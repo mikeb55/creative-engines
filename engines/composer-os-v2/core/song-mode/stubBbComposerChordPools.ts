@@ -122,6 +122,31 @@ export const nelson_swing = chunk64((i) => {
   return [`${a}m7`, `${b}9`, `${c}maj13`, `${d}13`];
 });
 
+/** Quincy Jones — punchy swing shout vocabulary / soul–pop crossover / orchestral lifts. */
+export const quincy_jones_swing = chunk64((i) => {
+  const a = ROOTS[(i + 4) % 12];
+  const b = ROOTS[(i + 9) % 12];
+  const c = ROOTS[(i + 2) % 12];
+  const d = ROOTS[(i + 7) % 12];
+  return [`${a}m9`, `${b}13`, `${c}maj9`, `${d}9`];
+});
+
+export const quincy_jones_soul = chunk64((i) => {
+  const a = ROOTS[(i + 6) % 12];
+  const b = ROOTS[(i + 11) % 12];
+  const c = ROOTS[(i + 3) % 12];
+  const d = ROOTS[(i + 8) % 12];
+  return [`${a}maj9`, `${b}m11`, `${c}13`, `${d}sus9`];
+});
+
+export const quincy_jones_orchestral = chunk64((i) => {
+  const a = ROOTS[i % 12];
+  const b = ROOTS[(i + 5) % 12];
+  const c = ROOTS[(i + 10) % 12];
+  const d = ROOTS[(i + 4) % 12];
+  return [`${a}maj7`, `${b}m9`, `${c}maj13`, `${d}maj9(#11)`];
+});
+
 /** Assign into `SONGWRITER_CHORD_POOLS` — three tiers per composer (seed % 3 resolver in builder). */
 export const STUB_BB_COMPOSER_CHORD_POOLS: Record<string, StubBbChordPoolShape> = {
   nestico_swing,
@@ -136,4 +161,7 @@ export const STUB_BB_COMPOSER_CHORD_POOLS: Record<string, StubBbChordPoolShape> 
   nelson_blues,
   nelson_modal,
   nelson_swing,
+  quincy_jones_swing,
+  quincy_jones_soul,
+  quincy_jones_orchestral,
 };

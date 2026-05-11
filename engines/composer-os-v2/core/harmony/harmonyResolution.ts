@@ -441,6 +441,17 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
     return onEff[barIndex - 1]!;
   }
 
+  const qjEff = meta?.quincyJonesEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'quincy_jones' &&
+    Array.isArray(qjEff) &&
+    qjEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return qjEff[barIndex - 1]!;
+  }
+
   /**
    * Gershwin: `precomputeGershwinEffectiveHarmonyBars` applies Songbook / chromatic / rhythm grid devices — receipts **`gg:*`**.
    */

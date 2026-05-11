@@ -472,6 +472,52 @@ const CLARE_FISCHER: VoiceRuleBundle = {
   },
 };
 
+const QUINCY_JONES: VoiceRuleBundle = {
+  voiceId: 'quincy_jones',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 2,
+    allowMidBarChange: false,
+  },
+  bassPolicy: {
+    role: 'root',
+    allowOctaveDoubling: true,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 6,
+    maxSpreadSemitones: 24,
+    clusterSizeNotes: [4, 8],
+    forbidParallelFifths: true,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'diatonic-step',
+    maxLeapSemitones: 10,
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 2,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: [
+      'Tight brass: kicks and punches aligned to bass/drum backbeat — no vague wash',
+      'Pop–jazz crossover: hook-friendly tops over altered dominants and sus resolutions',
+      'Rhythm-section precision: articulation matches hat/kick language bar to bar',
+      'Call-and-response: antiphonal brass/reed vs rhythm or guitar comp figures',
+      'Shout staging: partial ensemble → layered brass stacks → drop to rhythm bed',
+      'Orchestral lifts: dominant prolongation / pad builds before recap or tag',
+    ],
+  },
+  formPolicy: {
+    narrativeArc: 'suite',
+    sectionRecallEnforced: true,
+  },
+  rhythmPolicy: { antiMetric: false },
+  repairPolicy: {
+    resolveParallels: true,
+    maxVoiceOverlap: 5,
+  },
+};
+
 const OLIVER_NELSON: VoiceRuleBundle = {
   voiceId: 'oliver_nelson',
   harmonicRhythm: {
@@ -633,6 +679,7 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   bob_brookmeyer: BOB_BROOKMEYER,
   clare_fischer: CLARE_FISCHER,
   oliver_nelson: OLIVER_NELSON,
+  quincy_jones: QUINCY_JONES,
   berg: BERG,
   alban_berg: BERG,
 };

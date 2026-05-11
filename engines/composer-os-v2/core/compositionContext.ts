@@ -1125,6 +1125,18 @@ export interface GenerationMetadata {
   oliverNelsonSliceReceipt?: string;
   oliverNelsonEffectiveHarmonyBars?: string[];
   oliverNelsonDeviceReceipts?: string[];
+  /** Quincy Jones — crossover brass arranging (`quincyJonesSlice.ts`). */
+  quincyJonesDiagnostics?: {
+    songwriterId: 'quincy_jones';
+    barsConsidered: number;
+    soulTouches: number;
+    swingTouches: number;
+    orchestralTouches: number;
+    deviceReceipts?: string[];
+  };
+  quincyJonesSliceReceipt?: string;
+  quincyJonesEffectiveHarmonyBars?: string[];
+  quincyJonesDeviceReceipts?: string[];
   /** George Gershwin — Songbook / concert jazz harmony (`gershwinSlice.ts`). */
   gershwinDiagnostics?: {
     songwriterId: 'gershwin';

@@ -196,6 +196,7 @@ export function resolveHarmonicVoiceStyleContextKeys(voiceId: SongwriterRuleId):
       return [...MORRICONE_HARMONIC_STYLE_KEYS];
     case 'bernard_herrmann':
       return [...HERRMANN_HARMONIC_STYLE_KEYS];
+    case 'quincy_jones':
     case 'quincy_jones_film':
       return [...QUINCY_JONES_FILM_HARMONIC_STYLE_KEYS];
     case 'angelo_badalamenti':

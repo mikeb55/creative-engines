@@ -71,8 +71,17 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
     R('schneider.groove_switch', 'Groove type may change mid-piece', 'composer', 'rhythm', 73),
     R('schneider.climax_counterpoint', 'Climax: layered counter-lines over riff-shout', 'composer', 'orchestration', 84),
   ],
-  /** Placeholder until Quincy Jones research rules are authored (arranger id maps from UI). */
-  quincy_jones: [],
+  /** Quincy Jones — LA studio punch / crossover pop–jazz / tight rhythm-section locks. */
+  quincy_jones: [
+    R('quincy_jones.tight_brass', 'Brass punches locked to rhythm-section kicks & backbeats', 'composer', 'orchestration', 84),
+    R('quincy_jones.crossover_harmony', 'Pop vocal hooks over jazz extensions (9/13/sus) without mud', 'composer', 'harmony', 82),
+    R('quincy_jones.rhythm_precision', 'Rhythm-section pocket — articulated kicks; minimal drift vs grid', 'composer', 'rhythm', 83),
+    R('quincy_jones.call_response', 'Call-and-response: brass/reeds vs rhythm hits or guitar comps', 'composer', 'form', 81),
+    R('quincy_jones.section_trade', 'Section trades (saxes ↔ trombones ↔ trumpets) with registral clarity', 'composer', 'orchestration', 80),
+    R('quincy_jones.shout_stack', 'Shout choruses via layered stacks — staged dynamics not constant tutti', 'composer', 'density', 82),
+    R('quincy_jones.orchestral_bridge', 'Orchestral bridge lifts — dominant prolongation / pad handoffs', 'composer', 'harmony', 79),
+    R('quincy_jones.groove_first', 'Groove-first reductions before orchestral peaks', 'composer', 'form', 78),
+  ],
   gil_evans: [
     R('gil_evans.colour_field', 'Harmonic colour fields over sparse rhythm hooks', 'composer', 'harmony', 83),
     R('gil_evans.mid_register_blend', 'Mid-register blends; avoid shout-default brass peaks', 'composer', 'orchestration', 80),

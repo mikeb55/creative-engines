@@ -1364,6 +1364,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const brookmeyerLockedTruth = mdLockedTruth?.bobBrookmeyerEffectiveHarmonyBars;
   const clareFischerLockedTruth = mdLockedTruth?.clareFischerEffectiveHarmonyBars;
   const nelsonLockedTruth = mdLockedTruth?.oliverNelsonEffectiveHarmonyBars;
+  const qjJonesLockedTruth = mdLockedTruth?.quincyJonesEffectiveHarmonyBars;
   const ggLockedTruth = mdLockedTruth?.gershwinEffectiveHarmonyBars;
   const apLockedTruth = mdLockedTruth?.arvoPartEffectiveHarmonyBars;
   const satieLockedTruth = mdLockedTruth?.satieEffectiveHarmonyBars;
@@ -1517,6 +1518,12 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                                 lockedHarmonyBarsAuthoritative &&
                                 nelsonLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                               ? nelsonLockedTruth
+                            : mdLockedTruth?.songwriterStyleId === 'quincy_jones' &&
+                                Array.isArray(qjJonesLockedTruth) &&
+                                qjJonesLockedTruth.length === tbLockedTruth &&
+                                lockedHarmonyBarsAuthoritative &&
+                                qjJonesLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                              ? qjJonesLockedTruth
                             : mdLockedTruth?.songwriterStyleId === 'gershwin' &&
                                 Array.isArray(ggLockedTruth) &&
                                 ggLockedTruth.length === tbLockedTruth &&
@@ -2368,7 +2375,7 @@ function composerStyleFromArrangerStyle(arrangerStyle: string | undefined | null
   if (a === 'mingus' || a === 'charles_mingus') return 'charles_mingus';
   if (a === 'thad' || a === 'thad_jones') return 'thad_jones';
   if (a === 'schneider') return 'schneider';
-  if (a === 'quincy_jones') return 'quincy_jones';
+  if (a === 'quincy' || a === 'quincy_jones' || a === 'quincy_jones_film') return 'quincy_jones';
   if (a === 'wayne_shorter' || a === 'wayne' || a === 'shorter') return 'wayne_shorter';
   if (a === 'gil_evans') return 'gil_evans';
   if (a === 'bob_brookmeyer') return 'bob_brookmeyer';

@@ -3083,6 +3083,11 @@ function chordSymbolsForSection(
     const tier = Math.abs(seed) % 3;
     resolvedPoolId = tier === 0 ? 'nelson_blues' : tier === 1 ? 'nelson_modal' : 'nelson_swing';
   }
+  if (songwriterId === 'quincy_jones') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0 ? 'quincy_jones_swing' : tier === 1 ? 'quincy_jones_soul' : 'quincy_jones_orchestral';
+  }
   if (songwriterId === 'hans_zimmer') {
     const tier = Math.abs(seed) % 3;
     resolvedPoolId =
@@ -3121,6 +3126,7 @@ function chordSymbolsForSection(
       songwriterId === 'bob_brookmeyer' ||
       songwriterId === 'clare_fischer' ||
       songwriterId === 'oliver_nelson' ||
+      songwriterId === 'quincy_jones' ||
       songwriterId === 'gershwin' ||
       songwriterId === 'satie'
     ) {

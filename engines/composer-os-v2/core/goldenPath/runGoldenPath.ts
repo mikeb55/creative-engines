@@ -2462,6 +2462,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const brookmeyerEx = mdEx?.bobBrookmeyerEffectiveHarmonyBars;
   const clareFischerEx = mdEx?.clareFischerEffectiveHarmonyBars;
   const nelsonEx = mdEx?.oliverNelsonEffectiveHarmonyBars;
+  const qjJonesEx = mdEx?.quincyJonesEffectiveHarmonyBars;
   const btEx = mdEx?.beatlesEffectiveHarmonyBars;
   const fkEx = mdEx?.felaKutiEffectiveHarmonyBars;
   const ggEx = mdEx?.gershwinEffectiveHarmonyBars;
@@ -2569,6 +2570,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                                           Array.isArray(nelsonEx) &&
                                                           nelsonEx.length === tbEx
                                                         ? nelsonEx
+                                                      : mdEx?.songwriterStyleId === 'quincy_jones' &&
+                                                          Array.isArray(qjJonesEx) &&
+                                                          qjJonesEx.length === tbEx
+                                                        ? qjJonesEx
                                                       : mdEx?.songwriterStyleId === 'beatles' &&
                                                           Array.isArray(btEx) &&
                                                           btEx.length === tbEx

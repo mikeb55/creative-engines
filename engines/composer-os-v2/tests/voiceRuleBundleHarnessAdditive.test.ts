@@ -42,6 +42,10 @@ export function runVoiceRuleBundleHarnessAdditiveTests(): { name: string; ok: bo
   const okNelson =
     nelson.voiceId === 'oliver_nelson' && (nelson.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 6;
 
+  const quincy = getVoiceRuleBundle('quincy_jones');
+  const okQuincy =
+    quincy.voiceId === 'quincy_jones' && (quincy.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 6;
+
   return [
     { name: 'Phase 2+3a harness additive: HarmonicScene stub barRange', ok: okScene },
     { name: 'Phase 2+3a harness additive: unknown voice → neutral bundle id', ok: okNeutral },
@@ -51,5 +55,6 @@ export function runVoiceRuleBundleHarnessAdditiveTests(): { name: string; ok: bo
     { name: 'Phase 2+3a harness additive: bob_brookmeyer fingerprints', ok: okBrook },
     { name: 'Phase 2+3a harness additive: clare_fischer fingerprints', ok: okFischer },
     { name: 'Phase 2+3a harness additive: oliver_nelson fingerprints', ok: okNelson },
+    { name: 'Phase 2+3a harness additive: quincy_jones fingerprints', ok: okQuincy },
   ];
 }
