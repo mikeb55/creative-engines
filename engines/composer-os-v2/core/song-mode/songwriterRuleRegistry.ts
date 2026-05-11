@@ -819,6 +819,48 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
       'global'
     ),
   ],
+  count_basie: [
+    R(
+      'basie.functional_blues',
+      'Functional swing blues — I7/IV7 vocabulary, #IVdim passing, ii–V side-slips, dominant 9/13 colour without plain 11th extensions (`cb:*`).',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'basie.riff_head',
+      'Riff-first head — 1–2 bar brass/rhythm motives rotated through sections; sparse backgrounds behind solo.',
+      'songwriter',
+      'form',
+      9,
+      'verse'
+    ),
+    R(
+      'basie.sparse_comp',
+      'Piano / guitar comp stays thin — stabs and offbeat hits; reactive density follows horn lead.',
+      'songwriter',
+      'rhythm',
+      8,
+      'global'
+    ),
+    R(
+      'basie.shout_homophony',
+      'Shout chorus: tutti homophony reusing head riff material + staged dynamics (sections drop at cadence).',
+      'songwriter',
+      'form',
+      9,
+      'chorus'
+    ),
+    R(
+      'basie.basie_button',
+      'Basie Button ending grammar — ii–dim–I6/9 tail with static upper voices (encoded on tag bars).',
+      'songwriter',
+      'harmony',
+      8,
+      'chorus'
+    ),
+  ],
   charles_mingus: [
     R(
       'mingus.blues_gospel_harmony',

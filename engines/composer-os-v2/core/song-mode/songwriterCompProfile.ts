@@ -7,7 +7,7 @@ import type { SongwriterRuleId } from './songwritingResearchTypes';
 import { normalizeSongwriterStyleKey } from './songwriterStyleProfiles';
 
 /** Primary instrument association for Song Mode menu writers (planning / receipts). */
-export type SongwriterPrimaryInstrumentKind = 'keys' | 'guitar' | 'other';
+export type SongwriterPrimaryInstrumentKind = 'keys' | 'guitar' | 'ensemble' | 'other';
 
 /** Primary harmony carrier for comp lane routing. */
 export type PrimaryCompInstrument = 'keys' | 'guitar' | 'ensemble' | 'sax';
@@ -88,6 +88,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   kendrick_lamar: 'keys',
   gil_evans: 'keys',
   thad_jones: 'keys',
+  count_basie: 'keys',
   sammy_nestico: 'keys',
   quincy_jones: 'keys',
   quincy_jones_film: 'keys',

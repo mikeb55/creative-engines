@@ -150,6 +150,14 @@ export function writeOutputManifest(
     thadJonesSliceReceipt?: GenerationMetadata['thadJonesSliceReceipt'];
     thadJonesEffectiveHarmonyBars?: GenerationMetadata['thadJonesEffectiveHarmonyBars'];
     thadJonesShoutBars?: GenerationMetadata['thadJonesShoutBars'];
+    basieTestamentMode?: GenerationMetadata['basieTestamentMode'];
+    basieResolvedTestament?: GenerationMetadata['basieResolvedTestament'];
+    basieDiagnostics?: GenerationMetadata['basieDiagnostics'];
+    basieDeviceReceipts?: GenerationMetadata['basieDeviceReceipts'];
+    basieSliceReceipt?: GenerationMetadata['basieSliceReceipt'];
+    basieEffectiveHarmonyBars?: GenerationMetadata['basieEffectiveHarmonyBars'];
+    basieShoutBars?: GenerationMetadata['basieShoutBars'];
+    basieEpisodePlan?: GenerationMetadata['basieEpisodePlan'];
     sonicYouthDiagnostics?: GenerationMetadata['sonicYouthDiagnostics'];
     sonicYouthDeviceReceipts?: GenerationMetadata['sonicYouthDeviceReceipts'];
     sonicYouthSliceReceipt?: GenerationMetadata['sonicYouthSliceReceipt'];
@@ -407,6 +415,14 @@ export function writeOutputManifest(
     thadJonesSliceReceipt: meta.thadJonesSliceReceipt,
     thadJonesEffectiveHarmonyBars: meta.thadJonesEffectiveHarmonyBars,
     thadJonesShoutBars: meta.thadJonesShoutBars,
+    basieTestamentMode: meta.basieTestamentMode,
+    basieResolvedTestament: meta.basieResolvedTestament,
+    basieDiagnostics: meta.basieDiagnostics,
+    basieDeviceReceipts: meta.basieDeviceReceipts,
+    basieSliceReceipt: meta.basieSliceReceipt,
+    basieEffectiveHarmonyBars: meta.basieEffectiveHarmonyBars,
+    basieShoutBars: meta.basieShoutBars,
+    basieEpisodePlan: meta.basieEpisodePlan,
     sonicYouthDiagnostics: meta.sonicYouthDiagnostics,
     sonicYouthDeviceReceipts: meta.sonicYouthDeviceReceipts,
     sonicYouthSliceReceipt: meta.sonicYouthSliceReceipt,

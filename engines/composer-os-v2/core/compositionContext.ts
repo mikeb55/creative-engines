@@ -30,6 +30,8 @@ import type { EnsembleWybleRoleMap } from './wyble/wybleVoiceLayoutTypes';
 import type { WybleConsumptionReceipt } from './wyble/wybleConsumptionReceipt';
 import type { AlternateGuitarTuningResolved } from './song-mode/alternateGuitarTunings';
 import type { CharlesMingusEpisodePlan } from './song-mode/mingusEpisodeTypes';
+import type { BasieEpisodePlan } from './song-mode/basieEpisodeTypes';
+import type { BasieTestamentMode } from './song-mode/basieSlice';
 import type {
   MotifAuthorityLevel,
   MotifAuthorityPlan,
@@ -1364,6 +1366,25 @@ export interface GenerationMetadata {
   charlesMingusSliceReceipt?: string;
   charlesMingusEffectiveHarmonyBars?: string[];
   charlesMingusDeviceReceipts?: string[];
+  /** Count Basie — Kansas City swing / riff-head slice (`basieSlice.ts`). */
+  basieTestamentMode?: BasieTestamentMode;
+  basieResolvedTestament?: BasieTestamentMode;
+  basieEpisodePlan?: BasieEpisodePlan;
+  basieDiagnostics?: {
+    songwriterId: 'count_basie';
+    basieResolvedTestament?: BasieTestamentMode;
+    barsConsidered: number;
+    extensionTouches: number;
+    dimPassTouches: number;
+    shoutTouches: number;
+    episodeReceipts?: string[];
+    deviceReceipts?: string[];
+  };
+  basieSliceReceipt?: string;
+  basieEffectiveHarmonyBars?: string[];
+  basieDeviceReceipts?: string[];
+  /** Shout region bars (1-based). */
+  basieShoutBars?: number[];
   /** Bacharach (theatre-pop / studio orchestration) — slice diagnostics + effective harmony. */
   bacharachDiagnostics?: {
     songwriterId: 'bacharach';
@@ -1882,4 +1903,8 @@ export interface CompositionContext {
     release: ReleaseReadinessResult;
     mx: MxReadinessResult;
   };
+  /** Count Basie Song Mode — resolved Old vs New Testament flag (`basieSlice.ts`). */
+  basieTestamentMode?: BasieTestamentMode;
 }
+
+export type { BasieTestamentMode } from './song-mode/basieSlice';

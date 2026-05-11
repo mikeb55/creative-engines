@@ -260,6 +260,12 @@ import {
   precomputeCharlesMingusEffectiveHarmonyBars,
 } from './charlesMingusSlice';
 import {
+  accumulateBasieHarmonyDiagnostics,
+  createBasieHarmonyAccumulator,
+  finalizeBasieMetadata,
+  precomputeBasieEffectiveHarmonyBars,
+} from './count_basie';
+import {
   accumulateSammyNesticoHarmonyDiagnostics,
   createSammyNesticoHarmonyAccumulator,
   finalizeSammyNesticoMetadata,
@@ -2539,6 +2545,8 @@ function buildGuitarPart(
   const isSongwriterThadJones = normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'thad_jones';
   const isSongwriterCharlesMingus =
     normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'charles_mingus';
+  const isSongwriterCountBasie =
+    normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'count_basie';
   const isSongwriterSammyNestico =
     normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'sammy_nestico';
   const isSongwriterBobBrookmeyer =
@@ -2578,6 +2586,7 @@ function buildGuitarPart(
   const geAccum = createGilEvansHarmonyAccumulator();
   const tjAccum = createThadJonesHarmonyAccumulator();
   const cmAccum = createCharlesMingusHarmonyAccumulator();
+  const cbAccum = createBasieHarmonyAccumulator();
   const snNesticoAccum = createSammyNesticoHarmonyAccumulator();
   const brookmeyerAccum = createBobBrookmeyerHarmonyAccumulator();
   const clareFischerAccum = createClareFischerHarmonyAccumulator();
@@ -2704,6 +2713,9 @@ function buildGuitarPart(
   }
   if (isSongwriterCharlesMingus && isDuoGoldenPath) {
     precomputeCharlesMingusEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterCountBasie && isDuoGoldenPath) {
+    precomputeBasieEffectiveHarmonyBars(context);
   }
   if (isSongwriterSammyNestico && isDuoGoldenPath) {
     precomputeSammyNesticoEffectiveHarmonyBars(context);
@@ -3053,6 +3065,13 @@ function buildGuitarPart(
         b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
         resolveBarSymbol(context, b).symbol,
         cmAccum
+      );
+    }
+    if (isSongwriterCountBasie) {
+      accumulateBasieHarmonyDiagnostics(
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
+        cbAccum
       );
     }
     if (isSongwriterSammyNestico) {
@@ -3812,6 +3831,10 @@ function buildGuitarPart(
 
   if (isSongwriterCharlesMingus && context.generationMetadata) {
     finalizeCharlesMingusMetadata(context.generationMetadata, cmAccum);
+  }
+
+  if (isSongwriterCountBasie && context.generationMetadata) {
+    finalizeBasieMetadata(context.generationMetadata, cbAccum);
   }
 
   if (isSongwriterSammyNestico && context.generationMetadata) {

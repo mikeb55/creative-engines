@@ -1283,7 +1283,11 @@ Song Mode applies **writer slices**: each slice owns **harmonic devices (d1–d5
 | d1–d5 | Five named devices with eligibility + receipts |
 | Locked harmony | Bars routed so export **matches** `getChordForBar` after precompute |
 
-**Aliases:** Many writers register shortcuts (`monk`, `bird`, `fz`, …)—try them in quick experiments.
+**Aliases:** Many writers register shortcuts (`monk`, `bird`, `fz`, `basie`, `count basie`, …)—try them in quick experiments.
+
+### Count Basie (`count_basie`)
+
+**Shipped slice:** **`basieSlice.ts`** — **`cb:*`** receipts, **`basieEffectiveHarmonyBars`** authority in **`getChordForBar`** / locked export truth (same wiring as Thad Jones / Mingus). **Chord pools:** **`basie_blues`**, **`basie_swing`**, **`basie_ballad`** (**`seed % 3`**). **Episodes:** **`riff_head`**, **`solo_background`**, **`shout`**, **`tag`** (shout reuses head riff material). Optional **`basieTestamentMode`** (**Old Testament** vs **New Testament**) weights **`basieStyleProfile`** / **`CompositionContext`** — not a separate songwriter id. Big Band arranger **`basie`** shares expanded registry rules with Song Mode fingerprint bundle **`count_basie`**.
 
 ### Song Mode Style Engine (`StyleProfile`)
 

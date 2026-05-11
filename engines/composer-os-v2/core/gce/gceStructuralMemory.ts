@@ -357,6 +357,7 @@ export function validateAgainstFingerprint(
     id: `${fingerprint.id}_candidate`,
     format: fingerprint.format,
     songwriterId: fingerprint.songwriterId,
+    gceScore: fingerprint.gceScore,
     notes: 'candidate',
   });
 
@@ -622,6 +623,7 @@ export function validateSteelyOrbitV2FingerprintGate(
     id: `${orbitRef.id}_v2_candidate`,
     format: orbitRef.format,
     songwriterId: orbitRef.songwriterId,
+    gceScore: orbitRef.gceScore,
   });
 
   if (cand.densityCurve.length !== orbitRef.densityCurve.length) {

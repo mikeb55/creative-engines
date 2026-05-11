@@ -367,6 +367,10 @@ export function apiGenerate(
         body.thadPhase === 'swing' || body.thadPhase === 'ballad' || body.thadPhase === 'groove'
           ? body.thadPhase
           : undefined,
+      basieTestamentMode:
+        body.basieTestamentMode === 'old_testament' || body.basieTestamentMode === 'new_testament'
+          ? body.basieTestamentMode
+          : undefined,
       joniPhase:
         body.joniPhase === 'folk_modal' || body.joniPhase === 'jazz_folk' || body.joniPhase === 'modal_jazz'
           ? body.joniPhase

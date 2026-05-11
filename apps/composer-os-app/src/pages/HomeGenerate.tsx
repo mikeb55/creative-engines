@@ -476,6 +476,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'herbie_hancock', label: 'Herbie Hancock' },
   { id: 'henry_threadgill', label: 'Henry Threadgill' },
   { id: 'charles_mingus', label: 'Charles Mingus' },
+  { id: 'count_basie', label: 'Count Basie' },
   { id: 'james_brown', label: 'James Brown' },
   { id: 'jeff_lynne', label: 'Jeff Lynne' },
   { id: 'john_coltrane', label: 'John Coltrane' },
@@ -555,6 +556,7 @@ const JAZZ_MASTERS_HARMONIC_VOICE_IDS: readonly HarmonicVoiceId[] = [
   'wayne_shorter',
   'henry_threadgill',
   'charles_mingus',
+  'count_basie',
   'pat_metheny',
 ];
 const HARMONIC_VOICE_JAZZ_MASTERS_SET = new Set<string>(JAZZ_MASTERS_HARMONIC_VOICE_IDS);
@@ -658,6 +660,7 @@ const SONGWRITER_GROUP_SHIPPED_ORDER: readonly string[] = [
   'andrew_hill',
   'charlie_parker',
   'thad_jones',
+  'count_basie',
   'bill_evans',
   'satie',
   'steve_reich',

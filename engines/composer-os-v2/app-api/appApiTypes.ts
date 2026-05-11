@@ -20,6 +20,7 @@ import type {
   JerryGoldsmithContextMode,
   JohnWilliamsContextMode,
   JoniMitchellPhaseMode,
+  BasieTestamentMode,
   MilesDavisContextMode,
   NinoRotaContextMode,
   PhilipGlassContextMode,
@@ -52,6 +53,7 @@ export type { PhilipGlassContextMode };
 export type { SteveReichProcessMode };
 export type { HansZimmerContextMode };
 export type { AngeloBadalamentiContextMode };
+export type { BasieTestamentMode };
 export type { ImportHarmonyMode };
 export type { AlternateGuitarTuningRequest };
 
@@ -375,6 +377,8 @@ export interface GenerateRequest {
   styleGenerationContextKeys?: string[];
   /** Song Mode / Thad Jones (`thadJonesSlice.ts`). Default **`swing`** in engine when omitted. */
   thadPhase?: ThadJonesPhaseMode;
+  /** Song Mode / Count Basie — Old vs New Testament (`basieSlice.ts`). Omitted → seeded resolve. */
+  basieTestamentMode?: BasieTestamentMode;
   /** Song Mode / Joni Mitchell (`joniMitchellSlice.ts`). Default **`folk_modal`** in engine when omitted. */
   joniPhase?: JoniMitchellPhaseMode;
 }
@@ -657,6 +661,14 @@ export interface OutputEntry {
   thadJonesSliceReceipt?: GenerationMetadata['thadJonesSliceReceipt'];
   thadJonesEffectiveHarmonyBars?: GenerationMetadata['thadJonesEffectiveHarmonyBars'];
   thadJonesShoutBars?: GenerationMetadata['thadJonesShoutBars'];
+  basieTestamentMode?: GenerationMetadata['basieTestamentMode'];
+  basieResolvedTestament?: GenerationMetadata['basieResolvedTestament'];
+  basieDiagnostics?: GenerationMetadata['basieDiagnostics'];
+  basieDeviceReceipts?: GenerationMetadata['basieDeviceReceipts'];
+  basieSliceReceipt?: GenerationMetadata['basieSliceReceipt'];
+  basieEffectiveHarmonyBars?: GenerationMetadata['basieEffectiveHarmonyBars'];
+  basieShoutBars?: GenerationMetadata['basieShoutBars'];
+  basieEpisodePlan?: GenerationMetadata['basieEpisodePlan'];
   joniPhase?: GenerationMetadata['joniPhase'];
   joniResolvedPhase?: GenerationMetadata['joniResolvedPhase'];
   /** Bacharach (theatre-pop harmony) slice — diagnostics / receipts (Song Mode manifest echo). */

@@ -1165,6 +1165,13 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'thad_jones'
       ? { thadPhase: req.thadPhase }
       : {}),
+    ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'count_basie'
+      ? {
+          ...(req.basieTestamentMode === 'old_testament' || req.basieTestamentMode === 'new_testament'
+            ? { basieTestamentMode: req.basieTestamentMode }
+            : {}),
+        }
+      : {}),
     ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'joni_mitchell'
       ? { joniPhase: req.joniPhase }
       : {}),
@@ -1376,6 +1383,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const geLockedTruth = mdLockedTruth?.gilEvansEffectiveHarmonyBars;
   const tjLockedTruth = mdLockedTruth?.thadJonesEffectiveHarmonyBars;
   const cmLockedTruth = mdLockedTruth?.charlesMingusEffectiveHarmonyBars;
+  const cbLockedTruth = mdLockedTruth?.basieEffectiveHarmonyBars;
   const baLockedTruth = mdLockedTruth?.bacharachEffectiveHarmonyBars;
   const dfLockedTruth = mdLockedTruth?.donaldFagenEffectiveHarmonyBars;
   const eccLockedTruth = mdLockedTruth?.ecmChamberEffectiveHarmonyBars;
@@ -1590,6 +1598,12 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                                 lockedHarmonyBarsAuthoritative &&
                                 cmLockedTruth.length === lockedHarmonyBarsAuthoritative.length
                               ? cmLockedTruth
+                            : mdLockedTruth?.songwriterStyleId === 'count_basie' &&
+                                Array.isArray(cbLockedTruth) &&
+                                cbLockedTruth.length === tbLockedTruth &&
+                                lockedHarmonyBarsAuthoritative &&
+                                cbLockedTruth.length === lockedHarmonyBarsAuthoritative.length
+                              ? cbLockedTruth
                             : mdLockedTruth?.songwriterStyleId === 'bacharach' &&
                             Array.isArray(baLockedTruth) &&
                             baLockedTruth.length === tbLockedTruth &&
@@ -1870,6 +1884,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     const geDisk = mdDisk?.gilEvansEffectiveHarmonyBars;
     const tjDisk = mdDisk?.thadJonesEffectiveHarmonyBars;
     const cmDisk = mdDisk?.charlesMingusEffectiveHarmonyBars;
+    const cbDisk = mdDisk?.basieEffectiveHarmonyBars;
     const barsForDiskHarmonyTruth =
       mdDisk?.songwriterStyleId === 'brian_wilson' &&
       Array.isArray(bwDisk) &&
@@ -1979,6 +1994,12 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
                                         locked &&
                                         cmDisk.length === locked.length
                                       ? cmDisk
+                                    : mdDisk?.songwriterStyleId === 'count_basie' &&
+                                        Array.isArray(cbDisk) &&
+                                        cbDisk.length === gp.context.form.totalBars &&
+                                        locked &&
+                                        cbDisk.length === locked.length
+                                      ? cbDisk
                                     : mdDisk?.songwriterStyleId === 'frank_zappa' &&
                                     Array.isArray(fzDisk) &&
                                     fzDisk.length === gp.context.form.totalBars &&
@@ -2077,6 +2098,14 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       thadJonesSliceReceipt: gp.context.generationMetadata.thadJonesSliceReceipt,
       thadJonesEffectiveHarmonyBars: gp.context.generationMetadata.thadJonesEffectiveHarmonyBars,
       thadJonesShoutBars: gp.context.generationMetadata.thadJonesShoutBars,
+      basieTestamentMode: gp.context.generationMetadata.basieTestamentMode,
+      basieResolvedTestament: gp.context.generationMetadata.basieResolvedTestament,
+      basieDiagnostics: gp.context.generationMetadata.basieDiagnostics,
+      basieDeviceReceipts: gp.context.generationMetadata.basieDeviceReceipts,
+      basieSliceReceipt: gp.context.generationMetadata.basieSliceReceipt,
+      basieEffectiveHarmonyBars: gp.context.generationMetadata.basieEffectiveHarmonyBars,
+      basieShoutBars: gp.context.generationMetadata.basieShoutBars,
+      basieEpisodePlan: gp.context.generationMetadata.basieEpisodePlan,
       sonicYouthDiagnostics: gp.context.generationMetadata.sonicYouthDiagnostics,
       sonicYouthDeviceReceipts: gp.context.generationMetadata.sonicYouthDeviceReceipts,
       sonicYouthSliceReceipt: gp.context.generationMetadata.sonicYouthSliceReceipt,

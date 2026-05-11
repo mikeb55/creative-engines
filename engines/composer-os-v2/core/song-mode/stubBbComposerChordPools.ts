@@ -147,6 +147,40 @@ export const quincy_jones_orchestral = chunk64((i) => {
   return [`${a}maj7`, `${b}m9`, `${c}maj13`, `${d}maj9(#11)`];
 });
 
+/** Count Basie — 12-bar blues vocabulary: I7/IV7, #IVdim, ii, V, minor iv, VI7b9, 9/13 (no 11). */
+export const basie_blues = chunk64((i) => {
+  const I = ROOTS[i % 12];
+  const IV = ROOTS[(i + 5) % 12];
+  const V = ROOTS[(i + 7) % 12];
+  const ii = ROOTS[(i + 2) % 12];
+  const vm = ROOTS[(i + 5) % 12];
+  const VIb9 = ROOTS[(i + 9) % 12];
+  const sharpIv = ROOTS[(i + 6) % 12];
+  const row = i % 4;
+  if (row === 0) return [`${I}9`, `${sharpIv}dim7`, `${I}13`, `${IV}9`];
+  if (row === 1) return [`${IV}13`, `${IV}9`, `${I}9`, `${I}13`];
+  if (row === 2) return [`${ii}m7`, `${V}9`, `${VIb9}7(b9)`, `${ii}m7`];
+  return [`${vm}m7`, `${IV}9`, `${sharpIv}dim7`, `${V}13`];
+});
+
+/** Count Basie — swing: ii–V pockets, turnbacks, shout-ready dominants (compact symbols). */
+export const basie_swing = chunk64((i) => {
+  const a = ROOTS[i % 12];
+  const b = ROOTS[(i + 5) % 12];
+  const c = ROOTS[(i + 7) % 12];
+  const d = ROOTS[(i + 10) % 12];
+  return [`${a}m7`, `${b}9`, `${c}m7`, `${d}9`];
+});
+
+/** Count Basie — ballad: lush majors / m11, slower harmonic rhythm signifiers. */
+export const basie_ballad = chunk64((i) => {
+  const a = ROOTS[(i + 3) % 12];
+  const b = ROOTS[(i + 8) % 12];
+  const c = ROOTS[(i + 10) % 12];
+  const d = ROOTS[(i + 2) % 12];
+  return [`${a}maj9`, `${b}m11`, `${c}6/9`, `${d}m9`];
+});
+
 /** Assign into `SONGWRITER_CHORD_POOLS` — three tiers per composer (seed % 3 resolver in builder). */
 export const STUB_BB_COMPOSER_CHORD_POOLS: Record<string, StubBbChordPoolShape> = {
   nestico_swing,
@@ -164,4 +198,7 @@ export const STUB_BB_COMPOSER_CHORD_POOLS: Record<string, StubBbChordPoolShape> 
   quincy_jones_swing,
   quincy_jones_soul,
   quincy_jones_orchestral,
+  basie_blues,
+  basie_swing,
+  basie_ballad,
 };

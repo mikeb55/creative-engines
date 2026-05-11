@@ -10,6 +10,7 @@ import type {
   BeatlesContextMode,
   BernardHerrmannContextMode,
   ArvoPartTintinnabuliParams,
+  BasieTestamentMode,
   CompositionContext,
   FormMap,
   EnnioMorriconeContextMode,
@@ -1166,6 +1167,8 @@ export interface RunGoldenPathOptions {
   /** Song Mode / Fela Kuti: manual drum feel vs posture mapping (`felaKutiSlice.ts`). */
   felaPercussionFeelOverride?: 'straight' | 'swing' | 'afrobeat';
   bernardHerrmannContext?: BernardHerrmannContextMode;
+  /** Song Mode / Count Basie — Old vs New Testament posture (`basieSlice.ts`). Omitted → seeded resolve. */
+  basieTestamentMode?: BasieTestamentMode;
   johnWilliamsContext?: JohnWilliamsContextMode;
   ennioMorriconeContext?: EnnioMorriconeContextMode;
   ninoRotaContext?: NinoRotaContextMode;
@@ -1865,6 +1868,13 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'thad_jones'
         ? { thadPhase: options.thadPhase ?? 'swing' }
         : {}),
+      ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'count_basie'
+        ? {
+            ...(options.basieTestamentMode === 'old_testament' || options.basieTestamentMode === 'new_testament'
+              ? { basieTestamentMode: options.basieTestamentMode }
+              : {}),
+          }
+        : {}),
       ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'joni_mitchell'
         ? { joniPhase: options.joniPhase ?? 'folk_modal' }
         : {}),
@@ -2455,6 +2465,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const deEx = mdEx?.dukeEllingtonEffectiveHarmonyBars;
   const tjEx = mdEx?.thadJonesEffectiveHarmonyBars;
   const cmEx = mdEx?.charlesMingusEffectiveHarmonyBars;
+  const cbEx = mdEx?.basieEffectiveHarmonyBars;
   const mdMilesEx = mdEx?.milesDavisEffectiveHarmonyBars;
   const bkEx = mdEx?.bartokEffectiveHarmonyBars;
   const bgEx = mdEx?.bergEffectiveHarmonyBars;
@@ -2542,6 +2553,8 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                                     ? tjEx
                                                     : mdEx?.songwriterStyleId === 'charles_mingus' && Array.isArray(cmEx) && cmEx.length === tbEx
                                                       ? cmEx
+                                                      : mdEx?.songwriterStyleId === 'count_basie' && Array.isArray(cbEx) && cbEx.length === tbEx
+                                                        ? cbEx
                                                       : mdEx?.songwriterStyleId === 'miles_davis' &&
                                                       Array.isArray(mdMilesEx) &&
                                                       mdMilesEx.length === tbEx
@@ -2722,6 +2735,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const dbLt = mdLt?.debussyEffectiveHarmonyBars;
   const deLt = mdLt?.dukeEllingtonEffectiveHarmonyBars;
   const tjLt = mdLt?.thadJonesEffectiveHarmonyBars;
+  const cbLt = mdLt?.basieEffectiveHarmonyBars;
   const msLt = mdLt?.mariaSchneiderEffectiveHarmonyBars;
   const fzLt = mdLt?.frankZappaEffectiveHarmonyBars;
   const bhHerrLt = mdLt?.bernardHerrmannEffectiveHarmonyBars;
@@ -2794,6 +2808,8 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                                       ? deLt
                                                       : mdLt?.songwriterStyleId === 'thad_jones' && Array.isArray(tjLt) && tjLt.length === tbLt
                                                         ? tjLt
+                                                        : mdLt?.songwriterStyleId === 'count_basie' && Array.isArray(cbLt) && cbLt.length === tbLt
+                                                          ? cbLt
                                                         : mdLt?.songwriterStyleId === 'maria_schneider' && Array.isArray(msLt) && msLt.length === tbLt
                                                           ? msLt
                                                         : mdLt?.songwriterStyleId === 'bernard_herrmann' &&

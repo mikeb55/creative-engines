@@ -612,6 +612,54 @@ const BERG: VoiceRuleBundle = {
   },
 };
 
+const COUNT_BASIE: VoiceRuleBundle = {
+  voiceId: 'count_basie',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 2,
+    allowMidBarChange: false,
+  },
+  bassPolicy: {
+    role: 'root',
+    allowOctaveDoubling: true,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 4,
+    maxSpreadSemitones: 18,
+    clusterSizeNotes: [2, 4],
+    forbidParallelFifths: false,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'diatonic-step',
+    maxLeapSemitones: 9,
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 1,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: [
+      'Sparse piano comp: 2–4 note voicings, offbeat syncopation, reactive density to horn lead',
+      'Background riff: static blues-based motif in 2–4 bar loops — does not track changes note-for-note',
+      'Sax soli: four-way close voicing, drop-2 spreads, dim7 passing tones on phrase corners',
+      'Call-response: equal phrase duration; affirmation vs imitation; response density ≤ call density',
+      'Shout: gradual dynamic build pp→ff; sections drop sequentially into cadence',
+      'Brass: lead trumpet top on melody; muted pads in backgrounds; open unmuted brass on shout peaks',
+      'Intro: pedal send-off or drum break hook — 2–3 bars before head entry',
+      'Old vs New Testament: compositionContext.basieTestamentMode gates riff-forward KC vs Ne‑He‑Hi orchestral precision',
+    ],
+  },
+  formPolicy: {
+    narrativeArc: 'suite',
+    sectionRecallEnforced: true,
+  },
+  rhythmPolicy: { antiMetric: false },
+  repairPolicy: {
+    resolveParallels: true,
+    maxVoiceOverlap: 4,
+  },
+};
+
 const CHARLES_MINGUS: VoiceRuleBundle = {
   voiceId: 'charles_mingus',
   harmonicRhythm: {
@@ -675,6 +723,7 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   pat_metheny: PAT_METHENY,
   henry_threadgill: HENRY_THREADGILL,
   charles_mingus: CHARLES_MINGUS,
+  count_basie: COUNT_BASIE,
   sammy_nestico: SAMMY_NESTICO,
   bob_brookmeyer: BOB_BROOKMEYER,
   clare_fischer: CLARE_FISCHER,

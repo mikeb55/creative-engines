@@ -23,6 +23,8 @@ export function defaultStyleProfileForPrimarySongwriter(
       return 'STYLE_SOPHISTICATED_POP';
     case 'cole_porter':
       return 'STYLE_SOPHISTICATED_POP';
+    case 'count_basie':
+      return 'STYLE_BEBOP_LITE';
     case 'barry_harris':
       return 'STYLE_BEBOP_LITE';
     case 'donald_fagen':

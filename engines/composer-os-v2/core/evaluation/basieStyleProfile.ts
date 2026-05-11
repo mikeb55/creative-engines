@@ -87,6 +87,8 @@ function scoreBasie(
   const riffRepetitionRatio = num(formal.riffRepetitionRatio);
   const swingGridAlignment = num(rhythmic.swingGridAlignment);
 
+  const testamentMode = formal?.basieTestamentMode as string | undefined;
+
   const byId: Record<string, number> = {
     densityScore: scoreDensity(avgVoicingSize),
     riffRepetitionScore: scoreRiff(riffRepetitionRatio),
@@ -95,16 +97,34 @@ function scoreBasie(
   };
 
   const dimensions: StyleDimensionScore[] = input.profile.dimensions.map((d) => {
+    let w = d.weight;
+    if (testamentMode === 'old_testament') {
+      if (d.id === 'swingClarityScore') w = d.weight * 1.12;
+      if (d.id === 'riffRepetitionScore') w = d.weight * 1.08;
+      if (d.id === 'compSparsityScore') w = d.weight * 0.92;
+    } else if (testamentMode === 'new_testament') {
+      if (d.id === 'compSparsityScore') w = d.weight * 1.1;
+      if (d.id === 'densityScore') w = d.weight * 1.06;
+      if (d.id === 'riffRepetitionScore') w = d.weight * 0.94;
+    }
     const s = byId[d.id] ?? 1;
     return {
       id: d.id,
       label: d.label,
       score: s,
-      weight: d.weight,
-      weightedScore: s * d.weight,
+      weight: w,
+      weightedScore: s * w,
       targetDescription: d.description,
     };
   });
+
+  const weightSum = dimensions.reduce((acc, d) => acc + d.weight, 0);
+  if (weightSum > 0 && Math.abs(weightSum - 1) > 1e-6) {
+    for (const d of dimensions) {
+      d.weight = d.weight / weightSum;
+      d.weightedScore = d.score * d.weight;
+    }
+  }
 
   const finalStyleScore = dimensions.reduce((acc, d) => acc + d.weightedScore, 0);
 

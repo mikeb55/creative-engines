@@ -65,6 +65,7 @@ export type SongwriterRuleId =
   | 'herbie_hancock'
   | 'henry_threadgill'
   | 'charles_mingus'
+  | 'count_basie'
   | 'stephen_sondheim'
   | 'kate_bush'
   | 'thelonious_monk'

@@ -3066,6 +3066,10 @@ function chordSymbolsForSection(
     resolvedPoolId =
       tier === 0 ? 'thad_jones_swing' : tier === 1 ? 'thad_jones_dorian' : 'thad_jones_shout';
   }
+  if (songwriterId === 'count_basie') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId = tier === 0 ? 'basie_blues' : tier === 1 ? 'basie_swing' : 'basie_ballad';
+  }
   if (songwriterId === 'sammy_nestico') {
     const tier = Math.abs(seed) % 3;
     resolvedPoolId = tier === 0 ? 'nestico_swing' : tier === 1 ? 'nestico_ballad' : 'nestico_blues';

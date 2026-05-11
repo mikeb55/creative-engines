@@ -138,6 +138,13 @@ const VOICES: Record<string, { displayName: string } & LensPreset> = {
     chromaticMediantBias: 0.3,
     poolSampling: true,
   },
+  count_basie: {
+    displayName: 'Count Basie',
+    tritoneRate: 0.28,
+    susBias: 0.35,
+    chromaticMediantBias: 0.22,
+    poolSampling: true,
+  },
   joni_mitchell: {
     displayName: 'Joni Mitchell',
     tritoneRate: 0.05,

@@ -450,6 +450,7 @@ export function runPipelineTruthGates(params: {
     const pgFilmT = mdT.philipGlassEffectiveHarmonyBars;
     const srFilmT = mdT.steveReichEffectiveHarmonyBars;
     const tjFilmT = mdT.thadJonesEffectiveHarmonyBars;
+    const cbFilmT = mdT.basieEffectiveHarmonyBars;
     const hzFilmT = mdT.hansZimmerEffectiveHarmonyBars;
     const abFilmT = mdT.angeloBadalamentiEffectiveHarmonyBars;
     const hcTruth32 = context.harmonyContext;
@@ -538,6 +539,10 @@ export function runPipelineTruthGates(params: {
                                                                     Array.isArray(tjFilmT) &&
                                                                     tjFilmT.length === 32
                                                                   ? [...tjFilmT]
+                                                                  : mdT.songwriterStyleId === 'count_basie' &&
+                                                                      Array.isArray(cbFilmT) &&
+                                                                      cbFilmT.length === 32
+                                                                    ? [...cbFilmT]
                                                                   : mdT.songwriterStyleId === 'hans_zimmer' &&
                                                                   Array.isArray(hzFilmT) &&
                                                                   hzFilmT.length === 32

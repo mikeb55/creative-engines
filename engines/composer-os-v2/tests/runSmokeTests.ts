@@ -4,7 +4,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N` in the smoke summary, then sync **N** + suite count into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **242** PASS rows, **57** suites (2026-05-10).
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **243** PASS rows, **58** suites (2026-05-11).
  */
 
 import { runReadinessTests } from './readiness.test';
@@ -41,6 +41,7 @@ import { runAndrewHillSliceSmokeTests } from './andrewHillSliceSmoke.test';
 import { runCharlieParkerSliceSmokeTests } from './charlieParkerSliceSmoke.test';
 import { runFrippKingCrimsonSliceSmokeTests } from './frippKingCrimsonSliceSmoke.test';
 import { runThadJonesSliceSmokeTests } from './thadJonesSliceSmoke.test';
+import { runBasieSliceSmokeTests } from './basieSliceSmoke.test';
 import { runEcmChamberVariantSweepTests } from './ecmChamberVariantSweep.test';
 import { runAlternateGuitarTuningsTests } from './alternateGuitarTunings.test';
 import { runImportHarmonyEnsembleSmokeTests } from './importHarmonyEnsembleSmoke.test';
@@ -110,6 +111,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Charlie Parker songwriter slice', run: runCharlieParkerSliceSmokeTests },
   { label: 'Fripp / King Crimson songwriter slice', run: runFrippKingCrimsonSliceSmokeTests },
   { label: 'Thad Jones songwriter slice', run: runThadJonesSliceSmokeTests },
+  { label: 'Count Basie songwriter slice', run: runBasieSliceSmokeTests },
   { label: 'ECM chamber variant sweep (OOM guard)', run: runEcmChamberVariantSweepTests },
   { label: 'Import harmony ensemble (Big Band / String Quartet)', run: runImportHarmonyEnsembleSmokeTests },
   { label: 'Zappa String Quartet (SQ slice + odd meter)', run: runZappaStringQuartetSmokeTests },
