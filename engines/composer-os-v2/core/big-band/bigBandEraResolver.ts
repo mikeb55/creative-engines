@@ -50,6 +50,11 @@ function tuningFor(era: BigBandEraId, composer: BigBandComposerId | null): BigBa
     densityArc = true;
     shoutMotivicClimax = true;
   }
+  if (composer === 'charles_mingus' || composer === 'mingus') {
+    densityArc = true;
+    shoutMotivicClimax = true;
+    riffVsLine = 'balanced';
+  }
   if (composer === 'wayne_shorter') {
     densityArc = true;
     smoothTransitions = true;

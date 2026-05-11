@@ -29,6 +29,7 @@ import type { GuitarVoice2PolyphonyDiagnostics } from './goldenPath/guitarVoice2
 import type { EnsembleWybleRoleMap } from './wyble/wybleVoiceLayoutTypes';
 import type { WybleConsumptionReceipt } from './wyble/wybleConsumptionReceipt';
 import type { AlternateGuitarTuningResolved } from './song-mode/alternateGuitarTunings';
+import type { CharlesMingusEpisodePlan } from './song-mode/mingusEpisodeTypes';
 import type {
   MotifAuthorityLevel,
   MotifAuthorityPlan,
@@ -1274,8 +1275,12 @@ export interface GenerationMetadata {
     bluesDominantTouches: number;
     slashTouches: number;
     sideStepTouches: number;
+    episodeCount?: number;
+    shockCutBar?: number;
     deviceReceipts?: string[];
   };
+  /** Episode texture / shock-cut plan — built in `charlesMingusSlice.precomputeCharlesMingusEffectiveHarmonyBars`. */
+  charlesMingusEpisodePlan?: CharlesMingusEpisodePlan;
   charlesMingusSliceReceipt?: string;
   charlesMingusEffectiveHarmonyBars?: string[];
   charlesMingusDeviceReceipts?: string[];

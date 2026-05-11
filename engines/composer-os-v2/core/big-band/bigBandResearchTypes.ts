@@ -9,6 +9,9 @@ export type BigBandComposerId =
   /** Alias for {@link thad_jones} — same registry rules (UI / legacy `composerStyle`). */
   | 'thad'
   | 'thad_jones'
+  /** Alias for {@link charles_mingus} — same registry rules. */
+  | 'mingus'
+  | 'charles_mingus'
   | 'schneider'
   | 'quincy_jones'
   | 'gil_evans'

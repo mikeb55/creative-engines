@@ -2203,83 +2203,85 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Em11', 'Cmaj7(#11)', 'Am11', 'F13'],
     ],
   },
-  /** Charles Mingus — blues architecture pools (`charlesMingusSlice.ts`). */
-  charles_mingus_blues_jazz: {
+  /** Charles Mingus — `mingus_blues`: blues-jazz extended + chromatic approach + gospel cadences (`charlesMingusSlice.ts`). */
+  mingus_blues: {
     verse: [
-      ['C7', 'F7', 'C7', 'G7'],
-      ['Bb7', 'Eb7', 'Bb7', 'F7'],
-      ['G7', 'C7', 'G7', 'D7'],
-      ['F7', 'Bb7', 'F7', 'C7'],
+      ['C7#9', 'F7#9', 'C7(b9,13)', 'G7(b9,#9)'],
+      ['Bb7#9', 'Eb7(b9,13)', 'Bb7', 'F7(b9,#9)'],
+      ['G7#9', 'C7(b9,13)', 'G7', 'D7(b9,#9)'],
+      ['F7#9', 'Bb7(b9,13)', 'F7', 'C7#9'],
     ],
     chorus: [
-      ['C13', 'F9', 'C13', 'G13'],
-      ['Bb13', 'Eb9', 'Bb13', 'F13'],
-      ['G13', 'C9', 'G13', 'D13'],
-      ['F13', 'Bb9', 'F13', 'C13'],
+      ['Db7', 'G7(b9)', 'C7#9', 'C7(b9,13)'],
+      ['B7', 'E7', 'A7#9', 'D7(b9)'],
+      ['Bb7', 'Eb7', 'Ab7', 'Db7'],
+      ['Gb7', 'B7', 'E7', 'A7'],
     ],
     bridge: [
-      ['Dm7', 'G7', 'Cmaj7', 'Am7'],
-      ['Fm7', 'Bb7', 'Ebmaj7', 'Cm7'],
-      ['Em7b5', 'A7alt', 'Dm7', 'G7'],
-      ['Gm7', 'C7', 'Fmaj7', 'Dm7'],
+      ['Fmaj7', 'Fm6', 'C7', 'C7'],
+      ['Bbmaj7', 'Bbm6', 'F7', 'F7'],
+      ['Ebmaj7', 'Ebm6', 'Bb7', 'Bb7'],
+      ['Abmaj7', 'Abm6', 'Eb7', 'Eb7'],
     ],
     pre_chorus: [
-      ['C7', 'A7', 'Dm7', 'G7'],
-      ['Bb7', 'G7', 'Cm7', 'F7'],
-      ['G7', 'E7', 'Am7', 'D7'],
-      ['F7', 'D7', 'Gm7', 'C7'],
+      ['C7', 'F7', 'Bbmaj7', 'Bb7'],
+      ['G7', 'C7', 'Fmaj7', 'F7'],
+      ['D7', 'G7', 'Cmaj7', 'C7'],
+      ['A7', 'D7', 'Gmaj7', 'G7'],
     ],
   },
-  charles_mingus_gospel: {
+  /** Charles Mingus — `mingus_modal`: static modal fields, tertian extensions with #5/b5 colour, quartal stacks at peaks. */
+  mingus_modal: {
     verse: [
-      ['Cmaj7', 'F/C', 'Cmaj7', 'G7sus'],
-      ['Bbmaj7', 'Eb/Bb', 'Bbmaj7', 'F7sus'],
-      ['Gmaj7', 'C/G', 'Gmaj7', 'D7sus'],
-      ['Fmaj7', 'Bb/F', 'Fmaj7', 'C7sus'],
+      ['Dm11', 'Dm9(11,13)', 'Gm11', 'Am11'],
+      ['Em7(b5)', 'A7(#5,b9)', 'Dm11', 'Dm9'],
+      ['Fm11', 'Bb13', 'Ebmaj7#11', 'Cm11'],
+      ['Gm11', 'C13(sus4)', 'Fmaj7#11', 'Dm11'],
     ],
     chorus: [
-      ['C13', 'F9/C', 'C13', 'G13'],
-      ['Bb13', 'Eb9/Bb', 'Bb13', 'F13'],
-      ['G13', 'C9/G', 'G13', 'D13'],
-      ['F13', 'Bb9/F', 'F13', 'C13'],
+      ['Dm7', 'Dm7(b5)', 'Gm11', 'C7sus(b9)'],
+      ['Bbmaj7#11/D', 'Dm11', 'G13', 'Gm11'],
+      ['Ebmaj7', 'Dm7(b5)', 'G7alt', 'Cm11'],
+      ['Am11', 'D7#11', 'Gm11', 'C13'],
     ],
     bridge: [
-      ['Dm9', 'G13', 'Cmaj9', 'Am11'],
-      ['Fm9', 'Bb13', 'Ebmaj9', 'Cm11'],
-      ['Em11', 'A13', 'Dmaj9', 'Bm11'],
+      ['Dm11', 'Dm11', 'Gm11', 'Am11'],
+      ['Em11', 'A13', 'Dm11', 'Dm11'],
+      ['Fm11', 'Bb13', 'Ebmaj9', 'Cm11'],
       ['Gm11', 'C13', 'Fmaj9', 'Dm11'],
     ],
     pre_chorus: [
-      ['Am11', 'Dm9', 'G13', 'Cmaj9'],
-      ['Gm11', 'Cm9', 'F13', 'Bbmaj9'],
-      ['Em11', 'Am9', 'D13', 'Gmaj9'],
+      ['Dm9', 'Gm11', 'C13', 'Fmaj7#11'],
+      ['Em11', 'Am11', 'D13', 'Gmaj7'],
       ['Fm11', 'Bb13', 'Ebmaj9', 'Cm11'],
+      ['Gm11', 'C13', 'Fmaj9', 'Dm11'],
     ],
   },
-  charles_mingus_chromatic: {
+  /** Charles Mingus — `mingus_chromatic`: side-slip ii–V, tritone subs, cycling dominants, pedal ambiguity. */
+  mingus_chromatic: {
     verse: [
-      ['C7#9', 'F7b13', 'C7alt', 'G7#9'],
-      ['Bb7b9', 'Eb7#11', 'Bb13', 'F7alt'],
-      ['G7#9', 'C7b9', 'G7alt', 'D7#11'],
-      ['F7b13', 'Bb7alt', 'F13', 'C7#9'],
+      ['Ebm7', 'Ab7', 'Dm7', 'G7'],
+      ['Cm7', 'F7', 'Bbm7', 'Eb7'],
+      ['Am7b5', 'D7alt', 'Gm7', 'C7alt'],
+      ['Fm7', 'Bb7', 'Ebm7', 'Ab7'],
     ],
     chorus: [
-      ['C13(b9)', 'F7(#11)', 'C7alt', 'G13(b9)'],
-      ['Bb13', 'Eb7alt', 'Bb7#9', 'F13'],
-      ['G13(#11)', 'C7alt', 'G13(b9)', 'D7#9'],
-      ['F13(b9)', 'Bb7#11', 'F7alt', 'C13'],
+      ['Db7', 'G7alt', 'Cmaj7', 'Cmaj7'],
+      ['Gb7', 'C7alt', 'Fmaj7', 'Fmaj7'],
+      ['B7', 'F7alt', 'Bbmaj7', 'Bbmaj7'],
+      ['E7', 'Bb7alt', 'Ebmaj7', 'Ebmaj7'],
     ],
     bridge: [
-      ['Dm7b5', 'G7alt', 'Cm11', 'F7#11'],
-      ['Fm7b5', 'Bb7alt', 'Ebmaj7#11', 'Ab13'],
-      ['Em7b5', 'A7alt', 'Dm11', 'G7b13'],
-      ['Gm7b5', 'C7alt', 'Fm11', 'Bb13'],
+      ['Bb7', 'Eb7', 'Ab7', 'Db7'],
+      ['Gb7', 'B7', 'E7', 'A7'],
+      ['D7', 'G7', 'C7', 'F7'],
+      ['Bb7', 'Eb7', 'Ab7', 'Db7'],
     ],
     pre_chorus: [
-      ['C7alt', 'A7#9', 'Dm11', 'G7b13'],
-      ['Bb7alt', 'G7#9', 'Cm11', 'F13'],
-      ['G7alt', 'E7#9', 'Am11', 'D13'],
-      ['F7alt', 'D7#11', 'Gm11', 'C13'],
+      ['C7/B', 'C7/B', 'Bb13', 'Bb13'],
+      ['G7/B', 'G7/B', 'F13', 'F13'],
+      ['D7/A', 'D7/A', 'C13', 'C13'],
+      ['A7/G', 'A7/G', 'G13', 'G13'],
     ],
   },
   /** Thad Jones — swing tier: functional tonal + octatonic dominant colour + chromatic approach dominants (research pools). */
@@ -3002,12 +3004,7 @@ function chordSymbolsForSection(
   }
   if (songwriterId === 'charles_mingus') {
     const tier = Math.abs(seed) % 3;
-    resolvedPoolId =
-      tier === 0
-        ? 'charles_mingus_blues_jazz'
-        : tier === 1
-          ? 'charles_mingus_gospel'
-          : 'charles_mingus_chromatic';
+    resolvedPoolId = tier === 0 ? 'mingus_blues' : tier === 1 ? 'mingus_modal' : 'mingus_chromatic';
   }
   if (songwriterId === 'thad_jones') {
     const tier = Math.abs(seed) % 3;

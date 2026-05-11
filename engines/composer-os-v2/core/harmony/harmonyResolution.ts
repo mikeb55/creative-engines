@@ -328,6 +328,21 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   }
 
   /**
+   * Charles Mingus: `precomputeCharlesMingusEffectiveHarmonyBars` layers blues chromatic / episode texture receipts — **`cm:*`**.
+   * After precompute, `charlesMingusEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const cmEff = meta?.charlesMingusEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'charles_mingus' &&
+    Array.isArray(cmEff) &&
+    cmEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return cmEff[barIndex - 1]!;
+  }
+
+  /**
    * Miles Davis: `precomputeMilesDavisEffectiveHarmonyBars` applies modal / space / electric vamp devices — receipts **`md:*`**.
    * After precompute, `milesDavisEffectiveHarmonyBars` is full-form and authoritative.
    */

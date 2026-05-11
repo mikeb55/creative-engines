@@ -242,6 +242,12 @@ import {
   precomputeThadJonesEffectiveHarmonyBars,
 } from './thad_jones';
 import {
+  accumulateCharlesMingusHarmonyDiagnostics,
+  createCharlesMingusHarmonyAccumulator,
+  finalizeCharlesMingusMetadata,
+  precomputeCharlesMingusEffectiveHarmonyBars,
+} from './charlesMingusSlice';
+import {
   accumulateBacharachHarmonyDiagnostics,
   createBacharachHarmonyAccumulator,
   finalizeBacharachMetadata,
@@ -2487,6 +2493,8 @@ function buildGuitarPart(
   const isSongwriterColePorter = genMeta?.songwriterStyleId === 'cole_porter';
   const isSongwriterMariaSchneider = genMeta?.songwriterStyleId === 'maria_schneider';
   const isSongwriterThadJones = normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'thad_jones';
+  const isSongwriterCharlesMingus =
+    normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'charles_mingus';
   const isSongwriterFrippKingCrimson = genMeta?.songwriterStyleId === 'fripp_king_crimson';
   const bwAccum = createBrianWilsonHarmonyAccumulator();
   const swAccum = createStevieWonderHarmonyAccumulator();
@@ -2513,6 +2521,7 @@ function buildGuitarPart(
   const colePorterAccum = createColePorterHarmonyAccumulator();
   const msAccum = createMariaSchneiderHarmonyAccumulator();
   const tjAccum = createThadJonesHarmonyAccumulator();
+  const cmAccum = createCharlesMingusHarmonyAccumulator();
   const baAccum = createBacharachHarmonyAccumulator();
   const dfAccum = createDonaldFagenHarmonyAccumulator();
   const eccAccum = createEcmChamberHarmonyAccumulator();
@@ -2625,6 +2634,9 @@ function buildGuitarPart(
   }
   if (isSongwriterThadJones && isDuoGoldenPath) {
     precomputeThadJonesEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterCharlesMingus && isDuoGoldenPath) {
+    precomputeCharlesMingusEffectiveHarmonyBars(context);
   }
   if (isSongwriterBacharach && isDuoGoldenPath) {
     precomputeBacharachEffectiveHarmonyBars(context);
@@ -2938,6 +2950,13 @@ function buildGuitarPart(
         b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
         resolveBarSymbol(context, b).symbol,
         tjAccum
+      );
+    }
+    if (isSongwriterCharlesMingus) {
+      accumulateCharlesMingusHarmonyDiagnostics(
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
+        cmAccum
       );
     }
     if (isSongwriterBacharach) {
@@ -3650,6 +3669,10 @@ function buildGuitarPart(
 
   if (isSongwriterThadJones && context.generationMetadata) {
     finalizeThadJonesMetadata(context.generationMetadata, tjAccum);
+  }
+
+  if (isSongwriterCharlesMingus && context.generationMetadata) {
+    finalizeCharlesMingusMetadata(context.generationMetadata, cmAccum);
   }
 
   if (isSongwriterBacharach && context.generationMetadata) {

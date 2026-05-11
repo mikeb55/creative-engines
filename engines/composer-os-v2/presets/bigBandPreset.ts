@@ -29,6 +29,8 @@ export const bigBandPreset: Preset = {
     supportedComposerStyles: [
       'ellington',
       'basie',
+      'mingus',
+      'charles_mingus',
       'thad',
       'thad_jones',
       'schneider',

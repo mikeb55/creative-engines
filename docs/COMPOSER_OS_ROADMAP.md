@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-05-10]
+# Composer OS Roadmap [2026-05-11]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
@@ -10,6 +10,7 @@
 - **Remaining:** (4) **MusicXML import Phase 2** — wire parser into UI + generate path end-to-end · (5) **Duo intent → generation** — **`duoIntent`** through pipeline, voice-weighting (beyond UI stub) · (6) **Clave grid overlay** — thin Afro-Cuban slice (**meter map + groove hints only**).
 - **Structural memory (Phase 1, 2026-05-10):** **`gceStructuralMemory`** JSON fingerprints + melodic consecutive-bar guard; Steely Orbit script **`orbit_v6_64`** pre-GCE gate; seeds **`orbit_v6_64`** / **`steely_orbit_v1_7`** under **`engines/composer-os-v2/gce-memory/fingerprints/`**.
 - **Big Band — Thad Jones vocabulary (2026-05-11):** Research-aligned **`SONGWRITER_CHORD_POOLS`** (**`swing` / `dorian` / `shout`**) + **`VoiceRuleBundle`** **`thad_jones`** (fingerprint receipts); BB registry **`thad`** alias ↔ **`thad_jones`**; arranger mapping normalises to **`thad_jones`**. See [CHANGELOG.md](CHANGELOG.md) `[Unreleased]`.
+- **Charles Mingus — pools + episode slice (2026-05-11):** **`mingus_blues` / `mingus_modal` / `mingus_chromatic`** + **`charlesMingusSlice`** episode plan + **`cm:*`** receipts; **`VoiceRuleBundle`** fingerprints; BB **`charles_mingus`** + **`mingus`**. See [CHANGELOG.md](CHANGELOG.md) `[Unreleased]` · [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md).
 
 ### Writer Slice Roadmap — priority order for full slice development
 

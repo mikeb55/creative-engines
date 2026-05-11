@@ -28,6 +28,15 @@ const THAD_JONES_COMPOSER_RULES: BigBandRule[] = [
   R('thad_jones.shout_sequence', 'Shout with sequences + harmonic shift', 'composer', 'form', 81),
 ];
 
+/** Charles Mingus — shared for `mingus` alias and `charles_mingus` canonical id. */
+const CHARLES_MINGUS_COMPOSER_RULES: BigBandRule[] = [
+  R('mingus.episode_form', 'Episode sequences differ in tempo/texture/harmony/improv density', 'composer', 'form', 84),
+  R('mingus.bass_authority', 'Bass introduces motives; substitute dominants independent of comping', 'composer', 'harmony', 83),
+  R('mingus.collective_improv', 'Collective episodes: horns loose pitch-set; bass/drums hold form', 'composer', 'density', 82),
+  R('mingus.texture_shock', 'Abrupt texture shifts bridged by bass ostinato/pedal', 'composer', 'form', 81),
+  R('mingus.blues_gospel_axis', 'Blues/gospel axis through chromatic departures + functional recovery', 'composer', 'harmony', 80),
+];
+
 const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
   ellington: [
     R('ellington.counterpoint_density', '≥2 independent lines when not thin', 'composer', 'density', 82),
@@ -46,6 +55,8 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
   ],
   thad_jones: THAD_JONES_COMPOSER_RULES,
   thad: THAD_JONES_COMPOSER_RULES,
+  charles_mingus: CHARLES_MINGUS_COMPOSER_RULES,
+  mingus: CHARLES_MINGUS_COMPOSER_RULES,
   wayne_shorter: [
     R('wayne.lateral_root', 'Modal plateaus + lateral dominants without ii–V wallpaper', 'composer', 'harmony', 81),
     R('wayne.section_colour_turn', 'Orchestral colour turns at phrase seams', 'composer', 'orchestration', 79),
