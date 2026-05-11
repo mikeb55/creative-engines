@@ -1836,6 +1836,7 @@ const ALIASES: Record<string, SongwriterRuleId> = {
   quincy_jones_film: 'quincy_jones',
   bob_brookmeyer: 'bob_brookmeyer',
   brookmeyer: 'bob_brookmeyer',
+  'bob brookmeyer': 'bob_brookmeyer',
   maria_schneider: 'maria_schneider',
   schneider: 'maria_schneider',
   clare_fischer: 'clare_fischer',

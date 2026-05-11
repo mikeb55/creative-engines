@@ -255,6 +255,30 @@
 
 ---
 
+### Bob Brookmeyer
+
+#### Periods (research headings)
+
+- **Early** — Basie‑influenced swing foundations; clearer chorus‑oriented layouts before full orchestral autonomy.
+- **Middle** — harmonic extremes, controlled indeterminacy, orchestral jazz vocabulary stretched toward concert‑music colours.
+- **Late** — quartal harmony and **counterpoint first**: through‑composed motion, swing grid often loosened or abandoned for chamber‑like dialogue across big‑band forces.
+
+#### Three USPs (engine-facing)
+
+1. **Line‑first hierarchy** — melodic line leads; harmony pads and voicings yield when they conflict with the line.
+2. **Pitch‑module generative system** — a compact **3‑note cell** propagates through inversion, retrograde, augmentation, and diminution across strata (melody + harmony tint).
+3. **Delayed solo placement** — soloistic episodes gated until composed architectural episodes have run (“nothing else can occur first”).
+
+#### Key works (orientation)
+
+- *Celebration Suite*, *Electricity*, *Waltzing with Zoe*, *Spirit Music*.
+
+#### Influence / lineage
+
+- Strong downstream resonance for **Maria Schneider**, **Darcy James Argue**, **Jim McNeely**; formative overlap with **Lutosławski**, **Earle Brown**, **Joel Thome** (colour, mobility, open form).
+
+---
+
 ## SECTION 2 — BIG BAND ERAS (CRITICAL)
 
 ### Swing Era (Ellington / Basie)

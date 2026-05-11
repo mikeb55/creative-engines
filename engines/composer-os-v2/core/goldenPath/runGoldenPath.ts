@@ -11,6 +11,7 @@ import type {
   BernardHerrmannContextMode,
   ArvoPartTintinnabuliParams,
   BasieTestamentMode,
+  BrookmeyerPeriodMode,
   CompositionContext,
   FormMap,
   EnnioMorriconeContextMode,
@@ -1179,6 +1180,8 @@ export interface RunGoldenPathOptions {
   reichProcess?: SteveReichProcessMode;
   /** Song Mode / Messiaen: programme period posture (`messiaenSlice.ts`). Omitted → seeded resolve. */
   messiaenPeriodMode?: MessiaenPeriodMode;
+  /** Song Mode / Bob Brookmeyer: early vs late posture (`bobBrookmeyerSlice.ts`). Omitted → seeded resolve. */
+  brookmeyerPeriodMode?: BrookmeyerPeriodMode;
   /** Song Mode / Thad Jones: big-band phase (`thadJonesSlice.ts`). Default **`swing`** when omitted. */
   thadPhase?: ThadJonesPhaseMode;
   /** Song Mode / Joni Mitchell: sus/modal phase (`joniMitchellSlice.ts`). Default **`folk_modal`** when omitted. */
@@ -1865,6 +1868,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
         options.messiaenPeriodMode === 'middle_messiaen' ||
         options.messiaenPeriodMode === 'late_messiaen')
         ? { messiaenPeriodMode: options.messiaenPeriodMode }
+        : {}),
+      ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'bob_brookmeyer' &&
+      (options.brookmeyerPeriodMode === 'early_brookmeyer' || options.brookmeyerPeriodMode === 'late_brookmeyer')
+        ? { brookmeyerPeriodMode: options.brookmeyerPeriodMode }
         : {}),
       ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'fripp_king_crimson'
         ? {
@@ -2748,6 +2755,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const deLt = mdLt?.dukeEllingtonEffectiveHarmonyBars;
   const tjLt = mdLt?.thadJonesEffectiveHarmonyBars;
   const cbLt = mdLt?.basieEffectiveHarmonyBars;
+  const brookmeyerLt = mdLt?.bobBrookmeyerEffectiveHarmonyBars;
   const msLt = mdLt?.mariaSchneiderEffectiveHarmonyBars;
   const fzLt = mdLt?.frankZappaEffectiveHarmonyBars;
   const bhHerrLt = mdLt?.bernardHerrmannEffectiveHarmonyBars;
@@ -2823,6 +2831,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
                                                         ? tjLt
                                                         : mdLt?.songwriterStyleId === 'count_basie' && Array.isArray(cbLt) && cbLt.length === tbLt
                                                           ? cbLt
+                                                        : mdLt?.songwriterStyleId === 'bob_brookmeyer' &&
+                                                            Array.isArray(brookmeyerLt) &&
+                                                            brookmeyerLt.length === tbLt
+                                                          ? brookmeyerLt
                                                         : mdLt?.songwriterStyleId === 'maria_schneider' && Array.isArray(msLt) && msLt.length === tbLt
                                                           ? msLt
                                                         : mdLt?.songwriterStyleId === 'bernard_herrmann' &&

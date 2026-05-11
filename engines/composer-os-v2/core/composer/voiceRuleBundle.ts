@@ -91,4 +91,6 @@ export interface VoiceRuleBundle {
 
   /** Alban Berg — optional row-aware scoring (`voiceLeadingSolver.ts`). */
   bergVoiceLeading?: BergVoiceLeadingParams;
+  /** Bob Brookmeyer — harmony voicing yields to melodic line (`voiceLeadingSolver.ts`). */
+  lineFirstHierarchy?: boolean;
 }

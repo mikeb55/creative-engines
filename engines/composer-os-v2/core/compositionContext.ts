@@ -102,6 +102,9 @@ export type SteveReichProcessMode = 'phasing' | 'additive' | 'cycle';
 /** Olivier Messiaen — early vs middle vs late structural posture (`messiaenSlice.ts`). Seeded when omitted. */
 export type MessiaenPeriodMode = 'early_messiaen' | 'middle_messiaen' | 'late_messiaen';
 
+/** Bob Brookmeyer — chorus-based vs through-composed counterpoint posture (`bobBrookmeyerSlice.ts`). Seeded when omitted. */
+export type BrookmeyerPeriodMode = 'early_brookmeyer' | 'late_brookmeyer';
+
 /** Thad Jones — big-band extended common-practice slice (`thadJonesSlice.ts`). Default **`swing`**. */
 export type ThadJonesPhaseMode = 'swing' | 'ballad' | 'groove';
 
@@ -1103,11 +1106,29 @@ export interface GenerationMetadata {
     barsConsidered: number;
     quartalTouches: number;
     alteredTouches: number;
+    pitchModuleReceiptTouches?: number;
+    episodeReceiptTouches?: number;
     deviceReceipts?: string[];
   };
   bobBrookmeyerSliceReceipt?: string;
   bobBrookmeyerEffectiveHarmonyBars?: string[];
   bobBrookmeyerDeviceReceipts?: string[];
+  /** Brookmeyer — resolved programme period (`bobBrookmeyerSlice.ts`). */
+  brookmeyerPeriodMode?: BrookmeyerPeriodMode;
+  brookmeyerPeriodModeResolved?: BrookmeyerPeriodMode;
+  /** 3-note generative pitch-class module (0–11); harmony tinted toward these PCs. */
+  activePitchModule?: readonly [number, number, number];
+  brookmeyerActivePitchModule?: readonly [number, number, number];
+  brookmeyerActivePitchModuleNames?: readonly string[];
+  brookmeyerSoloPermitted?: boolean;
+  brookmeyerSoloGateThresholdEpisodes?: number;
+  brookmeyerLineFirstHierarchy?: boolean;
+  /** When true, voice-leading solver relaxes parallel-motion penalties so harmony yields to line (`voiceLeadingSolver.ts`). */
+  lineFirstHierarchy?: boolean;
+  brookmeyerContrapuntalLineCount?: number;
+  contrapuntalLineCount?: number;
+  brookmeyerEpisodePlanSummary?: string;
+  brookmeyerEraShort?: 'early' | 'late';
   /** Clare Fischer — dense Latin harmony (`clareFischerSlice.ts`). */
   clareFischerDiagnostics?: {
     songwriterId: 'clare_fischer';
@@ -1938,6 +1959,10 @@ export interface CompositionContext {
   basieTestamentMode?: BasieTestamentMode;
   /** Olivier Messiaen Song Mode — early / middle / late programme posture (`messiaenSlice.ts`). */
   messiaenPeriodMode?: MessiaenPeriodMode;
+  /** Bob Brookmeyer Song Mode — early (chorus-based) vs late (through-composed) (`bobBrookmeyerSlice.ts`). */
+  brookmeyerPeriodMode?: BrookmeyerPeriodMode;
+  /** When true, harmonic voicing yields to melodic line (`bobBrookmeyerSlice.ts` + `voiceLeadingSolver.ts`). */
+  lineFirstHierarchy?: boolean;
 }
 
 export type { BasieTestamentMode } from './song-mode/basieSlice';

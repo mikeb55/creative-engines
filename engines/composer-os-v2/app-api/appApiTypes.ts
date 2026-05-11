@@ -21,6 +21,7 @@ import type {
   JohnWilliamsContextMode,
   JoniMitchellPhaseMode,
   BasieTestamentMode,
+  BrookmeyerPeriodMode,
   MessiaenPeriodMode,
   MilesDavisContextMode,
   NinoRotaContextMode,
@@ -56,6 +57,7 @@ export type { MessiaenPeriodMode };
 export type { HansZimmerContextMode };
 export type { AngeloBadalamentiContextMode };
 export type { BasieTestamentMode };
+export type { BrookmeyerPeriodMode };
 export type { ImportHarmonyMode };
 export type { AlternateGuitarTuningRequest };
 
@@ -335,6 +337,8 @@ export interface GenerateRequest {
   reichProcess?: SteveReichProcessMode;
   /** Song Mode / Messiaen — programme period (`messiaenSlice.ts`). Omitted → seeded resolve. */
   messiaenPeriodMode?: MessiaenPeriodMode;
+  /** Song Mode / Bob Brookmeyer — early (chorus-based) vs late (through-composed) (`bobBrookmeyerSlice.ts`). */
+  brookmeyerPeriodMode?: BrookmeyerPeriodMode;
   hansZimmerContext?: HansZimmerContextMode;
   angeloBadalamentiContext?: AngeloBadalamentiContextMode;
   /**
@@ -684,6 +688,17 @@ export interface OutputEntry {
   basieEffectiveHarmonyBars?: GenerationMetadata['basieEffectiveHarmonyBars'];
   basieShoutBars?: GenerationMetadata['basieShoutBars'];
   basieEpisodePlan?: GenerationMetadata['basieEpisodePlan'];
+  brookmeyerPeriodMode?: GenerationMetadata['brookmeyerPeriodMode'];
+  brookmeyerPeriodModeResolved?: GenerationMetadata['brookmeyerPeriodModeResolved'];
+  activePitchModule?: GenerationMetadata['activePitchModule'];
+  brookmeyerSoloPermitted?: GenerationMetadata['brookmeyerSoloPermitted'];
+  brookmeyerEpisodePlanSummary?: GenerationMetadata['brookmeyerEpisodePlanSummary'];
+  bobBrookmeyerDiagnostics?: GenerationMetadata['bobBrookmeyerDiagnostics'];
+  bobBrookmeyerDeviceReceipts?: GenerationMetadata['bobBrookmeyerDeviceReceipts'];
+  bobBrookmeyerSliceReceipt?: GenerationMetadata['bobBrookmeyerSliceReceipt'];
+  bobBrookmeyerEffectiveHarmonyBars?: GenerationMetadata['bobBrookmeyerEffectiveHarmonyBars'];
+  lineFirstHierarchy?: GenerationMetadata['lineFirstHierarchy'];
+  contrapuntalLineCount?: GenerationMetadata['contrapuntalLineCount'];
   joniPhase?: GenerationMetadata['joniPhase'];
   joniResolvedPhase?: GenerationMetadata['joniResolvedPhase'];
   /** Bacharach (theatre-pop harmony) slice — diagnostics / receipts (Song Mode manifest echo). */

@@ -48,7 +48,10 @@ export function runVoiceRuleBundleHarnessAdditiveTests(): { name: string; ok: bo
 
   const brook = getVoiceRuleBundle('bob_brookmeyer');
   const okBrook =
-    brook.voiceId === 'bob_brookmeyer' && (brook.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 6;
+    brook.voiceId === 'bob_brookmeyer' &&
+    brook.lineFirstHierarchy === true &&
+    brook.harmonicRhythm.minChordDurationBars >= 2 &&
+    (brook.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 12;
 
   const fischer = getVoiceRuleBundle('clare_fischer');
   const okFischer =
@@ -81,7 +84,7 @@ export function runVoiceRuleBundleHarnessAdditiveTests(): { name: string; ok: bo
     { name: 'Phase 2+3a harness additive: maria_schneider ≥10 fingerprints', ok: okMsFp },
     { name: 'Phase 2+3a harness additive: berg bundle + row clarity', ok: okBerg },
     { name: 'Phase 2+3a harness additive: sammy_nestico fingerprints', ok: okNestico },
-    { name: 'Phase 2+3a harness additive: bob_brookmeyer fingerprints', ok: okBrook },
+    { name: 'Phase 2+3a harness additive: bob_brookmeyer ≥12 fingerprints + line-first', ok: okBrook },
     { name: 'Phase 2+3a harness additive: clare_fischer fingerprints', ok: okFischer },
     { name: 'Phase 2+3a harness additive: oliver_nelson fingerprints', ok: okNelson },
     { name: 'Phase 2+3a harness additive: quincy_jones fingerprints', ok: okQuincy },

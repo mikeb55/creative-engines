@@ -47,29 +47,33 @@ export const nestico_blues = chunk64((i) => {
   return [`${a}7`, `${b}9`, `${c}m7`, `${d}13`];
 });
 
-/** Brookmeyer — quartal/modal plates vs swing bounce vs linear minor gates. */
-export const brookmeyer_modal = chunk64((i) => {
+/**
+ * Brookmeyer — tier pools (**line-first** posture in planner: harmony yields to melodic cell).
+ * `brookmeyer_quartal` stacked 4ths / sus plates · `brookmeyer_linear` sparse planing / slash drivers · `brookmeyer_cluster` dense altered clusters.
+ */
+export const brookmeyer_quartal = chunk64((i) => {
   const a = ROOTS[i % 12];
   const b = ROOTS[(i + 5) % 12];
   const c = ROOTS[(i + 7) % 12];
   const d = ROOTS[(i + 11) % 12];
-  return [`${a}sus9`, `${b}m11`, `${c}maj7#11`, `${d}quartal`];
+  const bassPed = ROOTS[(i + 3) % 12];
+  return [`${a}quartal`, `${b}sus13`, `${c}maj7#11/${bassPed}`, `${d}sus9/${bassPed}`];
 });
 
-export const brookmeyer_contrapuntal = chunk64((i) => {
+export const brookmeyer_linear = chunk64((i) => {
   const a = ROOTS[(i + 2) % 12];
   const b = ROOTS[(i + 8) % 12];
   const c = ROOTS[(i + 5) % 12];
   const d = ROOTS[(i + 11) % 12];
-  return [`${a}m7(b5)`, `${b}7alt`, `${c}m9`, `${d}maj7#11`];
+  return [`${a}m11`, `${b}maj9/${c}`, `${c}dim7`, `${d}maj7#11`];
 });
 
-export const brookmeyer_swing = chunk64((i) => {
+export const brookmeyer_cluster = chunk64((i) => {
   const a = ROOTS[(i + 4) % 12];
   const b = ROOTS[(i + 9) % 12];
   const c = ROOTS[(i + 2) % 12];
   const d = ROOTS[(i + 7) % 12];
-  return [`${a}m9`, `${b}13`, `${c}maj9`, `${d}9`];
+  return [`${a}m9(b5)`, `${b}7alt`, `${c}augmaj7`, `${d}13(#11)`];
 });
 
 /** Fischer — polytonal altered fields; lyrical ballad clusters; Latin groove clarity. */
@@ -186,9 +190,9 @@ export const STUB_BB_COMPOSER_CHORD_POOLS: Record<string, StubBbChordPoolShape> 
   nestico_swing,
   nestico_ballad,
   nestico_blues,
-  brookmeyer_modal,
-  brookmeyer_contrapuntal,
-  brookmeyer_swing,
+  brookmeyer_quartal,
+  brookmeyer_linear,
+  brookmeyer_cluster,
   fischer_polytonal,
   fischer_ballad,
   fischer_latin,

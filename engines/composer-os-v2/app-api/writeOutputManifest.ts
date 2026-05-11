@@ -158,6 +158,17 @@ export function writeOutputManifest(
     basieEffectiveHarmonyBars?: GenerationMetadata['basieEffectiveHarmonyBars'];
     basieShoutBars?: GenerationMetadata['basieShoutBars'];
     basieEpisodePlan?: GenerationMetadata['basieEpisodePlan'];
+    brookmeyerPeriodMode?: GenerationMetadata['brookmeyerPeriodMode'];
+    brookmeyerPeriodModeResolved?: GenerationMetadata['brookmeyerPeriodModeResolved'];
+    activePitchModule?: GenerationMetadata['activePitchModule'];
+    brookmeyerSoloPermitted?: GenerationMetadata['brookmeyerSoloPermitted'];
+    brookmeyerEpisodePlanSummary?: GenerationMetadata['brookmeyerEpisodePlanSummary'];
+    bobBrookmeyerDiagnostics?: GenerationMetadata['bobBrookmeyerDiagnostics'];
+    bobBrookmeyerDeviceReceipts?: GenerationMetadata['bobBrookmeyerDeviceReceipts'];
+    bobBrookmeyerSliceReceipt?: GenerationMetadata['bobBrookmeyerSliceReceipt'];
+    bobBrookmeyerEffectiveHarmonyBars?: GenerationMetadata['bobBrookmeyerEffectiveHarmonyBars'];
+    lineFirstHierarchy?: GenerationMetadata['lineFirstHierarchy'];
+    contrapuntalLineCount?: GenerationMetadata['contrapuntalLineCount'];
     sonicYouthDiagnostics?: GenerationMetadata['sonicYouthDiagnostics'];
     sonicYouthDeviceReceipts?: GenerationMetadata['sonicYouthDeviceReceipts'];
     sonicYouthSliceReceipt?: GenerationMetadata['sonicYouthSliceReceipt'];
@@ -434,6 +445,17 @@ export function writeOutputManifest(
     basieEffectiveHarmonyBars: meta.basieEffectiveHarmonyBars,
     basieShoutBars: meta.basieShoutBars,
     basieEpisodePlan: meta.basieEpisodePlan,
+    brookmeyerPeriodMode: meta.brookmeyerPeriodMode,
+    brookmeyerPeriodModeResolved: meta.brookmeyerPeriodModeResolved,
+    activePitchModule: meta.activePitchModule,
+    brookmeyerSoloPermitted: meta.brookmeyerSoloPermitted,
+    brookmeyerEpisodePlanSummary: meta.brookmeyerEpisodePlanSummary,
+    bobBrookmeyerDiagnostics: meta.bobBrookmeyerDiagnostics,
+    bobBrookmeyerDeviceReceipts: meta.bobBrookmeyerDeviceReceipts,
+    bobBrookmeyerSliceReceipt: meta.bobBrookmeyerSliceReceipt,
+    bobBrookmeyerEffectiveHarmonyBars: meta.bobBrookmeyerEffectiveHarmonyBars,
+    lineFirstHierarchy: meta.lineFirstHierarchy,
+    contrapuntalLineCount: meta.contrapuntalLineCount,
     sonicYouthDiagnostics: meta.sonicYouthDiagnostics,
     sonicYouthDeviceReceipts: meta.sonicYouthDeviceReceipts,
     sonicYouthSliceReceipt: meta.sonicYouthSliceReceipt,

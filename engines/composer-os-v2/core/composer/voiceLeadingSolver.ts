@@ -40,6 +40,9 @@ function parallelFifthPenalty(prev: number[] | null, curr: number[]): number {
 }
 
 function parallelOctavePenalty(prev: number[] | null, curr: number[], bundle: VoiceRuleBundle): number {
+  if (bundle.lineFirstHierarchy === true) {
+    return 0;
+  }
   if (
     bundle.voiceId === 'berg' &&
     (bundle.bergVoiceLeading?.rowClarityLevel ?? 'balanced') === 'foreground'
@@ -98,7 +101,8 @@ function anchorTonePenalty(prev: number[] | null, curr: number[], anchorCount: n
   return lost * 60;
 }
 
-function simultaneousMotionPenalty(prev: number[] | null, curr: number[]): number {
+function simultaneousMotionPenalty(prev: number[] | null, curr: number[], bundle: VoiceRuleBundle): number {
+  if (bundle.lineFirstHierarchy === true) return 0;
   if (!prev || prev.length !== curr.length) return 0;
   let moving = 0;
   for (let i = 0; i < prev.length; i++) {
@@ -241,7 +245,7 @@ export function scoreVoicingCandidate(
   cost += spreadPenalty(curr, bundle.voicingPolicy.minSpreadSemitones, bundle.voicingPolicy.maxSpreadSemitones);
   cost += anchorTonePenalty(prev, curr, bundle.orchestrationPolicy.anchorToneCount);
   if (bundle.orchestrationPolicy.mutateSingleVoiceAtTime) {
-    cost += simultaneousMotionPenalty(prev, curr);
+    cost += simultaneousMotionPenalty(prev, curr, bundle);
   }
   cost += gilEvansOctaveDoublePenalty(bundle, curr);
   cost += coltraneAugmentedReward(bundle, prev, curr);

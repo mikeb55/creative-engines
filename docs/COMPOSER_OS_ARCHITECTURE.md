@@ -10,6 +10,8 @@
 
 **Song Mode — Count Basie (`count_basie`):** **`SONGWRITER_CHORD_POOLS`** tiers **`basie_blues`** / **`basie_swing`** / **`basie_ballad`** (**`seed % 3`**). **`precomputeBasieEffectiveHarmonyBars`** (`core/song-mode/basieSlice.ts`) emits **`cb:*`** receipts, **`basieEpisodePlan`** (episodes **`riff_head`** / **`solo_background`** / **`shout`** / **`tag`**), optional **`basieTestamentMode`** (Old vs New Testament weighting on **`basieStyleProfile`**). **`GenerateRequest.basieTestamentMode`** → **`GenerationMetadata`** and **`OutputEntry`** manifest echo. **`VoiceRuleBundle`** **`count_basie`**; Big Band **`basie`** rule list (10). Locked harmony + duo golden path same wiring pattern as Thad/Mingus.
 
+**Song Mode — Bob Brookmeyer (`bob_brookmeyer`):** stub pools **`brookmeyer_quartal`** / **`brookmeyer_linear`** / **`brookmeyer_cluster`** (**`seed % 3`**); planner tags **`line_first:true`**. **`precomputeBobBrookmeyerEffectiveHarmonyBars`** (`core/song-mode/bobBrookmeyerSlice.ts`) → **`bobBrookmeyerEffectiveHarmonyBars`** (**`brk:*`** receipts), **3-note `activePitchModule`**, episode plan + solo gate, **`brookmeyerPeriodMode`** (**`early_brookmeyer`** vs **`late_brookmeyer`**). **`lineFirstHierarchy`** on **`GenerationMetadata`** drives **`voiceLeadingSolver`** (harmony yields to melody). **`GenerateRequest.brookmeyerPeriodMode`** + diagnostics echo on **`OutputEntry`**. **`VoiceRuleBundle`** **`bob_brookmeyer`** (12 **`fingerprintReceipts`**).
+
 ## GCE structural memory (Phase 1)
 
 Lightweight **JSON fingerprints** (no ML, no new scoring engine) under **`engines/composer-os-v2/gce-memory/fingerprints/`**.

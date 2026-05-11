@@ -421,9 +421,10 @@ const SAMMY_NESTICO: VoiceRuleBundle = {
 
 const BOB_BROOKMEYER: VoiceRuleBundle = {
   voiceId: 'bob_brookmeyer',
+  lineFirstHierarchy: true,
   harmonicRhythm: {
-    minChordDurationBars: 1,
-    maxChordDurationBars: 3,
+    minChordDurationBars: 2,
+    maxChordDurationBars: 8,
     allowMidBarChange: false,
   },
   bassPolicy: {
@@ -446,12 +447,18 @@ const BOB_BROOKMEYER: VoiceRuleBundle = {
     mutateSingleVoiceAtTime: true,
     allowCollectiveImprov: false,
     fingerprintReceipts: [
-      'Quartal/quintal harmonic stacks as structural colour fields — not passing ornament',
-      'Counter-lines at simultaneous thirds/fifths avoided — prefer contrary motion',
-      'Metric displacement hooks arrive mid-phrase — never random beat-one resets',
-      'Section takeover: lead transfers sax→bone→full ensemble without doubling creep',
-      'Dense passes anchor outer voices — interior clusters spell alterations explicitly',
-      'Swing bounce restored after quartal plateaus via ii–V pocket before shout',
+      'Line-first hierarchy: pitch → rhythm → harmony; chord changes never constrain melodic line — unique among BB voices',
+      '3-note pitch module as sole generative cell — melody, harmony, rhythm derive via inversion / retrograde / augmentation / diminution',
+      'Quartal harmony chosen for non-demandingness — stacked 4ths liberate melodic motion above; line wins every conflict',
+      'Signature voicing: root-at-top / 9th-at-bottom inversions on quartal stacks',
+      'Minor 9th intervals in voicings — tension without traditional dominant function',
+      '2–4 independent contrapuntal lines (brass / sax / bones); strands permute the active pitch module — not free topical lines',
+      'Free imitation not strict canon — shared intervallic logic of the cell; independent rhythmic stratification',
+      'Solo gate — solos deferred until composed episode architecture completes (hard gate on slice receipts)',
+      'Climax energy reserved for form-ending shout — not mid-piece brass spikes without preparation',
+      'Through-composition — asymmetric section lengths; boundaries via orchestration / silence / density shifts vs repeating chorus',
+      'Sparse pitch inventory / dense development — limited notes, maximum permutation; tutti reserved for climax',
+      'Late Brookmeyer — swing grid loosened; chamber-like dialogue across big-band forces',
     ],
   },
   formPolicy: {

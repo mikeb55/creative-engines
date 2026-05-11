@@ -3081,7 +3081,7 @@ function chordSymbolsForSection(
   if (songwriterId === 'bob_brookmeyer') {
     const tier = Math.abs(seed) % 3;
     resolvedPoolId =
-      tier === 0 ? 'brookmeyer_modal' : tier === 1 ? 'brookmeyer_contrapuntal' : 'brookmeyer_swing';
+      tier === 0 ? 'brookmeyer_quartal' : tier === 1 ? 'brookmeyer_linear' : 'brookmeyer_cluster';
   }
   if (songwriterId === 'clare_fischer') {
     const tier = Math.abs(seed) % 3;
@@ -3140,7 +3140,11 @@ function chordSymbolsForSection(
     ) {
       chordSymbols = breakFrankZappaIiViProgressions(chordSymbols, seed);
     }
-    return { chordSymbols, chosenRowTags };
+    const rowTags =
+      songwriterId === 'bob_brookmeyer'
+        ? [...chosenRowTags, 'line_first:true', `brookmeyer_pool:${resolvedPoolId}`]
+        : chosenRowTags;
+    return { chordSymbols, chosenRowTags: rowTags };
   }
 
   // Fallback: original hardcoded progressions

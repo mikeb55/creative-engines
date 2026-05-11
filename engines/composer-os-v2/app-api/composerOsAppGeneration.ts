@@ -1154,6 +1154,10 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       req.messiaenPeriodMode === 'late_messiaen')
       ? { messiaenPeriodMode: req.messiaenPeriodMode }
       : {}),
+    ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'bob_brookmeyer' &&
+    (req.brookmeyerPeriodMode === 'early_brookmeyer' || req.brookmeyerPeriodMode === 'late_brookmeyer')
+      ? { brookmeyerPeriodMode: req.brookmeyerPeriodMode }
+      : {}),
     ...(normalizeSongwriterStyleKey(req.primarySongwriterStyle ?? '') === 'fripp_king_crimson'
       ? {
           ...(req.asymmetricRhythm ? { asymmetricRhythm: req.asymmetricRhythm } : {}),
@@ -2119,6 +2123,17 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       basieEffectiveHarmonyBars: gp.context.generationMetadata.basieEffectiveHarmonyBars,
       basieShoutBars: gp.context.generationMetadata.basieShoutBars,
       basieEpisodePlan: gp.context.generationMetadata.basieEpisodePlan,
+      brookmeyerPeriodMode: gp.context.generationMetadata.brookmeyerPeriodMode,
+      brookmeyerPeriodModeResolved: gp.context.generationMetadata.brookmeyerPeriodModeResolved,
+      activePitchModule: gp.context.generationMetadata.activePitchModule,
+      brookmeyerSoloPermitted: gp.context.generationMetadata.brookmeyerSoloPermitted,
+      brookmeyerEpisodePlanSummary: gp.context.generationMetadata.brookmeyerEpisodePlanSummary,
+      bobBrookmeyerDiagnostics: gp.context.generationMetadata.bobBrookmeyerDiagnostics,
+      bobBrookmeyerDeviceReceipts: gp.context.generationMetadata.bobBrookmeyerDeviceReceipts,
+      bobBrookmeyerSliceReceipt: gp.context.generationMetadata.bobBrookmeyerSliceReceipt,
+      bobBrookmeyerEffectiveHarmonyBars: gp.context.generationMetadata.bobBrookmeyerEffectiveHarmonyBars,
+      lineFirstHierarchy: gp.context.generationMetadata.lineFirstHierarchy,
+      contrapuntalLineCount: gp.context.generationMetadata.contrapuntalLineCount,
       sonicYouthDiagnostics: gp.context.generationMetadata.sonicYouthDiagnostics,
       sonicYouthDeviceReceipts: gp.context.generationMetadata.sonicYouthDeviceReceipts,
       sonicYouthSliceReceipt: gp.context.generationMetadata.sonicYouthSliceReceipt,
