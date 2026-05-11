@@ -42,7 +42,7 @@ export function validateResearchDrivenBigBand(
     if (n < 2) errors.push('basie: space/rest emphasis required on at least two slices');
   }
 
-  if (composerStyle === 'thad') {
+  if (composerStyle === 'thad' || composerStyle === 'thad_jones') {
     const shout = enhanced.behaviourSlices.find((b) => b.phase === 'shout_chorus');
     if (!shout?.shoutMotivicDevelopment) {
       errors.push('thad: shout must include density-arch + motivic development flag');

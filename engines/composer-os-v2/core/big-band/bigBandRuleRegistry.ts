@@ -19,6 +19,15 @@ function R(
   return { id, description, category, effectType, priority };
 }
 
+/** Thad Jones — shared rule rows for `thad` (alias) and `thad_jones` canonical id. */
+const THAD_JONES_COMPOSER_RULES: BigBandRule[] = [
+  R('thad_jones.extended_form', 'Extended forms with interludes/tags', 'composer', 'form', 80),
+  R('thad_jones.solo_background_arc', 'Solo backgrounds evolve toward near-shout', 'composer', 'density', 82),
+  R('thad_jones.voice_leading', 'Strong inner voice-leading', 'composer', 'harmony', 78),
+  R('thad_jones.metric_tension', 'Metric tension near climaxes', 'composer', 'rhythm', 76),
+  R('thad_jones.shout_sequence', 'Shout with sequences + harmonic shift', 'composer', 'form', 81),
+];
+
 const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
   ellington: [
     R('ellington.counterpoint_density', '≥2 independent lines when not thin', 'composer', 'density', 82),
@@ -35,13 +44,8 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
     R('basie.functional_harmony', 'Mostly functional harmony', 'composer', 'harmony', 72),
     R('basie.shout_homophony', 'Shout homophony + earlier riff reuse', 'composer', 'orchestration', 84),
   ],
-  thad_jones: [
-    R('thad_jones.extended_form', 'Extended forms with interludes/tags', 'composer', 'form', 80),
-    R('thad_jones.solo_background_arc', 'Solo backgrounds evolve toward near-shout', 'composer', 'density', 82),
-    R('thad_jones.voice_leading', 'Strong inner voice-leading', 'composer', 'harmony', 78),
-    R('thad_jones.metric_tension', 'Metric tension near climaxes', 'composer', 'rhythm', 76),
-    R('thad_jones.shout_sequence', 'Shout with sequences + harmonic shift', 'composer', 'form', 81),
-  ],
+  thad_jones: THAD_JONES_COMPOSER_RULES,
+  thad: THAD_JONES_COMPOSER_RULES,
   wayne_shorter: [
     R('wayne.lateral_root', 'Modal plateaus + lateral dominants without ii–V wallpaper', 'composer', 'harmony', 81),
     R('wayne.section_colour_turn', 'Orchestral colour turns at phrase seams', 'composer', 'orchestration', 79),

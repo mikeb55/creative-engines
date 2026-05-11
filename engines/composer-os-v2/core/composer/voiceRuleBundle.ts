@@ -61,6 +61,8 @@ export interface VoiceRuleBundle {
     anchorToneCount: number;
     mutateSingleVoiceAtTime: boolean;
     allowCollectiveImprov: boolean;
+    /** Optional research-derived fingerprint lines (Thad Jones BB orchestration vocabulary). */
+    fingerprintReceipts?: readonly string[];
   };
 
   formPolicy: {

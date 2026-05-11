@@ -46,7 +46,7 @@ function tuningFor(era: BigBandEraId, composer: BigBandComposerId | null): BigBa
     smoothTransitions = true;
     shoutMotivicClimax = false;
   }
-  if (composer === 'thad_jones') {
+  if (composer === 'thad_jones' || composer === 'thad') {
     densityArc = true;
     shoutMotivicClimax = true;
   }
@@ -174,7 +174,7 @@ function tuningFor(era: BigBandEraId, composer: BigBandComposerId | null): BigBa
     };
   }
 
-  if (composer === 'thad_jones') {
+  if (composer === 'thad_jones' || composer === 'thad') {
     thadProofOfConcept = {
       chordDensity: 4,
       extensionsPolicy: '9ths–13ths, altered dominants, poly-chords, side-step shifts',

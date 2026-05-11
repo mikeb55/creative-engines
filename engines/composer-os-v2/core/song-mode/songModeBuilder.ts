@@ -2282,56 +2282,85 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['F7alt', 'D7#11', 'Gm11', 'C13'],
     ],
   },
-  /** Thad Jones — nonachord-heavy big-band rows (`THAD_JONES_SLICE_PARAMETERS`). */
+  /** Thad Jones — swing tier: functional tonal + octatonic dominant colour + chromatic approach dominants (research pools). */
   thad_jones_swing: {
     verse: [
-      ['Cmaj13(#11)', 'Cm9', 'F13', 'Bb13'],
-      ['Bbmaj9(11,13)', 'G7alt', 'Cm9', 'F13(b9)'],
+      ['Dm7(9,11,13)', 'G7(#11,13)', 'Cmaj9', 'Cmaj7(#11)'],
+      ['Db7(b9)', 'G7(b9,#11)', 'Cm9', 'F7(#9,b13)'],
+      ['Em7(9,11,13)', 'A7(#11,13)', 'Dmaj9', 'Dmaj7(#11)'],
+      ['Bbm7(9,11,13)', 'Eb7(#11,13)', 'Abmaj9', 'Abmaj7(#11)'],
     ],
     chorus: [
-      ['Dm9', 'G13(#11)', 'Cmaj9(11,13)', 'A7(b9,b13)'],
-      ['Fm9', 'Bb13', 'Ebmaj13(#11)', 'C7alt'],
+      ['Dm7(9,11,13)', 'G7(b9,#11)', 'Cmaj9', 'Am7(9,11,13)'],
+      ['Fm9', 'Bb7(#11,13)', 'Ebmaj9', 'Cm9'],
+      ['Gm7(9,11,13)', 'C7(#9,b13)', 'Fmaj9', 'Dm9'],
+      ['Cm7(9,11,13)', 'F7(#11,13)', 'Bbmaj9', 'Gm9'],
     ],
     bridge: [
-      ['Em9', 'A13', 'Dmaj13(#11)', 'B7alt'],
-      ['Gm9', 'C13(#11)', 'Fmaj9(11,13)', 'D7(b9,#11,13)'],
+      ['Bm7(9,11,13)', 'E7(#11,13)', 'Amaj9', 'F#m7(9,11,13)'],
+      ['Gm9', 'C13(b9,#11)', 'Fmaj9', 'Dm9'],
+      ['Am7(9,11,13)', 'D7(#11,13)', 'Gmaj9', 'Em9'],
+      ['Dm9', 'G7(b9,#11)', 'Cmaj9', 'Am9'],
     ],
     pre_chorus: [
-      ['Am9', 'D13', 'Gmaj13(#11)', 'E7alt'],
+      ['Db7(b9)', 'G7(#11,13)', 'Cm9', 'F13'],
+      ['Gb7(b9)', 'C7(#11,13)', 'Fm9', 'Bb13'],
+      ['B7(b9)', 'E7(#11,13)', 'Am9', 'D13'],
+      ['Eb7(b9)', 'Ab7(#11,13)', 'Dm9', 'G13'],
     ],
   },
-  thad_jones_ballad: {
+  /** Thad Jones — Dorian / quartal minor tier (So What-family extensions; no plain m7 rows). */
+  thad_jones_dorian: {
     verse: [
-      ['Ebmaj13(#11)', 'Cm9', 'Fm9', 'Bb13'],
-      ['Dbmaj9(11,13)', 'Bb9', 'Ebmaj9', 'Cm9'],
+      ['Dm9(11)', 'Gm11', 'Em7(9,11,b13)', 'Am9(11)'],
+      ['Dm11', 'G13sus', 'Cm9', 'Fm11'],
+      ['Em9(11)', 'Am11', 'F#m7(9,11,13)', 'Bm9(11)'],
+      ['Cm11', 'Fm9', 'Dm9(11)', 'Gm11'],
     ],
     chorus: [
-      ['Abmaj13', 'Fm9', 'Bbm9', 'Eb13'],
-      ['Gbmaj9(#11)', 'Eb9', 'Abmaj13(#11)', 'Fm9'],
+      ['Dm9(11)', 'Gm11', 'C13sus', 'Am11'],
+      ['Ebmaj9', 'Ab13sus', 'Fm11', 'Bb13'],
+      ['Am11', 'Dm9(11)', 'G13sus', 'Em11'],
+      ['Gm11', 'Cm9', 'F13sus', 'Dm11'],
     ],
     bridge: [
-      ['Gm9', 'C13', 'Fmaj13(#11)', 'Dm9'],
-      ['Am9', 'D13', 'Gmaj13(#11)', 'Em9'],
+      ['Bm11', 'Em9(11)', 'A13sus', 'F#m11'],
+      ['Fm11', 'Bbm9', 'Eb13sus', 'Cm11'],
+      ['Am11', 'Dm11', 'G13sus', 'Em9(11)'],
+      ['Gm11', 'Cm9', 'Fm13sus', 'Dm11'],
     ],
     pre_chorus: [
-      ['Dm9', 'G13', 'Cmaj13(#11)', 'Am9'],
+      ['Em11', 'Am9(11)', 'D13sus', 'Bm11'],
+      ['Dm11', 'Gm9(11)', 'C13sus', 'Am11'],
+      ['Cm11', 'Fm9(11)', 'Bb13sus', 'Gm11'],
+      ['Am11', 'Dm11', 'G13sus', 'Em9(11)'],
     ],
   },
-  thad_jones_groove: {
+  /** Thad Jones — shout chorus tier: polychords, dense ii–V, octatonic symmetric dominants. */
+  thad_jones_shout: {
     verse: [
-      ['G13(#11)', 'G13(#11)', 'C13', 'C13'],
-      ['F13(b9)', 'Bb13', 'Ebmaj13(#11)', 'Bb13'],
+      ['Gm7', 'C7(b9,#11)', 'Fm9', 'Bb7(#11,13)'],
+      ['Abmaj7/G', 'G7(#11,13)', 'Cm9', 'F7alt'],
+      ['Dm7', 'G7(#9,b13)', 'Cmaj9', 'A7(#11,13)'],
+      ['Em7(b5)', 'A7alt', 'Dm9', 'G7(b9,#11)'],
     ],
     chorus: [
-      ['D7alt', 'G13', 'Cmaj13(#11)', 'A7(b9,b13)'],
-      ['Bb13', 'Eb13', 'Abmaj13', 'F13'],
+      ['Dm7', 'G7(b9,#11)', 'Cm9', 'F7(#11,13)'],
+      ['Gm7', 'C13(b9,#11)', 'Fm9', 'Bb13'],
+      ['Am7(b5)', 'D7alt', 'Gm9', 'C7(#11,13)'],
+      ['Fm9', 'Bb7(#9,b13)', 'Ebmaj9', 'Ab13'],
     ],
     bridge: [
-      ['E7alt', 'A13', 'Dmaj13(#11)', 'B7alt'],
-      ['C13', 'F13', 'Bbmaj13(#11)', 'G13'],
+      ['Bm7(b5)', 'E7alt', 'Am9', 'D7(#11,13)'],
+      ['Gm9', 'C7alt', 'Fm11', 'Bb13(#11)'],
+      ['Em7(b5)', 'A7(b9,#11)', 'Dm11', 'G13'],
+      ['Cm9', 'F7alt', 'Bbmaj9', 'Eb13'],
     ],
     pre_chorus: [
-      ['Am9', 'D13', 'G13', 'G13'],
+      ['Dm9', 'G7alt', 'Cm11', 'F13(#11)'],
+      ['Am9', 'D7(#11,13)', 'Gm9', 'C13'],
+      ['Bm7(b5)', 'E7(#11,13)', 'Am11', 'D13'],
+      ['Fm9', 'Bb7alt', 'Ebmaj9', 'Ab13'],
     ],
   },
   bernard_herrmann_thriller: {
@@ -2983,7 +3012,7 @@ function chordSymbolsForSection(
   if (songwriterId === 'thad_jones') {
     const tier = Math.abs(seed) % 3;
     resolvedPoolId =
-      tier === 0 ? 'thad_jones_swing' : tier === 1 ? 'thad_jones_ballad' : 'thad_jones_groove';
+      tier === 0 ? 'thad_jones_swing' : tier === 1 ? 'thad_jones_dorian' : 'thad_jones_shout';
   }
   if (songwriterId === 'hans_zimmer') {
     const tier = Math.abs(seed) % 3;

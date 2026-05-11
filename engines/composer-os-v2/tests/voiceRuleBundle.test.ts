@@ -15,6 +15,7 @@ function assertBundleShape(b: VoiceRuleBundle): boolean {
 
 function testSevenVoicesMinChordDurationBars(): boolean {
   return (
+    getVoiceRuleBundle('thad_jones').harmonicRhythm.minChordDurationBars === 1 &&
     getVoiceRuleBundle('gil_evans').harmonicRhythm.minChordDurationBars === 1 &&
     getVoiceRuleBundle('maria_schneider').harmonicRhythm.minChordDurationBars === 1 &&
     getVoiceRuleBundle('john_coltrane').harmonicRhythm.minChordDurationBars === 0 &&
@@ -38,6 +39,7 @@ function testHvPrefixStrips(): boolean {
 
 function testResolvableBundlesSatisfyShape(): boolean {
   for (const id of [
+    'thad_jones',
     'gil_evans',
     'maria_schneider',
     'john_coltrane',
@@ -101,7 +103,7 @@ function testGilEvansGoldenPathVoiceBundleAndSpread(): boolean {
 
 export function runVoiceRuleBundleTests(): { name: string; ok: boolean }[] {
   return [
-    ['VoiceRuleBundle — seven deep voices minChordDurationBars', testSevenVoicesMinChordDurationBars],
+    ['VoiceRuleBundle — deep voices minChordDurationBars', testSevenVoicesMinChordDurationBars],
     ['VoiceRuleBundle — unknown id falls back to neutral default', testFallbackMatchesNeutralDefault],
     ['VoiceRuleBundle — hv: prefix normalizes id', testHvPrefixStrips],
     ['VoiceRuleBundle — resolvable bundles satisfy interface shape', testResolvableBundlesSatisfyShape],

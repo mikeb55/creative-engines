@@ -2302,7 +2302,7 @@ function composerStyleFromArrangerStyle(arrangerStyle: string | undefined | null
   const a = arrangerStyle.trim().toLowerCase();
   if (a === 'basie') return 'basie';
   if (a === 'ellington') return 'ellington';
-  if (a === 'thad') return 'thad';
+  if (a === 'thad' || a === 'thad_jones') return 'thad_jones';
   if (a === 'schneider') return 'schneider';
   if (a === 'quincy_jones') return 'quincy_jones';
   if (a === 'gil_evans') return 'gil_evans';
@@ -2326,6 +2326,7 @@ function bigBandEvaluationStyleProfile(
       return schneiderStyleProfile;
     case 'quincy_jones':
       return quincyStyleProfile;
+    case 'thad_jones':
     case 'thad':
       return thadJonesStyleProfile;
     case 'gil_evans':

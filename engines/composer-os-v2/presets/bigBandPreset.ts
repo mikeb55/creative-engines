@@ -30,6 +30,7 @@ export const bigBandPreset: Preset = {
       'ellington',
       'basie',
       'thad',
+      'thad_jones',
       'schneider',
       'quincy_jones',
       'gil_evans',

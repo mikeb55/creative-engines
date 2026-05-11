@@ -281,6 +281,59 @@ const HENRY_THREADGILL: VoiceRuleBundle = {
   },
 };
 
+/** Thad Jones — research-documented dominants (octatonic colour), Dorian quartal minors, shout polychords (`SONGWRITER_CHORD_POOLS` tiers). */
+const THAD_JONES: VoiceRuleBundle = {
+  voiceId: 'thad_jones',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 2,
+    allowMidBarChange: false,
+  },
+  bassPolicy: {
+    role: 'root',
+    allowOctaveDoubling: false,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 6,
+    maxSpreadSemitones: 26,
+    clusterSizeNotes: [5, 8],
+    forbidParallelFifths: true,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'angular',
+    maxLeapSemitones: 11,
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 2,
+    mutateSingleVoiceAtTime: true,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: [
+      'Dominants: octatonic polychord voicings with #11 and altered 9s — not standard bebop altered scale',
+      'Minor regions: never plain m7 — always carry 9/11/13 with melodic 13 highlighted',
+      'Form: theme + variations; maintain functional resolution after every chromatic/modal departure',
+      'Shout: recap motives at higher density, planned dynamic contour, drop one section then re-entry',
+      'Texture evolution: sparse (unison) → call/response → solis/riffs → shout → thinning coda',
+      'Template A dominant: {1,3,b7,9,#11,13} omit 5',
+      'Template B dominant: {1,3,b7,9,5,#11,13} — 5 and #11 in near register',
+      'Template C dominant: upper triad (octatonic subset) over {1,3,b7,9}',
+      'Dorian minor / quartal So What family: {1,4,b7,3,5,9,13} — 11 directly above bass',
+      'Lead trumpet shout: written D–G above staff; sustained lines one to two ledger lines higher',
+      'Inner voices: at least two voices stepwise or contrary motion at each change',
+      'Voice exchange: trombones carry 3rds/7ths; saxes carry extensions',
+    ],
+  },
+  formPolicy: {
+    narrativeArc: 'suite',
+    sectionRecallEnforced: true,
+  },
+  rhythmPolicy: { antiMetric: false },
+  repairPolicy: {
+    resolveParallels: true,
+    maxVoiceOverlap: 5,
+  },
+};
+
 const CHARLES_MINGUS: VoiceRuleBundle = {
   voiceId: 'charles_mingus',
   harmonicRhythm: {
@@ -324,6 +377,7 @@ const CHARLES_MINGUS: VoiceRuleBundle = {
 
 const BY_ID: Record<string, VoiceRuleBundle> = {
   gil_evans: GIL_EVANS,
+  thad_jones: THAD_JONES,
   maria_schneider: MARIA_SCHNEIDER,
   john_coltrane: JOHN_COLTRANE,
   wayne_shorter: WAYNE_SHORTER,

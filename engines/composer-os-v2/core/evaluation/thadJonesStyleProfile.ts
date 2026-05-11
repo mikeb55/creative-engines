@@ -130,7 +130,7 @@ function scoreThad(
 }
 
 export const thadJonesStyleProfile: StyleProfile<unknown, ExtractedStyleFeatures> = {
-  id: 'thad',
+  id: 'thad_jones',
   name: 'Thad Jones',
   family: 'bigBand',
   threshold: 7.0,
