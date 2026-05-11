@@ -14,6 +14,12 @@
 
 **Song Mode — Oliver Nelson (`oliver_nelson`):** stub pools **`nelson_minor_modal`** / **`nelson_minor_blues`** / **`nelson_orchestral`**; planner tags **`pedalBased` / `bluesModalHybrid` / `twoLayerForm`**. **`precomputeOliverNelsonEffectiveHarmonyBars`** (`core/song-mode/oliverNelsonSlice.ts`) → **`oliverNelsonEffectiveHarmonyBars`** (**`on:*`** receipts), **`buildNelsonEpisodePlan`** (pedal · modal head · orchestral wedge · turnaround · 12-bar minor blues), **`NelsonPeriodMode`**, **`NelsonBluesFormVariant`**, **`activePedal`**, **`upperModalChords`**. **`GenerateRequest.nelsonPeriodMode` / `nelsonBluesFormVariant`** + manifest echo. **`VoiceRuleBundle`** **`oliver_nelson`** (12 **`fingerprintReceipts`**).
 
+## Song Mode — cross-cutting patterns (metadata / solver)
+
+- **`lineFirstHierarchy`** — Declared on **`VoiceRuleBundle`** (Bob Brookmeyer). When true, **`voiceLeadingSolver`** resolves pitch-module / melody-first priority over chord-tone filling so **composed line** wins conflicts (**`voiceRuleBundle.ts`**, **`voiceLeadingSolver.ts`**).
+- **`pedalBased` / `bluesModalHybrid` / `twoLayerForm`** — Chord-plan tags for Oliver Nelson in **`songModeBuilder.ts`**; **`nelsonEpisodeTypes.ts`** / **`oliverNelsonSlice.ts`** swap **modal-head** vs **minor-blues solo** harmonic environments within one chart.
+- **`messiaenPeriodMode`** + **`colourTag`** — **`GenerateRequest`** / **`GenerationMetadata`** carry Messiaen era posture and stub colour label from limited-transposition mode; **`messiaenSlice.ts`** holds spine **≥2** bars per chord and removes bare functional **V→I** from the locked rail.
+
 ## GCE structural memory (Phase 1)
 
 Lightweight **JSON fingerprints** (no ML, no new scoring engine) under **`engines/composer-os-v2/gce-memory/fingerprints/`**.

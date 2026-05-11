@@ -388,7 +388,7 @@ Song Mode builds a **planning-layer** vocal sketch before the golden-path score:
 
 Research-driven rows live in **`MELODY_PROFILES`** inside **`melodyBehaviourPlanner.ts`**. Other **`SongwriterRuleId`** values fall back to seed-tinted defaults (includes e.g. **`max_martin`**, **`ecm_chamber`** convenience rows).
 
-### Per-composer profile table (39 research rows)
+### Per-composer profile table (`MELODY_PROFILES` — **56** research rows)
 
 | Writer id | interval | rhythmic | phrase bars | repetition | contour profile | Key devices (abbrev.) |
 |-----------|----------|----------|---------------|------------|-----------------|----------------------|
@@ -434,11 +434,21 @@ Research-driven rows live in **`MELODY_PROFILES`** inside **`melodyBehaviourPlan
 | `kurt_weill` | stepwise | mixed | 4 | 0.6 | cabaret_arc | descending_minor_3rd; tritone_bitterness; chant_repeated_tone; major_minor_irony; mechanical_ostinato |
 | `messiaen` | angular | mixed | 7 | 0.55 | irregular | mode_colour_field; birdsong_ornament; non_retrogradable_cell; additive_prime_pulse |
 
+### Song Mode slice + VRB status (recent ships)
+
+| Primary id | VRB tier (fingerprints) | Locked harmony | Key API / metadata |
+|------------|-------------------------|----------------|---------------------|
+| **`count_basie`** | **extended** (**8**) | **`basieEffectiveHarmonyBars`** **`cb:*`** | **`basieTestamentMode`** (Old/New Testament); **`basieEpisodePlan`** / **`basieShoutBars`** |
+| **`bob_brookmeyer`** | **deep** (**12**) | **`bobBrookmeyerEffectiveHarmonyBars`** **`brk:*`** | **`brookmeyerPeriodMode`**; **`lineFirstHierarchy`** on bundle → **`voiceLeadingSolver`** defers harmony to pitch-module **line-first**; slice **solo gate** defers solo episodes until composed episodes satisfy **`brk:*`** receipts |
+| **`oliver_nelson`** | **deep** (**12**) | **`oliverNelsonEffectiveHarmonyBars`** **`on:*`** | Planner **`pedalBased` / `bluesModalHybrid` / `twoLayerForm`**; **`nelsonPeriodMode`** · **`nelsonBluesFormVariant`** · **`activePedal`** · **`upperModalChords`** · **`nelsonTwoLayerForm`** on **`GenerationMetadata`** / manifests |
+| **`messiaen`** | **deep** (**12**) | **`messiaenEffectiveHarmonyBars`** **`om:*`** | **`messiaenPeriodMode`**; **`colourTag`** stub on **`generationMetadata`**; spine **≥~2 bars/chord**; **no** bare functional **V→I** on rail |
+| **`quincy_jones`** | **thin** (**6**) | **`quincyJonesEffectiveHarmonyBars`** (Song Mode + BB registry **`8b8775e4`**) | VRB deepening queued (**Perplexity** research pass) |
+
 **Olivier Messiaen (`messiaen`) — harmony rail:** **`messiaenEffectiveHarmonyBars`** enforces **slow harmonic rhythm** at the spine (**minimum ~2 bars per chord**). **No functional cadential resolution** (**V→I** and similar) on the locked rail—motion is **colour-field** oriented.
 
 ### Smoke coverage
 
-**`npm run test:composer-smoke`** includes **`engines/composer-os-v2/tests/vocalMelodySmoke.test.ts`** (**`runVocalMelodySmokeTests`**) — **`MELODY_PROFILES`** cardinality (≥38 keys), distinct **`planMelodyBehaviour`** tuples across representative **`SongwriterRuleId`** values, **`planLeadMelody`** bar coverage / **`eighth_patterns`** vs **`whole_bar`** density, SATB comfort MIDI bands (verse-only scaffold), and **`buildSongwritingBridgePayloadFromLeadSheetContract`** **`melody_events`** parity with **`LeadSheetContract.vocalMelody`**.
+**`npm run test:composer-smoke`** includes **`engines/composer-os-v2/tests/vocalMelodySmoke.test.ts`** (**`runVocalMelodySmokeTests`**) — **`MELODY_PROFILES`** cardinality (≥35 keys in harness; **56** rows in source), distinct **`planMelodyBehaviour`** tuples across representative **`SongwriterRuleId`** values, **`planLeadMelody`** bar coverage / **`eighth_patterns`** vs **`whole_bar`** density, SATB comfort MIDI bands (verse-only scaffold), and **`buildSongwritingBridgePayloadFromLeadSheetContract`** **`melody_events`** parity with **`LeadSheetContract.vocalMelody`**.
 
 ### Chord-tone awareness
 

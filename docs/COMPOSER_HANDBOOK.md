@@ -8,22 +8,55 @@ Practical notes for **using** Composer OS—generation, evaluation, and quality 
 
 Compiled harmonic voice bundles live in **`engines/composer-os-v2/core/composer/voiceRuleBundles.ts`**. Optional **`orchestrationPolicy.fingerprintReceipts`** are **research-derived orchestration planning lines** (not the same thing as **GCE structural memory** JSON fingerprints in **`gce-memory/fingerprints/`**). **`getVoiceRuleBundle(id)`** returns the bundle for harmonic-voice / BB pairing; unknown ids fall back to **`neutral`** (no receipts).
 
+**Deep (≥10 `fingerprintReceipts`):** **Duke Ellington** (`duke_ellington` / `ellington`) **11** · **Gil Evans** (`gil_evans`) **11** · **Wayne Shorter** (`wayne_shorter`) **11** · **Maria Schneider** (`maria_schneider`) **11** · **Thad Jones** (`thad_jones`) **12** · **Charles Mingus** (`charles_mingus`) **11** · **Bob Brookmeyer** (`bob_brookmeyer`) **12** · **Olivier Messiaen** (`messiaen` / `olivier_messiaen`) **12** · **Oliver Nelson** (`oliver_nelson`) **12**.
+
+**Extended (specialised stack, 8 receipts):** **Count Basie** (`count_basie`) — shout-chorus / riff-head / **Basie Button** (Old vs New Testament) fingerprints without needing the **≥10** bar.
+
+**Thin (6 receipts) — queue Perplexity research + VRB deepening:** **Quincy Jones** (`quincy_jones`) · **Clare Fischer** (`clare_fischer`) · **Sammy Nestico** (`sammy_nestico`).
+
 | Composer (harmonic voice id) | Fingerprint count | Status |
 |------------------------------|-------------------|--------|
 | **Duke Ellington** (`duke_ellington`, alias `ellington`) | 11 | **deep** |
 | **Gil Evans** (`gil_evans`) | 11 | **deep** |
 | **Wayne Shorter** (`wayne_shorter`) | 11 | **deep** |
 | **Maria Schneider** (`maria_schneider`) | 11 | **deep** |
+| **Thad Jones** (`thad_jones`) | 12 | **deep** |
+| **Charles Mingus** (`charles_mingus`) | 11 | **deep** |
+| **Bob Brookmeyer** (`bob_brookmeyer`) | 12 | **deep** |
 | **Olivier Messiaen** (`messiaen`, alias `olivier_messiaen`) | 12 | **deep** |
-| **Bob Brookmeyer** (`bob_brookmeyer`) | 6 | thin |
-| **Clare Fischer** (`clare_fischer`) | 6 | thin |
-| **Sammy Nestico** (`sammy_nestico`) | 6 | thin |
-| **Oliver Nelson** (`oliver_nelson`) | 6 | thin |
-| **Quincy Jones** (`quincy_jones`) | 6 | thin |
+| **Oliver Nelson** (`oliver_nelson`) | 12 | **deep** |
+| **Count Basie** (`count_basie`) | 8 | **extended** |
+| **Clare Fischer** (`clare_fischer`) | 6 | **thin** |
+| **Sammy Nestico** (`sammy_nestico`) | 6 | **thin** |
+| **Quincy Jones** (`quincy_jones`) | 6 | **thin** |
 
-**Also bundled** (not in the thin/deep split above): **Thad Jones** (`thad_jones`) **12** receipts · **Charles Mingus** (`charles_mingus`) **11** · **Count Basie** (`count_basie`) **8** · **Alban Berg** (`berg` / `alban_berg`) **4** — see source file for authoritative counts.
+**Also bundled:** **Alban Berg** (`berg` / `alban_berg`) **4** — see **`voiceRuleBundles.ts`** for authoritative counts.
 
-**Messiaen period flag** — **`CompositionContext`** / **`GenerateRequest`** expose **`messiaenPeriodMode`**: **`early_messiaen`** · **`middle_messiaen`** · **`late_messiaen`** (early = modes + theological programme; middle = structural birdsong + CTI-type colour stacks; late = birdsong-heavy + colour organisation primary).
+**Ship hashes:** VRB deepen Ellington / Gil / Shorter / Schneider **`4aa848a5`** · Messiaen slice **`a4ae08de`** · Basie Song Mode **`ac875ae8`** · Quincy Song Mode + BB **`8b8775e4`** · BB composer stubs rail **`6344cdcb`** · Brookmeyer stack **`48e5407d`** · Oliver Nelson stack **`e4814fb3`**.
+
+---
+
+### Bob Brookmeyer (`bob_brookmeyer`)
+
+- **Pitch-module spine:** Generative **3-note cell** (Brookmeyer pitch module); harmony and rhythm are derivatives (**inversion / retrograde / augmentation / diminution**) — not chord-chart-first planning.
+- **`lineFirstHierarchy`:** **`VoiceRuleBundle`** flag drives **`voiceLeadingSolver`** — **melody wins** when symbols disagree with the active module (**`voiceRuleBundles.ts`**, **`voiceLeadingSolver.ts`**).
+- **Solo gate:** Slice defers **solo-permitted** episodes until composed architecture completes (episode receipts **`brk:*`**).
+- **`brookmeyerPeriodMode`:** **`early_brookmeyer`** vs **`late_brookmeyer`** — early = tighter swing grid + brass clarity; late = looser grid, chamber dialogue across sections (**`GenerateRequest`** / manifests).
+
+### Oliver Nelson (`oliver_nelson`)
+
+- **Two-layer form:** Planner tags **`pedalBased`**, **`bluesModalHybrid`**, **`twoLayerForm`** — **modal / pedal head** episodes vs **functional 12-bar C minor blues** solo layer (**`nelsonEpisodeTypes.ts`**, **`oliverNelsonSlice.ts`**).
+- **Pedal field:** Bass **i** pedal (**`activePedal`** pitch class); upper structures alternate **♭IIImaj7** and **IVmaj7** (e.g. **E♭maj7** / **Fmaj7** over **C**) — **`upperModalChords`** metadata.
+- **Turnaround:** **♭VI7(9,13) → V7(9,13) → im7** default; optional **Dø7–G7** bar-12 variant; **ivm7** minor IV (**Fm7**), not gospel **IV7**, unless optional colour.
+- **`NelsonPeriodMode` / `NelsonBluesFormVariant`:** **`early_nelson` / `middle_nelson` / `late_nelson`** × **`twelve_bar` / `sixteen_bar`** — API **`nelsonPeriodMode`**, **`nelsonBluesFormVariant`** on **`GenerateRequest`** + manifests.
+
+### Olivier Messiaen (`messiaen`) — modes, colour, rhythm
+
+- **Limited transposition modes 2 / 3 / 4** — Pool tiers **`messiaen_mode2`**, **`messiaen_mode3`**, **`messiaen_birdsong`** (**`seed % 3`**); harmony spine favours **colour translation**, not functional **V→I** discharge.
+- **`messiaenPeriodMode`:** **`early_messiaen`** (modes + theological programme) · **`middle_messiaen`** (birdsong-as-structure + CTI-style stacks) · **`late_messiaen`** (birdsong-heavy colour cosmology).
+- **`colourTag` stub** (`generationMetadata`) — maps active mode tag → Messiaen colour label until a dedicated colour engine exists.
+- **Birdsong layer:** Receipts / metadata allow **extreme-treble ornamental** strata decoupled from bar-grid melody (**`om:*`** family).
+- **Non-retrogradable rhythm:** Palindrome / additive rhythm receipts — phrase windows may carry **prime-length** sixteenth totals and **non-retrogradable** cells.
 
 **Messiaen colour stub** (`generationMetadata.colourTag`) — until **`engines/messiaen-colour-engine`** supplies live tags, the slice maps active limited-transposition mode tag → catalogue colour:
 
@@ -38,8 +71,6 @@ Compiled harmonic voice bundles live in **`engines/composer-os-v2/core/composer/
 | Mode 3⁴ | orange-red |
 | Mode 4¹ | grey-gold-blue |
 | Mode 6¹ | grey-gold-orange |
-
-**Ship:** deep VRB for Ellington / Gil / Shorter / Schneider — commit **`4aa848a5`** · Messiaen **`a4ae08de`** (see **`CHANGELOG.md`** `[Unreleased]`).
 
 ---
 
