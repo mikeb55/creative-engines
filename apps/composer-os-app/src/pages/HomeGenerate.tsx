@@ -459,6 +459,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'barry_harris', label: 'Barry Harris' },
   { id: 'beatles', label: 'Beatles' },
   { id: 'beethoven', label: 'Beethoven' },
+  { id: 'beethoven_late', label: 'Beethoven (Late SQ)' },
   { id: 'bill_evans', label: 'Bill Evans' },
   { id: 'billy_strayhorn', label: 'Billy Strayhorn' },
   { id: 'bob_dylan', label: 'Bob Dylan' },
@@ -483,6 +484,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'jim_hall', label: 'Jim Hall' },
   { id: 'jeff_tweedy', label: 'Jeff Tweedy' },
   { id: 'kate_bush', label: 'Kate Bush' },
+  { id: 'lachenmann', label: 'Lachenmann' },
   { id: 'joni_mitchell', label: 'Joni Mitchell' },
   { id: 'kendrick_lamar', label: 'Kendrick Lamar' },
   { id: 'kurt_weill', label: 'Kurt Weill' },
@@ -507,6 +509,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'randy_newman', label: 'Randy Newman' },
   { id: 'radiohead', label: 'Radiohead' },
   { id: 'ravel', label: 'Ravel' },
+  { id: 'reich_glass', label: 'Reich / Glass (SQ)' },
   { id: 'richard_thompson', label: 'Richard Thompson' },
   { id: 'satie', label: 'Erik Satie' },
   { id: 'steve_reich', label: 'Steve Reich' },
@@ -519,6 +522,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'stevie_wonder', label: 'Stevie Wonder' },
   { id: 'stravinsky', label: 'Stravinsky' },
   { id: 'thelonious_monk', label: 'Thelonious Monk' },
+  { id: 'turtle_island', label: 'Turtle Island Quartet' },
   { id: 'dave_brubeck', label: 'Dave Brubeck' },
   { id: 'andrew_hill', label: 'Andrew Hill' },
   { id: 'charlie_parker', label: 'Charlie Parker' },
@@ -574,13 +578,36 @@ const FILM_HARMONIC_VOICE_IDS: readonly HarmonicVoiceId[] = [
 ];
 const HARMONIC_VOICE_FILM_SET = new Set<string>(FILM_HARMONIC_VOICE_IDS);
 
-function buildHarmonicVoiceGroups(): Array<{
+/**
+ * SQ VRB family (10/10 shipped 2026-05-12): five existing classical bundles
+ * + five new ones. All auto-resolve to matching VoiceRuleBundle via
+ * `attachVoiceRuleBundleAndHarmonicScenes` when picked.
+ */
+const SQ_VRB_HARMONIC_VOICE_IDS: readonly HarmonicVoiceId[] = [
+  'beethoven_late',
+  'turtle_island',
+  'reich_glass',
+  'shostakovich',
+  'lachenmann',
+  'bartok',
+  'ravel',
+  'debussy',
+  'messiaen',
+];
+const HARMONIC_VOICE_SQ_VRB_SET = new Set<string>(SQ_VRB_HARMONIC_VOICE_IDS);
+
+function buildHarmonicVoiceGroups(opts?: { sqVrbFirst?: boolean }): Array<{
   label: string;
   voices: Array<{ id: HarmonicVoiceId; label: string }>;
 }> {
   const all = SONGWRITER_OPTIONS.filter((o) => !RHYTHM_ONLY_SONGWRITER_IDS.has(o.id));
   const libraryVoices = all
-    .filter((o) => !HARMONIC_VOICE_FILM_SET.has(o.id) && !HARMONIC_VOICE_JAZZ_MASTERS_SET.has(o.id))
+    .filter(
+      (o) =>
+        !HARMONIC_VOICE_FILM_SET.has(o.id) &&
+        !HARMONIC_VOICE_JAZZ_MASTERS_SET.has(o.id) &&
+        (!opts?.sqVrbFirst || !HARMONIC_VOICE_SQ_VRB_SET.has(o.id))
+    )
     .map((o) => ({ id: o.id as HarmonicVoiceId, label: o.label }))
     .sort((a, b) => a.label.localeCompare(b.label));
   const jazzMasterVoices = JAZZ_MASTERS_HARMONIC_VOICE_IDS.map((id) => {
@@ -591,6 +618,18 @@ function buildHarmonicVoiceGroups(): Array<{
     const o = all.find((x) => x.id === id);
     return { id, label: o?.label ?? id };
   });
+  const sqVrbVoices = SQ_VRB_HARMONIC_VOICE_IDS.map((id) => {
+    const o = all.find((x) => x.id === id);
+    return { id, label: o?.label ?? id };
+  });
+  if (opts?.sqVrbFirst) {
+    return [
+      { label: 'String Quartet (SQ VRB family)', voices: sqVrbVoices },
+      { label: 'Library', voices: libraryVoices },
+      { label: 'Jazz Masters', voices: jazzMasterVoices },
+      { label: 'Film', voices: filmVoices },
+    ];
+  }
   return [
     { label: 'Library', voices: libraryVoices },
     { label: 'Jazz Masters', voices: jazzMasterVoices },
@@ -599,6 +638,7 @@ function buildHarmonicVoiceGroups(): Array<{
 }
 
 const HARMONIC_VOICE_GROUPS = buildHarmonicVoiceGroups();
+const HARMONIC_VOICE_GROUPS_SQ = buildHarmonicVoiceGroups({ sqVrbFirst: true });
 
 const RHYTHM_ENGINE_LIST: { id: RhythmEngineId; label: string }[] = [
   { id: 'fela_kuti', label: 'Fela Kuti / Tony Allen' },
@@ -768,7 +808,19 @@ function SongwriterSelectOptionGroups({ onOptionHover }: { onOptionHover?: (id: 
   );
 }
 
-const SONG_MODE_LEADSHEET_PHASE1_WRITERS = new Set(['donald_fagen', 'barry_harris']);
+const SONG_MODE_LEADSHEET_PHASE1_WRITERS = new Set([
+  'donald_fagen',
+  'barry_harris',
+  'bill_evans',
+  'antonio_carlos_jobim',
+  'pat_metheny',
+  'bacharach',
+  'herbie_hancock',
+]);
+
+/** Shown when Song Mode LeadSheet import is disabled for the selected writer (must stay aligned with `SONG_MODE_LEADSHEET_PHASE1_WRITERS`). */
+const SONG_MODE_LEADSHEET_DISABLED_ROUTE_HINT =
+  'LeadSheet MusicXML input is available only for Song Mode with Bill Evans, Barry Harris, Donald Fagen, Antônio Carlos Jobim, Pat Metheny, Bacharach, or Herbie Hancock.';
 type HarmonyDisplayModeUi = 'raw' | 'enriched' | 'compare';
 type TonalityVaultUiFunctionalHint = 'tonic_family' | 'predominant_family' | 'dominant_family' | 'chromatic_or_unknown';
 
@@ -829,7 +881,7 @@ function primarySongwriterDisplayLabel(id: string | undefined): string | undefin
 function isLeadSheetSongModeRoute(presetId?: string, primarySongwriterStyle?: string): boolean {
   if (presetId !== 'song_mode') return false;
   const writer = primarySongwriterStyle?.trim().toLowerCase();
-  return writer === 'donald_fagen' || writer === 'barry_harris';
+  return writer ? SONG_MODE_LEADSHEET_PHASE1_WRITERS.has(writer) : false;
 }
 
 type ZappaMeterExtraPresetId = (typeof ZAPPA_METER_CYCLE_PRESET_DEFINITIONS)[number]['id'];
@@ -4917,9 +4969,10 @@ export function HomeGenerate({
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0 0 0.5rem', lineHeight: 1.45 }}>
               {isSongModeLeadSheetPhase1Writer
                 ? 'LeadSheet MusicXML input is active for this route.'
-                : 'LeadSheet MusicXML input is available only for Song Mode with Donald Fagen or Barry Harris.'}
+                : SONG_MODE_LEADSHEET_DISABLED_ROUTE_HINT}
             </p>
             <input
+              id="co-song-mode-leadsheet-phase1-file"
               type="file"
               accept=".musicxml,.xml,.mxl"
               disabled={loading || !isSongModeLeadSheetPhase1Writer}
@@ -4976,7 +5029,7 @@ export function HomeGenerate({
               </div>
             ) : (
               <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0 0 0.45rem' }}>
-                LeadSheet MusicXML input is available only for Song Mode with Donald Fagen or Barry Harris.
+                {SONG_MODE_LEADSHEET_DISABLED_ROUTE_HINT}
               </p>
             )}
             <textarea
@@ -6125,7 +6178,7 @@ export function HomeGenerate({
               setStyleProfile(next);
               setPrimarySongwriterHoverId(null);
             }}
-            harmonicVoiceGroups={HARMONIC_VOICE_GROUPS}
+            harmonicVoiceGroups={HARMONIC_VOICE_GROUPS_SQ}
             rhythmEngines={RHYTHM_ENGINE_LIST}
             harmonicSelectId="co-sq-songwriter"
             rhythmSelectId="co-sq-rhythm-engine"

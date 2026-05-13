@@ -8,14 +8,18 @@ Practical notes for **using** Composer OS—generation, evaluation, and quality 
 
 Compiled harmonic voice bundles live in **`engines/composer-os-v2/core/composer/voiceRuleBundles.ts`**. Optional **`orchestrationPolicy.fingerprintReceipts`** are **research-derived orchestration planning lines** (not the same thing as **GCE structural memory** JSON fingerprints in **`gce-memory/fingerprints/`**). **`getVoiceRuleBundle(id)`** returns the bundle for harmonic-voice / BB pairing; unknown ids fall back to **`neutral`** (no receipts).
 
-**Deep (≥10 `fingerprintReceipts`):** **Duke Ellington** (`duke_ellington` / `ellington`) **11** · **Gil Evans** (`gil_evans`) **11** · **Wayne Shorter** (`wayne_shorter`) **11** · **Maria Schneider** (`maria_schneider`) **11** · **Thad Jones** (`thad_jones`) **12** · **Charles Mingus** (`charles_mingus`) **11** · **Bob Brookmeyer** (`bob_brookmeyer`) **12** · **Olivier Messiaen** (`messiaen` / `olivier_messiaen`) **12** · **Oliver Nelson** (`oliver_nelson`) **12**.
+**Deep (≥10 `fingerprintReceipts`):** **John Coltrane** (`john_coltrane`) **10** · **Pat Metheny** (`pat_metheny`) **12** · **Clare Fischer** (`clare_fischer`) **44** · **Quincy Jones** (`quincy_jones`) **46** · **Sammy Nestico** (`sammy_nestico`) **41** · **Count Basie** (`count_basie`) **38** · **Duke Ellington** (`duke_ellington` / `ellington`) **11** · **Gil Evans** (`gil_evans`) **11** · **Wayne Shorter** (`wayne_shorter`) **11** · **Maria Schneider** (`maria_schneider`) **11** · **Thad Jones** (`thad_jones`) **12** · **Charles Mingus** (`charles_mingus`) **11** · **Bob Brookmeyer** (`bob_brookmeyer`) **12** · **Olivier Messiaen** (`messiaen` / `olivier_messiaen`) **12** · **Oliver Nelson** (`oliver_nelson`) **12**.
 
-**Extended (specialised stack, 8 receipts):** **Count Basie** (`count_basie`) — shout-chorus / riff-head / **Basie Button** (Old vs New Testament) fingerprints without needing the **≥10** bar.
+**Extended:** none — **`count_basie`** (**`CB_HARM_*`**, **`CB_VL_*`**, **`CB_RHYTHM_*`**, **`CB_FORM_*`**, **`CB_FP_*`**) raised the bundle to **deep**; slice layer still carries shout-chorus / riff-head / **Basie Button** behaviour.
 
-**Thin (6 receipts) — queue Perplexity research + VRB deepening:** **Quincy Jones** (`quincy_jones`) · **Clare Fischer** (`clare_fischer`) · **Sammy Nestico** (`sammy_nestico`).
+**Thin:** none (see table). **Alban Berg** — low-count **Also bundled** row, not **deep**.
 
 | Composer (harmonic voice id) | Fingerprint count | Status |
 |------------------------------|-------------------|--------|
+| **John Coltrane** (`john_coltrane`) | 10 | **deep** |
+| **Pat Metheny** (`pat_metheny`) | 12 | **deep** |
+| **Clare Fischer** (`clare_fischer`) | 44 | **deep** |
+| **Quincy Jones** (`quincy_jones`) | 46 | **deep** |
 | **Duke Ellington** (`duke_ellington`, alias `ellington`) | 11 | **deep** |
 | **Gil Evans** (`gil_evans`) | 11 | **deep** |
 | **Wayne Shorter** (`wayne_shorter`) | 11 | **deep** |
@@ -25,10 +29,8 @@ Compiled harmonic voice bundles live in **`engines/composer-os-v2/core/composer/
 | **Bob Brookmeyer** (`bob_brookmeyer`) | 12 | **deep** |
 | **Olivier Messiaen** (`messiaen`, alias `olivier_messiaen`) | 12 | **deep** |
 | **Oliver Nelson** (`oliver_nelson`) | 12 | **deep** |
-| **Count Basie** (`count_basie`) | 8 | **extended** |
-| **Clare Fischer** (`clare_fischer`) | 6 | **thin** |
-| **Sammy Nestico** (`sammy_nestico`) | 6 | **thin** |
-| **Quincy Jones** (`quincy_jones`) | 6 | **thin** |
+| **Sammy Nestico** (`sammy_nestico`) | 41 | **deep** |
+| **Count Basie** (`count_basie`) | 38 | **deep** |
 
 **Also bundled:** **Alban Berg** (`berg` / `alban_berg`) **4** — see **`voiceRuleBundles.ts`** for authoritative counts.
 

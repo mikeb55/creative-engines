@@ -25,6 +25,54 @@ function R(
 
 const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
   bacharach: [
+    R(
+      'bacharach.bb_harm_grammar',
+      'BB_HARM_01–10 harmonic grammar receipts (bb:harm* tags in bacharachSlice)',
+      'songwriter',
+      'harmony',
+      8,
+      'global'
+    ),
+    R(
+      'bacharach.bb_vl_grammar',
+      'BB_VL_01–05 voice-leading / orchestration receipts (bb:vl* tags in bacharachSlice)',
+      'songwriter',
+      'harmony',
+      8,
+      'global'
+    ),
+    R(
+      'bacharach.bb_rhythm_grammar',
+      'BB_RHYTHM_01–05 metric / phrase / percussion receipts (bb:rhythm* tags in bacharachSlice)',
+      'songwriter',
+      'rhythm',
+      8,
+      'global'
+    ),
+    R(
+      'bacharach.bb_form_grammar',
+      'BB_FORM_01–05 macro-form / section receipts (bb:form* tags in bacharachSlice)',
+      'songwriter',
+      'form',
+      8,
+      'global'
+    ),
+    R(
+      'bacharach.bb_orch_grammar',
+      'BB_ORCH_01–05 studio orchestration receipts (bb:orch* tags in bacharachSlice)',
+      'songwriter',
+      'harmony',
+      8,
+      'global'
+    ),
+    R(
+      'bacharach.bb_fp_fingerprint',
+      'BB_FP_01–03 composite fingerprints when rhythm/harmonic/orch+VL bundles align (bb:fp* tags in bacharachSlice)',
+      'songwriter',
+      'hook',
+      9,
+      'global'
+    ),
     R('bacharach.chromatic_mediant', 'Chromatic mediant moves (placeholder)', 'songwriter', 'harmony', 7, 'global'),
     R('bacharach.secondary_dominant', 'Secondary dominant colour (placeholder)', 'songwriter', 'harmony', 7, 'global'),
     R('bacharach.stepwise_bass', 'Stepwise bass motion (placeholder)', 'songwriter', 'harmony', 7, 'verse'),
@@ -60,6 +108,54 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('beatles.bt_co_tonic_switch', 'Co-tonic centre pivots (`bt:d3_co_tonic_switch`)', 'songwriter', 'harmony', 8, 'bridge'),
     R('beatles.bt_chromatic_mediant', 'Chromatic mediant relation receipts (`bt:d4_chromatic_mediant`)', 'songwriter', 'harmony', 8, 'chorus'),
     R('beatles.bt_suite_form', 'Side-two suite-style linkage receipts (`bt:d5_suite_form`)', 'songwriter', 'form', 7, 'global'),
+    R(
+      'beatles.bt_harm_grammar',
+      'Beatles major-key grammar BT_HARM receipts (`bt:harm01_*`–`bt:harm13_*` in `beatlesSlice.ts`)',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'beatles.bt_vl_grammar',
+      'Beatles voice-leading BT_VL receipts (`bt:vl01_*`–`bt:vl06_*`; surface + `beatlesSlice.ts`)',
+      'songwriter',
+      'melody',
+      9,
+      'global'
+    ),
+    R(
+      'beatles.bt_mel_grammar',
+      'Beatles melodic BT_MEL (`bt:mel01_*`–`bt:mel05_*`; `planMelodyBehaviour` + `leadMelodyPlanner.ts`)',
+      'songwriter',
+      'melody',
+      9,
+      'global'
+    ),
+    R(
+      'beatles.bt_rhythm_grammar',
+      'Beatles rhythm BT_RHYTHM (`bt:rhythm01_*`–`bt:rhythm04_*`; surface + `beatlesSlice.ts`)',
+      'songwriter',
+      'rhythm',
+      9,
+      'global'
+    ),
+    R(
+      'beatles.bt_form_grammar',
+      'Beatles macro-form BT_FORM (`bt:form01_*`–`bt:form07_*`; `songSectionPlanner.ts` + `beatlesSlice.ts` + surface)',
+      'songwriter',
+      'form',
+      9,
+      'global'
+    ),
+    R(
+      'beatles.bt_fp_fingerprints',
+      'Beatles BT_FP harmonic/melodic/formal/writer fingerprints (`bt:fp01_*`–`bt:fp04_*`; `beatlesSlice.ts` + Song Mode bundle)',
+      'songwriter',
+      'form',
+      9,
+      'global'
+    ),
   ],
   fela_kuti: [
     R('fela.fk_static_vamp', 'Two-chord / one-chord vamp holds (`fk:d1_static_vamp`)', 'songwriter', 'harmony', 9, 'verse'),
@@ -149,6 +245,54 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('martin.pre_lift', 'Pre-chorus lift into chorus', 'songwriter', 'harmony', 8, 'pre_chorus'),
   ],
   brian_wilson: [
+    R(
+      'brian_wilson.bw_harm_grammar',
+      'BW_HARM_01–10 Pet Sounds harmonic grammar receipts (bw:harm* tags in brianWilsonPetSoundsSlice)',
+      'songwriter',
+      'harmony',
+      8,
+      'global'
+    ),
+    R(
+      'brian_wilson.bw_vl_grammar',
+      'BW_VL_01–06 Pet Sounds voice-leading / texture receipts (bw:vl* tags in brianWilsonPetSoundsSlice)',
+      'songwriter',
+      'harmony',
+      8,
+      'global'
+    ),
+    R(
+      'brian_wilson.bw_mel_grammar',
+      'BW_MEL_01–05 Pet Sounds melodic receipts (bw:mel* tags in brianWilsonPetSoundsSlice)',
+      'songwriter',
+      'melody',
+      8,
+      'global'
+    ),
+    R(
+      'brian_wilson.bw_rhythm_grammar',
+      'BW_RHYTHM_01–04 Pet Sounds rhythm / ensemble receipts (bw:rhythm* tags in brianWilsonPetSoundsSlice)',
+      'songwriter',
+      'rhythm',
+      8,
+      'global'
+    ),
+    R(
+      'brian_wilson.bw_orch_grammar',
+      'BW_ORCH_01–05 Pet Sounds studio orchestration receipts (bw:orch* tags in brianWilsonPetSoundsSlice)',
+      'songwriter',
+      'form',
+      8,
+      'global'
+    ),
+    R(
+      'brian_wilson.bw_fp_fingerprint',
+      'BW_FP_01–03 composite fingerprints when harmonic/melodic/studio bundles align (bw:fp* tags in brianWilsonPetSoundsSlice)',
+      'songwriter',
+      'hook',
+      9,
+      'global'
+    ),
     R('wilson.layered_vocals', 'Stacked harmony layers', 'songwriter', 'form', 8, 'chorus'),
     R('wilson.section_pivot', 'Section pivots via colour chords', 'songwriter', 'harmony', 8, 'form'),
     R('wilson.hook_return', 'Hook return with arrangement lift', 'songwriter', 'hook', 8, 'chorus'),
@@ -428,6 +572,30 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('radiohead.modal_colour', 'Modal harmony + colour shifts', 'songwriter', 'harmony', 7, 'verse'),
     R('radiohead.irregular_form', 'Irregular phrase / form motion', 'songwriter', 'form', 7, 'form'),
     R('radiohead.sync_anchor', 'Syncopated melodic anchors', 'songwriter', 'rhythm', 7, 'global'),
+    R('radiohead.vl_parallel_ok', 'RH_VL_01 parallel fifths/octaves expressive', 'songwriter', 'harmony', 8, 'global'),
+    R('radiohead.vl_chromatic_inner', 'RH_VL_02 chromatic inner voices / mediants', 'songwriter', 'harmony', 8, 'verse'),
+    R('radiohead.vl_pedal_upper', 'RH_VL_03 static bass pedal upper harmony shift', 'songwriter', 'harmony', 8, 'verse'),
+    R('radiohead.vl_strings_extended', 'RH_VL_04–05 Greenwood strings extended techniques + registers', 'songwriter', 'melody', 8, 'chorus'),
+    R('radiohead.vl_bass_counter_melody', 'RH_VL_06 Colin bass dual melodic layer', 'songwriter', 'melody', 8, 'global'),
+    R('radiohead.mel_semitone_led', 'RH_MEL_01 semitone-led melody + leap peaks', 'songwriter', 'melody', 8, 'verse'),
+    R('radiohead.mel_narrow_centre', 'RH_MEL_02 obsessive pitch-centre orbit', 'songwriter', 'melody', 8, 'verse'),
+    R('radiohead.mel_outside_modal', 'RH_MEL_03 deliberate chromatic clash vs modal harmony', 'songwriter', 'melody', 8, 'chorus'),
+    R('radiohead.mel_falsetto_break', 'RH_MEL_04 falsetto break phrase boundary', 'songwriter', 'melody', 8, 'global'),
+    R('radiohead.mel_acoustic_electronic', 'RH_MEL_05 acoustic vs electronic melodic mode', 'songwriter', 'melody', 8, 'global'),
+    R('radiohead.rhythm_early_backbeat', 'RH_RHYTHM_01 early period standard backbeat / suppress odd meters', 'songwriter', 'rhythm', 8, 'global'),
+    R('radiohead.rhythm_odd_meters', 'RH_RHYTHM_02 middle/late asymmetric meters', 'songwriter', 'rhythm', 8, 'verse'),
+    R('radiohead.rhythm_meter_mutation', 'RH_RHYTHM_03 meter change within song / bar as unit', 'songwriter', 'rhythm', 8, 'form'),
+    R('radiohead.rhythm_polyrhythm', 'RH_RHYTHM_04 guitar polyrhythm vs drums', 'songwriter', 'rhythm', 8, 'global'),
+    R('radiohead.rhythm_ostinato_layer', 'RH_RHYTHM_05 electronic ostinato independent layer', 'songwriter', 'rhythm', 8, 'chorus'),
+    R('radiohead.rhythm_bass_syncopation', 'RH_RHYTHM_06 bass offbeat vs melody interlock', 'songwriter', 'rhythm', 8, 'global'),
+    R('radiohead.orch_period_palette', 'RH_ORCH_01 period instrumentation gate (core / +electronics / strings+electronics)', 'songwriter', 'harmony', 8, 'global'),
+    R('radiohead.orch_strings_percussion', 'RH_ORCH_02 strings as percussion col legno', 'songwriter', 'harmony', 8, 'chorus'),
+    R('radiohead.orch_layering', 'RH_ORCH_03 electronic acoustic structural layering', 'songwriter', 'harmony', 8, 'verse'),
+    R('radiohead.orch_killswitch', 'RH_ORCH_04 killswitch guitar stutter climax', 'songwriter', 'melody', 8, 'chorus'),
+    R('radiohead.orch_microtonal', 'RH_ORCH_05 optional microtonal guitar flag', 'songwriter', 'melody', 8, 'global'),
+    R('radiohead.fp_harmonic', 'RH_FP_01 full harmonic fingerprint when four components align', 'songwriter', 'harmony', 9, 'global'),
+    R('radiohead.fp_rhythmic', 'RH_FP_02 full rhythmic fingerprint when four components align', 'songwriter', 'rhythm', 9, 'global'),
+    R('radiohead.fp_orchestral', 'RH_FP_03 full orchestral fingerprint when five components align', 'songwriter', 'harmony', 9, 'chorus'),
   ],
   blur: [
     R('blur.brit_hook', 'Brit-pop hook emphasis', 'songwriter', 'hook', 8, 'chorus'),
@@ -471,6 +639,46 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
       'Late period (21st-century quartet, Emanon): long plateaus from texture, axis pitch, pedal, and registral bands; pandiatonic non-functional chord fields with parallel or near-parallel cluster motion; open form — sections chained by texture rules rather than fixed chorus; orchestral colour — strings/ensemble swirls, pedals, planed voicings under motivic lead; broad pandiatonic colour shifts (Copland / Vaughan Williams resonance).',
       'songwriter',
       'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'wayne_shorter.ws_harm_grammar',
+      'WS_HARM_* harmonic grammar receipts (`wayneShorterHarmonicGrammarReceipts`) — lateral roots, mediant brass proxy, axis bass, quartal/sus, ws:wedge wedge, neighbour devices (`applyWayneShorterHarmonicGrammarReceipts`).',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'wayne_shorter.ws_mel_grammar',
+      'WS_MEL_* melodic grammar receipts (`wayneShorterMelodicGrammarReceipts`) — hook-first cells, wide-leap d3 proxy, floating phrase toes from device bar placement (`applyWayneShorterMelodicGrammarReceipts`).',
+      'songwriter',
+      'melody',
+      8,
+      'global'
+    ),
+    R(
+      'wayne_shorter.ws_rhythm_grammar',
+      'WS_RHYTHM_* rhythm grammar receipts (`wayneShorterRhythmGrammarReceipts`) — metric float, ensemble independence, structural space / plateau (`applyWayneShorterRhythmGrammarReceipts`).',
+      'songwriter',
+      'rhythm',
+      8,
+      'global'
+    ),
+    R(
+      'wayne_shorter.ws_form_grammar',
+      'WS_FORM_* form/orchestration grammar receipts (`wayneShorterFormGrammarReceipts`) — through-composed seams, role-swap diversity (`applyWayneShorterFormGrammarReceipts`).',
+      'songwriter',
+      'form',
+      8,
+      'global'
+    ),
+    R(
+      'wayne_shorter.ws_fp_fingerprint',
+      'WS_FP_* composite fingerprint gate firings (`wayneShorterFingerprintReceipts`) when layered grammar receipts satisfy WS_FP_01–03 AND rules (`applyWayneShorterFingerprintReceipts`).',
+      'songwriter',
+      'form',
       9,
       'global'
     ),
@@ -951,6 +1159,19 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('sat.cell_repetition', 'Two-bar harmonic cell echo (`es:d3_cell_repetition`)', 'songwriter', 'form', 8, 'verse'),
     R('sat.texture_form', 'Sparse texture form hinge receipts (`es:d4_texture_form`)', 'songwriter', 'form', 7, 'form'),
     R('sat.modal_collection', 'White-collection modal pitch receipts (`es:d5_modal_collection`)', 'songwriter', 'harmony', 8, 'global'),
+  ],
+  /** SQ VRB family — registry stubs; deep grammar in `voiceRuleBundles.ts`. */
+  beethoven_late: [
+    R('bv.sq_vrb_bundle', 'Beethoven late SQ VRB bundle (`BV_*` ≥30 fingerprint receipts)', 'songwriter', 'harmony', 9, 'global'),
+  ],
+  turtle_island: [
+    R('ti.sq_vrb_bundle', 'Turtle Island Quartet SQ VRB bundle (`TI_*` 88 fingerprint receipts; SQ-jazz bridge)', 'songwriter', 'harmony', 9, 'global'),
+  ],
+  reich_glass: [
+    R('rg.sq_vrb_bundle', 'Reich/Glass minimalist SQ VRB bundle (`RG_*` 89 fingerprint receipts; phase + additive process)', 'songwriter', 'harmony', 9, 'global'),
+  ],
+  lachenmann: [
+    R('lc.sq_vrb_bundle', 'Lachenmann SQ VRB bundle (`LC_*` 84 fingerprint receipts; musique concrète instrumentale)', 'songwriter', 'harmony', 9, 'global'),
   ],
 };
 

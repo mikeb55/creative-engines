@@ -13,21 +13,21 @@ const HASAPIKO_44: RhythmPreset = {
       layerId: 'doumbek',
       gmMidi: 36,
       pattern: [
-        1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0,
+        true, false, false, false, false, false, true, false, true, false, false, false, false, false, true, false,
       ],
     },
     {
       layerId: 'frame',
       gmMidi: 38,
       pattern: [
-        0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0,
+        false, false, true, false, true, false, false, false, false, false, true, false, true, false, false, false,
       ],
     },
     {
       layerId: 'hat',
       gmMidi: 42,
       pattern: [
-        1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0,
+        true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, false,
       ],
     },
   ],
@@ -46,21 +46,21 @@ const ZEIBEKIKO_98: RhythmPreset = {
       layerId: 'doumbek',
       gmMidi: 36,
       pattern: [
-        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1,
+        true, false, false, true, false, false, true, false, false, true, false, false, true, false, true, true, false, true,
       ],
     },
     {
       layerId: 'frame',
       gmMidi: 38,
       pattern: [
-        0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0,
+        false, false, true, false, false, true, false, false, true, false, false, true, false, false, false, false, true, false,
       ],
     },
     {
       layerId: 'bell',
       gmMidi: 56,
       pattern: [
-        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+        true, false, false, true, false, false, true, false, false, true, false, false, true, false, false, true, false, false,
       ],
     },
   ],

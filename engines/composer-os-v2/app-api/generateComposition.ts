@@ -8,6 +8,7 @@ import { COMPOSER_OS_VERSION } from './composerOsConfig';
 import { manifestPathForMusicXml } from './composerOsOutputPaths';
 import { writeOutputManifest } from './writeOutputManifest';
 import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
+import { isClaveGridOverlayEnvEnabled } from '../core/rhythm/claveGridOverlay';
 import { validateLockedHarmonyMusicXmlTruthFromFile } from '../core/export/validateLockedHarmonyMusicXml';
 import { resolveEffectiveGenerationSeed } from '../core/creative-controls/creativeControlResolver';
 import { experimentalLabelForLevel } from '../core/creative-controls/experimentalEvaluator';
@@ -338,6 +339,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           ...(typeof req.stochasticRenderOrdinal === 'number'
             ? { stochasticRenderOrdinal: req.stochasticRenderOrdinal }
             : {}),
+          ...(isClaveGridOverlayEnvEnabled() && req.claveGridOverlay ? { claveGridOverlay: req.claveGridOverlay } : {}),
         });
   result.context.generationMetadata = {
     ...result.context.generationMetadata,

@@ -9,6 +9,8 @@ import type {
   ArvoPartTintinnabuliParams,
   BartokContextMode,
   BeatlesContextMode,
+  BeatlesFormTemplateId,
+  BeatlesMelodicLens,
   BernardHerrmannContextMode,
   EnnioMorriconeContextMode,
   FelaKutiContextMode,
@@ -35,6 +37,7 @@ import type {
 import type { RhythmIntentControl } from '../core/rhythmIntentTypes';
 import type { AlternateGuitarTuningRequest } from '../core/song-mode/alternateGuitarTunings';
 import type { BarMeterMap } from '../core/rhythm/barMeterTypes';
+import type { ClaveGridSpec } from '../core/rhythm/claveGridTypes';
 import type { BigBandFormPhase } from '../core/big-band/bigBandPlanTypes';
 import type { MotifTransform } from '../core/song-mode/motifMutationEngine';
 
@@ -47,6 +50,8 @@ export type { GershwinContextMode };
 export type { MilesDavisContextMode };
 export type { PrinceContextMode };
 export type { BeatlesContextMode };
+export type { BeatlesFormTemplateId };
+export type { BeatlesMelodicLens };
 export type { FelaKutiContextMode };
 export type { BernardHerrmannContextMode };
 export type { JohnWilliamsContextMode };
@@ -262,6 +267,11 @@ export interface GenerateRequest {
   blendStrength?: 'light' | 'medium' | 'strong';
   /** Song Mode: duo conversational vs supportive posture (optional). */
   duoIntent?: 'conversational' | 'supportive';
+  /**
+   * V31 — Clave grid overlay (`stub` registry `presetRef`). Applied only when **`COMPOSER_OS_CLAVE_GRID_OVERLAY`**
+   * is truthy in the generation process; omitted or flag off → legacy rhythm path.
+   */
+  claveGridOverlay?: ClaveGridSpec;
   /** Song Mode / Big Band / String Quartet: Slonimsky chromatic outside level. */
   chromaticStrength?: 'off' | 'subtle' | 'prominent';
   /** Guitar–Bass Duo / ECM chamber: regenerate bars `[startBar,endBar]` and splice into `baseMusicXml`. */
@@ -376,6 +386,19 @@ export interface GenerateRequest {
    * Omitted → engine default **`merseybeat_1962`** when primary songwriter is **`beatles`**.
    */
   beatlesContext?: BeatlesContextMode;
+  /**
+   * Song Mode / Beatles: Verse–Verse–Bridge–Verse default vs verse–chorus secondary vs legacy VC scaffold (`songSectionPlanner.ts`).
+   * Omitted → **`vv_br_v`** when primary songwriter is **`beatles`**.
+   */
+  beatlesFormTemplate?: BeatlesFormTemplateId;
+  /**
+   * Song Mode / Beatles: Lennon vs McCartney vs blended (**default**) vs neutral melodic lens (`melodyBehaviourPlanner.ts`).
+   */
+  beatlesMelodicLens?: BeatlesMelodicLens;
+  /**
+   * Song Mode / Radiohead: RH_MEL_05 acoustic vs electronic melodic generator posture (`melodyBehaviourPlanner.ts`).
+   */
+  radioheadMelodicContext?: 'acoustic' | 'electronic';
   /**
    * Song Mode / Fela Kuti: Zombie vs Water No Get Enemy vs Lady posture (`felaKutiSlice.ts`).
    * Omitted → engine default **`zombie_1977`** when primary songwriter is **`fela_kuti`**.
@@ -551,6 +574,16 @@ export interface OutputEntry {
   radioheadDeviceReceipts?: GenerationMetadata['radioheadDeviceReceipts'];
   radioheadSliceReceipt?: GenerationMetadata['radioheadSliceReceipt'];
   radioheadEffectiveHarmonyBars?: GenerationMetadata['radioheadEffectiveHarmonyBars'];
+  radioheadVoiceLeadingGrammarReceipts?: GenerationMetadata['radioheadVoiceLeadingGrammarReceipts'];
+  radioheadMelodicGrammarReceipts?: GenerationMetadata['radioheadMelodicGrammarReceipts'];
+  radioheadMelodicContext?: GenerationMetadata['radioheadMelodicContext'];
+  radioheadRhythmGrammarReceipts?: GenerationMetadata['radioheadRhythmGrammarReceipts'];
+  radioheadRhythmEarlyPeriodBackbeat?: GenerationMetadata['radioheadRhythmEarlyPeriodBackbeat'];
+  radioheadRhythmAsymmetricFeaturesEligible?: GenerationMetadata['radioheadRhythmAsymmetricFeaturesEligible'];
+  radioheadOrchestrationGrammarReceipts?: GenerationMetadata['radioheadOrchestrationGrammarReceipts'];
+  radioheadOrchestrationPalette?: GenerationMetadata['radioheadOrchestrationPalette'];
+  radioheadMicrotonalGuitarEligible?: GenerationMetadata['radioheadMicrotonalGuitarEligible'];
+  radioheadFingerprintReceipts?: GenerationMetadata['radioheadFingerprintReceipts'];
   /** James Brown (dominant-centre funk/soul) slice — diagnostics / receipts (Song Mode manifest echo). */
   jamesBrownDiagnostics?: GenerationMetadata['jamesBrownDiagnostics'];
   jamesBrownDeviceReceipts?: GenerationMetadata['jamesBrownDeviceReceipts'];
@@ -586,6 +619,16 @@ export interface OutputEntry {
   wayneShorterEffectiveHarmonyBars?: GenerationMetadata['wayneShorterEffectiveHarmonyBars'];
   wayneShorterAntiElaborationGuards?: GenerationMetadata['wayneShorterAntiElaborationGuards'];
   wayneShorterEligibilityStats?: GenerationMetadata['wayneShorterEligibilityStats'];
+  wayneShorterHarmFingerprintReceipts?: GenerationMetadata['wayneShorterHarmFingerprintReceipts'];
+  wayneShorterMelFingerprintReceipts?: GenerationMetadata['wayneShorterMelFingerprintReceipts'];
+  wayneShorterRhythmFingerprintReceipts?: GenerationMetadata['wayneShorterRhythmFingerprintReceipts'];
+  wayneShorterFormFingerprintReceipts?: GenerationMetadata['wayneShorterFormFingerprintReceipts'];
+  wayneShorterFpFingerprintReceipts?: GenerationMetadata['wayneShorterFpFingerprintReceipts'];
+  wayneShorterHarmonicGrammarReceipts?: GenerationMetadata['wayneShorterHarmonicGrammarReceipts'];
+  wayneShorterMelodicGrammarReceipts?: GenerationMetadata['wayneShorterMelodicGrammarReceipts'];
+  wayneShorterRhythmGrammarReceipts?: GenerationMetadata['wayneShorterRhythmGrammarReceipts'];
+  wayneShorterFormGrammarReceipts?: GenerationMetadata['wayneShorterFormGrammarReceipts'];
+  wayneShorterFingerprintReceipts?: GenerationMetadata['wayneShorterFingerprintReceipts'];
   /** Barry Harris (bebop / sixth–dim) slice — diagnostics / receipts (Song Mode manifest echo). */
   barryHarrisDiagnostics?: GenerationMetadata['barryHarrisDiagnostics'];
   barryHarrisDeviceReceipts?: GenerationMetadata['barryHarrisDeviceReceipts'];
@@ -606,6 +649,11 @@ export interface OutputEntry {
   debussyAntiElaborationGuards?: GenerationMetadata['debussyAntiElaborationGuards'];
   debussyArabesqueBars?: GenerationMetadata['debussyArabesqueBars'];
   debussyArabesqueMotifByBar?: GenerationMetadata['debussyArabesqueMotifByBar'];
+  debussyProgramPeriod?: GenerationMetadata['debussyProgramPeriod'];
+  debussyFormReceipts?: GenerationMetadata['debussyFormReceipts'];
+  debussyOrchestrationReceipts?: GenerationMetadata['debussyOrchestrationReceipts'];
+  debussyVocalColourOrchestral?: GenerationMetadata['debussyVocalColourOrchestral'];
+  debussyFingerprintReceipts?: GenerationMetadata['debussyFingerprintReceipts'];
   bernardHerrmannContext?: GenerationMetadata['bernardHerrmannContext'];
   bernardHerrmannDiagnostics?: GenerationMetadata['bernardHerrmannDiagnostics'];
   bernardHerrmannDeviceReceipts?: GenerationMetadata['bernardHerrmannDeviceReceipts'];

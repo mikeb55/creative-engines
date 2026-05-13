@@ -57,6 +57,7 @@ export function applySongwritingRules(params: {
   melodyBehaviour: MelodyBehaviourPlan;
   authorOverlay: AuthorOverlayBehaviour | null;
   stylePairingResolution?: StylePairingResult | null;
+  beatlesFingerprintReceipts?: string[];
 }): CompiledSong {
   const {
     compiled,
@@ -67,6 +68,7 @@ export function applySongwritingRules(params: {
     melodyBehaviour,
     authorOverlay,
     stylePairingResolution,
+    beatlesFingerprintReceipts,
   } = params;
   const lyricProsody = buildLyricProsodyMeta(resolution.primaryId, authorOverlay);
   const baseContrast = sectionContrastDims(resolution);
@@ -91,6 +93,7 @@ export function applySongwritingRules(params: {
     authorOverlayBehaviour: authorOverlay,
     sectionContrastDimensions,
     stylePairingResolution: stylePairingResolution ?? undefined,
+    ...(beatlesFingerprintReceipts?.length ? { beatlesFingerprintReceipts } : {}),
   };
   return {
     ...compiled,

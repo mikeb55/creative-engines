@@ -8,12 +8,384 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import type { BarMeterMap } from '../rhythm/barMeterTypes';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
+
+/** Bacharach jazz-pop harmonic grammar BB_HARM_01–10 — receipt prefix **`bb:harmNN_*`**. */
+export const bacharachHarmonicGrammarTags = {
+  harm01_maj9_tonic_opening: 'bb:harm01_maj9_tonic_opening',
+  harm02_sus4_dom7_resolution: 'bb:harm02_sus4_to_dom7_resolution',
+  harm03_ii_V_I_jazz_cadence: 'bb:harm03_ii_Vsus_V_I_jazz_cadence',
+  harm04_bVI_maj7_deceptive: 'bb:harm04_bVI_maj7_section_colour',
+  harm05_iv_minor_tension: 'bb:harm05_iv_minor_subdominant',
+  harm06_secondary_dominant_borrowed: 'bb:harm06_secondary_dominant_borrowed',
+  harm07_iii_characteristic: 'bb:harm07_iii_in_progression',
+  harm08_II_major_surprise: 'bb:harm08_II_major_quality_surprise',
+  harm09_modal_ambiguity_lydian_colour: 'bb:harm09_modal_ambiguity_lydian_colour',
+  harm10_dim7_passing_chromatic: 'bb:harm10_dim7_passing_chromatic',
+} as const;
+
+/** Bacharach voice-leading / studio orchestration grammar BB_VL_01–05 — **`bb:vlNN_*`**. */
+export const bacharachVoiceLeadingGrammarTags = {
+  vl01_maj9_spread: 'bb:vl01_maj9_spread_voicing',
+  vl02_brass_close_warm: 'bb:vl02_brass_close_warm_flugelhorn_bias',
+  vl03_chromatic_inner_pedal: 'bb:vl03_desc_chromatic_inner_or_pedal',
+  vl04_strings_dual_role: 'bb:vl04_strings_pad_or_countermelody',
+  vl05_twin_piano_split: 'bb:vl05_twin_piano_register_split',
+} as const;
+
+/** Bacharach rhythm / metric grammar BB_RHYTHM_01–05 — **`bb:rhythmNN_*`**. */
+export const bacharachRhythmGrammarTags = {
+  rhythm01_mixed_meter: 'bb:rhythm01_mixed_meter_fingerprint',
+  rhythm02_asymmetric_3_5: 'bb:rhythm02_asymmetric_phrase_3_or_5',
+  rhythm03_verse_shaker_chorus_ride: 'bb:rhythm03_verse_shaker_chorus_ride_boundary',
+  rhythm04_melody_first_stress: 'bb:rhythm04_melody_first_lyric_stress_override',
+  rhythm05_jazz_syncopation: 'bb:rhythm05_syncopated_jazz_pop_structural',
+} as const;
+
+/** Bacharach macro-form grammar BB_FORM_01–05 — **`bb:formNN_*`**. */
+export const bacharachFormGrammarTags = {
+  form01_intro_four_bars: 'bb:form01_intro_four_bars',
+  form01_two_verses_before_chorus: 'bb:form01_two_verses_before_first_chorus',
+  form01_close_on_verse: 'bb:form01_close_on_verse_not_chorus',
+  form01_long_arc: 'bb:form01_extended_pop_arc_sections',
+  form02_asymmetric_sections: 'bb:form02_asymmetric_section_or_phrase_lengths',
+  form03_boundary_harmonic: 'bb:form03_section_boundary_harmonic_pivot',
+  form03_boundary_rhythmic: 'bb:form03_section_boundary_meter_shift',
+  form03_boundary_textural: 'bb:form03_section_boundary_texture_shift',
+  form04_bridge_modal_bluesy: 'bb:form04_bridge_modal_bluesy_variation',
+  form05_brass_chorus_feature: 'bb:form05_brass_melodic_feature_chorus_staging',
+} as const;
+
+/** Bacharach studio orchestration grammar BB_ORCH_01–05 — **`bb:orchNN_*`**. */
+export const bacharachOrchestrationGrammarTags = {
+  orch01_core_ensemble: 'bb:orch01_core_strings_flugel_horns_twin_piano_timpani',
+  orch02_flugel_primary: 'bb:orch02_flugelhorn_primary_trumpet_climax_only',
+  orch03_strings_pad_arco: 'bb:orch03_strings_arco_pad_winds_double_colour',
+  orch04_verse_chorus_rhythm: 'bb:orch04_verse_light_chorus_kit_twin_piano_staging',
+  orch05_vocal_primary: 'bb:orch05_vocal_primary_solo_orchestral_texture',
+} as const;
+
+/** Bacharach composite fingerprints BB_FP_01–03 — **`bb:fpNN_*`** (full match vs parallel grammar bundles). */
+export const bacharachFingerprintTags = {
+  fp01_full_rhythmic: 'bb:fp01_full_bacharach_rhythmic_fingerprint',
+  fp02_full_harmonic: 'bb:fp02_full_bacharach_harmonic_fingerprint',
+  fp03_full_orchestral: 'bb:fp03_full_bacharach_orchestral_fingerprint',
+} as const;
+
+function isSongModeFamilyPreset(presetId: string): boolean {
+  return presetId === 'song_mode' || presetId.startsWith('song_mode_');
+}
+
+type BachHarmAnalysis = {
+  rootPc: number;
+  degreePc: number;
+  hp: string;
+  tl: string;
+  hasMinorThird: boolean;
+  hasSus4: boolean;
+  hasDom7: boolean;
+  hasMaj7: boolean;
+  hasMaj9: boolean;
+  hasSixNine: boolean;
+  hasDim7: boolean;
+};
+
+function analyzeBachHarmonySymbol(symbol: string, tonicPc: number): BachHarmAnalysis | undefined {
+  const hp = parseChordSymbol(symbol).harmonyPart.trim();
+  if (!hp || /^tonic_wash$/i.test(hp)) return undefined;
+  const m = hp.match(ROOT_AT_START);
+  const rootName = m?.[1];
+  if (!rootName) return undefined;
+  const rootPc = noteNameToPitchClass(rootName);
+  if (rootPc === undefined) return undefined;
+  const degreePc = (rootPc - tonicPc + 12) % 12;
+  const tl = hp.toLowerCase();
+  const rest = hp.slice(rootName.length).toLowerCase();
+  const hasMinorThird =
+    /^m(?!aj)|min/.test(rest.replace(/\s/g, '')) ||
+    (/^m[^a-z]/i.test(rest) && !/maj/i.test(rest));
+  const hasSus4 = /sus4|sus\b/i.test(tl);
+  const compact = hp.replace(/\s/g, '');
+  const hasDim7 = /dim|ø|°|o7|dim7/i.test(compact);
+  const hasDom7 =
+    !hasDim7 &&
+    !/maj7|mmaj7|Δ/.test(tl) &&
+    (/[^a-z]7([^a-z]|$)|\b7\(|\b9([^a-z]|$)|\b13/i.test(compact) || /^[a-g][#b]?7([^a-z]|$)/i.test(compact));
+  const hasMaj7 = /maj7|mmaj7|Δ|maj\s*7/i.test(tl);
+  const hasMaj9 =
+    /maj9|maj\(13\)|maj9\(13\)|maj7\(13\)|m\(maj9\)/i.test(compact) ||
+    /\bmaj9\b/i.test(tl);
+  const hasSixNine = /6\/9|69\b/i.test(compact);
+  return {
+    rootPc,
+    degreePc,
+    hp,
+    tl,
+    hasMinorThird,
+    hasSus4,
+    hasDom7,
+    hasMaj7,
+    hasMaj9,
+    hasSixNine,
+    hasDim7,
+  };
+}
+
+/**
+ * BB_HARM_01–10 — scan effective harmony bars for Bacharach jazz-pop grammar receipts.
+ */
+export function applyBacharachHarmonicGrammarReceipts(
+  context: CompositionContext,
+  bars: readonly string[],
+  tonicPcIn: number | undefined,
+  positions: readonly ('phraseStart' | 'phraseMiddle' | 'phraseFinal')[]
+): string[] {
+  const tonicPc =
+    tonicPcIn ?? harmonyRootPc(bars[0] ?? '') ?? harmonyRootPc(resolveBarSymbol(context, 1).symbol);
+  if (tonicPc === undefined) return [];
+
+  const receipts: string[] = [];
+  const n = bars.length;
+  const analyses: Array<BachHarmAnalysis | undefined> = bars.map((b) => analyzeBachHarmonySymbol(b, tonicPc));
+  const barNum = (i: number) => i + 1;
+  const phraseFinalAt = (i: number): boolean =>
+    i >= 0 && i < positions.length && positions[i] === 'phraseFinal';
+
+  // BB_HARM_01 — maj9 / maj9(13) / 6·9 tonic opening (not bare maj7 / triad as grammar headline).
+  const a0 = analyses[0];
+  if (
+    a0 &&
+    a0.degreePc === 0 &&
+    !a0.hasMinorThird &&
+    (a0.hasMaj9 || a0.hasSixNine || /maj\(13\)|maj9\(13\)/i.test(a0.hp))
+  ) {
+    receipts.push(`${bacharachHarmonicGrammarTags.harm01_maj9_tonic_opening}@bar1`);
+  }
+
+  // BB_HARM_02 — same dominant root: sus4 → dom7 (not direct sus → I).
+  for (let i = 0; i < n - 1; i++) {
+    const c0 = analyses[i];
+    const c1 = analyses[i + 1];
+    if (!c0 || !c1) continue;
+    if (c0.rootPc !== c1.rootPc) continue;
+    if (c0.hasSus4 && c1.hasDom7 && !c1.hasSus4) {
+      receipts.push(`${bacharachHarmonicGrammarTags.harm02_sus4_dom7_resolution}@bar${barNum(i)}`);
+      break;
+    }
+  }
+
+  // BB_HARM_03 — ii7 → V7sus → V7 → Imaj7 prototype window.
+  for (let i = 0; i < n - 3; i++) {
+    const q = analyses.slice(i, i + 4);
+    if (q.some((x) => !x)) continue;
+    const [d0, d1, d2, d3] = q as [BachHarmAnalysis, BachHarmAnalysis, BachHarmAnalysis, BachHarmAnalysis];
+    if (d0.degreePc !== 2 || d0.hasMinorThird === false) continue;
+    if (!/m7|min7|-7/i.test(d0.hp)) continue;
+    if (d1.degreePc !== 7 || !d1.hasSus4) continue;
+    if (d2.degreePc !== 7 || d2.rootPc !== d1.rootPc || d2.hasSus4) continue;
+    if (!d2.hasDom7) continue;
+    if (d3.degreePc !== 0 || d3.hasMinorThird) continue;
+    if (!d3.hasMaj7 && !d3.hasMaj9 && !d3.hasSixNine) continue;
+    receipts.push(`${bacharachHarmonicGrammarTags.harm03_ii_V_I_jazz_cadence}@bar${barNum(i)}`);
+    break;
+  }
+
+  // BB_HARM_04 — bVI maj7 colour at phrase conclusion (deceptive / studio ending).
+  for (let i = 0; i < n; i++) {
+    const a = analyses[i];
+    if (!a || !phraseFinalAt(i)) continue;
+    if (a.degreePc === 8 && !a.hasMinorThird && (a.hasMaj7 || a.hasMaj9)) {
+      receipts.push(`${bacharachHarmonicGrammarTags.harm04_bVI_maj7_deceptive}@bar${barNum(i)}`);
+      break;
+    }
+  }
+
+  // BB_HARM_05 — iv minor → I or V (minor subdominant tension).
+  for (let i = 0; i < n - 1; i++) {
+    const u = analyses[i];
+    const v = analyses[i + 1];
+    if (!u || !v) continue;
+    if (u.degreePc !== 5 || !u.hasMinorThird) continue;
+    if (v.degreePc !== 0 && v.degreePc !== 7) continue;
+    receipts.push(`${bacharachHarmonicGrammarTags.harm05_iv_minor_tension}@bar${barNum(i)}`);
+    break;
+  }
+
+  // BB_HARM_06 — vi min7 → II7 secondary dominant (borrowed chromatic complex).
+  for (let i = 0; i < n - 1; i++) {
+    const u = analyses[i];
+    const v = analyses[i + 1];
+    if (!u || !v) continue;
+    if (u.degreePc !== 9 || !u.hasMinorThird) continue;
+    if (!/m7|min7|-7/i.test(u.hp)) continue;
+    if (v.degreePc !== 2 || !v.hasDom7 || v.hasSus4) continue;
+    receipts.push(`${bacharachHarmonicGrammarTags.harm06_secondary_dominant_borrowed}@bar${barNum(i)}`);
+    break;
+  }
+
+  // BB_HARM_07 — iii chord in progression (characteristic rare degree).
+  for (let i = 0; i < n; i++) {
+    const a = analyses[i];
+    if (!a) continue;
+    if (a.degreePc === 4 && a.hasMinorThird) {
+      receipts.push(`${bacharachHarmonicGrammarTags.harm07_iii_characteristic}@bar${barNum(i)}`);
+      break;
+    }
+  }
+
+  // BB_HARM_08 — ii → II major surprise (major quality on 2nd degree).
+  for (let i = 0; i < n; i++) {
+    const a = analyses[i];
+    if (!a) continue;
+    if (a.degreePc === 2 && !a.hasMinorThird && !a.hasSus4 && (hasMajorTriadShell(a.hp) || a.hasMaj7)) {
+      receipts.push(`${bacharachHarmonicGrammarTags.harm08_II_major_surprise}@bar${barNum(i)}`);
+      break;
+    }
+  }
+
+  // BB_HARM_09 — Lydian / colour ambiguity (#11, #4) or bVII → I juxtaposition.
+  let harm09 = false;
+  for (let i = 0; i < n; i++) {
+    const a = analyses[i];
+    if (!a) continue;
+    if (/#11|#4\b|add#11|maj7\s*\(\s*#11/i.test(a.hp)) {
+      receipts.push(`${bacharachHarmonicGrammarTags.harm09_modal_ambiguity_lydian_colour}@sharp11@bar${barNum(i)}`);
+      harm09 = true;
+      break;
+    }
+  }
+  if (!harm09) {
+    for (let i = 0; i < n - 1; i++) {
+      const u = analyses[i];
+      const v = analyses[i + 1];
+      if (!u || !v) continue;
+      if (u.degreePc === 10 && !u.hasMinorThird && v.degreePc === 0 && !v.hasMinorThird) {
+        receipts.push(`${bacharachHarmonicGrammarTags.harm09_modal_ambiguity_lydian_colour}@bVII_to_I@bar${barNum(i)}`);
+        break;
+      }
+    }
+  }
+
+  // BB_HARM_10 — dim7 chromatic passing (roots semitone / whole-tone neighbours).
+  for (let i = 1; i < n - 1; i++) {
+    const prev = analyses[i - 1];
+    const mid = analyses[i];
+    const next = analyses[i + 1];
+    if (!prev || !mid || !next || !mid.hasDim7) continue;
+    const d0 = Math.min(Math.abs(mid.rootPc - prev.rootPc), 12 - Math.abs(mid.rootPc - prev.rootPc));
+    const d1 = Math.min(Math.abs(next.rootPc - mid.rootPc), 12 - Math.abs(next.rootPc - mid.rootPc));
+    if (d0 <= 2 && d1 <= 2) {
+      receipts.push(`${bacharachHarmonicGrammarTags.harm10_dim7_passing_chromatic}@bar${barNum(i)}`);
+      break;
+    }
+  }
+
+  void context;
+  return receipts;
+}
+
+/**
+ * BB_VL_01–05 — maj9 spread policy, brass/string surfaces, chromatic inner-line / pedal heuristics, twin piano song-mode hint.
+ */
+export function applyBacharachVoiceLeadingGrammarReceipts(
+  context: CompositionContext,
+  bars: readonly string[],
+  tonicPcIn: number | undefined
+): string[] {
+  const tonicPc =
+    tonicPcIn ?? harmonyRootPc(bars[0] ?? '') ?? harmonyRootPc(resolveBarSymbol(context, 1).symbol);
+  if (tonicPc === undefined) return [];
+
+  const receipts: string[] = [];
+  const n = bars.length;
+
+  // BB_VL_01 — maj9 chords → spread voicing default (close reserved for brass elsewhere).
+  for (let i = 0; i < n; i++) {
+    const a = analyzeBachHarmonySymbol(bars[i]!, tonicPc);
+    if (a && !a.hasMinorThird && a.hasMaj9) {
+      receipts.push(`${bacharachVoiceLeadingGrammarTags.vl01_maj9_spread}@bar${i + 1}`);
+      break;
+    }
+  }
+
+  // BB_VL_02 — brass: close warm voicing bias (big-band instrument surface).
+  const uiIg = context.generationMetadata.uiInstrumentGroup;
+  if (uiIg === 'big_band') {
+    receipts.push(bacharachVoiceLeadingGrammarTags.vl02_brass_close_warm);
+  }
+
+  // BB_VL_03 — stepwise chromatic inner motion OR pedal (roots / slash bass descend by semitone; or 4+ bar pedal).
+  let vl03 = false;
+  for (let i = 0; i <= n - 3; i++) {
+    const r0 = harmonyRootPc(bars[i] ?? '');
+    const r1 = harmonyRootPc(bars[i + 1] ?? '');
+    const r2 = harmonyRootPc(bars[i + 2] ?? '');
+    if (r0 === undefined || r1 === undefined || r2 === undefined) continue;
+    const d0 = (r0 - r1 + 12) % 12;
+    const d1 = (r1 - r2 + 12) % 12;
+    if (d0 === 1 && d1 === 1) {
+      receipts.push(`${bacharachVoiceLeadingGrammarTags.vl03_chromatic_inner_pedal}@chromatic_roots@bar${i + 1}`);
+      vl03 = true;
+      break;
+    }
+  }
+  if (!vl03) {
+    for (let i = 0; i <= n - 3; i++) {
+      const b0 = parseChordSymbol(bars[i] ?? '').slashBassPc;
+      const b1 = parseChordSymbol(bars[i + 1] ?? '').slashBassPc;
+      const b2 = parseChordSymbol(bars[i + 2] ?? '').slashBassPc;
+      if (b0 === undefined || b1 === undefined || b2 === undefined) continue;
+      const d0 = (b0 - b1 + 12) % 12;
+      const d1 = (b1 - b2 + 12) % 12;
+      if (d0 === 1 && d1 === 1) {
+        receipts.push(`${bacharachVoiceLeadingGrammarTags.vl03_chromatic_inner_pedal}@chromatic_slash_bass@bar${i + 1}`);
+        vl03 = true;
+        break;
+      }
+    }
+  }
+  if (!vl03) {
+    let runStart = 0;
+    for (let i = 1; i <= n; i++) {
+      if (i === n || bars[i]?.trim() !== bars[i - 1]?.trim()) {
+        const runLen = i - runStart;
+        if (runLen >= 4) {
+          receipts.push(`${bacharachVoiceLeadingGrammarTags.vl03_chromatic_inner_pedal}@pedal${runLen}b@endBar${i}`);
+          vl03 = true;
+          break;
+        }
+        runStart = i;
+      }
+    }
+  }
+
+  // BB_VL_04 — strings: pad vs countermelody dual role (string quartet surface).
+  if (uiIg === 'string_quartet') {
+    receipts.push(bacharachVoiceLeadingGrammarTags.vl04_strings_dual_role);
+  }
+
+  // BB_VL_05 — twin piano register separation (song-mode theatre-pop staging default).
+  if (isSongModeFamilyPreset(context.presetId)) {
+    receipts.push(bacharachVoiceLeadingGrammarTags.vl05_twin_piano_split);
+  }
+
+  return receipts;
+}
+
+function hasMajorTriadShell(hp: string): boolean {
+  const tl = hp.toLowerCase();
+  if (/maj7|m7|dim|ø|sus|add|6\/9|maj9/.test(tl)) return false;
+  const m = hp.match(ROOT_AT_START);
+  if (!m?.[1]) return false;
+  const rest = hp.slice(m[1]!.length).trim();
+  return rest === '' || /^major$/i.test(rest);
+}
 
 const PC_TO_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
 
@@ -76,6 +448,254 @@ export function computeBacharachPhrasePositions(
   }
   while (out.length < totalBars) out.push('phraseMiddle');
   return out.slice(0, totalBars);
+}
+
+/** Phrase spans (bars) matching {@link computeBacharachPhrasePositions}. */
+function collectBacharachPhraseLengths(totalBars: number, seed: number): number[] {
+  const lengths: number[] = [];
+  let bar = 1;
+  let phraseIdx = 0;
+  while (bar <= totalBars) {
+    const len = bacharachPhraseLength(seed, phraseIdx);
+    const end = Math.min(bar + len - 1, totalBars);
+    const span = end - bar + 1;
+    lengths.push(span);
+    bar = end + 1;
+    phraseIdx++;
+  }
+  return lengths;
+}
+
+function mergedBarMeterMap(context: CompositionContext): BarMeterMap | undefined {
+  const a = context.barMeterMap;
+  const b = context.generationMetadata.barMeterMap;
+  if (!a && !b) return undefined;
+  return { ...(b ?? {}), ...(a ?? {}) };
+}
+
+function hasVerseAndChorusSections(context: CompositionContext): boolean {
+  let verse = false;
+  let chorus = false;
+  for (const sec of context.form.sections) {
+    const lab = sec.label.toLowerCase();
+    if (/\bverse\b|^v\.|^v$/i.test(lab)) verse = true;
+    if (/\bchorus\b|\brefrain\b/i.test(lab)) chorus = true;
+  }
+  return verse && chorus;
+}
+
+/**
+ * BB_RHYTHM_01–05 — mixed meter; 3/5-bar phrase weights; verse vs chorus percussion hint; melody-first stress; jazz syncopation posture.
+ */
+export function applyBacharachRhythmGrammarReceipts(
+  context: CompositionContext,
+  totalBars: number,
+  seed: number
+): string[] {
+  const receipts: string[] = [];
+  if (totalBars < 1) return receipts;
+
+  const mm = mergedBarMeterMap(context);
+  const sigs = new Set<string>();
+  for (let b = 1; b <= totalBars; b++) {
+    const m = mm?.[b];
+    const num = m?.numerator ?? 4;
+    const den = m?.denominator ?? 4;
+    sigs.add(`${num}/${den}`);
+  }
+  if (sigs.size >= 2) {
+    receipts.push(bacharachRhythmGrammarTags.rhythm01_mixed_meter);
+  }
+
+  const phraseLens = collectBacharachPhraseLengths(totalBars, seed);
+  if (phraseLens.some((L) => L === 3 || L === 5)) {
+    receipts.push(bacharachRhythmGrammarTags.rhythm02_asymmetric_3_5);
+  }
+
+  if (hasVerseAndChorusSections(context)) {
+    receipts.push(bacharachRhythmGrammarTags.rhythm03_verse_shaker_chorus_ride);
+  }
+
+  receipts.push(bacharachRhythmGrammarTags.rhythm04_melody_first_stress);
+  receipts.push(bacharachRhythmGrammarTags.rhythm05_jazz_syncopation);
+
+  return receipts;
+}
+
+function bacharachSectionRole(label: string): 'intro' | 'verse' | 'chorus' | 'bridge' | 'outro' | 'instrumental' | 'other' {
+  const lab = label.toLowerCase().trim();
+  if (/\bintro\b|^in$/i.test(lab)) return 'intro';
+  if (/\bverse\b|^v\d|^v\.|^v$/i.test(lab)) return 'verse';
+  if (/\bchorus\b|\brefrain\b|^ch\d|^ch\.|^c$/i.test(lab)) return 'chorus';
+  if (/\bbridge\b|\bbrk\b/i.test(lab)) return 'bridge';
+  if (/\boutro\b|\bending\b|\btag\b|\bcoda\b|\bfade\b/i.test(lab)) return 'outro';
+  if (/\bsolo\b|\binstrumental\b/i.test(lab)) return 'instrumental';
+  return 'other';
+}
+
+function sortedFormSections(context: CompositionContext): Array<{ label: string; startBar: number; length: number }> {
+  return [...context.form.sections].sort((a, b) => a.startBar - b.startBar);
+}
+
+/**
+ * BB_FORM_01–05 — section labels + arcs; asymmetric lengths vs phrase grid; boundary signals from parallel grammar; bridge vs brass staging.
+ */
+export function applyBacharachFormGrammarReceipts(
+  context: CompositionContext,
+  totalBars: number,
+  seed: number,
+  harmonicGrammarReceipts: readonly string[],
+  rhythmGrammarReceipts: readonly string[],
+  vlGrammarReceipts: readonly string[],
+  sliceDeviceReceipts: readonly string[]
+): string[] {
+  const receipts: string[] = [];
+  const secs = sortedFormSections(context);
+  if (secs.length === 0) return receipts;
+
+  const first = secs[0]!;
+  if (bacharachSectionRole(first.label) === 'intro' && first.length === 4) {
+    receipts.push(bacharachFormGrammarTags.form01_intro_four_bars);
+  }
+
+  let versesBeforeChorus = 0;
+  let sawChorus = false;
+  for (const s of secs) {
+    const r = bacharachSectionRole(s.label);
+    if (r === 'chorus') {
+      sawChorus = true;
+      break;
+    }
+    if (r === 'verse') versesBeforeChorus++;
+  }
+  if (sawChorus && versesBeforeChorus >= 2) {
+    receipts.push(bacharachFormGrammarTags.form01_two_verses_before_chorus);
+  }
+
+  const last = secs[secs.length - 1]!;
+  if (bacharachSectionRole(last.label) === 'verse') {
+    receipts.push(bacharachFormGrammarTags.form01_close_on_verse);
+  }
+
+  if (totalBars >= 32 && secs.length >= 4) {
+    receipts.push(bacharachFormGrammarTags.form01_long_arc);
+  }
+
+  const secLens = secs.map((s) => s.length);
+  const phraseLens = collectBacharachPhraseLengths(totalBars, seed);
+  const asymmetricPhrase = phraseLens.some((L) => L === 3 || L === 5 || L === 7 || L >= 10);
+  const asymmetricSection =
+    secLens.some((L) => L !== 8) || (secLens.length >= 2 && new Set(secLens).size >= 2);
+  if (asymmetricPhrase || asymmetricSection) {
+    receipts.push(bacharachFormGrammarTags.form02_asymmetric_sections);
+  }
+
+  const harmPivot =
+    harmonicGrammarReceipts.some((r) => /harm04|harm05|harm06|harm09|harm10/i.test(r)) ||
+    sliceDeviceReceipts.some((r) => /ba:chromatic_side|ba:mixture|ba:deceptive/i.test(r));
+  const rhythmPivot = rhythmGrammarReceipts.some((r) => r.includes('rhythm01'));
+  const texturePivot = vlGrammarReceipts.some((r) => r.includes('vl02') || r.includes('vl04'));
+  if (harmPivot) receipts.push(bacharachFormGrammarTags.form03_boundary_harmonic);
+  if (rhythmPivot) receipts.push(bacharachFormGrammarTags.form03_boundary_rhythmic);
+  if (texturePivot) receipts.push(bacharachFormGrammarTags.form03_boundary_textural);
+
+  const hasBridge = secs.some((s) => bacharachSectionRole(s.label) === 'bridge');
+  const bridgeColourHarm =
+    harmonicGrammarReceipts.some((r) => /harm04|harm05|harm09|harm07/i.test(r)) ||
+    sliceDeviceReceipts.some((r) => /ba:mixture/i.test(r));
+  if (hasBridge && bridgeColourHarm) {
+    receipts.push(bacharachFormGrammarTags.form04_bridge_modal_bluesy);
+  }
+
+  const uiIg = context.generationMetadata.uiInstrumentGroup;
+  const chorusSurface =
+    secs.some((s) => bacharachSectionRole(s.label) === 'chorus') ||
+    (totalBars >= 16 && secs.some((s) => /^b$/i.test(s.label.trim())));
+  if (uiIg === 'big_band' && chorusSurface) {
+    receipts.push(bacharachFormGrammarTags.form05_brass_chorus_feature);
+  }
+
+  return receipts;
+}
+
+/**
+ * BB_ORCH_01–05 — theatre-pop studio orchestration receipts (ensemble default, brass/strings/rhythm/vocal hierarchy).
+ */
+export function applyBacharachOrchestrationGrammarReceipts(
+  context: CompositionContext,
+  totalBars: number,
+  rhythmGrammarReceipts: readonly string[],
+  vlGrammarReceipts: readonly string[]
+): string[] {
+  const receipts: string[] = [];
+  const meta = context.generationMetadata;
+
+  receipts.push(bacharachOrchestrationGrammarTags.orch01_core_ensemble);
+  receipts.push(bacharachOrchestrationGrammarTags.orch02_flugel_primary);
+  receipts.push(bacharachOrchestrationGrammarTags.orch03_strings_pad_arco);
+
+  const verseChorusRhythm = rhythmGrammarReceipts.some((r) => r.includes('rhythm03'));
+  const twinPiano = vlGrammarReceipts.some((r) => r.includes('vl05'));
+  if (hasVerseAndChorusSections(context) || verseChorusRhythm || twinPiano) {
+    receipts.push(bacharachOrchestrationGrammarTags.orch04_verse_chorus_rhythm);
+  }
+
+  const vocalPrimary =
+    isSongModeFamilyPreset(context.presetId) ||
+    meta.songModeHookFirstIdentity === true ||
+    totalBars >= 16;
+  if (vocalPrimary) {
+    receipts.push(bacharachOrchestrationGrammarTags.orch05_vocal_primary);
+  }
+
+  return receipts;
+}
+
+function grammarHas(rs: readonly string[], idFragment: string): boolean {
+  return rs.some((r) => r.includes(idFragment));
+}
+
+/**
+ * BB_FP_01–03 — full fingerprints when required parallel receipts co-occur (rhythm / harmony / orch+VL stacks).
+ */
+export function applyBacharachFingerprintReceipts(
+  harmonicGrammarReceipts: readonly string[],
+  rhythmGrammarReceipts: readonly string[],
+  vlGrammarReceipts: readonly string[],
+  orchGrammarReceipts: readonly string[]
+): string[] {
+  const out: string[] = [];
+
+  if (
+    grammarHas(rhythmGrammarReceipts, 'rhythm01') &&
+    grammarHas(rhythmGrammarReceipts, 'rhythm02') &&
+    grammarHas(rhythmGrammarReceipts, 'rhythm04') &&
+    grammarHas(rhythmGrammarReceipts, 'rhythm05')
+  ) {
+    out.push(bacharachFingerprintTags.fp01_full_rhythmic);
+  }
+
+  if (
+    grammarHas(harmonicGrammarReceipts, 'harm01') &&
+    grammarHas(harmonicGrammarReceipts, 'harm02') &&
+    grammarHas(harmonicGrammarReceipts, 'harm03') &&
+    grammarHas(harmonicGrammarReceipts, 'harm04') &&
+    grammarHas(harmonicGrammarReceipts, 'harm05')
+  ) {
+    out.push(bacharachFingerprintTags.fp02_full_harmonic);
+  }
+
+  if (
+    grammarHas(orchGrammarReceipts, 'orch02') &&
+    grammarHas(orchGrammarReceipts, 'orch03') &&
+    grammarHas(orchGrammarReceipts, 'orch05') &&
+    grammarHas(vlGrammarReceipts, 'vl04') &&
+    grammarHas(vlGrammarReceipts, 'vl05')
+  ) {
+    out.push(bacharachFingerprintTags.fp03_full_orchestral);
+  }
+
+  return out;
 }
 
 function phraseRoleAtBar(
@@ -435,13 +1055,45 @@ export function precomputeBacharachEffectiveHarmonyBars(context: CompositionCont
   applyInnerVoiceSlashPass(out, seed, receipts, tb, context, positions);
   applySoftExtensionLandingPass(out, tonicPc, seed, receipts, tb, context, positions);
 
+  const grammarReceipts = applyBacharachHarmonicGrammarReceipts(context, out, tonicPc, positions);
+  const vlReceipts = applyBacharachVoiceLeadingGrammarReceipts(context, out, tonicPc);
+  const rhythmReceipts = applyBacharachRhythmGrammarReceipts(context, tb, seed);
+  const formReceipts = applyBacharachFormGrammarReceipts(
+    context,
+    tb,
+    seed,
+    grammarReceipts,
+    rhythmReceipts,
+    vlReceipts,
+    receipts
+  );
+  const orchReceipts = applyBacharachOrchestrationGrammarReceipts(context, tb, rhythmReceipts, vlReceipts);
+  const fpReceipts = applyBacharachFingerprintReceipts(
+    grammarReceipts,
+    rhythmReceipts,
+    vlReceipts,
+    orchReceipts
+  );
+
   genMeta.bacharachEffectiveHarmonyBars = out;
   genMeta.bacharachDeviceReceipts = receipts;
+  genMeta.bacharachHarmonicGrammarReceipts = grammarReceipts.length ? grammarReceipts : undefined;
+  genMeta.bacharachVoiceLeadingGrammarReceipts = vlReceipts.length ? vlReceipts : undefined;
+  genMeta.bacharachRhythmGrammarReceipts = rhythmReceipts.length ? rhythmReceipts : undefined;
+  genMeta.bacharachFormGrammarReceipts = formReceipts.length ? formReceipts : undefined;
+  genMeta.bacharachOrchestrationGrammarReceipts = orchReceipts.length ? orchReceipts : undefined;
+  genMeta.bacharachFingerprintReceipts = fpReceipts.length ? fpReceipts : undefined;
   genMeta.bacharachAntiElaborationGuards = guards;
 }
 
 export function finalizeBacharachMetadata(metadata: GenerationMetadata, acc: BacharachHarmonyAccumulator): void {
   const flat = [...(metadata.bacharachDeviceReceipts ?? [])];
+  const grammarFlat = [...(metadata.bacharachHarmonicGrammarReceipts ?? [])];
+  const vlFlat = [...(metadata.bacharachVoiceLeadingGrammarReceipts ?? [])];
+  const rhythmFlat = [...(metadata.bacharachRhythmGrammarReceipts ?? [])];
+  const formFlat = [...(metadata.bacharachFormGrammarReceipts ?? [])];
+  const orchFlat = [...(metadata.bacharachOrchestrationGrammarReceipts ?? [])];
+  const fpFlat = [...(metadata.bacharachFingerprintReceipts ?? [])];
   const g = metadata.bacharachAntiElaborationGuards ?? {
     clusterVoicingReduced: 0,
     denseAlterationReduced: 0,
@@ -460,6 +1112,12 @@ export function finalizeBacharachMetadata(metadata: GenerationMetadata, acc: Bac
     antiElaborationGuardTriggers: guardTotal,
     antiElaborationGuards: { ...g },
     deviceReceipts: flat.length ? flat : undefined,
+    harmonicGrammarReceipts: grammarFlat.length ? grammarFlat : undefined,
+    voiceLeadingGrammarReceipts: vlFlat.length ? vlFlat : undefined,
+    rhythmGrammarReceipts: rhythmFlat.length ? rhythmFlat : undefined,
+    formGrammarReceipts: formFlat.length ? formFlat : undefined,
+    orchestrationGrammarReceipts: orchFlat.length ? orchFlat : undefined,
+    fingerprintReceipts: fpFlat.length ? fpFlat : undefined,
   } as const;
   const receipt = [
     `Bacharach (theatre-pop harmony slice): chrom≈${chromaticN}`,
@@ -468,6 +1126,12 @@ export function finalizeBacharachMetadata(metadata: GenerationMetadata, acc: Bac
     `slash≈${d.slashBassTouches}`,
     `bars=${acc.barsConsidered}`,
     `antiGuards=${guardTotal}`,
+    grammarFlat.length ? `grammar=${grammarFlat.join(';')}` : '',
+    vlFlat.length ? `vl=${vlFlat.join(';')}` : '',
+    rhythmFlat.length ? `rhythm=${rhythmFlat.join(';')}` : '',
+    formFlat.length ? `form=${formFlat.join(';')}` : '',
+    orchFlat.length ? `orch=${orchFlat.join(';')}` : '',
+    fpFlat.length ? `fp=${fpFlat.join(';')}` : '',
     flat.length ? `devices=${flat.join(';')}` : '',
   ]
     .filter(Boolean)

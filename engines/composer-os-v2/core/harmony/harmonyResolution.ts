@@ -207,7 +207,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   }
 
   /**
-   * Debussy: `precomputeDebussyEffectiveHarmonyBars` applies parallel planing / whole-tone colour / pentatonic contrast — receipts **`db:*`**.
+   * Debussy: `precomputeDebussyEffectiveHarmonyBars` applies parallel planing / whole-tone colour / pentatonic contrast — receipts **`db:*`**; `applyDebussyFormEncoding` adds **`db:form*`** + **`debussyProgramPeriod`**; `applyDebussyOrchestrationEncoding` adds **`db:orch*`** + **`debussyVocalColourOrchestral`**; **`finalizeDebussyMetadata`** adds composite **`db:fp*`** on **`debussyFingerprintReceipts`**.
    */
   const dbEff = meta?.debussyEffectiveHarmonyBars;
   if (

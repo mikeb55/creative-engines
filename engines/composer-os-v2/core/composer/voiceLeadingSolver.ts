@@ -26,7 +26,9 @@ function intervalClass(a: number, b: number): number {
 }
 
 /** Same-direction motion parallel fifth (simplest pairwise outer voices). */
-function parallelFifthPenalty(prev: number[] | null, curr: number[]): number {
+function parallelFifthPenalty(prev: number[] | null, curr: number[], bundle: VoiceRuleBundle): number {
+  /** RH_VL_01 — expressive parallel fifths (e.g. Paranoid Android m.14–15); not scored as error. */
+  if (bundle.voiceId === 'radiohead' || bundle.voiceId === 'debussy') return 0;
   if (!prev || prev.length < 2 || curr.length < 2) return 0;
   const ps = sortedNotes(prev);
   const cs = sortedNotes(curr);
@@ -40,6 +42,8 @@ function parallelFifthPenalty(prev: number[] | null, curr: number[]): number {
 }
 
 function parallelOctavePenalty(prev: number[] | null, curr: number[], bundle: VoiceRuleBundle): number {
+  /** RH_VL_01 — parallel octaves permitted as colour. */
+  if (bundle.voiceId === 'radiohead' || bundle.voiceId === 'debussy') return 0;
   if (bundle.lineFirstHierarchy === true) {
     return 0;
   }
@@ -239,7 +243,7 @@ export function scoreVoicingCandidate(
   const detail: string[] = [];
 
   let cost = candidate.cost + voiceMovementCost(prev, curr);
-  cost += parallelFifthPenalty(prev, curr);
+  cost += parallelFifthPenalty(prev, curr, bundle);
   cost += parallelOctavePenalty(prev, curr, bundle);
   cost += voiceOverlapPenalty(curr, bundle.repairPolicy.maxVoiceOverlap);
   cost += spreadPenalty(curr, bundle.voicingPolicy.minSpreadSemitones, bundle.voicingPolicy.maxSpreadSemitones);
@@ -258,7 +262,7 @@ export function scoreVoicingCandidate(
   cost += bergVoiceLeadingAdjustments(bundle, prev, curr);
   cost += shorterNonFunctionalNeighbourBonus(bundle, prev, curr);
 
-  if (parallelFifthPenalty(prev, curr) > 0) detail.push('parallel-fifth');
+  if (parallelFifthPenalty(prev, curr, bundle) > 0) detail.push('parallel-fifth');
   if (parallelOctavePenalty(prev, curr, bundle) > 0) detail.push('parallel-octave');
   if (spreadPenalty(curr, bundle.voicingPolicy.minSpreadSemitones, bundle.voicingPolicy.maxSpreadSemitones) > 0)
     detail.push('spread');

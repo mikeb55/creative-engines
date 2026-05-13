@@ -13,10 +13,13 @@ import { mapChordToVaultType } from './chordSymbolMapper';
 import { parseIRealProInput } from './irealProAdapter';
 import type { ParsedChart } from './parsedChart';
 import {
+  assertChorusQualityGate,
+  buildChorusQualityGate,
   buildHookIdentityTracker,
   buildPhraseContoursForBars,
   buildTensionProgression,
   phraseContourForBar,
+  type ChorusQualityGate,
   type ChorusTensionProgression,
   type PhraseContourTag,
   type VaultHookIdentity,
@@ -216,6 +219,8 @@ export type IRealVaultOutput = {
   hookIdentity?: VaultHookIdentity;
   /** Per-chorus macro tension [0, 1] from contours + hook + position. */
   tensionProgression?: ChorusTensionProgression;
+  /** Multi-chorus quality gate: each adjacent chorus transition must change at least two dimensions. */
+  chorusQualityGate?: ChorusQualityGate;
 };
 
 /** Options for {@link generateVaultFromParsedChart} / iReal / paste / PDF vault pipelines. */
@@ -461,6 +466,21 @@ export function generateVaultFromParsedChart(chart: ParsedChart, options?: Vault
     chorusCount,
     chart,
   });
+  const finalPhraseContours = buildPhraseContoursForBars(shaped.notes, totalBars);
+  const finalTensionProgression = buildTensionProgression({
+    phraseContours: finalPhraseContours,
+    hookIdentity,
+    barsPerChorus,
+    chorusCount,
+  });
+  const chorusQualityGate = buildChorusQualityGate({
+    notes: shaped.notes,
+    phraseContours: finalPhraseContours,
+    tensionProgression: finalTensionProgression,
+    barsPerChorus,
+    chorusCount,
+  });
+  assertChorusQualityGate(chorusQualityGate);
 
   return {
     title: chart.title,
@@ -471,9 +491,10 @@ export function generateVaultFromParsedChart(chart: ParsedChart, options?: Vault
     unmappedChords: allUnmappedChords,
     mode,
     ...(explicitSeed !== undefined ? { seed: explicitSeed } : {}),
-    phraseContours,
+    phraseContours: finalPhraseContours,
     hookIdentity,
-    tensionProgression,
+    tensionProgression: finalTensionProgression,
+    chorusQualityGate,
   };
 }
 

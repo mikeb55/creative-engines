@@ -4,7 +4,12 @@
  * planned key-center shifts, harmonic plateau pedals — layered on locked harmony.
  */
 
-import type { CompositionContext, GenerationMetadata, ShorterPhase } from '../compositionContext';
+import type { CompositionContext, FormMap, GenerationMetadata, ShorterPhase } from '../compositionContext';
+import { WAYNE_SHORTER_WS_HARM_FINGERPRINTS } from '../composer/wayneShorterHarmFingerprints';
+import { WAYNE_SHORTER_WS_MEL_FINGERPRINTS } from '../composer/wayneShorterMelFingerprints';
+import { WAYNE_SHORTER_WS_RHYTHM_FINGERPRINTS } from '../composer/wayneShorterRhythmFingerprints';
+import { WAYNE_SHORTER_WS_FORM_FINGERPRINTS } from '../composer/wayneShorterFormFingerprints';
+import { WAYNE_SHORTER_WS_FP_FINGERPRINTS } from '../composer/wayneShorterFpFingerprints';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import {
@@ -34,6 +39,12 @@ export const SHORTER_SLICE_PARAMETERS = {
 } as const;
 
 export type { ShorterPhase } from '../compositionContext';
+
+export { WAYNE_SHORTER_WS_HARM_FINGERPRINTS } from '../composer/wayneShorterHarmFingerprints';
+export { WAYNE_SHORTER_WS_MEL_FINGERPRINTS } from '../composer/wayneShorterMelFingerprints';
+export { WAYNE_SHORTER_WS_RHYTHM_FINGERPRINTS } from '../composer/wayneShorterRhythmFingerprints';
+export { WAYNE_SHORTER_WS_FORM_FINGERPRINTS } from '../composer/wayneShorterFormFingerprints';
+export { WAYNE_SHORTER_WS_FP_FINGERPRINTS } from '../composer/wayneShorterFpFingerprints';
 
 function resolveShorterPhase(genMeta: GenerationMetadata & Record<string, unknown>): ShorterPhase {
   const p = genMeta.shorterPhase as ShorterPhase | undefined;
@@ -419,6 +430,137 @@ export function countWayneShorterDeviceFiresFromReceipts(receipts: readonly stri
   return out;
 }
 
+const DEVICE_BAR_RE = /@bar(\d+)/;
+
+function wayneShorterDeviceBars(deviceReceipts: readonly string[]): number[] {
+  const bars: number[] = [];
+  for (const r of deviceReceipts) {
+    const m = r.match(DEVICE_BAR_RE);
+    if (m?.[1]) bars.push(Number(m[1]));
+  }
+  return bars;
+}
+
+function wayneShorterFloatingToeBarPresent(deviceReceipts: readonly string[]): boolean {
+  return wayneShorterDeviceBars(deviceReceipts).some((b) => (b - 1) % 4 !== 0);
+}
+
+function consecutiveRootThirdOrTritoneMotion(symbols: readonly string[]): boolean {
+  for (let i = 1; i < symbols.length; i++) {
+    const a = harmonyRootPc(symbols[i - 1]!);
+    const b = harmonyRootPc(symbols[i]!);
+    if (a === undefined || b === undefined) continue;
+    const ic = pcIntervalClass(a, b);
+    if (ic === 3 || ic === 4 || ic === 6) return true;
+  }
+  return false;
+}
+
+function barsHaveSlashBass(symbols: readonly string[]): boolean {
+  return symbols.some((s) => s.includes('/'));
+}
+
+function barsHaveQuartalOrSus(symbols: readonly string[]): boolean {
+  for (const s of symbols) {
+    const tl = parseChordSymbol(s).harmonyPart.toLowerCase();
+    if (/quartal|7sus|13sus|sus4|sus2|\bsus\b/.test(tl)) return true;
+  }
+  return false;
+}
+
+function wayneShorterDistinctDeviceFamilies(deviceReceipts: readonly string[]): number {
+  const fam = new Set<string>();
+  for (const r of deviceReceipts) {
+    if (r.includes(':d1:')) fam.add('d1');
+    else if (r.includes(':d2:')) fam.add('d2');
+    else if (r.includes(':d3:')) fam.add('d3');
+    else if (r.includes(':d4:')) fam.add('d4');
+    else if (r.includes(':d5:')) fam.add('d5');
+    else if (r.includes('ws:wedge')) fam.add('wedge');
+  }
+  return fam.size;
+}
+
+/** Harmonic grammar tags (`WS_HARM_*`) from effective harmony + `ws:d*` / `ws:wedge` receipts (additive to devices). */
+export function applyWayneShorterHarmonicGrammarReceipts(metadata: GenerationMetadata): void {
+  const out = metadata.wayneShorterEffectiveHarmonyBars;
+  const dev = metadata.wayneShorterDeviceReceipts ?? [];
+  const has = (needle: string) => dev.some((r) => r.includes(needle));
+  const g: string[] = [];
+  if (!out?.length) {
+    metadata.wayneShorterHarmonicGrammarReceipts = undefined;
+    return;
+  }
+  if (has(':d4:') || consecutiveRootThirdOrTritoneMotion(out) || has(':d1:')) g.push('WS_HARM_01');
+  if (has(':d4:')) g.push('WS_HARM_02');
+  if (has(':d2:') || has(':d5:') || barsHaveSlashBass(out)) g.push('WS_HARM_03');
+  if (barsHaveQuartalOrSus(out)) g.push('WS_HARM_04');
+  if (dev.some((r) => r.includes('ws:wedge'))) g.push('WS_HARM_05');
+  if (has(':d1:')) g.push('WS_HARM_06');
+  metadata.wayneShorterHarmonicGrammarReceipts = g.length ? [...new Set(g)] : undefined;
+}
+
+/** Melodic grammar tags (`WS_MEL_*`) — duo / Song Mode posture + device-derived phrase placement. */
+export function applyWayneShorterMelodicGrammarReceipts(metadata: GenerationMetadata): void {
+  const dev = metadata.wayneShorterDeviceReceipts ?? [];
+  const has = (needle: string) => dev.some((r) => r.includes(needle));
+  const g: string[] = [];
+  if (metadata.songModeHookFirstIdentity === true) {
+    g.push('WS_MEL_01');
+    g.push('WS_MEL_03');
+  }
+  if (has(':d3:')) g.push('WS_MEL_02');
+  if (wayneShorterFloatingToeBarPresent(dev)) g.push('WS_MEL_04');
+  metadata.wayneShorterMelodicGrammarReceipts = g.length ? [...new Set(g)] : undefined;
+}
+
+/** Rhythm grammar tags (`WS_RHYTHM_*`) — metric float, ensemble independence, structural space. */
+export function applyWayneShorterRhythmGrammarReceipts(metadata: GenerationMetadata): void {
+  const dev = metadata.wayneShorterDeviceReceipts ?? [];
+  const has = (needle: string) => dev.some((r) => r.includes(needle));
+  const g: string[] = [];
+  if (wayneShorterFloatingToeBarPresent(dev) || dev.length >= 4) g.push('WS_RHYTHM_01');
+  if (has(':d2:') || has(':d4:') || wayneShorterDistinctDeviceFamilies(dev) >= 2) g.push('WS_RHYTHM_02');
+  const ag = metadata.wayneShorterAntiElaborationGuards;
+  const clamp = (ag?.neighborClamp ?? 0) + (ag?.plateauClamp ?? 0);
+  if (clamp > 0 || has(':d5:')) g.push('WS_RHYTHM_03');
+  metadata.wayneShorterRhythmGrammarReceipts = g.length ? [...new Set(g)] : undefined;
+}
+
+/** Form / orchestration grammar tags (`WS_FORM_*`) from form map + device diversity. */
+export function applyWayneShorterFormGrammarReceipts(metadata: GenerationMetadata, form: FormMap): void {
+  const dev = metadata.wayneShorterDeviceReceipts ?? [];
+  const g: string[] = [];
+  if (form.sections.length >= 2 || form.totalBars >= 24) g.push('WS_FORM_01');
+  if (wayneShorterDistinctDeviceFamilies(dev) >= 2) g.push('WS_FORM_02');
+  metadata.wayneShorterFormGrammarReceipts = g.length ? [...new Set(g)] : undefined;
+}
+
+/**
+ * Composite fingerprint tags (`WS_FP_*`) when layered grammar receipts are all present.
+ * WS_FP_01: WS_HARM_01 + WS_HARM_03 + WS_HARM_04 + WS_HARM_05
+ * WS_FP_02: WS_MEL_01 + WS_MEL_02 + WS_MEL_04
+ * WS_FP_03: WS_RHYTHM_03 + WS_FORM_01 + WS_FORM_02 + WS_RHYTHM_02
+ */
+export function applyWayneShorterFingerprintReceipts(metadata: GenerationMetadata): void {
+  const h = new Set(metadata.wayneShorterHarmonicGrammarReceipts ?? []);
+  const m = new Set(metadata.wayneShorterMelodicGrammarReceipts ?? []);
+  const r = new Set(metadata.wayneShorterRhythmGrammarReceipts ?? []);
+  const f = new Set(metadata.wayneShorterFormGrammarReceipts ?? []);
+  const fp: string[] = [];
+  if (['WS_HARM_01', 'WS_HARM_03', 'WS_HARM_04', 'WS_HARM_05'].every((id) => h.has(id))) fp.push('WS_FP_01');
+  if (['WS_MEL_01', 'WS_MEL_02', 'WS_MEL_04'].every((id) => m.has(id))) fp.push('WS_FP_02');
+  if (
+    r.has('WS_RHYTHM_03') &&
+    f.has('WS_FORM_01') &&
+    f.has('WS_FORM_02') &&
+    r.has('WS_RHYTHM_02')
+  ) {
+    fp.push('WS_FP_03');
+  }
+  metadata.wayneShorterFingerprintReceipts = fp.length ? [...new Set(fp)] : undefined;
+}
+
 function applyNeighborChord(symbol: string, seed: number, bar: number, dirOverride?: 1 | -1): string {
   const r = harmonyRootPc(symbol);
   if (r === undefined) return symbol;
@@ -629,7 +771,11 @@ export function precomputeWayneShorterEffectiveHarmonyBars(context: CompositionC
   };
 }
 
-export function finalizeWayneShorterMetadata(metadata: GenerationMetadata, acc: WayneShorterHarmonyAccumulator): void {
+export function finalizeWayneShorterMetadata(
+  metadata: GenerationMetadata,
+  acc: WayneShorterHarmonyAccumulator,
+  context?: CompositionContext
+): void {
   const flat = [...(metadata.wayneShorterDeviceReceipts ?? [])];
   const g = metadata.wayneShorterAntiElaborationGuards ?? { neighborClamp: 0, plateauClamp: 0 };
   const guardTotal = g.neighborClamp + g.plateauClamp;
@@ -667,4 +813,14 @@ export function finalizeWayneShorterMetadata(metadata: GenerationMetadata, acc: 
     .join('; ');
   metadata.wayneShorterDiagnostics = { ...d };
   metadata.wayneShorterSliceReceipt = receipt;
+  applyWayneShorterHarmonicGrammarReceipts(metadata);
+  applyWayneShorterMelodicGrammarReceipts(metadata);
+  applyWayneShorterRhythmGrammarReceipts(metadata);
+  applyWayneShorterFormGrammarReceipts(metadata, context?.form ?? { sections: [], totalBars: tb });
+  applyWayneShorterFingerprintReceipts(metadata);
+  metadata.wayneShorterHarmFingerprintReceipts = [...WAYNE_SHORTER_WS_HARM_FINGERPRINTS];
+  metadata.wayneShorterMelFingerprintReceipts = [...WAYNE_SHORTER_WS_MEL_FINGERPRINTS];
+  metadata.wayneShorterRhythmFingerprintReceipts = [...WAYNE_SHORTER_WS_RHYTHM_FINGERPRINTS];
+  metadata.wayneShorterFormFingerprintReceipts = [...WAYNE_SHORTER_WS_FORM_FINGERPRINTS];
+  metadata.wayneShorterFpFingerprintReceipts = [...WAYNE_SHORTER_WS_FP_FINGERPRINTS];
 }

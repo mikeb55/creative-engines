@@ -133,6 +133,10 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   stephen_sondheim: 'keys',
   kate_bush: 'keys',
   thelonious_monk: 'keys',
+  beethoven_late: 'keys',
+  turtle_island: 'keys',
+  reich_glass: 'keys',
+  lachenmann: 'keys',
 };
 
 export function songWriterPrimaryInstrument(id: SongwriterRuleId): SongwriterPrimaryInstrumentKind {

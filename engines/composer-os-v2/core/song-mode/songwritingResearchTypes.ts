@@ -96,7 +96,11 @@ export type SongwriterRuleId =
   | 'jim_hall'
   | 'steve_reich'
   | 'frank_zappa'
-  | 'fripp_king_crimson';
+  | 'fripp_king_crimson'
+  | 'beethoven_late'
+  | 'turtle_island'
+  | 'reich_glass'
+  | 'lachenmann';
 
 export type AuthorRuleId = 'jimmy_webb' | 'pat_pattison' | 'jack_perricone';
 

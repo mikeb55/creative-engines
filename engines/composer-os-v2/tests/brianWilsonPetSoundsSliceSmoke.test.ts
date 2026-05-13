@@ -25,7 +25,11 @@ export function runBrianWilsonPetSoundsSliceSmokeTests(): { name: string; ok: bo
       md?.songwriterStyleId === 'brian_wilson' &&
       diag?.songwriterId === 'brian_wilson' &&
       (diag?.barsConsidered ?? 0) >= 32 &&
-      receipt.includes('Brian Wilson (Pet Sounds slice)'),
+      receipt.includes('Brian Wilson (Pet Sounds slice)') &&
+      receipt.includes('rhythm=') &&
+      receipt.includes('bw:rhythm01') &&
+      receipt.includes('orch=') &&
+      receipt.includes('bw:orch05'),
     name: 'Brian Wilson slice: golden path + Pet Sounds diagnostics receipt',
   });
 

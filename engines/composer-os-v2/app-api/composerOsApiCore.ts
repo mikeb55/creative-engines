@@ -476,6 +476,23 @@ export function apiGenerate(
         body.beatlesContext === 'abbey_road_1968'
           ? body.beatlesContext
           : undefined,
+      beatlesFormTemplate:
+        body.beatlesFormTemplate === 'vv_br_v' ||
+        body.beatlesFormTemplate === 'verse_chorus' ||
+        body.beatlesFormTemplate === 'legacy_vc'
+          ? body.beatlesFormTemplate
+          : undefined,
+      beatlesMelodicLens:
+        body.beatlesMelodicLens === 'neutral' ||
+        body.beatlesMelodicLens === 'lennon' ||
+        body.beatlesMelodicLens === 'mccartney' ||
+        body.beatlesMelodicLens === 'blended'
+          ? body.beatlesMelodicLens
+          : undefined,
+      radioheadMelodicContext:
+        body.radioheadMelodicContext === 'acoustic' || body.radioheadMelodicContext === 'electronic'
+          ? body.radioheadMelodicContext
+          : undefined,
       felaKutiContext:
         body.felaKutiContext === 'zombie_1977' ||
         body.felaKutiContext === 'water_no_get_enemy' ||

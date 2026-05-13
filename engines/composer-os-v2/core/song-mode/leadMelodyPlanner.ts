@@ -14,10 +14,11 @@ import { contourForPhrase, overallContourArc } from './melodyContourPlanner';
 import { buildPhraseEntriesFromChordPlan } from './melodyPhrasePlanner';
 import type { LeadMelodyPlan, MelodyContourKind, MelodyNoteEvent } from './leadMelodyTypes';
 import { getSingerRangeProfile } from './singerRangeProfiles';
-import type {
-  MelodyBehaviourPlan,
-  MelodyContourProfileId,
-  MelodyRhythmicSubdivision,
+import {
+  beatlesMelodicGrammarTags,
+  type MelodyBehaviourPlan,
+  type MelodyContourProfileId,
+  type MelodyRhythmicSubdivision,
 } from './melodyBehaviourPlanner';
 import { MELODY_PROFILE } from '../generation/generationModeProfile';
 
@@ -167,6 +168,32 @@ function seededUnit(seed: number, bar: number, salt = 0): number {
   let s = (seed * 7919 + bar * 104729 + salt * 503) >>> 0;
   s = (s * 1103515245 + 12345) >>> 0;
   return s / 0xffffffff;
+}
+
+/** BT_MEL_01 — 8-bar SRDC contour bias add-on (Statement / Restatement / Departure / Conclusion). */
+export function contourBarBiasBeatlesSRDC(idxInPhrase: number, phraseLenBars: number, seed: number): number {
+  if (phraseLenBars !== 8) return 0;
+  const pair = Math.floor(idxInPhrase / 2);
+  const u = seededUnit(seed, idxInPhrase, 64001);
+  if (pair <= 1) return pair === 0 ? -0.06 + u * 0.08 : 0.02 + u * 0.06;
+  if (pair === 2) return 0.38 + (u - 0.5) * 0.22;
+  return idxInPhrase >= phraseLenBars - 2 ? -0.48 + u * 0.14 : -0.14;
+}
+
+function applyBeatlesFourthAvoidance(
+  candPool: number[],
+  prevForPick: number | undefined,
+  melodyBehaviour: MelodyBehaviourPlan
+): number[] {
+  if (
+    melodyBehaviour.beatlesMelodicLens == null ||
+    melodyBehaviour.beatlesAllowFourthLeapEmphasis ||
+    prevForPick === undefined
+  ) {
+    return candPool;
+  }
+  const noFourth = candPool.filter((c) => Math.abs(c - prevForPick) !== 5);
+  return noFourth.length > 0 ? noFourth : candPool;
 }
 
 /** One chord symbol per bar (1-based index aligns with measure numbers). */
@@ -431,18 +458,26 @@ export function planLeadMelody(input: PlanLeadMelodyInput): LeadMelodyPlan {
       salt: number,
       measure: number
     ): { midi: number; melodicDiagnostics?: string[] } => {
-      const barBias = contourBarBiasForProfile(
+      let barBias = contourBarBiasForProfile(
         melodyBehaviour.contourProfile,
         measure - ph.startMeasure,
         phraseLenBars,
         seed
       );
+      if (
+        phraseLenBars === 8 &&
+        melodyBehaviour.devices.includes(beatlesMelodicGrammarTags.mel01_SRDC)
+      ) {
+        barBias += contourBarBiasBeatlesSRDC(measure - ph.startMeasure, phraseLenBars, seed);
+        barBias = Math.max(-1, Math.min(1, barBias));
+      }
       let candPool = filterCandidatesLeapBudget(
         candidatesIn,
         prevForPick,
         melodyBehaviour.intervalTendency,
         leapSt
       );
+      candPool = applyBeatlesFourthAvoidance(candPool, prevForPick, melodyBehaviour);
 
       if (prevForPick !== undefined && leapSt.pendingContrary) {
         const tight = candPool.filter((c) => Math.abs(c - prevForPick) <= 2);
@@ -475,6 +510,7 @@ export function planLeadMelody(input: PlanLeadMelodyInput): LeadMelodyPlan {
         melodyBehaviour.intervalTendency,
         leapSt
       );
+      candPool = applyBeatlesFourthAvoidance(candPool, prevForPick, melodyBehaviour);
       const raw = pickMidiFromCandidates(
         candPool,
         prevForPick,

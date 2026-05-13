@@ -6,6 +6,7 @@ import { applySongwritingRules } from './applySongwritingRules';
 import { resolveAuthorOverlay } from './authorOverlayResolver';
 import { planChorusMetadata } from './chorusPlanner';
 import { planHookMetadata } from './hookPlanner';
+import type { BeatlesContextMode, BeatlesFormTemplateId, BeatlesMelodicLens } from '../compositionContext';
 import { MELODY_PROFILE } from '../generation/generationModeProfile';
 import { buildHarmonicScenesFromFormPlan } from '../composer/harmonicScene';
 import { applyMotifAuthorityLayerToLeadMelody } from '../motif/sectionRecallEnforcer';
@@ -15,8 +16,13 @@ import type { VoiceRuleBundle } from '../composer/voiceRuleBundle';
 import { buildFormSections } from '../composer/formController';
 import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
 import { flattenChordPlanToHarmonyBars, planLeadMelody } from './leadMelodyPlanner';
+import type { BeatlesMelodyPlanOptions, RadioheadMelodyPlanOptions } from './melodyBehaviourPlanner';
 import { planMelodyBehaviour } from './melodyBehaviourPlanner';
-import { resolveBeatlesChordPoolId } from './beatlesSlice';
+import {
+  applyBeatlesMelodicFingerprintReceipts,
+  applyBeatlesWriterModeFingerprintReceipts,
+  resolveBeatlesChordPoolId,
+} from './beatlesSlice';
 import { resolveFelaKutiChordPoolId } from './felaKutiSlice';
 import { STUB_BB_COMPOSER_CHORD_POOLS } from './stubBbComposerChordPools';
 import { planProsodyPlaceholders } from './prosodyPlanner';
@@ -32,7 +38,11 @@ import type { StylePairingInput } from '../style-pairing/stylePairingTypes';
 import { resolveStylePairing } from '../style-pairing/stylePairingResolver';
 import { getSingerRangeProfile } from './singerRangeProfiles';
 import { validateMelodyAgainstSingerRange } from './singerRangeValidation';
-import { chordSlotsForSectionHarmonicRhythm, type HarmonicRhythmProfile } from './songSectionPlanner';
+import {
+  beatlesSectionBarTargets,
+  chordSlotsForSectionHarmonicRhythm,
+  type HarmonicRhythmProfile,
+} from './songSectionPlanner';
 import {
   createEraNormalizerDebugCounters,
   normalizeChordSymbolsForEra,
@@ -3181,13 +3191,25 @@ export function buildSongHook(seed: number): SongHook {
   };
 }
 
+function expandChordSymbolsToBarLength(symbols: string[], targetBars: number): string[] {
+  if (symbols.length === 0 || targetBars <= 0) return symbols;
+  const out: string[] = [];
+  let i = 0;
+  while (out.length < targetBars) {
+    out.push(symbols[i % symbols.length]!);
+    i++;
+  }
+  return out;
+}
+
 export function buildSectionChordPlans(
   sections: SongSectionPlan[],
   seed: number,
   songwriterId?: string,
   eraProfile?: EraProfile,
   eraId?: EraId | null,
-  voiceBundle?: VoiceRuleBundle | null
+  voiceBundle?: VoiceRuleBundle | null,
+  beatlesExpand?: { template: BeatlesFormTemplateId; songTotalBars: number }
 ): SectionChordPlan[] {
   const debugCounters = eraId ? createEraNormalizerDebugCounters(eraId) : undefined;
   /** Ordinal within verse / chorus so repeated sections (e.g. V-C-V-C×2) do not reuse the same pool row — `(order * 31)` aligns mod short pools when orders differ by 4. */
@@ -3230,12 +3252,23 @@ export function buildSectionChordPlans(
       }
     }
 
+    let chordSymbols = row.chordSymbols;
+    let chosenRowTags = row.chosenRowTags;
+    if (songwriterId === 'beatles' && beatlesExpand && beatlesExpand.template !== 'legacy_vc') {
+      const targets = beatlesSectionBarTargets(beatlesExpand.template, beatlesExpand.songTotalBars, sections.length);
+      const tb = targets?.[s.order];
+      if (tb != null && tb > 0) {
+        chordSymbols = expandChordSymbolsToBarLength(chordSymbols, tb);
+        chosenRowTags = [...chosenRowTags, `beatles_tile:${tb}b`];
+      }
+    }
+
     return {
       sectionOrder: s.order,
       sectionKind: s.kind,
       intensity: intensityForKind(s.kind),
-      chordSymbols: row.chordSymbols,
-      chosenRowTags: row.chosenRowTags,
+      chordSymbols,
+      chosenRowTags,
     };
   });
   if (!eraId) return planned;
@@ -3270,6 +3303,16 @@ export interface BuildCompiledSongParams {
   stylePairing?: StylePairingInput | null;
   /** Phase 2+3a — harmonic voice id (shadows motif/theme policy when set). */
   harmonicVoice?: string | null;
+  /** Beatles Song Mode — melodic era gate / lens (`planMelodyBehaviour`). */
+  beatlesContext?: BeatlesContextMode;
+  /** Beatles Song Mode — writer lens: Lennon / McCartney / blended (**default**) / neutral (`melodyBehaviourPlanner.ts`). */
+  beatlesMelodicLens?: BeatlesMelodicLens;
+  /** Beatles Song Mode — macro-form scaffold (`songSectionPlanner.ts`). Default **`vv_br_v`** when primary is **`beatles`**. */
+  beatlesFormTemplate?: BeatlesFormTemplateId;
+  /** Bar budget for Beatles per-section chord tiling (matches `totalBars` / form length). */
+  songTotalBars?: number;
+  /** Radiohead Song Mode — RH_MEL_05 acoustic vs electronic (`planMelodyBehaviour`). */
+  radioheadMelodicContext?: 'acoustic' | 'electronic';
 }
 
 export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong {
@@ -3285,7 +3328,22 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
   });
   const hookPlan = planHookMetadata(params.seed, params.sections, resolution.primaryId);
   const chorusPlan = planChorusMetadata(params.sections, resolution.primaryId);
-  const melodyBehaviour = planMelodyBehaviour(params.seed, resolution.primaryId);
+  const beatlesMelodyOpts: BeatlesMelodyPlanOptions | undefined =
+    resolution.primaryId === 'beatles'
+      ? { beatlesContext: params.beatlesContext, beatlesMelodicLens: params.beatlesMelodicLens }
+      : undefined;
+  const radioheadMelodyOpts: RadioheadMelodyPlanOptions | undefined =
+    resolution.primaryId === 'radiohead' && (params.radioheadMelodicContext === 'acoustic' || params.radioheadMelodicContext === 'electronic')
+      ? { melodicContext: params.radioheadMelodicContext }
+      : undefined;
+  const melodyBehaviour = planMelodyBehaviour(params.seed, resolution.primaryId, beatlesMelodyOpts, radioheadMelodyOpts);
+  const beatlesFingerprintSong =
+    resolution.primaryId === 'beatles'
+      ? [
+          ...applyBeatlesMelodicFingerprintReceipts(melodyBehaviour),
+          ...applyBeatlesWriterModeFingerprintReceipts(melodyBehaviour.beatlesMelodicLens ?? 'blended'),
+        ]
+      : undefined;
   const authorOverlay = resolveAuthorOverlay(params.authorOverlay ?? undefined);
   const stylePairingResolution =
     params.stylePairing != null
@@ -3298,13 +3356,20 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
     params.harmonicVoice != null && String(params.harmonicVoice).trim() !== ''
       ? getVoiceRuleBundle(String(params.harmonicVoice).trim())
       : null;
+  const beatlesTemplate: BeatlesFormTemplateId | undefined =
+    resolution.primaryId === 'beatles' ? (params.beatlesFormTemplate ?? 'vv_br_v') : undefined;
+  const beatlesExpand =
+    beatlesTemplate != null && beatlesTemplate !== 'legacy_vc'
+      ? { template: beatlesTemplate, songTotalBars: params.songTotalBars ?? 32 }
+      : undefined;
   const chordPlan = buildSectionChordPlans(
     params.sections,
     params.seed,
     resolution.primaryId,
     eraProfile,
     eraId,
-    voiceBundleForCompile
+    voiceBundleForCompile,
+    beatlesExpand
   );
   const sectionSummary = params.sections.map((s) => s.kind);
   const base: CompiledSong = {
@@ -3327,6 +3392,7 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
     melodyBehaviour,
     authorOverlay,
     stylePairingResolution,
+    beatlesFingerprintReceipts: beatlesFingerprintSong?.length ? beatlesFingerprintSong : undefined,
   });
 
   let formSectionsForMal: ReturnType<typeof buildFormSections> | undefined;
@@ -3343,7 +3409,8 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
   }
 
   const melodyBehaviourForLead =
-    withRules.songwriting?.melodyBehaviour ?? planMelodyBehaviour(params.seed, resolution.primaryId);
+    withRules.songwriting?.melodyBehaviour ??
+    planMelodyBehaviour(params.seed, resolution.primaryId, beatlesMelodyOpts, radioheadMelodyOpts);
   const themeVoiceKey =
     params.harmonicVoice != null && String(params.harmonicVoice).trim() !== ''
       ? String(params.harmonicVoice).trim()

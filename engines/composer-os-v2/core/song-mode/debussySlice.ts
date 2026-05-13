@@ -1,6 +1,59 @@
 /**
  * Debussy — impressionist colour / parallel planing Song Mode / duo golden-path **harmony** slice.
  * Lead-sheet symbols only — receipts **`db:*`**.
+ *
+ * **DB_HARM encoding (research rules → slice behaviour)**
+ * - **DB_HARM_01** — Parallel planing permitted types (triads, dom7, maj9, quartal, open 5ths):
+ *   no classical P5/P8 guard; `applyParallelPlaningPass` + `pickPlaningQuality` (incl. quartal / sparse 5th colour).
+ * - **DB_HARM_02** — Parallel dom7, whole-tone lateral block: whole-step transpose biases dom7/9 block in planing;
+ *   receipt `db:dom7_wt_block@bar*`.
+ * - **DB_HARM_03** — Whole tone as local field: `applyWholeToneFieldPass` spans 4–8 bars, phrase interior only;
+ *   colour rewrites (not brief V-prep); receipts `db:whole_tone@bar*`.
+ * - **DB_HARM_04** — Pentatonic subset layer: `applyPentatonicContrastPass` — slash pentatonic bass / sus / 6 colours over stem;
+ *   `db:pentatonic@bar*`.
+ * - **DB_HARM_05** — Added 2nd/6th non-functional tonic: `enrichDebussyTonic` avoids bare triad arrival (`add2`, `maj9`, `6/9`, `add6`).
+ * - **DB_HARM_06** — Non-functional dom9 colour: `enrichDebussyDominant` → `9(no11)` / alt colours; not scored as V9→I resolution chain.
+ * - **DB_HARM_07** — Open 5th / incomplete: planing + whole-tone pools include `sus4(no5)`, `(no3)` ambiguity sonorities.
+ * - **DB_HARM_08** — Quartal aggregate planing: `pickPlaningQuality` emits `quartal` / `7sus4` lateral blocks; `db:planing@bar*`.
+ * - **DB_HARM_09** — Scalar block entry (no prep): new whole-tone span → `db:scalar_entry@bar*`.
+ * - **DB_HARM_10** — Weakened / anti-cadence: `applyUnresolvedAppoggiaturaPass` skips functional V7→I glue;
+ *   `db:anti_cadence@bar*` + `resolutionSuppressed` guard count.
+ *
+ * **DB_VL encoding (texture / registral voice-leading — not lead-sheet `db:*`)**
+ * - **DB_VL_01–06** — `VoiceRuleBundle` **`debussy`** (`voiceRuleBundles.ts`): wide spread, root/pedal bass posture,
+ *   parallel repair off, multi-voice motion allowed; fingerprint lines cite each rule.
+ * - Solver: `voiceLeadingSolver.ts` — parallel 5th/8ve penalties **off** for `voiceId === 'debussy'` (parallel planing primary).
+ * - Style bias: `applyDebussyStyleSurface` (`songModeStyleSurface.ts`) — space/cadence softness complements registral wash.
+ *
+ * **DB_MEL encoding (melodic line / Song Mode lead)** — `planMelodyBehaviour` + **`applyDebussyMelodicEncoding`** (`melodyBehaviourPlanner.ts`):
+ * - **DB_MEL_01** — Conjunct arabesque, major-second field: `stepwise` + `dissolving` contour + `half_quarter` rhythm; device `db:mel01_conjunct_arabesque`.
+ * - **DB_MEL_02** — Pentatonic/modal cells vs shifting harmony: `modalIntervalPreference` + `db:mel02_modal_pentatonic_cells` (aligns `pentatonic_contrast` / harmony slice).
+ * - **DB_MEL_03** — Short gestures, timbral handoff: lower `repetitionVsVariationBias` + `db:mel03_gesture_timbre_handoff`.
+ * - **DB_MEL_04** — Coloristic ornaments (weak beat): `avoidStrongBeatOneAttack` + `attackDensity: low` + `db:mel04_coloristic_ornaments` (`leadMelodyPlanner` entrance delay).
+ * - **DB_MEL_05** — Melody in texture: `commonToneReturnBias` + wide `interOnsetSpacing` + `db:mel05_texture_embedded`.
+ * - Receipt helper: **`collectDebussyMelodicGrammarReceipts`** filters `devices` for `db:mel*`.
+ *
+ * **DB_FORM encoding (sectional / non-sonata continuity)** — **`applyDebussyFormEncoding`** + receipts **`db:form*`**:
+ * - **DB_FORM_01** — Sectional transformational form (not sonata-functional): `db:form01_sectional_transform`.
+ * - **DB_FORM_02** — Section boundary = texture / timbre / register, not cadence: `db:form02_boundary_texture_not_cadence` (pairs with `db:anti_cadence@bar*`).
+ * - **DB_FORM_03** — Early / middle / late programme gate: `resolveDebussyProgramPeriod` → `db:form03_period_*` on `generationMetadata.debussyProgramPeriod`.
+ * - **DB_FORM_04** — La mer–scale suite proportions (optional): `db:form04_lamer_suite_proportions` when `totalBars >= 48`.
+ * - **DB_FORM_05** — Fog-to-emergence arc: `db:form05_emergence_arc` (harmony slice pentatonic/open + enrich toward added-note fields = emergence bias).
+ *
+ * **DB_ORCH encoding (orchestration posture — metadata `db:orch*`, bundle fingerprints)** — **`applyDebussyOrchestrationEncoding`**:
+ * - **DB_ORCH_01** — Divided muted strings as harmonic cloud: `db:orch01_divided_muted_strings`.
+ * - **DB_ORCH_02** — Woodwind primary melodic carrier: `db:orch02_woodwind_melodic_lead`.
+ * - **DB_ORCH_03** — Arco + pizz simultaneously: `db:orch03_arco_pizz_simultaneous`.
+ * - **DB_ORCH_04** — Harp shimmer / gliss timbre: `db:orch04_harp_shimmer_gliss`.
+ * - **DB_ORCH_05** — Brass as colour not tutti mass: `db:orch05_brass_colour_not_mass`.
+ * - **DB_ORCH_06** — Timbre structural (handoff changes harmony read): `db:orch06_timbre_structural`.
+ * - **DB_ORCH_07** — Women's voices as instrumental colour: `debussyVocalColourOrchestral` + optional `db:orch07_vocal_colour_active`.
+ *
+ * **DB_FP encoding (composite fingerprints — `finalizeDebussyMetadata`)** — receipts **`db:fp*`** on `debussyFingerprintReceipts`:
+ * - **DB_FP_01** — Harmonic: planing + whole-tone field + pentatonic layer + added-note tonic colour; **`db:fp01_harmonic_fingerprint_complete`** when all four evidenced in `debussyDeviceReceipts` + effective bars.
+ * - **DB_FP_02** — Voice-leading: parallel planing + registral arabesque + pentatonic spread + harmonic colour; **`db:fp02_voice_leading_fingerprint_complete`** when planing + arabesque bars + pentatonic receipts align.
+ * - **DB_FP_03** — Formal: non-cadential boundaries + emergence arc + timbral return proxy (arabesque); **`db:fp03_formal_fingerprint_complete`** when form02+form05 + arabesque/anti-cadence signals present.
+ * - **DB_FP_04** — Orchestral: muted cloud + woodwind lead + arco/pizz + harp + timbre-structural; **`db:fp04_orchestral_fingerprint_complete`** when `db:orch01`–`04` and `db:orch06` all present on orchestration receipts.
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
@@ -30,6 +83,149 @@ function seededUnit(seed: number, bar: number, salt: number): number {
   let s = (seed ^ bar * 1103515245 ^ salt * 12345) >>> 0;
   s = (s * 1664525 + 1013904223) >>> 0;
   return s / 0xffffffff;
+}
+
+/** DB_FORM_03 — programme period gates formal / overlap behaviour hints. */
+export type DebussyProgramPeriod = 'early' | 'middle' | 'late';
+
+/** DB_FORM_* research tags on `generationMetadata.debussyFormReceipts`. */
+export const debussyFormGrammarTags = {
+  form01_sectional_transform: 'db:form01_sectional_transform',
+  form02_boundary_texture_not_cadence: 'db:form02_boundary_texture_not_cadence',
+  form03_period_early: 'db:form03_period_early',
+  form03_period_middle: 'db:form03_period_middle',
+  form03_period_late: 'db:form03_period_late',
+  form04_lamer_suite_proportions: 'db:form04_lamer_suite_proportions',
+  form05_emergence_arc: 'db:form05_emergence_arc',
+} as const;
+
+export function resolveDebussyProgramPeriod(seed: number): DebussyProgramPeriod {
+  const u = seededUnit(seed, 1, 772101);
+  if (u < 0.33) return 'early';
+  if (u < 0.72) return 'middle';
+  return 'late';
+}
+
+/** DB_FORM_01–05 — seed + bar budget receipts; call from `precomputeDebussyEffectiveHarmonyBars`. */
+export function applyDebussyFormEncoding(context: CompositionContext): void {
+  const md = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
+  const period = resolveDebussyProgramPeriod(context.seed);
+  const tb = context.form.totalBars;
+  const receipts: string[] = [
+    debussyFormGrammarTags.form01_sectional_transform,
+    debussyFormGrammarTags.form02_boundary_texture_not_cadence,
+    period === 'early'
+      ? debussyFormGrammarTags.form03_period_early
+      : period === 'middle'
+        ? debussyFormGrammarTags.form03_period_middle
+        : debussyFormGrammarTags.form03_period_late,
+    debussyFormGrammarTags.form05_emergence_arc,
+  ];
+  if (tb >= 48) receipts.push(debussyFormGrammarTags.form04_lamer_suite_proportions);
+  md.debussyProgramPeriod = period;
+  md.debussyFormReceipts = receipts;
+}
+
+/** DB_ORCH_01–07 — orchestral texture receipts + optional vocal-instrument colour flag. */
+export const debussyOrchestrationGrammarTags = {
+  orch01_divided_muted_strings: 'db:orch01_divided_muted_strings',
+  orch02_woodwind_melodic_lead: 'db:orch02_woodwind_melodic_lead',
+  orch03_arco_pizz_simultaneous: 'db:orch03_arco_pizz_simultaneous',
+  orch04_harp_shimmer_gliss: 'db:orch04_harp_shimmer_gliss',
+  orch05_brass_colour_not_mass: 'db:orch05_brass_colour_not_mass',
+  orch06_timbre_structural: 'db:orch06_timbre_structural',
+  orch07_womens_voices_instrumental: 'db:orch07_womens_voices_instrumental',
+} as const;
+
+export function applyDebussyOrchestrationEncoding(context: CompositionContext): void {
+  const md = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
+  const seed = context.seed;
+  const receipts: string[] = [
+    debussyOrchestrationGrammarTags.orch01_divided_muted_strings,
+    debussyOrchestrationGrammarTags.orch02_woodwind_melodic_lead,
+    debussyOrchestrationGrammarTags.orch03_arco_pizz_simultaneous,
+    debussyOrchestrationGrammarTags.orch04_harp_shimmer_gliss,
+    debussyOrchestrationGrammarTags.orch05_brass_colour_not_mass,
+    debussyOrchestrationGrammarTags.orch06_timbre_structural,
+    debussyOrchestrationGrammarTags.orch07_womens_voices_instrumental,
+  ];
+  const vocalColour = seededUnit(seed, 2, 772201) < 0.34;
+  md.debussyVocalColourOrchestral = vocalColour;
+  if (vocalColour) receipts.push('db:orch07_vocal_colour_active');
+  md.debussyOrchestrationReceipts = receipts;
+}
+
+/** DB_FP_01–04 — composite receipts (harmonic / VL / formal / orchestral full fingerprints). */
+export const debussyFingerprintGrammarTags = {
+  fp01_harmonic: 'db:fp01_harmonic_fingerprint',
+  fp01_harmonic_complete: 'db:fp01_harmonic_fingerprint_complete',
+  fp02_voice_leading: 'db:fp02_voice_leading_fingerprint',
+  fp02_voice_leading_complete: 'db:fp02_voice_leading_fingerprint_complete',
+  fp03_formal: 'db:fp03_formal_fingerprint',
+  fp03_formal_complete: 'db:fp03_formal_fingerprint_complete',
+  fp04_orchestral: 'db:fp04_orchestral_fingerprint',
+  fp04_orchestral_complete: 'db:fp04_orchestral_fingerprint_complete',
+} as const;
+
+function effectiveBarsShowAddedNoteTonicColour(eff: readonly string[], tonicPc: number | undefined): boolean {
+  for (const sym of eff) {
+    const hp = parseChordSymbol(sym).harmonyPart;
+    if (!/add2|maj9|6\/9|add6|add2\(add6\)|aug/i.test(hp)) continue;
+    if (tonicPc === undefined || looksMajorTonicColour(sym, tonicPc)) return true;
+  }
+  return false;
+}
+
+function buildDebussyCompositeFingerprintReceipts(
+  metadata: GenerationMetadata,
+  acc: DebussyHarmonyAccumulator,
+  context: CompositionContext,
+  flat: readonly string[],
+  arabLen: number
+): string[] {
+  const out: string[] = [];
+  const eff = metadata.debussyEffectiveHarmonyBars ?? [];
+  const tonicPc = inferTonicPitchClassFromBar1(context);
+  const devStr = flat.join('\n');
+  const hasPlaning = devStr.includes('db:planing');
+  const hasWt = devStr.includes('db:whole_tone');
+  const hasPent = devStr.includes('db:pentatonic');
+  const hasAddedTonicColour =
+    devStr.includes('db:appoggiatura') || effectiveBarsShowAddedNoteTonicColour(eff, tonicPc);
+
+  out.push(debussyFingerprintGrammarTags.fp01_harmonic);
+  if (hasPlaning && hasWt && hasPent && hasAddedTonicColour) {
+    out.push(debussyFingerprintGrammarTags.fp01_harmonic_complete);
+  }
+
+  out.push(debussyFingerprintGrammarTags.fp02_voice_leading);
+  if (hasPlaning && hasPent && (arabLen > 0 || acc.wholeToneTouches >= 2)) {
+    out.push(debussyFingerprintGrammarTags.fp02_voice_leading_complete);
+  }
+
+  const formJoin = (metadata.debussyFormReceipts ?? []).join(',');
+  const hasForm02 = formJoin.includes('db:form02');
+  const hasForm05 = formJoin.includes('db:form05');
+  const timbralReturn = arabLen > 0 || hasPent || devStr.includes('db:anti_cadence');
+  out.push(debussyFingerprintGrammarTags.fp03_formal);
+  if (hasForm02 && hasForm05 && timbralReturn) {
+    out.push(debussyFingerprintGrammarTags.fp03_formal_complete);
+  }
+
+  const orchJoin = (metadata.debussyOrchestrationReceipts ?? []).join(',');
+  out.push(debussyFingerprintGrammarTags.fp04_orchestral);
+  const orchNeed = [
+    debussyOrchestrationGrammarTags.orch01_divided_muted_strings,
+    debussyOrchestrationGrammarTags.orch02_woodwind_melodic_lead,
+    debussyOrchestrationGrammarTags.orch03_arco_pizz_simultaneous,
+    debussyOrchestrationGrammarTags.orch04_harp_shimmer_gliss,
+    debussyOrchestrationGrammarTags.orch06_timbre_structural,
+  ];
+  if (orchNeed.every((t) => orchJoin.includes(t))) {
+    out.push(debussyFingerprintGrammarTags.fp04_orchestral_complete);
+  }
+
+  return out;
 }
 
 function slashTail(symbol: string): string {
@@ -162,9 +358,11 @@ function enrichDebussyTonic(symbol: string, tonicPc: number | undefined, seed: n
   if (!ex) return symbol;
   const u = seededUnit(seed, bar, 770201);
   const { root, slash } = ex;
-  if (u < 0.3) return `${root}add2${slash}`;
-  if (u < 0.55) return `${root}maj9${slash}`;
-  if (u < 0.8) return `${root}6/9${slash}`;
+  if (u < 0.22) return `${root}add2${slash}`;
+  if (u < 0.38) return `${root}add6${slash}`;
+  if (u < 0.55) return `${root}add2(add6)${slash}`;
+  if (u < 0.72) return `${root}maj9${slash}`;
+  if (u < 0.9) return `${root}6/9${slash}`;
   return `${root}aug${slash}`;
 }
 
@@ -220,12 +418,15 @@ function looksResolvedDomToTonic(
 
 function pickWholeToneColour(root: string, slash: string, seed: number, bar: number): string {
   const u = seededUnit(seed, bar, 770601);
-  if (u < 0.28) return `${root}aug${slash}`;
-  if (u < 0.44) return `${root}9(no11)${slash}`;
-  if (u < 0.53) return `${root}maj7(#5)${slash}`;
-  if (u < 0.64) return `${root}6/9(no5)${slash}`;
-  if (u < 0.78) return `${root}add2(add6)${slash}`;
-  if (u < 0.86) return `${root}7sus4${slash}`;
+  if (u < 0.24) return `${root}aug${slash}`;
+  if (u < 0.38) return `${root}9(no11)${slash}`;
+  if (u < 0.48) return `${root}sus4(no5)${slash}`;
+  if (u < 0.56) return `${root}(no3)${slash}`;
+  if (u < 0.64) return `${root}quartal${slash}`;
+  if (u < 0.72) return `${root}maj7(#5)${slash}`;
+  if (u < 0.82) return `${root}6/9(no5)${slash}`;
+  if (u < 0.9) return `${root}add2(add6)${slash}`;
+  if (u < 0.95) return `${root}7sus4${slash}`;
   return `${root}7(#5)${slash}`;
 }
 
@@ -255,6 +456,7 @@ function applyWholeToneFieldPass(
       const span = 4 + Math.floor(seededUnit(seed, b, 770502) * 5);
       wtBarsRemaining = Math.max(0, span - 1);
       wtColl = seededUnit(seed, b, 770503) < 0.5 ? 0 : 1;
+      receipts.push(`db:scalar_entry@bar${b}`);
     }
 
     const ex = extractRootAndSlash(sym);
@@ -273,15 +475,29 @@ function applyWholeToneFieldPass(
   }
 }
 
-function pickPlaningQuality(root: string, slash: string, seed: number, bar: number): string {
+function pickPlaningQuality(
+  root: string,
+  slash: string,
+  seed: number,
+  bar: number,
+  transposeSemi: 1 | 2
+): string {
   const u = seededUnit(seed, bar, 770801);
-  if (u < 0.16) return `${root}add2${slash}`;
-  if (u < 0.31) return `${root}9${slash}`;
-  if (u < 0.48) return `${root}${slash}`;
-  if (u < 0.62) return `${root}7sus4${slash}`;
-  if (u < 0.7) return `${root}maj9${slash}`;
-  if (u < 0.81) return `${root}m${slash}`;
-  if (u < 0.91) return `${root}6${slash}`;
+  if (transposeSemi === 2) {
+    if (u < 0.2) return `${root}7${slash}`;
+    if (u < 0.36) return `${root}9${slash}`;
+    if (u < 0.5) return `${root}9(no11)${slash}`;
+  }
+  if (u < 0.12) return `${root}quartal${slash}`;
+  if (u < 0.22) return `${root}sus4(no5)${slash}`;
+  if (u < 0.3) return `${root}(no3)${slash}`;
+  if (u < 0.42) return `${root}add2${slash}`;
+  if (u < 0.54) return `${root}9${slash}`;
+  if (u < 0.64) return `${root}${slash}`;
+  if (u < 0.74) return `${root}7sus4${slash}`;
+  if (u < 0.82) return `${root}maj9${slash}`;
+  if (u < 0.9) return `${root}m${slash}`;
+  if (u < 0.96) return `${root}6${slash}`;
   return `${root}7${slash}`;
 }
 
@@ -304,8 +520,11 @@ function applyParallelPlaningPass(
     const moved = transposeChordRoot(sym, delta);
     const ex2 = extractRootAndSlash(moved);
     if (!ex2) continue;
-    out[b - 1] = pickPlaningQuality(ex2.root, ex2.slash, seed, b);
+    out[b - 1] = pickPlaningQuality(ex2.root, ex2.slash, seed, b, delta);
     receipts.push(`db:planing@bar${b}`);
+    if (delta === 2 && seededUnit(seed, b, 770703) < 0.42) {
+      receipts.push(`db:dom7_wt_block@bar${b}`);
+    }
   }
 }
 
@@ -371,6 +590,7 @@ function applyUnresolvedAppoggiaturaPass(
       looksResolvedDomToTonic(sym, next, tonicPc)
     ) {
       guards.resolutionSuppressed++;
+      receipts.push(`db:anti_cadence@bar${b}`);
       continue;
     }
     const ex = extractRootAndSlash(sym);
@@ -455,7 +675,7 @@ function scanChordForDebussyDiagnostics(chord: string, acc: DebussyHarmonyAccumu
   const hp = parseChordSymbol(c).harmonyPart;
   const t = hp.toLowerCase();
   if (/aug|#5|\(#5\)/.test(t)) acc.wholeToneTouches++;
-  if (/add2|planing|sus4/.test(t)) acc.planingTouches++;
+  if (/add2|planing|sus4|\(no3\)|quartal/.test(t)) acc.planingTouches++;
   if (/6\/9|pentatonic/.test(t) || /sus4/.test(t)) acc.pentatonicTouches++;
   if (/add2\(add6\)|maj9|m\(add2\)/.test(t)) acc.appoggiaturaTouches++;
 }
@@ -512,12 +732,19 @@ export function precomputeDebussyEffectiveHarmonyBars(context: CompositionContex
 
   applyArabesqueMotifFlag(genMeta, seed, receipts, tb, context);
 
+  applyDebussyFormEncoding(context);
+  applyDebussyOrchestrationEncoding(context);
+
   genMeta.debussyEffectiveHarmonyBars = out;
   genMeta.debussyDeviceReceipts = receipts;
   genMeta.debussyAntiElaborationGuards = guards;
 }
 
-export function finalizeDebussyMetadata(metadata: GenerationMetadata, acc: DebussyHarmonyAccumulator): void {
+export function finalizeDebussyMetadata(
+  metadata: GenerationMetadata,
+  acc: DebussyHarmonyAccumulator,
+  context: CompositionContext
+): void {
   const flat = [...(metadata.debussyDeviceReceipts ?? [])];
   const g = metadata.debussyAntiElaborationGuards ?? {
     noopEnrich: 0,
@@ -525,6 +752,12 @@ export function finalizeDebussyMetadata(metadata: GenerationMetadata, acc: Debus
   };
   const guardTotal = g.noopEnrich + g.resolutionSuppressed;
   const arab = metadata.debussyArabesqueBars ?? [];
+  const period = metadata.debussyProgramPeriod;
+  const formRcpt = metadata.debussyFormReceipts ?? [];
+  const orchRcpt = metadata.debussyOrchestrationReceipts ?? [];
+  const vocalOrch = metadata.debussyVocalColourOrchestral;
+  const fpRcpt = buildDebussyCompositeFingerprintReceipts(metadata, acc, context, flat, arab.length);
+  metadata.debussyFingerprintReceipts = fpRcpt;
   const d = {
     songwriterId: 'debussy' as const,
     barsConsidered: acc.barsConsidered,
@@ -536,6 +769,11 @@ export function finalizeDebussyMetadata(metadata: GenerationMetadata, acc: Debus
     antiElaborationGuardTriggers: guardTotal,
     antiElaborationGuards: { ...g },
     deviceReceipts: flat.length ? flat : undefined,
+    programPeriod: period,
+    formReceipts: formRcpt.length ? [...formRcpt] : undefined,
+    orchestrationReceipts: orchRcpt.length ? [...orchRcpt] : undefined,
+    vocalColourOrchestral: typeof vocalOrch === 'boolean' ? vocalOrch : undefined,
+    fingerprintReceipts: fpRcpt.length ? [...fpRcpt] : undefined,
   } as const;
   const receipt = [
     `Debussy (impressionist slice): wt≈${acc.wholeToneTouches}`,
@@ -545,6 +783,11 @@ export function finalizeDebussyMetadata(metadata: GenerationMetadata, acc: Debus
     `arab=${arab.length}`,
     `bars=${acc.barsConsidered}`,
     `antiGuards=${guardTotal}`,
+    period ? `formPeriod=${period}` : '',
+    formRcpt.length ? `formTags=${formRcpt.join(',')}` : '',
+    orchRcpt.length ? `orchTags=${orchRcpt.join(',')}` : '',
+    typeof vocalOrch === 'boolean' ? `vocalOrch=${vocalOrch}` : '',
+    fpRcpt.length ? `fpTags=${fpRcpt.join(',')}` : '',
     flat.length ? `devices=${flat.join(';')}` : '',
   ]
     .filter(Boolean)

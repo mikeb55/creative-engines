@@ -39,6 +39,7 @@ import type {
   MotifFingerprint,
 } from './motif/motifAuthorityV1';
 import type { BarMeterMap } from './rhythm/barMeterTypes';
+import type { ClaveGridOverlayReceipt } from './rhythm/claveGridOverlay';
 import type { SoloLine, ZappaImitationReceipt, ZappasoloOptions } from './solo/soloTypes';
 import type { HarmonyContext } from './harmony/harmonyContext';
 import type { HarmonicScene } from './composer/harmonicScene';
@@ -119,6 +120,17 @@ export type JoniMitchellPhaseMode = 'folk_modal' | 'jazz_folk' | 'modal_jazz';
 
 /** The Beatles Song Mode slice — Merseybeat vs Rubber Soul vs Abbey Road posture (`beatlesSlice.ts`). Default **`merseybeat_1962`** when omitted. */
 export type BeatlesContextMode = 'merseybeat_1962' | 'rubber_soul_1965' | 'abbey_road_1968';
+
+/**
+ * Beatles macro-form scaffold (`songSectionPlanner.ts`, BT_FORM_01–02).
+ * Default **`vv_br_v`** for primary **`beatles`** when omitted.
+ */
+export type BeatlesFormTemplateId = 'vv_br_v' | 'verse_chorus' | 'legacy_vc';
+
+/**
+ * Beatles Song Mode — melodic writer lens (`melodyBehaviourPlanner.ts`). Default **`blended`** when omitted.
+ */
+export type BeatlesMelodicLens = 'neutral' | 'lennon' | 'mccartney' | 'blended';
 
 /** Fela Kuti Song Mode slice — Afrobeat era posture (`felaKutiSlice.ts`). Default **`zombie_1977`** when omitted. */
 export type FelaKutiContextMode = 'zombie_1977' | 'water_no_get_enemy' | 'lady_1972';
@@ -245,6 +257,25 @@ export interface GenerationMetadata {
   duoModeReceiptLabel?: string;
   /** Song Mode / duo: conversational vs supportive (optional; omitted = no intent bias). */
   duoIntent?: 'conversational' | 'supportive';
+  /** Duo golden-path: intent-specific register ownership applied to final guitar/bass score lanes. */
+  duoIntentRegisterOwnershipPlan?: {
+    intent: 'conversational' | 'supportive';
+    guitarMelody: number[];
+    guitarComp: number[];
+    bassFoundation: number[];
+    bassResponse: number[];
+    receipt: string;
+  };
+  /** Duo golden-path: final velocity-only balance by product intent. */
+  duoIntentVelocityBalanceReceipt?: {
+    intent: 'conversational' | 'supportive';
+    guitarMeanBefore: number;
+    guitarMeanAfter: number;
+    bassMeanBefore: number;
+    bassMeanAfter: number;
+    accompanimentDelta: number;
+    receipt: string;
+  };
   /** Phase 18.2B.1 — Voice-2 polyphony snapshot after inject + stabilise (guitar_bass_duo polyphony path). */
   voice2PolyphonyDiagnostics?: GuitarVoice2PolyphonyDiagnostics;
   /**
@@ -342,6 +373,8 @@ export interface GenerationMetadata {
   songModeRhythmOverlayDisabled?: boolean;
   /** Song Mode: Stable / Balanced / Surprise — scales Phase C2 phrase intent only (from request). */
   songModeRhythmStrength?: 'stable' | 'balanced' | 'surprise';
+  /** V31 — Clave grid overlay receipt when `COMPOSER_OS_CLAVE_GRID_OVERLAY` is on (applied or validation skip). */
+  claveGridOverlayReceipt?: ClaveGridOverlayReceipt;
   /** Song Mode Phase C3: opt-in James Brown funk overlay (not in default C1 pool). */
   songModeJamesBrownFunkOverlay?: boolean;
   /** True after Phase C3 James Brown pass ran on the score. */
@@ -542,6 +575,18 @@ export interface GenerationMetadata {
     diminishedSeventhTouches: number;
     /** Named Pet Sounds harmonic device receipts for this run (e.g. `bw:device1:...`). */
     deviceReceipts?: string[];
+    /** BW_HARM_01–10 pattern tags from `brianWilsonPetSoundsSlice.ts`. */
+    harmonicGrammarReceipts?: string[];
+    /** BW_VL_01–06 voice-leading / texture tags from `brianWilsonPetSoundsSlice.ts`. */
+    voiceLeadingGrammarReceipts?: string[];
+    /** BW_MEL_01–05 melodic planning tags from `brianWilsonPetSoundsSlice.ts`. */
+    melodicGrammarReceipts?: string[];
+    /** BW_RHYTHM_01–04 rhythm / ensemble timing tags from `brianWilsonPetSoundsSlice.ts`. */
+    rhythmGrammarReceipts?: string[];
+    /** BW_ORCH_01–05 studio orchestration tags from `brianWilsonPetSoundsSlice.ts`. */
+    orchestrationGrammarReceipts?: string[];
+    /** BW_FP_01–03 composite fingerprint tags from `brianWilsonPetSoundsSlice.ts`. */
+    fingerprintReceipts?: string[];
   };
   /** One-line digest for manifests / dev inspector when the Pet Sounds slice ran. */
   brianWilsonPetSoundsSliceReceipt?: string;
@@ -556,6 +601,22 @@ export interface GenerationMetadata {
   }>;
   /** Flat list of device receipts (mirrors diagnostics.deviceReceipts when populated). */
   brianWilsonPetSoundsDeviceReceipts?: string[];
+  /** Brian Wilson BW_HARM research grammar receipts (`bw:harmNN_*` in `brianWilsonPetSoundsSlice.ts`). */
+  brianWilsonHarmonicGrammarReceipts?: string[];
+  /** Brian Wilson BW_VL research receipts (`bw:vlNN_*` in `brianWilsonPetSoundsSlice.ts`). */
+  brianWilsonVoiceLeadingGrammarReceipts?: string[];
+  /** Brian Wilson BW_MEL research receipts (`bw:melNN_*` in `brianWilsonPetSoundsSlice.ts`). */
+  brianWilsonMelodicGrammarReceipts?: string[];
+  /** Brian Wilson BW_RHYTHM research receipts (`bw:rhythmNN_*` in `brianWilsonPetSoundsSlice.ts`). */
+  brianWilsonRhythmGrammarReceipts?: string[];
+  /** Optional structural collective-ritard cue bars (section pivots); metadata only unless exporter consumes. */
+  brianWilsonStructuralRitardHints?: number[];
+  /** Brian Wilson BW_ORCH research receipts (`bw:orchNN_*` in `brianWilsonPetSoundsSlice.ts`). */
+  brianWilsonOrchestrationGrammarReceipts?: string[];
+  /** Pet Sounds modular section-assembly posture (BW_ORCH_04); hints compound tracking / splices for formal generator. */
+  brianWilsonFormalThroughComposeAssembly?: boolean;
+  /** Brian Wilson BW_FP composite receipts (`bw:fpNN_*` in `brianWilsonPetSoundsSlice.ts`) when full bundle gates align. */
+  brianWilsonFingerprintReceipts?: string[];
   /** Stevie Wonder (1972–76) — per-bar harmony vocabulary scan (sus4, altered dominants, 9s, m7 colour). */
   stevieWonderDiagnostics?: {
     songwriterId: 'stevie_wonder';
@@ -583,6 +644,22 @@ export interface GenerationMetadata {
     minorTriadTouches: number;
     borrowedModalTouches: number;
     slashPedalTouches: number;
+    /** RH_HARM_01 — Pablo Honey/Bends vs OK Computer/Kid A vs In Rainbows / Moon Shaped Pool emphasis. */
+    harmonicPeriod?: 'early' | 'middle' | 'late';
+    /** RH_HARM_01 — primary harmonic system for this seed (others remain eligible at lower weight). */
+    harmonicPrimarySystem?: 'functional_tonal' | 'functional_modal' | 'contrapuntal_keyboard';
+    /** RH_VL_01–RH_VL_06 — voice-leading / texture tags (`rh:vlNN_*`, `radioheadSlice.ts`). */
+    voiceLeadingGrammarReceipts?: string[];
+    /** RH_MEL_* — melodic grammar (`rh:melNN_*`, `melodyBehaviourPlanner.ts`). */
+    melodicGrammarReceipts?: string[];
+    /** RH_MEL_05 — acoustic vs electronic melodic posture. */
+    radioheadMelodicContext?: 'acoustic' | 'electronic';
+    /** RH_RHYTHM_* — rhythmic grammar (`rh:rhythmNN_*`). */
+    rhythmGrammarReceipts?: string[];
+    /** RH_ORCH_* — orchestration grammar (`rh:orchNN_*`). */
+    orchestrationGrammarReceipts?: string[];
+    /** RH_FP_01–03 — composite fingerprint component + full lines (`rh:fpNN_*`). */
+    fingerprintReceipts?: string[];
     /** Named harmonic device receipts for this run (e.g. `rh:device1:...`). */
     deviceReceipts?: string[];
   };
@@ -590,6 +667,30 @@ export interface GenerationMetadata {
   radioheadSliceReceipt?: string;
   /** Duo golden path: effective one chord per bar after Radiohead harmonic devices. */
   radioheadEffectiveHarmonyBars?: string[];
+  /** RH_HARM_01 — deterministic era gate for Radiohead harmonic emphasis (`radioheadSlice`). */
+  radioheadHarmonicPeriod?: 'early' | 'middle' | 'late';
+  /** RH_HARM_01 — primary system aligned with {@link GenerationMetadata.radioheadHarmonicPeriod}. */
+  radioheadHarmonicPrimarySystem?: 'functional_tonal' | 'functional_modal' | 'contrapuntal_keyboard';
+  /** RH_VL_* pattern tags (flattened; mirrors {@link GenerationMetadata.radioheadDiagnostics}.voiceLeadingGrammarReceipts). */
+  radioheadVoiceLeadingGrammarReceipts?: string[];
+  /** RH_MEL_* pattern tags (flattened). */
+  radioheadMelodicGrammarReceipts?: string[];
+  /** RH_MEL_05 — optional request override or resolved posture after {@link planMelodyBehaviour}. */
+  radioheadMelodicContext?: 'acoustic' | 'electronic';
+  /** RH_RHYTHM_* pattern tags (flattened). */
+  radioheadRhythmGrammarReceipts?: string[];
+  /** RH_RHYTHM_01 — Pablo Honey/Bends posture: suppress odd-meter generator options. */
+  radioheadRhythmEarlyPeriodBackbeat?: boolean;
+  /** RH_RHYTHM_02–05 — middle/late asymmetric-meter / polyrhythm / layer tooling eligible. */
+  radioheadRhythmAsymmetricFeaturesEligible?: boolean;
+  /** RH_ORCH_* pattern tags (flattened). */
+  radioheadOrchestrationGrammarReceipts?: string[];
+  /** RH_ORCH_01 — gated instrumentation palette from harmonic period. */
+  radioheadOrchestrationPalette?: 'core_band' | 'core_plus_electronics' | 'strings_plus_electronics';
+  /** RH_ORCH_05 — optional microtonal guitar path eligible this seed. */
+  radioheadMicrotonalGuitarEligible?: boolean;
+  /** RH_FP_01–03 — harmonic + rhythmic + orchestral fingerprint receipts (flattened). */
+  radioheadFingerprintReceipts?: string[];
   /** Flat list of harmonic device receipts (mirrors diagnostics.deviceReceipts when populated). */
   radioheadDeviceReceipts?: string[];
   /** James Brown (funk/soul dominant-centre) — per-bar harmony + device/guard stats. */
@@ -753,6 +854,26 @@ export interface GenerationMetadata {
     targetMeanFiresD4: number;
     targetMeanFiresD5: number;
   };
+  /** Wayne Shorter — WS_HARM_01–06 VRB harmonic fingerprint lines (echo of `WAYNE_SHORTER_WS_HARM_FINGERPRINTS`). */
+  wayneShorterHarmFingerprintReceipts?: readonly string[];
+  /** Wayne Shorter — WS_MEL_01–04 VRB melodic fingerprint lines (echo of `WAYNE_SHORTER_WS_MEL_FINGERPRINTS`). */
+  wayneShorterMelFingerprintReceipts?: readonly string[];
+  /** Wayne Shorter — WS_RHYTHM_01–03 VRB rhythm fingerprint lines (echo of `WAYNE_SHORTER_WS_RHYTHM_FINGERPRINTS`). */
+  wayneShorterRhythmFingerprintReceipts?: readonly string[];
+  /** Wayne Shorter — WS_FORM_01–02 VRB form/orchestration fingerprint lines (echo of `WAYNE_SHORTER_WS_FORM_FINGERPRINTS`). */
+  wayneShorterFormFingerprintReceipts?: readonly string[];
+  /** Wayne Shorter — WS_FP_01–03 composite fingerprint lines (echo of `WAYNE_SHORTER_WS_FP_FINGERPRINTS`). */
+  wayneShorterFpFingerprintReceipts?: readonly string[];
+  /** Wayne Shorter — runtime harmonic grammar tags (`WS_HARM_*`) from `applyWayneShorterHarmonicGrammarReceipts`. */
+  wayneShorterHarmonicGrammarReceipts?: readonly string[];
+  /** Wayne Shorter — runtime melodic grammar tags (`WS_MEL_*`) from `applyWayneShorterMelodicGrammarReceipts`. */
+  wayneShorterMelodicGrammarReceipts?: readonly string[];
+  /** Wayne Shorter — runtime rhythm grammar tags (`WS_RHYTHM_*`) from `applyWayneShorterRhythmGrammarReceipts`. */
+  wayneShorterRhythmGrammarReceipts?: readonly string[];
+  /** Wayne Shorter — runtime form/orchestration grammar tags (`WS_FORM_*`) from `applyWayneShorterFormGrammarReceipts`. */
+  wayneShorterFormGrammarReceipts?: readonly string[];
+  /** Wayne Shorter — composite FP gate firings (`WS_FP_*`) from `applyWayneShorterFingerprintReceipts`. */
+  wayneShorterFingerprintReceipts?: readonly string[];
   /** Frank Zappa — polytonal clash / xenochrony / juxtaposition slice diagnostics + receipts. */
   frankZappaDiagnostics?: {
     songwriterId: 'frank_zappa';
@@ -877,10 +998,30 @@ export interface GenerationMetadata {
       resolutionSuppressed: number;
     };
     deviceReceipts?: string[];
+    /** DB_FORM_03 — early / middle / late programme gate (`debussySlice.ts`). */
+    programPeriod?: 'early' | 'middle' | 'late';
+    /** DB_FORM_* tags (`db:form*`) alongside harmony `db:*` device strings. */
+    formReceipts?: string[];
+    /** DB_ORCH_* tags (`db:orch*`). */
+    orchestrationReceipts?: string[];
+    /** DB_ORCH_07 — optional wordless vocal layer as orchestral colour. */
+    vocalColourOrchestral?: boolean;
+    /** DB_FP_01–04 composite fingerprint tags (`db:fp*`). */
+    fingerprintReceipts?: string[];
   };
   debussySliceReceipt?: string;
   debussyEffectiveHarmonyBars?: string[];
   debussyDeviceReceipts?: string[];
+  /** DB_FORM_03 — mirrored for manifest / LOCK consumers. */
+  debussyProgramPeriod?: 'early' | 'middle' | 'late';
+  /** DB_FORM_01–05 — formal encoding receipts (`applyDebussyFormEncoding`). */
+  debussyFormReceipts?: string[];
+  /** DB_ORCH_01–07 — orchestration encoding receipts (`applyDebussyOrchestrationEncoding`). */
+  debussyOrchestrationReceipts?: string[];
+  /** DB_ORCH_07 — when true, wordless vocal colour layer is staged for downstream orchestration hints. */
+  debussyVocalColourOrchestral?: boolean;
+  /** DB_FP_01–04 — composite fingerprint receipts (`finalizeDebussyMetadata`). */
+  debussyFingerprintReceipts?: string[];
   debussyAntiElaborationGuards?: {
     noopEnrich: number;
     resolutionSuppressed: number;
@@ -1294,14 +1435,41 @@ export interface GenerationMetadata {
     functionalColourTouches: number;
     borrowedColourTouches: number;
     deviceReceipts?: string[];
+    harmonicGrammarReceipts?: string[];
+    voiceLeadingGrammarReceipts?: string[];
+    rhythmGrammarReceipts?: string[];
+    formGrammarReceipts?: string[];
+    fingerprintReceipts?: string[];
   };
   beatlesSliceReceipt?: string;
   beatlesEffectiveHarmonyBars?: string[];
   beatlesDeviceReceipts?: string[];
+  /** Pattern tags **`bt:harmNN_*`** from `beatlesSlice.ts` (Beatles major-key grammar / BT_HARM). */
+  beatlesHarmonicGrammarReceipts?: string[];
+  /** Pattern tags **`bt:vlNN_*`** — Beatles voice-leading / texture grammar (BT_VL). */
+  beatlesVoiceLeadingGrammarReceipts?: string[];
+  /** Pattern tags **`bt:rhythmNN_*`** — Beatles rhythm / metric grammar (BT_RHYTHM). */
+  beatlesRhythmGrammarReceipts?: string[];
+  /**
+   * Beatles BT_RHYTHM_03 — late era: odd-meter / polyrhythm metadata permissive mode (Abbey posture).
+   */
+  beatlesLateRhythmConstraintRelaxed?: boolean;
+  /** Pattern tags **`bt:formNN_*`** — Beatles macro-form grammar (BT_FORM). */
+  beatlesFormGrammarReceipts?: string[];
+  /** BT_FORM_05 — late collage / through-composed posture flag (Abbey era). */
+  beatlesCollageThroughComposedHint?: boolean;
   /**
    * Beatles Song Mode slice mode (`beatlesSlice.ts`). Default **`merseybeat_1962`** when omitted.
    */
   beatlesContext?: BeatlesContextMode;
+  /**
+   * Beatles macro-form template (`songSectionPlanner.ts`). Default **`vv_br_v`** when primary is **`beatles`** and omitted.
+   */
+  beatlesFormTemplate?: BeatlesFormTemplateId;
+  /** Beatles BT_FP_04 — Lennon / McCartney / blended writer lens (`melodyBehaviourPlanner.ts`). */
+  beatlesMelodicLens?: BeatlesMelodicLens;
+  /** Beatles BT_FP_01–04 — consolidated fingerprint receipts (`beatlesSlice.ts`). */
+  beatlesFingerprintReceipts?: string[];
   /** Fela Kuti — Afrobeat static-vamp / call-response harmony (`felaKutiSlice.ts`). */
   felaKutiDiagnostics?: {
     songwriterId: 'fela_kuti';
@@ -1441,10 +1609,34 @@ export interface GenerationMetadata {
       denseAlterationReduced: number;
     };
     deviceReceipts?: string[];
+    /** BB_HARM_01–10 pattern tags from `bacharachSlice.ts`. */
+    harmonicGrammarReceipts?: string[];
+    /** BB_VL_01–05 voice-leading / orchestration tags from `bacharachSlice.ts`. */
+    voiceLeadingGrammarReceipts?: string[];
+    /** BB_RHYTHM_01–05 metric / phrase / percussion tags from `bacharachSlice.ts`. */
+    rhythmGrammarReceipts?: string[];
+    /** BB_FORM_01–05 macro-form / section tags from `bacharachSlice.ts`. */
+    formGrammarReceipts?: string[];
+    /** BB_ORCH_01–05 studio orchestration tags from `bacharachSlice.ts`. */
+    orchestrationGrammarReceipts?: string[];
+    /** BB_FP_01–03 composite fingerprints from `bacharachSlice.ts`. */
+    fingerprintReceipts?: string[];
   };
   bacharachSliceReceipt?: string;
   bacharachEffectiveHarmonyBars?: string[];
   bacharachDeviceReceipts?: string[];
+  /** Bacharach BB_HARM research grammar receipts (`bb:harmNN_*` in `bacharachSlice.ts`). */
+  bacharachHarmonicGrammarReceipts?: string[];
+  /** Bacharach BB_VL research receipts (`bb:vlNN_*` in `bacharachSlice.ts`). */
+  bacharachVoiceLeadingGrammarReceipts?: string[];
+  /** Bacharach BB_RHYTHM research receipts (`bb:rhythmNN_*` in `bacharachSlice.ts`). */
+  bacharachRhythmGrammarReceipts?: string[];
+  /** Bacharach BB_FORM research receipts (`bb:formNN_*` in `bacharachSlice.ts`). */
+  bacharachFormGrammarReceipts?: string[];
+  /** Bacharach BB_ORCH research receipts (`bb:orchNN_*` in `bacharachSlice.ts`). */
+  bacharachOrchestrationGrammarReceipts?: string[];
+  /** Bacharach BB_FP composite fingerprints (`bb:fpNN_*` in `bacharachSlice.ts`). */
+  bacharachFingerprintReceipts?: string[];
   bacharachAntiElaborationGuards?: {
     clusterVoicingReduced: number;
     denseAlterationReduced: number;

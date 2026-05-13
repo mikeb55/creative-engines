@@ -38,6 +38,8 @@ export interface SongwritingPlanningBundle {
   sectionContrastDimensions: { melody: number; harmony: number; rhythm: number };
   /** Optional dual style pairing (songwriter vs arranger); additive to Phase B. */
   stylePairingResolution?: StylePairingResult;
+  /** Beatles BT_FP_01–04 fingerprint receipts (Song Mode compile path). */
+  beatlesFingerprintReceipts?: string[];
 }
 
 /** Simple per-section chord scaffold (metadata / planning level). */

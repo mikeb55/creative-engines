@@ -7,6 +7,7 @@ import type {
   ArvoPartContextMode,
   BartokContextMode,
   BeatlesContextMode,
+  BeatlesFormTemplateId,
   FelaKutiContextMode,
   FrankZappaContextMode,
   GenerationMetadata,
@@ -19,6 +20,7 @@ import type { StyleProfile } from './songModeStyleProfile';
 import { registerSongModeSectionBehaviour } from './songModeSectionControl';
 import { normalizeSongwriterStyleKey } from './songwriterStyleProfiles';
 import { computeZappaDensityArc, resolveFrankZappaSyntheticScaleBias } from './frankZappaSlice';
+import { beatlesFormGrammarTags, beatlesRhythmGrammarTags, beatlesVoiceLeadingGrammarTags } from './beatlesSlice';
 
 function clamp01(n: number): number {
   return Math.max(0, Math.min(1, n));
@@ -331,21 +333,91 @@ export function applyPrinceStyleSurface(metadata: GenerationMetadata, primarySon
 /**
  * Primary **`beatles`** — pocket clarity + space; softer cadence closes (`beatlesSlice.ts` receipts separate).
  */
-export function applyBeatlesStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
+export function applyBeatlesStyleSurface(
+  metadata: GenerationMetadata,
+  primarySongwriterStyle: string | undefined,
+  beatlesFormTemplate?: BeatlesFormTemplateId
+): void {
   if (metadata.songModeHookFirstIdentity !== true) return;
   if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
   if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'beatles') return;
 
   const ctx: BeatlesContextMode = metadata.beatlesContext ?? 'merseybeat_1962';
   metadata.beatlesContext = ctx;
+  const formTmpl: BeatlesFormTemplateId = beatlesFormTemplate ?? metadata.beatlesFormTemplate ?? 'vv_br_v';
+  metadata.beatlesFormTemplate = formTmpl;
+  metadata.beatlesCollageThroughComposedHint = ctx === 'abbey_road_1968';
 
   metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) + 0.08);
-  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) - 0.06);
+  const syncBase = metadata.songwriterSyncopationBias ?? 0.5;
+  if (ctx === 'merseybeat_1962') {
+    metadata.songwriterSyncopationBias = clamp01(syncBase - 0.18);
+  } else if (ctx === 'rubber_soul_1965') {
+    metadata.songwriterSyncopationBias = clamp01(syncBase + 0.05);
+  } else {
+    metadata.songwriterSyncopationBias = clamp01(syncBase + 0.14);
+  }
   metadata.songwriterSpaceBias = clamp01((metadata.songwriterSpaceBias ?? 0.5) + 0.12);
   metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) + 0.22);
 
+  metadata.beatlesLateRhythmConstraintRelaxed = ctx === 'abbey_road_1968';
+
+  metadata.beatlesFormGrammarReceipts = [
+    ...(metadata.beatlesFormGrammarReceipts ?? []),
+    `${beatlesFormGrammarTags.form01_primary_VVBrV}@template=${formTmpl}`,
+  ];
+  if (formTmpl === 'verse_chorus') {
+    metadata.beatlesFormGrammarReceipts.push(beatlesFormGrammarTags.form02_secondary_verse_chorus);
+  }
+  if (metadata.beatlesCollageThroughComposedHint) {
+    metadata.beatlesFormGrammarReceipts.push(beatlesFormGrammarTags.form05_collage_late);
+  }
+  metadata.beatlesFormGrammarReceipts.push(`${beatlesFormGrammarTags.form07_period_mode_switch}@${ctx}`);
+
+  const hd0 = metadata.harmonyDensityBias ?? 0.5;
+  if (ctx === 'rubber_soul_1965') {
+    metadata.harmonyDensityBias = clamp01(hd0 + 0.07);
+  }
+
+  // BT_VL_03 — bass: early root-oriented vs middle/late melodic chromatic bass (bias trigger).
+  const bass0 = metadata.songwriterBassIndependenceBias ?? 0.5;
+  if (ctx === 'merseybeat_1962') {
+    metadata.songwriterBassIndependenceBias = clamp01(bass0 - 0.2);
+  } else if (ctx === 'rubber_soul_1965') {
+    metadata.songwriterBassIndependenceBias = clamp01(bass0 + 0.05);
+  } else {
+    metadata.songwriterBassIndependenceBias = clamp01(bass0 + 0.22);
+  }
+
+  // BT_VL_02 — thirds/sixths vocal harmony emphasis; late period more unison/octave headroom.
+  const phraseLoose0 = metadata.songwriterPhraseStartLooseness ?? 0.5;
+  if (ctx === 'merseybeat_1962') {
+    metadata.songwriterPhraseStartLooseness = clamp01(phraseLoose0 - 0.07);
+  } else if (ctx === 'abbey_road_1968') {
+    metadata.songwriterPhraseStartLooseness = clamp01(phraseLoose0 + 0.09);
+  }
+
+  metadata.beatlesVoiceLeadingGrammarReceipts = [
+    ...(metadata.beatlesVoiceLeadingGrammarReceipts ?? []),
+    `${beatlesVoiceLeadingGrammarTags.vl02_thirds_sixths_close_vocal_harmony}@${ctx}`,
+    `${beatlesVoiceLeadingGrammarTags.vl03_bass_root_motion_era}@${ctx}`,
+    `${beatlesVoiceLeadingGrammarTags.vl05_blue_note_clash_colour}`,
+  ];
+
+  const rhythmEraTags: string[] =
+    ctx === 'merseybeat_1962'
+      ? [`${beatlesRhythmGrammarTags.rhythm01_early_straight_rock}@iambic_weakbeat_title_sync`]
+      : ctx === 'rubber_soul_1965'
+        ? [beatlesRhythmGrammarTags.rhythm02_middle_syncopation_form_edges]
+        : [beatlesRhythmGrammarTags.rhythm03_late_odd_meter_relax];
+  metadata.beatlesRhythmGrammarReceipts = [...(metadata.beatlesRhythmGrammarReceipts ?? []), ...rhythmEraTags];
+
   appendStyleSurfaceNotes(metadata, [
-    `Beatles surface (${ctx}): density +0.08, sync −0.06, space +0.12, cadence softness +0.22 — generative metadata only.`,
+    `BT_FORM: macro template ${formTmpl} (default VVBrV); collage hint=${metadata.beatlesCollageThroughComposedHint === true ? 'on' : 'off'} (Abbey-era).`,
+    `Beatles surface (${ctx}): density +0.08, sync ${ctx === 'merseybeat_1962' ? '−0.18' : ctx === 'rubber_soul_1965' ? '+0.05' : '+0.14'} (era rhythm), space +0.12, cadence softness +0.22 — generative metadata only.`,
+    `BT_RHYTHM_01–03: ${rhythmEraTags[0]} (${ctx}) — ${ctx === 'merseybeat_1962' ? 'straight rock rhythm / minimal sync; title hooks weak-beat metaphor' : ctx === 'rubber_soul_1965' ? 'stronger sync + harmonic rhythm variation at section edges' : 'odd-meter / displacement permissive metadata (`beatlesLateRhythmConstraintRelaxed`)'}.`,
+    `BT_VL_02 / BT_VL_05: ${beatlesVoiceLeadingGrammarTags.vl02_thirds_sixths_close_vocal_harmony} (${ctx === 'abbey_road_1968' ? 'late unison/octave headroom +’ve phrase looseness' : 'early close thirds/sixths metaphor'}); ${beatlesVoiceLeadingGrammarTags.vl05_blue_note_clash_colour} — ♭3/♭5/♭7 clash as colour (do not resolve away).`,
+    `BT_VL_03: ${beatlesVoiceLeadingGrammarTags.vl03_bass_root_motion_era} — bass independence bias nudged by era.`,
   ]);
 }
 
@@ -438,6 +510,10 @@ export function applyDebussyStyleSurface(metadata: GenerationMetadata, primarySo
 
   appendStyleSurfaceNotes(metadata, [
     'debussy surface: density +0.14, syncopation +0.09, space +0.31, cadence softness +0.34 — generative bias only (harmony slice emits db:* device receipts).',
+    'DB_VL_01–06: harmonic voice bundle `debussy` — wide registral spread, parallel inner strata + pedal centricity, heterophonic/octave colour, bell-frame posture (`voiceRuleBundles.ts` + `voiceLeadingSolver` parallel P5/P8 off).',
+    'DB_FORM_01–05: sectional / non-cadential continuity — `applyDebussyFormEncoding` (`debussySlice.ts`) emits `db:form*` + `debussyProgramPeriod` (early/middle/late); La mer suite tag when totalBars ≥ 48.',
+    'DB_ORCH_01–07: timbre-first orchestration — `applyDebussyOrchestrationEncoding` (`debussySlice.ts`) emits `db:orch*` + optional `debussyVocalColourOrchestral`; see `voiceRuleBundles` DEBUSSY fingerprints.',
+    'DB_FP_01–04: composite fingerprints — `finalizeDebussyMetadata` emits `db:fp*` on `debussyFingerprintReceipts` + `debussyDiagnostics.fingerprintReceipts` (gates full fingerprint when harmony/VL/form/orch layers align).',
   ]);
 }
 

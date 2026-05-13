@@ -25,6 +25,7 @@ function snakeCaseToTitleCase(id: string): string {
 const CLASSICAL = new Set<string>([
   'bach',
   'beethoven',
+  'beethoven_late',
   'debussy',
   'stravinsky',
   'ravel',
@@ -33,6 +34,9 @@ const CLASSICAL = new Set<string>([
   'prokofiev',
   'shostakovich',
   'messiaen',
+  'lachenmann',
+  'reich_glass',
+  'turtle_island',
 ]);
 
 const JAZZ = new Set<string>([

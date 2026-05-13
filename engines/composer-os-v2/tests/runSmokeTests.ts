@@ -4,7 +4,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N` in the smoke summary, then sync **N** + suite count into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **246** PASS rows, **61** suites (2026-05-11).
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **248** PASS rows, **63** suites (2026-05-11).
  */
 
 import { runReadinessTests } from './readiness.test';
@@ -30,6 +30,8 @@ import { runZappaSoloSmokeTests } from './zappasoloSmoke.test';
 import { runBarryHarrisSliceSmokeTests } from './barryHarrisSliceSmoke.test';
 import { runBillEvansSliceSmokeTests } from './billEvansSliceSmoke.test';
 import { runBacharachSliceSmokeTests } from './bacharachSliceSmoke.test';
+import { runBeatlesSliceSmokeTests } from './beatlesSliceSmoke.test';
+import { runDebussySliceSmokeTests } from './debussySliceSmoke.test';
 import { runDonaldFagenSliceSmokeTests } from './donaldFagenSliceSmoke.test';
 import { runEcmChamberSliceSmokeTests } from './ecmChamberSliceSmoke.test';
 import { runJobimSliceSmokeTests } from './jobimSliceSmoke.test';
@@ -58,6 +60,7 @@ import { runSonicYouthTextureTests } from '../core/score-model/__tests__/sonicYo
 import { runEvaluationSmokeTests } from '../core/evaluation/evaluation.smoke.test';
 import { runPhraseEngineV2SmokeTests } from './phraseEngineV2Smoke.test';
 import { runPhraseEngineV2IntegrationTests } from './phraseEngineV2Integration.test';
+import { runDuoIntentTests } from './duoIntent.test';
 import { runVaultQualitySmokeTests } from '../smoke/vaultQuality.smoke.test';
 import { runVoiceRuleBundleTests } from './voiceRuleBundle.test';
 import { runMusicXmlValidatorGateTests } from '../../../src/utils/musicXmlValidator.test';
@@ -71,11 +74,18 @@ import { runHarmonySpineLockSmokeTests } from './harmonySpineLock.smoke.test';
 
 type Row = { name: string; ok: boolean };
 
+function runPhraseEngineV2IntegrationWithDuoIntentSmokeGuard(): Row[] {
+  const rows = runPhraseEngineV2IntegrationTests();
+  const duoRows = runDuoIntentTests();
+  const failedDuoRows = duoRows.filter((row) => !row.ok);
+  return failedDuoRows.length > 0 ? [...rows, ...failedDuoRows] : rows;
+}
+
 const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Readiness', run: runReadinessTests },
   { label: 'Evaluation — Basie style profile structure', run: runEvaluationSmokeTests },
   { label: 'Phrase engine V2 — motif pool hook', run: runPhraseEngineV2SmokeTests },
-  { label: 'Phrase engine V2 — integration (duo mock)', run: runPhraseEngineV2IntegrationTests },
+  { label: 'Phrase engine V2 — integration (duo mock + duoIntent depth guard)', run: runPhraseEngineV2IntegrationWithDuoIntentSmokeGuard },
   { label: 'Conductor', run: runConductorTests },
   { label: 'App API boundary', run: runAppApiBoundaryTests },
   { label: 'MusicXML harmony (kind/@text + degrees)', run: runChordSymbolMusicXmlHarmonyTests },
@@ -102,7 +112,9 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Frank Zappa songwriter slice', run: runFrankZappaSliceSmokeTests },
   { label: 'Barry Harris songwriter slice', run: runBarryHarrisSliceSmokeTests },
   { label: 'Bill Evans songwriter slice', run: runBillEvansSliceSmokeTests },
+  { label: 'Beatles songwriter slice', run: runBeatlesSliceSmokeTests },
   { label: 'Bacharach songwriter slice', run: runBacharachSliceSmokeTests },
+  { label: 'Debussy songwriter slice', run: runDebussySliceSmokeTests },
   { label: 'Donald Fagen songwriter slice', run: runDonaldFagenSliceSmokeTests },
   { label: 'ECM Chamber songwriter slice', run: runEcmChamberSliceSmokeTests },
   { label: 'Antônio Carlos Jobim songwriter slice', run: runJobimSliceSmokeTests },

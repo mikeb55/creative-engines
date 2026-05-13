@@ -5,7 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import React from 'react';
 import { act, create } from 'react-test-renderer';
-import { vi } from 'vitest';
+import { beforeEach, vi } from 'vitest';
 import * as scoreXmlInput from '@composer-os/core/lead-sheet/musicXmlScoreInput';
 
 vi.mock('../src/services/api', () => {
@@ -35,6 +35,11 @@ vi.spyOn(scoreXmlInput, 'extractScoreMusicXmlFromUint8Array').mockImplementation
 
 describe('HomeGenerate mode-driven UI', () => {
   const src = fs.readFileSync(path.join(__dirname, '../src/pages/HomeGenerate.tsx'), 'utf-8');
+
+  beforeEach(async () => {
+    const { api } = await import('../src/services/api');
+    vi.mocked(api.generate).mockReset();
+  });
 
   async function renderHomeGenerate() {
     (globalThis as { window?: unknown }).window = { composerOsDesktop: undefined };
@@ -97,13 +102,7 @@ describe('HomeGenerate mode-driven UI', () => {
 
   function getLeadSheetFileInput(tree: ReturnType<typeof create>) {
     const nodes = tree.root.findAllByType('input');
-    const fileNode = nodes.find(
-      (n) =>
-        n.props.type === 'file' &&
-        typeof n.props.accept === 'string' &&
-        n.props.accept.includes('.musicxml') &&
-        n.props.id !== 'composer-os-import-lead-sheet-file'
-    );
+    const fileNode = nodes.find((n) => n.props.type === 'file' && n.props.id === 'co-song-mode-leadsheet-phase1-file');
     expect(fileNode).toBeDefined();
     return fileNode!;
   }
@@ -235,12 +234,15 @@ describe('HomeGenerate mode-driven UI', () => {
     expect(src).toContain('LeadSheet MusicXML input (Phase 1)');
     expect(src).toContain('SONG_MODE_LEADSHEET_PHASE1_WRITERS');
     expect(src).toContain('LeadSheet MusicXML input is active for this route.');
-    expect(src).toContain('LeadSheet MusicXML input is available only for Song Mode with Donald Fagen or Barry Harris.');
+    expect(src).toContain('Bill Evans');
+    expect(src).toContain('Herbie Hancock');
+    expect(src).toContain('Antônio Carlos Jobim');
   });
 
   it('threads LeadSheet MusicXML into generate payload only for supported Song Mode writers', () => {
     expect(src).toContain('songModeLeadSheetMusicXml');
     expect(src).toContain('isSongModeLeadSheetPhase1Writer && songModeLeadSheetTrim.length > 0');
+    expect(src).toContain('co-song-mode-leadsheet-phase1-file');
   });
 
   it('adds a dev-only Harmony import debug panel in Song Mode', () => {
@@ -264,9 +266,7 @@ describe('HomeGenerate mode-driven UI', () => {
     const text = JSON.stringify(tree.toJSON());
     expect(text).toContain('LeadSheet MusicXML input (Phase 1)');
     expect(text).toContain('LeadSheet MusicXML input is active for this route.');
-    expect(text).not.toContain(
-      'LeadSheet MusicXML input is available only for Song Mode with Donald Fagen or Barry Harris.'
-    );
+    expect(text).not.toContain('LeadSheet MusicXML input is available only for Song Mode with Bill Evans');
     const textarea = getLeadSheetTextarea(tree);
     expect(textarea.props.disabled).toBe(false);
   });
@@ -330,12 +330,9 @@ describe('HomeGenerate mode-driven UI', () => {
       songwriterSelect.props.onChange({ target: { value: 'wayne_shorter' } });
     });
     await settleUi();
-    await waitForTreeSubstring(
-      tree,
-      'LeadSheet MusicXML input is available only for Song Mode with Donald Fagen or Barry Harris.'
-    );
+    await waitForTreeSubstring(tree, 'LeadSheet MusicXML input is available only for Song Mode with Bill Evans');
     const text = JSON.stringify(tree.toJSON());
-    expect(text).toContain('LeadSheet MusicXML input is available only for Song Mode with Donald Fagen or Barry Harris.');
+    expect(text).toContain('Herbie Hancock');
     expect(getLeadSheetTextarea(tree).props.disabled).toBe(true);
     expect(getLeadSheetFileInput(tree).props.disabled).toBe(true);
     expect(getClearLeadSheetButton(tree)).toBeUndefined();

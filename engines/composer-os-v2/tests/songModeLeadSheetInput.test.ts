@@ -139,7 +139,8 @@ export function runSongModeLeadSheetInputTests(): { ok: boolean; name: string }[
         styleStack: { primary: 'barry_harris', weights: { primary: 1 } },
         seed: 55011,
         totalBars: 32,
-        primarySongwriterStyle: 'bacharach',
+        /** Control writer — must stay outside `SONG_MODE_LEADSHEET_PHASE1_WRITERS` (phase 3 includes Radiohead). */
+        primarySongwriterStyle: 'sonic_youth',
         songModeLeadSheetMusicXml: DONALD_FAGEN_LEADSHEET_XML,
       },
       tmp

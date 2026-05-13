@@ -6,13 +6,35 @@ import type { CompositionContext } from '../compositionContext';
 import { buildHarmonicSceneStubs, buildHarmonicScenesForVoiceBundle } from './harmonicScene';
 import { getVoiceRuleBundle, normalizeHarmonicVoiceId } from './voiceRuleBundles';
 
+/**
+ * Songwriter ids that auto-resolve to a same-named VoiceRuleBundle when picked
+ * in the UI (no explicit `harmonicVoice` option required). Extend this set
+ * whenever a slice + matching VRB ship together. The full SQ VRB family
+ * (Beethoven late, Turtle Island, Reich/Glass, Shostakovich, Lachenmann)
+ * is auto-resolved here so the String Quartet preset surfaces them.
+ */
+const AUTO_RESOLVE_SONGWRITER_TO_VOICE_ID: ReadonlySet<string> = new Set([
+  'radiohead',
+  'debussy',
+  'beethoven_late',
+  'turtle_island',
+  'reich_glass',
+  'shostakovich',
+  'lachenmann',
+]);
+
 export function attachVoiceRuleBundleAndHarmonicScenes(
   context: CompositionContext,
   options: { harmonicVoice?: string } | undefined,
   attachOpts?: { skipHarmonicSceneLog?: boolean }
 ): void {
   context.harmonicScenes = buildHarmonicSceneStubs(context.form);
-  const raw = options?.harmonicVoice?.trim();
+  const songwriterStyleId = context.generationMetadata?.songwriterStyleId;
+  const autoResolved =
+    typeof songwriterStyleId === 'string' && AUTO_RESOLVE_SONGWRITER_TO_VOICE_ID.has(songwriterStyleId)
+      ? songwriterStyleId
+      : '';
+  const raw = options?.harmonicVoice?.trim() || autoResolved;
   if (!raw) {
     context.voiceBundle = undefined;
     if (context.generationMetadata) {

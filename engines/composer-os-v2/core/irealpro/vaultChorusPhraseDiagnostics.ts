@@ -140,6 +140,26 @@ export type ChorusTensionProgression = {
   perChorus: number[];
 };
 
+export type ChorusQualityDimension = 'density' | 'register' | 'motifTension' | 'rhythmicVariation';
+
+export type ChorusQualityTransition = {
+  fromChorusIndex: number;
+  toChorusIndex: number;
+  changedDimensions: ChorusQualityDimension[];
+  changedDimensionCount: number;
+  passed: boolean;
+  densityDelta: number;
+  registerDelta: number;
+  motifTensionDelta: number;
+  rhythmicVariationChanged: boolean;
+};
+
+export type ChorusQualityGate = {
+  minChangedDimensions: number;
+  transitions: ChorusQualityTransition[];
+  passed: boolean;
+};
+
 const HOOK_EXACT_TENSION_DELTA = -0.1;
 const HOOK_TRANSPOSED_TENSION_DELTA = 0.14;
 const CONTOUR_WEIGHT = 0.48;
@@ -199,4 +219,102 @@ export function buildTensionProgression(params: {
   }
 
   return { perChorus };
+}
+
+function playable(notes: ScoreNote[]): ScoreNote[] {
+  return notes.filter((n) => n.pitch > 0);
+}
+
+function meanPitch(notes: ScoreNote[]): number {
+  const p = playable(notes);
+  if (p.length === 0) return 0;
+  return p.reduce((sum, n) => sum + n.pitch, 0) / p.length;
+}
+
+function densityPerBar(notes: ScoreNote[], barsPerChorus: number): number {
+  if (barsPerChorus <= 0) return 0;
+  return playable(notes).length / barsPerChorus;
+}
+
+function contourSignature(contours: readonly PhraseContourTag[]): string {
+  let rise = 0;
+  let fall = 0;
+  let stable = 0;
+  for (const contour of contours) {
+    if (contour === 'rise') rise++;
+    else if (contour === 'fall') fall++;
+    else stable++;
+  }
+  return `${rise}:${fall}:${stable}:${contours.join('|')}`;
+}
+
+export function buildChorusQualityGate(params: {
+  notes: ScoreNote[];
+  phraseContours: PhraseContourTag[];
+  tensionProgression: ChorusTensionProgression;
+  barsPerChorus: number;
+  chorusCount: number;
+  minChangedDimensions?: number;
+}): ChorusQualityGate {
+  const minChangedDimensions = params.minChangedDimensions ?? 2;
+  const transitions: ChorusQualityTransition[] = [];
+  if (params.chorusCount < 2 || params.barsPerChorus < 1) {
+    return { minChangedDimensions, transitions, passed: true };
+  }
+
+  const chorusNotes: ScoreNote[][] = [];
+  const contourSlices: PhraseContourTag[][] = [];
+  for (let chorusIndex = 0; chorusIndex < params.chorusCount; chorusIndex++) {
+    const lo = chorusIndex * params.barsPerChorus;
+    const hi = lo + params.barsPerChorus;
+    chorusNotes.push(params.notes.filter((n) => n.barIndex >= lo && n.barIndex < hi));
+    contourSlices.push(params.phraseContours.slice(lo, hi));
+  }
+
+  for (let chorusIndex = 1; chorusIndex < params.chorusCount; chorusIndex++) {
+    const prevNotes = chorusNotes[chorusIndex - 1] ?? [];
+    const currNotes = chorusNotes[chorusIndex] ?? [];
+    const densityDelta = Math.abs(densityPerBar(currNotes, params.barsPerChorus) - densityPerBar(prevNotes, params.barsPerChorus));
+    const registerDelta = Math.abs(meanPitch(currNotes) - meanPitch(prevNotes));
+    const motifTensionDelta = Math.abs(
+      (params.tensionProgression.perChorus[chorusIndex] ?? 0) -
+        (params.tensionProgression.perChorus[chorusIndex - 1] ?? 0)
+    );
+    const rhythmicVariationChanged =
+      contourSignature(contourSlices[chorusIndex] ?? []) !== contourSignature(contourSlices[chorusIndex - 1] ?? []);
+    const changedDimensions: ChorusQualityDimension[] = [];
+    if (densityDelta >= 0.12) changedDimensions.push('density');
+    if (registerDelta >= 1.5) changedDimensions.push('register');
+    if (motifTensionDelta >= 0.08) changedDimensions.push('motifTension');
+    if (rhythmicVariationChanged) changedDimensions.push('rhythmicVariation');
+    transitions.push({
+      fromChorusIndex: chorusIndex - 1,
+      toChorusIndex: chorusIndex,
+      changedDimensions,
+      changedDimensionCount: changedDimensions.length,
+      passed: changedDimensions.length >= minChangedDimensions,
+      densityDelta,
+      registerDelta,
+      motifTensionDelta,
+      rhythmicVariationChanged,
+    });
+  }
+
+  return {
+    minChangedDimensions,
+    transitions,
+    passed: transitions.every((transition) => transition.passed),
+  };
+}
+
+export function assertChorusQualityGate(gate: ChorusQualityGate): void {
+  if (gate.passed) return;
+  const failed = gate.transitions.filter((transition) => !transition.passed);
+  const details = failed
+    .map(
+      (transition) =>
+        `${transition.fromChorusIndex}->${transition.toChorusIndex}:${transition.changedDimensionCount}/${gate.minChangedDimensions}`
+    )
+    .join(', ');
+  throw new Error(`Vault multi-chorus quality gate failed: ${details}`);
 }

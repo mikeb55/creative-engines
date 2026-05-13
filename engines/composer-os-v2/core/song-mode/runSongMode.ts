@@ -6,7 +6,12 @@ import { buildCompiledSong, buildLeadSheetContractFromCompiled, summaryStringFor
 import type { CompiledSong } from './songCompilationTypes';
 import type { LeadSheetContract } from './leadSheetContract';
 import { DEFAULT_SONG_VOICE_TYPE, type SongVoiceType } from './songModeTypes';
-import { planDefaultVerseChorusStructure, planExtendedPopStructure } from './songSectionPlanner';
+import {
+  planBeatlesPrimaryVVbV,
+  planBeatlesSecondaryVerseChorus,
+  planDefaultVerseChorusStructure,
+  planExtendedPopStructure,
+} from './songSectionPlanner';
 import {
   mergeSongModeValidation,
   validateCompiledSong,
@@ -25,7 +30,9 @@ import {
 } from '../lead-sheet/universalLeadSheetBuilder';
 import type { LeadSheet } from '../lead-sheet/leadSheetTypes';
 import type { AuthorRuleId, ClassicalSongRuleId, SongwriterRuleId } from './songwritingResearchTypes';
+import type { BeatlesContextMode, BeatlesFormTemplateId, BeatlesMelodicLens } from '../compositionContext';
 import type { StylePairingInput } from '../style-pairing/stylePairingTypes';
+import { DEFAULT_PRIMARY_SONGWRITER_STYLE, normalizeSongwriterStyleKey } from './songwriterStyleProfiles';
 
 export type SongModeStructureVariant = 'default' | 'extended';
 
@@ -49,6 +56,12 @@ export interface SongModeRunInput {
   leadSheet?: LeadSheet;
   /** Phase 2+3a — harmonic voice bundle id (engine policy shadow). */
   harmonicVoice?: string | null;
+  beatlesContext?: BeatlesContextMode;
+  beatlesMelodicLens?: BeatlesMelodicLens;
+  /** Beatles macro-form (`songSectionPlanner`). Default **`vv_br_v`** when primary is **`beatles`**. */
+  beatlesFormTemplate?: BeatlesFormTemplateId;
+  /** Radiohead — RH_MEL_05 acoustic vs electronic (`planMelodyBehaviour`). */
+  radioheadMelodicContext?: 'acoustic' | 'electronic';
 }
 
 export interface SongModeRunManifestHints {
@@ -81,12 +94,23 @@ export function runSongMode(input: SongModeRunInput): SongModeRunResult {
   const title = input.title ?? `Song Mode Study ${input.seed}`;
   const voiceType = input.voiceType ?? DEFAULT_SONG_VOICE_TYPE;
   const sectionBarTarget = input.totalBars ?? 32;
+  const primaryResolved =
+    normalizeSongwriterStyleKey(input.primarySongwriterStyle ?? '') ?? DEFAULT_PRIMARY_SONGWRITER_STYLE;
+  const beatlesTpl = input.beatlesFormTemplate ?? 'vv_br_v';
   const sections =
     input.variant === 'extended'
       ? planExtendedPopStructure()
-      : planDefaultVerseChorusStructure(sectionBarTarget);
+      : primaryResolved === 'beatles' && beatlesTpl === 'vv_br_v'
+        ? planBeatlesPrimaryVVbV(sectionBarTarget)
+        : primaryResolved === 'beatles' && beatlesTpl === 'verse_chorus'
+          ? planBeatlesSecondaryVerseChorus(sectionBarTarget)
+          : primaryResolved === 'beatles' && beatlesTpl === 'legacy_vc'
+            ? planDefaultVerseChorusStructure(sectionBarTarget)
+            : planDefaultVerseChorusStructure(sectionBarTarget);
 
-  const planVal = validateSectionPlanForSongMode(sections);
+  const planVal = validateSectionPlanForSongMode(sections, {
+    requireChorus: !(primaryResolved === 'beatles' && beatlesTpl === 'vv_br_v'),
+  });
   const v0 = validateSongModeRunInput(input);
   const secondaryTrimmed =
     input.secondarySongwriterStyle != null && String(input.secondarySongwriterStyle).trim() !== ''
@@ -108,6 +132,11 @@ export function runSongMode(input: SongModeRunInput): SongModeRunResult {
     classicalOverlay: input.classicalOverlay ?? undefined,
     stylePairing: input.stylePairing ?? undefined,
     harmonicVoice: input.harmonicVoice ?? undefined,
+    beatlesContext: input.beatlesContext,
+    beatlesMelodicLens: input.beatlesMelodicLens,
+    beatlesFormTemplate: primaryResolved === 'beatles' ? beatlesTpl : undefined,
+    songTotalBars: sectionBarTarget,
+    radioheadMelodicContext: input.radioheadMelodicContext,
   });
   const lead = buildLeadSheetContractFromCompiled(compiled);
 

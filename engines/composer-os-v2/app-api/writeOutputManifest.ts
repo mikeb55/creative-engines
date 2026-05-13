@@ -128,6 +128,16 @@ export function writeOutputManifest(
     radioheadDeviceReceipts?: GenerationMetadata['radioheadDeviceReceipts'];
     radioheadSliceReceipt?: GenerationMetadata['radioheadSliceReceipt'];
     radioheadEffectiveHarmonyBars?: GenerationMetadata['radioheadEffectiveHarmonyBars'];
+    radioheadVoiceLeadingGrammarReceipts?: GenerationMetadata['radioheadVoiceLeadingGrammarReceipts'];
+    radioheadMelodicGrammarReceipts?: GenerationMetadata['radioheadMelodicGrammarReceipts'];
+    radioheadMelodicContext?: GenerationMetadata['radioheadMelodicContext'];
+    radioheadRhythmGrammarReceipts?: GenerationMetadata['radioheadRhythmGrammarReceipts'];
+    radioheadRhythmEarlyPeriodBackbeat?: GenerationMetadata['radioheadRhythmEarlyPeriodBackbeat'];
+    radioheadRhythmAsymmetricFeaturesEligible?: GenerationMetadata['radioheadRhythmAsymmetricFeaturesEligible'];
+    radioheadOrchestrationGrammarReceipts?: GenerationMetadata['radioheadOrchestrationGrammarReceipts'];
+    radioheadOrchestrationPalette?: GenerationMetadata['radioheadOrchestrationPalette'];
+    radioheadMicrotonalGuitarEligible?: GenerationMetadata['radioheadMicrotonalGuitarEligible'];
+    radioheadFingerprintReceipts?: GenerationMetadata['radioheadFingerprintReceipts'];
     jamesBrownDiagnostics?: GenerationMetadata['jamesBrownDiagnostics'];
     jamesBrownDeviceReceipts?: GenerationMetadata['jamesBrownDeviceReceipts'];
     jamesBrownSliceReceipt?: GenerationMetadata['jamesBrownSliceReceipt'];
@@ -194,6 +204,16 @@ export function writeOutputManifest(
     wayneShorterEffectiveHarmonyBars?: GenerationMetadata['wayneShorterEffectiveHarmonyBars'];
     wayneShorterAntiElaborationGuards?: GenerationMetadata['wayneShorterAntiElaborationGuards'];
     wayneShorterEligibilityStats?: GenerationMetadata['wayneShorterEligibilityStats'];
+    wayneShorterHarmFingerprintReceipts?: GenerationMetadata['wayneShorterHarmFingerprintReceipts'];
+    wayneShorterMelFingerprintReceipts?: GenerationMetadata['wayneShorterMelFingerprintReceipts'];
+    wayneShorterRhythmFingerprintReceipts?: GenerationMetadata['wayneShorterRhythmFingerprintReceipts'];
+    wayneShorterFormFingerprintReceipts?: GenerationMetadata['wayneShorterFormFingerprintReceipts'];
+    wayneShorterFpFingerprintReceipts?: GenerationMetadata['wayneShorterFpFingerprintReceipts'];
+    wayneShorterHarmonicGrammarReceipts?: GenerationMetadata['wayneShorterHarmonicGrammarReceipts'];
+    wayneShorterMelodicGrammarReceipts?: GenerationMetadata['wayneShorterMelodicGrammarReceipts'];
+    wayneShorterRhythmGrammarReceipts?: GenerationMetadata['wayneShorterRhythmGrammarReceipts'];
+    wayneShorterFormGrammarReceipts?: GenerationMetadata['wayneShorterFormGrammarReceipts'];
+    wayneShorterFingerprintReceipts?: GenerationMetadata['wayneShorterFingerprintReceipts'];
     barryHarrisDiagnostics?: GenerationMetadata['barryHarrisDiagnostics'];
     barryHarrisDeviceReceipts?: GenerationMetadata['barryHarrisDeviceReceipts'];
     barryHarrisSliceReceipt?: GenerationMetadata['barryHarrisSliceReceipt'];
@@ -211,6 +231,11 @@ export function writeOutputManifest(
     debussyAntiElaborationGuards?: GenerationMetadata['debussyAntiElaborationGuards'];
     debussyArabesqueBars?: GenerationMetadata['debussyArabesqueBars'];
     debussyArabesqueMotifByBar?: GenerationMetadata['debussyArabesqueMotifByBar'];
+    debussyProgramPeriod?: GenerationMetadata['debussyProgramPeriod'];
+    debussyFormReceipts?: GenerationMetadata['debussyFormReceipts'];
+    debussyOrchestrationReceipts?: GenerationMetadata['debussyOrchestrationReceipts'];
+    debussyVocalColourOrchestral?: GenerationMetadata['debussyVocalColourOrchestral'];
+    debussyFingerprintReceipts?: GenerationMetadata['debussyFingerprintReceipts'];
     bernardHerrmannContext?: GenerationMetadata['bernardHerrmannContext'];
     bernardHerrmannDiagnostics?: GenerationMetadata['bernardHerrmannDiagnostics'];
     bernardHerrmannDeviceReceipts?: GenerationMetadata['bernardHerrmannDeviceReceipts'];
@@ -423,6 +448,16 @@ export function writeOutputManifest(
     radioheadDeviceReceipts: meta.radioheadDeviceReceipts,
     radioheadSliceReceipt: meta.radioheadSliceReceipt,
     radioheadEffectiveHarmonyBars: meta.radioheadEffectiveHarmonyBars,
+    radioheadVoiceLeadingGrammarReceipts: meta.radioheadVoiceLeadingGrammarReceipts,
+    radioheadMelodicGrammarReceipts: meta.radioheadMelodicGrammarReceipts,
+    radioheadMelodicContext: meta.radioheadMelodicContext,
+    radioheadRhythmGrammarReceipts: meta.radioheadRhythmGrammarReceipts,
+    radioheadRhythmEarlyPeriodBackbeat: meta.radioheadRhythmEarlyPeriodBackbeat,
+    radioheadRhythmAsymmetricFeaturesEligible: meta.radioheadRhythmAsymmetricFeaturesEligible,
+    radioheadOrchestrationGrammarReceipts: meta.radioheadOrchestrationGrammarReceipts,
+    radioheadOrchestrationPalette: meta.radioheadOrchestrationPalette,
+    radioheadMicrotonalGuitarEligible: meta.radioheadMicrotonalGuitarEligible,
+    radioheadFingerprintReceipts: meta.radioheadFingerprintReceipts,
     jamesBrownDiagnostics: meta.jamesBrownDiagnostics,
     jamesBrownDeviceReceipts: meta.jamesBrownDeviceReceipts,
     jamesBrownSliceReceipt: meta.jamesBrownSliceReceipt,
@@ -489,6 +524,16 @@ export function writeOutputManifest(
     wayneShorterEffectiveHarmonyBars: meta.wayneShorterEffectiveHarmonyBars,
     wayneShorterAntiElaborationGuards: meta.wayneShorterAntiElaborationGuards,
     wayneShorterEligibilityStats: meta.wayneShorterEligibilityStats,
+    wayneShorterHarmFingerprintReceipts: meta.wayneShorterHarmFingerprintReceipts,
+    wayneShorterMelFingerprintReceipts: meta.wayneShorterMelFingerprintReceipts,
+    wayneShorterRhythmFingerprintReceipts: meta.wayneShorterRhythmFingerprintReceipts,
+    wayneShorterFormFingerprintReceipts: meta.wayneShorterFormFingerprintReceipts,
+    wayneShorterFpFingerprintReceipts: meta.wayneShorterFpFingerprintReceipts,
+    wayneShorterHarmonicGrammarReceipts: meta.wayneShorterHarmonicGrammarReceipts,
+    wayneShorterMelodicGrammarReceipts: meta.wayneShorterMelodicGrammarReceipts,
+    wayneShorterRhythmGrammarReceipts: meta.wayneShorterRhythmGrammarReceipts,
+    wayneShorterFormGrammarReceipts: meta.wayneShorterFormGrammarReceipts,
+    wayneShorterFingerprintReceipts: meta.wayneShorterFingerprintReceipts,
     barryHarrisDiagnostics: meta.barryHarrisDiagnostics,
     barryHarrisDeviceReceipts: meta.barryHarrisDeviceReceipts,
     barryHarrisSliceReceipt: meta.barryHarrisSliceReceipt,
@@ -506,6 +551,11 @@ export function writeOutputManifest(
     debussyAntiElaborationGuards: meta.debussyAntiElaborationGuards,
     debussyArabesqueBars: meta.debussyArabesqueBars,
     debussyArabesqueMotifByBar: meta.debussyArabesqueMotifByBar,
+    debussyProgramPeriod: meta.debussyProgramPeriod,
+    debussyFormReceipts: meta.debussyFormReceipts,
+    debussyOrchestrationReceipts: meta.debussyOrchestrationReceipts,
+    debussyVocalColourOrchestral: meta.debussyVocalColourOrchestral,
+    debussyFingerprintReceipts: meta.debussyFingerprintReceipts,
     bernardHerrmannContext: meta.bernardHerrmannContext,
     bernardHerrmannDiagnostics: meta.bernardHerrmannDiagnostics,
     bernardHerrmannDeviceReceipts: meta.bernardHerrmannDeviceReceipts,

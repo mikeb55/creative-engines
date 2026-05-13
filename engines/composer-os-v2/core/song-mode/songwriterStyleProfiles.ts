@@ -1306,6 +1306,8 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
     motifCellSize: 3,
     intervalPreference: 'stepwise',
     guitarModalPreference: 'phrygian_aeolian',
+    /** RH_HARM_01 — Pablo Honey/Bends · OK Computer/Kid A · In Rainbows / Moon Shaped Pool (seed picks primary system). */
+    songwriterHarmonicPeriods: ['pablo_bends', 'ok_computer_kid_a', 'in_rainbows_moon'],
   },
   blur: {
     id: 'blur',
@@ -1698,6 +1700,85 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
     motifCellSize: 3,
     intervalPreference: 'angular',
   },
+  /**
+   * SQ VRB family (2026-05-12) — planning-weight stubs only. Real grammar
+   * lives in `voiceRuleBundles.ts` (BEETHOVEN_LATE / TURTLE_ISLAND /
+   * REICH_GLASS / LACHENMANN bundles, auto-attached by
+   * `attachVoiceRuleBundleAndHarmonicScenes`). These rows exist so the
+   * UI dropdown ids type-check against `SongwriterRuleId`.
+   */
+  beethoven_late: {
+    id: 'beethoven_late',
+    description:
+      'Beethoven late SQ VRB — fugato episodes, variation cycles, motivic compression, voice-led counterpoint.',
+    lineVsCellEmphasis: 0.7,
+    harmonyColourBias: 0.7,
+    formRegularity: 0.4,
+    prosodyInfluence: 0.3,
+    hookRepetitionBias: 0.4,
+    phraseRegularity: 0.3,
+    hookReturnVariation: 0.8,
+    harmonicSpeed: 0.55,
+    sectionContrast: 0.85,
+    syncopationBias: 0.25,
+    densityBias: 0.55,
+    motifCellSize: 4,
+    intervalPreference: 'stepwise',
+  },
+  turtle_island: {
+    id: 'turtle_island',
+    description:
+      'Turtle Island Quartet SQ VRB — jazz-to-quartet bridge: chord-scale voicings, guide-tone voice-leading, walking-bass, chop/hickety-mute textures, head-solos-head spine.',
+    lineVsCellEmphasis: 0.78,
+    harmonyColourBias: 0.78,
+    formRegularity: 0.55,
+    prosodyInfluence: 0.3,
+    hookRepetitionBias: 0.5,
+    phraseRegularity: 0.55,
+    hookReturnVariation: 0.55,
+    harmonicSpeed: 0.7,
+    sectionContrast: 0.6,
+    syncopationBias: 0.75,
+    densityBias: 0.55,
+    motifCellSize: 4,
+    intervalPreference: 'mixed',
+  },
+  reich_glass: {
+    id: 'reich_glass',
+    description:
+      'Reich/Glass minimalist SQ VRB — phase blocks, additive patterns, steady pulse, pattern-bass + pattern-loop, non-teleological process form.',
+    lineVsCellEmphasis: 0.4,
+    harmonyColourBias: 0.45,
+    formRegularity: 0.85,
+    prosodyInfluence: 0.15,
+    hookRepetitionBias: 0.9,
+    phraseRegularity: 0.85,
+    hookReturnVariation: 0.25,
+    harmonicSpeed: 0.25,
+    sectionContrast: 0.45,
+    syncopationBias: 0.4,
+    densityBias: 0.5,
+    motifCellSize: 3,
+    intervalPreference: 'pentatonic',
+  },
+  lachenmann: {
+    id: 'lachenmann',
+    description:
+      'Lachenmann SQ VRB — musique concrète instrumentale; sound-type (Klangtypen) grammar, pitch-role decoupled, through-composed noise grammar.',
+    lineVsCellEmphasis: 0.25,
+    harmonyColourBias: 0.2,
+    formRegularity: 0.15,
+    prosodyInfluence: 0.1,
+    hookRepetitionBias: 0.1,
+    phraseRegularity: 0.1,
+    hookReturnVariation: 0.7,
+    harmonicSpeed: 0.2,
+    sectionContrast: 0.95,
+    syncopationBias: 0.55,
+    densityBias: 0.45,
+    motifCellSize: 2,
+    intervalPreference: 'chromatic',
+  },
 };
 
 export const DEFAULT_PRIMARY_SONGWRITER_STYLE: SongwriterRuleId = 'beatles';
@@ -1899,6 +1980,16 @@ const ALIASES: Record<string, SongwriterRuleId> = {
   crimson: 'fripp_king_crimson',
   don_sebesky: 'don_sebesky',
   sebesky: 'don_sebesky',
+  beethoven_late: 'beethoven_late',
+  late_beethoven: 'beethoven_late',
+  turtle_island: 'turtle_island',
+  turtle_island_quartet: 'turtle_island',
+  turtle: 'turtle_island',
+  reich_glass: 'reich_glass',
+  reich_and_glass: 'reich_glass',
+  minimalist_sq: 'reich_glass',
+  lachenmann: 'lachenmann',
+  helmut_lachenmann: 'lachenmann',
 };
 
 export function normalizeSongwriterStyleKey(raw: string | undefined | null): SongwriterRuleId | null {

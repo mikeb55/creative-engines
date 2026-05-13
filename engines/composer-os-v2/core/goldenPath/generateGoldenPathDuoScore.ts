@@ -39,6 +39,7 @@ import { resolveMeasureBeatSpanQuarters } from '../rhythm/oddMeterQuantiser';
 import { guitarBassDuoPreset } from '../../presets/guitarBassDuoPreset';
 import { GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID, isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 import { applyPhraseFirstSingleLineMonophony, buildPhraseFirstDuoScore } from './duoSingleLinePhraseFirstPipeline';
+import { applyDuoIntentRegisterOwnership, applyDuoIntentVelocityBalance } from './duoIntentDepth';
 import { applyDuoWybleBassAnchorBar1Nudge } from './duoWybleBassAnchorNudge';
 import { wybleConsumptionReceiptForDuoFamily } from '../wyble/wybleConsumptionReceipt';
 import { RHYTHM_DNA_CELL_TABLE, type RhythmDnaCellId } from '../composer/rhythmDnaMotifBinder';
@@ -3725,7 +3726,7 @@ function buildGuitarPart(
   }
 
   if (isSongwriterRadiohead && context.generationMetadata) {
-    finalizeRadioheadMetadata(context.generationMetadata, rhAccum);
+    finalizeRadioheadMetadata(context.generationMetadata, rhAccum, context.seed);
   }
 
   if (isSongwriterJamesBrown && context.generationMetadata) {
@@ -3745,7 +3746,7 @@ function buildGuitarPart(
   }
 
   if (isSongwriterWayneShorter && context.generationMetadata) {
-    finalizeWayneShorterMetadata(context.generationMetadata, wsAccum);
+    finalizeWayneShorterMetadata(context.generationMetadata, wsAccum, context);
   }
 
   if (isSongwriterFrankZappa && context.generationMetadata) {
@@ -3763,7 +3764,7 @@ function buildGuitarPart(
   }
 
   if (isSongwriterDebussy && context.generationMetadata) {
-    finalizeDebussyMetadata(context.generationMetadata, dbAccum);
+    finalizeDebussyMetadata(context.generationMetadata, dbAccum, context);
   }
 
   if (isSongwriterBernardHerrmann && context.generationMetadata) {
@@ -6127,6 +6128,15 @@ export function generateGoldenPathDuoScore(
   if (
     isGuitarBassDuoFamily(context.presetId) &&
     context.presetId !== 'ecm_chamber' &&
+    context.presetId !== GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID &&
+    !useIndieDualGuitar
+  ) {
+    const duoIntentRegisterScore = createScore(plans.scoreTitle, [guitarPart, bassPart], { tempo: opts?.bpm ?? 120 });
+    applyDuoIntentRegisterOwnership(duoIntentRegisterScore, context);
+  }
+  if (
+    isGuitarBassDuoFamily(context.presetId) &&
+    context.presetId !== 'ecm_chamber' &&
     !useIndieDualGuitar &&
     context.generationMetadata?.songwriterStyleId !== 'arvo_part'
   ) {
@@ -6501,6 +6511,14 @@ export function generateGoldenPathDuoScore(
     }
   }
   finalizeAndSealDuoScoreBarMath(afterExpressive);
+  if (
+    isGuitarBassDuoFamily(context.presetId) &&
+    context.presetId !== 'ecm_chamber' &&
+    context.presetId !== GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID &&
+    !shouldUseIndieArtPopDualGuitarRoute(context)
+  ) {
+    applyDuoIntentVelocityBalance(afterExpressive, context);
+  }
   {
     const gPostFin = afterExpressive.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
     if (gPostFin) logGuitarVoice2Checkpoint('post-finalize', gPostFin);

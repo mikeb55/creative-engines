@@ -24,6 +24,114 @@ export function logSongModeHarmonyDebug(payload: Record<string, unknown>): void 
   console.log('[SONG_MODE_HARMONY]', JSON.stringify(payload));
 }
 
+type EffectiveHarmonyBarsMetadataKey = keyof GenerationMetadata;
+
+interface EffectiveHarmonyTruthRegistryEntry {
+  songwriterStyleIds?: readonly string[];
+  styleProfiles?: readonly string[];
+  metadataKey: EffectiveHarmonyBarsMetadataKey;
+}
+
+export const EFFECTIVE_HARMONY_TRUTH_REGISTRY: readonly EffectiveHarmonyTruthRegistryEntry[] = [
+  { songwriterStyleIds: ['brian_wilson'], metadataKey: 'brianWilsonEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['stevie_wonder'], metadataKey: 'stevieWonderEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['radiohead'], metadataKey: 'radioheadEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['james_brown'], metadataKey: 'jamesBrownEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['joni_mitchell'], styleProfiles: ['STYLE_JONI_MITCHELL'], metadataKey: 'joniMitchellEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['sonic_youth'], styleProfiles: ['STYLE_SONIC_YOUTH'], metadataKey: 'sonicYouthEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['pat_metheny'], styleProfiles: ['STYLE_PAT_METHENY'], metadataKey: 'patMethenyEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['wayne_shorter'], metadataKey: 'wayneShorterEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['barry_harris'], metadataKey: 'barryHarrisEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['bill_evans'], metadataKey: 'billEvansEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['debussy'], metadataKey: 'debussyEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['duke_ellington'], metadataKey: 'dukeEllingtonEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['miles_davis'], metadataKey: 'milesDavisEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['bartok'], metadataKey: 'bartokEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['berg'], metadataKey: 'bergEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['sammy_nestico'], metadataKey: 'sammyNesticoEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['bob_brookmeyer'], metadataKey: 'bobBrookmeyerEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['clare_fischer'], metadataKey: 'clareFischerEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['oliver_nelson'], metadataKey: 'oliverNelsonEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['quincy_jones'], metadataKey: 'quincyJonesEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['gershwin'], metadataKey: 'gershwinEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['arvo_part'], metadataKey: 'arvoPartEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['satie'], metadataKey: 'satieEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['prince'], metadataKey: 'princeEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['beatles'], metadataKey: 'beatlesEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['fela_kuti'], metadataKey: 'felaKutiEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['cole_porter'], metadataKey: 'colePorterEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['gil_evans'], metadataKey: 'gilEvansEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['maria_schneider'], metadataKey: 'mariaSchneiderEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['thad_jones'], metadataKey: 'thadJonesEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['charles_mingus'], metadataKey: 'charlesMingusEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['count_basie'], metadataKey: 'basieEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['bacharach'], metadataKey: 'bacharachEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['donald_fagen'], metadataKey: 'donaldFagenEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['ecm_chamber'], metadataKey: 'ecmChamberEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['antonio_carlos_jobim'], metadataKey: 'jobimEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['herbie_hancock'], metadataKey: 'herbieHancockEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['stephen_sondheim'], metadataKey: 'sondheimEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['kate_bush'], metadataKey: 'kateBushEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['thelonious_monk'], metadataKey: 'theloniousMonkEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['john_coltrane'], metadataKey: 'johnColtraneEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['andrew_hill'], metadataKey: 'andrewHillEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['jim_hall'], metadataKey: 'jimHallEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['charlie_parker'], metadataKey: 'charlieParkerEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['fripp_king_crimson'], metadataKey: 'frippKingCrimsonEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['bernard_herrmann'], metadataKey: 'bernardHerrmannEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['john_williams'], metadataKey: 'johnWilliamsEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['ennio_morricone'], metadataKey: 'ennioMorriconeEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['nino_rota'], metadataKey: 'ninoRotaEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['jerry_goldsmith'], metadataKey: 'jerryGoldsmithEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['philip_glass'], metadataKey: 'philipGlassEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['steve_reich'], metadataKey: 'steveReichEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['messiaen'], metadataKey: 'messiaenEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['hans_zimmer'], metadataKey: 'hansZimmerEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['angelo_badalamenti'], metadataKey: 'angeloBadalamentiEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['frank_zappa'], metadataKey: 'frankZappaEffectiveHarmonyBars' },
+];
+
+function registryEntryMatches(entry: EffectiveHarmonyTruthRegistryEntry, md: GenerationMetadata): boolean {
+  const songwriterStyleId = md.songwriterStyleId;
+  const styleProfile = md.styleProfile;
+  return (
+    (songwriterStyleId != null && (entry.songwriterStyleIds?.includes(songwriterStyleId) ?? false)) ||
+    (styleProfile != null && (entry.styleProfiles?.includes(styleProfile) ?? false))
+  );
+}
+
+export function resolveEffectiveHarmonyTruth(
+  md: GenerationMetadata | undefined,
+  opts: {
+    totalBars: number;
+    expectedLength?: number;
+    harmonyContext?: CompositionContext['harmonyContext'];
+  }
+): string[] | undefined {
+  if (!md) return undefined;
+  const expectedLength = opts.expectedLength;
+  const matchesLength = (bars: readonly string[]) =>
+    bars.length === opts.totalBars && (expectedLength == null || bars.length === expectedLength);
+
+  if (
+    md.songwriterStyleId === 'frank_zappa' &&
+    opts.harmonyContext?.styleId === 'frank_zappa' &&
+    matchesLength(opts.harmonyContext.bars)
+  ) {
+    return [...opts.harmonyContext.bars];
+  }
+
+  for (const entry of EFFECTIVE_HARMONY_TRUTH_REGISTRY) {
+    if (!registryEntryMatches(entry, md)) continue;
+    const bars = md[entry.metadataKey];
+    if (Array.isArray(bars) && bars.every((bar): bar is string => typeof bar === 'string') && matchesLength(bars)) {
+      return bars;
+    }
+  }
+
+  return undefined;
+}
+
 export function assertCustomLockedRouting(
   layer: string,
   options: CustomLockedRoutingWire | undefined,
@@ -90,327 +198,12 @@ export function assertScoreMatchesLockedHarmonyWire(
   if (options?.harmonyMode !== 'custom_locked' && options?.harmonyMode !== 'custom') return;
   const md = context?.generationMetadata as GenerationMetadata | undefined;
   const tb = context?.form.totalBars ?? wire.length;
-  const bwEff = md?.brianWilsonEffectiveHarmonyBars;
-  const swEff = md?.stevieWonderEffectiveHarmonyBars;
-  const rhEff = md?.radioheadEffectiveHarmonyBars;
-  const jbEff = md?.jamesBrownEffectiveHarmonyBars;
-  const jmEff = md?.joniMitchellEffectiveHarmonyBars;
-  const syEff = md?.sonicYouthEffectiveHarmonyBars;
-  const pmEff = md?.patMethenyEffectiveHarmonyBars;
-  const wsEff = md?.wayneShorterEffectiveHarmonyBars;
-  const bhEff = md?.barryHarrisEffectiveHarmonyBars;
-  const beEff = md?.billEvansEffectiveHarmonyBars;
-  const dbEff = md?.debussyEffectiveHarmonyBars;
-  const deEff = md?.dukeEllingtonEffectiveHarmonyBars;
-  const tjEff = md?.thadJonesEffectiveHarmonyBars;
-  const cbEff = md?.basieEffectiveHarmonyBars;
-  const mdEff = md?.milesDavisEffectiveHarmonyBars;
-  const bkEff = md?.bartokEffectiveHarmonyBars;
-  const bgEff = md?.bergEffectiveHarmonyBars;
-  const snNesticoEff = md?.sammyNesticoEffectiveHarmonyBars;
-  const brookmeyerEff = md?.bobBrookmeyerEffectiveHarmonyBars;
-  const clareFischerEff = md?.clareFischerEffectiveHarmonyBars;
-  const nelsonEff = md?.oliverNelsonEffectiveHarmonyBars;
-  const qjJonesEff = md?.quincyJonesEffectiveHarmonyBars;
-  const btEff = md?.beatlesEffectiveHarmonyBars;
-  const fkEff = md?.felaKutiEffectiveHarmonyBars;
-  const ggEff = md?.gershwinEffectiveHarmonyBars;
-  const apEff = md?.arvoPartEffectiveHarmonyBars;
-  const satieEff = md?.satieEffectiveHarmonyBars;
-  const cpPorterEff = md?.colePorterEffectiveHarmonyBars;
-  const msEff = md?.mariaSchneiderEffectiveHarmonyBars;
-  const baEff = md?.bacharachEffectiveHarmonyBars;
-  const dfEff = md?.donaldFagenEffectiveHarmonyBars;
-  const eccEff = md?.ecmChamberEffectiveHarmonyBars;
-  const ajEff = md?.jobimEffectiveHarmonyBars;
-  const hhEff = md?.herbieHancockEffectiveHarmonyBars;
-  const shEff = md?.sondheimEffectiveHarmonyBars;
-  const kbEff = md?.kateBushEffectiveHarmonyBars;
-  const tmEff = md?.theloniousMonkEffectiveHarmonyBars;
-  const jcEff = md?.johnColtraneEffectiveHarmonyBars;
-  const ahEff = md?.andrewHillEffectiveHarmonyBars;
-  const jhEff = md?.jimHallEffectiveHarmonyBars;
-  const cpEff = md?.charlieParkerEffectiveHarmonyBars;
-  const fkcEff = md?.frippKingCrimsonEffectiveHarmonyBars;
-  const bhHerrEff = md?.bernardHerrmannEffectiveHarmonyBars;
-  const jwEff = md?.johnWilliamsEffectiveHarmonyBars;
-  const emEff = md?.ennioMorriconeEffectiveHarmonyBars;
-  const nrEff = md?.ninoRotaEffectiveHarmonyBars;
-  const jgEff = md?.jerryGoldsmithEffectiveHarmonyBars;
-  const pgEff = md?.philipGlassEffectiveHarmonyBars;
-  const srEff = md?.steveReichEffectiveHarmonyBars;
-  const omEff = md?.messiaenEffectiveHarmonyBars;
-  const hzEff = md?.hansZimmerEffectiveHarmonyBars;
-  const abEff = md?.angeloBadalamentiEffectiveHarmonyBars;
   const expectedWire =
-    md?.songwriterStyleId === 'brian_wilson' && Array.isArray(bwEff) && bwEff.length === tb && bwEff.length === wire.length
-      ? bwEff
-      : md?.songwriterStyleId === 'stevie_wonder' &&
-          Array.isArray(swEff) &&
-          swEff.length === tb &&
-          swEff.length === wire.length
-        ? swEff
-        : md?.songwriterStyleId === 'radiohead' &&
-            Array.isArray(rhEff) &&
-            rhEff.length === tb &&
-            rhEff.length === wire.length
-          ? rhEff
-          : md?.songwriterStyleId === 'james_brown' &&
-              Array.isArray(jbEff) &&
-              jbEff.length === tb &&
-              jbEff.length === wire.length
-            ? jbEff
-            : (md?.songwriterStyleId === 'joni_mitchell' || md?.styleProfile === 'STYLE_JONI_MITCHELL') &&
-                Array.isArray(jmEff) &&
-                jmEff.length === tb &&
-                jmEff.length === wire.length
-              ? jmEff
-              : (md?.songwriterStyleId === 'sonic_youth' || md?.styleProfile === 'STYLE_SONIC_YOUTH') &&
-                  Array.isArray(syEff) &&
-                  syEff.length === tb &&
-                  syEff.length === wire.length
-                ? syEff
-                : (md?.songwriterStyleId === 'pat_metheny' || md?.styleProfile === 'STYLE_PAT_METHENY') &&
-                    Array.isArray(pmEff) &&
-                    pmEff.length === tb &&
-                    pmEff.length === wire.length
-                  ? pmEff
-                  : md?.songwriterStyleId === 'wayne_shorter' &&
-                      Array.isArray(wsEff) &&
-                      wsEff.length === tb &&
-                      wsEff.length === wire.length
-                    ? wsEff
-                    : md?.songwriterStyleId === 'barry_harris' &&
-                        Array.isArray(bhEff) &&
-                        bhEff.length === tb &&
-                        bhEff.length === wire.length
-                      ? bhEff
-                      : md?.songwriterStyleId === 'bill_evans' &&
-                          Array.isArray(beEff) &&
-                          beEff.length === tb &&
-                          beEff.length === wire.length
-                        ? beEff
-                        : md?.songwriterStyleId === 'debussy' &&
-                            Array.isArray(dbEff) &&
-                            dbEff.length === tb &&
-                            dbEff.length === wire.length
-                          ? dbEff
-                        : md?.songwriterStyleId === 'duke_ellington' &&
-                            Array.isArray(deEff) &&
-                            deEff.length === tb &&
-                            deEff.length === wire.length
-                          ? deEff
-                          : md?.songwriterStyleId === 'thad_jones' &&
-                              Array.isArray(tjEff) &&
-                              tjEff.length === tb &&
-                              tjEff.length === wire.length
-                            ? tjEff
-                            : md?.songwriterStyleId === 'count_basie' &&
-                                Array.isArray(cbEff) &&
-                                cbEff.length === tb &&
-                                cbEff.length === wire.length
-                              ? cbEff
-                            : md?.songwriterStyleId === 'miles_davis' &&
-                              Array.isArray(mdEff) &&
-                              mdEff.length === tb &&
-                              mdEff.length === wire.length
-                            ? mdEff
-                            : md?.songwriterStyleId === 'bartok' &&
-                                Array.isArray(bkEff) &&
-                                bkEff.length === tb &&
-                                bkEff.length === wire.length
-                              ? bkEff
-                            : md?.songwriterStyleId === 'berg' &&
-                                Array.isArray(bgEff) &&
-                                bgEff.length === tb &&
-                                bgEff.length === wire.length
-                              ? bgEff
-                            : md?.songwriterStyleId === 'sammy_nestico' &&
-                                Array.isArray(snNesticoEff) &&
-                                snNesticoEff.length === tb &&
-                                snNesticoEff.length === wire.length
-                              ? snNesticoEff
-                            : md?.songwriterStyleId === 'bob_brookmeyer' &&
-                                Array.isArray(brookmeyerEff) &&
-                                brookmeyerEff.length === tb &&
-                                brookmeyerEff.length === wire.length
-                              ? brookmeyerEff
-                            : md?.songwriterStyleId === 'clare_fischer' &&
-                                Array.isArray(clareFischerEff) &&
-                                clareFischerEff.length === tb &&
-                                clareFischerEff.length === wire.length
-                              ? clareFischerEff
-                            : md?.songwriterStyleId === 'oliver_nelson' &&
-                                Array.isArray(nelsonEff) &&
-                                nelsonEff.length === tb &&
-                                nelsonEff.length === wire.length
-                              ? nelsonEff
-                            : md?.songwriterStyleId === 'quincy_jones' &&
-                                Array.isArray(qjJonesEff) &&
-                                qjJonesEff.length === tb &&
-                                qjJonesEff.length === wire.length
-                              ? qjJonesEff
-                            : md?.songwriterStyleId === 'beatles' &&
-                                Array.isArray(btEff) &&
-                                btEff.length === tb &&
-                                btEff.length === wire.length
-                              ? btEff
-                            : md?.songwriterStyleId === 'fela_kuti' &&
-                                Array.isArray(fkEff) &&
-                                fkEff.length === tb &&
-                                fkEff.length === wire.length
-                              ? fkEff
-                            : md?.songwriterStyleId === 'gershwin' &&
-                                Array.isArray(ggEff) &&
-                                ggEff.length === tb &&
-                                ggEff.length === wire.length
-                              ? ggEff
-                            : md?.songwriterStyleId === 'arvo_part' &&
-                                Array.isArray(apEff) &&
-                                apEff.length === tb &&
-                                apEff.length === wire.length
-                              ? apEff
-                            : md?.songwriterStyleId === 'satie' &&
-                                Array.isArray(satieEff) &&
-                                satieEff.length === tb &&
-                                satieEff.length === wire.length
-                              ? satieEff
-                            : md?.songwriterStyleId === 'cole_porter' &&
-                                Array.isArray(cpPorterEff) &&
-                                cpPorterEff.length === tb &&
-                                cpPorterEff.length === wire.length
-                              ? cpPorterEff
-                            : md?.songwriterStyleId === 'maria_schneider' &&
-                                Array.isArray(msEff) &&
-                                msEff.length === tb &&
-                                msEff.length === wire.length
-                              ? msEff
-                            : md?.songwriterStyleId === 'bacharach' &&
-                            Array.isArray(baEff) &&
-                            baEff.length === tb &&
-                            baEff.length === wire.length
-                          ? baEff
-                          : md?.songwriterStyleId === 'donald_fagen' &&
-                              Array.isArray(dfEff) &&
-                              dfEff.length === tb &&
-                              dfEff.length === wire.length
-                            ? dfEff
-                            : md?.songwriterStyleId === 'ecm_chamber' &&
-                                Array.isArray(eccEff) &&
-                                eccEff.length === tb &&
-                                eccEff.length === wire.length
-                              ? eccEff
-                              : md?.songwriterStyleId === 'antonio_carlos_jobim' &&
-                                  Array.isArray(ajEff) &&
-                                  ajEff.length === tb &&
-                                  ajEff.length === wire.length
-                                ? ajEff
-                                : md?.songwriterStyleId === 'herbie_hancock' &&
-                                    Array.isArray(hhEff) &&
-                                    hhEff.length === tb &&
-                                    hhEff.length === wire.length
-                                  ? hhEff
-                                  : md?.songwriterStyleId === 'stephen_sondheim' &&
-                                      Array.isArray(shEff) &&
-                                      shEff.length === tb &&
-                                      shEff.length === wire.length
-                                    ? shEff
-                                    : md?.songwriterStyleId === 'kate_bush' &&
-                                        Array.isArray(kbEff) &&
-                                        kbEff.length === tb &&
-                                        kbEff.length === wire.length
-                                      ? kbEff
-                                      : md?.songwriterStyleId === 'thelonious_monk' &&
-                                          Array.isArray(tmEff) &&
-                                          tmEff.length === tb &&
-                                          tmEff.length === wire.length
-                                        ? tmEff
-                                        : md?.songwriterStyleId === 'john_coltrane' &&
-                                            Array.isArray(jcEff) &&
-                                            jcEff.length === tb &&
-                                            jcEff.length === wire.length
-                                          ? jcEff
-                                          : md?.songwriterStyleId === 'andrew_hill' &&
-                                              Array.isArray(ahEff) &&
-                                              ahEff.length === tb &&
-                                              ahEff.length === wire.length
-                                            ? ahEff
-                                            : md?.songwriterStyleId === 'jim_hall' &&
-                                                Array.isArray(jhEff) &&
-                                                jhEff.length === tb &&
-                                                jhEff.length === wire.length
-                                              ? jhEff
-                                              : md?.songwriterStyleId === 'charlie_parker' &&
-                                                  Array.isArray(cpEff) &&
-                                                  cpEff.length === tb &&
-                                                  cpEff.length === wire.length
-                                                ? cpEff
-                                              : md?.songwriterStyleId === 'fripp_king_crimson' &&
-                                                  Array.isArray(fkcEff) &&
-                                                  fkcEff.length === tb &&
-                                                  fkcEff.length === wire.length
-                                                ? fkcEff
-                                              : md?.songwriterStyleId === 'bernard_herrmann' &&
-                                                Array.isArray(bhHerrEff) &&
-                                                bhHerrEff.length === tb &&
-                                                bhHerrEff.length === wire.length
-                                              ? bhHerrEff
-                                              : md?.songwriterStyleId === 'john_williams' &&
-                                                  Array.isArray(jwEff) &&
-                                                  jwEff.length === tb &&
-                                                  jwEff.length === wire.length
-                                                ? jwEff
-                                                : md?.songwriterStyleId === 'ennio_morricone' &&
-                                                    Array.isArray(emEff) &&
-                                                    emEff.length === tb &&
-                                                    emEff.length === wire.length
-                                                  ? emEff
-                                                  : md?.songwriterStyleId === 'nino_rota' &&
-                                                      Array.isArray(nrEff) &&
-                                                      nrEff.length === tb &&
-                                                      nrEff.length === wire.length
-                                                    ? nrEff
-                                                    : md?.songwriterStyleId === 'jerry_goldsmith' &&
-                                                        Array.isArray(jgEff) &&
-                                                        jgEff.length === tb &&
-                                                        jgEff.length === wire.length
-                                                      ? jgEff
-                                                      : md?.songwriterStyleId === 'philip_glass' &&
-                                                          Array.isArray(pgEff) &&
-                                                          pgEff.length === tb &&
-                                                          pgEff.length === wire.length
-                                                        ? pgEff
-                                                        : md?.songwriterStyleId === 'steve_reich' &&
-                                                            Array.isArray(srEff) &&
-                                                            srEff.length === tb &&
-                                                            srEff.length === wire.length
-                                                          ? srEff
-                                                          : md?.songwriterStyleId === 'messiaen' &&
-                                                              Array.isArray(omEff) &&
-                                                              omEff.length === tb &&
-                                                              omEff.length === wire.length
-                                                            ? omEff
-                                                          : md?.songwriterStyleId === 'hans_zimmer' &&
-                                                            Array.isArray(hzEff) &&
-                                                            hzEff.length === tb &&
-                                                            hzEff.length === wire.length
-                                                          ? hzEff
-                                                          : md?.songwriterStyleId === 'angelo_badalamenti' &&
-                                                              Array.isArray(abEff) &&
-                                                              abEff.length === tb &&
-                                                              abEff.length === wire.length
-                                                            ? abEff
-                                            : md?.songwriterStyleId === 'frank_zappa' &&
-                                                context?.harmonyContext &&
-                                                context.harmonyContext.bars.length === tb &&
-                                                context.harmonyContext.bars.length === wire.length
-                                              ? [...context.harmonyContext.bars]
-                                              : md?.songwriterStyleId === 'frank_zappa' &&
-                                                  Array.isArray(md?.frankZappaEffectiveHarmonyBars) &&
-                                                  md.frankZappaEffectiveHarmonyBars.length === tb &&
-                                                  md.frankZappaEffectiveHarmonyBars.length === wire.length
-                                                ? md.frankZappaEffectiveHarmonyBars
-                                                : wire;
+    resolveEffectiveHarmonyTruth(md, {
+      totalBars: tb,
+      expectedLength: wire.length,
+      harmonyContext: context?.harmonyContext,
+    }) ?? wire;
   const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   if (!g) {
     throw new Error('CUSTOM HARMONY NOT REACHING GOLDEN PATH: missing guitar part for chord check.');

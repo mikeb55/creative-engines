@@ -3,6 +3,7 @@
  * Profiles drive {@link planLeadMelody}; optional vocal-lead-sheet manifest hints.
  */
 
+import type { BeatlesContextMode, BeatlesMelodicLens } from '../compositionContext';
 import type { SongwriterRuleId } from './songwritingResearchTypes';
 
 /** Vocal planning rhythm density — drives quarter vs eighth patterns in {@link planLeadMelody}. */
@@ -60,7 +61,56 @@ export interface MelodyBehaviourPlan {
    */
   wideLeapPeakPerPhrase?: boolean;
   malLeadHints?: MalLeadHints;
+  /** Beatles BT_MEL / BT_FP_04 — Lennon vs McCartney vs blended writer lens (default **`blended`**). */
+  beatlesMelodicLens?: BeatlesMelodicLens;
+  /** Beatles BT_MEL_05 — Abbey-era exotic/modal melody vocabulary. */
+  beatlesLatePeriodModalMelody?: boolean;
+  /** Beatles BT_MEL_02 — perfect-fourth leaps emphasized only in late-period encoding. */
+  beatlesAllowFourthLeapEmphasis?: boolean;
+  /** RH_MEL_05 — resolved acoustic (stepwise chord-tone) vs electronic (syncopated layered) posture. */
+  radioheadMelodicContext?: 'acoustic' | 'electronic';
 }
+
+/** RH_MEL_* pattern tags — Radiohead melodic research (`radioheadSlice` cross-ref). */
+export const radioheadMelodicGrammarTags = {
+  mel01_semitone_dominant: 'rh:mel01_semitone_dominant',
+  mel02_narrow_range_obsessive: 'rh:mel02_narrow_range_obsessive',
+  mel03_outside_modal_clash: 'rh:mel03_outside_modal_clash',
+  mel04_falsetto_break: 'rh:mel04_falsetto_break_boundary',
+  mel05_acoustic: 'rh:mel05_acoustic_mode',
+  mel05_electronic: 'rh:mel05_electronic_mode',
+} as const;
+
+export type RadioheadMelodyPlanOptions = {
+  melodicContext?: 'acoustic' | 'electronic';
+};
+
+/** DB_MEL_01–05 — Debussy melodic research (`applyDebussyMelodicEncoding`). */
+export const debussyMelodicGrammarTags = {
+  mel01_conjunct_arabesque: 'db:mel01_conjunct_arabesque',
+  mel02_modal_pentatonic_cells: 'db:mel02_modal_pentatonic_cells',
+  mel03_gesture_timbre_handoff: 'db:mel03_gesture_timbre_handoff',
+  mel04_coloristic_ornaments: 'db:mel04_coloristic_ornaments',
+  mel05_texture_embedded: 'db:mel05_texture_embedded',
+} as const;
+
+export function collectDebussyMelodicGrammarReceipts(plan: MelodyBehaviourPlan): string[] {
+  return plan.devices.filter((d) => d.startsWith('db:mel'));
+}
+
+/** Receipt tags aligned with Beatles melodic research (BT_MEL_01–05). */
+export const beatlesMelodicGrammarTags = {
+  mel01_SRDC: 'bt:mel01_SRDC_eight_bar',
+  mel02_distribution: 'bt:mel02_interval_distribution_arch',
+  mel03_lennon: 'bt:mel03_lennon_mode',
+  mel04_mccartney: 'bt:mel04_mccartney_mode',
+  mel05_late_modal: 'bt:mel05_late_period_modal_melody',
+} as const;
+
+export type BeatlesMelodyPlanOptions = {
+  beatlesContext?: BeatlesContextMode;
+  beatlesMelodicLens?: BeatlesMelodicLens;
+};
 
 function clamp01(n: number): number {
   return Math.max(0, Math.min(1, n));
@@ -108,12 +158,13 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
   radiohead: {
     intervalTendency: 'stepwise',
     rhythmicSubdivision: 'mixed',
-    repetitionVsVariationBias: 0.8,
+    repetitionVsVariationBias: 0.82,
     phraseLength: 5,
     contourProfile: 'flat_with_terminal_climax',
     phraseAsymmetryTendency: 0.68,
     cadenceFrequency: 'low',
     devices: ['cell_repetition', 'modal_unease', 'metric_dislocation'],
+    wideLeapPeakPerPhrase: true,
   },
   james_brown: {
     intervalTendency: 'stepwise',
@@ -482,11 +533,20 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
     intervalTendency: 'mixed',
     rhythmicSubdivision: 'mixed',
     repetitionVsVariationBias: 0.5,
-    phraseLength: 4,
+    phraseLength: 8,
     contourProfile: 'arch',
     phraseAsymmetryTendency: 0.55,
     cadenceFrequency: 'medium',
-    devices: ['aaba_form', 'flat_side_modal', 'co_tonic_switch', 'chromatic_mediant', 'suite_form'],
+    devices: [
+      'aaba_form',
+      'flat_side_modal',
+      'co_tonic_switch',
+      'chromatic_mediant',
+      'suite_form',
+      'vl01_chromatic_inner_voice_line',
+      'vl06_SRDC_phrase_roles',
+      'vl05_blue_note_clash_colour',
+    ],
   },
   fela_kuti: {
     intervalTendency: 'mixed',
@@ -546,7 +606,16 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
     contourProfile: 'dissolving',
     phraseAsymmetryTendency: 0.7,
     cadenceFrequency: 'low',
-    devices: ['whole_tone_melody', 'pentatonic_contrast', 'parallel_planing', 'unresolved_appoggiatura', 'arabesque'],
+    devices: [
+      'whole_tone_melody',
+      'pentatonic_contrast',
+      'parallel_planing',
+      'unresolved_appoggiatura',
+      'arabesque',
+      'heterophonic_doubling',
+      'extreme_pedal_register',
+      'bell_register_frame',
+    ],
   },
   bernard_herrmann: {
     intervalTendency: 'mixed',
@@ -786,20 +855,172 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
   },
 };
 
+function seededUnitRadiohead(seed: number, salt: number): number {
+  let s = (seed ^ salt * 1103515245) >>> 0;
+  s = (s * 1664525 + 1013904223) >>> 0;
+  return s / 0xffffffff;
+}
+
+/** RH_MEL_01–05 — semitone-led line, narrow obsessive centre, outside clashes, falsetto boundary, acoustic/electronic split. */
+function applyRadioheadMelodicEncoding(
+  row: MelodyBehaviourPlan,
+  seed: number,
+  opts?: RadioheadMelodyPlanOptions
+): MelodyBehaviourPlan {
+  const devices = [...row.devices];
+  const pushTag = (t: string): void => {
+    if (!devices.includes(t)) devices.push(t);
+  };
+  pushTag(radioheadMelodicGrammarTags.mel01_semitone_dominant);
+  pushTag(radioheadMelodicGrammarTags.mel02_narrow_range_obsessive);
+  pushTag(radioheadMelodicGrammarTags.mel03_outside_modal_clash);
+  pushTag(radioheadMelodicGrammarTags.mel04_falsetto_break);
+
+  const ctx: 'acoustic' | 'electronic' =
+    opts?.melodicContext ??
+    (seededUnitRadiohead(seed, 55103) < 0.5 ? 'acoustic' : 'electronic');
+
+  pushTag(ctx === 'acoustic' ? radioheadMelodicGrammarTags.mel05_acoustic : radioheadMelodicGrammarTags.mel05_electronic);
+
+  const rhythmicSubdivision: MelodyRhythmicSubdivision =
+    ctx === 'acoustic' ? 'half_quarter' : 'eighth_patterns';
+
+  return {
+    ...row,
+    devices,
+    intervalTendency: 'stepwise',
+    rhythmicSubdivision,
+    repetitionVsVariationBias: clamp01(0.82 + (seed % 11) / 100),
+    cadenceFrequency: 'low',
+    wideLeapPeakPerPhrase: true,
+    phraseLength: Math.min(row.phraseLength, 6),
+    contourProfile: row.contourProfile ?? 'flat_with_terminal_climax',
+    radioheadMelodicContext: ctx,
+  };
+}
+
+export function collectRadioheadMelodicGrammarReceipts(plan: MelodyBehaviourPlan): string[] {
+  const out = plan.devices.filter((d) => d.startsWith('rh:mel'));
+  if (plan.radioheadMelodicContext) {
+    out.push(`rh:mel05_context=${plan.radioheadMelodicContext}`);
+  }
+  return out;
+}
+
+/** DB_MEL_01–05 — conjunct arabesque + M2 field; modal/pentatonic independence; timbral gesture handoff; weak-beat ornaments; texture-fused line. */
+function applyDebussyMelodicEncoding(row: MelodyBehaviourPlan, seed: number): MelodyBehaviourPlan {
+  const devices = [...row.devices];
+  const pushTag = (t: string): void => {
+    if (!devices.includes(t)) devices.push(t);
+  };
+  pushTag(debussyMelodicGrammarTags.mel01_conjunct_arabesque);
+  pushTag(debussyMelodicGrammarTags.mel02_modal_pentatonic_cells);
+  pushTag(debussyMelodicGrammarTags.mel03_gesture_timbre_handoff);
+  pushTag(debussyMelodicGrammarTags.mel04_coloristic_ornaments);
+  pushTag(debussyMelodicGrammarTags.mel05_texture_embedded);
+
+  const mal: MalLeadHints = {
+    ...(row.malLeadHints ?? {}),
+    modalIntervalPreference: true,
+    avoidStrongBeatOneAttack: true,
+    commonToneReturnBias: clamp01(0.52 + (seed % 7) / 100),
+    sequentialDisplacementBias: clamp01(0.28 + (seed % 5) / 100),
+    attackDensity: 'low',
+    interOnsetSpacing: 'wide',
+  };
+
+  return {
+    ...row,
+    devices,
+    intervalTendency: 'stepwise',
+    rhythmicSubdivision: 'half_quarter',
+    phraseLength: Math.min(row.phraseLength, 4),
+    repetitionVsVariationBias: clamp01(0.42 + (seed % 9) / 100),
+    cadenceFrequency: 'low',
+    contourProfile: row.contourProfile ?? 'dissolving',
+    malLeadHints: mal,
+  };
+}
+
+function applyBeatlesMelodicEncoding(
+  row: MelodyBehaviourPlan,
+  _seed: number,
+  opts?: BeatlesMelodyPlanOptions
+): MelodyBehaviourPlan {
+  const lens: BeatlesMelodicLens = opts?.beatlesMelodicLens ?? 'blended';
+  const lateModal = opts?.beatlesContext === 'abbey_road_1968';
+  const fourthEmphasis = opts?.beatlesContext === 'abbey_road_1968';
+
+  const devices = [...row.devices];
+  const pushDev = (t: string): void => {
+    if (!devices.includes(t)) devices.push(t);
+  };
+  pushDev(beatlesMelodicGrammarTags.mel01_SRDC);
+  pushDev(beatlesMelodicGrammarTags.mel02_distribution);
+  pushDev('beatles_fp02_NCT_departure_D');
+
+  let intervalTendency = row.intervalTendency;
+  const mal: MalLeadHints = { ...(row.malLeadHints ?? {}) };
+
+  if (lens === 'blended') {
+    intervalTendency = 'stepwise';
+    mal.modalIntervalPreference = true;
+    pushDev(beatlesMelodicGrammarTags.mel03_lennon);
+    pushDev(beatlesMelodicGrammarTags.mel04_mccartney);
+  } else if (lens === 'lennon') {
+    intervalTendency = 'stepwise';
+    mal.modalIntervalPreference = true;
+    pushDev(beatlesMelodicGrammarTags.mel03_lennon);
+  } else if (lens === 'mccartney') {
+    intervalTendency = 'mixed';
+    pushDev(beatlesMelodicGrammarTags.mel04_mccartney);
+  }
+
+  if (lateModal) {
+    pushDev(beatlesMelodicGrammarTags.mel05_late_modal);
+    mal.modalIntervalPreference = true;
+  }
+
+  return {
+    ...row,
+    devices,
+    intervalTendency,
+    malLeadHints: Object.keys(mal).length ? mal : undefined,
+    beatlesMelodicLens: lens,
+    beatlesLatePeriodModalMelody: lateModal,
+    beatlesAllowFourthLeapEmphasis: fourthEmphasis,
+  };
+}
+
 /**
  * Style-specific melodic behaviour for Song Mode lead melody planning.
  * Prefer {@link MELODY_PROFILES}; fallback is seed-tinted defaults.
  */
-export function planMelodyBehaviour(seed: number, primaryStyle: SongwriterRuleId): MelodyBehaviourPlan {
+export function planMelodyBehaviour(
+  seed: number,
+  primaryStyle: SongwriterRuleId,
+  beatlesOpts?: BeatlesMelodyPlanOptions,
+  radioheadOpts?: RadioheadMelodyPlanOptions
+): MelodyBehaviourPlan {
   const row = MELODY_PROFILES[primaryStyle];
   const base = defaultMelodyBehaviour(seed);
   if (!row) {
     return base;
   }
+  const merged =
+    primaryStyle === 'beatles'
+      ? applyBeatlesMelodicEncoding(row, seed, beatlesOpts)
+      : primaryStyle === 'radiohead'
+        ? applyRadioheadMelodicEncoding(row, seed, radioheadOpts)
+        : primaryStyle === 'debussy'
+          ? applyDebussyMelodicEncoding(row, seed)
+          : { ...row, devices: [...row.devices] };
   return {
-    ...row,
-    repetitionVsVariationBias: clamp01(row.repetitionVsVariationBias),
-    phraseAsymmetryTendency: clamp01(row.phraseAsymmetryTendency),
-    devices: [...row.devices],
+    ...merged,
+    repetitionVsVariationBias: clamp01(merged.repetitionVsVariationBias),
+    phraseAsymmetryTendency: clamp01(merged.phraseAsymmetryTendency),
+    devices: [...merged.devices],
   };
 }
+
+export type { BeatlesMelodicLens } from '../compositionContext';

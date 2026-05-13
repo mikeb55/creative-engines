@@ -14,15 +14,185 @@ function assertBundleShape(b: VoiceRuleBundle): boolean {
 }
 
 function testSevenVoicesMinChordDurationBars(): boolean {
+  const bartok = getVoiceRuleBundle('bartok');
+  const ravel = getVoiceRuleBundle('ravel');
+  const dutilleux = getVoiceRuleBundle('dutilleux');
+  const threadgill = getVoiceRuleBundle('henry_threadgill');
+  const maria = getVoiceRuleBundle('maria_schneider');
+  const mingus = getVoiceRuleBundle('charles_mingus');
+  const radiohead = getVoiceRuleBundle('radiohead');
+  const monk = getVoiceRuleBundle('thelonious_monk');
+  const billEvans = getVoiceRuleBundle('bill_evans');
+  const herbie = getVoiceRuleBundle('herbie_hancock');
   return (
+    bartok.voiceId === 'bartok' &&
+    bartok.rhythmPolicy.antiMetric === true &&
+    bartok.harmonicRhythm.minChordDurationBars === 0 &&
+    (bartok.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 30 &&
+    Boolean(bartok.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('BK_PITCH_01'))) &&
+    Boolean(bartok.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('BK_AXIS_01'))) &&
+    Boolean(bartok.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('BK_WORK_04'))) &&
+    ravel.voiceId === 'ravel' &&
+    ravel.formPolicy.narrativeArc === 'suite' &&
+    ravel.rhythmPolicy.antiMetric === false &&
+    (ravel.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 30 &&
+    Boolean(ravel.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('RV_SCALE_01'))) &&
+    Boolean(ravel.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('RV_PLANING_01'))) &&
+    Boolean(ravel.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('RV_WORK_04'))) &&
+    dutilleux.voiceId === 'dutilleux' &&
+    dutilleux.rhythmPolicy.antiMetric === true &&
+    dutilleux.voicingPolicy.minSpreadSemitones >= 12 &&
+    (dutilleux.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 30 &&
+    Boolean(dutilleux.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('DX_HC_01'))) &&
+    Boolean(dutilleux.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('DX_MEM_01'))) &&
+    Boolean(dutilleux.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('DX_WORK_07'))) &&
     getVoiceRuleBundle('thad_jones').harmonicRhythm.minChordDurationBars === 1 &&
     getVoiceRuleBundle('gil_evans').harmonicRhythm.minChordDurationBars === 1 &&
-    getVoiceRuleBundle('maria_schneider').harmonicRhythm.minChordDurationBars === 1 &&
+    (getVoiceRuleBundle('gil_evans').orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 25 &&
+    Boolean(getVoiceRuleBundle('gil_evans').orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('GE_HORN_01'))) &&
+    Boolean(getVoiceRuleBundle('gil_evans').orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('GE_TUBA_01'))) &&
+    maria.harmonicRhythm.minChordDurationBars === 1 &&
+    maria.harmonicRhythm.maxChordDurationBars >= 8 &&
+    (maria.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 25 &&
+    Boolean(maria.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('MS_HARM_01'))) &&
+    Boolean(maria.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('MS_FORM_05'))) &&
     getVoiceRuleBundle('john_coltrane').harmonicRhythm.minChordDurationBars === 0 &&
     getVoiceRuleBundle('wayne_shorter').harmonicRhythm.minChordDurationBars === 2 &&
     getVoiceRuleBundle('pat_metheny').harmonicRhythm.minChordDurationBars === 1 &&
-    getVoiceRuleBundle('henry_threadgill').harmonicRhythm.minChordDurationBars === 0 &&
-    getVoiceRuleBundle('charles_mingus').harmonicRhythm.minChordDurationBars === 1
+    threadgill.harmonicRhythm.minChordDurationBars === 0 &&
+    threadgill.bassPolicy.role === 'chromatic-first' &&
+    (threadgill.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 20 &&
+    mingus.harmonicRhythm.minChordDurationBars === 1 &&
+    mingus.harmonicRhythm.maxChordDurationBars >= 32 &&
+    mingus.harmonicRhythm.allowMidBarChange === true &&
+    mingus.orchestrationPolicy.allowCollectiveImprov === true &&
+    (mingus.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 25 &&
+    Boolean(mingus.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CM_FORM_01'))) &&
+    Boolean(mingus.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CM_SHOUT_01'))) &&
+    Boolean(mingus.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CM_WORK_04'))) &&
+    radiohead.rhythmPolicy.antiMetric === true &&
+    (radiohead.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 25 &&
+    Boolean(radiohead.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('RH_HARM_01'))) &&
+    Boolean(radiohead.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('RH_RHY_01'))) &&
+    Boolean(radiohead.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('RH_WORK_06'))) &&
+    monk.voiceId === 'thelonious_monk' &&
+    monk.rhythmPolicy.antiMetric === true &&
+    monk.formPolicy.narrativeArc === 'blues-backbone' &&
+    (monk.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 25 &&
+    Boolean(monk.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('TM_HARM_01'))) &&
+    Boolean(monk.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('TM_VOICING_01'))) &&
+    Boolean(monk.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('TM_DIFF_03'))) &&
+    billEvans.voiceId === 'bill_evans' &&
+    billEvans.bassPolicy.role === 'melodic-counterline' &&
+    billEvans.rhythmPolicy.antiMetric === true &&
+    (billEvans.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 25 &&
+    Boolean(billEvans.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('BE_VOICING_01'))) &&
+    Boolean(billEvans.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('BE_VL_01'))) &&
+    Boolean(billEvans.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('BE_DIFF_03'))) &&
+    herbie.voiceId === 'herbie_hancock' &&
+    herbie.melodicPolicy.contour === 'pentatonic-cell' &&
+    herbie.rhythmPolicy.antiMetric === true &&
+    (herbie.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 25 &&
+    Boolean(herbie.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('HH_QUARTAL_01'))) &&
+    Boolean(herbie.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('HH_FUNK_01'))) &&
+    Boolean(herbie.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('HH_DIFF_03'))) &&
+    (() => {
+      const bv = getVoiceRuleBundle('beethoven_late');
+      return (
+        bv.voiceId === 'beethoven_late' &&
+        bv.bassPolicy.role === 'structural-bass' &&
+        bv.formPolicy.narrativeArc === 'sonata-variation-fugue-attacca' &&
+        bv.melodicPolicy.contour === 'motivic-cell' &&
+        bv.dim7EnharmonicModulationEnabled === true &&
+        bv.speciesVoiceLeadingBias === 'high' &&
+        bv.rhythmPolicy.antiMetric === true &&
+        (bv.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 30 &&
+        Boolean(bv.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('BV_POLICY_01'))) &&
+        Boolean(bv.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('BV_HARM_GRAPH_01'))) &&
+        Boolean(bv.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('BV_WORK_03')))
+      );
+    })() &&
+    (() => {
+      const ti = getVoiceRuleBundle('turtle_island');
+      return (
+        ti.voiceId === 'turtle_island' &&
+        ti.bassPolicy.role === 'walking-bass' &&
+        ti.melodicPolicy.contour === 'chord-scale' &&
+        ti.formPolicy.narrativeArc === 'head-solos-head' &&
+        ti.rhythmPolicy.antiMetric === false &&
+        ti.swingFeel === true &&
+        ti.guideToneVoiceLeading === true &&
+        ti.improvSlots === true &&
+        (ti.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 30 &&
+        Boolean(ti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('TI_POLICY_01'))) &&
+        Boolean(ti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('TI_VOICING_01'))) &&
+        Boolean(ti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('TI_GROOVE_SWING_01'))) &&
+        Boolean(ti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('TI_TECH_CHOP_01'))) &&
+        Boolean(ti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('TI_VS_CLASSICAL_01')))
+      );
+    })() &&
+    (() => {
+      const rg = getVoiceRuleBundle('reich_glass');
+      return (
+        rg.voiceId === 'reich_glass' &&
+        rg.bassPolicy.role === 'pattern-bass' &&
+        rg.melodicPolicy.contour === 'pattern-loop' &&
+        rg.formPolicy.narrativeArc === 'minimalist-process' &&
+        rg.rhythmPolicy.antiMetric === false &&
+        rg.pulseState === 'steady' &&
+        rg.phaseProcessEnabled === true &&
+        rg.additiveProcessEnabled === true &&
+        (rg.patternIntegrityMinRepeats ?? 0) >= 1 &&
+        rg.harmonicRhythm.minChordDurationBars >= 4 &&
+        rg.harmonicRhythm.maxChordDurationBars >= 32 &&
+        (rg.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 30 &&
+        Boolean(rg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('RG_POLICY_01'))) &&
+        Boolean(rg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('RG_PHASE_BLOCK_01'))) &&
+        Boolean(rg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('RG_ADDITIVE_01'))) &&
+        Boolean(rg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('RG_VS_LIGETI_01'))) &&
+        Boolean(rg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('RG_WORK_REICH_01')))
+      );
+    })() &&
+    (() => {
+      const sh = getVoiceRuleBundle('shostakovich');
+      return (
+        sh.voiceId === 'shostakovich' &&
+        sh.bassPolicy.role === 'ostinato-or-pedal' &&
+        sh.melodicPolicy.contour === 'stepwise-with-leaps' &&
+        sh.formPolicy.narrativeArc === 'narrative-episodic' &&
+        sh.rhythmPolicy.antiMetric === false &&
+        sh.dschMotifEnabled === true &&
+        sh.quotationEventsEnabled === true &&
+        sh.tragicSlowMovementProfile === true &&
+        sh.shostakovichPeriod === 'middle' &&
+        sh.harmonicRhythm.maxChordDurationBars >= 16 &&
+        (sh.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 30 &&
+        Boolean(sh.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('SH_POLICY_01'))) &&
+        Boolean(sh.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('SH_DSCH_01'))) &&
+        Boolean(sh.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('SH_WORK_SQ8_01'))) &&
+        Boolean(sh.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('SH_VS_REICH_GLASS_01')))
+      );
+    })() &&
+    (() => {
+      const lc = getVoiceRuleBundle('lachenmann');
+      return (
+        lc.voiceId === 'lachenmann' &&
+        lc.bassPolicy.role === 'noise-field' &&
+        lc.melodicPolicy.contour === 'gesture-physical' &&
+        lc.formPolicy.narrativeArc === 'through-composed-noise-grammar' &&
+        lc.rhythmPolicy.antiMetric === true &&
+        lc.soundTypeGrammarEnabled === true &&
+        lc.pitchRoleDecoupled === true &&
+        lc.noSemanticOverlay === true &&
+        (lc.klangtypenPrimary?.length ?? 0) === 5 &&
+        (lc.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 30 &&
+        Boolean(lc.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LC_POLICY_01'))) &&
+        Boolean(lc.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LC_KLANG_FLIESS_01'))) &&
+        Boolean(lc.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LC_TECH_BOW_01'))) &&
+        Boolean(lc.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LC_FORM_GRAN_TORSO_01'))) &&
+        Boolean(lc.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LC_VS_CRUMB_01')))
+      );
+    })()
   );
 }
 
@@ -39,18 +209,49 @@ function testHvPrefixStrips(): boolean {
 
 function testResolvableBundlesSatisfyShape(): boolean {
   for (const id of [
+    'bartok',
+    'ravel',
+    'dutilleux',
     'thad_jones',
     'gil_evans',
     'duke_ellington',
     'maria_schneider',
+    'radiohead',
+    'thelonious_monk',
+    'bill_evans',
+    'herbie_hancock',
     'john_coltrane',
     'wayne_shorter',
     'pat_metheny',
     'henry_threadgill',
     'charles_mingus',
-    'neutral',
+    'beethoven_late',
+    'turtle_island',
+    'reich_glass',
+    'shostakovich',
+    'lachenmann',
   ]) {
     if (!assertBundleShape(getVoiceRuleBundle(id))) return false;
+  }
+  const duke = getVoiceRuleBundle('duke_ellington');
+  if (
+    duke.harmonicRhythm.maxChordDurationBars < 4 ||
+    duke.harmonicRhythm.allowMidBarChange !== true ||
+    (duke.orchestrationPolicy.fingerprintReceipts?.length ?? 0) < 25 ||
+    !duke.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('DE_VOICING_01')) ||
+    !duke.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('DE_JUNGLE_01')) ||
+    !duke.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('DE_WORK_08'))
+  ) {
+    return false;
+  }
+  const berg = getVoiceRuleBundle('berg');
+  if (
+    berg.bergVoiceLeading?.rowClarityLevel !== 'balanced' ||
+    (berg.orchestrationPolicy.fingerprintReceipts?.length ?? 0) < 15 ||
+    !berg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('BG_ROW_01')) ||
+    !berg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('BG_DIFF_01'))
+  ) {
+    return false;
   }
   return true;
 }
