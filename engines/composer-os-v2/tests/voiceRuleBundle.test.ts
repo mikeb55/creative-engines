@@ -192,6 +192,60 @@ function testSevenVoicesMinChordDurationBars(): boolean {
         Boolean(lc.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LC_FORM_GRAN_TORSO_01'))) &&
         Boolean(lc.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LC_VS_CRUMB_01')))
       );
+    })() &&
+    (() => {
+      const lg = getVoiceRuleBundle('ligeti');
+      return (
+        lg.voiceId === 'ligeti' &&
+        lg.bassPolicy.role === 'embedded-voice' &&
+        lg.melodicPolicy.contour === 'neighbor-motion' &&
+        lg.formPolicy.narrativeArc === 'continuous-sections' &&
+        lg.rhythmPolicy.antiMetric === true &&
+        lg.g4GerminalSetEnabled === true &&
+        lg.micropolyphonyMode === true &&
+        lg.tensionMetricCurvesRequired === true &&
+        lg.pcFieldStateGrammarEnabled === true &&
+        lg.silenceAsStructureEnabled === true &&
+        lg.textureAsHarmonyEnabled === true &&
+        (lg.ligetiProfile === 'sq1' || lg.ligetiProfile === 'sq2') &&
+        (lg.melodicPolicy.preferredIntervalSets?.length ?? 0) === 2 &&
+        (lg.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 30 &&
+        Boolean(lg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_POLICY_01'))) &&
+        Boolean(lg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_HARM_G4_01'))) &&
+        Boolean(lg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_MICRO_01'))) &&
+        Boolean(lg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_TEX_01'))) &&
+        Boolean(lg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_DIFF_REICH_GLASS_01'))) &&
+        getVoiceRuleBundle('gyorgy_ligeti').voiceId === 'ligeti' &&
+        getVoiceRuleBundle('micropolyphony').voiceId === 'ligeti' &&
+        getVoiceRuleBundle('sq_vrb_ligeti').voiceId === 'ligeti'
+      );
+    })() &&
+    (() => {
+      const cb = getVoiceRuleBundle('crumb_black_angels');
+      return (
+        cb.voiceId === 'crumb_black_angels' &&
+        cb.bassPolicy.role === 'noise-or-pedal' &&
+        cb.melodicPolicy.contour === 'gesture-symbolic' &&
+        cb.formPolicy.narrativeArc === 'ritual-arch' &&
+        cb.rhythmPolicy.antiMetric === true &&
+        cb.numerologyEnabled === true &&
+        cb.amplificationDecoupled === true &&
+        cb.symbolicTechniqueStatesEnabled === true &&
+        cb.quotationEventsEnabled === true &&
+        cb.mirrorEchoEnabled === true &&
+        (cb.soundTypeStates?.length ?? 0) === 3 &&
+        (cb.melodicPolicy.preferredIntervalSets?.length ?? 0) === 4 &&
+        (cb.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 30 &&
+        Boolean(cb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CB_POLICY_01'))) &&
+        Boolean(cb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CB_HARM_SETS_01'))) &&
+        Boolean(cb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CB_NUM_GROUP_01'))) &&
+        Boolean(cb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CB_FORM_13_01'))) &&
+        Boolean(cb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CB_TECH_ELECTRIC_INSECTS_01'))) &&
+        Boolean(cb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CB_WORK_BLACK_ANGELS_01'))) &&
+        getVoiceRuleBundle('crumb').voiceId === 'crumb_black_angels' &&
+        getVoiceRuleBundle('george_crumb').voiceId === 'crumb_black_angels' &&
+        getVoiceRuleBundle('black_angels').voiceId === 'crumb_black_angels'
+      );
     })()
   );
 }
@@ -230,6 +284,8 @@ function testResolvableBundlesSatisfyShape(): boolean {
     'reich_glass',
     'shostakovich',
     'lachenmann',
+    'ligeti',
+    'crumb_black_angels',
   ]) {
     if (!assertBundleShape(getVoiceRuleBundle(id))) return false;
   }

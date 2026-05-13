@@ -137,6 +137,9 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   turtle_island: 'keys',
   reich_glass: 'keys',
   lachenmann: 'keys',
+  ligeti: 'keys',
+  crumb_black_angels: 'keys',
+  dutilleux: 'keys',
 };
 
 export function songWriterPrimaryInstrument(id: SongwriterRuleId): SongwriterPrimaryInstrumentKind {

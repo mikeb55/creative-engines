@@ -100,7 +100,10 @@ export type SongwriterRuleId =
   | 'beethoven_late'
   | 'turtle_island'
   | 'reich_glass'
-  | 'lachenmann';
+  | 'lachenmann'
+  | 'ligeti'
+  | 'crumb_black_angels'
+  | 'dutilleux';
 
 export type AuthorRuleId = 'jimmy_webb' | 'pat_pattison' | 'jack_perricone';
 

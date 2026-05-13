@@ -338,6 +338,94 @@ export function runVoiceRuleBundleHarnessAdditiveTests(): { name: string; ok: bo
     getVoiceRuleBundle('gran_torso').voiceId === 'lachenmann' &&
     getVoiceRuleBundle('grido').voiceId === 'lachenmann';
 
+  const ligeti = getVoiceRuleBundle('ligeti');
+  const okLigeti =
+    ligeti.voiceId === 'ligeti' &&
+    ligeti.bassPolicy.role === 'embedded-voice' &&
+    ligeti.melodicPolicy.contour === 'neighbor-motion' &&
+    ligeti.formPolicy.narrativeArc === 'continuous-sections' &&
+    ligeti.rhythmPolicy.antiMetric === true &&
+    ligeti.g4GerminalSetEnabled === true &&
+    ligeti.micropolyphonyMode === true &&
+    ligeti.tensionMetricCurvesRequired === true &&
+    ligeti.pcFieldStateGrammarEnabled === true &&
+    ligeti.silenceAsStructureEnabled === true &&
+    ligeti.textureAsHarmonyEnabled === true &&
+    (ligeti.ligetiProfile === 'sq1' || ligeti.ligetiProfile === 'sq2') &&
+    (ligeti.melodicPolicy.preferredIntervalSets?.length ?? 0) === 2 &&
+    Boolean(ligeti.melodicPolicy.preferredIntervalSets?.includes(1)) &&
+    Boolean(ligeti.melodicPolicy.preferredIntervalSets?.includes(2)) &&
+    (ligeti.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 30 &&
+    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_POLICY_01'))) &&
+    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_HARM_G4_01'))) &&
+    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_FIELD_01'))) &&
+    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_TENSION_01'))) &&
+    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_MICRO_01'))) &&
+    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_VL_01'))) &&
+    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_RHY_01'))) &&
+    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_TEX_01'))) &&
+    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_FORM_01'))) &&
+    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_DIFF_BARTOK_01'))) &&
+    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_DIFF_DUTILLEUX_01'))) &&
+    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_DIFF_LACHENMANN_01'))) &&
+    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_DIFF_REICH_GLASS_01')));
+
+  const okLigetiAliases =
+    getVoiceRuleBundle('gyorgy_ligeti').voiceId === 'ligeti' &&
+    getVoiceRuleBundle('micropolyphony').voiceId === 'ligeti' &&
+    getVoiceRuleBundle('metamorphoses_nocturnes').voiceId === 'ligeti' &&
+    getVoiceRuleBundle('sq_vrb_ligeti').voiceId === 'ligeti';
+
+  const crumb = getVoiceRuleBundle('crumb_black_angels');
+  const okCrumb =
+    crumb.voiceId === 'crumb_black_angels' &&
+    crumb.bassPolicy.role === 'noise-or-pedal' &&
+    crumb.melodicPolicy.contour === 'gesture-symbolic' &&
+    crumb.formPolicy.narrativeArc === 'ritual-arch' &&
+    crumb.rhythmPolicy.antiMetric === true &&
+    crumb.numerologyEnabled === true &&
+    crumb.amplificationDecoupled === true &&
+    crumb.symbolicTechniqueStatesEnabled === true &&
+    crumb.quotationEventsEnabled === true &&
+    crumb.mirrorEchoEnabled === true &&
+    (crumb.soundTypeStates?.length ?? 0) === 3 &&
+    Boolean(crumb.soundTypeStates?.includes('pitched')) &&
+    Boolean(crumb.soundTypeStates?.includes('noise')) &&
+    Boolean(crumb.soundTypeStates?.includes('hybrid')) &&
+    (crumb.melodicPolicy.preferredIntervalSets?.length ?? 0) === 4 &&
+    Boolean(crumb.melodicPolicy.preferredIntervalSets?.includes(1)) &&
+    Boolean(crumb.melodicPolicy.preferredIntervalSets?.includes(6)) &&
+    Boolean(crumb.melodicPolicy.preferredIntervalSets?.includes(7)) &&
+    Boolean(crumb.melodicPolicy.preferredIntervalSets?.includes(5)) &&
+    (crumb.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 30 &&
+    Boolean(crumb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CB_POLICY_01'))) &&
+    Boolean(crumb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CB_HARM_SETS_01'))) &&
+    Boolean(crumb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CB_ISLAND_GOD_01'))) &&
+    Boolean(crumb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CB_CHORD_CLUSTER_01'))) &&
+    Boolean(crumb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CB_NUM_GROUP_01'))) &&
+    Boolean(crumb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CB_NUM_SPEECH_01'))) &&
+    Boolean(crumb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CB_FORM_13_01'))) &&
+    Boolean(crumb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CB_FORM_MIRROR_01'))) &&
+    Boolean(crumb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CB_TECH_ELECTRIC_INSECTS_01'))) &&
+    Boolean(crumb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CB_TECH_GOD_MUSIC_01'))) &&
+    Boolean(crumb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CB_PHONEME_GLASS_HALO_01'))) &&
+    Boolean(crumb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CB_AMP_01'))) &&
+    Boolean(crumb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CB_VL_01'))) &&
+    Boolean(crumb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CB_RHY_01'))) &&
+    Boolean(crumb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CB_MOTIF_01'))) &&
+    Boolean(crumb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CB_DIFF_LACHENMANN_01'))) &&
+    Boolean(crumb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CB_DIFF_LIGETI_01'))) &&
+    Boolean(crumb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CB_DIFF_SHOSTAKOVICH_01'))) &&
+    Boolean(crumb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CB_DIFF_DUTILLEUX_01'))) &&
+    Boolean(crumb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CB_WORK_BLACK_ANGELS_01')));
+
+  const okCrumbAliases =
+    getVoiceRuleBundle('crumb').voiceId === 'crumb_black_angels' &&
+    getVoiceRuleBundle('george_crumb').voiceId === 'crumb_black_angels' &&
+    getVoiceRuleBundle('black_angels').voiceId === 'crumb_black_angels' &&
+    getVoiceRuleBundle('thirteen_images').voiceId === 'crumb_black_angels' &&
+    getVoiceRuleBundle('sq_vrb_crumb').voiceId === 'crumb_black_angels';
+
   return [
     { name: 'Phase 2+3a harness additive: HarmonicScene stub barRange', ok: okScene },
     { name: 'Phase 2+3a harness additive: unknown voice → neutral bundle id', ok: okNeutral },
@@ -372,5 +460,9 @@ export function runVoiceRuleBundleHarnessAdditiveTests(): { name: string; ok: bo
     { name: 'Phase 2+3a harness additive: shostakovich aliases resolve', ok: okShostakovichAliases },
     { name: 'Phase 2+3a harness additive: lachenmann >=30 LC_* SQ-noise-grammar fingerprints', ok: okLachenmann },
     { name: 'Phase 2+3a harness additive: lachenmann aliases resolve', ok: okLachenmannAliases },
+    { name: 'Phase 2+3a harness additive: ligeti >=30 LG_* SQ-micropolyphony fingerprints', ok: okLigeti },
+    { name: 'Phase 2+3a harness additive: ligeti aliases resolve', ok: okLigetiAliases },
+    { name: 'Phase 2+3a harness additive: crumb_black_angels >=30 CB_* SQ-ritual fingerprints', ok: okCrumb },
+    { name: 'Phase 2+3a harness additive: crumb_black_angels aliases resolve', ok: okCrumbAliases },
   ];
 }

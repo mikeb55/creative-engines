@@ -20,7 +20,11 @@ export type BassPolicyRole =
   /** Shostakovich SQ — ostinato bass figure or sustained pedal pc */
   | 'ostinato-or-pedal'
   /** Lachenmann SQ — noise field, no structural bass */
-  | 'noise-field';
+  | 'noise-field'
+  /** Ligeti SQ — Vc participates as one micro-voice in stratified texture; no structural bass function */
+  | 'embedded-voice'
+  /** Crumb (Black Angels) — Vc alternates between low_ground noise-layer and sustained focal-pc pedal; no structural bass function */
+  | 'noise-or-pedal';
 
 export type MelodicContourPolicy =
   | 'descending-arc'
@@ -37,7 +41,11 @@ export type MelodicContourPolicy =
   /** Shostakovich SQ — stepwise default with flagged expressive leaps */
   | 'stepwise-with-leaps'
   /** Lachenmann SQ — gesture-physical (pitch decoupled; sound_type-driven) */
-  | 'gesture-physical';
+  | 'gesture-physical'
+  /** Ligeti SQ — neighbor-tone motion (±1, ±2 semitones); micropolyphony default */
+  | 'neighbor-motion'
+  /** Crumb (Black Angels) — symbolic gesture-driven contour (angelic ascent / demonic plunge / spectral hover); pc-set + ic1/ic6/P5/P4 vocabulary */
+  | 'gesture-symbolic';
 
 export type NarrativeArcPolicy =
   | 'continuous-curve'
@@ -53,7 +61,13 @@ export type NarrativeArcPolicy =
   /** Shostakovich SQ — episodic narrative blocks (march / scherzo / lament / quotation) */
   | 'narrative-episodic'
   /** Lachenmann SQ — through-composed sound-type / energy-curve grammar */
-  | 'through-composed-noise-grammar';
+  | 'through-composed-noise-grammar'
+  /** Ligeti SQ1 — 12–17 continuous sections with G4 cell continuity (no harmonic cadence boundaries) */
+  | 'continuous-sections'
+  /** Ligeti SQ2 — five-movement profile (nervoso / sostenuto / meccanismo / furioso / delicatezza) */
+  | 'five-movement'
+  /** Crumb Black Angels — 13 images / 3 parts ritual arch with global peak at image 7 (Threnody II); Threnodies 1/7/13 = arch supports */
+  | 'ritual-arch';
 
 export type BergRowClarityLevel = 'foreground' | 'balanced' | 'background';
 
@@ -169,4 +183,30 @@ export interface VoiceRuleBundle {
   pitchRoleDecoupled?: boolean;
   /** Lachenmann SQ VRB — forbid extra-musical / numerological / quotation overlays. */
   noSemanticOverlay?: boolean;
+  /** Ligeti SQ VRB — sub-profile flag selecting SQ1 vs SQ2 grammar. */
+  ligetiProfile?: 'sq1' | 'sq2';
+  /** Ligeti SQ VRB — G4 germinal interval set (Forte 4-1, prime form `[0,1,2,3]`) drives motivic identity. */
+  g4GerminalSetEnabled?: boolean;
+  /** Ligeti SQ VRB — micropolyphony mode: continuous neighbor-tone lines, phase-independent voices, density lifecycle. */
+  micropolyphonyMode?: boolean;
+  /** Ligeti SQ VRB — tension-metric curve required per section/movement (cluster width, pc_count, ic1 density). */
+  tensionMetricCurvesRequired?: boolean;
+  /** Ligeti SQ VRB — pc-field state grammar (chromatic_dense / cluster_narrow / constellation / sparse_filtered). */
+  pcFieldStateGrammarEnabled?: boolean;
+  /** Ligeti SQ VRB — silence as active structural element (silence_windows at section boundaries). */
+  silenceAsStructureEnabled?: boolean;
+  /** Ligeti SQ VRB — large-scale tempo-curve direction per movement (accel / rit / arch / flat). */
+  tempoCurveDirection?: 'accelerating' | 'decelerating' | 'arch' | 'flat' | 'flexible';
+  /** Ligeti SQ VRB — texture-as-harmony: forbid discrete chord changes in micropolyphony mode. */
+  textureAsHarmonyEnabled?: boolean;
+  /** Crumb (Black Angels) — numerology system (7 + 13) governs groupings, repeat counts, phrase lengths, counting gestures. */
+  numerologyEnabled?: boolean;
+  /** Crumb (Black Angels) — amplification is an independent dimension from dynamic marking (hyper-real ppp on sul pont harmonics). */
+  amplificationDecoupled?: boolean;
+  /** Crumb (Black Angels) — symbolically coded technique states (electric_insects / devil_music / god_music / consort_past / lament_slow). */
+  symbolicTechniqueStatesEnabled?: boolean;
+  /** Crumb (Black Angels) — sound_type per image ∈ {pitched, noise, hybrid}; transitions aligned with image / part boundaries. */
+  soundTypeStates?: readonly ('pitched' | 'noise' | 'hybrid')[];
+  /** Crumb (Black Angels) — mirror / echo image pairs (3↔9 · 11↔12 · 1↔13) carry shared pc_set + technique + transformed dynamic / inversion. */
+  mirrorEchoEnabled?: boolean;
 }

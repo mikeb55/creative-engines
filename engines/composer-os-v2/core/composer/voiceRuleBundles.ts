@@ -13,6 +13,8 @@ import { TURTLE_ISLAND_SQ_VRF_FINGERPRINT_RECEIPTS } from './turtleIslandSqVrbFi
 import { REICH_GLASS_SQ_VRF_FINGERPRINT_RECEIPTS } from './reichGlassSqVrbFingerprints';
 import { SHOSTAKOVICH_SQ_VRF_FINGERPRINT_RECEIPTS } from './shostakovichSqVrbFingerprints';
 import { LACHENMANN_SQ_VRF_FINGERPRINT_RECEIPTS } from './lachenmannSqVrbFingerprints';
+import { LIGETI_SQ_VRB_FINGERPRINT_RECEIPTS } from './ligetiSqVrbFingerprints';
+import { CRUMB_BLACK_ANGELS_SQ_VRB_FINGERPRINT_RECEIPTS } from './crumbBlackAngelsSqVrbFingerprints';
 
 /** Interval-class seeds aligned with Threadgill / IntervalSetSystem posture (engine-local). */
 const THREADGILL_INTERVAL_CLASS_SEEDS = [1, 2, 3, 5, 6, 7, 8, 10];
@@ -2350,6 +2352,113 @@ const LACHENMANN: VoiceRuleBundle = {
   noSemanticOverlay: true,
 };
 
+const LIGETI: VoiceRuleBundle = {
+  voiceId: 'ligeti',
+  harmonicRhythm: {
+    /** Field-based not chord-based; cap = 4-bar slow field transitions, not chord-symbol grammar. */
+    minChordDurationBars: 0,
+    maxChordDurationBars: 4,
+    allowMidBarChange: true,
+  },
+  bassPolicy: {
+    role: 'embedded-voice',
+    allowOctaveDoubling: false,
+  },
+  voicingPolicy: {
+    /** Allow extreme cluster_narrow (0) and constellation (≥ 10th = 16 st) spacings; clusters of 4–8 voices. */
+    minSpreadSemitones: 0,
+    maxSpreadSemitones: 48,
+    clusterSizeNotes: [4, 8],
+    forbidParallelFifths: false,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'neighbor-motion',
+    /** Hidden_leap permitted only as rare register reset at low dynamic; ≤ 1 per phrase. */
+    maxLeapSemitones: 12,
+    preferredIntervalSets: [1, 2],
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 0,
+    mutateSingleVoiceAtTime: true,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: LIGETI_SQ_VRB_FINGERPRINT_RECEIPTS,
+  },
+  formPolicy: {
+    /** SQ1 default; SQ2 profile flips to five-movement via `ligetiProfile`. */
+    narrativeArc: 'continuous-sections',
+    sectionRecallEnforced: false,
+  },
+  rhythmPolicy: {
+    antiMetric: true,
+  },
+  repairPolicy: {
+    resolveParallels: false,
+    maxVoiceOverlap: 8,
+  },
+  ligetiProfile: 'sq2',
+  g4GerminalSetEnabled: true,
+  micropolyphonyMode: true,
+  tensionMetricCurvesRequired: true,
+  pcFieldStateGrammarEnabled: true,
+  silenceAsStructureEnabled: true,
+  /** SQ2 default — accelerating arc (Mvt I) is the canonical exemplar; Mvt-specific curves carried at slice level. */
+  tempoCurveDirection: 'accelerating',
+  textureAsHarmonyEnabled: true,
+};
+
+const CRUMB_BLACK_ANGELS: VoiceRuleBundle = {
+  voiceId: 'crumb_black_angels',
+  harmonicRhythm: {
+    /** Numerologically governed image-duration cap (≤ 13 bars); not chord-level harmonic rhythm. */
+    minChordDurationBars: 0,
+    maxChordDurationBars: 13,
+    allowMidBarChange: true,
+  },
+  bassPolicy: {
+    role: 'noise-or-pedal',
+    allowOctaveDoubling: false,
+  },
+  voicingPolicy: {
+    /** Cluster_chord 7- or 13-note vertical spans + extreme spacing (B + D# wide-spaced god_music). */
+    minSpreadSemitones: 0,
+    maxSpreadSemitones: 60,
+    clusterSizeNotes: [3, 13],
+    forbidParallelFifths: false,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'gesture-symbolic',
+    /** Symbolic leaps allowed (angel ascents / devil plunges / glissando spans). */
+    maxLeapSemitones: 24,
+    preferredIntervalSets: [1, 6, 7, 5],
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 0,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: CRUMB_BLACK_ANGELS_SQ_VRB_FINGERPRINT_RECEIPTS,
+  },
+  formPolicy: {
+    narrativeArc: 'ritual-arch',
+    /** Mirror / echo pairs (3↔9 · 11↔12 · 1↔13) treated as numerologically fixed section recall. */
+    sectionRecallEnforced: true,
+  },
+  rhythmPolicy: {
+    antiMetric: true,
+  },
+  repairPolicy: {
+    resolveParallels: false,
+    maxVoiceOverlap: 8,
+  },
+  numerologyEnabled: true,
+  amplificationDecoupled: true,
+  symbolicTechniqueStatesEnabled: true,
+  quotationEventsEnabled: true,
+  soundTypeStates: ['pitched', 'noise', 'hybrid'] as const,
+  mirrorEchoEnabled: true,
+};
+
 const BY_ID: Record<string, VoiceRuleBundle> = {
   bartok: BARTOK,
   bela_bartok: BARTOK,
@@ -2421,6 +2530,19 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   reigen_seliger_geister: LACHENMANN,
   grido: LACHENMANN,
   sq_vrb_lachenmann: LACHENMANN,
+  ligeti: LIGETI,
+  gyorgy_ligeti: LIGETI,
+  ligeti_sq1: LIGETI,
+  ligeti_sq2: LIGETI,
+  micropolyphony: LIGETI,
+  metamorphoses_nocturnes: LIGETI,
+  sq_vrb_ligeti: LIGETI,
+  crumb_black_angels: CRUMB_BLACK_ANGELS,
+  crumb: CRUMB_BLACK_ANGELS,
+  george_crumb: CRUMB_BLACK_ANGELS,
+  black_angels: CRUMB_BLACK_ANGELS,
+  thirteen_images: CRUMB_BLACK_ANGELS,
+  sq_vrb_crumb: CRUMB_BLACK_ANGELS,
 };
 
 export function normalizeHarmonicVoiceId(raw: string): string {

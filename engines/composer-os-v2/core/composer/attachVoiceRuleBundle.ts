@@ -21,6 +21,9 @@ const AUTO_RESOLVE_SONGWRITER_TO_VOICE_ID: ReadonlySet<string> = new Set([
   'reich_glass',
   'shostakovich',
   'lachenmann',
+  'ligeti',
+  'crumb_black_angels',
+  'dutilleux',
 ]);
 
 export function attachVoiceRuleBundleAndHarmonicScenes(

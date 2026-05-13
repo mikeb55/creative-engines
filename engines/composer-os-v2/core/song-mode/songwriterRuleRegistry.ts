@@ -1173,6 +1173,15 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
   lachenmann: [
     R('lc.sq_vrb_bundle', 'Lachenmann SQ VRB bundle (`LC_*` 84 fingerprint receipts; musique concrète instrumentale)', 'songwriter', 'harmony', 9, 'global'),
   ],
+  ligeti: [
+    R('lg.sq_vrb_bundle', 'Ligeti SQ VRB bundle (`LG_*` 70 fingerprint receipts; micropolyphony / texture-as-harmony; SQ1 G4 cell + SQ2 five-movement)', 'songwriter', 'harmony', 9, 'global'),
+  ],
+  crumb_black_angels: [
+    R('cb.sq_vrb_bundle', 'Crumb (Black Angels) SQ VRB bundle (`CB_*` 72 fingerprint receipts; ritual / symbolic; 13 images × 3 parts; numerology 7/13; quotations + symbolic technique states)', 'songwriter', 'harmony', 9, 'global'),
+  ],
+  dutilleux: [
+    R('dx.sq_vrb_bundle', 'Dutilleux SQ VRB bundle (`DX_*` 83 fingerprint receipts; French modernist memory-form; focal hexachord HC0; memory parenthèses; gradual growth)', 'songwriter', 'harmony', 9, 'global'),
+  ],
 };
 
 const authorRules: Record<AuthorRuleId, SongwritingRuleEntry[]> = {

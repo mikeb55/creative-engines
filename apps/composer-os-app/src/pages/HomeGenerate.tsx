@@ -459,7 +459,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'barry_harris', label: 'Barry Harris' },
   { id: 'beatles', label: 'Beatles' },
   { id: 'beethoven', label: 'Beethoven' },
-  { id: 'beethoven_late', label: 'Beethoven (Late SQ)' },
+  { id: 'beethoven_late', label: 'Beethoven (Late Quartets)' },
   { id: 'bill_evans', label: 'Bill Evans' },
   { id: 'billy_strayhorn', label: 'Billy Strayhorn' },
   { id: 'bob_dylan', label: 'Bob Dylan' },
@@ -483,8 +483,11 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'john_coltrane', label: 'John Coltrane' },
   { id: 'jim_hall', label: 'Jim Hall' },
   { id: 'jeff_tweedy', label: 'Jeff Tweedy' },
+  { id: 'crumb_black_angels', label: 'Crumb (Black Angels)' },
+  { id: 'dutilleux', label: 'Dutilleux' },
   { id: 'kate_bush', label: 'Kate Bush' },
   { id: 'lachenmann', label: 'Lachenmann' },
+  { id: 'ligeti', label: 'Ligeti' },
   { id: 'joni_mitchell', label: 'Joni Mitchell' },
   { id: 'kendrick_lamar', label: 'Kendrick Lamar' },
   { id: 'kurt_weill', label: 'Kurt Weill' },
@@ -509,7 +512,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'randy_newman', label: 'Randy Newman' },
   { id: 'radiohead', label: 'Radiohead' },
   { id: 'ravel', label: 'Ravel' },
-  { id: 'reich_glass', label: 'Reich / Glass (SQ)' },
+  { id: 'reich_glass', label: 'Reich / Glass' },
   { id: 'richard_thompson', label: 'Richard Thompson' },
   { id: 'satie', label: 'Erik Satie' },
   { id: 'steve_reich', label: 'Steve Reich' },
@@ -579,28 +582,35 @@ const FILM_HARMONIC_VOICE_IDS: readonly HarmonicVoiceId[] = [
 const HARMONIC_VOICE_FILM_SET = new Set<string>(FILM_HARMONIC_VOICE_IDS);
 
 /**
- * SQ VRB family (10/10 shipped 2026-05-12): five existing classical bundles
- * + five new ones. All auto-resolve to matching VoiceRuleBundle via
- * `attachVoiceRuleBundleAndHarmonicScenes` when picked.
+ * SQ VRB family canonical order (12 ids — full roster). VRB bundles
+ * ship for `beethoven_late`, `bartok`, `ravel`, `debussy`, `dutilleux`,
+ * `messiaen`, `ligeti`, `reich_glass`, `shostakovich`, `turtle_island`,
+ * `crumb_black_angels`, `lachenmann`. Any reserved slots without an
+ * active SONGWRITER_OPTIONS row are filtered out by
+ * `buildHarmonicVoiceGroups`, keeping the canonical order intact.
  */
-const SQ_VRB_HARMONIC_VOICE_IDS: readonly HarmonicVoiceId[] = [
+const SONGWRITER_GROUP_SHIPPED_SQ_VRB_ORDER: readonly string[] = [
   'beethoven_late',
-  'turtle_island',
-  'reich_glass',
-  'shostakovich',
-  'lachenmann',
   'bartok',
   'ravel',
   'debussy',
+  'dutilleux',
   'messiaen',
+  'ligeti',
+  'reich_glass',
+  'shostakovich',
+  'turtle_island',
+  'crumb_black_angels',
+  'lachenmann',
 ];
-const HARMONIC_VOICE_SQ_VRB_SET = new Set<string>(SQ_VRB_HARMONIC_VOICE_IDS);
+const HARMONIC_VOICE_SQ_VRB_SET = new Set<string>(SONGWRITER_GROUP_SHIPPED_SQ_VRB_ORDER);
 
 function buildHarmonicVoiceGroups(opts?: { sqVrbFirst?: boolean }): Array<{
   label: string;
   voices: Array<{ id: HarmonicVoiceId; label: string }>;
 }> {
   const all = SONGWRITER_OPTIONS.filter((o) => !RHYTHM_ONLY_SONGWRITER_IDS.has(o.id));
+  const allById = new Map(all.map((o) => [o.id, o]));
   const libraryVoices = all
     .filter(
       (o) =>
@@ -611,20 +621,22 @@ function buildHarmonicVoiceGroups(opts?: { sqVrbFirst?: boolean }): Array<{
     .map((o) => ({ id: o.id as HarmonicVoiceId, label: o.label }))
     .sort((a, b) => a.label.localeCompare(b.label));
   const jazzMasterVoices = JAZZ_MASTERS_HARMONIC_VOICE_IDS.map((id) => {
-    const o = all.find((x) => x.id === id);
+    const o = allById.get(id);
     return { id, label: o?.label ?? id };
   });
   const filmVoices = FILM_HARMONIC_VOICE_IDS.map((id) => {
-    const o = all.find((x) => x.id === id);
+    const o = allById.get(id);
     return { id, label: o?.label ?? id };
   });
-  const sqVrbVoices = SQ_VRB_HARMONIC_VOICE_IDS.map((id) => {
-    const o = all.find((x) => x.id === id);
-    return { id, label: o?.label ?? id };
-  });
+  /** Only render SQ VRB slots that have a real SONGWRITER_OPTIONS row + valid HarmonicVoiceId. */
+  const sqVrbVoices: Array<{ id: HarmonicVoiceId; label: string }> =
+    SONGWRITER_GROUP_SHIPPED_SQ_VRB_ORDER.flatMap((id) => {
+      const o = allById.get(id);
+      return o ? [{ id: o.id as HarmonicVoiceId, label: o.label }] : [];
+    });
   if (opts?.sqVrbFirst) {
     return [
-      { label: 'String Quartet (SQ VRB family)', voices: sqVrbVoices },
+      { label: 'String Quartet VRB', voices: sqVrbVoices },
       { label: 'Library', voices: libraryVoices },
       { label: 'Jazz Masters', voices: jazzMasterVoices },
       { label: 'Film', voices: filmVoices },
@@ -992,6 +1004,14 @@ function clampMeterPart(raw: string, fallback: number): number {
   return Math.min(128, n);
 }
 
+/**
+ * String Quartet sentinel arranger id. When selected the SQ preset
+ * generation path omits the arranger style-pairing block entirely
+ * (no overlay). Engine receives no `stylePairing.arrangerStyle`
+ * value for SQ + None.
+ */
+const ARRANGER_NONE_ID = 'none';
+
 const ARRANGER_OPTIONS: { id: string; label: string }[] = [
   { id: 'ellington', label: 'Duke Ellington' },
   { id: 'basie', label: 'Count Basie' },
@@ -1007,6 +1027,17 @@ const ARRANGER_OPTIONS: { id: string; label: string }[] = [
   { id: 'gerald_wilson', label: 'Gerald Wilson' },
   { id: 'neal_hefti', label: 'Neal Hefti' },
   { id: 'don_sebesky', label: 'Don Sebesky' },
+  /** SQ VRB arrangers — surfaced only on the String Quartet preset. */
+  { id: 'beethoven_late', label: 'Beethoven (Late Quartets)' },
+  { id: 'bartok', label: 'Bartók' },
+  { id: 'ravel', label: 'Ravel' },
+  { id: 'dutilleux', label: 'Dutilleux' },
+  { id: 'ligeti', label: 'Ligeti' },
+  { id: 'reich_glass', label: 'Reich / Glass' },
+  { id: 'shostakovich', label: 'Shostakovich' },
+  { id: 'turtle_island', label: 'Turtle Island Quartet' },
+  { id: 'crumb_black_angels', label: 'Crumb (Black Angels)' },
+  { id: 'lachenmann', label: 'Lachenmann' },
 ];
 
 /** Matches engine `BigBandComposerId` / style-pairing “known” arrangers — grouped first like Style dropdowns. */
@@ -1021,16 +1052,52 @@ const ARRANGER_GROUP_CORE_ORDER: readonly string[] = [
   'clare_fischer',
 ];
 
+/**
+ * SQ VRB arranger family canonical order — surfaced on the String
+ * Quartet preset only (before the jazz arranger groups). Each id maps
+ * 1:1 with a shipped `VoiceRuleBundle` so `attachVoiceRuleBundle` can
+ * route the selection through `AUTO_RESOLVE_SONGWRITER_TO_VOICE_ID`.
+ */
+const ARRANGER_GROUP_SQ_VRB_ORDER: readonly string[] = [
+  'beethoven_late',
+  'bartok',
+  'ravel',
+  'dutilleux',
+  'ligeti',
+  'reich_glass',
+  'shostakovich',
+  'turtle_island',
+  'crumb_black_angels',
+  'lachenmann',
+];
+const ARRANGER_SQ_VRB_IDS = new Set<string>(ARRANGER_GROUP_SQ_VRB_ORDER);
+
 const ARRANGER_OPTION_BY_ID = new Map(ARRANGER_OPTIONS.map((o) => [o.id, o]));
 const ARRANGER_GROUP_CORE_IDS = new Set(ARRANGER_GROUP_CORE_ORDER);
 
-const ARRANGER_EXTENDED_ORDERED = ARRANGER_OPTIONS.filter((o) => !ARRANGER_GROUP_CORE_IDS.has(o.id)).sort((a, b) =>
-  a.label.localeCompare(b.label)
-);
+const ARRANGER_EXTENDED_ORDERED = ARRANGER_OPTIONS.filter(
+  (o) => !ARRANGER_GROUP_CORE_IDS.has(o.id) && !ARRANGER_SQ_VRB_IDS.has(o.id)
+).sort((a, b) => a.label.localeCompare(b.label));
 
-function ArrangerSelectOptionGroups() {
+function ArrangerSelectOptionGroups(props?: { variant?: 'default' | 'string_quartet' }) {
+  const isSq = props?.variant === 'string_quartet';
   return (
     <>
+      {isSq && (
+        <>
+          <option value={ARRANGER_NONE_ID}>— None (no arranger) —</option>
+          <optgroup label="String Quartet VRB">
+            {ARRANGER_GROUP_SQ_VRB_ORDER.filter((id) => ARRANGER_OPTION_BY_ID.has(id)).map((id) => {
+              const o = ARRANGER_OPTION_BY_ID.get(id)!;
+              return (
+                <option key={`sqvrb-${id}`} value={o.id}>
+                  {o.label}
+                </option>
+              );
+            })}
+          </optgroup>
+        </>
+      )}
       <optgroup label="Big band core (research-backed)">
         {ARRANGER_GROUP_CORE_ORDER.filter((id) => ARRANGER_OPTION_BY_ID.has(id)).map((id) => {
           const o = ARRANGER_OPTION_BY_ID.get(id)!;
@@ -1050,6 +1117,31 @@ function ArrangerSelectOptionGroups() {
       </optgroup>
     </>
   );
+}
+
+/** Initial / fallback arranger id used outside the String Quartet preset. */
+const ARRANGER_DEFAULT_NON_SQ_ID = 'thad';
+
+/**
+ * Two-way reset for arranger when the user switches presets.
+ *
+ * - Into `string_quartet`: a previously selected jazz arranger (not in the
+ *   SQ VRB family and not `none`) is inappropriate → reset to `none`.
+ *   SQ VRB selections + `none` carry over.
+ * - Out of `string_quartet`: a previously selected SQ VRB arranger (or
+ *   the SQ-only `none` sentinel) has no matching option in the other
+ *   presets' dropdowns → reset to the default jazz arranger (`thad`).
+ *   Jazz arranger selections carry over.
+ */
+function nextArrangerOnPresetChange(prevArranger: string, nextPresetId: string): string {
+  if (nextPresetId === 'string_quartet') {
+    if (prevArranger === ARRANGER_NONE_ID) return prevArranger;
+    if (ARRANGER_SQ_VRB_IDS.has(prevArranger)) return prevArranger;
+    return ARRANGER_NONE_ID;
+  }
+  if (prevArranger === ARRANGER_NONE_ID) return ARRANGER_DEFAULT_NON_SQ_ID;
+  if (ARRANGER_SQ_VRB_IDS.has(prevArranger)) return ARRANGER_DEFAULT_NON_SQ_ID;
+  return prevArranger;
 }
 
 const ERA_OPTIONS: { id: string; label: string }[] = [
@@ -2484,7 +2576,7 @@ export function HomeGenerate({
               }
             : undefined;
         const stylePairingStringQuartet =
-          presetId === 'string_quartet'
+          presetId === 'string_quartet' && arrangerStyle !== ARRANGER_NONE_ID
             ? {
                 songwriterStyle: songwriterStyle,
                 arrangerStyle: arrangerStyle,
@@ -3739,7 +3831,15 @@ export function HomeGenerate({
           Mode
         </label>
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}>
-          <select value={presetId} onChange={(e) => setPresetId(e.target.value)} disabled={loading}>
+          <select
+            value={presetId}
+            onChange={(e) => {
+              const next = e.target.value;
+              setPresetId(next);
+              setArrangerStyle((prev) => nextArrangerOnPresetChange(prev, next));
+            }}
+            disabled={loading}
+          >
             {modePresets.map((m) => (
               <option key={m.id} value={m.id} disabled={!m.supported}>
                 {m.name}
@@ -6232,7 +6332,7 @@ export function HomeGenerate({
               onChange={(e) => setArrangerStyle(e.target.value)}
               disabled={loading}
             >
-              <ArrangerSelectOptionGroups />
+              <ArrangerSelectOptionGroups variant="string_quartet" />
             </select>
             <span id="co-sq-arranger-desc" style={VISUALLY_HIDDEN}>
               {ARIA_ARRANGER_GROUPS_DESC}
