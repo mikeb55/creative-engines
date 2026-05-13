@@ -479,6 +479,32 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 
 ---
 
+## Future / Research Backlog
+
+### SQ Rhythm Engine candidates — Perplexity research queued (2026-05-13)
+
+**Status:** **not current sprint — research before building.** SQ VRB family is complete (12 composer bundles + UI wiring + arranger redesign). Rhythm engine slots for the **String Quartet** preset currently inherit the cross-preset library (Fela Kuti · Greek Rebetiko · Brazilian · New Orleans Second Line · Cuban / Afro-Cuban). The following SQ-native rhythm engines are queued for research; **do not begin research or execution from this backlog item.** Each entry will graduate to a real sprint slot only after its Perplexity research prompt + Cursor execution prompt + smoke gate + UI-wiring plan are landed.
+
+Priority order:
+
+1. **Bartók / Bulgarian aksak** — additive meters (4+2+3/8, 3+2+3/8, 3+2+2+3/8); pairs with **Bartók** SQ VRB.
+2. **Free / proportional** — no pulse; duration-ratio-based timing; pairs with **Dutilleux**, **Ligeti**, **Crumb**, **Lachenmann** SQ VRBs.
+3. **Baroque dance** — sarabande / gigue / courante pulse templates; pairs with **Crumb** `consort_past` and **Dutilleux** nocturne language.
+4. **Viennese waltz** — 3/4 long-short-short feel; pairs with **Shostakovich** `grotesque_scherzo` and ghost-waltz language.
+5. **Jewish / klezmer** — asymmetric dance patterns; pairs with **Shostakovich** `jewish_dance_rhythm`.
+6. **Reich phasing grid** — 12/8 or 4/4 canonic offset patterns; pairs with **Reich / Glass** SQ VRB.
+7. **Swing adapted for SQ** — cleaner SQ-specific swing template built on **Turtle Island Quartet** grammar.
+
+Each item requires (when promoted from backlog into a sprint slot):
+- **Perplexity research prompt** in the same format as the SQ VRB composer research prompts (target ≥30 fingerprint receipts across primary cells / phrase grouping / accent map / tempo curve / inter-voice rhythmic relation / differentiators).
+- **Cursor execution prompt** — engine type extensions, new rhythm-engine bundle file, registry wiring, smoke + harness test updates.
+- **Smoke gate** — `npm run test:composer-smoke` → 248/0, 63 suites.
+- **UI wiring** — add to the SQ Rhythm Engine dropdown alongside the existing options (Fela Kuti, Greek Rebetiko, Brazilian, New Orleans Second Line, Cuban / Afro-Cuban); preset-conditional optgroup if the SQ-native set grows beyond ~3 entries.
+
+**Do not begin research or execution — roadmap entry only.**
+
+---
+
 ## Priority stack (2026-04-29) — *superseded*
 
 **Use § What to do next — importance order (2026-05-12)** for scheduling. The numbered list below is **retained for history** only.
