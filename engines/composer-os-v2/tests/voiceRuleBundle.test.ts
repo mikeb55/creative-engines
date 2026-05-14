@@ -278,6 +278,59 @@ function testSevenVoicesMinChordDurationBars(): boolean {
         getVoiceRuleBundle('garota_de_ipanema').voiceId === 'jobim' &&
         getVoiceRuleBundle('girl_from_ipanema').voiceId === 'jobim'
       );
+    })() &&
+    (() => {
+      const ap = getVoiceRuleBundle('arvo_part');
+      return (
+        ap.voiceId === 'part' &&
+        ap.bassPolicy.role === 'pedal-or-drone' &&
+        ap.melodicPolicy.contour === 'stepwise-diatonic' &&
+        ap.formPolicy.narrativeArc === 'variation-or-arch' &&
+        ap.rhythmPolicy.antiMetric === false &&
+        ap.tintinnabuliEnabled === true &&
+        ap.sacredProfile === true &&
+        ap.silenceAsStructure === true &&
+        ap.tintinnabuliExtendedTechniquesLevel === 'minimal' &&
+        ap.dynamicCeiling === 'mf' &&
+        ap.noTeleologicalDevelopment === true &&
+        ap.forbidAudibleProcessOperators === true &&
+        (ap.tVoicePositionModes?.length ?? 0) === 5 &&
+        Boolean(ap.tVoicePositionModes?.includes('1_above')) &&
+        (ap.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 30 &&
+        Boolean(ap.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('AP_POLICY_01'))) &&
+        Boolean(ap.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('AP_T_VOICE_01'))) &&
+        Boolean(ap.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('AP_WORK_SPIEGEL_01'))) &&
+        Boolean(ap.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('AP_DIFF_RG_01'))) &&
+        getVoiceRuleBundle('part').voiceId === 'part' &&
+        getVoiceRuleBundle('tintinnabuli').voiceId === 'part' &&
+        getVoiceRuleBundle('spiegel_im_spiegel').voiceId === 'part' &&
+        getVoiceRuleBundle('fratres').voiceId === 'part' &&
+        getVoiceRuleBundle('arvo').voiceId === 'part'
+      );
+    })() &&
+    (() => {
+      const es = getVoiceRuleBundle('satie');
+      return (
+        es.voiceId === 'satie' &&
+        es.bassPolicy.role === 'pedal-or-static' &&
+        es.melodicPolicy.contour === 'stepwise-modal' &&
+        es.formPolicy.narrativeArc === 'non-teleological' &&
+        es.rhythmPolicy.antiMetric === false &&
+        es.parallelChordsEnabled === true &&
+        es.unresolvedDominantEnabled === true &&
+        es.furnitureModeEnabled === true &&
+        es.ironicStyleSwitchEnabled === true &&
+        es.tintinnabuliEnabled === false &&
+        es.sacredProfile === false &&
+        (es.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 30 &&
+        Boolean(es.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('ES_POLICY_01'))) &&
+        Boolean(es.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('ES_HARM_PAL_01'))) &&
+        Boolean(es.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('ES_RHY_FURN_01'))) &&
+        Boolean(es.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('ES_DIFF_DEB_01'))) &&
+        getVoiceRuleBundle('erik_satie').voiceId === 'satie' &&
+        getVoiceRuleBundle('gymnopedies').voiceId === 'satie' &&
+        getVoiceRuleBundle('furniture_music').voiceId === 'satie'
+      );
     })()
   );
 }
@@ -319,6 +372,7 @@ function testResolvableBundlesSatisfyShape(): boolean {
     'ligeti',
     'crumb_black_angels',
     'jobim',
+    'satie',
   ]) {
     if (!assertBundleShape(getVoiceRuleBundle(id))) return false;
   }

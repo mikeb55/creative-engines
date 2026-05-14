@@ -1148,6 +1148,7 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('cp.diatonic_density', 'Secondary dominant / passing chord density (`cp:diatonic_density`)', 'songwriter', 'harmony', 8, 'verse'),
     R('cp.bvi_color', 'bVI colour before cadence (`cp:bvi_color`)', 'songwriter', 'harmony', 7, 'chorus'),
     R('cp.beguine_feel', 'Beguine-aligned eighth-syncopation bass pocket (`cp:beguine`)', 'songwriter', 'rhythm', 7, 'global'),
+    R('cp.vrb_bundle', 'Cole Porter VRB (`CP_*` ≥30 fingerprint receipts; chromatic bass + mixture + speech-elegant melody)', 'songwriter', 'harmony', 9, 'global'),
   ],
   miles_davis: [
     R('md.modal_center', 'Modal centre spans — Dorian / Mixolydian field locks (`md:modal_center`)', 'songwriter', 'harmony', 9, 'global'),
@@ -1175,6 +1176,7 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('gg.syncopated_anticipation', 'Secondary dominant anticipation (`gg:d3_syncopated_anticipation`)', 'songwriter', 'harmony', 8, 'verse'),
     R('gg.chromatic_passing', 'Diminished passing connectors (`gg:d4_chromatic_passing`)', 'songwriter', 'harmony', 8, 'global'),
     R('gg.minor_third_modulation', 'Brief minor-third axis shift (`gg:d5_minor_third_modulation`)', 'songwriter', 'harmony', 7, 'bridge'),
+    R('gg.vrb_bundle', 'George Gershwin VRB (`GG_*` ≥30 fingerprint receipts; functional jazz + AABA/rhapsody)', 'songwriter', 'harmony', 9, 'global'),
   ],
   arvo_part: [
     R('ap.tintinnabuli_voice', 'T-voice mapped from M-voice against triad tones (`ap:d1_tintinnabuli_voice`)', 'songwriter', 'harmony', 9, 'global'),
@@ -1182,6 +1184,7 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('ap.additive_rhythm', 'Additive pulse scaffolding (`ap:d3_additive_rhythm`)', 'songwriter', 'rhythm', 8, 'global'),
     R('ap.register_arch', 'Golden-section register climax hint (`ap:d4_register_arch`)', 'songwriter', 'form', 7, 'form'),
     R('ap.triadic_transformation', 'Uniform triadic transforms / parallel pairs (`ap:d5_triadic_transformation`)', 'songwriter', 'harmony', 8, 'global'),
+    R('ap.sq_vrb_bundle', 'Arvo Pärt tintinnabuli SQ VRB (`AP_*` fingerprint receipts; M+T dual voice)', 'songwriter', 'harmony', 9, 'global'),
   ],
   satie: [
     R('sat.static_field', 'Harmonic prolongation / frozen field bars (`es:d1_static_field`)', 'songwriter', 'harmony', 9, 'global'),
@@ -1189,6 +1192,7 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('sat.cell_repetition', 'Two-bar harmonic cell echo (`es:d3_cell_repetition`)', 'songwriter', 'form', 8, 'verse'),
     R('sat.texture_form', 'Sparse texture form hinge receipts (`es:d4_texture_form`)', 'songwriter', 'form', 7, 'form'),
     R('sat.modal_collection', 'White-collection modal pitch receipts (`es:d5_modal_collection`)', 'songwriter', 'harmony', 8, 'global'),
+    R('es.sq_vrb_bundle', 'Erik Satie VRB bundle (`ES_*` ≥30 fingerprint receipts; Gymnopédies / Gnossiennes / furniture / Parade / Socrate)', 'songwriter', 'harmony', 9, 'global'),
   ],
   /** SQ VRB family — registry stubs; deep grammar in `voiceRuleBundles.ts`. */
   beethoven_late: [
@@ -1211,6 +1215,9 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
   ],
   dutilleux: [
     R('dx.sq_vrb_bundle', 'Dutilleux SQ VRB bundle (`DX_*` 83 fingerprint receipts; French modernist memory-form; focal hexachord HC0; memory parenthèses; gradual growth)', 'songwriter', 'harmony', 9, 'global'),
+  ],
+  ornette_coleman: [
+    R('oc.harmolodic_vrb', 'Ornette Coleman harmolodic VRB (`OC_*` fingerprint receipts; pitch field + pulse; democratic lines)', 'songwriter', 'harmony', 9, 'global'),
   ],
 };
 

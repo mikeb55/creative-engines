@@ -16,6 +16,11 @@ import { LACHENMANN_SQ_VRF_FINGERPRINT_RECEIPTS } from './lachenmannSqVrbFingerp
 import { LIGETI_SQ_VRB_FINGERPRINT_RECEIPTS } from './ligetiSqVrbFingerprints';
 import { CRUMB_BLACK_ANGELS_SQ_VRB_FINGERPRINT_RECEIPTS } from './crumbBlackAngelsSqVrbFingerprints';
 import { JOBIM_VRB_FINGERPRINT_RECEIPTS } from './jobimVrbFingerprints';
+import { ARVO_PART_TINTINNABULI_VRF_FINGERPRINT_RECEIPTS } from './arvoPartTintinnabuliVrbFingerprints';
+import { SATIE_VRF_FINGERPRINT_RECEIPTS } from './satieVrbFingerprints';
+import { ORNETTE_COLEMAN_VRF_FINGERPRINT_RECEIPTS } from './ornetteColemanVrbFingerprints';
+import { GERSHWIN_VRF_FINGERPRINT_RECEIPTS } from './gershwinVrbFingerprints';
+import { COLE_PORTER_VRF_FINGERPRINT_RECEIPTS } from './colePorterVrbFingerprints';
 
 /** Interval-class seeds aligned with Threadgill / IntervalSetSystem posture (engine-local). */
 const THREADGILL_INTERVAL_CLASS_SEEDS = [1, 2, 3, 5, 6, 7, 8, 10];
@@ -2458,6 +2463,257 @@ const JOBIM: VoiceRuleBundle = {
   lydianColourEnabled: true,
 };
 
+/** Arvo Pärt — tintinnabuli (1976+) SQ / chamber VRB. Canonical `voiceId` **`part`**; songwriter **`arvo_part`** auto-resolves here. */
+const PART: VoiceRuleBundle = {
+  voiceId: 'part',
+  harmonicRhythm: {
+    minChordDurationBars: 4,
+    maxChordDurationBars: 64,
+    allowMidBarChange: false,
+  },
+  bassPolicy: {
+    role: 'pedal-or-drone',
+    allowOctaveDoubling: true,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 12,
+    maxSpreadSemitones: 48,
+    clusterSizeNotes: [2, 4],
+    forbidParallelFifths: false,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'stepwise-diatonic',
+    maxLeapSemitones: 7,
+    preferredIntervalSets: [1, 2],
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 2,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: ARVO_PART_TINTINNABULI_VRF_FINGERPRINT_RECEIPTS,
+  },
+  formPolicy: {
+    narrativeArc: 'variation-or-arch',
+    sectionRecallEnforced: false,
+  },
+  rhythmPolicy: {
+    antiMetric: false,
+  },
+  repairPolicy: {
+    resolveParallels: false,
+    maxVoiceOverlap: 8,
+  },
+  tintinnabuliEnabled: true,
+  tVoicePositionModes: ['1_above', '1_below', '2_above', '2_below', 'alternating'],
+  sacredProfile: true,
+  silenceAsStructure: true,
+  tintinnabuliExtendedTechniquesLevel: 'minimal',
+  dynamicCeiling: 'mf',
+  noTeleologicalDevelopment: true,
+  forbidAudibleProcessOperators: true,
+};
+
+/** Erik Satie — modal salon / furniture music VRB (Gymnopédies · Gnossiennes · Sarabandes · Poire · Parade · Socrate). */
+const SATIE: VoiceRuleBundle = {
+  voiceId: 'satie',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 8,
+    allowMidBarChange: false,
+  },
+  bassPolicy: {
+    role: 'pedal-or-static',
+    allowOctaveDoubling: true,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 8,
+    maxSpreadSemitones: 40,
+    clusterSizeNotes: [2, 5],
+    forbidParallelFifths: false,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'stepwise-modal',
+    maxLeapSemitones: 4,
+    preferredIntervalSets: [1, 2, 3, 4],
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 1,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: SATIE_VRF_FINGERPRINT_RECEIPTS,
+  },
+  formPolicy: {
+    narrativeArc: 'non-teleological',
+    sectionRecallEnforced: false,
+  },
+  rhythmPolicy: {
+    /** Barred Gymnopédie / Sarabande spine; gnossienne barless mode flips at slice. */
+    antiMetric: false,
+  },
+  repairPolicy: {
+    resolveParallels: false,
+    maxVoiceOverlap: 6,
+  },
+  parallelChordsEnabled: true,
+  unresolvedDominantEnabled: true,
+  furnitureModeEnabled: true,
+  ironicStyleSwitchEnabled: true,
+  tintinnabuliEnabled: false,
+  sacredProfile: false,
+  noTeleologicalDevelopment: true,
+};
+
+/** Ornette Coleman — harmolodic language (Atlantic quartet → Skies → Prime Time). */
+const ORNETTE_COLEMAN: VoiceRuleBundle = {
+  voiceId: 'ornette_coleman',
+  harmonicRhythm: {
+    /** No fixed chord-cycle spine — field + pulse govern verticals. */
+    minChordDurationBars: 0,
+    maxChordDurationBars: 64,
+    allowMidBarChange: false,
+  },
+  bassPolicy: {
+    role: 'melodic-floating',
+    allowOctaveDoubling: false,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 6,
+    maxSpreadSemitones: 48,
+    clusterSizeNotes: [2, 6],
+    forbidParallelFifths: false,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'blues-field-free',
+    maxLeapSemitones: 12,
+    preferredIntervalSets: [1, 2, 3, 4, 5],
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 0,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: true,
+    fingerprintReceipts: ORNETTE_COLEMAN_VRF_FINGERPRINT_RECEIPTS,
+  },
+  formPolicy: {
+    narrativeArc: 'head-solos-head',
+    sectionRecallEnforced: false,
+  },
+  rhythmPolicy: {
+    antiMetric: false,
+  },
+  repairPolicy: {
+    resolveParallels: false,
+    maxVoiceOverlap: 8,
+  },
+  harmolodicsEnabled: true,
+  pitchFieldGoverned: true,
+  democraticEnsemble: true,
+  collectiveImprovEnabled: true,
+  bluesInflectionRequired: true,
+  forbidAudibleProcessOperators: true,
+};
+
+/** George Gershwin — functional jazz tonality, songbook + concert rhapsody. */
+const GERSHWIN: VoiceRuleBundle = {
+  voiceId: 'gershwin',
+  harmonicRhythm: {
+    minChordDurationBars: 0,
+    maxChordDurationBars: 8,
+    allowMidBarChange: true,
+  },
+  bassPolicy: {
+    role: 'walking-or-symphonic',
+    allowOctaveDoubling: false,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 8,
+    maxSpreadSemitones: 40,
+    clusterSizeNotes: [3, 6],
+    forbidParallelFifths: false,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'blues-diatonic',
+    maxLeapSemitones: 14,
+    preferredIntervalSets: [1, 2, 3, 4, 5],
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 2,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: GERSHWIN_VRF_FINGERPRINT_RECEIPTS,
+  },
+  formPolicy: {
+    narrativeArc: 'aaba-or-rhapsody',
+    sectionRecallEnforced: true,
+  },
+  rhythmPolicy: {
+    antiMetric: false,
+  },
+  repairPolicy: {
+    resolveParallels: false,
+    maxVoiceOverlap: 6,
+  },
+  swingFeel: true,
+  guideToneVoiceLeading: true,
+  blueNoteEnabled: true,
+  rhythmChangesEnabled: true,
+  concertModeEnabled: true,
+  songModeEnabled: true,
+};
+
+/** Cole Porter — chromatic songbook functionalism + urbane wit. */
+const COLE_PORTER: VoiceRuleBundle = {
+  voiceId: 'cole_porter',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 8,
+    allowMidBarChange: false,
+  },
+  bassPolicy: {
+    role: 'chromatic-descent-or-root',
+    allowOctaveDoubling: false,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 6,
+    maxSpreadSemitones: 36,
+    clusterSizeNotes: [3, 5],
+    forbidParallelFifths: false,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'speech-elegant',
+    maxLeapSemitones: 16,
+    preferredIntervalSets: [1, 2, 3, 6, 8],
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 2,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: COLE_PORTER_VRF_FINGERPRINT_RECEIPTS,
+  },
+  formPolicy: {
+    narrativeArc: 'aaba-or-extended-refrain',
+    sectionRecallEnforced: true,
+  },
+  rhythmPolicy: {
+    antiMetric: false,
+  },
+  repairPolicy: {
+    resolveParallels: false,
+    maxVoiceOverlap: 6,
+  },
+  swingFeel: false,
+  guideToneVoiceLeading: true,
+  chromaticBassEnabled: true,
+  majorMinorMixtureEnabled: true,
+  repeatedNoteOpeningEnabled: true,
+  textCoupledHarmonyEnabled: true,
+  witStyleProfile: true,
+};
+
 const CRUMB_BLACK_ANGELS: VoiceRuleBundle = {
   voiceId: 'crumb_black_angels',
   harmonicRhythm: {
@@ -2518,6 +2774,24 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   dutilleux: DUTILLEUX,
   henri_dutilleux: DUTILLEUX,
   gil_evans: GIL_EVANS,
+  gershwin: GERSHWIN,
+  george_gershwin: GERSHWIN,
+  rhapsody_in_blue: GERSHWIN,
+  porgy_and_bess: GERSHWIN,
+  i_got_rhythm: GERSHWIN,
+  summertime: GERSHWIN,
+  rhythm_changes: GERSHWIN,
+  an_american_in_paris: GERSHWIN,
+  concerto_in_f: GERSHWIN,
+  cole_porter: COLE_PORTER,
+  porter: COLE_PORTER,
+  night_and_day: COLE_PORTER,
+  begin_the_beguine: COLE_PORTER,
+  every_time_we_say_goodbye: COLE_PORTER,
+  i_love_paris: COLE_PORTER,
+  love_for_sale: COLE_PORTER,
+  just_one_of_those_things: COLE_PORTER,
+  anything_goes: COLE_PORTER,
   duke_ellington: DUKE_ELLINGTON,
   ellington: DUKE_ELLINGTON,
   thad_jones: THAD_JONES,
@@ -2600,6 +2874,36 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   bossa_nova: JOBIM,
   garota_de_ipanema: JOBIM,
   girl_from_ipanema: JOBIM,
+  part: PART,
+  arvo_part: PART,
+  arvo: PART,
+  arvo_part_tintinnabuli: PART,
+  tintinnabuli: PART,
+  spiegel_im_spiegel: PART,
+  fratres: PART,
+  tabula_rasa: PART,
+  fur_alina: PART,
+  cantus: PART,
+  summa: PART,
+  satie: SATIE,
+  erik_satie: SATIE,
+  gymnopedies: SATIE,
+  gnossiennes: SATIE,
+  gymnopedie: SATIE,
+  gnossienne: SATIE,
+  furniture_music: SATIE,
+  musique_ameublement: SATIE,
+  socrate: SATIE,
+  parade: SATIE,
+  ornette_coleman: ORNETTE_COLEMAN,
+  ornette: ORNETTE_COLEMAN,
+  harmolodics: ORNETTE_COLEMAN,
+  free_jazz: ORNETTE_COLEMAN,
+  shape_of_jazz: ORNETTE_COLEMAN,
+  lonely_woman: ORNETTE_COLEMAN,
+  skies_of_america: ORNETTE_COLEMAN,
+  prime_time: ORNETTE_COLEMAN,
+  change_of_the_century: ORNETTE_COLEMAN,
 };
 
 export function normalizeHarmonicVoiceId(raw: string): string {

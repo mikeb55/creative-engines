@@ -832,6 +832,16 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
     cadenceFrequency: 'low',
     devices: ['static_field', 'parallel_planning', 'cell_repetition', 'texture_form', 'modal_collection'],
   },
+  ornette_coleman: {
+    intervalTendency: 'mixed',
+    rhythmicSubdivision: 'eighth_patterns',
+    repetitionVsVariationBias: 0.44,
+    phraseLength: 2,
+    contourProfile: 'arch',
+    phraseAsymmetryTendency: 0.72,
+    cadenceFrequency: 'low',
+    devices: ['pitch_field', 'harmolodic_unison', 'democratic_foreground', 'blues_inflection', 'pulse_float'],
+  },
   cole_porter: {
     intervalTendency: 'stepwise',
     rhythmicSubdivision: 'eighth_patterns',

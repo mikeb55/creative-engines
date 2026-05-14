@@ -36,6 +36,8 @@ const CLASSICAL = new Set<string>([
   'mahler',
   'messiaen',
   'prokofiev',
+  'arvo_part',
+  'satie',
   'ravel',
   'reich_glass',
   'schubert',
@@ -62,7 +64,9 @@ const JAZZ = new Set<string>([
   'maria_schneider',
   'pat_metheny',
   'thelonious_monk',
+  'gershwin',
   'wayne_shorter',
+  'ornette_coleman',
 ]);
 
 const LATIN_JAZZ = new Set<string>(['antonio_carlos_jobim']);
@@ -71,7 +75,7 @@ const JAZZ_ROCK = new Set<string>(['donald_fagen']);
 
 const ROCK_FUSION = new Set<string>(['frank_zappa']);
 
-const THEATRE = new Set<string>(['bacharach', 'stephen_sondheim', 'kurt_weill']);
+const THEATRE = new Set<string>(['bacharach', 'stephen_sondheim', 'kurt_weill', 'cole_porter']);
 
 const POP = new Set<string>([
   'beatles',

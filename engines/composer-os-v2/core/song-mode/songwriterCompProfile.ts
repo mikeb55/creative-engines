@@ -146,6 +146,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   ligeti: 'keys',
   crumb_black_angels: 'keys',
   dutilleux: 'keys',
+  ornette_coleman: 'ensemble',
 };
 
 export function songWriterPrimaryInstrument(id: SongwriterRuleId): SongwriterPrimaryInstrumentKind {

@@ -473,6 +473,129 @@ export function runVoiceRuleBundleHarnessAdditiveTests(): { name: string; ok: bo
     getVoiceRuleBundle('garota_de_ipanema').voiceId === 'jobim' &&
     getVoiceRuleBundle('girl_from_ipanema').voiceId === 'jobim';
 
+  const satie = getVoiceRuleBundle('satie');
+  const okSatie =
+    satie.voiceId === 'satie' &&
+    satie.bassPolicy.role === 'pedal-or-static' &&
+    satie.melodicPolicy.contour === 'stepwise-modal' &&
+    satie.formPolicy.narrativeArc === 'non-teleological' &&
+    satie.rhythmPolicy.antiMetric === false &&
+    satie.parallelChordsEnabled === true &&
+    satie.unresolvedDominantEnabled === true &&
+    satie.furnitureModeEnabled === true &&
+    satie.ironicStyleSwitchEnabled === true &&
+    satie.tintinnabuliEnabled === false &&
+    satie.sacredProfile === false &&
+    (satie.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 30 &&
+    Boolean(satie.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('ES_POLICY_01'))) &&
+    Boolean(satie.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('ES_HARM_PAL_01'))) &&
+    Boolean(satie.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('ES_TEX_GYM_01'))) &&
+    Boolean(satie.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('ES_DIFF_PART_01')));
+
+  const okSatieAliases =
+    getVoiceRuleBundle('erik_satie').voiceId === 'satie' &&
+    getVoiceRuleBundle('gymnopedies').voiceId === 'satie' &&
+    getVoiceRuleBundle('furniture_music').voiceId === 'satie' &&
+    getVoiceRuleBundle('socrate').voiceId === 'satie' &&
+    getVoiceRuleBundle('parade').voiceId === 'satie';
+
+  const oc = getVoiceRuleBundle('ornette_coleman');
+  const okOrnette =
+    oc.voiceId === 'ornette_coleman' &&
+    oc.bassPolicy.role === 'melodic-floating' &&
+    oc.melodicPolicy.contour === 'blues-field-free' &&
+    oc.formPolicy.narrativeArc === 'head-solos-head' &&
+    oc.formPolicy.sectionRecallEnforced === false &&
+    oc.rhythmPolicy.antiMetric === false &&
+    oc.orchestrationPolicy.allowCollectiveImprov === true &&
+    oc.harmolodicsEnabled === true &&
+    oc.pitchFieldGoverned === true &&
+    oc.democraticEnsemble === true &&
+    oc.collectiveImprovEnabled === true &&
+    oc.bluesInflectionRequired === true &&
+    oc.forbidAudibleProcessOperators === true &&
+    (oc.harmonicRhythm.minChordDurationBars ?? -1) === 0 &&
+    (oc.harmonicRhythm.maxChordDurationBars ?? 0) === 64 &&
+    (oc.melodicPolicy.preferredIntervalSets?.length ?? 0) === 5 &&
+    Boolean(oc.melodicPolicy.preferredIntervalSets?.every((n) => [1, 2, 3, 4, 5].includes(n))) &&
+    (oc.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 30 &&
+    Boolean(oc.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('OC_POLICY_01'))) &&
+    Boolean(oc.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('OC_HARM_01'))) &&
+    Boolean(oc.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('OC_LINE_01'))) &&
+    Boolean(oc.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('OC_DIFF_COLTRANE_01'))) &&
+    Boolean(oc.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('OC_FORM_02')));
+
+  const okOrnetteAliases =
+    getVoiceRuleBundle('ornette').voiceId === 'ornette_coleman' &&
+    getVoiceRuleBundle('harmolodics').voiceId === 'ornette_coleman' &&
+    getVoiceRuleBundle('free_jazz').voiceId === 'ornette_coleman' &&
+    getVoiceRuleBundle('lonely_woman').voiceId === 'ornette_coleman' &&
+    getVoiceRuleBundle('prime_time').voiceId === 'ornette_coleman';
+
+  const gg = getVoiceRuleBundle('gershwin');
+  const okGershwin =
+    gg.voiceId === 'gershwin' &&
+    gg.bassPolicy.role === 'walking-or-symphonic' &&
+    gg.melodicPolicy.contour === 'blues-diatonic' &&
+    gg.formPolicy.narrativeArc === 'aaba-or-rhapsody' &&
+    gg.formPolicy.sectionRecallEnforced === true &&
+    gg.rhythmPolicy.antiMetric === false &&
+    gg.swingFeel === true &&
+    gg.guideToneVoiceLeading === true &&
+    gg.blueNoteEnabled === true &&
+    gg.rhythmChangesEnabled === true &&
+    gg.concertModeEnabled === true &&
+    gg.songModeEnabled === true &&
+    gg.harmonicRhythm.allowMidBarChange === true &&
+    (gg.harmonicRhythm.minChordDurationBars ?? -1) === 0 &&
+    (gg.harmonicRhythm.maxChordDurationBars ?? 0) === 8 &&
+    (gg.melodicPolicy.preferredIntervalSets?.length ?? 0) === 5 &&
+    Boolean(gg.melodicPolicy.preferredIntervalSets?.every((n) => [1, 2, 3, 4, 5].includes(n))) &&
+    (gg.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 30 &&
+    Boolean(gg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('GG_POLICY_01'))) &&
+    Boolean(gg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('GG_HARM_01'))) &&
+    Boolean(gg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('GG_DIFF_DEBUSSY_01'))) &&
+    Boolean(gg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('GG_WORK_RHAPSODY_01')));
+
+  const okGershwinAliases =
+    getVoiceRuleBundle('george_gershwin').voiceId === 'gershwin' &&
+    getVoiceRuleBundle('rhapsody_in_blue').voiceId === 'gershwin' &&
+    getVoiceRuleBundle('i_got_rhythm').voiceId === 'gershwin' &&
+    getVoiceRuleBundle('summertime').voiceId === 'gershwin' &&
+    getVoiceRuleBundle('concerto_in_f').voiceId === 'gershwin';
+
+  const cp = getVoiceRuleBundle('cole_porter');
+  const okColePorter =
+    cp.voiceId === 'cole_porter' &&
+    cp.bassPolicy.role === 'chromatic-descent-or-root' &&
+    cp.melodicPolicy.contour === 'speech-elegant' &&
+    cp.formPolicy.narrativeArc === 'aaba-or-extended-refrain' &&
+    cp.formPolicy.sectionRecallEnforced === true &&
+    cp.rhythmPolicy.antiMetric === false &&
+    cp.swingFeel === false &&
+    cp.guideToneVoiceLeading === true &&
+    cp.chromaticBassEnabled === true &&
+    cp.majorMinorMixtureEnabled === true &&
+    cp.repeatedNoteOpeningEnabled === true &&
+    cp.textCoupledHarmonyEnabled === true &&
+    cp.witStyleProfile === true &&
+    (cp.harmonicRhythm.minChordDurationBars ?? 0) === 1 &&
+    (cp.harmonicRhythm.maxChordDurationBars ?? 0) === 8 &&
+    (cp.melodicPolicy.preferredIntervalSets?.length ?? 0) === 5 &&
+    Boolean(cp.melodicPolicy.preferredIntervalSets?.every((n) => [1, 2, 3, 6, 8].includes(n))) &&
+    (cp.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 30 &&
+    Boolean(cp.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CP_POLICY_01'))) &&
+    Boolean(cp.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CP_HARM_01'))) &&
+    Boolean(cp.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CP_DIFF_GERSHWIN_01'))) &&
+    Boolean(cp.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('CP_WORK_NIGHT_DAY_01')));
+
+  const okColePorterAliases =
+    getVoiceRuleBundle('porter').voiceId === 'cole_porter' &&
+    getVoiceRuleBundle('night_and_day').voiceId === 'cole_porter' &&
+    getVoiceRuleBundle('begin_the_beguine').voiceId === 'cole_porter' &&
+    getVoiceRuleBundle('love_for_sale').voiceId === 'cole_porter' &&
+    getVoiceRuleBundle('anything_goes').voiceId === 'cole_porter';
+
   return [
     { name: 'Phase 2+3a harness additive: HarmonicScene stub barRange', ok: okScene },
     { name: 'Phase 2+3a harness additive: unknown voice → neutral bundle id', ok: okNeutral },
@@ -513,5 +636,13 @@ export function runVoiceRuleBundleHarnessAdditiveTests(): { name: string; ok: bo
     { name: 'Phase 2+3a harness additive: crumb_black_angels aliases resolve', ok: okCrumbAliases },
     { name: 'Phase 2+3a harness additive: jobim >=30 JB_* bossa-nova fingerprints', ok: okJobim },
     { name: 'Phase 2+3a harness additive: jobim aliases resolve', ok: okJobimAliases },
+    { name: 'Phase 2+3a harness additive: satie >=30 ES_* modal-salon fingerprints', ok: okSatie },
+    { name: 'Phase 2+3a harness additive: satie aliases resolve', ok: okSatieAliases },
+    { name: 'Phase 2+3a harness additive: ornette_coleman >=30 OC_* harmolodic fingerprints', ok: okOrnette },
+    { name: 'Phase 2+3a harness additive: ornette_coleman aliases resolve', ok: okOrnetteAliases },
+    { name: 'Phase 2+3a harness additive: gershwin >=30 GG_* functional-jazz fingerprints', ok: okGershwin },
+    { name: 'Phase 2+3a harness additive: gershwin aliases resolve', ok: okGershwinAliases },
+    { name: 'Phase 2+3a harness additive: cole_porter >=30 CP_* songbook fingerprints', ok: okColePorter },
+    { name: 'Phase 2+3a harness additive: cole_porter aliases resolve', ok: okColePorterAliases },
   ];
 }

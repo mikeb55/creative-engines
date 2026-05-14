@@ -9,9 +9,9 @@ import { getVoiceRuleBundle, normalizeHarmonicVoiceId } from './voiceRuleBundles
 /**
  * Songwriter ids that auto-resolve to a same-named VoiceRuleBundle when picked
  * in the UI (no explicit `harmonicVoice` option required). Extend this set
- * whenever a slice + matching VRB ship together. The full SQ VRB family
- * (Beethoven late, Turtle Island, Reich/Glass, Shostakovich, Lachenmann)
- * is auto-resolved here so the String Quartet preset surfaces them.
+ * whenever a slice + matching VRB ship together. SQ VRB family ids plus
+ * Jobim, Arvo Pärt tintinnabuli, Satie, and Ornette Coleman harmolodics resolve
+ * here so String Quartet / Song Mode can attach bundles without a separate pick.
  */
 const AUTO_RESOLVE_SONGWRITER_TO_VOICE_ID: ReadonlySet<string> = new Set([
   'radiohead',
@@ -25,6 +25,11 @@ const AUTO_RESOLVE_SONGWRITER_TO_VOICE_ID: ReadonlySet<string> = new Set([
   'crumb_black_angels',
   'dutilleux',
   'antonio_carlos_jobim',
+  'arvo_part',
+  'satie',
+  'ornette_coleman',
+  'gershwin',
+  'cole_porter',
 ]);
 
 export function attachVoiceRuleBundleAndHarmonicScenes(

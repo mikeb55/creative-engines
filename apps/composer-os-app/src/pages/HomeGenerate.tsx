@@ -502,6 +502,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'messiaen', label: 'Messiaen' },
   { id: 'nino_rota', label: 'Nino Rota' },
   { id: 'norman_whitfield', label: 'Norman Whitfield' },
+  { id: 'ornette_coleman', label: 'Ornette Coleman (Harmolodics)' },
   { id: 'philip_glass', label: 'Philip Glass' },
   { id: 'paul_mccartney', label: 'Paul McCartney' },
   { id: 'pat_metheny', label: 'Pat Metheny' },
@@ -528,6 +529,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'turtle_island', label: 'Turtle Island Quartet' },
   { id: 'dave_brubeck', label: 'Dave Brubeck' },
   { id: 'andrew_hill', label: 'Andrew Hill' },
+  { id: 'arvo_part', label: 'Arvo Pärt (Tintinnabuli)' },
   { id: 'charlie_parker', label: 'Charlie Parker' },
   { id: 'wayne_shorter', label: 'Wayne Shorter' },
   { id: 'xtc', label: 'XTC' },
@@ -594,9 +596,9 @@ const FILM_HARMONIC_VOICE_IDS: readonly HarmonicVoiceId[] = [
 const HARMONIC_VOICE_FILM_SET = new Set<string>(FILM_HARMONIC_VOICE_IDS);
 
 /**
- * SQ VRB family canonical order (12 ids — full roster). VRB bundles
+ * SQ VRB family canonical order (14 ids — full roster). VRB bundles
  * ship for `beethoven_late`, `bartok`, `ravel`, `debussy`, `dutilleux`,
- * `messiaen`, `ligeti`, `reich_glass`, `shostakovich`, `turtle_island`,
+ * `messiaen`, `ligeti`, `arvo_part`, `satie`, `reich_glass`, `shostakovich`, `turtle_island`,
  * `crumb_black_angels`, `lachenmann`. Any reserved slots without an
  * active SONGWRITER_OPTIONS row are filtered out by
  * `buildHarmonicVoiceGroups`, keeping the canonical order intact.
@@ -609,6 +611,8 @@ const SONGWRITER_GROUP_SHIPPED_SQ_VRB_ORDER: readonly string[] = [
   'dutilleux',
   'messiaen',
   'ligeti',
+  'arvo_part',
+  'satie',
   'reich_glass',
   'shostakovich',
   'turtle_island',
@@ -1051,6 +1055,8 @@ const ARRANGER_OPTIONS: { id: string; label: string }[] = [
   { id: 'ravel', label: 'Ravel' },
   { id: 'dutilleux', label: 'Dutilleux' },
   { id: 'ligeti', label: 'Ligeti' },
+  { id: 'arvo_part', label: 'Arvo Pärt (Tintinnabuli)' },
+  { id: 'satie', label: 'Erik Satie' },
   { id: 'reich_glass', label: 'Reich / Glass' },
   { id: 'shostakovich', label: 'Shostakovich' },
   { id: 'turtle_island', label: 'Turtle Island Quartet' },
@@ -1082,6 +1088,8 @@ const ARRANGER_GROUP_SQ_VRB_ORDER: readonly string[] = [
   'ravel',
   'dutilleux',
   'ligeti',
+  'arvo_part',
+  'satie',
   'reich_glass',
   'shostakovich',
   'turtle_island',

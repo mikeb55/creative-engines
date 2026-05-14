@@ -28,7 +28,7 @@ function intervalClass(a: number, b: number): number {
 /** Same-direction motion parallel fifth (simplest pairwise outer voices). */
 function parallelFifthPenalty(prev: number[] | null, curr: number[], bundle: VoiceRuleBundle): number {
   /** RH_VL_01 — expressive parallel fifths (e.g. Paranoid Android m.14–15); not scored as error. */
-  if (bundle.voiceId === 'radiohead' || bundle.voiceId === 'debussy') return 0;
+  if (bundle.voiceId === 'radiohead' || bundle.voiceId === 'debussy' || bundle.voiceId === 'satie') return 0;
   if (!prev || prev.length < 2 || curr.length < 2) return 0;
   const ps = sortedNotes(prev);
   const cs = sortedNotes(curr);
@@ -43,7 +43,7 @@ function parallelFifthPenalty(prev: number[] | null, curr: number[], bundle: Voi
 
 function parallelOctavePenalty(prev: number[] | null, curr: number[], bundle: VoiceRuleBundle): number {
   /** RH_VL_01 — parallel octaves permitted as colour. */
-  if (bundle.voiceId === 'radiohead' || bundle.voiceId === 'debussy') return 0;
+  if (bundle.voiceId === 'radiohead' || bundle.voiceId === 'debussy' || bundle.voiceId === 'satie') return 0;
   if (bundle.lineFirstHierarchy === true) {
     return 0;
   }
@@ -106,6 +106,7 @@ function anchorTonePenalty(prev: number[] | null, curr: number[], anchorCount: n
 }
 
 function simultaneousMotionPenalty(prev: number[] | null, curr: number[], bundle: VoiceRuleBundle): number {
+  if (bundle.voiceId === 'satie') return 0;
   if (bundle.lineFirstHierarchy === true) return 0;
   if (!prev || prev.length !== curr.length) return 0;
   let moving = 0;

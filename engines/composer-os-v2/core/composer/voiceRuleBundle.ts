@@ -5,6 +5,7 @@
 
 export type BassPolicyRole =
   | 'root'
+  /** Jobim — bass as independent singing line (beat-1 roots + syncopated fill + cadential contrary motion); slash-chord context allowed */
   | 'melodic-counterline'
   | 'chromatic-first'
   /** Wayne Shorter axis / pedal bass motion */
@@ -19,14 +20,22 @@ export type BassPolicyRole =
   | 'pattern-bass'
   /** Shostakovich SQ — ostinato bass figure or sustained pedal pc */
   | 'ostinato-or-pedal'
+  /** Arvo Pärt tintinnabuli — tonic/dominant pedal or sustained open-fifth drone under M+T */
+  | 'pedal-or-drone'
+  /** Erik Satie — slow tonic/modal pedal or static bass degrees (Gymnopédie alternation); no walking line */
+  | 'pedal-or-static'
   /** Lachenmann SQ — noise field, no structural bass */
   | 'noise-field'
   /** Ligeti SQ — Vc participates as one micro-voice in stratified texture; no structural bass function */
   | 'embedded-voice'
   /** Crumb (Black Angels) — Vc alternates between low_ground noise-layer and sustained focal-pc pedal; no structural bass function */
   | 'noise-or-pedal'
-  /** Jobim — bass acts as an independent singing line against shifting upper harmony (roots on 1 + syncopated 8th-note fill + cadential contrary motion); slash-chord context allowed */
-  | 'melodic-counterline';
+  /** Ornette Coleman harmolodics — bass floats tonal hints (steps, 4ths/5ths, riffs); not a fixed progression anchor */
+  | 'melodic-floating'
+  /** George Gershwin — walking songbook bass vs concert symphonic bass motion */
+  | 'walking-or-symphonic'
+  /** Cole Porter — functional roots + semitone bass descent modules + scalar linkage */
+  | 'chromatic-descent-or-root';
 
 export type MelodicContourPolicy =
   | 'descending-arc'
@@ -49,7 +58,17 @@ export type MelodicContourPolicy =
   /** Crumb (Black Angels) — symbolic gesture-driven contour (angelic ascent / demonic plunge / spectral hover); pc-set + ic1/ic6/P5/P4 vocabulary */
   | 'gesture-symbolic'
   /** Jobim — stepwise majority with occasional 4th / 5th leaps; long arcs over slow harmonic rhythm; raised 4 in major / natural 6 in minor */
-  | 'stepwise-arc';
+  | 'stepwise-arc'
+  /** Arvo Pärt tintinnabuli — M-voice strictly diatonic/modal stepwise with registral expansion rules */
+  | 'stepwise-diatonic'
+  /** Erik Satie — shallow modal/pentatonic-inflected lines; no leading-tone climax */
+  | 'stepwise-modal'
+  /** Ornette Coleman harmolodics — blues/modal pitch field, phrase-first lines; no chord-scale bar spine */
+  | 'blues-field-free'
+  /** George Gershwin — diatonic song contour with authorised blue inflections over functional harmony */
+  | 'blues-diatonic'
+  /** Cole Porter — speech-shaped, lyric-led elegance; chromatic passing without blues field */
+  | 'speech-elegant';
 
 export type NarrativeArcPolicy =
   | 'continuous-curve'
@@ -73,9 +92,27 @@ export type NarrativeArcPolicy =
   /** Crumb Black Angels — 13 images / 3 parts ritual arch with global peak at image 7 (Threnody II); Threnodies 1/7/13 = arch supports */
   | 'ritual-arch'
   /** Jobim — 32-bar AABA (default), AABBA, or through-composed (Águas de Março) song form with remote-key bridge */
-  | 'aaba-or-through-composed-song';
+  | 'aaba-or-through-composed-song'
+  /** Arvo Pärt tintinnabuli — variation cycles (Fratres) and/or single long arch (Spiegel) without teleological drama */
+  | 'variation-or-arch'
+  /** Erik Satie — loops, juxtaposition, furniture modules; no obligatory climax or cadential goal */
+  | 'non-teleological'
+  /** Ornette Coleman — scripted collective sections (tutti / solos / duo) without harmonic milestone teleology */
+  | 'through-composed-event-script'
+  /** George Gershwin — 32-bar AABA songbook vs multi-section concert rhapsody */
+  | 'aaba-or-rhapsody'
+  /** Cole Porter — 32-bar discipline vs extended continuous refrain / beguine chain */
+  | 'aaba-or-extended-refrain';
 
 export type BergRowClarityLevel = 'foreground' | 'balanced' | 'background';
+
+/** T-voice positional shadow modes relative to M (tintinnabuli VRB). */
+export type TintinnabuliTVoicePositionMode =
+  | '1_above'
+  | '1_below'
+  | '2_above'
+  | '2_below'
+  | 'alternating';
 
 /** Alban Berg — contrapuntal row clarity / strand hints (`voiceLeadingSolver.ts`). */
 export interface BergVoiceLeadingParams {
@@ -219,4 +256,56 @@ export interface VoiceRuleBundle {
   bossaNovaFeel?: boolean;
   /** Jobim — Lydian raised-4 colour on tonic maj7♯11 in major contexts (Wave, Girl from Ipanema, Triste); maj7♯11 verticals allowed without dominant prep. */
   lydianColourEnabled?: boolean;
+  /** Arvo Pärt tintinnabuli VRB — dual-voice M (scale) + T (triad shadow) system active. */
+  tintinnabuliEnabled?: boolean;
+  /** T-voice position law options (whole-passage / section). */
+  tVoicePositionModes?: readonly TintinnabuliTVoicePositionMode[];
+  /** Sacred-stillness posture: sparse texture, mf ceiling, symmetry bias. */
+  sacredProfile?: boolean;
+  /** Formal silence / unison–triad collapse at boundaries (tintinnabuli etiquette). */
+  silenceAsStructure?: boolean;
+  /** Tintinnabuli technique ceiling — color only, no noise grammar. */
+  tintinnabuliExtendedTechniquesLevel?: 'minimal';
+  /** Structural soft dynamic ceiling (pp–mf field). */
+  dynamicCeiling?: 'pp' | 'p' | 'mp' | 'mf';
+  /** Forbid Western teleological development / transformation as primary driver. */
+  noTeleologicalDevelopment?: boolean;
+  /** Forbid Reich/Glass-style audible process operators as structural subject. */
+  forbidAudibleProcessOperators?: boolean;
+  /** Erik Satie — parallel triad/seventh/add-note planing as first-class colour (no CP repair). */
+  parallelChordsEnabled?: boolean;
+  /** Erik Satie — V7 as colour with low tonic-resolution probability. */
+  unresolvedDominantEnabled?: boolean;
+  /** Erik Satie — musique d'ameublement: short isochronous loops, arbitrary concat. */
+  furnitureModeEnabled?: boolean;
+  /** Erik Satie — church_mode ↔ salon_waltz ↔ cabaret_vamp ↔ furniture_loop section switches. */
+  ironicStyleSwitchEnabled?: boolean;
+  /** Ornette Coleman harmolodics — coequal harmony/melody/rhythm grid; democratic lines */
+  harmolodicsEnabled?: boolean;
+  /** Ornette Coleman — pitch field + pulse replace chord-chart truth */
+  pitchFieldGoverned?: boolean;
+  /** Ornette Coleman — foreground/background roles shift by listening cues */
+  democraticEnsemble?: boolean;
+  /** Ornette Coleman — collective improv + micro call/response (informational; see orchestrationPolicy.allowCollectiveImprov) */
+  collectiveImprovEnabled?: boolean;
+  /** Ornette Coleman — blue thirds/fifths and bend vocabulary required at planning layer */
+  bluesInflectionRequired?: boolean;
+  /** George Gershwin — blue degrees in melody and supporting voicings */
+  blueNoteEnabled?: boolean;
+  /** George Gershwin — III7–VI7–II7–V7 bridge / I–vi–ii–V turnaround vocabulary */
+  rhythmChangesEnabled?: boolean;
+  /** George Gershwin — wide-register rhapsody / concerto developmental arcs */
+  concertModeEnabled?: boolean;
+  /** George Gershwin — compact 32-bar songbook phrasing */
+  songModeEnabled?: boolean;
+  /** Cole Porter — semitone bass descent modules as first-class device */
+  chromaticBassEnabled?: boolean;
+  /** Cole Porter — parallel major/minor mixture on shared tonic_pc */
+  majorMinorMixtureEnabled?: boolean;
+  /** Cole Porter — repeated-note obsessive openings */
+  repeatedNoteOpeningEnabled?: boolean;
+  /** Cole Porter — harmony events align with lyric / formal milestones */
+  textCoupledHarmonyEnabled?: boolean;
+  /** Cole Porter — sidestep / delay / mode-trigger wit parameters active */
+  witStyleProfile?: boolean;
 }
