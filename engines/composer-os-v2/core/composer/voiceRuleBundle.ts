@@ -24,7 +24,9 @@ export type BassPolicyRole =
   /** Ligeti SQ — Vc participates as one micro-voice in stratified texture; no structural bass function */
   | 'embedded-voice'
   /** Crumb (Black Angels) — Vc alternates between low_ground noise-layer and sustained focal-pc pedal; no structural bass function */
-  | 'noise-or-pedal';
+  | 'noise-or-pedal'
+  /** Jobim — bass acts as an independent singing line against shifting upper harmony (roots on 1 + syncopated 8th-note fill + cadential contrary motion); slash-chord context allowed */
+  | 'melodic-counterline';
 
 export type MelodicContourPolicy =
   | 'descending-arc'
@@ -45,7 +47,9 @@ export type MelodicContourPolicy =
   /** Ligeti SQ — neighbor-tone motion (±1, ±2 semitones); micropolyphony default */
   | 'neighbor-motion'
   /** Crumb (Black Angels) — symbolic gesture-driven contour (angelic ascent / demonic plunge / spectral hover); pc-set + ic1/ic6/P5/P4 vocabulary */
-  | 'gesture-symbolic';
+  | 'gesture-symbolic'
+  /** Jobim — stepwise majority with occasional 4th / 5th leaps; long arcs over slow harmonic rhythm; raised 4 in major / natural 6 in minor */
+  | 'stepwise-arc';
 
 export type NarrativeArcPolicy =
   | 'continuous-curve'
@@ -67,7 +71,9 @@ export type NarrativeArcPolicy =
   /** Ligeti SQ2 — five-movement profile (nervoso / sostenuto / meccanismo / furioso / delicatezza) */
   | 'five-movement'
   /** Crumb Black Angels — 13 images / 3 parts ritual arch with global peak at image 7 (Threnody II); Threnodies 1/7/13 = arch supports */
-  | 'ritual-arch';
+  | 'ritual-arch'
+  /** Jobim — 32-bar AABA (default), AABBA, or through-composed (Águas de Março) song form with remote-key bridge */
+  | 'aaba-or-through-composed-song';
 
 export type BergRowClarityLevel = 'foreground' | 'balanced' | 'background';
 
@@ -209,4 +215,8 @@ export interface VoiceRuleBundle {
   soundTypeStates?: readonly ('pitched' | 'noise' | 'hybrid')[];
   /** Crumb (Black Angels) — mirror / echo image pairs (3↔9 · 11↔12 · 1↔13) carry shared pc_set + technique + transformed dynamic / inversion. */
   mirrorEchoEnabled?: boolean;
+  /** Jobim — bossa-nova rhythmic feel: 3+3+2 / 2+3+3 8th-note groupings over 4/4 + melodic anticipation + soft internalised pulse (no drum kit). */
+  bossaNovaFeel?: boolean;
+  /** Jobim — Lydian raised-4 colour on tonic maj7♯11 in major contexts (Wave, Girl from Ipanema, Triste); maj7♯11 verticals allowed without dominant prep. */
+  lydianColourEnabled?: boolean;
 }

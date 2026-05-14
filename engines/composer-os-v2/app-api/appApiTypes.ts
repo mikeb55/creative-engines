@@ -414,6 +414,16 @@ export interface GenerateRequest {
    * Forward-compatible; omitted on legacy clients.
    */
   styleGenerationContextKeys?: string[];
+  /**
+   * String Quartet — optional SQ rhythm engine from Style Panel (additive diagnostics on `GenerationMetadata`).
+   */
+  sqRhythmEngineId?:
+    | 'bartok_bulgarian_aksak'
+    | 'free_proportional'
+    | 'baroque_dance'
+    | 'reich_phasing_grid'
+    | 'viennese_waltz'
+    | 'jewish_klezmer';
   /** Song Mode / Thad Jones (`thadJonesSlice.ts`). Default **`swing`** in engine when omitted. */
   thadPhase?: ThadJonesPhaseMode;
   /** Song Mode / Count Basie — Old vs New Testament (`basieSlice.ts`). Omitted → seeded resolve. */

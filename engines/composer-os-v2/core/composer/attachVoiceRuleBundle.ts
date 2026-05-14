@@ -24,6 +24,7 @@ const AUTO_RESOLVE_SONGWRITER_TO_VOICE_ID: ReadonlySet<string> = new Set([
   'ligeti',
   'crumb_black_angels',
   'dutilleux',
+  'antonio_carlos_jobim',
 ]);
 
 export function attachVoiceRuleBundleAndHarmonicScenes(

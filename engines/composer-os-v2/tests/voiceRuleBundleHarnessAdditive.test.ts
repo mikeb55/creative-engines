@@ -426,6 +426,53 @@ export function runVoiceRuleBundleHarnessAdditiveTests(): { name: string; ok: bo
     getVoiceRuleBundle('thirteen_images').voiceId === 'crumb_black_angels' &&
     getVoiceRuleBundle('sq_vrb_crumb').voiceId === 'crumb_black_angels';
 
+  const jobim = getVoiceRuleBundle('jobim');
+  const okJobim =
+    jobim.voiceId === 'jobim' &&
+    jobim.bassPolicy.role === 'melodic-counterline' &&
+    jobim.melodicPolicy.contour === 'stepwise-arc' &&
+    jobim.formPolicy.narrativeArc === 'aaba-or-through-composed-song' &&
+    jobim.rhythmPolicy.antiMetric === false &&
+    jobim.bossaNovaFeel === true &&
+    jobim.lydianColourEnabled === true &&
+    (jobim.harmonicRhythm.minChordDurationBars ?? 0) === 2 &&
+    (jobim.harmonicRhythm.maxChordDurationBars ?? 0) === 8 &&
+    (jobim.melodicPolicy.preferredIntervalSets?.length ?? 0) === 5 &&
+    Boolean(jobim.melodicPolicy.preferredIntervalSets?.includes(1)) &&
+    Boolean(jobim.melodicPolicy.preferredIntervalSets?.includes(2)) &&
+    Boolean(jobim.melodicPolicy.preferredIntervalSets?.includes(4)) &&
+    Boolean(jobim.melodicPolicy.preferredIntervalSets?.includes(5)) &&
+    Boolean(jobim.melodicPolicy.preferredIntervalSets?.includes(7)) &&
+    (jobim.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 30 &&
+    Boolean(jobim.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_POLICY_01'))) &&
+    Boolean(jobim.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_HARM_VOCAB_01'))) &&
+    Boolean(jobim.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_HARM_TONAL_01'))) &&
+    Boolean(jobim.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_VL_01'))) &&
+    Boolean(jobim.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_MEL_01'))) &&
+    Boolean(jobim.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_MEL_03'))) &&
+    Boolean(jobim.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_RHY_01'))) &&
+    Boolean(jobim.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_TEX_01'))) &&
+    Boolean(jobim.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_FORM_01'))) &&
+    Boolean(jobim.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_FORM_02'))) &&
+    Boolean(jobim.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_WORK_GIROTA_IPANEMA_01'))) &&
+    Boolean(jobim.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_WORK_CORCOVADO_01'))) &&
+    Boolean(jobim.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_WORK_WAVE_01'))) &&
+    Boolean(jobim.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_WORK_DESAFINADO_01'))) &&
+    Boolean(jobim.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_WORK_AGUAS_DE_MARCO_01'))) &&
+    Boolean(jobim.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_WORK_ONE_NOTE_SAMBA_01'))) &&
+    Boolean(jobim.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_WORK_TRISTE_01'))) &&
+    Boolean(jobim.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_DIFF_BILL_EVANS_01'))) &&
+    Boolean(jobim.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_DIFF_BACHARACH_01'))) &&
+    Boolean(jobim.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_DIFF_DEBUSSY_01'))) &&
+    Boolean(jobim.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_DIFF_WAYNE_SHORTER_01')));
+
+  const okJobimAliases =
+    getVoiceRuleBundle('antonio_carlos_jobim').voiceId === 'jobim' &&
+    getVoiceRuleBundle('tom_jobim').voiceId === 'jobim' &&
+    getVoiceRuleBundle('bossa_nova').voiceId === 'jobim' &&
+    getVoiceRuleBundle('garota_de_ipanema').voiceId === 'jobim' &&
+    getVoiceRuleBundle('girl_from_ipanema').voiceId === 'jobim';
+
   return [
     { name: 'Phase 2+3a harness additive: HarmonicScene stub barRange', ok: okScene },
     { name: 'Phase 2+3a harness additive: unknown voice → neutral bundle id', ok: okNeutral },
@@ -464,5 +511,7 @@ export function runVoiceRuleBundleHarnessAdditiveTests(): { name: string; ok: bo
     { name: 'Phase 2+3a harness additive: ligeti aliases resolve', ok: okLigetiAliases },
     { name: 'Phase 2+3a harness additive: crumb_black_angels >=30 CB_* SQ-ritual fingerprints', ok: okCrumb },
     { name: 'Phase 2+3a harness additive: crumb_black_angels aliases resolve', ok: okCrumbAliases },
+    { name: 'Phase 2+3a harness additive: jobim >=30 JB_* bossa-nova fingerprints', ok: okJobim },
+    { name: 'Phase 2+3a harness additive: jobim aliases resolve', ok: okJobimAliases },
   ];
 }

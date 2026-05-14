@@ -205,6 +205,36 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
     R('cu.tumbao_bell_layers', 'Tumbao vs cascara / bell orchestration windows', 'songwriter', 'rhythm', 8, 'verse'),
     R('cu.montuno_pivot', 'Montuno pivot harmony vs dance phrase lift', 'songwriter', 'harmony', 8, 'chorus'),
   ],
+  bartok_bulgarian_aksak: [
+    R('bg.sq_additive_vector', 'Bulgarian aksak subgroup_vector on fast micro-pulse (String Quartet rhythm engine)', 'songwriter', 'rhythm', 9, 'global'),
+    R('bg.metric_melodic_layers', 'Metric vs melodic accent layers stay independent', 'songwriter', 'rhythm', 9, 'global'),
+    R('bg.voice_roles_quartet', 'Metric declarer / offset support / cross-accent / cello rhythmic modes', 'songwriter', 'rhythm', 8, 'global'),
+  ],
+  free_proportional: [
+    R('fp.time_field_primary', 'Free/proportional SQ rhythm: time-field spans + cue sync, not beat-cycle lattice', 'songwriter', 'rhythm', 9, 'global'),
+    R('fp.coordination_levels', 'fixed_sync vs soft_window vs independent_local per section/event class', 'songwriter', 'rhythm', 8, 'global'),
+    R('fp.composer_profiles', 'Dutilleux / Ligeti / Crumb / Lachenmann weighting hooks for gesture sequencing', 'songwriter', 'rhythm', 8, 'global'),
+  ],
+  baroque_dance: [
+    R('bd.sq_dance_class', 'Baroque dance SQ rhythm: dance_class + tactus + pickup + cadence grammar (String Quartet rhythm engine)', 'songwriter', 'rhythm', 9, 'global'),
+    R('bd.periodic_hierarchy', 'Binary phrase modules, bar-accent profiles, ground bass BD9', 'songwriter', 'rhythm', 8, 'global'),
+    R('bd.modern_harmony_ok', 'Rhythmic identity stable under chromatic / non-functional harmony (Crumb sarabande model)', 'songwriter', 'rhythm', 8, 'global'),
+  ],
+  reich_phasing_grid: [
+    R('rp.sq_phase_grid', 'Reich phasing SQ rhythm: even pulse grid + onset-vector displacement + stepped/continuous operators (String Quartet rhythm engine)', 'songwriter', 'rhythm', 9, 'global'),
+    R('rp.pairs_reich_glass_vrb', 'Complements Reich/Glass SQ VRB — process vs additive wash differentiated', 'songwriter', 'rhythm', 8, 'global'),
+    R('rp.module_b_dt', 'Different Trains model: speech-derived motives + ostinato layering without literal-only mechanical phase', 'songwriter', 'rhythm', 8, 'global'),
+  ],
+  viennese_waltz: [
+    R('vw.sq_waltz_tactus', 'Viennese waltz SQ rhythm: 3/4 rotational tactus, ONE-two-three schwung, flowing 2–3 (String Quartet rhythm engine)', 'songwriter', 'rhythm', 9, 'global'),
+    R('vw.diff_baroque_minuet', 'Contrasts Baroque minuet square court periodicity — operetta / late-Romantic ballroom topic', 'songwriter', 'rhythm', 8, 'global'),
+    R('vw.pairing_note', 'Roadmap pairing: Shostakovich grotesque scherzo / ghost waltz adjacent contrast', 'songwriter', 'rhythm', 7, 'global'),
+  ],
+  jewish_klezmer: [
+    R('kl.sq_klezmer_gaits', 'Jewish / klezmer SQ rhythm: six-gait library (KL1–KL6) + felt subdivision + ornament classes + modal coupling (String Quartet rhythm engine)', 'songwriter', 'rhythm', 9, 'global'),
+    R('kl.shostakovich_pairing', 'Pairs with Shostakovich SQ VRB jewish_dance_rhythm receipts — variant preserves gait under irony', 'songwriter', 'rhythm', 8, 'global'),
+    R('kl.diff_aksak_baroque', 'Unevenness from accent/ornament/triplet underlay — not aksak additive packets; not Baroque court symmetry', 'songwriter', 'rhythm', 7, 'global'),
+  ],
   paul_simon: [
     R('simon.primary_axis', 'Tag melody/rhythm/harmony primary per song', 'songwriter', 'form', 8, 'global'),
     R('simon.section_contrast', 'Contrast at least one dimension V/C/B', 'songwriter', 'form', 8, 'form'),

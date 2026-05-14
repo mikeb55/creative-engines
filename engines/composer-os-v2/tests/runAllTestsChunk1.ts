@@ -5,6 +5,12 @@
 import { runConductorTests } from './conductor.test';
 import { runRhythmEngineTests } from './rhythmEngine.test';
 import { runAfrobeatRhythmEngineTests } from './afrobeatRhythmEngine.test';
+import { runBartokBulgarianAksakRhythmEngineTests } from './bartokBulgarianAksakRhythmEngine.test';
+import { runFreeProportionalRhythmEngineTests } from './freeProportionalRhythmEngine.test';
+import { runBaroqueDanceRhythmEngineTests } from './baroqueDanceRhythmEngine.test';
+import { runReichPhasingGridRhythmEngineTests } from './reichPhasingGridRhythmEngine.test';
+import { runVienneseWaltzRhythmEngineTests } from './vienneseWaltzRhythmEngine.test';
+import { runJewishKlezmerRhythmEngineTests } from './jewishKlezmerRhythmEngine.test';
 import { runInstrumentProfileTests } from './instrumentProfiles.test';
 import { runScoreIntegrityTests } from './scoreIntegrity.test';
 import { runReadinessTests } from './readiness.test';
@@ -50,6 +56,12 @@ const suites: SuiteEntry[] = [
   { name: 'Conductor', run: runConductorTests },
   { name: 'Rhythm Engine', run: runRhythmEngineTests },
   { name: 'Afrobeat rhythm engine (Tony Allen grids)', run: runAfrobeatRhythmEngineTests },
+  { name: 'Bartók Bulgarian aksak SQ rhythm engine', run: runBartokBulgarianAksakRhythmEngineTests },
+  { name: 'Free / proportional SQ rhythm engine', run: runFreeProportionalRhythmEngineTests },
+  { name: 'Baroque dance SQ rhythm engine', run: runBaroqueDanceRhythmEngineTests },
+  { name: 'Reich phasing grid SQ rhythm engine', run: runReichPhasingGridRhythmEngineTests },
+  { name: 'Viennese waltz SQ rhythm engine', run: runVienneseWaltzRhythmEngineTests },
+  { name: 'Jewish / Klezmer SQ rhythm engine', run: runJewishKlezmerRhythmEngineTests },
   { name: 'Instrument Profiles', run: runInstrumentProfileTests },
   { name: 'Score Integrity', run: runScoreIntegrityTests },
   { name: 'Readiness', run: runReadinessTests },

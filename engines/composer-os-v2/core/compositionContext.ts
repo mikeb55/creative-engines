@@ -424,6 +424,10 @@ export interface GenerationMetadata {
   motifReuseSuggestions?: Array<{ assetId: string; targetMode: string; role: string; note: string }>;
   /** Active songwriter style id — used to gate style-specific harmonic behaviour. */
   songwriterStyleId?: string;
+  /** String Quartet StylePanel — SQ rhythm engine id (`bartok_bulgarian_aksak`, `free_proportional`, `baroque_dance`, `reich_phasing_grid`, `viennese_waltz`, `jewish_klezmer`, …). */
+  sqRhythmEngineId?: string;
+  /** String Quartet — rhythm engine fingerprint receipts (`BG_RHYTHM_*`, …) for telemetry / eval. */
+  sqRhythmEngineReceipts?: readonly string[];
   /** Song Mode: keyboard-centric primary songwriter — route harmony staff to keys-comp presentation + register pass. */
   songModeSongwriterKeysCompActive?: boolean;
   /** Song Mode: which `SongwriterCompProfile` id was applied (keyboard-centric path). */

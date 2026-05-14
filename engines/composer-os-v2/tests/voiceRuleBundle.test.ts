@@ -246,6 +246,38 @@ function testSevenVoicesMinChordDurationBars(): boolean {
         getVoiceRuleBundle('george_crumb').voiceId === 'crumb_black_angels' &&
         getVoiceRuleBundle('black_angels').voiceId === 'crumb_black_angels'
       );
+    })() &&
+    (() => {
+      const jb = getVoiceRuleBundle('jobim');
+      return (
+        jb.voiceId === 'jobim' &&
+        jb.bassPolicy.role === 'melodic-counterline' &&
+        jb.melodicPolicy.contour === 'stepwise-arc' &&
+        jb.formPolicy.narrativeArc === 'aaba-or-through-composed-song' &&
+        jb.rhythmPolicy.antiMetric === false &&
+        jb.bossaNovaFeel === true &&
+        jb.lydianColourEnabled === true &&
+        (jb.harmonicRhythm.minChordDurationBars ?? 0) === 2 &&
+        (jb.harmonicRhythm.maxChordDurationBars ?? 0) === 8 &&
+        (jb.melodicPolicy.preferredIntervalSets?.length ?? 0) === 5 &&
+        Boolean(jb.melodicPolicy.preferredIntervalSets?.includes(7)) &&
+        (jb.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 30 &&
+        Boolean(jb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_POLICY_01'))) &&
+        Boolean(jb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_HARM_VOCAB_01'))) &&
+        Boolean(jb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_HARM_TONAL_01'))) &&
+        Boolean(jb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_VL_01'))) &&
+        Boolean(jb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_MEL_01'))) &&
+        Boolean(jb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_RHY_01'))) &&
+        Boolean(jb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_TEX_01'))) &&
+        Boolean(jb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_FORM_01'))) &&
+        Boolean(jb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_WORK_GIROTA_IPANEMA_01'))) &&
+        Boolean(jb.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('JB_WORK_WAVE_01'))) &&
+        getVoiceRuleBundle('antonio_carlos_jobim').voiceId === 'jobim' &&
+        getVoiceRuleBundle('tom_jobim').voiceId === 'jobim' &&
+        getVoiceRuleBundle('bossa_nova').voiceId === 'jobim' &&
+        getVoiceRuleBundle('garota_de_ipanema').voiceId === 'jobim' &&
+        getVoiceRuleBundle('girl_from_ipanema').voiceId === 'jobim'
+      );
     })()
   );
 }
@@ -286,6 +318,7 @@ function testResolvableBundlesSatisfyShape(): boolean {
     'lachenmann',
     'ligeti',
     'crumb_black_angels',
+    'jobim',
   ]) {
     if (!assertBundleShape(getVoiceRuleBundle(id))) return false;
   }

@@ -513,6 +513,16 @@ export function apiGenerate(
           .map((x) => x.trim());
         return out.length ? out : undefined;
       })(),
+      sqRhythmEngineId: (() => {
+        const v = (body as { sqRhythmEngineId?: unknown }).sqRhythmEngineId;
+        if (v === 'bartok_bulgarian_aksak') return 'bartok_bulgarian_aksak' as const;
+        if (v === 'free_proportional') return 'free_proportional' as const;
+        if (v === 'baroque_dance') return 'baroque_dance' as const;
+        if (v === 'reich_phasing_grid') return 'reich_phasing_grid' as const;
+        if (v === 'viennese_waltz') return 'viennese_waltz' as const;
+        if (v === 'jewish_klezmer') return 'jewish_klezmer' as const;
+        return undefined;
+      })(),
       slonimskyPatternId: (() => {
         if (typeof body.slonimskyPatternId === 'string' && body.slonimskyPatternId.trim() !== '') {
           return body.slonimskyPatternId.trim();

@@ -10,12 +10,18 @@ export type RhythmEngineId =
   | 'greek_rebetiko'
   | 'brazilian'
   | 'new_orleans_second_line'
-  | 'cuban_afro_cuban';
+  | 'cuban_afro_cuban'
+  | 'bartok_bulgarian_aksak'
+  | 'free_proportional'
+  | 'baroque_dance'
+  | 'reich_phasing_grid'
+  | 'viennese_waltz'
+  | 'jewish_klezmer';
 
 /** All shipped harmonic writers — excludes rhythm-only Song Mode engines. */
 export type HarmonicVoiceId = Exclude<SongwriterRuleId, RhythmEngineId>;
 
-export type RhythmContextPrefix = 'fk' | 'gr' | 'br' | 'sl' | 'cu';
+export type RhythmContextPrefix = 'fk' | 'gr' | 'br' | 'sl' | 'cu' | 'bg' | 'fp' | 'bd' | 'rp' | 'vw' | 'kl';
 
 /** Curated harmonic voice labels — mirror HomeGenerate `SONGWRITER_OPTIONS`. */
 export const HARMONIC_VOICE_LABELS: Pick<
@@ -88,6 +94,12 @@ export function resolveRhythmContextKeys(engineId: RhythmEngineId, presetId: str
     brazilian: 'br',
     new_orleans_second_line: 'sl',
     cuban_afro_cuban: 'cu',
+    bartok_bulgarian_aksak: 'bg',
+    free_proportional: 'fp',
+    baroque_dance: 'bd',
+    reich_phasing_grid: 'rp',
+    viennese_waltz: 'vw',
+    jewish_klezmer: 'kl',
   };
   const prefix = prefixMap[engineId];
   return presetId ? [`${prefix}:core`, `${prefix}:${presetId}`] : [`${prefix}:core`];
@@ -112,6 +124,12 @@ export function migrateLegacySongwriterValue(value: string): Partial<StyleProfil
     brazilian: 'brazilian',
     new_orleans_second_line: 'new_orleans_second_line',
     cuban_afro_cuban: 'cuban_afro_cuban',
+    bartok_bulgarian_aksak: 'bartok_bulgarian_aksak',
+    free_proportional: 'free_proportional',
+    baroque_dance: 'baroque_dance',
+    reich_phasing_grid: 'reich_phasing_grid',
+    viennese_waltz: 'viennese_waltz',
+    jewish_klezmer: 'jewish_klezmer',
   };
   if (value in rhythmMap) {
     return { rhythm: { engineId: rhythmMap[value]!, presetId: null, contextKeys: [] } };

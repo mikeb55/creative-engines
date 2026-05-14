@@ -68,6 +68,66 @@ describe('styleProfile', () => {
     ]);
   });
 
+  it("resolveRhythmContextKeys('bartok_bulgarian_aksak', 'b1') returns bg: keys", () => {
+    expect(resolveRhythmContextKeys('bartok_bulgarian_aksak', 'b1')).toEqual(['bg:core', 'bg:b1']);
+  });
+
+  it('migrateLegacySongwriterValue(bartok_bulgarian_aksak) returns rhythm engineId', () => {
+    const m = migrateLegacySongwriterValue('bartok_bulgarian_aksak');
+    expect(m.rhythm?.engineId).toBe('bartok_bulgarian_aksak');
+    expect(m.harmonic?.voiceId).toBeUndefined();
+  });
+
+  it("resolveRhythmContextKeys('free_proportional', 'dutilleux') returns fp: keys", () => {
+    expect(resolveRhythmContextKeys('free_proportional', 'dutilleux')).toEqual(['fp:core', 'fp:dutilleux']);
+  });
+
+  it('migrateLegacySongwriterValue(free_proportional) returns rhythm engineId', () => {
+    const m = migrateLegacySongwriterValue('free_proportional');
+    expect(m.rhythm?.engineId).toBe('free_proportional');
+    expect(m.harmonic?.voiceId).toBeUndefined();
+  });
+
+  it("resolveRhythmContextKeys('baroque_dance', 'bd1') returns bd: keys", () => {
+    expect(resolveRhythmContextKeys('baroque_dance', 'bd1')).toEqual(['bd:core', 'bd:bd1']);
+  });
+
+  it('migrateLegacySongwriterValue(baroque_dance) returns rhythm engineId', () => {
+    const m = migrateLegacySongwriterValue('baroque_dance');
+    expect(m.rhythm?.engineId).toBe('baroque_dance');
+    expect(m.harmonic?.voiceId).toBeUndefined();
+  });
+
+  it("resolveRhythmContextKeys('reich_phasing_grid', 'rp12') returns rp: keys", () => {
+    expect(resolveRhythmContextKeys('reich_phasing_grid', 'rp12')).toEqual(['rp:core', 'rp:rp12']);
+  });
+
+  it('migrateLegacySongwriterValue(reich_phasing_grid) returns rhythm engineId', () => {
+    const m = migrateLegacySongwriterValue('reich_phasing_grid');
+    expect(m.rhythm?.engineId).toBe('reich_phasing_grid');
+    expect(m.harmonic?.voiceId).toBeUndefined();
+  });
+
+  it("resolveRhythmContextKeys('viennese_waltz', 'standard') returns vw: keys", () => {
+    expect(resolveRhythmContextKeys('viennese_waltz', 'standard')).toEqual(['vw:core', 'vw:standard']);
+  });
+
+  it('migrateLegacySongwriterValue(viennese_waltz) returns rhythm engineId', () => {
+    const m = migrateLegacySongwriterValue('viennese_waltz');
+    expect(m.rhythm?.engineId).toBe('viennese_waltz');
+    expect(m.harmonic?.voiceId).toBeUndefined();
+  });
+
+  it("resolveRhythmContextKeys('jewish_klezmer', 'kl_chain') returns kl: keys", () => {
+    expect(resolveRhythmContextKeys('jewish_klezmer', 'kl_chain')).toEqual(['kl:core', 'kl:kl_chain']);
+  });
+
+  it('migrateLegacySongwriterValue(jewish_klezmer) returns rhythm engineId', () => {
+    const m = migrateLegacySongwriterValue('jewish_klezmer');
+    expect(m.rhythm?.engineId).toBe('jewish_klezmer');
+    expect(m.harmonic?.voiceId).toBeUndefined();
+  });
+
   it('resolveHarmonicContextKeys(ennio_morricone) includes hv + research tags', () => {
     expect(MORRICONE_HARMONIC_STYLE_KEYS).toHaveLength(10);
     expect(resolveHarmonicContextKeys('ennio_morricone')).toEqual([

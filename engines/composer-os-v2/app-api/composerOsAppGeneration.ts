@@ -35,6 +35,12 @@ import {
 import { importLeadSheetFromMusicXml } from '../core/lead-sheet/leadSheetMusicXmlImport';
 import { runGoldenPath, type GoldenPathResult, type RunGoldenPathOptions } from '../core/goldenPath/runGoldenPath';
 import { isClaveGridOverlayEnvEnabled } from '../core/rhythm/claveGridOverlay';
+import { mergeBartokBulgarianAksakSqRhythmIntoMetadata } from '../core/rhythm/bartokBulgarianAksakRhythmEngine';
+import { mergeFreeProportionalSqRhythmIntoMetadata } from '../core/rhythm/freeProportionalRhythmEngine';
+import { mergeBaroqueDanceSqRhythmIntoMetadata } from '../core/rhythm/baroqueDanceRhythmEngine';
+import { mergeReichPhasingGridSqRhythmIntoMetadata } from '../core/rhythm/reichPhasingGridRhythmEngine';
+import { mergeVienneseWaltzSqRhythmIntoMetadata } from '../core/rhythm/vienneseWaltzRhythmEngine';
+import { mergeJewishKlezmerSqRhythmIntoMetadata } from '../core/rhythm/jewishKlezmerRhythmEngine';
 import { runSongModeSectionRegeneration } from '../core/regeneration/runDuoSectionRegeneration';
 import {
   runBigBandSectionRegenerationPipeline,
@@ -98,6 +104,33 @@ import { generateSlonimskyEtudeXml } from '../core/slonimsky/slonimskyEtudeGener
 import type { IntervalPatternId } from '../core/slonimsky/slonimskyEngine';
 import { writeDrumGuide } from '../core/export/midiDrumGuideWriter';
 import { writeScoreMidi } from '../core/export/midiScoreWriter';
+
+const SHIPPED_SQ_RHYTHM_ENGINE_IDS = [
+  'bartok_bulgarian_aksak',
+  'free_proportional',
+  'baroque_dance',
+  'reich_phasing_grid',
+  'viennese_waltz',
+  'jewish_klezmer',
+] as const;
+
+type ShippedSqRhythmEngineId = (typeof SHIPPED_SQ_RHYTHM_ENGINE_IDS)[number];
+
+function shippedSqRhythmEngineId(
+  id: GenerateRequest['sqRhythmEngineId'] | undefined
+): ShippedSqRhythmEngineId | undefined {
+  if (!id) return undefined;
+  return (SHIPPED_SQ_RHYTHM_ENGINE_IDS as readonly string[]).includes(id)
+    ? (id as ShippedSqRhythmEngineId)
+    : undefined;
+}
+
+function sqRhythmEngineEchoFromRequest(
+  id: GenerateRequest['sqRhythmEngineId'] | undefined
+): { sqRhythmEngineId: ShippedSqRhythmEngineId } | undefined {
+  const s = shippedSqRhythmEngineId(id);
+  return s ? { sqRhythmEngineId: s } : undefined;
+}
 
 /**
  * Python `songwriting_bridge` CLI — development: repo `engines/songwriting_bridge`;
@@ -221,6 +254,7 @@ function requestEchoFromReq(req: GenerateRequest): NonNullable<GenerateResult['r
     ...(Array.isArray(req.styleGenerationContextKeys) && req.styleGenerationContextKeys.length > 0
       ? { styleGenerationContextKeys: req.styleGenerationContextKeys }
       : {}),
+    ...(sqRhythmEngineEchoFromRequest(req.sqRhythmEngineId) ?? {}),
     ...(sectionRegenEcho ? { sectionRegeneration: sectionRegenEcho } : {}),
   } as NonNullable<GenerateResult['requestEcho']>;
 }
@@ -261,21 +295,22 @@ function ensembleSlonimskySongwriterIdFromRequest(req: GenerateRequest): string 
   return fromPairing || fromPrimary || undefined;
 }
 
-/** Ensemble SQ realisation: songwriter echo + optional Frank Zappa string-quartet harmony slice + meter map. */
+/** Ensemble SQ realisation: songwriter echo + optional Frank Zappa string-quartet harmony slice + meter map + SQ rhythm engine receipts. */
 function buildStringQuartetGenerationMetadata(
   req: GenerateRequest,
   totalBars: number,
   chordProgressionText: string | undefined
 ): GenerationMetadata | undefined {
   const sw = ensembleSlonimskySongwriterIdFromRequest(req)?.trim().toLowerCase();
-  if (!sw) return undefined;
+  const sqR = shippedSqRhythmEngineId(req.sqRhythmEngineId);
+  if (!sw && !sqR) return undefined;
+
   const meta: GenerationMetadata = {
     generatedAt: new Date().toISOString(),
-    songwriterStyleId: sw,
+    ...(sw ? { songwriterStyleId: sw } : {}),
     ...(req.barMeterMap ? { barMeterMap: req.barMeterMap } : {}),
   };
-  const frankSq =
-    sw === 'frank_zappa' && req.zappaSQHarmonySlice !== false;
+  const frankSq = sw === 'frank_zappa' && req.zappaSQHarmonySlice !== false;
   if (frankSq) {
     (meta as GenerationMetadata & { zappaSQHarmonySlice?: boolean }).zappaSQHarmonySlice = true;
     const raw =
@@ -288,6 +323,24 @@ function buildStringQuartetGenerationMetadata(
       meta.parsedCustomProgressionBars = [...parsed.bars];
       meta.harmonySource = 'custom';
     }
+  }
+  if (sqR === 'bartok_bulgarian_aksak') {
+    return mergeBartokBulgarianAksakSqRhythmIntoMetadata(meta);
+  }
+  if (sqR === 'free_proportional') {
+    return mergeFreeProportionalSqRhythmIntoMetadata(meta);
+  }
+  if (sqR === 'baroque_dance') {
+    return mergeBaroqueDanceSqRhythmIntoMetadata(meta);
+  }
+  if (sqR === 'reich_phasing_grid') {
+    return mergeReichPhasingGridSqRhythmIntoMetadata(meta);
+  }
+  if (sqR === 'viennese_waltz') {
+    return mergeVienneseWaltzSqRhythmIntoMetadata(meta);
+  }
+  if (sqR === 'jewish_klezmer') {
+    return mergeJewishKlezmerSqRhythmIntoMetadata(meta);
   }
   return meta;
 }

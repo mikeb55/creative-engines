@@ -15,6 +15,7 @@ import { SHOSTAKOVICH_SQ_VRF_FINGERPRINT_RECEIPTS } from './shostakovichSqVrbFin
 import { LACHENMANN_SQ_VRF_FINGERPRINT_RECEIPTS } from './lachenmannSqVrbFingerprints';
 import { LIGETI_SQ_VRB_FINGERPRINT_RECEIPTS } from './ligetiSqVrbFingerprints';
 import { CRUMB_BLACK_ANGELS_SQ_VRB_FINGERPRINT_RECEIPTS } from './crumbBlackAngelsSqVrbFingerprints';
+import { JOBIM_VRB_FINGERPRINT_RECEIPTS } from './jobimVrbFingerprints';
 
 /** Interval-class seeds aligned with Threadgill / IntervalSetSystem posture (engine-local). */
 const THREADGILL_INTERVAL_CLASS_SEEDS = [1, 2, 3, 5, 6, 7, 8, 10];
@@ -2407,6 +2408,56 @@ const LIGETI: VoiceRuleBundle = {
   textureAsHarmonyEnabled: true,
 };
 
+const JOBIM: VoiceRuleBundle = {
+  voiceId: 'jobim',
+  harmonicRhythm: {
+    /** Tonic maj7 may sustain across multiple bars; 2–8 bars per chord typical. */
+    minChordDurationBars: 2,
+    maxChordDurationBars: 8,
+    allowMidBarChange: false,
+  },
+  bassPolicy: {
+    role: 'melodic-counterline',
+    allowOctaveDoubling: false,
+  },
+  voicingPolicy: {
+    /** Open voicings with frequent omission of 5th; 9 / 13 / ♯11 routinely added. */
+    minSpreadSemitones: 10,
+    maxSpreadSemitones: 36,
+    clusterSizeNotes: [3, 5],
+    forbidParallelFifths: false,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'stepwise-arc',
+    /** Predominantly stepwise; occasional 4th / 5th leaps; raised 4 in major / natural 6 in minor. */
+    maxLeapSemitones: 7,
+    preferredIntervalSets: [1, 2, 4, 5, 7],
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 0,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: JOBIM_VRB_FINGERPRINT_RECEIPTS,
+  },
+  formPolicy: {
+    narrativeArc: 'aaba-or-through-composed-song',
+    /** A / A′ retain motivic core; bridge re-entries return to opening cell. */
+    sectionRecallEnforced: true,
+  },
+  rhythmPolicy: {
+    /** Bossa pulse is always present; rubato in ballads but no antimetric structures. */
+    antiMetric: false,
+  },
+  repairPolicy: {
+    /** Guide-tone semitone preservation replaces strict species voice-leading. */
+    resolveParallels: false,
+    maxVoiceOverlap: 6,
+  },
+  bossaNovaFeel: true,
+  lydianColourEnabled: true,
+};
+
 const CRUMB_BLACK_ANGELS: VoiceRuleBundle = {
   voiceId: 'crumb_black_angels',
   harmonicRhythm: {
@@ -2543,6 +2594,12 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   black_angels: CRUMB_BLACK_ANGELS,
   thirteen_images: CRUMB_BLACK_ANGELS,
   sq_vrb_crumb: CRUMB_BLACK_ANGELS,
+  jobim: JOBIM,
+  antonio_carlos_jobim: JOBIM,
+  tom_jobim: JOBIM,
+  bossa_nova: JOBIM,
+  garota_de_ipanema: JOBIM,
+  girl_from_ipanema: JOBIM,
 };
 
 export function normalizeHarmonicVoiceId(raw: string): string {

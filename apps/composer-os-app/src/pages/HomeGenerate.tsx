@@ -539,6 +539,12 @@ const RHYTHM_ONLY_SONGWRITER_IDS = new Set<string>([
   'brazilian',
   'new_orleans_second_line',
   'cuban_afro_cuban',
+  'bartok_bulgarian_aksak',
+  'free_proportional',
+  'baroque_dance',
+  'reich_phasing_grid',
+  'viennese_waltz',
+  'jewish_klezmer',
 ]);
 
 /** Primary Style Panel excludes rhythm engines; secondary blend dropdown still lists them. */
@@ -548,6 +554,12 @@ const RHYTHM_SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'brazilian', label: 'Brazilian' },
   { id: 'new_orleans_second_line', label: 'New Orleans Second Line' },
   { id: 'cuban_afro_cuban', label: 'Cuban / Afro-Cuban' },
+  { id: 'bartok_bulgarian_aksak', label: 'Bartók / Bulgarian Aksak' },
+  { id: 'free_proportional', label: 'Free / Proportional' },
+  { id: 'baroque_dance', label: 'Baroque Dance' },
+  { id: 'reich_phasing_grid', label: 'Reich / Phasing Grid' },
+  { id: 'viennese_waltz', label: 'Viennese Waltz' },
+  { id: 'jewish_klezmer', label: 'Jewish / Klezmer' },
 ];
 
 const SONGWRITER_OPTIONS_WITH_RHYTHM: { id: string; label: string }[] = [
@@ -658,6 +670,12 @@ const RHYTHM_ENGINE_LIST: { id: RhythmEngineId; label: string }[] = [
   { id: 'brazilian', label: 'Brazilian' },
   { id: 'new_orleans_second_line', label: 'New Orleans Second Line' },
   { id: 'cuban_afro_cuban', label: 'Cuban / Afro-Cuban' },
+  { id: 'bartok_bulgarian_aksak', label: 'Bartók / Bulgarian Aksak' },
+  { id: 'free_proportional', label: 'Free / Proportional' },
+  { id: 'baroque_dance', label: 'Baroque Dance' },
+  { id: 'reich_phasing_grid', label: 'Reich / Phasing Grid' },
+  { id: 'viennese_waltz', label: 'Viennese Waltz' },
+  { id: 'jewish_klezmer', label: 'Jewish / Klezmer' },
 ];
 
 /** Effective Song Mode primary id for engine routing (harmonic wins; rhythm-only preserves legacy ids). */
@@ -2847,7 +2865,7 @@ export function HomeGenerate({
               })()
             : undefined;
 
-        const rhythmPresetForSongModeCtx =
+        const rhythmPresetForStyleCtx =
           styleProfile.rhythm.presetId ??
           (styleProfile.rhythm.engineId === 'brazilian'
             ? brazilianRhythmPresetId
@@ -2857,13 +2875,34 @@ export function HomeGenerate({
                 ? cubanRhythmPresetId
                 : styleProfile.rhythm.engineId === 'greek_rebetiko'
                   ? greekRhythmPresetId
-                  : null);
+                  : styleProfile.rhythm.engineId === 'bartok_bulgarian_aksak'
+                    ? 'b1'
+                    : styleProfile.rhythm.engineId === 'free_proportional'
+                      ? 'dutilleux'
+                      : styleProfile.rhythm.engineId === 'baroque_dance'
+                        ? 'bd1'
+                        : styleProfile.rhythm.engineId === 'reich_phasing_grid'
+                          ? 'rp12'
+                          : styleProfile.rhythm.engineId === 'viennese_waltz'
+                            ? 'standard'
+                            : styleProfile.rhythm.engineId === 'jewish_klezmer'
+                              ? 'kl_chain'
+                              : null);
 
         const songModeStyleGenerationKeys =
           presetId === 'song_mode'
             ? buildGenerationContext({
                 ...styleProfile,
-                rhythm: { ...styleProfile.rhythm, presetId: rhythmPresetForSongModeCtx },
+                rhythm: { ...styleProfile.rhythm, presetId: rhythmPresetForStyleCtx },
+              }).combinedKeys
+            : undefined;
+
+        const stringQuartetStyleGenerationKeys =
+          presetId === 'string_quartet' &&
+          (styleProfile.harmonic.voiceId != null || styleProfile.rhythm.engineId != null)
+            ? buildGenerationContext({
+                ...styleProfile,
+                rhythm: { ...styleProfile.rhythm, presetId: rhythmPresetForStyleCtx },
               }).combinedKeys
             : undefined;
 
@@ -2974,6 +3013,23 @@ export function HomeGenerate({
             ? { ensembleLeadSheetMusicXml: leadSheetXmlTrim }
             : {}),
           instrumentGroup: uiInstrumentGroup,
+          ...(presetId === 'string_quartet' &&
+          stringQuartetStyleGenerationKeys &&
+          stringQuartetStyleGenerationKeys.length > 0
+            ? { styleGenerationContextKeys: stringQuartetStyleGenerationKeys }
+            : {}),
+          ...(presetId === 'string_quartet'
+            ? (() => {
+                const eid = styleProfile.rhythm.engineId;
+                if (eid === 'free_proportional') return { sqRhythmEngineId: 'free_proportional' as const };
+                if (eid === 'baroque_dance') return { sqRhythmEngineId: 'baroque_dance' as const };
+                if (eid === 'reich_phasing_grid') return { sqRhythmEngineId: 'reich_phasing_grid' as const };
+                if (eid === 'viennese_waltz') return { sqRhythmEngineId: 'viennese_waltz' as const };
+                if (eid === 'jewish_klezmer') return { sqRhythmEngineId: 'jewish_klezmer' as const };
+                if (eid === 'bartok_bulgarian_aksak') return { sqRhythmEngineId: 'bartok_bulgarian_aksak' as const };
+                return {};
+              })()
+            : {}),
           ...(uiInstrumentGroup === 'big_band'
             ? {
                 drumIntensity,
