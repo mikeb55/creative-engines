@@ -6,7 +6,7 @@ Illustrates one shared `AbstractLineSet` realized under **two** orchestration co
 
 - **lengthBars:** 4  
 - **styleSourceVrbId:** `bartok`  
-- **sourceMode:** `melody_plus_chords` (lines composed first; chord functions inferred later for export)  
+- **sourceMode:** `chords_only` (Pass 3 wired path: lines derived from bar chord symbols via `resolveBarSymbol` / spine — no separate melody track in precompute)  
 - **dissonanceProfile:** tritone outer-voice ban, no parallel 5ths/8ves (matches `contrapuntalLinePolicy` on Bartók bundle).  
 - **densityEnvelope:** bars 1–2 `sparse`, 3–4 `medium`.  
 - **cadenceTags:** e.g. weak modal arrival at bar 4 (`strength: weak`, `type: modal`).  
