@@ -95,7 +95,7 @@ Order for the duo **32-bar** Song Mode golden path (after core duo build, before
 
 ### ContrapuntalLineEngine (duo golden path, pre-harmony-bar precompute)
 
-On **`generateGoldenPathDuoScore`**, when **`isDuoGoldenPath`**, **`precomputeContrapuntalLines`** runs **before** every songwriter **`precompute*EffectiveHarmonyBars`** call (including Basie). For VRB ids **`bob_brookmeyer`** and **`bartok`** with **`contrapuntalLinePolicy.enabled`**, **`GenerationMetadata.contrapuntalLineSet`** receives an **`AbstractLineSet`** from **`ContrapuntalLineEngine`**. **`lineFirstHierarchy`** in **`voiceLeadingSolver.ts`** is **not** fed the line set; Brookmeyer’s harmony precompute may still set that flag separately. **Pass 3 scope:** metadata + smoke musical gate; MusicXML / part writers do not yet consume **`contrapuntalLineSet`**.
+On **`generateGoldenPathDuoScore`**, when **`isDuoGoldenPath`**, **`precomputeContrapuntalLines`** runs **before** every songwriter **`precompute*EffectiveHarmonyBars`** call (including Basie). For VRB ids **`bob_brookmeyer`** and **`bartok`** with **`contrapuntalLinePolicy.enabled`**, **`GenerationMetadata.contrapuntalLineSet`** receives an **`AbstractLineSet`** from **`ContrapuntalLineEngine`**. **`lineFirstHierarchy`** in **`voiceLeadingSolver.ts`** is **not** fed the line set; Brookmeyer’s harmony precompute may still set that flag separately. **Pass 3 scope:** metadata + smoke musical gate; MusicXML / part writers do not yet consume **`contrapuntalLineSet`**. Closeout rules: **`engines/composer-os-v2/core/counterpoint/INVARIANTS.md`**.
 
 ### Phrase Engine V2 (pre-C1 pass)
 

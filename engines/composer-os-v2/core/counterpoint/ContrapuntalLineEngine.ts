@@ -202,6 +202,8 @@ function buildBartokLineSet(context: CompositionContext, lengthBars: number, see
     tenor: 0.25,
     bass: 0.375,
   };
+  /** ic1 / tritone-class / resolving step — repeats every bar (additive displacement on entries). */
+  const cell = [1, 6, 6, -7] as const;
   const voices: AbstractLineSet['voices'] = (['soprano', 'alto', 'tenor', 'bass'] as const).map((role) => ({
     role,
     tags:
@@ -216,37 +218,40 @@ function buildBartokLineSet(context: CompositionContext, lengthBars: number, see
     LineRole,
     (typeof voices)[0]
   >;
-  const subject: number[] = [];
-  let p = 72;
-  for (let k = 0; k < 4; k++) {
-    const step = k % 2 === 0 ? 1 : 6;
-    p = p + (k === 2 ? 6 : step);
-    subject.push(p);
-    byRole.soprano.notes.push({
-      pitchMidi: p,
-      durationBars: 0.25,
-      offsetBars: additive.soprano + k * 0.25,
-    });
-  }
   const delayBars = 1;
   const intervalAnswer = -12;
-  for (let k = 0; k < 4; k++) {
-    const src = subject[k]!;
-    const tp = src + intervalAnswer;
-    byRole.tenor.notes.push({
-      pitchMidi: tp,
-      durationBars: 0.25,
-      offsetBars: delayBars + additive.tenor + k * 0.25,
-    });
+  /** Stagger follower vs downbeat pile-up with leader (keeps Gate B strong-beat co-onset ≤2 consecutive). */
+  const tenorPhase = 1 / 32;
+  let p = 60 + (Math.abs(seed) % 12);
+  let idx = 0;
+  for (let b = 0; b < lengthBars; b++) {
+    for (let k = 0; k < 4; k++) {
+      if (idx > 0) p += cell[(idx - 1) % 4];
+      const off = b + additive.soprano + k * 0.25;
+      byRole.soprano.notes.push({
+        pitchMidi: p,
+        durationBars: 0.25,
+        offsetBars: off,
+      });
+      const tenOff = b + delayBars + additive.tenor + k * 0.25 + tenorPhase;
+      if (tenOff < lengthBars + 0.999) {
+        byRole.tenor.notes.push({
+          pitchMidi: p + intervalAnswer,
+          durationBars: 0.25,
+          offsetBars: tenOff,
+        });
+      }
+      idx++;
+    }
   }
   for (let b = 0; b < lengthBars; b++) {
     const sym = resolveBarSymbol(context, b + 1).symbol;
     const rpc = rootPcFromBarSymbol(sym);
-    const ap = midiForVoice('alto', (rpc + 1) % 12, 4) + (b % 3);
+    const ap = midiForVoice('alto', (rpc + 1) % 12, 4) + (b % 3) + Math.floor((seed + b) % 3);
     byRole.alto.notes.push({
       pitchMidi: ap,
       durationBars: 0.25,
-      offsetBars: b + additive.alto,
+      offsetBars: b + additive.alto + (b % 2) * 0.25,
     });
     const bp = midiForVoice('bass', (rpc + 11) % 12, 2) - (b % 2);
     byRole.bass.notes.push({
