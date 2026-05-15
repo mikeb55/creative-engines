@@ -421,7 +421,7 @@ function deriveOneIntent(
       targetActiveParts: 8,
       allowSectionUnisons: true,
       allowPads: true,
-      allowBackgroundFigures: true,
+      allowBackgroundFigures: false,
     };
   } else if (f.textureClass === 'polyphonic' || f.textureClass === 'contrapuntal') {
     densityPlan = {
