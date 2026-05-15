@@ -464,6 +464,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'beatles', label: 'Beatles' },
   { id: 'beethoven', label: 'Beethoven' },
   { id: 'beethoven_late', label: 'Beethoven (Late Quartets)' },
+  { id: 'bartok', label: 'Bartók (String Quartets)' },
   { id: 'bill_evans', label: 'Bill Evans' },
   { id: 'billy_strayhorn', label: 'Billy Strayhorn' },
   { id: 'bob_dylan', label: 'Bob Dylan' },
