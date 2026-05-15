@@ -18,6 +18,15 @@ import { chordTonesForChordSymbolWithContext, shouldUseUserChordSemanticsForTone
 import { assertGuitarScoreMatchesHarmonyContext } from '../harmony/harmonyContext';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { precomputeContrapuntalLines } from '../counterpoint/precomputeContrapuntalLines';
+import type { AbstractLineSet } from '../counterpoint/abstractLineSet';
+import {
+  applyDuoAbstractStrongBeatCoOnsetDisplacement,
+  fillBassMeasureFromAbstractBassLine,
+  fillGuitarMeasureFromAbstractSoprano,
+  isLineFirstDuoAbstractContext,
+  isLineFirstDuoAbstractFromSet,
+  shouldRunDuoContrapuntalPrecompute,
+} from './duoAbstractLineWiring';
 import {
   parseChordSymbol,
   pitchClassToBassMidi,
@@ -2467,7 +2476,9 @@ function buildGuitarPart(
   motifState: MotifTrackerState,
   interactionPlan: InteractionPlan | undefined,
   texturePlan: EcmBarTexture[] | undefined,
-  styleStack?: StyleStack
+  styleStack?: StyleStack,
+  /** Same reference as `generationMetadata.contrapuntalLineSet` after precompute (threading / tests). */
+  contrapuntalLineSet?: AbstractLineSet | null
 ): PartModel {
   const stackIds = styleStackToModuleIds(styleStack ?? DUO_DEFAULT_STYLE_STACK);
   const profile = guitarBassDuoPreset.instrumentProfiles.find(
@@ -2617,8 +2628,14 @@ function buildGuitarPart(
   const cpAccum = createCharlieParkerHarmonyAccumulator();
   const isDuoGoldenPath = isDuoGoldenPathPreset(context.presetId);
   if (isDuoGoldenPath) {
-    precomputeContrapuntalLines(context, context.voiceBundle?.voiceId ?? '');
+    const vid = (context.voiceBundle?.voiceId ?? '').trim();
+    if (shouldRunDuoContrapuntalPrecompute(context, vid)) {
+      precomputeContrapuntalLines(context, vid);
+    }
   }
+  const activeAbstract =
+    contrapuntalLineSet ?? context.generationMetadata?.contrapuntalLineSet ?? null;
+  const lineFirstDuoAbstract = isLineFirstDuoAbstractFromSet(activeAbstract, context);
   if (isSongwriterBrianWilson && isDuoGoldenPath) {
     precomputeBrianWilsonEffectiveHarmonyBars(context);
   }
@@ -2839,7 +2856,7 @@ function buildGuitarPart(
     return [Math.max(zL, effectiveBase) + bump, Math.min(79, zH + bump)];
   };
 
-  const hookRuntime = songModeHook
+  const hookRuntime = songModeHook && !lineFirstDuoAbstract
     ? buildSongModeHookRuntime({
         seed,
         context,
@@ -3291,6 +3308,26 @@ function buildGuitarPart(
       const anchored = anchorGuitarRegister(effectiveLow, effectiveHigh);
       effectiveLow = anchored[0];
       effectiveHigh = anchored[1];
+    }
+    if (lineFirstDuoAbstract && activeAbstract) {
+      const engineVrbId = activeAbstract.styleSourceVrbId ?? '';
+      fillGuitarMeasureFromAbstractSoprano(m, activeAbstract, b, {
+        effectiveLow,
+        effectiveHigh,
+        staggerGuitar,
+      }, engineVrbId, context);
+      normalizeMeasureToEighthBeatGrid(m);
+      if (isDuoGolden && !skipPhraseEngineStage3Anticipation) {
+        applyDuoGoldenPhraseEngineStage4MotifRhythm(m, seed, b);
+      }
+      normalizeMeasureToEighthBeatGrid(m);
+      duoBoostPhraseEndLanding(m, b, true);
+      duoEnforcePhraseEndCadence(m, b, context, effectiveLow, effectiveHigh, false);
+      normalizeMeasureToEighthBeatGrid(m);
+      if (guitarBarIsBusy(m)) consecutiveBusyGuitarBars++;
+      else consecutiveBusyGuitarBars = 0;
+      measures.push(m);
+      continue;
     }
     let rhythmBar = rhythm;
     const rDna = genMeta?.phase8RhythmDnaCellByBar?.[b - 1];
@@ -4338,7 +4375,8 @@ function buildBassPart(
   guitarPart: PartModel,
   interactionPlan: InteractionPlan | undefined,
   texturePlan: EcmBarTexture[] | undefined,
-  phraseGuitarContours: GuitarPhraseContour[]
+  phraseGuitarContours: GuitarPhraseContour[],
+  contrapuntalLineSet?: AbstractLineSet | null
 ): PartModel {
   const profile = guitarBassDuoPreset.instrumentProfiles.find(
     (p): p is BassProfile => p.instrumentIdentity === 'acoustic_upright_bass'
@@ -4354,6 +4392,14 @@ function buildBassPart(
       : undefined;
   const measures: MeasureModel[] = [];
   const tb = totalBarsFromContext(context);
+  const isDuoGoldenPathBass =
+    isGuitarBassDuoFamily(context.presetId) || context.presetId === 'ecm_chamber';
+  if (isDuoGoldenPathBass && !context.generationMetadata?.contrapuntalLineSet) {
+    const vid = (context.voiceBundle?.voiceId ?? '').trim();
+    if (shouldRunDuoContrapuntalPrecompute(context, vid)) {
+      precomputeContrapuntalLines(context, vid);
+    }
+  }
   let prevBassPitch: number | undefined = walkLow;
   let prevBarContour = '';
   let sameContourStreak = 0;
@@ -4455,6 +4501,20 @@ function buildBassPart(
     const fifth = clampPitch(rootClamped + 5, walkLow, effectiveHigh);
     const third = clampPitch(tones.third, walkLow, effectiveHigh);
     const seventh = clampPitch(tones.seventh, walkLow, effectiveHigh);
+
+    const abstractNow =
+      context.generationMetadata?.contrapuntalLineSet ?? contrapuntalLineSet ?? null;
+    if (isLineFirstDuoAbstractFromSet(abstractNow, context) && abstractNow) {
+      const engineVrbId = abstractNow.styleSourceVrbId ?? '';
+      fillBassMeasureFromAbstractBassLine(m, abstractNow, b, { effectiveLow, effectiveHigh }, engineVrbId, context);
+      normalizeMeasureQuarterGrid(m);
+      const lastN = [...m.events].reverse().find((e) => e.kind === 'note') as NoteEvent | undefined;
+      if (lastN) prevBassPitch = lastN.pitch;
+      measures.push(m);
+      registerMeasureAppend(b);
+      b++;
+      continue;
+    }
 
     const ecmMode = context.generationMetadata?.ecmMode;
     const tex = texturePlan?.find((t) => t.bar === b);
@@ -5236,7 +5296,9 @@ function buildBassPart(
     b++;
   }
 
-  repairBassMotifEchoBars1to8(measures, guitarPart, context, bassMap);
+  if (!isLineFirstDuoAbstractContext(context)) {
+    repairBassMotifEchoBars1to8(measures, guitarPart, context, bassMap);
+  }
   logBassProbe('before_return_bass', tb, { totalMeasures: measures.length, totalEvents: bassEventsSoFar() });
 
   if (context.generationMetadata?.songwriterStyleId === 'frank_zappa') {
@@ -5833,7 +5895,8 @@ export function generateGoldenPathDuoScore(
       plans.motifState,
       plans.interactionPlan,
       texturePlan,
-      plans.styleStack
+      plans.styleStack,
+      context.generationMetadata?.contrapuntalLineSet ?? null
     );
     logEcmInternalPhaseProbe(probeEcm, 'after_buildPianoPart');
     wayneSectionMotifReceipts = applyWayneShorterChorusBridgeMotifDevelopment(guitarPart, {
@@ -5845,11 +5908,12 @@ export function generateGoldenPathDuoScore(
     if (
       context.generationMetadata?.songModeHookFirstIdentity === true &&
       isGuitarBassDuoFamily(context.presetId) &&
-      tb === 32
+      tb === 32 &&
+      !isLineFirstDuoAbstractContext(context)
     ) {
       applySongModePhraseEngineV1(guitarPart, context);
     }
-    if (context.generationMetadata?.songModeHookFirstIdentity) {
+    if (context.generationMetadata?.songModeHookFirstIdentity && !isLineFirstDuoAbstractContext(context)) {
       guitarPart.measures = enforceSongModeGuitarDensity(
         guitarPart.measures,
         0.6,
@@ -5874,6 +5938,7 @@ export function generateGoldenPathDuoScore(
       const enhanced = applySlonimskyToMelodyLine(melodyLine, chords, slonimskyCtx, context.seed);
       applyEnhancedPitchesByBar(guitarPart, melodyLine, enhanced);
     } else if (
+      !isLineFirstDuoAbstractContext(context) &&
       styleProfileSupportsAlternateGuitarTuning(
         normalizeStyleProfileId(context.generationMetadata?.styleProfile)
       ) &&
@@ -5903,7 +5968,7 @@ export function generateGoldenPathDuoScore(
       context.generationMetadata.songModeLeadSheetAnchorStartApplied = true;
     }
     applySongModeImportedLeadSheetVelocityNudges(guitarPart, context);
-    if (isGuitarBassDuoFamily(context.presetId)) {
+    if (isGuitarBassDuoFamily(context.presetId) && !isLineFirstDuoAbstractContext(context)) {
       nudgeDuoGuitarPhraseEndsForVariety(guitarPart, context);
       applyLateClosingGuitarContourNudge(guitarPart, context);
       const phaseABars = injectPhaseAGuitarVoice2Probe(guitarPart, context);
@@ -6085,7 +6150,8 @@ export function generateGoldenPathDuoScore(
       guitarPart,
       plans.interactionPlan,
       texturePlan,
-      phraseGuitarContours
+      phraseGuitarContours,
+      context.generationMetadata?.contrapuntalLineSet ?? null
     );
     logEcmInternalPhaseProbe(probeEcm, 'after_buildBassPart');
     if (context.presetId === 'ecm_chamber' || (isGuitarBassDuoFamily(context.presetId) && isEcmStyle)) {
@@ -6120,10 +6186,14 @@ export function generateGoldenPathDuoScore(
   if (
     context.presetId !== 'ecm_chamber' &&
     context.presetId !== GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID &&
-    !skipStandardDuoBassMassaging
+    !skipStandardDuoBassMassaging &&
+    !isLineFirstDuoAbstractContext(context)
   ) {
+    applyDuoAbstractStrongBeatCoOnsetDisplacement(context, guitarPart, bassPart);
     simplifyBassAtPeakBar(context, bassPart, plans.bassMap, 4, walkLow, bassCeiling);
     resolveOverlapInDuoScore(context, guitarPart, bassPart, plans.bassMap, walkLow, bassCeiling);
+  } else if (isLineFirstDuoAbstractContext(context)) {
+    applyDuoAbstractStrongBeatCoOnsetDisplacement(context, guitarPart, bassPart);
   }
   if (context.generationMetadata?.songwriterStyleId === 'frank_zappa') {
     applyFrankZappaPhase4GuitarBassAndRegister(context, guitarPart, bassPart, tb, walkLow, bassCeiling);
@@ -6133,7 +6203,8 @@ export function generateGoldenPathDuoScore(
     isGuitarBassDuoFamily(context.presetId) &&
     context.presetId !== 'ecm_chamber' &&
     context.presetId !== GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID &&
-    !useIndieDualGuitar
+    !useIndieDualGuitar &&
+    !isLineFirstDuoAbstractContext(context)
   ) {
     const duoIntentRegisterScore = createScore(plans.scoreTitle, [guitarPart, bassPart], { tempo: opts?.bpm ?? 120 });
     applyDuoIntentRegisterOwnership(duoIntentRegisterScore, context);
@@ -6142,7 +6213,8 @@ export function generateGoldenPathDuoScore(
     isGuitarBassDuoFamily(context.presetId) &&
     context.presetId !== 'ecm_chamber' &&
     !useIndieDualGuitar &&
-    context.generationMetadata?.songwriterStyleId !== 'arvo_part'
+    context.generationMetadata?.songwriterStyleId !== 'arvo_part' &&
+    !isLineFirstDuoAbstractContext(context)
   ) {
     /**
      * Wyble-style V2/bass register coupling is for true guitar–bass duo. The Indie + separate

@@ -1,5 +1,6 @@
 /**
- * ContrapuntalLineEngine — line-first SATB composer + SQ/BB routers (Brookmeyer + Bartók only).
+ * ContrapuntalLineEngine — line-first SATB composer + BB/SQ routers.
+ * Bartók dedicated grammar; other `contrapuntalLinePolicy.enabled` VRBs use shared swing-chord grid (`buildSwingChordLineSetForVrb`).
  */
 
 import type { CompositionContext } from '../compositionContext';
@@ -97,8 +98,14 @@ function enforceRegisterInterlock(voices: AbstractLineSet['voices']): void {
   }
 }
 
-function buildBrookmeyerLineSet(context: CompositionContext, lengthBars: number, seed: number): AbstractLineSet {
-  const policy = getVoiceRuleBundle('bob_brookmeyer').contrapuntalLinePolicy!;
+/** Chord-spine + swing-offset SATB grid — Brookmeyer baseline; reused for other jazz VRBs with `contrapuntalLinePolicy.enabled`. */
+function buildSwingChordLineSetForVrb(
+  context: CompositionContext,
+  lengthBars: number,
+  seed: number,
+  vrbId: string,
+): AbstractLineSet {
+  const policy = getVoiceRuleBundle(vrbId).contrapuntalLinePolicy!;
   const dissonanceProfile = policy.dissonanceProfile;
   const swingOffsets: Record<LineRole, number[]> = {
     soprano: [0, 0.5],
@@ -189,8 +196,12 @@ function buildBrookmeyerLineSet(context: CompositionContext, lengthBars: number,
     dissonanceProfile: { ...dissonanceProfile },
     sourceMode: 'chords_only',
     lengthBars,
-    styleSourceVrbId: 'bob_brookmeyer',
+    styleSourceVrbId: vrbId,
   };
+}
+
+function buildBrookmeyerLineSet(context: CompositionContext, lengthBars: number, seed: number): AbstractLineSet {
+  return buildSwingChordLineSetForVrb(context, lengthBars, seed, 'bob_brookmeyer');
 }
 
 function buildBartokLineSet(context: CompositionContext, lengthBars: number, seed: number): AbstractLineSet {
@@ -318,8 +329,9 @@ export class ContrapuntalLineEngine {
   generateLines(lengthBars: number, sourceMode: AbstractLineSet['sourceMode']): AbstractLineSet {
     void sourceMode;
     const seed = this.context.seed ?? 0;
-    if (this.vrbId === 'bob_brookmeyer') return buildBrookmeyerLineSet(this.context, lengthBars, seed);
     if (this.vrbId === 'bartok') return buildBartokLineSet(this.context, lengthBars, seed);
+    const pol = getVoiceRuleBundle(this.vrbId).contrapuntalLinePolicy;
+    if (pol?.enabled) return buildSwingChordLineSetForVrb(this.context, lengthBars, seed, this.vrbId);
     throw new Error(`ContrapuntalLineEngine: unsupported vrbId ${this.vrbId}`);
   }
 

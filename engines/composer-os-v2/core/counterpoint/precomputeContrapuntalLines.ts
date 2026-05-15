@@ -11,12 +11,11 @@ import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
 import { ContrapuntalLineEngine } from './ContrapuntalLineEngine';
 
 /**
- * When `voiceBundle` is Brookmeyer or Bartók VRB with `contrapuntalLinePolicy.enabled`, builds
- * `AbstractLineSet` and stores on `generationMetadata.contrapuntalLineSet`.
+ * When the resolved `VoiceRuleBundle` carries `contrapuntalLinePolicy.enabled`, builds
+ * `AbstractLineSet` and stores on `generationMetadata.contrapuntalLineSet` (still before harmony-bar precompute).
  */
 export function precomputeContrapuntalLines(context: CompositionContext, vrbId: string): AbstractLineSet | null {
   const id = (vrbId || context.voiceBundle?.voiceId || '').trim();
-  if (id !== 'bartok' && id !== 'bob_brookmeyer') return null;
   const bundle = context.voiceBundle ?? getVoiceRuleBundle(id);
   if (!bundle?.contrapuntalLinePolicy?.enabled) return null;
   const engine = new ContrapuntalLineEngine(id, context);

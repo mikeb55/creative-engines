@@ -228,6 +228,8 @@ export interface GenerationMetadata {
   harmonySource?: 'builtin' | 'custom';
   /** User pasted progression: do not normalize or substitute harmony (Song Mode / locked long-form). */
   customHarmonyLocked?: boolean;
+  /** Resolved request harmony mode (duo slice vs Gate B `custom_locked`). */
+  harmonyModeRequested?: 'builtin' | 'custom' | 'custom_locked';
   /** Short readable summary when `harmonySource` is custom */
   customChordProgressionSummary?: string;
   /** UI / request: built-in vs custom progression mode */
@@ -1279,6 +1281,8 @@ export interface GenerationMetadata {
   lineFirstHierarchy?: boolean;
   /** Line-first SATB plan from {@link precomputeContrapuntalLines} (before effective-harmony-bar precompute). */
   contrapuntalLineSet?: AbstractLineSet;
+  /** Duo line-first — strong-beat co-onset displacement receipts (`duoAbstractLineWiring.ts`). */
+  duoLineFirstRhythmReceipts?: string[];
   brookmeyerContrapuntalLineCount?: number;
   contrapuntalLineCount?: number;
   brookmeyerEpisodePlanSummary?: string;

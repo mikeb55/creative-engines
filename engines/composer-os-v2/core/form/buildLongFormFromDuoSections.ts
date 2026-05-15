@@ -83,7 +83,11 @@ function expandBuiltinLongFormBars(mod: ModulationPlan, seed: number, target: nu
 export function buildDuoLongFormCompositionContextFromBars(
   seed: number,
   bars: string[],
-  opts?: { chordProgressionInputRaw?: string; presetId?: string }
+  opts?: {
+    chordProgressionInputRaw?: string;
+    presetId?: string;
+    harmonyModeRequested?: 'builtin' | 'custom' | 'custom_locked';
+  }
 ): { context: CompositionContext; modulationPlan: ModulationPlan } {
   const n = bars.length;
   if (n % 8 !== 0 || n < 8 || n > 64) {
@@ -152,6 +156,7 @@ export function buildDuoLongFormCompositionContextFromBars(
     generationMetadata: {
       generatedAt: new Date().toISOString(),
       harmonySource: 'custom',
+      harmonyModeRequested: opts?.harmonyModeRequested ?? 'custom',
       customHarmonyLocked: true,
       progressionMode: 'custom',
       customChordProgressionSummary: bars.join(' | '),
@@ -253,6 +258,7 @@ export function buildDuoLongFormCompositionContext(
       generationMetadata: {
         generatedAt: new Date().toISOString(),
         harmonySource: options?.parsedChordBars8 ? 'custom' : 'builtin',
+        harmonyModeRequested: options?.parsedChordBars8 ? 'custom' : 'builtin',
         longFormDuo: true,
         modulationPlanActive: modulationPlan.active,
         totalBars: 16,
@@ -338,6 +344,7 @@ export function buildDuoLongFormCompositionContext(
     generationMetadata: {
       generatedAt: new Date().toISOString(),
       harmonySource: options?.parsedChordBars8 ? 'custom' : 'builtin',
+      harmonyModeRequested: options?.parsedChordBars8 ? 'custom' : 'builtin',
       longFormDuo: true,
       modulationPlanActive: modulationPlan.active,
       totalBars: tb,

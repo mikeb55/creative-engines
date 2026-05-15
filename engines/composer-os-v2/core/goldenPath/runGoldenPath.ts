@@ -423,6 +423,7 @@ function buildGoldenPathContext(
     generationMetadata: {
       generatedAt: new Date().toISOString(),
       harmonySource: parseFailed ? undefined : useCustom ? 'custom' : 'builtin',
+      harmonyModeRequested: extras?.harmonyModeRequested ?? 'builtin',
       customChordProgressionSummary: useCustom && barsForLock ? barsForLock.join(' | ') : undefined,
       progressionMode,
       chordProgressionInputRaw: raw && raw.length > 0 ? raw : undefined,
@@ -459,6 +460,7 @@ function buildDuoTwentyFourBarCompositionContext(
     presetId: string;
     harmonySource: 'builtin' | 'custom';
     chordProgressionInputRaw?: string;
+    harmonyModeRequested?: 'builtin' | 'custom' | 'custom_locked';
   }
 ): CompositionContext {
   const preset = guitarBassDuoPreset;
@@ -488,6 +490,8 @@ function buildDuoTwentyFourBarCompositionContext(
   };
   const release = runReleaseReadinessGate({ validationPassed: true, exportValid: true, mxValid: true });
   const raw = opts.chordProgressionInputRaw;
+  const harmonyModeRequested =
+    opts.harmonyModeRequested ?? (opts.harmonySource === 'custom' ? 'custom' : 'builtin');
   const context: CompositionContext = {
     systemVersion: '2.0.0',
     presetId: opts.presetId,
@@ -506,6 +510,7 @@ function buildDuoTwentyFourBarCompositionContext(
     generationMetadata: {
       generatedAt: new Date().toISOString(),
       harmonySource: opts.harmonySource,
+      harmonyModeRequested,
       longFormDuo: true,
       modulationPlanActive: false,
       totalBars: 24,
@@ -683,6 +688,7 @@ function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions)
       return buildDuoLongFormCompositionContextFromBars(seed, bars, {
         chordProgressionInputRaw: options?.chordProgressionText?.trim(),
         presetId,
+        harmonyModeRequested: 'custom_locked',
       }).context;
     }
     return buildGoldenPathContext(seed, bars, {
@@ -720,6 +726,7 @@ function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions)
     return buildDuoLongFormCompositionContextFromBars(seed, options.parsedChordBars, {
       chordProgressionInputRaw: options?.chordProgressionText?.trim(),
       presetId,
+      harmonyModeRequested: options.harmonyMode ?? 'custom',
     }).context;
   }
   if (presetId === 'ecm_chamber') {
@@ -741,6 +748,7 @@ function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions)
           presetId: pid,
           harmonySource: 'custom',
           chordProgressionInputRaw: options.chordProgressionText?.trim(),
+          harmonyModeRequested: options.harmonyMode ?? 'custom',
         });
       }
       if (p?.length === 8) {
@@ -749,6 +757,7 @@ function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions)
           presetId: pid,
           harmonySource: 'custom',
           chordProgressionInputRaw: options.chordProgressionText?.trim(),
+          harmonyModeRequested: options.harmonyMode ?? 'custom',
         });
       }
       if (!p?.length) {
@@ -756,6 +765,7 @@ function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions)
         return buildDuoTwentyFourBarCompositionContext(seed, formSections24, builtin24, {
           presetId: pid,
           harmonySource: 'builtin',
+          harmonyModeRequested: 'builtin',
         });
       }
     }

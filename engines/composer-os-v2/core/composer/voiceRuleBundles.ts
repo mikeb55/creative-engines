@@ -2,7 +2,12 @@
  * Compiled VoiceRuleBundle tables — seven deep harmonic voices + neutral default.
  */
 
-import type { VoiceRuleBundle } from './voiceRuleBundle';
+import {
+  type VoiceRuleBundle,
+  DUO_CONTRAPUNTAL_POLICY_COLOR,
+  DUO_CONTRAPUNTAL_POLICY_JAZZ,
+  DUO_VOICE_POLICY_SQ_FAMILY_STUB,
+} from './voiceRuleBundle';
 import { WAYNE_SHORTER_WS_HARM_FINGERPRINTS } from './wayneShorterHarmFingerprints';
 import { WAYNE_SHORTER_WS_MEL_FINGERPRINTS } from './wayneShorterMelFingerprints';
 import { WAYNE_SHORTER_WS_RHYTHM_FINGERPRINTS } from './wayneShorterRhythmFingerprints';
@@ -379,6 +384,13 @@ const BARTOK: VoiceRuleBundle = {
     rhythmicIndependenceRequired: true,
     lineRoleAssignment: 'fixed',
   },
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.8,
+    registerInterlock: true,
+    intervalPreference: 'ic1_tritone',
+  },
 };
 
 const RAVEL: VoiceRuleBundle = {
@@ -422,6 +434,14 @@ const RAVEL: VoiceRuleBundle = {
     resolveParallels: false,
     maxVoiceOverlap: 5,
   },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_COLOR,
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.6,
+    registerInterlock: true,
+    intervalPreference: 'whole_tone_chromatic',
+  },
 };
 
 const DUTILLEUX: VoiceRuleBundle = {
@@ -464,6 +484,7 @@ const DUTILLEUX: VoiceRuleBundle = {
     resolveParallels: false,
     maxVoiceOverlap: 7,
   },
+  duoVoicePolicy: DUO_VOICE_POLICY_SQ_FAMILY_STUB,
 };
 
 const GIL_EVANS_FINGERPRINT_RECEIPTS = [
@@ -616,6 +637,14 @@ const MARIA_SCHNEIDER: VoiceRuleBundle = {
     resolveParallels: true,
     maxVoiceOverlap: 3,
   },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.7,
+    registerInterlock: true,
+    intervalPreference: 'chromatic_upper_extension',
+  },
 };
 
 const JOHN_COLTRANE: VoiceRuleBundle = {
@@ -698,6 +727,14 @@ const JOHN_COLTRANE: VoiceRuleBundle = {
     resolveParallels: false,
     maxVoiceOverlap: 5,
   },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.75,
+    registerInterlock: true,
+    intervalPreference: 'chromatic_sheets_of_sound',
+  },
 };
 
 const WAYNE_SHORTER: VoiceRuleBundle = {
@@ -742,6 +779,14 @@ const WAYNE_SHORTER: VoiceRuleBundle = {
   repairPolicy: {
     resolveParallels: true,
     maxVoiceOverlap: 3,
+  },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.7,
+    registerInterlock: true,
+    intervalPreference: 'upper_extension_non_functional',
   },
 };
 
@@ -847,6 +892,14 @@ const BILL_EVANS: VoiceRuleBundle = {
     resolveParallels: true,
     maxVoiceOverlap: 3,
   },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.65,
+    registerInterlock: true,
+    intervalPreference: 'chromatic_upper_extension',
+  },
 };
 
 const HERBIE_HANCOCK_FINGERPRINT_RECEIPTS = [
@@ -949,6 +1002,14 @@ const HERBIE_HANCOCK: VoiceRuleBundle = {
     resolveParallels: false,
     maxVoiceOverlap: 4,
   },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.65,
+    registerInterlock: true,
+    intervalPreference: 'chromatic_upper_extension',
+  },
 };
 
 const PAT_METHENY: VoiceRuleBundle = {
@@ -1041,6 +1102,14 @@ const PAT_METHENY: VoiceRuleBundle = {
   repairPolicy: {
     resolveParallels: true,
     maxVoiceOverlap: 3,
+  },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.65,
+    registerInterlock: true,
+    intervalPreference: 'diatonic_chromatic',
   },
 };
 
@@ -1136,6 +1205,14 @@ const THAD_JONES: VoiceRuleBundle = {
   repairPolicy: {
     resolveParallels: true,
     maxVoiceOverlap: 5,
+  },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.65,
+    registerInterlock: true,
+    intervalPreference: 'chromatic',
   },
 };
 
@@ -1283,6 +1360,13 @@ const BOB_BROOKMEYER: VoiceRuleBundle = {
     preferredImitationTypes: ['free', 'invertible'],
     rhythmicIndependenceRequired: true,
     lineRoleAssignment: 'dynamic',
+  },
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.7,
+    registerInterlock: true,
+    intervalPreference: 'chromatic',
   },
 };
 
@@ -1649,6 +1733,14 @@ const COUNT_BASIE: VoiceRuleBundle = {
     resolveParallels: true,
     maxVoiceOverlap: 4,
   },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.6,
+    registerInterlock: true,
+    intervalPreference: 'blues_chromatic',
+  },
 };
 
 const CHARLES_MINGUS_FINGERPRINT_RECEIPTS = [
@@ -1745,6 +1837,14 @@ const CHARLES_MINGUS: VoiceRuleBundle = {
   repairPolicy: {
     resolveParallels: true,
     maxVoiceOverlap: 4,
+  },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.7,
+    registerInterlock: true,
+    intervalPreference: 'blues_chromatic_collective',
   },
 };
 
@@ -1845,6 +1945,14 @@ const DUKE_ELLINGTON: VoiceRuleBundle = {
     resolveParallels: true,
     maxVoiceOverlap: 5,
   },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.6,
+    registerInterlock: true,
+    intervalPreference: 'chromatic_voice_colour',
+  },
 };
 
 /** Debussy — impressionist parallel strata / registral bell frames (`debussySlice.ts` harmony `db:*` + solver VL posture). */
@@ -1904,6 +2012,14 @@ const DEBUSSY: VoiceRuleBundle = {
   repairPolicy: {
     resolveParallels: false,
     maxVoiceOverlap: 6,
+  },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_COLOR,
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.6,
+    registerInterlock: true,
+    intervalPreference: 'whole_tone_pentatonic',
   },
 };
 
@@ -2104,6 +2220,14 @@ const THELONIOUS_MONK: VoiceRuleBundle = {
     resolveParallels: false,
     maxVoiceOverlap: 7,
   },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.75,
+    registerInterlock: true,
+    intervalPreference: 'chromatic_flat2_tritone',
+  },
 };
 
 const MESSIAEN: VoiceRuleBundle = {
@@ -2200,6 +2324,7 @@ const BEETHOVEN_LATE: VoiceRuleBundle = {
   },
   dim7EnharmonicModulationEnabled: true,
   speciesVoiceLeadingBias: 'high',
+  duoVoicePolicy: DUO_VOICE_POLICY_SQ_FAMILY_STUB,
 };
 
 const TURTLE_ISLAND: VoiceRuleBundle = {
@@ -2245,6 +2370,7 @@ const TURTLE_ISLAND: VoiceRuleBundle = {
   swingFeel: true,
   guideToneVoiceLeading: true,
   improvSlots: true,
+  duoVoicePolicy: DUO_VOICE_POLICY_SQ_FAMILY_STUB,
 };
 
 const REICH_GLASS: VoiceRuleBundle = {
@@ -2291,6 +2417,7 @@ const REICH_GLASS: VoiceRuleBundle = {
   phaseProcessEnabled: true,
   additiveProcessEnabled: true,
   patternIntegrityMinRepeats: 4,
+  duoVoicePolicy: DUO_VOICE_POLICY_SQ_FAMILY_STUB,
 };
 
 const SHOSTAKOVICH: VoiceRuleBundle = {
@@ -2337,6 +2464,7 @@ const SHOSTAKOVICH: VoiceRuleBundle = {
   quotationEventsEnabled: true,
   tragicSlowMovementProfile: true,
   shostakovichPeriod: 'middle',
+  duoVoicePolicy: DUO_VOICE_POLICY_SQ_FAMILY_STUB,
 };
 
 const LACHENMANN: VoiceRuleBundle = {
@@ -2382,6 +2510,7 @@ const LACHENMANN: VoiceRuleBundle = {
   klangtypenPrimary: ['fließklang', 'geräuschklang', 'druckklang', 'tonklang', 'impulsklang'] as const,
   pitchRoleDecoupled: true,
   noSemanticOverlay: true,
+  duoVoicePolicy: DUO_VOICE_POLICY_SQ_FAMILY_STUB,
 };
 
 const LIGETI: VoiceRuleBundle = {
@@ -2437,6 +2566,7 @@ const LIGETI: VoiceRuleBundle = {
   /** SQ2 default — accelerating arc (Mvt I) is the canonical exemplar; Mvt-specific curves carried at slice level. */
   tempoCurveDirection: 'accelerating',
   textureAsHarmonyEnabled: true,
+  duoVoicePolicy: DUO_VOICE_POLICY_SQ_FAMILY_STUB,
 };
 
 const JOBIM: VoiceRuleBundle = {
@@ -2538,6 +2668,7 @@ const PART: VoiceRuleBundle = {
   dynamicCeiling: 'mf',
   noTeleologicalDevelopment: true,
   forbidAudibleProcessOperators: true,
+  duoVoicePolicy: DUO_VOICE_POLICY_SQ_FAMILY_STUB,
 };
 
 /** Erik Satie — modal salon / furniture music VRB (Gymnopédies · Gnossiennes · Sarabandes · Poire · Parade · Socrate). */
@@ -2790,6 +2921,7 @@ const CRUMB_BLACK_ANGELS: VoiceRuleBundle = {
   quotationEventsEnabled: true,
   soundTypeStates: ['pitched', 'noise', 'hybrid'] as const,
   mirrorEchoEnabled: true,
+  duoVoicePolicy: DUO_VOICE_POLICY_SQ_FAMILY_STUB,
 };
 
 const BY_ID: Record<string, VoiceRuleBundle> = {

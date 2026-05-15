@@ -133,6 +133,69 @@ export interface ContrapuntalLinePolicy {
   lineRoleAssignment: 'fixed' | 'dynamic';
 }
 
+/** Duo golden-path — guitar/bass derivation from {@link AbstractLineSet} (stubs + routing hints). */
+export type DuoVoiceIntervalPreference =
+  | 'chromatic'
+  | 'ic1_tritone'
+  | 'diatonic'
+  | 'chromatic_upper_extension'
+  | 'chromatic_sheets_of_sound'
+  | 'diatonic_chromatic'
+  | 'whole_tone_pentatonic'
+  | 'upper_extension_non_functional'
+  | 'blues_chromatic_collective'
+  | 'chromatic_voice_colour'
+  | 'blues_chromatic'
+  | 'whole_tone_chromatic'
+  | 'chromatic_flat2_tritone';
+
+export interface DuoVoicePolicy {
+  guitarSource: 'soprano_line' | 'chord_block_derived';
+  bassSource: 'bass_line' | 'root_extraction';
+  rhythmicIndependenceFloor: number;
+  registerInterlock: boolean;
+  intervalPreference: DuoVoiceIntervalPreference;
+}
+
+/** SQ VRB duo stubs — policy readable; line engine not wired in Pass 4+5. */
+export const DUO_VOICE_POLICY_SQ_FAMILY_STUB: DuoVoicePolicy = {
+  guitarSource: 'soprano_line',
+  bassSource: 'bass_line',
+  rhythmicIndependenceFloor: 0.75,
+  registerInterlock: true,
+  intervalPreference: 'chromatic',
+};
+
+/** Shared line-first SATB policy for jazz / BB VRBs (parallel fifths allowed; octaves forbidden). */
+export const DUO_CONTRAPUNTAL_POLICY_JAZZ: ContrapuntalLinePolicy = {
+  enabled: true,
+  dissonanceProfile: {
+    allowedIntervals: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+    forbiddenIntervals: [],
+    parallelFifthsAllowed: true,
+    parallelOctavesAllowed: false,
+    resolveByStep: false,
+  },
+  preferredImitationTypes: ['free', 'invertible'],
+  rhythmicIndependenceRequired: true,
+  lineRoleAssignment: 'dynamic',
+};
+
+/** Colour / SQ-adjacent line-first policy (parallel fifths discouraged like Bartók bundle). */
+export const DUO_CONTRAPUNTAL_POLICY_COLOR: ContrapuntalLinePolicy = {
+  enabled: true,
+  dissonanceProfile: {
+    allowedIntervals: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+    forbiddenIntervals: [6],
+    parallelFifthsAllowed: false,
+    parallelOctavesAllowed: false,
+    resolveByStep: false,
+  },
+  preferredImitationTypes: ['strict', 'invertible'],
+  rhythmicIndependenceRequired: true,
+  lineRoleAssignment: 'fixed',
+};
+
 export interface VoiceRuleBundle {
   voiceId: string;
 
@@ -322,4 +385,6 @@ export interface VoiceRuleBundle {
   witStyleProfile?: boolean;
   /** ContrapuntalLineEngine — line-first SATB policy when VRB opts in (`bartok`, `bob_brookmeyer`, …). */
   contrapuntalLinePolicy?: ContrapuntalLinePolicy;
+  /** Duo golden-path — AbstractLineSet lane + independence floor (Brookmeyer / Bartók stubs). */
+  duoVoicePolicy?: DuoVoicePolicy;
 }
