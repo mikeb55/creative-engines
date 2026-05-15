@@ -255,6 +255,9 @@ function requestEchoFromReq(req: GenerateRequest): NonNullable<GenerateResult['r
       ? { styleGenerationContextKeys: req.styleGenerationContextKeys }
       : {}),
     ...(sqRhythmEngineEchoFromRequest(req.sqRhythmEngineId) ?? {}),
+    ...(typeof req.sqArrangerVrb?.voiceId === 'string' && req.sqArrangerVrb.voiceId.trim() !== ''
+      ? { sqArrangerBlendVoiceId: req.sqArrangerVrb.voiceId.trim() }
+      : {}),
     ...(sectionRegenEcho ? { sectionRegeneration: sectionRegenEcho } : {}),
   } as NonNullable<GenerateResult['requestEcho']>;
 }
@@ -303,12 +306,14 @@ function buildStringQuartetGenerationMetadata(
 ): GenerationMetadata | undefined {
   const sw = ensembleSlonimskySongwriterIdFromRequest(req)?.trim().toLowerCase();
   const sqR = shippedSqRhythmEngineId(req.sqRhythmEngineId);
-  if (!sw && !sqR) return undefined;
+  const sqVrb = req.sqArrangerVrb;
+  if (!sw && !sqR && !sqVrb) return undefined;
 
   const meta: GenerationMetadata = {
     generatedAt: new Date().toISOString(),
     ...(sw ? { songwriterStyleId: sw } : {}),
     ...(req.barMeterMap ? { barMeterMap: req.barMeterMap } : {}),
+    ...(sqVrb ? { sqArrangerVrb: sqVrb } : {}),
   };
   const frankSq = sw === 'frank_zappa' && req.zappaSQHarmonySlice !== false;
   if (frankSq) {

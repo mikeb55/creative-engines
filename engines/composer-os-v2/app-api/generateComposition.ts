@@ -204,6 +204,8 @@ export interface GenerateResult {
     debugFixtureMode?: 'indie_dual_guitar_tuning_proof';
     /** V44 Style Panel — harmonic + rhythm context key bundle */
     styleGenerationContextKeys?: string[];
+    /** Echo when client sends SQ multi-arranger blend VRB (`blend:*` voice id). */
+    sqArrangerBlendVoiceId?: string;
     /** Bar-range regen (duo/ECM) — echo without full base XML payload. */
     sectionRegeneration?: Pick<SectionRegenerationParams, 'startBar' | 'endBar'>;
   };

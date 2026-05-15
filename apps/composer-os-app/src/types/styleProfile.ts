@@ -71,10 +71,15 @@ export interface RhythmSelection {
   contextKeys: string[];
 }
 
+/** String Quartet multi-arranger blend (max two ids; weights sum to 1). */
+export type ArrangerBlendEntry = { id: string; weight: number };
+
 export interface StyleProfile {
   harmonic: HarmonicSelection;
   rhythm: RhythmSelection;
   pairPresetId?: string | null;
+  /** SQ preset: optional dual arranger blend weights (UI / diagnostics). */
+  arrangerBlend?: ArrangerBlendEntry[];
 }
 
 export interface GenerationContext {
@@ -115,6 +120,13 @@ export function buildGenerationContext(style: StyleProfile): GenerationContext {
     rhythmKeys,
     combinedKeys: [...harmonicKeys, ...rhythmKeys],
   };
+}
+
+/** Map legacy single `arrangerStyle` string to blend array for SQ UI migration. */
+export function migrateArrangerStyleToArrangerBlend(arrangerStyle: string | undefined | null): ArrangerBlendEntry[] {
+  const id = typeof arrangerStyle === 'string' ? arrangerStyle.trim() : '';
+  if (!id) return [{ id: 'none', weight: 1 }];
+  return [{ id, weight: 1 }];
 }
 
 export function migrateLegacySongwriterValue(value: string): Partial<StyleProfile> {

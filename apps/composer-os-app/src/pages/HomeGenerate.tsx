@@ -46,11 +46,15 @@ import {
 import { exportBlendedScoreToMusicXml, exportSongFormToMusicXml } from '@composer-os/core/blend';
 import {
   buildGenerationContext,
+  migrateArrangerStyleToArrangerBlend,
   migrateLegacySongwriterValue,
+  type ArrangerBlendEntry,
   type HarmonicVoiceId,
   type RhythmEngineId,
   type StyleProfile,
 } from '../types/styleProfile';
+import { blendVoiceRuleBundles, KNOWN_INCOMPATIBLE_SQ_BLEND_PAIRS } from '@composer-os/core/composer/vrbBlend';
+import { getVoiceRuleBundle } from '@composer-os/core/composer/voiceRuleBundles';
 import { buildSongModeProfileRuleRows } from '../utils/songModeProfileRulesViewModel';
 import { buildSongModeSectionSourceRows } from '../utils/songModeSectionSourcesViewModel';
 import { buildSongModeCompareCardRows, buildSongModeCompareInsights } from '../utils/songModeCompareViewModel';
@@ -1055,13 +1059,16 @@ const ARRANGER_OPTIONS: { id: string; label: string }[] = [
   { id: 'ravel', label: 'Ravel' },
   { id: 'dutilleux', label: 'Dutilleux' },
   { id: 'ligeti', label: 'Ligeti' },
-  { id: 'arvo_part', label: 'Arvo Pärt (Tintinnabuli)' },
-  { id: 'satie', label: 'Erik Satie' },
   { id: 'reich_glass', label: 'Reich / Glass' },
   { id: 'shostakovich', label: 'Shostakovich' },
   { id: 'turtle_island', label: 'Turtle Island Quartet' },
   { id: 'crumb_black_angels', label: 'Crumb (Black Angels)' },
   { id: 'lachenmann', label: 'Lachenmann' },
+  { id: 'arvo_part', label: 'Pärt' },
+  { id: 'satie', label: 'Satie' },
+  { id: 'gershwin', label: 'Gershwin' },
+  { id: 'cole_porter', label: 'Cole Porter' },
+  { id: 'ornette_coleman', label: 'Ornette Coleman' },
 ];
 
 /** Matches engine `BigBandComposerId` / style-pairing “known” arrangers — grouped first like Style dropdowns. */
@@ -1088,13 +1095,16 @@ const ARRANGER_GROUP_SQ_VRB_ORDER: readonly string[] = [
   'ravel',
   'dutilleux',
   'ligeti',
-  'arvo_part',
-  'satie',
   'reich_glass',
   'shostakovich',
   'turtle_island',
   'crumb_black_angels',
   'lachenmann',
+  'arvo_part',
+  'satie',
+  'gershwin',
+  'cole_porter',
+  'ornette_coleman',
 ];
 const ARRANGER_SQ_VRB_IDS = new Set<string>(ARRANGER_GROUP_SQ_VRB_ORDER);
 
@@ -1168,6 +1178,11 @@ function nextArrangerOnPresetChange(prevArranger: string, nextPresetId: string):
   if (prevArranger === ARRANGER_NONE_ID) return ARRANGER_DEFAULT_NON_SQ_ID;
   if (ARRANGER_SQ_VRB_IDS.has(prevArranger)) return ARRANGER_DEFAULT_NON_SQ_ID;
   return prevArranger;
+}
+
+function isSqKnownIncompatibleBlend(idA: string, idB: string): boolean {
+  if (idA === ARRANGER_NONE_ID || idB === ARRANGER_NONE_ID || idA === idB) return false;
+  return KNOWN_INCOMPATIBLE_SQ_BLEND_PAIRS.some(([x, y]) => (x === idA && y === idB) || (x === idB && y === idA));
 }
 
 const ERA_OPTIONS: { id: string; label: string }[] = [
@@ -1913,6 +1928,12 @@ export function HomeGenerate({
     pairPresetId: null,
   }));
   const [arrangerStyle, setArrangerStyle] = useState('thad');
+  const arrangerStyleLiveRef = useRef(arrangerStyle);
+  arrangerStyleLiveRef.current = arrangerStyle;
+  const sqPresetTransitionRef = useRef(presetId);
+  const [sqArrangerSlot1, setSqArrangerSlot1] = useState(ARRANGER_NONE_ID);
+  const [sqArrangerSlot2, setSqArrangerSlot2] = useState(ARRANGER_NONE_ID);
+  const [sqArrangerPrimaryWeightPct, setSqArrangerPrimaryWeightPct] = useState(60);
   const [songModeStyleProfile, setSongModeStyleProfile] = useState<SongModeStyleProfile>('STYLE_ECM');
   /** ECM style (`STYLE_ECM` / `STYLE_ECM_CHAMBER`): 0 = Chamber (Angel Song pole), 0.5 = Balanced, 1 = Flow (Metheny·Scofield pole). */
   const [ecmChamberFlow01, setEcmChamberFlow01] = useState(0.5);
@@ -1931,6 +1952,73 @@ export function HomeGenerate({
   const [greekRhythmPresetId, setGreekRhythmPresetId] = useState(DEFAULT_GREEK_RHYTHM_PRESET_ID);
   const [felaPercussionFeelMode, setFelaPercussionFeelMode] = useState<FelaPercussionFeelMode>('auto');
   const songwriterStyle = useMemo(() => resolveEffectivePrimarySongwriter(styleProfile), [styleProfile]);
+
+  useEffect(() => {
+    const prevPid = sqPresetTransitionRef.current;
+    sqPresetTransitionRef.current = presetId;
+    if (presetId !== 'string_quartet' || prevPid === 'string_quartet') return;
+    const a = arrangerStyleLiveRef.current;
+    const slot1 = a === ARRANGER_NONE_ID || ARRANGER_SQ_VRB_IDS.has(a) ? a : ARRANGER_NONE_ID;
+    setSqArrangerSlot1(slot1);
+    setSqArrangerSlot2(ARRANGER_NONE_ID);
+    setSqArrangerPrimaryWeightPct(60);
+  }, [presetId]);
+
+  useEffect(() => {
+    if (presetId !== 'string_quartet') return;
+    const w1 = sqArrangerPrimaryWeightPct / 100;
+    let blend: ArrangerBlendEntry[];
+    if (sqArrangerSlot1 === ARRANGER_NONE_ID) blend = [{ id: ARRANGER_NONE_ID, weight: 1 }];
+    else if (sqArrangerSlot2 === ARRANGER_NONE_ID) blend = [{ id: sqArrangerSlot1, weight: 1 }];
+    else
+      blend = [
+        { id: sqArrangerSlot1, weight: w1 },
+        { id: sqArrangerSlot2, weight: 1 - w1 },
+      ];
+    setStyleProfile((p) => {
+      const prev = p.arrangerBlend;
+      const same =
+        prev?.length === blend.length &&
+        prev.every((e, i) => e.id === blend[i]?.id && Math.abs(e.weight - (blend[i]?.weight ?? 0)) < 1e-9);
+      if (same) return p;
+      return { ...p, arrangerBlend: blend };
+    });
+  }, [presetId, sqArrangerSlot1, sqArrangerSlot2, sqArrangerPrimaryWeightPct]);
+
+  const sqArrangerBlendUiMessage = useMemo(() => {
+    if (presetId !== 'string_quartet') return null;
+    if (sqArrangerSlot1 === ARRANGER_NONE_ID || sqArrangerSlot2 === ARRANGER_NONE_ID) return null;
+    if (sqArrangerSlot1 === sqArrangerSlot2) return 'Select two different arrangers';
+    if (isSqKnownIncompatibleBlend(sqArrangerSlot1, sqArrangerSlot2)) {
+      return 'These arrangers are incompatible — blend not available';
+    }
+    return null;
+  }, [presetId, sqArrangerSlot1, sqArrangerSlot2]);
+
+  const sqArrangerGenerateBlocked = Boolean(sqArrangerBlendUiMessage);
+
+  const sqBlendPreview = useMemo(() => {
+    if (presetId !== 'string_quartet') return null;
+    if (sqArrangerBlendUiMessage) return null;
+    if (sqArrangerSlot1 === ARRANGER_NONE_ID || sqArrangerSlot2 === ARRANGER_NONE_ID) return null;
+    try {
+      const pw = sqArrangerPrimaryWeightPct / 100;
+      return blendVoiceRuleBundles(
+        getVoiceRuleBundle(sqArrangerSlot1),
+        getVoiceRuleBundle(sqArrangerSlot2),
+        pw
+      );
+    } catch {
+      return null;
+    }
+  }, [
+    presetId,
+    sqArrangerSlot1,
+    sqArrangerSlot2,
+    sqArrangerPrimaryWeightPct,
+    sqArrangerBlendUiMessage,
+  ]);
+
   const demoGuitarVoicingsForFretboard = useMemo(
     () => [
       guitarVoicingFromFrets('Cmaj7', [3, 3, 2, 0, 0, 0]),
@@ -2569,6 +2657,15 @@ export function HomeGenerate({
     async (opts?: { seedOverride?: number; variationOverride?: string }) => {
       const seed = opts?.seedOverride ?? baseSeed;
       const vid = opts?.variationOverride ?? variationId;
+      if (presetId === 'string_quartet' && sqArrangerGenerateBlocked) {
+        setError(sqArrangerBlendUiMessage ?? 'Invalid arranger selection.');
+        notifyGenPhase('failed');
+        onResult({
+          record: {},
+          summary: { status: 'failed', at: new Date().toISOString() },
+        });
+        return;
+      }
       setLoading(true);
       setError(null);
       notifyGenPhase('running');
@@ -2602,10 +2699,10 @@ export function HomeGenerate({
               }
             : undefined;
         const stylePairingStringQuartet =
-          presetId === 'string_quartet' && arrangerStyle !== ARRANGER_NONE_ID
+          presetId === 'string_quartet' && sqArrangerSlot1 !== ARRANGER_NONE_ID
             ? {
                 songwriterStyle: songwriterStyle,
-                arrangerStyle: arrangerStyle,
+                arrangerStyle: sqArrangerSlot1,
                 era,
               }
             : undefined;
@@ -3038,6 +3135,9 @@ export function HomeGenerate({
                 return {};
               })()
             : {}),
+          ...(presetId === 'string_quartet' && sqBlendPreview
+            ? { sqArrangerVrb: sqBlendPreview }
+            : {}),
           ...(uiInstrumentGroup === 'big_band'
             ? {
                 drumIntensity,
@@ -3234,6 +3334,12 @@ export function HomeGenerate({
       felaPercussionFeelMode,
       songwriterStyle,
       arrangerStyle,
+      sqArrangerSlot1,
+      sqArrangerSlot2,
+      sqArrangerPrimaryWeightPct,
+      sqArrangerGenerateBlocked,
+      sqArrangerBlendUiMessage,
+      sqBlendPreview,
       era,
       ensembleConfigId,
       presetId,
@@ -6383,21 +6489,117 @@ export function HomeGenerate({
           </span>
           <WriterRecipeCard writerId={primarySongwriterHoverId ?? songwriterStyle} />
           <div style={{ marginBottom: '0.65rem' }}>
-            <label
-              htmlFor="co-sq-arranger"
-              style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-            >
-              Arranger
-            </label>
-            <select
-              id="co-sq-arranger"
-              aria-describedby="co-sq-arranger-desc"
-              value={arrangerStyle}
-              onChange={(e) => setArrangerStyle(e.target.value)}
-              disabled={loading}
-            >
-              <ArrangerSelectOptionGroups variant="string_quartet" />
-            </select>
+            <span style={{ display: 'block', marginBottom: 6, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              Arranger blend (String Quartet)
+            </span>
+            <div style={{ marginBottom: '0.5rem' }}>
+              <label
+                htmlFor="co-sq-arranger-1"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.82rem', color: 'var(--text-muted)' }}
+              >
+                Arranger 1
+              </label>
+              <select
+                id="co-sq-arranger-1"
+                aria-describedby="co-sq-arranger-desc"
+                value={sqArrangerSlot1}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setSqArrangerSlot1(v);
+                  setArrangerStyle(v === ARRANGER_NONE_ID ? ARRANGER_NONE_ID : v);
+                  if (v === ARRANGER_NONE_ID) setSqArrangerSlot2(ARRANGER_NONE_ID);
+                }}
+                disabled={loading}
+              >
+                <ArrangerSelectOptionGroups variant="string_quartet" />
+              </select>
+            </div>
+            {sqArrangerSlot1 !== ARRANGER_NONE_ID ? (
+              <div style={{ marginBottom: '0.5rem' }}>
+                <label
+                  htmlFor="co-sq-arranger-weight"
+                  style={{ display: 'block', marginBottom: 4, fontSize: '0.82rem', color: 'var(--text-muted)' }}
+                >
+                  Arranger 1 weight ({sqArrangerPrimaryWeightPct}% — Arranger 2: {100 - sqArrangerPrimaryWeightPct}%)
+                </label>
+                <input
+                  id="co-sq-arranger-weight"
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={sqArrangerPrimaryWeightPct}
+                  onChange={(e) => setSqArrangerPrimaryWeightPct(Number(e.target.value))}
+                  disabled={loading || sqArrangerSlot2 === ARRANGER_NONE_ID}
+                  style={{ width: '100%', maxWidth: 360 }}
+                />
+              </div>
+            ) : null}
+            <div style={{ marginBottom: '0.5rem' }}>
+              <label
+                htmlFor="co-sq-arranger-2"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.82rem', color: 'var(--text-muted)' }}
+              >
+                Arranger 2
+              </label>
+              <select
+                id="co-sq-arranger-2"
+                value={sqArrangerSlot2}
+                onChange={(e) => setSqArrangerSlot2(e.target.value)}
+                disabled={loading || sqArrangerSlot1 === ARRANGER_NONE_ID}
+              >
+                <ArrangerSelectOptionGroups variant="string_quartet" />
+              </select>
+            </div>
+            {sqArrangerBlendUiMessage ? (
+              <p
+                role="alert"
+                style={{
+                  color: sqArrangerBlendUiMessage.includes('incompatible') ? 'rgb(180, 83, 9)' : 'var(--error)',
+                  fontSize: '0.82rem',
+                  margin: '0.35rem 0 0',
+                }}
+              >
+                {sqArrangerBlendUiMessage}
+              </p>
+            ) : null}
+            {sqBlendPreview ? (
+              <div
+                style={{
+                  marginTop: '0.65rem',
+                  padding: '0.55rem 0.65rem',
+                  borderRadius: 6,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-panel)',
+                  fontSize: '0.82rem',
+                }}
+              >
+                <strong style={{ color: 'var(--text)' }}>Blend preview</strong>
+                <div style={{ marginTop: 6, color: 'var(--text-muted)' }}>
+                  Blend: {ARRANGER_OPTION_BY_ID.get(sqArrangerSlot1)?.label ?? sqArrangerSlot1}{' '}
+                  {sqArrangerPrimaryWeightPct}% + {ARRANGER_OPTION_BY_ID.get(sqArrangerSlot2)?.label ?? sqArrangerSlot2}{' '}
+                  {100 - sqArrangerPrimaryWeightPct}%
+                </div>
+                <div style={{ marginTop: 6, color: 'var(--text-muted)' }}>
+                  Harmonic rhythm: {sqBlendPreview.harmonicRhythm.minChordDurationBars}–
+                  {sqBlendPreview.harmonicRhythm.maxChordDurationBars} bars
+                </div>
+                <div style={{ marginTop: 4, color: 'var(--text-muted)' }}>
+                  Melodic contour: {sqBlendPreview.melodicPolicy.contour} (favours{' '}
+                  {sqArrangerPrimaryWeightPct >= 50
+                    ? ARRANGER_OPTION_BY_ID.get(sqArrangerSlot1)?.label ?? sqArrangerSlot1
+                    : ARRANGER_OPTION_BY_ID.get(sqArrangerSlot2)?.label ?? sqArrangerSlot2}
+                  )
+                </div>
+                <div style={{ marginTop: 4, color: 'var(--text-muted)' }}>
+                  Bass role: {sqBlendPreview.bassPolicy.role} (favours{' '}
+                  {sqArrangerPrimaryWeightPct >= 50
+                    ? ARRANGER_OPTION_BY_ID.get(sqArrangerSlot1)?.label ?? sqArrangerSlot1
+                    : ARRANGER_OPTION_BY_ID.get(sqArrangerSlot2)?.label ?? sqArrangerSlot2}
+                  )
+                </div>
+              </div>
+            ) : null}
             <span id="co-sq-arranger-desc" style={VISUALLY_HIDDEN}>
               {ARIA_ARRANGER_GROUPS_DESC}
             </span>
@@ -6452,13 +6654,13 @@ export function HomeGenerate({
       </div>
 
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-        <button onClick={() => void generate()} disabled={loading}>
+        <button onClick={() => void generate()} disabled={loading || sqArrangerGenerateBlocked}>
           {loading ? 'Generating…' : 'Generate'}
         </button>
         <button
           className="secondary"
           type="button"
-          disabled={loading}
+          disabled={loading || sqArrangerGenerateBlocked}
           onClick={() => {
             const next = newVariationIdToken();
             setVariationId(next);
@@ -6471,7 +6673,7 @@ export function HomeGenerate({
         <button
           className="secondary"
           type="button"
-          disabled={loading}
+          disabled={loading || sqArrangerGenerateBlocked}
           onClick={() => {
             setBaseSeed(42);
             setVariationId('demo-42');
@@ -7839,6 +8041,7 @@ export function HomeGenerate({
           onApplyBars={(bars) => {
             setChordProgressionText(bars.join(' | '));
             reharmApplyHarmonyUnlockRef.current = true;
+            if (presetId === 'string_quartet' && sqArrangerGenerateBlocked) return;
             void generate();
           }}
         />

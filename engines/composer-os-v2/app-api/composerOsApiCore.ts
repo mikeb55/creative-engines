@@ -523,6 +523,13 @@ export function apiGenerate(
         if (v === 'jewish_klezmer') return 'jewish_klezmer' as const;
         return undefined;
       })(),
+      sqArrangerVrb: (() => {
+        const raw = (body as { sqArrangerVrb?: unknown }).sqArrangerVrb;
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+        const vid = (raw as { voiceId?: unknown }).voiceId;
+        if (typeof vid !== 'string' || !vid.trim()) return undefined;
+        return raw as GenerateRequest['sqArrangerVrb'];
+      })(),
       slonimskyPatternId: (() => {
         if (typeof body.slonimskyPatternId === 'string' && body.slonimskyPatternId.trim() !== '') {
           return body.slonimskyPatternId.trim();

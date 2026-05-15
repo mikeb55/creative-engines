@@ -15,12 +15,25 @@ import {
 import {
   buildGenerationContext,
   HARMONIC_VOICE_LABELS,
+  migrateArrangerStyleToArrangerBlend,
   migrateLegacySongwriterValue,
   resolveHarmonicContextKeys,
   resolveRhythmContextKeys,
 } from '../src/types/styleProfile';
 
 describe('styleProfile', () => {
+  it('migrateArrangerStyleToArrangerBlend(undefined) maps to none @ 1', () => {
+    expect(migrateArrangerStyleToArrangerBlend(undefined)).toEqual([{ id: 'none', weight: 1 }]);
+  });
+
+  it('migrateArrangerStyleToArrangerBlend("") maps to none @ 1', () => {
+    expect(migrateArrangerStyleToArrangerBlend('')).toEqual([{ id: 'none', weight: 1 }]);
+  });
+
+  it('migrateArrangerStyleToArrangerBlend(ravel) single entry weight 1', () => {
+    expect(migrateArrangerStyleToArrangerBlend('ravel')).toEqual([{ id: 'ravel', weight: 1 }]);
+  });
+
   it('migrateLegacySongwriterValue(greek_rebetiko) returns rhythm engineId', () => {
     const m = migrateLegacySongwriterValue('greek_rebetiko');
     expect(m.rhythm?.engineId).toBe('greek_rebetiko');

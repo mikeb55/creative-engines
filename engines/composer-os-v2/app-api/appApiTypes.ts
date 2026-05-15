@@ -40,6 +40,7 @@ import type { BarMeterMap } from '../core/rhythm/barMeterTypes';
 import type { ClaveGridSpec } from '../core/rhythm/claveGridTypes';
 import type { BigBandFormPhase } from '../core/big-band/bigBandPlanTypes';
 import type { MotifTransform } from '../core/song-mode/motifMutationEngine';
+import type { VoiceRuleBundle } from '../core/composer/voiceRuleBundle';
 
 export type { StyleProfile };
 export type { ArvoPartContextMode };
@@ -424,6 +425,11 @@ export interface GenerateRequest {
     | 'reich_phasing_grid'
     | 'viennese_waltz'
     | 'jewish_klezmer';
+  /**
+   * String Quartet — optional pre-merged SQ VRB bundle from UI dual-arranger blend (`vrbBlend.ts`).
+   * Omitted when a single arranger or none is selected.
+   */
+  sqArrangerVrb?: VoiceRuleBundle;
   /** Song Mode / Thad Jones (`thadJonesSlice.ts`). Default **`swing`** in engine when omitted. */
   thadPhase?: ThadJonesPhaseMode;
   /** Song Mode / Count Basie — Old vs New Testament (`basieSlice.ts`). Omitted → seeded resolve. */

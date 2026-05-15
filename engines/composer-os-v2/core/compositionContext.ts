@@ -2101,6 +2101,8 @@ export interface GenerationMetadata {
   tensionAudit?: import('./composer/tensionScheduler').TensionAuditRow[];
   /** Phase 6+7 — UI instrument group echo (Big Band | String Quartet | Guitar | Étude). */
   uiInstrumentGroup?: 'big_band' | 'string_quartet' | 'guitar' | 'etude';
+  /** String Quartet — composite VRB from multi-arranger blend (UI Phase 3+); additive diagnostics. */
+  sqArrangerVrb?: VoiceRuleBundle;
   /** Phase 6+7 — guitar export mode from StylePanel. */
   guitarOutputMode?: 'notation' | 'tab' | 'both';
   /** Phase 6+7 — étude generator instrument id from UI. */
