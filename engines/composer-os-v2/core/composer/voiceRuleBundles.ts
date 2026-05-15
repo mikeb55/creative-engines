@@ -1594,6 +1594,20 @@ const OLIVER_NELSON: VoiceRuleBundle = {
     resolveParallels: true,
     maxVoiceOverlap: 5,
   },
+  contrapuntalLinePolicy: {
+    enabled: true,
+    dissonanceProfile: DUO_CONTRAPUNTAL_POLICY_JAZZ.dissonanceProfile,
+    preferredImitationTypes: ['free'],
+    rhythmicIndependenceRequired: true,
+    lineRoleAssignment: 'dynamic',
+  },
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.65,
+    registerInterlock: true,
+    intervalPreference: 'chromatic_pedal_modal',
+  },
 };
 
 const BERG_FINGERPRINT_RECEIPTS = [

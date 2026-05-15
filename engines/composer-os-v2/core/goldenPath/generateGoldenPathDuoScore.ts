@@ -3317,13 +3317,7 @@ function buildGuitarPart(
         staggerGuitar,
       }, engineVrbId, context);
       normalizeMeasureToEighthBeatGrid(m);
-      if (isDuoGolden && !skipPhraseEngineStage3Anticipation) {
-        applyDuoGoldenPhraseEngineStage4MotifRhythm(m, seed, b);
-      }
-      normalizeMeasureToEighthBeatGrid(m);
-      duoBoostPhraseEndLanding(m, b, true);
-      duoEnforcePhraseEndCadence(m, b, context, effectiveLow, effectiveHigh, false);
-      normalizeMeasureToEighthBeatGrid(m);
+      /** Run 1c: keep guitar PCs aligned to abstract soprano; skip golden-path rhythm/cadence passes that retarget pitches. */
       if (guitarBarIsBusy(m)) consecutiveBusyGuitarBars++;
       else consecutiveBusyGuitarBars = 0;
       measures.push(m);

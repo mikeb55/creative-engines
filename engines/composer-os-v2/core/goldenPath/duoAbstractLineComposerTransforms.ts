@@ -1,6 +1,7 @@
 /**
  * Pass 4+5 — per-VRB post passes on duo abstract guitar/bass measures.
- * Brookmeyer + Bartók are identity (smoke Gate B + PC routing unchanged).
+ * Line-first VRBs (`LINE_FIRST_DUO_ENGINE_VRB_IDS`): identity (routing preserves AbstractLineSet PCs).
+ * All other VRBs: existing colour / timing passes below.
  */
 
 import type { CompositionContext } from '../compositionContext';
@@ -9,6 +10,7 @@ import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAn
 import { addEvent, createNote } from '../score-model/scoreEventBuilder';
 import type { MeasureModel, NoteEvent } from '../score-model/scoreModelTypes';
 import { clampPitch } from './guitarBassDuoHarmony';
+import { LINE_FIRST_DUO_ENGINE_VRB_ID_SET } from './lineFirstDuoEngineVrbIds';
 
 function rootPcFromBarSymbol(symbol: string): number {
   const hp = parseChordSymbol(symbol).harmonyPart;
@@ -55,7 +57,7 @@ export function postProcessDuoAbstractGuitar(
   effectiveHigh: number,
   spanQ: number,
 ): void {
-  if (!engineVrbId || engineVrbId === 'bob_brookmeyer' || engineVrbId === 'bartok') return;
+  if (!engineVrbId || LINE_FIRST_DUO_ENGINE_VRB_ID_SET.has(engineVrbId)) return;
   const sym = resolveBarSymbol(context, bar1Based).symbol;
   const rpc = rootPcFromBarSymbol(sym);
   const majScale = new Set<number>([0, 2, 4, 5, 7, 9, 11].map((i) => (rpc + i) % 12));
@@ -234,7 +236,7 @@ export function postProcessDuoAbstractBass(
   effectiveHigh: number,
   spanQ: number,
 ): void {
-  if (!engineVrbId || engineVrbId === 'bob_brookmeyer' || engineVrbId === 'bartok') return;
+  if (!engineVrbId || LINE_FIRST_DUO_ENGINE_VRB_ID_SET.has(engineVrbId)) return;
   const notes = sortedNotes(m);
   if (notes.length === 0) return;
   const clamp = (p: number) => clampPitch(p, effectiveLow, effectiveHigh);

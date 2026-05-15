@@ -10,48 +10,25 @@ import type { MeasureModel, NoteEvent as ScoreNoteEvent, PartModel } from '../sc
 import { addEvent, createNote } from '../score-model/scoreEventBuilder';
 import { measureBeatSpanQuartersOf } from '../score-model/measureBeatSpan';
 import { clampPitch } from './guitarBassDuoHarmony';
+import { liftToneToRange } from './guitarPhraseAuthority';
 import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 import { postProcessDuoAbstractBass, postProcessDuoAbstractGuitar } from './duoAbstractLineComposerTransforms';
+import { LINE_FIRST_DUO_ENGINE_VRB_IDS, LINE_FIRST_DUO_ENGINE_VRB_ID_SET } from './lineFirstDuoEngineVrbIds';
+
+export { LINE_FIRST_DUO_ENGINE_VRB_IDS };
 
 function isDuoGoldenPathPresetId(presetId: string): boolean {
   return isGuitarBassDuoFamily(presetId) || presetId === 'ecm_chamber';
 }
 
-/** VRBs with swing-chord abstract engine + duo guitar/bass fill from {@link AbstractLineSet}. */
-export const LINE_FIRST_DUO_ENGINE_VRB_IDS = [
-  'bob_brookmeyer',
-  'bartok',
-  'bill_evans',
-  'john_coltrane',
-  'pat_metheny',
-  'debussy',
-  'wayne_shorter',
-  'herbie_hancock',
-  'charles_mingus',
-  'duke_ellington',
-  'thad_jones',
-  'count_basie',
-  'ravel',
-  'maria_schneider',
-  'thelonious_monk',
-  'beethoven_late',
-  'turtle_island',
-  'reich_glass',
-  'shostakovich',
-  'lachenmann',
-  'ligeti',
-  'crumb_black_angels',
-  'part',
-  'dutilleux',
-] as const;
-
-const LINE_FIRST_DUO_ENGINE_VRB_ID_SET = new Set<string>(LINE_FIRST_DUO_ENGINE_VRB_IDS);
-
 /** Songwriter primary === same VRB id: skip abstract guitar/bass fill (slice path). `custom_locked` keeps fill for Gate B harnesses. */
 export function slicePrimaryBlocksLineFirstAbstract(context: CompositionContext, engineVrbId: string): boolean {
   const sid = context.generationMetadata?.songwriterStyleId;
   if (!sid || sid !== engineVrbId) return false;
-  if (context.generationMetadata?.harmonyModeRequested === 'custom_locked') return false;
+  const hm = context.generationMetadata?.harmonyModeRequested;
+  if (hm === 'custom_locked') return false;
+  /** Until harmony mode is known, do not block — avoids transient `undefined` during duo build ordering Gate B / harness parity. */
+  if (hm !== 'builtin' && hm !== 'custom') return false;
   return LINE_FIRST_DUO_ENGINE_VRB_ID_SET.has(engineVrbId);
 }
 
@@ -140,7 +117,7 @@ export function fillGuitarMeasureFromAbstractSoprano(
     }
     startQ = Math.max(0, Math.min(spanQ - 0.25, startQ));
     const durQ = Math.max(0.25, Math.min(spanQ - startQ, n.durationBars * spanQ));
-    const p = clampPitch(Math.round(n.pitchMidi), opts.effectiveLow, opts.effectiveHigh);
+    const p = liftToneToRange(Math.round(n.pitchMidi), opts.effectiveLow, opts.effectiveHigh);
     addEvent(m, createNote(p, startQ, durQ));
   }
   postProcessDuoAbstractGuitar(engineVrbId, m, context, bar1Based, opts.effectiveLow, opts.effectiveHigh, spanQ);
@@ -170,7 +147,7 @@ export function fillBassMeasureFromAbstractBassLine(
     const rel = n.offsetBars - (bar1Based - 1);
     const startQ = Math.max(0, Math.min(spanQ - 0.25, rel * spanQ));
     const durQ = Math.max(0.25, Math.min(spanQ - startQ, n.durationBars * spanQ));
-    const p = clampPitch(Math.round(n.pitchMidi), opts.effectiveLow, opts.effectiveHigh);
+    const p = liftToneToRange(Math.round(n.pitchMidi), opts.effectiveLow, opts.effectiveHigh);
     addEvent(m, createNote(p, startQ, durQ, 1, 'duo_abs_bass'));
   }
   postProcessDuoAbstractBass(engineVrbId, m, context, bar1Based, opts.effectiveLow, opts.effectiveHigh, spanQ);

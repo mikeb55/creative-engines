@@ -147,7 +147,8 @@ export type DuoVoiceIntervalPreference =
   | 'chromatic_voice_colour'
   | 'blues_chromatic'
   | 'whole_tone_chromatic'
-  | 'chromatic_flat2_tritone';
+  | 'chromatic_flat2_tritone'
+  | 'chromatic_pedal_modal'; // Oliver Nelson — minor-pedal / modal blues over chromatic inner motion
 
 export interface DuoVoicePolicy {
   guitarSource: 'soprano_line' | 'chord_block_derived';
