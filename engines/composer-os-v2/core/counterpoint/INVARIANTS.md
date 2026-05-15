@@ -116,6 +116,7 @@ ROUTING_ALL_PASS: true
 
 ## RUN 5 — CLOSEOUT
 
+- **Run 5 chore commit:** `b88b4c62`
 - **Gate B P3 harness:** `scripts/gateBRun5P3Verify.ts` — seed **75001**, 8 bars `custom_locked`, progression `Dm7 | G7 | Cmaj7 | Am7` ×2, key **C**. **Routing** column = duo realised (notes in guitar+bass bars 1–2 + `contrapuntalLineSet` present); script also prints **strictPC** (abstract PC bag parity bars 1–2) — ✗ is expected where colour post mutates PCs (decision **A**).
 - **7×3 matrix (Independence | Routing | Style):** `donald_fagen` ✓✓✓ · `bacharach` ✓✓✓ · `frank_zappa` ✓✓✓ · `ecm_chamber` ✓✓✓ · `fripp_king_crimson` ✓✓✓ · `james_brown` ✓✓✓ · `messiaen` ✓✓✓ (`ANY_FAIL: false`).
 - **Fixes applied:** none.

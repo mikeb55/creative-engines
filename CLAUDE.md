@@ -76,7 +76,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Runs:** Pass 2 → Pass 3 → Pass 4+5 → Run 1 → Run 1b → Run 1c → Run 2 → Run 3+4 → Run 5.
 
-**Final commit:** on `main` (2026-05-15) — **`chore(counterpoint): Run 5 closeout — Gate B P3 harness + architectural decision + CLAUDE.md final status`** (full SHA: `git log -1 --format=%H`).
+**Final commit:** `b88b4c62` — `chore(counterpoint): Run 5 closeout — Gate B P3 harness + architectural decision + CLAUDE.md final status`
 
 **Composers wired (line-first duo path):** 32 — see `engines/composer-os-v2/core/goldenPath/lineFirstDuoEngineVrbIds.ts` (`LINE_FIRST_DUO_ENGINE_VRB_IDS`).
 
