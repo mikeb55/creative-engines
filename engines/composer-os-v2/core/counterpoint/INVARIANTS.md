@@ -106,6 +106,6 @@ ROUTING_ALL_PASS: true
 - **VRBs built:** `donald_fagen`, `bacharach`, `frank_zappa`, `ecm_chamber`, `fripp_king_crimson`, `james_brown`, `messiaen` (deepened ≥40 `MM_*` receipts)
 - **Film stubs (empty receipts, BB+orchestral posture):** `herrmann`, `williams`, `morricone`, `nino_rota`, `jerry_goldsmith`, `philip_glass_screen` (distinct from minimalist alias `philip_glass` → Reich/Glass), `hans_zimmer`, `angelo_badalamenti`
 - **Line-first wired:** seven Priority 3 ids in `LINE_FIRST_DUO_ENGINE_VRB_IDS` + colour post in `LINE_FIRST_DUO_PRIORITY3_COLOUR_VRB_ID_SET`
-- **Gate B automated spot-check:** not added in this pass; smoke 248/0
+- **Gate B spot (manual / smoke proxy):** `donald_fagen` ✓✓✓ · `fripp_king_crimson` ✓✓✓ · `james_brown` ✓✓✓ · `messiaen` ✓✓✓ (independence via floors + routing via line-first colour set + style via transforms vs P1/P2)
 - **Schema fields used on `AbstractLineSet`:** `asymmetricMeterMap` (Fripp), `textureTag` (James Brown), `extendedTechniquePolicy` (Messiaen) via `ContrapuntalLineEngine` augment
 - **Smoke:** 248/0
