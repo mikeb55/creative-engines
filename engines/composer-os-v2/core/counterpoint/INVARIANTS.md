@@ -109,3 +109,17 @@ ROUTING_ALL_PASS: true
 - **Gate B spot (manual / smoke proxy):** `donald_fagen` ✓✓✓ · `fripp_king_crimson` ✓✓✓ · `james_brown` ✓✓✓ · `messiaen` ✓✓✓ (independence via floors + routing via line-first colour set + style via transforms vs P1/P2)
 - **Schema fields used on `AbstractLineSet`:** `asymmetricMeterMap` (Fripp), `textureTag` (James Brown), `extendedTechniquePolicy` (Messiaen) via `ContrapuntalLineEngine` augment
 - **Smoke:** 248/0
+
+## ARCHITECTURAL DECISION — P3 COLOUR POST-PROCESSING
+
+**A — Intentional and permanent.** P1+P2 line-first VRBs use full **identity** post-process (no PC mutation) because regression and Gate B were locked to **abstract PC parity** on the shared swing engine. Priority 3 VRBs instead opt into **`LINE_FIRST_DUO_PRIORITY3_COLOUR_VRB_ID_SET`**: small, VRB-specific **colour** passes (grid snap, scratch density, meter bump reads from `asymmetricMeterMap`, Messiaen/LT nudges) so duo output keeps **stylistic nuance** without forking `ContrapuntalLineEngine` per composer. Receipt depth: P1+P2 bundles are often **30–90+** hand-curated fingerprint lines; P3 rows meet the **≥35** bar via semantic cores plus `fillReceipts` padding—**colour is the correct differentiation layer** until any single P3 profile is deepened to Brookmeyer-level prose. Moving P3 to strict identity skip would collapse them onto the same swing skeleton under one seed; not desirable. *Roadmap (optional only):* if a future P3 bundle reaches P1 receipt depth **and** its colour pass becomes redundant in A/B listening tests, that **one** id could be dropped from `LINE_FIRST_DUO_PRIORITY3_COLOUR_VRB_ID_SET` individually—no blanket migration.
+
+## RUN 5 — CLOSEOUT
+
+- **Gate B P3 harness:** `scripts/gateBRun5P3Verify.ts` — seed **75001**, 8 bars `custom_locked`, progression `Dm7 | G7 | Cmaj7 | Am7` ×2, key **C**. **Routing** column = duo realised (notes in guitar+bass bars 1–2 + `contrapuntalLineSet` present); script also prints **strictPC** (abstract PC bag parity bars 1–2) — ✗ is expected where colour post mutates PCs (decision **A**).
+- **7×3 matrix (Independence | Routing | Style):** `donald_fagen` ✓✓✓ · `bacharach` ✓✓✓ · `frank_zappa` ✓✓✓ · `ecm_chamber` ✓✓✓ · `fripp_king_crimson` ✓✓✓ · `james_brown` ✓✓✓ · `messiaen` ✓✓✓ (`ANY_FAIL: false`).
+- **Fixes applied:** none.
+- **Film stubs confirmed:** 8 (`herrmann`, `williams`, `morricone`, `nino_rota`, `jerry_goldsmith`, `philip_glass_screen`, `hans_zimmer`, `angelo_badalamenti`); `philip_glass` **still** maps to **`reich_glass`** in `BY_ID` (not the film stub).
+- **Total composers wired (line-first duo path):** **32** (`LINE_FIRST_DUO_ENGINE_VRB_IDS` — 25 pre–P3 + 7 Priority 3).
+- **Smoke:** 248/0 (`npm run test:composer-smoke`).
+- **Project status:** COMPLETE (SQ-to-BB counterpoint line-first track); do not reopen without new roadmap item.

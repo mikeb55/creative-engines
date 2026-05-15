@@ -72,7 +72,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Pass 3 DONE:** eaf76297 — precompute wired at **`generateGoldenPathDuoScore.ts`** ~2620 before all **`precompute*EffectiveHarmonyBars`**; Brookmeyer + Bartók engine implemented; SQ/BB routers live; Gate B passed (independence ✓ routing ✓ style ✓ system ✓); **`INVARIANTS.md`** written.
 
-**Status:** COMPLETE. Engine wired and verified. Next use: duo golden-path depth pass (line-first layer now available to improve duo voice independence). Do not re-open this feature without a new roadmap item.
+### COUNTERPOINT SQ-TO-BB PROJECT — COMPLETE (2026-05-15)
+
+**Runs:** Pass 2 → Pass 3 → Pass 4+5 → Run 1 → Run 1b → Run 1c → Run 2 → Run 3+4 → Run 5.
+
+**Final commit:** on `main` (2026-05-15) — **`chore(counterpoint): Run 5 closeout — Gate B P3 harness + architectural decision + CLAUDE.md final status`** (full SHA: `git log -1 --format=%H`).
+
+**Composers wired (line-first duo path):** 32 — see `engines/composer-os-v2/core/goldenPath/lineFirstDuoEngineVrbIds.ts` (`LINE_FIRST_DUO_ENGINE_VRB_IDS`).
+
+**Film stubs (receipts pending):** 8 — `engines/composer-os-v2/core/composer/priority3VoiceRuleBundles.ts`.
+
+**Schema fields added (Run 2):** `asymmetricMeterMap`, `textureTag`, `extendedTechniquePolicy` on `AbstractLineSet`.
+
+**Gate B harness:** `engines/composer-os-v2/scripts/gateBRun1cDuoVerify.ts` (P1+P2+SQ family); `engines/composer-os-v2/scripts/gateBRun5P3Verify.ts` (Priority 3, seed 75001).
+
+**INVARIANTS:** `engines/composer-os-v2/core/counterpoint/INVARIANTS.md` (includes **ARCHITECTURAL DECISION — P3 COLOUR POST-PROCESSING**).
+
+**Do not reopen** without a new roadmap item.
+
+**Status:** COMPLETE — SQ-to-BB counterpoint line-first project closed Run 5 (2026-05-15).
 
 ## Recent update (2026-05-15) — String Quartet arranger blend (shipped)
 
