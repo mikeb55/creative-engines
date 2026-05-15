@@ -1,6 +1,7 @@
 /**
  * Pass 4+5 — per-VRB post passes on duo abstract guitar/bass measures.
- * Line-first VRBs (`LINE_FIRST_DUO_ENGINE_VRB_IDS`): identity (routing preserves AbstractLineSet PCs).
+ * Line-first VRBs (`LINE_FIRST_DUO_ENGINE_VRB_IDS`): identity by default (routing preserves AbstractLineSet PCs).
+ * Priority 3 colour VRBs (`LINE_FIRST_DUO_PRIORITY3_COLOUR_VRB_ID_SET`): light idiom nudges on top of abstract fill.
  * All other VRBs: existing colour / timing passes below.
  */
 
@@ -10,7 +11,10 @@ import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAn
 import { addEvent, createNote } from '../score-model/scoreEventBuilder';
 import type { MeasureModel, NoteEvent } from '../score-model/scoreModelTypes';
 import { clampPitch } from './guitarBassDuoHarmony';
-import { LINE_FIRST_DUO_ENGINE_VRB_ID_SET } from './lineFirstDuoEngineVrbIds';
+import {
+  LINE_FIRST_DUO_ENGINE_VRB_ID_SET,
+  LINE_FIRST_DUO_PRIORITY3_COLOUR_VRB_ID_SET,
+} from './lineFirstDuoEngineVrbIds';
 
 function rootPcFromBarSymbol(symbol: string): number {
   const hp = parseChordSymbol(symbol).harmonyPart;
@@ -57,7 +61,13 @@ export function postProcessDuoAbstractGuitar(
   effectiveHigh: number,
   spanQ: number,
 ): void {
-  if (!engineVrbId || LINE_FIRST_DUO_ENGINE_VRB_ID_SET.has(engineVrbId)) return;
+  if (
+    !engineVrbId ||
+    (LINE_FIRST_DUO_ENGINE_VRB_ID_SET.has(engineVrbId) &&
+      !LINE_FIRST_DUO_PRIORITY3_COLOUR_VRB_ID_SET.has(engineVrbId))
+  ) {
+    return;
+  }
   const sym = resolveBarSymbol(context, bar1Based).symbol;
   const rpc = rootPcFromBarSymbol(sym);
   const majScale = new Set<number>([0, 2, 4, 5, 7, 9, 11].map((i) => (rpc + i) % 12));
@@ -221,6 +231,76 @@ export function postProcessDuoAbstractGuitar(
       }
       break;
     }
+    case 'donald_fagen': {
+      const step = spanQ / 16;
+      for (const n of notes) {
+        n.startBeat = Math.min(spanQ - n.duration, Math.round(n.startBeat / step) * step);
+      }
+      if (notes.length) {
+        const peak = notes.reduce((a, b) => (a.startBeat + a.duration > b.startBeat + b.duration ? a : b));
+        peak.duration = Math.min(spanQ - peak.startBeat, peak.duration + step);
+      }
+      replaceMeasureNotes(m, notes);
+      break;
+    }
+    case 'bacharach': {
+      const last = notes[notes.length - 1]!;
+      last.duration = Math.min(spanQ - last.startBeat, last.duration + Math.min(0.5, spanQ * 0.07));
+      for (const n of notes) {
+        const pc = n.pitch % 12;
+        const maj = [0, 2, 4, 5, 7, 9, 11].map((i) => (rpc + i) % 12);
+        if (maj.includes((pc + 1) % 12)) n.pitch = clamp(n.pitch + 1);
+      }
+      replaceMeasureNotes(m, notes);
+      break;
+    }
+    case 'frank_zappa': {
+      for (let i = 0; i < notes.length; i++) {
+        if ((i + bar1Based) % 2 === 0) notes[i]!.pitch = clamp(notes[i]!.pitch + (i % 3 === 0 ? 2 : -1));
+      }
+      replaceMeasureNotes(m, notes);
+      break;
+    }
+    case 'ecm_chamber': {
+      for (const n of notes) {
+        n.duration = Math.min(spanQ - n.startBeat, Math.max(0.5, n.duration * 1.25));
+        n.velocity = Math.min(72, (n.velocity ?? 72) - 4);
+      }
+      break;
+    }
+    case 'fripp_king_crimson': {
+      const map = context.generationMetadata?.contrapuntalLineSet?.asymmetricMeterMap;
+      const bump = map?.length ? 0.0625 * (1 + (bar1Based % map.length)) : 0.0625;
+      for (const n of notes) {
+        n.startBeat = Math.min(spanQ - n.duration, n.startBeat + bump);
+      }
+      replaceMeasureNotes(m, notes);
+      break;
+    }
+    case 'james_brown': {
+      const pcs = notes.map((n) => ((n.pitch % 12) + 12) % 12);
+      const srcPc = pcs[0] ?? rpc;
+      const step = spanQ / 16;
+      const out: NoteEvent[] = [];
+      for (let i = 0; i < 16 && i * step < spanQ - 0.01; i++) {
+        const usePc = pcs[i % Math.max(1, pcs.length)] ?? srcPc;
+        const oct = Math.floor((notes[0]?.pitch ?? 60) / 12);
+        const pit = clamp(oct * 12 + usePc);
+        out.push(createNote(pit, i * step, step * 0.85));
+      }
+      replaceMeasureNotes(m, out);
+      break;
+    }
+    case 'messiaen': {
+      const minBars = context.generationMetadata?.contrapuntalLineSet?.extendedTechniquePolicy?.minBarsPerChord ?? 2;
+      const colour = minBars >= 2 ? 2 : 1;
+      for (const n of notes) {
+        n.pitch = clamp(n.pitch + (bar1Based % 2 === 0 ? colour : -colour));
+        n.duration = Math.min(spanQ - n.startBeat, Math.max(n.duration, spanQ / Math.max(1, minBars)));
+      }
+      replaceMeasureNotes(m, notes);
+      break;
+    }
     default:
       break;
   }
@@ -236,7 +316,13 @@ export function postProcessDuoAbstractBass(
   effectiveHigh: number,
   spanQ: number,
 ): void {
-  if (!engineVrbId || LINE_FIRST_DUO_ENGINE_VRB_ID_SET.has(engineVrbId)) return;
+  if (
+    !engineVrbId ||
+    (LINE_FIRST_DUO_ENGINE_VRB_ID_SET.has(engineVrbId) &&
+      !LINE_FIRST_DUO_PRIORITY3_COLOUR_VRB_ID_SET.has(engineVrbId))
+  ) {
+    return;
+  }
   const notes = sortedNotes(m);
   if (notes.length === 0) return;
   const clamp = (p: number) => clampPitch(p, effectiveLow, effectiveHigh);
@@ -364,6 +450,59 @@ export function postProcessDuoAbstractBass(
     case 'thelonious_monk': {
       if ((bar1Based + 2) % 4 === 0) {
         for (const n of notes) n.pitch = clamp(n.pitch + 1);
+      }
+      break;
+    }
+    case 'donald_fagen': {
+      const extra: NoteEvent[] = [];
+      for (const n of notes) {
+        if (n.startBeat >= 0.25) {
+          extra.push(createNote(clamp(n.pitch - 1), n.startBeat - 0.25, 0.25));
+        }
+      }
+      replaceMeasureNotes(m, [...extra, ...notes].sort((a, b) => a.startBeat - b.startBeat));
+      break;
+    }
+    case 'bacharach': {
+      const last = notes[notes.length - 1];
+      if (last) last.pitch = clamp(last.pitch + 1);
+      break;
+    }
+    case 'frank_zappa': {
+      if (bar1Based % 2 === 1) {
+        for (const n of notes) n.pitch = clamp(n.pitch + (n.startBeat < spanQ * 0.5 ? 5 : -3));
+      }
+      replaceMeasureNotes(m, notes);
+      break;
+    }
+    case 'ecm_chamber': {
+      if (bar1Based % 2 === 1 && notes[0]) {
+        notes[0]!.startBeat = Math.min(spanQ - notes[0]!.duration, notes[0]!.startBeat + 0.125);
+      }
+      break;
+    }
+    case 'fripp_king_crimson': {
+      const map = context.generationMetadata?.contrapuntalLineSet?.asymmetricMeterMap;
+      const bump = map?.length ? 0.125 * (bar1Based % map.length) : 0.125;
+      for (const n of notes) {
+        n.startBeat = Math.min(spanQ - n.duration, n.startBeat + bump);
+      }
+      replaceMeasureNotes(m, notes);
+      break;
+    }
+    case 'james_brown': {
+      const pat = context.generationMetadata?.contrapuntalLineSet?.textureTag?.strongBeatPattern ?? [1, 0, 0, 0];
+      const hit = pat[(bar1Based - 1) % pat.length] ?? 1;
+      for (const n of notes) {
+        if (hit) n.startBeat = Math.round(n.startBeat * 4) / 4;
+        else n.startBeat = Math.min(spanQ - n.duration, n.startBeat + 0.125);
+      }
+      replaceMeasureNotes(m, notes);
+      break;
+    }
+    case 'messiaen': {
+      for (const n of notes) {
+        n.duration = Math.min(spanQ - n.startBeat, Math.max(0.5, n.duration * 1.2));
       }
       break;
     }

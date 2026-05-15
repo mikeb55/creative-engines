@@ -19,6 +19,41 @@ import type {
   NoteEvent,
 } from './abstractLineSet';
 
+function augmentAbstractLineSetSchema(vrbId: string, lines: AbstractLineSet): AbstractLineSet {
+  if (vrbId === 'fripp_king_crimson') {
+    return {
+      ...lines,
+      asymmetricMeterMap: [
+        { barIndex: 0, numerator: 7, denominator: 8, lcmGridUnit: '16th' },
+        { barIndex: 1, numerator: 15, denominator: 16, lcmGridUnit: '16th' },
+        { barIndex: 2, numerator: 5, denominator: 4, lcmGridUnit: '16th' },
+      ],
+    };
+  }
+  if (vrbId === 'messiaen') {
+    return {
+      ...lines,
+      extendedTechniquePolicy: {
+        limitedTranspositionMode: true,
+        colourTag: 'mode_3_resonance',
+        suppressFunctionalResolution: true,
+        minBarsPerChord: 2,
+      },
+    };
+  }
+  if (vrbId === 'james_brown') {
+    return {
+      ...lines,
+      textureTag: {
+        type: 'funk_grid',
+        gridUnit: '16th',
+        strongBeatPattern: [1, 0, 0, 0],
+      },
+    };
+  }
+  return lines;
+}
+
 function rng01(seed: number, salt: number): number {
   let x = Math.imul(seed + salt * 7919, 1103515245);
   x = (x ^ (x >>> 13)) >>> 0;
@@ -329,9 +364,16 @@ export class ContrapuntalLineEngine {
   generateLines(lengthBars: number, sourceMode: AbstractLineSet['sourceMode']): AbstractLineSet {
     void sourceMode;
     const seed = this.context.seed ?? 0;
-    if (this.vrbId === 'bartok') return buildBartokLineSet(this.context, lengthBars, seed);
+    if (this.vrbId === 'bartok') {
+      return augmentAbstractLineSetSchema(this.vrbId, buildBartokLineSet(this.context, lengthBars, seed));
+    }
     const pol = getVoiceRuleBundle(this.vrbId).contrapuntalLinePolicy;
-    if (pol?.enabled) return buildSwingChordLineSetForVrb(this.context, lengthBars, seed, this.vrbId);
+    if (pol?.enabled) {
+      return augmentAbstractLineSetSchema(
+        this.vrbId,
+        buildSwingChordLineSetForVrb(this.context, lengthBars, seed, this.vrbId),
+      );
+    }
     throw new Error(`ContrapuntalLineEngine: unsupported vrbId ${this.vrbId}`);
   }
 

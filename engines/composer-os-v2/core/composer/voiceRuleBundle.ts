@@ -3,7 +3,7 @@
  * Reference vocabulary only — may import cross-cutting engine types from `core/counterpoint/`.
  */
 
-import type { DissonanceProfile } from '../counterpoint/abstractLineSet';
+import type { AbstractLineTextureTag, DissonanceProfile } from '../counterpoint/abstractLineSet';
 
 export type BassPolicyRole =
   | 'root'
@@ -148,7 +148,13 @@ export type DuoVoiceIntervalPreference =
   | 'blues_chromatic'
   | 'whole_tone_chromatic'
   | 'chromatic_flat2_tritone'
-  | 'chromatic_pedal_modal'; // Oliver Nelson — minor-pedal / modal blues over chromatic inner motion
+  | 'chromatic_pedal_modal' // Oliver Nelson — minor-pedal / modal blues over chromatic inner motion
+  | 'chromatic_studio'
+  | 'chromatic_lush'
+  | 'chromatic_polytonal'
+  | 'modal_sparse'
+  | 'pentatonic_diatonic'
+  | 'limited_transposition';
 
 export interface DuoVoicePolicy {
   guitarSource: 'soprano_line' | 'chord_block_derived';
@@ -156,6 +162,12 @@ export interface DuoVoicePolicy {
   rhythmicIndependenceFloor: number;
   registerInterlock: boolean;
   intervalPreference: DuoVoiceIntervalPreference;
+  /** When true, duo post-process may read {@link AbstractLineSet.asymmetricMeterMap} (Fripp / Crimson). */
+  useAsymmetricMeterMap?: boolean;
+  /** Default funk texture tag for line-first post (James Brown). */
+  textureTagType?: AbstractLineTextureTag['type'];
+  /** When true, duo post-process may read {@link AbstractLineSet.extendedTechniquePolicy} (Messiaen). */
+  useExtendedTechniquePolicy?: boolean;
 }
 
 /** SQ VRB duo defaults — spread as `DUO_VOICE_POLICY_SQ_FAMILY_STUB`; per-bundle overrides floors in `voiceRuleBundles.ts`. */

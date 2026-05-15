@@ -26,6 +26,23 @@ import { SATIE_VRF_FINGERPRINT_RECEIPTS } from './satieVrbFingerprints';
 import { ORNETTE_COLEMAN_VRF_FINGERPRINT_RECEIPTS } from './ornetteColemanVrbFingerprints';
 import { GERSHWIN_VRF_FINGERPRINT_RECEIPTS } from './gershwinVrbFingerprints';
 import { COLE_PORTER_VRF_FINGERPRINT_RECEIPTS } from './colePorterVrbFingerprints';
+import {
+  BADALAMENTI_FILM_STUB,
+  BACHARACH,
+  DONALD_FAGEN,
+  ECM_CHAMBER,
+  FRANK_ZAPPA,
+  FRIPP_KING_CRIMSON,
+  GOLDSMITH_FILM_STUB,
+  HANS_ZIMMER_FILM_STUB,
+  HERRMANN_FILM_STUB,
+  JAMES_BROWN,
+  MESSIAEN,
+  MORRICONE_FILM_STUB,
+  PHILIP_GLASS_FILM_STUB,
+  ROTA_FILM_STUB,
+  WILLIAMS_FILM_STUB,
+} from './priority3VoiceRuleBundles';
 
 /** Interval-class seeds aligned with Threadgill / IntervalSetSystem posture (engine-local). */
 const THREADGILL_INTERVAL_CLASS_SEEDS = [1, 2, 3, 5, 6, 7, 8, 10];
@@ -2248,58 +2265,6 @@ const THELONIOUS_MONK: VoiceRuleBundle = {
   },
 };
 
-const MESSIAEN: VoiceRuleBundle = {
-  voiceId: 'messiaen',
-  harmonicRhythm: {
-    minChordDurationBars: 2,
-    maxChordDurationBars: 24,
-    allowMidBarChange: false,
-  },
-  bassPolicy: {
-    role: 'root',
-    allowOctaveDoubling: false,
-  },
-  voicingPolicy: {
-    minSpreadSemitones: 14,
-    maxSpreadSemitones: 38,
-    clusterSizeNotes: [4, 10],
-    forbidParallelFifths: false,
-    forbidOctaveDoubling: false,
-  },
-  melodicPolicy: {
-    contour: 'angular',
-    maxLeapSemitones: 24,
-  },
-  orchestrationPolicy: {
-    anchorToneCount: 2,
-    mutateSingleVoiceAtTime: true,
-    allowCollectiveImprov: false,
-    fingerprintReceipts: [
-      'Harmony: Mode 3² as primary colour — 9-note limited-transposition set; favour this transposition in harmony spine',
-      'Melodic posture: modes are harmonic reservoirs — avoid monophonic modal scale runs as structural melody (post-1940 vocabulary)',
-      'Colour gate: track ≥3 chord symbols in same mode family before treating registral colour shifts as “loaded”',
-      'Chord of Resonance: Mode-3 resonance sonorities anchored in pool rows (`maj9/E` shells) — not tonic resolution',
-      'Orchestration: stained-glass CTI voicing — four distinct chord colours over a shared bass anchor across families',
-      'Rhythm: non-retrogradable cells — palindrome durational DNA at phrase windows; barlines mark phrases not march beats',
-      'Rhythm: additive inserts — sneak +1 sixteenth into ostinati; phrase totals favour primes (17/19/23 sixteenths)',
-      'Birdsong: extreme treble ornamental strata — 16th/32nd filament streams independent of harmonic grid',
-      'Temporal layering: eternal palindrome layer vs fleeting birdsong layer sounding simultaneously',
-      'Voice-leading: colour translation — lateral symmetric moves; ban classical V→I functional discharge in rail',
-      'Register: cathedral spacing — keep bass tower ≥3 octaves under birdsong glitter unless texture brief says otherwise',
-      'Period posture: early=modes+theology · middle=birdsong-as-architecture + ondes-colour · late=birdsong-dominant colour cosmology',
-    ],
-  },
-  formPolicy: {
-    narrativeArc: 'free',
-    sectionRecallEnforced: false,
-  },
-  rhythmPolicy: { antiMetric: true },
-  repairPolicy: {
-    resolveParallels: false,
-    maxVoiceOverlap: 6,
-  },
-};
-
 const BEETHOVEN_LATE: VoiceRuleBundle = {
   voiceId: 'beethoven_late',
   harmonicRhythm: {
@@ -3024,6 +2989,36 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   alban_berg: BERG,
   messiaen: MESSIAEN,
   olivier_messiaen: MESSIAEN,
+  donald_fagen: DONALD_FAGEN,
+  fagen: DONALD_FAGEN,
+  steely_dan: DONALD_FAGEN,
+  bacharach: BACHARACH,
+  burt_bacharach: BACHARACH,
+  frank_zappa: FRANK_ZAPPA,
+  zappa: FRANK_ZAPPA,
+  ecm_chamber: ECM_CHAMBER,
+  ecm: ECM_CHAMBER,
+  fripp_king_crimson: FRIPP_KING_CRIMSON,
+  fripp: FRIPP_KING_CRIMSON,
+  king_crimson: FRIPP_KING_CRIMSON,
+  crimson: FRIPP_KING_CRIMSON,
+  james_brown: JAMES_BROWN,
+  jb: JAMES_BROWN,
+  herrmann: HERRMANN_FILM_STUB,
+  bernard_herrmann: HERRMANN_FILM_STUB,
+  williams: WILLIAMS_FILM_STUB,
+  john_williams: WILLIAMS_FILM_STUB,
+  morricone: MORRICONE_FILM_STUB,
+  ennio_morricone: MORRICONE_FILM_STUB,
+  rota: ROTA_FILM_STUB,
+  nino_rota: ROTA_FILM_STUB,
+  goldsmith: GOLDSMITH_FILM_STUB,
+  jerry_goldsmith: GOLDSMITH_FILM_STUB,
+  philip_glass_screen: PHILIP_GLASS_FILM_STUB,
+  philip_glass_film: PHILIP_GLASS_FILM_STUB,
+  hans_zimmer: HANS_ZIMMER_FILM_STUB,
+  badalamenti: BADALAMENTI_FILM_STUB,
+  angelo_badalamenti: BADALAMENTI_FILM_STUB,
   debussy: DEBUSSY,
   claude_debussy: DEBUSSY,
   radiohead: RADIOHEAD,
