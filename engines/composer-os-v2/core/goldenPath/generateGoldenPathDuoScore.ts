@@ -17,6 +17,7 @@ declare module '../compositionContext' {
 import { chordTonesForChordSymbolWithContext, shouldUseUserChordSemanticsForTones } from '../harmony/harmonyChordTonePolicy';
 import { assertGuitarScoreMatchesHarmonyContext } from '../harmony/harmonyContext';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
+import { precomputeContrapuntalLines } from '../counterpoint/precomputeContrapuntalLines';
 import {
   parseChordSymbol,
   pitchClassToBassMidi,
@@ -2615,6 +2616,9 @@ function buildGuitarPart(
   const omMessiaenAccum = createMessiaenHarmonyAccumulator();
   const cpAccum = createCharlieParkerHarmonyAccumulator();
   const isDuoGoldenPath = isDuoGoldenPathPreset(context.presetId);
+  if (isDuoGoldenPath) {
+    precomputeContrapuntalLines(context, context.voiceBundle?.voiceId ?? '');
+  }
   if (isSongwriterBrianWilson && isDuoGoldenPath) {
     precomputeBrianWilsonEffectiveHarmonyBars(context);
   }

@@ -3,7 +3,7 @@
  * Merge function + explicit flag conflict resolution. No UI.
  */
 
-import type { VoiceRuleBundle } from './voiceRuleBundle';
+import type { VoiceRuleBundle, ContrapuntalLinePolicy } from './voiceRuleBundle';
 
 export class BlendConflictError extends Error {
   override readonly name = 'BlendConflictError';
@@ -115,6 +115,31 @@ function assertWeight(primaryWeight: number): { pw: number; sw: number } {
   const pw = primaryWeight;
   const sw = 1 - pw;
   return { pw, sw };
+}
+
+function mergeContrapuntalLinePolicy(
+  p: VoiceRuleBundle,
+  s: VoiceRuleBundle,
+  pw: number,
+  sw: number,
+): ContrapuntalLinePolicy | undefined {
+  const pe = p.contrapuntalLinePolicy;
+  const se = s.contrapuntalLinePolicy;
+  if (!pe && !se) return undefined;
+  if (!pe) return { ...se! };
+  if (!se) return { ...pe! };
+  const dissonanceProfile = pw >= sw ? { ...pe.dissonanceProfile } : { ...se.dissonanceProfile };
+  const preferredImitationTypes = [
+    ...new Set([...pe.preferredImitationTypes, ...se.preferredImitationTypes]),
+  ] as ContrapuntalLinePolicy['preferredImitationTypes'];
+  return {
+    enabled: pe.enabled || se.enabled,
+    dissonanceProfile,
+    preferredImitationTypes,
+    rhythmicIndependenceRequired: pe.rhythmicIndependenceRequired || se.rhythmicIndependenceRequired,
+    lineRoleAssignment:
+      pe.lineRoleAssignment === 'dynamic' || se.lineRoleAssignment === 'dynamic' ? 'dynamic' : 'fixed',
+  };
 }
 
 function wavg(a: number, b: number, pw: number, sw: number): number {
@@ -593,6 +618,7 @@ export function blendVoiceRuleBundles(
       sw,
     ),
     witStyleProfile: pickOptBool(p.witStyleProfile, s.witStyleProfile, pw, sw),
+    contrapuntalLinePolicy: mergeContrapuntalLinePolicy(p, s, pw, sw),
   };
 
   if (p.bergVoiceLeading && s.bergVoiceLeading) {

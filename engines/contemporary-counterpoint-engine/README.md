@@ -1,5 +1,12 @@
 # Contemporary Counterpoint Engine
 
+> ⚠️ **QUARANTINED — 2026-05-14**  
+> **Status:** conceptual reference only. Do not import or extend.  
+> **Superseded by:** `engines/composer-os-v2/core/counterpoint/ContrapuntalLineEngine.ts` (in progress).  
+> **Conceptual contract** preserved in `AbstractLineSet` spec (`engines/composer-os-v2/core/counterpoint/abstractLineSet.ts`) and `bridgeExample.md` in that folder.
+
+---
+
 Generates modern contrapuntal textures where harmony emerges from interacting lines rather than block chords.
 
 ## Purpose

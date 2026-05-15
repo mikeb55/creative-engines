@@ -43,6 +43,7 @@ import type { ClaveGridOverlayReceipt } from './rhythm/claveGridOverlay';
 import type { SoloLine, ZappaImitationReceipt, ZappasoloOptions } from './solo/soloTypes';
 import type { HarmonyContext } from './harmony/harmonyContext';
 import type { HarmonicScene } from './composer/harmonicScene';
+import type { AbstractLineSet } from './counterpoint/abstractLineSet';
 import type { VoiceRuleBundle } from './composer/voiceRuleBundle';
 import type { VoiceBundleHarmonicRhythmState } from './composer/voiceBundleHarmonicRhythm';
 import type { MacroFormPlan } from './form/macroFormPlanner';
@@ -1276,6 +1277,8 @@ export interface GenerationMetadata {
   brookmeyerLineFirstHierarchy?: boolean;
   /** When true, voice-leading solver relaxes parallel-motion penalties so harmony yields to line (`voiceLeadingSolver.ts`). */
   lineFirstHierarchy?: boolean;
+  /** Line-first SATB plan from {@link precomputeContrapuntalLines} (before effective-harmony-bar precompute). */
+  contrapuntalLineSet?: AbstractLineSet;
   brookmeyerContrapuntalLineCount?: number;
   contrapuntalLineCount?: number;
   brookmeyerEpisodePlanSummary?: string;

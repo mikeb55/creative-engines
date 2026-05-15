@@ -93,6 +93,10 @@ These labels are used in product and handoff docs; boundaries are conceptual, no
 
 Order for the duo **32-bar** Song Mode golden path (after core duo build, before final bar-math seal):
 
+### ContrapuntalLineEngine (duo golden path, pre-harmony-bar precompute)
+
+On **`generateGoldenPathDuoScore`**, when **`isDuoGoldenPath`**, **`precomputeContrapuntalLines`** runs **before** every songwriter **`precompute*EffectiveHarmonyBars`** call (including Basie). For VRB ids **`bob_brookmeyer`** and **`bartok`** with **`contrapuntalLinePolicy.enabled`**, **`GenerationMetadata.contrapuntalLineSet`** receives an **`AbstractLineSet`** from **`ContrapuntalLineEngine`**. **`lineFirstHierarchy`** in **`voiceLeadingSolver.ts`** is **not** fed the line set; Brookmeyer’s harmony precompute may still set that flag separately. **Pass 3 scope:** metadata + smoke musical gate; MusicXML / part writers do not yet consume **`contrapuntalLineSet`**.
+
 ### Phrase Engine V2 (pre-C1 pass)
 
 On the **guitar–bass duo** golden path, when **`songModeHookFirstIdentity`** is on and the preset is in the **guitar–bass duo family** with **32 bars**, **`generateGoldenPathDuoScore`** runs **Phrase Engine V2** immediately **before C1**: **`buildMotifPool`** on the working score, optional **`seedPoolFromHookIdentity`** when **`songModeHookIdentity`** is present on metadata, then **`applyPhraseEngineV2`** on the guitar part and **`applyBassMotifEcho`** on the bass part (same motif pool), replacing those parts on the score before the C1–C7 overlay chain.

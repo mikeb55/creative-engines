@@ -1,7 +1,9 @@
 /**
  * Phase 2+3a — compiled harmonic voice policy bundle (engine-only).
- * Reference vocabulary only — no imports from donor repos.
+ * Reference vocabulary only — may import cross-cutting engine types from `core/counterpoint/`.
  */
+
+import type { DissonanceProfile } from '../counterpoint/abstractLineSet';
 
 export type BassPolicyRole =
   | 'root'
@@ -119,6 +121,16 @@ export interface BergVoiceLeadingParams {
   rowClarityLevel: BergRowClarityLevel;
   /** Preferred independent strands (4–8); informational for orchestration planning. */
   contrapuntalStrandTarget?: number;
+}
+
+/** ContrapuntalLineEngine — VRB hooks for line-first generation + post-filter (Pass 2 stub). */
+export interface ContrapuntalLinePolicy {
+  enabled: boolean;
+  dissonanceProfile: DissonanceProfile;
+  preferredImitationTypes: Array<'strict' | 'free' | 'invertible'>;
+  rhythmicIndependenceRequired: boolean;
+  /** `fixed` = roles locked per voice (Pärt-style); `dynamic` = roles shift from interaction (Brookmeyer-style). */
+  lineRoleAssignment: 'fixed' | 'dynamic';
 }
 
 export interface VoiceRuleBundle {
@@ -308,4 +320,6 @@ export interface VoiceRuleBundle {
   textCoupledHarmonyEnabled?: boolean;
   /** Cole Porter — sidestep / delay / mode-trigger wit parameters active */
   witStyleProfile?: boolean;
+  /** ContrapuntalLineEngine — line-first SATB policy when VRB opts in (`bartok`, `bob_brookmeyer`, …). */
+  contrapuntalLinePolicy?: ContrapuntalLinePolicy;
 }

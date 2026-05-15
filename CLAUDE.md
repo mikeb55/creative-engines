@@ -62,9 +62,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Research / Perplexity prompts** (v1 interface sketch): see **`c:\Users\mike\Documents\Perplexity Research\000 Sonic Youth template.txt`** on this machine when extending the schema.
 
-## Recent update (2026-05-15)
+## Recent update (2026-05-15) — ContrapuntalLineEngine Pass 3 (shipped)
 
-**String Quartet — multi-arranger VRB blend (shipped):** **`engines/composer-os-v2/core/composer/vrbBlend.ts`** — **`blendVoiceRuleBundles`**, **`BlendConflictError`**, **`KNOWN_SAFE_SQ_BLEND_PAIRS`** / **`KNOWN_INCOMPATIBLE_SQ_BLEND_PAIRS`**, scalar merge + conflict table. **App API:** **`GenerateRequest.sqArrangerVrb`** optional composite **`VoiceRuleBundle`**. **`HomeGenerate.tsx`** (SQ preset only): dual arranger dropdowns + linked weight slider (0–100% / remainder), duplicate + incompatible-pair validation, blend **preview** card (harmonic rhythm span, melodic contour, bass role), **generate / Try Another / Demo** + Reharm apply disabled when selection invalid; single arranger + **None** path unchanged. **`StyleProfile.arrangerBlend`** + **`migrateArrangerStyleToArrangerBlend`** (`apps/composer-os-app/src/types/styleProfile.ts`). **SQ arranger list:** **15** VRB ids (adds **`arvo_part`**, **`satie`**, **`gershwin`**, **`cole_porter`**, **`ornette_coleman`** to **`ARRANGER_GROUP_SQ_VRB_ORDER`**). Roadmap **#4.5** + **SQ arranger surface parity** → **COMPLETE**. Smoke aggregate **248/0** (**63** suites).
+**Workstream:** Shared **line-first** layer — **`AbstractLineSet`** SATB strands for **`bob_brookmeyer`** + **`bartok`** when **`contrapuntalLinePolicy.enabled`**; stored on **`GenerationMetadata.contrapuntalLineSet`**. **Duo golden path:** **`precomputeContrapuntalLines`** in **`generateGoldenPathDuoScore.ts`** runs immediately after **`isDuoGoldenPath`**, **before** all **`precompute*EffectiveHarmonyBars`** (including Basie). **`ContrapuntalLineEngine`**: `generate` / `applyVrbFilter` / **`renderForStringQuartet`** (Vn1–Vc) / **`renderForBigBand`** (**`soliPlanForBundle`** + **`backgroundsPlanFromScene`** in **`bigBandSectionWriter.ts`**). **`vrbBlend`**: **`mergeContrapuntalLinePolicy`**. **`lineFirstHierarchy`** in **`voiceLeadingSolver.ts`** stays **independent** of the line set (Brookmeyer harmony slice still sets it later). **Pass 4 gap:** score / MusicXML pipeline does not yet read **`contrapuntalLineSet`** for part realisation. Smoke **`bobBrookmeyerSliceSmoke.test.ts`** adds **ContrapuntalLineEngine Pass 3** gate row — aggregate **`npm run test:composer-smoke`**: **249**/0 (**63** suites).
+
+**Pass 1 (inspection, done):** `engines/contemporary-counterpoint-engine` judged **too weak to wrap** (RNG scaffold, split score models). **Verdict C — rewrite** new engine in Composer OS; old package **quarantined** in its **README** (conceptual reference only; do not treat as production core).
+
+**Pass 2 (architecture, done):** New dir **`engines/composer-os-v2/core/counterpoint/`** — **`abstractLineSet.ts`**, **`precomputeContrapuntalLines.ts`**, **`ContrapuntalLineEngine.ts`**, **`bridgeExample.md`**. **`VoiceRuleBundle.contrapuntalLinePolicy`** on **`BARTOK`** and **`BOB_BROOKMEYER`**.
+
+**Pass 3 (done):** Wired + implemented as above; manifest / export alignment deferred.
+
+## Recent update (2026-05-15) — String Quartet arranger blend (shipped)
+
+**String Quartet — multi-arranger VRB blend:** **`engines/composer-os-v2/core/composer/vrbBlend.ts`** — **`blendVoiceRuleBundles`**, **`BlendConflictError`**, **`KNOWN_SAFE_SQ_BLEND_PAIRS`** / **`KNOWN_INCOMPATIBLE_SQ_BLEND_PAIRS`**, scalar merge + conflict table. **App API:** **`GenerateRequest.sqArrangerVrb`** optional composite **`VoiceRuleBundle`**. **`HomeGenerate.tsx`** (SQ preset only): dual arranger dropdowns + linked weight slider (0–100% / remainder), duplicate + incompatible-pair validation, blend **preview** card (harmonic rhythm span, melodic contour, bass role), **generate / Try Another / Demo** + Reharm apply disabled when selection invalid; single arranger + **None** path unchanged. **`StyleProfile.arrangerBlend`** + **`migrateArrangerStyleToArrangerBlend`** (`apps/composer-os-app/src/types/styleProfile.ts`). **SQ arranger list:** **15** VRB ids (adds **`arvo_part`**, **`satie`**, **`gershwin`**, **`cole_porter`**, **`ornette_coleman`** to **`ARRANGER_GROUP_SQ_VRB_ORDER`**). Roadmap **#4.5** + **SQ arranger surface parity** → **COMPLETE**. Smoke aggregate **249/0** (**63** suites) after contrapuntal gate row.
 
 ## Recent update (2026-05-14)
 
@@ -94,7 +104,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Chord Inspector — Reharm UI:** After a successful inspect, **Reharmonise** runs **`generateReharmCandidates`** and shows a **drift proximity** slider (**0.0–1.0**, step **0.1**, default **0.5**) that remaps to a target emotional drift and **reorders** the **top 8** same-root substitutes; each row shows substitute label, dominant **drift** readout, and **Use this chord** (fills the chord symbol field). The reharm panel **closes / clears** on a new **Inspect Chord** so results always match the current symbol.
 
-**Smoke tier:** **`npm run test:composer-smoke`** — **248**/0 PASS rows, **63** labelled suites (**`runSmokeTests.ts`** allowlist). Sync **`CLAUDE.md`**, **`docs/COMPOSER_OS_ROADMAP.md`** (Current + checklist), and **`docs/CHANGELOG.md`** when you change **`engines/composer-os-v2/tests/runSmokeTests.ts`**.
+**Smoke tier:** **`npm run test:composer-smoke`** — **249**/0 PASS rows, **63** labelled suites (**`runSmokeTests.ts`** allowlist). Sync **`CLAUDE.md`**, **`docs/COMPOSER_OS_ROADMAP.md`** (Current + checklist), and **`docs/CHANGELOG.md`** when you change **`engines/composer-os-v2/tests/runSmokeTests.ts`**.
 
 **Vault iReal / paste / PDF pipeline (2026-05-05):** **`VaultGenerationOptions`** — **`chorusCount`** (default **1**, max **64**) repeats the full chart with sequential **`barIndex`** / global **`startBeat`**; each chorus advances **melody** motif **`transformMotifThroughLayers`** tension phase (**primary → tension → chaos → recover → resolve**, modulo **5**) unless **`songwriterStyleId === 'sonic_youth'`** (holds rotation at **0** for SY texture). **Solo** mode repeats bars without motif pass; when **`riffStyle`** is omitted or **`triad-pair-pendulum`**, each chorus rotates effective vault style via **`TRIAD_PAIR_CHORUS_ROTATION`** (same SY bypass). **Melody** mode also wires **Build F** **`motifTransformer`** reuse after initial quadratonic fill. **Song Mode phrase validator:** **`sonic_youth`** bypasses **zigzag** (**`phrase_bar_zigzag`**) only.
 
@@ -151,7 +161,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Testing
 
 ```bash
-# Smoke tier (~5 min) — 248/0 PASS rows, 63 labelled suites (runSmokeTests.ts allowlist; sync CLAUDE + roadmap when edited)
+# Smoke tier (~5 min) — 249/0 PASS rows, 63 labelled suites (runSmokeTests.ts allowlist; sync CLAUDE + roadmap when edited)
 npm run test:composer-smoke
 
 # Fast tier (~15–20 min)

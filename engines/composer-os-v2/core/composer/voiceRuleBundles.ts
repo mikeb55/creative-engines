@@ -366,6 +366,19 @@ const BARTOK: VoiceRuleBundle = {
     resolveParallels: false,
     maxVoiceOverlap: 7,
   },
+  contrapuntalLinePolicy: {
+    enabled: true,
+    dissonanceProfile: {
+      allowedIntervals: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+      forbiddenIntervals: [6],
+      parallelFifthsAllowed: false,
+      parallelOctavesAllowed: false,
+      resolveByStep: false,
+    },
+    preferredImitationTypes: ['strict', 'invertible'],
+    rhythmicIndependenceRequired: true,
+    lineRoleAssignment: 'fixed',
+  },
 };
 
 const RAVEL: VoiceRuleBundle = {
@@ -1257,6 +1270,19 @@ const BOB_BROOKMEYER: VoiceRuleBundle = {
   repairPolicy: {
     resolveParallels: true,
     maxVoiceOverlap: 5,
+  },
+  contrapuntalLinePolicy: {
+    enabled: true,
+    dissonanceProfile: {
+      allowedIntervals: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+      forbiddenIntervals: [],
+      parallelFifthsAllowed: true,
+      parallelOctavesAllowed: false,
+      resolveByStep: false,
+    },
+    preferredImitationTypes: ['free', 'invertible'],
+    rhythmicIndependenceRequired: true,
+    lineRoleAssignment: 'dynamic',
   },
 };
 

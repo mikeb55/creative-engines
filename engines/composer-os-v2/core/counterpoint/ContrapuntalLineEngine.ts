@@ -1,0 +1,374 @@
+/**
+ * ContrapuntalLineEngine — line-first SATB composer + SQ/BB routers (Brookmeyer + Bartók only).
+ */
+
+import type { CompositionContext } from '../compositionContext';
+import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
+import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
+import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
+import type { BackgroundsPlan, SoliPlan } from '../composer/bigBandSectionWriter';
+import { backgroundsPlanFromScene, soliPlanForBundle } from '../composer/bigBandSectionWriter';
+import type {
+  AbstractLineSet,
+  CadenceTag,
+  DensityEnvelope,
+  ImitationEvent,
+  LineRole,
+  LineRoleTag,
+  NoteEvent,
+} from './abstractLineSet';
+
+function rng01(seed: number, salt: number): number {
+  let x = Math.imul(seed + salt * 7919, 1103515245);
+  x = (x ^ (x >>> 13)) >>> 0;
+  return (x % 100000) / 100000;
+}
+
+function rootPcFromBarSymbol(symbol: string): number {
+  const hp = parseChordSymbol(symbol).harmonyPart;
+  const m = hp.match(/^([A-G](?:#|b)?)/i);
+  const name = m?.[1] ?? 'C';
+  const key = name.charAt(0).toUpperCase() + name.slice(1);
+  return noteNameToPitchClass(key) ?? 0;
+}
+
+function midiForVoice(role: LineRole, pc: number, octave: number): number {
+  const o = octave * 12;
+  return Math.max(24, Math.min(108, o + ((pc % 12) + 12) % 12));
+}
+
+function intervalClass(a: number, b: number): number {
+  return Math.abs(a - b) % 12;
+}
+
+function hasParallelOctaveOrFifth(
+  prev: Record<LineRole, number | undefined>,
+  curr: Record<LineRole, number | undefined>,
+  forbidOct: boolean,
+  forbidFif: boolean,
+): boolean {
+  const pairs: [LineRole, LineRole][] = [
+    ['soprano', 'bass'],
+    ['soprano', 'alto'],
+    ['alto', 'tenor'],
+  ];
+  for (const [hi, lo] of pairs) {
+    const p1 = prev[hi];
+    const p2 = prev[lo];
+    const c1 = curr[hi];
+    const c2 = curr[lo];
+    if (p1 === undefined || p2 === undefined || c1 === undefined || c2 === undefined) continue;
+    const icp = intervalClass(p1, p2);
+    const icc = intervalClass(c1, c2);
+    const d1 = c1 - p1;
+    const d2 = c2 - p2;
+    const sameDir = Math.sign(d1) === Math.sign(d2) && d1 !== 0 && d2 !== 0;
+    if (!sameDir) continue;
+    if (forbidOct && icp === 0 && icc === 0 && Math.abs(c1 - p1) >= 12) return true;
+    if (forbidFif && icp === 7 && icc === 7) return true;
+  }
+  return false;
+}
+
+function enforceRegisterInterlock(voices: AbstractLineSet['voices']): void {
+  const grid = new Map<number, Partial<Record<LineRole, NoteEvent>>>();
+  for (const v of voices) {
+    for (const n of v.notes) {
+      const k = Math.round(n.offsetBars * 64) / 64;
+      let slot = grid.get(k);
+      if (!slot) {
+        slot = {};
+        grid.set(k, slot);
+      }
+      slot[v.role] = n;
+    }
+  }
+  for (const [, slot] of grid) {
+    const s = slot.soprano;
+    const a = slot.alto;
+    const t = slot.tenor;
+    const b = slot.bass;
+    if (!s || !a || !t || !b) continue;
+    const arr = [s.pitchMidi, a.pitchMidi, t.pitchMidi, b.pitchMidi].sort((x, y) => y - x);
+    s.pitchMidi = arr[0]!;
+    a.pitchMidi = Math.min(arr[1]!, s.pitchMidi - 2);
+    t.pitchMidi = Math.min(arr[2]!, a.pitchMidi - 2);
+    b.pitchMidi = Math.min(arr[3]!, t.pitchMidi - 2);
+  }
+}
+
+function buildBrookmeyerLineSet(context: CompositionContext, lengthBars: number, seed: number): AbstractLineSet {
+  const policy = getVoiceRuleBundle('bob_brookmeyer').contrapuntalLinePolicy!;
+  const dissonanceProfile = policy.dissonanceProfile;
+  const swingOffsets: Record<LineRole, number[]> = {
+    soprano: [0, 0.5],
+    alto: [0.25, 0.75],
+    tenor: [0.33, 0.66],
+    bass: [0.125, 0.625],
+  };
+  const tags: Record<LineRole, LineRoleTag[]> = {
+    soprano: ['melodic_lead'],
+    alto: ['counter_melody'],
+    tenor: ['harmonic_fill'],
+    bass: ['bass_anchor', 'rhythmic_anchor'],
+  };
+  const voices: AbstractLineSet['voices'] = (['soprano', 'alto', 'tenor', 'bass'] as const).map((role) => ({
+    role,
+    tags: tags[role],
+    notes: [] as NoteEvent[],
+  }));
+  const byRole = Object.fromEntries(voices.map((v) => [v.role, v])) as Record<
+    LineRole,
+    (typeof voices)[0]
+  >;
+  let prevPitches: Record<LineRole, number | undefined> = {
+    soprano: undefined,
+    alto: undefined,
+    tenor: undefined,
+    bass: undefined,
+  };
+  for (let b = 0; b < lengthBars; b++) {
+    const sym = resolveBarSymbol(context, b + 1).symbol;
+    const rpc = rootPcFromBarSymbol(sym);
+    const third = (rpc + 4) % 12;
+    const seventh = (rpc + 10) % 12;
+    const fifth = (rpc + 7) % 12;
+    const targets: Record<LineRole, number> = {
+      soprano: midiForVoice('soprano', third, 5),
+      alto: midiForVoice('alto', seventh, 4),
+      tenor: midiForVoice('tenor', fifth, 4),
+      bass: midiForVoice('bass', rpc, 3),
+    };
+    (['soprano', 'alto', 'tenor', 'bass'] as const).forEach((role) => {
+      const chrom = Math.floor(rng01(seed, b * 17 + role.charCodeAt(0)) * 5) - 2;
+      targets[role] += chrom;
+    });
+    const curr: Record<LineRole, number | undefined> = { ...prevPitches };
+    for (const role of ['soprano', 'alto', 'tenor', 'bass'] as const) {
+      for (const off of swingOffsets[role]) {
+        const base = targets[role];
+        let pitch = base + Math.floor(rng01(seed, b * 100 + off * 1000 + role.length) * 3) - 1;
+        curr[role] = pitch;
+        if (
+          hasParallelOctaveOrFifth(
+            prevPitches,
+            curr,
+            !dissonanceProfile.parallelOctavesAllowed,
+            !dissonanceProfile.parallelFifthsAllowed,
+          )
+        ) {
+          pitch += role === 'bass' ? -1 : 1;
+          curr[role] = pitch;
+        }
+        byRole[role].notes.push({
+          pitchMidi: pitch,
+          durationBars: 0.25,
+          offsetBars: b + off,
+        });
+      }
+    }
+    prevPitches = {
+      soprano: targets.soprano,
+      alto: targets.alto,
+      tenor: targets.tenor,
+      bass: targets.bass,
+    };
+  }
+  enforceRegisterInterlock(voices);
+  const densityEnvelope: DensityEnvelope = {
+    segments: [{ startBar: 1, endBar: lengthBars, density: 'medium' }],
+  };
+  const cadenceTags: CadenceTag[] =
+    lengthBars >= 4
+      ? [{ positionBars: lengthBars, type: 'authentic', strength: 'weak' }]
+      : [];
+  return {
+    voices,
+    cadenceTags,
+    densityEnvelope,
+    dissonanceProfile: { ...dissonanceProfile },
+    sourceMode: 'chords_only',
+    lengthBars,
+    styleSourceVrbId: 'bob_brookmeyer',
+  };
+}
+
+function buildBartokLineSet(context: CompositionContext, lengthBars: number, seed: number): AbstractLineSet {
+  const policy = getVoiceRuleBundle('bartok').contrapuntalLinePolicy!;
+  const dissonanceProfile = policy.dissonanceProfile;
+  const additive: Record<LineRole, number> = {
+    soprano: 0,
+    alto: 0.125,
+    tenor: 0.25,
+    bass: 0.375,
+  };
+  const voices: AbstractLineSet['voices'] = (['soprano', 'alto', 'tenor', 'bass'] as const).map((role) => ({
+    role,
+    tags:
+      role === 'soprano'
+        ? (['melodic_lead'] as LineRoleTag[])
+        : role === 'tenor'
+          ? (['canonic_follower', 'rhythmic_anchor'] as LineRoleTag[])
+          : (['harmonic_fill'] as LineRoleTag[]),
+    notes: [] as NoteEvent[],
+  }));
+  const byRole = Object.fromEntries(voices.map((v) => [v.role, v])) as Record<
+    LineRole,
+    (typeof voices)[0]
+  >;
+  const subject: number[] = [];
+  let p = 72;
+  for (let k = 0; k < 4; k++) {
+    const step = k % 2 === 0 ? 1 : 6;
+    p = p + (k === 2 ? 6 : step);
+    subject.push(p);
+    byRole.soprano.notes.push({
+      pitchMidi: p,
+      durationBars: 0.25,
+      offsetBars: additive.soprano + k * 0.25,
+    });
+  }
+  const delayBars = 1;
+  const intervalAnswer = -12;
+  for (let k = 0; k < 4; k++) {
+    const src = subject[k]!;
+    const tp = src + intervalAnswer;
+    byRole.tenor.notes.push({
+      pitchMidi: tp,
+      durationBars: 0.25,
+      offsetBars: delayBars + additive.tenor + k * 0.25,
+    });
+  }
+  for (let b = 0; b < lengthBars; b++) {
+    const sym = resolveBarSymbol(context, b + 1).symbol;
+    const rpc = rootPcFromBarSymbol(sym);
+    const ap = midiForVoice('alto', (rpc + 1) % 12, 4) + (b % 3);
+    byRole.alto.notes.push({
+      pitchMidi: ap,
+      durationBars: 0.25,
+      offsetBars: b + additive.alto,
+    });
+    const bp = midiForVoice('bass', (rpc + 11) % 12, 2) - (b % 2);
+    byRole.bass.notes.push({
+      pitchMidi: bp,
+      durationBars: 0.375,
+      offsetBars: b + additive.bass,
+    });
+  }
+  const imitationMap: ImitationEvent[] = [
+    {
+      sourceVoice: 'soprano',
+      imitatingVoice: 'tenor',
+      delayBars,
+      intervalSemitones: intervalAnswer,
+      type: 'strict',
+    },
+  ];
+  enforceRegisterInterlock(voices);
+  const densityEnvelope: DensityEnvelope = {
+    segments: [{ startBar: 1, endBar: lengthBars, density: lengthBars > 8 ? 'dense' : 'sparse' }],
+  };
+  return {
+    voices,
+    cadenceTags: [{ positionBars: lengthBars, type: 'modal', strength: 'medium' }],
+    densityEnvelope,
+    imitationMap,
+    dissonanceProfile: { ...dissonanceProfile },
+    sourceMode: 'chords_only',
+    lengthBars,
+    styleSourceVrbId: 'bartok',
+  };
+}
+
+/** Placeholder: SQ staff / technique assignment from AbstractLineSet. */
+export type StringQuartetVoicing = {
+  readonly format: 'string_quartet';
+  readonly parts: readonly string[];
+  readonly assignments: ReadonlyArray<{
+    readonly role: LineRole;
+    readonly staffName: string;
+    readonly notes: readonly NoteEvent[];
+  }>;
+};
+
+/** Routes through {@link soliPlanForBundle} / {@link backgroundsPlanFromScene} (existing BB section plans). */
+export type BigBandVoicing = {
+  readonly format: 'big_band';
+  readonly sectionLeaders: readonly string[];
+  readonly soliPlan?: SoliPlan;
+  readonly backgroundsPlan?: BackgroundsPlan;
+};
+
+export class ContrapuntalLineEngine {
+  constructor(
+    readonly vrbId: string,
+    readonly context: CompositionContext,
+  ) {}
+
+  /** Alias for `generateLines` (Pass 3 naming). */
+  generate(lengthBars: number, sourceMode: AbstractLineSet['sourceMode']): AbstractLineSet {
+    return this.generateLines(lengthBars, sourceMode);
+  }
+
+  generateLines(lengthBars: number, sourceMode: AbstractLineSet['sourceMode']): AbstractLineSet {
+    void sourceMode;
+    const seed = this.context.seed ?? 0;
+    if (this.vrbId === 'bob_brookmeyer') return buildBrookmeyerLineSet(this.context, lengthBars, seed);
+    if (this.vrbId === 'bartok') return buildBartokLineSet(this.context, lengthBars, seed);
+    throw new Error(`ContrapuntalLineEngine: unsupported vrbId ${this.vrbId}`);
+  }
+
+  applyVrbFilter(lines: AbstractLineSet): AbstractLineSet {
+    const out: AbstractLineSet = {
+      ...lines,
+      voices: lines.voices.map((v) => ({
+        ...v,
+        notes: v.notes.map((n) => {
+          if (lines.styleSourceVrbId !== 'bartok' || v.role !== 'soprano') return { ...n };
+          const lo = 60;
+          const hi = 105;
+          const pm = Math.min(hi, Math.max(lo, n.pitchMidi));
+          return {
+            ...n,
+            pitchMidi: pm,
+            articulationTag: Math.abs((n.offsetBars * 4) % 1) < 0.01 ? 'snap_pizz_candidate' : n.articulationTag,
+          };
+        }),
+      })),
+    };
+    return out;
+  }
+
+  renderForStringQuartet(lines: AbstractLineSet): StringQuartetVoicing {
+    const staffNames = ['Violin I', 'Violin II', 'Viola', 'Violoncello'] as const;
+    const order: LineRole[] = ['soprano', 'alto', 'tenor', 'bass'];
+    const assignments = order.map((role, i) => {
+      const v = lines.voices.find((x) => x.role === role)!;
+      return {
+        role,
+        staffName: staffNames[i]!,
+        notes: v.notes.map((n) => ({ ...n })),
+      };
+    });
+    return { format: 'string_quartet', parts: [...staffNames], assignments };
+  }
+
+  renderForBigBand(lines: AbstractLineSet): BigBandVoicing {
+    const bundle = getVoiceRuleBundle(lines.styleSourceVrbId) ?? this.context.voiceBundle;
+    const soliPlan = bundle ? soliPlanForBundle(bundle) : undefined;
+    const scene = this.context.harmonicScenes?.[0];
+    const backgroundsPlan = backgroundsPlanFromScene(scene);
+    const sectionLeaders = [
+      'lead_trumpet_or_lead_alto',
+      'lead_trombone',
+      'third_trumpet_or_second_trombone',
+      'bass_trombone_plus_string_bass',
+    ] as const;
+    return {
+      format: 'big_band',
+      sectionLeaders: [...sectionLeaders],
+      soliPlan,
+      backgroundsPlan,
+    };
+  }
+}
