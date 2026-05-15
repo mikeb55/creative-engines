@@ -124,3 +124,11 @@ ROUTING_ALL_PASS: true
 - **Total composers wired (line-first duo path):** **32** (`LINE_FIRST_DUO_ENGINE_VRB_IDS` — 25 pre–P3 + 7 Priority 3).
 - **Smoke:** 248/0 (`npm run test:composer-smoke`).
 - **Project status:** COMPLETE (SQ-to-BB counterpoint line-first track); do not reopen without new roadmap item.
+
+## Phase 6 Pass 5+6 — PIPELINE WIRING + GATE B (2026-05-15)
+
+- **Router move:** `sectionPlansForBigBandFromAbstract` lives in `core/counterpoint/sectionPlansForBigBandFromAbstract.ts` (per-composer soli/backgrounds switch + Phase 6 quartet pipeline). `bigBandSectionWriter.ts` keeps `soliPlanForBundle` / `backgroundsPlanFromScene` only.
+- **Pipeline:** `extractQuartetFeatures` → `deriveSectionWritingIntent` → `chooseVoicingGeometry` → `planSoliRhythm` / `planBackgroundsRhythm` (per phrase; optional `harmonyBars` on scene; undefined scene uses safe default `HarmonyBar`).
+- **`renderForBigBand`:** additive fields `quartetFeatures`, `sectionWritingIntents`, `voicingGeometries`, `soliRhythmPlans`, `backgroundsRhythmPlans` alongside existing `soliPlan` / `backgroundsPlan`. `styleProfileId` from `generationMetadata.songModeProfileRuleDiagnostics?.styleProfile` when present.
+- **Gate B harness:** `scripts/gateBPhase6Verify.ts` — **INDEPENDENCE** ✓ (`contrapuntalIndependence > 0.6` ⇒ ≥2 `lineDerived` assignments) · **ROUTING** ✓ (`bob_brookmeyer` / `bartok` line-first engine, not P3 colour; `postProcessDuoAbstractGuitar` identity on cloned measure) · **ANTI-COLLAPSE** ✓ (`forbidFullEnsembleChordHits` ⇒ no cluster in soli/backgrounds rhythm plans) · **SYSTEM** ✓ (`npm run test:composer-smoke` **248/0**).
+- **Smoke:** 248/0 (aggregate unchanged).

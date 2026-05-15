@@ -8,7 +8,11 @@ import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
 import type { BackgroundsPlan, SoliPlan } from '../composer/bigBandSectionWriter';
-import { backgroundsPlanFromScene, sectionPlansForBigBandFromAbstract } from '../composer/bigBandSectionWriter';
+import { backgroundsPlanFromScene } from '../composer/bigBandSectionWriter';
+import type { VoicingGeometry } from './chooseVoicingGeometry';
+import type { BackgroundsRhythmPlan, SoliRhythmPlan } from './planSoliAndBackgroundsRhythm';
+import type { QuartetFeatures, SectionWritingIntent } from './quartetFeatureTypes';
+import { sectionPlansForBigBandFromAbstract } from './sectionPlansForBigBandFromAbstract';
 import type {
   AbstractLineSet,
   CadenceTag,
@@ -342,12 +346,17 @@ export type StringQuartetVoicing = {
   }>;
 };
 
-/** Routes through {@link sectionPlansForBigBandFromAbstract} → {@link soliPlanForBundle} / {@link backgroundsPlanFromScene}. */
+/** Routes through {@link sectionPlansForBigBandFromAbstract} → legacy {@link soliPlanForBundle} / {@link backgroundsPlanFromScene} + Phase 6 metadata. */
 export type BigBandVoicing = {
   readonly format: 'big_band';
   readonly sectionLeaders: readonly string[];
   readonly soliPlan?: SoliPlan;
   readonly backgroundsPlan?: BackgroundsPlan;
+  readonly quartetFeatures?: readonly QuartetFeatures[];
+  readonly sectionWritingIntents?: readonly SectionWritingIntent[];
+  readonly voicingGeometries?: readonly VoicingGeometry[];
+  readonly soliRhythmPlans?: readonly SoliRhythmPlan[];
+  readonly backgroundsRhythmPlans?: readonly BackgroundsRhythmPlan[];
 };
 
 export class ContrapuntalLineEngine {
@@ -415,9 +424,12 @@ export class ContrapuntalLineEngine {
   renderForBigBand(lines: AbstractLineSet): BigBandVoicing {
     const bundle = getVoiceRuleBundle(lines.styleSourceVrbId) ?? this.context.voiceBundle;
     const scene = this.context.harmonicScenes?.[0];
-    const { soliPlan, backgroundsPlan } = bundle
-      ? sectionPlansForBigBandFromAbstract(bundle, scene, lines)
-      : { soliPlan: undefined, backgroundsPlan: undefined };
+    const diag = this.context.generationMetadata?.songModeProfileRuleDiagnostics;
+    const styleProfileId =
+      diag?.styleProfile !== undefined && diag.styleProfile != null ? String(diag.styleProfile) : undefined;
+    const plans = bundle
+      ? sectionPlansForBigBandFromAbstract(bundle, scene, lines, styleProfileId)
+      : null;
     const sectionLeaders = [
       'lead_trumpet_or_lead_alto',
       'lead_trombone',
@@ -427,8 +439,13 @@ export class ContrapuntalLineEngine {
     return {
       format: 'big_band',
       sectionLeaders: [...sectionLeaders],
-      soliPlan,
-      backgroundsPlan,
+      soliPlan: plans?.soliPlan,
+      backgroundsPlan: plans?.backgroundsPlan,
+      quartetFeatures: plans?.quartetFeatures,
+      sectionWritingIntents: plans?.sectionWritingIntents,
+      voicingGeometries: plans?.voicingGeometries,
+      soliRhythmPlans: plans?.soliRhythmPlans,
+      backgroundsRhythmPlans: plans?.backgroundsRhythmPlans,
     };
   }
 }
