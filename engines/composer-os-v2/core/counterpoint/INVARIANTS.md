@@ -90,3 +90,13 @@ ROUTING_ALL_PASS: true
 ```
 
 - **Smoke:** `npm run test:composer-smoke` → **248**/0 PASS rows, **63** suites.
+
+## RUN 2 — SCHEMA EXTENSION
+
+- **asymmetricMeterMap:** added (optional); for Fripp/King Crimson
+- **textureTag:** added (optional); for James Brown
+- **extendedTechniquePolicy:** added (optional); for Messiaen
+- All fields optional; no existing consumer affected
+- No composer wired in this pass
+- tsc: 0 new errors
+- Smoke: 248/0

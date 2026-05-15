@@ -55,6 +55,35 @@ export type DissonanceProfile = {
   resolveByStep: boolean;
 };
 
+export type AsymmetricMeterMapEntry = {
+  barIndex: number;
+  numerator: number;
+  denominator: number;
+  lcmGridUnit: '16th';
+};
+
+export type AbstractLineTextureTag = {
+  type:
+    | 'funk_grid'
+    | 'collective_shout'
+    | 'pedal_modal'
+    | 'riff_layer'
+    | 'orchestral_wedge'
+    | 'night_music'
+    | 'scherzo'
+    | 'dirge'
+    | 'neutral';
+  gridUnit?: '8th' | '16th' | '32nd';
+  strongBeatPattern?: number[];
+};
+
+export type AbstractLineExtendedTechniquePolicy = {
+  limitedTranspositionMode?: boolean;
+  colourTag?: string;
+  suppressFunctionalResolution?: boolean;
+  minBarsPerChord?: number;
+};
+
 export type AbstractLineSet = {
   voices: Array<{
     role: LineRole;
@@ -69,4 +98,7 @@ export type AbstractLineSet = {
   lengthBars: number;
   /** VRB id that shaped policy (e.g. `bartok`, `bob_brookmeyer`). */
   styleSourceVrbId: string;
+  asymmetricMeterMap?: AsymmetricMeterMapEntry[];
+  textureTag?: AbstractLineTextureTag;
+  extendedTechniquePolicy?: AbstractLineExtendedTechniquePolicy;
 };
