@@ -4,7 +4,9 @@
  */
 
 import type { AbstractLineSet } from '../core/counterpoint/abstractLineSet';
+import { deriveSectionWritingIntent } from '../core/counterpoint/deriveSectionWritingIntent';
 import { extractQuartetFeatures } from '../core/counterpoint/extractQuartetFeatures';
+import { getVoiceRuleBundle } from '../core/composer/voiceRuleBundles';
 
 function syntheticChoraleWholeNotes(): AbstractLineSet {
   const whole = (pitchMidi: number) => ({
@@ -60,6 +62,43 @@ function main(): void {
     console.error(JSON.stringify(f, null, 2));
     process.exit(1);
   }
+
+  const vrb = getVoiceRuleBundle('bob_brookmeyer');
+  const intents = deriveSectionWritingIntent(feats, vrb, 'STYLE_SMOKE_QUARTET');
+  if (intents.length !== 1) {
+    console.error(`FAIL: expected 1 intent, got ${intents.length}`);
+    process.exit(1);
+  }
+  const intent = intents[0]!;
+  const intentChecks: { label: string; ok: boolean }[] = [
+    { label: 'intent.textureGoal chorale', ok: intent.textureGoal === 'chorale' },
+    { label: 'intent.leadSection saxes', ok: intent.leadSection === 'saxes' },
+    { label: 'intent.harmonicHandling pad_support', ok: intent.harmonicHandling === 'pad_support' },
+    { label: 'intent.articulationFamily legato', ok: intent.articulationFamily === 'legato' },
+    { label: 'intent.antiCollapse always set', ok: intent.antiCollapse != null },
+    {
+      label: 'intent.antiCollapse.requireSourceLineMapping',
+      ok: intent.antiCollapse.requireSourceLineMapping === true,
+    },
+    {
+      label: 'intent.assignments include saxes lead',
+      ok: intent.assignments.some((a) => a.section === 'saxes' && a.role === 'lead'),
+    },
+    { label: 'intent.permitBlockVoicingRelease (homorhythmic chorale)', ok: intent.permitBlockVoicingRelease === true },
+    { label: 'intent.preserveVoiceIndependence (Brookmeyer line-first)', ok: intent.preserveVoiceIndependence === true },
+  ];
+  for (const c of intentChecks) {
+    if (c.ok) console.log(`PASS: ${c.label}`);
+    else {
+      console.log(`FAIL: ${c.label}`);
+      failed++;
+    }
+  }
+  if (failed > 0) {
+    console.error(JSON.stringify(intent, null, 2));
+    process.exit(1);
+  }
+
   console.log('smokeQuartetFeatures: OK');
 }
 
