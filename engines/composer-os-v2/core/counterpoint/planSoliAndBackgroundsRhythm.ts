@@ -55,7 +55,7 @@ export function planBackgroundsRhythm(
   let sectionWithSustain: EnsembleSection | undefined;
   let fullEnsembleAttackCluster = false;
 
-  if (harmonyBar.densityClass === 'sparse' || intent.textureGoal === 'chorale') {
+  if (intent.densityPlan.allowPads && intent.textureGoal === 'chorale') {
     backgroundsRhythm = 'whole';
   } else if (harmonyBar.densityClass === 'busy' && intent.textureGoal === 'contrapuntal') {
     backgroundsRhythm = 'half';
@@ -103,7 +103,7 @@ export function planSoliRhythm(
   let fullEnsembleAttackCluster = false;
   let soliUsesLongValues = false;
 
-  if (harmonyBar.densityClass === 'sparse' || intent.textureGoal === 'chorale') {
+  if (intent.densityPlan.allowPads && intent.textureGoal === 'chorale') {
     primaryDurationsBeats = [4];
     rhythmicActivity = 'long_legato';
     soliUsesLongValues = true;

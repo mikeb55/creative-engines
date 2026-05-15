@@ -144,8 +144,8 @@ function main(): void {
       ok: geoClose.shape === 'close' || geoClose.shape === 'cluster',
     },
     {
-      label: 'chooseVoicingGeometry open → spread|drop2and4',
-      ok: geoOpen.shape === 'spread' || geoOpen.shape === 'drop2and4',
+      label: 'chooseVoicingGeometry open → spread',
+      ok: geoOpen.shape === 'spread',
     },
   ];
   for (const c of geoChecks) {

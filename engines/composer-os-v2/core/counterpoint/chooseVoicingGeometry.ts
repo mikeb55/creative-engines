@@ -9,8 +9,14 @@ export interface VoicingGeometry {
   expandTowardPhrasePeak: boolean;
 }
 
+/** Callers may attach optional phrase scores without changing `SectionWritingIntent` schema. */
+export type SectionWritingIntentGeometry = SectionWritingIntent & {
+  convergenceScore?: number;
+  divergenceScore?: number;
+};
+
 /** Primary interval texture comes from styleProfileId tags (smoke + callers). */
-function intervalTextureFromIntent(intent: SectionWritingIntent): 'closeChromatic' | 'open' | 'neutral' {
+function intervalTextureFromIntent(intent: SectionWritingIntentGeometry): 'closeChromatic' | 'open' | 'neutral' {
   const tag = (intent.styleProfileId ?? '').toUpperCase();
   if (tag.includes('CLOSE_CHROMATIC') || tag.includes('PASS34_CLOSE')) {
     return 'closeChromatic';
@@ -27,19 +33,28 @@ function intervalTextureFromIntent(intent: SectionWritingIntent): 'closeChromati
   return 'neutral';
 }
 
-function convergenceLike(intent: SectionWritingIntent): boolean {
+function convergenceHigh(intent: SectionWritingIntentGeometry): boolean {
+  if (intent.convergenceScore != null && intent.convergenceScore > 0.62) {
+    return true;
+  }
   if (intent.motionRetention >= 0.62) return true;
   if (intent.textureGoal === 'chorale' || intent.textureGoal === 'homorhythmic') return true;
   return false;
 }
 
-function divergenceLike(intent: SectionWritingIntent): boolean {
+function divergenceHigh(intent: SectionWritingIntentGeometry): boolean {
+  if (intent.divergenceScore != null && intent.divergenceScore > 0.62) {
+    return true;
+  }
   if (intent.energyLevel >= 0.58 && intent.transparencyLevel >= 0.42) return true;
   if (intent.textureGoal === 'polyphonic' && intent.energyLevel > 0.5) return true;
   return false;
 }
 
-export function chooseVoicingGeometry(intent: SectionWritingIntent, vrb: VoiceRuleBundle): VoicingGeometry {
+export function chooseVoicingGeometry(
+  intent: SectionWritingIntentGeometry,
+  vrb: VoiceRuleBundle,
+): VoicingGeometry {
   const tex = intervalTextureFromIntent(intent);
   let shape: VoicingGeometryShape = 'close';
   let narrowAtCadence = false;
@@ -52,29 +67,25 @@ export function chooseVoicingGeometry(intent: SectionWritingIntent, vrb: VoiceRu
       shape = 'cluster';
     }
   } else if (tex === 'open') {
-    if (intent.leadSection === 'trumpets' || intent.leadSection === 'mixed_reeds_brass') {
-      shape = 'drop2and4';
-    } else {
-      shape = 'spread';
-    }
+    shape = 'spread';
   } else {
     shape = 'close';
   }
 
-  if (convergenceLike(intent)) {
+  if (convergenceHigh(intent)) {
     narrowAtCadence = true;
   } else {
     narrowAtCadence = false;
   }
 
-  if (divergenceLike(intent)) {
+  if (divergenceHigh(intent)) {
     expandTowardPhrasePeak = true;
   } else {
     expandTowardPhrasePeak = false;
   }
 
   const maxSpread = vrb.voicingPolicy.maxSpreadSemitones;
-  if (maxSpread <= 18 && (shape === 'spread' || shape === 'drop2and4')) {
+  if (maxSpread <= 18 && shape === 'spread') {
     shape = 'close';
   }
   if (maxSpread <= 14 && shape === 'cluster') {
