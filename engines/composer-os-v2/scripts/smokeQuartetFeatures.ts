@@ -4,8 +4,14 @@
  */
 
 import type { AbstractLineSet } from '../core/counterpoint/abstractLineSet';
+import { chooseVoicingGeometry } from '../core/counterpoint/chooseVoicingGeometry';
 import { deriveSectionWritingIntent } from '../core/counterpoint/deriveSectionWritingIntent';
 import { extractQuartetFeatures } from '../core/counterpoint/extractQuartetFeatures';
+import {
+  planBackgroundsRhythm,
+  planSoliRhythm,
+  type HarmonyBar,
+} from '../core/counterpoint/planSoliAndBackgroundsRhythm';
 import { getVoiceRuleBundle } from '../core/composer/voiceRuleBundles';
 
 function syntheticChoraleWholeNotes(): AbstractLineSet {
@@ -92,6 +98,93 @@ function main(): void {
   }
   if (failed > 0) {
     console.error(JSON.stringify(intent, null, 2));
+    process.exit(1);
+  }
+
+  const harmonyBarSparse: HarmonyBar = { barIndex: 0, densityClass: 'sparse', cadenceBeat: 3 };
+  const bg = planBackgroundsRhythm(intent, harmonyBarSparse, vrb);
+  const soli = planSoliRhythm(intent, harmonyBarSparse, vrb);
+  const rhythmChecks: { label: string; ok: boolean }[] = [
+    { label: 'planBackgroundsRhythm chorale → whole', ok: bg.backgroundsRhythm === 'whole' },
+    {
+      label: 'planSoliRhythm chorale → long values',
+      ok: soli.soliUsesLongValues === true && soli.primaryDurationsBeats.some((b) => b >= 4),
+    },
+  ];
+  for (const c of rhythmChecks) {
+    if (c.ok) console.log(`PASS: ${c.label}`);
+    else {
+      console.log(`FAIL: ${c.label}`);
+      failed++;
+    }
+  }
+  if (failed > 0) {
+    console.error(JSON.stringify({ bg, soli }, null, 2));
+    process.exit(1);
+  }
+
+  const geoClose = chooseVoicingGeometry(
+    { ...intent, styleProfileId: 'PASS34_CLOSE_CHROMATIC', textureGoal: 'polyphonic' },
+    vrb,
+  );
+  const geoOpen = chooseVoicingGeometry(
+    {
+      ...intent,
+      styleProfileId: 'PASS34_OPEN_INTERVAL',
+      textureGoal: 'polyphonic',
+      leadSection: 'saxes',
+      energyLevel: 0.62,
+      transparencyLevel: 0.45,
+    },
+    vrb,
+  );
+  const geoChecks: { label: string; ok: boolean }[] = [
+    {
+      label: 'chooseVoicingGeometry close chromatic → close|cluster',
+      ok: geoClose.shape === 'close' || geoClose.shape === 'cluster',
+    },
+    {
+      label: 'chooseVoicingGeometry open → spread|drop2and4',
+      ok: geoOpen.shape === 'spread' || geoOpen.shape === 'drop2and4',
+    },
+  ];
+  for (const c of geoChecks) {
+    if (c.ok) console.log(`PASS: ${c.label}`);
+    else {
+      console.log(`FAIL: ${c.label}`);
+      failed++;
+    }
+  }
+  if (failed > 0) {
+    console.error(JSON.stringify({ geoClose, geoOpen }, null, 2));
+    process.exit(1);
+  }
+
+  const intentForbid = {
+    ...intent,
+    antiCollapse: { ...intent.antiCollapse, forbidFullEnsembleChordHits: true },
+  };
+  const bgF = planBackgroundsRhythm(intentForbid, harmonyBarSparse, vrb);
+  const soliF = planSoliRhythm(intentForbid, harmonyBarSparse, vrb);
+  const forbidChecks: { label: string; ok: boolean }[] = [
+    {
+      label: 'forbidFullEnsembleChordHits → no full ensemble cluster (backgrounds)',
+      ok: bgF.fullEnsembleAttackCluster === false,
+    },
+    {
+      label: 'forbidFullEnsembleChordHits → no full ensemble cluster (soli)',
+      ok: soliF.fullEnsembleAttackCluster === false,
+    },
+  ];
+  for (const c of forbidChecks) {
+    if (c.ok) console.log(`PASS: ${c.label}`);
+    else {
+      console.log(`FAIL: ${c.label}`);
+      failed++;
+    }
+  }
+  if (failed > 0) {
+    console.error(JSON.stringify({ bgF, soliF }, null, 2));
     process.exit(1);
   }
 
