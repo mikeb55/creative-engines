@@ -1,6 +1,6 @@
 /**
  * Duo golden-path — wire {@link AbstractLineSet} soprano/bass into guitar/bass parts
- * (Brookmeyer + Bartók + Pass 4+5 P1/P2 VRBs; SQ bundles carry `duoVoicePolicy` only — no abstract fill).
+ * (Brookmeyer, Bartók, P1+P2 jazz VRBs, SQ VRB family + fall-through for others).
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
@@ -34,6 +34,15 @@ export const LINE_FIRST_DUO_ENGINE_VRB_IDS = [
   'ravel',
   'maria_schneider',
   'thelonious_monk',
+  'beethoven_late',
+  'turtle_island',
+  'reich_glass',
+  'shostakovich',
+  'lachenmann',
+  'ligeti',
+  'crumb_black_angels',
+  'part',
+  'dutilleux',
 ] as const;
 
 const LINE_FIRST_DUO_ENGINE_VRB_ID_SET = new Set<string>(LINE_FIRST_DUO_ENGINE_VRB_IDS);
@@ -181,9 +190,18 @@ function firstDownbeatNote(m: MeasureModel | undefined): ScoreNoteEvent | undefi
   return cands[0];
 }
 
+function partParallelCoMotion(gp: number | undefined, bp: number | undefined, g: number, b: number): boolean {
+  if (gp === undefined || bp === undefined) return false;
+  const dg = g - gp;
+  const db = b - bp;
+  if (dg === 0 || db === 0) return false;
+  return Math.sign(dg) === Math.sign(db);
+}
+
 /**
  * Strong-beat co-onset: consecutive guitar+bass downbeats → nudge bass +0.25q.
  * Threshold from `duoVoicePolicy.rhythmicIndependenceFloor`; Debussy skips count when stepwise parallel motion.
+ * Pärt (`part`): same-direction parallel downbeats nudge immediately. Lachenmann / Crumb: full-beat delay vs +0.25q.
  */
 export function applyDuoAbstractStrongBeatCoOnsetDisplacement(
   context: CompositionContext,
@@ -216,15 +234,26 @@ export function applyDuoAbstractStrongBeatCoOnsetDisplacement(
       const bPitch = b0.pitch;
       const debussyParallel =
         id === 'debussy' && debussyStepwiseParallelCoMotion(prevGp, prevBp, gPitch, bPitch);
-      if (!debussyParallel) {
+      const partPar = id === 'part' && partParallelCoMotion(prevGp, prevBp, gPitch, bPitch);
+      if (partPar) {
+        b0.startBeat = Math.min(b0.startBeat + 0.25, 3.75);
+        rec.push(`duo_abstract:part_parallel_nudge:bar=${b}`);
+        streak = 0;
+      } else if (debussyParallel) {
+        streak = 0;
+      } else {
         streak++;
         if (streak >= need) {
-          b0.startBeat = Math.min(b0.startBeat + 0.25, 3.75);
-          rec.push(`duo_abstract:co_onset_displace:bar=${b}`);
+          const silenceMode = id === 'lachenmann' || id === 'crumb_black_angels';
+          if (silenceMode) {
+            b0.startBeat = Math.min(b0.startBeat + 1.0, 3.25);
+            rec.push(`duo_abstract:co_onset_quarter_delay:bar=${b}`);
+          } else {
+            b0.startBeat = Math.min(b0.startBeat + 0.25, 3.75);
+            rec.push(`duo_abstract:co_onset_displace:bar=${b}`);
+          }
           streak = 0;
         }
-      } else {
-        streak = 0;
       }
       prevGp = gPitch;
       prevBp = bPitch;

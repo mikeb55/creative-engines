@@ -29,6 +29,22 @@ function replaceMeasureNotes(m: MeasureModel, notes: NoteEvent[]): void {
   }
 }
 
+function snapMidiToTriadTone(midi: number, rpc: number): number {
+  const pc = ((midi % 12) + 12) % 12;
+  const targets = [rpc, (rpc + 4) % 12, (rpc + 7) % 12];
+  let bestPc = pc;
+  let bestCost = 99;
+  for (const t of targets) {
+    const c = Math.min((pc - t + 12) % 12, (t - pc + 12) % 12);
+    if (c < bestCost) {
+      bestCost = c;
+      bestPc = t;
+    }
+  }
+  const oct = Math.floor(midi / 12);
+  return oct * 12 + bestPc;
+}
+
 /** Upper extensions / chromatic colour on abstract soprano skeleton (wraps base fill). */
 export function postProcessDuoAbstractGuitar(
   engineVrbId: string,
@@ -129,6 +145,74 @@ export function postProcessDuoAbstractGuitar(
       }
       break;
     }
+    case 'beethoven_late': {
+      const last = notes[notes.length - 1]!;
+      last.duration = Math.min(spanQ - last.startBeat, last.duration + Math.min(0.35, spanQ * 0.06));
+      break;
+    }
+    case 'turtle_island': {
+      for (const n of notes) {
+        const pc = n.pitch % 12;
+        const up = (pc + 2) % 12;
+        if (majScale.has(pc) && majScale.has(up)) n.pitch = clamp(n.pitch + 2);
+      }
+      replaceMeasureNotes(m, notes);
+      break;
+    }
+    case 'reich_glass': {
+      if (bar1Based % 4 === 1 && notes[0]) {
+        notes[0]!.startBeat = Math.min(spanQ - notes[0]!.duration, notes[0]!.startBeat + 0.125);
+      }
+      replaceMeasureNotes(m, notes);
+      break;
+    }
+    case 'shostakovich': {
+      if (bar1Based % 2 === 1) {
+        for (const n of notes) n.startBeat = Math.min(spanQ - n.duration, n.startBeat + 0.5);
+      }
+      replaceMeasureNotes(m, notes);
+      break;
+    }
+    case 'lachenmann': {
+      for (const n of notes) {
+        if (n.duration >= spanQ * 0.45) n.velocity = Math.min(40, n.velocity ?? 64);
+      }
+      break;
+    }
+    case 'ligeti': {
+      const lead = notes[0];
+      if (lead) {
+        const side = bar1Based % 2 === 0 ? 1 : -1;
+        const inner = createNote(
+          clamp(lead.pitch + side),
+          Math.min(spanQ - 0.25, lead.startBeat + 0.125),
+          0.25,
+        );
+        replaceMeasureNotes(m, [...notes, inner].sort((a, b) => a.startBeat - b.startBeat));
+      }
+      break;
+    }
+    case 'crumb_black_angels': {
+      if (bar1Based % 4 === 0 && notes.length > 1) {
+        notes.pop();
+        replaceMeasureNotes(m, notes);
+      }
+      break;
+    }
+    case 'part': {
+      for (const n of notes) {
+        n.pitch = clamp(snapMidiToTriadTone(n.pitch, rpc));
+      }
+      replaceMeasureNotes(m, notes);
+      break;
+    }
+    case 'dutilleux': {
+      for (let i = 0; i < notes.length; i++) {
+        if (i % 2 === 0) notes[i]!.pitch = clamp(notes[i]!.pitch + 1);
+      }
+      replaceMeasureNotes(m, notes);
+      break;
+    }
     case 'thelonious_monk': {
       if ((bar1Based + 2) % 4 === 0) {
         for (const n of notes) n.pitch = clamp(n.pitch + 1);
@@ -219,6 +303,60 @@ export function postProcessDuoAbstractBass(
     }
     case 'maria_schneider': {
       for (const n of notes) n.duration = Math.min(spanQ - n.startBeat, n.duration * 1.35);
+      break;
+    }
+    case 'beethoven_late': {
+      const extra: NoteEvent[] = [];
+      for (const n of notes) {
+        if (n.startBeat >= 0.25) {
+          extra.push(createNote(clamp(n.pitch - 1), n.startBeat - 0.25, 0.25));
+        }
+      }
+      replaceMeasureNotes(m, [...extra, ...notes].sort((a, b) => a.startBeat - b.startBeat));
+      break;
+    }
+    case 'turtle_island': {
+      for (const n of notes) {
+        if (n.startBeat >= 0.5) n.startBeat = Math.max(0, n.startBeat - 0.25);
+      }
+      replaceMeasureNotes(m, notes);
+      break;
+    }
+    case 'reich_glass': {
+      if (notes[0]) notes[0]!.duration = Math.min(spanQ - notes[0]!.startBeat, notes[0]!.duration + 0.75);
+      break;
+    }
+    case 'shostakovich': {
+      if (notes[0]) notes[0]!.duration = Math.min(spanQ - notes[0]!.startBeat, notes[0]!.duration + 0.5);
+      break;
+    }
+    case 'lachenmann': {
+      if (notes.length > 2) {
+        notes.splice(1, 1);
+        replaceMeasureNotes(m, notes);
+      }
+      break;
+    }
+    case 'ligeti': {
+      for (const n of notes) n.duration = Math.min(spanQ - n.startBeat, n.duration * 1.15);
+      replaceMeasureNotes(m, notes);
+      break;
+    }
+    case 'crumb_black_angels': {
+      for (const n of notes) n.duration = Math.min(spanQ - n.startBeat, n.duration * 1.2);
+      break;
+    }
+    case 'part': {
+      const symPart = resolveBarSymbol(context, bar1Based).symbol;
+      const rpcPart = rootPcFromBarSymbol(symPart);
+      for (const n of notes) {
+        n.pitch = clamp(snapMidiToTriadTone(n.pitch, rpcPart));
+      }
+      replaceMeasureNotes(m, notes);
+      break;
+    }
+    case 'dutilleux': {
+      if (notes[0]) notes[0]!.pitch = clamp(notes[0]!.pitch + 1);
       break;
     }
     case 'thelonious_monk': {

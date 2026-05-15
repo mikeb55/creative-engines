@@ -8,7 +8,7 @@ import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
 import type { BackgroundsPlan, SoliPlan } from '../composer/bigBandSectionWriter';
-import { backgroundsPlanFromScene, soliPlanForBundle } from '../composer/bigBandSectionWriter';
+import { backgroundsPlanFromScene, sectionPlansForBigBandFromAbstract } from '../composer/bigBandSectionWriter';
 import type {
   AbstractLineSet,
   CadenceTag,
@@ -307,7 +307,7 @@ export type StringQuartetVoicing = {
   }>;
 };
 
-/** Routes through {@link soliPlanForBundle} / {@link backgroundsPlanFromScene} (existing BB section plans). */
+/** Routes through {@link sectionPlansForBigBandFromAbstract} → {@link soliPlanForBundle} / {@link backgroundsPlanFromScene}. */
 export type BigBandVoicing = {
   readonly format: 'big_band';
   readonly sectionLeaders: readonly string[];
@@ -372,9 +372,10 @@ export class ContrapuntalLineEngine {
 
   renderForBigBand(lines: AbstractLineSet): BigBandVoicing {
     const bundle = getVoiceRuleBundle(lines.styleSourceVrbId) ?? this.context.voiceBundle;
-    const soliPlan = bundle ? soliPlanForBundle(bundle) : undefined;
     const scene = this.context.harmonicScenes?.[0];
-    const backgroundsPlan = backgroundsPlanFromScene(scene);
+    const { soliPlan, backgroundsPlan } = bundle
+      ? sectionPlansForBigBandFromAbstract(bundle, scene, lines)
+      : { soliPlan: undefined, backgroundsPlan: undefined };
     const sectionLeaders = [
       'lead_trumpet_or_lead_alto',
       'lead_trombone',

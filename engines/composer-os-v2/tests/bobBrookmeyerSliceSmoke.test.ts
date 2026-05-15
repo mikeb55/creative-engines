@@ -87,7 +87,8 @@ function brookmeyerContrapuntalGate(r: ReturnType<typeof runGoldenPathOnce>): bo
   );
 }
 
-const SQ_DUO_VOICE_POLICY_STUB_ONLY_IDS = [
+/** SQ VRB ids — Run 1: duo line-first engine + `contrapuntalLinePolicy.enabled`. */
+const SQ_FAMILY_DUO_ENGINE_IDS = [
   'beethoven_late',
   'turtle_island',
   'reich_glass',
@@ -112,10 +113,10 @@ function duoVoicePolicyStubsOk(): boolean {
   if (!bb || !bt) return false;
   if (bb.intervalPreference !== 'chromatic') return false;
   if (bt.intervalPreference !== 'ic1_tritone' || bt.rhythmicIndependenceFloor !== 0.8) return false;
-  for (const id of SQ_DUO_VOICE_POLICY_STUB_ONLY_IDS) {
+  for (const id of SQ_FAMILY_DUO_ENGINE_IDS) {
     const b = getVoiceRuleBundle(id);
     if (!b.duoVoicePolicy) return false;
-    if (b.contrapuntalLinePolicy?.enabled) return false;
+    if (!b.contrapuntalLinePolicy?.enabled) return false;
   }
   return true;
 }

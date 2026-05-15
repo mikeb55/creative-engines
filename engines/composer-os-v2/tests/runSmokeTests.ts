@@ -5,6 +5,8 @@
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N` in the smoke summary, then sync **N** + suite count into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
  * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **248** PASS rows, **63** suites (2026-05-15).
+ *
+ * Retired Cursor background smoke task IDs (pre-eb92c73a `harmonyModeRequested` slice gate + Gate B4 harness): **875851**, **984173** — no in-repo harness keyed by those IDs; failures were historical terminal runs only.
  */
 
 import { runReadinessTests } from './readiness.test';

@@ -484,7 +484,11 @@ const DUTILLEUX: VoiceRuleBundle = {
     resolveParallels: false,
     maxVoiceOverlap: 7,
   },
-  duoVoicePolicy: DUO_VOICE_POLICY_SQ_FAMILY_STUB,
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_COLOR,
+  duoVoicePolicy: {
+    ...DUO_VOICE_POLICY_SQ_FAMILY_STUB,
+    rhythmicIndependenceFloor: 0.75,
+  },
 };
 
 const GIL_EVANS_FINGERPRINT_RECEIPTS = [
@@ -2324,7 +2328,11 @@ const BEETHOVEN_LATE: VoiceRuleBundle = {
   },
   dim7EnharmonicModulationEnabled: true,
   speciesVoiceLeadingBias: 'high',
-  duoVoicePolicy: DUO_VOICE_POLICY_SQ_FAMILY_STUB,
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_COLOR,
+  duoVoicePolicy: {
+    ...DUO_VOICE_POLICY_SQ_FAMILY_STUB,
+    rhythmicIndependenceFloor: 0.75,
+  },
 };
 
 const TURTLE_ISLAND: VoiceRuleBundle = {
@@ -2370,7 +2378,11 @@ const TURTLE_ISLAND: VoiceRuleBundle = {
   swingFeel: true,
   guideToneVoiceLeading: true,
   improvSlots: true,
-  duoVoicePolicy: DUO_VOICE_POLICY_SQ_FAMILY_STUB,
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
+  duoVoicePolicy: {
+    ...DUO_VOICE_POLICY_SQ_FAMILY_STUB,
+    rhythmicIndependenceFloor: 0.75,
+  },
 };
 
 const REICH_GLASS: VoiceRuleBundle = {
@@ -2417,7 +2429,11 @@ const REICH_GLASS: VoiceRuleBundle = {
   phaseProcessEnabled: true,
   additiveProcessEnabled: true,
   patternIntegrityMinRepeats: 4,
-  duoVoicePolicy: DUO_VOICE_POLICY_SQ_FAMILY_STUB,
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_COLOR,
+  duoVoicePolicy: {
+    ...DUO_VOICE_POLICY_SQ_FAMILY_STUB,
+    rhythmicIndependenceFloor: 0.75,
+  },
 };
 
 const SHOSTAKOVICH: VoiceRuleBundle = {
@@ -2464,7 +2480,11 @@ const SHOSTAKOVICH: VoiceRuleBundle = {
   quotationEventsEnabled: true,
   tragicSlowMovementProfile: true,
   shostakovichPeriod: 'middle',
-  duoVoicePolicy: DUO_VOICE_POLICY_SQ_FAMILY_STUB,
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_COLOR,
+  duoVoicePolicy: {
+    ...DUO_VOICE_POLICY_SQ_FAMILY_STUB,
+    rhythmicIndependenceFloor: 0.75,
+  },
 };
 
 const LACHENMANN: VoiceRuleBundle = {
@@ -2510,7 +2530,11 @@ const LACHENMANN: VoiceRuleBundle = {
   klangtypenPrimary: ['fließklang', 'geräuschklang', 'druckklang', 'tonklang', 'impulsklang'] as const,
   pitchRoleDecoupled: true,
   noSemanticOverlay: true,
-  duoVoicePolicy: DUO_VOICE_POLICY_SQ_FAMILY_STUB,
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_COLOR,
+  duoVoicePolicy: {
+    ...DUO_VOICE_POLICY_SQ_FAMILY_STUB,
+    rhythmicIndependenceFloor: 0.75,
+  },
 };
 
 const LIGETI: VoiceRuleBundle = {
@@ -2566,7 +2590,11 @@ const LIGETI: VoiceRuleBundle = {
   /** SQ2 default — accelerating arc (Mvt I) is the canonical exemplar; Mvt-specific curves carried at slice level. */
   tempoCurveDirection: 'accelerating',
   textureAsHarmonyEnabled: true,
-  duoVoicePolicy: DUO_VOICE_POLICY_SQ_FAMILY_STUB,
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_COLOR,
+  duoVoicePolicy: {
+    ...DUO_VOICE_POLICY_SQ_FAMILY_STUB,
+    rhythmicIndependenceFloor: 0.75,
+  },
 };
 
 const JOBIM: VoiceRuleBundle = {
@@ -2668,7 +2696,11 @@ const PART: VoiceRuleBundle = {
   dynamicCeiling: 'mf',
   noTeleologicalDevelopment: true,
   forbidAudibleProcessOperators: true,
-  duoVoicePolicy: DUO_VOICE_POLICY_SQ_FAMILY_STUB,
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_COLOR,
+  duoVoicePolicy: {
+    ...DUO_VOICE_POLICY_SQ_FAMILY_STUB,
+    rhythmicIndependenceFloor: 0.9,
+  },
 };
 
 /** Erik Satie — modal salon / furniture music VRB (Gymnopédies · Gnossiennes · Sarabandes · Poire · Parade · Socrate). */
@@ -2921,7 +2953,11 @@ const CRUMB_BLACK_ANGELS: VoiceRuleBundle = {
   quotationEventsEnabled: true,
   soundTypeStates: ['pitched', 'noise', 'hybrid'] as const,
   mirrorEchoEnabled: true,
-  duoVoicePolicy: DUO_VOICE_POLICY_SQ_FAMILY_STUB,
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_COLOR,
+  duoVoicePolicy: {
+    ...DUO_VOICE_POLICY_SQ_FAMILY_STUB,
+    rhythmicIndependenceFloor: 0.75,
+  },
 };
 
 const BY_ID: Record<string, VoiceRuleBundle> = {

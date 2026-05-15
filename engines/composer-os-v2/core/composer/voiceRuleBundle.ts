@@ -157,7 +157,7 @@ export interface DuoVoicePolicy {
   intervalPreference: DuoVoiceIntervalPreference;
 }
 
-/** SQ VRB duo stubs — policy readable; line engine not wired in Pass 4+5. */
+/** SQ VRB duo defaults — spread as `DUO_VOICE_POLICY_SQ_FAMILY_STUB`; per-bundle overrides floors in `voiceRuleBundles.ts`. */
 export const DUO_VOICE_POLICY_SQ_FAMILY_STUB: DuoVoicePolicy = {
   guitarSource: 'soprano_line',
   bassSource: 'bass_line',
