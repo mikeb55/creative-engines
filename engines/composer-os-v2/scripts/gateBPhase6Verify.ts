@@ -13,8 +13,15 @@ import {
 } from '../core/goldenPath/lineFirstDuoEngineVrbIds';
 import { postProcessDuoAbstractGuitar } from '../core/goldenPath/duoAbstractLineComposerTransforms';
 import { runGoldenPathOnce } from '../core/goldenPath/runGoldenPath';
+import { sectionPlansForBigBandFromAbstract } from '../core/counterpoint/sectionPlansForBigBandFromAbstract';
 import { planBackgroundsRhythm, planSoliRhythm, type HarmonyBar } from '../core/counterpoint/planSoliAndBackgroundsRhythm';
+import type { AbstractLineSet } from '../core/counterpoint/abstractLineSet';
 import type { QuartetFeatures, VoiceActivityProfile } from '../core/counterpoint/quartetFeatureTypes';
+import {
+  applyPhase6RendererWiring,
+  rhythmDensityRank,
+} from '../core/composer/bigBandSectionPlanRenderer';
+import { backgroundsPlanFromScene, soliPlanForBundle } from '../core/composer/bigBandSectionWriter';
 import { createNote } from '../core/score-model/scoreEventBuilder';
 import type { MeasureModel } from '../core/score-model/scoreModelTypes';
 
@@ -105,6 +112,89 @@ function checkRouting(): boolean {
   return true;
 }
 
+function syntheticChoraleWholeNotes(): AbstractLineSet {
+  const whole = (pitchMidi: number) => ({
+    pitchMidi,
+    durationBars: 4,
+    offsetBars: 0,
+  });
+  return {
+    voices: [
+      { role: 'soprano' as const, notes: [whole(72)], tags: ['harmonic_fill' as const] },
+      { role: 'alto' as const, notes: [whole(67)], tags: ['harmonic_fill' as const] },
+      { role: 'tenor' as const, notes: [whole(64)], tags: ['harmonic_fill' as const] },
+      { role: 'bass' as const, notes: [whole(48)], tags: ['bass_anchor' as const] },
+    ],
+    cadenceTags: [],
+    densityEnvelope: { segments: [{ startBar: 0, endBar: 4, density: 'sparse' as const }] },
+    dissonanceProfile: {
+      allowedIntervals: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+      forbiddenIntervals: [],
+      parallelFifthsAllowed: false,
+      parallelOctavesAllowed: false,
+      resolveByStep: true,
+    },
+    sourceMode: 'chords_only',
+    lengthBars: 4,
+    styleSourceVrbId: 'bob_brookmeyer',
+  };
+}
+
+function checkChoraleWholeBackgrounds(): boolean {
+  const bundle = getVoiceRuleBundle('bob_brookmeyer');
+  const lines = syntheticChoraleWholeNotes();
+  const plans = sectionPlansForBigBandFromAbstract(bundle, undefined, lines);
+  const wired = applyPhase6RendererWiring(
+    {
+      format: 'big_band',
+      sectionLeaders: ['lead_trumpet_or_lead_alto'],
+      ...plans,
+    },
+    lines,
+  );
+  const phrase = wired.sectionRender?.phrases[0];
+  return (
+    wired.backgroundsPlan?.rhythm === 'whole' &&
+    phrase?.backgroundsRhythm === 'whole' &&
+    phrase.notes.some((n) => n.role === 'pad' || n.role === 'pedal')
+  );
+}
+
+function checkContrapuntalDenserBackgrounds(): boolean {
+  const bundle = getVoiceRuleBundle('bob_brookmeyer');
+  const feats = [highIndependenceFeatures()];
+  const intents = deriveSectionWritingIntent(feats, bundle, undefined);
+  const intent = intents[0];
+  if (!intent) return false;
+  const bar: HarmonyBar = { barIndex: 0, densityClass: 'busy' };
+  const bg = planBackgroundsRhythm(intent, bar, bundle);
+  return rhythmDensityRank(bg.backgroundsRhythm) > rhythmDensityRank('whole');
+}
+
+function checkNonSqFallbackUnchanged(): boolean {
+  const bundle = getVoiceRuleBundle('charles_mingus');
+  const baseSoli = soliPlanForBundle(bundle);
+  const baseBg = backgroundsPlanFromScene(undefined);
+  const voicing = {
+    format: 'big_band' as const,
+    sectionLeaders: ['lead_trumpet_or_lead_alto'],
+    soliPlan: baseSoli,
+    backgroundsPlan: baseBg,
+    quartetFeatures: [],
+    sectionWritingIntents: [],
+    voicingGeometries: [],
+    soliRhythmPlans: [],
+    backgroundsRhythmPlans: [],
+  };
+  const wired = applyPhase6RendererWiring(voicing);
+  return (
+    wired.soliPlan?.spreadMin === baseSoli.spreadMin &&
+    wired.soliPlan?.spreadMax === baseSoli.spreadMax &&
+    wired.backgroundsPlan?.rhythm === baseBg.rhythm &&
+    !wired.sectionRender
+  );
+}
+
 function checkAntiCollapse(): boolean {
   const bundle = getVoiceRuleBundle('bob_brookmeyer');
   const feats = [highIndependenceFeatures()];
@@ -138,6 +228,9 @@ function main(): void {
   const checks: Array<{ name: string; ok: boolean }> = [
     { name: 'INDEPENDENCE', ok: checkIndependence() },
     { name: 'ROUTING', ok: checkRouting() },
+    { name: 'CHORALE_WHOLE_BG', ok: checkChoraleWholeBackgrounds() },
+    { name: 'CONTRAPUNTAL_DENSER_BG', ok: checkContrapuntalDenserBackgrounds() },
+    { name: 'NON_SQ_FALLBACK', ok: checkNonSqFallbackUnchanged() },
     { name: 'ANTI-COLLAPSE', ok: checkAntiCollapse() },
     { name: 'SYSTEM', ok: checkSystemSmoke() },
   ];

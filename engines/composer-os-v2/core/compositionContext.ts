@@ -1281,6 +1281,9 @@ export interface GenerationMetadata {
   lineFirstHierarchy?: boolean;
   /** Line-first SATB plan from {@link precomputeContrapuntalLines} (before effective-harmony-bar precompute). */
   contrapuntalLineSet?: AbstractLineSet;
+  /** Phase 6 — wired {@link applyPhase6RendererWiring} soli/backgrounds + phrase render (`bigBandSectionPlanRenderer.ts`). */
+  bigBandVoicing?: import('./counterpoint/ContrapuntalLineEngine').BigBandVoicing;
+  bigBandSectionRender?: import('./composer/bigBandSectionPlanRenderer').BigBandSectionRenderOutput;
   /** Duo line-first — strong-beat co-onset displacement receipts (`duoAbstractLineWiring.ts`). */
   duoLineFirstRhythmReceipts?: string[];
   brookmeyerContrapuntalLineCount?: number;

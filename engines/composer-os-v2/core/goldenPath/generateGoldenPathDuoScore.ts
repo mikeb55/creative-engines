@@ -18,6 +18,7 @@ import { chordTonesForChordSymbolWithContext, shouldUseUserChordSemanticsForTone
 import { assertGuitarScoreMatchesHarmonyContext } from '../harmony/harmonyContext';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { precomputeContrapuntalLines } from '../counterpoint/precomputeContrapuntalLines';
+import { wireBigBandSectionRendererOnContext } from '../composer/bigBandSectionPlanRenderer';
 import type { AbstractLineSet } from '../counterpoint/abstractLineSet';
 import {
   applyDuoAbstractStrongBeatCoOnsetDisplacement,
@@ -2631,6 +2632,7 @@ function buildGuitarPart(
     const vid = (context.voiceBundle?.voiceId ?? '').trim();
     if (shouldRunDuoContrapuntalPrecompute(context, vid)) {
       precomputeContrapuntalLines(context, vid);
+      wireBigBandSectionRendererOnContext(context);
     }
   }
   const activeAbstract =
@@ -4392,6 +4394,7 @@ function buildBassPart(
     const vid = (context.voiceBundle?.voiceId ?? '').trim();
     if (shouldRunDuoContrapuntalPrecompute(context, vid)) {
       precomputeContrapuntalLines(context, vid);
+      wireBigBandSectionRendererOnContext(context);
     }
   }
   let prevBassPitch: number | undefined = walkLow;

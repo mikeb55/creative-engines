@@ -6,6 +6,7 @@ import type { CompositionContext } from '../compositionContext';
 import type { ChordEvent, NoteEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import { tensionLevelForBar } from './harmonicScene';
 import { solveVoiceLeading, type VoicingCandidate } from './voiceLeadingSolver';
+import { effectiveSpreadSemitonesFromMetadata } from './bigBandSectionPlanRenderer';
 
 const CEILING = 88;
 
@@ -43,11 +44,14 @@ export function applyVoiceBundleVoicingSpreadFloor(score: ScoreModel, context: C
         context.generationMetadata as { stochasticVariance?: number; stochasticRenderOrdinal?: number } | undefined;
       const sched = context.generationMetadata.scheduledTensionByBar;
       const t = scenes.length ? tensionLevelForBar(barNum, vb, scenes, sched) : 0.5;
+      const phase6Spread = effectiveSpreadSemitonesFromMetadata(context);
       const minS = Math.min(
-        vb.voicingPolicy.maxSpreadSemitones,
-        Math.round(vb.voicingPolicy.minSpreadSemitones * (1 + t * 0.12))
+        phase6Spread?.maxSpreadSemitones ?? vb.voicingPolicy.maxSpreadSemitones,
+        Math.round(
+          (phase6Spread?.minSpreadSemitones ?? vb.voicingPolicy.minSpreadSemitones) * (1 + t * 0.12),
+        ),
       );
-      const maxS = vb.voicingPolicy.maxSpreadSemitones;
+      const maxS = phase6Spread?.maxSpreadSemitones ?? vb.voicingPolicy.maxSpreadSemitones;
 
       let events = [...m.events];
 
