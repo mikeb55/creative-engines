@@ -45,7 +45,11 @@ export function resolveSqToBbUserChordInput(
   return t.length > 0 ? raw : null;
 }
 
-export type SqToBbChordMismatchResolution = 'repeat' | 'fill_internal';
+export type SqToBbChordMismatchResolution =
+  | 'repeat'
+  | 'fill_internal'
+  | 'stretch'
+  | 'compress';
 
 export {
   canGenerateWithUserChords,
