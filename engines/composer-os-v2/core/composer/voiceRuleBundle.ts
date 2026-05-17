@@ -142,7 +142,8 @@ export type SqVrbRegisterPolicy =
   | 'mid_register_additive_expansion'
   | 'dynamically_wide_arc_accumulative'
   | 'systematic_bass_to_soprano_expansion'
-  | 'mid_register_chromatic_inner_compression';
+  | 'mid_register_chromatic_inner_compression'
+  | 'low_biased_extreme_punctuation_spikes';
 export type SqVrbPhraseArticulation =
   | 'periodic_cadential'
   | 'continuous_motor_rhythm'
@@ -154,7 +155,8 @@ export type SqVrbPhraseArticulation =
   | 'looping_cell_no_cadence'
   | 'repeating_ostinato_no_cadence'
   | 'ground_iterations_progressive_entry'
-  | 'through_composed_arch_no_cadence';
+  | 'through_composed_arch_no_cadence'
+  | 'asymmetric_cell_non_resolving';
 
 /** ContrapuntalLineEngine — VRB hooks for line-first generation + post-filter (Pass 2 stub). */
 export interface ContrapuntalLinePolicy {

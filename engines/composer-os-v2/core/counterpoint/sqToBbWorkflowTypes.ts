@@ -273,6 +273,7 @@ export const SQ_TO_BB_SQ_COMPOSER_ENABLED: ReadonlySet<SqToBbSqComposerId> = new
   'glass',
   'zimmer',
   'badalamenti',
+  'shostakovich',
 ]);
 
 /** Greyed-out / unknown values → None (no throw). */
@@ -298,6 +299,7 @@ export function sqLineVrbIdForSqToBb(
   if (active === 'glass') return 'glass';
   if (active === 'zimmer') return 'zimmer';
   if (active === 'badalamenti') return 'badalamenti';
+  if (active === 'shostakovich') return 'shostakovich';
   return vrbIdForSqToBbStyleProfile(styleProfile);
 }
 

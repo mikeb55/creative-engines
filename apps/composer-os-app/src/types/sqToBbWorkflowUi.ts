@@ -116,7 +116,7 @@ export const SQ_TO_BB_SQ_COMPOSER_OPTIONS: ReadonlyArray<{
   { id: 'glass', label: 'Glass', enabled: true },
   { id: 'zimmer', label: 'Zimmer', enabled: true },
   { id: 'badalamenti', label: 'Badalamenti', enabled: true },
-  { id: 'shostakovich', label: 'Shostakovich — coming soon', enabled: false },
+  { id: 'shostakovich', label: 'Shostakovich', enabled: true },
   { id: 'webern', label: 'Webern — coming soon', enabled: false },
 ] as const;
 

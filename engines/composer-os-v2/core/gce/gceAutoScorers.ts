@@ -277,6 +277,18 @@ function cadenceStrengthRank(
         return 0.84;
     }
   }
+  if (contrapuntal && sqVrbId === 'shostakovich') {
+    switch (strength) {
+      case 'strong':
+        return 0.78;
+      case 'medium':
+        return 0.9;
+      case 'weak':
+        return 0.88;
+      default:
+        return 0.84;
+    }
+  }
   if (contrapuntal) {
     switch (strength) {
       case 'strong':
@@ -401,6 +413,9 @@ function getIntervalTarget(songwriterId?: string): {
     case 'glass':
       // Glass SQ — narrow pattern-loop steps; no jazz wide leaps
       return { steps: 0.78, skips: 0.18, leaps: 0.03, wideLeaps: 0.01, min: 1, max: 5 };
+    case 'shostakovich':
+      // Shostakovich SQ — semitone + minor third + tritone; chromatic inner approach
+      return { steps: 0.5, skips: 0.22, leaps: 0.18, wideLeaps: 0.1, min: 1, max: 11 };
     default:
       // Universal jazz target
       return { steps: 0.55, skips: 0.25, leaps: 0.15, wideLeaps: 0.05, min: 1, max: 8 };
@@ -656,6 +671,54 @@ function badalamentiSignatureIntervalScore(midi: number[]): number {
   return Math.min(1, colorRatio * 1.18 * harshPenalty);
 }
 
+/** Shostakovich — DSCH semitone / minor third / tritone / chromatic neighbour. */
+function shostakovichSignatureIntervalScore(midi: number[]): number {
+  if (midi.length < 3) return 0.5;
+  const intervals: number[] = [];
+  for (let i = 1; i < midi.length; i++) {
+    const d = midi[i]! - midi[i - 1]!;
+    if (d !== 0) intervals.push(d);
+  }
+  if (intervals.length === 0) return 0.45;
+  let hits = 0;
+  for (const d of intervals) {
+    const a = Math.abs(d) % 12;
+    if (a <= 2 || a === 3 || a === 4 || a === 6 || a === 8 || a === 9) hits++;
+  }
+  return Math.min(1, (hits / intervals.length) * 1.22);
+}
+
+function shostakovichThirdRelationScore(midi: number[]): number {
+  if (midi.length < 2) return 0.45;
+  let thirds = 0;
+  for (let i = 1; i < midi.length; i++) {
+    const a = Math.abs(midi[i]! - midi[i - 1]!) % 12;
+    if (a === 3 || a === 4 || a === 8 || a === 9) thirds++;
+  }
+  return Math.min(1, (thirds / (midi.length - 1)) * 1.4);
+}
+
+function shostakovichTritoneAxisScore(midi: number[]): number {
+  if (midi.length < 2) return 0.45;
+  let tritones = 0;
+  for (let i = 1; i < midi.length; i++) {
+    const a = Math.abs(midi[i]! - midi[i - 1]!) % 12;
+    if (a === 6) tritones++;
+  }
+  return Math.min(1, tritones > 0 ? 0.55 + (tritones / (midi.length - 1)) * 0.9 : 0.35);
+}
+
+function shostakovichHalfStepApproachScore(midi: number[]): number {
+  if (midi.length < 3) return 0.45;
+  let approaches = 0;
+  for (let i = 2; i < midi.length; i++) {
+    const d1 = Math.abs(midi[i - 1]! - midi[i - 2]!) % 12;
+    const d2 = Math.abs(midi[i]! - midi[i - 1]!) % 12;
+    if ((d1 <= 2 || d1 === 11) && (d2 <= 2 || d2 === 11)) approaches++;
+  }
+  return Math.min(1, approaches / Math.max(1, midi.length - 2));
+}
+
 function badalamentiCodaDissolutionScore(
   line: MelodicNote[],
   meso: readonly ContrapuntalMesoSpanRef[],
@@ -690,6 +753,7 @@ const SQ_VRB_MI_IDS = new Set([
   'glass',
   'zimmer',
   'badalamenti',
+  'shostakovich',
 ]);
 
 export function scoreMelodicIdentity(
@@ -897,6 +961,29 @@ export function scoreMelodicIdentity(
     const blend = sqGce.badalamentiSignatureIntervalBlend;
     intervalEconomy = Math.min(1, intervalEconomy * (1 - blend) + sig * blend);
   }
+  if (contrapuntalSq && contrapuntal.sqVrbId === 'shostakovich' && sqGce?.shostakovichSignatureIntervalBlend) {
+    const sig = shostakovichSignatureIntervalScore(pitches);
+    const blend = sqGce.shostakovichSignatureIntervalBlend;
+    intervalEconomy = Math.min(1, intervalEconomy * (1 - blend) + sig * blend);
+  }
+  if (contrapuntalSq && contrapuntal.sqVrbId === 'shostakovich' && sqGce?.thirdRelationCredit) {
+    intervalEconomy = Math.min(
+      1,
+      intervalEconomy + shostakovichThirdRelationScore(pitches) * sqGce.thirdRelationCredit,
+    );
+  }
+  if (contrapuntalSq && contrapuntal.sqVrbId === 'shostakovich' && sqGce?.tritoneAxisCredit) {
+    intervalEconomy = Math.min(
+      1,
+      intervalEconomy + shostakovichTritoneAxisScore(pitches) * sqGce.tritoneAxisCredit,
+    );
+  }
+  if (contrapuntalSq && contrapuntal.sqVrbId === 'shostakovich' && sqGce?.halfStepApproachCredit) {
+    intervalEconomy = Math.min(
+      1,
+      intervalEconomy + shostakovichHalfStepApproachScore(pitches) * sqGce.halfStepApproachCredit,
+    );
+  }
 
   // G — register cohesion (global σ for song/duo; per-meso mean σ for SQ contrapuntal)
   const zimmerPassacaglia =
@@ -926,7 +1013,15 @@ export function scoreMelodicIdentity(
               sqGce?.registerCohesionSoftCeilingSt ?? 26,
               32,
             )
-          : registerCohesionPerMesoSpans(
+          : contrapuntal.sqVrbId === 'shostakovich'
+            ? registerCohesionPerMesoSpansZimmer(
+                line,
+                contrapuntal.mesoSpans,
+                sqGce?.registerCohesionStdevCeilingSt ?? 28,
+                sqGce?.registerCohesionSoftCeilingSt ?? 32,
+                32,
+              )
+            : registerCohesionPerMesoSpans(
               line,
               contrapuntal.mesoSpans,
               sqGce?.registerCohesionStdevCeilingSt ?? CONTRAPUNTAL_REGISTER_STDEV_CEILING_DEFAULT,
@@ -986,9 +1081,11 @@ export function scoreMelodicIdentity(
                       : ' [SQ zimmer MI]'
                     : contrapuntalSq && contrapuntal.sqVrbId === 'badalamenti'
                       ? ' [SQ badalamenti MI]'
-                      : contrapuntalSq
-                        ? ' [SQ contrapuntal]'
-                        : '';
+                      : contrapuntalSq && contrapuntal.sqVrbId === 'shostakovich'
+                        ? ' [SQ shostakovich MI]'
+                        : contrapuntalSq
+                          ? ' [SQ contrapuntal]'
+                          : '';
 
   return {
     score: hardFail ? Math.min(score, 6) : score,
@@ -1511,6 +1608,7 @@ function scorePhraseGrammarContrapuntal(
   const loopingCellPg = sqGce?.phraseGrammarMode === 'looping_cell_no_cadence';
   const repeatingOstinatoPg = sqGce?.phraseGrammarMode === 'repeating_ostinato_no_cadence';
   const throughComposedArchPg = sqGce?.phraseGrammarMode === 'through_composed_arch_no_cadence';
+  const shostakovichPg = sqGce?.phraseGrammarMode === 'asymmetric_cell_non_resolving';
   const zimmerPassacagliaPg =
     options.sqVrbId === 'zimmer' && options.passacagliaMode === true;
 
@@ -1612,6 +1710,21 @@ function scorePhraseGrammarContrapuntal(
       if (longArch || inconclusive || spanCadence >= 0.42 || longEnding || i < meso.length - 1) {
         closedPhrases++;
       }
+    } else if (shostakovichPg) {
+      const inconclusive =
+        span.cadenceStrength === 'weak' ||
+        span.cadenceStrength === 'medium' ||
+        !longEnding;
+      if (inconclusive) inconclusiveHits++;
+      if (
+        cellRepeat ||
+        inconclusive ||
+        spanCadence >= 0.38 ||
+        longEnding ||
+        i < meso.length - 1
+      ) {
+        closedPhrases++;
+      }
     } else if (ostinatoPg) {
       if (cellRepeat || spanCadence >= 0.4 || longEnding || i < meso.length - 1) {
         closedPhrases++;
@@ -1628,6 +1741,12 @@ function scorePhraseGrammarContrapuntal(
       }
     } else if (sqGce && (folkModalPg || throughComposedArchPg)) {
       if (lenBars >= sqGce.phraseCellBarsMin && lenBars <= sqGce.phraseCellBarsMax + 0.25) {
+        periodicCellHits++;
+      }
+    } else if (sqGce && shostakovichPg) {
+      if (lenBars >= sqGce.phraseCellBarsMin && lenBars <= sqGce.phraseCellBarsMax + 0.25) {
+        periodicCellHits++;
+      } else if (lenBars >= 12 && lenBars <= 16.25) {
         periodicCellHits++;
       }
     }
@@ -1685,6 +1804,28 @@ function scorePhraseGrammarContrapuntal(
         (sqGce.chromaticMediantCredit ?? 0.12) * (periodicCellHits / meso.length) +
         repeatRatio * (sqGce.ostinatoPhraseEndingCredit ?? 0.16) +
         (strongCadences / meso.length) * (sqGce.authenticCadenceCredit ?? 0.08) +
+        (periodicCellHits / meso.length) * 0.08 +
+        cyclic * sqGce.cyclicMotifReturnBoost;
+    } else if (shostakovichPg) {
+      const modalEnds = meso.filter(
+        (m) => m.cadenceStrength === 'weak' || m.cadenceStrength === 'medium',
+      ).length;
+      const repeatRatio = ostinatoCellRepeats / Math.max(1, meso.length - 1);
+      const cyclic = cyclicMotifReturnScore(line, meso);
+      const longStrettoSpan = meso.some((m) => {
+        const lb = mesoSpanLengthBars(m);
+        return lb >= 12 && lb <= 16.25;
+      });
+      periodicBonus =
+        (inconclusiveHits / meso.length) * (sqGce.inconclusiveEndingCredit ?? 0.16) +
+        (modalEnds / meso.length) *
+          (sqGce.modalEndingsValid ? (sqGce.chromaticMediantCredit ?? 0.14) : 0) +
+        (sqGce.thirdRelationCredit ?? 0.14) * (periodicCellHits / meso.length) +
+        (sqGce.tritoneAxisCredit ?? 0.12) * (periodicCellHits / meso.length) +
+        repeatRatio * (sqGce.ostinatoPhraseEndingCredit ?? 0.18) +
+        (sqGce.passacagliaPedalCredit ?? 0.14) * repeatRatio +
+        (sqGce.bassPedalCredit ?? 0.12) * 0.55 +
+        (longStrettoSpan ? (sqGce.strettoMotifSaturationCredit ?? 0.12) : 0) +
         (periodicCellHits / meso.length) * 0.08 +
         cyclic * sqGce.cyclicMotifReturnBoost;
     } else if (loopingCellPg) {
@@ -1792,7 +1933,9 @@ function scorePhraseGrammarContrapuntal(
                       : ' [SQ zimmer PG]'
                     : options.sqVrbId === 'badalamenti'
                       ? ' [SQ badalamenti PG]'
-                      : '';
+                      : options.sqVrbId === 'shostakovich'
+                        ? ' [SQ shostakovich PG]'
+                        : '';
   return {
     score,
     justification:

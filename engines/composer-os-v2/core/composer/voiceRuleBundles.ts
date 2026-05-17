@@ -29,6 +29,7 @@ import { applyRotaFilmStubVrbProfile } from '../counterpoint/vrbProfiles/rotaFil
 import { applyWilliamsFilmStubVrbProfile } from '../counterpoint/vrbProfiles/williamsFilmStubVrb';
 import { applyBadalamentiFilmStubVrbProfile } from '../counterpoint/vrbProfiles/badalamentiFilmStubVrb';
 import { applyZimmerFilmStubVrbProfile } from '../counterpoint/vrbProfiles/zimmerFilmStubVrb';
+import { applyShostakovichSqVrbProfile } from '../counterpoint/vrbProfiles/shostakovichSqVrb';
 import { JOBIM_VRB_FINGERPRINT_RECEIPTS } from './jobimVrbFingerprints';
 import { ARVO_PART_TINTINNABULI_VRF_FINGERPRINT_RECEIPTS } from './arvoPartTintinnabuliVrbFingerprints';
 import { SATIE_VRF_FINGERPRINT_RECEIPTS } from './satieVrbFingerprints';
@@ -3055,8 +3056,8 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   philip_glass: REICH_GLASS,
   minimalist_sq: REICH_GLASS,
   sq_vrb_reich_glass: REICH_GLASS,
-  shostakovich: SHOSTAKOVICH,
-  dmitri_shostakovich: SHOSTAKOVICH,
+  shostakovich: applyShostakovichSqVrbProfile(SHOSTAKOVICH),
+  dmitri_shostakovich: applyShostakovichSqVrbProfile(SHOSTAKOVICH),
   shosti: SHOSTAKOVICH,
   dsch: SHOSTAKOVICH,
   sq_vrb_shostakovich: SHOSTAKOVICH,

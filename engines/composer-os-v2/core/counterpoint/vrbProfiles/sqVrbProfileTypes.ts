@@ -24,7 +24,8 @@ export type SqVrbRegisterPolicy =
   | 'mid_register_additive_expansion'
   | 'dynamically_wide_arc_accumulative'
   | 'systematic_bass_to_soprano_expansion'
-  | 'mid_register_chromatic_inner_compression';
+  | 'mid_register_chromatic_inner_compression'
+  | 'low_biased_extreme_punctuation_spikes';
 
 /** SQ→BB phrase surface grammar. */
 export type SqVrbPhraseArticulation =
@@ -38,7 +39,8 @@ export type SqVrbPhraseArticulation =
   | 'looping_cell_no_cadence'
   | 'repeating_ostinato_no_cadence'
   | 'ground_iterations_progressive_entry'
-  | 'through_composed_arch_no_cadence';
+  | 'through_composed_arch_no_cadence'
+  | 'asymmetric_cell_non_resolving';
 
 /** Badalamenti three-tier texture — melody / chromatic inner cushion / bass pedal. */
 export interface SqBadalamentiThreeTierTexture {
@@ -117,7 +119,8 @@ export type SqVrbGcePhraseGrammarMode =
   | 'doubly_open_cell_development'
   | 'looping_cell_no_cadence'
   | 'repeating_ostinato_no_cadence'
-  | 'through_composed_arch_no_cadence';
+  | 'through_composed_arch_no_cadence'
+  | 'asymmetric_cell_non_resolving';
 
 /** Per-VRB GCE Melodic Identity / Phrase Grammar tweaks (SQ→BB path). */
 export interface SqVrbGceScorerAdjustments {
@@ -195,6 +198,18 @@ export interface SqVrbGceScorerAdjustments {
   bassPedalCredit?: number;
   /** PG/MI: Miles Davis modal / Kind of Blue sparse field. */
   coolJazzModalCredit?: number;
+  /** MI: blend DSCH semitone / minor-third / tritone signature. */
+  shostakovichSignatureIntervalBlend?: number;
+  /** PG/MI: structural tritone at phrase boundary (recapitulation axis). */
+  tritoneAxisCredit?: number;
+  /** PG/MI: major/minor third-relation harmonic motion. */
+  thirdRelationCredit?: number;
+  /** MI: ic1/ic2 approach to resolution (not diatonic step penalty). */
+  halfStepApproachCredit?: number;
+  /** PG: cello pedal / passacaglia ground while upper voices develop. */
+  passacagliaPedalCredit?: number;
+  /** PG: stretto motivic saturation over long spans without closure. */
+  strettoMotifSaturationCredit?: number;
 }
 
 /** SQ Harmonic Voice profile — contrapuntal policy + BB translation hints. */
