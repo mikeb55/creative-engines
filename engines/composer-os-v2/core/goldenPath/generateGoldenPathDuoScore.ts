@@ -415,6 +415,10 @@ import {
 import { contourFingerprint, phraseTwoBarFingerprint, rhythmFingerprint } from './bassLineFingerprints';
 import { duoGuitarSwingStaggerBump, guitarBarIsBusy } from './duoSwingPhrasing';
 import {
+  applyPhraseIntentBiasToGuitarV1Measure,
+  type PhraseIntentBias,
+} from './duoPhraseIntentBias';
+import {
   applyDuoGoldenPhraseEngineStage3Anticipation,
   applyDuoGoldenPhraseEngineStage4MotifRhythm,
   duoGoldenPathPhraseIntentAtBar,
@@ -2824,6 +2828,7 @@ function buildGuitarPart(
     fagenLydianMajorBiasR > 0;
   const anchorMidi = motifState.baseMotifs[0]?.notes[0]?.pitch;
   let consecutiveBusyGuitarBars = 0;
+  let currentPhraseIntent: PhraseIntent | undefined;
 
   const songModeHook =
     context.generationMetadata?.songModeHookFirstIdentity === true &&
@@ -3269,14 +3274,19 @@ function buildGuitarPart(
     const reduceAttack = interaction?.coupling?.guitarReduceAttack;
     const phraseBar = context.presetId === 'ecm_chamber' ? phase : b;
     const cycleIndex = Math.floor((b - 1) / 8);
-    const phraseIntent: PhraseIntent =
+    let phraseIntent: PhraseIntent =
       isEcmM
         ? getEcmMethenyPhraseIntent(phase, cycleIndex, seed)
         : isEcmS
           ? getEcmSchneiderPhraseIntent(phase, seed)
           : isDuoGolden
-            ? duoGoldenPathPhraseIntentAtBar(seed, b, productDuoIntent)
+            ? (b - 1) % 4 === 0
+              ? duoGoldenPathPhraseIntentAtBar(seed, b, productDuoIntent)
+              : duoGoldenPathPhraseIntentAtBar(seed, b, productDuoIntent, currentPhraseIntent)
             : getDuoPhraseIntent(phraseBar, seed);
+    if (isDuoGolden && (b - 1) % 4 === 0) {
+      currentPhraseIntent = phraseIntent;
+    }
     let stagger = computeEnsembleStagger(isDuoGolden ? phase : phraseBar, seed, phraseIntent);
     if (isDuoGolden && productDuoIntent) {
       stagger = adjustDuoEnsembleStaggerForProductIntent(stagger, productDuoIntent);
@@ -3411,6 +3421,15 @@ function buildGuitarPart(
       if (isDuoGolden && !skipPhraseEngineStage3Anticipation) {
         applyDuoGoldenPhraseEngineStage3Anticipation(m, seed, b);
         normalizeMeasureToEighthBeatGrid(m);
+      }
+      if (isDuoGolden && songwriterMelodyProfile.phraseIntentBias !== 'neutral') {
+        applyPhraseIntentBiasToGuitarV1Measure(
+          m,
+          songwriterMelodyProfile.phraseIntentBias as PhraseIntentBias,
+          b,
+          effectiveLow,
+          effectiveHigh
+        );
       }
       measures.push(m);
       continue;
@@ -3733,6 +3752,15 @@ function buildGuitarPart(
       if (!skipPhraseEngineStage3Anticipation) {
         applyDuoGoldenPhraseEngineStage3Anticipation(m, seed, b);
         normalizeMeasureToEighthBeatGrid(m);
+      }
+      if (songwriterMelodyProfile.phraseIntentBias !== 'neutral') {
+        applyPhraseIntentBiasToGuitarV1Measure(
+          m,
+          songwriterMelodyProfile.phraseIntentBias as PhraseIntentBias,
+          b,
+          effectiveLow,
+          effectiveHigh
+        );
       }
       if (guitarBarIsBusy(m)) consecutiveBusyGuitarBars++;
       else consecutiveBusyGuitarBars = 0;

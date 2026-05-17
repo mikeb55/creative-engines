@@ -231,6 +231,18 @@ function applyPhraseEngineStage2AtPhraseStart(
  * Product-level duo intent (`metadata.duoIntent`): nudges {@link PhraseIntent} toward conversational alternation
  * or supportive guitar-primary behaviour — does not replace Stage 1–2 logic wholesale.
  */
+function biasIntentTowardContinuity(
+  seed: number,
+  bar: number,
+  intent: PhraseIntent,
+  continuityIntent: PhraseIntent
+): PhraseIntent {
+  if (intent === continuityIntent) return intent;
+  const u = seededUnit(seed, bar, 58201);
+  if (u < 0.72) return continuityIntent;
+  return intent;
+}
+
 function applyProductDuoIntentPhraseBias(
   seed: number,
   bar: number,
@@ -288,13 +300,18 @@ function applyProductDuoIntentPhraseBias(
 export function duoGoldenPathPhraseIntentAtBar(
   seed: number,
   bar: number,
-  productDuoIntent?: 'conversational' | 'supportive'
+  productDuoIntent?: 'conversational' | 'supportive',
+  continuityIntent?: PhraseIntent
 ): PhraseIntent {
   const phase = ((bar - 1) % 8) + 1;
   const phraseNumber8 = Math.floor((bar - 1) / 8) + 1;
   const base = getDuoPhraseIntentV31(phase, phraseNumber8);
   if ((bar - 1) % 4 !== 0) {
-    return applyProductDuoIntentPhraseBias(seed, bar, base, productDuoIntent);
+    const withProduct = applyProductDuoIntentPhraseBias(seed, bar, base, productDuoIntent);
+    if (continuityIntent !== undefined) {
+      return biasIntentTowardContinuity(seed, bar, withProduct, continuityIntent);
+    }
+    return withProduct;
   }
 
   const prevPhraseFirstBar = bar - 4;
