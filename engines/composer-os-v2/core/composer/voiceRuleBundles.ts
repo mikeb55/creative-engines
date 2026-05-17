@@ -20,6 +20,10 @@ import { SHOSTAKOVICH_SQ_VRF_FINGERPRINT_RECEIPTS } from './shostakovichSqVrbFin
 import { LACHENMANN_SQ_VRF_FINGERPRINT_RECEIPTS } from './lachenmannSqVrbFingerprints';
 import { LIGETI_SQ_VRB_FINGERPRINT_RECEIPTS } from './ligetiSqVrbFingerprints';
 import { CRUMB_BLACK_ANGELS_SQ_VRB_FINGERPRINT_RECEIPTS } from './crumbBlackAngelsSqVrbFingerprints';
+import { applyHerrmannFilmStubVrbProfile } from '../counterpoint/vrbProfiles/herrmannFilmStubVrb';
+import { applyMorriconeFilmStubVrbProfile } from '../counterpoint/vrbProfiles/morriconeFilmStubVrb';
+import { applyRavelSqVrbProfile } from '../counterpoint/vrbProfiles/ravelSqVrb';
+import { applyWilliamsFilmStubVrbProfile } from '../counterpoint/vrbProfiles/williamsFilmStubVrb';
 import { JOBIM_VRB_FINGERPRINT_RECEIPTS } from './jobimVrbFingerprints';
 import { ARVO_PART_TINTINNABULI_VRF_FINGERPRINT_RECEIPTS } from './arvoPartTintinnabuliVrbFingerprints';
 import { SATIE_VRF_FINGERPRINT_RECEIPTS } from './satieVrbFingerprints';
@@ -410,7 +414,7 @@ const BARTOK: VoiceRuleBundle = {
   },
 };
 
-const RAVEL: VoiceRuleBundle = {
+const RAVEL: VoiceRuleBundle = applyRavelSqVrbProfile({
   voiceId: 'ravel',
   harmonicRhythm: {
     minChordDurationBars: 1,
@@ -451,7 +455,6 @@ const RAVEL: VoiceRuleBundle = {
     resolveParallels: false,
     maxVoiceOverlap: 5,
   },
-  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_COLOR,
   duoVoicePolicy: {
     guitarSource: 'soprano_line',
     bassSource: 'bass_line',
@@ -459,7 +462,7 @@ const RAVEL: VoiceRuleBundle = {
     registerInterlock: true,
     intervalPreference: 'whole_tone_chromatic',
   },
-};
+});
 
 const DUTILLEUX: VoiceRuleBundle = {
   voiceId: 'dutilleux',
@@ -3004,12 +3007,12 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   crimson: FRIPP_KING_CRIMSON,
   james_brown: JAMES_BROWN,
   jb: JAMES_BROWN,
-  herrmann: HERRMANN_FILM_STUB,
-  bernard_herrmann: HERRMANN_FILM_STUB,
-  williams: WILLIAMS_FILM_STUB,
-  john_williams: WILLIAMS_FILM_STUB,
-  morricone: MORRICONE_FILM_STUB,
-  ennio_morricone: MORRICONE_FILM_STUB,
+  herrmann: applyHerrmannFilmStubVrbProfile(HERRMANN_FILM_STUB),
+  bernard_herrmann: applyHerrmannFilmStubVrbProfile(HERRMANN_FILM_STUB),
+  williams: applyWilliamsFilmStubVrbProfile(WILLIAMS_FILM_STUB),
+  john_williams: applyWilliamsFilmStubVrbProfile(WILLIAMS_FILM_STUB),
+  morricone: applyMorriconeFilmStubVrbProfile(MORRICONE_FILM_STUB),
+  ennio_morricone: applyMorriconeFilmStubVrbProfile(MORRICONE_FILM_STUB),
   rota: ROTA_FILM_STUB,
   nino_rota: ROTA_FILM_STUB,
   goldsmith: GOLDSMITH_FILM_STUB,

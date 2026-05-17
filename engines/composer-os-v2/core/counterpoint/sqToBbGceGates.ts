@@ -182,6 +182,11 @@ export function buildContrapuntalGceScoringOptions(
   }
   if (meso.length < 2) return undefined;
   const chordTimelineSource = context.generationMetadata?.chordTimelineSource;
+  const sqVrbId =
+    context.generationMetadata?.sqLineVrbId ??
+    lines.styleSourceVrbId ??
+    context.voiceBundle?.sqVrbProfileId ??
+    context.voiceBundle?.contrapuntalLinePolicy?.vrbId;
   return {
     contrapuntalLinePolicy: true,
     mesoSpans: meso.map((m) => ({
@@ -190,6 +195,7 @@ export function buildContrapuntalGceScoringOptions(
       cadenceStrength: m.cadenceStrength,
     })),
     cadenceTags: lines.cadenceTags ?? [],
+    ...(sqVrbId ? { sqVrbId } : {}),
     ...(chordTimelineSource ? { chordTimelineSource } : {}),
   };
 }

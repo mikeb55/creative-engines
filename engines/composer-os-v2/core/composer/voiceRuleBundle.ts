@@ -123,6 +123,27 @@ export interface BergVoiceLeadingParams {
   contrapuntalStrandTarget?: number;
 }
 
+/** SQ→BB Harmonic Voice — optional metadata on {@link ContrapuntalLinePolicy} (Ravel, future SQ picks). */
+export type SqVrbIndependenceLevel = 'low' | 'moderate' | 'high';
+export type SqVrbImitationStyle =
+  | 'motivic_echo'
+  | 'strict_interval_cycle'
+  | 'staggered_entry'
+  | 'climactic_synthesis'
+  | 'leitmotif_development';
+export type SqVrbRegisterPolicy =
+  | 'comfortable_with_climax_leaps'
+  | 'wide_registral_contrast'
+  | 'extreme_registers'
+  | 'lyrical_arch'
+  | 'heroic_arch_with_fanfare_leaps';
+export type SqVrbPhraseArticulation =
+  | 'periodic_cadential'
+  | 'continuous_motor_rhythm'
+  | 'ostinato_cell_based'
+  | 'folk_modal_suspended'
+  | 'romantic_periodic_cadential';
+
 /** ContrapuntalLineEngine — VRB hooks for line-first generation + post-filter (Pass 2 stub). */
 export interface ContrapuntalLinePolicy {
   enabled: boolean;
@@ -131,6 +152,12 @@ export interface ContrapuntalLinePolicy {
   rhythmicIndependenceRequired: boolean;
   /** `fixed` = roles locked per voice (Pärt-style); `dynamic` = roles shift from interaction (Brookmeyer-style). */
   lineRoleAssignment: 'fixed' | 'dynamic';
+  /** SQ→BB profile id when this policy row is composer-specific (e.g. `ravel`). */
+  vrbId?: string;
+  independenceLevel?: SqVrbIndependenceLevel;
+  imitationStyle?: SqVrbImitationStyle;
+  registerPolicy?: SqVrbRegisterPolicy;
+  phraseArticulation?: SqVrbPhraseArticulation;
 }
 
 /** Duo golden-path — guitar/bass derivation from {@link AbstractLineSet} (stubs + routing hints). */
@@ -400,4 +427,20 @@ export interface VoiceRuleBundle {
   contrapuntalLinePolicy?: ContrapuntalLinePolicy;
   /** Duo golden-path — AbstractLineSet lane + independence floor (Brookmeyer / Bartók stubs). */
   duoVoicePolicy?: DuoVoicePolicy;
+  /** SQ→BB — primary BB arranging style for compatibility badge (read in UI, not hardcoded). */
+  bestBbStyle?: import('../counterpoint/sqToBbWorkflowTypes').SqToBbStyleProfileId;
+  secondaryBbStyle?: import('../counterpoint/sqToBbWorkflowTypes').SqToBbStyleProfileId;
+  cautionBbStyle?: import('../counterpoint/sqToBbWorkflowTypes').SqToBbStyleProfileId;
+  /** SQ→BB — stable extended chord color tags for harmony planners. */
+  sqChordVocabulary?: string[];
+  /** SQ→BB Harmonic Voice profile id when specialized (`ravel`, …). */
+  sqVrbProfileId?: string;
+  /** SQ→BB — optional late-style flag (modal pedal, Spanish dance); not default quartet. */
+  lateStyleAvailable?: boolean;
+  /** Herrmann film stub — romantic mode (clearer centers) vs default thriller. */
+  herrmannRomanticModeAvailable?: boolean;
+  /** Morricone — pedal may sustain up to N bars (Deborah's Theme / modal float). */
+  pedalPointValidBars?: number;
+  /** Morricone — romantic period (legato arcs) vs default western. */
+  morriconeRomanticModeAvailable?: boolean;
 }

@@ -19,6 +19,7 @@ function clamp01(x: number): number {
 
 /** VRB bucket for Pass 2 style bias (Schneider / Basie / Mingus / Brookmeyer default). */
 function resolveStyleBiasVrb(vrb: VoiceRuleBundle): 'schneider' | 'basie' | 'mingus' | 'brookmeyer' {
+  if (vrb.bestBbStyle) return vrb.bestBbStyle;
   const id = vrb.voiceId.toLowerCase();
   if (id.includes('schneider')) return 'schneider';
   if (id.includes('basie')) return 'basie';

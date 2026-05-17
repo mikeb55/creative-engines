@@ -83,7 +83,14 @@ export function resolveSqToBbLengthFromUi(
   return { ok: true, lengthBars: n };
 }
 
-export type SqToBbSqComposerId = 'bartok' | 'ravel' | 'shostakovich' | 'webern';
+export type SqToBbSqComposerId =
+  | 'bartok'
+  | 'ravel'
+  | 'herrmann'
+  | 'morricone'
+  | 'williams'
+  | 'shostakovich'
+  | 'webern';
 export type SqToBbSqComposer = SqToBbSqComposerId | null;
 
 export const SQ_TO_BB_SQ_COMPOSER_SELECT_NULL = '';
@@ -95,7 +102,10 @@ export const SQ_TO_BB_SQ_COMPOSER_OPTIONS: ReadonlyArray<{
 }> = [
   { id: null, label: '— None (default) —', enabled: true },
   { id: 'bartok', label: 'Bartók', enabled: true },
-  { id: 'ravel', label: 'Ravel — coming soon', enabled: false },
+  { id: 'ravel', label: 'Ravel', enabled: true },
+  { id: 'herrmann', label: 'Herrmann', enabled: true },
+  { id: 'morricone', label: 'Morricone', enabled: true },
+  { id: 'williams', label: 'Williams', enabled: true },
   { id: 'shostakovich', label: 'Shostakovich — coming soon', enabled: false },
   { id: 'webern', label: 'Webern — coming soon', enabled: false },
 ] as const;

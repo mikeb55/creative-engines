@@ -2,11 +2,12 @@ import type { MelodicNote } from './gce_melody_eval';
 import type { FormMap } from '../compositionContext';
 import type { CadenceTag } from '../counterpoint/abstractLineSet';
 import type { PhraseCadenceStrength } from '../counterpoint/quartetFeatureTypes';
+import { getSqVrbGceAdjustments } from '../counterpoint/vrbProfiles/sqVrbProfileRegistry';
 import { BEATS_PER_MEASURE, type NoteEvent, type PartModel, type ScoreModel } from '../score-model/scoreModelTypes';
 import { activePartsNormalizedBigBand } from './gceStructuralMemory';
 
-/** Per-meso register σ ceiling for SQ→BB contrapuntal Melodic Identity (two octaves). */
-const CONTRAPUNTAL_REGISTER_STDEV_CEILING = 24;
+/** Per-meso register σ ceiling for SQ→BB contrapuntal Melodic Identity (Bartók default = 24 st). */
+const CONTRAPUNTAL_REGISTER_STDEV_CEILING_DEFAULT = 24;
 
 /** SQ→BB only — explicit opt-in; never inferred from VRB id alone. */
 export interface ContrapuntalMesoSpanRef {
@@ -19,6 +20,8 @@ export interface ContrapuntalGceScoringOptions {
   contrapuntalLinePolicy: true;
   mesoSpans: readonly ContrapuntalMesoSpanRef[];
   cadenceTags: readonly CadenceTag[];
+  /** SQ→BB Harmonic Voice id for per-composer GCE tweaks (`ravel` → σ≤20 st, …). */
+  sqVrbId?: string;
   /** SQ→BB — informational only (no GCE threshold changes). */
   chordTimelineSource?: 'user' | 'internal' | 'mixed';
 }
@@ -43,7 +46,9 @@ function pitchedNotesInBarRange(
 function registerCohesionPerMesoSpans(
   line: MelodicNote[],
   mesoSpans: readonly ContrapuntalMesoSpanRef[],
+  stdevCeilingSt: number = CONTRAPUNTAL_REGISTER_STDEV_CEILING_DEFAULT,
 ): number {
+  const ceiling = stdevCeilingSt > 0 ? stdevCeilingSt : CONTRAPUNTAL_REGISTER_STDEV_CEILING_DEFAULT;
   const perPhrase: number[] = [];
   for (const span of mesoSpans) {
     const notes = pitchedNotesInBarRange(line, span.startBeat, span.endBeat);
@@ -55,11 +60,11 @@ function registerCohesionPerMesoSpans(
     const mean = pitches.reduce((a, b) => a + b, 0) / pitches.length;
     const variance = pitches.reduce((s, p) => s + (p - mean) ** 2, 0) / pitches.length;
     const stddev = Math.sqrt(variance);
-    if (stddev <= CONTRAPUNTAL_REGISTER_STDEV_CEILING) {
+    if (stddev <= ceiling) {
       perPhrase.push(1);
     } else {
-      const excess = stddev - CONTRAPUNTAL_REGISTER_STDEV_CEILING;
-      perPhrase.push(Math.max(0, 1 - excess / CONTRAPUNTAL_REGISTER_STDEV_CEILING));
+      const excess = stddev - ceiling;
+      perPhrase.push(Math.max(0, 1 - excess / ceiling));
     }
   }
   if (perPhrase.length === 0) return 0.5;
@@ -68,7 +73,35 @@ function registerCohesionPerMesoSpans(
   return sorted.slice(0, keep).reduce((a, b) => a + b, 0) / keep;
 }
 
-function cadenceStrengthRank(strength: PhraseCadenceStrength, contrapuntal?: boolean): number {
+function cadenceStrengthRank(
+  strength: PhraseCadenceStrength,
+  contrapuntal?: boolean,
+  sqVrbId?: string,
+): number {
+  if (contrapuntal && sqVrbId === 'morricone') {
+    switch (strength) {
+      case 'strong':
+        return 1;
+      case 'medium':
+        return 0.92;
+      case 'weak':
+        return 0.82;
+      default:
+        return 0.72;
+    }
+  }
+  if (contrapuntal && sqVrbId === 'williams') {
+    switch (strength) {
+      case 'strong':
+        return 1;
+      case 'medium':
+        return 0.9;
+      case 'weak':
+        return 0.52;
+      default:
+        return 0.32;
+    }
+  }
   if (contrapuntal) {
     switch (strength) {
       case 'strong':
@@ -172,6 +205,18 @@ function getIntervalTarget(songwriterId?: string): {
     case 'pat_metheny':
       // Lyrical guitar — mostly stepwise with nice leaps
       return { steps: 0.6, skips: 0.25, leaps: 0.12, wideLeaps: 0.03, min: 1, max: 6 };
+    case 'ravel':
+      // Ravel SQ — stepwise + thirds/sixths; wide leaps only at structural peaks
+      return { steps: 0.62, skips: 0.28, leaps: 0.08, wideLeaps: 0.02, min: 1, max: 7 };
+    case 'herrmann':
+      // Herrmann SQ — semitone + minor third + tritone signature (not long stepwise arcs)
+      return { steps: 0.52, skips: 0.22, leaps: 0.18, wideLeaps: 0.08, min: 1, max: 10 };
+    case 'morricone':
+      // Morricone SQ — stepwise + folk fourths/fifths; not semitone/tritone obsession
+      return { steps: 0.58, skips: 0.22, leaps: 0.14, wideLeaps: 0.06, min: 1, max: 9 };
+    case 'williams':
+      // Williams SQ — P4/P5/M3 heroic leaps + stepwise lyrical; penalize semitone/tritone cells
+      return { steps: 0.48, skips: 0.24, leaps: 0.2, wideLeaps: 0.08, min: 1, max: 12 };
     default:
       // Universal jazz target
       return { steps: 0.55, skips: 0.25, leaps: 0.15, wideLeaps: 0.05, min: 1, max: 8 };
@@ -246,6 +291,65 @@ export function scoreJazzIntervalBalance(
   const clamped = Math.max(0, Math.min(1, raw));
   return contrapuntalRelaxed ? Math.max(0.55, clamped) : clamped;
 }
+
+/** Herrmann — reward semitone, tritone, minor-third recurrence in melodic cells. */
+function herrmannSignatureIntervalScore(midi: number[]): number {
+  if (midi.length < 3) return 0.5;
+  const intervals: number[] = [];
+  for (let i = 1; i < midi.length; i++) {
+    const d = midi[i]! - midi[i - 1]!;
+    if (d !== 0) intervals.push(d);
+  }
+  if (intervals.length === 0) return 0.4;
+  let hits = 0;
+  for (const d of intervals) {
+    const a = Math.abs(d) % 12;
+    if (a === 1 || a === 11 || a === 6 || a === 3 || a === 4) hits++;
+  }
+  return Math.min(1, (hits / intervals.length) * 1.35);
+}
+
+/** Morricone — reward stepwise, fourths/fifths, minor thirds; penalize semitone/tritone obsession. */
+function morriconeSignatureIntervalScore(midi: number[]): number {
+  if (midi.length < 3) return 0.5;
+  const intervals: number[] = [];
+  for (let i = 1; i < midi.length; i++) {
+    const d = midi[i]! - midi[i - 1]!;
+    if (d !== 0) intervals.push(d);
+  }
+  if (intervals.length === 0) return 0.45;
+  let folk = 0;
+  let chromaticObsession = 0;
+  for (const d of intervals) {
+    const a = Math.abs(d) % 12;
+    if (a <= 2 || a === 3 || a === 4 || a === 5 || a === 7) folk++;
+    if (a === 1 || a === 11 || a === 6) chromaticObsession++;
+  }
+  const n = intervals.length;
+  return Math.max(0, Math.min(1, (folk / n) * 1.25 - (chromaticObsession / n) * 0.45));
+}
+
+/** Williams — reward P4/P5/M3 + stepwise; penalize semitone/tritone obsession (Herrmann profile). */
+function williamsSignatureIntervalScore(midi: number[]): number {
+  if (midi.length < 3) return 0.5;
+  const intervals: number[] = [];
+  for (let i = 1; i < midi.length; i++) {
+    const d = midi[i]! - midi[i - 1]!;
+    if (d !== 0) intervals.push(d);
+  }
+  if (intervals.length === 0) return 0.45;
+  let heroic = 0;
+  let chromaticObsession = 0;
+  for (const d of intervals) {
+    const a = Math.abs(d) % 12;
+    if (a <= 2 || a === 3 || a === 4 || a === 5 || a === 7 || a === 9) heroic++;
+    if (a === 1 || a === 11 || a === 6) chromaticObsession++;
+  }
+  const n = intervals.length;
+  return Math.max(0, Math.min(1, (heroic / n) * 1.2 - (chromaticObsession / n) * 0.5));
+}
+
+const SQ_VRB_MI_IDS = new Set(['ravel', 'herrmann', 'morricone', 'williams']);
 
 export function scoreMelodicIdentity(
   line: MelodicNote[],
@@ -389,19 +493,46 @@ export function scoreMelodicIdentity(
 
   const contrapuntalSq =
     contrapuntal?.contrapuntalLinePolicy === true && (contrapuntal.mesoSpans?.length ?? 0) >= 2;
+  const sqGce =
+    contrapuntalSq && contrapuntal.sqVrbId
+      ? getSqVrbGceAdjustments(contrapuntal.sqVrbId)
+      : undefined;
+  const miSongwriterId =
+    contrapuntalSq && contrapuntal.sqVrbId && SQ_VRB_MI_IDS.has(contrapuntal.sqVrbId)
+      ? contrapuntal.sqVrbId
+      : songwriterId;
 
   // I — interval balance (jazz step/skip/leap distribution + recovery)
-  const intervalEconomy = scoreJazzIntervalBalance(pitches, songwriterId, contrapuntalSq);
+  let intervalEconomy = scoreJazzIntervalBalance(pitches, miSongwriterId, contrapuntalSq);
+  if (contrapuntalSq && contrapuntal.sqVrbId === 'herrmann' && sqGce?.herrmannSignatureIntervalBlend) {
+    const sig = herrmannSignatureIntervalScore(pitches);
+    const blend = sqGce.herrmannSignatureIntervalBlend;
+    intervalEconomy = Math.min(1, intervalEconomy * (1 - blend) + sig * blend);
+  }
+  if (contrapuntalSq && contrapuntal.sqVrbId === 'morricone' && sqGce?.morriconeSignatureIntervalBlend) {
+    const sig = morriconeSignatureIntervalScore(pitches);
+    const blend = sqGce.morriconeSignatureIntervalBlend;
+    intervalEconomy = Math.min(1, intervalEconomy * (1 - blend) + sig * blend);
+  }
+  if (contrapuntalSq && contrapuntal.sqVrbId === 'williams' && sqGce?.williamsSignatureIntervalBlend) {
+    const sig = williamsSignatureIntervalScore(pitches);
+    const blend = sqGce.williamsSignatureIntervalBlend;
+    intervalEconomy = Math.min(1, intervalEconomy * (1 - blend) + sig * blend);
+  }
 
   // G — register cohesion (global σ for song/duo; per-meso mean σ for SQ contrapuntal)
   const registerCohesion = contrapuntalSq
-    ? registerCohesionPerMesoSpans(line, contrapuntal.mesoSpans)
+    ? registerCohesionPerMesoSpans(
+        line,
+        contrapuntal.mesoSpans,
+        sqGce?.registerCohesionStdevCeilingSt ?? CONTRAPUNTAL_REGISTER_STDEV_CEILING_DEFAULT,
+      )
     : 1 - Math.min(pitchStddev / 12, 1);
 
-  const wMotif = contrapuntalSq ? 0.38 : 0.35;
+  const wMotif = sqGce?.motifRecurrenceWeight ?? (contrapuntalSq ? 0.38 : 0.35);
   const wContour = contrapuntalSq ? 0.3 : 0.25;
-  const wInterval = contrapuntalSq ? 0.07 : 0.2;
-  const wRegister = contrapuntalSq ? 0.25 : 0.2;
+  const wInterval = sqGce?.intervalEconomyWeight ?? (contrapuntalSq ? 0.07 : 0.2);
+  const wRegister = sqGce?.registerCohesionWeight ?? (contrapuntalSq ? 0.25 : 0.2);
 
   const rawScore =
     10 *
@@ -425,9 +556,23 @@ export function scoreMelodicIdentity(
     };
   }
 
-  const hardFail = motifRecurrence < 0.35;
+  const motifHardMin =
+    sqGce?.motifRecurrenceHardFailMin ?? (contrapuntalSq ? 0.35 : 0.35);
+  const hardFail = motifRecurrence < motifHardMin;
 
   const registerLabel = contrapuntalSq ? 'register cohesion (meso σ)' : 'register cohesion';
+  const sqTag =
+    contrapuntalSq && contrapuntal.sqVrbId === 'herrmann'
+      ? ' [SQ herrmann MI]'
+      : contrapuntalSq && contrapuntal.sqVrbId === 'ravel'
+        ? ' [SQ ravel MI]'
+        : contrapuntalSq && contrapuntal.sqVrbId === 'morricone'
+          ? ' [SQ morricone MI]'
+          : contrapuntalSq && contrapuntal.sqVrbId === 'williams'
+            ? ' [SQ williams MI]'
+            : contrapuntalSq
+              ? ' [SQ contrapuntal]'
+              : '';
 
   return {
     score: hardFail ? Math.min(score, 6) : score,
@@ -437,7 +582,7 @@ export function scoreMelodicIdentity(
       `interval balance ${(intervalEconomy * 10).toFixed(1)}, ` +
       `${registerLabel} ${(registerCohesion * 10).toFixed(1)}` +
       (hardFail ? ' [HARD FAIL]' : '') +
-      (contrapuntalSq ? ' [SQ contrapuntal]' : ''),
+      sqTag,
   };
 }
 
@@ -891,6 +1036,47 @@ export function scoreCadentialClarity(
   return { score, justification };
 }
 
+function mesoSpanLengthBars(span: ContrapuntalMesoSpanRef): number {
+  return Math.max(0, span.endBeat - span.startBeat) / BEATS_PER_MEASURE;
+}
+
+function motifIntervalVectorForSpan(line: MelodicNote[], span: ContrapuntalMesoSpanRef): number[] {
+  const notes = pitchedNotesInBarRange(line, span.startBeat, span.endBeat);
+  if (notes.length < 3) return [];
+  const pitches = notes.map((n) => n.midi);
+  const head = pitches.slice(0, Math.min(4, pitches.length));
+  return head.slice(1).map((p, j) => (((p - head[j]!) % 12) + 12) % 12);
+}
+
+function cyclicMotifReturnScore(
+  line: MelodicNote[],
+  meso: readonly ContrapuntalMesoSpanRef[],
+): number {
+  if (meso.length < 2) return 0;
+  const first = motifIntervalVectorForSpan(line, meso[0]!);
+  const last = motifIntervalVectorForSpan(line, meso[meso.length - 1]!);
+  if (first.length < 2 || first.length !== last.length) return 0;
+  const match = first.every((iv, k) => Math.abs(iv - last[k]!) <= 2);
+  return match ? 1 : 0;
+}
+
+function adjacentMesoCellRepeat(
+  line: MelodicNote[],
+  meso: readonly ContrapuntalMesoSpanRef[],
+  index: number,
+): boolean {
+  if (index < 1) return false;
+  const a = motifIntervalVectorForSpan(line, meso[index - 1]!);
+  const b = motifIntervalVectorForSpan(line, meso[index]!);
+  if (a.length < 2 || b.length < 2) return false;
+  let matches = 0;
+  const n = Math.min(a.length, b.length);
+  for (let k = 0; k < n; k++) {
+    if (Math.abs(a[k]! - b[k]!) <= 2) matches++;
+  }
+  return matches >= n - 1;
+}
+
 function scorePhraseGrammarContrapuntal(
   line: MelodicNote[],
   options: ContrapuntalGceScoringOptions,
@@ -900,12 +1086,22 @@ function scorePhraseGrammarContrapuntal(
     return scorePhraseGrammar(line);
   }
 
+  const sqGce = options.sqVrbId ? getSqVrbGceAdjustments(options.sqVrbId) : undefined;
+  const ostinatoPg = sqGce?.phraseGrammarMode === 'ostinato_cell';
+  const folkModalPg = sqGce?.phraseGrammarMode === 'folk_modal_suspended';
+  const romanticPg = sqGce?.phraseGrammarMode === 'romantic_periodic_cadential';
+
   let closedPhrases = 0;
   let cadenceSum = 0;
+  let periodicCellHits = 0;
+  let ostinatoCellRepeats = 0;
+  let dissonantClosures = 0;
+  let longArchHits = 0;
+  let inconclusiveHits = 0;
   for (let i = 0; i < meso.length; i++) {
     const span = meso[i]!;
     const spanCadence = Math.max(
-      cadenceStrengthRank(span.cadenceStrength, true),
+      cadenceStrengthRank(span.cadenceStrength, true, options.sqVrbId),
       cadenceTagStrengthNear(options.cadenceTags, span.endBeat),
       i < meso.length - 1 ? 0.68 : 0.55,
     );
@@ -913,8 +1109,44 @@ function scorePhraseGrammarContrapuntal(
     const notesIn = pitchedNotesInBarRange(line, span.startBeat, span.endBeat);
     const last = notesIn[notesIn.length - 1];
     const longEnding = last ? last.beats >= 1.5 : false;
-    if (spanCadence >= 0.5 || longEnding || i < meso.length - 1) {
+    const lenBars = mesoSpanLengthBars(span);
+    const cellRepeat = adjacentMesoCellRepeat(line, meso, i);
+    if (cellRepeat) ostinatoCellRepeats++;
+    if (folkModalPg) {
+      const longArch = lenBars >= (sqGce?.longPhraseBarsMin ?? 8);
+      const inconclusive = span.cadenceStrength === 'weak' || !longEnding;
+      if (longArch) longArchHits++;
+      if (inconclusive) inconclusiveHits++;
+      if (longArch || inconclusive || spanCadence >= 0.45 || longEnding || i < meso.length - 1) {
+        closedPhrases++;
+      }
+    } else if (romanticPg) {
+      if (
+        span.cadenceStrength === 'strong' ||
+        spanCadence >= 0.72 ||
+        (spanCadence >= 0.55 && longEnding) ||
+        i < meso.length - 1
+      ) {
+        closedPhrases++;
+      }
+    } else if (ostinatoPg) {
+      if (cellRepeat || spanCadence >= 0.4 || longEnding || i < meso.length - 1) {
+        closedPhrases++;
+      }
+      if (span.cadenceStrength === 'weak' || spanCadence < 0.55) {
+        dissonantClosures++;
+      }
+    } else if (spanCadence >= 0.5 || longEnding || i < meso.length - 1) {
       closedPhrases++;
+    }
+    if (sqGce && !folkModalPg) {
+      if (lenBars >= sqGce.phraseCellBarsMin && lenBars <= sqGce.phraseCellBarsMax + 0.25) {
+        periodicCellHits++;
+      }
+    } else if (sqGce && folkModalPg) {
+      if (lenBars >= sqGce.phraseCellBarsMin && lenBars <= sqGce.phraseCellBarsMax + 0.25) {
+        periodicCellHits++;
+      }
     }
   }
 
@@ -922,14 +1154,70 @@ function scorePhraseGrammarContrapuntal(
   const closedRatio = closedPhrases / meso.length;
   const phraseCountNorm = Math.min(meso.length / 6, 1);
 
+  let periodicBonus = 0;
+  if (sqGce) {
+    if (folkModalPg) {
+      periodicBonus =
+        (longArchHits / meso.length) * 0.1 +
+        (inconclusiveHits / meso.length) * (sqGce.inconclusiveEndingCredit ?? 0.12) +
+        (meso.filter((m) => m.cadenceStrength === 'weak' || m.cadenceStrength === 'medium').length /
+          meso.length) *
+          (sqGce.modalCadenceCredit ?? 0.1) +
+        (periodicCellHits / meso.length) * 0.06 +
+        cyclicMotifReturnScore(line, meso) * sqGce.cyclicMotifReturnBoost;
+    } else if (romanticPg) {
+      const strongCadences = meso.filter((m) => m.cadenceStrength === 'strong').length;
+      const totalBars = meso.reduce((s, m) => s + mesoSpanLengthBars(m), 0);
+      const cyclic = cyclicMotifReturnScore(line, meso);
+      periodicBonus =
+        (strongCadences / meso.length) * (sqGce.authenticCadenceCredit ?? 0.16) +
+        (periodicCellHits / meso.length) * 0.12 +
+        (sqGce.phrasePeriodBars > 0 && totalBars > 0 && totalBars % sqGce.phrasePeriodBars < 1
+          ? 0.08
+          : 0) +
+        cyclic * sqGce.cyclicMotifReturnBoost;
+    } else if (ostinatoPg) {
+      const repeatRatio = ostinatoCellRepeats / Math.max(1, meso.length - 1);
+      periodicBonus =
+        repeatRatio * (sqGce.ostinatoPhraseEndingCredit ?? 0.15) +
+        (periodicCellHits / meso.length) * 0.1 +
+        (dissonantClosures / meso.length) * (sqGce.dissonantClosureCredit ?? 0.1) +
+        cyclicMotifReturnScore(line, meso) * sqGce.cyclicMotifReturnBoost;
+    } else {
+      const cellRatio = periodicCellHits / meso.length;
+      const totalBars = meso.reduce((s, m) => s + mesoSpanLengthBars(m), 0);
+      const cyclic = cyclicMotifReturnScore(line, meso);
+      periodicBonus =
+        cellRatio * 0.08 +
+        (sqGce.phrasePeriodBars > 0 && totalBars > 0 && totalBars % sqGce.phrasePeriodBars < 1
+          ? 0.06
+          : 0) +
+        cyclic * sqGce.cyclicMotifReturnBoost;
+    }
+  }
+
   const rawScore =
-    10 * (0.35 * closedRatio + 0.35 * phraseCountNorm + 0.3 * cadenceStrengthScore);
+    10 *
+    (0.35 * closedRatio +
+      0.35 * phraseCountNorm +
+      0.3 * cadenceStrengthScore +
+      periodicBonus);
   const score = Math.max(0, Math.min(10, Math.round(rawScore * 10) / 10));
+  const pgTag =
+    options.sqVrbId === 'herrmann'
+      ? ' [SQ herrmann PG]'
+      : options.sqVrbId === 'ravel'
+        ? ' [SQ ravel PG]'
+        : options.sqVrbId === 'morricone'
+          ? ' [SQ morricone PG]'
+          : options.sqVrbId === 'williams'
+            ? ' [SQ williams PG]'
+            : '';
   return {
     score,
     justification:
       `${closedPhrases}/${meso.length} meso-closed, ${meso.length} meso phrases, ` +
-      `cadence strength ${(cadenceStrengthScore * 10).toFixed(1)} [SQ contrapuntal]`,
+      `cadence strength ${(cadenceStrengthScore * 10).toFixed(1)} [SQ contrapuntal]${pgTag}`,
   };
 }
 
