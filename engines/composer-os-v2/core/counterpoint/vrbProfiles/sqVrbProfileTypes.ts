@@ -26,7 +26,8 @@ export type SqVrbRegisterPolicy =
   | 'systematic_bass_to_soprano_expansion'
   | 'mid_register_chromatic_inner_compression'
   | 'low_biased_extreme_punctuation_spikes'
-  | 'extreme_pointillist_leaps_all_registers';
+  | 'extreme_pointillist_leaps_all_registers'
+  | 'open_string_low_pedal_lyrical_soprano_arch';
 
 /** SQ→BB phrase surface grammar. */
 export type SqVrbPhraseArticulation =
@@ -42,7 +43,8 @@ export type SqVrbPhraseArticulation =
   | 'ground_iterations_progressive_entry'
   | 'through_composed_arch_no_cadence'
   | 'asymmetric_cell_non_resolving'
-  | 'aphoristic_cell_silence_bounded';
+  | 'aphoristic_cell_silence_bounded'
+  | 'four_bar_periodic_suspended_non_resolving';
 
 /** Badalamenti three-tier texture — melody / chromatic inner cushion / bass pedal. */
 export interface SqBadalamentiThreeTierTexture {
@@ -123,7 +125,8 @@ export type SqVrbGcePhraseGrammarMode =
   | 'repeating_ostinato_no_cadence'
   | 'through_composed_arch_no_cadence'
   | 'asymmetric_cell_non_resolving'
-  | 'aphoristic_cell_silence_bounded';
+  | 'aphoristic_cell_silence_bounded'
+  | 'four_bar_periodic_suspended_non_resolving';
 
 /** Per-VRB GCE Melodic Identity / Phrase Grammar tweaks (SQ→BB path). */
 export interface SqVrbGceScorerAdjustments {
@@ -231,6 +234,24 @@ export interface SqVrbGceScorerAdjustments {
   longPhraseCellPenalty?: number;
   /** MI: penalize high motif recurrence (aphoristic non-repetition). */
   loopingMotifRecurrencePenalty?: number;
+  /** MI: blend quartal ic5 / ic2 Mitchell signature. */
+  joniMitchellSignatureIntervalBlend?: number;
+  /** MI/PG: stacked fourths / fifths vertical sonority. */
+  ic5Credit?: number;
+  /** MI/PG: sus2 / maj9 / add9 enrichment. */
+  ic2Credit?: number;
+  /** PG: sus2/sus4/maj7/maj9 phrase endings valid. */
+  susChordCredit?: number;
+  /** PG/MI: cello open-string pedal through phrase changes. */
+  lowRegisterPedalCredit?: number;
+  /** MI/PG: lyrical Vln I arc over sustained inner voices. */
+  sopranoArchCredit?: number;
+  /** PG: Vln II + Vla sustain = idiomatic (not sparse). */
+  innerVoiceSustainCredit?: number;
+  /** PG: penalize functional V→I dominant resolution endings. */
+  dominantResolutionPenalty?: number;
+  /** PG: soft penalty for 3-bar cells (rare). */
+  shortPhraseCellPenalty?: number;
 }
 
 /** SQ Harmonic Voice profile — contrapuntal policy + BB translation hints. */

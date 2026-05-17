@@ -259,7 +259,8 @@ export type SqToBbSqComposerId =
   | 'zimmer'
   | 'badalamenti'
   | 'shostakovich'
-  | 'webern';
+  | 'webern'
+  | 'joni_mitchell';
 export type SqToBbSqComposer = SqToBbSqComposerId | null;
 
 export const SQ_TO_BB_SQ_COMPOSER_ENABLED: ReadonlySet<SqToBbSqComposerId> = new Set([
@@ -275,6 +276,7 @@ export const SQ_TO_BB_SQ_COMPOSER_ENABLED: ReadonlySet<SqToBbSqComposerId> = new
   'badalamenti',
   'shostakovich',
   'webern',
+  'joni_mitchell',
 ]);
 
 /** Greyed-out / unknown values → None (no throw). */
@@ -302,6 +304,7 @@ export function sqLineVrbIdForSqToBb(
   if (active === 'badalamenti') return 'badalamenti';
   if (active === 'shostakovich') return 'shostakovich';
   if (active === 'webern') return 'webern';
+  if (active === 'joni_mitchell') return 'joni_mitchell';
   return vrbIdForSqToBbStyleProfile(styleProfile);
 }
 

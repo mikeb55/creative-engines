@@ -612,3 +612,4 @@ export const PHILIP_GLASS_FILM_STUB = filmStub('philip_glass_screen');
 export const HANS_ZIMMER_FILM_STUB = filmStub('hans_zimmer');
 export const BADALAMENTI_FILM_STUB = filmStub('angelo_badalamenti');
 export const WEBERN_FILM_STUB = filmStub('webern');
+export const JONI_MITCHELL_FILM_STUB = filmStub('joni_mitchell');

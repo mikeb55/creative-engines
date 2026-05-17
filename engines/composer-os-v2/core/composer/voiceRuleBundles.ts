@@ -31,6 +31,7 @@ import { applyBadalamentiFilmStubVrbProfile } from '../counterpoint/vrbProfiles/
 import { applyZimmerFilmStubVrbProfile } from '../counterpoint/vrbProfiles/zimmerFilmStubVrb';
 import { applyShostakovichSqVrbProfile } from '../counterpoint/vrbProfiles/shostakovichSqVrb';
 import { applyWebernSqVrbProfile } from '../counterpoint/vrbProfiles/webernSqVrb';
+import { applyJoniMitchellSqVrbProfile } from '../counterpoint/vrbProfiles/joniMitchellSqVrb';
 import { JOBIM_VRB_FINGERPRINT_RECEIPTS } from './jobimVrbFingerprints';
 import { ARVO_PART_TINTINNABULI_VRF_FINGERPRINT_RECEIPTS } from './arvoPartTintinnabuliVrbFingerprints';
 import { SATIE_VRF_FINGERPRINT_RECEIPTS } from './satieVrbFingerprints';
@@ -53,6 +54,7 @@ import {
   PHILIP_GLASS_FILM_STUB,
   ROTA_FILM_STUB,
   WEBERN_FILM_STUB,
+  JONI_MITCHELL_FILM_STUB,
   WILLIAMS_FILM_STUB,
 } from './priority3VoiceRuleBundles';
 
@@ -3033,6 +3035,8 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   angelo_badalamenti: applyBadalamentiFilmStubVrbProfile(BADALAMENTI_FILM_STUB),
   webern: applyWebernSqVrbProfile(WEBERN_FILM_STUB),
   anton_webern: applyWebernSqVrbProfile(WEBERN_FILM_STUB),
+  joni_mitchell: applyJoniMitchellSqVrbProfile(JONI_MITCHELL_FILM_STUB),
+  joni_mitchell_songwriter: applyJoniMitchellSqVrbProfile(JONI_MITCHELL_FILM_STUB),
   debussy: DEBUSSY,
   claude_debussy: DEBUSSY,
   radiohead: RADIOHEAD,

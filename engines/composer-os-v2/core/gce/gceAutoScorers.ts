@@ -239,6 +239,52 @@ function registerCohesionPerMesoSpansWebern(
   return sorted.slice(0, keep).reduce((a, b) => a + b, 0) / keep;
 }
 
+/** Joni Mitchell — σ≤23 hard; registral polarity (low pedal + high melody) valid. */
+function registerCohesionPerMesoSpansJoniMitchell(
+  line: MelodicNote[],
+  mesoSpans: readonly ContrapuntalMesoSpanRef[],
+  ceilingSt: number,
+  softCeilingSt: number,
+): number {
+  const ceiling = ceilingSt > 0 ? ceilingSt : 23;
+  const soft = softCeilingSt >= ceiling ? softCeilingSt : ceiling + 4;
+  const perPhrase: number[] = [];
+  for (const span of mesoSpans) {
+    const notes = pitchedNotesInBarRange(line, span.startBeat, span.endBeat);
+    if (notes.length === 0) {
+      perPhrase.push(0.5);
+      continue;
+    }
+    if (notes.length <= 2) {
+      perPhrase.push(0.96);
+      continue;
+    }
+    const pitches = notes.map((n) => n.midi);
+    const minP = Math.min(...pitches);
+    const maxP = Math.max(...pitches);
+    if (minP <= 50 && maxP >= 76) {
+      perPhrase.push(0.94);
+      continue;
+    }
+    const mean = pitches.reduce((a, b) => a + b, 0) / pitches.length;
+    const variance = pitches.reduce((s, p) => s + (p - mean) ** 2, 0) / pitches.length;
+    const stddev = Math.sqrt(variance);
+    if (stddev <= ceiling) {
+      perPhrase.push(1);
+    } else if (stddev <= soft) {
+      const excess = stddev - ceiling;
+      perPhrase.push(Math.max(0.88, 1 - excess / (soft - ceiling + 1) * 0.22));
+    } else {
+      const excess = stddev - soft;
+      perPhrase.push(Math.max(0.78, 1 - excess / soft * 0.32));
+    }
+  }
+  if (perPhrase.length === 0) return 0.5;
+  const sorted = [...perPhrase].sort((a, b) => b - a);
+  const keep = Math.max(1, Math.ceil(sorted.length * 0.75));
+  return sorted.slice(0, keep).reduce((a, b) => a + b, 0) / keep;
+}
+
 function cadenceStrengthRank(
   strength: PhraseCadenceStrength,
   contrapuntal?: boolean,
@@ -346,6 +392,18 @@ function cadenceStrengthRank(
         return 0.32;
       case 'medium':
         return 0.72;
+      case 'weak':
+        return 0.88;
+      default:
+        return 0.84;
+    }
+  }
+  if (contrapuntal && sqVrbId === 'joni_mitchell') {
+    switch (strength) {
+      case 'strong':
+        return 0.55;
+      case 'medium':
+        return 0.92;
       case 'weak':
         return 0.88;
       default:
@@ -482,6 +540,9 @@ function getIntervalTarget(songwriterId?: string): {
     case 'webern':
       // Webern SQ — ic1/ic2 saturation + wide pointillist leaps; no tonal step bias
       return { steps: 0.55, skips: 0.2, leaps: 0.15, wideLeaps: 0.1, min: 1, max: 24 };
+    case 'joni_mitchell':
+      // Mitchell SQ — quartal steps + fourths/fifths; lyrical skips; no tritone obsession
+      return { steps: 0.52, skips: 0.28, leaps: 0.14, wideLeaps: 0.06, min: 1, max: 10 };
     default:
       // Universal jazz target
       return { steps: 0.55, skips: 0.25, leaps: 0.15, wideLeaps: 0.05, min: 1, max: 8 };
@@ -812,6 +873,52 @@ function webernIc1SaturationScore(midi: number[]): number {
   return Math.min(1, (ic1ic2 / (midi.length - 1)) * 1.35);
 }
 
+/** Mitchell — quartal ic5 + sus/add9 ic2 colour; not semitone/tritone saturation. */
+function joniMitchellSignatureIntervalScore(midi: number[]): number {
+  if (midi.length < 2) return 0.45;
+  let hits = 0;
+  for (let i = 1; i < midi.length; i++) {
+    const a = Math.abs(midi[i]! - midi[i - 1]!) % 12;
+    if (a === 2 || a === 3 || a === 4 || a === 5 || a === 7 || a === 10) hits++;
+  }
+  return Math.min(1, (hits / (midi.length - 1)) * 1.28);
+}
+
+function joniMitchellIc5Score(midi: number[]): number {
+  if (midi.length < 2) return 0.45;
+  let ic5 = 0;
+  for (let i = 1; i < midi.length; i++) {
+    const a = Math.abs(midi[i]! - midi[i - 1]!) % 12;
+    if (a === 5 || a === 7) ic5++;
+  }
+  return Math.min(1, (ic5 / (midi.length - 1)) * 1.4);
+}
+
+function joniMitchellIc2Score(midi: number[]): number {
+  if (midi.length < 2) return 0.45;
+  let ic2 = 0;
+  for (let i = 1; i < midi.length; i++) {
+    const a = Math.abs(midi[i]! - midi[i - 1]!) % 12;
+    if (a <= 2 || a === 10) ic2++;
+  }
+  return Math.min(1, (ic2 / (midi.length - 1)) * 1.3);
+}
+
+function joniMitchellSopranoArchScore(midi: number[]): number {
+  if (midi.length < 3) return 0.45;
+  const span = Math.max(...midi) - Math.min(...midi);
+  if (span >= 12 && span <= 18) return 0.95;
+  if (span >= 9 && span <= 22) return 0.82;
+  return 0.55;
+}
+
+function joniMitchellLowPedalScore(midi: number[]): number {
+  if (midi.length < 2) return 0.45;
+  const low = midi.filter((p) => p <= 50);
+  if (low.length === 0) return 0.5;
+  return Math.min(1, 0.55 + (low.length / midi.length) * 0.55);
+}
+
 function mesoSpanHasSilenceBoundary(
   line: MelodicNote[],
   startBeat: number,
@@ -871,6 +978,7 @@ const SQ_VRB_MI_IDS = new Set([
   'badalamenti',
   'shostakovich',
   'webern',
+  'joni_mitchell',
 ]);
 
 export function scoreMelodicIdentity(
@@ -1118,6 +1226,17 @@ export function scoreMelodicIdentity(
       intervalEconomy + shostakovichTritoneAxisScore(pitches) * sqGce.tritoneAxisCredit,
     );
   }
+  if (contrapuntalSq && contrapuntal.sqVrbId === 'joni_mitchell' && sqGce?.joniMitchellSignatureIntervalBlend) {
+    const sig = joniMitchellSignatureIntervalScore(pitches);
+    const blend = sqGce.joniMitchellSignatureIntervalBlend;
+    intervalEconomy = Math.min(1, intervalEconomy * (1 - blend) + sig * blend);
+  }
+  if (contrapuntalSq && contrapuntal.sqVrbId === 'joni_mitchell' && sqGce?.ic5Credit) {
+    intervalEconomy = Math.min(1, intervalEconomy + joniMitchellIc5Score(pitches) * sqGce.ic5Credit);
+  }
+  if (contrapuntalSq && contrapuntal.sqVrbId === 'joni_mitchell' && sqGce?.ic2Credit) {
+    intervalEconomy = Math.min(1, intervalEconomy + joniMitchellIc2Score(pitches) * sqGce.ic2Credit);
+  }
 
   // G — register cohesion (global σ for song/duo; per-meso mean σ for SQ contrapuntal)
   const zimmerPassacaglia =
@@ -1163,7 +1282,14 @@ export function scoreMelodicIdentity(
                   sqGce?.registerCohesionSoftCeilingSt ?? 45,
                   45,
                 )
-              : registerCohesionPerMesoSpans(
+              : contrapuntal.sqVrbId === 'joni_mitchell'
+                ? registerCohesionPerMesoSpansJoniMitchell(
+                    line,
+                    contrapuntal.mesoSpans,
+                    sqGce?.registerCohesionStdevCeilingSt ?? 23,
+                    sqGce?.registerCohesionSoftCeilingSt ?? 27,
+                  )
+                : registerCohesionPerMesoSpans(
               line,
               contrapuntal.mesoSpans,
               sqGce?.registerCohesionStdevCeilingSt ?? CONTRAPUNTAL_REGISTER_STDEV_CEILING_DEFAULT,
@@ -1182,6 +1308,9 @@ export function scoreMelodicIdentity(
     if (webernIc1 >= 0.65 && intervalEconomy >= 0.82) {
       motifTerm = Math.max(motifTerm, 0.72);
     }
+  }
+  if (contrapuntalSq && contrapuntal.sqVrbId === 'joni_mitchell') {
+    motifTerm = Math.min(1, 0.38 + (1 - Math.min(1, motifRecurrence / 0.52)) * 0.55);
   }
 
   const rawScore =
@@ -1203,6 +1332,12 @@ export function scoreMelodicIdentity(
         : 0;
     score = Math.min(10, score + klangBoost + isoBoost + ic1Boost);
   }
+  if (contrapuntalSq && contrapuntal.sqVrbId === 'joni_mitchell') {
+    const archBoost = joniMitchellSopranoArchScore(pitches) * (sqGce?.sopranoArchCredit ?? 0.14) * 2.4;
+    const pedalBoost = joniMitchellLowPedalScore(pitches) * (sqGce?.lowRegisterPedalCredit ?? 0.14) * 1.8;
+    const ic5Boost = joniMitchellIc5Score(pitches) * (sqGce?.ic5Credit ?? 0.14) * 1.6;
+    score = Math.min(10, score + archBoost + pedalBoost + ic5Boost);
+  }
 
   if (uniquePitchCount <= 2) {
     return {
@@ -1222,12 +1357,19 @@ export function scoreMelodicIdentity(
   const hardFail =
     contrapuntalSq &&
     contrapuntal.sqVrbId !== 'webern' &&
+    contrapuntal.sqVrbId !== 'joni_mitchell' &&
     motifRecurrence < motifHardMin;
   const webernLoopPenalty =
     contrapuntalSq &&
     contrapuntal.sqVrbId === 'webern' &&
     motifRecurrence > 0.78 &&
     (sqGce?.loopingMotifRecurrencePenalty ?? 0) > 0;
+  const joniLoopPenalty =
+    contrapuntalSq &&
+    contrapuntal.sqVrbId === 'joni_mitchell' &&
+    motifRecurrence > 0.85 &&
+    intervalEconomy < 0.88 &&
+    (sqGce?.loopingCellPenalty ?? 0) > 0;
 
   const registerLabel = contrapuntalSq ? 'register cohesion (meso σ)' : 'register cohesion';
   const sqTag =
@@ -1255,9 +1397,11 @@ export function scoreMelodicIdentity(
                         ? ' [SQ shostakovich MI]'
                         : contrapuntalSq && contrapuntal.sqVrbId === 'webern'
                           ? ' [SQ webern MI]'
-                          : contrapuntalSq
-                            ? ' [SQ contrapuntal]'
-                            : '';
+                          : contrapuntalSq && contrapuntal.sqVrbId === 'joni_mitchell'
+                            ? ' [SQ joni_mitchell MI]'
+                            : contrapuntalSq
+                              ? ' [SQ contrapuntal]'
+                              : '';
 
   if (webernLoopPenalty) {
     score = Math.min(
@@ -1265,6 +1409,15 @@ export function scoreMelodicIdentity(
       Math.max(
         5.5,
         score - motifRecurrence * (sqGce?.loopingMotifRecurrencePenalty ?? 0.18) * 12,
+      ),
+    );
+  }
+  if (joniLoopPenalty) {
+    score = Math.min(
+      score,
+      Math.max(
+        5.5,
+        score - motifRecurrence * (sqGce?.loopingCellPenalty ?? 0.18) * 10,
       ),
     );
   }
@@ -1792,6 +1945,7 @@ function scorePhraseGrammarContrapuntal(
   const throughComposedArchPg = sqGce?.phraseGrammarMode === 'through_composed_arch_no_cadence';
   const shostakovichPg = sqGce?.phraseGrammarMode === 'asymmetric_cell_non_resolving';
   const webernPg = sqGce?.phraseGrammarMode === 'aphoristic_cell_silence_bounded';
+  const joniMitchellPg = sqGce?.phraseGrammarMode === 'four_bar_periodic_suspended_non_resolving';
   const zimmerPassacagliaPg =
     options.sqVrbId === 'zimmer' && options.passacagliaMode === true;
 
@@ -1809,6 +1963,9 @@ function scorePhraseGrammarContrapuntal(
   let loopingCellHits = 0;
   let rowCompletionHits = 0;
   let sparseTextureHits = 0;
+  let innerVoiceSustainHits = 0;
+  let shortPhraseHits = 0;
+  let dominantResolutionHits = 0;
   for (let i = 0; i < meso.length; i++) {
     const span = meso[i]!;
     const spanCadence = Math.max(
@@ -1926,6 +2083,24 @@ function scorePhraseGrammarContrapuntal(
       if (silenceBoundary || shortCell || rowComplete || spanCadence >= 0.34 || i < meso.length - 1) {
         closedPhrases++;
       }
+    } else if (joniMitchellPg) {
+      const inconclusive =
+        span.cadenceStrength === 'weak' ||
+        span.cadenceStrength === 'medium' ||
+        !longEnding;
+      const periodicCell = lenBars >= 4 && lenBars <= 5.25;
+      const shortCell = lenBars >= 2.75 && lenBars <= 3.25;
+      const longCell = lenBars >= 5.75 && lenBars <= 6.25;
+      const threeTier = notesIn.length <= 3;
+      if (inconclusive) inconclusiveHits++;
+      if (threeTier) innerVoiceSustainHits++;
+      if (cellRepeat) loopingCellHits++;
+      if (shortCell) shortPhraseHits++;
+      if (longCell) wallToWallHits++;
+      if (span.cadenceStrength === 'strong') dominantResolutionHits++;
+      if (inconclusive || periodicCell || threeTier || spanCadence >= 0.4 || i < meso.length - 1) {
+        closedPhrases++;
+      }
     } else if (ostinatoPg) {
       if (cellRepeat || spanCadence >= 0.4 || longEnding || i < meso.length - 1) {
         closedPhrases++;
@@ -1951,6 +2126,10 @@ function scorePhraseGrammarContrapuntal(
         periodicCellHits++;
       }
     } else if (sqGce && webernPg) {
+      if (lenBars >= sqGce.phraseCellBarsMin && lenBars <= sqGce.phraseCellBarsMax + 0.25) {
+        periodicCellHits++;
+      }
+    } else if (sqGce && joniMitchellPg) {
       if (lenBars >= sqGce.phraseCellBarsMin && lenBars <= sqGce.phraseCellBarsMax + 0.25) {
         periodicCellHits++;
       }
@@ -2045,6 +2224,22 @@ function scorePhraseGrammarContrapuntal(
         (ostinatoCellRepeats / Math.max(1, meso.length - 1)) *
           (sqGce.loopingCellPenalty ?? 0.2) *
           0.5;
+    } else if (joniMitchellPg) {
+      const modalEnds = meso.filter(
+        (m) => m.cadenceStrength === 'weak' || m.cadenceStrength === 'medium',
+      ).length;
+      periodicBonus =
+        (inconclusiveHits / meso.length) * (sqGce.inconclusiveEndingCredit ?? 0.16) +
+        (modalEnds / meso.length) *
+          (sqGce.modalEndingsValid ? (sqGce.modalCadenceCredit ?? 0.14) : 0) +
+        (periodicCellHits / meso.length) * (sqGce.susChordCredit ?? 0.16) +
+        (innerVoiceSustainHits / meso.length) * (sqGce.innerVoiceSustainCredit ?? 0.12) +
+        (sqGce.lowRegisterPedalCredit ?? 0.14) * 0.45 +
+        (sqGce.sopranoArchCredit ?? 0.14) * 0.4 -
+        (loopingCellHits / meso.length) * (sqGce.loopingCellPenalty ?? 0.18) -
+        (shortPhraseHits / meso.length) * (sqGce.shortPhraseCellPenalty ?? 0.12) -
+        (wallToWallHits / meso.length) * (sqGce.longPhraseCellPenalty ?? 0.1) -
+        (dominantResolutionHits / meso.length) * (sqGce.dominantResolutionPenalty ?? 0.14);
     } else if (loopingCellPg) {
       const repeatRatio = ostinatoCellRepeats / Math.max(1, meso.length - 1);
       const modalEnds = meso.filter(
@@ -2154,7 +2349,9 @@ function scorePhraseGrammarContrapuntal(
                         ? ' [SQ shostakovich PG]'
                         : options.sqVrbId === 'webern'
                           ? ' [SQ webern PG]'
-                          : '';
+                          : options.sqVrbId === 'joni_mitchell'
+                            ? ' [SQ joni_mitchell PG]'
+                            : '';
   return {
     score,
     justification:
