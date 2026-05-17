@@ -12,6 +12,7 @@ import { WILLIAMS_SQ_VRB_PROFILE } from './williamsFilmStubVrb';
 import { BADALAMENTI_SQ_VRB_PROFILE } from './badalamentiFilmStubVrb';
 import { ZIMMER_SQ_VRB_PROFILE } from './zimmerFilmStubVrb';
 import { SHOSTAKOVICH_SQ_VRB_PROFILE } from './shostakovichSqVrb';
+import { WEBERN_SQ_VRB_PROFILE } from './webernSqVrb';
 import type { SqVrbGceScorerAdjustments, SqVrbProfile } from './sqVrbProfileTypes';
 
 const SQ_VRB_PROFILE_BY_ID: Readonly<Record<string, SqVrbProfile>> = {
@@ -25,6 +26,7 @@ const SQ_VRB_PROFILE_BY_ID: Readonly<Record<string, SqVrbProfile>> = {
   zimmer: ZIMMER_SQ_VRB_PROFILE,
   badalamenti: BADALAMENTI_SQ_VRB_PROFILE,
   shostakovich: SHOSTAKOVICH_SQ_VRB_PROFILE,
+  webern: WEBERN_SQ_VRB_PROFILE,
 };
 
 export function getSqVrbProfile(vrbId: string): SqVrbProfile | undefined {

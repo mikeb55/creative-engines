@@ -274,6 +274,7 @@ export const SQ_TO_BB_SQ_COMPOSER_ENABLED: ReadonlySet<SqToBbSqComposerId> = new
   'zimmer',
   'badalamenti',
   'shostakovich',
+  'webern',
 ]);
 
 /** Greyed-out / unknown values → None (no throw). */
@@ -300,6 +301,7 @@ export function sqLineVrbIdForSqToBb(
   if (active === 'zimmer') return 'zimmer';
   if (active === 'badalamenti') return 'badalamenti';
   if (active === 'shostakovich') return 'shostakovich';
+  if (active === 'webern') return 'webern';
   return vrbIdForSqToBbStyleProfile(styleProfile);
 }
 

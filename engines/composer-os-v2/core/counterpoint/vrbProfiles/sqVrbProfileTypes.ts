@@ -25,7 +25,8 @@ export type SqVrbRegisterPolicy =
   | 'dynamically_wide_arc_accumulative'
   | 'systematic_bass_to_soprano_expansion'
   | 'mid_register_chromatic_inner_compression'
-  | 'low_biased_extreme_punctuation_spikes';
+  | 'low_biased_extreme_punctuation_spikes'
+  | 'extreme_pointillist_leaps_all_registers';
 
 /** SQ→BB phrase surface grammar. */
 export type SqVrbPhraseArticulation =
@@ -40,7 +41,8 @@ export type SqVrbPhraseArticulation =
   | 'repeating_ostinato_no_cadence'
   | 'ground_iterations_progressive_entry'
   | 'through_composed_arch_no_cadence'
-  | 'asymmetric_cell_non_resolving';
+  | 'asymmetric_cell_non_resolving'
+  | 'aphoristic_cell_silence_bounded';
 
 /** Badalamenti three-tier texture — melody / chromatic inner cushion / bass pedal. */
 export interface SqBadalamentiThreeTierTexture {
@@ -120,7 +122,8 @@ export type SqVrbGcePhraseGrammarMode =
   | 'looping_cell_no_cadence'
   | 'repeating_ostinato_no_cadence'
   | 'through_composed_arch_no_cadence'
-  | 'asymmetric_cell_non_resolving';
+  | 'asymmetric_cell_non_resolving'
+  | 'aphoristic_cell_silence_bounded';
 
 /** Per-VRB GCE Melodic Identity / Phrase Grammar tweaks (SQ→BB path). */
 export interface SqVrbGceScorerAdjustments {
@@ -210,6 +213,24 @@ export interface SqVrbGceScorerAdjustments {
   passacagliaPedalCredit?: number;
   /** PG: stretto motivic saturation over long spans without closure. */
   strettoMotifSaturationCredit?: number;
+  /** MI: blend ic1/ic2 pointillist / tritone signature. */
+  webernSignatureIntervalBlend?: number;
+  /** PG/MI: rest ≥ 1 beat marks phrase boundary. */
+  silenceBoundaryCredit?: number;
+  /** PG/MI: 1–2 simultaneous strands = Klangfarbenmelodie (not sparse). */
+  klangfarbenmelodieCredit?: number;
+  /** MI/PG: isolated extreme-register single tone valid. */
+  isolatedToneCredit?: number;
+  /** MI/PG: semitone / minor-second vertical saturation. */
+  ic1SaturationCredit?: number;
+  /** PG: 12-pc aggregate completion = phrase boundary. */
+  rowCompletionBoundaryCredit?: number;
+  /** PG/MI: penalize ostinato / looping cell repetition. */
+  loopingCellPenalty?: number;
+  /** PG: soft penalty for cells longer than phraseCellBarsMax. */
+  longPhraseCellPenalty?: number;
+  /** MI: penalize high motif recurrence (aphoristic non-repetition). */
+  loopingMotifRecurrencePenalty?: number;
 }
 
 /** SQ Harmonic Voice profile — contrapuntal policy + BB translation hints. */
