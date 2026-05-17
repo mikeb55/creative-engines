@@ -3,8 +3,11 @@
  * Runs a short fixed list of existing `run*Tests` entrypoints (no duplicate assertions).
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
- * `Passed: N` in the smoke summary, then sync **N** + suite count into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **248** PASS rows, **63** suites (2026-05-15).
+ * `Passed: N rows (M suites)` in the smoke summary, then sync **N** + **M** into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **248** PASS rows, **63** suites (full tier).
+ *
+ * **Fast subset:** `COMPOSER_OS_SMOKE_TIER=fast` or `npm run test:composer-smoke-fast` — skips `SMOKE_FAST_EXCLUDE` suites (local dev).
+ * **Full tier (default / CI):** unset or `COMPOSER_OS_SMOKE_TIER=full` — all suites in `smokeSuites`.
  *
  * Retired Cursor background smoke task IDs (pre-eb92c73a `harmonyModeRequested` slice gate + Gate B4 harness): **875851**, **984173** — no in-repo harness keyed by those IDs; failures were historical terminal runs only.
  */
@@ -75,6 +78,22 @@ import { runFollowup5ShoutBrassInPlaceSmokeTests } from './followup5ShoutBrassIn
 import { runHarmonySpineLockSmokeTests } from './harmonySpineLock.smoke.test';
 
 type Row = { name: string; ok: boolean };
+
+/** Smoke fast tier — heaviest suites omitted (~7.5s of ~22s wall clock on typical dev machine). */
+const SMOKE_FAST_EXCLUDE: readonly string[] = [
+  'App API boundary',
+  'Frank Zappa songwriter slice',
+  'SD3 drum guide export (MIDI + JSON sidecar)',
+  'Import harmony ensemble (Big Band / String Quartet)',
+  'Phase 6+7 — instrumentGroup MusicXML (quartet + guitar TAB)',
+  'Indie guitar_2 Song Mode comp (ChordEvent quality)',
+  'Charlie Parker songwriter slice',
+];
+
+function resolveSmokeTier(): 'fast' | 'full' {
+  const raw = (process.env.COMPOSER_OS_SMOKE_TIER ?? 'full').trim().toLowerCase();
+  return raw === 'fast' ? 'fast' : 'full';
+}
 
 function runPhraseEngineV2IntegrationWithDuoIntentSmokeGuard(): Row[] {
   const rows = runPhraseEngineV2IntegrationTests();
@@ -154,12 +173,18 @@ function toRows(results: { name: string; ok: boolean }[] | { ok: boolean; name: 
 }
 
 function main(): void {
-  console.log('[smoke] Composer OS v2 — tier=smoke (fixed allowlist)\n');
+  const smokeTier = resolveSmokeTier();
+  const suitesToRun =
+    smokeTier === 'fast'
+      ? smokeSuites.filter((s) => !SMOKE_FAST_EXCLUDE.includes(s.label))
+      : smokeSuites;
+
+  console.log(`[smoke] Composer OS v2 — tier=${smokeTier}\n`);
 
   let passed = 0;
   let failed = 0;
 
-  for (const suite of smokeSuites) {
+  for (const suite of suitesToRun) {
     const t0 = Date.now();
     const rows = toRows(suite.run());
     console.log(`=== ${suite.label} (${Date.now() - t0}ms) ===`);
@@ -175,7 +200,7 @@ function main(): void {
   }
 
   console.log('\n=== Smoke summary ===');
-  console.log(`Passed: ${passed}`);
+  console.log(`Passed: ${passed} rows (${suitesToRun.length} suites)`);
   console.log(`Failed: ${failed}`);
 
   if (failed > 0) {

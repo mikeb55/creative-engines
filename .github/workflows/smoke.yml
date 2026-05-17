@@ -1,5 +1,7 @@
 name: Composer OS Smoke
 
+# fast tier: test:composer-smoke-fast (local dev only — not wired to CI)
+
 on:
   push:
     branches: [main]
