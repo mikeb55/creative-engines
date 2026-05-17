@@ -24,6 +24,8 @@ export interface ContrapuntalGceScoringOptions {
   sqVrbId?: string;
   /** SQ→BB — informational only (no GCE threshold changes). */
   chordTimelineSource?: 'user' | 'internal' | 'mixed';
+  /** Zimmer passacaglia sub-mode — raises σ ceiling when ground bass + progressive entry. */
+  passacagliaMode?: boolean;
 }
 
 /** Melodic line position in bar-offset space (matches meso span startBeat/endBeat). */
@@ -73,6 +75,119 @@ function registerCohesionPerMesoSpans(
   return sorted.slice(0, keep).reduce((a, b) => a + b, 0) / keep;
 }
 
+/** Goldsmith — σ≤24 nominal; soft warning only between 24–26 st (sequential ascent). */
+function registerCohesionPerMesoSpansGoldsmith(
+  line: MelodicNote[],
+  mesoSpans: readonly ContrapuntalMesoSpanRef[],
+  ceilingSt: number,
+  softCeilingSt: number,
+): number {
+  const ceiling = ceilingSt > 0 ? ceilingSt : CONTRAPUNTAL_REGISTER_STDEV_CEILING_DEFAULT;
+  const soft = softCeilingSt > ceiling ? softCeilingSt : ceiling + 2;
+  const perPhrase: number[] = [];
+  for (const span of mesoSpans) {
+    const notes = pitchedNotesInBarRange(line, span.startBeat, span.endBeat);
+    if (notes.length < 2) {
+      perPhrase.push(0.55);
+      continue;
+    }
+    const pitches = notes.map((n) => n.midi);
+    const mean = pitches.reduce((a, b) => a + b, 0) / pitches.length;
+    const variance = pitches.reduce((s, p) => s + (p - mean) ** 2, 0) / pitches.length;
+    const stddev = Math.sqrt(variance);
+    if (stddev <= ceiling) {
+      perPhrase.push(1);
+    } else if (stddev <= soft) {
+      const excess = stddev - ceiling;
+      perPhrase.push(Math.max(0.82, 1 - excess / (soft - ceiling + 1) * 0.35));
+    } else {
+      const excess = stddev - soft;
+      perPhrase.push(Math.max(0, 1 - excess / ceiling));
+    }
+  }
+  if (perPhrase.length === 0) return 0.5;
+  const sorted = [...perPhrase].sort((a, b) => b - a);
+  const keep = Math.max(1, Math.ceil(sorted.length * 0.75));
+  return sorted.slice(0, keep).reduce((a, b) => a + b, 0) / keep;
+}
+
+/** Glass — σ≤18 hard; soft flag 16–18 st (mid-register additive loops). */
+function registerCohesionPerMesoSpansGlass(
+  line: MelodicNote[],
+  mesoSpans: readonly ContrapuntalMesoSpanRef[],
+  ceilingSt: number,
+  softCeilingSt: number,
+): number {
+  const ceiling = ceilingSt > 0 ? ceilingSt : 18;
+  const soft = softCeilingSt > 0 && softCeilingSt < ceiling ? softCeilingSt : 16;
+  const perPhrase: number[] = [];
+  for (const span of mesoSpans) {
+    const notes = pitchedNotesInBarRange(line, span.startBeat, span.endBeat);
+    if (notes.length < 2) {
+      perPhrase.push(0.55);
+      continue;
+    }
+    const pitches = notes.map((n) => n.midi);
+    const mean = pitches.reduce((a, b) => a + b, 0) / pitches.length;
+    const variance = pitches.reduce((s, p) => s + (p - mean) ** 2, 0) / pitches.length;
+    const stddev = Math.sqrt(variance);
+    if (stddev <= soft) {
+      perPhrase.push(1);
+    } else if (stddev <= ceiling) {
+      const excess = stddev - soft;
+      perPhrase.push(Math.max(0.88, 1 - excess / (ceiling - soft + 1) * 0.25));
+    } else {
+      const excess = stddev - ceiling;
+      perPhrase.push(Math.max(0, 1 - excess / ceiling));
+    }
+  }
+  if (perPhrase.length === 0) return 0.5;
+  const sorted = [...perPhrase].sort((a, b) => b - a);
+  const keep = Math.max(1, Math.ceil(sorted.length * 0.75));
+  return sorted.slice(0, keep).reduce((a, b) => a + b, 0) / keep;
+}
+
+/** Zimmer — σ≤26 nominal; soft warning 26–32 st; hard fail only above 32 (passacaglia: ceiling 28). */
+function registerCohesionPerMesoSpansZimmer(
+  line: MelodicNote[],
+  mesoSpans: readonly ContrapuntalMesoSpanRef[],
+  ceilingSt: number,
+  softCeilingSt: number,
+  hardFailSt: number,
+): number {
+  const ceiling = ceilingSt > 0 ? ceilingSt : 26;
+  const soft = softCeilingSt >= ceiling ? softCeilingSt : ceiling;
+  const hard = hardFailSt > soft ? hardFailSt : 32;
+  const perPhrase: number[] = [];
+  for (const span of mesoSpans) {
+    const notes = pitchedNotesInBarRange(line, span.startBeat, span.endBeat);
+    if (notes.length < 2) {
+      perPhrase.push(0.55);
+      continue;
+    }
+    const pitches = notes.map((n) => n.midi);
+    const mean = pitches.reduce((a, b) => a + b, 0) / pitches.length;
+    const variance = pitches.reduce((s, p) => s + (p - mean) ** 2, 0) / pitches.length;
+    const stddev = Math.sqrt(variance);
+    if (stddev <= ceiling) {
+      perPhrase.push(1);
+    } else if (stddev <= soft) {
+      const excess = stddev - ceiling;
+      perPhrase.push(Math.max(0.88, 1 - excess / (soft - ceiling + 1) * 0.22));
+    } else if (stddev <= hard) {
+      const excess = stddev - soft;
+      perPhrase.push(Math.max(0.72, 1 - excess / (hard - soft + 1) * 0.35));
+    } else {
+      const excess = stddev - hard;
+      perPhrase.push(Math.max(0, 1 - excess / hard));
+    }
+  }
+  if (perPhrase.length === 0) return 0.5;
+  const sorted = [...perPhrase].sort((a, b) => b - a);
+  const keep = Math.max(1, Math.ceil(sorted.length * 0.75));
+  return sorted.slice(0, keep).reduce((a, b) => a + b, 0) / keep;
+}
+
 function cadenceStrengthRank(
   strength: PhraseCadenceStrength,
   contrapuntal?: boolean,
@@ -100,6 +215,66 @@ function cadenceStrengthRank(
         return 0.52;
       default:
         return 0.32;
+    }
+  }
+  if (contrapuntal && sqVrbId === 'rota') {
+    switch (strength) {
+      case 'strong':
+        return 1;
+      case 'medium':
+        return 0.85;
+      case 'weak':
+        return 0.38;
+      default:
+        return 0.25;
+    }
+  }
+  if (contrapuntal && sqVrbId === 'goldsmith') {
+    switch (strength) {
+      case 'strong':
+        return 1;
+      case 'medium':
+        return 0.9;
+      case 'weak':
+        return 0.82;
+      default:
+        return 0.72;
+    }
+  }
+  if (contrapuntal && sqVrbId === 'glass') {
+    switch (strength) {
+      case 'strong':
+        return 0.88;
+      case 'medium':
+        return 0.9;
+      case 'weak':
+        return 0.86;
+      default:
+        return 0.8;
+    }
+  }
+  if (contrapuntal && sqVrbId === 'zimmer') {
+    switch (strength) {
+      case 'strong':
+        return 0.72;
+      case 'medium':
+        return 0.88;
+      case 'weak':
+        return 0.86;
+      default:
+        return 0.82;
+    }
+  }
+  if (contrapuntal && sqVrbId === 'badalamenti') {
+    switch (strength) {
+      case 'strong':
+        return 0.68;
+      case 'medium':
+        return 0.9;
+      case 'weak':
+        return 0.88;
+      default:
+        return 0.84;
     }
   }
   if (contrapuntal) {
@@ -217,6 +392,15 @@ function getIntervalTarget(songwriterId?: string): {
     case 'williams':
       // Williams SQ — P4/P5/M3 heroic leaps + stepwise lyrical; penalize semitone/tritone cells
       return { steps: 0.48, skips: 0.24, leaps: 0.2, wideLeaps: 0.08, min: 1, max: 12 };
+    case 'rota':
+      // Rota SQ — verismo stepwise + chromatic neighbour + mediant color; tight register
+      return { steps: 0.64, skips: 0.26, leaps: 0.08, wideLeaps: 0.02, min: 1, max: 6 };
+    case 'goldsmith':
+      // Goldsmith SQ — chromatic/mediant + sequential ascent; wide arc allowed
+      return { steps: 0.42, skips: 0.24, leaps: 0.22, wideLeaps: 0.12, min: 1, max: 12 };
+    case 'glass':
+      // Glass SQ — narrow pattern-loop steps; no jazz wide leaps
+      return { steps: 0.78, skips: 0.18, leaps: 0.03, wideLeaps: 0.01, min: 1, max: 5 };
     default:
       // Universal jazz target
       return { steps: 0.55, skips: 0.25, leaps: 0.15, wideLeaps: 0.05, min: 1, max: 8 };
@@ -349,7 +533,164 @@ function williamsSignatureIntervalScore(midi: number[]): number {
   return Math.max(0, Math.min(1, (heroic / n) * 1.2 - (chromaticObsession / n) * 0.5));
 }
 
-const SQ_VRB_MI_IDS = new Set(['ravel', 'herrmann', 'morricone', 'williams']);
+/** Rota — verismo stepwise + chromatic neighbour + mediant thirds/sixths. */
+function rotaSignatureIntervalScore(midi: number[]): number {
+  if (midi.length < 3) return 0.5;
+  const intervals: number[] = [];
+  for (let i = 1; i < midi.length; i++) {
+    const d = midi[i]! - midi[i - 1]!;
+    if (d !== 0) intervals.push(d);
+  }
+  if (intervals.length === 0) return 0.45;
+  let rotaColor = 0;
+  for (const d of intervals) {
+    const a = Math.abs(d) % 12;
+    if (a <= 2 || a === 3 || a === 4 || a === 8 || a === 9 || a === 11) rotaColor++;
+  }
+  return Math.min(1, (rotaColor / intervals.length) * 1.22);
+}
+
+function rotaParallelThirdSixthScore(midi: number[]): number {
+  if (midi.length < 3) return 0.45;
+  const intervals: number[] = [];
+  for (let i = 1; i < midi.length; i++) {
+    const d = midi[i]! - midi[i - 1]!;
+    if (d !== 0) intervals.push(d);
+  }
+  if (intervals.length === 0) return 0.4;
+  let hits = 0;
+  for (const d of intervals) {
+    const a = Math.abs(d) % 12;
+    if (a === 3 || a === 4 || a === 8 || a === 9) hits++;
+  }
+  return Math.min(1, (hits / intervals.length) * 1.35);
+}
+
+/** Goldsmith — chromatic neighbour, mediant thirds, jazz extensions, sequential ascent. */
+function goldsmithSignatureIntervalScore(midi: number[]): number {
+  if (midi.length < 3) return 0.5;
+  const intervals: number[] = [];
+  for (let i = 1; i < midi.length; i++) {
+    const d = midi[i]! - midi[i - 1]!;
+    if (d !== 0) intervals.push(d);
+  }
+  if (intervals.length === 0) return 0.45;
+  let color = 0;
+  for (const d of intervals) {
+    const a = Math.abs(d) % 12;
+    if (a <= 2 || a === 3 || a === 4 || a === 6 || a === 8 || a === 9 || a === 11) color++;
+  }
+  return Math.min(1, (color / intervals.length) * 1.2);
+}
+
+function goldsmithSequentialAscentScore(midi: number[]): number {
+  if (midi.length < 4) return 0.45;
+  let ascendingRuns = 0;
+  let runLen = 0;
+  for (let i = 1; i < midi.length; i++) {
+    const d = midi[i]! - midi[i - 1]!;
+    if (d > 0) {
+      runLen++;
+    } else {
+      if (runLen >= 2) ascendingRuns++;
+      runLen = 0;
+    }
+  }
+  if (runLen >= 2) ascendingRuns++;
+  return Math.min(1, ascendingRuns / Math.max(1, Math.floor(midi.length / 4)));
+}
+
+/** Glass — narrow pattern-loop steps + block parallel motion. */
+function glassSignatureIntervalScore(midi: number[]): number {
+  if (midi.length < 3) return 0.5;
+  const intervals: number[] = [];
+  for (let i = 1; i < midi.length; i++) {
+    const d = midi[i]! - midi[i - 1]!;
+    if (d !== 0) intervals.push(d);
+  }
+  if (intervals.length === 0) return 0.45;
+  let hits = 0;
+  for (const d of intervals) {
+    const a = Math.abs(d) % 12;
+    if (a <= 2 || a === 3 || a === 4 || a === 5) hits++;
+  }
+  return Math.min(1, (hits / intervals.length) * 1.25);
+}
+
+/** Zimmer — narrow ostinato steps + parallel octave Shepard-tone ascent (valid, not penalized). */
+function zimmerSignatureIntervalScore(midi: number[]): number {
+  if (midi.length < 3) return 0.5;
+  const intervals: number[] = [];
+  for (let i = 1; i < midi.length; i++) {
+    const d = midi[i]! - midi[i - 1]!;
+    if (d !== 0) intervals.push(d);
+  }
+  if (intervals.length === 0) return 0.45;
+  let hits = 0;
+  for (const d of intervals) {
+    const a = Math.abs(d) % 12;
+    if (a <= 2 || a === 3 || a === 4 || a === 5 || a === 7) hits++;
+    if (Math.abs(d) === 12) hits += 0.5;
+  }
+  return Math.min(1, (hits / intervals.length) * 1.15);
+}
+
+/** Badalamenti — cool-jazz modal stepwise + extension colour; avoid Herrmann tritone obsession. */
+function badalamentiSignatureIntervalScore(midi: number[]): number {
+  if (midi.length < 3) return 0.5;
+  const intervals: number[] = [];
+  for (let i = 1; i < midi.length; i++) {
+    const d = midi[i]! - midi[i - 1]!;
+    if (d !== 0) intervals.push(d);
+  }
+  if (intervals.length === 0) return 0.45;
+  let color = 0;
+  let harsh = 0;
+  for (const d of intervals) {
+    const a = Math.abs(d) % 12;
+    if (a <= 2 || a === 3 || a === 4 || a === 5 || a === 7 || a === 10) color++;
+    if (a === 1 || a === 6) harsh++;
+  }
+  const colorRatio = color / intervals.length;
+  const harshPenalty = harsh / intervals.length > 0.38 ? 0.72 : 1;
+  return Math.min(1, colorRatio * 1.18 * harshPenalty);
+}
+
+function badalamentiCodaDissolutionScore(
+  line: MelodicNote[],
+  meso: readonly ContrapuntalMesoSpanRef[],
+): number {
+  if (meso.length < 2) return 0;
+  const last = meso[meso.length - 1]!;
+  if (last.cadenceStrength === 'strong') return 0.35;
+  return cyclicMotifReturnScore(line, meso);
+}
+
+function glassAdditiveLayeringScore(line: MelodicNote[], meso: readonly ContrapuntalMesoSpanRef[]): number {
+  if (meso.length < 2) return 0;
+  const densities: number[] = [];
+  for (const span of meso) {
+    const notes = pitchedNotesInBarRange(line, span.startBeat, span.endBeat);
+    densities.push(notes.length);
+  }
+  let increases = 0;
+  for (let i = 1; i < densities.length; i++) {
+    if (densities[i]! >= densities[i - 1]!) increases++;
+  }
+  return increases / Math.max(1, densities.length - 1);
+}
+
+const SQ_VRB_MI_IDS = new Set([
+  'ravel',
+  'herrmann',
+  'morricone',
+  'williams',
+  'rota',
+  'goldsmith',
+  'glass',
+  'zimmer',
+  'badalamenti',
+]);
 
 export function scoreMelodicIdentity(
   line: MelodicNote[],
@@ -519,14 +860,77 @@ export function scoreMelodicIdentity(
     const blend = sqGce.williamsSignatureIntervalBlend;
     intervalEconomy = Math.min(1, intervalEconomy * (1 - blend) + sig * blend);
   }
+  if (contrapuntalSq && contrapuntal.sqVrbId === 'rota' && sqGce?.rotaSignatureIntervalBlend) {
+    const sig = rotaSignatureIntervalScore(pitches);
+    const blend = sqGce.rotaSignatureIntervalBlend;
+    intervalEconomy = Math.min(1, intervalEconomy * (1 - blend) + sig * blend);
+  }
+  if (contrapuntalSq && contrapuntal.sqVrbId === 'rota' && sqGce?.parallelThirdSixthBonus) {
+    const par = rotaParallelThirdSixthScore(pitches);
+    intervalEconomy = Math.min(1, intervalEconomy + par * sqGce.parallelThirdSixthBonus);
+  }
+  if (contrapuntalSq && contrapuntal.sqVrbId === 'goldsmith' && sqGce?.goldsmithSignatureIntervalBlend) {
+    const sig = goldsmithSignatureIntervalScore(pitches);
+    const blend = sqGce.goldsmithSignatureIntervalBlend;
+    intervalEconomy = Math.min(1, intervalEconomy * (1 - blend) + sig * blend);
+  }
+  if (contrapuntalSq && contrapuntal.sqVrbId === 'goldsmith' && sqGce?.sequentialAscentCredit) {
+    const asc = goldsmithSequentialAscentScore(pitches);
+    intervalEconomy = Math.min(1, intervalEconomy + asc * sqGce.sequentialAscentCredit);
+  }
+  if (contrapuntalSq && contrapuntal.sqVrbId === 'glass' && sqGce?.glassSignatureIntervalBlend) {
+    const sig = glassSignatureIntervalScore(pitches);
+    const blend = sqGce.glassSignatureIntervalBlend;
+    intervalEconomy = Math.min(1, intervalEconomy * (1 - blend) + sig * blend);
+  }
+  if (contrapuntalSq && contrapuntal.sqVrbId === 'glass' && sqGce?.parallelThirdSixthBonus) {
+    const par = rotaParallelThirdSixthScore(pitches);
+    intervalEconomy = Math.min(1, intervalEconomy + par * sqGce.parallelThirdSixthBonus);
+  }
+  if (contrapuntalSq && contrapuntal.sqVrbId === 'zimmer' && sqGce?.zimmerSignatureIntervalBlend) {
+    const sig = zimmerSignatureIntervalScore(pitches);
+    const blend = sqGce.zimmerSignatureIntervalBlend;
+    intervalEconomy = Math.min(1, intervalEconomy * (1 - blend) + sig * blend);
+  }
+  if (contrapuntalSq && contrapuntal.sqVrbId === 'badalamenti' && sqGce?.badalamentiSignatureIntervalBlend) {
+    const sig = badalamentiSignatureIntervalScore(pitches);
+    const blend = sqGce.badalamentiSignatureIntervalBlend;
+    intervalEconomy = Math.min(1, intervalEconomy * (1 - blend) + sig * blend);
+  }
 
   // G — register cohesion (global σ for song/duo; per-meso mean σ for SQ contrapuntal)
+  const zimmerPassacaglia =
+    contrapuntalSq &&
+    contrapuntal.sqVrbId === 'zimmer' &&
+    contrapuntal.passacagliaMode === true;
   const registerCohesion = contrapuntalSq
-    ? registerCohesionPerMesoSpans(
-        line,
-        contrapuntal.mesoSpans,
-        sqGce?.registerCohesionStdevCeilingSt ?? CONTRAPUNTAL_REGISTER_STDEV_CEILING_DEFAULT,
-      )
+    ? contrapuntal.sqVrbId === 'glass'
+      ? registerCohesionPerMesoSpansGlass(
+          line,
+          contrapuntal.mesoSpans,
+          sqGce?.registerCohesionStdevCeilingSt ?? 18,
+          sqGce?.registerCohesionSoftCeilingSt ?? 16,
+        )
+      : contrapuntal.sqVrbId === 'goldsmith'
+        ? registerCohesionPerMesoSpansGoldsmith(
+            line,
+            contrapuntal.mesoSpans,
+            sqGce?.registerCohesionStdevCeilingSt ?? CONTRAPUNTAL_REGISTER_STDEV_CEILING_DEFAULT,
+            sqGce?.registerCohesionSoftCeilingSt ?? 26,
+          )
+        : contrapuntal.sqVrbId === 'zimmer'
+          ? registerCohesionPerMesoSpansZimmer(
+              line,
+              contrapuntal.mesoSpans,
+              zimmerPassacaglia ? 28 : (sqGce?.registerCohesionStdevCeilingSt ?? 26),
+              sqGce?.registerCohesionSoftCeilingSt ?? 26,
+              32,
+            )
+          : registerCohesionPerMesoSpans(
+              line,
+              contrapuntal.mesoSpans,
+              sqGce?.registerCohesionStdevCeilingSt ?? CONTRAPUNTAL_REGISTER_STDEV_CEILING_DEFAULT,
+            )
     : 1 - Math.min(pitchStddev / 12, 1);
 
   const wMotif = sqGce?.motifRecurrenceWeight ?? (contrapuntalSq ? 0.38 : 0.35);
@@ -570,9 +974,21 @@ export function scoreMelodicIdentity(
           ? ' [SQ morricone MI]'
           : contrapuntalSq && contrapuntal.sqVrbId === 'williams'
             ? ' [SQ williams MI]'
-            : contrapuntalSq
-              ? ' [SQ contrapuntal]'
-              : '';
+            : contrapuntalSq && contrapuntal.sqVrbId === 'rota'
+              ? ' [SQ rota MI]'
+              : contrapuntalSq && contrapuntal.sqVrbId === 'goldsmith'
+                ? ' [SQ goldsmith MI]'
+                : contrapuntalSq && contrapuntal.sqVrbId === 'glass'
+                  ? ' [SQ glass MI]'
+                  : contrapuntalSq && contrapuntal.sqVrbId === 'zimmer'
+                    ? zimmerPassacaglia
+                      ? ' [SQ zimmer passacaglia MI]'
+                      : ' [SQ zimmer MI]'
+                    : contrapuntalSq && contrapuntal.sqVrbId === 'badalamenti'
+                      ? ' [SQ badalamenti MI]'
+                      : contrapuntalSq
+                        ? ' [SQ contrapuntal]'
+                        : '';
 
   return {
     score: hardFail ? Math.min(score, 6) : score,
@@ -1090,6 +1506,13 @@ function scorePhraseGrammarContrapuntal(
   const ostinatoPg = sqGce?.phraseGrammarMode === 'ostinato_cell';
   const folkModalPg = sqGce?.phraseGrammarMode === 'folk_modal_suspended';
   const romanticPg = sqGce?.phraseGrammarMode === 'romantic_periodic_cadential';
+  const strictPeriodicPg = sqGce?.phraseGrammarMode === 'strict_periodic_tonal_cadence';
+  const doublyOpenPg = sqGce?.phraseGrammarMode === 'doubly_open_cell_development';
+  const loopingCellPg = sqGce?.phraseGrammarMode === 'looping_cell_no_cadence';
+  const repeatingOstinatoPg = sqGce?.phraseGrammarMode === 'repeating_ostinato_no_cadence';
+  const throughComposedArchPg = sqGce?.phraseGrammarMode === 'through_composed_arch_no_cadence';
+  const zimmerPassacagliaPg =
+    options.sqVrbId === 'zimmer' && options.passacagliaMode === true;
 
   let closedPhrases = 0;
   let cadenceSum = 0;
@@ -1098,6 +1521,9 @@ function scorePhraseGrammarContrapuntal(
   let dissonantClosures = 0;
   let longArchHits = 0;
   let inconclusiveHits = 0;
+  let wallToWallHits = 0;
+  let doublyOpenHits = 0;
+  let chordTransitionHits = 0;
   for (let i = 0; i < meso.length; i++) {
     const span = meso[i]!;
     const spanCadence = Math.max(
@@ -1129,6 +1555,63 @@ function scorePhraseGrammarContrapuntal(
       ) {
         closedPhrases++;
       }
+    } else if (strictPeriodicPg) {
+      if (span.cadenceStrength === 'strong' || (spanCadence >= 0.78 && longEnding)) {
+        closedPhrases++;
+      }
+      if (lenBars > 8 && span.cadenceStrength !== 'strong') {
+        wallToWallHits++;
+      }
+    } else if (doublyOpenPg) {
+      const doublyOpen =
+        span.cadenceStrength === 'weak' ||
+        span.cadenceStrength === 'medium' ||
+        !longEnding;
+      if (doublyOpen) doublyOpenHits++;
+      if (cellRepeat || spanCadence >= 0.4 || doublyOpen || longEnding || i < meso.length - 1) {
+        closedPhrases++;
+      }
+    } else if (loopingCellPg) {
+      const inconclusive =
+        span.cadenceStrength === 'weak' || span.cadenceStrength === 'medium' || !longEnding;
+      if (inconclusive) inconclusiveHits++;
+      const chordBoundary =
+        sqGce?.chordTransitionAsBoundary === true && lenBars >= 1.5 && lenBars <= 2.75;
+      if (chordBoundary) chordTransitionHits++;
+      if (
+        cellRepeat ||
+        spanCadence >= 0.38 ||
+        inconclusive ||
+        longEnding ||
+        chordBoundary ||
+        i < meso.length - 1
+      ) {
+        closedPhrases++;
+      }
+    } else if (repeatingOstinatoPg) {
+      const inconclusive =
+        span.cadenceStrength === 'weak' || span.cadenceStrength === 'medium' || !longEnding;
+      if (inconclusive) inconclusiveHits++;
+      if (
+        cellRepeat ||
+        spanCadence >= 0.36 ||
+        inconclusive ||
+        longEnding ||
+        i < meso.length - 1
+      ) {
+        closedPhrases++;
+      }
+    } else if (throughComposedArchPg) {
+      const longArch = lenBars >= (sqGce?.longPhraseBarsMin ?? 16);
+      const inconclusive =
+        span.cadenceStrength === 'weak' ||
+        span.cadenceStrength === 'medium' ||
+        !longEnding;
+      if (longArch) longArchHits++;
+      if (inconclusive) inconclusiveHits++;
+      if (longArch || inconclusive || spanCadence >= 0.42 || longEnding || i < meso.length - 1) {
+        closedPhrases++;
+      }
     } else if (ostinatoPg) {
       if (cellRepeat || spanCadence >= 0.4 || longEnding || i < meso.length - 1) {
         closedPhrases++;
@@ -1143,7 +1626,7 @@ function scorePhraseGrammarContrapuntal(
       if (lenBars >= sqGce.phraseCellBarsMin && lenBars <= sqGce.phraseCellBarsMax + 0.25) {
         periodicCellHits++;
       }
-    } else if (sqGce && folkModalPg) {
+    } else if (sqGce && (folkModalPg || throughComposedArchPg)) {
       if (lenBars >= sqGce.phraseCellBarsMin && lenBars <= sqGce.phraseCellBarsMax + 0.25) {
         periodicCellHits++;
       }
@@ -1176,6 +1659,91 @@ function scorePhraseGrammarContrapuntal(
           ? 0.08
           : 0) +
         cyclic * sqGce.cyclicMotifReturnBoost;
+    } else if (strictPeriodicPg) {
+      const strongCadences = meso.filter((m) => m.cadenceStrength === 'strong').length;
+      const totalBars = meso.reduce((s, m) => s + mesoSpanLengthBars(m), 0);
+      const cyclic = cyclicMotifReturnScore(line, meso);
+      periodicBonus =
+        (strongCadences / meso.length) * (sqGce.authenticCadenceCredit ?? 0.22) +
+        (periodicCellHits / meso.length) * 0.14 +
+        (sqGce.phrasePeriodBars > 0 && totalBars > 0 && totalBars % sqGce.phrasePeriodBars < 1
+          ? 0.1
+          : 0) +
+        cyclic * sqGce.cyclicMotifReturnBoost -
+        (wallToWallHits / meso.length) * (sqGce.wallToWallPhrasePenalty ?? 0.14);
+    } else if (doublyOpenPg) {
+      const strongCadences = meso.filter((m) => m.cadenceStrength === 'strong').length;
+      const modalEnds = meso.filter(
+        (m) => m.cadenceStrength === 'weak' || m.cadenceStrength === 'medium',
+      ).length;
+      const repeatRatio = ostinatoCellRepeats / Math.max(1, meso.length - 1);
+      const cyclic = cyclicMotifReturnScore(line, meso);
+      periodicBonus =
+        (doublyOpenHits / meso.length) * (sqGce.inconclusiveEndingCredit ?? 0.12) +
+        (modalEnds / meso.length) *
+          (sqGce.modalEndingsValid ? (sqGce.modalCadenceCredit ?? 0.14) : 0) +
+        (sqGce.chromaticMediantCredit ?? 0.12) * (periodicCellHits / meso.length) +
+        repeatRatio * (sqGce.ostinatoPhraseEndingCredit ?? 0.16) +
+        (strongCadences / meso.length) * (sqGce.authenticCadenceCredit ?? 0.08) +
+        (periodicCellHits / meso.length) * 0.08 +
+        cyclic * sqGce.cyclicMotifReturnBoost;
+    } else if (loopingCellPg) {
+      const repeatRatio = ostinatoCellRepeats / Math.max(1, meso.length - 1);
+      const modalEnds = meso.filter(
+        (m) => m.cadenceStrength === 'weak' || m.cadenceStrength === 'medium',
+      ).length;
+      const cyclic = cyclicMotifReturnScore(line, meso);
+      const additive = glassAdditiveLayeringScore(line, meso);
+      periodicBonus =
+        repeatRatio * (sqGce.ostinatoPhraseEndingCredit ?? 0.2) +
+        (inconclusiveHits / meso.length) * (sqGce.inconclusiveEndingCredit ?? 0.14) +
+        (modalEnds / meso.length) *
+          (sqGce.modalEndingsValid ? (sqGce.modalCadenceCredit ?? 0.12) : 0) +
+        (chordTransitionHits / meso.length) * 0.12 +
+        (periodicCellHits / meso.length) * 0.1 +
+        additive * (sqGce.additiveLayeringCredit ?? 0.1) +
+        cyclic * sqGce.cyclicMotifReturnBoost;
+    } else if (repeatingOstinatoPg) {
+      const repeatRatio = ostinatoCellRepeats / Math.max(1, meso.length - 1);
+      const modalEnds = meso.filter(
+        (m) => m.cadenceStrength === 'weak' || m.cadenceStrength === 'medium',
+      ).length;
+      const weakCadences = meso.filter((m) => m.cadenceStrength === 'weak').length;
+      const cyclic = cyclicMotifReturnScore(line, meso);
+      const additive = glassAdditiveLayeringScore(line, meso);
+      periodicBonus =
+        repeatRatio * (sqGce.ostinatoPhraseEndingCredit ?? 0.18) +
+        (inconclusiveHits / meso.length) * (sqGce.inconclusiveEndingCredit ?? 0.14) +
+        (modalEnds / meso.length) *
+          (sqGce.modalEndingsValid ? (sqGce.modalCadenceCredit ?? 0.14) : 0) +
+        (weakCadences / meso.length) * (sqGce.subMediantColorCredit ?? 0.1) +
+        (sqGce.chromaticMediantCredit ?? 0.12) * (periodicCellHits / meso.length) +
+        additive * (sqGce.additiveLayeringCredit ?? 0.14) +
+        (meso.filter((m) => m.cadenceStrength === 'strong').length / meso.length) *
+          (sqGce.authenticCadenceCredit ?? 0.04) +
+        cyclic * sqGce.cyclicMotifReturnBoost -
+        (wallToWallHits / meso.length) * (sqGce.wallToWallPhrasePenalty ?? 0);
+      if (zimmerPassacagliaPg) {
+        periodicBonus += (additive * 0.08 + repeatRatio * 0.06);
+      }
+    } else if (throughComposedArchPg) {
+      const modalEnds = meso.filter(
+        (m) => m.cadenceStrength === 'weak' || m.cadenceStrength === 'medium',
+      ).length;
+      const cyclic = cyclicMotifReturnScore(line, meso);
+      const codaDiss = badalamentiCodaDissolutionScore(line, meso);
+      periodicBonus =
+        (longArchHits / meso.length) * 0.12 +
+        (inconclusiveHits / meso.length) * (sqGce.inconclusiveEndingCredit ?? 0.16) +
+        (modalEnds / meso.length) *
+          (sqGce.modalEndingsValid ? (sqGce.modalCadenceCredit ?? 0.14) : 0) +
+        (periodicCellHits / meso.length) * (sqGce.jazzExtensionCredit ?? 0.12) +
+        (sqGce.chromaticMediantCredit ?? 0.14) * (periodicCellHits / meso.length) +
+        (sqGce.bassPedalCredit ?? 0.12) * 0.55 +
+        codaDiss * (sqGce.codaDissolutionCredit ?? 0.14) +
+        (inconclusiveHits / meso.length) * (sqGce.coolJazzModalCredit ?? 0.1) +
+        cyclic * sqGce.cyclicMotifReturnBoost -
+        (wallToWallHits / meso.length) * (sqGce.wallToWallPhrasePenalty ?? 0);
     } else if (ostinatoPg) {
       const repeatRatio = ostinatoCellRepeats / Math.max(1, meso.length - 1);
       periodicBonus =
@@ -1212,7 +1780,19 @@ function scorePhraseGrammarContrapuntal(
           ? ' [SQ morricone PG]'
           : options.sqVrbId === 'williams'
             ? ' [SQ williams PG]'
-            : '';
+            : options.sqVrbId === 'rota'
+              ? ' [SQ rota PG]'
+              : options.sqVrbId === 'goldsmith'
+                ? ' [SQ goldsmith PG]'
+                : options.sqVrbId === 'glass'
+                  ? ' [SQ glass PG]'
+                  : options.sqVrbId === 'zimmer'
+                    ? zimmerPassacagliaPg
+                      ? ' [SQ zimmer passacaglia PG]'
+                      : ' [SQ zimmer PG]'
+                    : options.sqVrbId === 'badalamenti'
+                      ? ' [SQ badalamenti PG]'
+                      : '';
   return {
     score,
     justification:

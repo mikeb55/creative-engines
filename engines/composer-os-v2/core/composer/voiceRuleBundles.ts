@@ -23,7 +23,12 @@ import { CRUMB_BLACK_ANGELS_SQ_VRB_FINGERPRINT_RECEIPTS } from './crumbBlackAnge
 import { applyHerrmannFilmStubVrbProfile } from '../counterpoint/vrbProfiles/herrmannFilmStubVrb';
 import { applyMorriconeFilmStubVrbProfile } from '../counterpoint/vrbProfiles/morriconeFilmStubVrb';
 import { applyRavelSqVrbProfile } from '../counterpoint/vrbProfiles/ravelSqVrb';
+import { applyGlassFilmStubVrbProfile } from '../counterpoint/vrbProfiles/glassFilmStubVrb';
+import { applyGoldsmithFilmStubVrbProfile } from '../counterpoint/vrbProfiles/goldsmithFilmStubVrb';
+import { applyRotaFilmStubVrbProfile } from '../counterpoint/vrbProfiles/rotaFilmStubVrb';
 import { applyWilliamsFilmStubVrbProfile } from '../counterpoint/vrbProfiles/williamsFilmStubVrb';
+import { applyBadalamentiFilmStubVrbProfile } from '../counterpoint/vrbProfiles/badalamentiFilmStubVrb';
+import { applyZimmerFilmStubVrbProfile } from '../counterpoint/vrbProfiles/zimmerFilmStubVrb';
 import { JOBIM_VRB_FINGERPRINT_RECEIPTS } from './jobimVrbFingerprints';
 import { ARVO_PART_TINTINNABULI_VRF_FINGERPRINT_RECEIPTS } from './arvoPartTintinnabuliVrbFingerprints';
 import { SATIE_VRF_FINGERPRINT_RECEIPTS } from './satieVrbFingerprints';
@@ -3013,15 +3018,16 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   john_williams: applyWilliamsFilmStubVrbProfile(WILLIAMS_FILM_STUB),
   morricone: applyMorriconeFilmStubVrbProfile(MORRICONE_FILM_STUB),
   ennio_morricone: applyMorriconeFilmStubVrbProfile(MORRICONE_FILM_STUB),
-  rota: ROTA_FILM_STUB,
-  nino_rota: ROTA_FILM_STUB,
-  goldsmith: GOLDSMITH_FILM_STUB,
-  jerry_goldsmith: GOLDSMITH_FILM_STUB,
-  philip_glass_screen: PHILIP_GLASS_FILM_STUB,
-  philip_glass_film: PHILIP_GLASS_FILM_STUB,
-  hans_zimmer: HANS_ZIMMER_FILM_STUB,
-  badalamenti: BADALAMENTI_FILM_STUB,
-  angelo_badalamenti: BADALAMENTI_FILM_STUB,
+  rota: applyRotaFilmStubVrbProfile(ROTA_FILM_STUB),
+  nino_rota: applyRotaFilmStubVrbProfile(ROTA_FILM_STUB),
+  goldsmith: applyGoldsmithFilmStubVrbProfile(GOLDSMITH_FILM_STUB),
+  jerry_goldsmith: applyGoldsmithFilmStubVrbProfile(GOLDSMITH_FILM_STUB),
+  philip_glass_screen: applyGlassFilmStubVrbProfile(PHILIP_GLASS_FILM_STUB),
+  philip_glass_film: applyGlassFilmStubVrbProfile(PHILIP_GLASS_FILM_STUB),
+  zimmer: applyZimmerFilmStubVrbProfile(HANS_ZIMMER_FILM_STUB),
+  hans_zimmer: applyZimmerFilmStubVrbProfile(HANS_ZIMMER_FILM_STUB),
+  badalamenti: applyBadalamentiFilmStubVrbProfile(BADALAMENTI_FILM_STUB),
+  angelo_badalamenti: applyBadalamentiFilmStubVrbProfile(BADALAMENTI_FILM_STUB),
   debussy: DEBUSSY,
   claude_debussy: DEBUSSY,
   radiohead: RADIOHEAD,

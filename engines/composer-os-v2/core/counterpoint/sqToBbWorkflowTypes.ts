@@ -253,6 +253,11 @@ export type SqToBbSqComposerId =
   | 'herrmann'
   | 'morricone'
   | 'williams'
+  | 'rota'
+  | 'goldsmith'
+  | 'glass'
+  | 'zimmer'
+  | 'badalamenti'
   | 'shostakovich'
   | 'webern';
 export type SqToBbSqComposer = SqToBbSqComposerId | null;
@@ -263,6 +268,11 @@ export const SQ_TO_BB_SQ_COMPOSER_ENABLED: ReadonlySet<SqToBbSqComposerId> = new
   'herrmann',
   'morricone',
   'williams',
+  'rota',
+  'goldsmith',
+  'glass',
+  'zimmer',
+  'badalamenti',
 ]);
 
 /** Greyed-out / unknown values → None (no throw). */
@@ -283,6 +293,11 @@ export function sqLineVrbIdForSqToBb(
   if (active === 'herrmann') return 'herrmann';
   if (active === 'morricone') return 'morricone';
   if (active === 'williams') return 'williams';
+  if (active === 'rota') return 'rota';
+  if (active === 'goldsmith') return 'goldsmith';
+  if (active === 'glass') return 'glass';
+  if (active === 'zimmer') return 'zimmer';
+  if (active === 'badalamenti') return 'badalamenti';
   return vrbIdForSqToBbStyleProfile(styleProfile);
 }
 

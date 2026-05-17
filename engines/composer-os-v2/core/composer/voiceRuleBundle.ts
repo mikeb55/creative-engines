@@ -136,13 +136,25 @@ export type SqVrbRegisterPolicy =
   | 'wide_registral_contrast'
   | 'extreme_registers'
   | 'lyrical_arch'
-  | 'heroic_arch_with_fanfare_leaps';
+  | 'heroic_arch_with_fanfare_leaps'
+  | 'lyrical_soprano_arch_mid_centrist'
+  | 'dramatically_volatile_wide_arc'
+  | 'mid_register_additive_expansion'
+  | 'dynamically_wide_arc_accumulative'
+  | 'systematic_bass_to_soprano_expansion'
+  | 'mid_register_chromatic_inner_compression';
 export type SqVrbPhraseArticulation =
   | 'periodic_cadential'
   | 'continuous_motor_rhythm'
   | 'ostinato_cell_based'
   | 'folk_modal_suspended'
-  | 'romantic_periodic_cadential';
+  | 'romantic_periodic_cadential'
+  | 'strict_periodic_tonal_cadence'
+  | 'doubly_open_cell_development'
+  | 'looping_cell_no_cadence'
+  | 'repeating_ostinato_no_cadence'
+  | 'ground_iterations_progressive_entry'
+  | 'through_composed_arch_no_cadence';
 
 /** ContrapuntalLineEngine — VRB hooks for line-first generation + post-filter (Pass 2 stub). */
 export interface ContrapuntalLinePolicy {
@@ -158,6 +170,8 @@ export interface ContrapuntalLinePolicy {
   imitationStyle?: SqVrbImitationStyle;
   registerPolicy?: SqVrbRegisterPolicy;
   phraseArticulation?: SqVrbPhraseArticulation;
+  /** Zimmer passacaglia — ground bass + progressive voice entry (sub-mode, not separate vrbId). */
+  passacagliaMode?: boolean;
 }
 
 /** Duo golden-path — guitar/bass derivation from {@link AbstractLineSet} (stubs + routing hints). */

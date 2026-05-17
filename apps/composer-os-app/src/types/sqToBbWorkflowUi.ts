@@ -89,6 +89,11 @@ export type SqToBbSqComposerId =
   | 'herrmann'
   | 'morricone'
   | 'williams'
+  | 'rota'
+  | 'goldsmith'
+  | 'glass'
+  | 'zimmer'
+  | 'badalamenti'
   | 'shostakovich'
   | 'webern';
 export type SqToBbSqComposer = SqToBbSqComposerId | null;
@@ -106,6 +111,11 @@ export const SQ_TO_BB_SQ_COMPOSER_OPTIONS: ReadonlyArray<{
   { id: 'herrmann', label: 'Herrmann', enabled: true },
   { id: 'morricone', label: 'Morricone', enabled: true },
   { id: 'williams', label: 'Williams', enabled: true },
+  { id: 'rota', label: 'Rota', enabled: true },
+  { id: 'goldsmith', label: 'Goldsmith', enabled: true },
+  { id: 'glass', label: 'Glass', enabled: true },
+  { id: 'zimmer', label: 'Zimmer', enabled: true },
+  { id: 'badalamenti', label: 'Badalamenti', enabled: true },
   { id: 'shostakovich', label: 'Shostakovich — coming soon', enabled: false },
   { id: 'webern', label: 'Webern — coming soon', enabled: false },
 ] as const;

@@ -18,7 +18,13 @@ export type SqVrbRegisterPolicy =
   | 'wide_registral_contrast'
   | 'extreme_registers'
   | 'lyrical_arch'
-  | 'heroic_arch_with_fanfare_leaps';
+  | 'heroic_arch_with_fanfare_leaps'
+  | 'lyrical_soprano_arch_mid_centrist'
+  | 'dramatically_volatile_wide_arc'
+  | 'mid_register_additive_expansion'
+  | 'dynamically_wide_arc_accumulative'
+  | 'systematic_bass_to_soprano_expansion'
+  | 'mid_register_chromatic_inner_compression';
 
 /** SQ→BB phrase surface grammar. */
 export type SqVrbPhraseArticulation =
@@ -26,7 +32,28 @@ export type SqVrbPhraseArticulation =
   | 'continuous_motor_rhythm'
   | 'ostinato_cell_based'
   | 'folk_modal_suspended'
-  | 'romantic_periodic_cadential';
+  | 'romantic_periodic_cadential'
+  | 'strict_periodic_tonal_cadence'
+  | 'doubly_open_cell_development'
+  | 'looping_cell_no_cadence'
+  | 'repeating_ostinato_no_cadence'
+  | 'ground_iterations_progressive_entry'
+  | 'through_composed_arch_no_cadence';
+
+/** Badalamenti three-tier texture — melody / chromatic inner cushion / bass pedal. */
+export interface SqBadalamentiThreeTierTexture {
+  melodyLine: 'vln_i_lead';
+  innerVoices: 'chromatic_jazz_extensions';
+  bassLine: 'pedal_anchor';
+}
+
+/** Zimmer passacaglia sub-profile (ground bass + progressive entry; not a separate vrbId). */
+export interface SqZimmerPassacagliaSubMode {
+  independenceLevel: SqVrbIndependenceLevel;
+  registerPolicy: SqVrbRegisterPolicy;
+  phraseArticulation: SqVrbPhraseArticulation;
+  gceRegisterCohesionStdevCeilingSt: number;
+}
 
 /** Extended contrapuntal policy — SQ Harmonic Voice picker VRBs only. */
 export interface SqContrapuntalLinePolicy extends ContrapuntalLinePolicy {
@@ -85,7 +112,12 @@ export type SqVrbGcePhraseGrammarMode =
   | 'periodic_cadential'
   | 'ostinato_cell'
   | 'folk_modal_suspended'
-  | 'romantic_periodic_cadential';
+  | 'romantic_periodic_cadential'
+  | 'strict_periodic_tonal_cadence'
+  | 'doubly_open_cell_development'
+  | 'looping_cell_no_cadence'
+  | 'repeating_ostinato_no_cadence'
+  | 'through_composed_arch_no_cadence';
 
 /** Per-VRB GCE Melodic Identity / Phrase Grammar tweaks (SQ→BB path). */
 export interface SqVrbGceScorerAdjustments {
@@ -123,6 +155,46 @@ export interface SqVrbGceScorerAdjustments {
   williamsSignatureIntervalBlend?: number;
   /** PG: authentic / strong cadence closure credit. */
   authenticCadenceCredit?: number;
+  /** MI: blend verismo stepwise + chromatic-neighbour + mediant color. */
+  rotaSignatureIntervalBlend?: number;
+  /** MI: credit parallel 3rds/6ths in contour (Vln II/Vla doubling proxy). */
+  parallelThirdSixthBonus?: number;
+  /** PG: penalize wall-to-wall spans without articulated cadence joints. */
+  wallToWallPhrasePenalty?: number;
+  /** MI: blend Goldsmith sequential ascent + chromatic-mediant + jazz color. */
+  goldsmithSignatureIntervalBlend?: number;
+  /** PG: modal / chromatic-mediant non-tonic endings valid. */
+  modalEndingsValid?: boolean;
+  /** MI: credit rising sequential pitch ascent (σ soft warning above soft ceiling). */
+  sequentialAscentCredit?: number;
+  /** PG: chromatic-mediant third-relations as closure color. */
+  chromaticMediantCredit?: number;
+  /** MI/PG: σ soft-penalty floor only above this (Goldsmith sequential ascent). */
+  registerCohesionSoftCeilingSt?: number;
+  /** MI: blend Glass narrow-step pattern-loop signature. */
+  glassSignatureIntervalBlend?: number;
+  /** MI: blend Zimmer ostinato step / ascending Shepard-tone signature. */
+  zimmerSignatureIntervalBlend?: number;
+  /** PG/MI: ♭VI submediant colour chord credit. */
+  subMediantColorCredit?: number;
+  /** PG: 2-bar chord-change counts as phrase boundary. */
+  chordTransitionAsBoundary?: boolean;
+  /** PG: suppress wall-to-wall penalty (continuous arpeggiation valid). */
+  wallToWallPhrasePenalty?: number;
+  /** PG: credit additive density increase across phrase repetitions. */
+  additiveLayeringCredit?: number;
+  /** MI/PG: single modal centre — no modulation penalty. */
+  singleTonalCentre?: boolean;
+  /** MI: blend Badalamenti cool-jazz modal stepwise + extension colour. */
+  badalamentiSignatureIntervalBlend?: number;
+  /** PG: coda dissolution return to dark intro = phrase boundary. */
+  codaDissolutionCredit?: number;
+  /** PG/MI: jazz extension voicing colour (m7, maj9, add9, Lydian ♯11). */
+  jazzExtensionCredit?: number;
+  /** PG: sustained bass pedal through chord changes valid. */
+  bassPedalCredit?: number;
+  /** PG/MI: Miles Davis modal / Kind of Blue sparse field. */
+  coolJazzModalCredit?: number;
 }
 
 /** SQ Harmonic Voice profile — contrapuntal policy + BB translation hints. */
@@ -142,4 +214,8 @@ export interface SqVrbProfile {
   pedalPointValidBars?: number;
   /** Morricone — western vs romantic period surface. */
   morriconeRomanticModeAvailable?: boolean;
+  /** Zimmer — passacaglia ground-bass sub-mode (documented; not a separate vrbId). */
+  zimmerPassacagliaSubMode?: SqZimmerPassacagliaSubMode;
+  /** Badalamenti — Vln I melody / inner jazz cushion / Vc pedal (documented). */
+  badalamentiThreeTierTexture?: SqBadalamentiThreeTierTexture;
 }

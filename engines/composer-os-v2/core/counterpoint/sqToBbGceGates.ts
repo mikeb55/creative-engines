@@ -187,6 +187,7 @@ export function buildContrapuntalGceScoringOptions(
     lines.styleSourceVrbId ??
     context.voiceBundle?.sqVrbProfileId ??
     context.voiceBundle?.contrapuntalLinePolicy?.vrbId;
+  const passacagliaMode = context.voiceBundle?.contrapuntalLinePolicy?.passacagliaMode === true;
   return {
     contrapuntalLinePolicy: true,
     mesoSpans: meso.map((m) => ({
@@ -197,6 +198,7 @@ export function buildContrapuntalGceScoringOptions(
     cadenceTags: lines.cadenceTags ?? [],
     ...(sqVrbId ? { sqVrbId } : {}),
     ...(chordTimelineSource ? { chordTimelineSource } : {}),
+    ...(passacagliaMode ? { passacagliaMode: true } : {}),
   };
 }
 
