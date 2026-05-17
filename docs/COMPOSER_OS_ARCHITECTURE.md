@@ -148,4 +148,68 @@ User / API
 - **Song Mode**: compile + planning + duo MusicXML generation path via app API; rhythm intent applies on the **Song Mode duo MusicXML** path when `intent` is sent.
 - **Big Band / String Quartet**: planning and/or realisation paths per preset (see engine README for module ids).
 
+## SQ Harmonic Voice — VRB Registry
+
+A **Voice Rule Bundle (VRB)** is a per-composer parameter set that governs how the GCE scores string-quartet output on the SQ→BB path. It controls the σ register ceiling, independence level, register policy, phrase articulation, cadence credit, and harmony-interval credits. When the user picks a name in the **SQ Harmonic Voice** picker, the engine loads that profile’s adjustments into Gate 2 scoring (via `getSqVrbGceAdjustments` and isolated branches in `gceAutoScorers.ts`).
+
+**Registry source:** `engines/composer-os-v2/core/counterpoint/vrbProfiles/sqVrbProfileRegistry.ts` — twelve film-stub profiles. **Bartók** is the default SQ contrapuntal `VoiceRuleBundle` (native bundle, not a film-stub row in the registry); the picker enables Bartók, but `getSqVrbProfile('bartok')` is undefined.
+
+### VRB registry (σ ascending)
+
+| vrbId | σ ceiling | phraseArticulation | registerPolicy | bestBbStyle |
+|-------|-----------|-------------------|----------------|-------------|
+| glass | 18 | looping_cell_no_cadence | compressed_mid | schneider |
+| rota | 19 | strict_periodic_tonal_cadence | mid_soprano_lead | schneider |
+| ravel | 20 | periodic_cadential | mid_soprano_lead | schneider |
+| badalamenti | 21 | through_composed_arch_no_cadence | mid_chromatic_arch | schneider |
+| morricone | 22 | folk_modal_suspended | mid_soprano_lead | schneider |
+| joni_mitchell | 23 | four_bar_periodic_suspended_non_resolving | open_string_low_pedal_lyrical_soprano_arch | schneider |
+| goldsmith | 24 | doubly_open_cell_development | mid_soprano_lead | schneider |
+| bartók | 24 | (native contrapuntal bundle) | — | — |
+| williams | 26 | romantic_periodic_cadential | mid_soprano_lead | schneider |
+| zimmer | 26 | repeating_ostinato_no_cadence | mid_cathartic | schneider |
+| shostakovich | 28 | asymmetric_cell_non_resolving | low_biased_extreme_punctuation_spikes | mingus |
+| herrmann | 36 | ostinato_cell_based | mid_high_tension | brookmeyer |
+| webern | 40 | aphoristic_cell_silence_bounded | extreme_pointillist_leaps_all_registers | brookmeyer |
+
+*Bartók:* default SQ contrapuntal bundle, not a film-stub VRB profile; picker enabled but not in `sqVrbProfileRegistry`.
+
+### GCE branch structure
+
+Each film-stub `vrbId` has its own isolated branch in `engines/composer-os-v2/core/gce/gceAutoScorers.ts`, guarded by `contrapuntalLinePolicy.enabled` **and** `vrbId === '<id>'` (or equivalent profile lookup). Branches are strictly additive: adding a new VRB does not modify existing VRB branches.
+
+### Per-VRB differentiators
+
+**Glass** — Looping cell is rewarded; silence does **not** mark a phrase boundary (inverse of Webern).
+
+**Webern** — Looping cell is **penalized** (inverse of Glass). Silence ≥ 1 beat is a hard phrase boundary. One- to two-voice Klangfarbenmelodie texture is **not** penalized.
+
+**Joni Mitchell** — Three-tier texture (cello pedal / sustained quartal-sus inner / lyrical Vln I) is **not** penalized for low inner-voice activity. sus2/sus4/maj7/maj9 endings are credited; V→I is **not** credited. ic5/ic2 credited; ic1 saturation **not** applied.
+
+**Shostakovich** — Passacaglia / cello-drone texture is valid. Extreme register spikes do not hard-fail σ. Non-resolving phrase endings are correct, not defects.
+
+**Zimmer** — `ZIMMER_PASSACAGLIA_SUB_MODE` is documented on the profile (ground bass + progressive entry). σ soft ceiling extends to **32** in passacaglia context (hard ceiling remains 26 otherwise).
+
+### Standalone VRB tests (not in smoke)
+
+| Profile | Tests |
+|---------|------:|
+| glass | 22 |
+| rota | 20 |
+| ravel | 13 |
+| badalamenti | 24 |
+| morricone | 16 |
+| goldsmith | 20 |
+| williams | 15 |
+| zimmer | 25 |
+| herrmann | 14 |
+| shostakovich | 23 |
+| webern | 29 |
+| joni_mitchell | 31 |
+| **Total** | **252** |
+
+Smoke allowlist (`npm run test:composer-smoke`): **248** passed / **0** failed — unchanged when only VRB standalone suites run outside smoke.
+
+---
+
 For version history after V8.0, see [CHANGELOG.md](./CHANGELOG.md). For pre-V8.0 detailed changelog entries, see [archive/composer-os/CHANGELOG_HISTORICAL.md](./archive/composer-os/CHANGELOG_HISTORICAL.md).
