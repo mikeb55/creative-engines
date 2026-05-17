@@ -515,6 +515,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       locked &&
       locked.length === result.context.form.totalBars
     ) {
+      // TODO: assertExportTruth — partial context (post-write disk pass; golden path already ran in-memory truth).
       const disk = validateLockedHarmonyMusicXmlTruthFromFile(filepath, locked);
       if (!disk.ok) diskHarmonyTruthErrors = disk.errors;
     }

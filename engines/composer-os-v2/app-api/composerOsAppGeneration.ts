@@ -53,10 +53,8 @@ import { chromaticStrengthToOutsideLevel } from '../core/slonimsky/slonimskyPatt
 import { resolveEffectiveGenerationSeed } from '../core/creative-controls/creativeControlResolver';
 import { experimentalLabelForLevel } from '../core/creative-controls/experimentalEvaluator';
 import { manifestPathForMusicXml } from './composerOsOutputPaths';
-import {
-  assertLockedHarmonyScoreAndXmlMatchBars,
-  validateLockedHarmonyMusicXmlTruthFromFile,
-} from '../core/export/validateLockedHarmonyMusicXml';
+import { assertExportTruth, buildSpineSymbolsForExportTruth } from '../core/export/assertExportTruth';
+import { validateLockedHarmonyMusicXmlTruthFromFile } from '../core/export/validateLockedHarmonyMusicXml';
 import { writeOutputManifest } from './writeOutputManifest';
 import { mapAppStyleStackToEngine } from './mapStyleStack';
 import { defaultStyleProfileForPrimarySongwriter } from '../core/song-mode/songModeStyleProfileDefaults';
@@ -1520,7 +1518,22 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           }
         }
       }
-      assertLockedHarmonyScoreAndXmlMatchBars(gp.score, gp.xml, harmonyBarsForLockedAssertions!, gp.context);
+      assertExportTruth({
+        scoreModel: gp.score,
+        exportedXml: gp.xml,
+        effectiveBars: harmonyBarsForLockedAssertions,
+        lockedBars: lockedHarmonyBarsAuthoritative,
+        spineSymbols: buildSpineSymbolsForExportTruth(gp.context, tbLockedTruth),
+        runMode: 'song',
+        context: gp.context,
+        routingWire: {
+          harmonyMode: harmonyModeForRun,
+          lockedHarmonyBarsRaw: lockedHarmonyBarsAuthoritative,
+          parsedChordBars: lockedHarmonyBarsAuthoritative,
+          chordProgressionText: chordProgressionText,
+        },
+        spineLayer: 'composerOsAppGeneration:song_mode_locked',
+      });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       return {
@@ -1600,6 +1613,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       !indieDualGuitarTuningProofFixtureRequested(req)
     ) {
       try {
+        // TODO: assertExportTruth — partial context (disk re-read only; in-memory truth already ran above).
         const disk = validateLockedHarmonyMusicXmlTruthFromFile(filepath, barsForDiskHarmonyTruth);
         if (!disk.ok) diskHarmonyTruthErrors = disk.errors;
       } catch (e) {

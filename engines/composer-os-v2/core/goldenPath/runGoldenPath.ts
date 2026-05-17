@@ -60,10 +60,9 @@ import { placeMotifsAcrossBars, placeMotifsForEcmForm } from '../motif/motifTrac
 import { runScoreIntegrityGate } from '../score-integrity/scoreIntegrityGate';
 import { runBehaviourGates } from '../score-integrity/behaviourGates';
 import { exportScoreModelToMusicXml } from '../export/musicxmlExporter';
-import { validateLockedHarmonyMusicXmlTruth } from '../export/validateLockedHarmonyMusicXml';
+import { assertExportTruth, buildSpineSymbolsForExportTruth } from '../export/assertExportTruth';
 import { applyKeySignatureToScoreAndContext } from '../harmony/keyInference';
 import { assertGuitarScoreMatchesHarmonyContext } from '../harmony/harmonyContext';
-import { assertHarmonySpineMatchesScore } from '../harmony/harmonySpineProvider';
 import { validateMusicXmlSchema } from '../export/musicxmlValidation';
 import { checkSibeliusSafe } from '../export/sibeliusSafeProfile';
 import { validateExportIntegrity } from '../export/exportHardening';
@@ -2416,7 +2415,6 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   appendHarmonyPipelineTrace(appliedContext, 'score_builder', 'generateGoldenPathDuoScore finished');
   try {
     assertScoreMatchesLockedHarmonyWire(score, options, appliedContext);
-    assertHarmonySpineMatchesScore(score, options, appliedContext, 'runGoldenPath:after_score_build');
   } catch (e) {
     errors.push(e instanceof Error ? e.message : String(e));
   }
@@ -2598,38 +2596,58 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       if (!bassMeta.valid) errors.push(...bassMeta.errors);
     }
 
-    const expectedBarsForLockedTruth =
-      resolveEffectiveHarmonyTruth(appliedContext.generationMetadata, {
-        totalBars: appliedContext.form.totalBars,
-        harmonyContext: appliedContext.harmonyContext,
-      }) ?? appliedContext.lockedHarmonyBarsRaw;
-    if (!isIndieTuningFixture && expectedBarsForLockedTruth && expectedBarsForLockedTruth.length === appliedContext.form.totalBars) {
-      const lockedTruth = validateLockedHarmonyMusicXmlTruth(xml, expectedBarsForLockedTruth);
-      appliedContext.generationMetadata.customHarmonyMusicXmlTruthPassed = lockedTruth.ok;
-      if (!lockedTruth.ok) errors.push(...lockedTruth.errors);
-    }
   } else {
     errors.push(...exportResult.errors);
   }
 
-  const truthReport = isIndieTuningFixture
-    ? {
-        submittedChordString: null,
-        parsedBars: null,
-        scoreBars: null,
-        writtenXmlBars: null,
-        inputStage: 'skip' as const,
-        scoreStage: 'skip' as const,
-        exportStage: 'skip' as const,
-        errors: [] as string[],
-      }
-    : runPipelineTruthGates({
+  let truthReport: PipelineTruthReport = {
+    submittedChordString: null,
+    parsedBars: null,
+    scoreBars: null,
+    writtenXmlBars: null,
+    inputStage: 'skip',
+    scoreStage: 'skip',
+    exportStage: 'skip',
+    errors: [],
+  };
+  if (!isIndieTuningFixture && exportResult.success && xml) {
+    const tbTruth = appliedContext.form.totalBars;
+    const effectiveBarsForTruth =
+      resolveEffectiveHarmonyTruth(appliedContext.generationMetadata, {
+        totalBars: tbTruth,
+        harmonyContext: appliedContext.harmonyContext,
+      }) ?? appliedContext.lockedHarmonyBarsRaw;
+    const lockedBarsForTruth =
+      appliedContext.generationMetadata.customHarmonyLocked === true ||
+      (appliedContext.lockedHarmonyBarsRaw && appliedContext.lockedHarmonyBarsRaw.length > 0)
+        ? appliedContext.lockedHarmonyBarsRaw
+        : undefined;
+    try {
+      const pipelineFromTruth = assertExportTruth({
+        scoreModel: score,
+        exportedXml: xml,
+        effectiveBars: effectiveBarsForTruth,
+        lockedBars: lockedBarsForTruth,
+        spineSymbols: buildSpineSymbolsForExportTruth(appliedContext, tbTruth),
+        runMode: 'duo',
         context: appliedContext,
-        options,
-        score,
-        xml,
+        routingWire: options,
+        pipelineOptions: options,
+        spineLayer: 'runGoldenPath:after_export',
       });
-  errors.push(...truthReport.errors);
+      if (pipelineFromTruth) truthReport = pipelineFromTruth;
+    } catch (e) {
+      errors.push(e instanceof Error ? e.message : String(e));
+    }
+  } else if (!isIndieTuningFixture) {
+    truthReport = runPipelineTruthGates({
+      context: appliedContext,
+      options,
+      score,
+      xml,
+    });
+    errors.push(...truthReport.errors);
+  }
 
   const zappaShareableRelax = appliedContext.generationMetadata?.songwriterStyleId === 'frank_zappa';
   /** Frank Zappa intentionally breaks phrase/motif conventions; duo LOCK swing/polish heuristics are jazz-pop biased — do not penalize release readiness for stylistic warnings. Warnings still appear on the manifest. */
