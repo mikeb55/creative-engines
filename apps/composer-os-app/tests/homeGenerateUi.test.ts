@@ -178,6 +178,17 @@ describe('HomeGenerate mode-driven UI', () => {
     expect(src).toContain('getModeUx');
   });
 
+  it('routes sq_to_bb to SqToBbWorkflowPanel and skips standard generate/receipt', () => {
+    expect(src).toContain("presetId === 'sq_to_bb'");
+    expect(src).toContain('SqToBbWorkflowPanel');
+    expect(src).toContain('sqToBbStyleProfile');
+    expect(src).toContain('sqToBbEra');
+    expect(src).toMatch(/sqToBbEra.*null|setSqToBbEra\(null\)/);
+    expect(src).toContain('onEraChange');
+    expect(src).toContain('!isSqToBbWorkflow');
+    expect(src).toContain('showBigReceipt = (result || error) && !isSqToBbWorkflow');
+  });
+
   it('merges API presets into Generate mode list (same source as Presets tab)', () => {
     expect(src).toContain('mergePresetsWithRegistry');
     expect(src).toContain('APP_PRESET_REGISTRY');

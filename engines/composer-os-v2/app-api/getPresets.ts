@@ -71,6 +71,13 @@ const PRESETS: AppPreset[] = [
       'Short loopable riffs (1–4 bars), strict grid, rehearsal mark — internal riff composite gate before export (not duo GCE); Sibelius-safe MusicXML to your library Riffs folder.',
     supported: true,
   },
+  {
+    id: 'sq_to_bb',
+    name: 'SQ → BB',
+    description:
+      'Four-voice string-quartet sketch with GCE gates, review, then big-band section translation — separate SQ and BB MusicXML exports. Sketch length 8–128 bars (16 / 32 / 64 presets or custom).',
+    supported: true,
+  },
 ];
 
 export function getPresets(): AppPreset[] {

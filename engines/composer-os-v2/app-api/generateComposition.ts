@@ -78,6 +78,8 @@ export interface GenerateResult {
    * this is the `.musicxml` path for preview/playback (same folder).
    */
   ensembleMusicXmlFilepath?: string;
+  /** SQ→BB workflow payload (sketch / translate steps). */
+  sqToBbWorkflow?: import('../core/counterpoint/sqToBbWorkflowTypes').SqToBbWorkflowPayload;
   /** Path to run manifest JSON alongside MusicXML, when written */
   manifestPath?: string;
   /** Guitar–Bass Duo: harmony source when engine ran */

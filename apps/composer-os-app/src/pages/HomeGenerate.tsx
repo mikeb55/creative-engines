@@ -33,6 +33,14 @@ import { SecondLineRhythmControls } from '../components/SecondLineRhythmControls
 import { CubanRhythmControls } from '../components/CubanRhythmControls';
 import { FelaPercussionControls, type FelaPercussionFeelMode } from '../components/FelaPercussionControls';
 import { GreekRhythmControls } from '../components/GreekRhythmControls';
+import { SqToBbWorkflowPanel } from '../components/SqToBbWorkflowPanel';
+import { ComposerEraSelectOptions } from '../components/ComposerEraSelectOptions';
+import {
+  composerEraForRequest,
+  type ComposerEraId,
+  type ComposerEraSelectValue,
+} from '../types/composerEraOptions';
+import type { SqToBbStyleProfileId } from '../types/sqToBbWorkflowUi';
 import { StylePanel, type UiInstrumentGroup } from '../components/StylePanel';
 import { GuitarFretboardView } from '../components/GuitarFretboardView';
 import { RhythmBlendControls } from '../components/RhythmBlendControls';
@@ -1186,16 +1194,6 @@ function isSqKnownIncompatibleBlend(idA: string, idB: string): boolean {
   return KNOWN_INCOMPATIBLE_SQ_BLEND_PAIRS.some(([x, y]) => (x === idA && y === idB) || (x === idB && y === idA));
 }
 
-const ERA_OPTIONS: { id: string; label: string }[] = [
-  { id: 'swing', label: 'Swing' },
-  { id: 'bebop', label: 'Bebop' },
-  { id: 'post_bop', label: 'Post-bop' },
-  { id: 'contemporary', label: 'Contemporary' },
-  { id: 'cool_jazz', label: 'Cool Jazz' },
-  { id: 'hard_bop', label: 'Hard Bop' },
-  { id: 'fusion', label: 'Fusion' },
-];
-
 const DEFAULT_CUSTOM_HARMONY_PLACEHOLDER =
   'e.g. Dm9, G13, Cmaj9, A7alt — or Cmaj7 | Am7 | Dm7 | G7 | ... (one chord per bar)';
 const DUO_AND_SONG_MODE_CUSTOM_HARMONY_PLACEHOLDER =
@@ -1208,6 +1206,12 @@ const ERA_CUSTOM_HARMONY_PLACEHOLDERS: Record<string, string> = {
   post_bop: 'e.g. Dm9, G13, Cmaj9, A7alt — or Fmaj7#11 | G7alt | Cm7 | Ab7sus | ... (one chord per bar)',
   fusion: 'e.g. Dm9, G13, Cmaj9, A7alt — or Dm9 | Dm11 | Gm9 | Gm11 | ... (one chord per bar)',
   contemporary: 'e.g. Dm9, G13, Cmaj9, A7alt — or Cmaj7#11 | Am11 | Dm9 | G7sus | ... (one chord per bar)',
+  classical: DEFAULT_CUSTOM_HARMONY_PLACEHOLDER,
+  romantic: DEFAULT_CUSTOM_HARMONY_PLACEHOLDER,
+  impressionist: DEFAULT_CUSTOM_HARMONY_PLACEHOLDER,
+  early_modernist: DEFAULT_CUSTOM_HARMONY_PLACEHOLDER,
+  postwar_modernist: DEFAULT_CUSTOM_HARMONY_PLACEHOLDER,
+  contemporary_classical: DEFAULT_CUSTOM_HARMONY_PLACEHOLDER,
 };
 
 const ENSEMBLE_OPTIONS: { id: string; label: string }[] = [
@@ -1911,6 +1915,8 @@ export function HomeGenerate({
   }) => void;
 }) {
   const [presetId, setPresetId] = useState('song_mode');
+  const [sqToBbStyleProfile, setSqToBbStyleProfile] = useState<SqToBbStyleProfileId>('brookmeyer');
+  const [sqToBbEra, setSqToBbEra] = useState<ComposerEraSelectValue>(null);
   const [ecmMode, setEcmMode] = useState<'ECM_METHENY_QUARTET' | 'ECM_SCHNEIDER_CHAMBER'>(
     'ECM_METHENY_QUARTET'
   );
@@ -2654,8 +2660,13 @@ export function HomeGenerate({
     presetId === 'ecm_chamber' ||
     presetId === 'riff_generator';
 
+  const isSqToBbWorkflow = presetId === 'sq_to_bb';
+
   const generate = useCallback(
     async (opts?: { seedOverride?: number; variationOverride?: string }) => {
+      if (presetId === 'sq_to_bb') {
+        return;
+      }
       const seed = opts?.seedOverride ?? baseSeed;
       const vid = opts?.variationOverride ?? variationId;
       if (presetId === 'string_quartet' && sqArrangerGenerateBlocked) {
@@ -2687,16 +2698,23 @@ export function HomeGenerate({
         }
       }
       try {
+        const eraForPairing = composerEraForRequest(
+          era.trim() === '' ? null : (era as ComposerEraId),
+        );
         const stylePairingSong =
           presetId === 'song_mode'
-            ? { songwriterStyle: songwriterStyle, arrangerStyle: arrangerStyle, era }
+            ? {
+                songwriterStyle: songwriterStyle,
+                arrangerStyle: arrangerStyle,
+                ...(eraForPairing ? { era: eraForPairing } : {}),
+              }
             : undefined;
         const stylePairingBigBand =
           presetId === 'big_band'
             ? {
                 songwriterStyle: songwriterStyle,
                 arrangerStyle: arrangerStyle,
-                era,
+                ...(eraForPairing ? { era: eraForPairing } : {}),
               }
             : undefined;
         const stylePairingStringQuartet =
@@ -2704,7 +2722,7 @@ export function HomeGenerate({
             ? {
                 songwriterStyle: songwriterStyle,
                 arrangerStyle: sqArrangerSlot1,
-                era,
+                ...(eraForPairing ? { era: eraForPairing } : {}),
               }
             : undefined;
 
@@ -3535,7 +3553,7 @@ export function HomeGenerate({
     exportIntegrityFlag === false ||
     (exportIntegrityFlag === undefined && !!result && !error && !!result.success && !passed);
   const notShareableGenerated = receiptExportOk && v?.readiness?.shareable === false;
-  const showBigReceipt = result || error;
+  const showBigReceipt = (result || error) && !isSqToBbWorkflow;
 
   const modeUx = getModeUx(presetId);
   const summaryPresetId = result?.runManifest?.presetId ?? presetId;
@@ -4008,6 +4026,7 @@ export function HomeGenerate({
               const next = e.target.value;
               setPresetId(next);
               setArrangerStyle((prev) => nextArrangerOnPresetChange(prev, next));
+              if (next === 'sq_to_bb') setSqToBbEra(null);
             }}
             disabled={loading}
           >
@@ -4740,6 +4759,18 @@ export function HomeGenerate({
           )}
         </div>
       </div>
+
+      {isSqToBbWorkflow && (
+        <SqToBbWorkflowPanel
+          seed={baseSeed}
+          totalBars={totalBars}
+          bpm={bpm}
+          styleProfile={sqToBbStyleProfile}
+          onStyleProfileChange={setSqToBbStyleProfile}
+          era={sqToBbEra}
+          onEraChange={setSqToBbEra}
+        />
+      )}
 
       {(presetId === 'guitar_bass_duo' ||
         presetId === 'guitar_bass_duo_single_line' ||
@@ -6205,11 +6236,7 @@ export function HomeGenerate({
               }}
               disabled={loading}
             >
-              {ERA_OPTIONS.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.label}
-                </option>
-              ))}
+              <ComposerEraSelectOptions includeNoEra />
             </select>
           </div>
           <p
@@ -6408,11 +6435,7 @@ export function HomeGenerate({
               onChange={(e) => setEra(e.target.value)}
               disabled={loading}
             >
-              {ERA_OPTIONS.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.label}
-                </option>
-              ))}
+              <ComposerEraSelectOptions includeNoEra />
             </select>
           </div>
           <div>
@@ -6613,11 +6636,7 @@ export function HomeGenerate({
               Era
             </label>
             <select id="co-sq-era" value={era} onChange={(e) => setEra(e.target.value)} disabled={loading}>
-              {ERA_OPTIONS.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.label}
-                </option>
-              ))}
+              <ComposerEraSelectOptions includeNoEra />
             </select>
           </div>
           {songwriterStyle === 'frank_zappa' && frankZappaMeterMapBlock}
@@ -6655,34 +6674,38 @@ export function HomeGenerate({
       </div>
 
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-        <button onClick={() => void generate()} disabled={loading || sqArrangerGenerateBlocked}>
-          {loading ? 'Generating…' : 'Generate'}
-        </button>
-        <button
-          className="secondary"
-          type="button"
-          disabled={loading || sqArrangerGenerateBlocked}
-          onClick={() => {
-            const next = newVariationIdToken();
-            setVariationId(next);
-            setBaseSeed(Math.floor(Math.random() * 1e9));
-            void generate({ variationOverride: next });
-          }}
-        >
-          Try Another
-        </button>
-        <button
-          className="secondary"
-          type="button"
-          disabled={loading || sqArrangerGenerateBlocked}
-          onClick={() => {
-            setBaseSeed(42);
-            setVariationId('demo-42');
-            void generate({ seedOverride: 42, variationOverride: 'demo-42' });
-          }}
-        >
-          Demo (fixed variation)
-        </button>
+        {!isSqToBbWorkflow && (
+          <>
+            <button onClick={() => void generate()} disabled={loading || sqArrangerGenerateBlocked}>
+              {loading ? 'Generating…' : 'Generate'}
+            </button>
+            <button
+              className="secondary"
+              type="button"
+              disabled={loading || sqArrangerGenerateBlocked}
+              onClick={() => {
+                const next = newVariationIdToken();
+                setVariationId(next);
+                setBaseSeed(Math.floor(Math.random() * 1e9));
+                void generate({ variationOverride: next });
+              }}
+            >
+              Try Another
+            </button>
+            <button
+              className="secondary"
+              type="button"
+              disabled={loading || sqArrangerGenerateBlocked}
+              onClick={() => {
+                setBaseSeed(42);
+                setVariationId('demo-42');
+                void generate({ seedOverride: 42, variationOverride: 'demo-42' });
+              }}
+            >
+              Demo (fixed variation)
+            </button>
+          </>
+        )}
         <button className="secondary" type="button" onClick={() => openFolder()}>
           Open library folder
         </button>

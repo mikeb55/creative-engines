@@ -2,6 +2,7 @@ import type { AbstractLineSet } from './abstractLineSet';
 import { chooseVoicingGeometry, type VoicingGeometry } from './chooseVoicingGeometry';
 import { deriveSectionWritingIntent } from './deriveSectionWritingIntent';
 import { extractQuartetFeatures } from './extractQuartetFeatures';
+import { quantizePhrasesForOrchestration } from './quantizePhrasesForOrchestration';
 import type { QuartetFeatures, SectionWritingIntent } from './quartetFeatureTypes';
 import {
   planBackgroundsRhythm,
@@ -10,6 +11,7 @@ import {
   type HarmonyBar,
   type SoliRhythmPlan,
 } from './planSoliAndBackgroundsRhythm';
+import type { CompositionContext } from '../compositionContext';
 import type { HarmonicScene } from '../composer/harmonicScene';
 import type { VoiceRuleBundle } from '../composer/voiceRuleBundle';
 import type {
@@ -172,6 +174,7 @@ export function sectionPlansForBigBandFromAbstract(
   scene: HarmonicScene | undefined,
   lines: AbstractLineSet | undefined,
   styleProfileId?: string,
+  context?: CompositionContext,
 ): SectionPlansForBigBandFromAbstractResult {
   const { soliPlan, backgroundsPlan } = routerSoliBackgrounds(bundle, scene);
   if (!lines) {
@@ -186,7 +189,11 @@ export function sectionPlansForBigBandFromAbstract(
     };
   }
 
-  const quartetFeatures = extractQuartetFeatures(lines);
+  const rawQuartetFeatures = extractQuartetFeatures(lines);
+  const quartetFeatures =
+    bundle.contrapuntalLinePolicy?.enabled === true
+      ? quantizePhrasesForOrchestration(lines, rawQuartetFeatures, { context })
+      : rawQuartetFeatures;
   const sectionWritingIntents = deriveSectionWritingIntent(quartetFeatures, bundle, styleProfileId);
   const voicingGeometries = sectionWritingIntents.map((i) => chooseVoicingGeometry(i, bundle));
   const soliRhythmPlans = sectionWritingIntents.map((i, idx) =>

@@ -236,6 +236,12 @@ export interface GenerationMetadata {
   progressionMode?: 'builtin' | 'custom';
   /** Raw user `chordProgressionText` when custom mode was requested (success or parse failure) */
   chordProgressionInputRaw?: string;
+  /** SQ→BB: unparsed user chord timeline (`userChordInput` on request; Session 2 parses). */
+  userChordInput?: string | null;
+  /** SQ→BB: SQ harmonic voice picker (`null` = BB style-profile line default). */
+  sqToBbSqComposer?: import('./counterpoint/sqToBbWorkflowTypes').SqToBbSqComposer;
+  /** SQ→BB: VRB id used for contrapuntal line sketch / regen. */
+  sqLineVrbId?: string;
   /** Parsed one chord per bar when custom harmony was applied successfully */
   parsedCustomProgressionBars?: string[];
   /** Section-scoped regen: receipt when a fragment run was spliced into prior MusicXML. */
@@ -1284,6 +1290,14 @@ export interface GenerationMetadata {
   /** Phase 6 — wired {@link applyPhase6RendererWiring} soli/backgrounds + phrase render (`bigBandSectionPlanRenderer.ts`). */
   bigBandVoicing?: import('./counterpoint/ContrapuntalLineEngine').BigBandVoicing;
   bigBandSectionRender?: import('./composer/bigBandSectionPlanRenderer').BigBandSectionRenderOutput;
+  /** SQ→BB sketch density — meso quantizer threshold (`sparse` | `medium` | `dense`). */
+  sqToBbDensity?: import('./counterpoint/sqToBbWorkflowTypes').SqToBbDensity;
+  /** SQ→BB Phase A — Gate 1 (Melodic Identity + Phrase Grammar) after contrapuntal precompute. */
+  sqBbGceGate1?: import('./counterpoint/sqToBbGceGates').SqBbGceGate1Record;
+  /** When Gate 1 fails after DCR refine — skip {@link wireBigBandSectionRendererOnContext}. */
+  sqBbGceGate1BlockedRenderer?: boolean;
+  /** SQ→BB Phase A — Gate 2 (Arrangement + Economy) after BB renderer wiring. */
+  sqBbGceGate2?: import('./counterpoint/sqToBbGceGates').SqBbGceGate2Record;
   /** Duo line-first — strong-beat co-onset displacement receipts (`duoAbstractLineWiring.ts`). */
   duoLineFirstRhythmReceipts?: string[];
   brookmeyerContrapuntalLineCount?: number;

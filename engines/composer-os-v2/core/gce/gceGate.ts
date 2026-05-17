@@ -18,6 +18,7 @@ import {
   scoreArrangementAndOrchestrationForEnsemble,
   scoreThematicRecallPotential,
   gceSectionsFromFormMap,
+  type EconomyFocusScoringOptions,
   type GceStructureSection,
 } from './gceAutoScorers';
 
@@ -34,7 +35,8 @@ export function scoreResultForGce(
   score: ScoreModel,
   chords: string[],
   sections: GceStructureSection[],
-  songwriterId?: string
+  songwriterId?: string,
+  economyOptions?: EconomyFocusScoringOptions,
 ): GceGateResult {
   const melody = scoreModelToMelodicLine(score, resolveMelodicPartId(score));
 
@@ -46,7 +48,11 @@ export function scoreResultForGce(
     { name: 'Rhythmic Identity', weight: 1, score: scoreRhythmicIdentity(melody).score },
     { name: 'Structure & Form', weight: 1, score: scoreStructureAndForm(score, chords, sections).score },
     { name: 'Arrangement & Orchestration', weight: 1, score: scoreArrangementAndOrchestrationForEnsemble(score).score },
-    { name: 'Economy & Focus', weight: 1, score: scoreEconomyAndFocusForEnsemble(melody, sections, score).score },
+    {
+      name: 'Economy & Focus',
+      weight: 1,
+      score: scoreEconomyAndFocusForEnsemble(melody, sections, score, economyOptions).score,
+    },
     { name: 'Tension & Release', weight: 1, score: scoreTensionAndReleaseForEnsemble(score, chords, melody).score },
     { name: 'Thematic Recall Potential', weight: 1, score: scoreThematicRecallPotential(melody, sections).score },
   ];

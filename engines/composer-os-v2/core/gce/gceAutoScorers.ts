@@ -1,7 +1,106 @@
 import type { MelodicNote } from './gce_melody_eval';
 import type { FormMap } from '../compositionContext';
-import type { NoteEvent, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
+import type { CadenceTag } from '../counterpoint/abstractLineSet';
+import type { PhraseCadenceStrength } from '../counterpoint/quartetFeatureTypes';
+import { BEATS_PER_MEASURE, type NoteEvent, type PartModel, type ScoreModel } from '../score-model/scoreModelTypes';
 import { activePartsNormalizedBigBand } from './gceStructuralMemory';
+
+/** Per-meso register σ ceiling for SQ→BB contrapuntal Melodic Identity (two octaves). */
+const CONTRAPUNTAL_REGISTER_STDEV_CEILING = 24;
+
+/** SQ→BB only — explicit opt-in; never inferred from VRB id alone. */
+export interface ContrapuntalMesoSpanRef {
+  startBeat: number;
+  endBeat: number;
+  cadenceStrength: PhraseCadenceStrength;
+}
+
+export interface ContrapuntalGceScoringOptions {
+  contrapuntalLinePolicy: true;
+  mesoSpans: readonly ContrapuntalMesoSpanRef[];
+  cadenceTags: readonly CadenceTag[];
+}
+
+/** Melodic line position in bar-offset space (matches meso span startBeat/endBeat). */
+function melodicAbsBars(n: MelodicNote): number {
+  return (n.bar - 1) + n.beat / BEATS_PER_MEASURE;
+}
+
+function pitchedNotesInBarRange(
+  line: MelodicNote[],
+  startBeat: number,
+  endBeat: number,
+): MelodicNote[] {
+  return line.filter((n) => {
+    if (n.rest || n.midi <= 0) return false;
+    const abs = melodicAbsBars(n);
+    return abs >= startBeat - 1e-6 && abs < endBeat - 1e-6;
+  });
+}
+
+function registerCohesionPerMesoSpans(
+  line: MelodicNote[],
+  mesoSpans: readonly ContrapuntalMesoSpanRef[],
+): number {
+  const perPhrase: number[] = [];
+  for (const span of mesoSpans) {
+    const notes = pitchedNotesInBarRange(line, span.startBeat, span.endBeat);
+    if (notes.length < 2) {
+      perPhrase.push(0.55);
+      continue;
+    }
+    const pitches = notes.map((n) => n.midi);
+    const mean = pitches.reduce((a, b) => a + b, 0) / pitches.length;
+    const variance = pitches.reduce((s, p) => s + (p - mean) ** 2, 0) / pitches.length;
+    const stddev = Math.sqrt(variance);
+    if (stddev <= CONTRAPUNTAL_REGISTER_STDEV_CEILING) {
+      perPhrase.push(1);
+    } else {
+      const excess = stddev - CONTRAPUNTAL_REGISTER_STDEV_CEILING;
+      perPhrase.push(Math.max(0, 1 - excess / CONTRAPUNTAL_REGISTER_STDEV_CEILING));
+    }
+  }
+  if (perPhrase.length === 0) return 0.5;
+  const sorted = [...perPhrase].sort((a, b) => b - a);
+  const keep = Math.max(1, Math.ceil(sorted.length * 0.75));
+  return sorted.slice(0, keep).reduce((a, b) => a + b, 0) / keep;
+}
+
+function cadenceStrengthRank(strength: PhraseCadenceStrength, contrapuntal?: boolean): number {
+  if (contrapuntal) {
+    switch (strength) {
+      case 'strong':
+        return 1;
+      case 'medium':
+        return 0.9;
+      case 'weak':
+        return 0.75;
+      default:
+        return 0.62;
+    }
+  }
+  switch (strength) {
+    case 'strong':
+      return 1;
+    case 'medium':
+      return 0.78;
+    case 'weak':
+      return 0.52;
+    default:
+      return 0.22;
+  }
+}
+
+function cadenceTagStrengthNear(tags: readonly CadenceTag[], positionBars: number): number {
+  let best = 0;
+  for (const c of tags) {
+    if (Math.abs(c.positionBars - positionBars) > 0.12) continue;
+    const rank =
+      c.strength === 'strong' ? 1 : c.strength === 'medium' ? 0.82 : c.strength === 'weak' ? 0.55 : 0.3;
+    best = Math.max(best, rank);
+  }
+  return best;
+}
 
 /** Mirror **`uprightBassProfile`** hard range — inlined to avoid any module-init edge cases in GCE-only imports. */
 const UPRIGHT_BASS_HARD_LOW = 28;
@@ -77,7 +176,11 @@ function getIntervalTarget(songwriterId?: string): {
   }
 }
 
-export function scoreJazzIntervalBalance(midi: number[], songwriterId?: string): number {
+export function scoreJazzIntervalBalance(
+  midi: number[],
+  songwriterId?: string,
+  contrapuntalRelaxed?: boolean,
+): number {
   if (midi.length < 3) return 0.5;
 
   const intervals: number[] = [];
@@ -132,19 +235,21 @@ export function scoreJazzIntervalBalance(midi: number[], songwriterId?: string):
   else if (uniqueAbs <= 7) varietyScore = 1;
   else varietyScore = Math.max(0, 1 - (uniqueAbs - 7) / 5);
 
-  return Math.max(
-    0,
-    Math.min(
-      1,
-      1 -
-        distributionPenalty * 0.55 +
-        (leapRecoveryRate - 0.6) * 0.25 +
-        (varietyScore - 0.8) * 0.15
-    )
-  );
+  const penaltyScale = contrapuntalRelaxed ? 0.12 : 0.55;
+  const raw =
+    1 -
+    distributionPenalty * penaltyScale +
+    (leapRecoveryRate - 0.6) * 0.25 +
+    (varietyScore - 0.8) * 0.15;
+  const clamped = Math.max(0, Math.min(1, raw));
+  return contrapuntalRelaxed ? Math.max(0.55, clamped) : clamped;
 }
 
-export function scoreMelodicIdentity(line: MelodicNote[], songwriterId?: string): CategoryScore {
+export function scoreMelodicIdentity(
+  line: MelodicNote[],
+  songwriterId?: string,
+  contrapuntal?: ContrapuntalGceScoringOptions,
+): CategoryScore {
   const notes = line.filter((n) => !n.rest && n.midi > 0);
   if (notes.length < 4) {
     return { score: 0, justification: 'Too few notes' };
@@ -280,18 +385,28 @@ export function scoreMelodicIdentity(line: MelodicNote[], songwriterId?: string)
   /** Map typical weighted sums (~0.35–0.65) into ~0.75–0.9 so contour adds ~2.0+ to raw melodic score. */
   contourCompression = Math.min(1, 0.52 + 0.48 * contourCompression);
 
-  // I — interval balance (jazz step/skip/leap distribution + recovery)
-  const intervalEconomy = scoreJazzIntervalBalance(pitches, songwriterId);
+  const contrapuntalSq =
+    contrapuntal?.contrapuntalLinePolicy === true && (contrapuntal.mesoSpans?.length ?? 0) >= 2;
 
-  // G — register cohesion
-  const registerCohesion = 1 - Math.min(pitchStddev / 12, 1);
+  // I — interval balance (jazz step/skip/leap distribution + recovery)
+  const intervalEconomy = scoreJazzIntervalBalance(pitches, songwriterId, contrapuntalSq);
+
+  // G — register cohesion (global σ for song/duo; per-meso mean σ for SQ contrapuntal)
+  const registerCohesion = contrapuntalSq
+    ? registerCohesionPerMesoSpans(line, contrapuntal.mesoSpans)
+    : 1 - Math.min(pitchStddev / 12, 1);
+
+  const wMotif = contrapuntalSq ? 0.38 : 0.35;
+  const wContour = contrapuntalSq ? 0.3 : 0.25;
+  const wInterval = contrapuntalSq ? 0.07 : 0.2;
+  const wRegister = contrapuntalSq ? 0.25 : 0.2;
 
   const rawScore =
     10 *
-    (0.35 * motifRecurrence +
-      0.25 * contourCompression +
-      0.2 * intervalEconomy +
-      0.2 * registerCohesion);
+    (wMotif * motifRecurrence +
+      wContour * contourCompression +
+      wInterval * intervalEconomy +
+      wRegister * registerCohesion);
 
   let score = Math.max(0, Math.min(10, Math.round(rawScore * 10) / 10));
 
@@ -310,14 +425,17 @@ export function scoreMelodicIdentity(line: MelodicNote[], songwriterId?: string)
 
   const hardFail = motifRecurrence < 0.35;
 
+  const registerLabel = contrapuntalSq ? 'register cohesion (meso σ)' : 'register cohesion';
+
   return {
     score: hardFail ? Math.min(score, 6) : score,
     justification:
       `motif recurrence ${(motifRecurrence * 10).toFixed(1)}, ` +
       `contour ${(contourCompression * 10).toFixed(1)}, ` +
       `interval balance ${(intervalEconomy * 10).toFixed(1)}, ` +
-      `register cohesion ${(registerCohesion * 10).toFixed(1)}` +
-      (hardFail ? ' [HARD FAIL]' : ''),
+      `${registerLabel} ${(registerCohesion * 10).toFixed(1)}` +
+      (hardFail ? ' [HARD FAIL]' : '') +
+      (contrapuntalSq ? ' [SQ contrapuntal]' : ''),
   };
 }
 
@@ -548,10 +666,31 @@ export function scoreStructureAndForm(
   };
 }
 
-export function scoreEconomyAndFocus(line: MelodicNote[]): CategoryScore {
+/** SQ→BB lead scoring — distinct beat slots, not stacked render attacks. */
+export type EconomyFocusScoringContext = 'default' | 'bb_lead';
+
+export interface EconomyFocusScoringOptions {
+  scoringContext?: EconomyFocusScoringContext;
+}
+
+function countUniqueMelodicBeatSlots(notes: MelodicNote[]): number {
+  const slots = new Set<number>();
+  for (const n of notes) {
+    const absBeat = (n.bar - 1) * BEATS_PER_MEASURE + n.beat;
+    slots.add(Math.round(absBeat * 4) / 4);
+  }
+  return slots.size;
+}
+
+export function scoreEconomyAndFocus(
+  line: MelodicNote[],
+  options?: EconomyFocusScoringOptions,
+): CategoryScore {
   const notes = line.filter((n) => !n.rest && n.midi > 0);
   const totalBars = Math.max(...line.map((n) => n.bar), 1);
-  const density = notes.length / (totalBars * 4);
+  const beatSlots =
+    options?.scoringContext === 'bb_lead' ? countUniqueMelodicBeatSlots(notes) : notes.length;
+  const density = beatSlots / (totalBars * BEATS_PER_MEASURE);
   let score: number;
   /** Jazz duo melody: ideal ~50–80% notes per beat; wall-to-wall >95% penalised. */
   if (density > 0.95) {
@@ -567,9 +706,13 @@ export function scoreEconomyAndFocus(line: MelodicNote[]): CategoryScore {
   } else {
     score = density < 0.15 ? 4 : 5;
   }
+  const densityLabel =
+    options?.scoringContext === 'bb_lead'
+      ? `Beat-slot density ${Math.round(density * 100)}% (${beatSlots} slots / ${totalBars} bars)`
+      : `Note density ${Math.round(density * 100)}% (${notes.length} notes / ${totalBars} bars)`;
   return {
     score,
-    justification: `Note density ${Math.round(density * 100)}% (${notes.length} notes / ${totalBars} bars)`,
+    justification: densityLabel,
   };
 }
 
@@ -707,7 +850,8 @@ function sectionHasLongEnding(line: MelodicNote[], sec: GceStructureSection): bo
 export function scoreCadentialClarity(
   line: MelodicNote[],
   chords: string[],
-  sections: GceStructureSection[]
+  sections: GceStructureSection[],
+  contrapuntal?: ContrapuntalGceScoringOptions,
 ): CategoryScore {
   if (!sections?.length || !chords.length) {
     return { score: 0, justification: 'Insufficient section or chord data' };
@@ -732,16 +876,70 @@ export function scoreCadentialClarity(
   const denom = 3 * sections.length;
   const raw =
     denom > 0 ? (10 * (strongBeatLandings + tonicLandings + longNoteEndings)) / denom : 0;
-  const score = Math.max(0, Math.min(10, Math.round(raw * 10) / 10));
+  let score = Math.max(0, Math.min(10, Math.round(raw * 10) / 10));
+  let justification =
+    `strong beats ${strongBeatLandings}, tonic-family ${tonicLandings}, long endings ${longNoteEndings} / ${sections.length} sections`;
+
+  if (contrapuntal?.contrapuntalLinePolicy === true && (contrapuntal.mesoSpans?.length ?? 0) >= 2) {
+    const mesoCadence = scorePhraseGrammarContrapuntal(line, contrapuntal).score;
+    score = Math.max(0, Math.min(10, Math.round((0.42 * score + 0.58 * mesoCadence) * 10) / 10));
+    justification += `; meso cadence blend ${mesoCadence.toFixed(1)} [SQ contrapuntal]`;
+  }
+
+  return { score, justification };
+}
+
+function scorePhraseGrammarContrapuntal(
+  line: MelodicNote[],
+  options: ContrapuntalGceScoringOptions,
+): CategoryScore {
+  const meso = options.mesoSpans;
+  if (meso.length < 2) {
+    return scorePhraseGrammar(line);
+  }
+
+  let closedPhrases = 0;
+  let cadenceSum = 0;
+  for (let i = 0; i < meso.length; i++) {
+    const span = meso[i]!;
+    const spanCadence = Math.max(
+      cadenceStrengthRank(span.cadenceStrength, true),
+      cadenceTagStrengthNear(options.cadenceTags, span.endBeat),
+      i < meso.length - 1 ? 0.68 : 0.55,
+    );
+    cadenceSum += spanCadence;
+    const notesIn = pitchedNotesInBarRange(line, span.startBeat, span.endBeat);
+    const last = notesIn[notesIn.length - 1];
+    const longEnding = last ? last.beats >= 1.5 : false;
+    if (spanCadence >= 0.5 || longEnding || i < meso.length - 1) {
+      closedPhrases++;
+    }
+  }
+
+  const cadenceStrengthScore = cadenceSum / meso.length;
+  const closedRatio = closedPhrases / meso.length;
+  const phraseCountNorm = Math.min(meso.length / 6, 1);
+
+  const rawScore =
+    10 * (0.35 * closedRatio + 0.35 * phraseCountNorm + 0.3 * cadenceStrengthScore);
+  const score = Math.max(0, Math.min(10, Math.round(rawScore * 10) / 10));
   return {
     score,
     justification:
-      `strong beats ${strongBeatLandings}, tonic-family ${tonicLandings}, long endings ${longNoteEndings} / ${sections.length} sections`,
+      `${closedPhrases}/${meso.length} meso-closed, ${meso.length} meso phrases, ` +
+      `cadence strength ${(cadenceStrengthScore * 10).toFixed(1)} [SQ contrapuntal]`,
   };
 }
 
 /** GCE v2.0 — Phrase Grammar */
-export function scorePhraseGrammar(line: MelodicNote[]): CategoryScore {
+export function scorePhraseGrammar(
+  line: MelodicNote[],
+  contrapuntal?: ContrapuntalGceScoringOptions,
+): CategoryScore {
+  if (contrapuntal?.contrapuntalLinePolicy === true && (contrapuntal.mesoSpans?.length ?? 0) >= 2) {
+    return scorePhraseGrammarContrapuntal(line, contrapuntal);
+  }
+
   const phrases: MelodicNote[][] = [];
   let buf: MelodicNote[] = [];
   for (const e of line) {
@@ -913,6 +1111,38 @@ function bbScoreBarCount(score: ScoreModel): number {
   return n;
 }
 
+/**
+ * GCE v2.0 Arrangement pillar — hierarchy clarity (0–1).
+ * Mean per-bar dominance of the busiest part vs total attacks (flat textures → low H).
+ */
+export function computeArrangementHierarchyClarityBigBand(score: ScoreModel): number {
+  const barCount = bbScoreBarCount(score);
+  if (barCount < 1) return 0;
+  let sum = 0;
+  for (let b = 1; b <= barCount; b++) {
+    const counts: number[] = [];
+    for (const p of score.parts) {
+      if (p.id === 'bb_drums') continue;
+      const m = p.measures[b - 1];
+      let n = 0;
+      if (m) {
+        for (const e of m.events) {
+          if (e.kind === 'note' && (e.voice ?? 1) === 1) n++;
+        }
+      }
+      counts.push(n);
+    }
+    const total = counts.reduce((a, c) => a + c, 0);
+    if (total === 0) {
+      sum += 0.5;
+      continue;
+    }
+    const max = Math.max(...counts);
+    sum += max / total;
+  }
+  return sum / barCount;
+}
+
 /** Big-band arrangement: ensemble density motion / contrast across bars (not guitar–bass duo). */
 export function scoreArrangementAndOrchestrationBigBand(score: ScoreModel): CategoryScore {
   const barCount = bbScoreBarCount(score);
@@ -996,8 +1226,12 @@ export function scoreTensionAndReleaseForEnsemble(
   };
 }
 
-export function scoreEconomyAndFocusBigBand(line: MelodicNote[], sections: GceStructureSection[]): CategoryScore {
-  const duo = scoreEconomyAndFocus(line);
+export function scoreEconomyAndFocusBigBand(
+  line: MelodicNote[],
+  sections: GceStructureSection[],
+  options?: EconomyFocusScoringOptions,
+): CategoryScore {
+  const duo = scoreEconomyAndFocus(line, options);
   if (!sections.length) return duo;
   const densities: number[] = [];
   for (const sec of sections) {
@@ -1025,10 +1259,11 @@ export function scoreEconomyAndFocusBigBand(line: MelodicNote[], sections: GceSt
 export function scoreEconomyAndFocusForEnsemble(
   line: MelodicNote[],
   sections: GceStructureSection[],
-  score: ScoreModel
+  score: ScoreModel,
+  options?: EconomyFocusScoringOptions,
 ): CategoryScore {
-  if (isBigBandScoreModel(score)) return scoreEconomyAndFocusBigBand(line, sections);
-  return scoreEconomyAndFocus(line);
+  if (isBigBandScoreModel(score)) return scoreEconomyAndFocusBigBand(line, sections, options);
+  return scoreEconomyAndFocus(line, options);
 }
 
 function sectionIndexForBar(bar: number, sections: GceStructureSection[]): number {

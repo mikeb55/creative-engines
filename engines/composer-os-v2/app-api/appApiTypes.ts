@@ -436,6 +436,29 @@ export interface GenerateRequest {
   basieTestamentMode?: BasieTestamentMode;
   /** Song Mode / Joni Mitchell (`joniMitchellSlice.ts`). Default **`folk_modal`** in engine when omitted. */
   joniPhase?: JoniMitchellPhaseMode;
+  /** SQ→BB workflow (`sq_to_bb` preset) — sketch / regenerate / translate / export. */
+  sqToBbAction?: import('../core/counterpoint/sqToBbWorkflowTypes').SqToBbWorkflowAction;
+  /** SQ→BB style profile picker: Schneider / Basie / Mingus / Brookmeyer. */
+  sqToBbStyleProfile?: import('../core/counterpoint/sqToBbWorkflowTypes').SqToBbStyleProfileId;
+  /** Client-held abstract line set between workflow steps. */
+  sqToBbLineSet?: import('../core/counterpoint/abstractLineSet').AbstractLineSet;
+  /** Phrase index for `regenerate_phrase`. */
+  sqToBbPhraseIndex?: number;
+  /** SQ→BB sketch length (bars). Integer 8–128. Default 32 when omitted. */
+  lengthBars?: number;
+  /** SQ→BB SQ harmonic voice (`null` = style-profile default; `bartok` enabled). */
+  sqToBbSqComposer?: import('../core/counterpoint/sqToBbWorkflowTypes').SqToBbSqComposer;
+  /**
+   * SQ→BB optional era hint. Omit, `null`, or blank → no `generationMetadata.era` tag.
+   * Do not use `stylePairing.era` for this preset.
+   */
+  sqToBbEra?: string | null;
+  /** SQ→BB: raw user chord timeline (Session 1 state wire; parsing Session 2). */
+  userChordInput?: string | null;
+  /** SQ→BB UI: generate internal harmony vs use `userChordInput`. */
+  sqToBbChordSourceMode?: 'generate_harmony' | 'use_user_chords';
+  /** SQ→BB meso quantizer density (`sparse` | `medium` | `dense`). Default `medium`. */
+  sqToBbDensity?: import('../core/counterpoint/sqToBbWorkflowTypes').SqToBbDensity;
 }
 
 export interface ValidationSummary {

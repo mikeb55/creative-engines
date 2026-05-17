@@ -9,6 +9,7 @@ import type { GenerateRequest, ImportHarmonyMode } from './appApiTypes';
 import type { GenerationMetadata } from '../core/compositionContext';
 import { COMPOSER_OS_VERSION } from './composerOsConfig';
 import { generateComposition, type GenerateResult } from './generateComposition';
+import { runSqToBbWorkflowApp } from './sqToBbWorkflowApp';
 import { runRiffGeneratorApp } from './riffGeneratorApp';
 import { runBigBandMode, type BigBandRunInput } from '../core/big-band/runBigBandMode';
 import { runBigBandRealisation } from '../core/big-band/runBigBandRealisation';
@@ -158,6 +159,7 @@ export const SUPPORTED_APP_PRESET_IDS = [
   'song_mode',
   'big_band',
   'string_quartet',
+  'sq_to_bb',
   'wyble_etude',
   'slonimsky_etude',
 ] as const;
@@ -710,6 +712,8 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
       return runBigBandPlanning(req, outputDir);
     case 'string_quartet':
       return runStringQuartetPlanning(req, outputDir);
+    case 'sq_to_bb':
+      return runSqToBbWorkflowApp(req, outputDir);
     default:
       return {
         success: false,

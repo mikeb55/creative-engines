@@ -428,7 +428,7 @@ export class ContrapuntalLineEngine {
     const styleProfileId =
       diag?.styleProfile !== undefined && diag.styleProfile != null ? String(diag.styleProfile) : undefined;
     const plans = bundle
-      ? sectionPlansForBigBandFromAbstract(bundle, scene, lines, styleProfileId)
+      ? sectionPlansForBigBandFromAbstract(bundle, scene, lines, styleProfileId, this.context)
       : null;
     const sectionLeaders = [
       'lead_trumpet_or_lead_alto',

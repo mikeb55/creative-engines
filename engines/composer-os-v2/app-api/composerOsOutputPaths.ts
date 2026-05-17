@@ -18,6 +18,7 @@ export const PRESET_OUTPUT_SUBFOLDER: Record<string, string> = {
   string_quartet: 'String Quartet Compositions',
   song_mode: 'Song Mode',
   riff_generator: 'Riffs',
+  sq_to_bb: 'SQ to BB Compositions',
 };
 
 export function getUserDocumentsPath(): string {

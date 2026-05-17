@@ -83,6 +83,15 @@ export const MODE_UX: ModeUx[] = [
     output: 'Full ensemble MusicXML score when export succeeds; planning JSON if export fails.',
   },
   {
+    id: 'sq_to_bb',
+    label: 'SQ → BB',
+    hint: 'Four SQ lines → review → big-band section translation with GCE gates.',
+    whatItDoes:
+      'Generates a line-first SATB sketch, runs Gate 1 (Melodic Identity + Phrase Grammar), lets you approve or regenerate, then translates to big-band section assignments with Gate 2.',
+    bestFor: 'Arrangers sketching quartet counterpoint before big-band voicing.',
+    output: 'Separate SQ and BB MusicXML exports after gates pass or review.',
+  },
+  {
     id: 'riff_generator',
     label: 'Riff Generator',
     hint: '1–4 bar loopable riffs with chord symbols, rehearsal mark “Riff”, and Sibelius-safe MusicXML.',

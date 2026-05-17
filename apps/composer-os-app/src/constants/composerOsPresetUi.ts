@@ -78,10 +78,17 @@ export const APP_PRESET_REGISTRY: readonly AppPresetCard[] = [
       'Short loopable riffs (1–4 bars), strict grid, rehearsal mark — internal riff composite gate before export (not duo GCE); Sibelius-safe MusicXML to your library Riffs folder.',
     supported: true,
   },
+  {
+    id: 'sq_to_bb',
+    name: 'SQ → BB',
+    description:
+      'Line-first SATB sketch → review four voices → translate to big-band section plan — GCE gates + dual export.',
+    supported: true,
+  },
 ];
 
 /** Expected count from app API `getPresets()` — used to detect stale desktop bundles. */
-export const EXPECTED_APP_PRESET_COUNT = 9;
+export const EXPECTED_APP_PRESET_COUNT = 10;
 
 /** Merge live API presets over the static registry so every id always appears (API may be partial/stale). */
 export function mergePresetsWithRegistry(

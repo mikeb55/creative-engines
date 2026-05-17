@@ -7,6 +7,7 @@ import type { CompositionContext, GenerationMetadata } from '../compositionConte
 import type { AbstractLineSet, LineRole, NoteEvent as AbstractNoteEvent } from '../counterpoint/abstractLineSet';
 import type { BigBandVoicing } from '../counterpoint/ContrapuntalLineEngine';
 import { ContrapuntalLineEngine } from '../counterpoint/ContrapuntalLineEngine';
+import { runSqBbGceGate2, shouldApplySqToBbGceGates } from '../counterpoint/sqToBbGceGates';
 import type { VoicingGeometry, VoicingGeometryShape } from '../counterpoint/chooseVoicingGeometry';
 import type {
   BackgroundsRhythmPlan,
@@ -363,13 +364,26 @@ export function effectiveSpreadSemitonesFromMetadata(
 export function wireBigBandSectionRendererOnContext(context: CompositionContext): WiredBigBandVoicing | null {
   const ls = context.generationMetadata?.contrapuntalLineSet;
   if (!ls) return null;
-  const engine = new ContrapuntalLineEngine(ls.styleSourceVrbId, context);
-  const raw = engine.renderForBigBand(ls);
-  const wired = applyPhase6RendererWiring(raw, ls);
   const gen = context.generationMetadata as GenerationMetadata & {
     bigBandVoicing?: WiredBigBandVoicing;
     bigBandSectionRender?: BigBandSectionRenderOutput;
+    sqBbGceGate1BlockedRenderer?: boolean;
+    sqBbGceGate2?: import('../counterpoint/sqToBbGceGates').SqBbGceGate2Record;
   };
+  if (gen.sqBbGceGate1BlockedRenderer) {
+    return null;
+  }
+  const vrbId = ls.styleSourceVrbId;
+  const engine = new ContrapuntalLineEngine(vrbId, context);
+  const raw = engine.renderForBigBand(ls);
+  const wired = applyPhase6RendererWiring(raw, ls);
+  if (shouldApplySqToBbGceGates(context, vrbId) && wired.sectionRender) {
+    const gate2 = runSqBbGceGate2(wired, ls, context);
+    gen.sqBbGceGate2 = gate2;
+    if (gate2.hardFail) {
+      return null;
+    }
+  }
   gen.bigBandVoicing = wired;
   if (wired.sectionRender) {
     gen.bigBandSectionRender = wired.sectionRender;

@@ -9,6 +9,10 @@ import type { CompositionContext, GenerationMetadata } from '../compositionConte
 import type { AbstractLineSet } from './abstractLineSet';
 import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
 import { ContrapuntalLineEngine } from './ContrapuntalLineEngine';
+import {
+  runSqBbGceGate1,
+  shouldApplySqToBbGceGates,
+} from './sqToBbGceGates';
 
 /**
  * When the resolved `VoiceRuleBundle` carries `contrapuntalLinePolicy.enabled`, builds
@@ -21,8 +25,18 @@ export function precomputeContrapuntalLines(context: CompositionContext, vrbId: 
   const engine = new ContrapuntalLineEngine(id, context);
   const tb = Math.max(1, context.form.totalBars);
   const lines = engine.generateLines(tb, 'chords_only');
-  const filtered = engine.applyVrbFilter(lines);
+  let filtered = engine.applyVrbFilter(lines);
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
+  if (shouldApplySqToBbGceGates(context, id)) {
+    const gate1 = runSqBbGceGate1(filtered, context);
+    genMeta.sqBbGceGate1 = gate1.record;
+    filtered = gate1.refinedLines;
+    genMeta.contrapuntalLineSet = filtered;
+    if (!gate1.record.proceedToRenderer) {
+      genMeta.sqBbGceGate1BlockedRenderer = true;
+    }
+    return filtered;
+  }
   genMeta.contrapuntalLineSet = filtered;
   return filtered;
 }
