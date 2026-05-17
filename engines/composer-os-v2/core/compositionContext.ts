@@ -238,6 +238,10 @@ export interface GenerationMetadata {
   chordProgressionInputRaw?: string;
   /** SQ→BB: unparsed user chord timeline (`userChordInput` on request; Session 2 parses). */
   userChordInput?: string | null;
+  /** SQ→BB: merged per-bar chord timeline (user + optional internal fill). */
+  userChordTimeline?: import('./counterpoint/parseUserChordInput').MergedChordTimelineBar[] | null;
+  /** SQ→BB: chord timeline authority — user, internal, or mixed. */
+  chordTimelineSource?: import('./counterpoint/parseUserChordInput').SqToBbChordTimelineSource;
   /** SQ→BB: SQ harmonic voice picker (`null` = BB style-profile line default). */
   sqToBbSqComposer?: import('./counterpoint/sqToBbWorkflowTypes').SqToBbSqComposer;
   /** SQ→BB: VRB id used for contrapuntal line sketch / regen. */

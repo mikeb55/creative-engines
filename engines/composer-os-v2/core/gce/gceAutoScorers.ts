@@ -19,6 +19,8 @@ export interface ContrapuntalGceScoringOptions {
   contrapuntalLinePolicy: true;
   mesoSpans: readonly ContrapuntalMesoSpanRef[];
   cadenceTags: readonly CadenceTag[];
+  /** SQ→BB — informational only (no GCE threshold changes). */
+  chordTimelineSource?: 'user' | 'internal' | 'mixed';
 }
 
 /** Melodic line position in bar-offset space (matches meso span startBeat/endBeat). */

@@ -27,6 +27,7 @@ import type {
   SqToBbVoiceLaneId,
   SqToBbWorkflowPayload,
 } from '../core/counterpoint/sqToBbWorkflowTypes';
+import { wireSqToBbUserChordTimeline } from '../core/counterpoint/parseUserChordInput';
 import {
   normalizeSqToBbDensity,
   normalizeSqToBbEraInput,
@@ -299,6 +300,7 @@ export function runSqToBbWorkflowApp(req: GenerateRequest, outputDir: string): G
     };
   }
   const totalBars = lengthResolved.lengthBars;
+  const userChordInput = resolveSqToBbUserChordInput(req.sqToBbChordSourceMode, req.userChordInput);
   const { styleProfile, bbVrbId, sqLineVrbId, sqComposer } = resolveSqToBbVrbs(req);
   const lineBundle = getVoiceRuleBundle(sqLineVrbId);
   if (!lineBundle?.contrapuntalLinePolicy?.enabled) {
@@ -311,6 +313,21 @@ export function runSqToBbWorkflowApp(req: GenerateRequest, outputDir: string): G
   }
 
   const context = buildSqToBbContext(req, bbVrbId, sqLineVrbId, sqComposer, totalBars);
+  const chordWire = wireSqToBbUserChordTimeline(
+    context,
+    req.sqToBbChordSourceMode,
+    userChordInput,
+    totalBars,
+    req.sqToBbChordMismatchResolution,
+  );
+  if (!chordWire.ok) {
+    return {
+      success: false,
+      error: chordWire.error,
+      validation: validationOk(),
+      composerOsVersion: COMPOSER_OS_VERSION,
+    };
+  }
   let lines: AbstractLineSet;
 
   if (action === 'translate' || action === 'export') {
@@ -333,6 +350,21 @@ export function runSqToBbWorkflowApp(req: GenerateRequest, outputDir: string): G
       sqComposer,
       totalBars,
     );
+    const regenWire = wireSqToBbUserChordTimeline(
+      regenContext,
+      req.sqToBbChordSourceMode,
+      userChordInput,
+      totalBars,
+      req.sqToBbChordMismatchResolution,
+    );
+    if (!regenWire.ok) {
+      return {
+        success: false,
+        error: regenWire.error,
+        validation: validationOk(),
+        composerOsVersion: COMPOSER_OS_VERSION,
+      };
+    }
     const fresh = generateLineSet(regenContext, sqLineVrbId, totalBars);
     const features = extractQuartetFeatures(req.sqToBbLineSet);
     lines = replacePhraseNotes(req.sqToBbLineSet, fresh, phraseIndex, features);

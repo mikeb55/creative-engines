@@ -45,6 +45,16 @@ export function resolveSqToBbUserChordInput(
   return t.length > 0 ? raw : null;
 }
 
+export type SqToBbChordMismatchResolution = 'repeat' | 'fill_internal';
+
+export {
+  canGenerateWithUserChords,
+  detectBarCountMismatch,
+  lightCountUserChordBars,
+  parseUserChordInput,
+  type BarCountMismatch,
+} from '@composer-os/core/counterpoint/parseUserChordInput';
+
 export const SQ_TO_BB_LENGTH_PRESETS = [16, 32, 64] as const;
 export const SQ_TO_BB_LENGTH_MIN = 8;
 export const SQ_TO_BB_LENGTH_MAX = 128;

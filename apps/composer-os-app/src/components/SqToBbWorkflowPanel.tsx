@@ -7,7 +7,12 @@ import {
   composerEraSelectValueFromDom,
   resolveSqToBbLengthFromUi,
   resolveSqToBbUserChordInput,
+  canGenerateWithUserChords,
+  detectBarCountMismatch,
+  lightCountUserChordBars,
+  parseUserChordInput,
   sqToBbClassicalEraCompatibility,
+  type SqToBbChordMismatchResolution,
   sqToBbEraForRequest,
   sqToBbMismatchNoticeMessage,
   SQ_TO_BB_DENSITY_OPTIONS,
@@ -208,6 +213,9 @@ export function SqToBbWorkflowPanel({
   const [sqComposer, setSqComposer] = useState<SqToBbSqComposer>(null);
   const [chordSourceMode, setChordSourceMode] = useState<SqToBbChordSourceMode>('generate_harmony');
   const [chordProgressionRaw, setChordProgressionRaw] = useState('');
+  const [chordValidationTick, setChordValidationTick] = useState(0);
+  const [chordMismatchResolution, setChordMismatchResolution] =
+    useState<SqToBbChordMismatchResolution | null>(null);
   const [sqToBbDensity, setSqToBbDensity] = useState<SqToBbDensity>('medium');
   const [workflow, setWorkflow] = useState<SqToBbWorkflowPayloadUi | null>(null);
   const [loading, setLoading] = useState(false);
@@ -250,7 +258,30 @@ export function SqToBbWorkflowPanel({
     () => resolveSqToBbUserChordInput(chordSourceMode, chordProgressionRaw),
     [chordSourceMode, chordProgressionRaw],
   );
-  const canStartSketch = lengthResolved.ok && phase === 'idle' && !loading;
+  const chordLightCount = useMemo(() => {
+    if (chordSourceMode !== 'use_user_chords') return null;
+    return lightCountUserChordBars(chordProgressionRaw);
+  }, [chordSourceMode, chordProgressionRaw]);
+  const chordParse = useMemo(() => {
+    if (chordSourceMode !== 'use_user_chords' || chordValidationTick === 0) return null;
+    return parseUserChordInput(chordProgressionRaw);
+  }, [chordSourceMode, chordProgressionRaw, chordValidationTick]);
+  const barCountMismatch = useMemo(() => {
+    if (chordSourceMode !== 'use_user_chords' || chordLightCount == null) return null;
+    return detectBarCountMismatch(chordLightCount, lengthBars);
+  }, [chordSourceMode, chordLightCount, lengthBars]);
+  const chordGenerateGate = useMemo(
+    () =>
+      canGenerateWithUserChords(
+        chordProgressionRaw,
+        lengthBars,
+        chordSourceMode,
+        chordMismatchResolution,
+      ),
+    [chordProgressionRaw, lengthBars, chordSourceMode, chordMismatchResolution],
+  );
+  const canStartSketch =
+    lengthResolved.ok && phase === 'idle' && !loading && chordGenerateGate.ok;
 
   const regenCeilingReached = userRegenCount >= MAX_USER_REGENS;
   const canApprove = Boolean(workflow && !workflow.gate1BlockedRenderer && workflow.gate1.proceedToRenderer);
@@ -290,6 +321,9 @@ export function SqToBbWorkflowPanel({
           styleStack: { primary: 'bob_brookmeyer' },
           sqToBbChordSourceMode: chordSourceMode,
           userChordInput,
+          ...(chordMismatchResolution
+            ? { sqToBbChordMismatchResolution: chordMismatchResolution }
+            : {}),
           sqToBbSqComposer: sqComposer,
           sqToBbDensity,
           ...(eraTag !== undefined ? { sqToBbEra: eraTag } : { sqToBbEra: null }),
@@ -322,6 +356,7 @@ export function SqToBbWorkflowPanel({
       sqToBbDensity,
       chordSourceMode,
       userChordInput,
+      chordMismatchResolution,
       workflow?.contrapuntalLineSet,
     ],
   );
@@ -508,7 +543,11 @@ export function SqToBbWorkflowPanel({
                 type="radio"
                 name="sqToBbChordSource"
                 checked={chordSourceMode === 'generate_harmony'}
-                onChange={() => setChordSourceMode('generate_harmony')}
+                onChange={() => {
+                  setChordSourceMode('generate_harmony');
+                  setChordMismatchResolution(null);
+                  setChordValidationTick(0);
+                }}
               />
               Generate harmony
             </label>
@@ -527,9 +566,14 @@ export function SqToBbWorkflowPanel({
           </label>
           <textarea
             value={chordProgressionRaw}
-            onChange={(e) => setChordProgressionRaw(e.target.value)}
+            onChange={(e) => {
+              setChordProgressionRaw(e.target.value);
+              setChordMismatchResolution(null);
+            }}
+            onBlur={() => setChordValidationTick((n) => n + 1)}
             placeholder="Fmaj7#11 | Ebmaj7#5 | Dbmaj7 | Bmaj7 ..."
             rows={3}
+            disabled={chordSourceMode === 'generate_harmony'}
             style={{
               width: '100%',
               maxWidth: 560,
@@ -541,9 +585,100 @@ export function SqToBbWorkflowPanel({
               fontFamily: 'inherit',
               fontSize: '0.85rem',
               resize: 'vertical',
-              marginBottom: '0.75rem',
+              marginBottom: 4,
+              opacity: chordSourceMode === 'generate_harmony' ? 0.55 : 1,
             }}
           />
+          {chordSourceMode === 'use_user_chords' && chordLightCount != null && chordProgressionRaw.trim() ? (
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0 0 6px' }}>
+              {chordLightCount} chord{chordLightCount === 1 ? '' : 's'} detected
+            </p>
+          ) : null}
+          {chordParse && chordParse.tokens.length > 0 ? (
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '4px 8px',
+                fontSize: '0.82rem',
+                marginBottom: 6,
+                maxWidth: 560,
+              }}
+            >
+              {chordParse.tokens.map((t, i) => (
+                <span
+                  key={`${t.start}-${i}`}
+                  title={t.warningReason}
+                  style={{
+                    textDecoration:
+                      t.confidence === 'warning'
+                        ? 'underline wavy rgb(202,138,4)'
+                        : t.confidence === 'error'
+                          ? 'underline wavy rgb(185,28,28)'
+                          : undefined,
+                    color: t.confidence === 'error' ? 'rgb(185,28,28)' : undefined,
+                  }}
+                >
+                  {t.token}
+                </span>
+              ))}
+            </div>
+          ) : null}
+          {chordSourceMode === 'use_user_chords' &&
+          barCountMismatch &&
+          barCountMismatch.kind === 'fewer' ? (
+            <div
+              style={{
+                padding: '0.5rem 0.65rem',
+                marginBottom: 8,
+                borderRadius: 6,
+                border: '1px solid rgb(202,138,4)',
+                background: 'rgba(202,138,4,0.08)',
+                fontSize: '0.82rem',
+                maxWidth: 560,
+              }}
+            >
+              <p style={{ margin: '0 0 8px' }}>
+                {barCountMismatch.chordCount} chords found for {barCountMismatch.barCount} bars. Choose:
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => setChordMismatchResolution('repeat')}
+                  style={{
+                    fontWeight: chordMismatchResolution === 'repeat' ? 600 : 400,
+                  }}
+                >
+                  Repeat progression
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChordMismatchResolution('fill_internal')}
+                  style={{
+                    fontWeight: chordMismatchResolution === 'fill_internal' ? 600 : 400,
+                  }}
+                >
+                  Fill remaining bars internally
+                </button>
+                <button type="button" onClick={() => setChordMismatchResolution(null)}>
+                  Edit input
+                </button>
+              </div>
+            </div>
+          ) : null}
+          {chordSourceMode === 'use_user_chords' && barCountMismatch?.kind === 'more' ? (
+            <p style={{ fontSize: '0.82rem', color: 'rgb(185,28,28)', margin: '0 0 8px', maxWidth: 560 }}>
+              {barCountMismatch.chordCount} chords found for {barCountMismatch.barCount} bars. Extra chords not
+              applied. Edit input or increase bar count.
+            </p>
+          ) : null}
+          {chordSourceMode === 'use_user_chords' && !chordGenerateGate.ok ? (
+            <p style={{ fontSize: '0.82rem', color: 'rgb(185,28,28)', margin: '0 0 0.75rem', maxWidth: 560 }}>
+              {chordGenerateGate.message}
+            </p>
+          ) : (
+            <div style={{ marginBottom: '0.75rem' }} />
+          )}
 
           <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 4 }}>
             Density

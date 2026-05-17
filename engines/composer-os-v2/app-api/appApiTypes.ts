@@ -459,6 +459,8 @@ export interface GenerateRequest {
   sqToBbChordSourceMode?: 'generate_harmony' | 'use_user_chords';
   /** SQ→BB meso quantizer density (`sparse` | `medium` | `dense`). Default `medium`. */
   sqToBbDensity?: import('../core/counterpoint/sqToBbWorkflowTypes').SqToBbDensity;
+  /** SQ→BB: how to resolve N chords < M bars (`repeat` | `fill_internal`). */
+  sqToBbChordMismatchResolution?: import('../core/counterpoint/parseUserChordInput').SqToBbChordMismatchResolution;
 }
 
 export interface ValidationSummary {

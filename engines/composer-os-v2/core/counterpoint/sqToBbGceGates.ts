@@ -181,6 +181,7 @@ export function buildContrapuntalGceScoringOptions(
     meso = quantizePhrasesForOrchestration(lines, raw, { context });
   }
   if (meso.length < 2) return undefined;
+  const chordTimelineSource = context.generationMetadata?.chordTimelineSource;
   return {
     contrapuntalLinePolicy: true,
     mesoSpans: meso.map((m) => ({
@@ -189,6 +190,7 @@ export function buildContrapuntalGceScoringOptions(
       cadenceStrength: m.cadenceStrength,
     })),
     cadenceTags: lines.cadenceTags ?? [],
+    ...(chordTimelineSource ? { chordTimelineSource } : {}),
   };
 }
 
@@ -519,10 +521,22 @@ function applyContextChordTimelineToSqBbStub(
   lines: AbstractLineSet,
 ): void {
   if (!sqBbEconomyScoringEnabled(context, lines)) return;
-  const chords = buildChordsForGceGate(score, context, barCount);
-  if (!chords.some((c) => String(c).trim().length > 0)) return;
   const piano = score.parts.find((p) => p.id === 'bb_piano');
   if (!piano) return;
+
+  const timeline = context.generationMetadata?.userChordTimeline;
+  if (timeline && timeline.length === barCount) {
+    for (const bar of timeline) {
+      const sym = bar.normalizedSymbol?.trim();
+      if (!sym) continue;
+      const m = piano.measures[bar.barIndex - 1];
+      if (m) m.chord = sym;
+    }
+    return;
+  }
+
+  const chords = buildChordsForGceGate(score, context, barCount);
+  if (!chords.some((c) => String(c).trim().length > 0)) return;
   for (let b = 1; b <= barCount; b++) {
     const sym = chords[b - 1];
     if (!sym?.trim()) continue;
