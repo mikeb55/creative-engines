@@ -114,6 +114,7 @@ export const SHIPPED_SQ_RHYTHM_ENGINE_IDS = [
   'viennese_waltz',
   'jewish_klezmer',
   'sq_swing',
+  'sq_antimetric',
 ] as const;
 
 type ShippedSqRhythmEngineId = (typeof SHIPPED_SQ_RHYTHM_ENGINE_IDS)[number];

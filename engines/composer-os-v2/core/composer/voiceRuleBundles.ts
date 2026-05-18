@@ -2479,6 +2479,7 @@ const SHOSTAKOVICH: VoiceRuleBundle = {
   quotationEventsEnabled: true,
   tragicSlowMovementProfile: true,
   shostakovichPeriod: 'middle',
+  sqRhythmEngineId: 'sq_antimetric',
   contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_COLOR,
   duoVoicePolicy: {
     ...DUO_VOICE_POLICY_SQ_FAMILY_STUB,
@@ -2591,6 +2592,7 @@ const LIGETI: VoiceRuleBundle = {
   silenceAsStructureEnabled: true,
   tempoCurveDirection: 'accelerating',
   textureAsHarmonyEnabled: true,
+  sqRhythmEngineId: 'sq_antimetric',
   contrapuntalLinePolicy: {
     enabled: true,
     vrbId: 'ligeti',

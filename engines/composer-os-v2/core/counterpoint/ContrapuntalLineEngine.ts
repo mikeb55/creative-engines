@@ -7,6 +7,7 @@ import type { CompositionContext } from '../compositionContext';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
+import { applyAntimetricTransform, buildAntimetricPolicy } from '../rhythm/sqAntimetricRhythmEngine';
 import { applySwingTransform, buildSwingPolicy } from '../rhythm/sqSwingRhythmEngine';
 import {
   readSqToBbVrbWire,
@@ -94,6 +95,29 @@ function applySqSwingRhythmToLineSet(
       ...v,
       notes: applySwingTransform(v.notes, policy, lengthBars),
     })),
+  };
+}
+
+function applySqAntimetricRhythmToLineSet(
+  lines: AbstractLineSet,
+  vrbId: string,
+  bpm: number,
+): AbstractLineSet {
+  const bundle = getVoiceRuleBundle(vrbId);
+  if (bundle.sqRhythmEngineId !== 'sq_antimetric') {
+    return lines;
+  }
+  const policy = buildAntimetricPolicy(bundle, bpm);
+  const voiceOrder: LineRole[] = ['soprano', 'alto', 'tenor', 'bass'];
+  return {
+    ...lines,
+    voices: lines.voices.map((v) => {
+      const voiceIndex = Math.max(0, voiceOrder.indexOf(v.role));
+      return {
+        ...v,
+        notes: applyAntimetricTransform(v.notes, policy, voiceIndex),
+      };
+    }),
   };
 }
 
@@ -439,7 +463,8 @@ export class ContrapuntalLineEngine {
         this.formSections,
       );
       const swung = applySqSwingRhythmToLineSet(raw, this.vrbId, bpm, lengthBars);
-      return augmentAbstractLineSetSchema(this.vrbId, swung);
+      const antimetric = applySqAntimetricRhythmToLineSet(swung, this.vrbId, bpm);
+      return augmentAbstractLineSetSchema(this.vrbId, antimetric);
     }
     throw new Error(`ContrapuntalLineEngine: unsupported vrbId ${this.vrbId}`);
   }
