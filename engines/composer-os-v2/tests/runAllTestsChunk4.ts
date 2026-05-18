@@ -39,6 +39,7 @@ import { runLigetiVrbTests } from '../core/counterpoint/vrbProfiles/ligetiVrb.te
 import { runSatieVrbTests } from '../core/counterpoint/vrbProfiles/satieVrb.test';
 import { runColePorterVrbTests } from '../core/counterpoint/vrbProfiles/colePorterVrb.test';
 import { runGershwinVrbTests } from '../core/counterpoint/vrbProfiles/gershwinVrb.test';
+import { runArvoPartVrbTests } from '../core/counterpoint/vrbProfiles/arvoPartVrb.test';
 import { runDuoIntentTests } from './duoIntent.test';
 import { runMacroFormPlannerTests } from './macroFormPlanner.test';
 import { retroSuites } from './retro/index';
@@ -82,6 +83,7 @@ const suites: SuiteEntry[] = [
   { name: 'Satie SQ VRB profile (σ=19)', run: runSatieVrbTests },
   { name: 'Cole Porter SQ VRB profile (σ=25)', run: runColePorterVrbTests },
   { name: 'Gershwin SQ VRB profile (σ=27)', run: runGershwinVrbTests },
+  { name: 'Arvo Pärt SQ VRB profile (σ=16)', run: runArvoPartVrbTests },
   { name: 'Duo intent (product vs PhraseIntent)', run: runDuoIntentTests },
   { name: 'Macro form planner', run: runMacroFormPlannerTests },
   ...retroSuites,

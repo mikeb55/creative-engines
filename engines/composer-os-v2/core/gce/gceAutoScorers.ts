@@ -1184,7 +1184,11 @@ export function scoreMelodicIdentity(
     const asc = goldsmithSequentialAscentScore(pitches);
     intervalEconomy = Math.min(1, intervalEconomy + asc * sqGce.sequentialAscentCredit);
   }
-  if (contrapuntalSq && contrapuntal.sqVrbId === 'glass' && sqGce?.glassSignatureIntervalBlend) {
+  if (
+    contrapuntalSq &&
+    (contrapuntal.sqVrbId === 'glass' || contrapuntal.sqVrbId === 'arvo_part') &&
+    sqGce?.glassSignatureIntervalBlend
+  ) {
     const sig = glassSignatureIntervalScore(pitches);
     const blend = sqGce.glassSignatureIntervalBlend;
     intervalEconomy = Math.min(1, intervalEconomy * (1 - blend) + sig * blend);
@@ -1694,6 +1698,14 @@ export function rhythmExpectationForVrb(vrbId: string): RhythmExpectation | unde
   }
   if (id === 'satie') {
     return { placementMode: 'grid' };
+  }
+  if (id === 'part' || id === 'arvo_part') {
+    return {
+      placementMode: 'grid',
+      targetOffbeatWindow: [0.49, 0.51],
+      anticipationRateMax: 0.02,
+      grooveStabilityTolerance: 0.98,
+    };
   }
   if (id === 'reich_glass') {
     return { placementMode: 'grid' };

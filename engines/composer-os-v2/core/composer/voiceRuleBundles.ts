@@ -23,6 +23,7 @@ import { applyLigetiSqVrbProfile } from '../counterpoint/vrbProfiles/ligetiSqVrb
 import { applySatieSqVrbProfile } from '../counterpoint/vrbProfiles/satieSqVrb';
 import { applyColePorterSqVrbProfile } from '../counterpoint/vrbProfiles/colePorterSqVrb';
 import { applyGershwinSqVrbProfile } from '../counterpoint/vrbProfiles/gershwinSqVrb';
+import { applyArvoPartSqVrbProfile } from '../counterpoint/vrbProfiles/partSqVrb';
 import { CRUMB_BLACK_ANGELS_SQ_VRB_FINGERPRINT_RECEIPTS } from './crumbBlackAngelsSqVrbFingerprints';
 import { applyHerrmannFilmStubVrbProfile } from '../counterpoint/vrbProfiles/herrmannFilmStubVrb';
 import { applyMorriconeFilmStubVrbProfile } from '../counterpoint/vrbProfiles/morriconeFilmStubVrb';
@@ -37,7 +38,7 @@ import { applyShostakovichSqVrbProfile } from '../counterpoint/vrbProfiles/shost
 import { applyWebernSqVrbProfile } from '../counterpoint/vrbProfiles/webernSqVrb';
 import { applyJoniMitchellSqVrbProfile } from '../counterpoint/vrbProfiles/joniMitchellSqVrb';
 import { JOBIM_VRB_FINGERPRINT_RECEIPTS } from './jobimVrbFingerprints';
-import { ARVO_PART_TINTINNABULI_VRF_FINGERPRINT_RECEIPTS } from './arvoPartTintinnabuliVrbFingerprints';
+import { ARVO_PART_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/partVrbFingerprints';
 import { SATIE_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/satieVrbFingerprints';
 import { ORNETTE_COLEMAN_VRF_FINGERPRINT_RECEIPTS } from './ornetteColemanVrbFingerprints';
 import { GERSHWIN_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/gershwinVrbFingerprints';
@@ -2670,7 +2671,7 @@ const JOBIM: VoiceRuleBundle = {
 };
 
 /** Arvo Pärt — tintinnabuli (1976+) SQ / chamber VRB. Canonical `voiceId` **`part`**; songwriter **`arvo_part`** auto-resolves here. */
-const PART: VoiceRuleBundle = {
+const PART_STUB: VoiceRuleBundle = {
   voiceId: 'part',
   harmonicRhythm: {
     minChordDurationBars: 4,
@@ -2697,7 +2698,7 @@ const PART: VoiceRuleBundle = {
     anchorToneCount: 2,
     mutateSingleVoiceAtTime: false,
     allowCollectiveImprov: false,
-    fingerprintReceipts: ARVO_PART_TINTINNABULI_VRF_FINGERPRINT_RECEIPTS,
+    fingerprintReceipts: ARVO_PART_VRB_FINGERPRINT_RECEIPTS,
   },
   formPolicy: {
     narrativeArc: 'variation-or-arch',
@@ -2724,6 +2725,8 @@ const PART: VoiceRuleBundle = {
     rhythmicIndependenceFloor: 0.9,
   },
 };
+
+const PART = applyArvoPartSqVrbProfile(PART_STUB);
 
 /** Erik Satie — modal salon / furniture music VRB (Gymnopédies · Gnossiennes · Sarabandes · Poire · Parade · Socrate). */
 const SATIE_STUB: VoiceRuleBundle = {

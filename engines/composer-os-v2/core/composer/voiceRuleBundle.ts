@@ -165,7 +165,8 @@ export type SqVrbPhraseArticulation =
   | 'asymmetric_cell_non_resolving'
   | 'aphoristic_cell_silence_bounded'
   | 'four_bar_periodic_suspended_non_resolving'
-  | 'micropolyphonic_stasis';
+  | 'micropolyphonic_stasis'
+  | 'non_resolving';
 
 /** ContrapuntalLineEngine — VRB hooks for line-first generation + post-filter (Pass 2 stub). */
 export interface ContrapuntalLinePolicy {

@@ -47,7 +47,8 @@ export type SqVrbPhraseArticulation =
   | 'asymmetric_cell_non_resolving'
   | 'aphoristic_cell_silence_bounded'
   | 'four_bar_periodic_suspended_non_resolving'
-  | 'micropolyphonic_stasis';
+  | 'micropolyphonic_stasis'
+  | 'non_resolving';
 
 /** Badalamenti three-tier texture — melody / chromatic inner cushion / bass pedal. */
 export interface SqBadalamentiThreeTierTexture {
@@ -114,7 +115,10 @@ export type SqVrbChordVocabularyTag =
   | 'modal_interchange_bVII'
   | 'secondary_dominant'
   | 'neapolitan_phrygian_color'
-  | 'pandiatonic_chord';
+  | 'pandiatonic_chord'
+  | 'modal_tonic_triad'
+  | 'modal_open_fifth'
+  | 'modal_subtonic';
 
 /** GCE phrase-grammar mode for SQ Harmonic Voice profiles. */
 export type SqVrbGcePhraseGrammarMode =
@@ -130,7 +134,8 @@ export type SqVrbGcePhraseGrammarMode =
   | 'asymmetric_cell_non_resolving'
   | 'aphoristic_cell_silence_bounded'
   | 'four_bar_periodic_suspended_non_resolving'
-  | 'micropolyphonic_stasis';
+  | 'micropolyphonic_stasis'
+  | 'non_resolving';
 
 /** Per-VRB GCE Melodic Identity / Phrase Grammar tweaks (SQ→BB path). */
 export interface SqVrbGceScorerAdjustments {
@@ -254,6 +259,10 @@ export interface SqVrbGceScorerAdjustments {
   innerVoiceSustainCredit?: number;
   /** PG: penalize functional V→I dominant resolution endings. */
   dominantResolutionPenalty?: number;
+  /** PG: penalize authentic / strong V–I cadence closure. */
+  authenticCadencePenalty?: number;
+  /** PG/MI: credit ostinato / tintinnabuli cell repetition without cadence. */
+  loopingCellCredit?: number;
   /** PG: soft penalty for 3-bar cells (rare). */
   shortPhraseCellPenalty?: number;
   /** Ligeti — chromatic cluster saturation credit. */

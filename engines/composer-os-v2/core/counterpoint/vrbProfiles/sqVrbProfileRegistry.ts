@@ -18,6 +18,7 @@ import { LIGETI_SQ_VRB_PROFILE } from './ligetiSqVrb';
 import { SATIE_SQ_VRB_PROFILE } from './satieSqVrb';
 import { COLE_PORTER_SQ_VRB_PROFILE } from './colePorterSqVrb';
 import { GERSHWIN_SQ_VRB_PROFILE } from './gershwinSqVrb';
+import { ARVO_PART_SQ_VRB_PROFILE } from './partSqVrb';
 import type { SqVrbGceScorerAdjustments, SqVrbProfile } from './sqVrbProfileTypes';
 
 const SQ_VRB_PROFILE_BY_ID: Readonly<Record<string, SqVrbProfile>> = {
@@ -37,6 +38,7 @@ const SQ_VRB_PROFILE_BY_ID: Readonly<Record<string, SqVrbProfile>> = {
   satie: SATIE_SQ_VRB_PROFILE,
   cole_porter: COLE_PORTER_SQ_VRB_PROFILE,
   gershwin: GERSHWIN_SQ_VRB_PROFILE,
+  arvo_part: ARVO_PART_SQ_VRB_PROFILE,
 };
 
 export function getSqVrbProfile(vrbId: string): SqVrbProfile | undefined {
