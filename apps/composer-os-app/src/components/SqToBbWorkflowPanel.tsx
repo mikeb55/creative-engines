@@ -30,6 +30,7 @@ import {
   SQ_TO_BB_LENGTH_PRESETS,
   SQ_TO_BB_SQ_COMPOSER_OPTIONS,
   SQ_TO_BB_SQ_COMPOSER_SELECT_NULL,
+  sqComposerOptionByVrbId,
   SQ_TO_BB_DEFAULT_SECTION_LABEL_MODE,
   SQ_TO_BB_STYLE_PROFILES,
   getSectionLabelsForMode,
@@ -44,6 +45,7 @@ import {
   type SqToBbVoiceLaneId,
   type SqToBbWorkflowPayloadUi,
 } from '../types/sqToBbWorkflowUi';
+import { VrbTooltip, vrbOptionTitleAttribute } from '@composer-os/ui/components/VrbTooltip';
 import { ComposerEraSelectOptions } from './ComposerEraSelectOptions';
 import { SqToBbCompatibilityBadge } from './SqToBbCompatibilityBadge';
 import { SqToBbMismatchNotice } from './SqToBbMismatchNotice';
@@ -589,56 +591,69 @@ export function SqToBbWorkflowPanel({
           </div>
 
           <div style={{ marginBottom: '0.75rem' }}>
-            {sectionLabels.map((label) => (
-              <motion
-                key={label}
-                style={{ ...flexRow, marginBottom: '0.35rem', alignItems: 'center' }}
-              >
-                <span style={{ width: 108, fontSize: '0.82rem', color: 'var(--text-muted)' }}>{label}</span>
-                <select
-                  value={sectionVrbAssignments[label] ?? SQ_TO_BB_SQ_COMPOSER_SELECT_NULL}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setSectionVrbAssignments((prev) => ({
-                      ...prev,
-                      [label]: v === SQ_TO_BB_SQ_COMPOSER_SELECT_NULL ? null : v,
-                    }));
-                  }}
-                  style={{ maxWidth: 220, flex: '1 1 180px' }}
+            {sectionLabels.map((label) => {
+              const sectionVrbId = sectionVrbAssignments[label];
+              const sectionOption = sqComposerOptionByVrbId(sectionVrbId);
+              return (
+                <div
+                  key={label}
+                  style={{ ...flexRow, marginBottom: '0.35rem', alignItems: 'center' }}
                 >
-                  {SQ_TO_BB_SQ_COMPOSER_OPTIONS.map((o) => (
-                    <option
-                      key={`${label}-${o.id ?? 'none'}`}
-                      value={o.id ?? SQ_TO_BB_SQ_COMPOSER_SELECT_NULL}
-                      disabled={!o.enabled}
+                  <span style={{ width: 108, fontSize: '0.82rem', color: 'var(--text-muted)' }}>{label}</span>
+                  <VrbTooltip option={sectionOption}>
+                    <select
+                      value={sectionVrbId ?? SQ_TO_BB_SQ_COMPOSER_SELECT_NULL}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setSectionVrbAssignments((prev) => ({
+                          ...prev,
+                          [label]: v === SQ_TO_BB_SQ_COMPOSER_SELECT_NULL ? null : v,
+                        }));
+                      }}
+                      style={{ maxWidth: 220, flex: '1 1 180px', width: '100%' }}
                     >
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ))}
+                      {SQ_TO_BB_SQ_COMPOSER_OPTIONS.map((o) => (
+                        <option
+                          key={`${label}-${o.id ?? 'none'}`}
+                          value={o.id ?? SQ_TO_BB_SQ_COMPOSER_SELECT_NULL}
+                          disabled={!o.enabled}
+                          title={vrbOptionTitleAttribute(o)}
+                        >
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  </VrbTooltip>
+                </div>
+              );
+            })}
           </div>
 
-          <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 4 }}>
-            SQ Harmonic Voice
+          SQ Harmonic Voice
           </label>
-          <select
-            value={sqComposer ?? SQ_TO_BB_SQ_COMPOSER_SELECT_NULL}
-            onChange={(e) => {
-              const v = e.target.value;
-              setSqComposer(
-                v === SQ_TO_BB_SQ_COMPOSER_SELECT_NULL ? null : (v as SqToBbSqComposerId),
-              );
-            }}
-            style={{ marginBottom: '0.75rem', maxWidth: 320 }}
-          >
-            {SQ_TO_BB_SQ_COMPOSER_OPTIONS.map((o) => (
-              <option key={o.id ?? 'none'} value={o.id ?? SQ_TO_BB_SQ_COMPOSER_SELECT_NULL} disabled={!o.enabled}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+          <VrbTooltip option={sqComposerOptionByVrbId(sqComposer)}>
+            <select
+              value={sqComposer ?? SQ_TO_BB_SQ_COMPOSER_SELECT_NULL}
+              onChange={(e) => {
+                const v = e.target.value;
+                setSqComposer(
+                  v === SQ_TO_BB_SQ_COMPOSER_SELECT_NULL ? null : (v as SqToBbSqComposerId),
+                );
+              }}
+              style={{ marginBottom: '0.75rem', maxWidth: 320, width: '100%' }}
+            >
+              {SQ_TO_BB_SQ_COMPOSER_OPTIONS.map((o) => (
+                <option
+                  key={o.id ?? 'none'}
+                  value={o.id ?? SQ_TO_BB_SQ_COMPOSER_SELECT_NULL}
+                  disabled={!o.enabled}
+                  title={vrbOptionTitleAttribute(o)}
+                >
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </VrbTooltip>
 
           <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 4 }}>
             Era

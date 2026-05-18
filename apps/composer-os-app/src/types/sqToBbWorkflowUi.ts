@@ -90,27 +90,11 @@ export function resolveSqToBbLengthFromUi(
   return { ok: true, lengthBars: n };
 }
 
-export type SqToBbSqComposerId =
-  | 'arvo_part'
-  | 'bartok'
-  | 'ravel'
-  | 'herrmann'
-  | 'morricone'
-  | 'williams'
-  | 'rota'
-  | 'goldsmith'
-  | 'glass'
-  | 'zimmer'
-  | 'badalamenti'
-  | 'shostakovich'
-  | 'webern'
-  | 'joni_mitchell'
-  | 'ligeti'
-  | 'satie'
-  | 'cole_porter'
-  | 'gershwin'
-  | 'debussy';
-export type SqToBbSqComposer = SqToBbSqComposerId | null;
+export type {
+  SqComposerOption,
+  SqToBbSqComposer,
+  SqToBbSqComposerId,
+} from '@composer-os/ui/sqToBbWorkflowUi';
 
 export type SqToBbSectionLabelMode = 'song' | 'instrumental';
 
@@ -119,34 +103,11 @@ export {
   SQ_TO_BB_DEFAULT_SECTION_LABEL_MODE,
 } from '@composer-os/core/counterpoint/vrbProfiles/sqToBbSectionLabels';
 
-export const SQ_TO_BB_SQ_COMPOSER_SELECT_NULL = '';
-
-export const SQ_TO_BB_SQ_COMPOSER_OPTIONS: ReadonlyArray<{
-  id: SqToBbSqComposer;
-  label: string;
-  enabled: boolean;
-}> = [
-  { id: null, label: '— None (default) —', enabled: true },
-  { id: 'arvo_part', label: 'Pärt', enabled: true },
-  { id: 'bartok', label: 'Bartók', enabled: true },
-  { id: 'debussy', label: 'Debussy', enabled: true },
-  { id: 'ravel', label: 'Ravel', enabled: true },
-  { id: 'herrmann', label: 'Herrmann', enabled: true },
-  { id: 'morricone', label: 'Morricone', enabled: true },
-  { id: 'williams', label: 'Williams', enabled: true },
-  { id: 'rota', label: 'Rota', enabled: true },
-  { id: 'goldsmith', label: 'Goldsmith', enabled: true },
-  { id: 'glass', label: 'Glass', enabled: true },
-  { id: 'zimmer', label: 'Zimmer', enabled: true },
-  { id: 'badalamenti', label: 'Badalamenti', enabled: true },
-  { id: 'shostakovich', label: 'Shostakovich', enabled: true },
-  { id: 'webern', label: 'Webern', enabled: true },
-  { id: 'joni_mitchell', label: 'Joni Mitchell', enabled: true },
-  { id: 'ligeti', label: 'Ligeti', enabled: true },
-  { id: 'satie', label: 'Satie', enabled: true },
-  { id: 'cole_porter', label: 'Cole Porter', enabled: true },
-  { id: 'gershwin', label: 'Gershwin', enabled: true },
-] as const;
+export {
+  SQ_TO_BB_SQ_COMPOSER_OPTIONS,
+  SQ_TO_BB_SQ_COMPOSER_SELECT_NULL,
+  sqComposerOptionByVrbId,
+} from '@composer-os/ui/sqToBbWorkflowUi';
 
 export const SQ_TO_BB_STYLE_PROFILES: ReadonlyArray<{
   id: SqToBbStyleProfileId;
