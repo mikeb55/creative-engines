@@ -42,6 +42,7 @@ import { runGershwinVrbTests } from '../core/counterpoint/vrbProfiles/gershwinVr
 import { runArvoPartVrbTests } from '../core/counterpoint/vrbProfiles/arvoPartVrb.test';
 import { runDebussyBartokVrbTests } from './debussyBartokVrb.test';
 import { runBlendedVrbTests } from './blendedVrb.test';
+import { runBoundarySwingRampTests } from './boundarySwingRamp.test';
 import { runDuoIntentTests } from './duoIntent.test';
 import { runMacroFormPlannerTests } from './macroFormPlanner.test';
 import { retroSuites } from './retro/index';
@@ -88,6 +89,7 @@ const suites: SuiteEntry[] = [
   { name: 'Arvo Pärt SQ VRB profile (σ=16)', run: runArvoPartVrbTests },
   { name: 'Debussy + Bartók SQ VRB stubs (σ=21/29)', run: runDebussyBartokVrbTests },
   { name: '3-way VRB blend (blendedVrb)', run: runBlendedVrbTests },
+  { name: 'Boundary swing ramp (same-family VRB)', run: runBoundarySwingRampTests },
   { name: 'Duo intent (product vs PhraseIntent)', run: runDuoIntentTests },
   { name: 'Macro form planner', run: runMacroFormPlannerTests },
   ...retroSuites,

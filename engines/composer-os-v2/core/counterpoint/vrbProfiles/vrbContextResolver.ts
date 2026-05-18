@@ -3,7 +3,14 @@
  */
 
 import type { CompositionContext } from '../../compositionContext';
+import {
+  buildBoundaryRamp,
+  DEFAULT_BOUNDARY_TRANSITION_BARS,
+  type RampBar,
+} from '../boundarySwingRamp';
+import { dominantComponentId, isSameFamily } from './vrbFamilies';
 import { getSqVrbProfile } from './sqVrbProfileRegistry';
+import type { SqVrbProfile } from './sqVrbProfileTypes';
 import {
   buildGlobalVrbContextMap,
   resolveSectionVrbId,
@@ -77,6 +84,72 @@ function globalBarSectionContext(bar: number, globalFallback: string): BarSectio
   };
 }
 
+const boundaryRampCacheByMap = new WeakMap<VrbContextMap, Map<string, RampBar[]>>();
+const boundaryRampProfileByBar = new WeakMap<VrbContextMap, Map<number, SqVrbProfile>>();
+
+function boundaryRampCacheKey(fromSectionId: string, toSectionId: string): string {
+  return `ramp:${fromSectionId}:${toSectionId}`;
+}
+
+function ensureBoundaryRampsForWire(
+  contextMap: VrbContextMap,
+  sections: readonly SqToBbFormSectionRef[],
+): Map<string, RampBar[]> {
+  let cache = boundaryRampCacheByMap.get(contextMap);
+  if (cache) return cache;
+
+  cache = new Map();
+  const profileByBar = new Map<number, SqVrbProfile>();
+  const ordered = [...sections].sort((a, b) => a.startBar - b.startBar);
+
+  for (let i = 0; i < ordered.length - 1; i++) {
+    const from = ordered[i]!;
+    const to = ordered[i + 1]!;
+    const ctxA = contextMap.get(from.label);
+    const ctxB = contextMap.get(to.label);
+    if (!ctxA || !ctxB) continue;
+
+    const vrbA = resolveSectionVrbId(ctxA);
+    const vrbB = resolveSectionVrbId(ctxB);
+    const lookupA = dominantComponentId(vrbA, ctxA);
+    const lookupB = dominantComponentId(vrbB, ctxB);
+    if (!isSameFamily(lookupA, lookupB)) continue;
+
+    const transitionBars =
+      ctxA.transitionBars > 0 ? ctxA.transitionBars : DEFAULT_BOUNDARY_TRANSITION_BARS;
+    const key = boundaryRampCacheKey(from.label, to.label);
+    const ramp = buildBoundaryRamp(vrbA, vrbB, transitionBars, to.startBar);
+    cache.set(key, ramp);
+    for (const entry of ramp) {
+      profileByBar.set(entry.bar, entry.vrbProfile);
+    }
+  }
+
+  boundaryRampCacheByMap.set(contextMap, cache);
+  boundaryRampProfileByBar.set(contextMap, profileByBar);
+  return cache;
+}
+
+/** Cached same-family ramp for a section join (per context map / request). */
+export function getBoundaryRampForJoin(
+  fromSectionId: string,
+  toSectionId: string,
+  contextMap: VrbContextMap,
+  sections: readonly SqToBbFormSectionRef[],
+): RampBar[] {
+  const cache = ensureBoundaryRampsForWire(contextMap, sections);
+  return cache.get(boundaryRampCacheKey(fromSectionId, toSectionId)) ?? [];
+}
+
+export function resolveBoundaryRampProfileForBar(
+  bar: number,
+  contextMap: VrbContextMap,
+  sections: readonly SqToBbFormSectionRef[],
+): SqVrbProfile | null {
+  ensureBoundaryRampsForWire(contextMap, sections);
+  return boundaryRampProfileByBar.get(contextMap)?.get(bar) ?? null;
+}
+
 export function resolveVrbForBar(
   bar: number,
   contextMap: VrbContextMap,
@@ -95,6 +168,16 @@ export function resolveVrbForBar(
   const sectionCtx = contextMap.get(section.label);
   if (!sectionCtx) {
     return globalBarSectionContext(bar, globalFallback);
+  }
+
+  const rampProfile = resolveBoundaryRampProfileForBar(bar, contextMap, sections);
+  if (rampProfile) {
+    return {
+      bar,
+      sectionId: section.label,
+      vrbId: rampProfile.vrbId,
+      isTransitionBar: true,
+    };
   }
 
   return {

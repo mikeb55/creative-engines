@@ -7,10 +7,13 @@ import type { FormSection } from '../form/formPlanner';
 import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
 import type { VoicingCandidate } from '../composer/voiceLeadingSolver';
 import { dominantVrb, type VrbContextMap } from '../counterpoint/vrbProfiles/vrbContextMap';
+import { getRampProfileForBar } from '../counterpoint/boundarySwingRamp';
 import {
+  getBoundaryRampForJoin,
   hasExplicitPerSectionVrbAssignment,
   perSectionVrbResolutionEnabled,
   readSqToBbVrbWire,
+  resolveBoundaryRampProfileForBar,
   resolveVrbForBar,
 } from '../counterpoint/vrbProfiles/vrbContextResolver';
 import { getSqVrbProfile } from '../counterpoint/vrbProfiles/sqVrbProfileRegistry';
@@ -111,10 +114,13 @@ export function buildSectionAwareHarmonySpine(context: CompositionContext): Reso
     const isLastSection = si === sections.length - 1;
 
     for (let bar = section.startBar; bar <= endBar; bar++) {
-      const { row, voicing } = harmonizeBar(bar, context, fromVrbId, previousVoicing);
+      const rampProfile = resolveBoundaryRampProfileForBar(bar, wire.contextMap, sections);
+      const barVrbId = rampProfile?.vrbId ?? fromVrbId;
+      const { row, voicing } = harmonizeBar(bar, context, barVrbId, previousVoicing);
       if (bar === endBar && !isLastSection) {
         row.isPhraseBoundary = true;
       }
+      row.resolvedVrbId = barVrbId;
       const barCtx = resolveVrbForBar(bar, wire.contextMap, wire.globalFallback, sections);
       if (barCtx.isTransitionBar) {
         row.isBoundaryBar = true;
@@ -141,12 +147,20 @@ export function buildSectionAwareHarmonySpine(context: CompositionContext): Reso
           fromVrbId,
         ),
       };
-      previousVoicing = resolveSectionBoundary(join, wire.contextMap, sections, joinSymbol);
+      const joinRamp = getBoundaryRampForJoin(section.label, next.label, wire.contextMap, sections);
+      const joinRampProfile = getRampProfileForBar(joinBar, joinRamp);
+      previousVoicing = resolveSectionBoundary(
+        join,
+        wire.contextMap,
+        sections,
+        joinSymbol,
+        joinRampProfile,
+      );
       const joinRow = rows.find((r) => r.bar === joinBar);
       if (joinRow) {
         joinRow.voicing = previousVoicing;
         joinRow.isBoundaryBar = true;
-        joinRow.resolvedVrbId = toVrbId;
+        joinRow.resolvedVrbId = joinRampProfile?.vrbId ?? toVrbId;
       }
     }
   }

@@ -8,7 +8,7 @@ import type { VoicingCandidate } from '../composer/voiceLeadingSolver';
 import { solveVoiceLeading } from '../composer/voiceLeadingSolver';
 import { noteNameToPitchClass, parseChordSymbol } from './chordSymbolAnalysis';
 import { getSqVrbProfile } from '../counterpoint/vrbProfiles/sqVrbProfileRegistry';
-import type { SqVrbRegisterPolicy } from '../counterpoint/vrbProfiles/sqVrbProfileTypes';
+import type { SqVrbProfile, SqVrbRegisterPolicy } from '../counterpoint/vrbProfiles/sqVrbProfileTypes';
 import type { VrbContextMap } from '../counterpoint/vrbProfiles/vrbContextMap';
 export const MAX_SEMITONES_PER_BAR_AT_SEAM = 2;
 
@@ -173,8 +173,10 @@ export function resolveSectionBoundary(
   _contextMap: VrbContextMap,
   _sections: FormSection[],
   targetChordSymbol: string,
+  rampProfile?: SqVrbProfile | null,
 ): VoicingCandidate {
-  const bundle = getVoiceRuleBundle(join.toVrbId);
+  const seamVrbId = rampProfile?.vrbId ?? join.toVrbId;
+  const bundle = getVoiceRuleBundle(seamVrbId);
   if (!bundle) {
     return emergencyTonicVoicing(targetChordSymbol);
   }
