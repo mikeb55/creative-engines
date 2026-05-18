@@ -60,6 +60,7 @@ import { applyStyleStack } from '../style-modules/styleModuleRegistry';
 import { placeMotifsAcrossBars, placeMotifsForEcmForm } from '../motif/motifTracker';
 import { runScoreIntegrityGate } from '../score-integrity/scoreIntegrityGate';
 import { runBehaviourGates } from '../score-integrity/behaviourGates';
+import { applyContrapuntalPass4MusicXmlMerge } from '../counterpoint/contrapuntalPass4MusicXmlMerge';
 import { exportScoreModelToMusicXml } from '../export/musicxmlExporter';
 import { assertExportTruth, buildSpineSymbolsForExportTruth } from '../export/assertExportTruth';
 import { applyKeySignatureToScoreAndContext } from '../harmony/keyInference';
@@ -649,6 +650,23 @@ function applyEraBiasToGenerationMetadata(md: GenerationMetadata | undefined, er
     (md.songwriterSyncopationBias ?? 0.5) + eraProfile.rhythmBias + eraProfile.syncopationBias
   );
   md.harmonyDensityBias = eraProfile.harmonyDensityBias;
+}
+
+/** Pass 4 / line-first: attach contrapuntal VRB when primary songwriter id has policy enabled. */
+function harmonicVoiceOptionsForGoldenPath(
+  options?: RunGoldenPathOptions,
+): { harmonicVoice?: string } | undefined {
+  if (options?.harmonicVoice?.trim()) {
+    return { harmonicVoice: options.harmonicVoice.trim() };
+  }
+  if (options?.songModeHookFirstIdentity) return options;
+  const primary = options?.primarySongwriterStyle;
+  if (!primary) return options;
+  const id = normalizeSongwriterStyleKey(primary);
+  if (id !== 'bob_brookmeyer' && id !== 'bartok') return options;
+  const bundle = getVoiceRuleBundle(id);
+  if (!bundle.contrapuntalLinePolicy?.enabled) return options;
+  return { harmonicVoice: id };
 }
 
 function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions): CompositionContext {
@@ -2282,7 +2300,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   assertCustomLockedBeforeScoreGeneration(context, options);
 
   /** VoiceRuleBundle + HarmonicScene stubs before plan build so motif / section plans see `context.voiceBundle`. */
-  attachVoiceRuleBundleAndHarmonicScenes(context, options);
+  attachVoiceRuleBundleAndHarmonicScenes(context, harmonicVoiceOptionsForGoldenPath(options));
   attachFormPlanRhythmAndTension(context, seed);
   attachMacroFormPlanToContext(context, options);
 
@@ -2299,7 +2317,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     plans;
 
   const appliedContext = styleStack ? applyStyleStack(context, styleStack) : context;
-  attachVoiceRuleBundleAndHarmonicScenes(appliedContext, options, { skipHarmonicSceneLog: true });
+  attachVoiceRuleBundleAndHarmonicScenes(appliedContext, harmonicVoiceOptionsForGoldenPath(options), {
+    skipHarmonicSceneLog: true,
+  });
   attachFormPlanRhythmAndTension(appliedContext, seed);
   augmentGuitarBassDuoReceiptMetadata(appliedContext, styleStack);
   if (typeof options?.stochasticVariance === 'number') {
@@ -2541,6 +2561,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   logEcmPhaseProbe(probeEcm, 'before_export', score, {
     guitarMeasures: guitarMeasureCount,
   });
+  score = applyContrapuntalPass4MusicXmlMerge(score, appliedContext);
   const barMeterForMusicXml =
     appliedContext.barMeterMap ?? appliedContext.generationMetadata?.barMeterMap;
   let exportResult: ReturnType<typeof exportScoreModelToMusicXml>;

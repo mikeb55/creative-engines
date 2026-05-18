@@ -19,6 +19,8 @@ import { deriveChordBarsFromProgressionOrLeadSheet } from '../regeneration/ensem
 import { parseChordProgressionInputWithBarCount } from '../harmony/chordProgressionParser';
 import { planQuartetVoicing } from './quartetVoicingPlanner';
 import { runStringQuartetMode, type StringQuartetRunInput, type StringQuartetRunResult } from './runStringQuartetMode';
+import { applySqContrapuntalPass4MergeOnScore } from '../counterpoint/contrapuntalPass4MusicXmlMerge';
+import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
 import { runEnsembleExportPipeline } from '../export/ensembleExport';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import { validateEnsembleVoicing } from '../voicing/voicingValidation';
@@ -192,6 +194,16 @@ export function runQuartetRealisation(
       ? { zappaSQEffectiveHarmonyBars }
       : {}),
   });
+
+  const metaForMerge = generationMetadataForScore ?? input.generationMetadata;
+  if (metaForMerge) {
+    const swId =
+      typeof input.songwriterStyleId === 'string' && input.songwriterStyleId.trim()
+        ? input.songwriterStyleId.trim()
+        : metaForMerge.songwriterStyleId ?? '';
+    const bundle = swId ? getVoiceRuleBundle(swId) : undefined;
+    applySqContrapuntalPass4MergeOnScore(score, metaForMerge, bundle);
+  }
 
   const exportPipeline = runEnsembleExportPipeline(score, {
     ...(typeof input.bpm === 'number' && Number.isFinite(input.bpm) ? { bpm: input.bpm } : {}),

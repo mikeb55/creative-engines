@@ -41,6 +41,7 @@ import {
 import { buildShoutChorusSection, shoutChorusPlan } from '../core/composer/bigBandSectionWriter';
 import { exportScoreModelToMusicXml } from '../core/export/musicxmlExporter';
 import { validateMusicXml } from '../../../src/utils/musicXmlValidator';
+import { applySqContrapuntalPass4MergeOnScore } from '../core/counterpoint/contrapuntalPass4MusicXmlMerge';
 import { buildStringQuartetScoreFromContext } from '../core/composer/stringEnsemble';
 import { buildVoicingsForContext } from '../core/composer/guitarVoicingEngine';
 import type { GuitarVoicing } from '../core/composer/guitarVoicingEngine';
@@ -402,6 +403,16 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
 
     if (req.instrumentGroup === 'string_quartet') {
       const sqScore = buildStringQuartetScoreFromContext(result.context, result.score);
+      const meta = result.context.generationMetadata;
+      const vrbId =
+        result.context.voiceBundle?.voiceId ??
+        meta?.songwriterStyleId ??
+        req.primarySongwriterStyle ??
+        '';
+      const bundle = result.context.voiceBundle ?? getVoiceRuleBundle(String(vrbId));
+      if (meta) {
+        applySqContrapuntalPass4MergeOnScore(sqScore, meta, bundle);
+      }
       const ex = exportScoreModelToMusicXml(sqScore, { barMeterMap: barMeterForExport, bpm: req.bpm });
       if (ex.success && ex.xml) {
         xmlOut = ex.xml;

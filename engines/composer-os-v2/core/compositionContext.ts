@@ -1291,6 +1291,8 @@ export interface GenerationMetadata {
   lineFirstHierarchy?: boolean;
   /** Line-first SATB plan from {@link precomputeContrapuntalLines} (before effective-harmony-bar precompute). */
   contrapuntalLineSet?: AbstractLineSet;
+  /** Pass 4 — empty-bar fills from contrapuntal SQ / BB overlay into exported MusicXML score. */
+  contrapuntalLineMusicXmlMergeReceipt?: import('./counterpoint/contrapuntalPass4MusicXmlMerge').ContrapuntalLineMusicXmlMergeReceipt;
   /** Phase 6 — wired {@link applyPhase6RendererWiring} soli/backgrounds + phrase render (`bigBandSectionPlanRenderer.ts`). */
   bigBandVoicing?: import('./counterpoint/ContrapuntalLineEngine').BigBandVoicing;
   bigBandSectionRender?: import('./composer/bigBandSectionPlanRenderer').BigBandSectionRenderOutput;
