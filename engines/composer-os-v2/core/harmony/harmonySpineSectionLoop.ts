@@ -19,7 +19,7 @@ import { getChordForBar } from './harmonyResolution';
 import type { ResolvedHarmonyBar } from './harmonySpineProvider';
 import { classifyAuthoritativeLayerForBar } from './harmonySpineProvider';
 import {
-  computeTransitionBars,
+  computeTransitionBarsFromVoicing,
   resolveSectionBoundary,
   type SectionJoin,
 } from './sectionBoundaryResolver';
@@ -135,7 +135,11 @@ export function buildSectionAwareHarmonySpine(context: CompositionContext): Reso
         fromVrbId,
         toVrbId,
         lastVoicingOfFromSection: previousVoicing ?? { notes: voicingFromSymbol(joinSymbol), cost: 0 },
-        transitionBars: computeTransitionBars(fromVrbId, toVrbId),
+        transitionBars: computeTransitionBarsFromVoicing(
+          previousVoicing ?? { notes: voicingFromSymbol(joinSymbol), cost: 0 },
+          toVrbId,
+          fromVrbId,
+        ),
       };
       previousVoicing = resolveSectionBoundary(join, wire.contextMap, sections, joinSymbol);
       const joinRow = rows.find((r) => r.bar === joinBar);

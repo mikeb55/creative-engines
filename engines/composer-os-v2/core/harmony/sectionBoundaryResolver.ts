@@ -8,8 +8,29 @@ import type { VoicingCandidate } from '../composer/voiceLeadingSolver';
 import { solveVoiceLeading } from '../composer/voiceLeadingSolver';
 import { noteNameToPitchClass, parseChordSymbol } from './chordSymbolAnalysis';
 import { getSqVrbProfile } from '../counterpoint/vrbProfiles/sqVrbProfileRegistry';
+import type { SqVrbRegisterPolicy } from '../counterpoint/vrbProfiles/sqVrbProfileTypes';
 import type { VrbContextMap } from '../counterpoint/vrbProfiles/vrbContextMap';
 export const MAX_SEMITONES_PER_BAR_AT_SEAM = 2;
+
+/** Target soprano-centre MIDI per registerPolicy (contrapuntal line policy). */
+const REGISTER_POLICY_TARGET_MIDI: Record<SqVrbRegisterPolicy, number> = {
+  comfortable_with_climax_leaps: 70,
+  wide_registral_contrast: 68,
+  extreme_registers: 72,
+  lyrical_arch: 70,
+  heroic_arch_with_fanfare_leaps: 76,
+  lyrical_soprano_arch_mid_centrist: 72,
+  dramatically_volatile_wide_arc: 70,
+  mid_register_additive_expansion: 66,
+  dynamically_wide_arc_accumulative: 72,
+  systematic_bass_to_soprano_expansion: 66,
+  mid_register_chromatic_inner_compression: 62,
+  low_biased_extreme_punctuation_spikes: 55,
+  extreme_pointillist_leaps_all_registers: 72,
+  open_string_low_pedal_lyrical_soprano_arch: 68,
+  registral_expansion_contraction: 66,
+  micropolyphonic_merged_texture: 64,
+};
 
 export interface SectionJoin {
   fromSectionId: string;
@@ -42,12 +63,39 @@ function sigmaCeilingForVrb(vrbId: string): number {
   return bundle?.melodicPolicy.maxLeapSemitones ?? 12;
 }
 
-/** σ-delta approximation — actual voicing distance replaces this in a future pass (TODO). */
-export function computeTransitionBars(fromVrbId: string, toVrbId: string): number {
+/** σ-delta fallback when register target midpoint is unavailable. */
+export function computeTransitionBarsFromSigma(fromVrbId: string, toVrbId: string): number {
   const fromSigma = sigmaCeilingForVrb(fromVrbId);
   const toSigma = sigmaCeilingForVrb(toVrbId);
   if (fromSigma === toSigma) return 1;
   const raw = Math.ceil(Math.abs(fromSigma - toSigma) / MAX_SEMITONES_PER_BAR_AT_SEAM);
+  return Math.max(1, Math.min(4, raw));
+}
+
+function registerTargetMidpointMidi(toVrbId: string): number | null {
+  const policy = getSqVrbProfile(toVrbId)?.contrapuntalLinePolicy?.registerPolicy;
+  if (!policy) return null;
+  return REGISTER_POLICY_TARGET_MIDI[policy] ?? null;
+}
+
+/** Transition bars from furthest voice in lastVoicing vs target register centre of toVrbId. */
+export function computeTransitionBarsFromVoicing(
+  lastVoicing: VoicingCandidate,
+  toVrbId: string,
+  fromVrbId?: string,
+  maxSemitonesPerBar: number = MAX_SEMITONES_PER_BAR_AT_SEAM,
+): number {
+  const target = registerTargetMidpointMidi(toVrbId);
+  if (target === null) {
+    return fromVrbId ? computeTransitionBarsFromSigma(fromVrbId, toVrbId) : 1;
+  }
+  const pitches = lastVoicing.notes.filter((n) => Number.isFinite(n));
+  if (pitches.length === 0) {
+    return fromVrbId ? computeTransitionBarsFromSigma(fromVrbId, toVrbId) : 1;
+  }
+  const maxDistance = pitches.reduce((m, p) => Math.max(m, Math.abs(p - target)), 0);
+  if (maxDistance <= maxSemitonesPerBar) return 1;
+  const raw = Math.ceil(maxDistance / maxSemitonesPerBar);
   return Math.max(1, Math.min(4, raw));
 }
 

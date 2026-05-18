@@ -21,7 +21,8 @@ import {
 import { resolveVrbForBar, sectionRecordFromVrbContextMap } from '../core/counterpoint/vrbProfiles/vrbContextResolver';
 import { USE_PER_SECTION_VRB } from '../core/counterpoint/vrbProfiles/vrbContextMap';
 import {
-  computeTransitionBars,
+  computeTransitionBarsFromSigma,
+  computeTransitionBarsFromVoicing,
   joinConstraint,
   resolveSectionBoundary,
   MAX_SEMITONES_PER_BAR_AT_SEAM,
@@ -269,11 +270,27 @@ function testResolveVrbForBarNonTransitionZone(): boolean {
 }
 
 function testComputeTransitionBarsGlassToShostakovich(): boolean {
-  return computeTransitionBars('glass', 'shostakovich') === 4;
+  return computeTransitionBarsFromSigma('glass', 'shostakovich') === 4;
 }
 
 function testComputeTransitionBarsEqualSigma(): boolean {
-  return computeTransitionBars('glass', 'glass') === 1;
+  return computeTransitionBarsFromSigma('glass', 'glass') === 1;
+}
+
+function testComputeTransitionBarsFromVoicingFarFromTarget(): boolean {
+  const far: SectionJoin['lastVoicingOfFromSection'] = { notes: [90, 93, 96, 48], cost: 0 };
+  return computeTransitionBarsFromVoicing(far, 'glass', 'glass') > 1;
+}
+
+function testComputeTransitionBarsFromVoicingNearTarget(): boolean {
+  const near: SectionJoin['lastVoicingOfFromSection'] = { notes: [66, 67, 65, 66], cost: 0 };
+  return computeTransitionBarsFromVoicing(near, 'glass', 'glass') === 1;
+}
+
+function testComputeTransitionBarsFromVoicingSigmaFallback(): boolean {
+  const voicing: SectionJoin['lastVoicingOfFromSection'] = { notes: [60, 64, 67, 48], cost: 0 };
+  const out = computeTransitionBarsFromVoicing(voicing, 'not_a_real_vrb', 'glass');
+  return out === computeTransitionBarsFromSigma('glass', 'not_a_real_vrb');
 }
 
 function testResolveSectionBoundaryWithinTwoSemitones(): boolean {
@@ -399,8 +416,11 @@ export function runPerSectionVrbTests(): { name: string; ok: boolean }[] {
     ['resolveVrbForBar — flag true unknown bar safety net', testResolveVrbForBarSafetyNet],
     ['resolveVrbForBar — isTransitionBar true at section end', testResolveVrbForBarTransitionZone],
     ['resolveVrbForBar — isTransitionBar false mid-section', testResolveVrbForBarNonTransitionZone],
-    ['computeTransitionBars — glass→shostakovich clamped to 4', testComputeTransitionBarsGlassToShostakovich],
-    ['computeTransitionBars — equal σ returns 1', testComputeTransitionBarsEqualSigma],
+    ['computeTransitionBarsFromSigma — glass→shostakovich clamped to 4', testComputeTransitionBarsGlassToShostakovich],
+    ['computeTransitionBarsFromSigma — equal σ returns 1', testComputeTransitionBarsEqualSigma],
+    ['computeTransitionBarsFromVoicing — far from target > 1 bar', testComputeTransitionBarsFromVoicingFarFromTarget],
+    ['computeTransitionBarsFromVoicing — near target = 1 bar', testComputeTransitionBarsFromVoicingNearTarget],
+    ['computeTransitionBarsFromVoicing — no midpoint → σ fallback', testComputeTransitionBarsFromVoicingSigmaFallback],
     ['resolveSectionBoundary — voices within 2 semitones', testResolveSectionBoundaryWithinTwoSemitones],
     ['joinConstraint — nearest chord tone within 2st', testJoinConstraintNearestTone],
     ['joinConstraint — sustain when no tone within 2st', testJoinConstraintSustainWhenFar],
