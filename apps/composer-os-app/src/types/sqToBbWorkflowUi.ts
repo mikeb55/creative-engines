@@ -100,7 +100,11 @@ export type SqToBbSqComposerId =
   | 'badalamenti'
   | 'shostakovich'
   | 'webern'
-  | 'joni_mitchell';
+  | 'joni_mitchell'
+  | 'ligeti'
+  | 'satie'
+  | 'cole_porter'
+  | 'gershwin';
 export type SqToBbSqComposer = SqToBbSqComposerId | null;
 
 export const SQ_TO_BB_SQ_COMPOSER_SELECT_NULL = '';
@@ -124,6 +128,10 @@ export const SQ_TO_BB_SQ_COMPOSER_OPTIONS: ReadonlyArray<{
   { id: 'shostakovich', label: 'Shostakovich', enabled: true },
   { id: 'webern', label: 'Webern', enabled: true },
   { id: 'joni_mitchell', label: 'Joni Mitchell', enabled: true },
+  { id: 'ligeti', label: 'Ligeti', enabled: true },
+  { id: 'satie', label: 'Satie', enabled: true },
+  { id: 'cole_porter', label: 'Cole Porter', enabled: true },
+  { id: 'gershwin', label: 'Gershwin', enabled: true },
 ] as const;
 
 export const SQ_TO_BB_STYLE_PROFILES: ReadonlyArray<{

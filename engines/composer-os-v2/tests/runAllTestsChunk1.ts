@@ -48,6 +48,7 @@ import { runDuoPolishV33Tests } from './duoPolishV33.test';
 import { runLongFormDuoTests } from './longFormDuo.test';
 import { runChordProgressionTests } from './chordProgression.test';
 import { runParseUserChordInputTests } from '../core/counterpoint/parseUserChordInput.test';
+import { runPerSectionVrbTests } from './perSectionVrb.test';
 import { runAssertExportTruthTests } from '../core/export/assertExportTruth.test';
 import { runContrapuntalMusicXmlTests } from './contrapuntalMusicXml.test';
 import { runVoiceLeadingSolverPhase3bTests } from './voiceLeadingSolverPhase3b.test';
@@ -103,6 +104,7 @@ const suites: SuiteEntry[] = [
   { name: 'Long-form Duo (32)', run: runLongFormDuoTests },
   { name: 'Chord progression', run: runChordProgressionTests },
   { name: 'SQ→BB parseUserChordInput', run: runParseUserChordInputTests },
+  { name: 'Per-section VRB — types, labels, Glass→Shostakovich', run: runPerSectionVrbTests },
   { name: 'assertExportTruth (export-truth consolidation)', run: runAssertExportTruthTests },
   { name: 'Pass4 contrapuntal → MusicXML merge', run: runContrapuntalMusicXmlTests },
   { name: 'Voice-leading solver + HarmonicScene (Phase 3b)', run: runVoiceLeadingSolverPhase3bTests },
