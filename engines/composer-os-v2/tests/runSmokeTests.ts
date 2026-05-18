@@ -4,7 +4,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N rows (M suites)` in the smoke summary, then sync **N** + **M** into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **259** PASS rows, **64** suites (full tier).
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **279** PASS rows, **65** suites (full tier).
  *
  * **Fast subset:** `COMPOSER_OS_SMOKE_TIER=fast` or `npm run test:composer-smoke-fast` — skips `SMOKE_FAST_EXCLUDE` suites (local dev).
  * **Full tier (default / CI):** unset or `COMPOSER_OS_SMOKE_TIER=full` — all suites in `smokeSuites`.
@@ -77,11 +77,13 @@ import { runFollowup4MingusSchneiderThreadgillSmokeTests } from './followup4Ming
 import { runFollowup5ShoutBrassInPlaceSmokeTests } from './followup5ShoutBrassInPlaceSmoke.test';
 import { runHarmonySpineLockSmokeTests } from './harmonySpineLock.smoke.test';
 import { runOutputValidationSmokeTests } from './outputValidationSmoke.test';
+import { runSqSwingRhythmTests } from './sqSwingRhythm.test';
 
 type Row = { name: string; ok: boolean };
 
 /** Smoke fast tier — heaviest suites omitted (~7.5s of ~22s wall clock on typical dev machine). */
 const SMOKE_FAST_EXCLUDE: readonly string[] = [
+  'SQ swing rhythm engine (sq_swing)',
   'App API boundary',
   'Frank Zappa songwriter slice',
   'SD3 drum guide export (MIDI + JSON sidecar)',
@@ -110,6 +112,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Phrase engine V2 — motif pool hook', run: runPhraseEngineV2SmokeTests },
   { label: 'Phrase engine V2 — integration (duo mock + duoIntent depth guard)', run: runPhraseEngineV2IntegrationWithDuoIntentSmokeGuard },
   { label: 'Conductor', run: runConductorTests },
+  { label: 'SQ swing rhythm engine (sq_swing)', run: runSqSwingRhythmTests },
   { label: 'App API boundary', run: runAppApiBoundaryTests },
   { label: 'MusicXML harmony (kind/@text + degrees)', run: runChordSymbolMusicXmlHarmonyTests },
   { label: 'Universal lead sheet — repeatMarkers (import → parity)', run: runUniversalLeadSheetRepeatSmokeTests },

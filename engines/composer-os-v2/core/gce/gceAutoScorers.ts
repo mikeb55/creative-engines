@@ -3,6 +3,7 @@ import type { SqVrbGceScorerAdjustments } from '../counterpoint/vrbProfiles/sqVr
 import type { FormMap } from '../compositionContext';
 import type { CadenceTag } from '../counterpoint/abstractLineSet';
 import type { PhraseCadenceStrength } from '../counterpoint/quartetFeatureTypes';
+import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
 import { getSqVrbGceAdjustments } from '../counterpoint/vrbProfiles/sqVrbProfileRegistry';
 import { BEATS_PER_MEASURE, type NoteEvent, type PartModel, type ScoreModel } from '../score-model/scoreModelTypes';
 import { activePartsNormalizedBigBand } from './gceStructuralMemory';
@@ -1528,13 +1529,24 @@ export function scoreHarmonyAndLanguage(chords: string[]): CategoryScore {
   return { score, justification };
 }
 
-export function scoreRhythmicIdentity(line: MelodicNote[]): CategoryScore {
+export interface RhythmExpectation {
+  placementMode: 'grid' | 'swing' | 'anti_metric';
+  targetOffbeatWindow?: [number, number];
+  syncopationBand?: [number, number];
+  anticipationRateMax?: number;
+  grooveStabilityTolerance?: number;
+}
+
+function barFraction(n: MelodicNote): number {
+  return n.beat / BEATS_PER_MEASURE;
+}
+
+function scoreRhythmicIdentityGeneric(line: MelodicNote[]): CategoryScore {
   const notes = line.filter((n) => !n.rest && n.midi > 0);
   if (notes.length === 0) {
     return { score: 0, justification: 'No notes' };
   }
 
-  // IOI variety — normalized entropy of durations
   const durBuckets = new Map<number, number>();
   for (const n of notes) {
     const bucket = Math.round(n.beats * 4);
@@ -1549,14 +1561,12 @@ export function scoreRhythmicIdentity(line: MelodicNote[]): CategoryScore {
   const maxEntropy = Math.log2(Math.max(durBuckets.size, 1));
   const ioiVariety = maxEntropy > 0 ? Math.min(entropy / maxEntropy, 1) : 0;
 
-  // Syncopation — offbeat attacks (beat not integer)
   const offbeat = notes.filter((n) => {
     const b = n.beat % 1;
     return b > 0.1 && b < 0.9;
   }).length;
   const syncopation = Math.min(offbeat / total, 1);
 
-  // Rhythm motif recurrence — repeated duration 3-grams
   const durations = notes.map((n) => Math.round(n.beats * 4));
   let matches = 0;
   const grams = new Map<string, number>();
@@ -1569,7 +1579,6 @@ export function scoreRhythmicIdentity(line: MelodicNote[]): CategoryScore {
   }
   const rhythmMotif = Math.min(matches / Math.max(grams.size, 1), 1);
 
-  // Groove stability — consistency of attacks per bar
   const barAttacks = new Map<number, number>();
   for (const n of notes) {
     barAttacks.set(n.bar, (barAttacks.get(n.bar) ?? 0) + 1);
@@ -1597,6 +1606,118 @@ export function scoreRhythmicIdentity(line: MelodicNote[]): CategoryScore {
       `rhythm motif ${(rhythmMotif * 10).toFixed(1)}, ` +
       `groove ${(grooveStability * 10).toFixed(1)}` +
       (hardFail ? ' [HARD FAIL]' : ''),
+  };
+}
+
+function scoreRhythmicStyleConformance(
+  line: MelodicNote[],
+  expectation: RhythmExpectation,
+): number {
+  const notes = line.filter((n) => !n.rest && n.midi > 0);
+  if (notes.length === 0) return 0;
+
+  const offbeats = notes.filter((n) => {
+    const frac = barFraction(n);
+    const eighth = frac % 0.5;
+    return eighth > 0.08 && eighth < 0.42;
+  });
+  if (offbeats.length === 0) return 5;
+
+  if (expectation.placementMode === 'swing') {
+    const [lo, hi] = expectation.targetOffbeatWindow ?? [0.55, 0.72];
+    let reward = 0;
+    let gridPenalty = 0;
+    for (const n of offbeats) {
+      const frac = barFraction(n);
+      if (frac >= lo && frac <= hi) reward += 1;
+      const eighth = frac % 0.5;
+      if (Math.abs(eighth - 0.25) < 0.04) gridPenalty += 1;
+    }
+    const hitRate = reward / offbeats.length;
+    const gridRate = gridPenalty / offbeats.length;
+    return Math.max(0, Math.min(10, 10 * (0.65 * hitRate + 0.35 * (1 - gridRate))));
+  }
+
+  if (expectation.placementMode === 'grid') {
+    let gridHits = 0;
+    let anticipations = 0;
+    for (const n of offbeats) {
+      const frac = barFraction(n);
+      const eighth = frac % 0.5;
+      if (Math.abs(eighth - 0.25) < 0.06) gridHits += 1;
+      if (frac < 0.2 || (frac > 0.45 && frac < 0.55)) anticipations += 1;
+    }
+    const gridRate = gridHits / offbeats.length;
+    const antRate = anticipations / offbeats.length;
+    const antMax = expectation.anticipationRateMax ?? 0.15;
+    const antPenalty = antRate > antMax ? Math.min(1, (antRate - antMax) / Math.max(antMax, 0.05)) : 0;
+    return Math.max(0, Math.min(10, 10 * (0.75 * gridRate + 0.25 * (1 - antPenalty))));
+  }
+
+  const downbeats = notes.filter((n) => {
+    const frac = barFraction(n);
+    return frac < 0.08 || Math.abs(frac - 0.5) < 0.08;
+  });
+  const displaced = downbeats.filter((n) => {
+    const frac = barFraction(n);
+    return frac > 0.04 && frac < 0.12;
+  }).length;
+  const barAttacks = new Map<number, number>();
+  for (const n of notes) {
+    barAttacks.set(n.bar, (barAttacks.get(n.bar) ?? 0) + 1);
+  }
+  const counts = [...barAttacks.values()];
+  const mean = counts.reduce((a, b) => a + b, 0) / counts.length;
+  const variance = counts.reduce((s, v) => s + (v - mean) ** 2, 0) / counts.length;
+  const regularity = mean > 0 ? Math.max(0, 1 - Math.sqrt(variance) / mean) : 1;
+  const dispRate = downbeats.length > 0 ? displaced / downbeats.length : 0;
+  return Math.max(0, Math.min(10, 10 * (0.55 * dispRate + 0.45 * (1 - regularity))));
+}
+
+export function rhythmExpectationForVrb(vrbId: string): RhythmExpectation | undefined {
+  const id = (getVoiceRuleBundle(vrbId)?.voiceId ?? vrbId).trim().toLowerCase();
+  if (id === 'gershwin') {
+    return { placementMode: 'swing', targetOffbeatWindow: [0.55, 0.7] };
+  }
+  if (id === 'cole_porter') {
+    return { placementMode: 'swing', targetOffbeatWindow: [0.55, 0.65] };
+  }
+  if (id === 'turtle_island') {
+    return { placementMode: 'swing', targetOffbeatWindow: [0.58, 0.72] };
+  }
+  if (id === 'satie') {
+    return { placementMode: 'grid' };
+  }
+  if (id === 'reich_glass') {
+    return { placementMode: 'grid' };
+  }
+  if (id === 'shostakovich') {
+    return { placementMode: 'anti_metric' };
+  }
+  if (id === 'ligeti') {
+    return { placementMode: 'anti_metric' };
+  }
+  return undefined;
+}
+
+export function scoreRhythmicIdentity(
+  line: MelodicNote[],
+  expectation?: RhythmExpectation,
+): CategoryScore {
+  const generic = scoreRhythmicIdentityGeneric(line);
+  if (!expectation) {
+    return generic;
+  }
+  const styleScore = scoreRhythmicStyleConformance(line, expectation);
+  const blended = Math.max(
+    0,
+    Math.min(10, Math.round((0.8 * generic.score + 0.2 * styleScore) * 10) / 10),
+  );
+  const hardCapped =
+    generic.justification.includes('[HARD FAIL]') ? Math.min(blended, 6) : blended;
+  return {
+    score: hardCapped,
+    justification: `${generic.justification}; style ${expectation.placementMode} ${styleScore.toFixed(1)}`,
   };
 }
 

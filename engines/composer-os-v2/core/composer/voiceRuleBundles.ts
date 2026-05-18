@@ -2372,6 +2372,9 @@ const TURTLE_ISLAND: VoiceRuleBundle = {
     maxVoiceOverlap: 6,
   },
   swingFeel: true,
+  swingStyle: 'jazz',
+  swingIntensity: 0.8,
+  sqRhythmEngineId: 'sq_swing',
   guideToneVoiceLeading: true,
   improvSlots: true,
   contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
@@ -2770,6 +2773,8 @@ const SATIE_STUB: VoiceRuleBundle = {
   sacredProfile: false,
   noTeleologicalDevelopment: true,
   swingFeel: false,
+  swingStyle: 'none',
+  swingIntensity: 0.0,
 };
 
 const SATIE = applySatieSqVrbProfile(SATIE_STUB);
@@ -2866,6 +2871,9 @@ const GERSHWIN_STUB: VoiceRuleBundle = {
     maxVoiceOverlap: 6,
   },
   swingFeel: false,
+  swingStyle: 'concert',
+  swingIntensity: 0.65,
+  sqRhythmEngineId: 'sq_swing',
   guideToneVoiceLeading: true,
   blueNoteEnabled: true,
   rhythmChangesEnabled: true,
@@ -2917,6 +2925,9 @@ const COLE_PORTER_STUB: VoiceRuleBundle = {
     maxVoiceOverlap: 6,
   },
   swingFeel: false,
+  swingStyle: 'concert',
+  swingIntensity: 0.55,
+  sqRhythmEngineId: 'sq_swing',
   guideToneVoiceLeading: true,
   chromaticBassEnabled: true,
   majorMinorMixtureEnabled: true,

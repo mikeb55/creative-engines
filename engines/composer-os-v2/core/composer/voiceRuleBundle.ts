@@ -351,6 +351,17 @@ export interface VoiceRuleBundle {
   speciesVoiceLeadingBias?: 'off' | 'low' | 'medium' | 'high';
   /** Turtle Island Quartet — swing eighths performed [long,short] 2:1 (informational). */
   swingFeel?: boolean;
+  /**
+   * SQ swing rhythm engine (`sq_swing`) — performance style when {@link sqRhythmEngineId} is `sq_swing`.
+   * If sqRhythmEngineId !== 'sq_swing': ignore swingStyle and swingIntensity.
+   * If sqRhythmEngineId === 'sq_swing' and swingStyle is absent: infer from vrbId or fall back to
+   * 'concert' when swingFeel === true.
+   */
+  swingStyle?: 'none' | 'jazz' | 'concert' | 'folk_jazz';
+  /** SQ swing engine sensitivity 0.0–1.0 (default 0.5 when absent). */
+  swingIntensity?: number;
+  /** Shipped SQ rhythm engine id (`sq_swing`, `jewish_klezmer`, …). */
+  sqRhythmEngineId?: string;
   /** Turtle Island Quartet — guide-tone voice-leading enforced (informational). */
   guideToneVoiceLeading?: boolean;
   /** Turtle Island Quartet — chord-scale-based improv slots enabled (informational). */

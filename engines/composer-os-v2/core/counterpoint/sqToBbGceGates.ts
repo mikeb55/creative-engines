@@ -16,6 +16,7 @@ import {
   scoreHarmonyAndLanguage,
   scoreMelodicIdentity,
   scorePhraseGrammar,
+  rhythmExpectationForVrb,
   scoreRhythmicIdentity,
   scoreStructureAndForm,
   scoreTensionAndReleaseForEnsemble,
@@ -533,7 +534,11 @@ function scoreSqBbGate2OverallGce(
     { weight: 2, score: pillars.melodicIdentity },
     { weight: 1, score: pillars.phraseGrammar },
     { weight: 1, score: scoreHarmonyAndLanguage(chords).score },
-    { weight: 1, score: scoreRhythmicIdentity(melody).score },
+    {
+      weight: 1,
+      score: scoreRhythmicIdentity(melody, cp?.sqVrbId ? rhythmExpectationForVrb(cp.sqVrbId) : undefined)
+        .score,
+    },
     { weight: 1, score: scoreStructureAndForm(score, chords, sections).score },
     { weight: 1, score: scoreArrangementAndOrchestrationForEnsemble(score).score },
     {

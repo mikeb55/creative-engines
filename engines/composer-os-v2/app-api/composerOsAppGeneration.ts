@@ -106,13 +106,14 @@ import type { IntervalPatternId } from '../core/slonimsky/slonimskyEngine';
 import { writeDrumGuide } from '../core/export/midiDrumGuideWriter';
 import { writeScoreMidi } from '../core/export/midiScoreWriter';
 
-const SHIPPED_SQ_RHYTHM_ENGINE_IDS = [
+export const SHIPPED_SQ_RHYTHM_ENGINE_IDS = [
   'bartok_bulgarian_aksak',
   'free_proportional',
   'baroque_dance',
   'reich_phasing_grid',
   'viennese_waltz',
   'jewish_klezmer',
+  'sq_swing',
 ] as const;
 
 type ShippedSqRhythmEngineId = (typeof SHIPPED_SQ_RHYTHM_ENGINE_IDS)[number];

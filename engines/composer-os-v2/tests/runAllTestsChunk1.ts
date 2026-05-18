@@ -11,6 +11,7 @@ import { runBaroqueDanceRhythmEngineTests } from './baroqueDanceRhythmEngine.tes
 import { runReichPhasingGridRhythmEngineTests } from './reichPhasingGridRhythmEngine.test';
 import { runVienneseWaltzRhythmEngineTests } from './vienneseWaltzRhythmEngine.test';
 import { runJewishKlezmerRhythmEngineTests } from './jewishKlezmerRhythmEngine.test';
+import { runSqSwingRhythmTests } from './sqSwingRhythm.test';
 import { runInstrumentProfileTests } from './instrumentProfiles.test';
 import { runScoreIntegrityTests } from './scoreIntegrity.test';
 import { runReadinessTests } from './readiness.test';
@@ -67,6 +68,7 @@ const suites: SuiteEntry[] = [
   { name: 'Reich phasing grid SQ rhythm engine', run: runReichPhasingGridRhythmEngineTests },
   { name: 'Viennese waltz SQ rhythm engine', run: runVienneseWaltzRhythmEngineTests },
   { name: 'Jewish / Klezmer SQ rhythm engine', run: runJewishKlezmerRhythmEngineTests },
+  { name: 'SQ swing rhythm engine (sq_swing)', run: runSqSwingRhythmTests },
   { name: 'Instrument Profiles', run: runInstrumentProfileTests },
   { name: 'Score Integrity', run: runScoreIntegrityTests },
   { name: 'Readiness', run: runReadinessTests },

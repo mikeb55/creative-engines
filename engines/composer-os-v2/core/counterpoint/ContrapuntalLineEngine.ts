@@ -7,6 +7,7 @@ import type { CompositionContext } from '../compositionContext';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
+import { applySwingTransform, buildSwingPolicy } from '../rhythm/sqSwingRhythmEngine';
 import {
   readSqToBbVrbWire,
   resolveVrbForBar,
@@ -62,6 +63,38 @@ function augmentAbstractLineSetSchema(vrbId: string, lines: AbstractLineSet): Ab
     };
   }
   return lines;
+}
+
+function resolveGenerationBpm(context: CompositionContext): number {
+  const fromOverride = context.styleOverrides?.bpm;
+  if (typeof fromOverride === 'number' && Number.isFinite(fromOverride) && fromOverride > 0) {
+    return fromOverride;
+  }
+  const fromMeta = (context.generationMetadata as { bpm?: number } | undefined)?.bpm;
+  if (typeof fromMeta === 'number' && Number.isFinite(fromMeta) && fromMeta > 0) {
+    return fromMeta;
+  }
+  return 120;
+}
+
+function applySqSwingRhythmToLineSet(
+  lines: AbstractLineSet,
+  vrbId: string,
+  bpm: number,
+  lengthBars: number,
+): AbstractLineSet {
+  const bundle = getVoiceRuleBundle(vrbId);
+  if (bundle.sqRhythmEngineId !== 'sq_swing') {
+    return lines;
+  }
+  const policy = buildSwingPolicy(bundle, bpm);
+  return {
+    ...lines,
+    voices: lines.voices.map((v) => ({
+      ...v,
+      notes: applySwingTransform(v.notes, policy, lengthBars),
+    })),
+  };
 }
 
 function rng01(seed: number, salt: number): number {
@@ -391,22 +424,22 @@ export class ContrapuntalLineEngine {
   generateLines(lengthBars: number, sourceMode: AbstractLineSet['sourceMode']): AbstractLineSet {
     void sourceMode;
     const seed = this.context.seed ?? 0;
+    const bpm = resolveGenerationBpm(this.context);
     if (this.vrbId === 'bartok') {
       return augmentAbstractLineSetSchema(this.vrbId, buildBartokLineSet(this.context, lengthBars, seed));
     }
     const pol = getVoiceRuleBundle(this.vrbId).contrapuntalLinePolicy;
     if (pol?.enabled) {
-      return augmentAbstractLineSetSchema(
+      const raw = buildSwingChordLineSetForVrb(
+        this.context,
+        lengthBars,
+        seed,
         this.vrbId,
-        buildSwingChordLineSetForVrb(
-          this.context,
-          lengthBars,
-          seed,
-          this.vrbId,
-          this.vrbContextMap,
-          this.formSections,
-        ),
+        this.vrbContextMap,
+        this.formSections,
       );
+      const swung = applySqSwingRhythmToLineSet(raw, this.vrbId, bpm, lengthBars);
+      return augmentAbstractLineSetSchema(this.vrbId, swung);
     }
     throw new Error(`ContrapuntalLineEngine: unsupported vrbId ${this.vrbId}`);
   }
