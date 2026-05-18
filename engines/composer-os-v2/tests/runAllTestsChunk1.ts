@@ -46,6 +46,7 @@ import { runDuoLockQualityTests } from './duoLockQuality.test';
 import { runDuoInteractionV31Tests } from './duoInteractionV31.test';
 import { runDuoPhraseBiasTests } from './duoPhraseBias.test';
 import { runWybleDuoParityTests } from './wybleDuoParity.test';
+import { runMelodyV2Tests } from './melodyV2.test';
 import { runDuoIdentityV32Tests } from './duoIdentityV32.test';
 import { runDuoPolishV33Tests } from './duoPolishV33.test';
 import { runLongFormDuoTests } from './longFormDuo.test';
@@ -105,6 +106,7 @@ const suites: SuiteEntry[] = [
   { name: 'Duo interaction V3.1', run: runDuoInteractionV31Tests },
   { name: 'Duo phrase bias + Stage 2 continuity', run: runDuoPhraseBiasTests },
   { name: 'Wyble duo parity + BB Light Touch', run: runWybleDuoParityTests },
+  { name: 'Melody V2 (motif / register / cadenza)', run: runMelodyV2Tests },
   { name: 'Duo identity V3.2', run: runDuoIdentityV32Tests },
   { name: 'Duo polish V3.3', run: runDuoPolishV33Tests },
   { name: 'Long-form Duo (32)', run: runLongFormDuoTests },

@@ -452,6 +452,18 @@ import { applyDuoPitchVariationToGuitar } from './duoPitchVariationPass';
 import { applyECMShapingPass } from './ecmShapingPass';
 import { applyDuoOrchestrationPass } from './duoOrchestrationPass';
 import { applyEcmIdentityCellPass } from './identityCell';
+import { applyGlobalRegisterArc } from './melodicRegisterArc';
+import {
+  applyMotifRecallSeedToMeasure,
+  extractMelodicMotif,
+  goldenPathBarsFromGuitarPart,
+  motifPhraseSlotForBar,
+  motifVariationTypeForPhraseSlot,
+  shouldApplyMotifRecallAtBar,
+  type MelodicMotif,
+} from './melodicMotifSeed';
+import { applyPhraseVariationPass } from './melodicPhraseVariation';
+import { applyCadenzaPass } from './melodicCadenza';
 import {
   normalizeMeasureToEighthBeatGrid,
   snapAttackBeatToGrid,
@@ -2819,6 +2831,7 @@ function buildGuitarPart(
   );
   const hints = readStyleHints(context);
   const measures: MeasureModel[] = [];
+  let compositionMotif: MelodicMotif | undefined;
   const [baseLow] = profile.preferredMelodicZone;
   const effectiveBase = Math.max(baseLow, GUITAR_FLOOR_FOR_SEPARATION);
   const tb = totalBarsFromContext(context);
@@ -3322,6 +3335,9 @@ function buildGuitarPart(
       effectiveLow = anchored[0];
       effectiveHigh = anchored[1];
     }
+    if (isDuoGolden && context.presetId !== 'ecm_chamber') {
+      [effectiveLow, effectiveHigh] = applyGlobalRegisterArc(b, tb, effectiveLow, effectiveHigh);
+    }
     if (lineFirstDuoAbstract && activeAbstract) {
       const engineVrbId = activeAbstract.styleSourceVrbId ?? '';
       fillGuitarMeasureFromAbstractSoprano(m, activeAbstract, b, {
@@ -3430,6 +3446,39 @@ function buildGuitarPart(
           b,
           effectiveLow,
           effectiveHigh
+        );
+      }
+      if (isDuoGolden && context.presetId !== 'ecm_chamber' && b === 4) {
+        compositionMotif = extractMelodicMotif(
+          goldenPathBarsFromGuitarPart(
+            {
+              id: 'guitar',
+              name: 'Guitar',
+              instrumentIdentity: profile.instrumentIdentity,
+              midiProgram: profile.midiProgram,
+              clef: 'treble',
+              measures,
+            },
+            [1, 4],
+          ),
+          [1, 4],
+        );
+      }
+      if (
+        compositionMotif &&
+        shouldApplyMotifRecallAtBar(b) &&
+        isDuoGolden &&
+        context.presetId !== 'ecm_chamber'
+      ) {
+        applyMotifRecallSeedToMeasure(
+          m,
+          compositionMotif,
+          motifVariationTypeForPhraseSlot(motifPhraseSlotForBar(b), seed),
+          resolveBarSymbol(context, b).symbol,
+          effectiveLow,
+          effectiveHigh,
+          seed,
+          b,
         );
       }
       measures.push(m);
@@ -3763,6 +3812,39 @@ function buildGuitarPart(
           effectiveHigh
         );
       }
+      if (isDuoGolden && context.presetId !== 'ecm_chamber' && b === 4) {
+        compositionMotif = extractMelodicMotif(
+          goldenPathBarsFromGuitarPart(
+            {
+              id: 'guitar',
+              name: 'Guitar',
+              instrumentIdentity: profile.instrumentIdentity,
+              midiProgram: profile.midiProgram,
+              clef: 'treble',
+              measures,
+            },
+            [1, 4],
+          ),
+          [1, 4],
+        );
+      }
+      if (
+        compositionMotif &&
+        shouldApplyMotifRecallAtBar(b) &&
+        isDuoGolden &&
+        context.presetId !== 'ecm_chamber'
+      ) {
+        applyMotifRecallSeedToMeasure(
+          m,
+          compositionMotif,
+          motifVariationTypeForPhraseSlot(motifPhraseSlotForBar(b), seed),
+          resolveBarSymbol(context, b).symbol,
+          effectiveLow,
+          effectiveHigh,
+          seed,
+          b,
+        );
+      }
       if (guitarBarIsBusy(m)) consecutiveBusyGuitarBars++;
       else consecutiveBusyGuitarBars = 0;
     } else {
@@ -3998,17 +4080,20 @@ function buildGuitarPart(
     finalizeCharlieParkerMetadata(context.generationMetadata, cpAccum);
   }
 
-  return {
+  const guitarPartDraft: PartModel = {
     id: 'guitar',
     /** MusicXML export uses piano part-list / GM 1 when **`songModePresentAsPianoComp`** (`<part-name>Piano</part-name>`, etc.). */
     name: isSongwriterFrankZappa ? 'Piano' : 'Clean Electric Guitar',
     instrumentIdentity: profile.instrumentIdentity,
-    /** GM Acoustic Grand (0-based); MusicXML piano branch writes `<midi-program>1</midi-program>`. */
     midiProgram: isSongwriterFrankZappa ? 0 : profile.midiProgram,
     clef: 'treble',
     ...(isSongwriterFrankZappa ? { songModePresentAsPianoComp: true as const } : {}),
     measures,
   };
+  if (isDuoGoldenPath && context.presetId !== 'ecm_chamber') {
+    applyPhraseVariationPass(guitarPartDraft, context, seed);
+  }
+  return guitarPartDraft;
 }
 
 function firstGuitarPitchInBar(guitar: PartModel, bar: number): number | undefined {
@@ -5897,6 +5982,12 @@ export function generateGoldenPathDuoScore(
   if (context.presetId === 'ecm_chamber' && texturePlan && context.generationMetadata?.ecmMode) {
     texturePlan = augmentEcmChamberTexturePlan(texturePlan, tb, context.seed, context.generationMetadata.ecmMode);
   }
+  if (context.presetId === 'ecm_chamber' && texturePlan) {
+    context.generationMetadata = {
+      ...context.generationMetadata,
+      ecmBarTexturePlan: texturePlan,
+    };
+  }
 
   let guitarPart: PartModel;
   let bassPart: PartModel;
@@ -6180,6 +6271,12 @@ export function generateGoldenPathDuoScore(
     logEcmInternalPhaseProbe(probeEcm, 'after_buildBassPart');
     if (context.presetId === 'ecm_chamber' || (isGuitarBassDuoFamily(context.presetId) && isEcmStyle)) {
       applyEcmChamberPhraseEdgeSpaceToParts(guitarPart, bassPart, tb, context.seed);
+      if (context.presetId === 'ecm_chamber') {
+        context.generationMetadata = {
+          ...context.generationMetadata,
+          ecmPhraseEdgeSpaceApplied: true,
+        };
+      }
     }
   }
   const profile = guitarBassDuoPreset.instrumentProfiles.find(
@@ -6385,6 +6482,9 @@ export function generateGoldenPathDuoScore(
     tempo: bpm,
     feelProfile,
   });
+  if (context.presetId !== 'ecm_chamber') {
+    applyCadenzaPass(rawScore, context, context.seed);
+  }
   if (useIndieDualGuitar) {
     const alt = context.generationMetadata?.alternateGuitarTuning;
     if (alt?.mode === 'separate') {

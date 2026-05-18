@@ -328,6 +328,10 @@ export interface GenerationMetadata {
   /** ECM Chamber preset only */
   ecmMode?: EcmChamberMode;
   ecmMetrics?: EcmGenerationMetrics;
+  /** Per-bar ECM texture roles (GCE space/silence scorer). */
+  ecmBarTexturePlan?: import('../ecm/ecmTextureEngine').EcmBarTexture[];
+  /** Set when {@link applyEcmChamberPhraseEdgeSpaceToParts} runs on the duo score. */
+  ecmPhraseEdgeSpaceApplied?: boolean;
   /** Guitar–Bass Duo: opt-in 32-bar long-form route (V4.0) */
   longFormDuo?: boolean;
   modulationPlanActive?: boolean;

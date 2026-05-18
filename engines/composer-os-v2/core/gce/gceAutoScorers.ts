@@ -4,6 +4,13 @@ import type { FormMap } from '../compositionContext';
 import type { CadenceTag } from '../counterpoint/abstractLineSet';
 import type { PhraseCadenceStrength } from '../counterpoint/quartetFeatureTypes';
 import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
+import type { CompositionContext } from '../compositionContext';
+import {
+  scoreEcmMethenyFeel,
+  scoreEcmSchneiderFeel,
+  type EcmScorePlans,
+} from '../ecm/ecmChamberScoring';
+import type { EcmChamberMode } from '../ecm/ecmChamberTypes';
 import { getSqVrbGceAdjustments } from '../counterpoint/vrbProfiles/sqVrbProfileRegistry';
 import { BEATS_PER_MEASURE, type NoteEvent, type PartModel, type ScoreModel } from '../score-model/scoreModelTypes';
 import { activePartsNormalizedBigBand } from './gceStructuralMemory';
@@ -1697,6 +1704,15 @@ export function rhythmExpectationForVrb(vrbId: string): RhythmExpectation | unde
   if (id === 'ligeti') {
     return { placementMode: 'anti_metric' };
   }
+  if (id === 'ecm_chamber') {
+    return {
+      placementMode: 'grid',
+      targetOffbeatWindow: [0.48, 0.52],
+      syncopationBand: [0.0, 0.15],
+      anticipationRateMax: 0.05,
+      grooveStabilityTolerance: 0.95,
+    };
+  }
   return undefined;
 }
 
@@ -1838,6 +1854,135 @@ export function scoreEconomyAndFocus(
   return {
     score,
     justification: densityLabel,
+  };
+}
+
+export interface EcmBarRole {
+  bar: number;
+  guitarRole: string;
+  bassRole: string;
+}
+
+export interface EcmSpaceSilenceDetails {
+  silenceRatio: number;
+  sustainRatio: number;
+  phraseEdgeSpaceApplied: boolean;
+}
+
+export type EcmSpaceSilenceCategoryScore = CategoryScore & {
+  label: 'ecm_space_silence';
+  details: EcmSpaceSilenceDetails;
+};
+
+export type EcmFeelCategoryScore = CategoryScore & {
+  label: 'ecm_feel';
+  mode: EcmChamberMode;
+};
+
+function resolveEcmSpacePolicy(vrbId?: string) {
+  const bundle = getVoiceRuleBundle(vrbId ?? 'ecm_chamber');
+  return (
+    bundle?.ecmSpacePolicy ?? {
+      targetSilenceRatio: 0.2,
+      targetSustainRatio: 0.15,
+      phraseEdgeSpaceEnabled: true,
+      densityEnvelopeMode: 'schneider' as const,
+    }
+  );
+}
+
+/** ECM chamber — silence / sustain_pad roles vs VRB targets (0–10 scale for GCE gate). */
+export function scoreEcmSpaceAndSilence(
+  bars: readonly EcmBarRole[],
+  totalBars: number,
+  preset: string,
+  options?: {
+    phraseEdgeSpaceApplied?: boolean;
+    vrbId?: string;
+  },
+): EcmSpaceSilenceCategoryScore {
+  const policy = resolveEcmSpacePolicy(options?.vrbId);
+  const tb = Math.max(1, totalBars);
+  if (preset !== 'ecm_chamber' || bars.length === 0) {
+    return {
+      label: 'ecm_space_silence',
+      score: 0,
+      justification: 'inactive',
+      details: { silenceRatio: 0, sustainRatio: 0, phraseEdgeSpaceApplied: false },
+    };
+  }
+
+  const silenceCount = bars.filter((r) => r.guitarRole === 'silence').length;
+  const sustainCount = bars.filter((r) => r.guitarRole === 'sustain_pad').length;
+  const silenceRatio = silenceCount / tb;
+  const sustainRatio = sustainCount / tb;
+
+  const target = policy.targetSilenceRatio;
+  const lo = target - 0.05;
+  const hi = target + 0.1;
+
+  let unit = 1;
+  if (silenceRatio >= lo && silenceRatio <= hi) unit = 1;
+  else if (silenceRatio < 0.1) unit = 0.3;
+  else if (silenceRatio > 0.4) unit = 0.5;
+  else if (silenceRatio < lo || silenceRatio > hi) unit = 0.7;
+
+  const sustainTarget = policy.targetSustainRatio;
+  if (sustainRatio >= sustainTarget - 0.05 && sustainRatio <= sustainTarget + 0.1) {
+    unit = Math.min(1, unit + 0.15);
+  }
+
+  let phraseEdgeSpaceApplied = options?.phraseEdgeSpaceApplied === true;
+  if (!phraseEdgeSpaceApplied && policy.phraseEdgeSpaceEnabled) {
+    let phraseEnds = 0;
+    let phraseHits = 0;
+    for (let b = 4; b <= tb; b += 4) {
+      phraseEnds++;
+      const row = bars.find((r) => r.bar === b);
+      if (row && (row.guitarRole === 'silence' || row.guitarRole === 'sustain_pad')) {
+        phraseHits++;
+      }
+    }
+    phraseEdgeSpaceApplied = phraseEnds > 0 && phraseHits / phraseEnds >= 0.35;
+  }
+  if (phraseEdgeSpaceApplied) unit = Math.min(1, unit + 0.08);
+
+  const score = Math.max(0, Math.min(10, Math.round(unit * 10 * 10) / 10));
+  return {
+    label: 'ecm_space_silence',
+    score,
+    justification:
+      `silence ${(silenceRatio * 100).toFixed(0)}% (target ${(target * 100).toFixed(0)}%), ` +
+      `sustain_pad ${(sustainRatio * 100).toFixed(0)}%, ` +
+      `phrase-edge ${phraseEdgeSpaceApplied ? 'yes' : 'no'}`,
+    details: { silenceRatio, sustainRatio, phraseEdgeSpaceApplied },
+  };
+}
+
+function normalizeEcmFeelRaw(raw: number): number {
+  return Math.max(0, Math.min(10, Math.round((raw / 14) * 10) / 10));
+}
+
+/** ECM Metheny / Schneider feel heuristics as a GCE category (0–10). */
+export function scoreEcmFeelCategory(
+  score: ScoreModel,
+  context: CompositionContext,
+  plans: EcmScorePlans = {},
+): EcmFeelCategoryScore {
+  const policy = resolveEcmSpacePolicy(context.generationMetadata?.songwriterStyleId ?? 'ecm_chamber');
+  const mode: EcmChamberMode =
+    context.generationMetadata?.ecmMode ??
+    (policy.densityEnvelopeMode === 'metheny' ? 'ECM_METHENY_QUARTET' : 'ECM_SCHNEIDER_CHAMBER');
+  const raw =
+    mode === 'ECM_METHENY_QUARTET'
+      ? scoreEcmMethenyFeel(score, context, plans)
+      : scoreEcmSchneiderFeel(score, context, plans);
+  const normalized = normalizeEcmFeelRaw(raw);
+  return {
+    label: 'ecm_feel',
+    mode,
+    score: normalized,
+    justification: `${mode} feel raw=${raw} → ${normalized}/10`,
   };
 }
 

@@ -18,9 +18,14 @@ import {
   scoreArrangementAndOrchestrationForEnsemble,
   scoreThematicRecallPotential,
   gceSectionsFromFormMap,
+  rhythmExpectationForVrb,
+  scoreEcmSpaceAndSilence,
+  scoreEcmFeelCategory,
   type EconomyFocusScoringOptions,
+  type EcmBarRole,
   type GceStructureSection,
 } from './gceAutoScorers';
+import type { EcmScorePlans } from '../ecm/ecmChamberScoring';
 
 export interface GceGateResult {
   overallScore: number;
@@ -191,11 +196,73 @@ export function buildChordsForGceGate(
 /** Same harmonic bar span as app Song Mode clamp default (32). */
 export const GCE_GATE_HARMONIC_BAR_TARGET = 32;
 
+function ecmBarRolesFromContext(context: CompositionContext): EcmBarRole[] {
+  const plan = context.generationMetadata?.ecmBarTexturePlan;
+  if (!plan?.length) return [];
+  return plan.map((row) => ({
+    bar: row.bar,
+    guitarRole: row.guitarRole,
+    bassRole: row.bassRole,
+  }));
+}
+
+/** ECM chamber — adds space/silence + feel pillars (weights 2 + 1.5) on top of standard gate. */
+export function scoreEcmChamberResultForGce(
+  score: ScoreModel,
+  context: CompositionContext,
+  harmonicBarTarget: number = GCE_GATE_HARMONIC_BAR_TARGET,
+  plans: EcmScorePlans = {},
+): GceGateResult {
+  const chords = buildChordsForGceGate(score, context, harmonicBarTarget);
+  const sections = gceSectionsFromFormMap(context.form);
+  const melody = scoreModelToMelodicLine(score, resolveMelodicPartId(score));
+  const songwriterId = context.generationMetadata?.songwriterStyleId ?? 'ecm_chamber';
+  const rhythmExp = rhythmExpectationForVrb('ecm_chamber');
+  const tb = Math.max(1, context.form.totalBars, maxMeasureIndexAcrossParts(score));
+  const space = scoreEcmSpaceAndSilence(ecmBarRolesFromContext(context), tb, 'ecm_chamber', {
+    phraseEdgeSpaceApplied: context.generationMetadata?.ecmPhraseEdgeSpaceApplied,
+    vrbId: songwriterId,
+  });
+  const feel = scoreEcmFeelCategory(score, context, plans);
+
+  const scores: Array<{ name: string; score: number; weight: number }> = [
+    { name: 'Cadential Clarity', weight: 2, score: scoreCadentialClarity(melody, chords, sections).score },
+    { name: 'Melodic Identity', weight: 2, score: scoreMelodicIdentity(melody, songwriterId).score },
+    { name: 'Phrase Grammar', weight: 1, score: scorePhraseGrammar(melody).score },
+    { name: 'Harmony & Language', weight: 1, score: scoreHarmonyAndLanguage(chords).score },
+    { name: 'Rhythmic Identity', weight: 1, score: scoreRhythmicIdentity(melody, rhythmExp).score },
+    { name: 'Structure & Form', weight: 1, score: scoreStructureAndForm(score, chords, sections).score },
+    { name: 'Arrangement & Orchestration', weight: 1, score: scoreArrangementAndOrchestrationForEnsemble(score).score },
+    {
+      name: 'Economy & Focus',
+      weight: 1,
+      score: scoreEconomyAndFocusForEnsemble(melody, sections, score).score,
+    },
+    { name: 'Tension & Release', weight: 1, score: scoreTensionAndReleaseForEnsemble(score, chords, melody).score },
+    { name: 'Thematic Recall Potential', weight: 1, score: scoreThematicRecallPotential(melody, sections).score },
+    { name: 'ECM Space & Silence', weight: 2, score: space.score },
+    { name: 'ECM Feel', weight: 1.5, score: feel.score },
+  ];
+
+  const totalWeight = scores.reduce((s, c) => s + c.weight, 0);
+  const weightedSum = scores.reduce((s, c) => s + c.score * c.weight, 0);
+  const overallScore = Math.round((weightedSum / totalWeight) * 10) / 10;
+  const weakest = scores.reduce((a, b) => (a.score <= b.score ? a : b));
+  return {
+    overallScore,
+    weakestCategory: weakest.name,
+    passed: overallScore >= GCE_GATE_MIN,
+  };
+}
+
 export function scoreGoldenPathResultForGce(
   score: ScoreModel,
   context: CompositionContext,
   harmonicBarTarget: number = GCE_GATE_HARMONIC_BAR_TARGET
 ): GceGateResult {
+  if (context.presetId === 'ecm_chamber') {
+    return scoreEcmChamberResultForGce(score, context, harmonicBarTarget);
+  }
   const chords = buildChordsForGceGate(score, context, harmonicBarTarget);
   const sections = gceSectionsFromFormMap(context.form);
   return scoreResultForGce(score, chords, sections, context.generationMetadata?.songwriterStyleId);

@@ -490,6 +490,13 @@ export interface VoiceRuleBundle {
   contrapuntalLinePolicy?: ContrapuntalLinePolicy;
   /** Duo golden-path — AbstractLineSet lane + independence floor (Brookmeyer / Bartók stubs). */
   duoVoicePolicy?: DuoVoicePolicy;
+  /** ECM chamber — space / silence targets for GCE + texture planners. */
+  ecmSpacePolicy?: {
+    targetSilenceRatio: number;
+    targetSustainRatio: number;
+    phraseEdgeSpaceEnabled: boolean;
+    densityEnvelopeMode: 'schneider' | 'metheny';
+  };
   /** SQ→BB — primary BB arranging style for compatibility badge (read in UI, not hardcoded). */
   bestBbStyle?: import('../counterpoint/sqToBbWorkflowTypes').SqToBbStyleProfileId;
   secondaryBbStyle?: import('../counterpoint/sqToBbWorkflowTypes').SqToBbStyleProfileId;

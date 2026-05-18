@@ -26,6 +26,12 @@ export function logSongModeHarmonyDebug(payload: Record<string, unknown>): void 
 
 type EffectiveHarmonyBarsMetadataKey = keyof GenerationMetadata;
 
+function coerceStringBarArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value) || value.length === 0) return undefined;
+  if (!value.every((bar): bar is string => typeof bar === 'string')) return undefined;
+  return value;
+}
+
 interface EffectiveHarmonyTruthRegistryEntry {
   songwriterStyleIds?: readonly string[];
   styleProfiles?: readonly string[];
@@ -123,9 +129,10 @@ export function resolveEffectiveHarmonyTruth(
 
   for (const entry of EFFECTIVE_HARMONY_TRUTH_REGISTRY) {
     if (!registryEntryMatches(entry, md)) continue;
-    const bars = md[entry.metadataKey];
-    if (Array.isArray(bars) && bars.every((bar): bar is string => typeof bar === 'string') && matchesLength(bars)) {
-      return bars;
+    const raw = md[entry.metadataKey];
+    const bars = coerceStringBarArray(raw);
+    if (bars && matchesLength(bars)) {
+      return [...bars];
     }
   }
 

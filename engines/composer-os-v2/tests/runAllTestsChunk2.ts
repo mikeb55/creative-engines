@@ -14,6 +14,7 @@ import { runMusicXmlWrittenBarRegressionTests } from './musicXmlWrittenBarRegres
 import { runEcmIdentityTests } from './ecmIdentity.test';
 import { runEcmShapingPassTests } from './ecmShapingPass.test';
 import { runEcmArrangementPolicyTests } from './ecmArrangementPolicy.test';
+import { runEcmGceOrchestrationTests } from './ecmGceOrchestration.test';
 import { runDuoOrchestrationPassTests } from './duoOrchestrationPass.test';
 import { runIdentityCellTests } from './identityCell.test';
 import { runConductorAlignmentTests } from './conductorAlignment.test';
@@ -55,6 +56,7 @@ const suites: SuiteEntry[] = [
   { name: 'ECM identity', run: runEcmIdentityTests },
   { name: 'ECM shaping pass', run: runEcmShapingPassTests },
   { name: 'ECM arrangement policy', run: runEcmArrangementPolicyTests },
+  { name: 'ECM GCE orchestration', run: runEcmGceOrchestrationTests },
   { name: 'Duo orchestration pass', run: runDuoOrchestrationPassTests },
   { name: 'ECM identity cell', run: runIdentityCellTests },
   { name: 'Conductor alignment', run: runConductorAlignmentTests },

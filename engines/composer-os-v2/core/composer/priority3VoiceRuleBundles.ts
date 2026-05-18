@@ -401,6 +401,12 @@ export const ECM_CHAMBER: VoiceRuleBundle = {
     registerInterlock: true,
     intervalPreference: 'modal_sparse',
   },
+  ecmSpacePolicy: {
+    targetSilenceRatio: 0.2,
+    targetSustainRatio: 0.15,
+    phraseEdgeSpaceEnabled: true,
+    densityEnvelopeMode: 'schneider',
+  },
 };
 
 export const FRIPP_KING_CRIMSON: VoiceRuleBundle = {
