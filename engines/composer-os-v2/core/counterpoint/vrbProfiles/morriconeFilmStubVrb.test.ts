@@ -158,6 +158,20 @@ function testSqLineRouting(): boolean {
   return sqLineVrbIdForSqToBb('morricone', 'schneider') === 'morricone';
 }
 
+function testFingerprintReceiptCount(): boolean {
+  return (getVoiceRuleBundle('morricone').orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 35;
+}
+
+function testFingerprintWorkReceipt(): boolean {
+  const receipts = getVoiceRuleBundle('morricone').orchestrationPolicy.fingerprintReceipts ?? [];
+  return receipts.some((r) => r.includes('EM_WORK_'));
+}
+
+function testFingerprintDiffReceipt(): boolean {
+  const receipts = getVoiceRuleBundle('morricone').orchestrationPolicy.fingerprintReceipts ?? [];
+  return receipts.some((r) => r.includes('EM_DIFF_'));
+}
+
 export function runMorriconeFilmStubVrbTests(): { name: string; ok: boolean }[] {
   return [
     ['Morricone SQ VRB — profile loads', testProfileLoads],
@@ -179,6 +193,9 @@ export function runMorriconeFilmStubVrbTests(): { name: string; ok: boolean }[] 
     ['Morricone SQ VRB — picker enabled (UI after Herrmann)', testUiPickerMorricone],
     ['Morricone SQ VRB — sqLineVrbId routes morricone', testSqLineRouting],
     ['Morricone SQ VRB — Bartók Ravel Herrmann unchanged', testPriorVrbsUnchanged],
+    ['Morricone SQ VRB — fingerprintReceipts ≥35', testFingerprintReceiptCount],
+    ['Morricone SQ VRB — WORK_* receipt present', testFingerprintWorkReceipt],
+    ['Morricone SQ VRB — DIFF_* receipt present', testFingerprintDiffReceipt],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }
 

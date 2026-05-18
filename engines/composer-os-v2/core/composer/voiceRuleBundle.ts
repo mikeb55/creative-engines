@@ -463,4 +463,6 @@ export interface VoiceRuleBundle {
   pedalPointValidBars?: number;
   /** Morricone — romantic period (legato arcs) vs default western. */
   morriconeRomanticModeAvailable?: boolean;
+  /** Badalamenti film stub — Vln I lead / inner jazz cushion / Vc pedal (documented). */
+  badalamentiThreeTierTexture?: import('../counterpoint/vrbProfiles/sqVrbProfileTypes').SqBadalamentiThreeTierTexture;
 }

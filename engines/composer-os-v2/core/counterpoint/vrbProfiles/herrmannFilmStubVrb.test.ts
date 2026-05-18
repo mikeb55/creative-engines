@@ -167,6 +167,21 @@ function testSqLineRouting(): boolean {
   return sqLineVrbIdForSqToBb('herrmann', 'schneider') === 'herrmann';
 }
 
+function testFingerprintReceiptCount(): boolean {
+  const h = getVoiceRuleBundle('herrmann');
+  return (h.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 35;
+}
+
+function testFingerprintWorkReceipt(): boolean {
+  const receipts = getVoiceRuleBundle('herrmann').orchestrationPolicy.fingerprintReceipts ?? [];
+  return receipts.some((r) => r.includes('HH_WORK_'));
+}
+
+function testFingerprintDiffReceipt(): boolean {
+  const receipts = getVoiceRuleBundle('herrmann').orchestrationPolicy.fingerprintReceipts ?? [];
+  return receipts.some((r) => r.includes('HH_DIFF_'));
+}
+
 export function runHerrmannFilmStubVrbTests(): { name: string; ok: boolean }[] {
   return [
     ['Herrmann SQ VRB — profile loads', testProfileLoads],
@@ -187,6 +202,9 @@ export function runHerrmannFilmStubVrbTests(): { name: string; ok: boolean }[] {
     ['Herrmann SQ VRB — picker enabled (UI after Ravel)', testUiPickerHerrmann],
     ['Herrmann SQ VRB — sqLineVrbId routes herrmann', testSqLineRouting],
     ['Herrmann SQ VRB — Ravel and Bartók unchanged', testRavelBartokUnchanged],
+    ['Herrmann SQ VRB — fingerprintReceipts ≥35', testFingerprintReceiptCount],
+    ['Herrmann SQ VRB — WORK_* receipt present', testFingerprintWorkReceipt],
+    ['Herrmann SQ VRB — DIFF_* receipt present', testFingerprintDiffReceipt],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }
 

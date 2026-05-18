@@ -198,6 +198,25 @@ function testFilmStubWired(): boolean {
   return getVoiceRuleBundle('philip_glass_film').sqVrbProfileId === 'glass';
 }
 
+function testFingerprintReceiptCount(): boolean {
+  return (
+    (getVoiceRuleBundle('philip_glass_screen').orchestrationPolicy.fingerprintReceipts?.length ?? 0) >=
+    35
+  );
+}
+
+function testFingerprintWorkReceipt(): boolean {
+  const receipts =
+    getVoiceRuleBundle('philip_glass_screen').orchestrationPolicy.fingerprintReceipts ?? [];
+  return receipts.some((r) => r.includes('PG_WORK_'));
+}
+
+function testFingerprintDiffReceipt(): boolean {
+  const receipts =
+    getVoiceRuleBundle('philip_glass_screen').orchestrationPolicy.fingerprintReceipts ?? [];
+  return receipts.some((r) => r.includes('PG_DIFF_'));
+}
+
 export function runGlassFilmStubVrbTests(): { name: string; ok: boolean }[] {
   return [
     ['Glass SQ VRB — profile loads', testProfileLoads],
@@ -225,6 +244,9 @@ export function runGlassFilmStubVrbTests(): { name: string; ok: boolean }[] {
     ['Glass SQ VRB — sqLineVrbId routes glass', testSqLineRouting],
     ['Glass SQ VRB — philip_glass_film wired', testFilmStubWired],
     ['Glass SQ VRB — prior VRBs σ unchanged', testPriorVrbsUnchanged],
+    ['Glass SQ VRB — fingerprintReceipts ≥35', testFingerprintReceiptCount],
+    ['Glass SQ VRB — WORK_* receipt present', testFingerprintWorkReceipt],
+    ['Glass SQ VRB — DIFF_* receipt present', testFingerprintDiffReceipt],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }
 

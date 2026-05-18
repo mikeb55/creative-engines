@@ -185,6 +185,20 @@ function testBundleWired(): boolean {
   return getVoiceRuleBundle('jerry_goldsmith').sqVrbProfileId === 'goldsmith';
 }
 
+function testFingerprintReceiptCount(): boolean {
+  return (getVoiceRuleBundle('goldsmith').orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 35;
+}
+
+function testFingerprintWorkReceipt(): boolean {
+  const receipts = getVoiceRuleBundle('goldsmith').orchestrationPolicy.fingerprintReceipts ?? [];
+  return receipts.some((r) => r.includes('JG_WORK_'));
+}
+
+function testFingerprintDiffReceipt(): boolean {
+  const receipts = getVoiceRuleBundle('goldsmith').orchestrationPolicy.fingerprintReceipts ?? [];
+  return receipts.some((r) => r.includes('JG_DIFF_'));
+}
+
 export function runGoldsmithFilmStubVrbTests(): { name: string; ok: boolean }[] {
   return [
     ['Goldsmith SQ VRB — profile loads', testProfileLoads],
@@ -215,6 +229,9 @@ export function runGoldsmithFilmStubVrbTests(): { name: string; ok: boolean }[] 
     ['Goldsmith SQ VRB — sqLineVrbId routes goldsmith', testSqLineRouting],
     ['Goldsmith SQ VRB — voiceRuleBundle wired', testBundleWired],
     ['Goldsmith SQ VRB — prior VRBs σ unchanged', testPriorVrbsUnchanged],
+    ['Goldsmith SQ VRB — fingerprintReceipts ≥35', testFingerprintReceiptCount],
+    ['Goldsmith SQ VRB — WORK_* receipt present', testFingerprintWorkReceipt],
+    ['Goldsmith SQ VRB — DIFF_* receipt present', testFingerprintDiffReceipt],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }
 

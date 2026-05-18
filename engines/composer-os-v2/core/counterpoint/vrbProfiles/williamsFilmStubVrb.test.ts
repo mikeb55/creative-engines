@@ -186,6 +186,20 @@ function testSqLineRouting(): boolean {
   return sqLineVrbIdForSqToBb('williams', 'schneider') === 'williams';
 }
 
+function testFingerprintReceiptCount(): boolean {
+  return (getVoiceRuleBundle('williams').orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 35;
+}
+
+function testFingerprintWorkReceipt(): boolean {
+  const receipts = getVoiceRuleBundle('williams').orchestrationPolicy.fingerprintReceipts ?? [];
+  return receipts.some((r) => r.includes('JW_WORK_'));
+}
+
+function testFingerprintDiffReceipt(): boolean {
+  const receipts = getVoiceRuleBundle('williams').orchestrationPolicy.fingerprintReceipts ?? [];
+  return receipts.some((r) => r.includes('JW_DIFF_'));
+}
+
 export function runWilliamsFilmStubVrbTests(): { name: string; ok: boolean }[] {
   return [
     ['Williams SQ VRB — profile loads', testProfileLoads],
@@ -208,6 +222,9 @@ export function runWilliamsFilmStubVrbTests(): { name: string; ok: boolean }[] {
     ['Williams SQ VRB — picker enabled (UI after Morricone)', testUiPickerWilliams],
     ['Williams SQ VRB — sqLineVrbId routes williams', testSqLineRouting],
     ['Williams SQ VRB — prior VRBs unchanged', testPriorVrbsUnchanged],
+    ['Williams SQ VRB — fingerprintReceipts ≥35', testFingerprintReceiptCount],
+    ['Williams SQ VRB — WORK_* receipt present', testFingerprintWorkReceipt],
+    ['Williams SQ VRB — DIFF_* receipt present', testFingerprintDiffReceipt],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }
 

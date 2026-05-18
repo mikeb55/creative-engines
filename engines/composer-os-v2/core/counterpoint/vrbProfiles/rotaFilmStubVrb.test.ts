@@ -193,6 +193,20 @@ function testBundleWired(): boolean {
   return getVoiceRuleBundle('rota').sqVrbProfileId === 'rota';
 }
 
+function testFingerprintReceiptCount(): boolean {
+  return (getVoiceRuleBundle('rota').orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 35;
+}
+
+function testFingerprintWorkReceipt(): boolean {
+  const receipts = getVoiceRuleBundle('rota').orchestrationPolicy.fingerprintReceipts ?? [];
+  return receipts.some((r) => r.includes('NR_WORK_'));
+}
+
+function testFingerprintDiffReceipt(): boolean {
+  const receipts = getVoiceRuleBundle('rota').orchestrationPolicy.fingerprintReceipts ?? [];
+  return receipts.some((r) => r.includes('NR_DIFF_'));
+}
+
 export function runRotaFilmStubVrbTests(): { name: string; ok: boolean }[] {
   return [
     ['Rota SQ VRB — profile loads', testProfileLoads],
@@ -219,6 +233,9 @@ export function runRotaFilmStubVrbTests(): { name: string; ok: boolean }[] {
     ['Rota SQ VRB — sqLineVrbId routes rota', testSqLineRouting],
     ['Rota SQ VRB — voiceRuleBundle wired', testBundleWired],
     ['Rota SQ VRB — prior VRBs unchanged', testPriorVrbsUnchanged],
+    ['Rota SQ VRB — fingerprintReceipts ≥35', testFingerprintReceiptCount],
+    ['Rota SQ VRB — WORK_* receipt present', testFingerprintWorkReceipt],
+    ['Rota SQ VRB — DIFF_* receipt present', testFingerprintDiffReceipt],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }
 

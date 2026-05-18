@@ -3,18 +3,20 @@
  * Receipts padded to ≥35 lines each via fillReceipts for GCE / planning density.
  */
 
+import { BADALAMENTI_THREE_TIER_TEXTURE } from '../counterpoint/vrbProfiles/badalamentiFilmStubVrb';
+import { BADALAMENTI_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/badalamentiVrbFingerprints';
+import { GLASS_FILM_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/glassFilmVrbFingerprints';
+import { GOLDSMITH_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/goldsmithVrbFingerprints';
+import { HERRMANN_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/herrmannVrbFingerprints';
+import { MORRICONE_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/morriconeVrbFingerprints';
+import { ROTA_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/rotaVrbFingerprints';
+import { WILLIAMS_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/williamsVrbFingerprints';
+import { ZIMMER_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/zimmerVrbFingerprints';
 import type { DissonanceProfile } from '../counterpoint/abstractLineSet';
+import { fillReceipts } from './fillVrbReceipts';
 import type { VoiceRuleBundle } from './voiceRuleBundle';
 
-function fillReceipts(prefix: string, family: string, base: readonly string[], target = 40): string[] {
-  const out = [...base];
-  for (let i = out.length + 1; i <= target; i++) {
-    out.push(
-      `${prefix}_${String(i).padStart(2, '0')} — ${family}: planning anchor ${i} (orchestration / harmony / rhythm fingerprint slot).`,
-    );
-  }
-  return out;
-}
+export { fillReceipts } from './fillVrbReceipts';
 
 const DF_BASE = [
   'DF_HARM_01 — Non-functional chromatic side-slips; extended dominants; avoid pure blues turnaround as default spine.',
@@ -561,7 +563,11 @@ export const MESSIAEN: VoiceRuleBundle = {
   },
 };
 
-function filmStub(voiceId: string): VoiceRuleBundle {
+function filmStub(
+  voiceId: string,
+  fingerprintReceipts: readonly string[],
+  extras: Partial<VoiceRuleBundle> = {},
+): VoiceRuleBundle {
   return {
     voiceId,
     harmonicRhythm: {
@@ -588,7 +594,7 @@ function filmStub(voiceId: string): VoiceRuleBundle {
       anchorToneCount: 2,
       mutateSingleVoiceAtTime: false,
       allowCollectiveImprov: false,
-      fingerprintReceipts: [],
+      fingerprintReceipts,
     },
     formPolicy: {
       narrativeArc: 'suite',
@@ -599,17 +605,20 @@ function filmStub(voiceId: string): VoiceRuleBundle {
       resolveParallels: true,
       maxVoiceOverlap: 6,
     },
+    ...extras,
   };
 }
 
-export const HERRMANN_FILM_STUB = filmStub('herrmann');
-export const WILLIAMS_FILM_STUB = filmStub('williams');
-export const MORRICONE_FILM_STUB = filmStub('morricone');
-export const ROTA_FILM_STUB = filmStub('nino_rota');
-export const GOLDSMITH_FILM_STUB = filmStub('jerry_goldsmith');
+export const HERRMANN_FILM_STUB = filmStub('herrmann', HERRMANN_VRB_FINGERPRINT_RECEIPTS);
+export const WILLIAMS_FILM_STUB = filmStub('williams', WILLIAMS_VRB_FINGERPRINT_RECEIPTS);
+export const MORRICONE_FILM_STUB = filmStub('morricone', MORRICONE_VRB_FINGERPRINT_RECEIPTS);
+export const ROTA_FILM_STUB = filmStub('nino_rota', ROTA_VRB_FINGERPRINT_RECEIPTS);
+export const GOLDSMITH_FILM_STUB = filmStub('jerry_goldsmith', GOLDSMITH_VRB_FINGERPRINT_RECEIPTS);
 /** Distinct id from minimalist `philip_glass` → Reich/Glass SQ bundle alias. */
-export const PHILIP_GLASS_FILM_STUB = filmStub('philip_glass_screen');
-export const HANS_ZIMMER_FILM_STUB = filmStub('hans_zimmer');
-export const BADALAMENTI_FILM_STUB = filmStub('angelo_badalamenti');
-export const WEBERN_FILM_STUB = filmStub('webern');
-export const JONI_MITCHELL_FILM_STUB = filmStub('joni_mitchell');
+export const PHILIP_GLASS_FILM_STUB = filmStub('philip_glass_screen', GLASS_FILM_VRB_FINGERPRINT_RECEIPTS);
+export const HANS_ZIMMER_FILM_STUB = filmStub('hans_zimmer', ZIMMER_VRB_FINGERPRINT_RECEIPTS);
+export const BADALAMENTI_FILM_STUB = filmStub('angelo_badalamenti', BADALAMENTI_VRB_FINGERPRINT_RECEIPTS, {
+  badalamentiThreeTierTexture: BADALAMENTI_THREE_TIER_TEXTURE,
+});
+export const WEBERN_FILM_STUB = filmStub('webern', []);
+export const JONI_MITCHELL_FILM_STUB = filmStub('joni_mitchell', []);
