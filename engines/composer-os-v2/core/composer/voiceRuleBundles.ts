@@ -24,6 +24,8 @@ import { applySatieSqVrbProfile } from '../counterpoint/vrbProfiles/satieSqVrb';
 import { applyColePorterSqVrbProfile } from '../counterpoint/vrbProfiles/colePorterSqVrb';
 import { applyGershwinSqVrbProfile } from '../counterpoint/vrbProfiles/gershwinSqVrb';
 import { applyArvoPartSqVrbProfile } from '../counterpoint/vrbProfiles/partSqVrb';
+import { applyDebussySqVrbProfile } from '../counterpoint/vrbProfiles/debussySqVrb';
+import { applyBartokSqVrbProfile } from '../counterpoint/vrbProfiles/bartokSqVrb';
 import { CRUMB_BLACK_ANGELS_SQ_VRB_FINGERPRINT_RECEIPTS } from './crumbBlackAngelsSqVrbFingerprints';
 import { applyHerrmannFilmStubVrbProfile } from '../counterpoint/vrbProfiles/herrmannFilmStubVrb';
 import { applyMorriconeFilmStubVrbProfile } from '../counterpoint/vrbProfiles/morriconeFilmStubVrb';
@@ -367,7 +369,7 @@ export const NEUTRAL_VOICE_RULE_BUNDLE: VoiceRuleBundle = {
   },
 };
 
-const BARTOK: VoiceRuleBundle = {
+const BARTOK_STUB: VoiceRuleBundle = {
   voiceId: 'bartok',
   harmonicRhythm: {
     minChordDurationBars: 0,
@@ -407,19 +409,6 @@ const BARTOK: VoiceRuleBundle = {
     resolveParallels: false,
     maxVoiceOverlap: 7,
   },
-  contrapuntalLinePolicy: {
-    enabled: true,
-    dissonanceProfile: {
-      allowedIntervals: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-      forbiddenIntervals: [6],
-      parallelFifthsAllowed: false,
-      parallelOctavesAllowed: false,
-      resolveByStep: false,
-    },
-    preferredImitationTypes: ['strict', 'invertible'],
-    rhythmicIndependenceRequired: true,
-    lineRoleAssignment: 'fixed',
-  },
   duoVoicePolicy: {
     guitarSource: 'soprano_line',
     bassSource: 'bass_line',
@@ -428,6 +417,8 @@ const BARTOK: VoiceRuleBundle = {
     intervalPreference: 'ic1_tritone',
   },
 };
+
+const BARTOK = applyBartokSqVrbProfile(BARTOK_STUB);
 
 const RAVEL: VoiceRuleBundle = applyRavelSqVrbProfile({
   voiceId: 'ravel',
@@ -2009,7 +2000,7 @@ const DUKE_ELLINGTON: VoiceRuleBundle = {
 };
 
 /** Debussy — impressionist parallel strata / registral bell frames (`debussySlice.ts` harmony `db:*` + solver VL posture). */
-const DEBUSSY: VoiceRuleBundle = {
+const DEBUSSY_STUB: VoiceRuleBundle = {
   voiceId: 'debussy',
   harmonicRhythm: {
     minChordDurationBars: 1,
@@ -2066,7 +2057,6 @@ const DEBUSSY: VoiceRuleBundle = {
     resolveParallels: false,
     maxVoiceOverlap: 6,
   },
-  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_COLOR,
   duoVoicePolicy: {
     guitarSource: 'soprano_line',
     bassSource: 'bass_line',
@@ -2075,6 +2065,8 @@ const DEBUSSY: VoiceRuleBundle = {
     intervalPreference: 'whole_tone_pentatonic',
   },
 };
+
+const DEBUSSY = applyDebussySqVrbProfile(DEBUSSY_STUB);
 
 const RADIOHEAD_FINGERPRINT_RECEIPTS = [
   'RH_HARM_01 — Modal centres, not functional keys: Dorian, Aeolian, and Mixolydian are preferred over strict major/minor.',

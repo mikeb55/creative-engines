@@ -91,6 +91,7 @@ export function resolveSqToBbLengthFromUi(
 }
 
 export type SqToBbSqComposerId =
+  | 'arvo_part'
   | 'bartok'
   | 'ravel'
   | 'herrmann'
@@ -107,7 +108,8 @@ export type SqToBbSqComposerId =
   | 'ligeti'
   | 'satie'
   | 'cole_porter'
-  | 'gershwin';
+  | 'gershwin'
+  | 'debussy';
 export type SqToBbSqComposer = SqToBbSqComposerId | null;
 
 export type SqToBbSectionLabelMode = 'song' | 'instrumental';
@@ -125,7 +127,9 @@ export const SQ_TO_BB_SQ_COMPOSER_OPTIONS: ReadonlyArray<{
   enabled: boolean;
 }> = [
   { id: null, label: '— None (default) —', enabled: true },
+  { id: 'arvo_part', label: 'Pärt', enabled: true },
   { id: 'bartok', label: 'Bartók', enabled: true },
+  { id: 'debussy', label: 'Debussy', enabled: true },
   { id: 'ravel', label: 'Ravel', enabled: true },
   { id: 'herrmann', label: 'Herrmann', enabled: true },
   { id: 'morricone', label: 'Morricone', enabled: true },

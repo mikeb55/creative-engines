@@ -166,7 +166,8 @@ export type SqVrbPhraseArticulation =
   | 'aphoristic_cell_silence_bounded'
   | 'four_bar_periodic_suspended_non_resolving'
   | 'micropolyphonic_stasis'
-  | 'non_resolving';
+  | 'non_resolving'
+  | 'arch';
 
 /** ContrapuntalLineEngine — VRB hooks for line-first generation + post-filter (Pass 2 stub). */
 export interface ContrapuntalLinePolicy {
@@ -185,7 +186,7 @@ export interface ContrapuntalLinePolicy {
   /** Zimmer passacaglia — ground bass + progressive voice entry (sub-mode, not separate vrbId). */
   passacagliaMode?: boolean;
   /** Ligeti — canonic independence; not conventional parallel/contrary pairing. */
-  parallelMotionPolicy?: 'avoid' | 'allow';
+  parallelMotionPolicy?: 'avoid' | 'allow' | 'restrict';
   /** Ligeti — large leaps only at structural boundaries. */
   leapPolicy?: 'structural_only' | 'free';
   /** Ligeti — ic1/ic2-dominant vertical vocabulary. */

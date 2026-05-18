@@ -48,7 +48,8 @@ export type SqVrbPhraseArticulation =
   | 'aphoristic_cell_silence_bounded'
   | 'four_bar_periodic_suspended_non_resolving'
   | 'micropolyphonic_stasis'
-  | 'non_resolving';
+  | 'non_resolving'
+  | 'arch';
 
 /** Badalamenti three-tier texture — melody / chromatic inner cushion / bass pedal. */
 export interface SqBadalamentiThreeTierTexture {
@@ -118,7 +119,19 @@ export type SqVrbChordVocabularyTag =
   | 'pandiatonic_chord'
   | 'modal_tonic_triad'
   | 'modal_open_fifth'
-  | 'modal_subtonic';
+  | 'modal_subtonic'
+  | 'whole_tone_chord'
+  | 'added_ninth'
+  | 'parallel_planing'
+  | 'unresolved_dominant'
+  | 'pentatonic_cluster'
+  | 'chromatic_cluster'
+  | 'minor_second_stack'
+  | 'tritone_pair'
+  | 'modal_minor'
+  | 'folk_modal'
+  | 'lydian_mode_chord'
+  | 'octatonic_chord';
 
 /** GCE phrase-grammar mode for SQ Harmonic Voice profiles. */
 export type SqVrbGcePhraseGrammarMode =
@@ -135,7 +148,8 @@ export type SqVrbGcePhraseGrammarMode =
   | 'aphoristic_cell_silence_bounded'
   | 'four_bar_periodic_suspended_non_resolving'
   | 'micropolyphonic_stasis'
-  | 'non_resolving';
+  | 'non_resolving'
+  | 'arch';
 
 /** Per-VRB GCE Melodic Identity / Phrase Grammar tweaks (SQ→BB path). */
 export interface SqVrbGceScorerAdjustments {
@@ -275,6 +289,22 @@ export interface SqVrbGceScorerAdjustments {
   densityTransformationCredit?: number;
   /** Ligeti — penalize folk/modal inflection. */
   folkModalPenalty?: number;
+  /** PG/MI: credit parallel planed triad/seventh stacks. */
+  parallelPlaningCredit?: number;
+  /** PG/MI: whole-tone local field colour. */
+  wholeTonesCredit?: number;
+  /** PG/MI: add9 / maj9 extension surface. */
+  addedNinthCredit?: number;
+  /** PG/MI: impressionist non-functional colour harmony. */
+  coloristicHarmonyCredit?: number;
+  /** PG/MI: folk-modal pitch collections. */
+  folkModalCredit?: number;
+  /** PG/MI: tritone axis / dyad emphasis. */
+  tritoneCredit?: number;
+  /** PG/MI: high dissonance tolerance at seams. */
+  dissonanceToleranceCredit?: number;
+  /** PG/MI: aksak / additive rhythmic grouping. */
+  asymmetricRhythmCredit?: number;
 }
 
 /** SQ Harmonic Voice profile — contrapuntal policy + BB translation hints. */

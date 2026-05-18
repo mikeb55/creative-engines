@@ -1707,6 +1707,22 @@ export function rhythmExpectationForVrb(vrbId: string): RhythmExpectation | unde
       grooveStabilityTolerance: 0.98,
     };
   }
+  if (id === 'debussy') {
+    return {
+      placementMode: 'grid',
+      targetOffbeatWindow: [0.48, 0.52],
+      anticipationRateMax: 0.08,
+      grooveStabilityTolerance: 0.94,
+    };
+  }
+  if (id === 'bartok') {
+    return {
+      placementMode: 'grid',
+      targetOffbeatWindow: [0.49, 0.51],
+      anticipationRateMax: 0.04,
+      grooveStabilityTolerance: 0.96,
+    };
+  }
   if (id === 'reich_glass') {
     return { placementMode: 'grid' };
   }
