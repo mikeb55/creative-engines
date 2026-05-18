@@ -307,6 +307,34 @@ export function buildChorusQualityGate(params: {
   };
 }
 
+/**
+ * First weak adjacent-chorus pair → warn only; second+ weak pairs → throw (persistent weak variation).
+ */
+export function applyChorusQualityGate(gate: ChorusQualityGate): string[] {
+  const warnings: string[] = [];
+  if (gate.passed) return warnings;
+  const failed = gate.transitions.filter((transition) => !transition.passed);
+  if (failed.length === 0) return warnings;
+
+  const first = failed[0]!;
+  const warnMsg = `Vault multi-chorus quality: weak transition ${first.fromChorusIndex}->${first.toChorusIndex} (${first.changedDimensionCount}/${gate.minChangedDimensions} dimension(s) changed)`;
+  warnings.push(warnMsg);
+  console.warn(`[vault-chorus] ${warnMsg}`);
+
+  if (failed.length > 1) {
+    const details = failed
+      .slice(1)
+      .map(
+        (transition) =>
+          `${transition.fromChorusIndex}->${transition.toChorusIndex}:${transition.changedDimensionCount}/${gate.minChangedDimensions}`
+      )
+      .join(', ');
+    throw new Error(`Vault multi-chorus quality gate failed: ${details}`);
+  }
+  return warnings;
+}
+
+/** @deprecated Prefer {@link applyChorusQualityGate}; kept for tests that expect throw-on-any-failure. */
 export function assertChorusQualityGate(gate: ChorusQualityGate): void {
   if (gate.passed) return;
   const failed = gate.transitions.filter((transition) => !transition.passed);

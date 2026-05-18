@@ -49,8 +49,10 @@ export type ChorusArcStripProps = {
   output: IRealVaultOutput | null;
   locked: boolean[];
   onToggleLock: (chorusIndex: number) => void;
-  /** Optional; not used — drag is local preview only (no regeneration). */
-  onRegenerateChorus?: (chorusIndex: number) => void;
+  /** Drag-release: regenerate one chorus with user tension (0–1). */
+  onRegenerateChorus?: (chorusIndex: number, tensionOverride: number) => void | Promise<void>;
+  /** Chorus index currently regenerating (loading overlay). */
+  regeneratingChorusIndex?: number | null;
 };
 
 export function ChorusArcStrip({
@@ -59,12 +61,14 @@ export function ChorusArcStrip({
   output,
   locked,
   onToggleLock,
+  onRegenerateChorus,
+  regeneratingChorusIndex = null,
 }: ChorusArcStripProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const [width, setWidth] = useState(320);
   const [dragging, setDragging] = useState<number | null>(null);
-  /** Local-only tension edits (0–1); cleared when vault output or chorus count changes. */
+  const dragTensionRef = useRef<number | null>(null);
   const [editedTension, setEditedTension] = useState<Partial<Record<number, number>>>({});
 
   useEffect(() => {
@@ -90,9 +94,7 @@ export function ChorusArcStrip({
   }, [output, chorusCount]);
 
   const displayTensions = useMemo(() => {
-    return tensions.map((t, i) =>
-      editedTension[i] !== undefined ? editedTension[i]! : t
-    );
+    return tensions.map((t, i) => (editedTension[i] !== undefined ? editedTension[i]! : t));
   }, [tensions, editedTension]);
 
   const yFromClient = useCallback((clientY: number) => {
@@ -107,10 +109,17 @@ export function ChorusArcStrip({
     if (dragging === null) return;
     const move = (ev: PointerEvent) => {
       const t = yFromClient(ev.clientY);
+      dragTensionRef.current = t;
       setEditedTension((prev) => ({ ...prev, [dragging]: t }));
     };
     const up = () => {
+      const ix = dragging;
+      const t = dragTensionRef.current;
       setDragging(null);
+      dragTensionRef.current = null;
+      if (ix !== null && t !== undefined && onRegenerateChorus && !locked[ix]) {
+        void onRegenerateChorus(ix, t);
+      }
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
@@ -118,19 +127,18 @@ export function ChorusArcStrip({
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
     };
-  }, [dragging, yFromClient]);
+  }, [dragging, yFromClient, locked, onRegenerateChorus]);
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent, chorusIndex: number) => {
-      if (locked[chorusIndex] || !output) return;
+      if (locked[chorusIndex] || !output || regeneratingChorusIndex !== null) return;
       e.preventDefault();
+      const t = yFromClient(e.clientY);
+      dragTensionRef.current = t;
       setDragging(chorusIndex);
-      setEditedTension((prev) => ({
-        ...prev,
-        [chorusIndex]: yFromClient(e.clientY),
-      }));
+      setEditedTension((prev) => ({ ...prev, [chorusIndex]: t }));
     },
-    [locked, output, yFromClient]
+    [locked, output, regeneratingChorusIndex, yFromClient]
   );
 
   if (!output || chorusCount < 1) return null;
@@ -145,14 +153,22 @@ export function ChorusArcStrip({
     return { x, y, t, i };
   });
   const lineD = pts.map((p) => `${p.x},${p.y}`).join(' ');
-
   const hook = output.hookIdentity;
+  const busy = regeneratingChorusIndex !== null;
 
   return (
-    <div ref={wrapRef} className="mt-3 w-full max-w-3xl space-y-2">
+    <div ref={wrapRef} className="relative mt-3 w-full max-w-3xl space-y-2">
+      {busy ? (
+        <div
+          className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded bg-zinc-950/55 text-xs font-medium text-zinc-300"
+          aria-live="polite"
+        >
+          Regenerating C{(regeneratingChorusIndex ?? 0) + 1}…
+        </div>
+      ) : null}
       <svg
         ref={svgRef}
-        className="block w-full touch-none select-none text-zinc-500"
+        className={`block w-full touch-none select-none text-zinc-500 ${busy ? 'opacity-50' : ''}`}
         width={width}
         height={h}
         viewBox={`0 0 ${width} ${h}`}
@@ -172,7 +188,7 @@ export function ChorusArcStrip({
             cx={p.x}
             cy={p.y}
             r={8}
-            className={`${tensionNodeFill(p.t)} ${locked[p.i] ? 'cursor-not-allowed opacity-40' : 'cursor-ns-resize'}`}
+            className={`${tensionNodeFill(p.t)} ${locked[p.i] || busy ? 'cursor-not-allowed opacity-40' : 'cursor-ns-resize'}`}
             stroke="rgb(24 24 27)"
             strokeWidth={1}
             onPointerDown={(e) => handlePointerDown(e, p.i)}

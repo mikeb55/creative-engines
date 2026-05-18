@@ -13,21 +13,24 @@ import { mapChordToVaultType } from './chordSymbolMapper';
 import { parseIRealProInput } from './irealProAdapter';
 import type { ParsedChart } from './parsedChart';
 import {
-  assertChorusQualityGate,
+  applyChorusQualityGate,
   buildChorusQualityGate,
   buildHookIdentityTracker,
   buildPhraseContoursForBars,
   buildTensionProgression,
+  type ChorusTensionProgression,
   phraseContourForBar,
   type ChorusQualityGate,
-  type ChorusTensionProgression,
   type PhraseContourTag,
   type VaultHookIdentity,
 } from './vaultChorusPhraseDiagnostics';
-import { applyVaultTensionProgressionShaping } from './vaultTensionShaping';
+import {
+  applyVaultTensionProgressionShaping,
+  applyVaultTensionProgressionShapingForChorus,
+} from './vaultTensionShaping';
 
 /** Per-bar layer choice when restating the seed motif (Build F → iReal melody reuse). */
-const MELODY_MOTIF_TENSION_CYCLE: readonly TensionState[] = [
+export const MELODY_MOTIF_TENSION_CYCLE: readonly TensionState[] = [
   'primary',
   'tension',
   'chaos',
@@ -221,6 +224,8 @@ export type IRealVaultOutput = {
   tensionProgression?: ChorusTensionProgression;
   /** Multi-chorus quality gate: each adjacent chorus transition must change at least two dimensions. */
   chorusQualityGate?: ChorusQualityGate;
+  /** First weak adjacent-chorus transition only (logged); see {@link applyChorusQualityGate}. */
+  chorusQualityWarnings?: string[];
 };
 
 /** Options for {@link generateVaultFromParsedChart} / iReal / paste / PDF vault pipelines. */
@@ -253,6 +258,14 @@ function resolveChorusCount(raw: unknown): number {
   const n = typeof raw === 'number' ? raw : Number(raw);
   if (!Number.isFinite(n) || n < 1) return 1;
   return Math.min(64, Math.floor(n));
+}
+
+/** Melody motif tension-cycle phase offset per chorus (`sonic_youth` holds at 0). */
+export function tensionCycleRotationForChorus(
+  chorusIndex: number,
+  songwriterStyleId?: string
+): number {
+  return songwriterStyleId === 'sonic_youth' ? 0 : chorusIndex;
 }
 
 function generateVaultBarsSinglePass(params: {
@@ -410,7 +423,7 @@ export function generateVaultFromParsedChart(chart: ParsedChart, options?: Vault
       chorusIndex,
     });
 
-    const tensionCycleRotation = skipChorusTensionAdvance ? 0 : chorusIndex;
+    const tensionCycleRotation = tensionCycleRotationForChorus(chorusIndex, options?.songwriterStyleId);
 
     const chunkNotes =
       mode === 'melody'
@@ -480,7 +493,8 @@ export function generateVaultFromParsedChart(chart: ParsedChart, options?: Vault
     barsPerChorus,
     chorusCount,
   });
-  assertChorusQualityGate(chorusQualityGate);
+  const chorusQualityWarnings =
+    chorusCount < 2 ? [] : applyChorusQualityGate(chorusQualityGate);
 
   return {
     title: chart.title,
@@ -495,6 +509,189 @@ export function generateVaultFromParsedChart(chart: ParsedChart, options?: Vault
     hookIdentity,
     tensionProgression: finalTensionProgression,
     chorusQualityGate,
+    ...(chorusQualityWarnings.length > 0 ? { chorusQualityWarnings } : {}),
+  };
+}
+
+/** Melody-mode tension layer for a post-seed bar (chorus-local bar index). */
+export function melodyMotifTensionStateForBar(
+  barInChorus: number,
+  seedBarInChorus: number,
+  tensionCycleRotation: number
+): TensionState {
+  if (barInChorus <= seedBarInChorus) {
+    return MELODY_MOTIF_TENSION_CYCLE[0]!;
+  }
+  const L = MELODY_MOTIF_TENSION_CYCLE.length;
+  const cycleIdx = ((barInChorus - seedBarInChorus - 1 + tensionCycleRotation) % L + L) % L;
+  return MELODY_MOTIF_TENSION_CYCLE[cycleIdx]!;
+}
+
+function contourHintsFromPriorNotes(
+  notes: ScoreNote[],
+  barsPerChorus: number,
+  priorChorusIndex: number
+): PhraseContourTag[] {
+  const hints: PhraseContourTag[] = [];
+  const base = priorChorusIndex * barsPerChorus;
+  for (let b = 0; b < barsPerChorus; b++) {
+    hints.push(phraseContourForBar(notes, base + b));
+  }
+  return hints;
+}
+
+/**
+ * Regenerate one chorus (raw riff + motif) and re-apply tension shaping for that slice only.
+ * Other choruses keep prior {@link IRealVaultOutput.generatedNotes}.
+ */
+export function regenerateVaultChorusWithTension(params: {
+  chart: ParsedChart;
+  prior: IRealVaultOutput;
+  options: VaultGenerationOptions;
+  chorusIndex: number;
+  tensionOverride: number;
+}): IRealVaultOutput {
+  const { chart, prior, options, chorusIndex, tensionOverride } = params;
+  const measures = chart.measures ?? [];
+  const barsPerChorus = measures.length;
+  if (barsPerChorus < 1) return prior;
+  const chorusCount = resolveChorusCount(options.chorusCount ?? Math.max(1, Math.floor(prior.bars / barsPerChorus)));
+  if (chorusIndex < 0 || chorusIndex >= chorusCount) return prior;
+
+  const mode: GenerationMode = options.mode ?? prior.mode ?? 'solo';
+  const profile = getProfileForMode(mode);
+  const riffStyleSolo = options.riffStyle ?? 'bebop-placement';
+  const baselineVaultRiffStyle = mode === 'melody' ? 'quadratonic' : riffStyleSolo;
+  const tuningId = options.tuningId ?? 'standard';
+  const explicitSeed =
+    options.seed != null && Number.isFinite(options.seed)
+      ? Math.floor(Number(options.seed))
+      : prior.seed;
+  const rngRoot =
+    explicitSeed !== undefined
+      ? deriveVaultRngRoot(explicitSeed, {
+          mode,
+          drift: String(options.drift ?? 'neutral'),
+          duoIntent: options.duoIntent,
+          riffStyle: options.riffStyle ?? '',
+          tuningId,
+          chorusCount,
+          songwriterStyleId: options.songwriterStyleId ?? '',
+        })
+      : null;
+  const skipChorusTensionAdvance = options.songwriterStyleId === 'sonic_youth';
+  const rawRiffOpt = options.riffStyle;
+  const triadPairStyleRotationEligible = rawRiffOpt === undefined || rawRiffOpt === 'triad-pair-pendulum';
+
+  let effectiveRiffStyleForPass = baselineVaultRiffStyle;
+  if (mode === 'solo' && triadPairStyleRotationEligible && !skipChorusTensionAdvance) {
+    effectiveRiffStyleForPass = TRIAD_PAIR_CHORUS_ROTATION[chorusIndex % TRIAD_PAIR_CHORUS_ROTATION.length]!;
+  }
+
+  const contourHintsPerBar =
+    chorusIndex > 0 ? contourHintsFromPriorNotes(prior.generatedNotes, barsPerChorus, chorusIndex - 1) : undefined;
+
+  const { generatedNotes, chordMappings } = generateVaultBarsSinglePass({
+    chart,
+    measures,
+    mode,
+    profile,
+    effectiveRiffStyle: effectiveRiffStyleForPass,
+    tuningId,
+    contourHintsPerBar,
+    rngRoot,
+    chorusIndex,
+  });
+
+  const tensionCycleRotation = tensionCycleRotationForChorus(chorusIndex, options.songwriterStyleId);
+  const chunkNotes =
+    mode === 'melody'
+      ? applyMelodyMotifReuseAcrossBars({
+          chart,
+          generatedNotes,
+          chordMappings,
+          barCount: barsPerChorus,
+          tensionCycleRotation,
+        })
+      : generatedNotes;
+
+  const chorusQuarterWidth = totalQuarterLengthForBars(chart, barsPerChorus);
+  const barLo = chorusIndex * barsPerChorus;
+  const barHi = barLo + barsPerChorus;
+  const beatOffsetGlobal = chorusIndex * chorusQuarterWidth;
+
+  const outsideNotes = prior.generatedNotes.filter((n) => n.barIndex < barLo || n.barIndex >= barHi);
+  const offsetChorusNotes = chunkNotes.map((n) => ({
+    ...n,
+    barIndex: n.barIndex + barLo,
+    startBeat: n.startBeat + beatOffsetGlobal,
+  }));
+
+  const outsideMappings = prior.chordMappings.filter((m) => m.barIndex < barLo || m.barIndex >= barHi);
+  const offsetMappings = chordMappings.map((m) => ({ ...m, barIndex: m.barIndex + barLo }));
+
+  let mergedNotes = [...outsideNotes, ...offsetChorusNotes].sort(
+    (a, b) => a.barIndex - b.barIndex || a.startBeat - b.startBeat
+  );
+  let mergedMappings = [...outsideMappings, ...offsetMappings].sort((a, b) => a.barIndex - b.barIndex);
+
+  const tensionProgression = buildTensionProgression({
+    phraseContours: buildPhraseContoursForBars(mergedNotes, barsPerChorus * chorusCount),
+    hookIdentity: buildHookIdentityTracker(mergedNotes, barsPerChorus, chorusCount),
+    barsPerChorus,
+    chorusCount,
+  });
+  const perChorus = [...tensionProgression.perChorus];
+  while (perChorus.length < chorusCount) perChorus.push(0.5);
+  perChorus[chorusIndex] = Math.min(1, Math.max(0, tensionOverride));
+  const tensionWithOverride: ChorusTensionProgression = { perChorus };
+
+  const reshaped = applyVaultTensionProgressionShapingForChorus({
+    notes: mergedNotes,
+    chordMappings: mergedMappings,
+    chart,
+    chorusIndex,
+    barsPerChorus,
+    tension: perChorus[chorusIndex]!,
+  });
+  mergedNotes = reshaped.notes;
+  mergedMappings = reshaped.chordMappings;
+
+  const totalBars = barsPerChorus * chorusCount;
+  const finalPhraseContours = buildPhraseContoursForBars(mergedNotes, totalBars);
+  const hookIdentity = buildHookIdentityTracker(mergedNotes, barsPerChorus, chorusCount);
+  const finalTensionProgression = buildTensionProgression({
+    phraseContours: finalPhraseContours,
+    hookIdentity,
+    barsPerChorus,
+    chorusCount,
+  });
+  finalTensionProgression.perChorus[chorusIndex] = perChorus[chorusIndex]!;
+
+  const chorusQualityGate = buildChorusQualityGate({
+    notes: mergedNotes,
+    phraseContours: finalPhraseContours,
+    tensionProgression: finalTensionProgression,
+    barsPerChorus,
+    chorusCount,
+  });
+  const chorusQualityWarnings =
+    chorusCount < 2 ? [] : applyChorusQualityGate(chorusQualityGate);
+
+  return {
+    title: prior.title,
+    key: prior.key,
+    bars: totalBars,
+    generatedNotes: mergedNotes,
+    chordMappings: mergedMappings,
+    unmappedChords: prior.unmappedChords,
+    mode,
+    ...(explicitSeed !== undefined ? { seed: explicitSeed } : {}),
+    phraseContours: finalPhraseContours,
+    hookIdentity,
+    tensionProgression: finalTensionProgression,
+    chorusQualityGate,
+    ...(chorusQualityWarnings.length > 0 ? { chorusQualityWarnings } : {}),
   };
 }
 

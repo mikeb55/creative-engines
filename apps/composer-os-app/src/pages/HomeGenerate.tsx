@@ -110,6 +110,7 @@ import {
   inspectChordSymbol,
   inspectChordToMusicXml,
   remixSeed,
+  remixVaultChorusTension,
   vaultRiffScoreNotesToMusicXml,
   type ChordInspectorResult,
   type ChorusTensionProgression,
@@ -2166,6 +2167,8 @@ export function HomeGenerate({
     'bebop-placement' | 'quadratonic' | 'dyad-seesaw' | 'triad-pair-pendulum' | 'pedal-string'
   >('bebop-placement');
   const [pdfVaultDrift, setPdfVaultDrift] = useState<EmotionalDrift>('neutral');
+  const [pdfVaultChorusCount, setPdfVaultChorusCount] = useState(1);
+  const [vaultChorusRegenIx, setVaultChorusRegenIx] = useState<number | null>(null);
   const [pdfVaultOutput, setPdfVaultOutput] = useState<IRealVaultOutput | null>(null);
   const [pdfVaultBusy, setPdfVaultBusy] = useState(false);
   const [pdfVaultError, setPdfVaultError] = useState<string | null>(null);
@@ -2254,6 +2257,33 @@ export function HomeGenerate({
       return null;
     }
   }, [chordPasteText, chordPasteKey, chordPasteTimeSigId, chordPasteTempo]);
+
+  const runVaultChorusTensionRegen = useCallback(
+    async (
+      chart: ParsedChart,
+      output: IRealVaultOutput,
+      runOptions: VaultGenerationOptions,
+      setOutput: (next: IRealVaultOutput) => void,
+      chorusIndex: number,
+      tensionOverride: number
+    ) => {
+      if (runOptions.seed == null) return;
+      setVaultChorusRegenIx(chorusIndex);
+      try {
+        const next = remixVaultChorusTension(
+          chart,
+          output,
+          { seed: runOptions.seed, options: runOptions },
+          chorusIndex,
+          tensionOverride
+        );
+        setOutput(next);
+      } finally {
+        setVaultChorusRegenIx(null);
+      }
+    },
+    []
+  );
 
   const chordInspectorReharmTopEight = useMemo((): ReharmCandidate[] => {
     if (!chordInspectorResult || !chordInspectorReharmPanelOpen) return [];
@@ -6968,6 +6998,7 @@ export function HomeGenerate({
               barsPerChorus={chordPastePreviewChart.measures.length}
               output={chordPasteOutput}
               locked={boolArrayToLength(chordPasteChorusLocks, chordPasteChorusCount)}
+              regeneratingChorusIndex={vaultChorusRegenIx}
               onToggleLock={(chorusIndex) => {
                 setChordPasteChorusLocks((prev) => {
                   const next = boolArrayToLength(prev, chordPasteChorusCount);
@@ -6975,6 +7006,19 @@ export function HomeGenerate({
                   return next;
                 });
               }}
+              onRegenerateChorus={
+                chordPasteVaultLastRunOptions?.seed != null
+                  ? (chorusIndex, tensionOverride) =>
+                      void runVaultChorusTensionRegen(
+                        chordPastePreviewChart,
+                        chordPasteOutput,
+                        chordPasteVaultLastRunOptions,
+                        setChordPasteOutput,
+                        chorusIndex,
+                        tensionOverride
+                      )
+                  : undefined
+              }
             />
           ) : null}
           {chordPastePreviewChart &&
@@ -7465,6 +7509,7 @@ export function HomeGenerate({
               barsPerChorus={iRealParsedChart.measures.length}
               output={iRealVaultOutput}
               locked={boolArrayToLength(iRealVaultChorusLocks, iRealVaultChorusCount)}
+              regeneratingChorusIndex={vaultChorusRegenIx}
               onToggleLock={(chorusIndex) => {
                 setIRealVaultChorusLocks((prev) => {
                   const next = boolArrayToLength(prev, iRealVaultChorusCount);
@@ -7472,6 +7517,19 @@ export function HomeGenerate({
                   return next;
                 });
               }}
+              onRegenerateChorus={
+                iRealVaultLastRunOptions?.seed != null
+                  ? (chorusIndex, tensionOverride) =>
+                      void runVaultChorusTensionRegen(
+                        iRealParsedChart,
+                        iRealVaultOutput,
+                        iRealVaultLastRunOptions,
+                        setIRealVaultOutput,
+                        chorusIndex,
+                        tensionOverride
+                      )
+                  : undefined
+              }
             />
           ) : null}
           <p style={{ margin: '0.45rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)', maxWidth: 520 }}>
@@ -8238,6 +8296,34 @@ export function HomeGenerate({
                 ))}
               </select>
             </div>
+            <div>
+              <label
+                htmlFor="co-pdf-choruses"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Choruses
+              </label>
+              <input
+                id="co-pdf-choruses"
+                type="number"
+                min={1}
+                max={4}
+                step={1}
+                value={pdfVaultChorusCount}
+                onChange={(e) =>
+                  setPdfVaultChorusCount(Math.min(4, Math.max(1, Math.floor(Number(e.target.value) || 1))))
+                }
+                disabled={pdfVaultBusy}
+                style={{
+                  width: '5rem',
+                  padding: '0.35rem 0.45rem',
+                  borderRadius: 6,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg)',
+                  color: 'var(--text)',
+                }}
+              />
+            </div>
           </div>
           <p style={{ margin: '0.45rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)', maxWidth: 520 }}>
             {VAULT_GENERATION_OPTIONS_HINT}
@@ -8267,7 +8353,7 @@ export function HomeGenerate({
                       tuningId: pdfVaultTuningId,
                       riffStyle: pdfVaultRiffStyle,
                       drift: pdfVaultDrift,
-                      chorusCount: 1,
+                      chorusCount: pdfVaultChorusCount,
                       seed: runSeed,
                       ...(presetId === 'song_mode'
                         ? {
@@ -8283,6 +8369,7 @@ export function HomeGenerate({
                       tuningId: pdfVaultTuningId,
                       riffStyle: pdfVaultRiffStyle,
                       drift: pdfVaultDrift,
+                      chorusCount: pdfVaultChorusCount,
                       seed: runSeed,
                       ...(presetId === 'song_mode'
                         ? {
@@ -8347,11 +8434,25 @@ export function HomeGenerate({
               </p>
               {pdfVaultParsedChart?.measures?.length ? (
                 <ChorusArcStrip
-                  chorusCount={1}
+                  chorusCount={pdfVaultChorusCount}
                   barsPerChorus={pdfVaultParsedChart.measures.length}
                   output={pdfVaultOutput}
-                  locked={[false]}
+                  locked={boolArrayToLength([], pdfVaultChorusCount)}
+                  regeneratingChorusIndex={vaultChorusRegenIx}
                   onToggleLock={() => {}}
+                  onRegenerateChorus={
+                    pdfVaultLastRunOptions?.seed != null && pdfVaultParsedChart
+                      ? (chorusIndex, tensionOverride) =>
+                          void runVaultChorusTensionRegen(
+                            pdfVaultParsedChart,
+                            pdfVaultOutput,
+                            pdfVaultLastRunOptions,
+                            setPdfVaultOutput,
+                            chorusIndex,
+                            tensionOverride
+                          )
+                      : undefined
+                  }
                 />
               ) : null}
               {pdfVaultDual ? (

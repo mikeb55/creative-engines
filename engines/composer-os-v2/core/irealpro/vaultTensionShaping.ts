@@ -237,3 +237,44 @@ export function applyVaultTensionProgressionShaping(params: {
   notes.sort((a, b) => a.barIndex - b.barIndex || a.startBeat - b.startBeat);
   return { notes, chordMappings };
 }
+
+/** Tension shaping for one chorus slice only (single-chorus regen; leaves other choruses untouched). */
+export function applyVaultTensionProgressionShapingForChorus(params: {
+  notes: ScoreNote[];
+  chordMappings: VaultChordMappingRow[];
+  chart: ParsedChart;
+  chorusIndex: number;
+  barsPerChorus: number;
+  tension: number;
+}): { notes: ScoreNote[]; chordMappings: VaultChordMappingRow[] } {
+  const { chart, chorusIndex, barsPerChorus, tension } = params;
+  let notes = params.notes.map((n) => ({ ...n }));
+  let chordMappings = params.chordMappings.map((m) => ({ ...m }));
+  const barLo = chorusIndex * barsPerChorus;
+  const barHi = barLo + barsPerChorus;
+  const chorusSlice = notes.filter((n) => n.barIndex >= barLo && n.barIndex < barHi);
+  const outside = notes.filter((n) => n.barIndex < barLo || n.barIndex >= barHi);
+
+  if (tension > HIGH_TENSION) {
+    const playableCount = chorusSlice.filter((n) => n.pitch > 0).length;
+    const targetAdds = Math.max(0, Math.round(playableCount * DENSITY_DELTA));
+    const shaped = applyHighTensionChorus(chart, chorusSlice, targetAdds);
+    notes = [...outside, ...shaped];
+    chordMappings = chordMappings.map((row) =>
+      row.barIndex >= barLo && row.barIndex < barHi
+        ? { ...row, vaultChordTypeId: nudgeVaultIdHigh(row.vaultChordTypeId) }
+        : row
+    );
+  } else if (tension < LOW_TENSION) {
+    const shaped = applyLowTensionChorus(chart, chorusSlice);
+    notes = [...outside, ...shaped];
+    chordMappings = chordMappings.map((row) =>
+      row.barIndex >= barLo && row.barIndex < barHi
+        ? { ...row, vaultChordTypeId: nudgeVaultIdLow(row.vaultChordTypeId) }
+        : row
+    );
+  }
+
+  notes.sort((a, b) => a.barIndex - b.barIndex || a.startBeat - b.startBeat);
+  return { notes, chordMappings };
+}

@@ -38,9 +38,11 @@ import { runSingerRangeValidationTests } from './singerRangeValidation.test';
 import { runProsodyPlannerTests } from './prosodyPlanner.test';
 import { runSongModeCompletionTests } from './songModeCompletion.test';
 import { runIndieArtPopPhaseATests } from './indieArtPopPhaseA.test';
+import { runVaultChorusQualityTests } from './vaultChorusQuality.test';
 import { runHarnessMain, type SuiteEntry } from './harness/runHarnessMain';
 
 const suites: SuiteEntry[] = [
+  { name: 'Vault multi-chorus quality', run: runVaultChorusQualityTests },
   { name: 'MusicXML harmony (kind/@text + degrees)', run: runChordSymbolMusicXmlHarmonyTests },
   { name: 'Chord semantics (unified)', run: runChordSemanticsTests },
   { name: 'Wyble Etude guitar pitch offset', run: runWybleEtudePitchOffsetTests },
