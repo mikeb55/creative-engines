@@ -100,7 +100,7 @@ function resolveSqLineVrbIdFromContextMap(
   vrbContextMap: VrbContextMap,
   styleProfile: SqToBbStyleProfileId,
 ): string {
-  // TODO Commit 4+5: replace with resolveVrbForBar when bar context is available at orchestration setup.
+  // Orchestration setup has no bar index — dominantVrb(sq_bb) fallback until per-bar scoring runs in GCE gates.
   const sqBb = vrbContextMap.get('sq_bb');
   if (sqBb) {
     const id = dominantVrb(sqBb);

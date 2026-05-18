@@ -12,13 +12,23 @@ import type { ScoreModel } from '../score-model/scoreModelTypes';
 import { isAllowedSongFormBarCount } from './songFormBarCounts';
 import { lockedHarmonyChordSymbolsEquivalent } from './chordProgressionParser';
 import { getChordForBar } from './harmonyResolution';
+import { buildSectionAwareHarmonySpine } from './harmonySpineSectionLoop';
+import { perSectionVrbResolutionEnabled } from '../counterpoint/vrbProfiles/vrbContextResolver';
 
 export type HarmonySpineProvenance = 'builtin' | 'slice' | 'locked' | 'vault';
 
 export type ResolvedHarmonyBar = {
+  bar?: number;
   symbol: string;
   provenance: HarmonySpineProvenance;
   sliceId?: string;
+  /** Last bar of a section (not final section). */
+  isPhraseBoundary?: boolean;
+  /** Seam / transition bar between adjacent section VRBs. */
+  isBoundaryBar?: boolean;
+  resolvedVrbId?: string;
+  voicing?: import('../composer/voiceLeadingSolver').VoicingCandidate;
+  usedEmergencyFallback?: boolean;
 };
 
 /** Future adapters (per-slice spine hooks) conform to this surface. */
@@ -105,9 +115,9 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   { match: (m) => m?.songwriterStyleId === 'frank_zappa', effKey: 'frankZappaEffectiveHarmonyBars', sliceId: 'frank_zappa' },
 ];
 
-function classifyAuthoritativeLayer(
+export function classifyAuthoritativeLayerForBar(
   barIndex: number,
-  context: CompositionContext
+  context: CompositionContext,
 ): Pick<ResolvedHarmonyBar, 'provenance' | 'sliceId'> {
   const tb = context.form.totalBars;
   const meta = context.generationMetadata;
@@ -140,13 +150,47 @@ function classifyAuthoritativeLayer(
   return { provenance: 'builtin' };
 }
 
+function spineCacheKey(context: CompositionContext): string {
+  const meta = context.generationMetadata;
+  return [
+    context.form.totalBars,
+    meta?.sqLineVrbId ?? '',
+    JSON.stringify(context.form.sections ?? []),
+    JSON.stringify(meta?.sqToBbVrbContextBySection ?? {}),
+  ].join('|');
+}
+
+function getOrBuildSpine(context: CompositionContext): ResolvedHarmonyBar[] {
+  const meta = context.generationMetadata as { sqToBbHarmonySpineCache?: { key: string; rows: ResolvedHarmonyBar[] } };
+  const key = spineCacheKey(context);
+  if (meta.sqToBbHarmonySpineCache?.key === key) {
+    return meta.sqToBbHarmonySpineCache.rows;
+  }
+  const rows = buildSectionAwareHarmonySpine(context);
+  meta.sqToBbHarmonySpineCache = { key, rows };
+  return rows;
+}
+
 /**
  * Delegates symbol resolution to {@link getChordForBar} (zero behavioural drift vs legacy call sites).
  */
 export function resolveBarSymbol(context: CompositionContext, bar: number): ResolvedHarmonyBar {
+  if (!perSectionVrbResolutionEnabled()) {
+    const symbol = getChordForBar(bar, context);
+    const layer = classifyAuthoritativeLayerForBar(bar, context);
+    return {
+      symbol,
+      provenance: layer.provenance,
+      sliceId: layer.sliceId,
+    };
+  }
+  const rows = getOrBuildSpine(context);
+  const hit = rows.find((r) => r.bar === bar);
+  if (hit) return hit;
   const symbol = getChordForBar(bar, context);
-  const layer = classifyAuthoritativeLayer(bar, context);
+  const layer = classifyAuthoritativeLayerForBar(bar, context);
   return {
+    bar,
     symbol,
     provenance: layer.provenance,
     sliceId: layer.sliceId,

@@ -27,7 +27,12 @@ import {
 import { extractQuartetFeatures } from './extractQuartetFeatures';
 import { quantizePhrasesForOrchestration } from './quantizePhrasesForOrchestration';
 import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
-import { readSqToBbVrbWire, resolveVrbForBar } from './vrbProfiles/vrbContextResolver';
+import {
+  perSectionVrbResolutionEnabled,
+  readSqToBbVrbWire,
+  resolveVrbForBar,
+} from './vrbProfiles/vrbContextResolver';
+import { resolveSqGceForBar } from '../gce/sqVrbGcePerBar';
 import {
   buildChordsForGceGate,
   buildFallbackChordsAndSectionsFromScore,
@@ -188,12 +193,23 @@ export function buildContrapuntalGceScoringOptions(
   const barForScoring =
     scoringBar ??
     Math.max(1, Math.min(context.form?.totalBars ?? lines.lengthBars, Math.floor(meso[0]!.startBeat) + 1));
-  const sqVrbId =
-    resolveVrbForBar(barForScoring, wire.contextMap, wire.globalFallback, wire.sections).vrbId ||
+  const fallbackVrbId =
     context.generationMetadata?.sqLineVrbId ||
     lines.styleSourceVrbId ||
     context.voiceBundle?.sqVrbProfileId ||
-    context.voiceBundle?.contrapuntalLinePolicy?.vrbId;
+    context.voiceBundle?.contrapuntalLinePolicy?.vrbId ||
+    '';
+  let sqVrbId =
+    resolveVrbForBar(barForScoring, wire.contextMap, wire.globalFallback, wire.sections).vrbId ||
+    fallbackVrbId;
+  let isBoundaryBar = false;
+  let sqGceAdjustmentsOverride: import('../counterpoint/vrbProfiles/sqVrbProfileTypes').SqVrbGceScorerAdjustments | undefined;
+  if (perSectionVrbResolutionEnabled()) {
+    const barGce = resolveSqGceForBar(barForScoring, context, wire.globalFallback || fallbackVrbId);
+    sqVrbId = barGce.sqVrbId || sqVrbId;
+    isBoundaryBar = barGce.isBoundaryBar;
+    sqGceAdjustmentsOverride = barGce.adjustments;
+  }
   const passacagliaMode = context.voiceBundle?.contrapuntalLinePolicy?.passacagliaMode === true;
   return {
     contrapuntalLinePolicy: true,
@@ -203,7 +219,10 @@ export function buildContrapuntalGceScoringOptions(
       cadenceStrength: m.cadenceStrength,
     })),
     cadenceTags: lines.cadenceTags ?? [],
+    scoringBar: barForScoring,
+    ...(isBoundaryBar ? { isBoundaryBar: true } : {}),
     ...(sqVrbId ? { sqVrbId } : {}),
+    ...(sqGceAdjustmentsOverride ? { sqGceAdjustmentsOverride } : {}),
     ...(chordTimelineSource ? { chordTimelineSource } : {}),
     ...(passacagliaMode ? { passacagliaMode: true } : {}),
   };

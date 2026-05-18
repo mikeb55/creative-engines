@@ -1,4 +1,5 @@
 import type { MelodicNote } from './gce_melody_eval';
+import type { SqVrbGceScorerAdjustments } from '../counterpoint/vrbProfiles/sqVrbProfileTypes';
 import type { FormMap } from '../compositionContext';
 import type { CadenceTag } from '../counterpoint/abstractLineSet';
 import type { PhraseCadenceStrength } from '../counterpoint/quartetFeatureTypes';
@@ -26,6 +27,12 @@ export interface ContrapuntalGceScoringOptions {
   chordTimelineSource?: 'user' | 'internal' | 'mixed';
   /** Zimmer passacaglia sub-mode — raises σ ceiling when ground bass + progressive entry. */
   passacagliaMode?: boolean;
+  /** Bar used for per-section SQ GCE resolution (Commit 4+5). */
+  scoringBar?: number;
+  /** Seam bar scored with merged adjacent VRB adjustments. */
+  isBoundaryBar?: boolean;
+  /** Pre-merged per-bar GCE adjustments (boundary bars). */
+  sqGceAdjustmentsOverride?: SqVrbGceScorerAdjustments;
 }
 
 /** Melodic line position in bar-offset space (matches meso span startBeat/endBeat). */
@@ -1123,11 +1130,12 @@ export function scoreMelodicIdentity(
 
   const contrapuntalSq =
     contrapuntal?.contrapuntalLinePolicy === true && (contrapuntal.mesoSpans?.length ?? 0) >= 2;
-  // TODO Commit 4+5: sqVrbId will be per-section here (from options, not a module singleton).
   const sqGce =
-    contrapuntalSq && contrapuntal.sqVrbId
-      ? getSqVrbGceAdjustments(contrapuntal.sqVrbId)
-      : undefined;
+    contrapuntalSq && contrapuntal.sqGceAdjustmentsOverride
+      ? contrapuntal.sqGceAdjustmentsOverride
+      : contrapuntalSq && contrapuntal.sqVrbId
+        ? getSqVrbGceAdjustments(contrapuntal.sqVrbId)
+        : undefined;
   const miSongwriterId =
     contrapuntalSq && contrapuntal.sqVrbId && SQ_VRB_MI_IDS.has(contrapuntal.sqVrbId)
       ? contrapuntal.sqVrbId
@@ -1935,8 +1943,11 @@ function scorePhraseGrammarContrapuntal(
     return scorePhraseGrammar(line);
   }
 
-  // TODO Commit 4+5: sqVrbId will be per-section here (from options, not a module singleton).
-  const sqGce = options.sqVrbId ? getSqVrbGceAdjustments(options.sqVrbId) : undefined;
+  const sqGce = options.sqGceAdjustmentsOverride
+    ? options.sqGceAdjustmentsOverride
+    : options.sqVrbId
+      ? getSqVrbGceAdjustments(options.sqVrbId)
+      : undefined;
   const ostinatoPg = sqGce?.phraseGrammarMode === 'ostinato_cell';
   const folkModalPg = sqGce?.phraseGrammarMode === 'folk_modal_suspended';
   const romanticPg = sqGce?.phraseGrammarMode === 'romantic_periodic_cadential';

@@ -18,14 +18,20 @@ import {
   buildSqToBbFormSections,
   normalizeSectionVrbMap,
 } from '../app-api/normalizeSectionVrbMap';
-import { resolveVrbForBar } from '../core/counterpoint/vrbProfiles/vrbContextResolver';
+import { resolveVrbForBar, sectionRecordFromVrbContextMap } from '../core/counterpoint/vrbProfiles/vrbContextResolver';
 import { USE_PER_SECTION_VRB } from '../core/counterpoint/vrbProfiles/vrbContextMap';
-
-const test = {
-  todo(name: string): { name: string; ok: boolean } {
-    return { name: `[todo] ${name}`, ok: true };
-  },
-};
+import {
+  computeTransitionBars,
+  joinConstraint,
+  resolveSectionBoundary,
+  MAX_SEMITONES_PER_BAR_AT_SEAM,
+  type SectionJoin,
+} from '../core/harmony/sectionBoundaryResolver';
+import { buildSectionAwareHarmonySpine, chordUsesVrbVocabulary } from '../core/harmony/harmonySpineSectionLoop';
+import { mergeBoundaryThreshold, resolveSqGceForBar } from '../core/gce/sqVrbGcePerBar';
+import { getSqVrbGceAdjustments } from '../core/counterpoint/vrbProfiles/sqVrbProfileRegistry';
+import { getVoiceRuleBundle } from '../core/composer/voiceRuleBundles';
+import type { CompositionContext } from '../core/compositionContext';
 
 function testBuildGlobalVrbContextMap(): boolean {
   const map = buildGlobalVrbContextMap('glass', 32);
@@ -255,6 +261,102 @@ function testResolveVrbForBarNonTransitionZone(): boolean {
   });
 }
 
+function testComputeTransitionBarsGlassToShostakovich(): boolean {
+  return computeTransitionBars('glass', 'shostakovich') === 4;
+}
+
+function testComputeTransitionBarsEqualSigma(): boolean {
+  return computeTransitionBars('glass', 'glass') === 1;
+}
+
+function testResolveSectionBoundaryWithinTwoSemitones(): boolean {
+  const join: SectionJoin = {
+    fromSectionId: 'opening',
+    toSectionId: 'development',
+    joinBar: 17,
+    fromVrbId: 'glass',
+    toVrbId: 'shostakovich',
+    lastVoicingOfFromSection: { notes: [60, 64, 67, 48], cost: 0 },
+    transitionBars: 4,
+  };
+  const out = resolveSectionBoundary(join, new Map(), [], 'Dm7');
+  return out.notes.every((p, i) => Math.abs(p - join.lastVoicingOfFromSection.notes[i]!) <= MAX_SEMITONES_PER_BAR_AT_SEAM);
+}
+
+function testJoinConstraintNearestTone(): boolean {
+  const c = joinConstraint({ voiceIndex: 0, pitchMidi: 60 }, 'C');
+  return Math.abs(c.targetPitch - 60) <= MAX_SEMITONES_PER_BAR_AT_SEAM;
+}
+
+function testJoinConstraintSustainWhenFar(): boolean {
+  const c = joinConstraint({ voiceIndex: 0, pitchMidi: 90 }, 'C');
+  return c.targetPitch === 90;
+}
+
+function testGceBoundaryThresholdMaxNotAverage(): boolean {
+  const a = getSqVrbGceAdjustments('glass')!.registerCohesionStdevCeilingSt;
+  const b = getSqVrbGceAdjustments('shostakovich')!.registerCohesionStdevCeilingSt;
+  const maxed = mergeBoundaryThreshold(a, b);
+  const avg = (a + b) / 2;
+  return maxed === Math.max(a, b) && maxed > avg;
+}
+
+function testGceBoundaryBarFlag(): boolean {
+  return withPerSectionTestEnv(() => {
+    const ctx = buildGlassShostakovichContext();
+    const res = resolveSqGceForBar(17, ctx, 'glass');
+    return res.isBoundaryBar === true;
+  });
+}
+
+function buildGlassShostakovichContext(): CompositionContext {
+  const map = normalizeSectionVrbMap({
+    totalBars: 32,
+    sectionVrbMap: { opening: 'glass', development: 'shostakovich' },
+    sectionLabelMode: 'instrumental',
+  });
+  const sections = buildSqToBbFormSections(map, 32, 'instrumental');
+  const segments = Array.from({ length: 32 }, (_, i) => ({
+    startBar: i + 1,
+    bars: 1,
+    chord: i < 16 ? 'Am' : 'Dm',
+  }));
+  return {
+    form: { totalBars: 32, sections },
+    voiceBundle: getVoiceRuleBundle('glass'),
+    generationMetadata: {
+      sqLineVrbId: 'glass',
+      sqToBbVrbContextBySection: sectionRecordFromVrbContextMap(map),
+    },
+    seed: 42,
+    chordSymbolPlan: { segments, totalBars: 32 },
+  } as CompositionContext;
+}
+
+function maxVoiceMove(a: number[], b: number[]): number {
+  let m = 0;
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    const d = Math.abs((b[i] ?? b[b.length - 1]!) - (a[i] ?? a[a.length - 1]!));
+    m = Math.max(m, d);
+  }
+  return m;
+}
+
+function testGlassShostakovichSeamLive(): boolean {
+  return withPerSectionTestEnv(() => {
+    const ctx = buildGlassShostakovichContext();
+    const spine = buildSectionAwareHarmonySpine(ctx);
+    const bar16 = spine.find((r) => r.bar === 16);
+    const bar17 = spine.find((r) => r.bar === 17);
+    if (!bar16 || !bar17 || !bar16.voicing || !bar17.voicing) return false;
+    const a = bar16.isPhraseBoundary === true;
+    const b = maxVoiceMove(bar16.voicing.notes, bar17.voicing.notes) <= MAX_SEMITONES_PER_BAR_AT_SEAM;
+    const c = bar17.resolvedVrbId === 'shostakovich' || chordUsesVrbVocabulary(bar17.symbol, 'shostakovich');
+    const d = !bar17.usedEmergencyFallback;
+    return a && b && c && d;
+  });
+}
+
 function testSectionBarRangesSumToTotalBars(): boolean {
   const map = normalizeSectionVrbMap({
     totalBars: 32,
@@ -290,9 +392,13 @@ export function runPerSectionVrbTests(): { name: string; ok: boolean }[] {
     ['resolveVrbForBar — flag true unknown bar safety net', testResolveVrbForBarSafetyNet],
     ['resolveVrbForBar — isTransitionBar true at section end', testResolveVrbForBarTransitionZone],
     ['resolveVrbForBar — isTransitionBar false mid-section', testResolveVrbForBarNonTransitionZone],
-  ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() })).concat(
-    test.todo(
-      'Glass→Shostakovich seam: no voice moves >2 semitones at bar join — implement in Commit 4',
-    ),
-  );
+    ['computeTransitionBars — glass→shostakovich clamped to 4', testComputeTransitionBarsGlassToShostakovich],
+    ['computeTransitionBars — equal σ returns 1', testComputeTransitionBarsEqualSigma],
+    ['resolveSectionBoundary — voices within 2 semitones', testResolveSectionBoundaryWithinTwoSemitones],
+    ['joinConstraint — nearest chord tone within 2st', testJoinConstraintNearestTone],
+    ['joinConstraint — sustain when no tone within 2st', testJoinConstraintSustainWhenFar],
+    ['GCE boundary threshold — max not average', testGceBoundaryThresholdMaxNotAverage],
+    ['GCE boundary bar — isBoundaryBar flagged', testGceBoundaryBarFlag],
+    ['Glass→Shostakovich seam — live fixture', testGlassShostakovichSeamLive],
+  ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }

@@ -15,7 +15,7 @@ export interface BarSectionContext {
 
 export type SqToBbFormSectionRef = { label: string; startBar: number; length: number };
 
-function perSectionResolutionEnabled(): boolean {
+export function perSectionVrbResolutionEnabled(): boolean {
   return USE_PER_SECTION_VRB || process.env.COMPOSER_OS_TEST_PER_SECTION_VRB === '1';
 }
 
@@ -58,7 +58,7 @@ export function resolveVrbForBar(
   globalFallback: string,
   sections: readonly SqToBbFormSectionRef[],
 ): BarSectionContext {
-  if (!perSectionResolutionEnabled()) {
+  if (!perSectionVrbResolutionEnabled()) {
     return globalBarSectionContext(bar, globalFallback);
   }
 
