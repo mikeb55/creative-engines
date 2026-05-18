@@ -197,24 +197,18 @@ function testSevenVoicesMinChordDurationBars(): boolean {
       const lg = getVoiceRuleBundle('ligeti');
       return (
         lg.voiceId === 'ligeti' &&
-        lg.bassPolicy.role === 'embedded-voice' &&
+        lg.sqVrbProfileId === 'ligeti' &&
+        lg.bassPolicy.role === 'registral_boundary' &&
         lg.melodicPolicy.contour === 'neighbor-motion' &&
-        lg.formPolicy.narrativeArc === 'continuous-sections' &&
+        lg.formPolicy.goldenMeanClimax === true &&
         lg.rhythmPolicy.antiMetric === true &&
-        lg.g4GerminalSetEnabled === true &&
         lg.micropolyphonyMode === true &&
-        lg.tensionMetricCurvesRequired === true &&
-        lg.pcFieldStateGrammarEnabled === true &&
-        lg.silenceAsStructureEnabled === true &&
         lg.textureAsHarmonyEnabled === true &&
-        (lg.ligetiProfile === 'sq1' || lg.ligetiProfile === 'sq2') &&
-        (lg.melodicPolicy.preferredIntervalSets?.length ?? 0) === 2 &&
-        (lg.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 30 &&
-        Boolean(lg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_POLICY_01'))) &&
-        Boolean(lg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_HARM_G4_01'))) &&
-        Boolean(lg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_MICRO_01'))) &&
-        Boolean(lg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_TEX_01'))) &&
-        Boolean(lg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_DIFF_REICH_GLASS_01'))) &&
+        lg.contrapuntalLinePolicy?.enabled === true &&
+        lg.contrapuntalLinePolicy?.independenceLevel === 'maximum' &&
+        (lg.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 35 &&
+        Boolean(lg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LT_POLICY_01'))) &&
+        Boolean(lg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LT_WORK_ATMOSPHERES'))) &&
         getVoiceRuleBundle('gyorgy_ligeti').voiceId === 'ligeti' &&
         getVoiceRuleBundle('micropolyphony').voiceId === 'ligeti' &&
         getVoiceRuleBundle('sq_vrb_ligeti').voiceId === 'ligeti'

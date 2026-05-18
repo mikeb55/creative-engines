@@ -341,34 +341,24 @@ export function runVoiceRuleBundleHarnessAdditiveTests(): { name: string; ok: bo
   const ligeti = getVoiceRuleBundle('ligeti');
   const okLigeti =
     ligeti.voiceId === 'ligeti' &&
-    ligeti.bassPolicy.role === 'embedded-voice' &&
+    ligeti.sqVrbProfileId === 'ligeti' &&
+    ligeti.bassPolicy.role === 'registral_boundary' &&
     ligeti.melodicPolicy.contour === 'neighbor-motion' &&
-    ligeti.formPolicy.narrativeArc === 'continuous-sections' &&
+    ligeti.formPolicy.goldenMeanClimax === true &&
+    ligeti.formPolicy.noCadentialRelease === true &&
     ligeti.rhythmPolicy.antiMetric === true &&
-    ligeti.g4GerminalSetEnabled === true &&
+    ligeti.rhythmPolicy.phaseDisplacement === true &&
     ligeti.micropolyphonyMode === true &&
-    ligeti.tensionMetricCurvesRequired === true &&
-    ligeti.pcFieldStateGrammarEnabled === true &&
-    ligeti.silenceAsStructureEnabled === true &&
     ligeti.textureAsHarmonyEnabled === true &&
-    (ligeti.ligetiProfile === 'sq1' || ligeti.ligetiProfile === 'sq2') &&
-    (ligeti.melodicPolicy.preferredIntervalSets?.length ?? 0) === 2 &&
+    ligeti.contrapuntalLinePolicy?.independenceLevel === 'maximum' &&
+    ligeti.bestBbStyle === 'schneider' &&
+    (ligeti.melodicPolicy.preferredIntervalSets?.length ?? 0) >= 2 &&
     Boolean(ligeti.melodicPolicy.preferredIntervalSets?.includes(1)) &&
-    Boolean(ligeti.melodicPolicy.preferredIntervalSets?.includes(2)) &&
-    (ligeti.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 30 &&
-    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_POLICY_01'))) &&
-    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_HARM_G4_01'))) &&
-    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_FIELD_01'))) &&
-    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_TENSION_01'))) &&
-    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_MICRO_01'))) &&
-    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_VL_01'))) &&
-    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_RHY_01'))) &&
-    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_TEX_01'))) &&
-    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_FORM_01'))) &&
-    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_DIFF_BARTOK_01'))) &&
-    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_DIFF_DUTILLEUX_01'))) &&
-    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_DIFF_LACHENMANN_01'))) &&
-    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LG_DIFF_REICH_GLASS_01')));
+    (ligeti.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 35 &&
+    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LT_POLICY_01'))) &&
+    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LT_WORK_ATMOSPHERES'))) &&
+    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LT_WORK_LUX_AETERNA'))) &&
+    Boolean(ligeti.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LT_DIFF_VS_WEBERN')));
 
   const okLigetiAliases =
     getVoiceRuleBundle('gyorgy_ligeti').voiceId === 'ligeti' &&

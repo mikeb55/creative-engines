@@ -35,6 +35,7 @@ import { runRhythmBlendV43Tests } from './rhythmBlendV43.test';
 import { runHarmonySpineTests } from './harmonySpine.test';
 import { runMusicXmlImportTests } from './musicXmlImport.test';
 import { runVoiceRuleBundleHarnessAdditiveTests } from './voiceRuleBundleHarnessAdditive.test';
+import { runLigetiVrbTests } from '../core/counterpoint/vrbProfiles/ligetiVrb.test';
 import { runDuoIntentTests } from './duoIntent.test';
 import { runMacroFormPlannerTests } from './macroFormPlanner.test';
 import { retroSuites } from './retro/index';
@@ -74,6 +75,7 @@ const suites: SuiteEntry[] = [
   { name: 'Harmony spine harness (stub)', run: runHarmonySpineTests },
   { name: 'MusicXML import (ParsedChart)', run: runMusicXmlImportTests },
   { name: 'VoiceRuleBundle Phase 2+3a harness (additive)', run: runVoiceRuleBundleHarnessAdditiveTests },
+  { name: 'Ligeti SQ VRB profile (σ=32)', run: runLigetiVrbTests },
   { name: 'Duo intent (product vs PhraseIntent)', run: runDuoIntentTests },
   { name: 'Macro form planner', run: runMacroFormPlannerTests },
   ...retroSuites,

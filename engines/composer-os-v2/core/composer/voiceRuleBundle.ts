@@ -30,6 +30,8 @@ export type BassPolicyRole =
   | 'noise-field'
   /** Ligeti SQ — Vc participates as one micro-voice in stratified texture; no structural bass function */
   | 'embedded-voice'
+  /** Ligeti SQ VRB — bass marks lowest spatial limit; not root function or melodic bass */
+  | 'registral_boundary'
   /** Crumb (Black Angels) — Vc alternates between low_ground noise-layer and sustained focal-pc pedal; no structural bass function */
   | 'noise-or-pedal'
   /** Ornette Coleman harmolodics — bass floats tonal hints (steps, 4ths/5ths, riffs); not a fixed progression anchor */
@@ -124,7 +126,7 @@ export interface BergVoiceLeadingParams {
 }
 
 /** SQ→BB Harmonic Voice — optional metadata on {@link ContrapuntalLinePolicy} (Ravel, future SQ picks). */
-export type SqVrbIndependenceLevel = 'low' | 'moderate' | 'high';
+export type SqVrbIndependenceLevel = 'low' | 'moderate' | 'high' | 'maximum';
 export type SqVrbImitationStyle =
   | 'motivic_echo'
   | 'strict_interval_cycle'
@@ -145,7 +147,9 @@ export type SqVrbRegisterPolicy =
   | 'mid_register_chromatic_inner_compression'
   | 'low_biased_extreme_punctuation_spikes'
   | 'extreme_pointillist_leaps_all_registers'
-  | 'open_string_low_pedal_lyrical_soprano_arch';
+  | 'open_string_low_pedal_lyrical_soprano_arch'
+  | 'registral_expansion_contraction'
+  | 'micropolyphonic_merged_texture';
 export type SqVrbPhraseArticulation =
   | 'periodic_cadential'
   | 'continuous_motor_rhythm'
@@ -160,7 +164,8 @@ export type SqVrbPhraseArticulation =
   | 'through_composed_arch_no_cadence'
   | 'asymmetric_cell_non_resolving'
   | 'aphoristic_cell_silence_bounded'
-  | 'four_bar_periodic_suspended_non_resolving';
+  | 'four_bar_periodic_suspended_non_resolving'
+  | 'micropolyphonic_stasis';
 
 /** ContrapuntalLineEngine — VRB hooks for line-first generation + post-filter (Pass 2 stub). */
 export interface ContrapuntalLinePolicy {
@@ -178,6 +183,13 @@ export interface ContrapuntalLinePolicy {
   phraseArticulation?: SqVrbPhraseArticulation;
   /** Zimmer passacaglia — ground bass + progressive voice entry (sub-mode, not separate vrbId). */
   passacagliaMode?: boolean;
+  /** Ligeti — canonic independence; not conventional parallel/contrary pairing. */
+  parallelMotionPolicy?: 'avoid' | 'allow';
+  /** Ligeti — large leaps only at structural boundaries. */
+  leapPolicy?: 'structural_only' | 'free';
+  /** Ligeti — ic1/ic2-dominant vertical vocabulary. */
+  preferredIntervals?: number[];
+  dissonanceTolerance?: 'low' | 'moderate' | 'high';
 }
 
 /** Duo golden-path — guitar/bass derivation from {@link AbstractLineSet} (stubs + routing hints). */
@@ -288,8 +300,12 @@ export interface VoiceRuleBundle {
     contour: MelodicContourPolicy;
     maxLeapSemitones: number;
     preferredIntervalSets?: number[];
+    /** Ligeti / research — ic1/ic2 stepwise preference (alias readable in tests). */
+    preferredIntervals?: number[];
     /** Pat Metheny — informational */
     flatTwoMaj7Approach?: boolean;
+    /** Ligeti — pure ascent / descent as formal gesture. */
+    directionalArch?: boolean;
   };
 
   orchestrationPolicy: {
@@ -303,11 +319,21 @@ export interface VoiceRuleBundle {
   formPolicy: {
     narrativeArc: NarrativeArcPolicy;
     sectionRecallEnforced: boolean;
+    /** Ligeti — climax at golden-mean placement; not teleological cadence. */
+    goldenMeanClimax?: boolean;
+    /** Ligeti — registral density expansion/contraction arc. */
+    densityExpansionContraction?: boolean;
+    /** Ligeti — thinning replaces cadential release. */
+    noCadentialRelease?: boolean;
+    /** Ligeti — stasis as default surface. */
+    stasisSurface?: boolean;
   };
 
   rhythmPolicy: {
     antiMetric: boolean;
     gospelShoutThreshold?: number;
+    /** Ligeti Etudes — polyrhythmic phase offset / two-hand canon. */
+    phaseDisplacement?: boolean;
   };
 
   repairPolicy: {

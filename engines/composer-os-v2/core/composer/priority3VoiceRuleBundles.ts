@@ -12,6 +12,8 @@ import { MORRICONE_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/
 import { ROTA_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/rotaVrbFingerprints';
 import { WILLIAMS_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/williamsVrbFingerprints';
 import { ZIMMER_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/zimmerVrbFingerprints';
+import { LIGETI_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/ligetiVrbFingerprints';
+import { applyLigetiSqVrbProfile } from '../counterpoint/vrbProfiles/ligetiSqVrb';
 import type { DissonanceProfile } from '../counterpoint/abstractLineSet';
 import { fillReceipts } from './fillVrbReceipts';
 import type { VoiceRuleBundle } from './voiceRuleBundle';
@@ -622,3 +624,21 @@ export const BADALAMENTI_FILM_STUB = filmStub('angelo_badalamenti', BADALAMENTI_
 });
 export const WEBERN_FILM_STUB = filmStub('webern', []);
 export const JONI_MITCHELL_FILM_STUB = filmStub('joni_mitchell', []);
+
+/** Ligeti SQ VRB — micropolyphonic cluster profile (σ=32); wired via {@link applyLigetiSqVrbProfile}. */
+export const LIGETI_SQ_VRB_STUB = applyLigetiSqVrbProfile(
+  filmStub('ligeti', LIGETI_VRB_FINGERPRINT_RECEIPTS, {
+    harmonicRhythm: { minChordDurationBars: 4, maxChordDurationBars: 16, allowMidBarChange: false },
+    bassPolicy: { role: 'registral_boundary', allowOctaveDoubling: false },
+    rhythmPolicy: { antiMetric: true, phaseDisplacement: true },
+    repairPolicy: { resolveParallels: false, maxVoiceOverlap: 8 },
+    formPolicy: {
+      narrativeArc: 'continuous-sections',
+      sectionRecallEnforced: false,
+      goldenMeanClimax: true,
+      densityExpansionContraction: true,
+      noCadentialRelease: true,
+      stasisSurface: true,
+    },
+  }),
+);

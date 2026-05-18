@@ -2,7 +2,7 @@ import type { ContrapuntalLinePolicy } from '../../composer/voiceRuleBundle';
 import type { SqToBbStyleProfileId } from '../sqToBbWorkflowTypes';
 
 /** SQ→BB contrapuntal independence tier (Herrmann = low, Ravel = moderate, Bartók = high). */
-export type SqVrbIndependenceLevel = 'low' | 'moderate' | 'high';
+export type SqVrbIndependenceLevel = 'low' | 'moderate' | 'high' | 'maximum';
 
 /** SQ→BB imitation grammar. */
 export type SqVrbImitationStyle =
@@ -27,7 +27,9 @@ export type SqVrbRegisterPolicy =
   | 'mid_register_chromatic_inner_compression'
   | 'low_biased_extreme_punctuation_spikes'
   | 'extreme_pointillist_leaps_all_registers'
-  | 'open_string_low_pedal_lyrical_soprano_arch';
+  | 'open_string_low_pedal_lyrical_soprano_arch'
+  | 'registral_expansion_contraction'
+  | 'micropolyphonic_merged_texture';
 
 /** SQ→BB phrase surface grammar. */
 export type SqVrbPhraseArticulation =
@@ -44,7 +46,8 @@ export type SqVrbPhraseArticulation =
   | 'through_composed_arch_no_cadence'
   | 'asymmetric_cell_non_resolving'
   | 'aphoristic_cell_silence_bounded'
-  | 'four_bar_periodic_suspended_non_resolving';
+  | 'four_bar_periodic_suspended_non_resolving'
+  | 'micropolyphonic_stasis';
 
 /** Badalamenti three-tier texture — melody / chromatic inner cushion / bass pedal. */
 export interface SqBadalamentiThreeTierTexture {
@@ -126,7 +129,8 @@ export type SqVrbGcePhraseGrammarMode =
   | 'through_composed_arch_no_cadence'
   | 'asymmetric_cell_non_resolving'
   | 'aphoristic_cell_silence_bounded'
-  | 'four_bar_periodic_suspended_non_resolving';
+  | 'four_bar_periodic_suspended_non_resolving'
+  | 'micropolyphonic_stasis';
 
 /** Per-VRB GCE Melodic Identity / Phrase Grammar tweaks (SQ→BB path). */
 export interface SqVrbGceScorerAdjustments {
@@ -252,6 +256,16 @@ export interface SqVrbGceScorerAdjustments {
   dominantResolutionPenalty?: number;
   /** PG: soft penalty for 3-bar cells (rare). */
   shortPhraseCellPenalty?: number;
+  /** Ligeti — chromatic cluster saturation credit. */
+  chromaticClusterCredit?: number;
+  /** Ligeti — penalize functional cadential resolution. */
+  cadentialResolutionPenalty?: number;
+  /** Ligeti — registral expansion as harmonic intensification. */
+  registralExpansionCredit?: number;
+  /** Ligeti — density transformation / thinning arc. */
+  densityTransformationCredit?: number;
+  /** Ligeti — penalize folk/modal inflection. */
+  folkModalPenalty?: number;
 }
 
 /** SQ Harmonic Voice profile — contrapuntal policy + BB translation hints. */

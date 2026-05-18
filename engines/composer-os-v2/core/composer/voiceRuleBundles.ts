@@ -18,7 +18,8 @@ import { TURTLE_ISLAND_SQ_VRF_FINGERPRINT_RECEIPTS } from './turtleIslandSqVrbFi
 import { REICH_GLASS_SQ_VRF_FINGERPRINT_RECEIPTS } from './reichGlassSqVrbFingerprints';
 import { SHOSTAKOVICH_SQ_VRF_FINGERPRINT_RECEIPTS } from './shostakovichSqVrbFingerprints';
 import { LACHENMANN_SQ_VRF_FINGERPRINT_RECEIPTS } from './lachenmannSqVrbFingerprints';
-import { LIGETI_SQ_VRB_FINGERPRINT_RECEIPTS } from './ligetiSqVrbFingerprints';
+import { LIGETI_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/ligetiVrbFingerprints';
+import { applyLigetiSqVrbProfile } from '../counterpoint/vrbProfiles/ligetiSqVrb';
 import { CRUMB_BLACK_ANGELS_SQ_VRB_FINGERPRINT_RECEIPTS } from './crumbBlackAngelsSqVrbFingerprints';
 import { applyHerrmannFilmStubVrbProfile } from '../counterpoint/vrbProfiles/herrmannFilmStubVrb';
 import { applyMorriconeFilmStubVrbProfile } from '../counterpoint/vrbProfiles/morriconeFilmStubVrb';
@@ -2532,42 +2533,45 @@ const LACHENMANN: VoiceRuleBundle = {
 const LIGETI: VoiceRuleBundle = {
   voiceId: 'ligeti',
   harmonicRhythm: {
-    /** Field-based not chord-based; cap = 4-bar slow field transitions, not chord-symbol grammar. */
-    minChordDurationBars: 0,
-    maxChordDurationBars: 4,
-    allowMidBarChange: true,
+    minChordDurationBars: 4,
+    maxChordDurationBars: 16,
+    allowMidBarChange: false,
   },
   bassPolicy: {
-    role: 'embedded-voice',
+    role: 'registral_boundary',
     allowOctaveDoubling: false,
   },
   voicingPolicy: {
-    /** Allow extreme cluster_narrow (0) and constellation (≥ 10th = 16 st) spacings; clusters of 4–8 voices. */
-    minSpreadSemitones: 0,
-    maxSpreadSemitones: 48,
+    minSpreadSemitones: 8,
+    maxSpreadSemitones: 36,
     clusterSizeNotes: [4, 8],
     forbidParallelFifths: false,
-    forbidOctaveDoubling: false,
+    forbidOctaveDoubling: true,
   },
   melodicPolicy: {
     contour: 'neighbor-motion',
-    /** Hidden_leap permitted only as rare register reset at low dynamic; ≤ 1 per phrase. */
-    maxLeapSemitones: 12,
+    maxLeapSemitones: 14,
     preferredIntervalSets: [1, 2],
+    preferredIntervals: [1, 2],
+    directionalArch: true,
   },
   orchestrationPolicy: {
     anchorToneCount: 0,
     mutateSingleVoiceAtTime: true,
     allowCollectiveImprov: false,
-    fingerprintReceipts: LIGETI_SQ_VRB_FINGERPRINT_RECEIPTS,
+    fingerprintReceipts: LIGETI_VRB_FINGERPRINT_RECEIPTS,
   },
   formPolicy: {
-    /** SQ1 default; SQ2 profile flips to five-movement via `ligetiProfile`. */
     narrativeArc: 'continuous-sections',
     sectionRecallEnforced: false,
+    goldenMeanClimax: true,
+    densityExpansionContraction: true,
+    noCadentialRelease: true,
+    stasisSurface: true,
   },
   rhythmPolicy: {
     antiMetric: true,
+    phaseDisplacement: true,
   },
   repairPolicy: {
     resolveParallels: false,
@@ -2579,13 +2583,31 @@ const LIGETI: VoiceRuleBundle = {
   tensionMetricCurvesRequired: true,
   pcFieldStateGrammarEnabled: true,
   silenceAsStructureEnabled: true,
-  /** SQ2 default — accelerating arc (Mvt I) is the canonical exemplar; Mvt-specific curves carried at slice level. */
   tempoCurveDirection: 'accelerating',
   textureAsHarmonyEnabled: true,
-  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_COLOR,
+  contrapuntalLinePolicy: {
+    enabled: true,
+    vrbId: 'ligeti',
+    independenceLevel: 'maximum',
+    parallelMotionPolicy: 'avoid',
+    leapPolicy: 'structural_only',
+    preferredIntervals: [1, 2],
+    dissonanceTolerance: 'high',
+    dissonanceProfile: {
+      allowedIntervals: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+      forbiddenIntervals: [],
+      parallelFifthsAllowed: false,
+      parallelOctavesAllowed: false,
+      resolveByStep: false,
+    },
+    preferredImitationTypes: ['strict', 'invertible'],
+    rhythmicIndependenceRequired: true,
+    lineRoleAssignment: 'dynamic',
+  },
   duoVoicePolicy: {
     ...DUO_VOICE_POLICY_SQ_FAMILY_STUB,
-    rhythmicIndependenceFloor: 0.75,
+    rhythmicIndependenceFloor: 0.55,
+    registerInterlock: true,
   },
 };
 
@@ -3076,13 +3098,13 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   reigen_seliger_geister: LACHENMANN,
   grido: LACHENMANN,
   sq_vrb_lachenmann: LACHENMANN,
-  ligeti: LIGETI,
-  gyorgy_ligeti: LIGETI,
-  ligeti_sq1: LIGETI,
-  ligeti_sq2: LIGETI,
-  micropolyphony: LIGETI,
-  metamorphoses_nocturnes: LIGETI,
-  sq_vrb_ligeti: LIGETI,
+  ligeti: applyLigetiSqVrbProfile(LIGETI),
+  gyorgy_ligeti: applyLigetiSqVrbProfile(LIGETI),
+  ligeti_sq1: applyLigetiSqVrbProfile(LIGETI),
+  ligeti_sq2: applyLigetiSqVrbProfile(LIGETI),
+  micropolyphony: applyLigetiSqVrbProfile(LIGETI),
+  metamorphoses_nocturnes: applyLigetiSqVrbProfile(LIGETI),
+  sq_vrb_ligeti: applyLigetiSqVrbProfile(LIGETI),
   crumb_black_angels: CRUMB_BLACK_ANGELS,
   crumb: CRUMB_BLACK_ANGELS,
   george_crumb: CRUMB_BLACK_ANGELS,

@@ -94,7 +94,6 @@ const SQ_FAMILY_DUO_ENGINE_IDS = [
   'reich_glass',
   'shostakovich',
   'lachenmann',
-  'ligeti',
   'crumb_black_angels',
   'part',
   'dutilleux',
