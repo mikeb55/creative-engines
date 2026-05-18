@@ -142,6 +142,16 @@ export interface SectionRegenerationParams {
   baseMusicXml: string;
 }
 
+/** Per-section VRB assignment — single id or 2–3-way blend. */
+export type SectionVrbMapEntry =
+  | string
+  | {
+      /** Resolved primary / dominant id when blend present. */
+      vrbId?: string;
+      blendVrbIds: string[];
+      blendWeights: number[];
+    };
+
 export interface GenerateRequest {
   presetId: string;
   styleStack: AppStyleStack;
@@ -449,12 +459,12 @@ export interface GenerateRequest {
   /** SQ→BB SQ harmonic voice (`null` = style-profile default; `bartok` enabled). */
   sqToBbSqComposer?: import('../core/counterpoint/sqToBbWorkflowTypes').SqToBbSqComposer;
   /**
-   * Per-section SQ VRB map (canonical section label → vrbId).
+   * Per-section SQ VRB map (canonical section label → vrbId or blend spec).
    * sectionVrbMap supersedes sqToBbSqComposer when present.
    * Keys must be canonical section labels for sectionLabelMode.
    * If absent, sqToBbSqComposer is used as a global fallback.
    */
-  sectionVrbMap?: Record<string, string>;
+  sectionVrbMap?: Record<string, SectionVrbMapEntry>;
   /** Canonical section label set for sectionVrbMap keys. Default `instrumental`. */
   sectionLabelMode?: import('../core/counterpoint/vrbProfiles/sqToBbSectionLabels').SqToBbSectionLabelMode;
   /**

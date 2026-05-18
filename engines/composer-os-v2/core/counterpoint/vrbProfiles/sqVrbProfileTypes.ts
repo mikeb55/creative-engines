@@ -1,5 +1,6 @@
 import type { ContrapuntalLinePolicy } from '../../composer/voiceRuleBundle';
 import type { SqToBbStyleProfileId } from '../sqToBbWorkflowTypes';
+import type { VrbBlendMeta } from './vrbBlendTypes';
 
 /** SQ→BB contrapuntal independence tier (Herrmann = low, Ravel = moderate, Bartók = high). */
 export type SqVrbIndependenceLevel = 'low' | 'moderate' | 'high' | 'maximum';
@@ -328,4 +329,6 @@ export interface SqVrbProfile {
   zimmerPassacagliaSubMode?: SqZimmerPassacagliaSubMode;
   /** Badalamenti — Vln I melody / inner jazz cushion / Vc pedal (documented). */
   badalamentiThreeTierTexture?: SqBadalamentiThreeTierTexture;
+  /** Live blend pools + provenance when produced by {@link blendedVrb}. */
+  _blendMeta?: VrbBlendMeta;
 }

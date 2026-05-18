@@ -3,7 +3,14 @@
  */
 
 import type { CompositionContext } from '../../compositionContext';
-import { buildGlobalVrbContextMap, dominantVrb, USE_PER_SECTION_VRB, type SectionVrbContext, type VrbContextMap } from './vrbContextMap';
+import { getSqVrbProfile } from './sqVrbProfileRegistry';
+import {
+  buildGlobalVrbContextMap,
+  resolveSectionVrbId,
+  USE_PER_SECTION_VRB,
+  type SectionVrbContext,
+  type VrbContextMap,
+} from './vrbContextMap';
 
 export interface BarSectionContext {
   bar: number;
@@ -25,7 +32,16 @@ export function hasExplicitPerSectionVrbAssignment(context: CompositionContext):
   if (!stored) return false;
   const keys = Object.keys(stored);
   if (keys.length === 0) return false;
+  const hasBlend = Object.values(stored).some(
+    (ctx) => Boolean(ctx.blendedVrbId) || (ctx.vrbs?.length ?? 0) >= 2,
+  );
+  if (hasBlend) return true;
   return keys.length > 1 || keys[0] !== 'sq_bb';
+}
+
+/** Resolved SQ profile for a section (blended or single). */
+export function resolveSqVrbProfileForSection(ctx: SectionVrbContext): ReturnType<typeof getSqVrbProfile> {
+  return getSqVrbProfile(resolveSectionVrbId(ctx));
 }
 
 function findSectionForBar(
@@ -84,7 +100,7 @@ export function resolveVrbForBar(
   return {
     bar,
     sectionId: section.label,
-    vrbId: dominantVrb(sectionCtx) || globalFallback,
+    vrbId: resolveSectionVrbId(sectionCtx) || globalFallback,
     isTransitionBar: isBarInSectionTransition(bar, section, sectionCtx),
   };
 }

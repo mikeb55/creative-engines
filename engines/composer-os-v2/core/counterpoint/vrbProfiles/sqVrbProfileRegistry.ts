@@ -21,6 +21,7 @@ import { GERSHWIN_SQ_VRB_PROFILE } from './gershwinSqVrb';
 import { ARVO_PART_SQ_VRB_PROFILE } from './partSqVrb';
 import { DEBUSSY_SQ_VRB_PROFILE } from './debussySqVrb';
 import { BARTOK_SQ_VRB_PROFILE } from './bartokSqVrb';
+import { getCachedBlendedSqVrbProfile } from './blendedVrb';
 import type { SqVrbGceScorerAdjustments, SqVrbProfile } from './sqVrbProfileTypes';
 
 const SQ_VRB_PROFILE_BY_ID: Readonly<Record<string, SqVrbProfile>> = {
@@ -46,7 +47,8 @@ const SQ_VRB_PROFILE_BY_ID: Readonly<Record<string, SqVrbProfile>> = {
 };
 
 export function getSqVrbProfile(vrbId: string): SqVrbProfile | undefined {
-  return SQ_VRB_PROFILE_BY_ID[vrbId.trim().toLowerCase()];
+  const id = vrbId.trim().toLowerCase();
+  return getCachedBlendedSqVrbProfile(id) ?? SQ_VRB_PROFILE_BY_ID[id];
 }
 
 export function getSqVrbGceAdjustments(vrbId: string | undefined): SqVrbGceScorerAdjustments | undefined {

@@ -13,10 +13,12 @@ export interface VrbWeight {
 
 export interface SectionVrbContext {
   sectionId: string;
-  /** length 1 = pure assignment; length N = blend (future) */
+  /** length 1 = pure assignment; length 2–3 = blend source weights */
   vrbs: VrbWeight[];
   /** auto-computed, not user-facing */
   transitionBars: number;
+  /** Resolved `blended:id1+id2` when 2–3-way blend active. */
+  blendedVrbId?: string;
 }
 
 export type VrbContextMap = Map<string, SectionVrbContext>;
@@ -36,6 +38,12 @@ export function dominantVrb(ctx: SectionVrbContext): string {
     }
   }
   return best.vrbId;
+}
+
+/** Per-section VRB id — blended composite when {@link SectionVrbContext.blendedVrbId} set. */
+export function resolveSectionVrbId(ctx: SectionVrbContext): string {
+  if (ctx.blendedVrbId) return ctx.blendedVrbId;
+  return dominantVrb(ctx);
 }
 
 /**

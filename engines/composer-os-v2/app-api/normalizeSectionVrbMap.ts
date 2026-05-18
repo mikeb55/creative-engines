@@ -9,8 +9,11 @@ import {
   buildGlobalVrbContextMap,
   type SectionVrbContext,
   type VrbContextMap,
+  type VrbWeight,
 } from '../core/counterpoint/vrbProfiles/vrbContextMap';
+import { blendedVrb } from '../core/counterpoint/vrbProfiles/blendedVrb';
 import { getSqVrbProfile } from '../core/counterpoint/vrbProfiles/sqVrbProfileRegistry';
+import type { SectionVrbMapEntry } from './appApiTypes';
 import {
   getSectionLabelsForMode,
   isValidSectionLabel,
@@ -57,6 +60,56 @@ function sectionContext(sectionId: string, vrbId: string): SectionVrbContext {
   };
 }
 
+function blendSectionContext(
+  sectionId: string,
+  blendVrbIds: readonly string[],
+  blendWeights: readonly number[],
+): SectionVrbContext {
+  if (blendVrbIds.length < 2 || blendVrbIds.length > 3) {
+    throw new Error(`blendVrbIds for section "${sectionId}" must have 2–3 entries`);
+  }
+  if (blendVrbIds.length !== blendWeights.length) {
+    throw new Error(`blendVrbIds and blendWeights length mismatch for section "${sectionId}"`);
+  }
+  if (blendWeights.some((w) => w <= 0)) {
+    throw new Error(`blendWeights for section "${sectionId}" must all be > 0`);
+  }
+  const ids = blendVrbIds.map((id) => String(id).trim().toLowerCase());
+  for (const id of ids) {
+    assertKnownVrbId(id, sectionId);
+  }
+  const profiles = ids.map((id) => getSqVrbProfile(id)!);
+  const blended = blendedVrb(profiles, [...blendWeights]);
+  const w = blendWeights.reduce((a, x) => a + x, 0);
+  const vrbs: VrbWeight[] = ids.map((id, i) => ({ vrbId: id, weight: blendWeights[i]! / w }));
+  return {
+    sectionId,
+    vrbs,
+    transitionBars: 0,
+    blendedVrbId: blended.vrbId,
+  };
+}
+
+function parseSectionVrbEntry(
+  entry: SectionVrbMapEntry,
+  sectionKey: string,
+): SectionVrbContext {
+  if (typeof entry === 'string') {
+    const trimmed = entry.trim().toLowerCase();
+    assertKnownVrbId(trimmed, sectionKey);
+    return sectionContext(sectionKey, trimmed);
+  }
+  if (entry.blendVrbIds?.length) {
+    return blendSectionContext(sectionKey, entry.blendVrbIds, entry.blendWeights);
+  }
+  const trimmed = String(entry.vrbId ?? '').trim().toLowerCase();
+  if (!trimmed) {
+    throw new Error(`sectionVrbMap entry for "${sectionKey}" requires vrbId or blendVrbIds`);
+  }
+  assertKnownVrbId(trimmed, sectionKey);
+  return sectionContext(sectionKey, trimmed);
+}
+
 function composerToVrbId(raw: string | null | undefined): string {
   const composer = normalizeSqToBbSqComposer(raw);
   return composer ?? '';
@@ -72,7 +125,7 @@ function globalFallbackVrbId(raw: string | null | undefined): string {
 
 export function normalizeSectionVrbMap(input: {
   sqToBbSqComposer?: string | null;
-  sectionVrbMap?: Record<string, string>;
+  sectionVrbMap?: Record<string, SectionVrbMapEntry>;
   totalBars: number;
   sectionLabelMode?: SqToBbSectionLabelMode;
 }): VrbContextMap {
@@ -81,13 +134,11 @@ export function normalizeSectionVrbMap(input: {
 
   if (mapEntries.length > 0) {
     const out: VrbContextMap = new Map();
-    for (const [key, vrbId] of mapEntries) {
+    for (const [key, entry] of mapEntries) {
       if (!isValidSectionLabel(key, mode)) {
         throw new Error(invalidLabelErrorMessage(key, mode));
       }
-      const trimmed = String(vrbId).trim().toLowerCase();
-      assertKnownVrbId(trimmed, key);
-      out.set(key, sectionContext(key, trimmed));
+      out.set(key, parseSectionVrbEntry(entry, key));
     }
     return out;
   }

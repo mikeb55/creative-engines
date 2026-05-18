@@ -1685,7 +1685,50 @@ function scoreRhythmicStyleConformance(
   return Math.max(0, Math.min(10, 10 * (0.55 * dispRate + 0.45 * (1 - regularity))));
 }
 
+function parseBlendedVrbComponentIds(vrbId: string): string[] | null {
+  const trimmed = vrbId.trim().toLowerCase();
+  if (!trimmed.startsWith('blended:')) return null;
+  const body = trimmed.slice('blended:'.length);
+  return body ? body.split('+').filter(Boolean) : null;
+}
+
+function rhythmExpectationForBlendedVrbId(vrbId: string): RhythmExpectation | undefined {
+  const ids = parseBlendedVrbComponentIds(vrbId);
+  if (!ids || ids.length < 2) return undefined;
+  const expectations = ids.map((id) => rhythmExpectationForVrb(id)).filter(Boolean) as RhythmExpectation[];
+  if (expectations.length !== ids.length) return undefined;
+  const weights = expectations.map(() => 1 / expectations.length);
+  const placementCounts = new Map<string, number>();
+  for (let i = 0; i < expectations.length; i++) {
+    const mode = expectations[i]!.placementMode;
+    placementCounts.set(mode, (placementCounts.get(mode) ?? 0) + weights[i]!);
+  }
+  let placementMode: RhythmExpectation['placementMode'] = 'grid';
+  let bestPl = 0;
+  for (const [mode, w] of placementCounts) {
+    if (w > bestPl) {
+      bestPl = w;
+      placementMode = mode as RhythmExpectation['placementMode'];
+    }
+  }
+  const wm = (vals: number[]) => vals.reduce((acc, v, i) => acc + v * weights[i]!, 0);
+  const antMaxVals = expectations.map((e) => e.anticipationRateMax ?? 0.15);
+  const grooveVals = expectations.map((e) => e.grooveStabilityTolerance ?? 0.9);
+  const offLow = expectations.map((e) => e.targetOffbeatWindow?.[0] ?? 0.48);
+  const offHigh = expectations.map((e) => e.targetOffbeatWindow?.[1] ?? 0.52);
+  return {
+    placementMode,
+    anticipationRateMax: wm(antMaxVals),
+    grooveStabilityTolerance: wm(grooveVals),
+    targetOffbeatWindow: [wm(offLow), wm(offHigh)],
+  };
+}
+
 export function rhythmExpectationForVrb(vrbId: string): RhythmExpectation | undefined {
+  const raw = vrbId.trim().toLowerCase();
+  if (raw.startsWith('blended:')) {
+    return rhythmExpectationForBlendedVrbId(raw);
+  }
   const id = (getVoiceRuleBundle(vrbId)?.voiceId ?? vrbId).trim().toLowerCase();
   if (id === 'gershwin') {
     return { placementMode: 'swing', targetOffbeatWindow: [0.55, 0.7] };
@@ -1698,6 +1741,14 @@ export function rhythmExpectationForVrb(vrbId: string): RhythmExpectation | unde
   }
   if (id === 'satie') {
     return { placementMode: 'grid' };
+  }
+  if (raw === 'glass' || id === 'reich_glass') {
+    return {
+      placementMode: 'grid',
+      targetOffbeatWindow: [0.49, 0.51],
+      anticipationRateMax: 0.06,
+      grooveStabilityTolerance: 0.96,
+    };
   }
   if (id === 'part' || id === 'arvo_part') {
     return {
