@@ -23,15 +23,16 @@ export function phraseIntentBiasPitchNudgeSemitones(bias: PhraseIntentBias, bar:
     case 'arch':
       if (pos === 1) return 2;
       if (pos === 2) return 1;
-      return 0;
+      if (pos === 3) return 0;
+      return -1;
     case 'descending':
       if (pos === 1) return 1;
       if (pos === 2) return 0;
       if (pos === 3) return -1;
       return -2;
     case 'ascending':
-      if (pos === 1) return -1;
-      if (pos === 2) return 0;
+      if (pos === 1) return -2;
+      if (pos === 2) return -1;
       if (pos === 3) return 1;
       return 2;
     default:

@@ -4,7 +4,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N rows (M suites)` in the smoke summary, then sync **N** + **M** into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **299** PASS rows, **66** suites (full tier).
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **319** PASS rows, **67** suites (full tier).
  *
  * **Fast subset:** `COMPOSER_OS_SMOKE_TIER=fast` or `npm run test:composer-smoke-fast` — skips `SMOKE_FAST_EXCLUDE` suites (local dev).
  * **Full tier (default / CI):** unset or `COMPOSER_OS_SMOKE_TIER=full` — all suites in `smokeSuites`.
@@ -79,11 +79,13 @@ import { runHarmonySpineLockSmokeTests } from './harmonySpineLock.smoke.test';
 import { runOutputValidationSmokeTests } from './outputValidationSmoke.test';
 import { runSqSwingRhythmTests } from './sqSwingRhythm.test';
 import { runSqAntimetricRhythmTests } from './sqAntimetricRhythm.test';
+import { runWybleDuoParityTests } from './wybleDuoParity.test';
 
 type Row = { name: string; ok: boolean };
 
 /** Smoke fast tier — heaviest suites omitted (~7.5s of ~22s wall clock on typical dev machine). */
 const SMOKE_FAST_EXCLUDE: readonly string[] = [
+  'Wyble duo parity + BB Light Touch',
   'SQ anti-metric rhythm engine (sq_antimetric)',
   'SQ swing rhythm engine (sq_swing)',
   'App API boundary',
@@ -113,6 +115,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Evaluation — Basie style profile structure', run: runEvaluationSmokeTests },
   { label: 'Phrase engine V2 — motif pool hook', run: runPhraseEngineV2SmokeTests },
   { label: 'Phrase engine V2 — integration (duo mock + duoIntent depth guard)', run: runPhraseEngineV2IntegrationWithDuoIntentSmokeGuard },
+  { label: 'Wyble duo parity + BB Light Touch', run: runWybleDuoParityTests },
   { label: 'Conductor', run: runConductorTests },
   { label: 'SQ swing rhythm engine (sq_swing)', run: runSqSwingRhythmTests },
   { label: 'SQ anti-metric rhythm engine (sq_antimetric)', run: runSqAntimetricRhythmTests },

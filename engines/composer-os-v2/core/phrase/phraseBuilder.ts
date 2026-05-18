@@ -239,7 +239,7 @@ function biasIntentTowardContinuity(
 ): PhraseIntent {
   if (intent === continuityIntent) return intent;
   const u = seededUnit(seed, bar, 58201);
-  if (u < 0.72) return continuityIntent;
+  if (u < 0.6) return continuityIntent;
   return intent;
 }
 

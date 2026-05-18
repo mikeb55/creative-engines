@@ -468,6 +468,8 @@ export interface GenerateRequest {
   sqToBbChordSourceMode?: 'generate_harmony' | 'use_user_chords';
   /** SQ→BB meso quantizer density (`sparse` | `medium` | `dense`). Default `medium`. */
   sqToBbDensity?: import('../core/counterpoint/sqToBbWorkflowTypes').SqToBbDensity;
+  /** SQ→BB Light Touch — cap doublings, thin inner voices (default false). */
+  bbLightTouch?: boolean;
   /** SQ→BB: how to resolve N chords < M bars (`repeat` | `fill_internal`). */
   sqToBbChordMismatchResolution?: import('../core/counterpoint/parseUserChordInput').SqToBbChordMismatchResolution;
 }

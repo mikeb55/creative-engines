@@ -1302,6 +1302,8 @@ export interface GenerationMetadata {
   bigBandSectionRender?: import('./composer/bigBandSectionPlanRenderer').BigBandSectionRenderOutput;
   /** SQ→BB sketch density — meso quantizer threshold (`sparse` | `medium` | `dense`). */
   sqToBbDensity?: import('./counterpoint/sqToBbWorkflowTypes').SqToBbDensity;
+  /** SQ→BB Light Touch — cap doublings / thin inner voices on BB section render. */
+  bbLightTouch?: boolean;
   /** SQ→BB Phase A — Gate 1 (Melodic Identity + Phrase Grammar) after contrapuntal precompute. */
   sqBbGceGate1?: import('./counterpoint/sqToBbGceGates').SqBbGceGate1Record;
   /** When Gate 1 fails after DCR refine — skip {@link wireBigBandSectionRendererOnContext}. */

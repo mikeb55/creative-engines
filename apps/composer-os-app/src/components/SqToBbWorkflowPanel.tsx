@@ -243,6 +243,7 @@ export function SqToBbWorkflowPanel({
   const [chordMismatchResolution, setChordMismatchResolution] =
     useState<SqToBbChordMismatchResolution | null>(null);
   const [sqToBbDensity, setSqToBbDensity] = useState<SqToBbDensity>('medium');
+  const [bbLightTouch, setBbLightTouch] = useState(false);
   const [workflow, setWorkflow] = useState<SqToBbWorkflowPayloadUi | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -364,6 +365,7 @@ export function SqToBbWorkflowPanel({
           sectionLabelMode,
           ...(sectionVrbMapPayload ? { sectionVrbMap: sectionVrbMapPayload } : {}),
           sqToBbDensity,
+          ...(bbLightTouch ? { bbLightTouch: true } : {}),
           ...(eraTag !== undefined ? { sqToBbEra: eraTag } : { sqToBbEra: null }),
           ...extra,
         };
@@ -394,6 +396,7 @@ export function SqToBbWorkflowPanel({
       sectionLabelMode,
       sectionVrbMapPayload,
       sqToBbDensity,
+      bbLightTouch,
       chordSourceMode,
       userChordInput,
       chordMismatchResolution,
@@ -546,7 +549,7 @@ export function SqToBbWorkflowPanel({
 
           <div style={{ marginBottom: '0.75rem' }}>
             {sectionLabels.map((label) => (
-              <div
+              <motion
                 key={label}
                 style={{ ...flexRow, marginBottom: '0.35rem', alignItems: 'center' }}
               >
@@ -844,6 +847,24 @@ export function SqToBbWorkflowPanel({
             onDismiss={() => setDismissedMismatchPair(mismatchNoticePairKey)}
           />
         ) : null}
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            marginTop: '0.75rem',
+            fontSize: '0.85rem',
+            color: 'var(--text-muted)',
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={bbLightTouch}
+            onChange={(e) => setBbLightTouch(e.target.checked)}
+            disabled={loading || bbOutputLocked}
+          />
+          Light Touch
+        </label>
       </WorkflowZone>
 
       {phase === 'idle' && (

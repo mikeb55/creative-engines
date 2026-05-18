@@ -21,6 +21,11 @@ import type {
   SectionWritingIntent,
 } from '../counterpoint/quartetFeatureTypes';
 import type { BackgroundsPlan, SoliPlan } from './bigBandSectionWriter';
+import {
+  DEFAULT_BB_LIGHT_TOUCH_OFF,
+  filterAssignmentsForBbLightTouch,
+  type BbLightTouchPolicy,
+} from './bbLightTouch';
 
 export type BackgroundsRhythmValue = BackgroundsRhythmPlan['backgroundsRhythm'];
 
@@ -200,10 +205,14 @@ function materializeSoliNotes(
   lines: AbstractLineSet,
   intent: SectionWritingIntent,
   soliRhythm: SoliRhythmPlan,
+  lightTouch: BbLightTouchPolicy = DEFAULT_BB_LIGHT_TOUCH_OFF,
 ): BigBandSectionNoteStub[] {
   const phraseSpan = Math.max(0.25, intent.endBeat - intent.startBeat);
   const durations = cycleDurations(phraseSpan, soliRhythm.primaryDurationsBeats);
-  const soliAssigns = intent.assignments.filter(
+  const assignments = lightTouch.enabled
+    ? filterAssignmentsForBbLightTouch(intent.assignments, lightTouch)
+    : intent.assignments;
+  const soliAssigns = assignments.filter(
     (a) => a.role === 'lead' || a.role === 'counterline' || a.role === 'doubling',
   );
   const stubs: BigBandSectionNoteStub[] = [];
@@ -249,7 +258,9 @@ function materializeBackgroundNotes(
   lines: AbstractLineSet,
   intent: SectionWritingIntent,
   bgRhythm: BackgroundsRhythmPlan,
+  lightTouch: BbLightTouchPolicy = DEFAULT_BB_LIGHT_TOUCH_OFF,
 ): BigBandSectionNoteStub[] {
+  if (lightTouch.enabled && lightTouch.silenceInnerVoices) return [];
   const phraseSpan = Math.max(0.25, intent.endBeat - intent.startBeat);
   const dur = padDurationBeats(bgRhythm.backgroundsRhythm, phraseSpan);
   const padAssigns = intent.assignments.filter((a) => a.role === 'pad' || a.role === 'pedal');
@@ -274,6 +285,7 @@ function materializeBackgroundNotes(
 function renderPhrasesFromVoicing(
   voicing: BigBandVoicing,
   lines: AbstractLineSet | undefined,
+  lightTouch: BbLightTouchPolicy = DEFAULT_BB_LIGHT_TOUCH_OFF,
 ): BigBandSectionRenderOutput | undefined {
   if (!phase6PlansPresent(voicing) || !lines) return undefined;
   const intents = voicing.sectionWritingIntents!;
@@ -286,8 +298,8 @@ function renderPhrasesFromVoicing(
     const soliRh = soliPlans[i] ?? soliPlans[0]!;
     const bgRh = bgPlans[i] ?? bgPlans[0]!;
     const geo = geometries[i] ?? geometries[0]!;
-    const soliNotes = materializeSoliNotes(lines, intent, soliRh);
-    const bgNotes = materializeBackgroundNotes(lines, intent, bgRh);
+    const soliNotes = materializeSoliNotes(lines, intent, soliRh, lightTouch);
+    const bgNotes = materializeBackgroundNotes(lines, intent, bgRh, lightTouch);
     phrases.push({
       phraseId: intent.phraseId,
       startBeat: intent.startBeat,
@@ -308,9 +320,10 @@ function renderPhrasesFromVoicing(
 export function applyPhase6RendererWiring(
   voicing: BigBandVoicing,
   lines?: AbstractLineSet,
+  lightTouch: BbLightTouchPolicy = DEFAULT_BB_LIGHT_TOUCH_OFF,
 ): WiredBigBandVoicing {
   if (!phase6PlansPresent(voicing)) {
-    return { ...voicing, sectionRender: renderPhrasesFromVoicing(voicing, lines) };
+    return { ...voicing, sectionRender: renderPhrasesFromVoicing(voicing, lines, lightTouch) };
   }
   const idx = pickPhraseIndex(voicing);
   const geometry = voicing.voicingGeometries![idx]!;
@@ -344,6 +357,7 @@ export function applyPhase6RendererWiring(
         backgroundsPlan: mergedBg,
       },
       lines,
+      lightTouch,
     ),
   };
 }
@@ -382,7 +396,14 @@ export function wireBigBandSectionRendererOnContext(context: CompositionContext)
     context.form?.sections?.map((s) => ({ label: s.label, startBar: s.startBar, length: s.length })) ?? null,
   );
   const raw = engine.renderForBigBand(ls);
-  const wired = applyPhase6RendererWiring(raw, ls);
+  const lightTouchEnabled = context.generationMetadata?.bbLightTouch === true;
+  const wired = applyPhase6RendererWiring(
+    raw,
+    ls,
+    lightTouchEnabled
+      ? { enabled: true, maxDoublings: 1, silenceInnerVoices: true, preserveDuoLine: true }
+      : DEFAULT_BB_LIGHT_TOUCH_OFF,
+  );
   if (shouldApplySqToBbGceGates(context, vrbId) && wired.sectionRender) {
     const gate2 = runSqBbGceGate2(wired, ls, context);
     gen.sqBbGceGate2 = gate2;

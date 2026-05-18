@@ -154,6 +154,7 @@ function buildSqToBbContext(
     ...(userChordInput ? { userChordInput } : {}),
     sqToBbDensity,
     sqToBbVrbContextBySection: sectionRecordFromVrbContextMap(vrbContextMap),
+    ...(req.bbLightTouch === true ? { bbLightTouch: true } : {}),
   };
   context.form = {
     totalBars,

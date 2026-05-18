@@ -51,6 +51,7 @@ import { guitarBassDuoPreset } from '../../presets/guitarBassDuoPreset';
 import { GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID, isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 import { applyPhraseFirstSingleLineMonophony, buildPhraseFirstDuoScore } from './duoSingleLinePhraseFirstPipeline';
 import { applyDuoIntentRegisterOwnership, applyDuoIntentVelocityBalance } from './duoIntentDepth';
+import { applyWybleDuoVelocityPolicy } from './duoVelocityPolicy';
 import { applyDuoWybleBassAnchorBar1Nudge } from './duoWybleBassAnchorNudge';
 import { wybleConsumptionReceiptForDuoFamily } from '../wyble/wybleConsumptionReceipt';
 import { RHYTHM_DNA_CELL_TABLE, type RhythmDnaCellId } from '../composer/rhythmDnaMotifBinder';
@@ -6608,6 +6609,14 @@ export function generateGoldenPathDuoScore(
         if (bi >= 0) afterExpressive.parts[bi] = bassPhraseV2;
       }
     }
+  }
+  if (
+    isGuitarBassDuoFamily(context.presetId) &&
+    context.presetId !== 'ecm_chamber' &&
+    context.presetId !== GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID &&
+    !shouldUseIndieArtPopDualGuitarRoute(context)
+  ) {
+    applyWybleDuoVelocityPolicy(afterExpressive);
   }
   finalizeAndSealDuoScoreBarMath(afterExpressive);
   if (
