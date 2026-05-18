@@ -1,7 +1,15 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import * as Tone from 'tone';
 import { api } from '../services/api';
-import { initPlayback, pause, play, stop } from '../playback';
-import type { PlaybackSequence } from '../playback';
+import {
+  initVoices,
+  setMute as setStringVoiceMute,
+  setSolo as setStringVoiceSolo,
+  startPlayback,
+  stopPlayback,
+  type AllVoiceNotes,
+  type StringVoice,
+} from '../playback/stringVoices';
 import {
   composerEraDomValue,
   composerEraSelectValueFromDom,
@@ -37,6 +45,38 @@ import { SqToBbMismatchNotice } from './SqToBbMismatchNotice';
 
 const MAX_USER_REGENS = 2;
 const LANE_ORDER: SqToBbVoiceLaneId[] = ['S', 'A', 'T', 'B'];
+
+const LANE_TO_STRING_VOICE: Record<SqToBbVoiceLaneId, StringVoice> = {
+  S: 'violin1',
+  A: 'violin2',
+  T: 'viola',
+  B: 'cello',
+};
+
+function workflowToAllVoiceNotes(wf: SqToBbWorkflowPayloadUi): AllVoiceNotes {
+  const out: AllVoiceNotes = { violin1: [], violin2: [], viola: [], cello: [] };
+  for (const lane of wf.lanes) {
+    const voice = LANE_TO_STRING_VOICE[lane.voiceId];
+    if (!voice) continue;
+    for (const n of lane.notes) {
+      out[voice].push({
+        pitchMidi: n.pitchMidi,
+        offsetBars: n.offsetBars,
+        durationBars: n.durationBars,
+      });
+    }
+  }
+  return out;
+}
+
+function hasAnyVoiceNotes(notes: AllVoiceNotes): boolean {
+  return (
+    notes.violin1.length > 0 ||
+    notes.violin2.length > 0 ||
+    notes.viola.length > 0 ||
+    notes.cello.length > 0
+  );
+}
 
 const row: CSSProperties = { marginBottom: '0.75rem' };
 const flexRow: CSSProperties = { display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' };
@@ -101,29 +141,6 @@ function gate2BadgeStyle(outcome: string): { bg: string; color: string; border: 
     default:
       return { bg: 'rgba(100,116,139,0.12)', color: 'var(--text-muted)', border: 'var(--border)' };
   }
-}
-
-function lanesToPlayback(
-  wf: SqToBbWorkflowPayloadUi,
-  bpm: number,
-  muted: Record<SqToBbVoiceLaneId, boolean>,
-  solo: SqToBbVoiceLaneId | null,
-): PlaybackSequence {
-  const notes: PlaybackSequence['notes'] = [];
-  for (const lane of wf.lanes) {
-    if (muted[lane.voiceId]) continue;
-    if (solo && solo !== lane.voiceId) continue;
-    for (const n of lane.notes) {
-      const barIndex = Math.max(1, Math.floor(n.offsetBars) + 1);
-      notes.push({
-        midi: n.pitchMidi,
-        startBeat: (n.offsetBars - Math.floor(n.offsetBars)) * 4,
-        duration: Math.max(0.25, n.durationBars * 4),
-        barIndex,
-      });
-    }
-  }
-  return { notes, bpm, beatsPerBar: 4, totalBars: wf.totalBars };
 }
 
 function LaneStrip({
@@ -231,6 +248,7 @@ export function SqToBbWorkflowPanel({
   });
   const [solo, setSolo] = useState<SqToBbVoiceLaneId | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [stringsLoading, setStringsLoading] = useState(false);
   const [dismissedMismatchPair, setDismissedMismatchPair] = useState<string | null>(null);
 
   const sqSourceLocked = phase !== 'idle';
@@ -299,9 +317,9 @@ export function SqToBbWorkflowPanel({
     }
   }, [workflow?.action, workflow?.seed, flaggedPhraseIndex]);
 
-  const playbackSeq = useMemo(
-    () => (workflow ? lanesToPlayback(workflow, bpm, muted, solo) : null),
-    [workflow, bpm, muted, solo],
+  const allVoiceNotes = useMemo(
+    () => (workflow ? workflowToAllVoiceNotes(workflow) : null),
+    [workflow],
   );
 
   const callApi = useCallback(
@@ -402,10 +420,26 @@ export function SqToBbWorkflowPanel({
   };
 
   const handlePlay = async () => {
-    if (!playbackSeq?.notes.length) return;
-    await initPlayback();
-    setIsPlaying(true);
-    await play(playbackSeq, () => {});
+    if (!allVoiceNotes || !hasAnyVoiceNotes(allVoiceNotes)) return;
+    setStringsLoading(true);
+    try {
+      await Tone.start();
+      await initVoices();
+      setIsPlaying(true);
+      await startPlayback(allVoiceNotes, bpm, () => {
+        setIsPlaying(false);
+      });
+    } catch (e) {
+      setIsPlaying(false);
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setStringsLoading(false);
+    }
+  };
+
+  const handleStopPlayback = () => {
+    stopPlayback();
+    setIsPlaying(false);
   };
 
   const downloadXml = (xml: string | undefined, filename: string) => {
@@ -795,8 +829,23 @@ export function SqToBbWorkflowPanel({
               totalBars={workflow.totalBars}
               muted={muted[id]}
               soloActive={solo === id}
-              onToggleMute={() => setMuted((m) => ({ ...m, [id]: !m[id] }))}
-              onToggleSolo={() => setSolo((s) => (s === id ? null : id))}
+              onToggleMute={() => {
+                const next = !muted[id];
+                setMuted((m) => ({ ...m, [id]: next }));
+                setStringVoiceMute(LANE_TO_STRING_VOICE[id], next);
+              }}
+              onToggleSolo={() => {
+                if (solo === id) {
+                  setSolo(null);
+                  setStringVoiceSolo(null);
+                  for (const laneId of LANE_ORDER) {
+                    setStringVoiceMute(LANE_TO_STRING_VOICE[laneId], muted[laneId]);
+                  }
+                } else {
+                  setSolo(id);
+                  setStringVoiceSolo(LANE_TO_STRING_VOICE[id]);
+                }
+              }}
             />
           );
         })}
@@ -852,26 +901,27 @@ export function SqToBbWorkflowPanel({
             <button
               type="button"
               className="secondary"
-              onClick={
-                isPlaying
-                  ? () => {
-                      pause();
-                      setIsPlaying(false);
-                    }
-                  : handlePlay
-              }
-              disabled={loading}
+              onClick={() => {
+                if (isPlaying) {
+                  handleStopPlayback();
+                } else {
+                  void Tone.start();
+                  void handlePlay();
+                }
+              }}
+              disabled={loading || stringsLoading}
             >
-              {isPlaying ? 'Pause' : 'Play all voices'}
+              {stringsLoading
+                ? 'Loading strings...'
+                : isPlaying
+                  ? 'Pause'
+                  : 'Play all voices'}
             </button>
             <button
               type="button"
               className="secondary"
-              onClick={() => {
-                stop();
-                setIsPlaying(false);
-              }}
-              disabled={!isPlaying}
+              onClick={handleStopPlayback}
+              disabled={!isPlaying && !stringsLoading}
             >
               Stop
             </button>
