@@ -246,6 +246,10 @@ export interface GenerationMetadata {
   sqToBbSqComposer?: import('./counterpoint/sqToBbWorkflowTypes').SqToBbSqComposer;
   /** SQ→BB: VRB id used for contrapuntal line sketch / regen. */
   sqLineVrbId?: string;
+  /** SQ→BB: per-section VRB contexts keyed by canonical section label (Commit 3). */
+  sqToBbVrbContextBySection?: Readonly<
+    Record<string, import('./counterpoint/vrbProfiles/vrbContextMap').SectionVrbContext>
+  >;
   /** Parsed one chord per bar when custom harmony was applied successfully */
   parsedCustomProgressionBars?: string[];
   /** Section-scoped regen: receipt when a fragment run was spliced into prior MusicXML. */

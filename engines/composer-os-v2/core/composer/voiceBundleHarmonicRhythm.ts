@@ -3,6 +3,7 @@
  */
 
 import type { CompositionContext } from '../compositionContext';
+import type { VoiceRuleBundle } from './voiceRuleBundle';
 import { normalizeChordToken } from '../harmony/chordProgressionParser';
 
 export interface VoiceBundleHarmonicRhythmState {
@@ -14,9 +15,10 @@ export interface VoiceBundleHarmonicRhythmState {
 export function applyVoiceBundleHarmonicRhythm(
   barIndex: number,
   candidateChord: string,
-  context: CompositionContext
+  context: CompositionContext,
+  voiceBundleOverride?: VoiceRuleBundle,
 ): string {
-  const vb = context.voiceBundle;
+  const vb = voiceBundleOverride ?? context.voiceBundle;
   const meta = context.generationMetadata;
   if (!vb) return candidateChord;
 

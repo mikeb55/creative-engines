@@ -18,6 +18,8 @@ import {
   buildSqToBbFormSections,
   normalizeSectionVrbMap,
 } from '../app-api/normalizeSectionVrbMap';
+import { resolveVrbForBar } from '../core/counterpoint/vrbProfiles/vrbContextResolver';
+import { USE_PER_SECTION_VRB } from '../core/counterpoint/vrbProfiles/vrbContextMap';
 
 const test = {
   todo(name: string): { name: string; ok: boolean } {
@@ -146,6 +148,113 @@ function testNormalizeSectionVrbMapUnknownVrbId(): boolean {
   }
 }
 
+function withPerSectionTestEnv(fn: () => boolean): boolean {
+  const prev = process.env.COMPOSER_OS_TEST_PER_SECTION_VRB;
+  process.env.COMPOSER_OS_TEST_PER_SECTION_VRB = '1';
+  try {
+    return fn();
+  } finally {
+    if (prev === undefined) {
+      delete process.env.COMPOSER_OS_TEST_PER_SECTION_VRB;
+    } else {
+      process.env.COMPOSER_OS_TEST_PER_SECTION_VRB = prev;
+    }
+  }
+}
+
+function testResolveVrbForBarFlagFalseUsesGlobal(): boolean {
+  if (USE_PER_SECTION_VRB) return false;
+  const map = normalizeSectionVrbMap({
+    totalBars: 32,
+    sectionVrbMap: { opening: 'glass', development: 'shostakovich' },
+  });
+  const sections = [
+    { label: 'opening', startBar: 1, length: 16 },
+    { label: 'development', startBar: 17, length: 16 },
+  ];
+  const bar5 = resolveVrbForBar(5, map, 'ravel', sections);
+  const bar20 = resolveVrbForBar(20, map, 'ravel', sections);
+  return bar5.vrbId === 'ravel' && bar20.vrbId === 'ravel' && bar5.sectionId === 'sq_bb';
+}
+
+function testResolveVrbForBarSectionA(): boolean {
+  return withPerSectionTestEnv(() => {
+    const map = normalizeSectionVrbMap({
+      totalBars: 32,
+      sectionVrbMap: { opening: 'glass', development: 'shostakovich' },
+      sectionLabelMode: 'instrumental',
+    });
+    const sections = [
+      { label: 'opening', startBar: 1, length: 16 },
+      { label: 'development', startBar: 17, length: 16 },
+    ];
+    const ctx = resolveVrbForBar(4, map, 'ravel', sections);
+    return ctx.sectionId === 'opening' && ctx.vrbId === 'glass';
+  });
+}
+
+function testResolveVrbForBarSectionB(): boolean {
+  return withPerSectionTestEnv(() => {
+    const map = normalizeSectionVrbMap({
+      totalBars: 32,
+      sectionVrbMap: { opening: 'glass', development: 'shostakovich' },
+      sectionLabelMode: 'instrumental',
+    });
+    const sections = [
+      { label: 'opening', startBar: 1, length: 16 },
+      { label: 'development', startBar: 17, length: 16 },
+    ];
+    const ctx = resolveVrbForBar(20, map, 'ravel', sections);
+    return ctx.sectionId === 'development' && ctx.vrbId === 'shostakovich';
+  });
+}
+
+function testResolveVrbForBarSafetyNet(): boolean {
+  return withPerSectionTestEnv(() => {
+    const map = normalizeSectionVrbMap({ totalBars: 16, sectionVrbMap: { opening: 'glass' } });
+    const sections = [{ label: 'opening', startBar: 1, length: 8 }];
+    const ctx = resolveVrbForBar(99, map, 'ravel', sections);
+    return ctx.vrbId === 'ravel' && ctx.sectionId === 'sq_bb';
+  });
+}
+
+function testResolveVrbForBarTransitionZone(): boolean {
+  return withPerSectionTestEnv(() => {
+    const map = new Map([
+      [
+        'opening',
+        {
+          sectionId: 'opening',
+          vrbs: [{ vrbId: 'glass', weight: 1 }],
+          transitionBars: 2,
+        },
+      ],
+    ]);
+    const sections = [{ label: 'opening', startBar: 1, length: 8 }];
+    return (
+      resolveVrbForBar(7, map, 'ravel', sections).isTransitionBar &&
+      resolveVrbForBar(8, map, 'ravel', sections).isTransitionBar
+    );
+  });
+}
+
+function testResolveVrbForBarNonTransitionZone(): boolean {
+  return withPerSectionTestEnv(() => {
+    const map = new Map([
+      [
+        'opening',
+        {
+          sectionId: 'opening',
+          vrbs: [{ vrbId: 'glass', weight: 1 }],
+          transitionBars: 2,
+        },
+      ],
+    ]);
+    const sections = [{ label: 'opening', startBar: 1, length: 8 }];
+    return !resolveVrbForBar(5, map, 'ravel', sections).isTransitionBar;
+  });
+}
+
 function testSectionBarRangesSumToTotalBars(): boolean {
   const map = normalizeSectionVrbMap({
     totalBars: 32,
@@ -175,6 +284,12 @@ export function runPerSectionVrbTests(): { name: string; ok: boolean }[] {
     ['normalizeSectionVrbMap — invalid label throws', testNormalizeSectionVrbMapInvalidLabel],
     ['normalizeSectionVrbMap — unknown vrbId throws', testNormalizeSectionVrbMapUnknownVrbId],
     ['buildSqToBbFormSections — bar ranges sum to totalBars', testSectionBarRangesSumToTotalBars],
+    ['resolveVrbForBar — flag false uses globalFallback', testResolveVrbForBarFlagFalseUsesGlobal],
+    ['resolveVrbForBar — flag true section A vrbId', testResolveVrbForBarSectionA],
+    ['resolveVrbForBar — flag true section B vrbId', testResolveVrbForBarSectionB],
+    ['resolveVrbForBar — flag true unknown bar safety net', testResolveVrbForBarSafetyNet],
+    ['resolveVrbForBar — isTransitionBar true at section end', testResolveVrbForBarTransitionZone],
+    ['resolveVrbForBar — isTransitionBar false mid-section', testResolveVrbForBarNonTransitionZone],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() })).concat(
     test.todo(
       'Glass→Shostakovich seam: no voice moves >2 semitones at bar join — implement in Commit 4',

@@ -1123,6 +1123,7 @@ export function scoreMelodicIdentity(
 
   const contrapuntalSq =
     contrapuntal?.contrapuntalLinePolicy === true && (contrapuntal.mesoSpans?.length ?? 0) >= 2;
+  // TODO Commit 4+5: sqVrbId will be per-section here (from options, not a module singleton).
   const sqGce =
     contrapuntalSq && contrapuntal.sqVrbId
       ? getSqVrbGceAdjustments(contrapuntal.sqVrbId)
@@ -1934,6 +1935,7 @@ function scorePhraseGrammarContrapuntal(
     return scorePhraseGrammar(line);
   }
 
+  // TODO Commit 4+5: sqVrbId will be per-section here (from options, not a module singleton).
   const sqGce = options.sqVrbId ? getSqVrbGceAdjustments(options.sqVrbId) : undefined;
   const ostinatoPg = sqGce?.phraseGrammarMode === 'ostinato_cell';
   const folkModalPg = sqGce?.phraseGrammarMode === 'folk_modal_suspended';

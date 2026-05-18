@@ -49,6 +49,10 @@ import {
 } from './normalizeSectionVrbMap';
 import { dominantVrb, type VrbContextMap } from '../core/counterpoint/vrbProfiles/vrbContextMap';
 import {
+  sectionRecordFromVrbContextMap,
+  vrbContextMapFromSectionRecord,
+} from '../core/counterpoint/vrbProfiles/vrbContextResolver';
+import {
   SQ_TO_BB_DEFAULT_SECTION_LABEL_MODE,
   type SqToBbSectionLabelMode,
 } from '../core/counterpoint/vrbProfiles/sqToBbSectionLabels';
@@ -96,6 +100,7 @@ function resolveSqLineVrbIdFromContextMap(
   vrbContextMap: VrbContextMap,
   styleProfile: SqToBbStyleProfileId,
 ): string {
+  // TODO Commit 4+5: replace with resolveVrbForBar when bar context is available at orchestration setup.
   const sqBb = vrbContextMap.get('sq_bb');
   if (sqBb) {
     const id = dominantVrb(sqBb);
@@ -147,6 +152,7 @@ function buildSqToBbContext(
     ...(eraTag ? { era: eraTag } : {}),
     ...(userChordInput ? { userChordInput } : {}),
     sqToBbDensity,
+    sqToBbVrbContextBySection: sectionRecordFromVrbContextMap(vrbContextMap),
   };
   context.form = {
     totalBars,
@@ -184,7 +190,12 @@ function lanesFromLineSet(lines: AbstractLineSet): SqToBbLaneView[] {
 }
 
 function generateLineSet(context: CompositionContext, vrbId: string, totalBars: number): AbstractLineSet {
-  const engine = new ContrapuntalLineEngine(vrbId, context);
+  const formSections =
+    context.form?.sections?.map((s) => ({ label: s.label, startBar: s.startBar, length: s.length })) ?? null;
+  const vrbContextMap = vrbContextMapFromSectionRecord(
+    context.generationMetadata?.sqToBbVrbContextBySection,
+  );
+  const engine = new ContrapuntalLineEngine(vrbId, context, vrbContextMap, formSections);
   const raw = engine.generateLines(totalBars, 'chords_only');
   return engine.applyVrbFilter(raw);
 }

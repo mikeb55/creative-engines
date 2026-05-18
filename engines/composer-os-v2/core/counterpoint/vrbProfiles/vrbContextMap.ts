@@ -2,6 +2,9 @@
  * Per-section VRB context map — weights, dominant VRB, global backwards-compat builder.
  */
 
+/** Set to true in Commit 6 after all sites migrated and all smokes green. */
+export const USE_PER_SECTION_VRB = false;
+
 export interface VrbWeight {
   vrbId: string;
   /** 0.0–1.0; must sum to 1.0 per section */

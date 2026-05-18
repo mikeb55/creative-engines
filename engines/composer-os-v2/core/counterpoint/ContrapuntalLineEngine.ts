@@ -7,6 +7,12 @@ import type { CompositionContext } from '../compositionContext';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
+import {
+  readSqToBbVrbWire,
+  resolveVrbForBar,
+  type SqToBbFormSectionRef,
+} from './vrbProfiles/vrbContextResolver';
+import type { VrbContextMap } from './vrbProfiles/vrbContextMap';
 import type { BackgroundsPlan, SoliPlan } from '../composer/bigBandSectionWriter';
 import { backgroundsPlanFromScene } from '../composer/bigBandSectionWriter';
 import type { VoicingGeometry } from './chooseVoicingGeometry';
@@ -143,7 +149,13 @@ function buildSwingChordLineSetForVrb(
   lengthBars: number,
   seed: number,
   vrbId: string,
+  vrbContextMap?: VrbContextMap | null,
+  formSections?: readonly SqToBbFormSectionRef[] | null,
 ): AbstractLineSet {
+  const wire = readSqToBbVrbWire(context);
+  const contextMap = vrbContextMap ?? wire.contextMap;
+  const sections = formSections ?? wire.sections;
+  const globalFallback = vrbId;
   const policy = getVoiceRuleBundle(vrbId).contrapuntalLinePolicy!;
   const dissonanceProfile = policy.dissonanceProfile;
   const swingOffsets: Record<LineRole, number[]> = {
@@ -174,7 +186,11 @@ function buildSwingChordLineSetForVrb(
     bass: undefined,
   };
   for (let b = 0; b < lengthBars; b++) {
-    const sym = resolveBarSymbol(context, b + 1).symbol;
+    const bar = b + 1;
+    const barVrbId = resolveVrbForBar(bar, contextMap, globalFallback, sections).vrbId || vrbId;
+    const barDissonance =
+      getVoiceRuleBundle(barVrbId).contrapuntalLinePolicy?.dissonanceProfile ?? dissonanceProfile;
+    const sym = resolveBarSymbol(context, bar).symbol;
     const rpc = rootPcFromBarSymbol(sym);
     const third = (rpc + 4) % 12;
     const seventh = (rpc + 10) % 12;
@@ -199,8 +215,8 @@ function buildSwingChordLineSetForVrb(
           hasParallelOctaveOrFifth(
             prevPitches,
             curr,
-            !dissonanceProfile.parallelOctavesAllowed,
-            !dissonanceProfile.parallelFifthsAllowed,
+            !barDissonance.parallelOctavesAllowed,
+            !barDissonance.parallelFifthsAllowed,
           )
         ) {
           pitch += role === 'bass' ? -1 : 1;
@@ -363,6 +379,8 @@ export class ContrapuntalLineEngine {
   constructor(
     readonly vrbId: string,
     readonly context: CompositionContext,
+    readonly vrbContextMap: VrbContextMap | null = null,
+    readonly formSections: readonly SqToBbFormSectionRef[] | null = null,
   ) {}
 
   /** Alias for `generateLines` (Pass 3 naming). */
@@ -380,7 +398,14 @@ export class ContrapuntalLineEngine {
     if (pol?.enabled) {
       return augmentAbstractLineSetSchema(
         this.vrbId,
-        buildSwingChordLineSetForVrb(this.context, lengthBars, seed, this.vrbId),
+        buildSwingChordLineSetForVrb(
+          this.context,
+          lengthBars,
+          seed,
+          this.vrbId,
+          this.vrbContextMap,
+          this.formSections,
+        ),
       );
     }
     throw new Error(`ContrapuntalLineEngine: unsupported vrbId ${this.vrbId}`);
@@ -422,7 +447,12 @@ export class ContrapuntalLineEngine {
   }
 
   renderForBigBand(lines: AbstractLineSet): BigBandVoicing {
-    const bundle = getVoiceRuleBundle(lines.styleSourceVrbId) ?? this.context.voiceBundle;
+    const wire = readSqToBbVrbWire(this.context);
+    const renderBar = wire.sections[0]?.startBar ?? 1;
+    const renderVrbId =
+      resolveVrbForBar(renderBar, this.vrbContextMap ?? wire.contextMap, this.vrbId, wire.sections)
+        .vrbId || lines.styleSourceVrbId;
+    const bundle = getVoiceRuleBundle(renderVrbId) ?? this.context.voiceBundle;
     const scene = this.context.harmonicScenes?.[0];
     const diag = this.context.generationMetadata?.songModeProfileRuleDiagnostics;
     const styleProfileId =

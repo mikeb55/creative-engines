@@ -10,6 +10,8 @@
 
 import type { CompositionContext } from '../compositionContext';
 import { applyVoiceBundleHarmonicRhythm } from '../composer/voiceBundleHarmonicRhythm';
+import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
+import { readSqToBbVrbWire, resolveVrbForBar } from '../counterpoint/vrbProfiles/vrbContextResolver';
 import { applyHarmonicSceneChordBias } from '../composer/harmonicSceneChordBias';
 import { lockedHarmonyChordSymbolsEquivalent } from './chordProgressionParser';
 import { logHarmonyProvenance } from './harmonyContext';
@@ -849,7 +851,11 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 /** Authoritative chord symbol per bar — slice/locked/plan resolution plus VoiceRuleBundle harmonic rhythm overlay. */
 export function getChordForBar(barIndex: number, context: CompositionContext): string {
   const sym = resolveChordSymbolAuthoritativeForBar(barIndex, context);
-  const afterRhythm = applyVoiceBundleHarmonicRhythm(barIndex, sym, context);
+  const wire = readSqToBbVrbWire(context);
+  const barCtx = resolveVrbForBar(barIndex, wire.contextMap, wire.globalFallback, wire.sections);
+  const localBundle =
+    (barCtx.vrbId ? getVoiceRuleBundle(barCtx.vrbId) : undefined) ?? context.voiceBundle;
+  const afterRhythm = applyVoiceBundleHarmonicRhythm(barIndex, sym, context, localBundle);
   if (context.voiceBundle && context.harmonicScenes?.length) {
     return applyHarmonicSceneChordBias(barIndex, afterRhythm, context);
   }

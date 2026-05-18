@@ -27,6 +27,7 @@ import {
 import { extractQuartetFeatures } from './extractQuartetFeatures';
 import { quantizePhrasesForOrchestration } from './quantizePhrasesForOrchestration';
 import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
+import { readSqToBbVrbWire, resolveVrbForBar } from './vrbProfiles/vrbContextResolver';
 import {
   buildChordsForGceGate,
   buildFallbackChordsAndSectionsFromScore,
@@ -173,6 +174,7 @@ export function buildContrapuntalGceScoringOptions(
   lines: AbstractLineSet,
   context: CompositionContext,
   mesoFeatures?: readonly QuartetFeatures[] | null,
+  scoringBar?: number,
 ): ContrapuntalGceScoringOptions | undefined {
   if (!sqBbEconomyScoringEnabled(context, lines)) return undefined;
   let meso = mesoFeatures;
@@ -182,10 +184,15 @@ export function buildContrapuntalGceScoringOptions(
   }
   if (meso.length < 2) return undefined;
   const chordTimelineSource = context.generationMetadata?.chordTimelineSource;
+  const wire = readSqToBbVrbWire(context);
+  const barForScoring =
+    scoringBar ??
+    Math.max(1, Math.min(context.form?.totalBars ?? lines.lengthBars, Math.floor(meso[0]!.startBeat) + 1));
   const sqVrbId =
-    context.generationMetadata?.sqLineVrbId ??
-    lines.styleSourceVrbId ??
-    context.voiceBundle?.sqVrbProfileId ??
+    resolveVrbForBar(barForScoring, wire.contextMap, wire.globalFallback, wire.sections).vrbId ||
+    context.generationMetadata?.sqLineVrbId ||
+    lines.styleSourceVrbId ||
+    context.voiceBundle?.sqVrbProfileId ||
     context.voiceBundle?.contrapuntalLinePolicy?.vrbId;
   const passacagliaMode = context.voiceBundle?.contrapuntalLinePolicy?.passacagliaMode === true;
   return {
@@ -309,7 +316,8 @@ function computeGate1ReviewHint(
   for (let i = 0; i < rawFeatures.length; i++) {
     const f = rawFeatures[i]!;
     const slice = sliceMelodyForPhraseWindow(melody, f.startBeat, f.endBeat);
-    const cp = buildContrapuntalGceScoringOptions(lines, context);
+    const phraseBar = Math.max(1, Math.floor(f.startBeat) + 1);
+    const cp = buildContrapuntalGceScoringOptions(lines, context, undefined, phraseBar);
     const phraseScore =
       pillar === 'melodic_identity'
         ? scoreMelodicIdentity(slice, songwriterId, cp).score

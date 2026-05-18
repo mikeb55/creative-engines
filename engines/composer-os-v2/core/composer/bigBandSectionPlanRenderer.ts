@@ -4,6 +4,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { vrbContextMapFromSectionRecord } from '../counterpoint/vrbProfiles/vrbContextResolver';
 import type { AbstractLineSet, LineRole, NoteEvent as AbstractNoteEvent } from '../counterpoint/abstractLineSet';
 import type { BigBandVoicing } from '../counterpoint/ContrapuntalLineEngine';
 import { ContrapuntalLineEngine } from '../counterpoint/ContrapuntalLineEngine';
@@ -374,7 +375,12 @@ export function wireBigBandSectionRendererOnContext(context: CompositionContext)
     return null;
   }
   const vrbId = ls.styleSourceVrbId;
-  const engine = new ContrapuntalLineEngine(vrbId, context);
+  const engine = new ContrapuntalLineEngine(
+    vrbId,
+    context,
+    vrbContextMapFromSectionRecord(context.generationMetadata?.sqToBbVrbContextBySection),
+    context.form?.sections?.map((s) => ({ label: s.label, startBar: s.startBar, length: s.length })) ?? null,
+  );
   const raw = engine.renderForBigBand(ls);
   const wired = applyPhase6RendererWiring(raw, ls);
   if (shouldApplySqToBbGceGates(context, vrbId) && wired.sectionRender) {
