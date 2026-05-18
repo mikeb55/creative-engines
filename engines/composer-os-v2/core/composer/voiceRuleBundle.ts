@@ -455,6 +455,10 @@ export interface VoiceRuleBundle {
   bluesInflectionRequired?: boolean;
   /** George Gershwin — blue degrees in melody and supporting voicings */
   blueNoteEnabled?: boolean;
+  /** George Gershwin — jazz extension voicings (m7, 9, 13, alt) on functional shell */
+  jazzExtensionEnabled?: boolean;
+  /** George Gershwin — blues field colour (♭3, ♭7, ♯4) on diatonic framework */
+  bluesColourEnabled?: boolean;
   /** George Gershwin — III7–VI7–II7–V7 bridge / I–vi–ii–V turnaround vocabulary */
   rhythmChangesEnabled?: boolean;
   /** George Gershwin — wide-register rhapsody / concerto developmental arcs */

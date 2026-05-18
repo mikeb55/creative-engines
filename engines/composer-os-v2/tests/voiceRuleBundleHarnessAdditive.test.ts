@@ -530,22 +530,25 @@ export function runVoiceRuleBundleHarnessAdditiveTests(): { name: string; ok: bo
     gg.formPolicy.narrativeArc === 'aaba-or-rhapsody' &&
     gg.formPolicy.sectionRecallEnforced === true &&
     gg.rhythmPolicy.antiMetric === false &&
-    gg.swingFeel === true &&
+    gg.swingFeel === false &&
     gg.guideToneVoiceLeading === true &&
     gg.blueNoteEnabled === true &&
+    gg.jazzExtensionEnabled === true &&
+    gg.bluesColourEnabled === true &&
     gg.rhythmChangesEnabled === true &&
     gg.concertModeEnabled === true &&
     gg.songModeEnabled === true &&
+    gg.repairPolicy.resolveParallels === true &&
+    gg.sqVrbProfileId === 'gershwin' &&
     gg.harmonicRhythm.allowMidBarChange === true &&
-    (gg.harmonicRhythm.minChordDurationBars ?? -1) === 0 &&
-    (gg.harmonicRhythm.maxChordDurationBars ?? 0) === 8 &&
-    (gg.melodicPolicy.preferredIntervalSets?.length ?? 0) === 5 &&
-    Boolean(gg.melodicPolicy.preferredIntervalSets?.every((n) => [1, 2, 3, 4, 5].includes(n))) &&
-    (gg.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 30 &&
-    Boolean(gg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('GG_POLICY_01'))) &&
-    Boolean(gg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('GG_HARM_01'))) &&
-    Boolean(gg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('GG_DIFF_DEBUSSY_01'))) &&
-    Boolean(gg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('GG_WORK_RHAPSODY_01')));
+    (gg.harmonicRhythm.minChordDurationBars ?? 0) >= 1 &&
+    (gg.harmonicRhythm.maxChordDurationBars ?? 0) >= 2 &&
+    (gg.melodicPolicy.preferredIntervalSets?.length ?? 0) >= 5 &&
+    (gg.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 35 &&
+    Boolean(gg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('GW_POLICY_01'))) &&
+    Boolean(gg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('GW_HARM_01'))) &&
+    Boolean(gg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('GW_DIFF_VS_WILLIAMS_01'))) &&
+    Boolean(gg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('GW_WORK_RHAPSODY_IN_BLUE_01')));
 
   const okGershwinAliases =
     getVoiceRuleBundle('george_gershwin').voiceId === 'gershwin' &&
@@ -630,7 +633,7 @@ export function runVoiceRuleBundleHarnessAdditiveTests(): { name: string; ok: bo
     { name: 'Phase 2+3a harness additive: satie aliases resolve', ok: okSatieAliases },
     { name: 'Phase 2+3a harness additive: ornette_coleman >=30 OC_* harmolodic fingerprints', ok: okOrnette },
     { name: 'Phase 2+3a harness additive: ornette_coleman aliases resolve', ok: okOrnetteAliases },
-    { name: 'Phase 2+3a harness additive: gershwin >=30 GG_* functional-jazz fingerprints', ok: okGershwin },
+    { name: 'Phase 2+3a harness additive: gershwin >=35 GW_* jazz-concert fingerprints', ok: okGershwin },
     { name: 'Phase 2+3a harness additive: gershwin aliases resolve', ok: okGershwinAliases },
     { name: 'Phase 2+3a harness additive: cole_porter >=30 CP_* songbook fingerprints', ok: okColePorter },
     { name: 'Phase 2+3a harness additive: cole_porter aliases resolve', ok: okColePorterAliases },

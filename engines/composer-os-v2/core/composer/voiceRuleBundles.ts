@@ -22,6 +22,7 @@ import { LIGETI_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/lig
 import { applyLigetiSqVrbProfile } from '../counterpoint/vrbProfiles/ligetiSqVrb';
 import { applySatieSqVrbProfile } from '../counterpoint/vrbProfiles/satieSqVrb';
 import { applyColePorterSqVrbProfile } from '../counterpoint/vrbProfiles/colePorterSqVrb';
+import { applyGershwinSqVrbProfile } from '../counterpoint/vrbProfiles/gershwinSqVrb';
 import { CRUMB_BLACK_ANGELS_SQ_VRB_FINGERPRINT_RECEIPTS } from './crumbBlackAngelsSqVrbFingerprints';
 import { applyHerrmannFilmStubVrbProfile } from '../counterpoint/vrbProfiles/herrmannFilmStubVrb';
 import { applyMorriconeFilmStubVrbProfile } from '../counterpoint/vrbProfiles/morriconeFilmStubVrb';
@@ -39,7 +40,7 @@ import { JOBIM_VRB_FINGERPRINT_RECEIPTS } from './jobimVrbFingerprints';
 import { ARVO_PART_TINTINNABULI_VRF_FINGERPRINT_RECEIPTS } from './arvoPartTintinnabuliVrbFingerprints';
 import { SATIE_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/satieVrbFingerprints';
 import { ORNETTE_COLEMAN_VRF_FINGERPRINT_RECEIPTS } from './ornetteColemanVrbFingerprints';
-import { GERSHWIN_VRF_FINGERPRINT_RECEIPTS } from './gershwinVrbFingerprints';
+import { GERSHWIN_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/gershwinVrbFingerprints';
 import { COLE_PORTER_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/colePorterVrbFingerprints';
 import {
   BADALAMENTI_FILM_STUB,
@@ -2823,11 +2824,11 @@ const ORNETTE_COLEMAN: VoiceRuleBundle = {
   forbidAudibleProcessOperators: true,
 };
 
-/** George Gershwin — functional jazz tonality, songbook + concert rhapsody. */
-const GERSHWIN: VoiceRuleBundle = {
+/** George Gershwin — functional jazz tonality, songbook + concert rhapsody (SQ profile applied below). */
+const GERSHWIN_STUB: VoiceRuleBundle = {
   voiceId: 'gershwin',
   harmonicRhythm: {
-    minChordDurationBars: 0,
+    minChordDurationBars: 1,
     maxChordDurationBars: 8,
     allowMidBarChange: true,
   },
@@ -2836,22 +2837,22 @@ const GERSHWIN: VoiceRuleBundle = {
     allowOctaveDoubling: false,
   },
   voicingPolicy: {
-    minSpreadSemitones: 8,
-    maxSpreadSemitones: 40,
-    clusterSizeNotes: [3, 6],
+    minSpreadSemitones: 16,
+    maxSpreadSemitones: 24,
+    clusterSizeNotes: [3, 5],
     forbidParallelFifths: false,
     forbidOctaveDoubling: false,
   },
   melodicPolicy: {
     contour: 'blues-diatonic',
     maxLeapSemitones: 14,
-    preferredIntervalSets: [1, 2, 3, 4, 5],
+    preferredIntervalSets: [1, 2, 3, 4, 5, 7],
   },
   orchestrationPolicy: {
     anchorToneCount: 2,
     mutateSingleVoiceAtTime: false,
     allowCollectiveImprov: false,
-    fingerprintReceipts: GERSHWIN_VRF_FINGERPRINT_RECEIPTS,
+    fingerprintReceipts: GERSHWIN_VRB_FINGERPRINT_RECEIPTS,
   },
   formPolicy: {
     narrativeArc: 'aaba-or-rhapsody',
@@ -2861,16 +2862,18 @@ const GERSHWIN: VoiceRuleBundle = {
     antiMetric: false,
   },
   repairPolicy: {
-    resolveParallels: false,
+    resolveParallels: true,
     maxVoiceOverlap: 6,
   },
-  swingFeel: true,
+  swingFeel: false,
   guideToneVoiceLeading: true,
   blueNoteEnabled: true,
   rhythmChangesEnabled: true,
   concertModeEnabled: true,
   songModeEnabled: true,
 };
+
+const GERSHWIN = applyGershwinSqVrbProfile(GERSHWIN_STUB);
 
 /** Cole Porter — chromatic songbook functionalism + urbane wit. */
 const COLE_PORTER_STUB: VoiceRuleBundle = {
