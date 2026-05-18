@@ -4,7 +4,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N rows (M suites)` in the smoke summary, then sync **N** + **M** into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **248** PASS rows, **63** suites (full tier).
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **259** PASS rows, **64** suites (full tier).
  *
  * **Fast subset:** `COMPOSER_OS_SMOKE_TIER=fast` or `npm run test:composer-smoke-fast` — skips `SMOKE_FAST_EXCLUDE` suites (local dev).
  * **Full tier (default / CI):** unset or `COMPOSER_OS_SMOKE_TIER=full` — all suites in `smokeSuites`.
@@ -76,6 +76,7 @@ import { runHarmonicSceneMotifShoutSmokeTests } from './harmonicSceneMotifShoutS
 import { runFollowup4MingusSchneiderThreadgillSmokeTests } from './followup4MingusSchneiderThreadgillSmoke.test';
 import { runFollowup5ShoutBrassInPlaceSmokeTests } from './followup5ShoutBrassInPlaceSmoke.test';
 import { runHarmonySpineLockSmokeTests } from './harmonySpineLock.smoke.test';
+import { runOutputValidationSmokeTests } from './outputValidationSmoke.test';
 
 type Row = { name: string; ok: boolean };
 
@@ -88,6 +89,7 @@ const SMOKE_FAST_EXCLUDE: readonly string[] = [
   'Phase 6+7 — instrumentGroup MusicXML (quartet + guitar TAB)',
   'Indie guitar_2 Song Mode comp (ChordEvent quality)',
   'Charlie Parker songwriter slice',
+  'Output validation — MIDI + MusicXML structural',
 ];
 
 function resolveSmokeTier(): 'fast' | 'full' {
@@ -166,6 +168,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'HarmonicScene motif filter + shout/outro energy', run: runHarmonicSceneMotifShoutSmokeTests },
   { label: 'Follow-up 4 — Mingus overlay + activeMotifIds + shout export', run: runFollowup4MingusSchneiderThreadgillSmokeTests },
   { label: 'Follow-up 5 — shout-chorus in-place brass merge', run: runFollowup5ShoutBrassInPlaceSmokeTests },
+  { label: 'Output validation — MIDI + MusicXML structural', run: runOutputValidationSmokeTests },
 ];
 
 function toRows(results: { name: string; ok: boolean }[] | { ok: boolean; name: string }[]): Row[] {

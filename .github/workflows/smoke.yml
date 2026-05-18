@@ -7,6 +7,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   smoke:
@@ -20,8 +21,51 @@ jobs:
           node-version: '20'
           cache: npm
 
+      - name: Install system deps (xmllint for output validation)
+        run: sudo apt-get update && sudo apt-get install -y libxml2-utils
+
       - name: Install dependencies
         run: npm ci
 
+      - name: Install composer-os-v2 validation deps
+        run: npm install --ignore-scripts --prefix engines/composer-os-v2
+
       - name: Run composer smoke tests
         run: npm run test:composer-smoke
+
+  audio-verify:
+    name: Composer OS Audio Verify
+    needs: smoke
+    if: github.ref == 'refs/heads/release' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ hashFiles('requirements-ci.txt') }}
+
+      - name: Install system audio deps
+        run: sudo apt-get update && sudo apt-get install -y fluidsynth fluid-soundfont-gm libxml2-utils
+
+      - name: Install Node dependencies
+        run: npm ci && npm install --ignore-scripts --prefix engines/composer-os-v2
+
+      - name: Install Python CI requirements
+        run: pip install -r requirements-ci.txt
+
+      - name: Run composer smoke (populate _test_outputs)
+        run: npm run test:composer-smoke
+
+      - name: Audio validate rendered MIDI
+        run: python scripts/audio_validate.py --input-dir _test_outputs --expected-bars 8

@@ -50,7 +50,8 @@
     "eval:duo-top": "npx ts-node --transpile-only --project ../../tsconfig.json scripts/runDuoEvalTopCandidates.ts",
     "test:motif-authority": "ts-node scripts/testMotifAuthority.ts",
     "test:big-band-arranging": "ts-node scripts/testBigBandArranging.ts",
-    "eval:big-band-chart": "ts-node scripts/bigBandChartEval.ts"
+    "eval:big-band-chart": "ts-node scripts/bigBandChartEval.ts",
+    "test:output-validate": "node --max-old-space-size=4096 ../../node_modules/ts-node/dist/bin.js --project ../../tsconfig.json tests/outputValidationSmoke.test.ts"
   },
   "types": "./core/conductor/conductorTypes.ts",
   "dependencies": {
@@ -60,11 +61,14 @@
     "midi-writer-js": "^3.2.1"
   },
   "devDependencies": {
+    "@tonejs/midi": "^2.0.28",
     "@types/jest": "^29.5.12",
     "@types/node": "^25.6.0",
     "@xmldom/xmldom": "^0.9.9",
     "jest": "^29.7.0",
     "ts-jest": "^29.2.5",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "validate-with-xmllint": "^1.2.1",
+    "xpath": "^0.0.34"
   }
 }

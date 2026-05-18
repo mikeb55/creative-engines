@@ -32,6 +32,8 @@
     "test:composer-full": "npm --prefix engines/composer-os-v2 run test:full --",
     "test:composer-smoke": "npm --prefix engines/composer-os-v2 run test:smoke --",
     "test:composer-smoke-fast": "npm --prefix engines/composer-os-v2 run test:smoke-fast --",
+    "test:output-validate": "npm run test:output-validate --prefix engines/composer-os-v2",
+    "test:audio-validate": "python scripts/audio_validate.py --input-dir _test_outputs --expected-bars 8",
     "test:composer-release": "npm --prefix engines/composer-os-v2 run test:full && npm --prefix engines/composer-os-v2 run test:ecm && npm --prefix apps/composer-os-desktop run build"
   },
   "devDependencies": {
