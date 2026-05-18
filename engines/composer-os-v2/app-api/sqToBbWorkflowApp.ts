@@ -29,12 +29,17 @@ import type {
 } from '../core/counterpoint/sqToBbWorkflowTypes';
 import { wireSqToBbUserChordTimeline } from '../core/counterpoint/parseUserChordInput';
 import {
+  arrayBufferFromBase64,
+  extractChordsFromMidi,
+} from '../core/harmony/midiChordExtractor';
+import {
   normalizeSqToBbDensity,
   normalizeSqToBbEraInput,
   normalizeSqToBbSqComposer,
   resolveSqToBbLengthBars,
   resolveSqToBbUserChordInput,
   sqLineVrbIdForSqToBb,
+  type SqToBbChordSourceMode,
   vrbIdForSqToBbStyleProfile,
 } from '../core/counterpoint/sqToBbWorkflowTypes';
 import { getVoiceRuleBundle } from '../core/composer/voiceRuleBundles';
@@ -74,6 +79,42 @@ const ROLE_TO_LANE: Record<LineRole, SqToBbVoiceLaneId> = {
   tenor: 'T',
   bass: 'B',
 };
+
+type SqToBbResolvedChordInput = {
+  userChordInput: string | null;
+  wireMode: SqToBbChordSourceMode;
+  midiBarCountHint?: number;
+};
+
+/** MIDI base64 → pipe-separated chords; otherwise existing user-chord path. */
+function resolveSqToBbChordPipeline(req: GenerateRequest): SqToBbResolvedChordInput {
+  const midiRaw = req.midiChordInput?.trim();
+  if (midiRaw) {
+    try {
+      const extracted = extractChordsFromMidi(arrayBufferFromBase64(midiRaw), {
+        bpm: req.midiChordBpm,
+      });
+      if (extracted.warnings.length > 0) {
+        console.log('[SQ→BB MIDI chords]', extracted.warnings.join('; '));
+      }
+      const chordString = extracted.chordString.trim();
+      return {
+        userChordInput: chordString.length > 0 ? chordString : null,
+        wireMode: 'use_user_chords',
+        midiBarCountHint: extracted.barCount,
+      };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.log(`[SQ→BB MIDI chords] decode/extract failed: ${msg}`);
+      return { userChordInput: null, wireMode: 'use_user_chords' };
+    }
+  }
+  const mode = req.sqToBbChordSourceMode ?? 'generate_harmony';
+  return {
+    userChordInput: resolveSqToBbUserChordInput(mode, req.userChordInput),
+    wireMode: mode === 'midi' ? 'generate_harmony' : mode,
+  };
+}
 
 const LANE_LABEL: Record<SqToBbVoiceLaneId, string> = {
   S: 'Soprano',
@@ -126,7 +167,7 @@ function buildSqToBbContext(
 ): CompositionContext {
   const styleProfile = req.sqToBbStyleProfile ?? 'brookmeyer';
   const eraTag = normalizeSqToBbEraInput(req.sqToBbEra);
-  const userChordInput = resolveSqToBbUserChordInput(req.sqToBbChordSourceMode, req.userChordInput);
+  const { userChordInput } = resolveSqToBbChordPipeline(req);
   const sqToBbDensity = normalizeSqToBbDensity(req.sqToBbDensity);
   const sqLineBundle = getVoiceRuleBundle(sqLineVrbId);
   console.log(`SQ→BB era tag: ${eraTag ?? '(none)'}`);
@@ -352,8 +393,19 @@ export function runSqToBbWorkflowApp(req: GenerateRequest, outputDir: string): G
       composerOsVersion: COMPOSER_OS_VERSION,
     };
   }
-  const totalBars = lengthResolved.lengthBars;
-  const userChordInput = resolveSqToBbUserChordInput(req.sqToBbChordSourceMode, req.userChordInput);
+  const chordPipeline = resolveSqToBbChordPipeline(req);
+  let lengthResolvedFinal = lengthResolved;
+  if (
+    chordPipeline.midiBarCountHint != null &&
+    req.lengthBars == null &&
+    req.totalBars == null &&
+    lengthResolved.ok
+  ) {
+    const hinted = resolveSqToBbLengthBars(chordPipeline.midiBarCountHint);
+    if (hinted.ok) lengthResolvedFinal = hinted;
+  }
+  const totalBars = lengthResolvedFinal.lengthBars;
+  const { userChordInput, wireMode: chordWireMode } = chordPipeline;
   let resolved: ReturnType<typeof resolveSqToBbVrbs>;
   try {
     resolved = resolveSqToBbVrbs(req, totalBars);
@@ -388,7 +440,7 @@ export function runSqToBbWorkflowApp(req: GenerateRequest, outputDir: string): G
   );
   const chordWire = wireSqToBbUserChordTimeline(
     context,
-    req.sqToBbChordSourceMode,
+    chordWireMode,
     userChordInput,
     totalBars,
     req.sqToBbChordMismatchResolution,
@@ -427,7 +479,7 @@ export function runSqToBbWorkflowApp(req: GenerateRequest, outputDir: string): G
     );
     const regenWire = wireSqToBbUserChordTimeline(
       regenContext,
-      req.sqToBbChordSourceMode,
+      chordWireMode,
       userChordInput,
       totalBars,
       req.sqToBbChordMismatchResolution,

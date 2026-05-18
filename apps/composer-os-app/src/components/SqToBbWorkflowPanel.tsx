@@ -15,6 +15,8 @@ import {
   composerEraSelectValueFromDom,
   resolveSqToBbLengthFromUi,
   resolveSqToBbUserChordInput,
+  extractChordsFromMidi,
+  arrayBufferToBase64,
   canGenerateWithUserChords,
   detectBarCountMismatch,
   lightCountUserChordBars,
@@ -239,6 +241,14 @@ export function SqToBbWorkflowPanel({
   );
   const [chordSourceMode, setChordSourceMode] = useState<SqToBbChordSourceMode>('generate_harmony');
   const [chordProgressionRaw, setChordProgressionRaw] = useState('');
+  const [midiFileBase64, setMidiFileBase64] = useState<string | null>(null);
+  const [midiExtraction, setMidiExtraction] = useState<{
+    chordString: string;
+    barCount: number;
+    bpm: number;
+    warnings: string[];
+  } | null>(null);
+  const [dismissedMidiWarnings, setDismissedMidiWarnings] = useState(false);
   const [chordValidationTick, setChordValidationTick] = useState(0);
   const [chordMismatchResolution, setChordMismatchResolution] =
     useState<SqToBbChordMismatchResolution | null>(null);
@@ -307,16 +317,22 @@ export function SqToBbWorkflowPanel({
     if (chordSourceMode !== 'use_user_chords' || chordLightCount == null) return null;
     return detectBarCountMismatch(chordLightCount, lengthBars);
   }, [chordSourceMode, chordLightCount, lengthBars]);
-  const chordGenerateGate = useMemo(
-    () =>
-      canGenerateWithUserChords(
-        chordProgressionRaw,
-        lengthBars,
-        chordSourceMode,
-        chordMismatchResolution,
-      ),
-    [chordProgressionRaw, lengthBars, chordSourceMode, chordMismatchResolution],
-  );
+  const chordGenerateGate = useMemo(() => {
+    if (chordSourceMode === 'midi') {
+      if (midiExtraction?.chordString.trim()) return { ok: true as const };
+      return {
+        ok: false as const,
+        message: 'Upload a MIDI file with detectable harmony before generating.',
+      };
+    }
+    return canGenerateWithUserChords(
+      chordProgressionRaw,
+      lengthBars,
+      chordSourceMode,
+      chordMismatchResolution,
+    );
+  }, [chordProgressionRaw, lengthBars, chordSourceMode, chordMismatchResolution, midiExtraction]);
+  const midiGenerateOk = chordSourceMode !== 'midi' || Boolean(midiExtraction?.chordString.trim());
   const canStartSketch =
     lengthResolved.ok && phase === 'idle' && !loading && chordGenerateGate.ok;
 
@@ -356,8 +372,17 @@ export function SqToBbWorkflowPanel({
           sqToBbAction: action,
           sqToBbStyleProfile: styleProfile,
           styleStack: { primary: 'bob_brookmeyer' },
-          sqToBbChordSourceMode: chordSourceMode,
-          userChordInput,
+          ...(chordSourceMode === 'midi' && midiFileBase64
+            ? {
+                sqToBbChordSourceMode: 'midi',
+                userChordInput: null,
+                midiChordInput: midiFileBase64,
+                midiChordBpm: midiExtraction?.bpm,
+              }
+            : {
+                sqToBbChordSourceMode: chordSourceMode,
+                userChordInput,
+              }),
           ...(chordMismatchResolution
             ? { sqToBbChordMismatchResolution: chordMismatchResolution }
             : {}),
@@ -399,10 +424,26 @@ export function SqToBbWorkflowPanel({
       bbLightTouch,
       chordSourceMode,
       userChordInput,
+      midiFileBase64,
+      midiExtraction?.bpm,
       chordMismatchResolution,
       workflow?.contrapuntalLineSet,
     ],
   );
+
+  const handleMidiFileChange = useCallback(async (file: File | null) => {
+    if (!file) {
+      setMidiFileBase64(null);
+      setMidiExtraction(null);
+      setDismissedMidiWarnings(false);
+      return;
+    }
+    const buf = await file.arrayBuffer();
+    const extracted = extractChordsFromMidi(buf);
+    setMidiFileBase64(arrayBufferToBase64(buf));
+    setMidiExtraction(extracted);
+    setDismissedMidiWarnings(false);
+  }, []);
 
   const handleSketch = () => {
     if (!lengthResolved.ok) return;
@@ -685,7 +726,88 @@ export function SqToBbWorkflowPanel({
               />
               Use my chords
             </label>
+            <label style={{ fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <input
+                type="radio"
+                name="sqToBbChordSource"
+                checked={chordSourceMode === 'midi'}
+                onChange={() => {
+                  setChordSourceMode('midi');
+                  setChordMismatchResolution(null);
+                  setChordValidationTick(0);
+                }}
+              />
+              Import MIDI
+            </label>
           </div>
+          {chordSourceMode === 'midi' ? (
+            <div style={{ marginBottom: 8, maxWidth: 560 }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 4 }}>
+                MIDI file
+              </label>
+              <input
+                type="file"
+                accept=".mid,.midi,audio/midi"
+                disabled={sqSourceLocked || loading}
+                onChange={(e) => {
+                  const file = e.target.files?.[0] ?? null;
+                  void handleMidiFileChange(file);
+                }}
+              />
+              {midiExtraction ? (
+                <>
+                  <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '8px 0 4px' }}>
+                    Detected BPM: {midiExtraction.bpm}
+                  </p>
+                  <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0 0 6px' }}>
+                    Detected bars: {midiExtraction.barCount}
+                  </p>
+                  <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 4 }}>
+                    Extracted chords
+                  </label>
+                  <textarea
+                    readOnly
+                    value={midiExtraction.chordString}
+                    rows={3}
+                    style={{
+                      width: '100%',
+                      padding: '0.45rem 0.6rem',
+                      borderRadius: 6,
+                      border: '1px solid var(--border)',
+                      background: 'var(--bg-input, var(--bg))',
+                      color: 'var(--text)',
+                      fontFamily: 'inherit',
+                      fontSize: '0.85rem',
+                      resize: 'vertical',
+                      marginBottom: 4,
+                    }}
+                  />
+                </>
+              ) : null}
+              {midiExtraction?.warnings.length && !dismissedMidiWarnings ? (
+                <div
+                  style={{
+                    padding: '0.5rem 0.65rem',
+                    marginBottom: 8,
+                    borderRadius: 6,
+                    border: '1px solid rgb(202,138,4)',
+                    background: 'rgba(202,138,4,0.08)',
+                    fontSize: '0.82rem',
+                  }}
+                >
+                  <p style={{ margin: '0 0 6px' }}>{midiExtraction.warnings.join(' ')}</p>
+                  <button type="button" onClick={() => setDismissedMidiWarnings(true)}>
+                    Dismiss
+                  </button>
+                </div>
+              ) : null}
+              {!midiGenerateOk ? (
+                <p style={{ fontSize: '0.82rem', color: 'rgb(185,28,28)', margin: '0 0 8px' }}>
+                  Upload a MIDI file with detectable harmony before generating.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
           <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 4 }}>
             Chord progression (optional)
           </label>
@@ -698,7 +820,7 @@ export function SqToBbWorkflowPanel({
             onBlur={() => setChordValidationTick((n) => n + 1)}
             placeholder="Fmaj7#11 | Ebmaj7#5 | Dbmaj7 | Bmaj7 ..."
             rows={3}
-            disabled={chordSourceMode === 'generate_harmony'}
+            disabled={chordSourceMode === 'generate_harmony' || chordSourceMode === 'midi'}
             style={{
               width: '100%',
               maxWidth: 560,
@@ -711,7 +833,7 @@ export function SqToBbWorkflowPanel({
               fontSize: '0.85rem',
               resize: 'vertical',
               marginBottom: 4,
-              opacity: chordSourceMode === 'generate_harmony' ? 0.55 : 1,
+              opacity: chordSourceMode === 'generate_harmony' || chordSourceMode === 'midi' ? 0.55 : 1,
             }}
           />
           {chordSourceMode === 'use_user_chords' && chordLightCount != null && chordProgressionRaw.trim() ? (

@@ -465,7 +465,11 @@ export interface GenerateRequest {
   /** SQ→BB: raw user chord timeline (Session 1 state wire; parsing Session 2). */
   userChordInput?: string | null;
   /** SQ→BB UI: generate internal harmony vs use `userChordInput`. */
-  sqToBbChordSourceMode?: 'generate_harmony' | 'use_user_chords';
+  sqToBbChordSourceMode?: 'generate_harmony' | 'use_user_chords' | 'midi';
+  /** SQ→BB: base64-encoded `.mid` bytes; server extracts pipe-separated chords. */
+  midiChordInput?: string;
+  /** SQ→BB: override BPM for MIDI chord extraction (optional). */
+  midiChordBpm?: number;
   /** SQ→BB meso quantizer density (`sparse` | `medium` | `dense`). Default `medium`. */
   sqToBbDensity?: import('../core/counterpoint/sqToBbWorkflowTypes').SqToBbDensity;
   /** SQ→BB Light Touch — cap doublings, thin inner voices (default false). */

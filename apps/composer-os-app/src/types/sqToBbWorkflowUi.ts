@@ -25,7 +25,7 @@ export {
   type SqToBbEraBbCompatibility,
 } from '@composer-os/core/counterpoint/sqToBbWorkflowTypes';
 
-export type SqToBbChordSourceMode = 'generate_harmony' | 'use_user_chords';
+export type SqToBbChordSourceMode = 'generate_harmony' | 'use_user_chords' | 'midi';
 
 export type SqToBbDensity = 'sparse' | 'medium' | 'dense';
 
@@ -44,6 +44,9 @@ export function resolveSqToBbUserChordInput(
   const t = raw.trim();
   return t.length > 0 ? raw : null;
 }
+
+export { extractChordsFromMidi, arrayBufferToBase64 } from '@composer-os/core/harmony/midiChordExtractor';
+export type { MidiChordExtractionResult } from '@composer-os/core/harmony/midiChordExtractor';
 
 export type SqToBbChordMismatchResolution =
   | 'repeat'

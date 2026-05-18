@@ -184,7 +184,7 @@ export function normalizeSqToBbEraInput(raw: string | null | undefined): string 
 }
 
 /** SQ→BB chord source (UI state; engine wiring Session 2+). */
-export type SqToBbChordSourceMode = 'generate_harmony' | 'use_user_chords';
+export type SqToBbChordSourceMode = 'generate_harmony' | 'use_user_chords' | 'midi';
 
 /** Resolve `userChordInput` on generate request — null when generating harmony. */
 export function resolveSqToBbUserChordInput(

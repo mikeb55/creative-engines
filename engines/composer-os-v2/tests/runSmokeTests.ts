@@ -4,7 +4,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N rows (M suites)` in the smoke summary, then sync **N** + **M** into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **342** PASS rows, **69** suites (full tier).
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **357** PASS rows, **70** suites (full tier).
  *
  * **Fast subset:** `COMPOSER_OS_SMOKE_TIER=fast` or `npm run test:composer-smoke-fast` — skips `SMOKE_FAST_EXCLUDE` suites (local dev).
  * **Full tier (default / CI):** unset or `COMPOSER_OS_SMOKE_TIER=full` — all suites in `smokeSuites`.
@@ -82,6 +82,7 @@ import { runSqAntimetricRhythmTests } from './sqAntimetricRhythm.test';
 import { runWybleDuoParityTests } from './wybleDuoParity.test';
 import { runEcmGceOrchestrationTests } from './ecmGceOrchestration.test';
 import { runMelodyV2Tests } from './melodyV2.test';
+import { runMidiChordExtractorTests } from './midiChordExtractor.test';
 
 type Row = { name: string; ok: boolean };
 
@@ -89,6 +90,7 @@ type Row = { name: string; ok: boolean };
 const SMOKE_FAST_EXCLUDE: readonly string[] = [
   'Wyble duo parity + BB Light Touch',
   'Melody V2 (motif / register / cadenza)',
+  'MIDI chord extractor (SQ→BB import)',
   'ECM GCE orchestration',
   'SQ anti-metric rhythm engine (sq_antimetric)',
   'SQ swing rhythm engine (sq_swing)',
@@ -121,6 +123,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Phrase engine V2 — integration (duo mock + duoIntent depth guard)', run: runPhraseEngineV2IntegrationWithDuoIntentSmokeGuard },
   { label: 'Wyble duo parity + BB Light Touch', run: runWybleDuoParityTests },
   { label: 'Melody V2 (motif / register / cadenza)', run: runMelodyV2Tests },
+  { label: 'MIDI chord extractor (SQ→BB import)', run: runMidiChordExtractorTests },
   { label: 'ECM GCE orchestration', run: runEcmGceOrchestrationTests },
   { label: 'Conductor', run: runConductorTests },
   { label: 'SQ swing rhythm engine (sq_swing)', run: runSqSwingRhythmTests },
