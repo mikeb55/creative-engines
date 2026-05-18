@@ -124,7 +124,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Chord Inspector — Reharm UI:** After a successful inspect, **Reharmonise** runs **`generateReharmCandidates`** and shows a **drift proximity** slider (**0.0–1.0**, step **0.1**, default **0.5**) that remaps to a target emotional drift and **reorders** the **top 8** same-root substitutes; each row shows substitute label, dominant **drift** readout, and **Use this chord** (fills the chord symbol field). The reharm panel **closes / clears** on a new **Inspect Chord** so results always match the current symbol.
 
-**Smoke tier:** **`npm run test:composer-smoke`** — **248**/0 PASS rows, **63** labelled suites (**`runSmokeTests.ts`** allowlist). Sync **`CLAUDE.md`**, **`docs/COMPOSER_OS_ROADMAP.md`** (Current + checklist), and **`docs/CHANGELOG.md`** when you change **`engines/composer-os-v2/tests/runSmokeTests.ts`**.
+**Smoke tier:** **`npm run test:composer-smoke`** — **259**/0 PASS rows, **64** labelled suites (**`runSmokeTests.ts`** allowlist). **`npm run test:composer-smoke-fast`** — **213**/0, **56** suites (local dev). Sync **`CLAUDE.md`**, **`docs/COMPOSER_OS_ROADMAP.md`** (Current + checklist), and **`docs/CHANGELOG.md`** when you change **`engines/composer-os-v2/tests/runSmokeTests.ts`**.
 
 **Vault iReal / paste / PDF pipeline (2026-05-05):** **`VaultGenerationOptions`** — **`chorusCount`** (default **1**, max **64**) repeats the full chart with sequential **`barIndex`** / global **`startBeat`**; each chorus advances **melody** motif **`transformMotifThroughLayers`** tension phase (**primary → tension → chaos → recover → resolve**, modulo **5**) unless **`songwriterStyleId === 'sonic_youth'`** (holds rotation at **0** for SY texture). **Solo** mode repeats bars without motif pass; when **`riffStyle`** is omitted or **`triad-pair-pendulum`**, each chorus rotates effective vault style via **`TRIAD_PAIR_CHORUS_ROTATION`** (same SY bypass). **Melody** mode also wires **Build F** **`motifTransformer`** reuse after initial quadratonic fill. **Song Mode phrase validator:** **`sonic_youth`** bypasses **zigzag** (**`phrase_bar_zigzag`**) only.
 
@@ -181,7 +181,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Testing
 
 ```bash
-# Smoke tier (~5 min) — 248/0 PASS rows, 63 labelled suites (runSmokeTests.ts allowlist; sync CLAUDE + roadmap when edited)
+# Smoke tier (~5 min) — 259/0 PASS rows, 64 labelled suites; fast 213/56 (runSmokeTests.ts allowlist; sync CLAUDE + roadmap when edited)
 npm run test:composer-smoke
 
 # Fast tier (~15–20 min)

@@ -1,8 +1,28 @@
-# Composer OS Roadmap [2026-05-14]
+# Composer OS Roadmap [2026-05-18]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
 **V30 — COMPLETE (2026-05-05):** **Odd meter UI parity** (mixed-meter badge on chart preview + paste / iReal result blocks); **MusicXML import Phase 1** (`parseMusicXml` / core **`ParsedChart`** path); **Duo expansion** — Song Mode **pairing cards** + swap (**`pat_metheny`**, **`bacharach`**, **`ecm_chamber`**), **Duo intent** selector (UI), **Duo Health** pill on success, **ECM Chamber safe sweep** badge + Advanced override (**UI-only**). Duo expansion here was **surfaces + diagnostics**, not a duo golden-path slice rebuild.
+
+**V58 — IN PROGRESS (2026-05-18):** **Per-section VRB assignment** (SQ→BB) — types + `VrbContextMap` + per-section Harmonic Voice picker; recon complete; await Perplexity advice then **Commit 1** (types + UI).
+
+**V58 — COMPLETE since V57 (`0e2dfe0e` … `3b8db553`):** **Export-truth consolidation** (`assertExportTruth`) · **Contrapuntal Pass 4** (SQ/BB MusicXML from `contrapuntalLineSet`) · **Long forms 40–64 bars** (duo/song product quality) · **Film-stub VRBs → full receipts** (8 composers) · **Lead-sheet MusicXML import phase 3+** · **Output validation layer** (MIDI + MusicXML + audio; smoke +11 rows) · **SQ VRB slices:** Ligeti **σ=32**, Satie **σ=19**, Cole Porter **σ=25**, Gershwin **σ=27** · **GM string playback** (Violin I/II, Viola, Cello — Tone.Sampler + FluidR3_GM on SQ→BB panel).
+
+**SQ Harmonic Voice — GCE σ table (`registerCohesionStdevCeilingSt`, all 17):**
+
+| vrbId | σ | vrbId | σ |
+|-------|---|-------|---|
+| glass | 18 | cole_porter | 25 |
+| satie | 19 | williams | 26 |
+| rota | 19 | zimmer | 26 |
+| ravel | 20 | gershwin | 27 |
+| badalamenti | 21 | shostakovich | 28 |
+| morricone | 22 | ligeti | 32 |
+| joni_mitchell | 23 | herrmann | 36 |
+| goldsmith | 24 | webern | 40 |
+| **bartók** | **24** | | |
+
+Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartók** native bundle (not in registry map). **Smoke (2026-05-18):** full **259/0** (**64** suites) · fast **213/0** (**56** suites).
 
 **V31 — COMPLETE (2026-05-11):**
 
@@ -403,7 +423,7 @@
 
 - **String Quartet SQ rhythm engines (2026-05-14) — 6 / 7 shipped:** Native **`sqRhythmEngineId`** engines on **`GenerationMetadata`** (receipts + Style Panel wiring): **`bartok_bulgarian_aksak`** (`BG_RHYTHM_*`) · **`free_proportional`** (`FP_RHYTHM_*`) · **`baroque_dance`** (`BD_RHYTHM_*`) · **`reich_phasing_grid`** (`RP_RHYTHM_*`) · **`viennese_waltz`** (`VW_RHYTHM_*`) · **`jewish_klezmer`** (`KL_RHYTHM_*`). Style context prefixes: **`bg`**, **`fp`**, **`bd`**, **`rp`**, **`vw`**, **`kl`**. Cross-preset rhythm engines (Fela Kuti, Greek Rebetiko, Brazilian, Second Line, Cuban / Afro-Cuban) unchanged. **Remaining (deferred, not abandoned):** **Swing adapted for SQ** (`sq_swing`) — Perplexity research + execution prompt queued for a future sprint (Turtle Island–aligned grammar).
 - **V30 — COMPLETE (2026-05-05):** **Odd meter UI parity** · **MusicXML import Phase 1** · **Duo expansion** (pairing cards, duo intent selector, Duo Health readout, ECM safe sweep badge + Advanced checkbox) — detail under **§ Next best development — V30 complete · V31 sequencing**.
-- **Harness (project status):** **`test:smoke`** + **`test:fast`** are the primary CI/dev gates; **`npm test` / `test:full`** runs the **chunked** harness (**T2.8**, 2026-04-28 — lower single-process heap vs monolithic import list). **`test:smoke`** (**`npm run test:composer-smoke`**) prints **`Passed: N`** — **N** is the **aggregate** of every **`PASS:`** row across the fixed allowlist in **`engines/composer-os-v2/tests/runSmokeTests.ts`** (not the number of labelled suites). **Snapshot (2026-05-15):** **248** passed / **0** failed (**63** suites) — **re-run after local changes** and refresh this line + **`CLAUDE.md`** smoke blurb. Historical full-matrix debt remains triaged in **`docs/TEST_DEBT_COMPOSER_OS_V2.md`**.
+- **Harness (project status):** **`test:smoke`** + **`test:fast`** are the primary CI/dev gates; **`npm test` / `test:full`** runs the **chunked** harness (**T2.8**, 2026-04-28 — lower single-process heap vs monolithic import list). **`test:smoke`** (**`npm run test:composer-smoke`**) prints **`Passed: N`** — **N** is the **aggregate** of every **`PASS:`** row across the fixed allowlist in **`engines/composer-os-v2/tests/runSmokeTests.ts`** (not the number of labelled suites). **Snapshot (2026-05-18):** **259** passed / **0** failed (**64** suites); fast tier **213** / **56**. **Re-run after local changes** and refresh this line + **`CLAUDE.md`** smoke blurb. Historical full-matrix debt remains triaged in **`docs/TEST_DEBT_COMPOSER_OS_V2.md`**.
 - **Multi-arranger VRB blend — String Quartet preset (2026-05-15) — COMPLETE:** Weighted **two-arranger** **`VoiceRuleBundle`** blend (**`vrbBlend.ts`** / **`blendVoiceRuleBundles`**), **`sqArrangerVrb`** on generate when valid; **Generate** UI dual dropdowns + linked weights + incompatibility gate + preview card; **`StyleProfile.arrangerBlend`**; SQ arranger list **15** VRB ids (includes **Pärt**, **Satie**, **Gershwin**, **Porter**, **Ornette Coleman**). Roadmap **§ Item 4.5** marked **COMPLETE**; **SQ arranger surface parity** (new-territory composers on the SQ arranger rows) **COMPLETE**. Smoke **248**/0 (**63** suites).
 - **Windows desktop packaging (2026-05-14):** If **`electron-builder`** cannot delete **`release/win-unpacked/resources/app.asar`** (“in use by another process”), **`MsMpEng`** / **`SearchProtocolHost`** / **Explorer** / a **stale Electron** instance may hold a read lock on the prior unpack — rebuild with a **fresh output directory**, e.g. **`npx electron-builder --win --config.directories.output=release-jobim`** from **`apps/composer-os-desktop`**, then ship **`Composer-OS.exe`** from that folder. **Canonical workaround + root-cause detail:** **§ What to do next — #10** and **§ Item 10 — Desktop rebuild (EPERM)**.
 - **What to schedule first:** see **§ What to do next — importance order (2026-05-14)** below (replaces stale **Priority stack** ordering for assistants).
@@ -475,11 +495,12 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 |---|----------|-----|
 | **1** | **Smoke + fast tier green** | **`npm run test:composer-smoke`** / **`test:composer-fast`** + CI on **`main`** — gate before any large slice/refactor ship. Sync aggregate **`Passed: N`** in **Current** + **`CLAUDE.md`** when **`runSmokeTests.ts`** changes. |
 | **2** | **Duo golden-path depth** | Beyond V31 UI (**duo intent** shipped): registers, phrase bias follow-through; **MIDI velocity voice-balance** explicitly **deferred** from V31 — pick up now that no composer lane is in sprint. |
-| **3** | **Export-truth consolidation (harmony/manifest/fingerprint chain) — Shorter slice closed** | Continue only for remaining manifest/export drift found by smoke or manual LOCK checks; do not reschedule Wayne Shorter as an open deepening item. |
+| **3** | **Export-truth consolidation** | **COMPLETE (2026-05-17, `3b8db553`).** **`assertExportTruth`** + **`exportTruthAudit`**; golden-path wiring. Residual drift: smoke / manual LOCK only. |
 | **4** | **Multi-chorus quality** | Vault / **`chorusCount`** — phrase behaviour + variation beyond baseline (**Current** Tonality Vault note). |
 | **4.5** | **Multi-arranger VRB blend (SQ preset)** | **COMPLETE (2026-05-15).** Engine **`blendVoiceRuleBundles`** + known safe/incompatible pairs; app UI (two arrangers + weights + preview + generate guard); **`sqArrangerVrb`** payload; **`arrangerBlend`** on **`StyleProfile`**. See **§ Item 4.5**. |
-| **5** | **Lead-sheet MusicXML import phase 3+ (phase 2 complete — 7 writers, 39/39)** | — |
-| **6** | **New composer territories / depth** | **VRB “new composer territories” lane — COMPLETE (2026-05-14):** Pärt (**`part`**, **`AP_*`**), Satie (**`satie`**, **`ES_*`**), Ornette (**`ornette_coleman`**, **`OC_*`**), Gershwin (**`gershwin`**, **`GG_*`**), Porter (**`cole_porter`**, **`CP_*`**). **Next in this lane:** **Ligeti Song Mode slice** (optional; SQ VRB **`ligeti`** already ships) + **slice-level depth / eval** for any of the above when product schedules it — not VRB-only. |
+| **5** | **Lead-sheet MusicXML import phase 3+** | **COMPLETE (`e1f583b7`).** Writer parity, anchor expansion, **`ParsedChart`** handoff. |
+| **5.5** | **Per-section VRB assignment (SQ→BB)** | **IN PROGRESS (2026-05-18).** `VrbWeight` / `SectionVrbContext` / `VrbContextMap` / `dominantVrb()`; per-section Harmonic Voice picker. Recon done — see **`HANDOFF_V58.md`**. |
+| **6** | **New composer territories / depth** | **COMPLETE (2026-05-18):** Satie / Porter / Gershwin **SQ VRB slices** + Ligeti **σ=32** in registry; film-stub receipts. Optional: **Ligeti Song Mode slice**, slice-level eval. |
 | **7** | **Horizontal / backlog horizontals** | ECM **GCE** orchestration pillar; **Wyble** duo↔realized parity; BB **Light Touch**; **MIDI** import; **Nutritional Information** melody V2; **unmeasured cadenza**; **Generate UI** tooltips / preset wire-through — after **1–6** unless escalated. |
 | **9** | **String Quartet VRB Family** | **Status: COMPLETE (2026-05-13) — 12 shipped + UI wiring + SQ arranger redesign; arranger surface + blend extended (2026-05-15).** Full **songwriter** roster: **Bartók · Ravel · Dutilleux · Debussy · Messiaen · Beethoven (Late Quartets) · Turtle Island Quartet · Reich / Glass · Shostakovich · Lachenmann · Ligeti · Crumb (Black Angels)** — all 12 under **String Quartet VRB** songwriter optgroup. **SQ arranger** rows: **15** VRB ids (adds **Pärt · Satie · Gershwin · Cole Porter · Ornette Coleman**) + **multi-arranger weighted blend** + **`sqArrangerVrb`** (see **#4.5**). Two-way preset reset + `stylePairing.arrangerStyle` omitted when SQ + None unchanged. Excluded composers (Haydn, Schubert, Brahms, Xenakis, Richter) remain out of scope. |
 | **10** | **Desktop rebuild (Windows / `electron-builder` EPERM)** | **`release/win-unpacked/resources/app.asar`** removal fails (“in use by another process”). **Workaround confirmed:** build to **`%LocalAppData%\Temp\composer-desktop-vXX-out`** via **`--config.directories.output`**, then copy **`Composer-OS.exe`** into **`apps/composer-os-desktop/release/`**. **Root cause:** **`release\win-unpacked`** held by **Explorer**, **AV**, or **old Electron**. **Fix:** close everything holding **`release\`**, then **`npm run dist`** in-repo. See **§ Item 10 — Desktop rebuild (EPERM)** below. |
