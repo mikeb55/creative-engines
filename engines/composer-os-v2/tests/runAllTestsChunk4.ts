@@ -36,6 +36,8 @@ import { runHarmonySpineTests } from './harmonySpine.test';
 import { runMusicXmlImportTests } from './musicXmlImport.test';
 import { runVoiceRuleBundleHarnessAdditiveTests } from './voiceRuleBundleHarnessAdditive.test';
 import { runLigetiVrbTests } from '../core/counterpoint/vrbProfiles/ligetiVrb.test';
+import { runSatieVrbTests } from '../core/counterpoint/vrbProfiles/satieVrb.test';
+import { runColePorterVrbTests } from '../core/counterpoint/vrbProfiles/colePorterVrb.test';
 import { runDuoIntentTests } from './duoIntent.test';
 import { runMacroFormPlannerTests } from './macroFormPlanner.test';
 import { retroSuites } from './retro/index';
@@ -76,6 +78,8 @@ const suites: SuiteEntry[] = [
   { name: 'MusicXML import (ParsedChart)', run: runMusicXmlImportTests },
   { name: 'VoiceRuleBundle Phase 2+3a harness (additive)', run: runVoiceRuleBundleHarnessAdditiveTests },
   { name: 'Ligeti SQ VRB profile (σ=32)', run: runLigetiVrbTests },
+  { name: 'Satie SQ VRB profile (σ=19)', run: runSatieVrbTests },
+  { name: 'Cole Porter SQ VRB profile (σ=25)', run: runColePorterVrbTests },
   { name: 'Duo intent (product vs PhraseIntent)', run: runDuoIntentTests },
   { name: 'Macro form planner', run: runMacroFormPlannerTests },
   ...retroSuites,

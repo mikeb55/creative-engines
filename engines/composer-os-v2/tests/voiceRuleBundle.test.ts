@@ -306,24 +306,45 @@ function testSevenVoicesMinChordDurationBars(): boolean {
       const es = getVoiceRuleBundle('satie');
       return (
         es.voiceId === 'satie' &&
+        es.sqVrbProfileId === 'satie' &&
+        es.harmonicRhythm.minChordDurationBars >= 4 &&
         es.bassPolicy.role === 'pedal-or-static' &&
         es.melodicPolicy.contour === 'stepwise-modal' &&
+        es.melodicPolicy.maxLeapSemitones <= 4 &&
         es.formPolicy.narrativeArc === 'non-teleological' &&
+        es.formPolicy.stasisSurface === true &&
         es.rhythmPolicy.antiMetric === false &&
         es.parallelChordsEnabled === true &&
         es.unresolvedDominantEnabled === true &&
         es.furnitureModeEnabled === true &&
-        es.ironicStyleSwitchEnabled === true &&
-        es.tintinnabuliEnabled === false &&
-        es.sacredProfile === false &&
-        (es.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 30 &&
-        Boolean(es.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('ES_POLICY_01'))) &&
-        Boolean(es.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('ES_HARM_PAL_01'))) &&
-        Boolean(es.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('ES_RHY_FURN_01'))) &&
-        Boolean(es.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('ES_DIFF_DEB_01'))) &&
-        getVoiceRuleBundle('erik_satie').voiceId === 'satie' &&
+        es.suppressFunctionalResolution === true &&
+        es.contrapuntalLinePolicy?.parallelMotionPolicy === 'allow' &&
+        (es.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 35 &&
+        Boolean(es.orchestrationPolicy.fingerprintReceipts?.some((r) => r.includes('WORK_GYMNOPEDIE'))) &&
+        Boolean(es.orchestrationPolicy.fingerprintReceipts?.some((r) => r.includes('DIFF_VS_GLASS'))) &&
+        getVoiceRuleBundle('erik_satie').sqVrbProfileId === 'satie' &&
         getVoiceRuleBundle('gymnopedies').voiceId === 'satie' &&
         getVoiceRuleBundle('furniture_music').voiceId === 'satie'
+      );
+    })() &&
+    (() => {
+      const cp = getVoiceRuleBundle('cole_porter');
+      return (
+        cp.voiceId === 'cole_porter' &&
+        cp.sqVrbProfileId === 'cole_porter' &&
+        cp.harmonicRhythm.minChordDurationBars >= 1 &&
+        cp.bassPolicy.role === 'chromatic-descent-or-root' &&
+        cp.melodicPolicy.maxLeapSemitones <= 14 &&
+        cp.formPolicy.narrativeArc === 'aaba-or-extended-refrain' &&
+        cp.repairPolicy.resolveParallels === true &&
+        cp.suppressFunctionalResolution === false &&
+        cp.swingFeel === false &&
+        cp.contrapuntalLinePolicy?.parallelMotionPolicy === 'avoid' &&
+        (cp.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 35 &&
+        Boolean(cp.orchestrationPolicy.fingerprintReceipts?.some((r) => r.includes('WORK_NIGHT_AND_DAY'))) &&
+        Boolean(cp.orchestrationPolicy.fingerprintReceipts?.some((r) => r.includes('DIFF_VS_GERSHWIN'))) &&
+        getVoiceRuleBundle('porter').sqVrbProfileId === 'cole_porter' &&
+        getVoiceRuleBundle('night_and_day').voiceId === 'cole_porter'
       );
     })()
   );

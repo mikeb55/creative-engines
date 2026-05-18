@@ -441,6 +441,8 @@ export interface VoiceRuleBundle {
   furnitureModeEnabled?: boolean;
   /** Erik Satie — church_mode ↔ salon_waltz ↔ cabaret_vamp ↔ furniture_loop section switches. */
   ironicStyleSwitchEnabled?: boolean;
+  /** Erik Satie SQ VRB — suppress functional V→I scoring on line + GCE path. */
+  suppressFunctionalResolution?: boolean;
   /** Ornette Coleman harmolodics — coequal harmony/melody/rhythm grid; democratic lines */
   harmolodicsEnabled?: boolean;
   /** Ornette Coleman — pitch field + pulse replace chord-chart truth */

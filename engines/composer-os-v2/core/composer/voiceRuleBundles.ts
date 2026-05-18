@@ -20,6 +20,8 @@ import { SHOSTAKOVICH_SQ_VRF_FINGERPRINT_RECEIPTS } from './shostakovichSqVrbFin
 import { LACHENMANN_SQ_VRF_FINGERPRINT_RECEIPTS } from './lachenmannSqVrbFingerprints';
 import { LIGETI_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/ligetiVrbFingerprints';
 import { applyLigetiSqVrbProfile } from '../counterpoint/vrbProfiles/ligetiSqVrb';
+import { applySatieSqVrbProfile } from '../counterpoint/vrbProfiles/satieSqVrb';
+import { applyColePorterSqVrbProfile } from '../counterpoint/vrbProfiles/colePorterSqVrb';
 import { CRUMB_BLACK_ANGELS_SQ_VRB_FINGERPRINT_RECEIPTS } from './crumbBlackAngelsSqVrbFingerprints';
 import { applyHerrmannFilmStubVrbProfile } from '../counterpoint/vrbProfiles/herrmannFilmStubVrb';
 import { applyMorriconeFilmStubVrbProfile } from '../counterpoint/vrbProfiles/morriconeFilmStubVrb';
@@ -35,10 +37,10 @@ import { applyWebernSqVrbProfile } from '../counterpoint/vrbProfiles/webernSqVrb
 import { applyJoniMitchellSqVrbProfile } from '../counterpoint/vrbProfiles/joniMitchellSqVrb';
 import { JOBIM_VRB_FINGERPRINT_RECEIPTS } from './jobimVrbFingerprints';
 import { ARVO_PART_TINTINNABULI_VRF_FINGERPRINT_RECEIPTS } from './arvoPartTintinnabuliVrbFingerprints';
-import { SATIE_VRF_FINGERPRINT_RECEIPTS } from './satieVrbFingerprints';
+import { SATIE_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/satieVrbFingerprints';
 import { ORNETTE_COLEMAN_VRF_FINGERPRINT_RECEIPTS } from './ornetteColemanVrbFingerprints';
 import { GERSHWIN_VRF_FINGERPRINT_RECEIPTS } from './gershwinVrbFingerprints';
-import { COLE_PORTER_VRF_FINGERPRINT_RECEIPTS } from './colePorterVrbFingerprints';
+import { COLE_PORTER_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/colePorterVrbFingerprints';
 import {
   BADALAMENTI_FILM_STUB,
   BACHARACH,
@@ -2718,11 +2720,11 @@ const PART: VoiceRuleBundle = {
 };
 
 /** Erik Satie — modal salon / furniture music VRB (Gymnopédies · Gnossiennes · Sarabandes · Poire · Parade · Socrate). */
-const SATIE: VoiceRuleBundle = {
+const SATIE_STUB: VoiceRuleBundle = {
   voiceId: 'satie',
   harmonicRhythm: {
-    minChordDurationBars: 1,
-    maxChordDurationBars: 8,
+    minChordDurationBars: 4,
+    maxChordDurationBars: 16,
     allowMidBarChange: false,
   },
   bassPolicy: {
@@ -2730,9 +2732,9 @@ const SATIE: VoiceRuleBundle = {
     allowOctaveDoubling: true,
   },
   voicingPolicy: {
-    minSpreadSemitones: 8,
-    maxSpreadSemitones: 40,
-    clusterSizeNotes: [2, 5],
+    minSpreadSemitones: 12,
+    maxSpreadSemitones: 18,
+    clusterSizeNotes: [3, 4],
     forbidParallelFifths: false,
     forbidOctaveDoubling: false,
   },
@@ -2745,14 +2747,14 @@ const SATIE: VoiceRuleBundle = {
     anchorToneCount: 1,
     mutateSingleVoiceAtTime: false,
     allowCollectiveImprov: false,
-    fingerprintReceipts: SATIE_VRF_FINGERPRINT_RECEIPTS,
+    fingerprintReceipts: SATIE_VRB_FINGERPRINT_RECEIPTS,
   },
   formPolicy: {
     narrativeArc: 'non-teleological',
     sectionRecallEnforced: false,
+    stasisSurface: true,
   },
   rhythmPolicy: {
-    /** Barred Gymnopédie / Sarabande spine; gnossienne barless mode flips at slice. */
     antiMetric: false,
   },
   repairPolicy: {
@@ -2766,7 +2768,10 @@ const SATIE: VoiceRuleBundle = {
   tintinnabuliEnabled: false,
   sacredProfile: false,
   noTeleologicalDevelopment: true,
+  swingFeel: false,
 };
+
+const SATIE = applySatieSqVrbProfile(SATIE_STUB);
 
 /** Ornette Coleman — harmolodic language (Atlantic quartet → Skies → Prime Time). */
 const ORNETTE_COLEMAN: VoiceRuleBundle = {
@@ -2868,34 +2873,34 @@ const GERSHWIN: VoiceRuleBundle = {
 };
 
 /** Cole Porter — chromatic songbook functionalism + urbane wit. */
-const COLE_PORTER: VoiceRuleBundle = {
+const COLE_PORTER_STUB: VoiceRuleBundle = {
   voiceId: 'cole_porter',
   harmonicRhythm: {
     minChordDurationBars: 1,
     maxChordDurationBars: 8,
-    allowMidBarChange: false,
+    allowMidBarChange: true,
   },
   bassPolicy: {
     role: 'chromatic-descent-or-root',
     allowOctaveDoubling: false,
   },
   voicingPolicy: {
-    minSpreadSemitones: 6,
-    maxSpreadSemitones: 36,
+    minSpreadSemitones: 14,
+    maxSpreadSemitones: 20,
     clusterSizeNotes: [3, 5],
     forbidParallelFifths: false,
     forbidOctaveDoubling: false,
   },
   melodicPolicy: {
     contour: 'speech-elegant',
-    maxLeapSemitones: 16,
+    maxLeapSemitones: 14,
     preferredIntervalSets: [1, 2, 3, 6, 8],
   },
   orchestrationPolicy: {
     anchorToneCount: 2,
     mutateSingleVoiceAtTime: false,
     allowCollectiveImprov: false,
-    fingerprintReceipts: COLE_PORTER_VRF_FINGERPRINT_RECEIPTS,
+    fingerprintReceipts: COLE_PORTER_VRB_FINGERPRINT_RECEIPTS,
   },
   formPolicy: {
     narrativeArc: 'aaba-or-extended-refrain',
@@ -2905,7 +2910,7 @@ const COLE_PORTER: VoiceRuleBundle = {
     antiMetric: false,
   },
   repairPolicy: {
-    resolveParallels: false,
+    resolveParallels: true,
     maxVoiceOverlap: 6,
   },
   swingFeel: false,
@@ -2916,6 +2921,8 @@ const COLE_PORTER: VoiceRuleBundle = {
   textCoupledHarmonyEnabled: true,
   witStyleProfile: true,
 };
+
+const COLE_PORTER = applyColePorterSqVrbProfile(COLE_PORTER_STUB);
 
 const CRUMB_BLACK_ANGELS: VoiceRuleBundle = {
   voiceId: 'crumb_black_angels',
