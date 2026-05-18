@@ -13,6 +13,11 @@ import {
   isValidSectionLabel,
   SQ_TO_BB_DEFAULT_SECTION_LABEL_MODE,
 } from '../core/counterpoint/vrbProfiles/sqToBbSectionLabels';
+import {
+  assertSectionBarRanges,
+  buildSqToBbFormSections,
+  normalizeSectionVrbMap,
+} from '../app-api/normalizeSectionVrbMap';
 
 const test = {
   todo(name: string): { name: string; ok: boolean } {
@@ -89,6 +94,73 @@ function testFreeFormLabelRejected(): boolean {
   return !isValidSectionLabel('my_custom_section', 'song') && !isValidSectionLabel('my_custom_section', 'instrumental');
 }
 
+function testNormalizeSectionVrbMapFromMap(): boolean {
+  const map = normalizeSectionVrbMap({
+    totalBars: 32,
+    sectionVrbMap: { opening: 'glass', development: 'shostakovich' },
+    sectionLabelMode: 'instrumental',
+  });
+  if (map.size !== 2) return false;
+  const opening = map.get('opening');
+  const development = map.get('development');
+  return (
+    opening?.sectionId === 'opening' &&
+    dominantVrb(opening) === 'glass' &&
+    development?.sectionId === 'development' &&
+    dominantVrb(development) === 'shostakovich'
+  );
+}
+
+function testNormalizeSectionVrbMapComposerFallback(): boolean {
+  const map = normalizeSectionVrbMap({
+    totalBars: 32,
+    sqToBbSqComposer: 'glass',
+  });
+  const ctx = map.get('sq_bb');
+  return map.size === 1 && ctx != null && dominantVrb(ctx) === 'glass';
+}
+
+function testNormalizeSectionVrbMapInvalidLabel(): boolean {
+  try {
+    normalizeSectionVrbMap({
+      totalBars: 32,
+      sectionVrbMap: { my_custom_section: 'glass' },
+    });
+    return false;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : '';
+    return msg.includes('Invalid section label') && msg.includes('my_custom_section');
+  }
+}
+
+function testNormalizeSectionVrbMapUnknownVrbId(): boolean {
+  try {
+    normalizeSectionVrbMap({
+      totalBars: 32,
+      sectionVrbMap: { opening: 'not_a_real_vrb' },
+    });
+    return false;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : '';
+    return msg.includes('Unknown vrbId') && msg.includes('not_a_real_vrb') && msg.includes('opening');
+  }
+}
+
+function testSectionBarRangesSumToTotalBars(): boolean {
+  const map = normalizeSectionVrbMap({
+    totalBars: 32,
+    sectionVrbMap: { opening: 'glass', statement: 'ravel', development: 'shostakovich', coda: 'webern' },
+    sectionLabelMode: 'instrumental',
+  });
+  const sections = buildSqToBbFormSections(map, 32, 'instrumental');
+  try {
+    assertSectionBarRanges(sections, 32);
+    return sections.length === 4 && sections.every((s) => s.length > 0);
+  } catch {
+    return false;
+  }
+}
+
 export function runPerSectionVrbTests(): { name: string; ok: boolean }[] {
   return [
     ['buildGlobalVrbContextMap — single sq_bb entry', testBuildGlobalVrbContextMap],
@@ -98,6 +170,11 @@ export function runPerSectionVrbTests(): { name: string; ok: boolean }[] {
     ['isValidSectionLabel — instrumental mode', testIsValidSectionLabelInstrumental],
     ['getSectionLabelsForMode — 6 song / 8 instrumental', testGetSectionLabelsForModeCounts],
     ['isValidSectionLabel — reject free-form keys', testFreeFormLabelRejected],
+    ['normalizeSectionVrbMap — sectionVrbMap present', testNormalizeSectionVrbMapFromMap],
+    ['normalizeSectionVrbMap — sqToBbSqComposer fallback', testNormalizeSectionVrbMapComposerFallback],
+    ['normalizeSectionVrbMap — invalid label throws', testNormalizeSectionVrbMapInvalidLabel],
+    ['normalizeSectionVrbMap — unknown vrbId throws', testNormalizeSectionVrbMapUnknownVrbId],
+    ['buildSqToBbFormSections — bar ranges sum to totalBars', testSectionBarRangesSumToTotalBars],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() })).concat(
     test.todo(
       'Glass→Shostakovich seam: no voice moves >2 semitones at bar join — implement in Commit 4',

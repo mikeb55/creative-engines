@@ -449,6 +449,15 @@ export interface GenerateRequest {
   /** SQ→BB SQ harmonic voice (`null` = style-profile default; `bartok` enabled). */
   sqToBbSqComposer?: import('../core/counterpoint/sqToBbWorkflowTypes').SqToBbSqComposer;
   /**
+   * Per-section SQ VRB map (canonical section label → vrbId).
+   * sectionVrbMap supersedes sqToBbSqComposer when present.
+   * Keys must be canonical section labels for sectionLabelMode.
+   * If absent, sqToBbSqComposer is used as a global fallback.
+   */
+  sectionVrbMap?: Record<string, string>;
+  /** Canonical section label set for sectionVrbMap keys. Default `instrumental`. */
+  sectionLabelMode?: import('../core/counterpoint/vrbProfiles/sqToBbSectionLabels').SqToBbSectionLabelMode;
+  /**
    * SQ→BB optional era hint. Omit, `null`, or blank → no `generationMetadata.era` tag.
    * Do not use `stylePairing.era` for this preset.
    */

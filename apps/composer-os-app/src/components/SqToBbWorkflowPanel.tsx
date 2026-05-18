@@ -28,7 +28,10 @@ import {
   SQ_TO_BB_LENGTH_PRESETS,
   SQ_TO_BB_SQ_COMPOSER_OPTIONS,
   SQ_TO_BB_SQ_COMPOSER_SELECT_NULL,
+  SQ_TO_BB_DEFAULT_SECTION_LABEL_MODE,
   SQ_TO_BB_STYLE_PROFILES,
+  getSectionLabelsForMode,
+  type SqToBbSectionLabelMode,
   type SqToBbChordSourceMode,
   type SqToBbDensity,
   type SqToBbEraSelectValue,
@@ -228,6 +231,12 @@ export function SqToBbWorkflowPanel({
   const [lengthSelect, setLengthSelect] = useState<SqToBbLengthSelectValue>(32);
   const [customLengthBars, setCustomLengthBars] = useState('');
   const [sqComposer, setSqComposer] = useState<SqToBbSqComposer>(null);
+  const [sectionLabelMode, setSectionLabelMode] = useState<SqToBbSectionLabelMode>(
+    SQ_TO_BB_DEFAULT_SECTION_LABEL_MODE,
+  );
+  const [sectionVrbAssignments, setSectionVrbAssignments] = useState<Record<string, string | null>>(
+    () => Object.fromEntries(getSectionLabelsForMode(SQ_TO_BB_DEFAULT_SECTION_LABEL_MODE).map((l) => [l, null])),
+  );
   const [chordSourceMode, setChordSourceMode] = useState<SqToBbChordSourceMode>('generate_harmony');
   const [chordProgressionRaw, setChordProgressionRaw] = useState('');
   const [chordValidationTick, setChordValidationTick] = useState(0);
@@ -252,6 +261,15 @@ export function SqToBbWorkflowPanel({
   const [dismissedMismatchPair, setDismissedMismatchPair] = useState<string | null>(null);
 
   const sqSourceLocked = phase !== 'idle';
+  const sectionLabels = useMemo(() => getSectionLabelsForMode(sectionLabelMode), [sectionLabelMode]);
+  const sectionVrbMapPayload = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const label of sectionLabels) {
+      const vrbId = sectionVrbAssignments[label];
+      if (vrbId) map[label] = vrbId;
+    }
+    return Object.keys(map).length > 0 ? map : undefined;
+  }, [sectionLabels, sectionVrbAssignments]);
   const bbOutputLocked = sqSourceLocked;
   const eraCompatibility = useMemo(
     () => sqToBbClassicalEraCompatibility(era, styleProfile),
@@ -342,7 +360,9 @@ export function SqToBbWorkflowPanel({
           ...(chordMismatchResolution
             ? { sqToBbChordMismatchResolution: chordMismatchResolution }
             : {}),
-          sqToBbSqComposer: sqComposer,
+          sqToBbSqComposer: sectionVrbMapPayload ? null : sqComposer,
+          sectionLabelMode,
+          ...(sectionVrbMapPayload ? { sectionVrbMap: sectionVrbMapPayload } : {}),
           sqToBbDensity,
           ...(eraTag !== undefined ? { sqToBbEra: eraTag } : { sqToBbEra: null }),
           ...extra,
@@ -371,6 +391,8 @@ export function SqToBbWorkflowPanel({
       styleProfile,
       era,
       sqComposer,
+      sectionLabelMode,
+      sectionVrbMapPayload,
       sqToBbDensity,
       chordSourceMode,
       userChordInput,
@@ -488,6 +510,72 @@ export function SqToBbWorkflowPanel({
           disabled={sqSourceLocked || loading}
           style={{ border: 'none', margin: 0, padding: 0 }}
         >
+          <div style={{ marginBottom: '0.75rem' }}>
+            <span style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 4 }}>
+              Section label mode
+            </span>
+            <label style={{ fontSize: '0.85rem', marginRight: '1rem' }}>
+              <input
+                type="radio"
+                name="sqToBbSectionLabelMode"
+                checked={sectionLabelMode === 'song'}
+                onChange={() => {
+                  setSectionLabelMode('song');
+                  setSectionVrbAssignments(
+                    Object.fromEntries(getSectionLabelsForMode('song').map((l) => [l, null])),
+                  );
+                }}
+              />{' '}
+              Song
+            </label>
+            <label style={{ fontSize: '0.85rem' }}>
+              <input
+                type="radio"
+                name="sqToBbSectionLabelMode"
+                checked={sectionLabelMode === 'instrumental'}
+                onChange={() => {
+                  setSectionLabelMode('instrumental');
+                  setSectionVrbAssignments(
+                    Object.fromEntries(getSectionLabelsForMode('instrumental').map((l) => [l, null])),
+                  );
+                }}
+              />{' '}
+              Instrumental
+            </label>
+          </div>
+
+          <div style={{ marginBottom: '0.75rem' }}>
+            {sectionLabels.map((label) => (
+              <div
+                key={label}
+                style={{ ...flexRow, marginBottom: '0.35rem', alignItems: 'center' }}
+              >
+                <span style={{ width: 108, fontSize: '0.82rem', color: 'var(--text-muted)' }}>{label}</span>
+                <select
+                  value={sectionVrbAssignments[label] ?? SQ_TO_BB_SQ_COMPOSER_SELECT_NULL}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setSectionVrbAssignments((prev) => ({
+                      ...prev,
+                      [label]: v === SQ_TO_BB_SQ_COMPOSER_SELECT_NULL ? null : v,
+                    }));
+                  }}
+                  style={{ maxWidth: 220, flex: '1 1 180px' }}
+                >
+                  {SQ_TO_BB_SQ_COMPOSER_OPTIONS.map((o) => (
+                    <option
+                      key={`${label}-${o.id ?? 'none'}`}
+                      value={o.id ?? SQ_TO_BB_SQ_COMPOSER_SELECT_NULL}
+                      disabled={!o.enabled}
+                    >
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+
           <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 4 }}>
             SQ Harmonic Voice
           </label>

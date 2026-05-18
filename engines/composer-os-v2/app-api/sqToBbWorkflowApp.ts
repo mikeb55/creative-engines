@@ -34,7 +34,6 @@ import {
   normalizeSqToBbSqComposer,
   resolveSqToBbLengthBars,
   resolveSqToBbUserChordInput,
-  sqLineVrbIdForSqToBb,
   vrbIdForSqToBbStyleProfile,
 } from '../core/counterpoint/sqToBbWorkflowTypes';
 import { getVoiceRuleBundle } from '../core/composer/voiceRuleBundles';
@@ -44,6 +43,16 @@ import { exportScoreModelToMusicXml } from '../core/export/musicxmlExporter';
 import type { GenerateRequest } from './appApiTypes';
 import type { GenerateResult } from './generateComposition';
 import { COMPOSER_OS_VERSION } from './composerOsConfig';
+import {
+  buildSqToBbFormSections,
+  normalizeSectionVrbMap,
+} from './normalizeSectionVrbMap';
+import { dominantVrb, type VrbContextMap } from '../core/counterpoint/vrbProfiles/vrbContextMap';
+import {
+  SQ_TO_BB_DEFAULT_SECTION_LABEL_MODE,
+  type SqToBbSectionLabelMode,
+} from '../core/counterpoint/vrbProfiles/sqToBbSectionLabels';
+import { getSqVrbProfile } from '../core/counterpoint/vrbProfiles/sqVrbProfileRegistry';
 
 export {
   resolveSqToBbLengthBars,
@@ -83,12 +92,31 @@ function validationOk(): GenerateResult['validation'] {
   };
 }
 
+function resolveSqLineVrbIdFromContextMap(
+  vrbContextMap: VrbContextMap,
+  styleProfile: SqToBbStyleProfileId,
+): string {
+  const sqBb = vrbContextMap.get('sq_bb');
+  if (sqBb) {
+    const id = dominantVrb(sqBb);
+    if (id && getSqVrbProfile(id)) return id;
+  }
+  if (vrbContextMap.size === 1) {
+    const only = [...vrbContextMap.values()][0]!;
+    const id = dominantVrb(only);
+    if (id && getSqVrbProfile(id)) return id;
+  }
+  return vrbIdForSqToBbStyleProfile(styleProfile);
+}
+
 function buildSqToBbContext(
   req: GenerateRequest,
   bbVrbId: string,
   sqLineVrbId: string,
   sqComposer: SqToBbSqComposer,
   totalBars: number,
+  vrbContextMap: VrbContextMap,
+  sectionLabelMode: SqToBbSectionLabelMode,
 ): CompositionContext {
   const styleProfile = req.sqToBbStyleProfile ?? 'brookmeyer';
   const eraTag = normalizeSqToBbEraInput(req.sqToBbEra);
@@ -122,7 +150,7 @@ function buildSqToBbContext(
   };
   context.form = {
     totalBars,
-    sections: [{ label: 'sq_bb', startBar: 1, length: totalBars }],
+    sections: buildSqToBbFormSections(vrbContextMap, totalBars, sectionLabelMode),
   };
   return context;
 }
@@ -275,17 +303,29 @@ function gate2BlockedFromContext(context: CompositionContext): boolean {
   return g2?.hardFail === true;
 }
 
-function resolveSqToBbVrbs(req: GenerateRequest): {
+function resolveSqToBbVrbs(
+  req: GenerateRequest,
+  totalBars: number,
+): {
   styleProfile: SqToBbStyleProfileId;
   bbVrbId: string;
   sqLineVrbId: string;
   sqComposer: SqToBbSqComposer;
+  vrbContextMap: VrbContextMap;
+  sectionLabelMode: SqToBbSectionLabelMode;
 } {
   const styleProfile = (req.sqToBbStyleProfile ?? 'brookmeyer') as SqToBbStyleProfileId;
   const bbVrbId = vrbIdForSqToBbStyleProfile(styleProfile);
+  const sectionLabelMode = req.sectionLabelMode ?? SQ_TO_BB_DEFAULT_SECTION_LABEL_MODE;
+  const vrbContextMap = normalizeSectionVrbMap({
+    sqToBbSqComposer: req.sqToBbSqComposer,
+    sectionVrbMap: req.sectionVrbMap,
+    totalBars,
+    sectionLabelMode,
+  });
   const sqComposer = normalizeSqToBbSqComposer(req.sqToBbSqComposer);
-  const sqLineVrbId = sqLineVrbIdForSqToBb(sqComposer, styleProfile);
-  return { styleProfile, bbVrbId, sqLineVrbId, sqComposer };
+  const sqLineVrbId = resolveSqLineVrbIdFromContextMap(vrbContextMap, styleProfile);
+  return { styleProfile, bbVrbId, sqLineVrbId, sqComposer, vrbContextMap, sectionLabelMode };
 }
 
 export function runSqToBbWorkflowApp(req: GenerateRequest, outputDir: string): GenerateResult {
@@ -301,7 +341,19 @@ export function runSqToBbWorkflowApp(req: GenerateRequest, outputDir: string): G
   }
   const totalBars = lengthResolved.lengthBars;
   const userChordInput = resolveSqToBbUserChordInput(req.sqToBbChordSourceMode, req.userChordInput);
-  const { styleProfile, bbVrbId, sqLineVrbId, sqComposer } = resolveSqToBbVrbs(req);
+  let resolved: ReturnType<typeof resolveSqToBbVrbs>;
+  try {
+    resolved = resolveSqToBbVrbs(req, totalBars);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return {
+      success: false,
+      error: msg,
+      validation: validationOk(),
+      composerOsVersion: COMPOSER_OS_VERSION,
+    };
+  }
+  const { styleProfile, bbVrbId, sqLineVrbId, sqComposer, vrbContextMap, sectionLabelMode } = resolved;
   const lineBundle = getVoiceRuleBundle(sqLineVrbId);
   if (!lineBundle?.contrapuntalLinePolicy?.enabled) {
     return {
@@ -312,7 +364,15 @@ export function runSqToBbWorkflowApp(req: GenerateRequest, outputDir: string): G
     };
   }
 
-  const context = buildSqToBbContext(req, bbVrbId, sqLineVrbId, sqComposer, totalBars);
+  const context = buildSqToBbContext(
+    req,
+    bbVrbId,
+    sqLineVrbId,
+    sqComposer,
+    totalBars,
+    vrbContextMap,
+    sectionLabelMode,
+  );
   const chordWire = wireSqToBbUserChordTimeline(
     context,
     req.sqToBbChordSourceMode,
@@ -349,6 +409,8 @@ export function runSqToBbWorkflowApp(req: GenerateRequest, outputDir: string): G
       sqLineVrbId,
       sqComposer,
       totalBars,
+      vrbContextMap,
+      sectionLabelMode,
     );
     const regenWire = wireSqToBbUserChordTimeline(
       regenContext,

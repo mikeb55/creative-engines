@@ -107,6 +107,13 @@ export type SqToBbSqComposerId =
   | 'gershwin';
 export type SqToBbSqComposer = SqToBbSqComposerId | null;
 
+export type SqToBbSectionLabelMode = 'song' | 'instrumental';
+
+export {
+  getSectionLabelsForMode,
+  SQ_TO_BB_DEFAULT_SECTION_LABEL_MODE,
+} from '@composer-os/core/counterpoint/vrbProfiles/sqToBbSectionLabels';
+
 export const SQ_TO_BB_SQ_COMPOSER_SELECT_NULL = '';
 
 export const SQ_TO_BB_SQ_COMPOSER_OPTIONS: ReadonlyArray<{
