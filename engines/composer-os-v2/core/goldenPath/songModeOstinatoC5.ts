@@ -362,7 +362,7 @@ export function applySongModeOstinatoC5(score: ScoreModel, context: CompositionC
   if (meta.songModeRhythmOverlayDisabled === true) return;
   if (meta.songModeHookFirstIdentity !== true) return;
   if (!isGuitarBassDuoFamily(context.presetId)) return;
-  if (context.form.totalBars !== 32) return;
+  if (context.form.totalBars < 32) return;
 
   const { blendStart, blendLength, fromFeel, toFeel, c5Strength } = params;
   if (!Number.isFinite(blendStart) || !Number.isFinite(blendLength)) return;

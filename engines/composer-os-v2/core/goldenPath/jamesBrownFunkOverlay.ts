@@ -356,7 +356,7 @@ export function applyJamesBrownFunkOverlay(score: ScoreModel, context: Compositi
   const meta = context.generationMetadata as GenerationMetadata;
   if (meta.songModeJamesBrownFunkOverlay !== true) return;
   if (!isGuitarBassDuoFamily(context.presetId)) return;
-  if (context.form.totalBars !== 32) return;
+  if (context.form.totalBars < 32) return;
 
   const weights: JamesBrownFunkWeights = {
     baseWeight: SONG_MODE_OVERLAY_BASE_WEIGHTS[JAMES_BROWN_FUNK_OVERLAY_ID] ?? 0,

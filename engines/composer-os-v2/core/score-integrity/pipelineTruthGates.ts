@@ -12,6 +12,7 @@ import { validateWrittenMusicXmlComplete } from '../export/validateMusicXmlWritt
 import { validateStrictBarMath } from './strictBarMath';
 import { normalizeChordToken } from '../harmony/chordProgressionParser';
 import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
+import { isDuoLongFormLockedTruthBarCount } from '../harmony/songFormBarCounts';
 
 /** Matches BUILTIN_CHORD_SYMBOL_PLAN in runGoldenPath (one chord per bar, 8 bars). */
 export const DUO_BUILTIN_EIGHT_BARS: readonly string[] = [
@@ -69,17 +70,18 @@ export function shouldRunDuoEightBarPipelineTruth(context: CompositionContext): 
   return true;
 }
 
-/** Song Mode / custom_locked 32-bar: full input → score → MusicXML chord agreement */
+/** Song Mode / custom_locked 32–64-bar: full input → score → MusicXML chord agreement */
 export function shouldRunDuo32LockedPipelineTruth(
   context: CompositionContext,
   options?: PipelineTruthGoldenPathOptions
 ): boolean {
-  if (!isGuitarBassDuoFamily(context.presetId) || context.form.totalBars !== 32) return false;
+  const lockedN = context.form.totalBars;
+  if (!isGuitarBassDuoFamily(context.presetId) || !isDuoLongFormLockedTruthBarCount(lockedN)) return false;
   if (context.generationMetadata.chordProgressionParseFailed) return false;
   if (context.generationMetadata.harmonySource !== 'custom' || context.generationMetadata.customHarmonyLocked !== true) {
     return false;
   }
-  return (options?.parsedChordBars?.length ?? 0) === 32;
+  return (options?.parsedChordBars?.length ?? 0) === lockedN;
 }
 
 function validateDuo32LockedInputStage(
@@ -87,47 +89,52 @@ function validateDuo32LockedInputStage(
   options?: PipelineTruthGoldenPathOptions
 ): { ok: boolean; errors: string[] } {
   const errors: string[] = [];
+  const lockedN = context.form.totalBars;
   const meta = context.generationMetadata;
   if (meta.builtInHarmonyFallbackOccurred) {
-    errors.push('Input truth (32 locked): builtInHarmonyFallbackOccurred is set — aborting (no silent builtin fallback).');
+    errors.push(
+      `Input truth (${lockedN} locked): builtInHarmonyFallbackOccurred is set — aborting (no silent builtin fallback).`
+    );
   }
   const bars = options?.parsedChordBars;
-  if (!bars || bars.length !== 32) {
-    errors.push('Input truth (32 locked): requires exactly 32 parsedChordBars on options.');
+  if (!bars || bars.length !== lockedN) {
+    errors.push(`Input truth (${lockedN} locked): requires exactly ${lockedN} parsedChordBars on options.`);
   }
   if (meta.harmonySource !== 'custom') {
-    errors.push('Input truth (32 locked): harmonySource must be "custom".');
+    errors.push(`Input truth (${lockedN} locked): harmonySource must be "custom".`);
   }
-  if (bars && bars.length === 32) {
+  if (bars && bars.length === lockedN) {
     const fromPlan = expandChordSymbolPlanToBars(context.chordSymbolPlan);
-    if (fromPlan.length !== 32) {
-      errors.push(`Input truth (32 locked): chord symbol plan expands to ${fromPlan.length} bars, expected 32.`);
+    if (fromPlan.length !== lockedN) {
+      errors.push(
+        `Input truth (${lockedN} locked): chord symbol plan expands to ${fromPlan.length} bars, expected ${lockedN}.`
+      );
     } else {
-      for (let i = 0; i < 32; i++) {
+      for (let i = 0; i < lockedN; i++) {
         if (!chordSymbolsEqualForPipelineTruth(bars[i] ?? '', fromPlan[i] ?? '')) {
           errors.push(
-            `Input truth (32 locked): bar ${i + 1} parsed "${bars[i]}" does not match chordSymbolPlan "${fromPlan[i]}".`
+            `Input truth (${lockedN} locked): bar ${i + 1} parsed "${bars[i]}" does not match chordSymbolPlan "${fromPlan[i]}".`
           );
         }
       }
     }
     const receipt = meta.parsedCustomProgressionBars;
-    if (receipt && receipt.length === 32) {
-      for (let i = 0; i < 32; i++) {
+    if (receipt && receipt.length === lockedN) {
+      for (let i = 0; i < lockedN; i++) {
         if (normalizeChordToken(receipt[i] ?? '') !== normalizeChordToken(bars[i] ?? '')) {
-          errors.push(`Input truth (32 locked): receipt parsed bar ${i + 1} mismatch vs parsedChordBars.`);
+          errors.push(`Input truth (${lockedN} locked): receipt parsed bar ${i + 1} mismatch vs parsedChordBars.`);
         }
       }
     } else if (meta.harmonySource === 'custom') {
-      errors.push('Input truth (32 locked): missing parsedCustomProgressionBars[32] on receipt.');
+      errors.push(`Input truth (${lockedN} locked): missing parsedCustomProgressionBars[${lockedN}] on receipt.`);
     }
     const locked = context.lockedHarmonyBarsRaw;
-    if (!locked || locked.length !== 32) {
-      errors.push('Input truth (32 locked): context.lockedHarmonyBarsRaw must have length 32.');
+    if (!locked || locked.length !== lockedN) {
+      errors.push(`Input truth (${lockedN} locked): context.lockedHarmonyBarsRaw must have length ${lockedN}.`);
     } else {
-      for (let i = 0; i < 32; i++) {
+      for (let i = 0; i < lockedN; i++) {
         if (normalizeChordToken(locked[i] ?? '') !== normalizeChordToken(bars[i] ?? '')) {
-          errors.push(`Input truth (32 locked): lockedHarmonyBarsRaw bar ${i + 1} mismatch vs parsedChordBars.`);
+          errors.push(`Input truth (${lockedN} locked): lockedHarmonyBarsRaw bar ${i + 1} mismatch vs parsedChordBars.`);
         }
       }
     }
@@ -137,23 +144,24 @@ function validateDuo32LockedInputStage(
 
 function validateScoreStage32(score: ScoreModel, expected: string[]): { ok: boolean; errors: string[]; scoreBars: string[] } {
   const errors: string[] = [];
+  const lockedN = expected.length;
   const byBar = collectScoreChordsByBarIndex(score);
   const scoreBars: string[] = [];
-  for (let b = 1; b <= 32; b++) {
+  for (let b = 1; b <= lockedN; b++) {
     const c = byBar.get(b);
     if (!c) {
-      errors.push(`Score truth (32 locked): missing chord on bar ${b}.`);
+      errors.push(`Score truth (${lockedN} locked): missing chord on bar ${b}.`);
       scoreBars.push('');
       continue;
     }
     scoreBars.push(c);
     if (!chordSymbolsEqualForPipelineTruth(c, expected[b - 1] ?? '')) {
-      errors.push(`Score truth (32 locked): bar ${b} chord "${c}" does not match expected "${expected[b - 1]}".`);
+      errors.push(`Score truth (${lockedN} locked): bar ${b} chord "${c}" does not match expected "${expected[b - 1]}".`);
     }
   }
   const barMath = validateStrictBarMath(score);
   if (!barMath.valid) {
-    errors.push(...barMath.errors.map((e) => `Score truth (32 locked) (bar math): ${e}`));
+    errors.push(...barMath.errors.map((e) => `Score truth (${lockedN} locked) (bar math): ${e}`));
   }
   return { ok: errors.length === 0, errors, scoreBars };
 }
@@ -172,20 +180,21 @@ function validateExportStage32(
   const writtenXmlBars: string[] = [];
   const complete = validateWrittenMusicXmlComplete(score, xml, barMeterMap);
   if (!complete.valid) {
-    errors.push(...complete.errors.map((e) => `Export truth (32 locked) (written XML structure): ${e}`));
+    errors.push(...complete.errors.map((e) => `Export truth (${expected.length} locked) (written XML structure): ${e}`));
   }
+  const lockedN = expected.length;
   const harmMap = extractHarmoniesFromFirstPartXml(xml);
-  for (let b = 1; b <= 32; b++) {
+  for (let b = 1; b <= lockedN; b++) {
     const h = harmMap.get(b);
     if (!h) {
-      errors.push(`Export truth (32 locked): missing <harmony> in first part measure ${b}.`);
+      errors.push(`Export truth (${lockedN} locked): missing <harmony> in first part measure ${b}.`);
       writtenXmlBars.push('');
       continue;
     }
     writtenXmlBars.push(h);
     if (!chordSymbolsEqualForPipelineTruth(h, expected[b - 1] ?? '')) {
       errors.push(
-        `Export truth (32 locked): measure ${b} written harmony "${h}" does not match expected "${expected[b - 1]}".`
+        `Export truth (${lockedN} locked): measure ${b} written harmony "${h}" does not match expected "${expected[b - 1]}".`
       );
     }
   }
@@ -411,11 +420,16 @@ export function runPipelineTruthGates(params: {
 
   const submitted = options?.chordProgressionText?.trim() ?? null;
   const parsed8 = options?.parsedChordBars?.length === 8 ? [...options.parsedChordBars!] : null;
-  const parsed32 = options?.parsedChordBars?.length === 32 ? [...options.parsedChordBars!] : null;
+  const lockedTruthN = context.form.totalBars;
+  const parsedLocked =
+    isDuoLongFormLockedTruthBarCount(lockedTruthN) && options?.parsedChordBars?.length === lockedTruthN
+      ? [...options.parsedChordBars!]
+      : null;
 
   if (shouldRunDuo32LockedPipelineTruth(context, options)) {
     const barMeter = barMeterMapFromContext(context);
-    const parsedBars = parsed32 ?? [];
+    const lockedN = lockedTruthN;
+    const parsedBars = parsedLocked ?? [];
     const inputResult = validateDuo32LockedInputStage(context, options);
     const inputStage: PipelineTruthStageResult = inputResult.ok ? 'pass' : 'fail';
     const mdT = context.generationMetadata;
@@ -458,106 +472,106 @@ export function runPipelineTruthGates(params: {
     /** Mirror {@link runGoldenPath.ts} `expectedBarsForLockedTruth` — score/XML must match effective harmony, not raw submission text when Zappa rewrites chords. */
     const expected =
       hcTruth32 &&
-      hcTruth32.bars.length === 32 &&
+      hcTruth32.bars.length === lockedN &&
       mdT.songwriterStyleId === 'frank_zappa' &&
       hcTruth32.styleId === 'frank_zappa'
         ? [...hcTruth32.bars]
-        : mdT.songwriterStyleId === 'frank_zappa' && Array.isArray(fzT) && fzT.length === 32
+        : mdT.songwriterStyleId === 'frank_zappa' && Array.isArray(fzT) && fzT.length === lockedN
           ? [...fzT]
-          : mdT.songwriterStyleId === 'brian_wilson' && Array.isArray(bwT) && bwT.length === 32
+          : mdT.songwriterStyleId === 'brian_wilson' && Array.isArray(bwT) && bwT.length === lockedN
           ? [...bwT]
-        : mdT.songwriterStyleId === 'stevie_wonder' && Array.isArray(swT) && swT.length === 32
+        : mdT.songwriterStyleId === 'stevie_wonder' && Array.isArray(swT) && swT.length === lockedN
           ? [...swT]
-          : mdT.songwriterStyleId === 'radiohead' && Array.isArray(rhT) && rhT.length === 32
+          : mdT.songwriterStyleId === 'radiohead' && Array.isArray(rhT) && rhT.length === lockedN
             ? [...rhT]
-            : mdT.songwriterStyleId === 'james_brown' && Array.isArray(jbT) && jbT.length === 32
+            : mdT.songwriterStyleId === 'james_brown' && Array.isArray(jbT) && jbT.length === lockedN
               ? [...jbT]
-              : mdT.songwriterStyleId === 'joni_mitchell' && Array.isArray(jmT) && jmT.length === 32
+              : mdT.songwriterStyleId === 'joni_mitchell' && Array.isArray(jmT) && jmT.length === lockedN
                 ? [...jmT]
-                : mdT.songwriterStyleId === 'sonic_youth' && Array.isArray(syT) && syT.length === 32
+                : mdT.songwriterStyleId === 'sonic_youth' && Array.isArray(syT) && syT.length === lockedN
                   ? [...syT]
-                  : mdT.songwriterStyleId === 'pat_metheny' && Array.isArray(pmT) && pmT.length === 32
+                  : mdT.songwriterStyleId === 'pat_metheny' && Array.isArray(pmT) && pmT.length === lockedN
                     ? [...pmT]
-                    : mdT.songwriterStyleId === 'wayne_shorter' && Array.isArray(wsT) && wsT.length === 32
+                    : mdT.songwriterStyleId === 'wayne_shorter' && Array.isArray(wsT) && wsT.length === lockedN
                       ? [...wsT]
-                      : mdT.songwriterStyleId === 'barry_harris' && Array.isArray(bhT) && bhT.length === 32
+                      : mdT.songwriterStyleId === 'barry_harris' && Array.isArray(bhT) && bhT.length === lockedN
                         ? [...bhT]
-                        : mdT.songwriterStyleId === 'bacharach' && Array.isArray(baT) && baT.length === 32
+                        : mdT.songwriterStyleId === 'bacharach' && Array.isArray(baT) && baT.length === lockedN
                           ? [...baT]
-                          : mdT.songwriterStyleId === 'donald_fagen' && Array.isArray(dfT) && dfT.length === 32
+                          : mdT.songwriterStyleId === 'donald_fagen' && Array.isArray(dfT) && dfT.length === lockedN
                             ? [...dfT]
-                            : mdT.songwriterStyleId === 'ecm_chamber' && Array.isArray(eccT) && eccT.length === 32
+                            : mdT.songwriterStyleId === 'ecm_chamber' && Array.isArray(eccT) && eccT.length === lockedN
                               ? [...eccT]
-                              : mdT.songwriterStyleId === 'antonio_carlos_jobim' && Array.isArray(ajT) && ajT.length === 32
+                              : mdT.songwriterStyleId === 'antonio_carlos_jobim' && Array.isArray(ajT) && ajT.length === lockedN
                                 ? [...ajT]
-                                : mdT.songwriterStyleId === 'herbie_hancock' && Array.isArray(hhT) && hhT.length === 32
+                                : mdT.songwriterStyleId === 'herbie_hancock' && Array.isArray(hhT) && hhT.length === lockedN
                                   ? [...hhT]
-                                  : mdT.songwriterStyleId === 'stephen_sondheim' && Array.isArray(shT) && shT.length === 32
+                                  : mdT.songwriterStyleId === 'stephen_sondheim' && Array.isArray(shT) && shT.length === lockedN
                                     ? [...shT]
-                                    : mdT.songwriterStyleId === 'kate_bush' && Array.isArray(kbT) && kbT.length === 32
+                                    : mdT.songwriterStyleId === 'kate_bush' && Array.isArray(kbT) && kbT.length === lockedN
                                       ? [...kbT]
-                                      : mdT.songwriterStyleId === 'thelonious_monk' && Array.isArray(tmT) && tmT.length === 32
+                                      : mdT.songwriterStyleId === 'thelonious_monk' && Array.isArray(tmT) && tmT.length === lockedN
                                         ? [...tmT]
-                                        : mdT.songwriterStyleId === 'john_coltrane' && Array.isArray(jcT) && jcT.length === 32
+                                        : mdT.songwriterStyleId === 'john_coltrane' && Array.isArray(jcT) && jcT.length === lockedN
                                           ? [...jcT]
-                                          : mdT.songwriterStyleId === 'andrew_hill' && Array.isArray(ahT) && ahT.length === 32
+                                          : mdT.songwriterStyleId === 'andrew_hill' && Array.isArray(ahT) && ahT.length === lockedN
                                             ? [...ahT]
-                                            : mdT.songwriterStyleId === 'jim_hall' && Array.isArray(jhT) && jhT.length === 32
+                                            : mdT.songwriterStyleId === 'jim_hall' && Array.isArray(jhT) && jhT.length === lockedN
                                               ? [...jhT]
-                                              : mdT.songwriterStyleId === 'charlie_parker' && Array.isArray(cpT) && cpT.length === 32
+                                              : mdT.songwriterStyleId === 'charlie_parker' && Array.isArray(cpT) && cpT.length === lockedN
                                                 ? [...cpT]
-                                                : mdT.songwriterStyleId === 'bill_evans' && Array.isArray(beT) && beT.length === 32
+                                                : mdT.songwriterStyleId === 'bill_evans' && Array.isArray(beT) && beT.length === lockedN
                                                   ? [...beT]
                                                   : mdT.songwriterStyleId === 'bernard_herrmann' &&
                                                       Array.isArray(bhFilmT) &&
-                                                      bhFilmT.length === 32
+                                                      bhFilmT.length === lockedN
                                                     ? [...bhFilmT]
                                                     : mdT.songwriterStyleId === 'john_williams' &&
                                                         Array.isArray(jwFilmT) &&
-                                                        jwFilmT.length === 32
+                                                        jwFilmT.length === lockedN
                                                       ? [...jwFilmT]
                                                       : mdT.songwriterStyleId === 'ennio_morricone' &&
                                                           Array.isArray(emFilmT) &&
-                                                          emFilmT.length === 32
+                                                          emFilmT.length === lockedN
                                                         ? [...emFilmT]
                                                         : mdT.songwriterStyleId === 'nino_rota' &&
                                                             Array.isArray(nrFilmT) &&
-                                                            nrFilmT.length === 32
+                                                            nrFilmT.length === lockedN
                                                           ? [...nrFilmT]
                                                           : mdT.songwriterStyleId === 'jerry_goldsmith' &&
                                                               Array.isArray(jgFilmT) &&
-                                                              jgFilmT.length === 32
+                                                              jgFilmT.length === lockedN
                                                             ? [...jgFilmT]
                                                             : mdT.songwriterStyleId === 'philip_glass' &&
                                                                 Array.isArray(pgFilmT) &&
-                                                                pgFilmT.length === 32
+                                                                pgFilmT.length === lockedN
                                                               ? [...pgFilmT]
                                                               : mdT.songwriterStyleId === 'steve_reich' &&
                                                                   Array.isArray(srFilmT) &&
-                                                                  srFilmT.length === 32
+                                                                  srFilmT.length === lockedN
                                                                 ? [...srFilmT]
                                                                 : mdT.songwriterStyleId === 'messiaen' &&
                                                                     Array.isArray(omFilmT) &&
-                                                                    omFilmT.length === 32
+                                                                    omFilmT.length === lockedN
                                                                   ? [...omFilmT]
                                                                 : mdT.songwriterStyleId === 'thad_jones' &&
                                                                     Array.isArray(tjFilmT) &&
-                                                                    tjFilmT.length === 32
+                                                                    tjFilmT.length === lockedN
                                                                   ? [...tjFilmT]
                                                                   : mdT.songwriterStyleId === 'count_basie' &&
                                                                       Array.isArray(cbFilmT) &&
-                                                                      cbFilmT.length === 32
+                                                                      cbFilmT.length === lockedN
                                                                     ? [...cbFilmT]
                                                                   : mdT.songwriterStyleId === 'hans_zimmer' &&
                                                                   Array.isArray(hzFilmT) &&
-                                                                  hzFilmT.length === 32
+                                                                  hzFilmT.length === lockedN
                                                                 ? [...hzFilmT]
                                                                 : mdT.songwriterStyleId === 'angelo_badalamenti' &&
                                                                     Array.isArray(abFilmT) &&
-                                                                    abFilmT.length === 32
+                                                                    abFilmT.length === lockedN
                                                                   ? [...abFilmT]
                                                                   : Array.isArray(context.lockedHarmonyBarsRaw) &&
-                                                                      context.lockedHarmonyBarsRaw.length === 32
+                                                                      context.lockedHarmonyBarsRaw.length === lockedN
                                                                     ? [...context.lockedHarmonyBarsRaw]
                                                                     : [...parsedBars];
     const scoreResult = validateScoreStage32(score, expected);
@@ -566,7 +580,7 @@ export function runPipelineTruthGates(params: {
     let writtenXmlBars: string[] | null = null;
     const exportErrors: string[] = [];
     if (!xml) {
-      exportErrors.push('Export truth (32 locked): no MusicXML string to verify.');
+      exportErrors.push(`Export truth (${lockedN} locked): no MusicXML string to verify.`);
     } else {
       const ex = validateExportStage32(score, xml, expected, barMeter);
       writtenXmlBars = ex.writtenXmlBars;

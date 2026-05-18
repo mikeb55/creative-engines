@@ -932,7 +932,7 @@ export function applySongModeRhythmOverlayC1(score: ScoreModel, context: Composi
   if (context.generationMetadata?.songModeRhythmOverlayDisabled === true) return;
   if (context.generationMetadata?.songModeHookFirstIdentity !== true) return;
   if (!isGuitarBassDuoFamily(context.presetId)) return;
-  if (context.form.totalBars !== 32) return;
+  if (context.form.totalBars < 32) return;
 
   const guitar = score.parts.find((p) => p.id === 'guitar') as PartModel | undefined;
   if (!guitar) return;

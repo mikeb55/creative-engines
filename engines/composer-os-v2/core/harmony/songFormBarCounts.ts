@@ -23,3 +23,13 @@ export function clampSongFormBarCount(n: number | undefined, fallback: SongFormB
   if (isAllowedSongFormBarCount(n)) return n;
   return fallback;
 }
+
+/** Duo `custom_locked` pipeline truth: 32–64 long-form (steps of 8). */
+export const DUO_LONG_FORM_LOCKED_TRUTH_BAR_COUNTS = [32, 40, 48, 56, 64] as const;
+export type DuoLongFormLockedTruthBarCount = (typeof DUO_LONG_FORM_LOCKED_TRUTH_BAR_COUNTS)[number];
+
+export function isDuoLongFormLockedTruthBarCount(n: number): n is DuoLongFormLockedTruthBarCount {
+  return (
+    n === 32 || n === 40 || n === 48 || n === 56 || n === 64
+  );
+}

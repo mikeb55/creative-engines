@@ -220,7 +220,7 @@ function fillRestsUntilSwingCeiling(guitar: PartModel, context: CompositionConte
 export function applySongModeMelodicContinuityPass(guitar: PartModel, context: CompositionContext): void {
   if (!isGuitarBassDuoFamily(context.presetId)) return;
   if (context.generationMetadata?.songModeHookFirstIdentity !== true) return;
-  if (context.form.totalBars !== 32) return;
+  if (context.form.totalBars < 32) return;
 
   smoothMicroZigzagGuitar(guitar, context);
 

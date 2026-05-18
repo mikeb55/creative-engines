@@ -174,7 +174,7 @@ function insertStepwiseEighthInBestGap(guitar: PartModel, context: CompositionCo
 export function applySongModeGuitarDensityFloor(guitar: PartModel, context: CompositionContext): void {
   if (!isGuitarBassDuoFamily(context.presetId)) return;
   if (context.generationMetadata?.songModeHookFirstIdentity !== true) return;
-  if (context.form.totalBars !== 32) return;
+  if (context.form.totalBars < 32) return;
 
   let iter = 0;
   while (guitarRestRatio(guitar) > SONG_MODE_GUITAR_REST_FLOOR + 0.006 && iter < 48) {

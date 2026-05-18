@@ -267,7 +267,7 @@ export function applySongModeExpressionC6(score: ScoreModel, context: Compositio
   const meta = context.generationMetadata as GenerationMetadata;
   if (meta.songModeHookFirstIdentity !== true) return;
   if (!isGuitarBassDuoFamily(context.presetId)) return;
-  if (context.form.totalBars !== 32) return;
+  if (context.form.totalBars < 32) return;
 
   const guitar = score.parts.find((p) => p.id === 'guitar') as PartModel | undefined;
   if (!guitar) return;

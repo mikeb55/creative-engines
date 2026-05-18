@@ -105,7 +105,7 @@ export function applySongModeFagenKeysCompV15(score: ScoreModel, context: Compos
   const md = context.generationMetadata as GenerationMetadata | undefined;
   if (!md?.songModeHookFirstIdentity) return;
   if (!isGuitarBassDuoFamily(context.presetId)) return;
-  if (context.form.totalBars !== 32) return;
+  if (context.form.totalBars < 32) return;
   if (md.songwriterStyleId !== 'donald_fagen') return;
 
   const g = score.parts.find((p) => p.id === 'guitar');

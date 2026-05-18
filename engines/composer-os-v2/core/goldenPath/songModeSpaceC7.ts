@@ -243,7 +243,7 @@ export function applySongModeSpaceC7(score: ScoreModel, context: CompositionCont
   const meta = context.generationMetadata as GenerationMetadata;
   if (meta.songModeHookFirstIdentity !== true) return;
   if (!isGuitarBassDuoFamily(context.presetId)) return;
-  if (context.form.totalBars !== 32) return;
+  if (context.form.totalBars < 32) return;
 
   const guitar = score.parts.find((p) => p.id === 'guitar') as PartModel | undefined;
   if (!guitar) return;

@@ -152,11 +152,11 @@ export interface GenerateRequest {
   /**
    * Guitar–Bass Duo: built-in cycle vs user progression.
    * When `custom`, `chordProgressionText` is required (may be empty string from client → error).
-   * `custom_locked` — Song Mode / duo form: exactly `totalBars` symbols (8, 16, or 32), no substitution or scaffold fill.
+   * `custom_locked` — Song Mode / duo form: exactly `totalBars` symbols (8, 16, 24, 32, 40, 48, 56, 64), no substitution or scaffold fill.
    */
   harmonyMode?: 'builtin' | 'custom' | 'custom_locked';
   /**
-   * Guitar–Bass Duo / Song Mode: optional `|`-separated chords. Length must match `totalBars` when user harmony is supplied (8, 16, or 32 for Song/Form presets).
+   * Guitar–Bass Duo / Song Mode: optional `|`-separated chords. Length must match `totalBars` when user harmony is supplied (8, 16, 24, 32, 40, 48, 56, 64 for Song/Form presets).
    * Only used when `harmonyMode` is `custom` or inferred from non-empty text (legacy).
    */
   chordProgressionText?: string;
@@ -180,7 +180,7 @@ export interface GenerateRequest {
   tonalCenter?: string;
   /** Tempo BPM (UI; echoed in artifacts). */
   bpm?: number;
-  /** Bar count for planning modes that support it (`big_band`, `string_quartet`; echoed elsewhere). Song/Form duo presets: 8, 16, or 32 only. */
+  /** Bar count for planning modes that support it (`big_band`, `string_quartet`; echoed elsewhere). Song/Form duo presets: 8, 16, 24, 32, 40, 48, 56, 64. */
   totalBars?: number;
   /** Big Band only — drum intensity policy tier. Default `standard`. */
   drumIntensity?: 'sparse' | 'standard' | 'driving';
@@ -195,7 +195,7 @@ export interface GenerateRequest {
   feelMode?: 'in2' | 'in4';
   /** Big Band — drum timbre: explicit brushes/sticks or `auto` (intensity-driven matrix). Default `auto`. */
   drumArticulation?: 'auto' | 'brushes' | 'sticks';
-  /** Guitar–Bass Duo / Song Mode: long-form planning when `totalBars` is 16 or 32 (with matching chord length). */
+  /** Guitar–Bass Duo / Song Mode: long-form planning when `totalBars` is 16, 24, 32, 40, 48, 56, or 64 (with matching chord length). */
   longFormEnabled?: boolean;
   /**
    * V3.4 — MusicXML key policy: `auto` infers from chords unless a parseable `tonalCenter` / `tonalCenterOverride` is set;

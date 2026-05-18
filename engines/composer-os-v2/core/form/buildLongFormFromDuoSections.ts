@@ -40,8 +40,9 @@ function build32ChordBars(mod: ModulationPlan, seed: number): string[] {
   }
   for (const sec of mod.sections) {
     const off = sec.semitoneOffset;
-    for (let i = 0; i < 8; i++) {
-      bars.push(transposeChordSymbol(BUILTIN_EIGHT[i], off));
+    const len = sec.endBar - sec.startBar + 1;
+    for (let i = 0; i < len; i++) {
+      bars.push(transposeChordSymbol(BUILTIN_EIGHT[i % 8]!, off));
     }
   }
   return bars;
@@ -104,7 +105,10 @@ export function buildDuoLongFormCompositionContextFromBars(
   };
 
   const modulationPlan = generateModulationPlan(seed, n);
-  modulationPlan.active = false;
+  const modValid = validateModulationPlan(modulationPlan);
+  if (!modValid.valid) {
+    modulationPlan.active = false;
+  }
 
   const harmony: HarmonyPlan = buildHarmonyPlanFromBars(bars);
   const chordSymbolPlan = buildChordSymbolPlanFromBars(bars);
@@ -164,7 +168,7 @@ export function buildDuoLongFormCompositionContextFromBars(
       chordProgressionInputRaw: raw && raw.length > 0 ? raw : undefined,
       builtInHarmonyFallbackOccurred: false,
       longFormDuo: true,
-      modulationPlanActive: false,
+      modulationPlanActive: modulationPlan.active,
       totalBars: n,
       wybleVoiceLayout: wybleVoiceLayoutForPreset(opts?.presetId ?? 'guitar_bass_duo'),
     },

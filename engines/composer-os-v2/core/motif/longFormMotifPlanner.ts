@@ -1,5 +1,5 @@
 /**
- * Long-form Duo motif continuity — 16/32 bars built from the 8-bar LOCK grammar with section variation.
+ * Long-form Duo motif continuity — 16/32–64 bars built from the 8-bar LOCK grammar with section variation.
  */
 
 import type { BaseMotif, PlacedMotif } from './motifTypes';
@@ -8,7 +8,8 @@ import { placeMotifAtBar } from './motifTracker';
 function placeMotifsLongFormDuoCycles(
   motifs: BaseMotif[],
   seed: number,
-  cycleCount: 2 | 4
+  cycleCount: 2 | 4,
+  blockLength = 8
 ): PlacedMotif[] {
   if (motifs.length < 1) return [];
   const m = motifs[0];
@@ -30,10 +31,18 @@ function placeMotifsLongFormDuoCycles(
 
   const transposes = [0, 1, 5 + (seed % 3), 0];
   for (let c = 0; c < cycleCount; c++) {
-    cycle(c * 8, transposes[c] ?? 0);
+    cycle(c * blockLength, transposes[c] ?? 0);
   }
 
   return placements;
+}
+
+/**
+ * Places primary motif across four equal phrase-blocks (32–64 bars): same relative LOCK positions as 32-bar form.
+ */
+export function placeMotifsLongFormDuoByBarCount(motifs: BaseMotif[], seed: number, totalBars: number): PlacedMotif[] {
+  const blockLength = totalBars / 4;
+  return placeMotifsLongFormDuoCycles(motifs, seed, 4, blockLength);
 }
 
 /**
@@ -49,7 +58,7 @@ export function placeMotifsLongFormDuo16(motifs: BaseMotif[], seed: number): Pla
 }
 
 export function placeMotifsLongFormDuo(motifs: BaseMotif[], seed: number, totalBars: number): PlacedMotif[] {
-  if (totalBars === 32) return placeMotifsLongFormDuo32(motifs, seed);
   if (totalBars === 16) return placeMotifsLongFormDuo16(motifs, seed);
+  if (totalBars >= 32) return placeMotifsLongFormDuoByBarCount(motifs, seed, totalBars);
   return placeMotifsLongFormDuo32(motifs, seed);
 }
