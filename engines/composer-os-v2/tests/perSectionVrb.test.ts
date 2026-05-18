@@ -168,8 +168,7 @@ function withPerSectionTestEnv(fn: () => boolean): boolean {
   }
 }
 
-function testResolveVrbForBarFlagFalseUsesGlobal(): boolean {
-  if (USE_PER_SECTION_VRB) return false;
+function testResolveVrbForBarRespectsFlag(): boolean {
   const map = normalizeSectionVrbMap({
     totalBars: 32,
     sectionVrbMap: { opening: 'glass', development: 'shostakovich' },
@@ -180,7 +179,15 @@ function testResolveVrbForBarFlagFalseUsesGlobal(): boolean {
   ];
   const bar5 = resolveVrbForBar(5, map, 'ravel', sections);
   const bar20 = resolveVrbForBar(20, map, 'ravel', sections);
-  return bar5.vrbId === 'ravel' && bar20.vrbId === 'ravel' && bar5.sectionId === 'sq_bb';
+  if (!USE_PER_SECTION_VRB) {
+    return bar5.vrbId === 'ravel' && bar20.vrbId === 'ravel' && bar5.sectionId === 'sq_bb';
+  }
+  return (
+    bar5.vrbId === 'glass' &&
+    bar5.sectionId === 'opening' &&
+    bar20.vrbId === 'shostakovich' &&
+    bar20.sectionId === 'development'
+  );
 }
 
 function testResolveVrbForBarSectionA(): boolean {
@@ -386,7 +393,7 @@ export function runPerSectionVrbTests(): { name: string; ok: boolean }[] {
     ['normalizeSectionVrbMap — invalid label throws', testNormalizeSectionVrbMapInvalidLabel],
     ['normalizeSectionVrbMap — unknown vrbId throws', testNormalizeSectionVrbMapUnknownVrbId],
     ['buildSqToBbFormSections — bar ranges sum to totalBars', testSectionBarRangesSumToTotalBars],
-    ['resolveVrbForBar — flag false uses globalFallback', testResolveVrbForBarFlagFalseUsesGlobal],
+    ['resolveVrbForBar — respects USE_PER_SECTION_VRB flag', testResolveVrbForBarRespectsFlag],
     ['resolveVrbForBar — flag true section A vrbId', testResolveVrbForBarSectionA],
     ['resolveVrbForBar — flag true section B vrbId', testResolveVrbForBarSectionB],
     ['resolveVrbForBar — flag true unknown bar safety net', testResolveVrbForBarSafetyNet],

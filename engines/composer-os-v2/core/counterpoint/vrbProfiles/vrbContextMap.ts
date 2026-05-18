@@ -3,7 +3,7 @@
  */
 
 /** Set to true in Commit 6 after all sites migrated and all smokes green. */
-export const USE_PER_SECTION_VRB = false;
+export const USE_PER_SECTION_VRB = true;
 
 export interface VrbWeight {
   vrbId: string;
