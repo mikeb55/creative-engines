@@ -4,6 +4,12 @@ import * as path from 'path';
 import { runAppGeneration } from '../app-api/composerOsAppGeneration';
 import { applySingleLineImportedExpressionConnectionNudges } from '../core/goldenPath/generateGoldenPathDuoScore';
 import { normalizeChordToken } from '../core/harmony/chordProgressionParser';
+import {
+  isLeadSheetSongModeWriter,
+  LEAD_SHEET_SONG_MODE_WRITERS,
+} from '../core/lead-sheet/leadSheetWriterRegistry';
+import { runSongMode } from '../core/song-mode/runSongMode';
+import { parseMusicXml, parsedChartToLeadSheet } from '../core/musicXmlImport';
 import type { NoteEvent } from '../core/score-model/scoreModelTypes';
 
 const DONALD_FAGEN_LEADSHEET_XML = `<?xml version="1.0" encoding="UTF-8"?>
@@ -139,7 +145,7 @@ export function runSongModeLeadSheetInputTests(): { ok: boolean; name: string }[
         styleStack: { primary: 'barry_harris', weights: { primary: 1 } },
         seed: 55011,
         totalBars: 32,
-        /** Control writer — must stay outside `SONG_MODE_LEADSHEET_PHASE1_WRITERS` (phase 3 includes Radiohead). */
+        /** Control writer — must stay outside `LEAD_SHEET_SONG_MODE_WRITERS` (phase 4: radiohead / miles_davis / count_basie). */
         primarySongwriterStyle: 'sonic_youth',
         songModeLeadSheetMusicXml: DONALD_FAGEN_LEADSHEET_XML,
       },
@@ -384,6 +390,105 @@ export function runSongModeLeadSheetInputTests(): { ok: boolean; name: string }[
     out.push({
       ok: cLow <= cMid + 1e-6 && cMid <= cHigh + 1e-6 && cHigh - cLow >= 0.01,
       name: 'single-line imported expression nudge increases duration low->mid->high',
+    });
+
+    const wayne = runAppGeneration(
+      {
+        presetId: 'song_mode',
+        styleStack: { primary: 'barry_harris', weights: { primary: 1 } },
+        seed: 88001,
+        totalBars: 32,
+        primarySongwriterStyle: 'wayne_shorter',
+        songModeLeadSheetMusicXml: DONALD_FAGEN_LEADSHEET_XML,
+      },
+      tmp
+    );
+    const wayneHarmonyLocked = expectedBars.every(
+      (c, i) => normalizeChordToken(wayne.parsedCustomProgressionBars?.[i] ?? '') === normalizeChordToken(c)
+    );
+    out.push({
+      ok: wayne.success === true && wayneHarmonyLocked && wayne.runManifest?.songModeLeadSheetInputApplied === true,
+      name: 'Wayne Shorter Song Mode applies LeadSheet-derived locked harmony bars',
+    });
+
+    const debussy = runAppGeneration(
+      {
+        presetId: 'song_mode',
+        styleStack: { primary: 'barry_harris', weights: { primary: 1 } },
+        seed: 88002,
+        totalBars: 32,
+        primarySongwriterStyle: 'debussy',
+        songModeLeadSheetMusicXml: DONALD_FAGEN_LEADSHEET_XML,
+      },
+      tmp
+    );
+    out.push({
+      ok:
+        debussy.runManifest?.songModeLeadSheetAnchorStartApplied === true &&
+        debussy.runManifest?.songModeLeadSheetInputApplied === true,
+      name: 'Debussy Song Mode applies LeadSheet bar-1 melody anchor guidance',
+    });
+
+    const monk = runAppGeneration(
+      {
+        presetId: 'song_mode',
+        styleStack: { primary: 'barry_harris', weights: { primary: 1 } },
+        seed: 88003,
+        totalBars: 32,
+        primarySongwriterStyle: 'thelonious_monk',
+        songModeLeadSheetMusicXml: DONALD_FAGEN_LEADSHEET_XML,
+        importHarmonyMode: 'lock_harmony',
+      },
+      tmp
+    );
+    out.push({
+      ok:
+        monk.success === true &&
+        monk.runManifest?.importHarmonyLockApplied === true &&
+        (monk.runManifest?.importHarmonyLockedBarsCount ?? 0) >= 1,
+      name: 'Thelonious Monk Song Mode wires imported harmony timeline lock',
+    });
+
+    out.push({
+      ok:
+        LEAD_SHEET_SONG_MODE_WRITERS.includes('duke_ellington') &&
+        isLeadSheetSongModeWriter('duke_ellington') === true &&
+        isLeadSheetSongModeWriter('radiohead') === false,
+      name: 'Duke Ellington is in LeadSheet writer registry (phase 3 route active)',
+    });
+
+    const maria = runAppGeneration(
+      {
+        presetId: 'song_mode',
+        styleStack: { primary: 'barry_harris', weights: { primary: 1 } },
+        seed: 88004,
+        totalBars: 32,
+        primarySongwriterStyle: 'maria_schneider',
+        songModeLeadSheetMusicXml: DONALD_FAGEN_LEADSHEET_XML,
+        leadSheetPerformanceBlend: 0.7,
+      },
+      tmp
+    );
+    out.push({
+      ok:
+        maria.runManifest?.songModeLeadSheetInputApplied === true &&
+        maria.runManifest?.songModeLeadSheetAnchorStartApplied === true &&
+        (maria.runManifest?.songModeLeadSheetExpressionStrength ?? 0) > 0,
+      name: 'Maria Schneider Song Mode applies LeadSheet anchor metadata and expression blend',
+    });
+
+    const parsedFromSource = parsedChartToLeadSheet(parseMusicXml(DONALD_FAGEN_LEADSHEET_XML));
+    const smFromMusicXmlSource = runSongMode({
+      seed: 88005,
+      totalBars: 8,
+      primarySongwriterStyle: 'bill_evans',
+      musicXmlLeadSheet: parsedFromSource,
+    });
+    out.push({
+      ok:
+        smFromMusicXmlSource.universalLeadSheet.source === 'imported_musicxml' &&
+        (smFromMusicXmlSource.universalLeadSheet.chordSymbols?.length ?? 0) >= 4,
+      name: 'musicXmlSource ParsedChart→LeadSheet handoff reaches runSongMode (imported_musicxml)',
     });
   } catch (e) {
     out.push({

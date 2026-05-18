@@ -87,6 +87,10 @@ import {
 } from '@composer-os/core/lead-sheet/musicXmlScoreInput';
 import { parseMusicXml } from '@composer-os/core/musicXmlImport';
 import {
+  isLeadSheetSongModeWriter,
+  LEAD_SHEET_SONG_MODE_WRITERS,
+} from '@composer-os/core/lead-sheet/leadSheetWriterRegistry';
+import {
   generateReharmCandidates,
   type ReharmCandidate,
 } from '@composer-os/core/harmony/reharmCandidateEngine';
@@ -856,19 +860,11 @@ function SongwriterSelectOptionGroups({ onOptionHover }: { onOptionHover?: (id: 
   );
 }
 
-const SONG_MODE_LEADSHEET_PHASE1_WRITERS = new Set([
-  'donald_fagen',
-  'barry_harris',
-  'bill_evans',
-  'antonio_carlos_jobim',
-  'pat_metheny',
-  'bacharach',
-  'herbie_hancock',
-]);
+const SONG_MODE_LEADSHEET_PHASE1_WRITERS = new Set<string>(LEAD_SHEET_SONG_MODE_WRITERS);
 
-/** Shown when Song Mode LeadSheet import is disabled for the selected writer (must stay aligned with `SONG_MODE_LEADSHEET_PHASE1_WRITERS`). */
+/** Shown when Song Mode LeadSheet import is disabled for the selected writer (must stay aligned with `LEAD_SHEET_SONG_MODE_WRITERS`). */
 const SONG_MODE_LEADSHEET_DISABLED_ROUTE_HINT =
-  'LeadSheet MusicXML input is available only for Song Mode with Bill Evans, Barry Harris, Donald Fagen, Antônio Carlos Jobim, Pat Metheny, Bacharach, or Herbie Hancock.';
+  'LeadSheet MusicXML input is available only for Song Mode with a supported LeadSheet writer (Bill Evans, Barry Harris, Donald Fagen, Jobim, Pat Metheny, Bacharach, Herbie Hancock, Wayne Shorter, Debussy, Duke Ellington, Maria Schneider, or Thelonious Monk).';
 type HarmonyDisplayModeUi = 'raw' | 'enriched' | 'compare';
 type TonalityVaultUiFunctionalHint = 'tonic_family' | 'predominant_family' | 'dominant_family' | 'chromatic_or_unknown';
 
@@ -928,8 +924,7 @@ function primarySongwriterDisplayLabel(id: string | undefined): string | undefin
 
 function isLeadSheetSongModeRoute(presetId?: string, primarySongwriterStyle?: string): boolean {
   if (presetId !== 'song_mode') return false;
-  const writer = primarySongwriterStyle?.trim().toLowerCase();
-  return writer ? SONG_MODE_LEADSHEET_PHASE1_WRITERS.has(writer) : false;
+  return isLeadSheetSongModeWriter(primarySongwriterStyle);
 }
 
 type ZappaMeterExtraPresetId = (typeof ZAPPA_METER_CYCLE_PRESET_DEFINITIONS)[number]['id'];
@@ -2517,7 +2512,7 @@ export function HomeGenerate({
         ? DUO_AND_SONG_MODE_CUSTOM_HARMONY_PLACEHOLDER
         : DEFAULT_CUSTOM_HARMONY_PLACEHOLDER;
   const isSongModeLeadSheetPhase1Writer =
-    presetId === 'song_mode' && SONG_MODE_LEADSHEET_PHASE1_WRITERS.has(songwriterStyle.trim().toLowerCase());
+    presetId === 'song_mode' && isLeadSheetSongModeWriter(songwriterStyle);
   const leadSheetPreflightError =
     presetId === 'song_mode' && isSongModeLeadSheetPhase1Writer && songModeLeadSheetMusicXml.trim().length > 0
       ? validateLeadSheetMusicXmlForPhase1(songModeLeadSheetMusicXml.trim())

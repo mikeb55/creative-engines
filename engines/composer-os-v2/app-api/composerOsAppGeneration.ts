@@ -99,6 +99,8 @@ import { exportVocalLeadSheetMusicXmlViaPython } from '../core/song-mode/songwri
 import type { AuthorRuleId } from '../core/song-mode/songwritingResearchTypes';
 import { IMPORT_HARMONY_POLICY_VERSION } from '../core/importHarmonyPolicy';
 import { parseMusicXml, parsedChartToLeadSheet } from '../core/musicXmlImport';
+import { isLeadSheetSongModeWriter } from '../core/lead-sheet/leadSheetWriterRegistry';
+import type { LeadSheet } from '../core/lead-sheet/leadSheetTypes';
 import { generateSlonimskyEtudeXml } from '../core/slonimsky/slonimskyEtudeGenerator';
 import type { IntervalPatternId } from '../core/slonimsky/slonimskyEngine';
 import { writeDrumGuide } from '../core/export/midiDrumGuideWriter';
@@ -760,9 +762,10 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const musicXmlSourceRaw =
     typeof req.musicXmlSource === 'string' ? req.musicXmlSource.trim() : '';
   let musicXmlHarmonyPiped: string | undefined;
+  let musicXmlParsedLeadSheet: LeadSheet | undefined;
   if (musicXmlSourceRaw.length > 0) {
     const mxChart = parseMusicXml(musicXmlSourceRaw);
-    void parsedChartToLeadSheet(mxChart);
+    musicXmlParsedLeadSheet = parsedChartToLeadSheet(mxChart);
     musicXmlHarmonyPiped = mxChart.harmonies.join('|');
   }
   const secondarySw =
@@ -779,24 +782,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const primarySongwriterNormalized =
     typeof req.primarySongwriterStyle === 'string' ? req.primarySongwriterStyle.trim().toLowerCase() : '';
   const leadSheetXmlInput = typeof req.songModeLeadSheetMusicXml === 'string' ? req.songModeLeadSheetMusicXml.trim() : '';
-  const SONG_MODE_LEADSHEET_PHASE1_WRITERS = new Set([
-    'donald_fagen',
-    'barry_harris',
-    'bill_evans',
-    'antonio_carlos_jobim',
-    'pat_metheny',
-    'bacharach',
-    'herbie_hancock',
-    'wayne_shorter',
-    'radiohead',
-    'debussy',
-    'duke_ellington',
-    'maria_schneider',
-    'miles_davis',
-    'count_basie',
-    'thelonious_monk',
-  ]);
-  const isLeadSheetPhase1WriterRoute = SONG_MODE_LEADSHEET_PHASE1_WRITERS.has(primarySongwriterNormalized);
+  const isLeadSheetPhase1WriterRoute = isLeadSheetSongModeWriter(primarySongwriterNormalized);
   const perfBlendRaw =
     typeof req.leadSheetPerformanceBlend === 'number' && Number.isFinite(req.leadSheetPerformanceBlend)
       ? Math.min(1, Math.max(0, req.leadSheetPerformanceBlend))
@@ -893,11 +879,19 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   }
   const importedLeadSheetForSongMode =
     leadSheetAdapted?.ok === true && leadSheetAdapted.leadSheet ? leadSheetAdapted.leadSheet : undefined;
+  const musicXmlLeadSheetForSongMode =
+    isLeadSheetPhase1WriterRoute &&
+    leadSheetXmlInput.length === 0 &&
+    musicXmlSourceRaw.length > 0 &&
+    musicXmlParsedLeadSheet
+      ? musicXmlParsedLeadSheet
+      : undefined;
   const sm = runSongMode({
     seed: effectiveSeed,
     title,
     totalBars: barTarget,
     leadSheet: importedLeadSheetForSongMode,
+    musicXmlLeadSheet: musicXmlLeadSheetForSongMode,
     primarySongwriterStyle: req.primarySongwriterStyle,
     secondarySongwriterStyle: secondarySw,
     authorOverlay: authorOv as AuthorRuleId | undefined,

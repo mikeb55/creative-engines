@@ -52,8 +52,10 @@ export interface SongModeRunInput {
   classicalOverlay?: ClassicalSongRuleId | null;
   /** Optional songwriter ↔ arranger pairing (additive metadata). */
   stylePairing?: StylePairingInput | null;
-  /** Optional imported lead sheet (threaded for Song Mode input slices). */
+  /** Optional imported lead sheet (full LeadSheet MusicXML adapt path; highest priority). */
   leadSheet?: LeadSheet;
+  /** ParsedChart → LeadSheet from `musicXmlSource` when no `songModeLeadSheetMusicXml` is supplied. */
+  musicXmlLeadSheet?: LeadSheet;
   /** Phase 2+3a — harmonic voice bundle id (engine policy shadow). */
   harmonicVoice?: string | null;
   beatlesContext?: BeatlesContextMode;
@@ -163,8 +165,9 @@ export function runSongMode(input: SongModeRunInput): SongModeRunResult {
     songwritingFingerprint: sw?.resolvedStyle.styleFingerprint ?? '',
   };
 
-  const universalLeadSheet: UniversalLeadSheet = input.leadSheet
-    ? buildUniversalLeadSheetFromImportedLeadSheet(input.leadSheet)
+  const importedLeadSheet = input.leadSheet ?? input.musicXmlLeadSheet;
+  const universalLeadSheet: UniversalLeadSheet = importedLeadSheet
+    ? buildUniversalLeadSheetFromImportedLeadSheet(importedLeadSheet)
     : buildUniversalLeadSheetFromSongContract(lead);
 
   return {

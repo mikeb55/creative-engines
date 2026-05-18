@@ -243,7 +243,7 @@ describe('HomeGenerate mode-driven UI', () => {
 
   it('adds a Song Mode LeadSheet MusicXML input block with explicit Phase 1 route gating', () => {
     expect(src).toContain('LeadSheet MusicXML input (Phase 1)');
-    expect(src).toContain('SONG_MODE_LEADSHEET_PHASE1_WRITERS');
+    expect(src).toContain('LEAD_SHEET_SONG_MODE_WRITERS');
     expect(src).toContain('LeadSheet MusicXML input is active for this route.');
     expect(src).toContain('Bill Evans');
     expect(src).toContain('Herbie Hancock');

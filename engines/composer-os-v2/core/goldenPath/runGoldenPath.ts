@@ -38,6 +38,7 @@ import type {
   ThadJonesPhaseMode,
 } from '../compositionContext';
 import { IMPORT_HARMONY_POLICY_VERSION } from '../importHarmonyPolicy';
+import { isLeadSheetSongModeWriter } from '../lead-sheet/leadSheetWriterRegistry';
 import type { AsymmetricRhythmRequest } from '../rhythm/asymmetricPresets';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import type { RunManifest } from '../run-ledger/runLedgerTypes';
@@ -1832,8 +1833,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       normalizeStyleProfileId(options.styleProfile) ??
       defaultStyleProfileForPrimarySongwriter(options.primarySongwriterStyle) ??
       'STYLE_ECM';
-    const isLeadSheetPhase1Writer =
-      options.primarySongwriterStyle === 'donald_fagen' || options.primarySongwriterStyle === 'barry_harris';
+    const leadSheetWriterRoute = isLeadSheetSongModeWriter(options.primarySongwriterStyle);
+    const leadSheetAnchorsActive =
+      leadSheetWriterRoute && (options.songModeLeadSheetMelodyAnchors?.length ?? 0) > 0;
     context.generationMetadata = {
       ...context.generationMetadata,
       songModeHookFirstIdentity: true,
@@ -1843,22 +1845,16 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       options.ecmChamberMode === 'metheny_scofield'
         ? { ecmChamberMode: options.ecmChamberMode }
         : {}),
-      songModeLeadSheetMelodyAnchors:
-        isLeadSheetPhase1Writer && options.songModeLeadSheetMelodyAnchors?.length
-          ? options.songModeLeadSheetMelodyAnchors
-          : undefined,
-      songModeLeadSheetInputApplied:
-        isLeadSheetPhase1Writer && options.songModeLeadSheetMelodyAnchors?.length
-          ? true
-          : undefined,
-      songModeLeadSheetPerformanceBlend:
-        isLeadSheetPhase1Writer && options.songModeLeadSheetMelodyAnchors?.length
-          ? options.leadSheetPerformanceBlend
-          : undefined,
-      songModeLeadSheetExpressionStrength:
-        isLeadSheetPhase1Writer && options.songModeLeadSheetMelodyAnchors?.length
-          ? resolveLeadSheetExpressionStrengthFromBlend(options.leadSheetPerformanceBlend)
-          : undefined,
+      songModeLeadSheetMelodyAnchors: leadSheetAnchorsActive
+        ? options.songModeLeadSheetMelodyAnchors
+        : undefined,
+      songModeLeadSheetInputApplied: leadSheetAnchorsActive ? true : undefined,
+      songModeLeadSheetPerformanceBlend: leadSheetAnchorsActive
+        ? options.leadSheetPerformanceBlend
+        : undefined,
+      songModeLeadSheetExpressionStrength: leadSheetAnchorsActive
+        ? resolveLeadSheetExpressionStrengthFromBlend(options.leadSheetPerformanceBlend)
+        : undefined,
       ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'frank_zappa'
         ? { frankZappaContext: options.frankZappaContext ?? 'avant_rock' }
         : {}),

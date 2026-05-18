@@ -5455,8 +5455,6 @@ function nudgeDuoGuitarPhraseEndsForVariety(guitar: PartModel, context: Composit
 function applySongModeLeadSheetAnchorStart(guitar: PartModel, context: CompositionContext): boolean {
   if (!isGuitarBassDuoFamily(context.presetId)) return false;
   if (context.generationMetadata?.songModeHookFirstIdentity !== true) return false;
-  const songwriterId = context.generationMetadata?.songwriterStyleId;
-  if (songwriterId !== 'donald_fagen' && songwriterId !== 'barry_harris') return false;
   const anchors = context.generationMetadata?.songModeLeadSheetMelodyAnchors as
     | SongModeLeadSheetMelodyAnchor[]
     | undefined;
