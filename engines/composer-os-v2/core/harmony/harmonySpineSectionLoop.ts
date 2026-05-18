@@ -8,6 +8,7 @@ import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
 import type { VoicingCandidate } from '../composer/voiceLeadingSolver';
 import { dominantVrb, type VrbContextMap } from '../counterpoint/vrbProfiles/vrbContextMap';
 import {
+  hasExplicitPerSectionVrbAssignment,
   perSectionVrbResolutionEnabled,
   readSqToBbVrbWire,
   resolveVrbForBar,
@@ -94,7 +95,7 @@ export function chordUsesVrbVocabulary(symbol: string, vrbId: string): boolean {
 }
 
 export function buildSectionAwareHarmonySpine(context: CompositionContext): ResolvedHarmonyBar[] {
-  if (!perSectionSpineEnabled()) {
+  if (!perSectionSpineEnabled() || !hasExplicitPerSectionVrbAssignment(context)) {
     return buildLegacySpine(context);
   }
 

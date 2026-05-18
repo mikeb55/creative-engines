@@ -34,6 +34,7 @@ import {
   normalizeSqToBbSqComposer,
   resolveSqToBbLengthBars,
   resolveSqToBbUserChordInput,
+  sqLineVrbIdForSqToBb,
   vrbIdForSqToBbStyleProfile,
 } from '../core/counterpoint/sqToBbWorkflowTypes';
 import { getVoiceRuleBundle } from '../core/composer/voiceRuleBundles';
@@ -328,14 +329,14 @@ function resolveSqToBbVrbs(
   const styleProfile = (req.sqToBbStyleProfile ?? 'brookmeyer') as SqToBbStyleProfileId;
   const bbVrbId = vrbIdForSqToBbStyleProfile(styleProfile);
   const sectionLabelMode = req.sectionLabelMode ?? SQ_TO_BB_DEFAULT_SECTION_LABEL_MODE;
+  const sqComposer = normalizeSqToBbSqComposer(req.sqToBbSqComposer);
+  const sqLineVrbId = sqLineVrbIdForSqToBb(sqComposer, styleProfile);
   const vrbContextMap = normalizeSectionVrbMap({
-    sqToBbSqComposer: req.sqToBbSqComposer,
+    sqToBbSqComposer: sqLineVrbId,
     sectionVrbMap: req.sectionVrbMap,
     totalBars,
     sectionLabelMode,
   });
-  const sqComposer = normalizeSqToBbSqComposer(req.sqToBbSqComposer);
-  const sqLineVrbId = resolveSqLineVrbIdFromContextMap(vrbContextMap, styleProfile);
   return { styleProfile, bbVrbId, sqLineVrbId, sqComposer, vrbContextMap, sectionLabelMode };
 }
 

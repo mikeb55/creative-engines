@@ -13,7 +13,10 @@ import { isAllowedSongFormBarCount } from './songFormBarCounts';
 import { lockedHarmonyChordSymbolsEquivalent } from './chordProgressionParser';
 import { getChordForBar } from './harmonyResolution';
 import { buildSectionAwareHarmonySpine } from './harmonySpineSectionLoop';
-import { perSectionVrbResolutionEnabled } from '../counterpoint/vrbProfiles/vrbContextResolver';
+import {
+  hasExplicitPerSectionVrbAssignment,
+  perSectionVrbResolutionEnabled,
+} from '../counterpoint/vrbProfiles/vrbContextResolver';
 
 export type HarmonySpineProvenance = 'builtin' | 'slice' | 'locked' | 'vault';
 
@@ -175,7 +178,7 @@ function getOrBuildSpine(context: CompositionContext): ResolvedHarmonyBar[] {
  * Delegates symbol resolution to {@link getChordForBar} (zero behavioural drift vs legacy call sites).
  */
 export function resolveBarSymbol(context: CompositionContext, bar: number): ResolvedHarmonyBar {
-  if (!perSectionVrbResolutionEnabled()) {
+  if (!perSectionVrbResolutionEnabled() || !hasExplicitPerSectionVrbAssignment(context)) {
     const symbol = getChordForBar(bar, context);
     const layer = classifyAuthoritativeLayerForBar(bar, context);
     return {

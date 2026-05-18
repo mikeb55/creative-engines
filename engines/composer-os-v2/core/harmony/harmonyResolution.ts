@@ -12,6 +12,7 @@ import type { CompositionContext } from '../compositionContext';
 import { applyVoiceBundleHarmonicRhythm } from '../composer/voiceBundleHarmonicRhythm';
 import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
 import {
+  hasExplicitPerSectionVrbAssignment,
   perSectionVrbResolutionEnabled,
   readSqToBbVrbWire,
   resolveVrbForBar,
@@ -856,7 +857,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 export function getChordForBar(barIndex: number, context: CompositionContext): string {
   const sym = resolveChordSymbolAuthoritativeForBar(barIndex, context);
   let rhythmBundle = context.voiceBundle;
-  if (perSectionVrbResolutionEnabled()) {
+  if (perSectionVrbResolutionEnabled() && hasExplicitPerSectionVrbAssignment(context)) {
     const wire = readSqToBbVrbWire(context);
     const barCtx = resolveVrbForBar(barIndex, wire.contextMap, wire.globalFallback, wire.sections);
     rhythmBundle =

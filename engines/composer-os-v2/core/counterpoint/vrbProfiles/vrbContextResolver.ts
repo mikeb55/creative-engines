@@ -19,6 +19,15 @@ export function perSectionVrbResolutionEnabled(): boolean {
   return USE_PER_SECTION_VRB || process.env.COMPOSER_OS_TEST_PER_SECTION_VRB === '1';
 }
 
+/** Multi-label section map on metadata (not legacy sq_bb-only global). */
+export function hasExplicitPerSectionVrbAssignment(context: CompositionContext): boolean {
+  const stored = context.generationMetadata?.sqToBbVrbContextBySection;
+  if (!stored) return false;
+  const keys = Object.keys(stored);
+  if (keys.length === 0) return false;
+  return keys.length > 1 || keys[0] !== 'sq_bb';
+}
+
 function findSectionForBar(
   bar: number,
   sections: readonly SqToBbFormSectionRef[],
@@ -75,7 +84,7 @@ export function resolveVrbForBar(
   return {
     bar,
     sectionId: section.label,
-    vrbId: dominantVrb(sectionCtx),
+    vrbId: dominantVrb(sectionCtx) || globalFallback,
     isTransitionBar: isBarInSectionTransition(bar, section, sectionCtx),
   };
 }

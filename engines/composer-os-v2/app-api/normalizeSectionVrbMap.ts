@@ -62,6 +62,14 @@ function composerToVrbId(raw: string | null | undefined): string {
   return composer ?? '';
 }
 
+/** SQ composer id or resolved sqLine VRB id (e.g. bob_brookmeyer). */
+function globalFallbackVrbId(raw: string | null | undefined): string {
+  const trimmed = String(raw ?? '').trim().toLowerCase();
+  if (!trimmed) return '';
+  if (getSqVrbProfile(trimmed)) return trimmed;
+  return composerToVrbId(raw);
+}
+
 export function normalizeSectionVrbMap(input: {
   sqToBbSqComposer?: string | null;
   sectionVrbMap?: Record<string, string>;
@@ -84,10 +92,11 @@ export function normalizeSectionVrbMap(input: {
     return out;
   }
 
-  const vrbId = composerToVrbId(input.sqToBbSqComposer);
-  if (vrbId) {
-    assertKnownVrbId(vrbId, 'sq_bb');
+  const vrbId = globalFallbackVrbId(input.sqToBbSqComposer);
+  if (!vrbId) {
+    throw new Error('normalizeSectionVrbMap: vrbId must not be empty');
   }
+  assertKnownVrbId(vrbId, 'sq_bb');
   return buildGlobalVrbContextMap(vrbId, input.totalBars);
 }
 
