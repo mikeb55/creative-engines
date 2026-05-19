@@ -24,8 +24,8 @@ function testContrapuntalEnabled(): boolean {
   return getVoiceRuleBundle('ligeti').contrapuntalLinePolicy?.enabled === true;
 }
 
-function testIndependenceMaximum(): boolean {
-  return LIGETI_SQ_CONTRAPUNTAL_LINE_POLICY.independenceLevel === 'maximum';
+function testIndependenceHigh(): boolean {
+  return LIGETI_SQ_CONTRAPUNTAL_LINE_POLICY.independenceLevel === 'high';
 }
 
 function testHarmonicRhythmMin4(): boolean {
@@ -105,8 +105,16 @@ function testPhaseDisplacement(): boolean {
   return getVoiceRuleBundle('ligeti').rhythmPolicy.phaseDisplacement === true;
 }
 
-function testParallelMotionAvoid(): boolean {
-  return getVoiceRuleBundle('ligeti').contrapuntalLinePolicy?.parallelMotionPolicy === 'avoid';
+function testParallelMotionAllow(): boolean {
+  return getVoiceRuleBundle('ligeti').contrapuntalLinePolicy?.parallelMotionPolicy === 'allow';
+}
+
+function testPitchFieldSubstrate(): boolean {
+  return LIGETI_SQ_VRB_PROFILE.harmonicSubstrate === 'pitch-field-spine';
+}
+
+function testPitchFieldGoverned(): boolean {
+  return getVoiceRuleBundle('ligeti').pitchFieldGoverned === true;
 }
 
 function testStasisSurface(): boolean {
@@ -126,7 +134,7 @@ export function runLigetiVrbTests(): { name: string; ok: boolean }[] {
     ['Ligeti VRB — σ ceiling 32 st', testSigma32],
     ['Ligeti VRB — registry profile', testRegistryProfile],
     ['Ligeti VRB — contrapuntalLinePolicy.enabled', testContrapuntalEnabled],
-    ['Ligeti VRB — independenceLevel maximum', testIndependenceMaximum],
+    ['Ligeti VRB — independenceLevel high', testIndependenceHigh],
     ['Ligeti VRB — harmonicRhythm min >= 4 bars', testHarmonicRhythmMin4],
     ['Ligeti VRB — voicing forbidOctaveDoubling', testVoicingNoDoubling],
     ['Ligeti VRB — rhythmPolicy.antiMetric', testAntiMetric],
@@ -144,7 +152,9 @@ export function runLigetiVrbTests(): { name: string; ok: boolean }[] {
     ['Ligeti VRB — GCE clusterCredit > cadentialPenalty', testGceClusterOverCadential],
     ['Ligeti VRB — not in LINE_FIRST_DUO_ENGINE_VRB_IDS', testNotLineFirstDuo],
     ['Ligeti VRB — rhythmPolicy phaseDisplacement', testPhaseDisplacement],
-    ['Ligeti VRB — parallelMotionPolicy avoid', testParallelMotionAvoid],
+    ['Ligeti VRB — parallelMotionPolicy allow', testParallelMotionAllow],
+    ['Ligeti VRB — harmonicSubstrate pitch-field-spine', testPitchFieldSubstrate],
+    ['Ligeti VRB — pitchFieldGoverned true', testPitchFieldGoverned],
     ['Ligeti VRB — formPolicy stasisSurface', testStasisSurface],
     ['Ligeti VRB — prior VRB σ unchanged', testPriorSigmaUnchanged],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));

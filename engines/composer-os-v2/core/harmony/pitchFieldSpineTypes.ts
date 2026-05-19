@@ -56,6 +56,16 @@ export type PitchFieldRegion = {
   pedalPolicy?: 'bass-drone' | 'inner-sustain' | 'none';
   /** Messiaen — additive rhythmic cell layer. */
   rhythmicCellEnabled?: boolean;
+  /** Ligeti — micropolyphonic texture saturation (0–1). */
+  textureDensity?: number;
+  /** Ligeti — canonic entry offset span in bars. */
+  canonOffsetRange?: [number, number];
+  /** Ligeti — chromatic cluster band width in semitones. */
+  clusterWidth?: number;
+  /** Ligeti — temporal smear between strand entries (0–1). */
+  motionBlur?: number;
+  /** Ligeti — staggered voice entry amount (0–1). */
+  entryStagger?: number;
 };
 
 export type PitchFieldSpine = {

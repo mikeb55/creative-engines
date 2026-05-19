@@ -3124,6 +3124,61 @@ export function scoreThematicRecallPotential(
   };
 }
 
+/** Ligeti micropolyphony — stepwise motion, cluster density, entry stagger (ligeti vrbId only). */
+export function scoreMicropolyphonyCoherence(
+  notes: MelodicNote[],
+  spine: PitchFieldSpine,
+  textureDensity: number,
+  voiceId = 'melody',
+): CategoryScore {
+  const pitched = notes.filter((n) => !n.rest && n.midi > 0);
+  if (pitched.length < 2) {
+    return { score: 0, justification: 'Insufficient pitched notes for micropolyphony' };
+  }
+  let stepwise = 0;
+  let leapsOver3 = 0;
+  let clusterHits = 0;
+  const offsets: number[] = [];
+  for (let i = 0; i < pitched.length; i++) {
+    const n = pitched[i]!;
+    const field = resolveFieldForBar(spine, n.bar, voiceId);
+    const pc = ((n.midi % 12) + 12) % 12;
+    const entry = field.allowedPcs.find((a) => a.pc === pc);
+    clusterHits += entry?.weight ?? 0;
+    offsets.push(n.beat);
+    if (i === 0) continue;
+    const prev = pitched[i - 1]!;
+    const leap = Math.abs(n.midi - prev.midi);
+    if (leap <= 2) stepwise++;
+    if (leap > 3) leapsOver3++;
+  }
+  const stepRate = stepwise / Math.max(1, pitched.length - 1);
+  const clusterRate = clusterHits / pitched.length;
+  let staggerRegularity = 0.5;
+  if (offsets.length >= 3) {
+    const deltas: number[] = [];
+    for (let i = 1; i < offsets.length; i++) {
+      deltas.push(Math.abs(offsets[i]! - offsets[i - 1]!));
+    }
+    const mean = deltas.reduce((a, b) => a + b, 0) / deltas.length;
+    const var_ =
+      deltas.reduce((s, d) => s + (d - mean) ** 2, 0) / Math.max(1, deltas.length);
+    staggerRegularity = mean > 0 ? Math.max(0, 1 - Math.sqrt(var_) / mean) : 0.5;
+  }
+  const leapPenalty = leapsOver3 / Math.max(1, pitched.length);
+  const td = Math.max(0, Math.min(1, textureDensity));
+  const raw =
+    stepRate * 0.45 +
+    clusterRate * 0.35 * (0.5 + td * 0.5) +
+    staggerRegularity * 0.2 -
+    leapPenalty * 0.5;
+  const score = Math.max(0, Math.min(10, Math.round(raw * 10 * 10) / 10));
+  return {
+    score,
+    justification: `step ${stepRate.toFixed(2)} cluster ${clusterRate.toFixed(2)} stagger ${staggerRegularity.toFixed(2)} leaps>3 ${leapsOver3}`,
+  };
+}
+
 /** Pitch-field spine — weighted pitch-class adherence per bar (harmolodic / Ornette path). */
 export function scorePitchFieldCoherence(
   notes: MelodicNote[],

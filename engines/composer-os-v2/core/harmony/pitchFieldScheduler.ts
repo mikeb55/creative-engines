@@ -10,12 +10,14 @@ const DEFAULT_MAX_REGION_BARS = 8;
 function regionBoundsForVrb(vrbId: string): { min: number; max: number } {
   if (vrbId === 'coltrane') return { min: 4, max: 16 };
   if (vrbId === 'messiaen') return { min: 1, max: 8 };
+  if (vrbId === 'ligeti') return { min: 8, max: 32 };
   return { min: DEFAULT_MIN_REGION_BARS, max: DEFAULT_MAX_REGION_BARS };
 }
 
 function mutationStrengthRangeForVrb(vrbId: string): [number, number] {
   if (vrbId === 'coltrane') return [0.25, 0.55];
   if (vrbId === 'messiaen') return [0.2, 0.45];
+  if (vrbId === 'ligeti') return [0.1, 0.35];
   if (vrbId === 'ornette_coleman') return [0.35, 0.7];
   return [0.35, 0.7];
 }
@@ -26,8 +28,16 @@ function rng01(seed: number, salt: number): number {
   return (x % 100000) / 100000;
 }
 
-function pickCarryPcs(parent: PitchClass[], seed: number, regionIndex: number): PitchClass[] {
-  const count = 2 + Math.floor(rng01(seed, regionIndex * 41 + 7) * 3);
+function pickCarryPcs(
+  parent: PitchClass[],
+  seed: number,
+  regionIndex: number,
+  vrbId?: string,
+): PitchClass[] {
+  const count =
+    vrbId === 'ligeti'
+      ? Math.min(parent.length, 5 + Math.floor(rng01(seed, regionIndex * 41 + 7) * 4))
+      : 2 + Math.floor(rng01(seed, regionIndex * 41 + 7) * 3);
   const out: PitchClass[] = [];
   const pool = [...parent];
   for (let i = 0; i < count && pool.length > 0; i++) {
@@ -57,6 +67,12 @@ function shouldAdvanceRegion(
   if (barInRegion < minRegionBars) return false;
   if (vrbId === 'coltrane' && typeof densityDrive === 'number' && densityDrive > 0.8 && barInRegion >= 4) {
     return true;
+  }
+  if (vrbId === 'ligeti' && barInRegion >= 8) {
+    const b = regionStart + barInRegion - 1;
+    const t0 = tensionArc[b - 2] ?? tensionArc[b - 1] ?? 0;
+    const t1 = tensionArc[b - 1] ?? 0;
+    if (Math.abs(t1 - t0) > 0.22) return true;
   }
   const b = regionStart + barInRegion - 1;
   const t0 = tensionArc[b - 2] ?? tensionArc[b - 1] ?? 0;
@@ -120,7 +136,7 @@ export function scheduleFieldRegions(params: ScheduleFieldRegionsParams): PitchF
     const transitionOut: PitchFieldTransition | undefined =
       endBar < totalBars
         ? {
-            carryPcs: pickCarryPcs(parent, seed, regionIndex),
+            carryPcs: pickCarryPcs(parent, seed, regionIndex, vrbId),
             mutationStrength: mutationStrengthForBoundary(seed, regionIndex, vrbId),
             pivotPcs: parent.slice(0, Math.min(3, parent.length)),
           }

@@ -313,6 +313,12 @@ export interface SqVrbGceScorerAdjustments {
   collectiveImprovCredit?: number;
   /** Pitch-field spine — weighted pc adherence per bar. */
   pitchFieldCoherenceCredit?: number;
+  /** Ligeti — micropolyphonic strand merge credit. */
+  micropolyphonyCredit?: number;
+  /** Ligeti — chromatic cluster saturation credit. */
+  clusterDensityCredit?: number;
+  /** Ligeti — semitone/step motion credit. */
+  stepwiseMotionCredit?: number;
 }
 
 /** Per-VRB pitch-field spine options (parallel to chord spine). */

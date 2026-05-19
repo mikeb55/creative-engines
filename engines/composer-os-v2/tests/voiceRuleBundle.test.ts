@@ -205,7 +205,10 @@ function testSevenVoicesMinChordDurationBars(): boolean {
         lg.micropolyphonyMode === true &&
         lg.textureAsHarmonyEnabled === true &&
         lg.contrapuntalLinePolicy?.enabled === true &&
-        lg.contrapuntalLinePolicy?.independenceLevel === 'maximum' &&
+        lg.contrapuntalLinePolicy?.independenceLevel === 'high' &&
+        lg.pitchFieldGoverned === true &&
+        lg.suppressFunctionalResolution === true &&
+        lg.melodicPolicy.maxLeapSemitones === 3 &&
         (lg.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 35 &&
         Boolean(lg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LT_POLICY_01'))) &&
         Boolean(lg.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('LT_WORK_ATMOSPHERES'))) &&

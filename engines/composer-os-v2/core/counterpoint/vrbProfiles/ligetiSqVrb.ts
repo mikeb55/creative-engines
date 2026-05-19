@@ -1,15 +1,41 @@
 /**
- * György Ligeti SQ VRB — SQ→BB Harmonic Voice profile (σ = 32).
+ * György Ligeti SQ VRB — pitch-field spine (σ = 32).
  * Micropolyphony, chromatic cluster saturation, registral formal parameters.
  */
 
 import type { VoiceRuleBundle } from '../../composer/voiceRuleBundle';
+import type { IntervalWeight } from '../../harmony/pitchFieldSpineTypes';
 import type {
   SqContrapuntalLinePolicy,
   SqVrbChordVocabularyTag,
   SqVrbGceScorerAdjustments,
   SqVrbProfile,
 } from './sqVrbProfileTypes';
+import { LIGETI_SQ_VRF_FINGERPRINT_RECEIPTS } from './ligetiSqVrbFingerprints';
+
+export const LIGETI_SQ_INTERVAL_POOL: IntervalWeight[] = [
+  { semitones: 1, weight: 1.0 },
+  { semitones: 2, weight: 0.95 },
+  { semitones: 3, weight: 0.55 },
+  { semitones: 4, weight: 0.35 },
+  { semitones: 5, weight: 0.3 },
+  { semitones: 6, weight: 0.45 },
+  { semitones: 7, weight: 0.25 },
+  { semitones: 8, weight: 0.2 },
+  { semitones: 9, weight: 0.2 },
+  { semitones: 10, weight: 0.15 },
+  { semitones: 11, weight: 0.15 },
+];
+
+/** Ligeti pitch-field texture defaults (also on PitchFieldRegion). */
+export const LIGETI_SQ_TEXTURE = {
+  textureDensity: 0.85,
+  canonOffsetRange: [0.125, 0.5] as [number, number],
+  clusterWidth: 8,
+  motionBlur: 0.7,
+  entryStagger: 0.65,
+  mutationStrength: 0.2,
+} as const;
 
 export const LIGETI_SQ_CHORD_VOCABULARY: readonly SqVrbChordVocabularyTag[] = [
   'cluster_color_high_register',
@@ -27,8 +53,8 @@ export const LIGETI_SQ_GCE_SCORER_ADJUSTMENTS: SqVrbGceScorerAdjustments = {
   motifRecurrenceWeight: 0.12,
   intervalEconomyWeight: 0.1,
   registerCohesionWeight: 0.2,
-  phraseCellBarsMin: 4,
-  phraseCellBarsMax: 16,
+  phraseCellBarsMin: 8,
+  phraseCellBarsMax: 32,
   phrasePeriodBars: 0,
   cyclicMotifReturnBoost: 0.02,
   phraseGrammarMode: 'micropolyphonic_stasis',
@@ -40,27 +66,32 @@ export const LIGETI_SQ_GCE_SCORER_ADJUSTMENTS: SqVrbGceScorerAdjustments = {
   densityTransformationCredit: 0.14,
   folkModalPenalty: 0.16,
   ic1SaturationCredit: 0.16,
-  dominantResolutionPenalty: 0.14,
+  dominantResolutionPenalty: 0.88,
+  authenticCadencePenalty: 0.88,
   inconclusiveEndingCredit: 0.12,
+  pitchFieldCoherenceCredit: 0.86,
+  micropolyphonyCredit: 0.88,
+  clusterDensityCredit: 0.85,
+  stepwiseMotionCredit: 0.9,
   wallToWallPhrasePenalty: 0,
 };
 
-/** Ligeti SQ — maximum micropolyphonic independence; canonic strands; registral formalism. */
+/** Ligeti SQ — micropolyphonic independence; canonic strands; registral formalism. */
 export const LIGETI_SQ_CONTRAPUNTAL_LINE_POLICY: SqContrapuntalLinePolicy = {
   enabled: true,
   vrbId: 'ligeti',
-  independenceLevel: 'maximum',
+  independenceLevel: 'high',
   imitationStyle: 'strict_interval_cycle',
   registerPolicy: 'registral_expansion_contraction',
-  phraseArticulation: 'micropolyphonic_stasis',
-  parallelMotionPolicy: 'avoid',
+  phraseArticulation: 'non_resolving',
+  parallelMotionPolicy: 'allow',
   leapPolicy: 'structural_only',
   preferredIntervals: [1, 2],
   dissonanceTolerance: 'high',
   dissonanceProfile: {
     allowedIntervals: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
     forbiddenIntervals: [],
-    parallelFifthsAllowed: false,
+    parallelFifthsAllowed: true,
     parallelOctavesAllowed: false,
     resolveByStep: false,
   },
@@ -71,6 +102,12 @@ export const LIGETI_SQ_CONTRAPUNTAL_LINE_POLICY: SqContrapuntalLinePolicy = {
 
 export const LIGETI_SQ_VRB_PROFILE: SqVrbProfile = {
   vrbId: 'ligeti',
+  harmonicSubstrate: 'pitch-field-spine',
+  pitchFieldOptions: {
+    defaultOverlapPolicy: 'shared-parent',
+    fieldRhythmUnit: 'bar',
+    useChordFallbackForCadences: false,
+  },
   contrapuntalLinePolicy: LIGETI_SQ_CONTRAPUNTAL_LINE_POLICY,
   chordVocabulary: LIGETI_SQ_CHORD_VOCABULARY,
   bestBbStyle: 'schneider',
@@ -79,7 +116,7 @@ export const LIGETI_SQ_VRB_PROFILE: SqVrbProfile = {
   gceScorerAdjustments: LIGETI_SQ_GCE_SCORER_ADJUSTMENTS,
 };
 
-/** Merge SQ→BB profile onto the Ligeti VoiceRuleBundle row. */
+/** Merge SQ→BB pitch-field profile onto the Ligeti VoiceRuleBundle row. */
 export function applyLigetiSqVrbProfile(bundle: VoiceRuleBundle): VoiceRuleBundle {
   const p = LIGETI_SQ_VRB_PROFILE;
   return {
@@ -90,9 +127,11 @@ export function applyLigetiSqVrbProfile(bundle: VoiceRuleBundle): VoiceRuleBundl
     cautionBbStyle: p.cautionBbStyle,
     sqChordVocabulary: [...p.chordVocabulary],
     sqVrbProfileId: p.vrbId,
+    pitchFieldGoverned: true,
+    suppressFunctionalResolution: true,
     harmonicRhythm: {
       minChordDurationBars: 4,
-      maxChordDurationBars: 16,
+      maxChordDurationBars: 32,
       allowMidBarChange: false,
     },
     bassPolicy: {
@@ -108,7 +147,7 @@ export function applyLigetiSqVrbProfile(bundle: VoiceRuleBundle): VoiceRuleBundl
     },
     melodicPolicy: {
       contour: 'neighbor-motion',
-      maxLeapSemitones: 14,
+      maxLeapSemitones: 3,
       preferredIntervalSets: [1, 2],
       preferredIntervals: [1, 2],
       directionalArch: true,
@@ -140,6 +179,13 @@ export function applyLigetiSqVrbProfile(bundle: VoiceRuleBundle): VoiceRuleBundl
       rhythmicIndependenceFloor: 0.55,
       registerInterlock: true,
       intervalPreference: 'chromatic',
+    },
+    orchestrationPolicy: {
+      ...bundle.orchestrationPolicy,
+      fingerprintReceipts: [
+        ...(bundle.orchestrationPolicy.fingerprintReceipts ?? []),
+        ...LIGETI_SQ_VRF_FINGERPRINT_RECEIPTS,
+      ],
     },
     micropolyphonyMode: true,
     textureAsHarmonyEnabled: true,

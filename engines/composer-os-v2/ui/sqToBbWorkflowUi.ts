@@ -133,7 +133,8 @@ const COMPOSER_DESCRIPTIONS: Record<SqToBbSqComposerId, { label: string; descrip
   },
   ligeti: {
     label: 'Ligeti',
-    description: 'Micropolyphony. Per-voice phase drift, dense chromatic texture, anti-metric.',
+    description:
+      'Micropolyphony pitch-field. Chromatic cluster band, high overlap, slow 8–32 bar morph, near-stepwise strands.',
   },
   webern: {
     label: 'Webern',

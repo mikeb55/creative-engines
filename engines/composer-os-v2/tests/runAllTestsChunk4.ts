@@ -49,6 +49,7 @@ import { runDuoIntentTests } from './duoIntent.test';
 import { runMacroFormPlannerTests } from './macroFormPlanner.test';
 import { runOrnettePitchFieldTests } from './ornettePitchField.test';
 import { runColtraneMessiaenPitchFieldTests } from './coltraneMessiaenPitchField.test';
+import { runLigetiPitchFieldUpgradeTests } from './ligetiPitchFieldUpgrade.test';
 import { retroSuites } from './retro/index';
 import { runHarnessMain, type SuiteEntry } from './harness/runHarnessMain';
 
@@ -100,6 +101,7 @@ const suites: SuiteEntry[] = [
   { name: 'Macro form planner', run: runMacroFormPlannerTests },
   { name: 'Ornette pitch-field spine (Phase 1)', run: runOrnettePitchFieldTests },
   { name: 'Coltrane + Messiaen pitch-field (Session 2)', run: runColtraneMessiaenPitchFieldTests },
+  { name: 'Ligeti pitch-field upgrade (Session 3)', run: runLigetiPitchFieldUpgradeTests },
   ...retroSuites,
 ];
 
