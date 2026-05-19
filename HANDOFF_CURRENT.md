@@ -8,33 +8,45 @@
 | Desktop | `desktop:rebuild-and-smoke` PASS — **v1.0.44** portable (`release/Composer-OS.exe`) |
 
 ## ANCHOR COMMIT
-`2e1adcf3` — feat(desktop): rebundle — tempo-adaptive swing curve ships in v1.0.44
+`21499de4` — feat(pitch-field): spine core + Ornette VRB — pitch-field substrate, field scheduler, 30 tests
 
-**Shipped in v1.0.44 desktop IPC bundle:** `computeSwingIntensityForTempo`, Porter/Gershwin fine-grain swing, VRB tooltips, boundary swing ramp, 3-way blend, Python sidecar paths.
+**Pitch-field Session 1:** parallel `PitchFieldSpine` + `resolveBarSymbol` optional `pitchField`; Ornette SQ profile (σ=33, `harmonicSubstrate: pitch-field-spine`); registry **20** entries; `free_jazz` family; `scorePitchFieldCoherence`.
 
-**Also on `main`:**
-- `c0d75701` — feat(swing): tempo-adaptive curve
-- `d196a6a1` — feat(swing): Porter vs Gershwin fine-grain
-- `3d1c7757` — feat(desktop): Python sidecar paths + engine rebundle
-- `ca746798`, `39b5d597`, `c645b09a` — tooltips, boundary ramp, 3-way blend
+**Prior desktop anchor:** `2e1adcf3` — feat(desktop): rebundle — tempo-adaptive swing curve ships in v1.0.44
 
-## ROADMAP — COMPLETE
+## ROADMAP — ACTIVE
 | # | Item | Status |
 |---|---|---|
-| 1 | sq_swing rhythm engine (+ tempo-adaptive curve) | ✓ |
-| 2 | Porter vs Gershwin fine-grain | ✓ (`d196a6a1`) |
-| 3 | Tempo-adaptive swing curve | ✓ (`c0d75701`) |
-| 4 | 3-way VRB blend (within-section) | ✓ (`c645b09a`) |
-| 5 | UI tooltips | ✓ (`ca746798`) |
-| 6 | Boundary swing ramp | ✓ (`39b5d597`) |
-| 7 | Desktop rebuild + final rebundle | ✓ **v1.0.44** |
-
-**No active roadmap items.**
-
-**Deferred / backlog (not blocking):** Ornette; Wyble duo parity; ECM GCE orchestration; Melody V2 + cadenza; MIDI import; per-section VRB (V59 shipped).
+| 1 | Coltrane + Messiaen pitch-field profiles (Session 2) | Next |
+| 2 | ContrapuntalLineEngine consumes `ResolvedPitchField` | Backlog |
+| 3 | Wyble duo parity | Backlog |
+| 4 | ECM GCE orchestration | Backlog |
 
 ## NEXT SESSION ENTRY POINT
-None required for core roadmap. Optional: Wyble duo parity, ECM GCE, or product backlog items above.
+Session 2: Coltrane + Messiaen SQ VRBs on `pitch-field-spine` / chord-spine opt-in via `harmonicSubstrate`. Ornette path live — `resolveBarSymbol(..., 'melody').pitchField` populated when `pitchFieldGoverned` or profile substrate set.
 
-## VRB σ TABLE
-All 19 SQ Harmonic Voice profiles — unchanged. See `sqVrbProfileRegistry.ts`.
+## VRB σ TABLE (20 SQ Harmonic Voice profiles)
+| vrbId | σ |
+|---|---|
+| arvo_part | 16 |
+| glass | 18 |
+| satie | 19 |
+| rota | 19 |
+| ravel | 20 |
+| debussy | 21 |
+| morricone | 22 |
+| badalamenti | 21 |
+| goldsmith | 24 |
+| cole_porter | 25 |
+| williams | 26 |
+| zimmer | 26 |
+| gershwin | 27 |
+| shostakovich | 28 |
+| bartok | 29 |
+| joni_mitchell | 30 |
+| ligeti | 32 |
+| **ornette_coleman** | **33** |
+| herrmann | 36 |
+| webern | 40 |
+
+Registry: `sqVrbProfileRegistry.ts` — `ornette_coleman` → `ORNETTE_SQ_VRB_PROFILE`.
