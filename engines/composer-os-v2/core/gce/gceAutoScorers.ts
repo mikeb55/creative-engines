@@ -1731,10 +1731,18 @@ export function rhythmExpectationForVrb(vrbId: string): RhythmExpectation | unde
   }
   const id = (getVoiceRuleBundle(vrbId)?.voiceId ?? vrbId).trim().toLowerCase();
   if (id === 'gershwin') {
-    return { placementMode: 'swing', targetOffbeatWindow: [0.55, 0.7] };
+    return {
+      placementMode: 'swing',
+      targetOffbeatWindow: [0.55, 0.7],
+      anticipationRateMax: 0.14,
+    };
   }
   if (id === 'cole_porter') {
-    return { placementMode: 'swing', targetOffbeatWindow: [0.55, 0.65] };
+    return {
+      placementMode: 'swing',
+      targetOffbeatWindow: [0.55, 0.65],
+      anticipationRateMax: 0.1,
+    };
   }
   if (id === 'turtle_island') {
     return { placementMode: 'swing', targetOffbeatWindow: [0.58, 0.72] };

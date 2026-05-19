@@ -12,6 +12,7 @@ import { runReichPhasingGridRhythmEngineTests } from './reichPhasingGridRhythmEn
 import { runVienneseWaltzRhythmEngineTests } from './vienneseWaltzRhythmEngine.test';
 import { runJewishKlezmerRhythmEngineTests } from './jewishKlezmerRhythmEngine.test';
 import { runSqSwingRhythmTests } from './sqSwingRhythm.test';
+import { runPorterGershwinDistinctionTests } from './porterGershwinDistinction.test';
 import { runSqAntimetricRhythmTests } from './sqAntimetricRhythm.test';
 import { runInstrumentProfileTests } from './instrumentProfiles.test';
 import { runScoreIntegrityTests } from './scoreIntegrity.test';
@@ -73,6 +74,7 @@ const suites: SuiteEntry[] = [
   { name: 'Viennese waltz SQ rhythm engine', run: runVienneseWaltzRhythmEngineTests },
   { name: 'Jewish / Klezmer SQ rhythm engine', run: runJewishKlezmerRhythmEngineTests },
   { name: 'SQ swing rhythm engine (sq_swing)', run: runSqSwingRhythmTests },
+  { name: 'Porter vs Gershwin swing fine-grain', run: runPorterGershwinDistinctionTests },
   { name: 'SQ anti-metric rhythm engine (sq_antimetric)', run: runSqAntimetricRhythmTests },
   { name: 'Instrument Profiles', run: runInstrumentProfileTests },
   { name: 'Score Integrity', run: runScoreIntegrityTests },

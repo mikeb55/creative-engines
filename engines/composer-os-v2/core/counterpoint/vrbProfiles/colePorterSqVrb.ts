@@ -11,6 +11,7 @@ import type {
   SqVrbProfile,
 } from './sqVrbProfileTypes';
 import { GOLDSMITH_SQ_VRB_PROFILE } from './goldsmithFilmStubVrb';
+import { SQ_SWING_RHYTHM_BY_VRB_ID } from './sqSwingRhythm';
 
 export const COLE_PORTER_SQ_CHORD_VOCABULARY: readonly SqVrbChordVocabularyTag[] = [
   'chromatic_mediants',
@@ -142,6 +143,9 @@ export function applyColePorterSqVrbProfile(bundle: VoiceRuleBundle): VoiceRuleB
       intervalPreference: 'chromatic',
     },
     swingFeel: false,
+    swingStyle: SQ_SWING_RHYTHM_BY_VRB_ID.cole_porter.swingStyle,
+    swingIntensity: SQ_SWING_RHYTHM_BY_VRB_ID.cole_porter.swingIntensity,
+    anticipationRateMax: SQ_SWING_RHYTHM_BY_VRB_ID.cole_porter.anticipationRateMax,
     guideToneVoiceLeading: bundle.guideToneVoiceLeading ?? true,
     chromaticBassEnabled: bundle.chromaticBassEnabled ?? true,
     majorMinorMixtureEnabled: bundle.majorMinorMixtureEnabled ?? true,

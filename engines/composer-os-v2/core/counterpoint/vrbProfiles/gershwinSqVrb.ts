@@ -10,6 +10,7 @@ import type {
   SqVrbGceScorerAdjustments,
   SqVrbProfile,
 } from './sqVrbProfileTypes';
+import { SQ_SWING_RHYTHM_BY_VRB_ID } from './sqSwingRhythm';
 
 export const GERSHWIN_SQ_CHORD_VOCABULARY: readonly SqVrbChordVocabularyTag[] = [
   'dom7',
@@ -138,6 +139,9 @@ export function applyGershwinSqVrbProfile(bundle: VoiceRuleBundle): VoiceRuleBun
       intervalPreference: 'chromatic',
     },
     swingFeel: false,
+    swingStyle: SQ_SWING_RHYTHM_BY_VRB_ID.gershwin.swingStyle,
+    swingIntensity: SQ_SWING_RHYTHM_BY_VRB_ID.gershwin.swingIntensity,
+    anticipationRateMax: SQ_SWING_RHYTHM_BY_VRB_ID.gershwin.anticipationRateMax,
     guideToneVoiceLeading: true,
     blueNoteEnabled: true,
     jazzExtensionEnabled: true,

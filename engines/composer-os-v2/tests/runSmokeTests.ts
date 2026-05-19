@@ -78,6 +78,7 @@ import { runFollowup5ShoutBrassInPlaceSmokeTests } from './followup5ShoutBrassIn
 import { runHarmonySpineLockSmokeTests } from './harmonySpineLock.smoke.test';
 import { runOutputValidationSmokeTests } from './outputValidationSmoke.test';
 import { runSqSwingRhythmTests } from './sqSwingRhythm.test';
+import { runPorterGershwinDistinctionTests } from './porterGershwinDistinction.test';
 import { runSqAntimetricRhythmTests } from './sqAntimetricRhythm.test';
 import { runWybleDuoParityTests } from './wybleDuoParity.test';
 import { runEcmGceOrchestrationTests } from './ecmGceOrchestration.test';
@@ -127,6 +128,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'ECM GCE orchestration', run: runEcmGceOrchestrationTests },
   { label: 'Conductor', run: runConductorTests },
   { label: 'SQ swing rhythm engine (sq_swing)', run: runSqSwingRhythmTests },
+  { label: 'Porter vs Gershwin swing fine-grain', run: runPorterGershwinDistinctionTests },
   { label: 'SQ anti-metric rhythm engine (sq_antimetric)', run: runSqAntimetricRhythmTests },
   { label: 'App API boundary', run: runAppApiBoundaryTests },
   { label: 'MusicXML harmony (kind/@text + degrees)', run: runChordSymbolMusicXmlHarmonyTests },

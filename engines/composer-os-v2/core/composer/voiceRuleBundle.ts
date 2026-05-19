@@ -362,6 +362,8 @@ export interface VoiceRuleBundle {
   swingStyle?: 'none' | 'jazz' | 'concert' | 'folk_jazz';
   /** SQ swing engine sensitivity 0.0–1.0 (default 0.5 when absent). */
   swingIntensity?: number;
+  /** GCE rhythmic identity — max anticipation rate for swung / syncopated lines (0–1). */
+  anticipationRateMax?: number;
   /** Shipped SQ rhythm engine id (`sq_swing`, `jewish_klezmer`, …). */
   sqRhythmEngineId?: string;
   /** Turtle Island Quartet — guide-tone voice-leading enforced (informational). */

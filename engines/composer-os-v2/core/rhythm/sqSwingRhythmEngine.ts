@@ -4,6 +4,7 @@
 
 import type { VoiceRuleBundle } from '../composer/voiceRuleBundle';
 import type { NoteEvent } from '../counterpoint/abstractLineSet';
+import { sqSwingRhythmPresetForVrb } from '../counterpoint/vrbProfiles/sqSwingRhythm';
 
 const beatMs = (bpm: number) => 60000 / bpm;
 const straightEighthMs = (bpm: number) => beatMs(bpm) / 2;
@@ -67,12 +68,17 @@ function inferSwingStyleFromVrbId(
 }
 
 export function buildSwingPolicy(bundle: VoiceRuleBundle, bpm: number): SqSwingRhythmEnginePolicy {
+  const preset = sqSwingRhythmPresetForVrb(bundle.voiceId);
   const intensity =
     bundle.swingIntensity !== undefined
       ? Math.max(0, Math.min(1, bundle.swingIntensity))
-      : 0.5;
+      : preset?.swingIntensity !== undefined
+        ? Math.max(0, Math.min(1, preset.swingIntensity))
+        : 0.5;
   const swingStyle =
-    bundle.swingStyle ?? inferSwingStyleFromVrbId(bundle.voiceId, bundle.swingFeel);
+    bundle.swingStyle ??
+    preset?.swingStyle ??
+    inferSwingStyleFromVrbId(bundle.voiceId, bundle.swingFeel);
   return {
     swingStyle,
     swingIntensity: intensity,

@@ -4,7 +4,9 @@
 
 import { SHIPPED_SQ_RHYTHM_ENGINE_IDS } from '../app-api/composerOsAppGeneration';
 import type { VoiceRuleBundle } from '../core/composer/voiceRuleBundle';
+import { getVoiceRuleBundle } from '../core/composer/voiceRuleBundles';
 import type { NoteEvent } from '../core/counterpoint/abstractLineSet';
+import { SQ_SWING_RHYTHM_BY_VRB_ID } from '../core/counterpoint/vrbProfiles/sqSwingRhythm';
 import { rhythmExpectationForVrb, scoreRhythmicIdentity } from '../core/gce/gceAutoScorers';
 import type { MelodicNote } from '../core/gce/gce_melody_eval';
 import {
@@ -187,6 +189,60 @@ function testSwingExpectationFavorsSwung(): boolean {
   return swungScore > gridScore;
 }
 
+function testPorterPresetIntensity(): boolean {
+  return SQ_SWING_RHYTHM_BY_VRB_ID.cole_porter.swingIntensity === 0.52;
+}
+
+function testGershwinPresetIntensity(): boolean {
+  return SQ_SWING_RHYTHM_BY_VRB_ID.gershwin.swingIntensity === 0.65;
+}
+
+function testPorterGershwinIntensityGap(): boolean {
+  const gap =
+    SQ_SWING_RHYTHM_BY_VRB_ID.gershwin.swingIntensity -
+    SQ_SWING_RHYTHM_BY_VRB_ID.cole_porter.swingIntensity;
+  return gap >= 0.1;
+}
+
+function testPorterPresetAnticipation(): boolean {
+  return SQ_SWING_RHYTHM_BY_VRB_ID.cole_porter.anticipationRateMax === 0.1;
+}
+
+function testGershwinPresetAnticipation(): boolean {
+  return SQ_SWING_RHYTHM_BY_VRB_ID.gershwin.anticipationRateMax === 0.14;
+}
+
+function testTurtleIslandPresetUnchanged(): boolean {
+  return SQ_SWING_RHYTHM_BY_VRB_ID.turtle_island.swingIntensity === 0.8;
+}
+
+function testPorterBundleIntensity(): boolean {
+  return getVoiceRuleBundle('cole_porter').swingIntensity === 0.52;
+}
+
+function testGershwinBundleIntensity(): boolean {
+  return getVoiceRuleBundle('gershwin').swingIntensity === 0.65;
+}
+
+function testPorterBundleAnticipation(): boolean {
+  return getVoiceRuleBundle('cole_porter').anticipationRateMax === 0.1;
+}
+
+function testGershwinBundleAnticipation(): boolean {
+  return getVoiceRuleBundle('gershwin').anticipationRateMax === 0.14;
+}
+
+function testPorterGershwinGapAllTempos(): boolean {
+  const porter = getVoiceRuleBundle('cole_porter');
+  const gershwin = getVoiceRuleBundle('gershwin');
+  for (const bpm of [80, 120, 160, 200]) {
+    const p = buildSwingPolicy(porter, bpm).swingIntensity;
+    const g = buildSwingPolicy(gershwin, bpm).swingIntensity;
+    if (g - p < 0.1) return false;
+  }
+  return true;
+}
+
 export function runSqSwingRhythmTests(): { name: string; ok: boolean }[] {
   return [
     ['sq_swing: swingRatio 80 BPM ∈ [2.5, 3.5]', testSwingRatio80],
@@ -209,5 +265,16 @@ export function runSqSwingRhythmTests(): { name: string; ok: boolean }[] {
     ['sq_swing: rhythmExpectationForVrb ravel undefined', testRhythmExpRavel],
     ['sq_swing: scoreRhythmicIdentity no expectation unchanged', testScoreNoExpectationUnchanged],
     ['sq_swing: swing expectation favors swung offbeats', testSwingExpectationFavorsSwung],
+    ['sq_swing: cole_porter swingIntensity 0.52', testPorterPresetIntensity],
+    ['sq_swing: gershwin swingIntensity 0.65', testGershwinPresetIntensity],
+    ['sq_swing: porter–gershwin intensity gap >= 0.10', testPorterGershwinIntensityGap],
+    ['sq_swing: cole_porter anticipationRateMax 0.10', testPorterPresetAnticipation],
+    ['sq_swing: gershwin anticipationRateMax 0.14', testGershwinPresetAnticipation],
+    ['sq_swing: turtle_island swingIntensity 0.80 unchanged', testTurtleIslandPresetUnchanged],
+    ['sq_swing: cole_porter bundle swingIntensity 0.52', testPorterBundleIntensity],
+    ['sq_swing: gershwin bundle swingIntensity 0.65', testGershwinBundleIntensity],
+    ['sq_swing: cole_porter bundle anticipationRateMax 0.10', testPorterBundleAnticipation],
+    ['sq_swing: gershwin bundle anticipationRateMax 0.14', testGershwinBundleAnticipation],
+    ['sq_swing: porter–gershwin gap >= 0.10 at all tempos', testPorterGershwinGapAllTempos],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }
