@@ -5,10 +5,14 @@
 |---|---|
 | Full | 383 / 71 / 0 |
 | Fast | 228 / 57 / 0 |
-| Desktop | `desktop:rebuild-and-smoke` PASS — **v1.0.45** portable (`release/Composer-OS.exe`) |
+| Desktop | `desktop:rebuild-and-smoke` PASS — **v1.0.47** portable (`release/Composer-OS.exe`) |
+
+## RENDERER CRASH (resolved)
+- **Root cause:** module-scope `Tone.Sampler` in `stringVoices.ts` triggered `AudioContext` init before Electron renderer ready on Windows (`ACCESS_VIOLATION`).
+- **Fix:** lazy `getSamplers()` initialiser — samplers created on first playback/volume call, not at import.
 
 ## ANCHOR COMMIT
-`feat(desktop): rebundle` — pitch-field spine ships in packaged Electron (Ornette, Coltrane, Messiaen, Ligeti). Desktop **v1.0.45**.
+`fix(renderer): lazy-init Tone.Sampler in stringVoices` — renderer crash resolved. Desktop **v1.0.47** stable.
 
 **Pitch-field Sessions 1–4 complete:** Ornette / Coltrane / Messiaen / Ligeti on `pitch-field-spine`. Registry **22** entries. Messiaen mode picker + song-mode guard live in desktop UI bundle.
 
@@ -59,4 +63,4 @@
 | webern | 40 |
 
 ## NEXT SESSION ENTRY POINT
-**Next scope TBD.** Pitch-field program (Sessions 1–4) and desktop rebundle complete.
+**Next scope TBD.** Renderer crash fixed; desktop **v1.0.47** smoke-stable.
