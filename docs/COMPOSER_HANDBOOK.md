@@ -157,3 +157,254 @@ Fingerprints carry a **format** tag (**big band**, **string quartet**, **duo**, 
 ---
 
 *Structural memory is additive: every high-quality artifact you codify becomes a reusable **anchor** for the next generation pass.*
+
+---
+
+## Scenario Cookbook
+
+Practical scenario starting points across composers,
+harmonic voices, modes and sections. All multi-section
+scenarios require `totalBars > 16`. Song mode examples
+use `sectionLabelMode: song`; instrumental examples
+use `sectionLabelMode: instrumental` (default).
+
+---
+
+### 1. Stylistic Contrast (Jekyll & Hyde Sections)
+
+**1.1 — Sacred to Chaotic**
+Sections: `opening: arvo_part` · `development: ornette_coleman` · `reprise: arvo_part`
+Crystalline stillness gives way to semi-independent pitch fields, then returns to silence. Hard cut at the development boundary — no ramp between tintinnabuli and free jazz families.
+Key: totalBars 32+, instrumental mode.
+
+**1.2 — French Refinement vs Soviet Brutalism**
+Sections: `opening: ravel` · `development: shostakovich` · `coda: ravel`
+Smooth impressionist opening, displaced downbeats and dark modal harmony in the middle, refined resolution at close. Cross-family hard cut at opening→development.
+Key: instrumental mode, transitionBars 2 at ravel boundaries.
+
+**1.3 — Hollywood Sweep to Serial Fragmentation**
+Sections: `opening: williams` · `contrast: webern` · `reprise: williams`
+Strong orchestral narrative collapses into pointillist extremes (σ=40), then recovers. Maximum register contrast.
+Key: webern σ=40 ceiling active, instrumental mode.
+
+---
+
+### 2. Same-Family Blending
+
+**2.1 — Impressionist Watercolour**
+Blend: `debussy 0.5 + ravel 0.5` across full composition.
+Parallel planing softened by Ravel's voice-leading clarity. σ interpolated 20–21.
+Key: `blendVrbIds: ['debussy','ravel']`, `blendWeights: [0.5, 0.5]`.
+
+**2.2 — Broadway Gradient**
+Sections: `intro: cole_porter` · `verse: cole_porter` · `chorus: gershwin` · `outro: cole_porter`
+Controlled cabaret feel (swing 0.52) in verses, broader jazz exuberance (swing 0.65) in chorus. Tempo-adaptive curve widens the gap at slower tempos.
+Key: song mode, bpm 90.
+
+**2.3 — Cinematic Three-Way**
+Blend: `morricone 0.4 + herrmann 0.35 + badalamenti 0.25`
+Epic modal drama shadowed by chromatic unease with noir space. σ clamped to morricone ceiling (22).
+Key: `blendVrbIds: ['morricone','herrmann','badalamenti']`.
+
+---
+
+### 3. Pitch-Field Journeys
+
+All pitch-field scenarios require instrumental mode. Song-mode guard suppresses pitch-field spine in song mode.
+
+**3.1 — Free to Structured**
+Sections: `opening: ornette_coleman` · `development: coltrane` · `coda: messiaen`
+Loose harmolodic field tightens into interval-cell patterns, then settles into static modal colour. Freedom to stasis.
+Key: totalBars 48+.
+
+**3.2 — Modal Rainbow**
+Sections: `opening: messiaen` (M1 Floating) · `statement: coltrane` · `development: messiaen` (M7 Dense) · `coda: ornette_coleman`
+Whole-tone openness → interval-cell density → dense 10-note field → harmolodic dissolution.
+Key: `messiaenModeId: 1` opening, `messiaenModeId: 7` development.
+
+**3.3 — Texture as Narrative**
+Sections: `opening: messiaen` (M2 Shadowed) · `development: ligeti` · `coda: ornette_coleman`
+Octatonic colour absorbed into chromatic micropolyphony, then freed into pitch fields.
+Key: totalBars 64+.
+
+**3.4 — Ascending Complexity Arc**
+Sections: `opening: ornette_coleman` · `statement: coltrane` · `development: ligeti` · `coda: messiaen`
+Interaction-driven looseness → pattern saturation → micropolyphony → static modal resolution.
+Key: totalBars 64+.
+
+**3.5 — Reverse Arc**
+Sections: `opening: messiaen` (M2) · `development: coltrane` · `climax: ornette_coleman`
+Ordered modal colour dissolves through pattern saturation into harmolodic freedom.
+Key: instrumental only.
+
+---
+
+### 4. Messiaen Mode Explorations
+
+| Mode | Label | Pitch Classes | PCs |
+|------|-------|---------------|-----|
+| M1 | Floating (Whole Tone) | 0,2,4,6,8,10 | 6 |
+| M2 | Shadowed (Octatonic) | 0,1,3,4,6,7,9,10 | 8 |
+| M3 | Luminous | 0,2,3,4,6,7,8,10,11 | 9 |
+| M4 | Austere | 0,1,2,5,6,7,8,11 | 8 |
+| M5 | Sparse | 0,1,5,6,7,11 | 6 |
+| M6 | Veiled | 0,2,4,5,6,8,10,11 | 8 |
+| M7 | Dense | 0,1,2,3,5,6,7,8,9,11 | 10 |
+
+**4.1 — Colour Sequence (Light to Dark)**
+Sections: M1 Floating → M2 Shadowed → M6 Veiled → M7 Dense
+All sections use messiaen; different modeId per section. Journey of increasing harmonic saturation.
+
+**4.2 — Symmetric Pair (ABA)**
+Sections: M1 · M2 · M1
+Whole-tone bookends the octatonic middle. pedalPolicy: bass-drone where available.
+
+**4.3 — Sparse to Dense**
+Sections: M5 Sparse → M3 Luminous → M7 Dense
+Progressive densification. Feels like a slow harmonic awakening.
+Key: totalBars 48+.
+
+---
+
+### 5. Temporal Extremes
+
+**5.1 — Still vs Shattered**
+Sections: `opening: arvo_part` (HR min 4 bars) · `development: bartok` (HR min 0)
+Maximum harmonic rhythm contrast — sustained tintinnabuli chords collapse into rapid chromatic cluster changes.
+
+**5.2 — Zimmer Drone vs Shostakovich Fracture**
+Sections: `opening: zimmer` · `contrast: shostakovich`
+Layered pad stasis gives way to metric instability.
+Key: transitionBars 2.
+
+**5.3 — Pärt Bookends with Ligeti Core**
+Sections: `opening: arvo_part` · `development: ligeti` · `coda: arvo_part`
+Tintinnabuli silence frames micropolyphonic texture. Cross-family hard cuts at both boundaries.
+Key: totalBars 64+, Ligeti pitch-field active.
+
+---
+
+### 6. Jazz Lineage
+
+**6.1 — Decades in Four Sections**
+Sections: `opening: cole_porter` · `verse: gershwin` · `chorus: coltrane` · `coda: ornette_coleman`
+Broadway cabaret → jazz-classical → modal interval cells (pitch-field) → harmolodic freedom. A century of jazz.
+Key: song mode for porter/gershwin, instrumental for coltrane/ornette; bpm 120.
+
+**6.2 — Swing Gradient**
+Sections: `intro: cole_porter` (0.52) · `verse: gershwin` (0.65) · `chorus: turtle_island` (0.80)
+Progressive swing intensification. Gap widens at slow tempos via tempo-adaptive curve.
+Key: song mode, bpm 80.
+
+**6.3 — Joni Mitchell Bridge**
+Sections: `verse: cole_porter` · `bridge: joni_mitchell` · `chorus: gershwin`
+Broadway sophistication flanks an open-tuning quartal bridge. σ: Porter 25, Joni 23, Gershwin 27.
+Key: song mode.
+
+---
+
+### 7. Cinematic Arc
+
+**7.1 — The Hero's Journey**
+Sections: `opening: badalamenti` · `statement: morricone` · `development: goldsmith` · `climax: williams` · `coda: badalamenti`
+Noir ambience → epic modal drama → Hollywood tension → orchestral sweep → noir return. σ: 21→22→24→26→21.
+Key: totalBars 64+, boundary ramp active (cinematic family).
+
+**7.2 — Suspense to Resolution**
+Sections: `opening: herrmann` · `development: goldsmith` · `coda: williams`
+Hitchcock unease → Hollywood tension → orchestral resolution. σ narrows as tension resolves: 36→24→26.
+
+**7.3 — Zimmer Ostinato Arc**
+Blend: `zimmer 0.6 + morricone 0.4`
+Modern epic ostinato pads with modal drama undertow.
+Key: `blendVrbIds: ['zimmer','morricone']`.
+
+---
+
+### 8. Modernist Cluster
+
+**8.1 — The Modernist Arc**
+Sections: `opening: shostakovich` · `development: bartok` · `contrast: ligeti` · `coda: webern`
+Displaced downbeats → chromatic clusters → micropolyphony (pitch-field) → serial pointillism (σ=40).
+Key: totalBars 64+, Ligeti pitch-field active.
+
+**8.2 — Folk to Abstract**
+Sections: `opening: bartok` · `development: ligeti` · `coda: webern`
+Three stages of abstraction. Key: totalBars 48+.
+
+**8.3 — Soviet Sandwich**
+Sections: `opening: shostakovich` · `contrast: ligeti` · `reprise: shostakovich`
+Same modernist family — boundary ramp smooths the transitions.
+
+---
+
+### 9. East-West Fusion
+
+**9.1 — Three Shades of Modal**
+Blend: `messiaen 0.4 + debussy 0.4 + ravel 0.2`
+Symmetric modal colour + parallel planing + refined voice-leading. σ ~21. suppressFunctionalResolution hard-switches on.
+Key: `blendVrbIds: ['messiaen','debussy','ravel']`, `messiaenModeId: 2`.
+
+**9.2 — Sacred and Impressionist**
+Sections: `opening: arvo_part` · `development: messiaen` (M3 Luminous) · `coda: arvo_part`
+Tintinnabuli stillness frames Messiaen's luminous 9-note modal field.
+Key: totalBars 48+.
+
+**9.3 — Satie's Irony vs Messiaen's Devotion**
+Sections: `opening: satie` · `development: messiaen` (M2 Shadowed) · `coda: satie`
+Ironic parallel triads bookend octatonic modal devotion. σ: Satie 19, Messiaen 22.
+
+---
+
+### 10. Minimal vs Maximal
+
+**10.1 — The Sigma Journey**
+Sections: `opening: arvo_part` (σ=16) · `development: ligeti` (σ=32) · `climax: webern` (σ=40) · `coda: arvo_part` (σ=16)
+Register begins at narrowest, doubles, reaches maximum, collapses back. Pure register drama.
+Key: totalBars 64+, all cross-family hard cuts.
+
+**10.2 — Glass vs Herrmann**
+Sections: `opening: glass` (σ=18) · `contrast: herrmann` (σ=36) · `coda: glass` (σ=18)
+Additive diatonic cells give way to Hitchcock chromatic clusters, then return.
+
+**10.3 — Minimal Blend Pushed Wide**
+Blend: `arvo_part 0.3 + webern 0.7`
+Blend-capped σ ≈ 29. tintinnabuli hard-switches OFF (weight < 0.65). Wide-register serial feel with slight modal anchoring.
+
+---
+
+### 11. Solo Instrument Simulation
+
+**11.1 — Sax and Bass Duo (Ornette Style)**
+Format: Guitar/Bass duo · Composer: `ornette_coleman`
+Guitar takes melody overlay (overlap 0.75), bass takes floating overlay (overlap 0.55). No chord roots.
+Key: duo mode, Ornette pitch-field, democraticEnsemble true.
+
+**11.2 — Coltrane Quartet Simulation**
+Format: SQ mode · Composer: `coltrane`
+Melody cycles interval-cell patterns (sheets of sound), inner voices share cell at 0.80 overlap, bass holds modal pedal.
+Key: SQ mode, Coltrane pitch-field, densityDrive 0.8.
+
+**11.3 — String Quartet Micropolyphony**
+Format: String Quartet · Composer: `ligeti`
+Four voices enter staggered, each moving stepwise within the chromatic cluster field.
+Key: string quartet mode, Ligeti pitch-field, clusterWidth 8, motionBlur 0.70.
+
+---
+
+### 12. Swing Gradient
+
+**12.1 — From Grid to Groove**
+Sections: `opening: arvo_part` (grid) · `verse: cole_porter` (0.52) · `chorus: gershwin` (0.65) · `outro: turtle_island` (0.80)
+Metronomic stillness to cabaret precision to jazz exuberance to loose group swing.
+Key: song mode, bpm 80.
+
+**12.2 — Late Night Slow Burn**
+Sections: `intro: satie` · `verse: badalamenti` · `chorus: gershwin`
+Dry ironic opening, Twin Peaks chromatic space, full Broadway swing.
+Key: song mode, bpm 70.
+
+**12.3 — Fast and Straight**
+Sections: `opening: cole_porter` · `development: gershwin` · `coda: cole_porter`
+At bpm 200 tempo-adaptive curve straightens swing — Porter drops toward 0.43, Gershwin toward 0.54. Gap ≥ 0.10 maintained.
+Key: instrumental, bpm 200.
