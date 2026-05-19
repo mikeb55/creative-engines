@@ -6,7 +6,10 @@ import { SHIPPED_SQ_RHYTHM_ENGINE_IDS } from '../app-api/composerOsAppGeneration
 import type { VoiceRuleBundle } from '../core/composer/voiceRuleBundle';
 import { getVoiceRuleBundle } from '../core/composer/voiceRuleBundles';
 import type { NoteEvent } from '../core/counterpoint/abstractLineSet';
-import { SQ_SWING_RHYTHM_BY_VRB_ID } from '../core/counterpoint/vrbProfiles/sqSwingRhythm';
+import {
+  SQ_SWING_RHYTHM_BY_VRB_ID,
+  computeSwingIntensityForTempo,
+} from '../core/counterpoint/vrbProfiles/sqSwingRhythm';
 import { rhythmExpectationForVrb, scoreRhythmicIdentity } from '../core/gce/gceAutoScorers';
 import type { MelodicNote } from '../core/gce/gce_melody_eval';
 import {
@@ -233,11 +236,11 @@ function testGershwinBundleAnticipation(): boolean {
 }
 
 function testPorterGershwinGapAllTempos(): boolean {
-  const porter = getVoiceRuleBundle('cole_porter');
-  const gershwin = getVoiceRuleBundle('gershwin');
+  const porterPreset = SQ_SWING_RHYTHM_BY_VRB_ID.cole_porter;
+  const gershwinPreset = SQ_SWING_RHYTHM_BY_VRB_ID.gershwin;
   for (const bpm of [80, 120, 160, 200]) {
-    const p = buildSwingPolicy(porter, bpm).swingIntensity;
-    const g = buildSwingPolicy(gershwin, bpm).swingIntensity;
+    const p = computeSwingIntensityForTempo(porterPreset, bpm);
+    const g = computeSwingIntensityForTempo(gershwinPreset, bpm);
     if (g - p < 0.1) return false;
   }
   return true;

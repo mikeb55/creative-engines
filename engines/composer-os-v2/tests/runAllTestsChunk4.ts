@@ -43,6 +43,7 @@ import { runArvoPartVrbTests } from '../core/counterpoint/vrbProfiles/arvoPartVr
 import { runDebussyBartokVrbTests } from './debussyBartokVrb.test';
 import { runBlendedVrbTests } from './blendedVrb.test';
 import { runBoundarySwingRampTests } from './boundarySwingRamp.test';
+import { runTempoAdaptiveSwingTests } from './tempoAdaptiveSwing.test';
 import { runVrbTooltipsTests } from './vrbTooltips.test';
 import { runDuoIntentTests } from './duoIntent.test';
 import { runMacroFormPlannerTests } from './macroFormPlanner.test';
@@ -91,6 +92,7 @@ const suites: SuiteEntry[] = [
   { name: 'Debussy + Bartók SQ VRB stubs (σ=21/29)', run: runDebussyBartokVrbTests },
   { name: '3-way VRB blend (blendedVrb)', run: runBlendedVrbTests },
   { name: 'Boundary swing ramp (same-family VRB)', run: runBoundarySwingRampTests },
+  { name: 'Tempo-adaptive swing curve (sq_swing)', run: runTempoAdaptiveSwingTests },
   { name: 'VRB composer + gate tooltips', run: runVrbTooltipsTests },
   { name: 'Duo intent (product vs PhraseIntent)', run: runDuoIntentTests },
   { name: 'Macro form planner', run: runMacroFormPlannerTests },

@@ -4,7 +4,10 @@
 
 import type { VoiceRuleBundle } from '../composer/voiceRuleBundle';
 import type { NoteEvent } from '../counterpoint/abstractLineSet';
-import { sqSwingRhythmPresetForVrb } from '../counterpoint/vrbProfiles/sqSwingRhythm';
+import {
+  computeSwingIntensityForTempo,
+  sqSwingRhythmPresetForVrb,
+} from '../counterpoint/vrbProfiles/sqSwingRhythm';
 
 const beatMs = (bpm: number) => 60000 / bpm;
 const straightEighthMs = (bpm: number) => beatMs(bpm) / 2;
@@ -15,6 +18,7 @@ const shortNoteFloor = (sensitivity: number) => {
   return 60 + (150 - 60) * (1 - s);
 };
 
+/** Friberg–Sundström-inspired swing ratio from BPM + sensitivity (displacement path). */
 export function swingRatio(bpm: number, sensitivity: number): number {
   const beat = beatMs(bpm);
   const floor = shortNoteFloor(sensitivity);
@@ -67,22 +71,58 @@ function inferSwingStyleFromVrbId(
   return swingFeel ? 'concert' : 'none';
 }
 
-export function buildSwingPolicy(bundle: VoiceRuleBundle, bpm: number): SqSwingRhythmEnginePolicy {
+function resolveBaseSwingIntensity(
+  bundle: VoiceRuleBundle,
+  preset: ReturnType<typeof sqSwingRhythmPresetForVrb>,
+): number {
+  if (bundle.swingIntensity !== undefined) {
+    return Math.max(0, Math.min(1, bundle.swingIntensity));
+  }
+  if (preset?.swingIntensity !== undefined) {
+    return Math.max(0, Math.min(1, preset.swingIntensity));
+  }
+  return 0.5;
+}
+
+function warnSwingBpmMissingDev(bundle: VoiceRuleBundle): void {
+  if (process.env.NODE_ENV === 'production') return;
+  if (bundle.sqRhythmEngineId !== 'sq_swing') return;
   const preset = sqSwingRhythmPresetForVrb(bundle.voiceId);
-  const intensity =
-    bundle.swingIntensity !== undefined
-      ? Math.max(0, Math.min(1, bundle.swingIntensity))
-      : preset?.swingIntensity !== undefined
-        ? Math.max(0, Math.min(1, preset.swingIntensity))
-        : 0.5;
+  if (!preset?.curveK) return;
+  console.warn(
+    `[sq_swing] buildSwingPolicy: BPM omitted for ${bundle.voiceId} — using flat swingIntensity (no tempo curve)`,
+  );
+}
+
+export function buildSwingPolicy(
+  bundle: VoiceRuleBundle,
+  bpm?: number,
+): SqSwingRhythmEnginePolicy {
+  const preset = sqSwingRhythmPresetForVrb(bundle.voiceId);
+  const baseIntensity = resolveBaseSwingIntensity(bundle, preset);
+  let intensity = baseIntensity;
+
+  if (bpm !== undefined && Number.isFinite(bpm) && bpm > 0 && preset?.curveK !== undefined) {
+    intensity = computeSwingIntensityForTempo(
+      { ...preset, swingIntensity: baseIntensity },
+      bpm,
+    );
+  } else if (bpm === undefined) {
+    warnSwingBpmMissingDev(bundle);
+  }
+
   const swingStyle =
     bundle.swingStyle ??
     preset?.swingStyle ??
     inferSwingStyleFromVrbId(bundle.voiceId, bundle.swingFeel);
+  const policyBpm =
+    bpm !== undefined && Number.isFinite(bpm) && bpm > 0
+      ? Math.max(40, Math.min(300, bpm))
+      : 120;
   return {
     swingStyle,
     swingIntensity: intensity,
-    bpm: Math.max(40, Math.min(300, bpm)),
+    bpm: policyBpm,
   };
 }
 

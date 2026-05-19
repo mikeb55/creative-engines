@@ -3,7 +3,10 @@
  */
 
 import { getVoiceRuleBundle } from '../core/composer/voiceRuleBundles';
-import { SQ_SWING_RHYTHM_BY_VRB_ID } from '../core/counterpoint/vrbProfiles/sqSwingRhythm';
+import {
+  SQ_SWING_RHYTHM_BY_VRB_ID,
+  computeSwingIntensityForTempo,
+} from '../core/counterpoint/vrbProfiles/sqSwingRhythm';
 import { rhythmExpectationForVrb } from '../core/gce/gceAutoScorers';
 
 function testColePorterSwingIntensity(): boolean {
@@ -55,6 +58,34 @@ function testBundlePorterLessThanGershwin(): boolean {
   return p < g && g - p >= 0.1;
 }
 
+function testTempoGapAt80(): boolean {
+  const gap =
+    computeSwingIntensityForTempo(SQ_SWING_RHYTHM_BY_VRB_ID.gershwin, 80) -
+    computeSwingIntensityForTempo(SQ_SWING_RHYTHM_BY_VRB_ID.cole_porter, 80);
+  return gap >= 0.1;
+}
+
+function testTempoGapAt120(): boolean {
+  const gap =
+    computeSwingIntensityForTempo(SQ_SWING_RHYTHM_BY_VRB_ID.gershwin, 120) -
+    computeSwingIntensityForTempo(SQ_SWING_RHYTHM_BY_VRB_ID.cole_porter, 120);
+  return gap >= 0.1;
+}
+
+function testTempoGapAt160(): boolean {
+  const gap =
+    computeSwingIntensityForTempo(SQ_SWING_RHYTHM_BY_VRB_ID.gershwin, 160) -
+    computeSwingIntensityForTempo(SQ_SWING_RHYTHM_BY_VRB_ID.cole_porter, 160);
+  return gap >= 0.1;
+}
+
+function testTempoGapAt200(): boolean {
+  const gap =
+    computeSwingIntensityForTempo(SQ_SWING_RHYTHM_BY_VRB_ID.gershwin, 200) -
+    computeSwingIntensityForTempo(SQ_SWING_RHYTHM_BY_VRB_ID.cole_porter, 200);
+  return gap >= 0.1;
+}
+
 export function runPorterGershwinDistinctionTests(): { name: string; ok: boolean }[] {
   return [
     ['Porter/Gershwin — cole_porter swingIntensity 0.52', testColePorterSwingIntensity],
@@ -68,5 +99,9 @@ export function runPorterGershwinDistinctionTests(): { name: string; ok: boolean
     ['Porter/Gershwin — rhythmExpectation cole_porter anticipation 0.10', testRhythmExpColePorterAnticipation],
     ['Porter/Gershwin — rhythmExpectation gershwin anticipation 0.14', testRhythmExpGershwinAnticipation],
     ['Porter/Gershwin — bundle porter swing < gershwin gap >= 0.10', testBundlePorterLessThanGershwin],
+    ['Porter/Gershwin — tempo gap >= 0.10 at 80 BPM', testTempoGapAt80],
+    ['Porter/Gershwin — tempo gap >= 0.10 at 120 BPM', testTempoGapAt120],
+    ['Porter/Gershwin — tempo gap >= 0.10 at 160 BPM', testTempoGapAt160],
+    ['Porter/Gershwin — tempo gap >= 0.10 at 200 BPM', testTempoGapAt200],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }
