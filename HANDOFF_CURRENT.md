@@ -8,7 +8,7 @@
 | Desktop | `desktop:rebuild-and-smoke` PASS — **v1.0.44** portable (`release/Composer-OS.exe`) |
 
 ## ANCHOR COMMIT
-`pending` — feat(pitch-field): Ligeti upgrade — texture fields, micropolyphony, pitch-field substrate, 34 tests
+`d70b7958` — feat(pitch-field): Ligeti upgrade — texture fields, micropolyphony, pitch-field substrate, 34 tests
 
 **Pitch-field Sessions 1–3 complete:** Ornette / Coltrane / Messiaen / **Ligeti** on `pitch-field-spine`. Ligeti: chromatic cluster band, texture fields (`textureDensity`, `canonOffsetRange`, `clusterWidth`, `motionBlur`, `entryStagger`), 8–32 bar regions, `scoreMicropolyphonyCoherence`. Registry **22** entries (4 pitch-field composers).
 
