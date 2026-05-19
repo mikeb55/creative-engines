@@ -58,28 +58,35 @@ const VOICE_FOLDERS: Record<StringVoice, string> = {
   cello: 'cello-mp3',
 };
 
-const samplers: Record<StringVoice, Tone.Sampler> = {
-  violin1: new Tone.Sampler({
-    urls: GLEITZ_SAMPLE_URLS,
-    baseUrl: `${GLEITZ_BASE}${VOICE_FOLDERS.violin1}/`,
-    release: 1.5,
-  }).toDestination(),
-  violin2: new Tone.Sampler({
-    urls: GLEITZ_SAMPLE_URLS,
-    baseUrl: `${GLEITZ_BASE}${VOICE_FOLDERS.violin2}/`,
-    release: 1.5,
-  }).toDestination(),
-  viola: new Tone.Sampler({
-    urls: GLEITZ_SAMPLE_URLS,
-    baseUrl: `${GLEITZ_BASE}${VOICE_FOLDERS.viola}/`,
-    release: 1.5,
-  }).toDestination(),
-  cello: new Tone.Sampler({
-    urls: GLEITZ_SAMPLE_URLS,
-    baseUrl: `${GLEITZ_BASE}${VOICE_FOLDERS.cello}/`,
-    release: 1.5,
-  }).toDestination(),
-};
+let _samplers: Record<StringVoice, Tone.Sampler> | null = null;
+
+function getSamplers(): Record<StringVoice, Tone.Sampler> {
+  if (!_samplers) {
+    _samplers = {
+      violin1: new Tone.Sampler({
+        urls: GLEITZ_SAMPLE_URLS,
+        baseUrl: `${GLEITZ_BASE}${VOICE_FOLDERS.violin1}/`,
+        release: 1.5,
+      }).toDestination(),
+      violin2: new Tone.Sampler({
+        urls: GLEITZ_SAMPLE_URLS,
+        baseUrl: `${GLEITZ_BASE}${VOICE_FOLDERS.violin2}/`,
+        release: 1.5,
+      }).toDestination(),
+      viola: new Tone.Sampler({
+        urls: GLEITZ_SAMPLE_URLS,
+        baseUrl: `${GLEITZ_BASE}${VOICE_FOLDERS.viola}/`,
+        release: 1.5,
+      }).toDestination(),
+      cello: new Tone.Sampler({
+        urls: GLEITZ_SAMPLE_URLS,
+        baseUrl: `${GLEITZ_BASE}${VOICE_FOLDERS.cello}/`,
+        release: 1.5,
+      }).toDestination(),
+    };
+  }
+  return _samplers;
+}
 
 const voiceMuted: Record<StringVoice, boolean> = {
   violin1: false,
@@ -97,7 +104,7 @@ const START_BUFFER_SEC = 0.1;
 const BEATS_PER_BAR = 4;
 
 function applyVoiceVolume(voice: StringVoice): void {
-  const sampler = samplers[voice];
+  const sampler = getSamplers()[voice];
   if (soloVoice != null && soloVoice !== voice) {
     sampler.volume.value = -Infinity;
     return;
@@ -106,7 +113,7 @@ function applyVoiceVolume(voice: StringVoice): void {
 }
 
 function applyAllVolumes(): void {
-  for (const voice of Object.keys(samplers) as StringVoice[]) {
+  for (const voice of Object.keys(getSamplers()) as StringVoice[]) {
     applyVoiceVolume(voice);
   }
 }
@@ -158,8 +165,8 @@ export function stopPlayback(): void {
   transport.cancel();
   transport.position = 0;
   clearEndSchedule(transport);
-  for (const voice of Object.keys(samplers) as StringVoice[]) {
-    samplers[voice].releaseAll();
+  for (const voice of Object.keys(getSamplers()) as StringVoice[]) {
+    getSamplers()[voice].releaseAll();
   }
 }
 
@@ -184,7 +191,7 @@ export async function startPlayback(
   let maxEndSec = 0;
 
   for (const voice of Object.keys(allVoiceNotes) as StringVoice[]) {
-    const sampler = samplers[voice];
+    const sampler = getSamplers()[voice];
     if (soloVoice != null && soloVoice !== voice) continue;
     if (voiceMuted[voice]) continue;
 
