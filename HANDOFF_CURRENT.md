@@ -8,24 +8,27 @@
 | Desktop | `desktop:rebuild-and-smoke` PASS — **v1.0.44** portable (`release/Composer-OS.exe`) |
 
 ## ANCHOR COMMIT
-`21499de4` — feat(pitch-field): spine core + Ornette VRB — pitch-field substrate, field scheduler, 30 tests
+`914afde3` — feat(pitch-field): Coltrane + Messiaen VRBs, line engine wiring, song-mode guard, Messiaen mode picker, 40 tests
 
-**Pitch-field Session 1:** parallel `PitchFieldSpine` + `resolveBarSymbol` optional `pitchField`; Ornette SQ profile (σ=33, `harmonicSubstrate: pitch-field-spine`); registry **20** entries; `free_jazz` family; `scorePitchFieldCoherence`.
+**Pitch-field Session 2:** `coltrane` + `messiaen` SQ VRBs on `pitch-field-spine`; `ContrapuntalLineEngine` draws note PCs from `pitchField.allowedPcs` when `USE_PITCH_FIELD_NOTE_SELECTION`; `shouldUsePitchFieldSubstrate` song-mode guard; Messiaen M1–M7 mode picker → `messiaenModeId` on `GenerateRequest`; registry **22** entries; `modal_contemporary` family.
 
-**Prior desktop anchor:** `2e1adcf3` — feat(desktop): rebundle — tempo-adaptive swing curve ships in v1.0.44
+**Session 1 anchor:** `21499de4` — Ornette pitch-field spine + `resolveBarSymbol` optional `pitchField`.
 
 ## ROADMAP — ACTIVE
 | # | Item | Status |
 |---|---|---|
-| 1 | Coltrane + Messiaen pitch-field profiles (Session 2) | Next |
-| 2 | ContrapuntalLineEngine consumes `ResolvedPitchField` | Backlog |
-| 3 | Wyble duo parity | Backlog |
-| 4 | ECM GCE orchestration | Backlog |
+| 1 | Ligeti pitch-field upgrade (Session 3) | Next |
+| 2 | Wyble duo parity | Backlog |
+| 3 | ECM GCE orchestration | Backlog |
 
-## NEXT SESSION ENTRY POINT
-Session 2: Coltrane + Messiaen SQ VRBs on `pitch-field-spine` / chord-spine opt-in via `harmonicSubstrate`. Ornette path live — `resolveBarSymbol(..., 'melody').pitchField` populated when `pitchFieldGoverned` or profile substrate set.
+## FLAGS
+| Flag | Value |
+|---|---|
+| `USE_PITCH_FIELD_NOTE_SELECTION` | `true` (`engineFeatureFlags.ts`) |
+| Song-mode pitch-field guard | live (`shouldUsePitchFieldSubstrate`) |
+| Messiaen mode picker | live (UI + `messiaenModeId` default **2**) |
 
-## VRB σ TABLE (20 SQ Harmonic Voice profiles)
+## VRB σ TABLE (22 SQ Harmonic Voice profiles)
 | vrbId | σ |
 |---|---|
 | arvo_part | 16 |
@@ -35,6 +38,7 @@ Session 2: Coltrane + Messiaen SQ VRBs on `pitch-field-spine` / chord-spine opt-
 | ravel | 20 |
 | debussy | 21 |
 | morricone | 22 |
+| **messiaen** | **22** |
 | badalamenti | 21 |
 | goldsmith | 24 |
 | cole_porter | 25 |
@@ -44,9 +48,13 @@ Session 2: Coltrane + Messiaen SQ VRBs on `pitch-field-spine` / chord-spine opt-
 | shostakovich | 28 |
 | bartok | 29 |
 | joni_mitchell | 30 |
+| **coltrane** | **31** |
 | ligeti | 32 |
 | **ornette_coleman** | **33** |
 | herrmann | 36 |
 | webern | 40 |
 
-Registry: `sqVrbProfileRegistry.ts` — `ornette_coleman` → `ORNETTE_SQ_VRB_PROFILE`.
+Registry: `sqVrbProfileRegistry.ts` — 22 entries including `coltrane`, `messiaen`, `ornette_coleman`.
+
+## NEXT SESSION ENTRY POINT
+Session 3: Ligeti upgrade on `pitch-field-spine` (σ=32, micropolyphony region scheduler). Line engine pitch pool path live for Ornette / Coltrane / Messiaen when `instrumental` + `pitchFieldGoverned`.
