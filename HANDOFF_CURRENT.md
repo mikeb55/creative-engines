@@ -5,64 +5,36 @@
 |---|---|
 | Full | 383 / 71 / 0 |
 | Fast | 228 / 57 / 0 |
-| Desktop | `desktop:rebuild-and-smoke` PASS (v1.0.43 portable) — **rebundle needed** for tempo curve in packaged app |
+| Desktop | `desktop:rebuild-and-smoke` PASS — **v1.0.44** portable (`release/Composer-OS.exe`) |
 
 ## ANCHOR COMMIT
-`c0d75701` — feat(swing): tempo-adaptive curve — per-composer k, Friberg model, 20 tests
+`2e1adcf3` — feat(desktop): rebundle — tempo-adaptive swing curve ships in v1.0.44
 
-**Also on `main` (pushed):**
-- `d196a6a1` — feat(swing): Porter vs Gershwin fine-grain — intensity 0.52 vs 0.65, gap 0.13
-- `3d1c7757` — feat(desktop): rebundle engine changes + fix Python sidecar paths
-- `ca746798` — feat(ui): composer + gate tooltips
-- `39b5d597` — feat(vrb): boundary swing ramp
-- `c645b09a` — feat(vrb): 3-way VRB blend
+**Shipped in v1.0.44 desktop IPC bundle:** `computeSwingIntensityForTempo`, Porter/Gershwin fine-grain swing, VRB tooltips, boundary swing ramp, 3-way blend, Python sidecar paths.
 
-## ROADMAP
+**Also on `main`:**
+- `c0d75701` — feat(swing): tempo-adaptive curve
+- `d196a6a1` — feat(swing): Porter vs Gershwin fine-grain
+- `3d1c7757` — feat(desktop): Python sidecar paths + engine rebundle
+- `ca746798`, `39b5d597`, `c645b09a` — tooltips, boundary ramp, 3-way blend
+
+## ROADMAP — COMPLETE
 | # | Item | Status |
 |---|---|---|
-| 1 | sq_swing rhythm engine | ✓ (Friberg displacement + tempo curve) |
-| 2 | Wyble duo parity + BB Light Touch | pending |
-| 3 | ECM GCE orchestration | pending |
-| 4 | Melody V2 + cadenza | pending |
-| 5 | MIDI import | pending |
-| 6 | Porter vs Gershwin fine-grain | ✓ (`d196a6a1`) |
-| 7 | Tempo-adaptive swing curve | ✓ |
-| 8 | 3-way VRB blend (within-section) | ✓ (`c645b09a`) |
-| 9 | UI tooltips | ✓ (`ca746798`) |
-| 10 | Desktop rebuild | ✓ (`3d1c7757`) — rebundle after engine changes |
-| — | Boundary swing ramp | ✓ (`39b5d597`) |
-| — | Per-section VRB assignment | ✓ (V59) |
+| 1 | sq_swing rhythm engine (+ tempo-adaptive curve) | ✓ |
+| 2 | Porter vs Gershwin fine-grain | ✓ (`d196a6a1`) |
+| 3 | Tempo-adaptive swing curve | ✓ (`c0d75701`) |
+| 4 | 3-way VRB blend (within-section) | ✓ (`c645b09a`) |
+| 5 | UI tooltips | ✓ (`ca746798`) |
+| 6 | Boundary swing ramp | ✓ (`39b5d597`) |
+| 7 | Desktop rebuild + final rebundle | ✓ **v1.0.44** |
 
-**Deferred:** Ornette
+**No active roadmap items.**
 
-**Roadmap core complete** (Ornette + follow-on items above remain optional/product backlog).
+**Deferred / backlog (not blocking):** Ornette; Wyble duo parity; ECM GCE orchestration; Melody V2 + cadenza; MIDI import; per-section VRB (V59 shipped).
 
 ## NEXT SESSION ENTRY POINT
-**Desktop rebundle** — `apps/composer-os-app` + `composer-os-desktop` build so tempo curve ships in `desktop-ipc.bundle.cjs` / portable exe. Then Wyble duo parity (#2) or ECM GCE (#3) per priority.
+None required for core roadmap. Optional: Wyble duo parity, ECM GCE, or product backlog items above.
 
 ## VRB σ TABLE
-All 19 SQ Harmonic Voice profiles (`sqVrbProfileRegistry.ts`) — σ = `registerCohesionStdevCeilingSt`:
-
-| vrbId | σ |
-|-------|---|
-| arvo_part | 16 |
-| glass | 18 |
-| satie | 19 |
-| rota | 19 |
-| ravel | 20 |
-| badalamenti | 21 |
-| debussy | 21 |
-| morricone | 22 |
-| joni_mitchell | 23 |
-| goldsmith | 24 |
-| cole_porter | 25 |
-| williams | 26 |
-| zimmer | 26 |
-| gershwin | 27 |
-| shostakovich | 28 |
-| bartok | 29 |
-| ligeti | 32 |
-| herrmann | 36 |
-| webern | 40 |
-
-Profile σ ceilings unchanged; table reflects live registry.
+All 19 SQ Harmonic Voice profiles — unchanged. See `sqVrbProfileRegistry.ts`.
