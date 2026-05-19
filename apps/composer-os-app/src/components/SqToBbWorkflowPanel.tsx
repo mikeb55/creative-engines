@@ -629,7 +629,8 @@ export function SqToBbWorkflowPanel({
             })}
           </div>
 
-          SQ Harmonic Voice
+          <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 4 }}>
+            SQ Harmonic Voice
           </label>
           <VrbTooltip option={sqComposerOptionByVrbId(sqComposer)}>
             <select

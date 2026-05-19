@@ -25,6 +25,12 @@ import {
 } from './anthropicKeyHydration';
 import { getOutputDir } from '../../composer-os-app/src/lib/outputPaths';
 
+function resolveEnginesRoot(): string {
+  return app.isPackaged
+    ? path.join(process.resourcesPath, 'engines')
+    : path.join(__dirname, '..', '..', 'engines');
+}
+
 export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void {
   ipcMain.handle(
     'composer-os:save-export-file',
@@ -169,10 +175,7 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
       const { writeFile } = await import('fs/promises');
 
       const cliPath = path.join(
-        app.getPath('documents'),
-        'Cursor AI Projects',
-        'creative-engines',
-        'engines',
+        resolveEnginesRoot(),
         'wayne-shorter-engine',
         'wayne_shorter_cli.py'
       );
@@ -253,10 +256,7 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
       const { writeFile } = await import('fs/promises');
 
       const cliPath = path.join(
-        app.getPath('documents'),
-        'Cursor AI Projects',
-        'creative-engines',
-        'engines',
+        resolveEnginesRoot(),
         'charlie-parker-engine',
         'charlie_parker_cli.py'
       );
@@ -341,10 +341,7 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
       const { writeFile } = await import('fs/promises');
 
       const cliPath = path.join(
-        app.getPath('documents'),
-        'Cursor AI Projects',
-        'creative-engines',
-        'engines',
+        resolveEnginesRoot(),
         'monk-engine',
         'monk_engine_cli.py'
       );
