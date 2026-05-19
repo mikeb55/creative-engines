@@ -1,4 +1,5 @@
 import type { ContrapuntalLinePolicy } from '../../composer/voiceRuleBundle';
+import type { HarmonicSubstrate } from '../../harmony/pitchFieldSpineTypes';
 import type { SqToBbStyleProfileId } from '../sqToBbWorkflowTypes';
 import type { VrbBlendMeta } from './vrbBlendTypes';
 
@@ -306,11 +307,26 @@ export interface SqVrbGceScorerAdjustments {
   dissonanceToleranceCredit?: number;
   /** PG/MI: aksak / additive rhythmic grouping. */
   asymmetricRhythmCredit?: number;
+  /** Harmolodic / blues inflection surface (Ornette pitch-field path). */
+  bluesInflectionCredit?: number;
+  /** Democratic collective foreground credit. */
+  collectiveImprovCredit?: number;
+  /** Pitch-field spine — weighted pc adherence per bar. */
+  pitchFieldCoherenceCredit?: number;
 }
+
+/** Per-VRB pitch-field spine options (parallel to chord spine). */
+export type SqVrbPitchFieldOptions = {
+  defaultOverlapPolicy: 'shared-parent' | 'semi-independent' | 'high-divergence';
+  fieldRhythmUnit: 'bar' | 'half-bar' | 'phrase';
+  useChordFallbackForCadences?: boolean;
+};
 
 /** SQ Harmonic Voice profile — contrapuntal policy + BB translation hints. */
 export interface SqVrbProfile {
   vrbId: string;
+  harmonicSubstrate?: HarmonicSubstrate;
+  pitchFieldOptions?: SqVrbPitchFieldOptions;
   contrapuntalLinePolicy: SqContrapuntalLinePolicy;
   chordVocabulary: readonly SqVrbChordVocabularyTag[];
   bestBbStyle: SqToBbStyleProfileId;

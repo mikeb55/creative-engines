@@ -23,6 +23,7 @@ import { applyLigetiSqVrbProfile } from '../counterpoint/vrbProfiles/ligetiSqVrb
 import { applySatieSqVrbProfile } from '../counterpoint/vrbProfiles/satieSqVrb';
 import { applyColePorterSqVrbProfile } from '../counterpoint/vrbProfiles/colePorterSqVrb';
 import { applyGershwinSqVrbProfile } from '../counterpoint/vrbProfiles/gershwinSqVrb';
+import { applyOrnetteVrbProfile } from '../counterpoint/vrbProfiles/ornetteSqVrb';
 import { applyArvoPartSqVrbProfile } from '../counterpoint/vrbProfiles/partSqVrb';
 import { applyDebussySqVrbProfile } from '../counterpoint/vrbProfiles/debussySqVrb';
 import { applyBartokSqVrbProfile } from '../counterpoint/vrbProfiles/bartokSqVrb';
@@ -2777,7 +2778,7 @@ const SATIE_STUB: VoiceRuleBundle = {
 const SATIE = applySatieSqVrbProfile(SATIE_STUB);
 
 /** Ornette Coleman — harmolodic language (Atlantic quartet → Skies → Prime Time). */
-const ORNETTE_COLEMAN: VoiceRuleBundle = {
+const ORNETTE_COLEMAN_STUB: VoiceRuleBundle = {
   voiceId: 'ornette_coleman',
   harmonicRhythm: {
     /** No fixed chord-cycle spine — field + pulse govern verticals. */
@@ -2825,6 +2826,8 @@ const ORNETTE_COLEMAN: VoiceRuleBundle = {
   bluesInflectionRequired: true,
   forbidAudibleProcessOperators: true,
 };
+
+const ORNETTE_COLEMAN = applyOrnetteVrbProfile(ORNETTE_COLEMAN_STUB);
 
 /** George Gershwin — functional jazz tonality, songbook + concert rhapsody (SQ profile applied below). */
 const GERSHWIN_STUB: VoiceRuleBundle = {

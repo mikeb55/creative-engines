@@ -24,7 +24,8 @@ export type SqToBbSqComposerId =
   | 'satie'
   | 'cole_porter'
   | 'gershwin'
-  | 'debussy';
+  | 'debussy'
+  | 'ornette_coleman';
 
 export type SqToBbSqComposer = SqToBbSqComposerId | null;
 
@@ -117,6 +118,10 @@ const COMPOSER_DESCRIPTIONS: Record<SqToBbSqComposerId, { label: string; descrip
   webern: {
     label: 'Webern',
     description: 'Serial pointillism. Maximum chromatic range, extreme register spread.',
+  },
+  ornette_coleman: {
+    label: 'Ornette Coleman',
+    description: 'Harmolodic free jazz. Pitch-field spine, democratic lines, blues inflection.',
   },
 };
 

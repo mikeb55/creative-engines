@@ -13,6 +13,13 @@ import { isAllowedSongFormBarCount } from './songFormBarCounts';
 import { lockedHarmonyChordSymbolsEquivalent } from './chordProgressionParser';
 import { getChordForBar } from './harmonyResolution';
 import { buildSectionAwareHarmonySpine } from './harmonySpineSectionLoop';
+import type { ResolvedPitchField } from './pitchFieldSpineTypes';
+import {
+  getOrBuildPitchFieldSpineCache,
+  isUsingPitchFieldSubstrate,
+  resolveFieldForBar,
+  resolvePitchFieldBundleForContext,
+} from './pitchFieldResolver';
 import {
   hasExplicitPerSectionVrbAssignment,
   perSectionVrbResolutionEnabled,
@@ -32,11 +39,17 @@ export type ResolvedHarmonyBar = {
   resolvedVrbId?: string;
   voicing?: import('../composer/voiceLeadingSolver').VoicingCandidate;
   usedEmergencyFallback?: boolean;
+  /** Present when pitch-field substrate is active for this bar/voice. */
+  pitchField?: ResolvedPitchField;
 };
 
 /** Future adapters (per-slice spine hooks) conform to this surface. */
 export type HarmonySpineProvider = {
-  resolveBarSymbol(context: CompositionContext, bar: number): ResolvedHarmonyBar;
+  resolveBarSymbol(
+    context: CompositionContext,
+    bar: number,
+    voiceId?: string,
+  ): ResolvedHarmonyBar;
 };
 
 /**
@@ -174,30 +187,66 @@ function getOrBuildSpine(context: CompositionContext): ResolvedHarmonyBar[] {
   return rows;
 }
 
+function attachPitchFieldIfNeeded(
+  row: ResolvedHarmonyBar,
+  context: CompositionContext,
+  bar: number,
+  voiceId: string,
+): ResolvedHarmonyBar {
+  const bundle = resolvePitchFieldBundleForContext(context);
+  if (!bundle || !isUsingPitchFieldSubstrate(bundle)) {
+    return row;
+  }
+  const vrbId = bundle.sqVrbProfileId ?? bundle.voiceId;
+  const spine = getOrBuildPitchFieldSpineCache(context, vrbId);
+  const pitchField = resolveFieldForBar(spine, bar, voiceId);
+  return { ...row, pitchField };
+}
+
 /**
  * Delegates symbol resolution to {@link getChordForBar} (zero behavioural drift vs legacy call sites).
+ * When {@link isUsingPitchFieldSubstrate} is true, attaches optional {@link ResolvedPitchField}.
  */
-export function resolveBarSymbol(context: CompositionContext, bar: number): ResolvedHarmonyBar {
+export function resolveBarSymbol(
+  context: CompositionContext,
+  bar: number,
+  voiceId = 'melody',
+): ResolvedHarmonyBar {
   if (!perSectionVrbResolutionEnabled() || !hasExplicitPerSectionVrbAssignment(context)) {
     const symbol = getChordForBar(bar, context);
     const layer = classifyAuthoritativeLayerForBar(bar, context);
-    return {
-      symbol,
-      provenance: layer.provenance,
-      sliceId: layer.sliceId,
-    };
+  const bundle = resolvePitchFieldBundleForContext(context);
+  const resolvedVrbId =
+    bundle?.sqVrbProfileId ?? bundle?.voiceId ?? context.generationMetadata?.sqLineVrbId;
+    return attachPitchFieldIfNeeded(
+      {
+        bar,
+        symbol,
+        provenance: layer.provenance,
+        sliceId: layer.sliceId,
+        resolvedVrbId: resolvedVrbId ? String(resolvedVrbId) : undefined,
+      },
+      context,
+      bar,
+      voiceId,
+    );
   }
   const rows = getOrBuildSpine(context);
   const hit = rows.find((r) => r.bar === bar);
-  if (hit) return hit;
+  if (hit) return attachPitchFieldIfNeeded(hit, context, bar, voiceId);
   const symbol = getChordForBar(bar, context);
   const layer = classifyAuthoritativeLayerForBar(bar, context);
-  return {
+  return attachPitchFieldIfNeeded(
+    {
+      bar,
+      symbol,
+      provenance: layer.provenance,
+      sliceId: layer.sliceId,
+    },
+    context,
     bar,
-    symbol,
-    provenance: layer.provenance,
-    sliceId: layer.sliceId,
-  };
+    voiceId,
+  );
 }
 
 /**

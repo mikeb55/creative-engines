@@ -14,6 +14,8 @@ import type { EcmChamberMode } from '../ecm/ecmChamberTypes';
 import { getSqVrbGceAdjustments } from '../counterpoint/vrbProfiles/sqVrbProfileRegistry';
 import { BEATS_PER_MEASURE, type NoteEvent, type PartModel, type ScoreModel } from '../score-model/scoreModelTypes';
 import { activePartsNormalizedBigBand } from './gceStructuralMemory';
+import { resolveFieldForBar } from '../harmony/pitchFieldResolver';
+import type { PitchFieldSpine } from '../harmony/pitchFieldSpineTypes';
 
 /** Per-meso register σ ceiling for SQ→BB contrapuntal Melodic Identity (Bartók default = 24 st). */
 const CONTRAPUNTAL_REGISTER_STDEV_CEILING_DEFAULT = 24;
@@ -3119,5 +3121,35 @@ export function scoreThematicRecallPotential(
   return {
     score,
     justification: `${crossSectionMotifs} motif type(s) across 2+ sections`,
+  };
+}
+
+/** Pitch-field spine — weighted pitch-class adherence per bar (harmolodic / Ornette path). */
+export function scorePitchFieldCoherence(
+  notes: MelodicNote[],
+  spine: PitchFieldSpine,
+  voiceId = 'melody',
+): CategoryScore {
+  const pitched = notes.filter((n) => !n.rest && n.midi > 0);
+  if (pitched.length === 0) {
+    return { score: 0, justification: 'No pitched notes' };
+  }
+  let weightedHits = 0;
+  let totalWeight = 0;
+  for (const n of pitched) {
+    const field = resolveFieldForBar(spine, n.bar, voiceId);
+    const pc = ((n.midi % 12) + 12) % 12;
+    const entry = field.allowedPcs.find((a) => a.pc === pc);
+    const w = entry?.weight ?? 0;
+    weightedHits += w;
+    totalWeight += 1;
+    const maxW = field.allowedPcs.reduce((m, a) => Math.max(m, a.weight), 0.01);
+    totalWeight += maxW * 0.001;
+  }
+  const ratio = totalWeight > 0 ? weightedHits / pitched.length : 0;
+  const score = Math.max(0, Math.min(10, Math.round(ratio * 10 * 10) / 10));
+  return {
+    score,
+    justification: `pitch-field pc match ratio ${ratio.toFixed(2)} (${pitched.length} notes)`,
   };
 }

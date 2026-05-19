@@ -47,6 +47,7 @@ import { runTempoAdaptiveSwingTests } from './tempoAdaptiveSwing.test';
 import { runVrbTooltipsTests } from './vrbTooltips.test';
 import { runDuoIntentTests } from './duoIntent.test';
 import { runMacroFormPlannerTests } from './macroFormPlanner.test';
+import { runOrnettePitchFieldTests } from './ornettePitchField.test';
 import { retroSuites } from './retro/index';
 import { runHarnessMain, type SuiteEntry } from './harness/runHarnessMain';
 
@@ -96,6 +97,7 @@ const suites: SuiteEntry[] = [
   { name: 'VRB composer + gate tooltips', run: runVrbTooltipsTests },
   { name: 'Duo intent (product vs PhraseIntent)', run: runDuoIntentTests },
   { name: 'Macro form planner', run: runMacroFormPlannerTests },
+  { name: 'Ornette pitch-field spine (Phase 1)', run: runOrnettePitchFieldTests },
   ...retroSuites,
 ];
 
