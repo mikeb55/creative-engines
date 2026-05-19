@@ -24,6 +24,9 @@ import { applySatieSqVrbProfile } from '../counterpoint/vrbProfiles/satieSqVrb';
 import { applyColePorterSqVrbProfile } from '../counterpoint/vrbProfiles/colePorterSqVrb';
 import { applyGershwinSqVrbProfile } from '../counterpoint/vrbProfiles/gershwinSqVrb';
 import { applyOrnetteVrbProfile } from '../counterpoint/vrbProfiles/ornetteSqVrb';
+import { applyColtraneSqVrbProfile } from '../counterpoint/vrbProfiles/coltraneSqVrb';
+import { applyMessiaenSqVrbProfile } from '../counterpoint/vrbProfiles/messiaenSqVrb';
+import { COLTRANE_SQ_VRF_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/coltraneSqVrbFingerprints';
 import { applyArvoPartSqVrbProfile } from '../counterpoint/vrbProfiles/partSqVrb';
 import { applyDebussySqVrbProfile } from '../counterpoint/vrbProfiles/debussySqVrb';
 import { applyBartokSqVrbProfile } from '../counterpoint/vrbProfiles/bartokSqVrb';
@@ -2829,6 +2832,55 @@ const ORNETTE_COLEMAN_STUB: VoiceRuleBundle = {
 
 const ORNETTE_COLEMAN = applyOrnetteVrbProfile(ORNETTE_COLEMAN_STUB);
 
+/** John Coltrane (late) — interval-cell pitch-field spine (SQ profile applied below). */
+const COLTRANE_STUB: VoiceRuleBundle = {
+  voiceId: 'coltrane',
+  harmonicRhythm: {
+    minChordDurationBars: 0,
+    maxChordDurationBars: 64,
+    allowMidBarChange: false,
+  },
+  bassPolicy: {
+    role: 'pedal-or-drone',
+    allowOctaveDoubling: false,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 8,
+    maxSpreadSemitones: 42,
+    clusterSizeNotes: [3, 7],
+    forbidParallelFifths: true,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'pentatonic-cell',
+    maxLeapSemitones: 10,
+    preferredIntervalSets: [1, 2, 3, 4, 5, 6],
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 0,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: COLTRANE_SQ_VRF_FINGERPRINT_RECEIPTS,
+  },
+  formPolicy: {
+    narrativeArc: 'free',
+    sectionRecallEnforced: false,
+  },
+  rhythmPolicy: {
+    antiMetric: false,
+  },
+  repairPolicy: {
+    resolveParallels: true,
+    maxVoiceOverlap: 6,
+  },
+  pitchFieldGoverned: true,
+  suppressFunctionalResolution: true,
+};
+
+const COLTRANE = applyColtraneSqVrbProfile(COLTRANE_STUB);
+
+const MESSIAEN_SQ = applyMessiaenSqVrbProfile(MESSIAEN);
+
 /** George Gershwin — functional jazz tonality, songbook + concert rhapsody (SQ profile applied below). */
 const GERSHWIN_STUB: VoiceRuleBundle = {
   voiceId: 'gershwin',
@@ -3045,8 +3097,8 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   quincy_jones: QUINCY_JONES,
   berg: BERG,
   alban_berg: BERG,
-  messiaen: MESSIAEN,
-  olivier_messiaen: MESSIAEN,
+  messiaen: MESSIAEN_SQ,
+  olivier_messiaen: MESSIAEN_SQ,
   donald_fagen: DONALD_FAGEN,
   fagen: DONALD_FAGEN,
   steely_dan: DONALD_FAGEN,
@@ -3170,6 +3222,10 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   skies_of_america: ORNETTE_COLEMAN,
   prime_time: ORNETTE_COLEMAN,
   change_of_the_century: ORNETTE_COLEMAN,
+  coltrane: COLTRANE,
+  john_coltrane_late: COLTRANE,
+  a_love_supreme: COLTRANE,
+  interstellar_space: COLTRANE,
 };
 
 export function normalizeHarmonicVoiceId(raw: string): string {

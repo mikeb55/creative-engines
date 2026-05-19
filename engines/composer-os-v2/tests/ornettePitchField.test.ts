@@ -153,8 +153,8 @@ function testRegistryHasOrnette(): boolean {
   return SQ_VRB_PROFILE_REGISTRY_IDS.includes('ornette_coleman');
 }
 
-function testRegistryCount20(): boolean {
-  return SQ_VRB_PROFILE_REGISTRY_IDS.length === 20;
+function testRegistryCount22(): boolean {
+  return SQ_VRB_PROFILE_REGISTRY_IDS.length === 22;
 }
 
 function testSuppressFunctional(): boolean {
@@ -272,7 +272,7 @@ export function runOrnettePitchFieldTests(): boolean {
     ['ornette_coleman σ === 33', testSigma33],
     ['harmonicSubstrate pitch-field-spine', testHarmonicSubstrate],
     ['ornette_coleman in registry', testRegistryHasOrnette],
-    ['registry total === 20', testRegistryCount20],
+    ['registry total === 22', testRegistryCount22],
     ['suppressFunctionalResolution true', testSuppressFunctional],
     ['independenceLevel high', testIndependenceHigh],
     ['bestBbStyle mingus', testBestBbMingus],

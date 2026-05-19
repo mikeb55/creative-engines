@@ -4,9 +4,14 @@
  */
 
 import type { CompositionContext } from '../compositionContext';
+import type { VoiceRuleBundle } from '../composer/voiceRuleBundle';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
+import type { ResolvedHarmonyBar } from '../harmony/harmonySpineProvider';
+import type { PitchClass } from '../harmony/pitchFieldSpineTypes';
+import { shouldUsePitchFieldSubstrate } from '../harmony/pitchFieldResolver';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
+import { USE_PITCH_FIELD_NOTE_SELECTION } from './engineFeatureFlags';
 import { applyAntimetricTransform, buildAntimetricPolicy } from '../rhythm/sqAntimetricRhythmEngine';
 import { applySwingTransform, buildSwingPolicy } from '../rhythm/sqSwingRhythmEngine';
 import {
@@ -140,6 +145,95 @@ function midiForVoice(role: LineRole, pc: number, octave: number): number {
   return Math.max(24, Math.min(108, o + ((pc % 12) + 12) % 12));
 }
 
+function pitchFieldVoiceId(role: LineRole): string {
+  if (role === 'soprano') return 'melody';
+  if (role === 'bass') return 'bass';
+  return 'inner';
+}
+
+const ROLE_OCTAVE: Record<LineRole, number> = {
+  soprano: 5,
+  alto: 4,
+  tenor: 4,
+  bass: 3,
+};
+
+function pickWeightedPc(
+  pool: ReadonlyArray<{ pc: PitchClass; weight: number }>,
+  seed: number,
+  salt: number,
+): PitchClass {
+  if (pool.length === 0) return 0;
+  const total = pool.reduce((s, e) => s + Math.max(0, e.weight), 0);
+  if (total <= 0) return pool[0]!.pc;
+  let r = rng01(seed, salt) * total;
+  for (const e of pool) {
+    r -= Math.max(0, e.weight);
+    if (r <= 0) return e.pc;
+  }
+  return pool[pool.length - 1]!.pc;
+}
+
+function targetsFromChordSpine(sym: string): Record<LineRole, number> {
+  const rpc = rootPcFromBarSymbol(sym);
+  const third = (rpc + 4) % 12;
+  const seventh = (rpc + 10) % 12;
+  const fifth = (rpc + 7) % 12;
+  return {
+    soprano: midiForVoice('soprano', third, 5),
+    alto: midiForVoice('alto', seventh, 4),
+    tenor: midiForVoice('tenor', fifth, 4),
+    bass: midiForVoice('bass', rpc, 3),
+  };
+}
+
+function targetsFromPitchField(
+  resolved: ResolvedHarmonyBar,
+  role: LineRole,
+  seed: number,
+  bar: number,
+): number {
+  const pool = resolved.pitchField?.allowedPcs ?? [];
+  const pc = pickWeightedPc(pool, seed, bar * 17 + role.charCodeAt(0));
+  let midi = midiForVoice(role, pc, ROLE_OCTAVE[role]);
+  const center = resolved.pitchField?.registerCenterMidi;
+  const spread = resolved.pitchField?.registerSpread;
+  if (center != null && spread != null) {
+    const jitter = Math.floor(rng01(seed, bar * 31 + role.length) * spread) - Math.floor(spread / 2);
+    midi = Math.max(24, Math.min(108, center + jitter));
+    midi = midi - (midi % 12) + pc;
+  }
+  return midi;
+}
+
+function resolveTargetsForBar(
+  context: CompositionContext,
+  bar: number,
+  bundle: VoiceRuleBundle,
+  seed: number,
+): Record<LineRole, number> {
+  const sectionLabelMode =
+    context.sectionLabelMode ?? context.generationMetadata?.sectionLabelMode;
+  const useField =
+    USE_PITCH_FIELD_NOTE_SELECTION &&
+    shouldUsePitchFieldSubstrate(bundle, sectionLabelMode);
+  const roles: LineRole[] = ['soprano', 'alto', 'tenor', 'bass'];
+  if (!useField) {
+    const sym = resolveBarSymbol(context, bar).symbol;
+    return targetsFromChordSpine(sym);
+  }
+  const out = {} as Record<LineRole, number>;
+  for (const role of roles) {
+    const resolved = resolveBarSymbol(context, bar, pitchFieldVoiceId(role));
+    if (resolved.pitchField?.allowedPcs?.length) {
+      out[role] = targetsFromPitchField(resolved, role, seed, bar);
+    } else {
+      out[role] = targetsFromChordSpine(resolved.symbol)[role];
+    }
+  }
+  return out;
+}
+
 function intervalClass(a: number, b: number): number {
   return Math.abs(a - b) % 12;
 }
@@ -213,7 +307,8 @@ function buildSwingChordLineSetForVrb(
   const contextMap = vrbContextMap ?? wire.contextMap;
   const sections = formSections ?? wire.sections;
   const globalFallback = vrbId;
-  const policy = getVoiceRuleBundle(vrbId).contrapuntalLinePolicy!;
+  const lineBundle = getVoiceRuleBundle(vrbId);
+  const policy = lineBundle.contrapuntalLinePolicy!;
   const dissonanceProfile = policy.dissonanceProfile;
   const swingOffsets: Record<LineRole, number[]> = {
     soprano: [0, 0.5],
@@ -247,17 +342,8 @@ function buildSwingChordLineSetForVrb(
     const barVrbId = resolveVrbForBar(bar, contextMap, globalFallback, sections).vrbId || vrbId;
     const barDissonance =
       getVoiceRuleBundle(barVrbId).contrapuntalLinePolicy?.dissonanceProfile ?? dissonanceProfile;
-    const sym = resolveBarSymbol(context, bar).symbol;
-    const rpc = rootPcFromBarSymbol(sym);
-    const third = (rpc + 4) % 12;
-    const seventh = (rpc + 10) % 12;
-    const fifth = (rpc + 7) % 12;
-    const targets: Record<LineRole, number> = {
-      soprano: midiForVoice('soprano', third, 5),
-      alto: midiForVoice('alto', seventh, 4),
-      tenor: midiForVoice('tenor', fifth, 4),
-      bass: midiForVoice('bass', rpc, 3),
-    };
+    const barBundle = getVoiceRuleBundle(barVrbId);
+    const targets = resolveTargetsForBar(context, bar, barBundle ?? lineBundle, seed);
     (['soprano', 'alto', 'tenor', 'bass'] as const).forEach((role) => {
       const chrom = Math.floor(rng01(seed, b * 17 + role.charCodeAt(0)) * 5) - 2;
       targets[role] += chrom;

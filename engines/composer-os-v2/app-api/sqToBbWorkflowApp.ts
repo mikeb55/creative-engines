@@ -195,8 +195,14 @@ function buildSqToBbContext(
     ...(userChordInput ? { userChordInput } : {}),
     sqToBbDensity,
     sqToBbVrbContextBySection: sectionRecordFromVrbContextMap(vrbContextMap),
+    sectionLabelMode,
     ...(req.bbLightTouch === true ? { bbLightTouch: true } : {}),
+    ...(req.messiaenModeId != null ? { messiaenModeId: req.messiaenModeId } : {}),
   };
+  context.sectionLabelMode = sectionLabelMode;
+  if (req.messiaenModeId != null) {
+    context.messiaenModeId = req.messiaenModeId;
+  }
   context.form = {
     totalBars,
     sections: buildSqToBbFormSections(vrbContextMap, totalBars, sectionLabelMode),

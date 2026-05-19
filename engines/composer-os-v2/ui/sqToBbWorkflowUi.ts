@@ -4,6 +4,7 @@
 
 import { getSqVrbProfile } from '../core/counterpoint/vrbProfiles/sqVrbProfileRegistry';
 import { getVrbFamily, type VrbFamily } from '../core/counterpoint/vrbProfiles/vrbFamilies';
+import type { MessiaenModeId } from '../core/harmony/pitchFieldSpineTypes';
 
 export type SqToBbSqComposerId =
   | 'arvo_part'
@@ -25,9 +26,26 @@ export type SqToBbSqComposerId =
   | 'cole_porter'
   | 'gershwin'
   | 'debussy'
-  | 'ornette_coleman';
+  | 'ornette_coleman'
+  | 'coltrane'
+  | 'messiaen';
 
 export type SqToBbSqComposer = SqToBbSqComposerId | null;
+
+export type MessiaenModeOption = {
+  modeId: MessiaenModeId;
+  label: string;
+};
+
+export const MESSIAEN_MODE_OPTIONS: readonly MessiaenModeOption[] = [
+  { modeId: 1, label: 'M1 · Floating (Whole Tone)' },
+  { modeId: 2, label: 'M2 · Shadowed (Octatonic)' },
+  { modeId: 3, label: 'M3 · Luminous' },
+  { modeId: 4, label: 'M4 · Austere' },
+  { modeId: 5, label: 'M5 · Sparse' },
+  { modeId: 6, label: 'M6 · Veiled' },
+  { modeId: 7, label: 'M7 · Dense' },
+] as const;
 
 export type SqComposerOption = {
   vrbId: string;
@@ -38,6 +56,8 @@ export type SqComposerOption = {
   family: VrbFamily | null;
   sigma: number;
   enabled: boolean;
+  /** Messiaen-only — secondary mode picker options */
+  modeOptions?: readonly MessiaenModeOption[];
 };
 
 export const SQ_TO_BB_SQ_COMPOSER_SELECT_NULL = '';
@@ -123,6 +143,14 @@ const COMPOSER_DESCRIPTIONS: Record<SqToBbSqComposerId, { label: string; descrip
     label: 'Ornette Coleman',
     description: 'Harmolodic free jazz. Pitch-field spine, democratic lines, blues inflection.',
   },
+  coltrane: {
+    label: 'Coltrane (Late)',
+    description: 'Interval-cell fields. Sheets of sound, modal pedal, pivot trichord transitions.',
+  },
+  messiaen: {
+    label: 'Messiaen',
+    description: 'Modes of limited transposition. Block harmony, pedal bass, symmetric colour fields.',
+  },
 };
 
 function sigmaForVrbId(vrbId: string): number {
@@ -139,6 +167,7 @@ function buildComposerOption(vrbId: SqToBbSqComposerId): SqComposerOption {
     family: getVrbFamily(vrbId),
     sigma: sigmaForVrbId(vrbId),
     enabled: true,
+    ...(vrbId === 'messiaen' ? { modeOptions: MESSIAEN_MODE_OPTIONS } : {}),
   };
 }
 

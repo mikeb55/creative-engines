@@ -246,6 +246,10 @@ export interface GenerationMetadata {
   sqToBbSqComposer?: import('./counterpoint/sqToBbWorkflowTypes').SqToBbSqComposer;
   /** SQ→BB: VRB id used for contrapuntal line sketch / regen. */
   sqLineVrbId?: string;
+  /** SQ→BB: section label mode for `sectionVrbMap` keys and pitch-field song guard. */
+  sectionLabelMode?: import('./counterpoint/vrbProfiles/sqToBbSectionLabels').SqToBbSectionLabelMode;
+  /** SQ→BB Messiaen pitch-field — limited-transposition mode (1–7; default 2). */
+  messiaenModeId?: import('./harmony/pitchFieldSpineTypes').MessiaenModeId;
   /** SQ→BB: per-section VRB contexts keyed by canonical section label (Commit 3). */
   sqToBbVrbContextBySection?: Readonly<
     Record<string, import('./counterpoint/vrbProfiles/vrbContextMap').SectionVrbContext>
@@ -2215,6 +2219,10 @@ export interface CompositionContext {
   basieTestamentMode?: BasieTestamentMode;
   /** Olivier Messiaen Song Mode — early / middle / late programme posture (`messiaenSlice.ts`). */
   messiaenPeriodMode?: MessiaenPeriodMode;
+  /** SQ→BB — canonical section label mode (`song` | `instrumental`). */
+  sectionLabelMode?: import('./counterpoint/vrbProfiles/sqToBbSectionLabels').SqToBbSectionLabelMode;
+  /** SQ→BB Messiaen pitch-field — mode of limited transposition (default 2). */
+  messiaenModeId?: import('./harmony/pitchFieldSpineTypes').MessiaenModeId;
   /** Bob Brookmeyer Song Mode — early (chorus-based) vs late (through-composed) (`bobBrookmeyerSlice.ts`). */
   brookmeyerPeriodMode?: BrookmeyerPeriodMode;
   /** Oliver Nelson Song Mode — era + blues form variant (`oliverNelsonSlice.ts`). */

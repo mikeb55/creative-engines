@@ -91,10 +91,15 @@ export function resolveSqToBbLengthFromUi(
 }
 
 export type {
+  MessiaenModeOption,
   SqComposerOption,
   SqToBbSqComposer,
   SqToBbSqComposerId,
 } from '@composer-os/ui/sqToBbWorkflowUi';
+
+export { MESSIAEN_MODE_OPTIONS } from '@composer-os/ui/sqToBbWorkflowUi';
+
+export type { MessiaenModeId } from '@composer-os/core/harmony/pitchFieldSpineTypes';
 
 export type SqToBbSectionLabelMode = 'song' | 'instrumental';
 

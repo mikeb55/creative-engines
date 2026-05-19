@@ -4,8 +4,21 @@
 
 import type { PitchClass, PitchFieldRegion, PitchFieldTransition } from './pitchFieldSpineTypes';
 
-const MIN_REGION_BARS = 2;
-const MAX_REGION_BARS = 8;
+const DEFAULT_MIN_REGION_BARS = 2;
+const DEFAULT_MAX_REGION_BARS = 8;
+
+function regionBoundsForVrb(vrbId: string): { min: number; max: number } {
+  if (vrbId === 'coltrane') return { min: 4, max: 16 };
+  if (vrbId === 'messiaen') return { min: 1, max: 8 };
+  return { min: DEFAULT_MIN_REGION_BARS, max: DEFAULT_MAX_REGION_BARS };
+}
+
+function mutationStrengthRangeForVrb(vrbId: string): [number, number] {
+  if (vrbId === 'coltrane') return [0.25, 0.55];
+  if (vrbId === 'messiaen') return [0.2, 0.45];
+  if (vrbId === 'ornette_coleman') return [0.35, 0.7];
+  return [0.35, 0.7];
+}
 
 function rng01(seed: number, salt: number): number {
   let x = Math.imul(seed + salt * 7919, 1103515245);
@@ -24,9 +37,10 @@ function pickCarryPcs(parent: PitchClass[], seed: number, regionIndex: number): 
   return out;
 }
 
-function mutationStrengthForBoundary(seed: number, regionIndex: number): number {
+function mutationStrengthForBoundary(seed: number, regionIndex: number, vrbId: string): number {
+  const [lo, hi] = mutationStrengthRangeForVrb(vrbId);
   const u = rng01(seed, regionIndex * 97 + 11);
-  return 0.35 + u * 0.35;
+  return lo + u * (hi - lo);
 }
 
 function shouldAdvanceRegion(
@@ -34,9 +48,16 @@ function shouldAdvanceRegion(
   regionStart: number,
   tensionArc: number[],
   densityArc: number[],
+  vrbId: string,
+  maxRegionBars: number,
+  minRegionBars: number,
+  densityDrive?: number,
 ): boolean {
-  if (barInRegion >= MAX_REGION_BARS) return true;
-  if (barInRegion < MIN_REGION_BARS) return false;
+  if (barInRegion >= maxRegionBars) return true;
+  if (barInRegion < minRegionBars) return false;
+  if (vrbId === 'coltrane' && typeof densityDrive === 'number' && densityDrive > 0.8 && barInRegion >= 4) {
+    return true;
+  }
   const b = regionStart + barInRegion - 1;
   const t0 = tensionArc[b - 2] ?? tensionArc[b - 1] ?? 0;
   const t1 = tensionArc[b - 1] ?? 0;
@@ -68,6 +89,7 @@ export type ScheduleFieldRegionsParams = {
 export function scheduleFieldRegions(params: ScheduleFieldRegionsParams): PitchFieldRegion[] {
   const { totalBars, vrbId, tensionArc, densityArc, buildRegion } = params;
   const seed = params.seed ?? vrbId.split('').reduce((s, c) => s + c.charCodeAt(0), 0);
+  const { min: minRegionBars, max: maxRegionBars } = regionBoundsForVrb(vrbId);
   const regions: PitchFieldRegion[] = [];
   let bar = 1;
   let regionIndex = 0;
@@ -75,12 +97,23 @@ export function scheduleFieldRegions(params: ScheduleFieldRegionsParams): PitchF
     const startBar = bar;
     let endBar = startBar;
     let barInRegion = 1;
+    const previewDensityDrive =
+      vrbId === 'coltrane' ? 0.4 + rng01(seed, regionIndex * 23 + 5) * 0.6 : undefined;
     while (endBar < totalBars) {
-      const advance = shouldAdvanceRegion(barInRegion, startBar, tensionArc, densityArc);
-      if (advance && barInRegion >= MIN_REGION_BARS) break;
+      const advance = shouldAdvanceRegion(
+        barInRegion,
+        startBar,
+        tensionArc,
+        densityArc,
+        vrbId,
+        maxRegionBars,
+        minRegionBars,
+        previewDensityDrive,
+      );
+      if (advance && barInRegion >= minRegionBars) break;
       endBar++;
       barInRegion++;
-      if (barInRegion > MAX_REGION_BARS) break;
+      if (barInRegion > maxRegionBars) break;
     }
     const partial = buildRegion(regionIndex, startBar, endBar);
     const parent = partial.parentPcSet;
@@ -88,8 +121,8 @@ export function scheduleFieldRegions(params: ScheduleFieldRegionsParams): PitchF
       endBar < totalBars
         ? {
             carryPcs: pickCarryPcs(parent, seed, regionIndex),
-            mutationStrength: mutationStrengthForBoundary(seed, regionIndex),
-            pivotPcs: parent.slice(0, Math.min(2, parent.length)),
+            mutationStrength: mutationStrengthForBoundary(seed, regionIndex, vrbId),
+            pivotPcs: parent.slice(0, Math.min(3, parent.length)),
           }
         : undefined;
     regions.push({
@@ -104,4 +137,6 @@ export function scheduleFieldRegions(params: ScheduleFieldRegionsParams): PitchF
   return regions;
 }
 
-export { MIN_REGION_BARS, MAX_REGION_BARS };
+export const MIN_REGION_BARS = DEFAULT_MIN_REGION_BARS;
+export const MAX_REGION_BARS = DEFAULT_MAX_REGION_BARS;
+export { DEFAULT_MIN_REGION_BARS, DEFAULT_MAX_REGION_BARS, regionBoundsForVrb };

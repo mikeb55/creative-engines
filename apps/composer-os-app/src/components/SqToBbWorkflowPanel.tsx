@@ -30,7 +30,9 @@ import {
   SQ_TO_BB_LENGTH_PRESETS,
   SQ_TO_BB_SQ_COMPOSER_OPTIONS,
   SQ_TO_BB_SQ_COMPOSER_SELECT_NULL,
+  MESSIAEN_MODE_OPTIONS,
   sqComposerOptionByVrbId,
+  type MessiaenModeId,
   SQ_TO_BB_DEFAULT_SECTION_LABEL_MODE,
   SQ_TO_BB_STYLE_PROFILES,
   getSectionLabelsForMode,
@@ -235,6 +237,7 @@ export function SqToBbWorkflowPanel({
   const [lengthSelect, setLengthSelect] = useState<SqToBbLengthSelectValue>(32);
   const [customLengthBars, setCustomLengthBars] = useState('');
   const [sqComposer, setSqComposer] = useState<SqToBbSqComposer>(null);
+  const [messiaenModeId, setMessiaenModeId] = useState<MessiaenModeId>(2);
   const [sectionLabelMode, setSectionLabelMode] = useState<SqToBbSectionLabelMode>(
     SQ_TO_BB_DEFAULT_SECTION_LABEL_MODE,
   );
@@ -283,6 +286,10 @@ export function SqToBbWorkflowPanel({
     }
     return Object.keys(map).length > 0 ? map : undefined;
   }, [sectionLabels, sectionVrbAssignments]);
+  const messiaenActive = useMemo(() => {
+    if (sqComposer === 'messiaen') return true;
+    return Object.values(sectionVrbAssignments).some((v) => v === 'messiaen');
+  }, [sqComposer, sectionVrbAssignments]);
   const bbOutputLocked = sqSourceLocked;
   const eraCompatibility = useMemo(
     () => sqToBbClassicalEraCompatibility(era, styleProfile),
@@ -391,6 +398,7 @@ export function SqToBbWorkflowPanel({
           sqToBbSqComposer: sectionVrbMapPayload ? null : sqComposer,
           sectionLabelMode,
           ...(sectionVrbMapPayload ? { sectionVrbMap: sectionVrbMapPayload } : {}),
+          ...(messiaenActive ? { messiaenModeId } : {}),
           sqToBbDensity,
           ...(bbLightTouch ? { bbLightTouch: true } : {}),
           ...(eraTag !== undefined ? { sqToBbEra: eraTag } : { sqToBbEra: null }),
@@ -422,6 +430,8 @@ export function SqToBbWorkflowPanel({
       sqComposer,
       sectionLabelMode,
       sectionVrbMapPayload,
+      messiaenActive,
+      messiaenModeId,
       sqToBbDensity,
       bbLightTouch,
       chordSourceMode,
@@ -655,6 +665,30 @@ export function SqToBbWorkflowPanel({
               ))}
             </select>
           </VrbTooltip>
+
+          {messiaenActive && (
+            <>
+              <label
+                style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 4 }}
+              >
+                Messiaen mode
+              </label>
+              <select
+                value={messiaenModeId}
+                onChange={(e) => setMessiaenModeId(Number(e.target.value) as MessiaenModeId)}
+                disabled={loading || sqSourceLocked}
+                style={{ marginBottom: '0.75rem', maxWidth: 320, width: '100%' }}
+              >
+                <optgroup label="Messiaen Modes">
+                  {MESSIAEN_MODE_OPTIONS.map((m) => (
+                    <option key={m.modeId} value={m.modeId}>
+                      {m.label}
+                    </option>
+                  ))}
+                </optgroup>
+              </select>
+            </>
+          )}
 
           <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 4 }}>
             Era

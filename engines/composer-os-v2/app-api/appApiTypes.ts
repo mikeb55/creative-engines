@@ -467,6 +467,8 @@ export interface GenerateRequest {
   sectionVrbMap?: Record<string, SectionVrbMapEntry>;
   /** Canonical section label set for sectionVrbMap keys. Default `instrumental`. */
   sectionLabelMode?: import('../core/counterpoint/vrbProfiles/sqToBbSectionLabels').SqToBbSectionLabelMode;
+  /** SQ→BB Messiaen pitch-field — mode of limited transposition (1–7). Default 2 (octatonic). */
+  messiaenModeId?: import('../core/harmony/pitchFieldSpineTypes').MessiaenModeId;
   /**
    * SQ→BB optional era hint. Omit, `null`, or blank → no `generationMetadata.era` tag.
    * Do not use `stylePairing.era` for this preset.

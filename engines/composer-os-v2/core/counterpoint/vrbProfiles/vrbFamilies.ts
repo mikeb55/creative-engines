@@ -12,7 +12,8 @@ export type VrbFamily =
   | 'cinematic'
   | 'modernist'
   | 'minimal'
-  | 'free_jazz';
+  | 'free_jazz'
+  | 'modal_contemporary';
 
 export const VRB_FAMILIES: Record<VrbFamily, readonly string[]> = {
   tintinnabuli: ['arvo_part'],
@@ -29,6 +30,7 @@ export const VRB_FAMILIES: Record<VrbFamily, readonly string[]> = {
   modernist: ['shostakovich', 'bartok', 'ligeti', 'webern'],
   minimal: ['glass'],
   free_jazz: ['ornette_coleman'],
+  modal_contemporary: ['coltrane', 'messiaen'],
 };
 
 const VRB_ID_TO_FAMILY = new Map<string, VrbFamily>();

@@ -16,9 +16,9 @@ import { buildSectionAwareHarmonySpine } from './harmonySpineSectionLoop';
 import type { ResolvedPitchField } from './pitchFieldSpineTypes';
 import {
   getOrBuildPitchFieldSpineCache,
-  isUsingPitchFieldSubstrate,
   resolveFieldForBar,
   resolvePitchFieldBundleForContext,
+  shouldUsePitchFieldSubstrate,
 } from './pitchFieldResolver';
 import {
   hasExplicitPerSectionVrbAssignment,
@@ -194,9 +194,12 @@ function attachPitchFieldIfNeeded(
   voiceId: string,
 ): ResolvedHarmonyBar {
   const bundle = resolvePitchFieldBundleForContext(context);
-  if (!bundle || !isUsingPitchFieldSubstrate(bundle)) {
+  const sectionLabelMode =
+    context.sectionLabelMode ?? context.generationMetadata?.sectionLabelMode;
+  if (!bundle || !shouldUsePitchFieldSubstrate(bundle, sectionLabelMode)) {
     return row;
   }
+
   const vrbId = bundle.sqVrbProfileId ?? bundle.voiceId;
   const spine = getOrBuildPitchFieldSpineCache(context, vrbId);
   const pitchField = resolveFieldForBar(spine, bar, voiceId);
