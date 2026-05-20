@@ -11,6 +11,7 @@ import type { RiffGeneratorParams } from './riffTypes';
 import { buildMultiBarRhythm } from './riffRhythm';
 import { mulberry32 } from './riffRandom';
 import { generateRiffCoreMotif } from '../motif/songModeMotifEngine';
+import { riffPitchFieldForBar } from './riffPitchField';
 
 function measuresFromChordLoop(chords: string[]): import('../score-model/scoreModelTypes').MeasureModel[] {
   return chords.map((chord, i) => createMeasure(i + 1, chord));
@@ -44,6 +45,7 @@ export function buildRiffScoreModel(params: RiffGeneratorParams): BuiltRiffScore
   for (let b = 0; b < params.bars; b++) {
     const chord = chords[b]!;
     const barRh = perBarRhythm[b]!;
+    const pitchField = riffPitchFieldForBar(chord, params.style);
     const { notes, lastPitch } = assignMelodyToBar(
       barRh,
       chord,
@@ -52,7 +54,8 @@ export function buildRiffScoreModel(params: RiffGeneratorParams): BuiltRiffScore
       b,
       firstPitch,
       prevLast,
-      coreMotif
+      coreMotif,
+      pitchField
     );
     if (b === 0 && notes[0]) firstPitch = notes[0].pitch;
     perBarMelody.push(notes);

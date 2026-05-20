@@ -519,4 +519,10 @@ export interface VoiceRuleBundle {
   morriconeRomanticModeAvailable?: boolean;
   /** Badalamenti film stub — Vln I lead / inner jazz cushion / Vc pedal (documented). */
   badalamentiThreeTierTexture?: import('../counterpoint/vrbProfiles/sqVrbProfileTypes').SqBadalamentiThreeTierTexture;
+  /** Research riff posture (funk / rock guitar VRBs). */
+  riffProfile?: import('./riffProfileTypes').RiffProfile;
+  /** GCE blend σ hint (riff-family stubs). */
+  sigma?: number;
+  /** Style family label (riff routing / musicality). */
+  family?: string;
 }

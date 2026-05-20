@@ -9,14 +9,47 @@ import { COMPOSER_OS_VERSION } from './composerOsConfig';
 import { writeOutputManifest } from './writeOutputManifest';
 import { runRiffGenerator } from '../core/riff-generator/runRiffGenerator';
 import type { GenerateResult } from './generateComposition';
-import type { RiffDensity, RiffGridMode, RiffLineMode, RiffStyleId } from '../core/riff-generator/riffTypes';
+import type { OddMeterPolicyStyle } from '../core/rhythm/oddMeterEngine';
+import {
+  RIFF_BAR_STEP_VALUES,
+  type RiffBarCount,
+  type RiffDensity,
+  type RiffGridMode,
+  type RiffLineMode,
+  type RiffStyleId,
+} from '../core/riff-generator/riffTypes';
+import { riffStyleIdForFamily } from '../core/riff-generator/resolveRiffGeneratorProfile';
+import { getVoiceRuleBundle } from '../core/composer/voiceRuleBundles';
 import { resolveEffectiveGenerationSeed } from '../core/creative-controls/creativeControlResolver';
 import { compactRiffQualityForManifest } from '../core/riff-generator/riffQualityRules';
 
-function parseRiffBars(req: GenerateRequest): 1 | 2 | 3 | 4 {
-  const n = req.totalBars;
-  if (n === 1 || n === 2 || n === 3 || n === 4) return n;
+function parseRiffBars(req: GenerateRequest): RiffBarCount {
+  const n = req.totalBars ?? 2;
+  if ((RIFF_BAR_STEP_VALUES as readonly number[]).includes(n)) return n as RiffBarCount;
   return 2;
+}
+
+function parseRiffVrbId(req: GenerateRequest): string | undefined {
+  const id = req.riffVrbId?.trim();
+  if (!id) return undefined;
+  const b = getVoiceRuleBundle(id);
+  return b.riffProfile ? b.voiceId : undefined;
+}
+
+function parseRiffOddMeterPreset(req: GenerateRequest): OddMeterPolicyStyle | undefined {
+  const p = req.riffOddMeterPreset;
+  if (
+    p === 'meter5' ||
+    p === 'meter7' ||
+    p === 'meter9' ||
+    p === 'meter10' ||
+    p === 'mahavishnu' ||
+    p === 'fripp' ||
+    p === 'weatherReport'
+  ) {
+    return p;
+  }
+  return undefined;
 }
 
 function parseRiffStyle(req: GenerateRequest): RiffStyleId {
@@ -93,8 +126,14 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
     creativeControlLevel: req.creativeControlLevel,
   });
   const bars = parseRiffBars(req);
-  const style = parseRiffStyle(req);
+  const vrbId = parseRiffVrbId(req);
+  const bundle = vrbId ? getVoiceRuleBundle(vrbId) : undefined;
+  const style =
+    bundle?.family && typeof bundle.family === 'string'
+      ? riffStyleIdForFamily(bundle.family)
+      : parseRiffStyle(req);
   const density = parseRiffDensity(req);
+  const oddMeterPreset = parseRiffOddMeterPreset(req);
   const grid = parseRiffGrid(req);
   let lineMode = parseRiffLineMode(req);
   const bassOn = req.riffBass === true;
@@ -106,8 +145,12 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
   }
   const bpm = req.bpm && req.bpm > 0 ? req.bpm : 100;
   const title = req.title?.trim() || 'Riff';
-  const chordText = req.chordProgressionText;
+  const chordText =
+    req.chordProgression?.length && req.chordProgression.join('|').trim()
+      ? req.chordProgression.join(' | ')
+      : req.chordProgressionText;
 
+  const riffOp = req.riffOp === 'regenerate' || req.riffOp === 'mutate' ? req.riffOp : undefined;
   const gen = runRiffGenerator(effectiveSeed, {
     bars,
     density,
@@ -118,6 +161,11 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
     bpm,
     title,
     chordProgressionText: chordText,
+    vrbId,
+    oddMeterPreset,
+    riffOp: riffOp ?? 'full',
+    barLocks: req.riffBarLocks,
+    carryForward: req.riffCarryForward,
   });
 
   if (!gen.success) {
@@ -181,7 +229,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
   const riffDir = presetOutputDir;
   fs.mkdirSync(riffDir, { recursive: true });
   const slug = riffFilenameSlug(title);
-  const filename = `V1-Riff-${slug}-seed${effectiveSeed}-${style}-${bars}b.musicxml`;
+  const filename = `V1-Riff-${slug}-seed${effectiveSeed}-${vrbId ?? style}-${bars}b.musicxml`;
   const filepath = path.join(riffDir, filename);
   fs.writeFileSync(filepath, gen.xml, 'utf-8');
 
@@ -206,6 +254,8 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
     success: true,
     composerOsVersion: COMPOSER_OS_VERSION,
     xml: gen.xml,
+    riffCarryForward: gen.riffCarryForward,
+    riffMusicality: gen.riffMusicality,
     filename,
     filepath,
     scoreTitle: title,

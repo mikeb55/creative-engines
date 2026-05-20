@@ -288,6 +288,28 @@ export function apiGenerate(
           ? body.riffLineMode
           : undefined,
       riffBass: body.riffBass === true ? true : undefined,
+      riffVrbId: typeof body.riffVrbId === 'string' && body.riffVrbId.trim() ? body.riffVrbId.trim() : undefined,
+      riffOddMeterPreset:
+        body.riffOddMeterPreset === 'meter5' ||
+        body.riffOddMeterPreset === 'meter7' ||
+        body.riffOddMeterPreset === 'meter9' ||
+        body.riffOddMeterPreset === 'meter10' ||
+        body.riffOddMeterPreset === 'mahavishnu' ||
+        body.riffOddMeterPreset === 'fripp' ||
+        body.riffOddMeterPreset === 'weatherReport'
+          ? body.riffOddMeterPreset
+          : undefined,
+      riffOp:
+        body.riffOp === 'regenerate' || body.riffOp === 'mutate' ? body.riffOp : undefined,
+      riffBarLocks: Array.isArray(body.riffBarLocks)
+        ? body.riffBarLocks.map((x) => x === true)
+        : undefined,
+      riffCarryForward:
+        body.riffCarryForward &&
+        typeof body.riffCarryForward === 'object' &&
+        Array.isArray((body.riffCarryForward as { bars?: unknown }).bars)
+          ? (body.riffCarryForward as import('../core/riff-generator/riffCarryForward').RiffCarryForward)
+          : undefined,
       styleProfile: isStyleProfile(body.styleProfile) ? body.styleProfile : undefined,
       ecmChamberMode:
         body.ecmChamberMode === 'angel_song' ||

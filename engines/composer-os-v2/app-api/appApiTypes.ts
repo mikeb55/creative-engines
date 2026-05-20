@@ -171,6 +171,11 @@ export interface GenerateRequest {
    */
   chordProgressionText?: string;
   /**
+   * Riff Generator: optional pre-parsed bar chords (engine still accepts `chordProgressionText`).
+   * When set, must align with `totalBars` after loop expansion.
+   */
+  chordProgression?: string[];
+  /**
    * Song Mode — raw MusicXML string for future import parity with paste/iReal (`parseMusicXml` → LeadSheet).
    * Stub: fails generation until `parsedChartToLeadSheet` is implemented.
    */
@@ -263,13 +268,30 @@ export interface GenerateRequest {
   ecmChamberMode?: 'angel_song' | 'balanced' | 'metheny_scofield';
   /** D1: optional rhythm intent (engine-only; omitted = legacy behaviour). */
   intent?: RhythmIntentControl;
-  /** Riff Generator (`riff_generator`): 1–4 bar riff length. */
+  /** Riff Generator (`riff_generator`): loop length in bars (1, 2, 4, 8, 16, 32). */
   riffStyle?: 'metheny' | 'scofield' | 'funk' | 'neutral';
   riffDensity?: 'sparse' | 'medium' | 'dense';
   riffGrid?: 'eighth' | 'sixteenth';
   riffLineMode?: 'single_line' | 'guitar_bass' | 'octave_double';
   /** Riff Generator: add bass part (guitar–bass interaction). */
   riffBass?: boolean;
+  /** Riff Generator: VoiceRuleBundle id with `riffProfile` (e.g. `nile_rodgers`, `weather_report`). */
+  riffVrbId?: string;
+  /** Riff Generator: odd-meter template overlay (fusion / art_rock). */
+  riffOddMeterPreset?:
+    | 'meter5'
+    | 'meter7'
+    | 'meter9'
+    | 'meter10'
+    | 'mahavishnu'
+    | 'fripp'
+    | 'weatherReport';
+  /** Riff Generator: `regenerate` = fresh engine on unlocked bars; `mutate` = VRB variation operators. */
+  riffOp?: 'regenerate' | 'mutate';
+  /** Per-bar lock flags (length ≤ totalBars); locked bars preserved from `riffCarryForward`. */
+  riffBarLocks?: boolean[];
+  /** Prior riff bar snapshots from last generate (echoed on GenerateResult). */
+  riffCarryForward?: import('../core/riff-generator/riffCarryForward').RiffCarryForward;
   /** Guitar–Bass Duo (Song Mode hook): C4 hook rhythm layer strength; default medium in engine when omitted. */
   c4Strength?: 'light' | 'medium' | 'strong';
   /** Song Mode C3: James Brown funk overlay (opt-in; default false). */

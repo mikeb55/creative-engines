@@ -25,6 +25,7 @@ import { runOutputUxTests } from './outputUx.test';
 import { runAppShellTests } from './appShell.test';
 import { runSystemCheckTests } from './systemCheck.test';
 import { runRiffGeneratorTests } from './riffGenerator.test';
+import { runRiffGeneratorUiTests } from './riffGeneratorUi.test';
 import { runSongwritingEngineTests } from './songwritingEngine.test';
 import { runBacharachWorkflowDeveloperTests } from './bacharachWorkflow.test';
 import { runEvalReadableSummaryTests } from './evalReadableSummary.test';
@@ -77,6 +78,7 @@ const suites: SuiteEntry[] = [
   { name: 'App shell (product)', run: runAppShellTests },
   { name: 'System check (repo root)', run: runSystemCheckTests },
   { name: 'Riff Generator', run: runRiffGeneratorTests },
+  { name: 'Riff Generator UI catalog', run: runRiffGeneratorUiTests },
   { name: 'Songwriting Engine (Phase 1)', run: runSongwritingEngineTests },
   { name: 'Bacharach developer workflow', run: runBacharachWorkflowDeveloperTests },
   { name: 'Eval readable summary', run: runEvalReadableSummaryTests },

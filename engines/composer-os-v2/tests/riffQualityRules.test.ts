@@ -11,6 +11,8 @@ import {
   evaluateRiffQualityRules,
   RIFF_QUALITY_RULESET_VERSION,
 } from '../core/riff-generator/riffQualityRules';
+import { RIFF_MUSICALITY_GATE_VERSION } from '../core/riff-generator/riffMusicalityGate';
+import { validateTihaiCadence } from '../core/rhythm/oddMeterEngine';
 import { createMeasure, createNote, createRest, createScore } from '../core/score-model/scoreEventBuilder';
 import type { PartModel } from '../core/score-model/scoreModelTypes';
 
@@ -33,10 +35,33 @@ export function runRiffQualityRulesSuite(): { ok: boolean; name: string }[] {
       r.riffQuality.rulesetVersion === RIFF_QUALITY_RULESET_VERSION &&
       r.riffQuality.rules.length === 8 &&
       r.riffQuality.aggregatePass &&
-      compactRiffQualityForManifest(r.riffQuality).totalRules === 8;
+      compactRiffQualityForManifest(r.riffQuality).totalRules === 8 &&
+      r.riffMusicality.rulesetVersion === RIFF_MUSICALITY_GATE_VERSION &&
+      r.riffMusicality.details.anchorStrength != null &&
+      Object.keys(r.riffMusicality.details).length >= 8;
     rows.push({
       ok,
       name: 'riffQualityRules: healthy deterministic riff passes aggregate supplement',
+    });
+  }
+
+  {
+    const r = runRiffGenerator(42, {
+      bars: 2,
+      density: 'medium',
+      style: 'funk',
+      grid: 'sixteenth',
+      lineMode: 'single_line',
+      bassEnabled: false,
+      bpm: 100,
+    });
+    const ok =
+      r.success &&
+      r.riffMusicality.score >= 0.45 &&
+      r.riffMusicality.details.syncopationBalance != null;
+    rows.push({
+      ok,
+      name: 'riffMusicalityGate: funk sixteenth riff yields v8 rule scores',
     });
   }
 
@@ -71,6 +96,11 @@ export function runRiffQualityRulesSuite(): { ok: boolean; name: string }[] {
       ok,
       name: 'riffQualityRules: thin synthetic fails structural rules (occupancy / density)',
     });
+  }
+
+  {
+    const ok = validateTihaiCadence(10, 3);
+    rows.push({ ok, name: 'riffMusicalityGate: tihai cadence 10/3 validates for meter10 preset' });
   }
 
   {

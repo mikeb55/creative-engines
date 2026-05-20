@@ -11,6 +11,7 @@ import {
   normalizeChordToken,
   parseChordProgressionInput,
   parseChordProgressionInputWithBarCount,
+  parseChordsFromPipeDelimited,
   buildChordSymbolPlanFromBars,
   validateChordSymbolPlanCoversBars,
 } from '../core/harmony/chordProgressionParser';
@@ -37,6 +38,28 @@ export function runChordProgressionTests(): { name: string; ok: boolean }[] {
     ok: (() => {
       const r = parseChordProgressionInput('Dm9 | G13 | Cmaj9 | A7alt | Dm9 | G13 | Cmaj9 | A7alt');
       return r.ok && r.bars.length === 8 && r.bars[0] === 'Dm9';
+    })(),
+  });
+
+  tests.push({
+    name: 'parseChordsFromPipeDelimited: extended riff symbols (8 bars, no nulls)',
+    ok: (() => {
+      const prog =
+        'Dm9 | BbMaj7#11 | Eb9sus4 | AbMaj7 | F#m9 | BMaj7 | Gsus2 | Dm9';
+      const parsed = parseChordsFromPipeDelimited(prog);
+      if (parsed.length !== 8) return false;
+      if (parsed.some((e) => e == null)) return false;
+      const roots = parsed.map((e) => e!.rootPc);
+      return (
+        roots[0] === 2 &&
+        roots[1] === 10 &&
+        roots[2] === 3 &&
+        roots[3] === 8 &&
+        roots[4] === 6 &&
+        roots[5] === 11 &&
+        roots[6] === 7 &&
+        roots[7] === 2
+      );
     })(),
   });
 

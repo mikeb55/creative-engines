@@ -3,7 +3,7 @@
  */
 
 import type { ChordToneSet } from '../goldenPath/guitarBassDuoHarmony';
-import { chordTonesFromSymbol } from '../harmony/chordSymbolAnalysis';
+import { chordTonesForChordSymbol } from '../harmony/chordSymbolAnalysis';
 import type { RiffRhythmSegment } from './riffTypes';
 import { randInt } from './riffRandom';
 
@@ -25,7 +25,7 @@ export function assignBassToBar(
   chord: string,
   rng: () => number
 ): BassNote[] {
-  const tones = chordTonesFromSymbol(chord);
+  const tones = chordTonesForChordSymbol(chord, { lockedHarmony: true });
   const roots = [tones.root, tones.third, tones.fifth, tones.seventh];
   const out: BassNote[] = [];
   let rootCount = 0;

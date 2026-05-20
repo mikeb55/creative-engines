@@ -17,8 +17,21 @@ import { applyLigetiSqVrbProfile } from '../counterpoint/vrbProfiles/ligetiSqVrb
 import type { DissonanceProfile } from '../counterpoint/abstractLineSet';
 import { fillReceipts } from './fillVrbReceipts';
 import type { VoiceRuleBundle } from './voiceRuleBundle';
+import { buildJamesBrownRiffProfile } from './riffVrbStubs';
 
 export { fillReceipts } from './fillVrbReceipts';
+export {
+  FRIPP,
+  HENDRIX,
+  LED_ZEPPELIN,
+  IOMMI,
+  MAHAVISHNU,
+  MORELLO,
+  NILE_RODGERS,
+  SLY_STONE,
+  VERLAINE,
+  WEATHER_REPORT,
+} from './riffVrbStubs';
 
 const DF_BASE = [
   'DF_HARM_01 — Non-functional chromatic side-slips; extended dominants; avoid pure blues turnaround as default spine.',
@@ -465,6 +478,7 @@ export const FRIPP_KING_CRIMSON: VoiceRuleBundle = {
 
 export const JAMES_BROWN: VoiceRuleBundle = {
   voiceId: 'james_brown',
+  family: 'funk',
   harmonicRhythm: {
     minChordDurationBars: 4,
     maxChordDurationBars: 32,
@@ -515,6 +529,7 @@ export const JAMES_BROWN: VoiceRuleBundle = {
     intervalPreference: 'pentatonic_diatonic',
     textureTagType: 'funk_grid',
   },
+  riffProfile: buildJamesBrownRiffProfile(),
 };
 
 export const MESSIAEN: VoiceRuleBundle = {

@@ -7,7 +7,11 @@
 
 import type { ChordSymbolPlan } from '../compositionContext';
 import type { ChordSegment, HarmonyPlan } from '../primitives/harmonyTypes';
-import { parseChordStructureFromNormalized } from '../../../core/chordSymbolRegistry';
+import {
+  ChordQualityFamily,
+  parseChordStructureFromNormalized,
+  type ParsedChordStructure,
+} from '../../../core/chordSymbolRegistry';
 import {
   chordWithFallback,
   isValidChordShapeNormalized,
@@ -185,6 +189,65 @@ export function parseChordProgressionInputFlexible(input: string): ParseChordPro
     };
   }
   return { ok: true, bars };
+}
+
+/** One parsed chord slot from pipe-delimited riff / etude input (null = unrecognized symbol). */
+export type ParsedChordProgressionEntry = {
+  symbol: string;
+  rootPc: number;
+  structure: ParsedChordStructure;
+};
+
+function parseOnePipeDelimitedChord(rawCell: string): ParsedChordProgressionEntry | null {
+  const raw = rawCell.trim().replace(/\s+/g, ' ');
+  if (!raw) return null;
+  const primary = normalizeChordToken(raw);
+  if (/^tonic_wash$/i.test(primary.replace(/\s+/g, ''))) {
+    const structure: ParsedChordStructure = {
+      root: 'C',
+      bass: null,
+      suffix: '',
+      qualityFamily: ChordQualityFamily.Maj,
+    };
+    return { symbol: 'tonic_wash', rootPc: 0, structure };
+  }
+  if (!isValidChordShape(primary)) {
+    console.warn(`[riff-chord] unrecognized chord symbol: "${rawCell}"`);
+    return null;
+  }
+  const symbol = normalizeLeadSheetChordSpelling(raw).replace(/\s+/g, ' ').trim();
+  const structure = parseChordStructureFromNormalized(normalizeChordToken(symbol));
+  if (!structure) {
+    console.warn(`[riff-chord] structure parse failed: "${rawCell}"`);
+    return null;
+  }
+  const rootPc = noteNameToPitchClass(structure.root);
+  if (rootPc === undefined) {
+    console.warn(`[riff-chord] root pitch class failed: "${rawCell}"`);
+    return null;
+  }
+  return { symbol, rootPc, structure };
+}
+
+/**
+ * Parse pipe-delimited chord progression into one entry per bar cell (no bar-count gate).
+ * Returns `null` slots for unrecognized symbols (logs symbol) — no silent maj7 substitution.
+ */
+export function parseChordsFromPipeDelimited(input: string): (ParsedChordProgressionEntry | null)[] {
+  const trimmed = normalizeChordProgressionSeparators(input.trim());
+  if (!trimmed) return [];
+  const rawBars = trimmed.split('|').map((s) => s.trim());
+  const out: (ParsedChordProgressionEntry | null)[] = [];
+  for (const cell of rawBars) {
+    if (cell === '') continue;
+    const tokens = cell.split(/\s+/).filter(Boolean);
+    if (tokens.length === 0) {
+      out.push(null);
+      continue;
+    }
+    out.push(parseOnePipeDelimitedChord(tokens[0]!));
+  }
+  return out;
 }
 
 /** Merge consecutive identical chords into segments (exactly 8 bars). */

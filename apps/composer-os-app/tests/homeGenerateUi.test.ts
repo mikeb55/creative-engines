@@ -238,7 +238,8 @@ describe('HomeGenerate mode-driven UI', () => {
     expect(src).toContain("presetId === 'big_band'");
     expect(src).toContain("presetId === 'string_quartet'");
     expect(src).toContain("presetId === 'riff_generator'");
-    expect(src).toContain('Riff options');
+    expect(src).toContain('RiffGeneratorPanel');
+    expect(src).toContain('riffVrbId');
   });
 
   it('adds a Song Mode LeadSheet MusicXML input block with explicit Phase 1 route gating', () => {

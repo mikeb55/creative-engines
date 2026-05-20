@@ -68,6 +68,7 @@ import { runPhraseEngineV2IntegrationTests } from './phraseEngineV2Integration.t
 import { runDuoIntentTests } from './duoIntent.test';
 import { runVaultQualitySmokeTests } from '../smoke/vaultQuality.smoke.test';
 import { runVoiceRuleBundleTests } from './voiceRuleBundle.test';
+import { runRiffGeneratorIntegrationTests } from './riffGeneratorIntegration.test';
 import { runMusicXmlValidatorGateTests } from '../../../src/utils/musicXmlValidator.test';
 import { runPhase67EnsembleGuitarEtudeTests } from './phase67EnsembleGuitarEtude.test';
 import { runPhase67InstrumentGroupMusicXmlTests } from './phase67InstrumentGroupMusicXml.test';
@@ -180,6 +181,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Zappa Big Band (FZ harmony + Zappa Classic meter)', run: runZappaBigBandSmokeTests },
   { label: 'Tonality Vault quality (inspector, riff modes, LSM, reharm, BB routing, rule sets)', run: runVaultQualitySmokeTests },
   { label: 'VoiceRuleBundle compiler + gil_evans wiring', run: runVoiceRuleBundleTests },
+  { label: 'Riff Generator wiring (family / profile / odd-meter / blend)', run: runRiffGeneratorIntegrationTests },
   { label: 'MusicXML stringsync gate (order + displayOctave)', run: runMusicXmlValidatorGateTests },
   { label: 'Phase 6+7 — ensemble / guitar / étude helpers', run: runPhase67EnsembleGuitarEtudeTests },
   { label: 'Phase 6+7 — instrumentGroup MusicXML (quartet + guitar TAB)', run: runPhase67InstrumentGroupMusicXmlTests },

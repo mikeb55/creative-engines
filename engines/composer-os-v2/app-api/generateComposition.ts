@@ -70,6 +70,10 @@ export interface GenerateResult {
   /** Composer OS product version echoed for manifests and UI. */
   composerOsVersion?: string;
   xml?: string;
+  /** Riff Generator: bar snapshots for lock/regen/mutate UI. */
+  riffCarryForward?: import('../core/riff-generator/riffCarryForward').RiffCarryForward;
+  /** Riff Generator: musicality gate result (failedRules for UI labels). */
+  riffMusicality?: import('../core/riff-generator/riffMusicalityGate').RiffMusicalityResult;
   filename?: string;
   filepath?: string;
   /** Full-score `.mid` path when written next to the MusicXML export. */

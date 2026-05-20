@@ -132,3 +132,15 @@ ROUTING_ALL_PASS: true
 - **`renderForBigBand`:** additive fields `quartetFeatures`, `sectionWritingIntents`, `voicingGeometries`, `soliRhythmPlans`, `backgroundsRhythmPlans` alongside existing `soliPlan` / `backgroundsPlan`. `styleProfileId` from `generationMetadata.songModeProfileRuleDiagnostics?.styleProfile` when present.
 - **Gate B harness:** `scripts/gateBPhase6Verify.ts` — **INDEPENDENCE** ✓ (`contrapuntalIndependence > 0.6` ⇒ ≥2 `lineDerived` assignments) · **ROUTING** ✓ (`bob_brookmeyer` / `bartok` line-first engine, not P3 colour; `postProcessDuoAbstractGuitar` identity on cloned measure) · **ANTI-COLLAPSE** ✓ (`forbidFullEnsembleChordHits` ⇒ no cluster in soli/backgrounds rhythm plans) · **SYSTEM** ✓ (`npm run test:composer-smoke` **248/0**).
 - **Smoke:** 248/0 (aggregate unchanged).
+
+## Riff Generator — VRB registry + wiring (Commit 10, additive)
+
+- **Family tags (locked):** funk → `james_brown`, `nile_rodgers`, `sly_stone`; rock → `iommi`, `hendrix`, `led_zeppelin`; fusion → `weather_report`, `mahavishnu`; art_rock → `verlaine`, `morello`, `fripp`. Resolved via `VoiceRuleBundle.family` + `resolveRiffFamilyTag()` in `core/riff-generator/riffVrbRegistry.ts`.
+- **Riff VRB σ ceilings (stub bundles — do not change):** `nile_rodgers` 22 · `sly_stone` 24 · `iommi` 26 · `hendrix` 28 · `led_zeppelin` 27 · `weather_report` 30 · `mahavishnu` 32 · `verlaine` 25 · `morello` 25 · `fripp` 27. `james_brown` songwriter bundle has **no** `sigma` field; riff wiring is **`riffProfile` additive only** — existing `JB_*` fingerprint receipt lines untouched.
+- **`james_brown` fingerprints:** `buildJamesBrownRiffProfile()` attaches `riffProfile` only; does not rewrite `orchestrationPolicy.fingerprintReceipts` on `JAMES_BROWN`.
+- **`funkGridPolicy` vs Song Mode overlay:** `funkGridPolicy` / `riffProfileSliceFromFunkGrid` supply riff-generator posture only; **`jamesBrownFunkOverlay.ts`** Song Mode overlay path is unchanged and not replaced by funk grid policy.
+- **`oddMeterEngine` presets:** Riff UI odd-meter overlay calls `riffProfileSliceFromOddMeter` on the **active VRB profile** only when family is fusion or art_rock; Bartók aksak / Reich phasing SQ presets and engine tables are not modified.
+- **Odd-meter overlay gating:** `resolveRiffGeneratorProfileWithMeta` applies `oddMeterPreset` only when `riffFamilyAllowsOddMeterOverlay(family)` (fusion / art_rock). Funk / rock ignore UI meter template.
+- **Boundary swing ramp:** `riffBoundarySwingRamp.ts` — funk + rock → `straight_shuffle` ramp; fusion + art_rock → `odd_meter` ramp (no swing). Same-family transitions only.
+- **3-way riff VRB blend:** `blendRiffGeneratorVrbs` — same `RiffFamilyTag` only; cross-family → warning + primary VRB profile fallback.
+- **Engine flags (unchanged):** `USE_PER_SECTION_VRB = true` (`vrbContextMap.ts`); `USE_PITCH_FIELD_NOTE_SELECTION = true` (`engineFeatureFlags.ts`).

@@ -464,8 +464,99 @@ function testGilEvansGoldenPathVoiceBundleAndSpread(): boolean {
   return spread >= minSp;
 }
 
+function testRiffVrbStubsRegistry(): boolean {
+  const nile = getVoiceRuleBundle('nile_rodgers');
+  const iommi = getVoiceRuleBundle('iommi');
+  const hendrix = getVoiceRuleBundle('hendrix');
+  const jimi = getVoiceRuleBundle('jimi');
+  const sabbath = getVoiceRuleBundle('black_sabbath');
+  if (!nile.riffProfile || !iommi.riffProfile || !hendrix.riffProfile) return false;
+  return (
+    nile.voiceId === 'nile_rodgers' &&
+    iommi.voiceId === 'iommi' &&
+    hendrix.voiceId === 'hendrix' &&
+    jimi.voiceId === 'hendrix' &&
+    sabbath.voiceId === 'iommi' &&
+    iommi.riffProfile.allowPitchStreak === true &&
+    hendrix.riffProfile.allowPitchStreak === false &&
+    nile.riffProfile.subdivisionGrid === 16 &&
+    iommi.riffProfile.tritoneStable === true &&
+    testLedZeppelinRiffVrbStubRegistry()
+  );
+}
+
+function testLedZeppelinRiffVrbStubRegistry(): boolean {
+  const zep = getVoiceRuleBundle('led_zeppelin');
+  const page = getVoiceRuleBundle('jimmy_page');
+  if (!zep.riffProfile) return false;
+  const rp = zep.riffProfile;
+  return (
+    zep.voiceId === 'led_zeppelin' &&
+    zep.sigma === 27 &&
+    zep.family === 'rock' &&
+    page.voiceId === 'led_zeppelin' &&
+    getVoiceRuleBundle('zeppelin').voiceId === 'led_zeppelin' &&
+    rp.allowPitchStreak === false &&
+    rp.silencePolicy.styleClass === 'Medium' &&
+    rp.tuningPolicy?.midiFloor === 38 &&
+    rp.tuningPolicy?.midiCeiling === 88 &&
+    rp.tuningPolicy?.riffLowBand[0] === 40 &&
+    rp.tuningPolicy?.riffMidBand[1] === 69 &&
+    rp.rhythmFeel?.primarySubdivision === '8th' &&
+    rp.rhythmFeel?.beatPlacement === 'slightly_behind' &&
+    rp.intervalWeights?.m3 === 1.0 &&
+    rp.intervalWeights?.P5 === 1.0 &&
+    rp.textureMix?.openStringDroneProb === 0.45 &&
+    rp.oddMeterUsage?.isSuperimposed === false &&
+    (rp.oddMeterUsage?.meters.length ?? 0) === 2 &&
+    rp.phraseLengthBeats?.[0] === 4 &&
+    rp.pedalPoint?.enabled === true &&
+    Boolean(rp.styleModes?.epic_modal_heavy)
+  );
+}
+
+function testFusionArtRockRiffVrbStubsRegistry(): boolean {
+  const weather = getVoiceRuleBundle('weather_report');
+  const mahavishnu = getVoiceRuleBundle('mahavishnu');
+  const verlaine = getVoiceRuleBundle('verlaine');
+  const morello = getVoiceRuleBundle('morello');
+  const fripp = getVoiceRuleBundle('fripp');
+  if (
+    !weather.riffProfile ||
+    !mahavishnu.riffProfile ||
+    !verlaine.riffProfile ||
+    !morello.riffProfile ||
+    !fripp.riffProfile
+  ) {
+    return false;
+  }
+  return (
+    weather.voiceId === 'weather_report' &&
+    getVoiceRuleBundle('zawinul').voiceId === 'weather_report' &&
+    mahavishnu.voiceId === 'mahavishnu' &&
+    getVoiceRuleBundle('mclaughlin').voiceId === 'mahavishnu' &&
+    verlaine.voiceId === 'verlaine' &&
+    getVoiceRuleBundle('television').voiceId === 'verlaine' &&
+    morello.voiceId === 'morello' &&
+    getVoiceRuleBundle('ratm').voiceId === 'morello' &&
+    fripp.voiceId === 'fripp' &&
+    getVoiceRuleBundle('king_crimson').voiceId === 'fripp' &&
+    mahavishnu.riffProfile.meterPolicy === 'odd_grouped' &&
+    mahavishnu.riffProfile.polyGroupingMode === true &&
+    Boolean(fripp.riffProfile.processLoopPolicy) &&
+    Boolean(verlaine.riffProfile.counterpartVoicePolicy) &&
+    morello.riffProfile.allowPitchStreak === true &&
+    weather.riffProfile.ensembleInterlockMode === 'layeredOstinati'
+  );
+}
+
 export function runVoiceRuleBundleTests(): { name: string; ok: boolean }[] {
   return [
+    ['VoiceRuleBundle — riff VRB stubs (nile / iommi / hendrix)', testRiffVrbStubsRegistry],
+    [
+      'VoiceRuleBundle — fusion/art-rock riff stubs (weather / mahavishnu / verlaine / morello / fripp)',
+      testFusionArtRockRiffVrbStubsRegistry,
+    ],
     ['VoiceRuleBundle — deep voices minChordDurationBars', testSevenVoicesMinChordDurationBars],
     ['VoiceRuleBundle — unknown id falls back to neutral default', testFallbackMatchesNeutralDefault],
     ['VoiceRuleBundle — hv: prefix normalizes id', testHvPrefixStrips],

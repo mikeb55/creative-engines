@@ -8,9 +8,9 @@
  * Display suffixes are normalized here only (lead-sheet style), not in harmony generation.
  */
 
+export type { ChordRootAndKindText, MusicXmlHarmonyParts } from '../../../core/chordSymbolMusicXml';
+
 export {
-  ChordRootAndKindText,
-  MusicXmlHarmonyParts,
   musicXmlKindContentFromKindText,
   formatChordKindSuffixForDisplay,
   parseChordRootAndMusicXmlKindText,

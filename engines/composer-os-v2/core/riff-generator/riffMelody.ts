@@ -3,7 +3,8 @@
  */
 
 import type { ChordToneSet } from '../goldenPath/guitarBassDuoHarmony';
-import { chordTonesFromSymbol } from '../harmony/chordSymbolAnalysis';
+import { chordTonesForChordSymbol } from '../harmony/chordSymbolAnalysis';
+import type { ResolvedPitchField } from '../harmony/pitchFieldSpineTypes';
 import type { CoreMotif } from '../motif/motifEngineTypes';
 import type { RiffRhythmSegment, RiffStyleId } from './riffTypes';
 import { randInt } from './riffRandom';
@@ -62,6 +63,40 @@ function passingPitch(prev: number | undefined, tones: ChordToneSet, rng: () => 
   return p;
 }
 
+function pickWeightedPc(
+  pool: Array<{ pc: number; weight: number }>,
+  rng: () => number
+): number {
+  if (pool.length === 0) return 0;
+  const total = pool.reduce((s, e) => s + e.weight, 0);
+  let u = rng() * total;
+  for (const e of pool) {
+    u -= e.weight;
+    if (u <= 0) return e.pc;
+  }
+  return pool[pool.length - 1]!.pc;
+}
+
+function pitchFromField(
+  field: ResolvedPitchField,
+  rng: () => number,
+  low: number,
+  high: number,
+  preferPrev?: number
+): number {
+  const pool = field.allowedPcs;
+  if (pool.length === 0) return midiInRange(0, low, high);
+  let pc = pickWeightedPc(pool, rng);
+  if (preferPrev !== undefined && pool.length > 1) {
+    const targetPc = ((preferPrev % 12) + 12) % 12;
+    const near = pool
+      .map((e) => ({ e, d: Math.min(Math.abs(e.pc - targetPc), 12 - Math.abs(e.pc - targetPc)) }))
+      .sort((a, b) => a.d - b.d)[0];
+    if (near && rng() < 0.65) pc = near.e.pc;
+  }
+  return midiInRange(pc, low, high);
+}
+
 /** Snap toward motif interval step from previous pitch (chord-tone pool). */
 function pitchFromMotifInterval(
   last: number,
@@ -109,9 +144,10 @@ export function assignMelodyToBar(
   bIndex: number,
   firstBarFirstPitch: number | undefined,
   prevLastPitch: number | undefined,
-  coreMotif?: CoreMotif
+  coreMotif?: CoreMotif,
+  pitchField?: ResolvedPitchField
 ): { notes: MelodyLine[]; lastPitch: number } {
-  const tones = chordTonesFromSymbol(chord);
+  const tones = chordTonesForChordSymbol(chord, { lockedHarmony: true });
   const { low, high } = styleRegister(style);
   const notes: MelodyLine[] = [];
   let last = prevLastPitch ?? firstBarFirstPitch;
@@ -119,7 +155,9 @@ export function assignMelodyToBar(
   for (const s of bar) {
     if (s.rest) continue;
     let pitch: number;
-    if (isStrongBeat(s.startBeat)) {
+    if (pitchField?.allowedPcs?.length) {
+      pitch = pitchFromField(pitchField, rng, low, high, last);
+    } else if (isStrongBeat(s.startBeat)) {
       pitch = strongPitch(tones, chord, rng, low, high);
     } else {
       pitch = passingPitch(last, tones, rng, low, high);

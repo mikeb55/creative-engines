@@ -6,6 +6,8 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { runRiffGenerator } from '../core/riff-generator/runRiffGenerator';
+import { normalizeChordLoop } from '../core/riff-generator/riffChordLoop';
+import { parseChordsFromPipeDelimited } from '../core/harmony/chordProgressionParser';
 import { runRiffGeneratorApp } from '../app-api/riffGeneratorApp';
 import type { ScoreModel } from '../core/score-model/scoreModelTypes';
 import { manifestPathForMusicXml } from '../app-api/composerOsOutputPaths';
@@ -66,6 +68,49 @@ function offbeatAttackCount(perBarRhythm: { startBeat: number; rest: boolean }[]
 
 export function runRiffGeneratorTests(): { ok: boolean; name: string }[] {
   const out: { ok: boolean; name: string }[] = [];
+
+  {
+    const prog =
+      'Dm9 | BbMaj7#11 | Eb9sus4 | AbMaj7 | F#m9 | BMaj7 | Gsus2 | Dm9';
+    const parsed = parseChordsFromPipeDelimited(prog);
+    const loop = normalizeChordLoop(prog, 8);
+    const okParse = parsed.length === 8 && parsed.every((e) => e != null);
+    const okLoop =
+      loop.length === 8 &&
+      loop[4]!.replace(/\s+/g, '').toLowerCase().startsWith('f#m') &&
+      loop[5]!.replace(/\s+/g, '').toLowerCase().startsWith('bmaj');
+    out.push({
+      ok: okParse && okLoop,
+      name: 'normalizeChordLoop: 8-chord external progression preserves bars 5–8 (no 4-chord cap)',
+    });
+  }
+
+  {
+    const prog =
+      'Dm9 | BbMaj7#11 | Eb9sus4 | AbMaj7 | F#m9 | BMaj7 | Gsus2 | Dm9';
+    const r = runRiffGenerator(4242, {
+      bars: 8,
+      density: 'medium',
+      style: 'neutral',
+      grid: 'eighth',
+      lineMode: 'single_line',
+      bassEnabled: false,
+      bpm: 100,
+      title: 'ChordProg',
+      chordProgressionText: prog,
+    });
+    const g = r.success ? r.score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar') : undefined;
+    const harmonies = g?.measures.map((m) => (m.chord ?? '').replace(/\s+/g, '')) ?? [];
+    const ok =
+      r.success === true &&
+      harmonies.length === 8 &&
+      harmonies[4]!.toLowerCase().includes('f#m') &&
+      harmonies[5]!.toLowerCase().includes('bmaj');
+    out.push({
+      ok,
+      name: 'runRiffGenerator: external 8-bar chord progression on score measures (not Am7 vamp)',
+    });
+  }
 
   {
     const seed = 1701;

@@ -10,7 +10,15 @@ import { expandNotationSafeDurationsInScore } from '../score-integrity/notationS
 import { validateStrictBarMath } from '../score-integrity/strictBarMath';
 import { validateNotationSafeRhythm } from '../score-integrity/notationSafeRhythm';
 import { buildRiffScoreModel } from './buildRiffScoreModel';
+import {
+  applyRiffBarLocksToBuilt,
+  buildRiffScoreFromBarSnapshots,
+  normalizeRiffBarLocks,
+  snapshotRiffCarryForward,
+} from './riffCarryForward';
 import { normalizeChordLoop } from './riffChordLoop';
+import { applyRiffVariationOperators } from './riffVariationApply';
+import type { RiffProfile } from '../composer/riffProfileTypes';
 import { finalizeRiffScoreBarMath } from './riffFinalizeBarMath';
 import { scoreRiffGce } from './riffGce';
 import type { CoreMotif } from '../motif/motifEngineTypes';
@@ -19,18 +27,77 @@ import { validateRiffIdentity } from './riffIdentityValidation';
 import { validateBassHarmonicIntegrity } from './riffBassHarmonicGate';
 import { validateRiffMusicXmlStructure } from './riffMusicXmlSanity';
 import { evaluateRiffQualityRules } from './riffQualityRules';
+import {
+  evaluateRiffMusicality,
+  RIFF_MUSICALITY_MAX_SEED_RETRIES,
+  selectRiffByMusicality,
+} from './riffMusicalityGate';
+import {
+  resolveRiffGeneratorProfile,
+  riffStyleIdForFamily,
+} from './resolveRiffGeneratorProfile';
+import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
 
 const CANDIDATES = 7;
 const MAX_ROUNDS = 40;
 const GCE_THRESHOLD = 9.0;
 
+function buildRiffCandidate(
+  p: RiffGeneratorParams,
+  musicalityProfile: RiffProfile,
+  barLocks: boolean[]
+) {
+  const op = p.riffOp ?? 'full';
+  const carry = p.carryForward;
+
+  if (op === 'mutate' && carry?.bars.length) {
+    const ops = musicalityProfile.variationOperators ?? [];
+    const snaps = carry.bars.map((s, b) => {
+      if (barLocks[b]) return { ...s, rhythm: s.rhythm.map((r) => ({ ...r })), guitarNotes: s.guitarNotes.map((n) => ({ ...n })) };
+      return applyRiffVariationOperators(s, ops, p.seed + b * 997, musicalityProfile);
+    });
+    while (snaps.length < p.bars) {
+      const i = snaps.length;
+      snaps.push({
+        rhythm: [],
+        guitarNotes: [],
+        chord: p.chordSymbols[i],
+      });
+    }
+    return buildRiffScoreFromBarSnapshots(p, snaps.slice(0, p.bars), p.chordSymbols);
+  }
+
+  let built = buildRiffScoreModel(p);
+  if ((op === 'regenerate' || op === 'mutate') && carry && barLocks.some(Boolean)) {
+    built = applyRiffBarLocksToBuilt(built, carry, barLocks);
+  }
+  return built;
+}
+
 export function runRiffGenerator(baseSeed: number, params: Omit<RiffGeneratorParams, 'seed' | 'chordSymbols'> & { chordSymbols?: string[]; chordProgressionText?: string }): RiffGeneratorResult {
   const chords = normalizeChordLoop(params.chordProgressionText, params.bars);
+  const bundle = params.vrbId ? getVoiceRuleBundle(params.vrbId) : undefined;
+  const engineStyle =
+    bundle?.family && typeof bundle.family === 'string'
+      ? riffStyleIdForFamily(bundle.family)
+      : params.style;
   const full: RiffGeneratorParams = {
     ...params,
+    style: engineStyle,
     seed: baseSeed,
     chordSymbols: chords,
+    chordProgression: chords,
   };
+  const musicalityProfile = resolveRiffGeneratorProfile({
+    vrbId: params.vrbId,
+    style: engineStyle,
+    grid: params.grid,
+    density: params.density,
+    oddMeterPreset: params.oddMeterPreset,
+    chordProgression: chords,
+  });
+  const barLocks = normalizeRiffBarLocks(full.barLocks, full.bars);
+  const partialOp = full.riffOp === 'regenerate' || full.riffOp === 'mutate';
 
   for (let round = 0; round < MAX_ROUNDS; round++) {
     let best: {
@@ -42,12 +109,26 @@ export function runRiffGenerator(baseSeed: number, params: Omit<RiffGeneratorPar
       density: import('./riffTypes').RiffDensity;
       bars: number;
       grid: import('./riffTypes').RiffGridMode;
+      style: import('./riffTypes').RiffStyleId;
     } | null = null;
+
+    const musicalityPool: Array<{
+      gce: number;
+      xml: string;
+      score: import('../score-model/scoreModelTypes').ScoreModel;
+      coreMotif: CoreMotif;
+      perBarRhythm: import('./riffTypes').RiffRhythmSegment[][];
+      density: import('./riffTypes').RiffDensity;
+      bars: number;
+      grid: import('./riffTypes').RiffGridMode;
+      style: import('./riffTypes').RiffStyleId;
+      musicality: import('./riffMusicalityGate').RiffMusicalityResult;
+    }> = [];
 
     for (let c = 0; c < CANDIDATES; c++) {
       const seed = baseSeed + round * 100_003 + c * 7919;
       const p: RiffGeneratorParams = { ...full, seed };
-      const built = buildRiffScoreModel(p);
+      const built = buildRiffCandidate(p, musicalityProfile, barLocks);
       const { score, perBarRhythm } = built;
 
       finalizeRiffScoreBarMath(score, p.grid === 'sixteenth' ? 'sixteenth' : 'eighth');
@@ -82,6 +163,25 @@ export function runRiffGenerator(baseSeed: number, params: Omit<RiffGeneratorPar
       const sanity = validateRiffMusicXmlStructure(exp.xml);
       if (!sanity.valid) continue;
 
+      const musicality = evaluateRiffMusicality(
+        { score, perBarRhythm, bars: p.bars, grid: p.grid },
+        musicalityProfile
+      );
+      const row = {
+        gce,
+        xml: exp.xml,
+        score,
+        coreMotif: built.coreMotif,
+        perBarRhythm,
+        density: p.density,
+        bars: p.bars,
+        grid: p.grid,
+        style: p.style,
+        musicality,
+      };
+      if (musicalityPool.length < RIFF_MUSICALITY_MAX_SEED_RETRIES) {
+        musicalityPool.push(row);
+      }
       if (!best || gce > best.gce) {
         best = {
           gce,
@@ -92,33 +192,47 @@ export function runRiffGenerator(baseSeed: number, params: Omit<RiffGeneratorPar
           density: p.density,
           bars: p.bars,
           grid: p.grid,
+          style: p.style,
         };
       }
     }
 
     if (best && best.gce >= GCE_THRESHOLD) {
+      const musicalPick = selectRiffByMusicality(musicalityPool);
+      const chosen = musicalPick ?? (musicalityPool[0] ? musicalityPool[0] : null);
+      const out = chosen ?? {
+        ...best,
+        musicality: evaluateRiffMusicality(
+          { score: best.score, perBarRhythm: best.perBarRhythm, bars: best.bars, grid: best.grid },
+          musicalityProfile
+        ),
+      };
       const riffQuality = evaluateRiffQualityRules({
-        score: best.score,
-        perBarRhythm: best.perBarRhythm,
-        density: best.density,
-        bars: best.bars,
-        grid: best.grid,
+        score: out.score,
+        perBarRhythm: out.perBarRhythm,
+        density: out.density,
+        bars: out.bars,
+        grid: out.grid,
       });
       return {
         success: true,
-        score: best.score,
-        xml: best.xml,
-        gce: best.gce,
+        score: out.score,
+        xml: out.xml,
+        gce: out.gce,
         version: 1,
-        coreMotif: best.coreMotif,
-        perBarRhythm: best.perBarRhythm,
+        coreMotif: out.coreMotif,
+        perBarRhythm: out.perBarRhythm,
         riffQuality,
+        riffMusicality: out.musicality,
+        riffCarryForward: snapshotRiffCarryForward(out.score, out.perBarRhythm),
       };
     }
   }
 
   return {
     success: false,
-    error: `Riff Generator: no candidate reached GCE ${GCE_THRESHOLD} after ${MAX_ROUNDS} rounds`,
+    error: partialOp && !full.carryForward
+      ? 'Riff Generator: regenerate/mutate requires a prior riff (generate once first)'
+      : `Riff Generator: no candidate reached GCE ${GCE_THRESHOLD} after ${MAX_ROUNDS} rounds`,
   };
 }
