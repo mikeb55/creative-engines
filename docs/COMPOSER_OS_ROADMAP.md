@@ -1147,4 +1147,53 @@ Specific improvements needed:
 
 *End of Composer OS Roadmap [2026-05-06].*
 
+---
+
+## Phase Z6 — Blues-Rock Ferocity (riff + duo)
+
+**Z6 STATUS: SHIPPED**
+- bluesrockFerocious styleMode: Slonimsky map + VRB stub + FZBLUES receipts + adapter landed
+- UI: zappaStyleMode selector in Advanced panel (frank_zappa only)
+- Known gap: styleMode not yet threaded to riff solo call chain (`buildSoloPartForScore` → `riffSoloFromZappaEngine` has no context/metadata arg). Duo path wired; riff path deferred to 5b.
+- Sibelius verify: output clean, two voices correct, chromatic content present. Burst/rest-proxy contrast needs playback confirmation.
+
+### Phase Z7 — Slonimsky Harmonic Scene
+
+**Status: DEFERRED** — pending Z6 Sibelius verify + 5b riff API work
+
+---
+
+## Session Handoff — V59 — 2026-05-22
+
+**SMOKE BASELINE**
+- Full: **403** / **72** / **0** (~16s tsx)
+- Fast: **238** / **58** / **0** (~7s tsx)
+
+**LAST COMMIT:** `6fa4e8e6` → `origin/main`
+
+**COMPLETED THIS SESSION**
+- EVH deepening receipts + compiler (EVH_* 10 IDs)
+- EVH Phase E Song Mode registry fix
+- LC + DG fingerprintReceipts + compiler + tests
+- Zappa GCE structural fingerprint
+- Z6 Blues-Rock Ferocity (bluesrockFerocious styleMode, FZBLUES receipts, adapter, tests, golden fixtures)
+- tsx runner swap (90s → ~16s full smoke)
+- UI: chord grid warnings + Zappa advanced panel
+- Docs: COMPOSER_HANDBOOK_ZAPPA.md + .docx + master index link
+
+**NEXT SESSION ENTRY POINT**
+1. Confirm Z6 ferocity burst/rest contrast on playback in Sibelius
+2. If confirmed: proceed to **5b** — Zappa riff API surface area (`zappaEraPreset` / `zappaPhraseCharacter` / `zappaSymmetryBias` / `zappaChainDepth` — all need new `GenerationMetadata` fields + riff call chain threading + adapter work)
+3. If not confirmed: debug styleMode threading to riff solo path
+
+**REBUILD DESKTOP APP**
+
+PowerShell:
+
+```powershell
+Set-Location "C:\Users\mike\Documents\Cursor AI Projects\creative-engines-fresh\apps\composer-os-desktop"
+npm run desktop:package-no-bump
+Start-Process "release\Composer-OS.exe"
+```
+
 

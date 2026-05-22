@@ -278,7 +278,9 @@ Feedback sustain events export as whole notes with a sustain articulation marker
 | Gap | Status |
 |---|---|
 | Quote/collage generative mode | metadataOnly: true — future phase |
-| zappaStyleMode UI selector (compositional vs ferocity) | planned in UI item 5 |
+| zappaStyleMode UI selector (compositional vs ferocity) | ✅ shipped — Advanced panel, frank_zappa only |
+| zappaEraPreset / zappaPhraseCharacter / zappaSymmetryBias / zappaChainDepth | pending — riff API surface area needed first (5b) |
+| zappaStyleMode riff path wiring | pending — styleMode currently affects duo path only; riff solo adapter does not receive context/metadata |
 | Nile Rodgers deepening receipts | pending |
 | Carlton + Gilmour golden fixture refresh | pending after receipt deepening |
 | Zappa GCE structural fingerprint: Ionian/Lydian mode coverage | not yet scored |
