@@ -2,6 +2,15 @@
  * Songwriter style profiles — planning weights (no prose).
  */
 
+import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
+import type { RiffFamilyTag } from '../riff-generator/riffVrbRegistry';
+import {
+  RIFF_GENERATOR_VRB_IDS,
+  RIFF_VRB_EXPECTED_FAMILY,
+  type RiffGeneratorVrbId,
+} from '../riff-generator/riffVrbRegistry';
+import type { GenerationMetadata } from '../compositionContext';
+import { appendSongModeStyleSurfaceNotes } from './songModeStyleSurface';
 import type { SongwriterRuleId } from './songwritingResearchTypes';
 
 export interface SongwriterStyleProfile {
@@ -1832,6 +1841,222 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
     motifCellSize: 3,
     intervalPreference: 'angular',
   },
+  nile_rodgers: {
+    id: 'nile_rodgers',
+    description: 'Riff VRB — Nile Rodgers funk pocket (Song Mode surface from riffProfile).',
+    lineVsCellEmphasis: 0.22,
+    harmonyColourBias: 0.35,
+    formRegularity: 0.72,
+    prosodyInfluence: 0.2,
+    hookRepetitionBias: 0.88,
+    phraseRegularity: 0.68,
+    hookReturnVariation: 0.12,
+    harmonicSpeed: 0.18,
+    sectionContrast: 0.4,
+    syncopationBias: 0.92,
+    densityBias: 0.78,
+    motifCellSize: 2,
+    intervalPreference: 'pentatonic',
+    primaryMelodicInstrument: 'guitar',
+  },
+  larry_carlton: {
+    id: 'larry_carlton',
+    description: 'Riff VRB — Larry Carlton fusion-funk guitar (Song Mode surface from riffProfile).',
+    lineVsCellEmphasis: 0.55,
+    harmonyColourBias: 0.62,
+    formRegularity: 0.58,
+    prosodyInfluence: 0.22,
+    hookRepetitionBias: 0.62,
+    phraseRegularity: 0.52,
+    hookReturnVariation: 0.45,
+    harmonicSpeed: 0.42,
+    sectionContrast: 0.55,
+    syncopationBias: 0.72,
+    densityBias: 0.62,
+    motifCellSize: 3,
+    intervalPreference: 'mixed',
+    primaryMelodicInstrument: 'guitar',
+  },
+  sly_stone: {
+    id: 'sly_stone',
+    description: 'Riff VRB — Sly Stone funk call-response (Song Mode surface from riffProfile).',
+    lineVsCellEmphasis: 0.28,
+    harmonyColourBias: 0.4,
+    formRegularity: 0.65,
+    prosodyInfluence: 0.35,
+    hookRepetitionBias: 0.82,
+    phraseRegularity: 0.55,
+    hookReturnVariation: 0.28,
+    harmonicSpeed: 0.22,
+    sectionContrast: 0.62,
+    syncopationBias: 0.9,
+    densityBias: 0.8,
+    motifCellSize: 2,
+    intervalPreference: 'pentatonic',
+    primaryMelodicInstrument: 'guitar',
+  },
+  iommi: {
+    id: 'iommi',
+    description: 'Riff VRB — Tony Iommi rock riff cells (Song Mode surface from riffProfile).',
+    lineVsCellEmphasis: 0.35,
+    harmonyColourBias: 0.55,
+    formRegularity: 0.62,
+    prosodyInfluence: 0.15,
+    hookRepetitionBias: 0.85,
+    phraseRegularity: 0.6,
+    hookReturnVariation: 0.18,
+    harmonicSpeed: 0.2,
+    sectionContrast: 0.48,
+    syncopationBias: 0.55,
+    densityBias: 0.72,
+    motifCellSize: 2,
+    intervalPreference: 'pentatonic',
+    primaryMelodicInstrument: 'guitar',
+  },
+  david_gilmour: {
+    id: 'david_gilmour',
+    description: 'Riff VRB — David Gilmour lyrical rock lead (Song Mode surface from riffProfile).',
+    lineVsCellEmphasis: 0.68,
+    harmonyColourBias: 0.58,
+    formRegularity: 0.55,
+    prosodyInfluence: 0.28,
+    hookRepetitionBias: 0.55,
+    phraseRegularity: 0.48,
+    hookReturnVariation: 0.52,
+    harmonicSpeed: 0.35,
+    sectionContrast: 0.58,
+    syncopationBias: 0.42,
+    densityBias: 0.48,
+    motifCellSize: 4,
+    intervalPreference: 'stepwise',
+    primaryMelodicInstrument: 'guitar',
+  },
+  hendrix: {
+    id: 'hendrix',
+    description: 'Riff VRB — Jimi Hendrix blues-rock extroversion (Song Mode surface from riffProfile).',
+    lineVsCellEmphasis: 0.48,
+    harmonyColourBias: 0.72,
+    formRegularity: 0.45,
+    prosodyInfluence: 0.2,
+    hookRepetitionBias: 0.7,
+    phraseRegularity: 0.42,
+    hookReturnVariation: 0.55,
+    harmonicSpeed: 0.38,
+    sectionContrast: 0.72,
+    syncopationBias: 0.68,
+    densityBias: 0.65,
+    motifCellSize: 3,
+    intervalPreference: 'angular',
+    primaryMelodicInstrument: 'guitar',
+  },
+  led_zeppelin: {
+    id: 'led_zeppelin',
+    description: 'Riff VRB — Led Zeppelin blues-rock / modal heavy (Song Mode surface from riffProfile).',
+    lineVsCellEmphasis: 0.42,
+    harmonyColourBias: 0.65,
+    formRegularity: 0.58,
+    prosodyInfluence: 0.18,
+    hookRepetitionBias: 0.78,
+    phraseRegularity: 0.55,
+    hookReturnVariation: 0.35,
+    harmonicSpeed: 0.28,
+    sectionContrast: 0.65,
+    syncopationBias: 0.52,
+    densityBias: 0.68,
+    motifCellSize: 3,
+    intervalPreference: 'modal',
+    primaryMelodicInstrument: 'guitar',
+  },
+  weather_report: {
+    id: 'weather_report',
+    description: 'Riff VRB — Weather Report fusion groove (Song Mode surface from riffProfile).',
+    lineVsCellEmphasis: 0.62,
+    harmonyColourBias: 0.78,
+    formRegularity: 0.48,
+    prosodyInfluence: 0.12,
+    hookRepetitionBias: 0.5,
+    phraseRegularity: 0.45,
+    hookReturnVariation: 0.58,
+    harmonicSpeed: 0.4,
+    sectionContrast: 0.62,
+    syncopationBias: 0.7,
+    densityBias: 0.55,
+    motifCellSize: 4,
+    intervalPreference: 'modal',
+    primaryMelodicInstrument: 'guitar',
+  },
+  mahavishnu: {
+    id: 'mahavishnu',
+    description: 'Riff VRB — Mahavishnu odd-meter fusion (Song Mode surface from riffProfile).',
+    lineVsCellEmphasis: 0.7,
+    harmonyColourBias: 0.82,
+    formRegularity: 0.35,
+    prosodyInfluence: 0.1,
+    hookRepetitionBias: 0.48,
+    phraseRegularity: 0.32,
+    hookReturnVariation: 0.65,
+    harmonicSpeed: 0.55,
+    sectionContrast: 0.78,
+    syncopationBias: 0.75,
+    densityBias: 0.72,
+    motifCellSize: 4,
+    intervalPreference: 'angular',
+    primaryMelodicInstrument: 'guitar',
+  },
+  verlaine: {
+    id: 'verlaine',
+    description: 'Riff VRB — Tom Verlaine art-rock line (Song Mode surface from riffProfile).',
+    lineVsCellEmphasis: 0.75,
+    harmonyColourBias: 0.7,
+    formRegularity: 0.28,
+    prosodyInfluence: 0.3,
+    hookRepetitionBias: 0.42,
+    phraseRegularity: 0.25,
+    hookReturnVariation: 0.72,
+    harmonicSpeed: 0.45,
+    sectionContrast: 0.7,
+    syncopationBias: 0.48,
+    densityBias: 0.42,
+    motifCellSize: 4,
+    intervalPreference: 'chromatic',
+    primaryMelodicInstrument: 'guitar',
+  },
+  morello: {
+    id: 'morello',
+    description: 'Riff VRB — Tom Morello art-rock cells (Song Mode surface from riffProfile).',
+    lineVsCellEmphasis: 0.38,
+    harmonyColourBias: 0.6,
+    formRegularity: 0.55,
+    prosodyInfluence: 0.12,
+    hookRepetitionBias: 0.8,
+    phraseRegularity: 0.58,
+    hookReturnVariation: 0.22,
+    harmonicSpeed: 0.25,
+    sectionContrast: 0.68,
+    syncopationBias: 0.78,
+    densityBias: 0.7,
+    motifCellSize: 2,
+    intervalPreference: 'angular',
+    primaryMelodicInstrument: 'guitar',
+  },
+  fripp: {
+    id: 'fripp',
+    description: 'Riff VRB — Robert Fripp art-rock process cells (Song Mode surface from riffProfile).',
+    lineVsCellEmphasis: 0.8,
+    harmonyColourBias: 0.84,
+    formRegularity: 0.1,
+    prosodyInfluence: 0.18,
+    hookRepetitionBias: 0.35,
+    phraseRegularity: 0.12,
+    hookReturnVariation: 0.85,
+    harmonicSpeed: 0.5,
+    sectionContrast: 0.92,
+    syncopationBias: 0.8,
+    densityBias: 0.68,
+    motifCellSize: 3,
+    intervalPreference: 'angular',
+    primaryMelodicInstrument: 'guitar',
+  },
   /**
    * SQ VRB family (2026-05-12) — planning-weight stubs only. Real grammar
    * lives in `voiceRuleBundles.ts` (BEETHOVEN_LATE / TURTLE_ISLAND /
@@ -2215,8 +2440,30 @@ const ALIASES: Record<string, SongwriterRuleId> = {
   frank_zappa: 'frank_zappa',
   zappa: 'frank_zappa',
   fz: 'frank_zappa',
+  nile_rodgers: 'nile_rodgers',
+  nile: 'nile_rodgers',
+  larry_carlton: 'larry_carlton',
+  carlton: 'larry_carlton',
+  sly_stone: 'sly_stone',
+  sly: 'sly_stone',
+  iommi: 'iommi',
+  tony_iommi: 'iommi',
+  david_gilmour: 'david_gilmour',
+  gilmour: 'david_gilmour',
+  hendrix: 'hendrix',
+  jimi_hendrix: 'hendrix',
+  led_zeppelin: 'led_zeppelin',
+  zeppelin: 'led_zeppelin',
+  jimmy_page: 'led_zeppelin',
+  weather_report: 'weather_report',
+  mahavishnu: 'mahavishnu',
+  verlaine: 'verlaine',
+  tom_verlaine: 'verlaine',
+  morello: 'morello',
+  tom_morello: 'morello',
   fripp_king_crimson: 'fripp_king_crimson',
-  fripp: 'fripp_king_crimson',
+  king_crimson: 'fripp_king_crimson',
+  crimson: 'fripp_king_crimson',
   king_crimson: 'fripp_king_crimson',
   crimson: 'fripp_king_crimson',
   don_sebesky: 'don_sebesky',
@@ -2256,5 +2503,148 @@ const ALIASES: Record<string, SongwriterRuleId> = {
 export function normalizeSongwriterStyleKey(raw: string | undefined | null): SongwriterRuleId | null {
   if (raw == null || raw === '') return null;
   const k = raw.trim().toLowerCase();
+  if ((RIFF_GENERATOR_VRB_IDS as readonly string[]).includes(k)) {
+    return k as SongwriterRuleId;
+  }
   return ALIASES[k] ?? null;
+}
+
+function clamp01(n: number): number {
+  return Math.max(0, Math.min(1, n));
+}
+
+export function isRiffVrbSongwriterId(id: string | undefined | null): id is RiffGeneratorVrbId {
+  return typeof id === 'string' && (RIFF_GENERATOR_VRB_IDS as readonly string[]).includes(id);
+}
+
+export function riffFamilyForSongwriterId(id: string): RiffFamilyTag | null {
+  return isRiffVrbSongwriterId(id) ? RIFF_VRB_EXPECTED_FAMILY[id] : null;
+}
+
+/** Funk-family Song Mode surface nudge (riff VRB path). */
+export function applyFunkStyleSurface(metadata: GenerationMetadata, vrbId: string): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) + 0.1);
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) + 0.08);
+  appendSongModeStyleSurfaceNotes(metadata, [
+    `Riff VRB ${vrbId}: funk-family surface (syncopation + density from riffProfile).`,
+  ]);
+}
+
+/** Rock-family Song Mode surface nudge (riff VRB path). */
+export function applyRockStyleSurface(metadata: GenerationMetadata, vrbId: string): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  metadata.songwriterHookRepetitionBias = clamp01((metadata.songwriterHookRepetitionBias ?? 0.5) + 0.08);
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) + 0.06);
+  appendSongModeStyleSurfaceNotes(metadata, [
+    `Riff VRB ${vrbId}: rock-family surface (hook repetition + density from riffProfile).`,
+  ]);
+}
+
+/** Fusion-family Song Mode surface nudge (riff VRB path). */
+export function applyFusionStyleSurface(metadata: GenerationMetadata, vrbId: string): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  metadata.songwriterHarmonyColourBias = clamp01((metadata.songwriterHarmonyColourBias ?? 0.5) + 0.08);
+  metadata.songwriterSectionContrast = clamp01((metadata.songwriterSectionContrast ?? 0.5) + 0.06);
+  appendSongModeStyleSurfaceNotes(metadata, [
+    `Riff VRB ${vrbId}: fusion-family surface (harmony colour + section contrast from riffProfile).`,
+  ]);
+}
+
+/** Art-rock-family Song Mode surface nudge (riff VRB path). */
+export function applyArtRockStyleSurface(metadata: GenerationMetadata, vrbId: string): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  metadata.songwriterPhraseRegularity = clamp01((metadata.songwriterPhraseRegularity ?? 0.5) - 0.08);
+  metadata.songwriterHookReturnVariation = clamp01((metadata.songwriterHookReturnVariation ?? 0.5) + 0.08);
+  appendSongModeStyleSurfaceNotes(metadata, [
+    `Riff VRB ${vrbId}: art-rock-family surface (irregular phrase + varied hook return from riffProfile).`,
+  ]);
+}
+
+export function applyRiffVrbFamilyStyleSurface(metadata: GenerationMetadata, vrbId: string): void {
+  const family = riffFamilyForSongwriterId(vrbId);
+  if (!family) return;
+  switch (family) {
+    case 'funk':
+      applyFunkStyleSurface(metadata, vrbId);
+      break;
+    case 'rock':
+      applyRockStyleSurface(metadata, vrbId);
+      break;
+    case 'fusion':
+      applyFusionStyleSurface(metadata, vrbId);
+      break;
+    case 'art_rock':
+      applyArtRockStyleSurface(metadata, vrbId);
+      break;
+    default:
+      break;
+  }
+}
+
+export type RockRiffContextMode = 'generic' | 'blues_rock' | 'modal_heavy';
+export type FunkRiffContextMode = 'pocket' | 'syncopated' | 'generic';
+export type FusionRiffContextMode = 'modal_groove' | 'odd_meter' | 'generic';
+export type ArtRockRiffContextMode = 'process_loop' | 'angular_cells' | 'generic';
+
+export function riffContextFieldsForVrb(
+  vrbId: string,
+  opts?: {
+    rockRiffContext?: RockRiffContextMode;
+    funkRiffContext?: FunkRiffContextMode;
+    fusionRiffContext?: FusionRiffContextMode;
+    artRockRiffContext?: ArtRockRiffContextMode;
+  }
+): Partial<GenerationMetadata> {
+  const family = riffFamilyForSongwriterId(vrbId);
+  if (!family) return {};
+  const bundle = getVoiceRuleBundle(vrbId);
+  const base = {
+    riffVrbSongModeActive: true,
+    riffVrbId: vrbId,
+    riffVrbFamily: family,
+  };
+  switch (family) {
+    case 'rock':
+      return {
+        ...base,
+        rockRiffContext: opts?.rockRiffContext ?? 'generic',
+        riffProfileReceipt: bundle.riffProfile ? `${vrbId}: riffProfile wired (rock)` : undefined,
+      } as Partial<GenerationMetadata>;
+    case 'funk':
+      return {
+        ...base,
+        funkRiffContext: opts?.funkRiffContext ?? 'generic',
+        riffProfileReceipt: bundle.riffProfile ? `${vrbId}: riffProfile wired (funk)` : undefined,
+      } as Partial<GenerationMetadata>;
+    case 'fusion':
+      return {
+        ...base,
+        fusionRiffContext: opts?.fusionRiffContext ?? 'generic',
+        riffProfileReceipt: bundle.riffProfile ? `${vrbId}: riffProfile wired (fusion)` : undefined,
+      } as Partial<GenerationMetadata>;
+    case 'art_rock':
+      return {
+        ...base,
+        artRockRiffContext: opts?.artRockRiffContext ?? 'generic',
+        riffProfileReceipt: bundle.riffProfile ? `${vrbId}: riffProfile wired (art_rock)` : undefined,
+      } as Partial<GenerationMetadata>;
+    default:
+      return base as Partial<GenerationMetadata>;
+  }
+}
+
+/** Duo golden path: riff VRB receipt + surface (no Zappa solo merge). */
+export function applyRiffVrbDuoSongwriterBranch(
+  context: import('../compositionContext').CompositionContext,
+  songwriterId: string,
+  isDuoGoldenPath: boolean
+): void {
+  if (!isRiffVrbSongwriterId(songwriterId) || songwriterId === 'frank_zappa') return;
+  if (!isDuoGoldenPath || !context.generationMetadata) return;
+  const rp = getVoiceRuleBundle(songwriterId).riffProfile;
+  if (!rp) return;
+  applyRiffVrbFamilyStyleSurface(context.generationMetadata, songwriterId);
+  (context.generationMetadata as GenerationMetadata & { riffVrbDuoLaneReceipt?: string }).riffVrbDuoLaneReceipt =
+    `Phase E: ${songwriterId} duo lane uses riffProfile posture (no Slonimsky solo merge).`;
 }

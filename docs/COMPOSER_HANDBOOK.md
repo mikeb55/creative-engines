@@ -199,6 +199,28 @@ Known parser behaviour: extended symbol parsing is in place; if a symbol
 produces unexpected output check the [riff-chord] log before assuming
 a VRB profile issue.
 
+### Zappa Solo Generator
+
+Frank Zappa VRB auto-enables a solo overlay on generation.
+No toggle needed — solo is always on when `frank_zappa` is selected.
+
+Solo engine: `riffSoloFromZappaEngine` — uses Slonimsky `FRANK_ZAPPA`
+pattern map, 7/8 rhythmic cell snapping, guide-tone nudges from
+`zappaVoiceLeading`. Separate from duo `zappasoloEngine` lane.
+
+MusicXML export:
+- Guitar part: "Clean Electric Guitar", GM 28
+- Solo part: "Electric Guitar Solo", GM 31
+- Both export as instrument-name "Electric Guitar" for Sibelius compatibility
+
+Chord input: pipe-delimited, up to 32 bars
+Example: `Dm9 | BbMaj7#11 | Eb9sus4 | AbMaj7 | F#m9 | BMaj7 | Gsus2 | Dm9`
+
+Known gaps post-Z5:
+- 15x FZ_* songwriter receipts not yet compiled by riffReceiptCompiler
+- 4x FZ_RIFF_* stub receipts not yet wired
+- Zappa GCE structural fingerprint not yet created
+
 ---
 
 ## Scenario Cookbook

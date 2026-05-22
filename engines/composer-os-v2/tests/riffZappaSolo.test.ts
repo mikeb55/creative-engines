@@ -4,8 +4,28 @@ import {
   compileReceiptsToRiffProfilePatch,
   FRANK_ZAPPA_RESEARCH_RECEIPT_IDS,
 } from '../core/riff-generator/riffReceiptCompiler';
+import {
+  isOnZappaCellBoundary,
+  pitchUsesSlonimskyOutsideChordTones,
+  riffSoloFromZappaEngine,
+  zappa78CellBoundariesIn4_4,
+} from '../core/riff-generator/riffSoloZappaAdapter';
 import { resolveRiffGeneratorProfile } from '../core/riff-generator/resolveRiffGeneratorProfile';
 import { isRiffGeneratorVrbId, resolveRiffFamilyTag } from '../core/riff-generator/riffVrbRegistry';
+import type { RiffSoloGeneratorProfile } from '../core/composer/riffProfileTypes';
+import { confirmRiffPartInstrumentAssignment, resolveRiffAppSoloEnabled } from '../app-api/riffGeneratorApp';
+import { exportScoreModelToMusicXml } from '../core/export/musicxmlExporter';
+import {
+  RIFF_GUITAR_PART_INSTRUMENT_TAG,
+  RIFF_SOLO_PART_INSTRUMENT_TAG,
+  riffPartInstrumentTagsFromScore,
+  scorePartInstrumentTag,
+} from '../core/riff-generator/riffMultiVoiceTypes';
+import { runRiffGenerator } from '../core/riff-generator/runRiffGenerator';
+import {
+  hasSoloGeneratorProfile,
+  riffSoloToggleVisible,
+} from '../ui/riffGeneratorUi';
 
 function testFrankZappaRiffRegistry(): boolean {
   if (!isRiffGeneratorVrbId('frank_zappa')) return false;
@@ -66,10 +86,159 @@ function testSoloPartWhenEnabled(): boolean {
   return notes.length >= 4 && on.generationMetadata.multiVoiceBadges?.solo === true;
 }
 
+function zappaSoloProfile(): RiffSoloGeneratorProfile {
+  const p = getVoiceRuleBundle('frank_zappa').riffProfile?.soloGeneratorProfile;
+  if (!p?.enabled) throw new Error('frank_zappa soloGeneratorProfile missing');
+  return p;
+}
+
+function testZappaAdapterNonEmptyEightBars(): boolean {
+  const profile = zappaSoloProfile();
+  const seed = 42;
+  const chord = 'Am7';
+  let total = 0;
+  for (let b = 0; b < 8; b++) {
+    const line = riffSoloFromZappaEngine(b, chord, profile, seed);
+    if (line.length === 0) return false;
+    total += line.length;
+  }
+  return total >= 8;
+}
+
+function testZappaAdapterCellSnapPerBar(): boolean {
+  const profile = zappaSoloProfile();
+  const seed = 42;
+  const chord = 'Am7';
+  for (let b = 0; b < 8; b++) {
+    const line = riffSoloFromZappaEngine(b, chord, profile, seed);
+    const bounds = zappa78CellBoundariesIn4_4(profile, b, seed);
+    const snapped = line.some((e) => isOnZappaCellBoundary(e.startBeat, bounds));
+    if (!snapped) return false;
+  }
+  return true;
+}
+
+function testZappaAdapterSlonimskyPitchPool(): boolean {
+  const profile = zappaSoloProfile();
+  const seed = 42;
+  const chord = 'Am7';
+  let outside = 0;
+  let total = 0;
+  for (let b = 0; b < 8; b++) {
+    for (const e of riffSoloFromZappaEngine(b, chord, profile, seed)) {
+      total++;
+      if (pitchUsesSlonimskyOutsideChordTones(chord, e.pitch)) outside++;
+    }
+  }
+  return total > 0 && outside > 0;
+}
+
+function testFrankZappaSoloAlwaysEnabledInApp(): boolean {
+  if (!resolveRiffAppSoloEnabled('frank_zappa', false)) return false;
+  if (!resolveRiffAppSoloEnabled('frank_zappa', undefined)) return false;
+  if (resolveRiffAppSoloEnabled('iommi', false)) return false;
+  if (!resolveRiffAppSoloEnabled('iommi', true)) return false;
+  return true;
+}
+
+function testFrankZappaSoloToggleHidden(): boolean {
+  return hasSoloGeneratorProfile('frank_zappa') && !riffSoloToggleVisible('frank_zappa');
+}
+
+function testVrbsWithoutSoloProfileHideToggle(): boolean {
+  for (const id of ['iommi', 'hendrix', 'sly_stone'] as const) {
+    if (hasSoloGeneratorProfile(id)) return false;
+    if (riffSoloToggleVisible(id)) return false;
+  }
+  return true;
+}
+
+function testZappaRiffPartInstrumentTags(): boolean {
+  const profile = resolveRiffGeneratorProfile({
+    vrbId: 'frank_zappa',
+    style: 'neutral',
+    grid: 'eighth',
+    density: 'medium',
+  });
+  const built = buildRiffScoreModel({
+    seed: 42,
+    bars: 4,
+    density: 'medium',
+    style: 'neutral',
+    grid: 'eighth',
+    lineMode: 'single_line',
+    bassEnabled: false,
+    soloEnabled: true,
+    vrbId: 'frank_zappa',
+    chordSymbols: ['Am7'],
+    riffProfile: profile,
+    bpm: 100,
+  });
+  const tags = riffPartInstrumentTagsFromScore(built.score);
+  if (!tags || tags.guitar !== RIFF_GUITAR_PART_INSTRUMENT_TAG) return false;
+  if (tags.solo !== RIFF_SOLO_PART_INSTRUMENT_TAG) return false;
+  const g = built.score.parts.find((p) => p.id === 'guitar');
+  const s = built.score.parts.find((p) => p.id === 'solo');
+  if (!g || !s) return false;
+  if (scorePartInstrumentTag(g) !== RIFF_GUITAR_PART_INSTRUMENT_TAG) return false;
+  if (scorePartInstrumentTag(s) !== RIFF_SOLO_PART_INSTRUMENT_TAG) return false;
+  for (const p of built.score.parts) {
+    if (p.id === 'horns' || p.id === 'bass') {
+      if (scorePartInstrumentTag(p) != null) return false;
+    }
+  }
+  const confirm = confirmRiffPartInstrumentAssignment(built.score);
+  return confirm.ok && confirm.soloTag === RIFF_SOLO_PART_INSTRUMENT_TAG;
+}
+
+function testZappaRiffMusicXmlInstrumentNames(): boolean {
+  const gen = runRiffGenerator(42, {
+    vrbId: 'frank_zappa',
+    bars: 4,
+    density: 'medium',
+    style: 'neutral',
+    grid: 'eighth',
+    lineMode: 'single_line',
+    bassEnabled: false,
+    soloEnabled: true,
+    bpm: 100,
+    chordSymbols: ['Am7', 'D7', 'G7', 'C7'],
+  });
+  if (!gen.success || !gen.xml) return false;
+  const xml = gen.xml;
+  const guitarBlock = xml.match(/<score-part id="guitar">[\s\S]*?<\/score-part>/)?.[0] ?? '';
+  const soloBlock = xml.match(/<score-part id="solo">[\s\S]*?<\/score-part>/)?.[0] ?? '';
+  if (!guitarBlock || !soloBlock) return false;
+  if (!xml.includes('<part-name>Clean Electric Guitar</part-name>')) return false;
+  if (!xml.includes('<part-name>Electric Guitar Solo</part-name>')) return false;
+  if (!guitarBlock.includes('<midi-program>28</midi-program>')) return false;
+  if (!soloBlock.includes('<midi-program>31</midi-program>')) return false;
+  if (!guitarBlock.includes('<instrument-name>Electric Guitar</instrument-name>')) return false;
+  if (!soloBlock.includes('<instrument-name>Electric Guitar</instrument-name>')) return false;
+  if (guitarBlock.includes('<sound id=')) return false;
+  if (soloBlock.includes('<sound id=')) return false;
+  if (!guitarBlock.includes('strings.guitar.electric')) return false;
+  if (!soloBlock.includes('strings.guitar.electric.distortion')) return false;
+  if (!guitarBlock.includes('<score-instrument id="P1-I1">')) return false;
+  if (!soloBlock.includes('<score-instrument id="P2-I1">')) return false;
+  if (!guitarBlock.includes('<midi-channel>1</midi-channel>')) return false;
+  if (!soloBlock.includes('<midi-channel>2</midi-channel>')) return false;
+  const exp = exportScoreModelToMusicXml(gen.score);
+  return exp.success === true && !!exp.xml;
+}
+
 export function runRiffZappaSoloTests(): { name: string; ok: boolean }[] {
   return [
     ['Riff Zappa — frank_zappa VRB registry + solo profile', testFrankZappaRiffRegistry],
     ['Riff Zappa — research receipts compile to soloGeneratorProfile', testZappaResearchReceiptCompile],
     ['Riff Zappa — solo MIDI part when riffSolo enabled', testSoloPartWhenEnabled],
+    ['Riff Zappa — adapter non-empty SoloEvent[] seed 42 / 8 bars / Am7', testZappaAdapterNonEmptyEightBars],
+    ['Riff Zappa — ≥1 event per bar on 7/8 cell boundary', testZappaAdapterCellSnapPerBar],
+    ['Riff Zappa — pitch pool uses Slonimsky outside chord tones', testZappaAdapterSlonimskyPitchPool],
+    ['Riff Zappa — app forces soloEnabled for frank_zappa', testFrankZappaSoloAlwaysEnabledInApp],
+    ['Riff Zappa — frank_zappa: solo toggle hidden (always on)', testFrankZappaSoloToggleHidden],
+    ['Riff Zappa — iommi/hendrix/sly_stone: no solo profile, toggle hidden', testVrbsWithoutSoloProfileHideToggle],
+    ['Riff Zappa — solo part instrument = overdrivenGuitar', testZappaRiffPartInstrumentTags],
+    ['Riff Zappa — guitar cleanGuitar + solo in MusicXML', testZappaRiffMusicXmlInstrumentNames],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }

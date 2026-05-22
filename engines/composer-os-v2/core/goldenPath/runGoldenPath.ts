@@ -173,6 +173,16 @@ import {
   applyGrooveSoulStyleSurface,
   applySophisticatedPopStyleSurface,
 } from '../song-mode/songModeStyleSurface';
+import {
+  applyRiffVrbFamilyStyleSurface,
+  isRiffVrbSongwriterId,
+  riffContextFieldsForVrb,
+  type ArtRockRiffContextMode,
+  type FunkRiffContextMode,
+  type FusionRiffContextMode,
+  type RockRiffContextMode,
+} from '../song-mode/songwriterStyleProfiles';
+import { riffVrbSigmaCeiling } from '../song-mode/songwriterRuleRegistry';
 import { chromaticStrengthToOutsideLevel } from '../slonimsky/slonimskyPatternService';
 import { applySophisticatedPopHarmonyDressing } from '../song-mode/sophisticatedPopHarmonyDressing';
 import { applyBacharachSongModeHarmonyDressing } from '../song-mode/bacharachHarmonyDressing';
@@ -1205,6 +1215,14 @@ export interface RunGoldenPathOptions {
   frippPolymeterSecondaryPreset?: string;
   /** Song Mode / Frank Zappa: harmony vocabulary + density arc mode (`frankZappaSlice`). Default **`avant_rock`** when omitted. */
   frankZappaContext?: FrankZappaContextMode;
+  /** Phase E — riff rock VRBs (`iommi`, `hendrix`, `led_zeppelin`, `david_gilmour`, …). */
+  rockRiffContext?: RockRiffContextMode;
+  /** Phase E — riff funk VRBs (`nile_rodgers`, `sly_stone`, `larry_carlton`, `james_brown`). */
+  funkRiffContext?: FunkRiffContextMode;
+  /** Phase E — riff fusion VRBs (`weather_report`, `mahavishnu`). */
+  fusionRiffContext?: FusionRiffContextMode;
+  /** Phase E — riff art-rock VRBs (`verlaine`, `morello`, `fripp`). */
+  artRockRiffContext?: ArtRockRiffContextMode;
   /** Song Mode / Miles Davis: modal vs quintet vs electric posture (`milesDavisSlice.ts`). Default **`modal_1959`** when omitted. */
   milesDavisContext?: MilesDavisContextMode;
   /** Song Mode / Bartók: Mikrókosmos vs quartet vs orchestral strings (`bartokSlice.ts`). Default **`mikrokosmos`** when omitted. */
@@ -1876,6 +1894,17 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'frank_zappa'
         ? { frankZappaContext: options.frankZappaContext ?? 'avant_rock' }
         : {}),
+      ...(() => {
+        const riffPk = normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '');
+        return riffPk && isRiffVrbSongwriterId(riffPk)
+          ? riffContextFieldsForVrb(riffPk, {
+              rockRiffContext: options.rockRiffContext,
+              funkRiffContext: options.funkRiffContext,
+              fusionRiffContext: options.fusionRiffContext,
+              artRockRiffContext: options.artRockRiffContext,
+            })
+          : {};
+      })(),
       ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'miles_davis'
         ? { milesDavisContext: options.milesDavisContext ?? 'modal_1959' }
         : {}),
@@ -2080,6 +2109,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       options.primarySongwriterStyle,
       options.totalBars ?? context.form.totalBars
     );
+  }
+  if (options?.songModeHookFirstIdentity && context.generationMetadata) {
+    const riffPk = normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '');
+    if (riffPk && isRiffVrbSongwriterId(riffPk)) {
+      applyRiffVrbFamilyStyleSurface(context.generationMetadata, riffPk);
+    }
   }
   if (options?.songModeHookFirstIdentity) {
     applyMonkStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
@@ -2666,7 +2701,11 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     errors.push(...truthReport.errors);
   }
 
-  const zappaShareableRelax = appliedContext.generationMetadata?.songwriterStyleId === 'frank_zappa';
+  const primarySw = appliedContext.generationMetadata?.songwriterStyleId ?? '';
+  const riffSigma = riffVrbSigmaCeiling(primarySw);
+  const zappaShareableRelax =
+    appliedContext.generationMetadata?.songwriterStyleId === 'frank_zappa' ||
+    (riffSigma != null && riffSigma >= 28);
   /** Frank Zappa intentionally breaks phrase/motif conventions; duo LOCK swing/polish heuristics are jazz-pop biased — do not penalize release readiness for stylistic warnings. Warnings still appear on the manifest. */
   const phraseBehaviourWarningCountForGate = zappaShareableRelax ? 0 : songModePhraseWarnings.length;
 

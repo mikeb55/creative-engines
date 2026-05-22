@@ -4,7 +4,9 @@
  */
 
 import type { SongwriterRuleId } from './songwritingResearchTypes';
-import { normalizeSongwriterStyleKey } from './songwriterStyleProfiles';
+import { isRiffVrbSongwriterId, normalizeSongwriterStyleKey } from './songwriterStyleProfiles';
+import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
+import type { RiffProfile } from '../composer/riffProfileTypes';
 
 /** Primary instrument association for Song Mode menu writers (planning / receipts). */
 export type SongwriterPrimaryInstrumentKind = 'keys' | 'guitar' | 'ensemble' | 'other';
@@ -129,6 +131,18 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   viennese_waltz: 'ensemble',
   jewish_klezmer: 'ensemble',
   frank_zappa: 'keys',
+  nile_rodgers: 'guitar',
+  larry_carlton: 'guitar',
+  sly_stone: 'guitar',
+  iommi: 'guitar',
+  david_gilmour: 'guitar',
+  hendrix: 'guitar',
+  led_zeppelin: 'guitar',
+  weather_report: 'guitar',
+  mahavishnu: 'guitar',
+  verlaine: 'guitar',
+  morello: 'guitar',
+  fripp: 'guitar',
   fripp_king_crimson: 'guitar',
   john_coltrane: 'keys',
   jim_hall: 'guitar',
@@ -415,6 +429,30 @@ const JONI_ACOUSTIC_COMP: SongwriterCompProfile = {
   ],
 };
 
+function densityClassFromRiffProfile(rp: RiffProfile | undefined): string {
+  const sc = rp?.silencePolicy?.styleClass ?? 'medium';
+  if (/sparse|light/i.test(sc)) return 'sparse';
+  if (/dense|busy|heavy/i.test(sc)) return 'dense';
+  return 'medium';
+}
+
+function riffVrbGuitarCompProfile(id: SongwriterRuleId): SongwriterCompProfile {
+  const rp = getVoiceRuleBundle(id).riffProfile;
+  const density = densityClassFromRiffProfile(rp);
+  const scaleKeys = rp?.scalePool ? Object.keys(rp.scalePool).slice(0, 4).join(', ') : 'chart pool';
+  return {
+    id,
+    primaryCompInstrument: 'guitar',
+    voicingBias: ['riff_cell_guitar', 'power_interval_bias'],
+    registerBias: 'mid',
+    rhythmicFeel: ['riff_subdivision_grid'],
+    smallMovementRules: ['phrase_cell_persistence'],
+    receiptLines: [
+      `Song Mode riff VRB ${id}: guitar-led comp from riffProfile (density ${density}; scale pool ${scaleKeys}). Not an imitation of any artist.`,
+    ],
+  };
+}
+
 function genericKeysCompProfile(id: SongwriterRuleId): SongwriterCompProfile {
   return {
     id,
@@ -437,6 +475,7 @@ export function getSongwriterCompProfile(raw: string | undefined | null): Songwr
   const id = normalizeSongwriterStyleKey(raw ?? '');
   if (!id) return null;
   if (id === 'joni_mitchell') return JONI_ACOUSTIC_COMP;
+  if (isRiffVrbSongwriterId(id) && id !== 'frank_zappa') return riffVrbGuitarCompProfile(id);
   if (!isKeyboardCentricSongwriter(id)) return null;
   switch (id) {
     case 'donald_fagen':

@@ -2,6 +2,13 @@
  * Songwriting rule registry (research-aligned ids; short labels only).
  */
 
+import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
+import {
+  RIFF_GENERATOR_VRB_IDS,
+  RIFF_VRB_SIGMA_CEILINGS,
+  isRiffGeneratorVrbId,
+  type RiffGeneratorVrbId,
+} from '../riff-generator/riffVrbRegistry';
 import type {
   AuthorRuleId,
   ClassicalSongRuleId,
@@ -1221,6 +1228,64 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
   ],
 };
 
+/** Phase E — riff VRB rule families (additive; σ receipt + cloned family rules). */
+function wireRiffVrbSongwriterRules(): void {
+  const rules = songwriterRules as Record<string, SongwritingRuleEntry[]>;
+  const jb = songwriterRules.james_brown;
+  const prince = songwriterRules.prince;
+  const metheny = songwriterRules.pat_metheny;
+  const fripp = songwriterRules.fripp_king_crimson;
+  rules.nile_rodgers = [
+    R('riff.nile_rodgers.sigma', 'Riff VRB σ22 — funk pocket (reuses james_brown rule family)', 'songwriter', 'rhythm', 8, 'global'),
+    ...jb,
+  ];
+  rules.larry_carlton = [
+    R('riff.larry_carlton.sigma', 'Riff VRB σ24 — fusion-funk guitar (reuses james_brown rule family)', 'songwriter', 'rhythm', 8, 'global'),
+    ...jb,
+  ];
+  rules.sly_stone = [
+    R('riff.sly_stone.sigma', 'Riff VRB σ24 — Sly call-response (reuses james_brown rule family)', 'songwriter', 'rhythm', 8, 'global'),
+    ...jb,
+  ];
+  rules.iommi = [
+    R('riff.iommi.sigma', 'Riff VRB σ26 — rock riff cells (reuses prince rule family)', 'songwriter', 'rhythm', 8, 'global'),
+    ...prince,
+  ];
+  rules.david_gilmour = [
+    R('riff.david_gilmour.sigma', 'Riff VRB σ26 — lyrical rock (reuses prince rule family)', 'songwriter', 'melody', 8, 'global'),
+    ...prince,
+  ];
+  rules.hendrix = [
+    R('riff.hendrix.sigma', 'Riff VRB σ28 — blues-rock (reuses prince rule family)', 'songwriter', 'harmony', 8, 'global'),
+    ...prince,
+  ];
+  rules.led_zeppelin = [
+    R('riff.led_zeppelin.sigma', 'Riff VRB σ27 — Zeppelin modes (reuses prince rule family)', 'songwriter', 'harmony', 8, 'global'),
+    ...prince,
+  ];
+  rules.weather_report = [
+    R('riff.weather_report.sigma', 'Riff VRB σ30 — fusion groove (reuses pat_metheny rule family)', 'songwriter', 'harmony', 8, 'global'),
+    ...metheny,
+  ];
+  rules.mahavishnu = [
+    R('riff.mahavishnu.sigma', 'Riff VRB σ32 — odd-meter fusion (reuses pat_metheny rule family)', 'songwriter', 'harmony', 9, 'global'),
+    ...metheny,
+  ];
+  rules.verlaine = [
+    R('riff.verlaine.sigma', 'Riff VRB σ25 — art-rock line (reuses fripp_king_crimson rule family)', 'songwriter', 'melody', 8, 'global'),
+    ...fripp,
+  ];
+  rules.morello = [
+    R('riff.morello.sigma', 'Riff VRB σ25 — kill-switch cells (reuses fripp_king_crimson rule family)', 'songwriter', 'rhythm', 8, 'global'),
+    ...fripp,
+  ];
+  rules.fripp = [
+    R('riff.fripp.sigma', 'Riff VRB σ27 — Fripp process (reuses fripp_king_crimson rule family)', 'songwriter', 'rhythm', 8, 'global'),
+    ...fripp,
+  ];
+}
+wireRiffVrbSongwriterRules();
+
 const authorRules: Record<AuthorRuleId, SongwritingRuleEntry[]> = {
   jimmy_webb: [
     R('webb.motif_reuse', 'Motif reuse across sections', 'author', 'hook', 8, 'form'),
@@ -1285,6 +1350,24 @@ export const SONGWRITER_RULE_REGISTRY: SongwritingRuleRegistryShape = {
   classicalSongRules,
   foundationalRules,
 };
+
+/** Riff-generator VRB σ ceiling (stub bundle); undefined when not on riff registry. */
+export function riffVrbSigmaCeiling(vrbId: string): number | undefined {
+  if (!isRiffGeneratorVrbId(vrbId)) return undefined;
+  const fromRegistry = RIFF_VRB_SIGMA_CEILINGS[vrbId];
+  if (fromRegistry != null) return fromRegistry;
+  const bundleSigma = getVoiceRuleBundle(vrbId).sigma;
+  return typeof bundleSigma === 'number' ? bundleSigma : undefined;
+}
+
+export function riffVrbSigmaCeilingUnchanged(): boolean {
+  for (const id of RIFF_GENERATOR_VRB_IDS) {
+    const expected = RIFF_VRB_SIGMA_CEILINGS[id as RiffGeneratorVrbId];
+    if (expected == null) continue;
+    if (riffVrbSigmaCeiling(id) !== expected) return false;
+  }
+  return true;
+}
 
 export function allRegistryRuleIds(): string[] {
   const ids: string[] = [];

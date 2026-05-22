@@ -3,6 +3,7 @@
  */
 
 import { getVoiceRuleBundle } from '../core/composer/voiceRuleBundles';
+import { resolveRiffGeneratorProfile } from '../core/riff-generator/resolveRiffGeneratorProfile';
 import {
   RIFF_VRB_EXPECTED_FAMILY,
   resolveRiffFamilyTag,
@@ -94,6 +95,22 @@ const RIFF_VRB_CATALOG: readonly Omit<RiffVrbOption, 'sigma'>[] = [
 /** Families that may show the riff-path solo overlay toggle. */
 export function riffFamilyAllowsSoloOverlay(family: RiffFamilyTag): boolean {
   return family === 'fusion' || family === 'art_rock' || family === 'rock' || family === 'funk';
+}
+
+/** Resolved riff profile has a `soloGeneratorProfile` block (any VRB). */
+export function hasSoloGeneratorProfile(vrbId: string): boolean {
+  const profile = resolveRiffGeneratorProfile({
+    vrbId,
+    style: 'neutral',
+    grid: 'eighth',
+    density: 'medium',
+  });
+  return profile.soloGeneratorProfile != null;
+}
+
+/** Solo checkbox visible: profile has solo lane and not auto-on Zappa. */
+export function riffSoloToggleVisible(vrbId: string): boolean {
+  return hasSoloGeneratorProfile(vrbId) && vrbId !== 'frank_zappa';
 }
 
 function sigmaForVrb(vrbId: string): number | undefined {

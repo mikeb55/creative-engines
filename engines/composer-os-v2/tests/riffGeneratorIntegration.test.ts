@@ -17,6 +17,13 @@ import {
   riffProfileIsComplete,
 } from '../core/riff-generator/riffVrbRegistry';
 import { getVoiceRuleBundle } from '../core/composer/voiceRuleBundles';
+import { LINE_FIRST_DUO_ENGINE_VRB_ID_SET } from '../core/goldenPath/lineFirstDuoEngineVrbIds';
+import { SONGWRITER_RULE_REGISTRY, riffVrbSigmaCeiling, riffVrbSigmaCeilingUnchanged } from '../core/song-mode/songwriterRuleRegistry';
+import {
+  SONGWRITER_STYLE_PROFILES,
+  normalizeSongwriterStyleKey,
+} from '../core/song-mode/songwriterStyleProfiles';
+import { RIFF_VRB_SIGMA_CEILINGS } from '../core/riff-generator/riffVrbRegistry';
 
 function testRiffGeneratorFamilyTagResolution(): boolean {
   for (const id of RIFF_GENERATOR_VRB_IDS) {
@@ -126,6 +133,20 @@ function testRiffVrbBlendCrossFamilyWarn(): boolean {
   );
 }
 
+function testRiffVrbSongModeIntegration(): boolean {
+  for (const id of RIFF_GENERATOR_VRB_IDS) {
+    const pk = normalizeSongwriterStyleKey(id);
+    if (pk !== id) return false;
+    if (!SONGWRITER_STYLE_PROFILES[pk]) return false;
+    const rules = (SONGWRITER_RULE_REGISTRY.songwriterRules as Record<string, unknown>)[id];
+    if (!rules || !Array.isArray(rules) || rules.length < 1) return false;
+    if (!LINE_FIRST_DUO_ENGINE_VRB_ID_SET.has(id)) return false;
+    const expected = RIFF_VRB_SIGMA_CEILINGS[id];
+    if (expected != null && riffVrbSigmaCeiling(id) !== expected) return false;
+  }
+  return riffVrbSigmaCeilingUnchanged();
+}
+
 export function runRiffGeneratorIntegrationTests(): { name: string; ok: boolean }[] {
   return [
     ['RiffGenerator — family tag resolution (14 VRBs)', testRiffGeneratorFamilyTagResolution],
@@ -134,5 +155,6 @@ export function runRiffGeneratorIntegrationTests(): { name: string; ok: boolean 
     ['RiffGenerator — boundary swing ramp by family', testRiffBoundarySwingRampByFamily],
     ['RiffGenerator — VRB blend same family', testRiffVrbBlendSameFamily],
     ['RiffGenerator — VRB blend cross-family warn', testRiffVrbBlendCrossFamilyWarn],
+    ['RiffGenerator — Phase E song mode + duo integration (14 VRBs)', testRiffVrbSongModeIntegration],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }

@@ -57,7 +57,8 @@ export function buildRiffScoreModel(params: RiffGeneratorParams): BuiltRiffScore
     params.soloEnabled === true,
     params.bars,
     chords,
-    params.seed
+    params.seed,
+    params.vrbId
   );
 
   const guitarMeasures = measuresFromChordLoop(chords);

@@ -12,6 +12,18 @@ export const LINE_FIRST_DUO_PRIORITY3_COLOUR_VRB_IDS = [
   'fripp_king_crimson',
   'james_brown',
   'messiaen',
+  'nile_rodgers',
+  'larry_carlton',
+  'sly_stone',
+  'iommi',
+  'david_gilmour',
+  'hendrix',
+  'led_zeppelin',
+  'weather_report',
+  'mahavishnu',
+  'verlaine',
+  'morello',
+  'fripp',
 ] as const;
 
 export const LINE_FIRST_DUO_PRIORITY3_COLOUR_VRB_ID_SET = new Set<string>(LINE_FIRST_DUO_PRIORITY3_COLOUR_VRB_IDS);

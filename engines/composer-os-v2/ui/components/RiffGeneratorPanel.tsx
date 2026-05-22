@@ -12,8 +12,9 @@ import {
   RIFF_FAMILY_OPTIONS,
   RIFF_ODD_METER_NONE,
   RIFF_ODD_METER_PRESETS,
-  riffFamilyAllowsSoloOverlay,
+  hasSoloGeneratorProfile,
   riffFamilyShowsMeterPicker,
+  riffSoloToggleVisible,
   riffVrbOptionById,
   riffVrbOptionsForFamily,
   riffVrbUiIndicators,
@@ -130,7 +131,8 @@ export function RiffGeneratorPanel({
   const showMeter = riffFamilyShowsMeterPicker(family);
   const vrbUi = useMemo(() => riffVrbUiIndicators(vrbId), [vrbId]);
   const barIndex = RIFF_BAR_STEP_VALUES.indexOf(bars);
-  const showSoloToggle = riffFamilyAllowsSoloOverlay(family);
+  const showSoloToggle = riffSoloToggleVisible(vrbId);
+  const zappaSoloAlwaysOn = vrbId === 'frank_zappa' && hasSoloGeneratorProfile(vrbId);
 
   const multiVoiceBadges = useMemo(() => {
     if (riffGenerationMetadata?.multiVoiceBadges) return riffGenerationMetadata.multiVoiceBadges;
@@ -146,9 +148,20 @@ export function RiffGeneratorPanel({
     const bassInterlock = !!profile.bassContourPolicy && riffBass;
     const fxMarkers =
       !!buildFxMarkerTrack(profile) && /led_zeppelin|zeppelin|jimmy_page|page/.test(vrbId);
-    const solo = !!profile.soloGeneratorProfile?.enabled && riffSolo;
+    const solo =
+      !!profile.soloGeneratorProfile?.enabled && (zappaSoloAlwaysOn || riffSolo);
     return { horns, bassInterlock, fxMarkers, solo };
-  }, [riffGenerationMetadata, riffProfilePreview, vrbId, bars, riffGrid, density, riffBass, riffSolo]);
+  }, [
+    riffGenerationMetadata,
+    riffProfilePreview,
+    vrbId,
+    bars,
+    riffGrid,
+    density,
+    riffBass,
+    riffSolo,
+    zappaSoloAlwaysOn,
+  ]);
 
   const barPartIndicators = riffGenerationMetadata?.barPartIndicators;
 
@@ -184,7 +197,11 @@ export function RiffGeneratorPanel({
             style={{ ...controlStyle, minWidth: 168 }}
             value={vrbId}
             disabled={loading}
-            onChange={(e) => onVrbIdChange(e.target.value)}
+            onChange={(e) => {
+              const next = e.target.value;
+              onVrbIdChange(next);
+              if (next === 'frank_zappa') onRiffSoloChange(true);
+            }}
             title={selectedVrb?.sigma != null ? `σ ${selectedVrb.sigma}` : undefined}
           >
             {vrbOptions.map((o) => (
@@ -346,7 +363,7 @@ export function RiffGeneratorPanel({
               )
             }
           />
-          Solo overlay (separate lead part) — Frank Zappa VRB
+          Solo overlay (separate lead part)
         </label>
       ) : null}
 

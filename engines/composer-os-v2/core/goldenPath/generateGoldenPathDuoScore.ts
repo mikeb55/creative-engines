@@ -13,6 +13,17 @@ declare module '../compositionContext' {
     /** Wayne `buildPhrase` rhythm cells for phrase A (duration@beat), return nudge duration bias. */
     waynePhraseAFingerprint?: string[];
   }
+  interface GenerationMetadata {
+    riffVrbSongModeActive?: boolean;
+    riffVrbId?: string;
+    riffVrbFamily?: string;
+    rockRiffContext?: string;
+    funkRiffContext?: string;
+    fusionRiffContext?: string;
+    artRockRiffContext?: string;
+    riffProfileReceipt?: string;
+    riffVrbDuoLaneReceipt?: string;
+  }
 }
 import { chordTonesForChordSymbolWithContext, shouldUseUserChordSemanticsForTones } from '../harmony/harmonyChordTonePolicy';
 import { assertGuitarScoreMatchesHarmonyContext } from '../harmony/harmonyContext';
@@ -504,7 +515,11 @@ import { applyIndieArtPopPhaseADeepening } from '../song-mode/indieArtPopPhaseA'
 import { applySongModeStyleEngineToScore } from '../song-mode/songModeStyleEngine';
 import { getSonicYouthTextureStateAtBar } from '../song-mode/sonicYouthSlice';
 import { normalizeStyleProfileId } from '../song-mode/songModeStyleProfile';
-import { normalizeSongwriterStyleKey } from '../song-mode/songwriterStyleProfiles';
+import {
+  applyRiffVrbDuoSongwriterBranch,
+  isRiffVrbSongwriterId,
+  normalizeSongwriterStyleKey,
+} from '../song-mode/songwriterStyleProfiles';
 import {
   buildExportPartTransposeSemitonesFromResolvedAlternateTuning,
   formatAlternateGuitarTuningExportLine,
@@ -2681,6 +2696,13 @@ function buildGuitarPart(
   }
   if (isSongwriterFrankZappa && isDuoGoldenPath) {
     attachFrankZappaHarmonyContext(context);
+  }
+  if (
+    isRiffVrbSongwriterId(genMeta?.songwriterStyleId ?? '') &&
+    genMeta?.songwriterStyleId !== 'frank_zappa' &&
+    isDuoGoldenPath
+  ) {
+    applyRiffVrbDuoSongwriterBranch(context, genMeta!.songwriterStyleId!, true);
   }
   if (isSongwriterBarryHarris && isDuoGoldenPath) {
     precomputeBarryHarrisEffectiveHarmonyBars(context);

@@ -71,7 +71,76 @@ function isSongModeKeysCompPianoPart(p: PartModel): boolean {
   return p.name === 'Piano' || p.name === 'Acoustic Grand Piano';
 }
 
+/** Riff generator rhythm guitar — clean electric (part id `guitar`, riff score model names). */
+function isRiffCleanGuitarPart(p: PartModel): boolean {
+  return (
+    p.id === 'guitar' &&
+    p.instrumentIdentity === 'clean_electric_guitar' &&
+    p.name === 'Clean Electric Guitar'
+  );
+}
+
+/** Riff generator Zappa solo lane — overdriven / distortion electric (part id `solo`). */
+function isRiffOverdrivenSoloPart(p: PartModel): boolean {
+  return p.id === 'solo' && p.instrumentIdentity === 'electric_guitar_solo';
+}
+
+/** Sibelius part-list score-instrument ids for riff guitar lanes (P1 rhythm, P2 solo). */
+const RIFF_CLEAN_GUITAR_SCORE_INSTRUMENT_ID = 'P1-I1';
+const RIFF_SOLO_SCORE_INSTRUMENT_ID = 'P2-I1';
+const RIFF_CLEAN_GUITAR_SOUND_ID = 'strings.guitar.electric';
+const RIFF_SOLO_GUITAR_SOUND_ID = 'strings.guitar.electric.distortion';
+/** GM 1-indexed MusicXML midi-program (GM 0-based + 1). */
+const RIFF_CLEAN_GUITAR_MIDI_PROGRAM_XML = 28;
+const RIFF_SOLO_GUITAR_MIDI_PROGRAM_XML = 31;
+
+function riffScoreInstrumentIdForPart(p: PartModel): string | null {
+  if (isRiffCleanGuitarPart(p)) return RIFF_CLEAN_GUITAR_SCORE_INSTRUMENT_ID;
+  if (isRiffOverdrivenSoloPart(p)) return RIFF_SOLO_SCORE_INSTRUMENT_ID;
+  return null;
+}
+
+function riffCleanGuitarScorePartXml(p: PartModel): string {
+  const display = partDisplayNameForExport(p);
+  const abbrev = PART_ABBREV[p.id] ?? '';
+  const partAbbrevXml = abbrev ? `\n      <part-abbreviation>${escapeXml(abbrev)}</part-abbreviation>` : '';
+  return `    <score-part id="${p.id}">
+      <part-name>${escapeXml(display)}</part-name>${partAbbrevXml}
+      <score-instrument id="${RIFF_CLEAN_GUITAR_SCORE_INSTRUMENT_ID}">
+        <instrument-name>Electric Guitar</instrument-name>
+        <instrument-sound>${RIFF_CLEAN_GUITAR_SOUND_ID}</instrument-sound>
+      </score-instrument>
+      <midi-instrument id="${RIFF_CLEAN_GUITAR_SCORE_INSTRUMENT_ID}">
+        <midi-channel>1</midi-channel>
+        <midi-program>${RIFF_CLEAN_GUITAR_MIDI_PROGRAM_XML}</midi-program>
+        <volume>80</volume>
+        <pan>0</pan>
+      </midi-instrument>
+    </score-part>`;
+}
+
+function riffSoloGuitarScorePartXml(p: PartModel): string {
+  const display = partDisplayNameForExport(p);
+  const abbrev = PART_ABBREV[p.id] ?? '';
+  const partAbbrevXml = abbrev ? `\n      <part-abbreviation>${escapeXml(abbrev)}</part-abbreviation>` : '';
+  return `    <score-part id="${p.id}">
+      <part-name>${escapeXml(display)}</part-name>${partAbbrevXml}
+      <score-instrument id="${RIFF_SOLO_SCORE_INSTRUMENT_ID}">
+        <instrument-name>Electric Guitar</instrument-name>
+        <instrument-sound>${RIFF_SOLO_GUITAR_SOUND_ID}</instrument-sound>
+      </score-instrument>
+      <midi-instrument id="${RIFF_SOLO_SCORE_INSTRUMENT_ID}">
+        <midi-channel>2</midi-channel>
+        <midi-program>${RIFF_SOLO_GUITAR_MIDI_PROGRAM_XML}</midi-program>
+        <volume>85</volume>
+        <pan>0</pan>
+      </midi-instrument>
+    </score-part>`;
+}
+
 function partDisplayNameForExport(p: PartModel): string {
+  if (isRiffCleanGuitarPart(p)) return 'Clean Electric Guitar';
+  if (isRiffOverdrivenSoloPart(p)) return 'Electric Guitar Solo';
   if (p.instrumentIdentity === 'acoustic_upright_bass') {
     // Big Band bass uses p.name ('Double Bass');
     // Guitar-Bass Duo uses the duo constant ('Upright Bass')
@@ -93,6 +162,12 @@ function instrumentSoundXmlForPart(p: PartModel): string {
   }
   if (isBigBandPianoPart(p) || isStringQuartetPianoPart(p) || isSongModeKeysCompPianoPart(p)) {
     return '<instrument-sound>keyboard.piano</instrument-sound>';
+  }
+  if (isRiffCleanGuitarPart(p)) {
+    return `<instrument-sound>${RIFF_CLEAN_GUITAR_SOUND_ID}</instrument-sound>`;
+  }
+  if (isRiffOverdrivenSoloPart(p)) {
+    return `<instrument-sound>${RIFF_SOLO_GUITAR_SOUND_ID}</instrument-sound>`;
   }
   return '';
 }
@@ -118,6 +193,7 @@ const PART_ABBREV: Record<string, string> = {
   sq_piano: 'Pno.',
   guitar: 'Gtr.',
   bass: 'Bas.',
+  solo: 'Solo',
   zappa_solo: 'Elec.',
 };
 
@@ -496,7 +572,7 @@ function bigBandDrumsEventsToXml(
   measureCapacity: number
 ): string {
   const partId = part.id;
-  const instId = `${part.id}-I1`;
+  const instId = riffScoreInstrumentIdForPart(part) ?? `${part.id}-I1`;
   let raw = measure.events.filter((e) => e.kind === 'note' || e.kind === 'rest');
   const byVoice = new Map<number, ScoreEvent[]>();
   for (const e of raw) {
@@ -1088,6 +1164,8 @@ export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXml
       </midi-instrument>
     </score-part>`;
         }
+        if (isRiffCleanGuitarPart(p)) return riffCleanGuitarScorePartXml(p);
+        if (isRiffOverdrivenSoloPart(p)) return riffSoloGuitarScorePartXml(p);
         const mxProg = Math.min(128, Math.max(1, p.midiProgram + 1));
         const display = partDisplayNameForExport(p);
         const scoreInstName = p.scoreInstrumentName ?? display;

@@ -8,6 +8,13 @@ import type { GenerateRequest } from './appApiTypes';
 import { COMPOSER_OS_VERSION } from './composerOsConfig';
 import { writeOutputManifest } from './writeOutputManifest';
 import { runRiffGenerator } from '../core/riff-generator/runRiffGenerator';
+import {
+  RIFF_GUITAR_PART_INSTRUMENT_TAG,
+  RIFF_INSTRUMENT_MIDI_PROGRAM,
+  RIFF_SOLO_PART_INSTRUMENT_TAG,
+  riffPartInstrumentTagsFromScore,
+} from '../core/riff-generator/riffMultiVoiceTypes';
+import type { ScoreModel } from '../core/score-model/scoreModelTypes';
 import type { GenerateResult } from './generateComposition';
 import type { OddMeterPolicyStyle } from '../core/rhythm/oddMeterEngine';
 import {
@@ -72,6 +79,40 @@ function parseRiffLineMode(req: GenerateRequest): RiffLineMode {
   const m = req.riffLineMode;
   if (m === 'guitar_bass' || m === 'octave_double') return m;
   return 'single_line';
+}
+
+/** App-layer solo flag — Zappa VRB always on regardless of request. */
+export function resolveRiffAppSoloEnabled(vrbId: string | undefined, riffSolo?: boolean): boolean {
+  return vrbId === 'frank_zappa' ? true : riffSolo === true;
+}
+
+/** Riff export: `guitar` → clean electric; `solo` → overdriven (Zappa solo lane). */
+export function confirmRiffPartInstrumentAssignment(score: ScoreModel): {
+  ok: boolean;
+  guitarPartId: string;
+  soloPartId: string | null;
+  guitarTag: typeof RIFF_GUITAR_PART_INSTRUMENT_TAG;
+  soloTag: typeof RIFF_SOLO_PART_INSTRUMENT_TAG | null;
+} {
+  const tags = riffPartInstrumentTagsFromScore(score);
+  const guitar = score.parts.find((p) => p.id === 'guitar');
+  const solo = score.parts.find((p) => p.id === 'solo');
+  const guitarOk =
+    !!guitar &&
+    guitar.instrumentIdentity === 'clean_electric_guitar' &&
+    guitar.midiProgram === RIFF_INSTRUMENT_MIDI_PROGRAM.cleanGuitar;
+  const soloOk =
+    !solo ||
+    (solo.id === 'solo' &&
+      solo.instrumentIdentity === 'electric_guitar_solo' &&
+      solo.midiProgram === RIFF_INSTRUMENT_MIDI_PROGRAM.overdrivenGuitar);
+  return {
+    ok: !!tags && guitarOk && soloOk,
+    guitarPartId: guitar?.id ?? 'guitar',
+    soloPartId: solo?.id ?? null,
+    guitarTag: RIFF_GUITAR_PART_INSTRUMENT_TAG,
+    soloTag: solo ? RIFF_SOLO_PART_INSTRUMENT_TAG : null,
+  };
 }
 
 /** Filename slug — avoid implying duo GCE or embedding a faux “quality” brand in the path. */
@@ -151,6 +192,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
       : req.chordProgressionText;
 
   const riffOp = req.riffOp === 'regenerate' || req.riffOp === 'mutate' ? req.riffOp : undefined;
+  const soloEnabled = resolveRiffAppSoloEnabled(vrbId, req.riffSolo);
   const gen = runRiffGenerator(effectiveSeed, {
     bars,
     density,
@@ -158,7 +200,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
     grid,
     lineMode,
     bassEnabled: bassOn && lineMode === 'guitar_bass',
-    soloEnabled: req.riffSolo === true,
+    soloEnabled,
     bpm,
     title,
     chordProgressionText: chordText,
@@ -236,8 +278,9 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
 
   const ts = new Date().toISOString();
   const rqCompact = compactRiffQualityForManifest(gen.riffQuality);
+  const instrumentConfirm = confirmRiffPartInstrumentAssignment(gen.score);
   const manifestValidation = riffManifestValidation(gen.gce, true, gen.riffQuality.aggregatePass);
-  writeOutputManifest(filepath, {
+  const manifestPayload: Parameters<typeof writeOutputManifest>[1] = {
     presetId: 'riff_generator',
     styleStack: ['riff_generator'],
     seed: effectiveSeed,
@@ -249,7 +292,14 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
     riffInternalGatePassed: true,
     riffQualityRules: rqCompact,
     validation: manifestValidation,
-  });
+  };
+  if (instrumentConfirm.ok) {
+    (manifestPayload as { riffPartInstruments?: { guitar: string; solo?: string } }).riffPartInstruments = {
+      guitar: instrumentConfirm.guitarTag,
+      ...(instrumentConfirm.soloTag ? { solo: instrumentConfirm.soloTag } : {}),
+    };
+  }
+  writeOutputManifest(filepath, manifestPayload);
 
   return {
     success: true,

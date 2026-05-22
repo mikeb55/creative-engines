@@ -145,3 +145,14 @@ ROUTING_ALL_PASS: true
 - **Boundary swing ramp:** `riffBoundarySwingRamp.ts` — funk + rock → `straight_shuffle` ramp; fusion + art_rock → `odd_meter` ramp (no swing). Same-family transitions only.
 - **3-way riff VRB blend:** `blendRiffGeneratorVrbs` — same `RiffFamilyTag` only; cross-family → warning + primary VRB profile fallback.
 - **Engine flags (unchanged):** `USE_PER_SECTION_VRB = true` (`vrbContextMap.ts`); `USE_PITCH_FIELD_NOTE_SELECTION = true` (`engineFeatureFlags.ts`).
+
+## Phase E — Riff VRBs in Song Mode + songwriter layer (2026-05-21)
+
+- **14 riff-generator VRBs in Song Mode:** `james_brown`, `nile_rodgers`, `larry_carlton`, `sly_stone`, `iommi`, `david_gilmour`, `hendrix`, `led_zeppelin`, `weather_report`, `mahavishnu`, `verlaine`, `morello`, `fripp`, `frank_zappa` — profiles in `songwriterStyleProfiles.ts`, rules in `songwriterRuleRegistry.ts` (family clones + σ receipt), comp profiles in `songwriterCompProfile.ts`.
+- **Family surfaces (no new surface modules):** funk → `applyFunkStyleSurface`; rock → `applyRockStyleSurface`; fusion → `applyFusionStyleSurface`; art_rock → `applyArtRockStyleSurface` (metadata nudges only; same pattern as existing Song Mode surfaces).
+- **Golden path context:** `rockRiffContext` / `funkRiffContext` / `fusionRiffContext` / `artRockRiffContext` on `runGoldenPath` options + generation metadata when primary is a riff VRB.
+- **`frank_zappa`:** duo lane unchanged (`frankZappaSlice` + Slonimsky solo); **riff lane** solo remains `riffSoloBuilder` / `riffSoloZappaAdapter` — separate paths.
+- **Duo colour set:** all riff VRBs except pre-existing `frank_zappa` added to `LINE_FIRST_DUO_PRIORITY3_COLOUR_VRB_IDS` (`nile_rodgers` included).
+- **Gate relax (σ ≥ 28 only):** `hendrix` 28, `frank_zappa` 29, `weather_report` 30, `mahavishnu` 32 share phrase-behaviour relax with Zappa; lower σ VRBs unchanged.
+- **σ ceilings unchanged:** `RIFF_VRB_SIGMA_CEILINGS` in `riffVrbRegistry.ts` — not modified in Phase E.
+- **Not touched:** duo engine logic, GCE structural fingerprints, `jamesBrownFunkOverlay.ts`, Slonimsky/Zappa solo engines.
