@@ -2,12 +2,12 @@
   "name": "ellington-orchestration-engine",
   "version": "0.1.0",
   "scripts": {
-    "example": "npx ts-node --project ../jimmy-wyble-engine/tsconfig.json runEllingtonExample.ts",
-    "test": "npx ts-node --project tsconfig.json ellingtonValidation.ts",
-    "test:engine": "npx ts-node --project tsconfig.json tests/ellingtonEngine.test.ts",
-    "verify": "npx ts-node --project ../jimmy-wyble-engine/tsconfig.json ellingtonVerificationTest.ts",
-    "validate": "npx ts-node --project tsconfig.json ellingtonValidation.ts",
-    "realworld": "npx ts-node --project tsconfig.json ellingtonRealWorldTest.ts"
+    "example": "tsx --tsconfig ../jimmy-wyble-engine/tsconfig.json runEllingtonExample.ts",
+    "test": "tsx --tsconfig tsconfig.json ellingtonValidation.ts",
+    "test:engine": "tsx --tsconfig tsconfig.json tests/ellingtonEngine.test.ts",
+    "verify": "tsx --tsconfig ../jimmy-wyble-engine/tsconfig.json ellingtonVerificationTest.ts",
+    "validate": "tsx --tsconfig tsconfig.json ellingtonValidation.ts",
+    "realworld": "tsx --tsconfig tsconfig.json ellingtonRealWorldTest.ts"
   },
   "devDependencies": {
     "ts-node": "^10.9.2",

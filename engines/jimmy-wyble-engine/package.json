@@ -2,17 +2,17 @@
   "name": "jimmy-wyble-engine",
   "version": "0.1.0",
   "scripts": {
-    "test": "npx ts-node --project tsconfig.json wybleAutoTest.ts",
+    "test": "tsx --tsconfig tsconfig.json wybleAutoTest.ts",
     "validate": "npm run test",
-    "test:guitar": "npx ts-node --project tsconfig.json wybleGuitarTest.ts",
-    "example": "npx ts-node runWybleExample.ts",
-    "etude": "npx ts-node runWybleEtudeExample.ts",
-    "export": "npx ts-node exportWybleExample.ts",
-    "batch": "npx ts-node generateWybleBatch.ts",
-    "wyble:batch": "npx ts-node --project tsconfig.json generateWybleBatch.ts",
-    "wyble:test-import": "npx ts-node --project tsconfig.json import/testMusicXMLImport.ts && npx ts-node --project tsconfig.json import/testMusicXMLValidation.ts && npx ts-node --project tsconfig.json import/testMusicXMLToWybleIntegration.ts",
+    "test:guitar": "tsx --tsconfig tsconfig.json wybleGuitarTest.ts",
+    "example": "tsx runWybleExample.ts",
+    "etude": "tsx runWybleEtudeExample.ts",
+    "export": "tsx exportWybleExample.ts",
+    "batch": "tsx generateWybleBatch.ts",
+    "wyble:batch": "tsx --tsconfig tsconfig.json generateWybleBatch.ts",
+    "wyble:test-import": "tsx --tsconfig tsconfig.json import/testMusicXMLImport.ts && tsx --tsconfig tsconfig.json import/testMusicXMLValidation.ts && tsx --tsconfig tsconfig.json import/testMusicXMLToWybleIntegration.ts",
     "wyble:test-all": "npm run test && npm run wyble:test-import",
-    "wyble:test-templates": "npx ts-node --project tsconfig.json testTemplateIntegration.ts"
+    "wyble:test-templates": "tsx --tsconfig tsconfig.json testTemplateIntegration.ts"
   },
   "devDependencies": {
     "ts-node": "^10.9.2",

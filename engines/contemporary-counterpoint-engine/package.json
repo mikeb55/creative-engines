@@ -2,8 +2,8 @@
   "name": "contemporary-counterpoint-engine",
   "version": "0.1.0",
   "scripts": {
-    "test": "npx ts-node --project tsconfig.json counterpointAutoTest.ts",
-    "generate": "npx ts-node --project tsconfig.json counterpointDesktopGenerate.ts"
+    "test": "tsx --tsconfig tsconfig.json counterpointAutoTest.ts",
+    "generate": "tsx --tsconfig tsconfig.json counterpointDesktopGenerate.ts"
   },
   "devDependencies": {
     "ts-node": "^10.9.2",
