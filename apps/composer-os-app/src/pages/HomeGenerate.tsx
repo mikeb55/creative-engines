@@ -40,11 +40,14 @@ import {
   RIFF_ODD_METER_NONE,
   clampRiffBarCount,
   defaultRiffVrbIdForFamily,
+  isZappaRiffVrbId,
   riffGateLabelsFromFailedRules,
   type RiffCarryForward,
   type RiffFamilyTag,
   type RiffOddMeterSelectValue,
+  type ZappaStyleModeUi,
 } from '../types/riffGeneratorUi';
+import { riffChordGridWarnings } from '../utils/riffChordGridWarnings';
 import { ComposerEraSelectOptions } from '../components/ComposerEraSelectOptions';
 import {
   composerEraForRequest,
@@ -2132,7 +2135,14 @@ export function HomeGenerate({
   const [riffBarLocks, setRiffBarLocks] = useState<boolean[]>([]);
   const [riffCarryForward, setRiffCarryForward] = useState<RiffCarryForward | null>(null);
   const [riffGateMessages, setRiffGateMessages] = useState<string[]>([]);
+  const [riffZappaAdvancedOpen, setRiffZappaAdvancedOpen] = useState(false);
+  const [zappaStyleMode, setZappaStyleMode] = useState<ZappaStyleModeUi>('compositional');
   const riffGenerateOpRef = useRef<'full' | 'regenerate' | 'mutate'>('full');
+
+  const riffChordWarnings = useMemo(
+    () => (presetId === 'riff_generator' ? riffChordGridWarnings(chordProgressionText) : []),
+    [presetId, chordProgressionText]
+  );
 
   const [loading, setLoading] = useState(false);
   const [iRealPaste, setIRealPaste] = useState('');
@@ -2450,6 +2460,13 @@ export function HomeGenerate({
       return next;
     });
   }, [presetId, totalBars]);
+
+  useEffect(() => {
+    if (!isZappaRiffVrbId(riffVrbId)) {
+      setRiffZappaAdvancedOpen(false);
+      setZappaStyleMode('compositional');
+    }
+  }, [riffVrbId]);
 
   useEffect(() => {
     if (presetId !== 'big_band') setBigBandFormId('');
@@ -3119,6 +3136,7 @@ export function HomeGenerate({
                 riffBass,
                 ...(riffSolo ? { riffSolo: true } : {}),
                 ...(chordTrim ? { chordProgressionText: chordTrim } : {}),
+                ...(isZappaRiffVrbId(riffVrbId) ? { zappaStyleMode } : {}),
                 ...(riffGenerateOpRef.current !== 'full' &&
                 riffCarryForward &&
                 (riffGenerateOpRef.current === 'regenerate' || riffGenerateOpRef.current === 'mutate')
@@ -3160,6 +3178,7 @@ export function HomeGenerate({
                       zappaSoloMidiHigh,
                       zappaSoloDensity,
                       zappaSoloDissonance,
+                      zappaStyleMode,
                       ...(zappaBarMeterPayload ? { barMeterMap: zappaBarMeterPayload } : {}),
                     }
                   : {}),
@@ -4646,6 +4665,24 @@ export function HomeGenerate({
               fontSize: '0.9rem',
             }}
           />
+          {presetId === 'riff_generator' && riffChordWarnings.length > 0 ? (
+            <ul
+              role="status"
+              aria-live="polite"
+              style={{
+                margin: '0.45rem 0 0',
+                paddingLeft: '1.1rem',
+                maxWidth: 600,
+                fontSize: '0.82rem',
+                color: 'var(--warning, #b45309)',
+                lineHeight: 1.45,
+              }}
+            >
+              {riffChordWarnings.map((w) => (
+                <li key={`${w.token}-${w.message}`}>{w.message}</li>
+              ))}
+            </ul>
+          ) : null}
           {presetId === 'song_mode' && (
             <div style={{ marginTop: '0.85rem', maxWidth: 600 }}>
               <label
@@ -5252,6 +5289,10 @@ export function HomeGenerate({
           barLocks={riffBarLocks}
           gateMessages={riffGateMessages}
           canRegenerateMutate={riffCarryForward != null}
+          zappaAdvancedOpen={riffZappaAdvancedOpen}
+          zappaStyleMode={zappaStyleMode}
+          onZappaAdvancedOpenChange={setRiffZappaAdvancedOpen}
+          onZappaStyleModeChange={setZappaStyleMode}
           onFamilyChange={setRiffFamily}
           onVrbIdChange={setRiffVrbId}
           onBarsChange={(n) => setTotalBars(n)}

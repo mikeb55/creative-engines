@@ -18,9 +18,11 @@ import {
   riffVrbOptionById,
   riffVrbOptionsForFamily,
   riffVrbUiIndicators,
+  isZappaRiffVrbId,
   type RiffBarCount,
   type RiffFamilyTag,
   type RiffOddMeterSelectValue,
+  type ZappaStyleModeUi,
   clampRiffBarCount,
   defaultRiffVrbIdForFamily,
 } from '../riffGeneratorUi';
@@ -78,6 +80,10 @@ export type RiffGeneratorPanelProps = {
   gateMessages: string[];
   gateFailures?: GateFailure[];
   canRegenerateMutate: boolean;
+  zappaAdvancedOpen?: boolean;
+  zappaStyleMode?: ZappaStyleModeUi;
+  onZappaAdvancedOpenChange?: (open: boolean) => void;
+  onZappaStyleModeChange?: (mode: ZappaStyleModeUi) => void;
   /** Last generate metadata (FX markers, horns, rest windows). */
   riffGenerationMetadata?: RiffGenerationMetadata;
   /** Optional resolved profile preview (badges when metadata absent). */
@@ -111,6 +117,10 @@ export function RiffGeneratorPanel({
   gateMessages,
   gateFailures,
   canRegenerateMutate,
+  zappaAdvancedOpen = false,
+  zappaStyleMode = 'compositional',
+  onZappaAdvancedOpenChange,
+  onZappaStyleModeChange,
   riffGenerationMetadata,
   riffProfilePreview,
   onFamilyChange,
@@ -133,6 +143,7 @@ export function RiffGeneratorPanel({
   const barIndex = RIFF_BAR_STEP_VALUES.indexOf(bars);
   const showSoloToggle = riffSoloToggleVisible(vrbId);
   const zappaSoloAlwaysOn = vrbId === 'frank_zappa' && hasSoloGeneratorProfile(vrbId);
+  const showZappaAdvanced = isZappaRiffVrbId(vrbId);
 
   const multiVoiceBadges = useMemo(() => {
     if (riffGenerationMetadata?.multiVoiceBadges) return riffGenerationMetadata.multiVoiceBadges;
@@ -365,6 +376,45 @@ export function RiffGeneratorPanel({
           />
           Solo overlay (separate lead part)
         </label>
+      ) : null}
+
+      {showZappaAdvanced && onZappaAdvancedOpenChange && onZappaStyleModeChange ? (
+        <div style={{ marginTop: '0.75rem' }}>
+          <button
+            type="button"
+            style={{
+              ...controlStyle,
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+            }}
+            disabled={loading}
+            aria-expanded={zappaAdvancedOpen}
+            onClick={() => onZappaAdvancedOpenChange(!zappaAdvancedOpen)}
+          >
+            Advanced {zappaAdvancedOpen ? '▾' : '▸'}
+          </button>
+          {zappaAdvancedOpen ? (
+            <div style={{ marginTop: '0.55rem', maxWidth: 520 }}>
+              <label style={labelMuted} htmlFor="co-riff-zappa-style-mode">
+                Zappa style mode
+              </label>
+              <select
+                id="co-riff-zappa-style-mode"
+                style={{ ...controlStyle, width: '100%', maxWidth: 520 }}
+                value={zappaStyleMode}
+                disabled={loading}
+                onChange={(e) => onZappaStyleModeChange(e.target.value as ZappaStyleModeUi)}
+              >
+                <option value="compositional">
+                  Compositional — structured, meter-disrupted, fragmented
+                </option>
+                <option value="bluesrockFerocious">
+                  Blues-Rock Ferocity — modal, dense, fret-burning pedal vamps
+                </option>
+              </select>
+            </div>
+          ) : null}
+        </div>
       ) : null}
 
       <div style={{ marginTop: '0.85rem', paddingTop: '0.65rem', borderTop: '1px solid var(--border)' }}>

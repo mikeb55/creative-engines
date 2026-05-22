@@ -113,6 +113,14 @@ export function riffSoloToggleVisible(vrbId: string): boolean {
   return hasSoloGeneratorProfile(vrbId) && vrbId !== 'frank_zappa';
 }
 
+/** Riff VRB ids that surface the Zappa advanced panel (`zappaStyleMode`). */
+export function isZappaRiffVrbId(vrbId: string): boolean {
+  const id = vrbId.trim().toLowerCase();
+  return id === 'frank_zappa' || id === 'zappa' || id === 'mothers';
+}
+
+export type ZappaStyleModeUi = 'compositional' | 'bluesrockFerocious';
+
 function sigmaForVrb(vrbId: string): number | undefined {
   const b = getVoiceRuleBundle(vrbId);
   return typeof b.sigma === 'number' ? b.sigma : undefined;

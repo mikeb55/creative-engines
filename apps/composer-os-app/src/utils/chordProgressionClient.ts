@@ -5,9 +5,11 @@
 
 export {
   normalizeChordProgressionSeparators,
+  normalizeChordToken,
   parseChordProgressionInput,
   parseChordProgressionInputFlexible,
   parseChordProgressionInputWithBarCount,
+  parseChordsFromPipeDelimited,
 } from '@composer-os/core/harmony/chordProgressionParser';
 export {
   SONG_FORM_BAR_OPTIONS,

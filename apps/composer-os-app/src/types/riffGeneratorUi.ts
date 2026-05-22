@@ -5,6 +5,7 @@ export type {
   RiffOddMeterPreset,
   RiffOddMeterSelectValue,
   RiffVrbOption,
+  ZappaStyleModeUi,
 } from '@composer-os/ui/riffGeneratorUi';
 export {
   RIFF_BAR_COUNT_DEFAULT,
@@ -16,6 +17,7 @@ export {
   clampRiffBarCount,
   defaultRiffVrbIdForFamily,
   isRiffBarCount,
+  isZappaRiffVrbId,
   riffFamilyShowsMeterPicker,
   riffGateLabelsFromFailedRules,
   riffVrbOptionById,

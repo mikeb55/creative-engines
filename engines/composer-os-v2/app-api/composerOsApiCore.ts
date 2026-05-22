@@ -380,6 +380,10 @@ export function apiGenerate(
         body.frankZappaContext === 'futuristic_jazz'
           ? body.frankZappaContext
           : undefined,
+      zappaStyleMode:
+        body.zappaStyleMode === 'compositional' || body.zappaStyleMode === 'bluesrockFerocious'
+          ? body.zappaStyleMode
+          : undefined,
       milesDavisContext:
         body.milesDavisContext === 'modal_1959' ||
         body.milesDavisContext === 'quintet_1965' ||

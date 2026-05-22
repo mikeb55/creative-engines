@@ -15,6 +15,7 @@ import type {
   EnnioMorriconeContextMode,
   FelaKutiContextMode,
   FrankZappaContextMode,
+  ZappaStyleMode,
   GenerationMetadata,
   GershwinContextMode,
   HansZimmerContextMode,
@@ -47,6 +48,7 @@ export type { ArvoPartContextMode };
 export type { ArvoPartTintinnabuliParams };
 export type { BartokContextMode };
 export type { FrankZappaContextMode };
+export type { ZappaStyleMode };
 export type { GershwinContextMode };
 export type { MilesDavisContextMode };
 export type { PrinceContextMode };
@@ -371,6 +373,11 @@ export interface GenerateRequest {
    * Omitted → engine default **`avant_rock`** when primary songwriter is **`frank_zappa`**.
    */
   frankZappaContext?: FrankZappaContextMode;
+  /**
+   * Frank Zappa — compositional vs blues-rock ferocity (`frankZappaSlice.ts`, `runGoldenPath.ts`).
+   * Omitted → **`compositional`**.
+   */
+  zappaStyleMode?: ZappaStyleMode;
   /**
    * Song Mode / Miles Davis: modal vs quintet vs electric posture (`milesDavisSlice.ts`).
    * Omitted → engine default **`modal_1959`** when primary songwriter is **`miles_davis`**.

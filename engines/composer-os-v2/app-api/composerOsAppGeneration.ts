@@ -1170,6 +1170,9 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           zappaSoloDensity: req.zappaSoloDensity,
           zappaSoloDissonance: req.zappaSoloDissonance,
           frankZappaContext: req.frankZappaContext,
+          ...(req.zappaStyleMode === 'compositional' || req.zappaStyleMode === 'bluesrockFerocious'
+            ? { zappaStyleMode: req.zappaStyleMode }
+            : {}),
         }
       : {}),
     ...(req.primarySongwriterStyle?.trim().toLowerCase() === 'miles_davis'

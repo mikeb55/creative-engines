@@ -332,6 +332,9 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           zappaSoloMidiHigh: req.zappaSoloMidiHigh,
           zappaSoloDensity: req.zappaSoloDensity,
           zappaSoloDissonance: req.zappaSoloDissonance,
+          ...(req.zappaStyleMode === 'compositional' || req.zappaStyleMode === 'bluesrockFerocious'
+            ? { zappaStyleMode: req.zappaStyleMode }
+            : {}),
           ...(typeof req.primarySongwriterStyle === 'string' &&
           req.primarySongwriterStyle.trim().toLowerCase() === 'frank_zappa'
             ? {

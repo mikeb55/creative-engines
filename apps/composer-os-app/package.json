@@ -6,10 +6,10 @@
   "scripts": {
     "dev": "concurrently \"npm run dev:vite\" \"npm run dev:api\"",
     "dev:vite": "vite",
-    "dev:api": "cd ../.. && npx ts-node --project tsconfig.json scripts/startComposerOsAppApi.ts",
+    "dev:api": "cd ../.. && tsx --tsconfig tsconfig.json scripts/startComposerOsAppApi.ts",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "cd ../.. && npx ts-node --project tsconfig.json scripts/startComposerOsAppApi.ts",
+    "start": "cd ../.. && tsx --tsconfig tsconfig.json scripts/startComposerOsAppApi.ts",
     "test": "npm run build && vitest run"
   },
   "dependencies": {
