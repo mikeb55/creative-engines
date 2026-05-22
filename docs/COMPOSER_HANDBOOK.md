@@ -201,6 +201,8 @@ a VRB profile issue.
 
 ### Zappa Solo Generator
 
+**Full chapter:** [COMPOSER_HANDBOOK_ZAPPA.md](COMPOSER_HANDBOOK_ZAPPA.md) · [COMPOSER_HANDBOOK_ZAPPA.docx](COMPOSER_HANDBOOK_ZAPPA.docx) — compositional vs blues-rock ferocity modes, Z-PROG-01–20 progressions, 20 scenarios, export notes.
+
 Frank Zappa VRB auto-enables a solo overlay on generation.
 No toggle needed — solo is always on when `frank_zappa` is selected.
 
