@@ -1,0 +1,27 @@
+{
+  "vrbId": "larry_carlton",
+  "seed": 42,
+  "bars": 8,
+  "rhythmFingerprint": [
+    0.25,
+    0.25,
+    0,
+    0,
+    0,
+    0.125,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0.125,
+    0.25,
+    0
+  ],
+  "noteCount": 32,
+  "offbeatRatio": 0.75,
+  "registerMean": 55.71875,
+  "bassRegisterMean": 44.03125
+}

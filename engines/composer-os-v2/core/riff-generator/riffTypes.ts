@@ -6,6 +6,8 @@ import type { OddMeterPolicyStyle } from '../rhythm/oddMeterEngine';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import type { CoreMotif } from '../motif/motifEngineTypes';
 import type { RiffCarryForward } from './riffCarryForward';
+import type { RiffProfile } from '../composer/riffProfileTypes';
+import type { RiffGenerationMetadata } from './riffMultiVoiceTypes';
 
 export type RiffGeneratorOp = 'full' | 'regenerate' | 'mutate';
 
@@ -33,6 +35,8 @@ export interface RiffGeneratorParams {
   grid: RiffGridMode;
   lineMode: RiffLineMode;
   bassEnabled: boolean;
+  /** Zappa-style solo overlay part (requires `soloGeneratorProfile` on resolved profile). */
+  soloEnabled?: boolean;
   /** VoiceRuleBundle id when using riff VRB registry (e.g. `nile_rodgers`). */
   vrbId?: string;
   /** Odd-meter overlay when family is fusion / art_rock. */
@@ -49,6 +53,8 @@ export interface RiffGeneratorParams {
   barLocks?: boolean[];
   /** Prior bar snapshots from last successful riff generate. */
   carryForward?: RiffCarryForward;
+  /** Resolved VRB riff profile (receipt compiler merged). */
+  riffProfile?: RiffProfile;
 }
 
 export interface RiffGeneratorSuccess {
@@ -67,6 +73,8 @@ export interface RiffGeneratorSuccess {
   coreMotif?: CoreMotif;
   /** Echo for UI lock/regen/mutate on next request. */
   riffCarryForward?: RiffCarryForward;
+  /** Horns / FX markers / call-response windows (no FX MIDI). */
+  generationMetadata?: RiffGenerationMetadata;
 }
 
 export interface RiffGeneratorFailure {

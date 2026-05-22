@@ -878,12 +878,358 @@ export const MORELLO = riffVrbStub(
   MO_BASE
 );
 
+const DG_BASE = [
+  'DG_REG_01 — Lead A2–G5 (57–79 MIDI); comp A2–E4 (45–64); strings 1+2; sustain 0.85 bridge pickup.',
+  'DG_RHY_01 — 8th-primary straight+rubato; ~12ms behind beat; sparse ballad / rock / climax density bands.',
+  'DG_INT_01 — m3/P4/M2/M3/octave weights; double-stops 3rds+4ths; vibrato accent 0.75.',
+  'DG_BND_01 — Bend topology whole/half/1.5/quarter/2-step; cadential + mid-phrase placement.',
+  'DG_MOD_01 — defaultRockMinor / majorBallad / ambientModal pools; ComfortablyNumb / ShineOn / WYWH presets.',
+] as const;
+
+const LC_BASE = [
+  'LC_REG_01 — Lead core G3–E5 (60–76 MIDI); comp C3–A4 (48–69); string bias strings 2+3.',
+  'LC_RHY_01 — 16th grid light shuffle; Steely Dan slightly behind; fusion straight on grid.',
+  'LC_INT_01 — Stepwise M2/m3 lead; harmonic double-stops 3rds + 6ths; comp sus2/add9 maj9 dom9_13.',
+  'LC_MOD_01 — Mixolydian / major pent / dorian default; Steely Dan + fusion ballad mode pools.',
+  'LC_PRE_01 — Style presets KidCharlemagneType / Room335Type / NiteCrawlerType.',
+] as const;
+
 const SS_BASE = [
   'SS_HARM_01 — Funky minor-dom colour; short cycle; rhythm-section interlock.',
   'SS_RHY_01 — Busy 16th grid; syncopated accent map; tight rest slots.',
   'SS_MELO_01 — Minor-third + whole-step cells; mid-register guitar focus.',
   'SS_FORM_01 — 2-bar loop identity; bar-to-bar variation budget moderate.',
 ] as const;
+
+/** David Gilmour / Pink Floyd rock lead stub (σ26). */
+export const DAVID_GILMOUR: VoiceRuleBundle = {
+  voiceId: 'david_gilmour',
+  sigma: 26,
+  family: 'rock',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 8,
+    allowMidBarChange: true,
+  },
+  bassPolicy: { role: 'root', allowOctaveDoubling: true },
+  voicingPolicy: {
+    minSpreadSemitones: 4,
+    maxSpreadSemitones: 22,
+    clusterSizeNotes: [2, 5],
+    forbidParallelFifths: false,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: { contour: 'stepwise-arc', maxLeapSemitones: 12 },
+  orchestrationPolicy: {
+    anchorToneCount: 1,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: fillReceipts('DG', 'David Gilmour', DG_BASE),
+  },
+  formPolicy: { narrativeArc: 'blues-backbone', sectionRecallEnforced: true },
+  rhythmPolicy: { antiMetric: false },
+  repairPolicy: { resolveParallels: true, maxVoiceOverlap: 5 },
+  contrapuntalLinePolicy: {
+    enabled: true,
+    dissonanceProfile: DIS_ROCK_MOD,
+    preferredImitationTypes: ['free'],
+    rhythmicIndependenceRequired: true,
+    lineRoleAssignment: 'dynamic',
+  },
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.6,
+    registerInterlock: true,
+    intervalPreference: 'pentatonic_diatonic',
+  },
+  riffProfile: (() => {
+    const rockSlice = riffProfileSliceFromRockRiff('generic');
+    const slots = 8;
+    const accent = straightAccentTopology(slots);
+    accent[0] = 0.72;
+    accent[4] = 0.55;
+    return riffProfileShell({
+      ...rockSlice,
+      meterPolicy: 'simple',
+      subdivisionGrid: 8,
+      accentTopology: accent,
+      allowPitchStreak: false,
+      tritoneStable: false,
+      homeChordType: 'min7',
+      chordQualitySet: ['min7', 'maj7', 'sus2', 'sus4', 'add9', 'dom7', 'power5'],
+      scalePool: {
+        minorPentatonic: 0.5,
+        naturalMinorAeolian: 0.2,
+        Dorian: 0.15,
+        majorPentatonic: 0.4,
+        Ionian: 0.3,
+        mixolydian: 0.2,
+        bluesHexatonic: 0.2,
+      },
+      chromaticBudget: 0.15,
+      intervalCell: { steps: [3, 4, 2], transpositionMode: 'diatonic' },
+      registerAnchor: 'mid_register',
+      registerBandPerVoice: {
+        lead: { min: 57, max: 79 },
+        comp: { min: 45, max: 64 },
+        guitar: { min: 52, max: 82 },
+      },
+      riffRegisterFloor: 52,
+      riffRegisterCeiling: 82,
+      tuningPolicy: {
+        tuningOptions: {
+          standard: 0.35,
+          sustain: 0.85,
+          gain: 0.6,
+          bridgePickupLead: 0.9,
+          ComfortablyNumbType: 0.34,
+          ShineOnType: 0.33,
+          WishYouWereHereType: 0.33,
+          bendWhole: 0.4,
+          bendHalf: 0.25,
+          bendOneAndHalf: 0.15,
+          bendQuarter: 0.15,
+          bendTwoSteps: 0.05,
+          bendWithVibrato: 0.8,
+          releaseBend: 0.3,
+          fastRunProb: 0.15,
+          vibratoAccent: 0.75,
+        },
+        midiFloor: 52,
+        midiCeiling: 82,
+        riffLowBand: [45, 64],
+        riffMidBand: [57, 79],
+      },
+      rhythmFeel: {
+        primarySubdivision: '8th',
+        feelProfiles: ['straight_with_rubato', 'eighths_0.65', 'sixteenths_0.35'],
+        swingRatio: { straightWithRubato: 1.0 },
+        beatPlacement: 'slightly_behind',
+      },
+      intervalWeights: {
+        m3: 0.18,
+        P4: 0.15,
+        M2: 0.12,
+        M3: 0.12,
+        P5: 0.1,
+      },
+      doubleStopPolicy: {
+        intervalsAllowed: [3, 4, 5],
+        stringPairs: [
+          [2, 1],
+          [3, 2],
+        ],
+      },
+      chromaticApproachRules: [
+        { degrees: [3, 4, 5, 7, 10], chordContext: 'rock_lead', probability: 0.15 },
+      ],
+      silencePolicy: {
+        ...rockSlice.silencePolicy,
+        styleClass: 'Sparse',
+        rockRiffPreset: 'generic',
+      },
+      spacePolicy: {
+        internalRestProb: 0.45,
+        phraseEndRestBeats: [1.0],
+        callResponsePattern: 'structural_rest_0.7',
+      },
+      phraseLengthBeats: [2, 3, 4, 6, 8],
+      metricDisplacement: 0.4,
+      cadenceTypes: {
+        tail_fill: 0.6,
+        sustained_sus_chord: 0.15,
+        hard_stop_rest: 0.25,
+      },
+      variationOperators: [
+        'targetToneShift',
+        'startOffsetShift',
+        'ornamentAdd',
+        'registerShift',
+        'rhythmicWarp',
+        'articulationSwap',
+        'tailFill',
+      ],
+      repetitionPolicy: {
+        exactLoopAllowed: true,
+        pedalToneAllowed: true,
+        barIdentityPersistence: 0.5,
+        minExactRepetitions: 2,
+      },
+      modalUsage: 'chord-driven',
+      swingStyle: 'straight',
+      pedalBias: 0.55,
+      octaveDisplacementTolerance: 0.48,
+      ornamentPolicy: {
+        slides: true,
+        ghosts: false,
+        graceAttacks: true,
+        bends: true,
+        deadNotes: false,
+      },
+      attackPolicy: 'sustain',
+      riffContourPolicy: { rangeCeiling: 18, apexTiming: 0.65, returnTendency: 0.5 },
+    });
+  })(),
+};
+
+/** Larry Carlton / Mr. 335 funk-session riff stub (σ24). */
+export const LARRY_CARLTON: VoiceRuleBundle = {
+  voiceId: 'larry_carlton',
+  sigma: 24,
+  family: 'funk',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 4,
+    allowMidBarChange: true,
+  },
+  bassPolicy: { role: 'root', allowOctaveDoubling: true },
+  voicingPolicy: {
+    minSpreadSemitones: 3,
+    maxSpreadSemitones: 16,
+    clusterSizeNotes: [2, 4],
+    forbidParallelFifths: true,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: { contour: 'stepwise-arc', maxLeapSemitones: 9 },
+  orchestrationPolicy: {
+    anchorToneCount: 1,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: fillReceipts('LC', 'Larry Carlton', LC_BASE),
+  },
+  formPolicy: { narrativeArc: 'blues-backbone', sectionRecallEnforced: true },
+  rhythmPolicy: { antiMetric: false },
+  repairPolicy: { resolveParallels: true, maxVoiceOverlap: 4 },
+  contrapuntalLinePolicy: {
+    enabled: true,
+    dissonanceProfile: DIS_LOW,
+    preferredImitationTypes: ['free'],
+    rhythmicIndependenceRequired: true,
+    lineRoleAssignment: 'dynamic',
+  },
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.68,
+    registerInterlock: true,
+    intervalPreference: 'pentatonic_diatonic',
+    textureTagType: 'funk_grid',
+  },
+  riffProfile: (() => {
+    const slice = riffProfileSliceFromFunkGrid('nileRodgers');
+    const slots = 16;
+    const accent = new Array<number>(slots).fill(0.42);
+    accent[0] = 0.78;
+    for (let i = 2; i < slots; i += 4) accent[i] = 0.88;
+    if (slots >= 12) accent[10] = 0.72;
+    return riffProfileShell({
+      ...slice,
+      meterPolicy: 'simple',
+      subdivisionGrid: 16,
+      accentTopology: accent,
+      allowPitchStreak: false,
+      homeChordType: 'dom7',
+      chordQualitySet: ['sus2', 'add9', 'maj9', 'dom9', 'dom13', 'min7', 'maj7'],
+      scalePool: {
+        mixolydian: 0.35,
+        majorPentatonic: 0.3,
+        dorian: 0.15,
+        lydianDominant: 0.12,
+        bebopDominant: 0.1,
+        majorScaleIonian: 0.2,
+        lydian: 0.15,
+      },
+      chromaticBudget: 0.35,
+      intervalCell: { steps: [2, 3, 2], transpositionMode: 'diatonic' },
+      registerAnchor: 'mid_register',
+      registerBandPerVoice: {
+        lead: { min: 60, max: 76 },
+        comp: { min: 48, max: 69 },
+        guitar: { min: 55, max: 79 },
+      },
+      riffRegisterFloor: 55,
+      riffRegisterCeiling: 79,
+      tuningPolicy: {
+        tuningOptions: {
+          standard: 0.4,
+          KidCharlemagneType: 0.25,
+          Room335Type: 0.2,
+          NiteCrawlerType: 0.15,
+          steelyDanSession: 0.58,
+          fusionBallad: 0.25,
+        },
+        midiFloor: 55,
+        midiCeiling: 79,
+        riffLowBand: [48, 69],
+        riffMidBand: [60, 76],
+      },
+      rhythmFeel: {
+        primarySubdivision: '16th',
+        feelProfiles: ['light_shuffle', 'steely_dan_behind_grid', 'fusion_straight'],
+        swingRatio: { lightShuffle: 1.12, straight: 1.0 },
+        beatPlacement: 'slightly_behind',
+      },
+      intervalWeights: {
+        M2: 0.18,
+        m3: 0.16,
+        m2: 0.18,
+        P5: 0.07,
+        M6: 0.08,
+      } as import('./riffProfileTypes').RiffIntervalWeightMap,
+      doubleStopPolicy: {
+        intervalsAllowed: [3, 4, 8, 9],
+        stringPairs: [
+          [3, 2],
+          [2, 1],
+        ],
+      },
+      silencePolicy: {
+        ...slice.silencePolicy,
+        styleClass: 'Medium',
+        funkGridPreset: 'nileRodgers',
+      },
+      spacePolicy: {
+        internalRestProb: 0.35,
+        phraseEndRestBeats: [0.75],
+        callResponsePattern: 'comp_ghost_16ths_melodic_sparse',
+      },
+      phraseLengthBeats: [2, 3, 4, 6, 8],
+      metricDisplacement: 0.55,
+      cadenceTypes: {
+        tail_fill: 0.55,
+        sustained_sus_chord: 0.2,
+        hard_stop_rest: 0.25,
+      },
+      variationOperators: [
+        'ornamentAdd',
+        'targetToneShift',
+        'cellTransposition',
+        'rhythmicWarp',
+        'microTimingShift',
+        'startOffsetShift',
+        'registerShift',
+      ],
+      repetitionPolicy: {
+        exactLoopAllowed: true,
+        pedalToneAllowed: true,
+        barIdentityPersistence: 0.55,
+        minExactRepetitions: 2,
+      },
+      modalUsage: 'chord-driven',
+      swingStyle: 'shuffle',
+      pedalBias: 0.38,
+      octaveDisplacementTolerance: 0.42,
+      ornamentPolicy: {
+        slides: true,
+        ghosts: true,
+        graceAttacks: true,
+        bends: true,
+        deadNotes: false,
+      },
+    });
+  })(),
+};
 
 /** Sly Stone / Family Stone funk riff stub (σ24). */
 export const SLY_STONE: VoiceRuleBundle = {
@@ -966,6 +1312,107 @@ export const SLY_STONE: VoiceRuleBundle = {
       ornamentPolicy: { slides: false, ghosts: true, graceAttacks: false, bends: false, deadNotes: false },
     });
   })(),
+};
+
+const FZ_RIFF_BASE = [
+  'FZ_RIFF_HARM_01 — Modal / chromatic pool; Lydian + Mixolydian + blues inflection; high chromatic budget.',
+  'FZ_RIFF_RHY_01 — 7/8 feel via 3+3+2 eighth groups over 4/4; polyrhythm against straight grid.',
+  'FZ_RIFF_MELO_01 — Angular contour; wide register; tritone + m6 identity leaps.',
+  'FZ_RIFF_SOLO_01 — Riff-path solo lane: separate lead part; Slonimsky-adjacent cell motion (declarative).',
+] as const;
+
+/** Frank Zappa riff stub profile (σ29) — rock family; solo overlay via {@link RiffProfile.soloGeneratorProfile}. */
+export function buildFrankZappaRiffProfile(): RiffProfile {
+  const rockSlice = riffProfileSliceFromRockRiff('generic');
+  const slots = 16;
+  const accent = straightAccentTopology(slots);
+  accent[0] = 0.88;
+  accent[6] = 0.72;
+  accent[10] = 0.8;
+  return riffProfileShell({
+    ...rockSlice,
+    meterPolicy: 'simple',
+    subdivisionGrid: 16,
+    accentTopology: accent,
+    allowPitchStreak: false,
+    tritoneStable: true,
+    homeChordType: 'dom7',
+    chordQualitySet: ['dom7', 'maj7', 'min7', 'sus4', 'dim', 'aug'],
+    scalePool: { Lydian: 0.55, Mixolydian: 0.5, Dorian: 0.4, blues: 0.35 },
+    chromaticBudget: 0.52,
+    intervalCell: { steps: [1, 3, -2, 6], transpositionMode: 'chromatic' },
+    registerAnchor: 'mid_register',
+    riffRegisterFloor: 48,
+    riffRegisterCeiling: 78,
+    pedalBias: 0.25,
+    octaveDisplacementTolerance: 0.55,
+    repetitionPolicy: {
+      exactLoopAllowed: false,
+      pedalToneAllowed: true,
+      barIdentityPersistence: 0.35,
+      minExactRepetitions: 1,
+    },
+    variationOperators: ['rhythmicWarp', 'registerShift', 'chromaticAdd', 'ornamentAdd'],
+    modalUsage: 'chord-driven',
+    swingStyle: 'straight',
+    ornamentPolicy: { slides: true, ghosts: true, graceAttacks: true, bends: true, deadNotes: false },
+    soloGeneratorProfile: {
+      enabled: true,
+      registerFloor: 60,
+      registerCeiling: 84,
+      chromaticBudget: 0.52,
+      maxLeapSemitones: 12,
+      phraseBars: 4,
+      rhythmicCellEighths: [3, 3, 2],
+      variationOperators: ['rhythmicWarp', 'registerShift', 'chromaticAdd'],
+      scalePool: { Lydian: 0.5, Mixolydian: 0.45, Dorian: 0.35 },
+    },
+  });
+}
+
+/** Frank Zappa riff VRB stub (σ29) — additive to Song Mode {@link FRANK_ZAPPA} fingerprints. */
+export const FRANK_ZAPPA_RIFF: VoiceRuleBundle = {
+  voiceId: 'frank_zappa',
+  sigma: 29,
+  family: 'rock',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 4,
+    allowMidBarChange: true,
+  },
+  bassPolicy: { role: 'melodic-floating', allowOctaveDoubling: true },
+  voicingPolicy: {
+    minSpreadSemitones: 4,
+    maxSpreadSemitones: 28,
+    clusterSizeNotes: [2, 6],
+    forbidParallelFifths: false,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: { contour: 'angular', maxLeapSemitones: 14 },
+  orchestrationPolicy: {
+    anchorToneCount: 1,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: fillReceipts('FZ', 'Frank Zappa riff', FZ_RIFF_BASE),
+  },
+  formPolicy: { narrativeArc: 'through-composed-event-script', sectionRecallEnforced: false },
+  rhythmPolicy: { antiMetric: true },
+  repairPolicy: { resolveParallels: false, maxVoiceOverlap: 6 },
+  contrapuntalLinePolicy: {
+    enabled: true,
+    dissonanceProfile: DIS_ROCK_MOD,
+    preferredImitationTypes: ['free'],
+    rhythmicIndependenceRequired: true,
+    lineRoleAssignment: 'dynamic',
+  },
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.75,
+    registerInterlock: true,
+    intervalPreference: 'chromatic_polytonal',
+  },
+  riffProfile: buildFrankZappaRiffProfile(),
 };
 
 export const FRIPP = riffVrbStub(

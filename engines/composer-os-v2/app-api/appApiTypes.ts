@@ -275,6 +275,8 @@ export interface GenerateRequest {
   riffLineMode?: 'single_line' | 'guitar_bass' | 'octave_double';
   /** Riff Generator: add bass part (guitar–bass interaction). */
   riffBass?: boolean;
+  /** Riff-path Zappa-style solo overlay (requires VRB `soloGeneratorProfile`). */
+  riffSolo?: boolean;
   /** Riff Generator: VoiceRuleBundle id with `riffProfile` (e.g. `nile_rodgers`, `weather_report`). */
   riffVrbId?: string;
   /** Riff Generator: odd-meter template overlay (fusion / art_rock). */

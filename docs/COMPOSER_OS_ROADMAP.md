@@ -1024,6 +1024,19 @@ These items raise **output diversity** without assuming a single engine rewrite:
 - **Song Mode A/B inspection harness v1:** complete — added a deterministic CLI harness that runs small A/B seed sets and prints compact summary rows (section shape + profile/rules + source cues) for post-build inspection.
 - **Longer-horizon items** (Wayne Shorter product integration, ECM/Bacharach/Harris depth, Slonimsky tools, chord UX polish) remain on the roadmap in the sections below; this snapshot does not reprioritize them.
 
+### ZAPPA SOLO GENERATOR (post Phase C)
+
+**Status:** **Z1–Z4 shipped (2026-05-21)** — riff-path solo overlay on `frank_zappa` VRB (`soloGeneratorProfile`, `riffSoloBuilder.ts`, UI toggle). Song Mode / duo `zappasoloEngine.ts` unchanged. **σ29** · **family `rock`**.
+
+| Step | Scope | Notes |
+|------|--------|--------|
+| **Z1** | **Perplexity research** | Scale / modal language, polyrhythm, interval identity, contour, phrasing, variation ops, chromatic budget. **Songs:** *Inca Roads*, *Watermelon in Easter Hay*, *Apostrophe*, *Muffin Man*, *Montana*, *Blessed Relief*. |
+| **Z2** | **`frank_zappa` VRB stub** | `riffVrbStubs.ts` + `voiceRuleBundles.ts`. **Aliases:** `zappa` / `frank_zappa` / `mothers`. **σ** TBD. **Family:** `rock` (solo-specific family tag **TBD** at Z2). |
+| **Z3** | **Solo generator layer** | `soloGeneratorProfile` on `RiffProfile`; **separate MIDI part**; UI toggle in `RiffGeneratorPanel` (roll out **fusion / art_rock** first, then **rock**). |
+| **Z4** | **Wiring** | Family tags, smoke row counts, `INVARIANTS.md` update when implementation starts. |
+
+**Explicit non-goals until Z1–Z2:** duplicating riff receipt compiler behaviour for full ensemble; changing GCE / duo / Song Mode overlays for this lane.
+
 ### Next possible devs (pick list)
 
 | # | Dev | Notes |

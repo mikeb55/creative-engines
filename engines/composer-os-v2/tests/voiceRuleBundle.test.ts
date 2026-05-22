@@ -481,7 +481,74 @@ function testRiffVrbStubsRegistry(): boolean {
     hendrix.riffProfile.allowPitchStreak === false &&
     nile.riffProfile.subdivisionGrid === 16 &&
     iommi.riffProfile.tritoneStable === true &&
-    testLedZeppelinRiffVrbStubRegistry()
+    testLedZeppelinRiffVrbStubRegistry() &&
+    testLarryCarltonRiffVrbStubRegistry() &&
+    testDavidGilmourRiffVrbStubRegistry()
+  );
+}
+
+function testDavidGilmourRiffVrbStubRegistry(): boolean {
+  const dg = getVoiceRuleBundle('david_gilmour');
+  const gilmour = getVoiceRuleBundle('gilmour');
+  const floyd = getVoiceRuleBundle('pink_floyd');
+  if (!dg.riffProfile) return false;
+  const rp = dg.riffProfile;
+  return (
+    dg.voiceId === 'david_gilmour' &&
+    dg.sigma === 26 &&
+    dg.family === 'rock' &&
+    gilmour.voiceId === 'david_gilmour' &&
+    floyd.voiceId === 'david_gilmour' &&
+    rp.allowPitchStreak === false &&
+    rp.silencePolicy.styleClass === 'Sparse' &&
+    rp.subdivisionGrid === 8 &&
+    rp.tuningPolicy?.midiFloor === 52 &&
+    rp.tuningPolicy?.midiCeiling === 82 &&
+    rp.tuningPolicy?.riffMidBand[0] === 57 &&
+    rp.tuningPolicy?.riffMidBand[1] === 79 &&
+    rp.tuningPolicy?.riffLowBand[0] === 45 &&
+    rp.tuningPolicy?.riffLowBand[1] === 64 &&
+    rp.rhythmFeel?.primarySubdivision === '8th' &&
+    rp.rhythmFeel?.beatPlacement === 'slightly_behind' &&
+    rp.intervalWeights?.m3 === 0.18 &&
+    rp.intervalWeights?.P4 === 0.15 &&
+    rp.ornamentPolicy.bends === true &&
+    rp.metricDisplacement === 0.4 &&
+    Boolean(rp.tuningPolicy?.tuningOptions.ComfortablyNumbType) &&
+    Boolean(rp.tuningPolicy?.tuningOptions.ShineOnType) &&
+    (rp.variationOperators?.length ?? 0) >= 5
+  );
+}
+
+function testLarryCarltonRiffVrbStubRegistry(): boolean {
+  const lc = getVoiceRuleBundle('larry_carlton');
+  const carlton = getVoiceRuleBundle('carlton');
+  const mr335 = getVoiceRuleBundle('mr_335');
+  if (!lc.riffProfile) return false;
+  const rp = lc.riffProfile;
+  return (
+    lc.voiceId === 'larry_carlton' &&
+    lc.sigma === 24 &&
+    lc.family === 'funk' &&
+    carlton.voiceId === 'larry_carlton' &&
+    mr335.voiceId === 'larry_carlton' &&
+    rp.allowPitchStreak === false &&
+    rp.silencePolicy.styleClass === 'Medium' &&
+    rp.subdivisionGrid === 16 &&
+    rp.tuningPolicy?.midiFloor === 55 &&
+    rp.tuningPolicy?.midiCeiling === 79 &&
+    rp.tuningPolicy?.riffMidBand[0] === 60 &&
+    rp.tuningPolicy?.riffMidBand[1] === 76 &&
+    rp.tuningPolicy?.riffLowBand[0] === 48 &&
+    rp.tuningPolicy?.riffLowBand[1] === 69 &&
+    rp.rhythmFeel?.primarySubdivision === '16th' &&
+    rp.rhythmFeel?.beatPlacement === 'slightly_behind' &&
+    rp.intervalWeights?.M2 === 0.18 &&
+    rp.intervalWeights?.m3 === 0.16 &&
+    rp.phraseLengthBeats?.[0] === 2 &&
+    rp.metricDisplacement === 0.55 &&
+    Boolean(rp.tuningPolicy?.tuningOptions.KidCharlemagneType) &&
+    (rp.variationOperators?.length ?? 0) >= 5
   );
 }
 

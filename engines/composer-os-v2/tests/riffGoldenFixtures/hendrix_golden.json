@@ -1,0 +1,27 @@
+{
+  "vrbId": "hendrix",
+  "seed": 42,
+  "bars": 8,
+  "rhythmFingerprint": [
+    0.2,
+    0.1,
+    0,
+    0.2,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0.1,
+    0,
+    0.2,
+    0,
+    0.2
+  ],
+  "noteCount": 40,
+  "offbeatRatio": 0.8,
+  "registerMean": 57.775,
+  "bassRegisterMean": 43.975
+}

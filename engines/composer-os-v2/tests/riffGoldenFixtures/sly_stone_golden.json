@@ -1,0 +1,27 @@
+{
+  "vrbId": "sly_stone",
+  "seed": 42,
+  "bars": 8,
+  "rhythmFingerprint": [
+    0.25,
+    0.25,
+    0,
+    0,
+    0,
+    0.125,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0.125,
+    0.25,
+    0
+  ],
+  "noteCount": 24,
+  "offbeatRatio": 0.75,
+  "registerMean": 55.625,
+  "bassRegisterMean": 44.75
+}

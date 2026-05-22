@@ -160,6 +160,47 @@ Fingerprints carry a **format** tag (**big band**, **string quartet**, **duo**, 
 
 ---
 
+## Riff Generator
+
+Preset **`riff_generator`** — short-loop MusicXML (1–32 bars) to the **Riffs** library. Internal quality gate uses **`scoreRiffGce`** (not duo / Song Mode GCE). VRB family tags, odd-meter overlay, and per-bar locks are documented in **`engines/composer-os-v2/core/counterpoint/INVARIANTS.md`** (Riff Generator block).
+
+### Controls
+
+| Control | API field | Notes |
+|---------|-----------|--------|
+| Loop length | `totalBars` | Stepper: **1, 2, 4, 8, 16, 32** |
+| Family | UI → `riffVrbId` | **funk** · **rock** · **fusion** · **art_rock** |
+| VRB | `riffVrbId` | Stub profiles: e.g. `nile_rodgers`, `led_zeppelin`, `weather_report`, `fripp` |
+| Density | `riffDensity` | `sparse` · `medium` · `dense` |
+| Grid | `riffGrid` | `eighth` · `sixteenth` |
+| Line mode | `riffLineMode` | `single_line` · `guitar_bass` · `octave_double` |
+| Bass part | `riffBass` | With `guitar_bass` line mode |
+| Odd meter | `riffOddMeterPreset` | Fusion / art_rock only (`meter5`, `meter7`, `mahavishnu`, …) |
+| Regenerate / mutate | `riffOp` | `regenerate` · `mutate` (needs prior `riffCarryForward`) |
+| Per-bar lock | `riffBarLocks` | Preserves locked bars on regen/mutate |
+| Chords | `chordProgressionText` | Pipe-delimited — see **Chord progression input** below |
+
+### Chord progression input
+
+Pass a pipe-delimited chord string to the riff engine via `chordProgressionText`
+on `RiffGeneratorParams`. The parser resolves per-bar pitch fields when
+`USE_PITCH_FIELD_NOTE_SELECTION = true`.
+
+Format: `Dm9 | BbMaj7#11 | Eb9sus4 | AbMaj7 | F#m9 | BMaj7 | Gsus2 | Dm9`
+
+Rules:
+- One chord per bar — chord count should match `totalBars`
+- Supported extensions: m9, Maj7#11, 9sus4, sus2, dom9, 13, add9
+- Bad symbols log [riff-chord] warning and fall back to bar root — no silent maj7 swap
+- Empty or missing input falls back to Am7 for every bar
+- Loop truncation removed — up to 32 chords supported (matches bar stepper max)
+
+Known parser behaviour: extended symbol parsing is in place; if a symbol
+produces unexpected output check the [riff-chord] log before assuming
+a VRB profile issue.
+
+---
+
 ## Scenario Cookbook
 
 Practical scenario starting points across composers,

@@ -4,6 +4,8 @@
  */
 
 import type { RiffProfile } from '../composer/riffProfileTypes';
+import type { RiffFamilyTag } from './riffVrbRegistry';
+import { resolveRiffFamilyTag, riffMusicalityFamilyFromRiffTag } from './riffVrbRegistry';
 import { getFunkGridPolicy, type FunkGridPolicyStyle } from '../rhythm/funkGridPolicy';
 import { computeAlignmentCycle, getAccentSlots, getOddMeterPolicy, type OddMeterPolicyStyle } from '../rhythm/oddMeterEngine';
 import {
@@ -47,20 +49,42 @@ export interface GeneratedRiff {
   grid: RiffGridMode;
 }
 
+export interface GateFailure {
+  ruleId: string;
+  friendlyLabel: string;
+  profileField?: string;
+  profileValue?: string;
+}
+
 export interface RiffMusicalityGateOptions {
   threshold?: number;
   weights?: Partial<Record<RiffMusicalityRuleId, number>>;
+  /** VRB registry family tag (funk / rock / fusion / art_rock). */
+  familyTag?: RiffFamilyTag | null;
+  vrbId?: string;
 }
 
 export interface RiffMusicalityResult {
   passed: boolean;
   score: number;
   failedRules: string[];
+  gateFailures: GateFailure[];
   details: Record<string, number>;
   pitchStreakBypassed: boolean;
   contourRequired: boolean;
   rulesetVersion: typeof RIFF_MUSICALITY_GATE_VERSION;
+  family: RiffMusicalityFamily;
 }
+
+/** Per-family rule weight multipliers (applied before threshold check). */
+export const FAMILY_RULE_WEIGHT_MULTIPLIERS: Partial<
+  Record<RiffMusicalityFamily, Partial<Record<RiffMusicalityRuleId, number>>>
+> = {
+  funk: { syncopationBalance: 1.4, loopIdentityScore: 0.8 },
+  rock: { loopIdentityScore: 1.4, anchorStrength: 1.2 },
+  fusion: { cadentialReset: 1.3, barToBarMutationBudget: 1.2 },
+  art_rock: { silencePatternScore: 1.3, registerCoherence: 1.1 },
+};
 
 type MelodicNote = {
   midi: number;
@@ -91,6 +115,72 @@ function bandScore(value: number, lo: number, hi: number): number {
   const over = value - hi;
   const span = Math.max(hi - lo, 1e-6);
   return clamp01(1 - over / span);
+}
+
+function callResponsePatternActive(profile: RiffProfile): boolean {
+  const p = profile.spacePolicy?.callResponsePattern?.toLowerCase() ?? '';
+  return (
+    p.includes('vocal') ||
+    p.includes('call') ||
+    p.includes('drop') ||
+    p.includes('rest_window')
+  );
+}
+
+function profileHintForRule(
+  ruleId: RiffMusicalityRuleId,
+  profile: RiffProfile
+): { profileField?: string; profileValue?: string } {
+  switch (ruleId) {
+    case 'anchorStrength':
+      if (profile.hornStabTopology?.length) {
+        return {
+          profileField: 'hornStabTopology',
+          profileValue: `${profile.hornStabTopology.length} topology(ies)`,
+        };
+      }
+      return { profileField: 'accentTopology', profileValue: `${profile.accentTopology?.length ?? 0} slots` };
+    case 'loopIdentityScore':
+      return {
+        profileField: 'repetitionPolicy.barIdentityPersistence',
+        profileValue: String(profile.repetitionPolicy?.barIdentityPersistence ?? ''),
+      };
+    case 'syncopationBalance':
+      return {
+        profileField: 'spacePolicy.callResponsePattern',
+        profileValue: profile.spacePolicy?.callResponsePattern ?? '',
+      };
+    case 'registerCoherence':
+      if (profile.pedalRigid) {
+        return { profileField: 'pedalRigid', profileValue: 'true' };
+      }
+      return {
+        profileField: 'riffRegisterFloor',
+        profileValue: String(profile.riffRegisterFloor),
+      };
+    case 'intervalIdentityScore':
+      return {
+        profileField: 'intervalCell.steps',
+        profileValue: profile.intervalCell?.steps?.join(',') ?? '',
+      };
+    case 'barToBarMutationBudget':
+      return {
+        profileField: 'repetitionPolicy.barIdentityPersistence',
+        profileValue: String(profile.repetitionPolicy?.barIdentityPersistence ?? ''),
+      };
+    case 'silencePatternScore':
+      return {
+        profileField: 'silencePolicy.styleClass',
+        profileValue: profile.silencePolicy?.styleClass ?? '',
+      };
+    case 'cadentialReset':
+      return {
+        profileField: 'cadenceTypes',
+        profileValue: profile.cadenceTypes ? JSON.stringify(profile.cadenceTypes) : '',
+      };
+    default:
+      return {};
+  }
 }
 
 function guitarMelodicNotes(score: ScoreModel): MelodicNote[] {
@@ -152,6 +242,17 @@ function resolveRockPreset(profile: RiffProfile): RockRiffPolicyStyle | undefine
 
 function resolveFunkPreset(profile: RiffProfile): FunkGridPolicyStyle | undefined {
   return profile.silencePolicy.funkGridPreset;
+}
+
+/** Resolve gate family: VRB registry tag when present, else profile posture. */
+export function resolveMusicalityFamilyForGate(
+  profile: RiffProfile,
+  familyTag?: RiffFamilyTag | null,
+  vrbId?: string
+): RiffMusicalityFamily {
+  const tag = familyTag ?? (vrbId ? resolveRiffFamilyTag(vrbId) : null);
+  if (tag) return riffMusicalityFamilyFromRiffTag(tag);
+  return resolveMusicalityFamily(profile);
 }
 
 /** Infer scoring family from riff profile posture (VRB-agnostic). */
@@ -238,13 +339,26 @@ function scoreAnchorStrength(
 
   if (family === 'funk') strongTargets = [0, ...strongTargets.filter((b) => Math.abs(b) > EPS)];
 
+  const horn = riff.score.parts.find((p) => p.id === 'horns');
+
   let barsWithAnchor = 0;
   for (let b = 0; b < riff.bars; b++) {
     const barRh = riff.perBarRhythm[b] ?? [];
     const barNotes = guitarMelodicNotes(riff.score).filter((n) => n.measureIndex === b + 1);
+    const hornOnsets: number[] = [];
+    if (profile.hornStabTopology?.length && horn?.measures[b]) {
+      for (const e of horn.measures[b]!.events) {
+        if (e.kind === 'note') hornOnsets.push((e as { startBeat: number }).startBeat);
+      }
+      const topo = profile.hornStabTopology[b % profile.hornStabTopology.length];
+      if (topo) {
+        for (const slot of topo.slots) hornOnsets.push(slotToBeat(slot, slots));
+      }
+    }
     const onsets = [
       ...barRh.filter((s) => !s.rest).map((s) => s.startBeat),
       ...barNotes.map((n) => n.startBeat),
+      ...hornOnsets,
     ];
     const hasStrong = strongTargets.some((t) => onsets.some((o) => Math.abs(o - t) < EPS));
     if (hasStrong) barsWithAnchor += 1;
@@ -332,6 +446,9 @@ function scoreSyncopationBalance(
     lo = 0.03;
     hi = 0.9;
   }
+  if (callResponsePatternActive(profile)) {
+    hi *= 1.4;
+  }
   return { score: bandScore(v, lo, hi), detail: `ioi_var=${v.toFixed(3)}` };
 }
 
@@ -343,6 +460,12 @@ function scoreRegisterCoherence(
   if (!notes.length) return { score: 0, detail: 'no_notes' };
   const floor = profile.riffRegisterFloor;
   const ceiling = profile.riffRegisterCeiling;
+
+  if (profile.pedalRigid) {
+    const span = Math.max(5, Math.min(9, ceiling - floor));
+    const lowLock = notes.every((n) => n.midi >= floor && n.midi <= floor + span);
+    if (lowLock) return { score: 1, detail: 'pedal_rigid_low_string_lock' };
+  }
   const odd = resolveOddMeterPreset(profile);
   const outPct =
     notes.filter((n) => n.midi < floor || n.midi > ceiling).length / notes.length;
@@ -534,13 +657,16 @@ function scoreContourShape(
   return { score, skipped: false, detail: `arc=${arc.toFixed(2)} span=${span}` };
 }
 
-function evaluatePitchStreakGuard(
+export function evaluatePitchStreakGuard(
   riff: GeneratedRiff,
   profile: RiffProfile
 ): { score: number; bypassed: boolean; failures: string[] } {
   const rockPreset = resolveRockPreset(profile);
   const bypassed =
-    profile.allowPitchStreak || (rockPreset != null && rockRiffAllowsPitchStreak(rockPreset));
+    profile.allowPitchStreak === true ||
+    (profile.allowPitchStreak !== false &&
+      rockPreset != null &&
+      rockRiffAllowsPitchStreak(rockPreset));
   if (bypassed) return { score: 1, bypassed: true, failures: [] };
 
   const failures: string[] = [];
@@ -563,17 +689,24 @@ function evaluatePitchStreakGuard(
   return { score, bypassed: false, failures };
 }
 
-function mergeWeights(
+/** Exported for tests — family-aware rule weights (normalized). */
+export function familyRuleWeights(
   family: RiffMusicalityFamily,
   overrides?: Partial<Record<RiffMusicalityRuleId, number>>
 ): Record<RiffMusicalityRuleId, number> {
   const w = { ...DEFAULT_WEIGHTS, ...overrides };
+  const mult = FAMILY_RULE_WEIGHT_MULTIPLIERS[family];
+  if (mult) {
+    for (const [k, m] of Object.entries(mult) as [RiffMusicalityRuleId, number][]) {
+      w[k] = (w[k] ?? 0) * m;
+    }
+  }
   if (family === 'rock') {
-    w.loopIdentityScore = 0.18;
-    w.silencePatternScore = 0.1;
+    w.loopIdentityScore = (w.loopIdentityScore ?? 0) * 1.05;
+    w.silencePatternScore = (w.silencePatternScore ?? 0) * 0.85;
   } else if (family === 'funk') {
-    w.syncopationBalance = 0.16;
-    w.silencePatternScore = 0.14;
+    w.syncopationBalance = (w.syncopationBalance ?? 0) * 1.05;
+    w.silencePatternScore = (w.silencePatternScore ?? 0) * 1.05;
   }
   const sum = Object.values(w).reduce((a, b) => a + b, 0);
   if (sum <= 0) return w;
@@ -584,6 +717,34 @@ function mergeWeights(
   return out;
 }
 
+const RIFF_RULE_FRIENDLY_LABELS: Record<string, string> = {
+  anchorStrength: 'Needs a stronger downbeat',
+  loopIdentityScore: 'Riff lacks repetition coherence',
+  syncopationBalance: 'Rhythm too square / too random',
+  registerCoherence: 'Notes out of register',
+  intervalIdentityScore: "Intervals don't match style",
+  barToBarMutationBudget: 'Too much variation bar-to-bar',
+  silencePatternScore: 'Silence pattern off for this style',
+  cadentialReset: 'Phrase ending needs reset',
+  contourShape: 'Contour arc weak for this family',
+  pitchStreakGuard: 'Pitch streak policy',
+};
+
+function buildGateFailure(
+  ruleId: string,
+  profile: RiffProfile,
+  detail?: string
+): GateFailure {
+  const hint = profileHintForRule(ruleId as RiffMusicalityRuleId, profile);
+  const friendlyLabel = RIFF_RULE_FRIENDLY_LABELS[ruleId] ?? ruleId;
+  return {
+    ruleId,
+    friendlyLabel,
+    profileField: hint.profileField,
+    profileValue: hint.profileValue ?? detail,
+  };
+}
+
 /**
  * Evaluate 8-rule musicality gate + optional contour + pitch-streak guard.
  */
@@ -592,10 +753,11 @@ export function evaluateRiffMusicality(
   profile: RiffProfile,
   options?: RiffMusicalityGateOptions
 ): RiffMusicalityResult {
-  const family = resolveMusicalityFamily(profile);
+  const family = resolveMusicalityFamilyForGate(profile, options?.familyTag, options?.vrbId);
   const threshold = options?.threshold ?? RIFF_MUSICALITY_DEFAULT_THRESHOLD;
-  const weights = mergeWeights(family, options?.weights);
+  const weights = familyRuleWeights(family, options?.weights);
   const failedRules: string[] = [];
+  const gateFailures: GateFailure[] = [];
   const details: Record<string, number> = {};
 
   const rules: Record<RiffMusicalityRuleId, { score: number; detail?: string }> = {
@@ -616,6 +778,7 @@ export function evaluateRiffMusicality(
     weighted += row.score * weights[id]!;
     if (row.score < 0.45) {
       failedRules.push(`${id}: score=${row.score.toFixed(2)}${row.detail ? ` (${row.detail})` : ''}`);
+      gateFailures.push(buildGateFailure(id, profile, row.detail));
     }
   }
 
@@ -628,6 +791,7 @@ export function evaluateRiffMusicality(
     details.contourShape = contourScore;
     if (contourRequired && contourScore < 0.45) {
       failedRules.push(`contourShape: score=${contourScore.toFixed(2)} (${c.detail ?? 'weak_arc'})`);
+      gateFailures.push(buildGateFailure('contourShape', profile, c.detail));
     } else if (!contourRequired && contourScore < 0.3) {
       weighted = weighted * 0.95 + contourScore * 0.05;
     } else if (contourRequired) {
@@ -640,7 +804,15 @@ export function evaluateRiffMusicality(
   const pitch = evaluatePitchStreakGuard(riff, profile);
   details.pitchStreakGuard = pitch.score;
   if (!pitch.bypassed) {
-    failedRules.push(...pitch.failures);
+    for (const f of pitch.failures) {
+      failedRules.push(f);
+      gateFailures.push({
+        ruleId: 'pitchStreakGuard',
+        friendlyLabel: RIFF_RULE_FRIENDLY_LABELS.pitchStreakGuard!,
+        profileField: 'allowPitchStreak',
+        profileValue: String(profile.allowPitchStreak),
+      });
+    }
     if (pitch.score < 0.55) {
       weighted = Math.min(weighted, pitch.score);
     }
@@ -652,10 +824,12 @@ export function evaluateRiffMusicality(
     passed,
     score: clamp01(weighted),
     failedRules,
+    gateFailures,
     details,
     pitchStreakBypassed: pitch.bypassed,
     contourRequired,
     rulesetVersion: RIFF_MUSICALITY_GATE_VERSION,
+    family,
   };
 }
 

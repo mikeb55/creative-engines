@@ -2128,6 +2128,7 @@ export function HomeGenerate({
     'single_line' | 'guitar_bass' | 'octave_double'
   >('single_line');
   const [riffBass, setRiffBass] = useState(false);
+  const [riffSolo, setRiffSolo] = useState(false);
   const [riffBarLocks, setRiffBarLocks] = useState<boolean[]>([]);
   const [riffCarryForward, setRiffCarryForward] = useState<RiffCarryForward | null>(null);
   const [riffGateMessages, setRiffGateMessages] = useState<string[]>([]);
@@ -3116,6 +3117,7 @@ export function HomeGenerate({
                 riffGrid,
                 riffLineMode,
                 riffBass,
+                ...(riffSolo ? { riffSolo: true } : {}),
                 ...(chordTrim ? { chordProgressionText: chordTrim } : {}),
                 ...(riffGenerateOpRef.current !== 'full' &&
                 riffCarryForward &&
@@ -3448,6 +3450,7 @@ export function HomeGenerate({
       riffGrid,
       riffLineMode,
       riffBass,
+      riffSolo,
       riffBarLocks,
       riffCarryForward,
       songModeStyleProfile,
@@ -5245,6 +5248,7 @@ export function HomeGenerate({
           riffGrid={riffGrid}
           riffLineMode={riffLineMode}
           riffBass={riffBass}
+          riffSolo={riffSolo}
           barLocks={riffBarLocks}
           gateMessages={riffGateMessages}
           canRegenerateMutate={riffCarryForward != null}
@@ -5256,6 +5260,7 @@ export function HomeGenerate({
           onRiffGridChange={setRiffGrid}
           onRiffLineModeChange={setRiffLineMode}
           onRiffBassChange={setRiffBass}
+          onRiffSoloChange={setRiffSolo}
           onBarLockChange={(i, locked) => {
             setRiffBarLocks((prev) => {
               const next = [...prev];

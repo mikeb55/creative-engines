@@ -1,0 +1,27 @@
+{
+  "vrbId": "morello",
+  "seed": 42,
+  "bars": 8,
+  "rhythmFingerprint": [
+    0.25,
+    0.25,
+    0,
+    0,
+    0,
+    0.125,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0.125,
+    0,
+    0.25
+  ],
+  "noteCount": 32,
+  "offbeatRatio": 0.75,
+  "registerMean": 57.5625,
+  "bassRegisterMean": 44.5625
+}

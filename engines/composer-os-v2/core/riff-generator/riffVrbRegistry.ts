@@ -12,8 +12,10 @@ export type RiffFamilyTag = 'funk' | 'rock' | 'fusion' | 'art_rock';
 export const RIFF_GENERATOR_VRB_IDS = [
   'james_brown',
   'nile_rodgers',
+  'larry_carlton',
   'sly_stone',
   'iommi',
+  'david_gilmour',
   'hendrix',
   'led_zeppelin',
   'weather_report',
@@ -21,6 +23,7 @@ export const RIFF_GENERATOR_VRB_IDS = [
   'verlaine',
   'morello',
   'fripp',
+  'frank_zappa',
 ] as const;
 
 export type RiffGeneratorVrbId = (typeof RIFF_GENERATOR_VRB_IDS)[number];
@@ -28,8 +31,10 @@ export type RiffGeneratorVrbId = (typeof RIFF_GENERATOR_VRB_IDS)[number];
 export const RIFF_VRB_EXPECTED_FAMILY: Record<RiffGeneratorVrbId, RiffFamilyTag> = {
   james_brown: 'funk',
   nile_rodgers: 'funk',
+  larry_carlton: 'funk',
   sly_stone: 'funk',
   iommi: 'rock',
+  david_gilmour: 'rock',
   hendrix: 'rock',
   led_zeppelin: 'rock',
   weather_report: 'fusion',
@@ -37,6 +42,7 @@ export const RIFF_VRB_EXPECTED_FAMILY: Record<RiffGeneratorVrbId, RiffFamilyTag>
   verlaine: 'art_rock',
   morello: 'art_rock',
   fripp: 'art_rock',
+  frank_zappa: 'rock',
 };
 
 /**
@@ -45,8 +51,10 @@ export const RIFF_VRB_EXPECTED_FAMILY: Record<RiffGeneratorVrbId, RiffFamilyTag>
  */
 export const RIFF_VRB_SIGMA_CEILINGS: Partial<Record<RiffGeneratorVrbId, number>> = {
   nile_rodgers: 22,
+  larry_carlton: 24,
   sly_stone: 24,
   iommi: 26,
+  david_gilmour: 26,
   hendrix: 28,
   led_zeppelin: 27,
   weather_report: 30,
@@ -54,6 +62,7 @@ export const RIFF_VRB_SIGMA_CEILINGS: Partial<Record<RiffGeneratorVrbId, number>
   verlaine: 25,
   morello: 25,
   fripp: 27,
+  frank_zappa: 29,
 };
 
 export function isRiffGeneratorVrbId(id: string): id is RiffGeneratorVrbId {

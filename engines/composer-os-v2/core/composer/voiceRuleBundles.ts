@@ -68,6 +68,8 @@ import {
   MESSIAEN,
   MORELLO,
   NILE_RODGERS,
+  DAVID_GILMOUR,
+  LARRY_CARLTON,
   SLY_STONE,
   VERLAINE,
   WEATHER_REPORT,
@@ -78,6 +80,7 @@ import {
   JONI_MITCHELL_FILM_STUB,
   WILLIAMS_FILM_STUB,
 } from './priority3VoiceRuleBundles';
+import { buildFrankZappaRiffProfile } from './riffVrbStubs';
 
 /** Interval-class seeds aligned with Threadgill / IntervalSetSystem posture (engine-local). */
 const THREADGILL_INTERVAL_CLASS_SEEDS = [1, 2, 3, 5, 6, 7, 8, 10];
@@ -3059,6 +3062,94 @@ const CRUMB_BLACK_ANGELS: VoiceRuleBundle = {
   },
 };
 
+/** Sly Stone riff VRB research overlays (additive to SS_* fillReceipts stubs in riffVrbStubs). */
+const SLY_STONE_FINGERPRINT_RESEARCH = [
+  'sly_horns_thank_you_main_stab — id: sly_horns_thank_you_main_stab; topology: 2& and 4& offbeats; articulation: 8th staccato; behavior: horn answer does not double vocal line.',
+  'sly_horns_higher_chorus_drive — id: sly_horns_higher_chorus_drive; topology: backbeat plus 4& doubles vocal on chorus; behavior: horn answers on 2& and 3& between vocal lines.',
+  'sly_horns_dance_to_the_music_blocks — id: sly_horns_dance_to_the_music_blocks; topology: block hits on beats 1 and 3 at section entries; behavior: counter-stabs under vocals.',
+  'sly_vocal_gtr_callresp_thank_you — id: sly_vocal_gtr_callresp_thank_you; behavior: guitar drops full hits under vocals; topology: muted ghost 16ths continue; re-entry on 2& or 3.',
+  'sly_vocal_gtr_callresp_higher_intro_hook — id: sly_vocal_gtr_callresp_higher_intro_hook; topology: 1-beat rest window at vocal entry; behavior: guitar re-entry on & offbeats.',
+  'sly_organ_family_affair_minimal_rhodes — id: sly_organ_family_affair_minimal_rhodes; topology: sustained pads full or half bar; register: C3–C5; behavior: fills harmonic space under ensemble.',
+  'sly_organ_sing_simple_song_callfills — id: sly_organ_sing_simple_song_callfills; topology: stabs on 2& and 4&; register: F3–E5; behavior: fills drum-break gaps only.',
+  'sly_bass_thank_you_larry_pushes — id: sly_bass_thank_you_larry_pushes; topology: 16th anticipations into beats 1 and 3; behavior: octave jumps every 1–2 bars; melodic counterpart to static guitar comp.',
+  'sly_bass_higher_answering_riff — id: sly_bass_higher_answering_riff; topology: bass enters on & of 1; behavior: answers guitar riff contour; interlock not unison double.',
+  'sly_variation_thank_you_bars — id: sly_variation_thank_you_bars; operators: rhythmicDisplacement, octaveShift, harmonicColourSwap E9→E13/E7#9, truncation/extension.',
+  'sly_variation_higher_tag — id: sly_variation_higher_tag; operators: callLengthChange, harmonicSwap D→D7/D9; behavior: stop-time bars before shout peaks.',
+  'sly_riff_identity_thank_you_sections — id: sly_riff_identity_thank_you_sections; topology: core E9 comp constant across sections; behavior: density varies by section; breakdown strips to ghost 16ths only.',
+  'sly_riff_identity_higher_sections — id: sly_riff_identity_higher_sections; topology: fragmented verse hook versus full chorus with tail; behavior: simplified backbeat grid at drum breaks.',
+] as const;
+
+const SLY_STONE_VRF: VoiceRuleBundle = {
+  ...SLY_STONE,
+  orchestrationPolicy: {
+    ...SLY_STONE.orchestrationPolicy,
+    fingerprintReceipts: [
+      ...(SLY_STONE.orchestrationPolicy.fingerprintReceipts ?? []),
+      ...SLY_STONE_FINGERPRINT_RESEARCH,
+    ],
+  },
+};
+
+/** Led Zeppelin / Jimmy Page riff VRB research overlays (additive to LZ_* fillReceipts stubs in riffVrbStubs). */
+const LED_ZEPPELIN_FINGERPRINT_RESEARCH = [
+  'page_bow_dazed_and_confused — id: page_bow_dazed_and_confused; register: E2–A3; topology: sustained drones plus glissando swells; behavior: section boundary entry at 1:40; cadential reset exit at 4:20; free-time layer.',
+  'page_bow_how_many_more_times — id: page_bow_how_many_more_times; register: A3–D4; topology: rhythmic quarter-note bow strokes with 8th-note attacks; behavior: interlude chapter marker 3:10–4:10.',
+  'page_bow_live_whole_lotta_love — id: page_bow_live_whole_lotta_love; register: E2–E5; topology: free-time drones feeding delays; behavior: texture bridge between medley fragments; loosely synced to tom hits.',
+  'page_theremin_whole_lotta_love_breakdown — id: page_theremin_whole_lotta_love_breakdown; behavior: enters post-riff drop at 1:25; peaks before drum-fill cadential reset at 3:10; role: tension build.',
+  'page_fx_dazed_confused_reverse_echo — id: page_fx_dazed_confused_reverse_echo; topology: intro portal marker 0:00–0:40; behavior: reentry reset marker at 4:25–4:45 after bow interlude.',
+  'page_fx_no_quarter_theremin_live — id: page_fx_no_quarter_theremin_live; behavior: transition marker between ambient and riff sections; enters at jam subsection start; fades on main riff return.',
+  'page_variation_black_dog_verse_riff — id: page_variation_black_dog_verse_riff; styleMode: blues_rock; operators: microTimingShift, endTruncation, ornamentAdd; loopLengthBeats: 4.',
+  'page_variation_whole_lotta_love_main_riff — id: page_variation_whole_lotta_love_main_riff; styleMode: blues_rock; operators: chromaticAdd, tailFill, dynamicsVariation.',
+  'page_variation_kashmir_pedal_dyads — id: page_variation_kashmir_pedal_dyads; styleMode: epic_modal_heavy; operators: upperVoicingColourSwap, occasionalOctaveReposition; pedalRigid: true.',
+  'page_variation_bronyaur_open_drone — id: page_variation_bronyaur_open_drone; styleMode: folk_modal; operators: strumPatternChange, ornamentOnDrone, bassNoteSwap; droneContinuity: high.',
+  'page_variation_over_the_hills_intro_verse — id: page_variation_over_the_hills_intro_verse; styleMode: folk_modal; behavior: ornamented intro to simplified verse; topology: melodic fills on top strings.',
+  'page_doubletrack_blues_rock_lead — id: page_doubletrack_blues_rock_lead; behavior: blues_rock frequent, epic_modal_heavy moderate, folk_modal rare; topology: approx_unison_micro_variation.',
+  'page_unison_riff_octaves_epic — id: page_unison_riff_octaves_epic; topology: octave unison layers; behavior: Achilles Last Stand counter-riff overdubs in later sections.',
+  'page_cadence_tailfill_bluesrock — id: page_cadence_tailfill_bluesrock; styleMode: blues_rock; topology: 1/4–1/2 bar pentatonic fill then downbeat rest.',
+  'page_cadence_sustained_sus_epic — id: page_cadence_sustained_sus_epic; styleMode: epic_modal_heavy; topology: held sus/power chord over barline; behavior: drum-roll signal.',
+  'page_cadence_hard_stop_heavy — id: page_cadence_hard_stop_heavy; topology: unison hit then full stop 1–2 beats; restDurations: half_bar, full_bar.',
+  'page_density_intro_to_verse_whole_lotta_love — id: page_density_intro_to_verse_whole_lotta_love; behavior: thick intro to thin verse; topology: single-note riff plus stabs under vocal.',
+  'page_density_verse_to_chorus_black_dog — id: page_density_verse_to_chorus_black_dog; behavior: full stop under a cappella vocal; topology: thick chordal chorus with continuous riffs.',
+  'page_density_over_the_hills_acoustic_to_electric — id: page_density_over_the_hills_acoustic_to_electric; behavior: solo acoustic low density to sudden density jump at electric entrance 1:00.',
+] as const;
+
+const LED_ZEPPELIN_VRF: VoiceRuleBundle = {
+  ...LED_ZEPPELIN,
+  orchestrationPolicy: {
+    ...LED_ZEPPELIN.orchestrationPolicy,
+    fingerprintReceipts: [
+      ...(LED_ZEPPELIN.orchestrationPolicy.fingerprintReceipts ?? []),
+      ...LED_ZEPPELIN_FINGERPRINT_RESEARCH,
+    ],
+  },
+};
+
+/** Frank Zappa riff-path research (Z1) — solo lane + modal/polyrhythm receipts. */
+const FRANK_ZAPPA_FINGERPRINT_RESEARCH = [
+  'zappa_solo_inca_roads_modal — id: zappa_solo_inca_roads_modal; scalePool: Lydian+Mixolydian; polyrhythm: 7/8 feel; chromaticBudget: 0.55; register: 60–84.',
+  'zappa_solo_watermelon_easter_hay — id: zappa_solo_watermelon_easter_hay; contour: angular; operators: microTimingShift, ornamentAdd; phraseBars: 4.',
+  'zappa_solo_apostrophe_blues — id: zappa_solo_apostrophe_blues; scalePool: blues+Mixolydian; chromaticBudget: 0.48; maxLeapSemitones: 10.',
+  'zappa_solo_muffin_man_groove — id: zappa_solo_muffin_man_groove; rhythmicCellEighths: 3,3,2; registerFloor: 58; registerCeiling: 82.',
+  'zappa_solo_montana_country_fusion — id: zappa_solo_montana_country_fusion; scalePool: Mixolydian+Dorian; variationOperators: registerShift, chromaticAdd.',
+  'zappa_solo_blessed_relief_lyrical — id: zappa_solo_blessed_relief_lyrical; chromaticBudget: 0.35; maxLeapSemitones: 8; phraseBars: 8.',
+  'zappa_solo_interval_tritone — id: zappa_solo_interval_tritone; behavior: tritone+m6 identity leaps required per phrase window.',
+  'zappa_solo_phrasing_breath — id: zappa_solo_phrasing_breath; behavior: density contrast; rest slots after 4-bar motif statement.',
+] as const;
+
+const FRANK_ZAPPA_VRF: VoiceRuleBundle = {
+  ...FRANK_ZAPPA,
+  family: 'rock',
+  sigma: 29,
+  riffProfile: buildFrankZappaRiffProfile(),
+  orchestrationPolicy: {
+    ...FRANK_ZAPPA.orchestrationPolicy,
+    fingerprintReceipts: [
+      ...(FRANK_ZAPPA.orchestrationPolicy.fingerprintReceipts ?? []),
+      ...FRANK_ZAPPA_FINGERPRINT_RESEARCH,
+    ],
+  },
+};
+
 const BY_ID: Record<string, VoiceRuleBundle> = {
   bartok: BARTOK,
   bela_bartok: BARTOK,
@@ -3114,8 +3205,10 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   steely_dan: DONALD_FAGEN,
   bacharach: BACHARACH,
   burt_bacharach: BACHARACH,
-  frank_zappa: FRANK_ZAPPA,
-  zappa: FRANK_ZAPPA,
+  frank_zappa: FRANK_ZAPPA_VRF,
+  zappa: FRANK_ZAPPA_VRF,
+  mothers: FRANK_ZAPPA_VRF,
+  mothers_of_invention: FRANK_ZAPPA_VRF,
   ecm_chamber: ECM_CHAMBER,
   ecm: ECM_CHAMBER,
   fripp_king_crimson: FRIPP_KING_CRIMSON,
@@ -3134,17 +3227,23 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   jb: JAMES_BROWN,
   nile_rodgers: NILE_RODGERS,
   nile: NILE_RODGERS,
-  sly_stone: SLY_STONE,
-  sly: SLY_STONE,
-  family_stone: SLY_STONE,
+  larry_carlton: LARRY_CARLTON,
+  carlton: LARRY_CARLTON,
+  mr_335: LARRY_CARLTON,
+  sly_stone: SLY_STONE_VRF,
+  sly: SLY_STONE_VRF,
+  family_stone: SLY_STONE_VRF,
   iommi: IOMMI,
   black_sabbath: IOMMI,
+  david_gilmour: DAVID_GILMOUR,
+  gilmour: DAVID_GILMOUR,
+  pink_floyd: DAVID_GILMOUR,
   hendrix: HENDRIX,
   jimi: HENDRIX,
-  led_zeppelin: LED_ZEPPELIN,
-  jimmy_page: LED_ZEPPELIN,
-  page: LED_ZEPPELIN,
-  zeppelin: LED_ZEPPELIN,
+  led_zeppelin: LED_ZEPPELIN_VRF,
+  jimmy_page: LED_ZEPPELIN_VRF,
+  page: LED_ZEPPELIN_VRF,
+  zeppelin: LED_ZEPPELIN_VRF,
   herrmann: applyHerrmannFilmStubVrbProfile(HERRMANN_FILM_STUB),
   bernard_herrmann: applyHerrmannFilmStubVrbProfile(HERRMANN_FILM_STUB),
   williams: applyWilliamsFilmStubVrbProfile(WILLIAMS_FILM_STUB),

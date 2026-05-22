@@ -1,11 +1,18 @@
 import { useMemo, type CSSProperties } from 'react';
 import type { RiffDensity, RiffGridMode, RiffLineMode } from '../../core/riff-generator/riffTypes';
+import type { RiffGenerationMetadata } from '../../core/riff-generator/riffMultiVoiceTypes';
+import type { GateFailure } from '../../core/riff-generator/riffMusicalityGate';
+import type { RiffProfile } from '../../core/composer/riffProfileTypes';
+import { resolveRiffGeneratorProfile } from '../../core/riff-generator/resolveRiffGeneratorProfile';
+import { buildFxMarkerTrack } from '../../core/riff-generator/riffFxMarkerBuilder';
+import { buildHornStabTrack } from '../../core/riff-generator/riffHornStabBuilder';
 import {
   RIFF_BAR_STEP_VALUES,
   RIFF_DENSITY_UI_OPTIONS,
   RIFF_FAMILY_OPTIONS,
   RIFF_ODD_METER_NONE,
   RIFF_ODD_METER_PRESETS,
+  riffFamilyAllowsSoloOverlay,
   riffFamilyShowsMeterPicker,
   riffVrbOptionById,
   riffVrbOptionsForFamily,
@@ -65,9 +72,15 @@ export type RiffGeneratorPanelProps = {
   riffGrid: RiffGridMode;
   riffLineMode: RiffLineMode;
   riffBass: boolean;
+  riffSolo: boolean;
   barLocks: boolean[];
   gateMessages: string[];
+  gateFailures?: GateFailure[];
   canRegenerateMutate: boolean;
+  /** Last generate metadata (FX markers, horns, rest windows). */
+  riffGenerationMetadata?: RiffGenerationMetadata;
+  /** Optional resolved profile preview (badges when metadata absent). */
+  riffProfilePreview?: RiffProfile;
   onFamilyChange: (family: RiffFamilyTag) => void;
   onVrbIdChange: (vrbId: string) => void;
   onBarsChange: (bars: RiffBarCount) => void;
@@ -76,6 +89,7 @@ export type RiffGeneratorPanelProps = {
   onRiffGridChange: (grid: RiffGridMode) => void;
   onRiffLineModeChange: (mode: RiffLineMode) => void;
   onRiffBassChange: (enabled: boolean) => void;
+  onRiffSoloChange: (enabled: boolean) => void;
   onBarLockChange: (barIndex: number, locked: boolean) => void;
   onRegenerate: () => void;
   onMutate: () => void;
@@ -91,9 +105,13 @@ export function RiffGeneratorPanel({
   riffGrid,
   riffLineMode,
   riffBass,
+  riffSolo,
   barLocks,
   gateMessages,
+  gateFailures,
   canRegenerateMutate,
+  riffGenerationMetadata,
+  riffProfilePreview,
   onFamilyChange,
   onVrbIdChange,
   onBarsChange,
@@ -102,6 +120,7 @@ export function RiffGeneratorPanel({
   onRiffGridChange,
   onRiffLineModeChange,
   onRiffBassChange,
+  onRiffSoloChange,
   onBarLockChange,
   onRegenerate,
   onMutate,
@@ -111,6 +130,27 @@ export function RiffGeneratorPanel({
   const showMeter = riffFamilyShowsMeterPicker(family);
   const vrbUi = useMemo(() => riffVrbUiIndicators(vrbId), [vrbId]);
   const barIndex = RIFF_BAR_STEP_VALUES.indexOf(bars);
+  const showSoloToggle = riffFamilyAllowsSoloOverlay(family);
+
+  const multiVoiceBadges = useMemo(() => {
+    if (riffGenerationMetadata?.multiVoiceBadges) return riffGenerationMetadata.multiVoiceBadges;
+    const profile =
+      riffProfilePreview ??
+      resolveRiffGeneratorProfile({
+        vrbId,
+        style: 'neutral',
+        grid: riffGrid,
+        density,
+      });
+    const horns = !!buildHornStabTrack(profile, bars, ['E9'], vrbId);
+    const bassInterlock = !!profile.bassContourPolicy && riffBass;
+    const fxMarkers =
+      !!buildFxMarkerTrack(profile) && /led_zeppelin|zeppelin|jimmy_page|page/.test(vrbId);
+    const solo = !!profile.soloGeneratorProfile?.enabled && riffSolo;
+    return { horns, bassInterlock, fxMarkers, solo };
+  }, [riffGenerationMetadata, riffProfilePreview, vrbId, bars, riffGrid, density, riffBass, riffSolo]);
+
+  const barPartIndicators = riffGenerationMetadata?.barPartIndicators;
 
   return (
     <section style={zoneShell} aria-label="Riff generator options">
@@ -162,6 +202,18 @@ export function RiffGeneratorPanel({
           {vrbUi.processLoopLabel ? <span style={badgeStyle}>{vrbUi.processLoopLabel}</span> : null}
           {vrbUi.killSwitchLabel ? <span style={badgeStyle}>{vrbUi.killSwitchLabel}</span> : null}
           {vrbUi.counterpartLabel ? <span style={badgeStyle}>{vrbUi.counterpartLabel}</span> : null}
+        </div>
+      )}
+
+      {(multiVoiceBadges.horns ||
+        multiVoiceBadges.bassInterlock ||
+        multiVoiceBadges.fxMarkers ||
+        multiVoiceBadges.solo) && (
+        <div style={{ ...flexWrap, marginTop: '0.5rem' }} aria-label="Multi-voice parts">
+          {multiVoiceBadges.horns ? <span style={badgeStyle}>Horns</span> : null}
+          {multiVoiceBadges.bassInterlock ? <span style={badgeStyle}>Bass interlock</span> : null}
+          {multiVoiceBadges.fxMarkers ? <span style={badgeStyle}>FX markers</span> : null}
+          {multiVoiceBadges.solo ? <span style={badgeStyle}>Solo overlay</span> : null}
         </div>
       )}
 
@@ -279,6 +331,25 @@ export function RiffGeneratorPanel({
         Bass (acoustic bass voice, GM 33) — ignored in octave mode
       </label>
 
+      {showSoloToggle ? (
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem', marginTop: '0.45rem' }}>
+          <input
+            type="checkbox"
+            checked={riffSolo}
+            onChange={(e) => onRiffSoloChange(e.target.checked)}
+            disabled={
+              loading ||
+              !(
+                riffProfilePreview?.soloGeneratorProfile?.enabled ??
+                resolveRiffGeneratorProfile({ vrbId, style: 'neutral', grid: riffGrid, density })
+                  .soloGeneratorProfile?.enabled
+              )
+            }
+          />
+          Solo overlay (separate lead part) — Frank Zappa VRB
+        </label>
+      ) : null}
+
       <div style={{ marginTop: '0.85rem', paddingTop: '0.65rem', borderTop: '1px solid var(--border)' }}>
         <h4 style={{ ...zoneTitle, marginBottom: '0.45rem' }}>Lock / mutate</h4>
         <div
@@ -310,6 +381,15 @@ export function RiffGeneratorPanel({
                 onChange={(e) => onBarLockChange(i, e.target.checked)}
               />
               <span>{barLocks[i] ? 'Lock' : 'Open'}</span>
+              {barPartIndicators?.[i]?.parts?.length ? (
+                <span style={{ fontSize: '0.62rem', marginTop: 2, textAlign: 'center' }}>
+                  {barPartIndicators[i]!.parts
+                    .map((p) =>
+                      p === 'guitar' ? 'G' : p === 'horns' ? 'H' : p === 'bass' ? 'B' : p === 'solo' ? 'S' : 'FX'
+                    )
+                    .join('·')}
+                </span>
+              ) : null}
             </label>
           ))}
         </div>
@@ -333,7 +413,21 @@ export function RiffGeneratorPanel({
             Mutate
           </button>
         </div>
-        {gateMessages.length > 0 ? (
+        {gateFailures?.length ? (
+          <ul style={{ margin: '0.55rem 0 0', paddingLeft: '1.1rem', fontSize: '0.85rem', color: 'var(--text)' }}>
+            {gateFailures.map((f) => (
+              <li key={`${f.ruleId}-${f.profileField ?? ''}`}>
+                {f.friendlyLabel}
+                {f.profileField ? (
+                  <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                    {f.profileField}
+                    {f.profileValue ? ` — ${f.profileValue}` : ''}
+                  </span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        ) : gateMessages.length > 0 ? (
           <ul style={{ margin: '0.55rem 0 0', paddingLeft: '1.1rem', fontSize: '0.85rem', color: 'var(--text)' }}>
             {gateMessages.map((msg) => (
               <li key={msg}>{msg}</li>

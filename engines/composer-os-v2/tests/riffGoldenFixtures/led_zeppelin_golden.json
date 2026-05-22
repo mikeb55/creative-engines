@@ -1,0 +1,19 @@
+{
+  "vrbId": "led_zeppelin",
+  "seed": 42,
+  "bars": 8,
+  "rhythmFingerprint": [
+    0.25,
+    0,
+    0.125,
+    0,
+    0,
+    0.125,
+    0.25,
+    0.25
+  ],
+  "noteCount": 32,
+  "offbeatRatio": 0.375,
+  "registerMean": 56.34375,
+  "bassRegisterMean": 0
+}

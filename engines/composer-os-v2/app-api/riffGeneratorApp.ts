@@ -158,6 +158,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
     grid,
     lineMode,
     bassEnabled: bassOn && lineMode === 'guitar_bass',
+    soloEnabled: req.riffSolo === true,
     bpm,
     title,
     chordProgressionText: chordText,

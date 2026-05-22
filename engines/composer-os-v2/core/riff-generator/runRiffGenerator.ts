@@ -14,11 +14,13 @@ import {
   applyRiffBarLocksToBuilt,
   buildRiffScoreFromBarSnapshots,
   normalizeRiffBarLocks,
+  retargetLockedBarToChord,
   snapshotRiffCarryForward,
 } from './riffCarryForward';
 import { normalizeChordLoop } from './riffChordLoop';
-import { applyRiffVariationOperators } from './riffVariationApply';
+import { applyMutation } from './riffVariationApply';
 import type { RiffProfile } from '../composer/riffProfileTypes';
+import type { RiffGenerationMetadata } from './riffMultiVoiceTypes';
 import { finalizeRiffScoreBarMath } from './riffFinalizeBarMath';
 import { scoreRiffGce } from './riffGce';
 import type { CoreMotif } from '../motif/motifEngineTypes';
@@ -37,10 +39,49 @@ import {
   riffStyleIdForFamily,
 } from './resolveRiffGeneratorProfile';
 import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
+import { resolveRiffFamilyTag } from './riffVrbRegistry';
 
 const CANDIDATES = 7;
 const MAX_ROUNDS = 40;
 const GCE_THRESHOLD = 9.0;
+
+function prepareCarryForward(
+  p: RiffGeneratorParams,
+  musicalityProfile: RiffProfile,
+  barLocks: boolean[],
+  op: 'regenerate' | 'mutate' | 'full'
+): import('./riffCarryForward').RiffCarryForward | undefined {
+  const carry = p.carryForward;
+  if (!carry?.bars.length || op === 'full') return carry;
+
+  const priorChords = carry.bars.map((b) => (b.chord ?? '').trim());
+  const chordChanged = p.chordSymbols.some((c, i) => priorChords[i] && priorChords[i] !== c.trim());
+
+  if (op === 'regenerate' && chordChanged) {
+    return {
+      bars: carry.bars.map((snap, i) => {
+        if (barLocks[i] && priorChords[i] !== (p.chordSymbols[i] ?? '').trim()) {
+          return retargetLockedBarToChord(
+            snap,
+            p.chordSymbols[i]!,
+            musicalityProfile,
+            p.vrbId,
+            i,
+            p.style
+          );
+        }
+        return {
+          ...snap,
+          rhythm: snap.rhythm.map((r) => ({ ...r })),
+          guitarNotes: snap.guitarNotes.map((n) => ({ ...n })),
+          bassNotes: snap.bassNotes?.map((n) => ({ ...n })),
+          chord: p.chordSymbols[i] ?? snap.chord,
+        };
+      }),
+    };
+  }
+  return carry;
+}
 
 function buildRiffCandidate(
   p: RiffGeneratorParams,
@@ -48,13 +89,19 @@ function buildRiffCandidate(
   barLocks: boolean[]
 ) {
   const op = p.riffOp ?? 'full';
-  const carry = p.carryForward;
+  const carry = prepareCarryForward(p, musicalityProfile, barLocks, op);
 
   if (op === 'mutate' && carry?.bars.length) {
-    const ops = musicalityProfile.variationOperators ?? [];
     const snaps = carry.bars.map((s, b) => {
-      if (barLocks[b]) return { ...s, rhythm: s.rhythm.map((r) => ({ ...r })), guitarNotes: s.guitarNotes.map((n) => ({ ...n })) };
-      return applyRiffVariationOperators(s, ops, p.seed + b * 997, musicalityProfile);
+      if (barLocks[b]) {
+        return {
+          ...s,
+          rhythm: s.rhythm.map((r) => ({ ...r })),
+          guitarNotes: s.guitarNotes.map((n) => ({ ...n })),
+          bassNotes: s.bassNotes?.map((n) => ({ ...n })),
+        };
+      }
+      return applyMutation(s, musicalityProfile, p.seed + b * 997, p.vrbId, b);
     });
     while (snaps.length < p.bars) {
       const i = snaps.length;
@@ -81,13 +128,6 @@ export function runRiffGenerator(baseSeed: number, params: Omit<RiffGeneratorPar
     bundle?.family && typeof bundle.family === 'string'
       ? riffStyleIdForFamily(bundle.family)
       : params.style;
-  const full: RiffGeneratorParams = {
-    ...params,
-    style: engineStyle,
-    seed: baseSeed,
-    chordSymbols: chords,
-    chordProgression: chords,
-  };
   const musicalityProfile = resolveRiffGeneratorProfile({
     vrbId: params.vrbId,
     style: engineStyle,
@@ -96,6 +136,14 @@ export function runRiffGenerator(baseSeed: number, params: Omit<RiffGeneratorPar
     oddMeterPreset: params.oddMeterPreset,
     chordProgression: chords,
   });
+  const full: RiffGeneratorParams = {
+    ...params,
+    style: engineStyle,
+    seed: baseSeed,
+    chordSymbols: chords,
+    chordProgression: chords,
+    riffProfile: musicalityProfile,
+  };
   const barLocks = normalizeRiffBarLocks(full.barLocks, full.bars);
   const partialOp = full.riffOp === 'regenerate' || full.riffOp === 'mutate';
 
@@ -123,6 +171,7 @@ export function runRiffGenerator(baseSeed: number, params: Omit<RiffGeneratorPar
       grid: import('./riffTypes').RiffGridMode;
       style: import('./riffTypes').RiffStyleId;
       musicality: import('./riffMusicalityGate').RiffMusicalityResult;
+      generationMetadata?: RiffGenerationMetadata;
     }> = [];
 
     for (let c = 0; c < CANDIDATES; c++) {
@@ -165,7 +214,8 @@ export function runRiffGenerator(baseSeed: number, params: Omit<RiffGeneratorPar
 
       const musicality = evaluateRiffMusicality(
         { score, perBarRhythm, bars: p.bars, grid: p.grid },
-        musicalityProfile
+        musicalityProfile,
+        { vrbId: p.vrbId, familyTag: p.vrbId ? resolveRiffFamilyTag(p.vrbId) : null }
       );
       const row = {
         gce,
@@ -178,6 +228,7 @@ export function runRiffGenerator(baseSeed: number, params: Omit<RiffGeneratorPar
         grid: p.grid,
         style: p.style,
         musicality,
+        generationMetadata: built.generationMetadata,
       };
       if (musicalityPool.length < RIFF_MUSICALITY_MAX_SEED_RETRIES) {
         musicalityPool.push(row);
@@ -204,7 +255,8 @@ export function runRiffGenerator(baseSeed: number, params: Omit<RiffGeneratorPar
         ...best,
         musicality: evaluateRiffMusicality(
           { score: best.score, perBarRhythm: best.perBarRhythm, bars: best.bars, grid: best.grid },
-          musicalityProfile
+          musicalityProfile,
+          { vrbId: full.vrbId, familyTag: full.vrbId ? resolveRiffFamilyTag(full.vrbId) : null }
         ),
       };
       const riffQuality = evaluateRiffQualityRules({
@@ -214,6 +266,7 @@ export function runRiffGenerator(baseSeed: number, params: Omit<RiffGeneratorPar
         bars: out.bars,
         grid: out.grid,
       });
+      const genMeta = out.generationMetadata ?? musicalityPool[0]?.generationMetadata;
       return {
         success: true,
         score: out.score,
@@ -225,6 +278,7 @@ export function runRiffGenerator(baseSeed: number, params: Omit<RiffGeneratorPar
         riffQuality,
         riffMusicality: out.musicality,
         riffCarryForward: snapshotRiffCarryForward(out.score, out.perBarRhythm),
+        generationMetadata: genMeta,
       };
     }
   }

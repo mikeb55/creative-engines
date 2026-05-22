@@ -128,7 +128,7 @@ function testRiffVrbBlendCrossFamilyWarn(): boolean {
 
 export function runRiffGeneratorIntegrationTests(): { name: string; ok: boolean }[] {
   return [
-    ['RiffGenerator — family tag resolution (11 VRBs)', testRiffGeneratorFamilyTagResolution],
+    ['RiffGenerator — family tag resolution (14 VRBs)', testRiffGeneratorFamilyTagResolution],
     ['RiffGenerator — profile completeness (no neutral fallback)', testRiffGeneratorProfileCompleteness],
     ['RiffGenerator — odd-meter overlay gating by family', testOddMeterOverlayGating],
     ['RiffGenerator — boundary swing ramp by family', testRiffBoundarySwingRampByFamily],

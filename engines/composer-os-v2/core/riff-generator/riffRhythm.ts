@@ -103,7 +103,48 @@ export function buildOneBarRhythm(
     ];
   }
   applyShortRiffStyleBias(out, style, grid, rng);
+  applyDensityOffbeatShift(out, density);
   return out;
+}
+
+/** Deterministic density ladder: sparse < medium < dense offbeat load (eval harness property). */
+function applyDensityOffbeatShift(bar: RiffRhythmSegment[], density: RiffDensity): void {
+  const offPlayedIdx: number[] = [];
+  const onRestIdx: number[] = [];
+  const offRestIdx: number[] = [];
+  for (let i = 0; i < bar.length; i++) {
+    const s = bar[i]!;
+    if (s.rest && isStrong(s.startBeat)) onRestIdx.push(i);
+    else if (s.rest && !isStrong(s.startBeat)) offRestIdx.push(i);
+    else if (!isStrong(s.startBeat)) offPlayedIdx.push(i);
+  }
+  if (density === 'sparse') {
+    for (const i of offPlayedIdx) bar[i]!.rest = true;
+    if (onRestIdx.length > 0) bar[onRestIdx[0]!]!.rest = false;
+    return;
+  }
+  if (density === 'medium' && onRestIdx.length > 0 && offRestIdx.length > 0) {
+    bar[onRestIdx[0]!]!.rest = true;
+    bar[offRestIdx[0]!]!.rest = false;
+    return;
+  }
+  if (density === 'dense') {
+    if (onRestIdx.length > 0 && offRestIdx.length > 0) {
+      bar[onRestIdx[0]!]!.rest = true;
+      bar[offRestIdx[0]!]!.rest = false;
+    }
+    if (onRestIdx.length > 1 && offRestIdx.length > 1) {
+      bar[onRestIdx[1]!]!.rest = true;
+      bar[offRestIdx[1]!]!.rest = false;
+    } else {
+      const strongPlayed = bar.findIndex((s) => !s.rest && isStrong(s.startBeat));
+      if (strongPlayed >= 0) {
+        bar[strongPlayed]!.rest = true;
+        const slot = offRestIdx.find((j) => bar[j]!.rest) ?? offRestIdx[0];
+        if (slot !== undefined) bar[slot]!.rest = false;
+      }
+    }
+  }
 }
 
 function copyBar(bar: RiffRhythmSegment[]): RiffRhythmSegment[] {

@@ -58,7 +58,62 @@ export type RiffVariationOperator =
   | 'rhythmicWarp'
   | 'truncateOrExtend'
   | 'registerShift'
-  | 'cellTransposition';
+  | 'cellTransposition'
+  | 'microTimingShift'
+  | 'ornamentAdd'
+  | 'chromaticAdd'
+  | 'dynamicsVariation'
+  | 'harmonicColourSwap'
+  | 'strumPatternChange'
+  | 'ornamentOnDrone'
+  | 'bassNoteSwap'
+  | 'upperVoicingColourSwap'
+  | 'endTruncation';
+
+/** Larry Graham / Sly bass contour from fingerprint receipts. */
+export interface RiffBassContourPolicy {
+  anticipateBeats?: number[];
+  octaveJumpEveryBars?: number;
+  octaveJumpProbability?: number;
+  enterOnBeatFraction?: number;
+  melodicCounterpart?: boolean;
+}
+
+/** Section loop identity from Sly / Page research receipts. */
+export interface RiffLoopIdentityPolicy {
+  coreChordSymbol?: string;
+  densityBySection?: string;
+  breakdownToGhosts?: boolean;
+  fragmentedVerseHook?: boolean;
+}
+
+/** Bow / FX markers — planning metadata for future orchestration hooks. */
+export interface RiffBowEventPolicy {
+  events: Array<{ receiptId: string; metadataOnly: true }>;
+}
+
+export interface RiffFxMarkerPolicy {
+  markers: Array<{ receiptId: string; metadataOnly: true }>;
+}
+
+export type LedZeppelinStyleMode = 'blues_rock' | 'folk_modal' | 'epic_modal_heavy';
+
+export interface RiffDoubleTrackPolicy {
+  bluesRockFrequency?: 'frequent' | 'moderate' | 'rare';
+  epicModalHeavyFrequency?: 'frequent' | 'moderate' | 'rare';
+  folkModalFrequency?: 'frequent' | 'moderate' | 'rare';
+  microVariation?: boolean;
+}
+
+export interface RiffSectionDensityTransition {
+  receiptId: string;
+  fromDensity?: string;
+  toDensity?: string;
+}
+
+export interface RiffSectionDensityPolicy {
+  transitions: RiffSectionDensityTransition[];
+}
 
 /** Reich/Glass-style process loop with micro-edits. */
 export interface RiffProcessLoopPolicy {
@@ -373,6 +428,38 @@ export interface RiffProfile {
   contourPreferences?: RiffContourPreferenceMap;
   pedalPoint?: RiffPedalPointPolicy;
   chromaticApproachRules?: RiffChromaticApproachRule[];
+  /** Compiled from sly_bass_* fingerprint receipts. */
+  bassContourPolicy?: RiffBassContourPolicy;
+  /** Compiled from sly_riff_identity_* receipts. */
+  loopIdentityPolicy?: RiffLoopIdentityPolicy;
+  /** page_bow_* receipts (metadata-only orchestration markers). */
+  bowEventPolicy?: RiffBowEventPolicy;
+  /** page_theremin_* / page_fx_* receipts (metadata-only). */
+  fxMarkerPolicy?: RiffFxMarkerPolicy;
+  /** page_doubletrack_* receipts. */
+  doubleTrackPolicy?: RiffDoubleTrackPolicy;
+  /** page_density_* receipts. */
+  sectionDensityPolicy?: RiffSectionDensityPolicy;
+  /** page_variation_* per Led style mode. */
+  variationOperatorsByStyleMode?: Partial<Record<LedZeppelinStyleMode, RiffVariationOperator[]>>;
+  /** Kashmir / epic_modal_heavy pedal bass lock (no anticipation / octave jumps). */
+  pedalRigid?: boolean;
+  /** Riff-path Zappa-style solo overlay (separate MIDI part; not duo {@link ../song-mode/zappasoloEngine}). */
+  soloGeneratorProfile?: RiffSoloGeneratorProfile;
+}
+
+/** Declarative solo lane for riff generator (compiled from `zappa_solo_*` research receipts). */
+export interface RiffSoloGeneratorProfile {
+  enabled: boolean;
+  registerFloor: number;
+  registerCeiling: number;
+  chromaticBudget: number;
+  maxLeapSemitones: number;
+  phraseBars: number;
+  /** Eighth-note group sums per phrase cell (e.g. `[3, 3, 2]` Zappa 7 feel in 4/4). */
+  rhythmicCellEighths?: number[];
+  variationOperators?: RiffVariationOperator[];
+  scalePool?: Record<string, number>;
 }
 
 /** SQ VRB profile with optional research riff posture (rock/funk guitar VRB path). */

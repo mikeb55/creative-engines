@@ -38,6 +38,8 @@ import {
 
 } from './riffVrbRegistry';
 
+import { compileReceiptsToRiffProfilePatch, mergeRiffProfilePatch } from './riffReceiptCompiler';
+
 
 
 export function riffMusicalityFamilyFromBundleFamily(family: string | undefined): RiffMusicalityFamily {
@@ -172,7 +174,10 @@ export function resolveRiffGeneratorProfileWithMeta(input: {
 
   };
 
-
+  if (input.vrbId) {
+    const receiptPatch = compileReceiptsToRiffProfilePatch(input.vrbId);
+    profile = mergeRiffProfilePatch(profile, receiptPatch);
+  }
 
   return {
 

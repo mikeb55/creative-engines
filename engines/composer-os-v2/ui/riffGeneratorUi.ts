@@ -77,8 +77,10 @@ export type RiffVrbOption = {
 const RIFF_VRB_CATALOG: readonly Omit<RiffVrbOption, 'sigma'>[] = [
   { vrbId: 'james_brown', label: 'James Brown', family: 'funk' },
   { vrbId: 'nile_rodgers', label: 'Nile Rodgers', family: 'funk' },
+  { vrbId: 'larry_carlton', label: 'Larry Carlton', family: 'funk' },
   { vrbId: 'sly_stone', label: 'Sly Stone', family: 'funk' },
   { vrbId: 'iommi', label: 'Tony Iommi', family: 'rock' },
+  { vrbId: 'david_gilmour', label: 'David Gilmour', family: 'rock' },
   { vrbId: 'hendrix', label: 'Jimi Hendrix', family: 'rock' },
   { vrbId: 'led_zeppelin', label: 'Led Zeppelin', family: 'rock' },
   { vrbId: 'weather_report', label: 'Weather Report', family: 'fusion' },
@@ -86,7 +88,13 @@ const RIFF_VRB_CATALOG: readonly Omit<RiffVrbOption, 'sigma'>[] = [
   { vrbId: 'verlaine', label: 'Tom Verlaine', family: 'art_rock' },
   { vrbId: 'morello', label: 'Tom Morello', family: 'art_rock' },
   { vrbId: 'fripp', label: 'Robert Fripp', family: 'art_rock' },
+  { vrbId: 'frank_zappa', label: 'Frank Zappa', family: 'rock' },
 ] as const;
+
+/** Families that may show the riff-path solo overlay toggle. */
+export function riffFamilyAllowsSoloOverlay(family: RiffFamilyTag): boolean {
+  return family === 'fusion' || family === 'art_rock' || family === 'rock' || family === 'funk';
+}
 
 function sigmaForVrb(vrbId: string): number | undefined {
   const b = getVoiceRuleBundle(vrbId);
@@ -138,7 +146,20 @@ export const RIFF_MUSICALITY_RULE_LABELS: Readonly<Record<string, string>> = {
   contourShape: 'Contour arc weak for this family',
 };
 
-export function riffGateLabelsFromFailedRules(failedRules: string[]): string[] {
+export function riffGateLabelsFromFailedRules(
+  failedRules: string[],
+  gateFailures?: import('../core/riff-generator/riffMusicalityGate').GateFailure[]
+): string[] {
+  if (gateFailures?.length) {
+    return gateFailures.map((f) => {
+      const base = f.friendlyLabel || RIFF_MUSICALITY_RULE_LABELS[f.ruleId] || f.ruleId;
+      if (f.profileField && f.profileValue !== undefined && f.profileValue !== '') {
+        return `${base} → ${f.profileField} (${f.profileValue})`;
+      }
+      if (f.profileField) return `${base} → ${f.profileField}`;
+      return base;
+    });
+  }
   const labels: string[] = [];
   for (const line of failedRules) {
     const id = line.split(':')[0]?.trim() ?? '';

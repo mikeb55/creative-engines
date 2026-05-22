@@ -1,0 +1,19 @@
+{
+  "vrbId": "mahavishnu",
+  "seed": 42,
+  "bars": 8,
+  "rhythmFingerprint": [
+    0.3333333333333333,
+    0.16666666666666666,
+    0,
+    0.3333333333333333,
+    0,
+    0,
+    0,
+    0.16666666666666666
+  ],
+  "noteCount": 24,
+  "offbeatRatio": 0.6666666666666666,
+  "registerMean": 59.791666666666664,
+  "bassRegisterMean": 44.25
+}

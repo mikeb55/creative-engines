@@ -13,6 +13,22 @@ import type { ScoreModel } from '../core/score-model/scoreModelTypes';
 import { manifestPathForMusicXml } from '../app-api/composerOsOutputPaths';
 import { runRiffQualityRulesSuite } from './riffQualityRules.test';
 import { rhythmFingerprint } from '../core/riff-generator/riffRhythm';
+import {
+  bassRiffPitchFieldForBar,
+  guitarRiffPitchFieldForBar,
+  resolveStyleModeForBar,
+  voicingClassForChordSymbol,
+} from '../core/riff-generator/riffPitchField';
+import { noteNameToPitchClass, parseChordSymbol } from '../core/harmony/chordSymbolAnalysis';
+import { resolveRiffGeneratorProfileWithMeta } from '../core/riff-generator/resolveRiffGeneratorProfile';
+import { runRiffReceiptCompilerTests } from './riffReceiptCompiler.test';
+import { runRiffHornStabBuilderTests } from './riffHornStabBuilder.test';
+import { runRiffCallResponseEngineTests } from './riffCallResponseEngine.test';
+import { runRiffBassInterlockTests } from './riffBassInterlock.test';
+import { runRiffMusicalityGateTests } from './riffMusicalityGate.test';
+import { runRiffCarryForwardTests } from './riffCarryForward.test';
+import { runRiffVariationApplyTests } from './riffVariationApply.test';
+import { runRiffZappaSoloTests } from './riffZappaSolo.test';
 
 function countMelodicNotes(score: ScoreModel): number {
   let n = 0;
@@ -359,5 +375,104 @@ export function runRiffGeneratorTests(): { ok: boolean; name: string }[] {
     }
   }
 
-  return [...out, ...runRiffQualityRulesSuite()];
+  {
+    const extPc = (sym: string, semi: number): number => {
+      const parsed = parseChordSymbol(sym);
+      const rm = parsed.harmonyPart.match(/^([A-G](?:#|b)?)/i);
+      const rootPc = rm ? (noteNameToPitchClass(rm[1]!) ?? 0) : 0;
+      return (rootPc + semi) % 12;
+    };
+    const cases: Array<{
+      sym: string;
+      voicing: ReturnType<typeof voicingClassForChordSymbol>;
+      extSemi?: number;
+    }> = [
+      { sym: 'BbMaj7#11', voicing: 'maj7_spread_upper', extSemi: 6 },
+      { sym: 'Eb9sus4', voicing: 'sus_no_third' },
+      { sym: 'Gsus2', voicing: 'sus_no_third' },
+      { sym: 'F#m9', voicing: 'dom_close_379' },
+      { sym: 'G13', voicing: 'dom_close_379', extSemi: 9 },
+      { sym: 'Cadd9', voicing: 'dom_close_379', extSemi: 2 },
+    ];
+    const ok = cases.every((c) => {
+      if (voicingClassForChordSymbol(c.sym) !== c.voicing) return false;
+      const parsed = parseChordSymbol(c.sym);
+      const rm = parsed.harmonyPart.match(/^([A-G](?:#|b)?)/i);
+      const rootPc = rm ? (noteNameToPitchClass(rm[1]!) ?? -1) : -1;
+      const bass = bassRiffPitchFieldForBar(c.sym, 0);
+      const hasRoot = bass.allowedPcs.some((e) => e.pc === rootPc);
+      if (!hasRoot) return false;
+      if (c.extSemi !== undefined) {
+        return bass.allowedPcs.some((e) => e.pc === extPc(c.sym, c.extSemi));
+      }
+      return true;
+    });
+    out.push({
+      ok,
+      name: 'chord symbols map to voicing class and bass root+extension (no Am7 fallback)',
+    });
+  }
+
+  {
+    const g = guitarRiffPitchFieldForBar('E9', 'neutral', undefined, 'blues_rock' as const);
+    const led = resolveStyleModeForBar('led_zeppelin', 'BbMaj7#11', 2);
+    const ok = g.allowedPcs.length >= 3 && led === 'epic_modal_heavy';
+    out.push({
+      ok,
+      name: 'led_zeppelin resolveStyleModeForBar + guitar pitch field depth',
+    });
+  }
+
+  {
+    const meta = resolveRiffGeneratorProfileWithMeta({
+      vrbId: 'led_zeppelin',
+      style: 'neutral',
+      grid: 'eighth',
+      density: 'medium',
+    });
+    const ok =
+      meta.profile.variationOperatorsByStyleMode?.blues_rock !== undefined ||
+      (meta.profile.variationOperators?.length ?? 0) > 0;
+    out.push({
+      ok,
+      name: 'led_zeppelin profile includes compiled page_variation operators',
+    });
+  }
+
+  {
+    const r = runRiffGenerator(90210, {
+      vrbId: 'sly_stone',
+      bars: 4,
+      density: 'medium',
+      style: 'funk',
+      grid: 'sixteenth',
+      lineMode: 'guitar_bass',
+      bassEnabled: true,
+      bpm: 100,
+      title: 'SlyMulti',
+    });
+    const horns = r.success ? r.score.parts.find((p) => p.id === 'horns') : undefined;
+    const ok =
+      r.success === true &&
+      !!r.generationMetadata?.multiVoiceBadges?.horns &&
+      !!horns &&
+      horns.measures.some((m) => m.events.some((e) => e.kind === 'note'));
+    out.push({
+      ok,
+      name: 'runRiffGenerator sly_stone: horns part + generationMetadata badge',
+    });
+  }
+
+  return [
+    ...out,
+    ...runRiffQualityRulesSuite(),
+    ...runRiffReceiptCompilerTests(),
+    ...runRiffHornStabBuilderTests(),
+    ...runRiffCallResponseEngineTests(),
+    ...runRiffBassInterlockTests(),
+    ...runRiffMusicalityGateTests(),
+    ...runRiffCarryForwardTests(),
+    ...runRiffVariationApplyTests(),
+    ...runRiffZappaSoloTests(),
+  ];
 }

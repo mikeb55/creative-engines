@@ -288,6 +288,7 @@ export function apiGenerate(
           ? body.riffLineMode
           : undefined,
       riffBass: body.riffBass === true ? true : undefined,
+      riffSolo: body.riffSolo === true ? true : undefined,
       riffVrbId: typeof body.riffVrbId === 'string' && body.riffVrbId.trim() ? body.riffVrbId.trim() : undefined,
       riffOddMeterPreset:
         body.riffOddMeterPreset === 'meter5' ||

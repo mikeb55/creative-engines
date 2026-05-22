@@ -6,7 +6,16 @@ import type { PartModel, ScoreModel } from '../score-model/scoreModelTypes';
 import { createMeasure, createNote, createRest, createScore } from '../score-model/scoreEventBuilder';
 import { generateRiffCoreMotif } from '../motif/songModeMotifEngine';
 import type { BuiltRiffScore } from './buildRiffScoreModel';
-import type { RiffGeneratorParams, RiffRhythmSegment } from './riffTypes';
+import { buildFxMarkerTrack } from './riffFxMarkerBuilder';
+import { buildHornStabTrack } from './riffHornStabBuilder';
+import { computeGuitarRestWindows } from './riffCallResponseEngine';
+import { buildRiffGenerationMetadata } from './riffMultiVoiceMetadata';
+import type { RiffGeneratorParams, RiffRhythmSegment, RiffStyleId } from './riffTypes';
+import { chordTonesForChordSymbol } from '../harmony/chordSymbolAnalysis';
+import type { RiffProfile } from '../composer/riffProfileTypes';
+import { riffPitchFieldForBar } from './riffPitchField';
+import { assignBassToBar } from './riffBass';
+import { mulberry32 } from './riffRandom';
 
 export type RiffBarNoteSnapshot = {
   pitch: number;
@@ -25,6 +34,90 @@ export type RiffBarSnapshot = {
 export type RiffCarryForward = {
   bars: RiffBarSnapshot[];
 };
+
+function midiFromPc(pc: number, low: number, high: number): number {
+  let m = low + ((pc % 12) + 12) % 12;
+  while (m < low) m += 12;
+  while (m > high) m -= 12;
+  return Math.max(low, Math.min(high, m));
+}
+
+function retargetGuitarNotes(
+  notes: RiffBarNoteSnapshot[],
+  newChord: string,
+  profile: RiffProfile | undefined,
+  vrbId: string | undefined,
+  barIndex: number,
+  style: RiffStyleId
+): RiffBarNoteSnapshot[] {
+  const field = riffPitchFieldForBar(newChord, style, profile, vrbId, barIndex);
+  const tones = chordTonesForChordSymbol(newChord, { lockedHarmony: true });
+  const low = profile?.riffRegisterFloor ?? 52;
+  const high = profile?.riffRegisterCeiling ?? 75;
+  const pool = field?.allowedPcs?.length
+    ? field.allowedPcs.map((e) => e.pc)
+    : [tones.root, tones.third, tones.fifth, tones.seventh].map((m) => ((m % 12) + 12) % 12);
+
+  return notes.map((n) => {
+    const prevPc = ((n.pitch % 12) + 12) % 12;
+    let bestPc = pool[0]!;
+    let bestD = 99;
+    for (const pc of pool) {
+      const d = Math.min(Math.abs(pc - prevPc), 12 - Math.abs(pc - prevPc));
+      if (d < bestD) {
+        bestD = d;
+        bestPc = pc;
+      }
+    }
+    const octave = Math.floor(n.pitch / 12);
+    let pitch = midiFromPc(bestPc, low, high);
+    if (Math.abs(pitch - n.pitch) > 6) {
+      pitch = Math.max(low, Math.min(high, octave * 12 + bestPc));
+    }
+    return { ...n, pitch };
+  });
+}
+
+/**
+ * Locked bar chord edit: keep rhythm skeleton, retarget guitar/bass (and horn chord) to new symbol.
+ */
+export function retargetLockedBarToChord(
+  lockedBar: RiffBarSnapshot,
+  newChordSymbol: string,
+  vrbProfile: RiffProfile | undefined,
+  vrbId?: string,
+  barIndex = 0,
+  style: RiffStyleId = 'neutral'
+): RiffBarSnapshot {
+  const rhythm = lockedBar.rhythm.map((r) => ({ ...r }));
+  const guitarNotes = retargetGuitarNotes(
+    lockedBar.guitarNotes.map((n) => ({ ...n })),
+    newChordSymbol,
+    vrbProfile,
+    vrbId,
+    barIndex,
+    style
+  );
+  const rng = mulberry32(barIndex * 31337 + newChordSymbol.length);
+  const bassNotes = assignBassToBar(
+    rhythm,
+    newChordSymbol,
+    rng,
+    barIndex,
+    vrbProfile,
+    guitarNotes,
+    undefined
+  );
+  if (vrbProfile?.hornStabTopology?.length) {
+    buildHornStabTrack(vrbProfile, barIndex + 1, [newChordSymbol], vrbId);
+  }
+  return {
+    rhythm,
+    guitarNotes,
+    bassNotes,
+    chord: newChordSymbol,
+  };
+}
 
 export function normalizeRiffBarLocks(locks: boolean[] | undefined, bars: number): boolean[] {
   const out = new Array<boolean>(bars).fill(false);
@@ -165,9 +258,22 @@ export function buildRiffScoreFromBarSnapshots(
 
   const perBarRhythm = snapshots.map((s) => s.rhythm.map((r) => ({ ...r })));
   const score = createScore(params.title?.trim() || 'Riff', parts, { tempo: params.bpm });
+  const hornStabTrack = buildHornStabTrack(params.riffProfile, params.bars, chords, params.vrbId);
+  const fxMarkerTrack = buildFxMarkerTrack(params.riffProfile);
+  const guitarRestWindows = computeGuitarRestWindows(params.riffProfile, params.bars, params.vrbId);
+  const generationMetadata = buildRiffGenerationMetadata({
+    hornStabTrack,
+    fxMarkerTrack,
+    guitarRestWindows,
+    profile: params.riffProfile,
+    vrbId: params.vrbId,
+    bars: params.bars,
+    hasBassPart: !!bassMeasures,
+  });
   return {
     score,
     perBarRhythm,
     coreMotif: generateRiffCoreMotif(params.seed),
+    generationMetadata,
   };
 }

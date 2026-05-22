@@ -51,7 +51,8 @@
     "test:motif-authority": "ts-node scripts/testMotifAuthority.ts",
     "test:big-band-arranging": "ts-node scripts/testBigBandArranging.ts",
     "eval:big-band-chart": "ts-node scripts/bigBandChartEval.ts",
-    "test:output-validate": "node --max-old-space-size=4096 ../../node_modules/ts-node/dist/bin.js --project ../../tsconfig.json tests/outputValidationSmoke.test.ts"
+    "test:output-validate": "node --max-old-space-size=4096 ../../node_modules/ts-node/dist/bin.js --project ../../tsconfig.json tests/outputValidationSmoke.test.ts",
+    "riff:smoke": "bash scripts/riff-smoke.sh"
   },
   "types": "./core/conductor/conductorTypes.ts",
   "dependencies": {
