@@ -173,7 +173,8 @@ export function validateBarryHarrisConformance(
     chordCount < 3 &&
     metadata?.songwriterStyleId !== 'steve_reich' &&
     metadata?.songwriterStyleId !== 'messiaen' &&
-    metadata?.songwriterStyleId !== 'thad_jones'
+    metadata?.songwriterStyleId !== 'thad_jones' &&
+    metadata?.songwriterStyleId !== 'frank_zappa'
   ) {
     errors.push('Harmony too static for current duo grammar');
   }
