@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import { getVoiceRuleBundle } from '../core/composer/voiceRuleBundles';
 import { buildRiffScoreModel } from '../core/riff-generator/buildRiffScoreModel';
 import {
@@ -7,6 +9,7 @@ import {
 import {
   isOnZappaCellBoundary,
   pitchUsesSlonimskyOutsideChordTones,
+  resolveEffectiveZappaSoloProfile,
   riffSoloFromZappaEngine,
   zappa78CellBoundariesIn4_4,
 } from '../core/riff-generator/riffSoloZappaAdapter';
@@ -114,6 +117,85 @@ function testZappaAdapterCellSnapPerBar(): boolean {
     const bounds = zappa78CellBoundariesIn4_4(profile, b, seed);
     const snapped = line.some((e) => isOnZappaCellBoundary(e.startBeat, bounds));
     if (!snapped) return false;
+  }
+  return true;
+}
+
+function ferocityProfile(): RiffSoloGeneratorProfile {
+  return { ...zappaSoloProfile(), styleMode: 'bluesrockFerocious' };
+}
+
+function testZappaFerocityChromaticBudget(): boolean {
+  const resolved = resolveEffectiveZappaSoloProfile(ferocityProfile());
+  return Math.abs(resolved.chromaticBudget - 0.3) < 1e-6;
+}
+
+function testZappaFerocityBurstBarDensity(): boolean {
+  const profile = ferocityProfile();
+  const seed = 42;
+  const chord = 'Am7';
+  for (let b = 0; b < 8; b++) {
+    const line = riffSoloFromZappaEngine(b, chord, profile, seed);
+    if (line.length >= 12) return true;
+  }
+  return false;
+}
+
+function testZappaFerocityFeedbackProxyOnPhraseEnd(): boolean {
+  const profile = ferocityProfile();
+  const seed = 42;
+  const chord = 'Am7';
+  const phraseBars = profile.phraseBars ?? 4;
+  const endBar = phraseBars - 1;
+  const line = riffSoloFromZappaEngine(endBar, chord, profile, seed);
+  if (line.length === 0) return false;
+  return line.some((e) => e.feedbackProxy === true);
+}
+
+function testFrankzappaFerocityGoldenFixture(): boolean {
+  const goldenPath = path.join(__dirname, 'riffGolden', 'frankzappa.golden.json');
+  const defaultPath = path.join(__dirname, 'riffGolden', 'frankzappa-default.golden.json');
+  if (!fs.existsSync(goldenPath) || !fs.existsSync(defaultPath)) return false;
+  const golden = JSON.parse(fs.readFileSync(goldenPath, 'utf-8')) as {
+    seed: number;
+    bars: number;
+    chord: string;
+    styleMode: string;
+    chromaticBudget: number;
+    minBurstBarNotes: number;
+    minFeedbackProxyPhraseEnds: number;
+  };
+  if (golden.seed !== 42 || golden.bars !== 8 || golden.chord !== 'Am7') return false;
+  if (golden.styleMode !== 'bluesrockFerocious') return false;
+  const profile = ferocityProfile();
+  const seed = golden.seed;
+  const chord = golden.chord;
+  let burstOk = false;
+  let feedbackEnds = 0;
+  for (let b = 0; b < golden.bars; b++) {
+    const line = riffSoloFromZappaEngine(b, chord, profile, seed);
+    if (line.length >= golden.minBurstBarNotes) burstOk = true;
+    if (line.some((e) => e.feedbackProxy)) feedbackEnds++;
+    for (const e of line) {
+      if (e.isRest === true) return false;
+    }
+  }
+  return (
+    Math.abs(resolveEffectiveZappaSoloProfile(profile).chromaticBudget - golden.chromaticBudget) <
+      1e-6 &&
+    burstOk &&
+    feedbackEnds >= golden.minFeedbackProxyPhraseEnds
+  );
+}
+
+function testZappaFerocityNoRestFlags(): boolean {
+  const profile = ferocityProfile();
+  const seed = 42;
+  const chord = 'Am7';
+  for (let b = 0; b < 8; b++) {
+    for (const e of riffSoloFromZappaEngine(b, chord, profile, seed)) {
+      if (e.isRest === true) return false;
+    }
   }
   return true;
 }
@@ -235,6 +317,11 @@ export function runRiffZappaSoloTests(): { name: string; ok: boolean }[] {
     ['Riff Zappa — adapter non-empty SoloEvent[] seed 42 / 8 bars / Am7', testZappaAdapterNonEmptyEightBars],
     ['Riff Zappa — ≥1 event per bar on 7/8 cell boundary', testZappaAdapterCellSnapPerBar],
     ['Riff Zappa — pitch pool uses Slonimsky outside chord tones', testZappaAdapterSlonimskyPitchPool],
+    ['Riff Zappa — bluesrockFerocious chromaticBudget 0.30', testZappaFerocityChromaticBudget],
+    ['Riff Zappa — bluesrockFerocious burst bar ≥12 notes seed 42 Am7', testZappaFerocityBurstBarDensity],
+    ['Riff Zappa — bluesrockFerocious phrase-end feedbackProxy', testZappaFerocityFeedbackProxyOnPhraseEnd],
+    ['Riff Zappa — bluesrockFerocious no isRest events', testZappaFerocityNoRestFlags],
+    ['Riff Zappa — frankzappa.golden.json seed 42 / 8 bars / Am7 ferocity', testFrankzappaFerocityGoldenFixture],
     ['Riff Zappa — app forces soloEnabled for frank_zappa', testFrankZappaSoloAlwaysEnabledInApp],
     ['Riff Zappa — frank_zappa: solo toggle hidden (always on)', testFrankZappaSoloToggleHidden],
     ['Riff Zappa — iommi/hendrix/sly_stone: no solo profile, toggle hidden', testVrbsWithoutSoloProfileHideToggle],

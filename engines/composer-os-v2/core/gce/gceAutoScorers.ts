@@ -1802,6 +1802,14 @@ export function rhythmExpectationForVrb(vrbId: string): RhythmExpectation | unde
       grooveStabilityTolerance: 0.95,
     };
   }
+  if (id === 'frank_zappa' || raw === 'zappa' || raw === 'mothers' || raw === 'fz') {
+    return {
+      placementMode: 'anti_metric',
+      targetOffbeatWindow: [0.42, 0.68],
+      anticipationRateMax: 0.35,
+      grooveStabilityTolerance: 0.55,
+    };
+  }
   return undefined;
 }
 

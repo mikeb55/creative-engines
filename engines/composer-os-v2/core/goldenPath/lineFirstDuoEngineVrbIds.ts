@@ -18,6 +18,7 @@ export const LINE_FIRST_DUO_PRIORITY3_COLOUR_VRB_IDS = [
   'iommi',
   'david_gilmour',
   'hendrix',
+  'eddie_van_halen',
   'led_zeppelin',
   'weather_report',
   'mahavishnu',

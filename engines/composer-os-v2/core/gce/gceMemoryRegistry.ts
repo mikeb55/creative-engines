@@ -17,6 +17,8 @@ export type FormatGateKey = keyof typeof formatGateOverrides;
 export const bestFingerprintIdByFormatSongwriter: Record<string, string> = {
   'big_band:bill_evans': 'orbit_v6_64',
   'big_band:donald_fagen': 'steely_orbit_v1_7',
+  /** Declarative GCE structural profile — {@link ./frankZappaStructuralFingerprint}. */
+  'duo:frank_zappa': 'frank_zappa_duo_structural_v1',
 };
 
 export function fingerprintRegistryKey(format: string, songwriterId: string): string {

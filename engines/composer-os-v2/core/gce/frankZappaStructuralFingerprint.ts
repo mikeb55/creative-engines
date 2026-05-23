@@ -1,0 +1,283 @@
+/**
+ * Frank Zappa — GCE structural fingerprint (duo / Song Mode compositional structure).
+ * Additive to {@link ../song-mode/frankZappaSlice} harmony devices + Slonimsky solo lane.
+ * Distinct from riff-path FZ_* receipt compiler.
+ */
+
+import type { CompositionContext } from '../compositionContext';
+import type { BarMeterMap } from '../rhythm/barMeterTypes';
+import type { ScoreModel } from '../score-model/scoreModelTypes';
+import { resolveMelodicPartId } from './resolveMelodicPartId';
+import type { CategoryScore, GceStructureSection } from './gceAutoScorers';
+import { scoreRhythmicIdentity } from './gceAutoScorers';
+import type { MelodicNote } from './gce_melody_eval';
+import { scoreModelToMelodicLine } from './scoreModelToMelodicLine';
+
+export const FRANK_ZAPPA_GCE_STRUCTURAL_FINGERPRINT_ID = 'frank_zappa_duo_structural_v1' as const;
+
+/** 7/8 + 5/4 + 4/4 splice catalog for meter-disruption scoring. */
+export const ZAPPA_GCE_METER_SPLICE = [
+  { label: '7/8', groups: [3, 2, 2], numerator: 7, denominator: 8 },
+  { label: '5/4', groups: [3, 2], numerator: 5, denominator: 4 },
+  { label: '4/4', groups: [4], numerator: 4, denominator: 4 },
+] as const;
+
+export type ZappaHarmonicCadenceTarget = 'bII' | 'bVII' | 'tritone_sub';
+
+export interface FrankZappaStructuralFingerprint {
+  id: typeof FRANK_ZAPPA_GCE_STRUCTURAL_FINGERPRINT_ID;
+  phraseFragmentation: 'high';
+  meterMapId: 'zappa_meter_map';
+  meterSplice: typeof ZAPPA_GCE_METER_SPLICE;
+  harmonicCadenceTargets: readonly ZappaHarmonicCadenceTarget[];
+  texturalContrastOperators: readonly ('density_drop' | 'density_spike')[];
+  quoteCollage: { metadataOnly: true };
+}
+
+export const FRANK_ZAPPA_STRUCTURAL_FINGERPRINT: FrankZappaStructuralFingerprint = {
+  id: FRANK_ZAPPA_GCE_STRUCTURAL_FINGERPRINT_ID,
+  phraseFragmentation: 'high',
+  meterMapId: 'zappa_meter_map',
+  meterSplice: ZAPPA_GCE_METER_SPLICE,
+  harmonicCadenceTargets: ['bII', 'bVII', 'tritone_sub'],
+  texturalContrastOperators: ['density_drop', 'density_spike'],
+  quoteCollage: { metadataOnly: true },
+};
+
+const ZAPPA_SONGWRITER_IDS = new Set([
+  'frank_zappa',
+  'zappa',
+  'mothers',
+  'mothers_of_invention',
+  'fz',
+]);
+
+export function isFrankZappaSongwriterId(id?: string): boolean {
+  if (!id) return false;
+  return ZAPPA_SONGWRITER_IDS.has(id.trim().toLowerCase());
+}
+
+function chordSymbolHitsTarget(symbol: string, target: ZappaHarmonicCadenceTarget): boolean {
+  const s = symbol.trim();
+  const low = s.toLowerCase();
+  if (target === 'tritone_sub') {
+    return /7alt|7#11|7b9|7#9|m7b5|dim7|alt\b|tritone/i.test(s);
+  }
+  if (target === 'bVII') {
+    return /\/[A-G][#b]?7\b|7sus|mixolydian|b7\b/i.test(s) || /\b[A-G][#b]?7(?!alt)/i.test(low);
+  }
+  if (target === 'bII') {
+    return /\/[Dd][#b]?|bII|Db|C#\/|Neapolitan|maj7#11|7#11/i.test(s);
+  }
+  return false;
+}
+
+function barMeterMatchesSplice(
+  meter: { numerator: number; denominator: number } | undefined
+): boolean {
+  if (!meter) return false;
+  return ZAPPA_GCE_METER_SPLICE.some(
+    (row) => row.numerator === meter.numerator && row.denominator === meter.denominator
+  );
+}
+
+function resolveBarMeterMap(context?: CompositionContext, score?: ScoreModel): BarMeterMap | undefined {
+  return context?.generationMetadata?.barMeterMap ?? context?.barMeterMap ?? score?.barMeterMap;
+}
+
+function guitarAttacksPerBar(score: ScoreModel): number[] {
+  const part =
+    score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar') ??
+    score.parts.find((p) => p.id === 'guitar') ??
+    score.parts[0];
+  if (!part) return [];
+  return part.measures.map((m) => {
+    let n = 0;
+    for (const e of m.events) {
+      if (e.kind === 'note' && ((e as { voice?: number }).voice ?? 1) === 1) n++;
+    }
+    return n;
+  });
+}
+
+/** High fragmentation — section churn + weak return consistency (non-resolving form). */
+export function scoreFrankZappaPhraseFragmentation(
+  chords: string[],
+  sections: GceStructureSection[]
+): CategoryScore {
+  if (sections.length < 2) {
+    return { score: 5, justification: 'Zappa structural: few sections (fragmentation neutral)' };
+  }
+  const roles = sections.map((s) => s.role);
+  const adjacentChanges = roles.filter((r, i) => i > 0 && r !== roles[i - 1]).length;
+  const adjacentContrast = adjacentChanges / (sections.length - 1);
+
+  const roleGroups = new Map<string, string[][]>();
+  for (const sec of sections) {
+    const secChords = chords.slice(sec.barStart - 1, sec.barEnd);
+    if (!roleGroups.has(sec.role)) roleGroups.set(sec.role, []);
+    roleGroups.get(sec.role)!.push(secChords);
+  }
+  let returnSim = 0;
+  let pairs = 0;
+  for (const [, groups] of roleGroups) {
+    if (groups.length < 2) continue;
+    for (let i = 1; i < groups.length; i++) {
+      const a = new Set(groups[0]);
+      const b = new Set(groups[i]);
+      const intersection = [...a].filter((c) => b.has(c)).length;
+      const union = new Set([...a, ...b]).size;
+      returnSim += union > 0 ? intersection / union : 0;
+      pairs++;
+    }
+  }
+  const returnConsistency = pairs > 0 ? returnSim / pairs : 0.5;
+  const fragmentationScore = 0.55 * adjacentContrast + 0.45 * (1 - returnConsistency);
+  const score = Math.max(0, Math.min(10, Math.round(fragmentationScore * 10 * 10) / 10));
+  return {
+    score,
+    justification:
+      `Zappa fragmentation high: adjacent role churn ${(adjacentContrast * 10).toFixed(1)}/10, ` +
+      `low return consistency ${(returnConsistency * 10).toFixed(1)}/10`,
+  };
+}
+
+/** Meter map carries 7/8 / 5/4 / 4/4 splice (not steady 4/4 only). */
+export function scoreFrankZappaMeterDisruption(
+  context: CompositionContext | undefined,
+  score: ScoreModel,
+  totalBars: number
+): CategoryScore {
+  const map = resolveBarMeterMap(context, score);
+  if (!map || totalBars < 2) {
+    return {
+      score: 4,
+      justification: 'Zappa meter: no barMeterMap (disruption unverified)',
+    };
+  }
+  let spliceHits = 0;
+  let oddHits = 0;
+  for (let b = 1; b <= totalBars; b++) {
+    const m = map[b];
+    if (barMeterMatchesSplice(m)) spliceHits++;
+    if (m && (m.numerator !== 4 || m.denominator !== 4)) oddHits++;
+  }
+  const spliceRate = spliceHits / totalBars;
+  const oddRate = oddHits / totalBars;
+  const pillarScore = Math.max(
+    0,
+    Math.min(10, Math.round((4 + spliceRate * 4 + oddRate * 2) * 10) / 10)
+  );
+  return {
+    score: pillarScore,
+    justification:
+      `Zappa zappa_meter_map: ${spliceHits}/${totalBars} splice bars, ${oddHits}/${totalBars} non-4/4`,
+  };
+}
+
+/** ♭II / ♭VII / tritone-sub as cadence targets in harmony spine. */
+export function scoreFrankZappaHarmonicNonResolution(chords: string[]): CategoryScore {
+  if (!chords.length) return { score: 0, justification: 'Zappa harmony: no chords' };
+  let hits = 0;
+  const perTarget: Record<ZappaHarmonicCadenceTarget, number> = {
+    bII: 0,
+    bVII: 0,
+    tritone_sub: 0,
+  };
+  for (const c of chords) {
+    for (const t of FRANK_ZAPPA_STRUCTURAL_FINGERPRINT.harmonicCadenceTargets) {
+      if (chordSymbolHitsTarget(c, t)) {
+        hits++;
+        perTarget[t]++;
+        break;
+      }
+    }
+  }
+  const rate = hits / chords.length;
+  const targetCoverage =
+    FRANK_ZAPPA_STRUCTURAL_FINGERPRINT.harmonicCadenceTargets.filter((t) => perTarget[t] > 0)
+      .length / FRANK_ZAPPA_STRUCTURAL_FINGERPRINT.harmonicCadenceTargets.length;
+  const score = Math.max(
+    0,
+    Math.min(10, Math.round((3 + rate * 5 + targetCoverage * 2) * 10) / 10)
+  );
+  return {
+    score,
+    justification:
+      `Zappa cadence targets ${hits}/${chords.length} bars (bII=${perTarget.bII} bVII=${perTarget.bVII} tritone=${perTarget.tritone_sub})`,
+  };
+}
+
+/** Sudden density drop/spike between adjacent bars (guitar attack counts). */
+export function scoreFrankZappaTexturalContrast(score: ScoreModel, totalBars: number): CategoryScore {
+  const perBar = guitarAttacksPerBar(score);
+  if (perBar.length < 3) {
+    return { score: 5, justification: 'Zappa texture: sparse guitar data' };
+  }
+  let spikes = 0;
+  let drops = 0;
+  for (let i = 1; i < perBar.length; i++) {
+    const prev = perBar[i - 1] ?? 0;
+    const cur = perBar[i] ?? 0;
+    if (prev >= 2 && cur <= Math.max(0, prev - 2)) drops++;
+    if (prev <= 1 && cur >= prev + 3) spikes++;
+  }
+  const events = drops + spikes;
+  const rate = events / Math.max(1, perBar.length - 1);
+  const pillarScore = Math.max(0, Math.min(10, Math.round((4 + rate * 6) * 10) / 10));
+  return {
+    score: pillarScore,
+    justification: `Zappa texture contrast: ${drops} drops + ${spikes} spikes / ${totalBars} bars`,
+  };
+}
+
+export type FrankZappaStructuralGateInput = {
+  score: ScoreModel;
+  context: CompositionContext;
+  chords: string[];
+  sections: GceStructureSection[];
+  melody: MelodicNote[];
+};
+
+/** Composite structural pillars for Frank Zappa GCE gate (additive pillars only). */
+export function scoreFrankZappaStructuralPillars(input: FrankZappaStructuralGateInput): Array<{
+  name: string;
+  score: number;
+  weight: number;
+  justification: string;
+}> {
+  const lastSection = input.sections[input.sections.length - 1];
+  const tb = Math.max(
+    1,
+    input.context.form.totalBars,
+    lastSection?.barEnd ?? 0,
+    input.chords.length
+  );
+  const frag = scoreFrankZappaPhraseFragmentation(input.chords, input.sections);
+  const meter = scoreFrankZappaMeterDisruption(input.context, input.score, tb);
+  const harm = scoreFrankZappaHarmonicNonResolution(input.chords);
+  const texture = scoreFrankZappaTexturalContrast(input.score, tb);
+  const rhythm = scoreRhythmicIdentity(input.melody, {
+    placementMode: 'anti_metric',
+    targetOffbeatWindow: [0.42, 0.68],
+    anticipationRateMax: 0.35,
+    grooveStabilityTolerance: 0.55,
+  });
+  return [
+    { name: 'Zappa Phrase Fragmentation', weight: 1.5, score: frag.score, justification: frag.justification },
+    { name: 'Zappa Meter Disruption', weight: 1.5, score: meter.score, justification: meter.justification },
+    { name: 'Zappa Harmonic Non-Resolution', weight: 2, score: harm.score, justification: harm.justification },
+    { name: 'Zappa Textural Contrast', weight: 1.5, score: texture.score, justification: texture.justification },
+    { name: 'Zappa Rhythmic Anti-Metric', weight: 1, score: rhythm.score, justification: rhythm.justification },
+    {
+      name: 'Zappa Quote/Collage (metadata)',
+      weight: 0,
+      score: 10,
+      justification: `quoteCollage metadataOnly=${FRANK_ZAPPA_STRUCTURAL_FINGERPRINT.quoteCollage.metadataOnly}`,
+    },
+  ];
+}
+
+export function buildFrankZappaStructuralGateMelody(score: ScoreModel): MelodicNote[] {
+  return scoreModelToMelodicLine(score, resolveMelodicPartId(score));
+}

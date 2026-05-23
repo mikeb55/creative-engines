@@ -1,0 +1,10 @@
+{
+  "seed": 42,
+  "bars": 8,
+  "chord": "Am7",
+  "styleMode": "bluesrockFerocious",
+  "chromaticBudget": 0.3,
+  "minBurstBarNotes": 12,
+  "minFeedbackProxyPhraseEnds": 1,
+  "noRestEvents": true
+}

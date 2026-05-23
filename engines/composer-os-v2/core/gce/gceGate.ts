@@ -26,6 +26,16 @@ import {
   type GceStructureSection,
 } from './gceAutoScorers';
 import type { EcmScorePlans } from '../ecm/ecmChamberScoring';
+import {
+  FRANK_ZAPPA_STRUCTURAL_FINGERPRINT,
+  isFrankZappaSongwriterId,
+  scoreFrankZappaStructuralPillars,
+  buildFrankZappaStructuralGateMelody,
+} from './frankZappaStructuralFingerprint';
+import { getFrankZappaBluesrockFerociousProfile } from '../slonimsky/slonimskyEngine';
+import { resolveZappaStyleMode } from '../song-mode/frankZappaSlice';
+import type { MelodicNote } from './gce_melody_eval';
+import type { CategoryScore } from './gceAutoScorers';
 
 export interface GceGateResult {
   overallScore: number;
@@ -255,6 +265,109 @@ export function scoreEcmChamberResultForGce(
   };
 }
 
+function attacksPerBarFromMelody(melody: MelodicNote[]): number[] {
+  const byBar = new Map<number, number>();
+  for (const n of melody) {
+    if (n.rest || n.midi <= 0) continue;
+    byBar.set(n.bar, (byBar.get(n.bar) ?? 0) + 1);
+  }
+  if (byBar.size === 0) return [];
+  const maxBar = Math.max(...byBar.keys());
+  return Array.from({ length: maxBar }, (_, i) => byBar.get(i + 1) ?? 0);
+}
+
+/** Blues-rock ferocious pillars — Slonimsky map profile (replaces structural fingerprint scorers). */
+function scoreFrankZappaBluesrockFerociousPillars(
+  melody: MelodicNote[],
+  sections: GceStructureSection[]
+): Array<{ name: string; score: number; weight: number; justification: string }> {
+  const profile = getFrankZappaBluesrockFerociousProfile();
+  const attacks = attacksPerBarFromMelody(melody);
+  const avg =
+    attacks.length > 0 ? attacks.reduce((a, x) => a + x, 0) / attacks.length : 0;
+  const densityOk =
+    avg >= profile.noteDensityRange.min && avg <= profile.noteDensityRange.max;
+  const density: CategoryScore = {
+    score: densityOk ? 8.5 : avg < profile.noteDensityRange.min ? 6 : 5.5,
+    justification: `Bluesrock density mean ${avg.toFixed(1)} target ${profile.noteDensityRange.min}-${profile.noteDensityRange.max}`,
+  };
+
+  const groupingLabels = profile.rhythmicGroupings.map(String).join('+');
+  const rhythm: CategoryScore = {
+    score: profile.rhythmicGroupings.length >= 3 ? 8 : 6,
+    justification: `Bluesrock rhythmicGroupings ${groupingLabels}; chromaticBudget ${profile.chromaticBudget}`,
+  };
+
+  const rests = melody.filter((n) => n.rest).length;
+  const restRatio = melody.length > 0 ? rests / melody.length : 0;
+  const silence: CategoryScore = {
+    score: profile.silencePolicy.restDensityLow
+      ? restRatio <= 0.22
+        ? 8
+        : 6
+      : 7,
+    justification: `Bluesrock silencePolicy feedbackSustainAsRest=${profile.silencePolicy.feedbackSustainAsRest} hardCutAtSectionBoundary=${profile.silencePolicy.hardCutAtSectionBoundary}`,
+  };
+
+  void sections;
+  return [
+    { name: 'Zappa Bluesrock Note Density', weight: 2, score: density.score, justification: density.justification },
+    { name: 'Zappa Bluesrock Rhythmic Groupings', weight: 1.5, score: rhythm.score, justification: rhythm.justification },
+    { name: 'Zappa Bluesrock Silence Policy', weight: 1.5, score: silence.score, justification: silence.justification },
+  ];
+}
+
+/** Frank Zappa — additive GCE structural pillars (slice + Slonimsky solo unchanged). */
+export function scoreFrankZappaResultForGce(
+  score: ScoreModel,
+  context: CompositionContext,
+  harmonicBarTarget: number = GCE_GATE_HARMONIC_BAR_TARGET
+): GceGateResult {
+  const chords = buildChordsForGceGate(score, context, harmonicBarTarget);
+  const sections = gceSectionsFromFormMap(context.form);
+  const melody = buildFrankZappaStructuralGateMelody(score);
+  const zappaStyleMode = resolveZappaStyleMode(context);
+  const songwriterId = context.generationMetadata?.songwriterStyleId ?? 'frank_zappa';
+  const rhythmExp = rhythmExpectationForVrb('frank_zappa');
+
+  const baseScores: Array<{ name: string; score: number; weight: number }> = [
+    { name: 'Cadential Clarity', weight: 2, score: scoreCadentialClarity(melody, chords, sections).score },
+    { name: 'Melodic Identity', weight: 2, score: scoreMelodicIdentity(melody, songwriterId).score },
+    { name: 'Phrase Grammar', weight: 1, score: scorePhraseGrammar(melody).score },
+    { name: 'Harmony & Language', weight: 1, score: scoreHarmonyAndLanguage(chords).score },
+    { name: 'Rhythmic Identity', weight: 1, score: scoreRhythmicIdentity(melody, rhythmExp).score },
+    { name: 'Structure & Form', weight: 1, score: scoreStructureAndForm(score, chords, sections).score },
+    { name: 'Arrangement & Orchestration', weight: 1, score: scoreArrangementAndOrchestrationForEnsemble(score).score },
+    {
+      name: 'Economy & Focus',
+      weight: 1,
+      score: scoreEconomyAndFocusForEnsemble(melody, sections, score).score,
+    },
+    { name: 'Tension & Release', weight: 1, score: scoreTensionAndReleaseForEnsemble(score, chords, melody).score },
+    { name: 'Thematic Recall Potential', weight: 1, score: scoreThematicRecallPotential(melody, sections).score },
+  ];
+
+  const zappaPillars =
+    zappaStyleMode === 'compositional'
+      ? scoreFrankZappaStructuralPillars({ score, context, chords, sections, melody }).filter((p) => p.weight > 0)
+      : scoreFrankZappaBluesrockFerociousPillars(melody, sections).filter((p) => p.weight > 0);
+  const scores = [
+    ...baseScores,
+    ...zappaPillars.map((p) => ({ name: p.name, score: p.score, weight: p.weight })),
+  ];
+
+  const totalWeight = scores.reduce((s, c) => s + c.weight, 0);
+  const weightedSum = scores.reduce((s, c) => s + c.score * c.weight, 0);
+  const overallScore = Math.round((weightedSum / totalWeight) * 10) / 10;
+  const weakest = scores.reduce((a, b) => (a.score <= b.score ? a : b));
+  void FRANK_ZAPPA_STRUCTURAL_FINGERPRINT;
+  return {
+    overallScore,
+    weakestCategory: weakest.name,
+    passed: overallScore >= GCE_GATE_MIN,
+  };
+}
+
 export function scoreGoldenPathResultForGce(
   score: ScoreModel,
   context: CompositionContext,
@@ -263,7 +376,11 @@ export function scoreGoldenPathResultForGce(
   if (context.presetId === 'ecm_chamber') {
     return scoreEcmChamberResultForGce(score, context, harmonicBarTarget);
   }
+  const songwriterId = context.generationMetadata?.songwriterStyleId;
+  if (isFrankZappaSongwriterId(songwriterId)) {
+    return scoreFrankZappaResultForGce(score, context, harmonicBarTarget);
+  }
   const chords = buildChordsForGceGate(score, context, harmonicBarTarget);
   const sections = gceSectionsFromFormMap(context.form);
-  return scoreResultForGce(score, chords, sections, context.generationMetadata?.songwriterStyleId);
+  return scoreResultForGce(score, chords, sections, songwriterId);
 }

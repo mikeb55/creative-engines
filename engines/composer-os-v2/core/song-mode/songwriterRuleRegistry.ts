@@ -30,7 +30,7 @@ function R(
   return { id, description, category, effectType, priority, applicability };
 }
 
-const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
+const songwriterRules: Partial<Record<SongwriterRuleId, SongwritingRuleEntry[]>> = {
   bacharach: [
     R(
       'bacharach.bb_harm_grammar',
@@ -1231,10 +1231,10 @@ const songwriterRules: Record<SongwriterRuleId, SongwritingRuleEntry[]> = {
 /** Phase E — riff VRB rule families (additive; σ receipt + cloned family rules). */
 function wireRiffVrbSongwriterRules(): void {
   const rules = songwriterRules as Record<string, SongwritingRuleEntry[]>;
-  const jb = songwriterRules.james_brown;
-  const prince = songwriterRules.prince;
-  const metheny = songwriterRules.pat_metheny;
-  const fripp = songwriterRules.fripp_king_crimson;
+  const jb = songwriterRules.james_brown ?? [];
+  const prince = songwriterRules.prince ?? [];
+  const metheny = songwriterRules.pat_metheny ?? [];
+  const fripp = songwriterRules.fripp_king_crimson ?? [];
   rules.nile_rodgers = [
     R('riff.nile_rodgers.sigma', 'Riff VRB σ22 — funk pocket (reuses james_brown rule family)', 'songwriter', 'rhythm', 8, 'global'),
     ...jb,
@@ -1257,6 +1257,10 @@ function wireRiffVrbSongwriterRules(): void {
   ];
   rules.hendrix = [
     R('riff.hendrix.sigma', 'Riff VRB σ28 — blues-rock (reuses prince rule family)', 'songwriter', 'harmony', 8, 'global'),
+    ...prince,
+  ];
+  rules.eddie_van_halen = [
+    R('riff.eddie_van_halen.sigma', 'Riff VRB σ26 — EVH rock lead (reuses prince rule family)', 'songwriter', 'melody', 8, 'global'),
     ...prince,
   ];
   rules.led_zeppelin = [
@@ -1345,7 +1349,7 @@ const foundationalRules: Record<FoundationalRuleCategory, SongwritingRuleEntry[]
 };
 
 export const SONGWRITER_RULE_REGISTRY: SongwritingRuleRegistryShape = {
-  songwriterRules,
+  songwriterRules: songwriterRules as Record<SongwriterRuleId, SongwritingRuleEntry[]>,
   authorRules,
   classicalSongRules,
   foundationalRules,

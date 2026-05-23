@@ -3,6 +3,8 @@
  */
 
 import { getVoiceRuleBundle, NEUTRAL_VOICE_RULE_BUNDLE } from '../core/composer/voiceRuleBundles';
+import { EDDIE_VAN_HALEN_RIFF_STUB_REGISTRY } from '../core/composer/riffVrbStubs';
+import { RIFF_GENERATOR_VRB_IDS } from '../core/riff-generator/riffVrbRegistry';
 import type { VoiceRuleBundle } from '../core/composer/voiceRuleBundle';
 import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
 import type { ChordEvent, NoteEvent, ScoreModel } from '../core/score-model/scoreModelTypes';
@@ -483,7 +485,8 @@ function testRiffVrbStubsRegistry(): boolean {
     iommi.riffProfile.tritoneStable === true &&
     testLedZeppelinRiffVrbStubRegistry() &&
     testLarryCarltonRiffVrbStubRegistry() &&
-    testDavidGilmourRiffVrbStubRegistry()
+    testDavidGilmourRiffVrbStubRegistry() &&
+    testEddieVanHalenRiffVrbStubRegistry()
   );
 }
 
@@ -549,6 +552,59 @@ function testLarryCarltonRiffVrbStubRegistry(): boolean {
     rp.metricDisplacement === 0.55 &&
     Boolean(rp.tuningPolicy?.tuningOptions.KidCharlemagneType) &&
     (rp.variationOperators?.length ?? 0) >= 5
+  );
+}
+
+function testEddieVanHalenRiffGeneratorRegistry(): boolean {
+  return (
+    RIFF_GENERATOR_VRB_IDS.length === 15 &&
+    RIFF_GENERATOR_VRB_IDS[8] === 'eddie_van_halen' &&
+    (RIFF_GENERATOR_VRB_IDS as readonly string[]).includes('eddie_van_halen')
+  );
+}
+
+function testEddieVanHalenRiffVrbStubRegistry(): boolean {
+  if (!testEddieVanHalenRiffGeneratorRegistry()) return false;
+  const evh = getVoiceRuleBundle('eddie_van_halen');
+  const vanHalen = getVoiceRuleBundle('van_halen');
+  const alias = getVoiceRuleBundle('evh');
+  if (
+    !evh.riffProfile ||
+    vanHalen.voiceId !== 'eddie_van_halen' ||
+    alias.sigma !== 26 ||
+    EDDIE_VAN_HALEN_RIFF_STUB_REGISTRY.evh.family !== 'rock'
+  ) {
+    return false;
+  }
+  const rp = evh.riffProfile;
+  const tp = rp.tuningPolicy;
+  return (
+    evh.voiceId === 'eddie_van_halen' &&
+    evh.sigma === 26 &&
+    evh.family === 'rock' &&
+    rp.allowPitchStreak === true &&
+    rp.silencePolicy.styleClass === 'Busy' &&
+    rp.subdivisionGrid === 16 &&
+    tp?.midiFloor === 40 &&
+    tp?.midiCeiling === 88 &&
+    tp?.riffMidBand[0] === 52 &&
+    tp?.riffMidBand[1] === 76 &&
+    tp?.tuningOptions.gain === 0.8 &&
+    tp?.tuningOptions.bridgeHumbuckerDominant === 0.95 &&
+    tp?.tuningOptions.tapToPulloffRatio === 0.33 &&
+    tp?.tuningOptions.whammyDiveBombProb === 0.3 &&
+    rp.rhythmFeel?.primarySubdivision === '16th' &&
+    rp.rhythmFeel?.beatPlacement === 'slightly_ahead' &&
+    rp.textureMix?.openStringDroneProb === 0.35 &&
+    rp.textureMix?.powerChordRiff === 0.4 &&
+    rp.phraseLengthBeats?.[0] === 4 &&
+    rp.phraseLengthBeats?.[2] === 16 &&
+    rp.cadenceTypes?.sustained_sus_chord === 0.5 &&
+    rp.cadenceTypes?.tail_fill === 0.3 &&
+    rp.spacePolicy?.internalRestProb === 0.15 &&
+    (rp.variationOperators?.length ?? 0) >= 6 &&
+    (rp.whammyEvents?.length ?? 0) >= 1 &&
+    (rp.groupingPatterns?.length ?? 0) >= 1
   );
 }
 
@@ -619,7 +675,11 @@ function testFusionArtRockRiffVrbStubsRegistry(): boolean {
 
 export function runVoiceRuleBundleTests(): { name: string; ok: boolean }[] {
   return [
-    ['VoiceRuleBundle — riff VRB stubs (nile / iommi / hendrix)', testRiffVrbStubsRegistry],
+    ['VoiceRuleBundle — riff VRB stubs (nile / iommi / hendrix / evh)', testRiffVrbStubsRegistry],
+    [
+      'VoiceRuleBundle — Eddie Van Halen riff VRB #15 (registry + stub aliases)',
+      testEddieVanHalenRiffVrbStubRegistry,
+    ],
     [
       'VoiceRuleBundle — fusion/art-rock riff stubs (weather / mahavishnu / verlaine / morello / fripp)',
       testFusionArtRockRiffVrbStubsRegistry,

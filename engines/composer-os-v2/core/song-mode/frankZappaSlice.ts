@@ -4,7 +4,12 @@
  * Receipts **`fz:d{1–5}:<device>@bar{N}#v1`**.
  */
 
-import type { CompositionContext, FrankZappaContextMode, GenerationMetadata } from '../compositionContext';
+import type {
+  CompositionContext,
+  FrankZappaContextMode,
+  GenerationMetadata,
+  ZappaStyleMode,
+} from '../compositionContext';
 import type { HarmonyContext } from '../harmony/harmonyContext';
 import { computeHarmonyChecksum } from '../harmony/harmonyContext';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
@@ -572,6 +577,25 @@ export function isSongwriterFrankZappa(
   genMeta: GenerationMetadata | undefined
 ): genMeta is GenerationMetadata & { songwriterStyleId: 'frank_zappa' } {
   return genMeta?.songwriterStyleId === 'frank_zappa';
+}
+
+/** Duo GCE lane — compositional structural fingerprint vs blues-rock ferocious map. Default **`compositional`**. */
+export function resolveZappaStyleMode(
+  contextOrMeta?:
+    | CompositionContext
+    | Pick<GenerationMetadata, 'zappaStyleMode'>
+    | { styleMode?: ZappaStyleMode }
+): ZappaStyleMode {
+  if (contextOrMeta && 'styleMode' in contextOrMeta && contextOrMeta.styleMode === 'bluesrockFerocious') {
+    return 'bluesrockFerocious';
+  }
+  const mode =
+    contextOrMeta && 'generationMetadata' in contextOrMeta
+      ? contextOrMeta.generationMetadata?.zappaStyleMode
+      : contextOrMeta && 'zappaStyleMode' in contextOrMeta
+        ? contextOrMeta.zappaStyleMode
+        : undefined;
+  return mode === 'bluesrockFerocious' ? 'bluesrockFerocious' : 'compositional';
 }
 
 export interface FrankZappaHarmonyAccumulator {

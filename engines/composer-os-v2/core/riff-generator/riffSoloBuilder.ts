@@ -23,7 +23,8 @@ function midiFromPc(pc: number, low: number, high: number): number {
 function tonePool(chord: string, profile: RiffSoloGeneratorProfile, rng: () => number): number[] {
   const t = chordTonesForChordSymbol(chord, { lockedHarmony: true });
   const pcs = [t.root, t.third, t.fifth, t.seventh].map((m) => ((m % 12) + 12) % 12);
-  const chromatic = profile.chromaticBudget > 0.35 && rng() < profile.chromaticBudget;
+  const chromaticBudget = profile.chromaticBudget ?? 0;
+  const chromatic = chromaticBudget > 0.35 && rng() < chromaticBudget;
   if (chromatic) {
     const extra = Math.floor(rng() * 12);
     if (!pcs.includes(extra)) pcs.push(extra);
@@ -58,8 +59,9 @@ export function buildSoloLineForBar(
     const pc = pool[Math.floor(rng() * pool.length)]!;
     let pitch = midiFromPc(pc, low, high);
     const leap = Math.abs(pitch - prevPitch);
-    if (leap > profile.maxLeapSemitones) {
-      const stepPc = pool.find((p) => Math.abs(midiFromPc(p, low, high) - prevPitch) <= profile.maxLeapSemitones);
+    const maxLeapSemitones = profile.maxLeapSemitones ?? 12;
+    if (leap > maxLeapSemitones) {
+      const stepPc = pool.find((p) => Math.abs(midiFromPc(p, low, high) - prevPitch) <= maxLeapSemitones);
       if (stepPc !== undefined) pitch = midiFromPc(stepPc, low, high);
     }
     notes.push({ pitch, startBeat: beat, duration: Math.min(duration, 4 - beat) });

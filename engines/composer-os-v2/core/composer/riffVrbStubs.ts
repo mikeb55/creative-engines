@@ -1314,6 +1314,228 @@ export const SLY_STONE: VoiceRuleBundle = {
   })(),
 };
 
+const EVH_BASE = [
+  'EVH_REG_01 — MIDI 40–88; lead core 52–76; frets 5–12 sweet spot; bridge humbucker brown sound.',
+  'EVH_RHY_01 — 16th straight 95%; grid slightly ahead; palm-mute all-downstroke; ghost density 0.1.',
+  'EVH_TAP_01 — Tap-pull-hammer 1:1:1 triplets; m3/M3/P4/octave; frets 5/7/12/14/17; Eruption / Hot for Teacher / Panama.',
+  'EVH_INT_01 — power5/sus/add9 weights; open-string drone 0.35; whammy dive-bomb 0.3.',
+  'EVH_HARM_01 — major/minor/modal mix; Mixolydian + Dorian + vanHalenScale; very high sus usage.',
+  'EVH_VAR_01 — octave shift, rhythmic displacement, whammy, sus2↔sus4, dynamic contrast, tap vs picked.',
+] as const;
+
+/** Eddie Van Halen riff research profile (σ26). */
+export function buildEddieVanHalenRiffProfile(): RiffProfile {
+  const rockSlice = riffProfileSliceFromRockRiff('generic');
+  const slots = 16;
+  const accent = straightAccentTopology(slots);
+  accent[0] = 0.95;
+  accent[4] = 0.82;
+  accent[8] = 0.78;
+  accent[12] = 0.85;
+  return riffProfileShell({
+    ...rockSlice,
+    meterPolicy: 'simple',
+    subdivisionGrid: 16,
+    accentTopology: accent,
+    allowPitchStreak: true,
+    tritoneStable: false,
+    homeChordType: 'power5',
+    chordQualitySet: ['power5', 'sus2', 'sus4', 'add9', 'maj', 'min', 'dom7'],
+    scalePool: {
+      Mixolydian: 0.6,
+      Dorian: 0.3,
+      vanHalenScale: 0.1,
+      majorPentatonic: 0.75,
+      naturalMinorAeolian: 0.15,
+      bluesHexatonic: 0.1,
+    },
+    chromaticBudget: 0.22,
+    intervalCell: { steps: [3, 4, 5, 7], transpositionMode: 'diatonic' },
+    registerAnchor: 'mid_register',
+    riffRegisterFloor: 40,
+    riffRegisterCeiling: 88,
+    registerBandPerVoice: {
+      lead: { min: 52, max: 76 },
+      rhythm: { min: 40, max: 64 },
+      guitar: { min: 40, max: 88 },
+    },
+    tuningPolicy: {
+      midiFloor: 40,
+      midiCeiling: 88,
+      riffLowBand: [40, 64],
+      riffMidBand: [52, 76],
+      tuningOptions: {
+        gain: 0.8,
+        bridgeHumbuckerDominant: 0.95,
+        brownSound: 0.85,
+        fretSweetSpotLow: 5,
+        fretSweetSpotHigh: 12,
+        leadCoreLow: 52,
+        leadCoreHigh: 76,
+        palmMutingHigh: 1.0,
+        allDownstrokePreference: 0.9,
+        ghostNoteDensity: 0.1,
+        straightFeelPct: 0.95,
+        tapPattern: 1.0,
+        tapToPulloffRatio: 0.33,
+        tapInterval_m3: 0.4,
+        tapInterval_M3: 0.25,
+        tapInterval_P4: 0.2,
+        tapInterval_octave: 0.15,
+        tapFret5: 1,
+        tapFret7: 1,
+        tapFret12: 1,
+        tapFret14: 1,
+        tapFret17: 1,
+        tapSongEruption: 0.34,
+        tapSongHotForTeacher: 0.33,
+        tapSongPanama: 0.33,
+        powerChordWeight: 0.4,
+        susWeight: 0.3,
+        majorMinorMixWeight: 0.2,
+        add9Weight: 0.1,
+        whammyDiveBombProb: 0.3,
+        harmonicMajor: 0.75,
+        harmonicMinor: 0.15,
+        harmonicModal: 0.1,
+        susUsageVeryHigh: 1.0,
+        loopLength2Bar: 0.5,
+        loopLength4Bar: 0.5,
+        rhythmModePalmMute: 1.0,
+        leadModeLegato31: 1.0,
+        tappingModeTriplet: 1.0,
+        eventsPerBarRhythmMin: 16,
+        eventsPerBarRhythmMax: 32,
+        eventsPerBarLeadMin: 32,
+        eventsPerBarLeadMax: 48,
+      },
+    },
+    rhythmFeel: {
+      primarySubdivision: '16th',
+      feelProfiles: ['straight_0.95', 'sixteenth_triplet_tap', 'syncopated_onset'],
+      swingRatio: { straight: 0.95, shuffle: 0.05 },
+      beatPlacement: 'slightly_ahead',
+    },
+    textureMix: {
+      singleNoteRiff: 0.2,
+      powerChordRiff: 0.4,
+      hybridSinglePlusChord: 0.3,
+      openStringDroneProb: 0.35,
+    },
+    intervalWeights: {
+      P5: 0.4,
+      P4: 0.2,
+      m3: 0.25,
+      M3: 0.15,
+    },
+    groupingPatterns: [[3, 3, 3], [3, 3, 2]],
+    silencePolicy: {
+      ...rockSlice.silencePolicy,
+      styleClass: 'Busy',
+      rockRiffPreset: 'generic',
+    },
+    spacePolicy: {
+      internalRestProb: 0.15,
+      phraseEndRestBeats: [0.25, 0.5],
+      callResponsePattern: 'rhythm_palm_mute_then_lead_tap_answer',
+    },
+    phraseLengthBeats: [4, 8, 16],
+    cadenceTypes: {
+      tail_fill: 0.3,
+      sustained_sus_chord: 0.5,
+      hard_stop_rest: 0.2,
+    },
+    variationOperators: [
+      'registerShift',
+      'rhythmicWarp',
+      'dynamicsVariation',
+      'harmonicColourSwap',
+      'strumPatternChange',
+      'articulationSwap',
+    ],
+    repetitionPolicy: {
+      exactLoopAllowed: true,
+      pedalToneAllowed: true,
+      barIdentityPersistence: 0.65,
+      minExactRepetitions: 2,
+    },
+    modalUsage: 'chord-driven',
+    swingStyle: 'straight',
+    attackPolicy: 'staccato',
+    ornamentPolicy: {
+      slides: true,
+      ghosts: true,
+      graceAttacks: true,
+      bends: true,
+      deadNotes: false,
+    },
+    whammyEvents: [
+      { slot: 12, mode: 'sweepDown', durationPulses: 4 },
+      { slot: 14, mode: '-12', durationPulses: 2 },
+    ],
+    ensembleInterlockMode: 'callResponse',
+    styleModes: {
+      blues_rock: { scales: ['Mixolydian', 'power5', 'sus4', 'sus2'] },
+    },
+    pedalBias: 0.35,
+    octaveDisplacementTolerance: 0.5,
+    powerIntervalPolicy: { fifthWeight: 0.85, octaveWeight: 0.45, pedalWeight: 0.4 },
+    riffContourPolicy: { rangeCeiling: 20, apexTiming: 0.55, returnTendency: 0.35 },
+  });
+}
+
+/** Eddie Van Halen riff VRB stub (σ26) — rock family; tap / whammy / power-sus research profile. */
+export const EDDIE_VAN_HALEN: VoiceRuleBundle = {
+  voiceId: 'eddie_van_halen',
+  sigma: 26,
+  family: 'rock',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 4,
+    allowMidBarChange: true,
+  },
+  bassPolicy: { role: 'root', allowOctaveDoubling: true },
+  voicingPolicy: {
+    minSpreadSemitones: 4,
+    maxSpreadSemitones: 18,
+    clusterSizeNotes: [2, 5],
+    forbidParallelFifths: false,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: { contour: 'angular', maxLeapSemitones: 16 },
+  orchestrationPolicy: {
+    anchorToneCount: 1,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: fillReceipts('EVH', 'Eddie Van Halen', EVH_BASE),
+  },
+  formPolicy: { narrativeArc: 'blues-backbone', sectionRecallEnforced: false },
+  rhythmPolicy: { antiMetric: false },
+  repairPolicy: { resolveParallels: false, maxVoiceOverlap: 5 },
+  contrapuntalLinePolicy: {
+    enabled: true,
+    dissonanceProfile: DIS_ROCK_MOD,
+    preferredImitationTypes: ['free'],
+    rhythmicIndependenceRequired: true,
+    lineRoleAssignment: 'dynamic',
+  },
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.7,
+    registerInterlock: true,
+    intervalPreference: 'pentatonic_diatonic',
+  },
+  riffProfile: buildEddieVanHalenRiffProfile(),
+};
+
+/** Riff stub alias registry — wire into {@link voiceRuleBundles} BY_ID when promoting to generator VRB. */
+export const EDDIE_VAN_HALEN_RIFF_STUB_REGISTRY = {
+  eddie_van_halen: EDDIE_VAN_HALEN,
+  van_halen: EDDIE_VAN_HALEN,
+  evh: EDDIE_VAN_HALEN,
+} as const satisfies Record<string, VoiceRuleBundle>;
+
 const FZ_RIFF_BASE = [
   'FZ_RIFF_HARM_01 — Modal / chromatic pool; Lydian + Mixolydian + blues inflection; high chromatic budget.',
   'FZ_RIFF_RHY_01 — 7/8 feel via 3+3+2 eighth groups over 4/4; polyrhythm against straight grid.',
@@ -1366,6 +1588,42 @@ export function buildFrankZappaRiffProfile(): RiffProfile {
       rhythmicCellEighths: [3, 3, 2],
       variationOperators: ['rhythmicWarp', 'registerShift', 'chromaticAdd'],
       scalePool: { Lydian: 0.5, Mixolydian: 0.45, Dorian: 0.35 },
+    },
+    styleModes: {
+      compositional: { scales: ['Lydian', 'Mixolydian', 'Dorian', 'blues'] },
+      bluesrockFerocious: {
+        modalBase: ['Dorian', 'Mixolydian'],
+        pentatonicAnchorRatio: 0.38,
+        chromaticBudget: 0.3,
+        scaleMinglingEnabled: true,
+        noteDensityRange: { min: 8, max: 24 },
+        rhythmicGroupings: [5, 7, 3, 'hemiola'],
+        phraseEndingPolicy: {
+          openStringPullOff: true,
+          feedbackSustain: true,
+          threeQuarterStepBend: true,
+          hardCut: true,
+        },
+        contourShape: 'arch',
+        registerPolicy: {
+          lowStringMelodyProbability: 0.25,
+          feedbackHighRegisterMarker: true,
+        },
+        vampType: 'pedalOrTwoChord',
+        keyVampPatterns: ['i-bVI7', 'i-bIImaj7', 'Dm-A', 'I-II-Lydian'],
+        silencePolicy: {
+          feedbackSustainAsRest: true,
+          hardCutAtSectionBoundary: true,
+          restDensityLow: true,
+        },
+        variationOperators: [
+          'cycledMotifRhythmVariation',
+          'octaveDisplacement',
+          'tremoloPickTextureBurst',
+          'openStringPullOffInjection',
+          'scaleNeighbourNoteMingling',
+        ],
+      },
     },
   });
 }

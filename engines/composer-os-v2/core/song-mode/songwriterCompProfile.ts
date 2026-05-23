@@ -137,6 +137,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   iommi: 'guitar',
   david_gilmour: 'guitar',
   hendrix: 'guitar',
+  eddie_van_halen: 'guitar',
   led_zeppelin: 'guitar',
   weather_report: 'guitar',
   mahavishnu: 'guitar',

@@ -42,6 +42,8 @@ export interface SlonimskyContext {
   maxInfraSteps?: number;
   /** Max ultrapolation extensions in {@link generateSlonimskyPattern}; default **2** (multi-step cap). */
   maxUltraSteps?: number;
+  /** Optional 0–2 outside allowance override (riff solo adapter / Zappa lane). */
+  dissonanceLevel?: number;
 }
 
 export interface SlonimskyNote {
@@ -65,6 +67,41 @@ export type SlonimskyStyleIntentWeights = {
   shock: number;
 };
 
+/** Frank Zappa — blues-rock ferocious duo lane (GCE gate + Slonimsky map). */
+export type ZappaBluesrockPhraseEndingPolicy = {
+  openStringPullOff: boolean;
+  feedbackSustain: boolean;
+  threeQuarterStepBend: boolean;
+  hardCut: boolean;
+};
+
+export type ZappaBluesrockRegisterPolicy = {
+  lowStringMelodyProbability: number;
+  feedbackHighRegisterMarker: boolean;
+};
+
+export type ZappaBluesrockSilencePolicy = {
+  feedbackSustainAsRest: boolean;
+  hardCutAtSectionBoundary: boolean;
+  restDensityLow: boolean;
+};
+
+export type ZappaBluesrockFerociousProfile = {
+  modalBase: readonly string[];
+  pentatonicAnchorRatio: number;
+  chromaticBudget: number;
+  scaleMinglingEnabled: boolean;
+  noteDensityRange: { min: number; max: number };
+  rhythmicGroupings: readonly (number | string)[];
+  phraseEndingPolicy: ZappaBluesrockPhraseEndingPolicy;
+  contourShape: string;
+  registerPolicy: ZappaBluesrockRegisterPolicy;
+  vampType: string;
+  keyVampPatterns: readonly string[];
+  silencePolicy: ZappaBluesrockSilencePolicy;
+  variationOperators: readonly string[];
+};
+
 /**
  * Per–songwriter / style defaults for Slonimsky catalogue bias, outside allowance, and transposition cycle.
  * `preferredSections` names align with research shorthand (may alias {@link ThesaurusSectionKey} at lookup time).
@@ -80,6 +117,8 @@ export type SlonimskyStyleProfileSpec = {
   catalogueSection?: string;
   maxInfraSteps?: number;
   maxUltraSteps?: number;
+  /** Frank Zappa — {@link ZappaBluesrockFerociousProfile} for `zappaStyleMode === 'bluesrockFerocious'`. */
+  bluesrockFerocious?: ZappaBluesrockFerociousProfile;
 };
 
 /**
@@ -173,8 +212,49 @@ export const SLONIMSKY_STYLE_PROFILE_MAP: Record<string, SlonimskyStyleProfileSp
     catalogueSection: 'ditone_progression',
     maxInfraSteps: 2,
     maxUltraSteps: 2,
+    bluesrockFerocious: {
+      modalBase: ['Dorian', 'Mixolydian'],
+      pentatonicAnchorRatio: 0.38,
+      chromaticBudget: 0.3,
+      scaleMinglingEnabled: true,
+      noteDensityRange: { min: 8, max: 24 },
+      rhythmicGroupings: [5, 7, 3, 'hemiola'],
+      phraseEndingPolicy: {
+        openStringPullOff: true,
+        feedbackSustain: true,
+        threeQuarterStepBend: true,
+        hardCut: true,
+      },
+      contourShape: 'arch',
+      registerPolicy: {
+        lowStringMelodyProbability: 0.25,
+        feedbackHighRegisterMarker: true,
+      },
+      vampType: 'pedalOrTwoChord',
+      keyVampPatterns: ['i-bVI7', 'i-bIImaj7', 'I-II-Lydian', 'Dm-A'],
+      silencePolicy: {
+        feedbackSustainAsRest: true,
+        hardCutAtSectionBoundary: true,
+        restDensityLow: true,
+      },
+      variationOperators: [
+        'cycledMotifRhythmVariation',
+        'octaveDisplacement',
+        'tremoloPickTextureBurst',
+        'openStringPullOffInjection',
+        'scaleNeighbourNoteMingling',
+      ],
+    },
   },
 };
+
+export function getFrankZappaBluesrockFerociousProfile(): ZappaBluesrockFerociousProfile {
+  const row = SLONIMSKY_STYLE_PROFILE_MAP.FRANK_ZAPPA.bluesrockFerocious;
+  if (!row) {
+    throw new Error('SLONIMSKY_STYLE_PROFILE_MAP.FRANK_ZAPPA.bluesrockFerocious missing');
+  }
+  return row;
+}
 
 function seededUnit(seed: number): number {
   let s = seed >>> 0;

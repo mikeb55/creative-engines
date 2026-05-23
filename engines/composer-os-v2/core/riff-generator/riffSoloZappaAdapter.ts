@@ -1,11 +1,13 @@
 /**
- * Z5 — Riff-path Frank Zappa solo adapter (read-only use of duo Slonimsky / 7/8 / guide-tone stack).
+ * Z5 / Z6 — Riff-path Frank Zappa solo adapter (read-only use of duo Slonimsky / 7/8 / guide-tone stack).
  */
 
 import type { RiffSoloGeneratorProfile } from '../composer/riffProfileTypes';
 import { chordTonesForChordSymbol } from '../harmony/chordSymbolAnalysis';
+import { resolveZappaStyleMode } from '../song-mode/frankZappaSlice';
 import {
   generateSlonimskyPattern,
+  getFrankZappaBluesrockFerociousProfile,
   inferSlonimskyChordTypeCategory,
   resolveAllowedOutsideLevelForSlonimsky,
   selectSlonimskyPattern,
@@ -25,10 +27,15 @@ import {
 } from '../solo/zappasoloEngine';
 import type { RiffSoloNote } from './riffSoloBuilder';
 
-export type SoloEvent = RiffSoloNote;
+export type SoloEvent = RiffSoloNote & {
+  feedbackProxy?: boolean;
+  isRest?: boolean;
+};
 
 const MEASURE_SPAN_4_4 = 4;
 const CELL_SNAP_EPS = 0.085;
+const FEROCITY_CHROMATIC_BUDGET = 0.3;
+const FEROCITY_DENSITY_CEILING = 24;
 
 function seededUnit(seed: number, salt: number): number {
   let s = ((seed ^ salt * 1103515245) >>> 0) as number;
@@ -47,6 +54,33 @@ function allowedOutsideFromProfile(profile: RiffSoloGeneratorProfile): 0 | 1 | 2
   const tier = profile.chromaticBudget < 0.4 ? 1 : profile.chromaticBudget < 0.7 ? 1 : 2;
   const cap = resolveAllowedOutsideLevelForSlonimsky('frank_zappa');
   return Math.min(Math.max(1, tier), cap) as 0 | 1 | 2;
+}
+
+/** Z6 — merge ferocity stub / profile fields; compositional path unchanged when styleMode omitted. */
+export function resolveEffectiveZappaSoloProfile(profile: RiffSoloGeneratorProfile): RiffSoloGeneratorProfile {
+  if (resolveZappaStyleMode(profile) !== 'bluesrockFerocious') {
+    return profile;
+  }
+  const fer = getFrankZappaBluesrockFerociousProfile();
+  const pool: Record<string, number> = {};
+  for (const mode of fer.modalBase) {
+    pool[mode] = 0.55;
+  }
+  return {
+    ...profile,
+    styleMode: 'bluesrockFerocious',
+    chromaticBudget: FEROCITY_CHROMATIC_BUDGET,
+    scaleMinglingEnabled: fer.scaleMinglingEnabled,
+    noteDensityRange: profile.noteDensityRange ?? fer.noteDensityRange,
+    phraseEndingPolicy: profile.phraseEndingPolicy ?? fer.phraseEndingPolicy,
+    scalePool: { ...pool, ...profile.scalePool },
+    variationOperators: profile.variationOperators ?? [
+      'rhythmicWarp',
+      'registerShift',
+      'chromaticAdd',
+      'ornamentAdd',
+    ],
+  };
 }
 
 function phraseIntentFromOperators(
@@ -71,7 +105,6 @@ function phraseIntentFromOperators(
   return 'release';
 }
 
-/** Map phraseBars → one-bar Slonimsky span (section length in beats). */
 function maxBeatsForBar(profile: RiffSoloGeneratorProfile): number {
   const phraseBars = Math.max(1, profile.phraseBars ?? 4);
   return Math.min(MEASURE_SPAN_4_4, Math.max(0.5, (phraseBars * MEASURE_SPAN_4_4) / phraseBars));
@@ -81,7 +114,8 @@ function formSectionForBar(barIndex: number, profile: RiffSoloGeneratorProfile, 
   const ops = profile.variationOperators ?? [];
   const phraseBars = Math.max(1, profile.phraseBars ?? 4);
   const phraseIdx = Math.floor(barIndex / phraseBars);
-  if (ops.includes('rhythmicWarp') || ops.includes('rhythmicDisplacement')) {
+  const opLabels = ops as readonly string[];
+  if (ops.includes('rhythmicWarp') || opLabels.includes('rhythmicDisplacement')) {
     return phraseIdx % 2 === 1 ? 'B' : 'A';
   }
   return barIndex % 2 === 0 ? 'A' : 'B';
@@ -190,6 +224,30 @@ function applyCellSnapToSoloNotes(
   }
 }
 
+function applyScaleMinglingNudges(notes: SoloNote[], chordSymbol: string, profile: RiffSoloGeneratorProfile): void {
+  if (!profile.scaleMinglingEnabled) return;
+  const t = chordTonesForChordSymbol(chordSymbol);
+  const low = profile.registerFloor;
+  const high = profile.registerCeiling;
+  const neighbourPcs = [
+    ((t.root + 1) % 12) + 12,
+    ((t.root + 2) % 12) + 12,
+    ((t.fifth + 1) % 12) + 12,
+  ];
+  for (const n of notes) {
+    const pc = ((n.midi % 12) + 12) % 12;
+    if (neighbourPcs.includes(pc)) continue;
+    const targetPc = neighbourPcs[Math.floor(seededUnit(n.midi, n.barIndex) * neighbourPcs.length)]! % 12;
+    let m = n.midi;
+    while (((m % 12) + 12) % 12 !== targetPc) {
+      m += m < n.midi ? 1 : -1;
+    }
+    while (m < low) m += 12;
+    while (m > high) m -= 12;
+    n.midi = Math.max(low, Math.min(high, m));
+  }
+}
+
 function applyGuideToneNudgesForBar(
   notes: SoloNote[],
   barIndex1: number,
@@ -204,9 +262,89 @@ function applyGuideToneNudgesForBar(
     profile.registerCeiling
   );
   applyZappaGuideTonePitchNudges(notes, 1, receipt, profile.registerFloor, profile.registerCeiling);
+  if (profile.scaleMinglingEnabled) {
+    applyScaleMinglingNudges(notes, chordSymbol, profile);
+  }
   for (const n of notes) {
     n.barIndex = barIndex1;
   }
+}
+
+function isBurstBar(barIndex: number, profile: RiffSoloGeneratorProfile, seed: number): boolean {
+  const maxNotes = profile.noteDensityRange?.max ?? FEROCITY_DENSITY_CEILING;
+  if (maxNotes < 12) return false;
+  const phraseBars = Math.max(1, profile.phraseBars ?? 4);
+  const phrasePos = barIndex % phraseBars;
+  return phrasePos === phraseBars - 1 || seededUnit(seed, barIndex * 31 + 7) > 0.45;
+}
+
+function inflateBurstBarEvents(
+  events: SoloEvent[],
+  chordSymbol: string,
+  profile: RiffSoloGeneratorProfile,
+  seed: number,
+  barIndex: number
+): void {
+  const target = Math.min(
+    FEROCITY_DENSITY_CEILING,
+    profile.noteDensityRange?.max ?? FEROCITY_DENSITY_CEILING
+  );
+  const minBurst = Math.max(12, profile.noteDensityRange?.min ?? 8);
+  if (events.length >= minBurst) return;
+
+  const t = chordTonesForChordSymbol(chordSymbol);
+  const pcs = [t.root, t.third, t.fifth, t.seventh].map((m) => ((m % 12) + 12) % 12);
+  const low = profile.registerFloor;
+  const high = profile.registerCeiling;
+  let beat = 0.125;
+  let guard = 0;
+  while (events.length < target && beat < MEASURE_SPAN_4_4 - 0.05 && guard < 48) {
+    guard++;
+    const pc = pcs[Math.floor(seededUnit(seed, barIndex * 100 + guard) * pcs.length)]!;
+    let pitch = low + pc;
+    while (pitch < low) pitch += 12;
+    while (pitch > high) pitch -= 12;
+    const dur = 0.08 + seededUnit(seed, guard * 13) * 0.12;
+    events.push({
+      pitch,
+      startBeat: beat,
+      duration: Math.min(dur, MEASURE_SPAN_4_4 - beat),
+    });
+    beat += dur * 0.85;
+  }
+}
+
+function applyHardCutAtBarBoundary(events: SoloEvent[]): SoloEvent[] {
+  const cut = MEASURE_SPAN_4_4 - 1e-4;
+  return events
+    .filter((e) => !e.isRest && e.startBeat < cut)
+    .map((e) => {
+      const end = e.startBeat + e.duration;
+      if (end <= cut) return e;
+      return { ...e, duration: Math.max(0.05, cut - e.startBeat) };
+    });
+}
+
+function applyPhraseEndingPolicies(
+  events: SoloEvent[],
+  barIndex: number,
+  profile: RiffSoloGeneratorProfile
+): SoloEvent[] {
+  const policy = profile.phraseEndingPolicy;
+  let out = events;
+  if (policy?.hardCut) {
+    out = applyHardCutAtBarBoundary(out);
+  }
+  const phraseBars = Math.max(1, profile.phraseBars ?? 4);
+  const isPhraseEnd = (barIndex + 1) % phraseBars === 0;
+  if (isPhraseEnd && policy?.feedbackSustain && out.length > 0) {
+    const sorted = [...out].sort((a, b) => a.startBeat - b.startBeat);
+    const last = sorted[sorted.length - 1]!;
+    for (const e of out) {
+      e.feedbackProxy = e === last;
+    }
+  }
+  return out.filter((e) => !e.isRest);
 }
 
 /**
@@ -218,7 +356,10 @@ export function riffSoloFromZappaEngine(
   profile: RiffSoloGeneratorProfile,
   seed: number
 ): SoloEvent[] {
-  const ctx = buildSlonimskyContext(bar, chordSymbol, profile, seed);
+  const effective = resolveEffectiveZappaSoloProfile(profile);
+  const ferocity = resolveZappaStyleMode(effective) === 'bluesrockFerocious';
+
+  const ctx = buildSlonimskyContext(bar, chordSymbol, effective, seed);
   const pattern = selectZappaSlonimskyPattern(ctx, seed + bar * 7919);
   if (!pattern) return [];
 
@@ -227,13 +368,12 @@ export function riffSoloFromZappaEngine(
 
   const barIndex1 = bar + 1;
   const soloNotes = slonimskyToSoloNotes(barIndex1, sl);
-  applyCellSnapToSoloNotes(soloNotes, profile, bar, seed);
-  applyGuideToneNudgesForBar(soloNotes, barIndex1, chordSymbol, profile);
+  applyCellSnapToSoloNotes(soloNotes, effective, bar, seed);
+  applyGuideToneNudgesForBar(soloNotes, barIndex1, chordSymbol, effective);
 
-  const events = soloNotesToRiffEvents(soloNotes);
-  if (events.length === 0) return [];
+  let events = soloNotesToRiffEvents(soloNotes);
 
-  const maxLeap = profile.maxLeapSemitones;
+  const maxLeap = effective.maxLeapSemitones;
   for (let i = 1; i < events.length; i++) {
     const leap = Math.abs(events[i]!.pitch - events[i - 1]!.pitch);
     if (leap > maxLeap) {
@@ -241,6 +381,15 @@ export function riffSoloFromZappaEngine(
       events[i]!.pitch = events[i - 1]!.pitch + step * Math.min(maxLeap, leap - maxLeap + 1);
     }
   }
+
+  if (ferocity && isBurstBar(bar, effective, seed)) {
+    inflateBurstBarEvents(events, chordSymbol, effective, seed, bar);
+  }
+
+  if (ferocity) {
+    events = applyPhraseEndingPolicies(events, bar, effective);
+  }
+
   return events;
 }
 

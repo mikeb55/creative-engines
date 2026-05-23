@@ -108,6 +108,7 @@ export type SongwriterRuleId =
   | 'iommi'
   | 'david_gilmour'
   | 'hendrix'
+  | 'eddie_van_halen'
   | 'led_zeppelin'
   | 'weather_report'
   | 'mahavishnu'

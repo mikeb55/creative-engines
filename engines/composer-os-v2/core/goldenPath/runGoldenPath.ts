@@ -19,6 +19,7 @@ import type {
   EnnioMorriconeContextMode,
   FelaKutiContextMode,
   FrankZappaContextMode,
+  ZappaStyleMode,
   GenerationMetadata,
   GershwinContextMode,
   HansZimmerContextMode,
@@ -1215,6 +1216,8 @@ export interface RunGoldenPathOptions {
   frippPolymeterSecondaryPreset?: string;
   /** Song Mode / Frank Zappa: harmony vocabulary + density arc mode (`frankZappaSlice`). Default **`avant_rock`** when omitted. */
   frankZappaContext?: FrankZappaContextMode;
+  /** Frank Zappa — GCE duo lane (`gceGate.ts`). Default **`compositional`**. */
+  zappaStyleMode?: ZappaStyleMode;
   /** Phase E — riff rock VRBs (`iommi`, `hendrix`, `led_zeppelin`, `david_gilmour`, …). */
   rockRiffContext?: RockRiffContextMode;
   /** Phase E — riff funk VRBs (`nile_rodgers`, `sly_stone`, `larry_carlton`, `james_brown`). */
@@ -1892,7 +1895,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
         ? resolveLeadSheetExpressionStrengthFromBlend(options.leadSheetPerformanceBlend)
         : undefined,
       ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'frank_zappa'
-        ? { frankZappaContext: options.frankZappaContext ?? 'avant_rock' }
+        ? {
+            frankZappaContext: options.frankZappaContext ?? 'avant_rock',
+            zappaStyleMode: options.zappaStyleMode ?? 'compositional',
+          }
         : {}),
       ...(() => {
         const riffPk = normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '');

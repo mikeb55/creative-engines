@@ -250,7 +250,7 @@ export type RiffSwingStyle = 'straight' | 'concert' | 'jazz' | 'funk16th' | 'shu
 
 /** Page / Zep multi-tuning register bands (MIDI anchors only). */
 export interface RiffTuningPolicy {
-  tuningOptions: Record<string, number>;
+  tuningOptions: Record<string, number | string>;
   midiFloor: number;
   midiCeiling: number;
   riffLowBand: [number, number];
@@ -298,10 +298,41 @@ export interface RiffCadenceTypeWeights {
   hard_stop_rest: number;
 }
 
+/** Frank Zappa `bluesrockFerocious` riff styleMode (Slonimsky map parity). */
+export interface ZappaBluesrockFerociousStyleMode {
+  modalBase: string[];
+  pentatonicAnchorRatio: number;
+  chromaticBudget: number;
+  scaleMinglingEnabled: boolean;
+  noteDensityRange: { min: number; max: number };
+  rhythmicGroupings: (number | string)[];
+  phraseEndingPolicy: {
+    openStringPullOff: boolean;
+    feedbackSustain: boolean;
+    threeQuarterStepBend: boolean;
+    hardCut: boolean;
+  };
+  contourShape: string;
+  registerPolicy: {
+    lowStringMelodyProbability: number;
+    feedbackHighRegisterMarker: boolean;
+  };
+  vampType: string;
+  keyVampPatterns: string[];
+  silencePolicy: {
+    feedbackSustainAsRest: boolean;
+    hardCutAtSectionBoundary: boolean;
+    restDensityLow: boolean;
+  };
+  variationOperators: string[];
+}
+
 export interface RiffStyleModePool {
   blues_rock?: { scales: string[] };
   folk_modal?: { scales: string[]; droneUsage: 'high' | 'medium' | 'low' };
   epic_modal_heavy?: { scales: string[]; droneUsage: 'very_high' | 'high' | 'medium' };
+  compositional?: { scales: string[] };
+  bluesrockFerocious?: ZappaBluesrockFerociousStyleMode;
 }
 
 export interface RiffContourPreferenceMap {
@@ -448,6 +479,8 @@ export interface RiffProfile {
   soloGeneratorProfile?: RiffSoloGeneratorProfile;
 }
 
+export type ZappaRiffSoloStyleMode = 'compositional' | 'bluesrockFerocious';
+
 /** Declarative solo lane for riff generator (compiled from `zappa_solo_*` research receipts). */
 export interface RiffSoloGeneratorProfile {
   enabled: boolean;
@@ -460,7 +493,18 @@ export interface RiffSoloGeneratorProfile {
   rhythmicCellEighths?: number[];
   variationOperators?: RiffVariationOperator[];
   scalePool?: Record<string, number>;
+  /** Z6 — compositional (default) vs blues-rock ferocity Slonimsky lane. */
+  styleMode?: ZappaRiffSoloStyleMode;
+  noteDensityRange?: { min: number; max: number };
+  scaleMinglingEnabled?: boolean;
+  phraseEndingPolicy?: ZappaBluesrockFerociousStyleMode['phraseEndingPolicy'];
 }
+
+/** Receipt-compiler merge patches (nested `tuningPolicy` / `soloGeneratorProfile` may be partial). */
+export type RiffProfilePatch = Omit<Partial<RiffProfile>, 'soloGeneratorProfile' | 'tuningPolicy'> & {
+  soloGeneratorProfile?: Partial<RiffSoloGeneratorProfile>;
+  tuningPolicy?: Partial<RiffTuningPolicy>;
+};
 
 /** SQ VRB profile with optional research riff posture (rock/funk guitar VRB path). */
 export interface RiffVrbProfile extends SqVrbProfile {

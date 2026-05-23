@@ -80,7 +80,7 @@ import {
   JONI_MITCHELL_FILM_STUB,
   WILLIAMS_FILM_STUB,
 } from './priority3VoiceRuleBundles';
-import { buildFrankZappaRiffProfile } from './riffVrbStubs';
+import { buildFrankZappaRiffProfile, EDDIE_VAN_HALEN } from './riffVrbStubs';
 
 /** Interval-class seeds aligned with Threadgill / IntervalSetSystem posture (engine-local). */
 const THREADGILL_INTERVAL_CLASS_SEEDS = [1, 2, 3, 5, 6, 7, 8, 10];
@@ -3124,7 +3124,93 @@ const LED_ZEPPELIN_VRF: VoiceRuleBundle = {
   },
 };
 
+/** Larry Carlton riff VRB research overlays (additive to LC_* fillReceipts stubs in riffVrbStubs). */
+const LARRY_CARLTON_FINGERPRINT_RESEARCH = [
+  'LC_REG_001 — registerPolicy: midiFloor 40; midiCeiling 84; primaryRange 55-79; fretBias 5-12; pickupBias neck; gainProfile warm_moderate',
+  'LC_RHY_001 — rhythmFeel: beatPlacement slightly_behind; primarySubdivision 16th; swingRatio straight 0.55 shuffle 0.45; ghostNoteDensity high',
+  'LC_INT_001 — intervalWeights riff: m3 0.25, P4 0.25, M6 0.20, M2 0.15, P5 0.15',
+  'LC_INT_002 — intervalWeights melodic: M6 0.30, M3 0.25, P4 0.20, m3 0.15, M2 0.10',
+  'LC_HARM_001 — scalePool: pentatonic 0.85, Dorian 0.75, Mixolydian 0.70, Ionian 0.60, Lydian 0.55; blueNote moderate',
+  'LC_HARM_002 — chordToneRatio chord 0.70 scale 0.30; strongBeatChordTone 0.85; guideTone 7th_to_3rd; triadSuperimposition high',
+  'LC_PHR_001 — phraseLengthBeats 4, 8; contour peakThenResolve 0.60; cadence resolved 0.60, hanging 0.40',
+  'LC_SIL_001 — silencePolicy: eventsPerBarRiff 8-16 typical 12; eventsPerBarMelodic 6-14 typical 10; restDevice high; callResponse very_high',
+  'LC_VAR_001 — variationOperators: octaveDisplacement, rhythmicAugmentation, vibratoMicro, bendMicro, triadReharmonization, dynamicContrast',
+  'LC_MODE_001 — styleModes: funkRiffMode density 12-16; melodicSessionMode density 8-12; smoothJazzLeadMode density 10-14',
+] as const;
+
+const LARRY_CARLTON_VRF: VoiceRuleBundle = {
+  ...LARRY_CARLTON,
+  orchestrationPolicy: {
+    ...LARRY_CARLTON.orchestrationPolicy,
+    fingerprintReceipts: [
+      ...(LARRY_CARLTON.orchestrationPolicy.fingerprintReceipts ?? []),
+      ...LARRY_CARLTON_FINGERPRINT_RESEARCH,
+    ],
+  },
+};
+
+/** David Gilmour riff VRB research overlays (additive to DG_* fillReceipts stubs in riffVrbStubs). */
+const DAVID_GILMOUR_FINGERPRINT_RESEARCH = [
+  'DG_REG_001 — registerPolicy: midiFloor 40; midiCeiling 88; primaryRange 52-79; fretBias 12-17 vhigh, 5-10 high, 0-5 mod; pickupBias neck_mid_lead bridge_riff; compressionBias longDuration',
+  'DG_RHY_001 — rhythmFeel: beatPlacement onBeat slightlyBehind; primarySubdivision quarter 8th; densityRiff 4-12 typical 8; densityLead 2-10 typical 5',
+  'DG_INT_001 — intervalWeights riff: P4 0.30, m3 0.25, M3 0.20, P5 0.15, M2 0.10',
+  'DG_INT_002 — intervalWeights melodic: M3 0.30, m3 0.25, P4 0.20, M2 0.15, P5 0.10',
+  'DG_BEND_001 — bendProfile: halfStep vhigh, wholeStep vhigh, step1_5 high, step2 mod, quarterTone high, preBend mod; vibratoRate slow vhigh mod high fast low; vibratoDepth narrow moderate wide',
+  'DG_HARM_001 — scalePool: minorPentatonic vhigh, majorPentatonic high, bluesScale mod, Mixolydian mod, Dorian low; bluesOverMajor vhigh; pentatonicRatio 0.85',
+  'DG_HARM_002 — chordToneRatio chord 0.50 scale 0.50; strongBeatChordTone 0.60; bendToChordTone vhigh',
+  'DG_PHR_001 — phraseLengthBeats 8, 16, 32; contour slowClimbToPeak 0.65; cadence sustainedFade 0.60, resolved 0.40; emotionalArc sparse build peak sustain',
+  'DG_SIL_001 — silencePolicy: sustainedNotes vhigh; delayTailRhythm vhigh 300-630ms; spaceFunction emotional 0.70 rhythmic 0.30',
+  'DG_VAR_001 — variationOperators: dynamics, octaveShift, vibratoIntensityRamp, rhythmicAugmentation, delayDrivenRepetition, bendAndRelease, bendIntensityEscalation, staccatoVsLegato',
+  'DG_MODE_001 — styleModes: slowBurnLeadMode density 2-6; rhythmicRiffMode density 6-12; texturalAtmosphericMode density 2-8',
+] as const;
+
+const DAVID_GILMOUR_VRF: VoiceRuleBundle = {
+  ...DAVID_GILMOUR,
+  orchestrationPolicy: {
+    ...DAVID_GILMOUR.orchestrationPolicy,
+    fingerprintReceipts: [
+      ...(DAVID_GILMOUR.orchestrationPolicy.fingerprintReceipts ?? []),
+      ...DAVID_GILMOUR_FINGERPRINT_RESEARCH,
+    ],
+  },
+};
+
+/** Eddie Van Halen riff VRB research overlays (additive to EVH_* fillReceipts stubs in riffVrbStubs). */
+const EDDIE_VAN_HALEN_FINGERPRINT_RESEARCH = [
+  'EVH_REG_001 — registerPolicy: midiFloor 40; midiCeiling 88; primaryRange 52-76; fretBias 5-12; leadRange 5-17; naturalHarmonicFrets 5,7,12; pickupBias bridge humbucker; gain 0.8; brownSound true',
+  'EVH_RHY_001 — rhythmFeel: beatPlacement slightly_ahead; primarySubdivision 16th; swingRatio straight 0.95 shuffle 0.05; palmMuting extensive; downstrokePreference high; ghostNoteDensity 0.05; syncopation high',
+  'EVH_TAP_001 — tapTopology: tap-pulloff-hammer 1:1:1; tapToPulloffRatio 0.33; intervals m3 0.40 M3 0.25 P4 0.20 octave 0.15; fretPositions 5,7,12,14,17; rhythmicPlacement 16th-note triplets syncopated',
+  'EVH_INT_001 — intervalWeights riff: powerChord 0.40, sus 0.30, majorMinorMix 0.20, add9 0.10; openStringDroneProb 0.35; whammyDiveBombProb 0.30',
+  'EVH_INT_002 — intervalWeights lead: m3 0.40, M3 0.25, P4 0.20, octave 0.15; chromaticRuns high; wideLeaps high',
+  'EVH_HARM_001 — harmonicLanguage: major 0.75, minor 0.15, modal 0.10; scalePool: Mixolydian 0.60, Dorian 0.30, vanHalenScale 0.10; susUsage very_high; openStringDrone high',
+  'EVH_PHR_001 — phraseLengthBeats 8, 16; loopLengths 2bar 4bar; cadenceTypes hangingSuspended 0.50, resolvedRoot 0.30, openEnded 0.20',
+  'EVH_SIL_001 — silencePolicy: eventsPerBar rhythm 16-32 typical 24; lead 32-48 typical 40; intraBarRestProb 0.15; callResponseWithVocals very_high',
+  'EVH_VAR_001 — variationOperators: octaveShift, rhythmicDisplacement, whammyDiveBomb, sus2ToSus4, dynamicContrast, tapVsPicked',
+  'EVH_MODE_001 — styleModes: rhythmMode density 16-24 palmMute downstroke power sus callResponse; leadMode density 32-48 legato 3:1 tapping whammy m3 M3 P4 octave; tappingMode tap-pull-hammer triplets harmonicTaps 12 14',
+] as const;
+
+const EDDIE_VAN_HALEN_VRF: VoiceRuleBundle = {
+  ...EDDIE_VAN_HALEN,
+  orchestrationPolicy: {
+    ...EDDIE_VAN_HALEN.orchestrationPolicy,
+    fingerprintReceipts: [
+      ...(EDDIE_VAN_HALEN.orchestrationPolicy.fingerprintReceipts ?? []),
+      ...EDDIE_VAN_HALEN_FINGERPRINT_RESEARCH,
+    ],
+  },
+};
+
 /** Frank Zappa riff-path research (Z1) — solo lane + modal/polyrhythm receipts. */
+const FRANK_ZAPPA_FZBLUES_FINGERPRINT_RECEIPTS = [
+  'FZBLUES-MODAL — modalBase: Dorian, Mixolydian; pentatonicAnchorRatio 0.38; scaleMinglingEnabled true',
+  'FZBLUES-CHROM — chromaticBudget 0.30',
+  'FZBLUES-DENS — noteDensityRange: min 8, max 24',
+  'FZBLUES-RHYTHM — rhythmicGroupings: 5, 7, 3, hemiola; chromaticBudget 0.30',
+  'FZBLUES-PHRASE — phraseEndingPolicy: openStringPullOff feedbackSustain threeQuarterStepBend hardCut; contourShape arch',
+  'FZBLUES-VAMP — vampType pedalOrTwoChord; keyVampPatterns i-bVI7, i-bIImaj7, Dm-A, I-II-Lydian',
+  'FZBLUES-VAR — variationOperators: cycledMotifRhythmVariation octaveDisplacement tremoloPickTextureBurst openStringPullOffInjection scaleNeighbourNoteMingling',
+] as const;
+
 const FRANK_ZAPPA_FINGERPRINT_RESEARCH = [
   'zappa_solo_inca_roads_modal — id: zappa_solo_inca_roads_modal; scalePool: Lydian+Mixolydian; polyrhythm: 7/8 feel; chromaticBudget: 0.55; register: 60–84.',
   'zappa_solo_watermelon_easter_hay — id: zappa_solo_watermelon_easter_hay; contour: angular; operators: microTimingShift, ornamentAdd; phraseBars: 4.',
@@ -3146,6 +3232,7 @@ const FRANK_ZAPPA_VRF: VoiceRuleBundle = {
     fingerprintReceipts: [
       ...(FRANK_ZAPPA.orchestrationPolicy.fingerprintReceipts ?? []),
       ...FRANK_ZAPPA_FINGERPRINT_RESEARCH,
+      ...FRANK_ZAPPA_FZBLUES_FINGERPRINT_RECEIPTS,
     ],
   },
 };
@@ -3227,19 +3314,22 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   jb: JAMES_BROWN,
   nile_rodgers: NILE_RODGERS,
   nile: NILE_RODGERS,
-  larry_carlton: LARRY_CARLTON,
-  carlton: LARRY_CARLTON,
-  mr_335: LARRY_CARLTON,
+  larry_carlton: LARRY_CARLTON_VRF,
+  carlton: LARRY_CARLTON_VRF,
+  mr_335: LARRY_CARLTON_VRF,
   sly_stone: SLY_STONE_VRF,
   sly: SLY_STONE_VRF,
   family_stone: SLY_STONE_VRF,
   iommi: IOMMI,
   black_sabbath: IOMMI,
-  david_gilmour: DAVID_GILMOUR,
-  gilmour: DAVID_GILMOUR,
-  pink_floyd: DAVID_GILMOUR,
+  david_gilmour: DAVID_GILMOUR_VRF,
+  gilmour: DAVID_GILMOUR_VRF,
+  pink_floyd: DAVID_GILMOUR_VRF,
   hendrix: HENDRIX,
   jimi: HENDRIX,
+  eddie_van_halen: EDDIE_VAN_HALEN_VRF,
+  van_halen: EDDIE_VAN_HALEN_VRF,
+  evh: EDDIE_VAN_HALEN_VRF,
   led_zeppelin: LED_ZEPPELIN_VRF,
   jimmy_page: LED_ZEPPELIN_VRF,
   page: LED_ZEPPELIN_VRF,

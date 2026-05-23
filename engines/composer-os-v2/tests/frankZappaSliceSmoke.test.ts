@@ -9,6 +9,7 @@ import { runGoldenPathOnce } from '../core/goldenPath/runGoldenPath';
 import type { BarMeterMap } from '../core/rhythm/barMeterTypes';
 import type { ScoreEvent } from '../core/score-model/scoreModelTypes';
 import { frankZappaIiViRollingTriplePresent } from '../core/song-mode/songModeBuilder';
+import { runFrankZappaGceStructuralTests } from './frankZappaGceStructural.test';
 
 function buildZappaClassicBarMeterMap32(): BarMeterMap {
   const map: BarMeterMap = {};
@@ -244,5 +245,5 @@ export function runFrankZappaSliceSmokeTests(): { name: string; ok: boolean }[] 
     name: 'Frank Zappa motif stickiness + interaction',
   });
 
-  return out;
+  return [...out, ...runFrankZappaGceStructuralTests()];
 }

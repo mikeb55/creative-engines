@@ -54,6 +54,9 @@ import type { BergClimaxPlan, BergSilenceTag } from './style/berg/bergFormModule
 /** Frank Zappa Song Mode slice — harmonic vocabulary / density arc mode (metadata). */
 export type FrankZappaContextMode = 'avant_rock' | 'big_band' | 'futuristic_jazz';
 
+/** Frank Zappa duo GCE lane — compositional structural fingerprint vs blues-rock ferocious Slonimsky map. Default **`compositional`**. */
+export type ZappaStyleMode = 'compositional' | 'bluesrockFerocious';
+
 /** Miles Davis Song Mode slice — era / ensemble harmonic posture (`milesDavisSlice.ts`). Default **`modal_1959`** when omitted. */
 export type MilesDavisContextMode = 'modal_1959' | 'quintet_1965' | 'electric_1970';
 
@@ -564,6 +567,12 @@ export interface GenerationMetadata {
   songwriterSyncopationBias?: number;
   /** Songwriter profile: density bias (0–1). */
   songwriterDensityBias?: number;
+  /** Songwriter profile: harmony colour bias (0–1). */
+  songwriterHarmonyColourBias?: number;
+  /** Songwriter profile: section contrast (0–1). */
+  songwriterSectionContrast?: number;
+  /** Songwriter profile: hook return variation (0–1). */
+  songwriterHookReturnVariation?: number;
   /**
    * Song Mode ECM surface (`STYLE_ECM` / `STYLE_ECM_CHAMBER`): silence / breath vs fill (0–1).
    * Nudged by {@link applyEcmChamberStyleSurface}.
@@ -957,6 +966,8 @@ export interface GenerationMetadata {
   };
   /** Frank Zappa — slice mode for additive harmony/metadata passes (`frankZappaSlice.ts`). Default **`avant_rock`** when omitted. */
   frankZappaContext?: FrankZappaContextMode;
+  /** Frank Zappa — GCE / Slonimsky duo lane (`gceGate.ts`). Default **`compositional`**. */
+  zappaStyleMode?: ZappaStyleMode;
   /** Context-specific synthetic / modal scale weights for manifests (honest bias labels only). */
   frankZappaSyntheticScaleBias?: Record<string, number>;
   /** Per-bar density bias (0–1) from Zappa density arc; refined after hard-cut resets in precompute. */
