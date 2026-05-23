@@ -34,6 +34,18 @@ import { CubanRhythmControls } from '../components/CubanRhythmControls';
 import { FelaPercussionControls, type FelaPercussionFeelMode } from '../components/FelaPercussionControls';
 import { GreekRhythmControls } from '../components/GreekRhythmControls';
 import { SqToBbWorkflowPanel } from '../components/SqToBbWorkflowPanel';
+import { SlonimskyUniversalPanel } from '../components/SlonimskyUniversalPanel';
+import { SlonimskyEnsemblePanel } from '../components/slonimsky/SlonimskyEnsemblePanel';
+import { SlonimskyGbdPanel, type GbdChromaticStrength } from '../components/slonimsky/SlonimskyGbdPanel';
+import {
+  DEFAULT_SLONIMSKY_MACRO_STATE,
+  mapSlonimskyMacroStateToGenerateRequest,
+} from '../types/slonimskyMacroState';
+import {
+  DEFAULT_BIG_BAND_SLONIMSKY_MIDDLE,
+  DEFAULT_STRING_QUARTET_SLONIMSKY_MIDDLE,
+  mapEnsembleSlonimskyToGenerateRequest,
+} from '../types/slonimskyEnsembleState';
 import { RiffGeneratorPanel } from '@composer-os/ui/components/RiffGeneratorPanel';
 import {
   RIFF_BAR_COUNT_DEFAULT,
@@ -1515,7 +1527,9 @@ type GenResult = {
     importHarmonyLockApplied?: boolean;
     importHarmonyLockFallbackReason?: string;
     importHarmonyLockedBarsCount?: number;
+    slonimskyEnsembleCellReceipts?: string[];
   };
+  slonimskyEnsembleCellReceipts?: string[];
   scoreTitle?: string;
   guitarVoicings?: GuitarVoicing[];
   requestEcho?: {
@@ -2107,7 +2121,10 @@ export function HomeGenerate({
   const songFormDropdownRef = useRef<HTMLDivElement>(null);
   const [c4Strength, setC4Strength] = useState<'light' | 'medium' | 'strong'>('medium');
   const [blendStrength, setBlendStrength] = useState<'light' | 'medium' | 'strong'>('medium');
-  const [chromaticStrength, setChromaticStrength] = useState<'off' | 'subtle' | 'prominent'>('off');
+  const [slonimskyMacro, setSlonimskyMacro] = useState(DEFAULT_SLONIMSKY_MACRO_STATE);
+  const [slonimskyBbMiddle, setSlonimskyBbMiddle] = useState(DEFAULT_BIG_BAND_SLONIMSKY_MIDDLE);
+  const [slonimskySqMiddle, setSlonimskySqMiddle] = useState(DEFAULT_STRING_QUARTET_SLONIMSKY_MIDDLE);
+  const [gbdChromaticStrength, setGbdChromaticStrength] = useState<GbdChromaticStrength>('off');
   const [uiInstrumentGroup, setUiInstrumentGroup] = useState<UiInstrumentGroup>('big_band');
   const [drumIntensity, setDrumIntensity] = useState<'sparse' | 'standard' | 'driving'>('standard');
   const [bigBandFigureResponse, setBigBandFigureResponse] = useState<'low' | 'medium' | 'high'>('medium');
@@ -3124,9 +3141,11 @@ export function HomeGenerate({
           ...(isGuitarBassDuoFamily(presetId) || presetId === 'song_mode'
             ? { c4Strength: c4Strength, blendStrength: blendStrength, songModeJamesBrownFunkOverlay: funkGroove }
             : {}),
-          ...(presetId === 'song_mode' || presetId === 'big_band' || presetId === 'string_quartet'
-            ? { chromaticStrength }
+          ...(presetId === 'song_mode' ? mapSlonimskyMacroStateToGenerateRequest(slonimskyMacro) : {}),
+          ...(presetId === 'big_band' || presetId === 'string_quartet'
+            ? mapEnsembleSlonimskyToGenerateRequest(slonimskyMacro)
             : {}),
+          ...(presetId === 'guitar_bass_duo' ? { chromaticStrength: gbdChromaticStrength } : {}),
           ...(duoHarmonyFields ? duoHarmonyFields : {}),
           ...(presetId === 'song_mode' && songChordLine
             ? {
@@ -3518,6 +3537,8 @@ export function HomeGenerate({
       includeVocalLeadSheet,
       c4Strength,
       blendStrength,
+      slonimskyMacro,
+      gbdChromaticStrength,
       funkGroove,
       generateDrumGuide,
       formId,
@@ -4374,6 +4395,40 @@ export function HomeGenerate({
         )}
       </div>
 
+      {presetId === 'song_mode' && (
+        <SlonimskyUniversalPanel state={slonimskyMacro} onChange={setSlonimskyMacro} disabled={loading} />
+      )}
+      {presetId === 'big_band' && (
+        <SlonimskyEnsemblePanel
+          mode="big_band"
+          macro={slonimskyMacro}
+          onMacroChange={setSlonimskyMacro}
+          middle={slonimskyBbMiddle}
+          onMiddleChange={setSlonimskyBbMiddle}
+          disabled={loading}
+        />
+      )}
+      {presetId === 'string_quartet' && (
+        <SlonimskyEnsemblePanel
+          mode="string_quartet"
+          macro={slonimskyMacro}
+          onMacroChange={setSlonimskyMacro}
+          middle={slonimskySqMiddle}
+          onMiddleChange={setSlonimskySqMiddle}
+          disabled={loading}
+          ensembleCellReceipts={
+            result?.slonimskyEnsembleCellReceipts ?? result?.runManifest?.slonimskyEnsembleCellReceipts
+          }
+        />
+      )}
+      {presetId === 'guitar_bass_duo' && (
+        <SlonimskyGbdPanel
+          chromaticStrength={gbdChromaticStrength}
+          onChromaticStrengthChange={setGbdChromaticStrength}
+          disabled={loading}
+        />
+      )}
+
       {modeUx && (
         <div
           style={{
@@ -5176,44 +5231,6 @@ export function HomeGenerate({
             </label>
           </div>
         </>
-      )}
-
-      {(presetId === 'song_mode' || presetId === 'big_band' || presetId === 'string_quartet') && (
-        <div style={{ marginBottom: '1rem', maxWidth: 280 }}>
-          <label
-            htmlFor="composer-os-chromatic-strength"
-            style={{
-              display: 'block',
-              marginBottom: '0.35rem',
-              color: 'var(--text)',
-              fontSize: '0.9rem',
-              fontWeight: 600,
-            }}
-          >
-            Chromatic Strength
-          </label>
-          <select
-            id="composer-os-chromatic-strength"
-            value={chromaticStrength}
-            onChange={(e) =>
-              setChromaticStrength(e.target.value as 'off' | 'subtle' | 'prominent')
-            }
-            disabled={loading}
-            style={{
-              width: '100%',
-              maxWidth: 260,
-              padding: '0.45rem 0.6rem',
-              borderRadius: 6,
-              border: '1px solid var(--border)',
-              background: 'var(--bg-input, var(--bg))',
-              color: 'var(--text)',
-            }}
-          >
-            <option value="off">Off</option>
-            <option value="subtle">Subtle</option>
-            <option value="prominent">Prominent</option>
-          </select>
-        </div>
       )}
 
       <div style={{ marginBottom: '1rem' }}>

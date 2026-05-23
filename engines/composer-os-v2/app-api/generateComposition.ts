@@ -182,6 +182,8 @@ export interface GenerateResult {
     /** Section-scoped regen receipt (ensemble / golden path partial score merge). */
     sectionRegenerationReceipt?: string;
     sectionRegenerationPartialScore?: boolean;
+    /** Big Band / String Quartet — Z10/Z11 Slonimsky cell receipts from realisation. */
+    slonimskyEnsembleCellReceipts?: string[];
   };
   /** Resolved title used for the score (user or default). */
   scoreTitle?: string;
@@ -237,6 +239,8 @@ export interface GenerateResult {
   gceGatePassed?: boolean;
   /** Big Band / String Quartet — Slonimsky Chromatic Strength receipt lines (when set on request). */
   ensembleSlonimskyReceipt?: string[];
+  /** Big Band / String Quartet — Z10/Z11 per-bar cell receipts (`z10:bb` / `z11:sq`). */
+  slonimskyEnsembleCellReceipts?: string[];
   /** Phase 6+7 — `instrumentGroup === 'guitar'`: voicings for UI fretboard + TAB export. */
   guitarVoicings?: GuitarVoicing[];
 }

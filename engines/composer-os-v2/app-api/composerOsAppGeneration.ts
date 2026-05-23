@@ -354,6 +354,16 @@ function buildStringQuartetGenerationMetadata(
   return meta;
 }
 
+function slonimskyEnsembleCellReceiptsFromRealised(realised: {
+  slonimskyEnsembleCellReceipts?: string[];
+  ensembleHarmonyMetadata?: { slonimskyEnsembleCellReceipts?: string[] };
+}): string[] | undefined {
+  const direct = realised.slonimskyEnsembleCellReceipts;
+  if (direct && direct.length > 0) return direct;
+  const meta = realised.ensembleHarmonyMetadata?.slonimskyEnsembleCellReceipts;
+  return meta && meta.length > 0 ? meta : undefined;
+}
+
 function ensembleSlonimskyReceiptLines(
   cs: 'off' | 'subtle' | 'prominent' | undefined
 ): string[] | undefined {
@@ -2401,6 +2411,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
       }
     : undefined;
   const ensReceipt = ensembleSlonimskyReceiptLines(req.chromaticStrength);
+  const ensCellReceipts = slonimskyEnsembleCellReceiptsFromRealised(realised);
   return {
     success: ok,
     productKind: 'planning',
@@ -2450,11 +2461,13 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
             referenceBehaviourHints: realised.referenceInfluence.hints,
           }
         : {}),
+      ...(ensCellReceipts ? { slonimskyEnsembleCellReceipts: ensCellReceipts } : {}),
     },
     scoreTitle: title,
     requestEcho: requestEchoFromReq(req),
     stylePairingReceipt,
     ...(ensReceipt ? { ensembleSlonimskyReceipt: ensReceipt } : {}),
+    ...(ensCellReceipts ? { slonimskyEnsembleCellReceipts: ensCellReceipts } : {}),
     ...(evaluationResult !== undefined ? { evaluationResult } : {}),
     ...(ensembleMusicXmlFilepath ? { ensembleMusicXmlFilepath } : {}),
     ...(ensembleMidiFilepath ? { midiFilepath: ensembleMidiFilepath } : {}),
@@ -2637,6 +2650,7 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
       console.warn('Score MIDI export failed:', (e as Error)?.message ?? e);
     }
     const ensReceiptXml = ensembleSlonimskyReceiptLines(req.chromaticStrength);
+    const ensCellReceiptsSq = slonimskyEnsembleCellReceiptsFromRealised(realised);
     return {
       success: true,
       productKind: 'musicxml',
@@ -2679,10 +2693,12 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
               referenceBehaviourHints: realised.referenceInfluence.hints,
             }
           : {}),
+        ...(ensCellReceiptsSq ? { slonimskyEnsembleCellReceipts: ensCellReceiptsSq } : {}),
       },
       scoreTitle: title,
       requestEcho: requestEchoFromReq(req),
       ...(ensReceiptXml ? { ensembleSlonimskyReceipt: ensReceiptXml } : {}),
+      ...(ensCellReceiptsSq ? { slonimskyEnsembleCellReceipts: ensCellReceiptsSq } : {}),
       ...(quartetMidiFilepath ? { midiFilepath: quartetMidiFilepath } : {}),
     };
   }
