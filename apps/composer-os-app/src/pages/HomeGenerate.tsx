@@ -39,8 +39,14 @@ import { SlonimskyEnsemblePanel } from '../components/slonimsky/SlonimskyEnsembl
 import { SlonimskyGbdPanel, type GbdChromaticStrength } from '../components/slonimsky/SlonimskyGbdPanel';
 import {
   DEFAULT_SLONIMSKY_MACRO_STATE,
-  mapSlonimskyMacroStateToGenerateRequest,
+  SLONIMSKY_SONG_MODE_WRITERS,
+  type SlonimskySongModeWriterId,
 } from '../types/slonimskyMacroState';
+import {
+  mapSongModeSlonimskyToGenerateRequest,
+  type SlonimskySectionOverrides,
+} from '../types/slonimskySongModeState';
+import { SlonimskySongModePanel } from '../components/slonimsky/SlonimskySongModePanel';
 import {
   DEFAULT_BIG_BAND_SLONIMSKY_MIDDLE,
   DEFAULT_STRING_QUARTET_SLONIMSKY_MIDDLE,
@@ -2122,6 +2128,7 @@ export function HomeGenerate({
   const [c4Strength, setC4Strength] = useState<'light' | 'medium' | 'strong'>('medium');
   const [blendStrength, setBlendStrength] = useState<'light' | 'medium' | 'strong'>('medium');
   const [slonimskyMacro, setSlonimskyMacro] = useState(DEFAULT_SLONIMSKY_MACRO_STATE);
+  const [slonimskySectionOverrides, setSlonimskySectionOverrides] = useState<SlonimskySectionOverrides>({});
   const [slonimskyBbMiddle, setSlonimskyBbMiddle] = useState(DEFAULT_BIG_BAND_SLONIMSKY_MIDDLE);
   const [slonimskySqMiddle, setSlonimskySqMiddle] = useState(DEFAULT_STRING_QUARTET_SLONIMSKY_MIDDLE);
   const [gbdChromaticStrength, setGbdChromaticStrength] = useState<GbdChromaticStrength>('off');
@@ -3141,7 +3148,13 @@ export function HomeGenerate({
           ...(isGuitarBassDuoFamily(presetId) || presetId === 'song_mode'
             ? { c4Strength: c4Strength, blendStrength: blendStrength, songModeJamesBrownFunkOverlay: funkGroove }
             : {}),
-          ...(presetId === 'song_mode' ? mapSlonimskyMacroStateToGenerateRequest(slonimskyMacro) : {}),
+          ...(presetId === 'song_mode'
+            ? mapSongModeSlonimskyToGenerateRequest(
+                slonimskyMacro,
+                slonimskySectionOverrides,
+                songModeStyleGenerationKeys
+              )
+            : {}),
           ...(presetId === 'big_band' || presetId === 'string_quartet'
             ? mapEnsembleSlonimskyToGenerateRequest(slonimskyMacro)
             : {}),
@@ -3237,9 +3250,6 @@ export function HomeGenerate({
                   ? { ecmChamberMode: ecmChamberFlow01ToMode(ecmChamberFlow01Ref.current) }
                   : {}),
                 ...(musicXmlSource.trim().length > 0 ? { musicXmlSource: musicXmlSource.trim() } : {}),
-                ...(songModeStyleGenerationKeys && songModeStyleGenerationKeys.length > 0
-                  ? { styleGenerationContextKeys: songModeStyleGenerationKeys }
-                  : {}),
                 ...(styleProfile.rhythm.engineId === 'fela_kuti' && felaPercussionFeelMode !== 'auto'
                   ? {
                       felaPercussionFeelOverride:
@@ -3538,6 +3548,7 @@ export function HomeGenerate({
       c4Strength,
       blendStrength,
       slonimskyMacro,
+      slonimskySectionOverrides,
       gbdChromaticStrength,
       funkGroove,
       generateDrumGuide,
@@ -4396,7 +4407,22 @@ export function HomeGenerate({
       </div>
 
       {presetId === 'song_mode' && (
-        <SlonimskyUniversalPanel state={slonimskyMacro} onChange={setSlonimskyMacro} disabled={loading} />
+        <>
+          <SlonimskyUniversalPanel state={slonimskyMacro} onChange={setSlonimskyMacro} disabled={loading} />
+          <SlonimskySongModePanel
+            writerId={
+              (SLONIMSKY_SONG_MODE_WRITERS as readonly string[]).includes(songwriterStyle.trim().toLowerCase())
+                ? (songwriterStyle.trim().toLowerCase() as SlonimskySongModeWriterId)
+                : 'pat_metheny'
+            }
+            onWriterIdChange={setSongwriterStyle}
+            state={slonimskyMacro}
+            onChange={setSlonimskyMacro}
+            sectionOverrides={slonimskySectionOverrides}
+            onSectionOverridesChange={setSlonimskySectionOverrides}
+            disabled={loading}
+          />
+        </>
       )}
       {presetId === 'big_band' && (
         <SlonimskyEnsemblePanel

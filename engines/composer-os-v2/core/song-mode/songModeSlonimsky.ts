@@ -7,12 +7,11 @@ import { buildGuitarBassDuoSlonimskyContext } from '../slonimsky/slonimskyPatter
 import { selectSlonimskyPattern } from '../slonimsky/slonimskyEngine';
 
 const SLONIMSKY_SONGWRITER_IDS = new Set([
-  'frank_zappa',
   'pat_metheny',
-  'wayne_shorter',
-  'herbie_hancock',
-  'charlie_parker',
-  'thelonious_monk',
+  'frank_zappa',
+  'sonic_youth',
+  'joni_mitchell',
+  'radiohead',
 ]);
 
 export function applySongModeSlonimskyCellLayer(context: CompositionContext): void {
