@@ -1,0 +1,28 @@
+{
+  "id": "sq_bb_hybrid",
+  "fields": {
+    "densitySplit": "blendStrength",
+    "registerCarve": "chromaticStrength"
+  },
+  "densitySplit": {
+    "knobMin": -1,
+    "knobMax": 1,
+    "mapperAtMin": {
+      "blendStrength": "light",
+      "bbLightTouch": true
+    },
+    "mapperAtMax": {
+      "blendStrength": "strong"
+    }
+  },
+  "registerCarve": {
+    "knobMin": -1,
+    "knobMax": 1,
+    "mapperAtMin": {
+      "chromaticStrength": "off"
+    },
+    "mapperAtMax": {
+      "chromaticStrength": "prominent"
+    }
+  }
+}

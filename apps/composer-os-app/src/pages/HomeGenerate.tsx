@@ -63,6 +63,7 @@ import {
 import {
   DEFAULT_BIG_BAND_SLONIMSKY_MIDDLE,
   DEFAULT_STRING_QUARTET_SLONIMSKY_MIDDLE,
+  mapBigBandEnsembleSlonimskyToGenerateRequest,
   mapEnsembleSlonimskyToGenerateRequest,
 } from '../types/slonimskyEnsembleState';
 import { RiffGeneratorPanel } from '@composer-os/ui/components/RiffGeneratorPanel';
@@ -3174,6 +3175,20 @@ export function HomeGenerate({
             )
           : {};
 
+        const bigBandSlonimskyExtras =
+          presetId === 'big_band'
+            ? mapBigBandEnsembleSlonimskyToGenerateRequest(slonimskyMacro, slonimskyBbMiddle)
+            : null;
+        const bigBandSlonimskyStyleKeys =
+          bigBandSlonimskyExtras &&
+          (bigBandSlonimskyExtras.styleGenerationContextKeys?.length ||
+            slonimskyUiExtras.styleGenerationContextKeys?.length)
+            ? [
+                ...(bigBandSlonimskyExtras.styleGenerationContextKeys ?? []),
+                ...(slonimskyUiExtras.styleGenerationContextKeys ?? []),
+              ]
+            : undefined;
+
         const generatePayload = {
           ...coreFields,
           ...(!generateDrumGuide ? { skipDrumGuide: true as const } : {}),
@@ -3194,7 +3209,16 @@ export function HomeGenerate({
                 ...(slonimskyUiExtras.harmonicVoice ? { harmonicVoice: slonimskyUiExtras.harmonicVoice } : {}),
               }
             : {}),
-          ...(presetId === 'big_band' || presetId === 'string_quartet'
+          ...(bigBandSlonimskyExtras
+            ? {
+                ...bigBandSlonimskyExtras,
+                ...(bigBandSlonimskyStyleKeys
+                  ? { styleGenerationContextKeys: bigBandSlonimskyStyleKeys }
+                  : {}),
+                ...(slonimskyUiExtras.harmonicVoice ? { harmonicVoice: slonimskyUiExtras.harmonicVoice } : {}),
+              }
+            : {}),
+          ...(presetId === 'string_quartet'
             ? {
                 ...mapEnsembleSlonimskyToGenerateRequest(slonimskyMacro),
                 ...(slonimskyUiExtras.styleGenerationContextKeys

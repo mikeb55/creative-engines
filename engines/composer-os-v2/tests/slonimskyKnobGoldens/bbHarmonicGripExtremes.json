@@ -1,0 +1,19 @@
+{
+  "id": "bb_harmonic_grip",
+  "engineField": "chromaticStrength",
+  "knobMin": -1,
+  "knobMax": 1,
+  "mapperAtMin": {
+    "figureResponse": "medium",
+    "chromaticStrength": "prominent"
+  },
+  "mapperAtMax": {
+    "figureResponse": "medium",
+    "chromaticStrength": "off"
+  },
+  "outputEvidence": {
+    "metric": "allowedOutsideLevel",
+    "seed": 88001,
+    "barIndex": 4
+  }
+}

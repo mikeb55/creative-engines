@@ -1,0 +1,19 @@
+{
+  "id": "bb_cohesion",
+  "engineField": "figureResponse",
+  "knobMin": -1,
+  "knobMax": 1,
+  "mapperAtMin": {
+    "figureResponse": "low",
+    "chromaticStrength": "subtle"
+  },
+  "mapperAtMax": {
+    "figureResponse": "high",
+    "chromaticStrength": "subtle"
+  },
+  "outputEvidence": {
+    "metric": "brassPunchBarCount",
+    "seed": 88001,
+    "chordBars": 32
+  }
+}

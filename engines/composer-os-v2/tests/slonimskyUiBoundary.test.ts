@@ -14,8 +14,14 @@ import {
 import {
   DEFAULT_BIG_BAND_SLONIMSKY_MIDDLE,
   DEFAULT_STRING_QUARTET_SLONIMSKY_MIDDLE,
+  mapBigBandEnsembleSlonimskyToGenerateRequest,
   mapEnsembleSlonimskyToGenerateRequest,
 } from '../../../apps/composer-os-app/src/types/slonimskyEnsembleState';
+import {
+  verifyBbCohesionKnobGolden,
+  verifyBbHarmonicGripKnobGolden,
+  verifySqBbHybridKnobGolden,
+} from './slonimskyKnobGolden';
 import { mapSqBbHybridToGenerateRequest } from '../../../apps/composer-os-app/src/types/slonimskySqBbHybridState';
 import { getVoiceRuleBundle } from '../core/composer/voiceRuleBundles';
 import { chromaticStrengthToOutsideLevel } from '../core/slonimsky/slonimskyPatternService';
@@ -128,27 +134,36 @@ function testSongModeMapperMergesSectionKeys(): boolean {
 
 function testEnsembleBbSqMiddleLayersDistinct(): boolean {
   const ensembleSrc = readAppFile('components/slonimsky/SlonimskyEnsemblePanel.tsx');
+  const home = readAppFile('pages/HomeGenerate.tsx');
   return (
     ensembleSrc.includes('BigBandMiddleLayer') &&
     ensembleSrc.includes('StringQuartetMiddleLayer') &&
     ensembleSrc.includes("mode === 'big_band'") &&
     DEFAULT_BIG_BAND_SLONIMSKY_MIDDLE.sectionRole === 'lead' &&
     DEFAULT_STRING_QUARTET_SLONIMSKY_MIDDLE.textureRole === 'melody' &&
-    DEFAULT_BIG_BAND_SLONIMSKY_MIDDLE.ensemblePreset !== DEFAULT_STRING_QUARTET_SLONIMSKY_MIDDLE.ensemblePreset
+    DEFAULT_BIG_BAND_SLONIMSKY_MIDDLE.ensemblePreset !== DEFAULT_STRING_QUARTET_SLONIMSKY_MIDDLE.ensemblePreset &&
+    home.includes('mapBigBandEnsembleSlonimskyToGenerateRequest') &&
+    home.includes('bigBandSlonimskyExtras')
   );
 }
 
 function testEnsembleMapperOutputsRequestFields(): boolean {
-  const out = mapEnsembleSlonimskyToGenerateRequest({
+  const sq = mapEnsembleSlonimskyToGenerateRequest({
     sourcePreset: 'symmetric',
     motion: -0.5,
     tension: 0,
     variation: 0.5,
   });
+  const bb = mapBigBandEnsembleSlonimskyToGenerateRequest(
+    { sourcePreset: 'symmetric', motion: 0, tension: 0, variation: 0 },
+    { ...DEFAULT_BIG_BAND_SLONIMSKY_MIDDLE, cohesion: 1, harmonicGrip: -1 }
+  );
   return (
-    out.chromaticStrength === 'subtle' &&
-    out.blendStrength === 'light' &&
-    out.duoIntent === 'conversational'
+    sq.chromaticStrength === 'subtle' &&
+    sq.blendStrength === 'light' &&
+    sq.duoIntent === 'conversational' &&
+    bb.figureResponse === 'high' &&
+    bb.chromaticStrength === 'prominent'
   );
 }
 
@@ -175,7 +190,10 @@ function testSqBbHybridMapperContextAndBlend(): boolean {
     keys.includes('slonimsky:sq_bb:foreground=bb') &&
     out.blendStrength === 'strong' &&
     out.chromaticStrength === 'off' &&
-    out.duoIntent === 'conversational'
+    out.duoIntent === 'conversational' &&
+    verifyBbCohesionKnobGolden() &&
+    verifyBbHarmonicGripKnobGolden() &&
+    verifySqBbHybridKnobGolden()
   );
 }
 
