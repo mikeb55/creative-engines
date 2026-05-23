@@ -39,9 +39,16 @@ import { SlonimskyEnsemblePanel } from '../components/slonimsky/SlonimskyEnsembl
 import { SlonimskyGbdPanel, type GbdChromaticStrength } from '../components/slonimsky/SlonimskyGbdPanel';
 import {
   DEFAULT_SLONIMSKY_MACRO_STATE,
+  isSlonimskyEnabledPreset,
   SLONIMSKY_SONG_MODE_WRITERS,
   type SlonimskySongModeWriterId,
 } from '../types/slonimskyMacroState';
+import {
+  DEFAULT_SLONIMSKY_ADVANCED_OVERRIDES,
+  slonimskyUiExtrasFromAdvanced,
+} from '../types/slonimskyAdvancedState';
+import { slonimskyHarmonicVoiceModeForPreset } from '../constants/slonimskyHarmonicVoices';
+import { SlonimskyAdvancedDrawer } from '../components/slonimsky/SlonimskyAdvancedDrawer';
 import {
   mapSongModeSlonimskyToGenerateRequest,
   type SlonimskySectionOverrides,
@@ -2138,6 +2145,8 @@ export function HomeGenerate({
   const [sqBbHybrid, setSqBbHybrid] = useState(DEFAULT_SLONIMSKY_SQ_BB_HYBRID_STATE);
   const [sqBbHybridRouted, setSqBbHybridRouted] = useState(false);
   const [sqBbHybridRequest, setSqBbHybridRequest] = useState<SqBbHybridGenerateExtras>({});
+  const [slonimskyAdvanced, setSlonimskyAdvanced] = useState(DEFAULT_SLONIMSKY_ADVANCED_OVERRIDES);
+  const [slonimskyHarmonicVoice, setSlonimskyHarmonicVoice] = useState<string | null>(null);
   const [slonimskyBbMiddle, setSlonimskyBbMiddle] = useState(DEFAULT_BIG_BAND_SLONIMSKY_MIDDLE);
   const [slonimskySqMiddle, setSlonimskySqMiddle] = useState(DEFAULT_STRING_QUARTET_SLONIMSKY_MIDDLE);
   const [gbdChromaticStrength, setGbdChromaticStrength] = useState<GbdChromaticStrength>('off');
@@ -2778,6 +2787,12 @@ export function HomeGenerate({
     presetId === 'riff_generator';
 
   const isSqToBbWorkflow = presetId === 'sq_to_bb';
+  const slonimskyUiEnabled = isSlonimskyEnabledPreset(presetId);
+  const slonimskyHarmonicMode = slonimskyHarmonicVoiceModeForPreset(presetId);
+  const showSlonimskyZappaDrawer =
+    songwriterStyle === 'frank_zappa' ||
+    slonimskyHarmonicVoice === 'frank_zappa' ||
+    (presetId === 'riff_generator' && isZappaRiffVrbId(riffVrbId));
 
   const generate = useCallback(
     async (opts?: { seedOverride?: number; variationOverride?: string }) => {
@@ -3147,6 +3162,18 @@ export function HomeGenerate({
               }).combinedKeys
             : undefined;
 
+        const slonimskyUiExtras = slonimskyUiEnabled
+          ? slonimskyUiExtrasFromAdvanced(
+              slonimskyAdvanced,
+              slonimskyHarmonicVoice,
+              presetId === 'song_mode'
+                ? songModeStyleGenerationKeys
+                : presetId === 'string_quartet'
+                  ? stringQuartetStyleGenerationKeys
+                  : undefined
+            )
+          : {};
+
         const generatePayload = {
           ...coreFields,
           ...(!generateDrumGuide ? { skipDrumGuide: true as const } : {}),
@@ -3158,16 +3185,40 @@ export function HomeGenerate({
             ? { c4Strength: c4Strength, blendStrength: blendStrength, songModeJamesBrownFunkOverlay: funkGroove }
             : {}),
           ...(presetId === 'song_mode'
-            ? mapSongModeSlonimskyToGenerateRequest(
-                slonimskyMacro,
-                slonimskySectionOverrides,
-                songModeStyleGenerationKeys
-              )
+            ? {
+                ...mapSongModeSlonimskyToGenerateRequest(
+                  slonimskyMacro,
+                  slonimskySectionOverrides,
+                  slonimskyUiExtras.styleGenerationContextKeys
+                ),
+                ...(slonimskyUiExtras.harmonicVoice ? { harmonicVoice: slonimskyUiExtras.harmonicVoice } : {}),
+              }
             : {}),
           ...(presetId === 'big_band' || presetId === 'string_quartet'
-            ? mapEnsembleSlonimskyToGenerateRequest(slonimskyMacro)
+            ? {
+                ...mapEnsembleSlonimskyToGenerateRequest(slonimskyMacro),
+                ...(slonimskyUiExtras.styleGenerationContextKeys
+                  ? { styleGenerationContextKeys: slonimskyUiExtras.styleGenerationContextKeys }
+                  : {}),
+                ...(slonimskyUiExtras.harmonicVoice ? { harmonicVoice: slonimskyUiExtras.harmonicVoice } : {}),
+              }
             : {}),
-          ...(presetId === 'guitar_bass_duo' ? { chromaticStrength: gbdChromaticStrength } : {}),
+          ...(presetId === 'guitar_bass_duo' || presetId === 'guitar_bass_duo_single_line'
+            ? {
+                ...(presetId === 'guitar_bass_duo' ? { chromaticStrength: gbdChromaticStrength } : {}),
+                ...mapEnsembleSlonimskyToGenerateRequest(slonimskyMacro),
+                ...(slonimskyUiExtras.styleGenerationContextKeys
+                  ? { styleGenerationContextKeys: slonimskyUiExtras.styleGenerationContextKeys }
+                  : {}),
+                ...(slonimskyUiExtras.harmonicVoice ? { harmonicVoice: slonimskyUiExtras.harmonicVoice } : {}),
+              }
+            : {}),
+          ...(presetId === 'riff_generator' && slonimskyUiExtras.styleGenerationContextKeys
+            ? { styleGenerationContextKeys: slonimskyUiExtras.styleGenerationContextKeys }
+            : {}),
+          ...(presetId === 'riff_generator' && slonimskyUiExtras.harmonicVoice
+            ? { harmonicVoice: slonimskyUiExtras.harmonicVoice }
+            : {}),
           ...(duoHarmonyFields ? duoHarmonyFields : {}),
           ...(presetId === 'song_mode' && songChordLine
             ? {
@@ -3558,6 +3609,8 @@ export function HomeGenerate({
       blendStrength,
       slonimskyMacro,
       slonimskySectionOverrides,
+      slonimskyAdvanced,
+      slonimskyHarmonicVoice,
       gbdChromaticStrength,
       funkGroove,
       generateDrumGuide,
@@ -4417,7 +4470,14 @@ export function HomeGenerate({
 
       {presetId === 'song_mode' && (
         <>
-          <SlonimskyUniversalPanel state={slonimskyMacro} onChange={setSlonimskyMacro} disabled={loading} />
+          <SlonimskyUniversalPanel
+            state={slonimskyMacro}
+            onChange={setSlonimskyMacro}
+            disabled={loading}
+            harmonicVoiceMode={slonimskyHarmonicMode}
+            harmonicVoiceId={slonimskyHarmonicVoice}
+            onHarmonicVoiceChange={setSlonimskyHarmonicVoice}
+          />
           <SlonimskySongModePanel
             writerId={
               (SLONIMSKY_SONG_MODE_WRITERS as readonly string[]).includes(songwriterStyle.trim().toLowerCase())
@@ -4440,6 +4500,8 @@ export function HomeGenerate({
           onMacroChange={setSlonimskyMacro}
           middle={slonimskyBbMiddle}
           onMiddleChange={setSlonimskyBbMiddle}
+          harmonicVoiceId={slonimskyHarmonicVoice}
+          onHarmonicVoiceChange={setSlonimskyHarmonicVoice}
           disabled={loading}
         />
       )}
@@ -4450,6 +4512,8 @@ export function HomeGenerate({
           onMacroChange={setSlonimskyMacro}
           middle={slonimskySqMiddle}
           onMiddleChange={setSlonimskySqMiddle}
+          harmonicVoiceId={slonimskyHarmonicVoice}
+          onHarmonicVoiceChange={setSlonimskyHarmonicVoice}
           disabled={loading}
           ensembleCellReceipts={
             result?.slonimskyEnsembleCellReceipts ?? result?.runManifest?.slonimskyEnsembleCellReceipts
@@ -4457,11 +4521,22 @@ export function HomeGenerate({
         />
       )}
       {presetId === 'guitar_bass_duo' && (
-        <SlonimskyGbdPanel
+        <>
+          <SlonimskyUniversalPanel
+            state={slonimskyMacro}
+            onChange={setSlonimskyMacro}
+            disabled={loading}
+            harmonicOnly
+            harmonicVoiceMode="gbd"
+            harmonicVoiceId={slonimskyHarmonicVoice}
+            onHarmonicVoiceChange={setSlonimskyHarmonicVoice}
+          />
+          <SlonimskyGbdPanel
           chromaticStrength={gbdChromaticStrength}
           onChromaticStrengthChange={setGbdChromaticStrength}
           disabled={loading}
         />
+        </>
       )}
 
       {modeUx && (
@@ -4993,13 +5068,25 @@ export function HomeGenerate({
 
       {isSqToBbWorkflow && (
         <>
+          <SlonimskyUniversalPanel
+            state={slonimskyMacro}
+            onChange={setSlonimskyMacro}
+            disabled={loading}
+            harmonicOnly
+            harmonicVoiceMode="sq_to_bb"
+            harmonicVoiceId={slonimskyHarmonicVoice}
+            onHarmonicVoiceChange={setSlonimskyHarmonicVoice}
+          />
           <SlonimskySqBbHybridPanel
             state={sqBbHybrid}
             onChange={setSqBbHybrid}
             routed={sqBbHybridRouted}
             disabled={loading}
             onRoute={() => {
-              setSqBbHybridRequest(mapSqBbHybridToGenerateRequest(sqBbHybrid));
+              setSqBbHybridRequest({
+                ...mapSqBbHybridToGenerateRequest(sqBbHybrid),
+                ...slonimskyUiExtrasFromAdvanced(slonimskyAdvanced, slonimskyHarmonicVoice),
+              });
               setSqBbHybridRouted(true);
             }}
           />
@@ -5359,6 +5446,17 @@ export function HomeGenerate({
         />
       </div>
 
+      {presetId === 'riff_generator' && (
+        <SlonimskyUniversalPanel
+          state={slonimskyMacro}
+          onChange={setSlonimskyMacro}
+          disabled={loading}
+          harmonicOnly
+          harmonicVoiceMode="riff_generator"
+          harmonicVoiceId={slonimskyHarmonicVoice}
+          onHarmonicVoiceChange={setSlonimskyHarmonicVoice}
+        />
+      )}
       {presetId === 'riff_generator' && (
         <RiffGeneratorPanel
           loading={loading}
@@ -6830,6 +6928,43 @@ export function HomeGenerate({
           </div>
           {songwriterStyle === 'frank_zappa' && frankZappaMeterMapBlock}
         </div>
+      )}
+
+      {slonimskyUiEnabled && !isSqToBbWorkflow && (
+        <SlonimskyAdvancedDrawer
+          overrides={slonimskyAdvanced}
+          onOverridesChange={setSlonimskyAdvanced}
+          disabled={loading}
+          showZappaSection={showSlonimskyZappaDrawer}
+          zappaStyleMode={zappaStyleMode}
+          zappaEraPreset={zappaEraPreset}
+          zappaPhraseCharacter={zappaPhraseCharacter}
+          zappaSymmetryBias={zappaSymmetryBias}
+          zappaChainDepth={zappaChainDepth}
+          onZappaStyleModeChange={setZappaStyleMode}
+          onZappaEraPresetChange={setZappaEraPreset}
+          onZappaPhraseCharacterChange={setZappaPhraseCharacter}
+          onZappaSymmetryBiasChange={setZappaSymmetryBias}
+          onZappaChainDepthChange={setZappaChainDepth}
+        />
+      )}
+      {isSqToBbWorkflow && (
+        <SlonimskyAdvancedDrawer
+          overrides={slonimskyAdvanced}
+          onOverridesChange={setSlonimskyAdvanced}
+          disabled={loading}
+          showZappaSection={showSlonimskyZappaDrawer}
+          zappaStyleMode={zappaStyleMode}
+          zappaEraPreset={zappaEraPreset}
+          zappaPhraseCharacter={zappaPhraseCharacter}
+          zappaSymmetryBias={zappaSymmetryBias}
+          zappaChainDepth={zappaChainDepth}
+          onZappaStyleModeChange={setZappaStyleMode}
+          onZappaEraPresetChange={setZappaEraPreset}
+          onZappaPhraseCharacterChange={setZappaPhraseCharacter}
+          onZappaSymmetryBiasChange={setZappaSymmetryBias}
+          onZappaChainDepthChange={setZappaChainDepth}
+        />
       )}
 
       <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1rem', maxWidth: 520 }}>

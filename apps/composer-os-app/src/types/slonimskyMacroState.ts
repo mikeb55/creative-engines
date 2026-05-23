@@ -30,7 +30,24 @@ export const DEFAULT_SLONIMSKY_MACRO_STATE: SlonimskyMacroState = {
   variation: 0,
 };
 
-/** Song Mode only — BB/SQ use {@link SlonimskyEnsemblePanel}. */
+/** Presets that mount Slonimsky universal / advanced UI. */
+export const SLONIMSKY_ENABLED_PRESET_IDS = [
+  'song_mode',
+  'big_band',
+  'string_quartet',
+  'guitar_bass_duo',
+  'guitar_bass_duo_single_line',
+  'sq_to_bb',
+  'riff_generator',
+] as const;
+
+export type SlonimskyEnabledPresetId = (typeof SLONIMSKY_ENABLED_PRESET_IDS)[number];
+
+export function isSlonimskyEnabledPreset(presetId: string): presetId is SlonimskyEnabledPresetId {
+  return (SLONIMSKY_ENABLED_PRESET_IDS as readonly string[]).includes(presetId);
+}
+
+/** @deprecated Use {@link SLONIMSKY_ENABLED_PRESET_IDS} */
 export const SLONIMSKY_UNIVERSAL_PANEL_PRESET_IDS = ['song_mode'] as const;
 
 const SOURCE_PRESET_TENSION_BIAS: Record<SlonimskySourcePreset, number> = {

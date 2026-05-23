@@ -6,6 +6,13 @@ import {
   type SlonimskySourcePreset,
 } from '../../types/slonimskyMacroState';
 import {
+  SLONIMSKY_FLAVOR_DISPLAY,
+  SLONIMSKY_FLAVOR_LONG_DESCRIPTION,
+  SLONIMSKY_FLAVOR_ORDER,
+  SLONIMSKY_PIN_AVOID_TOOLTIP,
+  SLONIMSKY_WRITER_ONE_LINER,
+} from '../../constants/slonimskyUxCopy';
+import {
   SLONIMSKY_SECTION_LABELS,
   slonimskySongModeWriterPresets,
   type SlonimskySectionLabel,
@@ -113,7 +120,7 @@ export function SlonimskySongModePanel({
           }}
         >
           {SLONIMSKY_SONG_MODE_WRITERS.map((id) => (
-            <option key={id} value={id}>
+            <option key={id} value={id} title={SLONIMSKY_WRITER_ONE_LINER[id]}>
               {WRITER_LABELS[id]}
             </option>
           ))}
@@ -139,6 +146,7 @@ export function SlonimskySongModePanel({
                 key={p.id}
                 type="button"
                 disabled={disabled}
+                title={SLONIMSKY_FLAVOR_LONG_DESCRIPTION[p.macro.sourcePreset]}
                 onClick={() => onChange(p.macro)}
                 style={{
                   fontSize: '0.78rem',
@@ -210,19 +218,21 @@ export function SlonimskySongModePanel({
             type="button"
             className="secondary"
             disabled={disabled}
+            title={SLONIMSKY_PIN_AVOID_TOOLTIP.pin}
             onClick={pinSection}
             style={{ fontSize: '0.78rem' }}
           >
-            Pin {state.sourcePreset} → {activeSection}
+            Pin {SLONIMSKY_FLAVOR_DISPLAY[state.sourcePreset]} → {activeSection}
           </button>
           <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Avoid flavor:</span>
-          {(['lyrical', 'angular', 'symmetric', 'chromatic', 'riff'] as SlonimskySourcePreset[]).map((f) => {
+          {SLONIMSKY_FLAVOR_ORDER.map((f) => {
             const on = sectionOverride?.avoid?.includes(f);
             return (
               <button
                 key={f}
                 type="button"
                 disabled={disabled}
+                title={SLONIMSKY_PIN_AVOID_TOOLTIP.avoid}
                 onClick={() => toggleAvoidFlavor(f)}
                 aria-pressed={on}
                 style={{
@@ -237,7 +247,7 @@ export function SlonimskySongModePanel({
                   cursor: disabled ? 'default' : 'pointer',
                 }}
               >
-                {f}
+                {SLONIMSKY_FLAVOR_DISPLAY[f]}
               </button>
             );
           })}

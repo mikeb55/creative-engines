@@ -1,3 +1,4 @@
+import type { SlonimskyHarmonicVoiceMode } from '../../constants/slonimskyHarmonicVoices';
 import type { SlonimskyMacroState } from '../../types/slonimskyMacroState';
 import type {
   BigBandSlonimskyMiddleState,
@@ -304,6 +305,8 @@ export function SlonimskyEnsemblePanel(
         onMacroChange: (s: SlonimskyMacroState) => void;
         middle: BigBandSlonimskyMiddleState;
         onMiddleChange: (s: BigBandSlonimskyMiddleState) => void;
+        harmonicVoiceId?: string | null;
+        onHarmonicVoiceChange?: (id: string | null) => void;
         disabled?: boolean;
       }
     | {
@@ -312,11 +315,14 @@ export function SlonimskyEnsemblePanel(
         onMacroChange: (s: SlonimskyMacroState) => void;
         middle: StringQuartetSlonimskyMiddleState;
         onMiddleChange: (s: StringQuartetSlonimskyMiddleState) => void;
+        harmonicVoiceId?: string | null;
+        onHarmonicVoiceChange?: (id: string | null) => void;
         disabled?: boolean;
         ensembleCellReceipts?: string[];
       }
 ) {
   const { mode, macro, onMacroChange, disabled } = props;
+  const harmonicVoiceMode: SlonimskyHarmonicVoiceMode = mode === 'big_band' ? 'big_band' : 'string_quartet';
   return (
     <div
       style={{
@@ -334,6 +340,9 @@ export function SlonimskyEnsemblePanel(
         onChange={onMacroChange}
         disabled={disabled}
         embedded
+        harmonicVoiceMode={harmonicVoiceMode}
+        harmonicVoiceId={props.harmonicVoiceId}
+        onHarmonicVoiceChange={props.onHarmonicVoiceChange}
       />
       {mode === 'big_band' ? (
         <BigBandMiddleLayer

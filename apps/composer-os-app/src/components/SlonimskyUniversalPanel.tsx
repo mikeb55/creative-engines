@@ -1,20 +1,13 @@
-import { useMemo, useState } from 'react';
-import { THESAURUS_REGISTRY } from '@composer-os/core/slonimsky/thesaurusRegistry';
-import type { SlonimskyMacroState, SlonimskySourcePreset } from '../types/slonimskyMacroState';
-
-const FLAVOR_PRESETS: { id: SlonimskySourcePreset; label: string }[] = [
-  { id: 'lyrical', label: 'Lyrical' },
-  { id: 'angular', label: 'Angular' },
-  { id: 'symmetric', label: 'Symmetric' },
-  { id: 'chromatic', label: 'Chromatic' },
-  { id: 'riff', label: 'Riff' },
-];
-
-const KNOB_AXES: { key: 'motion' | 'tension' | 'variation'; label: string }[] = [
-  { key: 'motion', label: 'Motion' },
-  { key: 'tension', label: 'Tension' },
-  { key: 'variation', label: 'Variation' },
-];
+import type { SlonimskyHarmonicVoiceMode } from '../constants/slonimskyHarmonicVoices';
+import { slonimskyHarmonicVoiceOptionsForMode } from '../constants/slonimskyHarmonicVoices';
+import {
+  SLONIMSKY_FLAVOR_DISPLAY,
+  SLONIMSKY_FLAVOR_ORDER,
+  SLONIMSKY_FLAVOR_GENRE_HINT,
+  SLONIMSKY_FLAVOR_SHORT_TOOLTIP,
+  SLONIMSKY_KNOB_TOOLTIP,
+} from '../constants/slonimskyUxCopy';
+import type { SlonimskyMacroState } from '../types/slonimskyMacroState';
 
 function clampKnob(n: number): number {
   if (!Number.isFinite(n)) return 0;
@@ -31,25 +24,24 @@ export function SlonimskyUniversalPanel({
   onChange,
   disabled = false,
   embedded = false,
+  harmonicOnly = false,
+  harmonicVoiceMode = 'other',
+  harmonicVoiceId = null,
+  onHarmonicVoiceChange,
 }: {
   state: SlonimskyMacroState;
   onChange: (next: SlonimskyMacroState) => void;
   disabled?: boolean;
-  /** Inside {@link SlonimskyEnsemblePanel} — omit outer card chrome. */
   embedded?: boolean;
+  /** Harmonic voice selector only (e.g. GBD). */
+  harmonicOnly?: boolean;
+  harmonicVoiceMode?: SlonimskyHarmonicVoiceMode;
+  harmonicVoiceId?: string | null;
+  onHarmonicVoiceChange?: (id: string | null) => void;
 }) {
-  const cellIds = useMemo(() => THESAURUS_REGISTRY.map((p) => p.id), []);
-  const [activeCellIds, setActiveCellIds] = useState<readonly string[]>(() =>
-    THESAURUS_REGISTRY.filter((p) => p.inEngine).map((p) => p.id)
-  );
-
   const patch = (partial: Partial<SlonimskyMacroState>) => onChange({ ...state, ...partial });
-
-  const toggleCell = (id: string) => {
-    setActiveCellIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  };
+  const voiceOptions = slonimskyHarmonicVoiceOptionsForMode(harmonicVoiceMode);
+  const showMacro = !harmonicOnly;
 
   return (
     <div
@@ -83,6 +75,7 @@ export function SlonimskyUniversalPanel({
         </span>
       </div>
 
+      {showMacro ? (
       <div style={{ marginBottom: '0.75rem' }}>
         <span
           style={{
@@ -96,14 +89,15 @@ export function SlonimskyUniversalPanel({
           Flavor
         </span>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
-          {FLAVOR_PRESETS.map((p) => {
-            const on = state.sourcePreset === p.id;
+          {SLONIMSKY_FLAVOR_ORDER.map((id) => {
+            const on = state.sourcePreset === id;
             return (
               <button
-                key={p.id}
+                key={id}
                 type="button"
                 disabled={disabled}
-                onClick={() => patch({ sourcePreset: p.id })}
+                title={`${SLONIMSKY_FLAVOR_SHORT_TOOLTIP[id]} — ${SLONIMSKY_FLAVOR_GENRE_HINT[id]}`}
+                onClick={() => patch({ sourcePreset: id })}
                 style={{
                   fontSize: '0.78rem',
                   padding: '0.2rem 0.55rem',
@@ -116,22 +110,71 @@ export function SlonimskyUniversalPanel({
                   cursor: disabled ? 'default' : 'pointer',
                 }}
               >
-                {p.label}
+                {SLONIMSKY_FLAVOR_DISPLAY[id]}
               </button>
             );
           })}
         </div>
       </div>
+      ) : null}
 
+      {onHarmonicVoiceChange && voiceOptions.length > 0 ? (
+        <div style={{ marginBottom: '0.75rem' }}>
+          <label
+            style={{
+              display: 'block',
+              fontSize: '0.72rem',
+              color: 'var(--text-muted)',
+              marginBottom: 6,
+            }}
+          >
+            Harmonic Voice
+          </label>
+          <select
+            value={harmonicVoiceId ?? ''}
+            disabled={disabled}
+            onChange={(e) => onHarmonicVoiceChange(e.target.value ? e.target.value : null)}
+            style={{
+              width: '100%',
+              maxWidth: 320,
+              padding: '0.45rem 0.6rem',
+              borderRadius: 6,
+              border: '1px solid var(--border)',
+              background: 'var(--bg-input, var(--bg))',
+              color: 'var(--text)',
+            }}
+          >
+            <option value="">None (engine auto-resolves)</option>
+            {voiceOptions.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.label}
+                {v.genericVoiceWarning ? ' ⚠ generic voice' : ''}
+              </option>
+            ))}
+          </select>
+          {harmonicVoiceId === 'sonic_youth' ? (
+            <p
+              style={{
+                margin: '0.35rem 0 0',
+                fontSize: '0.72rem',
+                color: 'rgb(180, 120, 20)',
+              }}
+            >
+              ⚠ generic voice — no dedicated VRB bundle; engine uses neutral harmonic voice.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {showMacro ? (
       <div
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
           gap: '0.65rem 1rem',
-          marginBottom: '0.85rem',
         }}
       >
-        {KNOB_AXES.map(({ key, label }) => (
+        {(['motion', 'tension', 'variation'] as const).map((key) => (
           <label key={key} style={{ display: 'block', fontSize: '0.82rem' }}>
             <span
               style={{
@@ -141,8 +184,9 @@ export function SlonimskyUniversalPanel({
                 color: 'var(--text-muted)',
                 fontSize: '0.72rem',
               }}
+              title={SLONIMSKY_KNOB_TOOLTIP[key]}
             >
-              <span>{label}</span>
+              <span>{key.charAt(0).toUpperCase() + key.slice(1)}</span>
               <span style={{ color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
                 {formatKnob(state[key])}
               </span>
@@ -156,67 +200,13 @@ export function SlonimskyUniversalPanel({
               value={clampKnob(state[key])}
               onChange={(e) => patch({ [key]: clampKnob(Number(e.target.value)) })}
               style={{ width: '100%' }}
-              aria-label={`${label} (-1 to +1)`}
+              aria-label={`${key} (-1 to +1)`}
+              title={SLONIMSKY_KNOB_TOOLTIP[key]}
             />
           </label>
         ))}
       </div>
-
-      <div>
-        <span
-          style={{
-            display: 'block',
-            fontSize: '0.72rem',
-            color: 'var(--text-muted)',
-            marginBottom: 6,
-            letterSpacing: '0.02em',
-          }}
-        >
-          Bar cells ({activeCellIds.length}/{cellIds.length} on)
-        </span>
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '0.25rem',
-            maxHeight: 88,
-            overflowY: 'auto',
-            padding: '0.15rem 0',
-          }}
-        >
-          {cellIds.map((id) => {
-            const on = activeCellIds.includes(id);
-            const row = THESAURUS_REGISTRY.find((p) => p.id === id);
-            const title = row
-              ? `${row.name} · Pattern ${row.thesaurusNo}${row.inEngine ? ' · engine' : ''}`
-              : id;
-            return (
-              <button
-                key={id}
-                type="button"
-                disabled={disabled}
-                title={title}
-                aria-pressed={on}
-                onClick={() => toggleCell(id)}
-                style={{
-                  fontSize: '0.65rem',
-                  padding: '0.12rem 0.35rem',
-                  borderRadius: 4,
-                  border: on
-                    ? '1px solid var(--accent, #6ae)'
-                    : '1px solid var(--border-subtle, rgba(128,128,128,0.28))',
-                  background: on ? 'rgba(100,160,255,0.12)' : 'transparent',
-                  color: on ? 'var(--text)' : 'var(--text-muted)',
-                  cursor: disabled ? 'default' : 'pointer',
-                  fontFamily: 'ui-monospace, monospace',
-                }}
-              >
-                {id.replace(/^p_/, '')}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      ) : null}
     </div>
   );
 }
