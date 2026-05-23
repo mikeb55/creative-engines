@@ -51,6 +51,7 @@ import { VrbTooltip, vrbOptionTitleAttribute } from '@composer-os/ui/components/
 import { ComposerEraSelectOptions } from './ComposerEraSelectOptions';
 import { SqToBbCompatibilityBadge } from './SqToBbCompatibilityBadge';
 import { SqToBbMismatchNotice } from './SqToBbMismatchNotice';
+import type { SqBbHybridGenerateExtras } from '../types/slonimskySqBbHybridState';
 
 const MAX_USER_REGENS = 2;
 const LANE_ORDER: SqToBbVoiceLaneId[] = ['S', 'A', 'T', 'B'];
@@ -225,6 +226,7 @@ export function SqToBbWorkflowPanel({
   onStyleProfileChange,
   era,
   onEraChange,
+  slonimskyHybridRequest,
 }: {
   seed: number;
   totalBars: number;
@@ -233,6 +235,7 @@ export function SqToBbWorkflowPanel({
   onStyleProfileChange: (id: SqToBbStyleProfileId) => void;
   era: SqToBbEraSelectValue;
   onEraChange: (value: SqToBbEraSelectValue) => void;
+  slonimskyHybridRequest?: SqBbHybridGenerateExtras;
 }) {
   const [lengthSelect, setLengthSelect] = useState<SqToBbLengthSelectValue>(32);
   const [customLengthBars, setCustomLengthBars] = useState('');
@@ -402,6 +405,7 @@ export function SqToBbWorkflowPanel({
           sqToBbDensity,
           ...(bbLightTouch ? { bbLightTouch: true } : {}),
           ...(eraTag !== undefined ? { sqToBbEra: eraTag } : { sqToBbEra: null }),
+          ...slonimskyHybridRequest,
           ...extra,
         };
         const ls = lineSet ?? workflow?.contrapuntalLineSet;
@@ -440,6 +444,7 @@ export function SqToBbWorkflowPanel({
       midiExtraction?.bpm,
       chordMismatchResolution,
       workflow?.contrapuntalLineSet,
+      slonimskyHybridRequest,
     ],
   );
 

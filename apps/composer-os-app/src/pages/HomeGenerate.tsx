@@ -47,6 +47,12 @@ import {
   type SlonimskySectionOverrides,
 } from '../types/slonimskySongModeState';
 import { SlonimskySongModePanel } from '../components/slonimsky/SlonimskySongModePanel';
+import { SlonimskySqBbHybridPanel } from '../components/slonimsky/SlonimskySqBbHybridPanel';
+import {
+  DEFAULT_SLONIMSKY_SQ_BB_HYBRID_STATE,
+  mapSqBbHybridToGenerateRequest,
+  type SqBbHybridGenerateExtras,
+} from '../types/slonimskySqBbHybridState';
 import {
   DEFAULT_BIG_BAND_SLONIMSKY_MIDDLE,
   DEFAULT_STRING_QUARTET_SLONIMSKY_MIDDLE,
@@ -2129,6 +2135,9 @@ export function HomeGenerate({
   const [blendStrength, setBlendStrength] = useState<'light' | 'medium' | 'strong'>('medium');
   const [slonimskyMacro, setSlonimskyMacro] = useState(DEFAULT_SLONIMSKY_MACRO_STATE);
   const [slonimskySectionOverrides, setSlonimskySectionOverrides] = useState<SlonimskySectionOverrides>({});
+  const [sqBbHybrid, setSqBbHybrid] = useState(DEFAULT_SLONIMSKY_SQ_BB_HYBRID_STATE);
+  const [sqBbHybridRouted, setSqBbHybridRouted] = useState(false);
+  const [sqBbHybridRequest, setSqBbHybridRequest] = useState<SqBbHybridGenerateExtras>({});
   const [slonimskyBbMiddle, setSlonimskyBbMiddle] = useState(DEFAULT_BIG_BAND_SLONIMSKY_MIDDLE);
   const [slonimskySqMiddle, setSlonimskySqMiddle] = useState(DEFAULT_STRING_QUARTET_SLONIMSKY_MIDDLE);
   const [gbdChromaticStrength, setGbdChromaticStrength] = useState<GbdChromaticStrength>('off');
@@ -4983,15 +4992,28 @@ export function HomeGenerate({
       </div>
 
       {isSqToBbWorkflow && (
-        <SqToBbWorkflowPanel
-          seed={baseSeed}
-          totalBars={totalBars}
-          bpm={bpm}
-          styleProfile={sqToBbStyleProfile}
-          onStyleProfileChange={setSqToBbStyleProfile}
-          era={sqToBbEra}
-          onEraChange={setSqToBbEra}
-        />
+        <>
+          <SlonimskySqBbHybridPanel
+            state={sqBbHybrid}
+            onChange={setSqBbHybrid}
+            routed={sqBbHybridRouted}
+            disabled={loading}
+            onRoute={() => {
+              setSqBbHybridRequest(mapSqBbHybridToGenerateRequest(sqBbHybrid));
+              setSqBbHybridRouted(true);
+            }}
+          />
+          <SqToBbWorkflowPanel
+            seed={baseSeed}
+            totalBars={totalBars}
+            bpm={bpm}
+            styleProfile={sqToBbStyleProfile}
+            onStyleProfileChange={setSqToBbStyleProfile}
+            era={sqToBbEra}
+            onEraChange={setSqToBbEra}
+            slonimskyHybridRequest={sqBbHybridRequest}
+          />
+        </>
       )}
 
       {(presetId === 'guitar_bass_duo' ||
