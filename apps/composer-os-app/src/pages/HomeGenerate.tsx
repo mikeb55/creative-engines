@@ -4484,7 +4484,15 @@ export function HomeGenerate({
                 ? (songwriterStyle.trim().toLowerCase() as SlonimskySongModeWriterId)
                 : 'pat_metheny'
             }
-            onWriterIdChange={setSongwriterStyle}
+            onWriterIdChange={(id) => {
+              const migrated = migrateLegacySongwriterValue(id);
+              setStyleProfile((prev) => ({
+                harmonic: migrated.harmonic ?? prev.harmonic,
+                rhythm: migrated.rhythm ?? prev.rhythm,
+                pairPresetId: prev.pairPresetId,
+              }));
+              if (songModeDiversityPresetId) setSongModeDiversityPresetId('');
+            }}
             state={slonimskyMacro}
             onChange={setSlonimskyMacro}
             sectionOverrides={slonimskySectionOverrides}
