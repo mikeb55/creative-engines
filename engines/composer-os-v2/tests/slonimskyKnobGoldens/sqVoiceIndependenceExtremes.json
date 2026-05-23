@@ -1,0 +1,22 @@
+{
+  "id": "sq_voice_independence",
+  "engineFields": {
+    "blendStrength": "voiceIndependence",
+    "duoIntent": "voiceIndependence"
+  },
+  "knobMin": -0.8,
+  "knobMax": 0.8,
+  "mapperAtMin": {
+    "blendStrength": "light",
+    "duoIntent": "supportive"
+  },
+  "mapperAtMax": {
+    "blendStrength": "strong",
+    "duoIntent": "conversational"
+  },
+  "outputEvidence": {
+    "metric": "sqShortDurationStringNotes",
+    "seed": 77001,
+    "totalBars": 32
+  }
+}

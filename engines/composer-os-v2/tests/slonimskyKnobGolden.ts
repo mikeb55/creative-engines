@@ -15,9 +15,17 @@ import {
 } from '../core/slonimsky/slonimskyPatternService';
 import {
   DEFAULT_BIG_BAND_SLONIMSKY_MIDDLE,
+  DEFAULT_STRING_QUARTET_SLONIMSKY_MIDDLE,
   mapBigBandSlonimskyMiddleToGenerateRequest,
+  mapStringQuartetSlonimskyMiddleToGenerateRequest,
 } from '../../../apps/composer-os-app/src/types/slonimskyEnsembleState';
 import { mapSqBbHybridToGenerateRequest } from '../../../apps/composer-os-app/src/types/slonimskySqBbHybridState';
+import { runQuartetRealisation } from '../core/string-quartet/runQuartetRealisation';
+import {
+  countSqShortDurationStringNotes,
+  measureQuartetRegisterSpreadMidiSpan,
+} from '../core/string-quartet/quartetScoreBuilder';
+import { chromaticStrengthToOutsideLevel } from '../core/slonimsky/slonimskyPatternService';
 
 const GOLDENS_DIR = path.join(__dirname, 'slonimskyKnobGoldens');
 
@@ -117,6 +125,92 @@ export function verifyBbHarmonicGripKnobGolden(): boolean {
       allowedOutsideOverride: chromaticStrengthToOutsideLevel(atMax.chromaticStrength)!,
     }).allowedOutsideLevel ?? 0;
   return levelMin > levelMax;
+}
+
+type SqVoiceIndependenceGolden = {
+  id: string;
+  knobMin: number;
+  knobMax: number;
+  mapperAtMin: { blendStrength: string; duoIntent: string };
+  mapperAtMax: { blendStrength: string; duoIntent: string };
+  outputEvidence: { metric: string; seed: number; totalBars: number };
+};
+
+type SqRegisterSpreadGolden = {
+  id: string;
+  engineField: string;
+  knobMin: number;
+  knobMax: number;
+  mapperAtMin: { chromaticStrength: string };
+  mapperAtMax: { chromaticStrength: string };
+  outputEvidence: { metric: string; outsideLevelMin: number; outsideLevelMax: number };
+};
+
+function middleAtVoiceIndependence(voiceIndependence: number) {
+  return mapStringQuartetSlonimskyMiddleToGenerateRequest({
+    ...DEFAULT_STRING_QUARTET_SLONIMSKY_MIDDLE,
+    voiceIndependence,
+    registerSpread: 0,
+  });
+}
+
+function middleAtRegisterSpread(registerSpread: number) {
+  return mapStringQuartetSlonimskyMiddleToGenerateRequest({
+    ...DEFAULT_STRING_QUARTET_SLONIMSKY_MIDDLE,
+    voiceIndependence: 0,
+    registerSpread,
+  });
+}
+
+export function verifySqVoiceIndependenceKnobGolden(): boolean {
+  const fx = loadKnobGolden<SqVoiceIndependenceGolden>('sqVoiceIndependenceExtremes.json');
+  const atMin = middleAtVoiceIndependence(fx.knobMin);
+  const atMax = middleAtVoiceIndependence(fx.knobMax);
+  if (
+    atMin.blendStrength !== fx.mapperAtMin.blendStrength ||
+    atMax.blendStrength !== fx.mapperAtMax.blendStrength ||
+    atMin.duoIntent !== fx.mapperAtMin.duoIntent ||
+    atMax.duoIntent !== fx.mapperAtMax.duoIntent
+  ) {
+    return false;
+  }
+  const seed = fx.outputEvidence.seed;
+  const totalBars = fx.outputEvidence.totalBars;
+  const low = runQuartetRealisation({
+    seed,
+    totalBars,
+    blendStrength: atMin.blendStrength,
+    duoIntent: atMin.duoIntent,
+    allowedOutsideOverride: 1,
+  });
+  const high = runQuartetRealisation({
+    seed,
+    totalBars,
+    blendStrength: atMax.blendStrength,
+    duoIntent: atMax.duoIntent,
+    allowedOutsideOverride: 1,
+  });
+  if (!low.score || !high.score) return false;
+  const lowSplits = countSqShortDurationStringNotes(low.score);
+  const highSplits = countSqShortDurationStringNotes(high.score);
+  return highSplits > lowSplits;
+}
+
+export function verifySqRegisterSpreadKnobGolden(): boolean {
+  const fx = loadKnobGolden<SqRegisterSpreadGolden>('sqRegisterSpreadExtremes.json');
+  const atMin = middleAtRegisterSpread(fx.knobMin);
+  const atMax = middleAtRegisterSpread(fx.knobMax);
+  if (
+    atMin.chromaticStrength !== fx.mapperAtMin.chromaticStrength ||
+    atMax.chromaticStrength !== fx.mapperAtMax.chromaticStrength
+  ) {
+    return false;
+  }
+  const levelMin = chromaticStrengthToOutsideLevel(atMin.chromaticStrength)!;
+  const levelMax = chromaticStrengthToOutsideLevel(atMax.chromaticStrength)!;
+  const spanMin = measureQuartetRegisterSpreadMidiSpan(levelMin);
+  const spanMax = measureQuartetRegisterSpreadMidiSpan(levelMax);
+  return spanMax > spanMin;
 }
 
 export function verifySqBbHybridKnobGolden(): boolean {

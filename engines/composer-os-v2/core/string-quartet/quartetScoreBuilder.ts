@@ -28,6 +28,7 @@ import {
   buildQuartetSlonimskyContext,
   type SlonimskyNote,
 } from '../slonimsky/slonimskyPatternService';
+import type { SlonimskyContext } from '../slonimsky/slonimskyEngine';
 import { pushEnsembleSlonimskyCellReceipt } from '../slonimsky/slonimskyEnsembleReceipt';
 import type { BarMeterMap } from '../rhythm/barMeterTypes';
 import { resolveMeterForBar } from '../rhythm/oddMeterQuantiser';
@@ -234,6 +235,47 @@ function pitchesQuartetString(rootPc: number, sym: string): [number, number, num
   return [v1, v2, va, vc];
 }
 
+/** User register spread (via chromaticStrength → allowedOutsideOverride) widens or compresses vertical spacing. */
+function applyRegisterSpreadToStack(
+  stack: [number, number, number, number],
+  outsideLevel: 0 | 1 | 2
+): [number, number, number, number] {
+  const spreadSemi = outsideLevel === 0 ? -5 : outsideLevel === 2 ? 7 : 0;
+  if (spreadSemi === 0) return stack;
+  const deltas: [number, number, number, number] =
+    spreadSemi > 0
+      ? [spreadSemi, Math.round(spreadSemi * 0.55), -Math.round(spreadSemi * 0.35), -spreadSemi]
+      : [
+          Math.round(spreadSemi * 0.5),
+          Math.round(spreadSemi * 0.35),
+          Math.round(-spreadSemi * 0.25),
+          Math.round(-spreadSemi * 0.5),
+        ];
+  return stack.map((p, i) => {
+    const partId = QUARTET_PART_IDS[i]!;
+    return snapMidiToRange(p + deltas[i]!, ...QUARTET_MIDI_BOUNDS[partId]);
+  }) as [number, number, number, number];
+}
+
+function wholeStreakThresholdForBlend(blendStrength?: 'light' | 'medium' | 'strong'): number {
+  if (blendStrength === 'strong') return 2;
+  if (blendStrength === 'light') return 4;
+  return 3;
+}
+
+function sqSlonimskyPhraseIntentForProductDuo(
+  productDuoIntent: 'conversational' | 'supportive' | undefined,
+  bar: number,
+  seed: number
+): SlonimskyContext['phraseIntent'] | undefined {
+  if (productDuoIntent === 'supportive') return 'release';
+  if (productDuoIntent === 'conversational') {
+    const pool: SlonimskyContext['phraseIntent'][] = ['shock', 'float', 'build'];
+    return pool[Math.abs(seed + bar * 17) % pool.length]!;
+  }
+  return undefined;
+}
+
 const PART_META: Array<{
   name: string;
   instrumentIdentity: string;
@@ -268,6 +310,10 @@ export interface BuildQuartetScoreModelInput {
   slonimskyEnsembleCellReceipts?: string[];
   /** User Chromatic Strength cap — `Math.min` with profile allowance in Slonimsky contexts. */
   allowedOutsideOverride?: 0 | 1 | 2;
+  /** Slonimsky voice independence — more `strong` → earlier rhythmic splits across parts. */
+  blendStrength?: 'light' | 'medium' | 'strong';
+  /** Slonimsky voice independence — conversational vs supportive Slonimsky phrase intent. */
+  duoIntent?: 'conversational' | 'supportive';
   /** Per-bar time signatures (1-based indices); omit for all 4/4 — matches MusicXML export `barMeterMap`. */
   barMeterMap?: BarMeterMap;
   /** When present with {@link isSongwriterFrankZappaStringQuartet}, selects Zappa solo + inner-voice / bass path. */
@@ -390,8 +436,12 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
     wybleVoiceLayout,
     songwriterStyleId,
     allowedOutsideOverride,
+    blendStrength,
+    duoIntent: productDuoIntent,
     barMeterMap,
   } = input;
+  const outsideLevel = (allowedOutsideOverride ?? 1) as 0 | 1 | 2;
+  const splitStreakThreshold = wholeStreakThresholdForBlend(blendStrength);
   const totalBars = formPlan.totalBars;
 
   const chordForBar = (b: number) => {
@@ -543,12 +593,22 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
       continue;
     }
 
-    const needSplit = !padSketch && wholeTracker.highWholeStreakAtEnd() >= 3;
+    const needSplit =
+      !padSketch &&
+      (blendStrength === 'strong'
+        ? bar > 2
+        : blendStrength === 'light'
+          ? false
+          : wholeTracker.highWholeStreakAtEnd() >= splitStreakThreshold);
     const splitIdx = (bar + seed) % 4;
 
     const sym = chordForBar(bar);
     const rpc = chordSymbolRootPc(sym) ?? 0;
-    const stack = applyQuartetWybleChordToneStack(pitchesQuartetString(rpc, sym), wybleVoiceLayout, prevQuartetInner);
+    const stack = applyRegisterSpreadToStack(
+      applyQuartetWybleChordToneStack(pitchesQuartetString(rpc, sym), wybleVoiceLayout, prevQuartetInner),
+      outsideLevel
+    );
+    const slonimskyPhraseIntent = sqSlonimskyPhraseIntentForProductDuo(productDuoIntent, bar, seed);
     prevQuartetInner = { violin1: stack[0], violin2: stack[1], viola: stack[2] };
 
     let melodyPitchV1 = stack[0]!;
@@ -566,6 +626,7 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
           seed: seed + bar * 31,
           songwriterId: songwriterStyleId,
           ...(allowedOutsideOverride !== undefined ? { allowedOutsideOverride } : {}),
+          ...(slonimskyPhraseIntent ? { phraseIntent: slonimskyPhraseIntent } : {}),
           totalQuarterBeats: span,
           styleProfile: songwriterStyleId ?? null,
           chordSymbol: sym,
@@ -603,6 +664,7 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
           seed: seed + bar * 31,
           songwriterId: songwriterStyleId,
           ...(allowedOutsideOverride !== undefined ? { allowedOutsideOverride } : {}),
+          ...(slonimskyPhraseIntent ? { phraseIntent: slonimskyPhraseIntent } : {}),
           totalQuarterBeats: span,
           styleProfile: songwriterStyleId ?? null,
           chordSymbol: sym,
@@ -740,4 +802,27 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
     score.barMeterMap = input.barMeterMap;
   }
   return score;
+}
+
+/** Golden / smoke — cross-part MIDI span after register-spread stack nudge (C major, root 0). */
+export function measureQuartetRegisterSpreadMidiSpan(outsideLevel: 0 | 1 | 2): number {
+  const stack = applyRegisterSpreadToStack(pitchesQuartetString(0, 'Cmaj7'), outsideLevel);
+  return Math.max(...stack) - Math.min(...stack);
+}
+
+/** Golden / smoke — count string-part notes shorter than ~75% of bar span (rhythmic splits). */
+export function countSqShortDurationStringNotes(score: ScoreModel): number {
+  let n = 0;
+  for (const partId of QUARTET_PART_IDS) {
+    const part = score.parts.find((p) => p.id === partId);
+    if (!part) continue;
+    for (const m of part.measures) {
+      const span = m.measureBeatSpanQuarters ?? 4;
+      const shortThreshold = span * 0.75;
+      for (const ev of m.events) {
+        if (ev.kind === 'note' && ev.duration < shortThreshold) n++;
+      }
+    }
+  }
+  return n;
 }

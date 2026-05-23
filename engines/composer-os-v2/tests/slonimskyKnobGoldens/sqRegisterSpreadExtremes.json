@@ -1,0 +1,17 @@
+{
+  "id": "sq_register_spread",
+  "engineField": "chromaticStrength",
+  "knobMin": -1,
+  "knobMax": 1,
+  "mapperAtMin": {
+    "chromaticStrength": "off"
+  },
+  "mapperAtMax": {
+    "chromaticStrength": "prominent"
+  },
+  "outputEvidence": {
+    "metric": "quartetRegisterMidiSpan",
+    "outsideLevelMin": 0,
+    "outsideLevelMax": 2
+  }
+}

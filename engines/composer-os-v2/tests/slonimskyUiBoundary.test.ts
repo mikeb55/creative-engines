@@ -16,11 +16,14 @@ import {
   DEFAULT_STRING_QUARTET_SLONIMSKY_MIDDLE,
   mapBigBandEnsembleSlonimskyToGenerateRequest,
   mapEnsembleSlonimskyToGenerateRequest,
+  mapStringQuartetEnsembleSlonimskyToGenerateRequest,
 } from '../../../apps/composer-os-app/src/types/slonimskyEnsembleState';
 import {
   verifyBbCohesionKnobGolden,
   verifyBbHarmonicGripKnobGolden,
   verifySqBbHybridKnobGolden,
+  verifySqRegisterSpreadKnobGolden,
+  verifySqVoiceIndependenceKnobGolden,
 } from './slonimskyKnobGolden';
 import { mapSqBbHybridToGenerateRequest } from '../../../apps/composer-os-app/src/types/slonimskySqBbHybridState';
 import { getVoiceRuleBundle } from '../core/composer/voiceRuleBundles';
@@ -143,25 +146,34 @@ function testEnsembleBbSqMiddleLayersDistinct(): boolean {
     DEFAULT_STRING_QUARTET_SLONIMSKY_MIDDLE.textureRole === 'melody' &&
     DEFAULT_BIG_BAND_SLONIMSKY_MIDDLE.ensemblePreset !== DEFAULT_STRING_QUARTET_SLONIMSKY_MIDDLE.ensemblePreset &&
     home.includes('mapBigBandEnsembleSlonimskyToGenerateRequest') &&
-    home.includes('bigBandSlonimskyExtras')
+    home.includes('bigBandSlonimskyExtras') &&
+    home.includes('mapStringQuartetEnsembleSlonimskyToGenerateRequest') &&
+    home.includes('stringQuartetSlonimskyExtras')
   );
 }
 
 function testEnsembleMapperOutputsRequestFields(): boolean {
-  const sq = mapEnsembleSlonimskyToGenerateRequest({
+  const sqMacroOnly = mapEnsembleSlonimskyToGenerateRequest({
     sourcePreset: 'symmetric',
     motion: -0.5,
     tension: 0,
     variation: 0.5,
   });
+  const sq = mapStringQuartetEnsembleSlonimskyToGenerateRequest(
+    { sourcePreset: 'symmetric', motion: 0, tension: 0, variation: 0 },
+    { ...DEFAULT_STRING_QUARTET_SLONIMSKY_MIDDLE, voiceIndependence: 0.8, registerSpread: -0.6 }
+  );
   const bb = mapBigBandEnsembleSlonimskyToGenerateRequest(
     { sourcePreset: 'symmetric', motion: 0, tension: 0, variation: 0 },
     { ...DEFAULT_BIG_BAND_SLONIMSKY_MIDDLE, cohesion: 1, harmonicGrip: -1 }
   );
   return (
-    sq.chromaticStrength === 'subtle' &&
-    sq.blendStrength === 'light' &&
+    sqMacroOnly.chromaticStrength === 'subtle' &&
+    sqMacroOnly.blendStrength === 'light' &&
+    sqMacroOnly.duoIntent === 'conversational' &&
+    sq.blendStrength === 'strong' &&
     sq.duoIntent === 'conversational' &&
+    sq.chromaticStrength === 'off' &&
     bb.figureResponse === 'high' &&
     bb.chromaticStrength === 'prominent'
   );
@@ -193,7 +205,9 @@ function testSqBbHybridMapperContextAndBlend(): boolean {
     out.duoIntent === 'conversational' &&
     verifyBbCohesionKnobGolden() &&
     verifyBbHarmonicGripKnobGolden() &&
-    verifySqBbHybridKnobGolden()
+    verifySqBbHybridKnobGolden() &&
+    verifySqVoiceIndependenceKnobGolden() &&
+    verifySqRegisterSpreadKnobGolden()
   );
 }
 

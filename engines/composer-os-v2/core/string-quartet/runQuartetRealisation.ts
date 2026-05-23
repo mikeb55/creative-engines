@@ -115,6 +115,8 @@ export function runQuartetRealisation(
     barMeterMap?: BarMeterMap;
     /** When set with Frank Zappa string-quartet slice flags, drives SQ harmony precompute + score builder Zappa path. */
     generationMetadata?: GenerationMetadata;
+    blendStrength?: 'light' | 'medium' | 'strong';
+    duoIntent?: 'conversational' | 'supportive';
   }
 ): QuartetRealisationResult {
   const planning = runStringQuartetMode(input);
@@ -188,6 +190,12 @@ export function runQuartetRealisation(
       : {}),
     ...(input.allowedOutsideOverride !== undefined
       ? { allowedOutsideOverride: input.allowedOutsideOverride }
+      : {}),
+    ...(input.blendStrength === 'light' || input.blendStrength === 'medium' || input.blendStrength === 'strong'
+      ? { blendStrength: input.blendStrength }
+      : {}),
+    ...(input.duoIntent === 'conversational' || input.duoIntent === 'supportive'
+      ? { duoIntent: input.duoIntent }
       : {}),
     ...(input.barMeterMap ? { barMeterMap: input.barMeterMap } : {}),
     ...(generationMetadataForScore ? { generationMetadata: generationMetadataForScore } : {}),

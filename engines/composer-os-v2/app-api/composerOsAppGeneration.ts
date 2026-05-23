@@ -2564,6 +2564,12 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     req.chromaticStrength === 'prominent'
       ? { allowedOutsideOverride: chromaticStrengthToOutsideLevel(req.chromaticStrength)! }
       : {}),
+    ...(req.blendStrength === 'light' || req.blendStrength === 'medium' || req.blendStrength === 'strong'
+      ? { blendStrength: req.blendStrength }
+      : {}),
+    ...(req.duoIntent === 'conversational' || req.duoIntent === 'supportive'
+      ? { duoIntent: req.duoIntent }
+      : {}),
     ...(leadSheetForChordLock ? { leadSheet: leadSheetForChordLock } : {}),
     ...(typeof req.ensembleLeadSheetMusicXml === 'string' && req.ensembleLeadSheetMusicXml.trim()
       ? { ensembleLeadSheetMusicXml: req.ensembleLeadSheetMusicXml.trim() }

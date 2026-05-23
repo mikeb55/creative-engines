@@ -59,6 +59,16 @@ function axisToChromaticStrength(axis: number): GenerateRequest['chromaticStreng
   return 'prominent';
 }
 
+function axisToBlendStrength(axis: number): GenerateRequest['blendStrength'] {
+  if (axis < -0.34) return 'light';
+  if (axis < 0.34) return 'medium';
+  return 'strong';
+}
+
+function axisToDuoIntent(axis: number): GenerateRequest['duoIntent'] {
+  return axis < 0 ? 'supportive' : 'conversational';
+}
+
 function cohesionToFigureResponse(cohesion: number): GenerateRequest['figureResponse'] {
   const c = clampUnit(cohesion);
   if (c < -0.34) return 'low';
@@ -112,6 +122,53 @@ export function mapBigBandEnsembleSlonimskyToGenerateRequest(
 ): EnsembleSlonimskyMacroExtras & BigBandSlonimskyMiddleExtras {
   const macroFields = mapSlonimskyMacroStateToGenerateRequest(macro);
   const middleFields = mapBigBandSlonimskyMiddleToGenerateRequest(middle);
+  return {
+    ...macroFields,
+    ...middleFields,
+  };
+}
+
+export type StringQuartetSlonimskyMiddleExtras = Pick<
+  GenerateRequest,
+  'blendStrength' | 'duoIntent' | 'chromaticStrength' | 'styleGenerationContextKeys'
+>;
+
+const SQ_TEXTURE_ROLE_KEY: Record<StringQuartetSlonimskyTextureRole, string> = {
+  melody: 'slonimsky:sq:texture_role=melody',
+  accompaniment: 'slonimsky:sq:texture_role=accompaniment',
+  counterpoint: 'slonimsky:sq:texture_role=counterpoint',
+};
+
+const SQ_ENSEMBLE_PRESET_KEY: Record<StringQuartetSlonimskyEnsemblePreset, string> = {
+  romantic: 'slonimsky:sq:ensemble=romantic',
+  modern: 'slonimsky:sq:ensemble=modern',
+  minimal: 'slonimsky:sq:ensemble=minimal',
+  baroque: 'slonimsky:sq:ensemble=baroque',
+};
+
+/** SQ middle layer → {@link GenerateRequest.blendStrength}, {@link GenerateRequest.duoIntent}, {@link GenerateRequest.chromaticStrength}. */
+export function mapStringQuartetSlonimskyMiddleToGenerateRequest(
+  state: StringQuartetSlonimskyMiddleState
+): StringQuartetSlonimskyMiddleExtras {
+  const independence = clampUnit(state.voiceIndependence);
+  return {
+    blendStrength: axisToBlendStrength(independence),
+    duoIntent: axisToDuoIntent(independence),
+    chromaticStrength: axisToChromaticStrength(clampUnit(state.registerSpread)),
+    styleGenerationContextKeys: [
+      SQ_TEXTURE_ROLE_KEY[state.textureRole],
+      SQ_ENSEMBLE_PRESET_KEY[state.ensemblePreset],
+    ],
+  };
+}
+
+/** SQ — macro + middle (voice independence → blend/duoIntent; register spread → chromaticStrength). */
+export function mapStringQuartetEnsembleSlonimskyToGenerateRequest(
+  macro: SlonimskyMacroState,
+  middle: StringQuartetSlonimskyMiddleState
+): EnsembleSlonimskyMacroExtras & StringQuartetSlonimskyMiddleExtras {
+  const macroFields = mapSlonimskyMacroStateToGenerateRequest(macro);
+  const middleFields = mapStringQuartetSlonimskyMiddleToGenerateRequest(middle);
   return {
     ...macroFields,
     ...middleFields,

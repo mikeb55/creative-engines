@@ -65,6 +65,7 @@ import {
   DEFAULT_STRING_QUARTET_SLONIMSKY_MIDDLE,
   mapBigBandEnsembleSlonimskyToGenerateRequest,
   mapEnsembleSlonimskyToGenerateRequest,
+  mapStringQuartetEnsembleSlonimskyToGenerateRequest,
 } from '../types/slonimskyEnsembleState';
 import { RiffGeneratorPanel } from '@composer-os/ui/components/RiffGeneratorPanel';
 import {
@@ -3189,6 +3190,20 @@ export function HomeGenerate({
               ]
             : undefined;
 
+        const stringQuartetSlonimskyExtras =
+          presetId === 'string_quartet'
+            ? mapStringQuartetEnsembleSlonimskyToGenerateRequest(slonimskyMacro, slonimskySqMiddle)
+            : null;
+        const stringQuartetSlonimskyStyleKeys =
+          stringQuartetSlonimskyExtras &&
+          (stringQuartetSlonimskyExtras.styleGenerationContextKeys?.length ||
+            slonimskyUiExtras.styleGenerationContextKeys?.length)
+            ? [
+                ...(stringQuartetSlonimskyExtras.styleGenerationContextKeys ?? []),
+                ...(slonimskyUiExtras.styleGenerationContextKeys ?? []),
+              ]
+            : undefined;
+
         const generatePayload = {
           ...coreFields,
           ...(!generateDrumGuide ? { skipDrumGuide: true as const } : {}),
@@ -3218,11 +3233,11 @@ export function HomeGenerate({
                 ...(slonimskyUiExtras.harmonicVoice ? { harmonicVoice: slonimskyUiExtras.harmonicVoice } : {}),
               }
             : {}),
-          ...(presetId === 'string_quartet'
+          ...(stringQuartetSlonimskyExtras
             ? {
-                ...mapEnsembleSlonimskyToGenerateRequest(slonimskyMacro),
-                ...(slonimskyUiExtras.styleGenerationContextKeys
-                  ? { styleGenerationContextKeys: slonimskyUiExtras.styleGenerationContextKeys }
+                ...stringQuartetSlonimskyExtras,
+                ...(stringQuartetSlonimskyStyleKeys
+                  ? { styleGenerationContextKeys: stringQuartetSlonimskyStyleKeys }
                   : {}),
                 ...(slonimskyUiExtras.harmonicVoice ? { harmonicVoice: slonimskyUiExtras.harmonicVoice } : {}),
               }

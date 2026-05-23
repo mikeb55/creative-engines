@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-23) Slonimsky W4/W5 — SQ Voice Independence + Register Spread** — **Voice Independence** (−1…+1) → `GenerateRequest.blendStrength` + `duoIntent`; strong blend drives per-bar rhythmic splits, conversational Slonimsky `phraseIntent`. **Register Spread** → `chromaticStrength` → `allowedOutsideOverride` + `applyRegisterSpreadToStack` vertical spacing. `mapStringQuartetEnsembleSlonimskyToGenerateRequest` + `HomeGenerate.tsx` `stringQuartetSlonimskyExtras`. Goldens: `sqVoiceIndependenceExtremes.json`, `sqRegisterSpreadExtremes.json`. Smoke **259/63/0** fast · **424/77/0** full.
+
 - **(2026-05-23) Slonimsky W2/W3/W6 — BB middle knobs + SQ+BB hybrid confirm** — **BB Cohesion** (−1…+1) → `GenerateRequest.figureResponse` (`low` / `medium` / `high`) → `applyFigureResponseToPunchMaps` in big-band score build. **BB Harmonic Grip** → `chromaticStrength` (inverted axis) → `allowedOutsideOverride` via `chromaticStrengthToOutsideLevel` in `runBigBandPlanning`. **SQ+BB hybrid** confirmed: `densitySplit` → `blendStrength` + optional `bbLightTouch`; `registerCarve` → `chromaticStrength`. `mapBigBandEnsembleSlonimskyToGenerateRequest` + `HomeGenerate.tsx` `bigBandSlonimskyExtras`. Golden fixtures: `engines/composer-os-v2/tests/slonimskyKnobGoldens/` + `slonimskyKnobGolden.ts`. Smoke **259/63/0** fast · **424/77/0** full.
 
 - **(2026-05-22) Slonimsky Z7–Z11 + Zappa 5b riff params + receipt deepening (R1–R4)** — **Smoke: 411/0 (76 suites) full · 246/0 (62 suites) fast.**
