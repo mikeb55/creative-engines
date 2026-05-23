@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-05-22]
+# Composer OS Roadmap [2026-05-23]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
@@ -22,7 +22,9 @@
 | goldsmith | 24 | webern | 40 |
 | **bartók** | **24** | | |
 
-Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartók** native bundle (not in registry map). **Smoke (2026-05-22):** full **411/0** (**76** suites) · fast **246/0** (**62** suites).
+Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartók** native bundle (not in registry map). **Smoke (2026-05-23):** full **424/0** (**77** suites) · fast **259/0** (**63** suites). V61 **slonimsky-ui** boundary suite (+13 rows).
+
+**V61 — COMPLETE (2026-05-23):** Slonimsky UI panels U1–U9 — universal, song mode, ensemble (BB/SQ), GBD, SQ→BB hybrid, advanced drawer (pin/forbid cells), harmonic voice selector (sonic_youth warning + no `harmonicVoice` in payload), UX copy, Zappa advanced relocation; smoke **`slonimsky-ui`** UI/boundary goldens only.
 
 **V31 — COMPLETE (2026-05-11):**
 
@@ -1178,26 +1180,23 @@ Specific improvements needed:
 
 ---
 
-## Session Handoff — V60 — 2026-05-22
+## Session Handoff — V61 — 2026-05-23
 
 **SMOKE BASELINE**
-- Full: **411** / **76** / **0** (~17s tsx)
-- Fast: **246** / **62** / **0** (~8s tsx)
+- Full: **424** / **77** / **0** (~24s tsx)
+- Fast: **259** / **63** / **0** (~9s tsx)
 
-**LAST COMMIT:** `13299089` → `origin/main`
+**LAST COMMIT:** `75faf785` → `origin/main`
 
-**COMPLETED THIS SESSION**
-- **5b** — Zappa riff param threading + UI + seed-42 goldens
-- **Z7** — Slonimsky harmonic scene (cell → voicing colour → export bias)
-- **Z8** — GBD Slonimsky context + `z8:` receipts
-- **Z9** — Song mode Slonimsky cell layer + `z9:` receipts
-- **Z10/Z11** — BB + SQ ensemble Slonimsky cell receipts
-- **R1–R4** — NR receipt deepening; Carlton/Gilmour golden refresh; EVH seed-42 verify
+**COMPLETED THIS SESSION (V61 U1–U9)**
+- **U1–U6** — Slonimsky panels: universal macro, song mode (writers + section pin/avoid), ensemble BB/SQ, GBD, SQ→BB hybrid
+- **U7–U8** — UX copy, harmonic voice roster, advanced drawer (cell pin/forbid), sonic_youth warning path
+- **U9** — **`slonimsky-ui`** smoke suite (UI boundary goldens); vitest render check for sonic_youth badge
 
 **NEXT SESSION ENTRY POINT**
-1. Sibelius playback QA on Z7 harmonic colour + Z8 GBD line density
-2. Wire `slonimskyEnsembleCellReceipts` into app manifest echo if product wants UI receipts
-3. V58 per-section VRB assignment (recon complete; await Commit 1)
+1. Sibelius playback QA on Slonimsky harmonic colour + GBD outside levels
+2. V58 per-section VRB assignment (recon complete; await Commit 1)
+3. Optional: wire ensemble cell receipts into app manifest echo
 
 **REBUILD DESKTOP APP**
 
