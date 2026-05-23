@@ -1186,7 +1186,7 @@ Specific improvements needed:
 - Full: **424** / **77** / **0** (~24s tsx)
 - Fast: **259** / **63** / **0** (~9s tsx)
 
-**LAST COMMIT:** `75faf785` → `origin/main`
+**LAST COMMIT:** `fb2d43b3` → `origin/main`
 
 **COMPLETED THIS SESSION (V61 U1–U9)**
 - **U1–U6** — Slonimsky panels: universal macro, song mode (writers + section pin/avoid), ensemble BB/SQ, GBD, SQ→BB hybrid
