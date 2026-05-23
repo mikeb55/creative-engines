@@ -54,6 +54,7 @@ import {
   buildBigBandSlonimskyContext,
   type SlonimskyNote,
 } from '../slonimsky/slonimskyPatternService';
+import { pushEnsembleSlonimskyCellReceipt } from '../slonimsky/slonimskyEnsembleReceipt';
 import type { BarMeterMap } from '../rhythm/barMeterTypes';
 import { resolveMeasureBeatSpanQuarters } from '../rhythm/oddMeterQuantiser';
 import type { LeadSheet } from '../lead-sheet/leadSheetTypes';
@@ -704,6 +705,8 @@ export interface BuildBigBandScoreModelInput {
   enhancedPlanning?: BigBandEnhancedPlanning;
   /** When set (from Generate request), biases Slonimsky ensemble catalogue via `SLONIMSKY_STYLE_PROFILE_MAP`. */
   songwriterStyleId?: string;
+  /** Z10 — mutable sink for Slonimsky cell selection receipts (merged to generation metadata upstream). */
+  slonimskyEnsembleCellReceipts?: string[];
   /** User Chromatic Strength cap — `Math.min` with profile allowance in Slonimsky contexts. */
   allowedOutsideOverride?: 0 | 1 | 2;
   /** Optional per-bar meter — drives measure span and rhythmic scaling (defaults to 4 quarter-note beats). */
@@ -1107,6 +1110,7 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
           transpositionInterval: bar % 12,
           totalQuarterBeats: effectiveBeats,
         });
+        pushEnsembleSlonimskyCellReceipt(input.slonimskyEnsembleCellReceipts, 'bb', bar, ctx, seed);
         const mel: SlonimskyNote[] = slonimskyAltoAcc.map((m, i) => ({
           midi: m,
           durationBeats: 1,
@@ -1153,6 +1157,7 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
           effectiveHigh: BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES][1]!,
           catalogueSection: 'tritone_progression',
         });
+        pushEnsembleSlonimskyCellReceipt(input.slonimskyEnsembleCellReceipts, 'bb', bar, ctx, seed);
         const mel: SlonimskyNote[] = slonimskyTenorAcc.map((m, i) => ({
           midi: m,
           durationBeats: 1,

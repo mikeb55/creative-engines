@@ -309,3 +309,34 @@ export function buildBigBandSlonimskyContext(params: SlonimskyContextParams): Sl
 export function buildQuartetSlonimskyContext(params: SlonimskyContextParams): SlonimskyContext {
   return buildEnsembleBarSlonimskyContext(params, { styleProfile: 'Metheny', weights: QUARTET_INTENT_WEIGHTS });
 }
+
+function catalogueSectionForGbdSongwriter(songwriterId: string | undefined, bar: number): string {
+  if (songwriterId === 'frank_zappa') {
+    return bar % 2 === 0 ? 'tritone_progression' : 'intervallic_mirror_permutations';
+  }
+  if (songwriterId === 'pat_metheny' || songwriterId === 'wayne_shorter') {
+    return 'heptatonic_scales';
+  }
+  return 'pentatonic_scales';
+}
+
+const GBD_DUO_INTENT_WEIGHTS: SlonimskyIntentWeights = {
+  build: 0.35,
+  float: 0.35,
+  release: 0.2,
+  shock: 0.1,
+};
+
+/**
+ * Z8 — Guitar–bass duo Slonimsky context: cell pattern selection via catalogue section + intent weights.
+ */
+export function buildGuitarBassDuoSlonimskyContext(
+  params: Omit<SlonimskyContextParams, 'catalogueSection'> & { catalogueSection?: string }
+): SlonimskyContext {
+  const section =
+    params.catalogueSection ?? catalogueSectionForGbdSongwriter(params.songwriterId, params.phase);
+  return buildEnsembleBarSlonimskyContext(
+    { ...params, catalogueSection: section },
+    { styleProfile: params.styleProfile ?? 'ECM', weights: GBD_DUO_INTENT_WEIGHTS }
+  );
+}

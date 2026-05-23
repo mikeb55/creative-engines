@@ -498,6 +498,11 @@ export interface RiffSoloGeneratorProfile {
   noteDensityRange?: { min: number; max: number };
   scaleMinglingEnabled?: boolean;
   phraseEndingPolicy?: ZappaBluesrockFerociousStyleMode['phraseEndingPolicy'];
+  /** 5b — resolved from request metadata (`zappaRiffSoloParams.ts`). */
+  zappaEraPreset?: import('../compositionContext').ZappaEraPreset;
+  zappaPhraseCharacter?: import('../compositionContext').ZappaPhraseCharacter;
+  zappaSymmetryBias?: import('../compositionContext').ZappaSymmetryBias;
+  zappaChainDepth?: import('../compositionContext').ZappaChainDepth;
 }
 
 /** Receipt-compiler merge patches (nested `tuningPolicy` / `soloGeneratorProfile` may be partial). */

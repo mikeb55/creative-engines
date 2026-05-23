@@ -1,0 +1,6 @@
+{
+  "seed": 42,
+  "param": "zappaPhraseCharacter",
+  "value": "extended",
+  "expectPhraseBars": 8
+}

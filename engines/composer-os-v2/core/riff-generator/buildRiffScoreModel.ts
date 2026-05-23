@@ -18,6 +18,7 @@ import { buildFxMarkerTrack } from './riffFxMarkerBuilder';
 import { applyGuitarRestWindowsToBar } from './riffGuitarRestApply';
 import { buildRiffGenerationMetadata } from './riffMultiVoiceMetadata';
 import { buildSoloPartForScore } from './riffSoloBuilder';
+import { zappaRiffSoloControlsFrom } from './zappaRiffSoloParams';
 import type { RiffGenerationMetadata } from './riffMultiVoiceTypes';
 import { chordTonesForChordSymbol } from '../harmony/chordSymbolAnalysis';
 
@@ -58,7 +59,8 @@ export function buildRiffScoreModel(params: RiffGeneratorParams): BuiltRiffScore
     params.bars,
     chords,
     params.seed,
-    params.vrbId
+    params.vrbId,
+    zappaRiffSoloControlsFrom(params)
   );
 
   const guitarMeasures = measuresFromChordLoop(chords);

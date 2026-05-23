@@ -378,6 +378,10 @@ export interface GenerateRequest {
    * Omitted → **`compositional`**.
    */
   zappaStyleMode?: ZappaStyleMode;
+  zappaEraPreset?: import('../core/compositionContext').ZappaEraPreset;
+  zappaPhraseCharacter?: import('../core/compositionContext').ZappaPhraseCharacter;
+  zappaSymmetryBias?: import('../core/compositionContext').ZappaSymmetryBias;
+  zappaChainDepth?: import('../core/compositionContext').ZappaChainDepth;
   /**
    * Song Mode / Miles Davis: modal vs quintet vs electric posture (`milesDavisSlice.ts`).
    * Omitted → engine default **`modal_1959`** when primary songwriter is **`miles_davis`**.

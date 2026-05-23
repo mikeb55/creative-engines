@@ -39,6 +39,8 @@ export interface BigBandRealisationResult {
   referenceInfluence?: ReferenceInfluenceEnvelope;
   /** Populated when `songwriterStyleId === 'frank_zappa'` and harmony precompute ran. */
   frankZappaDeviceReceipts?: string[];
+  /** Z10 — Slonimsky cell receipts from BB score build. */
+  slonimskyEnsembleCellReceipts?: string[];
 }
 
 /** Minimal `CompositionContext` for `precomputeFrankZappaEffectiveHarmonyBars` (locked bars + form sections). */
@@ -134,6 +136,7 @@ export function runBigBandRealisation(
   const wybleLayout =
     input.suppressWybleVoiceLayoutForTest === true ? undefined : planning.orchestrationPlan.wybleVoiceLayout;
 
+  const slonimskyEnsembleCellReceipts: string[] = [];
   let score: ScoreModel;
   let exportPipeline: BigBandRealisationResult['exportPipeline'];
   try {
@@ -170,6 +173,7 @@ export function runBigBandRealisation(
         ? { drumArticulationBarOverrides: input.drumArticulationBarOverrides }
         : {}),
       ...(input.leadSheet ? { leadSheetMelodyLock: input.leadSheet } : {}),
+      slonimskyEnsembleCellReceipts,
     });
 
     if (
@@ -267,5 +271,6 @@ export function runBigBandRealisation(
     exportPipeline,
     ...(referenceInfluence ? { referenceInfluence } : {}),
     ...(frankZappaDeviceReceipts ? { frankZappaDeviceReceipts } : {}),
+    ...(slonimskyEnsembleCellReceipts.length > 0 ? { slonimskyEnsembleCellReceipts } : {}),
   };
 }

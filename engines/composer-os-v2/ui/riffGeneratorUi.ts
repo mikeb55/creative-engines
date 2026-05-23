@@ -121,6 +121,36 @@ export function isZappaRiffVrbId(vrbId: string): boolean {
 
 export type ZappaStyleModeUi = 'compositional' | 'bluesrockFerocious';
 
+export type ZappaEraPresetUi = 'broad' | 'mothers_66' | 'rio_73' | 'synclavier_84';
+export type ZappaPhraseCharacterUi = 'balanced' | 'fragmented' | 'extended';
+export type ZappaSymmetryBiasUi = 'low' | 'medium' | 'high';
+export type ZappaChainDepthUi = 1 | 2 | 3;
+
+export const ZAPPA_ERA_PRESET_OPTIONS: readonly { id: ZappaEraPresetUi; label: string }[] = [
+  { id: 'broad', label: 'Broad (1966–1993)' },
+  { id: 'mothers_66', label: "Mothers '66 — short cells" },
+  { id: 'rio_73', label: "Roxy '73 — 3+2+2" },
+  { id: 'synclavier_84', label: "Synclavier '84 — 2+3+2" },
+];
+
+export const ZAPPA_PHRASE_CHARACTER_OPTIONS: readonly { id: ZappaPhraseCharacterUi; label: string }[] = [
+  { id: 'balanced', label: 'Balanced (4-bar phrases)' },
+  { id: 'fragmented', label: 'Fragmented (2-bar)' },
+  { id: 'extended', label: 'Extended (8-bar)' },
+];
+
+export const ZAPPA_SYMMETRY_BIAS_OPTIONS: readonly { id: ZappaSymmetryBiasUi; label: string }[] = [
+  { id: 'low', label: 'Low — diatonic / chord tones' },
+  { id: 'medium', label: 'Medium — default colour' },
+  { id: 'high', label: 'High — tritone weighting' },
+];
+
+export const ZAPPA_CHAIN_DEPTH_OPTIONS: readonly { id: ZappaChainDepthUi; label: string }[] = [
+  { id: 1, label: '1 — single cell' },
+  { id: 2, label: '2 — chained cell' },
+  { id: 3, label: '3 — max chain' },
+];
+
 function sigmaForVrb(vrbId: string): number | undefined {
   const b = getVoiceRuleBundle(vrbId);
   return typeof b.sigma === 'number' ? b.sigma : undefined;

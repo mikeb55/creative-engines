@@ -3,8 +3,10 @@
  */
 
 import type { RiffSoloGeneratorProfile } from '../composer/riffProfileTypes';
+import type { ZappaRiffSoloControls } from '../compositionContext';
 import { chordTonesForChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { resolveZappaStyleMode } from '../song-mode/frankZappaSlice';
+import { chromaticBudgetForSymmetry, mergeZappaControlsOntoSoloProfile } from './zappaRiffSoloParams';
 import {
   generateSlonimskyPattern,
   getFrankZappaBluesrockFerociousProfile,
@@ -56,31 +58,94 @@ function allowedOutsideFromProfile(profile: RiffSoloGeneratorProfile): 0 | 1 | 2
   return Math.min(Math.max(1, tier), cap) as 0 | 1 | 2;
 }
 
-/** Z6 — merge ferocity stub / profile fields; compositional path unchanged when styleMode omitted. */
-export function resolveEffectiveZappaSoloProfile(profile: RiffSoloGeneratorProfile): RiffSoloGeneratorProfile {
-  if (resolveZappaStyleMode(profile) !== 'bluesrockFerocious') {
-    return profile;
+/** Z6 / 5b — merge ferocity stub, era cells, phrase length, symmetry budget, chain depth. */
+export function resolveEffectiveZappaSoloProfile(
+  profile: RiffSoloGeneratorProfile,
+  controls?: ZappaRiffSoloControls
+): RiffSoloGeneratorProfile {
+  let merged = mergeZappaControlsOntoSoloProfile(profile, controls);
+  if (resolveZappaStyleMode(merged) !== 'bluesrockFerocious') {
+    return merged;
   }
   const fer = getFrankZappaBluesrockFerociousProfile();
   const pool: Record<string, number> = {};
   for (const mode of fer.modalBase) {
     pool[mode] = 0.55;
   }
-  return {
-    ...profile,
+  merged = {
+    ...merged,
     styleMode: 'bluesrockFerocious',
     chromaticBudget: FEROCITY_CHROMATIC_BUDGET,
     scaleMinglingEnabled: fer.scaleMinglingEnabled,
-    noteDensityRange: profile.noteDensityRange ?? fer.noteDensityRange,
-    phraseEndingPolicy: profile.phraseEndingPolicy ?? fer.phraseEndingPolicy,
-    scalePool: { ...pool, ...profile.scalePool },
-    variationOperators: profile.variationOperators ?? [
+    noteDensityRange: merged.noteDensityRange ?? fer.noteDensityRange,
+    phraseEndingPolicy: merged.phraseEndingPolicy ?? fer.phraseEndingPolicy,
+    scalePool: { ...pool, ...merged.scalePool },
+    variationOperators: merged.variationOperators ?? [
       'rhythmicWarp',
       'registerShift',
       'chromaticAdd',
       'ornamentAdd',
     ],
   };
+  if (controls?.zappaSymmetryBias) {
+    merged.chromaticBudget = chromaticBudgetForSymmetry(
+      controls.zappaSymmetryBias,
+      merged.chromaticBudget
+    );
+    merged.zappaSymmetryBias = controls.zappaSymmetryBias;
+  }
+  return merged;
+}
+
+function pitchClass(midi: number): number {
+  return ((midi % 12) + 12) % 12;
+}
+
+function isTritoneFromRoot(pitch: number, rootPc: number): boolean {
+  return (pitchClass(pitch) + 12 - rootPc) % 12 === 6;
+}
+
+function applySymmetryTritonWeighting(
+  events: SoloEvent[],
+  chordSymbol: string,
+  profile: RiffSoloGeneratorProfile,
+  seed: number,
+  barIndex: number
+): void {
+  const bias = profile.zappaSymmetryBias;
+  if (!bias || events.length === 0) return;
+  const rootPc = pitchClass(chordTonesForChordSymbol(chordSymbol).root);
+  const low = profile.registerFloor;
+  const high = profile.registerCeiling;
+  const hasTritone = events.some((e) => isTritoneFromRoot(e.pitch, rootPc));
+
+  if (bias === 'high' && !hasTritone) {
+    const idx = events.length - 1;
+    let targetPc = (rootPc + 6) % 12;
+    let m = events[idx]!.pitch;
+    while (pitchClass(m) !== targetPc) {
+      m += m < events[idx]!.pitch ? 1 : -1;
+    }
+    while (m < low) m += 12;
+    while (m > high) m -= 12;
+    events[idx]!.pitch = Math.max(low, Math.min(high, m));
+    return;
+  }
+
+  if (bias === 'low' && hasTritone && seededUnit(seed, barIndex * 41 + 9) < 0.85) {
+    const t = chordTonesForChordSymbol(chordSymbol);
+    const pcs = [t.root, t.third, t.fifth, t.seventh].map((x) => pitchClass(x));
+    const idx = events.findIndex((e) => isTritoneFromRoot(e.pitch, rootPc));
+    if (idx < 0) return;
+    const pc = pcs[Math.floor(seededUnit(seed, barIndex + idx) * pcs.length)]!;
+    let m = events[idx]!.pitch;
+    while (pitchClass(m) !== pc) {
+      m += m < events[idx]!.pitch ? 1 : -1;
+    }
+    while (m < low) m += 12;
+    while (m > high) m -= 12;
+    events[idx]!.pitch = Math.max(low, Math.min(high, m));
+  }
 }
 
 function phraseIntentFromOperators(
@@ -354,9 +419,10 @@ export function riffSoloFromZappaEngine(
   bar: number,
   chordSymbol: string,
   profile: RiffSoloGeneratorProfile,
-  seed: number
+  seed: number,
+  controls?: ZappaRiffSoloControls
 ): SoloEvent[] {
-  const effective = resolveEffectiveZappaSoloProfile(profile);
+  const effective = resolveEffectiveZappaSoloProfile(profile, controls);
   const ferocity = resolveZappaStyleMode(effective) === 'bluesrockFerocious';
 
   const ctx = buildSlonimskyContext(bar, chordSymbol, effective, seed);
@@ -381,6 +447,8 @@ export function riffSoloFromZappaEngine(
       events[i]!.pitch = events[i - 1]!.pitch + step * Math.min(maxLeap, leap - maxLeap + 1);
     }
   }
+
+  applySymmetryTritonWeighting(events, chordSymbol, effective, seed, bar);
 
   if (ferocity && isBurstBar(bar, effective, seed)) {
     inflateBurstBarEvents(events, chordSymbol, effective, seed, bar);

@@ -13,6 +13,8 @@ import {
   riffSoloFromZappaEngine,
   zappa78CellBoundariesIn4_4,
 } from '../core/riff-generator/riffSoloZappaAdapter';
+import { chordTonesForChordSymbol } from '../core/harmony/chordSymbolAnalysis';
+import type { ZappaRiffSoloControls } from '../core/compositionContext';
 import { resolveRiffGeneratorProfile } from '../core/riff-generator/resolveRiffGeneratorProfile';
 import { isRiffGeneratorVrbId, resolveRiffFamilyTag } from '../core/riff-generator/riffVrbRegistry';
 import type { RiffSoloGeneratorProfile } from '../core/composer/riffProfileTypes';
@@ -25,6 +27,7 @@ import {
   scorePartInstrumentTag,
 } from '../core/riff-generator/riffMultiVoiceTypes';
 import { runRiffGenerator } from '../core/riff-generator/runRiffGenerator';
+import { buildRiffGoldenFixture, loadRiffGoldenFixture, RIFF_GOLDEN_BARS, RIFF_GOLDEN_SEED } from './riffGoldenFixture';
 import {
   hasSoloGeneratorProfile,
   riffSoloToggleVisible,
@@ -150,6 +153,79 @@ function testZappaFerocityFeedbackProxyOnPhraseEnd(): boolean {
   const line = riffSoloFromZappaEngine(endBar, chord, profile, seed);
   if (line.length === 0) return false;
   return line.some((e) => e.feedbackProxy === true);
+}
+
+function loadZappaParamGolden(name: string): Record<string, unknown> {
+  const p = path.join(__dirname, 'riffGolden', name);
+  return JSON.parse(fs.readFileSync(p, 'utf-8')) as Record<string, unknown>;
+}
+
+function pitchIsTritoneFromRoot(pitch: number, chord: string): boolean {
+  const rootPc = ((chordTonesForChordSymbol(chord).root % 12) + 12) % 12;
+  return (pitch % 12 + 12 - rootPc) % 12 === 6;
+}
+
+function testZappaEraRioGoldenFixture(): boolean {
+  const golden = loadZappaParamGolden('zappa-era-rio.golden.json');
+  if (golden.seed !== 42 || golden.value !== 'rio_73') return false;
+  const controls: ZappaRiffSoloControls = { zappaEraPreset: 'rio_73', zappaChainDepth: 1 };
+  const resolved = resolveEffectiveZappaSoloProfile(zappaSoloProfile(), controls);
+  const expect = golden.expectCellEighths as number[];
+  return JSON.stringify(resolved.rhythmicCellEighths) === JSON.stringify(expect);
+}
+
+function testZappaPhraseExtendedGoldenFixture(): boolean {
+  const golden = loadZappaParamGolden('zappa-phrase-extended.golden.json');
+  if (golden.seed !== 42 || golden.value !== 'extended') return false;
+  const resolved = resolveEffectiveZappaSoloProfile(zappaSoloProfile(), {
+    zappaPhraseCharacter: 'extended',
+  });
+  return resolved.phraseBars === golden.expectPhraseBars;
+}
+
+function testZappaSymmetryHighGoldenFixture(): boolean {
+  const golden = loadZappaParamGolden('zappa-symmetry-high.golden.json');
+  if (golden.seed !== 42 || golden.bars !== 8 || golden.chord !== 'Am7') return false;
+  const controls: ZappaRiffSoloControls = { zappaSymmetryBias: 'high' };
+  const profile = zappaSoloProfile();
+  const resolved = resolveEffectiveZappaSoloProfile(profile, controls);
+  if ((resolved.chromaticBudget ?? 0) < (golden.minChromaticBudget as number)) return false;
+  const chord = golden.chord as string;
+  const seed = golden.seed as number;
+  let tritones = 0;
+  for (let b = 0; b < (golden.bars as number); b++) {
+    for (const e of riffSoloFromZappaEngine(b, chord, profile, seed, controls)) {
+      if (pitchIsTritoneFromRoot(e.pitch, chord)) tritones++;
+    }
+  }
+  return tritones >= (golden.minTritonePitches as number);
+}
+
+function testZappaChainDepth3GoldenFixture(): boolean {
+  const golden = loadZappaParamGolden('zappa-chain-depth-3.golden.json');
+  if (golden.seed !== 42 || golden.value !== 3) return false;
+  const controls: ZappaRiffSoloControls = {
+    zappaEraPreset: 'broad',
+    zappaChainDepth: 3,
+  };
+  const resolved = resolveEffectiveZappaSoloProfile(zappaSoloProfile(), controls);
+  const expect = golden.expectCellEighths as number[];
+  return (
+    resolved.rhythmicCellEighths?.length === golden.expectCellLength &&
+    JSON.stringify(resolved.rhythmicCellEighths) === JSON.stringify(expect)
+  );
+}
+
+function testEvhGoldenSeed42Verify(): boolean {
+  const golden = loadRiffGoldenFixture('eddie_van_halen' as import('../core/riff-generator/riffVrbRegistry').RiffGeneratorVrbId);
+  if (golden.seed !== 42 || golden.bars !== RIFF_GOLDEN_BARS) return false;
+  const built = buildRiffGoldenFixture('eddie_van_halen' as import('../core/riff-generator/riffVrbRegistry').RiffGeneratorVrbId);
+  if ('error' in built) return false;
+  return (
+    built.seed === RIFF_GOLDEN_SEED &&
+    built.bars === RIFF_GOLDEN_BARS &&
+    Math.abs(built.noteCount - golden.noteCount) <= golden.noteCount * 0.1
+  );
 }
 
 function testFrankzappaFerocityGoldenFixture(): boolean {
@@ -321,7 +397,12 @@ export function runRiffZappaSoloTests(): { name: string; ok: boolean }[] {
     ['Riff Zappa — bluesrockFerocious burst bar ≥12 notes seed 42 Am7', testZappaFerocityBurstBarDensity],
     ['Riff Zappa — bluesrockFerocious phrase-end feedbackProxy', testZappaFerocityFeedbackProxyOnPhraseEnd],
     ['Riff Zappa — bluesrockFerocious no isRest events', testZappaFerocityNoRestFlags],
+    ['Riff EVH — eddie_van_halen_golden.json seed 42 verify', testEvhGoldenSeed42Verify],
     ['Riff Zappa — frankzappa.golden.json seed 42 / 8 bars / Am7 ferocity', testFrankzappaFerocityGoldenFixture],
+    ['Riff Zappa — zappa-era-rio.golden.json era cell [3,2,2]', testZappaEraRioGoldenFixture],
+    ['Riff Zappa — zappa-phrase-extended.golden.json phraseBars 8', testZappaPhraseExtendedGoldenFixture],
+    ['Riff Zappa — zappa-symmetry-high.golden.json tritone weighting', testZappaSymmetryHighGoldenFixture],
+    ['Riff Zappa — zappa-chain-depth-3.golden.json chained cells', testZappaChainDepth3GoldenFixture],
     ['Riff Zappa — app forces soloEnabled for frank_zappa', testFrankZappaSoloAlwaysEnabledInApp],
     ['Riff Zappa — frank_zappa: solo toggle hidden (always on)', testFrankZappaSoloToggleHidden],
     ['Riff Zappa — iommi/hendrix/sly_stone: no solo profile, toggle hidden', testVrbsWithoutSoloProfileHideToggle],

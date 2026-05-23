@@ -22,7 +22,15 @@ import {
   type RiffBarCount,
   type RiffFamilyTag,
   type RiffOddMeterSelectValue,
+  type ZappaChainDepthUi,
+  type ZappaEraPresetUi,
+  type ZappaPhraseCharacterUi,
   type ZappaStyleModeUi,
+  type ZappaSymmetryBiasUi,
+  ZAPPA_CHAIN_DEPTH_OPTIONS,
+  ZAPPA_ERA_PRESET_OPTIONS,
+  ZAPPA_PHRASE_CHARACTER_OPTIONS,
+  ZAPPA_SYMMETRY_BIAS_OPTIONS,
   clampRiffBarCount,
   defaultRiffVrbIdForFamily,
 } from '../riffGeneratorUi';
@@ -82,8 +90,16 @@ export type RiffGeneratorPanelProps = {
   canRegenerateMutate: boolean;
   zappaAdvancedOpen?: boolean;
   zappaStyleMode?: ZappaStyleModeUi;
+  zappaEraPreset?: ZappaEraPresetUi;
+  zappaPhraseCharacter?: ZappaPhraseCharacterUi;
+  zappaSymmetryBias?: ZappaSymmetryBiasUi;
+  zappaChainDepth?: ZappaChainDepthUi;
   onZappaAdvancedOpenChange?: (open: boolean) => void;
   onZappaStyleModeChange?: (mode: ZappaStyleModeUi) => void;
+  onZappaEraPresetChange?: (era: ZappaEraPresetUi) => void;
+  onZappaPhraseCharacterChange?: (phrase: ZappaPhraseCharacterUi) => void;
+  onZappaSymmetryBiasChange?: (bias: ZappaSymmetryBiasUi) => void;
+  onZappaChainDepthChange?: (depth: ZappaChainDepthUi) => void;
   /** Last generate metadata (FX markers, horns, rest windows). */
   riffGenerationMetadata?: RiffGenerationMetadata;
   /** Optional resolved profile preview (badges when metadata absent). */
@@ -119,8 +135,16 @@ export function RiffGeneratorPanel({
   canRegenerateMutate,
   zappaAdvancedOpen = false,
   zappaStyleMode = 'compositional',
+  zappaEraPreset = 'broad',
+  zappaPhraseCharacter = 'balanced',
+  zappaSymmetryBias = 'medium',
+  zappaChainDepth = 1,
   onZappaAdvancedOpenChange,
   onZappaStyleModeChange,
+  onZappaEraPresetChange,
+  onZappaPhraseCharacterChange,
+  onZappaSymmetryBiasChange,
+  onZappaChainDepthChange,
   riffGenerationMetadata,
   riffProfilePreview,
   onFamilyChange,
@@ -378,7 +402,13 @@ export function RiffGeneratorPanel({
         </label>
       ) : null}
 
-      {showZappaAdvanced && onZappaAdvancedOpenChange && onZappaStyleModeChange ? (
+      {showZappaAdvanced &&
+      onZappaAdvancedOpenChange &&
+      onZappaStyleModeChange &&
+      onZappaEraPresetChange &&
+      onZappaPhraseCharacterChange &&
+      onZappaSymmetryBiasChange &&
+      onZappaChainDepthChange ? (
         <div style={{ marginTop: '0.75rem' }}>
           <button
             type="button"
@@ -394,24 +424,102 @@ export function RiffGeneratorPanel({
             Advanced {zappaAdvancedOpen ? '▾' : '▸'}
           </button>
           {zappaAdvancedOpen ? (
-            <div style={{ marginTop: '0.55rem', maxWidth: 520 }}>
-              <label style={labelMuted} htmlFor="co-riff-zappa-style-mode">
-                Zappa style mode
-              </label>
-              <select
-                id="co-riff-zappa-style-mode"
-                style={{ ...controlStyle, width: '100%', maxWidth: 520 }}
-                value={zappaStyleMode}
-                disabled={loading}
-                onChange={(e) => onZappaStyleModeChange(e.target.value as ZappaStyleModeUi)}
-              >
-                <option value="compositional">
-                  Compositional — structured, meter-disrupted, fragmented
-                </option>
-                <option value="bluesrockFerocious">
-                  Blues-Rock Ferocity — modal, dense, fret-burning pedal vamps
-                </option>
-              </select>
+            <div style={{ marginTop: '0.55rem', maxWidth: 520, display: 'grid', gap: '0.55rem' }}>
+              <div>
+                <label style={labelMuted} htmlFor="co-riff-zappa-style-mode">
+                  Zappa style mode
+                </label>
+                <select
+                  id="co-riff-zappa-style-mode"
+                  style={{ ...controlStyle, width: '100%', maxWidth: 520 }}
+                  value={zappaStyleMode}
+                  disabled={loading}
+                  onChange={(e) => onZappaStyleModeChange(e.target.value as ZappaStyleModeUi)}
+                >
+                  <option value="compositional">
+                    Compositional — structured, meter-disrupted, fragmented
+                  </option>
+                  <option value="bluesrockFerocious">
+                    Blues-Rock Ferocity — modal, dense, fret-burning pedal vamps
+                  </option>
+                </select>
+              </div>
+              <div>
+                <label style={labelMuted} htmlFor="co-riff-zappa-era">
+                  Era preset (rhythmic cells)
+                </label>
+                <select
+                  id="co-riff-zappa-era"
+                  style={{ ...controlStyle, width: '100%', maxWidth: 520 }}
+                  value={zappaEraPreset}
+                  disabled={loading}
+                  onChange={(e) => onZappaEraPresetChange(e.target.value as ZappaEraPresetUi)}
+                >
+                  {ZAPPA_ERA_PRESET_OPTIONS.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={labelMuted} htmlFor="co-riff-zappa-phrase">
+                  Phrase character
+                </label>
+                <select
+                  id="co-riff-zappa-phrase"
+                  style={{ ...controlStyle, width: '100%', maxWidth: 520 }}
+                  value={zappaPhraseCharacter}
+                  disabled={loading}
+                  onChange={(e) =>
+                    onZappaPhraseCharacterChange(e.target.value as ZappaPhraseCharacterUi)
+                  }
+                >
+                  {ZAPPA_PHRASE_CHARACTER_OPTIONS.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={labelMuted} htmlFor="co-riff-zappa-symmetry">
+                  Symmetry / tritone bias
+                </label>
+                <select
+                  id="co-riff-zappa-symmetry"
+                  style={{ ...controlStyle, width: '100%', maxWidth: 520 }}
+                  value={zappaSymmetryBias}
+                  disabled={loading}
+                  onChange={(e) => onZappaSymmetryBiasChange(e.target.value as ZappaSymmetryBiasUi)}
+                >
+                  {ZAPPA_SYMMETRY_BIAS_OPTIONS.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={labelMuted} htmlFor="co-riff-zappa-chain">
+                  Cell chain depth
+                </label>
+                <select
+                  id="co-riff-zappa-chain"
+                  style={{ ...controlStyle, width: '100%', maxWidth: 520 }}
+                  value={zappaChainDepth}
+                  disabled={loading}
+                  onChange={(e) =>
+                    onZappaChainDepthChange(Number(e.target.value) as ZappaChainDepthUi)
+                  }
+                >
+                  {ZAPPA_CHAIN_DEPTH_OPTIONS.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           ) : null}
         </div>

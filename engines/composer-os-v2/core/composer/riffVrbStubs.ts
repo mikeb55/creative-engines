@@ -56,6 +56,10 @@ const NR_BASE = [
   'NR_GTR_01 — Clean chord fragments max 7 semitone span; string sets [4,3,2] and [3,2,1].',
   'NR_FORM_01 — 2-bar harmonic colour cycle; maj7/min7/dom colour rotation.',
   'NR_DIS_01 — Low dissonance; lush extensions without tritone anchors.',
+  'NR_VL_01 — Top-note voice-leading: stepwise approach to 3rd/7th targets on string change.',
+  'NR_TEX_01 — Sparse horn-stab windows; guitar rest gaps for pocket transparency.',
+  'NR_LOOP_01 — 2-bar exact colour loop; barIdentityPersistence 0.3; articulationSwap variation.',
+  'NR_DIFF_01 — vs James Brown: top-note harmony not root-first funk; vs Sly: no polyrhythm stack.',
 ] as const;
 
 const IM_BASE = [

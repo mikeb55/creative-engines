@@ -5,7 +5,11 @@ export type {
   RiffOddMeterPreset,
   RiffOddMeterSelectValue,
   RiffVrbOption,
+  ZappaChainDepthUi,
+  ZappaEraPresetUi,
+  ZappaPhraseCharacterUi,
   ZappaStyleModeUi,
+  ZappaSymmetryBiasUi,
 } from '@composer-os/ui/riffGeneratorUi';
 export {
   RIFF_BAR_COUNT_DEFAULT,
@@ -18,6 +22,10 @@ export {
   defaultRiffVrbIdForFamily,
   isRiffBarCount,
   isZappaRiffVrbId,
+  ZAPPA_CHAIN_DEPTH_OPTIONS,
+  ZAPPA_ERA_PRESET_OPTIONS,
+  ZAPPA_PHRASE_CHARACTER_OPTIONS,
+  ZAPPA_SYMMETRY_BIAS_OPTIONS,
   riffFamilyShowsMeterPicker,
   riffGateLabelsFromFailedRules,
   riffVrbOptionById,

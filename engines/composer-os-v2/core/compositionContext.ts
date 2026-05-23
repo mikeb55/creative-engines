@@ -57,6 +57,27 @@ export type FrankZappaContextMode = 'avant_rock' | 'big_band' | 'futuristic_jazz
 /** Frank Zappa duo GCE lane — compositional structural fingerprint vs blues-rock ferocious Slonimsky map. Default **`compositional`**. */
 export type ZappaStyleMode = 'compositional' | 'bluesrockFerocious';
 
+/** Riff solo era — maps to 7/8-style eighth cell groupings (`zappaRiffSoloParams.ts`). */
+export type ZappaEraPreset = 'broad' | 'mothers_66' | 'rio_73' | 'synclavier_84';
+
+/** Riff solo phrase length posture. */
+export type ZappaPhraseCharacter = 'balanced' | 'fragmented' | 'extended';
+
+/** Riff solo symmetric / tritone colour weighting. */
+export type ZappaSymmetryBias = 'low' | 'medium' | 'high';
+
+/** Max rhythmic cell chain repeats on the solo lane (1–3). */
+export type ZappaChainDepth = 1 | 2 | 3;
+
+/** Riff + metadata bundle for Zappa solo adapter threading. */
+export interface ZappaRiffSoloControls {
+  zappaStyleMode?: ZappaStyleMode;
+  zappaEraPreset?: ZappaEraPreset;
+  zappaPhraseCharacter?: ZappaPhraseCharacter;
+  zappaSymmetryBias?: ZappaSymmetryBias;
+  zappaChainDepth?: ZappaChainDepth;
+}
+
 /** Miles Davis Song Mode slice — era / ensemble harmonic posture (`milesDavisSlice.ts`). Default **`modal_1959`** when omitted. */
 export type MilesDavisContextMode = 'modal_1959' | 'quintet_1965' | 'electric_1970';
 
@@ -968,6 +989,19 @@ export interface GenerationMetadata {
   frankZappaContext?: FrankZappaContextMode;
   /** Frank Zappa — GCE / Slonimsky duo lane (`gceGate.ts`). Default **`compositional`**. */
   zappaStyleMode?: ZappaStyleMode;
+  /** Frank Zappa riff solo — era cell map (`zappaRiffSoloParams.ts`). */
+  zappaEraPreset?: ZappaEraPreset;
+  zappaPhraseCharacter?: ZappaPhraseCharacter;
+  zappaSymmetryBias?: ZappaSymmetryBias;
+  zappaChainDepth?: ZappaChainDepth;
+  /** Z7 — Slonimsky cell → harmonic scene voicing colour receipts (compositional Zappa). */
+  slonimskyHarmonicSceneReceipts?: string[];
+  /** Z8 — guitar–bass duo Slonimsky cell selection receipts. */
+  slonimskyGbdCellReceipts?: string[];
+  /** Z9 — song-mode Slonimsky cell selection receipts. */
+  slonimskySongModeCellReceipts?: string[];
+  /** Z10/Z11 — ensemble Slonimsky cell receipts (SQ / BB). */
+  slonimskyEnsembleCellReceipts?: string[];
   /** Context-specific synthetic / modal scale weights for manifests (honest bias labels only). */
   frankZappaSyntheticScaleBias?: Record<string, number>;
   /** Per-bar density bias (0–1) from Zappa density arc; refined after hard-cut resets in precompute. */

@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-05-18]
+# Composer OS Roadmap [2026-05-22]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
@@ -22,7 +22,7 @@
 | goldsmith | 24 | webern | 40 |
 | **bartók** | **24** | | |
 
-Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartók** native bundle (not in registry map). **Smoke (2026-05-18):** full **259/0** (**64** suites) · fast **213/0** (**56** suites).
+Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartók** native bundle (not in registry map). **Smoke (2026-05-22):** full **411/0** (**76** suites) · fast **246/0** (**62** suites).
 
 **V31 — COMPLETE (2026-05-11):**
 
@@ -1154,37 +1154,50 @@ Specific improvements needed:
 **Z6 STATUS: SHIPPED**
 - bluesrockFerocious styleMode: Slonimsky map + VRB stub + FZBLUES receipts + adapter landed
 - UI: zappaStyleMode selector in Advanced panel (frank_zappa only)
-- Known gap: styleMode not yet threaded to riff solo call chain (`buildSoloPartForScore` → `riffSoloFromZappaEngine` has no context/metadata arg). Duo path wired; riff path deferred to 5b.
-- Sibelius verify: output clean, two voices correct, chromatic content present. Burst/rest-proxy contrast needs playback confirmation.
+- **5b (2026-05-22):** `zappaStyleMode` + `zappaEraPreset` / `zappaPhraseCharacter` / `zappaSymmetryBias` / `zappaChainDepth` threaded through riff chain (`GenerationMetadata` → `RiffGeneratorParams` → `buildSoloPartForScore` → `riffSoloFromZappaEngine` / `resolveEffectiveZappaSoloProfile`); seed-42 golden fixtures; Advanced panel controls.
 
 ### Phase Z7 — Slonimsky Harmonic Scene
 
-**Status: DEFERRED** — pending Z6 Sibelius verify + 5b riff API work
+**Status: SHIPPED (2026-05-22)** — `slonimskyHarmonicScene.ts`: cell pitch classes → `dominantVoicingColor`; `enrichHarmonicScenesWithSlonimskyCells` on `attachVoiceRuleBundle`; compositional Zappa chord bias; `slonimskyHarmonicSceneReceipts` on metadata. Smoke: `slonimskyHarmonicScene.test.ts`.
+
+### Phase Z8 — GBD Slonimsky context
+
+**Status: SHIPPED (2026-05-22)** — `buildGuitarBassDuoSlonimskyContext` on all guitar–bass duo golden-path bars; `z8:gbd@bar1` receipts on `slonimskyGbdCellReceipts`. Smoke: `slonimskyGbdContext.test.ts`.
+
+### Phase Z9 — Song mode Slonimsky
+
+**Status: SHIPPED (2026-05-22)** — `songModeSlonimsky.ts` / `applySongModeSlonimskyCellLayer` (pat_metheny, frank_zappa, sonic_youth, joni_mitchell, radiohead); `z9:songwriter=*` on `slonimskySongModeCellReceipts`. Smoke: `songModeSlonimsky.test.ts`.
+
+### Phase Z10 / Z11 — BB + SQ ensemble cell receipts
+
+**Status: SHIPPED (2026-05-22)** — `pushEnsembleSlonimskyCellReceipt` on BB alto/tenor + SQ Vn1/Vn2 Slonimsky windows; sinks from `runBigBandRealisation` / `runQuartetRealisation` → `slonimskyEnsembleCellReceipts`. Smoke: `slonimskyEnsembleReceipt.test.ts`.
+
+### Receipt deepening R1–R4
+
+**Status: SHIPPED (2026-05-22)** — Nile Rodgers **NR_VL_01** / **NR_TEX_01** / **NR_LOOP_01** / **NR_DIFF_01** in `riffVrbStubs`; refreshed `larry_carlton_golden.json` + `david_gilmour_golden.json` (seed 42); EVH golden seed-42 verify in `riffZappaSolo.test.ts`.
 
 ---
 
-## Session Handoff — V59 — 2026-05-22
+## Session Handoff — V60 — 2026-05-22
 
 **SMOKE BASELINE**
-- Full: **403** / **72** / **0** (~16s tsx)
-- Fast: **238** / **58** / **0** (~7s tsx)
+- Full: **411** / **76** / **0** (~17s tsx)
+- Fast: **246** / **62** / **0** (~8s tsx)
 
-**LAST COMMIT:** `6fa4e8e6` → `origin/main`
+**LAST COMMIT:** `13299089` → `origin/main`
 
 **COMPLETED THIS SESSION**
-- EVH deepening receipts + compiler (EVH_* 10 IDs)
-- EVH Phase E Song Mode registry fix
-- LC + DG fingerprintReceipts + compiler + tests
-- Zappa GCE structural fingerprint
-- Z6 Blues-Rock Ferocity (bluesrockFerocious styleMode, FZBLUES receipts, adapter, tests, golden fixtures)
-- tsx runner swap (90s → ~16s full smoke)
-- UI: chord grid warnings + Zappa advanced panel
-- Docs: COMPOSER_HANDBOOK_ZAPPA.md + .docx + master index link
+- **5b** — Zappa riff param threading + UI + seed-42 goldens
+- **Z7** — Slonimsky harmonic scene (cell → voicing colour → export bias)
+- **Z8** — GBD Slonimsky context + `z8:` receipts
+- **Z9** — Song mode Slonimsky cell layer + `z9:` receipts
+- **Z10/Z11** — BB + SQ ensemble Slonimsky cell receipts
+- **R1–R4** — NR receipt deepening; Carlton/Gilmour golden refresh; EVH seed-42 verify
 
 **NEXT SESSION ENTRY POINT**
-1. Confirm Z6 ferocity burst/rest contrast on playback in Sibelius
-2. If confirmed: proceed to **5b** — Zappa riff API surface area (`zappaEraPreset` / `zappaPhraseCharacter` / `zappaSymmetryBias` / `zappaChainDepth` — all need new `GenerationMetadata` fields + riff call chain threading + adapter work)
-3. If not confirmed: debug styleMode threading to riff solo path
+1. Sibelius playback QA on Z7 harmonic colour + Z8 GBD line density
+2. Wire `slonimskyEnsembleCellReceipts` into app manifest echo if product wants UI receipts
+3. V58 per-section VRB assignment (recon complete; await Commit 1)
 
 **REBUILD DESKTOP APP**
 

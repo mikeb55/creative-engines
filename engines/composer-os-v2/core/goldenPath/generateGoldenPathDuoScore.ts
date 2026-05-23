@@ -528,12 +528,13 @@ import {
 import { buildResolvedTuningVoicingContext } from '../song-mode/alternateGuitarTuningVoicingMaps';
 import {
   applySlonimskyToMelodyLine,
-  buildDuoBarSlonimskyContext,
   mapDuoPhraseIntentToSlonimskyContext,
   resolveAllowedOutsideLevelForSlonimsky,
   type SlonimskyContext,
   type SlonimskyNote,
 } from '../slonimsky/slonimskyEngine';
+import { buildGuitarBassDuoSlonimskyContext } from '../slonimsky/slonimskyPatternService';
+import { pushGbdSlonimskyCellReceipt } from '../slonimsky/slonimskyEnsembleReceipt';
 import { applyBarryHarris } from '../style-modules/barry-harris/moduleApply';
 import { ensureRhythmIntentResolvedIntoMetadata } from '../rhythmIntentResolve';
 import {
@@ -3720,15 +3721,10 @@ function buildGuitarPart(
         }
 
         let slonimskyBarCtx: SlonimskyContext | undefined;
-        if (
-          isDuoGolden &&
-          isAlternateGuitarTuningPilotActive(genMeta) &&
-          styleProfileSupportsAlternateGuitarTuning(normalizeStyleProfileId(genMeta?.styleProfile))
-        ) {
+        if (isDuoGolden && isGuitarBassDuoFamily(context.presetId)) {
           const chordStr = resolveBarSymbol(context, b).symbol;
           const keyPc = inferTonicPitchClassFromBar1(context) ?? 0;
-          slonimskyBarCtx = buildDuoBarSlonimskyContext({
-            /** Slonimsky API field name — {@link PhraseIntent}, not `generationMetadata.duoIntent`. */
+          slonimskyBarCtx = buildGuitarBassDuoSlonimskyContext({
             duoIntent: phraseIntent,
             phase,
             seed,
@@ -3743,6 +3739,10 @@ function buildGuitarPart(
             effectiveLow,
             effectiveHigh,
           });
+          if (genMeta) {
+            if (!genMeta.slonimskyGbdCellReceipts) genMeta.slonimskyGbdCellReceipts = [];
+            pushGbdSlonimskyCellReceipt(genMeta.slonimskyGbdCellReceipts, b, slonimskyBarCtx, seed);
+          }
         }
 
         emitGuitarPhraseBar({

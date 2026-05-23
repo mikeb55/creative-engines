@@ -3,6 +3,7 @@
  */
 
 import type { RiffSoloGeneratorProfile } from '../composer/riffProfileTypes';
+import type { ZappaRiffSoloControls } from '../compositionContext';
 import { chordTonesForChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { mulberry32 } from './riffRandom';
 import { riffSoloFromZappaEngine } from './riffSoloZappaAdapter';
@@ -86,7 +87,8 @@ export function buildSoloPartForScore(
   bars: number,
   chords: string[],
   seed: number,
-  vrbId?: string
+  vrbId?: string,
+  zappaControls?: ZappaRiffSoloControls
 ): RiffSoloNote[][] | null {
   if (!soloEnabled || !profile?.enabled) return null;
   const useZappa = vrbId === 'frank_zappa';
@@ -94,7 +96,7 @@ export function buildSoloPartForScore(
   for (let b = 0; b < bars; b++) {
     const chord = chords[b] ?? chords[0] ?? 'Am7';
     if (useZappa) {
-      const zappaLine = riffSoloFromZappaEngine(b, chord, profile, seed);
+      const zappaLine = riffSoloFromZappaEngine(b, chord, profile, seed, zappaControls);
       if (zappaLine.length > 0) {
         out.push(zappaLine);
         continue;

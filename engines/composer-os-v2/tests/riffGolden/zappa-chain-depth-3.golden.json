@@ -1,0 +1,8 @@
+{
+  "seed": 42,
+  "param": "zappaChainDepth",
+  "value": 3,
+  "zappaEraPreset": "broad",
+  "expectCellLength": 9,
+  "expectCellEighths": [3, 3, 2, 3, 3, 2, 3, 3, 2]
+}

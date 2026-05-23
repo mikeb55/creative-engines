@@ -45,7 +45,11 @@ import {
   type RiffCarryForward,
   type RiffFamilyTag,
   type RiffOddMeterSelectValue,
+  type ZappaChainDepthUi,
+  type ZappaEraPresetUi,
+  type ZappaPhraseCharacterUi,
   type ZappaStyleModeUi,
+  type ZappaSymmetryBiasUi,
 } from '../types/riffGeneratorUi';
 import { riffChordGridWarnings } from '../utils/riffChordGridWarnings';
 import { ComposerEraSelectOptions } from '../components/ComposerEraSelectOptions';
@@ -2137,6 +2141,10 @@ export function HomeGenerate({
   const [riffGateMessages, setRiffGateMessages] = useState<string[]>([]);
   const [riffZappaAdvancedOpen, setRiffZappaAdvancedOpen] = useState(false);
   const [zappaStyleMode, setZappaStyleMode] = useState<ZappaStyleModeUi>('compositional');
+  const [zappaEraPreset, setZappaEraPreset] = useState<ZappaEraPresetUi>('broad');
+  const [zappaPhraseCharacter, setZappaPhraseCharacter] = useState<ZappaPhraseCharacterUi>('balanced');
+  const [zappaSymmetryBias, setZappaSymmetryBias] = useState<ZappaSymmetryBiasUi>('medium');
+  const [zappaChainDepth, setZappaChainDepth] = useState<ZappaChainDepthUi>(1);
   const riffGenerateOpRef = useRef<'full' | 'regenerate' | 'mutate'>('full');
 
   const riffChordWarnings = useMemo(
@@ -2465,6 +2473,10 @@ export function HomeGenerate({
     if (!isZappaRiffVrbId(riffVrbId)) {
       setRiffZappaAdvancedOpen(false);
       setZappaStyleMode('compositional');
+      setZappaEraPreset('broad');
+      setZappaPhraseCharacter('balanced');
+      setZappaSymmetryBias('medium');
+      setZappaChainDepth(1);
     }
   }, [riffVrbId]);
 
@@ -3136,7 +3148,15 @@ export function HomeGenerate({
                 riffBass,
                 ...(riffSolo ? { riffSolo: true } : {}),
                 ...(chordTrim ? { chordProgressionText: chordTrim } : {}),
-                ...(isZappaRiffVrbId(riffVrbId) ? { zappaStyleMode } : {}),
+                ...(isZappaRiffVrbId(riffVrbId)
+                  ? {
+                      zappaStyleMode,
+                      zappaEraPreset,
+                      zappaPhraseCharacter,
+                      zappaSymmetryBias,
+                      zappaChainDepth,
+                    }
+                  : {}),
                 ...(riffGenerateOpRef.current !== 'full' &&
                 riffCarryForward &&
                 (riffGenerateOpRef.current === 'regenerate' || riffGenerateOpRef.current === 'mutate')
@@ -5291,8 +5311,16 @@ export function HomeGenerate({
           canRegenerateMutate={riffCarryForward != null}
           zappaAdvancedOpen={riffZappaAdvancedOpen}
           zappaStyleMode={zappaStyleMode}
+          zappaEraPreset={zappaEraPreset}
+          zappaPhraseCharacter={zappaPhraseCharacter}
+          zappaSymmetryBias={zappaSymmetryBias}
+          zappaChainDepth={zappaChainDepth}
           onZappaAdvancedOpenChange={setRiffZappaAdvancedOpen}
           onZappaStyleModeChange={setZappaStyleMode}
+          onZappaEraPresetChange={setZappaEraPreset}
+          onZappaPhraseCharacterChange={setZappaPhraseCharacter}
+          onZappaSymmetryBiasChange={setZappaSymmetryBias}
+          onZappaChainDepthChange={setZappaChainDepth}
           onFamilyChange={setRiffFamily}
           onVrbIdChange={setRiffVrbId}
           onBarsChange={(n) => setTotalBars(n)}

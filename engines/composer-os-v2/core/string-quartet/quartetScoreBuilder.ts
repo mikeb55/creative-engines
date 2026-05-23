@@ -28,6 +28,7 @@ import {
   buildQuartetSlonimskyContext,
   type SlonimskyNote,
 } from '../slonimsky/slonimskyPatternService';
+import { pushEnsembleSlonimskyCellReceipt } from '../slonimsky/slonimskyEnsembleReceipt';
 import type { BarMeterMap } from '../rhythm/barMeterTypes';
 import { resolveMeterForBar } from '../rhythm/oddMeterQuantiser';
 import type { SoloLine } from '../solo/soloTypes';
@@ -263,6 +264,8 @@ export interface BuildQuartetScoreModelInput {
   wybleVoiceLayout?: EnsembleWybleRoleMap;
   /** When set (from Generate request), biases Slonimsky ensemble catalogue via `SLONIMSKY_STYLE_PROFILE_MAP`. */
   songwriterStyleId?: string;
+  /** Z11 — mutable sink for Slonimsky cell selection receipts. */
+  slonimskyEnsembleCellReceipts?: string[];
   /** User Chromatic Strength cap — `Math.min` with profile allowance in Slonimsky contexts. */
   allowedOutsideOverride?: 0 | 1 | 2;
   /** Per-bar time signatures (1-based indices); omit for all 4/4 — matches MusicXML export `barMeterMap`. */
@@ -572,6 +575,7 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
           catalogueSection: 'intervallic_mirror_permutations',
           transpositionInterval: bar % 12,
         });
+        pushEnsembleSlonimskyCellReceipt(input.slonimskyEnsembleCellReceipts, 'sq', bar, ctx, seed);
         const mel: SlonimskyNote[] = slonimskyV1Acc.map((m, i) => ({
           midi: m,
           durationBeats: 1,
@@ -607,6 +611,7 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
           effectiveHigh: QUARTET_MIDI_BOUNDS[SQ_PART_V2][1]!,
           catalogueSection: 'tritone_progression',
         });
+        pushEnsembleSlonimskyCellReceipt(input.slonimskyEnsembleCellReceipts, 'sq', bar, ctx, seed);
         const mel: SlonimskyNote[] = slonimskyV2Acc.map((m, i) => ({
           midi: m,
           durationBeats: 1,

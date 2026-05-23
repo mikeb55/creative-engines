@@ -1,0 +1,9 @@
+{
+  "seed": 42,
+  "bars": 8,
+  "chord": "Am7",
+  "param": "zappaSymmetryBias",
+  "value": "high",
+  "minChromaticBudget": 0.62,
+  "minTritonePitches": 1
+}

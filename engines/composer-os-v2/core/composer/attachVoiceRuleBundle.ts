@@ -5,6 +5,8 @@
 import type { CompositionContext } from '../compositionContext';
 import { buildHarmonicSceneStubs, buildHarmonicScenesForVoiceBundle } from './harmonicScene';
 import { getVoiceRuleBundle, normalizeHarmonicVoiceId } from './voiceRuleBundles';
+import { applySlonimskyHarmonicSceneToContext } from '../slonimsky/slonimskyHarmonicScene';
+import { applySongModeSlonimskyCellLayer } from '../song-mode/songModeSlonimsky';
 
 /**
  * Songwriter ids that auto-resolve to a same-named VoiceRuleBundle when picked
@@ -69,6 +71,9 @@ export function attachVoiceRuleBundleAndHarmonicScenes(
     },
     voiceBundleRhythmAntiMetric: bundle.rhythmPolicy.antiMetric,
   };
+
+  applySlonimskyHarmonicSceneToContext(context);
+  applySongModeSlonimskyCellLayer(context);
 
   if (!attachOpts?.skipHarmonicSceneLog) {
     console.log(

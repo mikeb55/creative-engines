@@ -37,6 +37,12 @@ import { isAllowedSongFormBarCount, SONG_FORM_BAR_OPTIONS } from '../core/harmon
 import { isGuitarBassDuoFamily } from '../core/presets/guitarBassDuoPresetIds';
 import { coerceAsymmetricRhythmRequestFromUnknown } from '../core/rhythm/asymmetricPresets';
 import { sanitizeBarMeterMap } from '../core/rhythm/barMeterTypes';
+import {
+  parseZappaChainDepth,
+  parseZappaEraPreset,
+  parseZappaPhraseCharacter,
+  parseZappaSymmetryBias,
+} from '../core/riff-generator/zappaRiffSoloParams';
 import type { IRealVaultOutput } from '../core/irealpro/irealVaultPipeline';
 import type { ParsedChart } from '../core/irealpro/parsedChart';
 import type { EmotionalDrift } from '../core/harmony/reharmCandidateEngine';
@@ -384,6 +390,10 @@ export function apiGenerate(
         body.zappaStyleMode === 'compositional' || body.zappaStyleMode === 'bluesrockFerocious'
           ? body.zappaStyleMode
           : undefined,
+      zappaEraPreset: parseZappaEraPreset(body.zappaEraPreset),
+      zappaPhraseCharacter: parseZappaPhraseCharacter(body.zappaPhraseCharacter),
+      zappaSymmetryBias: parseZappaSymmetryBias(body.zappaSymmetryBias),
+      zappaChainDepth: parseZappaChainDepth(body.zappaChainDepth),
       milesDavisContext:
         body.milesDavisContext === 'modal_1959' ||
         body.milesDavisContext === 'quintet_1965' ||

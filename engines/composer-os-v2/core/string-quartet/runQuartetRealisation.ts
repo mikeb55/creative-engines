@@ -174,6 +174,7 @@ export function runQuartetRealisation(
     zappaSQEffectiveHarmonyBars = Array.isArray(sqBars) ? sqBars : undefined;
   }
 
+  const slonimskyEnsembleCellReceipts: string[] = [];
   const score = buildQuartetScoreModel({
     title: planning.title,
     seed: input.seed,
@@ -193,7 +194,19 @@ export function runQuartetRealisation(
     ...(zappaSQEffectiveHarmonyBars && zappaSQEffectiveHarmonyBars.length === tb
       ? { zappaSQEffectiveHarmonyBars }
       : {}),
+    slonimskyEnsembleCellReceipts,
   });
+
+  if (slonimskyEnsembleCellReceipts.length > 0) {
+    const base = generationMetadataForScore ?? { generatedAt: new Date().toISOString() };
+    generationMetadataForScore = {
+      ...base,
+      slonimskyEnsembleCellReceipts: [
+        ...(base.slonimskyEnsembleCellReceipts ?? []),
+        ...slonimskyEnsembleCellReceipts,
+      ],
+    };
+  }
 
   const metaForMerge = generationMetadataForScore ?? input.generationMetadata;
   if (metaForMerge) {

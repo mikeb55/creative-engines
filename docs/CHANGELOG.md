@@ -1,5 +1,16 @@
 ## [Unreleased]
 
+### Added
+
+- **(2026-05-22) Slonimsky Z7–Z11 + Zappa 5b riff params + receipt deepening (R1–R4)** — **Smoke: 411/0 (76 suites) full · 246/0 (62 suites) fast.**
+  - **5b — Zappa riff API:** `zappaStyleMode`, `zappaEraPreset`, `zappaPhraseCharacter`, `zappaSymmetryBias`, `zappaChainDepth` on `GenerationMetadata` / `RiffGeneratorParams` / `RiffSoloGeneratorProfile`; `zappaRiffSoloParams.ts` + `resolveEffectiveZappaSoloProfile` in `riffSoloZappaAdapter.ts`; chain through `riffSoloBuilder` → `buildRiffScoreModel` → app API + `RiffGeneratorPanel` / `HomeGenerate.tsx` (frank_zappa Advanced only). Golden fixtures: `zappa-era-rio`, `zappa-phrase-extended`, `zappa-symmetry-high`, `zappa-chain-depth-3` (seed 42); `riffZappaSolo.test.ts` assertions.
+  - **Z7 — Harmonic scene:** `core/slonimsky/slonimskyHarmonicScene.ts` — derive `dominantVoicingColor` from cell pitch classes; `HarmonicScene.slonimskyCellPitchClasses`; `applySlonimskyHarmonicSceneToContext` from `attachVoiceRuleBundle`; compositional Zappa path in `harmonicSceneChordBias.ts`; `slonimskyHarmonicSceneReceipts` on metadata. Smoke: `slonimskyHarmonicScene.test.ts`.
+  - **Z8 — GBD duo:** `buildGuitarBassDuoSlonimskyContext` in `slonimskyPatternService.ts`; all `isGuitarBassDuoFamily` golden-path bars in `generateGoldenPathDuoScore.ts`; `pushGbdSlonimskyCellReceipt` → `slonimskyGbdCellReceipts`. Smoke: `slonimskyGbdContext.test.ts`.
+  - **Z9 — Song mode:** `songModeSlonimsky.ts` — `applySongModeSlonimskyCellLayer` for pat_metheny / frank_zappa / sonic_youth / joni_mitchell / radiohead; `z9:` receipts on `slonimskySongModeCellReceipts`. Smoke: `songModeSlonimsky.test.ts`.
+  - **Z10/Z11 — Ensemble:** `slonimskyEnsembleReceipt.ts` — `pushEnsembleSlonimskyCellReceipt` (`z10:bb`, `z11:sq`); BB alto+tenor + SQ Vn1+Vn2 in score builders; sinks from `runBigBandRealisation` / `runQuartetRealisation`. Smoke: `slonimskyEnsembleReceipt.test.ts`.
+  - **R1–R4 — Receipts / goldens:** Nile Rodgers **NR_VL_01**, **NR_TEX_01**, **NR_LOOP_01**, **NR_DIFF_01** in `riffVrbStubs.ts`; refreshed `riffGoldenFixtures/larry_carlton_golden.json` + `david_gilmour_golden.json` (seed 42); `testEvhGoldenSeed42Verify` in `riffZappaSolo.test.ts`.
+  - **`runSmokeTests.ts`:** +4 Slonimsky suites (Z7–Z11 + Z8 + Z9); smoke comment sync **411/76**, fast **246/62**.
+
 ### Fixed
 
 - **(2026-05-15) Duo Run 1c — line-first routing + abstract pitch truth** — `slicePrimaryBlocksLineFirstAbstract` only blocks abstract guitar/bass fill when `harmonyModeRequested` is explicitly **`builtin`** or **`custom`** (`custom_locked` and `undefined` no longer fall through to a false `custom_locked` check that blocked every bar after `songwriterStyleId` matched the VRB). Abstract soprano/bass fill uses **`liftToneToRange`** (`duoAbstractLineWiring.ts`) so two abstract pitch classes are not collapsed onto one boundary `clampPitch` before `finalizeAndSealDuoScoreBarMath` / bass notation grouping. Gate B harness: `engines/composer-os-v2/scripts/gateBRun1cDuoVerify.ts`. **`core/counterpoint/INVARIANTS.md`** — Run 1c matrix. Smoke **248/0** (**63** suites).

@@ -14,6 +14,8 @@ export interface HarmonicScene {
   barRange: [number, number];
   /** Threadgill — rotates interval-set family at scene boundaries. */
   threadgillIntervalFamily?: number;
+  /** Z7 — Slonimsky cell pitch classes driving scene voicing colour (compositional Zappa). */
+  slonimskyCellPitchClasses?: number[];
 }
 
 /** One stub scene per form section. */

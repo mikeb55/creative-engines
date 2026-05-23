@@ -1,0 +1,6 @@
+{
+  "seed": 42,
+  "param": "zappaEraPreset",
+  "value": "rio_73",
+  "expectCellEighths": [3, 2, 2]
+}

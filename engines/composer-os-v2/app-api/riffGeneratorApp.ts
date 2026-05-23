@@ -29,6 +29,7 @@ import { riffStyleIdForFamily } from '../core/riff-generator/resolveRiffGenerato
 import { getVoiceRuleBundle } from '../core/composer/voiceRuleBundles';
 import { resolveEffectiveGenerationSeed } from '../core/creative-controls/creativeControlResolver';
 import { compactRiffQualityForManifest } from '../core/riff-generator/riffQualityRules';
+import { zappaRiffSoloControlsFrom } from '../core/riff-generator/zappaRiffSoloParams';
 
 function parseRiffBars(req: GenerateRequest): RiffBarCount {
   const n = req.totalBars ?? 2;
@@ -193,6 +194,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
 
   const riffOp = req.riffOp === 'regenerate' || req.riffOp === 'mutate' ? req.riffOp : undefined;
   const soloEnabled = resolveRiffAppSoloEnabled(vrbId, req.riffSolo);
+  const zappaControls = zappaRiffSoloControlsFrom(req);
   const gen = runRiffGenerator(effectiveSeed, {
     bars,
     density,
@@ -209,6 +211,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
     riffOp: riffOp ?? 'full',
     barLocks: req.riffBarLocks,
     carryForward: req.riffCarryForward,
+    ...zappaControls,
   });
 
   if (!gen.success) {

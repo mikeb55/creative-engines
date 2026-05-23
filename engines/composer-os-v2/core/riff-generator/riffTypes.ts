@@ -8,6 +8,7 @@ import type { CoreMotif } from '../motif/motifEngineTypes';
 import type { RiffCarryForward } from './riffCarryForward';
 import type { RiffProfile } from '../composer/riffProfileTypes';
 import type { RiffGenerationMetadata } from './riffMultiVoiceTypes';
+import type { ZappaRiffSoloControls } from '../compositionContext';
 
 export type RiffGeneratorOp = 'full' | 'regenerate' | 'mutate';
 
@@ -55,6 +56,12 @@ export interface RiffGeneratorParams {
   carryForward?: RiffCarryForward;
   /** Resolved VRB riff profile (receipt compiler merged). */
   riffProfile?: RiffProfile;
+  /** Frank Zappa riff solo — threaded to `riffSoloFromZappaEngine` when `vrbId` is `frank_zappa`. */
+  zappaStyleMode?: ZappaRiffSoloControls['zappaStyleMode'];
+  zappaEraPreset?: ZappaRiffSoloControls['zappaEraPreset'];
+  zappaPhraseCharacter?: ZappaRiffSoloControls['zappaPhraseCharacter'];
+  zappaSymmetryBias?: ZappaRiffSoloControls['zappaSymmetryBias'];
+  zappaChainDepth?: ZappaRiffSoloControls['zappaChainDepth'];
 }
 
 export interface RiffGeneratorSuccess {

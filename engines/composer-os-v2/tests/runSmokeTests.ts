@@ -4,7 +4,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N rows (M suites)` in the smoke summary, then sync **N** + **M** into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **357** PASS rows, **70** suites (full tier).
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): aggregate **411** PASS rows, **76** suites (full tier); fast **246** rows, **62** suites.
  *
  * **Fast subset:** `COMPOSER_OS_SMOKE_TIER=fast` or `npm run test:composer-smoke-fast` — skips `SMOKE_FAST_EXCLUDE` suites (local dev).
  * **Full tier (default / CI):** unset or `COMPOSER_OS_SMOKE_TIER=full` — all suites in `smokeSuites`.
@@ -85,6 +85,10 @@ import { runWybleDuoParityTests } from './wybleDuoParity.test';
 import { runEcmGceOrchestrationTests } from './ecmGceOrchestration.test';
 import { runMelodyV2Tests } from './melodyV2.test';
 import { runMidiChordExtractorTests } from './midiChordExtractor.test';
+import { runSlonimskyHarmonicSceneTests } from './slonimskyHarmonicScene.test';
+import { runSlonimskyGbdContextTests } from './slonimskyGbdContext.test';
+import { runSongModeSlonimskyTests } from './songModeSlonimsky.test';
+import { runSlonimskyEnsembleReceiptTests } from './slonimskyEnsembleReceipt.test';
 
 type Row = { name: string; ok: boolean };
 
@@ -188,6 +192,10 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Phase 8 — improv + reharm + stochastic + collision', run: runPhase8ImprovReharmStochasticCollisionTests },
   { label: 'Harmony spine LOCK harness (mismatch throws)', run: runHarmonySpineLockSmokeTests },
   { label: 'HarmonicScene motif filter + shout/outro energy', run: runHarmonicSceneMotifShoutSmokeTests },
+  { label: 'Slonimsky Z7 harmonic scene (cell → voicing colour)', run: runSlonimskyHarmonicSceneTests },
+  { label: 'Slonimsky Z8 GBD duo context', run: runSlonimskyGbdContextTests },
+  { label: 'Slonimsky Z9 song mode cell layer', run: runSongModeSlonimskyTests },
+  { label: 'Slonimsky Z10/Z11 ensemble cell receipts', run: runSlonimskyEnsembleReceiptTests },
   { label: 'Follow-up 4 — Mingus overlay + activeMotifIds + shout export', run: runFollowup4MingusSchneiderThreadgillSmokeTests },
   { label: 'Follow-up 5 — shout-chorus in-place brass merge', run: runFollowup5ShoutBrassInPlaceSmokeTests },
   { label: 'Output validation — MIDI + MusicXML structural', run: runOutputValidationSmokeTests },
