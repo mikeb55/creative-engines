@@ -1,0 +1,13 @@
+{
+  "id": "test2",
+  "seed": 42,
+  "noteCount": 627,
+  "burstBarCount": 1,
+  "avgNotesPerBar": 9.75,
+  "feedbackProxyPresent": true,
+  "partIds": [
+    "guitar",
+    "bass",
+    "zappa_solo"
+  ]
+}

@@ -101,6 +101,26 @@ function pitchClass(midi: number): number {
   return ((midi % 12) + 12) % 12;
 }
 
+/** Closest MIDI in [low, high] with target pitch class (avoids unbounded ±1 loops). */
+function nearestMidiWithPitchClass(ref: number, targetPc: number, low: number, high: number): number {
+  const tgt = pitchClass(targetPc);
+  let best = ref;
+  let bestDist = 999;
+  for (let m = low; m <= high; m++) {
+    if (pitchClass(m) !== tgt) continue;
+    const d = Math.abs(m - ref);
+    if (d < bestDist) {
+      bestDist = d;
+      best = m;
+    }
+  }
+  if (bestDist < 999) return best;
+  let m = low + tgt;
+  while (m < low) m += 12;
+  while (m > high) m -= 12;
+  return Math.max(low, Math.min(high, m));
+}
+
 function isTritoneFromRoot(pitch: number, rootPc: number): boolean {
   return (pitchClass(pitch) + 12 - rootPc) % 12 === 6;
 }
@@ -121,14 +141,8 @@ function applySymmetryTritonWeighting(
 
   if (bias === 'high' && !hasTritone) {
     const idx = events.length - 1;
-    let targetPc = (rootPc + 6) % 12;
-    let m = events[idx]!.pitch;
-    while (pitchClass(m) !== targetPc) {
-      m += m < events[idx]!.pitch ? 1 : -1;
-    }
-    while (m < low) m += 12;
-    while (m > high) m -= 12;
-    events[idx]!.pitch = Math.max(low, Math.min(high, m));
+    const targetPc = (rootPc + 6) % 12;
+    events[idx]!.pitch = nearestMidiWithPitchClass(events[idx]!.pitch, targetPc, low, high);
     return;
   }
 
@@ -138,13 +152,7 @@ function applySymmetryTritonWeighting(
     const idx = events.findIndex((e) => isTritoneFromRoot(e.pitch, rootPc));
     if (idx < 0) return;
     const pc = pcs[Math.floor(seededUnit(seed, barIndex + idx) * pcs.length)]!;
-    let m = events[idx]!.pitch;
-    while (pitchClass(m) !== pc) {
-      m += m < events[idx]!.pitch ? 1 : -1;
-    }
-    while (m < low) m += 12;
-    while (m > high) m -= 12;
-    events[idx]!.pitch = Math.max(low, Math.min(high, m));
+    events[idx]!.pitch = nearestMidiWithPitchClass(events[idx]!.pitch, pc, low, high);
   }
 }
 
@@ -303,13 +311,7 @@ function applyScaleMinglingNudges(notes: SoloNote[], chordSymbol: string, profil
     const pc = ((n.midi % 12) + 12) % 12;
     if (neighbourPcs.includes(pc)) continue;
     const targetPc = neighbourPcs[Math.floor(seededUnit(n.midi, n.barIndex) * neighbourPcs.length)]! % 12;
-    let m = n.midi;
-    while (((m % 12) + 12) % 12 !== targetPc) {
-      m += m < n.midi ? 1 : -1;
-    }
-    while (m < low) m += 12;
-    while (m > high) m -= 12;
-    n.midi = Math.max(low, Math.min(high, m));
+    n.midi = nearestMidiWithPitchClass(n.midi, targetPc, low, high);
   }
 }
 

@@ -1229,6 +1229,7 @@ ${partList}
       );
       const forceDualVoiceSecondLayer =
         (part.instrumentIdentity === 'clean_electric_guitar' || isBigBandPianoPart(part)) &&
+        part.id !== 'zappa_solo' &&
         partUsesVoice2Somewhere;
       for (let i = 0; i < orderedMeasures.length; i++) {
         const m = orderedMeasures[i];

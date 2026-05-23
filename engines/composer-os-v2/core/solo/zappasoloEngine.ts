@@ -1682,8 +1682,43 @@ export function generateZappaSolo(context: CompositionContext, options?: Zappaso
   };
 }
 
+const FEROCITY_SOLO_MAX_VOICES = 4;
+
+/** Pack overlapping ferocity attacks into separate voices so duo bar-math finalize does not collapse bursts. */
+function assignFerocitySoloVoices(notes: SoloNote[]): Map<SoloNote, number> {
+  const sorted = [...notes].sort((a, c) => a.startBeat - c.startBeat);
+  const voiceEnd = new Map<number, number>();
+  const out = new Map<SoloNote, number>();
+  for (const sn of sorted) {
+    let voice = 1;
+    for (let v = 1; v <= FEROCITY_SOLO_MAX_VOICES; v++) {
+      const end = voiceEnd.get(v) ?? 0;
+      if (sn.startBeat >= end - 1e-4) {
+        voice = v;
+        break;
+      }
+    }
+    if (sn.startBeat < (voiceEnd.get(voice) ?? 0) - 1e-4) {
+      let bestV = 1;
+      let bestEnd = Number.POSITIVE_INFINITY;
+      for (let v = 1; v <= FEROCITY_SOLO_MAX_VOICES; v++) {
+        const end = voiceEnd.get(v) ?? 0;
+        if (end < bestEnd) {
+          bestEnd = end;
+          bestV = v;
+        }
+      }
+      voice = bestV;
+    }
+    voiceEnd.set(voice, sn.startBeat + sn.durationBeats);
+    out.set(sn, voice);
+  }
+  return out;
+}
+
 /** Convert {@link SoloLine} to a MusicXML-exportable part (treble lead). */
 export function soloLineToPartModel(line: SoloLine, totalBars: number): PartModel {
+  const ferocityLane = line.digest?.includes('bluesrockFerocious') === true;
   const byBar = new Map<number, SoloNote[]>();
   for (const n of line.allNotes) {
     if (!byBar.has(n.barIndex)) byBar.set(n.barIndex, []);
@@ -1693,10 +1728,12 @@ export function soloLineToPartModel(line: SoloLine, totalBars: number): PartMode
   const measures: MeasureModel[] = [];
   for (let b = 1; b <= totalBars; b++) {
     const notes = (byBar.get(b) ?? []).sort((a, c) => a.startBeat - c.startBeat);
+    const voiceByNote = ferocityLane ? assignFerocitySoloVoices(notes) : null;
     const events: ScoreEvent[] = [];
     for (const sn of notes) {
+      const voice = voiceByNote?.get(sn) ?? 1;
       if (sn.isRest) {
-        events.push({ kind: 'rest', startBeat: sn.startBeat, duration: sn.durationBeats, voice: 1 });
+        events.push({ kind: 'rest', startBeat: sn.startBeat, duration: sn.durationBeats, voice });
         continue;
       }
       events.push({
@@ -1704,7 +1741,7 @@ export function soloLineToPartModel(line: SoloLine, totalBars: number): PartMode
         pitch: zappaSoloExportWrittenMidi(sn.midi),
         startBeat: sn.startBeat,
         duration: sn.durationBeats,
-        voice: 1,
+        voice,
         motifRef:
           [sn.tupletRole && sn.tupletRole !== 'plain' ? `zappa_tuplet:${sn.tupletRole}` : '', sn.marker ? `zappa:${sn.marker}` : '']
             .filter(Boolean)

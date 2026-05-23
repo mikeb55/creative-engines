@@ -148,11 +148,8 @@ import {
   createFrankZappaHarmonyAccumulator,
   finalizeFrankZappaMetadata,
 } from './frankZappaSlice';
-import {
-  applyZappaSoloToMetadata,
-  generateZappaSolo,
-  mergeZappaSoloPart,
-} from '../solo/zappasoloEngine';
+import { applyZappaSoloToMetadata, mergeZappaSoloPart } from '../solo/zappasoloEngine';
+import { resolveFrankZappaSoloLineForContext } from '../song-mode/songModeZappaSoloRiffBridge';
 import {
   accumulateBarryHarrisHarmonyDiagnostics,
   createBarryHarrisHarmonyAccumulator,
@@ -452,7 +449,10 @@ import {
   augmentEcmChamberTexturePlan,
   applyEcmChamberPhraseEdgeSpaceToParts,
 } from '../ecm/ecmChamberArrangementPolicy';
-import { finalizeAndSealDuoScoreBarMath } from '../score-integrity/duoBarMathFinalize';
+import {
+  finalizeAndSealDuoScoreBarMath,
+  finalizeMeasureBarMathPerVoice,
+} from '../score-integrity/duoBarMathFinalize';
 import { isProtectedBar } from '../score-integrity/identityLock';
 import {
   assertHookBarsUnchangedSinceSnapshot,
@@ -3921,7 +3921,7 @@ function buildGuitarPart(
 
   if (isSongwriterFrankZappa && context.generationMetadata) {
     finalizeFrankZappaMetadata(context.generationMetadata, fzAccum);
-    const solo = generateZappaSolo(context, context.generationMetadata.zappaSoloOptions);
+    const solo = resolveFrankZappaSoloLineForContext(context);
     applyZappaSoloToMetadata(context.generationMetadata, solo);
   }
 
@@ -6679,19 +6679,18 @@ export function generateGoldenPathDuoScore(
       }
     }
   }
+  let zappaFerocitySoloLane = false;
   if (context.generationMetadata?.songwriterStyleId === 'frank_zappa' && context.generationMetadata) {
     const md = context.generationMetadata;
     if (!md.soloLine) {
-      const solo = generateZappaSolo(context, md.zappaSoloOptions);
+      const solo = resolveFrankZappaSoloLineForContext(context);
       applyZappaSoloToMetadata(md, solo);
     }
-    if (md.soloLine) {
+    zappaFerocitySoloLane = md.soloLine?.digest?.includes('bluesrockFerocious') === true;
+    if (md.soloLine && !zappaFerocitySoloLane) {
       afterExpressive = mergeZappaSoloPart(afterExpressive, md.soloLine);
     }
     applyFrankZappaImpliedInnerVoicePass(afterExpressive, context);
-  }
-  if (context.generationMetadata?.songwriterStyleId === 'frank_zappa' && context.generationMetadata) {
-    validateBarryHarrisConformance(afterExpressive, context.generationMetadata);
   }
   stampAllMeasuresBeatSpansFromContext(afterExpressive, context);
   applyVoiceBundleVoicingSpreadFloor(afterExpressive, context);
@@ -6741,6 +6740,21 @@ export function generateGoldenPathDuoScore(
     applyWybleDuoVelocityPolicy(afterExpressive);
   }
   finalizeAndSealDuoScoreBarMath(afterExpressive);
+  if (zappaFerocitySoloLane && context.generationMetadata?.soloLine) {
+    afterExpressive = mergeZappaSoloPart(afterExpressive, context.generationMetadata.soloLine);
+    const zappaSoloPart = afterExpressive.parts.find((p) => p.id === 'zappa_solo');
+    if (zappaSoloPart) {
+      const rhythmSnap = afterExpressive.duoRhythmSnap === 'eighth_beats' ? 'eighth' : 'quarter';
+      const map = effectiveBarMeterMapForDuo(context);
+      for (const m of zappaSoloPart.measures) {
+        m.measureBeatSpanQuarters = resolveMeasureBeatSpanQuarters(m.index, map);
+        finalizeMeasureBarMathPerVoice(m, { rhythmSnap });
+      }
+    }
+  }
+  if (context.generationMetadata?.songwriterStyleId === 'frank_zappa' && context.generationMetadata) {
+    validateBarryHarrisConformance(afterExpressive, context.generationMetadata);
+  }
   if (
     isGuitarBassDuoFamily(context.presetId) &&
     context.presetId !== 'ecm_chamber' &&

@@ -40,13 +40,22 @@ export function assertSibeliusExportMeasureStructure(xml: string): void {
       }
       if (anyVoice2InPart) {
         const backupCount = (inner.match(/<backup>/g) ?? []).length;
-        if (backupCount !== 1) {
+        const voiceNums = [...inner.matchAll(/<voice>(\d+)<\/voice>/g)].map((vm) => Number(vm[1]));
+        const voicesUsed = new Set(voiceNums.filter((v) => Number.isFinite(v) && v >= 1));
+        const expectedBackups = voicesUsed.size > 1 ? voicesUsed.size - 1 : 0;
+        if (partId === 'zappa_solo') {
+          if (backupCount !== expectedBackups) {
+            errors.push(
+              `part ${partId} measure ${measureNum}: ferocity solo requires ${expectedBackups} <backup> for ${voicesUsed.size} voices (found ${backupCount})`
+            );
+          }
+        } else if (backupCount !== 1) {
           errors.push(
             `part ${partId} measure ${measureNum}: dual-voice part requires exactly one <backup> per measure (found ${backupCount})`
           );
         }
         const firstV2 = inner.indexOf('<voice>2</voice>');
-        if (firstV2 >= 0 && backupIdx >= 0 && firstV2 < backupIdx) {
+        if (partId !== 'zappa_solo' && firstV2 >= 0 && backupIdx >= 0 && firstV2 < backupIdx) {
           errors.push(`part ${partId} measure ${measureNum}: <backup> must precede first voice-2 <note>`);
         }
       }
