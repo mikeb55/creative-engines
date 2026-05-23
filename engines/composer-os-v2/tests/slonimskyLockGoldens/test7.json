@@ -1,0 +1,22 @@
+{
+  "id": "test7",
+  "seed": 42,
+  "noteCount": 433,
+  "burstBarCount": 0,
+  "avgNotesPerBar": 0,
+  "partIds": [
+    "sq_violin_1",
+    "sq_violin_2",
+    "sq_viola",
+    "sq_cello",
+    "bb_alto_sax",
+    "bb_tenor_sax",
+    "bb_trumpets",
+    "bb_trombones",
+    "bb_piano",
+    "bb_drums"
+  ],
+  "sqNoteCount": 155,
+  "bbNoteCount": 278,
+  "slonimskyEnsembleCellReceiptCount": 2
+}

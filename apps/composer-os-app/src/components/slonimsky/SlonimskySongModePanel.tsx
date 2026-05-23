@@ -18,6 +18,11 @@ import {
   type SlonimskySectionLabel,
   type SlonimskySectionOverrides,
 } from '../../types/slonimskySongModeState';
+import {
+  isSlonimskyGenericVoiceWarning,
+  SLONIMSKY_GENERIC_VOICE_OPTION_SUFFIX,
+  SLONIMSKY_GENERIC_VOICE_WARNING_BODY,
+} from '../../constants/slonimskyHarmonicVoices';
 
 const WRITER_LABELS: Record<SlonimskySongModeWriterId, string> = {
   pat_metheny: 'Pat Metheny',
@@ -96,8 +101,37 @@ export function SlonimskySongModePanel({
       </div>
 
       <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '0.65rem' }}>
-        <span style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: 4 }}>
-          Writer (Z9 allowlist)
+        <span
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            gap: '0.35rem',
+            fontSize: '0.72rem',
+            color: 'var(--text-muted)',
+            marginBottom: 4,
+          }}
+        >
+          <span>Writer (Z9 allowlist)</span>
+          <span
+            aria-label={`Selected writer: ${WRITER_LABELS[writerId]}`}
+            style={{
+              fontSize: '0.78rem',
+              padding: '0.15rem 0.55rem',
+              borderRadius: 999,
+              border: '1px solid var(--border-subtle, rgba(128,128,128,0.35))',
+              background: 'rgba(100,160,255,0.1)',
+              color: 'var(--text)',
+            }}
+          >
+            {WRITER_LABELS[writerId]}
+            {isSlonimskyGenericVoiceWarning(writerId) ? (
+              <span style={{ color: 'rgb(180, 120, 20)' }} title={SLONIMSKY_GENERIC_VOICE_WARNING_BODY}>
+                {' '}
+                ⚠
+              </span>
+            ) : null}
+          </span>
         </span>
         <select
           value={writerId}
@@ -122,9 +156,21 @@ export function SlonimskySongModePanel({
           {SLONIMSKY_SONG_MODE_WRITERS.map((id) => (
             <option key={id} value={id} title={SLONIMSKY_WRITER_ONE_LINER[id]}>
               {WRITER_LABELS[id]}
+              {isSlonimskyGenericVoiceWarning(id) ? SLONIMSKY_GENERIC_VOICE_OPTION_SUFFIX : ''}
             </option>
           ))}
         </select>
+        {isSlonimskyGenericVoiceWarning(writerId) ? (
+          <p
+            style={{
+              margin: '0.35rem 0 0',
+              fontSize: '0.72rem',
+              color: 'rgb(180, 120, 20)',
+            }}
+          >
+            {SLONIMSKY_GENERIC_VOICE_WARNING_BODY}
+          </p>
+        ) : null}
       </label>
 
       <div style={{ marginBottom: '0.75rem' }}>

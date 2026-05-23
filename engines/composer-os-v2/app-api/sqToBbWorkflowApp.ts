@@ -14,6 +14,7 @@ import {
   shouldApplySqToBbGceGates,
   type SqBbGceGate1Record,
 } from '../core/counterpoint/sqToBbGceGates';
+import { applyContrapuntalPass4MusicXmlMerge } from '../core/counterpoint/contrapuntalPass4MusicXmlMerge';
 import {
   abstractLineSetToSqScoreModel,
   bbSectionRenderToScoreModel,
@@ -623,12 +624,13 @@ export function runSqToBbWorkflowApp(req: GenerateRequest, outputDir: string): G
     };
   }
 
-  const sqScore = abstractLineSetToSqScoreModel(lines);
+  const sqScore = applyContrapuntalPass4MusicXmlMerge(abstractLineSetToSqScoreModel(lines), context);
   const sqEx = exportScoreModelToMusicXml(sqScore, { bpm: req.bpm ?? 120 });
   const render = context.generationMetadata?.bigBandSectionRender;
-  const bbScore = render
+  const bbBase = render
     ? bbSectionRenderToScoreModel(render, totalBars)
     : abstractLineSetToSqScoreModel(lines);
+  const bbScore = applyContrapuntalPass4MusicXmlMerge(bbBase, context);
   const bbEx = exportScoreModelToMusicXml(bbScore, { bpm: req.bpm ?? 120 });
 
   fs.mkdirSync(outputDir, { recursive: true });

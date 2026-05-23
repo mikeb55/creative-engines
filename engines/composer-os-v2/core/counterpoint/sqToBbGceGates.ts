@@ -585,6 +585,33 @@ function applyContextChordTimelineToSqBbStub(
   }
 }
 
+/**
+ * BB section-render stubs use bar-addressed timing (phrase/intent `startBeat` aligns with
+ * `AbstractLineSet.offsetBars`). Convert to quarter-note beats for ScoreModel / MusicXML export.
+ */
+function pushBbStubNoteToPart(
+  part: PartModel,
+  barCount: number,
+  pitchMidi: number,
+  absBar: number,
+  durationBars: number,
+): void {
+  let remainBeats = Math.max(0.25, durationBars) * BEATS_PER_MEASURE;
+  let barIndex = Math.min(barCount, Math.max(1, Math.floor(absBar) + 1));
+  let beatInBar = (absBar - (barIndex - 1)) * BEATS_PER_MEASURE;
+  while (remainBeats > 1e-6 && barIndex <= barCount) {
+    const m = part.measures[barIndex - 1]!;
+    const room = BEATS_PER_MEASURE - beatInBar;
+    const take = Math.min(remainBeats, room);
+    if (take > 1e-6) {
+      m.events.push(createNote(Math.round(pitchMidi), beatInBar, take, 1));
+    }
+    remainBeats -= take;
+    barIndex += 1;
+    beatInBar = 0;
+  }
+}
+
 /** Minimal BB ScoreModel from Phase 6 phrase render for Gate 2 GCE pillars. */
 export function scoreModelFromSqBbSectionRender(
   render: BigBandSectionRenderOutput,
@@ -600,12 +627,8 @@ export function scoreModelFromSqBbSectionRender(
     for (const stub of phrase.notes) {
       const partId = SECTION_TO_PART[stub.section] ?? 'bb_alto_sax';
       const part = partMap.get(partId)!;
-      const absBeat = phrase.startBeat + stub.startBeat;
-      const barIndex = Math.min(barCount, Math.max(1, Math.floor(absBeat) + 1));
-      const beatInBar = (absBeat - (barIndex - 1)) * BEATS_PER_MEASURE;
-      const m = part.measures[barIndex - 1]!;
-      const dur = Math.max(0.25, stub.durationBeats);
-      m.events.push(createNote(stub.pitchMidi, beatInBar, dur, 1));
+      const absBar = phrase.startBeat + stub.startBeat;
+      pushBbStubNoteToPart(part, barCount, stub.pitchMidi, absBar, stub.durationBeats);
     }
   }
 

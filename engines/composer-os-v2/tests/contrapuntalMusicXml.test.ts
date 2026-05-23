@@ -130,10 +130,22 @@ function testBbRenderMergedWhenGatesPass(): boolean {
   const ex = exportScoreModelToMusicXml(merged);
   const alto = merged.parts.find((p) => p.id === 'bb_alto_sax');
   const hasBbNotes = Boolean(alto?.measures.some((m) => m.events.some((e) => e.kind === 'note')));
+  const ctx16 = makeDuoCtx(88001, 'bob_brookmeyer', Array.from({ length: 16 }, () => 'Cmaj7'));
+  precomputeContrapuntalLines(ctx16, 'bob_brookmeyer');
+  wireBigBandSectionRendererOnContext(ctx16);
+  const render16 = (ctx16.generationMetadata as GenerationMetadata).bigBandSectionRender;
+  const bb16 = render16?.phrases.length ? bbSectionRenderToScoreModel(render16, 16) : null;
+  const directBb = bb16 ? exportScoreModelToMusicXml(bb16, { bpm: 120 }) : { success: false };
+  const tbnM10 = Boolean(
+    bb16?.parts.find((p) => p.id === 'bb_trombones')?.measures[9]?.events.some((e) => e.kind === 'note'),
+  );
+
   return (
     ex.success === true &&
     hasBbNotes &&
-    (meta.contrapuntalLineMusicXmlMergeReceipt?.bbBarsWritten ?? 0) > 0
+    (meta.contrapuntalLineMusicXmlMergeReceipt?.bbBarsWritten ?? 0) > 0 &&
+    directBb.success === true &&
+    Boolean(tbnM10)
   );
 }
 

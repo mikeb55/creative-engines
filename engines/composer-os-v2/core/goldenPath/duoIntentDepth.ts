@@ -126,40 +126,60 @@ export function meanNoteVelocity(part: PartModel | undefined): number {
   return velocities.reduce((sum, value) => sum + value, 0) / velocities.length;
 }
 
-function applyVelocityDelta(part: PartModel, deltaForNote: (note: NoteEvent) => number): void {
-  for (const measure of part.measures) {
-    for (const event of measure.events) {
-      if (event.kind !== 'note') continue;
-      const note = event as NoteEvent;
-      note.velocity = clampVelocity((note.velocity ?? 80) + deltaForNote(note));
-    }
-  }
+function applyVelocityDelta(part: PartModel, deltaForNote: (note: NoteEvent) => number): PartModel {
+  return {
+    ...part,
+    measures: part.measures.map((measure) => ({
+      ...measure,
+      events: measure.events.map((event) => {
+        if (event.kind !== 'note') return event;
+        const note = event as NoteEvent;
+        return {
+          ...note,
+          velocity: clampVelocity((note.velocity ?? 80) + deltaForNote(note)),
+        };
+      }),
+    })),
+  };
 }
+
+export type DuoIntentVelocityBalanceResult = {
+  score: ScoreModel;
+  receipt: DuoIntentVelocityBalanceReceipt;
+};
 
 export function applyDuoIntentVelocityBalance(
   score: ScoreModel,
   context: CompositionContext
-): DuoIntentVelocityBalanceReceipt | undefined {
+): DuoIntentVelocityBalanceResult | undefined {
   const intent = resolveProductDuoIntent(context);
   if (!intent) return undefined;
 
-  const guitar = score.parts.find((part) => part.id === 'guitar' || part.instrumentIdentity === 'clean_electric_guitar');
-  const bass = score.parts.find((part) => part.id === 'bass' || part.instrumentIdentity === 'acoustic_upright_bass');
+  const work = structuredClone(score);
+  const guitar = work.parts.find((part) => part.id === 'guitar' || part.instrumentIdentity === 'clean_electric_guitar');
+  const bass = work.parts.find((part) => part.id === 'bass' || part.instrumentIdentity === 'acoustic_upright_bass');
   if (!guitar || !bass) return undefined;
 
   const guitarMeanBefore = meanNoteVelocity(guitar);
   const bassMeanBefore = meanNoteVelocity(bass);
   const accompanimentDelta = intent === 'conversational' ? -8 : 7;
 
-  applyVelocityDelta(guitar, (note) => ((note.voice ?? 1) === 1 ? (intent === 'supportive' ? 2 : 0) : accompanimentDelta));
-  applyVelocityDelta(bass, () => accompanimentDelta);
+  const guitarIdx = work.parts.findIndex((p) => p === guitar);
+  const bassIdx = work.parts.findIndex((p) => p === bass);
+  const guitarNext = applyVelocityDelta(
+    guitar,
+    (note) => ((note.voice ?? 1) === 1 ? (intent === 'supportive' ? 2 : 0) : accompanimentDelta)
+  );
+  const bassNext = applyVelocityDelta(bass, () => accompanimentDelta);
+  if (guitarIdx >= 0) work.parts[guitarIdx] = guitarNext;
+  if (bassIdx >= 0) work.parts[bassIdx] = bassNext;
 
   const receipt: DuoIntentVelocityBalanceReceipt = {
     intent,
     guitarMeanBefore,
-    guitarMeanAfter: meanNoteVelocity(guitar),
+    guitarMeanAfter: meanNoteVelocity(guitarNext),
     bassMeanBefore,
-    bassMeanAfter: meanNoteVelocity(bass),
+    bassMeanAfter: meanNoteVelocity(bassNext),
     accompanimentDelta,
     receipt:
       intent === 'conversational'
@@ -171,5 +191,5 @@ export function applyDuoIntentVelocityBalance(
     ...context.generationMetadata,
     duoIntentVelocityBalanceReceipt: receipt,
   };
-  return receipt;
+  return { score: work, receipt };
 }

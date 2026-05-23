@@ -1,0 +1,11 @@
+{
+  "id": "test1",
+  "seed": 42,
+  "noteCount": 307,
+  "burstBarCount": 0,
+  "avgNotesPerBar": 5.875,
+  "partIds": [
+    "guitar",
+    "bass"
+  ]
+}

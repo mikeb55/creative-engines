@@ -61,18 +61,18 @@ export function runDuoIntentTests(): { ok: boolean; name: string }[] {
   const convScore = makeVelocityFixtureScore();
   const convContext = makeVelocityFixtureContext('conversational');
   const convBassBefore = meanNoteVelocity(convScore.parts.find((p) => p.id === 'bass'));
-  const convReceipt = applyDuoIntentVelocityBalance(convScore, convContext);
-  const convBassAfter = meanNoteVelocity(convScore.parts.find((p) => p.id === 'bass'));
+  const convVel = applyDuoIntentVelocityBalance(convScore, convContext);
+  const convBassAfter = meanNoteVelocity(convVel?.score.parts.find((p) => p.id === 'bass'));
 
   const supScore = makeVelocityFixtureScore();
   const supContext = makeVelocityFixtureContext('supportive');
   const supBassBefore = meanNoteVelocity(supScore.parts.find((p) => p.id === 'bass'));
-  const supReceipt = applyDuoIntentVelocityBalance(supScore, supContext);
-  const supBassAfter = meanNoteVelocity(supScore.parts.find((p) => p.id === 'bass'));
+  const supVel = applyDuoIntentVelocityBalance(supScore, supContext);
+  const supBassAfter = meanNoteVelocity(supVel?.score.parts.find((p) => p.id === 'bass'));
   out.push({
     ok:
-      convReceipt?.accompanimentDelta === -8 &&
-      supReceipt?.accompanimentDelta === 7 &&
+      convVel?.receipt.accompanimentDelta === -8 &&
+      supVel?.receipt.accompanimentDelta === 7 &&
       convBassAfter < convBassBefore &&
       supBassAfter > supBassBefore,
     name: 'duoIntent depth: conversational lowers and supportive raises accompaniment velocity',

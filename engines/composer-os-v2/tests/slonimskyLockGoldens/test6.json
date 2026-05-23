@@ -1,0 +1,12 @@
+{
+  "id": "test6",
+  "seed": 42,
+  "noteCount": 85,
+  "burstBarCount": 0,
+  "avgNotesPerBar": 6.875,
+  "slonimskyAllowedOutsideOverride": 0,
+  "partIds": [
+    "guitar",
+    "bass"
+  ]
+}

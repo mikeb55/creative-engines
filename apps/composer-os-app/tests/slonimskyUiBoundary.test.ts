@@ -8,6 +8,7 @@ import React from 'react';
 import { act, create } from 'react-test-renderer';
 import { describe, expect, it } from 'vitest';
 import { SlonimskyUniversalPanel } from '../src/components/SlonimskyUniversalPanel';
+import { SlonimskySongModePanel } from '../src/components/slonimsky/SlonimskySongModePanel';
 import { DEFAULT_SLONIMSKY_MACRO_STATE } from '../src/types/slonimskyMacroState';
 import { slonimskyUiExtrasFromAdvanced } from '../src/types/slonimskyAdvancedState';
 
@@ -19,6 +20,26 @@ describe('slonimsky-ui boundary', () => {
     );
     expect(out.harmonicVoice).toBeUndefined();
     expect(out.styleGenerationContextKeys).toContain('slonimsky:harmonic_voice=sonic_youth_generic');
+  });
+
+  it('sonic_youth warning badge renders when selected in song mode writer panel', async () => {
+    let tree: ReturnType<typeof create>;
+    await act(async () => {
+      tree = create(
+        React.createElement(SlonimskySongModePanel, {
+          writerId: 'sonic_youth',
+          onWriterIdChange: () => undefined,
+          state: DEFAULT_SLONIMSKY_MACRO_STATE,
+          onChange: () => undefined,
+          sectionOverrides: {},
+          onSectionOverridesChange: () => undefined,
+        })
+      );
+    });
+    const json = JSON.stringify(tree!.toJSON());
+    expect(json).toContain('generic voice');
+    expect(json).toContain('no dedicated VRB bundle');
+    expect(json).toContain('⚠');
   });
 
   it('sonic_youth warning badge renders when selected in universal panel', async () => {

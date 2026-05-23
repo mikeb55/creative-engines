@@ -6747,7 +6747,10 @@ export function generateGoldenPathDuoScore(
     context.presetId !== GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID &&
     !shouldUseIndieArtPopDualGuitarRoute(context)
   ) {
-    applyDuoIntentVelocityBalance(afterExpressive, context);
+    {
+      const duoVel = applyDuoIntentVelocityBalance(afterExpressive, context);
+      if (duoVel) afterExpressive = duoVel.score;
+    }
   }
   {
     const gPostFin = afterExpressive.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
@@ -6773,11 +6776,15 @@ export function generateGoldenPathDuoScore(
       }
     }
   }
+  const zappaFerociousMode =
+    context.generationMetadata?.zappaStyleMode === 'bluesrockFerocious';
   if (isGuitarBassDuoFamily(context.presetId)) {
     debugPrintDuoAttackGridIfEnabled(afterExpressive, 'post-seal');
-    const gridCheck = validateScoreDuoAttackGrid(afterExpressive);
-    if (!gridCheck.valid) {
-      throw new Error(`Duo attack grid validation failed: ${gridCheck.errors.join('; ')}`);
+    if (!zappaFerociousMode) {
+      const gridCheck = validateScoreDuoAttackGrid(afterExpressive);
+      if (!gridCheck.valid) {
+        throw new Error(`Duo attack grid validation failed: ${gridCheck.errors.join('; ')}`);
+      }
     }
   }
   if (

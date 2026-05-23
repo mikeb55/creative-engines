@@ -8,6 +8,11 @@ import {
   SLONIMSKY_KNOB_TOOLTIP,
 } from '../constants/slonimskyUxCopy';
 import type { SlonimskyMacroState } from '../types/slonimskyMacroState';
+import {
+  isSlonimskyGenericVoiceWarning,
+  SLONIMSKY_GENERIC_VOICE_OPTION_SUFFIX,
+  SLONIMSKY_GENERIC_VOICE_WARNING_BODY,
+} from '../constants/slonimskyHarmonicVoices';
 
 function clampKnob(n: number): number {
   if (!Number.isFinite(n)) return 0;
@@ -148,11 +153,11 @@ export function SlonimskyUniversalPanel({
             {voiceOptions.map((v) => (
               <option key={v.id} value={v.id}>
                 {v.label}
-                {v.genericVoiceWarning ? ' ⚠ generic voice' : ''}
+                {v.genericVoiceWarning ? SLONIMSKY_GENERIC_VOICE_OPTION_SUFFIX : ''}
               </option>
             ))}
           </select>
-          {harmonicVoiceId === 'sonic_youth' ? (
+          {harmonicVoiceId != null && isSlonimskyGenericVoiceWarning(harmonicVoiceId) ? (
             <p
               style={{
                 margin: '0.35rem 0 0',
@@ -160,7 +165,7 @@ export function SlonimskyUniversalPanel({
                 color: 'rgb(180, 120, 20)',
               }}
             >
-              ⚠ generic voice — no dedicated VRB bundle; engine uses neutral harmonic voice.
+              {SLONIMSKY_GENERIC_VOICE_WARNING_BODY}
             </p>
           ) : null}
         </div>

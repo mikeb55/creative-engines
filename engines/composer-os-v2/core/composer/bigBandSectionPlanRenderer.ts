@@ -21,6 +21,7 @@ import type {
   SectionWritingIntent,
 } from '../counterpoint/quartetFeatureTypes';
 import type { BackgroundsPlan, SoliPlan } from './bigBandSectionWriter';
+import { BEATS_PER_MEASURE } from '../score-model/scoreModelTypes';
 import {
   DEFAULT_BB_LIGHT_TOUCH_OFF,
   filterAssignmentsForBbLightTouch,
@@ -207,8 +208,9 @@ function materializeSoliNotes(
   soliRhythm: SoliRhythmPlan,
   lightTouch: BbLightTouchPolicy = DEFAULT_BB_LIGHT_TOUCH_OFF,
 ): BigBandSectionNoteStub[] {
-  const phraseSpan = Math.max(0.25, intent.endBeat - intent.startBeat);
-  const durations = cycleDurations(phraseSpan, soliRhythm.primaryDurationsBeats);
+  const phraseSpanBars = Math.max(0.25, intent.endBeat - intent.startBeat);
+  const phraseSpanBeats = phraseSpanBars * BEATS_PER_MEASURE;
+  const durations = cycleDurations(phraseSpanBeats, soliRhythm.primaryDurationsBeats);
   const assignments = lightTouch.enabled
     ? filterAssignmentsForBbLightTouch(intent.assignments, lightTouch)
     : intent.assignments;
@@ -222,16 +224,17 @@ function materializeSoliNotes(
     let cursor = intent.startBeat;
     let di = 0;
     for (const n of src) {
-      const dur = durations[di % durations.length] ?? phraseSpan;
+      const durBeats = durations[di % durations.length] ?? phraseSpanBeats;
+      const durBars = durBeats / BEATS_PER_MEASURE;
       stubs.push({
         section: assign.section,
         role: assign.role,
         pitchMidi: Math.round(n.pitchMidi),
         startBeat: Math.max(0, n.offsetBars - intent.startBeat),
-        durationBeats: Math.min(dur, Math.max(0.25, intent.endBeat - cursor)),
+        durationBeats: Math.min(durBars, Math.max(0.25, intent.endBeat - cursor)),
         lineDerived: assign.lineDerived,
       });
-      cursor += dur;
+      cursor += durBars;
       di++;
       if (cursor >= intent.endBeat - 1e-9) break;
     }

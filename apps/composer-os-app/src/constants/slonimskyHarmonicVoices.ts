@@ -80,6 +80,18 @@ const SONIC_YOUTH_OPTION: SlonimskyHarmonicVoiceOption = {
   genericVoiceWarning: true,
 };
 
+/** Song Mode writer + Harmonic Voice — no dedicated VRB; UI warns only. */
+export const SLONIMSKY_SONIC_YOUTH_GENERIC_VOICE_ID = 'sonic_youth' as const;
+
+export function isSlonimskyGenericVoiceWarning(id: string): boolean {
+  return id.trim().toLowerCase() === SLONIMSKY_SONIC_YOUTH_GENERIC_VOICE_ID;
+}
+
+export const SLONIMSKY_GENERIC_VOICE_OPTION_SUFFIX = ' ⚠ generic voice';
+
+export const SLONIMSKY_GENERIC_VOICE_WARNING_BODY =
+  '⚠ generic voice — no dedicated VRB bundle; engine uses neutral harmonic voice.';
+
 export function slonimskyHarmonicVoiceModeForPreset(presetId: string): SlonimskyHarmonicVoiceMode {
   if (presetId === 'song_mode') return 'song_mode';
   if (presetId === 'guitar_bass_duo' || presetId === 'guitar_bass_duo_single_line') return 'gbd';

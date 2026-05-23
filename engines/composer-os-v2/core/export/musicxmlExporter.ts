@@ -955,9 +955,9 @@ function eventsToXml(
         continue;
       }
 
-      const nextE = voiceEvents[i + 1];
-      const nextSharesBeat = nextE !== undefined && nextE.startBeat === sb;
-      if (safeStart > cursor && !nextSharesBeat) {
+      // Pad to chord/note onset. Do not skip when the next event shares startBeat (same chord stack);
+      // that guard only avoided rests between simultaneous tones, not rests before the stack (SQ→BB stubs).
+      if (safeStart > cursor) {
         const restDiv = safeStart - cursor;
         const parts = decompose(restDiv);
         xml += emitRestTicks(parts, voice, staffPolyphonyXml);

@@ -213,12 +213,19 @@ function testSonicYouthNoHarmonicVoicePayload(): boolean {
   );
 }
 
-function testSonicYouthWarningRendersInUniversalPanel(): boolean {
-  const src = readAppFile('components/SlonimskyUniversalPanel.tsx');
+function testSonicYouthGenericVoiceWarningsInPanels(): boolean {
+  const universal = readAppFile('components/SlonimskyUniversalPanel.tsx');
+  const songMode = readAppFile('components/slonimsky/SlonimskySongModePanel.tsx');
+  const constants = readAppFile('constants/slonimskyHarmonicVoices.ts');
+  const constantsOk =
+    constants.includes('generic voice') && constants.includes('no dedicated VRB bundle');
   return (
-    src.includes("harmonicVoiceId === 'sonic_youth'") &&
-    src.includes('generic voice') &&
-    src.includes('no dedicated VRB bundle')
+    constantsOk &&
+    universal.includes('isSlonimskyGenericVoiceWarning') &&
+    universal.includes('SLONIMSKY_GENERIC_VOICE_WARNING_BODY') &&
+    songMode.includes('isSlonimskyGenericVoiceWarning(writerId)') &&
+    songMode.includes('SLONIMSKY_GENERIC_VOICE_OPTION_SUFFIX') &&
+    songMode.includes('SLONIMSKY_GENERIC_VOICE_WARNING_BODY')
   );
 }
 
@@ -240,7 +247,7 @@ export function runSlonimskyUiTests(): { name: string; ok: boolean }[] {
     ['slonimsky-ui — advanced pin/forbid → cell context keys', testAdvancedDrawerPinForbidCellKeys],
     ['slonimsky-ui — harmonic voice confirmed VRB → harmonicVoice', testHarmonicVoicePassesConfirmedVrb],
     ['slonimsky-ui — sonic_youth → no harmonicVoice + generic metadata key', testSonicYouthNoHarmonicVoicePayload],
-    ['slonimsky-ui — sonic_youth warning badge in universal panel', testSonicYouthWarningRendersInUniversalPanel],
+    ['slonimsky-ui — sonic_youth generic voice warnings (universal + song mode)', testSonicYouthGenericVoiceWarningsInPanels],
     ['slonimsky-ui — advanced drawer wired in HomeGenerate', testAdvancedDrawerMountedFromHomeGenerate],
   ];
   return cases.map(([name, fn]) => ({ name, ok: fn() }));
