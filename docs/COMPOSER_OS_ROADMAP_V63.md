@@ -3,7 +3,7 @@ Status: **complete** · V63 closed **2026-05-24**
 
 ## V63 final baseline
 Smoke: **fast 285/66/0** · **full 450/80/0**  
-Last commit: **e4453b0f**  
+Last commit: **c6322a1c**  
 Desktop: `apps/composer-os-desktop/release/Composer-OS.exe` + `Composer-OS-Setup.exe` (rebuilt S6)
 
 ## Goal (achieved)
@@ -18,7 +18,7 @@ Promote stub voices to real engine implementations. Remove ⚠ badges when slice
 | **S3** | joe_pass | GBD VRB | 1996e6de | `joePassGbdDistinct.json` |
 | **S4** | allan_holdsworth, scott_henderson | GBD VRB | 2ebcb40c | `allanHoldsworthGbdDistinct.json`, `scottHendersonGbdDistinct.json` |
 | **S5** | sonic_youth | Song Mode VRB | 6fdb86ba | `sonicYouthDistinct.json` |
-| **S6** | All promoted | Smoke + UI boundary + desktop | e4453b0f | `promotedVoicesV63UiBoundary.json` + `v63PromotedVoicesGolden.test.ts` |
+| **S6** | All promoted | Smoke + UI boundary + desktop | c6322a1c | `promotedVoicesV63UiBoundary.json` + `v63PromotedVoicesGolden.test.ts` |
 
 ## S6 closeout
 - UI/boundary golden: `slonimskyUiGoldens/promotedVoicesV63UiBoundary.json`
