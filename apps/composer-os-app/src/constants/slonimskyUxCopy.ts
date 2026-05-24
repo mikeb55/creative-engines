@@ -68,7 +68,7 @@ export const SLONIMSKY_GBD_WRITER_ONE_LINER: Record<SlonimskyGbdWriterId, string
   hendrix: 'Blues-rock fire, wide dynamic expression',
   fripp: 'Oblique, layered, textural outside the groove',
   wes_montgomery: 'Warm octave jazz lines, bebop-blues riff cells, lyrical then riff',
-  joe_pass: 'Walking chord melody, lyrical then chromatic (stub)',
+  joe_pass: 'Fingerstyle chord-melody line, chromatic bebop phrasing',
   allan_holdsworth: 'Legato outside lines, chromatic then angular (stub)',
   scott_henderson: 'Fusion blaze, angular then riff (stub)',
 };

@@ -890,6 +890,16 @@ const DG_BASE = [
   'DG_MOD_01 — defaultRockMinor / majorBallad / ambientModal pools; ComfortablyNumb / ShineOn / WYWH presets.',
 ] as const;
 
+const JP_BASE = [
+  'JP_MELO_01 — Fingerstyle single-line chord-melody; guide-tone targets with chromatic approach tones.',
+  'JP_VL_01 — Sophisticated voice-leading: stepwise 3rd/7th resolution; enclosure figures on strong beats.',
+  'JP_RHY_01 — Clean bebop 8th-note swing; behind-the-beat placement; sparse rest pockets for clarity.',
+  'JP_CHR_01 — Chromatic approach + passing tones between chord tones (high chromatic budget).',
+  'JP_HARM_01 — maj7 / min7 / dom7 / m7b5 / altered dominants; ii–V–I cadential cells.',
+  'JP_TEX_01 — Light double-stop 3rds on cadences; no funk 16th chord-fragment grid.',
+  'JP_DIFF_01 — vs Larry Carlton: chromatic line not fusion-funk shuffle comp; vs Wes: no octave-thumb stacks.',
+] as const;
+
 const WM_BASE = [
   'WM_MELO_01 — Singing single-note line; thumbs-down octave doubles on phrase peaks (not Nile chord-fragment grid).',
   'WM_RHY_01 — Swing 8th feel; behind-the-beat placement; 2–4 bar riff cells with clear cadence.',
@@ -1344,6 +1354,118 @@ export const WES_MONTGOMERY: VoiceRuleBundle = {
       attackPolicy: 'sustain',
       riffContourPolicy: { rangeCeiling: 14, apexTiming: 0.55, returnTendency: 0.62 },
       variationOperators: ['registerShift', 'targetToneShift', 'cellTransposition', 'ornamentAdd'],
+    });
+  })(),
+};
+
+/** Joe Pass — fingerstyle chord-melody / chromatic bebop line (σ24). */
+export const JOE_PASS: VoiceRuleBundle = {
+  voiceId: 'joe_pass',
+  sigma: 24,
+  family: 'fusion',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 4,
+    allowMidBarChange: true,
+  },
+  bassPolicy: { role: 'root', allowOctaveDoubling: true },
+  voicingPolicy: {
+    minSpreadSemitones: 3,
+    maxSpreadSemitones: 18,
+    clusterSizeNotes: [1, 3],
+    forbidParallelFifths: true,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: { contour: 'stepwise-arc', maxLeapSemitones: 9 },
+  orchestrationPolicy: {
+    anchorToneCount: 1,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: fillReceipts('JP', 'Joe Pass', JP_BASE),
+  },
+  formPolicy: { narrativeArc: 'blues-backbone', sectionRecallEnforced: true },
+  rhythmPolicy: { antiMetric: false },
+  repairPolicy: { resolveParallels: true, maxVoiceOverlap: 4 },
+  contrapuntalLinePolicy: {
+    enabled: true,
+    dissonanceProfile: DIS_LOW,
+    preferredImitationTypes: ['free'],
+    rhythmicIndependenceRequired: true,
+    lineRoleAssignment: 'dynamic',
+  },
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.65,
+    registerInterlock: true,
+    intervalPreference: 'pentatonic_diatonic',
+    textureTagType: 'jazz_swing_line',
+  },
+  riffProfile: (() => {
+    const slots = 8;
+    const accent = new Array<number>(slots).fill(0.38);
+    accent[0] = 0.75;
+    accent[2] = 0.68;
+    accent[4] = 0.72;
+    accent[6] = 0.7;
+    return riffProfileShell({
+      meterPolicy: 'simple',
+      subdivisionGrid: 8,
+      accentTopology: accent,
+      allowPitchStreak: false,
+      homeChordType: 'dom7',
+      chordQualitySet: ['maj7', 'min7', 'dom7', 'dom9', 'm7b5', 'min9', 'maj9', 'alt'],
+      scalePool: {
+        dorian: 0.22,
+        mixolydian: 0.18,
+        bebopDominant: 0.28,
+        bebopMajor: 0.15,
+        melodicMinor: 0.12,
+        altered: 0.1,
+      },
+      chromaticBudget: 0.58,
+      intervalCell: { steps: [1, 2, 1, 2], transpositionMode: 'chromatic' },
+      registerAnchor: 'mid_register',
+      registerBandPerVoice: {
+        lead: { min: 55, max: 78 },
+        guitar: { min: 55, max: 78 },
+      },
+      riffRegisterFloor: 55,
+      riffRegisterCeiling: 78,
+      topNoteLinePolicy: false,
+      riffHarmonicCycleLengthBars: 2,
+      doubleStopPolicy: {
+        intervalsAllowed: [3, 4],
+        stringPairs: [
+          [3, 2],
+          [2, 1],
+        ],
+      },
+      repetitionPolicy: {
+        exactLoopAllowed: false,
+        pedalToneAllowed: true,
+        barIdentityPersistence: 0.42,
+        minExactRepetitions: 2,
+      },
+      modalUsage: 'linear-melodic',
+      swingStyle: 'jazz',
+      pedalBias: 0.42,
+      octaveDisplacementTolerance: 0.32,
+      powerIntervalPolicy: { fifthWeight: 0.3, octaveWeight: 0.2, pedalWeight: 0.35 },
+      ornamentPolicy: {
+        slides: true,
+        ghosts: false,
+        graceAttacks: true,
+        bends: false,
+        deadNotes: false,
+      },
+      silencePolicy: {
+        restProbabilityBySlot: new Array(slots).fill(0.18),
+        styleClass: 'JoePassChordMelody',
+      },
+      attackPolicy: 'sustain',
+      riffContourPolicy: { rangeCeiling: 11, apexTiming: 0.5, returnTendency: 0.68 },
+      variationOperators: ['chromaticAdd', 'targetToneShift', 'ornamentAdd', 'cellTransposition'],
     });
   })(),
 };

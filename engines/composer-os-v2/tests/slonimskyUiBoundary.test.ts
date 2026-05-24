@@ -319,10 +319,11 @@ function testGbdStubWritersWarningOnly(): boolean {
     constants.includes('isSlonimskyGbdStubWriter') &&
     constants.includes('wes_montgomery') &&
     isConfirmedHarmonicVoiceBundle('wes_montgomery') &&
-    stubBody.includes("'joe_pass'") &&
+    isConfirmedHarmonicVoiceBundle('joe_pass') &&
     stubBody.includes("'allan_holdsworth'") &&
     stubBody.includes("'scott_henderson'") &&
-    !stubBody.includes('wes_montgomery')
+    !stubBody.includes('wes_montgomery') &&
+    !stubBody.includes('joe_pass')
   );
 }
 
@@ -342,10 +343,10 @@ export function runSlonimskyUiTests(): { name: string; ok: boolean }[] {
     ['slonimsky-ui — sonic_youth generic voice warnings (universal + song mode)', testSonicYouthGenericVoiceWarningsInPanels],
     ['slonimsky-ui — advanced drawer wired in HomeGenerate', testAdvancedDrawerMountedFromHomeGenerate],
     ['slonimsky-ui — V62 song mode writers golden (7)', verifySongModeWritersV62Golden],
-    ['slonimsky-ui — V62 GBD stub writers golden (4)', verifyGbdWritersV62Golden],
+    ['slonimsky-ui — V62 GBD stub writers golden (2)', verifyGbdWritersV62Golden],
     ['slonimsky-ui — V62 song mode panel lists seven new writers', testSongModePanelListsV62Writers],
     ['slonimsky-ui — V62 mccoy_tyner full slice (no stub warning)', testMccoyTynerNotSongModeStub],
-    ['slonimsky-ui — V62 GBD stub writers (Joe/Allan/Scott); wes shipped', testGbdStubWritersWarningOnly],
+    ['slonimsky-ui — V62 GBD stub writers (Allan/Scott); wes+joe shipped', testGbdStubWritersWarningOnly],
     ['slonimsky-ui — V62 lane3 preset HomeGenerate wiring', verifyLane3PresetWiringGolden],
     ['slonimsky-ui — V62 etude surfaces (Wyble + Slonimsky cell family)', verifyEtudeSurfacesGolden],
   ];

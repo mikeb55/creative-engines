@@ -1,0 +1,13 @@
+{
+  "id": "joe_pass_gbd_distinct",
+  "seed": 66203,
+  "totalBars": 16,
+  "presetId": "guitar_bass_duo",
+  "baselineHarmonicVoice": "larry_carlton",
+  "targetHarmonicVoice": "joe_pass",
+  "minGuitarPitchesDifferent": 8,
+  "minRegisterMeanDelta": 1,
+  "minChromaticBudget": 0.5,
+  "maxBaselineChromaticBudget": 0.45,
+  "fingerprintReceiptIncludes": "JP_MELO_01"
+}

@@ -2,11 +2,6 @@
   "id": "gbd_writers_v62",
   "stubWriters": [
     {
-      "writerId": "joe_pass",
-      "firstPresetLabel": "Lyrical",
-      "macro": { "sourcePreset": "lyrical", "motion": 0, "tension": -0.22, "variation": 0.18 }
-    },
-    {
       "writerId": "allan_holdsworth",
       "firstPresetLabel": "Chromatic",
       "macro": { "sourcePreset": "chromatic", "motion": 0.35, "tension": 0.52, "variation": 0.1 }

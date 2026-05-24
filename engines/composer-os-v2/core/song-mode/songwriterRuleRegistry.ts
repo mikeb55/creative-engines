@@ -1271,13 +1271,14 @@ function wireRiffVrbSongwriterRules(): void {
   ];
   rules.joe_pass = [
     R(
-      'gbd.joe_pass.stub',
-      'Joe Pass — GBD Slonimsky stub (planning weights only; no VRB slice)',
+      'riff.joe_pass.sigma',
+      'Riff VRB σ24 — fingerstyle chord-melody + chromatic bebop line (reuses pat_metheny rule family)',
       'songwriter',
       'melody',
-      5,
+      8,
       'global'
     ),
+    ...metheny,
   ];
   rules.allan_holdsworth = [
     R(

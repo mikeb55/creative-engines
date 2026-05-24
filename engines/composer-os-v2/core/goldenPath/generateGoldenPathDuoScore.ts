@@ -2340,6 +2340,14 @@ function buildSongwriterMelodyProfile(
         intervalBias: 'stepwise',
         rhythmicFeel: 'laid_back',
       };
+    case 'joe_pass':
+      return {
+        phraseIntentBias: 'arch',
+        densityBias: 0.02,
+        offbeatBias: 0.38,
+        intervalBias: 'chromatic',
+        rhythmicFeel: 'flowing',
+      };
     case 'brian_wilson':
       return {
         phraseIntentBias: 'arch',

@@ -328,7 +328,8 @@ function catalogueSectionForGbdSongwriter(songwriterId: string | undefined, bar:
   if (
     songwriterId === 'pat_metheny' ||
     songwriterId === 'wayne_shorter' ||
-    songwriterId === 'wes_montgomery'
+    songwriterId === 'wes_montgomery' ||
+    songwriterId === 'joe_pass'
   ) {
     return 'heptatonic_scales';
   }

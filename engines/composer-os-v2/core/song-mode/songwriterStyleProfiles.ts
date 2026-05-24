@@ -1953,7 +1953,8 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
   },
   joe_pass: {
     id: 'joe_pass',
-    description: 'GBD Slonimsky stub — walking chord-melody guitar (planning weights only).',
+    description:
+      'Joe Pass — fingerstyle chord-melody line, chromatic approach tones, clean bebop phrasing (full riff VRB).',
     lineVsCellEmphasis: 0.7,
     harmonyColourBias: 0.72,
     formRegularity: 0.5,
