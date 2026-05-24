@@ -12,6 +12,8 @@
 
 **P3 — Zappa FZ_* receipt promotion (2026-05-24):** **15** semantic **`FZ_*`** stubs in **`priority3VoiceRuleBundles.ts`**; **3** promoted via **`patchForFzReceipt`**: **`FZ_BURST`**, **`FZ_METRIC_SHIFT`**, **`FZ_REGISTER_COLLISION`** (replaced **`FZ_ERA_01`** / **`FZ_WORK_*`**). **`buildFrankZappaVrbRiffProfile()`** merges compiled receipts into **`FRANK_ZAPPA_VRF.riffProfile`**. Goldens **`fzBurstReceipt`**, **`fzMetricShiftReceipt`**, **`fzRegisterCollisionReceipt`** seeds **77001–77003** (off smoke until P8). Smoke **285/66/0** fast unchanged.
 
+**P4 — Section architecture domain model (2026-05-24):** **`sectionArchitectureDomain.ts`** — **`CompositionSection`**, **`SectionPreset`**, **`SectionArchitectureDocument`**, layer taxonomy (`form` · `macro_goals` · `vrb_context` · `marker` · `meter`), **`validateSectionPartition`**. Docs **`docs/SECTION_ARCHITECTURE_DOMAIN.md`**, **`core/section-architecture/INVARIANTS.md`**. Golden **`sectionArchitectureDomain.test.ts`** seed **78001** + runner (off smoke until P8). Smoke **285/66/0** fast unchanged.
+
 **V65 — BACKLOG (2026-05-24):** Per-section meter (engine-level) — see **§ V65 backlog**.
 
 **V58 — COMPLETE since V57 (`0e2dfe0e` … `3b8db553`):** **Export-truth consolidation** (`assertExportTruth`) · **Contrapuntal Pass 4** (SQ/BB MusicXML from `contrapuntalLineSet`) · **Long forms 40–64 bars** (duo/song product quality) · **Film-stub VRBs → full receipts** (8 composers) · **Lead-sheet MusicXML import phase 3+** · **Output validation layer** (MIDI + MusicXML + audio; smoke +11 rows) · **SQ VRB slices:** Ligeti **σ=32**, Satie **σ=19**, Cole Porter **σ=25**, Gershwin **σ=27** · **GM string playback** (Violin I/II, Viola, Cello — Tone.Sampler + FluidR3_GM on SQ→BB panel).
