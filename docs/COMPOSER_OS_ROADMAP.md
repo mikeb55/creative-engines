@@ -1,22 +1,12 @@
-# Composer OS Roadmap [2026-05-23]
+# Composer OS Roadmap [2026-05-24]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
 **V30 — COMPLETE (2026-05-05):** **Odd meter UI parity** (mixed-meter badge on chart preview + paste / iReal result blocks); **MusicXML import Phase 1** (`parseMusicXml` / core **`ParsedChart`** path); **Duo expansion** — Song Mode **pairing cards** + swap (**`pat_metheny`**, **`bacharach`**, **`ecm_chamber`**), **Duo intent** selector (UI), **Duo Health** pill on success, **ECM Chamber safe sweep** badge + Advanced override (**UI-only**). Duo expansion here was **surfaces + diagnostics**, not a duo golden-path slice rebuild.
 
-**V58 — IN PROGRESS (2026-05-18):** **Per-section VRB assignment** (SQ→BB) — types + `VrbContextMap` + per-section Harmonic Voice picker; recon complete; await Perplexity advice then **Commit 1** (types + UI).
+**V64 — COMPLETE (2026-05-24):** Section architecture + Zappa GCE structural layer + per-section VRB/meter (P1–P6). P7 closeout: **+22** smoke rows (**7** goldens in smoke). Smoke **307/73/0** fast · **472/87/0** full. See [COMPOSER_OS_ROADMAP_V64.md](COMPOSER_OS_ROADMAP_V64.md).
 
-**P7 — Per-section VRB param overrides (2026-05-24):** **`SectionMarker`** + per-bar **`VrbParams`** merge (Song Mode / GBD / all modes); **sonic_youth** A/B Slonimsky switch shipped; golden **`sonicYouthPerSectionVrb.test.ts`** (off smoke). Smoke **285/66/0** fast · **450/80/0** full unchanged.
-
-**P2 — Zappa GCE structural fingerprint generation (2026-05-24):** **`FRANK_ZAPPA_STRUCTURAL_FINGERPRINT`** gains **`metricDisruption`**, **`registerShiftProbability`**, **`absurdistJuxtaposition`**, **`styleCollisionWeight`**; **`applyZappaGceStructuralGeneration.ts`** wires auto **7/8+5/4+4/4** **`barMeterMap`**, absurdist section kinds, macro plan + section-role metadata; Phase 4 probabilistic register swap; golden **`zappaGceFingerprint.test.ts`** seed **76001** (off smoke). Smoke **285/66/0** unchanged.
-
-**P3 — Zappa FZ_* receipt promotion (2026-05-24):** **15** semantic **`FZ_*`** stubs in **`priority3VoiceRuleBundles.ts`**; **3** promoted via **`patchForFzReceipt`**: **`FZ_BURST`**, **`FZ_METRIC_SHIFT`**, **`FZ_REGISTER_COLLISION`** (replaced **`FZ_ERA_01`** / **`FZ_WORK_*`**). **`buildFrankZappaVrbRiffProfile()`** merges compiled receipts into **`FRANK_ZAPPA_VRF.riffProfile`**. Goldens **`fzBurstReceipt`**, **`fzMetricShiftReceipt`**, **`fzRegisterCollisionReceipt`** seeds **77001–77003** (off smoke until P8). Smoke **285/66/0** fast unchanged.
-
-**P4 — Section architecture domain model (2026-05-24):** **`sectionArchitectureDomain.ts`** — **`CompositionSection`**, **`SectionTemplateBundle`**, layer taxonomy (`form` · `macro_goals` · `vrb_context` · `marker` · `meter`), **`validateSectionPartition`**. Docs **`docs/SECTION_ARCHITECTURE_DOMAIN.md`**, **`INVARIANTS.md`**. Golden **`sectionArchitectureDomain.test.ts`** seed **78001** (off smoke until P8). Smoke **285/66/0** fast unchanged.
-
-**P5 — Section architecture TS + behavioural contract (2026-05-24):** **`sectionArchitectureTypes.ts`** + **`sectionArchitectureContracts.ts`** (signatures only). **`docs/COMPOSER_OS_SECTION_ARCHITECTURE.md`** (precedence, validation, regeneration, schema versioning). Musician guide **§2.9**. **`meterMap` typed, not wired** (P7). Smoke **285/66/0** fast unchanged.
-
-**V65 — BACKLOG (2026-05-24):** Per-section meter (engine-level) — see **§ V65 backlog**.
+**V65 — BACKLOG (2026-05-24):** Remaining **12** FZ_* stubs · section editor UI (meter + VRB) · fretboard view · MusicXML import depth · Sibelius QA per mode — see **§ V65 backlog**.
 
 **V58 — COMPLETE since V57 (`0e2dfe0e` … `3b8db553`):** **Export-truth consolidation** (`assertExportTruth`) · **Contrapuntal Pass 4** (SQ/BB MusicXML from `contrapuntalLineSet`) · **Long forms 40–64 bars** (duo/song product quality) · **Film-stub VRBs → full receipts** (8 composers) · **Lead-sheet MusicXML import phase 3+** · **Output validation layer** (MIDI + MusicXML + audio; smoke +11 rows) · **SQ VRB slices:** Ligeti **σ=32**, Satie **σ=19**, Cole Porter **σ=25**, Gershwin **σ=27** · **GM string playback** (Violin I/II, Viola, Cello — Tone.Sampler + FluidR3_GM on SQ→BB panel).
 
@@ -34,7 +24,7 @@
 | goldsmith | 24 | webern | 40 |
 | **bartók** | **24** | | |
 
-Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartók** native bundle (not in registry map). **Smoke (2026-05-24):** full **450/0** (**80** suites) · fast **285/0** (**66** suites). V63 closeout: promoted voices UI/boundary + distinctness goldens (+12 rows).
+Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartók** native bundle (not in registry map). **Smoke (2026-05-24):** full **472/0** (**87** suites) · fast **307/0** (**73** suites). V64 closeout: off-smoke goldens promoted (+22 rows, +7 suites).
 
 **V61 — COMPLETE (2026-05-23):** Slonimsky UI panels U1–U9 — universal, song mode, ensemble (BB/SQ), GBD, SQ→BB hybrid, advanced drawer (pin/forbid cells), harmonic voice selector (sonic_youth warning + no `harmonicVoice` in payload), UX copy, Zappa advanced relocation; smoke **`slonimsky-ui`** UI/boundary goldens only.
 
@@ -551,13 +541,19 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 
 ## V65 backlog
 
-### Per-section meter (engine-level) — P6/P7 shipped (2026-05-24)
+### Remaining FZ_* receipt stubs (12 of 15)
 
-- **`SectionPreset.meterMap`** → dense **`barMeterMap`** via **`resolveBarMeterMapFromSong`**
-- **Applies to:** Song Mode, GBD, ECM (golden path), String Quartet, Big Band (API **`resolveBarMeterMapForGenerateRequest`**)
-- **`zappaGceMeterMode`**: `disrupt` (default) | `respect` | `own`
-- **Goldens** seeds **79001**–**79003** (off smoke until P7)
-- **Remaining:** UI section editor meter per section; vault/etudes when safe
+- Promote remaining **`FZ_*`** metadata stubs in **`priority3VoiceRuleBundles.ts`** with goldens + smoke rows when stable
+
+### Section editor UI
+
+- Per-section **meter** + **VRB** assignment in Generate UI (engine wiring shipped P1/P6)
+
+### Product surfaces
+
+- **Fretboard view**
+- **MusicXML import** depth (beyond Phase 1–2)
+- **Sibelius QA** per mode
 
 ---
 

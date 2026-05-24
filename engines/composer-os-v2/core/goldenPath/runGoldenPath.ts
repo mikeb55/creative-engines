@@ -1792,6 +1792,18 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
   return best ?? last!;
 }
 
+function zappaStructuralActiveForMeterResolution(
+  context: CompositionContext,
+  options?: RunGoldenPathOptions
+): boolean {
+  if (shouldApplyZappaGceStructuralGeneration(context)) return true;
+  const id = options?.primarySongwriterStyle
+    ? normalizeSongwriterStyleKey(options.primarySongwriterStyle) ?? undefined
+    : undefined;
+  if (!isFrankZappaSongwriterId(id)) return false;
+  return (options?.zappaStyleMode ?? 'compositional') === 'compositional';
+}
+
 function attachMacroFormPlanToContext(context: CompositionContext, options?: RunGoldenPathOptions): void {
   const songwriterId =
     context.generationMetadata?.songwriterStyleId ??
@@ -1904,7 +1916,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       requestBarMeterMap: options?.barMeterMap,
       zappaGceAutoBarMeterMapEnabled: options?.zappaGceAutoBarMeterMapEnabled,
       zappaGceMeterMode: options?.zappaGceMeterMode,
-      zappaStructuralActive: shouldApplyZappaGceStructuralGeneration(context),
+      zappaStructuralActive: zappaStructuralActiveForMeterResolution(context, options),
       form: context.form,
       seed,
     });

@@ -181,7 +181,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Testing
 
 ```bash
-# Smoke tier (~5 min) — 285/0 PASS rows, 66 labelled suites; full 450/80 (runSmokeTests.ts allowlist; sync CLAUDE + roadmap when edited)
+# Smoke tier (~5 min) — 307/0 PASS rows, 73 labelled suites; full 472/87 (runSmokeTests.ts allowlist; sync CLAUDE + roadmap when edited)
 npm run test:composer-smoke
 
 # Fast tier (~15–20 min)

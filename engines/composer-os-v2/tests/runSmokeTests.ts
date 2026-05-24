@@ -4,7 +4,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N rows (M suites)` in the smoke summary, then sync **N** + **M** into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): full **450** PASS rows, **80** suites; fast **285** rows, **66** suites (V63 promoted voices UI/boundary + distinctness goldens).
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): full **472** PASS rows, **87** suites; fast **307** rows, **73** suites (V64 off-smoke goldens promoted P7 closeout).
  *
  * **Fast subset:** `COMPOSER_OS_SMOKE_TIER=fast` or `npm run test:composer-smoke-fast` — skips `SMOKE_FAST_EXCLUDE` suites (local dev).
  * **Full tier (default / CI):** unset or `COMPOSER_OS_SMOKE_TIER=full` — all suites in `smokeSuites`.
@@ -93,6 +93,13 @@ import { runSlonimskyUiTests } from './slonimskyUiBoundary.test';
 import { runModeExposureTests } from './modeExposure.test';
 import { runWybleEtudePitchOffsetTests } from './wybleEtudePitchOffset.test';
 import { runV63PromotedVoicesGoldenTests } from './v63PromotedVoicesGolden.test';
+import { runSonicYouthPerSectionVrbTests } from './sonicYouthPerSectionVrb.test';
+import { runZappaGceFingerprintTests } from './zappaGceFingerprint.test';
+import { runFzBurstReceiptTests } from './fzBurstReceipt.test';
+import { runFzMetricShiftReceiptTests } from './fzMetricShiftReceipt.test';
+import { runFzRegisterCollisionReceiptTests } from './fzRegisterCollisionReceipt.test';
+import { runSectionArchitectureDomainTests } from './sectionArchitectureDomain.test';
+import { runPerSectionMeterTests } from './perSectionMeter.test';
 
 type Row = { name: string; ok: boolean };
 
@@ -204,6 +211,13 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Mode exposure (V1)', run: runModeExposureTests },
   { label: 'Wyble Etude guitar pitch offset', run: runWybleEtudePitchOffsetTests },
   { label: 'V63 promoted voices (UI/boundary + distinctness goldens)', run: runV63PromotedVoicesGoldenTests },
+  { label: 'V64 — sonic_youth per-section VRB golden (seed 75002)', run: runSonicYouthPerSectionVrbTests },
+  { label: 'V64 — Zappa GCE structural fingerprint golden (seed 76001)', run: runZappaGceFingerprintTests },
+  { label: 'V64 — FZ_BURST receipt golden (seed 77001)', run: runFzBurstReceiptTests },
+  { label: 'V64 — FZ_METRIC_SHIFT receipt golden (seed 77002)', run: runFzMetricShiftReceiptTests },
+  { label: 'V64 — FZ_REGISTER_COLLISION receipt golden (seed 77003)', run: runFzRegisterCollisionReceiptTests },
+  { label: 'V64 — section architecture domain golden (seed 78001)', run: runSectionArchitectureDomainTests },
+  { label: 'V64 — per-section meter golden (seeds 79001–79003)', run: runPerSectionMeterTests },
   { label: 'Follow-up 4 — Mingus overlay + activeMotifIds + shout export', run: runFollowup4MingusSchneiderThreadgillSmokeTests },
   { label: 'Follow-up 5 — shout-chorus in-place brass merge', run: runFollowup5ShoutBrassInPlaceSmokeTests },
   { label: 'Output validation — MIDI + MusicXML structural', run: runOutputValidationSmokeTests },
