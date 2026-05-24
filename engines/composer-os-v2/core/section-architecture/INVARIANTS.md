@@ -16,7 +16,12 @@
 | `marker` | `SectionMarker[]` | Partial `VrbParams` overrides per bar range — all modes (P1/P7) |
 | `meter` | `SectionPresetSection.meterMap` | Written meter per section — **V65 engine** (P7) |
 
-## Precedence (P6 contract — not enforced in P4)
+## Precedence
+
+**P5 behavioural contract (full):** `docs/COMPOSER_OS_SECTION_ARCHITECTURE.md`  
+**Song schema merge order:** `SongDefaults` → `inheritsFrom` → `SectionPreset` profiles → `InstrumentOverride` → `LocalOverride` (implementations P6).
+
+**Runtime layers (shipped / P4):**
 
 1. `form` geometry is authoritative for bar boundaries.
 2. `marker` overrides merge onto base `VoiceRuleBundle` per bar (`resolveVoiceRuleBundleForBar`).

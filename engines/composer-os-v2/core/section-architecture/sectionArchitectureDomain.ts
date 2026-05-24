@@ -2,7 +2,7 @@
  * V64 P4 — Section architecture domain model (canonical bar geometry + layer taxonomy).
  *
  * Unifies form sections, per-section VRB markers, SQ→BB VRB context maps, macro goals,
- * and future SectionPreset meter maps under one vocabulary. P5 extends TS surfaces; P6
+ * and future section meter maps under one vocabulary. P5 extends TS surfaces; P6
  * defines merge/validation contracts; P7 consumes meter at engine render time.
  */
 
@@ -28,18 +28,21 @@ export interface SectionMeterSpan {
 }
 
 /** One section row inside a reusable preset (UI / API). */
-export interface SectionPresetSection extends CompositionSection {
+export interface SectionTemplateSection extends CompositionSection {
   /** Per-section meter timeline; engine reads at render in P7. */
   meterMap?: readonly SectionMeterSpan[];
 }
 
 /** Saved multi-section form template — superset of {@link FormMap} for product + V65 meter. */
-export interface SectionPreset {
+export interface SectionTemplateBundle {
   presetId: string;
   displayName: string;
-  sections: readonly SectionPresetSection[];
+  sections: readonly SectionTemplateSection[];
   totalBars: number;
 }
+
+/** @deprecated P4 name — use {@link SectionTemplateSection}. */
+export type SectionPresetSection = SectionTemplateSection;
 
 /**
  * Which architectural layer supplies section-scoped behaviour.
@@ -59,7 +62,7 @@ export interface SectionArchitectureDocument {
   macroGoals?: readonly MacroSectionGoals[];
   markers?: readonly SectionMarker[];
   vrbContextBySectionId?: Readonly<Record<string, SectionVrbContext>>;
-  preset?: SectionPreset;
+  preset?: SectionTemplateBundle;
 }
 
 export function compositionSectionEndBar(startBar: number, length: number): number {

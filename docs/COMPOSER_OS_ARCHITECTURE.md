@@ -155,9 +155,11 @@ A **Voice Rule Bundle (VRB)** is a per-composer parameter set that governs how t
 
 **Registry source:** `engines/composer-os-v2/core/counterpoint/vrbProfiles/sqVrbProfileRegistry.ts` — twelve film-stub profiles. **Bartók** is the default SQ contrapuntal `VoiceRuleBundle` (native bundle, not a film-stub row in the registry); the picker enables Bartók, but `getSqVrbProfile('bartok')` is undefined.
 
-### Section architecture domain (V64 P4)
+### Section architecture (V64 P4 domain + P5 contract)
 
-Canonical section vocabulary: **`engines/composer-os-v2/core/section-architecture/sectionArchitectureDomain.ts`** — **`CompositionSection`** (1-based inclusive spans), **`SectionPreset`** / **`SectionMeterSpan`** (V65 meter placeholder), **`SectionArchitectureDocument`** (aggregates form + macro + VRB context + markers + preset). Layer kinds: `form` · `macro_goals` · `vrb_context` · `marker` · `meter`. Partition helper **`validateSectionPartition`**. Full doc: **`docs/SECTION_ARCHITECTURE_DOMAIN.md`**. Golden **`sectionArchitectureDomain.test.ts`** (seed **78001**, off smoke). **P5** TS wiring · **P6** behavioural contract · **P7** engine meter.
+**P4 geometry:** **`sectionArchitectureDomain.ts`** — **`CompositionSection`**, **`SectionTemplateBundle`**, **`SectionMeterSpan`**, **`SectionArchitectureDocument`**, layer kinds (`form` · `macro_goals` · `vrb_context` · `marker` · `meter`), **`validateSectionPartition`**. **`docs/SECTION_ARCHITECTURE_DOMAIN.md`**. Golden seed **78001** (off smoke).
+
+**P5 Song schema:** **`sectionArchitectureTypes.ts`** — **`Song`**, **`SongDefaults`**, per-row **`SectionPreset`**, **`InstrumentOverride`**, **`LocalOverride`**, **`EffectiveGenerationContext`**. Signatures in **`sectionArchitectureContracts.ts`** (`resolveEffectiveContext`, `validateSong`, …) — **P6** implements merge; **P7** wires **`meterMap`**. Behavioural spec: **`docs/COMPOSER_OS_SECTION_ARCHITECTURE.md`**.
 
 ### Per-section VRB — `SectionMarker` (P1 / P7, all modes)
 

@@ -28,13 +28,15 @@ Implemented in `engines/composer-os-v2/core/section-architecture/sectionArchitec
 
 `SectionArchitectureDocument` aggregates these layers for one generate request.
 
-## `SectionPreset` (product + V65)
+## `SectionTemplateBundle` (P4 product template + V65)
 
-A **preset** is a named template:
+A **template bundle** is a named multi-section preset:
 
 - `presetId`, `displayName`
-- `sections[]` as `SectionPresetSection` (extends `CompositionSection`)
+- `sections[]` as `SectionTemplateSection` (extends `CompositionSection`)
 - optional `meterMap: { bar, meter }[]` per section (engine reads in P7)
+
+**P5 `Song` schema** uses per-row `SectionPreset` (see `sectionArchitectureTypes.ts`) — different type, same word historically.
 
 V65 backlog: String Quartet and Big Band both consume the same preset model for per-section meters. Zappa GCE **metric disruption** stacks on top of section meter, not instead of it.
 
@@ -64,8 +66,8 @@ FormMap.sections ──► CompositionSection[]  ◄── authoritative geometr
 | Phase | Deliverable |
 |-------|-------------|
 | **P4** | Domain model + doc + partition helpers (**this doc**) |
-| P5 | TS interfaces wired to `CompositionContext` / API |
-| P6 | Behavioral contract + precedence enforcement |
+| **P5** | TS interfaces + behavioural contract (`COMPOSER_OS_SECTION_ARCHITECTURE.md`) |
+| P6 | `resolveEffectiveContext` + validation implementations |
 | P7 | Per-section meter at engine render |
 | P8 | Smoke rows + desktop closeout |
 

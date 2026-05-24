@@ -359,6 +359,57 @@ You can blend two VRBs with a weight split (e.g. `Debussy 0.5 + Ravel 0.5`). The
 
 ---
 
+### 2.9 Section architecture — Song, sections, and what changes when you edit (V64 P5)
+
+Composer OS is moving from “one global feel for the whole piece” to a **Song document**: defaults at the top, **sections** with bar ranges, optional inheritance, and small **local overrides** on specific bars. P5 ships the **TypeScript contract** and the written rules; the engine **merges** those fields per bar in P6 and applies **per-section meter** in P7.
+
+**Plain-English model**
+
+| Piece | What it is |
+|---|---|
+| **Song** | Title, `schemaVersion`, global defaults, named profile library, list of sections, local overrides |
+| **SongDefaults** | Tempo, meter, default pitch/rhythm/voicing/density, tuning per instrument, humanize |
+| **Section** | Bar range (e.g. 1–4), type (verse/chorus/solo…), optional parent via `inheritsFrom`, section profiles, transitions, per-instrument overrides |
+| **LocalOverride** | “On bars 6–6 only, set metric displacement to 0.83” |
+| **Effective context** | What the generator actually uses **on that bar** after all layers are merged |
+
+**Precedence (lowest wins first, last wins on conflicts)**
+
+1. Song-wide defaults  
+2. Parent section if `inheritsFrom` is set  
+3. This section’s pitch / rhythm / voicing / energy  
+4. Instrument-specific overrides in that section  
+5. Local overrides on matching bars  
+
+**Sonic Youth example (already partly live via per-section VRB markers)**
+
+- **Bars 1–4 (Section A):** base Sonic Youth feel — grid, moderate outside level.  
+- **Bars 5–8 (Section B):** same chords/seed, but higher chromatic budget, stronger metric displacement, Slonimsky receipt **SY_SLON_01** on the harmonic voice layer.  
+
+You hear A as “normal noisy SY”; B as “same band, sabotaged metre and more chromatic grit” without re-importing a chart.
+
+**What triggers regeneration when you edit architecture**
+
+| You change… | What re-generates |
+|---|---|
+| A **named profile** used in several sections | Every section that references it |
+| A section’s **bar range** | That section + transition bars at both seams |
+| **Instrument overrides** in one section | That section only |
+| A **local override** | Only the bars in its range |
+| **`inheritsFrom`** | That section and all sections that inherit from it (directly or indirectly) |
+| **Global Song defaults** | Whole piece |
+
+Edits that do **not** force new notes: title/labels only, or documentation-only schema bumps with identical resolved values.
+
+**Hard vs soft rules**
+
+- **Hard (block save/load):** overlapping sections, gaps in bar coverage, circular inheritance, tuning profile on wrong instrument, missing profile id after delete.  
+- **Soft (warn, still generate):** empty cell sets with sequence ops present, local override path the engine does not recognise yet, `meterMap` present before P7 (stored but not applied at render).
+
+Full spec: **`docs/COMPOSER_OS_SECTION_ARCHITECTURE.md`**. Types: **`engines/composer-os-v2/core/section-architecture/sectionArchitectureTypes.ts`**.
+
+---
+
 ## Part 3 — Slonimsky Controls
 
 *What they do musically. No theory required.*
