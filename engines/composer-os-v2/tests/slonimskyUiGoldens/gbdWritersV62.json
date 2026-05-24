@@ -1,0 +1,25 @@
+{
+  "id": "gbd_writers_v62",
+  "stubWriters": [
+    {
+      "writerId": "wes_montgomery",
+      "firstPresetLabel": "Lyrical",
+      "macro": { "sourcePreset": "lyrical", "motion": -0.05, "tension": -0.2, "variation": 0.2 }
+    },
+    {
+      "writerId": "joe_pass",
+      "firstPresetLabel": "Lyrical",
+      "macro": { "sourcePreset": "lyrical", "motion": 0, "tension": -0.22, "variation": 0.18 }
+    },
+    {
+      "writerId": "allan_holdsworth",
+      "firstPresetLabel": "Chromatic",
+      "macro": { "sourcePreset": "chromatic", "motion": 0.35, "tension": 0.52, "variation": 0.1 }
+    },
+    {
+      "writerId": "scott_henderson",
+      "firstPresetLabel": "Angular",
+      "macro": { "sourcePreset": "angular", "motion": 0.45, "tension": 0.42, "variation": -0.05 }
+    }
+  ]
+}

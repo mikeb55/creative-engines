@@ -1,0 +1,41 @@
+{
+  "id": "song_mode_writers_v62",
+  "writers": [
+    {
+      "writerId": "wayne_shorter",
+      "firstPresetLabel": "Angular",
+      "macro": { "sourcePreset": "angular", "motion": 0.4, "tension": 0.35, "variation": -0.1 }
+    },
+    {
+      "writerId": "bill_evans",
+      "firstPresetLabel": "Lyrical",
+      "macro": { "sourcePreset": "lyrical", "motion": -0.1, "tension": -0.25, "variation": 0.2 }
+    },
+    {
+      "writerId": "herbie_hancock",
+      "firstPresetLabel": "Angular",
+      "macro": { "sourcePreset": "angular", "motion": 0.35, "tension": 0.4, "variation": -0.05 }
+    },
+    {
+      "writerId": "larry_carlton",
+      "firstPresetLabel": "Lyrical",
+      "macro": { "sourcePreset": "lyrical", "motion": 0.05, "tension": -0.15, "variation": 0.15 }
+    },
+    {
+      "writerId": "david_gilmour",
+      "firstPresetLabel": "Lyrical",
+      "macro": { "sourcePreset": "lyrical", "motion": -0.05, "tension": -0.2, "variation": 0.2 }
+    },
+    {
+      "writerId": "mccoy_tyner",
+      "firstPresetLabel": "Patterned",
+      "macro": { "sourcePreset": "symmetric", "motion": 0.05, "tension": 0.1, "variation": 0.1 },
+      "stubWriter": true
+    },
+    {
+      "writerId": "miles_davis",
+      "firstPresetLabel": "Lyrical",
+      "macro": { "sourcePreset": "lyrical", "motion": -0.2, "tension": -0.3, "variation": 0.15 }
+    }
+  ]
+}

@@ -4,7 +4,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N rows (M suites)` in the smoke summary, then sync **N** + **M** into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): full **424** PASS rows, **77** suites; fast **259** rows, **63** suites (V61 U9 **slonimsky-ui**).
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): full **438** PASS rows, **79** suites; fast **273** rows, **65** suites (V62 UI/boundary + mode exposure + Wyble etude).
  *
  * **Fast subset:** `COMPOSER_OS_SMOKE_TIER=fast` or `npm run test:composer-smoke-fast` — skips `SMOKE_FAST_EXCLUDE` suites (local dev).
  * **Full tier (default / CI):** unset or `COMPOSER_OS_SMOKE_TIER=full` — all suites in `smokeSuites`.
@@ -90,6 +90,8 @@ import { runSlonimskyGbdContextTests } from './slonimskyGbdContext.test';
 import { runSongModeSlonimskyTests } from './songModeSlonimsky.test';
 import { runSlonimskyEnsembleReceiptTests } from './slonimskyEnsembleReceipt.test';
 import { runSlonimskyUiTests } from './slonimskyUiBoundary.test';
+import { runModeExposureTests } from './modeExposure.test';
+import { runWybleEtudePitchOffsetTests } from './wybleEtudePitchOffset.test';
 
 type Row = { name: string; ok: boolean };
 
@@ -198,6 +200,8 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Slonimsky Z9 song mode cell layer', run: runSongModeSlonimskyTests },
   { label: 'Slonimsky Z10/Z11 ensemble cell receipts', run: runSlonimskyEnsembleReceiptTests },
   { label: 'slonimsky-ui', run: runSlonimskyUiTests },
+  { label: 'Mode exposure (V1)', run: runModeExposureTests },
+  { label: 'Wyble Etude guitar pitch offset', run: runWybleEtudePitchOffsetTests },
   { label: 'Follow-up 4 — Mingus overlay + activeMotifIds + shout export', run: runFollowup4MingusSchneiderThreadgillSmokeTests },
   { label: 'Follow-up 5 — shout-chorus in-place brass merge', run: runFollowup5ShoutBrassInPlaceSmokeTests },
   { label: 'Output validation — MIDI + MusicXML structural', run: runOutputValidationSmokeTests },

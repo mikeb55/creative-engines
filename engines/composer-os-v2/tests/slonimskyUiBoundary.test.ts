@@ -1,6 +1,6 @@
 /**
- * V61 U9 — Slonimsky UI boundary goldens (state → GenerateRequest mappers only).
- * Does not re-assert Z7–Z11 engine cell-layer suites.
+ * V61 U9 + V62 — Slonimsky UI boundary goldens (state → GenerateRequest mappers only).
+ * Does not re-assert Z7–Z11 engine lock goldens 1,2,6,7.
  */
 
 import * as fs from 'fs';
@@ -29,6 +29,12 @@ import {
 import { mapSqBbHybridToGenerateRequest } from '../../../apps/composer-os-app/src/types/slonimskySqBbHybridState';
 import { getVoiceRuleBundle } from '../core/composer/voiceRuleBundles';
 import { chromaticStrengthToOutsideLevel } from '../core/slonimsky/slonimskyPatternService';
+import {
+  verifyEtudeSurfacesGolden,
+  verifyGbdWritersV62Golden,
+  verifyLane3PresetWiringGolden,
+  verifySongModeWritersV62Golden,
+} from './slonimskyUiGolden';
 
 const REPO_ROOT = path.resolve(__dirname, '../../..');
 const APP_SRC = path.join(REPO_ROOT, 'apps/composer-os-app/src');
@@ -281,6 +287,40 @@ function testAdvancedDrawerMountedFromHomeGenerate(): boolean {
   return src.includes('SlonimskyAdvancedDrawer') && src.includes('slonimskyUiExtrasFromAdvanced');
 }
 
+function testSongModePanelListsV62Writers(): boolean {
+  const panel = readAppFile('components/slonimsky/SlonimskySongModePanel.tsx');
+  const ids = [
+    'wayne_shorter',
+    'bill_evans',
+    'herbie_hancock',
+    'larry_carlton',
+    'david_gilmour',
+    'mccoy_tyner',
+    'miles_davis',
+  ];
+  return ids.every((id) => panel.includes(id)) && panel.includes('isSlonimskyGenericVoiceWarning(writerId)');
+}
+
+function testMccoyTynerStubWarning(): boolean {
+  const constants = readAppFile('constants/slonimskyHarmonicVoices.ts');
+  return (
+    constants.includes("SLONIMSKY_SONG_MODE_STUB_WRITER_IDS = ['mccoy_tyner']") &&
+    constants.includes('isSlonimskySongModeStubWriter')
+  );
+}
+
+function testGbdStubWritersWarningOnly(): boolean {
+  const constants = readAppFile('constants/slonimskyHarmonicVoices.ts');
+  return (
+    constants.includes("'wes_montgomery'") &&
+    constants.includes("'joe_pass'") &&
+    constants.includes("'allan_holdsworth'") &&
+    constants.includes("'scott_henderson'") &&
+    constants.includes('SLONIMSKY_GBD_STUB_WRITER_IDS') &&
+    constants.includes('isSlonimskyGbdStubWriter')
+  );
+}
+
 export function runSlonimskyUiTests(): { name: string; ok: boolean }[] {
   const cases: [string, () => boolean][] = [
     ['slonimsky-ui — universal flavor → GenerateRequest macro fields', testUniversalFlavorMapsMacroToGenerateRequest],
@@ -296,6 +336,13 @@ export function runSlonimskyUiTests(): { name: string; ok: boolean }[] {
     ['slonimsky-ui — sonic_youth → no harmonicVoice + generic metadata key', testSonicYouthNoHarmonicVoicePayload],
     ['slonimsky-ui — sonic_youth generic voice warnings (universal + song mode)', testSonicYouthGenericVoiceWarningsInPanels],
     ['slonimsky-ui — advanced drawer wired in HomeGenerate', testAdvancedDrawerMountedFromHomeGenerate],
+    ['slonimsky-ui — V62 song mode writers golden (7)', verifySongModeWritersV62Golden],
+    ['slonimsky-ui — V62 GBD stub writers golden (4)', verifyGbdWritersV62Golden],
+    ['slonimsky-ui — V62 song mode panel lists seven new writers', testSongModePanelListsV62Writers],
+    ['slonimsky-ui — V62 mccoy_tyner planning stub warning', testMccoyTynerStubWarning],
+    ['slonimsky-ui — V62 GBD stub writers (Wes/Joe/Allan/Scott)', testGbdStubWritersWarningOnly],
+    ['slonimsky-ui — V62 lane3 preset HomeGenerate wiring', verifyLane3PresetWiringGolden],
+    ['slonimsky-ui — V62 etude surfaces (Wyble + Slonimsky cell family)', verifyEtudeSurfacesGolden],
   ];
   return cases.map(([name, fn]) => ({ name, ok: fn() }));
 }

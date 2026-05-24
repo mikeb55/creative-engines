@@ -1,0 +1,49 @@
+{
+  "id": "lane3_preset_wiring",
+  "presets": [
+    {
+      "presetId": "guitar_bass_duo_single_line",
+      "homeGenerateMustContain": [
+        "presetId === 'guitar_bass_duo_single_line'",
+        "SlonimskyGbdPanel",
+        "chromaticOnly",
+        "Guitar–Bass Duo (single line) — Outside level",
+        "chromaticStrength: gbdChromaticStrength"
+      ]
+    },
+    {
+      "presetId": "ecm_chamber",
+      "homeGenerateMustContain": [
+        "presetId === 'ecm_chamber'",
+        "mapEnsembleSlonimskyToGenerateRequest(slonimskyMacro)",
+        "SlonimskyUniversalPanel"
+      ]
+    },
+    {
+      "presetId": "riff_generator",
+      "homeGenerateMustContain": [
+        "presetId === 'riff_generator'",
+        "outsideLevelNumericLabels",
+        "chromaticStrength: gbdChromaticStrength",
+        "riffVrbId"
+      ]
+    },
+    {
+      "presetId": "wyble_etude",
+      "homeGenerateMustContain": [
+        "presetId === 'wyble_etude'",
+        "Wyble Etude — Outside level",
+        "outsideLevelNumericLabels",
+        "chromaticStrength: gbdChromaticStrength"
+      ]
+    },
+    {
+      "presetId": "slonimsky_etude",
+      "homeGenerateMustContain": [
+        "presetId === 'slonimsky_etude'",
+        "SlonimskyEtudeCellFamilyPanel",
+        "slonimskyPatternIdForCellFamily(slonimskyEtudeCellFamily)"
+      ]
+    }
+  ]
+}

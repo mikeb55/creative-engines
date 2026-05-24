@@ -1,0 +1,15 @@
+{
+  "id": "etude_surfaces_v62",
+  "wybleChromaticism": [
+    { "chromaticStrength": "off", "chromaticismLevel": 0 },
+    { "chromaticStrength": "subtle", "chromaticismLevel": 0.45 },
+    { "chromaticStrength": "prominent", "chromaticismLevel": 0.9 }
+  ],
+  "slonimskyCellFamilies": [
+    { "flavor": "lyrical", "patternId": "p_wholeTone" },
+    { "flavor": "angular", "patternId": "p_asymCell123" },
+    { "flavor": "symmetric", "patternId": "p_tritonePole" },
+    { "flavor": "chromatic", "patternId": "p_chromaticInterp" },
+    { "flavor": "riff", "patternId": "p_minorThirdCycle" }
+  ]
+}
