@@ -16,7 +16,7 @@ Desktop: **Composer-OS.exe** rebuilt clean (portable + NSIS)
 7. `79f71be3` — feat(slonimsky): GBD panel + four guitar voices + musician guide  
 8. `c2ee16a7` — feat(slonimsky): Lane 3 Wave 1 (GBD single-line, ECM, riff)  
 9. `c1b67e09` — feat(slonimsky): Lane 3 Wave 2 (wyble_etude, slonimsky_etude)  
-10. *(closeout)* — V62 UI/boundary goldens + smoke rows + desktop rebuild + roadmap header  
+10. `155a038f` — chore(v62): UI/boundary goldens, smoke +14 rows, roadmap closeout  
 
 ## 8 prompts in order
 1. W1 — Zappa ferocity in Song Mode (isolated) ✓  
