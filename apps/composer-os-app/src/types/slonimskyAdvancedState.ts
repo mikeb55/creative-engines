@@ -1,7 +1,10 @@
 import type { GenerateRequest } from '@composer-os/app-api/appApiTypes';
 import { THESAURUS_REGISTRY, type ThesaurusPattern } from '@composer-os/core/slonimsky/thesaurusRegistry';
 import type { SlonimskySourcePreset } from './slonimskyMacroState';
-import { isConfirmedHarmonicVoiceBundle } from '../constants/slonimskyHarmonicVoices';
+import {
+  isConfirmedHarmonicVoiceBundle,
+  isSlonimskyGbdStubWriter,
+} from '../constants/slonimskyHarmonicVoices';
 import { SLONIMSKY_FLAVOR_DISPLAY } from '../constants/slonimskyUxCopy';
 
 export type SlonimskyAdvancedOverrides = {
@@ -122,14 +125,23 @@ export function slonimskyUiExtrasFromAdvanced(
   const option = harmonicVoiceId?.trim() ?? '';
   if (option === 'sonic_youth') {
     advancedKeys.push('slonimsky:harmonic_voice=sonic_youth_generic');
+  } else if (isSlonimskyGbdStubWriter(option)) {
+    advancedKeys.push(`slonimsky:harmonic_voice=${option}_stub`);
   }
   const mergedKeys = mergeStyleContextKeys(baseStyleKeys, advancedKeys);
   const generic =
     option === 'sonic_youth'
       ? { slonimskyGenericHarmonicVoice: 'sonic_youth' as const }
-      : {};
+      : isSlonimskyGbdStubWriter(option)
+        ? { slonimskyGenericHarmonicVoice: option }
+        : {};
   const harmonicVoice =
-    option && option !== 'sonic_youth' && isConfirmedHarmonicVoiceBundle(option) ? option : undefined;
+    option &&
+    option !== 'sonic_youth' &&
+    !isSlonimskyGbdStubWriter(option) &&
+    isConfirmedHarmonicVoiceBundle(option)
+      ? option
+      : undefined;
   return {
     ...(mergedKeys?.length ? { styleGenerationContextKeys: mergedKeys } : {}),
     ...(harmonicVoice ? { harmonicVoice } : {}),

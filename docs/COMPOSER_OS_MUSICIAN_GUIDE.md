@@ -185,43 +185,56 @@ John Coltrane · Pat Metheny · Clare Fischer · Quincy Jones · Sammy Nestico �
 **Good voices (solid differentiation):**
 Bill Evans · Herbie Hancock · Thelonious Monk · Debussy · Ravel · Bartok · Shostakovich · Jobim · Arvo Pärt · Ornette Coleman · Coltrane · Gershwin · Cole Porter
 
-**Note on Sonic Youth:** Listed as a Slonimsky song-mode writer but has no dedicated voice bundle — falls back to a generic profile. A warning badge appears in the UI. Use another writer if you need a specific character.
+**Note on Sonic Youth:** Listed as a Slonimsky song-mode writer but has no dedicated voice bundle — falls back to a generic profile. A warning badge (⚠) appears in the UI. Use another writer if you need a specific character.
+
+**Note on McCoy Tyner (Song Mode):** Slonimsky Song Mode writer with planning stub only — no dedicated harmony slice. Shows ⚠ in the UI; flavor presets still apply.
+
+**Note on GBD stubs (Wes Montgomery, Joe Pass, Allan Holdsworth, Scott Henderson):** Listed in the Guitar–Bass Duo Slonimsky panel with flavor presets; no VRB bundle or GBD harmony slice. Shows ⚠ — macro flavor and outside level only.
 
 ---
 
 ### 2.3 Song Mode voices
 
-These voices work in Song Mode and shape melody + harmony + rhythm as a complete musical personality.
+These voices work in Song Mode and shape melody + harmony + rhythm as a complete musical personality. **Slonimsky Song Mode panel** writers are listed with engine tier (deep = full harmony slice; good = VRB / partial; stub = planning only).
 
-| Voice | Musical character | Best chord context |
-|---|---|---|
-| **Pat Metheny** | Open, singing lines with lift and space. Warm, clean-edged, lyrical. | Major 7ths, sus chords, open voicings |
-| **Wayne Shorter** | Oblique, elliptical, post-bop. Lines that imply without stating. | Altered chords, modal ambiguity |
-| **Bill Evans** | Flowing, inward, color-rich. Dense inner voices, modal clarity at the surface. | Minor 7ths, major 7ths, sus |
-| **Herbie Hancock** | Sharply shaped, mobile, post-bop into fusion. Rhythmically alert. | Dominant chords, altered harmony |
-| **Thelonious Monk** | Angular, surprising, rhythmically displaced. Never where you expect. | Blues changes, ii-V-I, tritone subs |
-| **John Coltrane** | Interval-cell driven, cyclical, high density. Sheets of sound. | Coltrane changes, modal, Giant Steps |
-| **Joni Mitchell** | Open-tuning quartal harmony. Clear, floating, graceful with surprising turns. | Open voicings, sus2/sus4, modal |
-| **Frank Zappa** | Twisted, jagged, colorful, a little dangerous. High ferocity when pushed. | Any — Zappa ignores convention |
-| **Radiohead** | Uneasy, fragile, tense with art-rock bite. Metric unease. | Minor, altered, chromatic mediant |
-| **Duke Ellington** | Warm orchestral jazz. Sophisticated melody, rich inner voices. | Standards, ii-V-I, blues |
-| **Debussy** | Parallel planing, whole-tone color, impressionist space. | Major 7#11, sus, open |
-| **Jobim** | Bossa nova melody character, Brazilian harmonic color, lightness. | Major 7ths, minor 7ths, bossa changes |
+| Voice | Tier | Musical character | Best chord context |
+|---|---|---|---|
+| **Pat Metheny** | deep | Open, singing lines with lift and space. Warm, clean-edged, lyrical. | Major 7ths, sus chords, open voicings |
+| **Wayne Shorter** | deep | Oblique, elliptical, post-bop. Lines that imply without stating. | Altered chords, modal ambiguity |
+| **Bill Evans** | deep | Flowing, inward, color-rich. Dense inner voices, modal clarity at the surface. | Minor 7ths, major 7ths, sus |
+| **Herbie Hancock** | deep | Sharply shaped, mobile, post-bop into fusion. Rhythmically alert. | Dominant chords, altered harmony |
+| **Miles Davis** | deep | Cool modal space, sparse phrasing, lyrical then chromatic Slonimsky color. | Modal centers, sus, minor 7 |
+| **Larry Carlton** | good | Smooth fusion guitar; lyrical then chromatic (riff VRB surface). | Funk changes, dom7, sus |
+| **David Gilmour** | good | Singing rock lead, riff hooks and sustain (riff VRB surface). | Rock harmony, pedal tones |
+| **McCoy Tyner** | stub ⚠ | Quartal stacks, pentatonic fire — **macro flavor only** (no harmony slice). | Modal, quartal, sus |
+| **Thelonious Monk** | deep | Angular, surprising, rhythmically displaced. Never where you expect. | Blues changes, ii-V-I, tritone subs |
+| **John Coltrane** | deep | Interval-cell driven, cyclical, high density. Sheets of sound. | Coltrane changes, modal, Giant Steps |
+| **Joni Mitchell** | deep | Open-tuning quartal harmony. Clear, floating, graceful with surprising turns. | Open voicings, sus2/sus4, modal |
+| **Frank Zappa** | deep | Twisted, jagged, colorful, a little dangerous. High ferocity when pushed. | Any — Zappa ignores convention |
+| **Radiohead** | deep | Uneasy, fragile, tense with art-rock bite. Metric unease. | Minor, altered, chromatic mediant |
+| **Sonic Youth** | deep* | Raw, slashing, noisy — texture over polish. *Full slice; **no VRB** — ⚠ generic harmonic voice. | Alt tuning, clusters, noise |
+| **Duke Ellington** | deep | Warm orchestral jazz. Sophisticated melody, rich inner voices. | Standards, ii-V-I, blues |
+| **Debussy** | deep | Parallel planing, whole-tone color, impressionist space. | Major 7#11, sus, open |
+| **Jobim** | deep | Bossa nova melody character, Brazilian harmonic color, lightness. | Major 7ths, minor 7ths, bossa changes |
 
 ---
 
 ### 2.4 Guitar-Bass Duo voices
 
-These voices work in Guitar-Bass Duo mode and shape the two-voice interaction.
+These voices work in Guitar-Bass Duo mode and shape the two-voice interaction. **Slonimsky GBD panel** voices include tier (deep / good / stub); stub rows show ⚠ in the UI.
 
-| Voice | Musical character |
-|---|---|
-| **Nile Rodgers** | Groove-first, hook-driven, rhythmically tight. Riff is the default. |
-| **Eddie Van Halen** | Virtuosic rock energy, riff-based with angular motion. |
-| **Larry Carlton** | Smooth, singing melodic lines, polished jazz-pop harmonic color. |
-| **David Gilmour** | Strong melodic shape, sustained phrasing, memorable hooks. |
-| **Hendrix** | Blues-rock vocabulary, wide dynamic range, expressive bends implied. |
-| **Fripp** | Oblique, layered, textural. Outside the groove, into sound. |
+| Voice | Tier | Musical character |
+|---|---|---|
+| **Nile Rodgers** | good | Groove-first, hook-driven, rhythmically tight. Riff is the default. |
+| **Eddie Van Halen** | good | Virtuosic rock energy, riff-based with angular motion. |
+| **Larry Carlton** | good | Smooth, singing melodic lines, polished jazz-pop harmonic color. |
+| **David Gilmour** | good | Strong melodic shape, sustained phrasing, memorable hooks. |
+| **Hendrix** | good | Blues-rock vocabulary, wide dynamic range, expressive bends implied. |
+| **Fripp** | good | Oblique, layered, textural. Outside the groove, into sound. |
+| **Wes Montgomery** | stub ⚠ | Warm octave jazz lines, lyrical then riff — **macro flavor only**. |
+| **Joe Pass** | stub ⚠ | Walking chord-melody guitar, lyrical then chromatic — **macro flavor only**. |
+| **Allan Holdsworth** | stub ⚠ | Legato fusion outside lines, chromatic then angular — **macro flavor only**. |
+| **Scott Henderson** | stub ⚠ | Fusion blaze, angular then riff — **macro flavor only**. |
 
 ---
 

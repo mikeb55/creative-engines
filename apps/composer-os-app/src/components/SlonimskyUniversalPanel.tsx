@@ -11,7 +11,8 @@ import type { SlonimskyMacroState } from '../types/slonimskyMacroState';
 import {
   isSlonimskyGenericVoiceWarning,
   SLONIMSKY_GENERIC_VOICE_OPTION_SUFFIX,
-  SLONIMSKY_GENERIC_VOICE_WARNING_BODY,
+  slonimskyGbdWriterWarningBody,
+  slonimskySongModeWriterWarningBody,
 } from '../constants/slonimskyHarmonicVoices';
 
 function clampKnob(n: number): number {
@@ -30,6 +31,7 @@ export function SlonimskyUniversalPanel({
   disabled = false,
   embedded = false,
   harmonicOnly = false,
+  hideHarmonicVoice = false,
   harmonicVoiceMode = 'other',
   harmonicVoiceId = null,
   onHarmonicVoiceChange,
@@ -40,6 +42,8 @@ export function SlonimskyUniversalPanel({
   embedded?: boolean;
   /** Harmonic voice selector only (e.g. GBD). */
   harmonicOnly?: boolean;
+  /** When true, omit harmonic voice dropdown (e.g. voice lives on {@link SlonimskyGbdPanel}). */
+  hideHarmonicVoice?: boolean;
   harmonicVoiceMode?: SlonimskyHarmonicVoiceMode;
   harmonicVoiceId?: string | null;
   onHarmonicVoiceChange?: (id: string | null) => void;
@@ -47,6 +51,13 @@ export function SlonimskyUniversalPanel({
   const patch = (partial: Partial<SlonimskyMacroState>) => onChange({ ...state, ...partial });
   const voiceOptions = slonimskyHarmonicVoiceOptionsForMode(harmonicVoiceMode);
   const showMacro = !harmonicOnly;
+  const showHarmonicVoice = !hideHarmonicVoice && onHarmonicVoiceChange && voiceOptions.length > 0;
+
+  function harmonicVoiceWarningBody(id: string): string {
+    const gbd = slonimskyGbdWriterWarningBody(id);
+    if (gbd) return gbd;
+    return slonimskySongModeWriterWarningBody(id);
+  }
 
   return (
     <div
@@ -123,7 +134,7 @@ export function SlonimskyUniversalPanel({
       </div>
       ) : null}
 
-      {onHarmonicVoiceChange && voiceOptions.length > 0 ? (
+      {showHarmonicVoice ? (
         <div style={{ marginBottom: '0.75rem' }}>
           <label
             style={{
@@ -165,7 +176,7 @@ export function SlonimskyUniversalPanel({
                 color: 'rgb(180, 120, 20)',
               }}
             >
-              {SLONIMSKY_GENERIC_VOICE_WARNING_BODY}
+              {harmonicVoiceWarningBody(harmonicVoiceId)}
             </p>
           ) : null}
         </div>

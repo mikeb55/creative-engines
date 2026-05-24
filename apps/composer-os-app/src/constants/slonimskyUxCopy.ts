@@ -1,3 +1,4 @@
+import type { SlonimskyGbdWriterId } from '../types/slonimskyGbdState';
 import type { SlonimskySongModeWriterId, SlonimskySourcePreset } from '../types/slonimskyMacroState';
 
 export const SLONIMSKY_FLAVOR_DISPLAY: Record<SlonimskySourcePreset, string> = {
@@ -57,6 +58,19 @@ export const SLONIMSKY_WRITER_ONE_LINER: Record<SlonimskySongModeWriterId, strin
   david_gilmour: 'Singing rock lead, riff hooks and sustain',
   mccoy_tyner: 'Quartal stacks, pentatonic fire (stub)',
   miles_davis: 'Cool modal space, lyrical then chromatic',
+};
+
+export const SLONIMSKY_GBD_WRITER_ONE_LINER: Record<SlonimskyGbdWriterId, string> = {
+  nile_rodgers: 'Groove-first, hook-driven, rhythmically tight',
+  eddie_van_halen: 'Virtuosic rock energy, riff-forward',
+  larry_carlton: 'Smooth fusion guitar, lyrical then chromatic',
+  david_gilmour: 'Singing rock lead, riff hooks and sustain',
+  hendrix: 'Blues-rock fire, wide dynamic expression',
+  fripp: 'Oblique, layered, textural outside the groove',
+  wes_montgomery: 'Warm octave lines, lyrical then riff (stub)',
+  joe_pass: 'Walking chord melody, lyrical then chromatic (stub)',
+  allan_holdsworth: 'Legato outside lines, chromatic then angular (stub)',
+  scott_henderson: 'Fusion blaze, angular then riff (stub)',
 };
 
 export const SLONIMSKY_FLAVOR_ORDER: readonly SlonimskySourcePreset[] = [

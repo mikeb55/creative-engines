@@ -38,6 +38,11 @@ import { SlonimskyUniversalPanel } from '../components/SlonimskyUniversalPanel';
 import { SlonimskyEnsemblePanel } from '../components/slonimsky/SlonimskyEnsemblePanel';
 import { SlonimskyGbdPanel, type GbdChromaticStrength } from '../components/slonimsky/SlonimskyGbdPanel';
 import {
+  SLONIMSKY_GBD_WRITERS,
+  slonimskyGbdWriterPresets,
+  type SlonimskyGbdWriterId,
+} from '../types/slonimskyGbdState';
+import {
   DEFAULT_SLONIMSKY_MACRO_STATE,
   isSlonimskyEnabledPreset,
   SLONIMSKY_SONG_MODE_WRITERS,
@@ -2152,6 +2157,11 @@ export function HomeGenerate({
   const [slonimskyBbMiddle, setSlonimskyBbMiddle] = useState(DEFAULT_BIG_BAND_SLONIMSKY_MIDDLE);
   const [slonimskySqMiddle, setSlonimskySqMiddle] = useState(DEFAULT_STRING_QUARTET_SLONIMSKY_MIDDLE);
   const [gbdChromaticStrength, setGbdChromaticStrength] = useState<GbdChromaticStrength>('off');
+  const [gbdWriterId, setGbdWriterId] = useState<SlonimskyGbdWriterId>('nile_rodgers');
+  useEffect(() => {
+    if (presetId !== 'guitar_bass_duo') return;
+    setSlonimskyHarmonicVoice(gbdWriterId);
+  }, [presetId, gbdWriterId]);
   const [uiInstrumentGroup, setUiInstrumentGroup] = useState<UiInstrumentGroup>('big_band');
   const [drumIntensity, setDrumIntensity] = useState<'sparse' | 'standard' | 'driving'>('standard');
   const [bigBandFigureResponse, setBigBandFigureResponse] = useState<'low' | 'medium' | 'high'>('medium');
@@ -4573,16 +4583,22 @@ export function HomeGenerate({
             state={slonimskyMacro}
             onChange={setSlonimskyMacro}
             disabled={loading}
-            harmonicOnly
-            harmonicVoiceMode="gbd"
-            harmonicVoiceId={slonimskyHarmonicVoice}
-            onHarmonicVoiceChange={setSlonimskyHarmonicVoice}
+            hideHarmonicVoice
           />
           <SlonimskyGbdPanel
-          chromaticStrength={gbdChromaticStrength}
-          onChromaticStrengthChange={setGbdChromaticStrength}
-          disabled={loading}
-        />
+            writerId={gbdWriterId}
+            onWriterIdChange={(id) => {
+              setGbdWriterId(id);
+              setSlonimskyHarmonicVoice(id);
+              const first = slonimskyGbdWriterPresets(id)[0];
+              if (first) setSlonimskyMacro(first.macro);
+            }}
+            state={slonimskyMacro}
+            onChange={setSlonimskyMacro}
+            chromaticStrength={gbdChromaticStrength}
+            onChromaticStrengthChange={setGbdChromaticStrength}
+            disabled={loading}
+          />
         </>
       )}
 

@@ -11,6 +11,7 @@ import {
   slonimskySectionOverridesToContextKeys,
   slonimskySongModeWriterPresets,
 } from '../../../apps/composer-os-app/src/types/slonimskySongModeState';
+import { slonimskyGbdWriterPresets } from '../../../apps/composer-os-app/src/types/slonimskyGbdState';
 import {
   DEFAULT_BIG_BAND_SLONIMSKY_MIDDLE,
   DEFAULT_STRING_QUARTET_SLONIMSKY_MIDDLE,
@@ -181,11 +182,17 @@ function testEnsembleMapperOutputsRequestFields(): boolean {
 
 function testGbdChromaticStrengthValues(): boolean {
   const home = readAppFile('pages/HomeGenerate.tsx');
+  const gbd = readAppFile('components/slonimsky/SlonimskyGbdPanel.tsx');
+  const presets = slonimskyGbdWriterPresets('wes_montgomery');
+  const lyrical = presets.find((p) => p.label === 'Lyrical');
   return (
     chromaticStrengthToOutsideLevel('off') === 0 &&
     chromaticStrengthToOutsideLevel('subtle') === 1 &&
     chromaticStrengthToOutsideLevel('prominent') === 2 &&
-    home.includes('chromaticStrength: gbdChromaticStrength')
+    home.includes('chromaticStrength: gbdChromaticStrength') &&
+    home.includes('gbdWriterId') &&
+    gbd.includes('wes_montgomery') &&
+    lyrical?.macro.sourcePreset === 'lyrical'
   );
 }
 
@@ -251,13 +258,16 @@ function testSonicYouthGenericVoiceWarningsInPanels(): boolean {
   const constants = readAppFile('constants/slonimskyHarmonicVoices.ts');
   const constantsOk =
     constants.includes('generic voice') && constants.includes('no dedicated VRB bundle');
+  const gbd = readAppFile('components/slonimsky/SlonimskyGbdPanel.tsx');
   return (
     constantsOk &&
     universal.includes('isSlonimskyGenericVoiceWarning') &&
-    universal.includes('SLONIMSKY_GENERIC_VOICE_WARNING_BODY') &&
+    universal.includes('slonimskySongModeWriterWarningBody') &&
     songMode.includes('isSlonimskyGenericVoiceWarning(writerId)') &&
     songMode.includes('SLONIMSKY_GENERIC_VOICE_OPTION_SUFFIX') &&
-    songMode.includes('slonimskySongModeWriterWarningBody')
+    songMode.includes('slonimskySongModeWriterWarningBody') &&
+    gbd.includes('slonimskyGbdWriterWarningBody') &&
+    gbd.includes('SLONIMSKY_GBD_WRITERS')
   );
 }
 

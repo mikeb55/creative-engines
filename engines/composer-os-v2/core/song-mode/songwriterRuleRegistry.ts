@@ -1261,6 +1261,46 @@ function wireRiffVrbSongwriterRules(): void {
     R('riff.iommi.sigma', 'Riff VRB σ26 — rock riff cells (reuses prince rule family)', 'songwriter', 'rhythm', 8, 'global'),
     ...prince,
   ];
+  rules.wes_montgomery = [
+    R(
+      'gbd.wes_montgomery.stub',
+      'Wes Montgomery — GBD Slonimsky stub (planning weights only; no VRB slice)',
+      'songwriter',
+      'melody',
+      5,
+      'global'
+    ),
+  ];
+  rules.joe_pass = [
+    R(
+      'gbd.joe_pass.stub',
+      'Joe Pass — GBD Slonimsky stub (planning weights only; no VRB slice)',
+      'songwriter',
+      'melody',
+      5,
+      'global'
+    ),
+  ];
+  rules.allan_holdsworth = [
+    R(
+      'gbd.allan_holdsworth.stub',
+      'Allan Holdsworth — GBD Slonimsky stub (planning weights only; no VRB slice)',
+      'songwriter',
+      'harmony',
+      5,
+      'global'
+    ),
+  ];
+  rules.scott_henderson = [
+    R(
+      'gbd.scott_henderson.stub',
+      'Scott Henderson — GBD Slonimsky stub (planning weights only; no VRB slice)',
+      'songwriter',
+      'melody',
+      5,
+      'global'
+    ),
+  ];
   rules.david_gilmour = [
     R('riff.david_gilmour.sigma', 'Riff VRB σ26 — lyrical rock (reuses prince rule family)', 'songwriter', 'melody', 8, 'global'),
     ...prince,

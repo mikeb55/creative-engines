@@ -33,6 +33,10 @@ const VOICE_LABELS: Record<string, string> = {
   hendrix: 'Jimi Hendrix',
   fripp: 'Robert Fripp',
   sonic_youth: 'Sonic Youth',
+  wes_montgomery: 'Wes Montgomery',
+  joe_pass: 'Joe Pass',
+  allan_holdsworth: 'Allan Holdsworth',
+  scott_henderson: 'Scott Henderson',
 };
 
 /** Engine {@link getVoiceRuleBundle} resolves to a non-neutral bundle. */
@@ -72,6 +76,18 @@ const GBD_VOICE_IDS = [
   'david_gilmour',
   'hendrix',
   'fripp',
+  'wes_montgomery',
+  'joe_pass',
+  'allan_holdsworth',
+  'scott_henderson',
+] as const;
+
+/** GBD Slonimsky writer — planning stub only (no VRB / no harmony slice). */
+export const SLONIMSKY_GBD_STUB_WRITER_IDS = [
+  'wes_montgomery',
+  'joe_pass',
+  'allan_holdsworth',
+  'scott_henderson',
 ] as const;
 
 const SONIC_YOUTH_OPTION: SlonimskyHarmonicVoiceOption = {
@@ -91,9 +107,18 @@ export function isSlonimskySongModeStubWriter(id: string): boolean {
   return (SLONIMSKY_SONG_MODE_STUB_WRITER_IDS as readonly string[]).includes(t);
 }
 
+export function isSlonimskyGbdStubWriter(id: string): boolean {
+  const t = id.trim().toLowerCase();
+  return (SLONIMSKY_GBD_STUB_WRITER_IDS as readonly string[]).includes(t);
+}
+
 export function isSlonimskyGenericVoiceWarning(id: string): boolean {
   const t = id.trim().toLowerCase();
-  return t === SLONIMSKY_SONIC_YOUTH_GENERIC_VOICE_ID || isSlonimskySongModeStubWriter(t);
+  return (
+    t === SLONIMSKY_SONIC_YOUTH_GENERIC_VOICE_ID ||
+    isSlonimskySongModeStubWriter(t) ||
+    isSlonimskyGbdStubWriter(t)
+  );
 }
 
 export function slonimskySongModeWriterWarningBody(id: string): string {
@@ -101,6 +126,16 @@ export function slonimskySongModeWriterWarningBody(id: string): string {
     return '⚠ stub voice — no dedicated Song Mode harmony slice; engine uses generic planning weights only.';
   }
   return SLONIMSKY_GENERIC_VOICE_WARNING_BODY;
+}
+
+export function slonimskyGbdWriterWarningBody(id: string): string {
+  if (isSlonimskyGbdStubWriter(id)) {
+    return '⚠ stub voice — no dedicated VRB bundle or GBD harmony slice; macro flavor only.';
+  }
+  if (id.trim().toLowerCase() === SLONIMSKY_SONIC_YOUTH_GENERIC_VOICE_ID) {
+    return SLONIMSKY_GENERIC_VOICE_WARNING_BODY;
+  }
+  return '';
 }
 
 export const SLONIMSKY_GENERIC_VOICE_OPTION_SUFFIX = ' ⚠ generic voice';
@@ -131,7 +166,7 @@ export function slonimskyHarmonicVoiceOptionsForMode(
           : [];
   const out: SlonimskyHarmonicVoiceOption[] = [];
   for (const id of ids) {
-    const o = option(id);
+    const o = option(id, mode === 'gbd' && isSlonimskyGbdStubWriter(id));
     if (o) out.push(o);
   }
   if (mode === 'song_mode' || mode === 'big_band' || mode === 'string_quartet') {
