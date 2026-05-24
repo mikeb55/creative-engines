@@ -215,6 +215,68 @@ These voices work in Song Mode and shape melody + harmony + rhythm as a complete
 
 ---
 
+### 2.7 Frank Zappa — FZ_* receipt fingerprints (V64 P3)
+
+When **Frank Zappa** is the Song Mode writer or harmonic voice, the engine loads **fifteen `FZ_*` fingerprint receipts** on the Frank Zappa VRB. These are planning rules that compile into the **riff profile** (density, meter feel, register, variation operators) — not the separate **GCE structural** layer (odd-meter maps, absurdist section kinds, register-swap bars) that P2 added. Think of **P2** as *form and meter architecture*; **FZ_*** as *how the guitar/solo lane behaves* inside that architecture.
+
+**When they fire:** On every generate where `frank_zappa` resolves to the Frank Zappa VRB — Song Mode duo, riff generator, and blues-rock ferocity solo path. Receipts merge into `riffProfile` before notes are written. Twelve receipts apply broad prefix rules (harmony, melody, rhythm, etc.); **three are fully promoted (P3)** with dedicated patches and golden fixtures (seeds **77001–77003**, off smoke until P8).
+
+#### All 15 FZ_* stubs (one line each)
+
+| Receipt | Description |
+|---|---|
+| **FZ_HARM_01** | Polytonal overlays; slash-chords and sudden unrelated tonal islands. |
+| **FZ_HARM_02** | Jazz, rock, and neo-classical harmonic fragments in one phrase window. |
+| **FZ_MELO_01** | Angular wide leaps, register jumps, motivic cells in the “wrong” metre. |
+| **FZ_MELO_02** | Sprechstimme-adjacent contour allowed as guitar colour. |
+| **FZ_RHY_01** | Complex metres, sudden metric resets, anti-metric precise notation feel. |
+| **FZ_ORCH_01** | Dense eclectic texture, then sudden drop to a single voice. |
+| **FZ_DIS_01** | High dissonance tolerance; clusters may sustain across barlines. |
+| **FZ_FORM_01** | Through-composed; anti-repetition; hard episode cuts. |
+| **FZ_BASS_01** | Angular chromatic bass; no conventional walking lines. |
+| **FZ_GTR_01** | Clean-tone islands inside distorted phrases; stereo ping-pong optional. |
+| **FZ_BURST** | **Promoted (P3)** — density spike then hard silence tail (see below). |
+| **FZ_METRIC_SHIFT** | **Promoted (P3)** — metric displacement + superimposed 7/8 feel (see below). |
+| **FZ_REGISTER_COLLISION** | **Promoted (P3)** — wide register + forced register swap (see below). |
+| **FZ_DIFF_01** | Not fusion smooth jazz: no continuous diatonic 8th-note spine. |
+| **FZ_DIFF_02** | Not minimalism: no steady pulse without pitch chaos on top. |
+
+`FZ_DIFF_*` are metadata-only guardrails (they steer planning text, not a numeric patch). The other prefix families (`FZ_HARM_*`, `FZ_MELO_*`, etc.) already compile to riff-profile fields.
+
+#### FZ_BURST — density spike and silence tail
+
+**What it does:** Raises solo **note-density ceiling**, declares **thick→thin** section-density transitions, and sets cadence weights toward **hard_stop_rest** (phrase ends that cut off rather than fade).
+
+**When it fires:** Whenever the Frank Zappa VRB profile is built for the request — including Song Mode with `frank_zappa` and ferocity solo paths that read the merged `riffProfile`.
+
+**What you hear:** A bar or short run suddenly **fills up** (more attacks, busier sixteenth activity), then the next bar or phrase tail **drops out** — explicit breath/rest (`zappa_phrase_breath_rest` on the solo staff in Song Mode), not a long decay. Feels like Zappa **yelling then walking off** mid-groove.
+
+**Try it:** Static harmony (e.g. eight bars of `Am7`), writer **frank_zappa**, high Motion/Tension in the drawer — scan the **zappa_solo** staff for one dense bar followed by a nearly empty bar.
+
+#### FZ_METRIC_SHIFT — metric displacement
+
+**What it does:** Adds **`metricDisplacement`** (+0.25 over the Zappa stub baseline, typically ~0.8 on the profile) plus **grouping patterns** such as 3+3+2 and superimposed **7/8** against a straight grid.
+
+**When it fires:** Same VRB merge as above; works together with P2’s bar-meter map but does not replace it — P2 still owns written `<time>` changes; this receipt biases **rhythmic placement** inside each bar.
+
+**What you hear:** The pulse **looks straight on paper** but riffs and solo **lean across the bar** — accents land on unexpected eighth positions, hemiola-like **3+3+2** cells, “wrong” downbeats. Listener feels **metric sabotage**, not a new time signature on every bar.
+
+**Try it:** Zappa writer on a 4/4 chart; compare feel to **bill_evans** on the same chords — Zappa profile should show higher `metricDisplacement` in diagnostics.
+
+#### FZ_REGISTER_COLLISION — wide register and swap
+
+**What it does:** Widens allowed **MIDI register** (roughly 40–84 on the profile), forces **`registerShift`** in variation operators, and sets **`zappaRegisterSwapForced`** in tuning options so guitar and bass lanes can **exchange register roles** more aggressively.
+
+**When it fires:** On Frank Zappa VRB profile merge; Song Mode **Phase 4** register swap (P2) can still add bar-level swaps — this receipt **raises the floor/ceiling** and the swap appetite on the riff profile.
+
+**What you hear:** Guitar suddenly **screams in a high cluster**, bass or inner line **drops into a muddy low register**, or the roles **flip** for a bar — “wrong instrument in wrong octave” on purpose. Wider **vertical spread** than a polite jazz duo.
+
+**Try it:** Seed **77003** golden path — same `Bb7` loop as generic Song Mode; Zappa solo/register span should exceed a **bill_evans** run on the same seed/chords.
+
+**Engineering note:** Receipt compiler path is `patchForFzReceipt` in `riffReceiptCompiler.ts`; merged profile via `buildFrankZappaVrbRiffProfile()`. GCE structural fingerprint (`fz:*` pillars) remains a separate layer — do not confuse the two when reading export receipts.
+
+---
+
 ### 2.4 Guitar-Bass Duo voices
 
 These voices work in Guitar-Bass Duo mode and shape the two-voice interaction. **Slonimsky GBD panel** voices include tier (deep / good / stub); stub rows show ⚠ in the UI.
