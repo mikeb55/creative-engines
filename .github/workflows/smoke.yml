@@ -13,6 +13,7 @@ jobs:
   smoke:
     name: Composer OS Smoke
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
@@ -31,6 +32,9 @@ jobs:
         run: npm install --ignore-scripts --prefix engines/composer-os-v2
 
       - name: Run composer smoke tests
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+          COMPOSER_OS_SMOKE_TIER: full
         run: npm run test:composer-smoke
 
   audio-verify:

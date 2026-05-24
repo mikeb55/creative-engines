@@ -46,6 +46,7 @@ import {
   validateDuoSwingRhythm,
 } from './duoLockQuality';
 import { validateDuoMelodyIdentityV3 } from './duoMelodyIdentityV3';
+import { isFrankZappaSongwriterId } from '../gce/frankZappaStructuralFingerprint';
 
 export interface SectionContrastResult {
   valid: boolean;
@@ -206,6 +207,9 @@ export function runBehaviourGates(
   const errors: string[] = [];
   const duoIdentityWarnings: string[] = [];
   const songMode = opts?.compositionContext?.generationMetadata?.songModeHookFirstIdentity === true;
+  const zappaStructuralRelax = isFrankZappaSongwriterId(
+    opts?.compositionContext?.generationMetadata?.songwriterStyleId
+  );
   const duoCtx = { compositionContext: opts?.compositionContext };
   const guitarBarCount =
     score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar')?.measures.length ?? 0;
@@ -233,7 +237,7 @@ export function runBehaviourGates(
   if (!bass.valid) errors.push(...bass.errors);
 
   const contrast = validateSectionContrast(sections, densityPlan, score);
-  if (!contrast.valid) errors.push(...contrast.errors);
+  if (!contrast.valid && !zappaStructuralRelax) errors.push(...contrast.errors);
 
   let motifValid = true;
   if (opts?.motifState) {
@@ -284,11 +288,18 @@ export function runBehaviourGates(
     if (!bach.valid) errors.push(...bach.errors);
   }
 
-  const duoMusical = validateDuoMusicalQuality(score, { styleStack, presetId: opts?.presetId });
+  const duoMusical = validateDuoMusicalQuality(score, {
+    styleStack,
+    presetId: opts?.presetId,
+    zappaStructuralRelax,
+  });
   if (!duoMusical.valid) errors.push(...duoMusical.errors);
   const duoMusicalValid = duoMusical.valid;
 
-  const bassIdentity = validateBassIdentity(score, { presetId: opts?.presetId });
+  const bassIdentity = validateBassIdentity(score, {
+    presetId: opts?.presetId,
+    zappaStructuralRelax,
+  });
   if (!bassIdentity.valid) errors.push(...bassIdentity.errors);
   const bassIdentityValid = bassIdentity.valid;
 

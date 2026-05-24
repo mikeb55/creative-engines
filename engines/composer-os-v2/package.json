@@ -12,7 +12,7 @@
     "test:full": "node --max-old-space-size=4096 ../../node_modules/tsx/dist/cli.mjs --tsconfig ../../tsconfig.json tests/runAllTests.ts full",
     "test:fast": "node --max-old-space-size=4096 ../../node_modules/tsx/dist/cli.mjs --tsconfig ../../tsconfig.json tests/runAllTests.ts fast",
     "test:smoke": "node --max-old-space-size=4096 ../../node_modules/tsx/dist/cli.mjs --tsconfig ../../tsconfig.json tests/runSmokeTests.ts",
-    "test:smoke-fast": "node -e \"process.env.COMPOSER_OS_SMOKE_TIER='fast';const {spawnSync}=require('child_process');const r=spawnSync(process.execPath,['--max-old-space-size=4096','../../node_modules/tsx/dist/cli.mjs','--tsconfig','../../tsconfig.json','tests/runSmokeTests.ts'],{stdio:'inherit',env:process.env,cwd:process.cwd()});process.exit(r.status??1)\"",
+    "test:smoke-fast": "node --max-old-space-size=4096 ../../node_modules/tsx/dist/cli.mjs --tsconfig ../../tsconfig.json scripts/runSmokeFastTier.ts",
     "test:retro": "tsx --tsconfig ../../tsconfig.json scripts/runRetroSelfTests.ts",
     "sibelius:diagnostic-variants": "tsx --tsconfig ../../tsconfig.json scripts/sibeliusDiagnosticVariants.ts",
     "polyphony:diagnostic-export": "tsx --tsconfig ../../tsconfig.json scripts/polyphonyDiagnosticExportCli.ts",

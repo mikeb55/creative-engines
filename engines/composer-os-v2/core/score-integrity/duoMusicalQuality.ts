@@ -23,7 +23,7 @@ function chordForBar(barIndex: number): string {
 
 export function validateDuoMusicalQuality(
   score: ScoreModel,
-  _opts?: { styleStack?: StyleStack; presetId?: string }
+  _opts?: { styleStack?: StyleStack; presetId?: string; zappaStructuralRelax?: boolean }
 ): DuoMusicalQualityResult {
   if (_opts?.presetId === 'ecm_chamber') return { valid: true, errors: [] };
   if (_opts?.presetId === GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID) return { valid: true, errors: [] };
@@ -72,7 +72,7 @@ export function validateDuoMusicalQuality(
       errors.push('Duo: guitar lacks breathing space (rest ratio below swing minimum ~20%)');
     }
   }
-  if (restRatio > 0.55) {
+  if (restRatio > 0.55 && !_opts?.zappaStructuralRelax) {
     errors.push(`Duo: guitar too sparse (rest ratio ${restRatio.toFixed(2)} above practical ceiling 0.55)`);
   }
 

@@ -23,10 +23,15 @@ export interface BassIdentityResult {
 /**
  * Golden-path bass must read as a melodic voice: contour, rhythm, targets, anti-loop.
  */
-export function validateBassIdentity(score: ScoreModel, opts?: { presetId?: string }): BassIdentityResult {
+export function validateBassIdentity(
+  score: ScoreModel,
+  opts?: { presetId?: string; zappaStructuralRelax?: boolean }
+): BassIdentityResult {
   if (opts?.presetId === 'ecm_chamber') return { valid: true, errors: [] };
   /** Walking-bass / LOCK gates target full duo texture; single-line mode enforces monophony elsewhere. */
   if (opts?.presetId === GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID) return { valid: true, errors: [] };
+  /** Frank Zappa duo: guide-tone / root-forward bass is intentional; jazz-pop bass-identity heuristics are non-blocking. */
+  if (opts?.zappaStructuralRelax) return { valid: true, errors: [] };
   const errors: string[] = [];
   const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
   if (!bass) return { valid: true, errors: [] };

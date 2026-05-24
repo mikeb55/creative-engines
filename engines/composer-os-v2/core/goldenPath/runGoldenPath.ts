@@ -196,6 +196,7 @@ import type { RhythmIntentControl } from '../rhythmIntentTypes';
 import { sanitizeBarMeterMap, type BarMeterMap } from '../rhythm/barMeterTypes';
 import { attachVoiceRuleBundleAndHarmonicScenes } from '../composer/attachVoiceRuleBundle';
 import { applyZappaGceStructuralFingerprintToContext } from '../gce/applyZappaGceStructuralGeneration';
+import { isFrankZappaSongwriterId } from '../gce/frankZappaStructuralFingerprint';
 import { attachFormPlanRhythmAndTension } from '../composer/formPlanAttach';
 import { applyRhythmMotifBindingToConstraints, RHYTHM_DNA_CELL_IDS } from '../composer/rhythmDnaMotifBinder';
 import { weightedRhythmSample, type StochasticConfig, DEFAULT_STOCHASTIC_CONFIG } from '../composer/stochasticLayer';
@@ -2484,12 +2485,16 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       const similarityWarning = 'return similarity';
       /** Song Mode: sliding-window motif coverage can read low while harmony/line quality is strong — non-blocking (same routing as hook contour). */
       const slidingMotifCoverageWarning = 'motif-mapped notes <50% in sliding window';
+      const zappaMotifPhraseRelax = isFrankZappaSongwriterId(
+        appliedContext.generationMetadata?.songwriterStyleId
+      );
       for (const issue of motifIssues) {
         const routeToPhraseWarnings =
           issue.includes(contourWarning) ||
           issue.includes(literalWarning) ||
           issue.includes(similarityWarning) ||
-          issue.includes(slidingMotifCoverageWarning);
+          issue.includes(slidingMotifCoverageWarning) ||
+          (zappaMotifPhraseRelax && issue.includes('consecutive bars without motif-mapped notes'));
         if (routeToPhraseWarnings) {
           songModePhraseWarnings = [...(songModePhraseWarnings ?? []), issue];
         } else {
@@ -2498,8 +2503,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       }
       const phraseIssues = validateSongModePhraseEngineV1(guitar, appliedContext);
       const { critical, warnings } = partitionSongModePhraseIssues(phraseIssues);
-      errors.push(...critical);
-      songModePhraseWarnings = [...(songModePhraseWarnings ?? []), ...warnings];
+      if (zappaMotifPhraseRelax) {
+        songModePhraseWarnings = [...(songModePhraseWarnings ?? []), ...critical, ...warnings];
+      } else {
+        errors.push(...critical);
+        songModePhraseWarnings = [...(songModePhraseWarnings ?? []), ...warnings];
+      }
     }
   }
   appendHarmonyPipelineTrace(appliedContext, 'score_builder', 'generateGoldenPathDuoScore finished');

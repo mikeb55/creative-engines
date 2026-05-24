@@ -460,7 +460,9 @@ import {
 import {
   finalizeAndSealDuoScoreBarMath,
   finalizeMeasureBarMathPerVoice,
+  type RhythmSnapMode,
 } from '../score-integrity/duoBarMathFinalize';
+import { isFrankZappaSongwriterId } from '../gce/frankZappaStructuralFingerprint';
 import { isProtectedBar } from '../score-integrity/identityLock';
 import {
   assertHookBarsUnchangedSinceSnapshot,
@@ -6817,6 +6819,21 @@ export function generateGoldenPathDuoScore(
     !shouldUseIndieArtPopDualGuitarRoute(context)
   ) {
     applyWybleDuoVelocityPolicy(afterExpressive);
+  }
+  stampAllMeasuresBeatSpansFromContext(afterExpressive, context);
+  if (isFrankZappaSongwriterId(context.generationMetadata?.songwriterStyleId)) {
+    const map = effectiveBarMeterMapForDuo(context);
+    if (map && Object.keys(map).length > 0) {
+      const bass = afterExpressive.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+      if (bass) {
+        const rhythmSnap: RhythmSnapMode =
+          afterExpressive.duoRhythmSnap === 'eighth_beats' ? 'eighth' : 'quarter';
+        for (const m of bass.measures) {
+          m.measureBeatSpanQuarters = resolveMeasureBeatSpanQuarters(m.index, map);
+          finalizeMeasureBarMathPerVoice(m, { forceBassMonoVoice1: true, rhythmSnap });
+        }
+      }
+    }
   }
   finalizeAndSealDuoScoreBarMath(afterExpressive);
   if (zappaFerocitySoloLane && context.generationMetadata?.soloLine) {
