@@ -1021,6 +1021,10 @@ export interface GenerationMetadata {
   zappaSectionKindSequence?: readonly string[];
   /** True when barMeterMap was auto-spliced from GCE fingerprint (not request-level). */
   zappaGceAutoBarMeterMap?: boolean;
+  /** P6 — Song schema section meter merged into barMeterMap. */
+  sectionMeterApplied?: boolean;
+  /** P6 — Zappa GCE meter mode used when auto meter enabled. */
+  zappaGceMeterMode?: 'disrupt' | 'respect' | 'own';
   /** String quartet — Frank Zappa SQ harmony slice (`fz:sq:` receipts); see `zappaStringQuartetSlice`. */
   zappaSQHarmonySlice?: boolean;
   zappaSQEffectiveHarmonyBars?: string[];

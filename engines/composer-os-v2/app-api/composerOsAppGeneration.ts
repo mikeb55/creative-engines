@@ -16,6 +16,7 @@ import { runBigBandRealisation } from '../core/big-band/runBigBandRealisation';
 import type { BigBandComposerId, BigBandEraId } from '../core/big-band/bigBandResearchTypes';
 import { runStringQuartetMode, type StringQuartetRunInput } from '../core/string-quartet/runStringQuartetMode';
 import { runQuartetRealisation } from '../core/string-quartet/runQuartetRealisation';
+import { resolveBarMeterMapForGenerateRequest } from '../core/section-architecture/resolveGenerationBarMeterMap';
 import { runSongMode } from '../core/song-mode/runSongMode';
 import type { SectionChordPlan } from '../core/song-mode/songCompilationTypes';
 import { buildChordProgressionTextForDuoFromCompiledSong } from '../core/song-mode/songModeBuilder';
@@ -1179,6 +1180,13 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       ? { debugFixtureMode: 'indie_dual_guitar_tuning_proof' as const }
       : {}),
     ...(req.barMeterMap ? { barMeterMap: req.barMeterMap } : {}),
+    ...(req.song ? { song: req.song } : {}),
+    ...(req.zappaGceAutoBarMeterMapEnabled === true ? { zappaGceAutoBarMeterMapEnabled: true } : {}),
+    ...(req.zappaGceMeterMode === 'disrupt' ||
+    req.zappaGceMeterMode === 'respect' ||
+    req.zappaGceMeterMode === 'own'
+      ? { zappaGceMeterMode: req.zappaGceMeterMode }
+      : {}),
     ...(req.primarySongwriterStyle?.trim().toLowerCase() === 'frank_zappa'
       ? {
           zappaSoloMidiLow: req.zappaSoloMidiLow,
@@ -2216,10 +2224,21 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
 
   const leadSheetForChordLock =
     !freeHarmony && leadSheet?.chordEvents?.length && !blendMergeApplied ? leadSheet : undefined;
+  const bbTotalBars = req.formId?.trim() === 'big_band_blues12' ? 42 : req.totalBars;
+  const resolvedBbBarMeterMap = resolveBarMeterMapForGenerateRequest({
+    totalBars: bbTotalBars,
+    song: req.song,
+    barMeterMap: req.barMeterMap,
+    zappaGceAutoBarMeterMapEnabled: req.zappaGceAutoBarMeterMapEnabled,
+    zappaGceMeterMode: req.zappaGceMeterMode,
+    songwriterStyleId: ensembleSongwriterStyleId,
+    zappaStyleMode: req.zappaStyleMode,
+    seed: runSeed,
+  });
   const bigBandRealisationInput: BigBandRunInput & { formId?: string; bpm?: number } = {
     seed: req.seed,
     title,
-    totalBars: req.formId?.trim() === 'big_band_blues12' ? 42 : req.totalBars,
+    totalBars: bbTotalBars,
     variationId: req.variationId,
     creativeControlLevel: req.creativeControlLevel,
     ensembleConfigId: req.ensembleConfigId,
@@ -2245,7 +2264,9 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     ...(typeof req.ensembleLeadSheetMusicXml === 'string' && req.ensembleLeadSheetMusicXml.trim()
       ? { ensembleLeadSheetMusicXml: req.ensembleLeadSheetMusicXml.trim() }
       : {}),
-    ...(req.barMeterMap && Object.keys(req.barMeterMap).length > 0 ? { barMeterMap: req.barMeterMap } : {}),
+    ...(resolvedBbBarMeterMap && Object.keys(resolvedBbBarMeterMap).length > 0
+      ? { barMeterMap: resolvedBbBarMeterMap }
+      : {}),
     ...(req.drumIntensity ? { drumIntensity: req.drumIntensity } : {}),
     ...(req.sectionIntensityOverrides && Object.keys(req.sectionIntensityOverrides).length > 0
       ? { sectionIntensityOverrides: req.sectionIntensityOverrides }
@@ -2326,7 +2347,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
       try {
         if (realised.score) {
           const baseName = path.basename(ensembleMusicXmlFilepath, '.musicxml');
-          writeDrumGuide(realised.score, outputDir, baseName, req.barMeterMap, req.bpm);
+          writeDrumGuide(realised.score, outputDir, baseName, resolvedBbBarMeterMap ?? req.barMeterMap, req.bpm);
         }
       } catch (e) {
         console.warn('Drum guide export failed:', (e as Error)?.message ?? e);
@@ -2335,7 +2356,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     try {
       if (!sectionRegenPartial && realised.score && ensembleMusicXmlFilepath) {
         const baseName = path.basename(ensembleMusicXmlFilepath, '.musicxml');
-        ensembleMidiFilepath = writeScoreMidi(realised.score, outputDir, baseName, req.barMeterMap, req.bpm);
+        ensembleMidiFilepath = writeScoreMidi(realised.score, outputDir, baseName, resolvedBbBarMeterMap ?? req.barMeterMap, req.bpm);
       }
     } catch (e) {
       console.warn('Score MIDI export failed:', (e as Error)?.message ?? e);
@@ -2558,6 +2579,16 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     sq.formPlan.totalBars,
     chordProgressionText
   );
+  const resolvedSqBarMeterMap = resolveBarMeterMapForGenerateRequest({
+    totalBars: req.totalBars,
+    song: req.song,
+    barMeterMap: req.barMeterMap,
+    zappaGceAutoBarMeterMapEnabled: req.zappaGceAutoBarMeterMapEnabled,
+    zappaGceMeterMode: req.zappaGceMeterMode,
+    songwriterStyleId: ensembleSongwriterStyleId,
+    zappaStyleMode: req.zappaStyleMode,
+    seed: effectiveSeed,
+  });
   const quartetRealisationInput: StringQuartetRunInput & { formId?: string; era?: BigBandEraId; bpm?: number } = {
     seed: effectiveSeed,
     title,
@@ -2584,7 +2615,9 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     ...(typeof req.ensembleLeadSheetMusicXml === 'string' && req.ensembleLeadSheetMusicXml.trim()
       ? { ensembleLeadSheetMusicXml: req.ensembleLeadSheetMusicXml.trim() }
       : {}),
-    ...(req.barMeterMap ? { barMeterMap: req.barMeterMap } : {}),
+    ...(resolvedSqBarMeterMap && Object.keys(resolvedSqBarMeterMap).length > 0
+      ? { barMeterMap: resolvedSqBarMeterMap }
+      : {}),
     ...(stringQuartetGenerationMetadata ? { generationMetadata: stringQuartetGenerationMetadata } : {}),
   };
   const sectionRegenBaseSq = req.sectionRegeneration?.baseMusicXml?.trim();
@@ -2651,7 +2684,7 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
       try {
         if (realised.score) {
           const baseName = path.basename(xmlFilepath, '.musicxml');
-          writeDrumGuide(realised.score, outputDir, baseName, req.barMeterMap, req.bpm);
+          writeDrumGuide(realised.score, outputDir, baseName, resolvedSqBarMeterMap ?? req.barMeterMap, req.bpm);
         }
       } catch (e) {
         console.warn('Drum guide export failed:', (e as Error)?.message ?? e);
@@ -2660,7 +2693,7 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     try {
       if (!sectionRegenPartialSq && realised.score) {
         const baseName = path.basename(xmlFilepath, '.musicxml');
-        quartetMidiFilepath = writeScoreMidi(realised.score, outputDir, baseName, req.barMeterMap, req.bpm);
+        quartetMidiFilepath = writeScoreMidi(realised.score, outputDir, baseName, resolvedSqBarMeterMap ?? req.barMeterMap, req.bpm);
       }
     } catch (e) {
       console.warn('Score MIDI export failed:', (e as Error)?.message ?? e);

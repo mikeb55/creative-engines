@@ -355,6 +355,12 @@ export interface GenerateRequest {
   zappaSoloDissonance?: 'mild' | 'moderate' | 'extreme';
   /** Song Mode / Frank Zappa: per-bar time signatures (1-based bar keys). Omitted → all 4/4. */
   barMeterMap?: BarMeterMap;
+  /** P6 — Song schema document (section `meterMap`, defaults, overrides). */
+  song?: import('../core/section-architecture/sectionArchitectureTypes').Song;
+  /** Frank Zappa P2 — opt-in GCE auto meter splice when no request `barMeterMap`. */
+  zappaGceAutoBarMeterMapEnabled?: boolean;
+  /** Frank Zappa P6 — section-meter interaction when auto meter enabled (`disrupt` default). */
+  zappaGceMeterMode?: import('../core/gce/frankZappaStructuralFingerprint').ZappaGceMeterMode;
   /** Song Mode / Fripp–King Crimson: asymmetric pulse cycle — preset id or validated custom (`asymmetricPresets.ts`). */
   asymmetricRhythm?: import('../core/rhythm/asymmetricPresets').AsymmetricRhythmRequest;
   /** Optional second asymmetric preset id for polymeter LCM diagnostics (`frippKingCrimsonSlice`). */

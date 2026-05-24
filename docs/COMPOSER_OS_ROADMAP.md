@@ -551,16 +551,13 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 
 ## V65 backlog
 
-### Per-section meter (engine-level)
+### Per-section meter (engine-level) — P6/P7 shipped (2026-05-24)
 
-- **`SectionPreset`** gains **`meterMap`**: `{ bar: number, meter: string }[]`
-- All generation modes read section **`meterMap`** at render time
-- **Applies to:** Song Mode, GBD, String Quartet, Big Band, ECM chamber, riff generator, etudes — any mode that produces notation
-- **Zappa GCE metric disruption** operates **on top of** section meter, not instead of it
-- **Done when:** a String Quartet and a Big Band composition can both use different time signatures per section from the same **`SectionPreset`** model
-- **Golden fixture required per mode**
-- **UI:** section editor shows meter per section, not just global meter
-- **Prerequisite:** **P4 + P5 shipped** — P6/P7 implement merge + meter render
+- **`SectionPreset.meterMap`** → dense **`barMeterMap`** via **`resolveBarMeterMapFromSong`**
+- **Applies to:** Song Mode, GBD, ECM (golden path), String Quartet, Big Band (API **`resolveBarMeterMapForGenerateRequest`**)
+- **`zappaGceMeterMode`**: `disrupt` (default) | `respect` | `own`
+- **Goldens** seeds **79001**–**79003** (off smoke until P7)
+- **Remaining:** UI section editor meter per section; vault/etudes when safe
 
 ---
 

@@ -144,8 +144,8 @@ export interface SectionPreset {
   rhythmProfile?: RhythmProfile;
   voicingProfile?: VoicingProfile;
   /**
-   * Per-section written meter timeline (typed only in P5 — engine wiring P7).
-   * @preference Does not replace global meter until render pass consumes it.
+   * Per-section written meter timeline.
+   * @preference Merged into render-time barMeterMap via resolveBarMeterMapFromSong (P6/P7).
    */
   meterMap?: readonly SectionMeterSpan[];
   /** @preference Section energy 0–1. */

@@ -10,7 +10,7 @@ import { FRANK_ZAPPA_STRUCTURAL_FINGERPRINT } from '../core/gce/frankZappaStruct
 const SEED = 76001;
 const CHORDS = Array.from({ length: 8 }, () => 'Bb7');
 
-function runFixture(primarySongwriterStyle: string) {
+function runFixture(primarySongwriterStyle: string, opts?: { zappaGceAutoBarMeterMapEnabled?: boolean }) {
   return runGoldenPathOnce(SEED, {
     presetId: 'guitar_bass_duo',
     totalBars: 8,
@@ -19,6 +19,7 @@ function runFixture(primarySongwriterStyle: string) {
     harmonyMode: 'custom_locked',
     lockedHarmonyBarsRaw: CHORDS,
     parsedChordBars: CHORDS,
+    ...(opts?.zappaGceAutoBarMeterMapEnabled ? { zappaGceAutoBarMeterMapEnabled: true } : {}),
   });
 }
 
@@ -49,7 +50,7 @@ function guitarRegisterSpread(score: ScoreModel | undefined): number {
 }
 
 function testZappaFingerprintApplied(): boolean {
-  const r = runFixture('frank_zappa');
+  const r = runFixture('frank_zappa', { zappaGceAutoBarMeterMapEnabled: true });
   const md = r.context?.generationMetadata;
   return (
     goldenRunOk(r) &&
@@ -61,7 +62,7 @@ function testZappaFingerprintApplied(): boolean {
 }
 
 function testZappaStructuralDiffVsGeneric(): boolean {
-  const zappa = runFixture('frank_zappa');
+  const zappa = runFixture('frank_zappa', { zappaGceAutoBarMeterMapEnabled: true });
   const generic = runFixture('bill_evans');
   if (!goldenRunOk(zappa) || !goldenRunOk(generic)) return false;
 
@@ -90,7 +91,8 @@ function testFingerprintParamsShape(): boolean {
     fp.metricDisruption === true &&
     fp.registerShiftProbability === 0.65 &&
     fp.absurdistJuxtaposition === true &&
-    fp.styleCollisionWeight === 0.7
+    fp.styleCollisionWeight === 0.7 &&
+    fp.zappaGceMeterMode === 'disrupt'
   );
 }
 

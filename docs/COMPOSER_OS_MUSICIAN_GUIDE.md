@@ -359,9 +359,9 @@ You can blend two VRBs with a weight split (e.g. `Debussy 0.5 + Ravel 0.5`). The
 
 ---
 
-### 2.9 Section architecture — Song, sections, and what changes when you edit (V64 P5)
+### 2.9 Section architecture — Song, sections, and per-section meter (V64 P6)
 
-Composer OS is moving from “one global feel for the whole piece” to a **Song document**: defaults at the top, **sections** with bar ranges, optional inheritance, and small **local overrides** on specific bars. P5 ships the **TypeScript contract** and the written rules; the engine **merges** those fields per bar in P6 and applies **per-section meter** in P7.
+Composer OS uses a **Song document**: defaults at the top, **sections** with bar ranges, optional inheritance, and small **local overrides** on specific bars. P6 merges those fields per bar and applies **per-section meter** at generate time (Song Mode, Guitar–Bass Duo, ECM, Big Band, String Quartet).
 
 **Plain-English model**
 
@@ -369,19 +369,43 @@ Composer OS is moving from “one global feel for the whole piece” to a **Song
 |---|---|
 | **Song** | Title, `schemaVersion`, global defaults, named profile library, list of sections, local overrides |
 | **SongDefaults** | Tempo, meter, default pitch/rhythm/voicing/density, tuning per instrument, humanize |
-| **Section** | Bar range (e.g. 1–4), type (verse/chorus/solo…), optional parent via `inheritsFrom`, section profiles, transitions, per-instrument overrides |
+| **Section** | Bar range (e.g. 1–4), type (verse/chorus/solo…), optional parent via `inheritsFrom`, section profiles, **`meterMap`**, transitions, per-instrument overrides |
 | **LocalOverride** | “On bars 6–6 only, set metric displacement to 0.83” |
 | **Effective context** | What the generator actually uses **on that bar** after all layers are merged |
 
 **Precedence (lowest wins first, last wins on conflicts)**
 
-1. Song-wide defaults  
+1. Song-wide defaults (`SongDefaults.meter`, profiles, tempo…)  
 2. Parent section if `inheritsFrom` is set  
-3. This section’s pitch / rhythm / voicing / energy  
+3. This section’s pitch / rhythm / voicing / energy / **`meterMap`**  
 4. Instrument-specific overrides in that section  
 5. Local overrides on matching bars  
+6. **Manual API `barMeterMap`** — always wins per bar when you set it explicitly  
 
-**Sonic Youth example (already partly live via per-section VRB markers)**
+**Meter stack (when Zappa GCE structural mode is active)**
+
+| Priority | Source |
+|---|---|
+| Highest | Request `barMeterMap` (manual API) |
+| ↑ | Section `meterMap` (Song schema) |
+| ↑ | Zappa GCE auto meter (mode-dependent — see below) |
+| Lowest | `SongDefaults.meter` (global fallback; compositions without a Song document unchanged) |
+
+**Per-section meter — plain English**
+
+Set a different time signature per section without re-pasting chords. Example **String Quartet**: **4/4** verse (bars 1–4) → **7/8** bridge (bars 5–8) → **3/4** outro (bars 9–12). Example **Big Band**: **4/4** head → **5/4** solo section. Each section’s `meterMap` carries forward inside that section until the next span.
+
+**Frank Zappa GCE — `zappaGceMeterMode`**
+
+When Zappa GCE auto meter is enabled (`zappaGceAutoBarMeterMapEnabled`), choose how it interacts with section meter:
+
+| Mode | What it does | When to use |
+|---|---|---|
+| **`disrupt`** (default) | Zappa 7/8 + 5/4 + 4/4 splice **overlays** section meter | Classic Zappa chaos on top of your form |
+| **`respect`** | Zappa structural behaviours fire; **section meter untouched** | **String Quartet + Zappa** — harmony/texture without wrecking your 7/8 bridge |
+| **`own`** | Zappa owns meter; section meter ignored (`req.barMeterMap` still wins) | Full Zappa metric takeover |
+
+**Sonic Youth example (partly live via per-section VRB markers)**
 
 - **Bars 1–4 (Section A):** base Sonic Youth feel — grid, moderate outside level.  
 - **Bars 5–8 (Section B):** same chords/seed, but higher chromatic budget, stronger metric displacement, Slonimsky receipt **SY_SLON_01** on the harmonic voice layer.  
@@ -394,6 +418,7 @@ You hear A as “normal noisy SY”; B as “same band, sabotaged metre and more
 |---|---|
 | A **named profile** used in several sections | Every section that references it |
 | A section’s **bar range** | That section + transition bars at both seams |
+| **`meterMap`** on a section | That section’s bars |
 | **Instrument overrides** in one section | That section only |
 | A **local override** | Only the bars in its range |
 | **`inheritsFrom`** | That section and all sections that inherit from it (directly or indirectly) |
@@ -404,9 +429,9 @@ Edits that do **not** force new notes: title/labels only, or documentation-only 
 **Hard vs soft rules**
 
 - **Hard (block save/load):** overlapping sections, gaps in bar coverage, circular inheritance, tuning profile on wrong instrument, missing profile id after delete.  
-- **Soft (warn, still generate):** empty cell sets with sequence ops present, local override path the engine does not recognise yet, `meterMap` present before P7 (stored but not applied at render).
+- **Soft (warn, still generate):** empty cell sets with sequence ops present, local override path the engine does not recognise yet.
 
-Full spec: **`docs/COMPOSER_OS_SECTION_ARCHITECTURE.md`**. Types: **`engines/composer-os-v2/core/section-architecture/sectionArchitectureTypes.ts`**.
+Full spec: **`docs/COMPOSER_OS_SECTION_ARCHITECTURE.md`**. Types + resolution: **`engines/composer-os-v2/core/section-architecture/`**.
 
 ---
 

@@ -183,14 +183,26 @@ export function shouldApplyZappaGceStructuralGeneration(context: CompositionCont
   return resolveZappaStyleMode(context) === 'compositional';
 }
 
+export interface ZappaGceStructuralApplyOptions {
+  /** Request already supplied `barMeterMap` — never overwrite. */
+  requestBarMeterMapPresent: boolean;
+  /**
+   * Opt-in: synthesize fingerprint splice `barMeterMap` when no request map.
+   * Off by default so legacy Zappa duo / smoke (4/4) are unchanged until UI/API enables P2 meter.
+   */
+  autoBarMeterMapEnabled?: boolean;
+  /** When true, bar meter was resolved by {@link resolveGenerationBarMeterMap} — skip meter writes here. */
+  meterResolvedExternally?: boolean;
+  zappaGceMeterMode?: import('./frankZappaStructuralFingerprint').ZappaGceMeterMode;
+}
+
 /**
- * Wire GCE structural fingerprint into Song Mode section planning + meter map.
- * Skips barMeterMap when request already supplied one.
+ * Wire GCE structural fingerprint into Song Mode section planning + optional meter map.
  */
 export function applyZappaGceStructuralFingerprintToContext(
   context: CompositionContext,
   seed: number,
-  requestBarMeterMapPresent: boolean
+  opts: ZappaGceStructuralApplyOptions
 ): void {
   if (!shouldApplyZappaGceStructuralGeneration(context)) return;
   if (!context.form?.sections?.length) return;
@@ -199,12 +211,19 @@ export function applyZappaGceStructuralFingerprintToContext(
   const sectionCount = context.form.sections.length;
   let sectionKinds: ZappaSectionStyleKind[] | undefined;
 
-  if (fp.absurdistJuxtaposition) {
+  if (fp.absurdistJuxtaposition && opts.autoBarMeterMapEnabled === true) {
     sectionKinds = planZappaAbsurdistSectionKinds(seed, sectionCount, fp.styleCollisionWeight);
   }
 
   let barMeterMap: BarMeterMap | undefined;
-  if (fp.metricDisruption && !requestBarMeterMapPresent) {
+  const meterMode = opts.zappaGceMeterMode ?? fp.zappaGceMeterMode ?? 'disrupt';
+  if (
+    !opts.meterResolvedExternally &&
+    fp.metricDisruption &&
+    meterMode !== 'respect' &&
+    !opts.requestBarMeterMapPresent &&
+    opts.autoBarMeterMapEnabled === true
+  ) {
     barMeterMap = buildZappaGceAutoBarMeterMap(context.form, seed);
   }
 

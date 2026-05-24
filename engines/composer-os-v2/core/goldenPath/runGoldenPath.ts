@@ -195,8 +195,10 @@ import { finalizeSongModeSectionShaping } from '../song-mode/songModeSectionCont
 import type { RhythmIntentControl } from '../rhythmIntentTypes';
 import { sanitizeBarMeterMap, type BarMeterMap } from '../rhythm/barMeterTypes';
 import { attachVoiceRuleBundleAndHarmonicScenes } from '../composer/attachVoiceRuleBundle';
-import { applyZappaGceStructuralFingerprintToContext } from '../gce/applyZappaGceStructuralGeneration';
-import { isFrankZappaSongwriterId } from '../gce/frankZappaStructuralFingerprint';
+import { applyZappaGceStructuralFingerprintToContext, shouldApplyZappaGceStructuralGeneration } from '../gce/applyZappaGceStructuralGeneration';
+import { isFrankZappaSongwriterId, type ZappaGceMeterMode } from '../gce/frankZappaStructuralFingerprint';
+import type { Song } from '../section-architecture/sectionArchitectureTypes';
+import { resolveGenerationBarMeterMap } from '../section-architecture/resolveGenerationBarMeterMap';
 import { attachFormPlanRhythmAndTension } from '../composer/formPlanAttach';
 import { applyRhythmMotifBindingToConstraints, RHYTHM_DNA_CELL_IDS } from '../composer/rhythmDnaMotifBinder';
 import { weightedRhythmSample, type StochasticConfig, DEFAULT_STOCHASTIC_CONFIG } from '../composer/stochasticLayer';
@@ -1243,6 +1245,12 @@ export interface RunGoldenPathOptions {
   zappaSoloDissonance?: 'mild' | 'moderate' | 'extreme';
   /** Optional per-bar meters (1-based keys); copied to context + `generationMetadata.barMeterMap`. */
   barMeterMap?: BarMeterMap;
+  /** P6 — Song schema document (section meterMap + defaults). */
+  song?: Song;
+  /** Frank Zappa P2 — opt-in auto `barMeterMap` from GCE splice when no request map (default off). */
+  zappaGceAutoBarMeterMapEnabled?: boolean;
+  /** Frank Zappa P6 — how auto meter interacts with section meter (`disrupt` default). */
+  zappaGceMeterMode?: ZappaGceMeterMode;
   /** Song Mode / Fripp–King Crimson: asymmetric cycle (`asymmetricPresets` id or validated custom cycle). */
   asymmetricRhythm?: AsymmetricRhythmRequest;
   /** Optional second asymmetric preset id — polymeter LCM receipt (`frippKingCrimsonSlice`). */
@@ -1813,6 +1821,21 @@ function applyResolvedFormMapToContext(context: CompositionContext, form: FormMa
   };
 }
 
+function wireResolvedBarMeterMapToContext(
+  context: CompositionContext,
+  resolved: ReturnType<typeof resolveGenerationBarMeterMap>
+): void {
+  if (!resolved.barMeterMap || Object.keys(resolved.barMeterMap).length === 0) return;
+  context.barMeterMap = resolved.barMeterMap;
+  context.generationMetadata = {
+    ...context.generationMetadata,
+    barMeterMap: resolved.barMeterMap,
+    sectionMeterApplied: resolved.sectionMeterApplied,
+    zappaGceMeterMode: resolved.zappaGceMeterMode,
+    ...(resolved.zappaMeterApplied ? { zappaGceAutoBarMeterMap: true } : {}),
+  };
+}
+
 /**
  * Single seed, no duo lock candidate sweep — use for deterministic inspection / tests.
  * For `custom_locked` / parsed text, pass `parsedChordBars` + `lockedHarmonyBarsRaw` as `runGoldenPath` does after its resolve step; text alone is not enough.
@@ -1839,14 +1862,6 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     }
   }
   const context = buildContextForGoldenPath(seed, effectiveOptions);
-  const barMeterFromRequest = sanitizeBarMeterMap(options?.barMeterMap);
-  if (barMeterFromRequest) {
-    context.barMeterMap = barMeterFromRequest;
-    context.generationMetadata = {
-      ...context.generationMetadata,
-      barMeterMap: barMeterFromRequest,
-    };
-  }
   const motifAuthorityLevelRequested = resolveMotifAuthorityLevel(options);
   const motifAuthorityEligible = isMotifAuthorityPilotPreset(
     options?.presetId ?? context.presetId,
@@ -1881,6 +1896,19 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       defaultForm: context.form,
     });
     applyResolvedFormMapToContext(context, resolvedForm);
+  }
+  {
+    const meterResolved = resolveGenerationBarMeterMap({
+      totalBars: context.form.totalBars,
+      song: options?.song,
+      requestBarMeterMap: options?.barMeterMap,
+      zappaGceAutoBarMeterMapEnabled: options?.zappaGceAutoBarMeterMapEnabled,
+      zappaGceMeterMode: options?.zappaGceMeterMode,
+      zappaStructuralActive: shouldApplyZappaGceStructuralGeneration(context),
+      form: context.form,
+      seed,
+    });
+    wireResolvedBarMeterMapToContext(context, meterResolved);
   }
   if (options?.creativeControlLevel) {
     context.generationMetadata = {
@@ -2377,7 +2405,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   attachVoiceRuleBundleAndHarmonicScenes(context, harmonicVoiceOptionsForGoldenPath(options));
   attachFormPlanRhythmAndTension(context, seed);
   attachMacroFormPlanToContext(context, options);
-  applyZappaGceStructuralFingerprintToContext(context, seed, !!barMeterFromRequest);
+  applyZappaGceStructuralFingerprintToContext(context, seed, {
+    requestBarMeterMapPresent: !!sanitizeBarMeterMap(options?.barMeterMap),
+    autoBarMeterMapEnabled: options?.zappaGceAutoBarMeterMapEnabled === true,
+    meterResolvedExternally: true,
+    zappaGceMeterMode: options?.zappaGceMeterMode,
+  });
 
   logEcmPhaseProbe(probeEcm, 'before_plan_build');
   let plans: GoldenPathPlans;

@@ -24,6 +24,9 @@ export const ZAPPA_GCE_METER_SPLICE = [
 
 export type ZappaHarmonicCadenceTarget = 'bII' | 'bVII' | 'tritone_sub';
 
+/** How Zappa GCE auto meter interacts with Song section meter. */
+export type ZappaGceMeterMode = 'disrupt' | 'respect' | 'own';
+
 export interface FrankZappaStructuralFingerprint {
   id: typeof FRANK_ZAPPA_GCE_STRUCTURAL_FINGERPRINT_ID;
   phraseFragmentation: 'high';
@@ -40,6 +43,13 @@ export interface FrankZappaStructuralFingerprint {
   absurdistJuxtaposition: boolean;
   /** Weight toward picking clashing section kinds at boundaries (0–1). */
   styleCollisionWeight: number;
+  /**
+   * Section-meter interaction when auto barMeterMap is enabled.
+   * - `disrupt` (default): Zappa splice overlays section meter
+   * - `respect`: section meter untouched — safe for String Quartet + Zappa
+   * - `own`: Zappa replaces section meter (`req.barMeterMap` still wins)
+   */
+  zappaGceMeterMode: ZappaGceMeterMode;
 }
 
 export const FRANK_ZAPPA_STRUCTURAL_FINGERPRINT: FrankZappaStructuralFingerprint = {
@@ -54,6 +64,7 @@ export const FRANK_ZAPPA_STRUCTURAL_FINGERPRINT: FrankZappaStructuralFingerprint
   registerShiftProbability: 0.65,
   absurdistJuxtaposition: true,
   styleCollisionWeight: 0.7,
+  zappaGceMeterMode: 'disrupt',
 };
 
 const ZAPPA_SONGWRITER_IDS = new Set([

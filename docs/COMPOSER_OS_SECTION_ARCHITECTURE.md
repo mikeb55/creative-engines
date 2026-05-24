@@ -4,7 +4,7 @@
 **Contract signatures (no implementation until P6):** `sectionArchitectureContracts.ts`  
 **Geometry / layers (P4):** `sectionArchitectureDomain.ts`, `docs/SECTION_ARCHITECTURE_DOMAIN.md`
 
-This document is the **behavioural contract** for Song → Section → bar resolution. **Per-section meter engine wiring is P7** — `SectionPreset.meterMap` is typed in P5 but not consumed at render time in this phase.
+This document is the **behavioural contract** for Song → Section → bar resolution. **Per-section meter engine wiring shipped P6/P7 (2026-05-24)** — see **`resolveGenerationBarMeterMap.ts`**, **`barMeterResolution.ts`**.
 
 ---
 
