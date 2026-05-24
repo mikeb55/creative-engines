@@ -100,7 +100,7 @@ const SONIC_YOUTH_OPTION: SlonimskyHarmonicVoiceOption = {
 export const SLONIMSKY_SONIC_YOUTH_GENERIC_VOICE_ID = 'sonic_youth' as const;
 
 /** Song Mode Slonimsky writer — planning stub only (no harmony slice). */
-export const SLONIMSKY_SONG_MODE_STUB_WRITER_IDS = ['mccoy_tyner'] as const;
+export const SLONIMSKY_SONG_MODE_STUB_WRITER_IDS = [] as const;
 
 export function isSlonimskySongModeStubWriter(id: string): boolean {
   const t = id.trim().toLowerCase();

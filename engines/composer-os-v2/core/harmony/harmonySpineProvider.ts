@@ -122,6 +122,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   { match: (m) => m?.songwriterStyleId === 'kate_bush', effKey: 'kateBushEffectiveHarmonyBars', sliceId: 'kate_bush' },
   { match: (m) => m?.songwriterStyleId === 'thelonious_monk', effKey: 'theloniousMonkEffectiveHarmonyBars', sliceId: 'thelonious_monk' },
   { match: (m) => m?.songwriterStyleId === 'john_coltrane', effKey: 'johnColtraneEffectiveHarmonyBars', sliceId: 'john_coltrane' },
+  { match: (m) => m?.songwriterStyleId === 'mccoy_tyner', effKey: 'mccoyTynerEffectiveHarmonyBars', sliceId: 'mccoy_tyner' },
   { match: (m) => m?.songwriterStyleId === 'andrew_hill', effKey: 'andrewHillEffectiveHarmonyBars', sliceId: 'andrew_hill' },
   { match: (m) => m?.songwriterStyleId === 'jim_hall', effKey: 'jimHallEffectiveHarmonyBars', sliceId: 'jim_hall' },
   { match: (m) => m?.songwriterStyleId === 'steve_reich', effKey: 'steveReichEffectiveHarmonyBars', sliceId: 'steve_reich' },

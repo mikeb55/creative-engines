@@ -80,6 +80,7 @@ export const EFFECTIVE_HARMONY_TRUTH_REGISTRY: readonly EffectiveHarmonyTruthReg
   { songwriterStyleIds: ['kate_bush'], metadataKey: 'kateBushEffectiveHarmonyBars' },
   { songwriterStyleIds: ['thelonious_monk'], metadataKey: 'theloniousMonkEffectiveHarmonyBars' },
   { songwriterStyleIds: ['john_coltrane'], metadataKey: 'johnColtraneEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['mccoy_tyner'], metadataKey: 'mccoyTynerEffectiveHarmonyBars' },
   { songwriterStyleIds: ['andrew_hill'], metadataKey: 'andrewHillEffectiveHarmonyBars' },
   { songwriterStyleIds: ['jim_hall'], metadataKey: 'jimHallEffectiveHarmonyBars' },
   { songwriterStyleIds: ['charlie_parker'], metadataKey: 'charlieParkerEffectiveHarmonyBars' },

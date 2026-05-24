@@ -923,6 +923,10 @@ export interface OutputEntry {
   johnColtraneDeviceReceipts?: GenerationMetadata['johnColtraneDeviceReceipts'];
   johnColtraneSliceReceipt?: GenerationMetadata['johnColtraneSliceReceipt'];
   johnColtraneEffectiveHarmonyBars?: GenerationMetadata['johnColtraneEffectiveHarmonyBars'];
+  mccoyTynerDiagnostics?: GenerationMetadata['mccoyTynerDiagnostics'];
+  mccoyTynerDeviceReceipts?: GenerationMetadata['mccoyTynerDeviceReceipts'];
+  mccoyTynerSliceReceipt?: GenerationMetadata['mccoyTynerSliceReceipt'];
+  mccoyTynerEffectiveHarmonyBars?: GenerationMetadata['mccoyTynerEffectiveHarmonyBars'];
   coltranePhase?: GenerationMetadata['coltranePhase'];
   coltraneHarmonicDensity?: GenerationMetadata['coltraneHarmonicDensity'];
   /** Andrew Hill (angular non-functional harmony) slice — diagnostics / receipts (Song Mode manifest echo). */

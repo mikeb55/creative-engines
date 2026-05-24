@@ -371,6 +371,12 @@ import {
   precomputeJohnColtraneEffectiveHarmonyBars,
 } from './johnColtraneSlice';
 import {
+  accumulateMccoyTynerHarmonyDiagnostics,
+  createMccoyTynerHarmonyAccumulator,
+  finalizeMccoyTynerMetadata,
+  precomputeMccoyTynerEffectiveHarmonyBars,
+} from './mccoy_tyner';
+import {
   accumulateAndrewHillHarmonyDiagnostics,
   createAndrewHillHarmonyAccumulator,
   finalizeAndrewHillMetadata,
@@ -2534,6 +2540,7 @@ function buildGuitarPart(
   const isSongwriterKateBush = genMeta?.songwriterStyleId === 'kate_bush';
   const isSongwriterTheloniousMonk = genMeta?.songwriterStyleId === 'thelonious_monk';
   const isSongwriterJohnColtrane = genMeta?.songwriterStyleId === 'john_coltrane';
+  const isSongwriterMccoyTyner = genMeta?.songwriterStyleId === 'mccoy_tyner';
   const isSongwriterAndrewHill = genMeta?.songwriterStyleId === 'andrew_hill';
   const isSongwriterJimHall = genMeta?.songwriterStyleId === 'jim_hall';
   const isSongwriterCharlieParker = genMeta?.songwriterStyleId === 'charlie_parker';
@@ -2655,6 +2662,7 @@ function buildGuitarPart(
   const kbAccum = createKateBushHarmonyAccumulator();
   const tmAccum = createTheloniousMonkHarmonyAccumulator();
   const jcAccum = createJohnColtraneHarmonyAccumulator();
+  const mtAccum = createMccoyTynerHarmonyAccumulator();
   const ahAccum = createAndrewHillHarmonyAccumulator();
   const jhHallAccum = createJimHallHarmonyAccumulator();
   const srReichAccum = createSteveReichHarmonyAccumulator();
@@ -2833,6 +2841,9 @@ function buildGuitarPart(
   }
   if (isSongwriterJohnColtrane && isDuoGoldenPath) {
     precomputeJohnColtraneEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterMccoyTyner && isDuoGoldenPath) {
+    precomputeMccoyTynerEffectiveHarmonyBars(context);
   }
   if (isSongwriterAndrewHill && isDuoGoldenPath) {
     precomputeAndrewHillEffectiveHarmonyBars(context);
@@ -3247,6 +3258,13 @@ function buildGuitarPart(
         b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
         resolveBarSymbol(context, b).symbol,
         jcAccum
+      );
+    }
+    if (isSongwriterMccoyTyner) {
+      accumulateMccoyTynerHarmonyDiagnostics(
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
+        mtAccum
       );
     }
     if (isSongwriterAndrewHill) {
@@ -4080,6 +4098,10 @@ function buildGuitarPart(
 
   if (isSongwriterJohnColtrane && context.generationMetadata) {
     finalizeJohnColtraneMetadata(context.generationMetadata, jcAccum);
+  }
+
+  if (isSongwriterMccoyTyner && context.generationMetadata) {
+    finalizeMccoyTynerMetadata(context.generationMetadata, mtAccum);
   }
 
   if (isSongwriterAndrewHill && context.generationMetadata) {

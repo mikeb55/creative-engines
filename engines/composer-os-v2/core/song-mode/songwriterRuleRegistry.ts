@@ -1164,14 +1164,11 @@ const songwriterRules: Partial<Record<SongwriterRuleId, SongwritingRuleEntry[]>>
     R('md.cool_phrasing', 'Mid-register sparse melodic pacing (`md:cool_phrase`)', 'songwriter', 'melody', 8, 'verse'),
   ],
   mccoy_tyner: [
-    R(
-      'mt.quartal_stub',
-      'McCoy Tyner — quartal / pentatonic voicing stub (no dedicated Song Mode slice; planning weights only)',
-      'songwriter',
-      'harmony',
-      6,
-      'global'
-    ),
+    R('mt.quartal_colour', 'Bare tertians → m11/sus4 quartal palette (`mt:quartal_colour`)', 'songwriter', 'harmony', 9, 'global'),
+    R('mt.pentatonic_cluster', 'Pentatonic sus9 / 6/9 clusters (`mt:pentatonic_cluster`)', 'songwriter', 'harmony', 9, 'verse'),
+    R('mt.modal_minor_pedal', 'Modal minor m11 pedal fields (`mt:modal_minor_pedal`)', 'songwriter', 'harmony', 8, 'global'),
+    R('mt.iv_quartal', 'IV-rooted quartal stacks over minor tonality (`mt:iv_quartal`)', 'songwriter', 'harmony', 9, 'chorus'),
+    R('mt.dominant_sus', 'Plain dominants → 9sus4 / 13sus4 comping colour (`mt:dominant_sus`)', 'songwriter', 'harmony', 7, 'bridge'),
   ],
   bartok: [
     R('bk.axis_substitution', 'Minor-third / symmetric axis substitution vs functional ii–V (`bk:axis_substitution`)', 'songwriter', 'harmony', 9, 'global'),

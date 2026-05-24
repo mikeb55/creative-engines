@@ -27,7 +27,7 @@ const SLONIMSKY_GBD_STUB_WRITER_IDS = [
   'scott_henderson',
 ] as const;
 
-const SLONIMSKY_SONG_MODE_STUB_WRITER_IDS = ['mccoy_tyner'] as const;
+const SLONIMSKY_SONG_MODE_STUB_WRITER_IDS = [] as const;
 
 export function loadUiGolden<T>(fileName: string): T {
   return JSON.parse(fs.readFileSync(path.join(GOLDENS_DIR, fileName), 'utf8')) as T;

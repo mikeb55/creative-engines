@@ -451,6 +451,7 @@ export function runPipelineTruthGates(params: {
     const kbT = mdT.kateBushEffectiveHarmonyBars;
     const tmT = mdT.theloniousMonkEffectiveHarmonyBars;
     const jcT = mdT.johnColtraneEffectiveHarmonyBars;
+    const mtT = mdT.mccoyTynerEffectiveHarmonyBars;
     const ahT = mdT.andrewHillEffectiveHarmonyBars;
     const jhT = mdT.jimHallEffectiveHarmonyBars;
     const cpT = mdT.charlieParkerEffectiveHarmonyBars;
@@ -514,7 +515,9 @@ export function runPipelineTruthGates(params: {
                                         ? [...tmT]
                                         : mdT.songwriterStyleId === 'john_coltrane' && Array.isArray(jcT) && jcT.length === lockedN
                                           ? [...jcT]
-                                          : mdT.songwriterStyleId === 'andrew_hill' && Array.isArray(ahT) && ahT.length === lockedN
+                                          : mdT.songwriterStyleId === 'mccoy_tyner' && Array.isArray(mtT) && mtT.length === lockedN
+                                            ? [...mtT]
+                                            : mdT.songwriterStyleId === 'andrew_hill' && Array.isArray(ahT) && ahT.length === lockedN
                                             ? [...ahT]
                                             : mdT.songwriterStyleId === 'jim_hall' && Array.isArray(jhT) && jhT.length === lockedN
                                               ? [...jhT]

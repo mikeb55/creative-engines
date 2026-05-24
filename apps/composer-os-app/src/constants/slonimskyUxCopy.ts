@@ -56,7 +56,7 @@ export const SLONIMSKY_WRITER_ONE_LINER: Record<SlonimskySongModeWriterId, strin
   herbie_hancock: 'Angular funk-jazz harmony, quartal colour',
   larry_carlton: 'Fusion-funk guitar, lyrical then chromatic',
   david_gilmour: 'Singing rock lead, riff hooks and sustain',
-  mccoy_tyner: 'Quartal stacks, pentatonic fire (stub)',
+  mccoy_tyner: 'Quartal m11/sus stacks, pentatonic clusters, IV-quartal over minor',
   miles_davis: 'Cool modal space, lyrical then chromatic',
 };
 

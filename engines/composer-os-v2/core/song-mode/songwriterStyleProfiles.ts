@@ -1644,7 +1644,7 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
   mccoy_tyner: {
     id: 'mccoy_tyner',
     description:
-      'McCoy Tyner — quartal stacks and pentatonic fields (planning stub only; no dedicated Song Mode harmony slice).',
+      'McCoy Tyner — quartal m11/sus stacks, pentatonic clusters, modal minor pedals, IV-rooted quartal over minor tonality (full Song Mode slice).',
     lineVsCellEmphasis: 0.55,
     harmonyColourBias: 0.78,
     formRegularity: 0.4,

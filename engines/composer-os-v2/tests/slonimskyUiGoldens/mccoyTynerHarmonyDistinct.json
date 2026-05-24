@@ -1,0 +1,13 @@
+{
+  "id": "mccoy_tyner_harmony_distinct",
+  "seed": 66101,
+  "totalBars": 16,
+  "presetId": "guitar_bass_duo",
+  "baselineWriter": "pat_metheny",
+  "targetWriter": "mccoy_tyner",
+  "minBarsDifferentFromBaseline": 6,
+  "minQuartalTouches": 4,
+  "minIvQuartalDeviceReceipts": 2,
+  "minPentatonicTouches": 2,
+  "sliceReceiptIncludes": "McCoy Tyner"
+}

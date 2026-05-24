@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-24) V63 S1 — McCoy Tyner Song Mode slice** — `mccoyTynerSlice.ts` (`mt:*` quartal m11/sus, pentatonic clusters, modal minor pedals, IV-rooted quartal over minor); golden-path precompute + locked harmony routing; Slonimsky Song Mode stub ⚠ removed; harmony golden `mccoyTynerHarmonyDistinct.json` + `mccoyTynerHarmonyGolden.test.ts` (not in smoke tier until S6). Smoke **273/65/0** fast unchanged.
+
 - **(2026-05-23) V62 closeout — UI/boundary goldens + smoke + desktop** — Golden fixtures `engines/composer-os-v2/tests/slonimskyUiGoldens/` (Song Mode 7 writers, GBD 4 stubs, Lane 3 preset wiring, etude surfaces) + `slonimskyUiGolden.ts` verifier; **+14** smoke rows (**slonimsky-ui** + **Mode exposure** + **Wyble Etude pitch offset** suites). Smoke **273/65/0** fast · **438/79/0** full. **`docs/COMPOSER_OS_ROADMAP_V62.md`** marked complete.
 - **(2026-05-23) Lane 3 Wave 2 — Etude surfaces** — **`wyble_etude`**: Outside Level 0|1|2 only (`SlonimskyGbdPanel` `chromaticOnly` → `chromaticStrength` → Wyble `chromaticismLevel` via `chromaticStrengthToWybleChromaticismLevel`). **`slonimsky_etude`**: cell family selector only (`SlonimskyEtudeCellFamilyPanel` → `slonimskyPatternIdForCellFamily`). Smoke **259/63/0** fast · **424/77/0** full.
 

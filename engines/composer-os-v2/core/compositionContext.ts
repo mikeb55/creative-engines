@@ -1956,6 +1956,27 @@ export interface GenerationMetadata {
   johnColtraneSliceReceipt?: string;
   johnColtraneEffectiveHarmonyBars?: string[];
   johnColtraneDeviceReceipts?: string[];
+  /** McCoy Tyner — quartal / pentatonic / IV-over-minor modal slice. */
+  mccoyTynerDiagnostics?: {
+    songwriterId: 'mccoy_tyner';
+    sliceParameters?: {
+      quartalBias: number;
+      pentatonicBias: number;
+      modalMinorBias: number;
+      ivQuartalRate: number;
+      tritoneRate: number;
+      susBias: number;
+    };
+    barsConsidered: number;
+    quartalTouches: number;
+    pentatonicTouches: number;
+    ivQuartalTouches: number;
+    modalMinorTouches: number;
+    deviceReceipts?: string[];
+  };
+  mccoyTynerSliceReceipt?: string;
+  mccoyTynerEffectiveHarmonyBars?: string[];
+  mccoyTynerDeviceReceipts?: string[];
   /** Andrew Hill (post-bop angular non-functional harmony) — slice diagnostics + effective harmony. */
   andrewHillDiagnostics?: {
     songwriterId: 'andrew_hill';

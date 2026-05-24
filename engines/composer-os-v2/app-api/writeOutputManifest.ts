@@ -341,6 +341,10 @@ export function writeOutputManifest(
     johnColtraneDeviceReceipts?: GenerationMetadata['johnColtraneDeviceReceipts'];
     johnColtraneSliceReceipt?: GenerationMetadata['johnColtraneSliceReceipt'];
     johnColtraneEffectiveHarmonyBars?: GenerationMetadata['johnColtraneEffectiveHarmonyBars'];
+    mccoyTynerDiagnostics?: GenerationMetadata['mccoyTynerDiagnostics'];
+    mccoyTynerDeviceReceipts?: GenerationMetadata['mccoyTynerDeviceReceipts'];
+    mccoyTynerSliceReceipt?: GenerationMetadata['mccoyTynerSliceReceipt'];
+    mccoyTynerEffectiveHarmonyBars?: GenerationMetadata['mccoyTynerEffectiveHarmonyBars'];
     coltranePhase?: GenerationMetadata['coltranePhase'];
     coltraneHarmonicDensity?: GenerationMetadata['coltraneHarmonicDensity'];
     andrewHillDiagnostics?: GenerationMetadata['andrewHillDiagnostics'];
@@ -661,6 +665,10 @@ export function writeOutputManifest(
     johnColtraneDeviceReceipts: meta.johnColtraneDeviceReceipts,
     johnColtraneSliceReceipt: meta.johnColtraneSliceReceipt,
     johnColtraneEffectiveHarmonyBars: meta.johnColtraneEffectiveHarmonyBars,
+    mccoyTynerDiagnostics: meta.mccoyTynerDiagnostics,
+    mccoyTynerDeviceReceipts: meta.mccoyTynerDeviceReceipts,
+    mccoyTynerSliceReceipt: meta.mccoyTynerSliceReceipt,
+    mccoyTynerEffectiveHarmonyBars: meta.mccoyTynerEffectiveHarmonyBars,
     coltranePhase: meta.coltranePhase,
     coltraneHarmonicDensity: meta.coltraneHarmonicDensity,
     andrewHillDiagnostics: meta.andrewHillDiagnostics,

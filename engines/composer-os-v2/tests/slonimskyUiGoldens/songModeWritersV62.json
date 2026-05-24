@@ -30,7 +30,7 @@
       "writerId": "mccoy_tyner",
       "firstPresetLabel": "Patterned",
       "macro": { "sourcePreset": "symmetric", "motion": 0.05, "tension": 0.1, "variation": 0.1 },
-      "stubWriter": true
+      "stubWriter": false
     },
     {
       "writerId": "miles_davis",

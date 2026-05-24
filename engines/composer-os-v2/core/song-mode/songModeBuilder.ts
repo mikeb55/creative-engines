@@ -2823,6 +2823,33 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Fm7', 'Bb7b9', 'Ebmaj7#11', 'Ab7alt'],
     ],
   },
+  /** McCoy Tyner — modal minor quartal / IV-stack vocabulary (`MCCOY_TYNER_SLICE_PARAMETERS`). */
+  mccoy_tyner: {
+    verse: [
+      ['Dm11', 'Dm11', 'Gm11', 'Dm11'],
+      ['Dm11/D', 'Dsus4', 'Gm11/D', 'Am11'],
+      ['Fm11/D', 'Dm11', 'Gsus4', 'Dm11'],
+      ['Dm11', 'Fm11/D', 'Gm11', 'Am11'],
+    ],
+    chorus: [
+      ['Dm11', 'Gm11', 'Dm11', 'Fm11/D'],
+      ['Dsus4', 'Gm11', 'Am11', 'Dm11'],
+      ['Fm11/D', 'Dm11', 'Gsus4', 'Dm11'],
+      ['Gm11', 'Dm11', 'Fm11/D', 'Dsus4'],
+    ],
+    bridge: [
+      ['Eb6/9', 'Dm11', 'Gm11', 'Cm11'],
+      ['Fm11/D', 'Bb9sus4', 'Eb6/9', 'Dm11'],
+      ['Gm11', 'Am11', 'Dm11', 'Gsus4'],
+      ['Fm11/D', 'Dm11', 'Gm11', 'Am11'],
+    ],
+    pre_chorus: [
+      ['Dm11', 'Gm11', 'Am11', 'Dm11'],
+      ['Dsus4', 'Gm11', 'Fm11/D', 'Dm11'],
+      ['Gm11', 'Am11', 'Dm11', 'Gsus4'],
+      ['Fm11/D', 'Dm11', 'Gm11', 'Am11'],
+    ],
+  },
   /** Third-cycle centres + altered bridges (`COLTRANE_SLICE_PARAMETERS`) — giant-steps–style motion, no tritone-sub clichés. */
   john_coltrane: {
     verse: [

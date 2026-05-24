@@ -183,11 +183,9 @@ Some voices have deep research behind them (10+ fingerprint receipts) and produc
 John Coltrane · Pat Metheny · Clare Fischer · Quincy Jones · Sammy Nestico · Count Basie · Duke Ellington · Gil Evans · Wayne Shorter · Maria Schneider · Thad Jones · Charles Mingus · Bob Brookmeyer · Olivier Messiaen · Oliver Nelson
 
 **Good voices (solid differentiation):**
-Bill Evans · Herbie Hancock · Thelonious Monk · Debussy · Ravel · Bartok · Shostakovich · Jobim · Arvo Pärt · Ornette Coleman · Coltrane · Gershwin · Cole Porter
+Bill Evans · Herbie Hancock · McCoy Tyner · Thelonious Monk · Debussy · Ravel · Bartok · Shostakovich · Jobim · Arvo Pärt · Ornette Coleman · Coltrane · Gershwin · Cole Porter
 
 **Note on Sonic Youth:** Listed as a Slonimsky song-mode writer but has no dedicated voice bundle — falls back to a generic profile. A warning badge (⚠) appears in the UI. Use another writer if you need a specific character.
-
-**Note on McCoy Tyner (Song Mode):** Slonimsky Song Mode writer with planning stub only — no dedicated harmony slice. Shows ⚠ in the UI; flavor presets still apply.
 
 **Note on GBD stubs (Wes Montgomery, Joe Pass, Allan Holdsworth, Scott Henderson):** Listed in the Guitar–Bass Duo Slonimsky panel with flavor presets; no VRB bundle or GBD harmony slice. Shows ⚠ — macro flavor and outside level only.
 
@@ -206,7 +204,7 @@ These voices work in Song Mode and shape melody + harmony + rhythm as a complete
 | **Miles Davis** | deep | Cool modal space, sparse phrasing, lyrical then chromatic Slonimsky color. | Modal centers, sus, minor 7 |
 | **Larry Carlton** | good | Smooth fusion guitar; lyrical then chromatic (riff VRB surface). | Funk changes, dom7, sus |
 | **David Gilmour** | good | Singing rock lead, riff hooks and sustain (riff VRB surface). | Rock harmony, pedal tones |
-| **McCoy Tyner** | stub ⚠ | Quartal stacks, pentatonic fire — **macro flavor only** (no harmony slice). | Modal, quartal, sus |
+| **McCoy Tyner** | deep | Quartal m11/sus stacks, pentatonic clusters, modal minor pedals, IV-rooted quartal over minor tonality. | Modal minor, sus, quartal |
 | **Thelonious Monk** | deep | Angular, surprising, rhythmically displaced. Never where you expect. | Blues changes, ii-V-I, tritone subs |
 | **John Coltrane** | deep | Interval-cell driven, cyclical, high density. Sheets of sound. | Coltrane changes, modal, Giant Steps |
 | **Joni Mitchell** | deep | Open-tuning quartal harmony. Clear, floating, graceful with surprising turns. | Open voicings, sus2/sus4, modal |
