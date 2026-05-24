@@ -12,6 +12,10 @@ import type { CompositionContext } from '../compositionContext';
 import { applyVoiceBundleHarmonicRhythm } from '../composer/voiceBundleHarmonicRhythm';
 import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
 import {
+  hasSectionMarkerVrbAssignment,
+  resolveVoiceRuleBundleForBar,
+} from '../composer/resolveSectionVrb';
+import {
   hasExplicitPerSectionVrbAssignment,
   perSectionVrbResolutionEnabled,
   readSqToBbVrbWire,
@@ -873,6 +877,8 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
     const barCtx = resolveVrbForBar(barIndex, wire.contextMap, wire.globalFallback, wire.sections);
     rhythmBundle =
       (barCtx.vrbId ? getVoiceRuleBundle(barCtx.vrbId) : undefined) ?? context.voiceBundle;
+  } else if (hasSectionMarkerVrbAssignment(context)) {
+    rhythmBundle = resolveVoiceRuleBundleForBar(context, barIndex) ?? context.voiceBundle;
   }
   const afterRhythm = applyVoiceBundleHarmonicRhythm(barIndex, sym, context, rhythmBundle);
   if (context.voiceBundle && context.harmonicScenes?.length) {

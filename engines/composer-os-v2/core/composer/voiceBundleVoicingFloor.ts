@@ -5,6 +5,7 @@
 import type { CompositionContext } from '../compositionContext';
 import type { ChordEvent, NoteEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import { tensionLevelForBar } from './harmonicScene';
+import { resolveVoiceRuleBundleForBar } from './resolveSectionVrb';
 import { solveVoiceLeading, type VoicingCandidate } from './voiceLeadingSolver';
 import { effectiveSpreadSemitonesFromMetadata } from './bigBandSectionPlanRenderer';
 
@@ -25,8 +26,7 @@ function widenStack(sorted: number[], minS: number, maxS: number): number[] {
 }
 
 export function applyVoiceBundleVoicingSpreadFloor(score: ScoreModel, context: CompositionContext): void {
-  const vb = context.voiceBundle;
-  if (!vb) return;
+  if (!context.voiceBundle) return;
 
   const scenes = context.harmonicScenes ?? [];
 
@@ -40,6 +40,7 @@ export function applyVoiceBundleVoicingSpreadFloor(score: ScoreModel, context: C
     for (let mi = 0; mi < measures.length; mi++) {
       const m = measures[mi]!;
       const barNum = m.index;
+      const vb = resolveVoiceRuleBundleForBar(context, barNum) ?? context.voiceBundle;
       const mdSt =
         context.generationMetadata as { stochasticVariance?: number; stochasticRenderOrdinal?: number } | undefined;
       const sched = context.generationMetadata.scheduledTensionByBar;

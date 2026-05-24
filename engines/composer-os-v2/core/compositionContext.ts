@@ -45,6 +45,7 @@ import type { HarmonyContext } from './harmony/harmonyContext';
 import type { HarmonicScene } from './composer/harmonicScene';
 import type { AbstractLineSet } from './counterpoint/abstractLineSet';
 import type { VoiceRuleBundle } from './composer/voiceRuleBundle';
+import type { SectionMarker } from './composer/sectionMarkerTypes';
 import type { VoiceBundleHarmonicRhythmState } from './composer/voiceBundleHarmonicRhythm';
 import type { MacroFormPlan } from './form/macroFormPlanner';
 import type { BergStyleMode } from './style/berg/bergStyleModes';
@@ -1000,6 +1001,8 @@ export interface GenerationMetadata {
   slonimskyGbdCellReceipts?: string[];
   /** Z9 — song-mode Slonimsky cell selection receipts. */
   slonimskySongModeCellReceipts?: string[];
+  /** Per-section VRB marker wiring receipt (e.g. sonic_youth A/B Slonimsky switch). */
+  sectionVrbMarkerReceipt?: string;
   /** Z10/Z11 — ensemble Slonimsky cell receipts (SQ / BB). */
   slonimskyEnsembleCellReceipts?: string[];
   /** Context-specific synthetic / modal scale weights for manifests (honest bias labels only). */
@@ -2271,6 +2274,8 @@ export interface CompositionContext {
   harmonyContext?: HarmonyContext;
   /** Phase 2+3a — compiled harmonic voice policy (when harmonicVoice requested). */
   voiceBundle?: VoiceRuleBundle;
+  /** Per-section VRB markers — overrides merged per bar via {@link resolveVoiceRuleBundleForBar}. */
+  sectionMarkers?: SectionMarker[];
   /** Phase 2+3a — session harmonic scenes (stub rows until Phase 3b). */
   harmonicScenes?: HarmonicScene[];
   /** Phase 4+5 — harmonic form arc (when VoiceRuleBundle attached). */

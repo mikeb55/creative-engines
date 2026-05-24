@@ -7,6 +7,7 @@ import { buildHarmonicSceneStubs, buildHarmonicScenesForVoiceBundle } from './ha
 import { getVoiceRuleBundle, normalizeHarmonicVoiceId } from './voiceRuleBundles';
 import { applySlonimskyHarmonicSceneToContext } from '../slonimsky/slonimskyHarmonicScene';
 import { applySongModeSlonimskyCellLayer } from '../song-mode/songModeSlonimsky';
+import { attachDefaultSonicYouthSectionMarkers } from './resolveSectionVrb';
 
 /**
  * Songwriter ids that auto-resolve to a same-named VoiceRuleBundle when picked
@@ -75,6 +76,7 @@ export function attachVoiceRuleBundleAndHarmonicScenes(
 
   applySlonimskyHarmonicSceneToContext(context);
   applySongModeSlonimskyCellLayer(context);
+  attachDefaultSonicYouthSectionMarkers(context);
 
   if (!attachOpts?.skipHarmonicSceneLog) {
     console.log(

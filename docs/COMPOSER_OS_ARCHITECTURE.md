@@ -154,6 +154,10 @@ A **Voice Rule Bundle (VRB)** is a per-composer parameter set that governs how t
 
 **Registry source:** `engines/composer-os-v2/core/counterpoint/vrbProfiles/sqVrbProfileRegistry.ts` — twelve film-stub profiles. **Bartók** is the default SQ contrapuntal `VoiceRuleBundle` (native bundle, not a film-stub row in the registry); the picker enables Bartók, but `getSqVrbProfile('bartok')` is undefined.
 
+### Per-section VRB — `SectionMarker` (P7, all modes)
+
+**SQ→BB** already supports **whole-VRB-id** switching per canonical section label via **`SectionVrbContext`** / **`sqToBbVrbContextBySection`** (`vrbContextMap.ts`, `resolveVrbForBar`). **P7** adds **`SectionMarker`** (`sectionMarkerTypes.ts`) with **`vrbOverrides: Partial<VrbParams>`** — partial bundle + riff-profile + Slonimsky lane patches merged per bar by **`resolveVoiceRuleBundleForBar`** (`resolveSectionVrb.ts`). Consumers: **`getChordForBar`** (harmonic rhythm), **`applyVoiceBundleVoicingSpreadFloor`**, GBD **`buildGuitarBassDuoSlonimskyContext`** in **`generateGoldenPathDuoScore.ts`**. **sonic_youth** Song Mode auto-attaches A/B markers (bars 1–4 base · 5–8 **SY_SLON_01** elevated). Golden: **`sonicYouthPerSectionVrb.test.ts`** (seed **75002**, off smoke).
+
 ### VRB registry (σ ascending)
 
 | vrbId | σ ceiling | phraseArticulation | registerPolicy | bestBbStyle |

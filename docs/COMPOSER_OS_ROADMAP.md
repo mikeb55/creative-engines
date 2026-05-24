@@ -6,6 +6,8 @@
 
 **V58 — IN PROGRESS (2026-05-18):** **Per-section VRB assignment** (SQ→BB) — types + `VrbContextMap` + per-section Harmonic Voice picker; recon complete; await Perplexity advice then **Commit 1** (types + UI).
 
+**P7 — Per-section VRB param overrides (2026-05-24):** **`SectionMarker`** + per-bar **`VrbParams`** merge (Song Mode / GBD / all modes); **sonic_youth** A/B Slonimsky switch shipped; golden **`sonicYouthPerSectionVrb.test.ts`** (off smoke). Smoke **285/66/0** fast · **450/80/0** full unchanged.
+
 **V58 — COMPLETE since V57 (`0e2dfe0e` … `3b8db553`):** **Export-truth consolidation** (`assertExportTruth`) · **Contrapuntal Pass 4** (SQ/BB MusicXML from `contrapuntalLineSet`) · **Long forms 40–64 bars** (duo/song product quality) · **Film-stub VRBs → full receipts** (8 composers) · **Lead-sheet MusicXML import phase 3+** · **Output validation layer** (MIDI + MusicXML + audio; smoke +11 rows) · **SQ VRB slices:** Ligeti **σ=32**, Satie **σ=19**, Cole Porter **σ=25**, Gershwin **σ=27** · **GM string playback** (Violin I/II, Viola, Cello — Tone.Sampler + FluidR3_GM on SQ→BB panel).
 
 **SQ Harmonic Voice — GCE σ table (`registerCohesionStdevCeilingSt`, all 17):**

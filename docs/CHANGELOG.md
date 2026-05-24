@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-24) P7 — Per-section VRB (all modes) + sonic_youth golden** — **`SectionMarker`** + **`VrbParams`** (`sectionMarkerTypes.ts`); per-bar merge via **`resolveVoiceRuleBundleForBar`** / **`resolveSectionVrb.ts`** (harmonic rhythm, voicing spread floor, GBD Slonimsky lane). **sonic_youth** Song Mode auto-wires A (bars 1–4 base) / B (bars 5–8 **SY_SLON_01** + chromaticBudget **0.72** + metricDisplacement **+0.15**). Golden **`sonicYouthPerSectionVrb.test.ts`** seed **75002** (off smoke). Smoke **285/66/0** fast · **450/80/0** full unchanged.
+
 - **(2026-05-24) V63 S6 closeout — promoted voices smoke + desktop** — `promotedVoicesV63UiBoundary.json` + `v63PromotedVoicesGolden.test.ts` (UI/boundary + S1–S5 distinctness goldens in smoke). Smoke **285/66/0** fast · **450/80/0** full (+12 rows, +1 suite). `COMPOSER_OS_MUSICIAN_GUIDE.md` §4.1b (18 examples). `COMPOSER_OS_ROADMAP_V63.md` complete. Desktop rebuild.
 
 - **(2026-05-24) V63 S5 — Sonic Youth dedicated VRB** — `SONIC_YOUTH` in `riffVrbStubs.ts` (σ25, noise-rock dual-guitar / angular-chromatic Slonimsky bias); `SONIC_YOUTH` Slonimsky style profile + songwriter auto-resolve; Song Mode harmonic voice ⚠ removed; distinctness golden `sonicYouthDistinct.json` + `sonicYouthDistinctGolden.test.ts` (not in smoke tier until S6). Smoke **273/65/0** fast unchanged.

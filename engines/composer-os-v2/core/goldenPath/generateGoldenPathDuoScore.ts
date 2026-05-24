@@ -67,6 +67,7 @@ import { applyDuoWybleBassAnchorBar1Nudge } from './duoWybleBassAnchorNudge';
 import { wybleConsumptionReceiptForDuoFamily } from '../wyble/wybleConsumptionReceipt';
 import { RHYTHM_DNA_CELL_TABLE, type RhythmDnaCellId } from '../composer/rhythmDnaMotifBinder';
 import { applyVoiceBundleVoicingSpreadFloor } from '../composer/voiceBundleVoicingFloor';
+import { resolveSlonimskyParamsForBar } from '../composer/resolveSectionVrb';
 import { applyVoiceBundleRepairReceipt } from '../composer/voiceBundleRepairReceipt';
 import {
   applyVoiceBundleOverlapMitigation,
@@ -3767,6 +3768,7 @@ function buildGuitarPart(
         }
 
         let slonimskyBarCtx: SlonimskyContext | undefined;
+        const sectionSlon = resolveSlonimskyParamsForBar(context, b);
         if (isDuoGolden && isGuitarBassDuoFamily(context.presetId)) {
           const chordStr = resolveBarSymbol(context, b).symbol;
           const keyPc = inferTonicPitchClassFromBar1(context) ?? 0;
@@ -3778,6 +3780,11 @@ function buildGuitarPart(
             ...(genMeta?.slonimskyAllowedOutsideOverride !== undefined
               ? { allowedOutsideOverride: genMeta.slonimskyAllowedOutsideOverride }
               : {}),
+            ...(sectionSlon?.allowedOutsideLevel !== undefined
+              ? { allowedOutsideOverride: sectionSlon.allowedOutsideLevel }
+              : {}),
+            ...(sectionSlon?.catalogueSection ? { catalogueSection: sectionSlon.catalogueSection } : {}),
+            ...(sectionSlon?.phraseIntent ? { phraseIntent: sectionSlon.phraseIntent } : {}),
             totalQuarterBeats: tb * 4,
             styleProfile: normalizeStyleProfileId(genMeta?.styleProfile),
             chordSymbol: chordStr,
@@ -3785,10 +3792,17 @@ function buildGuitarPart(
             effectiveLow,
             effectiveHigh,
           });
+          if (sectionSlon?.elevateReceiptIds?.includes('SY_SLON_01') && slonimskyBarCtx.allowedOutsideLevel < 2) {
+            slonimskyBarCtx = { ...slonimskyBarCtx, allowedOutsideLevel: 2, phraseIntent: 'shock' };
+          }
           if (genMeta) {
             if (!genMeta.slonimskyGbdCellReceipts) genMeta.slonimskyGbdCellReceipts = [];
             pushGbdSlonimskyCellReceipt(genMeta.slonimskyGbdCellReceipts, b, slonimskyBarCtx, seed);
           }
+        }
+
+        if (sectionSlon?.phraseIntent === 'shock' && densityLevel !== 'sparse') {
+          densityLevel = 'sparse';
         }
 
         emitGuitarPhraseBar({
