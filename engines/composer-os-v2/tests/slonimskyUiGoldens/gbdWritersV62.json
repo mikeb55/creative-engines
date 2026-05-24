@@ -1,15 +1,4 @@
 {
   "id": "gbd_writers_v62",
-  "stubWriters": [
-    {
-      "writerId": "allan_holdsworth",
-      "firstPresetLabel": "Chromatic",
-      "macro": { "sourcePreset": "chromatic", "motion": 0.35, "tension": 0.52, "variation": 0.1 }
-    },
-    {
-      "writerId": "scott_henderson",
-      "firstPresetLabel": "Angular",
-      "macro": { "sourcePreset": "angular", "motion": 0.45, "tension": 0.42, "variation": -0.05 }
-    }
-  ]
+  "stubWriters": []
 }

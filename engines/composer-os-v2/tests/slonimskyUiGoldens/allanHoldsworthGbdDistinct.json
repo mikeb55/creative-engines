@@ -1,0 +1,15 @@
+{
+  "id": "allan_holdsworth_gbd_distinct",
+  "seed": 66204,
+  "totalBars": 16,
+  "presetId": "guitar_bass_duo",
+  "baselineHarmonicVoice": "scott_henderson",
+  "targetHarmonicVoice": "allan_holdsworth",
+  "minGuitarPitchesDifferent": 8,
+  "minRegisterMeanDelta": 0.5,
+  "minChromaticBudget": 0.65,
+  "maxBaselineChromaticBudget": 0.52,
+  "minMaxLeapSemitones": 12,
+  "maxBaselineMaxLeapSemitones": 11,
+  "fingerprintReceiptIncludes": "AH_MELO_01"
+}

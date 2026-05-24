@@ -83,10 +83,7 @@ const GBD_VOICE_IDS = [
 ] as const;
 
 /** GBD Slonimsky writer — planning stub only (no VRB / no harmony slice). */
-export const SLONIMSKY_GBD_STUB_WRITER_IDS = [
-  'allan_holdsworth',
-  'scott_henderson',
-] as const;
+export const SLONIMSKY_GBD_STUB_WRITER_IDS = [] as const;
 
 const SONIC_YOUTH_OPTION: SlonimskyHarmonicVoiceOption = {
   id: 'sonic_youth',

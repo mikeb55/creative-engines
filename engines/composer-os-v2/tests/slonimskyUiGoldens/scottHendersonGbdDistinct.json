@@ -1,0 +1,15 @@
+{
+  "id": "scott_henderson_gbd_distinct",
+  "seed": 66204,
+  "totalBars": 16,
+  "presetId": "guitar_bass_duo",
+  "baselineHarmonicVoice": "allan_holdsworth",
+  "targetHarmonicVoice": "scott_henderson",
+  "minGuitarPitchesDifferent": 8,
+  "minRegisterMeanDelta": 0.5,
+  "minBarIdentityPersistence": 0.62,
+  "maxBaselineBarIdentityPersistence": 0.35,
+  "minSubdivisionGrid": 16,
+  "maxBaselineSubdivisionGrid": 8,
+  "fingerprintReceiptIncludes": "SH_MELO_01"
+}

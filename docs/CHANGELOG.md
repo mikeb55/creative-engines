@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-24) V63 S4 — Allan Holdsworth + Scott Henderson GBD riff VRBs** — `ALLAN_HOLDSWORTH` + `SCOTT_HENDERSON` in `riffVrbStubs.ts`; cross-distinctness goldens `allanHoldsworthGbdDistinct.json` + `scottHendersonGbdDistinct.json`; GBD stub ⚠ removed for both. Smoke **273/65/0** fast unchanged.
+
 - **(2026-05-24) V63 S3 — Joe Pass GBD riff VRB** — `JOE_PASS` in `riffVrbStubs.ts` (σ24, fingerstyle chord-melody / chromatic bebop line); GBD `harmonicVoice` routing; distinctness golden `joePassGbdDistinct.json`; GBD stub ⚠ removed for Joe Pass. Smoke **273/65/0** fast unchanged.
 
 - **(2026-05-24) V63 S2 — Wes Montgomery GBD riff VRB** — `WES_MONTGOMERY` in `riffVrbStubs.ts` (σ25, octave jazz line, bebop-blues cells); GBD `harmonicVoice` routing via `resolveDuoRiffVrbLaneId`; distinctness golden `wesMontgomeryGbdDistinct.json`; GBD stub ⚠ removed for Wes. Smoke **273/65/0** fast unchanged.

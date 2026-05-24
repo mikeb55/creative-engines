@@ -325,6 +325,12 @@ function catalogueSectionForGbdSongwriter(songwriterId: string | undefined, bar:
   if (songwriterId === 'frank_zappa') {
     return bar % 2 === 0 ? 'tritone_progression' : 'intervallic_mirror_permutations';
   }
+  if (songwriterId === 'allan_holdsworth') {
+    return 'semitone_progression';
+  }
+  if (songwriterId === 'scott_henderson') {
+    return 'pentatonic_scales';
+  }
   if (
     songwriterId === 'pat_metheny' ||
     songwriterId === 'wayne_shorter' ||

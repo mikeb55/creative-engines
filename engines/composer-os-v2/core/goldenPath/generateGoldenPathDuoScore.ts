@@ -2348,6 +2348,22 @@ function buildSongwriterMelodyProfile(
         intervalBias: 'chromatic',
         rhythmicFeel: 'flowing',
       };
+    case 'allan_holdsworth':
+      return {
+        phraseIntentBias: 'neutral',
+        densityBias: 0.1,
+        offbeatBias: 0.55,
+        intervalBias: 'chromatic',
+        rhythmicFeel: 'flowing',
+      };
+    case 'scott_henderson':
+      return {
+        phraseIntentBias: 'ascending',
+        densityBias: 0.18,
+        offbeatBias: 0.62,
+        intervalBias: 'leaping',
+        rhythmicFeel: 'syncopated',
+      };
     case 'brian_wilson':
       return {
         phraseIntentBias: 'arch',

@@ -69,8 +69,8 @@ export const SLONIMSKY_GBD_WRITER_ONE_LINER: Record<SlonimskyGbdWriterId, string
   fripp: 'Oblique, layered, textural outside the groove',
   wes_montgomery: 'Warm octave jazz lines, bebop-blues riff cells, lyrical then riff',
   joe_pass: 'Fingerstyle chord-melody line, chromatic bebop phrasing',
-  allan_holdsworth: 'Legato outside lines, chromatic then angular (stub)',
-  scott_henderson: 'Fusion blaze, angular then riff (stub)',
+  allan_holdsworth: 'Chromatic legato outside lines, wide leaps, floating rhythm',
+  scott_henderson: 'Angular fusion riffs, blues chromaticism, grounded 16ths',
 };
 
 export const SLONIMSKY_FLAVOR_ORDER: readonly SlonimskySourcePreset[] = [

@@ -80,7 +80,14 @@ import {
   JONI_MITCHELL_FILM_STUB,
   WILLIAMS_FILM_STUB,
 } from './priority3VoiceRuleBundles';
-import { buildFrankZappaRiffProfile, EDDIE_VAN_HALEN, JOE_PASS, WES_MONTGOMERY } from './riffVrbStubs';
+import {
+  ALLAN_HOLDSWORTH,
+  buildFrankZappaRiffProfile,
+  EDDIE_VAN_HALEN,
+  JOE_PASS,
+  SCOTT_HENDERSON,
+  WES_MONTGOMERY,
+} from './riffVrbStubs';
 
 /** Interval-class seeds aligned with Threadgill / IntervalSetSystem posture (engine-local). */
 const THREADGILL_INTERVAL_CLASS_SEEDS = [1, 2, 3, 5, 6, 7, 8, 10];
@@ -3323,6 +3330,10 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   joe_pass: JOE_PASS,
   joe: JOE_PASS,
   pass: JOE_PASS,
+  allan_holdsworth: ALLAN_HOLDSWORTH,
+  holdsworth: ALLAN_HOLDSWORTH,
+  scott_henderson: SCOTT_HENDERSON,
+  henderson: SCOTT_HENDERSON,
   sly_stone: SLY_STONE_VRF,
   sly: SLY_STONE_VRF,
   family_stone: SLY_STONE_VRF,

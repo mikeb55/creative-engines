@@ -1282,23 +1282,25 @@ function wireRiffVrbSongwriterRules(): void {
   ];
   rules.allan_holdsworth = [
     R(
-      'gbd.allan_holdsworth.stub',
-      'Allan Holdsworth — GBD Slonimsky stub (planning weights only; no VRB slice)',
+      'riff.allan_holdsworth.sigma',
+      'Riff VRB σ24 — chromatic legato outside fusion line (reuses pat_metheny rule family)',
       'songwriter',
-      'harmony',
-      5,
+      'melody',
+      8,
       'global'
     ),
+    ...metheny,
   ];
   rules.scott_henderson = [
     R(
-      'gbd.scott_henderson.stub',
-      'Scott Henderson — GBD Slonimsky stub (planning weights only; no VRB slice)',
+      'riff.scott_henderson.sigma',
+      'Riff VRB σ24 — angular fusion riff + blues-chromatic blaze (reuses pat_metheny rule family)',
       'songwriter',
       'melody',
-      5,
+      8,
       'global'
     ),
+    ...metheny,
   ];
   rules.david_gilmour = [
     R('riff.david_gilmour.sigma', 'Riff VRB σ26 — lyrical rock (reuses prince rule family)', 'songwriter', 'melody', 8, 'global'),

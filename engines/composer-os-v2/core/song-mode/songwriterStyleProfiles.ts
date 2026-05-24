@@ -1972,7 +1972,8 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
   },
   allan_holdsworth: {
     id: 'allan_holdsworth',
-    description: 'GBD Slonimsky stub — legato fusion outside lines (planning weights only).',
+    description:
+      'Allan Holdsworth — dense chromatic legato outside lines, wide leaps, floating rhythm (full riff VRB).',
     lineVsCellEmphasis: 0.75,
     harmonyColourBias: 0.85,
     formRegularity: 0.35,
@@ -1990,7 +1991,8 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
   },
   scott_henderson: {
     id: 'scott_henderson',
-    description: 'GBD Slonimsky stub — fusion shred angular riff language (planning weights only).',
+    description:
+      'Scott Henderson — angular fusion riff hooks, blues-inflected chromaticism, grounded 16th groove (full riff VRB).',
     lineVsCellEmphasis: 0.58,
     harmonyColourBias: 0.7,
     formRegularity: 0.48,
@@ -2777,16 +2779,26 @@ export function resolveDuoRiffVrbLaneId(genMeta: GenerationMetadata | undefined)
 }
 
 /** Duo golden path: riff VRB receipt + surface (no Zappa solo merge). */
+function riffChromaticBudgetToSlonimskyOutside(chromaticBudget: number): 0 | 1 | 2 {
+  if (chromaticBudget >= 0.68) return 2;
+  if (chromaticBudget >= 0.5) return 1;
+  return 0;
+}
+
 export function applyRiffVrbDuoSongwriterBranch(
   context: import('../compositionContext').CompositionContext,
   songwriterId: string,
   isDuoGoldenPath: boolean
 ): void {
-  if (!isRiffVrbSongwriterId(songwriterId) || songwriterId === 'frank_zappa') return;
   if (!isDuoGoldenPath || !context.generationMetadata) return;
   const rp = getVoiceRuleBundle(songwriterId).riffProfile;
   if (!rp) return;
-  applyRiffVrbFamilyStyleSurface(context.generationMetadata, songwriterId);
+  if (isRiffVrbSongwriterId(songwriterId) && songwriterId !== 'frank_zappa') {
+    applyRiffVrbFamilyStyleSurface(context.generationMetadata, songwriterId);
+  }
+  context.generationMetadata.slonimskyAllowedOutsideOverride = riffChromaticBudgetToSlonimskyOutside(
+    rp.chromaticBudget ?? 0.3
+  );
   (context.generationMetadata as GenerationMetadata & { riffVrbDuoLaneReceipt?: string }).riffVrbDuoLaneReceipt =
     `Phase E: ${songwriterId} duo lane uses riffProfile posture (no Slonimsky solo merge).`;
 }

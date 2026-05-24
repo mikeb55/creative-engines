@@ -890,6 +890,24 @@ const DG_BASE = [
   'DG_MOD_01 — defaultRockMinor / majorBallad / ambientModal pools; ComfortablyNumb / ShineOn / WYWH presets.',
 ] as const;
 
+const AH_BASE = [
+  'AH_MELO_01 — Dense chromatic legato lines; wide intervallic leaps; floating rhythmic placement.',
+  'AH_SCL_01 — Unconventional scales (whole-tone, melodic minor, Lydian augmented); no blues-pentatonic clichés.',
+  'AH_VL_01 — Chromatic voice-leading with delayed resolution; legato slides between distant targets.',
+  'AH_RHY_01 — Behind-grid floating 8ths; metric displacement; low riff-loop persistence.',
+  'AH_TEX_01 — Single-voice soprano line; sustain attack; sparse double-stops.',
+  'AH_DIFF_01 — vs Scott Henderson: outside legato not blues-funk riff grid; vs Joe Pass: wider leaps, less cadential bebop.',
+] as const;
+
+const SH_BASE = [
+  'SH_MELO_01 — Angular fusion phrases with riff anchors; blues-inflected chromatic cells.',
+  'SH_RHY_01 — Rhythmically grounded 16th fusion grid; aggressive staccato attack pockets.',
+  'SH_BLU_01 — Blues minor + bebop dominant scale pool; bent inflections on cadence bars.',
+  'SH_RIF_01 — 2–4 bar riff cells with high bar-identity persistence; exact-loop hooks allowed.',
+  'SH_CHR_01 — Moderate chromatic budget; angular interval cells locked to groove.',
+  'SH_DIFF_01 — vs Allan Holdsworth: riff-grounded funk fusion not floating outside legato.',
+] as const;
+
 const JP_BASE = [
   'JP_MELO_01 — Fingerstyle single-line chord-melody; guide-tone targets with chromatic approach tones.',
   'JP_VL_01 — Sophisticated voice-leading: stepwise 3rd/7th resolution; enclosure figures on strong beats.',
@@ -1466,6 +1484,229 @@ export const JOE_PASS: VoiceRuleBundle = {
       attackPolicy: 'sustain',
       riffContourPolicy: { rangeCeiling: 11, apexTiming: 0.5, returnTendency: 0.68 },
       variationOperators: ['chromaticAdd', 'targetToneShift', 'ornamentAdd', 'cellTransposition'],
+    });
+  })(),
+};
+
+/** Allan Holdsworth — chromatic legato outside fusion line (σ24). */
+export const ALLAN_HOLDSWORTH: VoiceRuleBundle = {
+  voiceId: 'allan_holdsworth',
+  sigma: 24,
+  family: 'fusion',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 4,
+    allowMidBarChange: true,
+  },
+  bassPolicy: { role: 'root', allowOctaveDoubling: true },
+  voicingPolicy: {
+    minSpreadSemitones: 4,
+    maxSpreadSemitones: 28,
+    clusterSizeNotes: [1, 2],
+    forbidParallelFifths: false,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: { contour: 'angular', maxLeapSemitones: 14 },
+  orchestrationPolicy: {
+    anchorToneCount: 1,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: fillReceipts('AH', 'Allan Holdsworth', AH_BASE),
+  },
+  formPolicy: { narrativeArc: 'free', sectionRecallEnforced: false },
+  rhythmPolicy: { antiMetric: true },
+  repairPolicy: { resolveParallels: false, maxVoiceOverlap: 5 },
+  contrapuntalLinePolicy: {
+    enabled: true,
+    dissonanceProfile: DIS_LOW,
+    preferredImitationTypes: ['free'],
+    rhythmicIndependenceRequired: true,
+    lineRoleAssignment: 'dynamic',
+  },
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.55,
+    registerInterlock: false,
+    intervalPreference: 'upper_extension_non_functional',
+    textureTagType: 'jazz_swing_line',
+  },
+  riffProfile: (() => {
+    const slots = 8;
+    const accent = new Array<number>(slots).fill(0.32);
+    accent[1] = 0.55;
+    accent[3] = 0.62;
+    accent[5] = 0.58;
+    accent[7] = 0.52;
+    return riffProfileShell({
+      meterPolicy: 'simple',
+      subdivisionGrid: 8,
+      accentTopology: accent,
+      allowPitchStreak: true,
+      homeChordType: 'maj7',
+      chordQualitySet: ['maj7', 'min7', 'dom7', 'dom9', 'm7b5', 'alt', 'maj7#11', 'min9'],
+      scalePool: {
+        wholeTone: 0.28,
+        melodicMinor: 0.26,
+        lydianAugmented: 0.18,
+        altered: 0.16,
+        lydian: 0.12,
+      },
+      chromaticBudget: 0.74,
+      intervalCell: { steps: [4, 3, 2, 5], transpositionMode: 'chromatic' },
+      registerAnchor: 'high_register',
+      registerBandPerVoice: {
+        lead: { min: 58, max: 84 },
+        guitar: { min: 58, max: 84 },
+      },
+      riffRegisterFloor: 58,
+      riffRegisterCeiling: 84,
+      topNoteLinePolicy: true,
+      riffHarmonicCycleLengthBars: 1,
+      repetitionPolicy: {
+        exactLoopAllowed: false,
+        pedalToneAllowed: true,
+        barIdentityPersistence: 0.26,
+        minExactRepetitions: 1,
+      },
+      modalUsage: 'linear-melodic',
+      swingStyle: 'straight',
+      pedalBias: 0.28,
+      octaveDisplacementTolerance: 0.65,
+      powerIntervalPolicy: { fifthWeight: 0.15, octaveWeight: 0.25, pedalWeight: 0.2 },
+      metricDisplacement: 0.74,
+      ornamentPolicy: {
+        slides: true,
+        ghosts: false,
+        graceAttacks: false,
+        bends: false,
+        deadNotes: false,
+      },
+      silencePolicy: {
+        restProbabilityBySlot: new Array(slots).fill(0.1),
+        styleClass: 'HoldsworthLegato',
+      },
+      attackPolicy: 'sustain',
+      riffContourPolicy: { rangeCeiling: 18, apexTiming: 0.42, returnTendency: 0.35 },
+      variationOperators: ['chromaticAdd', 'registerShift', 'cellTransposition', 'startOffsetShift'],
+    });
+  })(),
+};
+
+/** Scott Henderson — angular fusion riff / blues-chromatic blaze (σ24). */
+export const SCOTT_HENDERSON: VoiceRuleBundle = {
+  voiceId: 'scott_henderson',
+  sigma: 24,
+  family: 'fusion',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 4,
+    allowMidBarChange: true,
+  },
+  bassPolicy: { role: 'root', allowOctaveDoubling: true },
+  voicingPolicy: {
+    minSpreadSemitones: 3,
+    maxSpreadSemitones: 20,
+    clusterSizeNotes: [1, 4],
+    forbidParallelFifths: true,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: { contour: 'angular', maxLeapSemitones: 10 },
+  orchestrationPolicy: {
+    anchorToneCount: 1,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: fillReceipts('SH', 'Scott Henderson', SH_BASE),
+  },
+  formPolicy: { narrativeArc: 'blues-backbone', sectionRecallEnforced: true },
+  rhythmPolicy: { antiMetric: false },
+  repairPolicy: { resolveParallels: true, maxVoiceOverlap: 4 },
+  contrapuntalLinePolicy: {
+    enabled: true,
+    dissonanceProfile: DIS_LOW,
+    preferredImitationTypes: ['free'],
+    rhythmicIndependenceRequired: true,
+    lineRoleAssignment: 'dynamic',
+  },
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.72,
+    registerInterlock: true,
+    intervalPreference: 'pentatonic_diatonic',
+    textureTagType: 'funk_grid',
+  },
+  riffProfile: (() => {
+    const slots = 16;
+    const accent = new Array<number>(slots).fill(0.48);
+    accent[0] = 0.92;
+    accent[4] = 0.88;
+    accent[8] = 0.9;
+    accent[12] = 0.85;
+    return riffProfileShell({
+      meterPolicy: 'simple',
+      subdivisionGrid: 16,
+      accentTopology: accent,
+      allowPitchStreak: true,
+      homeChordType: 'dom7',
+      chordQualitySet: ['dom7', 'min7', 'maj7', 'dom9', 'sus4', 'm7b5', 'min9'],
+      scalePool: {
+        bluesMinor: 0.32,
+        bebopDominant: 0.28,
+        dorian: 0.2,
+        mixolydian: 0.15,
+        melodicMinor: 0.08,
+      },
+      chromaticBudget: 0.44,
+      intervalCell: { steps: [3, 1, 4, 2], transpositionMode: 'diatonic' },
+      registerAnchor: 'mid_register',
+      registerBandPerVoice: {
+        lead: { min: 54, max: 80 },
+        guitar: { min: 54, max: 80 },
+      },
+      riffRegisterFloor: 54,
+      riffRegisterCeiling: 80,
+      topNoteLinePolicy: false,
+      riffHarmonicCycleLengthBars: 2,
+      doubleStopPolicy: {
+        intervalsAllowed: [3, 4, 7],
+        stringPairs: [
+          [4, 3],
+          [3, 2],
+        ],
+      },
+      repetitionPolicy: {
+        exactLoopAllowed: true,
+        pedalToneAllowed: true,
+        barIdentityPersistence: 0.7,
+        minExactRepetitions: 3,
+      },
+      modalUsage: 'chord-driven',
+      swingStyle: 'straight',
+      pedalBias: 0.4,
+      octaveDisplacementTolerance: 0.38,
+      powerIntervalPolicy: { fifthWeight: 0.42, octaveWeight: 0.22, pedalWeight: 0.38 },
+      metricDisplacement: 0.18,
+      ornamentPolicy: {
+        slides: true,
+        ghosts: false,
+        graceAttacks: true,
+        bends: true,
+        deadNotes: false,
+      },
+      silencePolicy: {
+        restProbabilityBySlot: new Array(slots).fill(0.14),
+        styleClass: 'HendersonFusionRiff',
+      },
+      attackPolicy: 'staccato',
+      riffContourPolicy: { rangeCeiling: 13, apexTiming: 0.62, returnTendency: 0.55 },
+      variationOperators: [
+        'ornamentAdd',
+        'targetToneShift',
+        'cellTransposition',
+        'rhythmicWarp',
+        'registerShift',
+      ],
     });
   })(),
 };
