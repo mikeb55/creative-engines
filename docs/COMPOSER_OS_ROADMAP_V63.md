@@ -1,65 +1,35 @@
 # Composer OS — V63 Roadmap
-Status: pending · V62 closed 2026-05-23
+Status: **complete** · V63 closed **2026-05-24**
 
-## V62 final baseline
-Smoke: fast 273/65/0 · full 438/79/0
-Last commit: 0f0d6fee
-Desktop: Composer-OS.exe + Composer-OS-Setup.exe clean
+## V63 final baseline
+Smoke: **fast 285/66/0** · **full 450/80/0**  
+Last commit: **e4453b0f**  
+Desktop: `apps/composer-os-desktop/release/Composer-OS.exe` + `Composer-OS-Setup.exe` (rebuilt S6)
 
-## Goal
-Promote stub voices to real engine implementations.
-Remove ⚠ badges as each voice earns a real slice or VRB.
+## Goal (achieved)
+Promote stub voices to real engine implementations. Remove ⚠ badges when slice/VRB + golden confirmed.
 
-## 6 prompts in order
+## Shipped (S1–S6)
 
-### 1. S1 — mccoy_tyner engine implementation
-Mode: Song Mode
-Current: stub (planning only, no slice)
-Target: full *Slice.ts + profile/registry + locked harmony routing
-Done when: mccoy_tyner generates measurably distinct output vs generic fallback.
-Golden fixture required. ⚠ badge removed on pass.
+| Prompt | Voice(s) | Mode | Commit (ref) | Golden fixture |
+|--------|----------|------|--------------|----------------|
+| **S1** | mccoy_tyner | Song Mode slice | dd32803b | `mccoyTynerHarmonyDistinct.json` |
+| **S2** | wes_montgomery | GBD VRB | 575f25f9 | `wesMontgomeryGbdDistinct.json` |
+| **S3** | joe_pass | GBD VRB | 1996e6de | `joePassGbdDistinct.json` |
+| **S4** | allan_holdsworth, scott_henderson | GBD VRB | 2ebcb40c | `allanHoldsworthGbdDistinct.json`, `scottHendersonGbdDistinct.json` |
+| **S5** | sonic_youth | Song Mode VRB | 6fdb86ba | `sonicYouthDistinct.json` |
+| **S6** | All promoted | Smoke + UI boundary + desktop | e4453b0f | `promotedVoicesV63UiBoundary.json` + `v63PromotedVoicesGolden.test.ts` |
 
-### 2. S2 — wes_montgomery engine implementation
-Mode: GBD
-Current: stub (Slonimsky macro only)
-Target: VRB tuned to lyrical/riff profile + registry entry
-Done when: wes_montgomery output differs measurably from nile_rodgers at same chord input.
-Golden fixture required. ⚠ badge removed on pass.
+## S6 closeout
+- UI/boundary golden: `slonimskyUiGoldens/promotedVoicesV63UiBoundary.json`
+- Smoke suite: **V63 promoted voices (UI/boundary + distinctness goldens)** — **+12** rows, **+1** suite
+- Docs: `COMPOSER_OS_MUSICIAN_GUIDE.md` §4.1b (18 musical examples)
+- Desktop rebuild (no version bump)
 
-### 3. S3 — joe_pass engine implementation
-Mode: GBD
-Current: stub (Slonimsky macro only)
-Target: VRB tuned to lyrical/chromatic profile + registry entry
-Done when: joe_pass output differs measurably from larry_carlton at same chord input.
-Golden fixture required. ⚠ badge removed on pass.
-
-### 4. S4 — allan_holdsworth + scott_henderson engine implementation
-Mode: GBD
-Current: both stub
-Target: VRBs tuned to chromatic/angular and angular/riff profiles respectively
-Done when: both produce measurably distinct output. Two golden fixtures required.
-⚠ badges removed on pass.
-
-### 5. S5 — sonic_youth dedicated VRB
-Mode: Song Mode (already deep slice)
-Current: deep engine, generic VRB, ⚠ in UI
-Target: VRB tuned to sonic_youth style (dissonant/angular/unconventional structure)
-Done when: sonic_youth output differs measurably from generic VRB fallback.
-Golden fixture required. ⚠ badge removed on pass.
-
-### 6. S6 — V63 smoke + fixtures + desktop + roadmap
-UI/boundary goldens for all promoted voices.
-Update smoke targets.
-Rebuild desktop.
-Update roadmap header.
-This is the ONLY prompt permitted to add new smoke rows.
-
-## Rules
-- Smoke after every prompt
-- No new smoke suites until S6
-- No ⚠ badge removed without confirmed engine implementation + golden
-- Musician guide updated when any voice is promoted
-- Golden fixture required before marking any item done
+## Rules (carried forward)
+- Golden fixture required before marking a promoted voice done
+- No new smoke rows except S6 closeout (this release)
+- Musician guide updated for all promoted voices
 
 ## Backlog (V64+)
 - Zappa GCE structural fingerprint

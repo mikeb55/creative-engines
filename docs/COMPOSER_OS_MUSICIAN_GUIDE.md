@@ -469,6 +469,197 @@ Variation: +0.3
 
 ---
 
+### 4.1b V63 promoted voices — musical examples (2026-05-24)
+
+Six voices promoted from stub/generic to full engine surfaces in V63 (S1–S5). Each has a distinctness golden in smoke; no ⚠ badge in the Slonimsky UI.
+
+#### McCoy Tyner (Song Mode writer)
+
+**Example 1 — Simple diatonic**
+```
+Chords:    Fm7 | Bb7 | Ebmaj7 | Abmaj7
+Writer:    mccoy_tyner
+Flavor:    Patterned
+Motion:    0
+Tension:   +0.1
+Variation: +0.1
+```
+*Generate:* Quartal m11/sus stacks, pentatonic melody colour, IV-rooted quartal over minor pedals. *Use when:* Modal jazz ballad or McCoy-era quartet comp under a static progression.
+
+**Example 2 — Modal / ambiguous**
+```
+Chords:    Dm7 | G7alt | Cmaj7#11 | F#m7b5
+Writer:    mccoy_tyner
+Flavor:    Angular
+Motion:    +0.3
+Tension:   +0.35
+Variation: -0.05
+```
+*Generate:* More `mt:iv_quartal` device receipts, sharper stack movement, less Metheny-like float. *Use when:* You want Tyner tension without a functional ii–V–I story.
+
+**Example 3 — Contrast (vs Pat Metheny)**
+```
+Chords:    (same as Example 1)
+Writer A:  pat_metheny
+Writer B:  mccoy_tyner
+```
+*Differs:* Metheny = Lydian float and ECM spacing; Tyner = locked quartal harmony bars (`mccoyTynerEffectiveHarmonyBars`), higher quartal/pentatonic diagnostic counts. Same chords, different effective harmony timeline.
+
+---
+
+#### Sonic Youth (Song Mode — writer + harmonic voice `sonic_youth`)
+
+**Example 1 — Simple diatonic**
+```
+Chords:    Emadd9 | Emadd9/D | Gsus2 | Asus4
+Writer:    sonic_youth
+Harmonic:  sonic_youth
+Flavor:    Angular
+Motion:    +0.5
+Tension:   +0.4
+```
+*Generate:* Sus/add9 field, low loop persistence, anti-metric riff profile, texture receipts on comp chords. *Use when:* Noise-rock sketch with alternate-tuning colour, not polished pop.
+
+**Example 2 — Modal / ambiguous**
+```
+Chords:    Cmaj7#11 | F#7sus4 | B7alt | Emadd9
+Writer:    sonic_youth
+Harmonic:  sonic_youth
+Flavor:    Chromatic
+Motion:    +0.35
+Tension:   +0.5
+```
+*Generate:* More chromatic Slonimsky cell bias (`SY_SLON_01`), higher friction / `noise_wall` texture phases. *Use when:* Deliberately ugly harmony under a “pretty” lead sheet.
+
+**Example 3 — Contrast (vs generic VRB fallback)**
+```
+Chords:    (same as Example 1)
+Writer:    wayne_shorter
+Harmonic:  (none)  vs  sonic_youth
+```
+*Differs:* Without `harmonicVoice: sonic_youth` the engine uses neutral planning; with it you get dedicated VRB (`voiceBundleRhythmAntiMetric: true`, angular/chromatic riff profile). Golden fixture proves measurable pitch/policy delta at same seed.
+
+---
+
+#### Wes Montgomery (GBD harmonic voice)
+
+**Example 1 — Simple diatonic**
+```
+Chords:    Am7 | D7 | Gmaj7 | Cmaj7
+Harmonic:  wes_montgomery
+Flavor:    Lyrical
+Chromatic: Subtle
+```
+*Generate:* Warm octave-leaning line, bebop-blues riff cells, higher `octaveDisplacementTolerance` than funk grid voices. *Use when:* Lyrical GBD duo, not Nile pocket.
+
+**Example 2 — Modal / ambiguous**
+```
+Chords:    E7alt | A7#11 | Dm9 | G7sus
+Harmonic:  wes_montgomery
+Flavor:    Riff
+Motion:    +0.35
+```
+*Generate:* Riff-forward 8th grid, more bar-identity persistence than Holdsworth. *Use when:* Blues-modal changes with Wes-style hook repetition.
+
+**Example 3 — Contrast (vs Nile Rodgers)**
+```
+Chords:    (same as Example 1)
+Harmonic A: nile_rodgers
+Harmonic B: wes_montgomery
+```
+*Differs:* Nile = 16th funk top-note grid; Wes = lyrical register mean shift + octave policy (`WM_MELO_01` receipt). Same seed produces different guitar MIDI stream.
+
+---
+
+#### Joe Pass (GBD harmonic voice)
+
+**Example 1 — Simple diatonic**
+```
+Chords:    Cmaj7 | Am7 | Dm7 | G7
+Harmonic:  joe_pass
+Flavor:    Lyrical
+Chromatic: Subtle
+```
+*Generate:* Fingerstyle chord-melody approach tones, high `chromaticBudget` on VRB, stepwise targets on strong beats. *Use when:* Solo guitar+bass lead sheet reading.
+
+**Example 2 — Modal / ambiguous**
+```
+Chords:    F#m7b5 | B7alt | Em9 | A13
+Harmonic:  joe_pass
+Flavor:    Chromatic
+Motion:    +0.18
+```
+*Generate:* Chromatic enclosures between chord tones; more outside colour than Larry Carlton default. *Use when:* Bebop turnaround over altered dominants.
+
+**Example 3 — Contrast (vs Larry Carlton)**
+```
+Chords:    (same as Example 1)
+Harmonic A: larry_carlton
+Harmonic B: joe_pass
+```
+*Differs:* Larry = fusion lyrical grid; Joe = higher chromatic budget (`JP_MELO_01`), chord-melody fingerprint receipts. Distinct golden vs Larry at same seed.
+
+---
+
+#### Allan Holdsworth (GBD harmonic voice)
+
+**Example 1 — Simple diatonic**
+```
+Chords:    Cmaj7 | Bm7 | Am7 | Gmaj7
+Harmonic:  allan_holdsworth
+Flavor:    Chromatic
+Chromatic: Prominent
+```
+*Generate:* Floating legato outside lines, wide leaps (`maxLeapSemitones` 14), low bar-identity persistence. *Use when:* Fusion pad under static maj7 vamp.
+
+**Example 2 — Modal / ambiguous**
+```
+Chords:    Dm7b5 | G7alt | Cbmaj7 | F#7
+Harmonic:  allan_holdsworth
+Flavor:    Angular
+Motion:    +0.4
+```
+*Generate:* Dense chromatic cells, behind-grid rhythmic placement. *Use when:* Deliberately non-groove outside solo texture.
+
+**Example 3 — Contrast (vs Scott Henderson)**
+```
+Chords:    (same as Example 1)
+Harmonic A: scott_henderson
+Harmonic B: allan_holdsworth
+```
+*Differs:* Henderson = 16th riff grid + blues chromaticism; Holdsworth = floating legato, higher chromatic budget, lower loop persistence. Cross-golden fixture locks separation.
+
+---
+
+#### Scott Henderson (GBD harmonic voice)
+
+**Example 1 — Simple diatonic**
+```
+Chords:    G7 | C7 | F7 | Bb7
+Harmonic:  scott_henderson
+Flavor:    Angular
+```
+*Generate:* Angular fusion riff hooks, grounded 16th feel, staccato attack pockets. *Use when:* Blues-fusion duo comp.
+
+**Example 2 — Modal / ambiguous**
+```
+Chords:    Em7 | A7alt | Dmaj7#11 | G7alt
+Harmonic:  scott_henderson
+Flavor:    Riff
+Motion:    +0.55
+```
+*Generate:* Higher bar-identity persistence, riff-cell repetition (`SH_RIF_01`). *Use when:* Loop-based fusion head over ambiguous dominants.
+
+**Example 3 — Contrast (vs Allan Holdsworth)**
+```
+Chords:    (same as Example 1)
+Harmonic A: allan_holdsworth
+Harmonic B: scott_henderson
+```
+*Differs:* Holdsworth floats outside time; Henderson anchors 16th subdivision grid and riff loops. Same chords — Henderson reads as “fusion blues,” Holdsworth as “outside legato.”
+
+---
+
 ### 4.2 Song Mode — section shaping
 
 Use pin/avoid to build an arc across a full song form.

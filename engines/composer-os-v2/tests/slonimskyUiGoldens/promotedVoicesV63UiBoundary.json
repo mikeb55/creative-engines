@@ -1,0 +1,58 @@
+{
+  "id": "promoted_voices_v63_ui_boundary",
+  "voices": [
+    {
+      "voiceId": "mccoy_tyner",
+      "mode": "song_mode_writer",
+      "panelRelPath": "components/slonimsky/SlonimskySongModePanel.tsx",
+      "firstPresetLabel": "Patterned",
+      "macro": { "sourcePreset": "symmetric", "motion": 0.05, "tension": 0.1, "variation": 0.1 },
+      "distinctFixture": "mccoyTynerHarmonyDistinct.json"
+    },
+    {
+      "voiceId": "sonic_youth",
+      "mode": "song_mode_harmonic_voice",
+      "panelRelPath": "components/slonimsky/SlonimskySongModePanel.tsx",
+      "firstPresetLabel": "Angular",
+      "macro": { "sourcePreset": "angular", "motion": 0.5, "tension": 0.4, "variation": -0.15 },
+      "harmonicVoiceMode": "song_mode",
+      "distinctFixture": "sonicYouthDistinct.json"
+    },
+    {
+      "voiceId": "wes_montgomery",
+      "mode": "gbd_harmonic_voice",
+      "panelRelPath": "components/slonimsky/SlonimskyGbdPanel.tsx",
+      "firstPresetLabel": "Lyrical",
+      "macro": { "sourcePreset": "lyrical", "motion": -0.05, "tension": -0.2, "variation": 0.2 },
+      "harmonicVoiceMode": "gbd",
+      "distinctFixture": "wesMontgomeryGbdDistinct.json"
+    },
+    {
+      "voiceId": "joe_pass",
+      "mode": "gbd_harmonic_voice",
+      "panelRelPath": "components/slonimsky/SlonimskyGbdPanel.tsx",
+      "firstPresetLabel": "Lyrical",
+      "macro": { "sourcePreset": "lyrical", "motion": 0, "tension": -0.22, "variation": 0.18 },
+      "harmonicVoiceMode": "gbd",
+      "distinctFixture": "joePassGbdDistinct.json"
+    },
+    {
+      "voiceId": "allan_holdsworth",
+      "mode": "gbd_harmonic_voice",
+      "panelRelPath": "components/slonimsky/SlonimskyGbdPanel.tsx",
+      "firstPresetLabel": "Chromatic",
+      "macro": { "sourcePreset": "chromatic", "motion": 0.35, "tension": 0.52, "variation": 0.1 },
+      "harmonicVoiceMode": "gbd",
+      "distinctFixture": "allanHoldsworthGbdDistinct.json"
+    },
+    {
+      "voiceId": "scott_henderson",
+      "mode": "gbd_harmonic_voice",
+      "panelRelPath": "components/slonimsky/SlonimskyGbdPanel.tsx",
+      "firstPresetLabel": "Angular",
+      "macro": { "sourcePreset": "angular", "motion": 0.45, "tension": 0.42, "variation": -0.05 },
+      "harmonicVoiceMode": "gbd",
+      "distinctFixture": "scottHendersonGbdDistinct.json"
+    }
+  ]
+}

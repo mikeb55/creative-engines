@@ -22,7 +22,7 @@
 | goldsmith | 24 | webern | 40 |
 | **bartók** | **24** | | |
 
-Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartók** native bundle (not in registry map). **Smoke (2026-05-23):** full **438/0** (**79** suites) · fast **273/0** (**65** suites). V62 closeout: UI/boundary goldens + **Mode exposure** + **Wyble Etude** smoke (+14 rows).
+Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartók** native bundle (not in registry map). **Smoke (2026-05-24):** full **450/0** (**80** suites) · fast **285/0** (**66** suites). V63 closeout: promoted voices UI/boundary + distinctness goldens (+12 rows).
 
 **V61 — COMPLETE (2026-05-23):** Slonimsky UI panels U1–U9 — universal, song mode, ensemble (BB/SQ), GBD, SQ→BB hybrid, advanced drawer (pin/forbid cells), harmonic voice selector (sonic_youth warning + no `harmonicVoice` in payload), UX copy, Zappa advanced relocation; smoke **`slonimsky-ui`** UI/boundary goldens only.
 
@@ -1183,8 +1183,8 @@ Specific improvements needed:
 ## Session Handoff — V61 — 2026-05-23
 
 **SMOKE BASELINE**
-- Full: **438** / **79** / **0** (~25s tsx)
-- Fast: **273** / **65** / **0** (~11s tsx)
+- Full: **450** / **80** / **0** (~25s tsx)
+- Fast: **285** / **66** / **0** (~11s tsx)
 
 **LAST COMMIT:** `fb2d43b3` → `origin/main`
 

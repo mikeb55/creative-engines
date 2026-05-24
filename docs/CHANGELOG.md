@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-24) V63 S6 closeout — promoted voices smoke + desktop** — `promotedVoicesV63UiBoundary.json` + `v63PromotedVoicesGolden.test.ts` (UI/boundary + S1–S5 distinctness goldens in smoke). Smoke **285/66/0** fast · **450/80/0** full (+12 rows, +1 suite). `COMPOSER_OS_MUSICIAN_GUIDE.md` §4.1b (18 examples). `COMPOSER_OS_ROADMAP_V63.md` complete. Desktop rebuild.
+
 - **(2026-05-24) V63 S5 — Sonic Youth dedicated VRB** — `SONIC_YOUTH` in `riffVrbStubs.ts` (σ25, noise-rock dual-guitar / angular-chromatic Slonimsky bias); `SONIC_YOUTH` Slonimsky style profile + songwriter auto-resolve; Song Mode harmonic voice ⚠ removed; distinctness golden `sonicYouthDistinct.json` + `sonicYouthDistinctGolden.test.ts` (not in smoke tier until S6). Smoke **273/65/0** fast unchanged.
 
 - **(2026-05-24) V63 S4 — Allan Holdsworth + Scott Henderson GBD riff VRBs** — `ALLAN_HOLDSWORTH` + `SCOTT_HENDERSON` in `riffVrbStubs.ts`; cross-distinctness goldens `allanHoldsworthGbdDistinct.json` + `scottHendersonGbdDistinct.json`; GBD stub ⚠ removed for both. Smoke **273/65/0** fast unchanged.

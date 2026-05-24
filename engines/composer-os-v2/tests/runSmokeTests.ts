@@ -4,7 +4,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N rows (M suites)` in the smoke summary, then sync **N** + **M** into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): full **438** PASS rows, **79** suites; fast **273** rows, **65** suites (V62 UI/boundary + mode exposure + Wyble etude).
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): full **450** PASS rows, **80** suites; fast **285** rows, **66** suites (V63 promoted voices UI/boundary + distinctness goldens).
  *
  * **Fast subset:** `COMPOSER_OS_SMOKE_TIER=fast` or `npm run test:composer-smoke-fast` — skips `SMOKE_FAST_EXCLUDE` suites (local dev).
  * **Full tier (default / CI):** unset or `COMPOSER_OS_SMOKE_TIER=full` — all suites in `smokeSuites`.
@@ -92,6 +92,7 @@ import { runSlonimskyEnsembleReceiptTests } from './slonimskyEnsembleReceipt.tes
 import { runSlonimskyUiTests } from './slonimskyUiBoundary.test';
 import { runModeExposureTests } from './modeExposure.test';
 import { runWybleEtudePitchOffsetTests } from './wybleEtudePitchOffset.test';
+import { runV63PromotedVoicesGoldenTests } from './v63PromotedVoicesGolden.test';
 
 type Row = { name: string; ok: boolean };
 
@@ -202,6 +203,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'slonimsky-ui', run: runSlonimskyUiTests },
   { label: 'Mode exposure (V1)', run: runModeExposureTests },
   { label: 'Wyble Etude guitar pitch offset', run: runWybleEtudePitchOffsetTests },
+  { label: 'V63 promoted voices (UI/boundary + distinctness goldens)', run: runV63PromotedVoicesGoldenTests },
   { label: 'Follow-up 4 — Mingus overlay + activeMotifIds + shout export', run: runFollowup4MingusSchneiderThreadgillSmokeTests },
   { label: 'Follow-up 5 — shout-chorus in-place brass merge', run: runFollowup5ShoutBrassInPlaceSmokeTests },
   { label: 'Output validation — MIDI + MusicXML structural', run: runOutputValidationSmokeTests },
