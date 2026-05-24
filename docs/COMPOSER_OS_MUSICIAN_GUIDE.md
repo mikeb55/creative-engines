@@ -539,6 +539,40 @@ Harmonic:  (none)  vs  sonic_youth
 ```
 *Differs:* Without `harmonicVoice: sonic_youth` the engine uses neutral planning; with it you get dedicated VRB (`voiceBundleRhythmAntiMetric: true`, angular/chromatic riff profile). Golden fixture proves measurable pitch/policy delta at same seed.
 
+**Example 4 — Slonimsky cell variation within a song (current vs future)**
+
+**Cell bias (`SY_SLON_01`):** Sonic Youth’s Slonimsky profile weights **angular** and **chromatic** cell families (shock-weighted intent). Under the hood the catalogue pulls from **intervallic**, **semitone_scales**, and **ditone_progression** sections — ditone and semitone motion, not lyrical or symmetric loops.
+
+**What you can do today (whole-chart profile):**
+- **Try Another / change seed** — rotates which angular/chromatic cells fire while keeping the same SY bias.
+- **Flavor knob** — shift **Angular** ↔ **Chromatic** between passes for more or less half-step shock.
+- **Variation knob** — nudges cell rotation within the same family bias without leaving SY territory.
+- **Advanced drawer** — after Generate, read the bar-cell strip; **pin** a cell you want back or **forbid** one you never want again on the next pass.
+- **No per-section auto-switch yet** — one `sonic_youth` harmonic voice + one Slonimsky profile applies across the full chart until you re-run or override manually.
+
+**Three-section progression (4 bars each):**
+```
+Section A: Dm7   | Dm7   | Dm7   | Dm7
+Section B: AbMaj7 | AbMaj7 | AbMaj7 | AbMaj7
+Section C: Em7(b5) | Em7(b5) | Em7(b5) | Em7(b5)
+
+Writer:    sonic_youth
+Harmonic:  sonic_youth
+Seed:      75001 (change per section for variation today)
+```
+
+| Section | Chord | Typical output character (today) |
+|---|---|---|
+| **A** | Dm7 | Angular **semitone** cells over sus/add9 harmony field; moderate dual-guitar friction; anti-metric riff displacement; texture phase often **riff** or **shimmer**. |
+| **B** | AbMaj7 | **Chromatic** family dominates — tritone lift from D minor → limit-tone clash; ditone catalogue cells; friction rises toward **noise_wall** if Tension ≥ +0.5. |
+| **C** | Em7(b5) | **Intervallic/angular** return on half-dim colour; tritone/min2 riff cells; register spread widens; clearing or sustained crunch depending on Variation. |
+
+*Use when:* One song form needs section contrast under noise-rock grammar — but you accept manual re-seed or pin/forbid workflow per section for now.
+
+**V64 backlog — per-section VRB (not shipped):** Roadmap item **Per-section VRB** will assign different harmonic/Slonimsky emphasis **per section boundary** in a single Generate pass — no re-paste, no manual seed swap.
+
+*What V64 would change for `sonic_youth` specifically:* Section A could lock **angular / semitone_scales** cells + low **noise_level**; Section B could auto-escalate to **chromatic / ditone_progression** shock-weighting + **noise_wall** texture; Section C could hand off to **intervallic** angular release cells while the SY slice still owns dual-guitar tuning and friction receipts — cell-family switching follows form, not your re-run loop.
+
 ---
 
 #### Wes Montgomery (GBD harmonic voice)
