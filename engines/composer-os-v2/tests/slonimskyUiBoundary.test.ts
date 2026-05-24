@@ -191,6 +191,11 @@ function testGbdChromaticStrengthValues(): boolean {
     chromaticStrengthToOutsideLevel('prominent') === 2 &&
     home.includes('chromaticStrength: gbdChromaticStrength') &&
     home.includes('gbdWriterId') &&
+    home.includes('guitar_bass_duo_single_line') &&
+    home.includes('chromaticOnly') &&
+    home.includes('outsideLevelNumericLabels') &&
+    home.includes("presetId === 'ecm_chamber'") &&
+    home.includes('hideHarmonicVoice') &&
     gbd.includes('wes_montgomery') &&
     lyrical?.macro.sourcePreset === 'lyrical'
   );

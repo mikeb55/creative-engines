@@ -44,6 +44,7 @@ export const SLONIMSKY_ENABLED_PRESET_IDS = [
   'string_quartet',
   'guitar_bass_duo',
   'guitar_bass_duo_single_line',
+  'ecm_chamber',
   'sq_to_bb',
   'riff_generator',
 ] as const;

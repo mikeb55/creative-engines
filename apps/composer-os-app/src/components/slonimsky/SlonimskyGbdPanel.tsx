@@ -26,6 +26,12 @@ const CHROMATIC_OPTIONS: { value: GbdChromaticStrength; label: string }[] = [
   { value: 'prominent', label: 'Prominent' },
 ];
 
+const OUTSIDE_LEVEL_OPTIONS: { value: GbdChromaticStrength; label: string }[] = [
+  { value: 'off', label: '0' },
+  { value: 'subtle', label: '1' },
+  { value: 'prominent', label: '2' },
+];
+
 const WRITER_LABELS: Record<SlonimskyGbdWriterId, string> = {
   nile_rodgers: 'Nile Rodgers',
   eddie_van_halen: 'Eddie Van Halen',
@@ -50,15 +56,18 @@ export function outsideLevelLabel(cs: GbdChromaticStrength): string {
   return 'allowedOutsideLevel 2 — full intervallic patterns';
 }
 
-export function SlonimskyGbdPanel({
-  writerId,
-  onWriterIdChange,
-  state,
-  onChange,
-  chromaticStrength,
-  onChromaticStrengthChange,
-  disabled = false,
-}: {
+type SlonimskyGbdPanelChromaticOnlyProps = {
+  chromaticOnly: true;
+  panelTitle?: string;
+  chromaticStrength: GbdChromaticStrength;
+  onChromaticStrengthChange: (v: GbdChromaticStrength) => void;
+  /** Numeric 0 | 1 | 2 labels (riff generator). */
+  outsideLevelNumericLabels?: boolean;
+  disabled?: boolean;
+};
+
+type SlonimskyGbdPanelFullProps = {
+  chromaticOnly?: false;
   writerId: SlonimskyGbdWriterId;
   onWriterIdChange: (id: SlonimskyGbdWriterId) => void;
   state: SlonimskyMacroState;
@@ -66,7 +75,88 @@ export function SlonimskyGbdPanel({
   chromaticStrength: GbdChromaticStrength;
   onChromaticStrengthChange: (v: GbdChromaticStrength) => void;
   disabled?: boolean;
+};
+
+export type SlonimskyGbdPanelProps = SlonimskyGbdPanelChromaticOnlyProps | SlonimskyGbdPanelFullProps;
+
+function OutsideLevelSection({
+  chromaticStrength,
+  onChromaticStrengthChange,
+  disabled,
+  numericLabels,
+}: {
+  chromaticStrength: GbdChromaticStrength;
+  onChromaticStrengthChange: (v: GbdChromaticStrength) => void;
+  disabled?: boolean;
+  numericLabels?: boolean;
 }) {
+  const options = numericLabels ? OUTSIDE_LEVEL_OPTIONS : CHROMATIC_OPTIONS;
+  return (
+    <div>
+      <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: '0.45rem' }}>Outside level</div>
+      <label style={{ display: 'block', fontSize: '0.82rem' }}>
+        <span style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: 4 }}>
+          {numericLabels
+            ? 'Outside level (0–2) → slonimskyAllowedOutsideOverride'
+            : 'Chromatic strength → slonimskyAllowedOutsideOverride'}
+        </span>
+        <select
+          value={chromaticStrength}
+          disabled={disabled}
+          onChange={(e) => onChromaticStrengthChange(e.target.value as GbdChromaticStrength)}
+          style={{
+            width: '100%',
+            maxWidth: 280,
+            padding: '0.45rem 0.6rem',
+            borderRadius: 6,
+            border: '1px solid var(--border)',
+            background: 'var(--bg-input, var(--bg))',
+            color: 'var(--text)',
+          }}
+        >
+          {options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <p style={{ margin: '0.45rem 0 0', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+        {outsideLevelLabel(chromaticStrength)}
+      </p>
+    </div>
+  );
+}
+
+export function SlonimskyGbdPanel(props: SlonimskyGbdPanelProps) {
+  if (props.chromaticOnly) {
+    return (
+      <div
+        style={{
+          marginTop: '0.5rem',
+          marginBottom: '1rem',
+          padding: '0.85rem 1rem',
+          maxWidth: 420,
+          borderRadius: 10,
+          border: '1px solid var(--border)',
+          background: 'var(--bg-panel, rgba(0,0,0,0.12))',
+        }}
+      >
+        <div style={{ fontWeight: 600, fontSize: '0.92rem', marginBottom: '0.55rem' }}>
+          {props.panelTitle ?? 'Slonimsky Outside Level'}
+        </div>
+        <OutsideLevelSection
+          chromaticStrength={props.chromaticStrength}
+          onChromaticStrengthChange={props.onChromaticStrengthChange}
+          disabled={props.disabled}
+          numericLabels={props.outsideLevelNumericLabels}
+        />
+      </div>
+    );
+  }
+
+  const { writerId, onWriterIdChange, state, onChange, chromaticStrength, onChromaticStrengthChange, disabled } =
+    props;
   const presets = useMemo(() => slonimskyGbdWriterPresets(writerId), [writerId]);
   const activePresetId = useMemo(() => {
     const match = presets.find(
@@ -211,37 +301,11 @@ export function SlonimskyGbdPanel({
         </p>
       </div>
 
-      <div>
-        <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: '0.45rem' }}>Outside level</div>
-        <label style={{ display: 'block', fontSize: '0.82rem' }}>
-          <span style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: 4 }}>
-            Chromatic strength → slonimskyAllowedOutsideOverride
-          </span>
-          <select
-            value={chromaticStrength}
-            disabled={disabled}
-            onChange={(e) => onChromaticStrengthChange(e.target.value as GbdChromaticStrength)}
-            style={{
-              width: '100%',
-              maxWidth: 280,
-              padding: '0.45rem 0.6rem',
-              borderRadius: 6,
-              border: '1px solid var(--border)',
-              background: 'var(--bg-input, var(--bg))',
-              color: 'var(--text)',
-            }}
-          >
-            {CHROMATIC_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <p style={{ margin: '0.45rem 0 0', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-          {outsideLevelLabel(chromaticStrength)}
-        </p>
-      </div>
+      <OutsideLevelSection
+        chromaticStrength={chromaticStrength}
+        onChromaticStrengthChange={onChromaticStrengthChange}
+        disabled={disabled}
+      />
     </div>
   );
 }

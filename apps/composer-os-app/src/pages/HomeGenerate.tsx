@@ -3252,14 +3252,25 @@ export function HomeGenerate({
                 ...(slonimskyUiExtras.harmonicVoice ? { harmonicVoice: slonimskyUiExtras.harmonicVoice } : {}),
               }
             : {}),
-          ...(presetId === 'guitar_bass_duo' || presetId === 'guitar_bass_duo_single_line'
+          ...(presetId === 'guitar_bass_duo'
             ? {
-                ...(presetId === 'guitar_bass_duo' ? { chromaticStrength: gbdChromaticStrength } : {}),
+                chromaticStrength: gbdChromaticStrength,
                 ...mapEnsembleSlonimskyToGenerateRequest(slonimskyMacro),
                 ...(slonimskyUiExtras.styleGenerationContextKeys
                   ? { styleGenerationContextKeys: slonimskyUiExtras.styleGenerationContextKeys }
                   : {}),
                 ...(slonimskyUiExtras.harmonicVoice ? { harmonicVoice: slonimskyUiExtras.harmonicVoice } : {}),
+              }
+            : {}),
+          ...(presetId === 'guitar_bass_duo_single_line'
+            ? { chromaticStrength: gbdChromaticStrength }
+            : {}),
+          ...(presetId === 'ecm_chamber'
+            ? {
+                ...mapEnsembleSlonimskyToGenerateRequest(slonimskyMacro),
+                ...(slonimskyUiExtras.styleGenerationContextKeys
+                  ? { styleGenerationContextKeys: slonimskyUiExtras.styleGenerationContextKeys }
+                  : {}),
               }
             : {}),
           ...(presetId === 'riff_generator' && slonimskyUiExtras.styleGenerationContextKeys
@@ -3268,6 +3279,7 @@ export function HomeGenerate({
           ...(presetId === 'riff_generator' && slonimskyUiExtras.harmonicVoice
             ? { harmonicVoice: slonimskyUiExtras.harmonicVoice }
             : {}),
+          ...(presetId === 'riff_generator' ? { chromaticStrength: gbdChromaticStrength } : {}),
           ...(duoHarmonyFields ? duoHarmonyFields : {}),
           ...(presetId === 'song_mode' && songChordLine
             ? {
@@ -4601,6 +4613,15 @@ export function HomeGenerate({
           />
         </>
       )}
+      {presetId === 'guitar_bass_duo_single_line' && (
+        <SlonimskyGbdPanel
+          chromaticOnly
+          panelTitle="Guitar–Bass Duo (single line) — Outside level"
+          chromaticStrength={gbdChromaticStrength}
+          onChromaticStrengthChange={setGbdChromaticStrength}
+          disabled={loading}
+        />
+      )}
 
       {modeUx && (
         <div
@@ -5510,14 +5531,13 @@ export function HomeGenerate({
       </div>
 
       {presetId === 'riff_generator' && (
-        <SlonimskyUniversalPanel
-          state={slonimskyMacro}
-          onChange={setSlonimskyMacro}
+        <SlonimskyGbdPanel
+          chromaticOnly
+          panelTitle="Riff generator — Outside level"
+          outsideLevelNumericLabels
+          chromaticStrength={gbdChromaticStrength}
+          onChromaticStrengthChange={setGbdChromaticStrength}
           disabled={loading}
-          harmonicOnly
-          harmonicVoiceMode="riff_generator"
-          harmonicVoiceId={slonimskyHarmonicVoice}
-          onHarmonicVoiceChange={setSlonimskyHarmonicVoice}
         />
       )}
       {presetId === 'riff_generator' && (
@@ -5579,6 +5599,13 @@ export function HomeGenerate({
 
 
       {presetId === 'ecm_chamber' && (
+        <>
+        <SlonimskyUniversalPanel
+          state={slonimskyMacro}
+          onChange={setSlonimskyMacro}
+          disabled={loading}
+          hideHarmonicVoice
+        />
         <div style={{ marginBottom: '1rem' }}>
           <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
             ECM chamber mode
@@ -5594,6 +5621,7 @@ export function HomeGenerate({
             <option value="ECM_SCHNEIDER_CHAMBER">Schneider / Wheeler (clouds, swells)</option>
           </select>
         </div>
+        </>
       )}
 
       {presetId === 'song_mode' && (
