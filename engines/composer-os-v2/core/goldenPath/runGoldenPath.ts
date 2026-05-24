@@ -46,6 +46,7 @@ import type { RunManifest } from '../run-ledger/runLedgerTypes';
 import { guitarBassDuoPreset } from '../../presets/guitarBassDuoPreset';
 import { generateGoldenPathDuoScore, type GoldenPathPlans } from './generateGoldenPathDuoScore';
 import { planSectionRoles } from '../section-roles/sectionRolePlanner';
+import type { SectionRoleMetadata } from '../section-roles/sectionRoleTypes';
 import type { SectionRole } from '../section-roles/sectionRoleTypes';
 import { planDensityCurve } from '../density/densityCurvePlanner';
 import { planGuitarRegisterMap, planBassRegisterMap } from '../register-map/registerMapPlanner';
@@ -194,6 +195,7 @@ import { finalizeSongModeSectionShaping } from '../song-mode/songModeSectionCont
 import type { RhythmIntentControl } from '../rhythmIntentTypes';
 import { sanitizeBarMeterMap, type BarMeterMap } from '../rhythm/barMeterTypes';
 import { attachVoiceRuleBundleAndHarmonicScenes } from '../composer/attachVoiceRuleBundle';
+import { applyZappaGceStructuralFingerprintToContext } from '../gce/applyZappaGceStructuralGeneration';
 import { attachFormPlanRhythmAndTension } from '../composer/formPlanAttach';
 import { applyRhythmMotifBindingToConstraints, RHYTHM_DNA_CELL_IDS } from '../composer/rhythmDnaMotifBinder';
 import { weightedRhythmSample, type StochasticConfig, DEFAULT_STOCHASTIC_CONFIG } from '../composer/stochasticLayer';
@@ -922,6 +924,25 @@ function validateSlashBassHonoured(
   return out;
 }
 
+function zappaSectionKindRoleMetadata(kind: string): Partial<SectionRoleMetadata> {
+  switch (kind) {
+    case 'march':
+      return { densityTendency: 'dense', registerTendency: 'low', rhythmActivity: 'high', textureTendency: 'mixed' };
+    case 'ballad':
+      return { densityTendency: 'sparse', registerTendency: 'centre', rhythmActivity: 'low', textureTendency: 'melodic' };
+    case 'fusion_groove':
+      return { densityTendency: 'medium', registerTendency: 'lift', rhythmActivity: 'high', textureTendency: 'mixed' };
+    case 'doo_wop':
+      return { densityTendency: 'sparse', registerTendency: 'centre', rhythmActivity: 'medium', textureTendency: 'melodic' };
+    case 'avant_garde':
+      return { densityTendency: 'dense', registerTendency: 'lift', rhythmActivity: 'high', textureTendency: 'mixed' };
+    case 'country_twang':
+      return { densityTendency: 'medium', registerTendency: 'low', rhythmActivity: 'medium', textureTendency: 'melodic' };
+    default:
+      return {};
+  }
+}
+
 function buildGoldenPathPlans(
   seed: number,
   context: CompositionContext,
@@ -943,6 +964,17 @@ function buildGoldenPathPlans(
   const isDuoLong = isGuitarBassDuoFamily(context.presetId) && context.form.totalBars > 8;
   const duoRoles = isDuoLong ? duoRolesForLongFormSections(context.form.sections) : duoRoles8;
   let sections = planSectionRoles(context.form.sections, context.presetId === 'ecm_chamber' ? ecmRoles : duoRoles);
+  const zappaSectionKinds = context.generationMetadata?.zappaSectionKindSequence;
+  if (zappaSectionKinds?.length) {
+    sections = sections.map((sec, i) => {
+      const kindMeta = zappaSectionKindRoleMetadata(zappaSectionKinds[i] ?? zappaSectionKinds[0] ?? '');
+      if (!Object.keys(kindMeta).length) return sec;
+      return {
+        ...sec,
+        metadata: { ...sec.metadata, ...kindMeta } as SectionRoleMetadata,
+      };
+    });
+  }
   const macroPlan = context.generationMetadata?.macroFormPlan;
   if (macroPlan && isGuitarBassDuoFamily(context.presetId)) {
     sections = sections.map((sec) => {
@@ -2344,6 +2376,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   attachVoiceRuleBundleAndHarmonicScenes(context, harmonicVoiceOptionsForGoldenPath(options));
   attachFormPlanRhythmAndTension(context, seed);
   attachMacroFormPlanToContext(context, options);
+  applyZappaGceStructuralFingerprintToContext(context, seed, !!barMeterFromRequest);
 
   logEcmPhaseProbe(probeEcm, 'before_plan_build');
   let plans: GoldenPathPlans;

@@ -77,7 +77,11 @@ function testFrankZappaStructuralFingerprintShape(): boolean {
     FRANK_ZAPPA_STRUCTURAL_FINGERPRINT.meterMapId === 'zappa_meter_map' &&
     ZAPPA_GCE_METER_SPLICE.length === 3 &&
     FRANK_ZAPPA_STRUCTURAL_FINGERPRINT.harmonicCadenceTargets.length === 3 &&
-    FRANK_ZAPPA_STRUCTURAL_FINGERPRINT.quoteCollage.metadataOnly === true
+    FRANK_ZAPPA_STRUCTURAL_FINGERPRINT.quoteCollage.metadataOnly === true &&
+    FRANK_ZAPPA_STRUCTURAL_FINGERPRINT.metricDisruption === true &&
+    FRANK_ZAPPA_STRUCTURAL_FINGERPRINT.registerShiftProbability === 0.65 &&
+    FRANK_ZAPPA_STRUCTURAL_FINGERPRINT.absurdistJuxtaposition === true &&
+    FRANK_ZAPPA_STRUCTURAL_FINGERPRINT.styleCollisionWeight === 0.7
   );
 }
 

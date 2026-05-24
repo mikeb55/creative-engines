@@ -32,6 +32,14 @@ export interface FrankZappaStructuralFingerprint {
   harmonicCadenceTargets: readonly ZappaHarmonicCadenceTarget[];
   texturalContrastOperators: readonly ('density_drop' | 'density_spike')[];
   quoteCollage: { metadataOnly: true };
+  /** Sudden meter changes at section boundaries (auto barMeterMap when no request map). */
+  metricDisruption: boolean;
+  /** Per-bar probabilistic guitar↔bass register swap during Phase 4. */
+  registerShiftProbability: number;
+  /** Section kind planner may assign incompatible adjacent surfaces (march ↔ ballad). */
+  absurdistJuxtaposition: boolean;
+  /** Weight toward picking clashing section kinds at boundaries (0–1). */
+  styleCollisionWeight: number;
 }
 
 export const FRANK_ZAPPA_STRUCTURAL_FINGERPRINT: FrankZappaStructuralFingerprint = {
@@ -42,6 +50,10 @@ export const FRANK_ZAPPA_STRUCTURAL_FINGERPRINT: FrankZappaStructuralFingerprint
   harmonicCadenceTargets: ['bII', 'bVII', 'tritone_sub'],
   texturalContrastOperators: ['density_drop', 'density_spike'],
   quoteCollage: { metadataOnly: true },
+  metricDisruption: true,
+  registerShiftProbability: 0.65,
+  absurdistJuxtaposition: true,
+  styleCollisionWeight: 0.7,
 };
 
 const ZAPPA_SONGWRITER_IDS = new Set([

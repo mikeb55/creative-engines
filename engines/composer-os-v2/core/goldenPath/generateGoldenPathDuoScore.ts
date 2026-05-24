@@ -26,6 +26,7 @@ declare module '../compositionContext' {
   }
 }
 import { chordTonesForChordSymbolWithContext, shouldUseUserChordSemanticsForTones } from '../harmony/harmonyChordTonePolicy';
+import { FRANK_ZAPPA_STRUCTURAL_FINGERPRINT } from '../gce/frankZappaStructuralFingerprint';
 import { assertGuitarScoreMatchesHarmonyContext } from '../harmony/harmonyContext';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { precomputeContrapuntalLines } from '../counterpoint/precomputeContrapuntalLines';
@@ -5889,7 +5890,7 @@ function applyFrankZappaImpliedInnerVoicePass(score: ScoreModel, context: Compos
   }
 }
 
-/** Frank Zappa Phase 4 — guitar↔bass imitation (anchor echo) + one register-swap bar per section. */
+/** Frank Zappa Phase 4 — guitar↔bass imitation + probabilistic register swap (GCE fingerprint). */
 function applyFrankZappaPhase4GuitarBassAndRegister(
   context: CompositionContext,
   guitar: PartModel,
@@ -5903,6 +5904,11 @@ function applyFrankZappaPhase4GuitarBassAndRegister(
   if (!md || md.songwriterStyleId !== 'frank_zappa' || !form?.sections?.length) return;
   const seed = context.seed;
   const sections: ZappaImitationReceipt['sections'] = [];
+  const registerShiftProbability =
+    typeof md.zappaGceRegisterShiftProbability === 'number'
+      ? md.zappaGceRegisterShiftProbability
+      : FRANK_ZAPPA_STRUCTURAL_FINGERPRINT.registerShiftProbability;
+  const registerShiftBars: number[] = [];
 
   for (let si = 0; si < form.sections.length; si++) {
     const sec = form.sections[si]!;
@@ -5911,27 +5917,33 @@ function applyFrankZappaPhase4GuitarBassAndRegister(
     const delayBeats = seededUnit(seed, 961 + si) < 0.5 ? 1 : 2;
     const bassLeads = seededUnit(seed, 962 + si) < 0.42;
 
-    const swapPick = lo + Math.floor(seededUnit(seed, 963 + si) * Math.max(1, hi - lo + 1));
-    const swapBarClamped = Math.min(hi, Math.max(lo, swapPick));
-    const gSwap = guitar.measures.find((m) => m.index === swapBarClamped);
-    const bSwap = bass.measures.find((m) => m.index === swapBarClamped);
-    if (gSwap && bSwap) {
+    for (let bar = lo; bar <= hi; bar++) {
+      if (seededUnit(seed, bar, 963) >= registerShiftProbability) continue;
+      const gSwap = guitar.measures.find((m) => m.index === bar);
+      const bSwap = bass.measures.find((m) => m.index === bar);
+      if (!gSwap || !bSwap) continue;
+      let shifted = false;
       for (const e of gSwap.events) {
         if (e.kind === 'note' && isGuitarMelodyVoiceNote(e)) {
           (e as NoteEvent).pitch = Math.max(40, Math.min(88, (e as NoteEvent).pitch - 12));
+          shifted = true;
         }
       }
       for (const e of bSwap.events) {
         if (e.kind === 'note') {
           (e as NoteEvent).pitch = clampPitch((e as NoteEvent).pitch + 12, walkLow, Math.min(72, bassCeiling + 12));
+          shifted = true;
         }
       }
-      gSwap.events.sort(
-        (a, b) => (a as NoteEvent).startBeat - (b as NoteEvent).startBeat
-      );
-      bSwap.events.sort(
-        (a, b) => (a as NoteEvent).startBeat - (b as NoteEvent).startBeat
-      );
+      if (shifted) {
+        registerShiftBars.push(bar);
+        gSwap.events.sort(
+          (a, b) => (a as NoteEvent).startBeat - (b as NoteEvent).startBeat
+        );
+        bSwap.events.sort(
+          (a, b) => (a as NoteEvent).startBeat - (b as NoteEvent).startBeat
+        );
+      }
     }
 
     const bassAnticipatesGuitar = seededUnit(seed, 968 + si) < 0.38;
@@ -6038,6 +6050,9 @@ function applyFrankZappaPhase4GuitarBassAndRegister(
       ...md.frankZappaDiagnostics,
       zappaImitationReceipt: { sections },
     };
+  }
+  if (registerShiftBars.length > 0) {
+    md.zappaGceRegisterShiftBars = registerShiftBars;
   }
 }
 

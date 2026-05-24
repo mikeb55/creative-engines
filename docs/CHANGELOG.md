@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-24) P2 — Zappa GCE structural fingerprint (Song Mode generation)** — Extended **`FRANK_ZAPPA_STRUCTURAL_FINGERPRINT`** with **`metricDisruption`**, **`registerShiftProbability: 0.65`**, **`absurdistJuxtaposition`**, **`styleCollisionWeight: 0.7`**. New **`applyZappaGceStructuralGeneration.ts`**: auto **7/8+5/4+4/4** **`barMeterMap`** at section boundaries (skipped when request supplies map); absurdist section-kind sequence + macro plan patch; section-role metadata in **`buildGoldenPathPlans`**. Phase 4 register swap now probabilistic per bar. Golden **`zappaGceFingerprint.test.ts`** seed **76001** + runner **`runZappaGceFingerprintGolden.ts`** (off smoke). Smoke **285/66/0** fast unchanged.
+
 - **(2026-05-24) P7 — Per-section VRB (all modes) + sonic_youth golden** — **`SectionMarker`** + **`VrbParams`** (`sectionMarkerTypes.ts`); per-bar merge via **`resolveVoiceRuleBundleForBar`** / **`resolveSectionVrb.ts`** (harmonic rhythm, voicing spread floor, GBD Slonimsky lane). **sonic_youth** Song Mode auto-wires A (bars 1–4 base) / B (bars 5–8 **SY_SLON_01** + chromaticBudget **0.72** + metricDisplacement **+0.15**). Golden **`sonicYouthPerSectionVrb.test.ts`** seed **75002** (off smoke). Smoke **285/66/0** fast · **450/80/0** full unchanged.
 
 - **(2026-05-24) V63 S6 closeout — promoted voices smoke + desktop** — `promotedVoicesV63UiBoundary.json` + `v63PromotedVoicesGolden.test.ts` (UI/boundary + S1–S5 distinctness goldens in smoke). Smoke **285/66/0** fast · **450/80/0** full (+12 rows, +1 suite). `COMPOSER_OS_MUSICIAN_GUIDE.md` §4.1b (18 examples). `COMPOSER_OS_ROADMAP_V63.md` complete. Desktop rebuild.

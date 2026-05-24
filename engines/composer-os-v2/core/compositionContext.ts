@@ -1011,6 +1011,16 @@ export interface GenerationMetadata {
   frankZappaDensityBiasByBar?: number[];
   /** Bars where hard-cut triggers fired (1-based). */
   frankZappaHardCutTriggerBars?: number[];
+  /** GCE structural fingerprint — generation pass applied (compositional mode). */
+  zappaGceStructuralFingerprintApplied?: boolean;
+  /** GCE structural — probabilistic register swap threshold (from fingerprint). */
+  zappaGceRegisterShiftProbability?: number;
+  /** GCE structural — bars where register swap fired (1-based). */
+  zappaGceRegisterShiftBars?: number[];
+  /** GCE structural — absurdist section surface kinds (march / ballad / …). */
+  zappaSectionKindSequence?: readonly string[];
+  /** True when barMeterMap was auto-spliced from GCE fingerprint (not request-level). */
+  zappaGceAutoBarMeterMap?: boolean;
   /** String quartet — Frank Zappa SQ harmony slice (`fz:sq:` receipts); see `zappaStringQuartetSlice`. */
   zappaSQHarmonySlice?: boolean;
   zappaSQEffectiveHarmonyBars?: string[];
