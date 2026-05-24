@@ -70,14 +70,12 @@ function slonimskyUiExtrasFromAdvanced(
 } {
   const advancedKeys = slonimskyAdvancedOverridesToContextKeys(overrides);
   const option = harmonicVoiceId?.trim() ?? '';
-  if (option === 'sonic_youth') advancedKeys.push('slonimsky:harmonic_voice=sonic_youth_generic');
   const merged = [...(baseStyleKeys ?? []), ...advancedKeys];
   const harmonicVoice =
-    option && option !== 'sonic_youth' && isConfirmedHarmonicVoiceBundle(option) ? option : undefined;
+    option && isConfirmedHarmonicVoiceBundle(option) ? option : undefined;
   return {
     ...(merged.length ? { styleGenerationContextKeys: merged } : {}),
     ...(harmonicVoice ? { harmonicVoice } : {}),
-    ...(option === 'sonic_youth' ? { slonimskyGenericHarmonicVoice: 'sonic_youth' as const } : {}),
   };
 }
 
@@ -250,35 +248,22 @@ function testHarmonicVoicePassesConfirmedVrb(): boolean {
   return out.harmonicVoice === 'wayne_shorter' && !out.slonimskyGenericHarmonicVoice;
 }
 
-function testSonicYouthNoHarmonicVoicePayload(): boolean {
+function testSonicYouthHarmonicVoicePayload(): boolean {
   const out = slonimskyUiExtrasFromAdvanced(
     { pinnedCellIds: [], forbiddenCellIds: [] },
     'sonic_youth'
   );
-  const keys = out.styleGenerationContextKeys ?? [];
-  return (
-    out.harmonicVoice === undefined &&
-    out.slonimskyGenericHarmonicVoice === 'sonic_youth' &&
-    keys.includes('slonimsky:harmonic_voice=sonic_youth_generic')
-  );
+  return out.harmonicVoice === 'sonic_youth' && isConfirmedHarmonicVoiceBundle('sonic_youth');
 }
 
-function testSonicYouthGenericVoiceWarningsInPanels(): boolean {
-  const universal = readAppFile('components/SlonimskyUniversalPanel.tsx');
-  const songMode = readAppFile('components/slonimsky/SlonimskySongModePanel.tsx');
+function testSonicYouthConfirmedVoiceNoWarning(): boolean {
   const constants = readAppFile('constants/slonimskyHarmonicVoices.ts');
-  const constantsOk =
-    constants.includes('generic voice') && constants.includes('no dedicated VRB bundle');
-  const gbd = readAppFile('components/slonimsky/SlonimskyGbdPanel.tsx');
   return (
-    constantsOk &&
-    universal.includes('isSlonimskyGenericVoiceWarning') &&
-    universal.includes('slonimskySongModeWriterWarningBody') &&
-    songMode.includes('isSlonimskyGenericVoiceWarning(writerId)') &&
-    songMode.includes('SLONIMSKY_GENERIC_VOICE_OPTION_SUFFIX') &&
-    songMode.includes('slonimskySongModeWriterWarningBody') &&
-    gbd.includes('slonimskyGbdWriterWarningBody') &&
-    gbd.includes('SLONIMSKY_GBD_WRITERS')
+    constants.includes("'sonic_youth'") &&
+    constants.includes('SONG_MODE_VOICE_IDS') &&
+    !constants.includes('SONIC_YOUTH_OPTION') &&
+    !constants.includes('SLONIMSKY_SONIC_YOUTH_GENERIC_VOICE_ID') &&
+    isConfirmedHarmonicVoiceBundle('sonic_youth')
   );
 }
 
@@ -341,8 +326,8 @@ export function runSlonimskyUiTests(): { name: string; ok: boolean }[] {
     ['slonimsky-ui — SQ+BB hybrid → context keys + blendStrength', testSqBbHybridMapperContextAndBlend],
     ['slonimsky-ui — advanced pin/forbid → cell context keys', testAdvancedDrawerPinForbidCellKeys],
     ['slonimsky-ui — harmonic voice confirmed VRB → harmonicVoice', testHarmonicVoicePassesConfirmedVrb],
-    ['slonimsky-ui — sonic_youth → no harmonicVoice + generic metadata key', testSonicYouthNoHarmonicVoicePayload],
-    ['slonimsky-ui — sonic_youth generic voice warnings (universal + song mode)', testSonicYouthGenericVoiceWarningsInPanels],
+    ['slonimsky-ui — sonic_youth → confirmed harmonicVoice payload', testSonicYouthHarmonicVoicePayload],
+    ['slonimsky-ui — sonic_youth dedicated VRB (no generic warning)', testSonicYouthConfirmedVoiceNoWarning],
     ['slonimsky-ui — advanced drawer wired in HomeGenerate', testAdvancedDrawerMountedFromHomeGenerate],
     ['slonimsky-ui — V62 song mode writers golden (7)', verifySongModeWritersV62Golden],
     ['slonimsky-ui — V62 GBD stub writers golden (0)', verifyGbdWritersV62Golden],

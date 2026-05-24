@@ -1711,6 +1711,134 @@ export const SCOTT_HENDERSON: VoiceRuleBundle = {
   })(),
 };
 
+const SY_BASE = [
+  'SY_HARM_01 — Sus/add9/#11/alt voicings; slash colours; cadence destabilisation over static fields.',
+  'SY_TEX_01 — Dual-guitar friction: inter-string dissonance, alternate tunings, noise_level texture states.',
+  'SY_SLON_01 — Slonimsky bias: angular + chromatic cell families; shock-weighted intent; ditone/semitone catalogue.',
+  'SY_MELO_01 — Angular riffs with tritone/min2 cells; wide register spread; low bar-identity loop persistence.',
+  'SY_RHY_01 — Anti-metric displacement; texture phase shifts (riff→shimmer→noise_wall→clearing).',
+  'SY_TUN_01 — DADGAD/FACGCE/GDAE tuning anchors; open-string drone bias; prepared/feedback noise tiers.',
+  'SY_DIFF_01 — vs Verlaine: noisy dual-guitar not art-rock lyricism; vs Fripp: no process-loop minimalism.',
+] as const;
+
+/** Sonic Youth — noise-rock dual-guitar / alternate-tuning harmonic voice (σ25). */
+export const SONIC_YOUTH: VoiceRuleBundle = {
+  voiceId: 'sonic_youth',
+  sigma: 25,
+  family: 'art_rock',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 8,
+    allowMidBarChange: true,
+  },
+  bassPolicy: { role: 'noise-or-pedal', allowOctaveDoubling: false },
+  voicingPolicy: {
+    minSpreadSemitones: 5,
+    maxSpreadSemitones: 36,
+    clusterSizeNotes: [2, 7],
+    forbidParallelFifths: false,
+    forbidOctaveDoubling: true,
+  },
+  melodicPolicy: { contour: 'angular', maxLeapSemitones: 11 },
+  orchestrationPolicy: {
+    anchorToneCount: 0,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: true,
+    fingerprintReceipts: fillReceipts('SY', 'Sonic Youth', SY_BASE),
+  },
+  formPolicy: { narrativeArc: 'free', sectionRecallEnforced: false },
+  rhythmPolicy: { antiMetric: true },
+  repairPolicy: { resolveParallels: false, maxVoiceOverlap: 8 },
+  contrapuntalLinePolicy: {
+    enabled: true,
+    dissonanceProfile: DIS_RIFF_MOD,
+    preferredImitationTypes: ['free'],
+    rhythmicIndependenceRequired: true,
+    lineRoleAssignment: 'dynamic',
+  },
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.55,
+    registerInterlock: false,
+    intervalPreference: 'chromatic_polytonal',
+    textureTagType: 'riff_layer',
+  },
+  riffProfile: (() => {
+    const slots = 8;
+    const accent = new Array<number>(slots).fill(0.72);
+    accent[0] = 0.95;
+    accent[4] = 0.88;
+    return riffProfileShell({
+      meterPolicy: 'simple',
+      subdivisionGrid: 8,
+      accentTopology: accent,
+      allowPitchStreak: true,
+      tritoneStable: true,
+      homeChordType: 'power5',
+      chordQualitySet: ['sus2', 'sus4', 'add9', 'add11', 'maj7#11', 'dom7alt', 'min7', 'power5'],
+      scalePool: {
+        Aeolian: 0.35,
+        Dorian: 0.28,
+        wholeTone: 0.22,
+        diminished: 0.18,
+        chromatic: 0.15,
+      },
+      chromaticBudget: 0.58,
+      intervalCell: { steps: [1, 6, 2, 5], transpositionMode: 'chromatic' },
+      registerAnchor: 'upper_register',
+      registerBandPerVoice: {
+        lead: { min: 45, max: 84 },
+        guitar: { min: 45, max: 84 },
+      },
+      riffRegisterFloor: 45,
+      riffRegisterCeiling: 84,
+      topNoteLinePolicy: false,
+      riffHarmonicCycleLengthBars: 1,
+      doubleStopPolicy: {
+        intervalsAllowed: [1, 2, 6, 7],
+        stringPairs: [
+          [5, 4],
+          [4, 3],
+          [3, 2],
+        ],
+      },
+      repetitionPolicy: {
+        exactLoopAllowed: false,
+        pedalToneAllowed: true,
+        barIdentityPersistence: 0.22,
+        minExactRepetitions: 1,
+      },
+      modalUsage: 'process-cell',
+      swingStyle: 'straight',
+      pedalBias: 0.52,
+      octaveDisplacementTolerance: 0.72,
+      powerIntervalPolicy: { fifthWeight: 0.35, octaveWeight: 0.28, pedalWeight: 0.55 },
+      metricDisplacement: 0.68,
+      ornamentPolicy: {
+        slides: true,
+        ghosts: false,
+        graceAttacks: false,
+        bends: false,
+        deadNotes: true,
+      },
+      silencePolicy: {
+        restProbabilityBySlot: new Array(slots).fill(0.08),
+        styleClass: 'SonicYouthNoiseRock',
+      },
+      attackPolicy: 'staccato',
+      riffContourPolicy: { rangeCeiling: 16, apexTiming: 0.38, returnTendency: 0.28 },
+      variationOperators: [
+        'chromaticAdd',
+        'registerShift',
+        'cellTransposition',
+        'rhythmicWarp',
+        'articulationSwap',
+      ],
+    });
+  })(),
+};
+
 /** Sly Stone / Family Stone funk riff stub (σ24). */
 export const SLY_STONE: VoiceRuleBundle = {
   voiceId: 'sly_stone',

@@ -122,7 +122,7 @@ export type SlonimskyUiGenerateExtras = Pick<
   GenerateRequest,
   'chromaticStrength' | 'blendStrength' | 'duoIntent' | 'styleGenerationContextKeys' | 'harmonicVoice'
 > & {
-  /** sonic_youth selected — warn in UI; carried as metadata only. */
+  /** GBD stub writer selected — metadata only; no {@link GenerateRequest.harmonicVoice}. */
   slonimskyGenericHarmonicVoice?: string;
 };
 
@@ -133,23 +133,13 @@ export function slonimskyUiExtrasFromAdvanced(
 ): SlonimskyUiGenerateExtras {
   const advancedKeys = slonimskyAdvancedOverridesToContextKeys(overrides);
   const option = harmonicVoiceId?.trim() ?? '';
-  if (option === 'sonic_youth') {
-    advancedKeys.push('slonimsky:harmonic_voice=sonic_youth_generic');
-  } else if (isSlonimskyGbdStubWriter(option)) {
+  if (isSlonimskyGbdStubWriter(option)) {
     advancedKeys.push(`slonimsky:harmonic_voice=${option}_stub`);
   }
   const mergedKeys = mergeStyleContextKeys(baseStyleKeys, advancedKeys);
-  const generic =
-    option === 'sonic_youth'
-      ? { slonimskyGenericHarmonicVoice: 'sonic_youth' as const }
-      : isSlonimskyGbdStubWriter(option)
-        ? { slonimskyGenericHarmonicVoice: option }
-        : {};
+  const generic = isSlonimskyGbdStubWriter(option) ? { slonimskyGenericHarmonicVoice: option } : {};
   const harmonicVoice =
-    option &&
-    option !== 'sonic_youth' &&
-    !isSlonimskyGbdStubWriter(option) &&
-    isConfirmedHarmonicVoiceBundle(option)
+    option && !isSlonimskyGbdStubWriter(option) && isConfirmedHarmonicVoiceBundle(option)
       ? option
       : undefined;
   return {

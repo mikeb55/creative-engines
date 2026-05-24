@@ -1,0 +1,22 @@
+{
+  "id": "sonic_youth_song_mode_distinct",
+  "seed": 75001,
+  "totalBars": 16,
+  "presetId": "song_mode",
+  "primarySongwriterStyle": "wayne_shorter",
+  "songModeHookFirstIdentity": true,
+  "baselineHarmonicVoice": "",
+  "targetHarmonicVoice": "sonic_youth",
+  "minGuitarPitchesDifferent": 2,
+  "minRegisterMeanDelta": 0,
+  "fingerprintReceiptIncludes": "SY_SLON_01",
+  "minChromaticBudget": 0.5,
+  "maxBaselineChromaticBudget": 0.01,
+  "minMaxLeapSemitones": 10,
+  "maxBaselineMaxLeapSemitones": 12,
+  "minBarIdentityPersistence": 0.15,
+  "maxBaselineBarIdentityPersistence": 0.01,
+  "minMetricDisplacement": 0.6,
+  "maxBaselineMetricDisplacement": 0.01,
+  "requireTargetAntiMetric": true
+}

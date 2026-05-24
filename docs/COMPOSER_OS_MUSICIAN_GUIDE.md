@@ -185,7 +185,7 @@ John Coltrane · Pat Metheny · Clare Fischer · Quincy Jones · Sammy Nestico �
 **Good voices (solid differentiation):**
 Bill Evans · Herbie Hancock · McCoy Tyner · Thelonious Monk · Debussy · Ravel · Bartok · Shostakovich · Jobim · Arvo Pärt · Ornette Coleman · Coltrane · Gershwin · Cole Porter
 
-**Note on Sonic Youth:** Listed as a Slonimsky song-mode writer but has no dedicated voice bundle — falls back to a generic profile. A warning badge (⚠) appears in the UI. Use another writer if you need a specific character.
+**Note on Sonic Youth:** Full Song Mode harmony slice plus dedicated VRB (`sonic_youth`) — angular/chromatic Slonimsky cell bias, dual-guitar noise-rock texture. No generic-voice warning.
 
 ---
 
@@ -208,7 +208,7 @@ These voices work in Song Mode and shape melody + harmony + rhythm as a complete
 | **Joni Mitchell** | deep | Open-tuning quartal harmony. Clear, floating, graceful with surprising turns. | Open voicings, sus2/sus4, modal |
 | **Frank Zappa** | deep | Twisted, jagged, colorful, a little dangerous. High ferocity when pushed. | Any — Zappa ignores convention |
 | **Radiohead** | deep | Uneasy, fragile, tense with art-rock bite. Metric unease. | Minor, altered, chromatic mediant |
-| **Sonic Youth** | deep* | Raw, slashing, noisy — texture over polish. *Full slice; **no VRB** — ⚠ generic harmonic voice. | Alt tuning, clusters, noise |
+| **Sonic Youth** | deep | Raw, slashing, noisy — texture over polish. Full slice + dedicated VRB (angular/chromatic Slonimsky cells). | Alt tuning, clusters, noise |
 | **Duke Ellington** | deep | Warm orchestral jazz. Sophisticated melody, rich inner voices. | Standards, ii-V-I, blues |
 | **Debussy** | deep | Parallel planing, whole-tone color, impressionist space. | Major 7#11, sus, open |
 | **Jobim** | deep | Bossa nova melody character, Brazilian harmonic color, lightness. | Major 7ths, minor 7ths, bossa changes |
@@ -357,7 +357,7 @@ Example: Frank Zappa as songwriter + Wayne Shorter as harmonic voice = Zappa's m
 
 Available per mode — the selector shows only voices confirmed to work in the active mode.
 
-**Note on Sonic Youth:** Shows a ⚠ warning badge. No dedicated voice bundle exists — output falls back to a generic profile.
+**Sonic Youth** ships a dedicated `sonic_youth` VRB — select it as harmonic voice or pick Sonic Youth as Song Mode writer (auto-resolves to the same bundle).
 
 ---
 

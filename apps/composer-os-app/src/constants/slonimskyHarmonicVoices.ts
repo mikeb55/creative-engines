@@ -54,7 +54,7 @@ function option(id: string, genericVoiceWarning = false): SlonimskyHarmonicVoice
   };
 }
 
-/** Curated roster — confirmed VRB bundles only (plus sonic_youth warning). */
+/** Curated roster — confirmed VRB bundles only. */
 const SONG_MODE_VOICE_IDS = [
   'wayne_shorter',
   'bill_evans',
@@ -67,6 +67,7 @@ const SONG_MODE_VOICE_IDS = [
   'duke_ellington',
   'debussy',
   'jobim',
+  'sonic_youth',
 ] as const;
 
 const GBD_VOICE_IDS = [
@@ -85,15 +86,6 @@ const GBD_VOICE_IDS = [
 /** GBD Slonimsky writer — planning stub only (no VRB / no harmony slice). */
 export const SLONIMSKY_GBD_STUB_WRITER_IDS = [] as const;
 
-const SONIC_YOUTH_OPTION: SlonimskyHarmonicVoiceOption = {
-  id: 'sonic_youth',
-  label: VOICE_LABELS.sonic_youth,
-  genericVoiceWarning: true,
-};
-
-/** Song Mode writer + Harmonic Voice — no dedicated VRB; UI warns only. */
-export const SLONIMSKY_SONIC_YOUTH_GENERIC_VOICE_ID = 'sonic_youth' as const;
-
 /** Song Mode Slonimsky writer — planning stub only (no harmony slice). */
 export const SLONIMSKY_SONG_MODE_STUB_WRITER_IDS = [] as const;
 
@@ -109,11 +101,7 @@ export function isSlonimskyGbdStubWriter(id: string): boolean {
 
 export function isSlonimskyGenericVoiceWarning(id: string): boolean {
   const t = id.trim().toLowerCase();
-  return (
-    t === SLONIMSKY_SONIC_YOUTH_GENERIC_VOICE_ID ||
-    isSlonimskySongModeStubWriter(t) ||
-    isSlonimskyGbdStubWriter(t)
-  );
+  return isSlonimskySongModeStubWriter(t) || isSlonimskyGbdStubWriter(t);
 }
 
 export function slonimskySongModeWriterWarningBody(id: string): string {
@@ -126,9 +114,6 @@ export function slonimskySongModeWriterWarningBody(id: string): string {
 export function slonimskyGbdWriterWarningBody(id: string): string {
   if (isSlonimskyGbdStubWriter(id)) {
     return '⚠ stub voice — no dedicated VRB bundle or GBD harmony slice; macro flavor only.';
-  }
-  if (id.trim().toLowerCase() === SLONIMSKY_SONIC_YOUTH_GENERIC_VOICE_ID) {
-    return SLONIMSKY_GENERIC_VOICE_WARNING_BODY;
   }
   return '';
 }
@@ -163,9 +148,6 @@ export function slonimskyHarmonicVoiceOptionsForMode(
   for (const id of ids) {
     const o = option(id, mode === 'gbd' && isSlonimskyGbdStubWriter(id));
     if (o) out.push(o);
-  }
-  if (mode === 'song_mode' || mode === 'big_band' || mode === 'string_quartet') {
-    out.push(SONIC_YOUTH_OPTION);
   }
   return out;
 }

@@ -86,6 +86,7 @@ import {
   EDDIE_VAN_HALEN,
   JOE_PASS,
   SCOTT_HENDERSON,
+  SONIC_YOUTH,
   WES_MONTGOMERY,
 } from './riffVrbStubs';
 
@@ -3334,6 +3335,9 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   holdsworth: ALLAN_HOLDSWORTH,
   scott_henderson: SCOTT_HENDERSON,
   henderson: SCOTT_HENDERSON,
+  sonic_youth: SONIC_YOUTH,
+  sonic_youth_noise: SONIC_YOUTH,
+  sy: SONIC_YOUTH,
   sly_stone: SLY_STONE_VRF,
   sly: SLY_STONE_VRF,
   family_stone: SLY_STONE_VRF,

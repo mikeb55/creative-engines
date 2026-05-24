@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-24) V63 S5 — Sonic Youth dedicated VRB** — `SONIC_YOUTH` in `riffVrbStubs.ts` (σ25, noise-rock dual-guitar / angular-chromatic Slonimsky bias); `SONIC_YOUTH` Slonimsky style profile + songwriter auto-resolve; Song Mode harmonic voice ⚠ removed; distinctness golden `sonicYouthDistinct.json` + `sonicYouthDistinctGolden.test.ts` (not in smoke tier until S6). Smoke **273/65/0** fast unchanged.
+
 - **(2026-05-24) V63 S4 — Allan Holdsworth + Scott Henderson GBD riff VRBs** — `ALLAN_HOLDSWORTH` + `SCOTT_HENDERSON` in `riffVrbStubs.ts`; cross-distinctness goldens `allanHoldsworthGbdDistinct.json` + `scottHendersonGbdDistinct.json`; GBD stub ⚠ removed for both. Smoke **273/65/0** fast unchanged.
 
 - **(2026-05-24) V63 S3 — Joe Pass GBD riff VRB** — `JOE_PASS` in `riffVrbStubs.ts` (σ24, fingerstyle chord-melody / chromatic bebop line); GBD `harmonicVoice` routing; distinctness golden `joePassGbdDistinct.json`; GBD stub ⚠ removed for Joe Pass. Smoke **273/65/0** fast unchanged.

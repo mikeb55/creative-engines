@@ -6,23 +6,23 @@ import * as fs from 'fs';
 import * as path from 'path';
 import React from 'react';
 import { act, create } from 'react-test-renderer';
-import { describe, expect, it } from 'vitest';
 import { SlonimskyUniversalPanel } from '../src/components/SlonimskyUniversalPanel';
 import { SlonimskySongModePanel } from '../src/components/slonimsky/SlonimskySongModePanel';
 import { DEFAULT_SLONIMSKY_MACRO_STATE } from '../src/types/slonimskyMacroState';
 import { slonimskyUiExtrasFromAdvanced } from '../src/types/slonimskyAdvancedState';
+import { isConfirmedHarmonicVoiceBundle } from '../src/constants/slonimskyHarmonicVoices';
 
 describe('slonimsky-ui boundary', () => {
-  it('sonic_youth shows warning and omits harmonicVoice in payload extras', () => {
+  it('sonic_youth passes dedicated harmonicVoice in payload extras', () => {
     const out = slonimskyUiExtrasFromAdvanced(
       { pinnedCellIds: [], forbiddenCellIds: [] },
       'sonic_youth'
     );
-    expect(out.harmonicVoice).toBeUndefined();
-    expect(out.styleGenerationContextKeys).toContain('slonimsky:harmonic_voice=sonic_youth_generic');
+    expect(out.harmonicVoice).toBe('sonic_youth');
+    expect(isConfirmedHarmonicVoiceBundle('sonic_youth')).toBe(true);
   });
 
-  it('sonic_youth warning badge renders when selected in song mode writer panel', async () => {
+  it('sonic_youth selected in song mode writer panel has no generic warning badge', async () => {
     let tree: ReturnType<typeof create>;
     await act(async () => {
       tree = create(
@@ -37,12 +37,11 @@ describe('slonimsky-ui boundary', () => {
       );
     });
     const json = JSON.stringify(tree!.toJSON());
-    expect(json).toContain('generic voice');
-    expect(json).toContain('no dedicated VRB bundle');
-    expect(json).toContain('⚠');
+    expect(json).not.toContain('no dedicated VRB bundle');
+    expect(json).not.toContain('⚠ generic voice');
   });
 
-  it('sonic_youth warning badge renders when selected in universal panel', async () => {
+  it('sonic_youth selected in universal panel has no generic warning badge', async () => {
     let tree: ReturnType<typeof create>;
     await act(async () => {
       tree = create(
@@ -56,8 +55,7 @@ describe('slonimsky-ui boundary', () => {
       );
     });
     const json = JSON.stringify(tree!.toJSON());
-    expect(json).toContain('generic voice');
-    expect(json).toContain('no dedicated VRB bundle');
+    expect(json).not.toContain('no dedicated VRB bundle');
   });
 
   it('SlonimskyAdvancedDrawer is mounted from HomeGenerate', () => {
