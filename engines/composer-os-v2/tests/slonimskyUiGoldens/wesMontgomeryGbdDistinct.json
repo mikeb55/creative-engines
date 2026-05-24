@@ -1,0 +1,13 @@
+{
+  "id": "wes_montgomery_gbd_distinct",
+  "seed": 66202,
+  "totalBars": 16,
+  "presetId": "guitar_bass_duo",
+  "baselineHarmonicVoice": "nile_rodgers",
+  "targetHarmonicVoice": "wes_montgomery",
+  "minGuitarPitchesDifferent": 8,
+  "minRegisterMeanDelta": 2,
+  "minOctaveDisplacementTolerance": 0.8,
+  "maxBaselineOctaveDisplacementTolerance": 0.55,
+  "fingerprintReceiptIncludes": "WM_MELO_01"
+}

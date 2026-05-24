@@ -187,7 +187,7 @@ Bill Evans · Herbie Hancock · McCoy Tyner · Thelonious Monk · Debussy · Rav
 
 **Note on Sonic Youth:** Listed as a Slonimsky song-mode writer but has no dedicated voice bundle — falls back to a generic profile. A warning badge (⚠) appears in the UI. Use another writer if you need a specific character.
 
-**Note on GBD stubs (Wes Montgomery, Joe Pass, Allan Holdsworth, Scott Henderson):** Listed in the Guitar–Bass Duo Slonimsky panel with flavor presets; no VRB bundle or GBD harmony slice. Shows ⚠ — macro flavor and outside level only.
+**Note on GBD stubs (Joe Pass, Allan Holdsworth, Scott Henderson):** Listed in the Guitar–Bass Duo Slonimsky panel with flavor presets; no VRB bundle yet. Shows ⚠ — macro flavor and outside level only.
 
 ---
 
@@ -229,7 +229,7 @@ These voices work in Guitar-Bass Duo mode and shape the two-voice interaction. *
 | **David Gilmour** | good | Strong melodic shape, sustained phrasing, memorable hooks. |
 | **Hendrix** | good | Blues-rock vocabulary, wide dynamic range, expressive bends implied. |
 | **Fripp** | good | Oblique, layered, textural. Outside the groove, into sound. |
-| **Wes Montgomery** | stub ⚠ | Warm octave jazz lines, lyrical then riff — **macro flavor only**. |
+| **Wes Montgomery** | deep | Warm octave jazz lines, bebop-blues riff cells, lyrical then riff (full riff VRB). |
 | **Joe Pass** | stub ⚠ | Walking chord-melody guitar, lyrical then chromatic — **macro flavor only**. |
 | **Allan Holdsworth** | stub ⚠ | Legato fusion outside lines, chromatic then angular — **macro flavor only**. |
 | **Scott Henderson** | stub ⚠ | Fusion blaze, angular then riff — **macro flavor only**. |

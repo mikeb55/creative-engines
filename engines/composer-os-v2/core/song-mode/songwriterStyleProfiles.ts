@@ -1934,7 +1934,8 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
   },
   wes_montgomery: {
     id: 'wes_montgomery',
-    description: 'GBD Slonimsky stub — warm octave jazz guitar (planning weights only).',
+    description:
+      'Wes Montgomery — singing single-line jazz guitar, octave doubling, bebop-blues riff cells (full riff VRB).',
     lineVsCellEmphasis: 0.62,
     harmonyColourBias: 0.55,
     formRegularity: 0.52,
@@ -2754,6 +2755,24 @@ export function riffContextFieldsForVrb(
     default:
       return base as Partial<GenerationMetadata>;
   }
+}
+
+/** GBD Slonimsky / harmonicVoice writer id for duo Slonimsky + melody profile. */
+export function resolveDuoSlonimskyWriterId(
+  genMeta: GenerationMetadata | undefined
+): string | undefined {
+  const raw = (genMeta?.songwriterStyleId ?? genMeta?.harmonicVoice ?? '').trim();
+  return raw || undefined;
+}
+
+/** Duo lane when a riff VRB is attached via songwriter id or {@link GenerationMetadata.harmonicVoice}. */
+export function resolveDuoRiffVrbLaneId(genMeta: GenerationMetadata | undefined): string | undefined {
+  const raw = resolveDuoSlonimskyWriterId(genMeta);
+  if (!raw || raw === 'frank_zappa') return undefined;
+  if (isRiffVrbSongwriterId(raw)) return raw;
+  const bundle = getVoiceRuleBundle(raw);
+  if (bundle.voiceId !== 'neutral' && bundle.riffProfile) return raw;
+  return undefined;
 }
 
 /** Duo golden path: riff VRB receipt + surface (no Zappa solo merge). */

@@ -1260,13 +1260,14 @@ function wireRiffVrbSongwriterRules(): void {
   ];
   rules.wes_montgomery = [
     R(
-      'gbd.wes_montgomery.stub',
-      'Wes Montgomery — GBD Slonimsky stub (planning weights only; no VRB slice)',
+      'riff.wes_montgomery.sigma',
+      'Riff VRB σ25 — octave jazz line + bebop-blues riff cells (reuses pat_metheny rule family)',
       'songwriter',
       'melody',
-      5,
+      8,
       'global'
     ),
+    ...metheny,
   ];
   rules.joe_pass = [
     R(

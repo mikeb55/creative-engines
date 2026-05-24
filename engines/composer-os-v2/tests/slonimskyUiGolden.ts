@@ -21,7 +21,6 @@ const SONG_MODE_PANEL = path.join(
 const GBD_PANEL = path.join(REPO_ROOT, 'apps/composer-os-app/src/components/slonimsky/SlonimskyGbdPanel.tsx');
 
 const SLONIMSKY_GBD_STUB_WRITER_IDS = [
-  'wes_montgomery',
   'joe_pass',
   'allan_holdsworth',
   'scott_henderson',
@@ -171,7 +170,7 @@ export function verifyGbdWritersV62Golden(): boolean {
     if (!first || !macroMatches(first.macro, row.macro)) return false;
     if (!panelSrc.includes(row.writerId)) return false;
   }
-  return fx.stubWriters.length === 4;
+  return fx.stubWriters.length === 3;
 }
 
 export function verifyLane3PresetWiringGolden(): boolean {

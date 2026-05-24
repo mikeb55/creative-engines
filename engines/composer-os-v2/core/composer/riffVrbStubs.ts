@@ -890,6 +890,17 @@ const DG_BASE = [
   'DG_MOD_01 — defaultRockMinor / majorBallad / ambientModal pools; ComfortablyNumb / ShineOn / WYWH presets.',
 ] as const;
 
+const WM_BASE = [
+  'WM_MELO_01 — Singing single-note line; thumbs-down octave doubles on phrase peaks (not Nile chord-fragment grid).',
+  'WM_RHY_01 — Swing 8th feel; behind-the-beat placement; 2–4 bar riff cells with clear cadence.',
+  'WM_HARM_01 — Blues / bebop vocabulary: dom7, min7, maj7, sus4; ii–V–I guide-tone targets.',
+  'WM_INT_01 — Stepwise M2/m3 with occasional m6/M6 blues colour; octave displacement on strong beats.',
+  'WM_REP_01 — Exact 2–4 bar phrase loop; barIdentityPersistence ≥0.7; riff hook returns.',
+  'WM_OCT_01 — octaveDisplacementTolerance high — parallel octave melody stacks (Wes thumb sound).',
+  'WM_MOD_01 — Dorian / Mixolydian / bebop dominant pools; low funk-16th grid density.',
+  'WM_DIFF_01 — vs Nile Rodgers: no top-note funk fragments; vs Larry Carlton: less fusion shuffle comp.',
+] as const;
+
 const LC_BASE = [
   'LC_REG_01 — Lead core G3–E5 (60–76 MIDI); comp C3–A4 (48–69); string bias strings 2+3.',
   'LC_RHY_01 — 16th grid light shuffle; Steely Dan slightly behind; fusion straight on grid.',
@@ -1231,6 +1242,108 @@ export const LARRY_CARLTON: VoiceRuleBundle = {
         bends: true,
         deadNotes: false,
       },
+    });
+  })(),
+};
+
+/** Wes Montgomery — lyrical jazz guitar / octave lines / bebop-blues riff cells (σ25). */
+export const WES_MONTGOMERY: VoiceRuleBundle = {
+  voiceId: 'wes_montgomery',
+  sigma: 25,
+  family: 'fusion',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 4,
+    allowMidBarChange: true,
+  },
+  bassPolicy: { role: 'root', allowOctaveDoubling: true },
+  voicingPolicy: {
+    minSpreadSemitones: 4,
+    maxSpreadSemitones: 22,
+    clusterSizeNotes: [1, 4],
+    forbidParallelFifths: false,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: { contour: 'stepwise-arc', maxLeapSemitones: 12 },
+  orchestrationPolicy: {
+    anchorToneCount: 1,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: fillReceipts('WM', 'Wes Montgomery', WM_BASE),
+  },
+  formPolicy: { narrativeArc: 'blues-backbone', sectionRecallEnforced: true },
+  rhythmPolicy: { antiMetric: false },
+  repairPolicy: { resolveParallels: true, maxVoiceOverlap: 5 },
+  contrapuntalLinePolicy: {
+    enabled: true,
+    dissonanceProfile: DIS_LOW,
+    preferredImitationTypes: ['free'],
+    rhythmicIndependenceRequired: true,
+    lineRoleAssignment: 'dynamic',
+  },
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.62,
+    registerInterlock: true,
+    intervalPreference: 'pentatonic_diatonic',
+    textureTagType: 'jazz_swing_line',
+  },
+  riffProfile: (() => {
+    const slots = 8;
+    const accent = new Array<number>(slots).fill(0.35);
+    accent[0] = 0.82;
+    accent[4] = 0.78;
+    return riffProfileShell({
+      meterPolicy: 'simple',
+      subdivisionGrid: 8,
+      accentTopology: accent,
+      allowPitchStreak: true,
+      homeChordType: 'dom7',
+      chordQualitySet: ['dom7', 'min7', 'maj7', 'min9', 'dom9', 'sus4', 'm7b5'],
+      scalePool: {
+        dorian: 0.28,
+        mixolydian: 0.22,
+        bebopDominant: 0.25,
+        bluesMinor: 0.2,
+        majorPentatonic: 0.12,
+      },
+      chromaticBudget: 0.28,
+      intervalCell: { steps: [2, 2, 1, 2], transpositionMode: 'diatonic' },
+      registerAnchor: 'mid_register',
+      registerBandPerVoice: {
+        lead: { min: 52, max: 76 },
+        guitar: { min: 52, max: 76 },
+      },
+      riffRegisterFloor: 52,
+      riffRegisterCeiling: 76,
+      topNoteLinePolicy: false,
+      riffHarmonicCycleLengthBars: 4,
+      repetitionPolicy: {
+        exactLoopAllowed: true,
+        pedalToneAllowed: true,
+        barIdentityPersistence: 0.72,
+        minExactRepetitions: 4,
+      },
+      modalUsage: 'linear-melodic',
+      swingStyle: 'jazz',
+      pedalBias: 0.48,
+      octaveDisplacementTolerance: 0.88,
+      powerIntervalPolicy: { fifthWeight: 0.35, octaveWeight: 0.55, pedalWeight: 0.35 },
+      ornamentPolicy: {
+        slides: true,
+        ghosts: false,
+        graceAttacks: true,
+        bends: false,
+        deadNotes: false,
+      },
+      silencePolicy: {
+        restProbabilityBySlot: new Array(slots).fill(0.12),
+        styleClass: 'WesMontgomerySwing',
+      },
+      attackPolicy: 'sustain',
+      riffContourPolicy: { rangeCeiling: 14, apexTiming: 0.55, returnTendency: 0.62 },
+      variationOperators: ['registerShift', 'targetToneShift', 'cellTransposition', 'ornamentAdd'],
     });
   })(),
 };

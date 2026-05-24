@@ -84,7 +84,6 @@ const GBD_VOICE_IDS = [
 
 /** GBD Slonimsky writer — planning stub only (no VRB / no harmony slice). */
 export const SLONIMSKY_GBD_STUB_WRITER_IDS = [
-  'wes_montgomery',
   'joe_pass',
   'allan_holdsworth',
   'scott_henderson',

@@ -525,6 +525,8 @@ import {
   applyRiffVrbDuoSongwriterBranch,
   isRiffVrbSongwriterId,
   normalizeSongwriterStyleKey,
+  resolveDuoRiffVrbLaneId,
+  resolveDuoSlonimskyWriterId,
 } from '../song-mode/songwriterStyleProfiles';
 import {
   buildExportPartTransposeSemitonesFromResolvedAlternateTuning,
@@ -2330,6 +2332,14 @@ function buildSongwriterMelodyProfile(
         intervalBias: 'stepwise',
         rhythmicFeel: 'flowing',
       };
+    case 'wes_montgomery':
+      return {
+        phraseIntentBias: 'arch',
+        densityBias: -0.08,
+        offbeatBias: 0.42,
+        intervalBias: 'stepwise',
+        rhythmicFeel: 'laid_back',
+      };
     case 'brian_wilson':
       return {
         phraseIntentBias: 'arch',
@@ -2706,12 +2716,9 @@ function buildGuitarPart(
   if (isSongwriterFrankZappa && isDuoGoldenPath) {
     attachFrankZappaHarmonyContext(context);
   }
-  if (
-    isRiffVrbSongwriterId(genMeta?.songwriterStyleId ?? '') &&
-    genMeta?.songwriterStyleId !== 'frank_zappa' &&
-    isDuoGoldenPath
-  ) {
-    applyRiffVrbDuoSongwriterBranch(context, genMeta!.songwriterStyleId!, true);
+  const duoRiffLaneId = resolveDuoRiffVrbLaneId(genMeta);
+  if (duoRiffLaneId && isDuoGoldenPath) {
+    applyRiffVrbDuoSongwriterBranch(context, duoRiffLaneId, true);
   }
   if (isSongwriterBarryHarris && isDuoGoldenPath) {
     precomputeBarryHarrisEffectiveHarmonyBars(context);
@@ -2859,10 +2866,7 @@ function buildGuitarPart(
   }
 
   const seed = context.seed;
-  const songwriterMelodyProfile = buildSongwriterMelodyProfile(
-    genMeta?.songwriterStyleId as string | undefined,
-    seed
-  );
+  const songwriterMelodyProfile = buildSongwriterMelodyProfile(resolveDuoSlonimskyWriterId(genMeta), seed);
   const hints = readStyleHints(context);
   const measures: MeasureModel[] = [];
   let compositionMotif: MelodicMotif | undefined;
@@ -3746,7 +3750,7 @@ function buildGuitarPart(
             duoIntent: phraseIntent,
             phase,
             seed,
-            songwriterId: genMeta?.songwriterStyleId as string | undefined,
+            songwriterId: resolveDuoSlonimskyWriterId(genMeta),
             ...(genMeta?.slonimskyAllowedOutsideOverride !== undefined
               ? { allowedOutsideOverride: genMeta.slonimskyAllowedOutsideOverride }
               : {}),
