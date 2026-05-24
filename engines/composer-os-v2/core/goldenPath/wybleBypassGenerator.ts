@@ -192,7 +192,10 @@ export function generateWybleEtudeXml(
   canonicalChords: CanonicalChord[],
   seed?: number,
   title?: string,
-  harmonyOpts?: { chordSource?: 'parsedChordBars' | 'chordProgressionText' }
+  harmonyOpts?: {
+    chordSource?: 'parsedChordBars' | 'chordProgressionText';
+    chromaticismLevel?: number;
+  }
 ): WybleBypassResult {
   validateWybleCanonicalChordList(canonicalChords, chords.length);
   console.log(
@@ -215,6 +218,11 @@ export function generateWybleEtudeXml(
     dyadDensity: 0.5,
     voiceRatioMode: 'mixed',
     practiceMode: 'etude',
+    ...(typeof harmonyOpts?.chromaticismLevel === 'number' && Number.isFinite(harmonyOpts.chromaticismLevel)
+      ? {
+          chromaticismLevel: Math.max(0, Math.min(1, harmonyOpts.chromaticismLevel)),
+        }
+      : {}),
   };
   const output = generateWybleEtude(params);
   const score = wybleOutputToScore(

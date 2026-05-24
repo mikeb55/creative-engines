@@ -37,6 +37,9 @@ import { SqToBbWorkflowPanel } from '../components/SqToBbWorkflowPanel';
 import { SlonimskyUniversalPanel } from '../components/SlonimskyUniversalPanel';
 import { SlonimskyEnsemblePanel } from '../components/slonimsky/SlonimskyEnsemblePanel';
 import { SlonimskyGbdPanel, type GbdChromaticStrength } from '../components/slonimsky/SlonimskyGbdPanel';
+import { SlonimskyEtudeCellFamilyPanel } from '../components/slonimsky/SlonimskyEtudeCellFamilyPanel';
+import { slonimskyPatternIdForCellFamily } from '../types/slonimskyAdvancedState';
+import type { SlonimskySourcePreset } from '../types/slonimskyMacroState';
 import {
   SLONIMSKY_GBD_WRITERS,
   slonimskyGbdWriterPresets,
@@ -2157,6 +2160,7 @@ export function HomeGenerate({
   const [slonimskyBbMiddle, setSlonimskyBbMiddle] = useState(DEFAULT_BIG_BAND_SLONIMSKY_MIDDLE);
   const [slonimskySqMiddle, setSlonimskySqMiddle] = useState(DEFAULT_STRING_QUARTET_SLONIMSKY_MIDDLE);
   const [gbdChromaticStrength, setGbdChromaticStrength] = useState<GbdChromaticStrength>('off');
+  const [slonimskyEtudeCellFamily, setSlonimskyEtudeCellFamily] = useState<SlonimskySourcePreset>('lyrical');
   const [gbdWriterId, setGbdWriterId] = useState<SlonimskyGbdWriterId>('nile_rodgers');
   useEffect(() => {
     if (presetId !== 'guitar_bass_duo') return;
@@ -2883,6 +2887,18 @@ export function HomeGenerate({
           hadLeadSheetInputForRun && uiLeadSheetInputSourceForRun === 'file' && leadSheetFileName
             ? leadSheetFileName
             : undefined;
+        if (presetId === 'slonimsky_etude' && !chordTrim) {
+          setError(
+            'Slonimsky Etude requires a chord progression. Enter chords in the Chord progression field.'
+          );
+          setLoading(false);
+          notifyGenPhase('failed');
+          onResult({
+            record: {},
+            summary: { status: 'failed', at: new Date().toISOString() },
+          });
+          return;
+        }
         if (presetId === 'wyble_etude' && !chordTrim) {
           setError(
             'Wyble requires a chord progression. Enter bar-separated chords in the Chord progression field (no built-in fallback).'
@@ -3029,6 +3045,19 @@ export function HomeGenerate({
         if (presetId === 'wyble_etude' && chordTrim) {
           const wybleParsed = parseChordProgressionInputFlexible(chordTrim);
           if (!wybleParsed.ok) {
+            setError(CHORD_PROGRESSION_PARSE_ERROR_MESSAGE);
+            setLoading(false);
+            notifyGenPhase('failed');
+            onResult({
+              record: {},
+              summary: { status: 'failed', at: new Date().toISOString() },
+            });
+            return;
+          }
+        }
+        if (presetId === 'slonimsky_etude' && chordTrim) {
+          const slonParsed = parseChordProgressionInputFlexible(chordTrim);
+          if (!slonParsed.ok) {
             setError(CHORD_PROGRESSION_PARSE_ERROR_MESSAGE);
             setLoading(false);
             notifyGenPhase('failed');
@@ -3289,7 +3318,15 @@ export function HomeGenerate({
                 longFormEnabled: tbForm >= 16,
               }
             : {}),
-          ...(presetId === 'wyble_etude' && chordTrim ? { chordProgressionText: chordTrim } : {}),
+          ...(presetId === 'wyble_etude' && chordTrim
+            ? { chordProgressionText: chordTrim, chromaticStrength: gbdChromaticStrength }
+            : {}),
+          ...(presetId === 'slonimsky_etude' && chordTrim
+            ? {
+                chordProgressionText: chordTrim,
+                slonimskyPatternId: slonimskyPatternIdForCellFamily(slonimskyEtudeCellFamily),
+              }
+            : {}),
           ...(presetId === 'riff_generator'
             ? {
                 riffVrbId,
@@ -3673,6 +3710,7 @@ export function HomeGenerate({
       slonimskyAdvanced,
       slonimskyHarmonicVoice,
       gbdChromaticStrength,
+      slonimskyEtudeCellFamily,
       funkGroove,
       generateDrumGuide,
       formId,
@@ -4622,6 +4660,23 @@ export function HomeGenerate({
           disabled={loading}
         />
       )}
+      {presetId === 'wyble_etude' && (
+        <SlonimskyGbdPanel
+          chromaticOnly
+          panelTitle="Wyble Etude — Outside level"
+          outsideLevelNumericLabels
+          chromaticStrength={gbdChromaticStrength}
+          onChromaticStrengthChange={setGbdChromaticStrength}
+          disabled={loading}
+        />
+      )}
+      {presetId === 'slonimsky_etude' && (
+        <SlonimskyEtudeCellFamilyPanel
+          cellFamily={slonimskyEtudeCellFamily}
+          onCellFamilyChange={setSlonimskyEtudeCellFamily}
+          disabled={loading}
+        />
+      )}
 
       {modeUx && (
         <div
@@ -4819,11 +4874,12 @@ export function HomeGenerate({
         presetId === 'riff_generator' ||
         presetId === 'song_mode' ||
         presetId === 'wyble_etude' ||
+        presetId === 'slonimsky_etude' ||
         presetId === 'big_band' ||
         presetId === 'string_quartet') && (
         <div style={{ marginBottom: '1rem', maxWidth: 640 }}>
           <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
-            {presetId === 'wyble_etude'
+            {presetId === 'wyble_etude' || presetId === 'slonimsky_etude'
               ? 'Chord progression (required)'
               : presetId === 'big_band' || presetId === 'string_quartet'
                 ? `Chord progression (${ensembleChordBarCountForLabel ?? 16} bars)`
@@ -4844,6 +4900,18 @@ export function HomeGenerate({
               â€” separated by spaces or commas, or one chord per bar with <code>|</code>, <code>,</code>,{' '}
               <code>;</code>, or (without <code>|</code>) newlines / spaced <code>/</code>. Slash chords like{' '}
               <code>G7/B</code> are one symbol. This list is the only harmonic source for Wyble (no default loop).
+            </p>
+          ) : presetId === 'slonimsky_etude' ? (
+            <p
+              style={{
+                fontSize: '0.8rem',
+                color: 'var(--text-muted)',
+                margin: '0 0 0.5rem',
+                lineHeight: 1.45,
+              }}
+            >
+              Standard jazz symbols (e.g. <code>Dm9</code>, <code>G13</code>, <code>Cmaj9</code>) — spaces, commas, or one
+              chord per bar. Pick a cell family above; the engine uses the default catalogue pattern for that family.
             </p>
           ) : presetId === 'guitar_bass_duo' || presetId === 'guitar_bass_duo_single_line' ? (
             <p
@@ -4918,7 +4986,7 @@ export function HomeGenerate({
             rows={
               songFormBarPreset
                 ? Math.min(12, Math.max(4, Math.ceil(songFormBars / 6)))
-                : presetId === 'wyble_etude'
+                : presetId === 'wyble_etude' || presetId === 'slonimsky_etude'
                   ? 4
                   : 3
             }

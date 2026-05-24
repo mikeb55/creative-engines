@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-23) Lane 3 Wave 2 — Etude surfaces** — **`wyble_etude`**: Outside Level 0|1|2 only (`SlonimskyGbdPanel` `chromaticOnly` → `chromaticStrength` → Wyble `chromaticismLevel` via `chromaticStrengthToWybleChromaticismLevel`). **`slonimsky_etude`**: cell family selector only (`SlonimskyEtudeCellFamilyPanel` → `slonimskyPatternIdForCellFamily`). Smoke **259/63/0** fast · **424/77/0** full.
+
 - **(2026-05-23) Slonimsky W4/W5 — SQ Voice Independence + Register Spread** — **Voice Independence** (−1…+1) → `GenerateRequest.blendStrength` + `duoIntent`; strong blend drives per-bar rhythmic splits, conversational Slonimsky `phraseIntent`. **Register Spread** → `chromaticStrength` → `allowedOutsideOverride` + `applyRegisterSpreadToStack` vertical spacing. `mapStringQuartetEnsembleSlonimskyToGenerateRequest` + `HomeGenerate.tsx` `stringQuartetSlonimskyExtras`. Goldens: `sqVoiceIndependenceExtremes.json`, `sqRegisterSpreadExtremes.json`. Smoke **259/63/0** fast · **424/77/0** full.
 
 - **(2026-05-23) Slonimsky W2/W3/W6 — BB middle knobs + SQ+BB hybrid confirm** — **BB Cohesion** (−1…+1) → `GenerateRequest.figureResponse` (`low` / `medium` / `high`) → `applyFigureResponseToPunchMaps` in big-band score build. **BB Harmonic Grip** → `chromaticStrength` (inverted axis) → `allowedOutsideOverride` via `chromaticStrengthToOutsideLevel` in `runBigBandPlanning`. **SQ+BB hybrid** confirmed: `densitySplit` → `blendStrength` + optional `bbLightTouch`; `registerCarve` → `chromaticStrength`. `mapBigBandEnsembleSlonimskyToGenerateRequest` + `HomeGenerate.tsx` `bigBandSlonimskyExtras`. Golden fixtures: `engines/composer-os-v2/tests/slonimskyKnobGoldens/` + `slonimskyKnobGolden.ts`. Smoke **259/63/0** fast · **424/77/0** full.

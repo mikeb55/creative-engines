@@ -49,7 +49,10 @@ import {
 } from '../core/regeneration/ensembleSectionRegeneration';
 import { GCE_GATE_MIN, scoreGoldenPathResultForGce } from '../core/gce/gceGate';
 import { logSongModeHarmonyDebug, resolveEffectiveHarmonyTruth } from '../core/goldenPath/customLockedHarmonyRouting';
-import { chromaticStrengthToOutsideLevel } from '../core/slonimsky/slonimskyPatternService';
+import {
+  chromaticStrengthToOutsideLevel,
+  chromaticStrengthToWybleChromaticismLevel,
+} from '../core/slonimsky/slonimskyPatternService';
 import { resolveEffectiveGenerationSeed } from '../core/creative-controls/creativeControlResolver';
 import { experimentalLabelForLevel } from '../core/creative-controls/experimentalEvaluator';
 import { manifestPathForMusicXml } from './composerOsOutputPaths';
@@ -532,7 +535,10 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
         resolved.canonicalChords,
         req.seed,
         req.title,
-        { chordSource: resolved.source }
+        {
+          chordSource: resolved.source,
+          chromaticismLevel: chromaticStrengthToWybleChromaticismLevel(req.chromaticStrength),
+        }
       );
     } catch (e) {
       console.warn('VALIDATION BYPASSED:', (e as Error)?.message);

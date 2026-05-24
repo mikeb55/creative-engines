@@ -167,6 +167,17 @@ export function chromaticStrengthToOutsideLevel(
   return undefined;
 }
 
+/** Wyble `WybleParameters.chromaticismLevel` (0–1) from UI chromatic strength. */
+export function chromaticStrengthToWybleChromaticismLevel(
+  s: 'off' | 'subtle' | 'prominent' | undefined
+): number | undefined {
+  const level = chromaticStrengthToOutsideLevel(s);
+  if (level === undefined) return undefined;
+  if (level === 0) return 0;
+  if (level === 1) return 0.45;
+  return 0.9;
+}
+
 function resolveEffectiveEnsembleAllowedOutsideLevel(
   songwriterId: string | undefined,
   allowedOutsideOverride?: 0 | 1 | 2

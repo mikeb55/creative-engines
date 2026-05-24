@@ -80,6 +80,16 @@ export const SLONIMSKY_CELL_FAMILIES: {
   cells: ENGINE_CELLS.filter((p) => primaryFlavorForPattern(p) === flavor),
 }));
 
+/** Default engine catalogue pattern for a Slonimsky cell family (etude preset). */
+export function slonimskyPatternIdForCellFamily(flavor: SlonimskySourcePreset): string {
+  const family = SLONIMSKY_CELL_FAMILIES.find((f) => f.flavor === flavor);
+  const id = family?.cells[0]?.id;
+  if (!id) {
+    throw new Error(`No in-engine Slonimsky cell for family ${flavor}`);
+  }
+  return id;
+}
+
 export function dualUseFlavorsForCell(cellId: string): SlonimskySourcePreset[] {
   const row = ENGINE_CELLS.find((p) => p.id === cellId);
   if (!row) return [];
