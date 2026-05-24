@@ -73,6 +73,7 @@ export type SongwriterRuleId =
   | 'cole_porter'
   | 'dave_brubeck'
   | 'miles_davis'
+  | 'mccoy_tyner'
   | 'bartok'
   | 'berg'
   | 'gershwin'

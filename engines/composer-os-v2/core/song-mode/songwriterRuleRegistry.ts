@@ -1163,6 +1163,16 @@ const songwriterRules: Partial<Record<SongwriterRuleId, SongwritingRuleEntry[]>>
     R('md.time_no_changes', 'Suspended / ambiguous harmony regions (`md:time_no_changes`)', 'songwriter', 'harmony', 8, 'form'),
     R('md.cool_phrasing', 'Mid-register sparse melodic pacing (`md:cool_phrase`)', 'songwriter', 'melody', 8, 'verse'),
   ],
+  mccoy_tyner: [
+    R(
+      'mt.quartal_stub',
+      'McCoy Tyner — quartal / pentatonic voicing stub (no dedicated Song Mode slice; planning weights only)',
+      'songwriter',
+      'harmony',
+      6,
+      'global'
+    ),
+  ],
   bartok: [
     R('bk.axis_substitution', 'Minor-third / symmetric axis substitution vs functional ii–V (`bk:axis_substitution`)', 'songwriter', 'harmony', 9, 'global'),
     R('bk.golden_section', 'Golden-section climax bar colour (`bk:golden_section_climax`)', 'songwriter', 'form', 8, 'form'),

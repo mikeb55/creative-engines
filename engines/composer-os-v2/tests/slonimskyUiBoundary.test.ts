@@ -257,7 +257,7 @@ function testSonicYouthGenericVoiceWarningsInPanels(): boolean {
     universal.includes('SLONIMSKY_GENERIC_VOICE_WARNING_BODY') &&
     songMode.includes('isSlonimskyGenericVoiceWarning(writerId)') &&
     songMode.includes('SLONIMSKY_GENERIC_VOICE_OPTION_SUFFIX') &&
-    songMode.includes('SLONIMSKY_GENERIC_VOICE_WARNING_BODY')
+    songMode.includes('slonimskySongModeWriterWarningBody')
   );
 }
 

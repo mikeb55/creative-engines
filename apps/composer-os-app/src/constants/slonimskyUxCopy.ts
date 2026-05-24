@@ -50,6 +50,13 @@ export const SLONIMSKY_WRITER_ONE_LINER: Record<SlonimskySongModeWriterId, strin
   sonic_youth: 'Raw, slashing, noisy — texture over polish',
   joni_mitchell: 'Clear, floating, graceful with surprising turns',
   radiohead: 'Uneasy, fragile, tense, art-rock bite',
+  wayne_shorter: 'Motive-driven, chromatic, searching post-bop',
+  bill_evans: 'Lyrical piano color, voice-led harmony',
+  herbie_hancock: 'Angular funk-jazz harmony, quartal colour',
+  larry_carlton: 'Fusion-funk guitar, lyrical then chromatic',
+  david_gilmour: 'Singing rock lead, riff hooks and sustain',
+  mccoy_tyner: 'Quartal stacks, pentatonic fire (stub)',
+  miles_davis: 'Cool modal space, lyrical then chromatic',
 };
 
 export const SLONIMSKY_FLAVOR_ORDER: readonly SlonimskySourcePreset[] = [

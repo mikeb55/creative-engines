@@ -21,7 +21,7 @@ import {
 import {
   isSlonimskyGenericVoiceWarning,
   SLONIMSKY_GENERIC_VOICE_OPTION_SUFFIX,
-  SLONIMSKY_GENERIC_VOICE_WARNING_BODY,
+  slonimskySongModeWriterWarningBody,
 } from '../../constants/slonimskyHarmonicVoices';
 
 const WRITER_LABELS: Record<SlonimskySongModeWriterId, string> = {
@@ -30,6 +30,13 @@ const WRITER_LABELS: Record<SlonimskySongModeWriterId, string> = {
   sonic_youth: 'Sonic Youth',
   joni_mitchell: 'Joni Mitchell',
   radiohead: 'Radiohead',
+  wayne_shorter: 'Wayne Shorter',
+  bill_evans: 'Bill Evans',
+  herbie_hancock: 'Herbie Hancock',
+  larry_carlton: 'Larry Carlton',
+  david_gilmour: 'David Gilmour',
+  mccoy_tyner: 'McCoy Tyner',
+  miles_davis: 'Miles Davis',
 };
 
 function isSongModeWriter(id: string): id is SlonimskySongModeWriterId {
@@ -126,7 +133,7 @@ export function SlonimskySongModePanel({
           >
             {WRITER_LABELS[writerId]}
             {isSlonimskyGenericVoiceWarning(writerId) ? (
-              <span style={{ color: 'rgb(180, 120, 20)' }} title={SLONIMSKY_GENERIC_VOICE_WARNING_BODY}>
+              <span style={{ color: 'rgb(180, 120, 20)' }} title={slonimskySongModeWriterWarningBody(writerId)}>
                 {' '}
                 ⚠
               </span>
@@ -168,7 +175,7 @@ export function SlonimskySongModePanel({
               color: 'rgb(180, 120, 20)',
             }}
           >
-            {SLONIMSKY_GENERIC_VOICE_WARNING_BODY}
+            {slonimskySongModeWriterWarningBody(writerId)}
           </p>
         ) : null}
       </label>

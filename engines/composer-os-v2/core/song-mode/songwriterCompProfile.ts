@@ -114,6 +114,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   cole_porter: 'keys',
   dave_brubeck: 'keys',
   miles_davis: 'keys',
+  mccoy_tyner: 'keys',
   bartok: 'keys',
   berg: 'ensemble',
   gershwin: 'keys',

@@ -83,8 +83,24 @@ const SONIC_YOUTH_OPTION: SlonimskyHarmonicVoiceOption = {
 /** Song Mode writer + Harmonic Voice — no dedicated VRB; UI warns only. */
 export const SLONIMSKY_SONIC_YOUTH_GENERIC_VOICE_ID = 'sonic_youth' as const;
 
+/** Song Mode Slonimsky writer — planning stub only (no harmony slice). */
+export const SLONIMSKY_SONG_MODE_STUB_WRITER_IDS = ['mccoy_tyner'] as const;
+
+export function isSlonimskySongModeStubWriter(id: string): boolean {
+  const t = id.trim().toLowerCase();
+  return (SLONIMSKY_SONG_MODE_STUB_WRITER_IDS as readonly string[]).includes(t);
+}
+
 export function isSlonimskyGenericVoiceWarning(id: string): boolean {
-  return id.trim().toLowerCase() === SLONIMSKY_SONIC_YOUTH_GENERIC_VOICE_ID;
+  const t = id.trim().toLowerCase();
+  return t === SLONIMSKY_SONIC_YOUTH_GENERIC_VOICE_ID || isSlonimskySongModeStubWriter(t);
+}
+
+export function slonimskySongModeWriterWarningBody(id: string): string {
+  if (isSlonimskySongModeStubWriter(id)) {
+    return '⚠ stub voice — no dedicated Song Mode harmony slice; engine uses generic planning weights only.';
+  }
+  return SLONIMSKY_GENERIC_VOICE_WARNING_BODY;
 }
 
 export const SLONIMSKY_GENERIC_VOICE_OPTION_SUFFIX = ' ⚠ generic voice';

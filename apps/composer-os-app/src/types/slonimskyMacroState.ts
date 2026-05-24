@@ -7,6 +7,13 @@ export const SLONIMSKY_SONG_MODE_WRITERS = [
   'sonic_youth',
   'joni_mitchell',
   'radiohead',
+  'wayne_shorter',
+  'bill_evans',
+  'herbie_hancock',
+  'larry_carlton',
+  'david_gilmour',
+  'mccoy_tyner',
+  'miles_davis',
 ] as const;
 
 export type SlonimskySongModeWriterId = (typeof SLONIMSKY_SONG_MODE_WRITERS)[number];
