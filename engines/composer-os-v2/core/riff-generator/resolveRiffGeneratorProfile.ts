@@ -39,6 +39,12 @@ import {
 } from './riffVrbRegistry';
 
 import { compileReceiptsToRiffProfilePatch, mergeRiffProfilePatch } from './riffReceiptCompiler';
+import type { CompositionContext } from '../compositionContext';
+import {
+  applyPitchProfileToRiffProfile,
+  applySectionArchitectureToRiffProfile,
+  hasSectionArchitecture,
+} from '../section-architecture/effectiveContextForBar';
 
 
 
@@ -105,6 +111,12 @@ export function resolveRiffGeneratorProfileWithMeta(input: {
   /** User / locked chord symbols — one per bar slot after loop expansion. */
 
   chordProgression?: string[];
+
+  /** V65 P1 — per-bar section architecture overlay when Song present. */
+
+  context?: CompositionContext;
+
+  bar?: number;
 
 }): ResolveRiffGeneratorProfileMeta {
 
@@ -179,6 +191,10 @@ export function resolveRiffGeneratorProfileWithMeta(input: {
     profile = mergeRiffProfilePatch(profile, receiptPatch);
   }
 
+  if (input.context && hasSectionArchitecture(input.context) && typeof input.bar === 'number') {
+    profile = applySectionArchitectureToRiffProfile(profile, input.context, input.bar, 'guitar');
+  }
+
   return {
 
     profile,
@@ -210,6 +226,10 @@ export function resolveRiffGeneratorProfile(input: {
   oddMeterPreset?: OddMeterPolicyStyle;
 
   chordProgression?: string[];
+
+  context?: CompositionContext;
+
+  bar?: number;
 
 }): RiffProfile {
 

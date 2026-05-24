@@ -199,6 +199,12 @@ import { applyZappaGceStructuralFingerprintToContext, shouldApplyZappaGceStructu
 import { isFrankZappaSongwriterId, type ZappaGceMeterMode } from '../gce/frankZappaStructuralFingerprint';
 import type { Song } from '../section-architecture/sectionArchitectureTypes';
 import { resolveGenerationBarMeterMap } from '../section-architecture/resolveGenerationBarMeterMap';
+import { wireSongArchitectureAtPipelineEntry } from '../section-architecture/effectiveContextForBar';
+import {
+  getSectionArchitectureDensityHint,
+  hasSectionArchitecture,
+  getEffectivePitchProfileForBar,
+} from '../section-architecture/effectiveContextForBar';
 import { attachFormPlanRhythmAndTension } from '../composer/formPlanAttach';
 import { applyRhythmMotifBindingToConstraints, RHYTHM_DNA_CELL_IDS } from '../composer/rhythmDnaMotifBinder';
 import { weightedRhythmSample, type StochasticConfig, DEFAULT_STOCHASTIC_CONFIG } from '../composer/stochasticLayer';
@@ -986,6 +992,17 @@ function buildGoldenPathPlans(
       let densityTendency = sec.metadata.densityTendency;
       if (g.energyCurve === 'peak' || g.energyCurve === 'high') densityTendency = 'dense';
       else if (g.energyCurve === 'low') densityTendency = 'sparse';
+      return {
+        ...sec,
+        metadata: { ...sec.metadata, densityTendency },
+      };
+    });
+  }
+  if (hasSectionArchitecture(context)) {
+    sections = sections.map((sec) => {
+      const hint = getSectionArchitectureDensityHint(sec.startBar, context, 'guitar');
+      if (!hint) return sec;
+      const densityTendency = hint === 'medium' ? sec.metadata.densityTendency : hint;
       return {
         ...sec,
         metadata: { ...sec.metadata, densityTendency },
@@ -1909,6 +1926,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     });
     applyResolvedFormMapToContext(context, resolvedForm);
   }
+  wireSongArchitectureAtPipelineEntry(context, options?.song, applyResolvedFormMapToContext);
   {
     const meterResolved = resolveGenerationBarMeterMap({
       totalBars: context.form.totalBars,

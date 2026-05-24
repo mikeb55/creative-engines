@@ -10,3 +10,4 @@ export {
   resolveSectionForBar,
   mergeInstrumentOverride,
 } from './sectionArchitectureResolution';
+export * from './effectiveContextForBar';

@@ -5,6 +5,7 @@
 import type { CompositionContext } from '../compositionContext';
 import type { VoiceRuleBundle } from './voiceRuleBundle';
 import { normalizeChordToken } from '../harmony/chordProgressionParser';
+import { resolveVoiceBundleForBarWithSectionArchitecture } from '../section-architecture/effectiveContextForBar';
 
 export interface VoiceBundleHarmonicRhythmState {
   anchorChord: string;
@@ -18,7 +19,12 @@ export function applyVoiceBundleHarmonicRhythm(
   context: CompositionContext,
   voiceBundleOverride?: VoiceRuleBundle,
 ): string {
-  const vb = voiceBundleOverride ?? context.voiceBundle;
+  const vb =
+    resolveVoiceBundleForBarWithSectionArchitecture(
+      barIndex,
+      context,
+      voiceBundleOverride ?? context.voiceBundle
+    ) ?? voiceBundleOverride ?? context.voiceBundle;
   const meta = context.generationMetadata;
   if (!vb) return candidateChord;
 

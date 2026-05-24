@@ -6,6 +6,10 @@ import type { CompositionContext } from '../compositionContext';
 import type { ChordEvent, NoteEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import { tensionLevelForBar } from './harmonicScene';
 import { resolveVoiceRuleBundleForBar } from './resolveSectionVrb';
+import {
+  getEffectiveVoicingProfileForBar,
+  resolveVoiceBundleForBarWithSectionArchitecture,
+} from '../section-architecture/effectiveContextForBar';
 import { solveVoiceLeading, type VoicingCandidate } from './voiceLeadingSolver';
 import { effectiveSpreadSemitonesFromMetadata } from './bigBandSectionPlanRenderer';
 
@@ -40,19 +44,33 @@ export function applyVoiceBundleVoicingSpreadFloor(score: ScoreModel, context: C
     for (let mi = 0; mi < measures.length; mi++) {
       const m = measures[mi]!;
       const barNum = m.index;
-      const vb = resolveVoiceRuleBundleForBar(context, barNum) ?? context.voiceBundle;
+      const vb =
+        resolveVoiceBundleForBarWithSectionArchitecture(
+          barNum,
+          context,
+          resolveVoiceRuleBundleForBar(context, barNum) ?? context.voiceBundle
+        ) ??
+        resolveVoiceRuleBundleForBar(context, barNum) ??
+        context.voiceBundle;
+      const sectionVoicing = getEffectiveVoicingProfileForBar(barNum, context);
       const mdSt =
         context.generationMetadata as { stochasticVariance?: number; stochasticRenderOrdinal?: number } | undefined;
       const sched = context.generationMetadata.scheduledTensionByBar;
       const t = scenes.length ? tensionLevelForBar(barNum, vb, scenes, sched) : 0.5;
       const phase6Spread = effectiveSpreadSemitonesFromMetadata(context);
+      const voicingMin =
+        sectionVoicing?.minSpreadSemitones ??
+        phase6Spread?.minSpreadSemitones ??
+        vb.voicingPolicy.minSpreadSemitones;
+      const voicingMax =
+        sectionVoicing?.maxSpreadSemitones ??
+        phase6Spread?.maxSpreadSemitones ??
+        vb.voicingPolicy.maxSpreadSemitones;
       const minS = Math.min(
-        phase6Spread?.maxSpreadSemitones ?? vb.voicingPolicy.maxSpreadSemitones,
-        Math.round(
-          (phase6Spread?.minSpreadSemitones ?? vb.voicingPolicy.minSpreadSemitones) * (1 + t * 0.12),
-        ),
+        voicingMax,
+        Math.round(voicingMin * (1 + t * 0.12)),
       );
-      const maxS = phase6Spread?.maxSpreadSemitones ?? vb.voicingPolicy.maxSpreadSemitones;
+      const maxS = voicingMax;
 
       let events = [...m.events];
 

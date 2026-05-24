@@ -1023,6 +1023,12 @@ export interface GenerationMetadata {
   zappaGceAutoBarMeterMap?: boolean;
   /** P6 — Song schema section meter merged into barMeterMap. */
   sectionMeterApplied?: boolean;
+  /** V65 P1 — Song schema bridged to FormMap + effective context active. */
+  sectionArchitectureWired?: boolean;
+  /** V65 P1 — Song document id when wired. */
+  songId?: string;
+  /** V65 P1 — Song schemaVersion when wired. */
+  songSchemaVersion?: number;
   /** P6 — Zappa GCE meter mode used when auto meter enabled. */
   zappaGceMeterMode?: 'disrupt' | 'respect' | 'own';
   /** String quartet — Frank Zappa SQ harmony slice (`fz:sq:` receipts); see `zappaStringQuartetSlice`. */
@@ -2315,6 +2321,8 @@ export interface CompositionContext {
   nelsonBluesFormVariant?: NelsonBluesFormVariant;
   /** When true, harmonic voicing yields to melodic line (`bobBrookmeyerSlice.ts` + `voiceLeadingSolver.ts`). */
   lineFirstHierarchy?: boolean;
+  /** V65 P1 — Song schema document (section architecture); bridged at pipeline entry. */
+  song?: import('./section-architecture/sectionArchitectureTypes').Song;
 }
 
 export type { BasieTestamentMode } from './song-mode/basieSlice';

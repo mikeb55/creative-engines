@@ -7,6 +7,7 @@
 
 
 import type { CompositionContext } from '../compositionContext';
+import { getEffectivePitchProfileForBar } from '../section-architecture/effectiveContextForBar';
 
 import type { VoiceRuleBundle } from '../composer/voiceRuleBundle';
 
@@ -743,6 +744,8 @@ export function resolveFieldForBar(
 
   voiceId: string,
 
+  context?: CompositionContext,
+
 ): ResolvedPitchField {
 
   const region = regionForBar(spine, bar);
@@ -765,15 +768,33 @@ export function resolveFieldForBar(
 
     region.parentPcSet.map((pc) => ({ pc, weight: 1 }));
 
+  let registerCenterMidi = overlay?.registerCenterMidi;
+
+  let registerSpread = overlay?.registerSpread;
+
+  if (context) {
+    const pitch = getEffectivePitchProfileForBar(bar, context);
+    if (pitch) {
+      if (typeof pitch.registerFloor === 'number' && typeof pitch.registerCeiling === 'number') {
+        registerCenterMidi = Math.round((pitch.registerFloor + pitch.registerCeiling) / 2);
+        registerSpread = Math.max(4, Math.round((pitch.registerCeiling - pitch.registerFloor) / 2));
+      } else if (typeof pitch.registerFloor === 'number') {
+        registerCenterMidi = Math.max(registerCenterMidi ?? 60, pitch.registerFloor + 6);
+      } else if (typeof pitch.registerCeiling === 'number') {
+        registerCenterMidi = Math.min(registerCenterMidi ?? 60, pitch.registerCeiling - 6);
+      }
+    }
+  }
+
   return {
 
     allowedPcs: mergePcWeights(base, overlay),
 
     preferredIntervals: overlay?.preferredIntervals ?? region.intervalPool,
 
-    registerCenterMidi: overlay?.registerCenterMidi,
+    registerCenterMidi,
 
-    registerSpread: overlay?.registerSpread,
+    registerSpread,
 
     regionId: region.id,
 

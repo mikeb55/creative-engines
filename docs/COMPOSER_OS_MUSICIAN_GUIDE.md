@@ -1638,7 +1638,62 @@ Each family contains multiple cells (the 78 Slonimsky patterns are distributed a
 
 ---
 
+## Part 10 — Section architecture (Song object)
+
+*What changes when you attach a multi-section **Song** document to Generate.*
+
+### 10.1 What it means in practice
+
+Composer OS can accept a **Song** object alongside your chord progression. Each **section** (Intro, Verse, Chorus, Bridge, Outro, etc.) carries its own:
+
+- **Pitch profile** — register floor/ceiling, chromatic budget
+- **Rhythm profile** — anti-metric feel, metric displacement
+- **Voicing profile** — spread and harmonic-rhythm hold windows
+- **Energy** — maps to an overall density arc for that section
+- **Instrument overrides** — per-part **density** and **riffMode** (guitar and bass independently)
+
+At generate time the engine:
+
+1. Validates the Song (`validateSong`) — overlapping sections or bad bar ranges halt with a clear error
+2. Bridges section labels into the form map (Intro / Verse / Chorus appear as rehearsal marks)
+3. Resolves **`resolveEffectiveContext(bar, song)`** per bar — cached for the run
+4. Fans resolved profiles into harmony rhythm, voicing spread, pitch fields, and duo density
+
+**No Song object?** Nothing changes — global defaults only, same as before V65.
+
+### 10.2 Sonic Youth five-section example (seed 80001)
+
+A 16-bar Song Mode piece with five sections:
+
+| Section | Bars | Character | density | riffMode |
+|---|---|---|---|---|
+| Intro | 1–3 | Noise drone | sparse | `noise_drone` |
+| Verse | 4–6 | Motorik grid | moderate | `motorik` |
+| Chorus | 7–10 | Wall of sound | dense | `wall_of_sound` |
+| Bridge | 11–13 | Slonimsky cells | (energy-driven) | `slonimsky_cells` |
+| Outro | 14–16 | Sparse drone | sparse | `sparse_drone` |
+
+**What you hear:** Intro sits low and thin; chorus pushes register ceiling and energy; bridge climbs higher than intro; outro thins again. Same pasted `Dm7` progression — different section behaviour from architecture, not from re-seeding.
+
+Bridge and outro use **`interpolateDensity`** at section seams so density ramps rather than hard-jumps.
+
+### 10.3 Density and riffMode per section (GBD example, seed 80002)
+
+A 16-bar Guitar–Bass Duo with three sections:
+
+| Section | Bars | Guitar / bass density | riffMode |
+|---|---|---|---|
+| A | 1–5 | sparse | `groove_sparse` |
+| B | 6–10 | dense | `groove_dense` |
+| C | 11–16 | moderate | `motorik` |
+
+Instrument overrides are scoped by part (`guitar` vs `bass`). Resolved density scalars differ measurably between A and B even on identical harmony.
+
+**Golden verification (off smoke until V65 closeout):** `engines/composer-os-v2/scripts/runSectionArchitectureP1Golden.ts`
+
+---
+
 *End of Composer OS Musician Guide*
-*Version: V61 — 2026-05-23*
+*Version: V65 — 2026-05-24*
 *For engine detail: COMPOSER_HANDBOOK.md*
 *For roadmap: COMPOSER_OS_ROADMAP.md*

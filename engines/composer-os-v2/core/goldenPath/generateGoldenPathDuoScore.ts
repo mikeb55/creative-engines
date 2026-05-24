@@ -4,6 +4,11 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import {
+  getEffectivePitchProfileForBar,
+  getSectionArchitectureDensityHint,
+  hasSectionArchitecture,
+} from '../section-architecture/effectiveContextForBar';
 import type { SongModeHookIdentity } from '../motif/motifEngineTypes';
 
 declare module '../compositionContext' {
@@ -3411,6 +3416,15 @@ function buildGuitarPart(
     if (isDuoGolden && context.presetId !== 'ecm_chamber') {
       [effectiveLow, effectiveHigh] = applyGlobalRegisterArc(b, tb, effectiveLow, effectiveHigh);
     }
+    if (hasSectionArchitecture(context)) {
+      const pitchProf = getEffectivePitchProfileForBar(b, context);
+      if (typeof pitchProf?.registerFloor === 'number') {
+        effectiveLow = Math.max(effectiveLow, pitchProf.registerFloor);
+      }
+      if (typeof pitchProf?.registerCeiling === 'number') {
+        effectiveHigh = Math.min(effectiveHigh, pitchProf.registerCeiling);
+      }
+    }
     if (lineFirstDuoAbstract && activeAbstract) {
       const engineVrbId = activeAbstract.styleSourceVrbId ?? '';
       fillGuitarMeasureFromAbstractSoprano(m, activeAbstract, b, {
@@ -3683,8 +3697,14 @@ function buildGuitarPart(
       collapseRestsInsideNotes(m);
       dropRestsSameStartAsNote(m);
     } else {
-      let densityLevel: 'sparse' | 'medium' | 'dense' =
-        density === 'very_dense' ? 'dense' : (density as 'sparse' | 'medium' | 'dense');
+      let densityLevel: 'sparse' | 'medium' | 'dense';
+      const archDensity = getSectionArchitectureDensityHint(b, context, 'guitar');
+      if (archDensity) {
+        densityLevel = archDensity;
+      } else {
+        densityLevel =
+          density === 'very_dense' ? 'dense' : (density as 'sparse' | 'medium' | 'dense');
+      }
       if (isEcmS && tex?.densityBlend !== undefined && tex.densityBlend < 0.44) {
         densityLevel = 'sparse';
       }
@@ -3711,6 +3731,10 @@ function buildGuitarPart(
         if (mg) {
           densityLevel = mergeHarmonyPacingDensityHint(mg.harmonyPacing, densityLevel);
         }
+      }
+      const archDensityFinal = getSectionArchitectureDensityHint(b, context, 'guitar');
+      if (archDensityFinal) {
+        densityLevel = archDensityFinal;
       }
       if ((isEcmM || isEcmS) && tex?.guitarRole === 'silence') {
         addEvent(m, createRest(0, measureBeatSpanQuartersOf(m)));
@@ -5338,6 +5362,9 @@ function buildBassPart(
                       : duoGoldenBass && duoPhraseMode === 'rhythmic'
                         ? 'dense'
                         : 'normal';
+          const archBass = getSectionArchitectureDensityHint(b, context, 'bass');
+          if (archBass === 'dense') hint = 'dense';
+          else if (archBass === 'sparse') hint = 'sparse';
           const mb = macroGoalsForBar(b, context.generationMetadata?.macroFormPlan);
           if (mb && duoGoldenBass) {
             if (mb.harmonyPacing === 'dense') hint = 'dense';

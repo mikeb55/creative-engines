@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-24) V65 P1 — Section architecture wired at generate time** — **`effectiveContextForBar.ts`**: `wireSongArchitectureAtPipelineEntry` (validate Song + bridge sections → FormMap), cached **`getEffectiveContextForBar`**, density/riffMode instrument overrides, **`interpolateDensity`** transitions. Consumers: **`voiceBundleHarmonicRhythm`**, **`voiceBundleVoicingFloor`**, **`pitchFieldResolver.resolveFieldForBar`**, **`resolveRiffGeneratorProfile`**, **`harmonyResolution.getChordForBar`**, **`generateGoldenPathDuoScore`** (register + density). Goldens **`sectionArchitectureP1Golden.test.ts`** seeds **80001** (SY 5-section Song Mode) + **80002** (GBD 3-section); runner **`runSectionArchitectureP1Golden.ts`** (off smoke until V65 closeout). **`COMPOSER_OS_MUSICIAN_GUIDE.md`** Part 10 + regenerated **`.docx`**. Smoke **307/73/0** fast unchanged.
+
 - **(2026-05-24) V64 P7 closeout — smoke goldens + desktop + docs** — Promoted **7** off-smoke golden suites (**+22** rows, **+7** suites): `sonicYouthPerSectionVrb` (75002), `zappaGceFingerprint` (76001), `fzBurstReceipt` (77001), `fzMetricShiftReceipt` (77002), `fzRegisterCollisionReceipt` (77003), `sectionArchitectureDomain` (78001), `perSectionMeter` (79001–79003). Fix **`zappaStructuralActiveForMeterResolution`** in **`runGoldenPath.ts`**. Stash assessment: out-of-scope CI fix stash **discarded** (435/15 with stash). Smoke **307/73/0** fast · **472/87/0** full. **`COMPOSER_OS_ROADMAP_V64.md`** closed. Desktop rebuild.
 
 - **(2026-05-24) P6/P7 — Per-section meter + Zappa GCE meter modes** — Commit **`f00ace6f`**. See prior CHANGELOG entry.

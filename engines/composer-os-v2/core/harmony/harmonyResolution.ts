@@ -22,6 +22,7 @@ import {
   resolveVrbForBar,
 } from '../counterpoint/vrbProfiles/vrbContextResolver';
 import { applyHarmonicSceneChordBias } from '../composer/harmonicSceneChordBias';
+import { resolveVoiceBundleForBarWithSectionArchitecture } from '../section-architecture/effectiveContextForBar';
 import { lockedHarmonyChordSymbolsEquivalent } from './chordProgressionParser';
 import { logHarmonyProvenance } from './harmonyContext';
 
@@ -880,6 +881,8 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
   } else if (hasSectionMarkerVrbAssignment(context)) {
     rhythmBundle = resolveVoiceRuleBundleForBar(context, barIndex) ?? context.voiceBundle;
   }
+  rhythmBundle =
+    resolveVoiceBundleForBarWithSectionArchitecture(barIndex, context, rhythmBundle) ?? rhythmBundle;
   const afterRhythm = applyVoiceBundleHarmonicRhythm(barIndex, sym, context, rhythmBundle);
   if (context.voiceBundle && context.harmonicScenes?.length) {
     return applyHarmonicSceneChordBias(barIndex, afterRhythm, context);
