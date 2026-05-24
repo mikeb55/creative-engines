@@ -82,9 +82,9 @@ const FZ_BASE = [
   'FZ_FORM_01 — Through-composed; anti-repetition; episode cuts without transition.',
   'FZ_BASS_01 — Angular chromatic bass; avoids conventional walking patterns.',
   'FZ_GTR_01 — Sudden clean-tone islands inside distorted phrase; stereo ping-pong optional.',
-  'FZ_ERA_01 — Broad 1966–1993 posture; do not pin to single period cliché.',
-  'FZ_WORK_01 — Ensemble-stops + spoken cues metadata allowed as formal markers.',
-  'FZ_WORK_02 — Reggae pocket may neighbour prog blast without transition glue.',
+  'FZ_BURST — Density spike then hard silence tail; section thick→thin cut without fade.',
+  'FZ_METRIC_SHIFT — metricDisplacement +0.25; superimposed grouping against straight grid.',
+  'FZ_REGISTER_COLLISION — Wide register spread + forced registerShift swap between guitar and bass.',
   'FZ_DIFF_01 — Not fusion smooth jazz: reject continuous diatonic 8ths as spine.',
   'FZ_DIFF_02 — Not minimalism: reject steady pulse without pitch chaos overlays.',
 ] as const;

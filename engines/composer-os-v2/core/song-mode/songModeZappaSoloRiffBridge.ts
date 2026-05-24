@@ -4,7 +4,7 @@
  */
 
 import type { CompositionContext } from '../compositionContext';
-import { buildFrankZappaRiffProfile } from '../composer/riffVrbStubs';
+import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
 import { getChordForBar } from '../harmony/harmonyResolution';
 import { buildSoloPartForScore, type RiffSoloNote } from '../riff-generator/riffSoloBuilder';
 import type { SoloEvent } from '../riff-generator/riffSoloZappaAdapter';
@@ -75,7 +75,7 @@ export function buildSongModeZappaSoloViaRiffBuilder(context: CompositionContext
   if (md.songwriterStyleId !== 'frank_zappa') return null;
   if (resolveZappaStyleMode(md) !== 'bluesrockFerocious') return null;
 
-  const base = buildFrankZappaRiffProfile().soloGeneratorProfile;
+  const base = getVoiceRuleBundle('frank_zappa').riffProfile?.soloGeneratorProfile;
   if (!base?.enabled) return null;
 
   const controls = zappaRiffSoloControlsFrom(md);

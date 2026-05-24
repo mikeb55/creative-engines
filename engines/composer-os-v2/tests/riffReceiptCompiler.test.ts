@@ -54,6 +54,19 @@ function receiptHasPatchField(
   if (id.startsWith('FZ_DIS_')) return patch.tritoneStable === true && patch.chromaticBudget !== undefined;
   if (id.startsWith('FZ_GTR_')) return patch.ornamentPolicy !== undefined;
   if (id.startsWith('FZ_ORCH_')) return patch.ensembleInterlockMode !== undefined;
+  if (id === 'FZ_BURST') {
+    return (
+      (patch.sectionDensityPolicy?.transitions?.length ?? 0) >= 2 &&
+      (patch.cadenceTypes?.hard_stop_rest ?? 0) >= 0.7
+    );
+  }
+  if (id === 'FZ_METRIC_SHIFT') return (patch.metricDisplacement ?? 0) >= 0.75;
+  if (id === 'FZ_REGISTER_COLLISION') {
+    return (
+      (patch.riffRegisterCeiling ?? 0) - (patch.riffRegisterFloor ?? 99) >= 40 &&
+      (patch.variationOperators?.includes('registerShift') ?? false)
+    );
+  }
   if (id.startsWith('FZ_RIFF_HARM_')) {
     return patch.scalePool !== undefined && patch.chromaticBudget !== undefined;
   }

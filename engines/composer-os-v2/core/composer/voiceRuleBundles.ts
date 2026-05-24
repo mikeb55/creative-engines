@@ -89,6 +89,11 @@ import {
   SONIC_YOUTH,
   WES_MONTGOMERY,
 } from './riffVrbStubs';
+import {
+  compileResearchReceiptLines,
+  mergeRiffProfilePatch,
+} from '../riff-generator/riffReceiptCompiler';
+import type { RiffProfile } from './riffProfileTypes';
 
 /** Interval-class seeds aligned with Threadgill / IntervalSetSystem posture (engine-local). */
 const THREADGILL_INTERVAL_CLASS_SEEDS = [1, 2, 3, 5, 6, 7, 8, 10];
@@ -3230,11 +3235,24 @@ const FRANK_ZAPPA_FINGERPRINT_RESEARCH = [
   'zappa_solo_phrasing_breath — id: zappa_solo_phrasing_breath; behavior: density contrast; rest slots after 4-bar motif statement.',
 ] as const;
 
+/** Song Mode + riff generator: stub profile merged with compiled FZ_* / solo / FZBLUES receipts. */
+function buildFrankZappaVrbRiffProfile(): RiffProfile {
+  const receiptLines = [
+    ...(FRANK_ZAPPA.orchestrationPolicy?.fingerprintReceipts ?? []),
+    ...FRANK_ZAPPA_FINGERPRINT_RESEARCH,
+    ...FRANK_ZAPPA_FZBLUES_FINGERPRINT_RECEIPTS,
+  ];
+  return mergeRiffProfilePatch(
+    buildFrankZappaRiffProfile(),
+    compileResearchReceiptLines(receiptLines)
+  ) as RiffProfile;
+}
+
 const FRANK_ZAPPA_VRF: VoiceRuleBundle = {
   ...FRANK_ZAPPA,
   family: 'rock',
   sigma: 29,
-  riffProfile: buildFrankZappaRiffProfile(),
+  riffProfile: buildFrankZappaVrbRiffProfile(),
   orchestrationPolicy: {
     ...FRANK_ZAPPA.orchestrationPolicy,
     fingerprintReceipts: [

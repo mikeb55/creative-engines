@@ -82,9 +82,9 @@ export const FRANK_ZAPPA_FZ_RECEIPT_IDS = [
   'FZ_FORM_01',
   'FZ_BASS_01',
   'FZ_GTR_01',
-  'FZ_ERA_01',
-  'FZ_WORK_01',
-  'FZ_WORK_02',
+  'FZ_BURST',
+  'FZ_METRIC_SHIFT',
+  'FZ_REGISTER_COLLISION',
   'FZ_DIFF_01',
   'FZ_DIFF_02',
 ] as const;
@@ -1526,6 +1526,57 @@ function patchForFzReceipt(
   body: string,
   fields: Record<string, string>
 ): { patch: RiffProfilePatch; metadataOnly: boolean } {
+  if (id === 'FZ_BURST') {
+    return {
+      patch: {
+        sectionDensityPolicy: {
+          transitions: [
+            { receiptId: id, fromDensity: 'thin', toDensity: 'thick' },
+            { receiptId: id, fromDensity: 'thick', toDensity: 'thin' },
+          ],
+        },
+        cadenceTypes: { tail_fill: 0.12, sustained_sus_chord: 0.08, hard_stop_rest: 0.8 },
+        soloGeneratorProfile: {
+          enabled: true,
+          noteDensityRange: { min: 6, max: 28 },
+        },
+      },
+      metadataOnly: false,
+    };
+  }
+  if (id === 'FZ_METRIC_SHIFT') {
+    const base = parseFloatField(fields, 'metricdisplacement') ?? 0.55;
+    return {
+      patch: {
+        metricDisplacement: Math.min(1, base + 0.25),
+        groupingPatterns: [[3, 3, 2], [2, 2, 2, 1]],
+        oddMeterUsage: { meters: [{ label: '7/8', groups: [3, 3, 2] }], isSuperimposed: true },
+      },
+      metadataOnly: false,
+    };
+  }
+  if (id === 'FZ_REGISTER_COLLISION') {
+    const reg = registerPatchFromFields(fields, { floor: 40, ceil: 84, mid: [48, 80], low: [40, 55] });
+    const ops: RiffVariationOperator[] = ['registerShift', 'rhythmicWarp', 'cellTransposition'];
+    return {
+      patch: {
+        ...reg,
+        riffRegisterFloor: 40,
+        riffRegisterCeiling: 84,
+        variationOperators: ops,
+        tuningPolicy: {
+          ...reg.tuningPolicy,
+          midiFloor: 40,
+          midiCeiling: 84,
+          tuningOptions: {
+            ...reg.tuningPolicy?.tuningOptions,
+            zappaRegisterSwapForced: 1,
+          },
+        },
+      },
+      metadataOnly: false,
+    };
+  }
   if (id.startsWith('FZ_MELO_')) {
     const ops = defaultFzMeloOperators(body);
     return { patch: { variationOperators: ops.length ? ops : ['registerShift', 'rhythmicWarp'] }, metadataOnly: false };
@@ -1586,11 +1637,7 @@ function patchForFzReceipt(
       metadataOnly: false,
     };
   }
-  if (
-    id.startsWith('FZ_ERA_') ||
-    id.startsWith('FZ_WORK_') ||
-    id.startsWith('FZ_DIFF_')
-  ) {
+  if (id.startsWith('FZ_DIFF_')) {
     return { patch: {}, metadataOnly: true };
   }
   return { patch: {}, metadataOnly: true };

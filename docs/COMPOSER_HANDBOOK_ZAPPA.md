@@ -47,7 +47,10 @@ Set `zappaStyleMode` on the generation call. Default is `compositional`.
 | `FZ_MELO_*` | variationOperators |
 | `FZ_RHY_*` | chromaticBudget |
 | `FZ_HARM_*` / `FZ_BASS_*` / `FZ_FORM_*` / `FZ_DIS_*` / `FZ_GTR_*` / `FZ_ORCH_*` | riff profile fields |
-| `FZ_ERA_*` / `FZ_WORK_*` / `FZ_DIFF_*` | metadataOnly: true |
+| **`FZ_BURST`** (P3) | `sectionDensityPolicy` thick↔thin transitions + `cadenceTypes.hard_stop_rest` + solo density spike range |
+| **`FZ_METRIC_SHIFT`** (P3) | `metricDisplacement` +0.25 (floor ~0.8) + `groupingPatterns` / superimposed 7/8 |
+| **`FZ_REGISTER_COLLISION`** (P3) | wide register span (40–84) + `registerShift` operator + `zappaRegisterSwapForced` tuning flag |
+| `FZ_DIFF_*` | metadataOnly: true |
 | `FZ_RIFF_*` | riff profile (harm/rhy/melo/solo lane) |
 | `FZBLUES_MODAL_*` | modalBase + pentatonicAnchorRatio |
 | `FZBLUES_RHY_*` | rhythmicGroupings + chromaticBudget |
