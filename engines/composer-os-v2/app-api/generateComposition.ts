@@ -45,6 +45,7 @@ import { applySqContrapuntalPass4MergeOnScore } from '../core/counterpoint/contr
 import { buildStringQuartetScoreFromContext } from '../core/composer/stringEnsemble';
 import { buildVoicingsForContext } from '../core/composer/guitarVoicingEngine';
 import type { GuitarVoicing } from '../core/composer/guitarVoicingEngine';
+import { importMusicXmlToImportedSong } from '../core/musicXmlDeepImport';
 
 function isImportExpressionPilotPreset(presetId: string): boolean {
   return isGuitarBassDuoFamily(presetId) || presetId === 'ecm_chamber';
@@ -252,12 +253,34 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     creativeControlLevel: req.creativeControlLevel,
   });
   const duo = isGuitarBassDuoFamily(req.presetId);
+  const deepImportXml =
+    typeof req.musicXmlSource === 'string' && req.musicXmlSource.trim()
+      ? req.musicXmlSource.trim()
+      : typeof req.songModeLeadSheetMusicXml === 'string' && req.songModeLeadSheetMusicXml.trim()
+        ? req.songModeLeadSheetMusicXml.trim()
+        : undefined;
+  const importedSongResult =
+    !req.song && deepImportXml
+      ? importMusicXmlToImportedSong(deepImportXml, {
+          id: `musicxml_import_${effectiveSeed}`,
+          title: req.title ?? 'Imported MusicXML',
+          targetTotalBars: req.totalBars,
+        })
+      : undefined;
+  const importedSongHasExplicitSections =
+    importedSongResult?.deepImport.sectionStarts.some((s) => s.bar !== 1 || s.label !== 'A') ?? false;
+  const effectiveSong =
+    req.song ?? (req.importHarmonyMode !== 'free_harmony' && importedSongHasExplicitSections ? importedSongResult?.song : undefined);
   const chordText =
-    duo && typeof req.chordProgressionText === 'string' ? req.chordProgressionText : undefined;
+    duo && typeof req.chordProgressionText === 'string' && req.chordProgressionText.trim()
+      ? req.chordProgressionText
+      : duo && importedSongResult?.lockedHarmonyBars.length && req.importHarmonyMode !== 'free_harmony'
+        ? importedSongResult.lockedHarmonyBars.join('|')
+        : undefined;
   const importLeadSheetXml =
     typeof req.songModeLeadSheetMusicXml === 'string' ? req.songModeLeadSheetMusicXml.trim() : '';
   const importExpressionEnabled = isImportExpressionPilotPreset(req.presetId) && importLeadSheetXml.length > 0;
-  const totalBars = req.totalBars ?? (req.presetId === 'ecm_chamber' ? 32 : 8);
+  const totalBars = req.totalBars ?? importedSongResult?.song.totalBars ?? (req.presetId === 'ecm_chamber' ? 32 : 8);
   const adaptedImport =
     importExpressionEnabled
       ? extractLeadSheetMelodyAnchorsFromMusicXml(importLeadSheetXml, totalBars, {
@@ -307,10 +330,10 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           styleStack: mapAppStyleStackToEngine(req.styleStack),
           presetId: req.presetId,
           scoreTitle: req.title,
-          harmonyMode: duo ? req.harmonyMode : undefined,
+          harmonyMode: duo ? req.harmonyMode ?? (importedSongResult ? 'custom_locked' : undefined) : undefined,
           chordProgressionText: chordText,
           ecmMode: req.presetId === 'ecm_chamber' ? req.ecmMode ?? 'ECM_METHENY_QUARTET' : undefined,
-          totalBars: req.totalBars,
+          totalBars,
           longFormEnabled: req.longFormEnabled,
           keySignatureMode: req.keySignatureMode,
           tonalCenterOverride: req.tonalCenterOverride,
@@ -332,6 +355,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           harmonyBlend: harmonyBlendRaw,
           ...(req.formId ? { formId: req.formId as FormId } : {}),
           ...(req.barMeterMap ? { barMeterMap: req.barMeterMap } : {}),
+          ...(effectiveSong ? { song: effectiveSong } : {}),
           zappaSoloMidiLow: req.zappaSoloMidiLow,
           zappaSoloMidiHigh: req.zappaSoloMidiHigh,
           zappaSoloDensity: req.zappaSoloDensity,

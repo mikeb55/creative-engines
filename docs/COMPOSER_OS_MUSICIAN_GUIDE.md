@@ -1743,6 +1743,67 @@ This lets an arranger sketch read like a chart: lean opening, wide shout section
 
 ---
 
+## Part 11 — MusicXML Import and Sibelius QA
+
+*How imported MusicXML can seed Composer OS generation, and what export QA means today.*
+
+### 11.1 Importing a MusicXML score
+
+Use the MusicXML import field in the Generate screen, or send a `musicXmlSource`, `songModeLeadSheetMusicXml`, or `ensembleLeadSheetMusicXml` payload through the API. Composer OS now has an additive **deep import** path: it reads the score, builds an imported **Song** object, and uses that Song alongside locked harmony when you generate.
+
+Plain English:
+
+- Chord symbols become the locked harmony rail
+- Rehearsal marks become Song sections
+- Meter changes become per-section meter maps
+- Tempo markings become the Song default tempo
+- Part names become instrument-role hints such as guitar, bass, strings, brass, woodwinds, drums, or keys
+
+This works without replacing the older `parseMusicXml` and LeadSheet import paths. Existing imports keep their behaviour; the new path adds section-aware Song data on top.
+
+### 11.2 What gets extracted
+
+| MusicXML content | Composer OS use |
+|---|---|
+| `<harmony>` chord roots, quality, alterations, slash bass | `lockedHarmonyBars` |
+| Rehearsal marks | `Song.sections` |
+| Per-bar time signatures | `SectionPreset.meterMap` |
+| Tempo directions / `<sound tempo>` | `Song.globalDefaults.tempo` |
+| Part names | Instrument role hints |
+| Existing lead-sheet content | Optional LeadSheet handoff for Song Mode / BB / SQ |
+
+### 11.3 What does not get extracted yet
+
+- Lyrics
+- Non-voice-1 melody as full musical material
+- Stacked notes as full arranged voicings
+- Detailed articulations as generation constraints
+- Full round-trip part writing from imported scores
+- Drum-specific interpretation
+
+Multiple parts are detected, but today they mostly provide role hints rather than literal "use this exact part" instructions.
+
+### 11.4 Sibelius QA status
+
+V65 P3 automated QA generated short MusicXML files for all target modes and ran the repository validator.
+
+| Mode | Automated | Manual Sibelius |
+|---|---|---|
+| Song Mode (`guitar_bass_duo` export path) | PASS | Confirmed 2026-04-17 |
+| Guitar-Bass Duo | PASS | Confirmed 2026-05-02 |
+| ECM chamber | PASS | TBD |
+| String Quartet | PASS | TBD |
+| Big Band | PASS | TBD |
+| Riff generator | PASS | TBD |
+| Wyble etude | PASS | TBD |
+| Slonimsky etude | PASS | TBD |
+
+Detailed report: `docs/SIBELIUS_QA_REPORT.md`.
+
+**Golden verification (off smoke until V65 closeout):** `engines/composer-os-v2/scripts/runMusicXmlDeepImportGolden.ts`
+
+---
+
 *End of Composer OS Musician Guide*
 *Version: V65 — 2026-05-25*
 *For engine detail: COMPOSER_HANDBOOK.md*

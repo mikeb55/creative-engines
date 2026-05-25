@@ -106,6 +106,7 @@ import { parseMusicXml, parsedChartToLeadSheet } from '../core/musicXmlImport';
 import { isLeadSheetSongModeWriter } from '../core/lead-sheet/leadSheetWriterRegistry';
 import type { LeadSheet } from '../core/lead-sheet/leadSheetTypes';
 import { generateSlonimskyEtudeXml } from '../core/slonimsky/slonimskyEtudeGenerator';
+import { importMusicXmlToImportedSong } from '../core/musicXmlDeepImport';
 import type { IntervalPatternId } from '../core/slonimsky/slonimskyEngine';
 import { writeDrumGuide } from '../core/export/midiDrumGuideWriter';
 import { writeScoreMidi } from '../core/export/midiScoreWriter';
@@ -801,6 +802,20 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const primarySongwriterNormalized =
     typeof req.primarySongwriterStyle === 'string' ? req.primarySongwriterStyle.trim().toLowerCase() : '';
   const leadSheetXmlInput = typeof req.songModeLeadSheetMusicXml === 'string' ? req.songModeLeadSheetMusicXml.trim() : '';
+  const deepImportXmlInput = leadSheetXmlInput.length > 0 ? leadSheetXmlInput : musicXmlSourceRaw;
+  const importedSongResult =
+    !req.song && deepImportXmlInput.length > 0
+      ? importMusicXmlToImportedSong(deepImportXmlInput, {
+          id: `musicxml_import_${effectiveSeed}`,
+          title,
+          targetTotalBars: req.totalBars,
+        })
+      : undefined;
+  const importedSongHasExplicitSections =
+    importedSongResult?.deepImport.sectionStarts.some((s) => s.bar !== 1 || s.label !== 'A') ?? false;
+  const effectiveSong =
+    req.song ?? (req.importHarmonyMode !== 'free_harmony' && importedSongHasExplicitSections ? importedSongResult?.song : undefined);
+  const effectiveSongModeBarTarget = importedSongResult?.song.totalBars ?? barTarget;
   const isLeadSheetPhase1WriterRoute = isLeadSheetSongModeWriter(primarySongwriterNormalized);
   const perfBlendRaw =
     typeof req.leadSheetPerformanceBlend === 'number' && Number.isFinite(req.leadSheetPerformanceBlend)
@@ -848,13 +863,13 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     (isLeadSheetPhase1WriterRoute || lockHarmonyRequested || blendHarmonyRequested);
   const leadSheetAdapted =
     shouldParseLeadSheetInput
-      ? adaptLeadSheetMusicXmlForSongMode(leadSheetXmlInput, barTarget, {
+      ? adaptLeadSheetMusicXmlForSongMode(leadSheetXmlInput, effectiveSongModeBarTarget, {
           leadSheetPerformanceBlend: perfBlendRaw,
         })
       : undefined;
   const leadSheetAnchorsOnly =
     isLeadSheetPhase1WriterRoute && leadSheetXmlInput.length > 0
-      ? extractLeadSheetMelodyAnchorsFromMusicXml(leadSheetXmlInput, barTarget, {
+      ? extractLeadSheetMelodyAnchorsFromMusicXml(leadSheetXmlInput, effectiveSongModeBarTarget, {
           leadSheetPerformanceBlend: perfBlendRaw,
         })
       : undefined;
@@ -865,7 +880,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     isLeadSheetPhase1WriterRoute && leadSheetAdapted?.ok === true && !!leadSheetAdapted.lockedChordBars?.length;
   const timelineLock =
     (lockHarmonyRequested || blendHarmonyRequested) && leadSheetAdapted?.ok && leadSheetAdapted.leadSheet
-      ? extractLockedHarmonyBarsFromImportedTimeline(leadSheetAdapted.leadSheet, barTarget)
+      ? extractLockedHarmonyBarsFromImportedTimeline(leadSheetAdapted.leadSheet, effectiveSongModeBarTarget)
       : undefined;
   if (lockHarmonyRequested) {
     if (leadSheetXmlInput.length === 0) {
@@ -908,7 +923,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   const sm = runSongMode({
     seed: effectiveSeed,
     title,
-    totalBars: barTarget,
+    totalBars: effectiveSongModeBarTarget,
     leadSheet: importedLeadSheetForSongMode,
     musicXmlLeadSheet: musicXmlLeadSheetForSongMode,
     primarySongwriterStyle: req.primarySongwriterStyle,
@@ -931,7 +946,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       kind: p.sectionKind,
       barLength: p.chordSymbols.length,
     })) ?? [];
-  let expectedSongFormBars: number = barTarget;
+  let expectedSongFormBars: number = effectiveSongModeBarTarget;
   if (req.formId != null) {
     const formBarSum = resolveFormSections(req.formId as FormId).reduce((sum, s) => sum + s.length, 0);
     if (formBarSum > 0) {
@@ -951,7 +966,9 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       ? musicXmlHarmonyPiped
       : typeof req.chordProgressionText === 'string'
         ? req.chordProgressionText.trim()
-        : '';
+        : importedSongResult?.lockedHarmonyBars.length && req.importHarmonyMode !== 'free_harmony'
+          ? importedSongResult.lockedHarmonyBars.join('|')
+          : '';
   const useLockedCustomHarmony = rawCustomHarmony.length > 0 && !useLeadSheetHarmony;
   let lockedHarmonyBarsAuthoritative: string[] | undefined;
   if (useLockedCustomHarmony) {
@@ -1115,7 +1132,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     sm.universalLeadSheet.totalBars >= 1
       ? Math.floor(sm.universalLeadSheet.totalBars)
       : undefined;
-  const resolvedSongModeTotalBars = universalRepeatTruthBars ?? clampSongFormBarCount(req.totalBars, 32);
+  const resolvedSongModeTotalBars = universalRepeatTruthBars ?? effectiveSongModeBarTarget;
   const songModeGoldenPathOptions: RunGoldenPathOptions = {
     styleStack: mapAppStyleStackToEngine(req.styleStack),
     presetId: 'guitar_bass_duo',
@@ -1180,7 +1197,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       ? { debugFixtureMode: 'indie_dual_guitar_tuning_proof' as const }
       : {}),
     ...(req.barMeterMap ? { barMeterMap: req.barMeterMap } : {}),
-    ...(req.song ? { song: req.song } : {}),
+    ...(effectiveSong ? { song: effectiveSong } : {}),
     ...(req.zappaGceAutoBarMeterMapEnabled === true ? { zappaGceAutoBarMeterMapEnabled: true } : {}),
     ...(req.zappaGceMeterMode === 'disrupt' ||
     req.zappaGceMeterMode === 'respect' ||
@@ -2148,6 +2165,30 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     typeof req.chordProgressionText === 'string' && req.chordProgressionText.trim()
       ? req.chordProgressionText.trim()
       : undefined;
+  const deepImportXmlInput =
+    typeof req.ensembleLeadSheetMusicXml === 'string' && req.ensembleLeadSheetMusicXml.trim()
+      ? req.ensembleLeadSheetMusicXml.trim()
+      : typeof req.musicXmlSource === 'string' && req.musicXmlSource.trim()
+        ? req.musicXmlSource.trim()
+        : undefined;
+  const importedSongResult =
+    !req.song && deepImportXmlInput
+      ? importMusicXmlToImportedSong(deepImportXmlInput, {
+          id: `musicxml_import_${req.seed}`,
+          title,
+          targetTotalBars: req.totalBars,
+        })
+      : undefined;
+  const importedSongHasExplicitSections =
+    importedSongResult?.deepImport.sectionStarts.some((s) => s.bar !== 1 || s.label !== 'A') ?? false;
+  const effectiveSong = req.song ?? (importedSongHasExplicitSections ? importedSongResult?.song : undefined);
+  if (
+    !chordProgressionText &&
+    importedSongResult?.lockedHarmonyBars.length &&
+    req.importHarmonyMode !== 'free_harmony'
+  ) {
+    chordProgressionText = importedSongResult.lockedHarmonyBars.join('|');
+  }
   const ensembleTotalBarsResolved =
     typeof req.totalBars === 'number' && Number.isFinite(req.totalBars) && req.totalBars >= 1
       ? req.formId?.trim() === 'big_band_blues12'
@@ -2157,7 +2198,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
   const bb = runBigBandMode({
     seed: req.seed,
     title,
-    totalBars: req.totalBars,
+    totalBars: req.totalBars ?? importedSongResult?.song.totalBars,
     variationId: req.variationId,
     creativeControlLevel: req.creativeControlLevel,
     ensembleConfigId: req.ensembleConfigId,
@@ -2171,6 +2212,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     era: eraFromPairing,
     ...(composerStyleFromArranger ? { composerStyle: composerStyleFromArranger } : {}),
     ...(typeof req.formId === 'string' && req.formId.trim() ? { formId: req.formId.trim() } : {}),
+    ...(effectiveSong ? { song: effectiveSong } : {}),
   });
   const runSeed = resolveEffectiveGenerationSeed({
     seed: req.seed,
@@ -2227,7 +2269,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
   const bbTotalBars = req.formId?.trim() === 'big_band_blues12' ? 42 : req.totalBars;
   const resolvedBbBarMeterMap = resolveBarMeterMapForGenerateRequest({
     totalBars: bbTotalBars,
-    song: req.song,
+    song: effectiveSong,
     barMeterMap: req.barMeterMap,
     zappaGceAutoBarMeterMapEnabled: req.zappaGceAutoBarMeterMapEnabled,
     zappaGceMeterMode: req.zappaGceMeterMode,
@@ -2253,7 +2295,11 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     ...(composerStyleFromArranger ? { composerStyle: composerStyleFromArranger } : {}),
     ...(chordProgressionText ? { chordProgressionText } : {}),
     ...(typeof req.formId === 'string' && req.formId.trim() ? { formId: req.formId.trim() } : {}),
-    ...(typeof req.bpm === 'number' && Number.isFinite(req.bpm) ? { bpm: req.bpm } : {}),
+    ...(typeof req.bpm === 'number' && Number.isFinite(req.bpm)
+      ? { bpm: req.bpm }
+      : effectiveSong?.globalDefaults.tempo
+        ? { bpm: effectiveSong.globalDefaults.tempo }
+        : {}),
     ...(ensembleSongwriterStyleId ? { songwriterStyleId: ensembleSongwriterStyleId } : {}),
     ...(req.chromaticStrength === 'off' ||
     req.chromaticStrength === 'subtle' ||
@@ -2267,7 +2313,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     ...(resolvedBbBarMeterMap && Object.keys(resolvedBbBarMeterMap).length > 0
       ? { barMeterMap: resolvedBbBarMeterMap }
       : {}),
-    ...(req.song ? { song: req.song } : {}),
+    ...(effectiveSong ? { song: effectiveSong } : {}),
     ...(req.drumIntensity ? { drumIntensity: req.drumIntensity } : {}),
     ...(req.sectionIntensityOverrides && Object.keys(req.sectionIntensityOverrides).length > 0
       ? { sectionIntensityOverrides: req.sectionIntensityOverrides }
@@ -2514,20 +2560,49 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
   const harmonyBlendRaw = normalizeHarmonyBlendRaw(req.harmonyBlend);
   const freeHarmony = normalizedImportHarmonyMode === 'free_harmony';
   const ensembleSongwriterStyleId = ensembleSlonimskySongwriterIdFromRequest(req);
-  let chordProgressionText =
-    typeof req.chordProgressionText === 'string' && req.chordProgressionText.trim()
-      ? req.chordProgressionText.trim()
-      : undefined;
-  const ensembleTotalBarsResolved =
-    typeof req.totalBars === 'number' && Number.isFinite(req.totalBars) && req.totalBars >= 1
-      ? req.totalBars
-      : undefined;
   const effectiveSeed = resolveEffectiveGenerationSeed({
     seed: req.seed,
     variationId: req.variationId,
     creativeControlLevel: req.creativeControlLevel,
   });
-  const sq = runStringQuartetMode({ seed: effectiveSeed, title, totalBars: req.totalBars });
+  let chordProgressionText =
+    typeof req.chordProgressionText === 'string' && req.chordProgressionText.trim()
+      ? req.chordProgressionText.trim()
+      : undefined;
+  const deepImportXmlInput =
+    typeof req.ensembleLeadSheetMusicXml === 'string' && req.ensembleLeadSheetMusicXml.trim()
+      ? req.ensembleLeadSheetMusicXml.trim()
+      : typeof req.musicXmlSource === 'string' && req.musicXmlSource.trim()
+        ? req.musicXmlSource.trim()
+        : undefined;
+  const importedSongResult =
+    !req.song && deepImportXmlInput
+      ? importMusicXmlToImportedSong(deepImportXmlInput, {
+          id: `musicxml_import_${effectiveSeed}`,
+          title,
+          targetTotalBars: req.totalBars,
+        })
+      : undefined;
+  const importedSongHasExplicitSections =
+    importedSongResult?.deepImport.sectionStarts.some((s) => s.bar !== 1 || s.label !== 'A') ?? false;
+  const effectiveSong = req.song ?? (importedSongHasExplicitSections ? importedSongResult?.song : undefined);
+  if (
+    !chordProgressionText &&
+    importedSongResult?.lockedHarmonyBars.length &&
+    req.importHarmonyMode !== 'free_harmony'
+  ) {
+    chordProgressionText = importedSongResult.lockedHarmonyBars.join('|');
+  }
+  const ensembleTotalBarsResolved =
+    typeof req.totalBars === 'number' && Number.isFinite(req.totalBars) && req.totalBars >= 1
+      ? req.totalBars
+      : undefined;
+  const sq = runStringQuartetMode({
+    seed: effectiveSeed,
+    title,
+    totalBars: req.totalBars ?? importedSongResult?.song.totalBars,
+    ...(effectiveSong ? { song: effectiveSong } : {}),
+  });
   const leadSheet = req.ensembleLeadSheetMusicXml
     ? importLeadSheetFromMusicXml(req.ensembleLeadSheetMusicXml).leadSheet
     : undefined;
@@ -2582,7 +2657,7 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
   );
   const resolvedSqBarMeterMap = resolveBarMeterMapForGenerateRequest({
     totalBars: req.totalBars,
-    song: req.song,
+    song: effectiveSong,
     barMeterMap: req.barMeterMap,
     zappaGceAutoBarMeterMapEnabled: req.zappaGceAutoBarMeterMapEnabled,
     zappaGceMeterMode: req.zappaGceMeterMode,
@@ -2593,13 +2668,17 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
   const quartetRealisationInput: StringQuartetRunInput & { formId?: string; era?: BigBandEraId; bpm?: number } = {
     seed: effectiveSeed,
     title,
-    totalBars: req.totalBars,
+    totalBars: req.totalBars ?? importedSongResult?.song.totalBars,
     ...(chordProgressionText ? { chordProgressionText } : {}),
     ...(typeof req.formId === 'string' && req.formId.trim() ? { formId: req.formId.trim() } : {}),
     ...(parseBigBandEraFromPairing(req.stylePairing?.era)
       ? { era: parseBigBandEraFromPairing(req.stylePairing?.era) }
       : {}),
-    ...(typeof req.bpm === 'number' && Number.isFinite(req.bpm) ? { bpm: req.bpm } : {}),
+    ...(typeof req.bpm === 'number' && Number.isFinite(req.bpm)
+      ? { bpm: req.bpm }
+      : effectiveSong?.globalDefaults.tempo
+        ? { bpm: effectiveSong.globalDefaults.tempo }
+        : {}),
     ...(ensembleSongwriterStyleId ? { songwriterStyleId: ensembleSongwriterStyleId } : {}),
     ...(req.chromaticStrength === 'off' ||
     req.chromaticStrength === 'subtle' ||
@@ -2619,7 +2698,7 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     ...(resolvedSqBarMeterMap && Object.keys(resolvedSqBarMeterMap).length > 0
       ? { barMeterMap: resolvedSqBarMeterMap }
       : {}),
-    ...(req.song ? { song: req.song } : {}),
+    ...(effectiveSong ? { song: effectiveSong } : {}),
     ...(stringQuartetGenerationMetadata ? { generationMetadata: stringQuartetGenerationMetadata } : {}),
   };
   const sectionRegenBaseSq = req.sectionRegeneration?.baseMusicXml?.trim();
