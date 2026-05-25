@@ -62,3 +62,15 @@ export function buildResolvedTuningVoicingContext(
   const map = TUNING_VOICING_MAP_BY_PRESET_ID[presetId];
   return { presetId, map: map ?? null, partRole };
 }
+
+export function buildResolvedTuningVoicingContextFromPresetId(
+  presetId: string | undefined | null,
+  partRole: 'guitar' | 'guitar_2'
+): ResolvedTuningVoicingContext {
+  if (!presetId || presetId === 'standard') return { presetId: presetId ?? null, map: null, partRole };
+  return {
+    presetId,
+    map: TUNING_VOICING_MAP_BY_PRESET_ID[presetId] ?? null,
+    partRole,
+  };
+}

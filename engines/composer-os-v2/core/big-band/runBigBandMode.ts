@@ -37,6 +37,12 @@ import type { BarMeterMap } from '../rhythm/barMeterTypes';
 import type { FigureResponseLevel } from '../arranging/bigBandPatterns';
 import type { DrumArticulationMode, DrumIntensity } from './bigBandDrumIntensity';
 import type { BigBandFormPhase } from './bigBandPlanTypes';
+import type { CompositionContext } from '../compositionContext';
+import type { Song } from '../section-architecture/sectionArchitectureTypes';
+import {
+  createSectionArchitectureRuntimeContext,
+  getSectionArchitectureDensityHint,
+} from '../section-architecture/effectiveContextForBar';
 
 export interface BigBandRunInput {
   seed: number;
@@ -101,6 +107,10 @@ export interface BigBandRunInput {
   barDrumIntensityOverrides?: Partial<Record<number, DrumIntensity>>;
   /** Per-bar brush vs sticks override (1-based bar index). */
   drumArticulationBarOverrides?: Partial<Record<number, DrumArticulationMode>>;
+  /** V65 P2 — section architecture document for ensemble-aware planning/score. */
+  song?: Song;
+  /** V65 P2 — cached per-bar effective contexts created from `song`. */
+  sectionArchitectureContext?: CompositionContext;
 }
 
 export interface BigBandRunManifestHints {
@@ -135,6 +145,7 @@ export interface BigBandRunResult {
   universalLeadSheet?: UniversalLeadSheet;
   /** Present when `stylePairing` was supplied on input. */
   stylePairingResolution?: StylePairingResult;
+  sectionArchitectureContext?: CompositionContext;
 }
 
 /**
@@ -163,7 +174,17 @@ export function runBigBandMode(input: BigBandRunInput): BigBandRunResult {
   );
   let sectionPlan = planBigBandSections(formPlan, runSeed);
   sectionPlan = applyBigBandEnsembleMask(sectionPlan, ensembleMask);
-  const densityPlan = planBigBandDensity(formPlan);
+  const sectionArchitectureContext =
+    input.sectionArchitectureContext ?? createSectionArchitectureRuntimeContext(input.song, 'big_band', runSeed);
+  const densityPlan = sectionArchitectureContext
+    ? {
+        slices: planBigBandDensity(formPlan).slices.map((slice) => {
+          const formSlice = formPlan.slices.find((s) => s.index === slice.formSliceIndex);
+          const hint = getSectionArchitectureDensityHint(formSlice?.startBar ?? 1, sectionArchitectureContext);
+          return hint ? { ...slice, density: hint === 'medium' ? 'moderate' : hint } : slice;
+        }),
+      }
+    : planBigBandDensity(formPlan);
 
   const parsed = input.researchPathOverride
     ? loadBigBandResearchFromPath(input.researchPathOverride)
@@ -262,5 +283,6 @@ export function runBigBandMode(input: BigBandRunInput): BigBandRunResult {
     manifestHints,
     universalLeadSheet,
     stylePairingResolution,
+    sectionArchitectureContext,
   };
 }

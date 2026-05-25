@@ -37,6 +37,11 @@ import { generateZappaSolo } from '../solo/zappasoloEngine';
 import { stringQuartetPreset } from '../../presets/stringQuartetPreset';
 import { isSongwriterFrankZappaStringQuartet } from './zappaStringQuartetSlice';
 import { runQuartetParallelMotionPass } from './quartetVoiceLeadingGuard';
+import {
+  getEffectiveContextForBar,
+  getEffectiveRegisterWindowForBar,
+  getSectionArchitectureDensityHint,
+} from '../section-architecture/effectiveContextForBar';
 
 const CHORD_CYCLE = ['Dmin9', 'G13', 'Cmaj9', 'A7', 'Dm7', 'G7', 'Cmaj7', 'Cmaj7'];
 
@@ -320,6 +325,8 @@ export interface BuildQuartetScoreModelInput {
   generationMetadata?: GenerationMetadata;
   /** Full-form harmony after Zappa SQ precompute (d5 cuts, etc.) — authoritative for cello roots when supplied. */
   zappaSQEffectiveHarmonyBars?: string[];
+  /** V65 P2 — per-bar Song section architecture context. */
+  sectionArchitectureContext?: CompositionContext;
 }
 
 /** Quarter-note beat span for the measure (e.g. 3.5 for 7/8). Uses {@link resolveMeterForBar} — same defaults as exporter. */
@@ -421,6 +428,23 @@ function buildZappaQuartetCompositionContext(input: BuildQuartetScoreModelInput,
   } as unknown as CompositionContext;
 }
 
+function applySectionVoicingSpreadSq(stack: number[], minSpread?: number, maxSpread?: number): number[] {
+  if (stack.length < 2) return stack;
+  const out = [...stack];
+  const spread = Math.max(...out) - Math.min(...out);
+  if (typeof minSpread === 'number' && spread < minSpread) {
+    out[0] = out[0]! + Math.ceil((minSpread - spread) / 2);
+    out[out.length - 1] = out[out.length - 1]! - Math.floor((minSpread - spread) / 2);
+  }
+  if (typeof maxSpread === 'number' && spread > maxSpread) {
+    const center = out.reduce((a, b) => a + b, 0) / out.length;
+    for (let i = 0; i < out.length; i++) {
+      out[i] = Math.round(center + (out[i]! - center) * Math.max(0.25, maxSpread / spread));
+    }
+  }
+  return out;
+}
+
 export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): ScoreModel {
   const USE_PIANO_COMP_SQ = true;
   const USE_SLONIMSKY_SQ = true;
@@ -439,6 +463,7 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
     blendStrength,
     duoIntent: productDuoIntent,
     barMeterMap,
+    sectionArchitectureContext,
   } = input;
   const outsideLevel = (allowedOutsideOverride ?? 1) as 0 | 1 | 2;
   const splitStreakThreshold = wholeStreakThresholdForBlend(blendStrength);
@@ -472,6 +497,7 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
   });
 
   const wholeTracker = new WholeNoteDensityTracker();
+  const sectionArchitectureProfileByBar: NonNullable<ScoreModel['sectionArchitectureProfileByBar']> = {};
   let prevQuartetInner: { violin1?: number; violin2?: number; viola?: number } = {};
   /** Rolling 3-bar violin I windows for {@link applySlonimskyToMelodyLine}. */
   const slonimskyV1Acc: number[] = [];
@@ -498,6 +524,25 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
     const slice = formPlan.slices.find((s) => bar >= s.startBar && bar <= s.endBar);
     const texSlice = slice ? texturePlan.slices.find((x) => x.formSliceIndex === slice.index) : undefined;
     const sectionTag = (slice?.phase ?? 'other') as SectionTag;
+    const sectionEff = sectionArchitectureContext ? getEffectiveContextForBar(bar, sectionArchitectureContext) : undefined;
+    const sectionDensityHint = sectionArchitectureContext
+      ? getSectionArchitectureDensityHint(bar, sectionArchitectureContext)
+      : undefined;
+    const sectionRegisterWindow = sectionArchitectureContext
+      ? getEffectiveRegisterWindowForBar(bar, sectionArchitectureContext, 'strings')
+      : undefined;
+    if (sectionEff || sectionDensityHint || sectionRegisterWindow) {
+      sectionArchitectureProfileByBar[bar] = {
+        ...(sectionDensityHint ? { density: sectionDensityHint } : {}),
+        ...(typeof sectionEff?.voicing.minSpreadSemitones === 'number'
+          ? { minSpreadSemitones: sectionEff.voicing.minSpreadSemitones }
+          : {}),
+        ...(typeof sectionEff?.voicing.maxSpreadSemitones === 'number'
+          ? { maxSpreadSemitones: sectionEff.voicing.maxSpreadSemitones }
+          : {}),
+        ...(sectionRegisterWindow ? { registerFloor: sectionRegisterWindow.floor, registerCeiling: sectionRegisterWindow.ceil } : {}),
+      };
+    }
 
     /** Odd-meter maps: Zappa solo fragments do not reliably fill `measureBeatSpanQuarters`; use standard quartet voicing + SQ harmony bars. */
     if (zappaSqActive && zappaSoloLine && !barMeterMap) {
@@ -595,23 +640,33 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
 
     const needSplit =
       !padSketch &&
+      sectionDensityHint !== 'sparse' &&
       (blendStrength === 'strong'
         ? bar > 2
         : blendStrength === 'light'
           ? false
-          : wholeTracker.highWholeStreakAtEnd() >= splitStreakThreshold);
+          : sectionDensityHint === 'dense' ||
+            sectionEff?.rhythm.antiMetric === true ||
+            wholeTracker.highWholeStreakAtEnd() >= splitStreakThreshold);
     const splitIdx = (bar + seed) % 4;
 
     const sym = chordForBar(bar);
     const rpc = chordSymbolRootPc(sym) ?? 0;
-    const stack = applyRegisterSpreadToStack(
-      applyQuartetWybleChordToneStack(pitchesQuartetString(rpc, sym), wybleVoiceLayout, prevQuartetInner),
-      outsideLevel
+    const stack = applySectionVoicingSpreadSq(
+      applyRegisterSpreadToStack(
+        applyQuartetWybleChordToneStack(pitchesQuartetString(rpc, sym), wybleVoiceLayout, prevQuartetInner),
+        outsideLevel
+      ),
+      sectionEff?.voicing.minSpreadSemitones,
+      sectionEff?.voicing.maxSpreadSemitones
     );
     const slonimskyPhraseIntent = sqSlonimskyPhraseIntentForProductDuo(productDuoIntent, bar, seed);
     prevQuartetInner = { violin1: stack[0], violin2: stack[1], viola: stack[2] };
 
     let melodyPitchV1 = stack[0]!;
+    if (sectionRegisterWindow) {
+      melodyPitchV1 = snapMidiToRange(melodyPitchV1, sectionRegisterWindow.floor, sectionRegisterWindow.ceil);
+    }
     if (USE_RETURN_OCTAVE_LIFT && slice?.phase === 'return') {
       melodyPitchV1 = snapMidiToRange(stack[0]! + 12, ...QUARTET_MIDI_BOUNDS[SQ_PART_V1]);
     }
@@ -654,6 +709,9 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
     }
 
     let melodyPitchV2 = stack[1]!;
+    if (sectionRegisterWindow) {
+      melodyPitchV2 = snapMidiToRange(melodyPitchV2, sectionRegisterWindow.floor, sectionRegisterWindow.ceil);
+    }
     if (USE_SLONIMSKY_SQ && !v1Silent) {
       slonimskyV2Acc.push(melodyPitchV2);
       if (slonimskyV2Acc.length > 3) slonimskyV2Acc.shift();
@@ -702,7 +760,10 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
         continue;
       }
       const splitHere = needSplit && idx === splitIdx;
-      const pitch = idx === 0 ? melodyPitchV1 : idx === 1 ? melodyPitchV2 : stack[idx]!;
+      const rawPitch = idx === 0 ? melodyPitchV1 : idx === 1 ? melodyPitchV2 : stack[idx]!;
+      const pitch = sectionRegisterWindow
+        ? snapMidiToRange(rawPitch, sectionRegisterWindow.floor, sectionRegisterWindow.ceil)
+        : rawPitch;
       const half = span / 2;
       if (splitHere) {
         barNotes.push({ partId: pid, midi: pitch, durationBeats: half });
@@ -800,6 +861,9 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
   score.wybleConsumptionReceipt = wybleConsumptionReceiptForQuartet(wybleVoiceLayout);
   if (input.barMeterMap && Object.keys(input.barMeterMap).length > 0) {
     score.barMeterMap = input.barMeterMap;
+  }
+  if (Object.keys(sectionArchitectureProfileByBar).length > 0) {
+    score.sectionArchitectureProfileByBar = sectionArchitectureProfileByBar;
   }
   return score;
 }

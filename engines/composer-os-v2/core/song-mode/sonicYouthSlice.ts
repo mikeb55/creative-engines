@@ -13,6 +13,8 @@ import { coarseSectionRoleFromBar } from './brianWilsonPetSoundsSlice';
 import type { SonicYouthExtension, SYTextureState } from '../score-model/sonicYouthChordTypes';
 import { getSYDissonancePreset } from '../score-model/sonicYouthChordGuards';
 import { getNextTextureState } from '../score-model/sonicYouthTextureEngine';
+import { getEffectiveTuningProfileForBar } from '../section-architecture/effectiveContextForBar';
+import { getAlternateGuitarTuningPreset } from './alternateGuitarTunings';
 
 function seededUnit(seed: number, bar: number, salt: number): number {
   let s = (seed ^ bar * 1103515245 ^ salt * 12345) >>> 0;
@@ -65,6 +67,54 @@ const TUNING_IDS = ['bad_moon_dadgad', 'teen_age_riot_facgce', 'confusion_gdae']
 /** Six-string open MIDI (approx.) — annotation only for `sonicYouth` stubs. */
 const OPEN_DADGAD: readonly [number, number, number, number, number, number] = [38, 45, 50, 55, 57, 62];
 const OPEN_FACGCE: readonly [number, number, number, number, number, number] = [41, 48, 52, 55, 60, 64];
+const NOTE_TO_SEMITONE: Record<string, number> = {
+  C: 0,
+  'C#': 1,
+  Db: 1,
+  D: 2,
+  'D#': 3,
+  Eb: 3,
+  E: 4,
+  F: 5,
+  'F#': 6,
+  Gb: 6,
+  G: 7,
+  'G#': 8,
+  Ab: 8,
+  A: 9,
+  'A#': 10,
+  Bb: 10,
+  B: 11,
+};
+
+function noteToMidi(note: string): number | null {
+  const m = /^\s*([A-Ga-g])([#b]?)(-?\d+)\s*$/.exec(note);
+  if (!m) return null;
+  const semi = NOTE_TO_SEMITONE[`${m[1]!.toUpperCase()}${m[2] ?? ''}`];
+  const oct = Number(m[3]);
+  if (semi === undefined || !Number.isFinite(oct)) return null;
+  return (oct + 1) * 12 + semi;
+}
+
+function resolveSectionTuningState(
+  context: CompositionContext,
+  bar: number,
+  instrument: 'guitar' | 'guitar_2',
+  fallbackId: string,
+  fallbackOpen: readonly [number, number, number, number, number, number]
+): { tuningId: string; openPitches: readonly [number, number, number, number, number, number] } {
+  const tuningId = getEffectiveTuningProfileForBar(bar, context, instrument)?.tuningId;
+  const preset = getAlternateGuitarTuningPreset(tuningId);
+  if (!preset) return { tuningId: fallbackId, openPitches: fallbackOpen };
+  const midis = preset.strings.map(noteToMidi);
+  if (midis.some((m) => m == null) || midis.length !== 6) {
+    return { tuningId: fallbackId, openPitches: fallbackOpen };
+  }
+  return {
+    tuningId: preset.id,
+    openPitches: midis as [number, number, number, number, number, number],
+  };
+}
 
 function frictionFromSymbol(symbol: string): number {
   const t = symbol.toLowerCase();
@@ -113,10 +163,25 @@ export function buildSonicYouthExtension(
       ? [false, true, true, false, true, true]
       : [true, false, false, true, true, false];
 
+  const guitar1Tuning = resolveSectionTuningState(
+    context,
+    bar,
+    'guitar',
+    TUNING_IDS[bar % TUNING_IDS.length]!,
+    OPEN_DADGAD
+  );
+  const guitar2Tuning = resolveSectionTuningState(
+    context,
+    bar,
+    'guitar_2',
+    TUNING_IDS[(bar + 1) % TUNING_IDS.length]!,
+    OPEN_FACGCE
+  );
+
   return {
     guitar1: {
-      tuningId: TUNING_IDS[bar % TUNING_IDS.length]!,
-      openPitches: OPEN_DADGAD,
+      tuningId: guitar1Tuning.tuningId,
+      openPitches: guitar1Tuning.openPitches,
       shapeId: `g1_bar${bar}`,
       fretPattern: [0, 0, 0, 0, 0, 0],
       stringMask: 0x3f,
@@ -124,8 +189,8 @@ export function buildSonicYouthExtension(
       noiseLevel: friction > 0.66 ? 'feedback' : friction > 0.4 ? 'crunchy' : 'clean',
     },
     guitar2: {
-      tuningId: TUNING_IDS[(bar + 1) % TUNING_IDS.length]!,
-      openPitches: OPEN_FACGCE,
+      tuningId: guitar2Tuning.tuningId,
+      openPitches: guitar2Tuning.openPitches,
       shapeId: `g2_bar${bar}`,
       fretPattern: [-1, 0, 0, 0, 0, 0],
       stringMask: 0x2a,

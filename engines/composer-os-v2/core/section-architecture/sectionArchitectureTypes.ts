@@ -17,6 +17,9 @@ export interface BarRange {
 
 export type InstrumentKind =
   | 'guitar'
+  | 'guitarA'
+  | 'guitarB'
+  | 'guitar_2'
   | 'bass'
   | 'keys'
   | 'drums'
@@ -24,6 +27,22 @@ export type InstrumentKind =
   | 'brass'
   | 'woodwinds'
   | 'generic';
+
+export type SlonimskyCellSetId =
+  | 'tritone_progression'
+  | 'ditone_progression'
+  | 'sesquitone_progression'
+  | 'whole_tone_progression'
+  | 'semitone_progression'
+  | 'quadritone_progression'
+  | 'sesquiquadritone'
+  | 'quinquetone_diatessaron'
+  | 'twelve_tone_dodecaphonic'
+  | 'intervallic_mirror_permutations'
+  | 'polytonal_scales'
+  | 'heptatonic_scales'
+  | 'pentatonic_scales'
+  | string;
 
 /** Named reusable profile bucket (referenced by id from sections). */
 export interface NamedProfile<T> {
@@ -49,6 +68,8 @@ export interface PitchProfile {
   allowedOutsideLevel?: 0 | 1 | 2;
   /** @preference Chromatic budget 0–1 on riff profile. */
   chromaticBudget?: number;
+  /** @preference Slonimsky catalogue families active in this section. */
+  cellSets?: readonly SlonimskyCellSetId[];
 }
 
 export interface RhythmProfile {

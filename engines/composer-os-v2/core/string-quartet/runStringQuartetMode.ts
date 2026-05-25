@@ -20,6 +20,12 @@ import type { OrchestrationPlan } from '../orchestration/orchestrationPlanTypes'
 import { validateOrchestrationPlan } from '../orchestration/orchestrationValidation';
 import { buildUniversalLeadSheetFromPlanningForm } from '../lead-sheet/universalLeadSheetBuilder';
 import type { UniversalLeadSheet } from '../lead-sheet/universalLeadSheetTypes';
+import type { CompositionContext } from '../compositionContext';
+import type { Song } from '../section-architecture/sectionArchitectureTypes';
+import {
+  createSectionArchitectureRuntimeContext,
+  getSectionArchitectureDensityHint,
+} from '../section-architecture/effectiveContextForBar';
 
 export interface StringQuartetRunInput {
   seed: number;
@@ -31,6 +37,8 @@ export interface StringQuartetRunInput {
   songwriterStyleId?: string;
   /** User Chromatic Strength cap (0/1/2) — passed to score realisation Slonimsky only. */
   allowedOutsideOverride?: 0 | 1 | 2;
+  song?: Song;
+  sectionArchitectureContext?: CompositionContext;
 }
 
 export interface StringQuartetRunManifestHints {
@@ -51,14 +59,25 @@ export interface StringQuartetRunResult {
   validation: QuartetValidationResult;
   manifestHints: StringQuartetRunManifestHints;
   universalLeadSheet?: UniversalLeadSheet;
+  sectionArchitectureContext?: CompositionContext;
 }
 
 export function runStringQuartetMode(input: StringQuartetRunInput): StringQuartetRunResult {
   const title = input.title ?? `String Quartet Plan ${input.seed}`;
   const totalBars = Math.max(16, input.totalBars ?? 24);
   const formPlan = planDefaultQuartetForm(input.seed, { totalBars });
+  const sectionArchitectureContext =
+    input.sectionArchitectureContext ?? createSectionArchitectureRuntimeContext(input.song, 'string_quartet', input.seed);
   const texturePlan = planQuartetTexture(formPlan, input.seed);
-  const densityPlan = planQuartetDensity(formPlan);
+  const densityPlan = sectionArchitectureContext
+    ? {
+        slices: planQuartetDensity(formPlan).slices.map((slice) => {
+          const formSlice = formPlan.slices.find((s) => s.index === slice.formSliceIndex);
+          const hint = getSectionArchitectureDensityHint(formSlice?.startBar ?? 1, sectionArchitectureContext);
+          return hint ? { ...slice, density: hint === 'medium' ? 'moderate' : hint } : slice;
+        }),
+      }
+    : planQuartetDensity(formPlan);
 
   const qVal = validateQuartetPlanningBundle(formPlan, texturePlan, densityPlan);
   const orchestrationPlan = assembleQuartetOrchestrationPlan({ formPlan, texturePlan, densityPlan });
@@ -101,5 +120,6 @@ export function runStringQuartetMode(input: StringQuartetRunInput): StringQuarte
     validation,
     manifestHints,
     universalLeadSheet,
+    sectionArchitectureContext,
   };
 }

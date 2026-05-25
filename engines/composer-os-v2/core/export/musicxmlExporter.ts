@@ -1361,6 +1361,14 @@ ${stavesAndClefXml}${transposeXml}    </attributes>
             measure1TuningWords
           )}</words></direction-type></direction>\n`;
         }
+        const sectionTuningId = score.sectionArchitectureTuningByBarByPartId?.[measureNumber]?.[part.id];
+        const previousSectionTuningId =
+          measureNumber > 1 ? score.sectionArchitectureTuningByBarByPartId?.[measureNumber - 1]?.[part.id] : undefined;
+        if (sectionTuningId && sectionTuningId !== previousSectionTuningId) {
+          xml += `    <direction placement="above"><direction-type><words>${escapeXml(
+            `Section tuning: ${sectionTuningId}`
+          )}</words></direction-type></direction>\n`;
+        }
 
         if (i === 0) {
           const feelEl =

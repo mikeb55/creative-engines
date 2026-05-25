@@ -6,6 +6,10 @@
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
 import {
   getEffectivePitchProfileForBar,
+  getEffectiveRegisterWindowForBar,
+  getEffectiveTuningProfileForBar,
+  getFollowRootProbabilityForBar,
+  getSlonimskyCellSetsForBar,
   getSectionArchitectureDensityHint,
   hasSectionArchitecture,
 } from '../section-architecture/effectiveContextForBar';
@@ -542,7 +546,10 @@ import {
   formatAlternateGuitarTuningExportLine,
   styleProfileSupportsAlternateGuitarTuning,
 } from '../song-mode/alternateGuitarTunings';
-import { buildResolvedTuningVoicingContext } from '../song-mode/alternateGuitarTuningVoicingMaps';
+import {
+  buildResolvedTuningVoicingContext,
+  buildResolvedTuningVoicingContextFromPresetId,
+} from '../song-mode/alternateGuitarTuningVoicingMaps';
 import {
   applySlonimskyToMelodyLine,
   mapDuoPhraseIntentToSlonimskyContext,
@@ -610,7 +617,10 @@ function duoChordTonesWithOptionalTuningMap(
   salt: number
 ) {
   const base = guitarChordTonesInRange(chord, low, high, chordToneOpts);
-  const voicingCtx = buildResolvedTuningVoicingContext(context.generationMetadata?.alternateGuitarTuning, partRole);
+  const sectionTuning = getEffectiveTuningProfileForBar(bar, context, partRole);
+  const voicingCtx = sectionTuning?.tuningId
+    ? buildResolvedTuningVoicingContextFromPresetId(sectionTuning.tuningId, partRole)
+    : buildResolvedTuningVoicingContext(context.generationMetadata?.alternateGuitarTuning, partRole);
   return applyTuningVoicingMapToChordTones(base, chord, low, high, voicingCtx, context.seed, bar, salt);
 }
 
@@ -850,10 +860,13 @@ function forceChordalElectricGuitar2VoicingsForIndieRoute(
     : undefined;
   for (const m of part.measures) {
     const chord = m.chord ?? resolveBarSymbol(context, m.index).symbol;
+    const registerWindow = getEffectiveRegisterWindowForBar(m.index, context, 'guitar_2');
+    const sectionLow = registerWindow ? Math.max(low, registerWindow.floor) : low;
+    const sectionHigh = registerWindow ? Math.min(high, registerWindow.ceil) : high;
     const tones = duoChordTonesWithOptionalTuningMap(
       chord,
-      Math.max(low + 7, 47),
-      high,
+      Math.max(sectionLow + 7, 47),
+      sectionHigh,
       context,
       m.index,
       'guitar_2',
@@ -975,13 +988,16 @@ function applyVoiceRole(
 ): ScoreEvent[] {
   const low = 40;
   const high = 76;
+  const registerWindow = getEffectiveRegisterWindowForBar(barNumber, context, voicingPartRole);
+  const sectionLow = registerWindow ? Math.max(low, registerWindow.floor) : low;
+  const sectionHigh = registerWindow ? Math.min(high, registerWindow.ceil) : high;
   const chordToneOpts: ChordTonesOptions | undefined = shouldUseUserChordSemanticsForTones(context)
     ? { lockedHarmony: true }
     : undefined;
   const tones = duoChordTonesWithOptionalTuningMap(
     chordLabel,
-    Math.max(low + 7, 47),
-    high,
+    Math.max(sectionLow + 7, 47),
+    sectionHigh,
     context,
     barNumber,
     voicingPartRole,
@@ -1542,6 +1558,53 @@ function applyEnhancedPitchesByBar(
     const count = Math.min(v1Events.length, enhancedNotes.length);
     for (let i = 0; i < count; i++) {
       v1Events[i]!.pitch = enhancedNotes[i]!.midi;
+    }
+  }
+}
+
+function hasSectionSlonimskyCellSets(context: CompositionContext): boolean {
+  return Boolean(context.song?.sections.some((s) => s.pitchProfile?.cellSets?.length));
+}
+
+function applySectionAwareSongModeSlonimskyPostPass(
+  guitarPart: PartModel,
+  context: CompositionContext,
+  songwriterId: string | undefined,
+  outsideLevel: 0 | 1 | 2
+): void {
+  const keyPc = inferTonicPitchClassFromBar1(context) ?? 0;
+  for (const measure of guitarPart.measures) {
+    const v1Events = measure.events
+      .filter((e): e is NoteEvent => e.kind === 'note' && (e.voice ?? 1) === 1)
+      .sort((a, b) => a.startBeat - b.startBeat);
+    if (v1Events.length === 0) continue;
+    const cellSets = getSlonimskyCellSetsForBar(measure.index, context);
+    const chordSymbol = resolveBarSymbol(context, measure.index).symbol;
+    const ctx = buildGuitarBassDuoSlonimskyContext({
+      duoIntent: 'development',
+      phase: ((measure.index - 1) % 8) + 1,
+      seed: context.seed + measure.index * 37,
+      songwriterId,
+      allowedOutsideOverride: outsideLevel,
+      ...(cellSets?.[0] ? { catalogueSection: String(cellSets[0]), forceCatalogueSection: true } : {}),
+      totalQuarterBeats: 4,
+      styleProfile: normalizeStyleProfileId(context.generationMetadata?.styleProfile),
+      chordSymbol,
+      keyPc,
+      effectiveLow: getEffectiveRegisterWindowForBar(measure.index, context, 'guitar')?.floor ?? 52,
+      effectiveHigh: getEffectiveRegisterWindowForBar(measure.index, context, 'guitar')?.ceil ?? 84,
+    });
+    const original: SlonimskyNote[] = v1Events.map((note, idx) => ({
+      midi: note.pitch,
+      durationBeats: note.duration,
+      beat: note.startBeat,
+      role: idx === 0 || idx === v1Events.length - 1 ? 'target' : 'passing',
+    }));
+    const enhanced = applySlonimskyToMelodyLine(original, [chordSymbol], ctx, context.seed + measure.index * 101);
+    const sounding = enhanced.filter((n) => n.durationBeats > 0).sort((a, b) => a.beat - b.beat);
+    const count = Math.min(v1Events.length, sounding.length);
+    for (let i = 0; i < count; i++) {
+      v1Events[i]!.pitch = sounding[i]!.midi;
     }
   }
 }
@@ -3417,12 +3480,12 @@ function buildGuitarPart(
       [effectiveLow, effectiveHigh] = applyGlobalRegisterArc(b, tb, effectiveLow, effectiveHigh);
     }
     if (hasSectionArchitecture(context)) {
-      const pitchProf = getEffectivePitchProfileForBar(b, context);
-      if (typeof pitchProf?.registerFloor === 'number') {
-        effectiveLow = Math.max(effectiveLow, pitchProf.registerFloor);
+      const registerWindow = getEffectiveRegisterWindowForBar(b, context, 'guitar');
+      if (typeof registerWindow?.floor === 'number') {
+        effectiveLow = Math.max(effectiveLow, registerWindow.floor);
       }
-      if (typeof pitchProf?.registerCeiling === 'number') {
-        effectiveHigh = Math.min(effectiveHigh, pitchProf.registerCeiling);
+      if (typeof registerWindow?.ceil === 'number') {
+        effectiveHigh = Math.min(effectiveHigh, registerWindow.ceil);
       }
     }
     if (lineFirstDuoAbstract && activeAbstract) {
@@ -3796,6 +3859,7 @@ function buildGuitarPart(
 
         let slonimskyBarCtx: SlonimskyContext | undefined;
         const sectionSlon = resolveSlonimskyParamsForBar(context, b);
+        const sectionCellSets = getSlonimskyCellSetsForBar(b, context);
         if (isDuoGolden && isGuitarBassDuoFamily(context.presetId)) {
           const chordStr = resolveBarSymbol(context, b).symbol;
           const keyPc = inferTonicPitchClassFromBar1(context) ?? 0;
@@ -3811,6 +3875,7 @@ function buildGuitarPart(
               ? { allowedOutsideOverride: sectionSlon.allowedOutsideLevel }
               : {}),
             ...(sectionSlon?.catalogueSection ? { catalogueSection: sectionSlon.catalogueSection } : {}),
+            ...(sectionCellSets?.[0] ? { catalogueSection: String(sectionCellSets[0]), forceCatalogueSection: true } : {}),
             ...(sectionSlon?.phraseIntent ? { phraseIntent: sectionSlon.phraseIntent } : {}),
             totalQuarterBeats: tb * 4,
             styleProfile: normalizeStyleProfileId(genMeta?.styleProfile),
@@ -4714,9 +4779,19 @@ function buildBassPart(
         duoRegHigh = Math.min(duoRegHigh + 3, 57);
       }
     }
-    const effectiveHigh = isDuoPreset ? duoRegHigh : Math.min(high, bassCeiling);
-    const effectiveLow = isDuoPreset ? duoRegLow : Math.max(walkLow, low);
-    const rootClamped = clampPitch(root, effectiveLow, Math.min(effectiveHigh, high));
+    let effectiveHigh = isDuoPreset ? duoRegHigh : Math.min(high, bassCeiling);
+    let effectiveLow = isDuoPreset ? duoRegLow : Math.max(walkLow, low);
+    const bassRegisterWindow = getEffectiveRegisterWindowForBar(b, context, 'bass');
+    if (bassRegisterWindow) {
+      effectiveLow = Math.max(effectiveLow, bassRegisterWindow.floor);
+      effectiveHigh = Math.min(effectiveHigh, bassRegisterWindow.ceil);
+    }
+    const followRootProbability = getFollowRootProbabilityForBar(b, context, 'bass');
+    const rootTarget =
+      followRootProbability !== undefined && seededUnit(seed, b, 65601) > followRootProbability
+        ? pickGuideTone(tones, b, seed)
+        : root;
+    const rootClamped = clampPitch(rootTarget, effectiveLow, Math.min(effectiveHigh, high));
     const slashBassPitch =
       parsed.slashBassPc !== undefined
         ? pitchClassToBassMidi(parsed.slashBassPc, walkLow, effectiveHigh)
@@ -6168,20 +6243,24 @@ export function generateGoldenPathDuoScore(
 
       const songwriterId = context.generationMetadata?.songwriterStyleId;
       const outsideLevel: 0 | 1 | 2 = resolveAllowedOutsideLevelForSlonimsky(songwriterId);
-      const slonimskyCtx: SlonimskyContext = {
-        keyPc: 0,
-        chordType: 'dominant',
-        functionalStrength: 'medium',
-        allowedOutsideLevel: outsideLevel,
-        phraseIntent: 'build',
-        basePitch: 62,
-        maxBeats: 2,
-        skipInterpolation: true,
-      };
-      const melodyLine = extractVoiceOneMelodyFromPart(guitarPart);
-      const chords = context.lockedHarmonyBarsRaw ?? [];
-      const enhanced = applySlonimskyToMelodyLine(melodyLine, chords, slonimskyCtx, context.seed);
-      applyEnhancedPitchesByBar(guitarPart, melodyLine, enhanced);
+      if (hasSectionSlonimskyCellSets(context)) {
+        applySectionAwareSongModeSlonimskyPostPass(guitarPart, context, songwriterId, outsideLevel);
+      } else {
+        const slonimskyCtx: SlonimskyContext = {
+          keyPc: 0,
+          chordType: 'dominant',
+          functionalStrength: 'medium',
+          allowedOutsideLevel: outsideLevel,
+          phraseIntent: 'build',
+          basePitch: 62,
+          maxBeats: 2,
+          skipInterpolation: true,
+        };
+        const melodyLine = extractVoiceOneMelodyFromPart(guitarPart);
+        const chords = context.lockedHarmonyBarsRaw ?? [];
+        const enhanced = applySlonimskyToMelodyLine(melodyLine, chords, slonimskyCtx, context.seed);
+        applyEnhancedPitchesByBar(guitarPart, melodyLine, enhanced);
+      }
     } else if (
       !isLineFirstDuoAbstractContext(context) &&
       styleProfileSupportsAlternateGuitarTuning(
@@ -6612,6 +6691,22 @@ export function generateGoldenPathDuoScore(
     tempo: bpm,
     feelProfile,
   });
+  if (hasSectionArchitecture(context)) {
+    const tuningByBar: Record<number, Record<string, string>> = {};
+    for (let bar = 1; bar <= tb; bar++) {
+      const g = getEffectiveTuningProfileForBar(bar, context, 'guitar')?.tuningId;
+      const g2 = getEffectiveTuningProfileForBar(bar, context, 'guitar_2')?.tuningId;
+      const bassTuning = getEffectiveTuningProfileForBar(bar, context, 'bass')?.tuningId;
+      const row: Record<string, string> = {};
+      if (g) row.guitar = g;
+      if (g2) row.guitar_2 = g2;
+      if (bassTuning) row.bass = bassTuning;
+      if (Object.keys(row).length > 0) tuningByBar[bar] = row;
+    }
+    if (Object.keys(tuningByBar).length > 0) {
+      rawScore.sectionArchitectureTuningByBarByPartId = tuningByBar;
+    }
+  }
   if (context.presetId !== 'ecm_chamber') {
     applyCadenzaPass(rawScore, context, context.seed);
   }

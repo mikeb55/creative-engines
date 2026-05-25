@@ -7,7 +7,12 @@ import type { VoiceRuleBundle } from '../composer/voiceRuleBundle';
 import type { RiffProfile } from '../composer/riffProfileTypes';
 import { mergeRiffProfilePatch } from '../riff-generator/riffReceiptCompiler';
 import { formMapFromSong } from './resolveGenerationBarMeterMap';
-import { resolveEffectiveContext, resolveSectionForBar, validateSong } from './sectionArchitectureResolution';
+import {
+  normalizeSectionInstrumentTarget,
+  resolveEffectiveContext,
+  resolveSectionForBar,
+  validateSong,
+} from './sectionArchitectureResolution';
 import type {
   DensityLevel,
   EffectiveGenerationContext,
@@ -15,7 +20,9 @@ import type {
   InstrumentOverride,
   PitchProfile,
   RhythmProfile,
+  SlonimskyCellSetId,
   Song,
+  TuningProfile,
   VoicingProfile,
 } from './sectionArchitectureTypes';
 import type { FormMap } from '../compositionContext';
@@ -63,6 +70,40 @@ export function wireSongArchitectureAtPipelineEntry(
   };
 }
 
+export function createSectionArchitectureRuntimeContext(
+  song: Song | undefined,
+  presetId: string,
+  seed: number
+): CompositionContext | undefined {
+  if (!song) return undefined;
+  const form = formMapFromSong(song);
+  const context = {
+    systemVersion: '2.0.0',
+    presetId,
+    seed,
+    form,
+    feel: {},
+    harmony: { segments: [], totalBars: song.totalBars },
+    motif: { activeMotifs: [], variants: {} },
+    phrase: { segments: [], totalBars: song.totalBars },
+    register: {},
+    density: { segments: [], totalBars: song.totalBars },
+    instrumentProfiles: [],
+    chordSymbolPlan: { segments: [], totalBars: song.totalBars },
+    rehearsalMarkPlan: { marks: [] },
+    generationMetadata: { generatedAt: new Date().toISOString() },
+    validation: { gates: [], passed: true },
+    readiness: {
+      release: { passed: true, overall: 1, categories: [] },
+      mx: { passed: true, overall: 1, categories: [] },
+    },
+  } as unknown as CompositionContext;
+  wireSongArchitectureAtPipelineEntry(context, song, (ctx, resolvedForm) => {
+    ctx.form = resolvedForm;
+  });
+  return context;
+}
+
 export function hasSectionArchitecture(context: CompositionContext): boolean {
   return context.song != null && context.song.schemaVersion >= 1;
 }
@@ -86,8 +127,9 @@ export function getEffectiveContextForBar(
 
   const resolved = resolveEffectiveContext(b, song);
   const withDensity = applyTransitionDensityInterpolation(b, song, resolved);
-  cache.set(b, withDensity);
-  return withDensity;
+  const withRegister = applyTransitionRegisterInterpolation(b, song, withDensity);
+  cache.set(b, withRegister);
+  return withRegister;
 }
 
 function densityLevelToScalar(d: DensityLevel | undefined): number {
@@ -155,6 +197,68 @@ function applyTransitionDensityInterpolation(
   };
 }
 
+function resolveTransitionNeighbor(
+  bar: number,
+  song: Song,
+  ctx: EffectiveGenerationContext,
+  flag: 'interpolateDensity' | 'interpolateRegister'
+): { neighbor: EffectiveGenerationContext; blend: number } | null {
+  const transition = ctx.transition;
+  if (!transition?.[flag]) return null;
+
+  const section = resolveSectionForBar(bar, song.sections);
+  if (!section) return null;
+
+  let neighborSection = null as (typeof song.sections)[number] | null;
+  let blend = 0;
+
+  if (section.transitionOut?.[flag] && bar >= section.barRange.endBar - (section.transitionOut.bars ?? 0)) {
+    const nextBar = section.barRange.endBar + 1;
+    neighborSection = resolveSectionForBar(nextBar, song.sections);
+    const window = Math.max(1, section.transitionOut.bars ?? 1);
+    const start = section.barRange.endBar - window + 1;
+    blend = (bar - start + 1) / window;
+  } else if (section.transitionIn?.[flag] && bar <= section.barRange.startBar + (section.transitionIn.bars ?? 0) - 1) {
+    const prevBar = section.barRange.startBar - 1;
+    neighborSection = resolveSectionForBar(prevBar, song.sections);
+    const window = Math.max(1, section.transitionIn.bars ?? 1);
+    const start = section.barRange.startBar;
+    blend = 1 - (bar - start + 1) / window;
+  }
+
+  if (!neighborSection) return null;
+  return {
+    neighbor: resolveEffectiveContext(neighborSection.barRange.startBar, song),
+    blend: Math.min(1, Math.max(0, blend)),
+  };
+}
+
+function blendNumber(a: number | undefined, b: number | undefined, blend: number): number | undefined {
+  if (typeof a !== 'number') return b;
+  if (typeof b !== 'number') return a;
+  return a * (1 - blend) + b * blend;
+}
+
+function applyTransitionRegisterInterpolation(
+  bar: number,
+  song: Song,
+  ctx: EffectiveGenerationContext
+): EffectiveGenerationContext {
+  const transition = resolveTransitionNeighbor(bar, song, ctx, 'interpolateRegister');
+  if (!transition) return ctx;
+  const floor = blendNumber(ctx.pitch.registerFloor, transition.neighbor.pitch.registerFloor, transition.blend);
+  const ceiling = blendNumber(ctx.pitch.registerCeiling, transition.neighbor.pitch.registerCeiling, transition.blend);
+  if (floor === ctx.pitch.registerFloor && ceiling === ctx.pitch.registerCeiling) return ctx;
+  return {
+    ...ctx,
+    pitch: {
+      ...ctx.pitch,
+      ...(typeof floor === 'number' ? { registerFloor: Math.round(floor) } : {}),
+      ...(typeof ceiling === 'number' ? { registerCeiling: Math.round(ceiling) } : {}),
+    },
+  };
+}
+
 function densityScalarFromContext(ctx: EffectiveGenerationContext): number {
   if (typeof ctx.energy === 'number') {
     return Math.min(1, Math.max(0, ctx.energy));
@@ -166,7 +270,7 @@ function densityScalarFromContext(ctx: EffectiveGenerationContext): number {
 export function getSectionArchitectureDensityScalar(
   bar: number,
   context: CompositionContext,
-  instrument?: InstrumentKind
+  instrument?: InstrumentKind | string
 ): number | undefined {
   if (!hasSectionArchitecture(context)) return undefined;
   const eff = getEffectiveContextForBar(bar, context);
@@ -183,7 +287,7 @@ export function getSectionArchitectureDensityScalar(
 export function getSectionArchitectureDensityHint(
   bar: number,
   context: CompositionContext,
-  instrument?: InstrumentKind
+  instrument?: InstrumentKind | string
 ): 'sparse' | 'medium' | 'dense' | undefined {
   const scalar = getSectionArchitectureDensityScalar(bar, context, instrument);
   if (scalar === undefined) return undefined;
@@ -193,7 +297,7 @@ export function getSectionArchitectureDensityHint(
 export function instrumentOverrideForBar(
   bar: number,
   context: CompositionContext,
-  instrument?: InstrumentKind
+  instrument?: InstrumentKind | string
 ): InstrumentOverride | undefined {
   if (!hasSectionArchitecture(context)) return undefined;
   const song = context.song!;
@@ -201,8 +305,9 @@ export function instrumentOverrideForBar(
   if (!section?.instrumentOverrides?.length) return undefined;
 
   if (instrument) {
+    const normalizedInstrument = normalizeSectionInstrumentTarget(instrument);
     const match = section.instrumentOverrides.find(
-      (ov) => ov.tuningProfile?.instrumentType === instrument
+      (ov) => normalizeSectionInstrumentTarget(ov.tuningProfile?.instrumentType) === normalizedInstrument
     );
     if (match) return match;
     const untyped = section.instrumentOverrides.find((ov) => !ov.tuningProfile?.instrumentType);
@@ -211,6 +316,64 @@ export function instrumentOverrideForBar(
   }
 
   return section.instrumentOverrides[0];
+}
+
+function tuningLookupKeys(instrument: InstrumentKind | string): string[] {
+  const normalized = normalizeSectionInstrumentTarget(instrument);
+  if (normalized === 'guitar') return ['guitar', 'guitarA'];
+  if (normalized === 'guitar_2') return ['guitar_2', 'guitarB'];
+  return normalized ? [normalized] : [instrument];
+}
+
+export function getEffectiveTuningProfileForBar(
+  bar: number,
+  context: CompositionContext,
+  instrument: InstrumentKind | string
+): TuningProfile | undefined {
+  if (!hasSectionArchitecture(context)) return undefined;
+  const eff = getEffectiveContextForBar(bar, context);
+  if (!eff) return undefined;
+  for (const key of tuningLookupKeys(instrument)) {
+    const t = eff.tuningByInstrument[key as InstrumentKind];
+    if (t) return t;
+  }
+  return undefined;
+}
+
+export function getEffectiveRegisterWindowForBar(
+  bar: number,
+  context: CompositionContext,
+  instrument: InstrumentKind | string
+): { floor: number; ceil: number } | undefined {
+  if (!hasSectionArchitecture(context)) return undefined;
+  const ov = instrumentOverrideForBar(bar, context, instrument);
+  if (ov?.registerWindow) return { ...ov.registerWindow };
+  const pitch = getEffectivePitchProfileForBar(bar, context);
+  if (typeof pitch?.registerFloor === 'number' || typeof pitch?.registerCeiling === 'number') {
+    return {
+      floor: pitch.registerFloor ?? 0,
+      ceil: pitch.registerCeiling ?? 127,
+    };
+  }
+  return undefined;
+}
+
+export function getFollowRootProbabilityForBar(
+  bar: number,
+  context: CompositionContext,
+  instrument: InstrumentKind | string = 'bass'
+): number | undefined {
+  const ov = instrumentOverrideForBar(bar, context, instrument);
+  const raw = ov?.followRootProbability;
+  return typeof raw === 'number' && Number.isFinite(raw) ? Math.min(1, Math.max(0, raw)) : undefined;
+}
+
+export function getSlonimskyCellSetsForBar(
+  bar: number,
+  context: CompositionContext
+): readonly SlonimskyCellSetId[] | undefined {
+  const cellSets = getEffectivePitchProfileForBar(bar, context)?.cellSets;
+  return cellSets?.length ? cellSets : undefined;
 }
 
 export function getEffectivePitchProfileForBar(
@@ -311,7 +474,7 @@ export function applySectionArchitectureToRiffProfile(
   profile: RiffProfile,
   context: CompositionContext,
   bar: number,
-  instrument?: InstrumentKind
+  instrument?: InstrumentKind | string
 ): RiffProfile {
   if (!hasSectionArchitecture(context)) return profile;
 

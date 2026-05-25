@@ -183,6 +183,18 @@ export const ALTERNATE_GUITAR_TUNING_PRESETS: readonly AlternateGuitarTuningPres
     strings: ['D2', 'G2', 'D3', 'G3', 'B3', 'D4'],
     audibleDescription: 'Open G variant — darker, riff-led motion.',
   },
+  {
+    id: 'sy_aaddgg',
+    label: 'AADDGG',
+    strings: ['A2', 'A2', 'D3', 'D3', 'G3', 'G3'],
+    audibleDescription: 'Sonic Youth paired-string drone stack — low A pressure with doubled D/G shimmer.',
+  },
+  {
+    id: 'sy_eebddg',
+    label: 'EEBDDG',
+    strings: ['E2', 'E2', 'B2', 'D3', 'D3', 'G3'],
+    audibleDescription: 'Sonic Youth bridge tuning — E/B low grind against doubled D and high G.',
+  },
   // —— Joni Mitchell
   {
     id: 'dadgad',
@@ -466,6 +478,8 @@ const DRONE_CLUSTER_PRESETS = new Set<string>([
   'sy_facgce',
   'sy_cgcgce',
   'sy_dgdgbd',
+  'sy_aaddgg',
+  'sy_eebddg',
   'open_em11',
   'sus2_stack',
 ]);

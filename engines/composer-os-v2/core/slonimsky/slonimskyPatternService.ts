@@ -47,6 +47,8 @@ export type SlonimskyContextParams = {
   effectiveHigh: number;
   /** Slonimsky catalogue section id (see {@link ThesaurusSection} keys); widened to `string` for forward-compatible call sites. */
   catalogueSection: string;
+  /** When true, section architecture owns catalogue choice ahead of songwriter defaults. */
+  forceCatalogueSection?: boolean;
   /**
    * Optional harmonic window (e.g. three bars). When set, the **last** symbol is used with
    * {@link inferSlonimskyChordTypeCategory} / {@link chordTonesForChordSymbol} for this bar’s context
@@ -142,7 +144,7 @@ function mergeEnsembleParamsWithSlonimskyStyleProfile(params: SlonimskyContextPa
   let maxInfraSteps = params.maxInfraSteps;
   let maxUltraSteps = params.maxUltraSteps;
 
-  if (spec.catalogueSection) catalogueSection = spec.catalogueSection;
+  if (!params.forceCatalogueSection && spec.catalogueSection) catalogueSection = spec.catalogueSection;
   if (params.transpositionInterval === undefined && spec.transpositionInterval !== undefined) {
     transpositionInterval = spec.transpositionInterval;
   }

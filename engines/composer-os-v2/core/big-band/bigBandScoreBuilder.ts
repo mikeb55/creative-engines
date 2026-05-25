@@ -35,6 +35,12 @@ import {
 } from './buildBigBandOrchestrationPlan';
 import { chordSymbolRootPc, snapMidiToRange } from '../voicing/ensembleHarmonyUtils';
 import { BIG_BAND_MIDI_BOUNDS } from '../voicing/voicingProfiles';
+import type { CompositionContext } from '../compositionContext';
+import {
+  getEffectiveContextForBar,
+  getEffectiveRegisterWindowForBar,
+  getSectionArchitectureDensityHint,
+} from '../section-architecture/effectiveContextForBar';
 import { createNote, createPart, createRest, createScore, addEvent } from '../score-model/scoreEventBuilder';
 import type { MeasureModel, NoteEvent, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
 import type { EnsembleWybleRoleMap } from '../wyble/wybleVoiceLayoutTypes';
@@ -742,6 +748,25 @@ export interface BuildBigBandScoreModelInput {
   barDrumIntensityOverrides?: Partial<Record<number, DrumIntensity>>;
   /** Imported lead (`runBigBandRealisation` handoff) — alto melody lock when profile is `orbit_v3_melody_authority`. */
   leadSheetMelodyLock?: LeadSheet;
+  /** V65 P2 — per-bar Song section architecture context. */
+  sectionArchitectureContext?: CompositionContext;
+}
+
+function applySectionVoicingSpreadToStack(stack: number[], minSpread?: number, maxSpread?: number): number[] {
+  if (stack.length < 2) return stack;
+  const out = [...stack];
+  const spread = Math.max(...out) - Math.min(...out);
+  if (typeof minSpread === 'number' && spread < minSpread) {
+    out[0] = out[0]! + Math.ceil((minSpread - spread) / 2);
+    out[out.length - 1] = out[out.length - 1]! - Math.floor((minSpread - spread) / 2);
+  }
+  if (typeof maxSpread === 'number' && spread > maxSpread) {
+    const center = out.reduce((a, b) => a + b, 0) / out.length;
+    for (let i = 0; i < out.length; i++) {
+      out[i] = Math.round(center + (out[i]! - center) * Math.max(0.25, maxSpread / spread));
+    }
+  }
+  return out;
 }
 
 function addWindOrBassNotes(
@@ -929,6 +954,7 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
     barDrumIntensityOverrides,
     bigBandArrangementProfile,
     leadSheetMelodyLock,
+    sectionArchitectureContext,
   } = input;
   const totalBars = formPlan.totalBars;
   const orbitOrchestration =
@@ -1027,6 +1053,7 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
 
   const wholeTracker = new WholeNoteDensityTracker();
   let hornStreak = initialHornCloneStreakState();
+  const sectionArchitectureProfileByBar: NonNullable<ScoreModel['sectionArchitectureProfileByBar']> = {};
   /** Rolling 3-bar alto lead windows for {@link applySlonimskyToMelodyLine} (needs ≥3 notes). */
   const slonimskyAltoAcc: number[] = [];
   /** Rolling 3-bar tenor inner-line windows for {@link applySlonimskyToMelodyLine} (needs ≥3 notes). */
@@ -1048,17 +1075,51 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
       spaceEmphasisThisBar = beh?.spaceEmphasis === true;
     }
 
-    const needRhythmSplit = !padSketch && wholeTracker.highWholeStreakAtEnd() >= 3;
+    const sectionEff = sectionArchitectureContext ? getEffectiveContextForBar(bar, sectionArchitectureContext) : undefined;
+    const sectionDensityHint = sectionArchitectureContext
+      ? getSectionArchitectureDensityHint(bar, sectionArchitectureContext)
+      : undefined;
+    const sectionRegisterWindow = sectionArchitectureContext
+      ? getEffectiveRegisterWindowForBar(bar, sectionArchitectureContext, 'generic')
+      : undefined;
+    if (sectionEff || sectionDensityHint || sectionRegisterWindow) {
+      sectionArchitectureProfileByBar[bar] = {
+        ...(sectionDensityHint ? { density: sectionDensityHint } : {}),
+        ...(typeof sectionEff?.voicing.minSpreadSemitones === 'number'
+          ? { minSpreadSemitones: sectionEff.voicing.minSpreadSemitones }
+          : {}),
+        ...(typeof sectionEff?.voicing.maxSpreadSemitones === 'number'
+          ? { maxSpreadSemitones: sectionEff.voicing.maxSpreadSemitones }
+          : {}),
+        ...(sectionRegisterWindow ? { registerFloor: sectionRegisterWindow.floor, registerCeiling: sectionRegisterWindow.ceil } : {}),
+      };
+    }
+    const sectionDense = sectionDensityHint === 'dense';
+    const sectionSparse = sectionDensityHint === 'sparse';
+    const needRhythmSplit =
+      !padSketch &&
+      !sectionSparse &&
+      (sectionDense || sectionEff?.rhythm.antiMetric === true || wholeTracker.highWholeStreakAtEnd() >= 3);
     const splitWindSlot = (bar + seed) % 4;
 
     const sym = chordForBar(bar);
     const rpc = chordSymbolRootPc(sym) ?? 0;
-    const stack = pitchesForBigBandBar(rpc, sym);
+    const stack = applySectionVoicingSpreadToStack(
+      pitchesForBigBandBar(rpc, sym),
+      sectionEff?.voicing.minSpreadSemitones,
+      sectionEff?.voicing.maxSpreadSemitones
+    );
     let altoMidi = stack[0];
     let tenorMidi = stack[1];
     let trumpetMidi = stack[2];
     let boneMidi = stack[3];
     const bassMidi = stack[5];
+    if (sectionRegisterWindow) {
+      altoMidi = snapMidiToRange(altoMidi, sectionRegisterWindow.floor, sectionRegisterWindow.ceil);
+      tenorMidi = snapMidiToRange(tenorMidi, sectionRegisterWindow.floor, sectionRegisterWindow.ceil);
+      trumpetMidi = snapMidiToRange(trumpetMidi, sectionRegisterWindow.floor, sectionRegisterWindow.ceil);
+      boneMidi = snapMidiToRange(boneMidi, sectionRegisterWindow.floor, sectionRegisterWindow.ceil);
+    }
     const bassMidiEff = orbitOrchestration ? orbitBbV2BassAnchor(bar, bassMidi) : bassMidi;
 
     const snappedSax = (m: number) => snapMidiToRange(m, ...BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES]);
@@ -1546,6 +1607,9 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
   score.wybleConsumptionReceipt = wybleConsumptionReceiptForBigBand(wybleVoiceLayout);
   if (barMeterMap && Object.keys(barMeterMap).length > 0) {
     score.barMeterMap = barMeterMap;
+  }
+  if (Object.keys(sectionArchitectureProfileByBar).length > 0) {
+    score.sectionArchitectureProfileByBar = sectionArchitectureProfileByBar;
   }
   if (orbitOrchestration) {
     score.measureDynamicsMarkings = orbitBbV2DynamicsMarkings();

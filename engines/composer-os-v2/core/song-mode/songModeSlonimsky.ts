@@ -3,6 +3,7 @@
  */
 
 import type { CompositionContext } from '../compositionContext';
+import { getSlonimskyCellSetsForBar } from '../section-architecture/effectiveContextForBar';
 import { buildGuitarBassDuoSlonimskyContext } from '../slonimsky/slonimskyPatternService';
 import { selectSlonimskyPattern } from '../slonimsky/slonimskyEngine';
 
@@ -19,19 +20,27 @@ export function applySongModeSlonimskyCellLayer(context: CompositionContext): vo
   const songwriterId = meta.songwriterStyleId;
   if (!songwriterId || !SLONIMSKY_SONGWRITER_IDS.has(songwriterId)) return;
 
-  const chord = context.lockedHarmonyBarsRaw?.[0] ?? 'Cmaj7';
-  const ctx = buildGuitarBassDuoSlonimskyContext({
-    duoIntent: 'development',
-    phase: 1,
-    seed: context.seed,
-    songwriterId,
-    totalQuarterBeats: 4,
-    chordSymbol: chord,
-    keyPc: 0,
-    effectiveLow: 52,
-    effectiveHigh: 84,
+  const sectionStarts = context.song?.sections.map((s) => s.barRange.startBar) ?? [1];
+  const receipts = sectionStarts.map((bar) => {
+    const chord = context.lockedHarmonyBarsRaw?.[bar - 1] ?? context.lockedHarmonyBarsRaw?.[0] ?? 'Cmaj7';
+    const cellSets = getSlonimskyCellSetsForBar(bar, context);
+    const ctx = buildGuitarBassDuoSlonimskyContext({
+      duoIntent: 'development',
+      phase: ((bar - 1) % 8) + 1,
+      seed: context.seed + bar * 101,
+      songwriterId,
+      ...(cellSets?.[0] ? { catalogueSection: String(cellSets[0]), forceCatalogueSection: true } : {}),
+      totalQuarterBeats: 4,
+      chordSymbol: chord,
+      keyPc: 0,
+      effectiveLow: 52,
+      effectiveHigh: 84,
+    });
+    const pattern = selectSlonimskyPattern(ctx, context.seed + 4242 + bar);
+    if (!context.song) {
+      return `z9:songwriter=${songwriterId} pattern=${pattern?.id ?? 'none'} intent=${ctx.phraseIntent}`;
+    }
+    return `z9:bar=${bar} songwriter=${songwriterId} cellSet=${cellSets?.[0] ?? 'default'} pattern=${pattern?.id ?? 'none'} intent=${ctx.phraseIntent}`;
   });
-  const pattern = selectSlonimskyPattern(ctx, context.seed + 4242);
-  const receipt = `z9:songwriter=${songwriterId} pattern=${pattern?.id ?? 'none'} intent=${ctx.phraseIntent}`;
-  meta.slonimskySongModeCellReceipts = [receipt, ...(meta.slonimskySongModeCellReceipts ?? [])];
+  meta.slonimskySongModeCellReceipts = [...receipts, ...(meta.slonimskySongModeCellReceipts ?? [])];
 }

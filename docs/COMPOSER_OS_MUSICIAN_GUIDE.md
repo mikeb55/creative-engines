@@ -1691,9 +1691,59 @@ Instrument overrides are scoped by part (`guitar` vs `bass`). Resolved density s
 
 **Golden verification (off smoke until V65 closeout):** `engines/composer-os-v2/scripts/runSectionArchitectureP1Golden.ts`
 
+### 10.4 Per-instrument tuning per section
+
+Sections can now change guitar tuning as part of the form. That means the same song can keep one tuning for the intro and verse, then switch tuning at a bridge without changing the global preset.
+
+Plain English:
+
+- `guitarA` targets the main guitar part (`guitar`)
+- `guitarB` targets the second guitar part (`guitar_2`)
+- Each section can name a tuning preset such as `sy_aaddgg` or `sy_eebddg`
+- No Song object means no tuning change; legacy behaviour is unchanged
+
+Sonic Youth example:
+
+| Section | Bars | Main guitar tuning | Musical effect |
+|---|---:|---|---|
+| Intro | 1–4 | `sy_aaddgg` | Paired A/D/G drone bed |
+| Verse | 5–10 | `sy_aaddgg` | Keeps motorik continuity |
+| Bridge | 11–16 | `sy_eebddg` | Darker E/B grind with doubled D/G pressure |
+
+Composer OS resolves the active tuning per bar. The score also carries per-section tuning diagnostics so exported XML can show section tuning changes.
+
+### 10.5 Per-section Slonimsky cell families
+
+Sections can choose their Slonimsky catalogue family through `pitchProfile.cellSets`. This changes the chromatic cell vocabulary by section instead of using one global chromatic language.
+
+Example:
+
+| Section | `pitchProfile.cellSets` | What changes |
+|---|---|---|
+| Verse | `ditone_progression` | Wider equal-division cells, more angular |
+| Bridge | `semitone_progression` | Tighter chromatic pressure and half-step motion |
+
+The Song Mode Slonimsky layer now reads the active section at generation time. Goldens check that the verse and bridge resolve different cell families and produce different melodic interval signatures.
+
+### 10.6 Big Band section profiles
+
+Big Band and String Quartet ensemble paths now receive the same section architecture context as Song Mode. For Big Band, section energy and voicing profile can shape density and spread per section.
+
+Example:
+
+| Section | Bars | Energy / density | Voicing profile |
+|---|---:|---|---|
+| A | 1–5 | sparse | max spread 18 semitones |
+| B | 6–10 | dense | min spread 36 semitones |
+| C | 11–16 | moderate | max spread 24 semitones |
+
+This lets an arranger sketch read like a chart: lean opening, wide shout section, controlled ending. Drum-module behaviour is unchanged and deferred to P4.
+
+**Golden verification (off smoke until V65 closeout):** `engines/composer-os-v2/scripts/runSectionArchitectureP2Golden.ts`
+
 ---
 
 *End of Composer OS Musician Guide*
-*Version: V65 — 2026-05-24*
+*Version: V65 — 2026-05-25*
 *For engine detail: COMPOSER_HANDBOOK.md*
 *For roadmap: COMPOSER_OS_ROADMAP.md*

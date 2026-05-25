@@ -2267,6 +2267,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     ...(resolvedBbBarMeterMap && Object.keys(resolvedBbBarMeterMap).length > 0
       ? { barMeterMap: resolvedBbBarMeterMap }
       : {}),
+    ...(req.song ? { song: req.song } : {}),
     ...(req.drumIntensity ? { drumIntensity: req.drumIntensity } : {}),
     ...(req.sectionIntensityOverrides && Object.keys(req.sectionIntensityOverrides).length > 0
       ? { sectionIntensityOverrides: req.sectionIntensityOverrides }
@@ -2618,6 +2619,7 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     ...(resolvedSqBarMeterMap && Object.keys(resolvedSqBarMeterMap).length > 0
       ? { barMeterMap: resolvedSqBarMeterMap }
       : {}),
+    ...(req.song ? { song: req.song } : {}),
     ...(stringQuartetGenerationMetadata ? { generationMetadata: stringQuartetGenerationMetadata } : {}),
   };
   const sectionRegenBaseSq = req.sectionRegeneration?.baseMusicXml?.trim();

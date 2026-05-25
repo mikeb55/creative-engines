@@ -187,6 +187,19 @@ export interface ScoreModel {
    * Keys are part ids (`guitar`, `guitar_2`).
    */
   exportMeasure1TuningWordsByPartId?: Record<string, string>;
+  /** V65 P2: per-bar section tuning ids for score/export diagnostics. */
+  sectionArchitectureTuningByBarByPartId?: Record<number, Record<string, string>>;
+  /** V65 P2: per-bar section profile echo for ensemble score diagnostics. */
+  sectionArchitectureProfileByBar?: Record<
+    number,
+    {
+      density?: string;
+      minSpreadSemitones?: number;
+      maxSpreadSemitones?: number;
+      registerFloor?: number;
+      registerCeiling?: number;
+    }
+  >;
   /**
    * Measure-1 `<attributes>` only: chromatic transposition for fixed-offset guitar presets (e.g. Drop D, Eb standard).
    * Keys are part ids; values are semitone offsets (negative = written pitch sounds lower).

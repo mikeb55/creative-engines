@@ -202,6 +202,7 @@ export function runQuartetRealisation(
     ...(zappaSQEffectiveHarmonyBars && zappaSQEffectiveHarmonyBars.length === tb
       ? { zappaSQEffectiveHarmonyBars }
       : {}),
+    ...(planning.sectionArchitectureContext ? { sectionArchitectureContext: planning.sectionArchitectureContext } : {}),
     slonimskyEnsembleCellReceipts,
   });
 

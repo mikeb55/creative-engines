@@ -52,6 +52,13 @@ function barInRange(bar: number, range: { startBar: number; endBar: number }): b
   return bar >= range.startBar && bar <= range.endBar;
 }
 
+export function normalizeSectionInstrumentTarget(kind: InstrumentKind | string | undefined): InstrumentKind | undefined {
+  if (!kind) return undefined;
+  if (kind === 'guitarA') return 'guitar';
+  if (kind === 'guitarB') return 'guitar_2';
+  return kind as InstrumentKind;
+}
+
 function setByDotPath(obj: Record<string, unknown>, path: string, value: unknown): boolean {
   const parts = path.split('.').filter(Boolean);
   if (parts.length === 0) return false;
@@ -117,6 +124,8 @@ function mergeInstrumentOverridesIntoTuning(
     const kind = ov.tuningProfile?.instrumentType;
     if (kind && ov.tuningProfile) {
       out[kind] = { ...ov.tuningProfile };
+      const normalized = normalizeSectionInstrumentTarget(kind);
+      if (normalized && normalized !== kind) out[normalized] = { ...ov.tuningProfile };
     }
   }
   return out;
@@ -131,12 +140,18 @@ export function mergeInstrumentOverride(
   const next = { ...base };
   if (override.tuningProfile) {
     const kind = instrumentKind ?? override.tuningProfile.instrumentType;
-    if (instrumentKind && override.tuningProfile.instrumentType !== instrumentKind) {
+    const normalizedKind = normalizeSectionInstrumentTarget(kind);
+    if (
+      instrumentKind &&
+      normalizeSectionInstrumentTarget(override.tuningProfile.instrumentType) !==
+        normalizeSectionInstrumentTarget(instrumentKind)
+    ) {
       return next;
     }
     next.tuningByInstrument = {
       ...next.tuningByInstrument,
       [kind]: { ...override.tuningProfile },
+      ...(normalizedKind && normalizedKind !== kind ? { [normalizedKind]: { ...override.tuningProfile } } : {}),
     };
   }
   if (typeof override.density !== 'undefined') {
@@ -392,7 +407,7 @@ export function validateSong(song: Song): ValidationResult {
 
   if (song.globalDefaults.defaultTuningByInstrument) {
     for (const [key, profile] of Object.entries(song.globalDefaults.defaultTuningByInstrument)) {
-      if (profile && profile.instrumentType !== key) {
+      if (profile && normalizeSectionInstrumentTarget(profile.instrumentType) !== normalizeSectionInstrumentTarget(key)) {
         issues.push({
           severity: 'error',
           code: 'TUNING_INSTRUMENT_MISMATCH',

@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-05-24]
+# Composer OS Roadmap [2026-05-25]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
@@ -6,7 +6,7 @@
 
 **V64 — COMPLETE (2026-05-24):** Section architecture + Zappa GCE structural layer + per-section VRB/meter (P1–P6). P7 closeout: **+22** smoke rows (**7** goldens in smoke). Smoke **307/73/0** fast · **472/87/0** full. See [COMPOSER_OS_ROADMAP_V64.md](COMPOSER_OS_ROADMAP_V64.md).
 
-**V65 — IN PROGRESS (2026-05-24):** **P1** section architecture wired at generate (`effectiveContextForBar`, Song→FormMap bridge, per-bar consumers) — goldens **80001** / **80002** off smoke. Remaining: **12** FZ_* stubs · section editor UI · fretboard view · MusicXML import depth · P2 consumers (ContrapuntalLineEngine, registerWindow, tuning) — see **§ V65 backlog**.
+**V65 — IN PROGRESS (2026-05-25):** **P1** section architecture wired at generate (`effectiveContextForBar`, Song→FormMap bridge, per-bar consumers) — goldens **80001** / **80002** off smoke. **P2** per-section tuning / registerWindow / bass root-follow / Slonimsky `cellSets` / BB+SQ profile fan-out — goldens **81001** / **81002** / **81003** off smoke. Remaining: **12** FZ_* stubs · section editor UI · fretboard view · MusicXML import depth · ContrapuntalLineEngine / parallelRepair / eraChordNormalizer follow-up — see **§ V65 backlog**.
 
 **V58 — COMPLETE since V57 (`0e2dfe0e` … `3b8db553`):** **Export-truth consolidation** (`assertExportTruth`) · **Contrapuntal Pass 4** (SQ/BB MusicXML from `contrapuntalLineSet`) · **Long forms 40–64 bars** (duo/song product quality) · **Film-stub VRBs → full receipts** (8 composers) · **Lead-sheet MusicXML import phase 3+** · **Output validation layer** (MIDI + MusicXML + audio; smoke +11 rows) · **SQ VRB slices:** Ligeti **σ=32**, Satie **σ=19**, Cole Porter **σ=25**, Gershwin **σ=27** · **GM string playback** (Violin I/II, Viola, Cello — Tone.Sampler + FluidR3_GM on SQ→BB panel).
 

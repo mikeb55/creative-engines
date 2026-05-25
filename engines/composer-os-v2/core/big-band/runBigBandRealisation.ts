@@ -173,6 +173,7 @@ export function runBigBandRealisation(
         ? { drumArticulationBarOverrides: input.drumArticulationBarOverrides }
         : {}),
       ...(input.leadSheet ? { leadSheetMelodyLock: input.leadSheet } : {}),
+      ...(planning.sectionArchitectureContext ? { sectionArchitectureContext: planning.sectionArchitectureContext } : {}),
       slonimskyEnsembleCellReceipts,
     });
 
