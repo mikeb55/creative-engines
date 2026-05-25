@@ -19,6 +19,7 @@ import { runQuartetRealisation } from '../core/string-quartet/runQuartetRealisat
 import { resolveBarMeterMapForGenerateRequest } from '../core/section-architecture/resolveGenerationBarMeterMap';
 import { runSongMode } from '../core/song-mode/runSongMode';
 import type { SectionChordPlan } from '../core/song-mode/songCompilationTypes';
+import type { GrooveScaffoldSettings, SectionType, Song } from '../core/section-architecture/sectionArchitectureTypes';
 import { buildChordProgressionTextForDuoFromCompiledSong } from '../core/song-mode/songModeBuilder';
 import {
   adaptLeadSheetMusicXmlForSongMode,
@@ -260,6 +261,7 @@ function requestEchoFromReq(req: GenerateRequest): NonNullable<GenerateResult['r
           surprise: req.intent.surprise,
         }
       : {}),
+    ...(req.grooveScaffold ? { grooveScaffold: req.grooveScaffold } : {}),
     ...(Array.isArray(req.styleGenerationContextKeys) && req.styleGenerationContextKeys.length > 0
       ? { styleGenerationContextKeys: req.styleGenerationContextKeys }
       : {}),
@@ -770,6 +772,108 @@ function chordPlanToProgressionText(chordPlan: SectionChordPlan[]): string {
   return chordPlan.flatMap((s) => s.chordSymbols).join(' ');
 }
 
+function normalizeGrooveScaffoldRequest(req: GenerateRequest): GrooveScaffoldSettings | undefined {
+  if (!req.grooveScaffold) return undefined;
+  const g = req.grooveScaffold;
+  const feel =
+    g.feel === 'swing' ||
+    g.feel === 'funk' ||
+    g.feel === 'rock' ||
+    g.feel === 'bossa' ||
+    g.feel === 'ballad' ||
+    g.feel === 'odd_meter'
+      ? g.feel
+      : 'swing';
+  const density = g.density === 'sparse' || g.density === 'dense' ? g.density : 'medium';
+  const fillFrequency = g.fillFrequency === 'sparse' || g.fillFrequency === 'dense' ? g.fillFrequency : 'normal';
+  return { enabled: g.enabled === true, feel, density, fillFrequency };
+}
+
+function sectionTypeForGrooveScaffold(kind: SectionChordPlan['sectionKind']): SectionType {
+  if (kind === 'chorus' || kind === 'bridge' || kind === 'verse') return kind;
+  return 'verse';
+}
+
+function sectionEnergyForGrooveScaffold(intensity: SectionChordPlan['intensity']): number {
+  if (intensity === 'low') return 0.35;
+  if (intensity === 'high') return 0.72;
+  if (intensity === 'contrast') return 0.58;
+  return 0.5;
+}
+
+function songDensityForGrooveScaffold(density: GrooveScaffoldSettings['density']): Song['globalDefaults']['defaultDensity'] {
+  if (density === 'sparse') return 'sparse';
+  if (density === 'dense') return 'dense';
+  return 'moderate';
+}
+
+function withGrooveScaffoldSettings(song: Song, grooveScaffold: GrooveScaffoldSettings): Song {
+  return {
+    ...song,
+    globalDefaults: {
+      ...song.globalDefaults,
+      grooveScaffold,
+    },
+  };
+}
+
+function buildGrooveScaffoldSongFromChordPlan(params: {
+  title: string;
+  totalBars: number;
+  bpm?: number;
+  chordPlan: SectionChordPlan[];
+  grooveScaffold: GrooveScaffoldSettings;
+}): Song {
+  const sections: Song['sections'] = [];
+  let startBar = 1;
+  for (const [idx, block] of params.chordPlan.entries()) {
+    const length = Math.max(1, block.chordSymbols.length);
+    const endBar = Math.min(params.totalBars, startBar + length - 1);
+    if (startBar > params.totalBars) break;
+    sections.push({
+      id: `song_mode_${block.sectionKind}_${block.sectionOrder}`,
+      label: `${block.sectionKind}_${block.sectionOrder}`,
+      type: sectionTypeForGrooveScaffold(block.sectionKind),
+      barRange: { startBar, endBar },
+      energy: sectionEnergyForGrooveScaffold(block.intensity),
+    });
+    startBar = endBar + 1;
+    if (idx === params.chordPlan.length - 1 && startBar <= params.totalBars) {
+      const last = sections[sections.length - 1]!;
+      sections[sections.length - 1] = {
+        ...last,
+        barRange: { ...last.barRange, endBar: params.totalBars },
+      };
+    }
+  }
+  if (sections.length === 0) {
+    sections.push({
+      id: 'song_mode_default',
+      label: 'verse_0',
+      type: 'verse',
+      barRange: { startBar: 1, endBar: params.totalBars },
+      energy: 0.5,
+    });
+  }
+  return {
+    schemaVersion: 1,
+    id: `song_mode_groove_${params.title.replace(/\s+/g, '_').slice(0, 32)}`,
+    title: params.title,
+    totalBars: params.totalBars,
+    globalDefaults: {
+      tempo: params.bpm,
+      meter: '4/4',
+      defaultDensity: songDensityForGrooveScaffold(params.grooveScaffold.density),
+      defaultRhythmProfile: {
+        subdivision: params.grooveScaffold.feel === 'swing' ? 'triplet' : '8th',
+      },
+      grooveScaffold: params.grooveScaffold,
+    },
+    sections,
+    localOverrides: [],
+  };
+}
+
 function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResult {
   const ts = new Date().toISOString();
   const tsSafe = ts.replace(/[:.]/g, '-');
@@ -815,6 +919,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     importedSongResult?.deepImport.sectionStarts.some((s) => s.bar !== 1 || s.label !== 'A') ?? false;
   const effectiveSong =
     req.song ?? (req.importHarmonyMode !== 'free_harmony' && importedSongHasExplicitSections ? importedSongResult?.song : undefined);
+  const normalizedGrooveScaffold = normalizeGrooveScaffoldRequest(req);
   const effectiveSongModeBarTarget = importedSongResult?.song.totalBars ?? barTarget;
   const isLeadSheetPhase1WriterRoute = isLeadSheetSongModeWriter(primarySongwriterNormalized);
   const perfBlendRaw =
@@ -1133,6 +1238,19 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       ? Math.floor(sm.universalLeadSheet.totalBars)
       : undefined;
   const resolvedSongModeTotalBars = universalRepeatTruthBars ?? effectiveSongModeBarTarget;
+  const songForGoldenPath = normalizedGrooveScaffold
+    ? effectiveSong
+      ? withGrooveScaffoldSettings(effectiveSong, normalizedGrooveScaffold)
+      : normalizedGrooveScaffold.enabled
+        ? buildGrooveScaffoldSongFromChordPlan({
+            title,
+            totalBars: resolvedSongModeTotalBars,
+            bpm: req.bpm,
+            chordPlan: sm.compiledSong.chordPlan ?? [],
+            grooveScaffold: normalizedGrooveScaffold,
+          })
+        : undefined
+    : effectiveSong;
   const songModeGoldenPathOptions: RunGoldenPathOptions = {
     styleStack: mapAppStyleStackToEngine(req.styleStack),
     presetId: 'guitar_bass_duo',
@@ -1197,7 +1315,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       ? { debugFixtureMode: 'indie_dual_guitar_tuning_proof' as const }
       : {}),
     ...(req.barMeterMap ? { barMeterMap: req.barMeterMap } : {}),
-    ...(effectiveSong ? { song: effectiveSong } : {}),
+    ...(songForGoldenPath ? { song: songForGoldenPath } : {}),
     ...(req.zappaGceAutoBarMeterMapEnabled === true ? { zappaGceAutoBarMeterMapEnabled: true } : {}),
     ...(req.zappaGceMeterMode === 'disrupt' ||
     req.zappaGceMeterMode === 'respect' ||

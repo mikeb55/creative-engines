@@ -106,6 +106,10 @@ export interface GrooveScaffoldSettings {
   enabled: boolean;
   /** @preference Global groove feel; odd meters auto-route to odd_meter per bar. */
   feel?: 'swing' | 'funk' | 'rock' | 'bossa' | 'ballad' | 'odd_meter';
+  /** @preference Global density bias for the symbolic drum scaffold. */
+  density?: 'sparse' | 'medium' | 'dense';
+  /** @preference Global fill-frequency bias; sparse and dense keep P4 spacing rules intact. */
+  fillFrequency?: 'sparse' | 'normal' | 'dense';
 }
 
 export interface SongDefaults {

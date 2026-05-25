@@ -210,6 +210,8 @@ export interface GenerateResult {
     c4Strength?: 'light' | 'medium' | 'strong';
     /** Song Mode: duo intent echo when client sends it. */
     duoIntent?: 'conversational' | 'supportive';
+    /** Song Mode V65 P5b: groove scaffold UI echo. */
+    grooveScaffold?: GenerateRequest['grooveScaffold'];
     /** Echo when client sends Slonimsky Chromatic Strength (Song Mode / ensemble). */
     chromaticStrength?: 'off' | 'subtle' | 'prominent';
     importHarmonyMode?: ImportHarmonyMode;
@@ -770,6 +772,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       longFormEnabled: req.longFormEnabled,
       styleProfile: req.styleProfile,
       c4Strength: req.c4Strength,
+      ...(req.grooveScaffold ? { grooveScaffold: req.grooveScaffold } : {}),
       importHarmonyMode: normalizedImportHarmonyMode,
       harmonyBlend: harmonyBlendRaw,
       ...(req.sectionRegeneration

@@ -1,5 +1,10 @@
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
-import type { EffectiveGenerationContext, SectionType, Song } from '../section-architecture/sectionArchitectureTypes';
+import type {
+  EffectiveGenerationContext,
+  GrooveScaffoldSettings,
+  SectionType,
+  Song,
+} from '../section-architecture/sectionArchitectureTypes';
 import { getEffectiveContextForBar } from '../section-architecture/effectiveContextForBar';
 import { resolveMeasureBeatSpanQuarters } from '../rhythm/oddMeterQuantiser';
 import type { PartModel, ScoreEvent, ScoreModel } from '../score-model/scoreModelTypes';
@@ -8,7 +13,9 @@ import { createNote, createPart, createRest } from '../score-model/scoreEventBui
 export const GROOVE_DRUMS_PART_ID = 'groove_drums';
 export const GROOVE_DRUMS_INSTRUMENT_IDENTITY = 'groove_scaffold_drums';
 
-export type GrooveFeel = 'swing' | 'funk' | 'rock' | 'bossa' | 'ballad' | 'odd_meter';
+export type GrooveFeel = NonNullable<GrooveScaffoldSettings['feel']>;
+export type GrooveDensityPreference = NonNullable<GrooveScaffoldSettings['density']>;
+export type GrooveFillFrequencyPreference = NonNullable<GrooveScaffoldSettings['fillFrequency']>;
 export type GrooveSubdivision = '8th' | '16th' | 'triplet';
 export type GrooveDensityTier = 'low' | 'mid' | 'high';
 export type GrooveLaneRole = 'time' | 'backbeat' | 'comping' | 'fillColor';
@@ -80,6 +87,8 @@ export interface PercussionRenderPolicy {
 export interface GrooveScaffoldRequest {
   enabled: boolean;
   feel?: GrooveFeel;
+  density?: GrooveDensityPreference;
+  fillFrequency?: GrooveFillFrequencyPreference;
 }
 
 export interface GrooveScaffoldDiagnostics {
@@ -93,6 +102,8 @@ export interface GrooveScaffoldDiagnostics {
   openHatCount: number;
   barsSinceLastFill: number;
   oddMeterBars: number[];
+  density: GrooveDensityPreference;
+  fillFrequency: GrooveFillFrequencyPreference;
   exportSimplificationWarnings: string[];
   barPlans: GrooveBarPlan[];
 }
@@ -247,16 +258,44 @@ function densityTier(energy: number | undefined, role: GrooveBarRole): GrooveDen
   return 'mid';
 }
 
-function fillChance(feel: GrooveFeel, energy: number | undefined, finalBar: boolean): number {
+function applyDensityPreference(tier: GrooveDensityTier, density: GrooveDensityPreference): GrooveDensityTier {
+  if (density === 'sparse') {
+    if (tier === 'high') return 'mid';
+    if (tier === 'mid') return 'low';
+  }
+  if (density === 'dense') {
+    if (tier === 'low') return 'mid';
+    if (tier === 'mid') return 'high';
+  }
+  return tier;
+}
+
+function fillChance(
+  feel: GrooveFeel,
+  energy: number | undefined,
+  finalBar: boolean,
+  fillFrequency: GrooveFillFrequencyPreference
+): number {
   const e = typeof energy === 'number' ? Math.max(0, Math.min(1, energy)) : 0.45;
   const feelBoost = feel === 'funk' || feel === 'rock' ? 0.06 : feel === 'ballad' || feel === 'bossa' ? -0.04 : 0;
   const raw = finalBar ? 0.35 + e * 0.25 + feelBoost : 0.1 + e * 0.1 + feelBoost * 0.4;
-  return finalBar ? Math.max(0.35, Math.min(0.6, raw)) : Math.max(0.1, Math.min(0.2, raw));
+  const multiplier = fillFrequency === 'sparse' ? 0.72 : fillFrequency === 'dense' ? 1.28 : 1;
+  return finalBar
+    ? Math.max(0.35, Math.min(0.6, raw * multiplier))
+    : Math.max(0.1, Math.min(0.2, raw * multiplier));
 }
 
 function resolveRequestedFeel(song: Song): GrooveFeel {
   const req = song.globalDefaults.grooveScaffold?.feel;
   return req ?? 'rock';
+}
+
+function resolveRequestedDensity(song: Song): GrooveDensityPreference {
+  return song.globalDefaults.grooveScaffold?.density ?? 'medium';
+}
+
+function resolveRequestedFillFrequency(song: Song): GrooveFillFrequencyPreference {
+  return song.globalDefaults.grooveScaffold?.fillFrequency ?? 'normal';
 }
 
 function resolveFeelForBar(requested: GrooveFeel, beatSpan: number): GrooveFeel {
@@ -292,6 +331,8 @@ function buildBarContext(
 function planGrooveBar(
   ctx: GrooveBarContext,
   requestedFeel: GrooveFeel,
+  requestedDensity: GrooveDensityPreference,
+  requestedFillFrequency: GrooveFillFrequencyPreference,
   seed: number,
   beatSpan: number,
   fillsInCurrentSection: number
@@ -318,11 +359,12 @@ function planGrooveBar(
   }
 
   const canFillBySpacing = ctx.barsSinceFill >= 3 || role === 'ending';
-  const finalFillRoll = seededUnit(seed, ctx.bar, 65003) < fillChance(resolvedFeel, energy, true);
+  const finalFillRoll =
+    seededUnit(seed, ctx.bar, 65003) < fillChance(resolvedFeel, energy, true, requestedFillFrequency);
   const midCadenceRoll =
     ctx.cadenceStrength >= 0.4 &&
     ctx.barsSinceFill >= 4 &&
-    seededUnit(seed, ctx.bar, 65002) < fillChance(resolvedFeel, energy, false);
+    seededUnit(seed, ctx.bar, 65002) < fillChance(resolvedFeel, energy, false, requestedFillFrequency);
   const sectionNeedsOneSparseFill =
     finalBar && fillsInCurrentSection === 0 && ctx.barsSinceFill >= 4 && ctx.sectionType !== 'outro';
   if (
@@ -335,7 +377,7 @@ function planGrooveBar(
     fillEligible = true;
   }
 
-  const tier = densityTier(energy, role);
+  const tier = applyDensityPreference(densityTier(energy, role), requestedDensity);
   return {
     bar: ctx.bar,
     role,
@@ -496,6 +538,8 @@ export function grooveScaffoldPass(score: ScoreModel, context: CompositionContex
 
   const totalBars = song.totalBars;
   const requestedFeel = resolveRequestedFeel(song);
+  const requestedDensity = resolveRequestedDensity(song);
+  const requestedFillFrequency = resolveRequestedFillFrequency(song);
   const profile = buildGrooveStyleProfile(requestedFeel);
   const part: PartModel = createPart(
     GROOVE_DRUMS_PART_ID,
@@ -533,7 +577,15 @@ export function grooveScaffoldPass(score: ScoreModel, context: CompositionContex
       continue;
     }
     previousEnergy = gb.effectiveContext.energy ?? previousEnergy;
-    const plan = planGrooveBar(gb, requestedFeel, context.seed, span, fillCountBySection[gb.effectiveContext.sectionLabel] ?? 0);
+    const plan = planGrooveBar(
+      gb,
+      requestedFeel,
+      requestedDensity,
+      requestedFillFrequency,
+      context.seed,
+      span,
+      fillCountBySection[gb.effectiveContext.sectionLabel] ?? 0
+    );
     if (plan.resolvedFeel === 'odd_meter') {
       receipts.add(GROOVE_RECEIPTS.odd_meter);
       oddMeterBars.push(bar);
@@ -590,6 +642,8 @@ export function grooveScaffoldPass(score: ScoreModel, context: CompositionContex
     openHatCount,
     barsSinceLastFill: barsSinceFill,
     oddMeterBars,
+    density: requestedDensity,
+    fillFrequency: requestedFillFrequency,
     exportSimplificationWarnings:
       profile.microtimingPolicy === 'swing_triplet'
         ? ['Swing feel exported as straight notation with swing-triplet receipt metadata.']
@@ -597,5 +651,5 @@ export function grooveScaffoldPass(score: ScoreModel, context: CompositionContex
     barPlans,
   };
   md.grooveScaffoldReceipts = [...receipts];
-  md.grooveScaffoldReceipt = `Groove scaffold: feel=${requestedFeel}; receipts=${[...receipts].join(',')}; fills=${fillCount}; odd_meter_bars=${oddMeterBars.length}`;
+  md.grooveScaffoldReceipt = `Groove scaffold: feel=${requestedFeel}; density=${requestedDensity}; fills=${requestedFillFrequency}; receipts=${[...receipts].join(',')}; fill_count=${fillCount}; odd_meter_bars=${oddMeterBars.length}`;
 }

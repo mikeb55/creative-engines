@@ -323,7 +323,7 @@ type VaultRemixSession = {
   patchForB: Partial<VaultGenerationOptions> | null;
 };
 
-/** Mirrors `driftAffinity` in `reharmCandidateEngine` â€” UI-only scoring / labels (no engine edits). */
+/** Mirrors `driftAffinity` in `reharmCandidateEngine` — UI-only scoring / labels (no engine edits). */
 function reharmDriftAffinityScore(chordTypeId: string, drift: EmotionalDrift): number {
   const id = chordTypeId;
   const lower = id.toLowerCase();
@@ -426,15 +426,15 @@ const VAULT_GENERATION_OPTIONS_HINT =
 
 function VaultImportChartSummary({ chart }: { chart: ParsedChart }) {
   const ts = chart.timeSignature;
-  const tsStr = ts ? `${ts.num}/${ts.den}` : 'â€”';
+  const tsStr = ts ? `${ts.num}/${ts.den}` : '—';
   const tempo =
     chart.tempo != null && Number.isFinite(chart.tempo) && chart.tempo > 0
       ? `${Math.round(chart.tempo)} BPM`
-      : 'â€”';
+      : '—';
   const bars = chart.measures?.length ?? 0;
-  const style = chart.style?.trim() ? chart.style : 'â€”';
+  const style = chart.style?.trim() ? chart.style : '—';
   const composer = chart.composer?.trim() ? chart.composer : null;
-  const title = chart.title?.trim() ? chart.title : 'â€”';
+  const title = chart.title?.trim() ? chart.title : '—';
   return (
     <div
       role="region"
@@ -463,7 +463,7 @@ function VaultImportChartSummary({ chart }: { chart: ParsedChart }) {
         </p>
       ) : null}
       <p style={{ margin: '0.2rem 0' }}>
-        <strong>Key:</strong> {chart.key ?? 'â€”'}
+        <strong>Key:</strong> {chart.key ?? '—'}
       </p>
       <p
         style={{
@@ -491,7 +491,7 @@ function VaultImportChartSummary({ chart }: { chart: ParsedChart }) {
             const m = bmm[k]!;
             return `bar ${k + 1}: ${m.num}/${m.den}`;
           })
-          .join(' Â· ');
+          .join(' · ');
         return (
           <p style={{ margin: '0.2rem 0' }}>
             <strong>Per-bar meter (iReal T):</strong> {line}
@@ -513,7 +513,7 @@ function VaultImportChartSummary({ chart }: { chart: ParsedChart }) {
 
 /** Client-side chord preflight failures (before generate). */
 const CHORD_PROGRESSION_PARSE_ERROR_MESSAGE =
-  'Could not parse chord progression. Use standard jazz notation e.g. Dm9, G13, Cmaj9, A7alt â€” separated by spaces or commas.';
+  'Could not parse chord progression. Use standard jazz notation e.g. Dm9, G13, Cmaj9, A7alt — separated by spaces or commas.';
 
 /** Receipt echo from engine (#17 chord export diagnostics). */
 type ChordDxReceiptUi = {
@@ -528,7 +528,7 @@ type ChordDxReceiptUi = {
 };
 
 const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
-  { id: 'antonio_carlos_jobim', label: 'AntÃ´nio Carlos Jobim' },
+  { id: 'antonio_carlos_jobim', label: 'Antônio Carlos Jobim' },
   { id: 'bach', label: 'Bach' },
   { id: 'bacharach', label: 'Bacharach' },
   { id: 'angelo_badalamenti', label: 'Angelo Badalamenti' },
@@ -536,7 +536,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'beatles', label: 'Beatles' },
   { id: 'beethoven', label: 'Beethoven' },
   { id: 'beethoven_late', label: 'Beethoven (Late Quartets)' },
-  { id: 'bartok', label: 'BartÃ³k (String Quartets)' },
+  { id: 'bartok', label: 'Bartók (String Quartets)' },
   { id: 'bill_evans', label: 'Bill Evans' },
   { id: 'billy_strayhorn', label: 'Billy Strayhorn' },
   { id: 'bob_dylan', label: 'Bob Dylan' },
@@ -606,7 +606,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'turtle_island', label: 'Turtle Island Quartet' },
   { id: 'dave_brubeck', label: 'Dave Brubeck' },
   { id: 'andrew_hill', label: 'Andrew Hill' },
-  { id: 'arvo_part', label: 'Arvo PÃ¤rt (Tintinnabuli)' },
+  { id: 'arvo_part', label: 'Arvo Pärt (Tintinnabuli)' },
   { id: 'charlie_parker', label: 'Charlie Parker' },
   { id: 'wayne_shorter', label: 'Wayne Shorter' },
   { id: 'xtc', label: 'XTC' },
@@ -633,7 +633,7 @@ const RHYTHM_SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'brazilian', label: 'Brazilian' },
   { id: 'new_orleans_second_line', label: 'New Orleans Second Line' },
   { id: 'cuban_afro_cuban', label: 'Cuban / Afro-Cuban' },
-  { id: 'bartok_bulgarian_aksak', label: 'BartÃ³k / Bulgarian Aksak' },
+  { id: 'bartok_bulgarian_aksak', label: 'Bartók / Bulgarian Aksak' },
   { id: 'free_proportional', label: 'Free / Proportional' },
   { id: 'baroque_dance', label: 'Baroque Dance' },
   { id: 'reich_phasing_grid', label: 'Reich / Phasing Grid' },
@@ -673,7 +673,7 @@ const FILM_HARMONIC_VOICE_IDS: readonly HarmonicVoiceId[] = [
 const HARMONIC_VOICE_FILM_SET = new Set<string>(FILM_HARMONIC_VOICE_IDS);
 
 /**
- * SQ VRB family canonical order (14 ids â€” full roster). VRB bundles
+ * SQ VRB family canonical order (14 ids — full roster). VRB bundles
  * ship for `beethoven_late`, `bartok`, `ravel`, `debussy`, `dutilleux`,
  * `messiaen`, `ligeti`, `arvo_part`, `satie`, `reich_glass`, `shostakovich`, `turtle_island`,
  * `crumb_black_angels`, `lachenmann`. Any reserved slots without an
@@ -751,7 +751,7 @@ const RHYTHM_ENGINE_LIST: { id: RhythmEngineId; label: string }[] = [
   { id: 'brazilian', label: 'Brazilian' },
   { id: 'new_orleans_second_line', label: 'New Orleans Second Line' },
   { id: 'cuban_afro_cuban', label: 'Cuban / Afro-Cuban' },
-  { id: 'bartok_bulgarian_aksak', label: 'BartÃ³k / Bulgarian Aksak' },
+  { id: 'bartok_bulgarian_aksak', label: 'Bartók / Bulgarian Aksak' },
   { id: 'free_proportional', label: 'Free / Proportional' },
   { id: 'baroque_dance', label: 'Baroque Dance' },
   { id: 'reich_phasing_grid', label: 'Reich / Phasing Grid' },
@@ -768,7 +768,7 @@ function resolveEffectivePrimarySongwriter(profile: StyleProfile): string {
   return 'donald_fagen';
 }
 
-/** Song Mode UI hint only â€” not sent on Generate (no backend contract). */
+/** Song Mode UI hint only — not sent on Generate (no backend contract). */
 const SONG_MODE_DUO_PAIRING_UX: Record<
   string,
   { primaryLabel: string; primaryRationale: string; alternateLabel: string; alternateRationale: string }
@@ -841,7 +841,7 @@ const SONGWRITER_LIBRARY_ORDERED = SONGWRITER_OPTIONS_WITH_RHYTHM.filter(
   (o) => !SONGWRITER_GROUP_SHIPPED_IDS.has(o.id) && !SONGWRITER_GROUP_READY_IDS.has(o.id)
 ).sort((a, b) => a.label.localeCompare(b.label));
 
-/** Visually hidden â€” referenced by `aria-describedby` on grouped songwriter/arranger selects (WCAG). */
+/** Visually hidden — referenced by `aria-describedby` on grouped songwriter/arranger selects (WCAG). */
 const VISUALLY_HIDDEN: CSSProperties = {
   position: 'absolute',
   width: 1,
@@ -888,7 +888,7 @@ function SongwriterSelectOptionGroups({ onOptionHover }: { onOptionHover?: (id: 
           );
         })}
       </optgroup>
-      <optgroup label="Shipped â€” Singer-Songwriter">
+      <optgroup label="Shipped — Singer-Songwriter">
         {SONGWRITER_GROUP_SHIPPED_SINGER_SONGWRITER_ORDER.filter((id) => SONGWRITER_OPTION_BY_ID.has(id)).map((id) => {
           const o = SONGWRITER_OPTION_BY_ID.get(id)!;
           return (
@@ -964,7 +964,7 @@ function formatTonalityVaultDiatonicClass(label: TonalityVaultUiAnnotation['diat
 
 function compareEnrichedLabelForUi(ann?: TonalityVaultUiAnnotation): string {
   if (!ann) return 'No enriched annotation';
-  return `${ann.scaleDegreeFromMajor ?? '?'} Â· ${formatTonalityVaultFunctionalHint(ann.functionalHint)} Â· ${formatTonalityVaultDiatonicClass(ann.diatonicClass)}`;
+  return `${ann.scaleDegreeFromMajor ?? '?'} · ${formatTonalityVaultFunctionalHint(ann.functionalHint)} · ${formatTonalityVaultDiatonicClass(ann.diatonicClass)}`;
 }
 
 function envTruthyFlag(raw: unknown): boolean {
@@ -1071,7 +1071,7 @@ function expandZappaPatternToRows(steps: ZappaMeterStep[], barsPerStep: number, 
   return out;
 }
 
-/** Frank Zappa Song Mode â€” discrete lengths aligned with engine song-form counts. */
+/** Frank Zappa Song Mode — discrete lengths aligned with engine song-form counts. */
 const ZAPPA_SONG_BAR_OPTIONS = [8, 16, 32, 64] as const;
 type ZappaSongBarCount = (typeof ZAPPA_SONG_BAR_OPTIONS)[number];
 
@@ -1117,9 +1117,9 @@ const ARRANGER_OPTIONS: { id: string; label: string }[] = [
   { id: 'gerald_wilson', label: 'Gerald Wilson' },
   { id: 'neal_hefti', label: 'Neal Hefti' },
   { id: 'don_sebesky', label: 'Don Sebesky' },
-  /** SQ VRB arrangers â€” surfaced only on the String Quartet preset. */
+  /** SQ VRB arrangers — surfaced only on the String Quartet preset. */
   { id: 'beethoven_late', label: 'Beethoven (Late Quartets)' },
-  { id: 'bartok', label: 'BartÃ³k' },
+  { id: 'bartok', label: 'Bartók' },
   { id: 'ravel', label: 'Ravel' },
   { id: 'dutilleux', label: 'Dutilleux' },
   { id: 'ligeti', label: 'Ligeti' },
@@ -1128,14 +1128,14 @@ const ARRANGER_OPTIONS: { id: string; label: string }[] = [
   { id: 'turtle_island', label: 'Turtle Island Quartet' },
   { id: 'crumb_black_angels', label: 'Crumb (Black Angels)' },
   { id: 'lachenmann', label: 'Lachenmann' },
-  { id: 'arvo_part', label: 'PÃ¤rt' },
+  { id: 'arvo_part', label: 'Pärt' },
   { id: 'satie', label: 'Satie' },
   { id: 'gershwin', label: 'Gershwin' },
   { id: 'cole_porter', label: 'Cole Porter' },
   { id: 'ornette_coleman', label: 'Ornette Coleman' },
 ];
 
-/** Matches engine `BigBandComposerId` / style-pairing â€œknownâ€ arrangers â€” grouped first like Style dropdowns. */
+/** Matches engine `BigBandComposerId` / style-pairing "known" arrangers — grouped first like Style dropdowns. */
 const ARRANGER_GROUP_CORE_ORDER: readonly string[] = [
   'ellington',
   'basie',
@@ -1148,7 +1148,7 @@ const ARRANGER_GROUP_CORE_ORDER: readonly string[] = [
 ];
 
 /**
- * SQ VRB arranger family canonical order â€” surfaced on the String
+ * SQ VRB arranger family canonical order — surfaced on the String
  * Quartet preset only (before the jazz arranger groups). Each id maps
  * 1:1 with a shipped `VoiceRuleBundle` so `attachVoiceRuleBundle` can
  * route the selection through `AUTO_RESOLVE_SONGWRITER_TO_VOICE_ID`.
@@ -1185,7 +1185,7 @@ function ArrangerSelectOptionGroups(props?: { variant?: 'default' | 'string_quar
     <>
       {isSq && (
         <>
-          <option value={ARRANGER_NONE_ID}>â€” None (no arranger) â€”</option>
+          <option value={ARRANGER_NONE_ID}>— None (no arranger) —</option>
           <optgroup label="String Quartet VRB">
             {ARRANGER_GROUP_SQ_VRB_ORDER.filter((id) => ARRANGER_OPTION_BY_ID.has(id)).map((id) => {
               const o = ARRANGER_OPTION_BY_ID.get(id)!;
@@ -1226,11 +1226,11 @@ const ARRANGER_DEFAULT_NON_SQ_ID = 'thad';
  * Two-way reset for arranger when the user switches presets.
  *
  * - Into `string_quartet`: a previously selected jazz arranger (not in the
- *   SQ VRB family and not `none`) is inappropriate â†’ reset to `none`.
+ *   SQ VRB family and not `none`) is inappropriate → reset to `none`.
  *   SQ VRB selections + `none` carry over.
  * - Out of `string_quartet`: a previously selected SQ VRB arranger (or
  *   the SQ-only `none` sentinel) has no matching option in the other
- *   presets' dropdowns â†’ reset to the default jazz arranger (`thad`).
+ *   presets' dropdowns → reset to the default jazz arranger (`thad`).
  *   Jazz arranger selections carry over.
  */
 function nextArrangerOnPresetChange(prevArranger: string, nextPresetId: string): string {
@@ -1250,17 +1250,17 @@ function isSqKnownIncompatibleBlend(idA: string, idB: string): boolean {
 }
 
 const DEFAULT_CUSTOM_HARMONY_PLACEHOLDER =
-  'e.g. Dm9, G13, Cmaj9, A7alt â€” or Cmaj7 | Am7 | Dm7 | G7 | ... (one chord per bar)';
+  'e.g. Dm9, G13, Cmaj9, A7alt — or Cmaj7 | Am7 | Dm7 | G7 | ... (one chord per bar)';
 const DUO_AND_SONG_MODE_CUSTOM_HARMONY_PLACEHOLDER =
-  'e.g. Dm9, G13, Cmaj9, A7alt â€” or Cmaj9 | Am7 | Dm9 | G13 | ... (one chord per bar)';
+  'e.g. Dm9, G13, Cmaj9, A7alt — or Cmaj9 | Am7 | Dm9 | G13 | ... (one chord per bar)';
 const ERA_CUSTOM_HARMONY_PLACEHOLDERS: Record<string, string> = {
-  swing: 'e.g. Dm9, G13, Cmaj9, A7alt â€” or Cmaj6 | Am7 | Dm9 | G7 | ... (one chord per bar)',
-  bebop: 'e.g. Dm9, G13, Cmaj9, A7alt â€” or Dm7b5 | G7b9 | Cmaj7 | Ab7#11 | ... (one chord per bar)',
-  cool_jazz: 'e.g. Dm9, G13, Cmaj9, A7alt â€” or Cmaj7 | Am9 | DmMaj7 | G13 | ... (one chord per bar)',
-  hard_bop: 'e.g. Dm9, G13, Cmaj9, A7alt â€” or Fm7 | Bb7#9 | Ebmaj7 | Cm7b5 | ... (one chord per bar)',
-  post_bop: 'e.g. Dm9, G13, Cmaj9, A7alt â€” or Fmaj7#11 | G7alt | Cm7 | Ab7sus | ... (one chord per bar)',
-  fusion: 'e.g. Dm9, G13, Cmaj9, A7alt â€” or Dm9 | Dm11 | Gm9 | Gm11 | ... (one chord per bar)',
-  contemporary: 'e.g. Dm9, G13, Cmaj9, A7alt â€” or Cmaj7#11 | Am11 | Dm9 | G7sus | ... (one chord per bar)',
+  swing: 'e.g. Dm9, G13, Cmaj9, A7alt — or Cmaj6 | Am7 | Dm9 | G7 | ... (one chord per bar)',
+  bebop: 'e.g. Dm9, G13, Cmaj9, A7alt — or Dm7b5 | G7b9 | Cmaj7 | Ab7#11 | ... (one chord per bar)',
+  cool_jazz: 'e.g. Dm9, G13, Cmaj9, A7alt — or Cmaj7 | Am9 | DmMaj7 | G13 | ... (one chord per bar)',
+  hard_bop: 'e.g. Dm9, G13, Cmaj9, A7alt — or Fm7 | Bb7#9 | Ebmaj7 | Cm7b5 | ... (one chord per bar)',
+  post_bop: 'e.g. Dm9, G13, Cmaj9, A7alt — or Fmaj7#11 | G7alt | Cm7 | Ab7sus | ... (one chord per bar)',
+  fusion: 'e.g. Dm9, G13, Cmaj9, A7alt — or Dm9 | Dm11 | Gm9 | Gm11 | ... (one chord per bar)',
+  contemporary: 'e.g. Dm9, G13, Cmaj9, A7alt — or Cmaj7#11 | Am11 | Dm9 | G7sus | ... (one chord per bar)',
   classical: DEFAULT_CUSTOM_HARMONY_PLACEHOLDER,
   romantic: DEFAULT_CUSTOM_HARMONY_PLACEHOLDER,
   impressionist: DEFAULT_CUSTOM_HARMONY_PLACEHOLDER,
@@ -1278,7 +1278,7 @@ const ENSEMBLE_OPTIONS: { id: string; label: string }[] = [
   { id: 'custom', label: 'Custom' },
 ];
 
-/** Fixed style stack for MusicXML modes (duo / ECM) â€” not user-configurable in this UI. */
+/** Fixed style stack for MusicXML modes (duo / ECM) — not user-configurable in this UI. */
 const DEFAULT_SCORE_STYLE_STACK = {
   primary: 'barry_harris' as const,
   styleBlend: { primary: 'strong' as const, secondary: 'off' as const, colour: 'off' as const },
@@ -1321,7 +1321,7 @@ const SONG_MODE_ADVANCED_STYLE_SET = new Set<SongModeStyleProfile>([
   'STYLE_PAT_METHENY',
 ]);
 
-/** Song Mode ECM surface â€” matches engine `applyEcmChamberStyleSurface` / GenerateRequest.ecmChamberMode. */
+/** Song Mode ECM surface — matches engine `applyEcmChamberStyleSurface` / GenerateRequest.ecmChamberMode. */
 type EcmChamberGenerationMode = 'angel_song' | 'balanced' | 'metheny_scofield';
 
 function ecmChamberFlow01ToMode(flow01: number): EcmChamberGenerationMode {
@@ -1340,7 +1340,7 @@ function ecmChamberModeToFlow01(mode: EcmChamberGenerationMode): number {
 function ecmChamberModeUiLabel(mode: EcmChamberGenerationMode): string {
   if (mode === 'angel_song') return 'Angel Song';
   if (mode === 'balanced') return 'Balanced ECM Duo';
-  return 'MethenyÂ·Scofield';
+  return 'Metheny·Scofield';
 }
 
 function songModeStyleProfileFromSelectValue(v: string): SongModeStyleProfile | null {
@@ -1368,7 +1368,7 @@ function songModeStyleProfileLabel(id: SongModeStyleProfile): string {
   return id.replace(/^STYLE_/, '').replace(/_/g, ' ');
 }
 
-/** Presets listed under "Other" â€” excluded from zone optgroups to avoid duplicate options. */
+/** Presets listed under "Other" — excluded from zone optgroups to avoid duplicate options. */
 const ALT_TUNING_OTHER_GROUP_IDS = ['standard', 'drop_d', 'custom'] as const;
 
 const ALT_TUNING_ZONE_GROUPS: { zone: AlternateGuitarTuningZone; label: string }[] = [
@@ -1425,6 +1425,31 @@ const SONG_MODE_ALT_TUNING_STYLE_PROFILES = new Set<SongModeStyleProfile>([
   'STYLE_ECM_CHAMBER',
 ]);
 
+type GrooveScaffoldFeelUi = 'swing' | 'funk' | 'rock' | 'bossa' | 'ballad' | 'odd_meter';
+type GrooveScaffoldDensityUi = 'sparse' | 'medium' | 'dense';
+type GrooveScaffoldFillFrequencyUi = 'sparse' | 'normal' | 'dense';
+
+const GROOVE_SCAFFOLD_FEEL_OPTIONS: { value: GrooveScaffoldFeelUi; label: string }[] = [
+  { value: 'swing', label: 'Swing' },
+  { value: 'funk', label: 'Funk' },
+  { value: 'rock', label: 'Rock' },
+  { value: 'bossa', label: 'Bossa' },
+  { value: 'ballad', label: 'Ballad' },
+  { value: 'odd_meter', label: 'Odd meter' },
+];
+
+const GROOVE_SCAFFOLD_DENSITY_OPTIONS: { value: GrooveScaffoldDensityUi; label: string }[] = [
+  { value: 'sparse', label: 'Sparse' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'dense', label: 'Dense' },
+];
+
+const GROOVE_SCAFFOLD_FILL_OPTIONS: { value: GrooveScaffoldFillFrequencyUi; label: string }[] = [
+  { value: 'sparse', label: 'Sparse' },
+  { value: 'normal', label: 'Normal' },
+  { value: 'dense', label: 'Dense' },
+];
+
 function ensembleLabel(id: string): string {
   return ENSEMBLE_OPTIONS.find((o) => o.id === id)?.label ?? id;
 }
@@ -1440,14 +1465,14 @@ function newVariationIdToken(): string {
   return `v-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
 }
 
-/** Phase 1 LeadSheet preflight â€” mirrors engine unpack rules for pasted/plain XML (files use binary extract). */
+/** Phase 1 LeadSheet preflight — mirrors engine unpack rules for pasted/plain XML (files use binary extract). */
 function validateLeadSheetMusicXmlForPhase1(trimmed: string): string | null {
   const r = extractScoreMusicXmlFromString(trimmed);
   return r.ok ? null : r.errors[0] ?? 'LeadSheet MusicXML could not be validated.';
 }
 
 const MUSICXML_IMPORT_INVALID_MESSAGE =
-  'File does not appear to be valid MusicXML â€” please check and try again';
+  'File does not appear to be valid MusicXML — please check and try again';
 
 /** Optional lead-sheet file upload: well-formed XML with MusicXML score root (partwise or timewise). */
 function validateMusicXmlScoreDocument(xml: string): boolean {
@@ -1472,7 +1497,7 @@ type GenResult = {
   xml?: string;
   riffCarryForward?: RiffCarryForward;
   riffMusicality?: { failedRules?: string[]; passed?: boolean; score?: number };
-  /** API echo â€” `musicxml` when a score file was produced. */
+  /** API echo — `musicxml` when a score file was produced. */
   productKind?: 'musicxml' | 'planning' | 'song_structure';
   filename?: string;
   filepath?: string;
@@ -1596,9 +1621,9 @@ type GenResult = {
   };
   voice2PolyphonyDiagnostics?: GuitarVoice2PolyphonyDiagnostics;
   vocalLeadSheetFilepath?: string;
-  /** Song Mode â€” GCE weighted overall when the gate ran (engine receipt). */
+  /** Song Mode — GCE weighted overall when the gate ran (engine receipt). */
   gceScore?: number;
-  /** Song Mode â€” ship gate threshold met when scored. */
+  /** Song Mode — ship gate threshold met when scored. */
   gceGatePassed?: boolean;
 };
 
@@ -1935,7 +1960,7 @@ function BigBandRhythmControls(props: {
         onToggle={(e) => onAdvancedOpen((e.currentTarget as HTMLDetailsElement).open)}
       >
         <summary style={{ cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-          Advanced â€” section intensity overrides
+          Advanced — section intensity overrides
         </summary>
         <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: 6 }}>
           {(Object.keys(BIG_BAND_SECTION_OVERRIDE_LABELS) as BigBandPhaseOverrideKey[]).map((phase) => (
@@ -2000,8 +2025,8 @@ export function HomeGenerate({
   const [sqArrangerSlot1, setSqArrangerSlot1] = useState(ARRANGER_NONE_ID);
   const [sqArrangerSlot2, setSqArrangerSlot2] = useState(ARRANGER_NONE_ID);
   const [sqArrangerPrimaryWeightPct, setSqArrangerPrimaryWeightPct] = useState(60);
-  const [songModeStyleProfile, setSongModeStyleProfile] = useState<SongModeStyleProfile>('STYLE_ECM');
-  /** ECM style (`STYLE_ECM` / `STYLE_ECM_CHAMBER`): 0 = Chamber (Angel Song pole), 0.5 = Balanced, 1 = Flow (MethenyÂ·Scofield pole). */
+  const [songModeStyleProfile, setSongModeStyleProfile] = useState<SongModeStyleProfile | ''>('');
+  /** ECM style (`STYLE_ECM` / `STYLE_ECM_CHAMBER`): 0 = Chamber (Angel Song pole), 0.5 = Balanced, 1 = Flow (Metheny·Scofield pole). */
   const [ecmChamberFlow01, setEcmChamberFlow01] = useState(0.5);
   const [intentGroove, setIntentGroove] = useState(0.5);
   const [intentSpace, setIntentSpace] = useState(0.5);
@@ -2017,6 +2042,11 @@ export function HomeGenerate({
   const [cubanRhythmPresetId, setCubanRhythmPresetId] = useState(DEFAULT_CUBAN_RHYTHM_PRESET_ID);
   const [greekRhythmPresetId, setGreekRhythmPresetId] = useState(DEFAULT_GREEK_RHYTHM_PRESET_ID);
   const [felaPercussionFeelMode, setFelaPercussionFeelMode] = useState<FelaPercussionFeelMode>('auto');
+  const [grooveScaffoldEnabled, setGrooveScaffoldEnabled] = useState(false);
+  const [grooveScaffoldFeel, setGrooveScaffoldFeel] = useState<GrooveScaffoldFeelUi>('swing');
+  const [grooveScaffoldDensity, setGrooveScaffoldDensity] = useState<GrooveScaffoldDensityUi>('medium');
+  const [grooveScaffoldFillFrequency, setGrooveScaffoldFillFrequency] =
+    useState<GrooveScaffoldFillFrequencyUi>('normal');
   const songwriterStyle = useMemo(() => resolveEffectivePrimarySongwriter(styleProfile), [styleProfile]);
 
   useEffect(() => {
@@ -2056,7 +2086,7 @@ export function HomeGenerate({
     if (sqArrangerSlot1 === ARRANGER_NONE_ID || sqArrangerSlot2 === ARRANGER_NONE_ID) return null;
     if (sqArrangerSlot1 === sqArrangerSlot2) return 'Select two different arrangers';
     if (isSqKnownIncompatibleBlend(sqArrangerSlot1, sqArrangerSlot2)) {
-      return 'These arrangers are incompatible â€” blend not available';
+      return 'These arrangers are incompatible — blend not available';
     }
     return null;
   }, [presetId, sqArrangerSlot1, sqArrangerSlot2]);
@@ -2121,7 +2151,7 @@ export function HomeGenerate({
   const [era, setEra] = useState('post_bop');
   const [ensembleConfigId, setEnsembleConfigId] = useState('full_band');
   const [scoreTitle, setScoreTitle] = useState('');
-  /** Guitarâ€“Bass Duo: optional chord line â€” 8 bars (tiled to 32 in long-form) or 32 bars (locked). When non-empty, engine uses custom harmony. */
+  /** Guitar–Bass Duo: optional chord line — 8 bars (tiled to 32 in long-form) or 32 bars (locked). When non-empty, engine uses custom harmony. */
   const [chordProgressionText, setChordProgressionText] = useState('');
   /** Reharm Apply: next request uses `harmonyMode: custom` once so the engine reparses wire before LOCK assert (vs stale `custom_locked`). */
   const reharmApplyHarmonyUnlockRef = useRef(false);
@@ -2274,16 +2304,16 @@ export function HomeGenerate({
   const [compareRunBId, setCompareRunBId] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [outputDir, setOutputDir] = useState<OutputDirectoryResponse | null>(null);
-  /** Same merge as Presets tab â€” single source of truth with engine `getPresets()`. */
+  /** Same merge as Presets tab — single source of truth with engine `getPresets()`. */
   const [modePresets, setModePresets] = useState<AppPresetCard[]>(() => [...APP_PRESET_REGISTRY]);
   /** Song Mode duo pairing chip: per-writer index 0 = primary, 1 = alternate (UI only). */
   const [songModeDuoPairingVariantByWriter, setSongModeDuoPairingVariantByWriter] = useState<
     Record<string, number>
   >({});
   const [duoIntent, setDuoIntent] = useState<'conversational' | 'supportive'>('conversational');
-  /** ECM Chamber Song Mode â€” UI-only override label for sweep depth (no API wiring). */
+  /** ECM Chamber Song Mode — UI-only override label for sweep depth (no API wiring). */
   const [ecmFullSweepOverride, setEcmFullSweepOverride] = useState(false);
-  /** Last vault RNG options (for remix parity) â€” set on each successful vault Generate. */
+  /** Last vault RNG options (for remix parity) — set on each successful vault Generate. */
   const [iRealVaultLastRunOptions, setIRealVaultLastRunOptions] = useState<VaultGenerationOptions | null>(null);
   const [chordPasteVaultLastRunOptions, setChordPasteVaultLastRunOptions] = useState<VaultGenerationOptions | null>(
     null
@@ -2293,7 +2323,7 @@ export function HomeGenerate({
 
   const [vaultRemixSession, setVaultRemixSession] = useState<VaultRemixSession | null>(null);
 
-  /** After "Keep both" â€” show two saved variants until next vault Generate. */
+  /** After "Keep both" — show two saved variants until next vault Generate. */
   const [iRealVaultDual, setIRealVaultDual] = useState<{ a: IRealVaultOutput; b: IRealVaultOutput } | null>(null);
   const [chordPasteVaultDual, setChordPasteVaultDual] = useState<{ a: IRealVaultOutput; b: IRealVaultOutput } | null>(
     null
@@ -2397,7 +2427,7 @@ export function HomeGenerate({
     return scored.slice(0, 8).map((s) => s.c);
   }, [chordInspectorResult, chordInspectorReharmPanelOpen, chordInspectorReharmDriftSlider]);
 
-  const songModeStyleProfileRef = useRef<SongModeStyleProfile>(songModeStyleProfile);
+  const songModeStyleProfileRef = useRef<SongModeStyleProfile | ''>(songModeStyleProfile);
   const ecmChamberFlow01Ref = useRef(ecmChamberFlow01);
   const alternateTuningEnabledRef = useRef(alternateTuningEnabled);
   const alternateTuningModeRef = useRef<GuitarTuningMode>(alternateTuningMode);
@@ -2914,7 +2944,7 @@ export function HomeGenerate({
         /**
          * Song Mode: users often paste the 32-bar line into "Tonal centre" instead of "Chord progression".
          * If we only read `chordProgressionText`, the API gets a long string in `tonalCenter` and no
-         * `chordProgressionText` â†’ engine falls back to built-in duo32 (Dmin9/G13/â€¦).
+         * `chordProgressionText` → engine falls back to built-in duo32 (Dmin9/G13/…).
          */
         const songChordLine =
           presetId === 'song_mode'
@@ -3364,11 +3394,17 @@ export function HomeGenerate({
           ...(presetId === 'song_mode'
             ? {
                 ...(typeof __generateCorrelationId === 'string' ? { __generateCorrelationId } : {}),
-                /** Reinforces coreFields â€” visible in `[PAYLOAD]` and survives mapping edge cases. */
+                /** Reinforces coreFields — visible in `[PAYLOAD]` and survives mapping edge cases. */
                 primarySongwriterStyle: songwriterStyle.trim(),
                 duoIntent,
-                styleProfile: liveSongModeStyleProfile,
+                ...(liveSongModeStyleProfile ? { styleProfile: liveSongModeStyleProfile } : {}),
                 leadSheetHarmonyDisplayMode: leadSheetHarmonyDisplayModeUi,
+                grooveScaffold: {
+                  enabled: grooveScaffoldEnabled,
+                  feel: grooveScaffoldFeel,
+                  density: grooveScaffoldDensity,
+                  fillFrequency: grooveScaffoldFillFrequency,
+                },
                 intent: {
                   groove: intentGroove,
                   space: intentSpace,
@@ -3586,7 +3622,7 @@ export function HomeGenerate({
           ].filter((x): x is string => typeof x === 'string' && x.trim().length > 0);
           const runEntry: SongModeRecentRun = {
             id,
-            label: `Seed ${r.runManifest.seed ?? '-'} Â· ${r.runManifest.timestamp ?? 'run'}`,
+            label: `Seed ${r.runManifest.seed ?? '-'} · ${r.runManifest.timestamp ?? 'run'}`,
             seed: r.runManifest.seed,
             timestamp: r.runManifest.timestamp,
             filepath: r.filepath,
@@ -3680,6 +3716,10 @@ export function HomeGenerate({
       riffBarLocks,
       riffCarryForward,
       songModeStyleProfile,
+      grooveScaffoldEnabled,
+      grooveScaffoldFeel,
+      grooveScaffoldDensity,
+      grooveScaffoldFillFrequency,
       intentGroove,
       intentSpace,
       intentExpression,
@@ -3896,7 +3936,9 @@ export function HomeGenerate({
     hadLeadSheetInputForRun &&
     isLeadSheetSongModeRoute(summaryPresetId, receiptPrimarySongwriterStyle);
   const indieArtPopAltTuningEligible =
-    presetId === 'song_mode' && SONG_MODE_ALT_TUNING_STYLE_PROFILES.has(songModeStyleProfile);
+    presetId === 'song_mode' &&
+    !!songModeStyleProfile &&
+    SONG_MODE_ALT_TUNING_STYLE_PROFILES.has(songModeStyleProfile);
 
   const frankZappaMeterMapBlock = (
     <div
@@ -3911,7 +3953,7 @@ export function HomeGenerate({
       <span
         style={{ display: 'block', marginBottom: 8, fontSize: '0.85rem', color: 'var(--text-muted)' }}
       >
-        Frank Zappa â€” meter map (mixed meters)
+        Frank Zappa — meter map (mixed meters)
       </span>
       <p style={{ margin: '0 0 0.5rem', fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
         Time signatures for export and odd-meter planning ({songFormBars} bars). Uses{' '}
@@ -3948,7 +3990,7 @@ export function HomeGenerate({
         ))}
       </div>
       <p style={{ margin: '0 0 0.35rem', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-        Zappa Classic: 7/8 then 4/4 each bar. Black Page: 19/16 then 4/4 each bar. Oh Noâ€“Factory: repeating cycles tile
+        Zappa Classic: 7/8 then 4/4 each bar. Black Page: 19/16 then 4/4 each bar. Oh No–Factory: repeating cycles tile
         across your bar count.
       </p>
       <div
@@ -4265,7 +4307,7 @@ export function HomeGenerate({
       <span
         style={{ display: 'block', marginBottom: 8, fontSize: '0.85rem', color: 'var(--text-muted)' }}
       >
-        {composerOddMeterSongwriterLabel} â€” meter map
+        {composerOddMeterSongwriterLabel} — meter map
       </span>
       <p style={{ margin: '0 0 0.5rem', fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
         Time signatures for export and odd-meter planning ({songFormBars} bars). Uses{' '}
@@ -4354,7 +4396,7 @@ export function HomeGenerate({
               role="status"
               title={
                 showEcmAmberSweepBadge
-                  ? 'Long-form or mixed-meter chart â€” ECM Chamber reduces sweep variant depth'
+                  ? 'Long-form or mixed-meter chart — ECM Chamber reduces sweep variant depth'
                   : 'ECM Chamber Song Mode uses conservative sweep defaults'
               }
               style={{
@@ -4370,7 +4412,7 @@ export function HomeGenerate({
               }}
             >
               {showEcmAmberSweepBadge
-                ? 'Long-form sparse chart â€” reduced variant depth'
+                ? 'Long-form sparse chart — reduced variant depth'
                 : 'Safe sweep profile'}
             </span>
           ) : null}
@@ -4551,6 +4593,83 @@ export function HomeGenerate({
             </p>
           </div>
         )}
+        {presetId === 'song_mode' && (
+          <div
+            style={{
+              marginTop: '0.65rem',
+              maxWidth: 560,
+              padding: '0.6rem 0.7rem',
+              borderRadius: 8,
+              border: '1px solid var(--border)',
+              background: 'rgba(15,23,42,0.06)',
+            }}
+          >
+            <label
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                fontSize: '0.9rem',
+                color: 'var(--text)',
+                cursor: loading ? 'default' : 'pointer',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={grooveScaffoldEnabled}
+                onChange={(e) => setGrooveScaffoldEnabled(e.target.checked)}
+                disabled={loading}
+              />
+              Groove scaffold
+            </label>
+            {grooveScaffoldEnabled && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.7rem', marginTop: '0.6rem' }}>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                  Feel
+                  <select
+                    value={grooveScaffoldFeel}
+                    onChange={(e) => setGrooveScaffoldFeel(e.target.value as GrooveScaffoldFeelUi)}
+                    disabled={loading}
+                  >
+                    {GROOVE_SCAFFOLD_FEEL_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                  Density
+                  <select
+                    value={grooveScaffoldDensity}
+                    onChange={(e) => setGrooveScaffoldDensity(e.target.value as GrooveScaffoldDensityUi)}
+                    disabled={loading}
+                  >
+                    {GROOVE_SCAFFOLD_DENSITY_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                  Fills
+                  <select
+                    value={grooveScaffoldFillFrequency}
+                    onChange={(e) => setGrooveScaffoldFillFrequency(e.target.value as GrooveScaffoldFillFrequencyUi)}
+                    disabled={loading}
+                  >
+                    {GROOVE_SCAFFOLD_FILL_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            )}
+          </div>
+        )}
         {modeUx && (
           <p
             style={{
@@ -4706,13 +4825,13 @@ export function HomeGenerate({
             <p style={{ margin: '0.65rem 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
               <strong style={{ color: 'var(--text)' }}>Metheny</strong> leans modal and melodic;{' '}
               <strong style={{ color: 'var(--text)' }}>Schneider / Wheeler</strong> leans expansive clouds and
-              swells â€” pick the flavour below.
+              swells — pick the flavour below.
             </p>
           )}
           {(presetId === 'song_mode' || presetId === 'big_band') && (
             <p style={{ margin: '0.65rem 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
               <strong style={{ color: 'var(--text)' }}>Style pairing</strong> blends songwriter and arranger
-              habits for colour â€” guidance for the plan, not a second engine.
+              habits for colour — guidance for the plan, not a second engine.
             </p>
           )}
           {presetId === 'string_quartet' && (
@@ -4849,7 +4968,7 @@ export function HomeGenerate({
           >
             Short key label only (e.g. <code>C</code>). Enter your <strong style={{ color: 'var(--text)' }}>full
             chord progression</strong> (same length as <strong style={{ color: 'var(--text)' }}>Number of bars</strong>
-            : 8, 16, or 32) in <strong style={{ color: 'var(--text)' }}>Chord progression</strong> below â€” not here.
+            : 8, 16, or 32) in <strong style={{ color: 'var(--text)' }}>Chord progression</strong> below — not here.
           </p>
         )}
         <input
@@ -4897,7 +5016,7 @@ export function HomeGenerate({
               }}
             >
               Standard jazz symbols such as <code>Dm9</code>, <code>G13</code>, <code>Cmaj9</code>, <code>A7alt</code>{' '}
-              â€” separated by spaces or commas, or one chord per bar with <code>|</code>, <code>,</code>,{' '}
+              — separated by spaces or commas, or one chord per bar with <code>|</code>, <code>,</code>,{' '}
               <code>;</code>, or (without <code>|</code>) newlines / spaced <code>/</code>. Slash chords like{' '}
               <code>G7/B</code> are one symbol. This list is the only harmonic source for Wyble (no default loop).
             </p>
@@ -4923,8 +5042,8 @@ export function HomeGenerate({
               }}
             >
               Use standard jazz notation (e.g. <code>Dm9</code>, <code>G13</code>, <code>Cmaj9</code>, <code>A7alt</code>)
-              â€” spaces or commas, or one chord per bar for the length under <strong style={{ color: 'var(--text)' }}>Number of bars</strong>{' '}
-              (8â€“64 in allowed lengths). Slash chords like <code>D/F#</code> stay one symbol. Leave empty for the built-in
+              — spaces or commas, or one chord per bar for the length under <strong style={{ color: 'var(--text)' }}>Number of bars</strong>{' '}
+              (8–64 in allowed lengths). Slash chords like <code>D/F#</code> stay one symbol. Leave empty for the built-in
               study progression.
             </p>
           ) : presetId === 'big_band' || presetId === 'string_quartet' ? (
@@ -4937,7 +5056,7 @@ export function HomeGenerate({
               }}
             >
               Use standard jazz notation (e.g. <code>Dm9</code>, <code>G13</code>, <code>Cmaj9</code>, <code>A7alt</code>)
-              â€” spaces or commas, or one chord per bar for the length under <strong style={{ color: 'var(--text)' }}>Number of bars</strong>{' '}
+              — spaces or commas, or one chord per bar for the length under <strong style={{ color: 'var(--text)' }}>Number of bars</strong>{' '}
               (planning uses at least 16 bars). Slash chords like <code>D/F#</code> stay one symbol. Leave empty for the built-in
               study cycle.
             </p>
@@ -4950,8 +5069,8 @@ export function HomeGenerate({
                 lineHeight: 1.45,
               }}
             >
-              Standard jazz symbols (e.g. <code>Dm9</code>, <code>G13</code>, <code>Cmaj9</code>, <code>A7alt</code>) â€” spaces or commas.
-              One chord or a <strong style={{ color: 'var(--text)' }}>2â€“4</strong> chord loop â€” same separators
+              Standard jazz symbols (e.g. <code>Dm9</code>, <code>G13</code>, <code>Cmaj9</code>, <code>A7alt</code>) — spaces or commas.
+              One chord or a <strong style={{ color: 'var(--text)' }}>2–4</strong> chord loop — same separators
               as duo when you use more than one chord. Leave empty for a default vamp.
             </p>
           ) : (
@@ -4965,7 +5084,7 @@ export function HomeGenerate({
             >
               <strong style={{ color: 'var(--text)' }}>Exactly {songFormBars}</strong> chords for locked harmony (match{' '}
               <strong style={{ color: 'var(--text)' }}>Number of bars</strong>). Use standard jazz notation (e.g.{' '}
-              <code>Dm9</code>, <code>G13</code>, <code>Cmaj9</code>, <code>A7alt</code>) â€” spaces or commas, or one per bar with{' '}
+              <code>Dm9</code>, <code>G13</code>, <code>Cmaj9</code>, <code>A7alt</code>) — spaces or commas, or one per bar with{' '}
               <code>|</code>. Slash chords (e.g. <code>E7(#11)/G#</code>) are one symbol per bar.
             </p>
           )}
@@ -5036,7 +5155,7 @@ export function HomeGenerate({
                   lineHeight: 1.45,
                 }}
               >
-                Import chord symbols from a score file â€” overrides the chord progression field above for Generate.
+                Import chord symbols from a score file — overrides the chord progression field above for Generate.
                 Compressed scores must use <code style={{ fontSize: '0.8rem' }}>.mxl</code> (unpack uses the same path as
                 lead-sheet import).
               </p>
@@ -5060,7 +5179,7 @@ export function HomeGenerate({
                   disabled={loading}
                   onClick={() => musicXmlHarmonyFileInputRef.current?.click()}
                 >
-                  Choose MusicXML fileâ€¦
+                  Choose MusicXML file…
                 </button>
                 {musicXmlFileLabel && (
                   <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
@@ -5164,7 +5283,7 @@ export function HomeGenerate({
               disabled={loading || (presetId === 'song_mode' && songwriterStyle === 'frank_zappa')}
               title={
                 presetId === 'song_mode' && songwriterStyle === 'frank_zappa'
-                  ? 'Use Frank Zappa â€” song length in the Songwriter section'
+                  ? 'Use Frank Zappa — song length in the Songwriter section'
                   : undefined
               }
               style={{
@@ -5296,13 +5415,13 @@ export function HomeGenerate({
                   ? (() => {
                       const f = FORM_OPTIONS_UI.find((x) => x.id === formId);
                       return f
-                        ? `${f.label} â€” ${f.bars} bars (${f.structure})`
+                        ? `${f.label} — ${f.bars} bars (${f.structure})`
                         : 'System default';
                     })()
                   : 'System default'}
               </span>
               <span style={{ flexShrink: 0, color: 'var(--text-muted)', fontSize: '0.75rem' }} aria-hidden>
-                â–¾
+                ▾
               </span>
             </button>
             {songFormMenuOpen && (
@@ -5374,7 +5493,7 @@ export function HomeGenerate({
                       cursor: 'pointer',
                     }}
                   >
-                    {`${f.label} â€” ${f.bars} bars (${f.structure})`}
+                    {`${f.label} — ${f.bars} bars (${f.structure})`}
                   </div>
                 ))}
               </div>
@@ -5533,7 +5652,7 @@ export function HomeGenerate({
           Feel
         </span>
         <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 0.4rem', maxWidth: 520 }}>
-          How much the engine nudges the variation â€” not the form of the piece.
+          How much the engine nudges the variation — not the form of the piece.
         </p>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, fontSize: '0.9rem' }}>
           <input
@@ -5584,7 +5703,7 @@ export function HomeGenerate({
           type="text"
           value={scoreTitle}
           onChange={(e) => setScoreTitle(e.target.value)}
-          placeholder="e.g. My sketch â€” or leave blank for a default title"
+          placeholder="e.g. My sketch — or leave blank for a default title"
           disabled={loading}
           style={{
             width: '100%',
@@ -5904,11 +6023,16 @@ export function HomeGenerate({
             <select
               value={songModeStyleProfile}
               onChange={(e) => {
+                if (e.target.value === '') {
+                  setSongModeStyleProfile('');
+                  return;
+                }
                 const next = songModeStyleProfileFromSelectValue(e.target.value);
                 if (next) setSongModeStyleProfile(next);
               }}
               disabled={loading}
             >
+              <option value="">System default</option>
               <optgroup label="Advanced styles (deeper behavior)">
                 {SONG_MODE_STYLE_OPTIONS.filter((id) => SONG_MODE_ADVANCED_STYLE_SET.has(id)).map((id) => (
                   <option key={id} value={id}>
@@ -5960,7 +6084,7 @@ export function HomeGenerate({
                       [
                         { mode: 'angel_song' as const, label: 'Angel Song' },
                         { mode: 'balanced' as const, label: 'Balanced ECM Duo' },
-                        { mode: 'metheny_scofield' as const, label: 'MethenyÂ·Scofield' },
+                        { mode: 'metheny_scofield' as const, label: 'Metheny·Scofield' },
                       ] as const
                     ).map(({ mode, label }) => {
                       const active = ecmChamberFlow01ToMode(ecmChamberFlow01) === mode;
@@ -6117,7 +6241,7 @@ export function HomeGenerate({
               onChange={(e) => setIncludeVocalLeadSheet(e.target.checked)}
               disabled={loading}
             />
-            Include vocal lead sheet (planned vocal melody â€” separate MusicXML for singers)
+            Include vocal lead sheet (planned vocal melody — separate MusicXML for singers)
           </label>
           <span style={{ display: 'block', marginBottom: 0.35, color: 'var(--text-muted)', fontSize: 0.9 }}>
             Style pairing
@@ -6485,7 +6609,7 @@ export function HomeGenerate({
               <span
                 style={{ display: 'block', marginBottom: 8, fontSize: '0.85rem', color: 'var(--text-muted)' }}
               >
-                Frank Zappa â€” song length
+                Frank Zappa — song length
               </span>
               <p style={{ margin: '0 0 0.45rem', fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
                 Sets <strong style={{ color: 'var(--text)' }}>Number of bars</strong> for this generate (chords, engine,
@@ -6544,10 +6668,10 @@ export function HomeGenerate({
               <span
                 style={{ display: 'block', marginBottom: 8, fontSize: '0.85rem', color: 'var(--text-muted)' }}
               >
-                Frank Zappa â€” lead solo (Slonimsky layer)
+                Frank Zappa — lead solo (Slonimsky layer)
               </span>
               <p style={{ margin: '0 0 0.5rem', fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
-                Separate MusicXML part. Default range matches guitar (MIDI 40â€“84).
+                Separate MusicXML part. Default range matches guitar (MIDI 40–84).
               </p>
               <div
                 style={{
@@ -6689,7 +6813,7 @@ export function HomeGenerate({
             id="co-sm-style-pairing-hint"
             style={{ margin: '0 0 0.65rem', fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.45 }}
           >
-            Arranger and era nudge style pairing and era-aware harmony colour in Song Mode planningâ€”soft hints, not
+            Arranger and era nudge style pairing and era-aware harmony colour in Song Mode planning—soft hints, not
             hard ensemble switches.
           </p>
           <div style={{ marginBottom: '0.65rem' }}>
@@ -6749,7 +6873,7 @@ export function HomeGenerate({
               <option value="">None</option>
               <option value="schubert">Schubert</option>
               <option value="schumann">Schumann</option>
-              <option value="faure">FaurÃ©</option>
+              <option value="faure">Fauré</option>
             </select>
           </div>
         </div>
@@ -6797,7 +6921,7 @@ export function HomeGenerate({
               <strong style={{ color: 'var(--text)' }}>Solo Section</strong>,{' '}
               <strong style={{ color: 'var(--text)' }}>Soli Chorus</strong>,{' '}
               <strong style={{ color: 'var(--text)' }}>Shout Chorus</strong>, and{' '}
-              <strong style={{ color: 'var(--text)' }}>Rideout</strong> â€” not every chart uses every section.{' '}
+              <strong style={{ color: 'var(--text)' }}>Rideout</strong> — not every chart uses every section.{' '}
               <strong style={{ color: 'var(--text)' }}>Blues 12</strong> fixes a 42-bar chart (Intro 2 + Head 12 + Solo
               12 + Shout 12 + Rideout 4).
             </p>
@@ -6990,7 +7114,7 @@ export function HomeGenerate({
                   htmlFor="co-sq-arranger-weight"
                   style={{ display: 'block', marginBottom: 4, fontSize: '0.82rem', color: 'var(--text-muted)' }}
                 >
-                  Arranger 1 weight ({sqArrangerPrimaryWeightPct}% â€” Arranger 2: {100 - sqArrangerPrimaryWeightPct}%)
+                  Arranger 1 weight ({sqArrangerPrimaryWeightPct}% — Arranger 2: {100 - sqArrangerPrimaryWeightPct}%)
                 </label>
                 <input
                   id="co-sq-arranger-weight"
@@ -7051,7 +7175,7 @@ export function HomeGenerate({
                   {100 - sqArrangerPrimaryWeightPct}%
                 </div>
                 <div style={{ marginTop: 6, color: 'var(--text-muted)' }}>
-                  Harmonic rhythm: {sqBlendPreview.harmonicRhythm.minChordDurationBars}â€“
+                  Harmonic rhythm: {sqBlendPreview.harmonicRhythm.minChordDurationBars}–
                   {sqBlendPreview.harmonicRhythm.maxChordDurationBars} bars
                 </div>
                 <div style={{ marginTop: 4, color: 'var(--text-muted)' }}>
@@ -7160,7 +7284,7 @@ export function HomeGenerate({
         {!isSqToBbWorkflow && (
           <>
             <button onClick={() => void generate()} disabled={loading || sqArrangerGenerateBlocked}>
-              {loading ? 'Generatingâ€¦' : 'Generate'}
+              {loading ? 'Generating…' : 'Generate'}
             </button>
             <button
               className="secondary"
@@ -7220,7 +7344,7 @@ export function HomeGenerate({
             htmlFor="co-chord-paste-text"
             style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
           >
-            Chords â€” bars separated by <code style={{ fontSize: '0.8rem' }}>|</code>, chords in a bar separated by
+            Chords — bars separated by <code style={{ fontSize: '0.8rem' }}>|</code>, chords in a bar separated by
             spaces (e.g. Cmaj7 Dm7 | G7 | Cmaj7)
           </label>
           <textarea
@@ -7530,7 +7654,7 @@ export function HomeGenerate({
                 }
               }}
             >
-              {chordPasteBusy ? 'Workingâ€¦' : 'Generate from Chords'}
+              {chordPasteBusy ? 'Working…' : 'Generate from Chords'}
             </button>
           </div>
           {chordPasteError && (
@@ -7554,7 +7678,7 @@ export function HomeGenerate({
               <p style={{ margin: '0 0 0.35rem', color: 'var(--text)' }}>
                 <strong>{chordPasteOutput.title.trim() ? chordPasteOutput.title : '(untitled)'}</strong>
               </p>
-              <p style={{ margin: '0.25rem 0' }}>Key: {chordPasteOutput.key ?? 'â€”'}</p>
+              <p style={{ margin: '0.25rem 0' }}>Key: {chordPasteOutput.key ?? '—'}</p>
               <p
                 style={{
                   margin: '0.25rem 0',
@@ -7586,16 +7710,16 @@ export function HomeGenerate({
                 const totalBars = barsPerChorus * chordPasteChorusCount;
                 return (
                   <p style={{ margin: '0.25rem 0' }}>
-                    Total bars: {totalBars} ({barsPerChorus} bars/chorus Ã— {chordPasteChorusCount} choruses)
+                    Total bars: {totalBars} ({barsPerChorus} bars/chorus × {chordPasteChorusCount} choruses)
                   </p>
                 );
               })()}
               <p style={{ margin: '0.25rem 0' }}>
-                Mapped chords: {chordPasteOutput.chordMappings.length} Â· Unmapped:{' '}
+                Mapped chords: {chordPasteOutput.chordMappings.length} · Unmapped:{' '}
                 {chordPasteOutput.unmappedChords.length}
               </p>
               <p style={{ margin: '0.35rem 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                <strong>Vault seed:</strong> {chordPasteOutput.seed ?? 'â€”'}
+                <strong>Vault seed:</strong> {chordPasteOutput.seed ?? '—'}
               </p>
               {chordPasteVaultDual ? (
                 <p style={{ margin: '0.35rem 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
@@ -7660,7 +7784,7 @@ export function HomeGenerate({
                       >
                         <div style={{ fontWeight: 600, marginBottom: 6 }}>Saved variant {side.toUpperCase()}</div>
                         <p style={{ margin: '0.15rem 0', fontSize: '0.78rem' }}>
-                          Bars: {o.bars} Â· Mapped: {o.chordMappings.length}
+                          Bars: {o.bars} · Mapped: {o.chordMappings.length}
                         </p>
                         <ChorusArcStrip
                           chorusCount={chordPasteChorusCount}
@@ -8019,7 +8143,7 @@ export function HomeGenerate({
                 }
               }}
             >
-              {iRealVaultBusy ? 'Workingâ€¦' : 'Generate from iReal'}
+              {iRealVaultBusy ? 'Working…' : 'Generate from iReal'}
             </button>
           </div>
           {iRealVaultOutput && (
@@ -8027,7 +8151,7 @@ export function HomeGenerate({
               <p style={{ margin: '0 0 0.35rem', color: 'var(--text)' }}>
                 <strong>{iRealVaultOutput.title.trim() ? iRealVaultOutput.title : '(untitled)'}</strong>
               </p>
-              <p style={{ margin: '0.25rem 0' }}>Key: {iRealVaultOutput.key ?? 'â€”'}</p>
+              <p style={{ margin: '0.25rem 0' }}>Key: {iRealVaultOutput.key ?? '—'}</p>
               {iRealParsedChart?.timeSignature ? (
                 <p
                   style={{
@@ -8059,16 +8183,16 @@ export function HomeGenerate({
                 const totalBars = barsPerChorus * iRealVaultChorusCount;
                 return (
                   <p style={{ margin: '0.25rem 0' }}>
-                    Total bars: {totalBars} ({barsPerChorus} bars/chorus Ã— {iRealVaultChorusCount} choruses)
+                    Total bars: {totalBars} ({barsPerChorus} bars/chorus × {iRealVaultChorusCount} choruses)
                   </p>
                 );
               })()}
               <p style={{ margin: '0.25rem 0' }}>
-                Mapped chords: {iRealVaultOutput.chordMappings.length} Â· Unmapped:{' '}
+                Mapped chords: {iRealVaultOutput.chordMappings.length} · Unmapped:{' '}
                 {iRealVaultOutput.unmappedChords.length}
               </p>
               <p style={{ margin: '0.35rem 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                <strong>Vault seed:</strong> {iRealVaultOutput.seed ?? 'â€”'}
+                <strong>Vault seed:</strong> {iRealVaultOutput.seed ?? '—'}
               </p>
               {iRealVaultDual ? (
                 <p style={{ margin: '0.35rem 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
@@ -8131,7 +8255,7 @@ export function HomeGenerate({
                       >
                         <div style={{ fontWeight: 600, marginBottom: 6 }}>Saved variant {side.toUpperCase()}</div>
                         <p style={{ margin: '0.15rem 0', fontSize: '0.78rem' }}>
-                          Bars: {o.bars} Â· Mapped: {o.chordMappings.length}
+                          Bars: {o.bars} · Mapped: {o.chordMappings.length}
                         </p>
                         <ChorusArcStrip
                           chorusCount={iRealVaultChorusCount}
@@ -8504,7 +8628,7 @@ export function HomeGenerate({
                         style={{ width: '100%', maxWidth: 360 }}
                       />
                       <p style={{ margin: '0.35rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                        {chordInspectorReharmDriftSlider.toFixed(1)} Â· reorder by affinity to selected drift
+                        {chordInspectorReharmDriftSlider.toFixed(1)} · reorder by affinity to selected drift
                       </p>
                     </div>
                     {chordInspectorReharmTopEight.length === 0 ? (
@@ -8852,7 +8976,7 @@ export function HomeGenerate({
                 })();
               }}
             >
-              {pdfVaultBusy ? 'Workingâ€¦' : 'Extract & Generate'}
+              {pdfVaultBusy ? 'Working…' : 'Extract & Generate'}
             </button>
           </div>
           {pdfVaultError && (
@@ -8876,14 +9000,14 @@ export function HomeGenerate({
               <p style={{ margin: '0 0 0.35rem', color: 'var(--text)' }}>
                 <strong>{pdfVaultOutput.title.trim() ? pdfVaultOutput.title : '(untitled)'}</strong>
               </p>
-              <p style={{ margin: '0.25rem 0' }}>Key: {pdfVaultOutput.key ?? 'â€”'}</p>
+              <p style={{ margin: '0.25rem 0' }}>Key: {pdfVaultOutput.key ?? '—'}</p>
               <p style={{ margin: '0.25rem 0' }}>Total bars: {pdfVaultOutput.bars}</p>
               <p style={{ margin: '0.25rem 0' }}>
-                Mapped chords: {pdfVaultOutput.chordMappings.length} Â· Unmapped:{' '}
+                Mapped chords: {pdfVaultOutput.chordMappings.length} · Unmapped:{' '}
                 {pdfVaultOutput.unmappedChords.length}
               </p>
               <p style={{ margin: '0.35rem 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                <strong>Vault seed:</strong> {pdfVaultOutput.seed ?? 'â€”'}
+                <strong>Vault seed:</strong> {pdfVaultOutput.seed ?? '—'}
               </p>
               {pdfVaultParsedChart?.measures?.length ? (
                 <ChorusArcStrip
@@ -8969,7 +9093,7 @@ export function HomeGenerate({
                       >
                         <div style={{ fontWeight: 600, marginBottom: 6 }}>Saved variant {side.toUpperCase()}</div>
                         <p style={{ margin: '0.15rem 0', fontSize: '0.78rem' }}>
-                          Bars: {o.bars} Â· Mapped: {o.chordMappings.length}
+                          Bars: {o.bars} · Mapped: {o.chordMappings.length}
                         </p>
                         <ChorusArcStrip
                           chorusCount={1}
@@ -9073,7 +9197,7 @@ export function HomeGenerate({
       {vaultRemixSession ? (
         <div
           role="dialog"
-          aria-label="Vault remix â€” same seed compare"
+          aria-label="Vault remix — same seed compare"
           style={{
             marginTop: '1rem',
             marginBottom: '1rem',
@@ -9101,8 +9225,8 @@ export function HomeGenerate({
             const barsPerChorus = s.chart.measures?.length ?? 1;
             const pill =
               s.axis === 'drift'
-                ? `Drift: ${driftLabel(ro.drift ?? 'neutral')} â†’ ${driftLabel(s.driftB)}`
-                : `Duo intent: ${ro.duoIntent ?? 'conversational'} â†’ ${s.duoB}`;
+                ? `Drift: ${driftLabel(ro.drift ?? 'neutral')} → ${driftLabel(s.driftB)}`
+                : `Duo intent: ${ro.duoIntent ?? 'conversational'} → ${s.duoB}`;
             const locksForStrip =
               s.kind === 'ireal'
                 ? boolArrayToLength(iRealVaultChorusLocks, chorusCount)
@@ -9139,17 +9263,17 @@ export function HomeGenerate({
                     color: 'var(--text-muted)',
                   }}
                 >
-                  Locked: mode <strong>{ro.mode ?? 'solo'}</strong> Â· tuning <strong>{ro.tuningId ?? 'standard'}</strong>{' '}
-                  Â· riff <strong>{ro.riffStyle ?? 'bebop-placement'}</strong> Â· choruses <strong>{chorusCount}</strong>
+                  Locked: mode <strong>{ro.mode ?? 'solo'}</strong> · tuning <strong>{ro.tuningId ?? 'standard'}</strong>{' '}
+                  · riff <strong>{ro.riffStyle ?? 'bebop-placement'}</strong> · choruses <strong>{chorusCount}</strong>
                   {s.axis === 'duoIntent' ? (
                     <>
                       {' '}
-                      Â· drift <strong>{driftLabel(ro.drift ?? 'neutral')}</strong>
+                      · drift <strong>{driftLabel(ro.drift ?? 'neutral')}</strong>
                     </>
                   ) : presetId === 'song_mode' ? (
                     <>
                       {' '}
-                      Â· duo <strong>{ro.duoIntent ?? 'conversational'}</strong>
+                      · duo <strong>{ro.duoIntent ?? 'conversational'}</strong>
                     </>
                   ) : null}
                 </div>
@@ -9317,7 +9441,7 @@ export function HomeGenerate({
                         ) : (
                           <>
                             <p style={{ margin: '0.15rem 0', fontSize: '0.78rem' }}>
-                              Bars: {out.bars} Â· Mapped: {out.chordMappings.length}
+                              Bars: {out.bars} · Mapped: {out.chordMappings.length}
                             </p>
                             <ChorusArcStrip
                               chorusCount={chorusCount}
@@ -9453,7 +9577,7 @@ export function HomeGenerate({
               <p style={{ margin: '0.35rem 0' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Output type:</span>{' '}
                 <strong>{outputKindDesc.headline}</strong>
-                <span style={{ color: 'var(--text-muted)' }}> â€” {outputKindDesc.subtitle}</span>
+                <span style={{ color: 'var(--text-muted)' }}> — {outputKindDesc.subtitle}</span>
               </p>
               {(echo?.variationId ?? rm?.variationId) != null &&
                 String(echo?.variationId ?? rm?.variationId).trim() !== '' && (
@@ -9514,8 +9638,8 @@ export function HomeGenerate({
                   {result.stylePairingReceipt
                     ? result.stylePairingReceipt.summary
                     : echo?.stylePairing
-                      ? `${echo.stylePairing.songwriterStyle} Ã— ${echo.stylePairing.arrangerStyle}${
-                          echo.stylePairing.era ? ` Â· ${echo.stylePairing.era}` : ''
+                      ? `${echo.stylePairing.songwriterStyle} × ${echo.stylePairing.arrangerStyle}${
+                          echo.stylePairing.era ? ` · ${echo.stylePairing.era}` : ''
                         }`
                       : null}
                 </p>
@@ -9684,7 +9808,7 @@ export function HomeGenerate({
                       lineHeight: 1.45,
                     }}
                   >
-                    Heuristic only â€” {duoHealthReadout.sourceLabel}
+                    Heuristic only — {duoHealthReadout.sourceLabel}
                   </p>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem', alignItems: 'center' }}>
                     {(() => {
@@ -9716,7 +9840,7 @@ export function HomeGenerate({
                               color: indS.color,
                             }}
                           >
-                            Independence Â· {indLabel}
+                            Independence · {indLabel}
                           </span>
                           <span
                             title="Register / vertical space between duo voices"
@@ -9730,7 +9854,7 @@ export function HomeGenerate({
                               color: spS.color,
                             }}
                           >
-                            Spacing Â· {spLabel}
+                            Spacing · {spLabel}
                           </span>
                         </>
                       );
@@ -9758,7 +9882,7 @@ export function HomeGenerate({
                   ) : (
                     <div style={{ marginTop: '0.6rem' }}>
                       <p style={{ margin: '0 0 0.45rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                        Global deltas â€” density (B-A): {fmtSigned(sectionShapeDiag.densityDeltaBMinusA)} | colour
+                        Global deltas — density (B-A): {fmtSigned(sectionShapeDiag.densityDeltaBMinusA)} | colour
                         (B-A): {fmtSigned(sectionShapeDiag.colourDeltaBMinusA)} | opening vs return:{' '}
                         {fmtSigned(sectionShapeDiag.openingVsReturnDelta)} | return variation:{' '}
                         {sectionShapeDiag.returnVariationType ?? '-'}
@@ -9990,7 +10114,7 @@ export function HomeGenerate({
             <>
               <p style={{ fontSize: '1rem', margin: '0.25rem 0' }}>
                 <strong>{receiptExportOk ? 'Passed' : 'Failed'}</strong>
-                {receiptExportOk ? ' â€” your files are ready below.' : ' â€” see validation details.'}
+                {receiptExportOk ? ' — your files are ready below.' : ' — see validation details.'}
               </p>
               {result.filename && (
                 <p style={{ fontSize: '0.85rem', margin: '0.5rem 0 0', color: 'var(--text-muted)' }}>
@@ -10006,7 +10130,7 @@ export function HomeGenerate({
               {rm?.activeModules?.length ? (
                 <p style={{ fontSize: '0.85rem', margin: '0.35rem 0 0', color: 'var(--text-muted)' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Engine modules:</span>{' '}
-                  {rm.activeModules.join(' Â· ')}
+                  {rm.activeModules.join(' · ')}
                 </p>
               ) : null}
               {rm?.timestamp && (
@@ -10037,7 +10161,7 @@ export function HomeGenerate({
                   {(echo?.leadSheetHarmonyDisplayMode || echo?.leadSheetHarmonyDisplayModeEffective) && (
                     <p style={{ margin: '0.2rem 0', color: 'var(--text-muted)' }}>
                       <span style={{ color: 'var(--text)' }}>Harmony interpretation:</span>{' '}
-                      {echo?.leadSheetHarmonyDisplayMode ?? 'raw'} â†’{' '}
+                      {echo?.leadSheetHarmonyDisplayMode ?? 'raw'} →{' '}
                       {echo?.leadSheetHarmonyDisplayModeEffective ?? echo?.leadSheetHarmonyDisplayMode ?? 'raw'}
                     </p>
                   )}
@@ -10084,7 +10208,7 @@ export function HomeGenerate({
                                 <span style={{ color: 'var(--text)' }}>
                                   Bar {rawEv.bar} beat {rawEv.beat}:
                                 </span>{' '}
-                                Raw <strong style={{ color: 'var(--text)' }}>{rawEv.symbol}</strong> â†’ Enriched{' '}
+                                Raw <strong style={{ color: 'var(--text)' }}>{rawEv.symbol}</strong> → Enriched{' '}
                                 <strong style={{ color: 'var(--text)' }}>{enrichedLabel}</strong>
                               </p>
                               <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.8rem' }}>Why: {whyLine}</p>
@@ -10126,20 +10250,20 @@ export function HomeGenerate({
               {v && (
                 <div style={{ fontSize: '0.9rem', marginTop: '0.75rem' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Validation gates:</span>{' '}
-                  Score {v.integrityPassed ? 'âœ“' : 'âœ—'} Â· Bar math {v.strictBarMathPassed ? 'âœ“' : 'âœ—'} Â· Behaviour{' '}
-                  {v.behaviourGatesPassed ? 'âœ“' : 'âœ—'} Â· MX {v.mxValidationPassed ? 'âœ“' : 'âœ—'} Â· Round-trip{' '}
-                  {v.exportRoundTripPassed ? 'âœ“' : 'âœ—'} Â· Bass metadata {v.instrumentMetadataPassed ? 'âœ“' : 'âœ—'}
+                  Score {v.integrityPassed ? 'âœ“' : 'âœ—'} · Bar math {v.strictBarMathPassed ? 'âœ“' : 'âœ—'} · Behaviour{' '}
+                  {v.behaviourGatesPassed ? 'âœ“' : 'âœ—'} · MX {v.mxValidationPassed ? 'âœ“' : 'âœ—'} · Round-trip{' '}
+                  {v.exportRoundTripPassed ? 'âœ“' : 'âœ—'} · Bass metadata {v.instrumentMetadataPassed ? 'âœ“' : 'âœ—'}
                 </div>
               )}
               {v?.readiness && (
                 <p style={{ fontSize: '0.95rem', marginTop: '0.5rem' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Readiness score:</span> Release{' '}
-                  {v.readiness.release ?? '-'} Â·{' '}
+                  {v.readiness.release ?? '-'} ·{' '}
                   <span style={{ color: 'var(--text-muted)' }}>MX readiness:</span> {v.readiness.mx ?? '-'}
                   {v.readiness.shareable !== undefined && (
                     <span>
                       {' '}
-                      Â· {v.readiness.shareable ? 'Shareable' : 'Not shareable'}
+                      · {v.readiness.shareable ? 'Shareable' : 'Not shareable'}
                     </span>
                   )}
                 </p>
@@ -10162,7 +10286,7 @@ export function HomeGenerate({
                   }}
                 >
                   <strong style={{ display: 'block', marginBottom: '0.35rem' }}>Phrase quality (warnings)</strong>
-                  <span style={{ lineHeight: 1.45 }}>{v.warnings.slice(0, 3).join('; ')}{v.warnings.length > 3 ? ` â€¦ (+${v.warnings.length - 3} more)` : ''}</span>
+                  <span style={{ lineHeight: 1.45 }}>{v.warnings.slice(0, 3).join('; ')}{v.warnings.length > 3 ? ` … (+${v.warnings.length - 3} more)` : ''}</span>
                 </div>
               )}
               {(() => {
@@ -10183,12 +10307,12 @@ export function HomeGenerate({
                     <strong style={{ display: 'block', marginBottom: '0.35rem' }}>Chord export diagnostics</strong>
                     <p style={{ margin: '0 0 0.35rem', color: 'var(--text-muted)' }}>
                       Chords parsed: <strong style={{ color: 'var(--text)' }}>{dx.summary.totalChordsParsed}</strong>
-                      {' Â· '}
+                      {' · '}
                       Fallbacks used: <strong style={{ color: 'var(--text)' }}>{dx.summary.totalFallbacksUsed}</strong>
-                      {' Â· '}
+                      {' · '}
                       Sibelius simplification flags:{' '}
                       <strong style={{ color: 'var(--text)' }}>{dx.summary.totalApproximations}</strong>
-                      {' Â· '}
+                      {' · '}
                       Slash-bass bars: <strong style={{ color: 'var(--text)' }}>{dx.summary.slashChordsPreserved}</strong>
                     </p>
                     <p style={{ margin: '0 0 0.35rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>

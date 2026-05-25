@@ -37,6 +37,7 @@ import type {
 } from '../core/compositionContext';
 import type { RhythmIntentControl } from '../core/rhythmIntentTypes';
 import type { AlternateGuitarTuningRequest } from '../core/song-mode/alternateGuitarTunings';
+import type { GrooveScaffoldSettings } from '../core/section-architecture/sectionArchitectureTypes';
 import type { BarMeterMap } from '../core/rhythm/barMeterTypes';
 import type { ClaveGridSpec } from '../core/rhythm/claveGridTypes';
 import type { BigBandFormPhase } from '../core/big-band/bigBandPlanTypes';
@@ -304,6 +305,8 @@ export interface GenerateRequest {
   blendStrength?: 'light' | 'medium' | 'strong';
   /** Song Mode: duo conversational vs supportive posture (optional). */
   duoIntent?: 'conversational' | 'supportive';
+  /** Song Mode V65 P5b: opt-in symbolic drum scaffold controls. */
+  grooveScaffold?: GrooveScaffoldSettings;
   /**
    * V31 — Clave grid overlay (`stub` registry `presetRef`). Applied only when **`COMPOSER_OS_CLAVE_GRID_OVERLAY`**
    * is truthy in the generation process; omitted or flag off → legacy rhythm path.
