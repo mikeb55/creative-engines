@@ -51,6 +51,7 @@ import type { MacroFormPlan } from './form/macroFormPlanner';
 import type { BergStyleMode } from './style/berg/bergStyleModes';
 import type { BergTrichordIndexEntry } from './style/berg/bergRowEngine';
 import type { BergClimaxPlan, BergSilenceTag } from './style/berg/bergFormModules';
+import type { GrooveScaffoldDiagnostics } from './groove-scaffold/grooveScaffold';
 
 /** Frank Zappa Song Mode slice — harmonic vocabulary / density arc mode (metadata). */
 export type FrankZappaContextMode = 'avant_rock' | 'big_band' | 'futuristic_jazz';
@@ -547,6 +548,12 @@ export interface GenerationMetadata {
   importHarmonyTimelineEventCount?: number;
   /** Song Mode: aggregated section shaping metrics for manifests, UI notes, and eval harnesses. */
   songModeSectionShapingDiagnostics?: SongModeSectionShapingDiagnosticsV1;
+  /** V65 P4 — opt-in section-aware symbolic drum accompaniment diagnostics. */
+  grooveScaffoldDiagnostics?: GrooveScaffoldDiagnostics;
+  /** V65 P4 — compact manifest receipt for the groove scaffold pass. */
+  grooveScaffoldReceipt?: string;
+  /** V65 P4 — GROOVE_* receipt ids active for this run. */
+  grooveScaffoldReceipts?: string[];
   /**
    * Song Mode: compact inspectability payload for "which profile/rules drove this run".
    * Travels engine -> manifest/app API -> desktop renderer dev inspector.

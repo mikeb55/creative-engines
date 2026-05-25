@@ -638,6 +638,10 @@ export interface OutputEntry {
   songModeSectionShapingDiagnostics?: GenerationMetadata['songModeSectionShapingDiagnostics'];
   songModeSectionBehaviourDescriptors?: GenerationMetadata['songModeSectionBehaviourDescriptors'];
   songModeProfileRuleDiagnostics?: GenerationMetadata['songModeProfileRuleDiagnostics'];
+  /** V65 P4 — opt-in groove scaffold receipt/diagnostics. */
+  grooveScaffoldReceipt?: GenerationMetadata['grooveScaffoldReceipt'];
+  grooveScaffoldReceipts?: GenerationMetadata['grooveScaffoldReceipts'];
+  grooveScaffoldDiagnostics?: GenerationMetadata['grooveScaffoldDiagnostics'];
   /** Song Mode: compact human-readable summary for eval/batch manifest scanning. */
   songModeDiagnosticsSummary?: {
     profile?: string;

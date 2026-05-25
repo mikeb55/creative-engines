@@ -235,7 +235,7 @@ function rebuildMonophonicVoiceLine(
     }
     if (e.kind === 'note') {
       const n = e as NoteEvent;
-      const nn = createNote(n.pitch, sb, dur, voice, n.motifRef);
+      const nn = createNote(n.pitch, sb, dur, voice, n.motifRef, n.pitches ? [...n.pitches] : undefined);
       if (n.articulation) nn.articulation = n.articulation;
       if (n.velocity !== undefined) nn.velocity = n.velocity;
       out.push(nn);
@@ -319,8 +319,9 @@ export function finalizeScoreBarMathPerVoice(score: ScoreModel): void {
   const mode: RhythmSnapMode = score.duoRhythmSnap === 'eighth_beats' ? 'eighth' : 'quarter';
   for (const p of score.parts) {
     const forceBassMono = p.instrumentIdentity === 'acoustic_upright_bass';
+    const partMode: RhythmSnapMode = p.id === 'groove_drums' ? 'quarter' : mode;
     for (const m of p.measures) {
-      finalizeMeasureBarMathPerVoice(m, { forceBassMonoVoice1: forceBassMono, rhythmSnap: mode });
+      finalizeMeasureBarMathPerVoice(m, { forceBassMonoVoice1: forceBassMono, rhythmSnap: partMode });
     }
   }
 }

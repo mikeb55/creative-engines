@@ -159,7 +159,7 @@ export const FRANK_ZAPPA_RIFF_RECEIPT_LINES = [
 ] as const;
 
 const RESEARCH_PREFIX =
-  /^(sly_horns_|sly_vocal_gtr_|sly_organ_|sly_bass_|sly_variation_|sly_riff_identity_|page_bow_|page_theremin_|page_fx_|page_variation_|page_doubletrack_|page_cadence_|page_density_|page_unison_|zappa_solo_|LC_|DG_|EVH_|FZBLUES_|FZ_RIFF_|FZ_)/;
+  /^(sly_horns_|sly_vocal_gtr_|sly_organ_|sly_bass_|sly_variation_|sly_riff_identity_|page_bow_|page_theremin_|page_fx_|page_variation_|page_doubletrack_|page_cadence_|page_density_|page_unison_|zappa_solo_|LC_|DG_|EVH_|FZBLUES_|FZ_RIFF_|FZ_|GROOVE_)/;
 
 export type ReceiptCompileMeta = { metadataOnly: boolean };
 
@@ -434,6 +434,10 @@ function loopIdentityForId(id: string): RiffLoopIdentityPolicy {
 
 function patchForReceipt(id: string, body: string): { patch: RiffProfilePatch; metadataOnly: boolean } {
   const fields = fieldMap(body);
+
+  if (id.startsWith('GROOVE_')) {
+    return { patch: {}, metadataOnly: true };
+  }
 
   if (id.startsWith('sly_horns_')) {
     const prev = [] as RiffHornStabTopology[];

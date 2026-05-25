@@ -40,6 +40,10 @@ import {
 } from '../rhythm/oddMeterQuantiser';
 import { getSYTextureState, isSonicYouthEvent } from '../score-model/sonicYouthChordGuards';
 import type { SonicYouthExtension } from '../score-model/sonicYouthChordTypes';
+import {
+  GROOVE_DRUMS_INSTRUMENT_IDENTITY,
+  PERCUSSION_RENDER_POLICY,
+} from '../groove-scaffold/grooveScaffold';
 
 /** Part-list `<part-name>` / `<instrument-name>` for GM piano (program 1); short label matches Sibelius instrument library. */
 const PIANO_PART_LIST_NAME = 'Piano';
@@ -186,6 +190,7 @@ const PART_ABBREV: Record<string, string> = {
   bb_piano: 'Pno.',
   bb_drums: 'Dr.',
   fela_drums: 'Perc.',
+  groove_drums: 'Dr.',
   sq_violin_1: 'Vln.I',
   sq_violin_2: 'Vln.II',
   sq_viola: 'Vla.',
@@ -422,6 +427,45 @@ function felaAfrobeatScorePartXml(partId: string): string {
     </score-part>`;
 }
 
+const GROOVE_GM_INSTRUMENTS = [
+  PERCUSSION_RENDER_POLICY.kitMap.kick,
+  PERCUSSION_RENDER_POLICY.kitMap.snare,
+  PERCUSSION_RENDER_POLICY.kitMap.hihatClosed,
+  PERCUSSION_RENDER_POLICY.kitMap.hihatOpen,
+  PERCUSSION_RENDER_POLICY.kitMap.ride,
+  PERCUSSION_RENDER_POLICY.kitMap.crash,
+  PERCUSSION_RENDER_POLICY.kitMap.tomHigh,
+  PERCUSSION_RENDER_POLICY.kitMap.tomMid,
+  PERCUSSION_RENDER_POLICY.kitMap.tomFloor,
+] as const;
+
+function grooveInstrumentId(partId: string, gmMidi: number): string {
+  return `${partId}-I${gmMidi}`;
+}
+
+function grooveDrumsScorePartXml(partId: string): string {
+  const abbr = PART_ABBREV[partId] ?? 'Dr.';
+  const blocks = GROOVE_GM_INSTRUMENTS.map((gm) => {
+    const id = grooveInstrumentId(partId, gm);
+    return `
+      <score-instrument id="${id}">
+        <instrument-name>GM ${gm}</instrument-name>
+        <instrument-sound>drum.kit</instrument-sound>
+      </score-instrument>
+      <midi-instrument id="${id}">
+        <midi-channel>10</midi-channel>
+        <midi-program>1</midi-program>
+        <midi-unpitched>${gm}</midi-unpitched>
+        <volume>78.7402</volume>
+        <pan>0</pan>
+      </midi-instrument>`;
+  }).join('');
+  return `    <score-part id="${partId}">
+      <part-name>Groove Drums</part-name>
+      <part-abbreviation>${escapeXml(abbr)}</part-abbreviation>${blocks}
+    </score-part>`;
+}
+
 /**
  * GM drum MIDI → MusicXML unpitched **display** step/octave.
  * Use treble-staff–range positions (octaves 4–5) so Sibelius/Finale place notes on the
@@ -559,6 +603,98 @@ function felaAfrobeatDrumsEventsToXml(
     );
   }
 
+  return xml;
+}
+
+function grooveDrumGlyph(midi: number): { step: string; octave: number } {
+  const map = PERCUSSION_RENDER_POLICY.displayStepMap;
+  switch (midi) {
+    case 36:
+      return { step: map.kick.displayStep, octave: map.kick.displayOctave };
+    case 38:
+      return { step: map.snare.displayStep, octave: map.snare.displayOctave };
+    case 42:
+      return { step: map.hihatClosed.displayStep, octave: map.hihatClosed.displayOctave };
+    case 46:
+      return { step: map.hihatOpen.displayStep, octave: map.hihatOpen.displayOctave };
+    case 51:
+      return { step: map.ride.displayStep, octave: map.ride.displayOctave };
+    case 49:
+      return { step: map.crash.displayStep, octave: map.crash.displayOctave };
+    case 50:
+      return { step: map.tomHigh.displayStep, octave: map.tomHigh.displayOctave };
+    case 48:
+      return { step: map.tomMid.displayStep, octave: map.tomMid.displayOctave };
+    case 45:
+      return { step: map.tomFloor.displayStep, octave: map.tomFloor.displayOctave };
+    default:
+      throw new Error(`MusicXML export: groove_drums unsupported MIDI pitch ${midi}`);
+  }
+}
+
+/** Groove scaffold drums: one staff, one voice; simultaneous hits use chord followers. */
+function grooveDrumsEventsToXml(
+  measure: MeasureModel,
+  measureIndex: number,
+  part: PartModel,
+  decompose: (ticks: number) => number[],
+  measureCapacity: number
+): string {
+  const raw = measure.events
+    .filter((e) => e.kind === 'note' || e.kind === 'rest')
+    .sort((a, b) => a.startBeat - b.startBeat);
+  let xml = '';
+  let cursor = 0;
+  let voiceTickSum = 0;
+  for (const e of raw) {
+    const { start: startDiv, end: endDiv } = beatSpanToTicks(e.startBeat, e.startBeat + e.duration, measureCapacity);
+    const safeStart = Math.max(startDiv, cursor);
+    if (endDiv <= safeStart) continue;
+    if (safeStart > cursor) {
+      const restDiv = safeStart - cursor;
+      const parts = decompose(restDiv);
+      xml += emitRestTicks(parts, 1, STAFF_1_XML);
+      for (const p of parts) voiceTickSum += p;
+      cursor = safeStart;
+    }
+    const durDiv = endDiv - safeStart;
+    const parts = decompose(durDiv);
+    if (e.kind === 'rest') {
+      xml += emitRestTicks(parts, 1, STAFF_1_XML);
+      for (const p of parts) voiceTickSum += p;
+      cursor = endDiv;
+      continue;
+    }
+    const stack = [e.pitch, ...(e.pitches ?? [])].filter((p, idx, arr) => arr.indexOf(p) === idx).sort((a, b) => a - b);
+    for (const t of parts) {
+      stack.forEach((midi, idx) => {
+        const g = grooveDrumGlyph(midi);
+        xml += drumKitNoteXml({
+          chord: idx > 0,
+          step: g.step,
+          octave: g.octave,
+          ticks480: t,
+          voice: 1,
+          stem: 'up',
+          notehead: 'normal',
+          instrumentId: grooveInstrumentId(part.id, midi),
+        });
+      });
+      voiceTickSum += t;
+    }
+    cursor = endDiv;
+  }
+  if (cursor < measureCapacity) {
+    const restDiv = measureCapacity - cursor;
+    const parts = decompose(restDiv);
+    xml += emitRestTicks(parts, 1, STAFF_1_XML);
+    for (const p of parts) voiceTickSum += p;
+  }
+  if (voiceTickSum !== measureCapacity) {
+    throw new Error(
+      `MusicXML export: part ${part.id} measure ${measureIndex + 1}: tick sum ${voiceTickSum} ≠ expected ${measureCapacity} (groove drums)`
+    );
+  }
   return xml;
 }
 
@@ -1149,6 +1285,9 @@ export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXml
         if (p.instrumentIdentity === 'fela_afrobeat_drums') {
           return felaAfrobeatScorePartXml(p.id);
         }
+        if (p.instrumentIdentity === GROOVE_DRUMS_INSTRUMENT_IDENTITY || p.id === 'groove_drums') {
+          return grooveDrumsScorePartXml(p.id);
+        }
         /** Big Band (`bb_piano`) + String Quartet (`sq_piano`) + Song Mode keys comp: piano part-list, GM ch. 1 program 1. */
         if (isBigBandPianoPart(p) || isStringQuartetPianoPart(p) || isSongModeKeysCompPianoPart(p)) {
           return `    <score-part id="${p.id}">
@@ -1196,11 +1335,12 @@ ${partList}
       const part = score.parts[partIndex];
       const isBigBandDrums = part.instrumentIdentity === 'big_band_jazz_drums';
       const isFelaAfrobeatDrums = part.instrumentIdentity === 'fela_afrobeat_drums';
+      const isGrooveDrums = part.instrumentIdentity === GROOVE_DRUMS_INSTRUMENT_IDENTITY || part.id === 'groove_drums';
       const clefSign = part.clef === 'bass' ? 'F' : 'G';
       const clefLine = part.clef === 'bass' ? 4 : 2;
       const clefOctaveChangeXml = '';
       let clefXml: string;
-      if (isBigBandDrums || isFelaAfrobeatDrums) {
+      if (isBigBandDrums || isFelaAfrobeatDrums || isGrooveDrums) {
         clefXml = '<clef number="1"><sign>percussion</sign><line>2</line></clef>';
       } else if (
         part.instrumentIdentity === 'string_quartet_viola' ||
@@ -1405,6 +1545,8 @@ ${stavesAndClefXml}${transposeXml}    </attributes>
             ? bigBandDrumsEventsToXml(m, i, part, decompose, opts, measureCapacity)
             : part.instrumentIdentity === 'fela_afrobeat_drums'
               ? felaAfrobeatDrumsEventsToXml(m, i, part, decompose, measureCapacity)
+              : isGrooveDrums
+                ? grooveDrumsEventsToXml(m, i, part, decompose, measureCapacity)
               : guitarInstrumentGroupTabExport
                 ? guitarInstrumentGroupTabEventsToXml(m, i, part, decompose, opts, preferFlats, measureCapacity)
                 : eventsToXml(m, i, part, decompose, opts, preferFlats, forceDualVoiceSecondLayer, measureCapacity);

@@ -14,6 +14,7 @@ import {
 } from '../rhythm/oddMeterQuantiser';
 import type { ChordEvent, MeasureModel, NoteEvent, PartModel, ScoreEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import { DIVISIONS } from '../score-model/scoreModelTypes';
+import { GROOVE_DRUMS_INSTRUMENT_IDENTITY, GROOVE_DRUMS_PART_ID } from '../groove-scaffold/grooveScaffold';
 
 /** Pulses per quarter (aligned with MusicXML divisions / drum guide). */
 export const SCORE_MIDI_PPQ = DIVISIONS;
@@ -136,6 +137,11 @@ function melodicChannelForPartIndex(partIndex: number): number {
   return ch;
 }
 
+function midiChannelForPart(part: PartModel, partIndex: number): number {
+  if (part.id === GROOVE_DRUMS_PART_ID || part.instrumentIdentity === GROOVE_DRUMS_INSTRUMENT_IDENTITY) return 10;
+  return melodicChannelForPartIndex(partIndex);
+}
+
 function hasRenderableNotes(score: ScoreModel): boolean {
   if (!score.parts?.length) return false;
   for (const p of score.parts) {
@@ -176,16 +182,18 @@ export function writeScoreModelMidiFile(score: ScoreModel, outputPath: string, o
   const tracks: InstanceType<typeof MidiWriter.Track>[] = [metaTrack];
 
   score.parts.forEach((part, pi) => {
-    const channel = melodicChannelForPartIndex(pi);
+    const channel = midiChannelForPart(part, pi);
     const prog = Math.max(0, Math.min(127, Math.round(part.midiProgram)));
 
     const track = new MidiWriter.Track();
-    track.addEvent(
-      new MidiWriter.ProgramChangeEvent({
-        instrument: prog,
-        channel,
-      })
-    );
+    if (channel !== 10) {
+      track.addEvent(
+        new MidiWriter.ProgramChangeEvent({
+          instrument: prog,
+          channel,
+        })
+      );
+    }
     const label = (part.name || part.id || `part_${pi}`).slice(0, 128);
     track.addEvent(new MidiWriter.TrackNameEvent({ text: label }));
 

@@ -175,6 +175,7 @@ import {
   applyGrooveSoulStyleSurface,
   applySophisticatedPopStyleSurface,
 } from '../song-mode/songModeStyleSurface';
+import { wireSongArchitectureAtPipelineEntry } from '../section-architecture/effectiveContextForBar';
 import {
   applyRiffVrbFamilyStyleSurface,
   isRiffVrbSongwriterId,
@@ -2927,6 +2928,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     songModeDonaldFagenC1Receipt: appliedContext.generationMetadata.songModeDonaldFagenC1Receipt,
     songModeSectionShapingDiagnostics: appliedContext.generationMetadata.songModeSectionShapingDiagnostics,
     songModeSectionBehaviourDescriptors: appliedContext.generationMetadata.songModeSectionBehaviourDescriptors,
+    grooveScaffoldReceipt: appliedContext.generationMetadata.grooveScaffoldReceipt,
+    grooveScaffoldReceipts: appliedContext.generationMetadata.grooveScaffoldReceipts,
+    grooveScaffoldDiagnostics: appliedContext.generationMetadata.grooveScaffoldDiagnostics,
     songModeProfileRuleDiagnostics: {
       ...(appliedContext.generationMetadata.songModeProfileRuleDiagnostics ?? {}),
       bacharachSongModeRuleBundleId: appliedContext.generationMetadata.bacharachSongModeRuleBundleId,

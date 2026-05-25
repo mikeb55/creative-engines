@@ -101,6 +101,13 @@ export interface HumanizeSettings {
   velocityJitter?: number;
 }
 
+export interface GrooveScaffoldSettings {
+  /** @preference Opt-in symbolic drum accompaniment. Omitted/false means no drum part. */
+  enabled: boolean;
+  /** @preference Global groove feel; odd meters auto-route to odd_meter per bar. */
+  feel?: 'swing' | 'funk' | 'rock' | 'bossa' | 'ballad' | 'odd_meter';
+}
+
 export interface SongDefaults {
   /** @preference Global tempo BPM. */
   tempo?: number;
@@ -114,6 +121,8 @@ export interface SongDefaults {
   /** @preference Per-instrument tuning defaults keyed by instrumentType. */
   defaultTuningByInstrument?: Partial<Record<InstrumentKind, TuningProfile>>;
   humanize?: HumanizeSettings;
+  /** V65 P4 — opt-in groove scaffold; requires a Song object and enabled=true. */
+  grooveScaffold?: GrooveScaffoldSettings;
 }
 
 export type SectionType =

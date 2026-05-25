@@ -9,7 +9,7 @@ import type {
   SongModeSectionShapingDiagnosticsV1,
 } from '../song-mode/songModeSectionTypes';
 import type { MotifDevelopmentSummary } from '../motif/motifAuthorityV1';
-import type { ImportHarmonyLockFallbackReason, ImportHarmonyMode } from '../compositionContext';
+import type { GenerationMetadata, ImportHarmonyLockFallbackReason, ImportHarmonyMode } from '../compositionContext';
 
 /** Run manifest for replay/debug. */
 export interface RunManifest {
@@ -121,6 +121,10 @@ export interface RunManifest {
   songModeStyleSurfaceNotes?: string[];
   /** Song Mode — Donald Fagen: Phase C1 rhythm-overlay receipt when primary songwriter resolved to `donald_fagen`. */
   songModeDonaldFagenC1Receipt?: string;
+  /** V65 P4 — opt-in groove scaffold receipt/diagnostics. */
+  grooveScaffoldReceipt?: GenerationMetadata['grooveScaffoldReceipt'];
+  grooveScaffoldReceipts?: GenerationMetadata['grooveScaffoldReceipts'];
+  grooveScaffoldDiagnostics?: GenerationMetadata['grooveScaffoldDiagnostics'];
   /** Song Mode — aggregated section-role shaping diagnostics (stable field set for manifests / eval). */
   songModeSectionShapingDiagnostics?: SongModeSectionShapingDiagnosticsV1;
   /** Song Mode — per-slice role bias descriptors (used to render per-section diagnostics in UI/dev tooling). */

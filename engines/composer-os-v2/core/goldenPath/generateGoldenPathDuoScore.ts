@@ -84,6 +84,7 @@ import {
   applyVoiceBundleParallelRepairPass,
 } from '../composer/voiceBundleParallelRepair';
 import { createMeasure, createNote, createRest, addEvent, createScore } from '../score-model/scoreEventBuilder';
+import { grooveScaffoldPass } from '../groove-scaffold/grooveScaffold';
 import type { GuitarProfile, BassProfile } from '../instrument-profiles/instrumentProfileTypes';
 import { CLEAN_ELECTRIC_GUITAR } from '../instrument-profiles/guitarProfile';
 import { ACOUSTIC_UPRIGHT_BASS } from '../instrument-profiles/uprightBassProfile';
@@ -6957,6 +6958,7 @@ export function generateGoldenPathDuoScore(
       }
     }
   }
+  grooveScaffoldPass(afterExpressive, context, context.song);
   finalizeAndSealDuoScoreBarMath(afterExpressive);
   if (zappaFerocitySoloLane && context.generationMetadata?.soloLine) {
     afterExpressive = mergeZappaSoloPart(afterExpressive, context.generationMetadata.soloLine);

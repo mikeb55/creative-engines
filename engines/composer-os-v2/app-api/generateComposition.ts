@@ -156,6 +156,9 @@ export interface GenerateResult {
     wybleConsumptionReceipt?: WybleConsumptionReceipt;
     songModeStyleSurfaceNotes?: string[];
     songModeDonaldFagenC1Receipt?: string;
+    grooveScaffoldReceipt?: GenerationMetadata['grooveScaffoldReceipt'];
+    grooveScaffoldReceipts?: GenerationMetadata['grooveScaffoldReceipts'];
+    grooveScaffoldDiagnostics?: GenerationMetadata['grooveScaffoldDiagnostics'];
     songModeSectionShapingDiagnostics?: GenerationMetadata['songModeSectionShapingDiagnostics'];
     songModeSectionBehaviourDescriptors?: GenerationMetadata['songModeSectionBehaviourDescriptors'];
     songModeProfileRuleDiagnostics?: GenerationMetadata['songModeProfileRuleDiagnostics'];
@@ -615,6 +618,9 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       keySignatureExportKeyWritten: result.context.generationMetadata.keySignatureReceipt?.exportKeyWritten,
       songModeStyleSurfaceNotes: result.context.generationMetadata.songModeStyleSurfaceNotes,
       songModeDonaldFagenC1Receipt: result.context.generationMetadata.songModeDonaldFagenC1Receipt,
+      grooveScaffoldReceipt: result.context.generationMetadata.grooveScaffoldReceipt,
+      grooveScaffoldReceipts: result.context.generationMetadata.grooveScaffoldReceipts,
+      grooveScaffoldDiagnostics: result.context.generationMetadata.grooveScaffoldDiagnostics,
       songModeSectionBehaviourDescriptors: result.context.generationMetadata.songModeSectionBehaviourDescriptors,
       importHarmonyPolicyVersion: result.context.generationMetadata.importHarmonyPolicyVersion,
       validation: {
@@ -729,6 +735,9 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           wybleConsumptionReceipt: result.runManifest.wybleConsumptionReceipt,
           songModeStyleSurfaceNotes: result.runManifest.songModeStyleSurfaceNotes,
           songModeDonaldFagenC1Receipt: result.runManifest.songModeDonaldFagenC1Receipt,
+          grooveScaffoldReceipt: result.runManifest.grooveScaffoldReceipt,
+          grooveScaffoldReceipts: result.runManifest.grooveScaffoldReceipts,
+          grooveScaffoldDiagnostics: result.runManifest.grooveScaffoldDiagnostics,
           songModeSectionShapingDiagnostics: result.runManifest.songModeSectionShapingDiagnostics,
           songModeSectionBehaviourDescriptors: result.runManifest.songModeSectionBehaviourDescriptors,
           songModeProfileRuleDiagnostics: result.runManifest.songModeProfileRuleDiagnostics,

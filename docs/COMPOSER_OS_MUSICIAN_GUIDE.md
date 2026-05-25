@@ -43,6 +43,39 @@ That's it. Everything else in this guide is about going deeper.
 
 ---
 
+### 1.1a Groove Scaffold — opt-in Song Mode drums
+
+**What it provides:** A simple symbolic drum staff for Song Mode when the composition includes a Song object with `globalDefaults.grooveScaffold.enabled: true`. The exported score gains one `Groove Drums` part: one unpitched percussion staff, one voice, GM drum pitches, MusicXML percussion clef, and MIDI channel 10.
+
+**What it does not do:** It is not a full drum engine. It does not imitate named drummers, write jazz comping intelligence, use custom kits, add brush nuance, or create multi-staff percussion notation. Existing compositions without the opt-in Song object are unchanged.
+
+**Six feels:**
+- `swing` — ride-led time with hi-hat on 2 and 4; exported as straight notation with swing-triplet receipt metadata.
+- `funk` — 16th-note grid, tight hi-hat, restrained ghost-snare color.
+- `rock` — 8th-note grid, strong backbeat, occasional open-hat lift.
+- `bossa` — light 8th-note cross-stick posture with minimal kick.
+- `ballad` — sparse 8th-note pulse with soft side-stick/snare behavior.
+- `odd_meter` — automatic per-bar fallback when a Song section or request meter uses non-4/4, using a simple meter-derived ostinato.
+
+**How section energy changes density:** Intro stays sparse, verse stays steady, chorus lifts cymbal/hat activity, bridge stays contrasting rather than fill-heavy, and outro tapers into a deterministic ending gesture. Higher section energy raises density tier and fill chance, but caps keep the part readable.
+
+**Fill behavior:** Fills are sparse and rule-based. Section-final bars get a 35-60% fill window by feel and energy; mid-section cadences get only 10-20% and only after enough space. No two fills occur within two bars except ending/tag behavior. After a fill, the next bar is a reset. Fills use kick, snare, and toms only; crashes happen on section arrivals, not on fill bars.
+
+**How to enable:** Include a Song architecture document in the generation request and set:
+
+```json
+"globalDefaults": {
+  "grooveScaffold": {
+    "enabled": true,
+    "feel": "rock"
+  }
+}
+```
+
+Valid `feel` values are `swing`, `funk`, `rock`, `bossa`, `ballad`, and `odd_meter`.
+
+---
+
 ### 1.2 Big Band
 
 **What it produces:** Full ensemble writing across brass, saxes, and rhythm section. Arranged in sections — not just melody + comp.

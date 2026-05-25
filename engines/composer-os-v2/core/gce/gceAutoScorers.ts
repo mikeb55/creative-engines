@@ -2927,7 +2927,7 @@ export function computeArrangementHierarchyClarityBigBand(score: ScoreModel): nu
   for (let b = 1; b <= barCount; b++) {
     const counts: number[] = [];
     for (const p of score.parts) {
-      if (p.id === 'bb_drums') continue;
+      if (p.id === 'bb_drums' || p.id === 'groove_drums') continue;
       const m = p.measures[b - 1];
       let n = 0;
       if (m) {

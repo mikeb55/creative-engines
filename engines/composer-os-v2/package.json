@@ -50,6 +50,7 @@
     "eval:duo-top": "tsx --tsconfig ../../tsconfig.json scripts/runDuoEvalTopCandidates.ts",
     "test:motif-authority": "tsx scripts/testMotifAuthority.ts",
     "test:big-band-arranging": "tsx scripts/testBigBandArranging.ts",
+    "test:groove-scaffold": "tsx --tsconfig ../../tsconfig.json scripts/runGrooveScaffoldGoldens.ts",
     "eval:big-band-chart": "tsx scripts/bigBandChartEval.ts",
     "test:output-validate": "node --max-old-space-size=4096 ../../node_modules/tsx/dist/cli.mjs --tsconfig ../../tsconfig.json tests/outputValidationSmoke.test.ts",
     "riff:smoke": "bash scripts/riff-smoke.sh"

@@ -114,6 +114,9 @@ export function writeOutputManifest(
     c4_bars_used?: number[];
     songModeStyleSurfaceNotes?: string[];
     songModeDonaldFagenC1Receipt?: string;
+    grooveScaffoldReceipt?: GenerationMetadata['grooveScaffoldReceipt'];
+    grooveScaffoldReceipts?: GenerationMetadata['grooveScaffoldReceipts'];
+    grooveScaffoldDiagnostics?: GenerationMetadata['grooveScaffoldDiagnostics'];
     /** Song Mode — resolved primary songwriter id (eval / receipts). */
     songwriterStyleId?: string;
     brianWilsonPetSoundsDiagnostics?: GenerationMetadata['brianWilsonPetSoundsDiagnostics'];
@@ -439,6 +442,9 @@ export function writeOutputManifest(
     c4_bars_used: meta.c4_bars_used,
     songModeStyleSurfaceNotes: meta.songModeStyleSurfaceNotes,
     songModeDonaldFagenC1Receipt: meta.songModeDonaldFagenC1Receipt,
+    grooveScaffoldReceipt: meta.grooveScaffoldReceipt,
+    grooveScaffoldReceipts: meta.grooveScaffoldReceipts,
+    grooveScaffoldDiagnostics: meta.grooveScaffoldDiagnostics,
     songwriterStyleId: meta.songwriterStyleId,
     brianWilsonPetSoundsDiagnostics: meta.brianWilsonPetSoundsDiagnostics,
     brianWilsonPetSoundsDeviceReceipts: meta.brianWilsonPetSoundsDeviceReceipts,

@@ -96,7 +96,7 @@ function scoreBarCount(score: ScoreModel): number {
 
 function isMelodicPartId(id: string): boolean {
   if (MELODIC_BB_PART_IDS.has(id)) return true;
-  if (id === 'bb_drums' || id === 'bb_rhythm_section') return false;
+  if (id === 'bb_drums' || id === 'groove_drums' || id === 'bb_rhythm_section') return false;
   return true;
 }
 
@@ -138,7 +138,7 @@ function collectRestRunLengths(part: PartModel): { maxRun: number; distribution:
 
 /** Exported for BB GCE arrangement pillar — same counting as fingerprint density curve. */
 export function activePartsNormalizedBigBand(score: ScoreModel, bar: number): number {
-  const ids = score.parts.map((p) => p.id);
+  const ids = score.parts.map((p) => p.id).filter((id) => id !== 'groove_drums');
   let active = 0;
   for (const p of score.parts) {
     if (p.id === 'bb_drums') {
@@ -152,7 +152,7 @@ export function activePartsNormalizedBigBand(score: ScoreModel, bar: number): nu
         }
       }
       if (hit) active++;
-    } else {
+    } else if (p.id !== 'groove_drums') {
       const m = p.measures[bar - 1];
       if (!m) continue;
       let hit = false;
