@@ -248,11 +248,11 @@ These voices work in Song Mode and shape melody + harmony + rhythm as a complete
 
 ---
 
-### 2.7 Frank Zappa — FZ_* receipt fingerprints (V64 P3)
+### 2.7 Frank Zappa — FZ_* receipt fingerprints (V65 P5)
 
 When **Frank Zappa** is the Song Mode writer or harmonic voice, the engine loads **fifteen `FZ_*` fingerprint receipts** on the Frank Zappa VRB. These are planning rules that compile into the **riff profile** (density, meter feel, register, variation operators) — not the separate **GCE structural** layer (odd-meter maps, absurdist section kinds, register-swap bars) that P2 added. Think of **P2** as *form and meter architecture*; **FZ_*** as *how the guitar/solo lane behaves* inside that architecture.
 
-**When they fire:** On every generate where `frank_zappa` resolves to the Frank Zappa VRB — Song Mode duo, riff generator, and blues-rock ferocity solo path. Receipts merge into `riffProfile` before notes are written. Twelve receipts apply broad prefix rules (harmony, melody, rhythm, etc.); **three are fully promoted (P3)** with dedicated patches and golden fixtures (seeds **77001–77003**, off smoke until P8).
+**When they fire:** On every generate where `frank_zappa` resolves to the Frank Zappa VRB — Song Mode duo, riff generator, and blues-rock ferocity solo path. Receipts merge into `riffProfile` before notes are written. Ten receipts apply broad prefix rules (harmony, melody, rhythm, etc.); **five are fully promoted** with dedicated patches and golden fixtures: **FZ_BURST**, **FZ_METRIC_SHIFT**, **FZ_REGISTER_COLLISION**, **FZ_DIFF_01**, and **FZ_DIFF_02**.
 
 #### All 15 FZ_* stubs (one line each)
 
@@ -271,10 +271,10 @@ When **Frank Zappa** is the Song Mode writer or harmonic voice, the engine loads
 | **FZ_BURST** | **Promoted (P3)** — density spike then hard silence tail (see below). |
 | **FZ_METRIC_SHIFT** | **Promoted (P3)** — metric displacement + superimposed 7/8 feel (see below). |
 | **FZ_REGISTER_COLLISION** | **Promoted (P3)** — wide register + forced register swap (see below). |
-| **FZ_DIFF_01** | Not fusion smooth jazz: no continuous diatonic 8th-note spine. |
-| **FZ_DIFF_02** | Not minimalism: no steady pulse without pitch chaos on top. |
+| **FZ_DIFF_01** | **Promoted (V65 P5)** — not fusion smooth jazz; forces structural contrast against continuous diatonic 8ths. |
+| **FZ_DIFF_02** | **Promoted (V65 P5)** — not minimalism; marks style boundaries with pitch-chaos overlays. |
 
-`FZ_DIFF_*` are metadata-only guardrails (they steer planning text, not a numeric patch). The other prefix families (`FZ_HARM_*`, `FZ_MELO_*`, etc.) already compile to riff-profile fields.
+`FZ_DIFF_*` are now runtime receipts. They also appear as `frankZappaDiffReceipts` in generation metadata and manifests. The `fz:d1-d5:*` harmony device receipts remain harmony-only and keep their existing format.
 
 #### FZ_BURST — density spike and silence tail
 
@@ -305,6 +305,33 @@ When **Frank Zappa** is the Song Mode writer or harmonic voice, the engine loads
 **What you hear:** Guitar suddenly **screams in a high cluster**, bass or inner line **drops into a muddy low register**, or the roles **flip** for a bar — “wrong instrument in wrong octave” on purpose. Wider **vertical spread** than a polite jazz duo.
 
 **Try it:** Seed **77003** golden path — same `Bb7` loop as generic Song Mode; Zappa solo/register span should exceed a **bill_evans** run on the same seed/chords.
+
+#### FZ_DIFF_01 — structural contrast marker
+
+**What it does:** Adds a Zappa-specific rest-window and section-density contrast patch. It breaks up smooth, continuous eighth-note spines with interrupted attacks, ghosted openings, and low repeat persistence.
+
+**When it fires:** During Frank Zappa VRB profile build. It affects riff/Song Mode guitar behavior before notes are emitted, and is echoed in `frankZappaDiffReceipts`.
+
+**What you hear:** A line that refuses to become polite fusion. It drops or ghosts early-bar attacks, makes section contrast more jagged, and pushes phrase endings toward hard interruption rather than smooth continuation.
+
+#### FZ_DIFF_02 — style boundary signal
+
+**What it does:** Raises chromatic budget, adds pitch-chaos variation operators, reinforces 3+3+2 / 5+3 grouping patterns, and raises solo chromatic behavior. It marks "this section changed identity" rather than letting Zappa settle into minimal pulse.
+
+**When it fires:** During Frank Zappa VRB profile build and in per-section behavior diagnostics when a section boundary, anti-metric rhythm, or high chromatic budget is active.
+
+**What you hear:** New sections arrive with sharper chromatic bite and less steady-state looping. The pulse can stay readable, but pitch content destabilizes it.
+
+#### Per-section Zappa behavior
+
+When a generation request includes a Song architecture document, Zappa now reads each section's effective context: section label, density, register profile, rhythm profile, and chromatic budget. `resolveZappaSectionBehaviorForBar()` turns that into per-bar overrides:
+
+- Low/sparse sections pull guitar register down and thin density.
+- Dense/high/anti-metric sections push register up, increase density, and mark style boundaries.
+- Section changes are written to `zappaSectionBehaviorBySection` for manifest inspection.
+- Harmony devices still write only `fz:d1` through `fz:d5` receipts; section behavior does not create new harmony-device receipt kinds.
+
+Plain example: Section A can be sparse/low and Section B can be dense/high. Same Zappa writer, same chord loop, but the score should visibly change register and note density across the A→B boundary.
 
 **Engineering note:** Receipt compiler path is `patchForFzReceipt` in `riffReceiptCompiler.ts`; merged profile via `buildFrankZappaVrbRiffProfile()`. GCE structural fingerprint (`fz:*` pillars) remains a separate layer — do not confuse the two when reading export receipts.
 

@@ -364,6 +364,8 @@ export function writeOutputManifest(
     jimHallVoicingCap?: GenerationMetadata['jimHallVoicingCap'];
     frankZappaDiagnostics?: GenerationMetadata['frankZappaDiagnostics'];
     frankZappaDeviceReceipts?: GenerationMetadata['frankZappaDeviceReceipts'];
+    frankZappaDiffReceipts?: GenerationMetadata['frankZappaDiffReceipts'];
+    zappaSectionBehaviorBySection?: GenerationMetadata['zappaSectionBehaviorBySection'];
     frankZappaSliceReceipt?: GenerationMetadata['frankZappaSliceReceipt'];
     frankZappaEffectiveHarmonyBars?: GenerationMetadata['frankZappaEffectiveHarmonyBars'];
     frankZappaAntiElaborationGuards?: GenerationMetadata['frankZappaAntiElaborationGuards'];
@@ -691,6 +693,8 @@ export function writeOutputManifest(
     jimHallVoicingCap: meta.jimHallVoicingCap,
     frankZappaDiagnostics: meta.frankZappaDiagnostics,
     frankZappaDeviceReceipts: meta.frankZappaDeviceReceipts,
+    frankZappaDiffReceipts: meta.frankZappaDiffReceipts,
+    zappaSectionBehaviorBySection: meta.zappaSectionBehaviorBySection,
     frankZappaSliceReceipt: meta.frankZappaSliceReceipt,
     frankZappaEffectiveHarmonyBars: meta.frankZappaEffectiveHarmonyBars,
     frankZappaAntiElaborationGuards: meta.frankZappaAntiElaborationGuards,

@@ -89,6 +89,8 @@ export const FRANK_ZAPPA_FZ_RECEIPT_IDS = [
   'FZ_DIFF_02',
 ] as const;
 
+export const FRANK_ZAPPA_DIFF_RECEIPT_IDS = ['FZ_DIFF_01', 'FZ_DIFF_02'] as const;
+
 /** Frank Zappa riff stub cores from {@link ../composer/riffVrbStubs} `FZ_RIFF_BASE`. */
 export const FRANK_ZAPPA_RIFF_RECEIPT_IDS = [
   'FZ_RIFF_HARM_01',
@@ -1641,8 +1643,58 @@ function patchForFzReceipt(
       metadataOnly: false,
     };
   }
-  if (id.startsWith('FZ_DIFF_')) {
-    return { patch: {}, metadataOnly: true };
+  if (id === 'FZ_DIFF_01') {
+    return {
+      patch: {
+        spacePolicy: {
+          internalRestProb: 0.38,
+          phraseEndRestBeats: [0.5, 1],
+          callResponsePattern: 'zappa_structural_contrast_rest_window',
+        },
+        sectionDensityPolicy: {
+          transitions: [
+            { receiptId: id, fromDensity: 'smooth', toDensity: 'jagged' },
+            { receiptId: id, fromDensity: 'continuous', toDensity: 'interrupted' },
+          ],
+        },
+        repetitionPolicy: {
+          exactLoopAllowed: false,
+          pedalToneAllowed: true,
+          barIdentityPersistence: 0.18,
+          minExactRepetitions: 1,
+        },
+        soloGeneratorProfile: {
+          enabled: true,
+          noteDensityRange: { min: 5, max: 28 },
+          phraseEndingPolicy: {
+            openStringPullOff: false,
+            feedbackSustain: false,
+            threeQuarterStepBend: false,
+            hardCut: true,
+          },
+        },
+      },
+      metadataOnly: false,
+    };
+  }
+  if (id === 'FZ_DIFF_02') {
+    return {
+      patch: {
+        chromaticBudget: Math.max(parseChromaticBudgetFromBody(body, fields), 0.62),
+        scalePool: { Lydian: 0.35, Mixolydian: 0.25, diminished: 0.2, wholeTone: 0.2 },
+        variationOperators: ['chromaticAdd', 'harmonicColourSwap', 'rhythmicWarp', 'cellTransposition'],
+        groupingPatterns: [[3, 3, 2], [2, 3, 2], [5, 3]],
+        metricDisplacement: Math.max(parseFloatField(fields, 'metricdisplacement') ?? 0, 0.86),
+        soloGeneratorProfile: {
+          enabled: true,
+          chromaticBudget: 0.68,
+          maxLeapSemitones: 14,
+          rhythmicCellEighths: [5, 3],
+          variationOperators: ['chromaticAdd', 'harmonicColourSwap', 'rhythmicWarp', 'cellTransposition'],
+        },
+      },
+      metadataOnly: false,
+    };
   }
   return { patch: {}, metadataOnly: true };
 }

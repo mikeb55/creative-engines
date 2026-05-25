@@ -156,9 +156,13 @@ import {
 } from './wayne_shorter';
 import {
   accumulateFrankZappaHarmonyDiagnostics,
+  applyZappaSectionDensityBehavior,
+  applyZappaSectionRegisterBehavior,
   attachFrankZappaHarmonyContext,
+  buildZappaSectionBehaviorDiagnostics,
   createFrankZappaHarmonyAccumulator,
   finalizeFrankZappaMetadata,
+  resolveZappaSectionBehaviorForBar,
 } from './frankZappaSlice';
 import { applyZappaSoloToMetadata, mergeZappaSoloPart } from '../solo/zappasoloEngine';
 import { resolveFrankZappaSoloLineForContext } from '../song-mode/songModeZappaSoloRiffBridge';
@@ -2985,31 +2989,65 @@ function buildGuitarPart(
     tb === 32;
   /** Indie dual-electric remap has tight chord-density smoke gates; Stage 3 anticipation would skew comp metrics. */
   const skipPhraseEngineStage3Anticipation = shouldUseIndieArtPopDualGuitarRoute(context);
+  const zappaSectionBehaviorForBar = (bar: number) =>
+    isSongwriterFrankZappa ? resolveZappaSectionBehaviorForBar(bar, context) : undefined;
+  const applyZappaRegisterForBar = (bar: number, low: number, high: number): [number, number] =>
+    applyZappaSectionRegisterBehavior(low, high, zappaSectionBehaviorForBar(bar));
+  const applyZappaOutputRegisterForBar = (m: MeasureModel, low: number, high: number, behavior: ReturnType<typeof zappaSectionBehaviorForBar>) => {
+    if (!behavior || behavior.registerShiftSemitones <= 0) return;
+    const shift = Math.min(12, Math.max(0, behavior.registerShiftSemitones));
+    const targetHigh = Math.min(96, Math.max(high, 84));
+    const targetLow = Math.max(28, Math.min(targetHigh, low + shift));
+    for (const e of m.events) {
+      if (e.kind !== 'note') continue;
+      e.pitch = Math.min(targetHigh, e.pitch + shift);
+      while (e.pitch < targetLow && e.pitch + 12 <= targetHigh) e.pitch += 12;
+      e.pitch = Math.max(targetLow, Math.min(targetHigh, e.pitch));
+    }
+  };
+  if (isSongwriterFrankZappa) {
+    genMeta.frankZappaDiffReceipts = genMeta.frankZappaDiffReceipts ?? ['FZ_DIFF_01', 'FZ_DIFF_02'];
+    genMeta.zappaSectionBehaviorBySection =
+      genMeta.zappaSectionBehaviorBySection ?? buildZappaSectionBehaviorDiagnostics(context, tb);
+  }
+
   const [zL1, zH1] = getRegisterForBar(guitarMap, 1, context);
   const lab1 = sectionLabelForBar(1, context);
   const bump1 = lab1 === 'B' ? 5 : 0;
-  const stmtLow = Math.max(zL1, effectiveBase) + bump1;
-  const stmtHigh = Math.min(79, zH1 + bump1);
+  const [stmtLow, stmtHigh] = applyZappaRegisterForBar(
+    1,
+    Math.max(zL1, effectiveBase) + bump1,
+    Math.min(79, zH1 + bump1)
+  );
   const [zL25, zH25] = getRegisterForBar(guitarMap, SONG_MODE_HOOK_RETURN_BAR, context);
   const lab25 = sectionLabelForBar(SONG_MODE_HOOK_RETURN_BAR, context);
   const bump25 = lab25 === 'B' ? 5 : 0;
-  const retLow = Math.max(zL25, effectiveBase) + bump25;
-  const retHigh = Math.min(79, zH25 + bump25);
+  const [retLow, retHigh] = applyZappaRegisterForBar(
+    SONG_MODE_HOOK_RETURN_BAR,
+    Math.max(zL25, effectiveBase) + bump25,
+    Math.min(79, zH25 + bump25)
+  );
   const [zL9, zH9] = getRegisterForBar(guitarMap, SONG_MODE_MOTIF_BAR_9, context);
   const lab9 = sectionLabelForBar(SONG_MODE_MOTIF_BAR_9, context);
   const bump9 = lab9 === 'B' ? 5 : 0;
-  const bar9Low = Math.max(zL9, effectiveBase) + bump9;
-  const bar9High = Math.min(79, zH9 + bump9);
+  const [bar9Low, bar9High] = applyZappaRegisterForBar(
+    SONG_MODE_MOTIF_BAR_9,
+    Math.max(zL9, effectiveBase) + bump9,
+    Math.min(79, zH9 + bump9)
+  );
   const [zL17, zH17] = getRegisterForBar(guitarMap, SONG_MODE_MOTIF_BAR_17, context);
   const lab17 = sectionLabelForBar(SONG_MODE_MOTIF_BAR_17, context);
   const bump17 = lab17 === 'B' ? 5 : 0;
-  const bar17Low = Math.max(zL17, effectiveBase) + bump17;
-  const bar17High = Math.min(79, zH17 + bump17);
+  const [bar17Low, bar17High] = applyZappaRegisterForBar(
+    SONG_MODE_MOTIF_BAR_17,
+    Math.max(zL17, effectiveBase) + bump17,
+    Math.min(79, zH17 + bump17)
+  );
   const registerForBar = (bar: number): [number, number] => {
     const [zL, zH] = getRegisterForBar(guitarMap, bar, context);
     const lab = sectionLabelForBar(bar, context);
     const bump = lab === 'B' ? 5 : 0;
-    return [Math.max(zL, effectiveBase) + bump, Math.min(79, zH + bump)];
+    return applyZappaRegisterForBar(bar, Math.max(zL, effectiveBase) + bump, Math.min(79, zH + bump));
   };
 
   const hookRuntime = songModeHook && !lineFirstDuoAbstract
@@ -3461,6 +3499,7 @@ function buildGuitarPart(
       ? snapAttackBeatToGrid(stagger.guitar + swingBump + phraseShapeBump)
       : qBeat(stagger.guitar + swingBump);
     const phraseShapeBar = isDuoGolden ? phase : context.presetId === 'ecm_chamber' ? phase : b;
+    const zappaSectionBehavior = zappaSectionBehaviorForBar(b);
     const [zLow, zHigh] = getRegisterForBar(guitarMap, b, context);
     const lab = sectionLabelForBar(b, context);
     const sectionBump = lab === 'B' ? 5 : 0;
@@ -3489,6 +3528,11 @@ function buildGuitarPart(
         effectiveHigh = Math.min(effectiveHigh, registerWindow.ceil);
       }
     }
+    [effectiveLow, effectiveHigh] = applyZappaSectionRegisterBehavior(
+      effectiveLow,
+      effectiveHigh,
+      zappaSectionBehavior
+    );
     if (lineFirstDuoAbstract && activeAbstract) {
       const engineVrbId = activeAbstract.styleSourceVrbId ?? '';
       fillGuitarMeasureFromAbstractSoprano(m, activeAbstract, b, {
@@ -3500,6 +3544,7 @@ function buildGuitarPart(
       /** Run 1c: keep guitar PCs aligned to abstract soprano; skip golden-path rhythm/cadence passes that retarget pitches. */
       if (guitarBarIsBusy(m)) consecutiveBusyGuitarBars++;
       else consecutiveBusyGuitarBars = 0;
+      applyZappaOutputRegisterForBar(m, effectiveLow, effectiveHigh, zappaSectionBehavior);
       measures.push(m);
       continue;
     }
@@ -3632,6 +3677,7 @@ function buildGuitarPart(
           b,
         );
       }
+      applyZappaOutputRegisterForBar(m, effectiveLow, effectiveHigh, zappaSectionBehavior);
       measures.push(m);
       continue;
     }
@@ -3800,6 +3846,7 @@ function buildGuitarPart(
       if (archDensityFinal) {
         densityLevel = archDensityFinal;
       }
+      densityLevel = applyZappaSectionDensityBehavior(densityLevel, zappaSectionBehavior);
       if ((isEcmM || isEcmS) && tex?.guitarRole === 'silence') {
         addEvent(m, createRest(0, measureBeatSpanQuartersOf(m)));
       } else if (
@@ -4025,6 +4072,7 @@ function buildGuitarPart(
     } else {
       normalizeMeasureQuarterGrid(m);
     }
+    applyZappaOutputRegisterForBar(m, effectiveLow, effectiveHigh, zappaSectionBehavior);
     measures.push(m);
   }
 

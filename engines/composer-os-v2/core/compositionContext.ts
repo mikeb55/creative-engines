@@ -975,6 +975,21 @@ export interface GenerationMetadata {
   frankZappaSliceReceipt?: string;
   frankZappaEffectiveHarmonyBars?: string[];
   frankZappaDeviceReceipts?: string[];
+  /** V65 P5 — promoted differentiator receipts active at runtime (`FZ_DIFF_01`, `FZ_DIFF_02`). */
+  frankZappaDiffReceipts?: string[];
+  /** V65 P5 — per-section Zappa density/register/style-boundary behavior diagnostics. */
+  zappaSectionBehaviorBySection?: Record<
+    string,
+    {
+      label: string;
+      bars: number[];
+      meanDensityScalar: number;
+      meanRegisterShiftSemitones: number;
+      structuralContrastBars: number[];
+      styleBoundaryBars: number[];
+      receipts: string[];
+    }
+  >;
   frankZappaAntiElaborationGuards?: {
     polytonalNoop: number;
     xenochronyNoop: number;

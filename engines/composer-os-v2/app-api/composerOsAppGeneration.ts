@@ -2064,6 +2064,8 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       andrewHillAntiElaborationGuards: gp.context.generationMetadata.andrewHillAntiElaborationGuards,
       frankZappaDiagnostics: gp.context.generationMetadata.frankZappaDiagnostics,
       frankZappaDeviceReceipts: gp.context.generationMetadata.frankZappaDeviceReceipts,
+      frankZappaDiffReceipts: gp.context.generationMetadata.frankZappaDiffReceipts,
+      zappaSectionBehaviorBySection: gp.context.generationMetadata.zappaSectionBehaviorBySection,
       frankZappaSliceReceipt: gp.context.generationMetadata.frankZappaSliceReceipt,
       frankZappaEffectiveHarmonyBars: gp.context.generationMetadata.frankZappaEffectiveHarmonyBars,
       frankZappaAntiElaborationGuards: gp.context.generationMetadata.frankZappaAntiElaborationGuards,

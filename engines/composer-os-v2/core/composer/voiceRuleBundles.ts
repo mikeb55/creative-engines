@@ -3235,12 +3235,22 @@ const FRANK_ZAPPA_FINGERPRINT_RESEARCH = [
   'zappa_solo_phrasing_breath — id: zappa_solo_phrasing_breath; behavior: density contrast; rest slots after 4-bar motif statement.',
 ] as const;
 
+const FRANK_ZAPPA_BASE_RECEIPTS = FRANK_ZAPPA.orchestrationPolicy?.fingerprintReceipts ?? [];
+const FRANK_ZAPPA_DIFF_RECEIPT_IDS_LOCAL = ['FZ_DIFF_01', 'FZ_DIFF_02'] as const;
+const isFrankZappaDiffReceiptLine = (line: string): boolean =>
+  FRANK_ZAPPA_DIFF_RECEIPT_IDS_LOCAL.some((id) => line.includes(id));
+const FRANK_ZAPPA_NON_DIFF_BASE_RECEIPTS = FRANK_ZAPPA_BASE_RECEIPTS.filter(
+  (line) => !isFrankZappaDiffReceiptLine(line)
+);
+const FRANK_ZAPPA_DIFF_BASE_RECEIPTS = FRANK_ZAPPA_BASE_RECEIPTS.filter(isFrankZappaDiffReceiptLine);
+
 /** Song Mode + riff generator: stub profile merged with compiled FZ_* / solo / FZBLUES receipts. */
 function buildFrankZappaVrbRiffProfile(): RiffProfile {
   const receiptLines = [
-    ...(FRANK_ZAPPA.orchestrationPolicy?.fingerprintReceipts ?? []),
+    ...FRANK_ZAPPA_NON_DIFF_BASE_RECEIPTS,
     ...FRANK_ZAPPA_FINGERPRINT_RESEARCH,
     ...FRANK_ZAPPA_FZBLUES_FINGERPRINT_RECEIPTS,
+    ...FRANK_ZAPPA_DIFF_BASE_RECEIPTS,
   ];
   return mergeRiffProfilePatch(
     buildFrankZappaRiffProfile(),
@@ -3256,9 +3266,10 @@ const FRANK_ZAPPA_VRF: VoiceRuleBundle = {
   orchestrationPolicy: {
     ...FRANK_ZAPPA.orchestrationPolicy,
     fingerprintReceipts: [
-      ...(FRANK_ZAPPA.orchestrationPolicy.fingerprintReceipts ?? []),
+      ...FRANK_ZAPPA_NON_DIFF_BASE_RECEIPTS,
       ...FRANK_ZAPPA_FINGERPRINT_RESEARCH,
       ...FRANK_ZAPPA_FZBLUES_FINGERPRINT_RECEIPTS,
+      ...FRANK_ZAPPA_DIFF_BASE_RECEIPTS,
     ],
   },
 };

@@ -958,6 +958,8 @@ export interface OutputEntry {
   jimHallVoicingCap?: GenerationMetadata['jimHallVoicingCap'];
   frankZappaDiagnostics?: GenerationMetadata['frankZappaDiagnostics'];
   frankZappaDeviceReceipts?: GenerationMetadata['frankZappaDeviceReceipts'];
+  frankZappaDiffReceipts?: GenerationMetadata['frankZappaDiffReceipts'];
+  zappaSectionBehaviorBySection?: GenerationMetadata['zappaSectionBehaviorBySection'];
   frankZappaSliceReceipt?: GenerationMetadata['frankZappaSliceReceipt'];
   frankZappaEffectiveHarmonyBars?: GenerationMetadata['frankZappaEffectiveHarmonyBars'];
   frankZappaAntiElaborationGuards?: GenerationMetadata['frankZappaAntiElaborationGuards'];

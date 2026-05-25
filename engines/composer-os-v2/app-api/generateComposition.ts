@@ -624,6 +624,8 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       grooveScaffoldReceipts: result.context.generationMetadata.grooveScaffoldReceipts,
       grooveScaffoldDiagnostics: result.context.generationMetadata.grooveScaffoldDiagnostics,
       songModeSectionBehaviourDescriptors: result.context.generationMetadata.songModeSectionBehaviourDescriptors,
+      frankZappaDiffReceipts: result.context.generationMetadata.frankZappaDiffReceipts,
+      zappaSectionBehaviorBySection: result.context.generationMetadata.zappaSectionBehaviorBySection,
       importHarmonyPolicyVersion: result.context.generationMetadata.importHarmonyPolicyVersion,
       validation: {
         scoreIntegrity: result.integrityPassed,

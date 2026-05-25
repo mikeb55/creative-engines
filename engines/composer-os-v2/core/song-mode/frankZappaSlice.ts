@@ -16,6 +16,7 @@ import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { isProtectedBar } from '../score-integrity/identityLock';
 import { SONG_MODE_MOTIF_BAR_17, SONG_MODE_MOTIF_BAR_9 } from '../motif/motifEngineTypes';
+import { getEffectiveContextForBar } from '../section-architecture/effectiveContextForBar';
 
 /** Stable device ids for receipts + diagnostics (spec labels). */
 export const FRANK_ZAPPA_DEVICE_POLYTONAL_SUPERIMPOSITION = 'polytonal_superimposition' as const;
@@ -34,6 +35,7 @@ const D2_METRIC_DISPLACEMENT_RATE = 0.32;
 const D3_XENOCHRONY_RATE = 0.2;
 const D4_STYLE_JUXTAPOSITION_RATE = 0.5;
 const D5_THROUGH_COMPOSED_CUT_RATE = 0.22;
+const FRANK_ZAPPA_DIFF_RECEIPT_IDS_RUNTIME = ['FZ_DIFF_01', 'FZ_DIFF_02'] as const;
 
 /** Bernoulli targets per device (Song Mode Frank Zappa slice + string-quartet variant). */
 export const FRANK_ZAPPA_DEVICE_TARGET_RATES = {
@@ -345,6 +347,145 @@ function densityArcTailReset(density: number[], tb: number, resetBar: number): n
 function meanDensity(density: readonly number[]): number {
   if (density.length === 0) return 0.55;
   return density.reduce((a, x) => a + x, 0) / density.length;
+}
+
+export interface ZappaSectionBehaviorOverride {
+  bar: number;
+  sectionLabel: string;
+  densityScalar: number;
+  densityDelta: number;
+  registerShiftSemitones: number;
+  structuralContrast: boolean;
+  styleBoundary: boolean;
+  receipts: string[];
+}
+
+function densityScalarForZappaBehavior(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) return Math.max(0, Math.min(1, value));
+  if (value === 'sparse') return 0.25;
+  if (value === 'dense') return 0.85;
+  if (value === 'moderate') return 0.55;
+  return 0.5;
+}
+
+function fallbackZappaSectionDensity(sectionIndex: number): number {
+  return sectionIndex % 2 === 0 ? 0.36 : 0.82;
+}
+
+function fallbackZappaSectionRegisterShift(sectionIndex: number): number {
+  return sectionIndex % 2 === 0 ? -2 : 5;
+}
+
+function sectionIndexForBar(bar: number, context: CompositionContext): number {
+  return context.form.sections.findIndex(
+    (s) => bar >= s.startBar && bar < s.startBar + s.length
+  );
+}
+
+/**
+ * V65 P5: per-bar Zappa structural behavior from Song section architecture, with FormMap fallback.
+ * Harmony receipts stay `fz:d1-d5:*`; this helper only biases density/register/style-boundary behavior.
+ */
+export function resolveZappaSectionBehaviorForBar(
+  bar: number,
+  context: CompositionContext
+): ZappaSectionBehaviorOverride | undefined {
+  const idx = sectionIndexForBar(bar, context);
+  if (idx < 0) return undefined;
+  const section = context.form.sections[idx]!;
+  const eff = getEffectiveContextForBar(bar, context);
+  const densityScalar = densityScalarForZappaBehavior(eff?.density ?? fallbackZappaSectionDensity(idx));
+  const pitchMid =
+    typeof eff?.pitch?.registerFloor === 'number' && typeof eff?.pitch?.registerCeiling === 'number'
+      ? (eff.pitch.registerFloor + eff.pitch.registerCeiling) / 2
+      : undefined;
+  const registerShiftSemitones = Math.max(
+    -7,
+    Math.min(9, Math.round(pitchMid !== undefined ? (pitchMid - 60) / 2 : fallbackZappaSectionRegisterShift(idx)))
+  );
+  const styleBoundary = bar === section.startBar && idx > 0;
+  const structuralContrast =
+    styleBoundary ||
+    Math.abs(densityScalar - 0.5) >= 0.25 ||
+    Math.abs(registerShiftSemitones) >= 4 ||
+    eff?.rhythm?.antiMetric === true;
+  const receipts = [
+    ...(structuralContrast ? ['FZ_DIFF_01'] : []),
+    ...(styleBoundary || eff?.rhythm?.antiMetric === true || (eff?.pitch?.chromaticBudget ?? 0) >= 0.55
+      ? ['FZ_DIFF_02']
+      : []),
+  ];
+  return {
+    bar,
+    sectionLabel: section.label,
+    densityScalar,
+    densityDelta: densityScalar - 0.5,
+    registerShiftSemitones,
+    structuralContrast,
+    styleBoundary,
+    receipts,
+  };
+}
+
+function zappaSectionDensityLevel(behavior: ZappaSectionBehaviorOverride): 'sparse' | 'medium' | 'dense' {
+  if (behavior.densityScalar <= 0.38) return 'sparse';
+  if (behavior.densityScalar >= 0.68) return 'dense';
+  return 'medium';
+}
+
+export function applyZappaSectionRegisterBehavior(
+  low: number,
+  high: number,
+  behavior: ZappaSectionBehaviorOverride | undefined
+): [number, number] {
+  if (!behavior) return [low, high];
+  const shift = behavior.registerShiftSemitones;
+  return [Math.max(28, Math.min(96, low + shift)), Math.max(28, Math.min(96, high + shift))];
+}
+
+export function applyZappaSectionDensityBehavior(
+  current: 'sparse' | 'medium' | 'dense',
+  behavior: ZappaSectionBehaviorOverride | undefined
+): 'sparse' | 'medium' | 'dense' {
+  if (!behavior) return current;
+  return zappaSectionDensityLevel(behavior);
+}
+
+export function buildZappaSectionBehaviorDiagnostics(
+  context: CompositionContext,
+  totalBars: number
+): GenerationMetadata['zappaSectionBehaviorBySection'] {
+  const bySection: NonNullable<GenerationMetadata['zappaSectionBehaviorBySection']> = {};
+  for (let b = 1; b <= totalBars; b++) {
+    const behavior = resolveZappaSectionBehaviorForBar(b, context);
+    if (!behavior) continue;
+    const key = behavior.sectionLabel || `section_${sectionIndexForBar(b, context) + 1}`;
+    const row =
+      bySection[key] ??
+      (bySection[key] = {
+        label: behavior.sectionLabel,
+        bars: [],
+        meanDensityScalar: 0,
+        meanRegisterShiftSemitones: 0,
+        structuralContrastBars: [],
+        styleBoundaryBars: [],
+        receipts: [],
+      });
+    row.bars.push(b);
+    row.meanDensityScalar += behavior.densityScalar;
+    row.meanRegisterShiftSemitones += behavior.registerShiftSemitones;
+    if (behavior.structuralContrast) row.structuralContrastBars.push(b);
+    if (behavior.styleBoundary) row.styleBoundaryBars.push(b);
+    for (const receipt of behavior.receipts) {
+      if (!row.receipts.includes(receipt)) row.receipts.push(receipt);
+    }
+  }
+  for (const row of Object.values(bySection)) {
+    const n = Math.max(1, row.bars.length);
+    row.meanDensityScalar = Number((row.meanDensityScalar / n).toFixed(3));
+    row.meanRegisterShiftSemitones = Number((row.meanRegisterShiftSemitones / n).toFixed(3));
+  }
+  return Object.keys(bySection).length ? bySection : undefined;
 }
 
 function isLydianModalField(bar: number, symbol: string, fzCtx: FrankZappaContextMode, seed: number): boolean {
@@ -826,12 +967,19 @@ export function precomputeFrankZappaEffectiveHarmonyBars(context: CompositionCon
     Array.isArray(genMeta.frankZappaDensityBiasByBar) && (genMeta.frankZappaDensityBiasByBar as number[]).length === tb
       ? ([...(genMeta.frankZappaDensityBiasByBar as number[])] as number[])
       : computeZappaDensityArc(tb);
+  for (let b = 1; b <= tb; b++) {
+    const behavior = resolveZappaSectionBehaviorForBar(b, context);
+    if (!behavior) continue;
+    densityArc[b - 1] = Math.max(0, Math.min(1, (densityArc[b - 1] ?? 0.55) + behavior.densityDelta * 0.45));
+  }
 
   const hard = applyHardCutTriggerSystem(out, seed, receipts, tb, context, densityArc);
   densityArc = hard.density;
   genMeta.frankZappaDensityBiasByBar = densityArc;
   genMeta.frankZappaHardCutTriggerBars = hard.triggers.length ? hard.triggers : undefined;
   genMeta.songwriterDensityBias = Math.max(0, Math.min(1, meanDensity(densityArc)));
+  genMeta.frankZappaDiffReceipts = [...FRANK_ZAPPA_DIFF_RECEIPT_IDS_RUNTIME];
+  genMeta.zappaSectionBehaviorBySection = buildZappaSectionBehaviorDiagnostics(context, tb);
 
   genMeta.frankZappaEffectiveHarmonyBars = out;
   genMeta.frankZappaDeviceReceipts = receipts;
