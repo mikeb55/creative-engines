@@ -6,7 +6,9 @@
 
 **V64 — COMPLETE (2026-05-24):** Section architecture + Zappa GCE structural layer + per-section VRB/meter (P1–P6). P7 closeout: **+22** smoke rows (**7** goldens in smoke). Smoke **307/73/0** fast · **472/87/0** full. See [COMPOSER_OS_ROADMAP_V64.md](COMPOSER_OS_ROADMAP_V64.md).
 
-**V65 — IN PROGRESS (2026-05-25):** **P1** section architecture wired at generate (`effectiveContextForBar`, Song→FormMap bridge, per-bar consumers) — goldens **80001** / **80002** off smoke. **P2** per-section tuning / registerWindow / bass root-follow / Slonimsky `cellSets` / BB+SQ profile fan-out — goldens **81001** / **81002** / **81003** off smoke. **P3** MusicXML deep import maps chords / rehearsal sections / meter / tempo / role hints into `ImportedSongResult` and imported `Song`; golden **82001** off smoke; Sibelius QA matrix added in `docs/SIBELIUS_QA_REPORT.md`. **P4** opt-in Groove Scaffold adds `groove_drums` before final seal, six symbolic feels, `GROOVE_*` receipts/diagnostics, MusicXML percussion + MIDI channel 10, and off-smoke goldens **83001** / **83002**. Remaining: **12** FZ_* stubs · section editor UI · fretboard view · ContrapuntalLineEngine / parallelRepair / eraChordNormalizer follow-up — see **§ V65 backlog**.
+**V65 — COMPLETE (closed 2026-05-25):** Section architecture P1/P2, MusicXML deep import P3, Groove Scaffold P4, and Zappa diff/per-section behavior P5 are shipped and promoted to smoke in P6. Smoke **324/80/0** fast · **489/94/0** full. See [COMPOSER_OS_ROADMAP_V65.md](COMPOSER_OS_ROADMAP_V65.md).
+
+**V66 — NEXT BACKLOG:** remaining **10** FZ_* receipt stubs · section editor UI · fretboard view · MusicXML import stress / repeat truth hardening · ContrapuntalLineEngine / parallelRepair / eraChordNormalizer follow-up — see **§ V66 backlog**.
 
 **V58 — COMPLETE since V57 (`0e2dfe0e` … `3b8db553`):** **Export-truth consolidation** (`assertExportTruth`) · **Contrapuntal Pass 4** (SQ/BB MusicXML from `contrapuntalLineSet`) · **Long forms 40–64 bars** (duo/song product quality) · **Film-stub VRBs → full receipts** (8 composers) · **Lead-sheet MusicXML import phase 3+** · **Output validation layer** (MIDI + MusicXML + audio; smoke +11 rows) · **SQ VRB slices:** Ligeti **σ=32**, Satie **σ=19**, Cole Porter **σ=25**, Gershwin **σ=27** · **GM string playback** (Violin I/II, Viola, Cello — Tone.Sampler + FluidR3_GM on SQ→BB panel).
 
@@ -24,7 +26,7 @@
 | goldsmith | 24 | webern | 40 |
 | **bartók** | **24** | | |
 
-Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartók** native bundle (not in registry map). **Smoke (2026-05-24):** full **472/0** (**87** suites) · fast **307/0** (**73** suites). V64 closeout: off-smoke goldens promoted (+22 rows, +7 suites).
+Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartók** native bundle (not in registry map). **Smoke (2026-05-25):** full **489/0** (**94** suites) · fast **324/0** (**80** suites). V65 closeout: off-smoke goldens promoted (+17 rows, +7 suites).
 
 **V61 — COMPLETE (2026-05-23):** Slonimsky UI panels U1–U9 — universal, song mode, ensemble (BB/SQ), GBD, SQ→BB hybrid, advanced drawer (pin/forbid cells), harmonic voice selector (sonic_youth warning + no `harmonicVoice` in payload), UX copy, Zappa advanced relocation; smoke **`slonimsky-ui`** UI/boundary goldens only.
 
@@ -539,9 +541,9 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 
 ---
 
-## V65 backlog
+## V66 backlog
 
-### Remaining FZ_* receipt stubs (12 of 15)
+### Remaining FZ_* receipt stubs (10 of 15)
 
 - Promote remaining **`FZ_*`** metadata stubs in **`priority3VoiceRuleBundles.ts`** with goldens + smoke rows when stable
 

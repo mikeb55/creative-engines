@@ -4,7 +4,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N rows (M suites)` in the smoke summary, then sync **N** + **M** into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): full **472** PASS rows, **87** suites; fast **307** rows, **73** suites (V64 off-smoke goldens promoted P7 closeout).
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): full **489** PASS rows, **94** suites; fast **324** rows, **80** suites (V65 P6 goldens promoted).
  *
  * **Fast subset:** `COMPOSER_OS_SMOKE_TIER=fast` or `npm run test:composer-smoke-fast` — skips `SMOKE_FAST_EXCLUDE` suites (local dev).
  * **Full tier (default / CI):** unset or `COMPOSER_OS_SMOKE_TIER=full` — all suites in `smokeSuites`.
@@ -100,6 +100,13 @@ import { runFzMetricShiftReceiptTests } from './fzMetricShiftReceipt.test';
 import { runFzRegisterCollisionReceiptTests } from './fzRegisterCollisionReceipt.test';
 import { runSectionArchitectureDomainTests } from './sectionArchitectureDomain.test';
 import { runPerSectionMeterTests } from './perSectionMeter.test';
+import { runSectionArchitectureP1GoldenTests } from './sectionArchitectureP1Golden.test';
+import { runSectionArchitectureP2GoldenTests } from './sectionArchitectureP2Golden.test';
+import { runMusicXmlDeepImportV65P3GoldenTests } from './musicXmlImport.test';
+import { runGrooveScaffoldGoldenTests } from './grooveScaffold.test';
+import { runFzDiff01ReceiptTests } from './fzDiff01Receipt.test';
+import { runFzDiff02ReceiptTests } from './fzDiff02Receipt.test';
+import { runZappaPerSectionTests } from './zappaPerSection.test';
 
 type Row = { name: string; ok: boolean };
 
@@ -218,6 +225,13 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'V64 — FZ_REGISTER_COLLISION receipt golden (seed 77003)', run: runFzRegisterCollisionReceiptTests },
   { label: 'V64 — section architecture domain golden (seed 78001)', run: runSectionArchitectureDomainTests },
   { label: 'V64 — per-section meter golden (seeds 79001–79003)', run: runPerSectionMeterTests },
+  { label: 'V65 P1 — section architecture wiring goldens (seeds 80001–80002)', run: runSectionArchitectureP1GoldenTests },
+  { label: 'V65 P2 — per-section tuning / Slonimsky / Big Band goldens (seeds 81001–81003)', run: runSectionArchitectureP2GoldenTests },
+  { label: 'V65 P3 — MusicXML deep import golden (seed 82001)', run: runMusicXmlDeepImportV65P3GoldenTests },
+  { label: 'V65 P4 — groove scaffold goldens (seeds 83001–83002)', run: runGrooveScaffoldGoldenTests },
+  { label: 'V65 P5 — FZ_DIFF_01 receipt golden (seed 84001)', run: runFzDiff01ReceiptTests },
+  { label: 'V65 P5 — FZ_DIFF_02 receipt golden (seed 84002)', run: runFzDiff02ReceiptTests },
+  { label: 'V65 P5 — Zappa per-section golden (seed 84003)', run: runZappaPerSectionTests },
   { label: 'Follow-up 4 — Mingus overlay + activeMotifIds + shout export', run: runFollowup4MingusSchneiderThreadgillSmokeTests },
   { label: 'Follow-up 5 — shout-chorus in-place brass merge', run: runFollowup5ShoutBrassInPlaceSmokeTests },
   { label: 'Output validation — MIDI + MusicXML structural', run: runOutputValidationSmokeTests },

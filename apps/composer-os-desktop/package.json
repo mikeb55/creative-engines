@@ -121,7 +121,7 @@
         "portable",
         "nsis"
       ],
-      "icon": "resources/icon.png",
+      "icon": "resources/icon.ico",
       "signAndEditExecutable": false
     },
     "nsis": {
