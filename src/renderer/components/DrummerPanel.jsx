@@ -3,6 +3,7 @@ import { BIG_BAND_DRUM_STYLES } from '../../engine/bigBandDrums.js';
 import { DRUM_PRESETS } from '../../engine/drumPresets.js';
 import { useBigBand } from '../context/BigBandContext';
 import { useDrumSelection } from '../context/DrumSelectionContext';
+import { DrumStaffDisplay } from './DrumStaffDisplay';
 
 const panelStyle = {
   border: '1px solid var(--border, #444)',
@@ -209,6 +210,7 @@ export function DrummerPanel() {
       </div>
 
       <PatternGrid pattern={activePattern} />
+      <DrumStaffDisplay pattern={activePattern} />
     </section>
   );
 }

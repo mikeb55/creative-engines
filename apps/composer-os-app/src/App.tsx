@@ -9,6 +9,7 @@ import { DiagnosticsPanel, type LastGenerationSummary } from './components/Diagn
 import { api } from './services/api';
 import { CompositionSongProvider } from '@renderer/context/CompositionSongContext';
 import { DrumSelectionProvider } from '@renderer/context/DrumSelectionContext';
+import { FillSchedulerProvider } from '@renderer/context/FillSchedulerContext';
 import { FzFingerprintProvider } from '@renderer/context/FzFingerprintContext';
 import { VrbProfileProvider } from '@renderer/context/VrbProfileContext';
 import { DeferredQueueIndicator } from '@renderer/components/DeferredQueueIndicator';
@@ -429,6 +430,7 @@ export default function App() {
     <CompositionSongProvider>
     <LastGenerateProvider>
     <DrumSelectionProvider>
+    <FillSchedulerProvider>
     <BigBandProvider>
     <StringQuartetProvider>
     <ContrapuntalProvider>
@@ -522,6 +524,7 @@ export default function App() {
     </ContrapuntalProvider>
     </StringQuartetProvider>
     </BigBandProvider>
+    </FillSchedulerProvider>
     </DrumSelectionProvider>
     </LastGenerateProvider>
     </CompositionSongProvider>

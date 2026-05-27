@@ -175,6 +175,16 @@ export interface VrbProfilePayload {
   character: string;
 }
 
+/** V68 P2 — Fill scheduler (Structure tab). */
+export interface FillSchedulerConfigPayload {
+  fillDensity: number;
+  fillTypeId: string;
+  lockFills: boolean;
+  sectionBars: number;
+  fillPositions: number[];
+  lockedFillPositions?: number[];
+}
+
 /** V66 P2 — Structure tab drummer pattern selection (16th-note grid). */
 export interface UiDrumPatternPayload {
   drummerId: string;
@@ -435,6 +445,8 @@ export interface GenerateRequest {
   song?: import('../core/section-architecture/sectionArchitectureTypes').Song;
   /** V66 P2 — UI-selected drummer pattern (16th-grid lanes for kick/snare/hat/ride). */
   uiDrumPattern?: UiDrumPatternPayload;
+  /** V68 P2 — drum fill scheduler (Structure tab). */
+  fillSchedulerConfig?: FillSchedulerConfigPayload;
   /** V66 P3 — Frank Zappa GCE fingerprint receipt (Structure tab). */
   fingerprintReceipt?: FingerprintReceiptPayload;
   /** V66 P3 — ECM VRB profile (Structure tab). */

@@ -125,6 +125,37 @@ function coerceSixteenthHits(raw: unknown): number[] | undefined {
   return out.length ? out.sort((a, b) => a - b) : undefined;
 }
 
+function coerceFillSchedulerConfigFromBody(
+  body: Partial<GenerateRequest>
+): import('./appApiTypes').FillSchedulerConfigPayload | undefined {
+  const raw = (body as { fillSchedulerConfig?: unknown }).fillSchedulerConfig;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const fillDensity = Number(o.fillDensity);
+  if (!Number.isFinite(fillDensity) || fillDensity <= 0) return undefined;
+  const fillTypeId = typeof o.fillTypeId === 'string' ? o.fillTypeId.trim() : '';
+  if (!fillTypeId) return undefined;
+  const sectionBars = Math.max(1, Math.floor(Number(o.sectionBars) || 0));
+  const fillPositions = Array.isArray(o.fillPositions)
+    ? o.fillPositions
+        .map((x) => Math.floor(Number(x)))
+        .filter((b) => Number.isFinite(b) && b >= 1 && b <= sectionBars)
+    : [];
+  const lockedFillPositions = Array.isArray(o.lockedFillPositions)
+    ? o.lockedFillPositions
+        .map((x) => Math.floor(Number(x)))
+        .filter((b) => Number.isFinite(b) && b >= 1 && b <= sectionBars)
+    : undefined;
+  return {
+    fillDensity: Math.max(0, Math.min(1, fillDensity)),
+    fillTypeId,
+    lockFills: o.lockFills === true,
+    sectionBars,
+    fillPositions,
+    ...(lockedFillPositions?.length ? { lockedFillPositions } : {}),
+  };
+}
+
 function coerceUiDrumPatternFromBody(body: Partial<GenerateRequest>): UiDrumPatternPayload | undefined {
   const raw = (body as { uiDrumPattern?: unknown }).uiDrumPattern;
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
@@ -807,6 +838,7 @@ export function apiGenerate(
       song: coerceSongFromBody(body),
       grooveScaffold: coerceGrooveScaffoldFromBody(body),
       uiDrumPattern: coerceUiDrumPatternFromBody(body),
+      fillSchedulerConfig: coerceFillSchedulerConfigFromBody(body),
       fingerprintReceipt: coerceFingerprintReceiptFromBody(body),
       vrbProfile: coerceVrbProfileFromBody(body),
       bigBandConfig: coerceBigBandConfigFromBody(body),

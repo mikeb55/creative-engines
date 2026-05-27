@@ -263,6 +263,7 @@ function requestEchoFromReq(req: GenerateRequest): NonNullable<GenerateResult['r
       : {}),
     ...(req.grooveScaffold ? { grooveScaffold: req.grooveScaffold } : {}),
     ...(req.uiDrumPattern ? { uiDrumPattern: req.uiDrumPattern } : {}),
+    ...(req.fillSchedulerConfig ? { fillSchedulerConfig: req.fillSchedulerConfig } : {}),
     ...(req.song ? { song: req.song } : {}),
     ...(req.fingerprintReceipt ? { fingerprintReceipt: req.fingerprintReceipt } : {}),
     ...(req.vrbProfile ? { vrbProfile: req.vrbProfile } : {}),

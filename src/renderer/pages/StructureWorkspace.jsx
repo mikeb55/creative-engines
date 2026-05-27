@@ -4,6 +4,7 @@ import { MeterEditor } from '../components/MeterEditor';
 import { TuningPanel } from '../components/TuningPanel';
 import { DrummerPanel } from '../components/DrummerPanel';
 import { RhythmToolboxPanel } from '../components/RhythmToolboxPanel';
+import { FillSchedulerPanel } from '../components/FillSchedulerPanel';
 import { FzReceiptsPanel } from '../components/FzReceiptsPanel';
 import { VrbPanel } from '../components/VrbPanel';
 
@@ -25,6 +26,7 @@ export function StructureWorkspace() {
       <TuningPanel />
       <DrummerPanel />
       <RhythmToolboxPanel />
+      <FillSchedulerPanel />
       <FzReceiptsPanel />
       <VrbPanel />
     </div>

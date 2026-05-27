@@ -11,6 +11,7 @@ import type { PlaybackSequence } from '../playback';
 import { api, displayOutputPath, type OutputDirectoryResponse } from '../services/api';
 import { useCompositionSong } from '@renderer/context/CompositionSongContext';
 import { useDrumSelection } from '@renderer/context/DrumSelectionContext';
+import { useFillScheduler } from '@renderer/context/FillSchedulerContext';
 import { useFzFingerprint } from '@renderer/context/FzFingerprintContext';
 import { useVrbProfile } from '@renderer/context/VrbProfileContext';
 import { useBigBand } from '@renderer/context/BigBandContext';
@@ -2010,6 +2011,7 @@ export function HomeGenerate({
 }) {
   const { song: compositionSong, activeSectionId: compositionActiveSectionId } = useCompositionSong();
   const { payloadPattern: uiDrumPattern } = useDrumSelection();
+  const { fillSchedulerConfig } = useFillScheduler();
   const { fingerprintReceipt } = useFzFingerprint();
   const { vrbProfile } = useVrbProfile();
   const { bigBandConfig } = useBigBand();
@@ -3317,6 +3319,7 @@ export function HomeGenerate({
             ? { slonimskyPatternId: structureSlonimskyId }
             : {}),
           ...(uiDrumPattern ? { uiDrumPattern } : {}),
+          ...(fillSchedulerConfig ? { fillSchedulerConfig } : {}),
           ...(fingerprintReceipt ? { fingerprintReceipt } : {}),
           ...(vrbProfile ? { vrbProfile } : {}),
           ...(bigBandConfig ? { bigBandConfig } : {}),
