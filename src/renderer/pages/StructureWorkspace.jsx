@@ -3,6 +3,8 @@ import { SectionEditor } from '../components/SectionEditor';
 import { MeterEditor } from '../components/MeterEditor';
 import { TuningPanel } from '../components/TuningPanel';
 import { DrummerPanel } from '../components/DrummerPanel';
+import { FzReceiptsPanel } from '../components/FzReceiptsPanel';
+import { VrbPanel } from '../components/VrbPanel';
 
 const scrollStyle = {
   maxHeight: 'calc(100vh - 12rem)',
@@ -21,6 +23,8 @@ export function StructureWorkspace() {
       <MeterEditor />
       <TuningPanel />
       <DrummerPanel />
+      <FzReceiptsPanel />
+      <VrbPanel />
     </div>
   );
 }

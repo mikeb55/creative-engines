@@ -19,6 +19,8 @@ import type {
   MelodicVariationPackRequest,
   MelodicVariationPackNoteEvent,
   UiDrumPatternPayload,
+  FingerprintReceiptPayload,
+  VrbProfilePayload,
 } from './appApiTypes';
 import type { GrooveScaffoldSettings } from '../core/section-architecture/sectionArchitectureTypes';
 import type { Song } from '../core/section-architecture/sectionArchitectureTypes';
@@ -174,6 +176,51 @@ function coerceGrooveScaffoldFromBody(body: Partial<GenerateRequest>): GrooveSca
     ...(feel ? { feel } : {}),
     ...(density ? { density } : {}),
     ...(fillFrequency ? { fillFrequency } : {}),
+  };
+}
+
+function coerceFingerprintReceiptFromBody(
+  body: Partial<GenerateRequest>
+): FingerprintReceiptPayload | undefined {
+  const raw = (body as { fingerprintReceipt?: unknown }).fingerprintReceipt;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const id = typeof o.id === 'string' ? o.id.trim() : '';
+  const name = typeof o.name === 'string' ? o.name.trim() : '';
+  if (!id || !name) return undefined;
+  const params =
+    o.params && typeof o.params === 'object' && !Array.isArray(o.params)
+      ? (o.params as Record<string, unknown>)
+      : {};
+  return {
+    id,
+    name,
+    description: typeof o.description === 'string' ? o.description.trim() : '',
+    params,
+  };
+}
+
+function coerceVrbProfileFromBody(body: Partial<GenerateRequest>): VrbProfilePayload | undefined {
+  const raw = (body as { vrbProfile?: unknown }).vrbProfile;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const presetId = typeof o.presetId === 'string' ? o.presetId.trim() : '';
+  const name = typeof o.name === 'string' ? o.name.trim() : '';
+  if (!presetId || !name) return undefined;
+  const clamp = (v: unknown, lo: number, hi: number, fallback: number) => {
+    const n = Number(v);
+    if (!Number.isFinite(n)) return fallback;
+    return Math.max(lo, Math.min(hi, n));
+  };
+  return {
+    presetId,
+    name,
+    roomSize: clamp(o.roomSize, 0, 1, 0.5),
+    decay: clamp(o.decay, 0.5, 8, 2),
+    predelay: clamp(o.predelay, 0, 80, 12),
+    damping: clamp(o.damping, 0, 1, 0.5),
+    diffusion: clamp(o.diffusion, 0, 1, 0.6),
+    character: typeof o.character === 'string' ? o.character.trim() : '',
   };
 }
 
@@ -661,6 +708,8 @@ export function apiGenerate(
       song: coerceSongFromBody(body),
       grooveScaffold: coerceGrooveScaffoldFromBody(body),
       uiDrumPattern: coerceUiDrumPatternFromBody(body),
+      fingerprintReceipt: coerceFingerprintReceiptFromBody(body),
+      vrbProfile: coerceVrbProfileFromBody(body),
     };
     const genCorr = req_.__generateCorrelationId;
     if (genCorr != null) {

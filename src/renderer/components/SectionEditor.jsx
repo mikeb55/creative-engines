@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import { useCompositionSong } from '../context/CompositionSongContext';
 import { readSectionRowSummary } from '../lib/compositionSongUi';
+import {
+  GBD_SECTION_OPTIONS,
+  GBD_TYPE_COLORS,
+  gbdLabelForSectionType,
+  sectionBarCount,
+  sectionTypeForGbdLabel,
+} from '../lib/sectionGbdUi';
 
 const panelStyle = {
   border: '1px solid var(--border, #444)',
@@ -11,12 +18,45 @@ const panelStyle = {
 
 const rowStyle = {
   display: 'grid',
-  gridTemplateColumns: '1fr auto auto',
+  gridTemplateColumns: '1fr auto auto auto',
   gap: '0.35rem 0.5rem',
   alignItems: 'center',
   padding: '0.35rem 0',
   borderBottom: '1px solid var(--border-subtle, rgba(128,128,128,0.2))',
 };
+
+function GbdFlowView({ sections, totalBars, activeSectionId, onSelect }) {
+  const total = Math.max(1, totalBars);
+  return (
+    <div style={{ marginTop: '0.75rem' }}>
+      <div style={{ fontSize: '0.8rem', marginBottom: 4 }}>GBD flow</div>
+      <div style={{ display: 'flex', height: 28, borderRadius: 4, overflow: 'hidden', border: '1px solid var(--border-subtle, #333)' }}>
+        {sections.map((section) => {
+          const bars = sectionBarCount(section);
+          const widthPct = (bars / total) * 100;
+          const colors = GBD_TYPE_COLORS[section.type] ?? GBD_TYPE_COLORS.verse;
+          const active = section.id === activeSectionId;
+          return (
+            <button
+              key={section.id}
+              type="button"
+              title={`${section.label} · ${gbdLabelForSectionType(section.type)} · ${bars} bars`}
+              onClick={() => onSelect(section.id)}
+              style={{
+                flex: `0 0 ${widthPct}%`,
+                minWidth: 12,
+                border: active ? `2px solid ${colors.border}` : `1px solid ${colors.border}`,
+                background: colors.bg,
+                cursor: 'pointer',
+                padding: 0,
+              }}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export function SectionEditor() {
   const {
@@ -58,12 +98,14 @@ export function SectionEditor() {
         {song.sections.map((section, index) => {
           const { meter, tempo, feel, key } = readSectionRowSummary(section, song);
           const selected = section.id === activeSectionId;
+          const typeColors = GBD_TYPE_COLORS[section.type] ?? GBD_TYPE_COLORS.verse;
           return (
             <div
               key={section.id}
               style={{
                 ...rowStyle,
-                background: selected ? 'rgba(100, 140, 255, 0.12)' : undefined,
+                background: selected ? 'rgba(100, 140, 255, 0.12)' : typeColors.bg,
+                borderLeft: `3px solid ${typeColors.border}`,
                 cursor: 'pointer',
               }}
               onClick={() => setActiveSectionId(section.id)}
@@ -103,9 +145,28 @@ export function SectionEditor() {
                   </button>
                 )}
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted, #888)', marginTop: 2 }}>
-                  {meter} · {tempo} bpm · {feel} · {key}
+                  {gbdLabelForSectionType(section.type)} · {meter} · {tempo} bpm · {feel} · {key}
                 </div>
               </div>
+              <label
+                style={{ fontSize: '0.72rem' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                Type
+                <select
+                  value={gbdLabelForSectionType(section.type)}
+                  onChange={(e) =>
+                    patchSection(section.id, { type: sectionTypeForGbdLabel(e.target.value) })
+                  }
+                  style={{ display: 'block', marginTop: 2, maxWidth: 110 }}
+                >
+                  {GBD_SECTION_OPTIONS.map((o) => (
+                    <option key={o.label} value={o.label}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <div style={{ display: 'flex', gap: 4 }} onClick={(e) => e.stopPropagation()}>
                 <button
                   type="button"
@@ -203,6 +264,12 @@ export function SectionEditor() {
           })()}
         </div>
       )}
+      <GbdFlowView
+        sections={song.sections}
+        totalBars={song.totalBars}
+        activeSectionId={activeSectionId}
+        onSelect={setActiveSectionId}
+      />
     </section>
   );
 }

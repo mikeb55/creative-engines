@@ -155,6 +155,26 @@ export type SectionVrbMapEntry =
       blendWeights: number[];
     };
 
+/** V66 P3 — Frank Zappa GCE fingerprint receipt from Structure tab. */
+export interface FingerprintReceiptPayload {
+  id: string;
+  name: string;
+  description: string;
+  params: Record<string, unknown>;
+}
+
+/** V66 P3 — ECM VRB profile from Structure tab. */
+export interface VrbProfilePayload {
+  presetId: string;
+  name: string;
+  roomSize: number;
+  decay: number;
+  predelay: number;
+  damping: number;
+  diffusion: number;
+  character: string;
+}
+
 /** V66 P2 — Structure tab drummer pattern selection (16th-note grid). */
 export interface UiDrumPatternPayload {
   drummerId: string;
@@ -377,6 +397,10 @@ export interface GenerateRequest {
   song?: import('../core/section-architecture/sectionArchitectureTypes').Song;
   /** V66 P2 — UI-selected drummer pattern (16th-grid lanes for kick/snare/hat/ride). */
   uiDrumPattern?: UiDrumPatternPayload;
+  /** V66 P3 — Frank Zappa GCE fingerprint receipt (Structure tab). */
+  fingerprintReceipt?: FingerprintReceiptPayload;
+  /** V66 P3 — ECM VRB profile (Structure tab). */
+  vrbProfile?: VrbProfilePayload;
   /** Frank Zappa P2 — opt-in GCE auto meter splice when no request `barMeterMap`. */
   zappaGceAutoBarMeterMapEnabled?: boolean;
   /** Frank Zappa P6 — section-meter interaction when auto meter enabled (`disrupt` default). */

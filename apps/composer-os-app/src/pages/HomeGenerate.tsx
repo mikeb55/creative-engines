@@ -11,6 +11,9 @@ import type { PlaybackSequence } from '../playback';
 import { api, displayOutputPath, type OutputDirectoryResponse } from '../services/api';
 import { useCompositionSong } from '@renderer/context/CompositionSongContext';
 import { useDrumSelection } from '@renderer/context/DrumSelectionContext';
+import { useFzFingerprint } from '@renderer/context/FzFingerprintContext';
+import { useVrbProfile } from '@renderer/context/VrbProfileContext';
+import { configureDeferredEngine, enqueue } from '@engine/deferredEngine.js';
 import { getUiOverride } from '@renderer/lib/compositionSongUi';
 import { mapCoreUiToGenerationFields } from '../utils/buildGenerateRequestBody';
 import {
@@ -2003,7 +2006,15 @@ export function HomeGenerate({
 }) {
   const { song: compositionSong, activeSectionId: compositionActiveSectionId } = useCompositionSong();
   const { payloadPattern: uiDrumPattern } = useDrumSelection();
+  const { fingerprintReceipt } = useFzFingerprint();
+  const { vrbProfile } = useVrbProfile();
   const [presetId, setPresetId] = useState('song_mode');
+
+  useEffect(() => {
+    configureDeferredEngine({
+      generate: (payload) => api.generate(payload as Parameters<typeof api.generate>[0]),
+    });
+  }, []);
   const [sqToBbStyleProfile, setSqToBbStyleProfile] = useState<SqToBbStyleProfileId>('brookmeyer');
   const [sqToBbEra, setSqToBbEra] = useState<ComposerEraSelectValue>(null);
   const [ecmMode, setEcmMode] = useState<'ECM_METHENY_QUARTET' | 'ECM_SCHNEIDER_CHAMBER'>(
@@ -3290,6 +3301,8 @@ export function HomeGenerate({
             ? { slonimskyPatternId: structureSlonimskyId }
             : {}),
           ...(uiDrumPattern ? { uiDrumPattern } : {}),
+          ...(fingerprintReceipt ? { fingerprintReceipt } : {}),
+          ...(vrbProfile ? { vrbProfile } : {}),
           ...(!generateDrumGuide ? { skipDrumGuide: true as const } : {}),
           variationEnabled: variationEnabled,
           styleStack: isScorePreset ? DEFAULT_SCORE_STYLE_STACK : MINIMAL_STYLE_STACK,
@@ -3578,7 +3591,7 @@ export function HomeGenerate({
         }
         const riffOpSent = riffGenerateOpRef.current;
         riffGenerateOpRef.current = 'full';
-        const r = (await api.generate(generatePayload)) as GenResult;
+        const r = (await enqueue(generatePayload)) as GenResult;
         if (unlockHarmonyAfterReharmApply) {
           reharmApplyHarmonyUnlockRef.current = false;
         }

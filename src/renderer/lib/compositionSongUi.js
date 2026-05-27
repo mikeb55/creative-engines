@@ -206,6 +206,12 @@ export function patchSectionUi(song, sectionId, patch) {
   if (patch.compoundMeter != null) {
     next = setUiOverride(next, sectionId, 'compoundMeter', patch.compoundMeter);
   }
+  if (patch.type != null) {
+    next = {
+      ...next,
+      sections: next.sections.map((s) => (s.id === sectionId ? { ...s, type: patch.type } : s)),
+    };
+  }
 
   return next;
 }

@@ -17,6 +17,7 @@ export default defineConfig({
       '@composer-os': composerOsEngineRoot,
       '@renderer': path.resolve(__dirname, '../../src/renderer'),
       '@engine': path.resolve(__dirname, '../../src/engine'),
+      '@engine/': path.resolve(__dirname, '../../src/engine/'),
     },
   },
   server: {
