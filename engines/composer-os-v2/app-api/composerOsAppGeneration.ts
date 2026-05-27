@@ -268,6 +268,7 @@ function requestEchoFromReq(req: GenerateRequest): NonNullable<GenerateResult['r
     ...(req.vrbProfile ? { vrbProfile: req.vrbProfile } : {}),
     ...(req.bigBandConfig ? { bigBandConfig: req.bigBandConfig } : {}),
     ...(req.stringQuartetConfig ? { stringQuartetConfig: req.stringQuartetConfig } : {}),
+    ...(req.contrapuntalConfig ? { contrapuntalConfig: req.contrapuntalConfig } : {}),
     ...(Array.isArray(req.styleGenerationContextKeys) && req.styleGenerationContextKeys.length > 0
       ? { styleGenerationContextKeys: req.styleGenerationContextKeys }
       : {}),

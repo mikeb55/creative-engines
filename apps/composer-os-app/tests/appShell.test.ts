@@ -8,10 +8,11 @@ describe('Composer OS app shell', () => {
   const appTs = fs.readFileSync(path.join(__dirname, '../src/App.tsx'), 'utf-8');
   const outputsTs = fs.readFileSync(path.join(__dirname, '../src/pages/Outputs.tsx'), 'utf-8');
 
-  it('nav includes Generate, Structure, Ensemble, Presets, Outputs (Style Stack tab removed)', () => {
+  it('nav includes Generate, Structure, Ensemble, Grid, Presets, Outputs (Style Stack tab removed)', () => {
     expect(appTs).toMatch(/Generate/);
     expect(appTs).toMatch(/Structure/);
     expect(appTs).toMatch(/Ensemble/);
+    expect(appTs).toMatch(/\bGrid\b/);
     expect(appTs).toMatch(/Presets/);
     expect(appTs).toMatch(/Outputs/);
     expect(appTs).not.toMatch(/Style Stack/);

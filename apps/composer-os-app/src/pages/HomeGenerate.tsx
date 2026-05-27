@@ -15,6 +15,8 @@ import { useFzFingerprint } from '@renderer/context/FzFingerprintContext';
 import { useVrbProfile } from '@renderer/context/VrbProfileContext';
 import { useBigBand } from '@renderer/context/BigBandContext';
 import { useStringQuartet } from '@renderer/context/StringQuartetContext';
+import { useContrapuntal } from '@renderer/context/ContrapuntalContext';
+import { useLastGenerate } from '@renderer/context/LastGenerateContext';
 import { configureDeferredEngine, enqueue } from '@engine/deferredEngine.js';
 import { getUiOverride } from '@renderer/lib/compositionSongUi';
 import { mapCoreUiToGenerationFields } from '../utils/buildGenerateRequestBody';
@@ -2012,6 +2014,9 @@ export function HomeGenerate({
   const { vrbProfile } = useVrbProfile();
   const { bigBandConfig } = useBigBand();
   const { stringQuartetConfig } = useStringQuartet();
+  const { contrapuntalConfig } = useContrapuntal();
+  const { publishGridFromXml, setPlaybackBeat: setGridPlaybackBeat, setIsPlaying: setGridIsPlaying, clearGrid } =
+    useLastGenerate();
   const [presetId, setPresetId] = useState('song_mode');
 
   useEffect(() => {
@@ -2372,17 +2377,24 @@ export function HomeGenerate({
       return;
     }
     await initPlayback();
-    await play(playbackSeq, (beat) => setPlaybackBeat(beat));
+    await play(playbackSeq, (beat) => {
+      setPlaybackBeat(beat);
+      setGridPlaybackBeat(beat);
+    });
     setIsPlaying(true);
+    setGridIsPlaying(true);
   };
   const handlePause = () => {
     pause();
     setIsPlaying(false);
+    setGridIsPlaying(false);
   };
   const handleStop = () => {
     stop();
     setIsPlaying(false);
+    setGridIsPlaying(false);
     setPlaybackBeat(0);
+    setGridPlaybackBeat(0);
   };
 
   const chordPastePreviewChart = useMemo((): ParsedChart | null => {
@@ -3309,6 +3321,7 @@ export function HomeGenerate({
           ...(vrbProfile ? { vrbProfile } : {}),
           ...(bigBandConfig ? { bigBandConfig } : {}),
           ...(stringQuartetConfig ? { stringQuartetConfig } : {}),
+          ...(contrapuntalConfig ? { contrapuntalConfig } : {}),
           ...(!generateDrumGuide ? { skipDrumGuide: true as const } : {}),
           variationEnabled: variationEnabled,
           styleStack: isScorePreset ? DEFAULT_SCORE_STYLE_STACK : MINIMAL_STYLE_STACK,
@@ -3622,8 +3635,11 @@ export function HomeGenerate({
           const timeSig = ts ? `${ts.num}/${ts.den}` : '4/4';
           const applyPlaybackFromXml = (xml: string) => {
             setPlaybackSeq(parseXmlToPlaybackSequence(xml, bpm, timeSig));
+            publishGridFromXml(xml, bpm, timeSig);
             setPlaybackBeat(0);
+            setGridPlaybackBeat(0);
             setIsPlaying(false);
+            setGridIsPlaying(false);
           };
           const playbackFilepath =
             typeof r.ensembleMusicXmlFilepath === 'string' && r.ensembleMusicXmlFilepath.trim().length > 0
@@ -3698,8 +3714,11 @@ export function HomeGenerate({
         setError(displayMessage);
         setResult(null);
         setPlaybackSeq(null);
+        clearGrid();
         setPlaybackBeat(0);
+        setGridPlaybackBeat(0);
         setIsPlaying(false);
+        setGridIsPlaying(false);
         notifyGenPhase('failed');
         onResult({
           record: {},

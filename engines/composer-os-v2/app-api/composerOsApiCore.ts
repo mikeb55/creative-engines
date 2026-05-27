@@ -248,6 +248,57 @@ function coerceStringQuartetConfigFromBody(
   return { voicingStyle, texture, stylePreset, voices: voices as Array<Record<string, unknown>> };
 }
 
+function coerceContrapuntalConfigFromBody(
+  body: Partial<GenerateRequest>
+): GenerateRequest['contrapuntalConfig'] {
+  const raw = (body as { contrapuntalConfig?: unknown }).contrapuntalConfig;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const voiceCount = Math.round(Number(o.voiceCount));
+  if (!Number.isFinite(voiceCount) || voiceCount < 2 || voiceCount > 6) return undefined;
+  const speciesPairs = Array.isArray(o.speciesPairs)
+    ? o.speciesPairs
+        .filter((p) => p && typeof p === 'object' && !Array.isArray(p))
+        .map((p) => {
+          const row = p as Record<string, unknown>;
+          const pairKey = typeof row.pairKey === 'string' ? row.pairKey.trim() : '';
+          const species = typeof row.species === 'string' ? row.species.trim() : 'free';
+          const voiceA = Math.round(Number(row.voiceA));
+          const voiceB = Math.round(Number(row.voiceB));
+          if (!pairKey) return null;
+          return { pairKey, voiceA, voiceB, species };
+        })
+        .filter((x): x is NonNullable<typeof x> => x !== null)
+    : [];
+  const cfRaw = o.cantusFirmus;
+  const cf =
+    cfRaw && typeof cfRaw === 'object' && !Array.isArray(cfRaw)
+      ? (cfRaw as Record<string, unknown>)
+      : {};
+  const source = cf.source === 'custom' ? 'custom' : 'active_section';
+  const rules =
+    o.rules && typeof o.rules === 'object' && !Array.isArray(o.rules)
+      ? (o.rules as Record<string, boolean>)
+      : {};
+  const stylePreset = typeof o.stylePreset === 'string' ? o.stylePreset.trim() : 'palestrina';
+  return {
+    voiceCount,
+    speciesPairs,
+    cantusFirmus: {
+      source,
+      customEntry: typeof cf.customEntry === 'string' ? cf.customEntry.trim() : '',
+      directionBias:
+        cf.directionBias === 'ascending' ||
+        cf.directionBias === 'descending' ||
+        cf.directionBias === 'arch'
+          ? cf.directionBias
+          : 'free',
+    },
+    rules,
+    stylePreset,
+  };
+}
+
 function coerceVrbProfileFromBody(body: Partial<GenerateRequest>): VrbProfilePayload | undefined {
   const raw = (body as { vrbProfile?: unknown }).vrbProfile;
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
@@ -760,6 +811,7 @@ export function apiGenerate(
       vrbProfile: coerceVrbProfileFromBody(body),
       bigBandConfig: coerceBigBandConfigFromBody(body),
       stringQuartetConfig: coerceStringQuartetConfigFromBody(body),
+      contrapuntalConfig: coerceContrapuntalConfigFromBody(body),
     };
     const genCorr = req_.__generateCorrelationId;
     if (genCorr != null) {

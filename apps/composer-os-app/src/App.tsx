@@ -17,11 +17,15 @@ import { EnsembleWorkspace } from '@renderer/pages/EnsembleWorkspace';
 import { BigBandProvider } from '@renderer/context/BigBandContext';
 import { StringQuartetProvider } from '@renderer/context/StringQuartetContext';
 import { BigBandDrumSync } from '@renderer/components/BigBandDrumSync';
+import { ContrapuntalProvider } from '@renderer/context/ContrapuntalContext';
+import { LastGenerateProvider } from '@renderer/context/LastGenerateContext';
+import { GridWorkspace } from '@renderer/pages/GridWorkspace';
 
 type Tab =
   | 'home'
   | 'structure'
   | 'ensemble'
+  | 'grid'
   | 'presets'
   | 'outputs'
   | 'composer-engines'
@@ -422,9 +426,11 @@ export default function App() {
 
   return (
     <CompositionSongProvider>
+    <LastGenerateProvider>
     <DrumSelectionProvider>
     <BigBandProvider>
     <StringQuartetProvider>
+    <ContrapuntalProvider>
     <FzFingerprintProvider>
     <VrbProfileProvider>
     <BigBandDrumSync />
@@ -440,7 +446,7 @@ export default function App() {
           </p>
         )}
         <nav style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
-          {(['home', 'structure', 'ensemble', 'presets', 'outputs'] as const).map((t) => (
+          {(['home', 'structure', 'ensemble', 'grid', 'presets', 'outputs'] as const).map((t) => (
             <button
               key={t}
               className={tab === t ? '' : 'secondary'}
@@ -452,7 +458,9 @@ export default function App() {
                   ? 'Structure'
                   : t === 'ensemble'
                     ? 'Ensemble'
-                    : t === 'presets'
+                    : t === 'grid'
+                      ? 'Grid'
+                      : t === 'presets'
                       ? 'Presets'
                       : 'Outputs'}
             </button>
@@ -495,6 +503,7 @@ export default function App() {
       {tab === 'home' && <HomeGenerate onResult={onResult} />}
       {tab === 'structure' && <StructureWorkspace />}
       {tab === 'ensemble' && <EnsembleWorkspace />}
+      {tab === 'grid' && <GridWorkspace />}
       {tab === 'presets' && <Presets />}
       {tab === 'outputs' && <Outputs refreshTrigger={refreshOutputs} />}
       {tab === 'composer-engines' && (
@@ -506,9 +515,11 @@ export default function App() {
     </div>
     </VrbProfileProvider>
     </FzFingerprintProvider>
+    </ContrapuntalProvider>
     </StringQuartetProvider>
     </BigBandProvider>
     </DrumSelectionProvider>
+    </LastGenerateProvider>
     </CompositionSongProvider>
   );
 }

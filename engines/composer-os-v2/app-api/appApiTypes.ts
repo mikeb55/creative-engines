@@ -210,6 +210,24 @@ export interface StringQuartetConfigPayload {
   voices: Array<Record<string, unknown>>;
 }
 
+/** V67 P2 — Contrapuntal generation UI (Ensemble tab). */
+export interface ContrapuntalConfigPayload {
+  voiceCount: number;
+  speciesPairs: Array<{
+    pairKey: string;
+    voiceA: number;
+    voiceB: number;
+    species: string;
+  }>;
+  cantusFirmus: {
+    source: string;
+    customEntry: string;
+    directionBias: string;
+  };
+  rules: Record<string, boolean>;
+  stylePreset: string;
+}
+
 export interface GenerateRequest {
   presetId: string;
   styleStack: AppStyleStack;
@@ -425,6 +443,8 @@ export interface GenerateRequest {
   bigBandConfig?: BigBandConfigPayload;
   /** V67 P1 — String quartet ensemble panel (Ensemble tab). */
   stringQuartetConfig?: StringQuartetConfigPayload;
+  /** V67 P2 — Contrapuntal panel (Ensemble tab). */
+  contrapuntalConfig?: ContrapuntalConfigPayload;
   /** Frank Zappa P2 — opt-in GCE auto meter splice when no request `barMeterMap`. */
   zappaGceAutoBarMeterMapEnabled?: boolean;
   /** Frank Zappa P6 — section-meter interaction when auto meter enabled (`disrupt` default). */
