@@ -7,8 +7,18 @@ import { ComposerCredits } from './pages/ComposerCredits';
 import { SlonimskyEtudes } from './pages/SlonimskyEtudes';
 import { DiagnosticsPanel, type LastGenerationSummary } from './components/DiagnosticsPanel';
 import { api } from './services/api';
+import { CompositionSongProvider } from '@renderer/context/CompositionSongContext';
+import { StructureWorkspace } from '@renderer/pages/StructureWorkspace';
 
-type Tab = 'home' | 'presets' | 'outputs' | 'composer-engines' | 'slonimsky-etudes' | 'guide' | 'credits';
+type Tab =
+  | 'home'
+  | 'structure'
+  | 'presets'
+  | 'outputs'
+  | 'composer-engines'
+  | 'slonimsky-etudes'
+  | 'guide'
+  | 'credits';
 
 function ComposerEngines() {
   const [wsTitle, setWsTitle] = React.useState('');
@@ -402,6 +412,7 @@ export default function App() {
   );
 
   return (
+    <CompositionSongProvider>
     <div style={{ maxWidth: 720, margin: '0 auto', padding: '1.5rem' }}>
       <header style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
         <h1 style={{ margin: 0, fontSize: '1.5rem' }}>
@@ -414,13 +425,19 @@ export default function App() {
           </p>
         )}
         <nav style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
-          {(['home', 'presets', 'outputs'] as const).map((t) => (
+          {(['home', 'structure', 'presets', 'outputs'] as const).map((t) => (
             <button
               key={t}
               className={tab === t ? '' : 'secondary'}
               onClick={() => setTab(t)}
             >
-              {t === 'home' ? 'Generate' : t === 'presets' ? 'Presets' : 'Outputs'}
+              {t === 'home'
+                ? 'Generate'
+                : t === 'structure'
+                  ? 'Structure'
+                  : t === 'presets'
+                    ? 'Presets'
+                    : 'Outputs'}
             </button>
           ))}
           <button
@@ -458,6 +475,7 @@ export default function App() {
       <DiagnosticsPanel lastGeneration={lastGeneration} />
 
       {tab === 'home' && <HomeGenerate onResult={onResult} />}
+      {tab === 'structure' && <StructureWorkspace />}
       {tab === 'presets' && <Presets />}
       {tab === 'outputs' && <Outputs refreshTrigger={refreshOutputs} />}
       {tab === 'composer-engines' && (
@@ -467,5 +485,6 @@ export default function App() {
       {tab === 'guide' && <UserGuide />}
       {tab === 'credits' && <ComposerCredits />}
     </div>
+    </CompositionSongProvider>
   );
 }

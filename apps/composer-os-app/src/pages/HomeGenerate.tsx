@@ -9,6 +9,8 @@ import {
 } from '../playback';
 import type { PlaybackSequence } from '../playback';
 import { api, displayOutputPath, type OutputDirectoryResponse } from '../services/api';
+import { useCompositionSong } from '@renderer/context/CompositionSongContext';
+import { getUiOverride } from '@renderer/lib/compositionSongUi';
 import { mapCoreUiToGenerationFields } from '../utils/buildGenerateRequestBody';
 import {
   describeOutputKind,
@@ -1998,6 +2000,7 @@ export function HomeGenerate({
     summary: { status: 'success' | 'failed'; shareable?: boolean; at?: string };
   }) => void;
 }) {
+  const { song: compositionSong, activeSectionId: compositionActiveSectionId } = useCompositionSong();
   const [presetId, setPresetId] = useState('song_mode');
   const [sqToBbStyleProfile, setSqToBbStyleProfile] = useState<SqToBbStyleProfileId>('brookmeyer');
   const [sqToBbEra, setSqToBbEra] = useState<ComposerEraSelectValue>(null);
@@ -3273,8 +3276,17 @@ export function HomeGenerate({
               ]
             : undefined;
 
+        const structureSlonimskyId =
+          compositionSong && compositionActiveSectionId
+            ? getUiOverride(compositionSong, compositionActiveSectionId, 'slonimskyPatternId')
+            : undefined;
+
         const generatePayload = {
           ...coreFields,
+          ...(compositionSong ? { song: compositionSong } : {}),
+          ...(typeof structureSlonimskyId === 'string' && structureSlonimskyId
+            ? { slonimskyPatternId: structureSlonimskyId }
+            : {}),
           ...(!generateDrumGuide ? { skipDrumGuide: true as const } : {}),
           variationEnabled: variationEnabled,
           styleStack: isScorePreset ? DEFAULT_SCORE_STYLE_STACK : MINIMAL_STYLE_STACK,
