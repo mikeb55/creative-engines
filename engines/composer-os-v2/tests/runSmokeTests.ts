@@ -4,7 +4,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N rows (M suites)` in the smoke summary, then sync **N** + **M** into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): full **489** PASS rows, **94** suites; fast **324** rows, **80** suites (V65 P6 goldens promoted).
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): full **495** PASS rows, **95** suites; fast **329** rows, **81** suites (V68 P1 RhythmToolbox gate).
  *
  * **Fast subset:** `COMPOSER_OS_SMOKE_TIER=fast` or `npm run test:composer-smoke-fast` — skips `SMOKE_FAST_EXCLUDE` suites (local dev).
  * **Full tier (default / CI):** unset or `COMPOSER_OS_SMOKE_TIER=full` — all suites in `smokeSuites`.
@@ -70,6 +70,7 @@ import { runVaultQualitySmokeTests } from '../smoke/vaultQuality.smoke.test';
 import { runVoiceRuleBundleTests } from './voiceRuleBundle.test';
 import { runRiffGeneratorIntegrationTests } from './riffGeneratorIntegration.test';
 import { runMusicXmlValidatorGateTests } from '../../../src/utils/musicXmlValidator.test';
+import { runRhythmToolboxGateTests } from '../../../src/engine/__tests__/rhythmToolbox.test';
 import { runPhase67EnsembleGuitarEtudeTests } from './phase67EnsembleGuitarEtude.test';
 import { runPhase67InstrumentGroupMusicXmlTests } from './phase67InstrumentGroupMusicXml.test';
 import { runPhase8ImprovReharmStochasticCollisionTests } from './phase8ImprovReharmStochasticCollision.test';
@@ -205,6 +206,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'VoiceRuleBundle compiler + gil_evans wiring', run: runVoiceRuleBundleTests },
   { label: 'Riff Generator wiring (family / profile / odd-meter / blend)', run: runRiffGeneratorIntegrationTests },
   { label: 'MusicXML stringsync gate (order + displayOctave)', run: runMusicXmlValidatorGateTests },
+  { label: 'RhythmToolbox drum analysis gate', run: runRhythmToolboxGateTests },
   { label: 'Phase 6+7 — ensemble / guitar / étude helpers', run: runPhase67EnsembleGuitarEtudeTests },
   { label: 'Phase 6+7 — instrumentGroup MusicXML (quartet + guitar TAB)', run: runPhase67InstrumentGroupMusicXmlTests },
   { label: 'Phase 8 — improv + reharm + stochastic + collision', run: runPhase8ImprovReharmStochasticCollisionTests },

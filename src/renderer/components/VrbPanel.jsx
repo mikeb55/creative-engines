@@ -42,6 +42,7 @@ export function VrbPanel() {
           onChange={(e) => applyPreset(e.target.value, true)}
           style={{ width: '100%', marginTop: 4 }}
         >
+          <option value="__off__">— Off —</option>
           {presets.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}

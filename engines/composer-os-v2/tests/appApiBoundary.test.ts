@@ -429,6 +429,29 @@ export function runAppApiBoundaryTests(): { ok: boolean; name: string }[] {
       name:
         'indie dual-guitar tuning-proof fixture runs through apiGenerate, writes real MusicXML file, and matches deterministic pitch tables',
     });
+
+    const vrbEcho = apiGenerate(
+      {
+        ...base,
+        presetId: 'big_band',
+        title: 'VRB boundary',
+        vrbProfile: {
+          presetId: 'nordic_studio',
+          name: 'Nordic Studio',
+          roomSize: 0.42,
+          decay: 1.8,
+          predelay: 12,
+          damping: 0.55,
+          diffusion: 0.62,
+          character: 'ECM test',
+        },
+      },
+      tmp
+    ) as { requestEcho?: { vrbProfile?: { presetId?: string; name?: string } } };
+    out.push({
+      ok: vrbEcho.requestEcho?.vrbProfile?.presetId === 'nordic_studio',
+      name: 'ECM vrbProfile passes through apiGenerate into requestEcho',
+    });
   } finally {
     try {
       fs.rmSync(tmp, { recursive: true, force: true });

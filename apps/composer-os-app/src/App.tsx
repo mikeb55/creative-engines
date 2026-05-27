@@ -12,6 +12,7 @@ import { DrumSelectionProvider } from '@renderer/context/DrumSelectionContext';
 import { FzFingerprintProvider } from '@renderer/context/FzFingerprintContext';
 import { VrbProfileProvider } from '@renderer/context/VrbProfileContext';
 import { DeferredQueueIndicator } from '@renderer/components/DeferredQueueIndicator';
+import { VrbStatusIndicator } from '@renderer/components/VrbStatusIndicator';
 import { StructureWorkspace } from '@renderer/pages/StructureWorkspace';
 import { EnsembleWorkspace } from '@renderer/pages/EnsembleWorkspace';
 import { BigBandProvider } from '@renderer/context/BigBandContext';
@@ -445,6 +446,9 @@ export default function App() {
             {embeddedStamp.gitCommit ? ` · ${embeddedStamp.gitCommit.slice(0, 7)}` : ''}
           </p>
         )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+          <VrbStatusIndicator onNavigate={() => setTab('structure')} />
+        </div>
         <nav style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
           {(['home', 'structure', 'ensemble', 'grid', 'presets', 'outputs'] as const).map((t) => (
             <button

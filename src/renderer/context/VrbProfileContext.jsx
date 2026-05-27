@@ -7,6 +7,7 @@ const DEFAULT_PRESET_ID = 'nordic_studio';
 
 export function VrbProfileProvider({ children }) {
   const [presetId, setPresetId] = useState(DEFAULT_PRESET_ID);
+  const [enabled, setEnabled] = useState(true);
   const [locked, setLocked] = useState(true);
   const [sliders, setSliders] = useState(() => {
     const p = getEcmVrbPresetById(DEFAULT_PRESET_ID);
@@ -15,9 +16,15 @@ export function VrbProfileProvider({ children }) {
 
   const applyPreset = useCallback(
     (id, forcePresetValues = false) => {
+      if (id === '__off__') {
+        setPresetId('__off__');
+        setEnabled(false);
+        return;
+      }
       const preset = getEcmVrbPresetById(id);
       if (!preset) return;
       setPresetId(id);
+      setEnabled(true);
       if (locked || forcePresetValues) {
         setSliders(presetToVrbProfile(preset));
       }
@@ -34,12 +41,15 @@ export function VrbProfileProvider({ children }) {
     if (preset) setSliders(presetToVrbProfile(preset));
   }, [presetId]);
 
-  const vrbProfile = sliders;
+  const vrbProfile = enabled && sliders ? sliders : null;
+  const presetLabel = enabled && sliders ? sliders.name : null;
 
   const value = useMemo(
     () => ({
       presets: ECM_VRB_PRESETS,
       presetId,
+      enabled,
+      presetLabel,
       locked,
       setLocked,
       sliders,
@@ -48,7 +58,7 @@ export function VrbProfileProvider({ children }) {
       updateSlider,
       resetToPreset,
     }),
-    [presetId, locked, sliders, vrbProfile, applyPreset, updateSlider, resetToPreset]
+    [presetId, enabled, presetLabel, locked, sliders, vrbProfile, applyPreset, updateSlider, resetToPreset]
   );
 
   return <VrbProfileContext.Provider value={value}>{children}</VrbProfileContext.Provider>;
