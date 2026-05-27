@@ -155,6 +155,21 @@ export type SectionVrbMapEntry =
       blendWeights: number[];
     };
 
+/** V66 P2 — Structure tab drummer pattern selection (16th-note grid). */
+export interface UiDrumPatternPayload {
+  drummerId: string;
+  drummerName?: string;
+  presetId?: string;
+  patternName: string;
+  feel: string;
+  meter: string;
+  kicks: number[];
+  snares: number[];
+  hats: number[];
+  ride: number[];
+  description?: string;
+}
+
 export interface GenerateRequest {
   presetId: string;
   styleStack: AppStyleStack;
@@ -360,6 +375,8 @@ export interface GenerateRequest {
   barMeterMap?: BarMeterMap;
   /** P6 — Song schema document (section `meterMap`, defaults, overrides). */
   song?: import('../core/section-architecture/sectionArchitectureTypes').Song;
+  /** V66 P2 — UI-selected drummer pattern (16th-grid lanes for kick/snare/hat/ride). */
+  uiDrumPattern?: UiDrumPatternPayload;
   /** Frank Zappa P2 — opt-in GCE auto meter splice when no request `barMeterMap`. */
   zappaGceAutoBarMeterMapEnabled?: boolean;
   /** Frank Zappa P6 — section-meter interaction when auto meter enabled (`disrupt` default). */

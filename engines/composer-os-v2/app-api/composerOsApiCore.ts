@@ -18,7 +18,10 @@ import type {
   MelodicVariationPackResponse,
   MelodicVariationPackRequest,
   MelodicVariationPackNoteEvent,
+  UiDrumPatternPayload,
 } from './appApiTypes';
+import type { GrooveScaffoldSettings } from '../core/section-architecture/sectionArchitectureTypes';
+import type { Song } from '../core/section-architecture/sectionArchitectureTypes';
 import type { RhythmIntentControl } from '../core/rhythmIntentTypes';
 import { isStyleProfile } from '../core/song-mode/songModeStyleProfile';
 import {
@@ -107,6 +110,79 @@ function coerceIntentFromBody(body: Partial<GenerateRequest>): RhythmIntentContr
     surprise,
     pattern: pattern ?? 0.5,
   };
+}
+
+function coerceSixteenthHits(raw: unknown): number[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const out: number[] = [];
+  for (const x of raw) {
+    const n = Math.round(Number(x));
+    if (!Number.isFinite(n) || n < 0 || n > 15) continue;
+    if (!out.includes(n)) out.push(n);
+  }
+  return out.length ? out.sort((a, b) => a - b) : undefined;
+}
+
+function coerceUiDrumPatternFromBody(body: Partial<GenerateRequest>): UiDrumPatternPayload | undefined {
+  const raw = (body as { uiDrumPattern?: unknown }).uiDrumPattern;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const drummerId = typeof o.drummerId === 'string' ? o.drummerId.trim() : '';
+  const patternName = typeof o.patternName === 'string' ? o.patternName.trim() : '';
+  if (!drummerId || !patternName) return undefined;
+  const kicks = coerceSixteenthHits(o.kicks);
+  const snares = coerceSixteenthHits(o.snares);
+  const hats = coerceSixteenthHits(o.hats);
+  const ride = coerceSixteenthHits(o.ride);
+  if (!kicks || !snares || !hats || !ride) return undefined;
+  return {
+    drummerId,
+    patternName,
+    feel: typeof o.feel === 'string' && o.feel.trim() ? o.feel.trim() : 'swing',
+    meter: typeof o.meter === 'string' && o.meter.trim() ? o.meter.trim() : '4/4',
+    kicks,
+    snares,
+    hats,
+    ride,
+    ...(typeof o.drummerName === 'string' && o.drummerName.trim() ? { drummerName: o.drummerName.trim() } : {}),
+    ...(typeof o.presetId === 'string' && o.presetId.trim() ? { presetId: o.presetId.trim() } : {}),
+    ...(typeof o.description === 'string' && o.description.trim() ? { description: o.description.trim() } : {}),
+  };
+}
+
+function coerceGrooveScaffoldFromBody(body: Partial<GenerateRequest>): GrooveScaffoldSettings | undefined {
+  const raw = body.grooveScaffold;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const g = raw as GrooveScaffoldSettings;
+  if (g.enabled !== true) return undefined;
+  const feel =
+    g.feel === 'swing' ||
+    g.feel === 'funk' ||
+    g.feel === 'rock' ||
+    g.feel === 'bossa' ||
+    g.feel === 'ballad' ||
+    g.feel === 'odd_meter'
+      ? g.feel
+      : undefined;
+  const density = g.density === 'sparse' || g.density === 'medium' || g.density === 'dense' ? g.density : undefined;
+  const fillFrequency =
+    g.fillFrequency === 'sparse' || g.fillFrequency === 'normal' || g.fillFrequency === 'dense'
+      ? g.fillFrequency
+      : undefined;
+  return {
+    enabled: true,
+    ...(feel ? { feel } : {}),
+    ...(density ? { density } : {}),
+    ...(fillFrequency ? { fillFrequency } : {}),
+  };
+}
+
+function coerceSongFromBody(body: Partial<GenerateRequest>): Song | undefined {
+  const raw = (body as { song?: unknown }).song;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const s = raw as Song;
+  if (typeof s.schemaVersion !== 'number' || !Array.isArray(s.sections)) return undefined;
+  return s;
 }
 
 function normalizeChordProgressionText(body: Partial<GenerateRequest>): string | undefined {
@@ -582,6 +658,9 @@ export function apiGenerate(
         return i;
       })(),
       slonimskyCycleKeys: body.slonimskyCycleKeys === true ? true : undefined,
+      song: coerceSongFromBody(body),
+      grooveScaffold: coerceGrooveScaffoldFromBody(body),
+      uiDrumPattern: coerceUiDrumPatternFromBody(body),
     };
     const genCorr = req_.__generateCorrelationId;
     if (genCorr != null) {

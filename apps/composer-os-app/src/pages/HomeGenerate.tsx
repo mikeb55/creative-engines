@@ -10,6 +10,7 @@ import {
 import type { PlaybackSequence } from '../playback';
 import { api, displayOutputPath, type OutputDirectoryResponse } from '../services/api';
 import { useCompositionSong } from '@renderer/context/CompositionSongContext';
+import { useDrumSelection } from '@renderer/context/DrumSelectionContext';
 import { getUiOverride } from '@renderer/lib/compositionSongUi';
 import { mapCoreUiToGenerationFields } from '../utils/buildGenerateRequestBody';
 import {
@@ -2001,6 +2002,7 @@ export function HomeGenerate({
   }) => void;
 }) {
   const { song: compositionSong, activeSectionId: compositionActiveSectionId } = useCompositionSong();
+  const { payloadPattern: uiDrumPattern } = useDrumSelection();
   const [presetId, setPresetId] = useState('song_mode');
   const [sqToBbStyleProfile, setSqToBbStyleProfile] = useState<SqToBbStyleProfileId>('brookmeyer');
   const [sqToBbEra, setSqToBbEra] = useState<ComposerEraSelectValue>(null);
@@ -3287,6 +3289,7 @@ export function HomeGenerate({
           ...(typeof structureSlonimskyId === 'string' && structureSlonimskyId
             ? { slonimskyPatternId: structureSlonimskyId }
             : {}),
+          ...(uiDrumPattern ? { uiDrumPattern } : {}),
           ...(!generateDrumGuide ? { skipDrumGuide: true as const } : {}),
           variationEnabled: variationEnabled,
           styleStack: isScorePreset ? DEFAULT_SCORE_STYLE_STACK : MINIMAL_STYLE_STACK,

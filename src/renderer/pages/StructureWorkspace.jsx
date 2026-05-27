@@ -2,6 +2,7 @@ import React from 'react';
 import { SectionEditor } from '../components/SectionEditor';
 import { MeterEditor } from '../components/MeterEditor';
 import { TuningPanel } from '../components/TuningPanel';
+import { DrummerPanel } from '../components/DrummerPanel';
 
 const scrollStyle = {
   maxHeight: 'calc(100vh - 12rem)',
@@ -19,6 +20,7 @@ export function StructureWorkspace() {
       <SectionEditor />
       <MeterEditor />
       <TuningPanel />
+      <DrummerPanel />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { SlonimskyEtudes } from './pages/SlonimskyEtudes';
 import { DiagnosticsPanel, type LastGenerationSummary } from './components/DiagnosticsPanel';
 import { api } from './services/api';
 import { CompositionSongProvider } from '@renderer/context/CompositionSongContext';
+import { DrumSelectionProvider } from '@renderer/context/DrumSelectionContext';
 import { StructureWorkspace } from '@renderer/pages/StructureWorkspace';
 
 type Tab =
@@ -413,6 +414,7 @@ export default function App() {
 
   return (
     <CompositionSongProvider>
+    <DrumSelectionProvider>
     <div style={{ maxWidth: 720, margin: '0 auto', padding: '1.5rem' }}>
       <header style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
         <h1 style={{ margin: 0, fontSize: '1.5rem' }}>
@@ -485,6 +487,7 @@ export default function App() {
       {tab === 'guide' && <UserGuide />}
       {tab === 'credits' && <ComposerCredits />}
     </div>
+    </DrumSelectionProvider>
     </CompositionSongProvider>
   );
 }

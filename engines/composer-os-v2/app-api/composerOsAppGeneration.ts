@@ -262,6 +262,8 @@ function requestEchoFromReq(req: GenerateRequest): NonNullable<GenerateResult['r
         }
       : {}),
     ...(req.grooveScaffold ? { grooveScaffold: req.grooveScaffold } : {}),
+    ...(req.uiDrumPattern ? { uiDrumPattern: req.uiDrumPattern } : {}),
+    ...(req.song ? { song: req.song } : {}),
     ...(Array.isArray(req.styleGenerationContextKeys) && req.styleGenerationContextKeys.length > 0
       ? { styleGenerationContextKeys: req.styleGenerationContextKeys }
       : {}),
