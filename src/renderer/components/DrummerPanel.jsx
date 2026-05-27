@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
+import { BIG_BAND_DRUM_STYLES } from '../../engine/bigBandDrums.js';
 import { DRUM_PRESETS } from '../../engine/drumPresets.js';
+import { useBigBand } from '../context/BigBandContext';
 import { useDrumSelection } from '../context/DrumSelectionContext';
 
 const panelStyle = {
@@ -54,6 +56,7 @@ function PatternGrid({ pattern }) {
 }
 
 export function DrummerPanel() {
+  const { config: bigBandConfig, setDrumStyleId } = useBigBand();
   const {
     drummerModules,
     drummerId,
@@ -61,10 +64,18 @@ export function DrummerPanel() {
     patternName,
     activePattern,
     presetId,
+    bigBandDrumStyleId,
+    useBigBandDrums,
     selectDrummer,
     selectPattern,
     loadPreset,
+    selectBigBandDrumStyle,
   } = useDrumSelection();
+
+  const bigBandDrumOptions = useMemo(
+    () => BIG_BAND_DRUM_STYLES.filter((s) => s.bandStyle === bigBandConfig.bandStyle),
+    [bigBandConfig.bandStyle]
+  );
 
   const [feelFilter, setFeelFilter] = useState('');
 
@@ -84,6 +95,31 @@ export function DrummerPanel() {
   return (
     <section style={panelStyle} aria-label="Drummer panel">
       <h3 style={{ margin: '0 0 0.5rem', fontSize: '0.95rem' }}>Drummers</h3>
+
+      <h4 style={{ margin: '0 0 0.35rem', fontSize: '0.85rem' }}>Big band drum style</h4>
+      <p style={{ margin: '0 0 0.35rem', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+        Synced with Ensemble → Big Band style ({bigBandConfig.bandStyle})
+      </p>
+      <select
+        value={useBigBandDrums ? bigBandDrumStyleId ?? '' : ''}
+        onChange={(e) => {
+          const id = e.target.value;
+          if (!id) return;
+          selectBigBandDrumStyle(id);
+          setDrumStyleId(id);
+        }}
+        style={{ width: '100%', maxWidth: 320, marginBottom: '0.65rem' }}
+      >
+        <option value="" disabled>
+          Select big band pattern…
+        </option>
+        {bigBandDrumOptions.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.name} · {s.feel}
+          </option>
+        ))}
+      </select>
+
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: '0.65rem' }}>
         {drummerModules.map((m) => (
           <button

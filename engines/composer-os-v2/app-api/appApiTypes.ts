@@ -188,6 +188,26 @@ export interface UiDrumPatternPayload {
   hats: number[];
   ride: number[];
   description?: string;
+  bigBandDrumStyleId?: string;
+  bandStyle?: string;
+}
+
+/** V67 P1 — Big Band ensemble UI (Ensemble tab). */
+export interface BigBandConfigPayload {
+  styleId: string;
+  bandStyle: 'basie' | 'ellington' | 'kenton' | 'rich' | 'thad';
+  soliMode: boolean;
+  shoutChorus: boolean;
+  drumStyleId?: string;
+  sections: Record<string, unknown>;
+}
+
+/** V67 P1 — String quartet ensemble UI (Ensemble tab). */
+export interface StringQuartetConfigPayload {
+  voicingStyle: string;
+  texture: string;
+  stylePreset: string;
+  voices: Array<Record<string, unknown>>;
 }
 
 export interface GenerateRequest {
@@ -401,6 +421,10 @@ export interface GenerateRequest {
   fingerprintReceipt?: FingerprintReceiptPayload;
   /** V66 P3 — ECM VRB profile (Structure tab). */
   vrbProfile?: VrbProfilePayload;
+  /** V67 P1 — Big Band ensemble panel (Ensemble tab). */
+  bigBandConfig?: BigBandConfigPayload;
+  /** V67 P1 — String quartet ensemble panel (Ensemble tab). */
+  stringQuartetConfig?: StringQuartetConfigPayload;
   /** Frank Zappa P2 — opt-in GCE auto meter splice when no request `barMeterMap`. */
   zappaGceAutoBarMeterMapEnabled?: boolean;
   /** Frank Zappa P6 — section-meter interaction when auto meter enabled (`disrupt` default). */

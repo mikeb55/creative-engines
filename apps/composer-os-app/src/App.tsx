@@ -13,10 +13,15 @@ import { FzFingerprintProvider } from '@renderer/context/FzFingerprintContext';
 import { VrbProfileProvider } from '@renderer/context/VrbProfileContext';
 import { DeferredQueueIndicator } from '@renderer/components/DeferredQueueIndicator';
 import { StructureWorkspace } from '@renderer/pages/StructureWorkspace';
+import { EnsembleWorkspace } from '@renderer/pages/EnsembleWorkspace';
+import { BigBandProvider } from '@renderer/context/BigBandContext';
+import { StringQuartetProvider } from '@renderer/context/StringQuartetContext';
+import { BigBandDrumSync } from '@renderer/components/BigBandDrumSync';
 
 type Tab =
   | 'home'
   | 'structure'
+  | 'ensemble'
   | 'presets'
   | 'outputs'
   | 'composer-engines'
@@ -418,8 +423,11 @@ export default function App() {
   return (
     <CompositionSongProvider>
     <DrumSelectionProvider>
+    <BigBandProvider>
+    <StringQuartetProvider>
     <FzFingerprintProvider>
     <VrbProfileProvider>
+    <BigBandDrumSync />
     <div style={{ maxWidth: 720, margin: '0 auto', padding: '1.5rem' }}>
       <header style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
         <h1 style={{ margin: 0, fontSize: '1.5rem' }}>
@@ -432,7 +440,7 @@ export default function App() {
           </p>
         )}
         <nav style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
-          {(['home', 'structure', 'presets', 'outputs'] as const).map((t) => (
+          {(['home', 'structure', 'ensemble', 'presets', 'outputs'] as const).map((t) => (
             <button
               key={t}
               className={tab === t ? '' : 'secondary'}
@@ -442,9 +450,11 @@ export default function App() {
                 ? 'Generate'
                 : t === 'structure'
                   ? 'Structure'
-                  : t === 'presets'
-                    ? 'Presets'
-                    : 'Outputs'}
+                  : t === 'ensemble'
+                    ? 'Ensemble'
+                    : t === 'presets'
+                      ? 'Presets'
+                      : 'Outputs'}
             </button>
           ))}
           <button
@@ -484,6 +494,7 @@ export default function App() {
 
       {tab === 'home' && <HomeGenerate onResult={onResult} />}
       {tab === 'structure' && <StructureWorkspace />}
+      {tab === 'ensemble' && <EnsembleWorkspace />}
       {tab === 'presets' && <Presets />}
       {tab === 'outputs' && <Outputs refreshTrigger={refreshOutputs} />}
       {tab === 'composer-engines' && (
@@ -495,6 +506,8 @@ export default function App() {
     </div>
     </VrbProfileProvider>
     </FzFingerprintProvider>
+    </StringQuartetProvider>
+    </BigBandProvider>
     </DrumSelectionProvider>
     </CompositionSongProvider>
   );

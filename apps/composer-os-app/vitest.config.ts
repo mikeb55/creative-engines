@@ -7,6 +7,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@composer-os': path.resolve(__dirname, '../../engines/composer-os-v2'),
+      '@engine': path.resolve(__dirname, '../../src/engine'),
+      '@renderer': path.resolve(__dirname, '../../src/renderer'),
     },
   },
   test: {

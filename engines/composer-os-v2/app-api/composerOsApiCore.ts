@@ -200,6 +200,54 @@ function coerceFingerprintReceiptFromBody(
   };
 }
 
+function coerceBigBandConfigFromBody(body: Partial<GenerateRequest>): GenerateRequest['bigBandConfig'] {
+  const raw = (body as { bigBandConfig?: unknown }).bigBandConfig;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const styleId = typeof o.styleId === 'string' ? o.styleId.trim() : '';
+  const bandStyle = o.bandStyle;
+  if (
+    !styleId ||
+    bandStyle !== 'basie' &&
+      bandStyle !== 'ellington' &&
+      bandStyle !== 'kenton' &&
+      bandStyle !== 'rich' &&
+      bandStyle !== 'thad'
+  ) {
+    return undefined;
+  }
+  const sections =
+    o.sections && typeof o.sections === 'object' && !Array.isArray(o.sections)
+      ? (o.sections as Record<string, unknown>)
+      : {};
+  return {
+    styleId,
+    bandStyle,
+    soliMode: o.soliMode === true,
+    shoutChorus: o.shoutChorus === true,
+    sections,
+    ...(typeof o.drumStyleId === 'string' && o.drumStyleId.trim()
+      ? { drumStyleId: o.drumStyleId.trim() }
+      : {}),
+  };
+}
+
+function coerceStringQuartetConfigFromBody(
+  body: Partial<GenerateRequest>
+): GenerateRequest['stringQuartetConfig'] {
+  const raw = (body as { stringQuartetConfig?: unknown }).stringQuartetConfig;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const voicingStyle = typeof o.voicingStyle === 'string' ? o.voicingStyle.trim() : '';
+  const texture = typeof o.texture === 'string' ? o.texture.trim() : '';
+  const stylePreset = typeof o.stylePreset === 'string' ? o.stylePreset.trim() : '';
+  if (!voicingStyle || !texture || !stylePreset) return undefined;
+  const voices = Array.isArray(o.voices)
+    ? o.voices.filter((v) => v && typeof v === 'object' && !Array.isArray(v))
+    : [];
+  return { voicingStyle, texture, stylePreset, voices: voices as Array<Record<string, unknown>> };
+}
+
 function coerceVrbProfileFromBody(body: Partial<GenerateRequest>): VrbProfilePayload | undefined {
   const raw = (body as { vrbProfile?: unknown }).vrbProfile;
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
@@ -710,6 +758,8 @@ export function apiGenerate(
       uiDrumPattern: coerceUiDrumPatternFromBody(body),
       fingerprintReceipt: coerceFingerprintReceiptFromBody(body),
       vrbProfile: coerceVrbProfileFromBody(body),
+      bigBandConfig: coerceBigBandConfigFromBody(body),
+      stringQuartetConfig: coerceStringQuartetConfigFromBody(body),
     };
     const genCorr = req_.__generateCorrelationId;
     if (genCorr != null) {

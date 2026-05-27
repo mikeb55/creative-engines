@@ -13,6 +13,8 @@ import { useCompositionSong } from '@renderer/context/CompositionSongContext';
 import { useDrumSelection } from '@renderer/context/DrumSelectionContext';
 import { useFzFingerprint } from '@renderer/context/FzFingerprintContext';
 import { useVrbProfile } from '@renderer/context/VrbProfileContext';
+import { useBigBand } from '@renderer/context/BigBandContext';
+import { useStringQuartet } from '@renderer/context/StringQuartetContext';
 import { configureDeferredEngine, enqueue } from '@engine/deferredEngine.js';
 import { getUiOverride } from '@renderer/lib/compositionSongUi';
 import { mapCoreUiToGenerationFields } from '../utils/buildGenerateRequestBody';
@@ -2008,6 +2010,8 @@ export function HomeGenerate({
   const { payloadPattern: uiDrumPattern } = useDrumSelection();
   const { fingerprintReceipt } = useFzFingerprint();
   const { vrbProfile } = useVrbProfile();
+  const { bigBandConfig } = useBigBand();
+  const { stringQuartetConfig } = useStringQuartet();
   const [presetId, setPresetId] = useState('song_mode');
 
   useEffect(() => {
@@ -3303,6 +3307,8 @@ export function HomeGenerate({
           ...(uiDrumPattern ? { uiDrumPattern } : {}),
           ...(fingerprintReceipt ? { fingerprintReceipt } : {}),
           ...(vrbProfile ? { vrbProfile } : {}),
+          ...(bigBandConfig ? { bigBandConfig } : {}),
+          ...(stringQuartetConfig ? { stringQuartetConfig } : {}),
           ...(!generateDrumGuide ? { skipDrumGuide: true as const } : {}),
           variationEnabled: variationEnabled,
           styleStack: isScorePreset ? DEFAULT_SCORE_STYLE_STACK : MINIMAL_STYLE_STACK,
