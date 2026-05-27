@@ -5,6 +5,23 @@ import { useBigBand } from '../context/BigBandContext';
 import { useDrumSelection } from '../context/DrumSelectionContext';
 import { DrumStaffDisplay } from './DrumStaffDisplay';
 
+const AUDIO_EXTENSIONS = /\.(wav|mp3|aiff|aif|flac)$/i;
+
+function basenameFromPath(filePath) {
+  if (!filePath) return '';
+  const parts = String(filePath).replace(/\\/g, '/').split('/');
+  return parts[parts.length - 1] ?? filePath;
+}
+
+async function pickAudioFileViaDesktop() {
+  const desktop = typeof window !== 'undefined' ? window.composerOsDesktop : null;
+  if (!desktop?.pickAudioFile) return null;
+  const result = await desktop.pickAudioFile();
+  if (!result || typeof result !== 'object') return null;
+  const path = typeof result.path === 'string' ? result.path.trim() : '';
+  return path || null;
+}
+
 const panelStyle = {
   border: '1px solid var(--border, #444)',
   borderRadius: 8,
@@ -71,7 +88,12 @@ export function DrummerPanel() {
     selectPattern,
     loadPreset,
     selectBigBandDrumStyle,
+    drumLoopPath,
+    setDrumLoopPath,
+    clearDrumLoopPath,
   } = useDrumSelection();
+
+  const drumLoopLabel = useMemo(() => basenameFromPath(drumLoopPath), [drumLoopPath]);
 
   const bigBandDrumOptions = useMemo(
     () => BIG_BAND_DRUM_STYLES.filter((s) => s.bandStyle === bigBandConfig.bandStyle),
@@ -207,6 +229,26 @@ export function DrummerPanel() {
             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{preset.tags.join(' · ')}</div>
           </button>
         ))}
+      </div>
+
+      <h4 style={{ margin: '0.65rem 0 0.35rem', fontSize: '0.85rem' }}>Drum Loop File</h4>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginBottom: '0.65rem' }}>
+        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+          {drumLoopLabel || 'No loop selected'}
+        </span>
+        <button
+          type="button"
+          className="secondary"
+          onClick={async () => {
+            const picked = await pickAudioFileViaDesktop();
+            if (picked && AUDIO_EXTENSIONS.test(picked)) setDrumLoopPath(picked);
+          }}
+        >
+          Browse
+        </button>
+        <button type="button" className="secondary" disabled={!drumLoopPath} onClick={clearDrumLoopPath}>
+          Clear
+        </button>
       </div>
 
       <PatternGrid pattern={activePattern} />

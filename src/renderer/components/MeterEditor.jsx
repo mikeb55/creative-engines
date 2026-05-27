@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { useCompositionSong } from '../context/CompositionSongContext';
 import {
   getUiOverride,
+  isValidAdditiveMeterInput,
   parseAdditiveBeatGroups,
   parseMeterParts,
   readSectionMeter,
@@ -119,6 +120,8 @@ export function MeterEditor() {
           placeholder="3+3+2"
           onChange={(e) => {
             const raw = e.target.value;
+            if (raw && !/^[\d+\s]*$/.test(raw)) return;
+            if (!isValidAdditiveMeterInput(raw, numerator)) return;
             const groups = parseAdditiveBeatGroups(raw);
             patchSection(activeSection.id, {
               additiveMeter: raw,

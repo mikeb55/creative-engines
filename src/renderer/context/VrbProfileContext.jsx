@@ -33,7 +33,12 @@ export function VrbProfileProvider({ children }) {
   );
 
   const updateSlider = useCallback((key, value) => {
-    setSliders((prev) => (prev ? { ...prev, [key]: value } : prev));
+    setSliders((prev) => {
+      if (!prev) return prev;
+      let next = Number(value);
+      if (key === 'decay') next = Math.max(0.1, Math.min(8, Number.isFinite(next) ? next : 0.1));
+      return { ...prev, [key]: next };
+    });
   }, []);
 
   const resetToPreset = useCallback(() => {

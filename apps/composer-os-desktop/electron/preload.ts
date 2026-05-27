@@ -49,6 +49,8 @@ contextBridge.exposeInMainWorld('composerOsDesktop', {
     }>,
   openExportFolder: (engine: 'fela-kuti' | 'greek' | 'blended' | 'brazilian' | 'second-line' | 'cuban') =>
     ipcRenderer.invoke('composer-os:open-export-folder', { engine }) as Promise<void>,
+  pickAudioFile: (): Promise<{ path: string | null }> =>
+    ipcRenderer.invoke('composer-os:pick-audio-file') as Promise<{ path: string | null }>,
   onStartupState: (cb: (s: StartupState) => void): void => {
     ipcRenderer.on('composer-os:startup-state', (_e, s: StartupState) => cb(s));
   },

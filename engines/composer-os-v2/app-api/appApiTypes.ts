@@ -445,6 +445,8 @@ export interface GenerateRequest {
   song?: import('../core/section-architecture/sectionArchitectureTypes').Song;
   /** V66 P2 — UI-selected drummer pattern (16th-grid lanes for kick/snare/hat/ride). */
   uiDrumPattern?: UiDrumPatternPayload;
+  /** V68 P3 — optional audio drum loop file path (.wav / .mp3 / .aiff / .flac). */
+  drumLoopPath?: string;
   /** V68 P2 — drum fill scheduler (Structure tab). */
   fillSchedulerConfig?: FillSchedulerConfigPayload;
   /** V66 P3 — Frank Zappa GCE fingerprint receipt (Structure tab). */

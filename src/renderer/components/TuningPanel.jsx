@@ -35,10 +35,9 @@ export function TuningPanel() {
 
   const tuningSystemId = getUiOverride(song, activeSection.id, 'tuningSystemId') ?? '12tet';
   const userCents = getUiOverride(song, activeSection.id, 'userCents');
-  const cents =
-    Array.isArray(userCents) && userCents.length === 12
-      ? userCents
-      : Array(12).fill(0);
+  const cents = (
+    Array.isArray(userCents) && userCents.length === 12 ? userCents : Array(12).fill(0)
+  ).map((c) => Math.max(0, Math.min(99, Number(c) || 0)));
   const keyLabel = getUiOverride(song, activeSection.id, 'key') ?? 'C';
   const slonimskyId = getUiOverride(song, activeSection.id, 'slonimskyPatternId');
   const previewPattern = previewId ? getSlonimskyPatternById(previewId) : null;

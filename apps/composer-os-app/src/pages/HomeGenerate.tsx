@@ -2010,7 +2010,7 @@ export function HomeGenerate({
   }) => void;
 }) {
   const { song: compositionSong, activeSectionId: compositionActiveSectionId } = useCompositionSong();
-  const { payloadPattern: uiDrumPattern } = useDrumSelection();
+  const { payloadPattern: uiDrumPattern, drumLoopPath } = useDrumSelection();
   const { fillSchedulerConfig } = useFillScheduler();
   const { fingerprintReceipt } = useFzFingerprint();
   const { vrbProfile } = useVrbProfile();
@@ -3319,6 +3319,7 @@ export function HomeGenerate({
             ? { slonimskyPatternId: structureSlonimskyId }
             : {}),
           ...(uiDrumPattern ? { uiDrumPattern } : {}),
+          ...(drumLoopPath ? { drumLoopPath } : {}),
           ...(fillSchedulerConfig ? { fillSchedulerConfig } : {}),
           ...(fingerprintReceipt ? { fingerprintReceipt } : {}),
           ...(vrbProfile ? { vrbProfile } : {}),

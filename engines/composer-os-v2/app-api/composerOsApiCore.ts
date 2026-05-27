@@ -156,6 +156,14 @@ function coerceFillSchedulerConfigFromBody(
   };
 }
 
+function coerceDrumLoopPathFromBody(body: Partial<GenerateRequest>): string | undefined {
+  const raw = (body as { drumLoopPath?: unknown }).drumLoopPath;
+  if (raw === null || raw === undefined) return undefined;
+  if (typeof raw !== 'string') return undefined;
+  const trimmed = raw.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
 function coerceUiDrumPatternFromBody(body: Partial<GenerateRequest>): UiDrumPatternPayload | undefined {
   const raw = (body as { uiDrumPattern?: unknown }).uiDrumPattern;
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
@@ -346,7 +354,7 @@ function coerceVrbProfileFromBody(body: Partial<GenerateRequest>): VrbProfilePay
     presetId,
     name,
     roomSize: clamp(o.roomSize, 0, 1, 0.5),
-    decay: clamp(o.decay, 0.5, 8, 2),
+    decay: clamp(o.decay, 0.1, 8, 2),
     predelay: clamp(o.predelay, 0, 80, 12),
     damping: clamp(o.damping, 0, 1, 0.5),
     diffusion: clamp(o.diffusion, 0, 1, 0.6),
@@ -838,6 +846,7 @@ export function apiGenerate(
       song: coerceSongFromBody(body),
       grooveScaffold: coerceGrooveScaffoldFromBody(body),
       uiDrumPattern: coerceUiDrumPatternFromBody(body),
+      drumLoopPath: coerceDrumLoopPathFromBody(body),
       fillSchedulerConfig: coerceFillSchedulerConfigFromBody(body),
       fingerprintReceipt: coerceFingerprintReceiptFromBody(body),
       vrbProfile: coerceVrbProfileFromBody(body),

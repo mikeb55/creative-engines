@@ -93,6 +93,16 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
   ipcMain.handle('composer-os-api:get-presets', () => apiGetPresets());
   ipcMain.handle('composer-os-api:get-style-modules', () => apiGetStyleModules());
   ipcMain.handle('composer-os-api:get-runtime-build-info', () => getComposerOsRuntimeBuildInfo());
+  ipcMain.handle('composer-os:pick-audio-file', async () => {
+    const { dialog } = await import('electron');
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      filters: [{ name: 'Audio', extensions: ['wav', 'mp3', 'aiff', 'flac'] }],
+    });
+    if (result.canceled || !result.filePaths?.[0]) return { path: null };
+    return { path: result.filePaths[0] };
+  });
+
   ipcMain.handle('composer-os-api:read-file', async (_event, body: unknown) => {
     const pathRaw =
       body && typeof body === 'object' && typeof (body as { path?: unknown }).path === 'string'

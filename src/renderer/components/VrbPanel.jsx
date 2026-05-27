@@ -65,10 +65,10 @@ export function VrbPanel() {
       />
       <SliderRow
         label="Decay"
-        min={0.5}
+        min={0.1}
         max={8}
         step={0.1}
-        value={sliders.decay}
+        value={Math.max(0.1, sliders.decay)}
         unit=" s"
         onChange={(v) => updateSlider('decay', v)}
       />

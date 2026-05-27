@@ -46,6 +46,7 @@ declare global {
       openExportFolder?: (
         engine: 'fela-kuti' | 'greek' | 'blended' | 'brazilian' | 'second-line' | 'cuban'
       ) => Promise<void>;
+      pickAudioFile?: () => Promise<{ path: string | null }>;
       onStartupState: (cb: (s: ComposerOsStartupState) => void) => void;
       notifyGenerationPhase: (phase: 'running' | 'succeeded' | 'failed' | 'idle') => void;
     };

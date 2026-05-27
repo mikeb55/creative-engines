@@ -14,6 +14,9 @@ export function DrumSelectionProvider({ children }) {
   const [bigBandDrumStyleId, setBigBandDrumStyleId] = useState(null);
   const [useBigBandDrums, setUseBigBandDrums] = useState(false);
   const [patternOverride, setPatternOverride] = useState(null);
+  const [drumLoopPath, setDrumLoopPath] = useState(null);
+
+  const clearDrumLoopPath = useCallback(() => setDrumLoopPath(null), []);
 
   const drummer = useMemo(() => getDrummerModule(drummerId), [drummerId]);
 
@@ -171,6 +174,9 @@ export function DrumSelectionProvider({ children }) {
       bigBandDrumStyleId,
       useBigBandDrums,
       payloadPattern,
+      drumLoopPath,
+      setDrumLoopPath,
+      clearDrumLoopPath,
       selectDrummer,
       selectPattern,
       loadPreset,
@@ -190,6 +196,8 @@ export function DrumSelectionProvider({ children }) {
       bigBandDrumStyleId,
       useBigBandDrums,
       payloadPattern,
+      drumLoopPath,
+      clearDrumLoopPath,
       selectDrummer,
       selectPattern,
       loadPreset,

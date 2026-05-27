@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useCompositionSong } from '../context/CompositionSongContext';
 import { readSectionRowSummary } from '../lib/compositionSongUi';
 import {
@@ -72,6 +72,16 @@ export function SectionEditor() {
   } = useCompositionSong();
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState('');
+  const deleteGuardRef = useRef(false);
+
+  const requestDeleteSection = (sectionId) => {
+    if (deleteGuardRef.current) return;
+    deleteGuardRef.current = true;
+    window.setTimeout(() => {
+      deleteGuardRef.current = false;
+    }, 400);
+    deleteSection(sectionId);
+  };
 
   const startRename = (section) => {
     setEditingId(section.id);
@@ -193,7 +203,7 @@ export function SectionEditor() {
                 disabled={song.sections.length <= 1}
                 onClick={(e) => {
                   e.stopPropagation();
-                  deleteSection(section.id);
+                  requestDeleteSection(section.id);
                 }}
               >
                 Delete

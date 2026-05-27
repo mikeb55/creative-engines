@@ -124,6 +124,17 @@ export function parseAdditiveBeatGroups(raw) {
   return groups;
 }
 
+/** @param {string} raw @param {number} numerator */
+export function isValidAdditiveMeterInput(raw, numerator) {
+  const trimmed = String(raw || '').trim();
+  if (!trimmed) return true;
+  if (!/^[\d+\s]+$/.test(trimmed)) return false;
+  const groups = parseAdditiveBeatGroups(trimmed);
+  if (!groups.length) return false;
+  const sum = groups.reduce((acc, n) => acc + n, 0);
+  return sum <= numerator;
+}
+
 /** @param {import('@composer-os/core/section-architecture/sectionArchitectureTypes').SectionPreset} section @param {import('@composer-os/core/section-architecture/sectionArchitectureTypes').Song} song */
 export function readSectionRowSummary(section, song) {
   const meter = readSectionMeter(section, song);
