@@ -3,8 +3,11 @@ Martino-specific GCE dimensions (0.0–1.0 each). Stdlib only.
 """
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import Any
+
+_log = logging.getLogger(__name__)
 
 MARTINO_GCE_DIMENSIONS: tuple[str, ...] = (
     "reduction_integrity",
@@ -283,11 +286,37 @@ def check_hard_gates(
     if interval_fingerprints and len(interval_fingerprints) >= 2:
         for i in range(1, len(interval_fingerprints)):
             fp_prev, fp_cur = interval_fingerprints[i - 1], interval_fingerprints[i]
-            if fp_prev and fp_cur and len(fp_prev) == len(fp_cur):
-                jumps = [abs(a - b) for a, b in zip(fp_prev, fp_cur)]
-                if jumps and max(jumps) > 9:
-                    reasons.append("lfv_positional_jump")
-                    break
+            if not fp_prev or not fp_cur:
+                continue
+            if len(fp_prev) != len(fp_cur):
+                bar_a = int(plan[i - 1].get("bar", i)) if i - 1 < len(plan) else i
+                bar_b = int(plan[i].get("bar", i + 1)) if i < len(plan) else i + 1
+                _log.debug(
+                    "lfv_positional_jump skipped bars %d-%d: fingerprint length "
+                    "mismatch %d vs %d (not a positional jump)",
+                    bar_a,
+                    bar_b,
+                    len(fp_prev),
+                    len(fp_cur),
+                )
+                continue
+            bridge_jump = abs(fp_cur[0] - fp_prev[-1])
+            if bridge_jump > 9:
+                bar_a = int(plan[i - 1].get("bar", i)) if i - 1 < len(plan) else i
+                bar_b = int(plan[i].get("bar", i + 1)) if i < len(plan) else i + 1
+                _log.warning(
+                    "lfv_positional_jump bars %d-%d (plan idx %d-%d) bridge_jump=%d "
+                    "(fp lens %d vs %d)",
+                    bar_a,
+                    bar_b,
+                    i - 1,
+                    i,
+                    bridge_jump,
+                    len(fp_prev),
+                    len(fp_cur),
+                )
+                reasons.append(f"lfv_positional_jump:bars_{bar_a}-{bar_b}:bridge_{bridge_jump}")
+                break
 
     if direction_vectors and len(direction_vectors) >= 4:
         resets = 0

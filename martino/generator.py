@@ -308,6 +308,13 @@ ANCHOR_ACTIVITY = "A4"
 DCR_VARIANTS = ("A", "B", "C")
 MIN_DIRECTION_ARC_BARS = 4
 MAX_DIRECTION_ARC_BARS = 8
+GATE_RETRY_PRIMARIES: tuple[str, ...] = (
+    "A1_LINEAR_CORE",
+    "A2_DIAGONAL_BRIDGE",
+    "A3_PIVOT_CELL",
+    "A4_ANCHOR_ARP",
+)
+MAX_GCE_GATE_ATTEMPTS = 3
 
 
 def _activity_id_from_key(key: str) -> str:
@@ -561,11 +568,16 @@ def _roles_for_phrase_position(
     row: dict[str, Any],
     phrase_rows: list[dict[str, Any]],
     ascending: bool,
+    tune_config: dict,
 ) -> list[str]:
     if row.get("is_dominant"):
         return list(ROLE_ACTIVITY_PRIORITY["bridge"])
     if pos == 0:
-        return list(ROLE_ACTIVITY_PRIORITY["opening"])
+        roles = list(ROLE_ACTIVITY_PRIORITY["opening"])
+        boost = tune_config.get("_gate_role_boost")
+        if boost:
+            roles = [str(boost)] + [k for k in roles if k != boost]
+        return roles
     if pos == PHRASE_LENGTH - 1:
         return list(ROLE_ACTIVITY_PRIORITY["anchor"])
     if pos == 1:
@@ -650,7 +662,7 @@ def _plan_phrase_activities(
     anti_loop_triggered = False
 
     for pos, row in enumerate(phrase_rows):
-        roles = _roles_for_phrase_position(pos, row, phrase_rows, ascending)
+        roles = _roles_for_phrase_position(pos, row, phrase_rows, ascending, tune_config)
         roles = _variant_role_keys(roles, pos, variant)
         if pos == PHRASE_LENGTH - 1:
             roles = list(ROLE_ACTIVITY_PRIORITY["anchor"])
@@ -908,11 +920,37 @@ def _attach_direction_telemetry(
     return vec, arc
 
 
-def plan_all_phrase_activities(
+def _next_gate_primary(current: str) -> str:
+    cycle = GATE_RETRY_PRIMARIES
+    cur = str(current or cycle[0])
+    if cur in cycle:
+        return cycle[(cycle.index(cur) + 1) % len(cycle)]
+    for label in cycle:
+        if label.split("_", 1)[0] in cur:
+            return cycle[(cycle.index(label) + 1) % len(cycle)]
+    return cycle[1]
+
+
+def _gce_candidate_better(
+    candidate: Any,
+    incumbent: Any,
+) -> bool:
+    if candidate.overall > incumbent.overall + 1e-9:
+        return True
+    if incumbent.overall > candidate.overall + 1e-9:
+        return False
+    return candidate.dimensions.get("anti_bebop_drift", 0.0) > incumbent.dimensions.get(
+        "anti_bebop_drift", 0.0
+    )
+
+
+def _plan_phrases_with_dcr(
     reduction_map: list[dict[str, Any]],
     tune_config: dict,
-) -> list[dict[str, Any]]:
-    """Plan every 4-bar phrase in the tune; DCR picks strongest variant per span."""
+    *,
+    anti_bebop_penalty: float = 0.0,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], Any]:
+    """Run phrase DCR for full tune and return plan, per-phrase DCR meta, and GCE result."""
     from gce.martinoScorers import score_martino_gce
 
     full_plan: list[dict[str, Any]] = []
@@ -926,7 +964,9 @@ def plan_all_phrase_activities(
         chunk = reduction_map[start : start + PHRASE_LENGTH]
         if len(chunk) < PHRASE_LENGTH:
             break
-        phrase_plan, dcr_meta, _dims = _dcr_evaluate_phrase_plans(chunk, tune_config, carry_key=carry)
+        phrase_plan, dcr_meta, _dims = _dcr_evaluate_phrase_plans(
+            chunk, tune_config, carry_key=carry, anti_bebop_penalty=anti_bebop_penalty
+        )
         dir_vector, dir_arc = _attach_direction_telemetry(phrase_plan, dir_vector, dir_arc)
         dcr_runs.append(dcr_meta)
         full_plan.extend(phrase_plan)
@@ -935,65 +975,81 @@ def plan_all_phrase_activities(
     fps = [list(r.get("interval_fingerprint") or []) for r in full_plan]
     directions = [str(r.get("direction_vector", "pivot")) for r in full_plan]
     rhythms = [str(r.get("rhythmic_signature", "")) for r in full_plan]
-    _gce_result = score_martino_gce(
+    gce = score_martino_gce(
         full_plan,
         interval_fingerprints=fps,
         direction_vectors=directions,
         rhythmic_signatures=rhythms,
         chords=[str(r.get("chord", "")) for r in full_plan],
     )
-    final_gce = _gce_result
+    return full_plan, dcr_runs, gce
 
-    # V71 gate retry — max 3 attempts if gate_failed
-    _gate_attempts = 0
-    while (
-        hasattr(_gce_result, "gate_failed")
-        and _gce_result.gate_failed
-        and _gate_attempts < 2
-    ):
-        _gate_attempts += 1
-        _fallback_activities = [
-            "A2_DIAGONAL_BRIDGE",
-            "A3_PIVOT_CELL",
-            "A4_ANCHOR_ARP",
-            "A1_LINEAR_CORE",
-        ]
-        break  # scaffold — expand with project's rerun pattern
+
+def plan_all_phrase_activities(
+    reduction_map: list[dict[str, Any]],
+    tune_config: dict,
+) -> list[dict[str, Any]]:
+    """Plan every 4-bar phrase in the tune; DCR picks strongest variant per span."""
+    from master_loader import resolve_activity_key
+
+    base_primary = str(tune_config.get("primary_activity", GATE_RETRY_PRIMARIES[0]))
+    saved_primary = base_primary
+    saved_boost = tune_config.get("_gate_role_boost")
+
+    full_plan, dcr_runs, final_gce = _plan_phrases_with_dcr(reduction_map, tune_config)
+    gate_attempts = 1
+    gate_log: list[dict[str, Any]] = [
+        {
+            "attempt": 1,
+            "primary_activity": base_primary,
+            "overall": final_gce.overall,
+            "anti_bebop_drift": final_gce.dimensions.get("anti_bebop_drift"),
+            "gate_failed": final_gce.gate_failed,
+        }
+    ]
+
+    primary = base_primary
+    while final_gce.gate_failed and gate_attempts < MAX_GCE_GATE_ATTEMPTS:
+        primary = _next_gate_primary(primary)
+        tune_config["primary_activity"] = primary
+        tune_config["_gate_role_boost"] = resolve_activity_key(primary)
+        candidate_plan, candidate_dcr, candidate_gce = _plan_phrases_with_dcr(
+            reduction_map,
+            tune_config,
+            anti_bebop_penalty=0.1 * gate_attempts,
+        )
+        gate_attempts += 1
+        gate_log.append(
+            {
+                "attempt": gate_attempts,
+                "primary_activity": primary,
+                "overall": candidate_gce.overall,
+                "anti_bebop_drift": candidate_gce.dimensions.get("anti_bebop_drift"),
+                "gate_failed": candidate_gce.gate_failed,
+            }
+        )
+        if _gce_candidate_better(candidate_gce, final_gce):
+            full_plan, dcr_runs, final_gce = candidate_plan, candidate_dcr, candidate_gce
+
+    tune_config["primary_activity"] = saved_primary
+    if saved_boost is None:
+        tune_config.pop("_gate_role_boost", None)
+    else:
+        tune_config["_gate_role_boost"] = saved_boost
 
     if final_gce.dimensions.get("anti_bebop_drift", 1.0) < 0.3:
-        rerun_plan: list[dict[str, Any]] = []
-        dcr_runs = []
-        carry = None
-        dir_vector = None
-        dir_arc = 0
-        for start in range(0, len(reduction_map), PHRASE_LENGTH):
-            chunk = reduction_map[start : start + PHRASE_LENGTH]
-            if len(chunk) < PHRASE_LENGTH:
-                break
-            phrase_plan, dcr_meta, _dims = _dcr_evaluate_phrase_plans(
-                chunk, tune_config, carry_key=carry, anti_bebop_penalty=0.25
-            )
-            dcr_meta["dcr_anti_bebop_rerun"] = True
-            dir_vector, dir_arc = _attach_direction_telemetry(phrase_plan, dir_vector, dir_arc)
-            dcr_runs.append(dcr_meta)
-            rerun_plan.extend(phrase_plan)
-            carry = _activity_key_from_id(phrase_plan[-1]["activity"])
-        full_plan = rerun_plan
-        fps = [list(r.get("interval_fingerprint") or []) for r in full_plan]
-        directions = [str(r.get("direction_vector", "pivot")) for r in full_plan]
-        rhythms = [str(r.get("rhythmic_signature", "")) for r in full_plan]
-        final_gce = score_martino_gce(
-            full_plan,
-            interval_fingerprints=fps,
-            direction_vectors=directions,
-            rhythmic_signatures=rhythms,
-            chords=[str(r.get("chord", "")) for r in full_plan],
+        full_plan, dcr_runs, final_gce = _plan_phrases_with_dcr(
+            reduction_map, tune_config, anti_bebop_penalty=0.25
         )
+        if dcr_runs:
+            dcr_runs[-1]["dcr_anti_bebop_rerun"] = True
 
     tune_config["_dcr"] = dcr_runs[-1] if dcr_runs else {}
     tune_config["_martino_gce"] = final_gce.to_provenance_dict()
     tune_config["_martino_gce_overall"] = final_gce.overall
     tune_config["_gce_gate_failed"] = final_gce.gate_failed
+    tune_config["_gce_gate_attempts"] = gate_attempts
+    tune_config["_gce_gate_log"] = gate_log
     return full_plan
 
 
@@ -1333,6 +1389,8 @@ def generate_musicxml(tune_config: dict) -> Path:
                     "dcr_weakest_dimension": dcr_block.get("dcr_weakest_dimension"),
                     "dcr_refinement_applied": dcr_block.get("dcr_refinement_applied"),
                     "gce_gate_failed": tune_config.get("_gce_gate_failed"),
+                    "gce_gate_attempts": tune_config.get("_gce_gate_attempts"),
+                    "gce_gate_log": tune_config.get("_gce_gate_log"),
                     "dcr": dcr_block,
                     "martinoGce": martino_gce,
                     "martinoGceOverall": tune_config.get("_martino_gce_overall"),
