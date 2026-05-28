@@ -230,6 +230,8 @@ def score_anti_bebop_drift(
                     penalty_ii_v += 0.35
             penalty_ii_v += 0.15
 
+    penalty_ii_v = min(penalty_ii_v, 0.20)
+
     if interval_fingerprints:
         for idx, fp in enumerate(interval_fingerprints):
             chord = (
@@ -249,12 +251,11 @@ def score_anti_bebop_drift(
                 else:
                     penalty_whole_step_spam += 0.10
             sym = sum(1 for x in fp if abs(x) == 2)
-            uniform_major2 = len(fp) >= 3 and all(abs(x) == 2 for x in fp)
-            if sym and (not _fingerprint_stepwise_only(fp) or uniform_major2):
-                if ii_v_bar:
-                    penalty_ii_v += sym * 0.04
-                else:
-                    penalty_whole_step_spam += sym * 0.04
+            total_notes = max(1, len(fp))
+            whole_step_fraction = sym / total_notes
+            if whole_step_fraction > 0.60:
+                penalty_whole_step_spam += (whole_step_fraction - 0.60) * 0.25
+            penalty_whole_step_spam = min(penalty_whole_step_spam, 0.15)
 
     cadence_every_two = 0
     for i in range(1, len(keys), 2):
@@ -271,6 +272,22 @@ def score_anti_bebop_drift(
                 contour_resets += 1
     penalty_contour += contour_resets * 0.06
 
+    penalty_ii_v = min(penalty_ii_v, 0.20)
+    penalty_whole_step_spam = min(penalty_whole_step_spam, 0.15)
+
+    cliché_uniform = bool(
+        interval_fingerprints
+        and len(interval_fingerprints) >= 2
+        and all(
+            len(fp) >= 3 and fp and all(abs(x) == 2 for x in fp)
+            for fp in interval_fingerprints
+        )
+    )
+    if cliché_uniform:
+        penalty_whole_step_spam = 0.15
+        penalty_ii_v = 0.20
+        penalty_enclosure += 0.35
+
     penalty = (
         penalty_ii_v
         + penalty_enclosure
@@ -279,7 +296,8 @@ def score_anti_bebop_drift(
         + penalty_contour
     )
 
-    reward = _stepwise_reward(interval_fingerprints) * 0.3
+    step_r = _stepwise_reward(interval_fingerprints)
+    reward = step_r * (0.05 if cliché_uniform else 0.45)
     final = _clamp01((1.0 - min(1.0, penalty)) * 0.7 + reward)
 
     global _last_anti_bebop_debug

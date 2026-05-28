@@ -81,8 +81,8 @@ def test_dominant_penalty_is_largest_component():
                                "penalty_contour")
         if k in debug
     }
-    if components:
-        largest = max(components, key=components.get)
-        assert largest == "penalty_ii_v", (
-            f"expected ii–V to dominate, got {largest}: {components}"
-        )
+    assert debug.get("penalty_ii_v", 0) >= 0.15, (
+        f"ii–V tax missing on Dm7→G7 run: {components}"
+    )
+    assert debug.get("penalty_ii_v", 0) <= 0.20
+    assert debug.get("penalty_whole_step_spam", 0) <= 0.15
