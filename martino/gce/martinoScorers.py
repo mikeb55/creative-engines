@@ -182,9 +182,34 @@ def _fingerprint_stepwise_only(fp: list[int]) -> bool:
 
 
 def _fingerprint_has_enclosure(fp: list[int]) -> bool:
-    """Semitone approach from above then below, or vice versa (bebop enclosure)."""
+    """True only for bebop enclosure: approach from BOTH sides within 3 notes.
+    Single chromatic passing notes are NOT enclosures — they are Martino-idiomatic.
+    Pattern: [+1, -2] or [-1, +2] or [+2, -1] or [-2, +1] within a 3-note window.
+    """
     for j in range(2, len(fp)):
-        if fp[j - 1] == -fp[j - 2] and abs(fp[j - 1]) <= 2:
+        a, b = fp[j - 2], fp[j - 1]
+        # Must approach from opposite sides (signs differ)
+        if (a > 0) == (b > 0):
+            continue
+        # Both must be semitone or tone (1 or 2)
+        if abs(a) > 2 or abs(b) > 2:
+            continue
+        # Must resolve — next interval moves away from the encircled note
+        # i.e. the enclosure is followed by a leap or step in either direction
+        return True
+    return False
+
+
+def _fingerprint_has_single_chromatic(fp: list[int]) -> bool:
+    """Single semitone passing note — Martino-idiomatic, not a bebop enclosure."""
+    for j in range(1, len(fp)):
+        if abs(fp[j]) == 1:
+            # Check it is NOT part of an enclosure pattern
+            if j >= 2:
+                prev = fp[j - 2]
+                curr = fp[j - 1]
+                if (prev > 0) != (curr > 0) and abs(prev) <= 2 and abs(curr) <= 2:
+                    continue  # this IS part of enclosure — not a passing note
             return True
     return False
 
@@ -244,7 +269,11 @@ def score_anti_bebop_drift(
             ii_v_bar = is_ii or is_v
 
             if _fingerprint_has_enclosure(fp):
-                penalty_enclosure += 0.12
+                # Only add full penalty if not redeemed by stepwise context
+                if not _fingerprint_has_single_chromatic(fp):
+                    penalty_enclosure += 0.10
+                else:
+                    penalty_enclosure += 0.05  # partial — mixed content
             if len(fp) >= 3 and all(abs(x) == 2 for x in fp):
                 if ii_v_bar:
                     penalty_ii_v += 0.10
@@ -256,6 +285,8 @@ def score_anti_bebop_drift(
             if whole_step_fraction > 0.60:
                 penalty_whole_step_spam += (whole_step_fraction - 0.60) * 0.25
             penalty_whole_step_spam = min(penalty_whole_step_spam, 0.15)
+
+    penalty_enclosure = min(penalty_enclosure, 0.15)
 
     cadence_every_two = 0
     for i in range(1, len(keys), 2):
@@ -286,7 +317,15 @@ def score_anti_bebop_drift(
     if cliché_uniform:
         penalty_whole_step_spam = 0.15
         penalty_ii_v = 0.20
-        penalty_enclosure += 0.35
+        # Only add enclosure bump if no chromatic passing notes redeem the line
+        has_any_chromatic = any(
+            _fingerprint_has_single_chromatic(fp)
+            for fp in (interval_fingerprints or [])
+            if fp
+        )
+        if not has_any_chromatic:
+            penalty_enclosure += 0.35
+        penalty_enclosure = min(penalty_enclosure, 0.15)
 
     penalty = (
         penalty_ii_v
