@@ -17,8 +17,24 @@ type MartinoPaths = {
   outputDir: string;
 };
 
+/** Packaged Electron: martino ships in `extraResources` → `process.resourcesPath/martino`. */
+function packagedMartinoResourcesRoot(): string | null {
+  const resourcesPath = (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath;
+  if (typeof resourcesPath !== 'string' || !resourcesPath.length) {
+    return null;
+  }
+  if (existsSync(path.join(resourcesPath, 'martino', 'martino_bridge.py'))) {
+    return resourcesPath;
+  }
+  return null;
+}
+
 /** Repo root for martino/ — bundled __dirname is desktop resources, not engines/martino. */
 function resolveMartinoRepoRoot(): string {
+  const packagedRoot = packagedMartinoResourcesRoot();
+  if (packagedRoot) {
+    return packagedRoot;
+  }
   const envRoot = process.env.COMPOSER_OS_REPO_ROOT?.trim();
   if (envRoot) {
     const resolved = path.resolve(envRoot);

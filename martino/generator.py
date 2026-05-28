@@ -165,6 +165,108 @@ def _sub(parent: ET.Element, tag: str, text: str | None = None, **attrib: Any) -
     return e
 
 
+VALID_MUSICXML_KINDS = frozenset(
+    {
+        "major",
+        "minor",
+        "dominant",
+        "major-seventh",
+        "minor-seventh",
+        "half-diminished",
+        "diminished",
+        "diminished-seventh",
+        "augmented",
+        "major-sixth",
+        "minor-sixth",
+        "suspended-fourth",
+        "suspended-second",
+        "major-minor",
+        "augmented-seventh",
+        "none",
+        "other",
+    }
+)
+
+_KIND_ALIASES: dict[str, str] = {
+    "major": "major",
+    "maj": "major",
+    "m": "minor",
+    "minor": "minor",
+    "min": "minor",
+    "dominant": "dominant",
+    "7": "dominant",
+    "maj7": "major-seventh",
+    "major7": "major-seventh",
+    "major-seventh": "major-seventh",
+    "min7": "minor-seventh",
+    "m7": "minor-seventh",
+    "minor-seventh": "minor-seventh",
+    "m7b5": "half-diminished",
+    "half-diminished": "half-diminished",
+    "half-dim": "half-diminished",
+    "dim": "diminished",
+    "diminished": "diminished",
+    "dim7": "diminished-seventh",
+    "diminished-seventh": "diminished-seventh",
+    "aug": "augmented",
+    "augmented": "augmented",
+    "maj6": "major-sixth",
+    "major-sixth": "major-sixth",
+    "min6": "minor-sixth",
+    "minor-sixth": "minor-sixth",
+    "sus4": "suspended-fourth",
+    "suspended-fourth": "suspended-fourth",
+    "sus2": "suspended-second",
+    "suspended-second": "suspended-second",
+}
+
+
+def _normalize_kind(kind: str) -> str:
+    """Map chord-quality token to MusicXML 3.1 kind enumeration value."""
+    k = kind.strip().lower().replace("_", "-")
+    if k in VALID_MUSICXML_KINDS:
+        return k
+    compact = k.replace(" ", "")
+    if compact in _KIND_ALIASES:
+        return _KIND_ALIASES[compact]
+    if k in _KIND_ALIASES:
+        return _KIND_ALIASES[k]
+    for alias, normalized in sorted(_KIND_ALIASES.items(), key=lambda item: -len(item[0])):
+        if alias in compact or alias in k:
+            return normalized
+    return "other"
+
+
+def _infer_kind_from_chord(chord_text: str) -> tuple[str, str]:
+    """Return (normalized MusicXML kind, display text for kind@text)."""
+    c = chord_text
+    if re.search(r"m7b5|ø|half-dim", c, re.I):
+        return _normalize_kind("half-diminished"), "m7b5"
+    if re.search(r"dim7|o7", c, re.I):
+        return _normalize_kind("diminished-seventh"), "dim7"
+    if re.search(r"\bdim\b|°", c, re.I):
+        return _normalize_kind("diminished"), "dim"
+    if re.search(r"aug|\+", c):
+        return _normalize_kind("augmented"), "aug"
+    if "maj7" in c or "Δ" in c or re.search(r"maj\s*7", c, re.I):
+        return _normalize_kind("major-seventh"), "maj7"
+    if re.search(r"min7|m7|-7", c, re.I):
+        return _normalize_kind("minor-seventh"), "m7"
+    if re.search(r"maj6", c, re.I):
+        return _normalize_kind("major-sixth"), "maj6"
+    if re.search(r"min6|m6", c, re.I):
+        return _normalize_kind("minor-sixth"), "m6"
+    if re.search(r"sus4", c, re.I):
+        return _normalize_kind("suspended-fourth"), "sus4"
+    if re.search(r"sus2", c, re.I):
+        return _normalize_kind("suspended-second"), "sus2"
+    if "7" in c and not re.search(r"maj", c, re.I):
+        return _normalize_kind("dominant"), "7"
+    if re.search(r"m(?!aj)", c):
+        return _normalize_kind("minor"), "m"
+    return _normalize_kind("major"), ""
+
+
 def _strip_harmony_nonstandard(root: ET.Element) -> None:
     """Sibelius-safe harmony: no attrs; only root/kind/bass/degree children."""
     allowed_children = frozenset({"root", "kind", "bass", "degree"})
@@ -187,19 +289,16 @@ def _harmony_elem(measure_el: ET.Element, chord_text: str) -> None:
     alter = None
     if len(root_str) > 1:
         alter = -1 if root_str[1] == "b" else (1 if root_str[1] == "#" else None)
-    kind_text = "maj7"
-    if "maj7" in chord_text or "Δ" in chord_text:
-        kind_text = "maj7"
-    elif "min7" in chord_text or "m7" in chord_text or "-7" in chord_text:
-        kind_text = "min7"
-    elif "7" in chord_text and "maj" not in chord_text and "min" not in chord_text:
-        kind_text = "dominant"
+    kind_value, kind_display = _infer_kind_from_chord(chord_text)
+    kind_value = _normalize_kind(kind_value)
     root_el = _sub(h, "root")
     _sub(root_el, "root-step", step)
     if alter is not None:
         _sub(root_el, "root-alter", str(alter))
     k = _sub(h, "kind")
-    k.set("text", kind_text)
+    k.text = kind_value
+    if kind_display:
+        k.set("text", kind_display)
     measure_el.append(h)
 
 

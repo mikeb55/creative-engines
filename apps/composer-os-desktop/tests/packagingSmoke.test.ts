@@ -11,6 +11,16 @@ function readUtf8(rel: string): string {
 }
 
 describe('Packaging smoke (desktop)', () => {
+  it('electron-builder extraResources includes martino engine (packaged Python bridge)', () => {
+    const pkg = JSON.parse(fs.readFileSync(path.join(desktopRoot, 'package.json'), 'utf-8')) as {
+      build?: { extraResources?: Array<{ from?: string; to?: string }> };
+    };
+    const extras = pkg.build?.extraResources ?? [];
+    const martino = extras.find((e) => e.to === 'martino');
+    expect(martino).toBeDefined();
+    expect(martino?.from).toContain('martino');
+  });
+
   it('electron-builder config is present and icon resolves', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(desktopRoot, 'package.json'), 'utf-8'));
     expect(pkg.build?.productName).toBe('Composer OS Desktop');

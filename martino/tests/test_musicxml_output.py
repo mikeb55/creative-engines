@@ -12,6 +12,25 @@ BRIDGE = ENGINE_DIR / "martino_bridge.py"
 LIBRARY_PREFIX = Path(r"C:\Users\mike\Documents\Mike Composer Files\Martino Linear")
 FORBIDDEN_HARMONY_ATTRS = frozenset({"default_y", "relative_y", "default_x", "relative_x"})
 HARMONY_ALLOWED_CHILDREN = frozenset({"root", "kind", "bass", "degree"})
+VALID_KIND_VALUES = [
+    "major",
+    "minor",
+    "dominant",
+    "major-seventh",
+    "minor-seventh",
+    "half-diminished",
+    "diminished",
+    "diminished-seventh",
+    "augmented",
+    "major-sixth",
+    "minor-sixth",
+    "suspended-fourth",
+    "suspended-second",
+    "major-minor",
+    "augmented-seventh",
+    "none",
+    "other",
+]
 
 
 def _local_tag(elem: ET.Element) -> str:
@@ -79,6 +98,19 @@ def test_mx_readiness_beatrice_at_least_3():
     resp = _run_bridge(_beatrice_config())
     assert resp["ok"] is True
     assert int(resp.get("readinessScore", 0)) >= 3
+
+
+def test_all_kind_values_valid():
+    resp = _run_bridge(_dm7_progression_config())
+    root = ET.parse(Path(resp["outputPath"])).getroot()
+    valid = set(VALID_KIND_VALUES)
+    for kind_el in root.iter():
+        if _local_tag(kind_el) != "kind":
+            continue
+        value = (kind_el.text or "").strip()
+        if not value:
+            value = (kind_el.get("value") or "").strip()
+        assert value in valid, f"invalid <kind> value: {value!r}"
 
 
 def test_sibelius_schema_clean():

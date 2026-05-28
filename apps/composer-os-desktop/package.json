@@ -115,6 +115,16 @@
           "**/*.txt",
           "**/*.json"
         ]
+      },
+      {
+        "from": "../../martino",
+        "to": "martino",
+        "filter": [
+          "**/*.py",
+          "**/*.json",
+          "**/*.xml",
+          "**/*.md"
+        ]
       }
     ],
     "win": {
