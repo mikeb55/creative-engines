@@ -3712,7 +3712,11 @@ export function HomeGenerate({
                     martinoManualChords
                 )
               : martinoManualChords;
-          const conv = buildConversionTable(prog, martinoDominantTensionDefault, martinoTensionOverrides);
+          const conv = buildConversionTable(
+            parseMartinoChords(prog).chords,
+            martinoDominantTensionDefault,
+            martinoTensionOverrides
+          );
           const manifest = r.runManifest as {
             martinoActivityMap?: string;
             martinoVersionUsed?: string;
@@ -4969,6 +4973,9 @@ export function HomeGenerate({
           sectionBarCount={Number((martinoActiveSection as { barCount?: number } | null)?.barCount ?? totalBars)}
           sectionMeter={String((martinoActiveSection as { meter?: string } | null)?.meter ?? '4/4')}
           sectionKey={String((martinoActiveSection as { key?: string } | null)?.key ?? (tonalCenter || 'F'))}
+          sectionChords={String(
+            (martinoActiveSection as { chordProgressionText?: string } | null)?.chordProgressionText ?? chordProgressionText
+          )}
           dominantTensionDefault={martinoDominantTensionDefault}
           setDominantTensionDefault={setMartinoDominantTensionDefault}
           tensionOverrides={martinoTensionOverrides}

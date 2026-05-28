@@ -165,8 +165,21 @@ def _sub(parent: ET.Element, tag: str, text: str | None = None, **attrib: Any) -
     return e
 
 
+def _strip_harmony_nonstandard(root: ET.Element) -> None:
+    """Sibelius-safe harmony: no attrs; only root/kind/bass/degree children."""
+    allowed_children = frozenset({"root", "kind", "bass", "degree"})
+    for h in root.iter():
+        if h.tag != "harmony" and not h.tag.endswith("}harmony"):
+            continue
+        h.attrib.clear()
+        for child in list(h):
+            local = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+            if local not in allowed_children:
+                h.remove(child)
+
+
 def _harmony_elem(measure_el: ET.Element, chord_text: str) -> None:
-    h = _el("harmony", default_y="50", placement="above")
+    h = _el("harmony")
     s = re.sub(r"[(#)/]", " ", chord_text).strip()
     parts = s.split()
     root_str = parts[0] if parts else "C"
@@ -403,6 +416,7 @@ def generate_musicxml(tune_config: dict) -> Path:
 
             _add_melody_to_measure(meas, tune_config, bar, chorus)
 
+    _strip_harmony_nonstandard(root)
     tree = ET.ElementTree(root)
     ET.indent(tree, space="  ")
     tree.write(out_path, encoding="UTF-8", xml_declaration=True, default_namespace="", method="xml")

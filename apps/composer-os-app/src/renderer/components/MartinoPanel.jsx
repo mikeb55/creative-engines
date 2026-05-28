@@ -28,6 +28,7 @@ export default function MartinoPanel({
   sectionBarCount,
   sectionMeter,
   sectionKey,
+  sectionChords = '',
   dominantTensionDefault,
   setDominantTensionDefault,
   tensionOverrides,
@@ -52,11 +53,8 @@ export default function MartinoPanel({
   onLoadOrbit,
   disabled,
 }) {
-  const chordText = chordSource === 'section' ? '' : manualChords;
-  const parsed = useMemo(() => {
-    if (chordSource === 'section') return { ok: true, chords: [] };
-    return parseMartinoChords(manualChords);
-  }, [chordSource, manualChords]);
+  const chordText = chordSource === 'section' ? sectionChords : manualChords;
+  const parsed = useMemo(() => parseMartinoChords(chordText), [chordSource, manualChords, sectionChords]);
 
   const conversionRows = useMemo(() => {
     if (!parsed.ok || !parsed.chords.length) return [];

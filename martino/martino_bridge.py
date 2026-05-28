@@ -11,6 +11,11 @@ _ENGINE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(_ENGINE_DIR))
 
 from generator import build_activity_map, enforce_lfv, generate_musicxml, increment_version  # noqa: E402
+from mx_readiness import score_musicxml_path  # noqa: E402
+
+MARTINO_LIBRARY_DIR = Path(
+    r"C:\Users\mike\Documents\Mike Composer Files\Martino Linear"
+)
 
 
 def _emit(payload: dict) -> None:
@@ -28,6 +33,10 @@ def main() -> int:
         if not tune_config.get("chords"):
             raise ValueError("tune_config.chords is required")
 
+        if not tune_config.get("output_dir"):
+            MARTINO_LIBRARY_DIR.mkdir(parents=True, exist_ok=True)
+            tune_config["output_dir"] = str(MARTINO_LIBRARY_DIR)
+
         melody_mode = tune_config.get("melody", "auto")
         if melody_mode == "auto" and not tune_config.get("melody_bars"):
             print(
@@ -36,6 +45,7 @@ def main() -> int:
             )
 
         out_path = generate_musicxml(tune_config)
+        readiness_score, readiness_issues = score_musicxml_path(out_path)
         activity_map = build_activity_map(tune_config)
         lfv_flags: list[dict] = []
         mb = tune_config.get("_melody_bars_list") or tune_config.get("melody_bars") or []
@@ -53,12 +63,14 @@ def main() -> int:
                 lfv_flags = [{"index": i, "out_of_range": True} for i, _ in flags]
 
         version_used = tune_config.get("version_prefix") or "V5.3"
+        warnings = [f"mx: {msg}" for msg in readiness_issues] if readiness_issues else []
         _emit(
             {
                 "ok": True,
                 "outputPath": str(out_path),
                 "versionUsed": version_used,
-                "warnings": [],
+                "readinessScore": readiness_score,
+                "warnings": warnings,
                 "activityMapText": activity_map,
                 "lfvFlags": lfv_flags,
                 "stderrExcerpt": "",
@@ -72,6 +84,7 @@ def main() -> int:
                 "ok": False,
                 "outputPath": "",
                 "versionUsed": "",
+                "readinessScore": 0,
                 "warnings": [],
                 "activityMapText": "",
                 "lfvFlags": [],

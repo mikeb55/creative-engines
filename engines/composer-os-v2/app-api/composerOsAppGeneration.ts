@@ -642,6 +642,8 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
       }
     );
     tuneConfig.measures_per_chorus = progression.length;
+    const { ensureOutputDirectoryForPreset } = require('./composerOsOutputPaths');
+    tuneConfig.output_dir = ensureOutputDirectoryForPreset('martino_linear');
     const engineResult = callMartinoEngineSync(tuneConfig);
     if (!engineResult.ok || !engineResult.outputPath) {
       const msg = engineResult.stderrExcerpt || 'Martino engine failed';
@@ -659,12 +661,28 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
         },
       };
     }
+    const mxScore = Math.min(
+      5,
+      Math.max(0, Number(engineResult.readinessScore ?? 0))
+    );
+    const mxOk = mxScore >= 3;
     return {
       success: true,
       composerOsVersion: COMPOSER_OS_VERSION,
       productKind: 'musicxml',
       filepath: engineResult.outputPath,
-      validation: validationForStructural(true, []),
+      validation: {
+        integrityPassed: true,
+        behaviourGatesPassed: true,
+        mxValidationPassed: mxOk,
+        strictBarMathPassed: true,
+        exportRoundTripPassed: true,
+        exportIntegrityPassed: true,
+        instrumentMetadataPassed: true,
+        sibeliusSafe: mxOk,
+        readiness: { shareable: mxOk, release: mxOk ? 1 : 0, mx: mxScore },
+        errors: mxOk ? [] : engineResult.warnings ?? [],
+      },
       lfvFlags: engineResult.lfvFlags ?? [],
       runManifest: {
         seed: req.seed,
@@ -675,6 +693,7 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
         martinoActivityMap: engineResult.activityMapText,
         martinoLfvFlags: engineResult.lfvFlags ?? [],
         martinoWarnings: engineResult.warnings ?? [],
+        martinoReadinessScore: mxScore,
       } as GenerateResult['runManifest'],
     };
   }

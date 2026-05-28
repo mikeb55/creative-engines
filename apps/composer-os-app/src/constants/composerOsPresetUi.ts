@@ -100,7 +100,8 @@ export const EXPECTED_APP_PRESET_COUNT = 11;
 export function mergePresetsWithRegistry(
   apiPresets: AppPresetCard[] | undefined | null
 ): AppPresetCard[] {
-  const map = new Map((apiPresets ?? []).map((p) => [p.id, p]));
+  const list = Array.isArray(apiPresets) ? apiPresets : [];
+  const map = new Map(list.map((p) => [p.id, p]));
   return APP_PRESET_REGISTRY.map((base) => {
     const fromApi = map.get(base.id);
     if (!fromApi) return { ...base };

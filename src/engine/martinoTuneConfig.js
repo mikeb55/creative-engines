@@ -54,7 +54,6 @@ export function buildTuneConfig(section, martinoConfig = {}) {
       ? martinoConfig.secondaryActivities.map(String)
       : [],
     melody: 'auto',
-    output_dir: 'C:\\Dev\\composer-os\\temp\\martino',
     lfv: {
       min_fret: Number(lfvRaw.min_fret ?? 5),
       max_fret: Number(lfvRaw.max_fret ?? 9),

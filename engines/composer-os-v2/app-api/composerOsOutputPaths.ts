@@ -19,6 +19,7 @@ export const PRESET_OUTPUT_SUBFOLDER: Record<string, string> = {
   song_mode: 'Song Mode',
   riff_generator: 'Riffs',
   sq_to_bb: 'SQ to BB Compositions',
+  martino_linear: 'Martino Linear',
 };
 
 export function getUserDocumentsPath(): string {

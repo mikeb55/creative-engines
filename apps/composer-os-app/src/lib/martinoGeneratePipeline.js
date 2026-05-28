@@ -41,13 +41,16 @@ export function parseMartinoChords(text) {
  * @param {Record<number, 'low'|'medium'|'high'>} overrides
  */
 export function buildConversionTable(chords, defaultTension = 'low', overrides = {}) {
+  const chordList = Array.isArray(chords)
+    ? chords
+    : parseMartinoChords(typeof chords === 'string' ? chords : '').chords;
   const tensionMap = {};
-  chords.forEach((_, i) => {
+  chordList.forEach((_, i) => {
     if (overrides[i]) tensionMap[i] = overrides[i];
   });
-  return convert_progression(chords, tensionMap).map((row, i) => ({
+  return convert_progression(chordList, tensionMap).map((row, i) => ({
     index: i,
-    chord: chords[i],
+    chord: chordList[i],
     minorRoot: row.minorRoot,
     rule: row.bookRule,
     tension: overrides[i] ?? (row.bookRule.includes('dominant') ? defaultTension : '—'),
@@ -96,7 +99,7 @@ export function buildExplainLines(bridgeResult, conversions, explainMode) {
   const lines = [];
   const mapText = String(bridgeResult.activityMapText || '');
   const primary = mapText.match(/PRIMARY_ACTIVITY=([^\n]+)/)?.[1] || 'A1_LINEAR_CORE';
-  conversions.forEach((row, i) => {
+  (Array.isArray(conversions) ? conversions : []).forEach((row, i) => {
     const lfvFlag = Array.isArray(bridgeResult.lfvFlags)
       ? bridgeResult.lfvFlags.some((f) => f.index === i)
       : false;

@@ -6,6 +6,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { constants as fsConstants, existsSync, mkdirSync, accessSync } from 'node:fs';
 import path from 'node:path';
 import { resolveComposerOsRepoRoot } from '../../app-api/systemCheck';
+import { ensureOutputDirectoryForPreset } from '../../app-api/composerOsOutputPaths';
 
 const TIMEOUT_MS = 30_000;
 
@@ -47,7 +48,7 @@ function getMartinoPaths(): MartinoPaths {
     repoRoot,
     bridgeScript: path.join(repoRoot, 'martino', 'martino_bridge.py'),
     generatorScript: path.join(repoRoot, 'martino', 'generator.py'),
-    outputDir: path.join(repoRoot, 'temp', 'martino'),
+    outputDir: ensureOutputDirectoryForPreset('martino_linear'),
   };
 }
 
@@ -55,6 +56,7 @@ export interface MartinoEngineResponse {
   ok: boolean;
   outputPath: string;
   versionUsed: string;
+  readinessScore?: number;
   warnings: string[];
   activityMapText: string;
   lfvFlags: Array<{ index: number; out_of_range: boolean }>;
@@ -87,7 +89,7 @@ function preflight(): MartinoEngineResponse | null {
     try {
       mkdirSync(outputDir, { recursive: true });
     } catch (err) {
-      return fail(`temp/martino not writable: ${err instanceof Error ? err.message : String(err)}`);
+      return fail(`Martino Linear output folder not writable: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
   return null;
@@ -108,11 +110,17 @@ function parseBridgeResult(stdout: string, stderr: string, status: number | null
   }
 }
 
+function tuneConfigWithLibraryOutput(tuneConfig: Record<string, unknown>): Record<string, unknown> {
+  const { outputDir } = getMartinoPaths();
+  if (tuneConfig.output_dir) return tuneConfig;
+  return { ...tuneConfig, output_dir: outputDir };
+}
+
 export function callMartinoEngineSync(tuneConfig: Record<string, unknown>): MartinoEngineResponse {
   const pre = preflight();
   if (pre) return pre;
   const { bridgeScript } = getMartinoPaths();
-  const payload = JSON.stringify({ tune_config: tuneConfig });
+  const payload = JSON.stringify({ tune_config: tuneConfigWithLibraryOutput(tuneConfig) });
   const result = spawnSync('py', [bridgeScript], {
     input: payload,
     encoding: 'utf8',
@@ -133,7 +141,7 @@ export function callMartinoEngine(tuneConfig: Record<string, unknown>): Promise<
       return;
     }
     const { bridgeScript } = getMartinoPaths();
-    const payload = JSON.stringify({ tune_config: tuneConfig });
+    const payload = JSON.stringify({ tune_config: tuneConfigWithLibraryOutput(tuneConfig) });
     const child = spawn('py', [bridgeScript], { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
     let stdout = '';
     let stderr = '';
