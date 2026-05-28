@@ -86,6 +86,18 @@ def transpose_bar(bar: list, semitones: int) -> list:
     return out
 
 
+def _activity_key_from_plan(activity_id: str) -> str:
+    from generator import _activity_key_from_id
+
+    return _activity_key_from_id(activity_id)
+
+
+def _activity_id_for_key(key: str) -> str:
+    from generator import _activity_id_from_key
+
+    return _activity_id_from_key(key)
+
+
 def resolve_activity_key(primary_activity: str) -> str:
     raw = str(primary_activity or "A1_LINEAR_CORE")
     for token in raw.replace("(", " ").replace(")", " ").split():
@@ -215,31 +227,47 @@ def build_canonical_melody(tune_config: dict) -> tuple[list[list], list[dict[str
     tension_map = tune_config.get("tension_map") or {}
     min_midi, max_midi = _lfv_bounds(tune_config)
 
+    from generator import _build_reduction_map, plan_all_phrase_activities
+
+    reduction_map = _build_reduction_map(chords, tune_config)
+    phrase_plan = plan_all_phrase_activities(reduction_map, tune_config)
+    tune_config["_phrase_plan"] = phrase_plan
+    plan_by_bar = {int(entry["bar"]): entry for entry in phrase_plan}
+
     melody: list[list] = []
     provenance: list[dict[str, Any]] = []
     last_midi: int | None = None
-    prev_chord: str | None = None
     lfv_violation_measures: set[int] = set()
 
     for global_bar in range(total):
         bar_in_chorus = global_bar % mpc
-        activity_key = _select_activity_for_bar(bar_in_chorus, last_midi, tune_config)
+        measure_num = global_bar + 1
+        plan_entry = plan_by_bar.get(measure_num)
+        if plan_entry:
+            activity_key = _activity_key_from_plan(plan_entry["activity"])
+            chord = str(plan_entry["chord"])
+            semitones = int(plan_entry["transpose"])
+            reduction_name = str(plan_entry["reduction"])
+            role = str(plan_entry.get("role", ""))
+        else:
+            activity_key = _select_activity_for_bar(bar_in_chorus, last_midi, tune_config)
+            chord = _chord_for_bar(chords, bar_in_chorus, split)
+            level = tension_map.get(global_bar) or tension_map.get(str(global_bar)) or "low"
+            conversion = martino_convert(chord, str(level), None)
+            semitones = semitones_gm_to_target(int(conversion["minorRootPc"]))
+            reduction_name = conversion["minorRoot"]
+            role = ""
+
         master_bars = load_master_bars(activity_key)
         if not master_bars:
-            chord = _chord_for_bar(chords, bar_in_chorus, split)
             raise TemplateUnavailableError(
                 f"No canonical template available for [{chord}] — generation aborted. Do not invent material."
             )
 
-        chord = _chord_for_bar(chords, bar_in_chorus, split)
-        level = tension_map.get(global_bar) or tension_map.get(str(global_bar)) or "low"
-        conversion = martino_convert(chord, str(level), prev_chord)
-        semitones = semitones_gm_to_target(int(conversion["minorRootPc"]))
         template_bar = master_bars[bar_in_chorus % len(master_bars)]
         source_bar_index = bar_in_chorus % len(master_bars)
         transposed = transpose_bar(template_bar, semitones)
 
-        measure_num = global_bar + 1
         bar_lfv_violation = False
         for note_index, note in enumerate(transposed):
             step, octv, alt, dur = note[0], int(note[1]), note[2], int(note[3])
@@ -252,13 +280,17 @@ def build_canonical_melody(tune_config: dict) -> tuple[list[list], list[dict[str
                     "measure": measure_num,
                     "note_index": note_index,
                     "source_activity": activity_key,
+                    "activity": plan_entry.get("activity") if plan_entry else _activity_id_for_key(activity_key),
+                    "role": role,
                     "source_bar": source_bar_index,
                     "transpose": semitones,
                     "lfv_violation": not in_lfv,
+                    "lfv_ok": plan_entry.get("lfv_ok", in_lfv) if plan_entry else in_lfv,
                     "fallback": False,
                     "source_chord": chord,
-                    "minor_root": conversion["minorRoot"],
-                    "book_rule": conversion["bookRule"],
+                    "reduction": reduction_name,
+                    "minor_root": reduction_name,
+                    "book_rule": plan_entry.get("book_rule") if plan_entry else None,
                 }
             )
             last_midi = midi
@@ -267,7 +299,6 @@ def build_canonical_melody(tune_config: dict) -> tuple[list[list], list[dict[str
             lfv_violation_measures.add(measure_num)
 
         melody.append(transposed)
-        prev_chord = chord
 
     existing = set(tune_config.get("asterisk_measures") or [])
     tune_config["asterisk_measures"] = sorted(existing | lfv_violation_measures)

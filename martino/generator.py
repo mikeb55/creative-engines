@@ -18,6 +18,8 @@ except ImportError:
     build_canonical_melody = None  # type: ignore
     TemplateUnavailableError = RuntimeError  # type: ignore
 
+from martino_convert import martino_convert, pc_to_minor_root_name
+
 _ENGINE_DIR = Path(__file__).resolve().parent
 _SPEC_PATH = _ENGINE_DIR / "engine_spec.json"
 _PROVENANCE_DIR = _ENGINE_DIR.parent / "temp" / "martino" / "provenance"
@@ -272,6 +274,328 @@ def _infer_kind_from_chord(chord_text: str) -> tuple[str, str]:
     if re.search(r"m(?!aj)", c):
         return _normalize_kind("minor"), "m"
     return _normalize_kind("major"), ""
+
+
+ACTIVITY_ROLES: dict[str, str] = {
+    "A1_LINEAR_CORE": "opening",
+    "A2_DIAGONAL_BRIDGE": "bridge",
+    "A3_PIVOT_CELL": "pivot",
+    "A4_ANCHOR_ARP": "anchor",
+    "A5_FREE_MIX": "climactic",
+}
+
+ACTIVITY_KEY_TO_ID: dict[str, str] = {
+    "A1": "A1_LINEAR_CORE",
+    "A2": "A2_DIAGONAL_BRIDGE",
+    "A3": "A3_PIVOT_CELL",
+    "A4": "A4_ANCHOR_ARP",
+    "A5": "A5_FREE_MIX",
+}
+
+ACTIVITY_ID_TO_KEY: dict[str, str] = {v: k for k, v in ACTIVITY_KEY_TO_ID.items()}
+
+ROLE_ACTIVITY_PRIORITY: dict[str, list[str]] = {
+    "opening": ["A1"],
+    "bridge": ["A2", "A3"],
+    "pivot": ["A3", "A2"],
+    "anchor": ["A4"],
+    "climactic": ["A5", "A3", "A2"],
+}
+
+PHRASE_LENGTH = 4
+DOMINANT_ACTIVITIES = frozenset({"A2", "A3"})
+ANCHOR_ACTIVITY = "A4"
+
+
+def _activity_id_from_key(key: str) -> str:
+    return ACTIVITY_KEY_TO_ID.get(key, key)
+
+
+def _activity_key_from_id(activity_id: str) -> str:
+    if activity_id in ACTIVITY_ID_TO_KEY:
+        return ACTIVITY_ID_TO_KEY[activity_id]
+    for full, short in ACTIVITY_KEY_TO_ID.items():
+        if activity_id == full or activity_id.startswith(full):
+            return short
+    return "A1"
+
+
+def _chord_is_dominant(chord: str) -> bool:
+    kind, _ = _infer_kind_from_chord(chord)
+    return kind == "dominant"
+
+
+def _chord_is_maj7_resolution(chord: str) -> bool:
+    kind, _ = _infer_kind_from_chord(chord)
+    return kind == "major-seventh"
+
+
+def _pc_shortest_distance(a: int, b: int) -> int:
+    d = abs((int(b) - int(a)) % 12)
+    return min(d, 12 - d)
+
+
+def _build_reduction_map(chords: list[str], tune_config: dict) -> list[dict[str, Any]]:
+    """Per-bar harmonic reduction with sustained minor centre across related chords."""
+    tension_map = tune_config.get("tension_map") or {}
+    split = tune_config.get("split_chord_measures") or {}
+    mpc = int(tune_config.get("measures_per_chorus", 16))
+    choruses = int(tune_config.get("choruses", 1))
+    total = mpc * choruses
+    rows: list[dict[str, Any]] = []
+    current_centre_pc: int | None = None
+    prev_chord: str | None = None
+
+    for global_bar in range(total):
+        bar_in_chorus = global_bar % mpc
+        bar_key = str(bar_in_chorus)
+        if bar_key in split:
+            split_entry = split[bar_key]
+            chord = str(split_entry[0] if isinstance(split_entry, list) else split_entry)
+        elif bar_in_chorus < len(chords):
+            entry = chords[bar_in_chorus]
+            chord = str(entry[0] if isinstance(entry, list) else entry)
+        elif chords:
+            entry = chords[-1]
+            chord = str(entry[0] if isinstance(entry, list) else entry)
+        else:
+            chord = "Gmaj7"
+
+        level = tension_map.get(global_bar) or tension_map.get(str(global_bar)) or "low"
+        conversion = martino_convert(chord, str(level), prev_chord)
+        new_pc = int(conversion["minorRootPc"])
+        if current_centre_pc is None:
+            sustained_pc = new_pc
+        elif _pc_shortest_distance(current_centre_pc, new_pc) > 2:
+            sustained_pc = new_pc
+        else:
+            sustained_pc = current_centre_pc
+        current_centre_pc = sustained_pc
+        prev_chord = chord
+
+        from master_loader import semitones_gm_to_target
+
+        rows.append(
+            {
+                "bar": global_bar + 1,
+                "bar_index": global_bar,
+                "bar_in_phrase": global_bar % PHRASE_LENGTH,
+                "chord": chord,
+                "reduction": pc_to_minor_root_name(sustained_pc),
+                "reduction_pc": sustained_pc,
+                "transpose": semitones_gm_to_target(sustained_pc),
+                "is_dominant": _chord_is_dominant(chord),
+                "is_maj7": _chord_is_maj7_resolution(chord),
+                "book_rule": conversion.get("bookRule"),
+            }
+        )
+    return rows
+
+
+def _lfv_ok_for_activity_bar(
+    activity_key: str,
+    bar_in_phrase: int,
+    reduction_pc: int,
+    tune_config: dict,
+) -> bool:
+    from master_loader import load_master_bars, note_to_midi, semitones_gm_to_target, transpose_bar
+
+    master_bars = load_master_bars(activity_key)
+    if not master_bars:
+        return False
+    semitones = semitones_gm_to_target(reduction_pc)
+    template = master_bars[bar_in_phrase % len(master_bars)]
+    transposed = transpose_bar(template, semitones)
+    lfv = tune_config.get("lfv") or {}
+    min_midi = int(lfv.get("min_midi", 38))
+    max_midi = int(lfv.get("max_midi", 68))
+    for note in transposed:
+        step, octv, alt = note[0], int(note[1]), note[2]
+        midi = note_to_midi(str(step), octv, int(alt) if alt is not None else None)
+        if midi < min_midi or midi > max_midi:
+            return False
+    return True
+
+
+def _pick_activity_for_slot(
+    role_keys: list[str],
+    phrase_pos: int,
+    row: dict[str, Any],
+    tune_config: dict,
+    prior_plan: list[str | None],
+) -> str:
+    """First activity in role priority that has a master and passes LFV for this bar."""
+    bar_in_phrase = int(row.get("bar_in_phrase", phrase_pos))
+    reduction_pc = int(row["reduction_pc"])
+    for key in role_keys:
+        if not _lfv_ok_for_activity_bar(key, bar_in_phrase, reduction_pc, tune_config):
+            continue
+        if prior_plan:
+            run = 1
+            for prev in reversed(prior_plan):
+                if prev == key:
+                    run += 1
+                else:
+                    break
+            if run >= 2:
+                continue
+        return key
+    for key in role_keys:
+        if _lfv_ok_for_activity_bar(key, bar_in_phrase, reduction_pc, tune_config):
+            return key
+    return role_keys[0]
+
+
+def _phrase_direction_ascending(phrase_rows: list[dict[str, Any]]) -> bool:
+    pcs = [int(r["reduction_pc"]) for r in phrase_rows]
+    if len(pcs) < 2:
+        return False
+    ups = sum(1 for i in range(1, len(pcs)) if ((pcs[i] - pcs[i - 1]) % 12) in (1, 2))
+    return ups >= len(pcs) - 1
+
+
+def _roles_for_phrase_position(
+    pos: int,
+    row: dict[str, Any],
+    phrase_rows: list[dict[str, Any]],
+    ascending: bool,
+) -> list[str]:
+    if row.get("is_dominant"):
+        return list(ROLE_ACTIVITY_PRIORITY["bridge"])
+    if pos == 0:
+        return list(ROLE_ACTIVITY_PRIORITY["opening"])
+    if pos == PHRASE_LENGTH - 1:
+        return list(ROLE_ACTIVITY_PRIORITY["anchor"])
+    if pos == 1:
+        return list(ROLE_ACTIVITY_PRIORITY["bridge"])
+    if row.get("is_maj7"):
+        return list(ROLE_ACTIVITY_PRIORITY["anchor"]) + list(ROLE_ACTIVITY_PRIORITY["pivot"])
+    if ascending and pos in (2, 3):
+        return list(ROLE_ACTIVITY_PRIORITY["climactic"])
+    return list(ROLE_ACTIVITY_PRIORITY["pivot"])
+
+
+def _enforce_consecutive_cap(plan_keys: list[str]) -> list[str]:
+    if len(plan_keys) < 2:
+        return plan_keys
+    out = list(plan_keys)
+    for i in range(2, len(out)):
+        if out[i] == out[i - 1] == out[i - 2]:
+            alt = next(
+                (k for k in ("A5", "A3", "A2", "A1", "A4") if k != out[i - 1] and k != out[i]),
+                out[i],
+            )
+            out[i] = alt
+    return out
+
+
+def _enforce_phrase_variety(
+    plan_keys: list[str],
+    tune_config: dict,
+    phrase_rows: list[dict[str, Any]],
+) -> list[str]:
+    if tune_config.get("mode") == "teaching_single_form":
+        return plan_keys
+    if len(set(plan_keys)) >= 2:
+        return plan_keys
+    out = list(plan_keys)
+    swap_pos = 1 if len(out) > 1 else 0
+    for alt in ("A2", "A3", "A4", "A5"):
+        if alt == out[swap_pos]:
+            continue
+        candidate = list(out)
+        candidate[swap_pos] = alt
+        if _lfv_ok_for_activity_bar(
+            alt,
+            int(phrase_rows[swap_pos].get("bar_in_phrase", swap_pos)),
+            int(phrase_rows[swap_pos]["reduction_pc"]),
+            tune_config,
+        ):
+            return _enforce_consecutive_cap(candidate)
+    return plan_keys
+
+
+def _plan_phrase_activities(
+    phrase_rows: list[dict[str, Any]],
+    tune_config: dict,
+    carry_key: str | None = None,
+) -> list[dict[str, Any]]:
+    """
+    Plan one 4-bar phrase span. Mandatory role rules; LFV re-plan via role priority.
+    """
+    if len(phrase_rows) != PHRASE_LENGTH:
+        raise ValueError(f"phrase planner requires {PHRASE_LENGTH} bars, got {len(phrase_rows)}")
+
+    ascending = _phrase_direction_ascending(phrase_rows)
+    plan_keys: list[str | None] = [None] * PHRASE_LENGTH
+    prior: list[str | None] = [carry_key]
+
+    for pos, row in enumerate(phrase_rows):
+        roles = _roles_for_phrase_position(pos, row, phrase_rows, ascending)
+        if pos == PHRASE_LENGTH - 1:
+            roles = list(ROLE_ACTIVITY_PRIORITY["anchor"])
+        elif row.get("is_dominant"):
+            roles = list(ROLE_ACTIVITY_PRIORITY["bridge"])
+        plan_keys[pos] = _pick_activity_for_slot(roles, pos, row, tune_config, prior + plan_keys[:pos])
+        prior = prior + [plan_keys[pos]]
+
+    for pos, row in enumerate(phrase_rows):
+        if row.get("is_dominant"):
+            plan_keys[pos] = _pick_activity_for_slot(
+                list(ROLE_ACTIVITY_PRIORITY["bridge"]),
+                pos,
+                row,
+                tune_config,
+                plan_keys[:pos],
+            )
+    plan_keys[PHRASE_LENGTH - 1] = _pick_activity_for_slot(
+        list(ROLE_ACTIVITY_PRIORITY["anchor"]),
+        PHRASE_LENGTH - 1,
+        phrase_rows[-1],
+        tune_config,
+        plan_keys[:-1],
+    )
+
+    resolved = _enforce_consecutive_cap([k or "A1" for k in plan_keys])
+    resolved = _enforce_phrase_variety(resolved, tune_config, phrase_rows)
+
+    plan: list[dict[str, Any]] = []
+    for pos, row in enumerate(phrase_rows):
+        key = resolved[pos]
+        activity_id = _activity_id_from_key(key)
+        lfv_ok = _lfv_ok_for_activity_bar(
+            key, int(row.get("bar_in_phrase", pos)), int(row["reduction_pc"]), tune_config
+        )
+        plan.append(
+            {
+                "bar": int(row["bar"]),
+                "chord": row["chord"],
+                "reduction": row["reduction"],
+                "activity": activity_id,
+                "role": ACTIVITY_ROLES.get(activity_id, "opening"),
+                "transpose": int(row["transpose"]),
+                "lfv_ok": lfv_ok,
+                "book_rule": row.get("book_rule"),
+            }
+        )
+    return plan
+
+
+def plan_all_phrase_activities(
+    reduction_map: list[dict[str, Any]],
+    tune_config: dict,
+) -> list[dict[str, Any]]:
+    """Plan every 4-bar phrase in the tune; returns concatenated phrase plan rows."""
+    full_plan: list[dict[str, Any]] = []
+    carry: str | None = None
+    for start in range(0, len(reduction_map), PHRASE_LENGTH):
+        chunk = reduction_map[start : start + PHRASE_LENGTH]
+        if len(chunk) < PHRASE_LENGTH:
+            break
+        phrase_plan = _plan_phrase_activities(chunk, tune_config, carry_key=carry)
+        full_plan.extend(phrase_plan)
+        carry = _activity_key_from_id(phrase_plan[-1]["activity"])
+    return full_plan
 
 
 def _local_tag(elem: ET.Element) -> str:
@@ -584,6 +908,7 @@ def generate_musicxml(tune_config: dict) -> Path:
     if prov:
         _PROVENANCE_DIR.mkdir(parents=True, exist_ok=True)
         prov_path = provenance_json_path(out_path)
+        phrase_plan = tune_config.get("_phrase_plan") or []
         prov_path.write_text(
             json.dumps(
                 {
@@ -591,6 +916,7 @@ def generate_musicxml(tune_config: dict) -> Path:
                     "provenancePath": str(prov_path),
                     "activityMapText": build_activity_map(tune_config),
                     "lfvMapText": _build_lfv_map(tune_config),
+                    "phrasePlan": phrase_plan,
                     "notes": prov,
                 },
                 indent=2,
