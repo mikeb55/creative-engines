@@ -83,8 +83,19 @@ def score_reduction_integrity(plan: list[dict[str, Any]]) -> float:
         names = [str(r.get("reduction", "")) for r in plan]
         stable = sum(1 for i in range(1, len(names)) if names[i] == names[i - 1])
         return _clamp01(0.55 + stable / max(1, len(names) - 1) * 0.45) if len(names) > 1 else 0.7
-    changes = sum(1 for i in range(1, len(pcs)) if _pc_shortest_distance(pcs[i], pcs[i - 1]) > 2)
-    return _clamp01(1.0 - changes / max(1, len(pcs) - 1))
+    if len(pcs) == 1:
+        return 0.75
+    transitions = len(pcs) - 1
+    sustained = sum(
+        1 for i in range(1, len(pcs))
+        if _pc_shortest_distance(pcs[i], pcs[i - 1]) <= 2
+    )
+    changes = transitions - sustained
+    # Reward sustained centres, penalise changes
+    # sustained fraction weighted more heavily than change penalty
+    sustain_score = sustained / transitions
+    change_penalty = changes / transitions * 0.5
+    return _clamp01(0.5 + sustain_score * 0.75 - change_penalty)
 
 
 def score_spatial_continuity(
@@ -289,19 +300,26 @@ def score_anti_bebop_drift(
     penalty_enclosure = min(penalty_enclosure, 0.15)
 
     cadence_every_two = 0
-    for i in range(1, len(keys), 2):
-        if i < len(keys) and keys[i] in ("A4", "A4_ANCHOR_ARP"):
-            cadence_every_two += 1
-    penalty_cadence += cadence_every_two * 0.08
+    even_bars = [i for i in range(1, len(keys), 2)]
+    a4_on_even = sum(
+        1 for i in even_bars
+        if i < len(keys) and keys[i] in ("A4", "A4_ANCHOR_ARP")
+    )
+    # Only penalise if A4 dominates even positions (>50% of them)
+    if even_bars and a4_on_even / len(even_bars) > 0.5:
+        cadence_every_two = a4_on_even
+    penalty_cadence += cadence_every_two * 0.06  # reduced from 0.08
 
     contour_resets = 0
     if interval_fingerprints and len(interval_fingerprints) >= 2:
         for i in range(1, len(interval_fingerprints)):
+            if i == 1:
+                continue  # exempt bar 1→2 boundary
             a = sum(interval_fingerprints[i - 1])
             b = sum(interval_fingerprints[i])
             if a != 0 and b != 0 and (a > 0) != (b > 0):
                 contour_resets += 1
-    penalty_contour += contour_resets * 0.06
+    penalty_contour += contour_resets * 0.05  # reduced from 0.06
 
     penalty_ii_v = min(penalty_ii_v, 0.20)
     penalty_whole_step_spam = min(penalty_whole_step_spam, 0.15)
