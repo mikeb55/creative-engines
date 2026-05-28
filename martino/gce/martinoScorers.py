@@ -44,6 +44,7 @@ class MartinoGceResult:
     hard_gate_triggered: bool
     hard_gate_reasons: list[str]
     anti_bebop_penalty: float
+    gate_failed: bool = False
 
     def to_provenance_dict(self) -> dict[str, float]:
         return dict(self.dimensions)
@@ -124,23 +125,36 @@ def score_directional_persistence(
 def score_inversion_coherence(plan: list[dict[str, Any]]) -> float:
     if not plan:
         return 0.5
-    ok = 0
+    ok = 0.0
     for row in plan:
         role = str(row.get("role", ""))
         act = str(row.get("activity", ""))
         chord = str(row.get("chord", ""))
-        if "dominant" in chord.lower() or chord.endswith("7") and "maj" not in chord.lower():
+        inversion = str(row.get("inversion", "root")).lower()
+        is_dominant = (
+            "dominant" in chord.lower()
+            or (chord.endswith("7") and "maj" not in chord.lower())
+        )
+        if is_dominant:
             if "A2" in act or "A3" in act:
-                ok += 1
+                ok += 1.0
+            else:
+                ok += 0.5
             continue
-        if role == "anchor" and "A4" in act:
-            ok += 1
-        elif role == "opening" and "A1" in act:
-            ok += 1
-        elif role in ("bridge", "pivot", "climactic"):
-            ok += 1
+        # Opening/climactic: reward root or first inversion
+        if "A1" in act or "A5" in act:
+            if inversion in ("root", "first"):
+                ok += 1.0
+            else:
+                ok += 0.5
+        # Pivot/anchor: penalise root-only (expect more movement)
+        elif "A3" in act or "A4" in act:
+            if inversion == "root":
+                ok += 0.75
+            else:
+                ok += 1.0
         else:
-            ok += 1
+            ok += 1.0
     return _clamp01(ok / len(plan))
 
 
@@ -155,6 +169,17 @@ def score_activity_architecture(plan: list[dict[str, Any]]) -> float:
         if keys[i] == keys[i - 1] == keys[i - 2]:
             run_penalty += 0.25
     return _clamp01(0.45 + variety * 0.55 - run_penalty)
+
+
+def _stepwise_reward(interval_fingerprints: list[list[int]] | None) -> float:
+    """Fraction of melodic intervals that are steps (semitones 1–2)."""
+    if not interval_fingerprints:
+        return 0.0
+    intervals = [abs(x) for fp in interval_fingerprints for x in fp]
+    if not intervals:
+        return 0.0
+    steps = sum(1 for iv in intervals if iv in (1, 2))
+    return steps / len(intervals)
 
 
 def score_anti_bebop_drift(
@@ -197,7 +222,14 @@ def score_anti_bebop_drift(
                 contour_resets += 1
         penalty += contour_resets * 0.06
 
-    return _clamp01(1.0 - min(1.0, penalty))
+    step_frac = _stepwise_reward(interval_fingerprints)
+    if step_frac >= 0.9 and penalty < 0.5:
+        penalty *= 0.5
+
+    p = min(1.0, penalty)
+    reward = step_frac * 0.3 if p < 0.4 else step_frac * 0.08
+    base = (1.0 - p) * 0.7 + reward
+    return _clamp01(max(base, step_frac * 0.05))
 
 
 def score_lfv_integrity(plan: list[dict[str, Any]]) -> float:
@@ -302,12 +334,17 @@ def score_martino_gce(
     hard, reasons = check_hard_gates(
         plan, rhythmic_signatures, interval_fingerprints, direction_vectors
     )
+    overall_clamped = _clamp01(overall)
+    gate_failed = (overall_clamped * 10 < 7.5) or (
+        dimensions.get("anti_bebop_drift", 1.0) < 0.75
+    )
     return MartinoGceResult(
         dimensions=dimensions,
-        overall=_clamp01(overall),
+        overall=overall_clamped,
         hard_gate_triggered=hard,
         hard_gate_reasons=reasons,
         anti_bebop_penalty=anti_bebop_penalty,
+        gate_failed=gate_failed,
     )
 
 
