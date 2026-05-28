@@ -1,5 +1,11 @@
 # HANDOFF — auto-updated 2026-05-19
 
+## Post-V77
+- Tests: 72 passing
+- Live: overall 0.870, reduction 0.833, anti_bebop 0.735, gate clean
+- Remaining: lfv_integrity 0.75 — V78 target
+- Commit: a449c5de
+
 ## Post-V76
 
 - Tests: 68 passing
