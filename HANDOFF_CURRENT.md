@@ -1,5 +1,12 @@
 # HANDOFF — auto-updated 2026-05-19
 
+## Post-V76
+
+- Tests: 68 passing
+- Live: anti_bebop 0.630, overall 0.830, gate clean
+- Next: V77 — reduction integrity 0.667, contour/cadence penalty review, target overall > 0.85
+- Commit: 7dba6153
+
 ## Current state (post-V75)
 
 - Tests: 63 passing
