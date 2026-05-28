@@ -174,6 +174,21 @@ def score_activity_architecture(plan: list[dict[str, Any]]) -> float:
     return _clamp01(0.45 + variety * 0.55 - run_penalty)
 
 
+def _fingerprint_stepwise_only(fp: list[int]) -> bool:
+    """True when every interval in the bar is a semitone or whole-tone step."""
+    if not fp:
+        return True
+    return all(abs(x) in (1, 2) for x in fp)
+
+
+def _fingerprint_has_enclosure(fp: list[int]) -> bool:
+    """Semitone approach from above then below, or vice versa (bebop enclosure)."""
+    for j in range(2, len(fp)):
+        if fp[j - 1] == -fp[j - 2] and abs(fp[j - 1]) <= 2:
+            return True
+    return False
+
+
 def _stepwise_reward(interval_fingerprints: list[list[int]] | None) -> float:
     """Fraction of melodic intervals that are steps (semitones 1–2)."""
     if not interval_fingerprints:
@@ -195,18 +210,25 @@ def score_anti_bebop_drift(
     chord_list = chords or [str(r.get("chord", "")) for r in plan]
     keys = _activity_keys(plan)
 
+    fps = interval_fingerprints or []
+
     for i in range(len(chord_list) - 1):
         c0, c1 = chord_list[i].lower(), chord_list[i + 1].lower()
         if "m7" in c0 and c0.startswith("d") and c1.startswith("g") and "7" in c1:
+            bar_fp = fps[i] if i < len(fps) else []
             if i < len(keys) and keys[i] in ("A1", "A1_LINEAR_CORE"):
-                penalty += 0.35
+                if not _fingerprint_stepwise_only(bar_fp) and _fingerprint_has_enclosure(
+                    bar_fp
+                ):
+                    penalty += 0.35
             penalty += 0.15
 
     if interval_fingerprints:
         for fp in interval_fingerprints:
-            for j in range(2, len(fp)):
-                if fp[j - 1] == -fp[j - 2] and abs(fp[j - 1]) <= 2:
-                    penalty += 0.12
+            if _fingerprint_has_enclosure(fp):
+                penalty += 0.12
+            if len(fp) >= 3 and all(abs(x) == 2 for x in fp):
+                penalty += 0.10
             sym = sum(1 for x in fp if abs(x) == 2)
             penalty += sym * 0.04
 
@@ -301,7 +323,7 @@ def check_hard_gates(
                 )
                 continue
             bridge_jump = abs(fp_cur[0] - fp_prev[-1])
-            if bridge_jump > 9:
+            if bridge_jump > 14:
                 bar_a = int(plan[i - 1].get("bar", i)) if i - 1 < len(plan) else i
                 bar_b = int(plan[i].get("bar", i + 1)) if i < len(plan) else i + 1
                 _log.warning(
