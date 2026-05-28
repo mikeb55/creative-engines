@@ -997,7 +997,7 @@ def plan_all_phrase_activities(
     saved_boost = tune_config.get("_gate_role_boost")
 
     full_plan, dcr_runs, final_gce = _plan_phrases_with_dcr(reduction_map, tune_config)
-    gate_attempts = 1
+    gate_retry_count = 0
     gate_log: list[dict[str, Any]] = [
         {
             "attempt": 1,
@@ -1009,19 +1009,19 @@ def plan_all_phrase_activities(
     ]
 
     primary = base_primary
-    while final_gce.gate_failed and gate_attempts < MAX_GCE_GATE_ATTEMPTS:
+    while final_gce.gate_failed and gate_retry_count < MAX_GCE_GATE_ATTEMPTS - 1:
         primary = _next_gate_primary(primary)
         tune_config["primary_activity"] = primary
         tune_config["_gate_role_boost"] = resolve_activity_key(primary)
         candidate_plan, candidate_dcr, candidate_gce = _plan_phrases_with_dcr(
             reduction_map,
             tune_config,
-            anti_bebop_penalty=0.1 * gate_attempts,
+            anti_bebop_penalty=0.1 * (gate_retry_count + 1),
         )
-        gate_attempts += 1
+        gate_retry_count += 1
         gate_log.append(
             {
-                "attempt": gate_attempts,
+                "attempt": gate_retry_count + 1,
                 "primary_activity": primary,
                 "overall": candidate_gce.overall,
                 "anti_bebop_drift": candidate_gce.dimensions.get("anti_bebop_drift"),
@@ -1048,8 +1048,13 @@ def plan_all_phrase_activities(
     tune_config["_martino_gce"] = final_gce.to_provenance_dict()
     tune_config["_martino_gce_overall"] = final_gce.overall
     tune_config["_gce_gate_failed"] = final_gce.gate_failed
-    tune_config["_gce_gate_attempts"] = gate_attempts
+    tune_config["_gce_gate_attempts"] = gate_retry_count
     tune_config["_gce_gate_log"] = gate_log
+    from gce import martinoScorers as _ms
+
+    tune_config["_anti_bebop_debug"] = dict(
+        getattr(_ms, "_last_anti_bebop_debug", {})
+    )
     return full_plan
 
 
@@ -1391,6 +1396,7 @@ def generate_musicxml(tune_config: dict) -> Path:
                     "gce_gate_failed": tune_config.get("_gce_gate_failed"),
                     "gce_gate_attempts": tune_config.get("_gce_gate_attempts"),
                     "gce_gate_log": tune_config.get("_gce_gate_log"),
+                    "anti_bebop_debug": tune_config.get("_anti_bebop_debug"),
                     "dcr": dcr_block,
                     "martinoGce": martino_gce,
                     "martinoGceOverall": tune_config.get("_martino_gce_overall"),

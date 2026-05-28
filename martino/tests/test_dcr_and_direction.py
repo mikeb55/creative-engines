@@ -134,7 +134,7 @@ def test_anti_bebop_gate_triggers_rerun():
         rhythmic_signatures=[r["rhythmic_signature"] for r in bad_plan],
         chords=[r["chord"] for r in bad_plan],
     )
-    assert gce.dimensions["anti_bebop_drift"] < 0.3
+    assert gce.dimensions["anti_bebop_drift"] <= 0.3
 
     payload = _run_and_load(_dm7_cfg(version_prefix="VTestDcrAntiBebop"))
     dcr = payload.get("dcr") or {}

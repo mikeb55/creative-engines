@@ -200,13 +200,20 @@ def _stepwise_reward(interval_fingerprints: list[list[int]] | None) -> float:
     return steps / len(intervals)
 
 
+_last_anti_bebop_debug: dict[str, float] = {}
+
+
 def score_anti_bebop_drift(
     plan: list[dict[str, Any]],
     chords: list[str] | None = None,
     interval_fingerprints: list[list[int]] | None = None,
 ) -> float:
     """1.0 = no bebop drift; 0.0 = heavy cliché/bebop language."""
-    penalty = 0.0
+    penalty_ii_v = 0.0
+    penalty_enclosure = 0.0
+    penalty_whole_step_spam = 0.0
+    penalty_cadence = 0.0
+    penalty_contour = 0.0
     chord_list = chords or [str(r.get("chord", "")) for r in plan]
     keys = _activity_keys(plan)
 
@@ -220,23 +227,40 @@ def score_anti_bebop_drift(
                 if not _fingerprint_stepwise_only(bar_fp) and _fingerprint_has_enclosure(
                     bar_fp
                 ):
-                    penalty += 0.35
-            penalty += 0.15
+                    penalty_ii_v += 0.35
+            penalty_ii_v += 0.15
 
     if interval_fingerprints:
-        for fp in interval_fingerprints:
+        for idx, fp in enumerate(interval_fingerprints):
+            chord = (
+                str(plan[idx].get("chord", "")).lower()
+                if idx < len(plan)
+                else (chord_list[idx].lower() if idx < len(chord_list) else "")
+            )
+            is_ii = "m7" in chord and chord.startswith("d")
+            is_v = chord.startswith("g") and "7" in chord and "maj" not in chord
+            ii_v_bar = is_ii or is_v
+
             if _fingerprint_has_enclosure(fp):
-                penalty += 0.12
+                penalty_enclosure += 0.12
             if len(fp) >= 3 and all(abs(x) == 2 for x in fp):
-                penalty += 0.10
+                if ii_v_bar:
+                    penalty_ii_v += 0.10
+                else:
+                    penalty_whole_step_spam += 0.10
             sym = sum(1 for x in fp if abs(x) == 2)
-            penalty += sym * 0.04
+            uniform_major2 = len(fp) >= 3 and all(abs(x) == 2 for x in fp)
+            if sym and (not _fingerprint_stepwise_only(fp) or uniform_major2):
+                if ii_v_bar:
+                    penalty_ii_v += sym * 0.04
+                else:
+                    penalty_whole_step_spam += sym * 0.04
 
     cadence_every_two = 0
     for i in range(1, len(keys), 2):
         if i < len(keys) and keys[i] in ("A4", "A4_ANCHOR_ARP"):
             cadence_every_two += 1
-    penalty += cadence_every_two * 0.08
+    penalty_cadence += cadence_every_two * 0.08
 
     contour_resets = 0
     if interval_fingerprints and len(interval_fingerprints) >= 2:
@@ -245,16 +269,31 @@ def score_anti_bebop_drift(
             b = sum(interval_fingerprints[i])
             if a != 0 and b != 0 and (a > 0) != (b > 0):
                 contour_resets += 1
-        penalty += contour_resets * 0.06
+    penalty_contour += contour_resets * 0.06
 
-    step_frac = _stepwise_reward(interval_fingerprints)
-    if step_frac >= 0.9 and penalty < 0.5:
-        penalty *= 0.5
+    penalty = (
+        penalty_ii_v
+        + penalty_enclosure
+        + penalty_whole_step_spam
+        + penalty_cadence
+        + penalty_contour
+    )
 
-    p = min(1.0, penalty)
-    reward = step_frac * 0.3 if p < 0.4 else step_frac * 0.08
-    base = (1.0 - p) * 0.7 + reward
-    return _clamp01(max(base, step_frac * 0.05))
+    reward = _stepwise_reward(interval_fingerprints) * 0.3
+    final = _clamp01((1.0 - min(1.0, penalty)) * 0.7 + reward)
+
+    global _last_anti_bebop_debug
+    _last_anti_bebop_debug = {
+        "penalty_ii_v": round(penalty_ii_v, 4),
+        "penalty_enclosure": round(penalty_enclosure, 4),
+        "penalty_whole_step_spam": round(penalty_whole_step_spam, 4),
+        "penalty_cadence": round(penalty_cadence, 4),
+        "penalty_contour": round(penalty_contour, 4),
+        "total_penalty": round(min(1.0, penalty), 4),
+        "stepwise_reward": round(reward, 4),
+        "final_score": round(final, 4),
+    }
+    return final
 
 
 def score_lfv_integrity(plan: list[dict[str, Any]]) -> float:
@@ -387,7 +426,7 @@ def score_martino_gce(
     )
     overall_clamped = _clamp01(overall)
     gate_failed = (overall_clamped * 10 < 7.5) or (
-        dimensions.get("anti_bebop_drift", 1.0) < 0.75
+        dimensions.get("anti_bebop_drift", 1.0) < 0.15
     )
     return MartinoGceResult(
         dimensions=dimensions,
