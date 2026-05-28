@@ -12,6 +12,11 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 
+try:
+    from master_loader import build_melody_bars
+except ImportError:
+    build_melody_bars = None  # type: ignore
+
 _ENGINE_DIR = Path(__file__).resolve().parent
 _SPEC_PATH = _ENGINE_DIR / "engine_spec.json"
 
@@ -227,7 +232,11 @@ def _auto_melody_bar(
     tune_config: dict,
     divisions_per_bar: int,
 ) -> list[tuple[str, int, int | None, int]]:
-    """Generate one bar of melody in primary minor (F minor default), stepwise, within LFV."""
+    """DEV ONLY — placeholder stepwise F minor when MARTINO_DEV_PLACEHOLDER=1."""
+    import os
+
+    if not os.environ.get("MARTINO_DEV_PLACEHOLDER"):
+        return []
     # Simple stepwise in F minor: F,G,Ab,Bb,C,Db,Eb. Octave 3-4 for LFV.
     scale = [
         ("F", 3, None), ("G", 3, None), ("Ab", 3, -1), ("Bb", 3, None),
@@ -291,6 +300,8 @@ def _add_melody_to_measure(meas: ET.Element, tune_config: dict, bar: int, chorus
     # Auto
     divisions_per_bar = int(tune_config.get("divisions", 2)) * int(tune_config.get("time_signature", {}).get("beats", 4))
     bar_notes = _auto_melody_bar(bar, chorus, tune_config, divisions_per_bar)
+    if not bar_notes:
+        return
     for st, oct, alt, dur in bar_notes:
         _add_note(meas, st, oct, alt, dur)
 
@@ -318,6 +329,16 @@ def generate_musicxml(tune_config: dict) -> Path:
     split_chord_measures = tune_config.get("split_chord_measures", {})
 
     _normalize_melody_bars(tune_config)
+
+    if (
+        tune_config.get("melody") == "auto"
+        and not tune_config.get("melody_bars")
+        and not tune_config.get("_melody_bars_list")
+        and build_melody_bars is not None
+    ):
+        built = build_melody_bars(tune_config)
+        if built:
+            tune_config["_melody_bars_list"] = built
 
     version_prefix = tune_config.get("version_prefix") or spec.get("output", {}).get("default_version", "V4.1")
     suffix = spec.get("output", {}).get("suffix", "MartinoLinearExpressions")

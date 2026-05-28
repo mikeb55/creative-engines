@@ -25,6 +25,8 @@ def main() -> int:
         tune_config = req.get("tune_config") or req
         if not isinstance(tune_config, dict):
             raise ValueError("tune_config must be an object")
+        if not tune_config.get("chords"):
+            raise ValueError("tune_config.chords is required")
 
         melody_mode = tune_config.get("melody", "auto")
         if melody_mode == "auto" and not tune_config.get("melody_bars"):

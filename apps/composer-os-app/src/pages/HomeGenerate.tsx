@@ -74,6 +74,13 @@ import {
 } from '../types/slonimskySongModeState';
 import { SlonimskySongModePanel } from '../components/slonimsky/SlonimskySongModePanel';
 import { SlonimskySqBbHybridPanel } from '../components/slonimsky/SlonimskySqBbHybridPanel';
+import MartinoPanel from '../renderer/components/MartinoPanel.jsx';
+import {
+  parseMartinoChords,
+  buildMartinoTuneConfig,
+  buildConversionTable,
+  buildExplainLines,
+} from '../lib/martinoGeneratePipeline.js';
 import {
   DEFAULT_SLONIMSKY_SQ_BB_HYBRID_STATE,
   mapSqBbHybridToGenerateRequest,
@@ -2020,6 +2027,26 @@ export function HomeGenerate({
   const { publishGridFromXml, setPlaybackBeat: setGridPlaybackBeat, setIsPlaying: setGridIsPlaying, clearGrid } =
     useLastGenerate();
   const [presetId, setPresetId] = useState('song_mode');
+  const [martinoChordSource, setMartinoChordSource] = useState<'section' | 'manual'>('manual');
+  const [martinoManualChords, setMartinoManualChords] = useState('Dm7 G7 Cmaj7 Cmaj7');
+  const [martinoDominantTensionDefault, setMartinoDominantTensionDefault] = useState<'low' | 'medium' | 'high'>('low');
+  const [martinoTensionOverrides, setMartinoTensionOverrides] = useState<Record<number, 'low' | 'medium' | 'high'>>({});
+  const [martinoActiveActivity, setMartinoActiveActivity] = useState('A1_LINEAR_CORE');
+  const [martinoSecondaryActivities, setMartinoSecondaryActivities] = useState<string[]>(['A2_DIAGONAL_BRIDGE']);
+  const [martinoMode, setMartinoMode] = useState<'teaching' | 'performance'>('teaching');
+  const [martinoChoruses, setMartinoChoruses] = useState(1);
+  const [martinoNoteDensity, setMartinoNoteDensity] = useState('eighth');
+  const [martinoLfvMin, setMartinoLfvMin] = useState(5);
+  const [martinoLfvMax, setMartinoLfvMax] = useState(9);
+  const [martinoExplainMode, setMartinoExplainMode] = useState(false);
+  const [martinoExplainLines, setMartinoExplainLines] = useState<string[]>([]);
+  const [martinoBridgeMeta, setMartinoBridgeMeta] = useState<{ version?: string; lfvCount?: number; warnings?: string[] } | null>(null);
+
+  const martinoActiveSection = useMemo(() => {
+    if (!compositionSong || !compositionActiveSectionId) return null;
+    const sections = (compositionSong as { sections?: Array<Record<string, unknown>> }).sections;
+    return sections?.find((s) => s.id === compositionActiveSectionId) ?? null;
+  }, [compositionSong, compositionActiveSectionId]);
 
   useEffect(() => {
     configureDeferredEngine({
@@ -2975,6 +3002,20 @@ export function HomeGenerate({
           });
           return;
         }
+        if (presetId === 'martino_linear') {
+          const martinoChordText =
+            martinoChordSource === 'section'
+              ? String((martinoActiveSection as { chordProgressionText?: string } | null)?.chordProgressionText ?? chordTrim)
+              : martinoManualChords;
+          const parsedMartino = parseMartinoChords(martinoChordText);
+          if (!parsedMartino.ok || !parsedMartino.chords.length) {
+            setError(parsedMartino.error || 'Martino Linear requires at least one valid chord symbol.');
+            setLoading(false);
+            notifyGenPhase('failed');
+            onResult({ record: {}, summary: { status: 'failed', at: new Date().toISOString() } });
+            return;
+          }
+        }
         /**
          * Song Mode: users often paste the 32-bar line into "Tonal centre" instead of "Chord progression".
          * If we only read `chordProgressionText`, the API gets a long string in `tonalCenter` and no
@@ -3402,6 +3443,36 @@ export function HomeGenerate({
           ...(presetId === 'wyble_etude' && chordTrim
             ? { chordProgressionText: chordTrim, chromaticStrength: gbdChromaticStrength }
             : {}),
+          ...(presetId === 'martino_linear'
+            ? {
+                chordProgressionText:
+                  martinoChordSource === 'section'
+                    ? String(
+                        (martinoActiveSection as { chordProgressionText?: string } | null)?.chordProgressionText ??
+                          martinoManualChords
+                      )
+                    : martinoManualChords,
+                martinoConfig: {
+                  enabled: true,
+                  progression: parseMartinoChords(
+                    martinoChordSource === 'section'
+                      ? String(
+                          (martinoActiveSection as { chordProgressionText?: string } | null)?.chordProgressionText ??
+                            martinoManualChords
+                        )
+                      : martinoManualChords
+                  ).chords,
+                  dominantTensionDefault: martinoDominantTensionDefault,
+                  perChordOverrides: martinoTensionOverrides,
+                  activeActivity: martinoActiveActivity,
+                  secondaryActivities: martinoSecondaryActivities,
+                  choruses: martinoChoruses,
+                  asteriskMeasures: [],
+                  lfv: { min_fret: martinoLfvMin, max_fret: martinoLfvMax },
+                  mode: martinoMode,
+                },
+              }
+            : {}),
           ...(presetId === 'slonimsky_etude' && chordTrim
             ? {
                 chordProgressionText: chordTrim,
@@ -3633,6 +3704,41 @@ export function HomeGenerate({
           _uiLeadSheetInputSourceForRun: uiLeadSheetInputSourceForRun,
           _uiLeadSheetFileNameForRun: uiLeadSheetFileNameForRun,
         });
+        if (presetId === 'martino_linear' && r.success) {
+          const prog =
+            martinoChordSource === 'section'
+              ? String(
+                  (martinoActiveSection as { chordProgressionText?: string } | null)?.chordProgressionText ??
+                    martinoManualChords
+                )
+              : martinoManualChords;
+          const conv = buildConversionTable(prog, martinoDominantTensionDefault, martinoTensionOverrides);
+          const manifest = r.runManifest as {
+            martinoActivityMap?: string;
+            martinoVersionUsed?: string;
+            martinoLfvFlags?: unknown[];
+            martinoWarnings?: string[];
+          } | undefined;
+          const lfvFlags =
+            (Array.isArray((r as { lfvFlags?: unknown[] }).lfvFlags)
+              ? (r as { lfvFlags: unknown[] }).lfvFlags
+              : manifest?.martinoLfvFlags) ?? [];
+          setMartinoBridgeMeta({
+            version: manifest?.martinoVersionUsed,
+            lfvCount: lfvFlags.length,
+            warnings: manifest?.martinoWarnings ?? [],
+          });
+          setMartinoExplainLines(
+            buildExplainLines(
+              {
+                activityMapText: manifest?.martinoActivityMap ?? '',
+                lfvFlags,
+              },
+              conv,
+              martinoExplainMode
+            )
+          );
+        }
         {
           const bpm = r.requestEcho?.bpm ?? 120;
           const ts = iRealParsedChart?.timeSignature;
@@ -4850,6 +4956,59 @@ export function HomeGenerate({
         <SlonimskyEtudeCellFamilyPanel
           cellFamily={slonimskyEtudeCellFamily}
           onCellFamilyChange={setSlonimskyEtudeCellFamily}
+          disabled={loading}
+        />
+      )}
+      {presetId === 'martino_linear' && (
+        <MartinoPanel
+          chordSource={martinoChordSource}
+          setChordSource={setMartinoChordSource}
+          manualChords={martinoManualChords}
+          setManualChords={setMartinoManualChords}
+          sectionLabel={String((martinoActiveSection as { name?: string } | null)?.name ?? 'Active section')}
+          sectionBarCount={Number((martinoActiveSection as { barCount?: number } | null)?.barCount ?? totalBars)}
+          sectionMeter={String((martinoActiveSection as { meter?: string } | null)?.meter ?? '4/4')}
+          sectionKey={String((martinoActiveSection as { key?: string } | null)?.key ?? (tonalCenter || 'F'))}
+          dominantTensionDefault={martinoDominantTensionDefault}
+          setDominantTensionDefault={setMartinoDominantTensionDefault}
+          tensionOverrides={martinoTensionOverrides}
+          setTensionOverride={(index, level) =>
+            setMartinoTensionOverrides((prev) => ({ ...prev, [index]: level }))
+          }
+          activeActivity={martinoActiveActivity}
+          setActiveActivity={setMartinoActiveActivity}
+          secondaryActivities={martinoSecondaryActivities}
+          toggleSecondary={(id) =>
+            setMartinoSecondaryActivities((prev) =>
+              prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+            )
+          }
+          mode={martinoMode}
+          setMode={setMartinoMode}
+          choruses={martinoChoruses}
+          setChoruses={setMartinoChoruses}
+          noteDensity={martinoNoteDensity}
+          setNoteDensity={setMartinoNoteDensity}
+          lfvMin={martinoLfvMin}
+          setLfvMin={setMartinoLfvMin}
+          lfvMax={martinoLfvMax}
+          setLfvMax={setMartinoLfvMax}
+          explainMode={martinoExplainMode}
+          setExplainMode={setMartinoExplainMode}
+          onLoadBeatrice={() => {
+            setMartinoManualChords(
+              'Fmaj7 Gbmaj7 Fmaj7 Ebmaj7 Dm7 Ebmaj7 Dm7 Bbm7 Am7 Bbmaj7 Dm7 Fmaj7 Gbmaj7 Fmaj7 Ebmaj7 Fmaj7'
+            );
+            setMartinoActiveActivity('A2_DIAGONAL_BRIDGE');
+            setMartinoChoruses(2);
+          }}
+          onLoadOrbit={() => {
+            setMartinoManualChords(
+              'Fmaj7#11 Ebmaj7#5 Dbmaj7 Bmaj7 Bbm9 Abmaj7 Gbmaj7 Emaj7 Fmaj7#11 Ebmaj7#5 Dbmaj7 Bmaj7 Bbm9 Abmaj7 Gbmaj7 Emaj7 G/F G/F Eb/F Eb/F G/F G/F Eb/F Eb/F Dbmaj7 Bb7 Fmaj7 Fmaj7'
+            );
+            setMartinoActiveActivity('A1_LINEAR_CORE');
+            setMartinoChoruses(1);
+          }}
           disabled={loading}
         />
       )}
@@ -9789,6 +9948,25 @@ export function HomeGenerate({
                 <p style={{ margin: '0.5rem 0 0', wordBreak: 'break-word' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Output path:</span> {result.filepath}
                 </p>
+              )}
+              {summaryPresetId === 'martino_linear' && martinoBridgeMeta && (
+                <div style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
+                  {martinoBridgeMeta.version && (
+                    <p style={{ margin: '0.2rem 0' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Engine version:</span> {martinoBridgeMeta.version}
+                    </p>
+                  )}
+                  <p style={{ margin: '0.2rem 0' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>LFV flags:</span> {martinoBridgeMeta.lfvCount ?? 0}
+                  </p>
+                  {martinoExplainLines.length > 0 && (
+                    <ul style={{ margin: '0.35rem 0 0', paddingLeft: '1.1rem' }}>
+                      {martinoExplainLines.map((line) => (
+                        <li key={line}>{line}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               )}
               {result.vocalLeadSheetFilepath ? (
                 <p

@@ -44,6 +44,23 @@ export const MODE_UX: ModeUx[] = [
     output: 'Exported MusicXML — two-staff guitar score.',
   },
   {
+    id: 'slonimsky_etude',
+    label: 'Slonimsky Etude',
+    hint: 'Pattern-based chromatic etude generator',
+    whatItDoes: 'Generates pattern-based chromatic etudes from Slonimsky cell families over your chord progression.',
+    bestFor: 'Chromatic vocabulary and pattern drills tied to harmony.',
+    output: 'Exported MusicXML etude file.',
+  },
+  {
+    id: 'martino_linear',
+    label: 'Martino Linear',
+    hint: 'Pat Martino Linear Expressions — minor conversion + canonical activity lines.',
+    whatItDoes:
+      'Reduces harmony to minor centers, transposes canonical A1–A5 master templates, and exports a single-line guitar MusicXML study.',
+    bestFor: 'Linear Expressions practice, LFV-constrained positional lines, and tune-specific reduction studies.',
+    output: 'Exported MusicXML — Martino linear overlay with activity map metadata.',
+  },
+  {
     id: 'song_mode',
     label: 'Song Mode',
     hint: 'Best for hook-led song structures and lead-sheet-ready ideas.',
@@ -128,7 +145,8 @@ export function describeOutputKind(presetId: string): {
     presetId === 'ecm_chamber' ||
     presetId === 'riff_generator' ||
     presetId === 'song_mode' ||
-    presetId === 'wyble_etude'
+    presetId === 'wyble_etude' ||
+    presetId === 'martino_linear'
   ) {
     return {
       category: 'full_score_musicxml',

@@ -1,0 +1,736 @@
+{
+  "id": "A2_DIAGONAL_BRIDGE",
+  "sourceFile": "Activity Chords\\Activity Chord in Pat Martino Linear Expressions Book.xml",
+  "bars_gm": [
+    [
+      [
+        "F",
+        3,
+        null,
+        2
+      ],
+      [
+        "G",
+        3,
+        null,
+        1
+      ],
+      [
+        "Ab",
+        3,
+        -1,
+        1
+      ],
+      [
+        "F",
+        3,
+        null,
+        2
+      ],
+      [
+        "Eb",
+        3,
+        -1,
+        1
+      ],
+      [
+        "F",
+        3,
+        null,
+        1
+      ]
+    ],
+    [
+      [
+        "Ab",
+        3,
+        -1,
+        2
+      ],
+      [
+        "Bb",
+        3,
+        null,
+        1
+      ],
+      [
+        "C",
+        4,
+        null,
+        1
+      ],
+      [
+        "Db",
+        4,
+        -1,
+        2
+      ],
+      [
+        "C",
+        4,
+        null,
+        1
+      ],
+      [
+        "Bb",
+        3,
+        null,
+        1
+      ]
+    ],
+    [
+      [
+        "F",
+        3,
+        null,
+        2
+      ],
+      [
+        "Ab",
+        3,
+        -1,
+        1
+      ],
+      [
+        "Bb",
+        3,
+        null,
+        1
+      ],
+      [
+        "C",
+        4,
+        null,
+        2
+      ],
+      [
+        "Bb",
+        3,
+        null,
+        1
+      ],
+      [
+        "A",
+        3,
+        null,
+        1
+      ]
+    ],
+    [
+      [
+        "Bb",
+        3,
+        null,
+        2
+      ],
+      [
+        "C",
+        4,
+        null,
+        1
+      ],
+      [
+        "Eb",
+        4,
+        -1,
+        1
+      ],
+      [
+        "F",
+        4,
+        null,
+        2
+      ],
+      [
+        "Eb",
+        4,
+        -1,
+        1
+      ],
+      [
+        "D",
+        4,
+        null,
+        1
+      ]
+    ],
+    [
+      [
+        "D",
+        4,
+        null,
+        2
+      ],
+      [
+        "C",
+        4,
+        null,
+        1
+      ],
+      [
+        "Bb",
+        3,
+        null,
+        1
+      ],
+      [
+        "A",
+        3,
+        null,
+        2
+      ],
+      [
+        "G",
+        3,
+        null,
+        1
+      ],
+      [
+        "F",
+        3,
+        null,
+        1
+      ]
+    ],
+    [
+      [
+        "Eb",
+        3,
+        -1,
+        2
+      ],
+      [
+        "F",
+        3,
+        null,
+        1
+      ],
+      [
+        "G",
+        3,
+        null,
+        1
+      ],
+      [
+        "Ab",
+        3,
+        -1,
+        2
+      ],
+      [
+        "Bb",
+        3,
+        null,
+        1
+      ],
+      [
+        "C",
+        4,
+        null,
+        1
+      ]
+    ],
+    [
+      [
+        "D",
+        4,
+        null,
+        2
+      ],
+      [
+        "C",
+        4,
+        null,
+        1
+      ],
+      [
+        "Bb",
+        3,
+        null,
+        1
+      ],
+      [
+        "A",
+        3,
+        null,
+        2
+      ],
+      [
+        "G",
+        3,
+        null,
+        1
+      ],
+      [
+        "F",
+        3,
+        null,
+        1
+      ]
+    ],
+    [
+      [
+        "Bb",
+        3,
+        null,
+        2
+      ],
+      [
+        "C",
+        4,
+        null,
+        1
+      ],
+      [
+        "D",
+        4,
+        null,
+        1
+      ],
+      [
+        "F",
+        4,
+        null,
+        2
+      ],
+      [
+        "Eb",
+        4,
+        -1,
+        1
+      ],
+      [
+        "D",
+        4,
+        null,
+        1
+      ]
+    ],
+    [
+      [
+        "A",
+        3,
+        null,
+        2
+      ],
+      [
+        "C",
+        4,
+        null,
+        1
+      ],
+      [
+        "E",
+        4,
+        null,
+        1
+      ],
+      [
+        "G",
+        4,
+        null,
+        2
+      ],
+      [
+        "F",
+        4,
+        null,
+        1
+      ],
+      [
+        "E",
+        4,
+        null,
+        1
+      ]
+    ],
+    [
+      [
+        "Bb",
+        3,
+        null,
+        2
+      ],
+      [
+        "D",
+        4,
+        null,
+        1
+      ],
+      [
+        "F",
+        4,
+        null,
+        1
+      ],
+      [
+        "G",
+        4,
+        null,
+        2
+      ],
+      [
+        "F",
+        4,
+        null,
+        1
+      ],
+      [
+        "Eb",
+        4,
+        -1,
+        1
+      ]
+    ],
+    [
+      [
+        "D",
+        4,
+        null,
+        2
+      ],
+      [
+        "F",
+        4,
+        null,
+        1
+      ],
+      [
+        "G",
+        4,
+        null,
+        1
+      ],
+      [
+        "Bb",
+        3,
+        null,
+        2
+      ],
+      [
+        "A",
+        3,
+        null,
+        1
+      ],
+      [
+        "G",
+        3,
+        null,
+        1
+      ]
+    ],
+    [
+      [
+        "F",
+        3,
+        null,
+        2
+      ],
+      [
+        "Ab",
+        3,
+        -1,
+        1
+      ],
+      [
+        "Bb",
+        3,
+        null,
+        1
+      ],
+      [
+        "C",
+        4,
+        null,
+        2
+      ],
+      [
+        "Eb",
+        4,
+        -1,
+        1
+      ],
+      [
+        "F",
+        4,
+        null,
+        1
+      ]
+    ],
+    [
+      [
+        "Ab",
+        3,
+        -1,
+        2
+      ],
+      [
+        "Bb",
+        3,
+        null,
+        1
+      ],
+      [
+        "C",
+        4,
+        null,
+        1
+      ],
+      [
+        "Db",
+        4,
+        -1,
+        2
+      ],
+      [
+        "C",
+        4,
+        null,
+        1
+      ],
+      [
+        "Bb",
+        3,
+        null,
+        1
+      ]
+    ],
+    [
+      [
+        "F",
+        3,
+        null,
+        2
+      ],
+      [
+        "G",
+        3,
+        null,
+        1
+      ],
+      [
+        "Ab",
+        3,
+        -1,
+        1
+      ],
+      [
+        "F",
+        3,
+        null,
+        2
+      ],
+      [
+        "Eb",
+        3,
+        -1,
+        1
+      ],
+      [
+        "F",
+        3,
+        null,
+        1
+      ]
+    ],
+    [
+      [
+        "Bb",
+        3,
+        null,
+        2
+      ],
+      [
+        "C",
+        4,
+        null,
+        1
+      ],
+      [
+        "Eb",
+        4,
+        -1,
+        1
+      ],
+      [
+        "F",
+        4,
+        null,
+        2
+      ],
+      [
+        "Eb",
+        4,
+        -1,
+        1
+      ],
+      [
+        "D",
+        4,
+        null,
+        1
+      ]
+    ],
+    [
+      [
+        "F",
+        3,
+        null,
+        2
+      ],
+      [
+        "Ab",
+        3,
+        -1,
+        1
+      ],
+      [
+        "Bb",
+        3,
+        null,
+        1
+      ],
+      [
+        "C",
+        4,
+        null,
+        2
+      ],
+      [
+        "Bb",
+        3,
+        null,
+        1
+      ],
+      [
+        "F",
+        3,
+        null,
+        1
+      ]
+    ]
+  ],
+  "notes_gm": [
+    {
+      "pitch": "B",
+      "octave": 3,
+      "alter": -1,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "G",
+      "octave": 4,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "D",
+      "octave": 5,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "F",
+      "octave": 5,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "Bb",
+      "octave": 2,
+      "alter": -1,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "G",
+      "octave": 3,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "D",
+      "octave": 4,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "F",
+      "octave": 4,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "A",
+      "octave": 3,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "G",
+      "octave": 4,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "C",
+      "octave": 5,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "E",
+      "octave": 5,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "A",
+      "octave": 2,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "G",
+      "octave": 3,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "C",
+      "octave": 4,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "E",
+      "octave": 4,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    }
+  ],
+  "fret_range": {
+    "min": 3,
+    "max": 11
+  },
+  "contour": "descending",
+  "feel": "melodic",
+  "form": 2,
+  "checksum_sha256": "0b6f520bde1d399c70e40757e14b9a4cd2b9db643dd45dde48c79e6287863517"
+}

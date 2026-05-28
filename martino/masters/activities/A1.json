@@ -1,0 +1,440 @@
+{
+  "id": "A1_LINEAR_CORE",
+  "sourceFile": "Activity Chords\\Activity Chord in Pat Martino Linear Expressions Book.xml",
+  "bars_gm": [
+    [
+      [
+        "G",
+        3,
+        null,
+        2
+      ],
+      [
+        "F",
+        4,
+        null,
+        2
+      ],
+      [
+        "B",
+        4,
+        -1,
+        2
+      ],
+      [
+        "D",
+        5,
+        null,
+        2
+      ],
+      [
+        "G",
+        2,
+        null,
+        2
+      ],
+      [
+        "F",
+        3,
+        null,
+        2
+      ],
+      [
+        "Bb",
+        3,
+        -1,
+        2
+      ],
+      [
+        "D",
+        4,
+        null,
+        2
+      ]
+    ],
+    [
+      [
+        "G",
+        3,
+        null,
+        2
+      ],
+      [
+        "F",
+        4,
+        null,
+        2
+      ],
+      [
+        "B",
+        4,
+        -1,
+        2
+      ],
+      [
+        "D",
+        5,
+        null,
+        2
+      ],
+      [
+        "G",
+        2,
+        null,
+        2
+      ],
+      [
+        "F",
+        3,
+        null,
+        2
+      ],
+      [
+        "Bb",
+        3,
+        -1,
+        2
+      ],
+      [
+        "D",
+        4,
+        null,
+        2
+      ]
+    ],
+    [
+      [
+        "A",
+        3,
+        null,
+        2
+      ],
+      [
+        "F",
+        4,
+        1,
+        2
+      ],
+      [
+        "B",
+        4,
+        null,
+        2
+      ],
+      [
+        "D",
+        5,
+        null,
+        2
+      ],
+      [
+        "A",
+        2,
+        null,
+        2
+      ],
+      [
+        "Gb",
+        3,
+        -1,
+        2
+      ],
+      [
+        "B",
+        3,
+        null,
+        2
+      ],
+      [
+        "D",
+        4,
+        null,
+        2
+      ]
+    ],
+    [
+      [
+        "A",
+        3,
+        null,
+        2
+      ],
+      [
+        "F",
+        4,
+        null,
+        2
+      ],
+      [
+        "C",
+        5,
+        null,
+        2
+      ],
+      [
+        "D",
+        5,
+        null,
+        2
+      ],
+      [
+        "A",
+        2,
+        null,
+        2
+      ],
+      [
+        "F",
+        3,
+        null,
+        2
+      ],
+      [
+        "C",
+        4,
+        null,
+        2
+      ],
+      [
+        "D",
+        4,
+        null,
+        2
+      ]
+    ]
+  ],
+  "notes_gm": [
+    {
+      "pitch": "G",
+      "octave": 3,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "F",
+      "octave": 4,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "B",
+      "octave": 4,
+      "alter": -1,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "D",
+      "octave": 5,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "G",
+      "octave": 2,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "F",
+      "octave": 3,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "Bb",
+      "octave": 3,
+      "alter": -1,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "D",
+      "octave": 4,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "G",
+      "octave": 3,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "F",
+      "octave": 4,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "B",
+      "octave": 4,
+      "alter": -1,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "D",
+      "octave": 5,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "G",
+      "octave": 2,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "F",
+      "octave": 3,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "Bb",
+      "octave": 3,
+      "alter": -1,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "D",
+      "octave": 4,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "A",
+      "octave": 3,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "F",
+      "octave": 4,
+      "alter": 1,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "B",
+      "octave": 4,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "D",
+      "octave": 5,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "A",
+      "octave": 2,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "Gb",
+      "octave": 3,
+      "alter": -1,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "B",
+      "octave": 3,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "D",
+      "octave": 4,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "A",
+      "octave": 3,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "F",
+      "octave": 4,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "C",
+      "octave": 5,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "D",
+      "octave": 5,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "A",
+      "octave": 2,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "F",
+      "octave": 3,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "C",
+      "octave": 4,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "D",
+      "octave": 4,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    }
+  ],
+  "fret_range": {
+    "min": 3,
+    "max": 11
+  },
+  "contour": "ascending",
+  "feel": "burning",
+  "form": 1,
+  "checksum_sha256": "ce05edcc44d8ebe521b8b679755917dd2bb74eb180ae49695d313cdc1289af4a"
+}

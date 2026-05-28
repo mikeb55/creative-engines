@@ -665,6 +665,7 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
       productKind: 'musicxml',
       filepath: engineResult.outputPath,
       validation: validationForStructural(true, []),
+      lfvFlags: engineResult.lfvFlags ?? [],
       runManifest: {
         seed: req.seed,
         presetId: 'martino_linear',
@@ -672,6 +673,8 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
         timestamp: new Date().toISOString(),
         martinoVersionUsed: engineResult.versionUsed,
         martinoActivityMap: engineResult.activityMapText,
+        martinoLfvFlags: engineResult.lfvFlags ?? [],
+        martinoWarnings: engineResult.warnings ?? [],
       } as GenerateResult['runManifest'],
     };
   }

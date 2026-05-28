@@ -1,0 +1,122 @@
+{
+  "id": "A3_PIVOT_CELL",
+  "sourceFile": "Activity Chords\\Activity Chord in Pat Martino Linear Expressions Book.xml",
+  "bars_gm": [
+    [
+      [
+        "D",
+        4,
+        null,
+        2
+      ],
+      [
+        "B",
+        4,
+        -1,
+        2
+      ],
+      [
+        "F",
+        5,
+        null,
+        2
+      ],
+      [
+        "G",
+        5,
+        null,
+        2
+      ],
+      [
+        "D",
+        3,
+        null,
+        2
+      ],
+      [
+        "Bb",
+        3,
+        -1,
+        2
+      ],
+      [
+        "F",
+        4,
+        null,
+        2
+      ],
+      [
+        "G",
+        4,
+        null,
+        2
+      ]
+    ]
+  ],
+  "notes_gm": [
+    {
+      "pitch": "D",
+      "octave": 4,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "B",
+      "octave": 4,
+      "alter": -1,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "F",
+      "octave": 5,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "G",
+      "octave": 5,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "D",
+      "octave": 3,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "Bb",
+      "octave": 3,
+      "alter": -1,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "F",
+      "octave": 4,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    },
+    {
+      "pitch": "G",
+      "octave": 4,
+      "alter": null,
+      "duration": 2,
+      "beat_position": 0.0
+    }
+  ],
+  "fret_range": {
+    "min": 3,
+    "max": 11
+  },
+  "contour": "arch",
+  "feel": "melodic",
+  "form": 3,
+  "checksum_sha256": "7f0d253e8ec1df54dd5271448ceb0842fe0136da6d98a8e81b94d741d76e0a3d"
+}
