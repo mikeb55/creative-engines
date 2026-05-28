@@ -646,7 +646,7 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
     tuneConfig.output_dir = ensureOutputDirectoryForPreset('martino_linear');
     const engineResult = callMartinoEngineSync(tuneConfig);
     if (!engineResult.ok || !engineResult.outputPath) {
-      const msg = engineResult.stderrExcerpt || 'Martino engine failed';
+      const msg = engineResult.error || engineResult.stderrExcerpt || 'Martino engine failed';
       return {
         success: false,
         error: msg,

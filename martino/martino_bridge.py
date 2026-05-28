@@ -37,13 +37,6 @@ def main() -> int:
             MARTINO_LIBRARY_DIR.mkdir(parents=True, exist_ok=True)
             tune_config["output_dir"] = str(MARTINO_LIBRARY_DIR)
 
-        melody_mode = tune_config.get("melody", "auto")
-        if melody_mode == "auto" and not tune_config.get("melody_bars"):
-            print(
-                "WARNING: melody=auto uses placeholder stepwise lane; production should supply melody_bars or canonical templates.",
-                file=sys.stderr,
-            )
-
         out_path = generate_musicxml(tune_config)
         readiness_score, readiness_issues = score_musicxml_path(out_path)
         activity_map = build_activity_map(tune_config)
@@ -73,6 +66,7 @@ def main() -> int:
                 "warnings": warnings,
                 "activityMapText": activity_map,
                 "lfvFlags": lfv_flags,
+                "provenanceLog": tune_config.get("_provenance_log") or [],
                 "stderrExcerpt": "",
             }
         )
@@ -88,7 +82,9 @@ def main() -> int:
                 "warnings": [],
                 "activityMapText": "",
                 "lfvFlags": [],
-                "stderrExcerpt": str(exc),
+                "provenanceLog": [],
+                "stderrExcerpt": str(exc)[:500],
+                "error": str(exc),
             }
         )
         return 1

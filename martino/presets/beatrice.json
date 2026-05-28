@@ -23,22 +23,5 @@
   ],
   "lfv": { "min_fret": 5, "max_fret": 9 },
   "version_prefix": "V4.1",
-  "melody_bars": [
-    [["F", 3, null, 2], ["G", 3, null, 1], ["Ab", 3, -1, 1], ["F", 3, null, 2], ["Eb", 3, -1, 1], ["F", 3, null, 1]],
-    [["Ab", 3, -1, 2], ["Bb", 3, null, 1], ["C", 4, null, 1], ["Db", 4, -1, 2], ["C", 4, null, 1], ["Bb", 3, null, 1]],
-    [["F", 3, null, 2], ["Ab", 3, -1, 1], ["Bb", 3, null, 1], ["C", 4, null, 2], ["Bb", 3, null, 1], ["A", 3, null, 1]],
-    [["Bb", 3, null, 2], ["C", 4, null, 1], ["Eb", 4, -1, 1], ["F", 4, null, 2], ["Eb", 4, -1, 1], ["D", 4, null, 1]],
-    [["D", 4, null, 2], ["C", 4, null, 1], ["Bb", 3, null, 1], ["A", 3, null, 2], ["G", 3, null, 1], ["F", 3, null, 1]],
-    [["Eb", 3, -1, 2], ["F", 3, null, 1], ["G", 3, null, 1], ["Ab", 3, -1, 2], ["Bb", 3, null, 1], ["C", 4, null, 1]],
-    [["D", 4, null, 2], ["C", 4, null, 1], ["Bb", 3, null, 1], ["A", 3, null, 2], ["G", 3, null, 1], ["F", 3, null, 1]],
-    [["Bb", 3, null, 2], ["C", 4, null, 1], ["D", 4, null, 1], ["F", 4, null, 2], ["Eb", 4, -1, 1], ["D", 4, null, 1]],
-    [["A", 3, null, 2], ["C", 4, null, 1], ["E", 4, null, 1], ["G", 4, null, 2], ["F", 4, null, 1], ["E", 4, null, 1]],
-    [["Bb", 3, null, 2], ["D", 4, null, 1], ["F", 4, null, 1], ["G", 4, null, 2], ["F", 4, null, 1], ["Eb", 4, -1, 1]],
-    [["D", 4, null, 2], ["F", 4, null, 1], ["G", 4, null, 1], ["Bb", 3, null, 2], ["A", 3, null, 1], ["G", 3, null, 1]],
-    [["F", 3, null, 2], ["Ab", 3, -1, 1], ["Bb", 3, null, 1], ["C", 4, null, 2], ["Eb", 4, -1, 1], ["F", 4, null, 1]],
-    [["Ab", 3, -1, 2], ["Bb", 3, null, 1], ["C", 4, null, 1], ["Db", 4, -1, 2], ["C", 4, null, 1], ["Bb", 3, null, 1]],
-    [["F", 3, null, 2], ["G", 3, null, 1], ["Ab", 3, -1, 1], ["F", 3, null, 2], ["Eb", 3, -1, 1], ["F", 3, null, 1]],
-    [["Bb", 3, null, 2], ["C", 4, null, 1], ["Eb", 4, -1, 1], ["F", 4, null, 2], ["Eb", 4, -1, 1], ["D", 4, null, 1]],
-    [["F", 3, null, 2], ["Ab", 3, -1, 1], ["Bb", 3, null, 1], ["C", 4, null, 2], ["Bb", 3, null, 1], ["F", 3, null, 1]]
-  ]
+  "melody": "auto"
 }

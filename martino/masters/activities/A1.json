@@ -1,440 +1,544 @@
 {
   "id": "A1_LINEAR_CORE",
-  "sourceFile": "Activity Chords\\Activity Chord in Pat Martino Linear Expressions Book.xml",
+  "sourceFile": "masters\\sources\\A1.xml",
   "bars_gm": [
     [
       [
         "G",
-        3,
-        null,
-        2
-      ],
-      [
-        "F",
-        4,
-        null,
-        2
-      ],
-      [
-        "B",
-        4,
-        -1,
-        2
-      ],
-      [
-        "D",
-        5,
-        null,
-        2
-      ],
-      [
-        "G",
         2,
         null,
-        2
+        1
       ],
-      [
-        "F",
-        3,
-        null,
-        2
-      ],
-      [
-        "Bb",
-        3,
-        -1,
-        2
-      ],
-      [
-        "D",
-        4,
-        null,
-        2
-      ]
-    ],
-    [
-      [
-        "G",
-        3,
-        null,
-        2
-      ],
-      [
-        "F",
-        4,
-        null,
-        2
-      ],
-      [
-        "B",
-        4,
-        -1,
-        2
-      ],
-      [
-        "D",
-        5,
-        null,
-        2
-      ],
-      [
-        "G",
-        2,
-        null,
-        2
-      ],
-      [
-        "F",
-        3,
-        null,
-        2
-      ],
-      [
-        "Bb",
-        3,
-        -1,
-        2
-      ],
-      [
-        "D",
-        4,
-        null,
-        2
-      ]
-    ],
-    [
       [
         "A",
-        3,
+        2,
         null,
-        2
+        1
       ],
       [
-        "F",
-        4,
+        "B",
+        2,
+        -1,
+        1
+      ],
+      [
+        "C",
+        3,
+        null,
+        1
+      ],
+      [
+        "C",
+        3,
         1,
-        2
-      ],
-      [
-        "B",
-        4,
-        null,
-        2
+        1
       ],
       [
         "D",
-        5,
+        3,
         null,
-        2
+        1
+      ],
+      [
+        "F",
+        3,
+        null,
+        1
+      ],
+      [
+        "D",
+        3,
+        null,
+        1
+      ],
+      [
+        "E",
+        3,
+        null,
+        1
+      ],
+      [
+        "F",
+        3,
+        1,
+        1
+      ],
+      [
+        "G",
+        3,
+        null,
+        1
       ],
       [
         "A",
-        2,
+        3,
         null,
-        2
+        1
       ],
       [
-        "Gb",
+        "C",
+        4,
+        null,
+        1
+      ],
+      [
+        "A",
         3,
-        -1,
-        2
+        null,
+        1
       ],
       [
         "B",
         3,
-        null,
-        2
+        -1,
+        1
       ],
       [
         "D",
         4,
         null,
-        2
+        1
       ]
     ],
     [
       [
-        "A",
-        3,
+        "F",
+        4,
         null,
-        2
+        1
+      ],
+      [
+        "A",
+        4,
+        null,
+        1
+      ],
+      [
+        "A",
+        4,
+        -1,
+        1
+      ],
+      [
+        "E",
+        4,
+        null,
+        1
+      ],
+      [
+        "G",
+        4,
+        null,
+        1
       ],
       [
         "F",
         4,
         null,
-        2
+        1
       ],
       [
-        "C",
-        5,
+        "E",
+        4,
         null,
-        2
+        1
       ],
       [
         "D",
-        5,
+        4,
         null,
-        2
+        1
+      ],
+      [
+        "C",
+        4,
+        null,
+        1
       ],
       [
         "A",
-        2,
+        3,
         null,
-        2
+        1
       ],
+      [
+        "B",
+        3,
+        -1,
+        1
+      ],
+      [
+        "D",
+        4,
+        null,
+        1
+      ],
+      [
+        "A",
+        3,
+        null,
+        1
+      ],
+      [
+        "B",
+        3,
+        -1,
+        1
+      ],
+      [
+        "A",
+        3,
+        null,
+        1
+      ],
+      [
+        "G",
+        3,
+        null,
+        1
+      ]
+    ],
+    [
       [
         "F",
         3,
         null,
-        2
-      ],
-      [
-        "C",
-        4,
-        null,
-        2
+        1
       ],
       [
         "D",
-        4,
+        3,
         null,
-        2
+        1
+      ],
+      [
+        "C",
+        3,
+        null,
+        1
+      ],
+      [
+        "D",
+        3,
+        null,
+        1
+      ],
+      [
+        "D",
+        3,
+        null,
+        1
       ]
     ]
   ],
   "notes_gm": [
     {
       "pitch": "G",
-      "octave": 3,
-      "alter": null,
-      "duration": 2,
-      "beat_position": 0.0
-    },
-    {
-      "pitch": "F",
-      "octave": 4,
-      "alter": null,
-      "duration": 2,
-      "beat_position": 0.0
-    },
-    {
-      "pitch": "B",
-      "octave": 4,
-      "alter": -1,
-      "duration": 2,
-      "beat_position": 0.0
-    },
-    {
-      "pitch": "D",
-      "octave": 5,
-      "alter": null,
-      "duration": 2,
-      "beat_position": 0.0
-    },
-    {
-      "pitch": "G",
       "octave": 2,
       "alter": null,
-      "duration": 2,
-      "beat_position": 0.0
-    },
-    {
-      "pitch": "F",
-      "octave": 3,
-      "alter": null,
-      "duration": 2,
-      "beat_position": 0.0
-    },
-    {
-      "pitch": "Bb",
-      "octave": 3,
-      "alter": -1,
-      "duration": 2,
-      "beat_position": 0.0
-    },
-    {
-      "pitch": "D",
-      "octave": 4,
-      "alter": null,
-      "duration": 2,
-      "beat_position": 0.0
-    },
-    {
-      "pitch": "G",
-      "octave": 3,
-      "alter": null,
-      "duration": 2,
-      "beat_position": 0.0
-    },
-    {
-      "pitch": "F",
-      "octave": 4,
-      "alter": null,
-      "duration": 2,
-      "beat_position": 0.0
-    },
-    {
-      "pitch": "B",
-      "octave": 4,
-      "alter": -1,
-      "duration": 2,
-      "beat_position": 0.0
-    },
-    {
-      "pitch": "D",
-      "octave": 5,
-      "alter": null,
-      "duration": 2,
-      "beat_position": 0.0
-    },
-    {
-      "pitch": "G",
-      "octave": 2,
-      "alter": null,
-      "duration": 2,
-      "beat_position": 0.0
-    },
-    {
-      "pitch": "F",
-      "octave": 3,
-      "alter": null,
-      "duration": 2,
-      "beat_position": 0.0
-    },
-    {
-      "pitch": "Bb",
-      "octave": 3,
-      "alter": -1,
-      "duration": 2,
-      "beat_position": 0.0
-    },
-    {
-      "pitch": "D",
-      "octave": 4,
-      "alter": null,
-      "duration": 2,
-      "beat_position": 0.0
+      "duration": 1,
+      "beat_position": 0.0,
+      "source_bar": 0
     },
     {
       "pitch": "A",
-      "octave": 3,
+      "octave": 2,
       "alter": null,
-      "duration": 2,
-      "beat_position": 0.0
+      "duration": 1,
+      "beat_position": 0.25,
+      "source_bar": 0
     },
     {
-      "pitch": "F",
-      "octave": 4,
+      "pitch": "B",
+      "octave": 2,
+      "alter": -1,
+      "duration": 1,
+      "beat_position": 0.5,
+      "source_bar": 0
+    },
+    {
+      "pitch": "C",
+      "octave": 3,
+      "alter": null,
+      "duration": 1,
+      "beat_position": 0.75,
+      "source_bar": 0
+    },
+    {
+      "pitch": "C",
+      "octave": 3,
       "alter": 1,
-      "duration": 2,
-      "beat_position": 0.0
-    },
-    {
-      "pitch": "B",
-      "octave": 4,
-      "alter": null,
-      "duration": 2,
-      "beat_position": 0.0
+      "duration": 1,
+      "beat_position": 1.0,
+      "source_bar": 0
     },
     {
       "pitch": "D",
-      "octave": 5,
+      "octave": 3,
       "alter": null,
-      "duration": 2,
-      "beat_position": 0.0
+      "duration": 1,
+      "beat_position": 1.25,
+      "source_bar": 0
+    },
+    {
+      "pitch": "F",
+      "octave": 3,
+      "alter": null,
+      "duration": 1,
+      "beat_position": 1.5,
+      "source_bar": 0
+    },
+    {
+      "pitch": "D",
+      "octave": 3,
+      "alter": null,
+      "duration": 1,
+      "beat_position": 1.75,
+      "source_bar": 0
+    },
+    {
+      "pitch": "E",
+      "octave": 3,
+      "alter": null,
+      "duration": 1,
+      "beat_position": 2.0,
+      "source_bar": 0
+    },
+    {
+      "pitch": "F",
+      "octave": 3,
+      "alter": 1,
+      "duration": 1,
+      "beat_position": 2.25,
+      "source_bar": 0
+    },
+    {
+      "pitch": "G",
+      "octave": 3,
+      "alter": null,
+      "duration": 1,
+      "beat_position": 2.5,
+      "source_bar": 0
     },
     {
       "pitch": "A",
-      "octave": 2,
+      "octave": 3,
       "alter": null,
-      "duration": 2,
-      "beat_position": 0.0
+      "duration": 1,
+      "beat_position": 2.75,
+      "source_bar": 0
     },
     {
-      "pitch": "Gb",
+      "pitch": "C",
+      "octave": 4,
+      "alter": null,
+      "duration": 1,
+      "beat_position": 3.0,
+      "source_bar": 0
+    },
+    {
+      "pitch": "A",
+      "octave": 3,
+      "alter": null,
+      "duration": 1,
+      "beat_position": 3.25,
+      "source_bar": 0
+    },
+    {
+      "pitch": "B",
       "octave": 3,
       "alter": -1,
-      "duration": 2,
-      "beat_position": 0.0
+      "duration": 1,
+      "beat_position": 3.5,
+      "source_bar": 0
+    },
+    {
+      "pitch": "D",
+      "octave": 4,
+      "alter": null,
+      "duration": 1,
+      "beat_position": 3.75,
+      "source_bar": 0
+    },
+    {
+      "pitch": "F",
+      "octave": 4,
+      "alter": null,
+      "duration": 1,
+      "beat_position": 0.0,
+      "source_bar": 1
+    },
+    {
+      "pitch": "A",
+      "octave": 4,
+      "alter": null,
+      "duration": 1,
+      "beat_position": 0.25,
+      "source_bar": 1
+    },
+    {
+      "pitch": "A",
+      "octave": 4,
+      "alter": -1,
+      "duration": 1,
+      "beat_position": 0.5,
+      "source_bar": 1
+    },
+    {
+      "pitch": "E",
+      "octave": 4,
+      "alter": null,
+      "duration": 1,
+      "beat_position": 0.75,
+      "source_bar": 1
+    },
+    {
+      "pitch": "G",
+      "octave": 4,
+      "alter": null,
+      "duration": 1,
+      "beat_position": 1.0,
+      "source_bar": 1
+    },
+    {
+      "pitch": "F",
+      "octave": 4,
+      "alter": null,
+      "duration": 1,
+      "beat_position": 1.25,
+      "source_bar": 1
+    },
+    {
+      "pitch": "E",
+      "octave": 4,
+      "alter": null,
+      "duration": 1,
+      "beat_position": 1.5,
+      "source_bar": 1
+    },
+    {
+      "pitch": "D",
+      "octave": 4,
+      "alter": null,
+      "duration": 1,
+      "beat_position": 1.75,
+      "source_bar": 1
+    },
+    {
+      "pitch": "C",
+      "octave": 4,
+      "alter": null,
+      "duration": 1,
+      "beat_position": 2.0,
+      "source_bar": 1
+    },
+    {
+      "pitch": "A",
+      "octave": 3,
+      "alter": null,
+      "duration": 1,
+      "beat_position": 2.25,
+      "source_bar": 1
     },
     {
       "pitch": "B",
       "octave": 3,
-      "alter": null,
-      "duration": 2,
-      "beat_position": 0.0
+      "alter": -1,
+      "duration": 1,
+      "beat_position": 2.5,
+      "source_bar": 1
     },
     {
       "pitch": "D",
       "octave": 4,
       "alter": null,
-      "duration": 2,
-      "beat_position": 0.0
+      "duration": 1,
+      "beat_position": 2.75,
+      "source_bar": 1
     },
     {
       "pitch": "A",
       "octave": 3,
       "alter": null,
-      "duration": 2,
-      "beat_position": 0.0
+      "duration": 1,
+      "beat_position": 3.0,
+      "source_bar": 1
     },
     {
-      "pitch": "F",
-      "octave": 4,
-      "alter": null,
-      "duration": 2,
-      "beat_position": 0.0
-    },
-    {
-      "pitch": "C",
-      "octave": 5,
-      "alter": null,
-      "duration": 2,
-      "beat_position": 0.0
-    },
-    {
-      "pitch": "D",
-      "octave": 5,
-      "alter": null,
-      "duration": 2,
-      "beat_position": 0.0
+      "pitch": "B",
+      "octave": 3,
+      "alter": -1,
+      "duration": 1,
+      "beat_position": 3.25,
+      "source_bar": 1
     },
     {
       "pitch": "A",
-      "octave": 2,
+      "octave": 3,
       "alter": null,
-      "duration": 2,
-      "beat_position": 0.0
+      "duration": 1,
+      "beat_position": 3.5,
+      "source_bar": 1
+    },
+    {
+      "pitch": "G",
+      "octave": 3,
+      "alter": null,
+      "duration": 1,
+      "beat_position": 3.75,
+      "source_bar": 1
     },
     {
       "pitch": "F",
       "octave": 3,
       "alter": null,
-      "duration": 2,
-      "beat_position": 0.0
-    },
-    {
-      "pitch": "C",
-      "octave": 4,
-      "alter": null,
-      "duration": 2,
-      "beat_position": 0.0
+      "duration": 1,
+      "beat_position": 0.0,
+      "source_bar": 2
     },
     {
       "pitch": "D",
-      "octave": 4,
+      "octave": 3,
       "alter": null,
-      "duration": 2,
-      "beat_position": 0.0
+      "duration": 1,
+      "beat_position": 0.25,
+      "source_bar": 2
+    },
+    {
+      "pitch": "C",
+      "octave": 3,
+      "alter": null,
+      "duration": 1,
+      "beat_position": 0.5,
+      "source_bar": 2
+    },
+    {
+      "pitch": "D",
+      "octave": 3,
+      "alter": null,
+      "duration": 1,
+      "beat_position": 0.75,
+      "source_bar": 2
+    },
+    {
+      "pitch": "D",
+      "octave": 3,
+      "alter": null,
+      "duration": 1,
+      "beat_position": 1.0,
+      "source_bar": 2
     }
   ],
+  "phrase_boundaries": [
+    1,
+    2
+  ],
   "fret_range": {
-    "min": 3,
-    "max": 11
+    "min": 0,
+    "max": 6
   },
   "contour": "ascending",
   "feel": "burning",
   "form": 1,
-  "checksum_sha256": "ce05edcc44d8ebe521b8b679755917dd2bb74eb180ae49695d313cdc1289af4a"
+  "checksum_sha256": "cd1a7386848221873bdc174bf499451745858d672d180fea9131bc95f93aa9fa"
 }

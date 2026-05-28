@@ -78,7 +78,7 @@ def test_beatrice_rehearsal_marks_ab():
     assert "B" in rehearsals
 
 
-def test_beatrice_direction_text_measure_one():
+def test_beatrice_measure_one_has_no_engine_metadata_words():
     with open(ENGINE_DIR / "presets" / "beatrice.json", encoding="utf-8") as f:
         config = json.load(f)
     config["output_dir"] = OUT_DIR
@@ -91,7 +91,10 @@ def test_beatrice_direction_text_measure_one():
         for w in [d.find("direction-type/words")]
         if w is not None and w.text
     ]
-    assert any("ACTIVITY MAP" in (t or "") for t in words)
+    for text in words:
+        upper = (text or "").upper()
+        assert "ACTIVITY MAP" not in upper
+        assert "LFV MAP" not in upper
 
 
 def test_orbit_cli_produces_file():
@@ -140,13 +143,13 @@ def test_orbit_fmaj7sharp11_in_harmony():
     config["output_dir"] = OUT_DIR
     config["version_prefix"] = "VTestOrbitF"
     path = generate_musicxml(config)
-    found = False
-    for meas in ET.parse(path).getroot().find("part").findall("measure"):
-        for d in meas.findall("direction"):
-            w = d.find("direction-type/words")
-            if w is not None and w.text and "Fmaj7#11" in w.text:
-                found = True
-    assert found
+    meas1 = ET.parse(path).getroot().find("part").find("measure")
+    harmony = meas1.find("harmony")
+    assert harmony is not None
+    root_step = harmony.find("root/root-step")
+    assert root_step is not None and root_step.text == "F"
+    kind = harmony.find("kind")
+    assert kind is not None and (kind.text or "").strip() == "major-seventh"
 
 
 def test_custom_progression_four_bars():
@@ -204,7 +207,7 @@ ALL_TESTS = [
     test_beatrice_measure_count,
     test_beatrice_harmony_present,
     test_beatrice_rehearsal_marks_ab,
-    test_beatrice_direction_text_measure_one,
+    test_beatrice_measure_one_has_no_engine_metadata_words,
     test_orbit_cli_produces_file,
     test_orbit_xml_parses,
     test_orbit_measure_count_28,

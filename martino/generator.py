@@ -13,9 +13,10 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from master_loader import build_melody_bars
+    from master_loader import TemplateUnavailableError, build_canonical_melody
 except ImportError:
-    build_melody_bars = None  # type: ignore
+    build_canonical_melody = None  # type: ignore
+    TemplateUnavailableError = RuntimeError  # type: ignore
 
 _ENGINE_DIR = Path(__file__).resolve().parent
 _SPEC_PATH = _ENGINE_DIR / "engine_spec.json"
@@ -333,38 +334,9 @@ def _add_note(meas: ET.Element, step: str, octave: int, alter: int | None, durat
         _sub(p, "alter", "1")
     _sub(p, "octave", str(octave))
     _sub(n, "duration", str(duration))
-    _sub(n, "type", "quarter" if duration == 2 else "eighth")
     _sub(n, "voice", "1")
+    _sub(n, "type", "quarter" if duration == 2 else "eighth")
     meas.append(n)
-
-
-def _auto_melody_bar(
-    bar_index: int,
-    chorus: int,
-    tune_config: dict,
-    divisions_per_bar: int,
-) -> list[tuple[str, int, int | None, int]]:
-    """DEV ONLY — placeholder stepwise F minor when MARTINO_DEV_PLACEHOLDER=1."""
-    import os
-
-    if not os.environ.get("MARTINO_DEV_PLACEHOLDER"):
-        return []
-    # Simple stepwise in F minor: F,G,Ab,Bb,C,Db,Eb. Octave 3-4 for LFV.
-    scale = [
-        ("F", 3, None), ("G", 3, None), ("Ab", 3, -1), ("Bb", 3, None),
-        ("C", 4, None), ("Db", 4, -1), ("Eb", 4, -1),
-        ("F", 4, None), ("G", 4, None), ("Ab", 4, -1), ("Bb", 4, None),
-    ]
-    n_notes = min(6, divisions_per_bar)  # 3/4 -> 6 eighths, 4/4 -> 8
-    d_quarter = 2
-    d_eighth = 1
-    out = []
-    for i in range(n_notes):
-        idx = (bar_index * 3 + i) % len(scale)
-        step, oct, alt = scale[idx]
-        dur = d_eighth if (i < n_notes - 1) else (d_quarter if n_notes <= 4 else d_eighth)
-        out.append((step, oct, alt, dur))
-    return out
 
 
 def _normalize_melody_bars(tune_config: dict) -> None:
@@ -409,13 +381,9 @@ def _add_melody_to_measure(meas: ET.Element, tune_config: dict, bar: int, chorus
                     alt, dur = no.get("alter"), no.get("duration", 1)
                 _add_note(meas, str(st), int(oct), int(alt) if alt is not None else None, int(dur))
             return
-    # Auto
-    divisions_per_bar = int(tune_config.get("divisions", 2)) * int(tune_config.get("time_signature", {}).get("beats", 4))
-    bar_notes = _auto_melody_bar(bar, chorus, tune_config, divisions_per_bar)
-    if not bar_notes:
-        return
-    for st, oct, alt, dur in bar_notes:
-        _add_note(meas, st, oct, alt, dur)
+    raise TemplateUnavailableError(
+        f"No canonical template available for bar {bar + 1} — generation aborted. Do not invent material."
+    )
 
 
 # Replace the inline melody block in generate_musicxml with a call to _add_melody_to_measure
@@ -442,15 +410,21 @@ def generate_musicxml(tune_config: dict) -> Path:
 
     _normalize_melody_bars(tune_config)
 
-    if (
-        tune_config.get("melody") == "auto"
-        and not tune_config.get("melody_bars")
-        and not tune_config.get("_melody_bars_list")
-        and build_melody_bars is not None
-    ):
-        built = build_melody_bars(tune_config)
-        if built:
-            tune_config["_melody_bars_list"] = built
+    provenance_log: list[dict[str, Any]] = []
+    if tune_config.get("melody_bars") or tune_config.get("_melody_bars_list"):
+        pass
+    elif tune_config.get("melody") == "auto":
+        if build_canonical_melody is None:
+            raise TemplateUnavailableError(
+                "No canonical template available — master_loader missing. Do not invent material."
+            )
+        built, provenance_log = build_canonical_melody(tune_config)
+        tune_config["_melody_bars_list"] = built
+        tune_config["_provenance_log"] = provenance_log
+    else:
+        raise TemplateUnavailableError(
+            "No canonical template available — melody must be auto with masters. Do not invent material."
+        )
 
     version_prefix = tune_config.get("version_prefix") or spec.get("output", {}).get("default_version", "V4.1")
     suffix = spec.get("output", {}).get("suffix", "MartinoLinearExpressions")
@@ -485,8 +459,6 @@ def generate_musicxml(tune_config: dict) -> Path:
                 c = _sub(att, "clef")
                 _sub(c, "sign", "G")
                 _sub(c, "line", "2")
-                _direction_words_elem(meas, build_activity_map(tune_config))
-                _direction_words_elem(meas, _build_lfv_map(tune_config))
 
             mark = rehearsal_marks.get(bar) or rehearsal_marks.get(str(bar))
             if mark is not None:
@@ -499,16 +471,13 @@ def generate_musicxml(tune_config: dict) -> Path:
             if bar_key in split_chord_measures:
                 for ch in split_chord_measures[bar_key]:
                     _harmony_elem(meas, ch)
-                    _chord_words_elem(meas, ch)
             else:
                 chord_entry = chords[bar] if bar < len(chords) else "Fmaj7"
                 if isinstance(chord_entry, list):
                     for ch in chord_entry:
                         _harmony_elem(meas, ch)
-                        _chord_words_elem(meas, ch)
                 else:
                     _harmony_elem(meas, chord_entry)
-                    _chord_words_elem(meas, chord_entry)
 
             if measure_num in asterisk_measures:
                 _asterisk_elem(meas, measure_num)
@@ -519,6 +488,22 @@ def generate_musicxml(tune_config: dict) -> Path:
     tree = ET.ElementTree(root)
     ET.indent(tree, space="  ")
     tree.write(out_path, encoding="UTF-8", xml_declaration=True, default_namespace="", method="xml")
+
+    prov = tune_config.get("_provenance_log") or provenance_log
+    if prov:
+        prov_path = out_path.with_suffix(".provenance.json")
+        prov_path.write_text(
+            json.dumps(
+                {
+                    "outputPath": str(out_path),
+                    "activityMapText": build_activity_map(tune_config),
+                    "lfvMapText": _build_lfv_map(tune_config),
+                    "notes": prov,
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
     return out_path
 
 

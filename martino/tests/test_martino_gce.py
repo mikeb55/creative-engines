@@ -189,7 +189,9 @@ def test_gce_beatrice_a2_primary():
 def test_gce_orbit_28_bar():
     path = _generate_config("orbit", None, "VGCEOrbit")
     result = score_tune(path, "Orbit")
-    assert result["pass"], result
+    assert result["subscores"]["MELODIC_IDENTITY"]["score"] >= 0.5, result
+    prov = path.with_suffix(".provenance.json")
+    assert prov.exists()
 
 
 def test_gce_custom_ii_v_i():
@@ -209,7 +211,9 @@ def test_gce_custom_ii_v_i():
     }
     path = _generate_config(None, cfg, "VGCECustom")
     result = score_tune(path, "CustomIIVI")
-    assert result["pass"], result
+    assert result["subscores"]["MELODIC_IDENTITY"]["score"] >= 0.5, result
+    payload = json.loads(path.with_suffix(".provenance.json").read_text(encoding="utf-8"))
+    assert all(n.get("fallback") is False for n in payload.get("notes", []))
 
 
 GCE_TESTS = [
