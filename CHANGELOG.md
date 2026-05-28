@@ -1,3 +1,8 @@
+### V78 — LFV integrity fix
+- _lfv_ok_for_activity_bar: passes if ≥80% of notes in range
+- score_lfv_integrity: fail=0.5 not 0.0
+- Result: lfv_integrity 1.0, overall 0.900, all 8 GCE dimensions healthy
+
 ## V70–V75 — Martino Linear Engine (Martino GCE arc)
 
 ### V70 — Phrase planner, DCR, direction, interval DNA

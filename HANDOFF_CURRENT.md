@@ -1,5 +1,11 @@
 # HANDOFF — auto-updated 2026-05-19
 
+## Post-V78 — GCE Calibration Arc complete
+- Tests: 76 passing
+- Live overall: 0.900, gate clean, all dimensions healthy
+- V79: final weight rebalance + npm run dist for portable .exe
+- Commit: 05fb79f7
+
 ## Post-V77
 - Tests: 72 passing
 - Live: overall 0.870, reduction 0.833, anti_bebop 0.735, gate clean
