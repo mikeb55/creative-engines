@@ -52,6 +52,38 @@ def test_beatrice_measure_count():
     assert len(measures) == 32
 
 
+def test_every_measure_has_harmony():
+    with open(ENGINE_DIR / "presets" / "orbit.json", encoding="utf-8") as f:
+        config = json.load(f)
+    config["output_dir"] = OUT_DIR
+    config["version_prefix"] = "VTestOrbitHarm"
+    path = generate_musicxml(config)
+    root = ET.parse(path).getroot()
+    measures = root.find("part").findall("measure")
+    assert measures, "expected at least one measure"
+    for i, meas in enumerate(measures, start=1):
+        assert meas.find("harmony") is not None, f"measure {i} missing <harmony>"
+
+
+def test_work_title_prefers_tune_field():
+    config = {
+        "tune": "Orbit 5X Version 2",
+        "tune_name": "Martino Linear",
+        "chords": ["Fmaj7", "G7", "Cmaj7", "Cmaj7"],
+        "measures_per_chorus": 4,
+        "choruses": 1,
+        "melody": "auto",
+        "output_dir": str(OUT_DIR),
+        "version_prefix": "VTestTitle",
+    }
+    path = generate_musicxml(config)
+    title = ET.parse(path).getroot().find("work/work-title").text or ""
+    assert "Orbit 5X Version 2" in title
+    assert "Martino Linear Expressions" in title
+    assert "VTestTitle" in title
+    assert "Martino Linear" not in title.split("–")[0].strip()
+
+
 def test_beatrice_harmony_present():
     with open(ENGINE_DIR / "presets" / "beatrice.json", encoding="utf-8") as f:
         config = json.load(f)
@@ -197,6 +229,8 @@ ALL_TESTS = [
     test_beatrice_cli_produces_file,
     test_beatrice_xml_parses,
     test_beatrice_measure_count,
+    test_every_measure_has_harmony,
+    test_work_title_prefers_tune_field,
     test_beatrice_harmony_present,
     test_beatrice_no_rehearsal_marks_in_score,
     test_beatrice_measure_one_has_no_engine_metadata_words,

@@ -146,9 +146,11 @@ function coerceMartinoConfigFromBody(
           max_fret: Math.max(0, Math.floor(Number((lfvRaw as { max_fret?: unknown }).max_fret) || 9)),
         }
       : { min_fret: 5, max_fret: 9 };
+  const tuneRaw = typeof o.tune === 'string' ? o.tune.trim() : '';
   return {
     enabled: o.enabled !== false,
     progression,
+    ...(tuneRaw ? { tune: tuneRaw } : {}),
     dominantTensionDefault,
     activeActivity:
       typeof o.activeActivity === 'string' && o.activeActivity.trim()

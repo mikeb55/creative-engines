@@ -632,6 +632,7 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
       {
         enabled: mc?.enabled ?? true,
         progression,
+        ...(typeof mc?.tune === 'string' && mc.tune.trim() ? { tune: mc.tune.trim() } : {}),
         dominantTensionDefault: mc?.dominantTensionDefault ?? 'low',
         activeActivity: mc?.activeActivity ?? 'A1_LINEAR_CORE',
         secondaryActivities: mc?.secondaryActivities ?? ['A2_DIAGONAL_BRIDGE'],

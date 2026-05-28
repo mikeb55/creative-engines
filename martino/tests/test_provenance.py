@@ -11,7 +11,7 @@ import pytest
 ENGINE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ENGINE_DIR))
 
-from generator import generate_musicxml  # noqa: E402
+from generator import generate_musicxml, provenance_json_path  # noqa: E402
 from master_loader import (  # noqa: E402
     TemplateUnavailableError,
     build_canonical_melody,
@@ -72,7 +72,7 @@ def test_dm7_progression_uses_templates_only():
     assert all(entry.get("fallback") is False for entry in prov)
     path = generate_musicxml(cfg)
     assert path.exists()
-    sidecar = path.with_suffix(".provenance.json")
+    sidecar = provenance_json_path(path)
     assert sidecar.exists()
     payload = json.loads(sidecar.read_text(encoding="utf-8"))
     assert all(n.get("fallback") is False for n in payload.get("notes", []))

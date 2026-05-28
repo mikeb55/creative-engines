@@ -20,6 +20,12 @@ except ImportError:
 
 _ENGINE_DIR = Path(__file__).resolve().parent
 _SPEC_PATH = _ENGINE_DIR / "engine_spec.json"
+_PROVENANCE_DIR = _ENGINE_DIR.parent / "temp" / "martino" / "provenance"
+
+
+def provenance_json_path(musicxml_path: Path) -> Path:
+    """Sidecar provenance path (repo temp — not the user MusicXML library folder)."""
+    return _PROVENANCE_DIR / f"{musicxml_path.stem}.provenance.json"
 
 # Default LFV pitch bounds (guitar frets 5-9, standard tuning)
 STEP_TO_MIDI_BASE = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
@@ -268,6 +274,112 @@ def _infer_kind_from_chord(chord_text: str) -> tuple[str, str]:
     return _normalize_kind("major"), ""
 
 
+def _local_tag(elem: ET.Element) -> str:
+    tag = elem.tag
+    return tag.rsplit("}", 1)[-1] if "}" in tag else tag
+
+
+def _display_tune_name(tune_config: dict) -> str:
+    """Score title: prefer tune, then preset, then tune_name / name / title."""
+    for key in ("tune", "preset", "tune_name", "name", "title"):
+        raw = tune_config.get(key)
+        if raw is not None and str(raw).strip():
+            return str(raw).strip()
+    return "Tune"
+
+
+def _parse_root_alter(root_str: str) -> tuple[str, int | None]:
+    step = root_str[0].upper()
+    alter = None
+    if len(root_str) > 1:
+        acc = root_str[1:]
+        if acc in ("b", "♭"):
+            alter = -1
+        elif acc in ("#", "♯"):
+            alter = 1
+    return step, alter
+
+
+def _chord_symbols_for_bar(tune_config: dict, bar: int, chorus: int) -> list[str]:
+    """Chord symbol(s) for one bar in the score (split-bar => multiple harmonies at beat 1)."""
+    chords = tune_config.get("chords") or []
+    mpc = int(tune_config.get("measures_per_chorus", 16))
+    split = tune_config.get("split_chord_measures") or {}
+    bar_key = str(bar)
+    if bar_key in split:
+        entry = split[bar_key]
+        if isinstance(entry, list):
+            return [str(c) for c in entry]
+        return [str(entry)]
+
+    idx = chorus * mpc + bar
+    if idx < len(chords):
+        entry = chords[idx]
+    elif bar < len(chords):
+        entry = chords[bar]
+    elif chords:
+        entry = chords[-1]
+    else:
+        entry = "Fmaj7"
+
+    if isinstance(entry, list):
+        return [str(c) for c in entry]
+    return [str(entry)]
+
+
+def _harmony_insert_index(meas: ET.Element) -> int:
+    """Index to insert beat-1 <harmony> — after attributes/print, before notes/directions."""
+    insert_at = 0
+    for i, child in enumerate(meas):
+        local = _local_tag(child)
+        if local in ("attributes", "print"):
+            insert_at = i + 1
+        elif local in ("note", "direction", "harmony", "sound", "barline"):
+            return insert_at
+    return insert_at
+
+
+def _build_harmony_elem(chord_text: str) -> ET.Element:
+    h = _el("harmony")
+    slash_idx = chord_text.find("/")
+    harmony_part = chord_text[:slash_idx].strip() if slash_idx >= 0 else chord_text
+    bass_part = chord_text[slash_idx + 1 :].strip() if slash_idx >= 0 else ""
+
+    s = re.sub(r"[(#)/]", " ", harmony_part).strip()
+    parts = s.split()
+    root_str = parts[0] if parts else "C"
+    step, alter = _parse_root_alter(root_str)
+    kind_value, kind_display = _infer_kind_from_chord(harmony_part)
+    kind_value = _normalize_kind(kind_value)
+    root_el = _sub(h, "root")
+    _sub(root_el, "root-step", step)
+    if alter is not None:
+        _sub(root_el, "root-alter", str(alter))
+    k = _sub(h, "kind")
+    k.text = kind_value
+    if kind_display:
+        k.set("text", kind_display)
+
+    if bass_part:
+        bass_match = re.match(r"^([A-G](?:#|b|♭|#)?)", bass_part, re.I)
+        if bass_match:
+            bass_step, bass_alter = _parse_root_alter(bass_match.group(1))
+            bass_el = _sub(h, "bass")
+            _sub(bass_el, "bass-step", bass_step)
+            if bass_alter is not None:
+                _sub(bass_el, "bass-alter", str(bass_alter))
+    return h
+
+
+def _write_harmonies_at_beat_one(meas: ET.Element, chord_texts: list[str]) -> None:
+    """Insert one or more <harmony> elements at beat 1 (never append after notes)."""
+    if not chord_texts:
+        chord_texts = ["Fmaj7"]
+    insert_at = _harmony_insert_index(meas)
+    for ch in reversed(chord_texts):
+        meas.insert(insert_at, _build_harmony_elem(ch))
+
+
 def _strip_rehearsal_marks(root: ET.Element) -> None:
     """Score output: no <rehearsal> (section letters live in tune_config / provenance only)."""
     for parent in root.iter():
@@ -297,25 +409,8 @@ def _strip_harmony_nonstandard(root: ET.Element) -> None:
 
 
 def _harmony_elem(measure_el: ET.Element, chord_text: str) -> None:
-    h = _el("harmony")
-    s = re.sub(r"[(#)/]", " ", chord_text).strip()
-    parts = s.split()
-    root_str = parts[0] if parts else "C"
-    step = root_str[0]
-    alter = None
-    if len(root_str) > 1:
-        alter = -1 if root_str[1] == "b" else (1 if root_str[1] == "#" else None)
-    kind_value, kind_display = _infer_kind_from_chord(chord_text)
-    kind_value = _normalize_kind(kind_value)
-    root_el = _sub(h, "root")
-    _sub(root_el, "root-step", step)
-    if alter is not None:
-        _sub(root_el, "root-alter", str(alter))
-    k = _sub(h, "kind")
-    k.text = kind_value
-    if kind_display:
-        k.set("text", kind_display)
-    measure_el.append(h)
+    """Backward-compatible wrapper: one harmony at beat 1."""
+    _write_harmonies_at_beat_one(measure_el, [chord_text])
 
 
 def _chord_words_elem(measure_el: ET.Element, chord_text: str) -> None:
@@ -410,7 +505,7 @@ def generate_musicxml(tune_config: dict) -> Path:
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    tune_name = tune_config.get("tune_name", "Tune")
+    tune_name = _display_tune_name(tune_config)
     choruses = int(tune_config.get("choruses", 1))
     mpc = int(tune_config.get("measures_per_chorus", 16))
     ts = tune_config.get("time_signature", {})
@@ -418,9 +513,7 @@ def generate_musicxml(tune_config: dict) -> Path:
     beat_type = int(ts.get("beat_type", 4))
     divisions = int(tune_config.get("divisions", 2))
     key = tune_config.get("key", {"fifths": -1, "mode": "major"})
-    chords = tune_config.get("chords", [])
     asterisk_measures = set(tune_config.get("asterisk_measures", []))
-    split_chord_measures = tune_config.get("split_chord_measures", {})
 
     _normalize_melody_bars(tune_config)
 
@@ -474,17 +567,7 @@ def generate_musicxml(tune_config: dict) -> Path:
                 _sub(c, "sign", "G")
                 _sub(c, "line", "2")
 
-            bar_key = str(bar)
-            if bar_key in split_chord_measures:
-                for ch in split_chord_measures[bar_key]:
-                    _harmony_elem(meas, ch)
-            else:
-                chord_entry = chords[bar] if bar < len(chords) else "Fmaj7"
-                if isinstance(chord_entry, list):
-                    for ch in chord_entry:
-                        _harmony_elem(meas, ch)
-                else:
-                    _harmony_elem(meas, chord_entry)
+            _write_harmonies_at_beat_one(meas, _chord_symbols_for_bar(tune_config, bar, chorus))
 
             if measure_num in asterisk_measures:
                 _asterisk_elem(meas, measure_num)
@@ -499,11 +582,13 @@ def generate_musicxml(tune_config: dict) -> Path:
 
     prov = tune_config.get("_provenance_log") or provenance_log
     if prov:
-        prov_path = out_path.with_suffix(".provenance.json")
+        _PROVENANCE_DIR.mkdir(parents=True, exist_ok=True)
+        prov_path = provenance_json_path(out_path)
         prov_path.write_text(
             json.dumps(
                 {
                     "outputPath": str(out_path),
+                    "provenancePath": str(prov_path),
                     "activityMapText": build_activity_map(tune_config),
                     "lfvMapText": _build_lfv_map(tune_config),
                     "notes": prov,

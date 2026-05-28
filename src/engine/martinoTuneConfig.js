@@ -38,8 +38,13 @@ export function buildTuneConfig(section, martinoConfig = {}) {
     ? /** @type {{ min_fret?: number; max_fret?: number }} */ (martinoConfig.lfv)
     : {};
 
+  const userTune =
+    typeof martinoConfig.tune === 'string' ? martinoConfig.tune.trim() : '';
+  const tuneLabel =
+    userTune || String(section?.name || section?.title || 'Untitled');
   return {
-    tune_name: String(section?.name || section?.title || 'Untitled'),
+    tune: tuneLabel,
+    tune_name: tuneLabel,
     choruses: Number(martinoConfig.choruses ?? 1),
     measures_per_chorus: Number(section?.barCount ?? progression.length ?? 16),
     time_signature: parseMeter(section?.meter),

@@ -66,8 +66,11 @@ export function buildMartinoTuneConfig(params) {
     chords,
     martinoConfig,
   } = params;
+  const tune =
+    typeof martinoConfig?.tune === 'string' ? martinoConfig.tune.trim() : '';
   return buildTuneConfig(section, {
     ...martinoConfig,
+    ...(tune ? { tune } : {}),
     progression: chords,
   });
 }

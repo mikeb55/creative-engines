@@ -20,6 +20,8 @@ const chip = (active) => ({
 });
 
 export default function MartinoPanel({
+  tuneName,
+  setTuneName,
   chordSource,
   setChordSource,
   manualChords,
@@ -64,6 +66,21 @@ export default function MartinoPanel({
   return (
     <div style={{ marginBottom: '1rem', maxWidth: 720 }}>
       <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem' }}>Martino Linear</h3>
+
+      <div style={{ marginBottom: '0.75rem' }}>
+        <label htmlFor="martino-tune-name" style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 4 }}>
+          Tune name (optional)
+        </label>
+        <input
+          id="martino-tune-name"
+          type="text"
+          value={tuneName}
+          onChange={(e) => setTuneName(e.target.value)}
+          placeholder="e.g. Orbit, Nadine, My Progression"
+          disabled={disabled}
+          style={{ display: 'block', width: '100%', padding: '0.45rem 0.6rem', borderRadius: 6, border: '1px solid var(--border)' }}
+        />
+      </div>
 
       <div style={{ marginBottom: '0.75rem' }}>
         <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 4 }}>Chord source</div>

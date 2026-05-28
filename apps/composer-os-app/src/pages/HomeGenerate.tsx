@@ -2027,6 +2027,7 @@ export function HomeGenerate({
   const { publishGridFromXml, setPlaybackBeat: setGridPlaybackBeat, setIsPlaying: setGridIsPlaying, clearGrid } =
     useLastGenerate();
   const [presetId, setPresetId] = useState('song_mode');
+  const [martinoTuneName, setMartinoTuneName] = useState('');
   const [martinoChordSource, setMartinoChordSource] = useState<'section' | 'manual'>('manual');
   const [martinoManualChords, setMartinoManualChords] = useState('Dm7 G7 Cmaj7 Cmaj7');
   const [martinoDominantTensionDefault, setMartinoDominantTensionDefault] = useState<'low' | 'medium' | 'high'>('low');
@@ -3454,6 +3455,7 @@ export function HomeGenerate({
                     : martinoManualChords,
                 martinoConfig: {
                   enabled: true,
+                  ...(martinoTuneName.trim() ? { tune: martinoTuneName.trim() } : {}),
                   progression: parseMartinoChords(
                     martinoChordSource === 'section'
                       ? String(
@@ -4965,6 +4967,8 @@ export function HomeGenerate({
       )}
       {presetId === 'martino_linear' && (
         <MartinoPanel
+          tuneName={martinoTuneName}
+          setTuneName={setMartinoTuneName}
           chordSource={martinoChordSource}
           setChordSource={setMartinoChordSource}
           manualChords={martinoManualChords}
@@ -5003,6 +5007,7 @@ export function HomeGenerate({
           explainMode={martinoExplainMode}
           setExplainMode={setMartinoExplainMode}
           onLoadBeatrice={() => {
+            setMartinoTuneName('Beatrice');
             setMartinoManualChords(
               'Fmaj7 Gbmaj7 Fmaj7 Ebmaj7 Dm7 Ebmaj7 Dm7 Bbm7 Am7 Bbmaj7 Dm7 Fmaj7 Gbmaj7 Fmaj7 Ebmaj7 Fmaj7'
             );
@@ -5010,6 +5015,7 @@ export function HomeGenerate({
             setMartinoChoruses(2);
           }}
           onLoadOrbit={() => {
+            setMartinoTuneName('Orbit 5X Version 2');
             setMartinoManualChords(
               'Fmaj7#11 Ebmaj7#5 Dbmaj7 Bmaj7 Bbm9 Abmaj7 Gbmaj7 Emaj7 Fmaj7#11 Ebmaj7#5 Dbmaj7 Bmaj7 Bbm9 Abmaj7 Gbmaj7 Emaj7 G/F G/F Eb/F Eb/F G/F G/F Eb/F Eb/F Dbmaj7 Bb7 Fmaj7 Fmaj7'
             );

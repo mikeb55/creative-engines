@@ -179,6 +179,8 @@ export interface VrbProfilePayload {
 export interface MartinoConfigPayload {
   enabled: boolean;
   progression: string[];
+  /** User-facing tune name for score title and output filename. */
+  tune?: string;
   dominantTensionDefault?: 'low' | 'medium' | 'high';
   perChordOverrides?: Record<number, 'low' | 'medium' | 'high'>;
   activeActivity?: string;

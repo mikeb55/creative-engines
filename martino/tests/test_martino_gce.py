@@ -12,7 +12,7 @@ from typing import Any
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from generator import generate_musicxml
+from generator import generate_musicxml, provenance_json_path
 
 ENGINE_DIR = Path(__file__).resolve().parent.parent
 OUT_DIR = Path(__file__).resolve().parent.parent.parent / "temp" / "martino"
@@ -190,7 +190,7 @@ def test_gce_orbit_28_bar():
     path = _generate_config("orbit", None, "VGCEOrbit")
     result = score_tune(path, "Orbit")
     assert result["subscores"]["MELODIC_IDENTITY"]["score"] >= 0.5, result
-    prov = path.with_suffix(".provenance.json")
+    prov = provenance_json_path(path)
     assert prov.exists()
 
 
@@ -212,7 +212,7 @@ def test_gce_custom_ii_v_i():
     path = _generate_config(None, cfg, "VGCECustom")
     result = score_tune(path, "CustomIIVI")
     assert result["subscores"]["MELODIC_IDENTITY"]["score"] >= 0.5, result
-    payload = json.loads(path.with_suffix(".provenance.json").read_text(encoding="utf-8"))
+    payload = json.loads(provenance_json_path(path).read_text(encoding="utf-8"))
     assert all(n.get("fallback") is False for n in payload.get("notes", []))
 
 
