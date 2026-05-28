@@ -37,6 +37,13 @@ const PRESETS: AppPreset[] = [
     supported: true,
   },
   {
+    id: 'martino_linear',
+    name: 'Martino Linear',
+    description: 'Pat Martino Linear Expressions — deterministic spatial transformation engine (v6 bridge)',
+    category: 'study',
+    supported: true,
+  },
+  {
     id: ecmChamberPreset.id,
     name: ecmChamberPreset.name,
     description:

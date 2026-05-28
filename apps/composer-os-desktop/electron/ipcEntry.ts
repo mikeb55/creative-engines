@@ -416,6 +416,17 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
     }
   );
 
+  ipcMain.handle('martino:generate', async (_event, tuneConfig: unknown) => {
+    const { callMartinoEngine } = await import(
+      '../../../engines/composer-os-v2/core/martino/martinoEngineBridge'
+    );
+    const cfg =
+      tuneConfig && typeof tuneConfig === 'object' && !Array.isArray(tuneConfig)
+        ? (tuneConfig as Record<string, unknown>)
+        : {};
+    return callMartinoEngine(cfg);
+  });
+
   ipcMain.handle('show-item-in-folder', async (_event, filePath: string) => {
     if (!filePath) return { ok: false, error: 'no path' };
     const normalized = require('path').normalize(filePath);

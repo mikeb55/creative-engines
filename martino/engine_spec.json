@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Martino Linear Expressions Engine Spec",
+  "version": "1.0",
+  "description": "Schema and defaults for tune config and engine behavior",
+
+  "v5_engine_patch_1": {
+    "STRICT_CHORD_GRID_MODE": true,
+    "CHORD_TEXT_PRESERVATION": true,
+    "SLASH_BASS_ENCODING": true,
+    "SPLIT_BAR_CHORDS": true,
+    "REPEAT_ENCODING_POLICY": true,
+    "REPEAT_MODE": "barlines",
+    "REPEAT_MODE_OPTIONS": ["barlines", "flatten"],
+    "FIXED_PLAYTHROUGH_BOUNDARIES": true,
+    "VALIDATION_AUTO_REGEN": true,
+    "VALIDATION_MAX_RETRIES": 2
+  },
+
+  "lfv_default": {
+    "min_fret": 5,
+    "max_fret": 9,
+    "description": "Limited Fretboard View; guitar standard tuning assumed for pitch bounds",
+    "pitch_bounds": { "min_midi": 38, "max_midi": 68, "note": "D3 to G#4 for frets 5-9 on strings 5-2" },
+    "string_preference_by_activity": {
+      "A1_LINEAR_CORE": "4-3-2",
+      "A2_DIAGONAL_BRIDGE": "5-4-3-2",
+      "A3_PIVOT_CELL": "3-2",
+      "A4_ANCHOR_ARP": "5-4-3",
+      "A5_FREE_MIX": "4-3-2+MIX"
+    }
+  },
+
+  "activities": ["A1_LINEAR_CORE", "A2_DIAGONAL_BRIDGE", "A3_PIVOT_CELL", "A4_ANCHOR_ARP", "A5_FREE_MIX"],
+
+  "output": {
+    "filename_pattern": "V{major}.{minor}_{tune_name}_{descriptor}.musicxml",
+    "version_prefix_pattern": "V{x}[.{y}]",
+    "default_version": "V5.3",
+    "suffix": "MartinoLinearExpressions"
+  },
+
+  "activity_map_format": {
+    "sections": ["TUNE={tune_name}", "PLAYTHROUGH 1: measure ranges -> activity", "PLAYTHROUGH 2: measure ranges -> activity", "ASTERISK_MEASURES=[...]", "PRIMARY_ACTIVITY=...", "SECONDARY_ACTIVITIES=[...]", "LFV=FRETS_{min_fret}_TO_{max_fret}"]
+  },
+
+  "lfv_map_format": {
+    "header": "LFV MAP — {tune_name}",
+    "lines": [
+      "A1 LINEAR_CORE -> LFV {min_fret}-{max_fret} STRINGS(4-3-2)",
+      "A2 DIAGONAL_BRIDGE -> LFV {min_fret}-{max_fret} STRINGS(5-4-3-2)",
+      "A3 PIVOT_CELL -> LFV {min_fret}-{max_fret} STRINGS(3-2)",
+      "A4 ANCHOR_ARP -> LFV {min_fret}-{max_fret} STRINGS(5-4-3)",
+      "A5 FREE_MIX -> STRINGS(4-3-2)+MIX"
+    ]
+  },
+
+  "note_density": {
+    "eighth_note_default": { "divisions": 2, "duration_quarter": 2, "duration_eighth": 1 },
+    "swing_eighths": { "divisions": 2, "swing": true },
+    "mixed": { "divisions": 2 }
+  }
+}

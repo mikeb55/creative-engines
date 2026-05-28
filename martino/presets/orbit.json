@@ -1,0 +1,23 @@
+{
+  "tune_name": "Orbit",
+  "choruses": 1,
+  "measures_per_chorus": 28,
+  "time_signature": { "beats": 4, "beat_type": 4 },
+  "key": { "fifths": -1, "mode": "major" },
+  "chords": [
+    "Fmaj7#11", "Ebmaj7#5", "Dbmaj7", "Bmaj7",
+    "Bbm9", "Abmaj7", "Gbmaj7", "Emaj7",
+    "Fmaj7#11", "Ebmaj7#5", "Dbmaj7", "Bmaj7",
+    "Bbm9", "Abmaj7", "Gbmaj7", "Emaj7",
+    "G/F", "G/F", "Eb/F", "Eb/F",
+    "G/F", "G/F", "Eb/F", "Eb/F",
+    "Dbmaj7", "Bb7", "Fmaj7", "Fmaj7"
+  ],
+  "rehearsal_marks": { "0": "A", "8": "B", "16": "C", "24": "D" },
+  "asterisk_measures": [],
+  "primary_activity": "A1_LINEAR_CORE",
+  "secondary_activities": ["A2_DIAGONAL_BRIDGE"],
+  "melody": "auto",
+  "output_dir": "C:\\Dev\\composer-os\\temp\\martino",
+  "lfv": { "min_fret": 5, "max_fret": 9 }
+}

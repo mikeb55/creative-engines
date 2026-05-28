@@ -1,0 +1,44 @@
+{
+  "tune_name": "Beatrice",
+  "choruses": 2,
+  "measures_per_chorus": 16,
+  "time_signature": { "beats": 4, "beat_type": 4 },
+  "divisions": 2,
+  "key": { "fifths": -1, "mode": "major" },
+  "chords": [
+    "Fmaj7", "Gbmaj7", "Fmaj7", "Ebmaj7",
+    "Dm7", "Ebmaj7", "Dm7", "Bbm7",
+    "Am7", "Bbmaj7", "Dm7", "Fmaj7",
+    "Gbmaj7", "Fmaj7", "Ebmaj7", "Fmaj7"
+  ],
+  "split_chord_measures": { "6": ["Dm7", "Cm7"] },
+  "rehearsal_marks": { "0": "A", "4": "B", "8": "C" },
+  "asterisk_measures": [2, 13, 18, 29],
+  "primary_activity": "LINEAR_CORE(F_MINOR_LANE)",
+  "secondary_activities": ["ANCHOR_ARP(D_MINOR_FUNCTION)", "PIVOT_CELL", "DIAGONAL_BRIDGE"],
+  "activity_map_measure_ranges": [
+    { "range": "1-4", "activity": "LINEAR_CORE A" },
+    { "range": "5-8", "activity": "LINEAR_CORE B" },
+    { "range": "9-16", "activity": "LINEAR_CORE C" }
+  ],
+  "lfv": { "min_fret": 5, "max_fret": 9 },
+  "version_prefix": "V4.1",
+  "melody_bars": [
+    [["F", 3, null, 2], ["G", 3, null, 1], ["Ab", 3, -1, 1], ["F", 3, null, 2], ["Eb", 3, -1, 1], ["F", 3, null, 1]],
+    [["Ab", 3, -1, 2], ["Bb", 3, null, 1], ["C", 4, null, 1], ["Db", 4, -1, 2], ["C", 4, null, 1], ["Bb", 3, null, 1]],
+    [["F", 3, null, 2], ["Ab", 3, -1, 1], ["Bb", 3, null, 1], ["C", 4, null, 2], ["Bb", 3, null, 1], ["A", 3, null, 1]],
+    [["Bb", 3, null, 2], ["C", 4, null, 1], ["Eb", 4, -1, 1], ["F", 4, null, 2], ["Eb", 4, -1, 1], ["D", 4, null, 1]],
+    [["D", 4, null, 2], ["C", 4, null, 1], ["Bb", 3, null, 1], ["A", 3, null, 2], ["G", 3, null, 1], ["F", 3, null, 1]],
+    [["Eb", 3, -1, 2], ["F", 3, null, 1], ["G", 3, null, 1], ["Ab", 3, -1, 2], ["Bb", 3, null, 1], ["C", 4, null, 1]],
+    [["D", 4, null, 2], ["C", 4, null, 1], ["Bb", 3, null, 1], ["A", 3, null, 2], ["G", 3, null, 1], ["F", 3, null, 1]],
+    [["Bb", 3, null, 2], ["C", 4, null, 1], ["D", 4, null, 1], ["F", 4, null, 2], ["Eb", 4, -1, 1], ["D", 4, null, 1]],
+    [["A", 3, null, 2], ["C", 4, null, 1], ["E", 4, null, 1], ["G", 4, null, 2], ["F", 4, null, 1], ["E", 4, null, 1]],
+    [["Bb", 3, null, 2], ["D", 4, null, 1], ["F", 4, null, 1], ["G", 4, null, 2], ["F", 4, null, 1], ["Eb", 4, -1, 1]],
+    [["D", 4, null, 2], ["F", 4, null, 1], ["G", 4, null, 1], ["Bb", 3, null, 2], ["A", 3, null, 1], ["G", 3, null, 1]],
+    [["F", 3, null, 2], ["Ab", 3, -1, 1], ["Bb", 3, null, 1], ["C", 4, null, 2], ["Eb", 4, -1, 1], ["F", 4, null, 1]],
+    [["Ab", 3, -1, 2], ["Bb", 3, null, 1], ["C", 4, null, 1], ["Db", 4, -1, 2], ["C", 4, null, 1], ["Bb", 3, null, 1]],
+    [["F", 3, null, 2], ["G", 3, null, 1], ["Ab", 3, -1, 1], ["F", 3, null, 2], ["Eb", 3, -1, 1], ["F", 3, null, 1]],
+    [["Bb", 3, null, 2], ["C", 4, null, 1], ["Eb", 4, -1, 1], ["F", 4, null, 2], ["Eb", 4, -1, 1], ["D", 4, null, 1]],
+    [["F", 3, null, 2], ["Ab", 3, -1, 1], ["Bb", 3, null, 1], ["C", 4, null, 2], ["Bb", 3, null, 1], ["F", 3, null, 1]]
+  ]
+}

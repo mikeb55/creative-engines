@@ -57,4 +57,8 @@ contextBridge.exposeInMainWorld('composerOsDesktop', {
   notifyGenerationPhase: (phase: 'running' | 'succeeded' | 'failed' | 'idle'): void => {
     ipcRenderer.send('composer-os:generation-phase', phase);
   },
+  martino: {
+    generate: (tuneConfig: Record<string, unknown>) =>
+      ipcRenderer.invoke('martino:generate', tuneConfig) as Promise<Record<string, unknown>>,
+  },
 });

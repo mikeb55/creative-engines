@@ -125,6 +125,47 @@ function coerceSixteenthHits(raw: unknown): number[] | undefined {
   return out.length ? out.sort((a, b) => a - b) : undefined;
 }
 
+function coerceMartinoConfigFromBody(
+  body: Partial<GenerateRequest>
+): import('./appApiTypes').MartinoConfigPayload | undefined {
+  const raw = (body as { martinoConfig?: unknown }).martinoConfig;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const progression = Array.isArray(o.progression)
+    ? o.progression.map((x) => String(x).trim()).filter(Boolean)
+    : [];
+  if (!progression.length) return undefined;
+  const tension = o.dominantTensionDefault;
+  const dominantTensionDefault =
+    tension === 'medium' || tension === 'high' || tension === 'low' ? tension : 'low';
+  const lfvRaw = o.lfv;
+  const lfv =
+    lfvRaw && typeof lfvRaw === 'object' && !Array.isArray(lfvRaw)
+      ? {
+          min_fret: Math.max(0, Math.floor(Number((lfvRaw as { min_fret?: unknown }).min_fret) || 5)),
+          max_fret: Math.max(0, Math.floor(Number((lfvRaw as { max_fret?: unknown }).max_fret) || 9)),
+        }
+      : { min_fret: 5, max_fret: 9 };
+  return {
+    enabled: o.enabled !== false,
+    progression,
+    dominantTensionDefault,
+    activeActivity:
+      typeof o.activeActivity === 'string' && o.activeActivity.trim()
+        ? o.activeActivity.trim()
+        : 'A1_LINEAR_CORE',
+    secondaryActivities: Array.isArray(o.secondaryActivities)
+      ? o.secondaryActivities.map((x) => String(x).trim()).filter(Boolean)
+      : ['A2_DIAGONAL_BRIDGE'],
+    choruses: Math.max(1, Math.floor(Number(o.choruses) || 1)),
+    asteriskMeasures: Array.isArray(o.asteriskMeasures)
+      ? o.asteriskMeasures.map((x) => Math.floor(Number(x))).filter((n) => Number.isFinite(n))
+      : [],
+    lfv,
+    mode: o.mode === 'performance' ? 'performance' : 'teaching',
+  };
+}
+
 function coerceFillSchedulerConfigFromBody(
   body: Partial<GenerateRequest>
 ): import('./appApiTypes').FillSchedulerConfigPayload | undefined {
@@ -853,6 +894,7 @@ export function apiGenerate(
       bigBandConfig: coerceBigBandConfigFromBody(body),
       stringQuartetConfig: coerceStringQuartetConfigFromBody(body),
       contrapuntalConfig: coerceContrapuntalConfigFromBody(body),
+      martinoConfig: coerceMartinoConfigFromBody(body),
     };
     const genCorr = req_.__generateCorrelationId;
     if (genCorr != null) {

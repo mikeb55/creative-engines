@@ -134,7 +134,7 @@ export interface AppLocks {
 /**
  * Section-scoped regeneration — splice a newly generated bar span into prior MusicXML (`baseMusicXml`).
  * Wired presets: guitar–bass duo family, `ecm_chamber`, `song_mode`, `big_band`, `string_quartet`.
- * Unsupported (API returns error if `baseMusicXml` is set): `riff_generator`, `wyble_etude`, `slonimsky_etude`.
+ * Unsupported (API returns error if `baseMusicXml` is set): `riff_generator`, `wyble_etude`, `slonimsky_etude`, `martino_linear`.
  */
 export interface SectionRegenerationParams {
   /** 1-based inclusive start bar */
@@ -173,6 +173,20 @@ export interface VrbProfilePayload {
   damping: number;
   diffusion: number;
   character: string;
+}
+
+/** V69 P1 — Martino Linear Expressions (Structure / preset). */
+export interface MartinoConfigPayload {
+  enabled: boolean;
+  progression: string[];
+  dominantTensionDefault?: 'low' | 'medium' | 'high';
+  perChordOverrides?: Record<number, 'low' | 'medium' | 'high'>;
+  activeActivity?: string;
+  secondaryActivities?: string[];
+  choruses?: number;
+  asteriskMeasures?: number[];
+  lfv?: { min_fret: number; max_fret: number };
+  mode?: 'teaching' | 'performance';
 }
 
 /** V68 P2 — Fill scheduler (Structure tab). */
@@ -459,6 +473,8 @@ export interface GenerateRequest {
   stringQuartetConfig?: StringQuartetConfigPayload;
   /** V67 P2 — Contrapuntal panel (Ensemble tab). */
   contrapuntalConfig?: ContrapuntalConfigPayload;
+  /** V69 P1 — Martino Linear Expressions preset config. */
+  martinoConfig?: MartinoConfigPayload;
   /** Frank Zappa P2 — opt-in GCE auto meter splice when no request `barMeterMap`. */
   zappaGceAutoBarMeterMapEnabled?: boolean;
   /** Frank Zappa P6 — section-meter interaction when auto meter enabled (`disrupt` default). */

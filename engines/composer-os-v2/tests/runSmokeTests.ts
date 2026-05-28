@@ -73,6 +73,7 @@ import { runMusicXmlValidatorGateTests } from '../../../src/utils/musicXmlValida
 import { runRhythmToolboxGateTests } from '../../../src/engine/__tests__/rhythmToolbox.test';
 import { runSdParserGateTests } from '../../../src/engine/__tests__/sdParser.test';
 import { runChordParserGateTests } from '../../../src/engine/__tests__/chordParser.test';
+import { runMartinoConvertGateTests } from '../../../src/engine/__tests__/martinoConvert.test';
 import { runPhase67EnsembleGuitarEtudeTests } from './phase67EnsembleGuitarEtude.test';
 import { runPhase67InstrumentGroupMusicXmlTests } from './phase67InstrumentGroupMusicXml.test';
 import { runPhase8ImprovReharmStochasticCollisionTests } from './phase8ImprovReharmStochasticCollision.test';
@@ -211,6 +212,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'RhythmToolbox drum analysis gate', run: runRhythmToolboxGateTests },
   { label: 'SD parser percussion gate', run: runSdParserGateTests },
   { label: 'Chord parser gate', run: runChordParserGateTests },
+  { label: 'Martino convert gate', run: runMartinoConvertGateTests },
   { label: 'Phase 6+7 — ensemble / guitar / étude helpers', run: runPhase67EnsembleGuitarEtudeTests },
   { label: 'Phase 6+7 — instrumentGroup MusicXML (quartet + guitar TAB)', run: runPhase67InstrumentGroupMusicXmlTests },
   { label: 'Phase 8 — improv + reharm + stochastic + collision', run: runPhase8ImprovReharmStochasticCollisionTests },

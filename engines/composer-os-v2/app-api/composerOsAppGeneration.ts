@@ -170,6 +170,7 @@ export const SUPPORTED_APP_PRESET_IDS = [
   'sq_to_bb',
   'wyble_etude',
   'slonimsky_etude',
+  'martino_linear',
 ] as const;
 
 export type SupportedAppPresetId = (typeof SUPPORTED_APP_PRESET_IDS)[number];
@@ -587,6 +588,90 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
         wybleChordSource: resolved.source,
         wybleChordBarCount: chords.length,
         wybleChordsPerBar: chords,
+      } as GenerateResult['runManifest'],
+    };
+  }
+
+  if (id === 'martino_linear') {
+    const { callMartinoEngineSync } = require('../core/martino/martinoEngineBridge');
+    const { buildTuneConfig } = require('../../../src/engine/martinoTuneConfig.js');
+    const mc = req.martinoConfig;
+    const progression =
+      mc?.progression?.length
+        ? mc.progression
+        : (() => {
+            const resolved = resolveWybleChordBarsFromRequest(
+              (req as GenerateRequest & { parsedChordBars?: string[] }).parsedChordBars,
+              req.chordProgressionText
+            );
+            return resolved.ok ? resolved.bars : [];
+          })();
+    if (!progression.length) {
+      const msg = 'Martino Linear requires martinoConfig.progression or chordProgressionText.';
+      return {
+        success: false,
+        error: msg,
+        composerOsVersion: COMPOSER_OS_VERSION,
+        productKind: 'musicxml',
+        validation: validationForStructural(false, [msg]),
+        runManifest: {
+          seed: req.seed,
+          presetId: 'martino_linear',
+          activeModules: ['martino_linear_engine'],
+          timestamp: new Date().toISOString(),
+        },
+      };
+    }
+    const tuneConfig = buildTuneConfig(
+      {
+        name: req.title || 'Martino Linear',
+        barCount: progression.length,
+        meter: '4/4',
+        key: req.tonalCenter || 'F',
+      },
+      {
+        enabled: mc?.enabled ?? true,
+        progression,
+        dominantTensionDefault: mc?.dominantTensionDefault ?? 'low',
+        activeActivity: mc?.activeActivity ?? 'A1_LINEAR_CORE',
+        secondaryActivities: mc?.secondaryActivities ?? ['A2_DIAGONAL_BRIDGE'],
+        choruses: mc?.choruses ?? 1,
+        asteriskMeasures: mc?.asteriskMeasures ?? [],
+        lfv: mc?.lfv ?? { min_fret: 5, max_fret: 9 },
+        mode: mc?.mode ?? 'teaching',
+      }
+    );
+    tuneConfig.measures_per_chorus = progression.length;
+    const engineResult = callMartinoEngineSync(tuneConfig);
+    if (!engineResult.ok || !engineResult.outputPath) {
+      const msg = engineResult.stderrExcerpt || 'Martino engine failed';
+      return {
+        success: false,
+        error: msg,
+        composerOsVersion: COMPOSER_OS_VERSION,
+        productKind: 'musicxml',
+        validation: validationForStructural(false, [msg]),
+        runManifest: {
+          seed: req.seed,
+          presetId: 'martino_linear',
+          activeModules: ['martino_linear_engine'],
+          timestamp: new Date().toISOString(),
+        },
+      };
+    }
+    return {
+      success: true,
+      composerOsVersion: COMPOSER_OS_VERSION,
+      productKind: 'musicxml',
+      filepath: engineResult.outputPath,
+      validation: validationForStructural(true, []),
+      runManifest: {
+        seed: req.seed,
+        presetId: 'martino_linear',
+        activeModules: ['martino_linear_engine'],
+        timestamp: new Date().toISOString(),
+        martinoVersionUsed: engineResult.versionUsed,
+        martinoActivityMap: engineResult.activityMapText,
       } as GenerateResult['runManifest'],
     };
   }
