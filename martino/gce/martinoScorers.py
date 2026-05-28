@@ -374,8 +374,13 @@ def score_anti_bebop_drift(
 def score_lfv_integrity(plan: list[dict[str, Any]]) -> float:
     if not plan:
         return 0.5
-    ok = sum(1 for r in plan if r.get("lfv_ok", True))
-    return _clamp01(ok / len(plan))
+    # lfv_ok is bool — True=pass, False=fail
+    # Weight: full pass = 1.0, fail = 0.5 (not 0.0 — one bad note ≠ total failure)
+    scores = []
+    for r in plan:
+        lfv_ok = r.get("lfv_ok", True)
+        scores.append(1.0 if lfv_ok else 0.5)
+    return _clamp01(sum(scores) / len(scores))
 
 
 def score_interval_dna_continuity(fingerprints: list[list[int]] | None) -> float:

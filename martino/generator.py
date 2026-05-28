@@ -408,6 +408,7 @@ def _lfv_ok_for_activity_bar(
     reduction_pc: int,
     tune_config: dict,
 ) -> bool:
+    """Returns True if >= 80% of notes in bar are within LFV range."""
     from master_loader import load_master_bars, note_to_midi, semitones_gm_to_target, transpose_bar
 
     master_bars = load_master_bars(activity_key)
@@ -419,12 +420,21 @@ def _lfv_ok_for_activity_bar(
     lfv = tune_config.get("lfv") or {}
     min_midi = int(lfv.get("min_midi", 38))
     max_midi = int(lfv.get("max_midi", 68))
-    for note in transposed:
-        step, octv, alt = note[0], int(note[1]), note[2]
-        midi = note_to_midi(str(step), octv, int(alt) if alt is not None else None)
-        if midi < min_midi or midi > max_midi:
-            return False
-    return True
+    if not transposed:
+        return True
+    in_range = sum(
+        1
+        for note in transposed
+        if min_midi
+        <= note_to_midi(
+            str(note[0]),
+            int(note[1]),
+            int(note[2]) if note[2] is not None else None,
+        )
+        <= max_midi
+    )
+    # Pass if 80% or more notes are in range
+    return (in_range / len(transposed)) >= 0.80
 
 
 def _interval_fingerprint_for_slot(
