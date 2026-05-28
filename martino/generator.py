@@ -305,6 +305,9 @@ ROLE_ACTIVITY_PRIORITY: dict[str, list[str]] = {
 PHRASE_LENGTH = 4
 DOMINANT_ACTIVITIES = frozenset({"A2", "A3"})
 ANCHOR_ACTIVITY = "A4"
+DCR_VARIANTS = ("A", "B", "C")
+MIN_DIRECTION_ARC_BARS = 4
+MAX_DIRECTION_ARC_BARS = 8
 
 
 def _activity_id_from_key(key: str) -> str:
@@ -417,18 +420,117 @@ def _lfv_ok_for_activity_bar(
     return True
 
 
+def _interval_fingerprint_for_slot(
+    activity_key: str,
+    bar_in_phrase: int,
+    reduction_pc: int,
+    tune_config: dict,
+) -> list[int]:
+    from master_loader import load_master_bars, note_to_midi, semitones_gm_to_target, transpose_bar
+
+    master_bars = load_master_bars(activity_key)
+    if not master_bars:
+        return []
+    semitones = semitones_gm_to_target(reduction_pc)
+    template = master_bars[bar_in_phrase % len(master_bars)]
+    transposed = transpose_bar(template, semitones)
+    midis = [
+        note_to_midi(str(n[0]), int(n[1]), int(n[2]) if n[2] is not None else None) for n in transposed
+    ]
+    return [midis[i + 1] - midis[i] for i in range(len(midis) - 1)]
+
+
+def _rhythmic_signature_for_slot(
+    activity_key: str,
+    bar_in_phrase: int,
+) -> str:
+    from master_loader import load_master_bars
+
+    master_bars = load_master_bars(activity_key)
+    if not master_bars:
+        return ""
+    template = master_bars[bar_in_phrase % len(master_bars)]
+    return ",".join(str(int(n[3])) for n in template)
+
+
+def _contour_direction_from_fingerprint(fp: list[int]) -> str:
+    if not fp:
+        return "pivot"
+    total = sum(fp)
+    if total > 1:
+        return "ascending"
+    if total < -1:
+        return "descending"
+    return "pivot"
+
+
+def _track_directional_arc(
+    fingerprint: list[int],
+    prior_vector: str | None,
+    prior_arc_count: int,
+) -> tuple[str, int]:
+    local = _contour_direction_from_fingerprint(fingerprint)
+    if prior_vector is None:
+        return local, 1
+    if local == "pivot":
+        return "pivot", max(1, prior_arc_count)
+    if prior_vector == local and prior_arc_count < MAX_DIRECTION_ARC_BARS:
+        return local, prior_arc_count + 1
+    if prior_vector == local:
+        return local, prior_arc_count
+    if prior_arc_count < MIN_DIRECTION_ARC_BARS and prior_vector != "pivot":
+        return prior_vector, prior_arc_count + 1
+    return local, 1
+
+
+def _anti_loop_violation(
+    candidate_key: str,
+    bar_in_phrase: int,
+    reduction_pc: int,
+    tune_config: dict,
+    prior_fps: list[list[int]],
+    prior_rhythms: list[str],
+    prior_directions: list[str],
+) -> bool:
+    fp = _interval_fingerprint_for_slot(candidate_key, bar_in_phrase, reduction_pc, tune_config)
+    rhythm = _rhythmic_signature_for_slot(candidate_key, bar_in_phrase)
+    direction = _contour_direction_from_fingerprint(fp)
+    if len(prior_fps) >= 2 and fp == prior_fps[-1] == prior_fps[-2]:
+        return True
+    if len(prior_rhythms) >= 2 and rhythm == prior_rhythms[-1] == prior_rhythms[-2]:
+        return True
+    if len(prior_directions) >= 2 and direction == prior_directions[-1] == prior_directions[-2]:
+        return True
+    if len(prior_fps) >= 2 and fp and prior_fps[-1]:
+        if len(fp) >= 2 and len(prior_fps[-1]) >= 2:
+            enc = fp[-2:] == [-fp[-1], fp[-1]] and prior_fps[-1][-2:] == [-prior_fps[-1][-1], prior_fps[-1][-1]]
+            if enc:
+                return True
+    return False
+
+
 def _pick_activity_for_slot(
     role_keys: list[str],
     phrase_pos: int,
     row: dict[str, Any],
     tune_config: dict,
     prior_plan: list[str | None],
+    anti_loop_ctx: dict[str, list[Any]] | None = None,
 ) -> str:
     """First activity in role priority that has a master and passes LFV for this bar."""
     bar_in_phrase = int(row.get("bar_in_phrase", phrase_pos))
     reduction_pc = int(row["reduction_pc"])
+    ctx = anti_loop_ctx or {}
+    prior_fps = ctx.get("fingerprints") or []
+    prior_rhythms = ctx.get("rhythms") or []
+    prior_directions = ctx.get("directions") or []
+
     for key in role_keys:
         if not _lfv_ok_for_activity_bar(key, bar_in_phrase, reduction_pc, tune_config):
+            continue
+        if _anti_loop_violation(
+            key, bar_in_phrase, reduction_pc, tune_config, prior_fps, prior_rhythms, prior_directions
+        ):
             continue
         if prior_plan:
             run = 1
@@ -515,10 +617,24 @@ def _enforce_phrase_variety(
     return plan_keys
 
 
+def _variant_role_keys(
+    roles: list[str],
+    pos: int,
+    variant: str,
+) -> list[str]:
+    if variant == "B" and pos in (1, 2):
+        boosted = ["A2", "A3"] + [k for k in roles if k not in ("A2", "A3")]
+        return boosted
+    if variant == "C" and pos == 2:
+        return ["A5", "A3", "A2"] + [k for k in roles if k not in ("A5", "A3", "A2")]
+    return list(roles)
+
+
 def _plan_phrase_activities(
     phrase_rows: list[dict[str, Any]],
     tune_config: dict,
     carry_key: str | None = None,
+    variant: str = "A",
 ) -> list[dict[str, Any]]:
     """
     Plan one 4-bar phrase span. Mandatory role rules; LFV re-plan via role priority.
@@ -530,13 +646,49 @@ def _plan_phrase_activities(
     plan_keys: list[str | None] = [None] * PHRASE_LENGTH
     prior: list[str | None] = [carry_key]
 
+    anti_loop_ctx: dict[str, list[Any]] = {"fingerprints": [], "rhythms": [], "directions": []}
+    anti_loop_triggered = False
+
     for pos, row in enumerate(phrase_rows):
         roles = _roles_for_phrase_position(pos, row, phrase_rows, ascending)
+        roles = _variant_role_keys(roles, pos, variant)
         if pos == PHRASE_LENGTH - 1:
             roles = list(ROLE_ACTIVITY_PRIORITY["anchor"])
         elif row.get("is_dominant"):
             roles = list(ROLE_ACTIVITY_PRIORITY["bridge"])
-        plan_keys[pos] = _pick_activity_for_slot(roles, pos, row, tune_config, prior + plan_keys[:pos])
+        prior_keys = [k for k in (prior + plan_keys[:pos]) if k]
+        key = _pick_activity_for_slot(
+            roles, pos, row, tune_config, prior_keys, anti_loop_ctx=anti_loop_ctx
+        )
+        if _anti_loop_violation(
+            key,
+            int(row.get("bar_in_phrase", pos)),
+            int(row["reduction_pc"]),
+            tune_config,
+            anti_loop_ctx["fingerprints"],
+            anti_loop_ctx["rhythms"],
+            anti_loop_ctx["directions"],
+        ):
+            for alt in roles:
+                if alt != key and not _anti_loop_violation(
+                    alt,
+                    int(row.get("bar_in_phrase", pos)),
+                    int(row["reduction_pc"]),
+                    tune_config,
+                    anti_loop_ctx["fingerprints"],
+                    anti_loop_ctx["rhythms"],
+                    anti_loop_ctx["directions"],
+                ):
+                    key = alt
+                    anti_loop_triggered = True
+                    break
+        plan_keys[pos] = key
+        fp = _interval_fingerprint_for_slot(
+            key, int(row.get("bar_in_phrase", pos)), int(row["reduction_pc"]), tune_config
+        )
+        anti_loop_ctx["fingerprints"].append(fp)
+        anti_loop_ctx["rhythms"].append(_rhythmic_signature_for_slot(key, int(row.get("bar_in_phrase", pos))))
+        anti_loop_ctx["directions"].append(_contour_direction_from_fingerprint(fp))
         prior = prior + [plan_keys[pos]]
 
     for pos, row in enumerate(phrase_rows):
@@ -566,35 +718,226 @@ def _plan_phrase_activities(
         lfv_ok = _lfv_ok_for_activity_bar(
             key, int(row.get("bar_in_phrase", pos)), int(row["reduction_pc"]), tune_config
         )
+        fp = _interval_fingerprint_for_slot(
+            key, int(row.get("bar_in_phrase", pos)), int(row["reduction_pc"]), tune_config
+        )
         plan.append(
             {
                 "bar": int(row["bar"]),
                 "chord": row["chord"],
                 "reduction": row["reduction"],
+                "reduction_pc": int(row["reduction_pc"]),
                 "activity": activity_id,
                 "role": ACTIVITY_ROLES.get(activity_id, "opening"),
                 "transpose": int(row["transpose"]),
                 "lfv_ok": lfv_ok,
                 "book_rule": row.get("book_rule"),
+                "interval_fingerprint": fp,
+                "rhythmic_signature": _rhythmic_signature_for_slot(key, int(row.get("bar_in_phrase", pos))),
             }
         )
+    tune_config.setdefault("_anti_loop_flags", []).append(anti_loop_triggered)
     return plan
+
+
+def _apply_dcr_refinement(
+    plan: list[dict[str, Any]],
+    weakest: str,
+    phrase_rows: list[dict[str, Any]],
+    tune_config: dict,
+) -> list[dict[str, Any]]:
+    from gce.martinoScorers import DCR_SCORE_KEYS
+
+    if not plan or weakest not in DCR_SCORE_KEYS:
+        return plan
+    out = [dict(row) for row in plan]
+    pos = 1 if len(out) > 1 else 0
+    row = phrase_rows[pos]
+    bar_in_phrase = int(row.get("bar_in_phrase", pos))
+    reduction_pc = int(row["reduction_pc"])
+
+    if weakest == "reduction":
+        for entry in out:
+            entry["reduction"] = out[0]["reduction"]
+            entry["reduction_pc"] = out[0].get("reduction_pc", reduction_pc)
+            entry["transpose"] = out[0]["transpose"]
+        return out
+
+    if weakest == "variety":
+        alts = ["A2", "A3", "A5", "A1"]
+        current = _activity_key_from_id(str(out[pos]["activity"]))
+        for alt in alts:
+            if alt != current and _lfv_ok_for_activity_bar(alt, bar_in_phrase, reduction_pc, tune_config):
+                out[pos]["activity"] = _activity_id_from_key(alt)
+                out[pos]["role"] = ACTIVITY_ROLES.get(out[pos]["activity"], "bridge")
+                fp = _interval_fingerprint_for_slot(alt, bar_in_phrase, reduction_pc, tune_config)
+                out[pos]["interval_fingerprint"] = fp
+                break
+        return out
+
+    if weakest == "direction":
+        entry = out[0]
+        key = "A2" if _lfv_ok_for_activity_bar("A2", 0, int(entry.get("reduction_pc", reduction_pc)), tune_config) else "A1"
+        entry["activity"] = _activity_id_from_key(key)
+        entry["role"] = ACTIVITY_ROLES.get(entry["activity"], "opening")
+        fp = _interval_fingerprint_for_slot(key, 0, int(entry.get("reduction_pc", reduction_pc)), tune_config)
+        entry["interval_fingerprint"] = fp
+        return out
+
+    return out
+
+
+def _dcr_evaluate_phrase_plans(
+    phrase_rows: list[dict[str, Any]],
+    tune_config: dict,
+    carry_key: str | None = None,
+    anti_bebop_penalty: float = 0.0,
+) -> tuple[list[dict[str, Any]], dict[str, Any], dict[str, float]]:
+    from gce.martinoScorers import (
+        overall_plan_score,
+        score_martino_gce,
+        weakest_dcr_dimension,
+    )
+
+    scored: dict[str, tuple[list[dict[str, Any]], Any]] = {}
+    for label in DCR_VARIANTS:
+        plan = _plan_phrase_activities(phrase_rows, tune_config, carry_key=carry_key, variant=label)
+        fps = [list(r.get("interval_fingerprint") or []) for r in plan]
+        rhythms = [str(r.get("rhythmic_signature", "")) for r in plan]
+        directions = [_contour_direction_from_fingerprint(fp) for fp in fps]
+        gce = score_martino_gce(
+            plan,
+            interval_fingerprints=fps,
+            direction_vectors=directions,
+            rhythmic_signatures=rhythms,
+            chords=[str(r.get("chord", "")) for r in plan],
+            anti_bebop_penalty=anti_bebop_penalty,
+        )
+        scored[label] = (plan, gce)
+
+    winner = max(DCR_VARIANTS, key=lambda lbl: overall_plan_score(scored[lbl][1]))
+    plan, gce_result = scored[winner]
+    weakest = weakest_dcr_dimension(gce_result.dimensions)
+    before_refine = json.dumps(plan, sort_keys=True)
+    refined = _apply_dcr_refinement(plan, weakest, phrase_rows, tune_config)
+    refinement_applied = json.dumps(refined, sort_keys=True) != before_refine
+    if refinement_applied:
+        plan = refined
+        fps = [list(r.get("interval_fingerprint") or []) for r in plan]
+        directions = [_contour_direction_from_fingerprint(fp) for fp in fps]
+        gce_result = score_martino_gce(
+            plan,
+            interval_fingerprints=fps,
+            direction_vectors=directions,
+            rhythmic_signatures=[str(r.get("rhythmic_signature", "")) for r in plan],
+            chords=[str(r.get("chord", "")) for r in plan],
+            anti_bebop_penalty=anti_bebop_penalty,
+        )
+
+    if gce_result.hard_gate_triggered and anti_bebop_penalty == 0.0:
+        alt_plan, alt_meta, alt_dims = _dcr_evaluate_phrase_plans(
+            phrase_rows, tune_config, carry_key=carry_key, anti_bebop_penalty=0.2
+        )
+        from gce.martinoScorers import MARTINO_GCE_DIMENSIONS, MARTINO_GCE_WEIGHTS
+
+        alt_overall = sum(alt_dims.get(k, 0.0) * MARTINO_GCE_WEIGHTS[k] for k in MARTINO_GCE_DIMENSIONS)
+        if alt_overall >= overall_plan_score(gce_result):
+            alt_meta["dcr_hard_gate_rerun"] = True
+            return alt_plan, alt_meta, alt_dims
+
+    dcr_meta = {
+        "dcr_variants_scored": len(DCR_VARIANTS),
+        "dcr_winner": winner,
+        "dcr_weakest_dimension": weakest,
+        "dcr_refinement_applied": refinement_applied,
+        "dcr_hard_gate": gce_result.hard_gate_triggered,
+        "dcr_hard_gate_reasons": list(gce_result.hard_gate_reasons),
+    }
+    return plan, dcr_meta, gce_result.dimensions
+
+
+def _attach_direction_telemetry(
+    plan: list[dict[str, Any]],
+    prior_vector: str | None,
+    prior_arc: int,
+) -> tuple[str | None, int]:
+    vec = prior_vector
+    arc = prior_arc
+    for row in plan:
+        fp = list(row.get("interval_fingerprint") or [])
+        vec, arc = _track_directional_arc(fp, vec, arc)
+        row["direction_vector"] = vec
+        row["arc_bar_count"] = arc
+    return vec, arc
 
 
 def plan_all_phrase_activities(
     reduction_map: list[dict[str, Any]],
     tune_config: dict,
 ) -> list[dict[str, Any]]:
-    """Plan every 4-bar phrase in the tune; returns concatenated phrase plan rows."""
+    """Plan every 4-bar phrase in the tune; DCR picks strongest variant per span."""
+    from gce.martinoScorers import score_martino_gce
+
     full_plan: list[dict[str, Any]] = []
+    dcr_runs: list[dict[str, Any]] = []
     carry: str | None = None
+    dir_vector: str | None = None
+    dir_arc = 0
+    tune_config.setdefault("_anti_loop_flags", [])
+
     for start in range(0, len(reduction_map), PHRASE_LENGTH):
         chunk = reduction_map[start : start + PHRASE_LENGTH]
         if len(chunk) < PHRASE_LENGTH:
             break
-        phrase_plan = _plan_phrase_activities(chunk, tune_config, carry_key=carry)
+        phrase_plan, dcr_meta, _dims = _dcr_evaluate_phrase_plans(chunk, tune_config, carry_key=carry)
+        dir_vector, dir_arc = _attach_direction_telemetry(phrase_plan, dir_vector, dir_arc)
+        dcr_runs.append(dcr_meta)
         full_plan.extend(phrase_plan)
         carry = _activity_key_from_id(phrase_plan[-1]["activity"])
+
+    fps = [list(r.get("interval_fingerprint") or []) for r in full_plan]
+    directions = [str(r.get("direction_vector", "pivot")) for r in full_plan]
+    rhythms = [str(r.get("rhythmic_signature", "")) for r in full_plan]
+    final_gce = score_martino_gce(
+        full_plan,
+        interval_fingerprints=fps,
+        direction_vectors=directions,
+        rhythmic_signatures=rhythms,
+        chords=[str(r.get("chord", "")) for r in full_plan],
+    )
+    if final_gce.dimensions.get("anti_bebop_drift", 1.0) < 0.3:
+        rerun_plan: list[dict[str, Any]] = []
+        dcr_runs = []
+        carry = None
+        dir_vector = None
+        dir_arc = 0
+        for start in range(0, len(reduction_map), PHRASE_LENGTH):
+            chunk = reduction_map[start : start + PHRASE_LENGTH]
+            if len(chunk) < PHRASE_LENGTH:
+                break
+            phrase_plan, dcr_meta, _dims = _dcr_evaluate_phrase_plans(
+                chunk, tune_config, carry_key=carry, anti_bebop_penalty=0.25
+            )
+            dcr_meta["dcr_anti_bebop_rerun"] = True
+            dir_vector, dir_arc = _attach_direction_telemetry(phrase_plan, dir_vector, dir_arc)
+            dcr_runs.append(dcr_meta)
+            rerun_plan.extend(phrase_plan)
+            carry = _activity_key_from_id(phrase_plan[-1]["activity"])
+        full_plan = rerun_plan
+        fps = [list(r.get("interval_fingerprint") or []) for r in full_plan]
+        directions = [str(r.get("direction_vector", "pivot")) for r in full_plan]
+        rhythms = [str(r.get("rhythmic_signature", "")) for r in full_plan]
+        final_gce = score_martino_gce(
+            full_plan,
+            interval_fingerprints=fps,
+            direction_vectors=directions,
+            rhythmic_signatures=rhythms,
+            chords=[str(r.get("chord", "")) for r in full_plan],
+        )
+
+    tune_config["_dcr"] = dcr_runs[-1] if dcr_runs else {}
+    tune_config["_martino_gce"] = final_gce.to_provenance_dict()
+    tune_config["_martino_gce_overall"] = final_gce.overall
     return full_plan
 
 
@@ -909,6 +1252,18 @@ def generate_musicxml(tune_config: dict) -> Path:
         _PROVENANCE_DIR.mkdir(parents=True, exist_ok=True)
         prov_path = provenance_json_path(out_path)
         phrase_plan = tune_config.get("_phrase_plan") or []
+        bar_telemetry = [
+            {
+                "bar": int(row.get("bar", 0)),
+                "direction_vector": row.get("direction_vector"),
+                "arc_bar_count": row.get("arc_bar_count"),
+                "interval_fingerprint": row.get("interval_fingerprint"),
+                "anti_loop_triggered": bool(tune_config.get("_anti_loop_flags")),
+            }
+            for row in phrase_plan
+        ]
+        dcr_block = tune_config.get("_dcr") or {}
+        martino_gce = tune_config.get("_martino_gce") or {}
         prov_path.write_text(
             json.dumps(
                 {
@@ -917,6 +1272,14 @@ def generate_musicxml(tune_config: dict) -> Path:
                     "activityMapText": build_activity_map(tune_config),
                     "lfvMapText": _build_lfv_map(tune_config),
                     "phrasePlan": phrase_plan,
+                    "dcr_variants_scored": dcr_block.get("dcr_variants_scored"),
+                    "dcr_winner": dcr_block.get("dcr_winner"),
+                    "dcr_weakest_dimension": dcr_block.get("dcr_weakest_dimension"),
+                    "dcr_refinement_applied": dcr_block.get("dcr_refinement_applied"),
+                    "dcr": dcr_block,
+                    "martinoGce": martino_gce,
+                    "martinoGceOverall": tune_config.get("_martino_gce_overall"),
+                    "barTelemetry": bar_telemetry,
                     "notes": prov,
                 },
                 indent=2,

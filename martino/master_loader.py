@@ -275,24 +275,29 @@ def build_canonical_melody(tune_config: dict) -> tuple[list[list], list[dict[str
             in_lfv = min_midi <= midi <= max_midi
             if not in_lfv:
                 bar_lfv_violation = True
-            provenance.append(
-                {
-                    "measure": measure_num,
-                    "note_index": note_index,
-                    "source_activity": activity_key,
-                    "activity": plan_entry.get("activity") if plan_entry else _activity_id_for_key(activity_key),
-                    "role": role,
-                    "source_bar": source_bar_index,
-                    "transpose": semitones,
-                    "lfv_violation": not in_lfv,
-                    "lfv_ok": plan_entry.get("lfv_ok", in_lfv) if plan_entry else in_lfv,
-                    "fallback": False,
-                    "source_chord": chord,
-                    "reduction": reduction_name,
-                    "minor_root": reduction_name,
-                    "book_rule": plan_entry.get("book_rule") if plan_entry else None,
-                }
-            )
+            prov_entry: dict[str, Any] = {
+                "measure": measure_num,
+                "note_index": note_index,
+                "source_activity": activity_key,
+                "activity": plan_entry.get("activity") if plan_entry else _activity_id_for_key(activity_key),
+                "role": role,
+                "source_bar": source_bar_index,
+                "transpose": semitones,
+                "lfv_violation": not in_lfv,
+                "lfv_ok": plan_entry.get("lfv_ok", in_lfv) if plan_entry else in_lfv,
+                "fallback": False,
+                "source_chord": chord,
+                "reduction": reduction_name,
+                "minor_root": reduction_name,
+                "book_rule": plan_entry.get("book_rule") if plan_entry else None,
+            }
+            if plan_entry:
+                prov_entry["direction_vector"] = plan_entry.get("direction_vector")
+                prov_entry["arc_bar_count"] = plan_entry.get("arc_bar_count")
+                prov_entry["interval_fingerprint"] = plan_entry.get("interval_fingerprint")
+                flags = tune_config.get("_anti_loop_flags") or []
+                prov_entry["anti_loop_triggered"] = bool(flags) and any(flags)
+            provenance.append(prov_entry)
             last_midi = midi
 
         if bar_lfv_violation:
