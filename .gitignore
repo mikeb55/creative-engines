@@ -24,3 +24,6 @@ _test_outputs/
 apps/composer-os-desktop/release-*/
 apps/composer-os-desktop/dist-electron-release/
 temp/martino/*.musicxml
+temp/martino/*.provenance.json
+temp/martino/provenance/
+temp/grand-criteria-martino/
