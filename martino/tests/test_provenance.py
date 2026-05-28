@@ -112,6 +112,9 @@ def test_metadata_absent_and_voice_before_type():
     }
     path = generate_musicxml(cfg)
     root = ET.parse(path).getroot()
+    for el in root.iter():
+        if _local_tag(el) == "rehearsal":
+            raise AssertionError("rehearsal marks must not appear in MusicXML score output")
     for words in root.iter():
         if _local_tag(words) != "words":
             continue

@@ -62,20 +62,16 @@ def test_beatrice_harmony_present():
     assert any(m.findall("harmony") for m in part.findall("measure"))
 
 
-def test_beatrice_rehearsal_marks_ab():
+def test_beatrice_no_rehearsal_marks_in_score():
     with open(ENGINE_DIR / "presets" / "beatrice.json", encoding="utf-8") as f:
         config = json.load(f)
     config["output_dir"] = OUT_DIR
     config["version_prefix"] = "VTestBeatriceR"
     path = generate_musicxml(config)
-    rehearsals = []
-    for meas in ET.parse(path).getroot().find("part").findall("measure"):
-        for d in meas.findall("direction"):
-            r = d.find("direction-type/rehearsal")
-            if r is not None and r.text:
-                rehearsals.append(r.text)
-    assert "A" in rehearsals
-    assert "B" in rehearsals
+    root = ET.parse(path).getroot()
+    for el in root.iter():
+        tag = el.tag.split("}")[-1] if "}" in el.tag else el.tag
+        assert tag != "rehearsal", "rehearsal marks must not appear in MusicXML score output"
 
 
 def test_beatrice_measure_one_has_no_engine_metadata_words():
@@ -121,20 +117,16 @@ def test_orbit_measure_count_28():
     assert len(measures) == 28
 
 
-def test_orbit_rehearsal_marks_abcd():
+def test_orbit_no_rehearsal_marks_in_score():
     with open(ENGINE_DIR / "presets" / "orbit.json", encoding="utf-8") as f:
         config = json.load(f)
     config["output_dir"] = OUT_DIR
     config["version_prefix"] = "VTestOrbitR"
     path = generate_musicxml(config)
-    rehearsals = []
-    for meas in ET.parse(path).getroot().find("part").findall("measure"):
-        for d in meas.findall("direction"):
-            r = d.find("direction-type/rehearsal")
-            if r is not None and r.text:
-                rehearsals.append(r.text)
-    for mark in ("A", "B", "C", "D"):
-        assert mark in rehearsals
+    root = ET.parse(path).getroot()
+    for el in root.iter():
+        tag = el.tag.split("}")[-1] if "}" in el.tag else el.tag
+        assert tag != "rehearsal", "rehearsal marks must not appear in MusicXML score output"
 
 
 def test_orbit_fmaj7sharp11_in_harmony():
@@ -206,12 +198,12 @@ ALL_TESTS = [
     test_beatrice_xml_parses,
     test_beatrice_measure_count,
     test_beatrice_harmony_present,
-    test_beatrice_rehearsal_marks_ab,
+    test_beatrice_no_rehearsal_marks_in_score,
     test_beatrice_measure_one_has_no_engine_metadata_words,
     test_orbit_cli_produces_file,
     test_orbit_xml_parses,
     test_orbit_measure_count_28,
-    test_orbit_rehearsal_marks_abcd,
+    test_orbit_no_rehearsal_marks_in_score,
     test_orbit_fmaj7sharp11_in_harmony,
     test_custom_progression_four_bars,
     test_enforce_lfv_in_range,

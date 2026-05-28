@@ -2,7 +2,22 @@
 
 **Project:** Composer OS (`C:\Dev\composer-os`)  
 **Sibling reference:** [grand-criteria Martino Linear Expressions Engine](https://github.com/mikeb55/grand-criteria-of-excellence-jazz/tree/main/Jazz%20Guitar/Martino_Linear_Expressions_Engine)  
-**Status:** Feasibility and integration proposal only — no feature code in this phase.
+**Status:** **Shipped (V69, 2026-05-28)** — `martino_linear` preset, Python engine, desktop bridge, and book-sourced melodic masters are in production.
+
+---
+
+## V69 status (shipped)
+
+| Phase | Delivered |
+|-------|-----------|
+| **P1** | `martino_linear` preset; `martino_bridge.py` + `martinoEngineBridge.ts`; Orbit 28-bar + Beatrice presets; GCE gate tests; output under `Mike Composer Files\Martino Linear\`. |
+| **P2** | Generate UI (`MartinoPanel`), chord parse + `martino_convert` / `martinoTuneConfig`, explain-mode lines from bridge `activityMapText` (not written into MusicXML). |
+| **P3** | **Masters:** `martino/masters/sources/A1.xml`–`A5.xml` — single-line Gm melodic activities from Guitar Pro book exports (3 bars × ~16 eighth-notes per bar each). **Not** the old `Activity Chords` voicing chart (stacked Gm7 shapes). `parse_masters.py` regenerates `masters/activities/A1.json`–`A5.json`. Generation = transpose-only from Gm + `martino_convert` minor root; LFV flags `*` via provenance/asterisk, not note rewriting. Provenance sidecar `.provenance.json` per file. |
+| **P4** | No `<rehearsal>`, no engine `<words>` on staff; pytest martino 34/34; composer smoke baselines maintained. |
+
+**What masters contain:** Frozen `[step, octave, alter, duration]` sequences per bar in G minor, plus `notes_gm` with `beat_position` and `phrase_boundaries`. Activities map 1:1 to book “Linear Expressions” files 1–5 (positions ~3rd / 5th / 7th / etc.).
+
+**What P3 fixed:** Replaced chord-voicing stacks parsed from `Activity Chords/…Book.xml` with real melodic lines; removed silent chord-tone fallback; hardened bridge; Sibelius-safe harmony and note element order.
 
 ---
 

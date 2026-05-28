@@ -268,6 +268,21 @@ def _infer_kind_from_chord(chord_text: str) -> tuple[str, str]:
     return _normalize_kind("major"), ""
 
 
+def _strip_rehearsal_marks(root: ET.Element) -> None:
+    """Score output: no <rehearsal> (section letters live in tune_config / provenance only)."""
+    for parent in root.iter():
+        for child in list(parent):
+            local = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+            if local == "rehearsal":
+                parent.remove(child)
+            elif local == "direction-type":
+                rehearsals = [c for c in child if (c.tag.split("}")[-1] if "}" in c.tag else c.tag) == "rehearsal"]
+                for r in rehearsals:
+                    child.remove(r)
+                if not list(child) and parent.tag.split("}")[-1].endswith("direction"):
+                    parent.remove(child)
+
+
 def _strip_harmony_nonstandard(root: ET.Element) -> None:
     """Sibelius-safe harmony: no attrs; only root/kind/bass/degree children."""
     allowed_children = frozenset({"root", "kind", "bass", "degree"})
@@ -404,7 +419,6 @@ def generate_musicxml(tune_config: dict) -> Path:
     divisions = int(tune_config.get("divisions", 2))
     key = tune_config.get("key", {"fifths": -1, "mode": "major"})
     chords = tune_config.get("chords", [])
-    rehearsal_marks = tune_config.get("rehearsal_marks", {})
     asterisk_measures = set(tune_config.get("asterisk_measures", []))
     split_chord_measures = tune_config.get("split_chord_measures", {})
 
@@ -460,13 +474,6 @@ def generate_musicxml(tune_config: dict) -> Path:
                 _sub(c, "sign", "G")
                 _sub(c, "line", "2")
 
-            mark = rehearsal_marks.get(bar) or rehearsal_marks.get(str(bar))
-            if mark is not None:
-                d = _el("direction", placement="above")
-                r = _sub(_sub(d, "direction-type"), "rehearsal")
-                r.text = mark
-                meas.append(d)
-
             bar_key = str(bar)
             if bar_key in split_chord_measures:
                 for ch in split_chord_measures[bar_key]:
@@ -485,6 +492,7 @@ def generate_musicxml(tune_config: dict) -> Path:
             _add_melody_to_measure(meas, tune_config, bar, chorus)
 
     _strip_harmony_nonstandard(root)
+    _strip_rehearsal_marks(root)
     tree = ET.ElementTree(root)
     ET.indent(tree, space="  ")
     tree.write(out_path, encoding="UTF-8", xml_declaration=True, default_namespace="", method="xml")
