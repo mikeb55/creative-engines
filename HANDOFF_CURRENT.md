@@ -1,5 +1,22 @@
 # HANDOFF — auto-updated 2026-05-19
 
+## Current state (post-V75)
+
+- Tests: 63 passing
+- Live Dm7 G7 Cmaj7 Cmaj7: overall 0.820, anti_bebop 0.567,
+  gate_failed false, gate_attempts 0
+- Commit chain:
+    V70: 1a0a67a8
+    V70 P2: 4914d34b
+    V71: 606c4fbf
+    V72: a303f14a
+    V73: 7d2a22bb
+    V74: 0983d2dc
+    V75: 7d733390
+- Next: V76 — enclosure penalty 0.24 is now largest bucket on
+  live run; inspect whether catching Martino chromatic approaches
+  or genuine bebop enclosures; exempt template-sourced bars if needed
+
 ## SMOKE BASELINE
 | Tier | Result |
 |---|---|

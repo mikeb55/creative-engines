@@ -1,3 +1,37 @@
+## V70–V75 — Martino Linear Engine (Martino GCE arc)
+
+### V70 — Phrase planner, DCR, direction, interval DNA
+- Activity role system (A1=opening through A5=climactic)
+- 4-bar phrase planner, DCR A/B/C variants
+- Directional persistence arcs, interval DNA anti-loop
+- 8-dimension Martino GCE subsystem
+
+### V71 — Anti-bebop positive scoring, refinement pass, GCE gate
+- _stepwise_reward blended into anti_bebop scorer
+- Contour-tightening refinement pass in _apply_dcr_refinement
+- gate_failed field on MartinoGceResult
+
+### V72 — Gate retry, LFV jump guard, anti-bebop debug
+- Real gate retry loop (max 3 attempts, best-result fallback)
+- LFV positional jump: length guard + cross-bar boundary only
+- Named penalty buckets + _last_anti_bebop_debug
+
+### V73 — ii–V conditional penalty, LFV bridge threshold
+- 0.35 ii–V penalty gated on enclosure + non-stepwise only
+- LFV bridge fires only if jump > 14 semitones
+- 4 new tests
+
+### V74 — Gate threshold, penalty breakdown
+- anti_bebop gate threshold: 0.75 → 0.15
+- Named penalty components surfaced in provenance
+- gce_gate_attempts = 0 on clean run
+
+### V75 — Whole-step cap, ii–V cap, reward rebalance
+- Whole-step spam: >60% fraction only, hard cap 0.15
+- ii–V penalty: hard cap 0.20
+- Stepwise reward weight: 0.30 → 0.45
+- Live result: anti_bebop 0.567, overall 0.820, gate clean
+
 ## [2026-04-28] Radiohead (OK Computer / Kid A era) full-slice songwriter profile
 
 - **Chord pools:** `SONGWRITER_CHORD_POOLS.radiohead` in `songModeBuilder.ts` (triads, maj7/m7, modal borrow colours, `Dbmaj7` / `Eb6`, borrowed **iv**; pools avoid dominant-jazz extensions).
