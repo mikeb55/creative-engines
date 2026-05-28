@@ -5,12 +5,51 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { constants as fsConstants, existsSync, mkdirSync, accessSync } from 'node:fs';
 import path from 'node:path';
+import { resolveComposerOsRepoRoot } from '../../app-api/systemCheck';
 
-const REPO_ROOT = path.resolve(__dirname, '..', '..', '..', '..');
-const BRIDGE_SCRIPT = path.join(REPO_ROOT, 'martino', 'martino_bridge.py');
-const GENERATOR_SCRIPT = path.join(REPO_ROOT, 'martino', 'generator.py');
-const OUTPUT_DIR = path.join(REPO_ROOT, 'temp', 'martino');
 const TIMEOUT_MS = 30_000;
+
+type MartinoPaths = {
+  repoRoot: string;
+  bridgeScript: string;
+  generatorScript: string;
+  outputDir: string;
+};
+
+/** Repo root for martino/ — bundled __dirname is desktop resources, not engines/martino. */
+function resolveMartinoRepoRoot(): string {
+  const envRoot = process.env.COMPOSER_OS_REPO_ROOT?.trim();
+  if (envRoot) {
+    const resolved = path.resolve(envRoot);
+    if (existsSync(path.join(resolved, 'martino', 'martino_bridge.py'))) {
+      return resolved;
+    }
+  }
+  const fromRepoHelper = resolveComposerOsRepoRoot();
+  if (existsSync(path.join(fromRepoHelper, 'martino', 'martino_bridge.py'))) {
+    return fromRepoHelper;
+  }
+  let dir = __dirname;
+  for (let i = 0; i < 10; i++) {
+    if (existsSync(path.join(dir, 'martino', 'martino_bridge.py'))) {
+      return dir;
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return fromRepoHelper;
+}
+
+function getMartinoPaths(): MartinoPaths {
+  const repoRoot = resolveMartinoRepoRoot();
+  return {
+    repoRoot,
+    bridgeScript: path.join(repoRoot, 'martino', 'martino_bridge.py'),
+    generatorScript: path.join(repoRoot, 'martino', 'generator.py'),
+    outputDir: path.join(repoRoot, 'temp', 'martino'),
+  };
+}
 
 export interface MartinoEngineResponse {
   ok: boolean;
@@ -35,17 +74,18 @@ function fail(reason: string): MartinoEngineResponse {
 }
 
 function preflight(): MartinoEngineResponse | null {
+  const { bridgeScript, generatorScript, outputDir } = getMartinoPaths();
   const pyCheck = spawnSync('py', ['--version'], { encoding: 'utf8', windowsHide: true });
   if (pyCheck.status !== 0) {
     return fail('Python not found. Install Python 3.8+ and ensure py is on your PATH.');
   }
-  if (!existsSync(BRIDGE_SCRIPT)) return fail(`Missing bridge script: ${BRIDGE_SCRIPT}`);
-  if (!existsSync(GENERATOR_SCRIPT)) return fail(`Missing generator script: ${GENERATOR_SCRIPT}`);
+  if (!existsSync(bridgeScript)) return fail(`Missing bridge script: ${bridgeScript}`);
+  if (!existsSync(generatorScript)) return fail(`Missing generator script: ${generatorScript}`);
   try {
-    accessSync(OUTPUT_DIR, fsConstants.W_OK);
+    accessSync(outputDir, fsConstants.W_OK);
   } catch {
     try {
-      mkdirSync(OUTPUT_DIR, { recursive: true });
+      mkdirSync(outputDir, { recursive: true });
     } catch (err) {
       return fail(`temp/martino not writable: ${err instanceof Error ? err.message : String(err)}`);
     }
@@ -71,8 +111,9 @@ function parseBridgeResult(stdout: string, stderr: string, status: number | null
 export function callMartinoEngineSync(tuneConfig: Record<string, unknown>): MartinoEngineResponse {
   const pre = preflight();
   if (pre) return pre;
+  const { bridgeScript } = getMartinoPaths();
   const payload = JSON.stringify({ tune_config: tuneConfig });
-  const result = spawnSync('py', [BRIDGE_SCRIPT], {
+  const result = spawnSync('py', [bridgeScript], {
     input: payload,
     encoding: 'utf8',
     windowsHide: true,
@@ -91,8 +132,9 @@ export function callMartinoEngine(tuneConfig: Record<string, unknown>): Promise<
       resolve(pre);
       return;
     }
+    const { bridgeScript } = getMartinoPaths();
     const payload = JSON.stringify({ tune_config: tuneConfig });
-    const child = spawn('py', [BRIDGE_SCRIPT], { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
+    const child = spawn('py', [bridgeScript], { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
     let stdout = '';
     let stderr = '';
     const timer = setTimeout(() => {
