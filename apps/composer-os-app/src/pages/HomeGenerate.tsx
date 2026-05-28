@@ -75,11 +75,13 @@ import {
 import { SlonimskySongModePanel } from '../components/slonimsky/SlonimskySongModePanel';
 import { SlonimskySqBbHybridPanel } from '../components/slonimsky/SlonimskySqBbHybridPanel';
 import MartinoPanel from '../renderer/components/MartinoPanel.jsx';
+import MartinoResultPanel from '../renderer/components/MartinoResultPanel.jsx';
 import {
   parseMartinoChords,
   buildMartinoTuneConfig,
   buildConversionTable,
   buildExplainLines,
+  buildMartinoResultSummary,
 } from '../lib/martinoGeneratePipeline.js';
 import {
   DEFAULT_SLONIMSKY_SQ_BB_HYBRID_STATE,
@@ -2042,6 +2044,11 @@ export function HomeGenerate({
   const [martinoExplainMode, setMartinoExplainMode] = useState(false);
   const [martinoExplainLines, setMartinoExplainLines] = useState<string[]>([]);
   const [martinoBridgeMeta, setMartinoBridgeMeta] = useState<{ version?: string; lfvCount?: number; warnings?: string[] } | null>(null);
+  const [martinoFeedback, setMartinoFeedback] = useState<
+    | null
+    | { type: 'success'; summary: ReturnType<typeof buildMartinoResultSummary>; gateFailed: boolean }
+    | { type: 'failed'; message: string }
+  >(null);
 
   const martinoActiveSection = useMemo(() => {
     if (!compositionSong || !compositionActiveSectionId) return null;
@@ -2920,6 +2927,9 @@ export function HomeGenerate({
       }
       setLoading(true);
       setError(null);
+      if (presetId === 'martino_linear') {
+        setMartinoFeedback(null);
+      }
       notifyGenPhase('running');
       const musicXmlTrimPreflight = musicXmlSource.trim();
       if (presetId === 'song_mode' && musicXmlTrimPreflight.length > 0) {
@@ -3724,6 +3734,7 @@ export function HomeGenerate({
             martinoVersionUsed?: string;
             martinoLfvFlags?: unknown[];
             martinoWarnings?: string[];
+            martinoProvenance?: Record<string, unknown>;
           } | undefined;
           const lfvFlags =
             (Array.isArray((r as { lfvFlags?: unknown[] }).lfvFlags)
@@ -3744,6 +3755,26 @@ export function HomeGenerate({
               martinoExplainMode
             )
           );
+          const provenance = manifest?.martinoProvenance ?? null;
+          const tuneLabel =
+            martinoTuneName.trim() || scoreTitle.trim() || String(provenance?.tune_name ?? 'Tune');
+          const summary = buildMartinoResultSummary(provenance, {
+            tuneName: tuneLabel,
+            outputPath: r.filepath ?? '',
+          });
+          setMartinoFeedback({
+            type: 'success',
+            summary,
+            gateFailed: summary.gateFailed,
+          });
+        } else if (presetId === 'martino_linear' && !r.success) {
+          const manifest = r.runManifest as { martinoStderrExcerpt?: string } | undefined;
+          const failMsg =
+            manifest?.martinoStderrExcerpt ??
+            (r as { error?: string }).error ??
+            (r.validation?.errors?.length ? r.validation.errors.join(' ') : undefined) ??
+            'Unknown error';
+          setMartinoFeedback({ type: 'failed', message: failMsg });
         }
         {
           const bpm = r.requestEcho?.bpm ?? 120;
@@ -3828,6 +3859,9 @@ export function HomeGenerate({
           (lower.includes('lead') || lower.includes('musicxml') || lower.includes('xml'));
         const displayMessage = leadSheetHint ? `LeadSheet MusicXML import failed: ${msg}` : msg;
         setError(displayMessage);
+        if (presetId === 'martino_linear') {
+          setMartinoFeedback({ type: 'failed', message: msg });
+        }
         setResult(null);
         setPlaybackSeq(null);
         clearGrid();
@@ -7546,6 +7580,15 @@ export function HomeGenerate({
           Open library folder
         </button>
       </div>
+
+      {presetId === 'martino_linear' && (
+        <MartinoResultPanel
+          feedback={martinoFeedback}
+          onOpenFolder={(filepath) => {
+            if (filepath) void openFolder(dirnameOnly(filepath));
+          }}
+        />
+      )}
 
       <details
         style={{

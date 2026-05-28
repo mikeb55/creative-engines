@@ -56,9 +56,11 @@ export const MODE_UX: ModeUx[] = [
     label: 'Martino Linear',
     hint: 'Pat Martino Linear Expressions — minor conversion + canonical activity lines.',
     whatItDoes:
-      'Reduces harmony to minor centers, transposes canonical A1–A5 master templates, and exports a single-line guitar MusicXML study.',
-    bestFor: 'Linear Expressions practice, LFV-constrained positional lines, and tune-specific reduction studies.',
-    output: 'Exported MusicXML — Martino linear overlay with activity map metadata.',
+      "Converts your chord progression into Pat Martino's Linear Expressions system — every chord becomes a minor centre, then canonical melodic templates are threaded across the changes and evaluated for musical quality.",
+    bestFor:
+      "Practising linear guitar lines over jazz changes, studying Martino's approach to harmony, and generating LFV-constrained single-line studies.",
+    output:
+      'MusicXML file — open in Sibelius, MuseScore, or Dorico. Saved to: Mike Composer Files\\Martino Linear\\',
   },
   {
     id: 'song_mode',

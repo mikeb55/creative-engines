@@ -1,12 +1,18 @@
 import { useMemo } from 'react';
-import { parseMartinoChords, buildConversionTable } from '../../lib/martinoGeneratePipeline.js';
+import {
+  parseMartinoChords,
+  buildConversionTable,
+  formatMartinoRuleDisplay,
+  martinoRuleTooltip,
+  MARTINO_ACTIVITY_LABELS,
+} from '../../lib/martinoGeneratePipeline.js';
 
 const ACTIVITIES = [
-  { id: 'A1_LINEAR_CORE', label: 'A1 LINEAR CORE', hint: 'ascending · burning' },
-  { id: 'A2_DIAGONAL_BRIDGE', label: 'A2 DIAGONAL BRIDGE', hint: 'descending · melodic · recommended for Beatrice-style changes' },
-  { id: 'A3_PIVOT_CELL', label: 'A3 PIVOT CELL', hint: 'arch · melodic' },
-  { id: 'A4_ANCHOR_ARP', label: 'A4 ANCHOR ARP', hint: 'wave · ballad · most LFV violations — use with care' },
-  { id: 'A5_FREE_MIX', label: 'A5 FREE MIX', hint: 'ascending · burning' },
+  { id: 'A1_LINEAR_CORE', hint: 'ascending · burning' },
+  { id: 'A2_DIAGONAL_BRIDGE', hint: 'descending · melodic · recommended for Beatrice-style changes' },
+  { id: 'A3_PIVOT_CELL', hint: 'arch · melodic' },
+  { id: 'A4_ANCHOR_ARP', hint: 'wave · ballad · most LFV violations — use with care' },
+  { id: 'A5_FREE_MIX', hint: 'ascending · burning' },
 ];
 
 const chip = (active) => ({
@@ -63,6 +69,12 @@ export default function MartinoPanel({
     return buildConversionTable(parsed.chords, dominantTensionDefault, tensionOverrides);
   }, [parsed, dominantTensionDefault, tensionOverrides]);
 
+  const activityButtonLabel = (id) => MARTINO_ACTIVITY_LABELS[id]?.label ?? id;
+  const activityButtonTooltip = (id, hint) => {
+    const code = MARTINO_ACTIVITY_LABELS[id]?.code ?? id;
+    return hint ? `${code} · ${hint}` : code;
+  };
+
   return (
     <div style={{ marginBottom: '1rem', maxWidth: 720 }}>
       <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem' }}>Martino Linear</h3>
@@ -111,7 +123,12 @@ export default function MartinoPanel({
 
       {conversionRows.length > 0 && (
         <div style={{ marginBottom: '0.75rem', overflowX: 'auto' }}>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 4 }}>Minor conversion lane</div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text)', fontWeight: 600, marginBottom: 2 }}>
+            How each chord is heard
+          </div>
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0 0 6px' }}>
+            Martino reduces every chord to a minor centre before generating the line.
+          </p>
           <table style={{ width: '100%', fontSize: '0.82rem', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
@@ -124,11 +141,13 @@ export default function MartinoPanel({
             <tbody>
               {conversionRows.map((row) => {
                 const isDom = row.rule.includes('dominant');
+                const ruleLabel = formatMartinoRuleDisplay(row.rule);
+                const ruleTip = martinoRuleTooltip(row.rule);
                 return (
                   <tr key={row.index}>
                     <td>{row.chord}</td>
                     <td>{row.minorRoot}</td>
-                    <td>{row.rule}</td>
+                    <td title={ruleTip || undefined}>{ruleLabel}</td>
                     <td>
                       {isDom ? (
                         <span>
@@ -163,12 +182,12 @@ export default function MartinoPanel({
             <button
               key={a.id}
               type="button"
-              title={a.hint}
+              title={activityButtonTooltip(a.id, a.hint)}
               style={chip(activeActivity === a.id)}
               onClick={() => setActiveActivity(a.id)}
               disabled={disabled}
             >
-              {a.label}
+              {activityButtonLabel(a.id)}
             </button>
           ))}
         </div>
@@ -178,11 +197,12 @@ export default function MartinoPanel({
             <button
               key={a.id}
               type="button"
+              title={activityButtonTooltip(a.id, a.hint)}
               style={chip(secondaryActivities.includes(a.id))}
               onClick={() => toggleSecondary(a.id)}
               disabled={disabled}
             >
-              {a.id.replace('_', ' ')}
+              {activityButtonLabel(a.id)}
             </button>
           ))}
         </div>
@@ -197,7 +217,7 @@ export default function MartinoPanel({
         </label>
       </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: '0.75rem', fontSize: '0.85rem' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: '0.75rem', fontSize: '0.85rem', alignItems: 'center' }}>
         <label>
           Choruses{' '}
           <select value={choruses} onChange={(e) => setChoruses(Number(e.target.value))} disabled={disabled}>
@@ -213,11 +233,12 @@ export default function MartinoPanel({
             <option value="mixed">Mixed</option>
           </select>
         </label>
-        <label>
-          LFV min <input type="number" min={0} max={24} value={lfvMin} onChange={(e) => setLfvMin(Number(e.target.value))} disabled={disabled} style={{ width: 48 }} />
-        </label>
-        <label>
-          max <input type="number" min={0} max={24} value={lfvMax} onChange={(e) => setLfvMax(Number(e.target.value))} disabled={disabled} style={{ width: 48 }} />
+        <label title="Keeps notes within a playable fret range on guitar">
+          Guitar position{' '}
+          low{' '}
+          <input type="number" min={0} max={24} value={lfvMin} onChange={(e) => setLfvMin(Number(e.target.value))} disabled={disabled} style={{ width: 48 }} />
+          {' '}high{' '}
+          <input type="number" min={0} max={24} value={lfvMax} onChange={(e) => setLfvMax(Number(e.target.value))} disabled={disabled} style={{ width: 48 }} />
         </label>
         <label>
           <input type="checkbox" checked={explainMode} onChange={(e) => setExplainMode(e.target.checked)} disabled={disabled} /> Explain mode

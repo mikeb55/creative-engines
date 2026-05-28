@@ -595,6 +595,32 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
   if (id === 'martino_linear') {
     const { callMartinoEngineSync } = require('../core/martino/martinoEngineBridge');
     const { buildTuneConfig } = require('../../../src/engine/martinoTuneConfig.js');
+    const fs = require('fs') as typeof import('fs');
+    const pathMod = require('path') as typeof import('path');
+    const { resolveComposerOsRepoRoot } = require('./systemCheck');
+    const readMartinoProvenanceSidecar = (outputPath: string): Record<string, unknown> | null => {
+      const stem = pathMod.basename(outputPath, pathMod.extname(outputPath));
+      const candidates: string[] = [];
+      const resourcesPath = (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath;
+      if (resourcesPath) {
+        candidates.push(
+          pathMod.join(resourcesPath, 'temp', 'martino', 'provenance', `${stem}.provenance.json`)
+        );
+      }
+      candidates.push(
+        pathMod.join(resolveComposerOsRepoRoot(), 'temp', 'martino', 'provenance', `${stem}.provenance.json`)
+      );
+      for (const provPath of candidates) {
+        try {
+          if (fs.existsSync(provPath)) {
+            return JSON.parse(fs.readFileSync(provPath, 'utf8')) as Record<string, unknown>;
+          }
+        } catch {
+          /* ignore malformed sidecar */
+        }
+      }
+      return null;
+    };
     const mc = req.martinoConfig;
     const progression =
       mc?.progression?.length
@@ -659,6 +685,7 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
           presetId: 'martino_linear',
           activeModules: ['martino_linear_engine'],
           timestamp: new Date().toISOString(),
+          martinoStderrExcerpt: engineResult.stderrExcerpt || msg,
         },
       };
     }
@@ -667,6 +694,7 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
       Math.max(0, Number(engineResult.readinessScore ?? 0))
     );
     const mxOk = mxScore >= 3;
+    const martinoProvenance = readMartinoProvenanceSidecar(engineResult.outputPath);
     return {
       success: true,
       composerOsVersion: COMPOSER_OS_VERSION,
@@ -695,6 +723,7 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
         martinoLfvFlags: engineResult.lfvFlags ?? [],
         martinoWarnings: engineResult.warnings ?? [],
         martinoReadinessScore: mxScore,
+        martinoProvenance: martinoProvenance ?? undefined,
       } as GenerateResult['runManifest'],
     };
   }

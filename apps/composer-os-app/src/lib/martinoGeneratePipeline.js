@@ -97,6 +97,112 @@ export async function runMartinoGenerate(tuneConfig) {
  * @param {Array<{index:number,chord:string,minorRoot:string,rule:string,tension:string}>} conversions
  * @param {boolean} explainMode
  */
+/** @type {Record<string, { label: string, tooltip: string }>} */
+export const MARTINO_RULE_DISPLAY = {
+  'minor-direct': {
+    label: 'Direct minor',
+    tooltip: 'This chord is already minor — used as-is',
+  },
+  'dominant-p5-above': {
+    label: 'Dominant resolves up a fifth',
+    tooltip: 'G7 shares its minor centre with the Dm7 before it',
+  },
+  'minor-of-third-after-dominant': {
+    label: 'Minor of the third (post-dominant)',
+    tooltip: 'Cmaj7 is heard through its relative Em',
+  },
+  'relative-minor-maj7-line': {
+    label: 'Relative minor',
+    tooltip: 'Cmaj7 is heard through its relative Am',
+  },
+  'relative-minor': {
+    label: 'Relative minor',
+    tooltip: 'Cmaj7 is heard through its relative Am',
+  },
+};
+
+/** @param {string} rule */
+export function formatMartinoRuleDisplay(rule) {
+  const entry = MARTINO_RULE_DISPLAY[rule];
+  return entry ? entry.label : rule;
+}
+
+/** @param {string} rule */
+export function martinoRuleTooltip(rule) {
+  const entry = MARTINO_RULE_DISPLAY[rule];
+  return entry?.tooltip ?? '';
+}
+
+/** @type {Record<string, { label: string, code: string }>} */
+export const MARTINO_ACTIVITY_LABELS = {
+  A1_LINEAR_CORE: { label: 'Opening Line', code: 'A1 — Linear Core' },
+  A2_DIAGONAL_BRIDGE: { label: 'Bridge', code: 'A2 — Diagonal Bridge' },
+  A3_PIVOT_CELL: { label: 'Pivot', code: 'A3 — Pivot Cell' },
+  A4_ANCHOR_ARP: { label: 'Anchor', code: 'A4 — Anchor Arp' },
+  A5_FREE_MIX: { label: 'Free Mix', code: 'A5 — Free Mix' },
+};
+
+/** @param {string} activityId */
+export function martinoActivityHumanLabel(activityId) {
+  return MARTINO_ACTIVITY_LABELS[activityId]?.label ?? activityId.replace(/_/g, ' ');
+}
+
+/** @param {string} activityId */
+export function martinoActivityCodeTooltip(activityId) {
+  return MARTINO_ACTIVITY_LABELS[activityId]?.code ?? activityId;
+}
+
+/** @param {string} fp */
+function basenameOnly(fp) {
+  const p = String(fp || '').replace(/[/\\]+$/, '');
+  const li = Math.max(p.lastIndexOf('\\'), p.lastIndexOf('/'));
+  return li >= 0 ? p.slice(li + 1) : p;
+}
+
+/** @param {string} dir */
+function formatDirectionLabel(dir) {
+  const d = String(dir || '').trim().toLowerCase();
+  if (d === 'ascending') return 'ascending';
+  if (d === 'descending') return 'descending';
+  if (d === 'pivot') return 'pivot';
+  return d || '—';
+}
+
+/**
+ * @param {Record<string, unknown> | null | undefined} provenance
+ * @param {{ tuneName?: string, outputPath?: string }} opts
+ */
+export function buildMartinoResultSummary(provenance, opts = {}) {
+  const plan = Array.isArray(provenance?.phrasePlan) ? provenance.phrasePlan : [];
+  const sorted = [...plan].sort((a, b) => Number(a.bar) - Number(b.bar));
+  const firstFour = sorted.filter((row) => Number(row.bar) >= 1 && Number(row.bar) <= 4);
+  const directionPhrase = firstFour.length
+    ? firstFour.map((row) => formatDirectionLabel(String(row.direction_vector ?? ''))).join(' · ')
+    : '—';
+  const dcrWinner = provenance?.dcr_winner != null ? String(provenance.dcr_winner) : '—';
+  const activityIds = [];
+  for (const row of sorted) {
+    const act = String(row.activity ?? '');
+    if (act && !activityIds.includes(act)) activityIds.push(act);
+  }
+  const activitiesUsed = activityIds.length
+    ? activityIds.map((id) => martinoActivityHumanLabel(id)).join(', ')
+    : '—';
+  const overallRaw = Number(provenance?.martinoGceOverall);
+  const overallScore = Number.isFinite(overallRaw) ? (overallRaw * 10).toFixed(1) : '—';
+  const gateFailed = provenance?.gce_gate_failed === true;
+  const outputPath = String(opts.outputPath ?? provenance?.outputPath ?? '');
+  return {
+    tuneName: String(opts.tuneName ?? 'Tune').trim() || 'Tune',
+    lineCharacter: `${dcrWinner} variant · ${directionPhrase}`,
+    activitiesUsed,
+    overallScore,
+    filename: outputPath ? basenameOnly(outputPath) : '—',
+    gateFailed,
+    outputDir: outputPath,
+  };
+}
+
 export function buildExplainLines(bridgeResult, conversions, explainMode) {
   if (!explainMode) return [];
   const lines = [];
