@@ -1,6 +1,6 @@
 {
   "name": "creative-engines",
-  "version": "0.1.0",
+  "version": "1.2.0",
   "private": true,
   "scripts": {
     "test": "npm run test --prefix engines/conductor-engine && npm run test --prefix engines/big-band-architecture-engine && npm run test --prefix engines/arranger-assist-engine && npm run test --prefix engines/selective-big-band-generation-engine && npm run test --prefix engines/contemporary-counterpoint-engine && npm run test --prefix engines/composer-os-v2 && npm run test --prefix apps/composer-os-app && npm run test --prefix apps/composer-os-desktop",
