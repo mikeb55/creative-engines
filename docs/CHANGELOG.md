@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-29) V98 — Tritonic cell voice-leading engine** — New `core/tritonic/tritonicVoiceLeading.ts`: `VoiceLeadingResult`, `getVoiceLeadingCandidates()` (valid moves ≤6 semitones per voice, sorted by smoothness), `getBestVoiceLeading()`; permutation-aware pitch-class motion via shortest chromatic path. Jest **`tritonicVoiceLeading.test.ts`**; dictionary-only — no producer wiring yet.
+
 - **(2026-05-29) V96b — Standalone etude preset proof** — `buildStandaloneEtudePreset()` in `musicContextAdapters.ts`: engine-agnostic `StandaloneEtudePreset` → valid `MusicContext` with `sourceEngineId: 'etude_preset'`, normalised harmony bars + checksum; no parent engine, no feature flag. Jest parity vs Wyble preset checksum on same key.
 
 - **(2026-05-29) V97 — Tritonic cell dictionary** — New `core/tritonic/tritonicCell.ts`: `TritonicCell` / `TritonicDictionary` types, `buildTritonicDictionary()` with five families (`quartal`, `cluster`, `suspended`, `shorter_floating`, `bergonzi`); `intervalProfile` and `tension` derived from pitch-class content (not Slonimsky interval primitives). Jest **`tritonicCell.test.ts`**; dictionary-only — no MusicContext producer yet.
