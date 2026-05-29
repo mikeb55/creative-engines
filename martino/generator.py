@@ -680,6 +680,19 @@ def _ecm_tension_hint(tune_config: dict) -> str:
     return ""
 
 
+def _barry_harris_hints(tune_config: dict) -> dict:
+    """Return Barry Harris style hints from tune_config if barry_harris mode set."""
+    if not tune_config.get("barry_harris"):
+        return {}
+    profile = str(tune_config.get("barry_harris_profile") or "bebop_step")
+    return {
+        "passingMotion": profile in ("bebop_step", "scalar_embellish"),
+        "guideToneEmphasis": profile in ("bebop_step", "enclosure_heavy"),
+        "stepwiseVoiceLeading": profile == "scalar_embellish",
+        "dominantGravity": profile in ("bebop_step", "enclosure_heavy"),
+    }
+
+
 def _plan_phrase_activities(
     phrase_rows: list[dict[str, Any]],
     tune_config: dict,

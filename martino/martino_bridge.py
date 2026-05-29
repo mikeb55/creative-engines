@@ -10,7 +10,13 @@ from pathlib import Path
 _ENGINE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(_ENGINE_DIR))
 
-from generator import build_activity_map, enforce_lfv, generate_musicxml, increment_version  # noqa: E402
+from generator import (  # noqa: E402
+    _barry_harris_hints,
+    build_activity_map,
+    enforce_lfv,
+    generate_musicxml,
+    increment_version,
+)
 from mx_readiness import score_musicxml_path  # noqa: E402
 
 _PROVENANCE_DIR = _ENGINE_DIR.parent / "temp" / "martino" / "provenance"
@@ -86,6 +92,7 @@ def main() -> int:
                 "activityMapText": activity_map,
                 "slonimskyHint": tune_config.get("slonimsky_macro") or "",
                 "ecmMode": tune_config.get("ecm_mode") or "",
+                "barryHarrisHints": _barry_harris_hints(tune_config),
                 "lfvFlags": lfv_flags,
                 "provenanceLog": tune_config.get("_provenance_log") or [],
                 "phrasePlan": phrase_plan,

@@ -3490,6 +3490,9 @@ export function HomeGenerate({
                   mode: martinoMode,
                   ...(slonimskyMacro ? { slonimsky_macro: slonimskyMacro } : {}),
                   ...(typeof martinoMode === 'string' && martinoMode ? { ecm_mode: ecmMode ?? '' } : {}),
+                  ...(typeof martinoMode === 'string' && martinoMode === 'barry_harris'
+                    ? { barry_harris: true, barry_harris_profile: 'bebop_step' }
+                    : {}),
                 },
               }
             : {}),
