@@ -652,6 +652,34 @@ def _variant_role_keys(
     return list(roles)
 
 
+def _slonimsky_colour_hint(tune_config: dict, bar_index: int) -> str | None:
+    """Return a Slonimsky catalogue section hint from tune_config if set."""
+    macro = tune_config.get("slonimsky_macro")
+    if not macro:
+        return None
+    sections = {
+        "tritone": "tritone_progression",
+        "semitone": "semitone_progression",
+        "pentatonic": "pentatonic_scales",
+        "heptatonic": "heptatonic_scales",
+        "intervallic": "intervallic_mirror_permutations",
+    }
+    for key, val in sections.items():
+        if key in str(macro).lower():
+            return val
+    return str(macro)
+
+
+def _ecm_tension_hint(tune_config: dict) -> str:
+    """Return tension hint from ECM chamber mode if set."""
+    mode = str(tune_config.get("ecm_mode") or "")
+    if "SCHNEIDER" in mode:
+        return "high"
+    if "METHENY" in mode:
+        return "low"
+    return ""
+
+
 def _plan_phrase_activities(
     phrase_rows: list[dict[str, Any]],
     tune_config: dict,

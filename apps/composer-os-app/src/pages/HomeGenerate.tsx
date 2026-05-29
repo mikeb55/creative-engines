@@ -3488,6 +3488,8 @@ export function HomeGenerate({
                   asteriskMeasures: [],
                   lfv: { min_fret: martinoLfvMin, max_fret: martinoLfvMax },
                   mode: martinoMode,
+                  ...(slonimskyMacro ? { slonimsky_macro: slonimskyMacro } : {}),
+                  ...(typeof martinoMode === 'string' && martinoMode ? { ecm_mode: ecmMode ?? '' } : {}),
                 },
               }
             : {}),

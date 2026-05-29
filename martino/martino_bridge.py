@@ -84,6 +84,8 @@ def main() -> int:
                 "readinessScore": readiness_score,
                 "warnings": warnings,
                 "activityMapText": activity_map,
+                "slonimskyHint": tune_config.get("slonimsky_macro") or "",
+                "ecmMode": tune_config.get("ecm_mode") or "",
                 "lfvFlags": lfv_flags,
                 "provenanceLog": tune_config.get("_provenance_log") or [],
                 "phrasePlan": phrase_plan,
