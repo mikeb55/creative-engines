@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-29) V101 — ECM chamber MusicContext producer** — `core/ecm/ecmTypes.ts` (`EcmChamberPreset`: key/tempo/texture/voicing), `ecmProducer.ts` (`buildMusicContextFromEcm` — modal cycle per texture, voicing spellings, `normalizeChordSymbol` + checksum, `sourceEngineId: 'ecm'`, always-on, no DuoLock). Jest **`core/ecm/ecm.test.ts`**.
+
 - **(2026-05-29) V100b — Duo LOCK integration** — `core/duo/duoLock.ts` (`DuoLock`, `lockDuo`, `isDuoLocked`, `assertDuoLock`, `buildMusicContextFromLockedDuo`, `buildDuoMusicContextFromScore`); `DuoVoice` → per-voice `{ bars }` snapshot; `extractDuoBarsFromScore` on guitar/bass parts. **`generateComposition`** + **`composerOsAppGeneration`** (`duoLockedMusicContextFromGoldenPath`): export truth → LOCK → `buildMusicContextFromDuo` → `musicContext` on success (Shared Brain handoff). Jest **`core/duo/duo.test.ts`** (+7 LOCK cases).
 
 - **(2026-05-29) V100a — Duo MusicContext producer shell** — `core/duo/duoTypes.ts` (`DuoExportTruth`), `duoExportHelper.ts` (`buildDuoExportTruth` — both voices via `normalizeChordSymbol`, checksum over upper+lower), `duoMusicContextShell.ts` (`buildMusicContextFromDuo` — `sourceEngineId: 'duo'`, harmony from `upperBars`, always-on). Jest **`core/duo/duo.test.ts`**.
