@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-29) V102 — Tritonic realisation** — `core/tritonic/tritonicRealisation.ts` (`TritonicRealisationContext` / `Result`, `realiseTritonic`, `realisationToMusicContext`): Wayne behaviour + voice-leading phrase chains per mode (BB ≥4 cells / high oddity, SQ ≤3 cells / smooth, ECM suspended+shorter_floating / forced `delayedResolution`); checksum from realised cell notes; MusicContext `sourceEngineId: 'tritonic'`. No phraseEngineV2 / existing producer changes. Jest **`tritonicRealisation.test.ts`**.
+
 - **(2026-05-29) V101 — ECM chamber MusicContext producer** — `core/ecm/ecmTypes.ts` (`EcmChamberPreset`: key/tempo/texture/voicing), `ecmProducer.ts` (`buildMusicContextFromEcm` — modal cycle per texture, voicing spellings, `normalizeChordSymbol` + checksum, `sourceEngineId: 'ecm'`, always-on, no DuoLock). Jest **`core/ecm/ecm.test.ts`**.
 
 - **(2026-05-29) V100b — Duo LOCK integration** — `core/duo/duoLock.ts` (`DuoLock`, `lockDuo`, `isDuoLocked`, `assertDuoLock`, `buildMusicContextFromLockedDuo`, `buildDuoMusicContextFromScore`); `DuoVoice` → per-voice `{ bars }` snapshot; `extractDuoBarsFromScore` on guitar/bass parts. **`generateComposition`** + **`composerOsAppGeneration`** (`duoLockedMusicContextFromGoldenPath`): export truth → LOCK → `buildMusicContextFromDuo` → `musicContext` on success (Shared Brain handoff). Jest **`core/duo/duo.test.ts`** (+7 LOCK cases).
