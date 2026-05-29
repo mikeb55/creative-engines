@@ -29,8 +29,9 @@ function parseKey(keyLabel) {
 /**
  * @param {Record<string, unknown>} section
  * @param {Record<string, unknown>} martinoConfig
+ * @param {Record<string, unknown> | null | undefined} [musicContext]
  */
-export function buildTuneConfig(section, martinoConfig = {}) {
+export function buildTuneConfig(section, martinoConfig = {}, musicContext = null) {
   const progression = Array.isArray(martinoConfig.progression)
     ? martinoConfig.progression.map(String)
     : [];

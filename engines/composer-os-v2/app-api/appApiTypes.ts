@@ -3,6 +3,7 @@
  */
 
 import type { StyleProfile } from '../core/song-mode/songModeStyleProfile';
+import type { MusicContext } from '../core/music-context/musicContextTypes';
 import type {
   AngeloBadalamentiContextMode,
   ArvoPartContextMode,
@@ -485,6 +486,8 @@ export interface GenerateRequest {
   contrapuntalConfig?: ContrapuntalConfigPayload;
   /** V69 P1 — Martino Linear Expressions preset config. */
   martinoConfig?: MartinoConfigPayload;
+  /** V90a — Shared Brain snapshot for Martino harmony/motif (feature-flagged). */
+  musicContext?: MusicContext;
   /** Frank Zappa P2 — opt-in GCE auto meter splice when no request `barMeterMap`. */
   zappaGceAutoBarMeterMapEnabled?: boolean;
   /** Frank Zappa P6 — section-meter interaction when auto meter enabled (`disrupt` default). */

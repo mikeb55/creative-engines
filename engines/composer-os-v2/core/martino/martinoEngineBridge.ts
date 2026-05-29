@@ -15,6 +15,11 @@ import path from 'node:path';
 import { resolveComposerOsRepoRoot } from '../../app-api/systemCheck';
 
 import { ensureOutputDirectoryForPreset } from '../../app-api/composerOsOutputPaths';
+import type { MusicContext } from '../music-context/musicContextTypes';
+import {
+  applyMartinoMusicContextToTuneConfig,
+  isMartinoMusicContextEnabled,
+} from './applyMartinoMusicContext';
 
 
 
@@ -203,6 +208,78 @@ export interface MartinoEngineResponse {
   phrasePlan?: unknown[];
 
   barTelemetry?: unknown[];
+
+}
+
+
+
+export { isMartinoMusicContextEnabled } from './applyMartinoMusicContext';
+
+
+
+export function buildMartinoTuneConfig(
+
+  section: Record<string, unknown>,
+
+  martinoConfig: Record<string, unknown>,
+
+  musicContext?: MusicContext | null
+
+): Record<string, unknown> {
+
+  const { buildTuneConfig } = require('../../../../src/engine/martinoTuneConfig.js') as {
+
+    buildTuneConfig: (
+
+      s: Record<string, unknown>,
+
+      m: Record<string, unknown>,
+
+      mc?: MusicContext | null
+
+    ) => Record<string, unknown>;
+
+  };
+
+  const tuneConfig = buildTuneConfig(section, martinoConfig, musicContext ?? null);
+
+  return applyMartinoMusicContextToTuneConfig(tuneConfig, musicContext ?? null, martinoConfig);
+
+}
+
+
+
+export function appendMartinoGenerationReceipt(
+
+  musicContext: MusicContext | undefined,
+
+  result: MartinoEngineResponse
+
+): void {
+
+  if (!isMartinoMusicContextEnabled() || !musicContext || !result.ok) {
+
+    return;
+
+  }
+
+  musicContext.receipts.push({
+
+    engine: 'martino',
+
+    kind: 'martino_generation_complete',
+
+    payload: {
+
+      outputPath: result.outputPath,
+
+      readinessScore: result.readinessScore,
+
+      activitiesUsed: result.activityMapText,
+
+    },
+
+  });
 
 }
 

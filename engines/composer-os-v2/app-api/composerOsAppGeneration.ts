@@ -593,8 +593,11 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
   }
 
   if (id === 'martino_linear') {
-    const { callMartinoEngineSync } = require('../core/martino/martinoEngineBridge');
-    const { buildTuneConfig } = require('../../../src/engine/martinoTuneConfig.js');
+    const {
+      callMartinoEngineSync,
+      buildMartinoTuneConfig,
+      appendMartinoGenerationReceipt,
+    } = require('../core/martino/martinoEngineBridge');
     const fs = require('fs') as typeof import('fs');
     const pathMod = require('path') as typeof import('path');
     const { resolveComposerOsRepoRoot } = require('./systemCheck');
@@ -648,7 +651,7 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
         },
       };
     }
-    const tuneConfig = buildTuneConfig(
+    const tuneConfig = buildMartinoTuneConfig(
       {
         name: req.title || 'Martino Linear',
         barCount: progression.length,
@@ -675,7 +678,8 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
         ...(mc?.ecmMode ? { ecmMode: mc.ecmMode } : {}),
         ...(mc?.ecmChamberMode ? { ecmChamberMode: mc.ecmChamberMode } : {}),
         ...(mc?.slonimskyMacroHints !== undefined ? { slonimskyMacroHints: mc.slonimskyMacroHints } : {}),
-      }
+      },
+      req.musicContext ?? null
     );
     tuneConfig.measures_per_chorus = progression.length;
     const { ensureOutputDirectoryForPreset } = require('./composerOsOutputPaths');
@@ -704,6 +708,7 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
     );
     const mxOk = mxScore >= 3;
     const martinoProvenance = readMartinoProvenanceSidecar(engineResult.outputPath);
+    appendMartinoGenerationReceipt(req.musicContext, engineResult);
     return {
       success: true,
       composerOsVersion: COMPOSER_OS_VERSION,

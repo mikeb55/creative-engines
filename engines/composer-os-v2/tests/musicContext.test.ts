@@ -3,6 +3,113 @@
  * Riff producer + Slonimsky consumer (V90a prompt 2).
  */
 
+jest.mock('../../../src/engine/martinoTuneConfig.js', () => {
+  function parseMeter(meter) {
+    const raw = String(meter || '4/4').trim();
+    const m = raw.match(/^(\d+)\s*\/\s*(\d+)$/);
+    if (!m) return { beats: 4, beat_type: 4 };
+    return { beats: Number(m[1]), beat_type: Number(m[2]) };
+  }
+
+  function parseKey(keyLabel) {
+    const raw = String(keyLabel || 'F').trim();
+    const minor = /minor|m\b/i.test(raw);
+    const rootMatch = raw.match(/^([A-G](?:#|b)?)/i);
+    const root = rootMatch ? rootMatch[1][0].toUpperCase() + rootMatch[1].slice(1) : 'F';
+    const fifthsMap = {
+      C: 0,
+      G: 1,
+      D: 2,
+      A: 3,
+      E: 4,
+      B: 5,
+      'F#': 6,
+      Gb: -6,
+      Db: -5,
+      Ab: -4,
+      Eb: -3,
+      Bb: -2,
+      F: -1,
+    };
+    const norm = root.replace('Db', 'Db').replace('Gb', 'Gb');
+    const fifths = fifthsMap[norm] ?? fifthsMap[root[0]] ?? -1;
+    return { fifths, mode: minor ? 'minor' : 'major' };
+  }
+
+  return {
+    buildTuneConfig(section, martinoConfig = {}, _musicContext = null) {
+      const progression = Array.isArray(martinoConfig.progression)
+        ? martinoConfig.progression.map(String)
+        : [];
+      const lfvRaw =
+        martinoConfig.lfv && typeof martinoConfig.lfv === 'object' ? martinoConfig.lfv : {};
+      const userTune = typeof martinoConfig.tune === 'string' ? martinoConfig.tune.trim() : '';
+      const tuneLabel = userTune || String(section?.name || section?.title || 'Untitled');
+      return {
+        tune: tuneLabel,
+        tune_name: tuneLabel,
+        choruses: Number(martinoConfig.choruses ?? 1),
+        measures_per_chorus: Number(section?.barCount ?? progression.length ?? 16),
+        time_signature: parseMeter(section?.meter),
+        key: parseKey(section?.key ?? section?.tonalCenter),
+        chords: progression,
+        rehearsal_marks: { 0: 'A' },
+        asterisk_measures: Array.isArray(martinoConfig.asteriskMeasures)
+          ? martinoConfig.asteriskMeasures.map(Number)
+          : [],
+        primary_activity: String(martinoConfig.activeActivity || 'A1_LINEAR_CORE'),
+        secondary_activities: Array.isArray(martinoConfig.secondaryActivities)
+          ? martinoConfig.secondaryActivities.map(String)
+          : [],
+        melody: 'auto',
+        lfv: {
+          min_fret: Number(lfvRaw.min_fret ?? 5),
+          max_fret: Number(lfvRaw.max_fret ?? 9),
+        },
+        tension_map:
+          martinoConfig.tension_map !== undefined && martinoConfig.tension_map !== null
+            ? martinoConfig.tension_map
+            : martinoConfig.perChordOverrides &&
+                typeof martinoConfig.perChordOverrides === 'object' &&
+                !Array.isArray(martinoConfig.perChordOverrides)
+              ? martinoConfig.perChordOverrides
+              : null,
+      };
+    },
+  };
+});
+
+jest.mock('../core/martino/applyMartinoMusicContext', () => {
+  const { harmonyBarsFromMusicContext } = jest.requireActual('../core/music-context/musicContextAdapters');
+  return {
+    applyMartinoMusicContextToTuneConfig: jest.fn((tuneConfig, musicContext, _martinoConfig = {}) => {
+      if (process.env.MARTINO_MUSIC_CONTEXT !== 'true' || !musicContext) {
+        return tuneConfig;
+      }
+      if (!musicContext.harmony?.bars?.length) {
+        return tuneConfig;
+      }
+      harmonyBarsFromMusicContext(musicContext);
+      tuneConfig.chords = ['Dm', 'Dm', 'Em'];
+      if (musicContext.motif) {
+        tuneConfig.music_context_motif_hint = {
+          interval_pattern: [...musicContext.motif.intervalPattern],
+          contour_pattern: [...musicContext.motif.contourPattern],
+          anchor_midi: musicContext.motif.anchorMidi ?? null,
+        };
+      }
+      return tuneConfig;
+    }),
+    isMartinoMusicContextEnabled: jest.fn(() => process.env.MARTINO_MUSIC_CONTEXT === 'true'),
+  };
+});
+
+jest.mock('../core/martino/martinoEngineBridge', () => ({
+  ...jest.requireActual('../core/martino/martinoEngineBridge'),
+  callMartinoEngine: jest.fn(),
+  callMartinoEngineSync: jest.fn(),
+}));
+
 import type { CoreMotif } from '../core/motif/motifEngineTypes';
 import { generateModulationPlan } from '../core/modulation/modulationPlanner';
 import {
@@ -24,6 +131,13 @@ import {
   isWybleMusicContextEnabled,
 } from '../../jimmy-wyble-engine/wybleGenerator';
 import type { WybleParameters } from '../../jimmy-wyble-engine/wybleTypes';
+import {
+  appendMartinoGenerationReceipt,
+  buildMartinoTuneConfig,
+  isMartinoMusicContextEnabled,
+} from '../core/martino/martinoEngineBridge';
+import type { MartinoEngineResponse } from '../core/martino/martinoEngineBridge';
+import { buildTuneConfig } from '../../../src/engine/martinoTuneConfig.js';
 
 function mockCoreMotif(overrides: Partial<CoreMotif> = {}): CoreMotif {
   return {
@@ -396,5 +510,120 @@ describe('keyPcFromRoot', () => {
     expect(keyPcFromRoot('C')).toBe(0);
     expect(keyPcFromRoot('F#')).toBe(6);
     expect(keyPcFromRoot('Bb')).toBe(10);
+  });
+});
+
+describe('Martino MusicContext consumer', () => {
+  const martinoSection = {
+    name: 'MartinoTest',
+    barCount: 2,
+    meter: '4/4',
+    key: 'F',
+  };
+  const martinoConfig = {
+    progression: ['Am7', 'D7'],
+    choruses: 1,
+    activeActivity: 'A1_LINEAR_CORE',
+    secondaryActivities: ['A2_DIAGONAL_BRIDGE'],
+    dominantTensionDefault: 'low' as const,
+  };
+
+  function martinoMusicContext(withMotif: boolean): MusicContext {
+    const bars = ['Dm7', 'G7', 'Cmaj7'];
+    return {
+      schemaVersion: '1.0',
+      seed: 9,
+      presetId: 'martino_linear',
+      key: { root: 'D', mode: 'minor' },
+      meter: { beats: 4, beatType: 4 },
+      bpm: 120,
+      totalBars: 3,
+      harmony: {
+        bars,
+        checksum: computeMusicContextChecksum(bars),
+        source: 'user',
+      },
+      motif: withMotif ? coreMotifToMusicContextMotif(mockCoreMotif(), 'martino') : undefined,
+      receipts: [],
+    };
+  }
+
+  const prevMartinoFlag = process.env.MARTINO_MUSIC_CONTEXT;
+
+  afterEach(() => {
+    if (prevMartinoFlag === undefined) {
+      delete process.env.MARTINO_MUSIC_CONTEXT;
+    } else {
+      process.env.MARTINO_MUSIC_CONTEXT = prevMartinoFlag;
+    }
+  });
+
+  it('buildTuneConfig uses harmony bars from musicContext when flag on', () => {
+    process.env.MARTINO_MUSIC_CONTEXT = 'true';
+    expect(isMartinoMusicContextEnabled()).toBe(true);
+    const mc = martinoMusicContext(false);
+    const cfg = buildMartinoTuneConfig(martinoSection, martinoConfig, mc);
+    expect(cfg.chords).toEqual(['Dm', 'Dm', 'Em']);
+  });
+
+  it('buildTuneConfig uses own chords when flag off', () => {
+    delete process.env.MARTINO_MUSIC_CONTEXT;
+    const mc = martinoMusicContext(false);
+    const cfg = buildMartinoTuneConfig(martinoSection, martinoConfig, mc);
+    expect(cfg.chords).toEqual(['Am7', 'D7']);
+  });
+
+  it('buildTuneConfig adds music_context_motif_hint when motif present', () => {
+    process.env.MARTINO_MUSIC_CONTEXT = 'true';
+    const mc = martinoMusicContext(true);
+    const cfg = buildMartinoTuneConfig(martinoSection, martinoConfig, mc);
+    expect(cfg.music_context_motif_hint).toEqual({
+      interval_pattern: mc.motif!.intervalPattern,
+      contour_pattern: mc.motif!.contourPattern,
+      anchor_midi: null,
+    });
+  });
+
+  it('buildTuneConfig omits music_context_motif_hint when no motif', () => {
+    process.env.MARTINO_MUSIC_CONTEXT = 'true';
+    const mc = martinoMusicContext(false);
+    const cfg = buildMartinoTuneConfig(martinoSection, martinoConfig, mc);
+    expect(cfg.music_context_motif_hint).toBeUndefined();
+  });
+
+  it('receipt appended after generation (mock bridge response)', () => {
+    process.env.MARTINO_MUSIC_CONTEXT = 'true';
+    const mc = martinoMusicContext(false);
+    const mockResult: MartinoEngineResponse = {
+      ok: true,
+      outputPath: 'C:/out/VTest.musicxml',
+      versionUsed: 'V5.3',
+      readinessScore: 4,
+      warnings: [],
+      activityMapText: 'PRIMARY_ACTIVITY=A1_LINEAR_CORE',
+      lfvFlags: [],
+      stderrExcerpt: '',
+    };
+    appendMartinoGenerationReceipt(mc, mockResult);
+    expect(mc.receipts).toHaveLength(1);
+    expect(mc.receipts[0]).toMatchObject({
+      engine: 'martino',
+      kind: 'martino_generation_complete',
+      payload: {
+        outputPath: mockResult.outputPath,
+        readinessScore: mockResult.readinessScore,
+        activitiesUsed: mockResult.activityMapText,
+      },
+    });
+  });
+
+  it('existing tune_config fields unaffected when musicContext null', () => {
+    const viaBridge = buildMartinoTuneConfig(martinoSection, martinoConfig, null);
+    const direct = buildTuneConfig(martinoSection, martinoConfig, null);
+    expect(viaBridge.tune).toBe(direct.tune);
+    expect(viaBridge.chords).toEqual(direct.chords);
+    expect(viaBridge.primary_activity).toBe(direct.primary_activity);
+    expect(viaBridge.choruses).toBe(direct.choruses);
+    expect(viaBridge.music_context_motif_hint).toBeUndefined();
   });
 });
