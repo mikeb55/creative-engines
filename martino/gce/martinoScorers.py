@@ -21,14 +21,14 @@ MARTINO_GCE_DIMENSIONS: tuple[str, ...] = (
 )
 
 MARTINO_GCE_WEIGHTS: dict[str, float] = {
-    "reduction_integrity": 0.14,
-    "spatial_continuity": 0.10,
+    "reduction_integrity": 0.15,
+    "spatial_continuity": 0.13,
     "directional_persistence": 0.14,
-    "inversion_coherence": 0.10,
+    "inversion_coherence": 0.12,
     "activity_architecture": 0.14,
     "anti_bebop_drift": 0.16,
-    "lfv_integrity": 0.12,
-    "interval_dna_continuity": 0.10,
+    "lfv_integrity": 0.08,
+    "interval_dna_continuity": 0.08,
 }
 
 DCR_SCORE_KEYS: dict[str, str] = {
