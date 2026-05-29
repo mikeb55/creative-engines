@@ -1,5 +1,6 @@
 import type { SystemCheckResponse } from '../system-check/systemCheckTypes';
 import type { IRealVaultOutput, ParsedChart } from '@composer-os/core/irealpro';
+import type { AnalyticalModeResult } from '@composer-os/core/music-context/musicContextTypes';
 
 const BASE = '/api';
 
@@ -102,6 +103,15 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     }
     if (path === '/melodic-variation-pack') {
       return ipcInvoke<T>('composer-os-api:melodic-variation-pack', body ?? {});
+    }
+    if (path === '/analyse') {
+      return ipcInvoke<T>('composer-os-api:analyse', body ?? {});
+    }
+    if (path === '/export-pdf') {
+      return ipcInvoke<T>('composer-os-api:export-pdf', body ?? {});
+    }
+    if (path === '/export-guitar-pro') {
+      return ipcInvoke<T>('composer-os-api:export-guitar-pro', body ?? {});
     }
     throw new Error(`Unknown IPC POST path: ${path}`);
   }
@@ -259,6 +269,15 @@ export const api = {
         transform: string;
       }>;
     }>('/melodic-variation-pack', body),
+  analyse: (body: { chords: string[]; key?: string }) =>
+    post<{ success: true; result: AnalyticalModeResult } | { success: false; error: string }>(
+      '/analyse',
+      body
+    ),
+  exportPdf: (body: { musicXmlPath: string; outputPath: string }) =>
+    post<{ success: boolean; path?: string; error?: string }>('/export-pdf', body),
+  exportGuitarPro: (body: { musicXmlPath: string; outputPath: string }) =>
+    post<{ success: boolean; path?: string; error?: string }>('/export-guitar-pro', body),
 };
 
 /** Shape checks for generation receipts (tests). */

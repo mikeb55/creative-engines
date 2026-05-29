@@ -27,6 +27,22 @@ export interface MusicContextReceipt {
   payload: unknown;
 }
 
+export interface AnalyticalModeResult {
+  bars: {
+    barIndex: number;
+    symbol: string;
+    normalised: string;
+    rootPc: number | null;
+    diatonicClass: string | null;
+    functionalHint: string | null;
+    scaleDegree: string | null;
+    tension: 'low' | 'medium' | 'high' | null;
+  }[];
+  key: { root: string; mode: string };
+  modulationSuggestions: string[];
+  warnings: string[];
+}
+
 export interface MusicContext {
   schemaVersion: '1.0';
   seed: number;

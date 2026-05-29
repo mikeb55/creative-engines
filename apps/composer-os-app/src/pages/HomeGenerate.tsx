@@ -9,6 +9,7 @@ import {
 } from '../playback';
 import type { PlaybackSequence } from '../playback';
 import { api, displayOutputPath, type OutputDirectoryResponse } from '../services/api';
+import type { AnalyticalModeResult } from '@composer-os/core/music-context/musicContextTypes';
 import { useCompositionSong } from '@renderer/context/CompositionSongContext';
 import { useDrumSelection } from '@renderer/context/DrumSelectionContext';
 import { useFillScheduler } from '@renderer/context/FillSchedulerContext';
@@ -236,6 +237,53 @@ function chordPasteTimeSigFromUi(id: '4-4' | '3-4' | '6-8'): { num: number; den:
   if (id === '3-4') return { num: 3, den: 4 };
   if (id === '6-8') return { num: 6, den: 8 };
   return { num: 4, den: 4 };
+}
+
+function chordsForAnalyticalInput(raw: string): string[] {
+  const t = raw.trim();
+  if (!t) return [];
+  if (t.includes('|')) return [t];
+  if (/\s/.test(t)) return t.split(/\s+/).filter(Boolean);
+  return [t];
+}
+
+async function saveMusicXmlForSideExport(
+  xml: string,
+  base: string
+): Promise<{ ok: true; musicXmlPath: string } | { ok: false; error: string }> {
+  const bridge = window.composerOsDesktop;
+  if (!bridge?.invokeApi) {
+    return {
+      ok: false,
+      error: 'Side export requires Composer OS desktop (saves MusicXML to Documents first).',
+    };
+  }
+  const safeBase =
+    base
+      .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+      .replace(/\s+/g, '_')
+      .replace(/^\.+|\.+$/g, '') || 'export';
+  const save = (await bridge.invokeApi('composer-os:save-export-file', {
+    relativePath: `Composer OS Exports/${safeBase}.musicxml`,
+    contents: xml,
+  })) as { ok?: boolean; fullPath?: string; error?: string };
+  if (!save.ok || !save.fullPath) {
+    return { ok: false, error: save.error ?? 'Could not save MusicXML for export.' };
+  }
+  return { ok: true, musicXmlPath: save.fullPath };
+}
+
+async function runSideExportFromMusicXmlPath(
+  musicXmlPath: string,
+  kind: 'pdf' | 'gp'
+): Promise<{ success: boolean; path?: string; error?: string }> {
+  const outputPath =
+    kind === 'pdf'
+      ? musicXmlPath.replace(/\.musicxml$/i, '.pdf').replace(/\.xml$/i, '.pdf')
+      : musicXmlPath.replace(/\.musicxml$/i, '.gp').replace(/\.xml$/i, '.gp');
+  return kind === 'pdf'
+    ? api.exportPdf({ musicXmlPath, outputPath })
+    : api.exportGuitarPro({ musicXmlPath, outputPath });
 }
 
 /** Resolved meters across chart bars: global `timeSignature` + sparse `barMeterMap` carry. */
@@ -2371,6 +2419,12 @@ export function HomeGenerate({
   const [chordInspectorResult, setChordInspectorResult] = useState<ChordInspectorResult | null>(null);
   const [chordInspectorParseError, setChordInspectorParseError] = useState<string | null>(null);
   const [chordInspectorExportError, setChordInspectorExportError] = useState<string | null>(null);
+  const [chordInspectorAnalyticalBusy, setChordInspectorAnalyticalBusy] = useState(false);
+  const [chordInspectorAnalyticalError, setChordInspectorAnalyticalError] = useState<string | null>(null);
+  const [chordInspectorAnalyticalResult, setChordInspectorAnalyticalResult] =
+    useState<AnalyticalModeResult | null>(null);
+  const [chordInspectorSideExportMsg, setChordInspectorSideExportMsg] = useState<string | null>(null);
+  const [chordPasteSideExportMsg, setChordPasteSideExportMsg] = useState<string | null>(null);
   const [pdfLeadSheetFile, setPdfLeadSheetFile] = useState<File | null>(null);
   const [pdfPageNumber, setPdfPageNumber] = useState(1);
   const [pdfVaultMode, setPdfVaultMode] = useState<'solo' | 'melody'>('solo');
@@ -2385,6 +2439,7 @@ export function HomeGenerate({
   const [pdfVaultBusy, setPdfVaultBusy] = useState(false);
   const [pdfVaultError, setPdfVaultError] = useState<string | null>(null);
   const [pdfMusicXmlExportError, setPdfMusicXmlExportError] = useState<string | null>(null);
+  const [pdfSideExportMsg, setPdfSideExportMsg] = useState<string | null>(null);
   const pdfFileInputRef = useRef<HTMLInputElement | null>(null);
   const [result, setResult] = useState<GenResult | null>(null);
   const [playbackSeq, setPlaybackSeq] = useState<PlaybackSequence | null>(null);
@@ -8421,7 +8476,7 @@ export function HomeGenerate({
                   </ul>
                 </div>
               )}
-              <div style={{ marginTop: '0.65rem' }}>
+              <div style={{ marginTop: '0.65rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <button
                   type="button"
                   className="secondary"
@@ -8457,7 +8512,84 @@ export function HomeGenerate({
                 >
                   Download MusicXML
                 </button>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={chordPasteBusy || chordPasteOutput.generatedNotes.length === 0}
+                  onClick={() => {
+                    void (async () => {
+                      setChordPasteSideExportMsg(null);
+                      const titleRaw = chordPasteOutput.title.trim() || 'Pasted progression';
+                      const xml = vaultRiffScoreNotesToMusicXml(
+                        chordPasteOutput.generatedNotes,
+                        chordPasteOutput.bars,
+                        titleRaw
+                      );
+                      const base =
+                        titleRaw
+                          .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+                          .replace(/\s+/g, '_')
+                          .replace(/^\.+|\.+$/g, '') || 'pasted_progression';
+                      const saved = await saveMusicXmlForSideExport(xml, base);
+                      if (!saved.ok) {
+                        setChordPasteSideExportMsg(saved.error);
+                        return;
+                      }
+                      const r = await runSideExportFromMusicXmlPath(saved.musicXmlPath, 'pdf');
+                      setChordPasteSideExportMsg(
+                        r.success ? `PDF exported: ${r.path}` : r.error ?? 'PDF export failed.'
+                      );
+                    })();
+                  }}
+                >
+                  Export PDF
+                </button>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={chordPasteBusy || chordPasteOutput.generatedNotes.length === 0}
+                  onClick={() => {
+                    void (async () => {
+                      setChordPasteSideExportMsg(null);
+                      const titleRaw = chordPasteOutput.title.trim() || 'Pasted progression';
+                      const xml = vaultRiffScoreNotesToMusicXml(
+                        chordPasteOutput.generatedNotes,
+                        chordPasteOutput.bars,
+                        titleRaw
+                      );
+                      const base =
+                        titleRaw
+                          .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+                          .replace(/\s+/g, '_')
+                          .replace(/^\.+|\.+$/g, '') || 'pasted_progression';
+                      const saved = await saveMusicXmlForSideExport(xml, base);
+                      if (!saved.ok) {
+                        setChordPasteSideExportMsg(saved.error);
+                        return;
+                      }
+                      const r = await runSideExportFromMusicXmlPath(saved.musicXmlPath, 'gp');
+                      setChordPasteSideExportMsg(
+                        r.success ? `Guitar Pro exported: ${r.path}` : r.error ?? 'Guitar Pro export failed.'
+                      );
+                    })();
+                  }}
+                >
+                  Export Guitar Pro
+                </button>
               </div>
+              {chordPasteSideExportMsg && (
+                <p
+                  style={{
+                    marginTop: '0.5rem',
+                    fontSize: '0.82rem',
+                    color: chordPasteSideExportMsg.includes('exported:')
+                      ? 'var(--text-muted)'
+                      : 'var(--error, #ef4444)',
+                  }}
+                >
+                  {chordPasteSideExportMsg}
+                </p>
+              )}
               {chordPasteMusicXmlError && (
                 <div
                   role="alert"
@@ -9116,7 +9248,188 @@ export function HomeGenerate({
             >
               Generate + Export MusicXML
             </button>
+            <button
+              type="button"
+              className="secondary"
+              disabled={chordInspectorAnalyticalBusy || !chordInspectorInput.trim()}
+              onClick={() => {
+                void (async () => {
+                  setChordInspectorAnalyticalError(null);
+                  setChordInspectorAnalyticalResult(null);
+                  const chords = chordsForAnalyticalInput(chordInspectorInput);
+                  if (chords.length === 0) {
+                    setChordInspectorAnalyticalError('Enter at least one chord symbol.');
+                    return;
+                  }
+                  setChordInspectorAnalyticalBusy(true);
+                  try {
+                    const r = await api.analyse({
+                      chords,
+                      key: tonalCenter.trim() || chordPasteKey || 'C',
+                    });
+                    if (!r.success) {
+                      setChordInspectorAnalyticalError(r.error);
+                      return;
+                    }
+                    setChordInspectorAnalyticalResult(r.result);
+                  } catch (e) {
+                    setChordInspectorAnalyticalError(e instanceof Error ? e.message : String(e));
+                  } finally {
+                    setChordInspectorAnalyticalBusy(false);
+                  }
+                })();
+              }}
+            >
+              {chordInspectorAnalyticalBusy ? 'Analysing…' : 'Analyse'}
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              disabled={!chordInspectorInput.trim()}
+              onClick={() => {
+                void (async () => {
+                  setChordInspectorSideExportMsg(null);
+                  const xml = inspectChordToMusicXml(chordInspectorInput, {
+                    bars: chordInspectorBars,
+                    mode: chordInspectorMode,
+                    tuningId: chordInspectorTuningId,
+                    riffStyle: chordInspectorRiffStyle,
+                  });
+                  if (!xml) {
+                    setChordInspectorSideExportMsg(
+                      'Could not generate MusicXML (unmapped chord, empty riff, or parse error).'
+                    );
+                    return;
+                  }
+                  const base =
+                    chordInspectorInput
+                      .trim()
+                      .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+                      .replace(/\s+/g, '_')
+                      .replace(/^\.+|\.+$/g, '') || 'chord';
+                  const saved = await saveMusicXmlForSideExport(xml, base);
+                  if (!saved.ok) {
+                    setChordInspectorSideExportMsg(saved.error);
+                    return;
+                  }
+                  const r = await runSideExportFromMusicXmlPath(saved.musicXmlPath, 'pdf');
+                  setChordInspectorSideExportMsg(
+                    r.success ? `PDF exported: ${r.path}` : r.error ?? 'PDF export failed.'
+                  );
+                })();
+              }}
+            >
+              Export PDF
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              disabled={!chordInspectorInput.trim()}
+              onClick={() => {
+                void (async () => {
+                  setChordInspectorSideExportMsg(null);
+                  const xml = inspectChordToMusicXml(chordInspectorInput, {
+                    bars: chordInspectorBars,
+                    mode: chordInspectorMode,
+                    tuningId: chordInspectorTuningId,
+                    riffStyle: chordInspectorRiffStyle,
+                  });
+                  if (!xml) {
+                    setChordInspectorSideExportMsg(
+                      'Could not generate MusicXML (unmapped chord, empty riff, or parse error).'
+                    );
+                    return;
+                  }
+                  const base =
+                    chordInspectorInput
+                      .trim()
+                      .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+                      .replace(/\s+/g, '_')
+                      .replace(/^\.+|\.+$/g, '') || 'chord';
+                  const saved = await saveMusicXmlForSideExport(xml, base);
+                  if (!saved.ok) {
+                    setChordInspectorSideExportMsg(saved.error);
+                    return;
+                  }
+                  const r = await runSideExportFromMusicXmlPath(saved.musicXmlPath, 'gp');
+                  setChordInspectorSideExportMsg(
+                    r.success ? `Guitar Pro exported: ${r.path}` : r.error ?? 'Guitar Pro export failed.'
+                  );
+                })();
+              }}
+            >
+              Export Guitar Pro
+            </button>
           </div>
+          {chordInspectorSideExportMsg && (
+            <p
+              style={{
+                marginTop: '0.5rem',
+                fontSize: '0.82rem',
+                color: chordInspectorSideExportMsg.includes('exported:')
+                  ? 'var(--text-muted)'
+                  : 'var(--error, #ef4444)',
+              }}
+            >
+              {chordInspectorSideExportMsg}
+            </p>
+          )}
+          {chordInspectorAnalyticalError && (
+            <div
+              role="alert"
+              style={{
+                marginTop: '0.75rem',
+                padding: '0.5rem 0.65rem',
+                borderRadius: 6,
+                background: 'rgba(239,68,68,0.1)',
+                border: '1px solid rgba(239,68,68,0.35)',
+                fontSize: '0.85rem',
+                color: 'var(--error, #ef4444)',
+              }}
+            >
+              {chordInspectorAnalyticalError}
+            </div>
+          )}
+          {chordInspectorAnalyticalResult && !chordInspectorAnalyticalError && (
+            <div style={{ marginTop: '0.75rem', overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                <thead>
+                  <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
+                    <th style={{ padding: '0.35rem 0.5rem' }}>Symbol</th>
+                    <th style={{ padding: '0.35rem 0.5rem' }}>Normalised</th>
+                    <th style={{ padding: '0.35rem 0.5rem' }}>Degree</th>
+                    <th style={{ padding: '0.35rem 0.5rem' }}>Function</th>
+                    <th style={{ padding: '0.35rem 0.5rem' }}>Tension</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {chordInspectorAnalyticalResult.bars.map((row, i) => (
+                    <tr key={`analytical-${row.barIndex}-${i}-${row.symbol}`} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td style={{ padding: '0.35rem 0.5rem' }}>{row.symbol}</td>
+                      <td style={{ padding: '0.35rem 0.5rem' }}>{row.normalised}</td>
+                      <td style={{ padding: '0.35rem 0.5rem' }}>{row.scaleDegree ?? '—'}</td>
+                      <td style={{ padding: '0.35rem 0.5rem' }}>{row.functionalHint ?? '—'}</td>
+                      <td style={{ padding: '0.35rem 0.5rem' }}>{row.tension ?? '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {chordInspectorAnalyticalResult.modulationSuggestions.length > 0 && (
+                <ul style={{ margin: '0.5rem 0 0', paddingLeft: '1.1rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                  {chordInspectorAnalyticalResult.modulationSuggestions.map((s) => (
+                    <li key={s}>{s}</li>
+                  ))}
+                </ul>
+              )}
+              {chordInspectorAnalyticalResult.warnings.length > 0 && (
+                <ul style={{ margin: '0.5rem 0 0', paddingLeft: '1.1rem', fontSize: '0.82rem', color: '#ca8a04' }}>
+                  {chordInspectorAnalyticalResult.warnings.map((w) => (
+                    <li key={w}>{w}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
           {chordInspectorParseError && (
             <div
               role="alert"
@@ -9737,7 +10050,7 @@ export function HomeGenerate({
                   </ul>
                 </div>
               )}
-              <div style={{ marginTop: '0.65rem' }}>
+              <div style={{ marginTop: '0.65rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <button
                   type="button"
                   className="secondary"
@@ -9773,7 +10086,84 @@ export function HomeGenerate({
                 >
                   Download MusicXML
                 </button>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={pdfVaultBusy || pdfVaultOutput.generatedNotes.length === 0}
+                  onClick={() => {
+                    void (async () => {
+                      setPdfSideExportMsg(null);
+                      const titleRaw = pdfVaultOutput.title.trim() || 'PDF lead sheet';
+                      const xml = vaultRiffScoreNotesToMusicXml(
+                        pdfVaultOutput.generatedNotes,
+                        pdfVaultOutput.bars,
+                        titleRaw
+                      );
+                      const base =
+                        titleRaw
+                          .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+                          .replace(/\s+/g, '_')
+                          .replace(/^\.+|\.+$/g, '') || 'pdf_lead_sheet';
+                      const saved = await saveMusicXmlForSideExport(xml, base);
+                      if (!saved.ok) {
+                        setPdfSideExportMsg(saved.error);
+                        return;
+                      }
+                      const r = await runSideExportFromMusicXmlPath(saved.musicXmlPath, 'pdf');
+                      setPdfSideExportMsg(
+                        r.success ? `PDF exported: ${r.path}` : r.error ?? 'PDF export failed.'
+                      );
+                    })();
+                  }}
+                >
+                  Export PDF
+                </button>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={pdfVaultBusy || pdfVaultOutput.generatedNotes.length === 0}
+                  onClick={() => {
+                    void (async () => {
+                      setPdfSideExportMsg(null);
+                      const titleRaw = pdfVaultOutput.title.trim() || 'PDF lead sheet';
+                      const xml = vaultRiffScoreNotesToMusicXml(
+                        pdfVaultOutput.generatedNotes,
+                        pdfVaultOutput.bars,
+                        titleRaw
+                      );
+                      const base =
+                        titleRaw
+                          .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+                          .replace(/\s+/g, '_')
+                          .replace(/^\.+|\.+$/g, '') || 'pdf_lead_sheet';
+                      const saved = await saveMusicXmlForSideExport(xml, base);
+                      if (!saved.ok) {
+                        setPdfSideExportMsg(saved.error);
+                        return;
+                      }
+                      const r = await runSideExportFromMusicXmlPath(saved.musicXmlPath, 'gp');
+                      setPdfSideExportMsg(
+                        r.success ? `Guitar Pro exported: ${r.path}` : r.error ?? 'Guitar Pro export failed.'
+                      );
+                    })();
+                  }}
+                >
+                  Export Guitar Pro
+                </button>
               </div>
+              {pdfSideExportMsg && (
+                <p
+                  style={{
+                    marginTop: '0.5rem',
+                    fontSize: '0.82rem',
+                    color: pdfSideExportMsg.includes('exported:')
+                      ? 'var(--text-muted)'
+                      : 'var(--error, #ef4444)',
+                  }}
+                >
+                  {pdfSideExportMsg}
+                </p>
+              )}
               {pdfMusicXmlExportError && (
                 <div
                   role="alert"

@@ -51,7 +51,7 @@ import {
 import type { IRealVaultOutput } from '../core/irealpro/irealVaultPipeline';
 import type { ParsedChart } from '../core/irealpro/parsedChart';
 import { buildMusicContextFromVaultOutput } from '../core/music-context/musicContextAdapters';
-import type { MusicContext } from '../core/music-context/musicContextTypes';
+import type { MusicContext, AnalyticalModeResult } from '../core/music-context/musicContextTypes';
 import type { EmotionalDrift } from '../core/harmony/reharmCandidateEngine';
 import { formatPdfExtractFailureHint, generateFromPdf } from '../core/pdf';
 import type { GceStructureSection } from '../core/gce/gceAutoScorers';
@@ -60,6 +60,11 @@ import {
   generateMelodicVariations,
   scoreMelodicVariationsForPack,
 } from '../core/song-mode/melodicVariationPack';
+import { runAnalyticalMode } from '../core/analytical/analyticalMode';
+import { exportMusicXmlToPdf } from '../core/export/pdfExporter';
+import { exportMusicXmlToGuitarPro } from '../core/export/guitarProExporter';
+
+export type { AnalyticalModeResult };
 
 export { getComposerFilesRoot, PRESET_OUTPUT_SUBFOLDER } from './composerOsOutputPaths';
 
@@ -1249,5 +1254,50 @@ export async function apiPdfGenerateFromPdf(
       output: null,
       error: e instanceof Error ? e.message : String(e),
     };
+  }
+}
+
+export function apiAnalyse(
+  req: { chords: string[]; key?: string }
+):
+  | { success: true; result: AnalyticalModeResult }
+  | { success: false; error: string } {
+  try {
+    const chords = req?.chords;
+    if (!Array.isArray(chords) || chords.length === 0) {
+      return { success: false, error: 'chords must be a non-empty string array.' };
+    }
+    const result = runAnalyticalMode(chords, req.key);
+    return { success: true, result };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+export async function apiExportPdf(req: {
+  musicXmlPath: string;
+  outputPath: string;
+}): Promise<{ success: boolean; path?: string; error?: string }> {
+  try {
+    if (!req?.musicXmlPath?.trim() || !req?.outputPath?.trim()) {
+      return { success: false, error: 'musicXmlPath and outputPath are required.' };
+    }
+    return await exportMusicXmlToPdf(req.musicXmlPath.trim(), req.outputPath.trim());
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+export async function apiExportGuitarPro(req: {
+  musicXmlPath: string;
+  outputPath: string;
+}): Promise<{ success: boolean; path?: string; error?: string }> {
+  try {
+    if (!req?.musicXmlPath?.trim() || !req?.outputPath?.trim()) {
+      return { success: false, error: 'musicXmlPath and outputPath are required.' };
+    }
+    return await exportMusicXmlToGuitarPro(req.musicXmlPath.trim(), req.outputPath.trim());
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
 }

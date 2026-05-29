@@ -23,6 +23,9 @@ import {
   apiSystemCheck,
   apiPdfGenerateFromPdf,
   apiMelodicVariationPack,
+  apiAnalyse,
+  apiExportPdf,
+  apiExportGuitarPro,
 } from '../engines/composer-os-v2/app-api/composerOsApiCore';
 import type { GenerateRequest } from '../engines/composer-os-v2/app-api/appApiTypes';
 
@@ -179,6 +182,37 @@ app.post('/api/pdf/generate-from-pdf', async (req: Request, res: Response) => {
     res.json(r);
   } catch (err) {
     res.status(500).json({ success: true, output: null, error: String(err) });
+  }
+});
+
+app.post('/api/analyse', (req: Request, res: Response) => {
+  try {
+    const result = apiAnalyse(req.body as Parameters<typeof apiAnalyse>[0]);
+    if (!result.success) {
+      res.status(400).json(result);
+      return;
+    }
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: String(err) });
+  }
+});
+
+app.post('/api/export-pdf', async (req: Request, res: Response) => {
+  try {
+    const r = await apiExportPdf(req.body as Parameters<typeof apiExportPdf>[0]);
+    res.json(r);
+  } catch (err) {
+    res.status(500).json({ success: false, error: String(err) });
+  }
+});
+
+app.post('/api/export-guitar-pro', async (req: Request, res: Response) => {
+  try {
+    const r = await apiExportGuitarPro(req.body as Parameters<typeof apiExportGuitarPro>[0]);
+    res.json(r);
+  } catch (err) {
+    res.status(500).json({ success: false, error: String(err) });
   }
 });
 

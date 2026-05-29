@@ -16,6 +16,9 @@ import {
   apiSystemCheck,
   apiPdfGenerateFromPdf,
   apiMelodicVariationPack,
+  apiAnalyse,
+  apiExportPdf,
+  apiExportGuitarPro,
   type PdfGenerateFromPdfRequest,
   getComposerOsRuntimeBuildInfo,
 } from '../../../engines/composer-os-v2/app-api/composerOsApiCore';
@@ -198,6 +201,15 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
     hydrateAnthropicKeyFromAllSources();
     return apiPdfGenerateFromPdf(body as PdfGenerateFromPdfRequest);
   });
+  ipcMain.handle('composer-os-api:analyse', (_e, body: unknown) =>
+    Promise.resolve(apiAnalyse(body as Parameters<typeof apiAnalyse>[0]))
+  );
+  ipcMain.handle('composer-os-api:export-pdf', (_e, body: unknown) =>
+    apiExportPdf(body as Parameters<typeof apiExportPdf>[0])
+  );
+  ipcMain.handle('composer-os-api:export-guitar-pro', (_e, body: unknown) =>
+    apiExportGuitarPro(body as Parameters<typeof apiExportGuitarPro>[0])
+  );
   ipcMain.handle(
     'composer-os-api:save-anthropic-api-key',
     (_e, body: unknown) => {
