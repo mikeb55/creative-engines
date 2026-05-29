@@ -192,6 +192,68 @@ export function buildMusicContextFromIReal(chart: ParsedChart): MusicContext {
   };
 }
 
+/** MusicContext snapshot from Wyble etude chord bars (V90c). */
+export function buildMusicContextFromWyble(
+  chordBars: readonly string[],
+  params: {
+    key?: string;
+    bpm?: number;
+    timeSignature?: { num: number; den: number };
+    tuning?: { name: string; strings: readonly number[]; capo: number };
+    totalBars?: number;
+  }
+): MusicContext {
+  const harmonyBars = chordBars.map(normalizeChordSymbol);
+  const harmony: MusicContextHarmony = {
+    bars: harmonyBars,
+    checksum: computeMusicContextChecksum(harmonyBars),
+    source: 'user',
+  };
+  const keyLabel = params.key?.trim();
+  const { root, mode } = keyLabel
+    ? normalizeKeyRoot(keyLabel)
+    : { root: 'C', mode: 'major' as const };
+  const ts = params.timeSignature ?? { num: 4, den: 4 };
+  return {
+    schemaVersion: '1.0',
+    seed: 0,
+    presetId: 'wyble_etude',
+    key: { root, mode },
+    meter: { beats: ts.num, beatType: ts.den },
+    bpm: params.bpm ?? 120,
+    totalBars: params.totalBars ?? chordBars.length,
+    harmony,
+    ...(params.tuning ? { tuning: params.tuning } : {}),
+    provenance: {
+      sourceEngineId: 'wyble',
+      capturedAt: Date.now(),
+    },
+    receipts: [],
+  };
+}
+
+/** True when provenance.capturedAt is older than threshold (default 10 min). */
+export function isMusicContextStale(
+  mc: MusicContext,
+  thresholdMs: number = 10 * 60 * 1000
+): boolean {
+  if (!mc.provenance?.capturedAt) return false;
+  return Date.now() - mc.provenance.capturedAt > thresholdMs;
+}
+
+const ENGINE_GENERATION_COMPLETE_KIND_RE = /_(?:generation|generator)_complete$/;
+
+/** Count engine-generation-complete receipts (hop chain depth). */
+export function getMusicContextHopCount(mc: MusicContext): number {
+  const receipts = mc.receipts ?? [];
+  return receipts.filter((r) => ENGINE_GENERATION_COMPLETE_KIND_RE.test(r.kind)).length;
+}
+
+/** True when hop count meets or exceeds limit (default 2). */
+export function isMusicContextHopLimitReached(mc: MusicContext, limit: number = 2): boolean {
+  return getMusicContextHopCount(mc) >= limit;
+}
+
 /** MusicContext snapshot from vault generation output (V90b). */
 export function buildMusicContextFromVaultOutput(
   output: IRealVaultOutput,

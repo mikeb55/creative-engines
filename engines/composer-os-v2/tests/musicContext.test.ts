@@ -119,10 +119,14 @@ import {
   buildMusicContextFromIReal,
   buildMusicContextFromSlonimsky,
   buildMusicContextFromVaultOutput,
+  buildMusicContextFromWyble,
   buildRiffGeneratorMusicContext,
   computeMusicContextChecksum,
   coreMotifToMusicContextMotif,
+  getMusicContextHopCount,
   harmonyBarsFromMusicContext,
+  isMusicContextHopLimitReached,
+  isMusicContextStale,
   keyPcFromRoot,
   motifToSeedPitches,
 } from '../core/music-context/musicContextAdapters';
@@ -956,5 +960,119 @@ describe('buildMusicContextFromVaultOutput', () => {
     const irealCtx = buildMusicContextFromIReal(chart);
     const vaultCtx = buildMusicContextFromVaultOutput(mockVaultOutput({ bars: 16 }), chart);
     expect(vaultCtx.harmony.checksum).toBe(irealCtx.harmony.checksum);
+  });
+});
+
+describe('buildMusicContextFromWyble', () => {
+  it('harmony.bars normalised via normalizeChordSymbol', () => {
+    const ctx = buildMusicContextFromWyble(['C^7', 'D-7'], { key: 'C' });
+    expect(ctx.harmony.bars).toEqual(['Cmaj7', 'Dm7']);
+    expect(ctx.harmony.checksum).toBe(computeMusicContextChecksum(['Cmaj7', 'Dm7']));
+  });
+
+  it('tuning field present when params.tuning provided', () => {
+    const tuning = { name: 'Standard', strings: [40, 45, 50, 55, 59, 64] as const, capo: 0 };
+    const ctx = buildMusicContextFromWyble(['G7'], { tuning });
+    expect(ctx.tuning).toEqual(tuning);
+  });
+
+  it('tuning field absent when params.tuning omitted', () => {
+    const ctx = buildMusicContextFromWyble(['G7'], { key: 'G' });
+    expect(ctx.tuning).toBeUndefined();
+  });
+
+  it("provenance.sourceEngineId === 'wyble'", () => {
+    const ctx = buildMusicContextFromWyble(['Am7'], {});
+    expect(ctx.provenance?.sourceEngineId).toBe('wyble');
+  });
+
+  it('receipts is empty array', () => {
+    const ctx = buildMusicContextFromWyble(['Am7'], {});
+    expect(ctx.receipts).toEqual([]);
+  });
+
+  it('motif is undefined', () => {
+    const ctx = buildMusicContextFromWyble(['Am7'], {});
+    expect(ctx.motif).toBeUndefined();
+  });
+
+  it('totalBars = params.totalBars when provided', () => {
+    const ctx = buildMusicContextFromWyble(['Am7', 'D7', 'G7'], { totalBars: 16 });
+    expect(ctx.totalBars).toBe(16);
+    expect(ctx.harmony.bars).toHaveLength(3);
+  });
+});
+
+describe('isMusicContextStale', () => {
+  it('returns false when provenance absent', () => {
+    const ctx = mockMusicContext({ provenance: undefined });
+    expect(isMusicContextStale(ctx)).toBe(false);
+  });
+
+  it('returns false when capturedAt is recent (Date.now())', () => {
+    const ctx = mockMusicContext({
+      provenance: { sourceEngineId: 'riff', capturedAt: Date.now() },
+    });
+    expect(isMusicContextStale(ctx)).toBe(false);
+  });
+
+  it('returns true when capturedAt is older than threshold', () => {
+    const ctx = mockMusicContext({
+      provenance: { sourceEngineId: 'riff', capturedAt: Date.now() - 11 * 60 * 1000 },
+    });
+    expect(isMusicContextStale(ctx, 10 * 60 * 1000)).toBe(true);
+  });
+});
+
+describe('getMusicContextHopCount', () => {
+  it('returns 0 when receipts is empty', () => {
+    expect(getMusicContextHopCount(mockMusicContext())).toBe(0);
+  });
+
+  it('returns correct count for 1 engine-complete receipt', () => {
+    const ctx = mockMusicContext({
+      receipts: [{ engine: 'riff', kind: 'riff_generator_complete', payload: {} }],
+    });
+    expect(getMusicContextHopCount(ctx)).toBe(1);
+  });
+
+  it('returns correct count for 2 engine-complete receipts', () => {
+    const ctx = mockMusicContext({
+      receipts: [
+        { engine: 'riff', kind: 'riff_generator_complete', payload: {} },
+        { engine: 'vault', kind: 'vault_generation_complete', payload: {} },
+      ],
+    });
+    expect(getMusicContextHopCount(ctx)).toBe(2);
+  });
+});
+
+describe('isMusicContextHopLimitReached', () => {
+  it('returns false at 1 hop', () => {
+    const ctx = mockMusicContext({
+      receipts: [{ engine: 'riff', kind: 'riff_generator_complete', payload: {} }],
+    });
+    expect(isMusicContextHopLimitReached(ctx)).toBe(false);
+  });
+
+  it('returns true at 2 hops (default limit)', () => {
+    const ctx = mockMusicContext({
+      receipts: [
+        { engine: 'riff', kind: 'riff_generator_complete', payload: {} },
+        { engine: 'martino', kind: 'martino_generation_complete', payload: {} },
+      ],
+    });
+    expect(isMusicContextHopLimitReached(ctx)).toBe(true);
+  });
+
+  it('returns true at 3 hops', () => {
+    const ctx = mockMusicContext({
+      receipts: [
+        { engine: 'riff', kind: 'riff_generator_complete', payload: {} },
+        { engine: 'vault', kind: 'vault_generation_complete', payload: {} },
+        { engine: 'martino', kind: 'martino_generation_complete', payload: {} },
+      ],
+    });
+    expect(isMusicContextHopLimitReached(ctx)).toBe(true);
   });
 });

@@ -38,6 +38,11 @@ export interface MusicContext {
   harmony: MusicContextHarmony;
   motif?: MusicContextMotif;
   modulation?: ModulationPlan;
+  tuning?: {
+    name: string;
+    strings: readonly number[];
+    capo: number;
+  };
   receipts: readonly MusicContextReceipt[];
   provenance?: {
     sourceEngineId: string;

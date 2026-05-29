@@ -93,6 +93,7 @@ import {
 } from '../core/harmony/chordProgressionParser';
 import { clampSongFormBarCount } from '../core/harmony/songFormBarCounts';
 import { resolveWybleChordBarsFromRequest } from '../core/goldenPath/resolveWybleChordBars';
+import { buildMusicContextFromWyble } from '../core/music-context/musicContextAdapters';
 import { buildChordExportDiagnosticsReceipt } from '../../core/chordExportDiagnostics';
 import { getChordForBar } from '../core/harmony/harmonyResolution';
 import {
@@ -574,6 +575,21 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
     const xmlPath = require('path').join(outputDir, `wyble_etude_${req.seed ?? Date.now()}.musicxml`);
     require('fs').writeFileSync(xmlPath, result.guitarXml, 'utf-8');
     const chordExportDiagnostics = buildChordExportDiagnosticsReceipt(chords, resolved.canonicalChords);
+    const wybleParams = {
+      key: req.tonalCenter ?? req.tonalCenterOverride,
+      bpm: req.bpm,
+      timeSignature: { num: 4, den: 4 },
+      tuning: (req as GenerateRequest & {
+        tuning?: { name: string; strings: readonly number[]; capo: number };
+      }).tuning,
+    };
+    const musicContext = buildMusicContextFromWyble(chords, {
+      key: wybleParams.key,
+      bpm: wybleParams.bpm,
+      timeSignature: wybleParams.timeSignature,
+      tuning: wybleParams.tuning ?? undefined,
+      totalBars: chords.length,
+    });
     return {
       success: true,
       composerOsVersion: COMPOSER_OS_VERSION,
@@ -581,6 +597,7 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
       filepath: xmlPath,
       validation: validationForStructural(true, []),
       chordExportDiagnostics,
+      musicContext,
       runManifest: {
         seed: req.seed,
         presetId: 'wyble_etude',

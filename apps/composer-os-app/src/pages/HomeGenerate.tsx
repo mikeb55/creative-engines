@@ -79,6 +79,10 @@ import {
   SharedMusicContextReadyBadge,
   SharedMusicContextToggle,
 } from '../renderer/components/SharedMusicContextToggle.jsx';
+import {
+  getMusicContextHopCount,
+  isMusicContextStale,
+} from '../../../../engines/composer-os-v2/core/music-context/musicContextAdapters';
 import MartinoResultPanel from '../renderer/components/MartinoResultPanel.jsx';
 import {
   parseMartinoChords,
@@ -2310,6 +2314,8 @@ export function HomeGenerate({
   const [riffCarryForward, setRiffCarryForward] = useState<RiffCarryForward | null>(null);
   const [riffGateMessages, setRiffGateMessages] = useState<string[]>([]);
   const [sharedMusicContext, setSharedMusicContext] = useState<GenResult['musicContext'] | null>(null);
+  const contextIsStale = sharedMusicContext ? isMusicContextStale(sharedMusicContext as Parameters<typeof isMusicContextStale>[0]) : false;
+  const hopCount = sharedMusicContext ? getMusicContextHopCount(sharedMusicContext as Parameters<typeof getMusicContextHopCount>[0]) : 0;
   const [wybleUseSharedContext, setWybleUseSharedContext] = useState(false);
   const [martinoUseSharedContext, setMartinoUseSharedContext] = useState(false);
   const [riffZappaAdvancedOpen, setRiffZappaAdvancedOpen] = useState(false);
@@ -5237,6 +5243,8 @@ export function HomeGenerate({
           active={wybleUseSharedContext}
           onToggle={() => setWybleUseSharedContext((v) => !v)}
           disabled={loading}
+          isStale={contextIsStale}
+          hopCount={hopCount}
         />
       )}
       {presetId === 'slonimsky_etude' && (
@@ -5346,6 +5354,8 @@ export function HomeGenerate({
           active={martinoUseSharedContext}
           onToggle={() => setMartinoUseSharedContext((v) => !v)}
           disabled={loading}
+          isStale={contextIsStale}
+          hopCount={hopCount}
         />
       )}
       {presetId === 'martino_linear' && typeof window !== 'undefined' && window.composerOsDesktop && (
