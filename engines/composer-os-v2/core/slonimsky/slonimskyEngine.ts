@@ -1,5 +1,7 @@
 import type { PhraseIntent } from '../goldenPath/phraseIntentTypes';
-import { chordTonesForChordSymbol } from '../harmony/chordSymbolAnalysis';
+import { chordTonesForChordSymbol, noteNameToPitchClass } from '../harmony/chordSymbolAnalysis';
+import { harmonyBarsFromMusicContext } from '../music-context/musicContextAdapters';
+import type { MusicContext } from '../music-context/musicContextTypes';
 import { SLONIMSKY_ENGINE_PATTERNS } from './thesaurusRegistry';
 
 export type IntervalPatternId = string;
@@ -44,6 +46,8 @@ export interface SlonimskyContext {
   maxUltraSteps?: number;
   /** Optional 0–2 outside allowance override (riff solo adapter / Zappa lane). */
   dissonanceLevel?: number;
+  /** Shared Brain snapshot — consumed when `SLONIMSKY_MUSIC_CONTEXT=true`. */
+  musicContext?: MusicContext;
 }
 
 export interface SlonimskyNote {
@@ -55,6 +59,67 @@ export interface SlonimskyNote {
 
 const GUITAR_MIDI_MIN = 48;
 const GUITAR_MIDI_MAX = 84;
+
+export function isSlonimskyMusicContextEnabled(): boolean {
+  return process.env.SLONIMSKY_MUSIC_CONTEXT === 'true';
+}
+
+function keyPcFromMusicContextRoot(root: string): number {
+  return noteNameToPitchClass(root) ?? 0;
+}
+
+/** Contour sum → Slonimsky phrase intent when caller did not set phraseIntent explicitly. */
+export function phraseIntentFromContourPattern(
+  contour: readonly number[]
+): SlonimskyContext['phraseIntent'] | undefined {
+  if (contour.length === 0) return undefined;
+  const sum = contour.reduce((a, b) => a + b, 0);
+  if (sum > 0) return 'build';
+  if (sum < 0) return 'release';
+  const activity = contour.reduce((a, v) => a + Math.abs(v), 0);
+  if (activity > contour.length) return 'shock';
+  return 'float';
+}
+
+type MusicContextSlonimskyOverrides = {
+  keyPc?: number;
+  chordSymbol?: string;
+  phraseIntent?: SlonimskyContext['phraseIntent'];
+  harmonyBars?: string[];
+};
+
+function consumeMusicContextForSlonimsky(params: {
+  musicContext?: MusicContext;
+  phraseIntentExplicit?: boolean;
+}): MusicContextSlonimskyOverrides {
+  if (!isSlonimskyMusicContextEnabled() || !params.musicContext) return {};
+  const mc = params.musicContext;
+  if (mc.harmony.bars.length === 0) return {};
+
+  const harmonyBars = harmonyBarsFromMusicContext(mc);
+  mc.receipts.push({
+    engine: 'slonimsky',
+    kind: 'slonimsky_context_consumed',
+    payload: { bars: mc.harmony.bars.length },
+  });
+
+  const overrides: MusicContextSlonimskyOverrides = {
+    harmonyBars,
+    keyPc: keyPcFromMusicContextRoot(mc.key.root),
+    chordSymbol: harmonyBars[harmonyBars.length - 1],
+  };
+
+  if (
+    !params.phraseIntentExplicit &&
+    mc.motif?.contourPattern &&
+    mc.motif.contourPattern.length > 0
+  ) {
+    const biased = phraseIntentFromContourPattern(mc.motif.contourPattern);
+    if (biased) overrides.phraseIntent = biased;
+  }
+
+  return overrides;
+}
 
 /** Canonical catalogue — patterns defined in `thesaurusRegistry.ts` as {@link SLONIMSKY_ENGINE_PATTERNS}. */
 export const SLONIMSKY_PATTERNS: readonly IntervalPattern[] = SLONIMSKY_ENGINE_PATTERNS;
@@ -605,13 +670,23 @@ export function mapDuoPhraseIntentToSlonimskyContext(params: {
   chordSymbol?: string;
   effectiveLow?: number;
   effectiveHigh?: number;
+  /** When set, overrides duo-intent / contour-derived phraseIntent. */
+  phraseIntent?: SlonimskyContext['phraseIntent'];
+  musicContext?: MusicContext;
 }): SlonimskyContext {
-  const phraseIntent = mapDuoPhraseIntentToSlonimskyPhraseIntent(
-    params.duoIntent,
-    params.phase,
-    params.seed
-  );
-  const chordType = params.chordType ?? 'dominant';
+  const mcOverrides = consumeMusicContextForSlonimsky({
+    musicContext: params.musicContext,
+    phraseIntentExplicit: params.phraseIntent !== undefined,
+  });
+  const phraseIntent =
+    params.phraseIntent ??
+    mcOverrides.phraseIntent ??
+    mapDuoPhraseIntentToSlonimskyPhraseIntent(params.duoIntent, params.phase, params.seed);
+  const chordType =
+    params.chordType ??
+    (mcOverrides.chordSymbol
+      ? inferSlonimskyChordTypeCategory(mcOverrides.chordSymbol)
+      : 'dominant');
   const profileLevel = resolveAllowedOutsideLevelForSlonimsky(params.songwriterId);
   const allowedOutsideLevel = (
     params.allowedOutsideOverride !== undefined
@@ -619,7 +694,7 @@ export function mapDuoPhraseIntentToSlonimskyContext(params: {
       : profileLevel
   ) as 0 | 1 | 2;
   return {
-    keyPc: params.keyPc ?? 0,
+    keyPc: mcOverrides.keyPc ?? params.keyPc ?? 0,
     chordType,
     functionalStrength: 'medium',
     allowedOutsideLevel,
@@ -627,9 +702,10 @@ export function mapDuoPhraseIntentToSlonimskyContext(params: {
     basePitch: 62,
     maxBeats: Math.max(4, params.totalQuarterBeats),
     styleProfile: params.styleProfile,
-    chordSymbol: params.chordSymbol,
+    chordSymbol: mcOverrides.chordSymbol ?? params.chordSymbol,
     effectiveLow: params.effectiveLow,
     effectiveHigh: params.effectiveHigh,
+    musicContext: params.musicContext,
   };
 }
 
@@ -646,8 +722,15 @@ export function buildDuoBarSlonimskyContext(params: {
   keyPc: number;
   effectiveLow: number;
   effectiveHigh: number;
+  phraseIntent?: SlonimskyContext['phraseIntent'];
+  musicContext?: MusicContext;
 }): SlonimskyContext {
-  const inferred = inferSlonimskyChordTypeCategory(params.chordSymbol);
+  const mcOverrides = consumeMusicContextForSlonimsky({
+    musicContext: params.musicContext,
+    phraseIntentExplicit: params.phraseIntent !== undefined,
+  });
+  const chordForBar = mcOverrides.chordSymbol ?? params.chordSymbol;
+  const inferred = inferSlonimskyChordTypeCategory(chordForBar);
   const base = mapDuoPhraseIntentToSlonimskyContext({
     duoIntent: params.duoIntent,
     phase: params.phase,
@@ -656,18 +739,20 @@ export function buildDuoBarSlonimskyContext(params: {
     allowedOutsideOverride: params.allowedOutsideOverride,
     totalQuarterBeats: params.totalQuarterBeats,
     styleProfile: params.styleProfile ?? undefined,
-    keyPc: params.keyPc,
+    keyPc: mcOverrides.keyPc ?? params.keyPc,
     chordType: inferred,
-    chordSymbol: params.chordSymbol,
+    chordSymbol: chordForBar,
     effectiveLow: params.effectiveLow,
     effectiveHigh: params.effectiveHigh,
+    phraseIntent: params.phraseIntent ?? mcOverrides.phraseIntent,
   });
-  const t = chordTonesForChordSymbol(params.chordSymbol);
+  const t = chordTonesForChordSymbol(chordForBar);
   const third = liftIntoRange(t.third, params.effectiveLow, params.effectiveHigh);
   return {
     ...base,
     basePitch: third,
     maxBeats: 4,
+    musicContext: params.musicContext,
   };
 }
 

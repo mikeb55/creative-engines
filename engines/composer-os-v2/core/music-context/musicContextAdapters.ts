@@ -5,7 +5,8 @@
 import { computeHarmonyChecksum } from '../harmony/harmonyContext';
 import type { CoreMotif } from '../motif/motifEngineTypes';
 import type { ModulationPlan } from '../modulation/modulationPlanTypes';
-import type { MusicContext, MusicContextMotif } from './musicContextTypes';
+import type { MusicContext, MusicContextHarmony, MusicContextMotif } from './musicContextTypes';
+import type { RiffGeneratorParams } from '../riff-generator/riffTypes';
 
 /** Deterministic harmony checksum for MusicContext (delegates to harmonyContext). */
 export function computeMusicContextChecksum(bars: readonly string[]): string {
@@ -46,5 +47,36 @@ export function attachModulationToContext(ctx: MusicContext, plan: ModulationPla
   return {
     ...ctx,
     modulation: plan,
+  };
+}
+
+/** MusicContext snapshot for successful riff generation (V90a). */
+export function buildRiffGeneratorMusicContext(
+  params: Pick<RiffGeneratorParams, 'seed' | 'bars' | 'style' | 'bpm' | 'chordSymbols'>,
+  coreMotif?: CoreMotif
+): MusicContext {
+  const harmonyBars = params.chordSymbols ?? [];
+  const harmony: MusicContextHarmony = {
+    bars: harmonyBars,
+    checksum: computeMusicContextChecksum(harmonyBars),
+    source: 'user',
+  };
+  return {
+    schemaVersion: '1.0',
+    seed: params.seed ?? 0,
+    presetId: 'riff_generator',
+    key: { root: params.style ?? 'C', mode: 'major' },
+    meter: { beats: 4, beatType: 4 },
+    bpm: params.bpm ?? 120,
+    totalBars: params.bars ?? 4,
+    harmony,
+    motif: coreMotif ? coreMotifToMusicContextMotif(coreMotif, 'riff') : undefined,
+    receipts: [
+      {
+        engine: 'riff',
+        kind: 'riff_generator_complete',
+        payload: { seed: params.seed, bars: params.bars },
+      },
+    ],
   };
 }

@@ -9,6 +9,7 @@ import type { RiffCarryForward } from './riffCarryForward';
 import type { RiffProfile } from '../composer/riffProfileTypes';
 import type { RiffGenerationMetadata } from './riffMultiVoiceTypes';
 import type { ZappaRiffSoloControls } from '../compositionContext';
+import type { MusicContext } from '../music-context/musicContextTypes';
 
 export type RiffGeneratorOp = 'full' | 'regenerate' | 'mutate';
 
@@ -82,6 +83,8 @@ export interface RiffGeneratorSuccess {
   riffCarryForward?: RiffCarryForward;
   /** Horns / FX markers / call-response windows (no FX MIDI). */
   generationMetadata?: RiffGenerationMetadata;
+  /** Shared Brain snapshot (V90a) — optional for callers that consume MusicContext. */
+  musicContext?: MusicContext;
 }
 
 export interface RiffGeneratorFailure {

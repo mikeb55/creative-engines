@@ -40,10 +40,13 @@ import {
 } from './resolveRiffGeneratorProfile';
 import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
 import { resolveRiffFamilyTag } from './riffVrbRegistry';
+import { buildRiffGeneratorMusicContext } from '../music-context/musicContextAdapters';
 
 const CANDIDATES = 7;
 const MAX_ROUNDS = 40;
 const GCE_THRESHOLD = 9.0;
+
+export { buildRiffGeneratorMusicContext } from '../music-context/musicContextAdapters';
 
 function prepareCarryForward(
   p: RiffGeneratorParams,
@@ -267,6 +270,7 @@ export function runRiffGenerator(baseSeed: number, params: Omit<RiffGeneratorPar
         grid: out.grid,
       });
       const genMeta = out.generationMetadata ?? musicalityPool[0]?.generationMetadata;
+      const musicContext = buildRiffGeneratorMusicContext(full, out.coreMotif);
       return {
         success: true,
         score: out.score,
@@ -279,6 +283,7 @@ export function runRiffGenerator(baseSeed: number, params: Omit<RiffGeneratorPar
         riffMusicality: out.musicality,
         riffCarryForward: snapshotRiffCarryForward(out.score, out.perBarRhythm),
         generationMetadata: genMeta,
+        musicContext,
       };
     }
   }
