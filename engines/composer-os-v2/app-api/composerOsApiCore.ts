@@ -63,8 +63,10 @@ import {
 import { runAnalyticalMode } from '../core/analytical/analyticalMode';
 import { exportMusicXmlToPdf } from '../core/export/pdfExporter';
 import { exportMusicXmlToGuitarPro } from '../core/export/guitarProExporter';
+import { runCompingGenerator, type CompingResult } from '../core/comping/compingGenerator';
+import type { CompingOptions } from '../core/comping/compingTypes';
 
-export type { AnalyticalModeResult };
+export type { CompingOptions, CompingResult };
 
 export { getComposerFilesRoot, PRESET_OUTPUT_SUBFOLDER } from './composerOsOutputPaths';
 
@@ -1297,6 +1299,43 @@ export async function apiExportGuitarPro(req: {
       return { success: false, error: 'musicXmlPath and outputPath are required.' };
     }
     return await exportMusicXmlToGuitarPro(req.musicXmlPath.trim(), req.outputPath.trim());
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+export function apiGenerateComping(req: {
+  chords: string[];
+  key: string;
+  bpm: number;
+  bars: number;
+  timeSignature?: { num: number; den: number };
+  options: CompingOptions;
+}):
+  | { success: true; result: CompingResult }
+  | { success: false; error: string } {
+  try {
+    const chords = req?.chords;
+    if (!Array.isArray(chords) || chords.length === 0) {
+      return { success: false, error: 'chords must be a non-empty string array.' };
+    }
+    if (typeof req.key !== 'string' || !req.key.trim()) {
+      return { success: false, error: 'key is required.' };
+    }
+    const bpm = Number(req.bpm);
+    if (!Number.isFinite(bpm) || bpm <= 0) {
+      return { success: false, error: 'bpm must be a positive number.' };
+    }
+    const bars = Math.max(1, Math.floor(Number(req.bars) || 1));
+    const ts = req.timeSignature ?? { num: 4, den: 4 };
+    const result = runCompingGenerator(chords, {
+      key: req.key.trim(),
+      bpm,
+      bars,
+      timeSignature: { num: ts.num ?? 4, den: ts.den ?? 4 },
+      options: req.options,
+    });
+    return { success: true, result };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : String(e) };
   }

@@ -286,6 +286,46 @@ async function runSideExportFromMusicXmlPath(
     : api.exportGuitarPro({ musicXmlPath, outputPath });
 }
 
+function chordsFromProgressionText(text: string): string[] {
+  const t = text.trim();
+  if (!t) return ['Am7'];
+  const parts = t.includes('|')
+    ? t.split('|').flatMap((seg) => seg.trim().split(/[\s,]+/).filter(Boolean))
+    : t.split(/[\s,]+/).filter(Boolean);
+  return parts.length > 0 ? parts : ['Am7'];
+}
+
+function compingVoicingsToScoreNotes(
+  voicings: Array<{
+    barIndex: number;
+    beat: number;
+    midiPitches: number[];
+    duration: number;
+  }>
+) {
+  const notes: Array<{
+    pitch: number;
+    startBeat: number;
+    duration: number;
+    barIndex: number;
+    guitarString: number;
+    guitarFret: number;
+  }> = [];
+  for (const v of voicings) {
+    for (const pitch of v.midiPitches) {
+      notes.push({
+        pitch,
+        startBeat: Math.max(0, v.beat - 1),
+        duration: v.duration,
+        barIndex: v.barIndex,
+        guitarString: 2,
+        guitarFret: 0,
+      });
+    }
+  }
+  return notes;
+}
+
 /** Resolved meters across chart bars: global `timeSignature` + sparse `barMeterMap` carry. */
 function parsedChartHasMixedMeter(chart: ParsedChart): boolean {
   const n = chart.measures?.length ?? 0;
@@ -2373,6 +2413,29 @@ export function HomeGenerate({
   const [zappaSymmetryBias, setZappaSymmetryBias] = useState<ZappaSymmetryBiasUi>('medium');
   const [zappaChainDepth, setZappaChainDepth] = useState<ZappaChainDepthUi>(1);
   const riffGenerateOpRef = useRef<'full' | 'regenerate' | 'mutate'>('full');
+  const [riffSubMode, setRiffSubMode] = useState<'riff' | 'comping'>('riff');
+  const [compingStyle, setCompingStyle] = useState<'freddie_green' | 'shell_voicing' | 'full_chord'>(
+    'freddie_green'
+  );
+  const [compingBeatPattern, setCompingBeatPattern] = useState<
+    'beats_2_4' | 'beats_1_3' | 'all_beats' | 'offbeats'
+  >('beats_2_4');
+  const [compingDensity, setCompingDensity] = useState<'sparse' | 'medium' | 'dense'>('medium');
+  const [compingMuted, setCompingMuted] = useState(false);
+  const [compingBusy, setCompingBusy] = useState(false);
+  const [compingError, setCompingError] = useState<string | null>(null);
+  const [compingResult, setCompingResult] = useState<{
+    chordVoicings: Array<{
+      barIndex: number;
+      beat: number;
+      symbol: string;
+      midiPitches: number[];
+      duration: number;
+    }>;
+    musicContext: GenResult['musicContext'];
+    warnings: string[];
+  } | null>(null);
+  const [compingMusicXmlError, setCompingMusicXmlError] = useState<string | null>(null);
 
   const riffChordWarnings = useMemo(
     () => (presetId === 'riff_generator' ? riffChordGridWarnings(chordProgressionText) : []),
@@ -6358,6 +6421,254 @@ export function HomeGenerate({
         />
       )}
       {presetId === 'riff_generator' && (
+        <div
+          style={{
+            marginBottom: '1rem',
+            maxWidth: 620,
+            padding: '0.75rem 0.85rem',
+            borderRadius: 8,
+            border: '1px solid var(--border)',
+            background: 'var(--bg-panel)',
+          }}
+        >
+          <p style={{ margin: '0 0 0.65rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+            Riff generator mode
+          </p>
+          <div style={{ display: 'flex', gap: 6, marginBottom: '0.75rem' }}>
+            <button
+              type="button"
+              className={riffSubMode === 'riff' ? undefined : 'secondary'}
+              onClick={() => setRiffSubMode('riff')}
+              aria-pressed={riffSubMode === 'riff'}
+              disabled={loading || compingBusy}
+            >
+              Riff
+            </button>
+            <button
+              type="button"
+              className={riffSubMode === 'comping' ? undefined : 'secondary'}
+              onClick={() => setRiffSubMode('comping')}
+              aria-pressed={riffSubMode === 'comping'}
+              disabled={loading || compingBusy}
+            >
+              Comping
+            </button>
+          </div>
+          {riffSubMode === 'comping' ? (
+            <>
+              <div
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '0.75rem 1.25rem',
+                  marginBottom: '0.75rem',
+                }}
+              >
+                <div>
+                  <label htmlFor="co-comping-style" style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                    Style
+                  </label>
+                  <select
+                    id="co-comping-style"
+                    value={compingStyle}
+                    onChange={(e) =>
+                      setCompingStyle(e.target.value as 'freddie_green' | 'shell_voicing' | 'full_chord')
+                    }
+                    disabled={compingBusy}
+                  >
+                    <option value="freddie_green">Freddie Green</option>
+                    <option value="shell_voicing">Shell Voicing</option>
+                    <option value="full_chord">Full Chord</option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="co-comping-beat" style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                    Beat pattern
+                  </label>
+                  <select
+                    id="co-comping-beat"
+                    value={compingBeatPattern}
+                    onChange={(e) =>
+                      setCompingBeatPattern(
+                        e.target.value as 'beats_2_4' | 'beats_1_3' | 'all_beats' | 'offbeats'
+                      )
+                    }
+                    disabled={compingBusy}
+                  >
+                    <option value="beats_2_4">2 + 4</option>
+                    <option value="beats_1_3">1 + 3</option>
+                    <option value="all_beats">All beats</option>
+                    <option value="offbeats">Offbeats</option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="co-comping-density" style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                    Density
+                  </label>
+                  <select
+                    id="co-comping-density"
+                    value={compingDensity}
+                    onChange={(e) =>
+                      setCompingDensity(e.target.value as 'sparse' | 'medium' | 'dense')
+                    }
+                    disabled={compingBusy || compingStyle !== 'full_chord'}
+                  >
+                    <option value="sparse">Sparse</option>
+                    <option value="medium">Medium</option>
+                    <option value="dense">Dense</option>
+                  </select>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: 2 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem' }}>
+                    <input
+                      type="checkbox"
+                      checked={compingMuted}
+                      onChange={(e) => setCompingMuted(e.target.checked)}
+                      disabled={compingBusy}
+                    />
+                    Muted (rhythm only)
+                  </label>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={compingBusy || loading}
+                onClick={() => {
+                  void (async () => {
+                    setCompingError(null);
+                    setCompingMusicXmlError(null);
+                    setCompingBusy(true);
+                    try {
+                      const chords = chordsFromProgressionText(chordProgressionText);
+                      const r = await api.generateComping({
+                        chords,
+                        key: tonalCenter.trim() || 'C',
+                        bpm: bpm > 0 ? bpm : 100,
+                        bars: clampRiffBarCount(totalBars),
+                        timeSignature: { num: 4, den: 4 },
+                        options: {
+                          style: compingStyle,
+                          beatPattern: compingBeatPattern,
+                          voicingDensity: compingDensity,
+                          muted: compingMuted,
+                        },
+                      });
+                      if (!r.success) {
+                        setCompingError(r.error);
+                        setCompingResult(null);
+                        return;
+                      }
+                      setCompingResult(r.result);
+                      if (r.result.musicContext) setSharedMusicContext(r.result.musicContext);
+                    } catch (e) {
+                      setCompingError(e instanceof Error ? e.message : String(e));
+                      setCompingResult(null);
+                    } finally {
+                      setCompingBusy(false);
+                    }
+                  })();
+                }}
+              >
+                {compingBusy ? 'Generating…' : 'Generate Comping'}
+              </button>
+              {compingError && (
+                <div
+                  role="alert"
+                  style={{
+                    marginTop: '0.75rem',
+                    padding: '0.5rem 0.65rem',
+                    borderRadius: 6,
+                    background: 'rgba(239,68,68,0.1)',
+                    border: '1px solid rgba(239,68,68,0.35)',
+                    fontSize: '0.85rem',
+                    color: 'var(--error, #ef4444)',
+                  }}
+                >
+                  {compingError}
+                </div>
+              )}
+              {compingResult && !compingError && (
+                <div style={{ marginTop: '0.85rem' }}>
+                  <p style={{ margin: '0 0 0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                    Chord grid ({compingResult.chordVoicings.length} hits)
+                  </p>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                      <thead>
+                        <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
+                          <th style={{ padding: '0.35rem 0.5rem' }}>Bar</th>
+                          <th style={{ padding: '0.35rem 0.5rem' }}>Beat</th>
+                          <th style={{ padding: '0.35rem 0.5rem' }}>Symbol</th>
+                          <th style={{ padding: '0.35rem 0.5rem' }}>Pitches</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {compingResult.chordVoicings.map((row, i) => (
+                          <tr key={`comping-${row.barIndex}-${row.beat}-${i}`} style={{ borderBottom: '1px solid var(--border)' }}>
+                            <td style={{ padding: '0.35rem 0.5rem' }}>{row.barIndex + 1}</td>
+                            <td style={{ padding: '0.35rem 0.5rem' }}>{row.beat}</td>
+                            <td style={{ padding: '0.35rem 0.5rem' }}>{row.symbol}</td>
+                            <td style={{ padding: '0.35rem 0.5rem' }}>
+                              {row.midiPitches.length ? row.midiPitches.join(', ') : '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {compingResult.warnings.length > 0 && (
+                    <ul style={{ margin: '0.5rem 0 0', paddingLeft: '1.1rem', fontSize: '0.82rem', color: '#ca8a04' }}>
+                      {compingResult.warnings.map((w) => (
+                        <li key={w}>{w}</li>
+                      ))}
+                    </ul>
+                  )}
+                  <div style={{ marginTop: '0.65rem' }}>
+                    <button
+                      type="button"
+                      className="secondary"
+                      disabled={compingBusy || compingResult.chordVoicings.length === 0}
+                      onClick={() => {
+                        setCompingMusicXmlError(null);
+                        const notes = compingVoicingsToScoreNotes(compingResult.chordVoicings);
+                        const barCount = clampRiffBarCount(totalBars);
+                        const xml = vaultRiffScoreNotesToMusicXml(
+                          notes,
+                          barCount,
+                          title.trim() || 'Comping'
+                        );
+                        const base =
+                          (title.trim() || 'Comping')
+                            .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+                            .replace(/\s+/g, '_')
+                            .replace(/^\.+|\.+$/g, '') || 'comping';
+                        const blob = new Blob([xml], { type: 'application/vnd.recordare.musicxml+xml' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `${base}.xml`;
+                        a.rel = 'noopener';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                      }}
+                    >
+                      Export MusicXML
+                    </button>
+                  </div>
+                  {compingMusicXmlError && (
+                    <p style={{ marginTop: '0.5rem', fontSize: '0.82rem', color: 'var(--error, #ef4444)' }}>
+                      {compingMusicXmlError}
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
+          ) : null}
+        </div>
+      )}
+      {presetId === 'riff_generator' && riffSubMode === 'riff' && (
         <RiffGeneratorPanel
           loading={loading}
           family={riffFamily}

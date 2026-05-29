@@ -19,6 +19,7 @@ import {
   apiAnalyse,
   apiExportPdf,
   apiExportGuitarPro,
+  apiGenerateComping,
   type PdfGenerateFromPdfRequest,
   getComposerOsRuntimeBuildInfo,
 } from '../../../engines/composer-os-v2/app-api/composerOsApiCore';
@@ -209,6 +210,9 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
   );
   ipcMain.handle('composer-os-api:export-guitar-pro', (_e, body: unknown) =>
     apiExportGuitarPro(body as Parameters<typeof apiExportGuitarPro>[0])
+  );
+  ipcMain.handle('composer-os-api:generate-comping', (_e, body: unknown) =>
+    Promise.resolve(apiGenerateComping(body as Parameters<typeof apiGenerateComping>[0]))
   );
   ipcMain.handle(
     'composer-os-api:save-anthropic-api-key',

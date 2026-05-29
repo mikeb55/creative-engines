@@ -26,6 +26,7 @@ import {
   apiAnalyse,
   apiExportPdf,
   apiExportGuitarPro,
+  apiGenerateComping,
 } from '../engines/composer-os-v2/app-api/composerOsApiCore';
 import type { GenerateRequest } from '../engines/composer-os-v2/app-api/appApiTypes';
 
@@ -211,6 +212,19 @@ app.post('/api/export-guitar-pro', async (req: Request, res: Response) => {
   try {
     const r = await apiExportGuitarPro(req.body as Parameters<typeof apiExportGuitarPro>[0]);
     res.json(r);
+  } catch (err) {
+    res.status(500).json({ success: false, error: String(err) });
+  }
+});
+
+app.post('/api/generate-comping', (req: Request, res: Response) => {
+  try {
+    const result = apiGenerateComping(req.body as Parameters<typeof apiGenerateComping>[0]);
+    if (!result.success) {
+      res.status(400).json(result);
+      return;
+    }
+    res.json(result);
   } catch (err) {
     res.status(500).json({ success: false, error: String(err) });
   }

@@ -113,6 +113,9 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     if (path === '/export-guitar-pro') {
       return ipcInvoke<T>('composer-os-api:export-guitar-pro', body ?? {});
     }
+    if (path === '/generate-comping') {
+      return ipcInvoke<T>('composer-os-api:generate-comping', body ?? {});
+    }
     throw new Error(`Unknown IPC POST path: ${path}`);
   }
   let r: Response;
@@ -278,6 +281,36 @@ export const api = {
     post<{ success: boolean; path?: string; error?: string }>('/export-pdf', body),
   exportGuitarPro: (body: { musicXmlPath: string; outputPath: string }) =>
     post<{ success: boolean; path?: string; error?: string }>('/export-guitar-pro', body),
+  generateComping: (body: {
+    chords: string[];
+    key: string;
+    bpm: number;
+    bars: number;
+    timeSignature?: { num: number; den: number };
+    options: {
+      style: 'freddie_green' | 'shell_voicing' | 'full_chord';
+      beatPattern: 'beats_2_4' | 'beats_1_3' | 'all_beats' | 'offbeats';
+      voicingDensity: 'sparse' | 'medium' | 'dense';
+      muted: boolean;
+    };
+  }) =>
+    post<
+      | {
+          success: true;
+          result: {
+            chordVoicings: Array<{
+              barIndex: number;
+              beat: number;
+              symbol: string;
+              midiPitches: number[];
+              duration: number;
+            }>;
+            musicContext: import('@composer-os/core/music-context/musicContextTypes').MusicContext;
+            warnings: string[];
+          };
+        }
+      | { success: false; error: string }
+    >('/generate-comping', body),
 };
 
 /** Shape checks for generation receipts (tests). */
