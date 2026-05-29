@@ -83,6 +83,7 @@ import {
   buildExplainLines,
   buildMartinoResultSummary,
 } from '../lib/martinoGeneratePipeline.js';
+import { irealChordToMartino } from '../lib/irealToMartino.js';
 import {
   DEFAULT_SLONIMSKY_SQ_BB_HYBRID_STATE,
   mapSqBbHybridToGenerateRequest,
@@ -2056,6 +2057,8 @@ export function HomeGenerate({
     | { type: 'failed'; message: string }
   >(null);
   const [martinoXmlString, setMartinoXmlString] = useState<string | null>(null);
+  const [iRealMartinoSentMsg, setIRealMartinoSentMsg] = useState('');
+  const [martinoSessionMsg, setMartinoSessionMsg] = useState('');
 
   const martinoActiveSection = useMemo(() => {
     if (!compositionSong || !compositionActiveSectionId) return null;
@@ -2915,6 +2918,186 @@ export function HomeGenerate({
     songwriterStyle === 'frank_zappa' ||
     slonimskyHarmonicVoice === 'frank_zappa' ||
     (presetId === 'riff_generator' && isZappaRiffVrbId(riffVrbId));
+
+  const handleSendIRealToMartino = useCallback(() => {
+    if (!iRealParsedChart) return;
+    const result = irealChordToMartino(iRealParsedChart);
+    const parsed = parseMartinoChords(result);
+    const count = parsed.ok ? parsed.chords.length : 0;
+    if (!result) {
+      setIRealMartinoSentMsg('No chords to send');
+      return;
+    }
+    setMartinoChordSource('manual');
+    setMartinoManualChords(result);
+    setIRealMartinoSentMsg(`${count} chord${count === 1 ? '' : 's'} sent to Martino`);
+  }, [iRealParsedChart]);
+
+  const buildMartinoSessionPayload = useCallback(() => {
+    const progressionText =
+      martinoChordSource === 'section'
+        ? String(
+            (martinoActiveSection as { chordProgressionText?: string } | null)?.chordProgressionText ??
+              martinoManualChords
+          )
+        : martinoManualChords;
+    const progression = parseMartinoChords(progressionText).chords;
+    const tension_map: Record<string, 'low' | 'medium' | 'high'> = {};
+    Object.entries(martinoTensionOverrides).forEach(([idx, level]) => {
+      tension_map[idx] = level;
+    });
+    return {
+      formatVersion: 3 as const,
+      savedAt: new Date().toISOString(),
+      presetId: 'martino_linear',
+      seed: baseSeed,
+      styleStack: MINIMAL_STYLE_STACK,
+      title: martinoTuneName.trim() || undefined,
+      chordProgressionText: progressionText,
+      ecmMode,
+      martinoConfig: {
+        activeActivity: martinoActiveActivity,
+        secondaryActivities: martinoSecondaryActivities,
+        mode: martinoMode,
+        progression,
+        choruses: martinoChoruses,
+        dominantTensionDefault: martinoDominantTensionDefault,
+        perChordOverrides: martinoTensionOverrides,
+        tension_map,
+        ecmMode,
+        slonimskyMacroHints: slonimskyMacro,
+        lfv: { min_fret: martinoLfvMin, max_fret: martinoLfvMax },
+        explainMode: martinoExplainMode,
+        noteDensity: martinoNoteDensity,
+        chordSource: martinoChordSource,
+        tune: martinoTuneName.trim() || undefined,
+      },
+    };
+  }, [
+    baseSeed,
+    ecmMode,
+    martinoActiveActivity,
+    martinoActiveSection,
+    martinoChordSource,
+    martinoChoruses,
+    martinoDominantTensionDefault,
+    martinoExplainMode,
+    martinoLfvMax,
+    martinoLfvMin,
+    martinoManualChords,
+    martinoMode,
+    martinoNoteDensity,
+    martinoSecondaryActivities,
+    martinoTensionOverrides,
+    martinoTuneName,
+    slonimskyMacro,
+  ]);
+
+  const restoreMartinoFromSession = useCallback((session: Record<string, unknown>) => {
+    const mc = (session.martinoConfig ?? {}) as Record<string, unknown>;
+    if (typeof session.presetId === 'string' && session.presetId) {
+      setPresetId(session.presetId);
+    }
+    const progressionText =
+      typeof session.chordProgressionText === 'string'
+        ? session.chordProgressionText
+        : Array.isArray(mc.progression)
+          ? mc.progression.map(String).join(' ')
+          : '';
+    if (progressionText) {
+      setMartinoManualChords(progressionText);
+      setMartinoChordSource(mc.chordSource === 'section' ? 'section' : 'manual');
+    }
+    if (typeof mc.tune === 'string') setMartinoTuneName(mc.tune);
+    else if (typeof session.title === 'string') setMartinoTuneName(session.title);
+    if (typeof mc.activeActivity === 'string') setMartinoActiveActivity(mc.activeActivity);
+    if (Array.isArray(mc.secondaryActivities)) {
+      setMartinoSecondaryActivities(mc.secondaryActivities.map(String));
+    }
+    if (mc.mode === 'teaching' || mc.mode === 'performance') setMartinoMode(mc.mode);
+    if (typeof mc.choruses === 'number') setMartinoChoruses(mc.choruses);
+    if (
+      mc.dominantTensionDefault === 'low' ||
+      mc.dominantTensionDefault === 'medium' ||
+      mc.dominantTensionDefault === 'high'
+    ) {
+      setMartinoDominantTensionDefault(mc.dominantTensionDefault);
+    }
+    const overrides = mc.perChordOverrides ?? mc.tension_map;
+    if (overrides && typeof overrides === 'object') {
+      const next: Record<number, 'low' | 'medium' | 'high'> = {};
+      Object.entries(overrides as Record<string, string>).forEach(([k, v]) => {
+        if (v === 'low' || v === 'medium' || v === 'high') next[Number(k)] = v;
+      });
+      setMartinoTensionOverrides(next);
+    }
+    const lfv = mc.lfv as { min_fret?: number; max_fret?: number } | undefined;
+    if (lfv?.min_fret != null) setMartinoLfvMin(Number(lfv.min_fret));
+    if (lfv?.max_fret != null) setMartinoLfvMax(Number(lfv.max_fret));
+    if (typeof mc.explainMode === 'boolean') setMartinoExplainMode(mc.explainMode);
+    if (typeof mc.noteDensity === 'string') setMartinoNoteDensity(mc.noteDensity);
+    if (session.ecmMode === 'ECM_METHENY_QUARTET' || session.ecmMode === 'ECM_SCHNEIDER_CHAMBER') {
+      setEcmMode(session.ecmMode);
+    }
+    if (mc.slonimskyMacroHints && typeof mc.slonimskyMacroHints === 'object') {
+      setSlonimskyMacro(mc.slonimskyMacroHints as typeof slonimskyMacro);
+    }
+    if (typeof session.seed === 'number' && Number.isFinite(session.seed)) {
+      setBaseSeed(session.seed);
+    }
+  }, []);
+
+  const handleSaveMartinoSession = useCallback(async () => {
+    const desktop = typeof window !== 'undefined' ? window.composerOsDesktop : undefined;
+    if (!desktop?.invokeApi) return;
+    setMartinoSessionMsg('');
+    try {
+      const pick = (await desktop.invokeApi('composer-os-api:pick-session-save-path')) as {
+        ok?: boolean;
+        canceled?: boolean;
+        filepath?: string;
+      };
+      if (!pick?.ok || !pick.filepath) return;
+      const session = buildMartinoSessionPayload();
+      const saved = (await desktop.invokeApi('composer-os-api:save-session', {
+        filepath: pick.filepath,
+        session,
+      })) as { ok?: boolean; error?: string };
+      if (saved?.ok) {
+        setMartinoSessionMsg('Session saved');
+      } else {
+        setMartinoSessionMsg(saved?.error ? `Save failed: ${saved.error}` : 'Save failed');
+      }
+    } catch (e) {
+      setMartinoSessionMsg(e instanceof Error ? e.message : 'Save failed');
+    }
+  }, [buildMartinoSessionPayload]);
+
+  const handleLoadMartinoSession = useCallback(async () => {
+    const desktop = typeof window !== 'undefined' ? window.composerOsDesktop : undefined;
+    if (!desktop?.invokeApi) return;
+    setMartinoSessionMsg('');
+    try {
+      const pick = (await desktop.invokeApi('composer-os-api:pick-session-load-path')) as {
+        ok?: boolean;
+        canceled?: boolean;
+        filepath?: string;
+      };
+      if (!pick?.ok || !pick.filepath) return;
+      const loaded = (await desktop.invokeApi('composer-os-api:load-session', {
+        filepath: pick.filepath,
+      })) as { ok?: boolean; session?: Record<string, unknown>; errors?: string[] };
+      if (!loaded?.ok || !loaded.session) {
+        const err = loaded?.errors?.join('; ') || 'Load failed';
+        setMartinoSessionMsg(err);
+        return;
+      }
+      restoreMartinoFromSession(loaded.session);
+      setMartinoSessionMsg('Session loaded');
+    } catch (e) {
+      setMartinoSessionMsg(e instanceof Error ? e.message : 'Load failed');
+    }
+  }, [restoreMartinoFromSession]);
 
   const generate = useCallback(
     async (opts?: { seedOverride?: number; variationOverride?: string }) => {
@@ -5128,6 +5311,19 @@ export function HomeGenerate({
           }}
           disabled={loading}
         />
+      )}
+      {presetId === 'martino_linear' && typeof window !== 'undefined' && window.composerOsDesktop && (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: '1rem' }}>
+          <button type="button" className="secondary" onClick={() => void handleSaveMartinoSession()} disabled={loading}>
+            Save Session
+          </button>
+          <button type="button" className="secondary" onClick={() => void handleLoadMartinoSession()} disabled={loading}>
+            Load Session
+          </button>
+          {martinoSessionMsg ? (
+            <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{martinoSessionMsg}</span>
+          ) : null}
+        </div>
       )}
 
       {modeUx && (
@@ -8288,6 +8484,18 @@ export function HomeGenerate({
             (iRealParsedChart.measures?.length > 0 || !!iRealParsedChart.title?.trim()) && (
               <VaultImportChartSummary chart={iRealParsedChart} />
             )}
+          {iRealParsedChart?.measures?.length ? (
+            <div style={{ marginTop: '0.5rem' }}>
+              <button type="button" className="secondary" onClick={handleSendIRealToMartino} disabled={iRealVaultBusy}>
+                Send to Martino
+              </button>
+              {iRealMartinoSentMsg ? (
+                <p style={{ margin: '0.35rem 0 0', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                  {iRealMartinoSentMsg}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
           <div
             style={{
               display: 'flex',

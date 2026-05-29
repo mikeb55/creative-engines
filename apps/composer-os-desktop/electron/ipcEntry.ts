@@ -24,6 +24,8 @@ import {
   saveAnthropicApiKeyToSecretStore,
 } from './anthropicKeyHydration';
 import { getOutputDir } from '../../composer-os-app/src/lib/outputPaths';
+import { loadSessionFile, saveSessionFile } from '../../../engines/composer-os-v2/core/sessions/sessionStore';
+import type { ComposerSessionV1 } from '../../../engines/composer-os-v2/core/sessions/sessionTypes';
 
 function resolveEnginesRoot(): string {
   return app.isPackaged
@@ -101,6 +103,58 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
     });
     if (result.canceled || !result.filePaths?.[0]) return { path: null };
     return { path: result.filePaths[0] };
+  });
+
+  ipcMain.handle('composer-os-api:pick-session-save-path', async () => {
+    const { dialog } = await import('electron');
+    const result = await dialog.showSaveDialog({
+      filters: [{ name: 'Composer Session', extensions: ['json'] }],
+      defaultPath: 'martino-session.json',
+    });
+    if (result.canceled || !result.filePath) {
+      return { ok: false, canceled: true };
+    }
+    let filepath = result.filePath;
+    if (!filepath.toLowerCase().endsWith('.json')) {
+      filepath = `${filepath}.json`;
+    }
+    return { ok: true, filepath };
+  });
+
+  ipcMain.handle('composer-os-api:pick-session-load-path', async () => {
+    const { dialog } = await import('electron');
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      filters: [{ name: 'Composer Session', extensions: ['json'] }],
+    });
+    if (result.canceled || !result.filePaths?.[0]) {
+      return { ok: false, canceled: true };
+    }
+    return { ok: true, filepath: result.filePaths[0] };
+  });
+
+  ipcMain.handle('composer-os-api:save-session', (_event, body: unknown) => {
+    const b =
+      body && typeof body === 'object'
+        ? (body as { filepath?: unknown; session?: unknown })
+        : {};
+    const filepath = typeof b.filepath === 'string' ? b.filepath.trim() : '';
+    const session = b.session as ComposerSessionV1 | undefined;
+    if (!filepath || !session) {
+      return { ok: false, error: 'missing filepath or session' };
+    }
+    return saveSessionFile(filepath, session);
+  });
+
+  ipcMain.handle('composer-os-api:load-session', (_event, body: unknown) => {
+    const filepath =
+      body && typeof body === 'object' && typeof (body as { filepath?: unknown }).filepath === 'string'
+        ? (body as { filepath: string }).filepath.trim()
+        : '';
+    if (!filepath) {
+      return { ok: false, errors: ['missing filepath'] };
+    }
+    return loadSessionFile(filepath);
   });
 
   ipcMain.handle('composer-os-api:read-file', async (_event, body: unknown) => {
