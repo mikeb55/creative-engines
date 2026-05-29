@@ -1,3 +1,10 @@
+import {
+  formatMartinoRuleDisplay,
+  martinoRuleTooltip,
+  martinoActivityHumanLabel,
+  martinoActivityCodeTooltip,
+} from '../../lib/martinoGeneratePipeline.js';
+
 const panelStyle = {
   marginTop: '0.75rem',
   marginBottom: '1rem',
@@ -14,7 +21,44 @@ const panelStyle = {
 const rowStyle = { margin: '0.35rem 0' };
 const labelStyle = { color: 'var(--text-muted)' };
 
-export default function MartinoResultPanel({ feedback, onOpenFolder }) {
+function buildBarExplainRows(phrasePlan, barTelemetry) {
+  const planByBar = new Map();
+  for (const row of Array.isArray(phrasePlan) ? phrasePlan : []) {
+    const bar = Number(row?.bar);
+    if (bar) planByBar.set(bar, row);
+  }
+  const telemByBar = new Map();
+  for (const row of Array.isArray(barTelemetry) ? barTelemetry : []) {
+    const bar = Number(row?.bar);
+    if (bar) telemByBar.set(bar, row);
+  }
+  const bars = [...new Set([...planByBar.keys(), ...telemByBar.keys()])].sort((a, b) => a - b);
+  return bars.map((bar) => ({
+    bar,
+    plan: planByBar.get(bar),
+    telemetry: telemByBar.get(bar),
+  }));
+}
+
+function formatExplainBar({ bar, plan, telemetry }) {
+  if (!plan) return { bar, headline: `Bar ${bar}`, detail: '—' };
+  const chord = String(plan.chord ?? '—');
+  const reduction = String(plan.reduction ?? '—');
+  const activityId = String(plan.activity ?? '');
+  const activity = martinoActivityHumanLabel(activityId);
+  const activityCode = martinoActivityCodeTooltip(activityId);
+  const ruleKey = String(plan.book_rule ?? '');
+  const rule = formatMartinoRuleDisplay(ruleKey);
+  const ruleTip = martinoRuleTooltip(ruleKey);
+  const direction = String(plan.direction_vector ?? telemetry?.direction_vector ?? '—');
+  const lfvOk = plan.lfv_ok !== false;
+  const antiLoop = telemetry?.anti_loop_triggered === true;
+  const headline = `Bar ${bar}: ${chord} → ${reduction}`;
+  const detail = `${activity} (${activityCode}) · ${rule} · ${direction} · LFV ${lfvOk ? '✓' : '⚠'}${antiLoop ? ' · anti-loop' : ''}`;
+  return { bar, headline, detail, ruleTip };
+}
+
+export default function MartinoResultPanel({ feedback, onOpenFolder, explainMode }) {
   if (!feedback) return null;
 
   if (feedback.type === 'failed') {
@@ -27,7 +71,11 @@ export default function MartinoResultPanel({ feedback, onOpenFolder }) {
     );
   }
 
-  const { summary, gateFailed } = feedback;
+  const { summary, gateFailed, phrasePlan = [], barTelemetry = [] } = feedback;
+  const explainBars =
+    explainMode && phrasePlan.length > 0
+      ? buildBarExplainRows(phrasePlan, barTelemetry).map(formatExplainBar)
+      : [];
 
   return (
     <div style={panelStyle} role="status" aria-live="polite">
@@ -63,6 +111,21 @@ export default function MartinoResultPanel({ feedback, onOpenFolder }) {
         >
           ⚠ Line is outside ideal range — open in Sibelius to review
         </p>
+      )}
+      {explainBars.length > 0 && (
+        <div style={{ marginTop: '0.75rem' }}>
+          <p style={{ margin: '0 0 0.45rem', fontWeight: 600, fontSize: '0.88rem' }}>
+            Bar-by-bar reasoning
+          </p>
+          {explainBars.map((row) => (
+            <div key={row.bar} style={{ marginBottom: '0.45rem', fontSize: '0.85rem' }}>
+              <div style={{ fontWeight: 500 }}>{row.headline}</div>
+              <div style={{ color: 'var(--text-muted)' }} title={row.ruleTip || undefined}>
+                {row.detail}
+              </div>
+            </div>
+          ))}
+        </div>
       )}
       {summary.outputDir && onOpenFolder && (
         <button

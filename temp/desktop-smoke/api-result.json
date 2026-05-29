@@ -1,0 +1,36 @@
+{
+  "ok": true,
+  "r": {
+    "success": false,
+    "error": "Missing bridge script: C:\\Users\\mike\\AppData\\Local\\Temp\\3ENAVVaHfEFvlah6CRXkTFXP2lJ\\martino\\martino_bridge.py",
+    "composerOsVersion": "1.0.0",
+    "productKind": "musicxml",
+    "validation": {
+      "integrityPassed": false,
+      "behaviourGatesPassed": false,
+      "mxValidationPassed": false,
+      "strictBarMathPassed": false,
+      "exportRoundTripPassed": false,
+      "exportIntegrityPassed": false,
+      "instrumentMetadataPassed": false,
+      "sibeliusSafe": false,
+      "readiness": {
+        "shareable": false,
+        "release": 0,
+        "mx": 0
+      },
+      "errors": [
+        "Missing bridge script: C:\\Users\\mike\\AppData\\Local\\Temp\\3ENAVVaHfEFvlah6CRXkTFXP2lJ\\martino\\martino_bridge.py"
+      ]
+    },
+    "runManifest": {
+      "seed": 151653031,
+      "presetId": "martino_linear",
+      "activeModules": [
+        "martino_linear_engine"
+      ],
+      "timestamp": "2026-05-28T22:58:10.884Z",
+      "martinoStderrExcerpt": "Missing bridge script: C:\\Users\\mike\\AppData\\Local\\Temp\\3ENAVVaHfEFvlah6CRXkTFXP2lJ\\martino\\martino_bridge.py"
+    }
+  }
+}

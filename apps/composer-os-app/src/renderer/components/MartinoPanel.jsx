@@ -59,6 +59,10 @@ export default function MartinoPanel({
   setExplainMode,
   onLoadBeatrice,
   onLoadOrbit,
+  onLoadStandard,
+  onLoadBallad,
+  onLoadBlues,
+  onLoadModal,
   disabled,
 }) {
   const chordText = chordSource === 'section' ? sectionChords : manualChords;
@@ -248,6 +252,12 @@ export default function MartinoPanel({
       <div style={{ display: 'flex', gap: 8 }}>
         <button type="button" onClick={onLoadBeatrice} disabled={disabled} style={chip(false)}>Beatrice</button>
         <button type="button" onClick={onLoadOrbit} disabled={disabled} style={chip(false)}>Orbit</button>
+      </div>
+      <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+        <button type="button" onClick={onLoadStandard} disabled={disabled} style={chip(false)}>Standard</button>
+        <button type="button" onClick={onLoadBallad}   disabled={disabled} style={chip(false)}>Ballad</button>
+        <button type="button" onClick={onLoadBlues}    disabled={disabled} style={chip(false)}>Blues</button>
+        <button type="button" onClick={onLoadModal}    disabled={disabled} style={chip(false)}>Modal</button>
       </div>
     </div>
   );

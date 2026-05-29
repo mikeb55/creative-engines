@@ -200,6 +200,10 @@ export interface MartinoEngineResponse {
 
   provenanceLog?: Array<Record<string, unknown>>;
 
+  phrasePlan?: unknown[];
+
+  barTelemetry?: unknown[];
+
 }
 
 

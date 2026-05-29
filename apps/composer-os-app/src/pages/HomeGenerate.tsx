@@ -2046,7 +2046,13 @@ export function HomeGenerate({
   const [martinoBridgeMeta, setMartinoBridgeMeta] = useState<{ version?: string; lfvCount?: number; warnings?: string[] } | null>(null);
   const [martinoFeedback, setMartinoFeedback] = useState<
     | null
-    | { type: 'success'; summary: ReturnType<typeof buildMartinoResultSummary>; gateFailed: boolean }
+    | {
+        type: 'success';
+        summary: ReturnType<typeof buildMartinoResultSummary>;
+        gateFailed: boolean;
+        phrasePlan: unknown[];
+        barTelemetry: unknown[];
+      }
     | { type: 'failed'; message: string }
   >(null);
 
@@ -3756,6 +3762,14 @@ export function HomeGenerate({
             )
           );
           const provenance = manifest?.martinoProvenance ?? null;
+          const phrasePlan: unknown[] =
+            (r as { phrasePlan?: unknown[] }).phrasePlan ??
+            (provenance?.phrasePlan as unknown[]) ??
+            [];
+          const barTelemetry: unknown[] =
+            (r as { barTelemetry?: unknown[] }).barTelemetry ??
+            (provenance?.barTelemetry as unknown[]) ??
+            [];
           const tuneLabel =
             martinoTuneName.trim() || scoreTitle.trim() || String(provenance?.tune_name ?? 'Tune');
           const summary = buildMartinoResultSummary(provenance, {
@@ -3766,6 +3780,8 @@ export function HomeGenerate({
             type: 'success',
             summary,
             gateFailed: summary.gateFailed,
+            phrasePlan,
+            barTelemetry,
           });
         } else if (presetId === 'martino_linear' && !r.success) {
           const manifest = r.runManifest as { martinoStderrExcerpt?: string } | undefined;
@@ -3969,6 +3985,18 @@ export function HomeGenerate({
       zappaSoloDissonance,
       iRealParsedChart,
       onResult,
+      martinoTuneName,
+      martinoManualChords,
+      martinoChordSource,
+      martinoActiveActivity,
+      martinoSecondaryActivities,
+      martinoChoruses,
+      martinoDominantTensionDefault,
+      martinoTensionOverrides,
+      martinoMode,
+      martinoLfvMin,
+      martinoLfvMax,
+      martinoExplainMode,
     ]
   );
 
@@ -5042,18 +5070,52 @@ export function HomeGenerate({
           setExplainMode={setMartinoExplainMode}
           onLoadBeatrice={() => {
             setMartinoTuneName('Beatrice');
-            setMartinoManualChords(
-              'Fmaj7 Gbmaj7 Fmaj7 Ebmaj7 Dm7 Ebmaj7 Dm7 Bbm7 Am7 Bbmaj7 Dm7 Fmaj7 Gbmaj7 Fmaj7 Ebmaj7 Fmaj7'
-            );
-            setMartinoActiveActivity('A2_DIAGONAL_BRIDGE');
+            setMartinoChordSource('manual');
+            setMartinoManualChords('Fmaj7 Gbmaj7 Fmaj7 Ebmaj7 Dm7 Ebmaj7 Dm7 Bbm7 Am7 Bbmaj7 Dm7 Fmaj7 Gbmaj7 Fmaj7 Ebmaj7 Fmaj7');
             setMartinoChoruses(2);
+            setMartinoActiveActivity('A1_LINEAR_CORE');
+            setMartinoSecondaryActivities(['A2_DIAGONAL_BRIDGE', 'A3_PIVOT_CELL', 'A4_ANCHOR_ARP']);
+            setMartinoDominantTensionDefault('low');
           }}
           onLoadOrbit={() => {
-            setMartinoTuneName('Orbit 5X Version 2');
-            setMartinoManualChords(
-              'Fmaj7#11 Ebmaj7#5 Dbmaj7 Bmaj7 Bbm9 Abmaj7 Gbmaj7 Emaj7 Fmaj7#11 Ebmaj7#5 Dbmaj7 Bmaj7 Bbm9 Abmaj7 Gbmaj7 Emaj7 G/F G/F Eb/F Eb/F G/F G/F Eb/F Eb/F Dbmaj7 Bb7 Fmaj7 Fmaj7'
-            );
+            setMartinoTuneName('Orbit');
+            setMartinoChordSource('manual');
+            setMartinoManualChords('Fmaj7#11 Ebmaj7#5 Dbmaj7 Bmaj7 Bbm9 Abmaj7 Gbmaj7 Emaj7 Fmaj7#11 Ebmaj7#5 Dbmaj7 Bmaj7 Bbm9 Abmaj7 Gbmaj7 Emaj7 G/F G/F Eb/F Eb/F G/F G/F Eb/F Eb/F Dbmaj7 Bb7 Fmaj7 Fmaj7');
+            setMartinoChoruses(1);
             setMartinoActiveActivity('A1_LINEAR_CORE');
+            setMartinoSecondaryActivities(['A2_DIAGONAL_BRIDGE']);
+            setMartinoDominantTensionDefault('low');
+          }}
+          onLoadStandard={() => {
+            setMartinoTuneName('');
+            setMartinoChordSource('manual');
+            setMartinoActiveActivity('A1_LINEAR_CORE');
+            setMartinoSecondaryActivities(['A2_DIAGONAL_BRIDGE', 'A3_PIVOT_CELL']);
+            setMartinoDominantTensionDefault('medium');
+            setMartinoChoruses(2);
+          }}
+          onLoadBallad={() => {
+            setMartinoTuneName('');
+            setMartinoChordSource('manual');
+            setMartinoActiveActivity('A1_LINEAR_CORE');
+            setMartinoSecondaryActivities(['A2_DIAGONAL_BRIDGE']);
+            setMartinoDominantTensionDefault('low');
+            setMartinoChoruses(1);
+          }}
+          onLoadBlues={() => {
+            setMartinoTuneName('');
+            setMartinoChordSource('manual');
+            setMartinoActiveActivity('A4_ANCHOR_ARP');
+            setMartinoSecondaryActivities(['A3_PIVOT_CELL']);
+            setMartinoDominantTensionDefault('high');
+            setMartinoChoruses(2);
+          }}
+          onLoadModal={() => {
+            setMartinoTuneName('');
+            setMartinoChordSource('manual');
+            setMartinoActiveActivity('A1_LINEAR_CORE');
+            setMartinoSecondaryActivities(['A2_DIAGONAL_BRIDGE']);
+            setMartinoDominantTensionDefault('low');
             setMartinoChoruses(1);
           }}
           disabled={loading}
@@ -7584,6 +7646,7 @@ export function HomeGenerate({
       {presetId === 'martino_linear' && (
         <MartinoResultPanel
           feedback={martinoFeedback}
+          explainMode={martinoExplainMode}
           onOpenFolder={(filepath) => {
             if (filepath) void openFolder(dirnameOnly(filepath));
           }}
