@@ -2,7 +2,9 @@
 
 ### Added
 
-- **(2026-05-29) V100a — Duo MusicContext producer shell** — `core/duo/duoTypes.ts` (`DuoVoice`, `DuoExportTruth`), `duoExportHelper.ts` (`buildDuoExportTruth` — both voices via `normalizeChordSymbol`, checksum over upper+lower), `duoMusicContextShell.ts` (`buildMusicContextFromDuo` — `sourceEngineId: 'duo'`, harmony from `upperBars`, always-on). Jest **`core/duo/duo.test.ts`**. No golden-path LOCK wiring (V100b).
+- **(2026-05-29) V100b — Duo LOCK integration** — `core/duo/duoLock.ts` (`DuoLock`, `lockDuo`, `isDuoLocked`, `assertDuoLock`, `buildMusicContextFromLockedDuo`, `buildDuoMusicContextFromScore`); `DuoVoice` → per-voice `{ bars }` snapshot; `extractDuoBarsFromScore` on guitar/bass parts. **`generateComposition`** + **`composerOsAppGeneration`** (`duoLockedMusicContextFromGoldenPath`): export truth → LOCK → `buildMusicContextFromDuo` → `musicContext` on success (Shared Brain handoff). Jest **`core/duo/duo.test.ts`** (+7 LOCK cases).
+
+- **(2026-05-29) V100a — Duo MusicContext producer shell** — `core/duo/duoTypes.ts` (`DuoExportTruth`), `duoExportHelper.ts` (`buildDuoExportTruth` — both voices via `normalizeChordSymbol`, checksum over upper+lower), `duoMusicContextShell.ts` (`buildMusicContextFromDuo` — `sourceEngineId: 'duo'`, harmony from `upperBars`, always-on). Jest **`core/duo/duo.test.ts`**.
 
 - **(2026-05-29) V99 — Wayne behaviour layer (tritonic)** — New `core/tritonic/tritonicBehaviourLayer.ts`: `WayneBehaviourOptions` + `applyWayneBehaviour()` reranks `VoiceLeadingResult[]` by `oddityScore` (high → favour tension + rough motion), `delayedResolution` (drop target cells with tension &lt; 0.5, never empty if input non-empty), `melodyPriority` stub (V102). Jest **`tritonicBehaviourLayer.test.ts`**; no producer wiring.
 

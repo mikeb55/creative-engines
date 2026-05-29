@@ -97,6 +97,7 @@ import {
   buildMusicContextFromWyble,
   buildMusicContextFromWyblePreset,
 } from '../core/music-context/musicContextAdapters';
+import { buildDuoMusicContextFromScore } from '../core/duo/duoLock';
 import { resolveWybleEtudePreset } from '../core/music-context/wybleEtudePresetProgressions';
 import { buildChordExportDiagnosticsReceipt } from '../../core/chordExportDiagnostics';
 import { getChordForBar } from '../core/harmony/harmonyResolution';
@@ -114,6 +115,7 @@ import type { LeadSheet } from '../core/lead-sheet/leadSheetTypes';
 import { generateSlonimskyEtudeXml } from '../core/slonimsky/slonimskyEtudeGenerator';
 import { importMusicXmlToImportedSong } from '../core/musicXmlDeepImport';
 import type { IntervalPatternId } from '../core/slonimsky/slonimskyEngine';
+import type { MusicContext } from '../core/music-context/musicContextTypes';
 import { writeDrumGuide } from '../core/export/midiDrumGuideWriter';
 import { writeScoreMidi } from '../core/export/midiScoreWriter';
 
@@ -192,6 +194,23 @@ function validationForStructural(ok: boolean, errors: string[]): GenerateResult[
     sibeliusSafe: ok,
     readiness: { shareable: false, release: ok ? 1 : 0, mx: ok ? 1 : 0 },
     errors,
+  };
+}
+
+/** V100b — buildDuoExportTruth → lockDuo → assertDuoLock → buildMusicContextFromDuo. */
+function duoLockedMusicContextFromGoldenPath(
+  gp: GoldenPathResult,
+  seed: number,
+  bpm?: number
+): MusicContext {
+  if (!gp.score) {
+    throw new Error('Duo LOCK: golden path score missing');
+  }
+  const ctx = buildDuoMusicContextFromScore(gp.score);
+  return {
+    ...ctx,
+    seed,
+    ...(typeof bpm === 'number' && Number.isFinite(bpm) ? { bpm } : {}),
   };
 }
 
@@ -916,7 +935,10 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
 
   switch (id) {
     case 'guitar_bass_duo':
-    case 'guitar_bass_duo_single_line':
+    case 'guitar_bass_duo_single_line': {
+      const duoResult = generateComposition(req, outputDir);
+      return { ...duoResult, composerOsVersion: COMPOSER_OS_VERSION };
+    }
     case 'ecm_chamber':
       return { ...generateComposition(req, outputDir), composerOsVersion: COMPOSER_OS_VERSION };
     case 'riff_generator':
@@ -2318,9 +2340,18 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     success && gp.context
       ? buildUniversalLeadSheetFromCompositionContext(gp.context, scoreTitleResolved)
       : undefined;
+  let songModeMusicContext: MusicContext | undefined;
+  if (success && gp.score) {
+    try {
+      songModeMusicContext = duoLockedMusicContextFromGoldenPath(gp, effectiveSeed, req.bpm);
+    } catch {
+      songModeMusicContext = undefined;
+    }
+  }
   return {
     success,
     error: success ? undefined : mergedErrors[0] ?? 'Generation failed',
+    musicContext: songModeMusicContext,
     productKind: 'musicxml',
     xml: gp.xml,
     filename,

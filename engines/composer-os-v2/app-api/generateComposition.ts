@@ -47,6 +47,7 @@ import { buildVoicingsForContext } from '../core/composer/guitarVoicingEngine';
 import type { GuitarVoicing } from '../core/composer/guitarVoicingEngine';
 import { importMusicXmlToImportedSong } from '../core/musicXmlDeepImport';
 import type { MusicContext } from '../core/music-context/musicContextTypes';
+import { buildDuoMusicContextFromScore } from '../core/duo/duoLock';
 
 function isImportExpressionPilotPreset(presetId: string): boolean {
   return isGuitarBassDuoFamily(presetId) || presetId === 'ecm_chamber';
@@ -679,9 +680,26 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
         )
       : undefined;
 
+  let duoMusicContext: MusicContext | undefined;
+  if (duo && successFinal && result.score) {
+    try {
+      duoMusicContext = buildDuoMusicContextFromScore(result.score);
+      duoMusicContext = {
+        ...duoMusicContext,
+        seed: effectiveSeed,
+        ...(typeof req.bpm === 'number' && Number.isFinite(req.bpm) ? { bpm: req.bpm } : {}),
+      };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      allErrors.push(msg);
+    }
+  }
+  const successWithDuoLock = successFinal && !(duo && !duoMusicContext && successFinal);
+
   return {
-    success: successFinal,
-    error: successFinal ? undefined : allErrors[0] ?? 'Generation failed',
+    success: successWithDuoLock,
+    error: successWithDuoLock ? undefined : allErrors[0] ?? 'Generation failed',
+    musicContext: duoMusicContext,
     productKind: 'musicxml',
     composerOsVersion: COMPOSER_OS_VERSION,
     xml: outputXml,

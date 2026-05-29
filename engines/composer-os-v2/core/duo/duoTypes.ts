@@ -1,8 +1,20 @@
 /**
- * Duo export-truth types (V100a).
+ * Duo export-truth types (V100a) + LOCK types (V100b).
  */
 
-export type DuoVoice = 'upper' | 'lower';
+/** Normalised per-voice harmony timeline at LOCK time. */
+export interface DuoVoice {
+  bars: string[];
+}
+
+export type DuoVoiceRole = 'upper' | 'lower';
+
+export interface DuoLock {
+  upper: DuoVoice;
+  lower: DuoVoice;
+  lockedAt: number;
+  checksum: string;
+}
 
 export interface DuoExportTruth {
   /** Normalised chord symbols (guitar / upper voice). */
