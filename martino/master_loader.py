@@ -229,8 +229,16 @@ def build_canonical_melody(tune_config: dict) -> tuple[list[list], list[dict[str
 
     from generator import _build_reduction_map, plan_all_phrase_activities
 
-    reduction_map = _build_reduction_map(chords, tune_config)
-    phrase_plan = plan_all_phrase_activities(reduction_map, tune_config)
+    phrase_plan = []
+    for _chorus_idx in range(choruses):
+        chorus_reduction = _build_reduction_map(chords, tune_config)
+        chorus_plan = plan_all_phrase_activities(
+            chorus_reduction, tune_config, chorus_index=_chorus_idx
+        )
+        # Offset bar numbers so each chorus continues from the previous
+        offset = _chorus_idx * mpc
+        for entry in chorus_plan:
+            phrase_plan.append({**entry, "bar": int(entry["bar"]) + offset})
     tune_config["_phrase_plan"] = phrase_plan
     plan_by_bar = {int(entry["bar"]): entry for entry in phrase_plan}
 

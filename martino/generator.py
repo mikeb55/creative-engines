@@ -959,17 +959,20 @@ def _plan_phrases_with_dcr(
     tune_config: dict,
     *,
     anti_bebop_penalty: float = 0.0,
+    chorus_index: int = 0,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], Any]:
     """Run phrase DCR for full tune and return plan, per-phrase DCR meta, and GCE result."""
     from gce.martinoScorers import score_martino_gce
-
     full_plan: list[dict[str, Any]] = []
     dcr_runs: list[dict[str, Any]] = []
     carry: str | None = None
     dir_vector: str | None = None
     dir_arc = 0
     tune_config.setdefault("_anti_loop_flags", [])
-
+    # Vary carry_key seed per chorus so each chorus starts from a different variant
+    _chorus_seed_keys = [None, "pivot", "anchor", "diagonal"]
+    if chorus_index > 0:
+        carry = _chorus_seed_keys[chorus_index % len(_chorus_seed_keys)]
     for start in range(0, len(reduction_map), PHRASE_LENGTH):
         chunk = reduction_map[start : start + PHRASE_LENGTH]
         if len(chunk) < PHRASE_LENGTH:
@@ -981,7 +984,6 @@ def _plan_phrases_with_dcr(
         dcr_runs.append(dcr_meta)
         full_plan.extend(phrase_plan)
         carry = _activity_key_from_id(phrase_plan[-1]["activity"])
-
     fps = [list(r.get("interval_fingerprint") or []) for r in full_plan]
     directions = [str(r.get("direction_vector", "pivot")) for r in full_plan]
     rhythms = [str(r.get("rhythmic_signature", "")) for r in full_plan]
@@ -998,6 +1000,8 @@ def _plan_phrases_with_dcr(
 def plan_all_phrase_activities(
     reduction_map: list[dict[str, Any]],
     tune_config: dict,
+    *,
+    chorus_index: int = 0,
 ) -> list[dict[str, Any]]:
     """Plan every 4-bar phrase in the tune; DCR picks strongest variant per span."""
     from master_loader import resolve_activity_key
@@ -1006,7 +1010,9 @@ def plan_all_phrase_activities(
     saved_primary = base_primary
     saved_boost = tune_config.get("_gate_role_boost")
 
-    full_plan, dcr_runs, final_gce = _plan_phrases_with_dcr(reduction_map, tune_config)
+    full_plan, dcr_runs, final_gce = _plan_phrases_with_dcr(
+        reduction_map, tune_config, chorus_index=chorus_index
+    )
     gate_retry_count = 0
     gate_log: list[dict[str, Any]] = [
         {
@@ -1054,7 +1060,17 @@ def plan_all_phrase_activities(
         if dcr_runs:
             dcr_runs[-1]["dcr_anti_bebop_rerun"] = True
 
-    tune_config["_dcr"] = dcr_runs[-1] if dcr_runs else {}
+    _dcr_last = dcr_runs[-1] if dcr_runs else {}
+    tune_config["_dcr"] = {
+        **_dcr_last,
+        "dcr_refinement_applied": any(
+            r.get("dcr_refinement_applied") for r in dcr_runs
+        ),
+        "dcr_refinement_applied_count": sum(
+            1 for r in dcr_runs if r.get("dcr_refinement_applied")
+        ),
+        "dcr_runs_total": len(dcr_runs),
+    }
     tune_config["_martino_gce"] = final_gce.to_provenance_dict()
     tune_config["_martino_gce_overall"] = final_gce.overall
     tune_config["_gce_gate_failed"] = final_gce.gate_failed
