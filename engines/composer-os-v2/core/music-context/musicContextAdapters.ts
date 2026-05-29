@@ -3,6 +3,7 @@
  */
 
 import { computeHarmonyChecksum } from '../harmony/harmonyContext';
+import { noteNameToPitchClass } from '../harmony/chordSymbolAnalysis';
 import type { CoreMotif } from '../motif/motifEngineTypes';
 import type { ModulationPlan } from '../modulation/modulationPlanTypes';
 import type { MusicContext, MusicContextHarmony, MusicContextMotif } from './musicContextTypes';
@@ -11,6 +12,11 @@ import type { RiffGeneratorParams } from '../riff-generator/riffTypes';
 /** Deterministic harmony checksum for MusicContext (delegates to harmonyContext). */
 export function computeMusicContextChecksum(bars: readonly string[]): string {
   return computeHarmonyChecksum(bars);
+}
+
+/** Pitch class 0–11 from key root letter (C→0, F#→6, Bb→10). */
+export function keyPcFromRoot(root: string): number {
+  return noteNameToPitchClass(root) ?? 0;
 }
 
 export function coreMotifToMusicContextMotif(

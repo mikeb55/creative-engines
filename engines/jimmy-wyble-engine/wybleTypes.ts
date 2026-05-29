@@ -4,6 +4,7 @@
  */
 
 import type { CanonicalChord } from '../core/canonicalChord';
+import type { MusicContext } from '../composer-os-v2/core/music-context/musicContextTypes';
 
 export interface NoteEvent {
   pitch: number;      // MIDI note number
@@ -48,6 +49,8 @@ export interface WybleParameters {
   staggeredAttackFeel?: boolean;
   practiceMode?: PracticeMode;
   pedalToneEnabled?: boolean;
+  /** Shared Brain snapshot — consumed when `WYBLE_MUSIC_CONTEXT=true`. */
+  musicContext?: MusicContext;
 }
 
 export interface ImpliedHarmony {

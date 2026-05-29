@@ -11,6 +11,7 @@ import {
   computeMusicContextChecksum,
   coreMotifToMusicContextMotif,
   harmonyBarsFromMusicContext,
+  keyPcFromRoot,
   motifToSeedPitches,
 } from '../core/music-context/musicContextAdapters';
 import type { MusicContext } from '../core/music-context/musicContextTypes';
@@ -18,6 +19,11 @@ import {
   buildDuoBarSlonimskyContext,
   isSlonimskyMusicContextEnabled,
 } from '../core/slonimsky/slonimskyEngine';
+import {
+  applyWybleMusicContextOverrides,
+  isWybleMusicContextEnabled,
+} from '../../jimmy-wyble-engine/wybleGenerator';
+import type { WybleParameters } from '../../jimmy-wyble-engine/wybleTypes';
 
 function mockCoreMotif(overrides: Partial<CoreMotif> = {}): CoreMotif {
   return {
@@ -282,5 +288,113 @@ describe('Slonimsky MusicContext consumer', () => {
       kind: 'slonimsky_context_consumed',
       payload: { bars: 3 },
     });
+  });
+});
+
+describe('Wyble MusicContext consumer', () => {
+  function wybleBaseParams(): WybleParameters {
+    return {
+      harmonicContext: { chords: ['Am7', 'D7'] },
+      phraseLength: 2,
+    };
+  }
+
+  function wybleMusicContext(withMotif: boolean): MusicContext {
+    const bars = ['Dm7', 'G7', 'Cmaj7'];
+    return {
+      schemaVersion: '1.0',
+      seed: 5,
+      presetId: 'wyble_etude',
+      key: { root: 'D', mode: 'minor' },
+      meter: { beats: 4, beatType: 4 },
+      bpm: 100,
+      totalBars: 3,
+      harmony: {
+        bars,
+        checksum: computeMusicContextChecksum(bars),
+        source: 'user',
+      },
+      motif: withMotif
+        ? coreMotifToMusicContextMotif(mockCoreMotif({ intervalPattern: [5] }), 'riff')
+        : undefined,
+      receipts: [],
+    };
+  }
+
+  const prevWybleFlag = process.env.WYBLE_MUSIC_CONTEXT;
+
+  afterEach(() => {
+    if (prevWybleFlag === undefined) {
+      delete process.env.WYBLE_MUSIC_CONTEXT;
+    } else {
+      process.env.WYBLE_MUSIC_CONTEXT = prevWybleFlag;
+    }
+  });
+
+  it('harmonicContext.chords set from musicContext.harmony.bars when flag on', () => {
+    process.env.WYBLE_MUSIC_CONTEXT = 'true';
+    expect(isWybleMusicContextEnabled()).toBe(true);
+    const mc = wybleMusicContext(false);
+    const out = applyWybleMusicContextOverrides({
+      ...wybleBaseParams(),
+      musicContext: mc,
+    });
+    expect(out.harmonicContext.chords).toEqual(['Dm7', 'G7', 'Cmaj7']);
+  });
+
+  it('harmonicContext.chords unchanged when flag off', () => {
+    delete process.env.WYBLE_MUSIC_CONTEXT;
+    expect(isWybleMusicContextEnabled()).toBe(false);
+    const mc = wybleMusicContext(false);
+    const base = wybleBaseParams();
+    const out = applyWybleMusicContextOverrides({
+      ...base,
+      musicContext: mc,
+    });
+    expect(out.harmonicContext.chords).toEqual(base.harmonicContext.chords);
+    expect(mc.receipts).toHaveLength(0);
+  });
+
+  it('motifSeed derived from musicContext.motif when present + flag on', () => {
+    process.env.WYBLE_MUSIC_CONTEXT = 'true';
+    const mc = wybleMusicContext(true);
+    const out = applyWybleMusicContextOverrides({
+      ...wybleBaseParams(),
+      musicContext: mc,
+    });
+    expect(out.motifSeed).toEqual(motifToSeedPitches(mc.motif!, keyPcFromRoot('D')));
+  });
+
+  it('motifSeed unchanged when musicContext.motif absent', () => {
+    process.env.WYBLE_MUSIC_CONTEXT = 'true';
+    const mc = wybleMusicContext(false);
+    const out = applyWybleMusicContextOverrides({
+      ...wybleBaseParams(),
+      musicContext: mc,
+    });
+    expect(out.motifSeed).toBeUndefined();
+  });
+
+  it('receipt appended to musicContext when consumed', () => {
+    process.env.WYBLE_MUSIC_CONTEXT = 'true';
+    const mc = wybleMusicContext(true);
+    applyWybleMusicContextOverrides({
+      ...wybleBaseParams(),
+      musicContext: mc,
+    });
+    expect(mc.receipts).toHaveLength(1);
+    expect(mc.receipts[0]).toMatchObject({
+      engine: 'wyble',
+      kind: 'wyble_context_consumed',
+      payload: { bars: 3, motifUsed: true },
+    });
+  });
+});
+
+describe('keyPcFromRoot', () => {
+  it('maps C→0, F#→6, Bb→10 correctly', () => {
+    expect(keyPcFromRoot('C')).toBe(0);
+    expect(keyPcFromRoot('F#')).toBe(6);
+    expect(keyPcFromRoot('Bb')).toBe(10);
   });
 });

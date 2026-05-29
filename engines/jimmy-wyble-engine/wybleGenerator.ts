@@ -11,6 +11,54 @@ import type {
   ImpliedHarmony,
 } from './wybleTypes';
 import { validateJazzPhrasePitches } from './jazzBehaviourGate';
+import type { MusicContext } from '../composer-os-v2/core/music-context/musicContextTypes';
+import {
+  harmonyBarsFromMusicContext,
+  keyPcFromRoot,
+  motifToSeedPitches,
+} from '../composer-os-v2/core/music-context/musicContextAdapters';
+
+export function isWybleMusicContextEnabled(): boolean {
+  return process.env.WYBLE_MUSIC_CONTEXT === 'true';
+}
+
+/** Applies MusicContext harmony + motifSeed when {@link isWybleMusicContextEnabled}. */
+export function applyWybleMusicContextOverrides(params: WybleParameters): WybleParameters {
+  if (!isWybleMusicContextEnabled() || !params.musicContext) {
+    return params;
+  }
+  const mc: MusicContext = params.musicContext;
+  if (mc.harmony.bars.length === 0) {
+    return params;
+  }
+
+  const harmonyBars = harmonyBarsFromMusicContext(mc);
+  const harmonicContext: HarmonicContext = {
+    ...params.harmonicContext,
+    chords: harmonyBars,
+  };
+
+  const motifSeedExplicit = params.motifSeed !== undefined;
+  let motifSeed = params.motifSeed;
+  if (!motifSeedExplicit && mc.motif) {
+    motifSeed = motifToSeedPitches(mc.motif, keyPcFromRoot(mc.key.root));
+  }
+
+  mc.receipts.push({
+    engine: 'wyble',
+    kind: 'wyble_context_consumed',
+    payload: {
+      bars: mc.harmony.bars.length,
+      motifUsed: !!mc.motif,
+    },
+  });
+
+  return {
+    ...params,
+    harmonicContext,
+    ...(motifSeed !== undefined ? { motifSeed } : {}),
+  };
+}
 
 const UPPER_MIN = 64;
 const UPPER_MAX = 76;
@@ -1723,21 +1771,22 @@ function applyGuitarConstraints(output: WybleOutput): WybleOutput {
 }
 
 export function generateWybleEtude(params: WybleParameters): WybleOutput {
-  const { harmonicContext, phraseLength = 8 } = params;
+  const resolved = applyWybleMusicContextOverrides(params);
+  const { harmonicContext, phraseLength = 8 } = resolved;
 
   const seedBase =
-    (params as WybleParameters & { seed?: number }).seed ?? params.motifSeed?.[0] ?? 0;
+    (resolved as WybleParameters & { seed?: number }).seed ?? resolved.motifSeed?.[0] ?? 0;
 
   const beatsPerBar = 4;
   const totalBeats = phraseLength * beatsPerBar;
 
-  const upperResult = generateUpperVoice(totalBeats, harmonicContext, params, seedBase);
+  const upperResult = generateUpperVoice(totalBeats, harmonicContext, resolved, seedBase);
   const upperPitches = upperResult.pitches;
   const lowerPitches = generateLowerVoice(
     totalBeats,
     harmonicContext,
     upperPitches,
-    params,
+    resolved,
     seedBase,
     upperResult.phraseLengths,
     upperResult.phraseNetDeltas,
