@@ -13,6 +13,7 @@ import type {
 import { validateJazzPhrasePitches } from './jazzBehaviourGate';
 import type { MusicContext } from '../composer-os-v2/core/music-context/musicContextTypes';
 import {
+  appendReceiptToMusicContext,
   harmonyBarsFromMusicContext,
   keyPcFromRoot,
   motifToSeedPitches,
@@ -44,7 +45,7 @@ export function applyWybleMusicContextOverrides(params: WybleParameters): WybleP
     motifSeed = motifToSeedPitches(mc.motif, keyPcFromRoot(mc.key.root));
   }
 
-  mc.receipts.push({
+  const updatedMc = appendReceiptToMusicContext(mc, {
     engine: 'wyble',
     kind: 'wyble_context_consumed',
     payload: {
@@ -55,6 +56,7 @@ export function applyWybleMusicContextOverrides(params: WybleParameters): WybleP
 
   return {
     ...params,
+    musicContext: updatedMc,
     harmonicContext,
     ...(motifSeed !== undefined ? { motifSeed } : {}),
   };

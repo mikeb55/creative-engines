@@ -16,6 +16,7 @@ import { resolveComposerOsRepoRoot } from '../../app-api/systemCheck';
 
 import { ensureOutputDirectoryForPreset } from '../../app-api/composerOsOutputPaths';
 import type { MusicContext } from '../music-context/musicContextTypes';
+import { appendReceiptToMusicContext } from '../music-context/musicContextAdapters';
 import {
   applyMartinoMusicContextToTuneConfig,
   isMartinoMusicContextEnabled,
@@ -255,15 +256,15 @@ export function appendMartinoGenerationReceipt(
 
   result: MartinoEngineResponse
 
-): void {
+): MusicContext | undefined {
 
   if (!isMartinoMusicContextEnabled() || !musicContext || !result.ok) {
 
-    return;
+    return musicContext;
 
   }
 
-  musicContext.receipts.push({
+  return appendReceiptToMusicContext(musicContext, {
 
     engine: 'martino',
 

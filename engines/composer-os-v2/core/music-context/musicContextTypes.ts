@@ -21,6 +21,12 @@ export interface MusicContextMotif {
   producer: 'riff' | 'song_mode' | 'martino' | 'user';
 }
 
+export interface MusicContextReceipt {
+  engine: 'martino' | 'slonimsky' | 'wyble' | 'riff' | string;
+  kind: string;
+  payload: unknown;
+}
+
 export interface MusicContext {
   schemaVersion: '1.0';
   seed: number;
@@ -32,9 +38,10 @@ export interface MusicContext {
   harmony: MusicContextHarmony;
   motif?: MusicContextMotif;
   modulation?: ModulationPlan;
-  receipts: Array<{
-    engine: 'martino' | 'slonimsky' | 'wyble' | 'riff' | string;
-    kind: string;
-    payload: unknown;
-  }>;
+  receipts: readonly MusicContextReceipt[];
+  provenance?: {
+    sourceEngineId: string;
+    capturedAt: number;
+    sourceRunId?: string;
+  };
 }

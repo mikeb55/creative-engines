@@ -1,6 +1,9 @@
 import type { PhraseIntent } from '../goldenPath/phraseIntentTypes';
 import { chordTonesForChordSymbol, noteNameToPitchClass } from '../harmony/chordSymbolAnalysis';
-import { harmonyBarsFromMusicContext } from '../music-context/musicContextAdapters';
+import {
+  appendReceiptToMusicContext,
+  harmonyBarsFromMusicContext,
+} from '../music-context/musicContextAdapters';
 import type { MusicContext } from '../music-context/musicContextTypes';
 import { SLONIMSKY_ENGINE_PATTERNS } from './thesaurusRegistry';
 
@@ -86,6 +89,7 @@ type MusicContextSlonimskyOverrides = {
   chordSymbol?: string;
   phraseIntent?: SlonimskyContext['phraseIntent'];
   harmonyBars?: string[];
+  musicContext?: MusicContext;
 };
 
 function consumeMusicContextForSlonimsky(params: {
@@ -97,7 +101,7 @@ function consumeMusicContextForSlonimsky(params: {
   if (mc.harmony.bars.length === 0) return {};
 
   const harmonyBars = harmonyBarsFromMusicContext(mc);
-  mc.receipts.push({
+  const updatedMc = appendReceiptToMusicContext(mc, {
     engine: 'slonimsky',
     kind: 'slonimsky_context_consumed',
     payload: { bars: mc.harmony.bars.length },
@@ -107,6 +111,7 @@ function consumeMusicContextForSlonimsky(params: {
     harmonyBars,
     keyPc: keyPcFromMusicContextRoot(mc.key.root),
     chordSymbol: harmonyBars[harmonyBars.length - 1],
+    musicContext: updatedMc,
   };
 
   if (
@@ -705,7 +710,7 @@ export function mapDuoPhraseIntentToSlonimskyContext(params: {
     chordSymbol: mcOverrides.chordSymbol ?? params.chordSymbol,
     effectiveLow: params.effectiveLow,
     effectiveHigh: params.effectiveHigh,
-    musicContext: params.musicContext,
+    musicContext: mcOverrides.musicContext ?? params.musicContext,
   };
 }
 
@@ -752,7 +757,7 @@ export function buildDuoBarSlonimskyContext(params: {
     ...base,
     basePitch: third,
     maxBeats: 4,
-    musicContext: params.musicContext,
+    musicContext: mcOverrides.musicContext ?? params.musicContext,
   };
 }
 

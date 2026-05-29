@@ -48,8 +48,9 @@ describe('MusicContext smoke — Riff → Wyble handoff', () => {
       musicContext: mc,
     });
     expect(wybleParams.harmonicContext.chords).toEqual([...mc.harmony.bars]);
-    expect(mc.receipts.some((r) => r.engine === 'wyble')).toBe(true);
+    expect(mc.receipts.some((r) => r.engine === 'wyble')).toBe(false);
+    expect(wybleParams.musicContext?.receipts.some((r) => r.engine === 'wyble')).toBe(true);
     expect(mc.receipts.filter((r) => r.engine === 'riff').length).toBeGreaterThanOrEqual(1);
-    expect(mc.receipts.filter((r) => r.engine === 'wyble').length).toBeGreaterThanOrEqual(1);
+    expect(wybleParams.musicContext?.receipts.filter((r) => r.engine === 'wyble').length).toBeGreaterThanOrEqual(1);
   });
 });

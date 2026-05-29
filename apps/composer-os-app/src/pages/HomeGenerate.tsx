@@ -6348,7 +6348,7 @@ export function HomeGenerate({
           }}
         />
       )}
-      {presetId === 'riff_generator' && sharedMusicContext ? <SharedMusicContextReadyBadge /> : null}
+      {sharedMusicContext ? <SharedMusicContextReadyBadge /> : null}
 
 
       {presetId === 'ecm_chamber' && (
@@ -8222,6 +8222,7 @@ export function HomeGenerate({
                   setChordPasteVaultLastRunOptions(opts);
                   const out = generateVaultFromParsedChart(chart, opts);
                   setChordPasteOutput(out);
+                  if (out.musicContext) setSharedMusicContext(out.musicContext);
                   setChordPasteVaultDual(null);
                 } catch (e) {
                   setChordPasteOutput(null);
@@ -8726,6 +8727,7 @@ export function HomeGenerate({
                   setIRealVaultLastRunOptions(opts);
                   const out = generateFromIReal(iRealPaste, opts);
                   setIRealVaultOutput(out);
+                  if (out.musicContext) setSharedMusicContext(out.musicContext);
                   setIRealVaultDual(null);
                 } finally {
                   setIRealVaultBusy(false);

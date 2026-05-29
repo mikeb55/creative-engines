@@ -50,6 +50,8 @@ import {
 } from '../core/riff-generator/zappaRiffSoloParams';
 import type { IRealVaultOutput } from '../core/irealpro/irealVaultPipeline';
 import type { ParsedChart } from '../core/irealpro/parsedChart';
+import { buildMusicContextFromVaultOutput } from '../core/music-context/musicContextAdapters';
+import type { MusicContext } from '../core/music-context/musicContextTypes';
 import type { EmotionalDrift } from '../core/harmony/reharmCandidateEngine';
 import { formatPdfExtractFailureHint, generateFromPdf } from '../core/pdf';
 import type { GceStructureSection } from '../core/gce/gceAutoScorers';
@@ -1119,6 +1121,7 @@ export type PdfGenerateFromPdfResponse = {
   output: IRealVaultOutput | null;
   /** Same chart used for {@link output} — enables client-side vault remix without re-OCR. */
   parsedChart?: ParsedChart | null;
+  musicContext?: MusicContext;
   error?: string;
 };
 
@@ -1238,7 +1241,8 @@ export async function apiPdfGenerateFromPdf(
         error: formatPdfExtractFailureHint(),
       };
     }
-    return { success: true, output: out.output, parsedChart: out.chart };
+    const musicContext = buildMusicContextFromVaultOutput(out.output, out.chart);
+    return { success: true, output: out.output, parsedChart: out.chart, musicContext };
   } catch (e) {
     return {
       success: true,

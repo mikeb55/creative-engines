@@ -3,11 +3,21 @@
  */
 
 import { computeHarmonyChecksum } from '../harmony/harmonyContext';
-import { noteNameToPitchClass } from '../harmony/chordSymbolAnalysis';
+import { noteNameToPitchClass, normalizeChordSymbol } from '../harmony/chordSymbolAnalysis';
 import type { CoreMotif } from '../motif/motifEngineTypes';
 import type { ModulationPlan } from '../modulation/modulationPlanTypes';
-import type { MusicContext, MusicContextHarmony, MusicContextMotif } from './musicContextTypes';
+import type { IRealVaultOutput } from '../irealpro/irealVaultPipeline';
+import type { ParsedChart } from '../irealpro/parsedChart';
+import type { SlonimskyNote } from '../slonimsky/slonimskyEngine';
+import type {
+  MusicContext,
+  MusicContextHarmony,
+  MusicContextMotif,
+  MusicContextReceipt,
+} from './musicContextTypes';
 import type { RiffGeneratorParams } from '../riff-generator/riffTypes';
+
+const ROOT_RE = /^([A-G](?:#|b)?)/i;
 
 /** Deterministic harmony checksum for MusicContext (delegates to harmonyContext). */
 export function computeMusicContextChecksum(bars: readonly string[]): string {
@@ -17,6 +27,58 @@ export function computeMusicContextChecksum(bars: readonly string[]): string {
 /** Pitch class 0–11 from key root letter (C→0, F#→6, Bb→10). */
 export function keyPcFromRoot(root: string): number {
   return noteNameToPitchClass(root) ?? 0;
+}
+
+/** Returns a new MusicContext with an appended receipt (does not mutate the input). */
+export function appendReceiptToMusicContext(
+  ctx: MusicContext,
+  receipt: MusicContextReceipt
+): MusicContext {
+  return {
+    ...ctx,
+    receipts: [...(ctx.receipts ?? []), receipt],
+  };
+}
+
+/** Normalise pitch-class root from key label (e.g. "Bb major" → "Bb"). */
+export function normalizeKeyRoot(keyLabel: string): { root: string; mode: 'major' | 'minor' } {
+  const raw = String(keyLabel || 'C').trim();
+  const minor = /minor|\bm\b/i.test(raw) && !/major/i.test(raw);
+  const rootMatch = raw.match(ROOT_RE);
+  const root = rootMatch ? rootMatch[1]![0]!.toUpperCase() + rootMatch[1]!.slice(1) : 'C';
+  return { root, mode: minor ? 'minor' : 'major' };
+}
+
+/** Infer tonal centre from the first chord symbol root. */
+export function inferKeyRootFromChordSymbols(chordSymbols: readonly string[]): string {
+  for (const sym of chordSymbols) {
+    const trimmed = String(sym || '').trim();
+    if (!trimmed || /^n\.c\.$/i.test(trimmed)) continue;
+    const slashIdx = trimmed.indexOf('/');
+    const harmony = slashIdx >= 0 ? trimmed.slice(0, slashIdx) : trimmed;
+    const m = harmony.match(ROOT_RE);
+    if (m) return m[1]![0]!.toUpperCase() + m[1]!.slice(1);
+  }
+  return 'C';
+}
+
+export interface SlonimskyResult {
+  notes: SlonimskyNote[];
+  patternLength?: number;
+}
+
+function motifFromSlonimskyNotes(notes: readonly SlonimskyNote[]): CoreMotif | undefined {
+  if (notes.length < 2) return undefined;
+  const intervalPattern = notes.slice(1).map((n, i) => n.midi - notes[i]!.midi);
+  const contourPattern = intervalPattern.map((iv) => (iv > 0 ? 1 : iv < 0 ? -1 : 0));
+  return {
+    id: 'slonimsky-0',
+    intervalPattern,
+    rhythmPattern: notes.map((n) => ({ startBeat: n.beat, duration: n.durationBeats })),
+    contourPattern,
+    roleTags: [],
+    registerTags: [],
+  };
 }
 
 export function coreMotifToMusicContextMotif(
@@ -56,9 +118,16 @@ export function attachModulationToContext(ctx: MusicContext, plan: ModulationPla
   };
 }
 
+type RiffMusicContextParams = Pick<
+  RiffGeneratorParams,
+  'seed' | 'bars' | 'style' | 'bpm' | 'chordSymbols'
+> & {
+  keyRoot?: string;
+};
+
 /** MusicContext snapshot for successful riff generation (V90a). */
 export function buildRiffGeneratorMusicContext(
-  params: Pick<RiffGeneratorParams, 'seed' | 'bars' | 'style' | 'bpm' | 'chordSymbols'>,
+  params: RiffMusicContextParams,
   coreMotif?: CoreMotif
 ): MusicContext {
   const harmonyBars = params.chordSymbols ?? [];
@@ -67,16 +136,24 @@ export function buildRiffGeneratorMusicContext(
     checksum: computeMusicContextChecksum(harmonyBars),
     source: 'user',
   };
+  const keyRoot =
+    params.keyRoot?.trim()
+      ? normalizeKeyRoot(params.keyRoot).root
+      : inferKeyRootFromChordSymbols(harmonyBars);
   return {
     schemaVersion: '1.0',
     seed: params.seed ?? 0,
     presetId: 'riff_generator',
-    key: { root: params.style ?? 'C', mode: 'major' },
+    key: { root: keyRoot, mode: 'major' },
     meter: { beats: 4, beatType: 4 },
     bpm: params.bpm ?? 120,
     totalBars: params.bars ?? 4,
     harmony,
     motif: coreMotif ? coreMotifToMusicContextMotif(coreMotif, 'riff') : undefined,
+    provenance: {
+      sourceEngineId: 'riff',
+      capturedAt: Date.now(),
+    },
     receipts: [
       {
         engine: 'riff',
@@ -84,5 +161,148 @@ export function buildRiffGeneratorMusicContext(
         payload: { seed: params.seed, bars: params.bars },
       },
     ],
+  };
+}
+
+/** MusicContext snapshot from an iReal parsed chart (V90b). */
+export function buildMusicContextFromIReal(chart: ParsedChart): MusicContext {
+  const chordBars = (chart.harmonies ?? []).map(normalizeChordSymbol);
+  const keyLabel = chart.key?.trim() || inferKeyRootFromChordSymbols(chordBars);
+  const { root, mode } = normalizeKeyRoot(keyLabel);
+  const ts = chart.timeSignature ?? chart.meter ?? { num: 4, den: 4 };
+  const harmony: MusicContextHarmony = {
+    bars: chordBars,
+    checksum: computeMusicContextChecksum(chordBars),
+    source: 'user',
+  };
+  return {
+    schemaVersion: '1.0',
+    seed: 0,
+    presetId: 'ireal_import',
+    key: { root, mode },
+    meter: { beats: ts.num, beatType: ts.den },
+    bpm: chart.tempo ?? 120,
+    totalBars: chordBars.length,
+    harmony,
+    provenance: {
+      sourceEngineId: 'ireal',
+      capturedAt: Date.now(),
+    },
+    receipts: [],
+  };
+}
+
+/** MusicContext snapshot from vault generation output (V90b). */
+export function buildMusicContextFromVaultOutput(
+  output: IRealVaultOutput,
+  chart: ParsedChart,
+  options?: { bpm?: number }
+): MusicContext {
+  try {
+    const chordBars = (chart.harmonies ?? []).map(normalizeChordSymbol);
+    const harmony: MusicContextHarmony = {
+      bars: chordBars,
+      checksum: computeMusicContextChecksum(chordBars),
+      source: 'user',
+    };
+    const { root, mode } =
+      chart.key != null
+        ? normalizeKeyRoot(chart.key.trim())
+        : { root: 'C', mode: 'major' as const };
+    const ts = chart.timeSignature ?? { num: 4, den: 4 };
+    const measuresLen = chart.measures?.length ?? 0;
+    const receipts: MusicContextReceipt[] = [
+      {
+        engine: 'vault',
+        kind: 'vault_generation_complete',
+        payload: {
+          mode: output.mode,
+          seed: output.seed ?? null,
+          chorusCount: measuresLen > 0 ? Math.round(output.bars / measuresLen) : 1,
+        },
+      },
+    ];
+    if (output.unmappedChords.length > 0) {
+      receipts.push({
+        engine: 'vault',
+        kind: 'vault_unmapped_chords',
+        payload: {
+          count: output.unmappedChords.length,
+          bars: output.unmappedChords.map((u) => u.barIndex),
+        },
+      });
+    }
+    return {
+      schemaVersion: '1.0',
+      seed: output.seed ?? 0,
+      presetId: 'vault',
+      key: { root, mode },
+      meter: { beats: ts.num, beatType: ts.den },
+      bpm: options?.bpm ?? chart.tempo ?? 120,
+      totalBars: measuresLen,
+      harmony,
+      provenance: {
+        sourceEngineId: 'vault',
+        capturedAt: Date.now(),
+        sourceRunId: output.seed != null ? String(output.seed) : undefined,
+      },
+      receipts,
+    };
+  } catch (err) {
+    return {
+      schemaVersion: '1.0',
+      seed: 0,
+      presetId: 'vault',
+      key: { root: 'C', mode: 'major' },
+      meter: { beats: 4, beatType: 4 },
+      bpm: 120,
+      totalBars: 0,
+      harmony: {
+        bars: [],
+        checksum: computeMusicContextChecksum([]),
+        source: 'user',
+      },
+      receipts: [
+        {
+          engine: 'vault',
+          kind: 'vault_producer_error',
+          payload: { message: String(err) },
+        },
+      ],
+    };
+  }
+}
+
+/** MusicContext snapshot from a Slonimsky pattern result (V90b). */
+export function buildMusicContextFromSlonimsky(
+  result: SlonimskyResult,
+  params: {
+    key: string;
+    bpm?: number;
+    bars?: number;
+  }
+): MusicContext {
+  const { root, mode } = normalizeKeyRoot(params.key);
+  const coreMotif = result.notes?.length ? motifFromSlonimskyNotes(result.notes) : undefined;
+  const totalBars = params.bars ?? result.patternLength ?? 4;
+  return {
+    schemaVersion: '1.0',
+    seed: 0,
+    presetId: 'slonimsky_pattern',
+    key: { root, mode: mode === 'minor' ? mode : 'major' },
+    meter: { beats: 4, beatType: 4 },
+    bpm: params.bpm ?? 120,
+    totalBars,
+    harmony: {
+      bars: [],
+      checksum: computeMusicContextChecksum([]),
+      source: 'generated',
+    },
+    motif: coreMotif ? coreMotifToMusicContextMotif(coreMotif, 'user') : undefined,
+    provenance: {
+      sourceEngineId: 'slonimsky',
+      capturedAt: Date.now(),
+    },
+    receipts: [],
   };
 }

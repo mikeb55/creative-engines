@@ -7,6 +7,50 @@ import { chordTonesForGoldenChord } from '../goldenPath/guitarBassDuoHarmony';
 import { normalizeLeadSheetChordSpelling } from '../../../core/leadSheetChordNormalize';
 
 const ROOT_RE = /^([A-G](?:#|b)?)/i;
+const VALID_SLASH_BASS = /^[A-G][#b]?$/i;
+
+/**
+ * MusicContext / lead-sheet chord dialect normaliser (iReal ^ − Δ ø + legacy dim/aug).
+ * Root preserved; slash bass retained when the segment after `/` is a note name.
+ */
+export function normalizeChordSymbol(symbol: string): string {
+  let s = String(symbol || '').trim();
+  if (!s) return s;
+
+  const rootMatch = s.match(ROOT_RE);
+  if (!rootMatch) return s;
+
+  const root = rootMatch[1]![0]!.toUpperCase() + rootMatch[1]!.slice(1);
+  let rest = s.slice(rootMatch[0].length);
+
+  let harmony = rest;
+  let bass = '';
+  const slashIdx = rest.indexOf('/');
+  if (slashIdx >= 0) {
+    const possibleBass = rest.slice(slashIdx + 1).trim();
+    if (VALID_SLASH_BASS.test(possibleBass)) {
+      harmony = rest.slice(0, slashIdx);
+      bass = possibleBass;
+    }
+  }
+
+  harmony = harmony.replace(/\^7/g, 'maj7');
+  harmony = harmony.replace(/\u03947/g, 'maj7').replace(/Δ7/g, 'maj7');
+  harmony = harmony.replace(/\u0394/g, 'maj7').replace(/Δ/g, 'maj7');
+  harmony = harmony.replace(/-7/g, 'm7');
+  harmony = harmony.replace(/-9/g, 'm9');
+  harmony = harmony.replace(/-(?=\d|$)/g, 'm');
+  harmony = harmony.replace(/ø7/g, 'm7b5');
+  harmony = harmony.replace(/ø/g, 'm7b5');
+
+  let combined = `${root}${harmony}`;
+  combined = combined.replace(/min(?![a-z])/gi, 'm');
+  combined = combined.replace(/dim(?![a-z])/gi, '°');
+  combined = combined.replace(/aug(?![a-z])/gi, '+');
+  combined = combined.replace(/dom7/gi, '7');
+
+  return bass ? `${combined}/${bass}` : combined;
+}
 
 /** Map note name to pitch class 0–11. */
 export function noteNameToPitchClass(name: string): number | undefined {

@@ -111,9 +111,14 @@ jest.mock('../core/martino/martinoEngineBridge', () => ({
 }));
 
 import type { CoreMotif } from '../core/motif/motifEngineTypes';
+import { normalizeChordSymbol } from '../core/harmony/chordSymbolAnalysis';
 import { generateModulationPlan } from '../core/modulation/modulationPlanner';
 import {
+  appendReceiptToMusicContext,
   attachModulationToContext,
+  buildMusicContextFromIReal,
+  buildMusicContextFromSlonimsky,
+  buildMusicContextFromVaultOutput,
   buildRiffGeneratorMusicContext,
   computeMusicContextChecksum,
   coreMotifToMusicContextMotif,
@@ -122,6 +127,8 @@ import {
   motifToSeedPitches,
 } from '../core/music-context/musicContextAdapters';
 import type { MusicContext } from '../core/music-context/musicContextTypes';
+import type { ParsedChart } from '../core/irealpro/parsedChart';
+import type { IRealVaultOutput } from '../core/irealpro/irealVaultPipeline';
 import {
   buildDuoBarSlonimskyContext,
   isSlonimskyMusicContextEnabled,
@@ -321,6 +328,31 @@ describe('Riff MusicContext producer', () => {
       kind: 'riff_generator_complete',
     });
   });
+
+  it('key.root is pitch class from keyRoot, not style string', () => {
+    const ctx = buildRiffGeneratorMusicContext({
+      seed: 1,
+      bars: 2,
+      style: 'dorian' as 'neutral',
+      bpm: 120,
+      chordSymbols: ['Am7', 'D7'],
+      keyRoot: 'G',
+    });
+    expect(ctx.key.root).toBe('G');
+    expect(ctx.key.root).not.toBe('dorian');
+  });
+
+  it('key.root inferred from first chord when keyRoot omitted', () => {
+    const ctx = buildRiffGeneratorMusicContext({
+      seed: 1,
+      bars: 2,
+      style: 'funk',
+      bpm: 120,
+      chordSymbols: ['Dm7', 'G7'],
+    });
+    expect(ctx.key.root).toBe('D');
+    expect(ctx.key.root).not.toBe('funk');
+  });
 });
 
 describe('Slonimsky MusicContext consumer', () => {
@@ -393,12 +425,13 @@ describe('Slonimsky MusicContext consumer', () => {
   it('Receipt appended to musicContext when consumed', () => {
     process.env.SLONIMSKY_MUSIC_CONTEXT = 'true';
     const mc = slonimskyMusicContext();
-    buildDuoBarSlonimskyContext({
+    const ctx = buildDuoBarSlonimskyContext({
       ...slonimskyBarParams,
       musicContext: mc,
     });
-    expect(mc.receipts).toHaveLength(1);
-    expect(mc.receipts[0]).toMatchObject({
+    expect(mc.receipts).toHaveLength(0);
+    expect(ctx.musicContext?.receipts).toHaveLength(1);
+    expect(ctx.musicContext?.receipts[0]).toMatchObject({
       engine: 'slonimsky',
       kind: 'slonimsky_context_consumed',
       payload: { bars: 3 },
@@ -493,12 +526,13 @@ describe('Wyble MusicContext consumer', () => {
   it('receipt appended to musicContext when consumed', () => {
     process.env.WYBLE_MUSIC_CONTEXT = 'true';
     const mc = wybleMusicContext(true);
-    applyWybleMusicContextOverrides({
+    const out = applyWybleMusicContextOverrides({
       ...wybleBaseParams(),
       musicContext: mc,
     });
-    expect(mc.receipts).toHaveLength(1);
-    expect(mc.receipts[0]).toMatchObject({
+    expect(mc.receipts).toHaveLength(0);
+    expect(out.musicContext?.receipts).toHaveLength(1);
+    expect(out.musicContext?.receipts[0]).toMatchObject({
       engine: 'wyble',
       kind: 'wyble_context_consumed',
       payload: { bars: 3, motifUsed: true },
@@ -605,9 +639,10 @@ describe('Martino MusicContext consumer', () => {
       lfvFlags: [],
       stderrExcerpt: '',
     };
-    appendMartinoGenerationReceipt(mc, mockResult);
-    expect(mc.receipts).toHaveLength(1);
-    expect(mc.receipts[0]).toMatchObject({
+    const updated = appendMartinoGenerationReceipt(mc, mockResult);
+    expect(mc.receipts).toHaveLength(0);
+    expect(updated?.receipts).toHaveLength(1);
+    expect(updated?.receipts[0]).toMatchObject({
       engine: 'martino',
       kind: 'martino_generation_complete',
       payload: {
@@ -626,6 +661,99 @@ describe('Martino MusicContext consumer', () => {
     expect(viaBridge.primary_activity).toBe(direct.primary_activity);
     expect(viaBridge.choruses).toBe(direct.choruses);
     expect(viaBridge.music_context_motif_hint).toBeUndefined();
+  });
+});
+
+describe('immutable receipts', () => {
+  it('appendReceiptToMusicContext does not mutate the original', () => {
+    const ctx = mockMusicContext();
+    const updated = appendReceiptToMusicContext(ctx, {
+      engine: 'riff',
+      kind: 'test_receipt',
+      payload: { ok: true },
+    });
+    expect(ctx.receipts).toHaveLength(0);
+    expect(updated.receipts).toHaveLength(1);
+    expect(updated.receipts).not.toBe(ctx.receipts);
+  });
+});
+
+describe('normalizeChordSymbol', () => {
+  it('rewrites iReal dialect to lead-sheet notation', () => {
+    expect(normalizeChordSymbol('C^7')).toBe('Cmaj7');
+    expect(normalizeChordSymbol('CΔ7')).toBe('Cmaj7');
+    expect(normalizeChordSymbol('D-7')).toBe('Dm7');
+    expect(normalizeChordSymbol('G-9')).toBe('Gm9');
+    expect(normalizeChordSymbol('Eb-7')).toBe('Ebm7');
+    expect(normalizeChordSymbol('F#ø7')).toBe('F#m7b5');
+    expect(normalizeChordSymbol('Bdim7')).toBe('B°7');
+    expect(normalizeChordSymbol('G7')).toBe('G7');
+    expect(normalizeChordSymbol('Ab7')).toBe('Ab7');
+  });
+});
+
+function mockIRealChart(overrides: Partial<ParsedChart> = {}): ParsedChart {
+  return {
+    title: 'Autumn Leaves',
+    composer: 'Kosma',
+    key: 'Bb major',
+    meter: { num: 4, den: 4 },
+    timeSignature: { num: 4, den: 4 },
+    harmonies: ['Cm7', 'F7', 'Bbmaj7', 'Ebmaj7'],
+    barMeterMap: {},
+    repeatMarkers: [],
+    tempo: 140,
+    style: 'Jazz',
+    sections: [],
+    measures: [],
+    repeats: [],
+    ...overrides,
+  };
+}
+
+describe('buildMusicContextFromIReal', () => {
+  it('key.root is normalised pitch class not full key string', () => {
+    const ctx = buildMusicContextFromIReal(mockIRealChart());
+    expect(ctx.key.root).toBe('Bb');
+    expect(ctx.key.mode).toBe('major');
+  });
+
+  it('harmony bars length matches chart harmonies length', () => {
+    const chart = mockIRealChart();
+    const ctx = buildMusicContextFromIReal(chart);
+    expect(ctx.harmony.bars).toHaveLength(chart.harmonies.length);
+  });
+
+  it('provenance.sourceEngineId is ireal', () => {
+    const ctx = buildMusicContextFromIReal(mockIRealChart());
+    expect(ctx.provenance?.sourceEngineId).toBe('ireal');
+  });
+
+  it('receipts is empty array not undefined', () => {
+    const ctx = buildMusicContextFromIReal(mockIRealChart());
+    expect(ctx.receipts).toEqual([]);
+    expect(ctx.receipts).not.toBeUndefined();
+  });
+});
+
+describe('buildMusicContextFromSlonimsky', () => {
+  it('harmony bars is empty array not null', () => {
+    const ctx = buildMusicContextFromSlonimsky(
+      { notes: [{ midi: 60, durationBeats: 1, beat: 0, role: 'target' }] },
+      { key: 'G' }
+    );
+    expect(ctx.harmony.bars).toEqual([]);
+    expect(ctx.harmony.bars).not.toBeNull();
+  });
+
+  it('key.root matches params.key normalised', () => {
+    const ctx = buildMusicContextFromSlonimsky({ notes: [] }, { key: 'Bb major' });
+    expect(ctx.key.root).toBe('Bb');
+  });
+
+  it('provenance.sourceEngineId is slonimsky', () => {
+    const ctx = buildMusicContextFromSlonimsky({ notes: [] }, { key: 'C' });
+    expect(ctx.provenance?.sourceEngineId).toBe('slonimsky');
   });
 });
 
@@ -690,5 +818,143 @@ describe('API wiring — MusicContext', () => {
     );
     expect(cfg.chords).toEqual(['Dm', 'Dm', 'Em']);
     delete process.env.MARTINO_MUSIC_CONTEXT;
+  });
+});
+
+function mockVaultOutput(overrides: Partial<IRealVaultOutput> = {}): IRealVaultOutput {
+  return {
+    title: 'Vault Test',
+    key: 'C',
+    bars: 32,
+    generatedNotes: [],
+    chordMappings: [{ barIndex: 0, symbol: 'Xmaj7', vaultChordTypeId: 'maj7', rootPc: 0 }],
+    unmappedChords: [],
+    mode: 'solo',
+    seed: 12345,
+    ...overrides,
+  };
+}
+
+function mockVaultChart(overrides: Partial<ParsedChart> = {}): ParsedChart {
+  return {
+    title: 'Vault Chart',
+    composer: '',
+    key: null,
+    meter: { num: 4, den: 4 },
+    timeSignature: { num: 4, den: 4 },
+    harmonies: ['C^7', 'Dm7'],
+    barMeterMap: {},
+    repeatMarkers: [],
+    tempo: 100,
+    style: null,
+    sections: [],
+    measures: Array.from({ length: 8 }, () => []),
+    repeats: [],
+    ...overrides,
+  };
+}
+
+describe('buildMusicContextFromVaultOutput', () => {
+  it('harmony.bars uses chart.harmonies not chordMappings', () => {
+    const chart = mockVaultChart({ harmonies: ['C^7', 'Dm7'] });
+    const output = mockVaultOutput({
+      chordMappings: [
+        { barIndex: 0, symbol: 'G7alt', vaultChordTypeId: 'dom7', rootPc: 7 },
+        { barIndex: 1, symbol: 'Am7b5', vaultChordTypeId: 'm7b5', rootPc: 9 },
+      ],
+    });
+    const ctx = buildMusicContextFromVaultOutput(output, chart);
+    expect(ctx.harmony.bars).toEqual(['Cmaj7', 'Dm7']);
+  });
+
+  it('harmony.checksum matches computeMusicContextChecksum on normalized chart harmonies', () => {
+    const chart = mockVaultChart({ harmonies: ['C^7', 'Dm7'] });
+    const ctx = buildMusicContextFromVaultOutput(mockVaultOutput(), chart);
+    const expected = computeMusicContextChecksum(chart.harmonies.map(normalizeChordSymbol));
+    expect(ctx.harmony.checksum).toBe(expected);
+  });
+
+  it('totalBars is chart.measures.length not output.bars', () => {
+    const chart = mockVaultChart({ measures: Array.from({ length: 8 }, () => []) });
+    const output = mockVaultOutput({ bars: 32 });
+    const ctx = buildMusicContextFromVaultOutput(output, chart);
+    expect(ctx.totalBars).toBe(8);
+    expect(output.bars).toBe(32);
+  });
+
+  it("key.root is 'C' when chart.key is null", () => {
+    const ctx = buildMusicContextFromVaultOutput(mockVaultOutput(), mockVaultChart({ key: null }));
+    expect(ctx.key.root).toBe('C');
+    expect(ctx.key.mode).toBe('major');
+  });
+
+  it('provenance.sourceEngineId is vault', () => {
+    const ctx = buildMusicContextFromVaultOutput(mockVaultOutput(), mockVaultChart());
+    expect(ctx.provenance?.sourceEngineId).toBe('vault');
+  });
+
+  it('receipts contains vault_generation_complete on every call', () => {
+    const ctx = buildMusicContextFromVaultOutput(mockVaultOutput(), mockVaultChart());
+    expect(ctx.receipts.some((r) => r.kind === 'vault_generation_complete')).toBe(true);
+  });
+
+  it('receipts contains vault_unmapped_chords when output.unmappedChords.length > 0', () => {
+    const output = mockVaultOutput({
+      unmappedChords: [
+        { barIndex: 2, symbol: '???' },
+        { barIndex: 5, symbol: '???' },
+      ],
+    });
+    const ctx = buildMusicContextFromVaultOutput(output, mockVaultChart());
+    const receipt = ctx.receipts.find((r) => r.kind === 'vault_unmapped_chords');
+    expect(receipt).toBeDefined();
+    expect(receipt?.payload).toEqual({ count: 2, bars: [2, 5] });
+  });
+
+  it('receipts does not contain vault_unmapped_chords when unmappedChords is empty', () => {
+    const ctx = buildMusicContextFromVaultOutput(
+      mockVaultOutput({ unmappedChords: [] }),
+      mockVaultChart()
+    );
+    expect(ctx.receipts.some((r) => r.kind === 'vault_unmapped_chords')).toBe(false);
+  });
+
+  it('motif is undefined', () => {
+    const ctx = buildMusicContextFromVaultOutput(mockVaultOutput(), mockVaultChart());
+    expect(ctx.motif).toBeUndefined();
+  });
+
+  it('on error returns valid MusicContext with vault_producer_error receipt and does not throw', () => {
+    const chordAnalysis = require('../core/harmony/chordSymbolAnalysis');
+    const spy = jest.spyOn(chordAnalysis, 'normalizeChordSymbol').mockImplementation(() => {
+      throw new Error('forced vault producer failure');
+    });
+    expect(() => buildMusicContextFromVaultOutput(mockVaultOutput(), mockVaultChart())).not.toThrow();
+    const ctx = buildMusicContextFromVaultOutput(mockVaultOutput(), mockVaultChart());
+    expect(ctx.harmony.bars).toEqual([]);
+    expect(ctx.harmony.checksum).toBe(computeMusicContextChecksum([]));
+    expect(ctx.receipts.some((r) => r.kind === 'vault_producer_error')).toBe(true);
+    spy.mockRestore();
+  });
+
+  it('vault and iReal producers produce identical harmony.checksum for the same ParsedChart', () => {
+    const chart: ParsedChart = {
+      title: 'Drift Test',
+      composer: '',
+      key: 'F major',
+      meter: { num: 4, den: 4 },
+      timeSignature: { num: 4, den: 4 },
+      harmonies: ['Dm7', 'G7', 'Cmaj7', 'Am7'],
+      barMeterMap: {},
+      repeatMarkers: [],
+      tempo: 120,
+      style: null,
+      sections: [],
+      measures: Array.from({ length: 4 }, () => []),
+      repeats: [],
+    };
+    const irealCtx = buildMusicContextFromIReal(chart);
+    const vaultCtx = buildMusicContextFromVaultOutput(mockVaultOutput({ bars: 16 }), chart);
+    expect(vaultCtx.harmony.checksum).toBe(irealCtx.harmony.checksum);
   });
 });

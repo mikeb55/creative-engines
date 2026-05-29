@@ -11,6 +11,8 @@ import type { EmotionalDrift } from '../harmony/reharmCandidateEngine';
 import type { TensionState } from '../harmony/layerStateMachine';
 import { mapChordToVaultType } from './chordSymbolMapper';
 import { parseIRealProInput } from './irealProAdapter';
+import { buildMusicContextFromVaultOutput } from '../music-context/musicContextAdapters';
+import type { MusicContext } from '../music-context/musicContextTypes';
 import type { ParsedChart } from './parsedChart';
 import {
   applyChorusQualityGate,
@@ -226,6 +228,8 @@ export type IRealVaultOutput = {
   chorusQualityGate?: ChorusQualityGate;
   /** First weak adjacent-chorus transition only (logged); see {@link applyChorusQualityGate}. */
   chorusQualityWarnings?: string[];
+  /** Shared Brain snapshot (single-chorus harmony; chart-sourced bars). */
+  musicContext?: MusicContext;
 };
 
 /** Options for {@link generateVaultFromParsedChart} / iReal / paste / PDF vault pipelines. */
@@ -496,7 +500,7 @@ export function generateVaultFromParsedChart(chart: ParsedChart, options?: Vault
   const chorusQualityWarnings =
     chorusCount < 2 ? [] : applyChorusQualityGate(chorusQualityGate);
 
-  return {
+  const output: IRealVaultOutput = {
     title: chart.title,
     key: chart.key,
     bars: totalBars,
@@ -511,6 +515,8 @@ export function generateVaultFromParsedChart(chart: ParsedChart, options?: Vault
     chorusQualityGate,
     ...(chorusQualityWarnings.length > 0 ? { chorusQualityWarnings } : {}),
   };
+  const musicContext = buildMusicContextFromVaultOutput(output, chart);
+  return { ...output, musicContext };
 }
 
 /** Melody-mode tension layer for a post-seed bar (chorus-local bar index). */
