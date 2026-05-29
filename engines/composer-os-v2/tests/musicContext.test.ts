@@ -117,6 +117,7 @@ import {
   appendReceiptToMusicContext,
   attachModulationToContext,
   buildMusicContextFromIReal,
+  buildMusicContextFromMartino,
   buildMusicContextFromSlonimsky,
   buildMusicContextFromVaultOutput,
   buildMusicContextFromWyble,
@@ -1074,5 +1075,191 @@ describe('isMusicContextHopLimitReached', () => {
       ],
     });
     expect(isMusicContextHopLimitReached(ctx)).toBe(true);
+  });
+});
+
+describe('buildMusicContextFromMartino', () => {
+  const mockPhrasePlan = [
+    { chord: 'Dm7',   reduction: 'Dm'  },
+    { chord: 'G7',    reduction: 'G7'  },
+    { chord: 'Cmaj7', reduction: 'C'   },
+    { chord: 'Am7',   reduction: 'Am'  }
+  ];
+  const mockTuneConfig = {
+    time_signature: { beats: 4, beat_type: 4 },
+    chords: ['Dm7','G7','Cmaj7','Am7']
+  };
+
+  it('1: harmony.bars uses .chord not .reduction', () => {
+    const mc = buildMusicContextFromMartino(mockTuneConfig, mockPhrasePlan, { key: 'C' });
+    expect(mc.harmony.bars[0]).toBe('Dm7');
+    expect(mc.harmony.bars[0]).not.toBe('Dm');
+  });
+
+  it('2: normalises iReal glyphs in chord field', () => {
+    const plan = [{ chord: 'C^7', reduction: 'C' }];
+    const mc = buildMusicContextFromMartino(mockTuneConfig, plan, {});
+    expect(mc.harmony.bars[0]).toBe('Cmaj7');
+  });
+
+  it('3: checksum matches expected', () => {
+    const mc = buildMusicContextFromMartino(mockTuneConfig, mockPhrasePlan, {});
+    const expected = computeMusicContextChecksum(
+      mockPhrasePlan.map(b => normalizeChordSymbol(b.chord))
+    );
+    expect(mc.harmony.checksum).toBe(expected);
+  });
+
+  it('4: provenance.sourceEngineId === martino', () => {
+    const mc = buildMusicContextFromMartino(mockTuneConfig, mockPhrasePlan, {});
+    expect(mc.provenance?.sourceEngineId).toBe('martino');
+  });
+
+  it('5: receipts[0].kind === martino_generation_complete', () => {
+    const mc = buildMusicContextFromMartino(mockTuneConfig, mockPhrasePlan, {});
+    expect(mc.receipts[0].kind).toBe('martino_generation_complete');
+  });
+
+  it('6: receipts[0].payload.source === phrasePlan', () => {
+    const mc = buildMusicContextFromMartino(mockTuneConfig, mockPhrasePlan, {});
+    expect((mc.receipts[0].payload as any).source).toBe('phrasePlan');
+  });
+
+  it('7: motif is undefined', () => {
+    const mc = buildMusicContextFromMartino(mockTuneConfig, mockPhrasePlan, {});
+    expect(mc.motif).toBeUndefined();
+  });
+
+  it('8: key.root is C when key is null', () => {
+    const mc = buildMusicContextFromMartino(mockTuneConfig, mockPhrasePlan, { key: undefined });
+    expect(mc.key.root).toBe('C');
+  });
+
+  it('9: totalBars = phrasePlan.length when not provided', () => {
+    const mc = buildMusicContextFromMartino(mockTuneConfig, mockPhrasePlan, {});
+    expect(mc.totalBars).toBe(4);
+  });
+
+  it('10: minor-root guard — reduction never in harmony.bars', () => {
+    const mc = buildMusicContextFromMartino(mockTuneConfig, mockPhrasePlan, {});
+    expect(mc.harmony.bars).not.toContain('Dm');
+    expect(mc.harmony.bars).not.toContain('Am');
+    expect(mc.harmony.bars).toContain('Dm7');
+    expect(mc.harmony.bars).toContain('Am7');
+  });
+
+  it('11: on error returns MusicContext with error receipt, does not throw', () => {
+    const mc = buildMusicContextFromMartino(mockTuneConfig, null as any, {});
+    expect(mc.receipts[0].kind).toBe('martino_producer_error');
+    expect(mc.harmony.bars).toEqual([]);
+  });
+
+  it('12: getMusicContextHopCount on Martino context = 1', () => {
+    const mc = buildMusicContextFromMartino(mockTuneConfig, mockPhrasePlan, {});
+    expect(getMusicContextHopCount(mc)).toBe(1);
+  });
+
+  it('13: hop limit reached after second engine-complete receipt', () => {
+    const mc = buildMusicContextFromMartino(mockTuneConfig, mockPhrasePlan, {});
+    const mc2 = appendReceiptToMusicContext(mc, {
+      engine: 'vault',
+      kind: 'vault_generation_complete',
+      payload: {}
+    });
+    expect(getMusicContextHopCount(mc2)).toBe(2);
+    expect(isMusicContextHopLimitReached(mc2)).toBe(true);
+  });
+});
+
+describe('buildMusicContextFromMartino', () => {
+  const mockPhrasePlan = [
+    { chord: 'Dm7',   reduction: 'Dm'  },
+    { chord: 'G7',    reduction: 'G7'  },
+    { chord: 'Cmaj7', reduction: 'C'   },
+    { chord: 'Am7',   reduction: 'Am'  }
+  ];
+  const mockTuneConfig = {
+    time_signature: { beats: 4, beat_type: 4 },
+    chords: ['Dm7','G7','Cmaj7','Am7']
+  };
+
+  it('1: harmony.bars uses .chord not .reduction', () => {
+    const mc = buildMusicContextFromMartino(mockTuneConfig, mockPhrasePlan, { key: 'C' });
+    expect(mc.harmony.bars[0]).toBe('Dm7');
+    expect(mc.harmony.bars[0]).not.toBe('Dm');
+  });
+
+  it('2: normalises iReal glyphs in chord field', () => {
+    const plan = [{ chord: 'C^7', reduction: 'C' }];
+    const mc = buildMusicContextFromMartino(mockTuneConfig, plan, {});
+    expect(mc.harmony.bars[0]).toBe('Cmaj7');
+  });
+
+  it('3: checksum matches expected', () => {
+    const mc = buildMusicContextFromMartino(mockTuneConfig, mockPhrasePlan, {});
+    const expected = computeMusicContextChecksum(
+      mockPhrasePlan.map(b => normalizeChordSymbol(b.chord))
+    );
+    expect(mc.harmony.checksum).toBe(expected);
+  });
+
+  it('4: provenance.sourceEngineId === martino', () => {
+    const mc = buildMusicContextFromMartino(mockTuneConfig, mockPhrasePlan, {});
+    expect(mc.provenance?.sourceEngineId).toBe('martino');
+  });
+
+  it('5: receipts[0].kind === martino_generation_complete', () => {
+    const mc = buildMusicContextFromMartino(mockTuneConfig, mockPhrasePlan, {});
+    expect(mc.receipts[0].kind).toBe('martino_generation_complete');
+  });
+
+  it('6: receipts[0].payload.source === phrasePlan', () => {
+    const mc = buildMusicContextFromMartino(mockTuneConfig, mockPhrasePlan, {});
+    expect((mc.receipts[0].payload as any).source).toBe('phrasePlan');
+  });
+
+  it('7: motif is undefined', () => {
+    const mc = buildMusicContextFromMartino(mockTuneConfig, mockPhrasePlan, {});
+    expect(mc.motif).toBeUndefined();
+  });
+
+  it('8: key.root is C when key is null', () => {
+    const mc = buildMusicContextFromMartino(mockTuneConfig, mockPhrasePlan, { key: undefined });
+    expect(mc.key.root).toBe('C');
+  });
+
+  it('9: totalBars = phrasePlan.length when not provided', () => {
+    const mc = buildMusicContextFromMartino(mockTuneConfig, mockPhrasePlan, {});
+    expect(mc.totalBars).toBe(4);
+  });
+
+  it('10: minor-root guard — reduction never in harmony.bars', () => {
+    const mc = buildMusicContextFromMartino(mockTuneConfig, mockPhrasePlan, {});
+    expect(mc.harmony.bars).not.toContain('Dm');
+    expect(mc.harmony.bars).not.toContain('Am');
+    expect(mc.harmony.bars).toContain('Dm7');
+    expect(mc.harmony.bars).toContain('Am7');
+  });
+
+  it('11: on error returns MusicContext with error receipt, does not throw', () => {
+    const mc = buildMusicContextFromMartino(mockTuneConfig, null as any, {});
+    expect(mc.receipts[0].kind).toBe('martino_producer_error');
+    expect(mc.harmony.bars).toEqual([]);
+  });
+
+  it('12: getMusicContextHopCount on Martino context = 1', () => {
+    const mc = buildMusicContextFromMartino(mockTuneConfig, mockPhrasePlan, {});
+    expect(getMusicContextHopCount(mc)).toBe(1);
+  });
+
+  it('13: hop limit reached after second engine-complete receipt', () => {
+    const mc = buildMusicContextFromMartino(mockTuneConfig, mockPhrasePlan, {});
+    const mc2 = appendReceiptToMusicContext(mc, {
+      engine: 'vault',
+      kind: 'vault_generation_complete',
+      payload: {}
+    });
+    expect(getMusicContextHopCount(mc2)).toBe(2);
+    expect(isMusicContextHopLimitReached(mc2)).toBe(true);
   });
 });

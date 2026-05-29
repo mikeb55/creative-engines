@@ -368,3 +368,44 @@ export function buildMusicContextFromSlonimsky(
     receipts: [],
   };
 }
+
+export function buildMusicContextFromMartino(
+  tuneConfig: Record<string, unknown>,
+  phrasePlan: Array<{ chord: string; reduction: string }>,
+  generationParams: { key?: string; bpm?: number; totalBars?: number }
+): MusicContext {
+  try {
+    const bars = phrasePlan.map(b => normalizeChordSymbol(b.chord));
+    const checksum = computeMusicContextChecksum(bars);
+    const keyParsed = normalizeKeyRoot(generationParams.key ?? null) ?? { root: 'C', mode: 'major' };
+    const totalBars = generationParams.totalBars ?? phrasePlan.length;
+    const ts = tuneConfig.time_signature as any;
+    const meter = ts ? { num: ts.beats, den: ts.beat_type } : { num: 4, den: 4 };
+    return {
+      schemaVersion: '1.0',
+      key: keyParsed,
+      meter,
+      bpm: generationParams.bpm ?? 120,
+      totalBars,
+      harmony: { bars, checksum, source: 'martino' },
+      provenance: { sourceEngineId: 'martino', capturedAt: Date.now() },
+      receipts: [{
+        engine: 'martino',
+        kind: 'martino_generation_complete',
+        payload: { bars: totalBars, key: generationParams.key ?? null, source: 'phrasePlan' }
+      }]
+    };
+  } catch (err) {
+    return {
+      schemaVersion: '1.0',
+      key: { root: 'C', mode: 'major' },
+      meter: { num: 4, den: 4 },
+      bpm: 120,
+      totalBars: 0,
+      harmony: { bars: [], checksum: computeMusicContextChecksum([]), source: 'martino' },
+      provenance: { sourceEngineId: 'martino', capturedAt: Date.now() },
+      receipts: [{ engine: 'martino', kind: 'martino_producer_error',
+                   payload: { message: String(err) } }]
+    };
+  }
+}
