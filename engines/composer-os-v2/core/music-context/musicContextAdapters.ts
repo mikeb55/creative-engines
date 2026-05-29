@@ -20,6 +20,7 @@ import {
   resolveWybleEtudePresetChordBars,
   wybleEtudeKeyRootName,
 } from './wybleEtudePresetProgressions';
+import type { StandaloneEtudePreset } from './etudePresetTypes';
 import type { WybleEtudePreset } from './wybleEtudePresetTypes';
 
 const ROOT_RE = /^([A-G](?:#|b)?)/i;
@@ -258,6 +259,33 @@ export function buildMusicContextFromWyblePreset(preset: WybleEtudePreset): Musi
     harmony,
     provenance: {
       sourceEngineId: 'wyble',
+      capturedAt: Date.now(),
+    },
+    receipts: [],
+  };
+}
+
+/** Standalone etude preset → MusicContext with no parent engine (V96b). Always-on — no feature flag. */
+export function buildStandaloneEtudePreset(preset: StandaloneEtudePreset): MusicContext {
+  const chordBars = resolveWybleEtudePresetChordBars(preset as WybleEtudePreset);
+  const harmonyBars = chordBars.map(normalizeChordSymbol);
+  const harmony: MusicContextHarmony = {
+    bars: harmonyBars,
+    checksum: computeMusicContextChecksum(harmonyBars),
+    source: 'user',
+  };
+  const root = wybleEtudeKeyRootName(preset.key);
+  return {
+    schemaVersion: '1.0',
+    seed: 0,
+    presetId: 'etude_preset',
+    key: { root, mode: 'major' },
+    meter: { beats: 4, beatType: 4 },
+    bpm: preset.tempo,
+    totalBars: harmonyBars.length,
+    harmony,
+    provenance: {
+      sourceEngineId: 'etude_preset',
       capturedAt: Date.now(),
     },
     receipts: [],

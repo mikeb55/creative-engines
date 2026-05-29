@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-29) V96b — Standalone etude preset proof** — `buildStandaloneEtudePreset()` in `musicContextAdapters.ts`: engine-agnostic `StandaloneEtudePreset` → valid `MusicContext` with `sourceEngineId: 'etude_preset'`, normalised harmony bars + checksum; no parent engine, no feature flag. Jest parity vs Wyble preset checksum on same key.
+
 - **(2026-05-29) V97 — Tritonic cell dictionary** — New `core/tritonic/tritonicCell.ts`: `TritonicCell` / `TritonicDictionary` types, `buildTritonicDictionary()` with five families (`quartal`, `cluster`, `suspended`, `shorter_floating`, `bergonzi`); `intervalProfile` and `tension` derived from pitch-class content (not Slonimsky interval primitives). Jest **`tritonicCell.test.ts`**; dictionary-only — no MusicContext producer yet.
 
 - **(2026-05-29) V95 — Wyble etude preset MusicContext producer** — `buildMusicContextFromWyblePreset` + `resolveWybleEtudePreset` / `wybleEtudePresetProgressions` (pentatonic · chromatic · whole_tone × easy/medium/hard); harmony bars via `normalizeChordSymbol`, checksum after normalisation; always-on (no feature flag). Wyble generate resolves preset when chord text omitted; UI etude preset panel on **`HomeGenerate.tsx`**.

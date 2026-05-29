@@ -123,6 +123,7 @@ import {
   buildMusicContextFromWyble,
   buildMusicContextFromWyblePreset,
   buildRiffGeneratorMusicContext,
+  buildStandaloneEtudePreset,
   computeMusicContextChecksum,
   coreMotifToMusicContextMotif,
   getMusicContextHopCount,
@@ -133,6 +134,7 @@ import {
   motifToSeedPitches,
 } from '../core/music-context/musicContextAdapters';
 import { resolveWybleEtudePresetChordBars, resolveWybleEtudePreset } from '../core/music-context/wybleEtudePresetProgressions';
+import type { StandaloneEtudePreset } from '../core/music-context/etudePresetTypes';
 import type { WybleEtudePreset } from '../core/music-context/wybleEtudePresetTypes';
 import type { MusicContext } from '../core/music-context/musicContextTypes';
 import { resolveWybleChordBarsFromRequest } from '../core/goldenPath/resolveWybleChordBars';
@@ -1086,6 +1088,56 @@ describe('resolveWybleEtudePreset + resolveWybleChordBarsFromRequest (V95)', () 
     if (!resolved.ok) return;
     expect(resolved.source).toBe('chordProgressionText');
     expect(resolved.bars).toEqual(['Am7', 'D7']);
+  });
+});
+
+describe('buildStandaloneEtudePreset (V96b)', () => {
+  function sampleStandalone(overrides: Partial<StandaloneEtudePreset> = {}): StandaloneEtudePreset {
+    return {
+      key: 7,
+      tempo: 108,
+      patternType: 'pentatonic',
+      difficulty: 'medium',
+      ...overrides,
+    };
+  }
+
+  it('returns valid MusicContext with no engine context passed', () => {
+    const ctx = buildStandaloneEtudePreset(sampleStandalone());
+    expect(ctx.schemaVersion).toBe('1.0');
+    expect(ctx.presetId).toBe('etude_preset');
+    expect(ctx.key.root).toBe('G');
+    expect(ctx.bpm).toBe(108);
+    expect(ctx.harmony.bars.length).toBeGreaterThan(0);
+    expect(ctx.totalBars).toBe(ctx.harmony.bars.length);
+    expect(ctx.motif).toBeUndefined();
+    expect(ctx.receipts).toEqual([]);
+    expect(typeof ctx.provenance?.capturedAt).toBe('number');
+  });
+
+  it('harmony.checksum matches normalised bars', () => {
+    const ctx = buildStandaloneEtudePreset(sampleStandalone({ patternType: 'chromatic' }));
+    const normalised = ctx.harmony.bars.map((s) => normalizeChordSymbol(s));
+    expect(ctx.harmony.bars).toEqual(normalised);
+    expect(ctx.harmony.checksum).toBe(computeMusicContextChecksum(normalised));
+  });
+
+  it("sourceEngineId is 'etude_preset'", () => {
+    const ctx = buildStandaloneEtudePreset(sampleStandalone());
+    expect(ctx.provenance?.sourceEngineId).toBe('etude_preset');
+  });
+
+  it('Wyble preset + standalone preset on same key produce identical harmony.checksum', () => {
+    const shared: WybleEtudePreset = {
+      key: 2,
+      tempo: 96,
+      patternType: 'whole_tone',
+      difficulty: 'hard',
+    };
+    const wybleCtx = buildMusicContextFromWyblePreset(shared);
+    const standaloneCtx = buildStandaloneEtudePreset(shared);
+    expect(standaloneCtx.harmony.checksum).toBe(wybleCtx.harmony.checksum);
+    expect(standaloneCtx.harmony.bars).toEqual(wybleCtx.harmony.bars);
   });
 });
 
