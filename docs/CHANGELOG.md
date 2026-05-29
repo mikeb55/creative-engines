@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-29) V97 — Tritonic cell dictionary** — New `core/tritonic/tritonicCell.ts`: `TritonicCell` / `TritonicDictionary` types, `buildTritonicDictionary()` with five families (`quartal`, `cluster`, `suspended`, `shorter_floating`, `bergonzi`); `intervalProfile` and `tension` derived from pitch-class content (not Slonimsky interval primitives). Jest **`tritonicCell.test.ts`**; dictionary-only — no MusicContext producer yet.
+
 - **(2026-05-28) V69 — Martino Linear Engine** — Shipped Martino Linear preset end-to-end in Composer OS desktop + web API.
   - **P1:** Martino engine v6 wired + 28-bar Orbit + Python bridge + GCE gate (`martino_linear` preset, `martinoEngineBridge.ts`, `martino_bridge.py`).
   - **P2:** Canonical masters + UI pipeline + explain mode (`MartinoPanel`, `martinoGeneratePipeline.js`, library output path).
