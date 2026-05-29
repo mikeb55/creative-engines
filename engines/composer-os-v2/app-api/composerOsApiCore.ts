@@ -976,6 +976,16 @@ export function apiGenerate(
       stringQuartetConfig: coerceStringQuartetConfigFromBody(body),
       contrapuntalConfig: coerceContrapuntalConfigFromBody(body),
       martinoConfig: coerceMartinoConfigFromBody(body),
+      wybleEtudePreset: (() => {
+        const raw = (body as { wybleEtudePreset?: unknown }).wybleEtudePreset;
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+        return raw as GenerateRequest['wybleEtudePreset'];
+      })(),
+      musicContext:
+        (body as { musicContext?: unknown }).musicContext &&
+        typeof (body as { musicContext?: unknown }).musicContext === 'object'
+          ? ((body as { musicContext: MusicContext }).musicContext as MusicContext)
+          : undefined,
     };
     const genCorr = req_.__generateCorrelationId;
     if (genCorr != null) {

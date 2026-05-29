@@ -8,8 +8,10 @@ import {
   parseChordProgressionTextToCanonicalChords,
 } from '../harmony/chordPipeline';
 import type { CanonicalChord } from '../../../core/canonicalChord';
+import type { WybleEtudePreset } from '../music-context/wybleEtudePresetTypes';
+import { resolveWybleEtudePresetChordBars } from '../music-context/wybleEtudePresetProgressions';
 
-export type WybleChordSource = 'parsedChordBars' | 'chordProgressionText';
+export type WybleChordSource = 'parsedChordBars' | 'chordProgressionText' | 'wybleEtudePreset';
 
 export type ResolveWybleChordBarsResult =
   | { ok: true; bars: string[]; canonicalChords: CanonicalChord[]; source: WybleChordSource }
@@ -17,11 +19,12 @@ export type ResolveWybleChordBarsResult =
 
 /**
  * Prefer `parsedChordBars` when non-empty (direct per-bar parse — same canonical mapping as text).
- * Otherwise require non-empty `chordProgressionText`. No built-in or fallback progression.
+ * Otherwise require non-empty `chordProgressionText`. When both absent, use `wybleEtudePreset` (V95).
  */
 export function resolveWybleChordBarsFromRequest(
   parsedChordBars: unknown,
-  chordProgressionText: unknown
+  chordProgressionText: unknown,
+  wybleEtudePreset?: WybleEtudePreset | null
 ): ResolveWybleChordBarsResult {
   const hasBars = Array.isArray(parsedChordBars) && parsedChordBars.length > 0;
   const text = typeof chordProgressionText === 'string' ? chordProgressionText.trim() : '';
@@ -52,9 +55,19 @@ export function resolveWybleChordBarsFromRequest(
     return { ok: true, bars: p.bars, canonicalChords: p.canonicalChords, source: 'chordProgressionText' };
   }
 
+  if (wybleEtudePreset) {
+    const bars = resolveWybleEtudePresetChordBars(wybleEtudePreset);
+    try {
+      const canonicalChords = parseBarStringsToCanonicalChords(bars);
+      return { ok: true, bars, canonicalChords, source: 'wybleEtudePreset' };
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  }
+
   return {
     ok: false,
     error:
-      'Wyble requires a chord progression. Enter chordProgressionText (bar-separated chords) or parsedChordBars.',
+      'Wyble requires a chord progression or wybleEtudePreset. Enter chordProgressionText, parsedChordBars, or etude preset fields.',
   };
 }

@@ -490,6 +490,13 @@ export interface GenerateRequest {
   martinoConfig?: MartinoConfigPayload;
   /** V90a — Shared Brain snapshot for Martino harmony/motif (feature-flagged). */
   musicContext?: MusicContext;
+  /**
+   * V95 — Wyble etude preset (key / tempo / pattern / difficulty). When chord text is omitted,
+   * drives harmony via {@link buildMusicContextFromWyblePreset} (always-on — no feature flag).
+   */
+  wybleEtudePreset?: Partial<import('../core/music-context/wybleEtudePresetTypes').WybleEtudePreset> & {
+    keyRoot?: string;
+  };
   /** Frank Zappa P2 — opt-in GCE auto meter splice when no request `barMeterMap`. */
   zappaGceAutoBarMeterMapEnabled?: boolean;
   /** Frank Zappa P6 — section-meter interaction when auto meter enabled (`disrupt` default). */

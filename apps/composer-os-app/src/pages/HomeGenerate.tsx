@@ -2364,6 +2364,8 @@ export function HomeGenerate({
   const [slonimskyBbMiddle, setSlonimskyBbMiddle] = useState(DEFAULT_BIG_BAND_SLONIMSKY_MIDDLE);
   const [slonimskySqMiddle, setSlonimskySqMiddle] = useState(DEFAULT_STRING_QUARTET_SLONIMSKY_MIDDLE);
   const [gbdChromaticStrength, setGbdChromaticStrength] = useState<GbdChromaticStrength>('off');
+  const [wyblePatternType, setWyblePatternType] = useState<'pentatonic' | 'chromatic' | 'whole_tone'>('pentatonic');
+  const [wybleDifficulty, setWybleDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
   const [slonimskyEtudeCellFamily, setSlonimskyEtudeCellFamily] = useState<SlonimskySourcePreset>('lyrical');
   const [gbdWriterId, setGbdWriterId] = useState<SlonimskyGbdWriterId>('nile_rodgers');
   useEffect(() => {
@@ -3329,18 +3331,6 @@ export function HomeGenerate({
           });
           return;
         }
-        if (presetId === 'wyble_etude' && !chordTrim) {
-          setError(
-            'Wyble requires a chord progression. Enter bar-separated chords in the Chord progression field (no built-in fallback).'
-          );
-          setLoading(false);
-          notifyGenPhase('failed');
-          onResult({
-            record: {},
-            summary: { status: 'failed', at: new Date().toISOString() },
-          });
-          return;
-        }
         if (presetId === 'martino_linear') {
           const martinoChordText =
             martinoChordSource === 'section'
@@ -3779,8 +3769,17 @@ export function HomeGenerate({
                 longFormEnabled: tbForm >= 16,
               }
             : {}),
-          ...(presetId === 'wyble_etude' && chordTrim
-            ? { chordProgressionText: chordTrim, chromaticStrength: gbdChromaticStrength }
+          ...(presetId === 'wyble_etude'
+            ? {
+                chromaticStrength: gbdChromaticStrength,
+                wybleEtudePreset: {
+                  keyRoot: tonalCenter || tonalCenterOverride || 'C',
+                  tempo: bpm,
+                  patternType: wyblePatternType,
+                  difficulty: wybleDifficulty,
+                },
+                ...(chordTrim ? { chordProgressionText: chordTrim } : {}),
+              }
             : {}),
           ...(presetId === 'wyble_etude' && wybleUseSharedContext && sharedMusicContext
             ? { musicContext: sharedMusicContext }
@@ -5356,6 +5355,42 @@ export function HomeGenerate({
         />
       )}
       {presetId === 'wyble_etude' && (
+        <div className="panel" style={{ marginBottom: '1rem' }}>
+          <h3 style={{ marginTop: 0 }}>Wyble etude preset</h3>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 0 }}>
+            Used when chord progression is blank. Key and tempo come from Tonal centre and BPM above.
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+            <label>
+              Pattern
+              <select
+                value={wyblePatternType}
+                onChange={(e) =>
+                  setWyblePatternType(e.target.value as 'pentatonic' | 'chromatic' | 'whole_tone')
+                }
+                disabled={loading}
+              >
+                <option value="pentatonic">Pentatonic</option>
+                <option value="chromatic">Chromatic</option>
+                <option value="whole_tone">Whole tone</option>
+              </select>
+            </label>
+            <label>
+              Difficulty
+              <select
+                value={wybleDifficulty}
+                onChange={(e) => setWybleDifficulty(e.target.value as 'easy' | 'medium' | 'hard')}
+                disabled={loading}
+              >
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+            </label>
+          </div>
+        </div>
+      )}
+      {presetId === 'wyble_etude' && (
         <SharedMusicContextToggle
           sharedMusicContext={sharedMusicContext}
           active={wybleUseSharedContext}
@@ -5691,8 +5726,10 @@ export function HomeGenerate({
         presetId === 'string_quartet') && (
         <div style={{ marginBottom: '1rem', maxWidth: 640 }}>
           <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
-            {presetId === 'wyble_etude' || presetId === 'slonimsky_etude'
+            {presetId === 'slonimsky_etude'
               ? 'Chord progression (required)'
+              : presetId === 'wyble_etude'
+                ? 'Chord progression (optional)'
               : presetId === 'big_band' || presetId === 'string_quartet'
                 ? `Chord progression (${ensembleChordBarCountForLabel ?? 16} bars)`
               : songFormBarPreset
@@ -5711,7 +5748,8 @@ export function HomeGenerate({
               Standard jazz symbols such as <code>Dm9</code>, <code>G13</code>, <code>Cmaj9</code>, <code>A7alt</code>{' '}
               — separated by spaces or commas, or one chord per bar with <code>|</code>, <code>,</code>,{' '}
               <code>;</code>, or (without <code>|</code>) newlines / spaced <code>/</code>. Slash chords like{' '}
-              <code>G7/B</code> are one symbol. This list is the only harmonic source for Wyble (no default loop).
+              <code>G7/B</code> are one symbol. Leave blank to use the etude preset below (key, tempo, pattern,
+              difficulty).
             </p>
           ) : presetId === 'slonimsky_etude' ? (
             <p

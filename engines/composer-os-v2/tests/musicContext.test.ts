@@ -132,9 +132,10 @@ import {
   keyPcFromRoot,
   motifToSeedPitches,
 } from '../core/music-context/musicContextAdapters';
-import { resolveWybleEtudePresetChordBars } from '../core/music-context/wybleEtudePresetProgressions';
+import { resolveWybleEtudePresetChordBars, resolveWybleEtudePreset } from '../core/music-context/wybleEtudePresetProgressions';
 import type { WybleEtudePreset } from '../core/music-context/wybleEtudePresetTypes';
 import type { MusicContext } from '../core/music-context/musicContextTypes';
+import { resolveWybleChordBarsFromRequest } from '../core/goldenPath/resolveWybleChordBars';
 import type { ParsedChart } from '../core/irealpro/parsedChart';
 import type { IRealVaultOutput } from '../core/irealpro/irealVaultPipeline';
 import {
@@ -1059,6 +1060,32 @@ describe('buildMusicContextFromWyblePreset', () => {
     });
     expect(fromPreset.harmony.checksum).toBe(fromProducer.harmony.checksum);
     expect(fromPreset.harmony.bars).toEqual(fromProducer.harmony.bars);
+  });
+});
+
+describe('resolveWybleEtudePreset + resolveWybleChordBarsFromRequest (V95)', () => {
+  it('resolves chord bars from preset when progression text omitted', () => {
+    const preset = resolveWybleEtudePreset(
+      { patternType: 'pentatonic', difficulty: 'easy', key: 2 },
+      { keyLabel: 'D', bpm: 96 }
+    );
+    const resolved = resolveWybleChordBarsFromRequest(undefined, '', preset);
+    expect(resolved.ok).toBe(true);
+    if (!resolved.ok) return;
+    expect(resolved.source).toBe('wybleEtudePreset');
+    expect(resolved.bars).toEqual(resolveWybleEtudePresetChordBars(preset));
+    const ctx = buildMusicContextFromWyblePreset(preset);
+    expect(ctx.harmony.bars.map((s) => normalizeChordSymbol(s))).toEqual(ctx.harmony.bars);
+    expect(ctx.harmony.checksum).toBe(computeMusicContextChecksum(ctx.harmony.bars));
+  });
+
+  it('manual chord progression wins over preset fallback', () => {
+    const preset = resolveWybleEtudePreset({ patternType: 'chromatic', difficulty: 'hard' }, { bpm: 120 });
+    const resolved = resolveWybleChordBarsFromRequest(undefined, 'Am7 | D7', preset);
+    expect(resolved.ok).toBe(true);
+    if (!resolved.ok) return;
+    expect(resolved.source).toBe('chordProgressionText');
+    expect(resolved.bars).toEqual(['Am7', 'D7']);
   });
 });
 

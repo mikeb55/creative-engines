@@ -93,7 +93,11 @@ import {
 } from '../core/harmony/chordProgressionParser';
 import { clampSongFormBarCount } from '../core/harmony/songFormBarCounts';
 import { resolveWybleChordBarsFromRequest } from '../core/goldenPath/resolveWybleChordBars';
-import { buildMusicContextFromWyble } from '../core/music-context/musicContextAdapters';
+import {
+  buildMusicContextFromWyble,
+  buildMusicContextFromWyblePreset,
+} from '../core/music-context/musicContextAdapters';
+import { resolveWybleEtudePreset } from '../core/music-context/wybleEtudePresetProgressions';
 import { buildChordExportDiagnosticsReceipt } from '../../core/chordExportDiagnostics';
 import { getChordForBar } from '../core/harmony/harmonyResolution';
 import {
@@ -517,7 +521,15 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
   if (id === 'wyble_etude') {
     const { generateWybleEtudeXml } = require('../core/goldenPath/wybleBypassGenerator');
     const reqAny = req as GenerateRequest & { parsedChordBars?: string[]; chordProgressionText?: string };
-    const resolved = resolveWybleChordBarsFromRequest(reqAny.parsedChordBars, reqAny.chordProgressionText);
+    const wybleEtudePreset = resolveWybleEtudePreset(
+      (req as GenerateRequest & { wybleEtudePreset?: unknown }).wybleEtudePreset,
+      { keyLabel: req.tonalCenter ?? req.tonalCenterOverride, bpm: req.bpm }
+    );
+    const resolved = resolveWybleChordBarsFromRequest(
+      reqAny.parsedChordBars,
+      reqAny.chordProgressionText,
+      wybleEtudePreset
+    );
     if (!resolved.ok) {
       return {
         success: false,
@@ -583,13 +595,16 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
         tuning?: { name: string; strings: readonly number[]; capo: number };
       }).tuning,
     };
-    const musicContext = buildMusicContextFromWyble(chords, {
-      key: wybleParams.key,
-      bpm: wybleParams.bpm,
-      timeSignature: wybleParams.timeSignature,
-      tuning: wybleParams.tuning ?? undefined,
-      totalBars: chords.length,
-    });
+    const musicContext =
+      resolved.source === 'wybleEtudePreset'
+        ? buildMusicContextFromWyblePreset(wybleEtudePreset)
+        : buildMusicContextFromWyble(chords, {
+            key: wybleParams.key,
+            bpm: wybleParams.bpm,
+            timeSignature: wybleParams.timeSignature,
+            tuning: wybleParams.tuning ?? undefined,
+            totalBars: chords.length,
+          });
     return {
       success: true,
       composerOsVersion: COMPOSER_OS_VERSION,
