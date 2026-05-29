@@ -1,0 +1,32 @@
+{
+  "id": "A6_ENCLOSURE_CELL",
+  "sourceFile": "masters\\sources\\A6.xml",
+  "bars_gm": [
+    [
+      ["G", 2, 1, 1],
+      ["F", 2, 1, 1],
+      ["G", 2, null, 1],
+      ["G", 2, 1, 1],
+      ["F", 2, 1, 1],
+      ["G", 2, null, 1],
+      ["B", 2, -1, 1],
+      ["D", 3, null, 1]
+    ]
+  ],
+  "notes_gm": [
+    {"pitch": "G", "octave": 2, "alter": 1, "duration": 1, "beat_position": 0.0, "source_bar": 0},
+    {"pitch": "F", "octave": 2, "alter": 1, "duration": 1, "beat_position": 0.5, "source_bar": 0},
+    {"pitch": "G", "octave": 2, "alter": null, "duration": 1, "beat_position": 1.0, "source_bar": 0},
+    {"pitch": "G", "octave": 2, "alter": 1, "duration": 1, "beat_position": 1.5, "source_bar": 0},
+    {"pitch": "F", "octave": 2, "alter": 1, "duration": 1, "beat_position": 2.0, "source_bar": 0},
+    {"pitch": "G", "octave": 2, "alter": null, "duration": 1, "beat_position": 2.5, "source_bar": 0},
+    {"pitch": "B", "octave": 2, "alter": -1, "duration": 1, "beat_position": 3.0, "source_bar": 0},
+    {"pitch": "D", "octave": 3, "alter": null, "duration": 1, "beat_position": 3.5, "source_bar": 0}
+  ],
+  "phrase_boundaries": [1],
+  "fret_range": {"min": 3, "max": 9},
+  "contour": "enclosure",
+  "feel": "chromatic",
+  "form": 1,
+  "checksum_sha256": "placeholder"
+}

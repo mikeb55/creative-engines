@@ -20,11 +20,17 @@ ACTIVITY_ALIASES = {
     "A3_PIVOT_CELL": "A3",
     "A4_ANCHOR_ARP": "A4",
     "A5_FREE_MIX": "A5",
+    "A6_ENCLOSURE_CELL": "A6",
+    "A7_LONG_SPAN": "A7",
+    "A8_RHYTHMIC_DISPLACEMENT": "A8",
     "LINEAR_CORE": "A1",
     "DIAGONAL_BRIDGE": "A2",
     "PIVOT_CELL": "A3",
     "ANCHOR_ARP": "A4",
     "FREE_MIX": "A5",
+    "A6": "A6",
+    "A7": "A7",
+    "A8": "A8",
 }
 
 FORBIDDEN_METADATA_SUBSTRINGS = (

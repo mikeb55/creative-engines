@@ -1,0 +1,50 @@
+{
+  "id": "A7_LONG_SPAN",
+  "sourceFile": "masters\\sources\\A7.xml",
+  "bars_gm": [
+    [
+      ["G", 2, null, 1],
+      ["A", 2, null, 1],
+      ["B", 2, -1, 1],
+      ["C", 3, null, 1],
+      ["D", 3, null, 1],
+      ["E", 3, null, 1],
+      ["F", 3, null, 1],
+      ["G", 3, null, 1]
+    ],
+    [
+      ["A", 3, null, 1],
+      ["B", 3, -1, 1],
+      ["D", 4, null, 1],
+      ["C", 4, null, 1],
+      ["E", 4, null, 1],
+      ["D", 4, null, 1],
+      ["F", 4, null, 1],
+      ["G", 4, null, 1]
+    ]
+  ],
+  "notes_gm": [
+    {"pitch": "G", "octave": 2, "alter": null, "duration": 1, "beat_position": 0.0, "source_bar": 0},
+    {"pitch": "A", "octave": 2, "alter": null, "duration": 1, "beat_position": 0.25, "source_bar": 0},
+    {"pitch": "B", "octave": 2, "alter": -1, "duration": 1, "beat_position": 0.5, "source_bar": 0},
+    {"pitch": "C", "octave": 3, "alter": null, "duration": 1, "beat_position": 0.75, "source_bar": 0},
+    {"pitch": "D", "octave": 3, "alter": null, "duration": 1, "beat_position": 1.0, "source_bar": 0},
+    {"pitch": "E", "octave": 3, "alter": null, "duration": 1, "beat_position": 1.25, "source_bar": 0},
+    {"pitch": "F", "octave": 3, "alter": null, "duration": 1, "beat_position": 1.5, "source_bar": 0},
+    {"pitch": "G", "octave": 3, "alter": null, "duration": 1, "beat_position": 1.75, "source_bar": 0},
+    {"pitch": "A", "octave": 3, "alter": null, "duration": 1, "beat_position": 0.0, "source_bar": 1},
+    {"pitch": "B", "octave": 3, "alter": -1, "duration": 1, "beat_position": 0.25, "source_bar": 1},
+    {"pitch": "D", "octave": 4, "alter": null, "duration": 1, "beat_position": 0.5, "source_bar": 1},
+    {"pitch": "C", "octave": 4, "alter": null, "duration": 1, "beat_position": 0.75, "source_bar": 1},
+    {"pitch": "E", "octave": 4, "alter": null, "duration": 1, "beat_position": 1.0, "source_bar": 1},
+    {"pitch": "D", "octave": 4, "alter": null, "duration": 1, "beat_position": 1.25, "source_bar": 1},
+    {"pitch": "F", "octave": 4, "alter": null, "duration": 1, "beat_position": 1.5, "source_bar": 1},
+    {"pitch": "G", "octave": 4, "alter": null, "duration": 1, "beat_position": 1.75, "source_bar": 1}
+  ],
+  "phrase_boundaries": [1, 2],
+  "fret_range": {"min": 3, "max": 9},
+  "contour": "ascending",
+  "feel": "lyrical",
+  "form": 1,
+  "checksum_sha256": "placeholder"
+}
