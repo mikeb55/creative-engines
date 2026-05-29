@@ -16,6 +16,11 @@ import type {
   MusicContextReceipt,
 } from './musicContextTypes';
 import type { RiffGeneratorParams } from '../riff-generator/riffTypes';
+import {
+  resolveWybleEtudePresetChordBars,
+  wybleEtudeKeyRootName,
+} from './wybleEtudePresetProgressions';
+import type { WybleEtudePreset } from './wybleEtudePresetTypes';
 
 const ROOT_RE = /^([A-G](?:#|b)?)/i;
 
@@ -224,6 +229,33 @@ export function buildMusicContextFromWyble(
     totalBars: params.totalBars ?? chordBars.length,
     harmony,
     ...(params.tuning ? { tuning: params.tuning } : {}),
+    provenance: {
+      sourceEngineId: 'wyble',
+      capturedAt: Date.now(),
+    },
+    receipts: [],
+  };
+}
+
+/** MusicContext snapshot from a Wyble etude preset (V95). Always-on producer — no feature flag. */
+export function buildMusicContextFromWyblePreset(preset: WybleEtudePreset): MusicContext {
+  const chordBars = resolveWybleEtudePresetChordBars(preset);
+  const harmonyBars = chordBars.map(normalizeChordSymbol);
+  const harmony: MusicContextHarmony = {
+    bars: harmonyBars,
+    checksum: computeMusicContextChecksum(harmonyBars),
+    source: 'user',
+  };
+  const root = wybleEtudeKeyRootName(preset.key);
+  return {
+    schemaVersion: '1.0',
+    seed: 0,
+    presetId: 'wyble_etude',
+    key: { root, mode: 'major' },
+    meter: { beats: 4, beatType: 4 },
+    bpm: preset.tempo,
+    totalBars: harmonyBars.length,
+    harmony,
     provenance: {
       sourceEngineId: 'wyble',
       capturedAt: Date.now(),

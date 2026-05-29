@@ -121,6 +121,7 @@ import {
   buildMusicContextFromSlonimsky,
   buildMusicContextFromVaultOutput,
   buildMusicContextFromWyble,
+  buildMusicContextFromWyblePreset,
   buildRiffGeneratorMusicContext,
   computeMusicContextChecksum,
   coreMotifToMusicContextMotif,
@@ -131,6 +132,8 @@ import {
   keyPcFromRoot,
   motifToSeedPitches,
 } from '../core/music-context/musicContextAdapters';
+import { resolveWybleEtudePresetChordBars } from '../core/music-context/wybleEtudePresetProgressions';
+import type { WybleEtudePreset } from '../core/music-context/wybleEtudePresetTypes';
 import type { MusicContext } from '../core/music-context/musicContextTypes';
 import type { ParsedChart } from '../core/irealpro/parsedChart';
 import type { IRealVaultOutput } from '../core/irealpro/irealVaultPipeline';
@@ -1001,6 +1004,61 @@ describe('buildMusicContextFromWyble', () => {
     const ctx = buildMusicContextFromWyble(['Am7', 'D7', 'G7'], { totalBars: 16 });
     expect(ctx.totalBars).toBe(16);
     expect(ctx.harmony.bars).toHaveLength(3);
+  });
+});
+
+describe('buildMusicContextFromWyblePreset', () => {
+  function samplePreset(overrides: Partial<WybleEtudePreset> = {}): WybleEtudePreset {
+    return {
+      key: 2,
+      tempo: 96,
+      patternType: 'pentatonic',
+      difficulty: 'easy',
+      ...overrides,
+    };
+  }
+
+  it('returns valid MusicContext with wyble provenance', () => {
+    const ctx = buildMusicContextFromWyblePreset(samplePreset());
+    expect(ctx.schemaVersion).toBe('1.0');
+    expect(ctx.presetId).toBe('wyble_etude');
+    expect(ctx.key.root).toBe('D');
+    expect(ctx.bpm).toBe(96);
+    expect(ctx.provenance?.sourceEngineId).toBe('wyble');
+    expect(typeof ctx.provenance?.capturedAt).toBe('number');
+    expect(ctx.harmony.bars.length).toBeGreaterThan(0);
+    expect(ctx.totalBars).toBe(ctx.harmony.bars.length);
+    expect(ctx.receipts).toEqual([]);
+  });
+
+  it('harmony.checksum matches normalised bars', () => {
+    const ctx = buildMusicContextFromWyblePreset(samplePreset({ patternType: 'chromatic' }));
+    const normalised = ctx.harmony.bars.map((s) => normalizeChordSymbol(s));
+    expect(ctx.harmony.bars).toEqual(normalised);
+    expect(ctx.harmony.checksum).toBe(computeMusicContextChecksum(normalised));
+  });
+
+  it.each(['easy', 'medium', 'hard'] as const)(
+    'difficulty %s produces non-empty MusicContext',
+    (difficulty) => {
+      const ctx = buildMusicContextFromWyblePreset(
+        samplePreset({ difficulty, patternType: 'whole_tone' })
+      );
+      expect(ctx.harmony.bars.length).toBeGreaterThan(0);
+      expect(ctx.totalBars).toBeGreaterThan(0);
+    }
+  );
+
+  it('drift: preset and buildMusicContextFromWyble on same key share harmony.checksum', () => {
+    const preset = samplePreset({ key: 7, patternType: 'pentatonic', difficulty: 'medium' });
+    const fromPreset = buildMusicContextFromWyblePreset(preset);
+    const rawBars = resolveWybleEtudePresetChordBars(preset);
+    const fromProducer = buildMusicContextFromWyble(rawBars, {
+      key: 'G',
+      bpm: preset.tempo,
+    });
+    expect(fromPreset.harmony.checksum).toBe(fromProducer.harmony.checksum);
+    expect(fromPreset.harmony.bars).toEqual(fromProducer.harmony.bars);
   });
 });
 
