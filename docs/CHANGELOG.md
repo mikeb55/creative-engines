@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-29) V100a — Duo MusicContext producer shell** — `core/duo/duoTypes.ts` (`DuoVoice`, `DuoExportTruth`), `duoExportHelper.ts` (`buildDuoExportTruth` — both voices via `normalizeChordSymbol`, checksum over upper+lower), `duoMusicContextShell.ts` (`buildMusicContextFromDuo` — `sourceEngineId: 'duo'`, harmony from `upperBars`, always-on). Jest **`core/duo/duo.test.ts`**. No golden-path LOCK wiring (V100b).
+
 - **(2026-05-29) V99 — Wayne behaviour layer (tritonic)** — New `core/tritonic/tritonicBehaviourLayer.ts`: `WayneBehaviourOptions` + `applyWayneBehaviour()` reranks `VoiceLeadingResult[]` by `oddityScore` (high → favour tension + rough motion), `delayedResolution` (drop target cells with tension &lt; 0.5, never empty if input non-empty), `melodyPriority` stub (V102). Jest **`tritonicBehaviourLayer.test.ts`**; no producer wiring.
 
 - **(2026-05-29) V98 — Tritonic cell voice-leading engine** — New `core/tritonic/tritonicVoiceLeading.ts`: `VoiceLeadingResult`, `getVoiceLeadingCandidates()` (valid moves ≤6 semitones per voice, sorted by smoothness), `getBestVoiceLeading()`; permutation-aware pitch-class motion via shortest chromatic path. Jest **`tritonicVoiceLeading.test.ts`**; dictionary-only — no producer wiring yet.
