@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-29) V99 — Wayne behaviour layer (tritonic)** — New `core/tritonic/tritonicBehaviourLayer.ts`: `WayneBehaviourOptions` + `applyWayneBehaviour()` reranks `VoiceLeadingResult[]` by `oddityScore` (high → favour tension + rough motion), `delayedResolution` (drop target cells with tension &lt; 0.5, never empty if input non-empty), `melodyPriority` stub (V102). Jest **`tritonicBehaviourLayer.test.ts`**; no producer wiring.
+
 - **(2026-05-29) V98 — Tritonic cell voice-leading engine** — New `core/tritonic/tritonicVoiceLeading.ts`: `VoiceLeadingResult`, `getVoiceLeadingCandidates()` (valid moves ≤6 semitones per voice, sorted by smoothness), `getBestVoiceLeading()`; permutation-aware pitch-class motion via shortest chromatic path. Jest **`tritonicVoiceLeading.test.ts`**; dictionary-only — no producer wiring yet.
 
 - **(2026-05-29) V96b — Standalone etude preset proof** — `buildStandaloneEtudePreset()` in `musicContextAdapters.ts`: engine-agnostic `StandaloneEtudePreset` → valid `MusicContext` with `sourceEngineId: 'etude_preset'`, normalised harmony bars + checksum; no parent engine, no feature flag. Jest parity vs Wyble preset checksum on same key.
