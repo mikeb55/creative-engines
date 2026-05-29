@@ -137,6 +137,7 @@ import {
   isMartinoMusicContextEnabled,
 } from '../core/martino/martinoEngineBridge';
 import type { MartinoEngineResponse } from '../core/martino/martinoEngineBridge';
+import type { GenerateRequest } from '../app-api/appApiTypes';
 import { buildTuneConfig } from '../../../src/engine/martinoTuneConfig.js';
 
 function mockCoreMotif(overrides: Partial<CoreMotif> = {}): CoreMotif {
@@ -625,5 +626,69 @@ describe('Martino MusicContext consumer', () => {
     expect(viaBridge.primary_activity).toBe(direct.primary_activity);
     expect(viaBridge.choruses).toBe(direct.choruses);
     expect(viaBridge.music_context_motif_hint).toBeUndefined();
+  });
+});
+
+describe('API wiring — MusicContext', () => {
+  it('GenerateRequest accepts optional musicContext field', () => {
+    const ctx = mockMusicContext();
+    const req: GenerateRequest = {
+      presetId: 'wyble_etude',
+      styleStack: { primary: 'neutral' },
+      seed: 1,
+      musicContext: ctx,
+    };
+    expect(req.musicContext).toBe(ctx);
+  });
+
+  it('riff_generator result surfaces musicContext when present', () => {
+    const fs = require('fs') as typeof import('fs');
+    const os = require('os') as typeof import('os');
+    const path = require('path') as typeof import('path');
+    const { runRiffGeneratorApp } = require('../app-api/riffGeneratorApp');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'riff-mc-api-'));
+    const result = runRiffGeneratorApp(
+      {
+        presetId: 'riff_generator',
+        styleStack: { primary: 'neutral' },
+        seed: 4242,
+        totalBars: 2,
+        chordProgressionText: 'Dm7 | G7',
+        bpm: 100,
+      },
+      dir
+    );
+    expect(result.success).toBe(true);
+    expect(result.musicContext).toBeDefined();
+    expect(result.musicContext?.presetId).toBe('riff_generator');
+    expect(result.musicContext?.harmony.bars.length).toBeGreaterThan(0);
+  });
+
+  it('wyble_etude passes musicContext to WybleParameters when present', () => {
+    process.env.WYBLE_MUSIC_CONTEXT = 'true';
+    const wybleGen = require('../../jimmy-wyble-engine/wybleGenerator');
+    const spy = jest.spyOn(wybleGen, 'generateWybleEtude');
+    const { generateWybleEtudeXml } = require('../core/goldenPath/wybleBypassGenerator');
+    const { parseBarStringsToCanonicalChords } = require('../core/harmony/chordPipeline');
+    const mc = mockMusicContext();
+    const bars = ['Dm7', 'G7'];
+    const canonical = parseBarStringsToCanonicalChords(bars);
+    generateWybleEtudeXml(bars, canonical, 99, 'Wyble MC', { musicContext: mc });
+    expect(spy).toHaveBeenCalled();
+    const params = spy.mock.calls[spy.mock.calls.length - 1]?.[0];
+    expect(params.musicContext).toBe(mc);
+    spy.mockRestore();
+  });
+
+  it('martino_linear passes musicContext to buildTuneConfig when present', () => {
+    process.env.MARTINO_MUSIC_CONTEXT = 'true';
+    const mc = mockMusicContext();
+    const cfg = buildMartinoTuneConfig(
+      { name: 'Martino', barCount: 2, meter: '4/4', key: 'F' },
+      { progression: ['Am7', 'D7'] },
+      mc
+    );
+    expect(cfg.chords).toEqual(['Dm', 'Dm', 'Em']);
+    delete process.env.MARTINO_MUSIC_CONTEXT;
   });
 });

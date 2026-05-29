@@ -198,6 +198,8 @@ export interface MartinoConfigPayload {
   ecmChamberMode?: 'angel_song' | 'balanced' | 'metheny_scofield';
   slonimskyMacroHints?: unknown;
   tension_map?: Record<string | number, 'low' | 'medium' | 'high'> | null;
+  /** V90a — Shared Brain snapshot from Riff / prior engine (feature-flagged). */
+  musicContext?: MusicContext;
 }
 
 /** V68 P2 — Fill scheduler (Structure tab). */

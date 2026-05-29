@@ -310,6 +310,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
     xml: gen.xml,
     riffCarryForward: gen.riffCarryForward,
     riffMusicality: gen.riffMusicality,
+    musicContext: gen.musicContext,
     filename,
     filepath,
     scoreTitle: title,

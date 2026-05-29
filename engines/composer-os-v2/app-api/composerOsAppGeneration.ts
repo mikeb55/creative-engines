@@ -552,6 +552,7 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
         {
           chordSource: resolved.source,
           chromaticismLevel: chromaticStrengthToWybleChromaticismLevel(req.chromaticStrength),
+          ...(req.musicContext ? { musicContext: req.musicContext } : {}),
         }
       );
     } catch (e) {
@@ -679,7 +680,7 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
         ...(mc?.ecmChamberMode ? { ecmChamberMode: mc.ecmChamberMode } : {}),
         ...(mc?.slonimskyMacroHints !== undefined ? { slonimskyMacroHints: mc.slonimskyMacroHints } : {}),
       },
-      req.musicContext ?? null
+      req.martinoConfig?.musicContext ?? req.musicContext ?? null
     );
     tuneConfig.measures_per_chorus = progression.length;
     const { ensureOutputDirectoryForPreset } = require('./composerOsOutputPaths');
@@ -708,7 +709,7 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
     );
     const mxOk = mxScore >= 3;
     const martinoProvenance = readMartinoProvenanceSidecar(engineResult.outputPath);
-    appendMartinoGenerationReceipt(req.musicContext, engineResult);
+    appendMartinoGenerationReceipt(req.martinoConfig?.musicContext ?? req.musicContext, engineResult);
     return {
       success: true,
       composerOsVersion: COMPOSER_OS_VERSION,

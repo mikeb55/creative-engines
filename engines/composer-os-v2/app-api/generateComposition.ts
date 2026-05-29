@@ -46,6 +46,7 @@ import { buildStringQuartetScoreFromContext } from '../core/composer/stringEnsem
 import { buildVoicingsForContext } from '../core/composer/guitarVoicingEngine';
 import type { GuitarVoicing } from '../core/composer/guitarVoicingEngine';
 import { importMusicXmlToImportedSong } from '../core/musicXmlDeepImport';
+import type { MusicContext } from '../core/music-context/musicContextTypes';
 
 function isImportExpressionPilotPreset(presetId: string): boolean {
   return isGuitarBassDuoFamily(presetId) || presetId === 'ecm_chamber';
@@ -75,6 +76,8 @@ export interface GenerateResult {
   riffCarryForward?: import('../core/riff-generator/riffCarryForward').RiffCarryForward;
   /** Riff Generator: musicality gate result (failedRules for UI labels). */
   riffMusicality?: import('../core/riff-generator/riffMusicalityGate').RiffMusicalityResult;
+  /** V90a — Shared Brain snapshot from riff_generator (handoff to Wyble / Martino). */
+  musicContext?: MusicContext;
   filename?: string;
   filepath?: string;
   /** Full-score `.mid` path when written next to the MusicXML export. */

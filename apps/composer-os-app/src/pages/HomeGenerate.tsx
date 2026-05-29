@@ -75,6 +75,10 @@ import {
 import { SlonimskySongModePanel } from '../components/slonimsky/SlonimskySongModePanel';
 import { SlonimskySqBbHybridPanel } from '../components/slonimsky/SlonimskySqBbHybridPanel';
 import MartinoPanel from '../renderer/components/MartinoPanel.jsx';
+import {
+  SharedMusicContextReadyBadge,
+  SharedMusicContextToggle,
+} from '../renderer/components/SharedMusicContextToggle.jsx';
 import MartinoResultPanel from '../renderer/components/MartinoResultPanel.jsx';
 import {
   parseMartinoChords,
@@ -1518,6 +1522,12 @@ type GenResult = {
   xml?: string;
   riffCarryForward?: RiffCarryForward;
   riffMusicality?: { failedRules?: string[]; passed?: boolean; score?: number };
+  /** V90a — Shared Brain snapshot from riff_generator. */
+  musicContext?: {
+    schemaVersion?: string;
+    harmony?: { bars?: string[]; checksum?: string };
+    receipts?: Array<{ engine?: string; kind?: string }>;
+  };
   /** API echo — `musicxml` when a score file was produced. */
   productKind?: 'musicxml' | 'planning' | 'song_structure';
   filename?: string;
@@ -2299,6 +2309,9 @@ export function HomeGenerate({
   const [riffBarLocks, setRiffBarLocks] = useState<boolean[]>([]);
   const [riffCarryForward, setRiffCarryForward] = useState<RiffCarryForward | null>(null);
   const [riffGateMessages, setRiffGateMessages] = useState<string[]>([]);
+  const [sharedMusicContext, setSharedMusicContext] = useState<GenResult['musicContext'] | null>(null);
+  const [wybleUseSharedContext, setWybleUseSharedContext] = useState(false);
+  const [martinoUseSharedContext, setMartinoUseSharedContext] = useState(false);
   const [riffZappaAdvancedOpen, setRiffZappaAdvancedOpen] = useState(false);
   const [zappaStyleMode, setZappaStyleMode] = useState<ZappaStyleModeUi>('compositional');
   const [zappaEraPreset, setZappaEraPreset] = useState<ZappaEraPresetUi>('broad');
@@ -3645,6 +3658,9 @@ export function HomeGenerate({
           ...(presetId === 'wyble_etude' && chordTrim
             ? { chordProgressionText: chordTrim, chromaticStrength: gbdChromaticStrength }
             : {}),
+          ...(presetId === 'wyble_etude' && wybleUseSharedContext && sharedMusicContext
+            ? { musicContext: sharedMusicContext }
+            : {}),
           ...(presetId === 'martino_linear'
             ? {
                 chordProgressionText:
@@ -3677,6 +3693,9 @@ export function HomeGenerate({
                   ...(typeof martinoMode === 'string' && martinoMode ? { ecm_mode: ecmMode ?? '' } : {}),
                   ...(typeof martinoMode === 'string' && martinoMode === 'barry_harris'
                     ? { barry_harris: true, barry_harris_profile: 'bebop_step' }
+                    : {}),
+                  ...(martinoUseSharedContext && sharedMusicContext
+                    ? { musicContext: sharedMusicContext }
                     : {}),
                 },
               }
@@ -3899,6 +3918,7 @@ export function HomeGenerate({
         }
         if (presetId === 'riff_generator' && r.success) {
           if (r.riffCarryForward) setRiffCarryForward(r.riffCarryForward);
+          if (r.musicContext) setSharedMusicContext(r.musicContext);
           const failed = r.riffMusicality?.failedRules ?? [];
           if (riffOpSent === 'full' || riffOpSent === 'regenerate' || riffOpSent === 'mutate') {
             setRiffGateMessages(riffGateLabelsFromFailedRules(failed));
@@ -5211,6 +5231,14 @@ export function HomeGenerate({
           disabled={loading}
         />
       )}
+      {presetId === 'wyble_etude' && (
+        <SharedMusicContextToggle
+          sharedMusicContext={sharedMusicContext}
+          active={wybleUseSharedContext}
+          onToggle={() => setWybleUseSharedContext((v) => !v)}
+          disabled={loading}
+        />
+      )}
       {presetId === 'slonimsky_etude' && (
         <SlonimskyEtudeCellFamilyPanel
           cellFamily={slonimskyEtudeCellFamily}
@@ -5309,6 +5337,14 @@ export function HomeGenerate({
             setMartinoDominantTensionDefault('low');
             setMartinoChoruses(1);
           }}
+          disabled={loading}
+        />
+      )}
+      {presetId === 'martino_linear' && (
+        <SharedMusicContextToggle
+          sharedMusicContext={sharedMusicContext}
+          active={martinoUseSharedContext}
+          onToggle={() => setMartinoUseSharedContext((v) => !v)}
           disabled={loading}
         />
       )}
@@ -6312,6 +6348,7 @@ export function HomeGenerate({
           }}
         />
       )}
+      {presetId === 'riff_generator' && sharedMusicContext ? <SharedMusicContextReadyBadge /> : null}
 
 
       {presetId === 'ecm_chamber' && (

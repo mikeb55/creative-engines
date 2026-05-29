@@ -195,6 +195,7 @@ export function generateWybleEtudeXml(
   harmonyOpts?: {
     chordSource?: 'parsedChordBars' | 'chordProgressionText';
     chromaticismLevel?: number;
+    musicContext?: import('../music-context/musicContextTypes').MusicContext;
   }
 ): WybleBypassResult {
   validateWybleCanonicalChordList(canonicalChords, chords.length);
@@ -223,6 +224,7 @@ export function generateWybleEtudeXml(
           chromaticismLevel: Math.max(0, Math.min(1, harmonyOpts.chromaticismLevel)),
         }
       : {}),
+    ...(harmonyOpts?.musicContext ? { musicContext: harmonyOpts.musicContext } : {}),
   };
   const output = generateWybleEtude(params);
   const score = wybleOutputToScore(
