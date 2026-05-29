@@ -37,12 +37,17 @@ function globalQuarterStart(
   return (barIndex - 1) * beatsPerBar + startBeat;
 }
 
+export type PlayOptions = {
+  loop?: boolean;
+};
+
 /**
  * VaultMicroscope-style PolySynth + Transport scheduling; singleton transport, fresh synth each run.
  */
 export async function play(
   seq: PlaybackSequence,
-  onBeat: (beat: number) => void
+  onBeat: (beat: number) => void,
+  options?: PlayOptions
 ): Promise<void> {
   await Tone.start();
   stop();
@@ -56,6 +61,7 @@ export async function play(
   transport.stop();
   transport.cancel();
   transport.position = 0;
+  transport.loop = false;
 
   synth = new Tone.PolySynth(Tone.Synth, {
     oscillator: { type: 'triangle' },
@@ -95,12 +101,17 @@ export async function play(
     maxEndQuarter = Math.max(maxEndQuarter, end);
   }
   const endSec = maxEndQuarter * secondsPerQuarter + 0.05;
-  endStopId = transport.scheduleOnce(() => {
-    transport.stop();
-    transport.cancel();
-    clearScheduledIds(transport);
-    disposeSynth();
-  }, endSec);
+  if (options?.loop) {
+    transport.loop = true;
+    transport.loopEnd = endSec;
+  } else {
+    endStopId = transport.scheduleOnce(() => {
+      transport.stop();
+      transport.cancel();
+      clearScheduledIds(transport);
+      disposeSynth();
+    }, endSec);
+  }
 
   transport.start();
 }
@@ -111,6 +122,7 @@ export function pause(): void {
 
 export function stop(): void {
   const transport = Tone.getTransport();
+  transport.loop = false;
   transport.stop();
   transport.cancel();
   transport.position = 0;

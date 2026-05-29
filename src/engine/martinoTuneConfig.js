@@ -42,7 +42,15 @@ export function buildTuneConfig(section, martinoConfig = {}) {
     typeof martinoConfig.tune === 'string' ? martinoConfig.tune.trim() : '';
   const tuneLabel =
     userTune || String(section?.name || section?.title || 'Untitled');
-  return {
+  const tensionMapRaw =
+    martinoConfig.tension_map !== undefined && martinoConfig.tension_map !== null
+      ? martinoConfig.tension_map
+      : martinoConfig.perChordOverrides &&
+          typeof martinoConfig.perChordOverrides === 'object' &&
+          !Array.isArray(martinoConfig.perChordOverrides)
+        ? martinoConfig.perChordOverrides
+        : null;
+  const tuneConfig = {
     tune: tuneLabel,
     tune_name: tuneLabel,
     choruses: Number(martinoConfig.choruses ?? 1),
@@ -63,5 +71,34 @@ export function buildTuneConfig(section, martinoConfig = {}) {
       min_fret: Number(lfvRaw.min_fret ?? 5),
       max_fret: Number(lfvRaw.max_fret ?? 9),
     },
+    tension_map: tensionMapRaw,
   };
+  if (
+    martinoConfig.martinoMode === 'barry_harris' ||
+    martinoConfig.barryHarris === true ||
+    martinoConfig.barry_harris === true
+  ) {
+    tuneConfig.barry_harris = true;
+    tuneConfig.barry_harris_profile = String(
+      martinoConfig.barryHarrisProfile ||
+        martinoConfig.barry_harris_profile ||
+        'bebop_step'
+    );
+  }
+  const ecmMode = martinoConfig.ecmMode || martinoConfig.ecm_mode;
+  if (ecmMode) {
+    tuneConfig.ecm_mode = String(ecmMode);
+  }
+  const ecmChamberMode = martinoConfig.ecmChamberMode || martinoConfig.ecm_chamber_mode;
+  if (ecmChamberMode) {
+    tuneConfig.ecm_chamber_mode = String(ecmChamberMode);
+  }
+  const slonimskyMacro =
+    martinoConfig.slonimskyMacroHints !== undefined
+      ? martinoConfig.slonimskyMacroHints
+      : martinoConfig.slonimsky_macro;
+  if (slonimskyMacro !== undefined && slonimskyMacro !== null) {
+    tuneConfig.slonimsky_macro = slonimskyMacro;
+  }
+  return tuneConfig;
 }

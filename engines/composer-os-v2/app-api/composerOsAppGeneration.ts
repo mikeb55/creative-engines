@@ -660,12 +660,21 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
         progression,
         ...(typeof mc?.tune === 'string' && mc.tune.trim() ? { tune: mc.tune.trim() } : {}),
         dominantTensionDefault: mc?.dominantTensionDefault ?? 'low',
+        ...(mc?.perChordOverrides ? { perChordOverrides: mc.perChordOverrides } : {}),
+        ...(mc?.tension_map !== undefined ? { tension_map: mc.tension_map } : {}),
         activeActivity: mc?.activeActivity ?? 'A1_LINEAR_CORE',
         secondaryActivities: mc?.secondaryActivities ?? ['A2_DIAGONAL_BRIDGE'],
+        ...(Array.isArray(mc?.activities) && mc.activities.length ? { activities: mc.activities } : {}),
         choruses: mc?.choruses ?? 1,
         asteriskMeasures: mc?.asteriskMeasures ?? [],
         lfv: mc?.lfv ?? { min_fret: 5, max_fret: 9 },
         mode: mc?.mode ?? 'teaching',
+        ...(mc?.martinoMode ? { martinoMode: mc.martinoMode } : {}),
+        ...(mc?.barryHarris ? { barryHarris: mc.barryHarris } : {}),
+        ...(mc?.barryHarrisProfile ? { barryHarrisProfile: mc.barryHarrisProfile } : {}),
+        ...(mc?.ecmMode ? { ecmMode: mc.ecmMode } : {}),
+        ...(mc?.ecmChamberMode ? { ecmChamberMode: mc.ecmChamberMode } : {}),
+        ...(mc?.slonimskyMacroHints !== undefined ? { slonimskyMacroHints: mc.slonimskyMacroHints } : {}),
       }
     );
     tuneConfig.measures_per_chorus = progression.length;

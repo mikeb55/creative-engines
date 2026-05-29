@@ -147,11 +147,69 @@ function coerceMartinoConfigFromBody(
         }
       : { min_fret: 5, max_fret: 9 };
   const tuneRaw = typeof o.tune === 'string' ? o.tune.trim() : '';
+  const perChordOverridesRaw = o.perChordOverrides;
+  const perChordOverrides =
+    perChordOverridesRaw &&
+    typeof perChordOverridesRaw === 'object' &&
+    !Array.isArray(perChordOverridesRaw)
+      ? (perChordOverridesRaw as Record<number, 'low' | 'medium' | 'high'>)
+      : undefined;
+  const martinoModeRaw =
+    typeof o.martinoMode === 'string'
+      ? o.martinoMode.trim()
+      : typeof o.martino_mode === 'string'
+        ? o.martino_mode.trim()
+        : '';
+  const barryHarrisProfileRaw =
+    typeof o.barryHarrisProfile === 'string'
+      ? o.barryHarrisProfile.trim()
+      : typeof o.barry_harris_profile === 'string'
+        ? o.barry_harris_profile.trim()
+        : '';
+  const ecmModeRaw =
+    o.ecmMode === 'ECM_METHENY_QUARTET' || o.ecmMode === 'ECM_SCHNEIDER_CHAMBER'
+      ? o.ecmMode
+      : o.ecm_mode === 'ECM_METHENY_QUARTET' || o.ecm_mode === 'ECM_SCHNEIDER_CHAMBER'
+        ? o.ecm_mode
+        : typeof o.ecm_mode === 'string' && o.ecm_mode.trim()
+          ? o.ecm_mode.trim()
+          : typeof o.ecmMode === 'string' && o.ecmMode.trim()
+            ? o.ecmMode.trim()
+            : undefined;
+  const ecmChamberModeRaw =
+    o.ecmChamberMode === 'angel_song' ||
+    o.ecmChamberMode === 'balanced' ||
+    o.ecmChamberMode === 'metheny_scofield'
+      ? o.ecmChamberMode
+      : o.ecm_chamber_mode === 'angel_song' ||
+          o.ecm_chamber_mode === 'balanced' ||
+          o.ecm_chamber_mode === 'metheny_scofield'
+        ? o.ecm_chamber_mode
+        : undefined;
+  const slonimskyMacroHints =
+    o.slonimskyMacroHints !== undefined && o.slonimskyMacroHints !== null
+      ? o.slonimskyMacroHints
+      : o.slonimsky_macro !== undefined && o.slonimsky_macro !== null
+        ? o.slonimsky_macro
+        : undefined;
+  const tensionMapRaw = o.tension_map;
+  const tension_map =
+    tensionMapRaw !== undefined &&
+    tensionMapRaw !== null &&
+    typeof tensionMapRaw === 'object' &&
+    !Array.isArray(tensionMapRaw)
+      ? (tensionMapRaw as Record<string | number, 'low' | 'medium' | 'high'>)
+      : undefined;
+  const activities = Array.isArray(o.activities)
+    ? o.activities.map((x) => String(x).trim()).filter(Boolean)
+    : undefined;
+  const barryHarris = martinoModeRaw === 'barry_harris' || o.barry_harris === true;
   return {
     enabled: o.enabled !== false,
     progression,
     ...(tuneRaw ? { tune: tuneRaw } : {}),
     dominantTensionDefault,
+    ...(perChordOverrides ? { perChordOverrides } : {}),
     activeActivity:
       typeof o.activeActivity === 'string' && o.activeActivity.trim()
         ? o.activeActivity.trim()
@@ -159,12 +217,24 @@ function coerceMartinoConfigFromBody(
     secondaryActivities: Array.isArray(o.secondaryActivities)
       ? o.secondaryActivities.map((x) => String(x).trim()).filter(Boolean)
       : ['A2_DIAGONAL_BRIDGE'],
+    ...(activities?.length ? { activities } : {}),
     choruses: Math.max(1, Math.floor(Number(o.choruses) || 1)),
     asteriskMeasures: Array.isArray(o.asteriskMeasures)
       ? o.asteriskMeasures.map((x) => Math.floor(Number(x))).filter((n) => Number.isFinite(n))
       : [],
     lfv,
     mode: o.mode === 'performance' ? 'performance' : 'teaching',
+    ...(martinoModeRaw ? { martinoMode: martinoModeRaw } : {}),
+    ...(barryHarris ? { barryHarris: true } : {}),
+    ...(martinoModeRaw === 'barry_harris' && barryHarrisProfileRaw
+      ? { barryHarrisProfile: barryHarrisProfileRaw }
+      : barryHarris && barryHarrisProfileRaw
+        ? { barryHarrisProfile: barryHarrisProfileRaw }
+        : {}),
+    ...(ecmModeRaw ? { ecmMode: ecmModeRaw } : {}),
+    ...(ecmChamberModeRaw ? { ecmChamberMode: ecmChamberModeRaw } : {}),
+    ...(slonimskyMacroHints !== undefined ? { slonimskyMacroHints } : {}),
+    ...(tension_map ? { tension_map } : {}),
   };
 }
 

@@ -189,6 +189,14 @@ export interface MartinoConfigPayload {
   asteriskMeasures?: number[];
   lfv?: { min_fret: number; max_fret: number };
   mode?: 'teaching' | 'performance';
+  activities?: string[];
+  martinoMode?: string;
+  barryHarris?: boolean;
+  barryHarrisProfile?: string;
+  ecmMode?: string;
+  ecmChamberMode?: 'angel_song' | 'balanced' | 'metheny_scofield';
+  slonimskyMacroHints?: unknown;
+  tension_map?: Record<string | number, 'low' | 'medium' | 'high'> | null;
 }
 
 /** V68 P2 — Fill scheduler (Structure tab). */

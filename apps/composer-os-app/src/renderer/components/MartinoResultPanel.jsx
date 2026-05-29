@@ -4,6 +4,8 @@ import {
   martinoActivityHumanLabel,
   martinoActivityCodeTooltip,
 } from '../../lib/martinoGeneratePipeline.js';
+import MartinoScorePanel from './MartinoScorePanel.jsx';
+import MartinoAudioPlayer from './MartinoAudioPlayer.jsx';
 
 const panelStyle = {
   marginTop: '0.75rem',
@@ -58,7 +60,7 @@ function formatExplainBar({ bar, plan, telemetry }) {
   return { bar, headline, detail, ruleTip };
 }
 
-export default function MartinoResultPanel({ feedback, onOpenFolder, explainMode }) {
+export default function MartinoResultPanel({ feedback, onOpenFolder, explainMode, xmlString }) {
   if (!feedback) return null;
 
   if (feedback.type === 'failed') {
@@ -97,6 +99,8 @@ export default function MartinoResultPanel({ feedback, onOpenFolder, explainMode
       <p style={rowStyle}>
         <span style={labelStyle}>File</span> {summary.filename}
       </p>
+      <MartinoScorePanel xmlString={xmlString ?? null} showTab />
+      <MartinoAudioPlayer xmlString={xmlString ?? null} barTelemetry={barTelemetry} />
       {gateFailed && (
         <p
           style={{

@@ -2055,6 +2055,7 @@ export function HomeGenerate({
       }
     | { type: 'failed'; message: string }
   >(null);
+  const [martinoXmlString, setMartinoXmlString] = useState<string | null>(null);
 
   const martinoActiveSection = useMemo(() => {
     if (!compositionSong || !compositionActiveSectionId) return null;
@@ -2935,6 +2936,7 @@ export function HomeGenerate({
       setError(null);
       if (presetId === 'martino_linear') {
         setMartinoFeedback(null);
+        setMartinoXmlString(null);
       }
       notifyGenPhase('running');
       const musicXmlTrimPreflight = musicXmlSource.trim();
@@ -3802,6 +3804,7 @@ export function HomeGenerate({
           const ts = iRealParsedChart?.timeSignature;
           const timeSig = ts ? `${ts.num}/${ts.den}` : '4/4';
           const applyPlaybackFromXml = (xml: string) => {
+            if (presetId === 'martino_linear') setMartinoXmlString(xml);
             setPlaybackSeq(parseXmlToPlaybackSequence(xml, bpm, timeSig));
             publishGridFromXml(xml, bpm, timeSig);
             setPlaybackBeat(0);
@@ -7651,6 +7654,7 @@ export function HomeGenerate({
       {presetId === 'martino_linear' && (
         <MartinoResultPanel
           feedback={martinoFeedback}
+          xmlString={martinoXmlString}
           explainMode={martinoExplainMode}
           onOpenFolder={(filepath) => {
             if (filepath) void openFolder(dirnameOnly(filepath));
