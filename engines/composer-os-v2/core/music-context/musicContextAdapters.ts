@@ -437,17 +437,26 @@ export function buildMusicContextFromMartino(
   try {
     const bars = phrasePlan.map(b => normalizeChordSymbol(b.chord));
     const checksum = computeMusicContextChecksum(bars);
-    const keyParsed = normalizeKeyRoot(generationParams.key ?? null) ?? { root: 'C', mode: 'major' };
+    const keyLabel = generationParams.key;
+    const keyParsed =
+      typeof keyLabel === 'string' && keyLabel.trim() !== ''
+        ? normalizeKeyRoot(keyLabel.trim())
+        : { root: 'C', mode: 'major' as const };
     const totalBars = generationParams.totalBars ?? phrasePlan.length;
-    const ts = tuneConfig.time_signature as any;
-    const meter = ts ? { num: ts.beats, den: ts.beat_type } : { num: 4, den: 4 };
+    const ts = tuneConfig.time_signature as { beats?: number; beat_type?: number } | undefined;
+    const meter =
+      ts?.beats != null && ts?.beat_type != null
+        ? { beats: ts.beats, beatType: ts.beat_type }
+        : { beats: 4, beatType: 4 };
     return {
       schemaVersion: '1.0',
+      seed: 0,
+      presetId: 'martino_linear',
       key: keyParsed,
       meter,
       bpm: generationParams.bpm ?? 120,
       totalBars,
-      harmony: { bars, checksum, source: 'martino' },
+      harmony: { bars, checksum, source: 'martino_convert' },
       provenance: { sourceEngineId: 'martino', capturedAt: Date.now() },
       receipts: [{
         engine: 'martino',
@@ -458,11 +467,13 @@ export function buildMusicContextFromMartino(
   } catch (err) {
     return {
       schemaVersion: '1.0',
+      seed: 0,
+      presetId: 'martino_linear',
       key: { root: 'C', mode: 'major' },
-      meter: { num: 4, den: 4 },
+      meter: { beats: 4, beatType: 4 },
       bpm: 120,
       totalBars: 0,
-      harmony: { bars: [], checksum: computeMusicContextChecksum([]), source: 'martino' },
+      harmony: { bars: [], checksum: computeMusicContextChecksum([]), source: 'martino_convert' },
       provenance: { sourceEngineId: 'martino', capturedAt: Date.now() },
       receipts: [{ engine: 'martino', kind: 'martino_producer_error',
                    payload: { message: String(err) } }]

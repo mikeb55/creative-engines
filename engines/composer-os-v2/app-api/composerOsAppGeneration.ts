@@ -97,7 +97,18 @@ import {
   buildMusicContextFromWyble,
   buildMusicContextFromWyblePreset,
 } from '../core/music-context/musicContextAdapters';
-import { buildDuoMusicContextFromScore } from '../core/duo/duoLock';
+import { buildDuoMusicContextFromScore, lockDuo } from '../core/duo/duoLock';
+import { buildDuoExportTruth, extractDuoBarsFromScore } from '../core/duo/duoExportHelper';
+import {
+  buildSongModeResult,
+  buildSongModeStructureFromChordPlan,
+} from '../core/song-mode/songModeProducer';
+import {
+  assertSongModeLock,
+  lockSongMode,
+  projectSongModeLock,
+} from '../core/song-mode/songModeLock';
+import type { SongModeRunResult } from '../core/song-mode/runSongMode';
 import { resolveWybleEtudePreset } from '../core/music-context/wybleEtudePresetProgressions';
 import { buildChordExportDiagnosticsReceipt } from '../../core/chordExportDiagnostics';
 import { getChordForBar } from '../core/harmony/harmonyResolution';
@@ -212,6 +223,29 @@ function duoLockedMusicContextFromGoldenPath(
     seed,
     ...(typeof bpm === 'number' && Number.isFinite(bpm) ? { bpm } : {}),
   };
+}
+
+/** V103b — chordPlan sections → buildSongModeResult → lockSongMode → projectSongModeLock. */
+function songModeLockedMusicContextFromGoldenPath(
+  gp: GoldenPathResult,
+  sm: SongModeRunResult,
+  seed: number,
+  bpm?: number
+): MusicContext {
+  if (!gp.score) {
+    throw new Error('Duo LOCK: golden path score missing');
+  }
+  const duoBars = extractDuoBarsFromScore(gp.score);
+  const duoLock = lockDuo(buildDuoExportTruth(duoBars.upper, duoBars.lower));
+  const structure = buildSongModeStructureFromChordPlan(
+    sm.compiledSong.chordPlan,
+    gp.context.form.sections,
+    { seed, bpm }
+  );
+  const result = buildSongModeResult(structure, duoLock);
+  const lock = lockSongMode(result);
+  assertSongModeLock(lock);
+  return projectSongModeLock(lock, seed, bpm);
 }
 
 function writeArtifactJson(
@@ -2343,7 +2377,16 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   let songModeMusicContext: MusicContext | undefined;
   if (success && gp.score) {
     try {
-      songModeMusicContext = duoLockedMusicContextFromGoldenPath(gp, effectiveSeed, req.bpm);
+      if (sm.compiledSong.chordPlan?.length > 0) {
+        songModeMusicContext = songModeLockedMusicContextFromGoldenPath(
+          gp,
+          sm,
+          effectiveSeed,
+          req.bpm
+        );
+      } else {
+        songModeMusicContext = duoLockedMusicContextFromGoldenPath(gp, effectiveSeed, req.bpm);
+      }
     } catch {
       songModeMusicContext = undefined;
     }

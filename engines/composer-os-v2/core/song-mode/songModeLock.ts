@@ -3,17 +3,19 @@
  */
 
 import type { MusicContext } from '../music-context/musicContextTypes';
+import { normalizeChordSymbol } from '../harmony/chordSymbolAnalysis';
 import {
   buildMusicContextFromSongModeTruth,
+  buildSongModeSectionContext,
   computeSongModeMasterChecksum,
 } from './songModeProducer';
-import type { SongModeExportTruth, SongModeLock } from './songModeTypes';
+import type { SongModeExportTruth, SongModeLock, SongModeResult } from './songModeTypes';
 
 const SONG_MODE_LOCK_MISSING = 'Song Mode LOCK: export truth checksum missing or empty';
 const SONG_MODE_LOCK_NOT_HELD = 'Duo LOCK: generation blocked — no valid duo lock';
 
 /** Seal export truth into a SongModeLock (masterChecksum required). */
-export function lockSongMode(truth: SongModeExportTruth): SongModeLock {
+export function lockSongMode(truth: SongModeExportTruth | SongModeResult): SongModeLock {
   const checksum =
     typeof truth.masterChecksum === 'string' ? truth.masterChecksum.trim() : '';
   if (!checksum) {
@@ -76,4 +78,38 @@ export function buildMusicContextFromLockedSongMode(truth: SongModeExportTruth):
   assertSongModeLock(lock);
   assertSongModeLockIntegrity(lock);
   return buildMusicContextFromSongModeTruth(truth);
+}
+
+function exportTruthFromLock(lock: SongModeLock): SongModeExportTruth {
+  const sectionsOrdered = lock.sections.map((s) => {
+    const bars = s.harmonyBars.map(normalizeChordSymbol);
+    const section = buildSongModeSectionContext({
+      sectionId: s.sectionId,
+      plan: s.plan,
+      harmonyBars: bars,
+    });
+    return { ...section, checksum: s.checksum };
+  });
+  const sectionById = Object.fromEntries(
+    sectionsOrdered.map((section) => [section.sectionId, section])
+  ) as Record<string, (typeof sectionsOrdered)[number]>;
+  return {
+    sectionsOrdered,
+    sectionById,
+    masterChecksum: lock.checksum,
+    capturedAt: lock.lockedAt,
+  };
+}
+
+/** Locked sections → final MusicContext (re-normalise + checksum-after-norm). */
+export function projectSongModeLock(
+  lock: SongModeLock,
+  seed: number,
+  bpm?: number
+): MusicContext {
+  assertSongModeLockIntegrity(lock);
+  return buildMusicContextFromSongModeTruth(exportTruthFromLock(lock), {
+    seed,
+    ...(typeof bpm === 'number' && Number.isFinite(bpm) ? { bpm } : {}),
+  });
 }

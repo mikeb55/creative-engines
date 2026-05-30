@@ -82,3 +82,6 @@ export interface SongModeLock {
   lockedAt: number;
   checksum: string;
 }
+
+/** Assembled export truth ready for LOCK (V103b handoff alias). */
+export type SongModeResult = SongModeExportTruth;

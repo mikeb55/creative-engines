@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-29) V103b — Song Mode MusicContext handoff** — `composerOsAppGeneration.ts` `runSongStructure`: when `sm.compiledSong.chordPlan` non-empty → `songModeLockedMusicContextFromGoldenPath` (`buildSongModeStructureFromChordPlan` → `buildSongModeResult` → `lockSongMode` → `assertSongModeLock` → `projectSongModeLock`); empty chordPlan → duo LOCK fallback unchanged. V103a exports `buildSongModeResult`, `projectSongModeLock`, `SongModeResult`. Jest **`songMode.test.ts`** (+5 handoff cases). **`musicContextAdapters.ts`** Martino type fixes + root **`ts-node`** devDep for full tier.
+
 - **(2026-05-29) V103a — Song Mode producer + LOCK types** — Extended `core/song-mode/songModeTypes.ts` (`SongModeSectionContext`, `SongModeExportTruth`, `SongModeLock`); `songModeProducer.ts` (section builder, `assembleSongModeExportTruth` with duplicate-ID hard-fail, per-section checksum logging, deterministic `masterChecksum`, `buildMusicContextFromSongModeTruth` — concat + re-normalise + checksum-after-norm); `songModeLock.ts` (`lockSongMode`, `assertSongModeLock`, `assertSongModeLockIntegrity`, `buildMusicContextFromLockedSongMode`). Jest **`core/song-mode/songMode.test.ts`** (10 cases). No app wiring yet (V103b).
 
 - **(2026-05-29) V102 — Tritonic realisation** — `core/tritonic/tritonicRealisation.ts` (`TritonicRealisationContext` / `Result`, `realiseTritonic`, `realisationToMusicContext`): Wayne behaviour + voice-leading phrase chains per mode (BB ≥4 cells / high oddity, SQ ≤3 cells / smooth, ECM suspended+shorter_floating / forced `delayedResolution`); checksum from realised cell notes; MusicContext `sourceEngineId: 'tritonic'`. No phraseEngineV2 / existing producer changes. Jest **`tritonicRealisation.test.ts`**.

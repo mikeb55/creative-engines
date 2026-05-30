@@ -11,9 +11,13 @@ import {
 import type { MusicContext, MusicContextHarmony } from '../music-context/musicContextTypes';
 import type {
   SongModeExportTruth,
+  SongModeResult,
   SongModeSectionContext,
   SongSectionPlan,
 } from './songModeTypes';
+import type { SectionChordPlan } from './songCompilationTypes';
+import type { DuoLock } from '../duo/duoTypes';
+import { assertDuoLock } from '../duo/duoLock';
 
 export interface BuildSongModeSectionContextInput {
   sectionId: string;
@@ -23,8 +27,64 @@ export interface BuildSongModeSectionContextInput {
   bpm?: number;
 }
 
+/** Section inputs for {@link buildSongModeResult} (V103b handoff). */
+export interface SongModeStructure {
+  sectionInputs: readonly BuildSongModeSectionContextInput[];
+}
+
 const DUPLICATE_SECTION_ID = (id: string) =>
   `Song Mode: duplicate section ID "${id}"`;
+
+function sectionIdForChordPlanBlock(
+  block: SectionChordPlan,
+  planIndex: number,
+  formSections?: readonly { label: string; startBar: number; length: number }[]
+): string {
+  const formSection = formSections?.[planIndex];
+  if (formSection?.label.trim()) {
+    return formSection.label.trim().replace(/\s+/g, '_').toLowerCase();
+  }
+  return `${block.sectionKind}_${block.sectionOrder}`;
+}
+
+/**
+ * Build section structure from compile-time chord plan (+ optional form labels).
+ * Hard-fails on duplicate section IDs before Map insertion downstream.
+ */
+export function buildSongModeStructureFromChordPlan(
+  chordPlan: readonly SectionChordPlan[],
+  formSections?: readonly { label: string; startBar: number; length: number }[],
+  options?: { seed?: number; bpm?: number }
+): SongModeStructure {
+  const seen = new Set<string>();
+  const sectionInputs: BuildSongModeSectionContextInput[] = [];
+
+  for (const [planIndex, block] of chordPlan.entries()) {
+    const sectionId = sectionIdForChordPlanBlock(block, planIndex, formSections);
+    if (seen.has(sectionId)) {
+      throw new Error(DUPLICATE_SECTION_ID(sectionId));
+    }
+    seen.add(sectionId);
+    sectionInputs.push({
+      sectionId,
+      plan: { order: block.sectionOrder, kind: block.sectionKind },
+      harmonyBars: block.chordSymbols.map(normalizeChordSymbol),
+      seed: options?.seed,
+      bpm: options?.bpm,
+    });
+  }
+
+  return { sectionInputs };
+}
+
+/** Duo LOCK gate + section truth assembly (checksum logging inside assembler). */
+export function buildSongModeResult(
+  structure: SongModeStructure,
+  duoLock: DuoLock
+): SongModeResult {
+  assertDuoLock(duoLock);
+  return assembleSongModeExportTruth(structure.sectionInputs);
+}
 
 function sortSectionIdentityDeterministic<
   T extends { sectionId: string; plan: SongSectionPlan; checksum: string },
