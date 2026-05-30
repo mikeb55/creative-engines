@@ -5088,6 +5088,12 @@ export function HomeGenerate({
     </div>
   ) : null;
 
+  const showSongModeTileControls = generateProducerId === 'song_mode';
+  const showVaultChartPanel = generateProducerId === 'vault';
+  const showIrealChartPanel = generateProducerId === 'ireal';
+  const showSlonimskyEtudeControls = generateProducerId === 'slonimsky';
+  const showSongModeDuoFamilyControls = presetId === 'song_mode';
+
   return (
     <section>
       <h2>Generate</h2>
@@ -5126,9 +5132,1100 @@ export function HomeGenerate({
         tritonicFloatOver={tritonicFloatOverText}
       />
 
+      {showVaultChartPanel ? (
+      <details
+        open={vaultChartPanelOpen}
+        onToggle={(e) => setVaultChartPanelOpen(e.currentTarget.open)}
+        style={{
+          marginBottom: '1rem',
+          maxWidth: 560,
+          padding: '0.75rem 0.85rem',
+          borderRadius: 8,
+          border: '1px solid var(--border)',
+          background: 'var(--bg-panel)',
+        }}
+      >
+        <summary
+          style={{
+            cursor: 'pointer',
+            fontSize: '0.95rem',
+            fontWeight: 600,
+            color: 'var(--text)',
+            listStylePosition: 'outside',
+          }}
+        >
+          Paste Chord Progression
+        </summary>
+        <div style={{ marginTop: '0.85rem' }}>
+          <label
+            htmlFor="co-chord-paste-text"
+            style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+          >
+            Chords — bars separated by <code style={{ fontSize: '0.8rem' }}>|</code>, chords in a bar separated by
+            spaces (e.g. Cmaj7 Dm7 | G7 | Cmaj7)
+          </label>
+          <textarea
+            id="co-chord-paste-text"
+            value={chordPasteText}
+            onChange={(e) => setChordPasteText(e.target.value)}
+            rows={5}
+            wrap="soft"
+            spellCheck={false}
+            disabled={chordPasteBusy}
+            style={{
+              width: '100%',
+              maxWidth: '100%',
+              boxSizing: 'border-box',
+              fontFamily: 'inherit',
+              fontSize: '0.82rem',
+              padding: '0.45rem 0.5rem',
+              borderRadius: 6,
+              border: '1px solid var(--border)',
+              background: 'var(--bg)',
+              color: 'var(--text)',
+            }}
+          />
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+              marginTop: '0.65rem',
+              alignItems: 'flex-end',
+            }}
+          >
+            <div>
+              <label
+                htmlFor="co-chord-paste-key"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Key
+              </label>
+              <select
+                id="co-chord-paste-key"
+                value={chordPasteKey}
+                onChange={(e) => setChordPasteKey(e.target.value)}
+                disabled={chordPasteBusy}
+              >
+                {PASTE_CHORD_KEY_OPTIONS.map((k) => (
+                  <option key={k} value={k}>
+                    {k}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="co-chord-paste-timesig"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Time signature
+              </label>
+              <select
+                id="co-chord-paste-timesig"
+                value={chordPasteTimeSigId}
+                onChange={(e) => setChordPasteTimeSigId(e.target.value as '4-4' | '3-4' | '6-8')}
+                disabled={chordPasteBusy}
+              >
+                <option value="4-4">4/4</option>
+                <option value="3-4">3/4</option>
+                <option value="6-8">6/8</option>
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="co-chord-paste-tempo"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Tempo (BPM)
+              </label>
+              <input
+                id="co-chord-paste-tempo"
+                type="number"
+                min={20}
+                max={400}
+                value={chordPasteTempo}
+                onChange={(e) =>
+                  setChordPasteTempo(Math.min(400, Math.max(20, Math.floor(Number(e.target.value) || 120))))
+                }
+                disabled={chordPasteBusy}
+                style={{
+                  width: '5rem',
+                  padding: '0.35rem 0.45rem',
+                  borderRadius: 6,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg)',
+                  color: 'var(--text)',
+                }}
+              />
+            </div>
+            <div role="group" aria-label="Paste chord progression mode">
+              <span
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Mode
+              </span>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  type="button"
+                  className={chordPasteMode === 'solo' ? undefined : 'secondary'}
+                  onClick={() => setChordPasteMode('solo')}
+                  disabled={chordPasteBusy}
+                  aria-pressed={chordPasteMode === 'solo'}
+                >
+                  Solo
+                </button>
+                <button
+                  type="button"
+                  className={chordPasteMode === 'melody' ? undefined : 'secondary'}
+                  onClick={() => setChordPasteMode('melody')}
+                  disabled={chordPasteBusy}
+                  aria-pressed={chordPasteMode === 'melody'}
+                >
+                  Melody
+                </button>
+              </div>
+            </div>
+            <div>
+              <label
+                htmlFor="co-chord-paste-tuning"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Tuning
+              </label>
+              <select
+                id="co-chord-paste-tuning"
+                value={chordPasteTuningId}
+                onChange={(e) => setChordPasteTuningId(e.target.value)}
+                disabled={chordPasteBusy}
+              >
+                <option value="standard">standard</option>
+                <option value="dadgad">dadgad (DADGAD)</option>
+                <option value="open_d">open_d (Open D)</option>
+                <option value="open_g">open_g (Open G)</option>
+                <option value="sy_cgdgcd">sy_cgdgcd (Sonic Youth)</option>
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="co-chord-paste-riff-style"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Riff style
+              </label>
+              <select
+                id="co-chord-paste-riff-style"
+                value={chordPasteRiffStyle}
+                onChange={(e) =>
+                  setChordPasteRiffStyle(
+                    e.target.value as
+                      | 'bebop-placement'
+                      | 'quadratonic'
+                      | 'dyad-seesaw'
+                      | 'triad-pair-pendulum'
+                      | 'pedal-string'
+                  )
+                }
+                disabled={chordPasteBusy}
+              >
+                <option value="bebop-placement">bebop-placement</option>
+                <option value="quadratonic">quadratonic</option>
+                <option value="dyad-seesaw">dyad-seesaw</option>
+                <option value="triad-pair-pendulum">triad-pair-pendulum</option>
+                <option value="pedal-string">pedal-string</option>
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="co-chord-paste-drift"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Emotional drift
+              </label>
+              <select
+                id="co-chord-paste-drift"
+                value={chordPasteDrift}
+                onChange={(e) => setChordPasteDrift(e.target.value as EmotionalDrift)}
+                disabled={chordPasteBusy}
+              >
+                {VAULT_EMOTIONAL_DRIFT_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="co-chord-paste-choruses"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Choruses
+              </label>
+              <input
+                id="co-chord-paste-choruses"
+                type="number"
+                min={1}
+                max={64}
+                step={1}
+                value={chordPasteChorusCount}
+                onChange={(e) =>
+                  setChordPasteChorusCount(
+                    Math.min(64, Math.max(1, Math.floor(Number(e.target.value) || 1)))
+                  )
+                }
+                disabled={chordPasteBusy}
+                style={{
+                  width: '5rem',
+                  padding: '0.35rem 0.45rem',
+                  borderRadius: 6,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg)',
+                  color: 'var(--text)',
+                }}
+              />
+            </div>
+          </div>
+          {chordPasteOutput && chordPastePreviewChart?.measures?.length ? (
+            <ChorusArcStrip
+              chorusCount={chordPasteChorusCount}
+              barsPerChorus={chordPastePreviewChart.measures.length}
+              output={chordPasteOutput}
+              locked={boolArrayToLength(chordPasteChorusLocks, chordPasteChorusCount)}
+              regeneratingChorusIndex={vaultChorusRegenIx}
+              onToggleLock={(chorusIndex) => {
+                setChordPasteChorusLocks((prev) => {
+                  const next = boolArrayToLength(prev, chordPasteChorusCount);
+                  next[chorusIndex] = !next[chorusIndex];
+                  return next;
+                });
+              }}
+              onRegenerateChorus={
+                chordPasteVaultLastRunOptions?.seed != null
+                  ? (chorusIndex, tensionOverride) =>
+                      void runVaultChorusTensionRegen(
+                        chordPastePreviewChart,
+                        chordPasteOutput,
+                        chordPasteVaultLastRunOptions,
+                        setChordPasteOutput,
+                        chorusIndex,
+                        tensionOverride
+                      )
+                  : undefined
+              }
+            />
+          ) : null}
+          {chordPastePreviewChart &&
+            (chordPastePreviewChart.measures?.some((m) => m.length > 0) ||
+              !!chordPastePreviewChart.title?.trim()) && (
+              <VaultImportChartSummary chart={chordPastePreviewChart} />
+            )}
+          <p style={{ margin: '0.45rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)', maxWidth: 520 }}>
+            {VAULT_GENERATION_OPTIONS_HINT}
+          </p>
+          <div style={{ marginTop: '0.65rem' }}>
+            <button
+              type="button"
+              disabled={chordPasteBusy}
+              onClick={() => {
+                setChordPasteBusy(true);
+                setChordPasteError(null);
+                setChordPasteMusicXmlError(null);
+                try {
+                  const chart = parseChordProgressionText(
+                    chordPasteText,
+                    chordPasteKey,
+                    chordPasteTimeSigFromUi(chordPasteTimeSigId),
+                    chordPasteTempo
+                  );
+                  const anyChord = chart.measures.some((m) => m.length > 0);
+                  if (!anyChord) {
+                    setChordPasteOutput(null);
+                    setChordPasteError('Add at least one chord symbol (use | between bars).');
+                    return;
+                  }
+                  const runSeed = Date.now();
+                  const opts: VaultGenerationOptions = {
+                    mode: chordPasteMode,
+                    tuningId: chordPasteTuningId,
+                    riffStyle: chordPasteRiffStyle,
+                    drift: chordPasteDrift,
+                    chorusCount: chordPasteChorusCount,
+                    seed: runSeed,
+                    ...(presetId === 'song_mode'
+                      ? {
+                          duoIntent,
+                          songwriterStyleId: songwriterStyle.trim().toLowerCase(),
+                        }
+                      : {}),
+                  };
+                  setChordPasteVaultLastRunOptions(opts);
+                  const out = generateVaultFromParsedChart(chart, opts);
+                  setChordPasteOutput(out);
+                  if (out.musicContext) setSharedMusicContext(out.musicContext);
+                  setChordPasteVaultDual(null);
+                } catch (e) {
+                  setChordPasteOutput(null);
+                  setChordPasteError(e instanceof Error ? e.message : String(e));
+                } finally {
+                  setChordPasteBusy(false);
+                }
+              }}
+            >
+              {chordPasteBusy ? 'Working…' : 'Generate from Chords'}
+            </button>
+          </div>
+          {chordPasteError && (
+            <div
+              role="alert"
+              style={{
+                marginTop: '0.75rem',
+                padding: '0.5rem 0.65rem',
+                borderRadius: 6,
+                background: 'rgba(239,68,68,0.1)',
+                border: '1px solid rgba(239,68,68,0.35)',
+                fontSize: '0.85rem',
+                color: 'var(--error, #ef4444)',
+              }}
+            >
+              {chordPasteError}
+            </div>
+          )}
+          {chordPasteOutput && (
+            <div style={{ marginTop: '0.85rem', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
+              <p style={{ margin: '0 0 0.35rem', color: 'var(--text)' }}>
+                <strong>{chordPasteOutput.title.trim() ? chordPasteOutput.title : '(untitled)'}</strong>
+              </p>
+              <p style={{ margin: '0.25rem 0' }}>Key: {chordPasteOutput.key ?? '—'}</p>
+              <p
+                style={{
+                  margin: '0.25rem 0',
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                }}
+              >
+                <span>
+                  Time signature:{' '}
+                  {(() => {
+                    const ts =
+                      chordPastePreviewChart?.timeSignature ?? chordPasteTimeSigFromUi(chordPasteTimeSigId);
+                    return `${ts.num}/${ts.den}`;
+                  })()}
+                </span>
+                {chordPastePreviewChart && parsedChartHasMixedMeter(chordPastePreviewChart) ? (
+                  <MixedMeterBadge />
+                ) : null}
+              </p>
+              <p style={{ margin: '0.25rem 0' }}>Tempo: {chordPasteTempo} BPM</p>
+              {(() => {
+                const barsPerChorus =
+                  chordPastePreviewChart?.measures?.length ??
+                  (chordPasteChorusCount > 0
+                    ? Math.round(chordPasteOutput.bars / chordPasteChorusCount)
+                    : chordPasteOutput.bars);
+                const totalBars = barsPerChorus * chordPasteChorusCount;
+                return (
+                  <p style={{ margin: '0.25rem 0' }}>
+                    Total bars: {totalBars} ({barsPerChorus} bars/chorus × {chordPasteChorusCount} choruses)
+                  </p>
+                );
+              })()}
+              <p style={{ margin: '0.25rem 0' }}>
+                Mapped chords: {chordPasteOutput.chordMappings.length} · Unmapped:{' '}
+                {chordPasteOutput.unmappedChords.length}
+              </p>
+              <p style={{ margin: '0.35rem 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                <strong>Vault seed:</strong> {chordPasteOutput.seed ?? '—'}
+              </p>
+              {chordPasteVaultDual ? (
+                <p style={{ margin: '0.35rem 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  <strong>Compare pair saved:</strong> variants A & B (see below). Next Generate clears this row.
+                </p>
+              ) : null}
+              <div style={{ marginTop: '0.55rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={
+                    chordPasteBusy ||
+                    !chordPastePreviewChart?.measures?.length ||
+                    chordPasteVaultLastRunOptions?.seed == null
+                  }
+                  onClick={() => {
+                    const chart = chordPastePreviewChart;
+                    const output = chordPasteOutput;
+                    const runOpts = chordPasteVaultLastRunOptions;
+                    if (!chart?.measures?.length || !output || runOpts?.seed == null) return;
+                    const driftBase = runOpts.drift ?? 'neutral';
+                    const duoBase = runOpts.duoIntent ?? 'conversational';
+                    setVaultRemixSession({
+                      kind: 'paste',
+                      chart,
+                      runOptions: { ...runOpts },
+                      outputA: output,
+                      axis: 'drift',
+                      driftB: nextEmotionalDrift(driftBase),
+                      duoB: duoBase === 'conversational' ? 'supportive' : 'conversational',
+                      outputB: null,
+                      patchForB: null,
+                    });
+                  }}
+                >
+                  Remix same seed
+                </button>
+              </div>
+              {chordPasteVaultDual ? (
+                <div
+                  style={{
+                    marginTop: '0.65rem',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                    gap: '0.65rem',
+                  }}
+                >
+                  {(['a', 'b'] as const).map((side) => {
+                    const o = chordPasteVaultDual[side];
+                    const barsPerChorus =
+                      chordPastePreviewChart?.measures?.length ??
+                      Math.max(1, Math.round(o.bars / chordPasteChorusCount));
+                    return (
+                      <div
+                        key={`paste-dual-${side}`}
+                        style={{
+                          padding: '0.55rem 0.65rem',
+                          borderRadius: 8,
+                          border: '1px solid var(--border)',
+                          background: 'var(--bg-elevated, rgba(0,0,0,0.03))',
+                        }}
+                      >
+                        <div style={{ fontWeight: 600, marginBottom: 6 }}>Saved variant {side.toUpperCase()}</div>
+                        <p style={{ margin: '0.15rem 0', fontSize: '0.78rem' }}>
+                          Bars: {o.bars} · Mapped: {o.chordMappings.length}
+                        </p>
+                        <ChorusArcStrip
+                          chorusCount={chordPasteChorusCount}
+                          barsPerChorus={barsPerChorus}
+                          output={o}
+                          locked={boolArrayToLength(chordPasteChorusLocks, chordPasteChorusCount)}
+                          onToggleLock={(chorusIndex) => {
+                            setChordPasteChorusLocks((prev) => {
+                              const next = boolArrayToLength(prev, chordPasteChorusCount);
+                              next[chorusIndex] = !next[chorusIndex];
+                              return next;
+                            });
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
+              {chordPasteOutput.unmappedChords.length > 0 && (
+                <div
+                  style={{
+                    marginTop: '0.5rem',
+                    padding: '0.5rem 0.65rem',
+                    borderRadius: 6,
+                    background: 'rgba(234,179,8,0.12)',
+                    border: '1px solid rgba(234,179,8,0.35)',
+                  }}
+                >
+                  <p
+                    style={{
+                      margin: '0 0 0.35rem',
+                      fontWeight: 600,
+                      color: '#ca8a04',
+                      fontSize: '0.82rem',
+                    }}
+                  >
+                    Unmapped chords
+                  </p>
+                  <ul style={{ margin: 0, paddingLeft: '1.1rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                    {chordPasteOutput.unmappedChords.map((u, i) => (
+                      <li key={`chord-paste-unmapped-${u.barIndex}-${i}-${u.symbol}`}>
+                        Bar {u.barIndex + 1}: {u.symbol || '(empty)'}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <div style={{ marginTop: '0.65rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={chordPasteBusy || chordPasteOutput.generatedNotes.length === 0}
+                  onClick={() => {
+                    setChordPasteMusicXmlError(null);
+                    if (!chordPasteOutput.generatedNotes.length) {
+                      setChordPasteMusicXmlError('No generated notes to export (all chords may be unmapped).');
+                      return;
+                    }
+                    const titleRaw = chordPasteOutput.title.trim() || 'Pasted progression';
+                    const xml = vaultRiffScoreNotesToMusicXml(
+                      chordPasteOutput.generatedNotes,
+                      chordPasteOutput.bars,
+                      titleRaw
+                    );
+                    const base =
+                      titleRaw
+                        .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+                        .replace(/\s+/g, '_')
+                        .replace(/^\.+|\.+$/g, '') || 'pasted_progression';
+                    const blob = new Blob([xml], { type: 'application/vnd.recordare.musicxml+xml' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${base}.xml`;
+                    a.rel = 'noopener';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                  }}
+                >
+                  Download MusicXML
+                </button>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={chordPasteBusy || chordPasteOutput.generatedNotes.length === 0}
+                  onClick={() => {
+                    void (async () => {
+                      setChordPasteSideExportMsg(null);
+                      const titleRaw = chordPasteOutput.title.trim() || 'Pasted progression';
+                      const xml = vaultRiffScoreNotesToMusicXml(
+                        chordPasteOutput.generatedNotes,
+                        chordPasteOutput.bars,
+                        titleRaw
+                      );
+                      const base =
+                        titleRaw
+                          .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+                          .replace(/\s+/g, '_')
+                          .replace(/^\.+|\.+$/g, '') || 'pasted_progression';
+                      const saved = await saveMusicXmlForSideExport(xml, base);
+                      if (!saved.ok) {
+                        setChordPasteSideExportMsg(saved.error);
+                        return;
+                      }
+                      const r = await runSideExportFromMusicXmlPath(saved.musicXmlPath, 'pdf');
+                      setChordPasteSideExportMsg(
+                        r.success ? `PDF exported: ${r.path}` : r.error ?? 'PDF export failed.'
+                      );
+                    })();
+                  }}
+                >
+                  Export PDF
+                </button>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={chordPasteBusy || chordPasteOutput.generatedNotes.length === 0}
+                  onClick={() => {
+                    void (async () => {
+                      setChordPasteSideExportMsg(null);
+                      const titleRaw = chordPasteOutput.title.trim() || 'Pasted progression';
+                      const xml = vaultRiffScoreNotesToMusicXml(
+                        chordPasteOutput.generatedNotes,
+                        chordPasteOutput.bars,
+                        titleRaw
+                      );
+                      const base =
+                        titleRaw
+                          .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+                          .replace(/\s+/g, '_')
+                          .replace(/^\.+|\.+$/g, '') || 'pasted_progression';
+                      const saved = await saveMusicXmlForSideExport(xml, base);
+                      if (!saved.ok) {
+                        setChordPasteSideExportMsg(saved.error);
+                        return;
+                      }
+                      const r = await runSideExportFromMusicXmlPath(saved.musicXmlPath, 'gp');
+                      setChordPasteSideExportMsg(
+                        r.success ? `Guitar Pro exported: ${r.path}` : r.error ?? 'Guitar Pro export failed.'
+                      );
+                    })();
+                  }}
+                >
+                  Export Guitar Pro
+                </button>
+              </div>
+              {chordPasteSideExportMsg && (
+                <p
+                  style={{
+                    marginTop: '0.5rem',
+                    fontSize: '0.82rem',
+                    color: chordPasteSideExportMsg.includes('exported:')
+                      ? 'var(--text-muted)'
+                      : 'var(--error, #ef4444)',
+                  }}
+                >
+                  {chordPasteSideExportMsg}
+                </p>
+              )}
+              {chordPasteMusicXmlError && (
+                <div
+                  role="alert"
+                  style={{
+                    marginTop: '0.75rem',
+                    padding: '0.5rem 0.65rem',
+                    borderRadius: 6,
+                    background: 'rgba(239,68,68,0.1)',
+                    border: '1px solid rgba(239,68,68,0.35)',
+                    fontSize: '0.85rem',
+                    color: 'var(--error, #ef4444)',
+                  }}
+                >
+                  {chordPasteMusicXmlError}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </details>
+
+      ) : null}
+
+      {showIrealChartPanel ? (
+      <details
+        open={irealChartPanelOpen}
+        onToggle={(e) => setIrealChartPanelOpen(e.currentTarget.open)}
+        style={{
+          marginBottom: '1rem',
+          maxWidth: 560,
+          padding: '0.75rem 0.85rem',
+          borderRadius: 8,
+          border: '1px solid var(--border)',
+          background: 'var(--bg-panel)',
+        }}
+      >
+        <summary
+          style={{
+            cursor: 'pointer',
+            fontSize: '0.95rem',
+            fontWeight: 600,
+            color: 'var(--text)',
+            listStylePosition: 'outside',
+          }}
+        >
+          iReal Pro Import (Beta)
+        </summary>
+        <div style={{ marginTop: '0.85rem' }}>
+          <label
+            htmlFor="co-ireal-paste"
+            style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+          >
+            Paste an <code style={{ fontSize: '0.8rem' }}>ireal://</code> URL or iReal Pro HTML export
+          </label>
+          <textarea
+            id="co-ireal-paste"
+            value={iRealPaste}
+            onChange={(e) => setIRealPaste(e.target.value)}
+            rows={5}
+            wrap="soft"
+            spellCheck={false}
+            disabled={iRealVaultBusy}
+            style={{
+              width: '100%',
+              maxWidth: '100%',
+              boxSizing: 'border-box',
+              fontFamily: 'inherit',
+              fontSize: '0.82rem',
+              padding: '0.45rem 0.5rem',
+              borderRadius: 6,
+              border: '1px solid var(--border)',
+              background: 'var(--bg)',
+              color: 'var(--text)',
+            }}
+          />
+          {iRealParsedChart &&
+            (iRealParsedChart.measures?.length > 0 || !!iRealParsedChart.title?.trim()) && (
+              <VaultImportChartSummary chart={iRealParsedChart} />
+            )}
+          {iRealParsedChart?.measures?.length ? (
+            <div style={{ marginTop: '0.5rem' }}>
+              <button type="button" className="secondary" onClick={handleSendIRealToMartino} disabled={iRealVaultBusy}>
+                Send to Martino
+              </button>
+              {iRealMartinoSentMsg ? (
+                <p style={{ margin: '0.35rem 0 0', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                  {iRealMartinoSentMsg}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+              marginTop: '0.65rem',
+              alignItems: 'flex-end',
+            }}
+          >
+            <div role="group" aria-label="iReal vault mode">
+              <span
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Mode
+              </span>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  type="button"
+                  className={iRealVaultMode === 'solo' ? undefined : 'secondary'}
+                  onClick={() => setIRealVaultMode('solo')}
+                  disabled={iRealVaultBusy}
+                  aria-pressed={iRealVaultMode === 'solo'}
+                >
+                  Solo
+                </button>
+                <button
+                  type="button"
+                  className={iRealVaultMode === 'melody' ? undefined : 'secondary'}
+                  onClick={() => setIRealVaultMode('melody')}
+                  disabled={iRealVaultBusy}
+                  aria-pressed={iRealVaultMode === 'melody'}
+                >
+                  Melody
+                </button>
+              </div>
+            </div>
+            <div>
+              <label
+                htmlFor="co-ireal-riff-style"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Riff style
+              </label>
+              <select
+                id="co-ireal-riff-style"
+                value={iRealVaultRiffStyle}
+                onChange={(e) =>
+                  setIRealVaultRiffStyle(
+                    e.target.value as
+                      | 'bebop-placement'
+                      | 'quadratonic'
+                      | 'dyad-seesaw'
+                      | 'triad-pair-pendulum'
+                      | 'pedal-string'
+                  )
+                }
+                disabled={iRealVaultBusy}
+              >
+                <option value="bebop-placement">bebop-placement</option>
+                <option value="quadratonic">quadratonic</option>
+                <option value="dyad-seesaw">dyad-seesaw</option>
+                <option value="triad-pair-pendulum">triad-pair-pendulum</option>
+                <option value="pedal-string">pedal-string</option>
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="co-ireal-tuning"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Tuning
+              </label>
+              <select
+                id="co-ireal-tuning"
+                value={iRealVaultTuningId}
+                onChange={(e) => setIRealVaultTuningId(e.target.value)}
+                disabled={iRealVaultBusy}
+              >
+                <option value="standard">standard</option>
+                <option value="dadgad">dadgad (DADGAD)</option>
+                <option value="open_d">open_d (Open D)</option>
+                <option value="open_g">open_g (Open G)</option>
+                <option value="sy_cgdgcd">sy_cgdgcd (Sonic Youth)</option>
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="co-ireal-drift"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Emotional drift
+              </label>
+              <select
+                id="co-ireal-drift"
+                value={iRealVaultDrift}
+                onChange={(e) => setIRealVaultDrift(e.target.value as EmotionalDrift)}
+                disabled={iRealVaultBusy}
+              >
+                {VAULT_EMOTIONAL_DRIFT_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="co-ireal-choruses"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Choruses
+              </label>
+              <input
+                id="co-ireal-choruses"
+                type="number"
+                min={1}
+                max={64}
+                step={1}
+                value={iRealVaultChorusCount}
+                onChange={(e) =>
+                  setIRealVaultChorusCount(
+                    Math.min(64, Math.max(1, Math.floor(Number(e.target.value) || 1)))
+                  )
+                }
+                disabled={iRealVaultBusy}
+                style={{
+                  width: '5rem',
+                  padding: '0.35rem 0.45rem',
+                  borderRadius: 6,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg)',
+                  color: 'var(--text)',
+                }}
+              />
+            </div>
+          </div>
+          {iRealVaultOutput && iRealParsedChart?.measures?.length ? (
+            <ChorusArcStrip
+              chorusCount={iRealVaultChorusCount}
+              barsPerChorus={iRealParsedChart.measures.length}
+              output={iRealVaultOutput}
+              locked={boolArrayToLength(iRealVaultChorusLocks, iRealVaultChorusCount)}
+              regeneratingChorusIndex={vaultChorusRegenIx}
+              onToggleLock={(chorusIndex) => {
+                setIRealVaultChorusLocks((prev) => {
+                  const next = boolArrayToLength(prev, iRealVaultChorusCount);
+                  next[chorusIndex] = !next[chorusIndex];
+                  return next;
+                });
+              }}
+              onRegenerateChorus={
+                iRealVaultLastRunOptions?.seed != null
+                  ? (chorusIndex, tensionOverride) =>
+                      void runVaultChorusTensionRegen(
+                        iRealParsedChart,
+                        iRealVaultOutput,
+                        iRealVaultLastRunOptions,
+                        setIRealVaultOutput,
+                        chorusIndex,
+                        tensionOverride
+                      )
+                  : undefined
+              }
+            />
+          ) : null}
+          <p style={{ margin: '0.45rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)', maxWidth: 520 }}>
+            {VAULT_GENERATION_OPTIONS_HINT}
+          </p>
+          <div style={{ marginTop: '0.65rem' }}>
+            <button
+              type="button"
+              disabled={iRealVaultBusy}
+              onClick={() => {
+                setIRealVaultBusy(true);
+                try {
+                  const runSeed = Date.now();
+                  const opts: VaultGenerationOptions = {
+                    mode: iRealVaultMode,
+                    riffStyle: iRealVaultRiffStyle,
+                    tuningId: iRealVaultTuningId,
+                    drift: iRealVaultDrift,
+                    chorusCount: iRealVaultChorusCount,
+                    seed: runSeed,
+                    ...(presetId === 'song_mode'
+                      ? {
+                          duoIntent,
+                          songwriterStyleId: songwriterStyle.trim().toLowerCase(),
+                        }
+                      : {}),
+                  };
+                  setIRealVaultLastRunOptions(opts);
+                  const out = generateFromIReal(iRealPaste, opts);
+                  setIRealVaultOutput(out);
+                  if (out.musicContext) setSharedMusicContext(out.musicContext);
+                  setIRealVaultDual(null);
+                } finally {
+                  setIRealVaultBusy(false);
+                }
+              }}
+            >
+              {iRealVaultBusy ? 'Working…' : 'Generate from iReal'}
+            </button>
+          </div>
+          {iRealVaultOutput && (
+            <div style={{ marginTop: '0.85rem', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
+              <p style={{ margin: '0 0 0.35rem', color: 'var(--text)' }}>
+                <strong>{iRealVaultOutput.title.trim() ? iRealVaultOutput.title : '(untitled)'}</strong>
+              </p>
+              <p style={{ margin: '0.25rem 0' }}>Key: {iRealVaultOutput.key ?? '—'}</p>
+              {iRealParsedChart?.timeSignature ? (
+                <p
+                  style={{
+                    margin: '0.25rem 0',
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                  }}
+                >
+                  <span>
+                    Time signature: {iRealParsedChart.timeSignature.num}/{iRealParsedChart.timeSignature.den}
+                  </span>
+                  {parsedChartHasMixedMeter(iRealParsedChart) ? <MixedMeterBadge /> : null}
+                </p>
+              ) : null}
+              {iRealParsedChart != null &&
+              iRealParsedChart.tempo != null &&
+              Number.isFinite(iRealParsedChart.tempo) &&
+              iRealParsedChart.tempo > 0 ? (
+                <p style={{ margin: '0.25rem 0' }}>Tempo: {Math.round(iRealParsedChart.tempo)} BPM</p>
+              ) : null}
+              {(() => {
+                const barsPerChorus =
+                  iRealParsedChart?.measures?.length ??
+                  (iRealVaultChorusCount > 0
+                    ? Math.round(iRealVaultOutput.bars / iRealVaultChorusCount)
+                    : iRealVaultOutput.bars);
+                const totalBars = barsPerChorus * iRealVaultChorusCount;
+                return (
+                  <p style={{ margin: '0.25rem 0' }}>
+                    Total bars: {totalBars} ({barsPerChorus} bars/chorus × {iRealVaultChorusCount} choruses)
+                  </p>
+                );
+              })()}
+              <p style={{ margin: '0.25rem 0' }}>
+                Mapped chords: {iRealVaultOutput.chordMappings.length} · Unmapped:{' '}
+                {iRealVaultOutput.unmappedChords.length}
+              </p>
+              <p style={{ margin: '0.35rem 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                <strong>Vault seed:</strong> {iRealVaultOutput.seed ?? '—'}
+              </p>
+              {iRealVaultDual ? (
+                <p style={{ margin: '0.35rem 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  <strong>Compare pair saved:</strong> variants A & B (see below). Next Generate clears this row.
+                </p>
+              ) : null}
+              <div style={{ marginTop: '0.55rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={
+                    iRealVaultBusy || !iRealParsedChart?.measures?.length || iRealVaultLastRunOptions?.seed == null
+                  }
+                  onClick={() => {
+                    const chart = iRealParsedChart;
+                    const output = iRealVaultOutput;
+                    const runOpts = iRealVaultLastRunOptions;
+                    if (!chart?.measures?.length || !output || runOpts?.seed == null) return;
+                    const driftBase = runOpts.drift ?? 'neutral';
+                    const duoBase = runOpts.duoIntent ?? 'conversational';
+                    setVaultRemixSession({
+                      kind: 'ireal',
+                      chart,
+                      runOptions: { ...runOpts },
+                      outputA: output,
+                      axis: 'drift',
+                      driftB: nextEmotionalDrift(driftBase),
+                      duoB: duoBase === 'conversational' ? 'supportive' : 'conversational',
+                      outputB: null,
+                      patchForB: null,
+                    });
+                  }}
+                >
+                  Remix same seed
+                </button>
+              </div>
+              {iRealVaultDual ? (
+                <div
+                  style={{
+                    marginTop: '0.65rem',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                    gap: '0.65rem',
+                  }}
+                >
+                  {(['a', 'b'] as const).map((side) => {
+                    const o = iRealVaultDual[side];
+                    const barsPerChorus =
+                      iRealParsedChart?.measures?.length ??
+                      Math.max(1, Math.round(o.bars / iRealVaultChorusCount));
+                    return (
+                      <div
+                        key={`ireal-dual-${side}`}
+                        style={{
+                          padding: '0.55rem 0.65rem',
+                          borderRadius: 8,
+                          border: '1px solid var(--border)',
+                          background: 'var(--bg-elevated, rgba(0,0,0,0.03))',
+                        }}
+                      >
+                        <div style={{ fontWeight: 600, marginBottom: 6 }}>Saved variant {side.toUpperCase()}</div>
+                        <p style={{ margin: '0.15rem 0', fontSize: '0.78rem' }}>
+                          Bars: {o.bars} · Mapped: {o.chordMappings.length}
+                        </p>
+                        <ChorusArcStrip
+                          chorusCount={iRealVaultChorusCount}
+                          barsPerChorus={barsPerChorus}
+                          output={o}
+                          locked={boolArrayToLength(iRealVaultChorusLocks, iRealVaultChorusCount)}
+                          onToggleLock={(chorusIndex) => {
+                            setIRealVaultChorusLocks((prev) => {
+                              const next = boolArrayToLength(prev, iRealVaultChorusCount);
+                              next[chorusIndex] = !next[chorusIndex];
+                              return next;
+                            });
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
+              {iRealVaultOutput.unmappedChords.length > 0 && (
+                <div
+                  style={{
+                    marginTop: '0.5rem',
+                    padding: '0.5rem 0.65rem',
+                    borderRadius: 6,
+                    background: 'rgba(234,179,8,0.12)',
+                    border: '1px solid rgba(234,179,8,0.35)',
+                  }}
+                >
+                  <p
+                    style={{
+                      margin: '0 0 0.35rem',
+                      fontWeight: 600,
+                      color: '#ca8a04',
+                      fontSize: '0.82rem',
+                    }}
+                  >
+                    Unmapped chords
+                  </p>
+                  <ul style={{ margin: 0, paddingLeft: '1.1rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                    {iRealVaultOutput.unmappedChords.map((u, i) => (
+                      <li key={`ireal-unmapped-${u.barIndex}-${i}-${u.symbol}`}>
+                        Bar {u.barIndex + 1}: {u.symbol || '(empty)'}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </details>
+      ) : null}
+
       <div style={{ marginBottom: '1rem' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}>
-          {presetId === 'song_mode' && songwriterStyle.trim().toLowerCase() === 'ecm_chamber' ? (
+          {showSongModeTileControls && songwriterStyle.trim().toLowerCase() === 'ecm_chamber' ? (
             <span
               role="status"
               title={
@@ -5154,7 +6251,7 @@ export function HomeGenerate({
             </span>
           ) : null}
         </div>
-        {presetId === 'song_mode' && songwriterStyle.trim().toLowerCase() === 'ecm_chamber' ? (
+        {showSongModeTileControls && songwriterStyle.trim().toLowerCase() === 'ecm_chamber' ? (
           <details
             style={{
               marginTop: '0.45rem',
@@ -5191,7 +6288,7 @@ export function HomeGenerate({
             </label>
           </details>
         ) : null}
-        {presetId === 'song_mode' &&
+        {showSongModeTileControls &&
           (() => {
             const w = songwriterStyle.trim().toLowerCase();
             const row = SONG_MODE_DUO_PAIRING_UX[w];
@@ -5266,7 +6363,7 @@ export function HomeGenerate({
               </div>
             );
           })()}
-        {presetId === 'song_mode' && (
+        {showSongModeDuoFamilyControls && (
           <div
             role="radiogroup"
             aria-label="Duo intent"
@@ -5330,7 +6427,7 @@ export function HomeGenerate({
             </p>
           </div>
         )}
-        {presetId === 'song_mode' && (
+        {showSongModeTileControls && (
           <div
             style={{
               marginTop: '0.65rem',
@@ -5423,7 +6520,7 @@ export function HomeGenerate({
         )}
       </div>
 
-      {presetId === 'song_mode' && (
+      {showSongModeTileControls && (
         <>
           <SlonimskyUniversalPanel
             state={slonimskyMacro}
@@ -5572,7 +6669,7 @@ export function HomeGenerate({
           hopCount={hopCount}
         />
       )}
-      {presetId === 'slonimsky_etude' && (
+      {showSlonimskyEtudeControls && (
         <SlonimskyEtudeCellFamilyPanel
           cellFamily={slonimskyEtudeCellFamily}
           onCellFamilyChange={setSlonimskyEtudeCellFamily}
@@ -5728,7 +6825,7 @@ export function HomeGenerate({
               swells — pick the flavour below.
             </p>
           )}
-          {(presetId === 'song_mode' || presetId === 'big_band') && (
+          {(showSongModeTileControls || presetId === 'big_band') && (
             <p style={{ margin: '0.65rem 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
               <strong style={{ color: 'var(--text)' }}>Style pairing</strong> blends songwriter and arranger
               habits for colour — guidance for the plan, not a second engine.
@@ -5773,7 +6870,7 @@ export function HomeGenerate({
         />
       )}
 
-      {(presetId === 'song_mode' || presetId === 'big_band' || presetId === 'string_quartet') && (
+      {(showSongModeTileControls || presetId === 'big_band' || presetId === 'string_quartet') && (
         <div style={{ marginBottom: '1rem', maxWidth: 560 }}>
           <span
             id="composer-os-import-lead-sheet-heading"
@@ -5887,7 +6984,7 @@ export function HomeGenerate({
         <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
           Tonal centre / key
         </label>
-        {presetId === 'song_mode' && (
+        {showSongModeTileControls && (
           <p
             style={{
               fontSize: '0.8rem',
@@ -5922,9 +7019,9 @@ export function HomeGenerate({
       {(presetId === 'guitar_bass_duo' ||
         presetId === 'guitar_bass_duo_single_line' ||
         presetId === 'riff_generator' ||
-        presetId === 'song_mode' ||
+        showSongModeTileControls ||
+        showSlonimskyEtudeControls ||
         presetId === 'wyble_etude' ||
-        presetId === 'slonimsky_etude' ||
         presetId === 'big_band' ||
         presetId === 'string_quartet') && (
         <div style={{ marginBottom: '1rem', maxWidth: 640 }}>
@@ -6073,7 +7170,7 @@ export function HomeGenerate({
               ))}
             </ul>
           ) : null}
-          {presetId === 'song_mode' && (
+          {showSongModeTileControls && (
             <div style={{ marginTop: '0.85rem', maxWidth: 600 }}>
               <label
                 style={{ display: 'block', marginBottom: 6, fontSize: '0.85rem', color: 'var(--text-muted)' }}
@@ -6235,7 +7332,7 @@ export function HomeGenerate({
               <option value={16}>16 bars</option>
               <option value={24}>24 bars</option>
               <option value={32}>32 bars</option>
-              {(presetId === 'song_mode' ||
+              {(showSongModeTileControls ||
                 presetId === 'guitar_bass_duo' ||
                 presetId === 'guitar_bass_duo_single_line') && (
                 <>
@@ -6312,7 +7409,7 @@ export function HomeGenerate({
 
       {(presetId === 'guitar_bass_duo' ||
         presetId === 'guitar_bass_duo_single_line' ||
-        presetId === 'song_mode' ||
+        showSongModeTileControls ||
         presetId === 'string_quartet') && (
         <div style={{ marginBottom: '1rem' }}>
           <label style={{
@@ -6495,7 +7592,7 @@ export function HomeGenerate({
         </div>
       </div>
 
-      {(isGuitarBassDuoFamily(presetId) || presetId === 'song_mode') && (
+      {(isGuitarBassDuoFamily(presetId) || showSongModeTileControls) && (
         <>
           <div style={{ marginBottom: '1rem', maxWidth: 280 }}>
             <label
@@ -7027,7 +8124,7 @@ export function HomeGenerate({
         </>
       )}
 
-      {presetId === 'song_mode' && (
+      {showSongModeTileControls && (
         <div style={{ marginBottom: '1rem', maxWidth: 520 }}>
           <div
             style={{
@@ -8429,7 +9526,7 @@ export function HomeGenerate({
         </div>
       )}
 
-      {slonimskyUiEnabled && !isSqToBbWorkflow && (
+      {slonimskyUiEnabled && (presetId !== 'song_mode' || showSongModeTileControls) && !isSqToBbWorkflow && (
         <SlonimskyAdvancedDrawer
           overrides={slonimskyAdvanced}
           onOverridesChange={setSlonimskyAdvanced}
@@ -8545,1091 +9642,7 @@ export function HomeGenerate({
         />
       )}
 
-      <details
-        open={vaultChartPanelOpen}
-        onToggle={(e) => setVaultChartPanelOpen(e.currentTarget.open)}
-        style={{
-          marginBottom: '1rem',
-          maxWidth: 560,
-          padding: '0.75rem 0.85rem',
-          borderRadius: 8,
-          border: '1px solid var(--border)',
-          background: 'var(--bg-panel)',
-        }}
-      >
-        <summary
-          style={{
-            cursor: 'pointer',
-            fontSize: '0.95rem',
-            fontWeight: 600,
-            color: 'var(--text)',
-            listStylePosition: 'outside',
-          }}
-        >
-          Paste Chord Progression
-        </summary>
-        <div style={{ marginTop: '0.85rem' }}>
-          <label
-            htmlFor="co-chord-paste-text"
-            style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-          >
-            Chords — bars separated by <code style={{ fontSize: '0.8rem' }}>|</code>, chords in a bar separated by
-            spaces (e.g. Cmaj7 Dm7 | G7 | Cmaj7)
-          </label>
-          <textarea
-            id="co-chord-paste-text"
-            value={chordPasteText}
-            onChange={(e) => setChordPasteText(e.target.value)}
-            rows={5}
-            wrap="soft"
-            spellCheck={false}
-            disabled={chordPasteBusy}
-            style={{
-              width: '100%',
-              maxWidth: '100%',
-              boxSizing: 'border-box',
-              fontFamily: 'inherit',
-              fontSize: '0.82rem',
-              padding: '0.45rem 0.5rem',
-              borderRadius: 6,
-              border: '1px solid var(--border)',
-              background: 'var(--bg)',
-              color: 'var(--text)',
-            }}
-          />
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '0.75rem',
-              marginTop: '0.65rem',
-              alignItems: 'flex-end',
-            }}
-          >
-            <div>
-              <label
-                htmlFor="co-chord-paste-key"
-                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-              >
-                Key
-              </label>
-              <select
-                id="co-chord-paste-key"
-                value={chordPasteKey}
-                onChange={(e) => setChordPasteKey(e.target.value)}
-                disabled={chordPasteBusy}
-              >
-                {PASTE_CHORD_KEY_OPTIONS.map((k) => (
-                  <option key={k} value={k}>
-                    {k}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label
-                htmlFor="co-chord-paste-timesig"
-                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-              >
-                Time signature
-              </label>
-              <select
-                id="co-chord-paste-timesig"
-                value={chordPasteTimeSigId}
-                onChange={(e) => setChordPasteTimeSigId(e.target.value as '4-4' | '3-4' | '6-8')}
-                disabled={chordPasteBusy}
-              >
-                <option value="4-4">4/4</option>
-                <option value="3-4">3/4</option>
-                <option value="6-8">6/8</option>
-              </select>
-            </div>
-            <div>
-              <label
-                htmlFor="co-chord-paste-tempo"
-                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-              >
-                Tempo (BPM)
-              </label>
-              <input
-                id="co-chord-paste-tempo"
-                type="number"
-                min={20}
-                max={400}
-                value={chordPasteTempo}
-                onChange={(e) =>
-                  setChordPasteTempo(Math.min(400, Math.max(20, Math.floor(Number(e.target.value) || 120))))
-                }
-                disabled={chordPasteBusy}
-                style={{
-                  width: '5rem',
-                  padding: '0.35rem 0.45rem',
-                  borderRadius: 6,
-                  border: '1px solid var(--border)',
-                  background: 'var(--bg)',
-                  color: 'var(--text)',
-                }}
-              />
-            </div>
-            <div role="group" aria-label="Paste chord progression mode">
-              <span
-                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-              >
-                Mode
-              </span>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button
-                  type="button"
-                  className={chordPasteMode === 'solo' ? undefined : 'secondary'}
-                  onClick={() => setChordPasteMode('solo')}
-                  disabled={chordPasteBusy}
-                  aria-pressed={chordPasteMode === 'solo'}
-                >
-                  Solo
-                </button>
-                <button
-                  type="button"
-                  className={chordPasteMode === 'melody' ? undefined : 'secondary'}
-                  onClick={() => setChordPasteMode('melody')}
-                  disabled={chordPasteBusy}
-                  aria-pressed={chordPasteMode === 'melody'}
-                >
-                  Melody
-                </button>
-              </div>
-            </div>
-            <div>
-              <label
-                htmlFor="co-chord-paste-tuning"
-                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-              >
-                Tuning
-              </label>
-              <select
-                id="co-chord-paste-tuning"
-                value={chordPasteTuningId}
-                onChange={(e) => setChordPasteTuningId(e.target.value)}
-                disabled={chordPasteBusy}
-              >
-                <option value="standard">standard</option>
-                <option value="dadgad">dadgad (DADGAD)</option>
-                <option value="open_d">open_d (Open D)</option>
-                <option value="open_g">open_g (Open G)</option>
-                <option value="sy_cgdgcd">sy_cgdgcd (Sonic Youth)</option>
-              </select>
-            </div>
-            <div>
-              <label
-                htmlFor="co-chord-paste-riff-style"
-                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-              >
-                Riff style
-              </label>
-              <select
-                id="co-chord-paste-riff-style"
-                value={chordPasteRiffStyle}
-                onChange={(e) =>
-                  setChordPasteRiffStyle(
-                    e.target.value as
-                      | 'bebop-placement'
-                      | 'quadratonic'
-                      | 'dyad-seesaw'
-                      | 'triad-pair-pendulum'
-                      | 'pedal-string'
-                  )
-                }
-                disabled={chordPasteBusy}
-              >
-                <option value="bebop-placement">bebop-placement</option>
-                <option value="quadratonic">quadratonic</option>
-                <option value="dyad-seesaw">dyad-seesaw</option>
-                <option value="triad-pair-pendulum">triad-pair-pendulum</option>
-                <option value="pedal-string">pedal-string</option>
-              </select>
-            </div>
-            <div>
-              <label
-                htmlFor="co-chord-paste-drift"
-                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-              >
-                Emotional drift
-              </label>
-              <select
-                id="co-chord-paste-drift"
-                value={chordPasteDrift}
-                onChange={(e) => setChordPasteDrift(e.target.value as EmotionalDrift)}
-                disabled={chordPasteBusy}
-              >
-                {VAULT_EMOTIONAL_DRIFT_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label
-                htmlFor="co-chord-paste-choruses"
-                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-              >
-                Choruses
-              </label>
-              <input
-                id="co-chord-paste-choruses"
-                type="number"
-                min={1}
-                max={64}
-                step={1}
-                value={chordPasteChorusCount}
-                onChange={(e) =>
-                  setChordPasteChorusCount(
-                    Math.min(64, Math.max(1, Math.floor(Number(e.target.value) || 1)))
-                  )
-                }
-                disabled={chordPasteBusy}
-                style={{
-                  width: '5rem',
-                  padding: '0.35rem 0.45rem',
-                  borderRadius: 6,
-                  border: '1px solid var(--border)',
-                  background: 'var(--bg)',
-                  color: 'var(--text)',
-                }}
-              />
-            </div>
-          </div>
-          {chordPasteOutput && chordPastePreviewChart?.measures?.length ? (
-            <ChorusArcStrip
-              chorusCount={chordPasteChorusCount}
-              barsPerChorus={chordPastePreviewChart.measures.length}
-              output={chordPasteOutput}
-              locked={boolArrayToLength(chordPasteChorusLocks, chordPasteChorusCount)}
-              regeneratingChorusIndex={vaultChorusRegenIx}
-              onToggleLock={(chorusIndex) => {
-                setChordPasteChorusLocks((prev) => {
-                  const next = boolArrayToLength(prev, chordPasteChorusCount);
-                  next[chorusIndex] = !next[chorusIndex];
-                  return next;
-                });
-              }}
-              onRegenerateChorus={
-                chordPasteVaultLastRunOptions?.seed != null
-                  ? (chorusIndex, tensionOverride) =>
-                      void runVaultChorusTensionRegen(
-                        chordPastePreviewChart,
-                        chordPasteOutput,
-                        chordPasteVaultLastRunOptions,
-                        setChordPasteOutput,
-                        chorusIndex,
-                        tensionOverride
-                      )
-                  : undefined
-              }
-            />
-          ) : null}
-          {chordPastePreviewChart &&
-            (chordPastePreviewChart.measures?.some((m) => m.length > 0) ||
-              !!chordPastePreviewChart.title?.trim()) && (
-              <VaultImportChartSummary chart={chordPastePreviewChart} />
-            )}
-          <p style={{ margin: '0.45rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)', maxWidth: 520 }}>
-            {VAULT_GENERATION_OPTIONS_HINT}
-          </p>
-          <div style={{ marginTop: '0.65rem' }}>
-            <button
-              type="button"
-              disabled={chordPasteBusy}
-              onClick={() => {
-                setChordPasteBusy(true);
-                setChordPasteError(null);
-                setChordPasteMusicXmlError(null);
-                try {
-                  const chart = parseChordProgressionText(
-                    chordPasteText,
-                    chordPasteKey,
-                    chordPasteTimeSigFromUi(chordPasteTimeSigId),
-                    chordPasteTempo
-                  );
-                  const anyChord = chart.measures.some((m) => m.length > 0);
-                  if (!anyChord) {
-                    setChordPasteOutput(null);
-                    setChordPasteError('Add at least one chord symbol (use | between bars).');
-                    return;
-                  }
-                  const runSeed = Date.now();
-                  const opts: VaultGenerationOptions = {
-                    mode: chordPasteMode,
-                    tuningId: chordPasteTuningId,
-                    riffStyle: chordPasteRiffStyle,
-                    drift: chordPasteDrift,
-                    chorusCount: chordPasteChorusCount,
-                    seed: runSeed,
-                    ...(presetId === 'song_mode'
-                      ? {
-                          duoIntent,
-                          songwriterStyleId: songwriterStyle.trim().toLowerCase(),
-                        }
-                      : {}),
-                  };
-                  setChordPasteVaultLastRunOptions(opts);
-                  const out = generateVaultFromParsedChart(chart, opts);
-                  setChordPasteOutput(out);
-                  if (out.musicContext) setSharedMusicContext(out.musicContext);
-                  setChordPasteVaultDual(null);
-                } catch (e) {
-                  setChordPasteOutput(null);
-                  setChordPasteError(e instanceof Error ? e.message : String(e));
-                } finally {
-                  setChordPasteBusy(false);
-                }
-              }}
-            >
-              {chordPasteBusy ? 'Working…' : 'Generate from Chords'}
-            </button>
-          </div>
-          {chordPasteError && (
-            <div
-              role="alert"
-              style={{
-                marginTop: '0.75rem',
-                padding: '0.5rem 0.65rem',
-                borderRadius: 6,
-                background: 'rgba(239,68,68,0.1)',
-                border: '1px solid rgba(239,68,68,0.35)',
-                fontSize: '0.85rem',
-                color: 'var(--error, #ef4444)',
-              }}
-            >
-              {chordPasteError}
-            </div>
-          )}
-          {chordPasteOutput && (
-            <div style={{ marginTop: '0.85rem', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
-              <p style={{ margin: '0 0 0.35rem', color: 'var(--text)' }}>
-                <strong>{chordPasteOutput.title.trim() ? chordPasteOutput.title : '(untitled)'}</strong>
-              </p>
-              <p style={{ margin: '0.25rem 0' }}>Key: {chordPasteOutput.key ?? '—'}</p>
-              <p
-                style={{
-                  margin: '0.25rem 0',
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  alignItems: 'center',
-                  gap: '0.25rem',
-                }}
-              >
-                <span>
-                  Time signature:{' '}
-                  {(() => {
-                    const ts =
-                      chordPastePreviewChart?.timeSignature ?? chordPasteTimeSigFromUi(chordPasteTimeSigId);
-                    return `${ts.num}/${ts.den}`;
-                  })()}
-                </span>
-                {chordPastePreviewChart && parsedChartHasMixedMeter(chordPastePreviewChart) ? (
-                  <MixedMeterBadge />
-                ) : null}
-              </p>
-              <p style={{ margin: '0.25rem 0' }}>Tempo: {chordPasteTempo} BPM</p>
-              {(() => {
-                const barsPerChorus =
-                  chordPastePreviewChart?.measures?.length ??
-                  (chordPasteChorusCount > 0
-                    ? Math.round(chordPasteOutput.bars / chordPasteChorusCount)
-                    : chordPasteOutput.bars);
-                const totalBars = barsPerChorus * chordPasteChorusCount;
-                return (
-                  <p style={{ margin: '0.25rem 0' }}>
-                    Total bars: {totalBars} ({barsPerChorus} bars/chorus × {chordPasteChorusCount} choruses)
-                  </p>
-                );
-              })()}
-              <p style={{ margin: '0.25rem 0' }}>
-                Mapped chords: {chordPasteOutput.chordMappings.length} · Unmapped:{' '}
-                {chordPasteOutput.unmappedChords.length}
-              </p>
-              <p style={{ margin: '0.35rem 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                <strong>Vault seed:</strong> {chordPasteOutput.seed ?? '—'}
-              </p>
-              {chordPasteVaultDual ? (
-                <p style={{ margin: '0.35rem 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                  <strong>Compare pair saved:</strong> variants A & B (see below). Next Generate clears this row.
-                </p>
-              ) : null}
-              <div style={{ marginTop: '0.55rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
-                <button
-                  type="button"
-                  className="secondary"
-                  disabled={
-                    chordPasteBusy ||
-                    !chordPastePreviewChart?.measures?.length ||
-                    chordPasteVaultLastRunOptions?.seed == null
-                  }
-                  onClick={() => {
-                    const chart = chordPastePreviewChart;
-                    const output = chordPasteOutput;
-                    const runOpts = chordPasteVaultLastRunOptions;
-                    if (!chart?.measures?.length || !output || runOpts?.seed == null) return;
-                    const driftBase = runOpts.drift ?? 'neutral';
-                    const duoBase = runOpts.duoIntent ?? 'conversational';
-                    setVaultRemixSession({
-                      kind: 'paste',
-                      chart,
-                      runOptions: { ...runOpts },
-                      outputA: output,
-                      axis: 'drift',
-                      driftB: nextEmotionalDrift(driftBase),
-                      duoB: duoBase === 'conversational' ? 'supportive' : 'conversational',
-                      outputB: null,
-                      patchForB: null,
-                    });
-                  }}
-                >
-                  Remix same seed
-                </button>
-              </div>
-              {chordPasteVaultDual ? (
-                <div
-                  style={{
-                    marginTop: '0.65rem',
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                    gap: '0.65rem',
-                  }}
-                >
-                  {(['a', 'b'] as const).map((side) => {
-                    const o = chordPasteVaultDual[side];
-                    const barsPerChorus =
-                      chordPastePreviewChart?.measures?.length ??
-                      Math.max(1, Math.round(o.bars / chordPasteChorusCount));
-                    return (
-                      <div
-                        key={`paste-dual-${side}`}
-                        style={{
-                          padding: '0.55rem 0.65rem',
-                          borderRadius: 8,
-                          border: '1px solid var(--border)',
-                          background: 'var(--bg-elevated, rgba(0,0,0,0.03))',
-                        }}
-                      >
-                        <div style={{ fontWeight: 600, marginBottom: 6 }}>Saved variant {side.toUpperCase()}</div>
-                        <p style={{ margin: '0.15rem 0', fontSize: '0.78rem' }}>
-                          Bars: {o.bars} · Mapped: {o.chordMappings.length}
-                        </p>
-                        <ChorusArcStrip
-                          chorusCount={chordPasteChorusCount}
-                          barsPerChorus={barsPerChorus}
-                          output={o}
-                          locked={boolArrayToLength(chordPasteChorusLocks, chordPasteChorusCount)}
-                          onToggleLock={(chorusIndex) => {
-                            setChordPasteChorusLocks((prev) => {
-                              const next = boolArrayToLength(prev, chordPasteChorusCount);
-                              next[chorusIndex] = !next[chorusIndex];
-                              return next;
-                            });
-                          }}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : null}
-              {chordPasteOutput.unmappedChords.length > 0 && (
-                <div
-                  style={{
-                    marginTop: '0.5rem',
-                    padding: '0.5rem 0.65rem',
-                    borderRadius: 6,
-                    background: 'rgba(234,179,8,0.12)',
-                    border: '1px solid rgba(234,179,8,0.35)',
-                  }}
-                >
-                  <p
-                    style={{
-                      margin: '0 0 0.35rem',
-                      fontWeight: 600,
-                      color: '#ca8a04',
-                      fontSize: '0.82rem',
-                    }}
-                  >
-                    Unmapped chords
-                  </p>
-                  <ul style={{ margin: 0, paddingLeft: '1.1rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                    {chordPasteOutput.unmappedChords.map((u, i) => (
-                      <li key={`chord-paste-unmapped-${u.barIndex}-${i}-${u.symbol}`}>
-                        Bar {u.barIndex + 1}: {u.symbol || '(empty)'}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              <div style={{ marginTop: '0.65rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <button
-                  type="button"
-                  className="secondary"
-                  disabled={chordPasteBusy || chordPasteOutput.generatedNotes.length === 0}
-                  onClick={() => {
-                    setChordPasteMusicXmlError(null);
-                    if (!chordPasteOutput.generatedNotes.length) {
-                      setChordPasteMusicXmlError('No generated notes to export (all chords may be unmapped).');
-                      return;
-                    }
-                    const titleRaw = chordPasteOutput.title.trim() || 'Pasted progression';
-                    const xml = vaultRiffScoreNotesToMusicXml(
-                      chordPasteOutput.generatedNotes,
-                      chordPasteOutput.bars,
-                      titleRaw
-                    );
-                    const base =
-                      titleRaw
-                        .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
-                        .replace(/\s+/g, '_')
-                        .replace(/^\.+|\.+$/g, '') || 'pasted_progression';
-                    const blob = new Blob([xml], { type: 'application/vnd.recordare.musicxml+xml' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${base}.xml`;
-                    a.rel = 'noopener';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                  }}
-                >
-                  Download MusicXML
-                </button>
-                <button
-                  type="button"
-                  className="secondary"
-                  disabled={chordPasteBusy || chordPasteOutput.generatedNotes.length === 0}
-                  onClick={() => {
-                    void (async () => {
-                      setChordPasteSideExportMsg(null);
-                      const titleRaw = chordPasteOutput.title.trim() || 'Pasted progression';
-                      const xml = vaultRiffScoreNotesToMusicXml(
-                        chordPasteOutput.generatedNotes,
-                        chordPasteOutput.bars,
-                        titleRaw
-                      );
-                      const base =
-                        titleRaw
-                          .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
-                          .replace(/\s+/g, '_')
-                          .replace(/^\.+|\.+$/g, '') || 'pasted_progression';
-                      const saved = await saveMusicXmlForSideExport(xml, base);
-                      if (!saved.ok) {
-                        setChordPasteSideExportMsg(saved.error);
-                        return;
-                      }
-                      const r = await runSideExportFromMusicXmlPath(saved.musicXmlPath, 'pdf');
-                      setChordPasteSideExportMsg(
-                        r.success ? `PDF exported: ${r.path}` : r.error ?? 'PDF export failed.'
-                      );
-                    })();
-                  }}
-                >
-                  Export PDF
-                </button>
-                <button
-                  type="button"
-                  className="secondary"
-                  disabled={chordPasteBusy || chordPasteOutput.generatedNotes.length === 0}
-                  onClick={() => {
-                    void (async () => {
-                      setChordPasteSideExportMsg(null);
-                      const titleRaw = chordPasteOutput.title.trim() || 'Pasted progression';
-                      const xml = vaultRiffScoreNotesToMusicXml(
-                        chordPasteOutput.generatedNotes,
-                        chordPasteOutput.bars,
-                        titleRaw
-                      );
-                      const base =
-                        titleRaw
-                          .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
-                          .replace(/\s+/g, '_')
-                          .replace(/^\.+|\.+$/g, '') || 'pasted_progression';
-                      const saved = await saveMusicXmlForSideExport(xml, base);
-                      if (!saved.ok) {
-                        setChordPasteSideExportMsg(saved.error);
-                        return;
-                      }
-                      const r = await runSideExportFromMusicXmlPath(saved.musicXmlPath, 'gp');
-                      setChordPasteSideExportMsg(
-                        r.success ? `Guitar Pro exported: ${r.path}` : r.error ?? 'Guitar Pro export failed.'
-                      );
-                    })();
-                  }}
-                >
-                  Export Guitar Pro
-                </button>
-              </div>
-              {chordPasteSideExportMsg && (
-                <p
-                  style={{
-                    marginTop: '0.5rem',
-                    fontSize: '0.82rem',
-                    color: chordPasteSideExportMsg.includes('exported:')
-                      ? 'var(--text-muted)'
-                      : 'var(--error, #ef4444)',
-                  }}
-                >
-                  {chordPasteSideExportMsg}
-                </p>
-              )}
-              {chordPasteMusicXmlError && (
-                <div
-                  role="alert"
-                  style={{
-                    marginTop: '0.75rem',
-                    padding: '0.5rem 0.65rem',
-                    borderRadius: 6,
-                    background: 'rgba(239,68,68,0.1)',
-                    border: '1px solid rgba(239,68,68,0.35)',
-                    fontSize: '0.85rem',
-                    color: 'var(--error, #ef4444)',
-                  }}
-                >
-                  {chordPasteMusicXmlError}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </details>
 
-      <details
-        open={irealChartPanelOpen}
-        onToggle={(e) => setIrealChartPanelOpen(e.currentTarget.open)}
-        style={{
-          marginBottom: '1rem',
-          maxWidth: 560,
-          padding: '0.75rem 0.85rem',
-          borderRadius: 8,
-          border: '1px solid var(--border)',
-          background: 'var(--bg-panel)',
-        }}
-      >
-        <summary
-          style={{
-            cursor: 'pointer',
-            fontSize: '0.95rem',
-            fontWeight: 600,
-            color: 'var(--text)',
-            listStylePosition: 'outside',
-          }}
-        >
-          iReal Pro Import (Beta)
-        </summary>
-        <div style={{ marginTop: '0.85rem' }}>
-          <label
-            htmlFor="co-ireal-paste"
-            style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-          >
-            Paste an <code style={{ fontSize: '0.8rem' }}>ireal://</code> URL or iReal Pro HTML export
-          </label>
-          <textarea
-            id="co-ireal-paste"
-            value={iRealPaste}
-            onChange={(e) => setIRealPaste(e.target.value)}
-            rows={5}
-            wrap="soft"
-            spellCheck={false}
-            disabled={iRealVaultBusy}
-            style={{
-              width: '100%',
-              maxWidth: '100%',
-              boxSizing: 'border-box',
-              fontFamily: 'inherit',
-              fontSize: '0.82rem',
-              padding: '0.45rem 0.5rem',
-              borderRadius: 6,
-              border: '1px solid var(--border)',
-              background: 'var(--bg)',
-              color: 'var(--text)',
-            }}
-          />
-          {iRealParsedChart &&
-            (iRealParsedChart.measures?.length > 0 || !!iRealParsedChart.title?.trim()) && (
-              <VaultImportChartSummary chart={iRealParsedChart} />
-            )}
-          {iRealParsedChart?.measures?.length ? (
-            <div style={{ marginTop: '0.5rem' }}>
-              <button type="button" className="secondary" onClick={handleSendIRealToMartino} disabled={iRealVaultBusy}>
-                Send to Martino
-              </button>
-              {iRealMartinoSentMsg ? (
-                <p style={{ margin: '0.35rem 0 0', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                  {iRealMartinoSentMsg}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '0.75rem',
-              marginTop: '0.65rem',
-              alignItems: 'flex-end',
-            }}
-          >
-            <div role="group" aria-label="iReal vault mode">
-              <span
-                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-              >
-                Mode
-              </span>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button
-                  type="button"
-                  className={iRealVaultMode === 'solo' ? undefined : 'secondary'}
-                  onClick={() => setIRealVaultMode('solo')}
-                  disabled={iRealVaultBusy}
-                  aria-pressed={iRealVaultMode === 'solo'}
-                >
-                  Solo
-                </button>
-                <button
-                  type="button"
-                  className={iRealVaultMode === 'melody' ? undefined : 'secondary'}
-                  onClick={() => setIRealVaultMode('melody')}
-                  disabled={iRealVaultBusy}
-                  aria-pressed={iRealVaultMode === 'melody'}
-                >
-                  Melody
-                </button>
-              </div>
-            </div>
-            <div>
-              <label
-                htmlFor="co-ireal-riff-style"
-                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-              >
-                Riff style
-              </label>
-              <select
-                id="co-ireal-riff-style"
-                value={iRealVaultRiffStyle}
-                onChange={(e) =>
-                  setIRealVaultRiffStyle(
-                    e.target.value as
-                      | 'bebop-placement'
-                      | 'quadratonic'
-                      | 'dyad-seesaw'
-                      | 'triad-pair-pendulum'
-                      | 'pedal-string'
-                  )
-                }
-                disabled={iRealVaultBusy}
-              >
-                <option value="bebop-placement">bebop-placement</option>
-                <option value="quadratonic">quadratonic</option>
-                <option value="dyad-seesaw">dyad-seesaw</option>
-                <option value="triad-pair-pendulum">triad-pair-pendulum</option>
-                <option value="pedal-string">pedal-string</option>
-              </select>
-            </div>
-            <div>
-              <label
-                htmlFor="co-ireal-tuning"
-                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-              >
-                Tuning
-              </label>
-              <select
-                id="co-ireal-tuning"
-                value={iRealVaultTuningId}
-                onChange={(e) => setIRealVaultTuningId(e.target.value)}
-                disabled={iRealVaultBusy}
-              >
-                <option value="standard">standard</option>
-                <option value="dadgad">dadgad (DADGAD)</option>
-                <option value="open_d">open_d (Open D)</option>
-                <option value="open_g">open_g (Open G)</option>
-                <option value="sy_cgdgcd">sy_cgdgcd (Sonic Youth)</option>
-              </select>
-            </div>
-            <div>
-              <label
-                htmlFor="co-ireal-drift"
-                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-              >
-                Emotional drift
-              </label>
-              <select
-                id="co-ireal-drift"
-                value={iRealVaultDrift}
-                onChange={(e) => setIRealVaultDrift(e.target.value as EmotionalDrift)}
-                disabled={iRealVaultBusy}
-              >
-                {VAULT_EMOTIONAL_DRIFT_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label
-                htmlFor="co-ireal-choruses"
-                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-              >
-                Choruses
-              </label>
-              <input
-                id="co-ireal-choruses"
-                type="number"
-                min={1}
-                max={64}
-                step={1}
-                value={iRealVaultChorusCount}
-                onChange={(e) =>
-                  setIRealVaultChorusCount(
-                    Math.min(64, Math.max(1, Math.floor(Number(e.target.value) || 1)))
-                  )
-                }
-                disabled={iRealVaultBusy}
-                style={{
-                  width: '5rem',
-                  padding: '0.35rem 0.45rem',
-                  borderRadius: 6,
-                  border: '1px solid var(--border)',
-                  background: 'var(--bg)',
-                  color: 'var(--text)',
-                }}
-              />
-            </div>
-          </div>
-          {iRealVaultOutput && iRealParsedChart?.measures?.length ? (
-            <ChorusArcStrip
-              chorusCount={iRealVaultChorusCount}
-              barsPerChorus={iRealParsedChart.measures.length}
-              output={iRealVaultOutput}
-              locked={boolArrayToLength(iRealVaultChorusLocks, iRealVaultChorusCount)}
-              regeneratingChorusIndex={vaultChorusRegenIx}
-              onToggleLock={(chorusIndex) => {
-                setIRealVaultChorusLocks((prev) => {
-                  const next = boolArrayToLength(prev, iRealVaultChorusCount);
-                  next[chorusIndex] = !next[chorusIndex];
-                  return next;
-                });
-              }}
-              onRegenerateChorus={
-                iRealVaultLastRunOptions?.seed != null
-                  ? (chorusIndex, tensionOverride) =>
-                      void runVaultChorusTensionRegen(
-                        iRealParsedChart,
-                        iRealVaultOutput,
-                        iRealVaultLastRunOptions,
-                        setIRealVaultOutput,
-                        chorusIndex,
-                        tensionOverride
-                      )
-                  : undefined
-              }
-            />
-          ) : null}
-          <p style={{ margin: '0.45rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)', maxWidth: 520 }}>
-            {VAULT_GENERATION_OPTIONS_HINT}
-          </p>
-          <div style={{ marginTop: '0.65rem' }}>
-            <button
-              type="button"
-              disabled={iRealVaultBusy}
-              onClick={() => {
-                setIRealVaultBusy(true);
-                try {
-                  const runSeed = Date.now();
-                  const opts: VaultGenerationOptions = {
-                    mode: iRealVaultMode,
-                    riffStyle: iRealVaultRiffStyle,
-                    tuningId: iRealVaultTuningId,
-                    drift: iRealVaultDrift,
-                    chorusCount: iRealVaultChorusCount,
-                    seed: runSeed,
-                    ...(presetId === 'song_mode'
-                      ? {
-                          duoIntent,
-                          songwriterStyleId: songwriterStyle.trim().toLowerCase(),
-                        }
-                      : {}),
-                  };
-                  setIRealVaultLastRunOptions(opts);
-                  const out = generateFromIReal(iRealPaste, opts);
-                  setIRealVaultOutput(out);
-                  if (out.musicContext) setSharedMusicContext(out.musicContext);
-                  setIRealVaultDual(null);
-                } finally {
-                  setIRealVaultBusy(false);
-                }
-              }}
-            >
-              {iRealVaultBusy ? 'Working…' : 'Generate from iReal'}
-            </button>
-          </div>
-          {iRealVaultOutput && (
-            <div style={{ marginTop: '0.85rem', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
-              <p style={{ margin: '0 0 0.35rem', color: 'var(--text)' }}>
-                <strong>{iRealVaultOutput.title.trim() ? iRealVaultOutput.title : '(untitled)'}</strong>
-              </p>
-              <p style={{ margin: '0.25rem 0' }}>Key: {iRealVaultOutput.key ?? '—'}</p>
-              {iRealParsedChart?.timeSignature ? (
-                <p
-                  style={{
-                    margin: '0.25rem 0',
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    alignItems: 'center',
-                    gap: '0.25rem',
-                  }}
-                >
-                  <span>
-                    Time signature: {iRealParsedChart.timeSignature.num}/{iRealParsedChart.timeSignature.den}
-                  </span>
-                  {parsedChartHasMixedMeter(iRealParsedChart) ? <MixedMeterBadge /> : null}
-                </p>
-              ) : null}
-              {iRealParsedChart != null &&
-              iRealParsedChart.tempo != null &&
-              Number.isFinite(iRealParsedChart.tempo) &&
-              iRealParsedChart.tempo > 0 ? (
-                <p style={{ margin: '0.25rem 0' }}>Tempo: {Math.round(iRealParsedChart.tempo)} BPM</p>
-              ) : null}
-              {(() => {
-                const barsPerChorus =
-                  iRealParsedChart?.measures?.length ??
-                  (iRealVaultChorusCount > 0
-                    ? Math.round(iRealVaultOutput.bars / iRealVaultChorusCount)
-                    : iRealVaultOutput.bars);
-                const totalBars = barsPerChorus * iRealVaultChorusCount;
-                return (
-                  <p style={{ margin: '0.25rem 0' }}>
-                    Total bars: {totalBars} ({barsPerChorus} bars/chorus × {iRealVaultChorusCount} choruses)
-                  </p>
-                );
-              })()}
-              <p style={{ margin: '0.25rem 0' }}>
-                Mapped chords: {iRealVaultOutput.chordMappings.length} · Unmapped:{' '}
-                {iRealVaultOutput.unmappedChords.length}
-              </p>
-              <p style={{ margin: '0.35rem 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                <strong>Vault seed:</strong> {iRealVaultOutput.seed ?? '—'}
-              </p>
-              {iRealVaultDual ? (
-                <p style={{ margin: '0.35rem 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                  <strong>Compare pair saved:</strong> variants A & B (see below). Next Generate clears this row.
-                </p>
-              ) : null}
-              <div style={{ marginTop: '0.55rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
-                <button
-                  type="button"
-                  className="secondary"
-                  disabled={
-                    iRealVaultBusy || !iRealParsedChart?.measures?.length || iRealVaultLastRunOptions?.seed == null
-                  }
-                  onClick={() => {
-                    const chart = iRealParsedChart;
-                    const output = iRealVaultOutput;
-                    const runOpts = iRealVaultLastRunOptions;
-                    if (!chart?.measures?.length || !output || runOpts?.seed == null) return;
-                    const driftBase = runOpts.drift ?? 'neutral';
-                    const duoBase = runOpts.duoIntent ?? 'conversational';
-                    setVaultRemixSession({
-                      kind: 'ireal',
-                      chart,
-                      runOptions: { ...runOpts },
-                      outputA: output,
-                      axis: 'drift',
-                      driftB: nextEmotionalDrift(driftBase),
-                      duoB: duoBase === 'conversational' ? 'supportive' : 'conversational',
-                      outputB: null,
-                      patchForB: null,
-                    });
-                  }}
-                >
-                  Remix same seed
-                </button>
-              </div>
-              {iRealVaultDual ? (
-                <div
-                  style={{
-                    marginTop: '0.65rem',
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                    gap: '0.65rem',
-                  }}
-                >
-                  {(['a', 'b'] as const).map((side) => {
-                    const o = iRealVaultDual[side];
-                    const barsPerChorus =
-                      iRealParsedChart?.measures?.length ??
-                      Math.max(1, Math.round(o.bars / iRealVaultChorusCount));
-                    return (
-                      <div
-                        key={`ireal-dual-${side}`}
-                        style={{
-                          padding: '0.55rem 0.65rem',
-                          borderRadius: 8,
-                          border: '1px solid var(--border)',
-                          background: 'var(--bg-elevated, rgba(0,0,0,0.03))',
-                        }}
-                      >
-                        <div style={{ fontWeight: 600, marginBottom: 6 }}>Saved variant {side.toUpperCase()}</div>
-                        <p style={{ margin: '0.15rem 0', fontSize: '0.78rem' }}>
-                          Bars: {o.bars} · Mapped: {o.chordMappings.length}
-                        </p>
-                        <ChorusArcStrip
-                          chorusCount={iRealVaultChorusCount}
-                          barsPerChorus={barsPerChorus}
-                          output={o}
-                          locked={boolArrayToLength(iRealVaultChorusLocks, iRealVaultChorusCount)}
-                          onToggleLock={(chorusIndex) => {
-                            setIRealVaultChorusLocks((prev) => {
-                              const next = boolArrayToLength(prev, iRealVaultChorusCount);
-                              next[chorusIndex] = !next[chorusIndex];
-                              return next;
-                            });
-                          }}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : null}
-              {iRealVaultOutput.unmappedChords.length > 0 && (
-                <div
-                  style={{
-                    marginTop: '0.5rem',
-                    padding: '0.5rem 0.65rem',
-                    borderRadius: 6,
-                    background: 'rgba(234,179,8,0.12)',
-                    border: '1px solid rgba(234,179,8,0.35)',
-                  }}
-                >
-                  <p
-                    style={{
-                      margin: '0 0 0.35rem',
-                      fontWeight: 600,
-                      color: '#ca8a04',
-                      fontSize: '0.82rem',
-                    }}
-                  >
-                    Unmapped chords
-                  </p>
-                  <ul style={{ margin: 0, paddingLeft: '1.1rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                    {iRealVaultOutput.unmappedChords.map((u, i) => (
-                      <li key={`ireal-unmapped-${u.barIndex}-${i}-${u.symbol}`}>
-                        Bar {u.barIndex + 1}: {u.symbol || '(empty)'}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </details>
 
       <details
         style={{
