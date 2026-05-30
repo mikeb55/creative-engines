@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-30) V105p1 — String Quartet MusicContext producer** — `buildMusicContextFromStringQuartet()` (`sourceEngineId: 'string_quartet'`); four-layer realisation (role assignment · texture archetype · voice-leading solver · diagnostics receipt `string_quartet_realisation_complete`); harmony via `normalizeChordSymbol` + checksum after normalisation; Tritonic float on violin_1 + one inner voice (`pad_suspension` · `contrapuntal_weave`; suppressed in `chorale`); cello/viola anchor-first. Always-on. Jest **`stringQuartetMusicContext.test.ts`** (+14).
+
 ---
 
 ## [1.4.0] — 2026-05-30
