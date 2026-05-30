@@ -33,6 +33,15 @@ import {
   mergePresetsWithRegistry,
   type AppPresetCard,
 } from '../constants/composerOsPresetUi';
+import {
+  applyGenerateProducerSideEffects,
+  getGenerateProducerTile,
+  producerIdFromPresetId,
+  tritonicFloatOverLabel,
+  type GenerateProducerId,
+} from '../constants/generateProducerLanes';
+import { GenerateProducerLaneChooser } from '../components/GenerateProducerLaneChooser';
+import { GenerateSharedContextStrip } from '../components/GenerateSharedContextStrip';
 import { FORM_OPTIONS } from '../constants/formOptions';
 import {
   clampSongFormBarCount,
@@ -2148,6 +2157,9 @@ export function HomeGenerate({
   const { publishGridFromXml, setPlaybackBeat: setGridPlaybackBeat, setIsPlaying: setGridIsPlaying, clearGrid } =
     useLastGenerate();
   const [presetId, setPresetId] = useState('song_mode');
+  const [generateProducerId, setGenerateProducerId] = useState<GenerateProducerId>('song_mode');
+  const [vaultChartPanelOpen, setVaultChartPanelOpen] = useState(false);
+  const [irealChartPanelOpen, setIrealChartPanelOpen] = useState(false);
   const [martinoTuneName, setMartinoTuneName] = useState('');
   const [martinoChordSource, setMartinoChordSource] = useState<'section' | 'manual'>('manual');
   const [martinoManualChords, setMartinoManualChords] = useState('Dm7 G7 Cmaj7 Cmaj7');
@@ -2777,6 +2789,54 @@ export function HomeGenerate({
       .then((r) => setModePresets(mergePresetsWithRegistry(r.presets)))
       .catch(() => setModePresets([...APP_PRESET_REGISTRY]));
   }, []);
+
+  const isPresetSupportedForProducer = useCallback(
+    (pid: string) => modePresets.find((m) => m.id === pid)?.supported !== false,
+    [modePresets]
+  );
+
+  const handleSelectGenerateProducer = useCallback(
+    (id: GenerateProducerId) => {
+      const tile = getGenerateProducerTile(id);
+      if (!tile || !isPresetSupportedForProducer(tile.presetId)) return;
+
+      setGenerateProducerId(id);
+      const nextPreset = tile.presetId;
+      setPresetId(nextPreset);
+      setArrangerStyle((prev) => nextArrangerOnPresetChange(prev, nextPreset));
+      if (nextPreset === 'sq_to_bb') setSqToBbEra(null);
+
+      const fx = applyGenerateProducerSideEffects(id);
+      if (fx.riffSubMode) setRiffSubMode(fx.riffSubMode);
+      if (fx.songwriterStyle) setSongwriterStyle(fx.songwriterStyle);
+      if (fx.rhythmEngineId === 'new_orleans_second_line') {
+        setStyleProfile((p) => ({
+          ...p,
+          rhythm: {
+            engineId: 'new_orleans_second_line',
+            presetId: secondLineRhythmPresetId || DEFAULT_SECOND_LINE_RHYTHM_PRESET_ID,
+            contextKeys: [],
+          },
+          pairPresetId: null,
+        }));
+      }
+      if (fx.sqTritonicColour) {
+        setSqTritonicColour(fx.sqTritonicColour);
+        setSqBehaviourBiases(defaultSqBiasesForColour(fx.sqTritonicColour));
+      }
+
+      setVaultChartPanelOpen(id === 'vault');
+      setIrealChartPanelOpen(id === 'ireal');
+    },
+    [isPresetSupportedForProducer, secondLineRhythmPresetId]
+  );
+
+  useEffect(() => {
+    setGenerateProducerId((prev) => {
+      if ((prev === 'ireal' || prev === 'vault') && presetId === 'song_mode') return prev;
+      return producerIdFromPresetId(presetId, { riffSubMode });
+    });
+  }, [presetId, riffSubMode]);
 
   function modeLabelForPreset(id: string): string {
     return modePresets.find((m) => m.id === id)?.name ?? id;
@@ -4531,6 +4591,63 @@ export function HomeGenerate({
   const notShareableGenerated = receiptExportOk && v?.readiness?.shareable === false;
   const showBigReceipt = (result || error) && !isSqToBbWorkflow;
 
+  const sharedStripHarmony = useMemo(() => {
+    if (generateProducerId === 'vault' && chordPasteText.trim()) {
+      const t = chordPasteText.trim().replace(/\s+/g, ' ');
+      return t.length > 72 ? `${t.slice(0, 72)}…` : t;
+    }
+    if (generateProducerId === 'ireal' && iRealPaste.trim()) {
+      const t = iRealPaste.trim();
+      return t.length > 48 ? `${t.slice(0, 48)}…` : t;
+    }
+    const prog = chordProgressionText.trim();
+    if (prog) {
+      const t = prog.replace(/\s+/g, ' ');
+      return t.length > 72 ? `${t.slice(0, 72)}…` : t;
+    }
+    const tc = tonalCenter.trim();
+    return tc || '—';
+  }, [generateProducerId, chordPasteText, iRealPaste, chordProgressionText, tonalCenter]);
+
+  const sharedStripTime = useMemo(() => {
+    const parts: string[] = [];
+    if (bpm > 0) parts.push(`${bpm} BPM`);
+    if (presetId === 'song_mode' && songwriterStyle === 'frank_zappa' && zappaMetersByBar.length > 0) {
+      parts.push('per-bar meters');
+    } else if (composerMeterPresetId && composerMeterPresetId !== 'all_4_4') {
+      parts.push(composerMeterPresetId.replace(/_/g, ' '));
+    }
+    return parts.length ? parts.join(' · ') : '—';
+  }, [bpm, presetId, songwriterStyle, zappaMetersByBar.length, composerMeterPresetId]);
+
+  const sharedStripExportIntegrity = useMemo((): 'pass' | 'fail' | 'pending' | 'unknown' => {
+    if (loading) return 'pending';
+    if (!result && !error) return 'unknown';
+    if (exportIntegrityFlag === true || receiptExportOk) return 'pass';
+    if (exportIntegrityFlag === false || receiptHardFail) return 'fail';
+    return 'unknown';
+  }, [loading, result, error, exportIntegrityFlag, receiptExportOk, receiptHardFail]);
+
+  const tritonicFloatOverText = useMemo(
+    () =>
+      tritonicFloatOverLabel({
+        hasVaultChart: !!(iRealVaultOutput || chordPasteOutput || pdfVaultOutput),
+        hasGeneratedHarmony: !!(
+          generatePanelMusicContext?.harmony?.bars?.length ||
+          chordProgressionText.trim() ||
+          lockedProgressionPreviewBars.length
+        ),
+      }),
+    [
+      iRealVaultOutput,
+      chordPasteOutput,
+      pdfVaultOutput,
+      generatePanelMusicContext,
+      chordProgressionText,
+      lockedProgressionPreviewBars.length,
+    ]
+  );
+
   const modeUx = getModeUx(presetId);
   const summaryPresetId = result?.runManifest?.presetId ?? presetId;
   const outputKindDesc = result
@@ -4993,28 +5110,25 @@ export function HomeGenerate({
         </p>
       )}
 
+      <GenerateProducerLaneChooser
+        producerId={generateProducerId}
+        onSelectProducer={handleSelectGenerateProducer}
+        isPresetSupported={isPresetSupportedForProducer}
+        disabled={loading}
+      />
+
+      <GenerateSharedContextStrip
+        harmony={sharedStripHarmony}
+        time={sharedStripTime}
+        seed={baseSeed}
+        onRerollSeed={() => setBaseSeed(Math.floor(Math.random() * 1e9))}
+        seedDisabled={loading}
+        exportIntegrity={sharedStripExportIntegrity}
+        tritonicFloatOver={tritonicFloatOverText}
+      />
+
       <div style={{ marginBottom: '1rem' }}>
-        <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
-          Mode
-        </label>
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}>
-          <select
-            value={presetId}
-            onChange={(e) => {
-              const next = e.target.value;
-              setPresetId(next);
-              setArrangerStyle((prev) => nextArrangerOnPresetChange(prev, next));
-              if (next === 'sq_to_bb') setSqToBbEra(null);
-            }}
-            disabled={loading}
-          >
-            {modePresets.map((m) => (
-              <option key={m.id} value={m.id} disabled={!m.supported}>
-                {m.name}
-                {!m.supported ? ' (coming soon)' : ''}
-              </option>
-            ))}
-          </select>
           {presetId === 'song_mode' && songwriterStyle.trim().toLowerCase() === 'ecm_chamber' ? (
             <span
               role="status"
@@ -8433,6 +8547,8 @@ export function HomeGenerate({
       )}
 
       <details
+        open={vaultChartPanelOpen}
+        onToggle={(e) => setVaultChartPanelOpen(e.currentTarget.open)}
         style={{
           marginBottom: '1rem',
           maxWidth: 560,
@@ -9084,6 +9200,8 @@ export function HomeGenerate({
       </details>
 
       <details
+        open={irealChartPanelOpen}
+        onToggle={(e) => setIrealChartPanelOpen(e.currentTarget.open)}
         style={{
           marginBottom: '1rem',
           maxWidth: 560,

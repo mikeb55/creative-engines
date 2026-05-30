@@ -195,14 +195,36 @@ describe('HomeGenerate mode-driven UI', () => {
     expect(src).toContain('../constants/composerOsPresetUi');
   });
 
+  it('uses three-lane producer chooser instead of flat mode dropdown', () => {
+    const lanesSrc = fs.readFileSync(
+      path.join(__dirname, '../src/constants/generateProducerLanes.ts'),
+      'utf-8'
+    );
+    const stripSrc = fs.readFileSync(
+      path.join(__dirname, '../src/components/GenerateSharedContextStrip.tsx'),
+      'utf-8'
+    );
+    expect(src).toContain('GenerateProducerLaneChooser');
+    expect(src).toContain('GenerateSharedContextStrip');
+    expect(src).toContain('generateProducerId');
+    expect(src).toContain('generateProducerLanes');
+    expect(lanesSrc).toContain('GENERATE_PRODUCER_LANES');
+    expect(stripSrc).toContain('Float over:');
+    expect(src).not.toMatch(/>\s*Mode\s*<\/label>[\s\S]{0,120}<select[\s\S]{0,200}modePresets\.map/);
+  });
+
   it('preflights custom duo harmony with shared engine parser', () => {
     expect(src).toContain('parseChordProgressionInput');
     expect(src).toContain('../utils/chordProgressionClient');
   });
 
-  it('disables unsupported modes in the Mode dropdown like Presets (coming soon)', () => {
-    expect(src).toContain('disabled={!m.supported}');
-    expect(src).toMatch(/coming soon/);
+  it('disables unsupported producer tiles when preset is not supported', () => {
+    const chooserSrc = fs.readFileSync(
+      path.join(__dirname, '../src/components/GenerateProducerLaneChooser.tsx'),
+      'utf-8'
+    );
+    expect(src).toContain('isPresetSupportedForProducer');
+    expect(chooserSrc).toContain('Coming soon in this build');
   });
 
   it('uses creative control terminology', () => {
