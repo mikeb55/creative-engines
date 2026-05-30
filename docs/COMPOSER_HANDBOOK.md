@@ -225,6 +225,128 @@ Known gaps post-Z5:
 
 ---
 
+## Tritonic
+
+### What is Tritonic?
+
+Tritonic is Composer OS’s **three-note colour engine** — small pitch-class cells (always three notes) that move by smooth voice-leading, in the harmonic world of **Wayne Shorter**: chords that **suggest** colour and tension rather than spell every function in block voicings. Your chart (or a generated progression) stays the **anchor**; tritonic cells **float above** it or spin out a **singable line** from the same material. No jazz-engine jargon required: think “upper-structure drift” or “melodic implication,” not “replace my changes.”
+
+**Cell families:** `quartal` · `cluster` · `suspended` · `shorter_floating` · `bergonzi`
+
+**Realisation modes:** `bb` (dense, energetic) · `sq` (smooth quartet) · `ecm` (sustained, delayed release)
+
+---
+
+### Two modes
+
+| Mode | What you hear | Best when |
+|------|---------------|-----------|
+| **Harmonic Float** | Three-note cells colour your chord sequence from above; harmony bars stay your anchors (Vault / iReal / paste). | Big band shout, ECM wash, comping over a locked chart |
+| **Melodic Trace** | Same cell chain, but the export emphasises a **singer-safe motif** — a line you can hum or put on a lead sheet. | Ballads, vocal demos, Wayne-style floating heads |
+
+Both modes share the same cell dictionary and the **nine behaviour dials** below (0–1 sliders; **0.5 = neutral**).
+
+---
+
+### The nine dials (0–1, default 0.5)
+
+Each dial is a **float**, not an on/off switch. At **0.5** the engine behaves as shipped; nudge up or down to steer without replacing generative logic.
+
+#### tension
+
+**Musically:** Favours **darker, sharper cells** (cluster, bergonzi) vs smoother quartal/suspended choices.
+
+**Cookbook example:** [Scenario 3 — Big Band Blues Shout in F](TRITONIC_BB_COOKBOOK.md#scenario-3--big-band-blues-shout-in-f) — high oddity and cluster peaks on the V bar.
+
+**Sweet spots:** **BB** 0.55–0.75 · **ECM** 0.45–0.60 · **Quartet** 0.50–0.70 · **Vocal** 0.30–0.50 (keep lyric line uncluttered)
+
+#### resolutionDelay
+
+**Musically:** **Postpones settling** on low-tension / cadential cells — the harmony keeps “asking” instead of answering.
+
+**Cookbook example:** [Scenario 2 — Minor Blues in C (ECM Sparse)](TRITONIC_BB_COOKBOOK.md#scenario-2--minor-blues-in-c-ecm-sparse) — ECM mode forces delayed resolution; the minor blues never fully cadences.
+
+**Sweet spots:** **ECM** 0.65–0.85 · **BB** 0.35–0.55 · **Quartet** 0.60–0.80 · **Vocal** 0.50–0.70 (ballad float)
+
+#### density
+
+**Musically:** **More events per bar** vs longer spans — how busy the timeline feels under the cells.
+
+**Cookbook example:** [Scenario 3 — Big Band Blues Shout in F](TRITONIC_BB_COOKBOOK.md#scenario-3--big-band-blues-shout-in-f) — dense all-beats comping vs sparse ECM scenarios.
+
+**Sweet spots:** **BB** 0.65–0.85 · **ECM** 0.25–0.45 · **Quartet** 0.35–0.55 · **Vocal** 0.30–0.50
+
+#### registralSpread
+
+**Musically:** **Wide vertical spacing** vs tight inner-voice motion — orchestral openness vs close jazz voicings.
+
+**Cookbook example:** [Scenario 22 — Maria Schneider (Orchestral Swell)](TRITONIC_BB_COOKBOOK.md#scenario-22--maria-schneider-orchestral-swell) — open voicing and slow swell across bar lines.
+
+**Sweet spots:** **ECM** 0.60–0.80 · **BB** 0.55–0.75 · **Quartet** 0.40–0.60 · **Vocal** 0.45–0.65
+
+#### contourBias
+
+**Musically:** Steers **stepwise, singable motion** vs **leaps and registral jumps** in the projected line.
+
+**Cookbook example:** [Scenario 40 — Cinema Noir (Descending Chromatic)](TRITONIC_BB_COOKBOOK.md#scenario-40--cinema-noir-descending-chromatic) — chromatic descent drives contour; dial down for stepwise ECM lines.
+
+**Sweet spots:** **ECM** 0.55–0.70 (lyrical step) · **BB** 0.40–0.55 · **Quartet** 0.50–0.65 · **Vocal** 0.65–0.85
+
+#### cadenceAvoidance
+
+**Musically:** **Resists obvious V→I / ii→V release** — modal hover and Shorter-style perpetual float.
+
+**Cookbook example:** [Scenario 8 — Nefertiti-Style (No Resolution)](TRITONIC_BB_COOKBOOK.md#scenario-8--nefertiti-style-no-resolution) — suspended cells, no cadential release.
+
+**Sweet spots:** **ECM** 0.75–0.95 · **Quartet (Wayne)** 0.80–0.95 · **BB** 0.40–0.60 · **Vocal / tonal** 0.15–0.35
+
+#### rhythmicDisplacement
+
+**Musically:** Nudges cell onsets **off the downbeat** — syncopated float vs locked punch.
+
+**Cookbook example:** [Scenario 37 — Samba Jazz (Bossa Offbeats)](TRITONIC_BB_COOKBOOK.md#scenario-37--samba-jazz-bossa-offbeats) — offbeat comping against straight harmonic rhythm.
+
+**Sweet spots:** **BB / funk** 0.55–0.75 · **ECM** 0.45–0.55 · **Quartet** 0.50–0.65 · **Vocal** 0.40–0.55
+
+#### anchorAdhesion
+
+**Musically:** How tightly cells **honour your chart’s chord tones** vs drifting into outside colour.
+
+**Cookbook example:** [Scenario 4 — Simple ii–V–I in C Major](TRITONIC_BB_COOKBOOK.md) — smooth SQ voice-leading through canonical changes (high adhesion). Contrast [Scenario 10 — ECM Floating (No Tonal Centre)](TRITONIC_BB_COOKBOOK.md) for low adhesion.
+
+**Sweet spots:** **Tonal / vocal** 0.65–0.85 · **Quartet** 0.45–0.65 · **ECM** 0.30–0.50 · **BB** 0.40–0.60
+
+#### motifSingability
+
+**Musically:** Prioritises **smooth, narrow-range, hummable** melodic trace vs angular upper-structure lines.
+
+**Cookbook example:** [Scenario 9 — Infant Eyes Ballad](TRITONIC_BB_COOKBOOK.md#scenario-9--infant-eyes-ballad) — slow ballad, shorter_floating cells, lead-sheet-first intent.
+
+**Sweet spots:** **Vocal** 0.70–0.90 · **ECM ballad** 0.60–0.80 · **Quartet** 0.50–0.70 · **BB** 0.35–0.55
+
+---
+
+### Quick-start presets
+
+Unlisted dials default to **0.5**. Paste into `behaviourBiases` on `TritonicRealisationContext` (API) or match in UI when sliders ship.
+
+| Preset | tension | resolutionDelay | density | registralSpread | contourBias | cadenceAvoidance | rhythmicDisplacement | anchorAdhesion | motifSingability |
+|--------|---------|-----------------|---------|-----------------|-------------|------------------|----------------------|----------------|------------------|
+| **ECM / chamber** | 0.5 | 0.7 | 0.3 | 0.5 | 0.5 | 0.8 | 0.5 | 0.5 | 0.5 |
+| **Big Band** | 0.6 | 0.4 | 0.7 | 0.7 | 0.5 | 0.5 | 0.6 | 0.5 | 0.5 |
+| **Wayne Shorter quartet** | 0.8 | 0.8 | 0.4 | 0.5 | 0.5 | 0.9 | 0.5 | 0.4 | 0.5 |
+| **Safe / tonal** | 0.3 | 0.2 | 0.5 | 0.5 | 0.5 | 0.2 | 0.5 | 0.5 | 0.8 |
+
+**Mode pairing:** ECM preset → `ecm` · Big Band → `bb` · Wayne quartet → `sq` or `ecm` · Safe/tonal → `sq` with Harmonic Float over a diatonic chart.
+
+---
+
+### Where to go deeper
+
+**[TRITONIC_BB_COOKBOOK.md](TRITONIC_BB_COOKBOOK.md)** — **60 worked scenarios** (bar-by-bar progressions + engine/behaviour notes): blues, ii–V–I, Shorter, Messiaen, cinematic, minimalist, and more. Do not duplicate those recipes here; use them as musical targets and map dials + mode to match.
+
+---
+
 ## Scenario Cookbook
 
 Practical scenario starting points across composers,
