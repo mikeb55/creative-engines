@@ -53,7 +53,8 @@ describe('buildMusicContextFromDuo', () => {
     expect(ctx.harmony.bars).toEqual(truth.upperBars.map(normalizeChordSymbol));
     expect(ctx.harmony.checksum).toBe(truth.checksum);
     expect(ctx.totalBars).toBe(truth.upperBars.length);
-    expect(ctx.receipts).toEqual([]);
+    expect(ctx.receipts.length).toBe(1);
+    expect(ctx.receipts[0]?.kind).toBe('duo_realisation_complete');
     expect(typeof ctx.provenance?.capturedAt).toBe('number');
   });
 
