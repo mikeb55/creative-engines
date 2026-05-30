@@ -40,7 +40,7 @@
 - `sourceEngineId: 'song_mode'`
 
 ### V104 — Tritonic BB Cookbook + v1.3.0 dist
-- `docs/TRITONIC_BB_COOKBOOK.md` + `.docx` — 21 scenario recipes
+- `docs/TRITONIC_BB_COOKBOOK.md` + `.docx` — 60 scenario recipes
 - Root `package.json` v1.3.0 + `ts-node` devDep
 - `musicContextAdapters.ts` Martino type fixes (V103b)
 
@@ -93,7 +93,7 @@
 - V88 practice layer · V89 composition depth
 
 ## Docs added v1.3.0
-- `docs/TRITONIC_BB_COOKBOOK.md` — 21 scenarios (blues, ii–V–I, Wayne/ECM, Bacharach, non-diatonic, BB, alt tuning, Andrew Hill)
+- `docs/TRITONIC_BB_COOKBOOK.md` — 60 scenarios (blues, ii–V–I, Wayne/ECM, Bacharach, BB, cinematic, polymodal, counterpoint, Messiaen, atonal, world/folk, minimalist)
 - `docs/TRITONIC_BB_COOKBOOK.docx` — Word export (regenerate: `node scripts/generateTritonicBbCookbookDocx.mjs`)
 
 ## Rules for continuation
