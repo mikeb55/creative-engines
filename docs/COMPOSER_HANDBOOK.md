@@ -452,6 +452,74 @@ Collapsed by default. After a run it lists the full diagnostic readout (crossing
 
 ---
 
+## Tritonic UI — Generate monitor
+
+After Generate, a **Tritonic monitor** stacks on the right when the run used Tritonic float (`tritonic`, `vault_tritonic`, or `wyble_tritonic`) or when **String Quartet** has Tritonic colour set to **Subtle** or **Active**. Same layout every time: **Harmonic Float** (scrolling anchor columns) · **active cell** card (family, tension, resolution badge, sparkline) · **Melodic Trace** (contour, hover-only detail) · **bias side rail** (full sliders before generate, compact strip after) · **Diagnostics** (collapsed strip).
+
+### Scenario 1 — Locked chart, harmonic float
+
+You imported a chart from iReal Pro or Tonality Vault. After Generate, **Harmonic Float** shows one column per anchor bar: chord symbol at the base, cell glyph above, colour for stable · colouristic · unresolved · cadence-ready, vertical position for register. Scroll the strip before export — a glowing edge on a quiet bar is a natural breath or a Bartók-style delayed landing.
+
+### Scenario 2 — Melodic trace for a vocal line
+
+In the same run, **Melodic Trace** draws the singer-safe line bold, the voice-led strand ghosted behind it, faint markers where the voicing top arrives. Hover a column for note name, interval from the previous note, and beat placement — shape first, labels only on demand. If the bold line stair-steps, nudge **Motif singability** or **Contour bias** on the side rail, then **Variation**.
+
+### Scenario 3 — Active cell, dials, and diagnostics
+
+Before a second take, read the **active cell** card: cell family, tension, resolution badge (**locked** · **near** · **eligible** · **resolving**), and a tension sparkline over the last two phrases. Open **Diagnostics** for unresolved tones, contour variety, cadence strength, and rhythmic offset mix. The rail highlights the most influential bias and the one you changed last.
+
+### The same screen, different ensembles
+
+The Tritonic monitor speaks differently depending on what you are writing for. Same panels, different questions.
+
+#### String quartet — blend and line
+
+Close-knit, voice-sensitive. The question is not just “how tense is this chord?” but “which voice is creating the colour, and is the blend still singing as one body?”
+
+**Scenario:** You are writing a warm floating intro for the four players. You check Harmonic Float to see where the colour is being created — is it the viola carrying the tension or the second violin? Then you look at Melodic Trace to make sure the first violin line still has a graceful arc rather than turning into a scale exercise. A glowing edge on a quiet chord tells you the phrase could resolve here — you might hold it one bar longer for the Bartók-style delayed arrival.
+
+#### Big band — section weight and arrival
+
+Sectional, weight-sensitive. A warm bright cluster over one anchor may mean “the brass are pressing.” A cooler wider colour suggests the reeds are carrying a smoother body of sound.
+
+**Scenario:** You are writing a shout chorus and need to decide when to let the band land. The central card tells you whether the phrase is still building or ready to arrive. The floating colours show accumulated heat — three bars of warm saturation means the band has been suspended long enough. One bar with a glowing edge: that is your hit point.
+
+**Scenario:** You are writing a Thad Jones-style soli for the saxes over a slow groove. Melodic Trace shows whether the soli line has a memorable shape or has wandered into a series of unconnected figures. If the contour keeps climbing without a release, the line will feel exhausting rather than inevitable.
+
+#### Guitar / bass duo — space and implication
+
+Exposed, conversational. Two players implying a whole harmonic world with very little material. Space between attacks matters as much as the notes themselves.
+
+**Scenario:** You are writing a rubato opening. The guitar suggests harmony, the bass answers in fragments. Melodic Trace shows whether the phrase feels singable and human. Harmonic Float shows whether the implied harmony glows with intention or simply looks incomplete. Cool settled colour over an ambiguous chord means the music is comfortable in its own mystery — that is often exactly right for this setting.
+
+**Scenario:** Orbit Suite — New Orleans sketch. The bass owns the second-line groove. The guitar floats Tritonic cells on the upper strings. Harmonic Float shows the cells arriving late behind the beat — warm colour blooming after the anchor, not on it. That delay is the whole point. If the colour appears on the downbeat, tighten the **Rhythmic displacement** slider.
+
+#### Wayne Shorter quartet — tension and narrative
+
+Suspended, story-driven. The question is always: are we moving toward something or deliberately away from it?
+
+**Scenario:** You are writing an Infant Eyes-style ballad. The harmony sits on a maj7 for two bars. Harmonic Float shows sustained warm colour — the cell is hanging above the chord, neither confirming nor contradicting it. The central card shows **near** — the phrase could resolve but has not been told to yet. You leave it. Two bars later the card shifts to **resolving** on its own. That moment is the composition.
+
+#### ECM / chamber — sparsity and atmosphere
+
+Textural, atmospheric. Less is more. Long silences between events are as important as the events themselves.
+
+**Scenario:** You are writing an ECM-style duo for guitar and cello. Most bars have one Tritonic cell, maybe two. Harmonic Float shows long gaps of cool settled colour with occasional warm blooms. The diagnostics strip shows low contour variety — the melody is staying close, almost static. That is not a problem. That is the sound.
+
+#### Diagnostics by ensemble
+
+The strip below the panels renames its priorities by context:
+
+| Context | Read first |
+|---------|------------|
+| **String quartet** | Unresolved tones · line independence |
+| **Big band** | Cadence strength · section balance |
+| **Guitar / bass duo** | Contour variety · rhythmic offset |
+| **Wayne Shorter** | Resolution delay · anchor adhesion |
+| **ECM** | Sparsity (low event density) · registral spread |
+
+---
+
 ## Scenario Cookbook
 
 Practical scenario starting points across composers,
