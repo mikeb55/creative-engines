@@ -2,6 +2,27 @@
 
 ### Added
 
+---
+
+## [1.4.0] — 2026-05-30
+
+### Added
+
+- Tritonic floats above Vault anchors (Vault × Tritonic)
+- Tritonic generates singable melody as top-line material
+- Time model separates voicingTop, projectedStrand, singerSafeMotif
+- Phrase memory + state machine + musical diagnostics
+- Nine behaviour dials steer Tritonic bias (0–1, default 0.5)
+- Big Band and New Orleans/funk MusicContext producers
+- Song Mode differentiates engines by section
+- Wayne Shorter Python bridge wired into pipeline
+
+---
+
+## [Unreleased archive — v1.4.0 development]
+
+### Added
+
 - **(2026-05-30) V104p7 — Song Mode per-section engine differentiation + Wayne Shorter Python bridge** — `SongSectionPlan.sectionEngine` (`song_mode` · `ecm_chamber` · `big_band` · `tritonic_vault` · `wayne_shorter`); `songModeSectionEngineRouter.ts` routes each section through its MusicContext producer (verse→ECM · chorus→Big Band · bridge→Tritonic vault); `buildSongModeStructureFromChordPlan` accepts `sectionEngineByKind`; assembly receipt lists `sectionEngines`. Wayne Shorter: `wayne_shorter_bridge.py` stdin JSON → Python compile → stdout harmony bars; `wayneShorterEngineBridge.ts` + `buildMusicContextFromWayneShorter()` (`sourceEngineId: 'wayne_shorter'`, receipt `wayne_shorter_realisation_complete`, checksum after `normalizeChordSymbol`). Always-on. Jest **`songMode.test.ts`** (+4) · **`wayneShorterMusicContext.test.ts`**.
 
 - **(2026-05-30) COMPOSER_HANDBOOK.docx** — `scripts/generateComposerHandbookDocx.mjs` regenerates **`docs/COMPOSER_HANDBOOK.docx`** from **`docs/COMPOSER_HANDBOOK.md`** (title page, TOC, heading hierarchy, tables, page numbers).

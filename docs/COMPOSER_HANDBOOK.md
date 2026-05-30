@@ -347,6 +347,61 @@ Unlisted dials default to **0.5**. Paste into `behaviourBiases` on `TritonicReal
 
 ---
 
+## Song Mode — per-section engines
+
+Long-form Song Mode can **change engine family at section boundaries** while keeping one chart. Think of each section as answering three questions before you generate.
+
+### 1. What should this section feel like?
+
+Pick the emotional posture first — not the dropdown label.
+
+| Feel | What you hear | Typical section |
+|------|---------------|-----------------|
+| **Stable** | Locked harmony, songwriter slice owns the bars | Intro, outro, tag |
+| **Suspended** | Modal hover, delayed cadence, space between chords | Verse (ballad), bridge (ECM) |
+| **Eruptive** | Brass punch, dense comping, forward motion | Chorus, shout |
+| **Floating** | Upper-structure colour over unchanged anchors | Bridge, Wayne-style interlude |
+| **Singable** | Narrow-range motif you can hum; harmony stays underneath | Melodic trace, vocal demo |
+
+### 2. What carries continuity across sections?
+
+Not everything resets at a rehearsal mark. Decide what **must** persist:
+
+- **Rhythm** — pulse, swing feel, bossa subdivision, odd-meter map
+- **Interval family** — quartal vs stepwise vs cluster vocabulary (Tritonic cell family)
+- **Motif contour** — phrase memory and singer-safe line shape
+- **Harmony colour** — same chord roots with different upper-structure treatment
+
+If you change engine at a boundary but keep **rhythm + harmony roots**, the form still reads as one song. If you change **interval family + motif contour** without a transition, listeners hear a hard cut — sometimes intentional (Scenario Cookbook §1.1), sometimes jarring.
+
+### 3. What is allowed to change at the section boundary?
+
+These may switch per section without breaking LOCK:
+
+- **Engine family** — `song_mode` · `ecm_chamber` · `big_band` · `tritonic_vault` · `wayne_shorter`
+- **Behaviour dial profile** — nine Tritonic biases (0–1); e.g. high `cadenceAvoidance` on bridge, low on chorus
+- **Strand priority** — harmonic float (`voicingTop`) vs melodic trace (`singerSafeMotif`) vs voice-led line (`projectedStrand`)
+
+Harmony **checksum** still locks after normalisation — section engines colour or realise bars; they do not silently rewrite pasted symbols.
+
+### Section type → recommended engine → feel
+
+Illustrative defaults when you do not set `sectionEngine` explicitly. Override any row when the dramaturgy demands it.
+
+| Section type | Recommended engine | Feel |
+|--------------|-------------------|------|
+| **Intro / tag** | `song_mode` | Stable — songwriter slice harmony, familiar entry |
+| **Verse** | `ecm_chamber` | Suspended — sparse or resonant ECM texture over verse changes |
+| **Pre-chorus** | `song_mode` or `ecm_chamber` | Stable → suspended lift; keep roots, thin the texture |
+| **Chorus** | `big_band` | Eruptive — brass punch or Freddie Green shell, forward energy |
+| **Bridge** | `tritonic_vault` | Floating — Vault anchors + Tritonic cells above (ECM or SQ mode) |
+| **Wayne interlude** | `wayne_shorter` | Floating — Python bridge compile; modal colour, delayed resolution |
+| **Outro / coda** | `ecm_chamber` or `song_mode` | Suspended or stable — release tension, do not re-shout |
+
+**Practical pairing:** verse ECM + chorus Big Band + bridge Tritonic vault is the shipped illustration (feel: intimate → anthem → float). For a vocal demo, set bridge to Tritonic **Melodic Trace** and raise `motifSingability` on the dials.
+
+---
+
 ## Scenario Cookbook
 
 Practical scenario starting points across composers,

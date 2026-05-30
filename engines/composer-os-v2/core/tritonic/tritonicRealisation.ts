@@ -31,7 +31,7 @@ import {
   createTritonicStateMachine,
   type TritonicStateMachine,
 } from './tritonicStateMachine';
-import { nudgeTimelineForBehaviourBiases, scheduleTritonicTimeline, type TritonicTimelineEvent } from './tritonicTimeline';
+import { scheduleTritonicTimeline, type TritonicTimelineEvent } from './tritonicTimeline';
 import { getVoiceLeadingCandidates } from './tritonicVoiceLeading';
 
 export type TritonicRealisationMode = 'bb' | 'sq' | 'ecm';
