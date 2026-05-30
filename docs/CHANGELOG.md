@@ -2,6 +2,29 @@
 
 ### Added
 
+---
+
+## [1.5.0] — 2026-05-30
+
+### Added
+
+- String Quartet MusicContext producer (7 textures, 4-layer voice-leading, Tritonic integration)
+- String Quartet Generate UI (texture cards, Tritonic colour, status chips)
+- Wyble × Tritonic harmony feed (AnchorDescriptor, phrase-level state machine)
+- Full dual-guitar lower voice (role resolver, 3 topologies, intent modes)
+- Monk Python engine (chromatic neighbours, tritone shifts, rhythmic motifs)
+- V88 practice layer (any MusicContext → practice curriculum)
+- V89 composition depth (harmonic arcs, motivic transformations, reharmonisation)
+- VaultMicroscope + FretboardPanel on Generate
+- Tritonic monitor UI (Harmonic Float + Melodic Trace)
+- Producer UI reorganised into 3 lanes (Song & Chart · Study & Pattern · Texture & Arrangement)
+
+---
+
+## [Unreleased archive — v1.5.0 development]
+
+### Added
+
 - **(2026-05-30) V1.5p10 — Generate producer lanes (3-lane chooser)** — **`HomeGenerate.tsx`**: flat Mode dropdown replaced with three lanes (**Song & Chart** · **Study & Pattern** · **Texture & Arrangement**), tile producers per lane, selection blurb per lane, shared strip (**harmony** · **time** · **seed** · **export integrity**), always-on Tritonic **Float over** line. New **`generateProducerLanes.ts`**, **`GenerateProducerLaneChooser.tsx`**, **`GenerateSharedContextStrip.tsx`**. UI-only — existing preset/generate paths unchanged. Jest **`generateProducerLanes.test.ts`** (+5).
 
 - **(2026-05-30) V1.5p9 — Tritonic monitor UI (Harmonic Float + Melodic Trace)** — Right-hand **`TritonicMonitorPanel`** on **`HomeGenerate.tsx`** when `sourceEngineId` is `tritonic` · `vault_tritonic` · `wyble_tritonic` (or String Quartet with Tritonic colour active pre-generate): scrolling harmonic-float anchor columns · melodic-trace SVG (singer-safe bold · projected ghost · voicing-top markers, hover-only note detail) · active-cell card + tension sparkline · bias side rail (full pre-generate · compact after) · collapsed diagnostics strip. Engine: **`tritonicMonitorSnapshot.ts`** + **`tritonicMonitorPanels.ts`**; `monitorSnapshot` on tritonic melody/vault/wyble receipts. Jest **`tritonicMonitorSnapshot.test.ts`** · **`tritonicMonitorPanels.test.ts`**.

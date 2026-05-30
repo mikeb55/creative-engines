@@ -4,6 +4,22 @@ Practical notes for **using** Composer OS—generation, evaluation, and quality 
 
 ---
 
+## ECM VRB — room character (header chip)
+
+**VRB** in the app header (**`VRB: Nordic Studio`**) is **not** a reverb plugin and **not** the harmonic **VoiceRuleBundle** roster below. It is an **ECM Records–style room profile**: how dry or spacious the generated material should feel — room size, decay tail, early reflections, damping. Composer OS passes this as metadata on every generate call so exports and downstream scoring share one acoustic “stage.”
+
+**Default — Nordic Studio** — Manfred Eicher signature sound: dry focus, long tail, restrained early reflections. **roomSize 0.42** · **decay 1.8 s** · **predelay 12 ms** · damping 0.55 · diffusion 0.62.
+
+**Other rooms:** Stone Church Oslo · Infinite Hall · Close Dry · Distant Bloom · Cathedral Fade · **— Off —** (no VRB on generate).
+
+**Where to change it:** **Structure** tab → **ECM VRB** panel (**`VrbPanel`**). Header chip click jumps there. Sliders unlock when **Lock to Preset** is off.
+
+**Generation:** Active profile is sent as **`vrbProfile`** on every **`GenerateRequest`** (preset id, name, room params, character string). Off = field omitted.
+
+Presets live in **`src/engine/ecmVrb.js`**; app state in **`VrbProfileContext`** (default **`nordic_studio`**).
+
+---
+
 ## VoiceRuleBundle (VRB) fingerprint status
 
 Compiled harmonic voice bundles live in **`engines/composer-os-v2/core/composer/voiceRuleBundles.ts`**. Optional **`orchestrationPolicy.fingerprintReceipts`** are **research-derived orchestration planning lines** (not the same thing as **GCE structural memory** JSON fingerprints in **`gce-memory/fingerprints/`**). **`getVoiceRuleBundle(id)`** returns the bundle for harmonic-voice / BB pairing; unknown ids fall back to **`neutral`** (no receipts).
