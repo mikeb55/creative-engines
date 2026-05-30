@@ -2,7 +2,7 @@
 
 ### Added
 
-- **(2026-05-30) V104p1 — Vault × Tritonic integration** — `tritonicRealisation.ts`: `isVaultMusicContext`, `realiseTritonicFromVault`, `vaultAnchoredTritonicToMusicContext`, `buildMusicContextFromVaultTritonic`; one floating cell per vault anchor bar (voice-led); `harmony.bars` stays vault anchors with shared checksum LOCK; `tritonic_vault_realisation_complete` receipt. Always-on — no feature flag. Jest **`tritonicRealisation.test.ts`** (+6 vault cases).
+- **(2026-05-30) V104p2 — Tritonic melody generation** — `tritonicMelody.ts`: `extractSingableMelodyMidis`, `melodyMidisToCoreMotif`, `buildMusicContextFromTritonicMelody`; voice-led top-voice lane (≤6 semitone steps) → `MusicContextMotif` with `seedPitches` / `anchorMidi`; harmony via `normalizeChordSymbol` + checksum; receipt `tritonic_melody_complete`. `MusicContextMotif.producer` adds `'tritonic'`. Always-on. Jest **`tritonicMelody.test.ts`**.
 
 - **(2026-05-29) V103b — Song Mode MusicContext handoff** — `composerOsAppGeneration.ts` `runSongStructure`: when `sm.compiledSong.chordPlan` non-empty → `songModeLockedMusicContextFromGoldenPath` (`buildSongModeStructureFromChordPlan` → `buildSongModeResult` → `lockSongMode` → `assertSongModeLock` → `projectSongModeLock`); empty chordPlan → duo LOCK fallback unchanged. V103a exports `buildSongModeResult`, `projectSongModeLock`, `SongModeResult`. Jest **`songMode.test.ts`** (+5 handoff cases). **`musicContextAdapters.ts`** Martino type fixes + root **`ts-node`** devDep for full tier.
 

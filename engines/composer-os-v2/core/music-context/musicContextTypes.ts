@@ -18,7 +18,7 @@ export interface MusicContextMotif {
   contourPattern: number[];
   anchorMidi?: number;
   seedPitches?: number[];
-  producer: 'riff' | 'song_mode' | 'martino' | 'user';
+  producer: 'riff' | 'song_mode' | 'martino' | 'user' | 'tritonic';
 }
 
 export interface MusicContextReceipt {
