@@ -16,6 +16,8 @@ import {
 import type { MusicContext, MusicContextHarmony } from '../music-context/musicContextTypes';
 import { wybleEtudeKeyRootName } from '../music-context/wybleEtudePresetProgressions';
 import type { TritonicCell, TritonicCellFamily } from './tritonicCell';
+import { tritonicDiagnosticsReceiptFields } from './tritonicDiagnostics';
+import { projectedStrandMidisFromCells } from './tritonicStrands';
 import { applyWayneBehaviour, type WayneBehaviourOptions } from './tritonicBehaviourLayer';
 import { scheduleTritonicTimeline, type TritonicTimelineEvent } from './tritonicTimeline';
 import { getVoiceLeadingCandidates } from './tritonicVoiceLeading';
@@ -284,6 +286,14 @@ export function vaultAnchoredTritonicToMusicContext(
     source: vaultCtx.harmony.source,
   };
 
+  const cells = result.phrases.flat();
+  const diagnosticFields = tritonicDiagnosticsReceiptFields({
+    cells,
+    timeline: result.timeline,
+    anchorBars: result.anchorBars,
+    strandMidis: projectedStrandMidisFromCells(cells),
+  });
+
   return {
     ...vaultCtx,
     presetId: `tritonic_vault_${result.mode}`,
@@ -305,6 +315,11 @@ export function vaultAnchoredTritonicToMusicContext(
           floatingChecksum: result.checksum,
           barCount: harmonyBars.length,
           timelineEventCount: result.timeline.length,
+          unresolvedToneCount: diagnosticFields.unresolvedToneCount,
+          contourVariety: diagnosticFields.contourVariety,
+          cadenceStrength: diagnosticFields.cadenceStrength,
+          rhythmicOffsetDistribution: diagnosticFields.rhythmicOffsetDistribution,
+          phraseState: diagnosticFields.phraseState,
         },
       },
     ],

@@ -19,7 +19,9 @@ import {
 import {
   extractSingableMelodyMidis,
   extractTritonicStrands,
+  projectedStrandMidisFromCells,
 } from './tritonicStrands';
+import { tritonicDiagnosticsReceiptFields } from './tritonicDiagnostics';
 
 export { extractSingableMelodyMidis } from './tritonicStrands';
 
@@ -73,6 +75,13 @@ export function buildMusicContextFromTritonicMelody(
   motif.anchorMidi = singerMidis[0];
   motif.seedPitches = [...singerMidis];
 
+  const diagnosticFields = tritonicDiagnosticsReceiptFields({
+    cells,
+    timeline: result.timeline,
+    harmonyBars,
+    strandMidis: projectedStrandMidisFromCells(cells),
+  });
+
   return {
     ...base,
     seed: params?.seed ?? 0,
@@ -102,6 +111,11 @@ export function buildMusicContextFromTritonicMelody(
             projectedStrand: strands.projectedStrand.length,
             singerSafeMotif: strands.singerSafeMotif.length,
           },
+          unresolvedToneCount: diagnosticFields.unresolvedToneCount,
+          contourVariety: diagnosticFields.contourVariety,
+          cadenceStrength: diagnosticFields.cadenceStrength,
+          rhythmicOffsetDistribution: diagnosticFields.rhythmicOffsetDistribution,
+          phraseState: diagnosticFields.phraseState,
         },
       },
     ],

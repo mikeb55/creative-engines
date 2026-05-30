@@ -2,7 +2,7 @@
 
 ### Added
 
-- **(2026-05-30) V104p3 — Tritonic time model + three strands** — `tritonicTimeline.ts` (`TritonicTimelineEvent`, `scheduleTritonicTimeline`, 0..n cells/bar, spans, overlap); `tritonicStrands.ts` (`voicingTop`, `projectedStrand`, `singerSafeMotif`); `TritonicRealisationResult.timeline`; melody producer uses singer-safe strand + timeline rhythm. Always-on. Jest **`tritonicTimeline.test.ts`**, **`tritonicStrands.test.ts`**.
+- **(2026-05-30) V104p4 — Tritonic diagnostics + state machine** — `tritonicDiagnostics.ts` (unresolvedToneCount, contourVariety, cadenceStrength, rhythmicOffsetDistribution); `tritonicStateMachine.ts` (`TritonicStateMachine`, phrase memory across cell transitions); both `tritonic_vault_realisation_complete` and `tritonic_melody_complete` receipts carry diagnostics + `phraseState`. Always-on. Jest **`tritonicDiagnostics.test.ts`**.
 
 - **(2026-05-29) V103b — Song Mode MusicContext handoff** — `composerOsAppGeneration.ts` `runSongStructure`: when `sm.compiledSong.chordPlan` non-empty → `songModeLockedMusicContextFromGoldenPath` (`buildSongModeStructureFromChordPlan` → `buildSongModeResult` → `lockSongMode` → `assertSongModeLock` → `projectSongModeLock`); empty chordPlan → duo LOCK fallback unchanged. V103a exports `buildSongModeResult`, `projectSongModeLock`, `SongModeResult`. Jest **`songMode.test.ts`** (+5 handoff cases). **`musicContextAdapters.ts`** Martino type fixes + root **`ts-node`** devDep for full tier.
 
