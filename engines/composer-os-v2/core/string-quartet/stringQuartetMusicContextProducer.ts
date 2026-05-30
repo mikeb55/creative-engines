@@ -3,13 +3,22 @@
  */
 
 import { normalizeChordSymbol } from '../harmony/chordSymbolAnalysis';
+import type { PitchClass } from '../harmony/pitchFieldSpineTypes';
 import {
   barsFromHarmonyTemplate,
   type HarmonyBarTemplate,
 } from '../music-context/compingHarmonyTemplates';
-import { computeMusicContextChecksum } from '../music-context/musicContextAdapters';
+import {
+  computeMusicContextChecksum,
+  keyPcFromRoot,
+  normalizeKeyRoot,
+} from '../music-context/musicContextAdapters';
 import { wybleEtudeKeyRootName } from '../music-context/wybleEtudePresetProgressions';
 import type { MusicContext, MusicContextHarmony } from '../music-context/musicContextTypes';
+import {
+  resolveTritonicBehaviourBiases,
+  type TritonicBehaviourBiases,
+} from '../tritonic/tritonicBehaviourBiases';
 import {
   assignStringQuartetRoles,
   computeStringQuartetRealisationDiagnostics,
@@ -18,8 +27,45 @@ import {
 } from './stringQuartetMusicContextRealisation';
 import type {
   StringQuartetMusicContextPreset,
+  StringQuartetTritonicColour,
   StringQuartetTextureArchetype,
 } from './stringQuartetMusicContextTypes';
+
+export type StringQuartetMusicContextGenerateInput = {
+  tonalCenter?: string;
+  bpm?: number;
+  seed: number;
+  textureArchetype?: StringQuartetTextureArchetype;
+  tritonicColour?: StringQuartetTritonicColour;
+  tritonicBehaviourBiases?: Partial<TritonicBehaviourBiases>;
+};
+
+function defaultBiasesForColour(colour: StringQuartetTritonicColour): Partial<TritonicBehaviourBiases> {
+  if (colour === 'active') {
+    return { tension: 0.65, density: 0.6, registralSpread: 0.7 };
+  }
+  if (colour === 'subtle') {
+    return { tension: 0.45, registralSpread: 0.55 };
+  }
+  return {};
+}
+
+function resolvePresetFromGenerateInput(input: StringQuartetMusicContextGenerateInput): StringQuartetMusicContextPreset {
+  const tonal = input.tonalCenter?.trim() || 'C';
+  const { root } = normalizeKeyRoot(tonal);
+  const colour = input.tritonicColour ?? 'subtle';
+  return {
+    key: keyPcFromRoot(root) as PitchClass,
+    tempo: input.bpm ?? 120,
+    seed: input.seed,
+    textureArchetype: input.textureArchetype ?? 'arco_melody_accompaniment',
+    tritonicColour: colour,
+    tritonicBehaviourBiases: resolveTritonicBehaviourBiases({
+      ...defaultBiasesForColour(colour),
+      ...input.tritonicBehaviourBiases,
+    }),
+  };
+}
 
 const SQ_HARMONY_TEMPLATES: Record<StringQuartetTextureArchetype, readonly HarmonyBarTemplate[]> = {
   chorale: [
@@ -108,6 +154,13 @@ function resolveStringQuartetHarmonyRawBars(preset: StringQuartetMusicContextPre
   return barsFromHarmonyTemplate(preset.key, SQ_HARMONY_TEMPLATES[preset.textureArchetype]);
 }
 
+/** Generate-request surface → preset (key/tempo inherit project fields). */
+export function buildStringQuartetMusicContextFromGenerateInput(
+  input: StringQuartetMusicContextGenerateInput,
+): MusicContext {
+  return buildMusicContextFromStringQuartet(resolvePresetFromGenerateInput(input));
+}
+
 /** MusicContext snapshot from String Quartet preset; harmony normalised before checksum. */
 export function buildMusicContextFromStringQuartet(
   preset: StringQuartetMusicContextPreset,
@@ -120,12 +173,18 @@ export function buildMusicContextFromStringQuartet(
   };
   const root = wybleEtudeKeyRootName(preset.key);
   const tempo = preset.tempo > 0 ? preset.tempo : DEFAULT_TEMPO[preset.textureArchetype];
+  const tritonicColour = preset.tritonicColour ?? 'subtle';
+  const resolvedBiases = resolveTritonicBehaviourBiases({
+    ...defaultBiasesForColour(tritonicColour),
+    ...preset.tritonicBehaviourBiases,
+  });
   const roles = assignStringQuartetRoles(preset.seed);
   const realisedBars = solveStringQuartetVoiceLeading({
     harmonyBars,
     seed: preset.seed,
     texture: preset.textureArchetype,
     roles,
+    tritonicColour,
   });
   const diagnostics = computeStringQuartetRealisationDiagnostics(realisedBars, harmonyBars);
 
@@ -150,7 +209,9 @@ export function buildMusicContextFromStringQuartet(
         payload: {
           textureArchetype: preset.textureArchetype,
           roles,
-          tritonicFloatEnabled: tritonicFloatEnabled(preset.textureArchetype),
+          tritonicColour,
+          tritonicBehaviourBiases: resolvedBiases,
+          tritonicFloatEnabled: tritonicFloatEnabled(preset.textureArchetype, tritonicColour),
           barCount: harmonyBars.length,
           harmonyChecksum: harmony.checksum,
           bpm: tempo,

@@ -402,6 +402,56 @@ Illustrative defaults when you do not set `sectionEngine` explicitly. Override a
 
 ---
 
+## String Quartet — Generate panel
+
+When you choose the **String Quartet** preset, the primary panel shapes **how the four voices behave** before you hit Generate. Pick a **texture** first — that is the musical goal. Key, tempo, and Tritonic colour refine the same plan; they do not replace it.
+
+**Defaults:** texture **Arco melody + accompaniment** · Tritonic colour **Subtle** · key and tempo follow your project settings (empty key → **C**).
+
+### Texture cards (pick one)
+
+Each card is a whole ensemble posture for the run. One line under the row updates when you change selection.
+
+| Card | What you hear |
+|------|----------------|
+| **Chorale** | Four voices breathe as one sustained blend — hymn-like vertical warmth. |
+| **Arco melody + accompaniment** | A singing top line over supportive inner parts (default). |
+| **Pad suspension** | Long tones and suspended colour; air between chord changes. |
+| **Pizzicato pulse** | Short, articulated rhythm in the lower three; lift in the top if needed. |
+| **Tremolo wash** | Shimmer and energy matter more than spelling every chord change. |
+| **Contrapuntal weave** | Independent lines that imply harmony through motion. |
+| **Duet support** | Two voices in front; viola and cello anchor register and pulse. |
+
+### Tritonic colour
+
+Three settings — how much **floating upper colour** sits above the locked harmony:
+
+- **None** — grounded quartet only; no Tritonic float (even on suspended or contrapuntal textures).
+- **Subtle** — light harmonic colour on the top line and one inner voice (default).
+- **Active** — stronger float; use when you want Wayne-style upper-structure motion without rewriting the chart.
+
+With **Subtle** or **Active**, open **Edit behaviour ▼** to nudge nine musical dials (tension, spacing, cadence delay, and similar). These steer feel; they do not replace the texture card.
+
+### Seed and Variation
+
+The seed stays fixed until you press **Variation** — same seed, same plan. Use Variation when you want a fresh layout without changing texture or colour.
+
+### After Generate — status chips
+
+When export succeeds, three chips summarise the realisation:
+
+| Chip | Good sign | Watch for |
+|------|-----------|-----------|
+| **Smooth lines** | Stepwise, singable motion in the parts | **Rough** — many leaps; try a calmer texture or lower tension |
+| **Spacing** | Registers stay open; bass not crowded | **Crowded** — inner voices too tight in the low register |
+| **Crossings & parallels** | Clean voice order and outer-voice motion | **Needs attention** — crossings or exposed parallel fifths/octaves |
+
+### Advanced panel
+
+Collapsed by default. After a run it lists the full diagnostic readout (crossings, crowding, leap averages, harmonic completeness, texture stability). If Tritonic colour is on, the same panel repeats the **behaviour sliders** for fine tuning between takes.
+
+---
+
 ## Scenario Cookbook
 
 Practical scenario starting points across composers,

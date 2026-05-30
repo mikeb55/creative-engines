@@ -75,6 +75,16 @@ import {
 } from '../types/slonimskySongModeState';
 import { SlonimskySongModePanel } from '../components/slonimsky/SlonimskySongModePanel';
 import { SlonimskySqBbHybridPanel } from '../components/slonimsky/SlonimskySqBbHybridPanel';
+import {
+  StringQuartetGeneratePanel,
+  defaultSqBiasesForColour,
+  type SqRealisationReceiptPayload,
+} from '../components/string-quartet/StringQuartetGeneratePanel';
+import type {
+  StringQuartetTextureArchetype,
+  StringQuartetTritonicColour,
+} from '../../../../engines/composer-os-v2/core/string-quartet/stringQuartetMusicContextTypes';
+import type { TritonicBehaviourBiases } from '../../../../engines/composer-os-v2/core/tritonic/tritonicBehaviourBiases';
 import MartinoPanel from '../renderer/components/MartinoPanel.jsx';
 import {
   SharedMusicContextReadyBadge,
@@ -2178,6 +2188,14 @@ export function HomeGenerate({
   const [ecmMode, setEcmMode] = useState<'ECM_METHENY_QUARTET' | 'ECM_SCHNEIDER_CHAMBER'>(
     'ECM_METHENY_QUARTET'
   );
+  const [sqTextureArchetype, setSqTextureArchetype] =
+    useState<StringQuartetTextureArchetype>('arco_melody_accompaniment');
+  const [sqTritonicColour, setSqTritonicColour] = useState<StringQuartetTritonicColour>('subtle');
+  const [sqBehaviourBiases, setSqBehaviourBiases] = useState<TritonicBehaviourBiases>(() =>
+    defaultSqBiasesForColour('subtle'),
+  );
+  const [sqBehaviourOpen, setSqBehaviourOpen] = useState(false);
+  const [sqAdvancedOpen, setSqAdvancedOpen] = useState(false);
   const [baseSeed, setBaseSeed] = useState(() => Math.floor(Math.random() * 1e9));
   const [variationId, setVariationId] = useState('v-1');
   const [tonalCenter, setTonalCenter] = useState('');
@@ -2745,6 +2763,13 @@ export function HomeGenerate({
   }
 
   const ensembleSongFormPreset = presetId === 'big_band' || presetId === 'string_quartet';
+  const sqRealisationReceipt = useMemo((): SqRealisationReceiptPayload | undefined => {
+    if (presetId !== 'string_quartet' || !result?.musicContext?.receipts) return undefined;
+    const receipt = result.musicContext.receipts.find(
+      (r) => r.kind === 'string_quartet_realisation_complete',
+    );
+    return receipt?.payload as SqRealisationReceiptPayload | undefined;
+  }, [presetId, result?.musicContext?.receipts]);
   const songFormBarPreset =
     presetId === 'song_mode' ||
     presetId === 'guitar_bass_duo' ||
@@ -3958,6 +3983,17 @@ export function HomeGenerate({
           ...(presetId === 'string_quartet' && sqBlendPreview
             ? { sqArrangerVrb: sqBlendPreview }
             : {}),
+          ...(presetId === 'string_quartet'
+            ? {
+                stringQuartetMusicContext: {
+                  textureArchetype: sqTextureArchetype,
+                  tritonicColour: sqTritonicColour,
+                  ...(sqTritonicColour !== 'none'
+                    ? { tritonicBehaviourBiases: sqBehaviourBiases }
+                    : {}),
+                },
+              }
+            : {}),
           ...(uiInstrumentGroup === 'big_band'
             ? {
                 drumIntensity,
@@ -4250,6 +4286,9 @@ export function HomeGenerate({
       sqArrangerGenerateBlocked,
       sqArrangerBlendUiMessage,
       sqBlendPreview,
+      sqTextureArchetype,
+      sqTritonicColour,
+      sqBehaviourBiases,
       era,
       ensembleConfigId,
       presetId,
@@ -5572,6 +5611,35 @@ export function HomeGenerate({
         </div>
       )}
 
+      {presetId === 'string_quartet' && (
+        <StringQuartetGeneratePanel
+          textureArchetype={sqTextureArchetype}
+          onTextureArchetypeChange={setSqTextureArchetype}
+          tonalCenter={tonalCenter}
+          onTonalCenterChange={setTonalCenter}
+          bpm={bpm}
+          onBpmChange={setBpm}
+          tritonicColour={sqTritonicColour}
+          onTritonicColourChange={(c) => {
+            setSqTritonicColour(c);
+            setSqBehaviourBiases(defaultSqBiasesForColour(c));
+            if (c === 'none') setSqBehaviourOpen(false);
+          }}
+          behaviourBiases={sqBehaviourBiases}
+          onBehaviourBiasChange={(key, value) =>
+            setSqBehaviourBiases((prev) => ({ ...prev, [key]: value }))
+          }
+          behaviourDisclosureOpen={sqBehaviourOpen}
+          onBehaviourDisclosureToggle={() => setSqBehaviourOpen((o) => !o)}
+          seed={baseSeed}
+          onVariation={() => setBaseSeed(Math.floor(Math.random() * 1e9))}
+          advancedOpen={sqAdvancedOpen}
+          onAdvancedToggle={() => setSqAdvancedOpen((o) => !o)}
+          resultReceipt={sqRealisationReceipt}
+          disabled={loading}
+        />
+      )}
+
       {(presetId === 'song_mode' || presetId === 'big_band' || presetId === 'string_quartet') && (
         <div style={{ marginBottom: '1rem', maxWidth: 560 }}>
           <span
@@ -5681,6 +5749,7 @@ export function HomeGenerate({
         </div>
       )}
 
+      {presetId !== 'string_quartet' && (
       <div style={{ marginBottom: '1rem' }}>
         <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
           Tonal centre / key
@@ -5715,6 +5784,7 @@ export function HomeGenerate({
           }}
         />
       </div>
+      )}
 
       {(presetId === 'guitar_bass_duo' ||
         presetId === 'guitar_bass_duo_single_line' ||
@@ -5970,6 +6040,7 @@ export function HomeGenerate({
       )}
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
+        {presetId !== 'string_quartet' && (
         <div>
           <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
             Tempo (BPM)
@@ -5991,6 +6062,7 @@ export function HomeGenerate({
             }}
           />
         </div>
+        )}
         <div>
           <label style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: 0.9 }}>
             Number of bars

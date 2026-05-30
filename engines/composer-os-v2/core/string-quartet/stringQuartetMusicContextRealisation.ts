@@ -17,6 +17,7 @@ import type {
   StringQuartetPartLeapStats,
   StringQuartetRealisationDiagnostics,
   StringQuartetRoleAssignment,
+  StringQuartetTritonicColour,
   StringQuartetTextureArchetype,
   StringQuartetViolaRole,
   StringQuartetViolin1Role,
@@ -76,7 +77,11 @@ export function assignStringQuartetRoles(seed: number): StringQuartetRoleAssignm
   };
 }
 
-export function tritonicFloatEnabled(texture: StringQuartetTextureArchetype): boolean {
+export function tritonicFloatEnabled(
+  texture: StringQuartetTextureArchetype,
+  colour: StringQuartetTritonicColour = 'subtle',
+): boolean {
+  if (colour === 'none') return false;
   if (texture === 'chorale') return false;
   return texture === 'pad_suspension' || texture === 'contrapuntal_weave';
 }
@@ -162,11 +167,12 @@ export function solveStringQuartetVoiceLeading(params: {
   seed: number;
   texture: StringQuartetTextureArchetype;
   roles: StringQuartetRoleAssignment;
+  tritonicColour?: StringQuartetTritonicColour;
 }): StringQuartetRealisedBar[] {
-  const { harmonyBars, seed, texture, roles } = params;
+  const { harmonyBars, seed, texture, roles, tritonicColour = 'subtle' } = params;
   const rng = mulberry32(seed >>> 0);
   const cells = buildTritonicDictionary().cells;
-  const floatEnabled = tritonicFloatEnabled(texture);
+  const floatEnabled = tritonicFloatEnabled(texture, tritonicColour);
   const floatInner = innerFloatPart(seed);
   const duration = TEXTURE_NOTE_DURATION[texture];
   const bars: StringQuartetRealisedBar[] = [];

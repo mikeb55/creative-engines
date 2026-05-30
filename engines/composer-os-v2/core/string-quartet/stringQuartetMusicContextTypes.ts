@@ -3,6 +3,9 @@
  */
 
 import type { PitchClass } from '../harmony/pitchFieldSpineTypes';
+import type { TritonicBehaviourBiases } from '../tritonic/tritonicBehaviourBiases';
+
+export type StringQuartetTritonicColour = 'none' | 'subtle' | 'active';
 
 export type StringQuartetTextureArchetype =
   | 'chorale'
@@ -41,6 +44,9 @@ export interface StringQuartetMusicContextPreset {
   tempo: number;
   seed: number;
   textureArchetype: StringQuartetTextureArchetype;
+  /** Default subtle — None suppresses Tritonic float regardless of texture. */
+  tritonicColour?: StringQuartetTritonicColour;
+  tritonicBehaviourBiases?: Partial<TritonicBehaviourBiases>;
 }
 
 export interface StringQuartetPartLeapStats {

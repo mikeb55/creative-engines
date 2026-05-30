@@ -69,7 +69,7 @@ describe('buildMusicContextFromStringQuartet', () => {
         textureArchetype,
         barCount: 8,
         bpm: 100,
-        tritonicFloatEnabled: tritonicFloatEnabled(textureArchetype),
+        tritonicFloatEnabled: tritonicFloatEnabled(textureArchetype, 'subtle'),
         voiceCrossingCount: expect.any(Number),
         lowRegisterCrowdingCount: expect.any(Number),
         outerVoiceParallelsCount: expect.any(Number),
@@ -101,6 +101,14 @@ describe('buildMusicContextFromStringQuartet', () => {
     const ctx = buildMusicContextFromStringQuartet(samplePreset({ textureArchetype: 'chorale' }));
     const receipt = ctx.receipts.find((r) => r.kind === 'string_quartet_realisation_complete');
     expect(receipt?.payload).toMatchObject({ tritonicFloatEnabled: false });
+  });
+
+  it('tritonicColour none suppresses float even on pad_suspension', () => {
+    const ctx = buildMusicContextFromStringQuartet(
+      samplePreset({ textureArchetype: 'pad_suspension', tritonicColour: 'none' }),
+    );
+    const receipt = ctx.receipts.find((r) => r.kind === 'string_quartet_realisation_complete');
+    expect(receipt?.payload).toMatchObject({ tritonicFloatEnabled: false, tritonicColour: 'none' });
   });
 
   it('assigns roles per instrument in receipt payload', () => {

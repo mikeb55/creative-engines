@@ -247,6 +247,25 @@ export interface StringQuartetConfigPayload {
   voices: Array<Record<string, unknown>>;
 }
 
+/** V105p2 — String Quartet MusicContext producer surface (Generate UI). */
+export type StringQuartetTritonicColour = 'none' | 'subtle' | 'active';
+
+export interface StringQuartetMusicContextPayload {
+  textureArchetype: string;
+  tritonicColour: StringQuartetTritonicColour;
+  tritonicBehaviourBiases?: Partial<{
+    tension: number;
+    resolutionDelay: number;
+    density: number;
+    registralSpread: number;
+    contourBias: number;
+    cadenceAvoidance: number;
+    rhythmicDisplacement: number;
+    anchorAdhesion: number;
+    motifSingability: number;
+  }>;
+}
+
 /** V67 P2 — Contrapuntal generation UI (Ensemble tab). */
 export interface ContrapuntalConfigPayload {
   voiceCount: number;
@@ -484,6 +503,8 @@ export interface GenerateRequest {
   bigBandConfig?: BigBandConfigPayload;
   /** V67 P1 — String quartet ensemble panel (Ensemble tab). */
   stringQuartetConfig?: StringQuartetConfigPayload;
+  /** V105p2 — String Quartet MusicContext producer (Generate primary panel). */
+  stringQuartetMusicContext?: StringQuartetMusicContextPayload;
   /** V67 P2 — Contrapuntal panel (Ensemble tab). */
   contrapuntalConfig?: ContrapuntalConfigPayload;
   /** V69 P1 — Martino Linear Expressions preset config. */

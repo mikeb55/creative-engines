@@ -409,6 +409,67 @@ function coerceStringQuartetConfigFromBody(
   return { voicingStyle, texture, stylePreset, voices: voices as Array<Record<string, unknown>> };
 }
 
+const SQ_TEXTURE_ARCHETYPES = new Set([
+  'chorale',
+  'arco_melody_accompaniment',
+  'pad_suspension',
+  'pizzicato_pulse',
+  'tremolo_wash',
+  'contrapuntal_weave',
+  'duet_support',
+]);
+
+const SQ_TRITONIC_COLOURS = new Set(['none', 'subtle', 'active']);
+
+function coerceStringQuartetMusicContextFromBody(
+  body: Partial<GenerateRequest>,
+): GenerateRequest['stringQuartetMusicContext'] {
+  const raw = (body as { stringQuartetMusicContext?: unknown }).stringQuartetMusicContext;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const textureArchetype =
+    typeof o.textureArchetype === 'string' && SQ_TEXTURE_ARCHETYPES.has(o.textureArchetype.trim())
+      ? o.textureArchetype.trim()
+      : 'arco_melody_accompaniment';
+  const colourRaw = typeof o.tritonicColour === 'string' ? o.tritonicColour.trim() : 'subtle';
+  const tritonicColour = SQ_TRITONIC_COLOURS.has(colourRaw)
+    ? (colourRaw as 'none' | 'subtle' | 'active')
+    : 'subtle';
+  const biasRaw = o.tritonicBehaviourBiases;
+  let tritonicBehaviourBiases:
+    | NonNullable<GenerateRequest['stringQuartetMusicContext']>['tritonicBehaviourBiases']
+    | undefined;
+  if (biasRaw && typeof biasRaw === 'object' && !Array.isArray(biasRaw)) {
+    const b = biasRaw as Record<string, unknown>;
+    const keys = [
+      'tension',
+      'resolutionDelay',
+      'density',
+      'registralSpread',
+      'contourBias',
+      'cadenceAvoidance',
+      'rhythmicDisplacement',
+      'anchorAdhesion',
+      'motifSingability',
+    ] as const;
+    const out: Record<string, number> = {};
+    for (const key of keys) {
+      const n = Number(b[key]);
+      if (Number.isFinite(n)) out[key] = Math.max(0, Math.min(1, n));
+    }
+    if (Object.keys(out).length > 0) {
+      tritonicBehaviourBiases = out as NonNullable<
+        GenerateRequest['stringQuartetMusicContext']
+      >['tritonicBehaviourBiases'];
+    }
+  }
+  return {
+    textureArchetype,
+    tritonicColour,
+    ...(tritonicBehaviourBiases ? { tritonicBehaviourBiases } : {}),
+  };
+}
+
 function coerceContrapuntalConfigFromBody(
   body: Partial<GenerateRequest>
 ): GenerateRequest['contrapuntalConfig'] {
@@ -974,6 +1035,7 @@ export function apiGenerate(
       vrbProfile: coerceVrbProfileFromBody(body),
       bigBandConfig: coerceBigBandConfigFromBody(body),
       stringQuartetConfig: coerceStringQuartetConfigFromBody(body),
+      stringQuartetMusicContext: coerceStringQuartetMusicContextFromBody(body),
       contrapuntalConfig: coerceContrapuntalConfigFromBody(body),
       martinoConfig: coerceMartinoConfigFromBody(body),
       wybleEtudePreset: (() => {

@@ -16,6 +16,8 @@ import { runBigBandRealisation } from '../core/big-band/runBigBandRealisation';
 import type { BigBandComposerId, BigBandEraId } from '../core/big-band/bigBandResearchTypes';
 import { runStringQuartetMode, type StringQuartetRunInput } from '../core/string-quartet/runStringQuartetMode';
 import { runQuartetRealisation } from '../core/string-quartet/runQuartetRealisation';
+import { buildStringQuartetMusicContextFromGenerateInput } from '../core/string-quartet/stringQuartetMusicContextProducer';
+import type { StringQuartetTextureArchetype } from '../core/string-quartet/stringQuartetMusicContextTypes';
 import { resolveBarMeterMapForGenerateRequest } from '../core/section-architecture/resolveGenerationBarMeterMap';
 import { runSongMode } from '../core/song-mode/runSongMode';
 import type { SectionChordPlan } from '../core/song-mode/songCompilationTypes';
@@ -375,6 +377,20 @@ function ensembleSlonimskySongwriterIdFromRequest(req: GenerateRequest): string 
   const fromPairing = req.stylePairing?.songwriterStyle?.trim();
   const fromPrimary = req.primarySongwriterStyle?.trim();
   return fromPairing || fromPrimary || undefined;
+}
+
+function stringQuartetMusicContextForRequest(req: GenerateRequest, seed: number): MusicContext {
+  const mc = req.stringQuartetMusicContext;
+  const texture = (mc?.textureArchetype?.trim() ||
+    'arco_melody_accompaniment') as StringQuartetTextureArchetype;
+  return buildStringQuartetMusicContextFromGenerateInput({
+    tonalCenter: req.tonalCenter,
+    bpm: req.bpm,
+    seed,
+    textureArchetype: texture,
+    tritonicColour: mc?.tritonicColour ?? 'subtle',
+    tritonicBehaviourBiases: mc?.tritonicBehaviourBiases,
+  });
 }
 
 /** Ensemble SQ realisation: songwriter echo + optional Frank Zappa string-quartet harmony slice + meter map + SQ rhythm engine receipts. */
@@ -3171,6 +3187,7 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     }
     const ensReceiptXml = ensembleSlonimskyReceiptLines(req.chromaticStrength);
     const ensCellReceiptsSq = slonimskyEnsembleCellReceiptsFromRealised(realised);
+    const sqMusicContext = stringQuartetMusicContextForRequest(req, effectiveSeed);
     return {
       success: true,
       productKind: 'musicxml',
@@ -3178,6 +3195,7 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
       filename: xmlFilename,
       composerOsVersion: COMPOSER_OS_VERSION,
       validation: validationForStructural(true, []),
+      musicContext: sqMusicContext,
       runManifest: {
         seed: effectiveSeed,
         presetId: 'string_quartet',
