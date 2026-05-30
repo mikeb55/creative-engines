@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-30) V105p8 — VaultMicroscope + Fretboard on Generate** — `MusicContextGeneratePanels` on **`HomeGenerate.tsx`**: collapsible **VaultMicroscope** (vault · wyble_tritonic) and **FretboardPanel** (wyble · riff · duo · wyble_tritonic) read from post-generate MusicContext via **`musicContextGeneratePanels.ts`** (harmonic detail table · tension map · reharm · tuning · synthesised grips · Tritonic float in pink). No backend changes. Jest **`musicContextGeneratePanels.test.ts`** (+7).
+
 - **(2026-05-30) V105p7 — V89 composition depth** — `buildCompositionDepthFromMusicContext()` elaborates any MusicContext in-place: `harmonicDevelopmentPlan` (tension rise · plateau · release) · `motivicTransformations` (augmentation · inversion · retrograde · fragmentation) · per-chord `reharmonisationSuggestions` · `sectionArcMap` (exposition · development · climax · resolution) · `composerNotes`; `sourceEngineId: 'composition_depth'` · receipt `composition_depth_complete` (`sectionCount` · `reharmonisationCount` · `motivicTransformationCount` · `arcSpanBars`). Always-on. Jest **`compositionDepth.test.ts`** (+8).
 
 - **(2026-05-30) V105p6 — V88 practice layer** — `buildPracticeLayerFromMusicContext()` extracts etude targets from any MusicContext: `targetChordSymbols` · voice-led `guideToneLines` (3rd/7th) · per-chord `scaleRecommendations` · `rhythmicFocus` (motif or meter/bpm) · `difficultyRating` · ordered `practiceSequence`; `sourceEngineId: 'practice_layer'` · receipt `practice_layer_complete` (`chordCount` · `guideToneLineLength` · `difficultyRating` · `scaleCount`). Always-on. Jest **`practiceLayer.test.ts`** (+8).

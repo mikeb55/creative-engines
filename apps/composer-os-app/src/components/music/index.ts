@@ -12,3 +12,7 @@ export {
 export { LayerToggleBar, type LayerToggleBarProps } from './LayerToggleBar';
 export { TabPanel, type TabNote, type TabPanelProps } from './TabPanel';
 export { VaultMicroscope, type VaultMicroscopeProps } from './VaultMicroscope';
+export {
+  MusicContextGeneratePanels,
+  type MusicContextGeneratePanelsProps,
+} from './MusicContextGeneratePanels';

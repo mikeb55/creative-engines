@@ -9,7 +9,7 @@ import {
 } from '../playback';
 import type { PlaybackSequence } from '../playback';
 import { api, displayOutputPath, type OutputDirectoryResponse } from '../services/api';
-import type { AnalyticalModeResult } from '@composer-os/core/music-context/musicContextTypes';
+import type { AnalyticalModeResult, MusicContext } from '@composer-os/core/music-context/musicContextTypes';
 import { useCompositionSong } from '@renderer/context/CompositionSongContext';
 import { useDrumSelection } from '@renderer/context/DrumSelectionContext';
 import { useFillScheduler } from '@renderer/context/FillSchedulerContext';
@@ -80,6 +80,7 @@ import {
   defaultSqBiasesForColour,
   type SqRealisationReceiptPayload,
 } from '../components/string-quartet/StringQuartetGeneratePanel';
+import { MusicContextGeneratePanels } from '../components/music/MusicContextGeneratePanels';
 import type {
   StringQuartetTextureArchetype,
   StringQuartetTritonicColour,
@@ -2525,6 +2526,11 @@ export function HomeGenerate({
   const [pdfSideExportMsg, setPdfSideExportMsg] = useState<string | null>(null);
   const pdfFileInputRef = useRef<HTMLInputElement | null>(null);
   const [result, setResult] = useState<GenResult | null>(null);
+  const generatePanelMusicContext = useMemo((): MusicContext | null => {
+    const raw = result?.musicContext ?? sharedMusicContext;
+    if (!raw?.harmony?.bars?.length) return null;
+    return raw as MusicContext;
+  }, [result?.musicContext, sharedMusicContext]);
   const [playbackSeq, setPlaybackSeq] = useState<PlaybackSequence | null>(null);
   const [playbackBeat, setPlaybackBeat] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -6835,6 +6841,9 @@ export function HomeGenerate({
         />
       )}
       {sharedMusicContext ? <SharedMusicContextReadyBadge /> : null}
+      {generatePanelMusicContext ? (
+        <MusicContextGeneratePanels musicContext={generatePanelMusicContext} />
+      ) : null}
 
 
       {presetId === 'ecm_chamber' && (
