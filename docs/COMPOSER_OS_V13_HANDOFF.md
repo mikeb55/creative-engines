@@ -47,6 +47,7 @@
 ## Test state
 | Suite | Baseline |
 |-------|----------|
+| Jest (`engines/composer-os-v2`) | **344/344** PASS |
 | MusicContext producers | **34/34** PASS |
 | Composer smoke (full) | **527/0** PASS |
 | pytest martino/tests/ | **76/76** PASS |
