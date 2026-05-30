@@ -220,3 +220,114 @@ describe('V103b handoff helpers', () => {
     spy.mockRestore();
   });
 });
+
+describe('V104p7 per-section engine differentiation', () => {
+  it('routes verse/chorus/bridge through ecm, big_band, tritonic_vault', () => {
+    const truth = assembleSongModeExportTruth([
+      {
+        sectionId: 'verse_1',
+        plan: { order: 0, kind: 'verse', sectionEngine: 'ecm_chamber' },
+        harmonyBars: ['Dm7', 'G7'],
+        sectionEngine: 'ecm_chamber',
+      },
+      {
+        sectionId: 'chorus_1',
+        plan: { order: 1, kind: 'chorus', sectionEngine: 'big_band' },
+        harmonyBars: ['Cmaj7'],
+        sectionEngine: 'big_band',
+      },
+      {
+        sectionId: 'bridge_1',
+        plan: { order: 2, kind: 'bridge', sectionEngine: 'tritonic_vault' },
+        harmonyBars: ['Fmaj7', 'Em7'],
+        sectionEngine: 'tritonic_vault',
+      },
+    ]);
+
+    const verse = truth.sectionById.verse_1!;
+    expect(verse.musicContext.provenance?.sourceEngineId).toBe('ecm');
+    expect(verse.musicContext.presetId).toBe('ecm_chamber');
+    expect(verse.musicContext.receipts.some((r) => r.kind === 'ecm_chamber_section_realisation')).toBe(
+      true,
+    );
+
+    const chorus = truth.sectionById.chorus_1!;
+    expect(chorus.musicContext.provenance?.sourceEngineId).toBe('big_band');
+    expect(chorus.musicContext.receipts.some((r) => r.kind === 'big_band_realisation_complete')).toBe(
+      true,
+    );
+
+    const bridge = truth.sectionById.bridge_1!;
+    expect(bridge.musicContext.provenance?.sourceEngineId).toBe('tritonic');
+    expect(bridge.musicContext.receipts.some((r) => r.kind === 'tritonic_vault_realisation_complete')).toBe(
+      true,
+    );
+  });
+
+  it('buildMusicContextFromSongModeTruth receipt lists sectionEngines', () => {
+    const truth = assembleSongModeExportTruth([
+      {
+        sectionId: 'verse_1',
+        plan: { order: 0, kind: 'verse', sectionEngine: 'ecm_chamber' },
+        harmonyBars: ['Dm7'],
+        sectionEngine: 'ecm_chamber',
+      },
+      {
+        sectionId: 'chorus_1',
+        plan: { order: 1, kind: 'chorus', sectionEngine: 'big_band' },
+        harmonyBars: ['Cmaj7'],
+        sectionEngine: 'big_band',
+      },
+    ]);
+    const ctx = buildMusicContextFromSongModeTruth(truth);
+    const receipt = ctx.receipts.find((r) => r.kind === 'song_mode_sections_assembled');
+    expect(receipt?.payload).toMatchObject({
+      sectionEngines: {
+        verse_1: 'ecm_chamber',
+        chorus_1: 'big_band',
+      },
+    });
+  });
+
+  it('buildSongModeStructureFromChordPlan accepts sectionEngineByKind', () => {
+    const structure = buildSongModeStructureFromChordPlan(
+      [
+        {
+          sectionOrder: 0,
+          sectionKind: 'verse',
+          intensity: 'medium',
+          chordSymbols: ['Dm7'],
+        },
+        {
+          sectionOrder: 1,
+          sectionKind: 'chorus',
+          intensity: 'high',
+          chordSymbols: ['Cmaj7'],
+        },
+      ],
+      undefined,
+      {
+        sectionEngineByKind: {
+          verse: 'ecm_chamber',
+          chorus: 'big_band',
+        },
+      },
+    );
+    expect(structure.sectionInputs[0]?.sectionEngine).toBe('ecm_chamber');
+    expect(structure.sectionInputs[0]?.plan.sectionEngine).toBe('ecm_chamber');
+    expect(structure.sectionInputs[1]?.sectionEngine).toBe('big_band');
+  });
+
+  it('wayne_shorter section engine sets provenance + receipt', () => {
+    const section = buildSongModeSectionContext({
+      sectionId: 'bridge_ws',
+      plan: { order: 0, kind: 'bridge', sectionEngine: 'wayne_shorter' },
+      harmonyBars: ['E-7', 'A7'],
+      sectionEngine: 'wayne_shorter',
+    });
+    expect(section.musicContext.provenance?.sourceEngineId).toBe('wayne_shorter');
+    expect(
+      section.musicContext.receipts.some((r) => r.kind === 'wayne_shorter_realisation_complete'),
+    ).toBe(true);
+  });
+});

@@ -10,7 +10,17 @@ export type SongSectionKind = 'verse' | 'pre_chorus' | 'chorus' | 'bridge';
 export interface SongSectionPlan {
   order: number;
   kind: SongSectionKind;
+  /** Per-section MusicContext producer (V104p7). */
+  sectionEngine?: SongModeSectionEngine;
 }
+
+/** Which MusicContext producer builds a section (V104p7). */
+export type SongModeSectionEngine =
+  | 'song_mode'
+  | 'ecm_chamber'
+  | 'big_band'
+  | 'tritonic_vault'
+  | 'wayne_shorter';
 
 /** Default vocal target for Song Mode; additional ids use placeholder tessitura until expanded. */
 export type SongVoiceType = 'male_tenor' | 'female_alto' | 'baritone' | 'soprano';

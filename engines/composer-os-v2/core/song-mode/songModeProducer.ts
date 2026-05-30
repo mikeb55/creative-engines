@@ -13,11 +13,13 @@ import type {
   SongModeExportTruth,
   SongModeResult,
   SongModeSectionContext,
+  SongModeSectionEngine,
   SongSectionPlan,
 } from './songModeTypes';
 import type { SectionChordPlan } from './songCompilationTypes';
 import type { DuoLock } from '../duo/duoTypes';
 import { assertDuoLock } from '../duo/duoLock';
+import { buildSectionMusicContextForEngine } from './songModeSectionEngineRouter';
 
 export interface BuildSongModeSectionContextInput {
   sectionId: string;
@@ -25,6 +27,7 @@ export interface BuildSongModeSectionContextInput {
   harmonyBars: string[];
   seed?: number;
   bpm?: number;
+  sectionEngine?: SongModeSectionEngine;
 }
 
 /** Section inputs for {@link buildSongModeResult} (V103b handoff). */
@@ -54,7 +57,11 @@ function sectionIdForChordPlanBlock(
 export function buildSongModeStructureFromChordPlan(
   chordPlan: readonly SectionChordPlan[],
   formSections?: readonly { label: string; startBar: number; length: number }[],
-  options?: { seed?: number; bpm?: number }
+  options?: {
+    seed?: number;
+    bpm?: number;
+    sectionEngineByKind?: Partial<Record<SongSectionPlan['kind'], SongModeSectionEngine>>;
+  },
 ): SongModeStructure {
   const seen = new Set<string>();
   const sectionInputs: BuildSongModeSectionContextInput[] = [];
@@ -65,12 +72,18 @@ export function buildSongModeStructureFromChordPlan(
       throw new Error(DUPLICATE_SECTION_ID(sectionId));
     }
     seen.add(sectionId);
+    const sectionEngine = options?.sectionEngineByKind?.[block.sectionKind];
     sectionInputs.push({
       sectionId,
-      plan: { order: block.sectionOrder, kind: block.sectionKind },
+      plan: {
+        order: block.sectionOrder,
+        kind: block.sectionKind,
+        ...(sectionEngine ? { sectionEngine } : {}),
+      },
       harmonyBars: block.chordSymbols.map(normalizeChordSymbol),
       seed: options?.seed,
       bpm: options?.bpm,
+      ...(sectionEngine ? { sectionEngine } : {}),
     });
   }
 
@@ -116,50 +129,34 @@ export function computeSongModeMasterChecksum(
 }
 
 function buildSectionMusicContext(
-  harmonyBars: readonly string[],
-  checksum: string,
-  seed: number,
-  bpm: number
+  input: BuildSongModeSectionContextInput,
 ): MusicContext {
-  const bars = harmonyBars.map(normalizeChordSymbol);
-  const harmony: MusicContextHarmony = {
-    bars,
-    checksum,
-    source: 'generated',
-  };
-  const { root, mode } = normalizeKeyRoot(inferKeyRootFromChordSymbols(bars));
-  return {
-    schemaVersion: '1.0',
-    seed,
-    presetId: 'song_mode',
-    key: { root, mode },
-    meter: { beats: 4, beatType: 4 },
-    bpm,
-    totalBars: bars.length,
-    harmony,
-    provenance: {
-      sourceEngineId: 'song_mode',
-      capturedAt: Date.now(),
-    },
-    receipts: [],
-  };
+  const sectionEngine = input.sectionEngine ?? input.plan.sectionEngine;
+  return buildSectionMusicContextForEngine({
+    sectionId: input.sectionId,
+    sectionKind: input.plan.kind,
+    sectionEngine,
+    harmonyBars: input.harmonyBars,
+    seed: input.seed,
+    bpm: input.bpm,
+  });
 }
 
 /** Section-level record builder — normalises bars before checksum + MusicContext. */
 export function buildSongModeSectionContext(
   input: BuildSongModeSectionContextInput
 ): SongModeSectionContext {
-  const normalisedBars = input.harmonyBars.map(normalizeChordSymbol);
+  const sectionEngine = input.sectionEngine ?? input.plan.sectionEngine;
+  const plan: SongSectionPlan = {
+    ...input.plan,
+    ...(sectionEngine ? { sectionEngine } : {}),
+  };
+  const musicContext = buildSectionMusicContext({ ...input, plan });
+  const normalisedBars = musicContext.harmony.bars.map(normalizeChordSymbol);
   const checksum = computeMusicContextChecksum(normalisedBars);
-  const musicContext = buildSectionMusicContext(
-    normalisedBars,
-    checksum,
-    input.seed ?? 0,
-    input.bpm ?? 120
-  );
   return {
     sectionId: input.sectionId,
-    plan: { ...input.plan },
+    plan,
     musicContext,
     checksum,
   };
@@ -238,6 +235,12 @@ export function buildMusicContextFromSongModeTruth(
         kind: 'song_mode_sections_assembled',
         payload: {
           sectionIds: truth.sectionsOrdered.map((s) => s.sectionId),
+          sectionEngines: Object.fromEntries(
+            truth.sectionsOrdered.map((s) => [
+              s.sectionId,
+              s.plan.sectionEngine ?? 'song_mode',
+            ]),
+          ),
           masterChecksum: truth.masterChecksum,
         },
       },

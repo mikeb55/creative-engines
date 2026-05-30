@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-30) V104p7 — Song Mode per-section engine differentiation + Wayne Shorter Python bridge** — `SongSectionPlan.sectionEngine` (`song_mode` · `ecm_chamber` · `big_band` · `tritonic_vault` · `wayne_shorter`); `songModeSectionEngineRouter.ts` routes each section through its MusicContext producer (verse→ECM · chorus→Big Band · bridge→Tritonic vault); `buildSongModeStructureFromChordPlan` accepts `sectionEngineByKind`; assembly receipt lists `sectionEngines`. Wayne Shorter: `wayne_shorter_bridge.py` stdin JSON → Python compile → stdout harmony bars; `wayneShorterEngineBridge.ts` + `buildMusicContextFromWayneShorter()` (`sourceEngineId: 'wayne_shorter'`, receipt `wayne_shorter_realisation_complete`, checksum after `normalizeChordSymbol`). Always-on. Jest **`songMode.test.ts`** (+4) · **`wayneShorterMusicContext.test.ts`**.
+
 - **(2026-05-30) COMPOSER_HANDBOOK.docx** — `scripts/generateComposerHandbookDocx.mjs` regenerates **`docs/COMPOSER_HANDBOOK.docx`** from **`docs/COMPOSER_HANDBOOK.md`** (title page, TOC, heading hierarchy, tables, page numbers).
 
 - **(2026-05-30) V104p6 — Big Band + New Orleans MusicContext producers** — `buildMusicContextFromBigBand()` (`sourceEngineId: 'big_band'`, comping styles `brass_punch` · `sax_soli` · `shell_voicing` · `freddie_green`, receipt `big_band_realisation_complete`); `buildMusicContextFromNewOrleans()` (`sourceEngineId: 'new_orleans'`, styles `second_line` · `anticipation_bass` · `brass_punch_offbeat`, receipt `new_orleans_realisation_complete`); shared `compingHarmonyTemplates.ts`; harmony via `normalizeChordSymbol` + checksum after normalisation. Always-on. Jest **`bigBandMusicContext.test.ts`** · **`newOrleansMusicContext.test.ts`**.
