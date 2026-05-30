@@ -1,14 +1,14 @@
-﻿# Tritonic Big Band Cookbook
+# Tritonic Big Band Cookbook
 
-**Composer OS v1.3.0** â€” **60** scenario recipes for tritonic cell realisation (`bb` Â· `sq` Â· `ecm` modes), Wayne behaviour knobs, and named chord progressions. Each scenario maps a musical goal to engine settings plus a bar-by-bar harmony plan.
+**Composer OS v1.3.0** — scenario recipes for tritonic cell realisation (`bb` · `sq` · `ecm` modes), Wayne behaviour knobs, and named chord progressions. Each scenario maps a musical goal to engine settings plus a bar-by-bar harmony plan.
 
-**Cell families:** `quartal` Â· `cluster` Â· `suspended` Â· `shorter_floating` Â· `bergonzi`
+**Cell families:** `quartal` · `cluster` · `suspended` · `shorter_floating` · `bergonzi`
 
-**Realisation modes:** `bb` (dense, high oddity floor 0.65) Â· `sq` (smooth, oddity cap 0.25) Â· `ecm` (suspended/shorter_floating bias, forced `delayedResolution`)
+**Realisation modes:** `bb` (dense, high oddity floor 0.65) · `sq` (smooth, oddity cap 0.25) · `ecm` (suspended/shorter_floating bias, forced `delayedResolution`)
 
 ---
 
-## Scenario 1 â€” Slow Blues in Bb (Freddie Green)
+## Scenario 1 — Slow Blues in Bb (Freddie Green)
 
 **Style:** Classic slow blues; Freddie Green comp on beats 2+4; shell voicings under tritonic cells floating in upper register.
 
@@ -22,13 +22,13 @@
 
 | Bar | Chord | Notes |
 |-----|-------|-------|
-| 1 | Bb7 | I â€” tritonic bergonzi cell on guide tones |
+| 1 | Bb7 | I — tritonic bergonzi cell on guide tones |
 | 2 | Bb7 | pedal; suspended cell drift |
-| 3 | Eb7 | IV â€” quartal colour |
+| 3 | Eb7 | IV — quartal colour |
 | 4 | Eb7 | IV hold |
 | 5 | Bb7 | return I |
 | 6 | Bb7 | turnaround setup |
-| 7 | F7 | V â€” cluster tension peak |
+| 7 | F7 | V — cluster tension peak |
 | 8 | Bb7 | cadence |
 
 **Cell families:** bergonzi, suspended, quartal
@@ -37,7 +37,7 @@
 
 ---
 
-## Scenario 2 â€” Minor Blues in C (ECM Sparse)
+## Scenario 2 — Minor Blues in C (ECM Sparse)
 
 **Style:** ECM chamber minor blues; sparse voicing; cluster + suspended families; no aggressive resolution.
 
@@ -51,13 +51,13 @@
 
 | Bar | Chord | Notes |
 |-----|-------|-------|
-| 1 | Cm9 | i â€” suspended cell |
+| 1 | Cm9 | i — suspended cell |
 | 2 | Cm9 | pedal |
-| 3 | Fm9 | iv â€” cluster semitone colour |
+| 3 | Fm9 | iv — cluster semitone colour |
 | 4 | Fm9 | iv hold |
 | 5 | Cm9 | return i |
-| 6 | Abmaj7 | bVI â€” shorter_floating lift |
-| 7 | G7alt | V â€” cluster peak |
+| 6 | Abmaj7 | bVI — shorter_floating lift |
+| 7 | G7alt | V — cluster peak |
 | 8 | Cm9 | soft landing |
 
 **Cell families:** cluster, suspended, shorter_floating
@@ -66,7 +66,7 @@
 
 ---
 
-## Scenario 3 â€” Big Band Blues Shout in F
+## Scenario 3 — Big Band Blues Shout in F
 
 **Style:** Dense BB shout chorus; all-beats comping; high oddity; full section energy.
 
@@ -87,7 +87,7 @@
 | 5 | F7 | I |
 | 6 | D7 | tritone sub colour |
 | 7 | Gm7 | ii setup |
-| 8 | C7 | V â†’ I shout tag |
+| 8 | C7 | V → I shout tag |
 
 **Cell families:** bergonzi, cluster, quartal
 
@@ -95,7 +95,7 @@
 
 ---
 
-## Scenario 4 â€” Simple iiâ€“Vâ€“I in C Major
+## Scenario 4 — Simple ii–V–I in C Major
 
 **Style:** Straight-ahead jazz; easy difficulty; pentatonic pattern; close voicing.
 
@@ -116,11 +116,11 @@
 
 **Cell families:** bergonzi, shorter_floating
 
-**Musical notes:** SQ mode caps oddity at 0.25 for smooth voice-leading through the canonical iiâ€“Vâ€“I. Pentatonic pattern type keeps cell choices diatonic-friendly; ideal teaching scenario.
+**Musical notes:** SQ mode caps oddity at 0.25 for smooth voice-leading through the canonical ii–V–I. Pentatonic pattern type keeps cell choices diatonic-friendly; ideal teaching scenario.
 
 ---
 
-## Scenario 5 â€” Advanced iiâ€“Vâ€“I with Tritone Sub
+## Scenario 5 — Advanced ii–V–I with Tritone Sub
 
 **Style:** Tritone substitution on V; chromatic pattern; medium difficulty.
 
@@ -145,7 +145,7 @@
 
 ---
 
-## Scenario 6 â€” Descending iiâ€“Vâ€“I Chain
+## Scenario 6 — Descending ii–V–I Chain
 
 **Style:** Cycle of fifths descent; whole-tone pattern; hard difficulty.
 
@@ -174,9 +174,9 @@
 
 ---
 
-## Scenario 7 â€” Coltrane Changes
+## Scenario 7 — Coltrane Changes
 
-**Style:** Giant Steps cycle Eâ€“Abâ€“Bâ€“D; bergonzi cells; high oddity; delayed resolution.
+**Style:** Giant Steps cycle E–Ab–B–D; bergonzi cells; high oddity; delayed resolution.
 
 **Engine:** bb | dense | mixed | hard | chromatic
 
@@ -207,7 +207,7 @@
 
 ---
 
-## Scenario 8 â€” Nefertiti-Style (No Resolution)
+## Scenario 8 — Nefertiti-Style (No Resolution)
 
 **Style:** Wayne Shorter modal float; suspended cells; no cadential release.
 
@@ -228,7 +228,7 @@
 | 5 | Abmaj7 | bVII float |
 | 6 | Abmaj7 | hold |
 | 7 | Dbmaj7 | remote |
-| 8 | Dbmaj7 | no Vâ†’I |
+| 8 | Dbmaj7 | no V→I |
 
 **Cell families:** suspended, shorter_floating
 
@@ -236,7 +236,7 @@
 
 ---
 
-## Scenario 9 â€” Infant Eyes Ballad
+## Scenario 9 — Infant Eyes Ballad
 
 **Style:** Shorter ballad; shorter_floating family; sparse ECM texture; slow tempo.
 
@@ -251,7 +251,7 @@
 | Bar | Chord | Notes |
 |-----|-------|-------|
 | 1 | Fmaj7 | I |
-| 2 | Em7b5 | passing iiÃ¸ |
+| 2 | Em7b5 | passing iiø |
 | 3 | A7b9 | V of ii |
 | 4 | Dm | ii minor colour |
 | 5 | Cm7 | bVII area |
@@ -265,7 +265,7 @@
 
 ---
 
-## Scenario 10 â€” ECM Floating (No Tonal Centre)
+## Scenario 10 — ECM Floating (No Tonal Centre)
 
 **Style:** Major-thirds cycle; no fixed tonic; suspended + quartal cells; open voicing.
 
@@ -279,7 +279,7 @@
 
 | Bar | Chord | Notes |
 |-----|-------|-------|
-| 1 | Abmaj7 | âˆ† |
+| 1 | Abmaj7 | ∆ |
 | 2 | Emaj7 | major third |
 | 3 | Cmaj7 | major third |
 | 4 | Gmaj7 | major third |
@@ -290,11 +290,11 @@
 
 **Cell families:** suspended, quartal, shorter_floating
 
-**Musical notes:** Symmetric major-third cycle destroys functional hierarchy â€” ideal ECM use case. Quartal cells stack fourths that ignore tertian chord spelling while still mapping to maj7 surfaces.
+**Musical notes:** Symmetric major-third cycle destroys functional hierarchy — ideal ECM use case. Quartal cells stack fourths that ignore tertian chord spelling while still mapping to maj7 surfaces.
 
 ---
 
-## Scenario 11 â€” Walk On By (Bacharach Chromatic Descent)
+## Scenario 11 — Walk On By (Bacharach Chromatic Descent)
 
 **Style:** Lush Bacharach-style chromatic inner lines; resonant texture; mixed voicing.
 
@@ -319,11 +319,11 @@
 
 **Cell families:** shorter_floating, suspended, bergonzi
 
-**Musical notes:** Chromatic descending bass (Câ†’C#â†’D) pairs with cluster-adjacent cells on the dim7 bar. Sus4 dominant delays resolution Bacharach-style before G7 release.
+**Musical notes:** Chromatic descending bass (C→C#→D) pairs with cluster-adjacent cells on the dim7 bar. Sus4 dominant delays resolution Bacharach-style before G7 release.
 
 ---
 
-## Scenario 12 â€” Alfie (Unexpected Modulations)
+## Scenario 12 — Alfie (Unexpected Modulations)
 
 **Style:** Bacharach modulatory ballad; close voicing; melodyPriority.
 
@@ -352,7 +352,7 @@
 
 ---
 
-## Scenario 13 â€” Chromatic Mediant Chain
+## Scenario 13 — Chromatic Mediant Chain
 
 **Style:** Non-diatonic mediants; cluster cells; high tension; BB mode.
 
@@ -381,7 +381,7 @@
 
 ---
 
-## Scenario 14 â€” Quartal Harmony (Stacked Fourths)
+## Scenario 14 — Quartal Harmony (Stacked Fourths)
 
 **Style:** Pure quartal cells; no traditional tertian names; stacked-fourth spelling.
 
@@ -395,14 +395,14 @@
 
 | Bar | Chord | Notes |
 |-----|-------|-------|
-| 1 | Câ€“Fâ€“Bb | quartal stack (sus4 family) |
-| 2 | Dâ€“Gâ€“C | transposed stack |
-| 3 | Eâ€“Aâ€“D | |
-| 4 | Câ€“Fâ€“Bb | return |
-| 5 | Fâ€“Bbâ€“Eb | |
-| 6 | Gâ€“Câ€“F | |
-| 7 | Aâ€“Dâ€“G | |
-| 8 | Câ€“Fâ€“Bb | |
+| 1 | C–F–Bb | quartal stack (sus4 family) |
+| 2 | D–G–C | transposed stack |
+| 3 | E–A–D | |
+| 4 | C–F–Bb | return |
+| 5 | F–Bb–Eb | |
+| 6 | G–C–F | |
+| 7 | A–D–G | |
+| 8 | C–F–Bb | |
 
 **Cell families:** quartal only
 
@@ -410,7 +410,7 @@
 
 ---
 
-## Scenario 15 â€” Messiaen Mode 2 (Octatonic)
+## Scenario 15 — Messiaen Mode 2 (Octatonic)
 
 **Style:** Octatonic diminished-scale harmony; bergonzi + cluster; ECM mode.
 
@@ -424,7 +424,7 @@
 
 | Bar | Chord | Notes |
 |-----|-------|-------|
-| 1 | Dm7b5 | octatonic iÃ¸ |
+| 1 | Dm7b5 | octatonic iø |
 | 2 | Eb7 | half-step dominant |
 | 3 | Fm7b5 | |
 | 4 | F#7 | |
@@ -435,11 +435,11 @@
 
 **Cell families:** bergonzi, cluster
 
-**Musical notes:** Alternating m7b5 and dominant 7th pairs outline octatonic set {0,1,3,4,6,7,9,10}. Cluster cells on Ã¸ chords maximise semitone density.
+**Musical notes:** Alternating m7b5 and dominant 7th pairs outline octatonic set {0,1,3,4,6,7,9,10}. Cluster cells on ø chords maximise semitone density.
 
 ---
 
-## Scenario 16 â€” Basie Rhythm Changes
+## Scenario 16 — Basie Rhythm Changes
 
 **Style:** Count Basie Bb rhythm changes; Freddie Green beats 2+4; dense voicing.
 
@@ -464,11 +464,11 @@
 
 **Cell families:** bergonzi, quartal
 
-**Musical notes:** Classic A-section rhythm changes at Basie tempo; beats_2_4 comping leaves room for brass hits on 1 and 3 while tritonic cells connect upper voices across the iiâ€“V pairs.
+**Musical notes:** Classic A-section rhythm changes at Basie tempo; beats_2_4 comping leaves room for brass hits on 1 and 3 while tritonic cells connect upper voices across the ii–V pairs.
 
 ---
 
-## Scenario 17 â€” Ellington Ballad
+## Scenario 17 — Ellington Ballad
 
 **Style:** Rich extensions; full_chord voicing; all_beats; low oddity.
 
@@ -497,7 +497,7 @@
 
 ---
 
-## Scenario 18 â€” DADGAD Open Tuning Drone
+## Scenario 18 — DADGAD Open Tuning Drone
 
 **Style:** Alternate tuning drone; suspended cells only; sparse; open voicing.
 
@@ -507,7 +507,7 @@
 
 **Key:** D **Tempo:** 76 bpm **Meter:** 4/4
 
-**Tuning:** capo 0 Â· strings `[62,57,55,50,45,38]` (DADGAD MIDI)
+**Tuning:** capo 0 · strings `[62,57,55,50,45,38]` (DADGAD MIDI)
 
 **Progression:**
 
@@ -528,7 +528,7 @@
 
 ---
 
-## Scenario 19 â€” Sonic Youth (CGDGCD Power Clash)
+## Scenario 19 — Sonic Youth (CGDGCD Power Clash)
 
 **Style:** Noise-rock alternate tuning; power fifths; cluster cells; no functional harmony.
 
@@ -559,7 +559,7 @@
 
 ---
 
-## Scenario 20 â€” Andrew Hill (Augmented Cycle)
+## Scenario 20 — Andrew Hill (Augmented Cycle)
 
 **Style:** Asymmetric rhythm feel; augmented major-third cycle; shorter_floating + bergonzi; BB mode.
 
@@ -573,20 +573,20 @@
 
 | Bar | Chord | Notes |
 |-----|-------|-------|
-| 1 | Cmâˆ†7 | augmented cycle start |
-| 2 | Ebmâˆ†7 | +3 semitones |
-| 3 | F#âˆ†7 | +3 |
-| 4 | Aâˆ†7 | +3 / return axis |
-| 5 | Cmâˆ†7 | cycle repeat |
-| 6 | Ebmâˆ†7 | |
-| 7 | F#âˆ†7 | 7/4 bar â€” asymmetric feel |
+| 1 | Cm∆7 | augmented cycle start |
+| 2 | Ebm∆7 | +3 semitones |
+| 3 | F#∆7 | +3 |
+| 4 | A∆7 | +3 / return axis |
+| 5 | Cm∆7 | cycle repeat |
+| 6 | Ebm∆7 | |
+| 7 | F#∆7 | 7/4 bar — asymmetric feel |
 
 **Cell families:** shorter_floating, bergonzi
 
 **Musical notes:** Hill's non-functional major-third cycles align with whole_tone pattern type. 7/4 meter breaks four-square BB phrasing; delayedResolution sustains ambiguity across bar lines.
 
 ---
-## Scenario 21 â€” Thad Jones (Dense Chromatic Inner Voices)
+## Scenario 21 — Thad Jones (Dense Chromatic Inner Voices)
 
 **Style:** Thad Jones big-band harmony; dense chromatic inner voices; full_chord voicing; all-beats comping.
 
@@ -600,8 +600,8 @@
 
 | Bar | Chord | Notes |
 |-----|-------|-------|
-| 1 | Dbmaj7#11 | bIII Lydian â€” Thad colour |
-| 2 | Cm7b5 | passing iiÃ¸ |
+| 1 | Dbmaj7#11 | bIII Lydian — Thad colour |
+| 2 | Cm7b5 | passing iiø |
 | 3 | F7alt | altered V |
 | 4 | Bbmaj7 | I |
 | 5 | Dbmaj7#11 | cycle repeat |
@@ -615,7 +615,7 @@
 
 ---
 
-## Scenario 22 â€” Maria Schneider (Orchestral Swell)
+## Scenario 22 — Maria Schneider (Orchestral Swell)
 
 **Style:** Maria Schneider orchestral swell; ECM texture; open voicing; delayed resolution throughout.
 
@@ -644,7 +644,7 @@
 
 ---
 
-## Scenario 23 â€” Donald Fagen (Aja-Style)
+## Scenario 23 — Donald Fagen (Aja-Style)
 
 **Style:** Donald Fagen Aja-style precision; chromatic pattern; resonant texture; medium difficulty.
 
@@ -669,11 +669,11 @@
 
 **Cell families:** bergonzi, shorter_floating, suspended
 
-**Musical notes:** Fagen's sus4 dominants delay tertian resolution â€” matching tritonic suspended family behaviour. Chromatic pattern type colours the Em7â†’A7sus4 approach with cluster-adjacent cells without breaking the groove.
+**Musical notes:** Fagen's sus4 dominants delay tertian resolution — matching tritonic suspended family behaviour. Chromatic pattern type colours the Em7→A7sus4 approach with cluster-adjacent cells without breaking the groove.
 
 ---
 
-## Scenario 24 â€” XTC English Settlement (Slash Chords)
+## Scenario 24 — XTC English Settlement (Slash Chords)
 
 **Style:** XTC English Settlement; slash-chord harmony; odd bar lengths; cluster cells; offbeats comping.
 
@@ -693,17 +693,17 @@
 | 4 | Abmaj7/Bb | remote slash |
 | 5 | Fmaj7 | return |
 | 6 | Bb/C | |
-| 7 | Eb/F | 7/8 â€” asymmetric tag |
+| 7 | Eb/F | 7/8 — asymmetric tag |
 
 **Cell families:** cluster, quartal
 
-**Musical notes:** Slash chords decouple bass from upper structure â€” tritonic quartal cells float independently of the bass pedal. 7/8 meter plus offbeats comping mirrors Settlement's angular folk-rock pulse.
+**Musical notes:** Slash chords decouple bass from upper structure — tritonic quartal cells float independently of the bass pedal. 7/8 meter plus offbeats comping mirrors Settlement's angular folk-rock pulse.
 
 ---
 
-## Scenario 25 â€” Two-Part Counterpoint (Guitarâ€“Bass Duo)
+## Scenario 25 — Two-Part Counterpoint (Guitar–Bass Duo)
 
-**Style:** Guitarâ€“bass duo; upper quartal cells against stepwise diatonic bass; open voicing.
+**Style:** Guitar–bass duo; upper quartal cells against stepwise diatonic bass; open voicing.
 
 **Engine:** sq | sparse | open | easy | pentatonic
 
@@ -715,7 +715,7 @@
 
 | Bar | Chord | Notes |
 |-----|-------|-------|
-| 1 | C | I â€” bass root |
+| 1 | C | I — bass root |
 | 2 | G/B | V first inversion |
 | 3 | Am | vi |
 | 4 | F | IV |
@@ -730,7 +730,7 @@
 
 ---
 
-## Scenario 26 â€” Fux Species Counterpoint (Third Species)
+## Scenario 26 — Fux Species Counterpoint (Third Species)
 
 **Style:** Strict third-species counterpoint; duo producer; melodyPriority; close voicing.
 
@@ -759,9 +759,9 @@
 
 ---
 
-## Scenario 27 â€” Invertible Counterpoint (Voice Swap)
+## Scenario 27 — Invertible Counterpoint (Voice Swap)
 
-**Style:** Invertible counterpoint; voices swap at bar 5; guitarâ€“bass duo.
+**Style:** Invertible counterpoint; voices swap at bar 5; guitar–bass duo.
 
 **Engine:** sq | medium | mixed | medium | pentatonic
 
@@ -777,7 +777,7 @@
 | 2 | Em7 | vi |
 | 3 | Am7 | ii |
 | 4 | D7 | V |
-| 5 | Am7 | **voice swap** â€” upper becomes bass line |
+| 5 | Am7 | **voice swap** — upper becomes bass line |
 | 6 | D7 | |
 | 7 | Gmaj7 | |
 | 8 | Gmaj7 | tag |
@@ -788,7 +788,7 @@
 
 ---
 
-## Scenario 28 â€” Messiaen Mode 3 (Limited Transposition)
+## Scenario 28 — Messiaen Mode 3 (Limited Transposition)
 
 **Style:** Messiaen Mode 3 pitch cycling; bergonzi cells exclusively; ECM mode; high oddity.
 
@@ -813,11 +813,11 @@
 
 **Cell families:** bergonzi only
 
-**Musical notes:** Mode 3's six-pitch set resists functional harmony â€” bergonzi tertian anchors are the only family that maps cleanly to chord export. ECM forced delayedResolution keeps the cycle perpetually unresolved.
+**Musical notes:** Mode 3's six-pitch set resists functional harmony — bergonzi tertian anchors are the only family that maps cleanly to chord export. ECM forced delayedResolution keeps the cycle perpetually unresolved.
 
 ---
 
-## Scenario 29 â€” Messiaen Mode 4 (Diminished)
+## Scenario 29 — Messiaen Mode 4 (Diminished)
 
 **Style:** Messiaen Mode 4 diminished stacks; suspended + cluster cells; delayed resolution.
 
@@ -846,7 +846,7 @@
 
 ---
 
-## Scenario 30 â€” Quartet for the End of Time
+## Scenario 30 — Quartet for the End of Time
 
 **Style:** Messiaen *Quartet for the End of Time* homage; shorter_floating only; ultra-slow tempo.
 
@@ -864,18 +864,18 @@
 | 2 | Emaj7 | |
 | 3 | Emaj7 | |
 | 4 | Emaj7 | |
-| 5 | Fmaj7#11 | block 2 â€” Lydian shift |
+| 5 | Fmaj7#11 | block 2 — Lydian shift |
 | 6 | Fmaj7#11 | |
 | 7 | Fmaj7#11 | |
 | 8 | Fmaj7#11 | |
 
 **Cell families:** shorter_floating only
 
-**Musical notes:** Extreme slowness exposes every semitone in cell voice-leading across four-bar blocks. The Eâ†’Fmaj7#11 shift is a single Messiaen-like colour change without functional dominant.
+**Musical notes:** Extreme slowness exposes every semitone in cell voice-leading across four-bar blocks. The E→Fmaj7#11 shift is a single Messiaen-like colour change without functional dominant.
 
 ---
 
-## Scenario 31 â€” Completely Atonal (12 Roots)
+## Scenario 31 — Completely Atonal (12 Roots)
 
 **Style:** Twelve different roots in twelve bars; all cell families; maximum oddity; no tonal centre.
 
@@ -908,7 +908,7 @@
 
 ---
 
-## Scenario 32 â€” Microtonally-Inspired (Semitone Maj7 Chain)
+## Scenario 32 — Microtonally-Inspired (Semitone Maj7 Chain)
 
 **Style:** Microtonally-inspired semitone maj7 chain; cluster cells; high tension; ECM mode.
 
@@ -937,7 +937,7 @@
 
 ---
 
-## Scenario 33 â€” Nonsensical Chromatic Explosion
+## Scenario 33 — Nonsensical Chromatic Explosion
 
 **Style:** Deliberately nonsensical chromatic harmony; all families; BB mode; near-max oddity.
 
@@ -953,7 +953,7 @@
 |-----|-------|-------|
 | 1 | Ab7 | remote bVI |
 | 2 | Emaj7 | chromatic mediant |
-| 3 | Bbm7b5 | Ã¸ colour |
+| 3 | Bbm7b5 | ø colour |
 | 4 | F#maj7#11 | Lydian remote |
 | 5 | Dm7 | sudden ii |
 | 6 | Gbmaj7 | tritone mediant |
@@ -962,11 +962,11 @@
 
 **Cell families:** quartal, cluster, suspended, shorter_floating, bergonzi
 
-**Musical notes:** Each bar pivots by unrelated interval â€” testing tritonic voice-leading under extreme harmonic whiplash. BB dense voicing fills the section for cartoon chase-score energy.
+**Musical notes:** Each bar pivots by unrelated interval — testing tritonic voice-leading under extreme harmonic whiplash. BB dense voicing fills the section for cartoon chase-score energy.
 
 ---
 
-## Scenario 34 â€” Random Walk (Interval Rotation)
+## Scenario 34 — Random Walk (Interval Rotation)
 
 **Style:** Random-walk root motion by interval rotation; quartal cells; SQ smooth mode.
 
@@ -995,9 +995,9 @@
 
 ---
 
-## Scenario 35 â€” Polymodal (C Major / F# Major)
+## Scenario 35 — Polymodal (C Major / F# Major)
 
-**Style:** Polymodal bitonality; C major upper register | F# major lower; guitarâ€“bass duo; high tension.
+**Style:** Polymodal bitonality; C major upper register | F# major lower; guitar–bass duo; high tension.
 
 **Engine:** sq | dense | open | hard | chromatic
 
@@ -1024,7 +1024,7 @@
 
 ---
 
-## Scenario 36 â€” Lloyd Webber (Deliberate Clash)
+## Scenario 36 — Lloyd Webber (Deliberate Clash)
 
 **Style:** Lloyd Webber pastiche; lush diatonic progression with tritonic cell clash; shell voicing.
 
@@ -1053,7 +1053,7 @@
 
 ---
 
-## Scenario 37 â€” Samba Jazz (Bossa Offbeats)
+## Scenario 37 — Samba Jazz (Bossa Offbeats)
 
 **Style:** Samba jazz; bossa offbeats comping pattern; resonant texture.
 
@@ -1067,7 +1067,7 @@
 
 | Bar | Chord | Notes |
 |-----|-------|-------|
-| 1 | Am7b5 | iiÃ¸ |
+| 1 | Am7b5 | iiø |
 | 2 | D7b9 | V |
 | 3 | Gm | i |
 | 4 | Cm7 | iv |
@@ -1078,11 +1078,11 @@
 
 **Cell families:** bergonzi, suspended, shorter_floating
 
-**Musical notes:** Offbeats comping pattern syncopates against straight harmonic rhythm â€” classic samba jazz feel. Resonant texture supports nylon-string guitar voicings in upper register.
+**Musical notes:** Offbeats comping pattern syncopates against straight harmonic rhythm — classic samba jazz feel. Resonant texture supports nylon-string guitar voicings in upper register.
 
 ---
 
-## Scenario 38 â€” Nordic Folk Drone
+## Scenario 38 — Nordic Folk Drone
 
 **Style:** Nordic folk drone; DADGAD-adjacent sus2 harmony; suspended cells; slow tempo.
 
@@ -1111,7 +1111,7 @@
 
 ---
 
-## Scenario 39 â€” Steve Reich Phase (Additive Bass)
+## Scenario 39 — Steve Reich Phase (Additive Bass)
 
 **Style:** Steve Reich phase shifting; descending bass pedal under static top; quartal cells only; SQ mode.
 
@@ -1140,7 +1140,7 @@
 
 ---
 
-## Scenario 40 â€” Cinema Noir (Descending Chromatic)
+## Scenario 40 — Cinema Noir (Descending Chromatic)
 
 **Style:** Cinema noir; descending chromatic bass; cluster + bergonzi; BB full_chord; slow tempo.
 
@@ -1169,7 +1169,7 @@
 
 ---
 
-## Scenario 41 â€” Stravinsky Petrushka (Polychord)
+## Scenario 41 — Stravinsky Petrushka (Polychord)
 
 **Style:** Stravinsky Petrushka polychord; Cmaj7 over F#maj7; cluster cells; dense BB voicing.
 
@@ -1198,9 +1198,9 @@
 
 ---
 
-## Scenario 42 â€” BartÃ³k Night Music (Chromatic Ascent)
+## Scenario 42 — Bartók Night Music (Chromatic Ascent)
 
-**Style:** BartÃ³k night music; chromatic ascending minor triads; cluster + bergonzi; ECM mode; very slow.
+**Style:** Bartók night music; chromatic ascending minor triads; cluster + bergonzi; ECM mode; very slow.
 
 **Engine:** ecm | sparse | close | hard | chromatic
 
@@ -1227,9 +1227,9 @@
 
 ---
 
-## Scenario 43 â€” Bitonality (Bb / D)
+## Scenario 43 — Bitonality (Bb / D)
 
-**Style:** Bitonality; Bbmaj7 upper | Dmaj7 lower; guitarâ€“bass duo; quartal upper, shell lower.
+**Style:** Bitonality; Bbmaj7 upper | Dmaj7 lower; guitar–bass duo; quartal upper, shell lower.
 
 **Engine:** sq | medium | mixed | medium | pentatonic
 
@@ -1256,7 +1256,7 @@
 
 ---
 
-## Scenario 44 â€” Polymodal Folk (Dorian / Phrygian)
+## Scenario 44 — Polymodal Folk (Dorian / Phrygian)
 
 **Style:** Polymodal folk; Dorian upper | Phrygian lower; duo producer; simultaneous mode streams.
 
@@ -1285,7 +1285,7 @@
 
 ---
 
-## Scenario 45 â€” Lydian over Locrian
+## Scenario 45 — Lydian over Locrian
 
 **Style:** Lydian upper (Fmaj7#11) over Locrian lower (Bm7b5); ECM texture; high oddity.
 
@@ -1310,17 +1310,17 @@
 
 **Cell families:** shorter_floating, suspended
 
-**Musical notes:** Bright Lydian #11 over dark Locrian Ã¸ creates maximum modal contrast. ECM delayedResolution prevents either mode from dominating the other.
+**Musical notes:** Bright Lydian #11 over dark Locrian ø creates maximum modal contrast. ECM delayedResolution prevents either mode from dominating the other.
 
 ---
 
-## Scenario 46 â€” Hans Zimmer Ostinato (Rising Oddity)
+## Scenario 46 — Hans Zimmer Ostinato (Rising Oddity)
 
-**Style:** Hans Zimmer ostinato; iâ€“bVIâ€“bIIIâ€“bVII loop; oddityScore rises 0.2â†’0.8 across sections.
+**Style:** Hans Zimmer ostinato; i–bVI–bIII–bVII loop; oddityScore rises 0.2→0.8 across sections.
 
 **Engine:** bb | dense | full_chord | medium | pentatonic
 
-**Behaviour:** oddityScore 0.20â†’0.80 (section ramp) | delayedResolution false | melodyPriority false
+**Behaviour:** oddityScore 0.20→0.80 (section ramp) | delayedResolution false | melodyPriority false
 
 **Key:** D minor **Tempo:** 136 bpm **Meter:** 4/4
 
@@ -1328,14 +1328,14 @@
 
 | Bar | Chord | Notes |
 |-----|-------|-------|
-| 1 | Dm | i â€” oddity 0.2 |
+| 1 | Dm | i — oddity 0.2 |
 | 2 | Bb | bVI |
 | 3 | F | bIII |
 | 4 | C | bVII |
-| 5 | Dm | repeat â€” oddity 0.5 |
+| 5 | Dm | repeat — oddity 0.5 |
 | 6 | Bb | |
 | 7 | F | |
-| 8 | C | peak â€” oddity 0.8 |
+| 8 | C | peak — oddity 0.8 |
 
 **Cell families:** bergonzi, cluster, quartal
 
@@ -1343,7 +1343,7 @@
 
 ---
 
-## Scenario 47 â€” Bernard Herrmann Psycho (Alternating Minors)
+## Scenario 47 — Bernard Herrmann Psycho (Alternating Minors)
 
 **Style:** Bernard Herrmann *Psycho* alternating minors; cluster cells only; SQ mode.
 
@@ -1372,7 +1372,7 @@
 
 ---
 
-## Scenario 48 â€” Ennio Morricone Western
+## Scenario 48 — Ennio Morricone Western
 
 **Style:** Ennio Morricone western; suspended cells; DADGAD-adjacent; sparse texture.
 
@@ -1401,7 +1401,7 @@
 
 ---
 
-## Scenario 49 â€” John Barry Bond Style
+## Scenario 49 — John Barry Bond Style
 
 **Style:** John Barry Bond theme; shell voicing; offbeats; bergonzi cells.
 
@@ -1418,7 +1418,7 @@
 | 1 | Em | i |
 | 2 | F | bII Neapolitan colour |
 | 3 | Em | return |
-| 4 | F#m7b5 | iiÃ¸ |
+| 4 | F#m7b5 | iiø |
 | 5 | B7 | V |
 | 6 | Em | cadence |
 | 7 | Em | tag |
@@ -1430,7 +1430,7 @@
 
 ---
 
-## Scenario 50 â€” Nino Rota Fellini Circus
+## Scenario 50 — Nino Rota Fellini Circus
 
 **Style:** Nino Rota Fellini circus; 3/4 meter; cluster + quartal; ECM mode.
 
@@ -1455,11 +1455,11 @@
 
 **Cell families:** cluster, quartal
 
-**Musical notes:** Rota's circus harmony jumps by unexpected intervals in waltz time. 3/4 meter changes tritonic phrase plan cadence feel â€” cells align to three-beat bars.
+**Musical notes:** Rota's circus harmony jumps by unexpected intervals in waltz time. 3/4 meter changes tritonic phrase plan cadence feel — cells align to three-beat bars.
 
 ---
 
-## Scenario 51 â€” Jerry Goldsmith Atonal (12-Tone Row)
+## Scenario 51 — Jerry Goldsmith Atonal (12-Tone Row)
 
 **Style:** Jerry Goldsmith atonal; twelve-tone row as chord progression; all families; maximum oddity.
 
@@ -1492,7 +1492,7 @@
 
 ---
 
-## Scenario 52 â€” Polyrhythmic Polymodal
+## Scenario 52 — Polyrhythmic Polymodal
 
 **Style:** Polyrhythmic polymodal; 4/4 harmony against implied 3/4 cell rhythm; SQ mode.
 
@@ -1521,7 +1521,7 @@
 
 ---
 
-## Scenario 53 â€” Thomas Newman Suburban (Static Unease)
+## Scenario 53 — Thomas Newman Suburban (Static Unease)
 
 **Style:** Thomas Newman suburban unease; static diatonic loop; shorter_floating cells create anxiety.
 
@@ -1546,11 +1546,11 @@
 
 **Cell families:** shorter_floating only
 
-**Musical notes:** Harmonic stasis is deliberate â€” shorter_floating cells supply unease through voice-leading drift without changing chords. Newman-style suburban dread in sparse ECM texture.
+**Musical notes:** Harmonic stasis is deliberate — shorter_floating cells supply unease through voice-leading drift without changing chords. Newman-style suburban dread in sparse ECM texture.
 
 ---
 
-## Scenario 54 â€” Jonny Greenwood (There Will Be Blood)
+## Scenario 54 — Jonny Greenwood (There Will Be Blood)
 
 **Style:** Jonny Greenwood *There Will Be Blood*; chromatic ascending minors; cluster cells; ECM mode.
 
@@ -1579,7 +1579,7 @@
 
 ---
 
-## Scenario 55 â€” Shostakovich Ironic Waltz
+## Scenario 55 — Shostakovich Ironic Waltz
 
 **Style:** Shostakovich ironic waltz; 3/4 meter; bergonzi cells; BB mode.
 
@@ -1600,7 +1600,7 @@
 | 5 | Dm | |
 | 6 | Bb | bVI |
 | 7 | A7 | V |
-| 8 | Dmaj7 | major cadence â€” ironic |
+| 8 | Dmaj7 | major cadence — ironic |
 
 **Cell families:** bergonzi
 
@@ -1608,9 +1608,9 @@
 
 ---
 
-## Scenario 56 â€” Miles Sketches of Spain (Phrygian / Dorian)
+## Scenario 56 — Miles Sketches of Spain (Phrygian / Dorian)
 
-**Style:** Miles *Sketches of Spain*; E Phrygian upper | E Dorian lower; guitarâ€“bass duo; open voicing.
+**Style:** Miles *Sketches of Spain*; E Phrygian upper | E Dorian lower; guitar–bass duo; open voicing.
 
 **Engine:** ecm | sparse | open | medium | pentatonic
 
@@ -1637,7 +1637,7 @@
 
 ---
 
-## Scenario 57 â€” Stealth Cinematic Tension
+## Scenario 57 — Stealth Cinematic Tension
 
 **Style:** Stealth cinematic tension; shorter_floating only; ECM mode; major-third cycle.
 
@@ -1651,7 +1651,7 @@
 
 | Bar | Chord | Notes |
 |-----|-------|-------|
-| 1 | Abmaj7 | âˆ† |
+| 1 | Abmaj7 | ∆ |
 | 2 | Emaj7 | major third |
 | 3 | Cmaj7 | major third |
 | 4 | G#maj7 | major third |
@@ -1666,7 +1666,7 @@
 
 ---
 
-## Scenario 58 â€” Polychordal Cluster Bomb
+## Scenario 58 — Polychordal Cluster Bomb
 
 **Style:** Polychordal cluster bomb; Cmaj7 + Gbmaj7 + Dbmaj7 implied simultaneously; cluster only.
 
@@ -1695,7 +1695,7 @@
 
 ---
 
-## Scenario 59 â€” John Adams Minimalist Swell
+## Scenario 59 — John Adams Minimalist Swell
 
 **Style:** John Adams minimalist swell; quartal cells; fifth-cycle root motion; SQ mode.
 
@@ -1724,7 +1724,7 @@
 
 ---
 
-## Scenario 60 â€” Max Richter Post-Minimal
+## Scenario 60 — Max Richter Post-Minimal
 
 **Style:** Max Richter post-minimal; diatonic loop with shorter_floating shimmer above; ECM sparse.
 
@@ -1757,11 +1757,11 @@
 
 | Setting | Values |
 |---------|--------|
-| mode | `bb` Â· `sq` Â· `ecm` |
-| texture | `sparse` Â· `resonant` Â· `suspended` Â· `dense` Â· `medium` |
-| voicing | `close` Â· `open` Â· `mixed` Â· `shell_voicing` Â· `full_chord` |
-| difficulty | `easy` Â· `medium` Â· `hard` |
-| patternType | `pentatonic` Â· `chromatic` Â· `whole_tone` |
-| comping beatPattern | `beats_2_4` Â· `beats_1_3` Â· `all_beats` Â· `offbeats` |
+| mode | `bb` · `sq` · `ecm` |
+| texture | `sparse` · `resonant` · `suspended` · `dense` · `medium` |
+| voicing | `close` · `open` · `mixed` · `shell_voicing` · `full_chord` |
+| difficulty | `easy` · `medium` · `hard` |
+| patternType | `pentatonic` · `chromatic` · `whole_tone` |
+| comping beatPattern | `beats_2_4` · `beats_1_3` · `all_beats` · `offbeats` |
 
-**Implementation:** `realiseTritonic()` â†’ `realisationToMusicContext()` in `engines/composer-os-v2/core/tritonic/tritonicRealisation.ts`. Cookbook progressions are user-facing harmony plans; cell realisation fills upper-structure motion via voice-leading + Wayne behaviour layer.
+**Implementation:** `realiseTritonic()` → `realisationToMusicContext()` in `engines/composer-os-v2/core/tritonic/tritonicRealisation.ts`. Cookbook progressions are user-facing harmony plans; cell realisation fills upper-structure motion via voice-leading + Wayne behaviour layer.
