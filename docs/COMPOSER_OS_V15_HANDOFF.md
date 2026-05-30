@@ -38,7 +38,7 @@
 
 | Suite | Baseline (v1.5.0) |
 |-------|---------------------|
-| Jest node (`engines/composer-os-v2`) | **460/460** PASS (**58** suites) |
+| Jest node (`engines/composer-os-v2`) | **469/469** PASS (**59** suites) |
 | Jest total (node + UI smoke) | **464/464** PASS (**59** suites) |
 | `tests/musicContext.test.ts` | **111/111** PASS |
 | Composer smoke (full) | **489/0** PASS (**94** suites) — re-run after allowlist edits |
@@ -72,6 +72,7 @@
 | String Quartet | `string_quartet` | `buildMusicContextFromStringQuartet` |
 | Practice layer | `practice_layer` | `buildPracticeLayerFromMusicContext` |
 | Composition depth | `composition_depth` | `buildCompositionDepthFromMusicContext` |
+| Population Composer | `population_composer` | `buildMusicContextFromPopulation` |
 
 ## Active MusicContext consumers (flag-gated)
 

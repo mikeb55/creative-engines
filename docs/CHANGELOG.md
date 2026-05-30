@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-30) V106p1 — Population Composer hybrid MusicContext producer** — `PopulationComposerPreset` + `buildMusicContextFromPopulation()` (`sourceEngineId: 'population_composer'`); ecology selection across **tritonic** · **monk** · **wayne_shorter** · **vault** · **big_band** (dramatic fitness · contrast · inheritance pressure · mutation underrepresentation); receipt `population_composer_realisation_complete` (`generationCount` · `dominantProducer` · `producerWeightHistory` · `dramaticArcCompliance`); harmony via `normalizeChordSymbol` + checksum after normalisation. Always-on. Jest **`populationComposer.test.ts`** (+9).
+
 ---
 
 ## [1.5.0] — 2026-05-30
