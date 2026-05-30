@@ -17,9 +17,21 @@ import type { MusicContext, MusicContextHarmony } from '../music-context/musicCo
 import { wybleEtudeKeyRootName } from '../music-context/wybleEtudePresetProgressions';
 import type { TritonicCell, TritonicCellFamily } from './tritonicCell';
 import { tritonicDiagnosticsReceiptFields } from './tritonicDiagnostics';
+import {
+  applyTritonicBehaviourBiases,
+  biasSteeredStartCellSort,
+  nudgeTimelineForBehaviourBiases,
+  resolveTritonicBehaviourBiases,
+  type TritonicBehaviourBiases,
+} from './tritonicBehaviourBiases';
 import { projectedStrandMidisFromCells } from './tritonicStrands';
 import { applyWayneBehaviour, type WayneBehaviourOptions } from './tritonicBehaviourLayer';
-import { scheduleTritonicTimeline, type TritonicTimelineEvent } from './tritonicTimeline';
+import {
+  advanceTritonicState,
+  createTritonicStateMachine,
+  type TritonicStateMachine,
+} from './tritonicStateMachine';
+import { nudgeTimelineForBehaviourBiases, scheduleTritonicTimeline, type TritonicTimelineEvent } from './tritonicTimeline';
 import { getVoiceLeadingCandidates } from './tritonicVoiceLeading';
 
 export type TritonicRealisationMode = 'bb' | 'sq' | 'ecm';
@@ -28,6 +40,7 @@ export type TritonicRealisationContext = {
   mode: TritonicRealisationMode;
   cells: TritonicCell[];
   behaviourOptions: WayneBehaviourOptions;
+  behaviourBiases?: Partial<TritonicBehaviourBiases>;
 };
 
 export type TritonicRealisationResult = {
@@ -107,11 +120,12 @@ function modeCellPool(cells: TritonicCell[], mode: TritonicRealisationMode): Tri
   return preferred.length > 0 ? preferred : cells;
 }
 
-function pickStartCell(cells: TritonicCell[], mode: TritonicRealisationMode): TritonicCell {
+function pickStartCell(
+  cells: TritonicCell[],
+  mode: TritonicRealisationMode,
+  biases: TritonicBehaviourBiases,
+): TritonicCell {
   const pool = modeCellPool(cells, mode);
-  if (mode === 'bb') {
-    return [...pool].sort((a, b) => b.tension - a.tension)[0]!;
-  }
   if (mode === 'ecm') {
     return (
       pool.find((c) => c.family === 'suspended') ??
@@ -119,18 +133,25 @@ function pickStartCell(cells: TritonicCell[], mode: TritonicRealisationMode): Tr
       pool[0]!
     );
   }
-  return [...pool].sort((a, b) => a.tension - b.tension)[0]!;
+  const modeSort =
+    mode === 'bb'
+      ? (a: TritonicCell, b: TritonicCell) => b.tension - a.tension
+      : (a: TritonicCell, b: TritonicCell) => a.tension - b.tension;
+  return biasSteeredStartCellSort(pool, modeSort, biases)[0]!;
 }
 
 function pickNextCell(
   from: TritonicCell,
   pool: TritonicCell[],
   options: WayneBehaviourOptions,
+  biases: TritonicBehaviourBiases,
+  state?: TritonicStateMachine | null,
 ): TritonicCell {
   const candidates = getVoiceLeadingCandidates(from, pool);
   if (candidates.length === 0) return from;
   const ranked = applyWayneBehaviour(candidates, options);
-  return ranked[0]?.to ?? from;
+  const biasRanked = applyTritonicBehaviourBiases(ranked, biases, state);
+  return biasRanked[0]?.to ?? from;
 }
 
 function buildPhrase(
@@ -138,13 +159,33 @@ function buildPhrase(
   pool: TritonicCell[],
   length: number,
   options: WayneBehaviourOptions,
+  biases: TritonicBehaviourBiases,
 ): TritonicCell[] {
   const phrase: TritonicCell[] = [start];
   let current = start;
+  let state = createTritonicStateMachine();
+  const startMidi = projectedStrandMidisFromCells([start])[0] ?? 60;
+  state = advanceTritonicState({
+    state,
+    cell: start,
+    midi: startMidi,
+    sampleIndex: 0,
+    behaviourBiases: biases,
+  });
+
   for (let i = 1; i < length; i++) {
-    const next = pickNextCell(current, pool, options);
+    const next = pickNextCell(current, pool, options, biases, state);
     phrase.push(next);
     current = next;
+    const midis = projectedStrandMidisFromCells(phrase);
+    state = advanceTritonicState({
+      state,
+      cell: current,
+      midi: midis[midis.length - 1]!,
+      prevMidi: midis.length >= 2 ? midis[midis.length - 2] : undefined,
+      sampleIndex: i,
+      behaviourBiases: biases,
+    });
   }
   return phrase;
 }
@@ -214,21 +255,45 @@ export function realiseTritonicFromVault(
 
   const pool = modeCellPool(ctx.cells, ctx.mode);
   const behaviour = resolveWayneBehaviourForRealisation(ctx.mode, ctx.behaviourOptions);
+  const biases = resolveTritonicBehaviourBiases(ctx.behaviourBiases);
 
   const floatingCells: TritonicCell[] = [];
-  let current = pickStartCell(pool, ctx.mode);
+  let state = createTritonicStateMachine();
+  let current = pickStartCell(pool, ctx.mode, biases);
   floatingCells.push(floatCellAboveAnchor(current, anchorBars[0]!));
+  const startMidi = projectedStrandMidisFromCells([current])[0] ?? 60;
+  state = advanceTritonicState({
+    state,
+    cell: current,
+    midi: startMidi,
+    anchor: anchorBars[0]!,
+    sampleIndex: 0,
+    behaviourBiases: biases,
+  });
 
   for (let i = 1; i < anchorBars.length; i++) {
-    const next = pickNextCell(current, pool, behaviour);
+    const next = pickNextCell(current, pool, behaviour, biases, state);
     current = next;
     floatingCells.push(floatCellAboveAnchor(current, anchorBars[i]!));
+    const midis = projectedStrandMidisFromCells(floatingCells);
+    state = advanceTritonicState({
+      state,
+      cell: current,
+      midi: midis[midis.length - 1]!,
+      prevMidi: midis.length >= 2 ? midis[midis.length - 2] : undefined,
+      anchor: anchorBars[i]!,
+      sampleIndex: i,
+      behaviourBiases: biases,
+    });
   }
 
   const phrases = [floatingCells];
-  const timeline = scheduleTritonicTimeline(floatingCells, ctx.mode, {
-    barCount: anchorBars.length,
-  });
+  const timeline = nudgeTimelineForBehaviourBiases(
+    scheduleTritonicTimeline(floatingCells, ctx.mode, {
+      barCount: anchorBars.length,
+    }),
+    biases,
+  );
   return {
     phrases,
     mode: ctx.mode,
@@ -246,20 +311,24 @@ export function realiseTritonic(ctx: TritonicRealisationContext): TritonicRealis
 
   const pool = modeCellPool(ctx.cells, ctx.mode);
   const behaviour = resolveWayneBehaviourForRealisation(ctx.mode, ctx.behaviourOptions);
+  const biases = resolveTritonicBehaviourBiases(ctx.behaviourBiases);
   const plan = MODE_PHRASE_PLAN[ctx.mode];
   const phrases: TritonicCell[][] = [];
 
   for (let p = 0; p < plan.phraseCount; p++) {
-    const start = pickStartCell(pool, ctx.mode);
+    const start = pickStartCell(pool, ctx.mode, biases);
     const len = ctx.mode === 'sq' ? Math.min(plan.cellsPerPhrase, 2 + (p % 2)) : plan.cellsPerPhrase;
-    phrases.push(buildPhrase(start, pool, len, behaviour));
+    phrases.push(buildPhrase(start, pool, len, behaviour, biases));
   }
 
   return {
     phrases,
     mode: ctx.mode,
     checksum: checksumFromTritonicPhrases(phrases),
-    timeline: scheduleTritonicTimeline(phrases.flat(), ctx.mode),
+    timeline: nudgeTimelineForBehaviourBiases(
+      scheduleTritonicTimeline(phrases.flat(), ctx.mode),
+      biases,
+    ),
   };
 }
 
@@ -270,6 +339,7 @@ export function realiseTritonic(ctx: TritonicRealisationContext): TritonicRealis
 export function vaultAnchoredTritonicToMusicContext(
   vaultCtx: MusicContext,
   result: VaultAnchoredTritonicResult,
+  behaviourBiases?: Partial<TritonicBehaviourBiases>,
 ): MusicContext {
   const harmonyBars = result.anchorBars.map(normalizeChordSymbol);
   const harmonyChecksum = computeMusicContextChecksum(harmonyBars);
@@ -292,6 +362,7 @@ export function vaultAnchoredTritonicToMusicContext(
     timeline: result.timeline,
     anchorBars: result.anchorBars,
     strandMidis: projectedStrandMidisFromCells(cells),
+    behaviourBiases,
   });
 
   return {
@@ -332,7 +403,7 @@ export function buildMusicContextFromVaultTritonic(
   ctx: TritonicRealisationContext,
 ): MusicContext {
   const result = realiseTritonicFromVault(vaultCtx, ctx);
-  return vaultAnchoredTritonicToMusicContext(vaultCtx, result);
+  return vaultAnchoredTritonicToMusicContext(vaultCtx, result, ctx.behaviourBiases);
 }
 
 /** Map realised phrases to MusicContext harmony (one bar per cell). */

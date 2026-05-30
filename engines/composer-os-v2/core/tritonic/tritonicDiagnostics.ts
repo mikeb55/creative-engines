@@ -6,6 +6,10 @@
 import { chordTonesForChordSymbol } from '../harmony/chordSymbolAnalysis';
 import type { TritonicCell } from './tritonicCell';
 import {
+  resolveTritonicBehaviourBiases,
+  type TritonicBehaviourBiases,
+} from './tritonicBehaviourBiases';
+import {
   runTritonicStateMachine,
   type TritonicStateMachine,
 } from './tritonicStateMachine';
@@ -111,12 +115,14 @@ export type ComputeTritonicDiagnosticsParams = {
   harmonyBars?: readonly string[];
   strandMidis?: readonly number[];
   phraseState?: TritonicStateMachine;
+  behaviourBiases?: Partial<TritonicBehaviourBiases>;
 };
 
 export function computeTritonicMusicalDiagnostics(
   params: ComputeTritonicDiagnosticsParams,
 ): { diagnostics: TritonicMusicalDiagnostics; phraseState: TritonicStateMachine } {
   const strandMidis = params.strandMidis ?? projectedStrandMidisFromCells(params.cells);
+  const behaviourBiases = resolveTritonicBehaviourBiases(params.behaviourBiases);
   const phraseState =
     params.phraseState ??
     runTritonicStateMachine({
@@ -124,6 +130,7 @@ export function computeTritonicMusicalDiagnostics(
       strandMidis,
       anchorBars: params.anchorBars,
       harmonyBars: params.harmonyBars,
+      behaviourBiases,
     });
 
   const finalAnchor =

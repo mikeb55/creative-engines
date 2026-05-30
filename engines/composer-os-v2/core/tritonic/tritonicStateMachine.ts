@@ -6,6 +6,11 @@
 import { chordTonesForChordSymbol } from '../harmony/chordSymbolAnalysis';
 import type { PitchClass } from '../harmony/pitchFieldSpineTypes';
 import type { TritonicCell } from './tritonicCell';
+import {
+  biasSteeredResolutionEligibility,
+  type TritonicBehaviourBiases,
+} from './tritonicBehaviourBiases';
+import { neutralTritonicBehaviourBiases } from './tritonicBehaviourBiases';
 
 export type TritonicContourType = 'step' | 'leap' | 'reversal' | 'static';
 
@@ -77,53 +82,83 @@ function updateTensionArc(current: { mean: number; peak: number }, tension: numb
   return { mean, peak: Math.max(current.peak, tension) };
 }
 
-function resolutionEligibilityScore(unresolvedCount: number, cellTension: number, meanTension: number): number {
-  const unresolvedPenalty = Math.min(1, unresolvedCount / 6);
-  const tensionPenalty = meanTension * 0.35 + cellTension * 0.15;
-  const lowTensionBonus = cellTension < 0.5 ? 0.15 : 0;
-  return Math.max(0, Math.min(1, 1 - unresolvedPenalty - tensionPenalty + lowTensionBonus));
-}
-
 export type RunTritonicStateMachineParams = {
   cells: readonly TritonicCell[];
   strandMidis: readonly number[];
   anchorBars?: readonly string[];
   harmonyBars?: readonly string[];
+  behaviourBiases?: TritonicBehaviourBiases;
 };
+
+function resolutionEligibilityScore(
+  unresolvedCount: number,
+  cellTension: number,
+  meanTension: number,
+  biases: TritonicBehaviourBiases,
+): number {
+  const unresolvedPenalty = Math.min(1, unresolvedCount / 6);
+  const tensionPenalty = meanTension * 0.35 + cellTension * 0.15;
+  const lowTensionBonus = cellTension < 0.5 ? 0.15 : 0;
+  const base = Math.max(0, Math.min(1, 1 - unresolvedPenalty - tensionPenalty + lowTensionBonus));
+  return biasSteeredResolutionEligibility(base, cellTension, biases);
+}
+
+export type AdvanceTritonicStateParams = {
+  state: TritonicStateMachine;
+  cell: TritonicCell;
+  midi: number;
+  prevMidi?: number;
+  anchor?: string;
+  sampleIndex: number;
+  behaviourBiases?: TritonicBehaviourBiases;
+};
+
+/** Single phrase-memory step (used during bias-steered cell selection). */
+export function advanceTritonicState(params: AdvanceTritonicStateParams): TritonicStateMachine {
+  const biases = params.behaviourBiases ?? neutralTritonicBehaviourBiases();
+  const { state, cell, midi, prevMidi, sampleIndex } = params;
+  const anchor = params.anchor ?? '';
+  const mergedUnresolved = mergeUnresolved(
+    state.unresolvedTones,
+    unresolvedPcsForCell(cell, anchor, midi),
+  );
+  const tensionArc = updateTensionArc(state.tensionArc, cell.tension, sampleIndex);
+
+  return {
+    ...state,
+    previousCell: cell,
+    lastContourType: contourType(prevMidi, midi, state.lastContourType),
+    registralCentroid:
+      sampleIndex === 0 ? midi : (state.registralCentroid * sampleIndex + midi) / (sampleIndex + 1),
+    tensionArc,
+    unresolvedTones: mergedUnresolved,
+    resolutionEligibility: resolutionEligibilityScore(
+      mergedUnresolved.length,
+      cell.tension,
+      tensionArc.mean,
+      biases,
+    ),
+  };
+}
 
 /**
  * Advance phrase memory across cell transitions (harmony + melody shared path).
  */
 export function runTritonicStateMachine(params: RunTritonicStateMachineParams): TritonicStateMachine {
-  const { cells, strandMidis, anchorBars, harmonyBars } = params;
+  const { cells, strandMidis, anchorBars, harmonyBars, behaviourBiases } = params;
+  const biases = behaviourBiases ?? neutralTritonicBehaviourBiases();
   let state = createTritonicStateMachine();
 
   for (let i = 0; i < cells.length; i++) {
-    const cell = cells[i]!;
-    const midi = strandMidis[i] ?? state.registralCentroid;
-    const prevMidi = i > 0 ? strandMidis[i - 1] : undefined;
-    const anchor = anchorBars?.[i] ?? harmonyBars?.[i] ?? '';
-
-    const sampleIndex = i;
-    state = {
-      ...state,
-      previousCell: cell,
-      lastContourType: contourType(prevMidi, midi, state.lastContourType),
-      registralCentroid:
-        sampleIndex === 0
-          ? midi
-          : (state.registralCentroid * sampleIndex + midi) / (sampleIndex + 1),
-      tensionArc: updateTensionArc(state.tensionArc, cell.tension, sampleIndex),
-      unresolvedTones: mergeUnresolved(
-        state.unresolvedTones,
-        unresolvedPcsForCell(cell, anchor, midi),
-      ),
-      resolutionEligibility: resolutionEligibilityScore(
-        mergeUnresolved(state.unresolvedTones, unresolvedPcsForCell(cell, anchor, midi)).length,
-        cell.tension,
-        updateTensionArc(state.tensionArc, cell.tension, sampleIndex).mean,
-      ),
-    };
+    state = advanceTritonicState({
+      state,
+      cell: cells[i]!,
+      midi: strandMidis[i] ?? state.registralCentroid,
+      prevMidi: i > 0 ? strandMidis[i - 1] : undefined,
+      anchor: anchorBars?.[i] ?? harmonyBars?.[i] ?? '',
+      sampleIndex: i,
+      behaviourBiases: biases,
+    });
   }
 
   return state;

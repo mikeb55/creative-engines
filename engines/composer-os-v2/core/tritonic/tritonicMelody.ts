@@ -80,6 +80,7 @@ export function buildMusicContextFromTritonicMelody(
     timeline: result.timeline,
     harmonyBars,
     strandMidis: projectedStrandMidisFromCells(cells),
+    behaviourBiases: ctx.behaviourBiases,
   });
 
   return {

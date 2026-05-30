@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-30) V104p5 — Tritonic behaviour biases** — `tritonicBehaviourBiases.ts` (`TritonicBehaviourBiases`: tension, resolutionDelay, density, registralSpread, contourBias, cadenceAvoidance, rhythmicDisplacement, anchorAdhesion, motifSingability — all 0..1, default 0.5 neutral); soft rerank after Wayne layer + state-machine resolution eligibility; optional `behaviourBiases` on `TritonicRealisationContext`; timeline nudge from density/rhythmicDisplacement (identity at neutral). Always-on. Jest **`tritonicBehaviourBiases.test.ts`** (+8 cases; tritonic suite **58**/0).
+
 - **(2026-05-30) V104p4 — Tritonic diagnostics + state machine** — `tritonicDiagnostics.ts` (unresolvedToneCount, contourVariety, cadenceStrength, rhythmicOffsetDistribution); `tritonicStateMachine.ts` (`TritonicStateMachine`, phrase memory across cell transitions); both `tritonic_vault_realisation_complete` and `tritonic_melody_complete` receipts carry diagnostics + `phraseState`. Always-on. Jest **`tritonicDiagnostics.test.ts`**.
 
 - **(2026-05-29) V103b — Song Mode MusicContext handoff** — `composerOsAppGeneration.ts` `runSongStructure`: when `sm.compiledSong.chordPlan` non-empty → `songModeLockedMusicContextFromGoldenPath` (`buildSongModeStructureFromChordPlan` → `buildSongModeResult` → `lockSongMode` → `assertSongModeLock` → `projectSongModeLock`); empty chordPlan → duo LOCK fallback unchanged. V103a exports `buildSongModeResult`, `projectSongModeLock`, `SongModeResult`. Jest **`songMode.test.ts`** (+5 handoff cases). **`musicContextAdapters.ts`** Martino type fixes + root **`ts-node`** devDep for full tier.
