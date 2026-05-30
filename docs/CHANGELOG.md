@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-30) V105p3 — Wyble × Tritonic harmony feed** — `AnchorDescriptor` type + Wyble bar→descriptor conversion preserving voicing density; `buildMusicContextFromWybleTritonic()` (`sourceEngineId: 'wyble_tritonic'`) feeds per-bar anchor biases into Tritonic state machine without resetting tension arc / unresolved tones / registral centroid; phrase-level cell commits only; receipt `wyble_tritonic_realisation_complete` (anchorDescriptorCount · meanCellTension · phraseCommitCount · unresolvedCarryRate); harmony checksum LOCK after `normalizeChordSymbol`. Always-on. Jest **`wybleTritonicRealisation.test.ts`** (+10).
+
 - **(2026-05-30) V105p2 — String Quartet Generate UI** — `StringQuartetGeneratePanel` in **`HomeGenerate.tsx`**: texture archetype card row (7), key/tempo, Tritonic colour (None · Subtle · Active) with behaviour disclosure, seed + Variation; post-generate status chips (smooth lines · spacing · crossings); advanced diagnostics + full bias sliders. Payload **`stringQuartetMusicContext`** → API **`buildMusicContextFromStringQuartet`** on successful SQ export. Always-on.
 
 - **(2026-05-30) V105p1 — String Quartet MusicContext producer** — `buildMusicContextFromStringQuartet()` (`sourceEngineId: 'string_quartet'`); four-layer realisation (role assignment · texture archetype · voice-leading solver · diagnostics receipt `string_quartet_realisation_complete`); harmony via `normalizeChordSymbol` + checksum after normalisation; Tritonic float on violin_1 + one inner voice (`pad_suspension` · `contrapuntal_weave`; suppressed in `chorale`); cello/viola anchor-first. Always-on. Jest **`stringQuartetMusicContext.test.ts`** (+15).
