@@ -1,5 +1,6 @@
 /**
  * V104p2 — Tritonic melody generation: voice-led cell chain → singable motif + MusicContext.
+ * V104p3 — Three strands + timeline rhythm.
  * Always-on — no feature flag.
  */
 
@@ -10,67 +11,30 @@ import {
 } from '../music-context/musicContextAdapters';
 import type { MusicContext } from '../music-context/musicContextTypes';
 import type { CoreMotif } from '../motif/motifEngineTypes';
-import type { TritonicCell } from './tritonicCell';
 import {
   realiseTritonic,
   realisationToMusicContext,
   type TritonicRealisationContext,
 } from './tritonicRealisation';
-import { getVoiceLeadingCandidates, pitchClassMovement } from './tritonicVoiceLeading';
+import {
+  extractSingableMelodyMidis,
+  extractTritonicStrands,
+} from './tritonicStrands';
 
-const MELODY_ANCHOR_MIDI = 67;
+export { extractSingableMelodyMidis } from './tritonicStrands';
 
-function pcToMidiNearAnchor(pc: PitchClass, anchorMidi: number): number {
-  const anchorPc = ((anchorMidi % 12) + 12) % 12;
-  let midi = anchorMidi - anchorPc + pc;
-  while (midi < anchorMidi - 6) midi += 12;
-  while (midi > anchorMidi + 6) midi -= 12;
-  return midi;
-}
-
-/** Top-voice lane through a voice-led cell chain — singable register (≤6 semitone steps). */
-export function extractSingableMelodyMidis(cells: readonly TritonicCell[]): number[] {
-  if (cells.length === 0) return [];
-
-  const first = cells[0]!;
-  const topPc = [...first.notes].sort((a, b) => a - b).pop()!;
-  let melodyVoiceIdx = first.notes.indexOf(topPc);
-  let currentMidi = pcToMidiNearAnchor(topPc, MELODY_ANCHOR_MIDI);
-  const midis: number[] = [currentMidi];
-
-  for (let i = 1; i < cells.length; i++) {
-    const from = cells[i - 1]!;
-    const to = cells[i]!;
-    const candidates = getVoiceLeadingCandidates(from, [to]);
-    const vl = candidates[0];
-    const movement = vl?.voiceMovement[melodyVoiceIdx] ?? 0;
-    currentMidi += movement;
-    midis.push(currentMidi);
-
-    const targetPc = ((currentMidi % 12) + 12) % 12;
-    melodyVoiceIdx = to.notes.findIndex((n) => n === targetPc);
-    if (melodyVoiceIdx < 0) {
-      melodyVoiceIdx = to.notes.reduce(
-        (best, n, idx) =>
-          Math.abs(pitchClassMovement(targetPc, n)) <
-          Math.abs(pitchClassMovement(targetPc, to.notes[best]!))
-            ? idx
-            : best,
-        0,
-      );
-    }
-  }
-
-  return midis;
-}
-
-export function melodyMidisToCoreMotif(midis: readonly number[]): CoreMotif {
+export function melodyMidisToCoreMotif(
+  midis: readonly number[],
+  rhythm?: { startBeat: number; duration: number }[],
+): CoreMotif {
   const intervalPattern = midis.slice(1).map((m, i) => midis[i + 1]! - midis[i]!);
   const contourPattern = intervalPattern.map((iv) => (iv > 0 ? 1 : iv < 0 ? -1 : 0));
   return {
     id: 'tritonic-melody-0',
     intervalPattern,
-    rhythmPattern: midis.map((_, i) => ({ startBeat: i, duration: 1 })),
+    rhythmPattern:
+      rhythm ??
+      midis.map((_, i) => ({ startBeat: i, duration: 1 })),
     contourPattern,
     roleTags: ['guide-tone'],
     registerTags: ['mid'],
@@ -83,7 +47,7 @@ export type TritonicMelodyParams = {
 };
 
 /**
- * Realise tritonic cells → harmony + voice-led singable motif.
+ * Realise tritonic cells → harmony + three-strand motif (singer-safe export).
  * harmony.bars via normalizeChordSymbol; checksum after normalisation.
  */
 export function buildMusicContextFromTritonicMelody(
@@ -94,15 +58,20 @@ export function buildMusicContextFromTritonicMelody(
   const result = realiseTritonic(ctx);
   const cells = result.phrases.flat();
   const base = realisationToMusicContext(result, key);
+  const strands = extractTritonicStrands(result.timeline, cells);
 
   const harmonyBars = base.harmony.bars.map((s) => s);
   const harmonyChecksum = computeMusicContextChecksum(harmonyBars);
 
-  const melodyMidis = extractSingableMelodyMidis(cells);
-  const coreMotif = melodyMidisToCoreMotif(melodyMidis);
+  const singerMidis = strands.singerSafeMotif.map((n) => n.midi);
+  const singerRhythm = strands.singerSafeMotif.map((n) => ({
+    startBeat: (n.bar - 1) * 4 + (n.beat - 1),
+    duration: n.duration,
+  }));
+  const coreMotif = melodyMidisToCoreMotif(singerMidis, singerRhythm);
   const motif = coreMotifToMusicContextMotif(coreMotif, 'tritonic');
-  motif.anchorMidi = melodyMidis[0];
-  motif.seedPitches = [...melodyMidis];
+  motif.anchorMidi = singerMidis[0];
+  motif.seedPitches = [...singerMidis];
 
   return {
     ...base,
@@ -123,10 +92,16 @@ export function buildMusicContextFromTritonicMelody(
         payload: {
           mode: result.mode,
           cellCount: cells.length,
-          noteCount: melodyMidis.length,
+          noteCount: singerMidis.length,
           harmonyChecksum,
-          melodyChecksum: computeMusicContextChecksum(melodyMidis.map(String)),
+          melodyChecksum: computeMusicContextChecksum(singerMidis.map(String)),
           floatingChecksum: result.checksum,
+          timelineEventCount: result.timeline.length,
+          strandLengths: {
+            voicingTop: strands.voicingTop.length,
+            projectedStrand: strands.projectedStrand.length,
+            singerSafeMotif: strands.singerSafeMotif.length,
+          },
         },
       },
     ],

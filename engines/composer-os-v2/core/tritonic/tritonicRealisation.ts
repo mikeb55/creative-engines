@@ -17,6 +17,7 @@ import type { MusicContext, MusicContextHarmony } from '../music-context/musicCo
 import { wybleEtudeKeyRootName } from '../music-context/wybleEtudePresetProgressions';
 import type { TritonicCell, TritonicCellFamily } from './tritonicCell';
 import { applyWayneBehaviour, type WayneBehaviourOptions } from './tritonicBehaviourLayer';
+import { scheduleTritonicTimeline, type TritonicTimelineEvent } from './tritonicTimeline';
 import { getVoiceLeadingCandidates } from './tritonicVoiceLeading';
 
 export type TritonicRealisationMode = 'bb' | 'sq' | 'ecm';
@@ -31,7 +32,10 @@ export type TritonicRealisationResult = {
   phrases: TritonicCell[][];
   mode: TritonicRealisationMode;
   checksum: string;
+  timeline: TritonicTimelineEvent[];
 };
+
+export type { TritonicTimelineEvent };
 
 /** Vault-anchored realisation — one floating cell per vault harmony bar. */
 export type VaultAnchoredTritonicResult = TritonicRealisationResult & {
@@ -220,12 +224,16 @@ export function realiseTritonicFromVault(
   }
 
   const phrases = [floatingCells];
+  const timeline = scheduleTritonicTimeline(floatingCells, ctx.mode, {
+    barCount: anchorBars.length,
+  });
   return {
     phrases,
     mode: ctx.mode,
     checksum: checksumFromTritonicPhrases(phrases),
     anchorBars,
     anchorChecksum,
+    timeline,
   };
 }
 
@@ -249,6 +257,7 @@ export function realiseTritonic(ctx: TritonicRealisationContext): TritonicRealis
     phrases,
     mode: ctx.mode,
     checksum: checksumFromTritonicPhrases(phrases),
+    timeline: scheduleTritonicTimeline(phrases.flat(), ctx.mode),
   };
 }
 
@@ -295,6 +304,7 @@ export function vaultAnchoredTritonicToMusicContext(
           anchorChecksum: result.anchorChecksum,
           floatingChecksum: result.checksum,
           barCount: harmonyBars.length,
+          timelineEventCount: result.timeline.length,
         },
       },
     ],
