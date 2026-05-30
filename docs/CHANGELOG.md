@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-30) V104p1 — Vault × Tritonic integration** — `tritonicRealisation.ts`: `isVaultMusicContext`, `realiseTritonicFromVault`, `vaultAnchoredTritonicToMusicContext`, `buildMusicContextFromVaultTritonic`; one floating cell per vault anchor bar (voice-led); `harmony.bars` stays vault anchors with shared checksum LOCK; `tritonic_vault_realisation_complete` receipt. Always-on — no feature flag. Jest **`tritonicRealisation.test.ts`** (+6 vault cases).
+
 - **(2026-05-29) V103b — Song Mode MusicContext handoff** — `composerOsAppGeneration.ts` `runSongStructure`: when `sm.compiledSong.chordPlan` non-empty → `songModeLockedMusicContextFromGoldenPath` (`buildSongModeStructureFromChordPlan` → `buildSongModeResult` → `lockSongMode` → `assertSongModeLock` → `projectSongModeLock`); empty chordPlan → duo LOCK fallback unchanged. V103a exports `buildSongModeResult`, `projectSongModeLock`, `SongModeResult`. Jest **`songMode.test.ts`** (+5 handoff cases). **`musicContextAdapters.ts`** Martino type fixes + root **`ts-node`** devDep for full tier.
 
 - **(2026-05-29) V103a — Song Mode producer + LOCK types** — Extended `core/song-mode/songModeTypes.ts` (`SongModeSectionContext`, `SongModeExportTruth`, `SongModeLock`); `songModeProducer.ts` (section builder, `assembleSongModeExportTruth` with duplicate-ID hard-fail, per-section checksum logging, deterministic `masterChecksum`, `buildMusicContextFromSongModeTruth` — concat + re-normalise + checksum-after-norm); `songModeLock.ts` (`lockSongMode`, `assertSongModeLock`, `assertSongModeLockIntegrity`, `buildMusicContextFromLockedSongMode`). Jest **`core/song-mode/songMode.test.ts`** (10 cases). No app wiring yet (V103b).

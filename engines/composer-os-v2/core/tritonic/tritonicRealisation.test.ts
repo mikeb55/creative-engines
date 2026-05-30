@@ -1,15 +1,27 @@
 /**
  * V102 — Tritonic realisation + MusicContext export.
+ * V104p1 — Vault-anchored tritonic realisation.
  */
 
 import { normalizeChordSymbol } from '../harmony/chordSymbolAnalysis';
-import { computeMusicContextChecksum } from '../music-context/musicContextAdapters';
+import {
+  buildMusicContextFromVaultOutput,
+  computeMusicContextChecksum,
+} from '../music-context/musicContextAdapters';
+import type { ParsedChart } from '../irealpro/parsedChart';
+import type { IRealVaultOutput } from '../irealpro/irealVaultPipeline';
 import * as behaviourLayer from './tritonicBehaviourLayer';
 import { buildTritonicDictionary } from './tritonicCell';
 import {
+  anchorRootPcFromSymbol,
+  buildMusicContextFromVaultTritonic,
+  floatCellAboveAnchor,
+  isVaultMusicContext,
   realiseTritonic,
+  realiseTritonicFromVault,
   realisationToMusicContext,
   resolveWayneBehaviourForRealisation,
+  vaultAnchoredTritonicToMusicContext,
 } from './tritonicRealisation';
 
 function defaultCtx(overrides: Partial<Parameters<typeof realiseTritonic>[0]> = {}) {
@@ -96,5 +108,99 @@ describe('realisationToMusicContext', () => {
     expect(mc.provenance?.sourceEngineId).toBe('tritonic');
     expect(mc.harmony.bars.length).toBeGreaterThan(0);
     expect(typeof mc.provenance?.capturedAt).toBe('number');
+  });
+});
+
+function mockVaultChart(harmonies: string[]): ParsedChart {
+  return {
+    title: 'Tritonic Vault',
+    composer: '',
+    key: 'Bb major',
+    meter: { num: 4, den: 4 },
+    timeSignature: { num: 4, den: 4 },
+    harmonies,
+    barMeterMap: {},
+    repeatMarkers: [],
+    tempo: 120,
+    style: null,
+    sections: [],
+    measures: harmonies.map(() => []),
+    repeats: [],
+  };
+}
+
+function mockVaultOutput(): IRealVaultOutput {
+  return {
+    title: 'Tritonic Vault',
+    key: 'Bb',
+    bars: 4,
+    generatedNotes: [],
+    chordMappings: [],
+    unmappedChords: [],
+    mode: 'solo',
+    seed: 42001,
+  };
+}
+
+function vaultMusicContext(harmonies: string[]) {
+  return buildMusicContextFromVaultOutput(mockVaultOutput(), mockVaultChart(harmonies));
+}
+
+describe('Vault × Tritonic integration (v1.4p1)', () => {
+  it('isVaultMusicContext detects vault provenance', () => {
+    const vaultCtx = vaultMusicContext(['Bb7', 'Eb7', 'Bb7', 'F7']);
+    expect(isVaultMusicContext(vaultCtx)).toBe(true);
+    const standalone = realisationToMusicContext(realiseTritonic(defaultCtx()), 0);
+    expect(isVaultMusicContext(standalone)).toBe(false);
+  });
+
+  it('realiseTritonicFromVault produces one floating cell per anchor bar', () => {
+    const anchors = ['Bb7', 'Eb7', 'Bb7', 'F7'];
+    const vaultCtx = vaultMusicContext(anchors);
+    const result = realiseTritonicFromVault(vaultCtx, defaultCtx({ mode: 'bb' }));
+    expect(result.anchorBars).toEqual(anchors.map(normalizeChordSymbol));
+    expect(result.phrases.flat()).toHaveLength(anchors.length);
+    expect(result.anchorChecksum).toBe(vaultCtx.harmony.checksum);
+  });
+
+  it('vaultAnchoredTritonicToMusicContext preserves anchor checksum LOCK', () => {
+    const anchors = ['Dm7', 'G7', 'Cmaj7', 'Am7'];
+    const vaultCtx = vaultMusicContext(anchors);
+    const result = realiseTritonicFromVault(vaultCtx, defaultCtx({ mode: 'sq' }));
+    const mc = vaultAnchoredTritonicToMusicContext(vaultCtx, result);
+    const normalised = mc.harmony.bars.map(normalizeChordSymbol);
+    expect(mc.harmony.bars).toEqual(normalised);
+    expect(mc.harmony.checksum).toBe(computeMusicContextChecksum(normalised));
+    expect(mc.harmony.checksum).toBe(vaultCtx.harmony.checksum);
+    expect(mc.harmony.bars).toEqual(anchors.map(normalizeChordSymbol));
+  });
+
+  it('buildMusicContextFromVaultTritonic appends tritonic receipt and hops provenance', () => {
+    const vaultCtx = vaultMusicContext(['Cmaj7', 'Am7', 'Dm7', 'G7']);
+    const mc = buildMusicContextFromVaultTritonic(vaultCtx, defaultCtx({ mode: 'ecm' }));
+    expect(mc.provenance?.sourceEngineId).toBe('tritonic');
+    expect(mc.presetId).toBe('tritonic_vault_ecm');
+    expect(mc.receipts.some((r) => r.kind === 'vault_generation_complete')).toBe(true);
+    expect(mc.receipts.some((r) => r.kind === 'tritonic_vault_realisation_complete')).toBe(true);
+    const tritonicReceipt = mc.receipts.find((r) => r.kind === 'tritonic_vault_realisation_complete');
+    expect(tritonicReceipt?.payload).toMatchObject({
+      mode: 'ecm',
+      anchorChecksum: vaultCtx.harmony.checksum,
+      barCount: 4,
+    });
+  });
+
+  it('floatCellAboveAnchor transposes by anchor root', () => {
+    const dict = buildTritonicDictionary();
+    const cell = dict.byFamily.bergonzi[0]!;
+    const floated = floatCellAboveAnchor(cell, 'G7');
+    expect(floated.notes).toHaveLength(3);
+    expect(anchorRootPcFromSymbol('G7')).toBe(7);
+    expect(floated.family).toBe(cell.family);
+  });
+
+  it('rejects non-vault MusicContext', () => {
+    const mc = realisationToMusicContext(realiseTritonic(defaultCtx()), 0);
+    expect(() => realiseTritonicFromVault(mc, defaultCtx())).toThrow(/Vault MusicContext/);
   });
 });
