@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-30) V105p7 — V89 composition depth** — `buildCompositionDepthFromMusicContext()` elaborates any MusicContext in-place: `harmonicDevelopmentPlan` (tension rise · plateau · release) · `motivicTransformations` (augmentation · inversion · retrograde · fragmentation) · per-chord `reharmonisationSuggestions` · `sectionArcMap` (exposition · development · climax · resolution) · `composerNotes`; `sourceEngineId: 'composition_depth'` · receipt `composition_depth_complete` (`sectionCount` · `reharmonisationCount` · `motivicTransformationCount` · `arcSpanBars`). Always-on. Jest **`compositionDepth.test.ts`** (+8).
+
 - **(2026-05-30) V105p6 — V88 practice layer** — `buildPracticeLayerFromMusicContext()` extracts etude targets from any MusicContext: `targetChordSymbols` · voice-led `guideToneLines` (3rd/7th) · per-chord `scaleRecommendations` · `rhythmicFocus` (motif or meter/bpm) · `difficultyRating` · ordered `practiceSequence`; `sourceEngineId: 'practice_layer'` · receipt `practice_layer_complete` (`chordCount` · `guideToneLineLength` · `difficultyRating` · `scaleCount`). Always-on. Jest **`practiceLayer.test.ts`** (+8).
 
 - **(2026-05-30) V105p5 — Monk Python engine bridge** — `monk_bridge.py` stdin JSON → `MonkEngine` compile → stdout harmony bars + Monk language metrics (`chromaticNeighbourRate` · `tritoneShiftCount` · `rhythmicMotifConsistency` · `dissonanceResolutionScore`); `monkEngineBridge.ts` + `buildMusicContextFromMonk()` (`sourceEngineId: 'monk'`, receipt `monk_realisation_complete`); harmony via `normalizeChordSymbol` + checksum after normalisation. Always-on. Jest **`monkMusicContext.test.ts`** (+3) · pytest **`test_monk_bridge.py`** (+2).
