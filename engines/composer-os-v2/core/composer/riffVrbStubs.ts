@@ -1315,7 +1315,7 @@ export const WES_MONTGOMERY: VoiceRuleBundle = {
     rhythmicIndependenceFloor: 0.62,
     registerInterlock: true,
     intervalPreference: 'pentatonic_diatonic',
-    textureTagType: 'jazz_swing_line',
+    textureTagType: 'neutral',
   },
   riffProfile: (() => {
     const slots = 8;
@@ -1417,7 +1417,7 @@ export const JOE_PASS: VoiceRuleBundle = {
     rhythmicIndependenceFloor: 0.65,
     registerInterlock: true,
     intervalPreference: 'pentatonic_diatonic',
-    textureTagType: 'jazz_swing_line',
+    textureTagType: 'neutral',
   },
   riffProfile: (() => {
     const slots = 8;
@@ -1529,7 +1529,7 @@ export const ALLAN_HOLDSWORTH: VoiceRuleBundle = {
     rhythmicIndependenceFloor: 0.55,
     registerInterlock: false,
     intervalPreference: 'upper_extension_non_functional',
-    textureTagType: 'jazz_swing_line',
+    textureTagType: 'neutral',
   },
   riffProfile: (() => {
     const slots = 8;
@@ -1554,7 +1554,7 @@ export const ALLAN_HOLDSWORTH: VoiceRuleBundle = {
       },
       chromaticBudget: 0.74,
       intervalCell: { steps: [4, 3, 2, 5], transpositionMode: 'chromatic' },
-      registerAnchor: 'high_register',
+      registerAnchor: 'upper_register',
       registerBandPerVoice: {
         lead: { min: 58, max: 84 },
         guitar: { min: 58, max: 84 },

@@ -474,8 +474,8 @@ function genericKeysCompProfile(id: SongwriterRuleId): SongwriterCompProfile {
 }
 
 /**
- * Non-null only for keyboard-centric primaries — guitar-led writers (Beatles, Paul Simon, Richard Thompson)
- * return null so Song Mode keeps the existing guitar/bass duo behaviour without keys-comp routing.
+ * Keyboard-centric primaries return a keys comp profile; guitar-centric writers may return a guitar
+ * comp profile (e.g. Joni Mitchell acoustic) or null when Song Mode keeps guitar/bass duo without comp routing.
  */
 export function getSongwriterCompProfile(raw: string | undefined | null): SongwriterCompProfile | null {
   const id = normalizeSongwriterStyleKey(raw ?? '');

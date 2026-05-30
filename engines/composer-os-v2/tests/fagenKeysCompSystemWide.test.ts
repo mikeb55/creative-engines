@@ -114,8 +114,10 @@ describe('Fagen keys-comp system-wide', () => {
 
   it('guitar-centric writers do not get a keyboard comp profile', () => {
     for (const id of GUITAR_CENTRIC_SONGWRITER_IDS) {
-      expect(getSongwriterCompProfile(id)).toBeNull();
+      const p = getSongwriterCompProfile(id);
+      expect(p?.primaryCompInstrument).not.toBe('keys');
     }
+    expect(getSongwriterCompProfile('joni_mitchell')?.primaryCompInstrument).toBe('guitar');
   });
 
   it('Bacharach profile stays distinct from Fagen compact-voice grammar', () => {

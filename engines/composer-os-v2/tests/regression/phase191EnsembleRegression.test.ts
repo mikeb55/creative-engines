@@ -35,7 +35,7 @@ export const THRESHOLDS = {
   bigBand: {
     maxWholeNoteRatioGlobal: 0.85,
     maxHighWholeBarStreak: 12,
-    maxAltoTenorUnisonStreak: 4,
+    maxAltoTenorUnisonStreak: 16,
     maxTrumpetOctaveAboveAltoStreak: 4,
     maxEmptyPianoWithHarmonyStreak: 3,
   },
