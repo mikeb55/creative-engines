@@ -46,6 +46,11 @@ export interface PopulationComposerPreset {
   bpm?: number;
 }
 
+/** Melodic participant in population ecology (not a harmony-bar producer). */
+export type PopulationMelodicParticipantId = 'zappa_solo';
+
+export type ZappaSoloPopulationParticipation = 'primary' | 'secondary' | 'tertiary';
+
 export type PopulationComposerReceiptPayload = {
   generationCount: number;
   dominantProducer: PopulationProducerId;

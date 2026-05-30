@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-30) V106p2 — Zappa Solo MusicContext producer** — `ZappaSoloMusicContextPreset` + `buildMusicContextFromZappaSolo()` (`sourceEngineId: 'zappa_solo'`); melodic dramatist over **supplied** harmony (never authors chords); four-state solo arc (`claim` · `agitation` · `fracture` · `crooked_landing`); Population participation levels (`primary` · `secondary` · `tertiary`); pitch-language metrics + wraps `generateZappaSolo`; receipt `zappa_solo_realisation_complete` (`modalAnchorRatio` · `motifMutationRecurrence` · `rhythmicElasticityScore` · `targetedDissonanceIndex` · `closureRefusalScore` · `conversationalAsymmetry`); harmony via `normalizeChordSymbol` + checksum LOCK (`source: locked`). Always-on. Jest **`zappaSoloMusicContext.test.ts`** (+9).
+
 - **(2026-05-30) V106p1 — Population Composer hybrid MusicContext producer** — `PopulationComposerPreset` + `buildMusicContextFromPopulation()` (`sourceEngineId: 'population_composer'`); ecology selection across **tritonic** · **monk** · **wayne_shorter** · **vault** · **big_band** (dramatic fitness · contrast · inheritance pressure · mutation underrepresentation); receipt `population_composer_realisation_complete` (`generationCount` · `dominantProducer` · `producerWeightHistory` · `dramaticArcCompliance`); harmony via `normalizeChordSymbol` + checksum after normalisation. Always-on. Jest **`populationComposer.test.ts`** (+9).
 
 ---
