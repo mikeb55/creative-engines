@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-29) V103a — Song Mode producer + LOCK types** — Extended `core/song-mode/songModeTypes.ts` (`SongModeSectionContext`, `SongModeExportTruth`, `SongModeLock`); `songModeProducer.ts` (section builder, `assembleSongModeExportTruth` with duplicate-ID hard-fail, per-section checksum logging, deterministic `masterChecksum`, `buildMusicContextFromSongModeTruth` — concat + re-normalise + checksum-after-norm); `songModeLock.ts` (`lockSongMode`, `assertSongModeLock`, `assertSongModeLockIntegrity`, `buildMusicContextFromLockedSongMode`). Jest **`core/song-mode/songMode.test.ts`** (10 cases). No app wiring yet (V103b).
+
 - **(2026-05-29) V102 — Tritonic realisation** — `core/tritonic/tritonicRealisation.ts` (`TritonicRealisationContext` / `Result`, `realiseTritonic`, `realisationToMusicContext`): Wayne behaviour + voice-leading phrase chains per mode (BB ≥4 cells / high oddity, SQ ≤3 cells / smooth, ECM suspended+shorter_floating / forced `delayedResolution`); checksum from realised cell notes; MusicContext `sourceEngineId: 'tritonic'`. No phraseEngineV2 / existing producer changes. Jest **`tritonicRealisation.test.ts`**.
 
 - **(2026-05-29) V101 — ECM chamber MusicContext producer** — `core/ecm/ecmTypes.ts` (`EcmChamberPreset`: key/tempo/texture/voicing), `ecmProducer.ts` (`buildMusicContextFromEcm` — modal cycle per texture, voicing spellings, `normalizeChordSymbol` + checksum, `sourceEngineId: 'ecm'`, always-on, no DuoLock). Jest **`core/ecm/ecm.test.ts`**.
