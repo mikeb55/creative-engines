@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-05-30) COMPOSER_HANDBOOK.docx** — `scripts/generateComposerHandbookDocx.mjs` regenerates **`docs/COMPOSER_HANDBOOK.docx`** from **`docs/COMPOSER_HANDBOOK.md`** (title page, TOC, heading hierarchy, tables, page numbers).
+
 - **(2026-05-30) V104p6 — Big Band + New Orleans MusicContext producers** — `buildMusicContextFromBigBand()` (`sourceEngineId: 'big_band'`, comping styles `brass_punch` · `sax_soli` · `shell_voicing` · `freddie_green`, receipt `big_band_realisation_complete`); `buildMusicContextFromNewOrleans()` (`sourceEngineId: 'new_orleans'`, styles `second_line` · `anticipation_bass` · `brass_punch_offbeat`, receipt `new_orleans_realisation_complete`); shared `compingHarmonyTemplates.ts`; harmony via `normalizeChordSymbol` + checksum after normalisation. Always-on. Jest **`bigBandMusicContext.test.ts`** · **`newOrleansMusicContext.test.ts`**.
 
 - **(2026-05-30) V104p5 — Tritonic behaviour biases** — `tritonicBehaviourBiases.ts` (`TritonicBehaviourBiases`: tension, resolutionDelay, density, registralSpread, contourBias, cadenceAvoidance, rhythmicDisplacement, anchorAdhesion, motifSingability — all 0..1, default 0.5 neutral); soft rerank after Wayne layer + state-machine resolution eligibility; optional `behaviourBiases` on `TritonicRealisationContext`; timeline nudge from density/rhythmicDisplacement (identity at neutral). Always-on. Jest **`tritonicBehaviourBiases.test.ts`** (+8 cases; tritonic suite **58**/0).
