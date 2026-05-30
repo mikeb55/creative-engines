@@ -24,6 +24,8 @@ import {
   type TritonicBehaviourBiases,
 } from './tritonicBehaviourBiases';
 import { projectedStrandMidisFromCells } from './tritonicStrands';
+import { tritonicDiagnosticsReceiptFields } from './tritonicDiagnostics';
+import { buildTritonicMonitorSnapshot } from './tritonicMonitorSnapshot';
 import {
   applyWayneBehaviour,
   type WayneBehaviourOptions,
@@ -213,6 +215,30 @@ export function buildMusicContextFromWybleTritonic(
     source: wybleCtx.harmony.source,
   };
 
+  const cells = result.phrases.flat();
+  const diagnosticFields = tritonicDiagnosticsReceiptFields({
+    cells,
+    timeline: result.timeline,
+    anchorBars: result.anchorBars,
+    strandMidis: projectedStrandMidisFromCells(cells),
+    behaviourBiases: tritonicBiases,
+  });
+  const monitorSnapshot = buildTritonicMonitorSnapshot({
+    timeline: result.timeline,
+    cells,
+    anchorBars: result.anchorBars,
+    phraseState: diagnosticFields.phraseState,
+    diagnostics: {
+      unresolvedToneCount: diagnosticFields.unresolvedToneCount,
+      contourVariety: diagnosticFields.contourVariety,
+      cadenceStrength: diagnosticFields.cadenceStrength,
+      rhythmicOffsetDistribution: diagnosticFields.rhythmicOffsetDistribution,
+    },
+    mode: result.mode,
+    phraseCount: 1,
+    behaviourBiases: tritonicBiases,
+  });
+
   return {
     ...wybleCtx,
     presetId: 'wyble_tritonic',
@@ -234,6 +260,12 @@ export function buildMusicContextFromWybleTritonic(
           floatingChecksum: result.checksum,
           barCount: harmonyBars.length,
           ...result.receiptMetrics,
+          unresolvedToneCount: diagnosticFields.unresolvedToneCount,
+          contourVariety: diagnosticFields.contourVariety,
+          cadenceStrength: diagnosticFields.cadenceStrength,
+          rhythmicOffsetDistribution: diagnosticFields.rhythmicOffsetDistribution,
+          phraseState: diagnosticFields.phraseState,
+          monitorSnapshot,
         },
       },
     ],

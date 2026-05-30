@@ -81,6 +81,11 @@ import {
   type SqRealisationReceiptPayload,
 } from '../components/string-quartet/StringQuartetGeneratePanel';
 import { MusicContextGeneratePanels } from '../components/music/MusicContextGeneratePanels';
+import { TritonicMonitorPanel } from '../components/tritonic/TritonicMonitorPanel';
+import {
+  buildTritonicMonitorViewFromMusicContext,
+  shouldShowTritonicMonitor,
+} from '../../../../engines/composer-os-v2/core/music-context/tritonicMonitorPanels';
 import type {
   StringQuartetTextureArchetype,
   StringQuartetTritonicColour,
@@ -2197,6 +2202,8 @@ export function HomeGenerate({
   );
   const [sqBehaviourOpen, setSqBehaviourOpen] = useState(false);
   const [sqAdvancedOpen, setSqAdvancedOpen] = useState(false);
+  const [tritonicBiasLastChanged, setTritonicBiasLastChanged] =
+    useState<keyof TritonicBehaviourBiases | null>(null);
   const [baseSeed, setBaseSeed] = useState(() => Math.floor(Math.random() * 1e9));
   const [variationId, setVariationId] = useState('v-1');
   const [tonalCenter, setTonalCenter] = useState('');
@@ -2531,6 +2538,13 @@ export function HomeGenerate({
     if (!raw?.harmony?.bars?.length) return null;
     return raw as MusicContext;
   }, [result?.musicContext, sharedMusicContext]);
+  const tritonicMonitorView = useMemo(() => {
+    if (!generatePanelMusicContext) return null;
+    return buildTritonicMonitorViewFromMusicContext(generatePanelMusicContext);
+  }, [generatePanelMusicContext]);
+  const showTritonicMonitor =
+    (generatePanelMusicContext != null && shouldShowTritonicMonitor(generatePanelMusicContext)) ||
+    (presetId === 'string_quartet' && sqTritonicColour !== 'none');
   const [playbackSeq, setPlaybackSeq] = useState<PlaybackSequence | null>(null);
   const [playbackBeat, setPlaybackBeat] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -6841,8 +6855,36 @@ export function HomeGenerate({
         />
       )}
       {sharedMusicContext ? <SharedMusicContextReadyBadge /> : null}
-      {generatePanelMusicContext ? (
-        <MusicContextGeneratePanels musicContext={generatePanelMusicContext} />
+      {showTritonicMonitor || generatePanelMusicContext ? (
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '1rem',
+            alignItems: 'flex-start',
+            marginBottom: '1rem',
+            maxWidth: 1280,
+          }}
+        >
+          {generatePanelMusicContext ? (
+            <div style={{ flex: '1 1 480px', minWidth: 0 }}>
+              <MusicContextGeneratePanels musicContext={generatePanelMusicContext} />
+            </div>
+          ) : null}
+          {showTritonicMonitor ? (
+            <TritonicMonitorPanel
+              monitorView={tritonicMonitorView}
+              behaviourBiases={sqBehaviourBiases}
+              onBehaviourBiasChange={(key, value) => {
+                setSqBehaviourBiases((prev) => ({ ...prev, [key]: value }));
+                setTritonicBiasLastChanged(key);
+              }}
+              recentlyChangedBias={tritonicBiasLastChanged}
+              loading={loading}
+              hasGenerated={!!generatePanelMusicContext && shouldShowTritonicMonitor(generatePanelMusicContext)}
+            />
+          ) : null}
+        </div>
       ) : null}
 
 

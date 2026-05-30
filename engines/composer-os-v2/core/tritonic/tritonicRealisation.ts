@@ -17,6 +17,7 @@ import type { MusicContext, MusicContextHarmony } from '../music-context/musicCo
 import { wybleEtudeKeyRootName } from '../music-context/wybleEtudePresetProgressions';
 import type { TritonicCell, TritonicCellFamily } from './tritonicCell';
 import { tritonicDiagnosticsReceiptFields } from './tritonicDiagnostics';
+import { buildTritonicMonitorSnapshot } from './tritonicMonitorSnapshot';
 import {
   applyTritonicBehaviourBiases,
   biasSteeredStartCellSort,
@@ -365,6 +366,22 @@ export function vaultAnchoredTritonicToMusicContext(
     behaviourBiases,
   });
 
+  const monitorSnapshot = buildTritonicMonitorSnapshot({
+    timeline: result.timeline,
+    cells,
+    anchorBars: result.anchorBars,
+    phraseState: diagnosticFields.phraseState,
+    diagnostics: {
+      unresolvedToneCount: diagnosticFields.unresolvedToneCount,
+      contourVariety: diagnosticFields.contourVariety,
+      cadenceStrength: diagnosticFields.cadenceStrength,
+      rhythmicOffsetDistribution: diagnosticFields.rhythmicOffsetDistribution,
+    },
+    mode: result.mode,
+    phraseCount: result.mode === 'sq' ? 2 : 1,
+    behaviourBiases,
+  });
+
   return {
     ...vaultCtx,
     presetId: `tritonic_vault_${result.mode}`,
@@ -391,6 +408,7 @@ export function vaultAnchoredTritonicToMusicContext(
           cadenceStrength: diagnosticFields.cadenceStrength,
           rhythmicOffsetDistribution: diagnosticFields.rhythmicOffsetDistribution,
           phraseState: diagnosticFields.phraseState,
+          monitorSnapshot,
         },
       },
     ],

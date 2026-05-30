@@ -22,6 +22,7 @@ import {
   projectedStrandMidisFromCells,
 } from './tritonicStrands';
 import { tritonicDiagnosticsReceiptFields } from './tritonicDiagnostics';
+import { buildTritonicMonitorSnapshot } from './tritonicMonitorSnapshot';
 
 export { extractSingableMelodyMidis } from './tritonicStrands';
 
@@ -83,6 +84,22 @@ export function buildMusicContextFromTritonicMelody(
     behaviourBiases: ctx.behaviourBiases,
   });
 
+  const monitorSnapshot = buildTritonicMonitorSnapshot({
+    timeline: result.timeline,
+    cells,
+    harmonyBars,
+    phraseState: diagnosticFields.phraseState,
+    diagnostics: {
+      unresolvedToneCount: diagnosticFields.unresolvedToneCount,
+      contourVariety: diagnosticFields.contourVariety,
+      cadenceStrength: diagnosticFields.cadenceStrength,
+      rhythmicOffsetDistribution: diagnosticFields.rhythmicOffsetDistribution,
+    },
+    mode: result.mode,
+    phraseCount: result.mode === 'sq' ? 2 : 1,
+    behaviourBiases: ctx.behaviourBiases,
+  });
+
   return {
     ...base,
     seed: params?.seed ?? 0,
@@ -117,6 +134,7 @@ export function buildMusicContextFromTritonicMelody(
           cadenceStrength: diagnosticFields.cadenceStrength,
           rhythmicOffsetDistribution: diagnosticFields.rhythmicOffsetDistribution,
           phraseState: diagnosticFields.phraseState,
+          monitorSnapshot,
         },
       },
     ],
