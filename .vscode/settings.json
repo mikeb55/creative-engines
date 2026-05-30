@@ -1,0 +1,10 @@
+{
+  "files.watcherExclude": {
+    "**/release/**": true,
+    "**/release-build/**": true,
+    "**/dist/**": true,
+    "**/win-unpacked/**": true,
+    "**/release-v140/**": true,
+    "**/release-v140-build/**": true
+  }
+}
