@@ -2,11 +2,30 @@
 
 ### Added
 
-- **(2026-05-30) V106p3 — SY dual-guitar custom tuning MusicContext producer** — `SYTuningPreset` + `buildMusicContextFromSYTuning()` (`sourceEngineId: 'sy_tuning'`); SY-only catalog (**5** tunings: `f_sharp_unison` · `doubled_fifths` · `narrow_consonant` · `cluster_friction` · `drone_melody`) + **3** pairing archetypes (`mass_mass` · `mass_knife` · `drone_shard`); shape-resonance harmony (Wyble anchors → tuning-native fret shapes); SY-only lower-guitar role resolver (`pedal` ↑ · shape-parallel `counterline` · cluster `sparse_comp_answer` · `guide_tone_lane` only on `drone_melody`); receipt `sy_tuning_realisation_complete` (`openStringResonanceRatio` · `shapeRedundancyScore` · `clusterIdentityScore` · `retuneDependenceIndex` · `resonanceContinuityMetric` · `parallelShapeUsage` · `tertianNormalizationPenalty`); harmony via `normalizeChordSymbol` + checksum LOCK. Always-on. Jest **`syTuningProducer.test.ts`** (+13).
+---
 
-- **(2026-05-30) V106p2 — Zappa Solo MusicContext producer** — `ZappaSoloMusicContextPreset` + `buildMusicContextFromZappaSolo()` (`sourceEngineId: 'zappa_solo'`); melodic dramatist over **supplied** harmony (never authors chords); four-state solo arc (`claim` · `agitation` · `fracture` · `crooked_landing`); Population participation levels (`primary` · `secondary` · `tertiary`); pitch-language metrics + wraps `generateZappaSolo`; receipt `zappa_solo_realisation_complete` (`modalAnchorRatio` · `motifMutationRecurrence` · `rhythmicElasticityScore` · `targetedDissonanceIndex` · `closureRefusalScore` · `conversationalAsymmetry`); harmony via `normalizeChordSymbol` + checksum LOCK (`source: locked`). Always-on. Jest **`zappaSoloMusicContext.test.ts`** (+9).
+## [1.6.0] — 2026-05-30
 
-- **(2026-05-30) V106p1 — Population Composer hybrid MusicContext producer** — `PopulationComposerPreset` + `buildMusicContextFromPopulation()` (`sourceEngineId: 'population_composer'`); ecology selection across **tritonic** · **monk** · **wayne_shorter** · **vault** · **big_band** (dramatic fitness · contrast · inheritance pressure · mutation underrepresentation); receipt `population_composer_realisation_complete` (`generationCount` · `dominantProducer` · `producerWeightHistory` · `dramaticArcCompliance`); harmony via `normalizeChordSymbol` + checksum after normalisation. Always-on. Jest **`populationComposer.test.ts`** (+9).
+### Added
+
+- Population Composer hybrid engine (Tritonic, Monk, Wayne Shorter, Vault, Big Band as parallel agents; dramatic arc, inheritance pressure, contrast weight, mutation rate)
+- Zappa Solo producer (claim/agitation/fracture/crooked_landing arc; modal field + contamination; elastic phrase rhythm; motif mutation; primary, secondary, tertiary participation modes)
+- Sonic Youth Tuning producer (5 tuning presets, 3 dual-guitar archetypes, shape-resonance harmony, 7 idiomatic diagnostics)
+- COMPOSER_OS_V16_NEW_FEATURES.docx — standalone features guide with 36 scenarios
+
+---
+
+## [Unreleased archive — v1.6.0 development]
+
+### Added
+
+- **(2026-05-30) V106p3 — SY dual-guitar custom tuning MusicContext producer** — `SYTuningPreset` + `buildMusicContextFromSYTuning()` (`sourceEngineId: 'sy_tuning'`); SY-only catalog (**5** tunings: `f_sharp_unison` · `doubled_fifths` · `narrow_consonant` · `cluster_friction` · `drone_melody`) + **3** pairing archetypes (`mass_mass` · `mass_knife` · `drone_shard`); shape-resonance harmony (Wyble anchors → tuning-native fret shapes); SY-only lower-guitar role resolver; receipt `sy_tuning_realisation_complete` (7 shape metrics); harmony via `normalizeChordSymbol` + checksum LOCK. Always-on. Jest **`syTuningProducer.test.ts`** (+13).
+
+- **(2026-05-30) V106p2 — Zappa Solo MusicContext producer** — `ZappaSoloMusicContextPreset` + `buildMusicContextFromZappaSolo()` (`sourceEngineId: 'zappa_solo'`); melodic dramatist over **supplied** harmony (never authors chords); four-state solo arc; Population participation levels (`primary` · `secondary` · `tertiary`); receipt `zappa_solo_realisation_complete`. Always-on. Jest **`zappaSoloMusicContext.test.ts`** (+9).
+
+- **(2026-05-30) V106p1 — Population Composer hybrid MusicContext producer** — `PopulationComposerPreset` + `buildMusicContextFromPopulation()` (`sourceEngineId: 'population_composer'`); ecology selection across **tritonic** · **monk** · **wayne_shorter** · **vault** · **big_band**; receipt `population_composer_realisation_complete`. Always-on. Jest **`populationComposer.test.ts`** (+9).
+
+- **(2026-05-30) docs — v1.6 producer handbook + standalone guide** — **`COMPOSER_HANDBOOK.md`** / **`.docx`**: Population Composer · Zappa Solo · Sonic Youth Tuning · Dual-Guitar Lower Voice chapters (36 scenarios + Try These First); **`COMPOSER_OS_V16_NEW_FEATURES.docx`** + **`generateComposerOsV16NewFeaturesDocx.mjs`**.
 
 ---
 
