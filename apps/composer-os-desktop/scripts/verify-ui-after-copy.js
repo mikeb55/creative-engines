@@ -16,16 +16,19 @@ console.log('Verified Composer OS UI stamp at resources/ui:', r.stamp.productId,
 
 const assetsDir = path.join(uiDir, 'assets');
 if (fs.existsSync(assetsDir)) {
-  for (const f of fs.readdirSync(assetsDir)) {
-    if (!f.endsWith('.js')) continue;
-    const p = path.join(assetsDir, f);
-    const s = fs.readFileSync(p, 'utf8');
-    if (!s.includes('riff_generator') || !s.includes('Riff Generator')) {
-      console.error(
-        'UI JS bundle missing Riff Generator exposure (rebuild composer-os-app, then copy-ui):',
-        f
-      );
-      process.exit(1);
+  const files = fs.readdirSync(assetsDir).filter((f) => f.endsWith('.js'));
+  let found = false;
+  for (const f of files) {
+    const s = fs.readFileSync(path.join(assetsDir, f), 'utf8');
+    if (s.includes('riff_generator') && s.includes('Riff Generator')) {
+      found = true;
+      break;
     }
+  }
+  if (!found) {
+    console.error(
+      'UI JS bundle missing Riff Generator exposure (rebuild composer-os-app, then copy-ui)'
+    );
+    process.exit(1);
   }
 }
