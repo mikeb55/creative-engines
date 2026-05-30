@@ -237,8 +237,21 @@ export function getGenerateProducerLaneId(id: GenerateProducerId): GenerateProdu
 
 export function producerIdFromPresetId(
   presetId: string,
-  opts?: { riffSubMode?: 'riff' | 'comping' }
+  opts?: { riffSubMode?: 'riff' | 'comping'; currentProducerId?: GenerateProducerId }
 ): GenerateProducerId {
+  const current = opts?.currentProducerId;
+  if (current) {
+    const tile = getGenerateProducerTile(current);
+    if (tile?.presetId === presetId) {
+      if (presetId === 'riff_generator') {
+        if (opts?.riffSubMode === 'comping' && current === 'comping') return 'comping';
+        if (opts?.riffSubMode !== 'comping' && current === 'riff') return 'riff';
+      } else {
+        return current;
+      }
+    }
+  }
+
   if (presetId === 'riff_generator' && opts?.riffSubMode === 'comping') return 'comping';
   switch (presetId) {
     case 'guitar_bass_duo':

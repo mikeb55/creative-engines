@@ -2832,10 +2832,9 @@ export function HomeGenerate({
   );
 
   useEffect(() => {
-    setGenerateProducerId((prev) => {
-      if ((prev === 'ireal' || prev === 'vault') && presetId === 'song_mode') return prev;
-      return producerIdFromPresetId(presetId, { riffSubMode });
-    });
+    setGenerateProducerId((prev) =>
+      producerIdFromPresetId(presetId, { riffSubMode, currentProducerId: prev })
+    );
   }, [presetId, riffSubMode]);
 
   function modeLabelForPreset(id: string): string {

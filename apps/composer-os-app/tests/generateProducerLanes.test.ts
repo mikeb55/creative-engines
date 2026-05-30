@@ -28,6 +28,37 @@ describe('generateProducerLanes', () => {
     expect(producerIdFromPresetId('guitar_bass_duo_single_line')).toBe('duo');
   });
 
+  it('preserves current producer when preset matches tile preset (multi-tile presets)', () => {
+    expect(
+      producerIdFromPresetId('song_mode', { currentProducerId: 'wayne_shorter' })
+    ).toBe('wayne_shorter');
+    expect(producerIdFromPresetId('song_mode', { currentProducerId: 'monk' })).toBe('monk');
+    expect(
+      producerIdFromPresetId('song_mode', { currentProducerId: 'new_orleans' })
+    ).toBe('new_orleans');
+    expect(producerIdFromPresetId('song_mode', { currentProducerId: 'ireal' })).toBe('ireal');
+    expect(producerIdFromPresetId('song_mode', { currentProducerId: 'vault' })).toBe('vault');
+    expect(producerIdFromPresetId('big_band', { currentProducerId: 'big_band' })).toBe('big_band');
+    expect(
+      producerIdFromPresetId('string_quartet', { currentProducerId: 'tritonic' })
+    ).toBe('tritonic');
+    expect(
+      producerIdFromPresetId('riff_generator', {
+        riffSubMode: 'comping',
+        currentProducerId: 'comping',
+      })
+    ).toBe('comping');
+  });
+
+  it('resets producer when preset changes away from tile preset', () => {
+    expect(
+      producerIdFromPresetId('big_band', { currentProducerId: 'wayne_shorter' })
+    ).toBe('big_band');
+    expect(producerIdFromPresetId('song_mode', { currentProducerId: 'big_band' })).toBe(
+      'song_mode'
+    );
+  });
+
   it('returns side effects for chart and texture producers', () => {
     expect(applyGenerateProducerSideEffects('comping').riffSubMode).toBe('comping');
     expect(applyGenerateProducerSideEffects('wayne_shorter').songwriterStyle).toBe('wayne_shorter');
