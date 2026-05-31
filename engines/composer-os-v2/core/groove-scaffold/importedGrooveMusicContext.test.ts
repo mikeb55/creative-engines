@@ -4,6 +4,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { exportGrooveDrumsToMusicXml } from './exportGrooveDrumsMusicXml';
 import { attachImportedGrooveToSongSections, loopGrooveEventsForSection } from './attachGrooveToSections';
 import { importExternalGrooveMidi } from './importGrooveMidi';
 import {
@@ -223,5 +224,80 @@ describe('imported groove pipeline', () => {
     const groove = importExternalGrooveMidi(SHOUT_PARADE_MID);
     expect(groove.events.length).toBeGreaterThan(0);
     expect(groove.sourceFile).toBe('ShoutParade.mid');
+  });
+});
+
+describe('exportGrooveDrumsToMusicXml', () => {
+  function sampleExportContext(endBar = 2): ReturnType<typeof attachImportedGrooveToSongSections> {
+    const groove = syntheticGroove({
+      loopLengthBars: 1,
+      events: [
+        { pitch: GmDrumPitch.KICK, beatPosition: 0, durationQuarters: 0.25, velocity: 100 },
+        { pitch: GmDrumPitch.SNARE, beatPosition: 0, durationQuarters: 0.25, velocity: 90 },
+        { pitch: GmDrumPitch.HI_HAT_CLOSED, beatPosition: 0.5, durationQuarters: 0.25, velocity: 80 },
+      ],
+    });
+    return attachImportedGrooveToSongSections([
+      { grooveId: 'test-groove', startBar: 1, endBar, groove },
+    ]);
+  }
+
+  it('returns valid XML string', () => {
+    const ctx = sampleExportContext(2);
+    const xml = exportGrooveDrumsToMusicXml(ctx, 120, 4, 4);
+    expect(xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>')).toBe(true);
+    expect(xml).toContain('<!DOCTYPE score-partwise');
+    expect(xml).toContain('<score-partwise version="4.0">');
+    expect(xml).toContain('<part-name>Drum Set</part-name>');
+  });
+
+  it('output contains percussion clef', () => {
+    const xml = exportGrooveDrumsToMusicXml(sampleExportContext(1), 84, 4, 4);
+    expect(xml).toContain('<sign>percussion</sign>');
+  });
+
+  it('output contains midi-unpitched 36 for kick', () => {
+    const xml = exportGrooveDrumsToMusicXml(sampleExportContext(1), 120, 4, 4);
+    expect(xml).toContain('<midi-unpitched>36</midi-unpitched>');
+    expect(xml).toContain('instrument id="P1-I36"');
+  });
+
+  it('output contains midi-unpitched 38 for snare', () => {
+    const xml = exportGrooveDrumsToMusicXml(sampleExportContext(1), 120, 4, 4);
+    expect(xml).toContain('<midi-unpitched>38</midi-unpitched>');
+    expect(xml).toContain('instrument id="P1-I38"');
+  });
+
+  it('kick notes are in voice 2 with stem down', () => {
+    const xml = exportGrooveDrumsToMusicXml(sampleExportContext(1), 120, 4, 4);
+    expect(xml).toMatch(
+      /instrument id="P1-I36"[\s\S]*?<voice>2<\/voice>[\s\S]*?<stem>down<\/stem>/,
+    );
+    expect(xml).toMatch(
+      /display-step>F<\/display-step>[\s\S]*?display-octave>4<\/display-octave>[\s\S]*?instrument id="P1-I36"/,
+    );
+  });
+
+  it('snare notes are in voice 1 with stem up', () => {
+    const xml = exportGrooveDrumsToMusicXml(sampleExportContext(1), 120, 4, 4);
+    expect(xml).toMatch(
+      /instrument id="P1-I38"[\s\S]*?<voice>1<\/voice>[\s\S]*?<stem>up<\/stem>/,
+    );
+  });
+
+  it('hi-hat notes have notehead x', () => {
+    const xml = exportGrooveDrumsToMusicXml(sampleExportContext(1), 120, 4, 4);
+    expect(xml).toMatch(
+      /instrument id="P1-I42"[\s\S]*?<notehead>x<\/notehead>/,
+    );
+  });
+
+  it('output has correct measure count for bar range', () => {
+    const ctx = sampleExportContext(4);
+    const xml = exportGrooveDrumsToMusicXml(ctx, 100, 4, 4);
+    const measures = xml.match(/<measure number="/g);
+    expect(measures?.length).toBe(4);
+    expect(xml).toContain('<measure number="1">');
+    expect(xml).toContain('<measure number="4">');
   });
 });
