@@ -24,6 +24,11 @@ import { tritonicDiagnosticsReceiptFields } from './tritonicDiagnostics';
 import { buildTritonicMonitorSnapshot } from './tritonicMonitorSnapshot';
 import { extractTritonicStrands } from './tritonicStrands';
 import {
+  DEFAULT_TRITONIC_NOTE_DENSITY_PER_BAR,
+  expandSoloStrandToBarDensity,
+  type TritonicNoteDensityPerBar,
+} from './tritonicBarDensity';
+import {
   applyTritonicBehaviourBiases,
   biasSteeredStartCellSort,
   nudgeTimelineForBehaviourBiases,
@@ -475,6 +480,8 @@ export type TritonicMusicContextPreset = {
   floatingCells?: boolean;
   /** 0–1 bias overrides — resolutionDelay moderate ≈ 0.65, singability high ≈ 0.85. */
   behaviourBiases?: Partial<TritonicBehaviourBiases>;
+  /** Per-bar note count (default min 3, tension-scaled 4–8). */
+  noteDensityPerBar?: Partial<TritonicNoteDensityPerBar>;
 };
 
 export type TritonicSoloRealisationResult = {
@@ -541,12 +548,14 @@ export function realiseTritonicSolo(preset: TritonicMusicContextPreset): Tritoni
   const result = realiseTritonicFromVault(vaultCtx, tritonicCtx);
   const cells = result.phrases.flat();
   const strands = extractTritonicStrands(result.timeline, cells);
-  const soloNotes: SoloExportNote[] = strands.singerSafeMotif.map((n) => ({
-    barIndex: n.bar,
-    startBeat: n.beat - 1,
-    durationBeats: n.duration,
-    pitch: n.midi,
-  }));
+  const noteDensityPerBar = {
+    ...DEFAULT_TRITONIC_NOTE_DENSITY_PER_BAR,
+    ...preset.noteDensityPerBar,
+  };
+  const soloNotes = expandSoloStrandToBarDensity(strands.singerSafeMotif, cells, {
+    noteDensityPerBar,
+    beatsPerBar: vaultCtx.meter?.beats ?? 4,
+  });
 
   return {
     musicContext: {
@@ -558,6 +567,19 @@ export function realiseTritonicSolo(preset: TritonicMusicContextPreset): Tritoni
         root: wybleEtudeKeyRootName(keyPcFromPreset(preset, harmonyBars)),
         mode: 'major',
       },
+      receipts: musicContext.receipts.map((r) =>
+        r.kind === 'tritonic_vault_realisation_complete'
+          ? {
+              ...r,
+              payload: {
+                ...r.payload,
+                noteDensityPerBar,
+                expandedSoloNoteCount: soloNotes.length,
+                strandNoteCount: strands.singerSafeMotif.length,
+              },
+            }
+          : r,
+      ),
     },
     soloNotes,
   };

@@ -264,6 +264,25 @@ Both modes share the same cell dictionary and the **nine behaviour dials** below
 
 ---
 
+### Orbit 28-bar solo export (v1.7p4–p6)
+
+**Script:** `scripts/orbitSoloBatchExport28.ts` — four lead-sheet MusicXML solos for the Orbit 28-bar chart (90 BPM, 4/4). Default output: **Orbit-Solos** folder beside your Orbit BB charts.
+
+| File | Engine |
+|------|--------|
+| `solo_01_tritonic.musicxml` | Tritonic vault-anchored float (`buildMusicContextFromTritonic`) |
+| `solo_02_vault_triad_pairs.musicxml` | Vault triad pairs (`buildMusicContextFromVault`) |
+| `solo_03_martino_linear.musicxml` | Martino linear (`realiseMartinoSolo`) |
+| `solo_04_zappa.musicxml` | Zappa solo (`realiseZappaSoloFromBehaviour`) |
+
+Each export carries an **integrity receipt** (`exportIntegrityPassed`).
+
+**v1.7p6 — Tritonic density fix:** `tritonicBarDensity.ts` sets **`noteDensityPerBar`** (minimum **3** notes per bar; tension-scaled target **4–8**). `realiseTritonicSolo` expands the singer-safe strand before MusicXML export (replacing the old 1:1 timeline mapping). **`solo_01_tritonic.musicxml`:** **28 → 164** notes · average **~5.9** notes/bar · per-bar range **3–8**. **`orbitSoloBatchExport.test.ts`:** **8/8** PASS.
+
+Optional preset override: `noteDensityPerBar: { min, targetLow, targetHigh }` on `TritonicMusicContextPreset`.
+
+---
+
 ### The nine dials (0–1, default 0.5)
 
 Each dial is a **float**, not an on/off switch. At **0.5** the engine behaves as shipped; nudge up or down to steer without replacing generative logic.

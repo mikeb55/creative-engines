@@ -48,21 +48,21 @@ describe('Orbit solo engines', () => {
     const ex = exportSoloMusicContextToMusicXml(musicContext, soloNotes, { title: 'Tritonic test' });
     expect(ex.exportIntegrityPassed).toBe(true);
     expect(ex.measureCount).toBe(28);
-    expect(ex.noteCount).toBeGreaterThan(0);
-    expect(soloNotes.length).toBe(28);
-    const barsWithNotes = new Set(soloNotes.map((n) => n.barIndex));
-    expect(barsWithNotes.has(28)).toBe(true);
-    let silentRun = 0;
-    let maxSilentRun = 0;
-    for (let b = 1; b <= 28; b++) {
-      if (!barsWithNotes.has(b)) {
-        silentRun += 1;
-        maxSilentRun = Math.max(maxSilentRun, silentRun);
-      } else {
-        silentRun = 0;
-      }
+    expect(ex.noteCount).toBeGreaterThan(28);
+    expect(soloNotes.length).toBeGreaterThanOrEqual(28 * 3);
+    const byBar = new Map<number, number>();
+    for (const n of soloNotes) {
+      byBar.set(n.barIndex, (byBar.get(n.barIndex) ?? 0) + 1);
     }
-    expect(maxSilentRun).toBeLessThanOrEqual(2);
+    expect(byBar.size).toBe(28);
+    for (let b = 1; b <= 28; b++) {
+      expect(byBar.get(b) ?? 0).toBeGreaterThanOrEqual(3);
+      expect(byBar.get(b) ?? 0).toBeLessThanOrEqual(8);
+    }
+    const receipt = musicContext.receipts.find((r) => r.kind === 'tritonic_vault_realisation_complete');
+    const payload = receipt?.payload as Record<string, unknown>;
+    expect(payload.noteDensityPerBar).toEqual({ min: 3, targetLow: 4, targetHigh: 8 });
+    expect(payload.expandedSoloNoteCount).toBe(soloNotes.length);
   });
 
   it('buildMusicContextFromVault — triad pairs, locked harmony', () => {
