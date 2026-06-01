@@ -12,7 +12,7 @@ import { buildMusicContextFromHarmonyBars } from '../music-context/harmonyBarsMu
 import type { MusicContext } from '../music-context/musicContextTypes';
 import { loopHarmonyBarsToLength, sanitizeAndValidateMusicXmlHarmony, validateBarTotals } from '../solo/soloMusicContextExport';
 import { hardenSoloMusicXmlForSibelius } from '../solo/soloSibeliusHardening';
-import { applyOrbitSoloMusicalityToMusicXml, rebalanceMusicXmlBarTotals } from '../solo/soloMusicalityXml';
+import { applyOrbitSoloMusicalityToMusicXml, hardenMusicXmlTypeAndDot, normalizeSoloExportDivisions, rebalanceMusicXmlBarTotals } from '../solo/soloMusicalityXml';
 import { buildMartinoTuneConfig, callMartinoEngineSync } from './martinoEngineBridge';
 
 export type MartinoActivityRole =
@@ -94,14 +94,18 @@ export function realiseMartinoSolo(preset: MartinoRealisationPreset): MartinoRea
   if (harmonyCheck.errors.length > 0) {
     throw new Error(`Martino MusicXML harmony root-step invalid: ${harmonyCheck.errors.join('; ')}`);
   }
-  const hardened = hardenSoloMusicXmlForSibelius(harmonyCheck.xml);
+  const normalized = normalizeSoloExportDivisions(harmonyCheck.xml, 480);
+  const hardened = hardenSoloMusicXmlForSibelius(normalized);
   const musical = applyOrbitSoloMusicalityToMusicXml(hardened.xml, {
     maxConsecutiveEighths: 6,
     phraseBreathEveryBars: 2,
     enforceRhythmicVariety: true,
     harmonyBars,
   });
-  const xml = rebalanceMusicXmlBarTotals(hardenSoloMusicXmlForSibelius(musical).xml);
+  const rebalanced = rebalanceMusicXmlBarTotals(hardenSoloMusicXmlForSibelius(musical).xml);
+  let xml = hardenMusicXmlTypeAndDot(rebalanced);
+  xml = rebalanceMusicXmlBarTotals(xml);
+  xml = normalizeSoloExportDivisions(hardenMusicXmlTypeAndDot(xml));
   validateBarTotals(xml, preset.tuneName ?? 'Martino solo');
   const { root, mode } = normalizeKeyRoot(preset.key ?? inferKeyRootFromChordSymbols(harmonyBars));
   const checksum = computeMusicContextChecksum(harmonyBars);
