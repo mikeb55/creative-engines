@@ -11,6 +11,7 @@ import {
 import { buildMusicContextFromHarmonyBars } from '../music-context/harmonyBarsMusicContextShell';
 import type { MusicContext } from '../music-context/musicContextTypes';
 import { loopHarmonyBarsToLength, sanitizeAndValidateMusicXmlHarmony } from '../solo/soloMusicContextExport';
+import { hardenSoloMusicXmlForSibelius } from '../solo/soloSibeliusHardening';
 import { buildMartinoTuneConfig, callMartinoEngineSync } from './martinoEngineBridge';
 
 export type MartinoActivityRole =
@@ -92,7 +93,8 @@ export function realiseMartinoSolo(preset: MartinoRealisationPreset): MartinoRea
   if (harmonyCheck.errors.length > 0) {
     throw new Error(`Martino MusicXML harmony root-step invalid: ${harmonyCheck.errors.join('; ')}`);
   }
-  const xml = harmonyCheck.xml;
+  const hardened = hardenSoloMusicXmlForSibelius(harmonyCheck.xml);
+  const xml = hardened.xml;
   const { root, mode } = normalizeKeyRoot(preset.key ?? inferKeyRootFromChordSymbols(harmonyBars));
   const checksum = computeMusicContextChecksum(harmonyBars);
 

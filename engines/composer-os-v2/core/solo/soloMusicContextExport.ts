@@ -6,6 +6,8 @@ import { validateExportIntegrity } from '../export/exportHardening';
 import { exportScoreModelToMusicXml } from '../export/musicxmlExporter';
 import type { MeasureModel, PartModel, ScoreEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import type { MusicContext } from '../music-context/musicContextTypes';
+import { hardenSoloMusicXmlForSibelius, countPitchElements } from './soloSibeliusHardening';
+import { clampSoloTrebleConcertMidi } from './soloTreblePitchRange';
 
 export type SoloExportNote = {
   /** 1-based bar index */
@@ -126,7 +128,7 @@ export function buildSoloLeadSheetScoreModel(
       : undefined;
     let events: ScoreEvent[] = barNotes.map((n) => ({
       kind: 'note' as const,
-      pitch: n.pitch,
+      pitch: clampSoloTrebleConcertMidi(n.pitch),
       startBeat: n.startBeat,
       duration: n.durationBeats,
       voice: 1,
@@ -173,13 +175,12 @@ export function exportSoloMusicContextToMusicXml(
   }
 
   const harmonyCheck = sanitizeAndValidateMusicXmlHarmony(exportResult.xml);
-  const integrity = validateExportIntegrity(harmonyCheck.xml);
-  const harmonyErrors = harmonyCheck.errors;
+  const hardened = hardenSoloMusicXmlForSibelius(harmonyCheck.xml);
   return {
-    xml: harmonyCheck.xml,
-    exportIntegrityPassed: integrity.valid && harmonyErrors.length === 0,
-    exportIntegrityErrors: [...integrity.errors, ...harmonyErrors],
+    xml: hardened.xml,
+    exportIntegrityPassed: hardened.exportIntegrityPassed,
+    exportIntegrityErrors: hardened.exportIntegrityErrors,
     measureCount: ctx.totalBars,
-    noteCount: notes.filter((n) => n.pitch > 0).length,
+    noteCount: countPitchElements(hardened.xml),
   };
 }

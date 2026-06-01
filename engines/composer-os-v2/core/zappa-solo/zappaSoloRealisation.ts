@@ -21,19 +21,15 @@ import { buildMusicContextFromZappaSolo } from './zappaSoloMusicContextProducer'
 import { realiseZappaSoloMusicContext } from './zappaSoloMusicContextRealisation';
 import type { ZappaSoloMusicContextPreset, ZappaSoloArcSegment } from './zappaSoloMusicContextTypes';
 import { loopHarmonyBarsToLength, type SoloExportNote } from '../solo/soloMusicContextExport';
+import { clampSoloTrebleConcertMidi } from '../solo/soloTreblePitchRange';
 import type { MusicContext } from '../music-context/musicContextTypes';
 
-/** Treble solo written range — C4 through G6 (concert MIDI). */
+/** @deprecated Use clampSoloTrebleConcertMidi — re-export for Zappa solo path. */
 export const ZAPPA_SOLO_WRITTEN_MIN_MIDI = 60;
 export const ZAPPA_SOLO_WRITTEN_MAX_MIDI = 91;
 
-/** Clamp generated solo pitch to treble-safe C4–G6 (octave-wrap). */
 export function clampZappaTrebleWrittenMidi(midi: number): number {
-  let pitch = Math.round(Number(midi));
-  if (!Number.isFinite(pitch)) return ZAPPA_SOLO_WRITTEN_MIN_MIDI;
-  while (pitch < ZAPPA_SOLO_WRITTEN_MIN_MIDI) pitch += 12;
-  while (pitch > ZAPPA_SOLO_WRITTEN_MAX_MIDI) pitch -= 12;
-  return Math.max(ZAPPA_SOLO_WRITTEN_MIN_MIDI, Math.min(ZAPPA_SOLO_WRITTEN_MAX_MIDI, pitch));
+  return clampSoloTrebleConcertMidi(midi);
 }
 
 export type ZappaSoloBehaviourPreset = {

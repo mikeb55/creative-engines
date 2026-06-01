@@ -3,6 +3,7 @@
  */
 
 import type { SoloExportNote } from '../solo/soloMusicContextExport';
+import { clampSoloTrebleConcertMidi } from '../solo/soloTreblePitchRange';
 import type { TritonicCell } from './tritonicCell';
 import type { TritonicStrandNote } from './tritonicStrands';
 import { pcToMidiNearAnchor } from './tritonicStrands';
@@ -23,8 +24,6 @@ export const DEFAULT_TRITONIC_NOTE_DENSITY_PER_BAR: TritonicNoteDensityPerBar = 
   targetHigh: 8,
 };
 
-const SINGER_MIN_MIDI = 55;
-const SINGER_MAX_MIDI = 72;
 const SINGER_MAX_LEAP = 4;
 
 export function targetNoteCountForTension(
@@ -37,10 +36,7 @@ export function targetNoteCountForTension(
 }
 
 function clampSingerMidi(midi: number): number {
-  let m = midi;
-  while (m < SINGER_MIN_MIDI) m += 12;
-  while (m > SINGER_MAX_MIDI) m -= 12;
-  return Math.max(SINGER_MIN_MIDI, Math.min(SINGER_MAX_MIDI, m));
+  return clampSoloTrebleConcertMidi(midi);
 }
 
 function stepwiseMidi(prev: number, target: number): number {

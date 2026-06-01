@@ -6,8 +6,8 @@
 import fs from 'fs';
 import path from 'path';
 import { normalizeChordSymbol } from '../engines/composer-os-v2/core/harmony/chordSymbolAnalysis';
-import { validateExportIntegrity } from '../engines/composer-os-v2/core/export/exportHardening';
-import { sanitizeAndValidateMusicXmlHarmony } from '../engines/composer-os-v2/core/solo/soloMusicContextExport';
+import { clampSoloTrebleConcertMidi } from '../engines/composer-os-v2/core/solo/soloTreblePitchRange';
+import { hardenSoloMusicXmlForSibelius, countPitchElements } from '../engines/composer-os-v2/core/solo/soloSibeliusHardening';
 import { exportScoreModelToMusicXml } from '../engines/composer-os-v2/core/export/musicxmlExporter';
 import { realiseMartinoSolo } from '../engines/composer-os-v2/core/martino/martinoRealisation';
 import { soloLineToPartModel } from '../engines/composer-os-v2/core/solo/zappasoloEngine';
@@ -117,14 +117,14 @@ function exportZappaSolo(): ExportRow {
     parts: [soloPart],
   };
   const ex = exportScoreModelToMusicXml(score, { bpm: BPM });
-  const integrity = ex.xml ? validateExportIntegrity(ex.xml) : { valid: false, errors: ex.errors ?? ['export failed'] };
-  if (ex.xml) writeXml('solo_04_zappa.musicxml', ex.xml);
+  const hardened = ex.xml ? hardenSoloMusicXmlForSibelius(ex.xml) : null;
+  if (hardened?.xml) writeXml('solo_04_zappa.musicxml', hardened.xml);
   return {
     filename: 'solo_04_zappa.musicxml',
     engine: 'zappa_solo',
-    exportIntegrityPassed: integrity.valid,
-    errors: integrity.errors,
-    noteCount: soloLine.allNotes.filter((n) => !n.isRest).length,
+    exportIntegrityPassed: hardened?.exportIntegrityPassed ?? false,
+    errors: hardened?.exportIntegrityErrors ?? ex.errors ?? ['export failed'],
+    noteCount: hardened ? countPitchElements(hardened.xml) : 0,
   };
 }
 
@@ -186,15 +186,14 @@ function run(): ExportRow[] {
     phraseLengthBias: 'long',
     tuneName: 'Orbit Solo',
   });
-  const martinoHarmony = sanitizeAndValidateMusicXmlHarmony(martino.xml);
-  const martinoIntegrity = validateExportIntegrity(martinoHarmony.xml);
-  writeXml('solo_03_martino_linear.musicxml', martinoHarmony.xml);
+  const martinoHardened = hardenSoloMusicXmlForSibelius(martino.xml);
+  writeXml('solo_03_martino_linear.musicxml', martinoHardened.xml);
   rows.push({
     filename: 'solo_03_martino_linear.musicxml',
     engine: 'martino',
-    exportIntegrityPassed: martinoIntegrity.valid && martinoHarmony.errors.length === 0,
-    errors: [...martinoIntegrity.errors, ...martinoHarmony.errors],
-    noteCount: (martinoHarmony.xml.match(/<pitch>/g) ?? []).length,
+    exportIntegrityPassed: martinoHardened.exportIntegrityPassed,
+    errors: martinoHardened.exportIntegrityErrors,
+    noteCount: countPitchElements(martinoHardened.xml),
   });
 
   rows.push(exportZappaSolo());

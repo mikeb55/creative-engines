@@ -12,6 +12,7 @@ import {
 import { buildMusicContextFromHarmonyBars } from '../music-context/harmonyBarsMusicContextShell';
 import type { MusicContext, MusicContextHarmony } from '../music-context/musicContextTypes';
 import { loopHarmonyBarsToLength, type SoloExportNote } from '../solo/soloMusicContextExport';
+import { clampSoloTrebleConcertMidi } from '../solo/soloTreblePitchRange';
 
 export type VaultContrastLevel = 'low' | 'moderate' | 'high';
 export type VaultReharmLevel = 'low' | 'moderate' | 'high';
@@ -54,7 +55,7 @@ function scoreNotesToSoloExport(notes: readonly ScoreNote[]): SoloExportNote[] {
       barIndex: n.barIndex + 1,
       startBeat: n.startBeat % 4,
       durationBeats: n.duration,
-      pitch: n.pitch,
+      pitch: clampSoloTrebleConcertMidi(n.pitch),
     }));
 }
 
