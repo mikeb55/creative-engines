@@ -8,6 +8,16 @@ import {
   validateMusicXmlHarmonyRoots,
 } from './soloMusicContextExport';
 import { clampSoloMelodicMidi, SOLO_MELODIC_MAX_MIDI, SOLO_MELODIC_MIN_MIDI } from './soloMusicality';
+import {
+  advanceMeasureContext,
+  DEFAULT_MEASURE_TIME_CONTEXT,
+  durationToTypeAndDot,
+  expectedMeasureDuration,
+  hardenMusicXmlTypeAndDot,
+  normalizeSoloExportDivisions,
+  SOLO_EXPORT_DIVISIONS,
+  type MeasureTimeContext,
+} from './soloMusicalityXml';
 
 const STEP_SEMI: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 
@@ -98,19 +108,22 @@ function fillLongSilenceRuns(xml: string): { xml: string; count: number } {
   const partBody = partMatch[0];
   const measures = [...partBody.matchAll(/<measure([^>]*)number="(\d+)"([^>]*)>([\s\S]*?)<\/measure>/g)];
 
-  type Meas = { attrs: string; number: number; tailAttrs: string; body: string };
-  const parsed: Meas[] = measures.map((m) => ({
-    attrs: m[1] ?? '',
-    number: parseInt(m[2]!, 10),
-    tailAttrs: m[3] ?? '',
-    body: m[4]!,
-  }));
+  type Meas = { attrs: string; number: number; tailAttrs: string; body: string; ctx: MeasureTimeContext };
+  let ctx: MeasureTimeContext = { ...DEFAULT_MEASURE_TIME_CONTEXT };
+  const parsed: Meas[] = measures.map((m) => {
+    const body = m[4]!;
+    ctx = advanceMeasureContext(ctx, body);
+    return {
+      attrs: m[1] ?? '',
+      number: parseInt(m[2]!, 10),
+      tailAttrs: m[3] ?? '',
+      body,
+      ctx: { ...ctx },
+    };
+  });
 
-  const isWholeBarRest = (body: string): boolean => {
-    const div = parseInt(body.match(/<divisions>(\d+)<\/divisions>/)?.[1] ?? '480', 10);
-    const beats = parseInt(body.match(/<beats>(\d+)<\/beats>/)?.[1] ?? '4', 10);
-    const beatType = parseInt(body.match(/<beat-type>(\d+)<\/beat-type>/)?.[1] ?? '4', 10);
-    const barLen = (div * beats * 4) / beatType;
+  const isWholeBarRest = (body: string, mctx: MeasureTimeContext): boolean => {
+    const barLen = expectedMeasureDuration(mctx);
     const notes = [...body.matchAll(/<note>([\s\S]*?)<\/note>/g)].map((n) => n[1]!);
     const pitched = notes.filter((b) => !/<rest/.test(b) && /<pitch/.test(b));
     if (pitched.length > 0) return false;
@@ -130,7 +143,7 @@ function fillLongSilenceRuns(xml: string): { xml: string; count: number } {
 
   for (let i = 0; i < parsed.length; i++) {
     const m = parsed[i]!;
-    const silent = isWholeBarRest(m.body) && !isNcBar(m.body);
+    const silent = isWholeBarRest(m.body, m.ctx) && !isNcBar(m.body);
     if (silent) {
       if (runLen === 0) runStart = m.number;
       runLen += 1;
@@ -151,14 +164,15 @@ function fillLongSilenceRuns(xml: string): { xml: string; count: number } {
   for (const barNum of fillAt) {
     const meas = parsed.find((m) => m.number === barNum);
     if (!meas) continue;
-    const div = parseInt(meas.body.match(/<divisions>(\d+)<\/divisions>/)?.[1] ?? '480', 10);
-    const beats = parseInt(meas.body.match(/<beats>(\d+)<\/beats>/)?.[1] ?? '4', 10);
-    const beatType = parseInt(meas.body.match(/<beat-type>(\d+)<\/beat-type>/)?.[1] ?? '4', 10);
-    const barLen = Math.round((div * beats * 4) / beatType);
-    const dur = Math.max(1, Math.round(barLen / 4));
-    const fillNotes = [0, 1, 2].map((i) =>
-      `<note><pitch><step>E</step><octave>4</octave></pitch><duration>${dur}</duration><voice>1</voice><type>quarter</type></note>`,
-    ).join('\n        ');
+    const dur = SOLO_EXPORT_DIVISIONS;
+    const { type, dots } = durationToTypeAndDot(dur, SOLO_EXPORT_DIVISIONS);
+    const dotXml = dots > 0 ? '<dot/>'.repeat(dots) : '';
+    const fillNotes = [0, 1, 2]
+      .map(
+        () =>
+          `<note><pitch><step>E</step><octave>4</octave></pitch><duration>${dur}</duration><voice>1</voice><type>${type}</type>${dotXml}</note>`,
+      )
+      .join('\n        ');
     const bodyWithoutRests = meas.body.replace(/<note>\s*<rest[\s\S]*?<\/note>\s*/g, '');
     const newBody = bodyWithoutRests.trimEnd() + '\n        ' + fillNotes + '\n      ';
     const oldMeas = `<measure${meas.attrs}number="${meas.number}"${meas.tailAttrs}>${meas.body}</measure>`;
@@ -177,16 +191,13 @@ function trimMeasureVoiceOverflow(xml: string): { xml: string; count: number } {
 
   let trims = 0;
   let partBody = partMatch[0];
+  let ctx: MeasureTimeContext = { ...DEFAULT_MEASURE_TIME_CONTEXT };
 
   partBody = partBody.replace(
     /<measure([^>]*)number="(\d+)"([^>]*)>([\s\S]*?)<\/measure>/g,
     (full, a1, num, a2, body) => {
-      const barLen = (() => {
-        const div = parseInt(body.match(/<divisions>(\d+)<\/divisions>/)?.[1] ?? '480', 10);
-        const beats = parseInt(body.match(/<beats>(\d+)<\/beats>/)?.[1] ?? '4', 10);
-        const beatType = parseInt(body.match(/<beat-type>(\d+)<\/beat-type>/)?.[1] ?? '4', 10);
-        return (div * beats * 4) / beatType;
-      })();
+      ctx = advanceMeasureContext(ctx, body);
+      const barLen = expectedMeasureDuration(ctx);
 
       let pos = 0;
       const kept: string[] = [];
@@ -206,7 +217,20 @@ function trimMeasureVoiceOverflow(xml: string): { xml: string; count: number } {
         }
         if (pos + dur > barLen + 0.5) {
           const trimmedDur = Math.max(1, Math.round(barLen - pos));
-          const fixed = note.replace(/<duration>\d+<\/duration>/, `<duration>${trimmedDur}</duration>`);
+          const { type, dots } = durationToTypeAndDot(trimmedDur, ctx.divisions);
+          const dotXml = dots > 0 ? '<dot/>'.repeat(dots) : '';
+          let fixed = note
+            .replace(/<duration>\d+<\/duration>/, `<duration>${trimmedDur}</duration>`)
+            .replace(/<type>[^<]*<\/type>/g, '')
+            .replace(/<dot\s*\/>/g, '');
+          if (/<voice>\d+<\/voice>/.test(fixed)) {
+            fixed = fixed.replace(/(<voice>\d+<\/voice>)/, `$1<type>${type}</type>${dotXml}`);
+          } else {
+            fixed = fixed.replace(
+              /(<duration>\d+<\/duration>)/,
+              `$1<voice>1</voice><type>${type}</type>${dotXml}`,
+            );
+          }
           kept.push(fixed);
           pos = barLen;
           trims += 1;
@@ -239,6 +263,9 @@ export function hardenSoloMusicXmlForSibelius(xml: string): SoloSibeliusHardenin
 
   const trimmed = trimMeasureVoiceOverflow(out);
   out = trimmed.xml;
+
+  out = normalizeSoloExportDivisions(out);
+  out = hardenMusicXmlTypeAndDot(out);
 
   const integrity = validateExportIntegrity(out);
   const harmonyErrors = validateMusicXmlHarmonyRoots(out);

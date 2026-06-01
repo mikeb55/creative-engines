@@ -8,7 +8,7 @@ import type { MeasureModel, PartModel, ScoreEvent, ScoreModel } from '../score-m
 import type { MusicContext } from '../music-context/musicContextTypes';
 import { hardenSoloMusicXmlForSibelius, countPitchElements } from './soloSibeliusHardening';
 import { clampSoloMelodicMidi } from './soloMusicality';
-import { applyOrbitSoloMusicalityToMusicXml, findBarTotalIssues, rebalanceMusicXmlBarTotals } from './soloMusicalityXml';
+import { applyOrbitSoloMusicalityToMusicXml, findBarTotalIssues, findDivisionsDeclarationIssues, findTypeDotIssues, hardenMusicXmlTypeAndDot, normalizeSoloExportDivisions, rebalanceMusicXmlBarTotals } from './soloMusicalityXml';
 
 export type SoloExportNote = {
   /** 1-based bar index */
@@ -96,14 +96,36 @@ export function loopHarmonyBarsToLength(bars: readonly string[], totalBars: numb
   return out.slice(0, totalBars);
 }
 
-/** Validate every measure sums to full bar length — throws on first failure set. */
+/** Validate bar totals, divisions=480, and type/dot consistency — throws on failure. */
 export function validateBarTotals(xml: string, label = 'MusicXML'): void {
-  const issues = findBarTotalIssues(xml);
-  if (issues.length === 0) return;
-  const lines = issues.map(
-    (i) => `${label} | bar ${i.barNum} | expected ${i.expected} | actual ${i.actual}`,
+  const divIssues = findDivisionsDeclarationIssues(xml);
+  const barIssues = findBarTotalIssues(xml, label);
+  const typeIssues = findTypeDotIssues(xml, label);
+  if (divIssues.length === 0 && barIssues.length === 0 && typeIssues.length === 0) return;
+
+  const lines: string[] = [];
+  for (const d of divIssues) {
+    lines.push(`${label} | divisions | ${d}`);
+  }
+  for (const i of barIssues) {
+    lines.push(
+      `${label} | bar ${i.barNum} | divisions ${i.divisions} | expected ${i.expected} | actual ${i.actual}`,
+    );
+  }
+  for (const i of typeIssues) {
+    if (!i.type) {
+      lines.push(
+        `${label} | bar ${i.barNum} note ${i.noteIndex} | duration ${i.duration} | missing <type>`,
+      );
+    } else {
+      lines.push(
+        `${label} | bar ${i.barNum} note ${i.noteIndex} | duration ${i.duration} | type ${i.type} dots ${i.dots} | implied ${i.impliedDuration}`,
+      );
+    }
+  }
+  throw new Error(
+    `MusicXML validation failed (${divIssues.length + barIssues.length + typeIssues.length} issue(s)):\n${lines.join('\n')}`,
   );
-  throw new Error(`Bar total validation failed (${issues.length} bar(s)):\n${lines.join('\n')}`);
 }
 
 function groupNotesByBar(notes: readonly SoloExportNote[]): Map<number, SoloExportNote[]> {
@@ -186,18 +208,23 @@ export function exportSoloMusicContextToMusicXml(
   }
 
   const harmonyCheck = sanitizeAndValidateMusicXmlHarmony(exportResult.xml);
-  const musical = applyOrbitSoloMusicalityToMusicXml(harmonyCheck.xml, {
+  let xml = normalizeSoloExportDivisions(harmonyCheck.xml);
+  xml = applyOrbitSoloMusicalityToMusicXml(xml, {
     enforceRhythmicVariety: true,
   });
-  const balanced = rebalanceMusicXmlBarTotals(musical);
-  const hardened = hardenSoloMusicXmlForSibelius(balanced);
-  const finalXml = rebalanceMusicXmlBarTotals(hardened.xml);
-  validateBarTotals(finalXml, options?.title ?? 'solo export');
+  xml = rebalanceMusicXmlBarTotals(xml);
+  const hardened = hardenSoloMusicXmlForSibelius(xml);
+  xml = rebalanceMusicXmlBarTotals(hardened.xml);
+  xml = hardenMusicXmlTypeAndDot(xml);
+  xml = rebalanceMusicXmlBarTotals(xml);
+  xml = hardenMusicXmlTypeAndDot(xml);
+  xml = normalizeSoloExportDivisions(xml);
+  validateBarTotals(xml, options?.title ?? 'solo export');
   return {
-    xml: finalXml,
+    xml,
     exportIntegrityPassed: hardened.exportIntegrityPassed,
     exportIntegrityErrors: hardened.exportIntegrityErrors,
     measureCount: ctx.totalBars,
-    noteCount: countPitchElements(finalXml),
+    noteCount: countPitchElements(xml),
   };
 }

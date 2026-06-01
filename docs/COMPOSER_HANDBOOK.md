@@ -264,7 +264,7 @@ Both modes share the same cell dictionary and the **nine behaviour dials** below
 
 ---
 
-### Orbit 28-bar solo export (v1.7p4–p7)
+### Orbit 28-bar solo export (v1.7p4–p11)
 
 **Script:** `scripts/orbitSoloBatchExport28.ts` — four lead-sheet MusicXML solos for the Orbit 28-bar chart (90 BPM, 4/4). Default output: **Orbit-Solos** folder beside your Orbit BB charts.
 
@@ -276,6 +276,42 @@ Both modes share the same cell dictionary and the **nine behaviour dials** below
 | `solo_04_zappa.musicxml` | Zappa solo (`realiseZappaSoloFromBehaviour`) |
 
 Each export carries an **integrity receipt** (`exportIntegrityPassed`).
+
+#### ORBIT SOLO BATCH EXPORT — WHAT WAS FIXED (v1.7p11)
+
+**The Problem**
+
+All four solo files were opening in Sibelius with incorrect bar lengths — notes and rests were not grouping correctly into 4/4 bars. The music looked wrong on the page even though the files were passing internal tests.
+
+**Why It Happened**
+
+MusicXML files contain two separate pieces of information for every note: the duration (how many time units long the note is) and the type (whether it is a quarter, eighth, dotted quarter, etc.). Sibelius uses the TYPE to draw the note on the page, not the duration number. Our export pipeline was writing the duration correctly but not always including the type — so Sibelius was guessing, and guessing wrong.
+
+A second problem was that dotted notes were missing their dot instruction in the file. A dotted quarter at 720 units needs an explicit dot marker — without it, Sibelius reads it as a plain quarter and the bar comes up short.
+
+A third problem was the Martino engine using a different internal time grid (divisions=2) from the other three engines (divisions=480). This caused Sibelius to misread all Martino bar lengths from bar 2 onwards.
+
+**What Was Fixed**
+
+1. All four engines now use divisions=480 — one universal time grid throughout all files
+2. Every note and rest now carries an explicit type (quarter, eighth, half, whole)
+3. Every dotted note now carries an explicit dot marker so Sibelius draws it correctly
+4. A new validation gate checks type/dot/duration consistency on every note before any file is written — the export will throw an error rather than produce a file Sibelius cannot read
+
+**Result**
+
+All four solo files now open in Sibelius with clean 4/4 bar groupings, correct note values, and no import warnings. The files are ready for use in the Orbit big band arrangement.
+
+**The Four Solos — Current State**
+
+- `solo_01_tritonic.musicxml` — Floating chromatic cells, syncopated, spacious
+- `solo_02_vault_triad_pairs.musicxml` — Arpeggiated upper structure triads, lyrical
+- `solo_03_martino_linear.musicxml` — Linear eighth-note lines with phrase gaps
+- `solo_04_zappa.musicxml` — Dramatic, sparse, unexpected phrase lengths
+
+All solos: 28 bars, 4/4, 90 BPM, concert pitch C
+
+Output: `Mike Composer Files\Orbit Big Band\Orbit-Solos\`
 
 **v1.7p6 — Tritonic density fix:** `tritonicBarDensity.ts` sets **`noteDensityPerBar`** (minimum **3** notes per bar; tension-scaled target **4–8**). `realiseTritonicSolo` expands the singer-safe strand before MusicXML export (replacing the old 1:1 timeline mapping). **`solo_01_tritonic.musicxml`:** **28 → 164** notes · average **~5.9** notes/bar · per-bar range **3–8**. **`orbitSoloBatchExport.test.ts`:** **8/8** PASS.
 
