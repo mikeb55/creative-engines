@@ -7,7 +7,8 @@ import { exportScoreModelToMusicXml } from '../export/musicxmlExporter';
 import type { MeasureModel, PartModel, ScoreEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import type { MusicContext } from '../music-context/musicContextTypes';
 import { hardenSoloMusicXmlForSibelius, countPitchElements } from './soloSibeliusHardening';
-import { clampSoloTrebleConcertMidi } from './soloTreblePitchRange';
+import { clampSoloMelodicMidi } from './soloMusicality';
+import { applyOrbitSoloMusicalityToMusicXml } from './soloMusicalityXml';
 
 export type SoloExportNote = {
   /** 1-based bar index */
@@ -128,7 +129,7 @@ export function buildSoloLeadSheetScoreModel(
       : undefined;
     let events: ScoreEvent[] = barNotes.map((n) => ({
       kind: 'note' as const,
-      pitch: clampSoloTrebleConcertMidi(n.pitch),
+      pitch: clampSoloMelodicMidi(n.pitch),
       startBeat: n.startBeat,
       duration: n.durationBeats,
       voice: 1,
@@ -175,7 +176,10 @@ export function exportSoloMusicContextToMusicXml(
   }
 
   const harmonyCheck = sanitizeAndValidateMusicXmlHarmony(exportResult.xml);
-  const hardened = hardenSoloMusicXmlForSibelius(harmonyCheck.xml);
+  const musical = applyOrbitSoloMusicalityToMusicXml(harmonyCheck.xml, {
+    enforceRhythmicVariety: true,
+  });
+  const hardened = hardenSoloMusicXmlForSibelius(musical);
   return {
     xml: hardened.xml,
     exportIntegrityPassed: hardened.exportIntegrityPassed,

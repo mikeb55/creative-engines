@@ -7,7 +7,7 @@ import {
   sanitizeMusicXmlHarmonyRoots,
   validateMusicXmlHarmonyRoots,
 } from './soloMusicContextExport';
-import { clampSoloTrebleConcertMidi, SOLO_TREBLE_MAX_MIDI, SOLO_TREBLE_MIN_MIDI } from './soloTreblePitchRange';
+import { clampSoloMelodicMidi, SOLO_MELODIC_MAX_MIDI, SOLO_MELODIC_MIN_MIDI } from './soloMusicality';
 
 const STEP_SEMI: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 
@@ -46,8 +46,8 @@ function formatPitchXml(step: string, alter: number | undefined, octave: number)
 function clampPitchBlock(full: string, step: string, alter: string | undefined, octaveStr: string): string {
   const octave = parseInt(octaveStr, 10);
   const midi = pitchToMidi(step, alter, octave);
-  if (midi >= SOLO_TREBLE_MIN_MIDI && midi <= SOLO_TREBLE_MAX_MIDI) return full;
-  const clamped = clampSoloTrebleConcertMidi(midi);
+  if (midi >= SOLO_MELODIC_MIN_MIDI && midi <= SOLO_MELODIC_MAX_MIDI) return full;
+  const clamped = clampSoloMelodicMidi(midi);
   const p = midiToPitch(clamped);
   const newPitch = formatPitchXml(p.step, p.alter, p.octave);
   if (full.includes('<pitch>')) {
@@ -76,9 +76,9 @@ function clampPitchesInXml(xml: string): { xml: string; count: number } {
       if (!step || !octaveStr) return noteBlock;
       const alter = noteBlock.match(/<alter>(-?\d+)<\/alter>/)?.[1];
       const midi = pitchToMidi(step, alter, parseInt(octaveStr, 10));
-      if (midi >= SOLO_TREBLE_MIN_MIDI && midi <= SOLO_TREBLE_MAX_MIDI) return noteBlock;
+      if (midi >= SOLO_MELODIC_MIN_MIDI && midi <= SOLO_MELODIC_MAX_MIDI) return noteBlock;
       count += 1;
-      const p = midiToPitch(clampSoloTrebleConcertMidi(midi));
+      const p = midiToPitch(clampSoloMelodicMidi(midi));
       const alterXml = p.alter != null ? `\n          <alter>${p.alter}</alter>` : '';
       return noteBlock
         .replace(/<step>[A-G]<\/step>/, `<step>${p.step}</step>`)

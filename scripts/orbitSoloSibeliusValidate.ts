@@ -22,8 +22,8 @@ const FILES = [
   'solo_04_zappa.musicxml',
 ];
 
-const MIDI_MIN = 60;
-const MIDI_MAX = 91;
+const MIDI_MIN = 62;
+const MIDI_MAX = 86;
 const STEP: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 
 function pitchToMidi(step: string, alter: string | undefined, octave: number): number {

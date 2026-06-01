@@ -57,11 +57,11 @@ describe('Orbit solo engines', () => {
     expect(byBar.size).toBe(28);
     for (let b = 1; b <= 28; b++) {
       expect(byBar.get(b) ?? 0).toBeGreaterThanOrEqual(3);
-      expect(byBar.get(b) ?? 0).toBeLessThanOrEqual(8);
+      expect(byBar.get(b) ?? 0).toBeLessThanOrEqual(5);
     }
     const receipt = musicContext.receipts.find((r) => r.kind === 'tritonic_vault_realisation_complete');
     const payload = receipt?.payload as Record<string, unknown>;
-    expect(payload.noteDensityPerBar).toEqual({ min: 3, targetLow: 4, targetHigh: 8 });
+    expect(payload.noteDensityPerBar).toEqual({ min: 3, targetLow: 3, targetHigh: 5 });
     expect(payload.expandedSoloNoteCount).toBe(soloNotes.length);
   });
 
@@ -106,8 +106,8 @@ describe('Orbit solo engines', () => {
     expect(typeof payload.modalAnchorRatio).toBe('number');
     expect(typeof payload.closureRefusalScore).toBe('number');
     for (const n of soloNotes) {
-      expect(n.pitch).toBeGreaterThanOrEqual(60);
-      expect(n.pitch).toBeLessThanOrEqual(91);
+      expect(n.pitch).toBeGreaterThanOrEqual(62);
+      expect(n.pitch).toBeLessThanOrEqual(86);
     }
   });
 

@@ -21,15 +21,15 @@ import { buildMusicContextFromZappaSolo } from './zappaSoloMusicContextProducer'
 import { realiseZappaSoloMusicContext } from './zappaSoloMusicContextRealisation';
 import type { ZappaSoloMusicContextPreset, ZappaSoloArcSegment } from './zappaSoloMusicContextTypes';
 import { loopHarmonyBarsToLength, type SoloExportNote } from '../solo/soloMusicContextExport';
-import { clampSoloTrebleConcertMidi } from '../solo/soloTreblePitchRange';
+import { clampSoloMelodicMidi, applyMusicalityToSoloNotes, snapSoloNotesToHarmonyLandings } from '../solo/soloMusicality';
 import type { MusicContext } from '../music-context/musicContextTypes';
 
-/** @deprecated Use clampSoloTrebleConcertMidi — re-export for Zappa solo path. */
-export const ZAPPA_SOLO_WRITTEN_MIN_MIDI = 60;
-export const ZAPPA_SOLO_WRITTEN_MAX_MIDI = 91;
+/** D4–D6 concert — Orbit solo melodic range (v1.7p8). */
+export const ZAPPA_SOLO_WRITTEN_MIN_MIDI = 62;
+export const ZAPPA_SOLO_WRITTEN_MAX_MIDI = 86;
 
 export function clampZappaTrebleWrittenMidi(midi: number): number {
-  return clampSoloTrebleConcertMidi(midi);
+  return clampSoloMelodicMidi(midi);
 }
 
 export type ZappaSoloBehaviourPreset = {
@@ -91,13 +91,17 @@ export function realiseZappaSoloFromBehaviour(behaviour: ZappaSoloBehaviourPrese
     ctx.key.root,
     ctx.harmony.checksum,
   );
-  const soloNotes: SoloExportNote[] = soloLine.allNotes
-    .filter((n) => !n.isRest)
+  const rawNotes: SoloExportNote[] = soloLine.allNotes
+    .filter((n) => !n.isRest && n.durationBeats >= 0.25)
     .map((n) => ({
       barIndex: n.barIndex,
       startBeat: n.startBeat,
-      durationBeats: n.durationBeats,
+      durationBeats: Math.max(0.5, n.durationBeats <= 0.6 ? 0.5 : n.durationBeats <= 1.1 ? 1 : n.durationBeats),
       pitch: clampZappaTrebleWrittenMidi(n.midi + 12),
     }));
+  const soloNotes = snapSoloNotesToHarmonyLandings(
+    applyMusicalityToSoloNotes(rawNotes, ctx.harmony.bars),
+    ctx.harmony.bars,
+  );
   return { musicContext: ctx, soloNotes, soloLine };
 }

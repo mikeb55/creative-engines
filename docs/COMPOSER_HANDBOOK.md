@@ -279,16 +279,16 @@ Each export carries an **integrity receipt** (`exportIntegrityPassed`).
 
 **v1.7p6 — Tritonic density fix:** `tritonicBarDensity.ts` sets **`noteDensityPerBar`** (minimum **3** notes per bar; tension-scaled target **4–8**). `realiseTritonicSolo` expands the singer-safe strand before MusicXML export (replacing the old 1:1 timeline mapping). **`solo_01_tritonic.musicxml`:** **28 → 164** notes · average **~5.9** notes/bar · per-bar range **3–8**. **`orbitSoloBatchExport.test.ts`:** **8/8** PASS.
 
+**v1.7p8 — Musicality pass (GCE):** `soloMusicality.ts` + `soloMusicalityXml.ts` — monophonic **D4–D6** · min **eighth** · phrase breath · **`orbitSoloMusicality.test.ts`** **28/28** (7 GCE criteria × 4 solos). Vault: monophonic triad-pair upward arpeggio (`vaultSoloMonophonic.ts`). Tritonic: **3–5** notes/bar floating cells (no 16ths). Martino: breath rests + rhythm variety + harmony snap. Zappa: note-timeline export with musicality clamp.
+
+| File | Notes (v1.7p8) | GCE |
+|------|----------------|-----|
+| `solo_01_tritonic` | **65** | 7/7 PASS |
+| `solo_02_vault_triad_pairs` | **58** | 7/7 PASS |
+| `solo_03_martino_linear` | **77** | 7/7 PASS |
+| `solo_04_zappa` | **49** | 7/7 PASS |
+
 **v1.7p7 — Pre-Sibelius hardening:** `soloTreblePitchRange.ts` — treble concert range **C4–G6** (MIDI 60–91). `soloSibeliusHardening.ts` — harmony root sanitize · pitch clamp (inline + multiline `<pitch>`) · voice overflow trim · optional silence fill. Validator: `scripts/orbitSoloSibeliusValidate.ts`. Batch export runs hardening on all four solos automatically.
-
-| Fix | File | Result |
-|-----|------|--------|
-| 4× B3→B4 | `solo_01_tritonic` | CHECK 1–4 PASS |
-| 285 pitches octave-shifted | `solo_02_vault_triad_pairs` | CHECK 1–4 PASS |
-| Sub-C4 clamp + bar-1 trim **361→353** | `solo_03_martino_linear` | CHECK 1–4 PASS |
-| No change | `solo_04_zappa` | CHECK 1–4 PASS |
-
-All four files: **integrity PASS** · **`orbitSoloBatchExport.test.ts`:** **8/8** PASS.
 
 Optional preset override: `noteDensityPerBar: { min, targetLow, targetHigh }` on `TritonicMusicContextPreset`.
 

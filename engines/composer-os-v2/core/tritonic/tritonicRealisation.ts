@@ -28,6 +28,7 @@ import {
   expandSoloStrandToBarDensity,
   type TritonicNoteDensityPerBar,
 } from './tritonicBarDensity';
+import { applyMusicalityToSoloNotes, snapSoloNotesToHarmonyLandings } from '../solo/soloMusicality';
 import {
   applyTritonicBehaviourBiases,
   biasSteeredStartCellSort,
@@ -552,10 +553,17 @@ export function realiseTritonicSolo(preset: TritonicMusicContextPreset): Tritoni
     ...DEFAULT_TRITONIC_NOTE_DENSITY_PER_BAR,
     ...preset.noteDensityPerBar,
   };
-  const soloNotes = expandSoloStrandToBarDensity(strands.singerSafeMotif, cells, {
-    noteDensityPerBar,
-    beatsPerBar: vaultCtx.meter?.beats ?? 4,
-  });
+  const soloNotes = snapSoloNotesToHarmonyLandings(
+    applyMusicalityToSoloNotes(
+      expandSoloStrandToBarDensity(strands.singerSafeMotif, cells, {
+        noteDensityPerBar,
+        beatsPerBar: vaultCtx.meter?.beats ?? 4,
+      }),
+      harmonyBars,
+      vaultCtx.meter?.beats ?? 4,
+    ),
+    harmonyBars,
+  );
 
   return {
     musicContext: {

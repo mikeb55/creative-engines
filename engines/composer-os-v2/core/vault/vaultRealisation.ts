@@ -3,7 +3,9 @@
  */
 
 import { inspectChordSymbol } from '../irealpro/chordSymbolMapper';
-import { generateVaultRiff, type ScoreNote } from '../guitar/vaultRiffGenerator';
+import type { ScoreNote } from '../guitar/vaultRiffGenerator';
+import { generateVaultTriadPairMonophonicBar } from './vaultSoloMonophonic';
+import { clampSoloMelodicMidi, snapSoloNotesToHarmonyLandings } from '../solo/soloMusicality';
 import {
   computeMusicContextChecksum,
   inferKeyRootFromChordSymbols,
@@ -12,7 +14,6 @@ import {
 import { buildMusicContextFromHarmonyBars } from '../music-context/harmonyBarsMusicContextShell';
 import type { MusicContext, MusicContextHarmony } from '../music-context/musicContextTypes';
 import { loopHarmonyBarsToLength, type SoloExportNote } from '../solo/soloMusicContextExport';
-import { clampSoloTrebleConcertMidi } from '../solo/soloTreblePitchRange';
 
 export type VaultContrastLevel = 'low' | 'moderate' | 'high';
 export type VaultReharmLevel = 'low' | 'moderate' | 'high';
@@ -35,56 +36,50 @@ export type VaultRealisationResult = {
   soloNotes: SoloExportNote[];
 };
 
-function riffStyleForPreset(
-  preset: VaultRealisationPreset,
-): 'triad-pair-pendulum' | 'bebop-placement' {
-  if (preset.triadPairsMode !== false) return 'triad-pair-pendulum';
-  return 'bebop-placement';
-}
-
-function eighthsPerBarForContrast(level: VaultContrastLevel | undefined): number {
-  if (level === 'high') return 10;
-  if (level === 'low') return 6;
-  return 8;
-}
-
-function scoreNotesToSoloExport(notes: readonly ScoreNote[]): SoloExportNote[] {
-  return notes
-    .filter((n) => n.pitch > 0)
-    .map((n) => ({
-      barIndex: n.barIndex + 1,
-      startBeat: n.startBeat % 4,
-      durationBeats: n.duration,
-      pitch: clampSoloTrebleConcertMidi(n.pitch),
-    }));
+function scoreNotesToSoloExport(
+  notes: readonly SoloExportNote[],
+  harmonyBars: readonly string[],
+): SoloExportNote[] {
+  return snapSoloNotesToHarmonyLandings(
+    notes.map((n) => ({
+      ...n,
+      pitch: clampSoloMelodicMidi(n.pitch),
+    })),
+    harmonyBars,
+  );
 }
 
 /** Per-bar vault riff over supplied harmony — harmony stays source-locked when reharm appetite is low. */
 export function realiseVaultSolo(preset: VaultRealisationPreset): VaultRealisationResult {
   const totalBars = preset.totalBars ?? preset.harmonyBars.length;
   const harmonyBars = loopHarmonyBarsToLength(preset.harmonyBars, totalBars);
-  const style = riffStyleForPreset(preset);
-  const eighthsPerBar = eighthsPerBarForContrast(preset.upperStructureContrast);
   const tuningId = preset.tuningId ?? 'standard';
+  const useTriadPairs = preset.triadPairsMode !== false;
 
-  const scoreNotes: ScoreNote[] = [];
+  const soloNotesRaw: SoloExportNote[] = [];
   for (let barIndex = 0; barIndex < harmonyBars.length; barIndex++) {
     const symbol = harmonyBars[barIndex]!;
     if (/^NC$/i.test(symbol)) continue;
     const inspected = inspectChordSymbol(symbol, tuningId);
     if (!inspected) continue;
-    const barNotes = generateVaultRiff({
-      chordTypeId: inspected.vaultChordTypeId,
-      rootPc: inspected.rootPc,
-      bars: 1,
-      style,
-      tuningId,
-      eighthsPerBar,
-    });
-    for (const n of barNotes) {
-      scoreNotes.push({ ...n, barIndex });
+    if (useTriadPairs) {
+      soloNotesRaw.push(
+        ...generateVaultTriadPairMonophonicBar({
+          chordTypeId: inspected.vaultChordTypeId,
+          rootPc: inspected.rootPc,
+          barIndex: barIndex + 1,
+        }),
+      );
     }
   }
+  const scoreNotes: ScoreNote[] = soloNotesRaw.map((n) => ({
+    pitch: n.pitch,
+    startBeat: n.startBeat,
+    duration: n.durationBeats,
+    guitarString: 0,
+    guitarFret: 0,
+    barIndex: n.barIndex - 1,
+  }));
 
   const harmony: MusicContextHarmony = {
     bars: harmonyBars,
@@ -109,8 +104,8 @@ export function realiseVaultSolo(preset: VaultRealisationPreset): VaultRealisati
             upperStructureContrast: preset.upperStructureContrast ?? 'high',
             reharmonisationAppetite: preset.reharmonisationAppetite ?? 'low',
             barCount: totalBars,
-            noteCount: scoreNotes.length,
-            riffStyle: style,
+            noteCount: soloNotesRaw.length,
+            riffStyle: useTriadPairs ? 'triad-pair-monophonic' : 'bebop-placement',
             harmonyChecksum: harmony.checksum,
           },
         },
@@ -124,7 +119,7 @@ export function realiseVaultSolo(preset: VaultRealisationPreset): VaultRealisati
   return {
     musicContext,
     scoreNotes,
-    soloNotes: scoreNotesToSoloExport(scoreNotes),
+    soloNotes: scoreNotesToSoloExport(soloNotesRaw, harmonyBars),
   };
 }
 

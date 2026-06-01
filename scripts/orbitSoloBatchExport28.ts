@@ -6,19 +6,15 @@
 import fs from 'fs';
 import path from 'path';
 import { normalizeChordSymbol } from '../engines/composer-os-v2/core/harmony/chordSymbolAnalysis';
-import { clampSoloTrebleConcertMidi } from '../engines/composer-os-v2/core/solo/soloTreblePitchRange';
 import { hardenSoloMusicXmlForSibelius, countPitchElements } from '../engines/composer-os-v2/core/solo/soloSibeliusHardening';
-import { exportScoreModelToMusicXml } from '../engines/composer-os-v2/core/export/musicxmlExporter';
 import { realiseMartinoSolo } from '../engines/composer-os-v2/core/martino/martinoRealisation';
-import { soloLineToPartModel } from '../engines/composer-os-v2/core/solo/zappasoloEngine';
 import {
   exportSoloMusicContextToMusicXml,
   loopHarmonyBarsToLength,
 } from '../engines/composer-os-v2/core/solo/soloMusicContextExport';
 import { realiseTritonicSolo } from '../engines/composer-os-v2/core/tritonic/tritonicRealisation';
 import { realiseVaultSolo } from '../engines/composer-os-v2/core/vault/vaultRealisation';
-import { realiseZappaSoloFromBehaviour, clampZappaTrebleWrittenMidi } from '../engines/composer-os-v2/core/zappa-solo/zappaSoloRealisation';
-import type { ScoreModel } from '../engines/composer-os-v2/core/score-model/scoreModelTypes';
+import { realiseZappaSoloFromBehaviour } from '../engines/composer-os-v2/core/zappa-solo/zappaSoloRealisation';
 
 const OUT_DIR =
   process.env.ORBIT_SOLO_OUT_DIR ??
@@ -85,7 +81,7 @@ function writeXml(filename: string, xml: string): string {
 }
 
 function exportZappaSolo(): ExportRow {
-  const { musicContext, soloLine } = realiseZappaSoloFromBehaviour({
+  const { musicContext, soloNotes } = realiseZappaSoloFromBehaviour({
     harmonyBars: HARMONY_BARS,
     totalBars: TOTAL_BARS,
     seed: SEED + 3,
@@ -96,35 +92,17 @@ function exportZappaSolo(): ExportRow {
     rhythmicElasticityScore: 0.8,
     modalAnchorRatio: 0.65,
   });
-  const soloPart = soloLineToPartModel(soloLine, TOTAL_BARS);
-  for (const measure of soloPart.measures) {
-    for (const ev of measure.events) {
-      if (ev.kind === 'note' && ev.pitch != null) {
-        ev.pitch = clampZappaTrebleWrittenMidi(ev.pitch);
-      }
-    }
-  }
-  for (let i = 0; i < soloPart.measures.length; i++) {
-    const sym = musicContext.harmony.bars[i];
-    if (sym) {
-      soloPart.measures[i]!.chord = /^NC$/i.test(sym) ? 'N.C.' : sym;
-    }
-  }
-  const score: ScoreModel = {
+  const ex = exportSoloMusicContextToMusicXml(musicContext, soloNotes, {
     title: 'Orbit Zappa Solo',
-    tempo: BPM,
-    timeSignature: { beats: 4, beatType: 4 },
-    parts: [soloPart],
-  };
-  const ex = exportScoreModelToMusicXml(score, { bpm: BPM });
-  const hardened = ex.xml ? hardenSoloMusicXmlForSibelius(ex.xml) : null;
-  if (hardened?.xml) writeXml('solo_04_zappa.musicxml', hardened.xml);
+    partName: 'Zappa Solo',
+  });
+  writeXml('solo_04_zappa.musicxml', ex.xml);
   return {
     filename: 'solo_04_zappa.musicxml',
     engine: 'zappa_solo',
-    exportIntegrityPassed: hardened?.exportIntegrityPassed ?? false,
-    errors: hardened?.exportIntegrityErrors ?? ex.errors ?? ['export failed'],
-    noteCount: hardened ? countPitchElements(hardened.xml) : 0,
+    exportIntegrityPassed: ex.exportIntegrityPassed,
+    errors: ex.exportIntegrityErrors,
+    noteCount: ex.noteCount,
   };
 }
 
