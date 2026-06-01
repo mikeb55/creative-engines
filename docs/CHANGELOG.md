@@ -2,6 +2,8 @@
 
 ### Added
 
+- **(2026-06-01) V107p4 — Orbit 28-bar four-engine solo batch export** — `buildMusicContextFromTritonic()` (vault-anchored floating cells) · `buildMusicContextFromVault()` (triad-pair locked harmony) · `martinoRealisation.ts` · `zappaSoloRealisation.ts` · shared `soloMusicContextExport.ts`; batch script `scripts/orbitSoloBatchExport28.ts` → `solo_01_tritonic` · `solo_02_vault_triad_pairs` · `solo_03_martino_linear` · `solo_04_zappa` MusicXML with integrity receipt per file. Jest **`orbitSoloBatchExport.test.ts`** (+7).
+
 ---
 
 ## [1.6.0] — 2026-05-30

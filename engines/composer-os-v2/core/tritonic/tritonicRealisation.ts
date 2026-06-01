@@ -12,12 +12,17 @@ import type { PitchClass } from '../harmony/pitchFieldSpineTypes';
 import {
   computeMusicContextChecksum,
   harmonyBarsFromMusicContext,
+  inferKeyRootFromChordSymbols,
 } from '../music-context/musicContextAdapters';
+import { buildMusicContextFromHarmonyBars } from '../music-context/harmonyBarsMusicContextShell';
 import type { MusicContext, MusicContextHarmony } from '../music-context/musicContextTypes';
+import { loopHarmonyBarsToLength, type SoloExportNote } from '../solo/soloMusicContextExport';
 import { wybleEtudeKeyRootName } from '../music-context/wybleEtudePresetProgressions';
 import type { TritonicCell, TritonicCellFamily } from './tritonicCell';
+import { buildTritonicDictionary } from './tritonicCell';
 import { tritonicDiagnosticsReceiptFields } from './tritonicDiagnostics';
 import { buildTritonicMonitorSnapshot } from './tritonicMonitorSnapshot';
+import { extractTritonicStrands } from './tritonicStrands';
 import {
   applyTritonicBehaviourBiases,
   biasSteeredStartCellSort,
@@ -452,5 +457,104 @@ export function realisationToMusicContext(
       capturedAt: Date.now(),
     },
     receipts: [],
+  };
+}
+
+export type TritonicMusicContextPreset = {
+  harmonyBars: readonly string[];
+  totalBars?: number;
+  seed?: number;
+  bpm?: number;
+  key?: PitchClass | string;
+  mode?: TritonicRealisationMode;
+  /** Vault-anchored floating cells (default true for chart-length solos). */
+  floatingCells?: boolean;
+  /** 0–1 bias overrides — resolutionDelay moderate ≈ 0.65, singability high ≈ 0.85. */
+  behaviourBiases?: Partial<TritonicBehaviourBiases>;
+};
+
+export type TritonicSoloRealisationResult = {
+  musicContext: MusicContext;
+  soloNotes: SoloExportNote[];
+};
+
+function keyPcFromPreset(preset: TritonicMusicContextPreset, harmonyBars: readonly string[]): PitchClass {
+  if (typeof preset.key === 'number') return preset.key as PitchClass;
+  if (typeof preset.key === 'string' && preset.key.trim()) {
+    return (noteNameToPitchClass(preset.key.trim()) ?? 0) as PitchClass;
+  }
+  const root = inferKeyRootFromChordSymbols(harmonyBars);
+  return (noteNameToPitchClass(root) ?? 0) as PitchClass;
+}
+
+function moderateHighBiases(
+  partial?: Partial<TritonicBehaviourBiases>,
+): Partial<TritonicBehaviourBiases> {
+  return {
+    resolutionDelay: 0.65,
+    motifSingability: 0.85,
+    ...partial,
+  };
+}
+
+/** Vault-anchored tritonic float over supplied harmony — one cell per bar. */
+export function buildMusicContextFromTritonic(preset: TritonicMusicContextPreset): MusicContext {
+  return realiseTritonicSolo(preset).musicContext;
+}
+
+export function realiseTritonicSolo(preset: TritonicMusicContextPreset): TritonicSoloRealisationResult {
+  const totalBars = preset.totalBars ?? preset.harmonyBars.length;
+  const harmonyBars = loopHarmonyBarsToLength(preset.harmonyBars, totalBars);
+  const vaultCtx = buildMusicContextFromHarmonyBars({
+    harmonyBars,
+    sourceEngineId: 'vault',
+    presetId: 'vault',
+    seed: preset.seed ?? 0,
+    bpm: preset.bpm ?? 120,
+    receipts: [
+      {
+        engine: 'vault',
+        kind: 'vault_generation_complete',
+        payload: { mode: 'solo', seed: preset.seed ?? null, barCount: totalBars },
+      },
+    ],
+  });
+
+  const dict = buildTritonicDictionary();
+  const mode = preset.mode ?? 'ecm';
+  const tritonicCtx: TritonicRealisationContext = {
+    mode,
+    cells: dict.cells,
+    behaviourOptions: {
+      oddityScore: 0.35,
+      delayedResolution: mode === 'ecm',
+      melodyPriority: true,
+    },
+    behaviourBiases: moderateHighBiases(preset.behaviourBiases),
+  };
+
+  const musicContext = buildMusicContextFromVaultTritonic(vaultCtx, tritonicCtx);
+  const result = realiseTritonicFromVault(vaultCtx, tritonicCtx);
+  const cells = result.phrases.flat();
+  const strands = extractTritonicStrands(result.timeline, cells);
+  const soloNotes: SoloExportNote[] = strands.singerSafeMotif.map((n) => ({
+    barIndex: n.bar,
+    startBeat: n.beat - 1,
+    durationBeats: n.duration,
+    pitch: n.midi,
+  }));
+
+  return {
+    musicContext: {
+      ...musicContext,
+      seed: preset.seed ?? musicContext.seed,
+      bpm: preset.bpm ?? musicContext.bpm,
+      totalBars,
+      key: {
+        root: wybleEtudeKeyRootName(keyPcFromPreset(preset, harmonyBars)),
+        mode: 'major',
+      },
+    },
+    soloNotes,
   };
 }

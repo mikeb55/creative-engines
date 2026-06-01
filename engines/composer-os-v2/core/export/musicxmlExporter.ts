@@ -1476,7 +1476,11 @@ ${stavesAndClefXml}${transposeXml}    </attributes>
         const writesLeadSheetHarmony =
           chordForHarmony &&
           !opts.omitChordSymbols &&
-          (part.id === 'guitar' || isBigBandPianoPart(part) || isStringQuartetPianoPart(part));
+          (part.id === 'guitar' ||
+            part.id === 'solo' ||
+            part.id === 'zappa_solo' ||
+            isBigBandPianoPart(part) ||
+            isStringQuartetPianoPart(part));
         if (writesLeadSheetHarmony) {
           if (
             part.id === 'guitar' &&
