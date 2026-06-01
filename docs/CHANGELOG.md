@@ -2,6 +2,7 @@
 
 ### Added
 
+- **(2026-06-01) V107p5 — Orbit solo batch review fixes** — Martino Python `_parse_root_alter` + shared `sanitizeMusicXmlHarmonyRoots` / schema validation in `soloMusicContextExport.ts` (single-letter `<root-step>` + `<root-alter>`). Tritonic vault timeline one-cell-per-bar for chart length + `tritonicCellContinuation` when voice-leading pool exhausts (bars 1–28 density). Zappa treble clamp C4–G6 in `zappaSoloRealisation.ts`. Re-export `solo_01`–`solo_04` with integrity receipt. Jest **`orbitSoloBatchExport.test.ts`** (+1 sanitizer, tritonic density, zappa range).
 - **(2026-06-01) V107p4 — Orbit 28-bar four-engine solo batch export** — `buildMusicContextFromTritonic()` (vault-anchored floating cells) · `buildMusicContextFromVault()` (triad-pair locked harmony) · `martinoRealisation.ts` · `zappaSoloRealisation.ts` · shared `soloMusicContextExport.ts`; batch script `scripts/orbitSoloBatchExport28.ts` → `solo_01_tritonic` · `solo_02_vault_triad_pairs` · `solo_03_martino_linear` · `solo_04_zappa` MusicXML with integrity receipt per file. Jest **`orbitSoloBatchExport.test.ts`** (+7).
 
 ---

@@ -2,7 +2,7 @@
  * Orbit four-engine solo batch — unit tests (V107p4).
  */
 
-import { loopHarmonyBarsToLength, exportSoloMusicContextToMusicXml } from '../core/solo/soloMusicContextExport';
+import { loopHarmonyBarsToLength, exportSoloMusicContextToMusicXml, validateMusicXmlHarmonyRoots, sanitizeMusicXmlHarmonyRoots } from '../core/solo/soloMusicContextExport';
 import { buildMusicContextFromTritonic, realiseTritonicSolo } from '../core/tritonic/tritonicRealisation';
 import { buildMusicContextFromVault, realiseVaultSolo } from '../core/vault/vaultRealisation';
 import { realiseZappaSoloFromBehaviour } from '../core/zappa-solo/zappaSoloRealisation';
@@ -49,6 +49,20 @@ describe('Orbit solo engines', () => {
     expect(ex.exportIntegrityPassed).toBe(true);
     expect(ex.measureCount).toBe(28);
     expect(ex.noteCount).toBeGreaterThan(0);
+    expect(soloNotes.length).toBe(28);
+    const barsWithNotes = new Set(soloNotes.map((n) => n.barIndex));
+    expect(barsWithNotes.has(28)).toBe(true);
+    let silentRun = 0;
+    let maxSilentRun = 0;
+    for (let b = 1; b <= 28; b++) {
+      if (!barsWithNotes.has(b)) {
+        silentRun += 1;
+        maxSilentRun = Math.max(maxSilentRun, silentRun);
+      } else {
+        silentRun = 0;
+      }
+    }
+    expect(maxSilentRun).toBeLessThanOrEqual(2);
   });
 
   it('buildMusicContextFromVault — triad pairs, locked harmony', () => {
@@ -76,7 +90,7 @@ describe('Orbit solo engines', () => {
   });
 
   it('zappa solo realisation carries receipt metrics', () => {
-    const { musicContext, soloLine } = realiseZappaSoloFromBehaviour({
+    const { musicContext, soloLine, soloNotes } = realiseZappaSoloFromBehaviour({
       harmonyBars: ORBIT_28,
       totalBars: 28,
       seed: 28001,
@@ -91,5 +105,17 @@ describe('Orbit solo engines', () => {
     const payload = receipt?.payload as Record<string, number>;
     expect(typeof payload.modalAnchorRatio).toBe('number');
     expect(typeof payload.closureRefusalScore).toBe('number');
+    for (const n of soloNotes) {
+      expect(n.pitch).toBeGreaterThanOrEqual(60);
+      expect(n.pitch).toBeLessThanOrEqual(91);
+    }
+  });
+
+  it('MusicXML harmony root-step sanitizer fixes multi-char accidentals', () => {
+    const bad = `<harmony><root><root-step>Db</root-step></root></harmony>`;
+    const fixed = sanitizeMusicXmlHarmonyRoots(bad);
+    expect(validateMusicXmlHarmonyRoots(fixed)).toEqual([]);
+    expect(fixed).toContain('<root-step>D</root-step>');
+    expect(fixed).toContain('<root-alter>-1</root-alter>');
   });
 });

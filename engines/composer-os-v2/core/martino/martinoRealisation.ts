@@ -10,7 +10,7 @@ import {
 } from '../music-context/musicContextAdapters';
 import { buildMusicContextFromHarmonyBars } from '../music-context/harmonyBarsMusicContextShell';
 import type { MusicContext } from '../music-context/musicContextTypes';
-import { loopHarmonyBarsToLength } from '../solo/soloMusicContextExport';
+import { loopHarmonyBarsToLength, sanitizeAndValidateMusicXmlHarmony } from '../solo/soloMusicContextExport';
 import { buildMartinoTuneConfig, callMartinoEngineSync } from './martinoEngineBridge';
 
 export type MartinoActivityRole =
@@ -87,7 +87,12 @@ export function realiseMartinoSolo(preset: MartinoRealisationPreset): MartinoRea
   if (!bridge.ok || !bridge.outputPath) {
     throw new Error(bridge.error ?? 'Martino bridge failed');
   }
-  const xml = fs.readFileSync(bridge.outputPath, 'utf-8');
+  const rawXml = fs.readFileSync(bridge.outputPath, 'utf-8');
+  const harmonyCheck = sanitizeAndValidateMusicXmlHarmony(rawXml);
+  if (harmonyCheck.errors.length > 0) {
+    throw new Error(`Martino MusicXML harmony root-step invalid: ${harmonyCheck.errors.join('; ')}`);
+  }
+  const xml = harmonyCheck.xml;
   const { root, mode } = normalizeKeyRoot(preset.key ?? inferKeyRootFromChordSymbols(harmonyBars));
   const checksum = computeMusicContextChecksum(harmonyBars);
 

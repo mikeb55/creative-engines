@@ -1140,10 +1140,14 @@ def _display_tune_name(tune_config: dict) -> str:
 
 
 def _parse_root_alter(root_str: str) -> tuple[str, int | None]:
-    step = root_str[0].upper()
+    """MusicXML-safe root: single A–G letter + optional one-character accidental only."""
+    raw = (root_str or "C").strip()
+    if not raw:
+        return "C", None
+    step = raw[0].upper()
     alter = None
-    if len(root_str) > 1:
-        acc = root_str[1:]
+    if len(raw) > 1:
+        acc = raw[1]
         if acc in ("b", "♭"):
             alter = -1
         elif acc in ("#", "♯"):

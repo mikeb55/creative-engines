@@ -61,6 +61,16 @@ export function timelineHasOverlap(
   return false;
 }
 
+/** One cell per bar — vault/chart-length solos (bars 1..N). */
+function scheduleOnePerBar(cells: readonly TritonicCell[], barCount: number): TritonicTimelineEvent[] {
+  const n = Math.min(cells.length, barCount);
+  const events: TritonicTimelineEvent[] = [];
+  for (let i = 0; i < n; i++) {
+    events.push({ bar: i + 1, beat: 1, duration: 4, cell: cells[i]! });
+  }
+  return events;
+}
+
 function scheduleDense(cells: readonly TritonicCell[], barCount: number): TritonicTimelineEvent[] {
   const events: TritonicTimelineEvent[] = [];
   for (let i = 0; i < cells.length; i++) {
@@ -109,6 +119,9 @@ export function scheduleTritonicTimeline(
 ): TritonicTimelineEvent[] {
   if (cells.length === 0) return [];
   const barCount = options?.barCount ?? defaultBarSpan(cells.length, mode);
+  if (options?.barCount != null && cells.length >= barCount) {
+    return scheduleOnePerBar(cells, barCount);
+  }
   if (mode === 'bb') return scheduleDense(cells, barCount);
   if (mode === 'sq') return scheduleSparse(cells, barCount);
   return scheduleSustained(cells, barCount);

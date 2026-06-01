@@ -38,6 +38,7 @@ import {
   type TritonicStateMachine,
 } from './tritonicStateMachine';
 import { scheduleTritonicTimeline, type TritonicTimelineEvent } from './tritonicTimeline';
+import { deriveContinuedCell } from './tritonicCellContinuation';
 import { getVoiceLeadingCandidates } from './tritonicVoiceLeading';
 
 export type TritonicRealisationMode = 'bb' | 'sq' | 'ecm';
@@ -152,12 +153,15 @@ function pickNextCell(
   options: WayneBehaviourOptions,
   biases: TritonicBehaviourBiases,
   state?: TritonicStateMachine | null,
+  barIndex = 0,
 ): TritonicCell {
   const candidates = getVoiceLeadingCandidates(from, pool);
-  if (candidates.length === 0) return from;
+  if (candidates.length === 0) return deriveContinuedCell(from, barIndex);
   const ranked = applyWayneBehaviour(candidates, options);
   const biasRanked = applyTritonicBehaviourBiases(ranked, biases, state);
-  return biasRanked[0]?.to ?? from;
+  const next = biasRanked[0]?.to;
+  if (!next || next === from) return deriveContinuedCell(from, barIndex);
+  return next;
 }
 
 function buildPhrase(
@@ -180,7 +184,7 @@ function buildPhrase(
   });
 
   for (let i = 1; i < length; i++) {
-    const next = pickNextCell(current, pool, options, biases, state);
+    const next = pickNextCell(current, pool, options, biases, state, i);
     phrase.push(next);
     current = next;
     const midis = projectedStrandMidisFromCells(phrase);
@@ -278,7 +282,7 @@ export function realiseTritonicFromVault(
   });
 
   for (let i = 1; i < anchorBars.length; i++) {
-    const next = pickNextCell(current, pool, behaviour, biases, state);
+    const next = pickNextCell(current, pool, behaviour, biases, state, i);
     current = next;
     floatingCells.push(floatCellAboveAnchor(current, anchorBars[i]!));
     const midis = projectedStrandMidisFromCells(floatingCells);

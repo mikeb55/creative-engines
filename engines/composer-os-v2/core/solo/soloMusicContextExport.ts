@@ -24,6 +24,61 @@ export type SoloMusicContextExportResult = {
   noteCount: number;
 };
 
+/** MusicXML-safe root: single A–G letter + optional alter. */
+export function parseMusicXmlRootStep(raw: string): { step: string; alter?: number } {
+  const text = (raw || 'C').trim();
+  const step = text[0]?.toUpperCase() ?? 'C';
+  if (!'ABCDEFG'.includes(step)) return { step: 'C' };
+  let alter: number | undefined;
+  if (text.length > 1) {
+    const acc = text[1]!;
+    if (acc === 'b' || acc === '♭') alter = -1;
+    else if (acc === '#' || acc === '♯') alter = 1;
+  }
+  return alter != null ? { step, alter } : { step };
+}
+
+/** Fix invalid multi-character `<root-step>` values (e.g. Db → D + alter -1). */
+export function sanitizeMusicXmlHarmonyRoots(xml: string): string {
+  return xml.replace(/<root>([\s\S]*?)<\/root>/g, (rootBlock) => {
+    const stepMatch = rootBlock.match(/<root-step>([^<]*)<\/root-step>/);
+    if (!stepMatch) return rootBlock;
+    const parsed = parseMusicXmlRootStep(stepMatch[1]!);
+    const raw = stepMatch[1]!.trim();
+    if (raw.length === 1 && raw.toUpperCase() === parsed.step && parsed.alter == null) return rootBlock;
+
+    let out = rootBlock.replace(/<root-step>[^<]*<\/root-step>/, `<root-step>${parsed.step}</root-step>`);
+    if (parsed.alter != null && parsed.alter !== 0) {
+      if (/<root-alter>/.test(out)) {
+        out = out.replace(/<root-alter>-?\d+<\/root-alter>/, `<root-alter>${parsed.alter}</root-alter>`);
+      } else {
+        out = out.replace(
+          /<root-step>[^<]*<\/root-step>/,
+          `<root-step>${parsed.step}</root-step>\n          <root-alter>${parsed.alter}</root-alter>`,
+        );
+      }
+    }
+    return out;
+  });
+}
+
+/** Validate harmony root-step tags against MusicXML letter-only rule. */
+export function validateMusicXmlHarmonyRoots(xml: string): string[] {
+  const issues: string[] = [];
+  for (const m of xml.matchAll(/<root-step>([^<]*)<\/root-step>/g)) {
+    const t = m[1]!.trim();
+    if (t.length !== 1 || !'ABCDEFG'.includes(t.toUpperCase())) {
+      issues.push(`harmony root-step invalid: ${JSON.stringify(t)} (must be single A–G letter)`);
+    }
+  }
+  return issues;
+}
+
+export function sanitizeAndValidateMusicXmlHarmony(xml: string): { xml: string; errors: string[] } {
+  const sanitized = sanitizeMusicXmlHarmonyRoots(xml);
+  return { xml: sanitized, errors: validateMusicXmlHarmonyRoots(sanitized) };
+}
+
 /** Loop harmony bars to exact length (deterministic). */
 export function loopHarmonyBarsToLength(bars: readonly string[], totalBars: number): string[] {
   if (totalBars <= 0) return [];
@@ -117,11 +172,13 @@ export function exportSoloMusicContextToMusicXml(
     };
   }
 
-  const integrity = validateExportIntegrity(exportResult.xml);
+  const harmonyCheck = sanitizeAndValidateMusicXmlHarmony(exportResult.xml);
+  const integrity = validateExportIntegrity(harmonyCheck.xml);
+  const harmonyErrors = harmonyCheck.errors;
   return {
-    xml: exportResult.xml,
-    exportIntegrityPassed: integrity.valid,
-    exportIntegrityErrors: integrity.errors,
+    xml: harmonyCheck.xml,
+    exportIntegrityPassed: integrity.valid && harmonyErrors.length === 0,
+    exportIntegrityErrors: [...integrity.errors, ...harmonyErrors],
     measureCount: ctx.totalBars,
     noteCount: notes.filter((n) => n.pitch > 0).length,
   };

@@ -44,6 +44,21 @@ def score_musicxml_path(path: Path) -> tuple[int, list[str]]:
             f"structure: parts={len(parts)} measures={len(measures)} harmonies={len(harmonies)}"
         )
 
+    bad_roots = False
+    for h in harmonies:
+        root_step_el = None
+        for child in h:
+            if _local_tag(child) == "root":
+                for rc in child:
+                    if _local_tag(rc) == "root-step":
+                        root_step_el = rc
+                        break
+        if root_step_el is not None:
+            text = (root_step_el.text or "").strip()
+            if len(text) != 1 or text not in "ABCDEFG":
+                bad_roots = True
+                issues.append(f"harmony root-step invalid: {text!r} (must be single A–G letter)")
+
     bad_attrs = False
     bad_children = False
     for h in harmonies:
@@ -58,6 +73,7 @@ def score_musicxml_path(path: Path) -> tuple[int, list[str]]:
                 bad_children = True
                 issues.append(f"harmony has non-standard child <{_local_tag(child)}>")
 
+    checks.append(not bad_roots)
     checks.append(not bad_attrs)
     checks.append(not bad_children)
     checks.append(path.stat().st_size > 0)

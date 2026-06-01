@@ -7,6 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import { normalizeChordSymbol } from '../engines/composer-os-v2/core/harmony/chordSymbolAnalysis';
 import { validateExportIntegrity } from '../engines/composer-os-v2/core/export/exportHardening';
+import { sanitizeAndValidateMusicXmlHarmony } from '../engines/composer-os-v2/core/solo/soloMusicContextExport';
 import { exportScoreModelToMusicXml } from '../engines/composer-os-v2/core/export/musicxmlExporter';
 import { realiseMartinoSolo } from '../engines/composer-os-v2/core/martino/martinoRealisation';
 import { soloLineToPartModel } from '../engines/composer-os-v2/core/solo/zappasoloEngine';
@@ -16,7 +17,7 @@ import {
 } from '../engines/composer-os-v2/core/solo/soloMusicContextExport';
 import { realiseTritonicSolo } from '../engines/composer-os-v2/core/tritonic/tritonicRealisation';
 import { realiseVaultSolo } from '../engines/composer-os-v2/core/vault/vaultRealisation';
-import { realiseZappaSoloFromBehaviour } from '../engines/composer-os-v2/core/zappa-solo/zappaSoloRealisation';
+import { realiseZappaSoloFromBehaviour, clampZappaTrebleWrittenMidi } from '../engines/composer-os-v2/core/zappa-solo/zappaSoloRealisation';
 import type { ScoreModel } from '../engines/composer-os-v2/core/score-model/scoreModelTypes';
 
 const OUT_DIR =
@@ -96,6 +97,13 @@ function exportZappaSolo(): ExportRow {
     modalAnchorRatio: 0.65,
   });
   const soloPart = soloLineToPartModel(soloLine, TOTAL_BARS);
+  for (const measure of soloPart.measures) {
+    for (const ev of measure.events) {
+      if (ev.kind === 'note' && ev.pitch != null) {
+        ev.pitch = clampZappaTrebleWrittenMidi(ev.pitch);
+      }
+    }
+  }
   for (let i = 0; i < soloPart.measures.length; i++) {
     const sym = musicContext.harmony.bars[i];
     if (sym) {
@@ -178,14 +186,15 @@ function run(): ExportRow[] {
     phraseLengthBias: 'long',
     tuneName: 'Orbit Solo',
   });
-  const martinoIntegrity = validateExportIntegrity(martino.xml);
-  writeXml('solo_03_martino_linear.musicxml', martino.xml);
+  const martinoHarmony = sanitizeAndValidateMusicXmlHarmony(martino.xml);
+  const martinoIntegrity = validateExportIntegrity(martinoHarmony.xml);
+  writeXml('solo_03_martino_linear.musicxml', martinoHarmony.xml);
   rows.push({
     filename: 'solo_03_martino_linear.musicxml',
     engine: 'martino',
-    exportIntegrityPassed: martinoIntegrity.valid,
-    errors: martinoIntegrity.errors,
-    noteCount: (martino.xml.match(/<pitch>/g) ?? []).length,
+    exportIntegrityPassed: martinoIntegrity.valid && martinoHarmony.errors.length === 0,
+    errors: [...martinoIntegrity.errors, ...martinoHarmony.errors],
+    noteCount: (martinoHarmony.xml.match(/<pitch>/g) ?? []).length,
   });
 
   rows.push(exportZappaSolo());
