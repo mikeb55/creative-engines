@@ -8,7 +8,7 @@ import type { MeasureModel, PartModel, ScoreEvent, ScoreModel } from '../score-m
 import type { MusicContext } from '../music-context/musicContextTypes';
 import { hardenSoloMusicXmlForSibelius, countPitchElements } from './soloSibeliusHardening';
 import { clampSoloMelodicMidi } from './soloMusicality';
-import { applyOrbitSoloMusicalityToMusicXml } from './soloMusicalityXml';
+import { applyOrbitSoloMusicalityToMusicXml, findBarTotalIssues, rebalanceMusicXmlBarTotals } from './soloMusicalityXml';
 
 export type SoloExportNote = {
   /** 1-based bar index */
@@ -96,6 +96,16 @@ export function loopHarmonyBarsToLength(bars: readonly string[], totalBars: numb
   return out.slice(0, totalBars);
 }
 
+/** Validate every measure sums to full bar length — throws on first failure set. */
+export function validateBarTotals(xml: string, label = 'MusicXML'): void {
+  const issues = findBarTotalIssues(xml);
+  if (issues.length === 0) return;
+  const lines = issues.map(
+    (i) => `${label} | bar ${i.barNum} | expected ${i.expected} | actual ${i.actual}`,
+  );
+  throw new Error(`Bar total validation failed (${issues.length} bar(s)):\n${lines.join('\n')}`);
+}
+
 function groupNotesByBar(notes: readonly SoloExportNote[]): Map<number, SoloExportNote[]> {
   const byBar = new Map<number, SoloExportNote[]>();
   for (const n of notes) {
@@ -179,12 +189,15 @@ export function exportSoloMusicContextToMusicXml(
   const musical = applyOrbitSoloMusicalityToMusicXml(harmonyCheck.xml, {
     enforceRhythmicVariety: true,
   });
-  const hardened = hardenSoloMusicXmlForSibelius(musical);
+  const balanced = rebalanceMusicXmlBarTotals(musical);
+  const hardened = hardenSoloMusicXmlForSibelius(balanced);
+  const finalXml = rebalanceMusicXmlBarTotals(hardened.xml);
+  validateBarTotals(finalXml, options?.title ?? 'solo export');
   return {
-    xml: hardened.xml,
+    xml: finalXml,
     exportIntegrityPassed: hardened.exportIntegrityPassed,
     exportIntegrityErrors: hardened.exportIntegrityErrors,
     measureCount: ctx.totalBars,
-    noteCount: countPitchElements(hardened.xml),
+    noteCount: countPitchElements(finalXml),
   };
 }

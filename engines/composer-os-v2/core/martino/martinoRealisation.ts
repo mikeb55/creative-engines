@@ -10,9 +10,9 @@ import {
 } from '../music-context/musicContextAdapters';
 import { buildMusicContextFromHarmonyBars } from '../music-context/harmonyBarsMusicContextShell';
 import type { MusicContext } from '../music-context/musicContextTypes';
-import { loopHarmonyBarsToLength, sanitizeAndValidateMusicXmlHarmony } from '../solo/soloMusicContextExport';
+import { loopHarmonyBarsToLength, sanitizeAndValidateMusicXmlHarmony, validateBarTotals } from '../solo/soloMusicContextExport';
 import { hardenSoloMusicXmlForSibelius } from '../solo/soloSibeliusHardening';
-import { applyOrbitSoloMusicalityToMusicXml } from '../solo/soloMusicalityXml';
+import { applyOrbitSoloMusicalityToMusicXml, rebalanceMusicXmlBarTotals } from '../solo/soloMusicalityXml';
 import { buildMartinoTuneConfig, callMartinoEngineSync } from './martinoEngineBridge';
 
 export type MartinoActivityRole =
@@ -101,7 +101,8 @@ export function realiseMartinoSolo(preset: MartinoRealisationPreset): MartinoRea
     enforceRhythmicVariety: true,
     harmonyBars,
   });
-  const xml = hardenSoloMusicXmlForSibelius(musical).xml;
+  const xml = rebalanceMusicXmlBarTotals(hardenSoloMusicXmlForSibelius(musical).xml);
+  validateBarTotals(xml, preset.tuneName ?? 'Martino solo');
   const { root, mode } = normalizeKeyRoot(preset.key ?? inferKeyRootFromChordSymbols(harmonyBars));
   const checksum = computeMusicContextChecksum(harmonyBars);
 

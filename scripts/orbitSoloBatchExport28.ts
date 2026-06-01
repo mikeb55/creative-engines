@@ -7,6 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import { normalizeChordSymbol } from '../engines/composer-os-v2/core/harmony/chordSymbolAnalysis';
 import { hardenSoloMusicXmlForSibelius, countPitchElements } from '../engines/composer-os-v2/core/solo/soloSibeliusHardening';
+import { validateBarTotals } from '../engines/composer-os-v2/core/solo/soloMusicContextExport';
 import { realiseMartinoSolo } from '../engines/composer-os-v2/core/martino/martinoRealisation';
 import {
   exportSoloMusicContextToMusicXml,
@@ -165,6 +166,7 @@ function run(): ExportRow[] {
     tuneName: 'Orbit Solo',
   });
   const martinoHardened = hardenSoloMusicXmlForSibelius(martino.xml);
+  validateBarTotals(martinoHardened.xml, 'solo_03_martino_linear');
   writeXml('solo_03_martino_linear.musicxml', martinoHardened.xml);
   rows.push({
     filename: 'solo_03_martino_linear.musicxml',

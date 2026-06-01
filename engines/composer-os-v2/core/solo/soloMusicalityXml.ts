@@ -124,6 +124,122 @@ function snapMidiToHarmony(midi: number, symbol: string): number {
   return best;
 }
 
+function formatRestXml(durationDiv: number, divisions: number, voice = '1'): string {
+  const t = typeForDiv(durationDiv, divisions);
+  return `<note><rest/><duration>${durationDiv}</duration><voice>${voice}</voice><type>${t}</type></note>`;
+}
+
+/** Ensure note list sums exactly to barLen divisions — pad rest or trim last note. */
+export function rebalanceBar(
+  notes: XmlNote[],
+  barLen: number,
+  divisions: number,
+): XmlNote[] {
+  const eighth = minDivForEighth(divisions);
+  const trimmed: XmlNote[] = [];
+  let pos = 0;
+
+  for (const n of notes) {
+    const dur = quantizeDiv(n.durationDiv, divisions);
+    if (pos >= barLen - 0.01) break;
+    if (pos + dur > barLen + 0.01) {
+      const remaining = Math.round(barLen - pos);
+      if (remaining >= eighth) {
+        trimmed.push({ ...n, durationDiv: remaining });
+      }
+      pos = barLen;
+      break;
+    }
+    trimmed.push({ ...n, durationDiv: dur });
+    pos += dur;
+  }
+
+  const remainder = Math.round(barLen - pos);
+  if (remainder >= eighth) {
+    trimmed.push({
+      isRest: true,
+      isChord: false,
+      durationDiv: remainder,
+      raw: '',
+    });
+  } else if (remainder > 0 && trimmed.length > 0) {
+    const last = trimmed[trimmed.length - 1]!;
+    trimmed[trimmed.length - 1] = { ...last, durationDiv: last.durationDiv + remainder };
+  } else if (trimmed.length === 0) {
+    trimmed.push({
+      isRest: true,
+      isChord: false,
+      durationDiv: barLen,
+      raw: '',
+    });
+  }
+
+  return trimmed;
+}
+
+export function measureBarLengthFromBody(body: string): number {
+  const divisions = parseInt(body.match(/<divisions>(\d+)<\/divisions>/)?.[1] ?? '480', 10);
+  const beats = parseInt(body.match(/<beats>(\d+)<\/beats>/)?.[1] ?? '4', 10);
+  const beatType = parseInt(body.match(/<beat-type>(\d+)<\/beat-type>/)?.[1] ?? '4', 10);
+  return (divisions * beats * 4) / beatType;
+}
+
+export function sumNonChordNoteDuration(body: string): number {
+  let pos = 0;
+  for (const nb of body.matchAll(/<note>([\s\S]*?)<\/note>/g)) {
+    const block = nb[1]!;
+    if (/<chord\s*\/>/.test(block)) continue;
+    pos += parseInt(block.match(/<duration>(\d+)<\/duration>/)?.[1] ?? '0', 10);
+  }
+  return pos;
+}
+
+export type BarTotalIssue = {
+  filename?: string;
+  barNum: number;
+  expected: number;
+  actual: number;
+};
+
+/** Return every bar whose note durations do not sum to full measure length. */
+export function findBarTotalIssues(xml: string, filename?: string): BarTotalIssue[] {
+  const part = xml.match(/<part id="[^"]+"[\s\S]*?<\/part>/)?.[0] ?? xml;
+  const issues: BarTotalIssue[] = [];
+  for (const m of part.matchAll(/<measure[^>]*number="(\d+)"[^>]*>([\s\S]*?)<\/measure>/g)) {
+    const barNum = parseInt(m[1]!, 10);
+    const body = m[2]!;
+    const expected = measureBarLengthFromBody(body);
+    const actual = sumNonChordNoteDuration(body);
+    if (Math.abs(actual - expected) > 0.01) {
+      issues.push({ filename, barNum, expected, actual });
+    }
+  }
+  return issues;
+}
+
+/** Rebalance every measure in MusicXML to exact bar length. */
+export function rebalanceMusicXmlBarTotals(xml: string): string {
+  return xml.replace(
+    /<measure([^>]*)number="(\d+)"([^>]*)>([\s\S]*?)<\/measure>/g,
+    (full, a1, numStr, a2, body) => {
+      const divisions = parseInt(body.match(/<divisions>(\d+)<\/divisions>/)?.[1] ?? '480', 10);
+      const barLen = measureBarLengthFromBody(body);
+      const head = body.replace(/<note>[\s\S]*?<\/note>/g, '').trimEnd();
+      const rawNotes = [...body.matchAll(/<note>([\s\S]*?)<\/note>/g)].map((m) =>
+        parseNoteBlock(m[1]!),
+      );
+      const balanced = rebalanceBar(rawNotes, barLen, divisions);
+      const rebuilt = balanced.map((n) =>
+        n.isRest
+          ? formatRestXml(n.durationDiv, divisions, n.voice ?? '1')
+          : formatNoteXml(n, divisions),
+      );
+      const newBody = (head ? head + '\n      ' : '') + rebuilt.join('\n      ') + '\n      ';
+      return `<measure${a1}number="${numStr}"${a2}>${newBody}</measure>`;
+    },
+  );
+}
+
 function formatNoteXml(
   n: XmlNote,
   divisions: number,
@@ -274,41 +390,36 @@ export function applyOrbitSoloMusicalityToMusicXml(
       if (options?.enforceRhythmicVariety) {
         notes = enforceRhythmicVariety(notes, divisions, barNum);
       }
+      notes = rebalanceBar(notes, barLen, divisions);
+
+      if (barNum % 4 === 0) {
+        const minRest = Math.round(divisions * SOLO_PHRASE_REST_MIN_BEATS);
+        const restSum = notes.filter((n) => n.isRest).reduce((s, n) => s + n.durationDiv, 0);
+        if (restSum < minRest && barLen >= minRest + minDivForEighth(divisions)) {
+          const pitched = notes.filter((n) => !n.isRest);
+          notes = rebalanceBar(pitched, barLen - minRest, divisions);
+          notes.push({
+            isRest: true,
+            isChord: false,
+            durationDiv: minRest,
+            raw: '',
+          });
+        }
+      }
 
       const rebuilt: string[] = [];
-      let pos = 0;
       for (const n of notes) {
-        const dur = quantizeDiv(n.durationDiv, divisions);
-        if (pos + dur > barLen + 0.5) break;
+        const dur = n.durationDiv;
         const snapCtx =
           options?.harmonyBars && !n.isRest
             ? { barNum, harmonyBars: options.harmonyBars, globalIdx: globalPitchIdx }
             : undefined;
         if (!n.isRest) globalPitchIdx += 1;
-        rebuilt.push(formatNoteXml({ ...n, durationDiv: dur }, divisions, snapCtx));
-        pos += dur;
-      }
-
-      if (barNum % 4 === 0 && barLen - pos >= divisions * SOLO_PHRASE_REST_MIN_BEATS) {
-        const restDur = Math.min(divisions * SOLO_PHRASE_REST_MIN_BEATS, barLen - pos);
-        if (restDur >= minDivForEighth(divisions)) {
-          rebuilt.push(
-            `<note><rest/><duration>${restDur}</duration><voice>1</voice><type>quarter</type></note>`,
-          );
+        if (n.isRest) {
+          rebuilt.push(formatRestXml(dur, divisions, n.voice ?? '1'));
+        } else {
+          rebuilt.push(formatNoteXml({ ...n, durationDiv: dur }, divisions, snapCtx));
         }
-      } else if (barNum % breathEvery === 0 && barLen - pos >= divisions * SOLO_PHRASE_REST_MIN_BEATS) {
-        const restDur = Math.min(divisions * SOLO_PHRASE_REST_MIN_BEATS, barLen - pos);
-        if (restDur >= minDivForEighth(divisions)) {
-          rebuilt.push(
-            `<note><rest/><duration>${restDur}</duration><voice>1</voice><type>quarter</type></note>`,
-          );
-        }
-      }
-
-      if (rebuilt.length === 0) {
-        rebuilt.push(
-          `<note><rest/><duration>${barLen}</duration><voice>1</voice><type>whole</type></note>`,
-        );
       }
 
       const newBody = (head ? head + '\n      ' : '') + rebuilt.join('\n      ') + '\n      ';
