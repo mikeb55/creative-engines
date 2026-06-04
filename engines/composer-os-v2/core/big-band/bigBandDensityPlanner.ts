@@ -10,6 +10,7 @@ function densityForPhase(phase: BigBandFormPlan['slices'][0]['phase']): DensityB
     case 'intro':
       return 'sparse';
     case 'melody_head':
+    case 'head_out':
       return 'moderate';
     case 'background_figures':
       return 'moderate';

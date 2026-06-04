@@ -140,6 +140,7 @@ export function mapBigBandFormPhaseToPolicyPhase(phase: BigBandFormPhase | undef
     case 'intro':
       return 'intro';
     case 'melody_head':
+    case 'head_out':
       return 'melody_head';
     case 'solo_section':
       return 'solo_section';

@@ -72,17 +72,82 @@ export function planOrbitBigBandForm64(): BigBandFormPlan {
   return { totalBars, slices };
 }
 
+/**
+ * Orbit BB 120-bar chart — 28-bar harmonic cycle × 4 + tag (4/4 @ 90 BPM in export script).
+ * Intro → head → soli stack → shout → head out → coda.
+ */
+export function planOrbitBigBand28Form(): BigBandFormPlan {
+  const totalBars = 120;
+  const slices: BigBandFormSlice[] = [
+    { index: 0, phase: 'intro', startBar: 1, endBar: 4 },
+    { index: 1, phase: 'melody_head', startBar: 5, endBar: 32 },
+    { index: 2, phase: 'solo_section', startBar: 33, endBar: 60 },
+    { index: 3, phase: 'shout_chorus', startBar: 61, endBar: 88 },
+    { index: 4, phase: 'head_out', startBar: 89, endBar: 116 },
+    { index: 5, phase: 'ending', startBar: 117, endBar: 120 },
+  ];
+  const rehearsalMarkOverride: Record<number, string> = {
+    1: 'A',
+    5: 'B',
+    33: 'C',
+    41: 'D',
+    49: 'E',
+    57: 'F',
+    61: 'G',
+    89: 'H',
+    117: 'I',
+  };
+  return { totalBars, slices, rehearsalMarkOverride };
+}
+
+/**
+ * BB101 — 120-bar NOLA big-band arc (sketch → full chart).
+ * Curiosity → momentum → confidence → reflection → anticipation → celebration.
+ */
+export function planBb101BigBandForm(): BigBandFormPlan {
+  const totalBars = 120;
+  const slices: BigBandFormSlice[] = [
+    { index: 0, phase: 'intro', startBar: 1, endBar: 16 },
+    { index: 1, phase: 'melody_head', startBar: 17, endBar: 40 },
+    { index: 2, phase: 'solo_section', startBar: 41, endBar: 64 },
+    { index: 3, phase: 'background_figures', startBar: 65, endBar: 80 },
+    { index: 4, phase: 'head_out', startBar: 81, endBar: 104 },
+    { index: 5, phase: 'shout_chorus', startBar: 105, endBar: 116 },
+    { index: 6, phase: 'ending', startBar: 117, endBar: 120 },
+  ];
+  const rehearsalMarkOverride: Record<number, string> = {
+    1: 'A',
+    9: 'B',
+    17: 'B',
+    33: 'C',
+    41: 'C',
+    49: 'D',
+    65: 'E',
+    81: 'F',
+    97: 'G',
+    105: 'H',
+    117: 'I',
+  };
+  return { totalBars, slices, rehearsalMarkOverride };
+}
+
 /** Resolve form plan from optional API/UI `formId`; defaults to weighted {@link planDefaultBigBandForm}. */
 export function planBigBandForm(formId: string | undefined, seed: number, opts?: PlanBigBandFormOpts): BigBandFormPlan {
   const id = formId?.trim();
   if (id === 'big_band_blues12') {
     return planBigBandBlues12Form();
   }
+  if (id === 'bb101_120' || id === 'bb101') {
+    return planBb101BigBandForm();
+  }
   if (id === 'orbit_bb' || id === 'orbit_32') {
     return planOrbitBigBandForm();
   }
   if (id === 'orbit_bb_64') {
     return planOrbitBigBandForm64();
+  }
+  if (id === 'orbit_28') {
+    return planOrbitBigBand28Form();
   }
   return planDefaultBigBandForm(seed, opts);
 }

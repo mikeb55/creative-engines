@@ -106,10 +106,12 @@ export function runBigBandRealisation(
       : undefined;
 
   const tb = planning.formPlan.totalBars;
+  const orbitForm28 = input.formId?.trim() === 'orbit_28';
   let chordBars = deriveChordBarsFromProgressionOrLeadSheet({
     chordProgressionText: typeof input.chordProgressionText === 'string' ? input.chordProgressionText : undefined,
     leadSheet: input.leadSheet,
     totalBars: tb,
+    ...(orbitForm28 ? { tileFromBarCount: 28 } : {}),
   });
 
   let frankZappaDeviceReceipts: string[] | undefined;
@@ -174,83 +176,92 @@ export function runBigBandRealisation(
         : {}),
       ...(input.leadSheet ? { leadSheetMelodyLock: input.leadSheet } : {}),
       ...(planning.sectionArchitectureContext ? { sectionArchitectureContext: planning.sectionArchitectureContext } : {}),
+      ...(input.orbit28V2GceFixes ? { orbit28V2GceFixes: input.orbit28V2GceFixes } : {}),
+      ...(input.bb101GceFixes ? { bb101GceFixes: input.bb101GceFixes } : {}),
       slonimskyEnsembleCellReceipts,
     });
 
+    /** `orbit_28_v1` / `orbit_28_v2` / `bb101_v1` use score-builder V2 helpers only — no V64/V5/V6/Steely/V22 post overlays. */
+    const profile = input.bigBandArrangementProfile;
+    const applyOrbit64FamilyOverlays =
+      profile !== undefined &&
+      profile !== 'orbit_28_v1' &&
+      profile !== 'orbit_28_v2' &&
+      profile !== 'bb101_v1';
+
     if (
-      input.bigBandArrangementProfile === 'orbit_v4_64' ||
-      input.bigBandArrangementProfile === 'orbit_v5_64' ||
-      input.bigBandArrangementProfile === 'orbit_v6_64' ||
-      input.bigBandArrangementProfile === 'orbit_steely_v1_64' ||
-      input.bigBandArrangementProfile === 'orbit_steely_v1_1_64' ||
-      input.bigBandArrangementProfile === 'orbit_steely_v1_2_64' ||
-      input.bigBandArrangementProfile === 'orbit_steely_v1_3_64' ||
-      input.bigBandArrangementProfile === 'orbit_steely_v1_4_64' ||
-      input.bigBandArrangementProfile === 'orbit_steely_v1_5_64' ||
-      input.bigBandArrangementProfile === 'orbit_steely_v1_7_64'
+      applyOrbit64FamilyOverlays &&
+      (profile === 'orbit_v4_64' ||
+        profile === 'orbit_v5_64' ||
+        profile === 'orbit_v6_64' ||
+        profile === 'orbit_steely_v1_64' ||
+        profile === 'orbit_steely_v1_1_64' ||
+        profile === 'orbit_steely_v1_2_64' ||
+        profile === 'orbit_steely_v1_3_64' ||
+        profile === 'orbit_steely_v1_4_64' ||
+        profile === 'orbit_steely_v1_5_64' ||
+        profile === 'orbit_steely_v1_7_64')
     ) {
       applyOrbitBbV64Overlay(score);
     }
     if (
-      input.bigBandArrangementProfile === 'orbit_v5_64' ||
-      input.bigBandArrangementProfile === 'orbit_v6_64' ||
-      input.bigBandArrangementProfile === 'orbit_steely_v1_64' ||
-      input.bigBandArrangementProfile === 'orbit_steely_v1_1_64' ||
-      input.bigBandArrangementProfile === 'orbit_steely_v1_2_64' ||
-      input.bigBandArrangementProfile === 'orbit_steely_v1_3_64' ||
-      input.bigBandArrangementProfile === 'orbit_steely_v1_4_64' ||
-      input.bigBandArrangementProfile === 'orbit_steely_v1_5_64' ||
-      input.bigBandArrangementProfile === 'orbit_steely_v1_7_64'
+      applyOrbit64FamilyOverlays &&
+      (profile === 'orbit_v5_64' ||
+        profile === 'orbit_v6_64' ||
+        profile === 'orbit_steely_v1_64' ||
+        profile === 'orbit_steely_v1_1_64' ||
+        profile === 'orbit_steely_v1_2_64' ||
+        profile === 'orbit_steely_v1_3_64' ||
+        profile === 'orbit_steely_v1_4_64' ||
+        profile === 'orbit_steely_v1_5_64' ||
+        profile === 'orbit_steely_v1_7_64')
     ) {
       applyOrbitBbV5Extended(score);
     }
-    if (input.bigBandArrangementProfile === 'orbit_v6_64') {
+    if (applyOrbit64FamilyOverlays && profile === 'orbit_v6_64') {
       applyOrbitBbV6Extended(score);
     } else if (
-      input.bigBandArrangementProfile === 'orbit_steely_v1_64' ||
-      input.bigBandArrangementProfile === 'orbit_steely_v1_1_64' ||
-      input.bigBandArrangementProfile === 'orbit_steely_v1_2_64' ||
-      input.bigBandArrangementProfile === 'orbit_steely_v1_3_64' ||
-      input.bigBandArrangementProfile === 'orbit_steely_v1_4_64' ||
-      input.bigBandArrangementProfile === 'orbit_steely_v1_5_64' ||
-      input.bigBandArrangementProfile === 'orbit_steely_v1_7_64'
+      applyOrbit64FamilyOverlays &&
+      (profile === 'orbit_steely_v1_64' ||
+        profile === 'orbit_steely_v1_1_64' ||
+        profile === 'orbit_steely_v1_2_64' ||
+        profile === 'orbit_steely_v1_3_64' ||
+        profile === 'orbit_steely_v1_4_64' ||
+        profile === 'orbit_steely_v1_5_64' ||
+        profile === 'orbit_steely_v1_7_64')
     ) {
       applyOrbitBbV6Extended(score, 'steely_v1');
-      if (
-        input.bigBandArrangementProfile === 'orbit_steely_v1_1_64' ||
-        input.bigBandArrangementProfile === 'orbit_steely_v1_2_64'
-      ) {
+      if (profile === 'orbit_steely_v1_1_64' || profile === 'orbit_steely_v1_2_64') {
         applySteelyOrbitV11DrumEnding(score);
       }
       if (
-        (input.bigBandArrangementProfile === 'orbit_steely_v1_2_64' ||
-          input.bigBandArrangementProfile === 'orbit_steely_v1_3_64' ||
-          input.bigBandArrangementProfile === 'orbit_steely_v1_4_64' ||
-          input.bigBandArrangementProfile === 'orbit_steely_v1_5_64' ||
-          input.bigBandArrangementProfile === 'orbit_steely_v1_7_64') &&
+        (profile === 'orbit_steely_v1_2_64' ||
+          profile === 'orbit_steely_v1_3_64' ||
+          profile === 'orbit_steely_v1_4_64' ||
+          profile === 'orbit_steely_v1_5_64' ||
+          profile === 'orbit_steely_v1_7_64') &&
         input.leadSheet
       ) {
         applySteelyOrbitV12MotifRecurrence(score, input.leadSheet);
       }
       if (
-        input.bigBandArrangementProfile === 'orbit_steely_v1_3_64' ||
-        input.bigBandArrangementProfile === 'orbit_steely_v1_4_64' ||
-        input.bigBandArrangementProfile === 'orbit_steely_v1_5_64' ||
-        input.bigBandArrangementProfile === 'orbit_steely_v1_7_64'
+        profile === 'orbit_steely_v1_3_64' ||
+        profile === 'orbit_steely_v1_4_64' ||
+        profile === 'orbit_steely_v1_5_64' ||
+        profile === 'orbit_steely_v1_7_64'
       ) {
         applySteelyOrbitDrumNarrative(score);
       }
       const steelyMelodicVariant =
-        input.bigBandArrangementProfile === 'orbit_steely_v1_4_64'
+        profile === 'orbit_steely_v1_4_64'
           ? ('v14' as const)
-          : input.bigBandArrangementProfile === 'orbit_steely_v1_5_64' ||
-              input.bigBandArrangementProfile === 'orbit_steely_v1_7_64'
+          : profile === 'orbit_steely_v1_5_64' || profile === 'orbit_steely_v1_7_64'
             ? ('v15' as const)
             : null;
       if (steelyMelodicVariant && input.leadSheet) {
         applySteelyOrbitMelodicDevelopment(score, input.leadSheet, steelyMelodicVariant);
       }
-      if (input.bigBandArrangementProfile === 'orbit_steely_v1_7_64') {
+      if (profile === 'orbit_steely_v1_7_64') {
         applySteelyOrbitV17Finishing(score);
         applySteelyOrbitV22Humanisation(score);
       }

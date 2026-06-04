@@ -26,6 +26,7 @@ import {
   mitigateBigBandHornMidis,
 } from '../ensemble-scoring/ensembleLayoutHeuristics';
 import type { BigBandInstrumentSection } from './bigBandSectionTypes';
+import type { BigBandArrangementProfile } from './bigBandTypes';
 import type { BigBandEraId } from './bigBandResearchTypes';
 import {
   BB_PART_RHYTHM,
@@ -77,6 +78,10 @@ import {
   orbitBbV2WindDropout,
   orbitBbV2WindVelocity,
 } from './orbitBbV2Arrangement';
+import { resolveOrbitBbArrangement } from './orbitBbArrangementRouter';
+import { resolveBb101BbArrangement } from './bb101BbArrangementRouter';
+import type { Bb101GceFixState } from './bb101BbArrangement';
+import type { Orbit28V2GceFixState } from './orbitBbV28V2Arrangement';
 import {
   addLockedLeadAltoMeasure,
   leadBarHasPitchedNotes,
@@ -128,6 +133,7 @@ function bigBandPhaseToSectionTag(phase: BigBandFormPhase | undefined): SectionT
     case 'intro':
       return 'head';
     case 'melody_head':
+    case 'head_out':
       return 'melody';
     case 'solo_section':
       return 'solo';
@@ -149,6 +155,7 @@ const BIG_BAND_REHEARSAL_MARK_DISPLAY: Record<BigBandFormPhase, string> = {
   solo_section: 'Solo Section',
   background_figures: 'Soli Chorus',
   shout_chorus: 'Shout Chorus',
+  head_out: 'Head Out',
   ending: 'Rideout',
 };
 
@@ -730,26 +737,17 @@ export interface BuildBigBandScoreModelInput {
   /**
    * Orbit BB — `orbit_v2` pacing / bloom; `orbit_v3_melody_authority` adds locked lead + defer backgrounds.
    */
-  bigBandArrangementProfile?:
-    | 'default'
-    | 'orbit_v2'
-    | 'orbit_v3_melody_authority'
-    | 'orbit_v4_64'
-    | 'orbit_v5_64'
-    | 'orbit_v6_64'
-    | 'orbit_steely_v1_64'
-    | 'orbit_steely_v1_1_64'
-    | 'orbit_steely_v1_2_64'
-    | 'orbit_steely_v1_3_64'
-    | 'orbit_steely_v1_4_64'
-    | 'orbit_steely_v1_5_64'
-    | 'orbit_steely_v1_7_64';
+  bigBandArrangementProfile?: BigBandArrangementProfile;
   /** 1-based bar → drum tier (overrides phase/slice for that measure only). */
   barDrumIntensityOverrides?: Partial<Record<number, DrumIntensity>>;
   /** Imported lead (`runBigBandRealisation` handoff) — alto melody lock when profile is `orbit_v3_melody_authority`. */
   leadSheetMelodyLock?: LeadSheet;
   /** V65 P2 — per-bar Song section architecture context. */
   sectionArchitectureContext?: CompositionContext;
+  /** Orbit 120-bar GCE loop — targeted fixes layered on `orbit_28_v2`. */
+  orbit28V2GceFixes?: Orbit28V2GceFixState;
+  /** BB101 120-bar GCE loop — targeted fixes layered on `bb101_v1`. */
+  bb101GceFixes?: Bb101GceFixState;
 }
 
 function applySectionVoicingSpreadToStack(stack: number[], minSpread?: number, maxSpread?: number): number[] {
@@ -955,10 +953,18 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
     bigBandArrangementProfile,
     leadSheetMelodyLock,
     sectionArchitectureContext,
+    orbit28V2GceFixes,
+    bb101GceFixes,
   } = input;
   const totalBars = formPlan.totalBars;
+  const orbitArr =
+    resolveOrbitBbArrangement(bigBandArrangementProfile, orbit28V2GceFixes) ??
+    resolveBb101BbArrangement(bigBandArrangementProfile, bb101GceFixes);
   const orbitOrchestration =
+    bigBandArrangementProfile === 'bb101_v1' ||
     bigBandArrangementProfile === 'orbit_v2' ||
+    bigBandArrangementProfile === 'orbit_28_v1' ||
+    bigBandArrangementProfile === 'orbit_28_v2' ||
     bigBandArrangementProfile === 'orbit_v3_melody_authority' ||
     bigBandArrangementProfile === 'orbit_v4_64' ||
     bigBandArrangementProfile === 'orbit_v5_64' ||
@@ -982,6 +988,7 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
     bigBandArrangementProfile === 'orbit_steely_v1_5_64' ||
     bigBandArrangementProfile === 'orbit_steely_v1_7_64';
   const orbitLeadLocked =
+    bigBandArrangementProfile === 'bb101_v1' ||
     bigBandArrangementProfile === 'orbit_v3_melody_authority' ||
     bigBandArrangementProfile === 'orbit_v4_64' ||
     bigBandArrangementProfile === 'orbit_v5_64' ||
@@ -1030,6 +1037,10 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
   const brassPunches = figMaps.brass;
   const shoutFragment = figMaps.shout;
   const rehearsalForBar = (b: number): string | undefined => {
+    const override = formPlan.rehearsalMarkOverride?.[b];
+    if (override !== undefined && override.trim().length > 0) {
+      return override.trim();
+    }
     const sl = formPlan.slices.find((s) => b === s.startBar);
     if (!sl) return undefined;
     return BIG_BAND_REHEARSAL_MARK_DISPLAY[sl.phase];
@@ -1120,7 +1131,7 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
       trumpetMidi = snapMidiToRange(trumpetMidi, sectionRegisterWindow.floor, sectionRegisterWindow.ceil);
       boneMidi = snapMidiToRange(boneMidi, sectionRegisterWindow.floor, sectionRegisterWindow.ceil);
     }
-    const bassMidiEff = orbitOrchestration ? orbitBbV2BassAnchor(bar, bassMidi) : bassMidi;
+    const bassMidiEff = orbitArr ? orbitArr.bassAnchor(bar, bassMidi) : bassMidi;
 
     const snappedSax = (m: number) => snapMidiToRange(m, ...BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES]);
     const snappedTrp = (m: number) => snapMidiToRange(m, ...BIG_BAND_MIDI_BOUNDS[BB_PART_TRUMPETS]);
@@ -1142,7 +1153,10 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
     tenorMidi = mit.tenorMidi;
     trumpetMidi = mit.trumpetMidi;
 
-    if (orbitOrchestration) {
+    if (orbitArr) {
+      trumpetMidi = orbitArr.bloomAdjustPitch(bar, 2, trumpetMidi);
+      boneMidi = orbitArr.bloomAdjustPitch(bar, 3, boneMidi);
+    } else if (orbitOrchestration) {
       trumpetMidi = orbitBbV2BloomAdjustPitch(bar, 2, trumpetMidi);
       boneMidi = orbitBbV2BloomAdjustPitch(bar, 3, boneMidi);
     }
@@ -1250,18 +1264,23 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
     };
     hornStreak = advanceHornCloneStreaks(hornStreak, hornIn);
 
-    let brassBeatsThisBar = orbitOrchestration
-      ? orbitBbV2MergeBrassBeats(bar, brassPunches.get(bar))
-      : brassPunches.get(bar);
+    let brassBeatsThisBar = orbitArr
+      ? orbitArr.mergeBrassBeats(bar, brassPunches.get(bar))
+      : orbitOrchestration
+        ? orbitBbV2MergeBrassBeats(bar, brassPunches.get(bar))
+        : brassPunches.get(bar);
     if (orbitLeadLocked && leadSheetMelodyLock) {
       const prot = leadAttacksDownbeat(leadSheetMelodyLock, bar);
       brassBeatsThisBar = orbitV3MelodyProtectBrassBeats(brassBeatsThisBar, prot);
     }
     const shoutBeatsRaw = shoutFragment.get(bar);
+    const shoutBeatsMerged = orbitArr
+      ? orbitArr.mergeShoutBeats(bar, shoutBeatsRaw)
+      : shoutBeatsRaw;
     const shoutBeatsThisBar =
       orbitLeadLocked && leadSheetMelodyLock
-        ? orbitV3MelodyProtectBrassBeats(shoutBeatsRaw, leadAttacksDownbeat(leadSheetMelodyLock, bar))
-        : shoutBeatsRaw;
+        ? orbitV3MelodyProtectBrassBeats(shoutBeatsMerged, leadAttacksDownbeat(leadSheetMelodyLock, bar))
+        : shoutBeatsMerged;
     const hasBrassHitWindow =
       (brassBeatsThisBar?.length ?? 0) > 0 || (shoutBeatsThisBar?.length ?? 0) > 0;
 
@@ -1284,7 +1303,10 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
             (bar < totalBars &&
               sliceStartBarSet.has(bar + 1) &&
               !sliceStartBarSet.has(bar)) ||
-            (orbitOrchestration && orbitBbV2ForceDrumTransition(bar));
+            (orbitArr
+              ? orbitArr.forceDrumTransition(bar)
+              : orbitOrchestration && orbitBbV2ForceDrumTransition(bar));
+          const orbitDrumTier = orbitArr?.drumIntensityOverride(bar);
           addBigBandDrumPattern(m, {
             ensembleHit: ensembleHitBar,
             sectionTag,
@@ -1297,11 +1319,17 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
               drumIntensity,
               slice?.phase,
               sectionIntensityOverrides,
-              barDrumIntensityOverrides,
+              {
+                ...barDrumIntensityOverrides,
+                ...(orbitDrumTier ? { [bar]: orbitDrumTier } : {}),
+              },
               bar
             ),
             drumArticulation:
-              drumArticulationBarOverrides?.[bar] ?? drumArticulation,
+              drumArticulationBarOverrides?.[bar] ??
+              (orbitArr && orbitArr.drumArticulation(bar) !== 'auto'
+                ? orbitArr.drumArticulation(bar)
+                : drumArticulation),
             feelMode,
             seed,
             barIndex: bar,
@@ -1320,7 +1348,7 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
           continue;
         }
 
-        if (orbitOrchestration && orbitBbV2PianoDropout(bar)) {
+        if (orbitArr ? orbitArr.pianoDropout(bar) : orbitOrchestration && orbitBbV2PianoDropout(bar)) {
           addEvent(m, createRest(0, effectiveBeats));
           continue;
         }
@@ -1443,12 +1471,34 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
       const splitHere = needRhythmSplit && idx === splitWindSlot && idx >= 0 && idx <= 3;
       let useHalfHalfWind =
         (USE_SPACE_EMPHASIS && spaceEmphasisThisBar) || splitHere;
-      if (orbitOrchestration && idx >= 0 && idx <= 3 && orbitBbV2PreferWholeBarSustain(bar, idx)) {
+      if (orbitArr) {
+        if (idx >= 0 && idx <= 3 && orbitArr.preferWholeBarSustain(bar, idx)) {
+          useHalfHalfWind = false;
+        }
+      } else if (orbitOrchestration && idx >= 0 && idx <= 3 && orbitBbV2PreferWholeBarSustain(bar, idx)) {
         useHalfHalfWind = false;
       }
 
       if (idx === 0 || idx === 1 || idx === 2 || idx === 3) {
-        if (orbitOrchestration) {
+        if (orbitArr) {
+          const melodyProtectSax =
+            orbitLeadLocked &&
+            leadSheetMelodyLock &&
+            leadBarHasPitchedNotes(leadSheetMelodyLock, bar) &&
+            (idx === 0 || idx === 1);
+          if (orbitArr.windDropout(bar, idx) && !melodyProtectSax) {
+            addEvent(m, createRest(0, effectiveBeats));
+            continue;
+          }
+          if (idx >= 2 && orbitArr.brassTacet(bar)) {
+            addEvent(m, createRest(0, effectiveBeats));
+            continue;
+          }
+          if (idx <= 1 && orbitArr.saxTacet(bar) && !melodyProtectSax) {
+            addEvent(m, createRest(0, effectiveBeats));
+            continue;
+          }
+        } else if (orbitOrchestration) {
           const melodyProtectSax =
             orbitLeadLocked &&
             leadSheetMelodyLock &&
@@ -1468,9 +1518,14 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
           }
         }
 
-        const vWind = orbitOrchestration
-          ? orbitBbV2WindVelocity(bar, idx as 0 | 1 | 2 | 3)
-          : undefined;
+        let vWind = orbitArr
+          ? orbitArr.windVelocity(bar, idx as 0 | 1 | 2 | 3)
+          : orbitOrchestration
+            ? orbitBbV2WindVelocity(bar, idx as 0 | 1 | 2 | 3)
+            : undefined;
+        if (orbitArr && idx === 2) {
+          vWind = Math.max(22, (vWind ?? 80) - orbitArr.cupMuteVelocityReduction(bar, idx));
+        }
 
         const pid = BB_PART_IDS[idx];
 
@@ -1513,6 +1568,21 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
 
         let pitch =
           idx === 0 ? melodyPitchAlto : idx === 1 ? melodyPitchTenor : idx === 2 ? trumpetMidi : boneMidi;
+        if (orbitArr && idx === 1 && orbitArr.saxSoliWindow(bar)) {
+          pitch = snapMidiToRange(orbitArr.tenorHarmonyMidi(melodyPitchAlto), ...BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES]);
+        }
+        if (orbitArr && idx === 2 && bar >= 105) {
+          pitch = snapMidiToRange(
+            pitch + orbitArr.shoutPitchOffset(bar),
+            ...BIG_BAND_MIDI_BOUNDS[BB_PART_TRUMPETS]
+          );
+        }
+        if (orbitArr && idx === 3 && bar >= 105 && (shoutBeatsThisBar?.length ?? 0) > 0) {
+          pitch = snapMidiToRange(
+            orbitArr.tromboneShoutCounter(bar, trumpetMidi),
+            ...BIG_BAND_MIDI_BOUNDS[BB_PART_TROMBONES]
+          );
+        }
         if (
           USE_SHOUT_REGISTER_LIFT &&
           idx === 2 &&
@@ -1611,7 +1681,9 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
   if (Object.keys(sectionArchitectureProfileByBar).length > 0) {
     score.sectionArchitectureProfileByBar = sectionArchitectureProfileByBar;
   }
-  if (orbitOrchestration) {
+  if (orbitArr) {
+    score.measureDynamicsMarkings = orbitArr.dynamicsMarkings();
+  } else if (orbitOrchestration) {
     score.measureDynamicsMarkings = orbitBbV2DynamicsMarkings();
   }
   return score;

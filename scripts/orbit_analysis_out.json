@@ -1,0 +1,943 @@
+﻿{
+  "score": {
+    "tempo": null,
+    "totalBars": 84,
+    "sections": [],
+    "partIds": {
+      "P1": "Alto Saxophone",
+      "P2": "Tenor Saxophone",
+      "P3": "Trumpet",
+      "P4": "Trombone",
+      "P5": "Piano",
+      "P6": "Double Bass",
+      "P7": "Drum Set (Jazz)"
+    }
+  },
+  "midis": [
+    {
+      "file": "Intro 01.mid",
+      "tempo": 89,
+      "timeSignature": "4/4",
+      "loopBars": 8,
+      "ticksPerBeat": 960,
+      "snareAccentPositions": [],
+      "snareDetail": [],
+      "totalNoteOns": 114,
+      "density": "medium",
+      "character": "setup"
+    },
+    {
+      "file": "Verse1 .mid",
+      "tempo": 90,
+      "timeSignature": "4/4",
+      "loopBars": 8,
+      "ticksPerBeat": 960,
+      "snareAccentPositions": [
+        "1.27",
+        "1.29",
+        "1.32",
+        "1.35",
+        "1.47",
+        "1.48",
+        "1.55",
+        "1.99",
+        "2.00",
+        "2.03",
+        "2.30",
+        "2.33",
+        "2.34",
+        "2.80",
+        "2.82",
+        "2.84",
+        "3.32",
+        "3.33",
+        "3.34",
+        "3.44",
+        "3.47",
+        "3.51",
+        "3.52",
+        "3.53",
+        "3.54",
+        "3.84",
+        "3.99",
+        "4.00",
+        "4.01",
+        "4.02",
+        "4.32",
+        "4.33",
+        "4.38",
+        "4.49",
+        "4.50",
+        "4.51",
+        "4.53",
+        "4.78",
+        "4.79",
+        "4.83",
+        "4.85"
+      ],
+      "snareDetail": [
+        {
+          "barInLoop": 1,
+          "beat": 2,
+          "vel": 94,
+          "tick": 964
+        },
+        {
+          "barInLoop": 1,
+          "beat": 2.84,
+          "vel": 36,
+          "tick": 1764
+        },
+        {
+          "barInLoop": 1,
+          "beat": 3.32,
+          "vel": 19,
+          "tick": 2230
+        },
+        {
+          "barInLoop": 1,
+          "beat": 3.47,
+          "vel": 17,
+          "tick": 2368
+        },
+        {
+          "barInLoop": 1,
+          "beat": 3.99,
+          "vel": 91,
+          "tick": 2871
+        },
+        {
+          "barInLoop": 1,
+          "beat": 4.49,
+          "vel": 26,
+          "tick": 3350
+        },
+        {
+          "barInLoop": 2,
+          "beat": 1.27,
+          "vel": 16,
+          "tick": 4098
+        },
+        {
+          "barInLoop": 2,
+          "beat": 1.47,
+          "vel": 10,
+          "tick": 4290
+        },
+        {
+          "barInLoop": 2,
+          "beat": 1.99,
+          "vel": 91,
+          "tick": 4790
+        },
+        {
+          "barInLoop": 2,
+          "beat": 2.3,
+          "vel": 14,
+          "tick": 5088
+        },
+        {
+          "barInLoop": 2,
+          "beat": 3.34,
+          "vel": 17,
+          "tick": 6090
+        },
+        {
+          "barInLoop": 2,
+          "beat": 3.54,
+          "vel": 13,
+          "tick": 6280
+        },
+        {
+          "barInLoop": 2,
+          "beat": 4.01,
+          "vel": 92,
+          "tick": 6728
+        },
+        {
+          "barInLoop": 2,
+          "beat": 4.38,
+          "vel": 16,
+          "tick": 7080
+        },
+        {
+          "barInLoop": 2,
+          "beat": 4.83,
+          "vel": 11,
+          "tick": 7512
+        },
+        {
+          "barInLoop": 3,
+          "beat": 1.29,
+          "vel": 10,
+          "tick": 7960
+        },
+        {
+          "barInLoop": 3,
+          "beat": 2,
+          "vel": 83,
+          "tick": 8636
+        },
+        {
+          "barInLoop": 3,
+          "beat": 2.84,
+          "vel": 34,
+          "tick": 9442
+        },
+        {
+          "barInLoop": 3,
+          "beat": 3.34,
+          "vel": 14,
+          "tick": 9928
+        },
+        {
+          "barInLoop": 3,
+          "beat": 3.53,
+          "vel": 22,
+          "tick": 10110
+        },
+        {
+          "barInLoop": 3,
+          "beat": 4.02,
+          "vel": 93,
+          "tick": 10578
+        },
+        {
+          "barInLoop": 3,
+          "beat": 4.53,
+          "vel": 29,
+          "tick": 11072
+        },
+        {
+          "barInLoop": 3,
+          "beat": 4.85,
+          "vel": 5,
+          "tick": 11378
+        },
+        {
+          "barInLoop": 4,
+          "beat": 1.35,
+          "vel": 9,
+          "tick": 11852
+        }
+      ],
+      "totalNoteOns": 151,
+      "density": "medium",
+      "character": "time"
+    },
+    {
+      "file": "Pre Chorus 01.mid",
+      "tempo": 89,
+      "timeSignature": "4/4",
+      "loopBars": 8,
+      "ticksPerBeat": 960,
+      "snareAccentPositions": [
+        "1.01",
+        "1.32",
+        "1.33",
+        "1.35",
+        "1.36",
+        "1.37",
+        "1.38",
+        "1.85",
+        "2.00",
+        "2.01",
+        "2.02",
+        "2.03",
+        "2.31",
+        "2.33",
+        "2.36",
+        "2.37",
+        "2.53",
+        "2.83",
+        "2.84",
+        "2.85",
+        "2.86",
+        "2.87",
+        "2.97",
+        "3.30",
+        "3.34",
+        "3.35",
+        "3.37",
+        "3.38",
+        "4.00",
+        "4.01",
+        "4.02",
+        "4.03",
+        "4.04",
+        "4.35",
+        "4.36",
+        "4.39",
+        "4.40",
+        "4.41",
+        "4.47",
+        "4.51",
+        "4.85",
+        "4.86",
+        "4.87",
+        "4.88",
+        "4.93",
+        "4.95"
+      ],
+      "snareDetail": [
+        {
+          "barInLoop": 1,
+          "beat": 1.32,
+          "vel": 19,
+          "tick": 308
+        },
+        {
+          "barInLoop": 1,
+          "beat": 2.02,
+          "vel": 90,
+          "tick": 978
+        },
+        {
+          "barInLoop": 1,
+          "beat": 2.36,
+          "vel": 16,
+          "tick": 1310
+        },
+        {
+          "barInLoop": 1,
+          "beat": 2.86,
+          "vel": 77,
+          "tick": 1786
+        },
+        {
+          "barInLoop": 1,
+          "beat": 3.38,
+          "vel": 32,
+          "tick": 2284
+        },
+        {
+          "barInLoop": 1,
+          "beat": 4.01,
+          "vel": 100,
+          "tick": 2892
+        },
+        {
+          "barInLoop": 1,
+          "beat": 4.4,
+          "vel": 15,
+          "tick": 3268
+        },
+        {
+          "barInLoop": 1,
+          "beat": 4.87,
+          "vel": 36,
+          "tick": 3714
+        },
+        {
+          "barInLoop": 1,
+          "beat": 4.95,
+          "vel": 27,
+          "tick": 3794
+        },
+        {
+          "barInLoop": 2,
+          "beat": 1.37,
+          "vel": 15,
+          "tick": 4192
+        },
+        {
+          "barInLoop": 2,
+          "beat": 2,
+          "vel": 93,
+          "tick": 4798
+        },
+        {
+          "barInLoop": 2,
+          "beat": 2.31,
+          "vel": 17,
+          "tick": 5094
+        },
+        {
+          "barInLoop": 2,
+          "beat": 2.83,
+          "vel": 65,
+          "tick": 5596
+        },
+        {
+          "barInLoop": 2,
+          "beat": 3.34,
+          "vel": 20,
+          "tick": 6088
+        },
+        {
+          "barInLoop": 2,
+          "beat": 4.01,
+          "vel": 94,
+          "tick": 6728
+        },
+        {
+          "barInLoop": 2,
+          "beat": 4.35,
+          "vel": 52,
+          "tick": 7058
+        },
+        {
+          "barInLoop": 2,
+          "beat": 4.85,
+          "vel": 50,
+          "tick": 7536
+        },
+        {
+          "barInLoop": 3,
+          "beat": 2.01,
+          "vel": 93,
+          "tick": 8650
+        },
+        {
+          "barInLoop": 3,
+          "beat": 2.33,
+          "vel": 21,
+          "tick": 8954
+        },
+        {
+          "barInLoop": 3,
+          "beat": 2.86,
+          "vel": 40,
+          "tick": 9464
+        },
+        {
+          "barInLoop": 3,
+          "beat": 2.97,
+          "vel": 23,
+          "tick": 9572
+        },
+        {
+          "barInLoop": 3,
+          "beat": 3.34,
+          "vel": 23,
+          "tick": 9928
+        },
+        {
+          "barInLoop": 3,
+          "beat": 4.03,
+          "vel": 94,
+          "tick": 10584
+        },
+        {
+          "barInLoop": 3,
+          "beat": 4.35,
+          "vel": 19,
+          "tick": 10892
+        }
+      ],
+      "totalNoteOns": 172,
+      "density": "medium",
+      "character": "lift"
+    },
+    {
+      "file": "Chorus1.mid",
+      "tempo": 90,
+      "timeSignature": "4/4",
+      "loopBars": 8,
+      "ticksPerBeat": 960,
+      "snareAccentPositions": [
+        "1.99",
+        "2.00",
+        "2.01",
+        "2.02",
+        "2.32",
+        "2.80",
+        "3.02",
+        "3.99",
+        "4.00",
+        "4.01",
+        "4.50"
+      ],
+      "snareDetail": [
+        {
+          "barInLoop": 1,
+          "beat": 2.02,
+          "vel": 108,
+          "tick": 982
+        },
+        {
+          "barInLoop": 1,
+          "beat": 4,
+          "vel": 106,
+          "tick": 2884
+        },
+        {
+          "barInLoop": 2,
+          "beat": 2,
+          "vel": 107,
+          "tick": 4800
+        },
+        {
+          "barInLoop": 2,
+          "beat": 4,
+          "vel": 115,
+          "tick": 6720
+        },
+        {
+          "barInLoop": 3,
+          "beat": 2.02,
+          "vel": 115,
+          "tick": 8658
+        },
+        {
+          "barInLoop": 3,
+          "beat": 4,
+          "vel": 117,
+          "tick": 10560
+        },
+        {
+          "barInLoop": 4,
+          "beat": 2.01,
+          "vel": 111,
+          "tick": 12488
+        },
+        {
+          "barInLoop": 4,
+          "beat": 4.01,
+          "vel": 112,
+          "tick": 14406
+        },
+        {
+          "barInLoop": 5,
+          "beat": 2,
+          "vel": 114,
+          "tick": 16318
+        },
+        {
+          "barInLoop": 5,
+          "beat": 4.01,
+          "vel": 107,
+          "tick": 18250
+        },
+        {
+          "barInLoop": 6,
+          "beat": 1.99,
+          "vel": 111,
+          "tick": 20148
+        },
+        {
+          "barInLoop": 6,
+          "beat": 3.99,
+          "vel": 110,
+          "tick": 22070
+        },
+        {
+          "barInLoop": 7,
+          "beat": 1.99,
+          "vel": 111,
+          "tick": 23994
+        },
+        {
+          "barInLoop": 7,
+          "beat": 4.5,
+          "vel": 99,
+          "tick": 26400
+        },
+        {
+          "barInLoop": 8,
+          "beat": 2.02,
+          "vel": 88,
+          "tick": 27858
+        },
+        {
+          "barInLoop": 8,
+          "beat": 2.32,
+          "vel": 84,
+          "tick": 28148
+        },
+        {
+          "barInLoop": 8,
+          "beat": 2.8,
+          "vel": 32,
+          "tick": 28608
+        },
+        {
+          "barInLoop": 8,
+          "beat": 3.02,
+          "vel": 99,
+          "tick": 28818
+        }
+      ],
+      "totalNoteOns": 105,
+      "density": "medium",
+      "character": "lift"
+    },
+    {
+      "file": "Bridge 01.mid",
+      "tempo": 89,
+      "timeSignature": "4/4",
+      "loopBars": 8,
+      "ticksPerBeat": 960,
+      "snareAccentPositions": [
+        "1.01",
+        "1.31",
+        "1.49",
+        "1.99",
+        "2.00",
+        "2.01",
+        "2.02",
+        "2.03",
+        "2.05",
+        "2.32",
+        "2.50",
+        "2.80",
+        "2.82",
+        "2.83",
+        "2.84",
+        "2.99",
+        "3.49",
+        "3.88",
+        "3.99",
+        "4.02",
+        "4.03",
+        "4.04",
+        "4.06",
+        "4.34",
+        "4.35",
+        "4.50",
+        "4.51",
+        "4.83",
+        "4.84"
+      ],
+      "snareDetail": [
+        {
+          "barInLoop": 1,
+          "beat": 1.99,
+          "vel": 104,
+          "tick": 954
+        },
+        {
+          "barInLoop": 1,
+          "beat": 2.32,
+          "vel": 13,
+          "tick": 1264
+        },
+        {
+          "barInLoop": 1,
+          "beat": 2.83,
+          "vel": 11,
+          "tick": 1759
+        },
+        {
+          "barInLoop": 1,
+          "beat": 3.99,
+          "vel": 98,
+          "tick": 2868
+        },
+        {
+          "barInLoop": 1,
+          "beat": 4.34,
+          "vel": 34,
+          "tick": 3202
+        },
+        {
+          "barInLoop": 1,
+          "beat": 4.83,
+          "vel": 50,
+          "tick": 3678
+        },
+        {
+          "barInLoop": 2,
+          "beat": 2.01,
+          "vel": 109,
+          "tick": 4814
+        },
+        {
+          "barInLoop": 2,
+          "beat": 2.84,
+          "vel": 18,
+          "tick": 5606
+        },
+        {
+          "barInLoop": 2,
+          "beat": 4.03,
+          "vel": 110,
+          "tick": 6748
+        },
+        {
+          "barInLoop": 2,
+          "beat": 4.34,
+          "vel": 73,
+          "tick": 7044
+        },
+        {
+          "barInLoop": 2,
+          "beat": 4.5,
+          "vel": 86,
+          "tick": 7200
+        },
+        {
+          "barInLoop": 3,
+          "beat": 1.99,
+          "vel": 104,
+          "tick": 8632
+        },
+        {
+          "barInLoop": 3,
+          "beat": 2.82,
+          "vel": 25,
+          "tick": 9428
+        },
+        {
+          "barInLoop": 3,
+          "beat": 4.02,
+          "vel": 93,
+          "tick": 10576
+        },
+        {
+          "barInLoop": 3,
+          "beat": 4.35,
+          "vel": 23,
+          "tick": 10898
+        },
+        {
+          "barInLoop": 3,
+          "beat": 4.84,
+          "vel": 43,
+          "tick": 11370
+        },
+        {
+          "barInLoop": 4,
+          "beat": 2.03,
+          "vel": 109,
+          "tick": 12508
+        },
+        {
+          "barInLoop": 4,
+          "beat": 2.84,
+          "vel": 38,
+          "tick": 13286
+        },
+        {
+          "barInLoop": 4,
+          "beat": 3.88,
+          "vel": 11,
+          "tick": 14286
+        },
+        {
+          "barInLoop": 4,
+          "beat": 4.03,
+          "vel": 103,
+          "tick": 14426
+        },
+        {
+          "barInLoop": 4,
+          "beat": 4.34,
+          "vel": 73,
+          "tick": 14726
+        },
+        {
+          "barInLoop": 4,
+          "beat": 4.5,
+          "vel": 102,
+          "tick": 14882
+        },
+        {
+          "barInLoop": 5,
+          "beat": 2,
+          "vel": 103,
+          "tick": 16324
+        },
+        {
+          "barInLoop": 5,
+          "beat": 4.03,
+          "vel": 97,
+          "tick": 18268
+        }
+      ],
+      "totalNoteOns": 120,
+      "density": "medium",
+      "character": "transition"
+    },
+    {
+      "file": "Fills 01.mid",
+      "tempo": 89,
+      "timeSignature": "4/4",
+      "loopBars": 1,
+      "ticksPerBeat": 960,
+      "snareAccentPositions": [
+        "1.00",
+        "1.28",
+        "1.54",
+        "2.00",
+        "2.26",
+        "2.79",
+        "3.28",
+        "4.00"
+      ],
+      "snareDetail": [
+        {
+          "barInLoop": 1,
+          "beat": 1,
+          "vel": 104,
+          "tick": 0
+        },
+        {
+          "barInLoop": 1,
+          "beat": 1.28,
+          "vel": 24,
+          "tick": 266
+        },
+        {
+          "barInLoop": 1,
+          "beat": 1.54,
+          "vel": 22,
+          "tick": 518
+        },
+        {
+          "barInLoop": 1,
+          "beat": 2,
+          "vel": 18,
+          "tick": 956
+        },
+        {
+          "barInLoop": 1,
+          "beat": 2.26,
+          "vel": 20,
+          "tick": 1206
+        },
+        {
+          "barInLoop": 1,
+          "beat": 2.79,
+          "vel": 16,
+          "tick": 1714
+        },
+        {
+          "barInLoop": 1,
+          "beat": 3.28,
+          "vel": 18,
+          "tick": 2190
+        },
+        {
+          "barInLoop": 1,
+          "beat": 4,
+          "vel": 106,
+          "tick": 2884
+        }
+      ],
+      "totalNoteOns": 14,
+      "density": "medium",
+      "character": "transition"
+    },
+    {
+      "file": "Fills 03.mid",
+      "tempo": 89,
+      "timeSignature": "4/4",
+      "loopBars": 1,
+      "ticksPerBeat": 960,
+      "snareAccentPositions": [
+        "1.00",
+        "1.34",
+        "1.52",
+        "1.78",
+        "2.05",
+        "2.50"
+      ],
+      "snareDetail": [
+        {
+          "barInLoop": 1,
+          "beat": 1,
+          "vel": 97,
+          "tick": 0
+        },
+        {
+          "barInLoop": 1,
+          "beat": 1.34,
+          "vel": 21,
+          "tick": 322
+        },
+        {
+          "barInLoop": 1,
+          "beat": 1.52,
+          "vel": 87,
+          "tick": 498
+        },
+        {
+          "barInLoop": 1,
+          "beat": 1.78,
+          "vel": 84,
+          "tick": 746
+        },
+        {
+          "barInLoop": 1,
+          "beat": 2.05,
+          "vel": 16,
+          "tick": 1012
+        },
+        {
+          "barInLoop": 1,
+          "beat": 2.5,
+          "vel": 90,
+          "tick": 1436
+        }
+      ],
+      "totalNoteOns": 14,
+      "density": "medium",
+      "character": "transition"
+    },
+    {
+      "file": "Fills 05.mid",
+      "tempo": 89,
+      "timeSignature": "4/4",
+      "loopBars": 1,
+      "ticksPerBeat": 960,
+      "snareAccentPositions": [
+        "2.03",
+        "2.35",
+        "2.83",
+        "3.34",
+        "3.53",
+        "3.82",
+        "4.02"
+      ],
+      "snareDetail": [
+        {
+          "barInLoop": 1,
+          "beat": 2.03,
+          "vel": 94,
+          "tick": 992
+        },
+        {
+          "barInLoop": 1,
+          "beat": 2.35,
+          "vel": 9,
+          "tick": 1298
+        },
+        {
+          "barInLoop": 1,
+          "beat": 2.83,
+          "vel": 77,
+          "tick": 1756
+        },
+        {
+          "barInLoop": 1,
+          "beat": 3.34,
+          "vel": 15,
+          "tick": 2246
+        },
+        {
+          "barInLoop": 1,
+          "beat": 3.53,
+          "vel": 71,
+          "tick": 2432
+        },
+        {
+          "barInLoop": 1,
+          "beat": 3.82,
+          "vel": 78,
+          "tick": 2708
+        },
+        {
+          "barInLoop": 1,
+          "beat": 4.02,
+          "vel": 86,
+          "tick": 2896
+        }
+      ],
+      "totalNoteOns": 17,
+      "density": "medium",
+      "character": "transition"
+    }
+  ],
+  "generated": "2026-05-31T06:01:26.595Z"
+}

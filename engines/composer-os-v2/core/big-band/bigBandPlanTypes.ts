@@ -13,6 +13,7 @@ export type BigBandFormPhase =
   | 'background_figures'
   | 'solo_section'
   | 'shout_chorus'
+  | 'head_out'
   | 'ending';
 
 export interface BigBandFormSlice {
@@ -25,6 +26,8 @@ export interface BigBandFormSlice {
 export interface BigBandFormPlan {
   totalBars: number;
   slices: BigBandFormSlice[];
+  /** 1-based bar → rehearsal letter/text (overrides slice-start phase labels in export). */
+  rehearsalMarkOverride?: Record<number, string>;
 }
 
 /** Per form slice: role assignment for each instrument section. */

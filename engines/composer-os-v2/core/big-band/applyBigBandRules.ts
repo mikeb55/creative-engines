@@ -23,21 +23,25 @@ export function applyBigBandRules(input: {
     let spaceEmphasis =
       resolved.tuning.spaceEmphasis >= 0.45 && (s.phase === 'solo_section' || dens === 'sparse');
     if (comp === 'basie') {
-      spaceEmphasis = s.phase === 'intro' || s.phase === 'solo_section' || s.phase === 'melody_head';
+      spaceEmphasis =
+        s.phase === 'intro' || s.phase === 'solo_section' || s.phase === 'melody_head' || s.phase === 'head_out';
     }
 
     let linePrimary = false;
     let riffPrimary = false;
     if (bebopLine && bebopLine.lineVsRiff === 'line_primary') {
       linePrimary =
-        s.phase === 'melody_head' || s.phase === 'solo_section' || s.phase === 'shout_chorus';
+        s.phase === 'melody_head' ||
+        s.phase === 'head_out' ||
+        s.phase === 'solo_section' ||
+        s.phase === 'shout_chorus';
     }
     if (resolved.tuning.riffVsLine === 'riff_primary' && !bebopLine) {
-      riffPrimary = s.phase === 'melody_head' || s.phase === 'background_figures';
+      riffPrimary = s.phase === 'melody_head' || s.phase === 'head_out' || s.phase === 'background_figures';
     }
     if (resolved.tuning.riffVsLine === 'balanced' && !bebopLine) {
       riffPrimary = s.phase === 'background_figures';
-      linePrimary = s.phase === 'melody_head' || s.phase === 'solo_section';
+      linePrimary = s.phase === 'melody_head' || s.phase === 'head_out' || s.phase === 'solo_section';
     }
 
     const smoothTransitionToNext =

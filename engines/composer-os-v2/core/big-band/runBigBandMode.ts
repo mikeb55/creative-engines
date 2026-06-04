@@ -37,6 +37,9 @@ import type { BarMeterMap } from '../rhythm/barMeterTypes';
 import type { FigureResponseLevel } from '../arranging/bigBandPatterns';
 import type { DrumArticulationMode, DrumIntensity } from './bigBandDrumIntensity';
 import type { BigBandFormPhase } from './bigBandPlanTypes';
+import type { BigBandArrangementProfile } from './bigBandTypes';
+import type { Orbit28V2GceFixState } from './orbitBbV28V2Arrangement';
+import type { Bb101GceFixState } from './bb101BbArrangement';
 import type { CompositionContext } from '../compositionContext';
 import type { Song } from '../section-architecture/sectionArchitectureTypes';
 import {
@@ -89,20 +92,7 @@ export interface BigBandRunInput {
   /** When true, skips bars 17–24 sax-soli substitute (custom charts e.g. Orbit). */
   suppressDesignatedSaxSoli?: boolean;
   /** Orbit BB orchestration profile (score builder). */
-  bigBandArrangementProfile?:
-    | 'default'
-    | 'orbit_v2'
-    | 'orbit_v3_melody_authority'
-    | 'orbit_v4_64'
-    | 'orbit_v5_64'
-    | 'orbit_v6_64'
-    | 'orbit_steely_v1_64'
-    | 'orbit_steely_v1_1_64'
-    | 'orbit_steely_v1_2_64'
-    | 'orbit_steely_v1_3_64'
-    | 'orbit_steely_v1_4_64'
-    | 'orbit_steely_v1_5_64'
-    | 'orbit_steely_v1_7_64';
+  bigBandArrangementProfile?: BigBandArrangementProfile;
   /** Per-bar drum tier overrides (1-based bar index). */
   barDrumIntensityOverrides?: Partial<Record<number, DrumIntensity>>;
   /** Per-bar brush vs sticks override (1-based bar index). */
@@ -111,6 +101,12 @@ export interface BigBandRunInput {
   song?: Song;
   /** V65 P2 — cached per-bar effective contexts created from `song`. */
   sectionArchitectureContext?: CompositionContext;
+  /** Orbit 120-bar GCE loop fixes for `orbit_28_v2`. */
+  orbit28V2GceFixes?: Orbit28V2GceFixState;
+  /** BB101 120-bar GCE loop fixes for `bb101_v1`. */
+  bb101GceFixes?: Bb101GceFixState;
+  /** Locked alto lead from BB101 sketch (`LeadSheet`). */
+  leadSheet?: import('../lead-sheet/leadSheetTypes').LeadSheet;
 }
 
 export interface BigBandRunManifestHints {
@@ -163,7 +159,8 @@ export function runBigBandMode(input: BigBandRunInput): BigBandRunResult {
   const blues12 = input.formId?.trim() === 'big_band_blues12';
   const orbitForm32 = input.formId?.trim() === 'orbit_bb' || input.formId?.trim() === 'orbit_32';
   const orbitForm64 = input.formId?.trim() === 'orbit_bb_64';
-  const totalBars = blues12 ? 42 : orbitForm32 ? 32 : orbitForm64 ? 64 : requestedBars;
+  const orbitForm28 = input.formId?.trim() === 'orbit_28';
+  const totalBars = blues12 ? 42 : orbitForm28 ? 120 : orbitForm32 ? 32 : orbitForm64 ? 64 : requestedBars;
   const era = input.era ?? 'post_bop';
   const composerStyle = input.composerStyle === undefined ? null : input.composerStyle;
 

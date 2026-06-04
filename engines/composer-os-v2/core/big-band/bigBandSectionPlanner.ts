@@ -18,6 +18,7 @@ function sliceRoles(phase: BigBandFormPlan['slices'][0]['phase'], seed: number):
         rhythm_section: 'bass_anchor',
       };
     case 'melody_head':
+    case 'head_out':
       return {
         saxes: 'backgrounds',
         trumpets: 'lead_melody',
