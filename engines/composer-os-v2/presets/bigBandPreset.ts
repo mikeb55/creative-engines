@@ -28,6 +28,7 @@ export const bigBandPreset: Preset = {
     supportedEras: ['swing', 'bebop', 'post_bop', 'contemporary'],
     supportedComposerStyles: [
       'ellington',
+      'strayhorn',
       'basie',
       'mingus',
       'charles_mingus',

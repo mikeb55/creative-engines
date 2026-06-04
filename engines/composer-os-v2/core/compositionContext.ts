@@ -31,6 +31,7 @@ import type { WybleConsumptionReceipt } from './wyble/wybleConsumptionReceipt';
 import type { AlternateGuitarTuningResolved } from './song-mode/alternateGuitarTunings';
 import type { CharlesMingusEpisodePlan } from './song-mode/mingusEpisodeTypes';
 import type { KennyWheelerSliceParams } from './song-mode/wheelerLyricSlice';
+import type { BillyStrayhornSliceParams } from './song-mode/billyStrayhornSlice';
 import type {
   HenryThreadgillEpisodePlan,
   HenryThreadgillSliceParams,
@@ -1180,6 +1181,31 @@ export interface GenerationMetadata {
   ellingtonCallResponseMap?: Record<number, 'call' | 'response'>;
   /** Bars tagged by shout-chorus pass (1-based). */
   ellingtonShoutBars?: number[];
+  /** Billy Strayhorn — chromatic song-form / extended-tone fusion slice (`billyStrayhornSlice.ts`). */
+  billyStrayhornDiagnostics?: {
+    songwriterId: 'billy_strayhorn';
+    barsConsidered: number;
+    extensionTouches: number;
+    chromaticTouches: number;
+    parallelColorTouches: number;
+    innerVoiceTouches: number;
+    chromaticArchitectureCount?: number;
+    sliceParams?: BillyStrayhornSliceParams;
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      bareMajorRaised: number;
+    };
+    deviceReceipts?: string[];
+  };
+  billyStrayhornSliceReceipt?: string;
+  billyStrayhornEffectiveHarmonyBars?: string[];
+  billyStrayhornDeviceReceipts?: string[];
+  billyStrayhornAntiElaborationGuards?: {
+    bareMajorRaised: number;
+  };
+  billyStrayhornSliceParams?: BillyStrayhornSliceParams;
+  /** Bars with sustained closed-block texture (1-based). */
+  strayhornClosedBlockBars?: number[];
   /** Thad Jones Song Mode slice posture (`thadJonesSlice.ts`). Default **`swing`** when omitted. */
   thadPhase?: ThadJonesPhaseMode;
   /** Effective Thad phase after resolve. */

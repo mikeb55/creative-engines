@@ -23,3 +23,4 @@ export * from './songModeBurtBacharachStyleProfile';
 export * from './songModeEcmEnsembleStyleProfile';
 export * from './songModeEvaluationProfiles';
 export * from './wheelerStyleProfile';
+export * from './strayhornStyleProfile';

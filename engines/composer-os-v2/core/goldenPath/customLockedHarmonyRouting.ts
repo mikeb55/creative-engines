@@ -51,6 +51,7 @@ export const EFFECTIVE_HARMONY_TRUTH_REGISTRY: readonly EffectiveHarmonyTruthReg
   { songwriterStyleIds: ['bill_evans'], metadataKey: 'billEvansEffectiveHarmonyBars' },
   { songwriterStyleIds: ['debussy'], metadataKey: 'debussyEffectiveHarmonyBars' },
   { songwriterStyleIds: ['duke_ellington'], metadataKey: 'dukeEllingtonEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['billy_strayhorn'], metadataKey: 'billyStrayhornEffectiveHarmonyBars' },
   { songwriterStyleIds: ['miles_davis'], metadataKey: 'milesDavisEffectiveHarmonyBars' },
   { songwriterStyleIds: ['bartok'], metadataKey: 'bartokEffectiveHarmonyBars' },
   { songwriterStyleIds: ['berg'], metadataKey: 'bergEffectiveHarmonyBars' },

@@ -40,6 +40,7 @@ export const LINE_FIRST_DUO_ENGINE_VRB_IDS = [
   'herbie_hancock',
   'charles_mingus',
   'duke_ellington',
+  'billy_strayhorn',
   'thad_jones',
   'count_basie',
   'ravel',

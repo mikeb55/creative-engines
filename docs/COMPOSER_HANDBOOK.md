@@ -24,7 +24,7 @@ Presets live in **`src/engine/ecmVrb.js`**; app state in **`VrbProfileContext`**
 
 Compiled harmonic voice bundles live in **`engines/composer-os-v2/core/composer/voiceRuleBundles.ts`**. Optional **`orchestrationPolicy.fingerprintReceipts`** are **research-derived orchestration planning lines** (not the same thing as **GCE structural memory** JSON fingerprints in **`gce-memory/fingerprints/`**). **`getVoiceRuleBundle(id)`** returns the bundle for harmonic-voice / BB pairing; unknown ids fall back to **`neutral`** (no receipts).
 
-**Deep (≥10 `fingerprintReceipts`):** **John Coltrane** (`john_coltrane`) **10** · **Pat Metheny** (`pat_metheny`) **12** · **Clare Fischer** (`clare_fischer`) **44** · **Quincy Jones** (`quincy_jones`) **46** · **Sammy Nestico** (`sammy_nestico`) **41** · **Count Basie** (`count_basie`) **38** · **Duke Ellington** (`duke_ellington` / `ellington`) **11** · **Gil Evans** (`gil_evans`) **11** · **Wayne Shorter** (`wayne_shorter`) **11** · **Maria Schneider** (`maria_schneider`) **11** · **Kenny Wheeler** (`kenny_wheeler`) **12** · **Thad Jones** (`thad_jones`) **12** · **Charles Mingus** (`charles_mingus`) **11** · **Henry Threadgill** (`henry_threadgill`) **26** · **Bob Brookmeyer** (`bob_brookmeyer`) **12** · **Olivier Messiaen** (`messiaen` / `olivier_messiaen`) **12** · **Oliver Nelson** (`oliver_nelson`) **12**.
+**Deep (≥10 `fingerprintReceipts`):** **John Coltrane** (`john_coltrane`) **10** · **Pat Metheny** (`pat_metheny`) **12** · **Clare Fischer** (`clare_fischer`) **44** · **Quincy Jones** (`quincy_jones`) **46** · **Sammy Nestico** (`sammy_nestico`) **41** · **Count Basie** (`count_basie`) **38** · **Duke Ellington** (`duke_ellington` / `ellington`) **11** · **Billy Strayhorn** (`billy_strayhorn` / `strayhorn`) **12** · **Gil Evans** (`gil_evans`) **11** · **Wayne Shorter** (`wayne_shorter`) **11** · **Maria Schneider** (`maria_schneider`) **11** · **Kenny Wheeler** (`kenny_wheeler`) **12** · **Thad Jones** (`thad_jones`) **12** · **Charles Mingus** (`charles_mingus`) **11** · **Henry Threadgill** (`henry_threadgill`) **26** · **Bob Brookmeyer** (`bob_brookmeyer`) **12** · **Olivier Messiaen** (`messiaen` / `olivier_messiaen`) **12** · **Oliver Nelson** (`oliver_nelson`) **12**.
 
 **Extended:** none — **`count_basie`** (**`CB_HARM_*`**, **`CB_VL_*`**, **`CB_RHYTHM_*`**, **`CB_FORM_*`**, **`CB_FP_*`**) raised the bundle to **deep**; slice layer still carries shout-chorus / riff-head / **Basie Button** behaviour.
 
@@ -37,6 +37,7 @@ Compiled harmonic voice bundles live in **`engines/composer-os-v2/core/composer/
 | **Clare Fischer** (`clare_fischer`) | 44 | **deep** |
 | **Quincy Jones** (`quincy_jones`) | 46 | **deep** |
 | **Duke Ellington** (`duke_ellington`, alias `ellington`) | 11 | **deep** |
+| **Billy Strayhorn** (`billy_strayhorn`, alias `strayhorn`) | 12 | **deep** |
 | **Gil Evans** (`gil_evans`) | 11 | **deep** |
 | **Wayne Shorter** (`wayne_shorter`) | 11 | **deep** |
 | **Maria Schneider** (`maria_schneider`) | 11 | **deep** |
@@ -95,6 +96,39 @@ These are **not** “bass note under a chord symbol.” Upper and bass follow **
 **Reference works:** *Ma Belle Hélène* · *Smatter* · *Angel Song* · *Music for Large & Small Ensembles* (Sweet Time Suite).
 
 **Evaluation:** **`wheelerStyleProfile.ts`** — hard fail on terminal root triad, voicing substitution, bebop chain > 0.20, Schneider-profile false positives.
+
+---
+
+### Billy Strayhorn (`billy_strayhorn`)
+
+Strayhorn composes from **inside the chord colour and phrase line simultaneously** — melody and harmony are one integrated extended-tone system. This is **not** Ellington with more lush harmony.
+
+| | **Strayhorn** | **Ellington** |
+|---|---------------|---------------|
+| Primary engine | Chromatic song architecture + long legato line | Sonority, timbral contrast, riff logic |
+| Harmony motion | Color continuity, tritone sub, minor-third drift, enharmonic pivots | Functional blues frames, jungle growl, shout derivation |
+| Melody | Defines chord from above (maj7/9/11/13 on strong beats) | Character writing for players, call/response |
+| Texture | Sustained closed blocks + inner voice motion | Sectional contrast, spot-effect blocks, dramatic stops |
+| Choose Strayhorn when | Balanced song form, chromatic ballad, Lush Life lineage | Mood suites, jungle colour, shout choruses, player portraits |
+
+**Song Mode slice** — **`billyStrayhornSlice.ts`** (`bs:*` receipts): chromatic reinterpretation passes + extended-tone enrichment + parallel color planing + tonal obscuring cadences.
+
+**Six parameters** (0–1, defaults in parentheses):
+
+| Parameter | Default | Musical role | Sweet spot |
+|-----------|---------|--------------|------------|
+| `chromaticContinuity` | 0.72 | Tritone sub, minor-third drift, enharmonic pivot, descending dom chains vs diatonic function | 0.65–0.80 |
+| `extendedToneMelody` | 0.68 | Accented melody on maj7/9/11/13 not root/5th | 0.60–0.75 |
+| `parallelColorMotion` | 0.55 | Non-functional m6/maj7 planing at phrase openings | 0.45–0.65 |
+| `phraseArcLength` | 0.65 | Ballad 6–10 beats before breath; rubato 10–14 | 0.58–0.72 |
+| `innerVoiceActivity` | 0.60 | Semitone/whole-step inner motion ≥45% of chords | 0.52–0.68 |
+| `closedBlockSustain` | 0.55 | Block voicing persists ≥2 bars as structural texture | 0.48–0.62 |
+
+**Big Band arranger id:** **`strayhorn`** — six rules (CompactBlock, SaxCountermelody, InnerVoiceMotion, ChromaticHarmonyRhythm, CrossSectionBlend, NoEllingtonRiff).
+
+**Reference works:** *Lush Life* · *Chelsea Bridge* · *Blood Count* · *Lotus Blossom* · *Isfahan* · *A Flower Is a Lovesome Thing*
+
+**Evaluation:** **`strayhornStyleProfile.ts`** — extension occupancy, phrase continuity, chromatic architecture score, parallel color motion, inner-voice density, closed-block duration; hard fail on Ellington riff/shout/sectional triggers.
 
 ---
 

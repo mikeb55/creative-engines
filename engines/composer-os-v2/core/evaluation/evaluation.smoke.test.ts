@@ -24,6 +24,7 @@ import { bobBrookmeyerStyleProfile } from './bobBrookmeyerStyleProfile';
 import { clareFischerStyleProfile } from './clareFischerStyleProfile';
 import { oliverNelsonStyleProfile } from './oliverNelsonStyleProfile';
 import { sammyNesticoStyleProfile } from './sammyNesticoStyleProfile';
+import { strayhornStyleProfile, evaluateStrayhornHardFails } from './strayhornStyleProfile';
 import { defaultGceWeights, evaluateGce } from './gceEvaluator';
 import { defaultLockGates, evaluateLock } from './lockGates';
 import { runDcrProtocol } from './dcrProtocol';
@@ -223,8 +224,15 @@ function testGceEvaluatorOnly(): boolean {
   return weightsOk && allPresent && scoreOk;
 }
 
+function testStrayhornProfileSmoke(): boolean {
+  const w = strayhornStyleProfile.dimensions.reduce((a, d) => a + d.weight, 0);
+  if (strayhornStyleProfile.dimensions.length !== 6 || Math.abs(w - 1.0) > 1e-9) return false;
+  const fails = evaluateStrayhornHardFails({});
+  return Array.isArray(fails);
+}
+
 function testGceCombinedAndProfilesSmoke(): boolean {
-  return testGceEvaluatorOnly() && testCombinedEvaluatorBasieSmoke() && testProfileRegistrySmoke();
+  return testGceEvaluatorOnly() && testCombinedEvaluatorBasieSmoke() && testProfileRegistrySmoke() && testStrayhornProfileSmoke();
 }
 
 function testLockGatesSmoke(): boolean {

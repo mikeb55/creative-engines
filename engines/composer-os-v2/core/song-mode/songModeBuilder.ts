@@ -2105,6 +2105,81 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Dm9', 'G13', 'Cmaj9(#11)', 'Am9'],
     ],
   },
+  /** Billy Strayhorn — `strayhorn_chromatic_ballad`: extended-tone fusion + chromatic reinterpretation (`billyStrayhornSlice.ts`). */
+  strayhorn_chromatic_ballad: {
+    verse: [
+      ['Ebmaj9(#11)', 'Ab13(b9)', 'Dbmaj7(9,13)', 'Gb13(b9)'],
+      ['Bmaj9(#11)', 'E13(b9)', 'Amaj7(9,13)', 'D13(b9)'],
+      ['Gmaj9(#11)', 'C13(b9)', 'Fmaj7(9,13)', 'Bb13(b9)'],
+      ['Ebmaj9(#11)', 'Abdim7', 'Dbmaj7(9,13)', 'Gb13(b9)'],
+    ],
+    chorus: [
+      ['Cmaj9(#11,13)', 'F#dim7', 'Bm7(11)', 'E13(b9)'],
+      ['Amaj9(#11)', 'D13(b9)', 'Gmaj7(9,13)', 'Cmaj9(#11)'],
+      ['Fm6(9)', 'Bbmaj7(9,13)', 'Ebmaj9(#11)', 'Ab13(b9)'],
+      ['Dbmaj7(9,13)', 'Gb13(b9)', 'Bmaj9(#11)', 'E13(b9)'],
+    ],
+    bridge: [
+      ['Dm9', 'G13(b9)', 'Cmaj9(#11)', 'F#dim7'],
+      ['Bm7(11)', 'E13(b9)', 'Amaj9(#11)', 'Dmaj7(9,13)'],
+      ['Gm6(9)', 'C13(b9)', 'Fmaj7(9,13)', 'Bb13(b9)'],
+      ['Ebmaj9(#11)', 'Abdim7', 'Dbmaj7(9,13)', 'Gb13(b9)'],
+    ],
+    pre_chorus: [
+      ['Am9', 'D13(b9)', 'Gmaj7(9,13)', 'Cmaj9(#11)'],
+      ['Fm6(9)', 'Bbmaj7(9,13)', 'Ebmaj9(#11)', 'Ab13(b9)'],
+    ],
+  },
+  /** Billy Strayhorn — `strayhorn_lush_life`: long legato line + tonal obscuring cadences. */
+  strayhorn_lush_life: {
+    verse: [
+      ['Dbmaj9(#11,13)', 'Gb13(b9)', 'Bmaj7(9,13)', 'E13(b9)'],
+      ['Abmaj9(#11)', 'Ddim7', 'Gmaj7(9,13)', 'Cm6(9)'],
+      ['Fmaj9(#11)', 'Bb13(b9)', 'Ebmaj7(9,13)', 'Ab13(b9)'],
+      ['Dbmaj9(#11)', 'F#dim7', 'Bm7(11)', 'E13(b9)'],
+    ],
+    chorus: [
+      ['Amaj9(#11,13)', 'D13(b9)', 'Gmaj7(9,13)', 'Cmaj9(#11)'],
+      ['Fm6(9)', 'Bbmaj7(9,13)', 'Ebmaj9(#11)', 'Abdim7'],
+      ['Dbmaj7(9,13)', 'Gb13(b9)', 'Bmaj9(#11)', 'E13(b9)'],
+      ['Am9', 'D13(b9)', 'Gmaj9(#11,13)', 'Cmaj7(9,13)'],
+    ],
+    bridge: [
+      ['Bm7(11)', 'E13(b9)', 'Amaj9(#11)', 'Dmaj7(9,13)'],
+      ['Gm6(9)', 'C13(b9)', 'Fmaj7(9,13)', 'Bb13(b9)'],
+      ['Ebmaj9(#11)', 'Abdim7', 'Dbmaj7(9,13)', 'Gb13(b9)'],
+      ['Bmaj9(#11)', 'E13(b9)', 'Amaj7(9,13)', 'D13(b9)'],
+    ],
+    pre_chorus: [
+      ['Dm9', 'G13(b9)', 'Cmaj9(#11)', 'F#dim7'],
+      ['Fm6(9)', 'Bbmaj7(9,13)', 'Ebmaj9(#11)', 'Ab13(b9)'],
+    ],
+  },
+  /** Billy Strayhorn — `strayhorn_chelsea_bridge`: parallel color motion + minor-third drift. */
+  strayhorn_chelsea_bridge: {
+    verse: [
+      ['Ebmaj7(9,13)', 'Ebmaj7(9,13)/G', 'Abmaj9(#11)', 'Ab13(b9)'],
+      ['Dbmaj7(9,13)', 'Dbm6(9)', 'Gbmaj9(#11)', 'B13(b9)'],
+      ['Bmaj7(9,13)', 'Bm6(9)', 'Emaj9(#11)', 'A13(b9)'],
+      ['Dmaj7(9,13)', 'Ddim7', 'Gmaj9(#11)', 'C13(b9)'],
+    ],
+    chorus: [
+      ['Cmaj9(#11,13)', 'Cm6(9)', 'Fmaj7(9,13)', 'F#dim7'],
+      ['Bm7(11)', 'B13(b9)', 'Emaj9(#11)', 'Ab13(b9)'],
+      ['Dbmaj7(9,13)', 'Ddim7', 'Gmaj9(#11)', 'C13(b9)'],
+      ['Fm6(9)', 'Bbmaj7(9,13)', 'Ebmaj9(#11)', 'Abdim7'],
+    ],
+    bridge: [
+      ['Am9', 'D13(b9)', 'Gmaj7(9,13)', 'Cmaj9(#11)'],
+      ['F#dim7', 'Bm7(11)', 'E13(b9)', 'Amaj9(#11)'],
+      ['Dm6(9)', 'G13(b9)', 'Cmaj7(9,13)', 'F#dim7'],
+      ['Bm7(11)', 'E13(b9)', 'Amaj9(#11)', 'Dmaj7(9,13)'],
+    ],
+    pre_chorus: [
+      ['Gm6(9)', 'C13(b9)', 'Fmaj7(9,13)', 'Bb13(b9)'],
+      ['Ebmaj9(#11)', 'Abdim7', 'Dbmaj7(9,13)', 'Gb13(b9)'],
+    ],
+  },
   /** Maria Schneider — `schneider_through_composed`: wide orchestral stacks, slow harmonic rhythm (`mariaSchneiderSlice.ts`). */
   schneider_through_composed: {
     verse: [
@@ -3259,6 +3334,15 @@ function chordSymbolsForSection(
     const tier = Math.abs(seed) % 3;
     resolvedPoolId =
       tier === 0 ? 'wheeler_polyaxial' : tier === 1 ? 'wheeler_lyric_suspension' : 'wheeler_chamber_ballad';
+  }
+  if (songwriterId === 'billy_strayhorn') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0
+        ? 'strayhorn_chromatic_ballad'
+        : tier === 1
+          ? 'strayhorn_lush_life'
+          : 'strayhorn_chelsea_bridge';
   }
   if (songwriterId === 'gil_evans') {
     const tier = Math.abs(seed) % 3;

@@ -619,6 +619,20 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   }
 
   /**
+   * Billy Strayhorn: `precomputeBillyStrayhornEffectiveHarmonyBars` applies chromatic reinterpretation + extended-tone fusion.
+   */
+  const bsEff = meta?.billyStrayhornEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'billy_strayhorn' &&
+    Array.isArray(bsEff) &&
+    bsEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return bsEff[barIndex - 1]!;
+  }
+
+  /**
    * Bacharach: `precomputeBacharachEffectiveHarmonyBars` applies theatre-pop chromatic side-doors + deceptive cadences.
    * After precompute, `bacharachEffectiveHarmonyBars` is full-form and authoritative.
    */

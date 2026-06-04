@@ -46,6 +46,52 @@ const CHARLES_MINGUS_COMPOSER_RULES: BigBandRule[] = [
   R('mingus.blues_gospel_axis', 'Blues/gospel axis through chromatic departures + functional recovery', 'composer', 'harmony', 80),
 ];
 
+/** Billy Strayhorn — chromatic song-form / extended-tone fusion (distinct from Ellington). */
+const STRAYHORN_COMPOSER_RULES: BigBandRule[] = [
+  R(
+    'strayhorn.compact_block',
+    'CompactBlockRule: sustained closed-position block voicing as structural feature — sections within one octave below lead trumpet; baritone sax close to melodic line',
+    'composer',
+    'orchestration',
+    84
+  ),
+  R(
+    'strayhorn.sax_countermelody',
+    'SaxCountermelodyRule: reed section thin independent contrapuntal countermelody at unison or near-unison — horizontal layer refracted from main melody',
+    'composer',
+    'orchestration',
+    83
+  ),
+  R(
+    'strayhorn.inner_voice_motion',
+    'InnerVoiceMotionRule: accompaniment chords show semitone or whole-step inner voice motion between adjacent events at ≥45% rate — penalise static harmonic pads',
+    'composer',
+    'harmony',
+    82
+  ),
+  R(
+    'strayhorn.chromatic_harmony_rhythm',
+    'ChromaticHarmonyRhythmRule: harmonic rhythm steady and song-governed with local chromatic intensification via planing, dominant chains, or tonic reinterpretation at phrase boundaries',
+    'composer',
+    'harmony',
+    81
+  ),
+  R(
+    'strayhorn.cross_section_blend',
+    'CrossSectionBlendRule: voicings built across families not section blocks only — melody refracted with countermelody or close harmonic coloring',
+    'composer',
+    'orchestration',
+    80
+  ),
+  R(
+    'strayhorn.no_ellington_riff',
+    'NoEllingtonRiffRule: suppress blues-riff repeated-figure writing, hard sectional character contrast, and dramatic-stop fragmentation',
+    'composer',
+    'form',
+    85
+  ),
+];
+
 const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
   ellington: [
     R('ellington.counterpoint_density', '≥2 independent lines when not thin', 'composer', 'density', 82),
@@ -55,6 +101,7 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
     R('ellington.shout_derive', 'Shout lead from earlier motives', 'composer', 'form', 79),
     R('ellington.elastic_time', 'Rhythm section timing variance', 'composer', 'rhythm', 71),
   ],
+  strayhorn: STRAYHORN_COMPOSER_RULES,
   basie: [
     R('basie.riff_core', 'Recurring 1–2 bar riff in head/backgrounds', 'composer', 'form', 85),
     R('basie.sparse_baseline', 'Baseline low density: one horn line + rhythm', 'composer', 'density', 83),

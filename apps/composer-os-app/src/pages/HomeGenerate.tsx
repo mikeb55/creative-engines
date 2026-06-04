@@ -967,6 +967,7 @@ const SONGWRITER_GROUP_SHIPPED_ORDER: readonly string[] = [
   'ecm_chamber',
   'antonio_carlos_jobim',
   'herbie_hancock',
+  'billy_strayhorn',
 ];
 
 /** Shipped writers shown under the Singer-Songwriter subgroup (full slice; separate optgroup label). */
@@ -1248,6 +1249,7 @@ const ARRANGER_NONE_ID = 'none';
 
 const ARRANGER_OPTIONS: { id: string; label: string }[] = [
   { id: 'ellington', label: 'Duke Ellington' },
+  { id: 'strayhorn', label: 'Billy Strayhorn' },
   { id: 'basie', label: 'Count Basie' },
   { id: 'thad', label: 'Thad Jones' },
   { id: 'schneider', label: 'Maria Schneider' },
@@ -1283,6 +1285,7 @@ const ARRANGER_OPTIONS: { id: string; label: string }[] = [
 /** Matches engine `BigBandComposerId` / style-pairing "known" arrangers — grouped first like Style dropdowns. */
 const ARRANGER_GROUP_CORE_ORDER: readonly string[] = [
   'ellington',
+  'strayhorn',
   'basie',
   'thad',
   'schneider',

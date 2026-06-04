@@ -9,6 +9,7 @@ import {
   DUO_VOICE_POLICY_SQ_FAMILY_STUB,
 } from './voiceRuleBundle';
 import { KENNY_WHEELER_VRF_FINGERPRINT_RECEIPTS } from './kennyWheelerVrbFingerprints';
+import { BILLY_STRAYHORN_VRF_FINGERPRINT_RECEIPTS } from './billyStrayhornVrbFingerprints';
 import { WAYNE_SHORTER_WS_HARM_FINGERPRINTS } from './wayneShorterHarmFingerprints';
 import { WAYNE_SHORTER_WS_MEL_FINGERPRINTS } from './wayneShorterMelFingerprints';
 import { WAYNE_SHORTER_WS_RHYTHM_FINGERPRINTS } from './wayneShorterRhythmFingerprints';
@@ -2082,6 +2083,56 @@ const DUKE_ELLINGTON: VoiceRuleBundle = {
   },
 };
 
+/** Billy Strayhorn — extended-tone melody/harmony fusion; chromatic song architecture (`billyStrayhornSlice.ts` `bs:*`). */
+const BILLY_STRAYHORN: VoiceRuleBundle = {
+  voiceId: 'billy_strayhorn',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 6,
+    allowMidBarChange: false,
+  },
+  bassPolicy: {
+    role: 'melodic-counterline',
+    allowOctaveDoubling: false,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 4,
+    maxSpreadSemitones: 14,
+    clusterSizeNotes: [4, 7],
+    forbidParallelFifths: true,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'descending-arc',
+    maxLeapSemitones: 12,
+    preferredIntervalSets: [3, 4, 5, 7, 9, 11],
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 1,
+    mutateSingleVoiceAtTime: true,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: BILLY_STRAYHORN_VRF_FINGERPRINT_RECEIPTS,
+  },
+  formPolicy: {
+    narrativeArc: 'aaba-or-through-composed-song',
+    sectionRecallEnforced: true,
+    noCadentialRelease: false,
+  },
+  rhythmPolicy: { antiMetric: false },
+  repairPolicy: {
+    resolveParallels: true,
+    maxVoiceOverlap: 4,
+  },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.65,
+    registerInterlock: true,
+    intervalPreference: 'chromatic_upper_extension',
+  },
+};
+
 /** Debussy — impressionist parallel strata / registral bell frames (`debussySlice.ts` harmony `db:*` + solver VL posture). */
 const DEBUSSY_STUB: VoiceRuleBundle = {
   voiceId: 'debussy',
@@ -3355,6 +3406,9 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   anything_goes: COLE_PORTER,
   duke_ellington: DUKE_ELLINGTON,
   ellington: DUKE_ELLINGTON,
+  billy_strayhorn: BILLY_STRAYHORN,
+  strayhorn: BILLY_STRAYHORN,
+  bs: BILLY_STRAYHORN,
   thad_jones: THAD_JONES,
   maria_schneider: MARIA_SCHNEIDER,
   kenny_wheeler: KENNY_WHEELER,

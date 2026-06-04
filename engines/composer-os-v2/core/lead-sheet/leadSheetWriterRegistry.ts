@@ -14,6 +14,7 @@ export const LEAD_SHEET_SONG_MODE_WRITERS = [
   'wayne_shorter',
   'debussy',
   'duke_ellington',
+  'billy_strayhorn',
   'maria_schneider',
   'kenny_wheeler',
   'thelonious_monk',

@@ -33,7 +33,7 @@ const AUTO_RESOLVE_SONGWRITER_TO_VOICE_ID: ReadonlySet<string> = new Set([
   'ornette_coleman',
   'gershwin',
   'cole_porter',
-  'sonic_youth',
+  'billy_strayhorn',
 ]);
 
 export function attachVoiceRuleBundleAndHarmonicScenes(

@@ -2,6 +2,15 @@
 
 ### Added
 
+- **Billy Strayhorn v2 Song Mode slice (`bs:*`)** — **`billyStrayhornSlice.ts`**: chromatic continuous reinterpretation + extended-tone melody/harmony fusion; six slice params (`chromaticContinuity`, `extendedToneMelody`, `parallelColorMotion`, `phraseArcLength`, `innerVoiceActivity`, `closedBlockSustain`). Golden-path precompute, locked harmony routing, smoke **`billyStrayhornSliceSmoke.test.ts`**.
+- **Strayhorn VRB bundle** — **`billyStrayhornVrbFingerprints.ts`** — 12 fingerprints with probability targets; aliases `billy_strayhorn` / `strayhorn` / `bs`.
+- **Strayhorn BB rules** — six named rules in **`bigBandRuleRegistry.ts`**: CompactBlock, SaxCountermelody, InnerVoiceMotion, ChromaticHarmonyRhythm, CrossSectionBlend, NoEllingtonRiff. **`BigBandComposerId`** **`strayhorn`** + preset support.
+- **Strayhorn evaluation profile** — **`strayhornStyleProfile.ts`** — pass/fail gates + Ellington discrimination.
+
+### Fixed
+
+- **Strayhorn promoted from UI-only to first-class v2 composer** — **`HomeGenerate.tsx`** shipped songwriter row + **`strayhorn`** arranger dropdown; **`composerOsAppGeneration.ts`** arranger → BB composer mapping.
+
 - **Kenny Wheeler v2 composer (first-class)** — **`wheelerLyricSlice.ts`** (`kw:*` receipts): two-process polyaxial harmony (upper sonority + independent bass), six slice params (`polyaxialHarmony`, `tensionCarryForward`, `bassTrajectoryLogic`, `melodicDisjunctionRate`, `cadentialOpacity`, `voicingSpecificity`). **`kennyWheelerVrbFingerprints.ts`** — 12 VRB fingerprints with probability targets. **Big Band:** `wheeler` composer id + 7 named rules (BrassBlend, WoodwindHalo, RegisterSeparation, CrossSectionVoicing, BloomNotSlam, SilenceArchitecture, NoTerminalTriad). **`wheelerStyleProfile.ts`** — evaluation pass/fail + Schneider discrimination. **ECM:** `ECM_WHEELER_CHAMBER` mode (brittle intervallic density waves, distinct from Schneider). **UI:** `kenny_wheeler` songwriter + `wheeler` arranger dropdowns; ECM preset split Schneider / Wheeler options.
 
 ### Fixed

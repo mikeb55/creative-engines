@@ -554,6 +554,24 @@ export function applyDukeEllingtonStyleSurface(metadata: GenerationMetadata, pri
 }
 
 /**
+ * Primary **`billy_strayhorn`** — chromatic ballad / extended-tone fusion metadata (Song Mode hook-first path).
+ */
+export function applyBillyStrayhornStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
+  if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'billy_strayhorn') return;
+
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) - 0.08);
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) - 0.12);
+  metadata.songwriterSpaceBias = clamp01((metadata.songwriterSpaceBias ?? 0.5) + 0.18);
+  metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) + 0.22);
+
+  appendStyleSurfaceNotes(metadata, [
+    'billy_strayhorn surface: density −0.08, syncopation −0.12, space +0.18, cadence softness +0.22 — chromatic ballad bias only.',
+  ]);
+}
+
+/**
  * Primary **`maria_schneider`** — floating pastoral chamber metadata (Song Mode hook-first path).
  */
 export function applyMariaSchneiderStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {

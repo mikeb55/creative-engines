@@ -73,6 +73,7 @@ import type {
 import { createCombinedEvaluator } from '../core/evaluation/combinedEvaluator';
 import { basieStyleProfile } from '../core/evaluation/basieStyleProfile';
 import { ellingtonStyleProfile } from '../core/evaluation/ellingtonStyleProfile';
+import { strayhornStyleProfile } from '../core/evaluation/strayhornStyleProfile';
 import { schneiderStyleProfile } from '../core/evaluation/schneiderStyleProfile';
 import { quincyStyleProfile } from '../core/evaluation/quincyStyleProfile';
 import { thadJonesStyleProfile } from '../core/evaluation/thadJonesStyleProfile';
@@ -2507,6 +2508,7 @@ function composerStyleFromArrangerStyle(arrangerStyle: string | undefined | null
   const a = arrangerStyle.trim().toLowerCase();
   if (a === 'basie') return 'basie';
   if (a === 'ellington') return 'ellington';
+  if (a === 'strayhorn' || a === 'billy_strayhorn') return 'strayhorn';
   if (a === 'mingus' || a === 'charles_mingus') return 'charles_mingus';
   if (a === 'threadgill' || a === 'henry_threadgill') return 'henry_threadgill';
   if (a === 'thad' || a === 'thad_jones') return 'thad_jones';
@@ -2530,6 +2532,8 @@ function bigBandEvaluationStyleProfile(
   switch (cs) {
     case 'ellington':
       return ellingtonStyleProfile;
+    case 'strayhorn':
+      return strayhornStyleProfile;
     case 'schneider':
       return schneiderStyleProfile;
     case 'quincy_jones':
