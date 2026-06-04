@@ -177,6 +177,13 @@ import {
 } from '../types/styleProfile';
 import { blendVoiceRuleBundles, KNOWN_INCOMPATIBLE_SQ_BLEND_PAIRS } from '@composer-os/core/composer/vrbBlend';
 import { getVoiceRuleBundle } from '@composer-os/core/composer/voiceRuleBundles';
+import {
+  COMPOSER_GROUP_DISPLAY_LABELS,
+  listGroupMemberComposerIds,
+  normalizeComposerId,
+  POST_BOP_CORE_UI_COMPOSER_IDS,
+} from '@composer-os/core/groups/composerGroupEngine';
+import type { ComposerGroupId } from '@composer-os/core/groups/composerGroupDefinitions';
 import { buildSongModeProfileRuleRows } from '../utils/songModeProfileRulesViewModel';
 import { buildSongModeSectionSourceRows } from '../utils/songModeSectionSourcesViewModel';
 import { buildSongModeCompareCardRows, buildSongModeCompareInsights } from '../utils/songModeCompareViewModel';
@@ -988,6 +995,28 @@ const SONGWRITER_LIBRARY_ORDERED = SONGWRITER_OPTIONS_WITH_RHYTHM.filter(
   (o) => !SONGWRITER_GROUP_SHIPPED_IDS.has(o.id) && !SONGWRITER_GROUP_READY_IDS.has(o.id)
 ).sort((a, b) => a.label.localeCompare(b.label));
 
+function songwriterIdsForProductionGroup(groupId: ComposerGroupId): string[] {
+  return listGroupMemberComposerIds(groupId).filter((id) => SONGWRITER_OPTION_BY_ID.has(id));
+}
+
+const PRODUCTION_WORLD_SONGWRITER_ID_SET = new Set<string>([
+  ...songwriterIdsForProductionGroup('ECM_CHAMBER_JAZZ'),
+  ...songwriterIdsForProductionGroup('STUDIO_ORCHESTRAL_JAZZ'),
+]);
+
+const POST_BOP_PLACEHOLDER_SONGWRITER_IDS = POST_BOP_CORE_UI_COMPOSER_IDS.filter(
+  (id) => SONGWRITER_OPTION_BY_ID.has(id) && !PRODUCTION_WORLD_SONGWRITER_ID_SET.has(id)
+);
+const POST_BOP_PLACEHOLDER_SONGWRITER_ID_SET = new Set<string>(POST_BOP_PLACEHOLDER_SONGWRITER_IDS);
+
+const SONGWRITER_GROUP_SHIPPED_ORDER_FILTERED = SONGWRITER_GROUP_SHIPPED_ORDER.filter(
+  (id) => !PRODUCTION_WORLD_SONGWRITER_ID_SET.has(id) && !POST_BOP_PLACEHOLDER_SONGWRITER_ID_SET.has(id)
+);
+
+const SONGWRITER_LIBRARY_ORDERED_FILTERED = SONGWRITER_LIBRARY_ORDERED.filter(
+  (o) => !PRODUCTION_WORLD_SONGWRITER_ID_SET.has(o.id) && !POST_BOP_PLACEHOLDER_SONGWRITER_ID_SET.has(o.id)
+);
+
 /** Visually hidden — referenced by `aria-describedby` on grouped songwriter/arranger selects (WCAG). */
 const VISUALLY_HIDDEN: CSSProperties = {
   position: 'absolute',
@@ -1002,9 +1031,9 @@ const VISUALLY_HIDDEN: CSSProperties = {
 };
 
 const ARIA_SONGWRITER_GROUPS_DESC =
-  'Songwriters are grouped into Shipped full slice, Shipped singer-songwriter slice, Ready to build, and In library.';
+  'Songwriters are grouped by production world (ECM Chamber Jazz, Studio Orchestral Jazz, Post-Bop Core), then Shipped full slice, Shipped singer-songwriter slice, Ready to build, and In library.';
 const ARIA_ARRANGER_GROUPS_DESC =
-  'Arrangers are grouped into Big band core research-backed and Charts and studio voices.';
+  'Arrangers are grouped by production world (ECM Chamber Jazz, Studio Orchestral Jazz), then Big band core research-backed and Charts and studio voices.';
 
 function uint8ArrayToBase64(bytes: Uint8Array): string {
   const chunk = 0x8000;
@@ -1025,8 +1054,40 @@ function SongwriterSelectOptionGroups({ onOptionHover }: { onOptionHover?: (id: 
       : {};
   return (
     <>
+      <optgroup label={COMPOSER_GROUP_DISPLAY_LABELS.ECM_CHAMBER_JAZZ}>
+        {songwriterIdsForProductionGroup('ECM_CHAMBER_JAZZ').map((id) => {
+          const o = SONGWRITER_OPTION_BY_ID.get(id)!;
+          return (
+            <option key={`ecm-${id}`} value={o.id} {...optHover(o.id)}>
+              {o.label}
+            </option>
+          );
+        })}
+      </optgroup>
+      <optgroup label={COMPOSER_GROUP_DISPLAY_LABELS.STUDIO_ORCHESTRAL_JAZZ}>
+        {songwriterIdsForProductionGroup('STUDIO_ORCHESTRAL_JAZZ').map((id) => {
+          const o = SONGWRITER_OPTION_BY_ID.get(id)!;
+          return (
+            <option key={`studio-${id}`} value={o.id} {...optHover(o.id)}>
+              {o.label}
+            </option>
+          );
+        })}
+      </optgroup>
+      {POST_BOP_PLACEHOLDER_SONGWRITER_IDS.length > 0 ? (
+        <optgroup label={COMPOSER_GROUP_DISPLAY_LABELS.POST_BOP_CORE}>
+          {POST_BOP_PLACEHOLDER_SONGWRITER_IDS.map((id) => {
+            const o = SONGWRITER_OPTION_BY_ID.get(id)!;
+            return (
+              <option key={`postbop-${id}`} value={o.id} {...optHover(o.id)}>
+                {o.label}
+              </option>
+            );
+          })}
+        </optgroup>
+      ) : null}
       <optgroup label="Shipped (full slice)">
-        {SONGWRITER_GROUP_SHIPPED_ORDER.filter((id) => SONGWRITER_OPTION_BY_ID.has(id)).map((id) => {
+        {SONGWRITER_GROUP_SHIPPED_ORDER_FILTERED.filter((id) => SONGWRITER_OPTION_BY_ID.has(id)).map((id) => {
           const o = SONGWRITER_OPTION_BY_ID.get(id)!;
           return (
             <option key={id} value={o.id} {...optHover(o.id)}>
@@ -1056,7 +1117,7 @@ function SongwriterSelectOptionGroups({ onOptionHover }: { onOptionHover?: (id: 
         })}
       </optgroup>
       <optgroup label="In library">
-        {SONGWRITER_LIBRARY_ORDERED.map((o) => (
+        {SONGWRITER_LIBRARY_ORDERED_FILTERED.map((o) => (
           <option key={o.id} value={o.id} {...optHover(o.id)}>
             {o.label}
           </option>
@@ -1330,6 +1391,24 @@ const ARRANGER_EXTENDED_ORDERED = ARRANGER_OPTIONS.filter(
   (o) => !ARRANGER_GROUP_CORE_IDS.has(o.id) && !ARRANGER_SQ_VRB_IDS.has(o.id)
 ).sort((a, b) => a.label.localeCompare(b.label));
 
+function arrangerIdsForProductionGroup(groupId: ComposerGroupId): string[] {
+  const members = new Set(listGroupMemberComposerIds(groupId));
+  return ARRANGER_OPTIONS.filter((o) => members.has(normalizeComposerId(o.id))).map((o) => o.id);
+}
+
+const ARRANGER_PRODUCTION_WORLD_ID_SET = new Set<string>([
+  ...arrangerIdsForProductionGroup('ECM_CHAMBER_JAZZ'),
+  ...arrangerIdsForProductionGroup('STUDIO_ORCHESTRAL_JAZZ'),
+]);
+
+const ARRANGER_GROUP_CORE_ORDER_FILTERED = ARRANGER_GROUP_CORE_ORDER.filter(
+  (id) => !ARRANGER_PRODUCTION_WORLD_ID_SET.has(id)
+);
+
+const ARRANGER_EXTENDED_ORDERED_FILTERED = ARRANGER_EXTENDED_ORDERED.filter(
+  (o) => !ARRANGER_PRODUCTION_WORLD_ID_SET.has(o.id)
+);
+
 function ArrangerSelectOptionGroups(props?: { variant?: 'default' | 'string_quartet' }) {
   const isSq = props?.variant === 'string_quartet';
   return (
@@ -1349,8 +1428,32 @@ function ArrangerSelectOptionGroups(props?: { variant?: 'default' | 'string_quar
           </optgroup>
         </>
       )}
+      <optgroup label={COMPOSER_GROUP_DISPLAY_LABELS.ECM_CHAMBER_JAZZ}>
+        {arrangerIdsForProductionGroup('ECM_CHAMBER_JAZZ')
+          .filter((id) => ARRANGER_OPTION_BY_ID.has(id))
+          .map((id) => {
+            const o = ARRANGER_OPTION_BY_ID.get(id)!;
+            return (
+              <option key={`ecm-arr-${id}`} value={o.id}>
+                {o.label}
+              </option>
+            );
+          })}
+      </optgroup>
+      <optgroup label={COMPOSER_GROUP_DISPLAY_LABELS.STUDIO_ORCHESTRAL_JAZZ}>
+        {arrangerIdsForProductionGroup('STUDIO_ORCHESTRAL_JAZZ')
+          .filter((id) => ARRANGER_OPTION_BY_ID.has(id))
+          .map((id) => {
+            const o = ARRANGER_OPTION_BY_ID.get(id)!;
+            return (
+              <option key={`studio-arr-${id}`} value={o.id}>
+                {o.label}
+              </option>
+            );
+          })}
+      </optgroup>
       <optgroup label="Big band core (research-backed)">
-        {ARRANGER_GROUP_CORE_ORDER.filter((id) => ARRANGER_OPTION_BY_ID.has(id)).map((id) => {
+        {ARRANGER_GROUP_CORE_ORDER_FILTERED.filter((id) => ARRANGER_OPTION_BY_ID.has(id)).map((id) => {
           const o = ARRANGER_OPTION_BY_ID.get(id)!;
           return (
             <option key={id} value={o.id}>
@@ -1360,7 +1463,7 @@ function ArrangerSelectOptionGroups(props?: { variant?: 'default' | 'string_quar
         })}
       </optgroup>
       <optgroup label="Charts & studio voices">
-        {ARRANGER_EXTENDED_ORDERED.map((o) => (
+        {ARRANGER_EXTENDED_ORDERED_FILTERED.map((o) => (
           <option key={o.id} value={o.id}>
             {o.label}
           </option>

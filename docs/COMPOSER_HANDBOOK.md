@@ -20,6 +20,87 @@ Presets live in **`src/engine/ecmVrb.js`**; app state in **`VrbProfileContext`**
 
 ---
 
+## Group Mode — production worlds
+
+**Group Mode** clusters composers by **production logic** — how groove, space, strings, cadence, and sectional architecture behave on record — not by harmonic vocabulary alone. Two active groups ship shared defaults today; a third is reserved.
+
+### Why groups exist
+
+Individual slice params (Sebesky `groovePersistence`, Wheeler `cadentialOpacity`, etc.) capture **composer-specific** behaviour. Production groups capture **shared studio worldview**: ECM chamber space vs CTI/studio-orchestral immediacy vs (future) Blue Note post-bop core. Composers **inherit group defaults** via `resolveComposerParams(composerId, overrides)`; **composer overrides win** on any key conflict.
+
+Engine: **`engines/composer-os-v2/core/groups/composerGroupEngine.ts`** · definitions: **`composerGroupDefinitions.ts`**.
+
+### ECM Chamber Jazz
+
+**Identity:** Spacious, suspended, porous, unresolved. Silence is structural. Groove can dissolve. Chamber-space production — Manfred Eicher / Schneider / Wheeler / Metheny / Bill Evans lineage.
+
+**Defaults (10 parameters):**
+
+| Parameter | Default | Musical meaning |
+|-----------|---------|-----------------|
+| `groovePersistence` | 0.25 | Grid may float or drop out |
+| `registralPorosity` | 0.80 | Wide gaps between layers |
+| `stringProminence` | 0.15 | Strings as halo, not body |
+| `cadentialResolution` | `suspended` | Endings hover, rarely land |
+| `ensembleDensityCurve` | `slow_bloom` | Texture blooms over time |
+| `silenceWeighting` | `structural` | Rests are form-bearing |
+| `productionGloss` | 0.20 | Dry, intimate mix surface |
+| `melodyFraming` | `integrated` | Melody woven into texture |
+| `soloistSpotlight` | 0.45 | Solo as colour, not feature |
+| `sectionalContrastMode` | `gradual` | Sections melt into each other |
+
+**Members (fully implemented):** `maria_schneider`, `kenny_wheeler`, `gil_evans`, `henry_threadgill`, `bill_evans`, `pat_metheny`, `wayne_shorter`, `bob_brookmeyer`, `ecm_chamber`.
+
+**Partial / future:** Garbarek, Weber, Bley, Surman, Towner.
+
+**Precursors (reserved for Post-Bop Core — not assigned to ECM):** Monk, Coltrane, Miles, Herbie Hancock, McCoy Tyner.
+
+### Studio Orchestral Jazz
+
+**Identity:** Groove-driven, melody-legible, lush, immediate. Production-shaped sectional architecture — record-producer mindset (CTI, Quincy, Sebesky, Nelson, Nestico, Basie shout charts).
+
+**Defaults:**
+
+| Parameter | Default | Musical meaning |
+|-----------|---------|-----------------|
+| `groovePersistence` | 0.78 | Grid stays locked |
+| `registralPorosity` | 0.20 | Layers stack tightly |
+| `stringProminence` | 0.65 | Strings carry body and lift |
+| `cadentialResolution` | `arrived` | Sections resolve and land |
+| `ensembleDensityCurve` | `tiered_lift` | Intro → groove → lift → reprise |
+| `silenceWeighting` | `minimal` | Rests are breath, not form |
+| `productionGloss` | 0.82 | Lush studio sheen |
+| `melodyFraming` | `spotlighted` | Tune on top, legible |
+| `soloistSpotlight` | 0.75 | Solo as featured event |
+| `sectionalContrastMode` | `discrete` | Clear A / B / lift blocks |
+
+**Members (fully implemented):** Sebesky, Quincy Jones, Oliver Nelson, Sammy Nestico, Clare Fischer, Count Basie, Thad Jones, Duke Ellington, Billy Strayhorn, Charles Mingus.
+
+**Partial / future:** Ogerman, Bob James, Mandel, Schifrin, Deodato, McFarland.
+
+### Post-Bop Core — coming soon
+
+**Placeholder only** — no defaults yet. Reserved ids: Monk, Coltrane, Miles, Herbie Hancock, McCoy Tyner, Wayne Shorter (shared with ECM when active), Charlie Parker, Barry Harris, Andrew Hill, Jim Hall, Pat Martino.
+
+UI shows **Post-Bop Core (coming soon)** for composers not yet assigned to an active group. `isPostBopCore()` returns **false** until Group 3 ships.
+
+### Overrides — which wins
+
+1. **`getComposerGroup(composerId)`** → active group or `null` (precursors / unassigned return `null`).
+2. **`getGroupDefaults(group)`** → full 10-parameter object.
+3. **`resolveComposerParams(composerId, partialOverrides)`** → `{ ...groupDefaults, ...overrides }`.
+
+Slice-specific params (e.g. Sebesky `liftToBlareArc`) remain on their slice types; group params are the **production-world baseline** for wiring and future shared passes.
+
+### `productionGloss` and `melodyFraming`
+
+- **`productionGloss` (0–1):** Mix / orchestration sheen — low = dry chamber intimacy (ECM); high = polished studio lushness (CTI / Quincy). Optional on **`SongwriterStyleProfile`** and **`ComposerProductionParams`**.
+- **`melodyFraming`:** `integrated` (melody embedded in texture) · `spotlighted` (tune clearly on top) · `floating` (reserved — drifting foreground). Optional everywhere; inherited from group when omitted.
+
+**UI:** Generate → songwriter and arranger dropdowns include **ECM Chamber Jazz**, **Studio Orchestral Jazz**, and **Post-Bop Core (coming soon)** optgroups (existing composer ids unchanged).
+
+---
+
 ## VoiceRuleBundle (VRB) fingerprint status
 
 Compiled harmonic voice bundles live in **`engines/composer-os-v2/core/composer/voiceRuleBundles.ts`**. Optional **`orchestrationPolicy.fingerprintReceipts`** are **research-derived orchestration planning lines** (not the same thing as **GCE structural memory** JSON fingerprints in **`gce-memory/fingerprints/`**). **`getVoiceRuleBundle(id)`** returns the bundle for harmonic-voice / BB pairing; unknown ids fall back to **`neutral`** (no receipts).

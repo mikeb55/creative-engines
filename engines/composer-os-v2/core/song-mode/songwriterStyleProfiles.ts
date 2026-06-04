@@ -76,6 +76,10 @@ export interface SongwriterStyleProfile {
   songwriterHarmonicPeriods?: readonly string[];
   /** Engine routing hint — interval-set grammar vs chord-symbol rows. */
   songwriterSystemType?: 'interval_set' | 'chord_symbol' | 'hybrid' | 'blues_suite';
+  /** Production-world gloss (0–1) — inherited from group defaults when omitted. */
+  productionGloss?: number;
+  /** Production-world melody framing — inherited from group defaults when omitted. */
+  melodyFraming?: 'integrated' | 'spotlighted' | 'floating';
 }
 
 export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyleProfile> = {

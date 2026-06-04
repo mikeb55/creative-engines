@@ -33,3 +33,11 @@ temp/martino/*.musicxml
 temp/martino/*.provenance.json
 temp/martino/provenance/
 temp/grand-criteria-martino/
+
+# Local orbit analysis scripts + smoke scratch output
+scripts/analyzeOrbitMidi.py
+scripts/analyzeOrbitSections.py
+scripts/orbitV4MidiSurgery.py
+scripts/verifyOrbitV4.py
+smoke-out.txt
+smoke-out2.txt

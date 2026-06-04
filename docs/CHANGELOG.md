@@ -1,5 +1,23 @@
 ## [Unreleased]
 
+---
+
+## [1.8.2] — 2026-06-04
+
+### Added
+
+- **Group Mode architecture** — production-world groups with shared default parameters; composers inherit group defaults and override only where distinct (`composerGroupDefinitions.ts`, `composerGroupEngine.ts`).
+- **ECM Chamber Jazz group** — 10 production defaults (spacious / suspended / structural silence).
+- **Studio Orchestral Jazz group** — 10 production defaults (groove-driven / melody-legible / tiered lift).
+- **Post-Bop Core group placeholder** — name + reserved composer ids; defaults not yet implemented.
+- **`productionGloss`** and **`melodyFraming`** — optional fields on shared `ComposerProductionParams` + `SongwriterStyleProfile`.
+- **Composer group display** — songwriter and arranger dropdowns grouped by production world in **`HomeGenerate.tsx`**.
+- **Big Band preset group fields** — `resolveBigBandPresetForComposer` adds `groupMode` + `groupDefaults` alongside existing preset output.
+
+---
+
+## [1.8.1] — 2026-06-04
+
 ### Added
 
 - **Don Sebesky v2 Song Mode slice (`ds:*`)** — **`donSebeskySlice.ts`**: CTI production-orchestra harmony; seven slice params (`groovePersistence`, `stringProminence`, `melodyLegibility`, `functionalLegibility`, `liftToBlareArc`, `soloistSpotlight`, `centerFillDensity`). Golden-path precompute, locked harmony routing, smoke **`donSebeskySliceSmoke.test.ts`**.

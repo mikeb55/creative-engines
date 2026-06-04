@@ -38,4 +38,8 @@ export interface Preset {
   bigBandMetadata?: BigBandPresetMetadata;
   /** Present on `string_quartet` — declarative planning flags. */
   stringQuartetMetadata?: StringQuartetPresetMetadata;
+  /** Production-world group id when resolved per composer (Big Band). */
+  groupMode?: import('../core/groups/composerGroupDefinitions').ComposerGroupId | null;
+  /** Group default parameters when `groupMode` is active. */
+  groupDefaults?: import('../core/groups/composerGroupDefinitions').GroupParams | null;
 }

@@ -6,6 +6,16 @@
 import type { Preset } from './presetTypes';
 import { CLEAN_ELECTRIC_GUITAR } from '../core/instrument-profiles/guitarProfile';
 import { ACOUSTIC_UPRIGHT_BASS } from '../core/instrument-profiles/uprightBassProfile';
+import {
+  getComposerGroup,
+  getGroupDefaults,
+} from '../core/groups/composerGroupEngine';
+import type { ComposerGroupId, GroupParams } from '../core/groups/composerGroupDefinitions';
+
+export interface BigBandPresetWithGroup extends Preset {
+  groupMode: ComposerGroupId | null;
+  groupDefaults: GroupParams | null;
+}
 
 export const bigBandPreset: Preset = {
   id: 'big_band',
@@ -49,3 +59,13 @@ export const bigBandPreset: Preset = {
     ],
   },
 };
+
+/** Big Band preset plus production-world group fields for a selected composer. */
+export function resolveBigBandPresetForComposer(composerId: string): BigBandPresetWithGroup {
+  const groupMode = getComposerGroup(composerId);
+  return {
+    ...bigBandPreset,
+    groupMode,
+    groupDefaults: groupMode ? getGroupDefaults(groupMode) : null,
+  };
+}

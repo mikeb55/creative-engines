@@ -32,6 +32,7 @@ import { runBigBandTypesTests } from './bigBandTypes.test';
 import { runBigBandPlanningTests } from './bigBandPlanning.test';
 import { runBigBandValidationTests } from './bigBandValidation.test';
 import { runBigBandModeTests } from './bigBandMode.test';
+import { runComposerGroupEngineTests } from './composerGroupEngine.test';
 import { runBigBandResearchParsingTests } from './bigBandResearchParsing.test';
 import { runBigBandEraSystemTests } from './bigBandEraSystem.test';
 import { runBebopLinePlannerTests } from './bebopLinePlanner.test';
@@ -72,6 +73,7 @@ const suites: SuiteEntry[] = [
   { name: 'Big Band planning', run: runBigBandPlanningTests },
   { name: 'Big Band validation', run: runBigBandValidationTests },
   { name: 'Big Band mode', run: runBigBandModeTests },
+  { name: 'Composer group engine', run: runComposerGroupEngineTests },
   { name: 'Big Band research parsing', run: runBigBandResearchParsingTests },
   { name: 'Big Band era system', run: runBigBandEraSystemTests },
   { name: 'Bebop line planner', run: runBebopLinePlannerTests },

@@ -5,7 +5,7 @@
 import { createRunManifest } from '../core/run-ledger/createRunManifest';
 import { invokeModule } from '../core/module-invocation/invokeModule';
 import { runBigBandMode } from '../core/big-band/runBigBandMode';
-import { bigBandPreset } from '../presets/bigBandPreset';
+import { bigBandPreset, resolveBigBandPresetForComposer } from '../presets/bigBandPreset';
 
 export function runBigBandModeTests(): { ok: boolean; name: string }[] {
   const out: { ok: boolean; name: string }[] = [];
@@ -18,6 +18,23 @@ export function runBigBandModeTests(): { ok: boolean; name: string }[] {
       bigBandPreset.bigBandMetadata.defaultEra === 'post_bop' &&
       bigBandPreset.bigBandMetadata.supportedEras?.includes('bebop') === true,
     name: 'big_band preset loads as planning preset',
+  });
+
+  const schneiderResolved = resolveBigBandPresetForComposer('schneider');
+  out.push({
+    ok:
+      schneiderResolved.groupMode === 'ECM_CHAMBER_JAZZ' &&
+      schneiderResolved.groupDefaults?.groovePersistence === 0.25 &&
+      schneiderResolved.groupDefaults?.melodyFraming === 'integrated',
+    name: 'resolveBigBandPresetForComposer attaches ECM group defaults',
+  });
+
+  const sebeskyResolved = resolveBigBandPresetForComposer('sebesky');
+  out.push({
+    ok:
+      sebeskyResolved.groupMode === 'STUDIO_ORCHESTRAL_JAZZ' &&
+      sebeskyResolved.groupDefaults?.productionGloss === 0.82,
+    name: 'resolveBigBandPresetForComposer attaches Studio Orchestral defaults',
   });
 
   const r = runBigBandMode({ seed: 50_001, title: 'Test Big Band Plan' });
