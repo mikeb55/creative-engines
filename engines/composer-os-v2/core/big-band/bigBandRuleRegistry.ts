@@ -88,6 +88,7 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
     R('quincy_jones.groove_first', 'Groove-first reductions before orchestral peaks', 'composer', 'form', 78),
   ],
   gil_evans: [
+    // TODO: deprecated — now parsed from BigBandResearch.md
     R('gil_evans.colour_field', 'Harmonic colour fields over sparse rhythm hooks', 'composer', 'harmony', 83),
     R('gil_evans.mid_register_blend', 'Mid-register blends; avoid shout-default brass peaks', 'composer', 'orchestration', 80),
     R('gil_evans.intro_small_group', 'Small-group intros / instrumental subset colours', 'composer', 'form', 77),
@@ -95,6 +96,7 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
     R('gil_evans.modal_side_slip', 'Modal prolongation with occasional side-step colour', 'composer', 'harmony', 79),
   ],
   bob_brookmeyer: [
+    // TODO: deprecated — now parsed from BigBandResearch.md
     R('brookmeyer.counter_lines', 'Multiple simultaneous independent lines when dense', 'composer', 'orchestration', 84),
     R('brookmeyer.quartal_colour', 'Quartal/quintal harmonic stacks as structural colour', 'composer', 'harmony', 82),
     R('brookmeyer.section_takeover', 'Section-to-section line handoffs (linear narrative)', 'composer', 'form', 79),
@@ -109,6 +111,7 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
     R('fischer.controlled_density', 'Orchestral density via harmony weight not player spam', 'composer', 'density', 82),
   ],
   oliver_nelson: [
+    // TODO: deprecated — now parsed from BigBandResearch.md
     R('nelson.blues_functional', 'Blues-functional backbone with arranged extensions', 'composer', 'harmony', 81),
     R('nelson.section_contrast', 'Contrasting sections via orchestration register', 'composer', 'orchestration', 80),
     R('nelson.chart_economy', 'Economical fills; intentional punches vs wallpaper', 'composer', 'density', 79),

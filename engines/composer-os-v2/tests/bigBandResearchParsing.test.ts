@@ -4,9 +4,12 @@
 
 import * as path from 'path';
 import {
+  RESEARCH_PARSED_COMPOSER_IDS,
   getDefaultBigBandResearchPath,
   loadBigBandResearchFromPath,
   parseBigBandResearchMarkdown,
+  parsedComposerBlockEqualRegistry,
+  type ResearchParsedComposerId,
 } from '../core/big-band/bigBandResearchParser';
 import { BIG_BAND_RULE_REGISTRY } from '../core/big-band/bigBandRuleRegistry';
 
@@ -43,6 +46,15 @@ export function runBigBandResearchParsingTests(): { ok: boolean; name: string }[
     ok: allRegistry.every((r) => r.priority >= 1 && r.priority <= 100),
     name: 'registry rules include priority in 1–100',
   });
+
+  for (const composerId of RESEARCH_PARSED_COMPOSER_IDS) {
+    const registryRules = BIG_BAND_RULE_REGISTRY.composerRules[composerId as ResearchParsedComposerId];
+    const block = bundled.composers[composerId as ResearchParsedComposerId];
+    out.push({
+      ok: parsedComposerBlockEqualRegistry(composerId, block, registryRules),
+      name: `${composerId}: parsed ENGINE RULES === hardcoded registry descriptions`,
+    });
+  }
 
   return out;
 }

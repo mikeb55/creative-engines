@@ -7,6 +7,7 @@ import * as path from 'path';
 import type {
   BigBandComposerId,
   BigBandEraId,
+  BigBandRule,
   ComposerResearchBlock,
   EraResearchBlock,
   ParsedBigBandResearch,
@@ -17,7 +18,38 @@ const COMPOSER_HEADINGS: Array<{ re: RegExp; id: BigBandComposerId; name: string
   { re: /^###\s+Count Basie$/i, id: 'basie', name: 'Count Basie' },
   { re: /^###\s+Thad Jones$/i, id: 'thad', name: 'Thad Jones' },
   { re: /^###\s+Maria Schneider$/i, id: 'schneider', name: 'Maria Schneider' },
+  { re: /^###\s+Gil Evans$/i, id: 'gil_evans', name: 'Gil Evans' },
+  { re: /^###\s+Bob Brookmeyer$/i, id: 'bob_brookmeyer', name: 'Bob Brookmeyer' },
+  { re: /^###\s+Oliver Nelson$/i, id: 'oliver_nelson', name: 'Oliver Nelson' },
 ];
+
+/** Composer ids whose ENGINE RULES bullets must match registry descriptions 1:1 (research-driven). */
+export const RESEARCH_PARSED_COMPOSER_IDS = [
+  'gil_evans',
+  'bob_brookmeyer',
+  'oliver_nelson',
+] as const;
+
+export type ResearchParsedComposerId = (typeof RESEARCH_PARSED_COMPOSER_IDS)[number];
+
+/** True when parsed ENGINE RULES bullets match registry descriptions in order (Gil Evans / Brookmeyer / Nelson). */
+export function parsedComposerRulesEqualRegistry(
+  composerId: ResearchParsedComposerId,
+  engineRuleLines: readonly string[],
+  registryRules: readonly BigBandRule[]
+): boolean {
+  if (engineRuleLines.length !== registryRules.length) return false;
+  return engineRuleLines.every((line, i) => line === registryRules[i]!.description);
+}
+
+export function parsedComposerBlockEqualRegistry(
+  composerId: ResearchParsedComposerId,
+  block: ComposerResearchBlock | undefined,
+  registryRules: readonly BigBandRule[]
+): boolean {
+  if (!block || block.composerId !== composerId) return false;
+  return parsedComposerRulesEqualRegistry(composerId, block.engineRuleLines, registryRules);
+}
 
 const ERA_HEADINGS: Array<{ re: RegExp; id: BigBandEraId; name: string }> = [
   { re: /^###\s+Swing Era\b/i, id: 'swing', name: 'Swing Era' },
@@ -188,7 +220,15 @@ export function parseBigBandResearchMarkdown(raw: string): ParsedBigBandResearch
   const composerRuleLines = Object.values(composers).reduce((a, c) => a + (c?.engineRuleLines.length ?? 0), 0);
   const eraRuleLines = Object.values(eras).reduce((a, e) => a + (e?.engineRuleLines.length ?? 0), 0);
 
-  const ok = errors.length === 0 && composerRuleLines >= 4 && eraRuleLines >= 4 && foundations.length >= 3;
+  const parsedResearchComposers = RESEARCH_PARSED_COMPOSER_IDS.every(
+    (id) => (composers[id]?.engineRuleLines.length ?? 0) >= 5
+  );
+  const ok =
+    errors.length === 0 &&
+    composerRuleLines >= 4 &&
+    eraRuleLines >= 4 &&
+    foundations.length >= 3 &&
+    parsedResearchComposers;
 
   if (!ok && errors.length === 0) {
     errors.push('parsed rule counts below expected minimum (file may be truncated or malformed)');

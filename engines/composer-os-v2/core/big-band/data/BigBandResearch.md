@@ -255,6 +255,50 @@
 
 ---
 
+### Gil Evans
+
+#### 1. Form / section design
+
+- Long atmospheric intros; small instrumental subsets before full ensemble colour. [web:46][web:47]
+- Melody often diffuse or carried by a solo voice within a harmonic cloud. [web:46]
+- Sections evolve by colour and register rather than riff repetition. [web:47]
+
+#### 2. Density behaviour
+
+- Sparse rhythm-section hooks support thick mid-register harmonic fields. [web:46]
+- Density increases via voicing weight and colour stacks, not shout-style tutti. [web:47]
+
+#### 3. Section identity
+
+- Mid-register blends (flutes, horns, muted brass) preferred over high brass peaks. [web:46]
+- Rhythm section: flexible placement; bass and drums colour rather than drive riff grid. [web:47]
+
+#### 4. Riff / motif handling
+
+- Motifs prolong modally; side-step colour replaces functional turnaround chains. [web:46]
+
+#### 5. Rhythm / swing behaviour
+
+- Elastic phrase placement vs strict backbeat/riff lock. [web:47]
+
+#### 6. Orchestration / voicing behaviour
+
+- Pastel clusters, open voicings, and planing over pedal fields. [web:46][web:47]
+
+#### 7. Shout chorus behaviour
+
+- Climaxes are colour swells, not Basie-style homophonic shout anthems. [web:47]
+
+#### 8. ENGINE RULES (Gil Evans)
+
+- Harmonic colour fields over sparse rhythm hooks
+- Mid-register blends; avoid shout-default brass peaks
+- Small-group intros / instrumental subset colours
+- Flexible phrase placement vs strict riff grid
+- Modal prolongation with occasional side-step colour
+
+---
+
 ### Bob Brookmeyer
 
 #### Periods (research headings)
@@ -276,6 +320,14 @@
 #### Influence / lineage
 
 - Strong downstream resonance for **Maria Schneider**, **Darcy James Argue**, **Jim McNeely**; formative overlap with **Lutosławski**, **Earle Brown**, **Joel Thome** (colour, mobility, open form).
+
+#### 8. ENGINE RULES (Bob Brookmeyer)
+
+- Multiple simultaneous independent lines when dense
+- Quartal/quintal harmonic stacks as structural colour
+- Section-to-section line handoffs (linear narrative)
+- Metric displacement near peaks (controlled)
+- Dense voicings with registral clarity
 
 ---
 
@@ -315,6 +367,14 @@
 #### Formal boundary signals
 
 - Section changes signalled by **orchestration shift + harmonic colour change + density change** — not bar-count templates alone.
+
+#### 8. ENGINE RULES (Oliver Nelson)
+
+- Blues-functional backbone with arranged extensions
+- Contrasting sections via orchestration register
+- Economical fills; intentional punches vs wallpaper
+- Swing authority on primary phrases
+- Classic head–solos–shout dramaturgy
 
 ---
 
