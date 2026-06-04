@@ -28,6 +28,15 @@ const THAD_JONES_COMPOSER_RULES: BigBandRule[] = [
   R('thad_jones.shout_sequence', 'Shout with sequences + harmonic shift', 'composer', 'form', 81),
 ];
 
+/** Henry Threadgill — shared for `threadgill` alias and `henry_threadgill` canonical id. */
+const HENRY_THREADGILL_COMPOSER_RULES: BigBandRule[] = [
+  R('threadgill.brass_sparse', 'Brass sparse and punctuating — not continuous lead wallpaper', 'composer', 'orchestration', 84),
+  R('threadgill.reed_interval_cells', 'Reeds carry interval-cell melodic material from active family pool', 'composer', 'harmony', 83),
+  R('threadgill.episodic_density', 'Ensemble low–medium density with episodic blooms at module seams', 'composer', 'density', 82),
+  R('threadgill.no_shout_saturation', 'No shout-chorus saturation — tutti unisons only as structural pillars', 'composer', 'form', 81),
+  R('threadgill.polymodal_layers', 'Bass anchor and upper voices may occupy different modal areas', 'composer', 'harmony', 80),
+];
+
 /** Charles Mingus — shared for `mingus` alias and `charles_mingus` canonical id. */
 const CHARLES_MINGUS_COMPOSER_RULES: BigBandRule[] = [
   R('mingus.episode_form', 'Episode sequences differ in tempo/texture/harmony/improv density', 'composer', 'form', 84),
@@ -62,6 +71,8 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
   thad: THAD_JONES_COMPOSER_RULES,
   charles_mingus: CHARLES_MINGUS_COMPOSER_RULES,
   mingus: CHARLES_MINGUS_COMPOSER_RULES,
+  henry_threadgill: HENRY_THREADGILL_COMPOSER_RULES,
+  threadgill: HENRY_THREADGILL_COMPOSER_RULES,
   wayne_shorter: [
     R('wayne.lateral_root', 'Modal plateaus + lateral dominants without ii–V wallpaper', 'composer', 'harmony', 81),
     R('wayne.section_colour_turn', 'Orchestral colour turns at phrase seams', 'composer', 'orchestration', 79),

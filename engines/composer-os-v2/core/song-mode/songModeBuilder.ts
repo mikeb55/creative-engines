@@ -2348,6 +2348,87 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['A7/G', 'A7/G', 'G13', 'G13'],
     ],
   },
+  /** Henry Threadgill — `threadgill_cell`: interval-cell pitch sets; avoid functional ii–V rows (`henryThreadgillSlice.ts`). */
+  threadgill_cell: {
+    verse: [
+      ['F#(b9,#9,no3)', 'B(no3,add4)', 'E7sus(b9)', 'Am(add9,b6)'],
+      ['Db(add9,no3)', 'Gb7alt', 'Bbm(add4)', 'E(add9)'],
+      ['Abm11', 'D7sus(b9,#11)', 'G(add9)', 'C(no3,b13)'],
+      ['Eb(add9)', 'Ab7alt', 'Dbm(add4)', 'F#(add9,no3)'],
+    ],
+    chorus: [
+      ['Gm(add9,b6)', 'C7sus(b9)', 'F(add9,no3)', 'Bb(no3,add4)'],
+      ['Em(add9)', 'A7alt', 'Dm11', 'G(add9,b6)'],
+      ['Cm(add9,no3)', 'F7sus(b9,#11)', 'Bb(add4)', 'Eb7alt'],
+      ['Am11', 'D(add9)', 'G7sus(b9)', 'C(add9,no3)'],
+    ],
+    bridge: [
+      ['F#(add9,no3)', 'B(no3)', 'E7sus(b9)', 'Am(add9)'],
+      ['Dbm(add4)', 'Gb7alt', 'B(add9)', 'E(no3,b13)'],
+      ['Ab(add9)', 'D7sus(b9)', 'G(add9,no3)', 'C7alt'],
+      ['Ebm11', 'Ab7alt', 'Db(add9)', 'F#(no3,add4)'],
+    ],
+    pre_chorus: [
+      ['Dm(add9)', 'G7sus(b9)', 'C(add9,no3)', 'F(no3)'],
+      ['Bbm(add4)', 'Eb7alt', 'Ab(add9)', 'Db7sus(b9)'],
+      ['Am11', 'D(add9)', 'G7alt', 'C(add9,b6)'],
+      ['Fm(add9,no3)', 'Bb7sus(b9)', 'Eb(add4)', 'Ab7alt'],
+    ],
+  },
+  /** Henry Threadgill — `threadgill_polymodal`: bass/upper modal separation via slash pitch fields. */
+  threadgill_polymodal: {
+    verse: [
+      ['Dm11/F', 'G7sus(b9)/B', 'C(add9)/E', 'F(no3)/Ab'],
+      ['Bbm(add4)/Db', 'Eb7alt/G', 'Ab(add9)/C', 'Db7sus/F'],
+      ['Am11/C', 'D7alt/F#', 'G(add9)/B', 'C(no3)/E'],
+      ['Fm(add9)/Ab', 'Bb7sus/Eb', 'Eb(add4)/G', 'Ab7alt/C'],
+    ],
+    chorus: [
+      ['Gm(add9)/Bb', 'C7sus/E', 'F(add9)/A', 'Bb(no3)/D'],
+      ['Em(add9)/G', 'A7alt/C#', 'Dm11/F', 'G(add9)/B'],
+      ['Cm(add9)/Eb', 'F7sus/Ab', 'Bb(add4)/D', 'Eb7alt/G'],
+      ['Am11/C', 'D(add9)/F#', 'G7sus/B', 'C(add9)/E'],
+    ],
+    bridge: [
+      ['F#(add9)/A', 'B(no3)/D', 'E7sus/G#', 'Am(add9)/C'],
+      ['Dbm(add4)/F', 'Gb7alt/Bb', 'B(add9)/D#', 'E(no3)/G#'],
+      ['Ab(add9)/C', 'D7sus/F', 'G(add9)/B', 'C7alt/E'],
+      ['Ebm11/Gb', 'Ab7alt/C', 'Db(add9)/F', 'F#(no3)/A'],
+    ],
+    pre_chorus: [
+      ['Dm(add9)/F', 'G7sus/B', 'C(add9)/E', 'F(no3)/Ab'],
+      ['Bbm(add4)/Db', 'Eb7alt/G', 'Ab(add9)/C', 'Db7sus/F'],
+      ['Am11/C', 'D(add9)/F#', 'G7alt/B', 'C(add9)/E'],
+      ['Fm(add9)/Ab', 'Bb7sus/Eb', 'Eb(add4)/G', 'Ab7alt/C'],
+    ],
+  },
+  /** Henry Threadgill — `threadgill_suite`: episodic module blocks with rotating interval families. */
+  threadgill_suite: {
+    verse: [
+      ['E(add9,no3)', 'Ab7sus(b9)', 'Dbm(add4)', 'F#7alt'],
+      ['Gm11', 'C(add9,b6)', 'F7sus(b9,#11)', 'Bb(no3)'],
+      ['Am(add9)', 'D7alt', 'G(add9,no3)', 'C7sus(b9)'],
+      ['F#(b9,#9,no3)', 'B(add4)', 'E7sus(b9)', 'Ab(add9)'],
+    ],
+    chorus: [
+      ['Db(add9,no3)', 'Gb7alt', 'Bbm11', 'E(add9,b6)'],
+      ['Cm(add4)', 'F7sus(b9)', 'Bb(add9)', 'Eb7alt'],
+      ['Am11', 'D(add9)', 'G7sus(b9,#11)', 'C(no3,b13)'],
+      ['Fm(add9)', 'Bb7alt', 'Eb(add4)', 'Ab7sus(b9)'],
+    ],
+    bridge: [
+      ['E(add9)', 'Ab7alt', 'Dbm(add4)', 'F#7sus(b9)'],
+      ['Gm(add9,no3)', 'C7sus(b9)', 'F(add4)', 'Bb7alt'],
+      ['Am11', 'D(add9,b6)', 'G7sus(b9)', 'C(add9,no3)'],
+      ['F#(no3,add4)', 'B7alt', 'E(add9)', 'Abm11'],
+    ],
+    pre_chorus: [
+      ['Dm(add9)', 'G7sus(b9)', 'C(add9,no3)', 'F(no3)'],
+      ['Bbm(add4)', 'Eb7alt', 'Ab(add9)', 'Db7sus(b9)'],
+      ['Am11', 'D(add9)', 'G7alt', 'C(add9,b6)'],
+      ['Fm(add9,no3)', 'Bb7sus(b9)', 'Eb(add4)', 'Ab7alt'],
+    ],
+  },
   /** Thad Jones — swing tier: functional tonal + octatonic dominant colour + chromatic approach dominants (research pools). */
   thad_jones_swing: {
     verse: [
@@ -3101,6 +3182,11 @@ function chordSymbolsForSection(
   if (songwriterId === 'charles_mingus') {
     const tier = Math.abs(seed) % 3;
     resolvedPoolId = tier === 0 ? 'mingus_blues' : tier === 1 ? 'mingus_modal' : 'mingus_chromatic';
+  }
+  if (songwriterId === 'henry_threadgill') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0 ? 'threadgill_cell' : tier === 1 ? 'threadgill_polymodal' : 'threadgill_suite';
   }
   if (songwriterId === 'thad_jones') {
     const tier = Math.abs(seed) % 3;

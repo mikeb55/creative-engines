@@ -19,7 +19,10 @@ export type BigBandComposerId =
   | 'clare_fischer'
   | 'oliver_nelson'
   | 'sammy_nestico'
-  | 'wayne_shorter';
+  | 'wayne_shorter'
+  /** Alias for {@link henry_threadgill} — same registry rules. */
+  | 'threadgill'
+  | 'henry_threadgill';
 
 export type BigBandEraId =
   | 'swing'

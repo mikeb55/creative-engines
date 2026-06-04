@@ -70,6 +70,7 @@ export const EFFECTIVE_HARMONY_TRUTH_REGISTRY: readonly EffectiveHarmonyTruthReg
   { songwriterStyleIds: ['maria_schneider'], metadataKey: 'mariaSchneiderEffectiveHarmonyBars' },
   { songwriterStyleIds: ['thad_jones'], metadataKey: 'thadJonesEffectiveHarmonyBars' },
   { songwriterStyleIds: ['charles_mingus'], metadataKey: 'charlesMingusEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['henry_threadgill'], metadataKey: 'henryThreadgillEffectiveHarmonyBars' },
   { songwriterStyleIds: ['count_basie'], metadataKey: 'basieEffectiveHarmonyBars' },
   { songwriterStyleIds: ['bacharach'], metadataKey: 'bacharachEffectiveHarmonyBars' },
   { songwriterStyleIds: ['donald_fagen'], metadataKey: 'donaldFagenEffectiveHarmonyBars' },

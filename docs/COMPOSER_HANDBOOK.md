@@ -24,7 +24,7 @@ Presets live in **`src/engine/ecmVrb.js`**; app state in **`VrbProfileContext`**
 
 Compiled harmonic voice bundles live in **`engines/composer-os-v2/core/composer/voiceRuleBundles.ts`**. Optional **`orchestrationPolicy.fingerprintReceipts`** are **research-derived orchestration planning lines** (not the same thing as **GCE structural memory** JSON fingerprints in **`gce-memory/fingerprints/`**). **`getVoiceRuleBundle(id)`** returns the bundle for harmonic-voice / BB pairing; unknown ids fall back to **`neutral`** (no receipts).
 
-**Deep (≥10 `fingerprintReceipts`):** **John Coltrane** (`john_coltrane`) **10** · **Pat Metheny** (`pat_metheny`) **12** · **Clare Fischer** (`clare_fischer`) **44** · **Quincy Jones** (`quincy_jones`) **46** · **Sammy Nestico** (`sammy_nestico`) **41** · **Count Basie** (`count_basie`) **38** · **Duke Ellington** (`duke_ellington` / `ellington`) **11** · **Gil Evans** (`gil_evans`) **11** · **Wayne Shorter** (`wayne_shorter`) **11** · **Maria Schneider** (`maria_schneider`) **11** · **Thad Jones** (`thad_jones`) **12** · **Charles Mingus** (`charles_mingus`) **11** · **Bob Brookmeyer** (`bob_brookmeyer`) **12** · **Olivier Messiaen** (`messiaen` / `olivier_messiaen`) **12** · **Oliver Nelson** (`oliver_nelson`) **12**.
+**Deep (≥10 `fingerprintReceipts`):** **John Coltrane** (`john_coltrane`) **10** · **Pat Metheny** (`pat_metheny`) **12** · **Clare Fischer** (`clare_fischer`) **44** · **Quincy Jones** (`quincy_jones`) **46** · **Sammy Nestico** (`sammy_nestico`) **41** · **Count Basie** (`count_basie`) **38** · **Duke Ellington** (`duke_ellington` / `ellington`) **11** · **Gil Evans** (`gil_evans`) **11** · **Wayne Shorter** (`wayne_shorter`) **11** · **Maria Schneider** (`maria_schneider`) **11** · **Thad Jones** (`thad_jones`) **12** · **Charles Mingus** (`charles_mingus`) **11** · **Henry Threadgill** (`henry_threadgill`) **26** · **Bob Brookmeyer** (`bob_brookmeyer`) **12** · **Olivier Messiaen** (`messiaen` / `olivier_messiaen`) **12** · **Oliver Nelson** (`oliver_nelson`) **12**.
 
 **Extended:** none — **`count_basie`** (**`CB_HARM_*`**, **`CB_VL_*`**, **`CB_RHYTHM_*`**, **`CB_FORM_*`**, **`CB_FP_*`**) raised the bundle to **deep**; slice layer still carries shout-chorus / riff-head / **Basie Button** behaviour.
 
@@ -42,6 +42,7 @@ Compiled harmonic voice bundles live in **`engines/composer-os-v2/core/composer/
 | **Maria Schneider** (`maria_schneider`) | 11 | **deep** |
 | **Thad Jones** (`thad_jones`) | 12 | **deep** |
 | **Charles Mingus** (`charles_mingus`) | 11 | **deep** |
+| **Henry Threadgill** (`henry_threadgill`) | 26 | **deep** |
 | **Bob Brookmeyer** (`bob_brookmeyer`) | 12 | **deep** |
 | **Olivier Messiaen** (`messiaen`, alias `olivier_messiaen`) | 12 | **deep** |
 | **Oliver Nelson** (`oliver_nelson`) | 12 | **deep** |
@@ -481,6 +482,25 @@ Illustrative defaults when you do not set `sectionEngine` explicitly. Override a
 | **Outro / coda** | `ecm_chamber` or `song_mode` | Suspended or stable — release tension, do not re-shout |
 
 **Practical pairing:** verse ECM + chorus Big Band + bridge Tritonic vault is the shipped illustration (feel: intimate → anthem → float). For a vocal demo, set bridge to Tritonic **Melodic Trace** and raise `motifSingability` on the dials.
+
+---
+
+## Henry Threadgill — interval-cell Song Mode slice
+
+**What it does:** Harmony comes from **interval cells**, not functional ii–V grammar. The slice builds **episodic modules** — each feels like a distinct chamber episode (sparse cells → hocket streams → polymodal fields → episodic blooms). Bass and upper voices can sit in **different modal areas** at once. Phrase lengths skew **anti-metric** (5, 7, 6, 9 bars) instead of default 4/8 blocks. Receipts use the **`ht:*`** prefix.
+
+**Slice parameters (0–1, defaults in parentheses):**
+
+| Parameter | Default | Sweet spot | Effect |
+|-----------|---------|------------|--------|
+| **`intervalCellDensity`** | 0.7 | 0.6–0.85 | How often bars get interval-cell enrichment (`(b9,#9,no3)`, sus clusters, quartal stacks) |
+| **`antiMetricStrength`** | 0.6 | 0.5–0.75 | Irregular episode phrase lengths; more `ht:offset_*` receipts at seams |
+| **`polymodalSeparation`** | 0.5 | 0.4–0.65 | Bass slash layers in a different modal area from the upper stem |
+| **`episodeContrast`** | 0.6 | 0.55–0.8 | Adjacent episodes must differ in ≥2 texture/metric/modal/density axes |
+
+**Example use case — episodic chamber form:** 24-bar piece, three 8-bar modules. Set **`intervalCellDensity`** ~0.75, **`episodeContrast`** ~0.7. Pick **`henry_threadgill`** as primary songwriter. Generate Song Mode duo — expect rotating interval families per section (`buildHarmonicScenesForVoiceBundle`) and sparse brass punctuations if you route Big Band with **`henry_threadgill`** arranger style.
+
+**VRB cross-reference:** **`VoiceRuleBundle`** **`henry_threadgill`** ships **26** **`fingerprintReceipts`** (`HT_CELL_*`, `HT_HARM_*`, `HT_FORM_*`, `HT_RHY_*`, `HT_ORCH_*`, `HT_VVC_*`) in **`voiceRuleBundles.ts`**. The slice emits **`ht:vrb_reachable`** when the bundle is attached (≥20 fingerprints). Harmonic scene rotation uses the same three closed interval families as **`threadgillMotifIdsMatchingFamily`** in **`harmonicScene.ts`**.
 
 ---
 

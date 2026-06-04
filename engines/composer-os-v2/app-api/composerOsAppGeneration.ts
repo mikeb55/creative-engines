@@ -2508,6 +2508,7 @@ function composerStyleFromArrangerStyle(arrangerStyle: string | undefined | null
   if (a === 'basie') return 'basie';
   if (a === 'ellington') return 'ellington';
   if (a === 'mingus' || a === 'charles_mingus') return 'charles_mingus';
+  if (a === 'threadgill' || a === 'henry_threadgill') return 'henry_threadgill';
   if (a === 'thad' || a === 'thad_jones') return 'thad_jones';
   if (a === 'schneider') return 'schneider';
   if (a === 'quincy' || a === 'quincy_jones' || a === 'quincy_jones_film') return 'quincy_jones';
@@ -2550,6 +2551,9 @@ function bigBandEvaluationStyleProfile(
     case 'sammy_nestico':
       return sammyNesticoStyleProfile;
     case 'wayne_shorter':
+      return basieStyleProfile;
+    case 'henry_threadgill':
+    case 'threadgill':
       return basieStyleProfile;
     case 'basie':
     default:

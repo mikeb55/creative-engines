@@ -30,6 +30,10 @@ import type { EnsembleWybleRoleMap } from './wyble/wybleVoiceLayoutTypes';
 import type { WybleConsumptionReceipt } from './wyble/wybleConsumptionReceipt';
 import type { AlternateGuitarTuningResolved } from './song-mode/alternateGuitarTunings';
 import type { CharlesMingusEpisodePlan } from './song-mode/mingusEpisodeTypes';
+import type {
+  HenryThreadgillEpisodePlan,
+  HenryThreadgillSliceParams,
+} from './song-mode/threadgillEpisodeTypes';
 import type { BasieEpisodePlan } from './song-mode/basieEpisodeTypes';
 import type { BasieTestamentMode } from './song-mode/basieSlice';
 import type {
@@ -1714,6 +1718,24 @@ export interface GenerationMetadata {
   charlesMingusSliceReceipt?: string;
   charlesMingusEffectiveHarmonyBars?: string[];
   charlesMingusDeviceReceipts?: string[];
+  /** Henry Threadgill — interval-cell episodic slice (`henryThreadgillSlice.ts`). */
+  henryThreadgillDiagnostics?: {
+    songwriterId: 'henry_threadgill';
+    barsConsidered: number;
+    intervalCellTouches: number;
+    polymodalTouches: number;
+    antiMetricTouches: number;
+    pitchSetTouches: number;
+    episodeCount?: number;
+    sliceParams?: HenryThreadgillSliceParams;
+    vrbFingerprintCount?: string;
+    deviceReceipts?: string[];
+  };
+  henryThreadgillEpisodePlan?: HenryThreadgillEpisodePlan;
+  henryThreadgillSliceParams?: HenryThreadgillSliceParams;
+  henryThreadgillSliceReceipt?: string;
+  henryThreadgillEffectiveHarmonyBars?: string[];
+  henryThreadgillDeviceReceipts?: string[];
   /** Count Basie — Kansas City swing / riff-head slice (`basieSlice.ts`). */
   basieTestamentMode?: BasieTestamentMode;
   basieResolvedTestament?: BasieTestamentMode;

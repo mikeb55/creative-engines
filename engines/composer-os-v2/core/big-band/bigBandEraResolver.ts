@@ -55,6 +55,12 @@ function tuningFor(era: BigBandEraId, composer: BigBandComposerId | null): BigBa
     shoutMotivicClimax = true;
     riffVsLine = 'balanced';
   }
+  if (composer === 'henry_threadgill' || composer === 'threadgill') {
+    smoothTransitions = false;
+    shoutMotivicClimax = false;
+    spaceEmphasis = Math.max(spaceEmphasis, 0.55);
+    riffVsLine = 'line_primary';
+  }
   if (composer === 'wayne_shorter') {
     densityArc = true;
     smoothTransitions = true;

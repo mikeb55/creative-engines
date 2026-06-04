@@ -369,6 +369,21 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
     return cmEff[barIndex - 1]!;
   }
 
+  /**
+   * Henry Threadgill: `precomputeHenryThreadgillEffectiveHarmonyBars` layers interval-cell / episodic pitch-set receipts — **`ht:*`**.
+   * After precompute, `henryThreadgillEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const htEff = meta?.henryThreadgillEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'henry_threadgill' &&
+    Array.isArray(htEff) &&
+    htEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return htEff[barIndex - 1]!;
+  }
+
   const cbEff = meta?.basieEffectiveHarmonyBars;
   if (
     meta?.songwriterStyleId === 'count_basie' &&

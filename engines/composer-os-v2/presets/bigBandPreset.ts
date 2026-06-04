@@ -41,6 +41,8 @@ export const bigBandPreset: Preset = {
       'oliver_nelson',
       'sammy_nestico',
       'wayne_shorter',
+      'henry_threadgill',
+      'threadgill',
     ],
   },
 };
