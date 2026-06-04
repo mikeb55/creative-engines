@@ -48,6 +48,7 @@ export type SongwriterRuleId =
   | 'bob_brookmeyer'
   | 'maria_schneider'
   | 'kenny_wheeler'
+  | 'jan_garbarek'
   | 'clare_fischer'
   | 'manny_albam'
   | 'oliver_nelson'

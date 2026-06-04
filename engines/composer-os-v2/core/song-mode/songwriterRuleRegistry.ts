@@ -595,6 +595,32 @@ const songwriterRules: Partial<Record<SongwriterRuleId, SongwritingRuleEntry[]>>
       'form'
     ),
   ],
+  jan_garbarek: [
+    R(
+      'garbarek.modal_field',
+      'Harmonic environment is a modal field not a progression — Dorian/Aeolian/Mixolydian centers held for extended spans',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'garbarek.drone_architecture',
+      'Bass and lower voices sustain pedal tones — walking bass is a hard fail; lyrical sustaining bass',
+      'songwriter',
+      'harmony',
+      9,
+      'verse'
+    ),
+    R(
+      'garbarek.ritual_melody',
+      'Melody as chant/call over stable modal field — arch/descent or circular folk nucleus; phrase-breath silence structural',
+      'songwriter',
+      'melody',
+      8,
+      'form'
+    ),
+  ],
   clare_fischer: [
     R('fisch.poly_plan', 'Poly-planar voicings', 'songwriter', 'harmony', 9, 'verse'),
     R('fisch.latino_clave', 'Latin clave + jazz changes', 'songwriter', 'rhythm', 8, 'global'),

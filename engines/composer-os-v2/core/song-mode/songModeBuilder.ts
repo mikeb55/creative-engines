@@ -2342,6 +2342,87 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Gm7(add11)/D', 'Cmaj7(add11)/E', 'Fmaj9(no3)/A', 'Bb6/9(add9)/F'],
     ],
   },
+  /** Jan Garbarek — `garbarek_modal_field`: Dorian/Aeolian/Mixolydian centers held 2–8 bars; no functional ii–V (`janGarbarekSlice.ts`). */
+  garbarek_modal_field: {
+    verse: [
+      ['Dm7sus4', 'Dm7sus4', 'Dm7sus4', 'Gm7sus4'],
+      ['Am7sus4', 'Am7sus4', 'Em7sus4', 'Em7sus4'],
+      ['D5', 'D5', 'Gm7sus4', 'Gm7sus4'],
+      ['Em9', 'Em9', 'Am7sus4', 'Am7sus4'],
+    ],
+    chorus: [
+      ['Gm7sus4', 'Gm7sus4', 'C7sus4', 'C7sus4'],
+      ['Am7sus4', 'Am7sus4', 'D5', 'D5'],
+      ['Em9', 'Em9', 'Em9', 'Bm7sus4'],
+      ['Dm7sus4', 'Dm7sus4', 'Gm7sus4', 'Gm7sus4'],
+    ],
+    bridge: [
+      ['D5/G', 'D5/G', 'Am7sus4/E', 'Am7sus4/E'],
+      ['Em9/B', 'Em9/B', 'D5/A', 'D5/A'],
+      ['Gm7sus4/D', 'Gm7sus4/D', 'C7sus4/G', 'C7sus4/G'],
+      ['Am7sus4/E', 'Am7sus4/E', 'D5', 'D5'],
+    ],
+    pre_chorus: [
+      ['Em9', 'Em9', 'D5', 'D5'],
+      ['Am7sus4', 'Am7sus4', 'Gm7sus4', 'Gm7sus4'],
+      ['D5/G', 'D5/G', 'Em9/B', 'Em9/B'],
+      ['Gm7sus4/D', 'Gm7sus4/D', 'Am7sus4/E', 'Am7sus4/E'],
+    ],
+  },
+  /** Jan Garbarek — `garbarek_drone_ritual`: pedal/drone bass with sparse upper modal colour. */
+  garbarek_drone_ritual: {
+    verse: [
+      ['D5/A', 'D5/A', 'D5/A', 'D5/A'],
+      ['Em9/D', 'Em9/D', 'Gm7sus4/D', 'Gm7sus4/D'],
+      ['Am7sus4/E', 'Am7sus4/E', 'D5/A', 'D5/A'],
+      ['Gm7sus4/D', 'Gm7sus4/D', 'Em9/D', 'Em9/D'],
+    ],
+    chorus: [
+      ['D5/A', 'D5/A', 'Em9/D', 'Em9/D'],
+      ['Gm7sus4/D', 'Gm7sus4/D', 'Am7sus4/E', 'Am7sus4/E'],
+      ['D5', 'D5', 'Gm7sus4/D', 'Gm7sus4/D'],
+      ['Em9/D', 'Em9/D', 'D5/A', 'D5/A'],
+    ],
+    bridge: [
+      ['C5/G', 'C5/G', 'D5/A', 'D5/A'],
+      ['Em9/B', 'Em9/B', 'D5/A', 'D5/A'],
+      ['Gm7sus4/D', 'Gm7sus4/D', 'Am7sus4/E', 'Am7sus4/E'],
+      ['D5', 'D5', 'D5/A', 'D5/A'],
+    ],
+    pre_chorus: [
+      ['D5/A', 'D5/A', 'Gm7sus4/D', 'Gm7sus4/D'],
+      ['Em9/D', 'Em9/D', 'Am7sus4/E', 'Am7sus4/E'],
+      ['D5', 'D5', 'Em9/D', 'Em9/D'],
+      ['Gm7sus4/D', 'Gm7sus4/D', 'D5/A', 'D5/A'],
+    ],
+  },
+  /** Jan Garbarek — `garbarek_folk_chant`: pentatonic/modal folk-nucleus friendly pools. */
+  garbarek_folk_chant: {
+    verse: [
+      ['D5', 'Em9', 'D5', 'D5'],
+      ['Am7sus4', 'Am7sus4', 'Gm7sus4', 'Gm7sus4'],
+      ['Em9', 'D5', 'Em9', 'D5'],
+      ['Gm7sus4', 'Am7sus4', 'D5', 'D5'],
+    ],
+    chorus: [
+      ['D5', 'D5', 'Gm7sus4', 'Gm7sus4'],
+      ['Em9', 'Em9', 'Am7sus4', 'Am7sus4'],
+      ['D5/A', 'D5/A', 'Em9/D', 'Em9/D'],
+      ['Gm7sus4/D', 'Gm7sus4/D', 'D5', 'D5'],
+    ],
+    bridge: [
+      ['Am7sus4/E', 'D5/A', 'Am7sus4/E', 'D5/A'],
+      ['Em9/B', 'D5/A', 'Em9/B', 'D5/A'],
+      ['Gm7sus4/D', 'D5/A', 'Gm7sus4/D', 'D5/A'],
+      ['D5', 'Em9', 'D5', 'D5'],
+    ],
+    pre_chorus: [
+      ['Em9', 'D5', 'Gm7sus4', 'D5'],
+      ['Am7sus4', 'D5', 'Em9', 'D5'],
+      ['Gm7sus4/D', 'D5/A', 'Em9/D', 'D5/A'],
+      ['D5', 'Em9', 'Am7sus4', 'D5'],
+    ],
+  },
   /** Gil Evans — `gil_evans_modal`: modal impressionist / sustained fields (`gilEvansSlice.ts`). */
   gil_evans_modal: {
     verse: [
@@ -3334,6 +3415,11 @@ function chordSymbolsForSection(
     const tier = Math.abs(seed) % 3;
     resolvedPoolId =
       tier === 0 ? 'wheeler_polyaxial' : tier === 1 ? 'wheeler_lyric_suspension' : 'wheeler_chamber_ballad';
+  }
+  if (songwriterId === 'jan_garbarek') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0 ? 'garbarek_modal_field' : tier === 1 ? 'garbarek_drone_ritual' : 'garbarek_folk_chant';
   }
   if (songwriterId === 'billy_strayhorn') {
     const tier = Math.abs(seed) % 3;

@@ -145,7 +145,7 @@ Slice-specific params (e.g. Sebesky `liftToBlareArc`) remain on their slice type
 
 Compiled harmonic voice bundles live in **`engines/composer-os-v2/core/composer/voiceRuleBundles.ts`**. Optional **`orchestrationPolicy.fingerprintReceipts`** are **research-derived orchestration planning lines** (not the same thing as **GCE structural memory** JSON fingerprints in **`gce-memory/fingerprints/`**). **`getVoiceRuleBundle(id)`** returns the bundle for harmonic-voice / BB pairing; unknown ids fall back to **`neutral`** (no receipts).
 
-**Deep (≥10 `fingerprintReceipts`):** **John Coltrane** (`john_coltrane`) **10** · **Pat Metheny** (`pat_metheny`) **12** · **Clare Fischer** (`clare_fischer`) **44** · **Quincy Jones** (`quincy_jones`) **46** · **Sammy Nestico** (`sammy_nestico`) **41** · **Count Basie** (`count_basie`) **38** · **Duke Ellington** (`duke_ellington` / `ellington`) **11** · **Billy Strayhorn** (`billy_strayhorn` / `strayhorn`) **12** · **Don Sebesky** (`don_sebesky` / `sebesky`) **12** · **Gil Evans** (`gil_evans`) **11** · **Wayne Shorter** (`wayne_shorter`) **11** · **Maria Schneider** (`maria_schneider`) **11** · **Kenny Wheeler** (`kenny_wheeler`) **12** · **Thad Jones** (`thad_jones`) **12** · **Charles Mingus** (`charles_mingus`) **11** · **Henry Threadgill** (`henry_threadgill`) **26** · **Bob Brookmeyer** (`bob_brookmeyer`) **12** · **Olivier Messiaen** (`messiaen` / `olivier_messiaen`) **12** · **Oliver Nelson** (`oliver_nelson`) **12**.
+**Deep (≥10 `fingerprintReceipts`):** **John Coltrane** (`john_coltrane`) **10** · **Pat Metheny** (`pat_metheny`) **12** · **Clare Fischer** (`clare_fischer`) **44** · **Quincy Jones** (`quincy_jones`) **46** · **Sammy Nestico** (`sammy_nestico`) **41** · **Count Basie** (`count_basie`) **38** · **Duke Ellington** (`duke_ellington` / `ellington`) **11** · **Billy Strayhorn** (`billy_strayhorn` / `strayhorn`) **12** · **Don Sebesky** (`don_sebesky` / `sebesky`) **12** · **Gil Evans** (`gil_evans`) **11** · **Wayne Shorter** (`wayne_shorter`) **11** · **Maria Schneider** (`maria_schneider`) **11** · **Kenny Wheeler** (`kenny_wheeler`) **12** · **Jan Garbarek** (`jan_garbarek`) **12** · **Thad Jones** (`thad_jones`) **12** · **Charles Mingus** (`charles_mingus`) **11** · **Henry Threadgill** (`henry_threadgill`) **26** · **Bob Brookmeyer** (`bob_brookmeyer`) **12** · **Olivier Messiaen** (`messiaen` / `olivier_messiaen`) **12** · **Oliver Nelson** (`oliver_nelson`) **12**.
 
 **Extended:** none — **`count_basie`** (**`CB_HARM_*`**, **`CB_VL_*`**, **`CB_RHYTHM_*`**, **`CB_FORM_*`**, **`CB_FP_*`**) raised the bundle to **deep**; slice layer still carries shout-chorus / riff-head / **Basie Button** behaviour.
 
@@ -163,6 +163,7 @@ Compiled harmonic voice bundles live in **`engines/composer-os-v2/core/composer/
 | **Wayne Shorter** (`wayne_shorter`) | 11 | **deep** |
 | **Maria Schneider** (`maria_schneider`) | 11 | **deep** |
 | **Kenny Wheeler** (`kenny_wheeler`) | 12 | **deep** |
+| **Jan Garbarek** (`jan_garbarek`, alias `garbarek`) | 12 | **deep** |
 | **Thad Jones** (`thad_jones`) | 12 | **deep** |
 | **Charles Mingus** (`charles_mingus`) | 11 | **deep** |
 | **Henry Threadgill** (`henry_threadgill`) | 26 | **deep** |
@@ -214,6 +215,7 @@ Canonical Song Mode / Big Band composers in **`engines/composer-os-v2`**. **Slic
 | Antônio Carlos Jobim | `antonio_carlos_jobim` | `aj:*` | fully implemented | Bossa extended tertian harmony, Brazilian modal colour | bossa / Lydian colour passes |
 | Henry Threadgill | `henry_threadgill` | `ht:*` | fully implemented | Episodic interval-cell harmony, polymodal bass, anti-metric phrases | `intervalCellDensity`, `antiMetricStrength`, `polymodalSeparation`, `episodeContrast` |
 | Kenny Wheeler | `kenny_wheeler` | `kw:*` | fully implemented | Polyaxial upper sonority + independent bass, lyrical ECM brittleness | `polyaxialHarmony`, `tensionCarryForward`, `bassTrajectoryLogic`, `melodicDisjunctionRate`, `cadentialOpacity`, `voicingSpecificity` |
+| Jan Garbarek | `jan_garbarek` | `jg:*` | fully implemented | Ritual modal melody over sparse harmonic field, drone gravity, phrase-breath silence | `modalCentricity`, `dronePresence`, `harmonicSlowness`, `melodicSustain`, `phraseBreathWeight`, `innerVoiceRestraint`, `folkArchetypeStrength` |
 | Billy Strayhorn | `billy_strayhorn` | `bs:*` | fully implemented | Chromatic song architecture + extended-tone melody/harmony fusion | `chromaticContinuity`, `extendedToneMelody`, `parallelColorMotion`, `phraseArcLength`, `innerVoiceActivity`, `closedBlockSustain` |
 | Don Sebesky | `don_sebesky` | `ds:*` | fully implemented | CTI production-orchestra: groove bed, string halo, melody-legible reharm, tiered lifts | `groovePersistence`, `stringProminence`, `melodyLegibility`, `functionalLegibility`, `liftToBlareArc`, `soloistSpotlight`, `centerFillDensity` |
 
@@ -321,6 +323,55 @@ These are **not** “bass note under a chord symbol.” Upper and bass follow **
 **Reference works:** *Ma Belle Hélène* · *Smatter* · *Angel Song* · *Music for Large & Small Ensembles* (Sweet Time Suite).
 
 **Evaluation:** **`wheelerStyleProfile.ts`** — hard fail on terminal root triad, voicing substitution, bebop chain > 0.20, Schneider-profile false positives.
+
+---
+
+### Jan Garbarek (`jan_garbarek`)
+
+Garbarek is the most **melodically archetypal** voice in the **ECM Chamber Jazz** group. Music behaves like **ritual invocation** — melody as chant or folk call unfolding above a **sparse modal field**. The ensemble exists to **protect the line's ritual clarity**, not to generate contrapuntal argument or orchestral narrative.
+
+**Three pillars**
+
+1. **Melody as modal ritual** — chant/call/joik archetype, not bebop line or motivic development.
+2. **Harmonic field not progression** — drone, pedal, slow modal environment; not chord-to-chord functional movement.
+3. **Silence and space as phrase syntax** — inter-phrase breath is structural, not decorative.
+
+**Garbarek vs other ECM voices**
+
+| | **Garbarek** | **Wheeler** | **Schneider** | **Threadgill** |
+|---|--------------|-------------|---------------|----------------|
+| Harmonic engine | Single modal center / field | Polyaxial upper + independent bass | Pastoral orchestral morph + swell | Interval-cell episodic system |
+| Texture | Sparse framing around exposed line | Brittle intervallic chamber bloom | Cinematic density arcs | Anti-metric cell blooms |
+| Pulse | Under-metric — thins until implied | Lyrical but harmonically active | Groove can dissolve into cloud | Attacked from inside by cells |
+| Cadence | Open modal center / drone | Open 6/9 / sus / slash | Rich non-triadic settlement | Pitch-set module seams |
+| Choose Garbarek when | Nordic/folk ritual melody, ECM austerity, chant-like sax | Lyrical trumpet/flugel polyaxial chamber | Large-ensemble narrative swell | Episodic harmolodic cells |
+
+**Song Mode slice** — **`janGarbarekSlice.ts`** (`jg:*` receipts): Layer 1 modal field → Layer 2 melodic invocation → Layer 3 ensemble framing (line protection, ritual percussion colour).
+
+**Seven parameters** (0–1, defaults in parentheses):
+
+| Parameter | Default | Musical role | Sweet spot |
+|-----------|---------|--------------|------------|
+| `modalCentricity` | 0.85 | Harmonic content stays within one governing modal collection per section | 0.78–0.92 |
+| `dronePresence` | 0.76 | Bass/lower voices sustain pedal 2+ bars — walking bass is a fail | 0.68–0.84 |
+| `harmonicSlowness` | 0.78 | Chord rhythm slower than 1 change per 2 bars in lyric sections | 0.72–0.86 |
+| `melodicSustain` | 0.74 | Melody notes sustain 1.5–4 beats (longer in rubato) | 0.66–0.82 |
+| `phraseBreathWeight` | 0.69 | Inter-phrase rests/decay ≥12% of phrase timeline | 0.60–0.78 |
+| `innerVoiceRestraint` | 0.81 | Accompaniment avoids busy counterlines during exposed melody (max 2 inner lines) | 0.74–0.88 |
+| `folkArchetypeStrength` | 0.63 | Circular 2–5 note folk nucleus reused with slight variation | 0.52–0.72 |
+
+**Nordic / folk influence in code**
+
+- **Norwegian folk / Sami joik** → `folkArchetypeStrength` controls short nuclei recycled with micro-variation; arch-and-descent contour preferred over through-composed bebop lines.
+- **Indian raga colour** → `melodicSustain` + microtonal-bend simulation fingerprint: approach/departure tones on long tones emulate pitch-bend without literal microtonal export.
+- **ECM ritual pacing** → `phraseBreathWeight` + `SilenceEnforcementRule`: mandatory inter-phrase gaps; continuous melody without breath fails evaluation.
+- **Eberhard Weber drone lineage** → `dronePresence` + `DroneArchitectureRule`: lyrical sustaining bass, slash pedals, open-fifth sonorities.
+
+**Big Band arranger id:** **`garbarek`** — six rules (ModalField, DroneArchitecture, LineProtection, RitualPercussion, SilenceEnforcement, FolkMotive).
+
+**Reference works:** *I Took Up the Runes* · *Visible World* · *Rites* · *All Those Born With Wings* · *Dis* · *Officium*
+
+**Evaluation:** **`garbarekStyleProfile.ts`** — pass on melodic sustain, pedal stability, slow harmonic rate, inner-voice restraint, modal identity, silence weighting, cadential openness; hard fail on Wheeler polyaxial independence, Schneider swell arcs, Threadgill anti-metric density, walking bass, fast harmony, ii–V–I closures.
 
 ---
 

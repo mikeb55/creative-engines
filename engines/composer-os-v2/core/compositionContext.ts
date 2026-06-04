@@ -37,6 +37,10 @@ import type {
   HenryThreadgillEpisodePlan,
   HenryThreadgillSliceParams,
 } from './song-mode/threadgillEpisodeTypes';
+import type {
+  JanGarbarekFieldPlan,
+  JanGarbarekSliceParams,
+} from './song-mode/janGarbarekSlice';
 import type { BasieEpisodePlan } from './song-mode/basieEpisodeTypes';
 import type { BasieTestamentMode } from './song-mode/basieSlice';
 import type {
@@ -1806,6 +1810,25 @@ export interface GenerationMetadata {
   henryThreadgillSliceReceipt?: string;
   henryThreadgillEffectiveHarmonyBars?: string[];
   henryThreadgillDeviceReceipts?: string[];
+  /** Jan Garbarek — ritual modal ECM field slice (`janGarbarekSlice.ts`). */
+  janGarbarekDiagnostics?: {
+    songwriterId: 'jan_garbarek';
+    barsConsidered: number;
+    modalFieldTouches: number;
+    droneTouches: number;
+    slowHarmonyTouches: number;
+    openCadenceTouches: number;
+    quartalTouches: number;
+    sectionCount?: number;
+    phraseBreathBars?: number[];
+    sliceParams?: JanGarbarekSliceParams;
+    deviceReceipts?: string[];
+  };
+  janGarbarekFieldPlan?: JanGarbarekFieldPlan;
+  janGarbarekSliceParams?: JanGarbarekSliceParams;
+  janGarbarekSliceReceipt?: string;
+  janGarbarekEffectiveHarmonyBars?: string[];
+  janGarbarekDeviceReceipts?: string[];
   /** Count Basie — Kansas City swing / riff-head slice (`basieSlice.ts`). */
   basieTestamentMode?: BasieTestamentMode;
   basieResolvedTestament?: BasieTestamentMode;

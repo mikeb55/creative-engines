@@ -630,6 +630,21 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   }
 
   /**
+   * Jan Garbarek: `precomputeJanGarbarekEffectiveHarmonyBars` applies modal field + drone + slow harmony.
+   * After precompute, `janGarbarekEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const janGarbarekEff = meta?.janGarbarekEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'jan_garbarek' &&
+    Array.isArray(janGarbarekEff) &&
+    janGarbarekEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return janGarbarekEff[barIndex - 1]!;
+  }
+
+  /**
    * Billy Strayhorn: `precomputeBillyStrayhornEffectiveHarmonyBars` applies chromatic reinterpretation + extended-tone fusion.
    */
   const bsEff = meta?.billyStrayhornEffectiveHarmonyBars;

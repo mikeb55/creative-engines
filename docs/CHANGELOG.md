@@ -2,6 +2,18 @@
 
 ---
 
+## [1.8.4] — 2026-06-04
+
+### Added
+
+- **Jan Garbarek v2 Song Mode slice (`jg:*`)** — ritual modal ECM field architecture (`janGarbarekSlice.ts`): modal field, drone pedal, slow harmony, phrase-breath silence; golden-path precompute + locked harmony routing + smoke **`janGarbarekSliceSmoke.test.ts`**.
+- **Garbarek VRB bundle** — **`janGarbarekVrbFingerprints.ts`** — 12 fingerprints with probability targets; aliases `jan_garbarek` / `garbarek` / `jg`.
+- **Garbarek Big Band rules** — six named rules in **`bigBandRuleRegistry.ts`**: ModalField, DroneArchitecture, LineProtection, RitualPercussion, SilenceEnforcement, FolkMotive.
+- **Garbarek evaluation profile** — **`garbarekStyleProfile.ts`** with Wheeler/Schneider/Threadgill discrimination hard fails.
+- **Garbarek assigned to ECM Chamber Jazz** — **`composerGroupDefinitions.ts`** fully implemented; songwriter **`jan_garbarek`** + arranger **`garbarek`** in **`HomeGenerate.tsx`** ECM optgroup.
+
+---
+
 ## [1.8.3] — 2026-06-04
 
 ### Added

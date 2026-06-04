@@ -25,7 +25,9 @@ export type BigBandComposerId =
   | 'wayne_shorter'
   /** Alias for {@link henry_threadgill} — same registry rules. */
   | 'threadgill'
-  | 'henry_threadgill';
+  | 'henry_threadgill'
+  | 'garbarek'
+  | 'jan_garbarek';
 
 export type BigBandEraId =
   | 'swing'

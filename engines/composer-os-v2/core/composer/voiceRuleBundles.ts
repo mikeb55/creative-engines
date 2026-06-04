@@ -9,6 +9,7 @@ import {
   DUO_VOICE_POLICY_SQ_FAMILY_STUB,
 } from './voiceRuleBundle';
 import { KENNY_WHEELER_VRF_FINGERPRINT_RECEIPTS } from './kennyWheelerVrbFingerprints';
+import { JAN_GARBAREK_VRF_FINGERPRINT_RECEIPTS } from './janGarbarekVrbFingerprints';
 import { BILLY_STRAYHORN_VRF_FINGERPRINT_RECEIPTS } from './billyStrayhornVrbFingerprints';
 import { DON_SEBESKY_VRF_FINGERPRINT_RECEIPTS } from './donSebeskyVrbFingerprints';
 import { WAYNE_SHORTER_WS_HARM_FINGERPRINTS } from './wayneShorterHarmFingerprints';
@@ -1267,6 +1268,57 @@ const HENRY_THREADGILL: VoiceRuleBundle = {
   repairPolicy: {
     resolveParallels: false,
     maxVoiceOverlap: 6,
+  },
+};
+
+const JAN_GARBAREK: VoiceRuleBundle = {
+  voiceId: 'jan_garbarek',
+  harmonicRhythm: {
+    minChordDurationBars: 2,
+    maxChordDurationBars: 8,
+    allowMidBarChange: false,
+  },
+  bassPolicy: {
+    role: 'pedal-or-drone',
+    allowOctaveDoubling: false,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 8,
+    maxSpreadSemitones: 28,
+    clusterSizeNotes: [2, 4],
+    forbidParallelFifths: true,
+    forbidOctaveDoubling: true,
+  },
+  melodicPolicy: {
+    contour: 'descending-arc',
+    maxLeapSemitones: 12,
+    preferredIntervalSets: [2, 3, 4, 5, 7, 12],
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 1,
+    mutateSingleVoiceAtTime: true,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: JAN_GARBAREK_VRF_FINGERPRINT_RECEIPTS,
+  },
+  formPolicy: {
+    narrativeArc: 'continuous-curve',
+    sectionRecallEnforced: true,
+    noCadentialRelease: true,
+  },
+  rhythmPolicy: {
+    antiMetric: false,
+  },
+  repairPolicy: {
+    resolveParallels: false,
+    maxVoiceOverlap: 2,
+  },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.35,
+    registerInterlock: false,
+    intervalPreference: 'modal_sparse',
   },
 };
 
@@ -3455,6 +3507,9 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   kenny_wheeler: KENNY_WHEELER,
   wheeler: KENNY_WHEELER,
   kw: KENNY_WHEELER,
+  jan_garbarek: JAN_GARBAREK,
+  garbarek: JAN_GARBAREK,
+  jg: JAN_GARBAREK,
   john_coltrane: JOHN_COLTRANE,
   wayne_shorter: WAYNE_SHORTER,
   bill_evans: BILL_EVANS,

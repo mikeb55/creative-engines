@@ -92,6 +92,16 @@ const STRAYHORN_COMPOSER_RULES: BigBandRule[] = [
   ),
 ];
 
+/** Jan Garbarek — ritual modal ECM field; melody as invocation over sparse modal center. */
+const JAN_GARBAREK_COMPOSER_RULES: BigBandRule[] = [
+  R('garbarek.modal_field', 'ModalFieldRule: harmonic environment is a field not a progression — Dorian/Aeolian/Mixolydian/pentatonic centers held for extended spans; avoid functional ii–V–I', 'composer', 'harmony', 86),
+  R('garbarek.drone_architecture', 'DroneArchitectureRule: bass and lower voices sustain pedal tones — walking bass is a hard fail; lyrical sustaining bass (Weber-influenced)', 'composer', 'harmony', 85),
+  R('garbarek.line_protection', 'LineProtectionRule: during melody statements ensemble thins to max 2–3 voices; entries delayed until melody atmosphere established', 'composer', 'orchestration', 84),
+  R('garbarek.ritual_percussion', 'RitualPercussionRule: percussion as textural color and ostinato — no swing ride grammar; light circular patterns', 'composer', 'rhythm', 82),
+  R('garbarek.silence_enforcement', 'SilenceEnforcementRule: inter-phrase rests mandatory — minimum 12% phrase timeline in silence or sustained decay', 'composer', 'density', 83),
+  R('garbarek.folk_motive', 'FolkMotiveRule: short nuclei (2–5 notes) recycled with variation; arch and descent contour preferred over through-composed development', 'composer', 'form', 81),
+];
+
 const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
   ellington: [
     R('ellington.counterpoint_density', '≥2 independent lines when not thin', 'composer', 'density', 82),
@@ -143,6 +153,8 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
     R('wheeler.silence_architecture', 'SilenceArchitectureRule: every 8–16 bars one thinning event — 1–4 voices, sustained tail, or ensemble breath', 'composer', 'density', 79),
     R('wheeler.no_terminal_triad', 'NoTerminalTriadRule: final bars avoid root-position tonic triad — prefer 6/9, maj7(add9), sus, slash upper-structure', 'composer', 'harmony', 85),
   ],
+  garbarek: JAN_GARBAREK_COMPOSER_RULES,
+  jan_garbarek: JAN_GARBAREK_COMPOSER_RULES,
   /** Quincy Jones — LA studio punch / crossover pop–jazz / tight rhythm-section locks. */
   quincy_jones: [
     R('quincy_jones.tight_brass', 'Brass punches locked to rhythm-section kicks & backbeats', 'composer', 'orchestration', 84),
