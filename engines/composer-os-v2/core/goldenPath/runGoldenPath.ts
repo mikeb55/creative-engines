@@ -149,6 +149,7 @@ import {
   applyBillEvansStyleSurface,
   applyDukeEllingtonStyleSurface,
   applyMariaSchneiderStyleSurface,
+  applyKennyWheelerStyleSurface,
   applyFrankZappaStyleSurface,
   applyMonkStyleSurface,
   applyJobimStyleSurface,
@@ -2280,6 +2281,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   }
   if (options?.songModeHookFirstIdentity) {
     applyMariaSchneiderStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
+    applyKennyWheelerStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
   }
   if (options?.songModeHookFirstIdentity) {
     applyGrooveSoulStyleSurface(context.generationMetadata, context.generationMetadata.styleProfile);

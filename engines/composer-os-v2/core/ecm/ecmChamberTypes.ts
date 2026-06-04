@@ -2,7 +2,7 @@
  * ECM Chamber engine — explicit modes (distinct; not blended).
  */
 
-export type EcmChamberMode = 'ECM_METHENY_QUARTET' | 'ECM_SCHNEIDER_CHAMBER';
+export type EcmChamberMode = 'ECM_METHENY_QUARTET' | 'ECM_SCHNEIDER_CHAMBER' | 'ECM_WHEELER_CHAMBER';
 
 export interface EcmSectionMetrics {
   label: string;

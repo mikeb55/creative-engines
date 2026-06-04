@@ -572,6 +572,24 @@ export function applyMariaSchneiderStyleSurface(metadata: GenerationMetadata, pr
 }
 
 /**
+ * Primary **`kenny_wheeler`** — brittle intervallic ECM chamber metadata (Song Mode hook-first path).
+ */
+export function applyKennyWheelerStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
+  if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'kenny_wheeler') return;
+
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) - 0.12);
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) - 0.08);
+  metadata.songwriterSpaceBias = clamp01((metadata.songwriterSpaceBias ?? 0.5) + 0.32);
+  metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) + 0.34);
+
+  appendStyleSurfaceNotes(metadata, [
+    'kenny_wheeler surface: density −0.12, syncopation −0.08, space +0.32, cadence softness +0.34 — polyaxial ECM bias only.',
+  ]);
+}
+
+/**
  * STYLE_SOPHISTICATED_POP — modest rhythm/metadata nudges + receipts; harmony dressing runs separately on locked bars.
  */
 export function applySophisticatedPopStyleSurface(metadata: GenerationMetadata, styleProfile: StyleProfile | undefined): void {

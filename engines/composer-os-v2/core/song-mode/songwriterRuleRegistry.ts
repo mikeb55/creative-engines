@@ -569,6 +569,32 @@ const songwriterRules: Partial<Record<SongwriterRuleId, SongwritingRuleEntry[]>>
       'form'
     ),
   ],
+  kenny_wheeler: [
+    R(
+      'wheeler.polyaxial_harmony',
+      'Upper sonority path (maj triads, sus, 6/9, maj7/#11) + independent bass path (semitone/M3 motion) — not root-stack tertian',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'wheeler.tension_carry',
+      'Tension-bearing sonorities carry forward; avoid functional V→I and plain tonic triad cadences',
+      'songwriter',
+      'harmony',
+      9,
+      'verse'
+    ),
+    R(
+      'wheeler.lyric_melody',
+      'Wide P4/P5/m6/M6/8ve leaps with contrary stepwise repair; melody floats above polyaxial gap on color tones',
+      'songwriter',
+      'melody',
+      8,
+      'form'
+    ),
+  ],
   clare_fischer: [
     R('fisch.poly_plan', 'Poly-planar voicings', 'songwriter', 'harmony', 9, 'verse'),
     R('fisch.latino_clave', 'Latin clave + jazz changes', 'songwriter', 'rhythm', 8, 'global'),

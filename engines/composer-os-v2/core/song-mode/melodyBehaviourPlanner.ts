@@ -400,6 +400,21 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
       commonToneReturnBias: 0.62,
     },
   },
+  kenny_wheeler: {
+    intervalTendency: 'angular',
+    rhythmicSubdivision: 'half_quarter',
+    repetitionVsVariationBias: 0.52,
+    phraseLength: 5,
+    contourProfile: 'wide_arc',
+    phraseAsymmetryTendency: 0.78,
+    cadenceFrequency: 'low',
+    devices: ['polyaxial_harmony', 'tension_carry', 'wide_leap_repair', 'open_cadence', 'anacrusis', 'register_gap'],
+    malLeadHints: {
+      attackDensity: 'low',
+      interOnsetSpacing: 'wide',
+      avoidStrongBeatOneAttack: true,
+    },
+  },
   john_coltrane: {
     intervalTendency: 'angular',
     rhythmicSubdivision: 'eighth_patterns',

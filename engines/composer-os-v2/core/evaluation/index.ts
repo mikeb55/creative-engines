@@ -22,3 +22,4 @@ export * from './songModePatMethenyStyleProfile';
 export * from './songModeBurtBacharachStyleProfile';
 export * from './songModeEcmEnsembleStyleProfile';
 export * from './songModeEvaluationProfiles';
+export * from './wheelerStyleProfile';

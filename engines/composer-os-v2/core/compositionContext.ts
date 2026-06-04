@@ -30,6 +30,7 @@ import type { EnsembleWybleRoleMap } from './wyble/wybleVoiceLayoutTypes';
 import type { WybleConsumptionReceipt } from './wyble/wybleConsumptionReceipt';
 import type { AlternateGuitarTuningResolved } from './song-mode/alternateGuitarTunings';
 import type { CharlesMingusEpisodePlan } from './song-mode/mingusEpisodeTypes';
+import type { KennyWheelerSliceParams } from './song-mode/wheelerLyricSlice';
 import type {
   HenryThreadgillEpisodePlan,
   HenryThreadgillSliceParams,
@@ -1690,6 +1691,31 @@ export interface GenerationMetadata {
   schneiderPedalBars?: number[];
   /** Tutti colour-stack bars (1-based). */
   schneiderColorStackBars?: number[];
+  /** Kenny Wheeler — polyaxial lyrical ECM slice (`wheelerLyricSlice.ts`). */
+  kennyWheelerDiagnostics?: {
+    songwriterId: 'kenny_wheeler';
+    barsConsidered: number;
+    upperStructureTouches: number;
+    tensionCarryTouches: number;
+    colorToneTouches: number;
+    openCadenceTouches: number;
+    bassMotionTouches: number;
+    sliceParams?: KennyWheelerSliceParams;
+    antiElaborationGuardTriggers: number;
+    antiElaborationGuards?: {
+      bareTriadRaised: number;
+      dominantSoftened: number;
+    };
+    deviceReceipts?: string[];
+  };
+  kennyWheelerSliceReceipt?: string;
+  kennyWheelerEffectiveHarmonyBars?: string[];
+  kennyWheelerDeviceReceipts?: string[];
+  kennyWheelerAntiElaborationGuards?: {
+    bareTriadRaised: number;
+    dominantSoftened: number;
+  };
+  kennyWheelerSliceParams?: KennyWheelerSliceParams;
   /** Gil Evans — cool modal / orchestral colour slice (`gilEvansSlice.ts`). */
   gilEvansDiagnostics?: {
     songwriterId: 'gil_evans';

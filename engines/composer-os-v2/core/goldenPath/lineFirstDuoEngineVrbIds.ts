@@ -44,6 +44,7 @@ export const LINE_FIRST_DUO_ENGINE_VRB_IDS = [
   'count_basie',
   'ravel',
   'maria_schneider',
+  'kenny_wheeler',
   'oliver_nelson',
   'thelonious_monk',
   'beethoven_late',

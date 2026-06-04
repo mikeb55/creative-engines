@@ -712,6 +712,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'kurt_weill', label: 'Kurt Weill' },
   { id: 'mahler', label: 'Mahler' },
   { id: 'maria_schneider', label: 'Maria Schneider' },
+  { id: 'kenny_wheeler', label: 'Kenny Wheeler' },
   { id: 'max_martin', label: 'Max Martin' },
   { id: 'miles_davis', label: 'Miles Davis' },
   { id: 'ennio_morricone', label: 'Ennio Morricone' },
@@ -793,6 +794,7 @@ const JAZZ_MASTERS_HARMONIC_VOICE_IDS: readonly HarmonicVoiceId[] = [
   'john_coltrane',
   'jim_hall',
   'maria_schneider',
+  'kenny_wheeler',
   'wayne_shorter',
   'henry_threadgill',
   'charles_mingus',
@@ -1249,6 +1251,7 @@ const ARRANGER_OPTIONS: { id: string; label: string }[] = [
   { id: 'basie', label: 'Count Basie' },
   { id: 'thad', label: 'Thad Jones' },
   { id: 'schneider', label: 'Maria Schneider' },
+  { id: 'wheeler', label: 'Kenny Wheeler' },
   { id: 'gil_evans', label: 'Gil Evans' },
   { id: 'sammy_nestico', label: 'Sammy Nestico' },
   { id: 'quincy_jones', label: 'Quincy Jones' },
@@ -1283,6 +1286,7 @@ const ARRANGER_GROUP_CORE_ORDER: readonly string[] = [
   'basie',
   'thad',
   'schneider',
+  'wheeler',
   'quincy_jones',
   'gil_evans',
   'bob_brookmeyer',
@@ -2203,7 +2207,7 @@ export function HomeGenerate({
   }, []);
   const [sqToBbStyleProfile, setSqToBbStyleProfile] = useState<SqToBbStyleProfileId>('brookmeyer');
   const [sqToBbEra, setSqToBbEra] = useState<ComposerEraSelectValue>(null);
-  const [ecmMode, setEcmMode] = useState<'ECM_METHENY_QUARTET' | 'ECM_SCHNEIDER_CHAMBER'>(
+  const [ecmMode, setEcmMode] = useState<'ECM_METHENY_QUARTET' | 'ECM_SCHNEIDER_CHAMBER' | 'ECM_WHEELER_CHAMBER'>(
     'ECM_METHENY_QUARTET'
   );
   const [sqTextureArchetype, setSqTextureArchetype] =
@@ -3279,7 +3283,11 @@ export function HomeGenerate({
     if (lfv?.max_fret != null) setMartinoLfvMax(Number(lfv.max_fret));
     if (typeof mc.explainMode === 'boolean') setMartinoExplainMode(mc.explainMode);
     if (typeof mc.noteDensity === 'string') setMartinoNoteDensity(mc.noteDensity);
-    if (session.ecmMode === 'ECM_METHENY_QUARTET' || session.ecmMode === 'ECM_SCHNEIDER_CHAMBER') {
+    if (
+      session.ecmMode === 'ECM_METHENY_QUARTET' ||
+      session.ecmMode === 'ECM_SCHNEIDER_CHAMBER' ||
+      session.ecmMode === 'ECM_WHEELER_CHAMBER'
+    ) {
       setEcmMode(session.ecmMode);
     }
     if (mc.slonimskyMacroHints && typeof mc.slonimskyMacroHints === 'object') {
@@ -8113,12 +8121,15 @@ export function HomeGenerate({
           <select
             value={ecmMode}
             onChange={(e) =>
-              setEcmMode(e.target.value as 'ECM_METHENY_QUARTET' | 'ECM_SCHNEIDER_CHAMBER')
+              setEcmMode(
+                e.target.value as 'ECM_METHENY_QUARTET' | 'ECM_SCHNEIDER_CHAMBER' | 'ECM_WHEELER_CHAMBER'
+              )
             }
             disabled={loading}
           >
             <option value="ECM_METHENY_QUARTET">Metheny (modal, single-line focus)</option>
-            <option value="ECM_SCHNEIDER_CHAMBER">Schneider / Wheeler (clouds, swells)</option>
+            <option value="ECM_SCHNEIDER_CHAMBER">Schneider (orchestral clouds, swells)</option>
+            <option value="ECM_WHEELER_CHAMBER">Wheeler (polyaxial chamber, brittle intervallic)</option>
           </select>
         </div>
         </>

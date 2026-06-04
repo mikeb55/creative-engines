@@ -279,6 +279,12 @@ import {
   precomputeMariaSchneiderEffectiveHarmonyBars,
 } from './mariaSchneiderSlice';
 import {
+  accumulateKennyWheelerHarmonyDiagnostics,
+  createKennyWheelerHarmonyAccumulator,
+  finalizeKennyWheelerMetadata,
+  precomputeKennyWheelerEffectiveHarmonyBars,
+} from './wheelerLyricSlice';
+import {
   accumulateGilEvansHarmonyDiagnostics,
   createGilEvansHarmonyAccumulator,
   finalizeGilEvansMetadata,
@@ -2399,6 +2405,14 @@ function buildSongwriterMelodyProfile(
         intervalBias: 'stepwise',
         rhythmicFeel: 'flowing',
       };
+    case 'kenny_wheeler':
+      return {
+        phraseIntentBias: 'arch',
+        densityBias: -0.08,
+        offbeatBias: 0.38,
+        intervalBias: 'leaping',
+        rhythmicFeel: 'floating',
+      };
     case 'thad_jones':
       return {
         phraseIntentBias: 'arch',
@@ -2719,6 +2733,7 @@ function buildGuitarPart(
   const isSongwriterFelaKuti = genMeta?.songwriterStyleId === 'fela_kuti';
   const isSongwriterColePorter = genMeta?.songwriterStyleId === 'cole_porter';
   const isSongwriterMariaSchneider = genMeta?.songwriterStyleId === 'maria_schneider';
+  const isSongwriterKennyWheeler = genMeta?.songwriterStyleId === 'kenny_wheeler';
   const isSongwriterGilEvans = normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'gil_evans';
   const isSongwriterThadJones = normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'thad_jones';
   const isSongwriterCharlesMingus =
@@ -2763,6 +2778,7 @@ function buildGuitarPart(
   const felaKutiAccum = createFelaKutiHarmonyAccumulator();
   const colePorterAccum = createColePorterHarmonyAccumulator();
   const msAccum = createMariaSchneiderHarmonyAccumulator();
+  const kwAccum = createKennyWheelerHarmonyAccumulator();
   const geAccum = createGilEvansHarmonyAccumulator();
   const tjAccum = createThadJonesHarmonyAccumulator();
   const cmAccum = createCharlesMingusHarmonyAccumulator();
@@ -2904,6 +2920,9 @@ function buildGuitarPart(
   }
   if (isSongwriterMariaSchneider && isDuoGoldenPath) {
     precomputeMariaSchneiderEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterKennyWheeler && isDuoGoldenPath) {
+    precomputeKennyWheelerEffectiveHarmonyBars(context);
   }
   if (isSongwriterGilEvans && isDuoGoldenPath) {
     precomputeGilEvansEffectiveHarmonyBars(context);
@@ -3285,6 +3304,13 @@ function buildGuitarPart(
         msAccum
       );
     }
+    if (isSongwriterKennyWheeler) {
+      accumulateKennyWheelerHarmonyDiagnostics(
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
+        kwAccum
+      );
+    }
     if (isSongwriterGilEvans) {
       accumulateGilEvansHarmonyDiagnostics(
         b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
@@ -3466,6 +3492,7 @@ function buildGuitarPart(
     const ecmMode = context.generationMetadata?.ecmMode;
     const isEcmM = context.presetId === 'ecm_chamber' && ecmMode === 'ECM_METHENY_QUARTET';
     const isEcmS = context.presetId === 'ecm_chamber' && ecmMode === 'ECM_SCHNEIDER_CHAMBER';
+    const isEcmW = context.presetId === 'ecm_chamber' && ecmMode === 'ECM_WHEELER_CHAMBER';
     const isDuoGolden = isDuoGoldenPathPreset(context.presetId);
     const phase = ((b - 1) % 8) + 1;
     const tex = texturePlan?.find((t) => t.bar === b);
@@ -3481,6 +3508,12 @@ function buildGuitarPart(
       if (b <= third) density = 'sparse';
       else if (b <= 2 * third) density = 'dense';
       else density = 'sparse';
+    } else if (isEcmW) {
+      const quarter = Math.floor(tb / 4);
+      if (b <= quarter) density = 'sparse';
+      else if (b <= 2 * quarter) density = 'medium';
+      else if (b === 2 * quarter + 1) density = 'sparse';
+      else density = 'medium';
     }
     if (tex?.guitarRole === 'silence' || tex?.guitarRole === 'shadow') density = 'sparse';
     const interaction = interactionPlan ? getInteractionForBar(interactionPlan, b) : undefined;
@@ -3492,7 +3525,9 @@ function buildGuitarPart(
         ? getEcmMethenyPhraseIntent(phase, cycleIndex, seed)
         : isEcmS
           ? getEcmSchneiderPhraseIntent(phase, seed)
-          : isDuoGolden
+          : isEcmW
+            ? getEcmSchneiderPhraseIntent(phase, seed)
+            : isDuoGolden
             ? (b - 1) % 4 === 0
               ? duoGoldenPathPhraseIntentAtBar(seed, b, productDuoIntent)
               : duoGoldenPathPhraseIntentAtBar(seed, b, productDuoIntent, currentPhraseIntent)
@@ -4230,6 +4265,10 @@ function buildGuitarPart(
     finalizeMariaSchneiderMetadata(context.generationMetadata, msAccum);
   }
 
+  if (isSongwriterKennyWheeler && context.generationMetadata) {
+    finalizeKennyWheelerMetadata(context.generationMetadata, kwAccum);
+  }
+
   if (isSongwriterGilEvans && context.generationMetadata) {
     finalizeGilEvansMetadata(context.generationMetadata, geAccum);
   }
@@ -4911,33 +4950,34 @@ function buildBassPart(
       continue;
     }
 
-    if (context.presetId === 'ecm_chamber' && ecmMode === 'ECM_SCHNEIDER_CHAMBER') {
-      logBassProbe('before_bar_generation', b, { branch: 'ECM_SCHNEIDER_CHAMBER' });
+    if (context.presetId === 'ecm_chamber' && (ecmMode === 'ECM_SCHNEIDER_CHAMBER' || ecmMode === 'ECM_WHEELER_CHAMBER')) {
+      const branch = ecmMode === 'ECM_WHEELER_CHAMBER' ? 'ECM_WHEELER_CHAMBER' : 'ECM_SCHNEIDER_CHAMBER';
+      logBassProbe('before_bar_generation', b, { branch });
       const p1 = slashBassPitch !== undefined ? slashBassPitch : rootClamped;
-      const step = (seed + b) % 3 === 0 ? 1 : 2;
+      const step = ecmMode === 'ECM_WHEELER_CHAMBER' ? ((seed + b) % 2 === 0 ? 1 : 4) : (seed + b) % 3 === 0 ? 1 : 2;
       const p2 = clampPitch(p1 + step, walkLow, effectiveHigh);
       if (tex?.bassRole === 'sustain_pad' && tex.guitarRole === 'lead') {
         addEvent(m, createNote(p1, 0, measureBeatSpanQuartersOf(m)));
         normalizeMeasureQuarterGrid(m);
-        logBassProbe('after_bar_generation', b, { branch: 'ECM_SCHNEIDER_CHAMBER', generatedEvents: m.events.length });
-        logBassProbe('before_measure_push', b, { branch: 'ECM_SCHNEIDER_CHAMBER' });
+        logBassProbe('after_bar_generation', b, { branch, generatedEvents: m.events.length });
+        logBassProbe('before_measure_push', b, { branch });
         measures.push(m);
         registerMeasureAppend(b);
-        logBassProbe('after_measure_push', b, { branch: 'ECM_SCHNEIDER_CHAMBER' });
+        logBassProbe('after_measure_push', b, { branch });
         prevBassPitch = p1;
         b++;
         continue;
       }
       if (tex?.guitarRole === 'sustain_pad' && tex.bassRole === 'inner_motion') {
-        const p2a = clampPitch(p1 + 1, walkLow, effectiveHigh);
+        const p2a = clampPitch(p1 + (ecmMode === 'ECM_WHEELER_CHAMBER' ? 1 : 1), walkLow, effectiveHigh);
         addEvent(m, createNote(p1, 0, 2));
         addEvent(m, createNote(p2a, 2, 2));
         normalizeMeasureQuarterGrid(m);
-        logBassProbe('after_bar_generation', b, { branch: 'ECM_SCHNEIDER_CHAMBER', generatedEvents: m.events.length });
-        logBassProbe('before_measure_push', b, { branch: 'ECM_SCHNEIDER_CHAMBER' });
+        logBassProbe('after_bar_generation', b, { branch, generatedEvents: m.events.length });
+        logBassProbe('before_measure_push', b, { branch });
         measures.push(m);
         registerMeasureAppend(b);
-        logBassProbe('after_measure_push', b, { branch: 'ECM_SCHNEIDER_CHAMBER' });
+        logBassProbe('after_measure_push', b, { branch });
         prevBassPitch = p2a;
         b++;
         continue;
@@ -4947,11 +4987,11 @@ function buildBassPart(
       addEvent(m, createNote(p1, 0, split));
       addEvent(m, createNote(p2, split, capSchneider - split));
       normalizeMeasureQuarterGrid(m);
-      logBassProbe('after_bar_generation', b, { branch: 'ECM_SCHNEIDER_CHAMBER', generatedEvents: m.events.length });
-      logBassProbe('before_measure_push', b, { branch: 'ECM_SCHNEIDER_CHAMBER' });
+      logBassProbe('after_bar_generation', b, { branch, generatedEvents: m.events.length });
+      logBassProbe('before_measure_push', b, { branch });
       measures.push(m);
       registerMeasureAppend(b);
-      logBassProbe('after_measure_push', b, { branch: 'ECM_SCHNEIDER_CHAMBER' });
+      logBassProbe('after_measure_push', b, { branch });
       prevBassPitch = p2;
       b++;
       continue;

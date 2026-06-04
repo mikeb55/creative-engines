@@ -68,6 +68,7 @@ export const EFFECTIVE_HARMONY_TRUTH_REGISTRY: readonly EffectiveHarmonyTruthReg
   { songwriterStyleIds: ['cole_porter'], metadataKey: 'colePorterEffectiveHarmonyBars' },
   { songwriterStyleIds: ['gil_evans'], metadataKey: 'gilEvansEffectiveHarmonyBars' },
   { songwriterStyleIds: ['maria_schneider'], metadataKey: 'mariaSchneiderEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['kenny_wheeler'], metadataKey: 'kennyWheelerEffectiveHarmonyBars' },
   { songwriterStyleIds: ['thad_jones'], metadataKey: 'thadJonesEffectiveHarmonyBars' },
   { songwriterStyleIds: ['charles_mingus'], metadataKey: 'charlesMingusEffectiveHarmonyBars' },
   { songwriterStyleIds: ['henry_threadgill'], metadataKey: 'henryThreadgillEffectiveHarmonyBars' },

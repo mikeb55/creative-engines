@@ -109,6 +109,21 @@ export const MARIA_SCHNEIDER_HARMONIC_STYLE_KEYS: readonly string[] = [
   'long_pedal_with_inner_motion',
 ];
 
+export const KENNY_WHEELER_HARMONIC_STYLE_KEYS: readonly string[] = [
+  'polyaxial_upper_bass_separation',
+  'tension_carry_forward',
+  'six_nine_sharp_eleven_sonorities',
+  'independent_bass_semitone_major_third',
+  'wide_leap_melodic_repair',
+  'open_cadence_no_terminal_triad',
+  'chamber_sparse_register_gap',
+  'flugelhorn_lyric_lead',
+  'woodwind_halo_color_tones',
+  'slash_chord_voicing_specificity',
+  'anacrusis_barline_deflection',
+  'fragile_unstable_sonority_field',
+];
+
 /** Wayne Shorter — motivic harmony, axis motion, melody-driven form (research-grounded Style Panel tags). */
 /** Henry Threadgill — interval-set systems, modular forms, anti-metric ensemble logic. */
 export const HENRY_THREADGILL_HARMONIC_STYLE_KEYS: readonly string[] = [
@@ -207,6 +222,8 @@ export function resolveHarmonicVoiceStyleContextKeys(voiceId: SongwriterRuleId):
       return [...GIL_EVANS_HARMONIC_STYLE_KEYS];
     case 'maria_schneider':
       return [...MARIA_SCHNEIDER_HARMONIC_STYLE_KEYS];
+    case 'kenny_wheeler':
+      return [...KENNY_WHEELER_HARMONIC_STYLE_KEYS];
     case 'wayne_shorter':
       return [...WAYNE_SHORTER_HARMONIC_STYLE_KEYS];
     case 'henry_threadgill':

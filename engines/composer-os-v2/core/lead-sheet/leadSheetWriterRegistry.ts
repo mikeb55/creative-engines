@@ -15,6 +15,7 @@ export const LEAD_SHEET_SONG_MODE_WRITERS = [
   'debussy',
   'duke_ellington',
   'maria_schneider',
+  'kenny_wheeler',
   'thelonious_monk',
 ] as const;
 

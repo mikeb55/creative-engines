@@ -52,6 +52,7 @@ import { runThadJonesSliceSmokeTests } from './thadJonesSliceSmoke.test';
 import { runBasieSliceSmokeTests } from './basieSliceSmoke.test';
 import { runBobBrookmeyerSliceSmokeTests } from './bobBrookmeyerSliceSmoke.test';
 import { runOliverNelsonSliceSmokeTests } from './oliverNelsonSliceSmoke.test';
+import { runWheelerLyricSliceSmokeTests } from './wheelerLyricSliceSmoke.test';
 import { runEcmChamberVariantSweepTests } from './ecmChamberVariantSweep.test';
 import { runAlternateGuitarTuningsTests } from './alternateGuitarTunings.test';
 import { runImportHarmonyEnsembleSmokeTests } from './importHarmonyEnsembleSmoke.test';
@@ -200,6 +201,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Thad Jones songwriter slice', run: runThadJonesSliceSmokeTests },
   { label: 'Count Basie songwriter slice', run: runBasieSliceSmokeTests },
   { label: 'Bob Brookmeyer songwriter slice', run: runBobBrookmeyerSliceSmokeTests },
+  { label: 'Kenny Wheeler songwriter slice', run: runWheelerLyricSliceSmokeTests },
   { label: 'Oliver Nelson songwriter slice', run: runOliverNelsonSliceSmokeTests },
   { label: 'ECM chamber variant sweep (OOM guard)', run: runEcmChamberVariantSweepTests },
   { label: 'Import harmony ensemble (Big Band / String Quartet)', run: runImportHarmonyEnsembleSmokeTests },

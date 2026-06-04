@@ -67,6 +67,47 @@ function buildMethenyHarmony(totalBars: number, seed: number): HarmonyPlan {
   return { segments, totalBars };
 }
 
+/** Wheeler: polyaxial upper-structure + independent bass — brittle intervallic chamber field. */
+function buildWheelerHarmony(totalBars: number, seed: number): HarmonyPlan {
+  const third = Math.floor(totalBars / 3);
+  const a = third;
+  const b = third;
+  const c = totalBars - a - b;
+  const u0 = Math.sin(seed * 13.1 + 1) * 10000;
+  const u0f = u0 - Math.floor(u0);
+  const u1 = Math.sin(seed * 7.3 + 4) * 10000;
+  const u1f = u1 - Math.floor(u1);
+
+  const blockA = u0f < 0.34 ? 'Ebmaj7(add9,#11)/G' : u0f < 0.67 ? 'Bb6/9(#11)/D' : 'Fmaj9(no3)/A';
+  const blockB = u1f < 0.5 ? 'Abmaj7(add11)/Eb' : 'Db6/9(add9)/Bb';
+  const blockC = u1f < 0.55 ? 'Bmaj7(add9)/F#' : 'Bb6/9(#11)/F';
+
+  return {
+    segments: [
+      { chord: blockA, bars: a },
+      { chord: blockB, bars: b },
+      { chord: blockC, bars: c },
+    ],
+    totalBars,
+  };
+}
+
+function wheelerDensityWaves(totalBars: number): DensityCurve {
+  const quarter = Math.floor(totalBars / 4);
+  const q2 = quarter;
+  const q3 = quarter;
+  const q4 = totalBars - 3 * quarter;
+  return {
+    totalBars,
+    segments: [
+      { startBar: 1, length: q2, level: 'sparse' },
+      { startBar: 1 + q2, length: q3, level: 'medium' },
+      { startBar: 1 + q2 + q3, length: 1, level: 'sparse' },
+      { startBar: 1 + q2 + q3 + 1, length: Math.max(1, q4 - 1), level: 'medium' },
+    ],
+  };
+}
+
 /** Schneider: three areas — per-block colour shifts (same broad identity). */
 function buildSchneiderHarmony(totalBars: number, seed: number): HarmonyPlan {
   const third = Math.floor(totalBars / 3);
@@ -136,6 +177,49 @@ function schneiderDensityWaves(totalBars: number): DensityCurve {
 
 function buildEcmMetrics(mode: EcmChamberMode, totalBars: number): EcmGenerationMetrics {
   const third = Math.floor(totalBars / 3);
+  if (mode === 'ECM_WHEELER_CHAMBER') {
+    return {
+      mode,
+      sections: [
+        {
+          label: 'A1',
+          startBar: 1,
+          length: third,
+          foregroundLineCount: 1,
+          backgroundComplexityScore: 2,
+          avgChordsPerBar: 0.18,
+          cadenceCount: 0,
+          swellEvents: 1,
+          textureStates: ['intervallic_field', 'thin_bass', 'halo_sus'],
+        },
+        {
+          label: 'B',
+          startBar: 1 + third,
+          length: third,
+          foregroundLineCount: 2,
+          backgroundComplexityScore: 3,
+          avgChordsPerBar: 0.22,
+          cadenceCount: 0,
+          swellEvents: 1,
+          textureStates: ['polyaxial_shift', 'register_gap', 'breath'],
+        },
+        {
+          label: 'A2',
+          startBar: 1 + 2 * third,
+          length: totalBars - 2 * third,
+          foregroundLineCount: 1,
+          backgroundComplexityScore: 2,
+          avgChordsPerBar: 0.15,
+          cadenceCount: 0,
+          swellEvents: 1,
+          textureStates: ['fragile_stable', 'open_6_9', 'unresolved_tail'],
+        },
+      ],
+      motifEchoSegments: 3,
+      innerVoiceSmoothnessEstimate: 0.38,
+      strongCadenceEstimate: 0.08,
+    };
+  }
   if (mode === 'ECM_METHENY_QUARTET') {
     return {
       mode,
@@ -230,14 +314,18 @@ export function buildEcmChamberContext(
   const preset = ecmChamberPreset;
   const totalBars = opts?.totalBars ?? ECM_DEFAULT_TOTAL_BARS;
   const harmony =
-    mode === 'ECM_SCHNEIDER_CHAMBER'
-      ? buildSchneiderHarmony(totalBars, seed)
-      : buildMethenyHarmony(totalBars, seed);
+    mode === 'ECM_WHEELER_CHAMBER'
+      ? buildWheelerHarmony(totalBars, seed)
+      : mode === 'ECM_SCHNEIDER_CHAMBER'
+        ? buildSchneiderHarmony(totalBars, seed)
+        : buildMethenyHarmony(totalBars, seed);
   const chordSymbolPlan = chordPlanFromHarmony(harmony);
   const feel =
-    mode === 'ECM_SCHNEIDER_CHAMBER'
-      ? { mode: 'straight' as const, intensity: 0.48, syncopationDensity: 'low' as const }
-      : { mode: 'straight' as const, intensity: 0.52, syncopationDensity: 'low' as const };
+    mode === 'ECM_WHEELER_CHAMBER'
+      ? { mode: 'straight' as const, intensity: 0.44, syncopationDensity: 'low' as const }
+      : mode === 'ECM_SCHNEIDER_CHAMBER'
+        ? { mode: 'straight' as const, intensity: 0.48, syncopationDensity: 'low' as const }
+        : { mode: 'straight' as const, intensity: 0.52, syncopationDensity: 'low' as const };
 
   const third = Math.floor(totalBars / 3);
   const sections = [
@@ -257,7 +345,11 @@ export function buildEcmChamberContext(
   const release = runReleaseReadinessGate({ validationPassed: true, exportValid: true, mxValid: true });
   const ecmMetrics = buildEcmMetrics(mode, totalBars);
   const densityCurve: DensityCurve =
-    mode === 'ECM_METHENY_QUARTET' ? tileMethenyDensity(totalBars) : schneiderDensityWaves(totalBars);
+    mode === 'ECM_METHENY_QUARTET'
+      ? tileMethenyDensity(totalBars)
+      : mode === 'ECM_WHEELER_CHAMBER'
+        ? wheelerDensityWaves(totalBars)
+        : schneiderDensityWaves(totalBars);
 
   return {
     systemVersion: '2.0.0',
@@ -290,7 +382,10 @@ export function buildEcmChamberContext(
     validation: { gates: [], passed: true },
     readiness: { release: release.release, mx: release.mx },
     styleOverrides: {
-      ecm: { variant: mode === 'ECM_SCHNEIDER_CHAMBER' ? 'schneider' : 'metheny' },
+      ecm: {
+        variant:
+          mode === 'ECM_WHEELER_CHAMBER' ? 'wheeler' : mode === 'ECM_SCHNEIDER_CHAMBER' ? 'schneider' : 'metheny',
+      },
     },
   };
 }

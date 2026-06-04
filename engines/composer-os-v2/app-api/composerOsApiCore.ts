@@ -176,9 +176,13 @@ function coerceMartinoConfigFromBody(
         ? o.barry_harris_profile.trim()
         : '';
   const ecmModeRaw =
-    o.ecmMode === 'ECM_METHENY_QUARTET' || o.ecmMode === 'ECM_SCHNEIDER_CHAMBER'
+    o.ecmMode === 'ECM_METHENY_QUARTET' ||
+    o.ecmMode === 'ECM_SCHNEIDER_CHAMBER' ||
+    o.ecmMode === 'ECM_WHEELER_CHAMBER'
       ? o.ecmMode
-      : o.ecm_mode === 'ECM_METHENY_QUARTET' || o.ecm_mode === 'ECM_SCHNEIDER_CHAMBER'
+      : o.ecm_mode === 'ECM_METHENY_QUARTET' ||
+          o.ecm_mode === 'ECM_SCHNEIDER_CHAMBER' ||
+          o.ecm_mode === 'ECM_WHEELER_CHAMBER'
         ? o.ecm_mode
         : typeof o.ecm_mode === 'string' && o.ecm_mode.trim()
           ? o.ecm_mode.trim()
@@ -650,7 +654,9 @@ export function apiGenerate(
           : undefined,
       chordProgressionText,
       ecmMode:
-        body.ecmMode === 'ECM_METHENY_QUARTET' || body.ecmMode === 'ECM_SCHNEIDER_CHAMBER'
+        body.ecmMode === 'ECM_METHENY_QUARTET' ||
+        body.ecmMode === 'ECM_SCHNEIDER_CHAMBER' ||
+        body.ecmMode === 'ECM_WHEELER_CHAMBER'
           ? body.ecmMode
           : undefined,
       variationId: typeof body.variationId === 'string' ? body.variationId : undefined,

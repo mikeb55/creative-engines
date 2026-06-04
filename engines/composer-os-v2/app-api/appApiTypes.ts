@@ -121,7 +121,7 @@ export interface AppStyleStack {
 }
 
 /** ECM Chamber engine — mutually exclusive chamber behaviours */
-export type EcmChamberMode = 'ECM_METHENY_QUARTET' | 'ECM_SCHNEIDER_CHAMBER';
+export type EcmChamberMode = 'ECM_METHENY_QUARTET' | 'ECM_SCHNEIDER_CHAMBER' | 'ECM_WHEELER_CHAMBER';
 
 export interface AppLocks {
   melody?: boolean;

@@ -604,6 +604,21 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   }
 
   /**
+   * Kenny Wheeler: `precomputeKennyWheelerEffectiveHarmonyBars` applies polyaxial upper/bass paths.
+   * After precompute, `kennyWheelerEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const kwEff = meta?.kennyWheelerEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'kenny_wheeler' &&
+    Array.isArray(kwEff) &&
+    kwEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return kwEff[barIndex - 1]!;
+  }
+
+  /**
    * Bacharach: `precomputeBacharachEffectiveHarmonyBars` applies theatre-pop chromatic side-doors + deceptive cadences.
    * After precompute, `bacharachEffectiveHarmonyBars` is full-form and authoritative.
    */

@@ -24,7 +24,7 @@ Presets live in **`src/engine/ecmVrb.js`**; app state in **`VrbProfileContext`**
 
 Compiled harmonic voice bundles live in **`engines/composer-os-v2/core/composer/voiceRuleBundles.ts`**. Optional **`orchestrationPolicy.fingerprintReceipts`** are **research-derived orchestration planning lines** (not the same thing as **GCE structural memory** JSON fingerprints in **`gce-memory/fingerprints/`**). **`getVoiceRuleBundle(id)`** returns the bundle for harmonic-voice / BB pairing; unknown ids fall back to **`neutral`** (no receipts).
 
-**Deep (≥10 `fingerprintReceipts`):** **John Coltrane** (`john_coltrane`) **10** · **Pat Metheny** (`pat_metheny`) **12** · **Clare Fischer** (`clare_fischer`) **44** · **Quincy Jones** (`quincy_jones`) **46** · **Sammy Nestico** (`sammy_nestico`) **41** · **Count Basie** (`count_basie`) **38** · **Duke Ellington** (`duke_ellington` / `ellington`) **11** · **Gil Evans** (`gil_evans`) **11** · **Wayne Shorter** (`wayne_shorter`) **11** · **Maria Schneider** (`maria_schneider`) **11** · **Thad Jones** (`thad_jones`) **12** · **Charles Mingus** (`charles_mingus`) **11** · **Henry Threadgill** (`henry_threadgill`) **26** · **Bob Brookmeyer** (`bob_brookmeyer`) **12** · **Olivier Messiaen** (`messiaen` / `olivier_messiaen`) **12** · **Oliver Nelson** (`oliver_nelson`) **12**.
+**Deep (≥10 `fingerprintReceipts`):** **John Coltrane** (`john_coltrane`) **10** · **Pat Metheny** (`pat_metheny`) **12** · **Clare Fischer** (`clare_fischer`) **44** · **Quincy Jones** (`quincy_jones`) **46** · **Sammy Nestico** (`sammy_nestico`) **41** · **Count Basie** (`count_basie`) **38** · **Duke Ellington** (`duke_ellington` / `ellington`) **11** · **Gil Evans** (`gil_evans`) **11** · **Wayne Shorter** (`wayne_shorter`) **11** · **Maria Schneider** (`maria_schneider`) **11** · **Kenny Wheeler** (`kenny_wheeler`) **12** · **Thad Jones** (`thad_jones`) **12** · **Charles Mingus** (`charles_mingus`) **11** · **Henry Threadgill** (`henry_threadgill`) **26** · **Bob Brookmeyer** (`bob_brookmeyer`) **12** · **Olivier Messiaen** (`messiaen` / `olivier_messiaen`) **12** · **Oliver Nelson** (`oliver_nelson`) **12**.
 
 **Extended:** none — **`count_basie`** (**`CB_HARM_*`**, **`CB_VL_*`**, **`CB_RHYTHM_*`**, **`CB_FORM_*`**, **`CB_FP_*`**) raised the bundle to **deep**; slice layer still carries shout-chorus / riff-head / **Basie Button** behaviour.
 
@@ -40,6 +40,7 @@ Compiled harmonic voice bundles live in **`engines/composer-os-v2/core/composer/
 | **Gil Evans** (`gil_evans`) | 11 | **deep** |
 | **Wayne Shorter** (`wayne_shorter`) | 11 | **deep** |
 | **Maria Schneider** (`maria_schneider`) | 11 | **deep** |
+| **Kenny Wheeler** (`kenny_wheeler`) | 12 | **deep** |
 | **Thad Jones** (`thad_jones`) | 12 | **deep** |
 | **Charles Mingus** (`charles_mingus`) | 11 | **deep** |
 | **Henry Threadgill** (`henry_threadgill`) | 26 | **deep** |
@@ -52,6 +53,48 @@ Compiled harmonic voice bundles live in **`engines/composer-os-v2/core/composer/
 **Also bundled:** **Alban Berg** (`berg` / `alban_berg`) **4** — see **`voiceRuleBundles.ts`** for authoritative counts.
 
 **Ship hashes:** VRB deepen Ellington / Gil / Shorter / Schneider **`4aa848a5`** · Messiaen slice **`a4ae08de`** · Basie Song Mode **`ac875ae8`** · Quincy Song Mode + BB **`8b8775e4`** · BB composer stubs rail **`6344cdcb`** · Brookmeyer stack **`48e5407d`** · Oliver Nelson stack **`e4814fb3`**.
+
+---
+
+### Kenny Wheeler (`kenny_wheeler`)
+
+Wheeler harmony runs **two coordinated but independent processes** at once:
+
+1. **Upper sonority path** — major triads, sus collections, 6/9, maj7/#11 colour clusters (the “chord” as colour object).
+2. **Bass path** — independent motion biased to **semitone** and **major-third** relations.
+
+These are **not** “bass note under a chord symbol.” Upper and bass follow **different interval logics** (polyaxial separation). Melody floats above both, leaping to **9 / #11 / 6** rather than tracing roots — singing through the **register gap**.
+
+**Song Mode slice** — **`wheelerLyricSlice.ts`** (`kw:*` receipts): Step 1 upper sonority → Step 2 independent bass → Step 3 slash / spacing combine → Step 4 melody-over-gap behaviour (MAL + phrase receipts).
+
+**Six parameters** (0–1, defaults in parentheses):
+
+| Parameter | Default | Musical role | Sweet spot |
+|-----------|---------|--------------|------------|
+| `polyaxialHarmony` | 0.78 | Upper structure + independent bass vs tertian root-stack | 0.70–0.85 |
+| `tensionCarryForward` | 0.70 | 9, #11, maj7, 13, sus carry to next tension sonority | 0.65–0.80 |
+| `bassTrajectoryLogic` | 0.68 | Semitone / M3 bass relations across phrase units | 0.60–0.75 |
+| `melodicDisjunctionRate` | 0.64 | P4/P5/m6/M6/8ve leaps + stepwise repair in 1–3 notes | 0.58–0.72 |
+| `cadentialOpacity` | 0.76 | End on 6/9, maj7(add9), sus, slash — not plain I or V→I | 0.72–0.85 |
+| `voicingSpecificity` | 0.72 | Keep `Bb6/9#11` spelling; do not normalize to generic maj9 | 0.68–0.80 |
+
+**Wheeler vs Maria Schneider**
+
+| | **Wheeler** | **Schneider** |
+|---|-------------|---------------|
+| Harmonic engine | Polyaxial upper + bass | Pastoral modal / orchestral morph |
+| Texture | Brittle, intervallic, fragile stability | Cinematic bloom, continuous voice-leading |
+| Ensemble | Chamber sparse → medium bloom | Luxuriant sectional swells |
+| Cadence | Open 6/9 / sus / slash | Rich non-triadic but more “settled” |
+| Choose Wheeler when | Lyrical trumpet/flugel chamber jazz, ECM brittleness | Large-ensemble narrative arc, Data Lords vs Garden contrast |
+
+**ECM preset:** **`ECM_WHEELER_CHAMBER`** — intervallic density waves, more breath/thinning than Schneider; **`ECM_SCHNEIDER_CHAMBER`** remains orchestral cloud/swell.
+
+**Big Band arranger id:** **`wheeler`** — seven rules (flugel blend, woodwind halo on extensions, register separation, cross-section voicing, bloom-not-slam, silence architecture, no terminal triad).
+
+**Reference works:** *Ma Belle Hélène* · *Smatter* · *Angel Song* · *Music for Large & Small Ensembles* (Sweet Time Suite).
+
+**Evaluation:** **`wheelerStyleProfile.ts`** — hard fail on terminal root triad, voicing substitution, bebop chain > 0.20, Schneider-profile false positives.
 
 ---
 

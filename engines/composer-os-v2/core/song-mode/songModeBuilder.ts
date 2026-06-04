@@ -2186,6 +2186,87 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Cm11', 'Fm9', 'Bbmaj9', 'G13'],
     ],
   },
+  /** Kenny Wheeler — `wheeler_polyaxial`: upper-structure + independent bass (`wheelerLyricSlice.ts`). */
+  wheeler_polyaxial: {
+    verse: [
+      ['Ebmaj7(add9,#11)/G', 'Bb6/9(#11)/D', 'Fmaj9(no3)/A', 'Dbmaj7(add11)/Ab'],
+      ['Ab6/9(add9)/Eb', 'Dbmaj7(add9)/Bb', 'Gbmaj7(add11)/Db', 'Bmaj7(add9)/F#'],
+      ['Emaj7(add11)/B', 'A6/9(#11)/E', 'Dmaj9(no3)/A', 'Gmaj7(add9)/D'],
+      ['Cmaj7(add11)/E', 'F6/9(add9)/C', 'Bbmaj7(add9)/F', 'Eb6/9(#11)/Bb'],
+    ],
+    chorus: [
+      ['Gbmaj7(add9)/Db', 'B6/9(add9)/F#', 'Ebm7(add11)/Bb', 'Abmaj7(add9)/Eb'],
+      ['Db6/9(#11)/Ab', 'Gbmaj7(add11)/Db', 'Bmaj7(add9)/F#', 'E6/9(add9)/B'],
+      ['Abmaj7(add11)/Eb', 'Dbmaj9(no3)/Bb', 'Gb6/9(#11)/Db', 'Bmaj7(add9)/F#'],
+      ['Emaj7(add9)/B', 'A6/9(add9)/E', 'Dmaj7(add11)/A', 'Gmaj9(no3)/D'],
+    ],
+    bridge: [
+      ['Bm11', 'E7sus4(add9)/B', 'Amaj7(add11)/E', 'D6/9(add9)/A'],
+      ['Gm11', 'C7sus4(add9)/G', 'Fmaj7(add9,#11)/A', 'Bb6/9(add9)/F'],
+      ['Em11', 'A7sus4(add9)/E', 'Dmaj7(add11)/F#', 'G6/9(#11)/D'],
+      ['Cm11', 'F7sus4(add9)/C', 'Bbmaj7(add9)/D', 'Eb6/9(add9)/Bb'],
+    ],
+    pre_chorus: [
+      ['Am11', 'Dmaj7(add9)/F#', 'Gmaj7(add11)/B', 'C6/9(add9)/E'],
+      ['Fm11', 'Bbmaj7(add9)/D', 'Eb6/9(#11)/G', 'Abmaj7(add11)/Eb'],
+      ['Dm11', 'Gmaj7(add9)/B', 'Cm11', 'F6/9(add9)/A'],
+      ['Gm11', 'Cmaj7(add11)/E', 'Fmaj9(no3)/A', 'Bb6/9(add9)/F'],
+    ],
+  },
+  /** Kenny Wheeler — `wheeler_lyric_suspension`: sus / 6-9 lyrical field. */
+  wheeler_lyric_suspension: {
+    verse: [
+      ['Csus2(add9)/E', 'Fsus4(add9)/A', 'Bbsus2(add9)/D', 'Ebsus2(add9)/G'],
+      ['Ab6/9(add9)/Eb', 'Dbmaj7(add11)/Ab', 'Gb6/9(#11)/Db', 'Bmaj7(add9)/F#'],
+      ['Esus2(add9)/G#', 'Asus4(add9)/C#', 'Dsus2(add9)/F#', 'G6/9(add9)/D'],
+      ['Cmaj7(add9)/E', 'F6/9(add9)/A', 'Bbsus2(add9)/D', 'Ebmaj7(add11)/G'],
+    ],
+    chorus: [
+      ['Gbmaj7(add9)/Db', 'B6/9(add9)/F#', 'Emaj7(add11)/B', 'A6/9(add9)/E'],
+      ['Dbmaj7(add11)/Ab', 'Gb6/9(#11)/Db', 'Bmaj7(add9)/F#', 'E6/9(add9)/B'],
+      ['Abmaj7(add9)/Eb', 'Db6/9(add9)/Bb', 'Gbmaj7(add11)/Db', 'B6/9(#11)/F#'],
+      ['Emaj7(add9)/B', 'A6/9(add9)/E', 'Dmaj7(add11)/A', 'G6/9(add9)/D'],
+    ],
+    bridge: [
+      ['Bm7sus4(add9)/F#', 'E7sus4(add9)/B', 'Amaj7(add11)/E', 'D6/9(add9)/A'],
+      ['Gm7sus4(add9)/D', 'C7sus4(add9)/G', 'Fmaj7(add9)/A', 'Bb6/9(add9)/F'],
+      ['Em7sus4(add9)/B', 'A7sus4(add9)/E', 'Dmaj7(add11)/F#', 'G6/9(#11)/D'],
+      ['Cm7sus4(add9)/G', 'F7sus4(add9)/C', 'Bbmaj7(add9)/D', 'Eb6/9(add9)/Bb'],
+    ],
+    pre_chorus: [
+      ['Am7sus4(add9)/E', 'Dmaj7(add9)/F#', 'Gmaj7(add11)/B', 'C6/9(add9)/E'],
+      ['Fm7sus4(add9)/C', 'Bbmaj7(add9)/D', 'Eb6/9(#11)/G', 'Abmaj7(add11)/Eb'],
+      ['Dm7sus4(add9)/A', 'Gmaj7(add9)/B', 'Cm7sus4(add9)/G', 'F6/9(add9)/A'],
+      ['Gm7sus4(add9)/D', 'Cmaj7(add11)/E', 'Fmaj9(no3)/A', 'Bb6/9(add9)/F'],
+    ],
+  },
+  /** Kenny Wheeler — `wheeler_chamber_ballad`: sparse chamber ECM ballad arcs. */
+  wheeler_chamber_ballad: {
+    verse: [
+      ['Cmaj7(add9,#11)/E', 'F6/9(add9)/A', 'Bbsus2(add9)/D', 'Ebmaj7(add11)/G'],
+      ['Abmaj7(add9)/Eb', 'Db6/9(add9)/Bb', 'Gbmaj7(add11)/Db', 'B6/9(#11)/F#'],
+      ['Em7(add11)/B', 'Amaj7(add9)/C#', 'D6/9(add9)/A', 'Gmaj7(add11)/D'],
+      ['Cm7(add11)/G', 'Fmaj7(add9)/A', 'Bbsus2(add9)/D', 'Eb6/9(add9)/Bb'],
+    ],
+    chorus: [
+      ['Gbmaj7(add9)/Db', 'B6/9(add9)/F#', 'Emaj7(add11)/B', 'A6/9(add9)/E'],
+      ['Dbmaj7(add11)/Ab', 'Gb6/9(#11)/Db', 'Bmaj7(add9)/F#', 'E6/9(add9)/B'],
+      ['Abmaj7(add9)/Eb', 'Db6/9(add9)/Bb', 'Gbmaj7(add11)/Db', 'B6/9(#11)/F#'],
+      ['Emaj7(add9)/B', 'A6/9(add9)/E', 'Dmaj7(add11)/A', 'G6/9(add9)/D'],
+    ],
+    bridge: [
+      ['Bm7(add11)/F#', 'E7sus4(add9)/B', 'Amaj7(add11)/E', 'D6/9(add9)/A'],
+      ['Gm7(add11)/D', 'C7sus4(add9)/G', 'Fmaj7(add9)/A', 'Bb6/9(add9)/F'],
+      ['Em7(add11)/B', 'A7sus4(add9)/E', 'Dmaj7(add11)/F#', 'G6/9(#11)/D'],
+      ['Cm7(add11)/G', 'F7sus4(add9)/C', 'Bbmaj7(add9)/D', 'Eb6/9(add9)/Bb'],
+    ],
+    pre_chorus: [
+      ['Am7(add11)/E', 'Dmaj7(add9)/F#', 'Gmaj7(add11)/B', 'C6/9(add9)/E'],
+      ['Fm7(add11)/C', 'Bbmaj7(add9)/D', 'Eb6/9(#11)/G', 'Abmaj7(add11)/Eb'],
+      ['Dm7(add11)/A', 'Gmaj7(add9)/B', 'Cm7(add11)/G', 'F6/9(add9)/A'],
+      ['Gm7(add11)/D', 'Cmaj7(add11)/E', 'Fmaj9(no3)/A', 'Bb6/9(add9)/F'],
+    ],
+  },
   /** Gil Evans — `gil_evans_modal`: modal impressionist / sustained fields (`gilEvansSlice.ts`). */
   gil_evans_modal: {
     verse: [
@@ -3173,6 +3254,11 @@ function chordSymbolsForSection(
         : tier === 1
           ? 'schneider_impressionist'
           : 'schneider_groove';
+  }
+  if (songwriterId === 'kenny_wheeler') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0 ? 'wheeler_polyaxial' : tier === 1 ? 'wheeler_lyric_suspension' : 'wheeler_chamber_ballad';
   }
   if (songwriterId === 'gil_evans') {
     const tier = Math.abs(seed) % 3;

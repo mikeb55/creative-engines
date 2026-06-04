@@ -54,6 +54,17 @@ const TB_MS: MotifCell2TransformBudget = {
   embedInnerVoice: true,
 };
 
+const TB_KW: MotifCell2TransformBudget = {
+  transpose: true,
+  invert: false,
+  retrograde: false,
+  augment: true,
+  diminish: false,
+  fragment: true,
+  sequence: false,
+  embedInnerVoice: true,
+};
+
 const TB_COL: MotifCell2TransformBudget = {
   transpose: true,
   invert: true,
@@ -115,6 +126,25 @@ function cellMariaSchneider(): MotifCell2 {
     harmonicMask: { chordTonesBias: 0.5, tensionBias: 0.3, avoidStrongLT: true, pedalFriendly: false },
     transformBudget: TB_MS,
     recallWeight: 0.9,
+  };
+}
+
+function cellKennyWheeler(): MotifCell2 {
+  const intervals = [5, -2, 4, -1];
+  const durations = [1.5, 0.5, 1, 0.5, 2];
+  const contour: ('up' | 'down' | 'same')[] = ['same', 'up', 'down', 'up', 'down'];
+  const accents = [0.42, 0.5, 0.55, 0.48, 0.38];
+  return {
+    id: 'kw_primary',
+    role: 'primary',
+    intervals,
+    durations,
+    contour,
+    accents,
+    registerBand: [58, 81],
+    harmonicMask: { chordTonesBias: 0.35, tensionBias: 0.45, avoidStrongLT: true, pedalFriendly: false },
+    transformBudget: TB_KW,
+    recallWeight: 0.86,
   };
 }
 
@@ -358,6 +388,7 @@ function bridgeFromVoicing(primary: MotifCell2, secondary: MotifCell2): MotifCel
 function primaryForVoice(canon: string, seed: number): MotifCell2 {
   if (canon === 'gil_evans') return cellGilEvans();
   if (canon === 'maria_schneider') return cellMariaSchneider();
+  if (canon === 'kenny_wheeler') return cellKennyWheeler();
   if (canon === 'john_coltrane') return cellJohnColtrane();
   if (canon === 'wayne_shorter') return cellWayneShorter();
   if (canon === 'henry_threadgill') return cellHenryThreadgill();

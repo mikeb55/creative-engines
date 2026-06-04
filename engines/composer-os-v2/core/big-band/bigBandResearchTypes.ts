@@ -13,6 +13,7 @@ export type BigBandComposerId =
   | 'mingus'
   | 'charles_mingus'
   | 'schneider'
+  | 'wheeler'
   | 'quincy_jones'
   | 'gil_evans'
   | 'bob_brookmeyer'

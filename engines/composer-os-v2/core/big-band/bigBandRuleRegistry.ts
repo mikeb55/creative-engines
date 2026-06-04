@@ -87,6 +87,15 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
     R('schneider.groove_switch', 'Groove type may change mid-piece', 'composer', 'rhythm', 73),
     R('schneider.climax_counterpoint', 'Climax: layered counter-lines over riff-shout', 'composer', 'orchestration', 84),
   ],
+  wheeler: [
+    R('wheeler.brass_blend', 'BrassBlendRule: flugelhorn/trombone/trumpet blend; forbid Basie punch unisons except rare contrast', 'composer', 'orchestration', 84),
+    R('wheeler.woodwind_halo', 'WoodwindHaloRule: flute/clarinet sustain 9/#11/maj7/13 above brass at 0.55–0.70 — not root doublings', 'composer', 'orchestration', 83),
+    R('wheeler.register_separation', 'RegisterSeparationRule: 10th–15th gap bass floor to upper colour stack; leave middle register porous', 'composer', 'density', 82),
+    R('wheeler.cross_section_voicing', 'CrossSectionVoicingRule: voicings across families — lead trumpet/alto, inner clarinet/trombone, bass separate', 'composer', 'harmony', 81),
+    R('wheeler.bloom_not_slam', 'BloomNotSlamRule: crescendi bloom into sonority — soft attack, long decay, no accented tutti hits', 'composer', 'form', 80),
+    R('wheeler.silence_architecture', 'SilenceArchitectureRule: every 8–16 bars one thinning event — 1–4 voices, sustained tail, or ensemble breath', 'composer', 'density', 79),
+    R('wheeler.no_terminal_triad', 'NoTerminalTriadRule: final bars avoid root-position tonic triad — prefer 6/9, maj7(add9), sus, slash upper-structure', 'composer', 'harmony', 85),
+  ],
   /** Quincy Jones — LA studio punch / crossover pop–jazz / tight rhythm-section locks. */
   quincy_jones: [
     R('quincy_jones.tight_brass', 'Brass punches locked to rhythm-section kicks & backbeats', 'composer', 'orchestration', 84),

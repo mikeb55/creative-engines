@@ -8,6 +8,7 @@ import {
   DUO_CONTRAPUNTAL_POLICY_JAZZ,
   DUO_VOICE_POLICY_SQ_FAMILY_STUB,
 } from './voiceRuleBundle';
+import { KENNY_WHEELER_VRF_FINGERPRINT_RECEIPTS } from './kennyWheelerVrbFingerprints';
 import { WAYNE_SHORTER_WS_HARM_FINGERPRINTS } from './wayneShorterHarmFingerprints';
 import { WAYNE_SHORTER_WS_MEL_FINGERPRINTS } from './wayneShorterMelFingerprints';
 import { WAYNE_SHORTER_WS_RHYTHM_FINGERPRINTS } from './wayneShorterRhythmFingerprints';
@@ -703,6 +704,58 @@ const MARIA_SCHNEIDER: VoiceRuleBundle = {
     bassSource: 'bass_line',
     rhythmicIndependenceFloor: 0.7,
     registerInterlock: true,
+    intervalPreference: 'chromatic_upper_extension',
+  },
+};
+
+const KENNY_WHEELER: VoiceRuleBundle = {
+  voiceId: 'kenny_wheeler',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 6,
+    allowMidBarChange: false,
+  },
+  bassPolicy: {
+    role: 'melodic-counterline',
+    allowOctaveDoubling: false,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 10,
+    maxSpreadSemitones: 36,
+    clusterSizeNotes: [3, 6],
+    forbidParallelFifths: true,
+    forbidOctaveDoubling: true,
+    lydianMaj7Sharp11Default: true,
+  },
+  melodicPolicy: {
+    contour: 'descending-arc',
+    maxLeapSemitones: 12,
+    preferredIntervalSets: [4, 5, 7, 8, 9, 12],
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 1,
+    mutateSingleVoiceAtTime: true,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: KENNY_WHEELER_VRF_FINGERPRINT_RECEIPTS,
+  },
+  formPolicy: {
+    narrativeArc: 'continuous-curve',
+    sectionRecallEnforced: false,
+    noCadentialRelease: true,
+  },
+  rhythmPolicy: {
+    antiMetric: true,
+  },
+  repairPolicy: {
+    resolveParallels: false,
+    maxVoiceOverlap: 2,
+  },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.72,
+    registerInterlock: false,
     intervalPreference: 'chromatic_upper_extension',
   },
 };
@@ -3304,6 +3357,9 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   ellington: DUKE_ELLINGTON,
   thad_jones: THAD_JONES,
   maria_schneider: MARIA_SCHNEIDER,
+  kenny_wheeler: KENNY_WHEELER,
+  wheeler: KENNY_WHEELER,
+  kw: KENNY_WHEELER,
   john_coltrane: JOHN_COLTRANE,
   wayne_shorter: WAYNE_SHORTER,
   bill_evans: BILL_EVANS,

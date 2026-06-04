@@ -12,7 +12,7 @@ import type { RiffProfile } from '../composer/riffProfileTypes';
 export type SongwriterPrimaryInstrumentKind = 'keys' | 'guitar' | 'ensemble' | 'other';
 
 /** Primary harmony carrier for comp lane routing. */
-export type PrimaryCompInstrument = 'keys' | 'guitar' | 'ensemble' | 'sax';
+export type PrimaryCompInstrument = 'keys' | 'guitar' | 'ensemble' | 'sax' | 'flugelhorn';
 
 export type RegisterBiasId = 'mid' | 'wide' | 'low_mid';
 
@@ -96,6 +96,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   quincy_jones_film: 'keys',
   bob_brookmeyer: 'keys',
   maria_schneider: 'keys',
+  kenny_wheeler: 'flugelhorn',
   clare_fischer: 'keys',
   manny_albam: 'keys',
   oliver_nelson: 'keys',
@@ -415,6 +416,31 @@ const MARIA_SCHNEIDER_KEYS_COMP: SongwriterCompProfile = {
   ],
 };
 
+const KENNY_WHEELER_FLUGEL_COMP: SongwriterCompProfile = {
+  id: 'kenny_wheeler',
+  primaryCompInstrument: 'flugelhorn',
+  voicingBias: [
+    'upper_structure_sus_six_nine_sharp_eleven',
+    'independent_bass_semitone_major_third',
+    'slash_polyaxial_spacing',
+    'preserve_specific_six_nine_sharp_eleven_spellings',
+  ],
+  registerBias: 'wide',
+  rhythmicFeel: [
+    'floating_phrase_anacrusis',
+    'barline_tie_ambiguity',
+    'chamber_sparse_to_medium_bloom',
+  ],
+  smallMovementRules: [
+    'bass_trajectory_independent_of_upper_root',
+    'tension_carry_not_functional_resolve',
+    'open_cadence_six_nine_maj7_add9',
+  ],
+  receiptLines: [
+    'Harmonic voice Kenny Wheeler — polyaxial ECM/chamber jazz: upper sonority + independent bass; flugel/trumpet lyric lead; woodwind halo on 9/#11; brittle intervallic melody with stepwise repair. Versus Schneider: less cinematic bloom, more fragile unstable sonorities. Not an imitation of any artist.',
+  ],
+};
+
 const JONI_ACOUSTIC_COMP: SongwriterCompProfile = {
   id: 'joni_mitchell',
   primaryCompInstrument: 'guitar',
@@ -496,6 +522,8 @@ export function getSongwriterCompProfile(raw: string | undefined | null): Songwr
       return DUKE_ELLINGTON_KEYS_COMP;
     case 'maria_schneider':
       return MARIA_SCHNEIDER_KEYS_COMP;
+    case 'kenny_wheeler':
+      return KENNY_WHEELER_FLUGEL_COMP;
     case 'henry_threadgill':
       return HENRY_THREADGILL_KEYS_COMP;
     case 'charles_mingus':

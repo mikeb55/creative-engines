@@ -114,6 +114,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   { match: (m) => m?.songwriterStyleId === 'fela_kuti', effKey: 'felaKutiEffectiveHarmonyBars', sliceId: 'fela_kuti' },
   { match: (m) => m?.songwriterStyleId === 'cole_porter', effKey: 'colePorterEffectiveHarmonyBars', sliceId: 'cole_porter' },
   { match: (m) => m?.songwriterStyleId === 'maria_schneider', effKey: 'mariaSchneiderEffectiveHarmonyBars', sliceId: 'maria_schneider' },
+  { match: (m) => m?.songwriterStyleId === 'kenny_wheeler', effKey: 'kennyWheelerEffectiveHarmonyBars', sliceId: 'kenny_wheeler' },
   { match: (m) => m?.songwriterStyleId === 'bacharach', effKey: 'bacharachEffectiveHarmonyBars', sliceId: 'bacharach' },
   { match: (m) => m?.songwriterStyleId === 'donald_fagen', effKey: 'donaldFagenEffectiveHarmonyBars', sliceId: 'donald_fagen' },
   { match: (m) => m?.songwriterStyleId === 'ecm_chamber', effKey: 'ecmChamberEffectiveHarmonyBars', sliceId: 'ecm_chamber' },
