@@ -1,9 +1,22 @@
 # Engine Master Palette
 
-**Version 1.0**  
+**Version 1.1** — updated 2026-06-04 for Composer OS v2 composer status  
 **Style-agnostic, instrumentation-agnostic**
 
-**Location:** `C:\Users\mike\Documents\Cursor AI Projects\creative-engines`
+**Location:** `C:\Users\mike\Documents\Cursor AI Projects\creative-engines` (legacy palette doc); authoritative v2 implementation lives in **`engines/composer-os-v2/`**.
+
+---
+
+## Composer OS v2 — implementation status (2026-06-04)
+
+| Composer | Slice / surface | Status | Notes |
+|----------|-----------------|--------|-------|
+| Henry Threadgill | `ht:*` | **Fully implemented** | Song Mode slice + BB **`henry_threadgill`** / **`threadgill`** (v103d) |
+| Kenny Wheeler | `kw:*` | **Fully implemented** | **`wheelerLyricSlice.ts`** + BB **`wheeler`**; supersedes legacy Python engine (v103e) |
+| Billy Strayhorn | `bs:*` | **Fully implemented** | Chromatic song-form slice + BB **`strayhorn`** (v103f) |
+| Wheeler Lyric Engine (Python) | — | **Legacy** | Referenced only — use v2 **`kenny_wheeler`** instead |
+
+All other **fully implemented** v2 composers (Maria Schneider, Gil Evans, Brookmeyer, Shorter, Zappa, Mingus, Ellington, Basie, Thad Jones, Nelson, Nestico, Fischer, Quincy, Evans, Coltrane, Monk, Harris, Hill, Parker, Jim Hall, Hancock, Metheny, Tyner, Miles, Jobim, Martino preset) — see **`docs/COMPOSER_HANDBOOK.md`** § Master composer reference (v2).
 
 ---
 
@@ -14,7 +27,7 @@
 | 1 | Scofield–Holland Groove Engine | Syncopated, bass-driven, medium tempo |
 | 2 | Shorter Narrative Engine | Motif-driven, dramatic arcs |
 | 3 | Frisell Atmosphere Engine | Spacious, lyrical, atmospheric |
-| 4 | Wheeler Lyric Engine | Luminous, floating harmony |
+| 4 | Wheeler Lyric Engine | Luminous, floating harmony — **legacy Python**; v2: **`kenny_wheeler`** (`kw:*`) **fully implemented** |
 | 5 | Stravinsky Pulse Engine | Rhythmic cells, shifting meters |
 | 6 | Zappa Disruption Engine | Secondary only — ensemble hits, fractures |
 | 7 | Slonimsky Harmonic Engine | Intervallic symmetry, exotic movement |

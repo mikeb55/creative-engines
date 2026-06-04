@@ -57,6 +57,62 @@ Compiled harmonic voice bundles live in **`engines/composer-os-v2/core/composer/
 
 ---
 
+## Master composer reference (v2)
+
+Canonical Song Mode / Big Band composers in **`engines/composer-os-v2`**. **Slice id** = harmony receipt prefix on golden-path precompute. **Status:** **fully implemented** = slice + golden-path wiring + (where applicable) VRB/BB/eval; **partial** = UI or VRB only; **legacy** = superseded external engine.
+
+### Fully implemented in v2
+
+| Composer | Id | Slice | Status | Identity (one line) | Key parameters |
+|----------|-----|-------|--------|---------------------|----------------|
+| Maria Schneider | `maria_schneider` | `ms:*` | fully implemented | Pastoral modal orchestral morph, density-as-texture, long pedal fields | `schneiderPhase`, device passes **d1–d5** |
+| Gil Evans | `gil_evans` | `ge:*` | fully implemented | Cool modal colour fields, side-slip orchestration, sparse rhythm hooks | `gilEvansPhase`, side-slip / modal passes |
+| Bob Brookmeyer | `bob_brookmeyer` | `brk:*` | fully implemented | Line-first quartal counterpoint, pitch-module episodes | `brookmeyerPeriod`, `contrapuntalLinePolicy` |
+| Wayne Shorter | `wayne_shorter` | `ws:*` | fully implemented | Lateral modal plateaus, dramatic harmonic colour turns | `waynePhase`, device passes **d1–d5** |
+| Pat Martino | `martino_linear` preset | — | fully implemented | Linear bebop guitar over supplied changes (MusicContext producer, not Song Mode slice) | `martino_linear` preset, solo density / breath rules |
+| Frank Zappa | `frank_zappa` | `fz:*` | fully implemented | Odd-meter cells, motif lock, guide-tone bass authority, no rolling ii–V | `zappaPhase`, `rhythmicCellLock`, motif receipts |
+| Charles Mingus | `charles_mingus` | `cm:*` | fully implemented | Blues-episodic form, bass authority, abrupt texture shocks | `mingusEpisodePlan`, episode contrast params |
+| Duke Ellington | `duke_ellington` | `de:*` | fully implemented | Jungle timbre, call/response, shout derivation, player character | phrase roles, jungle/shout passes |
+| Count Basie | `count_basie` | `cb:*` | fully implemented | KC riff-head swing, sparse comp, Basie Button cadences | `basieTestamentMode`, riff / shout passes |
+| Thad Jones | `thad_jones` | `tj:*` | fully implemented | Extended common-practice nonachord stacks, soli vs shout | `thadPhase`, `nonachordBias`, `sideSlipRate`, `shoutAlterationMultiplier` |
+| Oliver Nelson | `oliver_nelson` | `on:*` | fully implemented | Pedal modal head + minor-blues solo layer, blues scale density | modal / blues enrichment passes |
+| Sammy Nestico | `sammy_nestico` | `sn:*` | fully implemented | Basie-school chart clarity, kicks, riff punches | shout / kick passes |
+| Clare Fischer | `clare_fischer` | `cf:*` | fully implemented | Dense Latin voicing grammar, rootless upper structures | voicing density passes |
+| Quincy Jones | `quincy_jones` | `qj:*` | fully implemented | Tight brass / pop–jazz crossover, rhythm-section lock | crossover harmony / punch passes |
+| Bill Evans | `bill_evans` | `be:*` | fully implemented | Extension-rich voicings, sus/quartal dominants, delayed tonic | extension / sus passes |
+| John Coltrane | `john_coltrane` | `jc:*` | fully implemented | Three-tonic (augmented-triad) motion + optional modal pedals | `coltranePhase` (**changes** / **modal**) |
+| Thelonious Monk | `thelonious_monk` | `tm:*` | fully implemented | Angular harmony, whole-tone clusters, deferred cadences | device passes **d1–d5** |
+| Barry Harris | `barry_harris` | `bh:*` | fully implemented | Bebop sixth-dim grammar, tritone subs, cluster-safe labels | bebop dominant / cadence passes |
+| Andrew Hill | `andrew_hill` | `ah:*` | fully implemented | Angular non-functional harmony, open cadences, sus stripping | `avoid_resolution`, device passes **d1–d5** |
+| Charlie Parker | `charlie_parker` | `cp:*` | fully implemented | Bebop ii–V–I clarify, enclosure, turnaround compression | device passes **d1–d5** |
+| Jim Hall | `jim_hall` | `jh:*` | fully implemented | Interval-first guitar comping, warm extensions, duo counter-melody | `warmExtensionBias`, interval-first passes |
+| Herbie Hancock | `herbie_hancock` | `hh:*` | fully implemented | Quartal / sus9 pedals, side-slip chromaticism, fusion upper-structure | `herbiePhase` (**modal** / **funk** / **vsop**) |
+| Pat Metheny | `pat_metheny` | `pm:*` | fully implemented | Lydian maj colour, pedal shimmer, ECM diatonic planing | Lydian / pedal / planing passes |
+| McCoy Tyner | `mccoy_tyner` | `mt:*` | fully implemented | Quartal stacks, pentatonic clusters, IV-rooted quartal over minor | quartal / pentatonic enrichment |
+| Miles Davis | `miles_davis` | `md:*` | fully implemented | Modal vamps, space, electric-fusion colour, sparse dominants | `milesPhase`, modal colour passes |
+| Antônio Carlos Jobim | `antonio_carlos_jobim` | `aj:*` | fully implemented | Bossa extended tertian harmony, Brazilian modal colour | bossa / Lydian colour passes |
+| Henry Threadgill | `henry_threadgill` | `ht:*` | fully implemented | Episodic interval-cell harmony, polymodal bass, anti-metric phrases | `intervalCellDensity`, `antiMetricStrength`, `polymodalSeparation`, `episodeContrast` |
+| Kenny Wheeler | `kenny_wheeler` | `kw:*` | fully implemented | Polyaxial upper sonority + independent bass, lyrical ECM brittleness | `polyaxialHarmony`, `tensionCarryForward`, `bassTrajectoryLogic`, `melodicDisjunctionRate`, `cadentialOpacity`, `voicingSpecificity` |
+| Billy Strayhorn | `billy_strayhorn` | `bs:*` | fully implemented | Chromatic song architecture + extended-tone melody/harmony fusion | `chromaticContinuity`, `extendedToneMelody`, `parallelColorMotion`, `phraseArcLength`, `innerVoiceActivity`, `closedBlockSustain` |
+
+### Partial / referenced only
+
+| Composer | Id | Status | Notes |
+|----------|-----|--------|-------|
+| Bill Holman | — | not yet built | Arranger research target; no slice |
+| Don Sebesky | `don_sebesky` | UI only | Arranger dropdown row; no v2 slice |
+| Manny Albam | `manny_albam` | UI only | Arranger dropdown row; no v2 slice |
+| Gerald Wilson | `gerald_wilson` | UI only | Arranger dropdown row; no v2 slice |
+| Neal Hefti | `neal_hefti` | UI only | Arranger dropdown row; no v2 slice |
+
+### Legacy (superseded)
+
+| Composer | Status | Notes |
+|----------|--------|-------|
+| Kenny Wheeler (Python `wheeler_lyric` engine) | legacy | Superseded by v103e **`kenny_wheeler`** / **`wheelerLyricSlice.ts`** (`kw:*`) |
+
+---
+
 ### Kenny Wheeler (`kenny_wheeler`)
 
 Wheeler harmony runs **two coordinated but independent processes** at once:
