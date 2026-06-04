@@ -24,7 +24,7 @@ Presets live in **`src/engine/ecmVrb.js`**; app state in **`VrbProfileContext`**
 
 Compiled harmonic voice bundles live in **`engines/composer-os-v2/core/composer/voiceRuleBundles.ts`**. Optional **`orchestrationPolicy.fingerprintReceipts`** are **research-derived orchestration planning lines** (not the same thing as **GCE structural memory** JSON fingerprints in **`gce-memory/fingerprints/`**). **`getVoiceRuleBundle(id)`** returns the bundle for harmonic-voice / BB pairing; unknown ids fall back to **`neutral`** (no receipts).
 
-**Deep (≥10 `fingerprintReceipts`):** **John Coltrane** (`john_coltrane`) **10** · **Pat Metheny** (`pat_metheny`) **12** · **Clare Fischer** (`clare_fischer`) **44** · **Quincy Jones** (`quincy_jones`) **46** · **Sammy Nestico** (`sammy_nestico`) **41** · **Count Basie** (`count_basie`) **38** · **Duke Ellington** (`duke_ellington` / `ellington`) **11** · **Billy Strayhorn** (`billy_strayhorn` / `strayhorn`) **12** · **Gil Evans** (`gil_evans`) **11** · **Wayne Shorter** (`wayne_shorter`) **11** · **Maria Schneider** (`maria_schneider`) **11** · **Kenny Wheeler** (`kenny_wheeler`) **12** · **Thad Jones** (`thad_jones`) **12** · **Charles Mingus** (`charles_mingus`) **11** · **Henry Threadgill** (`henry_threadgill`) **26** · **Bob Brookmeyer** (`bob_brookmeyer`) **12** · **Olivier Messiaen** (`messiaen` / `olivier_messiaen`) **12** · **Oliver Nelson** (`oliver_nelson`) **12**.
+**Deep (≥10 `fingerprintReceipts`):** **John Coltrane** (`john_coltrane`) **10** · **Pat Metheny** (`pat_metheny`) **12** · **Clare Fischer** (`clare_fischer`) **44** · **Quincy Jones** (`quincy_jones`) **46** · **Sammy Nestico** (`sammy_nestico`) **41** · **Count Basie** (`count_basie`) **38** · **Duke Ellington** (`duke_ellington` / `ellington`) **11** · **Billy Strayhorn** (`billy_strayhorn` / `strayhorn`) **12** · **Don Sebesky** (`don_sebesky` / `sebesky`) **12** · **Gil Evans** (`gil_evans`) **11** · **Wayne Shorter** (`wayne_shorter`) **11** · **Maria Schneider** (`maria_schneider`) **11** · **Kenny Wheeler** (`kenny_wheeler`) **12** · **Thad Jones** (`thad_jones`) **12** · **Charles Mingus** (`charles_mingus`) **11** · **Henry Threadgill** (`henry_threadgill`) **26** · **Bob Brookmeyer** (`bob_brookmeyer`) **12** · **Olivier Messiaen** (`messiaen` / `olivier_messiaen`) **12** · **Oliver Nelson** (`oliver_nelson`) **12**.
 
 **Extended:** none — **`count_basie`** (**`CB_HARM_*`**, **`CB_VL_*`**, **`CB_RHYTHM_*`**, **`CB_FORM_*`**, **`CB_FP_*`**) raised the bundle to **deep**; slice layer still carries shout-chorus / riff-head / **Basie Button** behaviour.
 
@@ -94,13 +94,13 @@ Canonical Song Mode / Big Band composers in **`engines/composer-os-v2`**. **Slic
 | Henry Threadgill | `henry_threadgill` | `ht:*` | fully implemented | Episodic interval-cell harmony, polymodal bass, anti-metric phrases | `intervalCellDensity`, `antiMetricStrength`, `polymodalSeparation`, `episodeContrast` |
 | Kenny Wheeler | `kenny_wheeler` | `kw:*` | fully implemented | Polyaxial upper sonority + independent bass, lyrical ECM brittleness | `polyaxialHarmony`, `tensionCarryForward`, `bassTrajectoryLogic`, `melodicDisjunctionRate`, `cadentialOpacity`, `voicingSpecificity` |
 | Billy Strayhorn | `billy_strayhorn` | `bs:*` | fully implemented | Chromatic song architecture + extended-tone melody/harmony fusion | `chromaticContinuity`, `extendedToneMelody`, `parallelColorMotion`, `phraseArcLength`, `innerVoiceActivity`, `closedBlockSustain` |
+| Don Sebesky | `don_sebesky` | `ds:*` | fully implemented | CTI production-orchestra: groove bed, string halo, melody-legible reharm, tiered lifts | `groovePersistence`, `stringProminence`, `melodyLegibility`, `functionalLegibility`, `liftToBlareArc`, `soloistSpotlight`, `centerFillDensity` |
 
 ### Partial / referenced only
 
 | Composer | Id | Status | Notes |
 |----------|-----|--------|-------|
 | Bill Holman | — | not yet built | Arranger research target; no slice |
-| Don Sebesky | `don_sebesky` | UI only | Arranger dropdown row; no v2 slice |
 | Manny Albam | `manny_albam` | UI only | Arranger dropdown row; no v2 slice |
 | Gerald Wilson | `gerald_wilson` | UI only | Arranger dropdown row; no v2 slice |
 | Neal Hefti | `neal_hefti` | UI only | Arranger dropdown row; no v2 slice |
@@ -110,6 +110,54 @@ Canonical Song Mode / Big Band composers in **`engines/composer-os-v2`**. **Slic
 | Composer | Status | Notes |
 |----------|--------|-------|
 | Kenny Wheeler (Python `wheeler_lyric` engine) | legacy | Superseded by v103e **`kenny_wheeler`** / **`wheelerLyricSlice.ts`** (`kw:*`) |
+
+---
+
+### Don Sebesky (`don_sebesky`)
+
+Sebesky is the **first CTI-world composer** in Composer OS. Every other orchestral voice in the ECM-adjacent lane — Schneider, Wheeler, Evans — is porous, suspended, chamber-like, and often unresolved. Sebesky is the **opposite**: center-filled, groove-driven, lush, immediate, melody-legible, and **production-shaped**. He arranges like a master record producer using orchestra to make jazz feel expensive, inevitable, and immediately graspable.
+
+**CTI vs ECM (plain language)**
+
+| | **ECM-adjacent (Schneider / Evans / Wheeler)** | **CTI Sebesky** |
+|---|-----------------------------------------------|-----------------|
+| Spacing | Porous, registral gaps, chamber transparency | Center-filled tutti, 4–5 octave spread with filled mid |
+| Time | Floating, elastic, delayed climaxes | Stable groove bed; rhythm section stays legible |
+| Harmony | Suspended fields, modal ambiguity | Functionally trackable plus rich extensions (maj9, 6/9, 13, #11) |
+| Melody | May dissolve into orchestral process | Tune stays recognisable under reharm |
+| Form | Organic narrative / atmosphere-led | Discrete production sections with role changes |
+| Surface | Low-gloss blends, silence structural | Strings/harp sheen, brass crowns, produced swells |
+
+**Formal architecture (track-format):** intro string/harp halo → groove statement → solo frame (thinned texture) → orchestral lift (tiered strings → brass/reeds → tutti) → reprise/arrival. **Not** Schneider’s organic narrative; **not** Evans’s atmosphere-led transformation.
+
+**Song Mode slice** — **`donSebeskySlice.ts`** (`ds:*` receipts): functional-plus-colour grid; melody-legible reharm; sectional production markers; minimum **2** lift-to-blare events.
+
+**Seven parameters** (0–1, defaults in parentheses):
+
+| Parameter | Default | Musical role | Sweet spot |
+|-----------|---------|--------------|------------|
+| `groovePersistence` | 0.78 | Rhythm section keeps stable pulse after intro | 0.70–0.85 |
+| `stringProminence` | 0.68 | Strings/harp active across arrangement | 0.55–0.75 |
+| `melodyLegibility` | 0.74 | Reharm under fixed tune contour | 0.68–0.80 |
+| `functionalLegibility` | 0.72 | Chords trackable in functional/tonicised frame | 0.65–0.78 |
+| `liftToBlareArc` | 0.66 | Tiered crescendo to tutti accent | 0.58–0.72 |
+| `soloistSpotlight` | 0.70 | Texture 30–50% thinner under solo | 0.62–0.78 |
+| `centerFillDensity` | 0.65 | Mid-register filled at tutti | 0.60–0.72 |
+
+**Sebesky vs Schneider / Evans / Wheeler**
+
+| | **Sebesky** | **Schneider** | **Gil Evans** | **Wheeler** |
+|---|-------------|---------------|---------------|-------------|
+| Engine | Production-orchestra over groove | Pastoral modal morph | Colour-field atmosphere | Polyaxial upper + bass |
+| Climax | Discrete lift hits (4–12 bars) | Slow atmospheric accretion | Diffuse arrival | Bloom, not shout |
+| Brass | Arrival amplifier at crowns | Colour counterlines | Mid-register blend mist | Flugel blend, no slam |
+| Choose Sebesky when | CTI record aesthetic, melody-forward chart, lush studio orchestration | Long-form narrative swell | Cool modal wash | ECM lyrical brittleness |
+
+**Big Band arranger id:** **`sebesky`** (maps from UI **`don_sebesky`**) — eight rules: GrooveFirst, StringUsage, HarpGloss, BrassArrival, SectionalArchitecture, ClimaxBuilder, OrchestraAnswer, CenterFill.
+
+**Reference works:** Wes Montgomery *Bumpin* · *A Day in the Life* (Beatles recast) · Freddie Hubbard *First Light* · Milt Jackson *Sunflower* · Jim Hall *Concierto* · *Giant Box* (Firebird / *Birds of Fire* synthesis).
+
+**Evaluation:** **`sebeskyStyleProfile.ts`** — pass when groove ≥ 0.70, strings ≥ 0.45, functional ≥ 0.60, lifts ≥ 2, center fill ≥ 0.65; hard fail on floating time, ECM porosity, Schneider slow-swell-only arcs, melody abstraction.
 
 ---
 

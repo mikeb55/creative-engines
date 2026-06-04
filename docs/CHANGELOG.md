@@ -2,7 +2,15 @@
 
 ### Added
 
+- **Don Sebesky v2 Song Mode slice (`ds:*`)** — **`donSebeskySlice.ts`**: CTI production-orchestra harmony; seven slice params (`groovePersistence`, `stringProminence`, `melodyLegibility`, `functionalLegibility`, `liftToBlareArc`, `soloistSpotlight`, `centerFillDensity`). Golden-path precompute, locked harmony routing, smoke **`donSebeskySliceSmoke.test.ts`**.
+- **Sebesky VRB bundle** — **`donSebeskyVrbFingerprints.ts`** — 12 fingerprints with probability targets; aliases `don_sebesky` / `sebesky` / `ds`.
+- **Sebesky BB rules** — eight named rules in **`bigBandRuleRegistry.ts`**: GrooveFirst, StringUsage, HarpGloss, BrassArrival, SectionalArchitecture, ClimaxBuilder, OrchestraAnswer, CenterFill. **`BigBandComposerId`** **`sebesky`** + preset support.
+- **Sebesky evaluation profile** — **`sebeskyStyleProfile.ts`** — CTI pass/fail gates + ECM/Schneider/Evans/Wheeler discrimination.
+- **CTI orchestral mode** — first CTI-world composer in the system (center-filled groove-orchestra vs ECM-adjacent voices).
+
 ### Fixed
+
+- **Sebesky promoted from UI-only to first-class v2 composer** — **`HomeGenerate.tsx`** shipped songwriter row + arranger → **`sebesky`** BB composer mapping in **`composerOsAppGeneration.ts`**.
 
 ---
 

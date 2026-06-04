@@ -76,6 +76,7 @@ import { ellingtonStyleProfile } from '../core/evaluation/ellingtonStyleProfile'
 import { strayhornStyleProfile } from '../core/evaluation/strayhornStyleProfile';
 import { schneiderStyleProfile } from '../core/evaluation/schneiderStyleProfile';
 import { quincyStyleProfile } from '../core/evaluation/quincyStyleProfile';
+import { sebeskyStyleProfile } from '../core/evaluation/sebeskyStyleProfile';
 import { thadJonesStyleProfile } from '../core/evaluation/thadJonesStyleProfile';
 import { gilEvansStyleProfile } from '../core/evaluation/gilEvansStyleProfile';
 import { bobBrookmeyerStyleProfile } from '../core/evaluation/bobBrookmeyerStyleProfile';
@@ -2538,6 +2539,8 @@ function bigBandEvaluationStyleProfile(
       return schneiderStyleProfile;
     case 'quincy_jones':
       return quincyStyleProfile;
+    case 'sebesky':
+      return sebeskyStyleProfile;
     case 'thad_jones':
     case 'thad':
       return thadJonesStyleProfile;

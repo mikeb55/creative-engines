@@ -9,7 +9,7 @@ import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
 import type { RiffProfile } from '../composer/riffProfileTypes';
 
 /** Primary instrument association for Song Mode menu writers (planning / receipts). */
-export type SongwriterPrimaryInstrumentKind = 'keys' | 'guitar' | 'ensemble' | 'other';
+export type SongwriterPrimaryInstrumentKind = 'keys' | 'guitar' | 'ensemble' | 'flugelhorn' | 'other';
 
 /** Primary harmony carrier for comp lane routing. */
 export type PrimaryCompInstrument = 'keys' | 'guitar' | 'ensemble' | 'sax' | 'flugelhorn';

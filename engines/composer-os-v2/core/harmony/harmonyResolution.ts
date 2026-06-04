@@ -490,6 +490,17 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
     return qjEff[barIndex - 1]!;
   }
 
+  const dsEff = meta?.donSebeskyEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'don_sebesky' &&
+    Array.isArray(dsEff) &&
+    dsEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return dsEff[barIndex - 1]!;
+  }
+
   /**
    * Gershwin: `precomputeGershwinEffectiveHarmonyBars` applies Songbook / chromatic / rhythm grid devices — receipts **`gg:*`**.
    */

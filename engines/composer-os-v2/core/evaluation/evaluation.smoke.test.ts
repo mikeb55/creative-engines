@@ -25,6 +25,7 @@ import { clareFischerStyleProfile } from './clareFischerStyleProfile';
 import { oliverNelsonStyleProfile } from './oliverNelsonStyleProfile';
 import { sammyNesticoStyleProfile } from './sammyNesticoStyleProfile';
 import { strayhornStyleProfile, evaluateStrayhornHardFails } from './strayhornStyleProfile';
+import { sebeskyStyleProfile, evaluateSebeskyHardFails } from './sebeskyStyleProfile';
 import { defaultGceWeights, evaluateGce } from './gceEvaluator';
 import { defaultLockGates, evaluateLock } from './lockGates';
 import { runDcrProtocol } from './dcrProtocol';
@@ -64,6 +65,7 @@ function testProfileRegistrySmoke(): boolean {
     clareFischerStyleProfile,
     oliverNelsonStyleProfile,
     sammyNesticoStyleProfile,
+    sebeskyStyleProfile,
   ];
   for (const p of profiles) {
     if (p.dimensions.length !== 4) return false;

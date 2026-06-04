@@ -34,6 +34,7 @@ const AUTO_RESOLVE_SONGWRITER_TO_VOICE_ID: ReadonlySet<string> = new Set([
   'gershwin',
   'cole_porter',
   'billy_strayhorn',
+  'don_sebesky',
 ]);
 
 export function attachVoiceRuleBundleAndHarmonicScenes(

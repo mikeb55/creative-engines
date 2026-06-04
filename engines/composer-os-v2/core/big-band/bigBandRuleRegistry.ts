@@ -154,6 +154,16 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
     R('quincy_jones.orchestral_bridge', 'Orchestral bridge lifts — dominant prolongation / pad handoffs', 'composer', 'harmony', 79),
     R('quincy_jones.groove_first', 'Groove-first reductions before orchestral peaks', 'composer', 'form', 78),
   ],
+  sebesky: [
+    R('sebesky.groove_first', 'GrooveFirstRule: rhythm section stable pulse ≥70% post-intro; orchestra floats above', 'composer', 'rhythm', 86),
+    R('sebesky.string_usage', 'StringUsageRule: strings/harp >50% bars — pad, double, swell, transition support', 'composer', 'orchestration', 84),
+    R('sebesky.harp_gloss', 'HarpGlossRule: harp at sectional seams and pre-lift — not constant wallpaper', 'composer', 'orchestration', 78),
+    R('sebesky.brass_arrival', 'BrassArrivalRule: brightest brass at crowns; mid-form reinforcement only', 'composer', 'orchestration', 82),
+    R('sebesky.sectional_architecture', 'SectionalArchitectureRule: 4–6 discrete sections with role change; intro texture ≤8 bars', 'composer', 'form', 83),
+    R('sebesky.climax_builder', 'ClimaxBuilderRule: tiered strings → brass/reeds → tutti; discrete production lifts', 'composer', 'density', 85),
+    R('sebesky.orchestra_answer', 'OrchestraAnswerRule: 2–4 bar ensemble answers after solo phrases', 'composer', 'form', 80),
+    R('sebesky.center_fill', 'CenterFillRule: mid-register filled at tutti; ECM registral porosity hard fail', 'composer', 'density', 84),
+  ],
   gil_evans: [
     // TODO: deprecated — now parsed from BigBandResearch.md
     R('gil_evans.colour_field', 'Harmonic colour fields over sparse rhythm hooks', 'composer', 'harmony', 83),

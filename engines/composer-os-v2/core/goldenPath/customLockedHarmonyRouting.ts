@@ -60,6 +60,7 @@ export const EFFECTIVE_HARMONY_TRUTH_REGISTRY: readonly EffectiveHarmonyTruthReg
   { songwriterStyleIds: ['clare_fischer'], metadataKey: 'clareFischerEffectiveHarmonyBars' },
   { songwriterStyleIds: ['oliver_nelson'], metadataKey: 'oliverNelsonEffectiveHarmonyBars' },
   { songwriterStyleIds: ['quincy_jones'], metadataKey: 'quincyJonesEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['don_sebesky'], metadataKey: 'donSebeskyEffectiveHarmonyBars' },
   { songwriterStyleIds: ['gershwin'], metadataKey: 'gershwinEffectiveHarmonyBars' },
   { songwriterStyleIds: ['arvo_part'], metadataKey: 'arvoPartEffectiveHarmonyBars' },
   { songwriterStyleIds: ['satie'], metadataKey: 'satieEffectiveHarmonyBars' },

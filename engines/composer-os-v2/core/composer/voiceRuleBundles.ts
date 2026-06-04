@@ -10,6 +10,7 @@ import {
 } from './voiceRuleBundle';
 import { KENNY_WHEELER_VRF_FINGERPRINT_RECEIPTS } from './kennyWheelerVrbFingerprints';
 import { BILLY_STRAYHORN_VRF_FINGERPRINT_RECEIPTS } from './billyStrayhornVrbFingerprints';
+import { DON_SEBESKY_VRF_FINGERPRINT_RECEIPTS } from './donSebeskyVrbFingerprints';
 import { WAYNE_SHORTER_WS_HARM_FINGERPRINTS } from './wayneShorterHarmFingerprints';
 import { WAYNE_SHORTER_WS_MEL_FINGERPRINTS } from './wayneShorterMelFingerprints';
 import { WAYNE_SHORTER_WS_RHYTHM_FINGERPRINTS } from './wayneShorterRhythmFingerprints';
@@ -1642,6 +1643,46 @@ const QUINCY_JONES: VoiceRuleBundle = {
       'QJ_FP_02 — Jazz/pop/funk/orchestral layers may coexist; transitions absorbed by fanfare or percussion break',
       'QJ_FP_03 — Accompanying lines reduce in density and register when soloist active; no contrapuntal competition with soloist',
     ],
+  },
+  formPolicy: {
+    narrativeArc: 'suite',
+    sectionRecallEnforced: true,
+  },
+  rhythmPolicy: { antiMetric: false },
+  repairPolicy: {
+    resolveParallels: true,
+    maxVoiceOverlap: 5,
+  },
+};
+
+const DON_SEBESKY: VoiceRuleBundle = {
+  voiceId: 'don_sebesky',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 4,
+    allowMidBarChange: false,
+  },
+  bassPolicy: {
+    role: 'root',
+    allowOctaveDoubling: true,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 8,
+    maxSpreadSemitones: 48,
+    clusterSizeNotes: [5, 9],
+    forbidParallelFifths: true,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'diatonic-step',
+    maxLeapSemitones: 9,
+    preferredIntervalSets: [2, 3, 4, 5, 7],
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 2,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: DON_SEBESKY_VRF_FINGERPRINT_RECEIPTS,
   },
   formPolicy: {
     narrativeArc: 'suite',
@@ -3430,6 +3471,9 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   clare_fischer: CLARE_FISCHER,
   oliver_nelson: OLIVER_NELSON,
   quincy_jones: QUINCY_JONES,
+  don_sebesky: DON_SEBESKY,
+  sebesky: DON_SEBESKY,
+  ds: DON_SEBESKY,
   berg: BERG,
   alban_berg: BERG,
   messiaen: MESSIAEN_SQ,

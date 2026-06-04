@@ -16,6 +16,7 @@ export type BigBandComposerId =
   | 'schneider'
   | 'wheeler'
   | 'quincy_jones'
+  | 'sebesky'
   | 'gil_evans'
   | 'bob_brookmeyer'
   | 'clare_fischer'

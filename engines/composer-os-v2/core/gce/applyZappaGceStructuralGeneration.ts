@@ -178,7 +178,7 @@ function applyZappaKindsToMacroFormPlan(
 export function shouldApplyZappaGceStructuralGeneration(context: CompositionContext): boolean {
   const id =
     context.generationMetadata?.songwriterStyleId ??
-    context.generationMetadata?.primarySongwriterStyleId;
+    context.generationMetadata?.songwriterStyleId;
   if (!isFrankZappaSongwriterId(id)) return false;
   return resolveZappaStyleMode(context) === 'compositional';
 }

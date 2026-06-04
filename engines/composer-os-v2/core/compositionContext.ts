@@ -32,6 +32,7 @@ import type { AlternateGuitarTuningResolved } from './song-mode/alternateGuitarT
 import type { CharlesMingusEpisodePlan } from './song-mode/mingusEpisodeTypes';
 import type { KennyWheelerSliceParams } from './song-mode/wheelerLyricSlice';
 import type { BillyStrayhornSliceParams } from './song-mode/billyStrayhornSlice';
+import type { DonSebeskySliceParams, SebeskyProductionSection } from './song-mode/donSebeskySlice';
 import type {
   HenryThreadgillEpisodePlan,
   HenryThreadgillSliceParams,
@@ -1491,6 +1492,23 @@ export interface GenerationMetadata {
   quincyJonesSliceReceipt?: string;
   quincyJonesEffectiveHarmonyBars?: string[];
   quincyJonesDeviceReceipts?: string[];
+  /** Don Sebesky — CTI production-orchestra slice (`donSebeskySlice.ts`). */
+  donSebeskyDiagnostics?: {
+    songwriterId: 'don_sebesky';
+    barsConsidered: number;
+    functionalTouches: number;
+    extensionTouches: number;
+    stringHaloTouches: number;
+    liftTouches: number;
+    sliceParams?: DonSebeskySliceParams;
+    deviceReceipts?: string[];
+  };
+  donSebeskySliceReceipt?: string;
+  donSebeskyEffectiveHarmonyBars?: string[];
+  donSebeskyDeviceReceipts?: string[];
+  donSebeskySliceParams?: DonSebeskySliceParams;
+  donSebeskyProductionSections?: SebeskyProductionSection[];
+  donSebeskyLiftEventCount?: number;
   /** George Gershwin — Songbook / concert jazz harmony (`gershwinSlice.ts`). */
   gershwinDiagnostics?: {
     songwriterId: 'gershwin';

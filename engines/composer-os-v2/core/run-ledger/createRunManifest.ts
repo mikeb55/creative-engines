@@ -10,6 +10,7 @@ import type {
   SongModeSectionBehaviourDescriptor,
   SongModeSectionShapingDiagnosticsV1,
 } from '../song-mode/songModeSectionTypes';
+import type { GenerationMetadata } from '../compositionContext';
 
 export interface CreateRunManifestInput {
   version: string;
@@ -94,6 +95,9 @@ export interface CreateRunManifestInput {
   importHarmonyLockedBarsCount?: RunManifest['importHarmonyLockedBarsCount'];
   motifAuthorityLevel?: RunManifest['motifAuthorityLevel'];
   motifDevelopmentSummary?: RunManifest['motifDevelopmentSummary'];
+  grooveScaffoldReceipt?: GenerationMetadata['grooveScaffoldReceipt'];
+  grooveScaffoldReceipts?: GenerationMetadata['grooveScaffoldReceipts'];
+  grooveScaffoldDiagnostics?: GenerationMetadata['grooveScaffoldDiagnostics'];
 }
 
 /** Create run manifest. */
@@ -181,5 +185,8 @@ export function createRunManifest(input: CreateRunManifestInput): RunManifest {
     importHarmonyLockedBarsCount: input.importHarmonyLockedBarsCount,
     motifAuthorityLevel: input.motifAuthorityLevel,
     motifDevelopmentSummary: input.motifDevelopmentSummary,
+    grooveScaffoldReceipt: input.grooveScaffoldReceipt,
+    grooveScaffoldReceipts: input.grooveScaffoldReceipts,
+    grooveScaffoldDiagnostics: input.grooveScaffoldDiagnostics,
   };
 }

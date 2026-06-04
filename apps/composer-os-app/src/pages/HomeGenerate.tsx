@@ -712,6 +712,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'kurt_weill', label: 'Kurt Weill' },
   { id: 'mahler', label: 'Mahler' },
   { id: 'maria_schneider', label: 'Maria Schneider' },
+  { id: 'don_sebesky', label: 'Don Sebesky' },
   { id: 'kenny_wheeler', label: 'Kenny Wheeler' },
   { id: 'max_martin', label: 'Max Martin' },
   { id: 'miles_davis', label: 'Miles Davis' },
@@ -968,6 +969,7 @@ const SONGWRITER_GROUP_SHIPPED_ORDER: readonly string[] = [
   'antonio_carlos_jobim',
   'herbie_hancock',
   'billy_strayhorn',
+  'don_sebesky',
 ];
 
 /** Shipped writers shown under the Singer-Songwriter subgroup (full slice; separate optgroup label). */

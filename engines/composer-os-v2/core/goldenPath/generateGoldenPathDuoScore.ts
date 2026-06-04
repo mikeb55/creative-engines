@@ -351,6 +351,13 @@ import {
   precomputeQuincyJonesEffectiveHarmonyBars,
 } from './quincyJonesSlice';
 import {
+  accumulateDonSebeskyHarmonyDiagnostics,
+  createDonSebeskyHarmonyAccumulator,
+  finalizeDonSebeskyMetadata,
+  precomputeDonSebeskyEffectiveHarmonyBars,
+  resolveDonSebeskySliceParams,
+} from './donSebeskySlice';
+import {
   accumulateBacharachHarmonyDiagnostics,
   createBacharachHarmonyAccumulator,
   finalizeBacharachMetadata,
@@ -2425,7 +2432,7 @@ function buildSongwriterMelodyProfile(
         densityBias: -0.08,
         offbeatBias: 0.38,
         intervalBias: 'leaping',
-        rhythmicFeel: 'floating',
+        rhythmicFeel: 'flowing',
       };
     case 'thad_jones':
       return {
@@ -2767,6 +2774,8 @@ function buildGuitarPart(
     normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'oliver_nelson';
   const isSongwriterQuincyJones =
     normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'quincy_jones';
+  const isSongwriterDonSebesky =
+    normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'don_sebesky';
   const isSongwriterFrippKingCrimson = genMeta?.songwriterStyleId === 'fripp_king_crimson';
   const bwAccum = createBrianWilsonHarmonyAccumulator();
   const swAccum = createStevieWonderHarmonyAccumulator();
@@ -2805,6 +2814,7 @@ function buildGuitarPart(
   const clareFischerAccum = createClareFischerHarmonyAccumulator();
   const nelsonAccum = createOliverNelsonHarmonyAccumulator();
   const qjJonesAccum = createQuincyJonesHarmonyAccumulator();
+  const dsSebeskyAccum = createDonSebeskyHarmonyAccumulator();
   const baAccum = createBacharachHarmonyAccumulator();
   const dfAccum = createDonaldFagenHarmonyAccumulator();
   const eccAccum = createEcmChamberHarmonyAccumulator();
@@ -2972,6 +2982,9 @@ function buildGuitarPart(
   }
   if (isSongwriterQuincyJones && isDuoGoldenPath) {
     precomputeQuincyJonesEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterDonSebesky && isDuoGoldenPath) {
+    precomputeDonSebeskyEffectiveHarmonyBars(context);
   }
   if (isSongwriterBacharach && isDuoGoldenPath) {
     precomputeBacharachEffectiveHarmonyBars(context);
@@ -3405,6 +3418,13 @@ function buildGuitarPart(
         b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
         resolveBarSymbol(context, b).symbol,
         qjJonesAccum
+      );
+    }
+    if (isSongwriterDonSebesky) {
+      accumulateDonSebeskyHarmonyDiagnostics(
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
+        dsSebeskyAccum
       );
     }
     if (isSongwriterBacharach) {
@@ -4337,6 +4357,13 @@ function buildGuitarPart(
 
   if (isSongwriterQuincyJones && context.generationMetadata) {
     finalizeQuincyJonesMetadata(context.generationMetadata, qjJonesAccum);
+  }
+  if (isSongwriterDonSebesky && context.generationMetadata) {
+    finalizeDonSebeskyMetadata(
+      context.generationMetadata,
+      dsSebeskyAccum,
+      resolveDonSebeskySliceParams(context.generationMetadata)
+    );
   }
 
   if (isSongwriterBacharach && context.generationMetadata) {

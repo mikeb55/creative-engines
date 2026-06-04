@@ -202,7 +202,6 @@ import { applyZappaGceStructuralFingerprintToContext, shouldApplyZappaGceStructu
 import { isFrankZappaSongwriterId, type ZappaGceMeterMode } from '../gce/frankZappaStructuralFingerprint';
 import type { Song } from '../section-architecture/sectionArchitectureTypes';
 import { resolveGenerationBarMeterMap } from '../section-architecture/resolveGenerationBarMeterMap';
-import { wireSongArchitectureAtPipelineEntry } from '../section-architecture/effectiveContextForBar';
 import {
   getSectionArchitectureDensityHint,
   hasSectionArchitecture,
