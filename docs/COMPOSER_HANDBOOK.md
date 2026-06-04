@@ -22,17 +22,17 @@ Presets live in **`src/engine/ecmVrb.js`**; app state in **`VrbProfileContext`**
 
 ## Group Mode — production worlds
 
-**Group Mode** clusters composers by **production logic** — how groove, space, strings, cadence, and sectional architecture behave on record — not by harmonic vocabulary alone. Two active groups ship shared defaults today; a third is reserved.
+**Group Mode** clusters composers by **production logic** — how groove, space, strings, cadence, and sectional architecture behave on record — not by harmonic vocabulary alone. Three active production groups ship shared defaults; composers **inherit group defaults** and override only where distinct.
 
 ### Why groups exist
 
-Individual slice params (Sebesky `groovePersistence`, Wheeler `cadentialOpacity`, etc.) capture **composer-specific** behaviour. Production groups capture **shared studio worldview**: ECM chamber space vs CTI/studio-orchestral immediacy vs (future) Blue Note post-bop core. Composers **inherit group defaults** via `resolveComposerParams(composerId, overrides)`; **composer overrides win** on any key conflict.
+Individual slice params (Sebesky `groovePersistence`, Wheeler `cadentialOpacity`, etc.) capture **composer-specific** behaviour. Production groups capture **shared studio worldview**: ECM chamber space · CTI/studio-orchestral immediacy · Blue Note / Impulse post-bop acoustic core. Composers **inherit group defaults** via `resolveComposerParams(composerId, overrides)`; **composer overrides win** on any key conflict.
 
 Engine: **`engines/composer-os-v2/core/groups/composerGroupEngine.ts`** · definitions: **`composerGroupDefinitions.ts`**.
 
 ### ECM Chamber Jazz
 
-**Identity:** Spacious, suspended, porous, unresolved. Silence is structural. Groove can dissolve. Chamber-space production — Manfred Eicher / Schneider / Wheeler / Metheny / Bill Evans lineage.
+**Identity:** Spacious, suspended, porous, unresolved. Silence is structural. Groove can dissolve. Chamber-space production — Manfred Eicher / Schneider / Wheeler / Metheny lineage.
 
 **Defaults (10 parameters):**
 
@@ -49,11 +49,9 @@ Engine: **`engines/composer-os-v2/core/groups/composerGroupEngine.ts`** · defin
 | `soloistSpotlight` | 0.45 | Solo as colour, not feature |
 | `sectionalContrastMode` | `gradual` | Sections melt into each other |
 
-**Members (fully implemented):** `maria_schneider`, `kenny_wheeler`, `gil_evans`, `henry_threadgill`, `bill_evans`, `pat_metheny`, `wayne_shorter`, `bob_brookmeyer`, `ecm_chamber`.
+**Members (fully implemented):** `maria_schneider`, `kenny_wheeler`, `gil_evans`, `henry_threadgill`, `bill_evans` (dual — default ECM), `pat_metheny`, `bob_brookmeyer`, `ecm_chamber`.
 
 **Partial / future:** Garbarek, Weber, Bley, Surman, Towner.
-
-**Precursors (reserved for Post-Bop Core — not assigned to ECM):** Monk, Coltrane, Miles, Herbie Hancock, McCoy Tyner.
 
 ### Studio Orchestral Jazz
 
@@ -78,26 +76,68 @@ Engine: **`engines/composer-os-v2/core/groups/composerGroupEngine.ts`** · defin
 
 **Partial / future:** Ogerman, Bob James, Mandel, Schifrin, Deodato, McFarland.
 
-### Post-Bop Core — coming soon
+### Post-Bop Core
 
-**Placeholder only** — no defaults yet. Reserved ids: Monk, Coltrane, Miles, Herbie Hancock, McCoy Tyner, Wayne Shorter (shared with ECM when active), Charlie Parker, Barry Harris, Andrew Hill, Jim Hall, Pat Martino.
+**Identity:** Blue Note / Impulse / Prestige acoustic world — **head, solos, head out**. Groove anchored; blues and modal harmony; direct, warm, present sound. Van Gelder recording aesthetic — not ECM spatial air, not CTI orchestral luxury. Small-to-medium ensemble; strings virtually absent.
 
-UI shows **Post-Bop Core (coming soon)** for composers not yet assigned to an active group. `isPostBopCore()` returns **false** until Group 3 ships.
+**Defaults:**
+
+| Parameter | Default | Musical meaning |
+|-----------|---------|-----------------|
+| `groovePersistence` | 0.72 | Strong pulse; tempo can breathe but groove never dissolves |
+| `registralPorosity` | 0.45 | Natural acoustic spacing — not ECM open, not CTI lush |
+| `stringProminence` | 0.05 | Acoustic combo world, not orchestral |
+| `cadentialResolution` | `functional_modal` | ii–V–I and modal vamps — extended, delayed, or substituted |
+| `ensembleDensityCurve` | `blowing_arc` | Head → solo intensity build → shout/soli → head out |
+| `silenceWeighting` | `rhythmic` | Breath and punctuation, not structural ECM space |
+| `productionGloss` | 0.30 | Dry-warm Van Gelder presence |
+| `melodyFraming` | `head_based` | Head stated, dissolved in solos, restated |
+| `soloistSpotlight` | 0.60 | Solo primary during blows; rhythm section equal partner |
+| `sectionalContrastMode` | `blowing_sections` | Contrast via solo rotation and intensity, not orchestration |
+
+**Members (fully implemented):** Monk, Coltrane, Parker, Miles Davis, Herbie Hancock, McCoy Tyner, Barry Harris, Andrew Hill, Jim Hall, Pat Martino, Wayne Shorter (dual — default Post-Bop), Bill Evans (dual — default ECM).
+
+**Partial / future:** Joe Henderson, Bobby Hutcherson, Lee Morgan, Hank Mobley, Horace Silver.
+
+### Dual-group composers
+
+Some writers span two production worlds. **`getComposerGroups(composerId)`** returns `primary`, optional `secondary`, and `defaultTo`. UI lists each composer **once** under their `defaultTo` group.
+
+| Composer | Primary | Secondary | Default UI group |
+|----------|---------|-----------|------------------|
+| **Wayne Shorter** | Post-Bop Core | ECM Chamber Jazz | Post-Bop Core |
+| **Bill Evans** | ECM Chamber Jazz | Post-Bop Core | ECM Chamber Jazz |
+
+**Invoke secondary group on demand:** pass the third argument to **`resolveComposerParams`**:
+
+```typescript
+resolveComposerParams('wayne_shorter', {}, 'ECM_CHAMBER_JAZZ');
+resolveComposerParams('bill_evans', {}, 'POST_BOP_CORE');
+```
 
 ### Overrides — which wins
 
-1. **`getComposerGroup(composerId)`** → active group or `null` (precursors / unassigned return `null`).
-2. **`getGroupDefaults(group)`** → full 10-parameter object.
-3. **`resolveComposerParams(composerId, partialOverrides)`** → `{ ...groupDefaults, ...overrides }`.
+1. **`getComposerGroup(composerId)`** → default group (`defaultTo` for dual composers).
+2. **`getComposerGroups(composerId)`** → full assignment including secondary world.
+3. **`getGroupDefaults(group)`** → full 10-parameter object.
+4. **`resolveComposerParams(composerId, partialOverrides, groupOverride?)`** → `{ ...groupDefaults, ...overrides }`; `groupOverride` selects secondary world for dual composers.
 
 Slice-specific params (e.g. Sebesky `liftToBlareArc`) remain on their slice types; group params are the **production-world baseline** for wiring and future shared passes.
 
+### Shared type values
+
+- **`cadentialResolution`:** `suspended` (ECM) · `arrived` (CTI) · `functional_modal` (Post-Bop)
+- **`ensembleDensityCurve`:** `slow_bloom` · `tiered_lift` · `blowing_arc`
+- **`silenceWeighting`:** `structural` · `minimal` · `rhythmic`
+- **`melodyFraming`:** `integrated` · `spotlighted` · `floating` · `head_based`
+- **`sectionalContrastMode`:** `gradual` · `discrete` · `blowing_sections`
+
 ### `productionGloss` and `melodyFraming`
 
-- **`productionGloss` (0–1):** Mix / orchestration sheen — low = dry chamber intimacy (ECM); high = polished studio lushness (CTI / Quincy). Optional on **`SongwriterStyleProfile`** and **`ComposerProductionParams`**.
-- **`melodyFraming`:** `integrated` (melody embedded in texture) · `spotlighted` (tune clearly on top) · `floating` (reserved — drifting foreground). Optional everywhere; inherited from group when omitted.
+- **`productionGloss` (0–1):** Mix / orchestration sheen — ECM dry chamber · Post-Bop Van Gelder warmth · CTI luxury polish.
+- **`melodyFraming`:** How the tune sits in the mix — integrated texture · spotlighted lead · head-based blowing form · `floating` (reserved).
 
-**UI:** Generate → songwriter and arranger dropdowns include **ECM Chamber Jazz**, **Studio Orchestral Jazz**, and **Post-Bop Core (coming soon)** optgroups (existing composer ids unchanged).
+**UI:** Generate → songwriter and arranger dropdowns include **ECM Chamber Jazz**, **Studio Orchestral Jazz**, and **Post-Bop Core** optgroups (existing composer ids unchanged; no duplicate dual-group entries).
 
 ---
 

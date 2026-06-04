@@ -2,6 +2,22 @@
 
 ---
 
+## [1.8.3] — 2026-06-04
+
+### Added
+
+- **Post-Bop Core production group** — fully defined with 10 defaults (Blue Note / Impulse acoustic blowing world).
+- **11 composers assigned to Post-Bop Core** — Monk, Coltrane, Parker, Miles, Hancock, Tyner, Harris, Hill, Jim Hall, Pat Martino, Wayne Shorter (default).
+- **Dual-group support** — Wayne Shorter (Post-Bop primary, ECM secondary) and Bill Evans (ECM primary, Post-Bop secondary).
+- **Shared type values** — `functional_modal`, `blowing_arc`, `rhythmic`, `head_based`, `blowing_sections`.
+- **`getComposerGroups`** + **`resolveComposerParams` `groupOverride`** for secondary-world rendering.
+
+### Fixed
+
+- **Post-Bop Core UI optgroup** — active label (removed “coming soon”); composers grouped under Post-Bop Core in songwriter/arranger dropdowns.
+
+---
+
 ## [1.8.2] — 2026-06-04
 
 ### Added

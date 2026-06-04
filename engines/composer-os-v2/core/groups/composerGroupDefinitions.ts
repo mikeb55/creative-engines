@@ -36,14 +36,19 @@ export type ComposerGroupMemberStatus = 'fully_implemented' | 'partial_future' |
 export interface ComposerGroupDefinition {
   id: ComposerGroupId;
   description: string;
-  defaults: GroupParams | null;
+  defaults: GroupParams;
   /** Canonical songwriter / arranger ids assigned to this group. */
   members: readonly {
     composerId: string;
     status: ComposerGroupMemberStatus;
   }[];
-  /** Placeholder groups expose UI label suffix only — no defaults yet. */
-  placeholder?: boolean;
+}
+
+/** Dual-group composers appear in one UI optgroup (defaultTo) but may resolve via groupOverride. */
+export interface ComposerGroupAssignment {
+  primary: ComposerGroupId;
+  secondary?: ComposerGroupId;
+  defaultTo: ComposerGroupId;
 }
 
 /** Normalize arranger short ids and aliases to canonical composer ids for group lookup. */
@@ -64,6 +69,19 @@ export const COMPOSER_ID_ALIASES: Readonly<Record<string, string>> = {
   miles: 'miles_davis',
   quincy: 'quincy_jones',
   quincy_jones_film: 'quincy_jones',
+};
+
+export const DUAL_GROUP_COMPOSER_ASSIGNMENTS: Readonly<Record<string, ComposerGroupAssignment>> = {
+  wayne_shorter: {
+    primary: 'POST_BOP_CORE',
+    secondary: 'ECM_CHAMBER_JAZZ',
+    defaultTo: 'POST_BOP_CORE',
+  },
+  bill_evans: {
+    primary: 'ECM_CHAMBER_JAZZ',
+    secondary: 'POST_BOP_CORE',
+    defaultTo: 'ECM_CHAMBER_JAZZ',
+  },
 };
 
 const ECM_CHAMBER_JAZZ_DEFAULTS: GroupParams = {
@@ -92,6 +110,19 @@ const STUDIO_ORCHESTRAL_JAZZ_DEFAULTS: GroupParams = {
   sectionalContrastMode: 'discrete',
 };
 
+const POST_BOP_CORE_DEFAULTS: GroupParams = {
+  groovePersistence: 0.72,
+  registralPorosity: 0.45,
+  stringProminence: 0.05,
+  cadentialResolution: 'functional_modal',
+  ensembleDensityCurve: 'blowing_arc',
+  silenceWeighting: 'rhythmic',
+  productionGloss: 0.3,
+  melodyFraming: 'head_based',
+  soloistSpotlight: 0.6,
+  sectionalContrastMode: 'blowing_sections',
+};
+
 export const COMPOSER_GROUP_DEFINITIONS: readonly ComposerGroupDefinition[] = [
   {
     id: 'ECM_CHAMBER_JAZZ',
@@ -113,11 +144,6 @@ export const COMPOSER_GROUP_DEFINITIONS: readonly ComposerGroupDefinition[] = [
       { composerId: 'carla_bley', status: 'partial_future' },
       { composerId: 'john_surman', status: 'partial_future' },
       { composerId: 'ralph_towner', status: 'partial_future' },
-      { composerId: 'thelonious_monk', status: 'precursor_reserved' },
-      { composerId: 'john_coltrane', status: 'precursor_reserved' },
-      { composerId: 'miles_davis', status: 'precursor_reserved' },
-      { composerId: 'herbie_hancock', status: 'precursor_reserved' },
-      { composerId: 'mccoy_tyner', status: 'precursor_reserved' },
     ],
   },
   {
@@ -147,21 +173,26 @@ export const COMPOSER_GROUP_DEFINITIONS: readonly ComposerGroupDefinition[] = [
   {
     id: 'POST_BOP_CORE',
     description:
-      'Blue Note / post-bop core. Groove-anchored, blues-derived, functional and modal harmony, small-to-medium ensemble. Not ECM-spatial, not CTI-orchestral.',
-    defaults: null,
-    placeholder: true,
+      'Blue Note / Impulse / Prestige world. Groove-anchored, blues-derived, functional and modal harmony, small-to-medium ensemble. Not ECM-spatial, not CTI-orchestral.',
+    defaults: POST_BOP_CORE_DEFAULTS,
     members: [
-      { composerId: 'thelonious_monk', status: 'partial_future' },
-      { composerId: 'john_coltrane', status: 'partial_future' },
-      { composerId: 'miles_davis', status: 'partial_future' },
-      { composerId: 'herbie_hancock', status: 'partial_future' },
-      { composerId: 'mccoy_tyner', status: 'partial_future' },
-      { composerId: 'wayne_shorter', status: 'partial_future' },
-      { composerId: 'charlie_parker', status: 'partial_future' },
-      { composerId: 'barry_harris', status: 'partial_future' },
-      { composerId: 'andrew_hill', status: 'partial_future' },
-      { composerId: 'jim_hall', status: 'partial_future' },
-      { composerId: 'pat_martino', status: 'partial_future' },
+      { composerId: 'thelonious_monk', status: 'fully_implemented' },
+      { composerId: 'john_coltrane', status: 'fully_implemented' },
+      { composerId: 'charlie_parker', status: 'fully_implemented' },
+      { composerId: 'miles_davis', status: 'fully_implemented' },
+      { composerId: 'herbie_hancock', status: 'fully_implemented' },
+      { composerId: 'mccoy_tyner', status: 'fully_implemented' },
+      { composerId: 'barry_harris', status: 'fully_implemented' },
+      { composerId: 'andrew_hill', status: 'fully_implemented' },
+      { composerId: 'jim_hall', status: 'fully_implemented' },
+      { composerId: 'pat_martino', status: 'fully_implemented' },
+      { composerId: 'wayne_shorter', status: 'fully_implemented' },
+      { composerId: 'bill_evans', status: 'fully_implemented' },
+      { composerId: 'joe_henderson', status: 'partial_future' },
+      { composerId: 'bobby_hutcherson', status: 'partial_future' },
+      { composerId: 'lee_morgan', status: 'partial_future' },
+      { composerId: 'hank_mobley', status: 'partial_future' },
+      { composerId: 'horace_silver', status: 'partial_future' },
     ],
   },
 ] as const;
@@ -170,36 +201,26 @@ export const COMPOSER_GROUP_DEFINITIONS: readonly ComposerGroupDefinition[] = [
 export const COMPOSER_GROUP_DISPLAY_LABELS: Record<ComposerGroupId, string> = {
   ECM_CHAMBER_JAZZ: 'ECM Chamber Jazz',
   STUDIO_ORCHESTRAL_JAZZ: 'Studio Orchestral Jazz',
-  POST_BOP_CORE: 'Post-Bop Core (coming soon)',
+  POST_BOP_CORE: 'Post-Bop Core',
 };
 
-/** Precursors are registered on ECM definition but must not resolve to ECM until Post-Bop ships. */
-export const POST_BOP_PRECURSOR_COMPOSER_IDS: ReadonlySet<string> = new Set([
-  'thelonious_monk',
-  'john_coltrane',
-  'miles_davis',
-  'herbie_hancock',
-  'mccoy_tyner',
-]);
+const DUAL_GROUP_COMPOSER_IDS = new Set<string>(Object.keys(DUAL_GROUP_COMPOSER_ASSIGNMENTS));
 
-/** Active group assignment — precursors and placeholder-only members excluded from lookup. */
+/** Single-group assignment map — dual composers excluded (use defaultTo via engine). */
 const COMPOSER_TO_GROUP = ((): ReadonlyMap<string, ComposerGroupId> => {
   const map = new Map<string, ComposerGroupId>();
   for (const group of COMPOSER_GROUP_DEFINITIONS) {
-    if (group.placeholder || !group.defaults) continue;
     for (const member of group.members) {
       if (member.status === 'precursor_reserved') continue;
-      if (POST_BOP_PRECURSOR_COMPOSER_IDS.has(member.composerId)) continue;
+      if (DUAL_GROUP_COMPOSER_IDS.has(member.composerId)) continue;
       map.set(member.composerId, group.id);
     }
   }
+  for (const [composerId, assignment] of Object.entries(DUAL_GROUP_COMPOSER_ASSIGNMENTS)) {
+    map.set(composerId, assignment.defaultTo);
+  }
   return map;
 })();
-
-/** Post-Bop placeholder roster for UI (composers visible under coming-soon label). */
-export const POST_BOP_CORE_UI_COMPOSER_IDS: readonly string[] = COMPOSER_GROUP_DEFINITIONS.find(
-  (g) => g.id === 'POST_BOP_CORE'
-)!.members.map((m) => m.composerId);
 
 export function normalizeComposerId(composerId: string): string {
   const trimmed = composerId.trim();
@@ -210,6 +231,11 @@ export function normalizeComposerId(composerId: string): string {
 export function getComposerGroupAssignment(composerId: string): ComposerGroupId | null {
   const canonical = normalizeComposerId(composerId);
   return COMPOSER_TO_GROUP.get(canonical) ?? null;
+}
+
+export function getDualGroupAssignment(composerId: string): ComposerGroupAssignment | null {
+  const canonical = normalizeComposerId(composerId);
+  return DUAL_GROUP_COMPOSER_ASSIGNMENTS[canonical] ?? null;
 }
 
 export function getGroupDefinition(groupName: ComposerGroupId): ComposerGroupDefinition | undefined {

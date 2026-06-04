@@ -79,7 +79,7 @@ export interface SongwriterStyleProfile {
   /** Production-world gloss (0–1) — inherited from group defaults when omitted. */
   productionGloss?: number;
   /** Production-world melody framing — inherited from group defaults when omitted. */
-  melodyFraming?: 'integrated' | 'spotlighted' | 'floating';
+  melodyFraming?: 'integrated' | 'spotlighted' | 'floating' | 'head_based';
 }
 
 export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyleProfile> = {

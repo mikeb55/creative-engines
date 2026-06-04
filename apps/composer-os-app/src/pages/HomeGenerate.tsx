@@ -179,9 +179,8 @@ import { blendVoiceRuleBundles, KNOWN_INCOMPATIBLE_SQ_BLEND_PAIRS } from '@compo
 import { getVoiceRuleBundle } from '@composer-os/core/composer/voiceRuleBundles';
 import {
   COMPOSER_GROUP_DISPLAY_LABELS,
-  listGroupMemberComposerIds,
+  listGroupMemberComposerIdsForUi,
   normalizeComposerId,
-  POST_BOP_CORE_UI_COMPOSER_IDS,
 } from '@composer-os/core/groups/composerGroupEngine';
 import type { ComposerGroupId } from '@composer-os/core/groups/composerGroupDefinitions';
 import { buildSongModeProfileRuleRows } from '../utils/songModeProfileRulesViewModel';
@@ -996,25 +995,21 @@ const SONGWRITER_LIBRARY_ORDERED = SONGWRITER_OPTIONS_WITH_RHYTHM.filter(
 ).sort((a, b) => a.label.localeCompare(b.label));
 
 function songwriterIdsForProductionGroup(groupId: ComposerGroupId): string[] {
-  return listGroupMemberComposerIds(groupId).filter((id) => SONGWRITER_OPTION_BY_ID.has(id));
+  return listGroupMemberComposerIdsForUi(groupId).filter((id) => SONGWRITER_OPTION_BY_ID.has(id));
 }
 
 const PRODUCTION_WORLD_SONGWRITER_ID_SET = new Set<string>([
   ...songwriterIdsForProductionGroup('ECM_CHAMBER_JAZZ'),
   ...songwriterIdsForProductionGroup('STUDIO_ORCHESTRAL_JAZZ'),
+  ...songwriterIdsForProductionGroup('POST_BOP_CORE'),
 ]);
 
-const POST_BOP_PLACEHOLDER_SONGWRITER_IDS = POST_BOP_CORE_UI_COMPOSER_IDS.filter(
-  (id) => SONGWRITER_OPTION_BY_ID.has(id) && !PRODUCTION_WORLD_SONGWRITER_ID_SET.has(id)
-);
-const POST_BOP_PLACEHOLDER_SONGWRITER_ID_SET = new Set<string>(POST_BOP_PLACEHOLDER_SONGWRITER_IDS);
-
 const SONGWRITER_GROUP_SHIPPED_ORDER_FILTERED = SONGWRITER_GROUP_SHIPPED_ORDER.filter(
-  (id) => !PRODUCTION_WORLD_SONGWRITER_ID_SET.has(id) && !POST_BOP_PLACEHOLDER_SONGWRITER_ID_SET.has(id)
+  (id) => !PRODUCTION_WORLD_SONGWRITER_ID_SET.has(id)
 );
 
 const SONGWRITER_LIBRARY_ORDERED_FILTERED = SONGWRITER_LIBRARY_ORDERED.filter(
-  (o) => !PRODUCTION_WORLD_SONGWRITER_ID_SET.has(o.id) && !POST_BOP_PLACEHOLDER_SONGWRITER_ID_SET.has(o.id)
+  (o) => !PRODUCTION_WORLD_SONGWRITER_ID_SET.has(o.id)
 );
 
 /** Visually hidden — referenced by `aria-describedby` on grouped songwriter/arranger selects (WCAG). */
@@ -1033,7 +1028,7 @@ const VISUALLY_HIDDEN: CSSProperties = {
 const ARIA_SONGWRITER_GROUPS_DESC =
   'Songwriters are grouped by production world (ECM Chamber Jazz, Studio Orchestral Jazz, Post-Bop Core), then Shipped full slice, Shipped singer-songwriter slice, Ready to build, and In library.';
 const ARIA_ARRANGER_GROUPS_DESC =
-  'Arrangers are grouped by production world (ECM Chamber Jazz, Studio Orchestral Jazz), then Big band core research-backed and Charts and studio voices.';
+  'Arrangers are grouped by production world (ECM Chamber Jazz, Studio Orchestral Jazz, Post-Bop Core), then Big band core research-backed and Charts and studio voices.';
 
 function uint8ArrayToBase64(bytes: Uint8Array): string {
   const chunk = 0x8000;
@@ -1074,18 +1069,16 @@ function SongwriterSelectOptionGroups({ onOptionHover }: { onOptionHover?: (id: 
           );
         })}
       </optgroup>
-      {POST_BOP_PLACEHOLDER_SONGWRITER_IDS.length > 0 ? (
-        <optgroup label={COMPOSER_GROUP_DISPLAY_LABELS.POST_BOP_CORE}>
-          {POST_BOP_PLACEHOLDER_SONGWRITER_IDS.map((id) => {
-            const o = SONGWRITER_OPTION_BY_ID.get(id)!;
-            return (
-              <option key={`postbop-${id}`} value={o.id} {...optHover(o.id)}>
-                {o.label}
-              </option>
-            );
-          })}
-        </optgroup>
-      ) : null}
+      <optgroup label={COMPOSER_GROUP_DISPLAY_LABELS.POST_BOP_CORE}>
+        {songwriterIdsForProductionGroup('POST_BOP_CORE').map((id) => {
+          const o = SONGWRITER_OPTION_BY_ID.get(id)!;
+          return (
+            <option key={`postbop-${id}`} value={o.id} {...optHover(o.id)}>
+              {o.label}
+            </option>
+          );
+        })}
+      </optgroup>
       <optgroup label="Shipped (full slice)">
         {SONGWRITER_GROUP_SHIPPED_ORDER_FILTERED.filter((id) => SONGWRITER_OPTION_BY_ID.has(id)).map((id) => {
           const o = SONGWRITER_OPTION_BY_ID.get(id)!;
@@ -1392,13 +1385,14 @@ const ARRANGER_EXTENDED_ORDERED = ARRANGER_OPTIONS.filter(
 ).sort((a, b) => a.label.localeCompare(b.label));
 
 function arrangerIdsForProductionGroup(groupId: ComposerGroupId): string[] {
-  const members = new Set(listGroupMemberComposerIds(groupId));
+  const members = new Set(listGroupMemberComposerIdsForUi(groupId));
   return ARRANGER_OPTIONS.filter((o) => members.has(normalizeComposerId(o.id))).map((o) => o.id);
 }
 
 const ARRANGER_PRODUCTION_WORLD_ID_SET = new Set<string>([
   ...arrangerIdsForProductionGroup('ECM_CHAMBER_JAZZ'),
   ...arrangerIdsForProductionGroup('STUDIO_ORCHESTRAL_JAZZ'),
+  ...arrangerIdsForProductionGroup('POST_BOP_CORE'),
 ]);
 
 const ARRANGER_GROUP_CORE_ORDER_FILTERED = ARRANGER_GROUP_CORE_ORDER.filter(
@@ -1447,6 +1441,18 @@ function ArrangerSelectOptionGroups(props?: { variant?: 'default' | 'string_quar
             const o = ARRANGER_OPTION_BY_ID.get(id)!;
             return (
               <option key={`studio-arr-${id}`} value={o.id}>
+                {o.label}
+              </option>
+            );
+          })}
+      </optgroup>
+      <optgroup label={COMPOSER_GROUP_DISPLAY_LABELS.POST_BOP_CORE}>
+        {arrangerIdsForProductionGroup('POST_BOP_CORE')
+          .filter((id) => ARRANGER_OPTION_BY_ID.has(id))
+          .map((id) => {
+            const o = ARRANGER_OPTION_BY_ID.get(id)!;
+            return (
+              <option key={`postbop-arr-${id}`} value={o.id}>
                 {o.label}
               </option>
             );

@@ -3,15 +3,20 @@
  * Group defaults (`GroupParams`) require all fields; composers inherit via `resolveComposerParams`.
  */
 
-export type CadentialResolution = 'suspended' | 'arrived';
+/** ECM: endings hover unresolved. CTI: sections land decisively. Post-Bop: blues/modal functional logic. */
+export type CadentialResolution = 'suspended' | 'arrived' | 'functional_modal';
 
-export type EnsembleDensityCurve = 'slow_bloom' | 'tiered_lift';
+/** ECM: slow bloom. CTI: tiered lift. Post-Bop: head → solo intensity → head out. */
+export type EnsembleDensityCurve = 'slow_bloom' | 'tiered_lift' | 'blowing_arc';
 
-export type SilenceWeighting = 'structural' | 'minimal';
+/** ECM: structural silence. CTI: minimal gaps. Post-Bop: rhythmic breath and punctuation. */
+export type SilenceWeighting = 'structural' | 'minimal' | 'rhythmic';
 
-export type MelodyFraming = 'integrated' | 'spotlighted' | 'floating';
+/** ECM: integrated texture. CTI: spotlighted tune. Post-Bop: head stated, dissolved, restated. */
+export type MelodyFraming = 'integrated' | 'spotlighted' | 'floating' | 'head_based';
 
-export type SectionalContrastMode = 'gradual' | 'discrete';
+/** ECM: gradual melt. CTI: discrete blocks. Post-Bop: solo rotation and intensity build. */
+export type SectionalContrastMode = 'gradual' | 'discrete' | 'blowing_sections';
 
 /** Optional production parameters — slices and style profiles may override group defaults. */
 export interface ComposerProductionParams {

@@ -2,37 +2,58 @@
  * Composer OS — Group Mode defaults engine.
  */
 
-import type { ComposerGroupId, GroupParams } from './composerGroupDefinitions';
+import type { ComposerGroupAssignment, ComposerGroupId, GroupParams } from './composerGroupDefinitions';
 import {
   COMPOSER_GROUP_DEFINITIONS,
   getComposerGroupAssignment,
+  getDualGroupAssignment,
   getGroupDefinition,
   normalizeComposerId,
 } from './composerGroupDefinitions';
 import type { ComposerProductionParams } from './composerProductionParams';
 
-export type { ComposerGroupId, GroupParams, ComposerProductionParams };
+export type { ComposerGroupId, GroupParams, ComposerProductionParams, ComposerGroupAssignment };
 
-export { COMPOSER_GROUP_DEFINITIONS, COMPOSER_GROUP_DISPLAY_LABELS, normalizeComposerId, POST_BOP_CORE_UI_COMPOSER_IDS } from './composerGroupDefinitions';
+export {
+  COMPOSER_GROUP_DEFINITIONS,
+  COMPOSER_GROUP_DISPLAY_LABELS,
+  DUAL_GROUP_COMPOSER_ASSIGNMENTS,
+  normalizeComposerId,
+} from './composerGroupDefinitions';
 
-/** Returns active production group for composer, or null when unassigned / reserved. */
+/** Returns default production group for composer (dual-group uses defaultTo). */
 export function getComposerGroup(composerId: string): ComposerGroupId | null {
   return getComposerGroupAssignment(composerId);
 }
 
-/** Returns full default parameter object for an active group; null for placeholder groups. */
+/** Full group assignment including dual-group primary / secondary / defaultTo. */
+export function getComposerGroups(composerId: string): ComposerGroupAssignment | null {
+  const canonical = normalizeComposerId(composerId);
+  const dual = getDualGroupAssignment(canonical);
+  if (dual) return { ...dual };
+  const group = getComposerGroupAssignment(canonical);
+  if (!group) return null;
+  return { primary: group, defaultTo: group };
+}
+
+/** Returns full default parameter object for a production group. */
 export function getGroupDefaults(groupName: string): GroupParams | null {
   const def = COMPOSER_GROUP_DEFINITIONS.find((g) => g.id === groupName);
   if (!def?.defaults) return null;
   return { ...def.defaults };
 }
 
-/** Merge group defaults with composer-specific overrides; override wins on conflict. */
+/** Merge group defaults with composer overrides; optional groupOverride for dual-group secondary world. */
 export function resolveComposerParams(
   composerId: string,
-  composerOverrides: Partial<GroupParams> = {}
+  composerOverrides: Partial<GroupParams> = {},
+  groupOverride?: ComposerGroupId
 ): GroupParams | null {
-  const group = getComposerGroup(composerId);
+  const canonical = normalizeComposerId(composerId);
+  let group: ComposerGroupId | null = groupOverride ?? null;
+  if (!group) {
+    group = getComposerGroupAssignment(canonical);
+  }
   if (!group) return null;
   const defaults = getGroupDefaults(group);
   if (!defaults) return null;
@@ -47,12 +68,11 @@ export function isStudioOrchestral(composerId: string): boolean {
   return getComposerGroup(composerId) === 'STUDIO_ORCHESTRAL_JAZZ';
 }
 
-/** Returns false for all composers until Post-Bop Core defaults ship. */
-export function isPostBopCore(_composerId: string): boolean {
-  return false;
+export function isPostBopCore(composerId: string): boolean {
+  return getComposerGroup(composerId) === 'POST_BOP_CORE';
 }
 
-/** Canonical ids for UI optgroup ordering — fully implemented first, then partial. */
+/** Canonical ids for group ordering — fully implemented first, then partial. */
 export function listGroupMemberComposerIds(groupId: ComposerGroupId): readonly string[] {
   const def = getGroupDefinition(groupId);
   if (!def) return [];
@@ -60,4 +80,13 @@ export function listGroupMemberComposerIds(groupId: ComposerGroupId): readonly s
   return [...def.members]
     .sort((a, b) => (order[a.status] ?? 9) - (order[b.status] ?? 9))
     .map((m) => m.composerId);
+}
+
+/** UI roster — dual-group composers appear only under defaultTo group. */
+export function listGroupMemberComposerIdsForUi(groupId: ComposerGroupId): readonly string[] {
+  return listGroupMemberComposerIds(groupId).filter((composerId) => {
+    const dual = getDualGroupAssignment(composerId);
+    if (!dual) return true;
+    return dual.defaultTo === groupId;
+  });
 }
