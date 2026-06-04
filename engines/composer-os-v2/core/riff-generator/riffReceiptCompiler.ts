@@ -1583,6 +1583,131 @@ function patchForFzReceipt(
       metadataOnly: false,
     };
   }
+  if (id === 'FZ_HARM_01') {
+    return {
+      patch: {
+        chordQualitySet: ['dom7', 'maj7', 'min7', 'sus4', 'dim', 'aug', 'maj', 'min', 'm7b5'],
+        tritoneStable: true,
+        chromaticBudget: Math.max(parseChromaticBudgetFromBody(body, fields), 0.58),
+        scalePool: { Lydian: 0.4, wholeTone: 0.28, Mixolydian: 0.35 },
+      },
+      metadataOnly: false,
+    };
+  }
+  if (id === 'FZ_HARM_02') {
+    return {
+      patch: {
+        scalePool: { Lydian: 0.35, Mixolydian: 0.35, diminished: 0.25, Ionian: 0.2, blues: 0.22 },
+        variationOperators: ['harmonicColourSwap', 'cellTransposition', 'chromaticAdd'],
+        chromaticBudget: Math.max(parseChromaticBudgetFromBody(body, fields), 0.52),
+      },
+      metadataOnly: false,
+    };
+  }
+  if (id === 'FZ_MELO_01') {
+    const ops = defaultFzMeloOperators(body);
+    if (!ops.includes('startOffsetShift')) ops.push('startOffsetShift');
+    return {
+      patch: {
+        variationOperators: ops.length ? ops : ['registerShift', 'rhythmicWarp', 'startOffsetShift'],
+        soloGeneratorProfile: { enabled: true, maxLeapSemitones: 16, rhythmicCellEighths: [5, 3] },
+      },
+      metadataOnly: false,
+    };
+  }
+  if (id === 'FZ_MELO_02') {
+    return {
+      patch: {
+        variationOperators: ['ornamentAdd', 'microTimingShift', 'registerShift'],
+        ornamentPolicy: { slides: true, ghosts: true, graceAttacks: true, bends: false, deadNotes: false },
+        contourPreferences: { heavyRiffs: { descending: 0.35, ascending: 0.25, arched: 0.4 } },
+      },
+      metadataOnly: false,
+    };
+  }
+  if (id === 'FZ_RHY_01') {
+    return {
+      patch: {
+        chromaticBudget: Math.max(parseChromaticBudgetFromBody(body, fields), 0.55),
+        metricDisplacement: Math.max(parseFloatField(fields, 'metricdisplacement') ?? 0, 0.72),
+        groupingPatterns: [[3, 3, 2], [2, 3, 3], [5, 3]],
+        oddMeterUsage: {
+          meters: [
+            { label: '7/8', groups: [3, 3, 2] },
+            { label: '5/4', groups: [3, 2] },
+          ],
+          isSuperimposed: true,
+        },
+      },
+      metadataOnly: false,
+    };
+  }
+  if (id === 'FZ_ORCH_01') {
+    return {
+      patch: {
+        ensembleInterlockMode: 'layeredOstinati',
+        textureMix: { singleNoteRiff: 0.35, powerChordRiff: 0.25, hybridSinglePlusChord: 0.4 },
+        sectionDensityPolicy: {
+          transitions: [
+            { receiptId: id, fromDensity: 'thick', toDensity: 'thin' },
+            { receiptId: id, fromDensity: 'dense', toDensity: 'solo_voice' },
+          ],
+        },
+      },
+      metadataOnly: false,
+    };
+  }
+  if (id === 'FZ_DIS_01') {
+    return {
+      patch: {
+        tritoneStable: true,
+        chromaticBudget: Math.max(parseChromaticBudgetFromBody(body, fields), 0.68),
+        soloGeneratorProfile: { enabled: true, chromaticBudget: 0.62, maxLeapSemitones: 14 },
+      },
+      metadataOnly: false,
+    };
+  }
+  if (id === 'FZ_FORM_01') {
+    return {
+      patch: {
+        repetitionPolicy: {
+          exactLoopAllowed: false,
+          pedalToneAllowed: true,
+          barIdentityPersistence: 0.2,
+          minExactRepetitions: 1,
+        },
+        cadenceTypes: { tail_fill: 0.15, sustained_sus_chord: 0.15, hard_stop_rest: 0.7 },
+      },
+      metadataOnly: false,
+    };
+  }
+  if (id === 'FZ_BASS_01') {
+    const bass: RiffBassContourPolicy = {
+      melodicCounterpart: true,
+      anticipateBeats: [0, 2],
+      octaveJumpProbability: 0.45,
+    };
+    return {
+      patch: {
+        bassContourPolicy: bass,
+        chromaticBudget: Math.max(parseChromaticBudgetFromBody(body, fields), 0.55),
+        chromaticApproachRules: [{ degrees: [3, 7], chordContext: 'any', probability: 0.55 }],
+      },
+      metadataOnly: false,
+    };
+  }
+  if (id === 'FZ_GTR_01') {
+    return {
+      patch: {
+        ornamentPolicy: { slides: true, ghosts: true, graceAttacks: true, bends: true, deadNotes: false },
+        tuningPolicy: {
+          tuningOptions: { zappaCleanToneIslands: 0.35, zappaStereoPingPong: 0.25 },
+        },
+        variationOperators: ['ornamentAdd', 'registerShift', 'harmonicColourSwap'],
+      },
+      metadataOnly: false,
+    };
+  }
   if (id.startsWith('FZ_MELO_')) {
     const ops = defaultFzMeloOperators(body);
     return { patch: { variationOperators: ops.length ? ops : ['registerShift', 'rhythmicWarp'] }, metadataOnly: false };

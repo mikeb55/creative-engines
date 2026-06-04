@@ -286,7 +286,7 @@ Feedback sustain events export as whole notes with a sustain articulation marker
 | zappaStyleMode riff path wiring | pending — styleMode currently affects duo path only; riff solo adapter does not receive context/metadata |
 | Nile Rodgers deepening receipts | pending |
 | Carlton + Gilmour golden fixture refresh | pending after receipt deepening |
-| Zappa GCE structural fingerprint: Ionian/Lydian mode coverage | not yet scored |
+| Zappa GCE structural fingerprint: Ionian/Lydian mode coverage | ✅ scored — Lydian #11 + no V→I; Ionian major field + phrase endings avoid tonic; metric displacement on phrase starts |
 
 ---
 

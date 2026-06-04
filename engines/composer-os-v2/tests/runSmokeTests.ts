@@ -110,6 +110,7 @@ import { runMusicXmlDeepImportV65P3GoldenTests } from './musicXmlImport.test';
 import { runGrooveScaffoldGoldenTests } from './grooveScaffold.test';
 import { runFzDiff01ReceiptTests } from './fzDiff01Receipt.test';
 import { runFzDiff02ReceiptTests } from './fzDiff02Receipt.test';
+import { runZappaFzReceiptFingerprintTests } from './zappaFzReceiptFingerprints.test';
 import { runZappaPerSectionTests } from './zappaPerSection.test';
 
 type Row = { name: string; ok: boolean };
@@ -239,6 +240,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'V65 P4 — groove scaffold goldens (seeds 83001–83002)', run: runGrooveScaffoldGoldenTests },
   { label: 'V65 P5 — FZ_DIFF_01 receipt golden (seed 84001)', run: runFzDiff01ReceiptTests },
   { label: 'V65 P5 — FZ_DIFF_02 receipt golden (seed 84002)', run: runFzDiff02ReceiptTests },
+  { label: 'V66 — FZ_* stub receipt fingerprints (12 promoted)', run: runZappaFzReceiptFingerprintTests },
   { label: 'V65 P5 — Zappa per-section golden (seed 84003)', run: runZappaPerSectionTests },
   { label: 'Follow-up 4 — Mingus overlay + activeMotifIds + shout export', run: runFollowup4MingusSchneiderThreadgillSmokeTests },
   { label: 'Follow-up 5 — shout-chorus in-place brass merge', run: runFollowup5ShoutBrassInPlaceSmokeTests },

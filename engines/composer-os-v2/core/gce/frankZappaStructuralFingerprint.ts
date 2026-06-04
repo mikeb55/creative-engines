@@ -10,6 +10,7 @@ import type { ScoreModel } from '../score-model/scoreModelTypes';
 import { resolveMelodicPartId } from './resolveMelodicPartId';
 import type { CategoryScore, GceStructureSection } from './gceAutoScorers';
 import { scoreRhythmicIdentity } from './gceAutoScorers';
+import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import type { MelodicNote } from './gce_melody_eval';
 import { scoreModelToMelodicLine } from './scoreModelToMelodicLine';
 
@@ -39,6 +40,12 @@ export interface FrankZappaStructuralFingerprint {
   metricDisruption: boolean;
   /** Per-bar probabilistic guitar↔bass register swap during Phase 4. */
   registerShiftProbability: number;
+  /** Ironic Ionian/Lydian mode coverage — displaced major, not straight tonal resolution. */
+  ionianLydianModeCoverage: {
+    lydian: { raisedFourthPresent: true; avoidDominantResolution: true };
+    ionian: { tonicMajorContext: true; phraseEndingsAvoidTonic: true };
+    metricDisplacementOnPhraseStart: true;
+  };
   /** Section kind planner may assign incompatible adjacent surfaces (march ↔ ballad). */
   absurdistJuxtaposition: boolean;
   /** Weight toward picking clashing section kinds at boundaries (0–1). */
@@ -62,6 +69,11 @@ export const FRANK_ZAPPA_STRUCTURAL_FINGERPRINT: FrankZappaStructuralFingerprint
   quoteCollage: { metadataOnly: true },
   metricDisruption: true,
   registerShiftProbability: 0.65,
+  ionianLydianModeCoverage: {
+    lydian: { raisedFourthPresent: true, avoidDominantResolution: true },
+    ionian: { tonicMajorContext: true, phraseEndingsAvoidTonic: true },
+    metricDisplacementOnPhraseStart: true,
+  },
   absurdistJuxtaposition: true,
   styleCollisionWeight: 0.7,
   zappaGceMeterMode: 'disrupt',
@@ -254,6 +266,160 @@ export function scoreFrankZappaTexturalContrast(score: ScoreModel, totalBars: nu
   };
 }
 
+function harmonyRootPc(symbol: string): number | undefined {
+  const hp = parseChordSymbol(symbol).harmonyPart;
+  const m = /^([A-G][#b]?)/i.exec(hp);
+  return m ? noteNameToPitchClass(m[1]!) : undefined;
+}
+
+function chordHasRaisedFourth(symbol: string): boolean {
+  const hp = parseChordSymbol(symbol).harmonyPart;
+  return /#11|\(#11\)|maj7#11|Δ#11|lyd/i.test(hp);
+}
+
+function isDominantSymbol(symbol: string): boolean {
+  const tl = parseChordSymbol(symbol).harmonyPart.toLowerCase().replace(/\s/g, '');
+  if (/mmaj|dim|ø|sus|m7b5/.test(tl)) return false;
+  if (/^m(?!aj)/.test(tl)) return false;
+  return /\b7|9|11|13|alt/.test(tl) || /^[a-g][#b]?7/.test(tl);
+}
+
+function isMajorTonicSymbol(symbol: string): boolean {
+  const tl = parseChordSymbol(symbol).harmonyPart.toLowerCase().replace(/\s/g, '');
+  if (/m(?!aj)|dim|ø|sus|m7b5/.test(tl)) return false;
+  return /maj|Δ|\^|add|6\/9|^[a-g][#b]?$/.test(tl);
+}
+
+function isDominantToTonicResolution(prev: string, next: string): boolean {
+  const prevRoot = harmonyRootPc(prev);
+  const nextRoot = harmonyRootPc(next);
+  if (prevRoot === undefined || nextRoot === undefined) return false;
+  if (!isDominantSymbol(prev) || !isMajorTonicSymbol(next)) return false;
+  return ((prevRoot - nextRoot + 12) % 12) === 7;
+}
+
+function phraseStartNotes(melody: MelodicNote[]): MelodicNote[] {
+  const pitched = melody.filter((n) => !n.rest && n.midi > 0);
+  if (!pitched.length) return [];
+  const starts: MelodicNote[] = [pitched[0]!];
+  for (let i = 1; i < pitched.length; i++) {
+    const prev = pitched[i - 1]!;
+    const cur = pitched[i]!;
+    const gap = cur.bar - prev.bar + (cur.beat - prev.beat) / 4;
+    if (gap >= 0.45) starts.push(cur);
+  }
+  return starts;
+}
+
+function phraseEndingNotes(melody: MelodicNote[]): Array<{ note: MelodicNote; chordIndex: number }> {
+  const pitched = melody.filter((n) => !n.rest && n.midi > 0);
+  if (!pitched.length) return [];
+  const endings: Array<{ note: MelodicNote; chordIndex: number }> = [];
+  for (let i = 0; i < pitched.length; i++) {
+    const cur = pitched[i]!;
+    const next = pitched[i + 1];
+    const gap = next ? next.bar - cur.bar + (next.beat - cur.beat) / 4 : 99;
+    if (gap >= 0.45) endings.push({ note: cur, chordIndex: Math.max(0, cur.bar - 1) });
+  }
+  return endings;
+}
+
+function beatIsUnexpectedSubdivision(beat: number): boolean {
+  const frac = ((beat % 1) + 1) % 1;
+  if (frac < 0.06 || frac > 0.94) return false;
+  return Math.abs(frac - 0.25) < 0.08 || Math.abs(frac - 0.5) < 0.08 || Math.abs(frac - 0.75) < 0.08;
+}
+
+/** Lydian ironic — raised 4th colour present, dominant→tonic resolution suppressed. */
+export function scoreFrankZappaLydianIronic(chords: string[]): CategoryScore {
+  if (!chords.length) return { score: 0, justification: 'Zappa Lydian: no chords' };
+  const raisedHits = chords.filter((c) => chordHasRaisedFourth(c)).length;
+  let domRes = 0;
+  for (let i = 1; i < chords.length; i++) {
+    if (isDominantToTonicResolution(chords[i - 1]!, chords[i]!)) domRes++;
+  }
+  const raisedRate = raisedHits / chords.length;
+  const domRate = domRes / Math.max(1, chords.length - 1);
+  const score = Math.max(
+    0,
+    Math.min(10, Math.round((3 + raisedRate * 5 + (1 - domRate) * 2) * 10) / 10)
+  );
+  return {
+    score,
+    justification:
+      `Zappa Lydian ironic: #11/raised-4th ${raisedHits}/${chords.length}, ` +
+      `dominant resolution ${domRes}/${Math.max(1, chords.length - 1)} suppressed`,
+  };
+}
+
+/** Ionian ironic — tonic major field but phrase endings avoid tonic pitch class. */
+export function scoreFrankZappaIonianAvoidTonic(chords: string[], melody: MelodicNote[]): CategoryScore {
+  const majorBars = chords.filter((c) => isMajorTonicSymbol(c)).length;
+  if (majorBars === 0) {
+    return { score: 4, justification: 'Zappa Ionian: no major tonic field' };
+  }
+  const endings = phraseEndingNotes(melody);
+  if (!endings.length) {
+    return { score: 5, justification: 'Zappa Ionian: sparse melody (tonic avoidance neutral)' };
+  }
+  let avoid = 0;
+  let eligible = 0;
+  for (const { note, chordIndex } of endings) {
+    const sym = chords[chordIndex] ?? chords[chords.length - 1]!;
+    if (!isMajorTonicSymbol(sym)) continue;
+    const tonic = harmonyRootPc(sym);
+    if (tonic === undefined) continue;
+    eligible++;
+    const notePc = ((note.midi % 12) + 12) % 12;
+    if (notePc !== tonic) avoid++;
+  }
+  const avoidRate = eligible > 0 ? avoid / eligible : 0.5;
+  const majorRate = majorBars / chords.length;
+  const score = Math.max(
+    0,
+    Math.min(10, Math.round((3 + avoidRate * 4 + majorRate * 2) * 10) / 10)
+  );
+  return {
+    score,
+    justification:
+      `Zappa Ionian displaced: phrase endings avoid tonic ${avoid}/${eligible}, ` +
+      `major tonic field ${majorBars}/${chords.length}`,
+  };
+}
+
+/** Both modes — phrase starts land on unexpected beat subdivisions (metric displacement). */
+export function scoreFrankZappaModeMetricDisplacement(melody: MelodicNote[]): CategoryScore {
+  const starts = phraseStartNotes(melody);
+  if (!starts.length) {
+    return { score: 4, justification: 'Zappa mode displacement: no phrase starts' };
+  }
+  const displaced = starts.filter((n) => beatIsUnexpectedSubdivision(n.beat)).length;
+  const rate = displaced / starts.length;
+  const score = Math.max(0, Math.min(10, Math.round((3 + rate * 6) * 10) / 10));
+  return {
+    score,
+    justification: `Zappa mode displacement: ${displaced}/${starts.length} phrase starts off grid`,
+  };
+}
+
+/** Composite Ionian/Lydian ironic mode pillar for Zappa GCE gate. */
+export function scoreFrankZappaIonianLydianModeCoverage(
+  chords: string[],
+  melody: MelodicNote[]
+): CategoryScore {
+  const lyd = scoreFrankZappaLydianIronic(chords);
+  const ion = scoreFrankZappaIonianAvoidTonic(chords, melody);
+  const disp = scoreFrankZappaModeMetricDisplacement(melody);
+  const composite = Math.max(
+    0,
+    Math.min(10, Math.round(((lyd.score + ion.score + disp.score) / 3) * 10) / 10)
+  );
+  return {
+    score: composite,
+    justification: `Lydian=${lyd.score.toFixed(1)} Ionian=${ion.score.toFixed(1)} displacement=${disp.score.toFixed(1)}`,
+  };
+}
+
 export type FrankZappaStructuralGateInput = {
   score: ScoreModel;
   context: CompositionContext;
@@ -280,6 +446,7 @@ export function scoreFrankZappaStructuralPillars(input: FrankZappaStructuralGate
   const meter = scoreFrankZappaMeterDisruption(input.context, input.score, tb);
   const harm = scoreFrankZappaHarmonicNonResolution(input.chords);
   const texture = scoreFrankZappaTexturalContrast(input.score, tb);
+  const modeCov = scoreFrankZappaIonianLydianModeCoverage(input.chords, input.melody);
   const rhythm = scoreRhythmicIdentity(input.melody, {
     placementMode: 'anti_metric',
     targetOffbeatWindow: [0.42, 0.68],
@@ -291,6 +458,7 @@ export function scoreFrankZappaStructuralPillars(input: FrankZappaStructuralGate
     { name: 'Zappa Meter Disruption', weight: 1.5, score: meter.score, justification: meter.justification },
     { name: 'Zappa Harmonic Non-Resolution', weight: 2, score: harm.score, justification: harm.justification },
     { name: 'Zappa Textural Contrast', weight: 1.5, score: texture.score, justification: texture.justification },
+    { name: 'Zappa Ionian/Lydian Ironic Mode', weight: 1.5, score: modeCov.score, justification: modeCov.justification },
     { name: 'Zappa Rhythmic Anti-Metric', weight: 1, score: rhythm.score, justification: rhythm.justification },
     {
       name: 'Zappa Quote/Collage (metadata)',

@@ -11,7 +11,11 @@ import {
   ZAPPA_GCE_METER_SPLICE,
   isFrankZappaSongwriterId,
   scoreFrankZappaHarmonicNonResolution,
+  scoreFrankZappaIonianLydianModeCoverage,
+  scoreFrankZappaIonianAvoidTonic,
+  scoreFrankZappaLydianIronic,
   scoreFrankZappaMeterDisruption,
+  scoreFrankZappaModeMetricDisplacement,
   scoreFrankZappaStructuralPillars,
 } from '../core/gce/frankZappaStructuralFingerprint';
 import { rhythmExpectationForVrb } from '../core/gce/gceAutoScorers';
@@ -92,6 +96,34 @@ function testFrankZappaGceRegistryHook(): boolean {
 function testFrankZappaRhythmExpectation(): boolean {
   const exp = rhythmExpectationForVrb('frank_zappa');
   return exp?.placementMode === 'anti_metric';
+}
+
+function testFrankZappaIonianLydianModeScorers(): boolean {
+  const lydChords = ['Dmaj7#11', 'Dmaj7#11', 'A7alt', 'Gmaj7', 'F#7', 'Bmaj7'];
+  const lyd = scoreFrankZappaLydianIronic(lydChords);
+  const melody: import('../core/gce/gce_melody_eval').MelodicNote[] = [
+    { midi: 62, beats: 1, bar: 1, beat: 0.5 },
+    { midi: 66, beats: 1, bar: 1, beat: 2.5 },
+    { midi: 69, beats: 1, bar: 2, beat: 1.25 },
+    { midi: 71, beats: 1, bar: 4, beat: 3.5 },
+  ];
+  const ion = scoreFrankZappaIonianAvoidTonic(lydChords, melody);
+  const disp = scoreFrankZappaModeMetricDisplacement(melody);
+  const composite = scoreFrankZappaIonianLydianModeCoverage(lydChords, melody);
+  return lyd.score >= 5 && ion.score >= 4 && disp.score >= 5 && composite.score >= 5;
+}
+
+function testFrankZappaStructuralPillarsIncludeModeCoverage(): boolean {
+  const ctx = minimalZappaContext();
+  const score = minimalZappaScore();
+  const pillars = scoreFrankZappaStructuralPillars({
+    score,
+    context: ctx,
+    chords: ['Dmaj7#11', 'A7alt', 'Gmaj7', 'F#7'],
+    sections: [{ label: 'a', barStart: 1, barEnd: 4, role: 'verse' }],
+    melody: [{ midi: 62, beats: 1, bar: 1, beat: 0.5 }],
+  });
+  return pillars.some((p) => p.name.includes('Ionian/Lydian'));
 }
 
 function testFrankZappaStructuralScorers(): boolean {
@@ -193,6 +225,8 @@ export function runFrankZappaGceStructuralTests(): { name: string; ok: boolean }
     ['Zappa GCE — duo registry hook', testFrankZappaGceRegistryHook],
     ['Zappa GCE — rhythmExpectation anti_metric', testFrankZappaRhythmExpectation],
     ['Zappa GCE — structural scorers + pillars', testFrankZappaStructuralScorers],
+    ['Zappa GCE — Ionian/Lydian ironic mode scorers', testFrankZappaIonianLydianModeScorers],
+    ['Zappa GCE — structural pillars include Ionian/Lydian', testFrankZappaStructuralPillarsIncludeModeCoverage],
     ['Zappa GCE — scoreFrankZappaResultForGce finite', testFrankZappaGceGateFinite],
     ['Zappa GCE — songwriter id aliases', testFrankZappaSongwriterAliases],
     ['Zappa GCE — bluesrockFerocious in SLONIMSKY map', testFrankZappaBluesrockFerociousInSlonimskyMap],
