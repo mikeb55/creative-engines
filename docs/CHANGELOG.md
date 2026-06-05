@@ -2,6 +2,14 @@
 
 ### Added
 
+- **Ralph Towner v2 ECM composer (`rt:*`)** — guitar-born polyphonic slice (`ralphTownerSlice.ts`): fingerstyle voicing, melody-from-arpeggio, open-string resonance, slow harmonic fields, classical counterpoint; golden-path precompute + locked harmony routing + smoke **`townerGuitarPolySmoke.test.ts`** seed **98001**.
+- **Towner VRB bundle** — **`townerVrbFingerprints.ts`** — 8 fingerprints + negative discriminators (Garbarek / Wheeler / Weber / Surman / Bley / generic classical guitar); bundle id **`towner_guitar_polyphony`**; aliases `ralph_towner` / `towner` / `rt`.
+- **Towner Big Band rules** — five named rules in **`bigBandRuleRegistry.ts`**: GuitarBornHarmony, MelodyFromVoicing, ResonanceArchitecture, ClassicalCounterpoint, ChamberDialogue.
+- **Towner evaluation profile** — **`townerStyleProfile.ts`** with pass/fail thresholds and ECM negative discriminators.
+- **Towner assigned to ECM Chamber Jazz** — **`composerGroupDefinitions.ts`** **`ECM_CHAMBER_JAZZ`** group; songwriter **`ralph_towner`** + arranger **`towner`** in **`HomeGenerate.tsx`** ECM optgroup.
+
+### Added
+
 - **John Surman v2 ECM composer (`js:*`)** — British folk-minimalist slice (`johnSurmanSlice.ts`): folk modal centers, minimalist ostinato, dark reed register, structural silence; golden-path precompute + locked harmony routing + smoke **`surmanFolkModalSmoke.test.ts`** seed **97001**.
 - **Surman VRB bundle** — **`surmanVrbFingerprints.ts`** — 8 fingerprints + negative discriminators (Garbarek / Wheeler / Weber / Bley / jazz bleed); bundle id **`surman_folk_modal`**; aliases `john_surman` / `surman` / `js`.
 - **Surman Big Band rules** — five named rules in **`bigBandRuleRegistry.ts`**: FolkModalHarmony, DarkReedMelody, MinimalistOstinato, ChamberSpace, FolkPhraseContour.

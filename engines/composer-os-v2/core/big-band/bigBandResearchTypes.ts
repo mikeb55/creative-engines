@@ -43,7 +43,10 @@ export type BigBandComposerId =
   | 'schifrin_groove'
   | 'surman'
   | 'john_surman'
-  | 'surman_folk_modal';
+  | 'surman_folk_modal'
+  | 'towner'
+  | 'ralph_towner'
+  | 'towner_guitar_polyphony';
 
 export type BigBandEraId =
   | 'swing'

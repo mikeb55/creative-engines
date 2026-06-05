@@ -80,7 +80,7 @@ import { holmanStyleProfile } from '../core/evaluation/holmanStyleProfile';
 import { bleyStyleProfile } from '../core/evaluation/bleyStyleProfile';
 import { weberStyleProfile } from '../core/evaluation/weberStyleProfile';
 import { surmanStyleProfile } from '../core/evaluation/surmanStyleProfile';
-import { surmanStyleProfile } from '../core/evaluation/surmanStyleProfile';
+import { townerStyleProfile } from '../core/evaluation/townerStyleProfile';
 import { ogermanStyleProfile } from '../core/evaluation/ogermanStyleProfile';
 import { quincyStyleProfile } from '../core/evaluation/quincyStyleProfile';
 import { sebeskyStyleProfile } from '../core/evaluation/sebeskyStyleProfile';
@@ -2554,6 +2554,10 @@ function bigBandEvaluationStyleProfile(
     case 'john_surman':
     case 'surman_folk_modal':
       return surmanStyleProfile;
+    case 'towner':
+    case 'ralph_towner':
+    case 'towner_guitar_polyphony':
+      return townerStyleProfile;
     case 'holman':
     case 'bill_holman':
       return holmanStyleProfile;

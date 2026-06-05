@@ -46,6 +46,10 @@ import type {
   JohnSurmanSliceParams,
 } from './song-mode/johnSurmanSlice';
 import type {
+  TownerPolyphonicPlan,
+  RalphTownerSliceParams,
+} from './song-mode/ralphTownerSlice';
+import type {
   WeberFieldPlan,
   EberhardWeberSliceParams,
 } from './song-mode/weberFieldSlice';
@@ -1885,6 +1889,26 @@ export interface GenerationMetadata {
   johnSurmanSliceReceipt?: string;
   johnSurmanEffectiveHarmonyBars?: string[];
   johnSurmanDeviceReceipts?: string[];
+  /** Ralph Towner — guitar-born polyphonic ECM slice (`ralphTownerSlice.ts`, receipts `rt:*`). */
+  ralphTownerDiagnostics?: {
+    songwriterId: 'ralph_towner';
+    barsConsidered: number;
+    guitarVoicingTouches: number;
+    melodyFromVoicingTouches: number;
+    resonanceTouches: number;
+    openStringTouches: number;
+    bassIndependenceTouches: number;
+    arpeggioMotorTouches: number;
+    minSectionSpan?: number;
+    maxPhraseArcBars?: number;
+    sliceParams?: RalphTownerSliceParams;
+    deviceReceipts?: string[];
+  };
+  townerPolyphonicPlan?: TownerPolyphonicPlan;
+  ralphTownerSliceParams?: RalphTownerSliceParams;
+  ralphTownerSliceReceipt?: string;
+  ralphTownerEffectiveHarmonyBars?: string[];
+  ralphTownerDeviceReceipts?: string[];
   /** Eberhard Weber — bass-led harmonic field slice (`weberFieldSlice.ts`, receipts `ew:*`). */
   eberhardWeberDiagnostics?: {
     songwriterId: 'eberhard_weber';

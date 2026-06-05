@@ -659,6 +659,21 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
     return johnSurmanEff[barIndex - 1]!;
   }
 
+  /**
+   * Ralph Towner: `precomputeRalphTownerEffectiveHarmonyBars` applies guitar-born polyphonic field voicing.
+   * After precompute, `ralphTownerEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const ralphTownerEff = meta?.ralphTownerEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'ralph_towner' &&
+    Array.isArray(ralphTownerEff) &&
+    ralphTownerEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return ralphTownerEff[barIndex - 1]!;
+  }
+
   const eberhardWeberEff = meta?.eberhardWeberEffectiveHarmonyBars;
   if (
     meta?.songwriterStyleId === 'eberhard_weber' &&

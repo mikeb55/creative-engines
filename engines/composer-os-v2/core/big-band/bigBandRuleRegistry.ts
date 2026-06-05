@@ -131,6 +131,45 @@ const SURMAN_COMPOSER_RULES: BigBandRule[] = [
   ),
 ];
 
+/** Ralph Towner — guitar-born polyphonic ECM; fingerstyle voicing, arpeggio melody, resonance architecture. */
+const TOWNER_COMPOSER_RULES: BigBandRule[] = [
+  R(
+    'towner.guitar_born_harmony',
+    'GuitarBornHarmonyRule: harmony from fingerstyle voicing logic — open-string spacing, classical independence, piano-informed extensions; not jazz-grip block chords; open strings ring across changes',
+    'composer',
+    'harmony',
+    87
+  ),
+  R(
+    'towner.melody_from_voicing',
+    'MelodyFromVoicingRule: primary melody derived from arpeggio pattern or chord shape; contour inseparable from resonance; suppress separate lead-line-above-block-chord writing',
+    'composer',
+    'melody',
+    86
+  ),
+  R(
+    'towner.resonance_architecture',
+    'ResonanceArchitectureRule: common tones preserved; overtone decay structural; silence after key events completes the phrase; do not fill all space',
+    'composer',
+    'density',
+    85
+  ),
+  R(
+    'towner.classical_counterpoint',
+    'ClassicalCounterpointRule: independent bass against upper melody; middle strand implied; arpeggiation as linear composition; counterpoint by register — bass slower, upper more active',
+    'composer',
+    'harmony',
+    84
+  ),
+  R(
+    'towner.chamber_dialogue',
+    'ChamberDialogueRule: ensemble as distributed chamber counterpoint; guitar as harmonic center but flexible role exchange; no strict soloist vs rhythm section split; dialogic not domineering',
+    'composer',
+    'form',
+    83
+  ),
+];
+
 /** Jan Garbarek — ritual modal ECM field; melody as invocation over sparse modal center. */
 const JAN_GARBAREK_COMPOSER_RULES: BigBandRule[] = [
   R('garbarek.modal_field', 'ModalFieldRule: harmonic environment is a field not a progression — Dorian/Aeolian/Mixolydian/pentatonic centers held for extended spans; avoid functional ii–V–I', 'composer', 'harmony', 86),
@@ -426,6 +465,9 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
   surman: SURMAN_COMPOSER_RULES,
   john_surman: SURMAN_COMPOSER_RULES,
   surman_folk_modal: SURMAN_COMPOSER_RULES,
+  towner: TOWNER_COMPOSER_RULES,
+  ralph_towner: TOWNER_COMPOSER_RULES,
+  towner_guitar_polyphony: TOWNER_COMPOSER_RULES,
   bill_holman: HOLMAN_COMPOSER_RULES,
   holman: HOLMAN_COMPOSER_RULES,
   carla_bley: CARLA_BLEY_COMPOSER_RULES,

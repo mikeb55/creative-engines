@@ -210,6 +210,9 @@ export function runBehaviourGates(
   const zappaStructuralRelax = isFrankZappaSongwriterId(
     opts?.compositionContext?.generationMetadata?.songwriterStyleId
   );
+  const townerStructuralRelax =
+    opts?.compositionContext?.generationMetadata?.songwriterStyleId === 'ralph_towner';
+  const bassStructuralRelax = zappaStructuralRelax || townerStructuralRelax;
   const duoCtx = { compositionContext: opts?.compositionContext };
   const guitarBarCount =
     score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar')?.measures.length ?? 0;
@@ -301,7 +304,7 @@ export function runBehaviourGates(
 
   const bassIdentity = validateBassIdentity(score, {
     presetId: opts?.presetId,
-    zappaStructuralRelax,
+    zappaStructuralRelax: bassStructuralRelax,
   });
   if (!bassIdentity.valid) errors.push(...bassIdentity.errors);
   const bassIdentityValid = bassIdentity.valid;

@@ -641,6 +641,40 @@ const songwriterRules: Partial<Record<SongwriterRuleId, SongwritingRuleEntry[]>>
       'bridge'
     ),
   ],
+  ralph_towner: [
+    R(
+      'towner.guitar_born_voicing',
+      'Harmony from fingerstyle guitar voicing — maj9/add9/6-9/sus2/slash; open strings ring across changes; classical spacing',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'towner.melody_from_voicing',
+      'Melody derived from arpeggio or chord shape — finger-composed contour inseparable from resonance; not separate lead line',
+      'songwriter',
+      'melody',
+      9,
+      'verse'
+    ),
+    R(
+      'towner.resonance_architecture',
+      'Common tones preserved; overtone decay structural; silence after key events completes the phrase',
+      'songwriter',
+      'form',
+      8,
+      'bridge'
+    ),
+    R(
+      'towner.classical_counterpoint',
+      'Independent bass against upper melody; arpeggiation as linear composition; counterpoint by register',
+      'songwriter',
+      'harmony',
+      8,
+      'form'
+    ),
+  ],
   jan_garbarek: [
     R(
       'garbarek.modal_field',

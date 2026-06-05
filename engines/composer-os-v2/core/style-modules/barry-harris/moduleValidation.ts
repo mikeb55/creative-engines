@@ -158,7 +158,8 @@ export function validateBarryHarrisConformance(
       metadata?.songwriterStyleId === 'wayne_shorter' ||
       metadata?.songwriterStyleId === 'thelonious_monk' ||
       metadata?.songwriterStyleId === 'bill_holman' ||
-      metadata?.songwriterStyleId === 'claus_ogerman'
+      metadata?.songwriterStyleId === 'claus_ogerman' ||
+      metadata?.songwriterStyleId === 'ralph_towner'
         ? 18
         : 14;
     if (

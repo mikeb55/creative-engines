@@ -71,6 +71,9 @@ export const bigBandPreset: Preset = {
       'surman',
       'john_surman',
       'surman_folk_modal',
+      'towner',
+      'ralph_towner',
+      'towner_guitar_polyphony',
     ],
   },
 };

@@ -11,6 +11,7 @@ import {
 import { KENNY_WHEELER_VRF_FINGERPRINT_RECEIPTS } from './kennyWheelerVrbFingerprints';
 import { JAN_GARBAREK_VRF_FINGERPRINT_RECEIPTS } from './janGarbarekVrbFingerprints';
 import { SURMAN_FOLK_MODAL_VRF_FINGERPRINT_RECEIPTS } from './surmanVrbFingerprints';
+import { TOWNER_GUITAR_POLYPHONY_VRF_FINGERPRINT_RECEIPTS } from './townerVrbFingerprints';
 import { BILL_HOLMAN_VRF_FINGERPRINT_RECEIPTS } from './holmanVrbFingerprints';
 import { CARLA_BLEY_VRF_FINGERPRINT_RECEIPTS } from './carlaBleyVrbFingerprints';
 import { WEBER_FIELD_VRF_FINGERPRINT_RECEIPTS } from './weberVrbFingerprints';
@@ -1458,6 +1459,57 @@ const SURMAN_FOLK_MODAL: VoiceRuleBundle = {
     guitarSource: 'chord_block_derived',
     bassSource: 'bass_line',
     rhythmicIndependenceFloor: 0.4,
+    registerInterlock: false,
+    intervalPreference: 'modal_sparse',
+  },
+};
+
+const TOWNER_GUITAR_POLYPHONY: VoiceRuleBundle = {
+  voiceId: 'towner_guitar_polyphony',
+  harmonicRhythm: {
+    minChordDurationBars: 4,
+    maxChordDurationBars: 12,
+    allowMidBarChange: false,
+  },
+  bassPolicy: {
+    role: 'melodic-counterline',
+    allowOctaveDoubling: false,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 8,
+    maxSpreadSemitones: 36,
+    clusterSizeNotes: [3, 5],
+    forbidParallelFifths: true,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'stepwise-with-leaps',
+    maxLeapSemitones: 9,
+    preferredIntervalSets: [1, 2, 4, 5, 7, 9],
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 1,
+    mutateSingleVoiceAtTime: true,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: TOWNER_GUITAR_POLYPHONY_VRF_FINGERPRINT_RECEIPTS,
+  },
+  formPolicy: {
+    narrativeArc: 'continuous-curve',
+    sectionRecallEnforced: false,
+    noCadentialRelease: true,
+  },
+  rhythmPolicy: {
+    antiMetric: false,
+  },
+  repairPolicy: {
+    resolveParallels: false,
+    maxVoiceOverlap: 2,
+  },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
+  duoVoicePolicy: {
+    guitarSource: 'chord_block_derived',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.55,
     registerInterlock: false,
     intervalPreference: 'modal_sparse',
   },
@@ -3813,6 +3865,10 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   john_surman: SURMAN_FOLK_MODAL,
   surman: SURMAN_FOLK_MODAL,
   js: SURMAN_FOLK_MODAL,
+  towner_guitar_polyphony: TOWNER_GUITAR_POLYPHONY,
+  ralph_towner: TOWNER_GUITAR_POLYPHONY,
+  towner: TOWNER_GUITAR_POLYPHONY,
+  rt: TOWNER_GUITAR_POLYPHONY,
   weber_field: WEBER_FIELD,
   eberhard_weber: WEBER_FIELD,
   weber: WEBER_FIELD,

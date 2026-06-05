@@ -49,9 +49,9 @@ Engine: **`engines/composer-os-v2/core/groups/composerGroupEngine.ts`** · defin
 | `soloistSpotlight` | 0.45 | Solo as colour, not feature |
 | `sectionalContrastMode` | `gradual` | Sections melt into each other |
 
-**Members (fully implemented):** Maria Schneider, Kenny Wheeler, Bill Evans (dual — default ECM), Henry Threadgill, Bob Brookmeyer, Jan Garbarek, John Surman, Carla Bley, Eberhard Weber — plus Gil Evans, Pat Metheny, `ecm_chamber` preset.
+**Members (fully implemented):** Maria Schneider, Kenny Wheeler, Bill Evans (dual — default ECM), Henry Threadgill, Bob Brookmeyer, Jan Garbarek, John Surman, Ralph Towner, Carla Bley, Eberhard Weber — plus Gil Evans, Pat Metheny, `ecm_chamber` preset.
 
-**Partial / future:** Surman, Towner.
+**Partial / future:** *(none in ECM Chamber Jazz roster)*.
 
 ### Studio Orchestral Jazz
 
@@ -240,6 +240,7 @@ Canonical Song Mode / Big Band composers in **`engines/composer-os-v2`**. **Slic
 | Kenny Wheeler | `kenny_wheeler` | `kw:*` | fully implemented | Polyaxial upper sonority + independent bass, lyrical ECM brittleness | `polyaxialHarmony`, `tensionCarryForward`, `bassTrajectoryLogic`, `melodicDisjunctionRate`, `cadentialOpacity`, `voicingSpecificity` |
 | Jan Garbarek | `jan_garbarek` | `jg:*` | fully implemented | Ritual modal melody over sparse harmonic field, drone gravity, phrase-breath silence | `modalCentricity`, `dronePresence`, `harmonicSlowness`, `melodicSustain`, `phraseBreathWeight`, `innerVoiceRestraint`, `folkArchetypeStrength` |
 | John Surman | `john_surman` | `js:*` | fully implemented | British folk-minimalist ECM: Dorian/Mixolydian/pentatonic centers, minimalist ostinato, dark reed register, structural silence | `folkModalCenter`, `minimalistRepetition`, `darkReedRegister`, `spaceAndSilence`, `folkMelodyContour` |
+| Ralph Towner | `ralph_towner` | `rt:*` | fully implemented | Guitar-born polyphonic ECM: fingerstyle voicing, melody-from-arpeggio, open-string resonance, slow harmonic fields, classical counterpoint | `guitarBornVoicing`, `melodyFromVoicing`, `resonanceAndSilence`, `slowHarmonicRhythm`, `classicalCounterpoint` |
 | Eberhard Weber | `eberhard_weber` | `ew:*` | fully implemented | Bass-led harmonic field: pedal persistence, slow upper refresh, revoicing over resolution | `pedalPersistence`, `upperChordRefreshRate`, `functionalCadenceRate`, `revoicingInsteadOfResolution`, `bassAsHarmonySource` |
 | Billy Strayhorn | `billy_strayhorn` | `bs:*` | fully implemented | Chromatic song architecture + extended-tone melody/harmony fusion | `chromaticContinuity`, `extendedToneMelody`, `parallelColorMotion`, `phraseArcLength`, `innerVoiceActivity`, `closedBlockSustain` |
 | Don Sebesky | `don_sebesky` | `ds:*` | fully implemented | CTI production-orchestra: groove bed, string halo, melody-legible reharm, tiered lifts | `groovePersistence`, `stringProminence`, `melodyLegibility`, `functionalLegibility`, `liftToBlareArc`, `soloistSpotlight`, `centerFillDensity` |
@@ -471,6 +472,46 @@ Surman is the **British folk-minimalist** voice in ECM Chamber Jazz — modal mo
 **VRB bundle id:** **`surman_folk_modal`** — 8 fingerprints + Garbarek / Wheeler / Weber / Bley / jazz negative discriminators.
 
 **Evaluation:** **`surmanStyleProfile.ts`** — pass on folk modal center ≥0.72, minimalist repetition ≥0.65, dark reed ≥0.68, silence ≥0.60, folk contour ≥0.63; hard fail on Garbarek bright-sax bleed, Wheeler polyaxial bleed, Weber pedal-field bleed, altered dominants, tutti density.
+
+---
+
+### Ralph Towner (`ralph_towner`)
+
+Towner is the **guitar-born polyphonic** voice in ECM Chamber Jazz — fingerstyle harmony thinking as one instrument, not Garbarek's Nordic sax ritual, Wheeler's polyaxial horn lyricism, Weber's bass pedal field, Surman's dark reed folk-minimalism, or Bley's irony collage.
+
+**Three pillars**
+
+1. **Guitar-born harmony** — maj9/add9/6-9/sus2/slash voicings from fingerstyle logic; open strings ring across changes; classical spacing with piano-informed extensions.
+2. **Classical-jazz polyphony** — independent bass against upper melody; arpeggiation as linear composition; counterpoint by register.
+3. **Resonance architecture** — common tones preserved; overtone decay structural; silence completes the phrase after key harmonic events.
+
+**Towner vs other ECM voices**
+
+| | **Towner** | **Garbarek** | **Wheeler** | **Weber** | **Surman** |
+|---|------------|--------------|-------------|-----------|------------|
+| Harmonic engine | Fingerstyle guitar voicing field | Ritual modal field + drone | Polyaxial slash independence | Bass pedal field | Folk modal ostinato |
+| Melody | From arpeggio/chord shape inside voicing | Bright chant archetype | Brittle angular leaps | Long calm arches | Dark stepwise reed |
+| Texture | Open-string resonance + chamber dialogue | Sparse framing around line | Brittle intervallic bloom | Pedal + slow upper refresh | Low-density folk minimal |
+| Cadence | Internal re-color, no ii–V–I | Open drone center | Open sus / slash opacity | Revoicing over resolution | Modal step shift |
+| Choose Towner when | Guitar polyphony, arpeggio-as-composition, resonance | Nordic ritual sax invocation | Lyrical polyaxial chamber | Bass-led harmonic field | British folk-minimal reed |
+
+**Song Mode slice** — **`ralphTownerSlice.ts`** (`rt:*` receipts): guitar-born voicing → melody-from-voicing → open-string resonance → slow harmonic field → classical bass independence → arpeggio motor.
+
+**Five parameters** (0–1, defaults in parentheses):
+
+| Parameter | Default | Musical role |
+|-----------|---------|--------------|
+| `guitarBornVoicing` | 0.78 | Fingerstyle maj9/add9/6-9/sus2/slash; open strings across changes |
+| `melodyFromVoicing` | 0.72 | Melody from arpeggio/chord shape — not separate lead above blocks |
+| `resonanceAndSilence` | 0.70 | Common tones, open-string sustain, structural decay silence |
+| `slowHarmonicRhythm` | 0.72 | One sonority per phrase; internal bass/upper shift; no ii–V–I |
+| `classicalCounterpoint` | 0.68 | Independent bass; middle strand implied; register counterpoint |
+
+**Big Band arranger id:** **`towner`** — five rules (GuitarBornHarmony, MelodyFromVoicing, ResonanceArchitecture, ClassicalCounterpoint, ChamberDialogue).
+
+**VRB bundle id:** **`towner_guitar_polyphony`** — 8 fingerprints + Garbarek / Wheeler / Weber / Surman / Bley / generic classical guitar negative discriminators.
+
+**Evaluation:** **`townerStyleProfile.ts`** — pass on guitarBornVoicing ≥0.70, melodyFromVoicing ≥0.65, resonanceAndSilence ≥0.62, slowHarmonicRhythm ≥0.65, classicalCounterpoint ≥0.60; hard fail on Garbarek sax bleed, Wheeler polyaxial bleed, Weber pedal-field bleed, Surman folk ostinato bleed, bebop alteration, tremolo classical clichés.
 
 ---
 
