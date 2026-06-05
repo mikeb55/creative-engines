@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+### Fixed
+
+- **UI — Dave Brubeck** — demoted from **Shipped (full slice)** to **In library** (`HomeGenerate.tsx`); melody profile + odd-meter presets only — no `brubeckSlice.ts`.
+- **UI — Beatles** — promoted to **Shipped (full slice)**; `beatlesSlice.ts` already wired in golden path + smoke.
+- **UI — McCoy Tyner** — added to primary songwriter dropdown; quartal slice already in golden path.
+- **UI — Gershwin / Cole Porter** — added as primary songwriter entries (arranger rows unchanged); slices already wired.
+- **UI — Ornette Coleman** — confirmed **In library** songwriter row + VRB stub profile (no golden-path slice this pass).
+
 ### Added
 
 - **Lalo Schifrin v2 Film composer (`ls:*`)** — groove-native jazz-Latin film slice (`laloSchifrinSlice.ts`): odd-meter riff accents, Latin percussion grid, brass attack strata, modal altered vamps, compact motivic cells; golden-path precompute + locked harmony routing + **`filmComposerSlices.test.ts`** seed **94001**.

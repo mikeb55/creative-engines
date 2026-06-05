@@ -1884,7 +1884,7 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
   ornette_coleman: {
     id: 'ornette_coleman',
     description:
-      'Harmolodic pitch-field + democratic lines — blues-leaning hooks, pulse-locked grid, no chord-cycle spine (VRB receipts until slice ships).',
+      'STUB — harmolodic VRB only (43 OC_* receipts); full golden-path slice pending Perplexity research. Planning weights + VRB harmonic voice; not wired as primary Song Mode slice.',
     lineVsCellEmphasis: 0.52,
     harmonyColourBias: 0.42,
     formRegularity: 0.28,
