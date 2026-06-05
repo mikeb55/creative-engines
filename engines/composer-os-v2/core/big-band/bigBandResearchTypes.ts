@@ -40,7 +40,10 @@ export type BigBandComposerId =
   | 'ogerman_continuum'
   | 'schifrin'
   | 'lalo_schifrin'
-  | 'schifrin_groove';
+  | 'schifrin_groove'
+  | 'surman'
+  | 'john_surman'
+  | 'surman_folk_modal';
 
 export type BigBandEraId =
   | 'swing'

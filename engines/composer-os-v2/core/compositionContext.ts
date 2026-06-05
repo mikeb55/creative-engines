@@ -42,6 +42,10 @@ import type {
   JanGarbarekSliceParams,
 } from './song-mode/janGarbarekSlice';
 import type {
+  JohnSurmanFolkPlan,
+  JohnSurmanSliceParams,
+} from './song-mode/johnSurmanSlice';
+import type {
   WeberFieldPlan,
   EberhardWeberSliceParams,
 } from './song-mode/weberFieldSlice';
@@ -1860,6 +1864,27 @@ export interface GenerationMetadata {
   janGarbarekSliceReceipt?: string;
   janGarbarekEffectiveHarmonyBars?: string[];
   janGarbarekDeviceReceipts?: string[];
+  /** John Surman — British folk-minimalist ECM slice (`johnSurmanSlice.ts`, receipts `js:*`). */
+  johnSurmanDiagnostics?: {
+    songwriterId: 'john_surman';
+    barsConsidered: number;
+    folkModalTouches: number;
+    ostinatoTouches: number;
+    silenceTouches: number;
+    alteredStripped: number;
+    darkReedTouches: number;
+    minSectionSpan?: number;
+    maxPhraseArcBars?: number;
+    darkRegisterMidiFloor?: number;
+    darkRegisterMidiCeiling?: number;
+    sliceParams?: JohnSurmanSliceParams;
+    deviceReceipts?: string[];
+  };
+  johnSurmanFolkPlan?: JohnSurmanFolkPlan;
+  johnSurmanSliceParams?: JohnSurmanSliceParams;
+  johnSurmanSliceReceipt?: string;
+  johnSurmanEffectiveHarmonyBars?: string[];
+  johnSurmanDeviceReceipts?: string[];
   /** Eberhard Weber — bass-led harmonic field slice (`weberFieldSlice.ts`, receipts `ew:*`). */
   eberhardWeberDiagnostics?: {
     songwriterId: 'eberhard_weber';

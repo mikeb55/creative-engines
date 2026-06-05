@@ -92,6 +92,45 @@ const STRAYHORN_COMPOSER_RULES: BigBandRule[] = [
   ),
 ];
 
+/** John Surman — British folk-minimalist ECM; modal folk centers, dark reed lines, structural silence. */
+const SURMAN_COMPOSER_RULES: BigBandRule[] = [
+  R(
+    'surman.folk_modal_harmony',
+    'FolkModalHarmonyRule: harmony from Dorian/Mixolydian/pentatonic modal centers — no altered dominants or chromatic functional motion; modal center sustained across phrase spans',
+    'composer',
+    'harmony',
+    87
+  ),
+  R(
+    'surman.dark_reed_melody',
+    'DarkReedMelodyRule: primary melodic voice in low reed register — baritone sax or bass clarinet weight; long introspective phrases; suppress bright upper-register leads',
+    'composer',
+    'melody',
+    86
+  ),
+  R(
+    'surman.minimalist_ostinato',
+    'MinimalistOstinatoRule: rhythmic and melodic ostinato as structural device — gradual evolution preferred over variety; organic repetition not mechanical',
+    'composer',
+    'rhythm',
+    85
+  ),
+  R(
+    'surman.chamber_space',
+    'ChamberSpaceRule: low ensemble density throughout — structural silence enforced; no tutti saturation; each phrase needs decay space',
+    'composer',
+    'density',
+    84
+  ),
+  R(
+    'surman.folk_phrase_contour',
+    'FolkPhraseContourRule: melodic phrases shaped as folk-song arcs — stepwise motion, singable contour, modal leaps only (m3, P4, P5); no bebop fragmentation',
+    'composer',
+    'form',
+    83
+  ),
+];
+
 /** Jan Garbarek — ritual modal ECM field; melody as invocation over sparse modal center. */
 const JAN_GARBAREK_COMPOSER_RULES: BigBandRule[] = [
   R('garbarek.modal_field', 'ModalFieldRule: harmonic environment is a field not a progression — Dorian/Aeolian/Mixolydian/pentatonic centers held for extended spans; avoid functional ii–V–I', 'composer', 'harmony', 86),
@@ -384,6 +423,9 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
   ],
   garbarek: JAN_GARBAREK_COMPOSER_RULES,
   jan_garbarek: JAN_GARBAREK_COMPOSER_RULES,
+  surman: SURMAN_COMPOSER_RULES,
+  john_surman: SURMAN_COMPOSER_RULES,
+  surman_folk_modal: SURMAN_COMPOSER_RULES,
   bill_holman: HOLMAN_COMPOSER_RULES,
   holman: HOLMAN_COMPOSER_RULES,
   carla_bley: CARLA_BLEY_COMPOSER_RULES,

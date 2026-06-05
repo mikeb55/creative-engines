@@ -49,7 +49,7 @@ Engine: **`engines/composer-os-v2/core/groups/composerGroupEngine.ts`** · defin
 | `soloistSpotlight` | 0.45 | Solo as colour, not feature |
 | `sectionalContrastMode` | `gradual` | Sections melt into each other |
 
-**Members (fully implemented):** Maria Schneider, Kenny Wheeler, Bill Evans (dual — default ECM), Henry Threadgill, Bob Brookmeyer, Jan Garbarek, Carla Bley, Eberhard Weber — plus Gil Evans, Pat Metheny, `ecm_chamber` preset.
+**Members (fully implemented):** Maria Schneider, Kenny Wheeler, Bill Evans (dual — default ECM), Henry Threadgill, Bob Brookmeyer, Jan Garbarek, John Surman, Carla Bley, Eberhard Weber — plus Gil Evans, Pat Metheny, `ecm_chamber` preset.
 
 **Partial / future:** Surman, Towner.
 
@@ -239,6 +239,7 @@ Canonical Song Mode / Big Band composers in **`engines/composer-os-v2`**. **Slic
 | Henry Threadgill | `henry_threadgill` | `ht:*` | fully implemented | Episodic interval-cell harmony, polymodal bass, anti-metric phrases | `intervalCellDensity`, `antiMetricStrength`, `polymodalSeparation`, `episodeContrast` |
 | Kenny Wheeler | `kenny_wheeler` | `kw:*` | fully implemented | Polyaxial upper sonority + independent bass, lyrical ECM brittleness | `polyaxialHarmony`, `tensionCarryForward`, `bassTrajectoryLogic`, `melodicDisjunctionRate`, `cadentialOpacity`, `voicingSpecificity` |
 | Jan Garbarek | `jan_garbarek` | `jg:*` | fully implemented | Ritual modal melody over sparse harmonic field, drone gravity, phrase-breath silence | `modalCentricity`, `dronePresence`, `harmonicSlowness`, `melodicSustain`, `phraseBreathWeight`, `innerVoiceRestraint`, `folkArchetypeStrength` |
+| John Surman | `john_surman` | `js:*` | fully implemented | British folk-minimalist ECM: Dorian/Mixolydian/pentatonic centers, minimalist ostinato, dark reed register, structural silence | `folkModalCenter`, `minimalistRepetition`, `darkReedRegister`, `spaceAndSilence`, `folkMelodyContour` |
 | Eberhard Weber | `eberhard_weber` | `ew:*` | fully implemented | Bass-led harmonic field: pedal persistence, slow upper refresh, revoicing over resolution | `pedalPersistence`, `upperChordRefreshRate`, `functionalCadenceRate`, `revoicingInsteadOfResolution`, `bassAsHarmonySource` |
 | Billy Strayhorn | `billy_strayhorn` | `bs:*` | fully implemented | Chromatic song architecture + extended-tone melody/harmony fusion | `chromaticContinuity`, `extendedToneMelody`, `parallelColorMotion`, `phraseArcLength`, `innerVoiceActivity`, `closedBlockSustain` |
 | Don Sebesky | `don_sebesky` | `ds:*` | fully implemented | CTI production-orchestra: groove bed, string halo, melody-legible reharm, tiered lifts | `groovePersistence`, `stringProminence`, `melodyLegibility`, `functionalLegibility`, `liftToBlareArc`, `soloistSpotlight`, `centerFillDensity` |
@@ -430,6 +431,46 @@ Garbarek is the most **melodically archetypal** voice in the **ECM Chamber Jazz*
 **Reference works:** *I Took Up the Runes* · *Visible World* · *Rites* · *All Those Born With Wings* · *Dis* · *Officium*
 
 **Evaluation:** **`garbarekStyleProfile.ts`** — pass on melodic sustain, pedal stability, slow harmonic rate, inner-voice restraint, modal identity, silence weighting, cadential openness; hard fail on Wheeler polyaxial independence, Schneider swell arcs, Threadgill anti-metric density, walking bass, fast harmony, ii–V–I closures.
+
+---
+
+### John Surman (`john_surman`)
+
+Surman is the **British folk-minimalist** voice in ECM Chamber Jazz — modal moorland fog, not Garbarek's Nordic ritual chant, Wheeler's polyaxial suspension, or Weber's bass pedal field.
+
+**Three pillars**
+
+1. **British folk modality** — Dorian, Mixolydian, pentatonic scales *are* the harmony (not jazz changes with folk colour).
+2. **Minimalist architecture** — rhythmic/melodic ostinato and gradual 8–16 bar process; organic, not Glass/Riley mechanical.
+3. **Dark multi-reed weight** — baritone sax / bass clarinet register; long introspective lines, not bright upper-register sax archetype.
+
+**Surman vs other ECM voices**
+
+| | **Surman** | **Garbarek** | **Wheeler** | **Weber** |
+|---|------------|--------------|-------------|-----------|
+| Harmonic engine | Folk modal center sustained 8–16 bars | Ritual modal field + drone | Polyaxial slash independence | Bass pedal field |
+| Melody | Dark low reed, stepwise folk contour | Bright chant archetype | Brittle angular leaps | Long calm arches |
+| Texture | Low-density chamber; structural silence | Sparse framing around exposed line | Brittle intervallic bloom | Pedal + slow upper refresh |
+| Cadence | Modal step/common-tone shift | Open drone center | Open sus / slash opacity | Revoicing over resolution |
+| Choose Surman when | British folk-minimal ECM, dark reed, ostinato process | Nordic ritual sax invocation | Lyrical polyaxial chamber | Bass-led harmonic field |
+
+**Song Mode slice** — **`johnSurmanSlice.ts`** (`js:*` receipts): folk modal field → minimalist ostinato hold → dark reed register weight → structural silence → folk phrase contour.
+
+**Five parameters** (0–1, defaults in parentheses):
+
+| Parameter | Default | Musical role |
+|-----------|---------|--------------|
+| `folkModalCenter` | 0.80 | Dorian/Mixolydian/pentatonic as primary material; no altered dominants |
+| `minimalistRepetition` | 0.72 | Ostinato + gradual 8–16 bar evolution |
+| `darkReedRegister` | 0.75 | Baritone/bass-clarinet melodic weight (Bb2–Bb4) |
+| `spaceAndSilence` | 0.68 | Rests and sustained tones as compositional material |
+| `folkMelodyContour` | 0.70 | Stepwise folk-song shapes; modal leaps m3/P4/P5 only |
+
+**Big Band arranger id:** **`surman`** — five rules (FolkModalHarmony, DarkReedMelody, MinimalistOstinato, ChamberSpace, FolkPhraseContour).
+
+**VRB bundle id:** **`surman_folk_modal`** — 8 fingerprints + Garbarek / Wheeler / Weber / Bley / jazz negative discriminators.
+
+**Evaluation:** **`surmanStyleProfile.ts`** — pass on folk modal center ≥0.72, minimalist repetition ≥0.65, dark reed ≥0.68, silence ≥0.60, folk contour ≥0.63; hard fail on Garbarek bright-sax bleed, Wheeler polyaxial bleed, Weber pedal-field bleed, altered dominants, tutti density.
 
 ---
 

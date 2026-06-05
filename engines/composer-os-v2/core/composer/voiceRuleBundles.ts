@@ -10,6 +10,7 @@ import {
 } from './voiceRuleBundle';
 import { KENNY_WHEELER_VRF_FINGERPRINT_RECEIPTS } from './kennyWheelerVrbFingerprints';
 import { JAN_GARBAREK_VRF_FINGERPRINT_RECEIPTS } from './janGarbarekVrbFingerprints';
+import { SURMAN_FOLK_MODAL_VRF_FINGERPRINT_RECEIPTS } from './surmanVrbFingerprints';
 import { BILL_HOLMAN_VRF_FINGERPRINT_RECEIPTS } from './holmanVrbFingerprints';
 import { CARLA_BLEY_VRF_FINGERPRINT_RECEIPTS } from './carlaBleyVrbFingerprints';
 import { WEBER_FIELD_VRF_FINGERPRINT_RECEIPTS } from './weberVrbFingerprints';
@@ -1409,6 +1410,57 @@ const SCHIFRIN_GROOVE: VoiceRuleBundle = {
     maxVoiceOverlap: 3,
   },
   contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
+};
+
+const SURMAN_FOLK_MODAL: VoiceRuleBundle = {
+  voiceId: 'surman_folk_modal',
+  harmonicRhythm: {
+    minChordDurationBars: 4,
+    maxChordDurationBars: 16,
+    allowMidBarChange: false,
+  },
+  bassPolicy: {
+    role: 'ostinato-or-pedal',
+    allowOctaveDoubling: false,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 6,
+    maxSpreadSemitones: 22,
+    clusterSizeNotes: [2, 4],
+    forbidParallelFifths: true,
+    forbidOctaveDoubling: true,
+  },
+  melodicPolicy: {
+    contour: 'stepwise-with-leaps',
+    maxLeapSemitones: 7,
+    preferredIntervalSets: [2, 3, 4, 5, 7],
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 1,
+    mutateSingleVoiceAtTime: true,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: SURMAN_FOLK_MODAL_VRF_FINGERPRINT_RECEIPTS,
+  },
+  formPolicy: {
+    narrativeArc: 'continuous-curve',
+    sectionRecallEnforced: true,
+    noCadentialRelease: true,
+  },
+  rhythmPolicy: {
+    antiMetric: false,
+  },
+  repairPolicy: {
+    resolveParallels: false,
+    maxVoiceOverlap: 2,
+  },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
+  duoVoicePolicy: {
+    guitarSource: 'chord_block_derived',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.4,
+    registerInterlock: false,
+    intervalPreference: 'modal_sparse',
+  },
 };
 
 const JAN_GARBAREK: VoiceRuleBundle = {
@@ -3757,6 +3809,10 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   bley: CARLA_BLEY,
   garbarek: JAN_GARBAREK,
   jg: JAN_GARBAREK,
+  surman_folk_modal: SURMAN_FOLK_MODAL,
+  john_surman: SURMAN_FOLK_MODAL,
+  surman: SURMAN_FOLK_MODAL,
+  js: SURMAN_FOLK_MODAL,
   weber_field: WEBER_FIELD,
   eberhard_weber: WEBER_FIELD,
   weber: WEBER_FIELD,

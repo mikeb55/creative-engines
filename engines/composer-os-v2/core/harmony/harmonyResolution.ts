@@ -644,6 +644,21 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
     return janGarbarekEff[barIndex - 1]!;
   }
 
+  /**
+   * John Surman: `precomputeJohnSurmanEffectiveHarmonyBars` applies British folk-modal centres + ostinato.
+   * After precompute, `johnSurmanEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const johnSurmanEff = meta?.johnSurmanEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'john_surman' &&
+    Array.isArray(johnSurmanEff) &&
+    johnSurmanEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return johnSurmanEff[barIndex - 1]!;
+  }
+
   const eberhardWeberEff = meta?.eberhardWeberEffectiveHarmonyBars;
   if (
     meta?.songwriterStyleId === 'eberhard_weber' &&

@@ -135,7 +135,8 @@ export type SongwriterRuleId =
   | 'ligeti'
   | 'crumb_black_angels'
   | 'dutilleux'
-  | 'ornette_coleman';
+  | 'ornette_coleman'
+  | 'john_surman';
 
 export type AuthorRuleId = 'jimmy_webb' | 'pat_pattison' | 'jack_perricone';
 

@@ -1,6 +1,16 @@
 ## [Unreleased]
 
+### Added
+
+- **John Surman v2 ECM composer (`js:*`)** — British folk-minimalist slice (`johnSurmanSlice.ts`): folk modal centers, minimalist ostinato, dark reed register, structural silence; golden-path precompute + locked harmony routing + smoke **`surmanFolkModalSmoke.test.ts`** seed **97001**.
+- **Surman VRB bundle** — **`surmanVrbFingerprints.ts`** — 8 fingerprints + negative discriminators (Garbarek / Wheeler / Weber / Bley / jazz bleed); bundle id **`surman_folk_modal`**; aliases `john_surman` / `surman` / `js`.
+- **Surman Big Band rules** — five named rules in **`bigBandRuleRegistry.ts`**: FolkModalHarmony, DarkReedMelody, MinimalistOstinato, ChamberSpace, FolkPhraseContour.
+- **Surman evaluation profile** — **`surmanStyleProfile.ts`** with pass/fail thresholds and ECM negative discriminators.
+- **Surman assigned to ECM Chamber Jazz** — **`composerGroupDefinitions.ts`** **`ECM_CHAMBER_JAZZ`** group; songwriter **`john_surman`** + arranger **`surman`** in **`HomeGenerate.tsx`** ECM optgroup.
+
 ### Fixed
+
+- **Surman LOCK routing** — **`harmonyResolution.ts`** authoritative branch for **`john_surman`** effective bars (score/XML align with **`johnSurmanEffectiveHarmonyBars`** on custom long-form duo path).
 
 - **UI — Dave Brubeck** — demoted from **Shipped (full slice)** to **In library** (`HomeGenerate.tsx`); melody profile + odd-meter presets only — no `brubeckSlice.ts`.
 - **UI — Beatles** — promoted to **Shipped (full slice)**; `beatlesSlice.ts` already wired in golden path + smoke.

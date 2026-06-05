@@ -415,6 +415,16 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
       modalIntervalPreference: true,
     },
   },
+  john_surman: {
+    intervalTendency: 'stepwise',
+    rhythmicSubdivision: 'half_quarter',
+    repetitionVsVariationBias: 0.78,
+    phraseLength: 6,
+    contourProfile: 'descending-arc',
+    phraseAsymmetryTendency: 0.38,
+    cadenceFrequency: 'low',
+    devices: ['folk_modal_center', 'minimalist_ostinato', 'dark_reed_register', 'structural_silence', 'folk_melody_stepwise'],
+  },
   eberhard_weber: {
     intervalTendency: 'mixed',
     rhythmicSubdivision: 'half_quarter',

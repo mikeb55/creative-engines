@@ -607,6 +607,40 @@ const songwriterRules: Partial<Record<SongwriterRuleId, SongwritingRuleEntry[]>>
       'form'
     ),
   ],
+  john_surman: [
+    R(
+      'surman.folk_modal_center',
+      'Dorian/Mixolydian/pentatonic as primary harmonic material — modal center sustained 8–16 bars; no jazz altered dominants',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'surman.minimalist_ostinato',
+      'Rhythmic and melodic ostinato with gradual 8–16 bar evolution — organic repetition not mechanical process',
+      'songwriter',
+      'rhythm',
+      9,
+      'verse'
+    ),
+    R(
+      'surman.dark_reed_register',
+      'Melodic weight in baritone sax / bass clarinet register — long introspective phrases; not bright Nordic sax archetype',
+      'songwriter',
+      'melody',
+      8,
+      'form'
+    ),
+    R(
+      'surman.structural_silence',
+      'Rests and sustained decay as compositional material — low density; phrases breathe before next entry',
+      'songwriter',
+      'form',
+      8,
+      'bridge'
+    ),
+  ],
   jan_garbarek: [
     R(
       'garbarek.modal_field',

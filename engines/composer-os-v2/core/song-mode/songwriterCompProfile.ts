@@ -99,6 +99,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   maria_schneider: 'keys',
   kenny_wheeler: 'flugelhorn',
   jan_garbarek: 'other',
+  john_surman: 'other',
   eberhard_weber: 'other',
   claus_ogerman: 'keys',
   bill_holman: 'keys',

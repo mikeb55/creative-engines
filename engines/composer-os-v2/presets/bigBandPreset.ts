@@ -68,6 +68,9 @@ export const bigBandPreset: Preset = {
       'claus_ogerman',
       'schifrin',
       'lalo_schifrin',
+      'surman',
+      'john_surman',
+      'surman_folk_modal',
     ],
   },
 };
