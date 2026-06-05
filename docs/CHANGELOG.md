@@ -2,6 +2,15 @@
 
 ---
 
+## [1.9.0] — 2026-06-05
+
+### Changed
+
+- **Version 1.9.0** — root **`package.json`** bump; **`COMPOSER_HANDBOOK.md`**, **`README.md`**, and **`engine_master_palette.md`** aligned to current fully-implemented roster.
+- **Composer handbook (v1.9.0)** — Bill Holman (`bh:*`), Carla Bley (`cbl:*`), Jan Garbarek (`jg:*`), and Don Sebesky (`ds:*`) marked fully implemented in master reference; production-world group rosters confirmed (ECM Chamber Jazz · Studio Orchestral Jazz · Post-Bop Core).
+
+---
+
 ## [1.8.6] — 2026-06-05
 
 ### Added

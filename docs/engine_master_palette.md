@@ -1,16 +1,20 @@
 # Engine Master Palette
 
-**Version 1.1** — updated 2026-06-04 for Composer OS v2 composer status  
+**Version 1.2** — updated 2026-06-05 for Composer OS v1.9.0 composer status  
 **Style-agnostic, instrumentation-agnostic**
 
 **Location:** `C:\Users\mike\Documents\Cursor AI Projects\creative-engines` (legacy palette doc); authoritative v2 implementation lives in **`engines/composer-os-v2/`**.
 
 ---
 
-## Composer OS v2 — implementation status (2026-06-04)
+## Composer OS v2 — implementation status (2026-06-05, v1.9.0)
 
 | Composer | Slice / surface | Status | Notes |
 |----------|-----------------|--------|-------|
+| Jan Garbarek | `jg:*` | **Fully implemented** | Ritual modal ECM field slice + BB **`garbarek`** / **`jan_garbarek`** (v1.8.4) |
+| Bill Holman | `bh:*` | **Fully implemented** | Chart-first linear counterpoint slice + BB **`holman`** / **`bill_holman`** (v1.8.5) |
+| Carla Bley | `cbl:*` | **Fully implemented** | Formal irony ECM slice + BB **`bley`** / **`carla_bley`** (v1.8.6) |
+| Don Sebesky | `ds:*` | **Fully implemented** | CTI production-orchestra slice + BB **`sebesky`** / **`don_sebesky`** (v1.8.1) |
 | Henry Threadgill | `ht:*` | **Fully implemented** | Song Mode slice + BB **`henry_threadgill`** / **`threadgill`** (v103d) |
 | Kenny Wheeler | `kw:*` | **Fully implemented** | **`wheelerLyricSlice.ts`** + BB **`wheeler`**; supersedes legacy Python engine (v103e) |
 | Billy Strayhorn | `bs:*` | **Fully implemented** | Chromatic song-form slice + BB **`strayhorn`** (v103f) |

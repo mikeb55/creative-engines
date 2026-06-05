@@ -57,13 +57,13 @@ Composer OS is a **deterministic**, **seeded** compositional pipeline: **style e
 
 Big-band / jazz Song Mode slices with golden-path precompute (receipt prefixes in parentheses):
 
-**Maria Schneider** (`ms:*`) · **Gil Evans** (`ge:*`) · **Bob Brookmeyer** (`brk:*`) · **Wayne Shorter** (`ws:*`) · **Frank Zappa** (`fz:*`) · **Charles Mingus** (`cm:*`) · **Duke Ellington** (`de:*`) · **Count Basie** (`cb:*`) · **Thad Jones** (`tj:*`) · **Oliver Nelson** (`on:*`) · **Sammy Nestico** (`sn:*`) · **Clare Fischer** (`cf:*`) · **Quincy Jones** (`qj:*`) · **Bill Evans** (`be:*`) · **John Coltrane** (`jc:*`) · **Thelonious Monk** (`tm:*`) · **Barry Harris** (`bh:*`) · **Andrew Hill** (`ah:*`) · **Charlie Parker** (`cp:*`) · **Jim Hall** (`jh:*`) · **Herbie Hancock** (`hh:*`) · **Pat Metheny** (`pm:*`) · **McCoy Tyner** (`mt:*`) · **Miles Davis** (`md:*`) · **Antônio Carlos Jobim** (`aj:*`) · **Henry Threadgill** (`ht:*`) · **Kenny Wheeler** (`kw:*`) · **Billy Strayhorn** (`bs:*`).
+**Maria Schneider** (`ms:*`) · **Gil Evans** (`ge:*`) · **Bob Brookmeyer** (`brk:*`) · **Wayne Shorter** (`ws:*`) · **Frank Zappa** (`fz:*`) · **Charles Mingus** (`cm:*`) · **Duke Ellington** (`de:*`) · **Count Basie** (`cb:*`) · **Thad Jones** (`tj:*`) · **Oliver Nelson** (`on:*`) · **Sammy Nestico** (`sn:*`) · **Clare Fischer** (`cf:*`) · **Quincy Jones** (`qj:*`) · **Bill Evans** (`be:*`) · **John Coltrane** (`jc:*`) · **Thelonious Monk** (`tm:*`) · **Barry Harris** (`bh:*`) · **Andrew Hill** (`ah:*`) · **Charlie Parker** (`cp:*`) · **Jim Hall** (`jh:*`) · **Herbie Hancock** (`hh:*`) · **Pat Metheny** (`pm:*`) · **McCoy Tyner** (`mt:*`) · **Miles Davis** (`md:*`) · **Antônio Carlos Jobim** (`aj:*`) · **Henry Threadgill** (`ht:*`) · **Kenny Wheeler** (`kw:*`) · **Billy Strayhorn** (`bs:*`) · **Jan Garbarek** (`jg:*`) · **Carla Bley** (`cbl:*`) · **Bill Holman** (`bh:*`) · **Don Sebesky** (`ds:*`).
 
 **Also fully implemented (non-list above):** Pat Martino — **`martino_linear`** MusicContext preset (linear solo producer, not a Song Mode slice).
 
-**Partial / UI only:** Bill Holman (not built) · Don Sebesky · Manny Albam · Gerald Wilson · Neal Hefti (arranger dropdown only).
+**Partial / UI only:** Manny Albam · Gerald Wilson · Neal Hefti (arranger dropdown only).
 
-Full parameter names and one-line identities: **`docs/COMPOSER_HANDBOOK.md`** § Master composer reference (v2).
+Full parameter names and one-line identities: **`docs/COMPOSER_HANDBOOK.md`** § Master composer reference (v1.9.0).
 
 Canonical harmony implementations: **`engines/composer-os-v2/core/song-mode/*Slice.ts`** (each paired with **`engines/composer-os-v2/core/goldenPath/<name>Slice.ts`** re-exports where present). **Receipt prefixes** below come from the slice sources — search **`engines/composer-os-v2/core/song-mode/<Slice>.ts`** for full device strings.
 

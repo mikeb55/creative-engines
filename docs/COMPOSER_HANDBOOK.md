@@ -49,7 +49,7 @@ Engine: **`engines/composer-os-v2/core/groups/composerGroupEngine.ts`** · defin
 | `soloistSpotlight` | 0.45 | Solo as colour, not feature |
 | `sectionalContrastMode` | `gradual` | Sections melt into each other |
 
-**Members (fully implemented):** `maria_schneider`, `kenny_wheeler`, `gil_evans`, `henry_threadgill`, `bill_evans` (dual — default ECM), `pat_metheny`, `bob_brookmeyer`, `ecm_chamber`, **Jan Garbarek**, **Carla Bley**.
+**Members (fully implemented):** Maria Schneider, Kenny Wheeler, Bill Evans (dual — default ECM), Henry Threadgill, Bob Brookmeyer, Jan Garbarek, Carla Bley — plus Gil Evans, Pat Metheny, `ecm_chamber` preset.
 
 **Partial / future:** Weber, Surman, Towner.
 
@@ -72,7 +72,7 @@ Engine: **`engines/composer-os-v2/core/groups/composerGroupEngine.ts`** · defin
 | `soloistSpotlight` | 0.75 | Solo as featured event |
 | `sectionalContrastMode` | `discrete` | Clear A / B / lift blocks |
 
-**Members (fully implemented):** Sebesky, Quincy Jones, Oliver Nelson, Sammy Nestico, Clare Fischer, Count Basie, Thad Jones, **Bill Holman**, Duke Ellington, Billy Strayhorn, Charles Mingus.
+**Members (fully implemented):** Don Sebesky, Quincy Jones, Oliver Nelson, Sammy Nestico, Clare Fischer, Count Basie, Thad Jones, Bill Holman, Duke Ellington, Billy Strayhorn, Charles Mingus.
 
 **Partial / future:** Ogerman, Bob James, Mandel, Schifrin, Deodato, McFarland.
 
@@ -95,7 +95,7 @@ Engine: **`engines/composer-os-v2/core/groups/composerGroupEngine.ts`** · defin
 | `soloistSpotlight` | 0.60 | Solo primary during blows; rhythm section equal partner |
 | `sectionalContrastMode` | `blowing_sections` | Contrast via solo rotation and intensity, not orchestration |
 
-**Members (fully implemented):** Monk, Coltrane, Parker, Miles Davis, Herbie Hancock, McCoy Tyner, Barry Harris, Andrew Hill, Jim Hall, Pat Martino, Wayne Shorter (dual — default Post-Bop), Bill Evans (dual — default ECM).
+**Members (fully implemented):** Thelonious Monk, John Coltrane, Charlie Parker, Miles Davis, Herbie Hancock, McCoy Tyner, Barry Harris, Andrew Hill, Jim Hall, Pat Martino, Wayne Shorter (dual — default Post-Bop).
 
 **Partial / future:** Joe Henderson, Bobby Hutcherson, Lee Morgan, Hank Mobley, Horace Silver.
 
@@ -169,7 +169,7 @@ Compiled harmonic voice bundles live in **`engines/composer-os-v2/core/composer/
 | **Charles Mingus** (`charles_mingus`) | 11 | **deep** |
 | **Henry Threadgill** (`henry_threadgill`) | 26 | **deep** |
 | **Bob Brookmeyer** (`bob_brookmeyer`) | 12 | **deep** |
-| **Bill Holman** (`bill_holman`) | 12 | **deep** |
+| **Bill Holman** (`bill_holman`, alias `holman`) | 12 | **deep** |
 | **Olivier Messiaen** (`messiaen`, alias `olivier_messiaen`) | 12 | **deep** |
 | **Oliver Nelson** (`oliver_nelson`) | 12 | **deep** |
 | **Sammy Nestico** (`sammy_nestico`) | 41 | **deep** |
@@ -181,7 +181,7 @@ Compiled harmonic voice bundles live in **`engines/composer-os-v2/core/composer/
 
 ---
 
-## Master composer reference (v2)
+## Master composer reference (v1.9.0)
 
 Canonical Song Mode / Big Band composers in **`engines/composer-os-v2`**. **Slice id** = harmony receipt prefix on golden-path precompute. **Status:** **fully implemented** = slice + golden-path wiring + (where applicable) VRB/BB/eval; **partial** = UI or VRB only; **legacy** = superseded external engine.
 
@@ -220,12 +220,13 @@ Canonical Song Mode / Big Band composers in **`engines/composer-os-v2`**. **Slic
 | Jan Garbarek | `jan_garbarek` | `jg:*` | fully implemented | Ritual modal melody over sparse harmonic field, drone gravity, phrase-breath silence | `modalCentricity`, `dronePresence`, `harmonicSlowness`, `melodicSustain`, `phraseBreathWeight`, `innerVoiceRestraint`, `folkArchetypeStrength` |
 | Billy Strayhorn | `billy_strayhorn` | `bs:*` | fully implemented | Chromatic song architecture + extended-tone melody/harmony fusion | `chromaticContinuity`, `extendedToneMelody`, `parallelColorMotion`, `phraseArcLength`, `innerVoiceActivity`, `closedBlockSustain` |
 | Don Sebesky | `don_sebesky` | `ds:*` | fully implemented | CTI production-orchestra: groove bed, string halo, melody-legible reharm, tiered lifts | `groovePersistence`, `stringProminence`, `melodyLegibility`, `functionalLegibility`, `liftToBlareArc`, `soloistSpotlight`, `centerFillDensity` |
+| Carla Bley | `carla_bley` | `cbl:*` | fully implemented | Formal irony ECM: legible topics reframed by deadpan presentation and strategic displacement | `formalIronyIndex`, `deadpanPresentation`, `tonicLegibility`, `cadenceDeflection`, `motifContamination`, `climaxDeflation`, `repriseDefamiliarization` |
+| Bill Holman | `bill_holman` | `bh:*` | fully implemented | Chart-first linear counterpoint: lines generate harmony, sax soli, spread shout choruses | `lineIndependence`, `voiceLeadingSmoothness`, `saxSoliDensity`, `shoutChorusSpread`, `approachNoteWeight`, `countermelodyActivity` |
 
 ### Partial / referenced only
 
 | Composer | Id | Status | Notes |
 |----------|-----|--------|-------|
-| Bill Holman | — | not yet built | Arranger research target; no slice |
 | Manny Albam | `manny_albam` | UI only | Arranger dropdown row; no v2 slice |
 | Gerald Wilson | `gerald_wilson` | UI only | Arranger dropdown row; no v2 slice |
 | Neal Hefti | `neal_hefti` | UI only | Arranger dropdown row; no v2 slice |
