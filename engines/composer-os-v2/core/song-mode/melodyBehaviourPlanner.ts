@@ -752,6 +752,21 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
     cadenceFrequency: 'high',
     devices: ['waltz_colour', 'carnival_band', 'melancholy_cantilena', 'diatonic_glue', 'stravinsky_punch'],
   },
+  john_barry: {
+    intervalTendency: 'mixed',
+    rhythmicSubdivision: 'half_quarter',
+    repetitionVsVariationBias: 0.78,
+    phraseLength: 6,
+    contourProfile: 'wide_arc',
+    phraseAsymmetryTendency: 0.38,
+    cadenceFrequency: 'medium',
+    devices: ['thematic_monolith', 'bond_chord_palette', 'block_brass_declaration', 'string_emotional_mass', 'climax_by_accumulation'],
+    malLeadHints: {
+      attackDensity: 'medium',
+      interOnsetSpacing: 'wide',
+      avoidStrongBeatOneAttack: false,
+    },
+  },
   jerry_goldsmith: {
     intervalTendency: 'angular',
     rhythmicSubdivision: 'mixed',

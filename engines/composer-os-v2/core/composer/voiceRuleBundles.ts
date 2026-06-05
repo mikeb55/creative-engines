@@ -20,6 +20,7 @@ import { SCHIFRIN_GROOVE_VRF_FINGERPRINT_RECEIPTS } from './schifrinVrbFingerpri
 import { BILLY_STRAYHORN_VRF_FINGERPRINT_RECEIPTS } from './billyStrayhornVrbFingerprints';
 import { DON_SEBESKY_VRF_FINGERPRINT_RECEIPTS } from './donSebeskyVrbFingerprints';
 import { MANDEL_LYRIC_WARMTH_VRF_FINGERPRINT_RECEIPTS } from './mandelVrbFingerprints';
+import { BARRY_THEMATIC_MONOLITH_VRF_FINGERPRINT_RECEIPTS } from './barryVrbFingerprints';
 import { WAYNE_SHORTER_WS_HARM_FINGERPRINTS } from './wayneShorterHarmFingerprints';
 import { WAYNE_SHORTER_WS_MEL_FINGERPRINTS } from './wayneShorterMelFingerprints';
 import { WAYNE_SHORTER_WS_RHYTHM_FINGERPRINTS } from './wayneShorterRhythmFingerprints';
@@ -2143,6 +2144,54 @@ const MANDEL_LYRIC_WARMTH: VoiceRuleBundle = {
   },
 };
 
+const BARRY_THEMATIC_MONOLITH: VoiceRuleBundle = {
+  voiceId: 'barry_thematic_monolith',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 4,
+    allowMidBarChange: false,
+  },
+  bassPolicy: {
+    role: 'ostinato-or-pedal',
+    allowOctaveDoubling: false,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 10,
+    maxSpreadSemitones: 42,
+    clusterSizeNotes: [4, 6],
+    forbidParallelFifths: true,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'descending-arc',
+    maxLeapSemitones: 12,
+    preferredIntervalSets: [1, 2, 4, 5, 7, 9],
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 1,
+    mutateSingleVoiceAtTime: true,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: BARRY_THEMATIC_MONOLITH_VRF_FINGERPRINT_RECEIPTS,
+  },
+  formPolicy: {
+    narrativeArc: 'suite',
+    sectionRecallEnforced: true,
+  },
+  rhythmPolicy: { antiMetric: false },
+  repairPolicy: {
+    resolveParallels: true,
+    maxVoiceOverlap: 3,
+  },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.48,
+    registerInterlock: true,
+    intervalPreference: 'diatonic',
+  },
+};
+
 const OLIVER_NELSON: VoiceRuleBundle = {
   voiceId: 'oliver_nelson',
   harmonicRhythm: {
@@ -3953,6 +4002,10 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   johnny_mandel: MANDEL_LYRIC_WARMTH,
   mandel: MANDEL_LYRIC_WARMTH,
   jmd: MANDEL_LYRIC_WARMTH,
+  barry_thematic_monolith: BARRY_THEMATIC_MONOLITH,
+  john_barry: BARRY_THEMATIC_MONOLITH,
+  barry: BARRY_THEMATIC_MONOLITH,
+  jbr: BARRY_THEMATIC_MONOLITH,
   berg: BERG,
   alban_berg: BERG,
   messiaen: MESSIAEN_SQ,

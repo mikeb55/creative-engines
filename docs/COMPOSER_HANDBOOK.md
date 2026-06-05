@@ -95,7 +95,7 @@ Engine: **`engines/composer-os-v2/core/groups/composerGroupEngine.ts`** · defin
 | `soloistSpotlight` | 0.52 | Groove ensemble over solo feature |
 | `sectionalContrastMode` | `discrete` | Strata entry blocks |
 
-**Members (fully implemented):** Bernard Herrmann, Ennio Morricone, Jerry Goldsmith, **Lalo Schifrin** (`ls:*` slice).
+**Members (fully implemented):** Bernard Herrmann, Ennio Morricone, Jerry Goldsmith, Lalo Schifrin (`ls:*`), John Barry (`jbr:*`).
 
 ### Post-Bop Core
 

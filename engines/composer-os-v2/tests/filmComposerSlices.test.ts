@@ -10,6 +10,12 @@ import {
   latinPercussionGridReceiptCount,
   oddMeterGrooveReceiptCount,
 } from '../core/song-mode/laloSchifrinSlice';
+import {
+  bondPaletteReceiptCount,
+  brassPolarityReceiptCount,
+  hasHerrmannBleedReceipts,
+  thematicMonolithReceiptCount,
+} from '../core/song-mode/johnBarrySlice';
 
 const BASE = {
   presetId: 'guitar_bass_duo',
@@ -20,8 +26,10 @@ const BASE = {
 
 const SEED = 1;
 const SCHIFRIN_SEED = 94001;
+const BARRY_SEED = 10001;
 
 let schifrinGoldenCache: ReturnType<typeof runGoldenPathOnce> | undefined;
+let barryGoldenCache: ReturnType<typeof runGoldenPathOnce> | undefined;
 
 function schifrinGoldenRun(): ReturnType<typeof runGoldenPathOnce> {
   if (!schifrinGoldenCache) {
@@ -31,6 +39,16 @@ function schifrinGoldenRun(): ReturnType<typeof runGoldenPathOnce> {
     });
   }
   return schifrinGoldenCache;
+}
+
+function barryGoldenRun(): ReturnType<typeof runGoldenPathOnce> {
+  if (!barryGoldenCache) {
+    barryGoldenCache = runGoldenPathOnce(BARRY_SEED, {
+      ...BASE,
+      primarySongwriterStyle: 'john_barry',
+    });
+  }
+  return barryGoldenCache;
 }
 
 function tonicPcFromBars(bars: readonly string[] | undefined): number {
@@ -134,6 +152,40 @@ function testLaloSchifrinNoCadentialChains(): boolean {
   return countMajorTwoFiveOneChains(eff, tonicPc) === 0 && countDominantTonicPairs(eff, tonicPc) === 0;
 }
 
+function testJohnBarryGoldenPath(): boolean {
+  const r = barryGoldenRun();
+  const md = r.context?.generationMetadata;
+  const eff = md?.johnBarryEffectiveHarmonyBars;
+  const devices = md?.johnBarryDeviceReceipts ?? [];
+  return (
+    r.success &&
+    md?.songwriterStyleId === 'john_barry' &&
+    Array.isArray(eff) &&
+    eff.length === 32 &&
+    devices.some((d) => d.startsWith('jbr:'))
+  );
+}
+
+function testJohnBarryThematicMonolith(): boolean {
+  const devices = barryGoldenRun().context?.generationMetadata?.johnBarryDeviceReceipts ?? [];
+  return thematicMonolithReceiptCount(devices) >= 8;
+}
+
+function testJohnBarryBondPalette(): boolean {
+  const devices = barryGoldenRun().context?.generationMetadata?.johnBarryDeviceReceipts ?? [];
+  return bondPaletteReceiptCount(devices) >= 8;
+}
+
+function testJohnBarryBrassStringPolarity(): boolean {
+  const devices = barryGoldenRun().context?.generationMetadata?.johnBarryDeviceReceipts ?? [];
+  return brassPolarityReceiptCount(devices) >= 6;
+}
+
+function testJohnBarryNoHerrmannBleed(): boolean {
+  const devices = barryGoldenRun().context?.generationMetadata?.johnBarryDeviceReceipts ?? [];
+  return !hasHerrmannBleedReceipts(devices);
+}
+
 function testPhilipGlassEffectiveBarsLength(): boolean {
   const r = runGoldenPathOnce(SEED, { ...BASE, primarySongwriterStyle: 'philip_glass' });
   const eff = r.context?.generationMetadata?.philipGlassEffectiveHarmonyBars;
@@ -186,6 +238,11 @@ export function runFilmComposerSlicesTests(): { name: string; ok: boolean }[] {
     ['Film slice — Lalo Schifrin oddMeterGroove fires (seed 94001)', testLaloSchifrinOddMeterGroove],
     ['Film slice — Lalo Schifrin latinPercussionGrid active (seed 94001)', testLaloSchifrinLatinPercussionGrid],
     ['Film slice — Lalo Schifrin no V–I / ii–V–I cadence chains (seed 94001)', testLaloSchifrinNoCadentialChains],
+    ['Film slice — John Barry golden path + jbr: receipts (seed 10001)', testJohnBarryGoldenPath],
+    ['Film slice — John Barry thematicMonolith fires (seed 10001)', testJohnBarryThematicMonolith],
+    ['Film slice — John Barry bondHarmony palette active (seed 10001)', testJohnBarryBondPalette],
+    ['Film slice — John Barry brassStringPolarity present (seed 10001)', testJohnBarryBrassStringPolarity],
+    ['Film slice — John Barry no Herrmann chromatic bleed (seed 10001)', testJohnBarryNoHerrmannBleed],
     ['Film slice — Philip Glass effective bars length 32', testPhilipGlassEffectiveBarsLength],
     ['Film slice — Philip Glass pg: device receipts', testPhilipGlassReceiptPrefix],
     ['Film slice — Hans Zimmer effective bars length 32', testHansZimmerEffectiveBarsLength],

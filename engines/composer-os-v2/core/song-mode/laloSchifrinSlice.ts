@@ -102,7 +102,22 @@ function toModalAltered(symbol: string, seed: number, bar: number, tonicPc: numb
   return `${ex.root}sus4${ex.slash || `/${pedal}`}`;
 }
 
+function slashPedalPc(symbol: string): number | undefined {
+  if (!symbol.includes('/')) return undefined;
+  const tail = symbol.slice(symbol.indexOf('/') + 1).trim();
+  const m = tail.match(ROOT_AT_START);
+  if (!m?.[1]) return undefined;
+  return noteNameToPitchClass(m[1]);
+}
+
+function sharesTonicPedal(prev: string, cur: string, tonicPc: number): boolean {
+  const pPrev = slashPedalPc(prev);
+  const pCur = slashPedalPc(cur);
+  return pPrev === tonicPc && pCur === tonicPc;
+}
+
 function looksDominantToTonic(prev: string, cur: string, tonicPc: number): boolean {
+  if (sharesTonicPedal(prev, cur, tonicPc)) return false;
   const rPrev = harmonyRootPc(stemOnly(prev));
   const rCur = harmonyRootPc(stemOnly(cur));
   if (rPrev === undefined || rCur === undefined) return false;
@@ -112,6 +127,8 @@ function looksDominantToTonic(prev: string, cur: string, tonicPc: number): boole
 
 function matchesMajorTwoFiveOne(out: string[], iiBar: number, tonicPc: number, tb: number): boolean {
   if (iiBar + 2 > tb) return false;
+  const trio = [out[iiBar - 1]!, out[iiBar]!, out[iiBar + 1]!];
+  if (trio.every((sym) => slashPedalPc(sym) === tonicPc)) return false;
   const rIi = harmonyRootPc(stemOnly(out[iiBar - 1]!));
   const rV = harmonyRootPc(stemOnly(out[iiBar]!));
   const rI = harmonyRootPc(stemOnly(out[iiBar + 1]!));

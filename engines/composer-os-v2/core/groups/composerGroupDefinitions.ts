@@ -77,6 +77,10 @@ export const COMPOSER_ID_ALIASES: Readonly<Record<string, string>> = {
   johnny_mandel: 'johnny_mandel',
   jmd: 'johnny_mandel',
   mandel_lyric_warmth: 'johnny_mandel',
+  barry: 'john_barry',
+  john_barry: 'john_barry',
+  jbr: 'john_barry',
+  barry_thematic_monolith: 'john_barry',
   schifrin: 'lalo_schifrin',
   lalo_schifrin: 'lalo_schifrin',
   ls: 'lalo_schifrin',
@@ -221,6 +225,7 @@ export const COMPOSER_GROUP_DEFINITIONS: readonly ComposerGroupDefinition[] = [
       { composerId: 'ennio_morricone', status: 'fully_implemented' },
       { composerId: 'jerry_goldsmith', status: 'fully_implemented' },
       { composerId: 'lalo_schifrin', status: 'fully_implemented' },
+      { composerId: 'john_barry', status: 'fully_implemented' },
     ],
   },
   {

@@ -363,6 +363,51 @@ const MANDEL_COMPOSER_RULES: BigBandRule[] = [
   ),
 ];
 
+const BARRY_COMPOSER_RULES: BigBandRule[] = [
+  R(
+    'barry.thematic_monolith',
+    'ThematicMonolithRule: one theme supplies harmonic and melodic identity for large sections; cues derived from theme cells not constant new material',
+    'composer',
+    'form',
+    87
+  ),
+  R(
+    'barry.bond_harmony',
+    'BondHarmonyRule: min(maj7)/min(add2)/min6/Bond chord palette; 2-chord ostinato; chromatic bass descent; minor-to-major brightening; slow harmonic rhythm; romantic delayed resolution',
+    'composer',
+    'harmony',
+    86
+  ),
+  R(
+    'barry.block_brass',
+    'BlockBrassRule: 4–6 part block voicing middle-high register; mute/plunger/growl for Bond cues; weight and glare; suppress contrapuntal brass agility',
+    'composer',
+    'orchestration',
+    85
+  ),
+  R(
+    'barry.string_mass',
+    'StringMassRule: strings as sustained harmonic planes and octave melody doubling; broad legato; suppress Herrmann-style nervous chromatic inner agitation',
+    'composer',
+    'orchestration',
+    84
+  ),
+  R(
+    'barry.restraint_plus_mass',
+    'RestraintPlusMassRule: space between gestures; one dominant theme; climax by accumulation not decoration',
+    'composer',
+    'density',
+    83
+  ),
+  R(
+    'barry.british_noble',
+    'BritishNobleRule: stately spacious heraldic cast; modal inflection and ceremonial pacing; chorale-like writing; formal weight not vernacular-American groove',
+    'composer',
+    'form',
+    82
+  ),
+];
+
 const WEBER_COMPOSER_RULES: BigBandRule[] = [
   R(
     'weber.bass_foreground',
@@ -526,6 +571,9 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
   mandel: MANDEL_COMPOSER_RULES,
   johnny_mandel: MANDEL_COMPOSER_RULES,
   mandel_lyric_warmth: MANDEL_COMPOSER_RULES,
+  barry: BARRY_COMPOSER_RULES,
+  john_barry: BARRY_COMPOSER_RULES,
+  barry_thematic_monolith: BARRY_COMPOSER_RULES,
   schifrin: SCHIFRIN_COMPOSER_RULES,
   lalo_schifrin: SCHIFRIN_COMPOSER_RULES,
   schifrin_groove: SCHIFRIN_COMPOSER_RULES,

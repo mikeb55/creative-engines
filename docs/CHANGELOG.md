@@ -2,6 +2,12 @@
 
 ### Added
 
+- **John Barry v2 Film composer (`jbr:*`)** — thematic monolith Bond slice (`johnBarrySlice.ts`): min(maj7) palette, block brass, string mass, climax by accumulation; golden-path precompute + locked harmony routing + **`filmComposerSlices.test.ts`** rows seed **10001**. Receipt prefix **`jbr:*`** (not `jb:*` — James Brown owns `jb:*`).
+- **Barry VRB bundle** — **`barryVrbFingerprints.ts`** — 8 fingerprints + negative discriminators (Herrmann / Morricone / Goldsmith / Schifrin / Mancini bleed); bundle id **`barry_thematic_monolith`**; aliases `john_barry` / `barry` / `jbr`.
+- **Barry Big Band rules** — six named rules in **`bigBandRuleRegistry.ts`**: ThematicMonolith, BondHarmony, BlockBrass, StringMass, RestraintPlusMass, BritishNoble.
+- **Barry evaluation profile** — **`barryStyleProfile.ts`** with pass/fail thresholds and Film negative discriminators.
+- **Barry assigned to Film Soundtrack** — **`composerGroupDefinitions.ts`** **`FILM_SOUNDTRACK`** group; songwriter **`john_barry`** + arranger **`barry`** in **`HomeGenerate.tsx`** Film optgroup.
+
 - **Johnny Mandel v2 Studio Orchestral composer (`jmd:*`)** — melody-forward lyric warmth slice (`johnnyMandelSlice.ts`): song-centered melody on extensions, mechanical inner-voice warmth, Hollywood-jazz orchestral framing; golden-path precompute + locked harmony routing + smoke **`mandelLyricWarmthSmoke.test.ts`** seed **99001**. Receipt prefix **`jmd:*`** (not `jm:*` — Joni Mitchell owns `jm:*`).
 - **Mandel VRB bundle** — **`mandelVrbFingerprints.ts`** — 8 fingerprints + negative discriminators (Ogerman / Quincy / Sebesky / Nelson / Nestico bleed); bundle id **`mandel_lyric_warmth`**; aliases `johnny_mandel` / `mandel` / `jmd`.
 - **Mandel Big Band rules** — six named rules in **`bigBandRuleRegistry.ts`**: MelodyForward, InnerVoiceWarmth, BorrowedMinor, WarmBrass, OrchestraFraming, SoftenedCadence.

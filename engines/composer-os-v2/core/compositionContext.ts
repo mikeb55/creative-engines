@@ -61,6 +61,10 @@ import type {
   JohnnyMandelSliceParams,
   MandelLyricWarmthPlan,
 } from './song-mode/johnnyMandelSlice';
+import type {
+  JohnBarrySliceParams,
+  BarryThematicMonolithPlan,
+} from './song-mode/johnBarrySlice';
 import type { LaloSchifrinSliceParams } from './song-mode/laloSchifrinSlice';
 import type { BillHolmanSliceParams } from './song-mode/billHolmanSlice';
 import type { CarlaBleySliceParams } from './song-mode/carlaBleySlice';
@@ -1574,6 +1578,24 @@ export interface GenerationMetadata {
   johnnyMandelSliceReceipt?: string;
   johnnyMandelEffectiveHarmonyBars?: string[];
   johnnyMandelDeviceReceipts?: string[];
+  /** John Barry — thematic monolith Film slice (`johnBarrySlice.ts`, receipts `jbr:*`). */
+  johnBarryDiagnostics?: {
+    songwriterId: 'john_barry';
+    barsConsidered: number;
+    thematicMonolithTouches: number;
+    bondPaletteTouches: number;
+    brassPolarityTouches: number;
+    melodicNobilityTouches: number;
+    climaxTouches: number;
+    minPhraseSpan?: number;
+    sliceParams?: JohnBarrySliceParams;
+    deviceReceipts?: string[];
+  };
+  barryThematicMonolithPlan?: BarryThematicMonolithPlan;
+  johnBarrySliceParams?: JohnBarrySliceParams;
+  johnBarrySliceReceipt?: string;
+  johnBarryEffectiveHarmonyBars?: string[];
+  johnBarryDeviceReceipts?: string[];
   /** George Gershwin — Songbook / concert jazz harmony (`gershwinSlice.ts`). */
   gershwinDiagnostics?: {
     songwriterId: 'gershwin';

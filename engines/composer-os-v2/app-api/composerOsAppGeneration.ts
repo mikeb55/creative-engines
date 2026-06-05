@@ -85,6 +85,7 @@ import { ogermanStyleProfile } from '../core/evaluation/ogermanStyleProfile';
 import { quincyStyleProfile } from '../core/evaluation/quincyStyleProfile';
 import { sebeskyStyleProfile } from '../core/evaluation/sebeskyStyleProfile';
 import { mandelStyleProfile } from '../core/evaluation/mandelStyleProfile';
+import { barryStyleProfile } from '../core/evaluation/barryStyleProfile';
 import { thadJonesStyleProfile } from '../core/evaluation/thadJonesStyleProfile';
 import { gilEvansStyleProfile } from '../core/evaluation/gilEvansStyleProfile';
 import { bobBrookmeyerStyleProfile } from '../core/evaluation/bobBrookmeyerStyleProfile';
@@ -2581,6 +2582,10 @@ function bigBandEvaluationStyleProfile(
     case 'johnny_mandel':
     case 'mandel_lyric_warmth':
       return mandelStyleProfile;
+    case 'barry':
+    case 'john_barry':
+    case 'barry_thematic_monolith':
+      return barryStyleProfile;
     case 'thad_jones':
     case 'thad':
       return thadJonesStyleProfile;

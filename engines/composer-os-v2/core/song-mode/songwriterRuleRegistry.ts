@@ -1109,6 +1109,14 @@ const songwriterRules: Partial<Record<SongwriterRuleId, SongwritingRuleEntry[]>>
       'verse'
     ),
   ],
+  john_barry: [
+    R('jbr.thematic_monolith', 'One theme supplies harmonic identity across large sections', 'songwriter', 'form', 9, 'global'),
+    R('jbr.bond_palette', 'min(maj7)/min6/Bond chord palette + 2-chord ostinato', 'songwriter', 'harmony', 9, 'verse'),
+    R('jbr.block_brass', 'Block brass declaration — weight and glare not counterpoint', 'songwriter', 'melody', 9, 'chorus'),
+    R('jbr.string_mass', 'String emotional mass — sustained planes and octave doubling', 'songwriter', 'melody', 8, 'verse'),
+    R('jbr.melodic_nobility', 'Long declarative arcs with Bond 3–4 note brass cells', 'songwriter', 'melody', 8, 'global'),
+    R('jbr.climax_accumulation', 'Climax by repetition + bloom + register expansion', 'songwriter', 'form', 8, 'bridge'),
+  ],
   philip_glass: [
     R('pg.additive_cell', 'Additive pattern extension (harmonic voice tags)', 'songwriter', 'harmony', 8, 'global'),
     R('pg.pedal_field', 'Static pedal under shifting harmony (harmonic voice tags)', 'songwriter', 'harmony', 8, 'verse'),

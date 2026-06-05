@@ -77,6 +77,9 @@ export const bigBandPreset: Preset = {
       'mandel',
       'johnny_mandel',
       'mandel_lyric_warmth',
+      'barry',
+      'john_barry',
+      'barry_thematic_monolith',
     ],
   },
 };

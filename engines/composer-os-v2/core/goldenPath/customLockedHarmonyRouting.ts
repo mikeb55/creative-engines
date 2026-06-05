@@ -80,6 +80,7 @@ export const EFFECTIVE_HARMONY_TRUTH_REGISTRY: readonly EffectiveHarmonyTruthReg
   { songwriterStyleIds: ['eberhard_weber'], metadataKey: 'eberhardWeberEffectiveHarmonyBars' },
   { songwriterStyleIds: ['claus_ogerman'], metadataKey: 'clausOgermanEffectiveHarmonyBars' },
   { songwriterStyleIds: ['lalo_schifrin'], metadataKey: 'laloSchifrinEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['john_barry'], metadataKey: 'johnBarryEffectiveHarmonyBars' },
   { songwriterStyleIds: ['thad_jones'], metadataKey: 'thadJonesEffectiveHarmonyBars' },
   { songwriterStyleIds: ['charles_mingus'], metadataKey: 'charlesMingusEffectiveHarmonyBars' },
   { songwriterStyleIds: ['henry_threadgill'], metadataKey: 'henryThreadgillEffectiveHarmonyBars' },

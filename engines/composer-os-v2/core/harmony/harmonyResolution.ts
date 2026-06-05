@@ -282,6 +282,37 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   ) {
     return jgEff[barIndex - 1]!;
   }
+
+  /**
+   * Lalo Schifrin: `precomputeLaloSchifrinEffectiveHarmonyBars` applies odd-meter groove + modal vamps.
+   * After precompute, `laloSchifrinEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const lsEff = meta?.laloSchifrinEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'lalo_schifrin' &&
+    Array.isArray(lsEff) &&
+    lsEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return lsEff[barIndex - 1]!;
+  }
+
+  /**
+   * John Barry: `precomputeJohnBarryEffectiveHarmonyBars` applies thematic monolith Bond voicing.
+   * After precompute, `johnBarryEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const barryEff = meta?.johnBarryEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'john_barry' &&
+    Array.isArray(barryEff) &&
+    barryEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return barryEff[barIndex - 1]!;
+  }
+
   const pgEff = meta?.philipGlassEffectiveHarmonyBars;
   if (
     meta?.songwriterStyleId === 'philip_glass' &&

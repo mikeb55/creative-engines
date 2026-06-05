@@ -49,7 +49,10 @@ export type BigBandComposerId =
   | 'towner_guitar_polyphony'
   | 'mandel'
   | 'johnny_mandel'
-  | 'mandel_lyric_warmth';
+  | 'mandel_lyric_warmth'
+  | 'barry'
+  | 'john_barry'
+  | 'barry_thematic_monolith';
 
 export type BigBandEraId =
   | 'swing'

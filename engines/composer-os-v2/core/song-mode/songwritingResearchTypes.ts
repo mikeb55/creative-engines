@@ -138,7 +138,8 @@ export type SongwriterRuleId =
   | 'ornette_coleman'
   | 'john_surman'
   | 'ralph_towner'
-  | 'johnny_mandel';
+  | 'johnny_mandel'
+  | 'john_barry';
 
 export type AuthorRuleId = 'jimmy_webb' | 'pat_pattison' | 'jack_perricone';
 

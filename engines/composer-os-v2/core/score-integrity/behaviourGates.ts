@@ -214,7 +214,10 @@ export function runBehaviourGates(
     opts?.compositionContext?.generationMetadata?.songwriterStyleId === 'ralph_towner';
   const mandelStructuralRelax =
     opts?.compositionContext?.generationMetadata?.songwriterStyleId === 'johnny_mandel';
-  const bassStructuralRelax = zappaStructuralRelax || townerStructuralRelax || mandelStructuralRelax;
+  const barryStructuralRelax =
+    opts?.compositionContext?.generationMetadata?.songwriterStyleId === 'john_barry';
+  const bassStructuralRelax =
+    zappaStructuralRelax || townerStructuralRelax || mandelStructuralRelax || barryStructuralRelax;
   const duoCtx = { compositionContext: opts?.compositionContext };
   const guitarBarCount =
     score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar')?.measures.length ?? 0;

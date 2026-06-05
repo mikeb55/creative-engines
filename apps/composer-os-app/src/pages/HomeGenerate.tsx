@@ -737,6 +737,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'hans_zimmer', label: 'Hans Zimmer' },
   { id: 'jerry_goldsmith', label: 'Jerry Goldsmith' },
   { id: 'lalo_schifrin', label: 'Lalo Schifrin' },
+  { id: 'john_barry', label: 'John Barry' },
   { id: 'john_williams', label: 'John Williams' },
   { id: 'messiaen', label: 'Messiaen' },
   { id: 'nino_rota', label: 'Nino Rota' },
@@ -829,6 +830,7 @@ const FILM_HARMONIC_VOICE_IDS: readonly HarmonicVoiceId[] = [
   'nino_rota',
   'jerry_goldsmith',
   'lalo_schifrin',
+  'john_barry',
   'philip_glass',
   'hans_zimmer',
   'angelo_badalamenti',
@@ -1357,6 +1359,7 @@ const ARRANGER_OPTIONS: { id: string; label: string }[] = [
   { id: 'mandel', label: 'Johnny Mandel' },
   { id: 'ogerman', label: 'Claus Ogerman' },
   { id: 'schifrin', label: 'Lalo Schifrin' },
+  { id: 'barry', label: 'John Barry' },
   /** SQ VRB arrangers — surfaced only on the String Quartet preset. */
   { id: 'beethoven_late', label: 'Beethoven (Late Quartets)' },
   { id: 'bartok', label: 'Bartók' },

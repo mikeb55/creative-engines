@@ -162,7 +162,9 @@ export function validateBarryHarrisConformance(
       metadata?.songwriterStyleId === 'ralph_towner' ||
       metadata?.songwriterStyleId === 'johnny_mandel'
         ? 18
-        : 14;
+        : metadata?.songwriterStyleId === 'john_barry'
+          ? 24
+          : 14;
     if (
       metadata?.songwriterStyleId !== 'frank_zappa' &&
       metadata?.songwriterStyleId !== 'messiaen' &&
