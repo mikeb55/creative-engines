@@ -255,6 +255,45 @@ const JWHITE_COMPOSER_RULES: BigBandRule[] = [
   ),
 ];
 
+/** Johnny Marr — melodic rhythm guitar; partial voicings, open-string resonance, top-note melody. */
+const MARR_COMPOSER_RULES: BigBandRule[] = [
+  R(
+    'marr.melodic_rhythm',
+    'MelodicRhythmRule: top-note of pattern forms melodic contour; rhythm and melody integrated — not accompaniment plus lead',
+    'composer',
+    'melody',
+    88
+  ),
+  R(
+    'marr.partial_voicing',
+    'PartialVoicingRule: 2–5 note voicings; root omission permitted; open strings sustained against fretted shapes',
+    'composer',
+    'harmony',
+    87
+  ),
+  R(
+    'marr.add_note_surface',
+    'AddNoteSurfaceRule: add9/sus2/sus4/maj7/6/6-9 modal ambiguity within single voicing; avoid plain triads',
+    'composer',
+    'harmony',
+    86
+  ),
+  R(
+    'marr.pendulum_subdivision',
+    'PendulumSubdivisionRule: 16th-note hand motion continuous through rests; syncopation from selective contact; highlife logic',
+    'composer',
+    'rhythm',
+    85
+  ),
+  R(
+    'marr.suspended_arrival',
+    'SuspendedArrivalRule: resolve to open-string pedal or familiar top-note target; suppress dominant-tonic cadential closure',
+    'composer',
+    'form',
+    84
+  ),
+];
+
 /** Tom Verlaine — suspended modal field art-rock; bass displacement under static upper shape. */
 const VERLAINE_COMPOSER_RULES: BigBandRule[] = [
   R(
@@ -699,6 +738,9 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
   allan_holdsworth_scale_derived: HOLDSWORTH_COMPOSER_RULES,
   jack_white: JWHITE_COMPOSER_RULES,
   jack_white_drone_riff: JWHITE_COMPOSER_RULES,
+  marr: MARR_COMPOSER_RULES,
+  johnny_marr: MARR_COMPOSER_RULES,
+  marr_melodic_rhythm: MARR_COMPOSER_RULES,
   bill_holman: HOLMAN_COMPOSER_RULES,
   holman: HOLMAN_COMPOSER_RULES,
   carla_bley: CARLA_BLEY_COMPOSER_RULES,

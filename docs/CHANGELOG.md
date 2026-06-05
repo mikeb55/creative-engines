@@ -2,6 +2,14 @@
 
 ### Added
 
+- **Johnny Marr v2 art-rock composer (`jma:*`)** — melodic rhythm guitar slice (`marrMelodicSlice.ts`): partialVoicing 0.88, topNoteMelody 0.85, openStringResonance 0.80, addNoteHarmony 0.82, pendulumSubdivision 0.83; golden-path precompute + locked harmony routing + smoke **`marrMelodicRhythmSmoke.test.ts`** seed **55001**. Receipt prefix **`jma:*`** — distinct from Joni Mitchell `jm:*`, Mandel `jmd:*`, Jack White `jw:*`, John Williams `jwill:*`.
+- **Marr VRB bundle** — **`marrVrbFingerprints.ts`** — 8 fingerprints + McGuinn / The Edge / Andy Summers / Bernard Butler / generic rock negative discriminators; bundle id **`marr_melodic_rhythm`**.
+- **Marr Big Band rules** — five named rules in **`bigBandRuleRegistry.ts`**: MelodicRhythm, PartialVoicing, AddNoteSurface, PendulumSubdivision, SuspendedArrival (`marr.*`).
+- **Marr evaluation profile** — **`marrStyleProfile.ts`** with pass/fail thresholds and art-rock negative discriminators.
+- **Marr Generate UI** — **`marr`** in **`HomeGenerate.tsx`** songwriter + arranger lists; **`ART_ROCK_POST_PUNK`** group — Marr **`fully_implemented`** alongside Verlaine, Fripp, Morello.
+
+### Added
+
 - **Jack White v2 drone-riff composer (`jw:*`)** — open-tuning tonic floor slice (`jackWhiteDroneSlice.ts`): tonicPersistence 0.82, droneLogic 0.85, harmonyByImplication 0.88, riffCellEconomy 0.85, controlledIncompleteness 0.80; golden-path precompute + locked harmony routing + smoke **`jackWhiteDroneSmoke.test.ts`** seed **33001**. John Williams film receipts migrated to **`jwill:*`** to free **`jw:*`** for Jack White.
 - **Jack White VRB bundle** — **`jackWhiteVrbFingerprints.ts`** — 8 fingerprints + Hendrix / Iommi / Page / Gilmour / Verlaine / Black Keys / Spencer / Childish negative discriminators; bundle id **`jack_white_drone_riff`**.
 - **Jack White Big Band rules** — five named rules in **`bigBandRuleRegistry.ts`**: TonicPersistence, DroneRiffFusion, HarmonyByImplication, RiffCellEconomy, ControlledIncompleteness (`jwhite.*`).

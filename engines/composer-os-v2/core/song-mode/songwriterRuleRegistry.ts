@@ -1656,6 +1656,48 @@ function wireRiffVrbSongwriterRules(): void {
       'global'
     ),
   ];
+  rules.marr = [
+    R(
+      'marr.melodic_rhythm',
+      'Top-note of rhythm pattern forms melodic contour — rhythm and melody integrated not accompaniment plus lead',
+      'songwriter',
+      'melody',
+      9,
+      'global'
+    ),
+    R(
+      'marr.partial_voicing',
+      '2–5 note voicings; root omission permitted; open strings sustained against fretted shapes',
+      'songwriter',
+      'harmony',
+      9,
+      'verse'
+    ),
+    R(
+      'marr.add_note_surface',
+      'add9/sus2/sus4/maj7/6/6-9 modal ambiguity; avoid plain triads as default surface',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'marr.pendulum_subdivision',
+      '16th-note hand motion continuous through rests; syncopation from selective contact',
+      'songwriter',
+      'rhythm',
+      8,
+      'global'
+    ),
+    R(
+      'marr.suspended_arrival',
+      'Resolve to open-string pedal or familiar top-note target — suppress dominant-tonic closure',
+      'songwriter',
+      'form',
+      8,
+      'bridge'
+    ),
+  ];
   rules.scott_henderson = [
     R(
       'riff.scott_henderson.sigma',

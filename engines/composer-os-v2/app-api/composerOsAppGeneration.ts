@@ -84,6 +84,7 @@ import { townerStyleProfile } from '../core/evaluation/townerStyleProfile';
 import { verlaineStyleProfile } from '../core/evaluation/verlaineStyleProfile';
 import { holdsworthStyleProfile } from '../core/evaluation/holdsworthStyleProfile';
 import { jackWhiteStyleProfile } from '../core/evaluation/jackWhiteStyleProfile';
+import { marrStyleProfile } from '../core/evaluation/marrStyleProfile';
 import { ogermanStyleProfile } from '../core/evaluation/ogermanStyleProfile';
 import { quincyStyleProfile } from '../core/evaluation/quincyStyleProfile';
 import { sebeskyStyleProfile } from '../core/evaluation/sebeskyStyleProfile';
@@ -2576,6 +2577,10 @@ function bigBandEvaluationStyleProfile(
     case 'jack_white':
     case 'jack_white_drone_riff':
       return jackWhiteStyleProfile;
+    case 'marr':
+    case 'johnny_marr':
+    case 'marr_melodic_rhythm':
+      return marrStyleProfile;
     case 'holman':
     case 'bill_holman':
       return holmanStyleProfile;

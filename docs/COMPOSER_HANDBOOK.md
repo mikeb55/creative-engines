@@ -611,6 +611,32 @@ Verlaine is **field-based art-rock harmonic design**: static or slowly shifting 
 
 ---
 
+### Johnny Marr (`marr`)
+
+Marr is **melodic rhythm guitar**: partial voicings, open-string resonance, and arpeggiated figures where the **highest moving note IS the melody**. Rhythm and melody are one integrated part — not accompaniment plus separate lead.
+
+**Song Mode slice** — **`marrMelodicSlice.ts`** (`jma:*` receipts): partial voicing → open-string resonance → top-note melody → add-note harmony → pendulum subdivision → modal ambiguity → suspended arrival.
+
+**Five parameters** (0–1, defaults in parentheses):
+
+| Parameter | Default | Musical role |
+|-----------|---------|--------------|
+| `partialVoicingRate` | 0.88 | 2–5 note voicings; root omitted or weak; penalize full barre blocks |
+| `topNoteMelodyWeight` | 0.85 | Upper-voice motion forms 3–6 note motivic hook across bars |
+| `openStringResonance` | 0.80 | 1–2 sustained open strings (especially B or E) per chord event |
+| `addNoteHarmonyBias` | 0.82 | add9/sus2/sus4/maj7/6/6-9 surface; anti plain triads and jazz stabs |
+| `pendulumSubdivision` | 0.83 | Continuous 16th-note hand motion; highlife syncopated arpeggios |
+
+**VRB bundle id:** **`marr_melodic_rhythm`** — 8 fingerprints + McGuinn / The Edge / Andy Summers / Bernard Butler / generic rock negative discriminators.
+
+**Big Band arranger ids:** **`marr`**, **`johnny_marr`**, **`marr_melodic_rhythm`** — five rules (MelodicRhythm, PartialVoicing, AddNoteSurface, PendulumSubdivision, SuspendedArrival).
+
+**Production group:** **`ART_ROCK_POST_PUNK`** — alongside Verlaine, Sonic Youth, Fripp / King Crimson, Tom Morello.
+
+**Evaluation:** **`marrStyleProfile.ts`** — pass on partial voicing + top-note melody + open-string resonance + add-note harmony + pendulum subdivision + modal ambiguity; hard fail on McGuinn jangle, Edge delay-grid, Summers jazz stabs, Butler romantic mass, blues lead lines, barre block strumming.
+
+---
+
 ### Allan Holdsworth (`allan_holdsworth`)
 
 Holdsworth is **scale-derived fusion harmony**: chords are **interval subsets** of an active pitch collection — chord, scale, and line form one integrated system, not functional root-position stacks.

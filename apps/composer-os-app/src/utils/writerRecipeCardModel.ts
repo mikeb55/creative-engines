@@ -75,7 +75,7 @@ const LATIN_JAZZ = new Set<string>(['antonio_carlos_jobim']);
 
 const JAZZ_ROCK = new Set<string>(['donald_fagen']);
 
-const ROCK_FUSION = new Set<string>(['frank_zappa', 'verlaine', 'jack_white', 'allan_holdsworth']);
+const ROCK_FUSION = new Set<string>(['frank_zappa', 'verlaine', 'jack_white', 'allan_holdsworth', 'marr']);
 
 const THEATRE = new Set<string>(['bacharach', 'stephen_sondheim', 'kurt_weill', 'cole_porter']);
 

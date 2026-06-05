@@ -321,6 +321,12 @@ import {
   precomputeJackWhiteEffectiveHarmonyBars,
 } from './jackWhiteDroneSlice';
 import {
+  accumulateMarrHarmonyDiagnostics,
+  createMarrHarmonyAccumulator,
+  finalizeMarrMetadata,
+  precomputeMarrEffectiveHarmonyBars,
+} from './marrMelodicSlice';
+import {
   accumulateEberhardWeberHarmonyDiagnostics,
   createEberhardWeberHarmonyAccumulator,
   finalizeEberhardWeberMetadata,
@@ -2864,6 +2870,7 @@ function buildGuitarPart(
   const isSongwriterVerlaine = genMeta?.songwriterStyleId === 'verlaine';
   const isSongwriterAllanHoldsworth = genMeta?.songwriterStyleId === 'allan_holdsworth';
   const isSongwriterJackWhite = genMeta?.songwriterStyleId === 'jack_white';
+  const isSongwriterMarr = genMeta?.songwriterStyleId === 'marr';
   const isSongwriterEberhardWeber = genMeta?.songwriterStyleId === 'eberhard_weber';
   const isSongwriterClausOgerman =
     normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'claus_ogerman';
@@ -2931,6 +2938,7 @@ function buildGuitarPart(
   const tvAccum = createVerlaineHarmonyAccumulator();
   const holdsworthAccum = createHoldsworthHarmonyAccumulator();
   const jackWhiteAccum = createJackWhiteHarmonyAccumulator();
+  const marrAccum = createMarrHarmonyAccumulator();
   const ewAccum = createEberhardWeberHarmonyAccumulator();
   const coAccum = createClausOgermanHarmonyAccumulator();
   const lsAccum = createLaloSchifrinHarmonyAccumulator();
@@ -3104,6 +3112,9 @@ function buildGuitarPart(
   }
   if (isSongwriterJackWhite && isDuoGoldenPath) {
     precomputeJackWhiteEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterMarr && isDuoGoldenPath) {
+    precomputeMarrEffectiveHarmonyBars(context);
   }
   if (isSongwriterEberhardWeber && isDuoGoldenPath) {
     precomputeEberhardWeberEffectiveHarmonyBars(context);
@@ -3563,6 +3574,13 @@ function buildGuitarPart(
         b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
         resolveBarSymbol(context, b).symbol,
         jackWhiteAccum
+      );
+    }
+    if (isSongwriterMarr) {
+      accumulateMarrHarmonyDiagnostics(
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
+        marrAccum
       );
     }
     if (isSongwriterEberhardWeber) {
@@ -4600,6 +4618,9 @@ function buildGuitarPart(
   }
   if (isSongwriterJackWhite && context.generationMetadata) {
     finalizeJackWhiteMetadata(context.generationMetadata, jackWhiteAccum);
+  }
+  if (isSongwriterMarr && context.generationMetadata) {
+    finalizeMarrMetadata(context.generationMetadata, marrAccum);
   }
   if (isSongwriterEberhardWeber && context.generationMetadata) {
     finalizeEberhardWeberMetadata(context.generationMetadata, ewAccum);

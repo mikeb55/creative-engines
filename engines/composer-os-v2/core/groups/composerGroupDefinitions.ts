@@ -114,6 +114,9 @@ export const COMPOSER_ID_ALIASES: Readonly<Record<string, string>> = {
   jack_white: 'jack_white',
   white: 'jack_white',
   the_white_stripes: 'jack_white',
+  marr: 'marr',
+  johnny_marr: 'marr',
+  marr_melodic_rhythm: 'marr',
   sonic_youth: 'sonic_youth',
   sy: 'sonic_youth',
   wes: 'wes_montgomery',
@@ -330,6 +333,7 @@ export const COMPOSER_GROUP_DEFINITIONS: readonly ComposerGroupDefinition[] = [
     defaults: ART_ROCK_POST_PUNK_DEFAULTS,
     members: [
       { composerId: 'verlaine', status: 'fully_implemented' },
+      { composerId: 'marr', status: 'fully_implemented' },
       { composerId: 'sonic_youth', status: 'stub_exposed' },
       { composerId: 'fripp_king_crimson', status: 'fully_implemented' },
       { composerId: 'morello', status: 'fully_implemented' },

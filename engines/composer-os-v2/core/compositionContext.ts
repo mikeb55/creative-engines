@@ -62,6 +62,10 @@ import type {
   JackWhiteSliceParams,
 } from './song-mode/jackWhiteDroneSlice';
 import type {
+  MarrMelodicPlan,
+  MarrSliceParams,
+} from './song-mode/marrMelodicSlice';
+import type {
   WeberFieldPlan,
   EberhardWeberSliceParams,
 } from './song-mode/weberFieldSlice';
@@ -2028,6 +2032,35 @@ export interface GenerationMetadata {
   jackWhiteSliceReceipt?: string;
   jackWhiteEffectiveHarmonyBars?: string[];
   jackWhiteDeviceReceipts?: string[];
+  /** Johnny Marr — melodic rhythm guitar slice (`marrMelodicSlice.ts`, receipts `jma:*`). */
+  marrDiagnostics?: {
+    songwriterId: 'marr';
+    barsConsidered: number;
+    partialVoicingTouches: number;
+    openStringTouches: number;
+    topNoteMelodyTouches: number;
+    addNoteHarmonyTouches: number;
+    pendulumSubdivisionTouches: number;
+    modalAmbiguityTouches: number;
+    plainTriadTouches: number;
+    barreBlockTouches: number;
+    negEdgeTouches: number;
+    negMcguinnTouches: number;
+    minSectionSpan?: number;
+    sliceParams?: MarrSliceParams;
+    partialVoicingRate?: number;
+    topNoteMelody?: number;
+    openStringResonance?: number;
+    addNoteHarmony?: number;
+    pendulumSubdivision?: number;
+    modalAmbiguity?: number;
+    deviceReceipts?: string[];
+  };
+  marrMelodicPlan?: MarrMelodicPlan;
+  marrSliceParams?: MarrSliceParams;
+  marrSliceReceipt?: string;
+  marrEffectiveHarmonyBars?: string[];
+  marrDeviceReceipts?: string[];
   /** Eberhard Weber — bass-led harmonic field slice (`weberFieldSlice.ts`, receipts `ew:*`). */
   eberhardWeberDiagnostics?: {
     songwriterId: 'eberhard_weber';

@@ -52,7 +52,10 @@ export type BigBandComposerId =
   | 'mandel_lyric_warmth'
   | 'barry'
   | 'john_barry'
-  | 'barry_thematic_monolith';
+  | 'barry_thematic_monolith'
+  | 'marr'
+  | 'johnny_marr'
+  | 'marr_melodic_rhythm';
 
 export type BigBandEraId =
   | 'swing'

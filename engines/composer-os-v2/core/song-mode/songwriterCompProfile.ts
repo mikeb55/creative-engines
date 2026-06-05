@@ -149,6 +149,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   joe_pass: 'guitar',
   allan_holdsworth: 'guitar',
   jack_white: 'guitar',
+  marr: 'guitar',
   scott_henderson: 'guitar',
   sly_stone: 'guitar',
   iommi: 'guitar',

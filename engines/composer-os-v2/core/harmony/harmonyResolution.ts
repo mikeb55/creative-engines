@@ -722,6 +722,22 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   }
 
   /**
+   * Johnny Marr: `precomputeMarrEffectiveHarmonyBars` applies melodic rhythm guitar partial voicings.
+   * After precompute, `marrEffectiveHarmonyBars` is full-form and authoritative.
+   * Receipt prefix **`jma:*`** — distinct from Joni Mitchell `jm:*`, Mandel `jmd:*`, Jack White `jw:*`, John Williams `jwill:*`.
+   */
+  const marrEff = meta?.marrEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'marr' &&
+    Array.isArray(marrEff) &&
+    marrEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return marrEff[barIndex - 1]!;
+  }
+
+  /**
    * Jack White: `precomputeJackWhiteEffectiveHarmonyBars` applies open-tuning drone-riff implied harmony.
    * After precompute, `jackWhiteEffectiveHarmonyBars` is full-form and authoritative.
    * Receipt prefix **`jw:*`** — John Williams film slice uses **`jwill:*`**.
