@@ -12,6 +12,7 @@ import { KENNY_WHEELER_VRF_FINGERPRINT_RECEIPTS } from './kennyWheelerVrbFingerp
 import { JAN_GARBAREK_VRF_FINGERPRINT_RECEIPTS } from './janGarbarekVrbFingerprints';
 import { BILL_HOLMAN_VRF_FINGERPRINT_RECEIPTS } from './holmanVrbFingerprints';
 import { CARLA_BLEY_VRF_FINGERPRINT_RECEIPTS } from './carlaBleyVrbFingerprints';
+import { WEBER_FIELD_VRF_FINGERPRINT_RECEIPTS } from './weberVrbFingerprints';
 import { BILLY_STRAYHORN_VRF_FINGERPRINT_RECEIPTS } from './billyStrayhornVrbFingerprints';
 import { DON_SEBESKY_VRF_FINGERPRINT_RECEIPTS } from './donSebeskyVrbFingerprints';
 import { WAYNE_SHORTER_WS_HARM_FINGERPRINTS } from './wayneShorterHarmFingerprints';
@@ -1270,6 +1271,57 @@ const HENRY_THREADGILL: VoiceRuleBundle = {
   repairPolicy: {
     resolveParallels: false,
     maxVoiceOverlap: 6,
+  },
+};
+
+const WEBER_FIELD: VoiceRuleBundle = {
+  voiceId: 'weber_field',
+  harmonicRhythm: {
+    minChordDurationBars: 2,
+    maxChordDurationBars: 12,
+    allowMidBarChange: false,
+  },
+  bassPolicy: {
+    role: 'pedal-or-drone',
+    allowOctaveDoubling: false,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 10,
+    maxSpreadSemitones: 32,
+    clusterSizeNotes: [3, 5],
+    forbidParallelFifths: true,
+    forbidOctaveDoubling: true,
+  },
+  melodicPolicy: {
+    contour: 'descending-arc',
+    maxLeapSemitones: 9,
+    preferredIntervalSets: [4, 5, 7, 8, 12],
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 1,
+    mutateSingleVoiceAtTime: true,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: WEBER_FIELD_VRF_FINGERPRINT_RECEIPTS,
+  },
+  formPolicy: {
+    narrativeArc: 'continuous-curve',
+    sectionRecallEnforced: false,
+    noCadentialRelease: true,
+  },
+  rhythmPolicy: {
+    antiMetric: false,
+  },
+  repairPolicy: {
+    resolveParallels: false,
+    maxVoiceOverlap: 2,
+  },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.6,
+    registerInterlock: false,
+    intervalPreference: 'modal_sparse',
   },
 };
 
@@ -3619,6 +3671,10 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   bley: CARLA_BLEY,
   garbarek: JAN_GARBAREK,
   jg: JAN_GARBAREK,
+  weber_field: WEBER_FIELD,
+  eberhard_weber: WEBER_FIELD,
+  weber: WEBER_FIELD,
+  ew: WEBER_FIELD,
   john_coltrane: JOHN_COLTRANE,
   wayne_shorter: WAYNE_SHORTER,
   bill_evans: BILL_EVANS,

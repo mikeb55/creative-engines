@@ -41,6 +41,10 @@ import type {
   JanGarbarekFieldPlan,
   JanGarbarekSliceParams,
 } from './song-mode/janGarbarekSlice';
+import type {
+  WeberFieldPlan,
+  EberhardWeberSliceParams,
+} from './song-mode/weberFieldSlice';
 import type { BillHolmanSliceParams } from './song-mode/billHolmanSlice';
 import type { CarlaBleySliceParams } from './song-mode/carlaBleySlice';
 import type { CarlaBleyEpisodePlan } from './song-mode/bleyEpisodeTypes';
@@ -1832,6 +1836,25 @@ export interface GenerationMetadata {
   janGarbarekSliceReceipt?: string;
   janGarbarekEffectiveHarmonyBars?: string[];
   janGarbarekDeviceReceipts?: string[];
+  /** Eberhard Weber — bass-led harmonic field slice (`weberFieldSlice.ts`, receipts `ew:*`). */
+  eberhardWeberDiagnostics?: {
+    songwriterId: 'eberhard_weber';
+    barsConsidered: number;
+    pedalTouches: number;
+    upperRefreshTouches: number;
+    bassLedTouches: number;
+    revoicingTouches: number;
+    resonantTouches: number;
+    maxPhraseArcLength?: number;
+    unitCount?: number;
+    sliceParams?: EberhardWeberSliceParams;
+    deviceReceipts?: string[];
+  };
+  eberhardWeberFieldPlan?: WeberFieldPlan;
+  eberhardWeberSliceParams?: EberhardWeberSliceParams;
+  eberhardWeberSliceReceipt?: string;
+  eberhardWeberEffectiveHarmonyBars?: string[];
+  eberhardWeberDeviceReceipts?: string[];
   /** Bill Holman — chart-first linear counterpoint slice (`billHolmanSlice.ts`). */
   billHolmanDiagnostics?: {
     songwriterId: 'bill_holman';

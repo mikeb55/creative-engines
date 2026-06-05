@@ -49,9 +49,9 @@ Engine: **`engines/composer-os-v2/core/groups/composerGroupEngine.ts`** · defin
 | `soloistSpotlight` | 0.45 | Solo as colour, not feature |
 | `sectionalContrastMode` | `gradual` | Sections melt into each other |
 
-**Members (fully implemented):** Maria Schneider, Kenny Wheeler, Bill Evans (dual — default ECM), Henry Threadgill, Bob Brookmeyer, Jan Garbarek, Carla Bley — plus Gil Evans, Pat Metheny, `ecm_chamber` preset.
+**Members (fully implemented):** Maria Schneider, Kenny Wheeler, Bill Evans (dual — default ECM), Henry Threadgill, Bob Brookmeyer, Jan Garbarek, Carla Bley, Eberhard Weber — plus Gil Evans, Pat Metheny, `ecm_chamber` preset.
 
-**Partial / future:** Weber, Surman, Towner.
+**Partial / future:** Surman, Towner.
 
 ### Studio Orchestral Jazz
 
@@ -218,6 +218,7 @@ Canonical Song Mode / Big Band composers in **`engines/composer-os-v2`**. **Slic
 | Henry Threadgill | `henry_threadgill` | `ht:*` | fully implemented | Episodic interval-cell harmony, polymodal bass, anti-metric phrases | `intervalCellDensity`, `antiMetricStrength`, `polymodalSeparation`, `episodeContrast` |
 | Kenny Wheeler | `kenny_wheeler` | `kw:*` | fully implemented | Polyaxial upper sonority + independent bass, lyrical ECM brittleness | `polyaxialHarmony`, `tensionCarryForward`, `bassTrajectoryLogic`, `melodicDisjunctionRate`, `cadentialOpacity`, `voicingSpecificity` |
 | Jan Garbarek | `jan_garbarek` | `jg:*` | fully implemented | Ritual modal melody over sparse harmonic field, drone gravity, phrase-breath silence | `modalCentricity`, `dronePresence`, `harmonicSlowness`, `melodicSustain`, `phraseBreathWeight`, `innerVoiceRestraint`, `folkArchetypeStrength` |
+| Eberhard Weber | `eberhard_weber` | `ew:*` | fully implemented | Bass-led harmonic field: pedal persistence, slow upper refresh, revoicing over resolution | `pedalPersistence`, `upperChordRefreshRate`, `functionalCadenceRate`, `revoicingInsteadOfResolution`, `bassAsHarmonySource` |
 | Billy Strayhorn | `billy_strayhorn` | `bs:*` | fully implemented | Chromatic song architecture + extended-tone melody/harmony fusion | `chromaticContinuity`, `extendedToneMelody`, `parallelColorMotion`, `phraseArcLength`, `innerVoiceActivity`, `closedBlockSustain` |
 | Don Sebesky | `don_sebesky` | `ds:*` | fully implemented | CTI production-orchestra: groove bed, string halo, melody-legible reharm, tiered lifts | `groovePersistence`, `stringProminence`, `melodyLegibility`, `functionalLegibility`, `liftToBlareArc`, `soloistSpotlight`, `centerFillDensity` |
 | Carla Bley | `carla_bley` | `cbl:*` | fully implemented | Formal irony ECM: legible topics reframed by deadpan presentation and strategic displacement | `formalIronyIndex`, `deadpanPresentation`, `tonicLegibility`, `cadenceDeflection`, `motifContamination`, `climaxDeflation`, `repriseDefamiliarization` |
@@ -375,6 +376,50 @@ Garbarek is the most **melodically archetypal** voice in the **ECM Chamber Jazz*
 **Reference works:** *I Took Up the Runes* · *Visible World* · *Rites* · *All Those Born With Wings* · *Dis* · *Officium*
 
 **Evaluation:** **`garbarekStyleProfile.ts`** — pass on melodic sustain, pedal stability, slow harmonic rate, inner-voice restraint, modal identity, silence weighting, cadential openness; hard fail on Wheeler polyaxial independence, Schneider swell arcs, Threadgill anti-metric density, walking bass, fast harmony, ii–V–I closures.
+
+---
+
+### Eberhard Weber (`eberhard_weber`)
+
+Weber is the most **bass-centred harmonic architect** in ECM Chamber Jazz. Harmony is a **field sustained by the bass axis** — upper color clusters refresh slowly while the pedal holds. Tension releases through **revoicing, register, and spacing**, not functional cadence.
+
+**Three pillars**
+
+1. **Pedal as form** — one bass pitch or two-pitch axis active 4–12 bars; upper structures change above.
+2. **Bass-led chord identity** — slash sonorities and color clusters; not root-position tertian stacks.
+3. **Revoicing over resolution** — phrase endings shift register/timbre instead of ii–V–I closure.
+
+**Weber vs other ECM voices**
+
+| | **Weber** | **Garbarek** | **Wheeler** | **Schneider** |
+|---|-----------|--------------|-------------|---------------|
+| Bass role | Foreground harmonic source | Drone support for ritual melody | Independent polyaxial trajectory | Pedal under orchestral swell |
+| Upper harmony | Slow color refresh every 2–4 bars | Modal field, sparse | Polyaxial slash brittleness | Dense orchestral morph |
+| Melody | Long arching spans, wide calm intervals | Chant/folk ritual line | Brittle leap chains | Narrative orchestral lead |
+| Cadence | Revoicing / spacing release | Open modal center | Open sus / slash opacity | Rich non-triadic settlement |
+| Choose Weber when | Bass-led ECM field, Yellow Fields / Colours of Chloë palette | Nordic ritual sax melody | Lyrical polyaxial chamber | Large-ensemble narrative swell |
+
+**Song Mode slice** — **`weberFieldSlice.ts`** (`ew:*` receipts): pedal phrase units → upper-field palette over D/A/E pedals → defunctionalize ii–V–I → revoicing release at unit seams.
+
+**Five parameters** (0–1, defaults in parentheses):
+
+| Parameter | Default | Musical role |
+|-----------|---------|--------------|
+| `pedalPersistence` | 0.78 | Bass axis sustained 4–12 bars per phrase unit |
+| `upperChordRefreshRate` | 0.30 | Upper structure changes every 2–4 bars, not every bar |
+| `functionalCadenceRate` | 0.20 | Max functional ii–V–I pressure — keep low |
+| `revoicingInsteadOfResolution` | 0.65 | Release via register/spacing/timbre, not dominant-tonic |
+| `bassAsHarmonySource` | 0.85 | Chord identity from bass + upper cluster |
+
+**Characteristic upper-field palettes:** D pedal — Gmaj7(add9), Cmaj7/D, Em9, G/D · A pedal — Fmaj7(#11)/A, Dadd9/A, Cmaj7/A · E pedal — F/E, Am9/E, Cmaj7/E, Esus(add9)/E.
+
+**VRB bundle id:** **`weber_field`** — 8 fingerprints + Garbarek / Wheeler / Schneider negative discriminators.
+
+**Big Band arranger id:** **`weber`** — six rules (BassForeground, KeyboardPlane, WindLineLength, DrumColor, ResonantSilence, PedalField).
+
+**Reference works:** *Yellow Fields* · *Silent Feet* · *The Colours of Chloë* · *Pendulum* · *Endless Days*
+
+**Evaluation:** **`weberStyleProfile.ts`** — pass on pedal persistence ≥0.70, functional cadence ≤0.22, bass-as-harmony ≥0.78, phrase arc ≥0.68, revoicing ≥0.58; hard fail on Garbarek modal-sax bleed, Wheeler polyaxial slash bleed, Schneider orchestral swell bleed.
 
 ---
 

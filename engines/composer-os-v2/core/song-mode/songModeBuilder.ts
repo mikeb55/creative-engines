@@ -2423,6 +2423,87 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['D5', 'Em9', 'Am7sus4', 'D5'],
     ],
   },
+  /** Eberhard Weber — `weber_pedal_field`: D/A/E pedal axis with slow upper refresh (`weberFieldSlice.ts`). */
+  weber_pedal_field: {
+    verse: [
+      ['Gmaj7(add9)/D', 'Gmaj7(add9)/D', 'Cmaj7/D', 'Em9/D'],
+      ['Fmaj7(#11)/A', 'Fmaj7(#11)/A', 'Dadd9/A', 'Cmaj7/A'],
+      ['F/E', 'F/E', 'Am9/E', 'Cmaj7/E'],
+      ['G/D', 'Gmaj7(add9)/D', 'Cmaj7/D', 'Em9/D'],
+    ],
+    chorus: [
+      ['Gmaj7(add9)/D', 'Cmaj7/D', 'Gmaj7(add9)/D', 'Em9/D'],
+      ['Dadd9/A', 'Cmaj7/A', 'Fmaj7(#11)/A', 'Dadd9/A'],
+      ['Am9/E', 'Cmaj7/E', 'Esus(add9)/E', 'F/E'],
+      ['G/D', 'Gmaj7(add9)/D', 'Cmaj7/D', 'G/D'],
+    ],
+    bridge: [
+      ['Cmaj7/D', 'Gmaj7(add9)/D', 'Cmaj7/D', 'Em9/D'],
+      ['Cmaj7/A', 'Fmaj7(#11)/A', 'Dadd9/A', 'Cmaj7/A'],
+      ['Cmaj7/E', 'Am9/E', 'F/E', 'Esus(add9)/E'],
+      ['Em9/D', 'G/D', 'Gmaj7(add9)/D', 'Cmaj7/D'],
+    ],
+    pre_chorus: [
+      ['Gmaj7(add9)/D', 'Cmaj7/D', 'Em9/D', 'G/D'],
+      ['Fmaj7(#11)/A', 'Dadd9/A', 'Cmaj7/A', 'Fmaj7(#11)/A'],
+      ['F/E', 'Am9/E', 'Cmaj7/E', 'Esus(add9)/E'],
+      ['Gmaj7(add9)/D', 'Em9/D', 'Cmaj7/D', 'G/D'],
+    ],
+  },
+  /** Eberhard Weber — `weber_bass_led_chamber`: bass-led slash identity, minimal functional motion. */
+  weber_bass_led_chamber: {
+    verse: [
+      ['Gmaj7(add9)/D', 'Gmaj7(add9)/D', 'Gmaj7(add9)/D', 'Cmaj7/D'],
+      ['Dadd9/A', 'Dadd9/A', 'Cmaj7/A', 'Cmaj7/A'],
+      ['Am9/E', 'Am9/E', 'F/E', 'F/E'],
+      ['G/D', 'G/D', 'Em9/D', 'Em9/D'],
+    ],
+    chorus: [
+      ['Gmaj7(add9)/D', 'Cmaj7/D', 'Em9/D', 'G/D'],
+      ['Fmaj7(#11)/A', 'Cmaj7/A', 'Dadd9/A', 'Cmaj7/A'],
+      ['Cmaj7/E', 'Am9/E', 'Esus(add9)/E', 'F/E'],
+      ['Gmaj7(add9)/D', 'G/D', 'Cmaj7/D', 'Em9/D'],
+    ],
+    bridge: [
+      ['Cmaj7/D', 'Cmaj7/D', 'Gmaj7(add9)/D', 'Em9/D'],
+      ['Cmaj7/A', 'Dadd9/A', 'Fmaj7(#11)/A', 'Cmaj7/A'],
+      ['F/E', 'Cmaj7/E', 'Am9/E', 'Esus(add9)/E'],
+      ['G/D', 'Gmaj7(add9)/D', 'Cmaj7/D', 'Gmaj7(add9)/D'],
+    ],
+    pre_chorus: [
+      ['Gmaj7(add9)/D', 'Gmaj7(add9)/D', 'Cmaj7/D', 'Em9/D'],
+      ['Fmaj7(#11)/A', 'Dadd9/A', 'Dadd9/A', 'Cmaj7/A'],
+      ['Am9/E', 'Cmaj7/E', 'F/E', 'Am9/E'],
+      ['Em9/D', 'G/D', 'Gmaj7(add9)/D', 'Cmaj7/D'],
+    ],
+  },
+  /** Eberhard Weber — `weber_resonant_arc`: long pedal spans with revoicing release at phrase seams. */
+  weber_resonant_arc: {
+    verse: [
+      ['Gmaj7(add9)/D', 'Gmaj7(add9)/D', 'Gmaj7(add9)/D', 'Gmaj7(add9)/D'],
+      ['Cmaj7/A', 'Cmaj7/A', 'Fmaj7(#11)/A', 'Dadd9/A'],
+      ['F/E', 'F/E', 'F/E', 'Am9/E'],
+      ['G/D', 'Gmaj7(add9)/D', 'Gmaj7(add9)/D', 'Cmaj7/D'],
+    ],
+    chorus: [
+      ['Gmaj7(add9)/D', 'Gmaj7(add9)/D', 'Cmaj7/D', 'Em9/D'],
+      ['Dadd9/A', 'Cmaj7/A', 'Cmaj7/A', 'Fmaj7(#11)/A'],
+      ['Esus(add9)/E', 'Cmaj7/E', 'Am9/E', 'F/E'],
+      ['G/D', 'G/D', 'Gmaj7(add9)/D', 'Cmaj7/D'],
+    ],
+    bridge: [
+      ['Em9/D', 'Gmaj7(add9)/D', 'Cmaj7/D', 'G/D'],
+      ['Fmaj7(#11)/A', 'Cmaj7/A', 'Dadd9/A', 'Cmaj7/A'],
+      ['Cmaj7/E', 'Am9/E', 'F/E', 'Esus(add9)/E'],
+      ['Gmaj7(add9)/D', 'Gmaj7(add9)/D', 'Em9/D', 'G/D'],
+    ],
+    pre_chorus: [
+      ['Gmaj7(add9)/D', 'Cmaj7/D', 'Gmaj7(add9)/D', 'Em9/D'],
+      ['Dadd9/A', 'Fmaj7(#11)/A', 'Cmaj7/A', 'Dadd9/A'],
+      ['Am9/E', 'Cmaj7/E', 'F/E', 'Esus(add9)/E'],
+      ['G/D', 'Em9/D', 'Gmaj7(add9)/D', 'Cmaj7/D'],
+    ],
+  },
   /** Gil Evans — `gil_evans_modal`: modal impressionist / sustained fields (`gilEvansSlice.ts`). */
   gil_evans_modal: {
     verse: [
@@ -3420,6 +3501,11 @@ function chordSymbolsForSection(
     const tier = Math.abs(seed) % 3;
     resolvedPoolId =
       tier === 0 ? 'garbarek_modal_field' : tier === 1 ? 'garbarek_drone_ritual' : 'garbarek_folk_chant';
+  }
+  if (songwriterId === 'eberhard_weber') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0 ? 'weber_pedal_field' : tier === 1 ? 'weber_bass_led_chamber' : 'weber_resonant_arc';
   }
   if (songwriterId === 'bill_holman') {
     const tier = Math.abs(seed) % 3;

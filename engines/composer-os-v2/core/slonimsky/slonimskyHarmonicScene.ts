@@ -95,7 +95,7 @@ function pickPatternForBar(seed: number, bar: number, section: string): Interval
   return (
     selectPatternForIntent({
       seed: seed + bar * 997,
-      sectionPatterns,
+      sectionPatterns: sectionPatterns as unknown as readonly IntervalPattern[],
       phraseIntent: bar % 4 === 3 ? 'shock' : 'build',
       chordType: 'dominant',
       allowedOutsideLevel: 2,
@@ -165,7 +165,13 @@ export function applySlonimskyHarmonicSceneToContext(context: CompositionContext
 
   const controls = zappaRiffSoloControlsFrom(meta);
   let rpc = 0;
-  const firstChord = context.lockedHarmonyBarsRaw?.[0] ?? context.harmonyContext?.bars?.[0]?.symbol;
+  const rawFirst: unknown = context.lockedHarmonyBarsRaw?.[0] ?? context.harmonyContext?.bars?.[0];
+  const firstChord =
+    typeof rawFirst === 'string'
+      ? rawFirst
+      : rawFirst && typeof rawFirst === 'object' && 'symbol' in rawFirst
+        ? String((rawFirst as { symbol?: string }).symbol ?? '')
+        : undefined;
   if (firstChord) {
     rpc = ((chordTonesForChordSymbol(firstChord).root % 12) + 12) % 12;
   }

@@ -408,11 +408,27 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
     contourProfile: 'wide_arc',
     phraseAsymmetryTendency: 0.78,
     cadenceFrequency: 'low',
-    devices: ['polyaxial_harmony', 'tension_carry', 'wide_leap_repair', 'open_cadence', 'anacrusis', 'register_gap'],
+    devices: ['polyaxial_slash', 'tension_carry', 'brittle_leap', 'cadential_opacity', 'chamber_float'],
+    malLeadHints: {
+      attackDensity: 'low',
+      interOnsetSpacing: 'wide',
+      modalIntervalPreference: true,
+    },
+  },
+  eberhard_weber: {
+    intervalTendency: 'mixed',
+    rhythmicSubdivision: 'half_quarter',
+    repetitionVsVariationBias: 0.46,
+    phraseLength: 8,
+    contourProfile: 'wide_arc',
+    phraseAsymmetryTendency: 0.62,
+    cadenceFrequency: 'low',
+    devices: ['pedal_field', 'bass_led_harmony', 'slow_upper_refresh', 'revoicing_release', 'resonant_space'],
     malLeadHints: {
       attackDensity: 'low',
       interOnsetSpacing: 'wide',
       avoidStrongBeatOneAttack: true,
+      modalIntervalPreference: true,
     },
   },
   john_coltrane: {

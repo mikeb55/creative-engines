@@ -722,6 +722,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'maria_schneider', label: 'Maria Schneider' },
   { id: 'don_sebesky', label: 'Don Sebesky' },
   { id: 'jan_garbarek', label: 'Jan Garbarek' },
+  { id: 'eberhard_weber', label: 'Eberhard Weber' },
   { id: 'kenny_wheeler', label: 'Kenny Wheeler' },
   { id: 'max_martin', label: 'Max Martin' },
   { id: 'miles_davis', label: 'Miles Davis' },

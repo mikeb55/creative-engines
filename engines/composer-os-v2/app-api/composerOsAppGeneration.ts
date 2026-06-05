@@ -78,6 +78,7 @@ import { schneiderStyleProfile } from '../core/evaluation/schneiderStyleProfile'
 import { garbarekStyleProfile } from '../core/evaluation/garbarekStyleProfile';
 import { holmanStyleProfile } from '../core/evaluation/holmanStyleProfile';
 import { bleyStyleProfile } from '../core/evaluation/bleyStyleProfile';
+import { weberStyleProfile } from '../core/evaluation/weberStyleProfile';
 import { quincyStyleProfile } from '../core/evaluation/quincyStyleProfile';
 import { sebeskyStyleProfile } from '../core/evaluation/sebeskyStyleProfile';
 import { thadJonesStyleProfile } from '../core/evaluation/thadJonesStyleProfile';
@@ -2552,6 +2553,10 @@ function bigBandEvaluationStyleProfile(
     case 'bley':
     case 'carla_bley':
       return bleyStyleProfile;
+    case 'weber':
+    case 'eberhard_weber':
+    case 'weber_field':
+      return weberStyleProfile;
     case 'quincy_jones':
       return quincyStyleProfile;
     case 'sebesky':

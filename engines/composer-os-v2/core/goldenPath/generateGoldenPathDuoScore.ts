@@ -291,6 +291,12 @@ import {
   precomputeJanGarbarekEffectiveHarmonyBars,
 } from './janGarbarekSlice';
 import {
+  accumulateEberhardWeberHarmonyDiagnostics,
+  createEberhardWeberHarmonyAccumulator,
+  finalizeEberhardWeberMetadata,
+  precomputeEberhardWeberEffectiveHarmonyBars,
+} from './weberFieldSlice';
+import {
   accumulateBillHolmanHarmonyDiagnostics,
   createBillHolmanHarmonyAccumulator,
   finalizeBillHolmanMetadata,
@@ -2452,6 +2458,14 @@ function buildSongwriterMelodyProfile(
         intervalBias: 'leaping',
         rhythmicFeel: 'flowing',
       };
+    case 'eberhard_weber':
+      return {
+        phraseIntentBias: 'arch',
+        densityBias: -0.12,
+        offbeatBias: 0.22,
+        intervalBias: 'stepwise',
+        rhythmicFeel: 'flowing',
+      };
     case 'thad_jones':
       return {
         phraseIntentBias: 'arch',
@@ -2775,6 +2789,7 @@ function buildGuitarPart(
   const isSongwriterMariaSchneider = genMeta?.songwriterStyleId === 'maria_schneider';
   const isSongwriterKennyWheeler = genMeta?.songwriterStyleId === 'kenny_wheeler';
   const isSongwriterJanGarbarek = genMeta?.songwriterStyleId === 'jan_garbarek';
+  const isSongwriterEberhardWeber = genMeta?.songwriterStyleId === 'eberhard_weber';
   const isSongwriterBillHolman =
     normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'bill_holman';
   const isSongwriterCarlaBley =
@@ -2828,6 +2843,7 @@ function buildGuitarPart(
   const msAccum = createMariaSchneiderHarmonyAccumulator();
   const kwAccum = createKennyWheelerHarmonyAccumulator();
   const jgAccum = createJanGarbarekHarmonyAccumulator();
+  const ewAccum = createEberhardWeberHarmonyAccumulator();
   const holmanAccum = createBillHolmanHarmonyAccumulator();
   const carlaBleyAccum = createCarlaBleyHarmonyAccumulator();
   const geAccum = createGilEvansHarmonyAccumulator();
@@ -2981,6 +2997,9 @@ function buildGuitarPart(
   }
   if (isSongwriterJanGarbarek && isDuoGoldenPath) {
     precomputeJanGarbarekEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterEberhardWeber && isDuoGoldenPath) {
+    precomputeEberhardWeberEffectiveHarmonyBars(context);
   }
   if (isSongwriterBillHolman && isDuoGoldenPath) {
     precomputeBillHolmanEffectiveHarmonyBars(context);
@@ -3390,6 +3409,13 @@ function buildGuitarPart(
         b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
         resolveBarSymbol(context, b).symbol,
         jgAccum
+      );
+    }
+    if (isSongwriterEberhardWeber) {
+      accumulateEberhardWeberHarmonyDiagnostics(
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
+        ewAccum
       );
     }
     if (isSongwriterBillHolman) {
@@ -4377,6 +4403,9 @@ function buildGuitarPart(
 
   if (isSongwriterJanGarbarek && context.generationMetadata) {
     finalizeJanGarbarekMetadata(context.generationMetadata, jgAccum);
+  }
+  if (isSongwriterEberhardWeber && context.generationMetadata) {
+    finalizeEberhardWeberMetadata(context.generationMetadata, ewAccum);
   }
   if (isSongwriterBillHolman && context.generationMetadata) {
     finalizeBillHolmanMetadata(context.generationMetadata, holmanAccum);

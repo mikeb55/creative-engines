@@ -148,6 +148,52 @@ const HOLMAN_COMPOSER_RULES: BigBandRule[] = [
   ),
 ];
 
+/** Eberhard Weber — bass-led harmonic field over sustained pedal axis. */
+const WEBER_COMPOSER_RULES: BigBandRule[] = [
+  R(
+    'weber.bass_foreground',
+    'BassForegroundRule: bass central in register and compositional function — foreground voice not support (target 0.85)',
+    'composer',
+    'orchestration',
+    86
+  ),
+  R(
+    'weber.keyboard_plane',
+    'KeyboardPlaneRule: keyboards and strings create harmonic planes not comping changes (target 0.70)',
+    'composer',
+    'harmony',
+    84
+  ),
+  R(
+    'weber.wind_line_length',
+    'WindLineLengthRule: winds draw long melodic trajectories across static or slowly shifting support (target 0.72)',
+    'composer',
+    'form',
+    83
+  ),
+  R(
+    'weber.drum_color',
+    'DrumColorRule: low swing-ride obligation — drums as color, texture, pulse-flex not swing driver (target 0.15)',
+    'composer',
+    'rhythm',
+    81
+  ),
+  R(
+    'weber.resonant_silence',
+    'ResonantSilenceRule: rests expose tail resonance not break time — silenceWeighting resonant_structural',
+    'composer',
+    'density',
+    82
+  ),
+  R(
+    'weber.pedal_field',
+    'PedalFieldRule: one bass pitch or two-pitch axis 4–12 bars while upper color clusters refresh every 2–4 bars',
+    'composer',
+    'harmony',
+    85
+  ),
+];
+
 /** Carla Bley — formal irony: legible topics reframed by deadpan presentation. */
 const CARLA_BLEY_COMPOSER_RULES: BigBandRule[] = [
   R(
@@ -251,6 +297,9 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
   holman: HOLMAN_COMPOSER_RULES,
   carla_bley: CARLA_BLEY_COMPOSER_RULES,
   bley: CARLA_BLEY_COMPOSER_RULES,
+  weber: WEBER_COMPOSER_RULES,
+  eberhard_weber: WEBER_COMPOSER_RULES,
+  weber_field: WEBER_COMPOSER_RULES,
   /** Quincy Jones — LA studio punch / crossover pop–jazz / tight rhythm-section locks. */
   quincy_jones: [
     R('quincy_jones.tight_brass', 'Brass punches locked to rhythm-section kicks & backbeats', 'composer', 'orchestration', 84),

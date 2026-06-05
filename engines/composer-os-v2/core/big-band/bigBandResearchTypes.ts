@@ -31,7 +31,10 @@ export type BigBandComposerId =
   | 'bill_holman'
   | 'holman'
   | 'carla_bley'
-  | 'bley';
+  | 'bley'
+  | 'weber'
+  | 'eberhard_weber'
+  | 'weber_field';
 
 export type BigBandEraId =
   | 'swing'

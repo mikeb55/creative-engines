@@ -545,15 +545,15 @@ const songwriterRules: Partial<Record<SongwriterRuleId, SongwritingRuleEntry[]>>
   ],
   bill_holman: [
     R('holman.chart_first', 'Chart-first linear lines generate harmony', 'songwriter', 'melody', 9, 'global'),
-    R('holman.sax_soli', 'Five-voice sax soli as primary texture', 'songwriter', 'orchestration', 9, 'verse'),
+    R('holman.sax_soli', 'Five-voice sax soli as primary texture', 'songwriter', 'form', 9, 'verse'),
     R('holman.voice_leading', 'Classical voice-leading gate on all soli', 'songwriter', 'harmony', 8, 'global'),
     R('holman.countermelody', 'Independent singable counter-lines', 'songwriter', 'melody', 8, 'chorus'),
   ],
   carla_bley: [
     R('bley.formal_irony', 'Legible style-topic introduced then reframed by understatement or displacement', 'songwriter', 'form', 9, 'global'),
-    R('bley.deadpan_presentation', 'Dynamic rhetoric and climax inflation kept lower than material promises', 'songwriter', 'orchestration', 9, 'verse'),
+    R('bley.deadpan_presentation', 'Dynamic rhetoric and climax inflation kept lower than material promises', 'songwriter', 'form', 9, 'verse'),
     R('bley.cadence_deflection', 'Functional cadence sidestepped with dry wrong-note elegance', 'songwriter', 'harmony', 8, 'chorus'),
-    R('bley.climax_deflation', 'Major build gestures undercut within 1–4 bars', 'songwriter', 'density', 8, 'bridge'),
+    R('bley.climax_deflation', 'Major build gestures undercut within 1–4 bars', 'songwriter', 'form', 8, 'bridge'),
   ],
   maria_schneider: [
     R(
@@ -627,6 +627,40 @@ const songwriterRules: Partial<Record<SongwriterRuleId, SongwritingRuleEntry[]>>
     R(
       'garbarek.ritual_melody',
       'Melody as chant/call over stable modal field — arch/descent or circular folk nucleus; phrase-breath silence structural',
+      'songwriter',
+      'melody',
+      8,
+      'form'
+    ),
+  ],
+  eberhard_weber: [
+    R(
+      'weber.pedal_field',
+      'Bass-led harmonic field — one pedal axis 4–12 bars with upper color clusters refreshing every 2–4 bars',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'weber.bass_foreground',
+      'Bass is compositional foreground — chord identity from bass + upper cluster, not root-position stacks',
+      'songwriter',
+      'harmony',
+      9,
+      'verse'
+    ),
+    R(
+      'weber.revoicing_release',
+      'Tension released by register/spacing/timbre change — not dominant-tonic resolution',
+      'songwriter',
+      'harmony',
+      8,
+      'chorus'
+    ),
+    R(
+      'weber.arching_melody',
+      'Long melodic arcs beyond 4 bars — wide calm intervals P4/P5/M6/8ve, not brittle Wheeler leap chains',
       'songwriter',
       'melody',
       8,

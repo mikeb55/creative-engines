@@ -644,6 +644,17 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
     return janGarbarekEff[barIndex - 1]!;
   }
 
+  const eberhardWeberEff = meta?.eberhardWeberEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'eberhard_weber' &&
+    Array.isArray(eberhardWeberEff) &&
+    eberhardWeberEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return eberhardWeberEff[barIndex - 1]!;
+  }
+
   const holmanEff = meta?.billHolmanEffectiveHarmonyBars;
   if (
     meta?.songwriterStyleId === 'bill_holman' &&

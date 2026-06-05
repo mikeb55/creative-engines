@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+### Added
+
+- **Eberhard Weber v2 Song Mode slice (`ew:*`)** — bass-led harmonic field architecture (`weberFieldSlice.ts`): pedal persistence, slow upper refresh, bass-as-harmony-source, revoicing-over-resolution; golden-path precompute + locked harmony routing + smoke **`weberFieldSliceSmoke.test.ts`**.
+- **Weber VRB bundle** — **`weberVrbFingerprints.ts`** — 8 fingerprints + negative discriminators; aliases `eberhard_weber` / `weber` / `weber_field`.
+- **Weber Big Band rules** — six named rules in **`bigBandRuleRegistry.ts`**: BassForeground, KeyboardPlane, WindLineLength, DrumColor, ResonantSilence, PedalField.
+- **Weber evaluation profile** — **`weberStyleProfile.ts`** with Garbarek / Wheeler / Schneider discrimination hard fails.
+- **Weber assigned to ECM Chamber Jazz** — **`composerGroupDefinitions.ts`** fully implemented; songwriter **`eberhard_weber`** + arranger **`weber`** in **`HomeGenerate.tsx`** ECM optgroup.
+
 ---
 
 ## [1.9.0] — 2026-06-05
