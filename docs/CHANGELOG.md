@@ -2,6 +2,13 @@
 
 ### Added
 
+- **Tom Verlaine v2 art-rock composer (`tv:*`)** — suspended modal field slice (`verlainFieldSlice.ts`): static modal centers, bass displacement under upper shape, extension retention, progression avoidance; golden-path precompute + locked harmony routing + smoke **`verlainFieldSliceSmoke.test.ts`** seed **95001**.
+- **Verlaine VRB bundle** — **`verlainVrbFingerprints.ts`** — 8 fingerprints + negative discriminators (Fripp / Morello / Towner / Weber / jazz-lush / arena-pop bleed); bundle id **`verlaine_suspended_field`**; aliases `verlaine` / `tom_verlaine` / `television` / `tv`; riff stub **`VERLAINE`** in **`riffVrbStubs.ts`** retained with **`riffProfile`** merged into full bundle.
+- **Verlaine Big Band rules** — six named rules in **`bigBandRuleRegistry.ts`**: ModalFieldPersistence, SuspendedChordSurface, BassDisplacement, ExtensionRetention, SupraChordMelody, ProgressionAvoidance.
+- **Verlaine evaluation profile** — **`verlaineStyleProfile.ts`** with pass/fail thresholds and art-rock negative discriminators.
+- **Verlaine Generate UI** — **`verlaine`** in **`HomeGenerate.tsx`** shipped songwriter list.
+- **Art Rock / Post-Punk group** — **`composerGroupDefinitions.ts`** **`ART_ROCK_POST_PUNK`** — Verlaine, Sonic Youth, Fripp, Morello (`fully_implemented`); handbook Group Mode section updated.
+
 - **John Barry v2 Film composer (`jbr:*`)** — thematic monolith Bond slice (`johnBarrySlice.ts`): min(maj7) palette, block brass, string mass, climax by accumulation; golden-path precompute + locked harmony routing + **`filmComposerSlices.test.ts`** rows seed **10001**. Receipt prefix **`jbr:*`** (not `jb:*` — James Brown owns `jb:*`).
 - **Barry VRB bundle** — **`barryVrbFingerprints.ts`** — 8 fingerprints + negative discriminators (Herrmann / Morricone / Goldsmith / Schifrin / Mancini bleed); bundle id **`barry_thematic_monolith`**; aliases `john_barry` / `barry` / `jbr`.
 - **Barry Big Band rules** — six named rules in **`bigBandRuleRegistry.ts`**: ThematicMonolith, BondHarmony, BlockBrass, StringMass, RestraintPlusMass, BritishNoble.

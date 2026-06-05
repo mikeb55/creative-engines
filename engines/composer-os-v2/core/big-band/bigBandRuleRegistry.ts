@@ -170,6 +170,52 @@ const TOWNER_COMPOSER_RULES: BigBandRule[] = [
   ),
 ];
 
+/** Tom Verlaine — suspended modal field art-rock; bass displacement under static upper shape. */
+const VERLAINE_COMPOSER_RULES: BigBandRule[] = [
+  R(
+    'verlaine.modal_field_persistence',
+    'ModalFieldPersistenceRule: harmonic center holds 4–16 bars; change via bass displacement under static upper shape, not new chord; penalize frequent root movement',
+    'composer',
+    'harmony',
+    87
+  ),
+  R(
+    'verlaine.suspended_surface',
+    'SuspendedChordSurfaceRule: sus2/sus4/add9/add4/6-9/slash/dyad drones dominate; reject altered-dominant jazz-lush grips and dense harmonic masking',
+    'composer',
+    'harmony',
+    86
+  ),
+  R(
+    'verlaine.bass_displacement',
+    'BassDisplacementRule: guitar grip root and bass root differ frequently — reinterpret harmony by moving bass under static upper shape',
+    'composer',
+    'harmony',
+    85
+  ),
+  R(
+    'verlaine.extension_retention',
+    'ExtensionRetentionRule: upper tones 9/4/6 persist across bass change in 60–75% adjacent events; upper shape moves slowly',
+    'composer',
+    'harmony',
+    84
+  ),
+  R(
+    'verlaine.supra_chord_melody',
+    'SupraChordMelodyRule: melody targets scale degrees 2/4/6/9 over field; chord-defining tones delayed; melody floats and only intermittently confirms harmony',
+    'composer',
+    'melody',
+    86
+  ),
+  R(
+    'verlaine.progression_avoidance',
+    'ProgressionAvoidanceRule: penalize I–V–vi–IV, blues closure, ii–V–I, arena telegraph; reward modal loops and return-to-riff closure over V–I',
+    'composer',
+    'form',
+    85
+  ),
+];
+
 /** Jan Garbarek — ritual modal ECM field; melody as invocation over sparse modal center. */
 const JAN_GARBAREK_COMPOSER_RULES: BigBandRule[] = [
   R('garbarek.modal_field', 'ModalFieldRule: harmonic environment is a field not a progression — Dorian/Aeolian/Mixolydian/pentatonic centers held for extended spans; avoid functional ii–V–I', 'composer', 'harmony', 86),
@@ -558,6 +604,11 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
   towner: TOWNER_COMPOSER_RULES,
   ralph_towner: TOWNER_COMPOSER_RULES,
   towner_guitar_polyphony: TOWNER_COMPOSER_RULES,
+  verlaine: VERLAINE_COMPOSER_RULES,
+  tom_verlaine: VERLAINE_COMPOSER_RULES,
+  television: VERLAINE_COMPOSER_RULES,
+  verlaine_suspended_field: VERLAINE_COMPOSER_RULES,
+  tv: VERLAINE_COMPOSER_RULES,
   bill_holman: HOLMAN_COMPOSER_RULES,
   holman: HOLMAN_COMPOSER_RULES,
   carla_bley: CARLA_BLEY_COMPOSER_RULES,

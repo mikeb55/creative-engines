@@ -12,6 +12,7 @@ import { KENNY_WHEELER_VRF_FINGERPRINT_RECEIPTS } from './kennyWheelerVrbFingerp
 import { JAN_GARBAREK_VRF_FINGERPRINT_RECEIPTS } from './janGarbarekVrbFingerprints';
 import { SURMAN_FOLK_MODAL_VRF_FINGERPRINT_RECEIPTS } from './surmanVrbFingerprints';
 import { TOWNER_GUITAR_POLYPHONY_VRF_FINGERPRINT_RECEIPTS } from './townerVrbFingerprints';
+import { VERLAINE_SUSPENDED_FIELD_VRF_FINGERPRINT_RECEIPTS } from './verlainVrbFingerprints';
 import { BILL_HOLMAN_VRF_FINGERPRINT_RECEIPTS } from './holmanVrbFingerprints';
 import { CARLA_BLEY_VRF_FINGERPRINT_RECEIPTS } from './carlaBleyVrbFingerprints';
 import { WEBER_FIELD_VRF_FINGERPRINT_RECEIPTS } from './weberVrbFingerprints';
@@ -1461,6 +1462,61 @@ const SURMAN_FOLK_MODAL: VoiceRuleBundle = {
     guitarSource: 'chord_block_derived',
     bassSource: 'bass_line',
     rhythmicIndependenceFloor: 0.4,
+    registerInterlock: false,
+    intervalPreference: 'modal_sparse',
+  },
+};
+
+const VERLAINE_SUSPENDED_FIELD: VoiceRuleBundle = {
+  ...VERLAINE,
+  voiceId: 'verlaine_suspended_field',
+  harmonicRhythm: {
+    minChordDurationBars: 4,
+    maxChordDurationBars: 16,
+    allowMidBarChange: false,
+  },
+  bassPolicy: {
+    role: 'pedal-or-drone',
+    allowOctaveDoubling: false,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 6,
+    maxSpreadSemitones: 28,
+    clusterSizeNotes: [2, 4],
+    forbidParallelFifths: false,
+    forbidOctaveDoubling: true,
+  },
+  melodicPolicy: {
+    contour: 'chord-scale',
+    maxLeapSemitones: 9,
+    preferredIntervalSets: [2, 4, 5, 7, 9],
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 1,
+    mutateSingleVoiceAtTime: true,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: [
+      ...(VERLAINE.orchestrationPolicy.fingerprintReceipts ?? []),
+      ...VERLAINE_SUSPENDED_FIELD_VRF_FINGERPRINT_RECEIPTS,
+    ],
+  },
+  formPolicy: {
+    narrativeArc: 'head-solos-head',
+    sectionRecallEnforced: true,
+    noCadentialRelease: true,
+  },
+  rhythmPolicy: {
+    antiMetric: false,
+  },
+  repairPolicy: {
+    resolveParallels: false,
+    maxVoiceOverlap: 2,
+  },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
+  duoVoicePolicy: {
+    guitarSource: 'chord_block_derived',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.62,
     registerInterlock: false,
     intervalPreference: 'modal_sparse',
   },
@@ -4029,8 +4085,11 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   zawinul: WEATHER_REPORT,
   mahavishnu: MAHAVISHNU,
   mclaughlin: MAHAVISHNU,
-  verlaine: VERLAINE,
-  television: VERLAINE,
+  verlaine: VERLAINE_SUSPENDED_FIELD,
+  tom_verlaine: VERLAINE_SUSPENDED_FIELD,
+  television: VERLAINE_SUSPENDED_FIELD,
+  verlaine_suspended_field: VERLAINE_SUSPENDED_FIELD,
+  tv: VERLAINE_SUSPENDED_FIELD,
   morello: MORELLO,
   ratm: MORELLO,
   james_brown: JAMES_BROWN,

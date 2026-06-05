@@ -122,6 +122,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   { match: (m) => m?.songwriterStyleId === 'jan_garbarek', effKey: 'janGarbarekEffectiveHarmonyBars', sliceId: 'jan_garbarek' },
   { match: (m) => m?.songwriterStyleId === 'john_surman', effKey: 'johnSurmanEffectiveHarmonyBars', sliceId: 'john_surman' },
   { match: (m) => m?.songwriterStyleId === 'ralph_towner', effKey: 'ralphTownerEffectiveHarmonyBars', sliceId: 'ralph_towner' },
+  { match: (m) => m?.songwriterStyleId === 'verlaine', effKey: 'verlaineEffectiveHarmonyBars', sliceId: 'verlaine' },
   { match: (m) => m?.songwriterStyleId === 'bill_holman', effKey: 'billHolmanEffectiveHarmonyBars', sliceId: 'bill_holman' },
   { match: (m) => m?.songwriterStyleId === 'carla_bley', effKey: 'carlaBleyEffectiveHarmonyBars', sliceId: 'carla_bley' },
   { match: (m) => m?.songwriterStyleId === 'eberhard_weber', effKey: 'eberhardWeberEffectiveHarmonyBars', sliceId: 'eberhard_weber' },

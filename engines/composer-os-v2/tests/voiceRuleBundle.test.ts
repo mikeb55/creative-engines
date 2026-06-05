@@ -658,8 +658,8 @@ function testFusionArtRockRiffVrbStubsRegistry(): boolean {
     getVoiceRuleBundle('zawinul').voiceId === 'weather_report' &&
     mahavishnu.voiceId === 'mahavishnu' &&
     getVoiceRuleBundle('mclaughlin').voiceId === 'mahavishnu' &&
-    verlaine.voiceId === 'verlaine' &&
-    getVoiceRuleBundle('television').voiceId === 'verlaine' &&
+    verlaine.voiceId === 'verlaine_suspended_field' &&
+    getVoiceRuleBundle('television').voiceId === 'verlaine_suspended_field' &&
     morello.voiceId === 'morello' &&
     getVoiceRuleBundle('ratm').voiceId === 'morello' &&
     fripp.voiceId === 'fripp' &&

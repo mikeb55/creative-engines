@@ -706,6 +706,21 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   }
 
   /**
+   * Tom Verlaine: `precomputeVerlaineEffectiveHarmonyBars` applies suspended modal field voicing.
+   * After precompute, `verlaineEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const verlaineEff = meta?.verlaineEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'verlaine' &&
+    Array.isArray(verlaineEff) &&
+    verlaineEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return verlaineEff[barIndex - 1]!;
+  }
+
+  /**
    * Ralph Towner: `precomputeRalphTownerEffectiveHarmonyBars` applies guitar-born polyphonic field voicing.
    * After precompute, `ralphTownerEffectiveHarmonyBars` is full-form and authoritative.
    */

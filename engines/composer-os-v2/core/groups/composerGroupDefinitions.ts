@@ -16,7 +16,8 @@ export type ComposerGroupId =
   | 'ECM_CHAMBER_JAZZ'
   | 'STUDIO_ORCHESTRAL_JAZZ'
   | 'POST_BOP_CORE'
-  | 'FILM_SOUNDTRACK';
+  | 'FILM_SOUNDTRACK'
+  | 'ART_ROCK_POST_PUNK';
 
 /** Full default parameter object for an active production group. */
 export interface GroupParams {
@@ -92,6 +93,13 @@ export const COMPOSER_ID_ALIASES: Readonly<Record<string, string>> = {
   ralph_towner: 'ralph_towner',
   rt: 'ralph_towner',
   towner_guitar_polyphony: 'ralph_towner',
+  verlaine: 'verlaine',
+  tom_verlaine: 'verlaine',
+  television: 'verlaine',
+  tv: 'verlaine',
+  verlaine_suspended_field: 'verlaine',
+  fripp: 'fripp_king_crimson',
+  morello: 'morello',
   holman: 'bill_holman',
   bill_holman: 'bill_holman',
   charlie: 'charlie_parker',
@@ -166,6 +174,19 @@ const FILM_SOUNDTRACK_DEFAULTS: GroupParams = {
   melodyFraming: 'spotlighted',
   soloistSpotlight: 0.52,
   sectionalContrastMode: 'discrete',
+};
+
+const ART_ROCK_POST_PUNK_DEFAULTS: GroupParams = {
+  groovePersistence: 0.55,
+  registralPorosity: 0.55,
+  stringProminence: 0.05,
+  cadentialResolution: 'suspended',
+  ensembleDensityCurve: 'slow_bloom',
+  silenceWeighting: 'structural',
+  productionGloss: 0.25,
+  melodyFraming: 'integrated',
+  soloistSpotlight: 0.55,
+  sectionalContrastMode: 'gradual',
 };
 
 export const COMPOSER_GROUP_DEFINITIONS: readonly ComposerGroupDefinition[] = [
@@ -253,6 +274,18 @@ export const COMPOSER_GROUP_DEFINITIONS: readonly ComposerGroupDefinition[] = [
       { composerId: 'horace_silver', status: 'partial_future' },
     ],
   },
+  {
+    id: 'ART_ROCK_POST_PUNK',
+    description:
+      'Art-rock / post-punk production logic. Line-first guitar fields, suspended harmony, bass displacement, low studio gloss — Television, Sonic Youth, Fripp process, Morello cells.',
+    defaults: ART_ROCK_POST_PUNK_DEFAULTS,
+    members: [
+      { composerId: 'verlaine', status: 'fully_implemented' },
+      { composerId: 'sonic_youth', status: 'fully_implemented' },
+      { composerId: 'fripp_king_crimson', status: 'fully_implemented' },
+      { composerId: 'morello', status: 'fully_implemented' },
+    ],
+  },
 ] as const;
 
 /** UI-facing labels for production-world optgroups. */
@@ -261,6 +294,7 @@ export const COMPOSER_GROUP_DISPLAY_LABELS: Record<ComposerGroupId, string> = {
   STUDIO_ORCHESTRAL_JAZZ: 'Studio Orchestral Jazz',
   POST_BOP_CORE: 'Post-Bop Core',
   FILM_SOUNDTRACK: 'Film Soundtrack',
+  ART_ROCK_POST_PUNK: 'Art Rock / Post-Punk',
 };
 
 const DUAL_GROUP_COMPOSER_IDS = new Set<string>(Object.keys(DUAL_GROUP_COMPOSER_ASSIGNMENTS));

@@ -728,6 +728,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'jan_garbarek', label: 'Jan Garbarek' },
   { id: 'john_surman', label: 'John Surman' },
   { id: 'ralph_towner', label: 'Ralph Towner' },
+  { id: 'verlaine', label: 'Tom Verlaine' },
   { id: 'eberhard_weber', label: 'Eberhard Weber' },
   { id: 'kenny_wheeler', label: 'Kenny Wheeler' },
   { id: 'max_martin', label: 'Max Martin' },
@@ -1023,6 +1024,7 @@ const PRODUCTION_WORLD_SONGWRITER_ID_SET = new Set<string>([
   ...songwriterIdsForProductionGroup('STUDIO_ORCHESTRAL_JAZZ'),
   ...songwriterIdsForProductionGroup('FILM_SOUNDTRACK'),
   ...songwriterIdsForProductionGroup('POST_BOP_CORE'),
+  ...songwriterIdsForProductionGroup('ART_ROCK_POST_PUNK'),
 ]);
 
 const SONGWRITER_GROUP_SHIPPED_ORDER_FILTERED = SONGWRITER_GROUP_SHIPPED_ORDER.filter(
@@ -1047,9 +1049,9 @@ const VISUALLY_HIDDEN: CSSProperties = {
 };
 
 const ARIA_SONGWRITER_GROUPS_DESC =
-  'Songwriters are grouped by production world (ECM Chamber Jazz, Studio Orchestral Jazz, Film Soundtrack, Post-Bop Core), then Shipped full slice, Shipped singer-songwriter slice, Ready to build, and In library.';
+  'Songwriters are grouped by production world (ECM Chamber Jazz, Studio Orchestral Jazz, Film Soundtrack, Post-Bop Core, Art Rock / Post-Punk), then Shipped full slice, Shipped singer-songwriter slice, Ready to build, and In library.';
 const ARIA_ARRANGER_GROUPS_DESC =
-  'Arrangers are grouped by production world (ECM Chamber Jazz, Studio Orchestral Jazz, Film Soundtrack, Post-Bop Core), then Big band core research-backed and Charts and studio voices.';
+  'Arrangers are grouped by production world (ECM Chamber Jazz, Studio Orchestral Jazz, Film Soundtrack, Post-Bop Core, Art Rock / Post-Punk), then Big band core research-backed and Charts and studio voices.';
 
 function uint8ArrayToBase64(bytes: Uint8Array): string {
   const chunk = 0x8000;
@@ -1105,6 +1107,16 @@ function SongwriterSelectOptionGroups({ onOptionHover }: { onOptionHover?: (id: 
           const o = SONGWRITER_OPTION_BY_ID.get(id)!;
           return (
             <option key={`postbop-${id}`} value={o.id} {...optHover(o.id)}>
+              {o.label}
+            </option>
+          );
+        })}
+      </optgroup>
+      <optgroup label={COMPOSER_GROUP_DISPLAY_LABELS.ART_ROCK_POST_PUNK}>
+        {songwriterIdsForProductionGroup('ART_ROCK_POST_PUNK').map((id) => {
+          const o = SONGWRITER_OPTION_BY_ID.get(id)!;
+          return (
+            <option key={`artrock-${id}`} value={o.id} {...optHover(o.id)}>
               {o.label}
             </option>
           );

@@ -22,7 +22,7 @@ Presets live in **`src/engine/ecmVrb.js`**; app state in **`VrbProfileContext`**
 
 ## Group Mode — production worlds
 
-**Group Mode** clusters composers by **production logic** — how groove, space, strings, cadence, and sectional architecture behave on record — not by harmonic vocabulary alone. Three active production groups ship shared defaults; composers **inherit group defaults** and override only where distinct.
+**Group Mode** clusters composers by **production logic** — how groove, space, strings, cadence, and sectional architecture behave on record — not by harmonic vocabulary alone. Five active production groups ship shared defaults; composers **inherit group defaults** and override only where distinct.
 
 ### Why groups exist
 
@@ -96,6 +96,27 @@ Engine: **`engines/composer-os-v2/core/groups/composerGroupEngine.ts`** · defin
 | `sectionalContrastMode` | `discrete` | Strata entry blocks |
 
 **Members (fully implemented):** Bernard Herrmann, Ennio Morricone, Jerry Goldsmith, Lalo Schifrin (`ls:*`), John Barry (`jbr:*`).
+
+### Art Rock / Post-Punk
+
+**Identity:** Line-first guitar production — suspended modal fields, bass displacement, intersecting counterpart lines, low studio gloss. Not ECM pastoral, not CTI orchestral lift, not post-bop functional cadence.
+
+**Defaults:**
+
+| Parameter | Default | Musical meaning |
+|-----------|---------|-----------------|
+| `groovePersistence` | 0.55 | Pulse present but may float behind lines |
+| `registralPorosity` | 0.55 | Mid-register porous — dual-guitar/bass independence |
+| `stringProminence` | 0.05 | No orchestral body |
+| `cadentialResolution` | `suspended` | Return-to-riff or textural cutoff — not V–I |
+| `ensembleDensityCurve` | `slow_bloom` | Field builds by line intersection |
+| `silenceWeighting` | `structural` | Space between phrase statements |
+| `productionGloss` | 0.25 | Dry indie/art-rock stage |
+| `melodyFraming` | `integrated` | Melody as by-product of lines over field |
+| `soloistSpotlight` | 0.55 | Lines equal — no featured jazz solo arc |
+| `sectionalContrastMode` | `gradual` | Modal center shifts slowly |
+
+**Members (fully implemented):** Tom Verlaine (`tv:*`), Sonic Youth, Fripp / King Crimson (riff VRB), Tom Morello (riff VRB).
 
 ### Post-Bop Core
 
@@ -513,6 +534,32 @@ Towner is the **guitar-born polyphonic** voice in ECM Chamber Jazz — fingersty
 **VRB bundle id:** **`towner_guitar_polyphony`** — 8 fingerprints + Garbarek / Wheeler / Weber / Surman / Bley / generic classical guitar negative discriminators.
 
 **Evaluation:** **`townerStyleProfile.ts`** — pass on guitarBornVoicing ≥0.70, melodyFromVoicing ≥0.65, resonanceAndSilence ≥0.62, slowHarmonicRhythm ≥0.65, classicalCounterpoint ≥0.60; hard fail on Garbarek sax bleed, Wheeler polyaxial bleed, Weber pedal-field bleed, Surman folk ostinato bleed, bebop alteration, tremolo classical clichés.
+
+---
+
+### Tom Verlaine (`verlaine`)
+
+Verlaine is **field-based art-rock harmonic design**: static or slowly shifting modal centers, **suspended chord grips**, melody as by-product of **intersecting lines** rather than block progression. Bass **displacement** under a static upper shape is the primary harmonic motion device — not functional cadence.
+
+**Song Mode slice** — **`verlainFieldSlice.ts`** (`tv:*` receipts): modal field persistence → extension retention → suspended surface → bass displacement → progression avoidance → return-to-riff closure.
+
+**Five parameters** (0–1, defaults in parentheses):
+
+| Parameter | Default | Musical role |
+|-----------|---------|--------------|
+| `modalFieldPersistence` | 0.82 | Center holds 4–16 bars; bass moves beneath static upper shape |
+| `extensionRetentionRate` | 0.68 | Upper 9/4/6 tones persist across bass/root change |
+| `chordSurfaceBias` | 0.85 | sus2/sus4/add9/add4/6-9/slash/dyad drones; anti jazz-lush |
+| `bassDisplacementRate` | 0.72 | Guitar grip root ≠ bass root (C bass + B guitar reinterpretation) |
+| `progressionAvoidance` | 0.90 | No I–V–vi–IV, blues, ii–V–I; modal loops + textural cutoff |
+
+**VRB bundle id:** **`verlaine_suspended_field`** — 8 fingerprints + Fripp / Morello / Towner / Weber / jazz-lush / arena-pop negative discriminators; riff stub **`VERLAINE`** retained with merged **`riffProfile`**.
+
+**Big Band arranger ids:** **`verlaine`**, **`television`**, **`tv`** — six rules (ModalFieldPersistence, SuspendedChordSurface, BassDisplacement, ExtensionRetention, SupraChordMelody, ProgressionAvoidance).
+
+**Production group:** **`ART_ROCK_POST_PUNK`** — alongside Sonic Youth, Fripp / King Crimson, Tom Morello.
+
+**Evaluation:** **`verlaineStyleProfile.ts`** — pass on modal field + suspended surface + bass displacement + progression avoidance; hard fail on Fripp process-loop, Morello power cells, Towner ECM pastoral, Weber pedal field, altered-dominant jazz density.
 
 ---
 

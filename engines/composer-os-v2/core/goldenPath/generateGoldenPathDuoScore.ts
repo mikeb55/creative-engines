@@ -303,6 +303,12 @@ import {
   precomputeRalphTownerEffectiveHarmonyBars,
 } from './ralphTownerSlice';
 import {
+  accumulateVerlaineHarmonyDiagnostics,
+  createVerlaineHarmonyAccumulator,
+  finalizeVerlaineMetadata,
+  precomputeVerlaineEffectiveHarmonyBars,
+} from './verlainFieldSlice';
+import {
   accumulateEberhardWeberHarmonyDiagnostics,
   createEberhardWeberHarmonyAccumulator,
   finalizeEberhardWeberMetadata,
@@ -2835,6 +2841,7 @@ function buildGuitarPart(
   const isSongwriterJanGarbarek = genMeta?.songwriterStyleId === 'jan_garbarek';
   const isSongwriterJohnSurman = genMeta?.songwriterStyleId === 'john_surman';
   const isSongwriterRalphTowner = genMeta?.songwriterStyleId === 'ralph_towner';
+  const isSongwriterVerlaine = genMeta?.songwriterStyleId === 'verlaine';
   const isSongwriterEberhardWeber = genMeta?.songwriterStyleId === 'eberhard_weber';
   const isSongwriterClausOgerman =
     normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'claus_ogerman';
@@ -2899,6 +2906,7 @@ function buildGuitarPart(
   const jgAccum = createJanGarbarekHarmonyAccumulator();
   const jsAccum = createJohnSurmanHarmonyAccumulator();
   const rtAccum = createRalphTownerHarmonyAccumulator();
+  const tvAccum = createVerlaineHarmonyAccumulator();
   const ewAccum = createEberhardWeberHarmonyAccumulator();
   const coAccum = createClausOgermanHarmonyAccumulator();
   const lsAccum = createLaloSchifrinHarmonyAccumulator();
@@ -3063,6 +3071,9 @@ function buildGuitarPart(
   }
   if (isSongwriterRalphTowner && isDuoGoldenPath) {
     precomputeRalphTownerEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterVerlaine && isDuoGoldenPath) {
+    precomputeVerlaineEffectiveHarmonyBars(context);
   }
   if (isSongwriterEberhardWeber && isDuoGoldenPath) {
     precomputeEberhardWeberEffectiveHarmonyBars(context);
@@ -3501,6 +3512,13 @@ function buildGuitarPart(
         b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
         resolveBarSymbol(context, b).symbol,
         rtAccum
+      );
+    }
+    if (isSongwriterVerlaine) {
+      accumulateVerlaineHarmonyDiagnostics(
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
+        tvAccum
       );
     }
     if (isSongwriterEberhardWeber) {
@@ -4529,6 +4547,9 @@ function buildGuitarPart(
   }
   if (isSongwriterRalphTowner && context.generationMetadata) {
     finalizeRalphTownerMetadata(context.generationMetadata, rtAccum);
+  }
+  if (isSongwriterVerlaine && context.generationMetadata) {
+    finalizeVerlaineMetadata(context.generationMetadata, tvAccum);
   }
   if (isSongwriterEberhardWeber && context.generationMetadata) {
     finalizeEberhardWeberMetadata(context.generationMetadata, ewAccum);

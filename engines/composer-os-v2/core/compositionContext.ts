@@ -50,6 +50,10 @@ import type {
   RalphTownerSliceParams,
 } from './song-mode/ralphTownerSlice';
 import type {
+  VerlaineFieldPlan,
+  VerlaineSliceParams,
+} from './song-mode/verlainFieldSlice';
+import type {
   WeberFieldPlan,
   EberhardWeberSliceParams,
 } from './song-mode/weberFieldSlice';
@@ -1953,6 +1957,24 @@ export interface GenerationMetadata {
   ralphTownerSliceReceipt?: string;
   ralphTownerEffectiveHarmonyBars?: string[];
   ralphTownerDeviceReceipts?: string[];
+  /** Tom Verlaine — suspended modal field art-rock slice (`verlainFieldSlice.ts`, receipts `tv:*`). */
+  verlaineDiagnostics?: {
+    songwriterId: 'verlaine';
+    barsConsidered: number;
+    suspendedSurfaceTouches: number;
+    bassDisplacementTouches: number;
+    extensionHoldTouches: number;
+    fieldHoldTouches: number;
+    intersectingLineTouches: number;
+    minSectionSpan?: number;
+    sliceParams?: VerlaineSliceParams;
+    deviceReceipts?: string[];
+  };
+  verlaineFieldPlan?: VerlaineFieldPlan;
+  verlaineSliceParams?: VerlaineSliceParams;
+  verlaineSliceReceipt?: string;
+  verlaineEffectiveHarmonyBars?: string[];
+  verlaineDeviceReceipts?: string[];
   /** Eberhard Weber — bass-led harmonic field slice (`weberFieldSlice.ts`, receipts `ew:*`). */
   eberhardWeberDiagnostics?: {
     songwriterId: 'eberhard_weber';

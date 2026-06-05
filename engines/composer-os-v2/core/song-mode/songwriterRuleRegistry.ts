@@ -675,6 +675,48 @@ const songwriterRules: Partial<Record<SongwriterRuleId, SongwritingRuleEntry[]>>
       'form'
     ),
   ],
+  verlaine: [
+    R(
+      'verlaine.modal_field_persistence',
+      'Harmonic center holds 4–16 bars — change via bass displacement under static upper shape; penalize frequent root movement',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'verlaine.suspended_surface',
+      'Sus2/sus4/add9/add4/6-9/slash/dyad drones dominate — reject altered-dominant jazz-lush grips',
+      'songwriter',
+      'harmony',
+      9,
+      'verse'
+    ),
+    R(
+      'verlaine.bass_displacement',
+      'Guitar grip root and bass root differ — C bass + B guitar reinterpretation under static upper shape',
+      'songwriter',
+      'harmony',
+      8,
+      'form'
+    ),
+    R(
+      'verlaine.supra_chord_melody',
+      'Melody targets degrees 2/4/6/9 over field — chord-defining tones delayed; melody floats and intermittently confirms',
+      'songwriter',
+      'melody',
+      9,
+      'verse'
+    ),
+    R(
+      'verlaine.progression_avoidance',
+      'Penalize I–V–vi–IV, blues closure, ii–V–I — reward modal loops and return-to-riff closure over V–I',
+      'songwriter',
+      'form',
+      8,
+      'bridge'
+    ),
+  ],
   jan_garbarek: [
     R(
       'garbarek.modal_field',
@@ -1567,10 +1609,6 @@ function wireRiffVrbSongwriterRules(): void {
   rules.mahavishnu = [
     R('riff.mahavishnu.sigma', 'Riff VRB σ32 — odd-meter fusion (reuses pat_metheny rule family)', 'songwriter', 'harmony', 9, 'global'),
     ...metheny,
-  ];
-  rules.verlaine = [
-    R('riff.verlaine.sigma', 'Riff VRB σ25 — art-rock line (reuses fripp_king_crimson rule family)', 'songwriter', 'melody', 8, 'global'),
-    ...fripp,
   ];
   rules.morello = [
     R('riff.morello.sigma', 'Riff VRB σ25 — kill-switch cells (reuses fripp_king_crimson rule family)', 'songwriter', 'rhythm', 8, 'global'),

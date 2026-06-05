@@ -81,6 +81,7 @@ import { bleyStyleProfile } from '../core/evaluation/bleyStyleProfile';
 import { weberStyleProfile } from '../core/evaluation/weberStyleProfile';
 import { surmanStyleProfile } from '../core/evaluation/surmanStyleProfile';
 import { townerStyleProfile } from '../core/evaluation/townerStyleProfile';
+import { verlaineStyleProfile } from '../core/evaluation/verlaineStyleProfile';
 import { ogermanStyleProfile } from '../core/evaluation/ogermanStyleProfile';
 import { quincyStyleProfile } from '../core/evaluation/quincyStyleProfile';
 import { sebeskyStyleProfile } from '../core/evaluation/sebeskyStyleProfile';
@@ -2560,6 +2561,12 @@ function bigBandEvaluationStyleProfile(
     case 'ralph_towner':
     case 'towner_guitar_polyphony':
       return townerStyleProfile;
+    case 'verlaine':
+    case 'tom_verlaine':
+    case 'television':
+    case 'verlaine_suspended_field':
+    case 'tv':
+      return verlaineStyleProfile;
     case 'holman':
     case 'bill_holman':
       return holmanStyleProfile;
