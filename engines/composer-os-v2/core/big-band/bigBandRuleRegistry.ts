@@ -216,6 +216,45 @@ const HOLDSWORTH_COMPOSER_RULES: BigBandRule[] = [
   ),
 ];
 
+/** Jack White — drone-centered open-tuning riff harmony. */
+const JWHITE_COMPOSER_RULES: BigBandRule[] = [
+  R(
+    'jwhite.tonic_persistence',
+    'Open string or octave floor present across 60–80% of riff events; center always audible',
+    'composer',
+    'harmony',
+    88
+  ),
+  R(
+    'jwhite.drone_riff_fusion',
+    'Drone and riff operate simultaneously or in tight alternation; slide tones articulate harmonic area not decoration',
+    'composer',
+    'harmony',
+    87
+  ),
+  R(
+    'jwhite.harmony_by_implication',
+    'Dyads and fifths as default; third omission permitted; riff implies harmony — full voicing not required',
+    'composer',
+    'harmony',
+    89
+  ),
+  R(
+    'jwhite.riff_cell_economy',
+    '1–2 bar cells repeated before varied; one idea hits harder; variation = register/rhythm/slide not new harmonic content',
+    'composer',
+    'form',
+    86
+  ),
+  R(
+    'jwhite.controlled_incompleteness',
+    'Unresolved thirds, phrase truncation, abrasive doublings permitted; tonal center must remain clear; suppress smooth resolution and legato arcs',
+    'composer',
+    'melody',
+    85
+  ),
+];
+
 /** Tom Verlaine — suspended modal field art-rock; bass displacement under static upper shape. */
 const VERLAINE_COMPOSER_RULES: BigBandRule[] = [
   R(
@@ -658,6 +697,8 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
   allan_holdsworth: HOLDSWORTH_COMPOSER_RULES,
   holdsworth: HOLDSWORTH_COMPOSER_RULES,
   allan_holdsworth_scale_derived: HOLDSWORTH_COMPOSER_RULES,
+  jack_white: JWHITE_COMPOSER_RULES,
+  jack_white_drone_riff: JWHITE_COMPOSER_RULES,
   bill_holman: HOLMAN_COMPOSER_RULES,
   holman: HOLMAN_COMPOSER_RULES,
   carla_bley: CARLA_BLEY_COMPOSER_RULES,

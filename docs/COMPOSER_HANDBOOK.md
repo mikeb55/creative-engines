@@ -143,7 +143,7 @@ Engine: **`engines/composer-os-v2/core/groups/composerGroupEngine.ts`** · defin
 
 **Members (stub_exposed — VRB present, Song Mode pending):** Eddie Van Halen (`EVH:*`), Scott Henderson (`SH:*`).
 
-**Members (fully implemented):** Allan Holdsworth (`AH:*`) — scale-derived interval-subset fusion slice; receipt prefix **`AH:`** uppercase (Andrew Hill owns lowercase **`ah:*`**).
+**Members (fully implemented):** Allan Holdsworth (`AH:*`) — scale-derived fusion; receipt **`AH:`** uppercase (Andrew Hill owns **`ah:*`**). Jack White (`jw:*`) — drone-centered open-tuning riff slice (John Williams film uses **`jwill:*`**).
 
 ### Jazz Guitar
 
@@ -634,6 +634,32 @@ Holdsworth is **scale-derived fusion harmony**: chords are **interval subsets** 
 **Production group:** **`ROCK_FUSION`** — alongside Eddie Van Halen (stub), Scott Henderson (stub).
 
 **Evaluation:** **`holdsworthStyleProfile.ts`** — pass on scale membership + subset voicing + scale persistence; hard fail on functional cadence / plain triad bleed.
+
+---
+
+### Jack White (`jack_white`)
+
+Jack White is **drone-centered riff writing under constraint**: simple harmonic material stabilized by open strings or pedal centers, with melody, rhythm, and harmony fused into one aggressive guitar part. The tonal center stays clear even when the chord does not.
+
+**Song Mode slice** — **`jackWhiteDroneSlice.ts`** (`jw:*` receipts — John Williams film slice uses **`jwill:*`**): open-tuning substrate → tonic persistence → drone logic → harmony by implication → riff cell economy → controlled incompleteness → lead/rhythm fusion.
+
+**Five parameters** (0–1, defaults in parentheses):
+
+| Parameter | Default | Musical role |
+|-----------|---------|--------------|
+| `tonicPersistenceRate` | 0.82 | Open-A / open-E tonic floor across 60–80% of riff events |
+| `droneLogicMode` | 0.85 | Simultaneous, alternating, or layered pseudo-drone under riff/slide line |
+| `harmonyByImplication` | 0.88 | Dyads, fifths, open composites — omit thirds; penalize rich tertian progressions |
+| `riffCellEconomy` | 0.85 | 1–2 bar cells repeated before registral/rhythmic/slide variation |
+| `controlledIncompleteness` | 0.80 | Unresolved thirds, truncation, abrasive doublings — center must stay audible |
+
+**VRB bundle id:** **`jack_white_drone_riff`** — 8 fingerprints + Hendrix / Iommi / Page / Gilmour / Verlaine / Black Keys / Spencer / Childish negative discriminators.
+
+**Big Band arranger ids:** **`jack_white`**, **`jack_white_drone_riff`** — five rules (`jwhite.*`).
+
+**Production group:** **`ROCK_FUSION`** — alongside Allan Holdsworth, Eddie Van Halen (stub), Scott Henderson (stub).
+
+**Evaluation:** **`jackWhiteStyleProfile.ts`** — pass on tonic persistence + drone logic + implied harmony + cell economy; hard fail on Hendrix modal bleed, Gilmour legato arc, Verlaine airy field, generic garage (center lost).
 
 ---
 

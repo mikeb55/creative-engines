@@ -82,6 +82,8 @@ export const bigBandPreset: Preset = {
       'allan_holdsworth',
       'holdsworth',
       'allan_holdsworth_scale_derived',
+      'jack_white',
+      'jack_white_drone_riff',
       'mandel',
       'johnny_mandel',
       'mandel_lyric_warmth',

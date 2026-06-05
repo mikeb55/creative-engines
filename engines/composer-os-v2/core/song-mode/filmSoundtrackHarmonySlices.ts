@@ -1,5 +1,5 @@
 /**
- * Film soundtrack Song Mode harmony slices — lead-sheet symbols only; device receipts use composer prefixes **bh:** **jw:** **em:** **nr:** **jg:** **pg:** **hz:** **ab:**.
+ * Film soundtrack Song Mode harmony slices — lead-sheet symbols only; device receipts use composer prefixes **bh:** **jwill:** **em:** **nr:** **jg:** **pg:** **hz:** **ab:**.
  */
 
 import type {
@@ -185,7 +185,7 @@ export function precomputeJohnWilliamsEffectiveHarmonyBars(context: CompositionC
   const tb = context.form.totalBars;
   const seed = context.seed;
   const receipts: string[] = [];
-  const modes: JohnWilliamsContextMode[] = ['jw:heroic_mode', 'jw:magic_mode', 'jw:drama_mode'];
+  const modes: JohnWilliamsContextMode[] = ['jwill:heroic_mode', 'jwill:magic_mode', 'jwill:drama_mode'];
   const rawM = genMeta.johnWilliamsContext as string | undefined;
   const mode: JohnWilliamsContextMode = modes.includes(rawM as JohnWilliamsContextMode)
     ? (rawM as JohnWilliamsContextMode)
@@ -202,7 +202,7 @@ export function precomputeJohnWilliamsEffectiveHarmonyBars(context: CompositionC
       const ex = extractRootAndSlash(out[b - 1]!);
       if (ex) {
         out[b - 1] = `${ex.root}maj7(#11)${ex.slash}`;
-        receipts.push(`jw:d1_lydian_wonder@bar${b}`);
+        receipts.push(`jwill:d1_lydian_wonder@bar${b}`);
       }
     }
   }
@@ -212,14 +212,14 @@ export function precomputeJohnWilliamsEffectiveHarmonyBars(context: CompositionC
       const ex = extractRootAndSlash(out[b - 1]!);
       if (ex) {
         out[b - 1] = `${ex.root}7sus4${ex.slash}`;
-        receipts.push(`jw:d2_mixolydian_hero@bar${b}`);
+        receipts.push(`jwill:d2_mixolydian_hero@bar${b}`);
       }
     }
   }
   for (let b = 1; b <= tb; b++) {
     if (isProtectedBar(b, context)) continue;
     if (phraseRoleFourBar(b, tb) === 'phraseStart' && seededFilmUnit(seed, b, 920301) < 0.35) {
-      receipts.push(`jw:d3_leitmotif_anchor@bar${b}`);
+      receipts.push(`jwill:d3_leitmotif_anchor@bar${b}`);
     }
   }
   for (let b = 1; b <= tb; b++) {
@@ -228,7 +228,7 @@ export function precomputeJohnWilliamsEffectiveHarmonyBars(context: CompositionC
       const ex = extractRootAndSlash(out[b - 1]!);
       if (ex) {
         out[b - 1] = `${ex.root}maj9${ex.slash}`;
-        receipts.push(`jw:d4_brass_fanfare@bar${b}`);
+        receipts.push(`jwill:d4_brass_fanfare@bar${b}`);
       }
     }
   }
@@ -236,7 +236,7 @@ export function precomputeJohnWilliamsEffectiveHarmonyBars(context: CompositionC
     if (isProtectedBar(b, context)) continue;
     if (seededFilmUnit(seed, b, 920501) < 0.14) {
       out[b - 1] = transposeChordRoot(out[b - 1]!, 4);
-      receipts.push(`jw:d5_chromatic_mediant@bar${b}`);
+      receipts.push(`jwill:d5_chromatic_mediant@bar${b}`);
     }
   }
 

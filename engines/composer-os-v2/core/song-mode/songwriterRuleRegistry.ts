@@ -1614,6 +1614,48 @@ function wireRiffVrbSongwriterRules(): void {
       'global'
     ),
   ];
+  rules.jack_white = [
+    R(
+      'jwhite.tonic_persistence',
+      'Open-string or octave floor recurrent across riff events — tonal center always audible',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'jwhite.drone_riff_fusion',
+      'Drone and riff simultaneous or alternating; slide articulates harmonic area not decoration',
+      'songwriter',
+      'harmony',
+      9,
+      'verse'
+    ),
+    R(
+      'jwhite.harmony_by_implication',
+      'Dyads and fifths default; third omission permitted; riff implies harmony',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'jwhite.riff_cell_economy',
+      '1–2 bar cells repeated before varied — register/rhythm/slide not new harmony',
+      'songwriter',
+      'form',
+      9,
+      'global'
+    ),
+    R(
+      'jwhite.controlled_incompleteness',
+      'Unresolved thirds and phrase truncation valid; tonal anchor must remain clear',
+      'songwriter',
+      'melody',
+      8,
+      'global'
+    ),
+  ];
   rules.scott_henderson = [
     R(
       'riff.scott_henderson.sigma',

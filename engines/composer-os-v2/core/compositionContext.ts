@@ -58,6 +58,10 @@ import type {
   HoldsworthSliceParams,
 } from './song-mode/holdsworthScaleSlice';
 import type {
+  JackWhiteDronePlan,
+  JackWhiteSliceParams,
+} from './song-mode/jackWhiteDroneSlice';
+import type {
   WeberFieldPlan,
   EberhardWeberSliceParams,
 } from './song-mode/weberFieldSlice';
@@ -212,8 +216,8 @@ export type FelaKutiContextMode = 'zombie_1977' | 'water_no_get_enemy' | 'lady_1
 /** Bernard Herrmann — film soundtrack harmony posture (`filmSoundtrackHarmonySlices.ts`). */
 export type BernardHerrmannContextMode = 'bh:thriller_mode' | 'bh:romantic_mode' | 'bh:minimal_pulse';
 
-/** John Williams — film soundtrack harmony posture (`filmSoundtrackHarmonySlices.ts`). */
-export type JohnWilliamsContextMode = 'jw:heroic_mode' | 'jw:magic_mode' | 'jw:drama_mode';
+/** John Williams — film soundtrack harmony posture (`filmSoundtrackHarmonySlices.ts`). Receipt prefix **`jwill:*`** (Jack White owns **`jw:*`**). */
+export type JohnWilliamsContextMode = 'jwill:heroic_mode' | 'jwill:magic_mode' | 'jwill:drama_mode';
 
 /** Ennio Morricone — film soundtrack harmony posture (`filmSoundtrackHarmonySlices.ts`). */
 export type EnnioMorriconeContextMode = 'em:spaghetti_mode' | 'em:lyric_mode' | 'em:serial_tension';
@@ -1997,6 +2001,33 @@ export interface GenerationMetadata {
   holdsworthSliceReceipt?: string;
   holdsworthEffectiveHarmonyBars?: string[];
   holdsworthDeviceReceipts?: string[];
+  /** Jack White — drone-centered riff slice (`jackWhiteDroneSlice.ts`, receipts `jw:*`). */
+  jackWhiteDiagnostics?: {
+    songwriterId: 'jack_white';
+    barsConsidered: number;
+    tonicPersistTouches: number;
+    droneLogicTouches: number;
+    impliedHarmonyTouches: number;
+    riffCellTouches: number;
+    incompleteTouches: number;
+    fusedPartTouches: number;
+    fullTriadTouches: number;
+    hendrixBleedTouches: number;
+    minSectionSpan?: number;
+    tonicPersistence: number;
+    droneLogic: number;
+    harmonyByImplication: number;
+    riffCellEconomy: number;
+    controlledIncompleteness: number;
+    leadRhythmFusion: number;
+    sliceParams?: JackWhiteSliceParams;
+    deviceReceipts?: string[];
+  };
+  jackWhiteDronePlan?: JackWhiteDronePlan;
+  jackWhiteSliceParams?: JackWhiteSliceParams;
+  jackWhiteSliceReceipt?: string;
+  jackWhiteEffectiveHarmonyBars?: string[];
+  jackWhiteDeviceReceipts?: string[];
   /** Eberhard Weber — bass-led harmonic field slice (`weberFieldSlice.ts`, receipts `ew:*`). */
   eberhardWeberDiagnostics?: {
     songwriterId: 'eberhard_weber';

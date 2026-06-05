@@ -80,7 +80,7 @@ function testJohnWilliamsEffectiveBarsLength(): boolean {
 function testJohnWilliamsReceiptPrefix(): boolean {
   const r = runGoldenPathOnce(SEED, { ...BASE, primarySongwriterStyle: 'john_williams' });
   const rec = r.context?.generationMetadata?.johnWilliamsDeviceReceipts ?? [];
-  return rec.some((x) => String(x).startsWith('jw:'));
+  return rec.some((x) => String(x).startsWith('jwill:'));
 }
 
 function testEnnioMorriconeEffectiveBarsLength(): boolean {
@@ -227,7 +227,7 @@ export function runFilmComposerSlicesTests(): { name: string; ok: boolean }[] {
     ['Film slice — Bernard Herrmann effective bars length 32', testBernardHerrmannEffectiveBarsLength],
     ['Film slice — Bernard Herrmann bh: device receipts', testBernardHerrmannReceiptPrefix],
     ['Film slice — John Williams effective bars length 32', testJohnWilliamsEffectiveBarsLength],
-    ['Film slice — John Williams jw: device receipts', testJohnWilliamsReceiptPrefix],
+    ['Film slice — John Williams jwill: device receipts', testJohnWilliamsReceiptPrefix],
     ['Film slice — Ennio Morricone effective bars length 32', testEnnioMorriconeEffectiveBarsLength],
     ['Film slice — Ennio Morricone em: device receipts', testEnnioMorriconeReceiptPrefix],
     ['Film slice — Nino Rota effective bars length 32', testNinoRotaEffectiveBarsLength],

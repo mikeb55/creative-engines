@@ -2,6 +2,18 @@
 
 ### Added
 
+- **Jack White v2 drone-riff composer (`jw:*`)** — open-tuning tonic floor slice (`jackWhiteDroneSlice.ts`): tonicPersistence 0.82, droneLogic 0.85, harmonyByImplication 0.88, riffCellEconomy 0.85, controlledIncompleteness 0.80; golden-path precompute + locked harmony routing + smoke **`jackWhiteDroneSmoke.test.ts`** seed **33001**. John Williams film receipts migrated to **`jwill:*`** to free **`jw:*`** for Jack White.
+- **Jack White VRB bundle** — **`jackWhiteVrbFingerprints.ts`** — 8 fingerprints + Hendrix / Iommi / Page / Gilmour / Verlaine / Black Keys / Spencer / Childish negative discriminators; bundle id **`jack_white_drone_riff`**.
+- **Jack White Big Band rules** — five named rules in **`bigBandRuleRegistry.ts`**: TonicPersistence, DroneRiffFusion, HarmonyByImplication, RiffCellEconomy, ControlledIncompleteness (`jwhite.*`).
+- **Jack White evaluation profile** — **`jackWhiteStyleProfile.ts`** with pass/fail thresholds and rock-fusion negative discriminators.
+- **Jack White Rock / Fusion group** — **`composerGroupDefinitions.ts`** **`ROCK_FUSION`** — Jack White **`fully_implemented`** alongside Allan Holdsworth; handbook updated.
+
+### Changed
+
+- **John Williams film slice receipt prefix** — **`jw:*` → `jwill:*`** (`filmSoundtrackHarmonySlices.ts`, API context modes, film smoke) so Jack White owns **`jw:*`**.
+
+### Added
+
 - **Allan Holdsworth v2 scale-derived fusion composer (`AH:*`)** — scale-family interval-subset slice (`holdsworthScaleSlice.ts`): scaleMembershipPriority 0.90, functional root avoidance, chromatic VL, subset voicing; golden-path precompute + locked harmony routing + smoke **`holdsworthScaleSliceSmoke.test.ts`** seed **96001**. Receipt prefix **`AH:`** (uppercase) — distinct from Andrew Hill **`ah:*`**.
 - **Holdsworth VRB bundle upgrade** — **`holdsworthVrbFingerprints.ts`** — 8 fingerprints + negative discriminators (Henderson / Joe Pass / Verlaine / Wes / Hill bleed); bundle id **`allan_holdsworth_scale_derived`**; riff stub **`ALLAN_HOLDSWORTH`** in **`riffVrbStubs.ts`** retained with merged **`riffProfile`**.
 - **Holdsworth Big Band rules** — six named rules in **`bigBandRuleRegistry.ts`**: ScaleMembership, IntervalSubset, ScalePersistence, ChromaticVL, FunctionalAvoidance, IntegratedLine.

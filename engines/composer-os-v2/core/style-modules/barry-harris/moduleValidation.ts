@@ -164,7 +164,8 @@ export function validateBarryHarrisConformance(
         ? 18
         : metadata?.songwriterStyleId === 'john_barry' ||
             metadata?.songwriterStyleId === 'verlaine' ||
-            metadata?.songwriterStyleId === 'allan_holdsworth'
+            metadata?.songwriterStyleId === 'allan_holdsworth' ||
+            metadata?.songwriterStyleId === 'jack_white'
           ? 24
           : 14;
     if (

@@ -111,6 +111,9 @@ export const COMPOSER_ID_ALIASES: Readonly<Record<string, string>> = {
   eddie_van_halen: 'eddie_van_halen',
   holdsworth: 'allan_holdsworth',
   allan_holdsworth: 'allan_holdsworth',
+  jack_white: 'jack_white',
+  white: 'jack_white',
+  the_white_stripes: 'jack_white',
   sonic_youth: 'sonic_youth',
   sy: 'sonic_youth',
   wes: 'wes_montgomery',
@@ -340,6 +343,7 @@ export const COMPOSER_GROUP_DEFINITIONS: readonly ComposerGroupDefinition[] = [
     members: [
       { composerId: 'eddie_van_halen', status: 'stub_exposed' },
       { composerId: 'allan_holdsworth', status: 'fully_implemented' },
+      { composerId: 'jack_white', status: 'fully_implemented' },
       { composerId: 'scott_henderson', status: 'stub_exposed' },
     ],
   },

@@ -4,7 +4,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N rows (M suites)` in the smoke summary, then sync **N** + **M** into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): full **498** PASS rows, **96** suites; fast **332** rows, **82** suites (V68 P2 SD parser gate).
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): full **622** PASS rows, **113** suites; fast subset unchanged until refreshed.
  *
  * **Fast subset:** `COMPOSER_OS_SMOKE_TIER=fast` or `npm run test:composer-smoke-fast` — skips `SMOKE_FAST_EXCLUDE` suites (local dev).
  * **Full tier (default / CI):** unset or `COMPOSER_OS_SMOKE_TIER=full` — all suites in `smokeSuites`.
@@ -58,6 +58,7 @@ import { runSurmanFolkModalSmokeTests } from './surmanFolkModalSmoke.test';
 import { runTownerGuitarPolySmokeTests } from './townerGuitarPolySmoke.test';
 import { runVerlainFieldSliceSmokeTests } from './verlainFieldSliceSmoke.test';
 import { runHoldsworthScaleSliceSmokeTests } from './holdsworthScaleSliceSmoke.test';
+import { runJackWhiteDroneSmokeTests } from './jackWhiteDroneSmoke.test';
 import { runMandelLyricWarmthSmokeTests } from './mandelLyricWarmthSmoke.test';
 import { runWeberFieldSliceSmokeTests } from './weberFieldSliceSmoke.test';
 import { runOgermanSliceSmokeTests } from './ogermanSliceSmoke.test';
@@ -230,6 +231,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Ralph Towner songwriter slice', run: runTownerGuitarPolySmokeTests },
   { label: 'Tom Verlaine songwriter slice', run: runVerlainFieldSliceSmokeTests },
   { label: 'Allan Holdsworth songwriter slice', run: runHoldsworthScaleSliceSmokeTests },
+  { label: 'Jack White songwriter slice', run: runJackWhiteDroneSmokeTests },
   { label: 'Johnny Mandel songwriter slice', run: runMandelLyricWarmthSmokeTests },
   { label: 'Eberhard Weber songwriter slice', run: runWeberFieldSliceSmokeTests },
   { label: 'Claus Ogerman songwriter slice', run: runOgermanSliceSmokeTests },

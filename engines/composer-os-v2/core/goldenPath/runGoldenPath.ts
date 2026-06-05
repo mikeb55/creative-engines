@@ -2048,7 +2048,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
         ? { bernardHerrmannContext: options.bernardHerrmannContext ?? 'bh:thriller_mode' }
         : {}),
       ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'john_williams'
-        ? { johnWilliamsContext: options.johnWilliamsContext ?? 'jw:heroic_mode' }
+        ? { johnWilliamsContext: options.johnWilliamsContext ?? 'jwill:heroic_mode' }
         : {}),
       ...(normalizeSongwriterStyleKey(options.primarySongwriterStyle ?? '') === 'ennio_morricone'
         ? { ennioMorriconeContext: options.ennioMorriconeContext ?? 'em:spaghetti_mode' }

@@ -737,7 +737,7 @@ export function applyJohnWilliamsStyleSurface(metadata: GenerationMetadata, prim
   metadata.songwriterSpaceBias = clamp01((metadata.songwriterSpaceBias ?? 0.5) - 0.05);
   metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) + 0.2);
   appendStyleSurfaceNotes(metadata, [
-    'john_williams surface: density +0.15, syncopation +0.10, space −0.05, cadence softness +0.20 — generative bias only (harmony slice emits jw:* device receipts).',
+    'john_williams surface: density +0.15, syncopation +0.10, space −0.05, cadence softness +0.20 — generative bias only (harmony slice emits jwill:* device receipts).',
   ]);
 }
 

@@ -14,6 +14,7 @@ import { SURMAN_FOLK_MODAL_VRF_FINGERPRINT_RECEIPTS } from './surmanVrbFingerpri
 import { TOWNER_GUITAR_POLYPHONY_VRF_FINGERPRINT_RECEIPTS } from './townerVrbFingerprints';
 import { VERLAINE_SUSPENDED_FIELD_VRF_FINGERPRINT_RECEIPTS } from './verlainVrbFingerprints';
 import { HOLDSWORTH_SCALE_DERIVED_VRF_FINGERPRINT_RECEIPTS } from './holdsworthVrbFingerprints';
+import { JACK_WHITE_DRONE_RIFF_VRF_FINGERPRINT_RECEIPTS } from './jackWhiteVrbFingerprints';
 import { BILL_HOLMAN_VRF_FINGERPRINT_RECEIPTS } from './holmanVrbFingerprints';
 import { CARLA_BLEY_VRF_FINGERPRINT_RECEIPTS } from './carlaBleyVrbFingerprints';
 import { WEBER_FIELD_VRF_FINGERPRINT_RECEIPTS } from './weberVrbFingerprints';
@@ -1516,6 +1517,57 @@ const ALLAN_HOLDSWORTH_SCALE_DERIVED: VoiceRuleBundle = {
   contrapuntalLinePolicy: ALLAN_HOLDSWORTH.contrapuntalLinePolicy,
   duoVoicePolicy: ALLAN_HOLDSWORTH.duoVoicePolicy,
   riffProfile: ALLAN_HOLDSWORTH.riffProfile,
+};
+
+const JACK_WHITE_DRONE_RIFF: VoiceRuleBundle = {
+  voiceId: 'jack_white_drone_riff',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 2,
+    allowMidBarChange: false,
+  },
+  bassPolicy: {
+    role: 'pedal-or-drone',
+    allowOctaveDoubling: true,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 5,
+    maxSpreadSemitones: 24,
+    clusterSizeNotes: [1, 2],
+    forbidParallelFifths: false,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'angular',
+    maxLeapSemitones: 12,
+    preferredIntervalSets: [1, 2, 4, 5, 7],
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 1,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: [...JACK_WHITE_DRONE_RIFF_VRF_FINGERPRINT_RECEIPTS],
+  },
+  formPolicy: {
+    narrativeArc: 'head-solos-head',
+    sectionRecallEnforced: true,
+    noCadentialRelease: true,
+  },
+  rhythmPolicy: {
+    antiMetric: false,
+  },
+  repairPolicy: {
+    resolveParallels: false,
+    maxVoiceOverlap: 4,
+  },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.35,
+    registerInterlock: true,
+    intervalPreference: 'blues_chromatic',
+  },
 };
 
 const VERLAINE_SUSPENDED_FIELD: VoiceRuleBundle = {
@@ -4159,6 +4211,8 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   allan_holdsworth: ALLAN_HOLDSWORTH_SCALE_DERIVED,
   holdsworth: ALLAN_HOLDSWORTH_SCALE_DERIVED,
   allan_holdsworth_scale_derived: ALLAN_HOLDSWORTH_SCALE_DERIVED,
+  jack_white: JACK_WHITE_DRONE_RIFF,
+  jack_white_drone_riff: JACK_WHITE_DRONE_RIFF,
   scott_henderson: SCOTT_HENDERSON,
   henderson: SCOTT_HENDERSON,
   sonic_youth: SONIC_YOUTH,

@@ -216,6 +216,8 @@ export function runBehaviourGates(
     opts?.compositionContext?.generationMetadata?.songwriterStyleId === 'verlaine';
   const holdsworthStructuralRelax =
     opts?.compositionContext?.generationMetadata?.songwriterStyleId === 'allan_holdsworth';
+  const jackWhiteStructuralRelax =
+    opts?.compositionContext?.generationMetadata?.songwriterStyleId === 'jack_white';
   const mandelStructuralRelax =
     opts?.compositionContext?.generationMetadata?.songwriterStyleId === 'johnny_mandel';
   const barryStructuralRelax =
@@ -225,6 +227,7 @@ export function runBehaviourGates(
     townerStructuralRelax ||
     verlaineStructuralRelax ||
     holdsworthStructuralRelax ||
+    jackWhiteStructuralRelax ||
     mandelStructuralRelax ||
     barryStructuralRelax;
   const duoCtx = { compositionContext: opts?.compositionContext };

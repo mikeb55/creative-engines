@@ -869,9 +869,9 @@ export function apiGenerate(
           ? body.bernardHerrmannContext
           : undefined,
       johnWilliamsContext:
-        body.johnWilliamsContext === 'jw:heroic_mode' ||
-        body.johnWilliamsContext === 'jw:magic_mode' ||
-        body.johnWilliamsContext === 'jw:drama_mode'
+        body.johnWilliamsContext === 'jwill:heroic_mode' ||
+        body.johnWilliamsContext === 'jwill:magic_mode' ||
+        body.johnWilliamsContext === 'jwill:drama_mode'
           ? body.johnWilliamsContext
           : undefined,
       ennioMorriconeContext:

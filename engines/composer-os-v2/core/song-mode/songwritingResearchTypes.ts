@@ -115,6 +115,7 @@ export type SongwriterRuleId =
   | 'wes_montgomery'
   | 'joe_pass'
   | 'allan_holdsworth'
+  | 'jack_white'
   | 'scott_henderson'
   | 'sly_stone'
   | 'iommi'

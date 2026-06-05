@@ -722,6 +722,22 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   }
 
   /**
+   * Jack White: `precomputeJackWhiteEffectiveHarmonyBars` applies open-tuning drone-riff implied harmony.
+   * After precompute, `jackWhiteEffectiveHarmonyBars` is full-form and authoritative.
+   * Receipt prefix **`jw:*`** — John Williams film slice uses **`jwill:*`**.
+   */
+  const jackWhiteEff = meta?.jackWhiteEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'jack_white' &&
+    Array.isArray(jackWhiteEff) &&
+    jackWhiteEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return jackWhiteEff[barIndex - 1]!;
+  }
+
+  /**
    * Tom Verlaine: `precomputeVerlaineEffectiveHarmonyBars` applies suspended modal field voicing.
    * After precompute, `verlaineEffectiveHarmonyBars` is full-form and authoritative.
    */

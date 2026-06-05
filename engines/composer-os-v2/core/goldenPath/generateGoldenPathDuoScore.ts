@@ -315,6 +315,12 @@ import {
   precomputeHoldsworthEffectiveHarmonyBars,
 } from './holdsworthScaleSlice';
 import {
+  accumulateJackWhiteHarmonyDiagnostics,
+  createJackWhiteHarmonyAccumulator,
+  finalizeJackWhiteMetadata,
+  precomputeJackWhiteEffectiveHarmonyBars,
+} from './jackWhiteDroneSlice';
+import {
   accumulateEberhardWeberHarmonyDiagnostics,
   createEberhardWeberHarmonyAccumulator,
   finalizeEberhardWeberMetadata,
@@ -2562,6 +2568,14 @@ function buildSongwriterMelodyProfile(
         intervalBias: 'chromatic',
         rhythmicFeel: 'flowing',
       };
+    case 'jack_white':
+      return {
+        phraseIntentBias: 'neutral',
+        densityBias: 0.22,
+        offbeatBias: 0.38,
+        intervalBias: 'leaping',
+        rhythmicFeel: 'syncopated',
+      };
     case 'scott_henderson':
       return {
         phraseIntentBias: 'ascending',
@@ -2849,6 +2863,7 @@ function buildGuitarPart(
   const isSongwriterRalphTowner = genMeta?.songwriterStyleId === 'ralph_towner';
   const isSongwriterVerlaine = genMeta?.songwriterStyleId === 'verlaine';
   const isSongwriterAllanHoldsworth = genMeta?.songwriterStyleId === 'allan_holdsworth';
+  const isSongwriterJackWhite = genMeta?.songwriterStyleId === 'jack_white';
   const isSongwriterEberhardWeber = genMeta?.songwriterStyleId === 'eberhard_weber';
   const isSongwriterClausOgerman =
     normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'claus_ogerman';
@@ -2915,6 +2930,7 @@ function buildGuitarPart(
   const rtAccum = createRalphTownerHarmonyAccumulator();
   const tvAccum = createVerlaineHarmonyAccumulator();
   const holdsworthAccum = createHoldsworthHarmonyAccumulator();
+  const jackWhiteAccum = createJackWhiteHarmonyAccumulator();
   const ewAccum = createEberhardWeberHarmonyAccumulator();
   const coAccum = createClausOgermanHarmonyAccumulator();
   const lsAccum = createLaloSchifrinHarmonyAccumulator();
@@ -3085,6 +3101,9 @@ function buildGuitarPart(
   }
   if (isSongwriterAllanHoldsworth && isDuoGoldenPath) {
     precomputeHoldsworthEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterJackWhite && isDuoGoldenPath) {
+    precomputeJackWhiteEffectiveHarmonyBars(context);
   }
   if (isSongwriterEberhardWeber && isDuoGoldenPath) {
     precomputeEberhardWeberEffectiveHarmonyBars(context);
@@ -3537,6 +3556,13 @@ function buildGuitarPart(
         b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
         resolveBarSymbol(context, b).symbol,
         holdsworthAccum
+      );
+    }
+    if (isSongwriterJackWhite) {
+      accumulateJackWhiteHarmonyDiagnostics(
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
+        jackWhiteAccum
       );
     }
     if (isSongwriterEberhardWeber) {
@@ -4571,6 +4597,9 @@ function buildGuitarPart(
   }
   if (isSongwriterAllanHoldsworth && context.generationMetadata) {
     finalizeHoldsworthMetadata(context.generationMetadata, holdsworthAccum);
+  }
+  if (isSongwriterJackWhite && context.generationMetadata) {
+    finalizeJackWhiteMetadata(context.generationMetadata, jackWhiteAccum);
   }
   if (isSongwriterEberhardWeber && context.generationMetadata) {
     finalizeEberhardWeberMetadata(context.generationMetadata, ewAccum);
