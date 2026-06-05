@@ -170,6 +170,7 @@ import {
   applyEnnioMorriconeStyleSurface,
   applyNinoRotaStyleSurface,
   applyJerryGoldsmithStyleSurface,
+  applyLaloSchifrinStyleSurface,
   applyPhilipGlassStyleSurface,
   applyHansZimmerStyleSurface,
   applyAngeloBadalamentiStyleSurface,
@@ -2272,6 +2273,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   }
   if (options?.songModeHookFirstIdentity) {
     applyJerryGoldsmithStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
+  }
+  if (options?.songModeHookFirstIdentity) {
+    applyLaloSchifrinStyleSurface(context.generationMetadata, options.primarySongwriterStyle);
   }
   if (options?.songModeHookFirstIdentity) {
     applyPhilipGlassStyleSurface(context.generationMetadata, options.primarySongwriterStyle);

@@ -74,7 +74,28 @@ Engine: **`engines/composer-os-v2/core/groups/composerGroupEngine.ts`** · defin
 
 **Members (fully implemented):** Don Sebesky, Quincy Jones, Oliver Nelson, Sammy Nestico, Clare Fischer, Count Basie, Thad Jones, Bill Holman, Duke Ellington, Billy Strayhorn, Charles Mingus, Claus Ogerman.
 
-**Partial / future:** Bob James, Mandel, Schifrin, Deodato, McFarland.
+**Partial / future:** Bob James, Mandel, Deodato, McFarland.
+
+### Film Soundtrack
+
+**Identity:** Groove-native motor energy — percussion grid, brass attack strata, odd-meter riff accents, modal vamps locked to grid. Not pastoral mood painting or classical cadential closure.
+
+**Defaults:**
+
+| Parameter | Default | Musical meaning |
+|-----------|---------|-----------------|
+| `groovePersistence` | 0.85 | Forward thrust even in slow cues |
+| `registralPorosity` | 0.32 | Layers stack for momentum |
+| `stringProminence` | 0.42 | Strings as color/support — not lead voice |
+| `cadentialResolution` | `suspended` | Vamps and riff-snap — not V–I closure |
+| `ensembleDensityCurve` | `tiered_lift` | Additive layering to climax |
+| `silenceWeighting` | `rhythmic` | Grid stays continuous |
+| `productionGloss` | 0.58 | Urban studio film sheen |
+| `melodyFraming` | `spotlighted` | Compact 1–2 bar cells |
+| `soloistSpotlight` | 0.52 | Groove ensemble over solo feature |
+| `sectionalContrastMode` | `discrete` | Strata entry blocks |
+
+**Members (fully implemented):** Bernard Herrmann, Ennio Morricone, Jerry Goldsmith, **Lalo Schifrin** (`ls:*` slice).
 
 ### Post-Bop Core
 

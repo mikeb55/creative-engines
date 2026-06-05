@@ -2,7 +2,14 @@
  * Film soundtrack Song Mode slices — locked harmony + device receipts (not in smoke suite).
  */
 
+import { noteNameToPitchClass, parseChordSymbol } from '../core/harmony/chordSymbolAnalysis';
 import { runGoldenPathOnce } from '../core/goldenPath/runGoldenPath';
+import {
+  countDominantTonicPairs,
+  countMajorTwoFiveOneChains,
+  latinPercussionGridReceiptCount,
+  oddMeterGrooveReceiptCount,
+} from '../core/song-mode/laloSchifrinSlice';
 
 const BASE = {
   presetId: 'guitar_bass_duo',
@@ -12,6 +19,27 @@ const BASE = {
 } as const;
 
 const SEED = 1;
+const SCHIFRIN_SEED = 94001;
+
+let schifrinGoldenCache: ReturnType<typeof runGoldenPathOnce> | undefined;
+
+function schifrinGoldenRun(): ReturnType<typeof runGoldenPathOnce> {
+  if (!schifrinGoldenCache) {
+    schifrinGoldenCache = runGoldenPathOnce(SCHIFRIN_SEED, {
+      ...BASE,
+      primarySongwriterStyle: 'lalo_schifrin',
+    });
+  }
+  return schifrinGoldenCache;
+}
+
+function tonicPcFromBars(bars: readonly string[] | undefined): number {
+  if (!bars?.[0]) return 0;
+  const hp = parseChordSymbol(bars[0]).harmonyPart;
+  const m = hp.match(/^([A-G](?:#|b)?)/);
+  if (!m?.[1]) return 0;
+  return noteNameToPitchClass(m[1]) ?? 0;
+}
 
 function testBernardHerrmannEffectiveBarsLength(): boolean {
   const r = runGoldenPathOnce(SEED, { ...BASE, primarySongwriterStyle: 'bernard_herrmann' });
@@ -73,6 +101,39 @@ function testJerryGoldsmithReceiptPrefix(): boolean {
   return rec.some((x) => String(x).startsWith('jg:'));
 }
 
+function testLaloSchifrinGoldenPath(): boolean {
+  const r = schifrinGoldenRun();
+  const md = r.context?.generationMetadata;
+  const eff = md?.laloSchifrinEffectiveHarmonyBars;
+  const devices = md?.laloSchifrinDeviceReceipts ?? [];
+  return (
+    r.success &&
+    md?.songwriterStyleId === 'lalo_schifrin' &&
+    Array.isArray(eff) &&
+    eff.length === 32 &&
+    devices.some((d) => d.startsWith('ls:'))
+  );
+}
+
+function testLaloSchifrinOddMeterGroove(): boolean {
+  const devices = schifrinGoldenRun().context?.generationMetadata?.laloSchifrinDeviceReceipts ?? [];
+  const oddCount = oddMeterGrooveReceiptCount(devices);
+  return oddCount >= Math.floor(32 * 0.72 * 0.45);
+}
+
+function testLaloSchifrinLatinPercussionGrid(): boolean {
+  const devices = schifrinGoldenRun().context?.generationMetadata?.laloSchifrinDeviceReceipts ?? [];
+  const percCount = latinPercussionGridReceiptCount(devices);
+  return percCount >= Math.floor(32 * 0.8 * 0.45);
+}
+
+function testLaloSchifrinNoCadentialChains(): boolean {
+  const eff = schifrinGoldenRun().context?.generationMetadata?.laloSchifrinEffectiveHarmonyBars;
+  if (!eff) return false;
+  const tonicPc = tonicPcFromBars(eff);
+  return countMajorTwoFiveOneChains(eff, tonicPc) === 0 && countDominantTonicPairs(eff, tonicPc) === 0;
+}
+
 function testPhilipGlassEffectiveBarsLength(): boolean {
   const r = runGoldenPathOnce(SEED, { ...BASE, primarySongwriterStyle: 'philip_glass' });
   const eff = r.context?.generationMetadata?.philipGlassEffectiveHarmonyBars;
@@ -121,6 +182,10 @@ export function runFilmComposerSlicesTests(): { name: string; ok: boolean }[] {
     ['Film slice — Nino Rota nr: device receipts', testNinoRotaReceiptPrefix],
     ['Film slice — Jerry Goldsmith effective bars length 32', testJerryGoldsmithEffectiveBarsLength],
     ['Film slice — Jerry Goldsmith jg: device receipts', testJerryGoldsmithReceiptPrefix],
+    ['Film slice — Lalo Schifrin golden path + ls: receipts (seed 94001)', testLaloSchifrinGoldenPath],
+    ['Film slice — Lalo Schifrin oddMeterGroove fires (seed 94001)', testLaloSchifrinOddMeterGroove],
+    ['Film slice — Lalo Schifrin latinPercussionGrid active (seed 94001)', testLaloSchifrinLatinPercussionGrid],
+    ['Film slice — Lalo Schifrin no V–I / ii–V–I cadence chains (seed 94001)', testLaloSchifrinNoCadentialChains],
     ['Film slice — Philip Glass effective bars length 32', testPhilipGlassEffectiveBarsLength],
     ['Film slice — Philip Glass pg: device receipts', testPhilipGlassReceiptPrefix],
     ['Film slice — Hans Zimmer effective bars length 32', testHansZimmerEffectiveBarsLength],

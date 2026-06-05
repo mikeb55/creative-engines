@@ -49,6 +49,7 @@ import type {
   ClausOgermanSliceParams,
   OgermanContinuumPlan,
 } from './song-mode/clausOgermanSlice';
+import type { LaloSchifrinSliceParams } from './song-mode/laloSchifrinSlice';
 import type { BillHolmanSliceParams } from './song-mode/billHolmanSlice';
 import type { CarlaBleySliceParams } from './song-mode/carlaBleySlice';
 import type { CarlaBleyEpisodePlan } from './song-mode/bleyEpisodeTypes';
@@ -198,6 +199,9 @@ export type NinoRotaContextMode = 'nr:waltz_mode' | 'nr:carnival_mode' | 'nr:god
 
 /** Jerry Goldsmith — film soundtrack harmony posture (`filmSoundtrackHarmonySlices.ts`). */
 export type JerryGoldsmithContextMode = 'jg:action_mode' | 'jg:lyric_mode' | 'jg:suspense_mode';
+
+/** Lalo Schifrin — groove-native jazz-Latin film slice (`laloSchifrinSlice.ts`). */
+export type LaloSchifrinContextMode = 'ls:groove_mode' | 'ls:action_mode' | 'ls:jazz_latin_mode';
 
 /** Philip Glass — film soundtrack harmony posture (`filmSoundtrackHarmonySlices.ts`). */
 export type PhilipGlassContextMode = 'pg:minimal_pulse' | 'pg:lyrical_minimal' | 'pg:dark_pedal';
@@ -1330,6 +1334,22 @@ export interface GenerationMetadata {
   jerryGoldsmithSliceReceipt?: string;
   jerryGoldsmithEffectiveHarmonyBars?: string[];
   jerryGoldsmithDeviceReceipts?: string[];
+  laloSchifrinContext?: LaloSchifrinContextMode;
+  laloSchifrinDiagnostics?: {
+    songwriterId: 'lalo_schifrin';
+    barsConsidered: number;
+    oddMeterTouches?: number;
+    percussionTouches?: number;
+    brassTouches?: number;
+    modalTouches?: number;
+    motivicTouches?: number;
+    sliceParams?: LaloSchifrinSliceParams;
+    deviceReceipts?: string[];
+  };
+  laloSchifrinSliceParams?: LaloSchifrinSliceParams;
+  laloSchifrinSliceReceipt?: string;
+  laloSchifrinEffectiveHarmonyBars?: string[];
+  laloSchifrinDeviceReceipts?: string[];
   philipGlassContext?: PhilipGlassContextMode;
   philipGlassDiagnostics?: {
     songwriterId: 'philip_glass';

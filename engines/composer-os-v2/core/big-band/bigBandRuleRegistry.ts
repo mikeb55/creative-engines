@@ -149,6 +149,52 @@ const HOLMAN_COMPOSER_RULES: BigBandRule[] = [
 ];
 
 /** Eberhard Weber — bass-led harmonic field over sustained pedal axis. */
+/** Lalo Schifrin — groove-native jazz-Latin film orchestration. */
+const SCHIFRIN_COMPOSER_RULES: BigBandRule[] = [
+  R(
+    'schifrin.latin_percussion_grid',
+    'LatinPercussionGridRule: percussion establishes and maintains clave-like subdivision — structural not decorative; interlocks bass ostinato and piano comping through all transitions',
+    'composer',
+    'rhythm',
+    88
+  ),
+  R(
+    'schifrin.brass_riff_engine',
+    'BrassRiffEngineRule: brass as syncopated attack engine — unisons, clustered punches, cup-muted calls, trombone support; short attacks alternate held tension notes; climax by registral spread and density not romantic swell',
+    'composer',
+    'orchestration',
+    87
+  ),
+  R(
+    'schifrin.odd_meter_groove',
+    'OddMeterGrooveRule: 5/4 and 7/8 signature meters — riff groupings make meter unmistakable; cross-rhythm by layering Latin percussion over straight orchestral ostinati',
+    'composer',
+    'rhythm',
+    86
+  ),
+  R(
+    'schifrin.string_color_support',
+    'StringColorSupportRule: strings as color, momentum support, tremolo pressure, modal reinforcement — subordinate to percussion and brass rhetoric; urban groove-aware not pastoral lead',
+    'composer',
+    'orchestration',
+    82
+  ),
+  R(
+    'schifrin.modal_vamp_lock',
+    'ModalVampLockRule: harmony locks to percussion grid in film mode — vamp fields over pedal points; chromatic planing, tritone dominant exchange, pedal upper-structure shifts',
+    'composer',
+    'harmony',
+    85
+  ),
+  R(
+    'schifrin.additive_tension',
+    'AdditiveTensionRule: tension by additive layering — ostinato → percussion → brass → register expansion → altered dominant; release by thinning or riff-snap not cadential resolution',
+    'composer',
+    'density',
+    84
+  ),
+];
+
 const OGERMAN_COMPOSER_RULES: BigBandRule[] = [
   R(
     'ogerman.string_continuum',
@@ -348,6 +394,9 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
   ogerman: OGERMAN_COMPOSER_RULES,
   claus_ogerman: OGERMAN_COMPOSER_RULES,
   ogerman_continuum: OGERMAN_COMPOSER_RULES,
+  schifrin: SCHIFRIN_COMPOSER_RULES,
+  lalo_schifrin: SCHIFRIN_COMPOSER_RULES,
+  schifrin_groove: SCHIFRIN_COMPOSER_RULES,
   /** Quincy Jones — LA studio punch / crossover pop–jazz / tight rhythm-section locks. */
   quincy_jones: [
     R('quincy_jones.tight_brass', 'Brass punches locked to rhythm-section kicks & backbeats', 'composer', 'orchestration', 84),

@@ -37,7 +37,10 @@ export type BigBandComposerId =
   | 'weber_field'
   | 'ogerman'
   | 'claus_ogerman'
-  | 'ogerman_continuum';
+  | 'ogerman_continuum'
+  | 'schifrin'
+  | 'lalo_schifrin'
+  | 'schifrin_groove';
 
 export type BigBandEraId =
   | 'swing'

@@ -31,6 +31,7 @@ export const HARMONIC_VOICE_LABELS: Pick<
   | 'john_williams'
   | 'nino_rota'
   | 'jerry_goldsmith'
+  | 'lalo_schifrin'
   | 'philip_glass'
   | 'hans_zimmer'
   | 'angelo_badalamenti'
@@ -48,6 +49,7 @@ export const HARMONIC_VOICE_LABELS: Pick<
   john_williams: 'John Williams',
   nino_rota: 'Nino Rota',
   jerry_goldsmith: 'Jerry Goldsmith',
+  lalo_schifrin: 'Lalo Schifrin',
   philip_glass: 'Philip Glass',
   hans_zimmer: 'Hans Zimmer',
   angelo_badalamenti: 'Angelo Badalamenti',

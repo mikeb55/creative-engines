@@ -730,6 +730,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'ennio_morricone', label: 'Ennio Morricone' },
   { id: 'hans_zimmer', label: 'Hans Zimmer' },
   { id: 'jerry_goldsmith', label: 'Jerry Goldsmith' },
+  { id: 'lalo_schifrin', label: 'Lalo Schifrin' },
   { id: 'john_williams', label: 'John Williams' },
   { id: 'messiaen', label: 'Messiaen' },
   { id: 'nino_rota', label: 'Nino Rota' },
@@ -821,6 +822,7 @@ const FILM_HARMONIC_VOICE_IDS: readonly HarmonicVoiceId[] = [
   'john_williams',
   'nino_rota',
   'jerry_goldsmith',
+  'lalo_schifrin',
   'philip_glass',
   'hans_zimmer',
   'angelo_badalamenti',
@@ -1007,6 +1009,7 @@ function songwriterIdsForProductionGroup(groupId: ComposerGroupId): string[] {
 const PRODUCTION_WORLD_SONGWRITER_ID_SET = new Set<string>([
   ...songwriterIdsForProductionGroup('ECM_CHAMBER_JAZZ'),
   ...songwriterIdsForProductionGroup('STUDIO_ORCHESTRAL_JAZZ'),
+  ...songwriterIdsForProductionGroup('FILM_SOUNDTRACK'),
   ...songwriterIdsForProductionGroup('POST_BOP_CORE'),
 ]);
 
@@ -1032,9 +1035,9 @@ const VISUALLY_HIDDEN: CSSProperties = {
 };
 
 const ARIA_SONGWRITER_GROUPS_DESC =
-  'Songwriters are grouped by production world (ECM Chamber Jazz, Studio Orchestral Jazz, Post-Bop Core), then Shipped full slice, Shipped singer-songwriter slice, Ready to build, and In library.';
+  'Songwriters are grouped by production world (ECM Chamber Jazz, Studio Orchestral Jazz, Film Soundtrack, Post-Bop Core), then Shipped full slice, Shipped singer-songwriter slice, Ready to build, and In library.';
 const ARIA_ARRANGER_GROUPS_DESC =
-  'Arrangers are grouped by production world (ECM Chamber Jazz, Studio Orchestral Jazz, Post-Bop Core), then Big band core research-backed and Charts and studio voices.';
+  'Arrangers are grouped by production world (ECM Chamber Jazz, Studio Orchestral Jazz, Film Soundtrack, Post-Bop Core), then Big band core research-backed and Charts and studio voices.';
 
 function uint8ArrayToBase64(bytes: Uint8Array): string {
   const chunk = 0x8000;
@@ -1070,6 +1073,16 @@ function SongwriterSelectOptionGroups({ onOptionHover }: { onOptionHover?: (id: 
           const o = SONGWRITER_OPTION_BY_ID.get(id)!;
           return (
             <option key={`studio-${id}`} value={o.id} {...optHover(o.id)}>
+              {o.label}
+            </option>
+          );
+        })}
+      </optgroup>
+      <optgroup label={COMPOSER_GROUP_DISPLAY_LABELS.FILM_SOUNDTRACK}>
+        {songwriterIdsForProductionGroup('FILM_SOUNDTRACK').map((id) => {
+          const o = SONGWRITER_OPTION_BY_ID.get(id)!;
+          return (
+            <option key={`film-${id}`} value={o.id} {...optHover(o.id)}>
               {o.label}
             </option>
           );
@@ -1330,6 +1343,7 @@ const ARRANGER_OPTIONS: { id: string; label: string }[] = [
   { id: 'neal_hefti', label: 'Neal Hefti' },
   { id: 'don_sebesky', label: 'Don Sebesky' },
   { id: 'ogerman', label: 'Claus Ogerman' },
+  { id: 'schifrin', label: 'Lalo Schifrin' },
   /** SQ VRB arrangers — surfaced only on the String Quartet preset. */
   { id: 'beethoven_late', label: 'Beethoven (Late Quartets)' },
   { id: 'bartok', label: 'Bartók' },
@@ -1403,6 +1417,7 @@ function arrangerIdsForProductionGroup(groupId: ComposerGroupId): string[] {
 const ARRANGER_PRODUCTION_WORLD_ID_SET = new Set<string>([
   ...arrangerIdsForProductionGroup('ECM_CHAMBER_JAZZ'),
   ...arrangerIdsForProductionGroup('STUDIO_ORCHESTRAL_JAZZ'),
+  ...arrangerIdsForProductionGroup('FILM_SOUNDTRACK'),
   ...arrangerIdsForProductionGroup('POST_BOP_CORE'),
 ]);
 
@@ -1452,6 +1467,18 @@ function ArrangerSelectOptionGroups(props?: { variant?: 'default' | 'string_quar
             const o = ARRANGER_OPTION_BY_ID.get(id)!;
             return (
               <option key={`studio-arr-${id}`} value={o.id}>
+                {o.label}
+              </option>
+            );
+          })}
+      </optgroup>
+      <optgroup label={COMPOSER_GROUP_DISPLAY_LABELS.FILM_SOUNDTRACK}>
+        {arrangerIdsForProductionGroup('FILM_SOUNDTRACK')
+          .filter((id) => ARRANGER_OPTION_BY_ID.has(id))
+          .map((id) => {
+            const o = ARRANGER_OPTION_BY_ID.get(id)!;
+            return (
+              <option key={`film-arr-${id}`} value={o.id}>
                 {o.label}
               </option>
             );

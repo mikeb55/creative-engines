@@ -101,6 +101,7 @@ export type SongwriterRuleId =
   | 'ennio_morricone'
   | 'nino_rota'
   | 'jerry_goldsmith'
+  | 'lalo_schifrin'
   | 'philip_glass'
   | 'hans_zimmer'
   | 'angelo_badalamenti'

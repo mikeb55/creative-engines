@@ -1,0 +1,15 @@
+export {
+  accumulateLaloSchifrinHarmonyDiagnostics,
+  createLaloSchifrinHarmonyAccumulator,
+  countDominantTonicPairs,
+  countMajorTwoFiveOneChains,
+  DEFAULT_LALO_SCHIFRIN_SLICE_PARAMS,
+  finalizeLaloSchifrinMetadata,
+  latinPercussionGridReceiptCount,
+  oddMeterGrooveReceiptCount,
+  precomputeLaloSchifrinEffectiveHarmonyBars,
+  resolveLaloSchifrinSliceParams,
+  type LaloSchifrinContextMode,
+  type LaloSchifrinHarmonyAccumulator,
+  type LaloSchifrinSliceParams,
+} from '../song-mode/laloSchifrinSlice';

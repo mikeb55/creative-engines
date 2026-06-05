@@ -783,6 +783,20 @@ export function applyJerryGoldsmithStyleSurface(metadata: GenerationMetadata, pr
   ]);
 }
 
+/** Primary **`lalo_schifrin`** — groove-native jazz-Latin film engine (`laloSchifrinSlice.ts`). */
+export function applyLaloSchifrinStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
+  if (metadata.songModeHookFirstIdentity !== true) return;
+  if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
+  if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'lalo_schifrin') return;
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) + 0.18);
+  metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) + 0.28);
+  metadata.songwriterSpaceBias = clamp01((metadata.songwriterSpaceBias ?? 0.5) - 0.08);
+  metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) - 0.18);
+  appendStyleSurfaceNotes(metadata, [
+    'lalo_schifrin surface: density +0.18, syncopation +0.28, space −0.08, cadence softness −0.18 — generative bias only (harmony slice emits ls:* device receipts).',
+  ]);
+}
+
 /** Primary **`philip_glass`** — additive minimal pulse (`filmSoundtrackHarmonySlices.ts`). */
 export function applyPhilipGlassStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
   if (metadata.songModeHookFirstIdentity !== true) return;

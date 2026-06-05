@@ -28,3 +28,4 @@ export * from './wheelerStyleProfile';
 export * from './strayhornStyleProfile';
 export * from './sebeskyStyleProfile';
 export * from './ogermanStyleProfile';
+export * from './schifrinStyleProfile';

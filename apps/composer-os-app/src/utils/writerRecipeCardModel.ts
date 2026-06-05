@@ -113,6 +113,7 @@ const FILM_SCORING = new Set<string>([
   'ennio_morricone',
   'hans_zimmer',
   'jerry_goldsmith',
+  'lalo_schifrin',
   'john_williams',
   'nino_rota',
   'philip_glass',

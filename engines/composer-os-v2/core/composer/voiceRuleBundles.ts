@@ -14,6 +14,7 @@ import { BILL_HOLMAN_VRF_FINGERPRINT_RECEIPTS } from './holmanVrbFingerprints';
 import { CARLA_BLEY_VRF_FINGERPRINT_RECEIPTS } from './carlaBleyVrbFingerprints';
 import { WEBER_FIELD_VRF_FINGERPRINT_RECEIPTS } from './weberVrbFingerprints';
 import { OGERMAN_CONTINUUM_VRF_FINGERPRINT_RECEIPTS } from './ogermanVrbFingerprints';
+import { SCHIFRIN_GROOVE_VRF_FINGERPRINT_RECEIPTS } from './schifrinVrbFingerprints';
 import { BILLY_STRAYHORN_VRF_FINGERPRINT_RECEIPTS } from './billyStrayhornVrbFingerprints';
 import { DON_SEBESKY_VRF_FINGERPRINT_RECEIPTS } from './donSebeskyVrbFingerprints';
 import { WAYNE_SHORTER_WS_HARM_FINGERPRINTS } from './wayneShorterHarmFingerprints';
@@ -1364,6 +1365,48 @@ const OGERMAN_CONTINUUM: VoiceRuleBundle = {
   repairPolicy: {
     resolveParallels: false,
     maxVoiceOverlap: 4,
+  },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
+};
+
+const SCHIFRIN_GROOVE: VoiceRuleBundle = {
+  voiceId: 'schifrin_groove',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 4,
+    allowMidBarChange: true,
+  },
+  bassPolicy: {
+    role: 'pattern-bass',
+    allowOctaveDoubling: false,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 8,
+    maxSpreadSemitones: 36,
+    clusterSizeNotes: [3, 6],
+    forbidParallelFifths: false,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'pattern-loop',
+    maxLeapSemitones: 7,
+    preferredIntervalSets: [1, 2, 4, 5, 6, 7],
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 1,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: SCHIFRIN_GROOVE_VRF_FINGERPRINT_RECEIPTS,
+  },
+  formPolicy: {
+    narrativeArc: 'narrative-episodic',
+    sectionRecallEnforced: true,
+    noCadentialRelease: true,
+  },
+  rhythmPolicy: { antiMetric: true },
+  repairPolicy: {
+    resolveParallels: false,
+    maxVoiceOverlap: 3,
   },
   contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
 };
@@ -3722,6 +3765,10 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   claus_ogerman: OGERMAN_CONTINUUM,
   ogerman: OGERMAN_CONTINUUM,
   co: OGERMAN_CONTINUUM,
+  schifrin_groove: SCHIFRIN_GROOVE,
+  lalo_schifrin: SCHIFRIN_GROOVE,
+  schifrin: SCHIFRIN_GROOVE,
+  ls: SCHIFRIN_GROOVE,
   john_coltrane: JOHN_COLTRANE,
   wayne_shorter: WAYNE_SHORTER,
   bill_evans: BILL_EVANS,

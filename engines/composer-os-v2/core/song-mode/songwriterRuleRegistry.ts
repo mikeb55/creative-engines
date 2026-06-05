@@ -1007,6 +1007,32 @@ const songwriterRules: Partial<Record<SongwriterRuleId, SongwritingRuleEntry[]>>
     R('jg.quartal_suspense', 'Quartal / symmetric suspense (harmonic voice tags)', 'songwriter', 'harmony', 9, 'verse'),
     R('jg.rhythm_ostinato', 'Mixed-meter ostinato drive (harmonic voice tags)', 'songwriter', 'rhythm', 8, 'global'),
   ],
+  lalo_schifrin: [
+    R(
+      'schifrin.groove_engine',
+      'Groove-native motor energy — percussion grid + brass attack + odd-meter riff accents (`ls:*`)',
+      'songwriter',
+      'rhythm',
+      9,
+      'global'
+    ),
+    R(
+      'schifrin.modal_vamp',
+      'Modal altered vamps locked to percussion grid — no classical cadential closure',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'schifrin.motivic_cell',
+      '1–2 bar motivic cells sequenced and re-accented — not extended romantic melody',
+      'songwriter',
+      'melody',
+      8,
+      'verse'
+    ),
+  ],
   philip_glass: [
     R('pg.additive_cell', 'Additive pattern extension (harmonic voice tags)', 'songwriter', 'harmony', 8, 'global'),
     R('pg.pedal_field', 'Static pedal under shifting harmony (harmonic voice tags)', 'songwriter', 'harmony', 8, 'verse'),

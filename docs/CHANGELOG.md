@@ -2,6 +2,12 @@
 
 ### Added
 
+- **Lalo Schifrin v2 Film composer (`ls:*`)** — groove-native jazz-Latin film slice (`laloSchifrinSlice.ts`): odd-meter riff accents, Latin percussion grid, brass attack strata, modal altered vamps, compact motivic cells; golden-path precompute + locked harmony routing + **`filmComposerSlices.test.ts`** seed **94001**.
+- **Schifrin VRB bundle** — **`schifrinVrbFingerprints.ts`** — 8 fingerprints + negative discriminators (Herrmann / Morricone / Goldsmith / Mancini bleed); bundle id **`schifrin_groove`**; aliases `lalo_schifrin` / `schifrin` / `ls`.
+- **Schifrin Big Band rules** — six named rules in **`bigBandRuleRegistry.ts`**: LatinPercussionGrid, BrassRiffEngine, OddMeterGroove, StringColorSupport, ModalVampLock, AdditiveTension.
+- **Schifrin evaluation profile** — **`schifrinStyleProfile.ts`** with pass/fail thresholds and negative discriminator hard fails.
+- **Schifrin assigned to Film Soundtrack group** — **`composerGroupDefinitions.ts`** **`FILM_SOUNDTRACK`** group; removed from Studio Orchestral partial/future; songwriter **`lalo_schifrin`** in **`HomeGenerate.tsx`** Film harmonic voice optgroup.
+
 - **Claus Ogerman v2 Studio Orchestral composer (`co:*`)** — composed orchestral continuum slice (`clausOgermanSlice.ts`): harmonic suspension, inner-voice counterpoint, texture resolution, string layered sustain, cyclic 3-chord cells, veil/echo/commentary orchestra rotation; golden-path precompute + locked harmony routing + smoke **`ogermanSliceSmoke.test.ts`**.
 - **Ogerman VRB bundle** — **`ogermanVrbFingerprints.ts`** — 8 fingerprints + negative discriminators (Quincy / Sebesky / Jenkins-Riddle / riff-logic bleed); bundle id **`ogerman_continuum`**; aliases `claus_ogerman` / `ogerman` / `co`.
 - **Ogerman Big Band rules** — six named rules in **`bigBandRuleRegistry.ts`**: StringContinuum, InnerVoiceMotion, BrassEpisodic, ClimaxAccumulation, OrchestraRelation, CyclicCell.

@@ -15,7 +15,8 @@ import type {
 export type ComposerGroupId =
   | 'ECM_CHAMBER_JAZZ'
   | 'STUDIO_ORCHESTRAL_JAZZ'
-  | 'POST_BOP_CORE';
+  | 'POST_BOP_CORE'
+  | 'FILM_SOUNDTRACK';
 
 /** Full default parameter object for an active production group. */
 export interface GroupParams {
@@ -72,6 +73,9 @@ export const COMPOSER_ID_ALIASES: Readonly<Record<string, string>> = {
   ogerman: 'claus_ogerman',
   claus_ogerman: 'claus_ogerman',
   co: 'claus_ogerman',
+  schifrin: 'lalo_schifrin',
+  lalo_schifrin: 'lalo_schifrin',
+  ls: 'lalo_schifrin',
   holman: 'bill_holman',
   bill_holman: 'bill_holman',
   charlie: 'charlie_parker',
@@ -135,6 +139,19 @@ const POST_BOP_CORE_DEFAULTS: GroupParams = {
   sectionalContrastMode: 'blowing_sections',
 };
 
+const FILM_SOUNDTRACK_DEFAULTS: GroupParams = {
+  groovePersistence: 0.85,
+  registralPorosity: 0.32,
+  stringProminence: 0.42,
+  cadentialResolution: 'suspended',
+  ensembleDensityCurve: 'tiered_lift',
+  silenceWeighting: 'rhythmic',
+  productionGloss: 0.58,
+  melodyFraming: 'spotlighted',
+  soloistSpotlight: 0.52,
+  sectionalContrastMode: 'discrete',
+};
+
 export const COMPOSER_GROUP_DEFINITIONS: readonly ComposerGroupDefinition[] = [
   {
     id: 'ECM_CHAMBER_JAZZ',
@@ -178,9 +195,20 @@ export const COMPOSER_GROUP_DEFINITIONS: readonly ComposerGroupDefinition[] = [
       { composerId: 'claus_ogerman', status: 'fully_implemented' },
       { composerId: 'bob_james', status: 'partial_future' },
       { composerId: 'johnny_mandel', status: 'partial_future' },
-      { composerId: 'lalo_schifrin', status: 'partial_future' },
       { composerId: 'eumir_deodato', status: 'partial_future' },
       { composerId: 'gary_mcfarland', status: 'partial_future' },
+    ],
+  },
+  {
+    id: 'FILM_SOUNDTRACK',
+    description:
+      'Film scoring production logic. Groove-native motor energy, layered strata entry, modal vamps locked to percussion grid — not pastoral mood painting or classical cadential closure.',
+    defaults: FILM_SOUNDTRACK_DEFAULTS,
+    members: [
+      { composerId: 'bernard_herrmann', status: 'fully_implemented' },
+      { composerId: 'ennio_morricone', status: 'fully_implemented' },
+      { composerId: 'jerry_goldsmith', status: 'fully_implemented' },
+      { composerId: 'lalo_schifrin', status: 'fully_implemented' },
     ],
   },
   {
@@ -215,6 +243,7 @@ export const COMPOSER_GROUP_DISPLAY_LABELS: Record<ComposerGroupId, string> = {
   ECM_CHAMBER_JAZZ: 'ECM Chamber Jazz',
   STUDIO_ORCHESTRAL_JAZZ: 'Studio Orchestral Jazz',
   POST_BOP_CORE: 'Post-Bop Core',
+  FILM_SOUNDTRACK: 'Film Soundtrack',
 };
 
 const DUAL_GROUP_COMPOSER_IDS = new Set<string>(Object.keys(DUAL_GROUP_COMPOSER_ASSIGNMENTS));
