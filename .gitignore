@@ -39,5 +39,11 @@ scripts/analyzeOrbitMidi.py
 scripts/analyzeOrbitSections.py
 scripts/orbitV4MidiSurgery.py
 scripts/verifyOrbitV4.py
+scripts/orbitV3GceGateAnalysis.py
+scripts/orbitV3GceGateReport.json
+scripts/orbitV3V41CompareReport.py
+scripts/orbitV3V41DeepAnalysis.py
+scripts/orbitV42CleanMidi.py
+scripts/orbit_compare_data.json
 smoke-out.txt
 smoke-out2.txt

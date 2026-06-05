@@ -76,6 +76,7 @@ import { ellingtonStyleProfile } from '../core/evaluation/ellingtonStyleProfile'
 import { strayhornStyleProfile } from '../core/evaluation/strayhornStyleProfile';
 import { schneiderStyleProfile } from '../core/evaluation/schneiderStyleProfile';
 import { garbarekStyleProfile } from '../core/evaluation/garbarekStyleProfile';
+import { holmanStyleProfile } from '../core/evaluation/holmanStyleProfile';
 import { quincyStyleProfile } from '../core/evaluation/quincyStyleProfile';
 import { sebeskyStyleProfile } from '../core/evaluation/sebeskyStyleProfile';
 import { thadJonesStyleProfile } from '../core/evaluation/thadJonesStyleProfile';
@@ -2516,6 +2517,7 @@ function composerStyleFromArrangerStyle(arrangerStyle: string | undefined | null
   if (a === 'thad' || a === 'thad_jones') return 'thad_jones';
   if (a === 'schneider') return 'schneider';
   if (a === 'garbarek' || a === 'jan_garbarek') return 'garbarek';
+  if (a === 'holman' || a === 'bill_holman') return 'holman';
   if (a === 'quincy' || a === 'quincy_jones' || a === 'quincy_jones_film') return 'quincy_jones';
   if (a === 'wayne_shorter' || a === 'wayne' || a === 'shorter') return 'wayne_shorter';
   if (a === 'gil_evans') return 'gil_evans';
@@ -2542,6 +2544,9 @@ function bigBandEvaluationStyleProfile(
     case 'garbarek':
     case 'jan_garbarek':
       return garbarekStyleProfile;
+    case 'holman':
+    case 'bill_holman':
+      return holmanStyleProfile;
     case 'quincy_jones':
       return quincyStyleProfile;
     case 'sebesky':

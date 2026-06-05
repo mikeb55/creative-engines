@@ -41,6 +41,7 @@ import type {
   JanGarbarekFieldPlan,
   JanGarbarekSliceParams,
 } from './song-mode/janGarbarekSlice';
+import type { BillHolmanSliceParams } from './song-mode/billHolmanSlice';
 import type { BasieEpisodePlan } from './song-mode/basieEpisodeTypes';
 import type { BasieTestamentMode } from './song-mode/basieSlice';
 import type {
@@ -1829,6 +1830,22 @@ export interface GenerationMetadata {
   janGarbarekSliceReceipt?: string;
   janGarbarekEffectiveHarmonyBars?: string[];
   janGarbarekDeviceReceipts?: string[];
+  /** Bill Holman — chart-first linear counterpoint slice (`billHolmanSlice.ts`). */
+  billHolmanDiagnostics?: {
+    songwriterId: 'bill_holman';
+    barsConsidered: number;
+    lineIndependenceTouches: number;
+    approachNoteTouches: number;
+    countermelodyTouches: number;
+    saxSoliTouches: number;
+    deviceReceipts?: string[];
+  };
+  billHolmanSliceParams?: BillHolmanSliceParams;
+  billHolmanEpisodePlanSummary?: string;
+  billHolmanShoutStartBar?: number;
+  billHolmanSliceReceipt?: string;
+  billHolmanEffectiveHarmonyBars?: string[];
+  billHolmanDeviceReceipts?: string[];
   /** Count Basie — Kansas City swing / riff-head slice (`basieSlice.ts`). */
   basieTestamentMode?: BasieTestamentMode;
   basieResolvedTestament?: BasieTestamentMode;
@@ -2458,6 +2475,8 @@ export interface CompositionContext {
   nelsonBluesFormVariant?: NelsonBluesFormVariant;
   /** When true, harmonic voicing yields to melodic line (`bobBrookmeyerSlice.ts` + `voiceLeadingSolver.ts`). */
   lineFirstHierarchy?: boolean;
+  /** When true, chart-first linear lines generate harmony (`billHolmanSlice.ts`). */
+  chartFirstLinearHierarchy?: boolean;
   /** V65 P1 — Song schema document (section architecture); bridged at pipeline entry. */
   song?: import('./section-architecture/sectionArchitectureTypes').Song;
 }

@@ -102,6 +102,52 @@ const JAN_GARBAREK_COMPOSER_RULES: BigBandRule[] = [
   R('garbarek.folk_motive', 'FolkMotiveRule: short nuclei (2–5 notes) recycled with variation; arch and descent contour preferred over through-composed development', 'composer', 'form', 81),
 ];
 
+/** Bill Holman — chart-first linear counterpoint (lines generate harmony). */
+const HOLMAN_COMPOSER_RULES: BigBandRule[] = [
+  R(
+    'holman.chart_first',
+    'ChartFirstRule: generate all soli and ensemble voices as independent melodic lines before validating vertical harmony; reject voicings where any inner voice has no melodic logic',
+    'composer',
+    'harmony',
+    86
+  ),
+  R(
+    'holman.sax_soli',
+    'SaxSoliRule: 5-voice sax soli primary textural statement in A sections; lead alto upper register, stepwise register descent, baritone bass support; each voice independent contour',
+    'composer',
+    'orchestration',
+    85
+  ),
+  R(
+    'holman.shout_chorus',
+    'ShoutChorusRule: spread outer brass (high lead trumpet, low bass trombone) with mid-register inner cluster; reeds cushion below brass; linear voice leading at fortissimo',
+    'composer',
+    'orchestration',
+    84
+  ),
+  R(
+    'holman.countermelody',
+    'CountermelodyRule: at least one inner voice carries independently singable counter-line against lead — real second melody not harmonic padding',
+    'composer',
+    'form',
+    83
+  ),
+  R(
+    'holman.voice_leading_gate',
+    'VoiceLeadingGateRule: reject parallel 5ths/8ths; flag voice crossing and large inner leaps without resolution before soli commits',
+    'composer',
+    'harmony',
+    87
+  ),
+  R(
+    'holman.linear_harmony',
+    'LinearHarmonyRule: accept unusual vertical sonorities when individual voice leading is smooth; do not normalise to nearest functional equivalent',
+    'composer',
+    'harmony',
+    82
+  ),
+];
+
 const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
   ellington: [
     R('ellington.counterpoint_density', '≥2 independent lines when not thin', 'composer', 'density', 82),
@@ -155,6 +201,8 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
   ],
   garbarek: JAN_GARBAREK_COMPOSER_RULES,
   jan_garbarek: JAN_GARBAREK_COMPOSER_RULES,
+  bill_holman: HOLMAN_COMPOSER_RULES,
+  holman: HOLMAN_COMPOSER_RULES,
   /** Quincy Jones — LA studio punch / crossover pop–jazz / tight rhythm-section locks. */
   quincy_jones: [
     R('quincy_jones.tight_brass', 'Brass punches locked to rhythm-section kicks & backbeats', 'composer', 'orchestration', 84),

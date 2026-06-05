@@ -9,6 +9,7 @@ export * from './schneiderStyleProfile';
 export * from './quincyStyleProfile';
 export * from './thadJonesStyleProfile';
 export * from './gilEvansStyleProfile';
+export * from './holmanStyleProfile';
 export * from './bobBrookmeyerStyleProfile';
 export * from './clareFischerStyleProfile';
 export * from './oliverNelsonStyleProfile';

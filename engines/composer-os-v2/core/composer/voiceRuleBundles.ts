@@ -10,6 +10,7 @@ import {
 } from './voiceRuleBundle';
 import { KENNY_WHEELER_VRF_FINGERPRINT_RECEIPTS } from './kennyWheelerVrbFingerprints';
 import { JAN_GARBAREK_VRF_FINGERPRINT_RECEIPTS } from './janGarbarekVrbFingerprints';
+import { BILL_HOLMAN_VRF_FINGERPRINT_RECEIPTS } from './holmanVrbFingerprints';
 import { BILLY_STRAYHORN_VRF_FINGERPRINT_RECEIPTS } from './billyStrayhornVrbFingerprints';
 import { DON_SEBESKY_VRF_FINGERPRINT_RECEIPTS } from './donSebeskyVrbFingerprints';
 import { WAYNE_SHORTER_WS_HARM_FINGERPRINTS } from './wayneShorterHarmFingerprints';
@@ -1319,6 +1320,60 @@ const JAN_GARBAREK: VoiceRuleBundle = {
     rhythmicIndependenceFloor: 0.35,
     registerInterlock: false,
     intervalPreference: 'modal_sparse',
+  },
+};
+
+const BILL_HOLMAN: VoiceRuleBundle = {
+  voiceId: 'bill_holman',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 2,
+    allowMidBarChange: false,
+  },
+  bassPolicy: {
+    role: 'root',
+    allowOctaveDoubling: false,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 8,
+    maxSpreadSemitones: 28,
+    clusterSizeNotes: [4, 7],
+    forbidParallelFifths: true,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'diatonic-step',
+    maxLeapSemitones: 9,
+    preferredIntervalSets: [1, 2, 3, 4, 5, 7],
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 1,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: BILL_HOLMAN_VRF_FINGERPRINT_RECEIPTS,
+  },
+  formPolicy: {
+    narrativeArc: 'suite',
+    sectionRecallEnforced: true,
+  },
+  rhythmPolicy: { antiMetric: false },
+  repairPolicy: {
+    resolveParallels: true,
+    maxVoiceOverlap: 4,
+  },
+  contrapuntalLinePolicy: {
+    enabled: true,
+    dissonanceProfile: DUO_CONTRAPUNTAL_POLICY_JAZZ.dissonanceProfile,
+    preferredImitationTypes: ['free', 'invertible'],
+    rhythmicIndependenceRequired: true,
+    lineRoleAssignment: 'dynamic',
+  },
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.68,
+    registerInterlock: true,
+    intervalPreference: 'diatonic',
   },
 };
 
@@ -3508,6 +3563,8 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   wheeler: KENNY_WHEELER,
   kw: KENNY_WHEELER,
   jan_garbarek: JAN_GARBAREK,
+  bill_holman: BILL_HOLMAN,
+  holman: BILL_HOLMAN,
   garbarek: JAN_GARBAREK,
   jg: JAN_GARBAREK,
   john_coltrane: JOHN_COLTRANE,

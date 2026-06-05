@@ -72,7 +72,7 @@ Engine: **`engines/composer-os-v2/core/groups/composerGroupEngine.ts`** · defin
 | `soloistSpotlight` | 0.75 | Solo as featured event |
 | `sectionalContrastMode` | `discrete` | Clear A / B / lift blocks |
 
-**Members (fully implemented):** Sebesky, Quincy Jones, Oliver Nelson, Sammy Nestico, Clare Fischer, Count Basie, Thad Jones, Duke Ellington, Billy Strayhorn, Charles Mingus.
+**Members (fully implemented):** Sebesky, Quincy Jones, Oliver Nelson, Sammy Nestico, Clare Fischer, Count Basie, Thad Jones, **Bill Holman**, Duke Ellington, Billy Strayhorn, Charles Mingus.
 
 **Partial / future:** Ogerman, Bob James, Mandel, Schifrin, Deodato, McFarland.
 
@@ -168,6 +168,7 @@ Compiled harmonic voice bundles live in **`engines/composer-os-v2/core/composer/
 | **Charles Mingus** (`charles_mingus`) | 11 | **deep** |
 | **Henry Threadgill** (`henry_threadgill`) | 26 | **deep** |
 | **Bob Brookmeyer** (`bob_brookmeyer`) | 12 | **deep** |
+| **Bill Holman** (`bill_holman`) | 12 | **deep** |
 | **Olivier Messiaen** (`messiaen`, alias `olivier_messiaen`) | 12 | **deep** |
 | **Oliver Nelson** (`oliver_nelson`) | 12 | **deep** |
 | **Sammy Nestico** (`sammy_nestico`) | 41 | **deep** |
@@ -405,6 +406,46 @@ Strayhorn composes from **inside the chord colour and phrase line simultaneously
 **Reference works:** *Lush Life* · *Chelsea Bridge* · *Blood Count* · *Lotus Blossom* · *Isfahan* · *A Flower Is a Lovesome Thing*
 
 **Evaluation:** **`strayhornStyleProfile.ts`** — extension occupancy, phrase continuity, chromatic architecture score, parallel color motion, inner-voice density, closed-block duration; hard fail on Ellington riff/shout/sectional triggers.
+
+---
+
+---
+
+### Bill Holman (`bill_holman`)
+
+Holman is a **chart-first linear contrapuntist**. Harmony is what happens when independent melodic lines sound together — not the starting point. In a Holman soli or shout chorus, every voice carries a melodically satisfying line; the vertical sonority is the byproduct of cooperative line-weaving.
+
+**Three separators**
+
+| | **Holman** | **Brookmeyer** | **Thad Jones** | **Nelson** |
+|---|------------|----------------|----------------|------------|
+| Starting point | Chart / lead line | 3-note pitch module | Dense chromatic stacks | Pedal modal + blues sections |
+| Inner voices | Independent contours | Module-derived strands | Chromatic color fill | Quartal planing / sectional |
+| Shout texture | Spread outer + reed cushion | Climax cluster / quartal | Close nonachord blocks | Orchestral swell + blues solo |
+| Choose Holman when | Sax soli + shout with classical voice-leading | Pitch-module through-composition | Extended common-practice colour | Two-layer pedal/blues form |
+
+**Song Mode slice** — **`billHolmanSlice.ts`** (`bh:*` receipts): Step 1 lead line → Step 2 independent inner voices → Step 3 vertical harmony from lines → Step 4 voice-leading gate (parallel 5ths/8ths suppressed).
+
+**Six parameters** (0–1, defaults in parentheses):
+
+| Parameter | Default | Musical role | Sweet spot |
+|-----------|---------|--------------|------------|
+| `lineIndependence` | 0.78 | Inner voices have own contour vs chord-tone filling | 0.72–0.85 |
+| `voiceLeadingSmoothness` | 0.72 | Stepwise inner motion; contrary outer motion rewarded | 0.65–0.80 |
+| `saxSoliDensity` | 0.68 | Probability of 5-voice sax soli as primary texture | 0.60–0.75 |
+| `shoutChorusSpread` | 0.65 | Spread outer brass + close inner cluster in shouts | 0.55–0.72 |
+| `approachNoteWeight` | 0.70 | Half-step approach to inner-voice targets | 0.62–0.78 |
+| `countermelodyActivity` | 0.62 | Second singable counter-line against lead | 0.55–0.70 |
+
+**Sax soli architecture:** Lead alto upper register; voices descend stepwise in register; baritone bass support near tenor range; each voice must pass independent singability check.
+
+**Shout chorus architecture:** Spread outer voices (high lead trumpet, low bass trombone); inner mid-register cluster; reeds cushion below brass — not Thad close-position block, not Nestico riff repetition.
+
+**Big Band arranger id:** **`holman`** — six rules (ChartFirst, SaxSoli, ShoutChorus, Countermelody, VoiceLeadingGate, LinearHarmony).
+
+**Reference works:** Holman charts for Stan Kenton · Mel Lewis Orchestra · Bill Holman Band recordings (*The Sound of Jazz* lineage · Kenton *Adventures in Jazz* era · Mel Lewis Monday Night Band soli writing).
+
+**Evaluation:** **`holmanStyleProfile.ts`** — pass on line independence ≥0.70, voice-leading score, approach notes, countermelody presence, sax soli quality; hard fail on parallel 5ths/8ths, chord-tone arpeggio inner voices, Brookmeyer pitch-module dominance, Thad chromatic fill without contour, Nelson sectional blues dominance, close-block shouts without spread.
 
 ---
 

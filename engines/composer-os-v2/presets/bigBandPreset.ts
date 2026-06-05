@@ -58,6 +58,8 @@ export const bigBandPreset: Preset = {
       'threadgill',
       'garbarek',
       'jan_garbarek',
+      'bill_holman',
+      'holman',
     ],
   },
 };

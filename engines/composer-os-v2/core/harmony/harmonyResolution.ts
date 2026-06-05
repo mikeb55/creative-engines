@@ -644,6 +644,17 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
     return janGarbarekEff[barIndex - 1]!;
   }
 
+  const holmanEff = meta?.billHolmanEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'bill_holman' &&
+    Array.isArray(holmanEff) &&
+    holmanEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return holmanEff[barIndex - 1]!;
+  }
+
   /**
    * Billy Strayhorn: `precomputeBillyStrayhornEffectiveHarmonyBars` applies chromatic reinterpretation + extended-tone fusion.
    */

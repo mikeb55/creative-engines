@@ -2,6 +2,18 @@
 
 ---
 
+## [1.8.5] — 2026-06-05
+
+### Added
+
+- **Bill Holman v2 Song Mode slice (`bh:*`)** — chart-first linear counterpoint architecture (`billHolmanSlice.ts`): lead line → independent inner voices → vertical harmony → voice-leading gate; golden-path precompute + locked harmony routing + smoke **`billHolmanSliceSmoke.test.ts`**.
+- **Holman VRB bundle** — **`holmanVrbFingerprints.ts`** — 12 fingerprints with probability targets; aliases `bill_holman` / `holman`.
+- **Holman Big Band rules** — six named rules in **`bigBandRuleRegistry.ts`**: ChartFirst, SaxSoli, ShoutChorus, Countermelody, VoiceLeadingGate, LinearHarmony.
+- **Holman evaluation profile** — **`holmanStyleProfile.ts`** with Brookmeyer / Thad / Nelson discrimination hard fails.
+- **Holman assigned to Studio Orchestral Jazz** — **`composerGroupDefinitions.ts`** fully implemented; songwriter **`bill_holman`** + arranger **`holman`** in **`HomeGenerate.tsx`** Studio Orchestral Jazz optgroup.
+
+---
+
 ## [1.8.4] — 2026-06-04
 
 ### Added

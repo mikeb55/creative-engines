@@ -543,6 +543,12 @@ const songwriterRules: Partial<Record<SongwriterRuleId, SongwritingRuleEntry[]>>
     R('brook.odd_meter', 'Odd-meter phrase pivots', 'songwriter', 'rhythm', 8, 'form'),
     R('brook.west_coast', 'West Coast cool voicings', 'songwriter', 'harmony', 7, 'bridge'),
   ],
+  bill_holman: [
+    R('holman.chart_first', 'Chart-first linear lines generate harmony', 'songwriter', 'melody', 9, 'global'),
+    R('holman.sax_soli', 'Five-voice sax soli as primary texture', 'songwriter', 'orchestration', 9, 'verse'),
+    R('holman.voice_leading', 'Classical voice-leading gate on all soli', 'songwriter', 'harmony', 8, 'global'),
+    R('holman.countermelody', 'Independent singable counter-lines', 'songwriter', 'melody', 8, 'chorus'),
+  ],
   maria_schneider: [
     R(
       'schneider.voicing_language',

@@ -686,6 +686,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'beethoven_late', label: 'Beethoven (Late Quartets)' },
   { id: 'bartok', label: 'Bartók (String Quartets)' },
   { id: 'bill_evans', label: 'Bill Evans' },
+  { id: 'bill_holman', label: 'Bill Holman' },
   { id: 'billy_strayhorn', label: 'Billy Strayhorn' },
   { id: 'bob_dylan', label: 'Bob Dylan' },
   { id: 'brian_wilson', label: 'Brian Wilson' },
@@ -1316,6 +1317,7 @@ const ARRANGER_OPTIONS: { id: string; label: string }[] = [
   { id: 'sammy_nestico', label: 'Sammy Nestico' },
   { id: 'quincy_jones', label: 'Quincy Jones' },
   { id: 'bob_brookmeyer', label: 'Bob Brookmeyer' },
+  { id: 'holman', label: 'Bill Holman' },
   { id: 'clare_fischer', label: 'Clare Fischer' },
   { id: 'manny_albam', label: 'Manny Albam' },
   { id: 'oliver_nelson', label: 'Oliver Nelson' },
@@ -1351,6 +1353,7 @@ const ARRANGER_GROUP_CORE_ORDER: readonly string[] = [
   'quincy_jones',
   'gil_evans',
   'bob_brookmeyer',
+  'holman',
   'clare_fischer',
 ];
 

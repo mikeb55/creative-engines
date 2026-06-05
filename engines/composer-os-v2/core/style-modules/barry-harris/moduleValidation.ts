@@ -155,7 +155,9 @@ export function validateBarryHarrisConformance(
      *  Wayne Shorter post-bop: d2/d4/d5 device stack creates larger chromatic bass motion — widen to 18.
      *  Frank Zappa: intentionally disjunct bass — suppress this gate until mixed-meter export stabilises. */
     const maxBassJump =
-      metadata?.songwriterStyleId === 'wayne_shorter' || metadata?.songwriterStyleId === 'thelonious_monk'
+      metadata?.songwriterStyleId === 'wayne_shorter' ||
+      metadata?.songwriterStyleId === 'thelonious_monk' ||
+      metadata?.songwriterStyleId === 'bill_holman'
         ? 18
         : 14;
     if (

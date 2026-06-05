@@ -27,7 +27,9 @@ export type BigBandComposerId =
   | 'threadgill'
   | 'henry_threadgill'
   | 'garbarek'
-  | 'jan_garbarek';
+  | 'jan_garbarek'
+  | 'bill_holman'
+  | 'holman';
 
 export type BigBandEraId =
   | 'swing'

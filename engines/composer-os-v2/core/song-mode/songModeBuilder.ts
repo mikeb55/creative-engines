@@ -3421,6 +3421,11 @@ function chordSymbolsForSection(
     resolvedPoolId =
       tier === 0 ? 'garbarek_modal_field' : tier === 1 ? 'garbarek_drone_ritual' : 'garbarek_folk_chant';
   }
+  if (songwriterId === 'bill_holman') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0 ? 'holman_sax_soli' : tier === 1 ? 'holman_shout_spread' : 'holman_counterline';
+  }
   if (songwriterId === 'billy_strayhorn') {
     const tier = Math.abs(seed) % 3;
     resolvedPoolId =
@@ -3512,6 +3517,7 @@ function chordSymbolsForSection(
       songwriterId === 'berg' ||
       songwriterId === 'sammy_nestico' ||
       songwriterId === 'bob_brookmeyer' ||
+      songwriterId === 'bill_holman' ||
       songwriterId === 'clare_fischer' ||
       songwriterId === 'oliver_nelson' ||
       songwriterId === 'quincy_jones' ||
@@ -3523,6 +3529,14 @@ function chordSymbolsForSection(
     let rowTags = chosenRowTags;
     if (songwriterId === 'bob_brookmeyer') {
       rowTags = [...chosenRowTags, 'line_first:true', `brookmeyer_pool:${resolvedPoolId}`];
+    }
+    if (songwriterId === 'bill_holman') {
+      rowTags = [
+        ...rowTags,
+        'chartFirst:true',
+        'lineIndependence:true',
+        `holman_pool:${resolvedPoolId}`,
+      ];
     }
     if (songwriterId === 'oliver_nelson') {
       rowTags = [
