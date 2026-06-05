@@ -27,3 +27,4 @@ export * from './songModeEvaluationProfiles';
 export * from './wheelerStyleProfile';
 export * from './strayhornStyleProfile';
 export * from './sebeskyStyleProfile';
+export * from './ogermanStyleProfile';

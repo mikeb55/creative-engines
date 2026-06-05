@@ -275,7 +275,10 @@ export function runBehaviourGates(
   }
 
   let methenyValid = true;
-  if (styleModules.includes('metheny') && opts?.presetId !== 'ecm_chamber') {
+  const methenySongwriterId = opts?.compositionContext?.generationMetadata?.songwriterStyleId;
+  const skipMethenyForSongwriter =
+    methenySongwriterId === 'claus_ogerman' || methenySongwriterId === 'don_sebesky';
+  if (styleModules.includes('metheny') && opts?.presetId !== 'ecm_chamber' && !skipMethenyForSongwriter) {
     const metheny = validateMethenyConformance(guitarBarCount > 8 ? duoGateScore : score);
     methenyValid = metheny.valid;
     if (!metheny.valid) errors.push(...metheny.errors);

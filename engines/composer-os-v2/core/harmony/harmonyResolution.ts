@@ -655,6 +655,17 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
     return eberhardWeberEff[barIndex - 1]!;
   }
 
+  const coEff = meta?.clausOgermanEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'claus_ogerman' &&
+    Array.isArray(coEff) &&
+    coEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return coEff[barIndex - 1]!;
+  }
+
   const holmanEff = meta?.billHolmanEffectiveHarmonyBars;
   if (
     meta?.songwriterStyleId === 'bill_holman' &&

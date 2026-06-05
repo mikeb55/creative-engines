@@ -45,6 +45,10 @@ import type {
   WeberFieldPlan,
   EberhardWeberSliceParams,
 } from './song-mode/weberFieldSlice';
+import type {
+  ClausOgermanSliceParams,
+  OgermanContinuumPlan,
+} from './song-mode/clausOgermanSlice';
 import type { BillHolmanSliceParams } from './song-mode/billHolmanSlice';
 import type { CarlaBleySliceParams } from './song-mode/carlaBleySlice';
 import type { CarlaBleyEpisodePlan } from './song-mode/bleyEpisodeTypes';
@@ -1855,6 +1859,24 @@ export interface GenerationMetadata {
   eberhardWeberSliceReceipt?: string;
   eberhardWeberEffectiveHarmonyBars?: string[];
   eberhardWeberDeviceReceipts?: string[];
+  /** Claus Ogerman — orchestral continuum slice (`clausOgermanSlice.ts`, receipts `co:*`). */
+  clausOgermanDiagnostics?: {
+    songwriterId: 'claus_ogerman';
+    barsConsidered: number;
+    suspensionTouches: number;
+    innerVoiceTouches: number;
+    stringLayerTouches: number;
+    textureResolutionTouches: number;
+    orchestralModeTouches: number;
+    cellCount?: number;
+    sliceParams?: ClausOgermanSliceParams;
+    deviceReceipts?: string[];
+  };
+  clausOgermanContinuumPlan?: OgermanContinuumPlan;
+  clausOgermanSliceParams?: ClausOgermanSliceParams;
+  clausOgermanSliceReceipt?: string;
+  clausOgermanEffectiveHarmonyBars?: string[];
+  clausOgermanDeviceReceipts?: string[];
   /** Bill Holman — chart-first linear counterpoint slice (`billHolmanSlice.ts`). */
   billHolmanDiagnostics?: {
     songwriterId: 'bill_holman';

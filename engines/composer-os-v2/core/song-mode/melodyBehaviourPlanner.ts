@@ -431,6 +431,22 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
       modalIntervalPreference: true,
     },
   },
+  claus_ogerman: {
+    intervalTendency: 'stepwise',
+    rhythmicSubdivision: 'half_quarter',
+    repetitionVsVariationBias: 0.52,
+    phraseLength: 10,
+    contourProfile: 'wide_arc',
+    phraseAsymmetryTendency: 0.55,
+    cadenceFrequency: 'low',
+    devices: ['harmonic_suspension', 'inner_counterpoint', 'cyclic_cell', 'texture_resolution', 'string_continuum'],
+    malLeadHints: {
+      attackDensity: 'low',
+      interOnsetSpacing: 'wide',
+      avoidStrongBeatOneAttack: true,
+      modalIntervalPreference: true,
+    },
+  },
   john_coltrane: {
     intervalTendency: 'angular',
     rhythmicSubdivision: 'eighth_patterns',

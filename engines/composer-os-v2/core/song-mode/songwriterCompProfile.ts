@@ -99,6 +99,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   kenny_wheeler: 'flugelhorn',
   jan_garbarek: 'other',
   eberhard_weber: 'other',
+  claus_ogerman: 'keys',
   bill_holman: 'keys',
   carla_bley: 'keys',
   clare_fischer: 'keys',
@@ -530,6 +531,8 @@ export function getSongwriterCompProfile(raw: string | undefined | null): Songwr
       return KENNY_WHEELER_FLUGEL_COMP;
     case 'eberhard_weber':
       return genericKeysCompProfile('eberhard_weber');
+    case 'claus_ogerman':
+      return genericKeysCompProfile('claus_ogerman');
     case 'henry_threadgill':
       return HENRY_THREADGILL_KEYS_COMP;
     case 'charles_mingus':

@@ -667,6 +667,40 @@ const songwriterRules: Partial<Record<SongwriterRuleId, SongwritingRuleEntry[]>>
       'form'
     ),
   ],
+  claus_ogerman: [
+    R(
+      'ogerman.continuum_harmony',
+      'Orchestral continuum — harmony, inner-voice counterpoint, and string color generated as one system',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'ogerman.cyclic_cell',
+      '3-chord cyclic cells generate large harmonic spans — return to cell rather than V–I closure',
+      'songwriter',
+      'harmony',
+      9,
+      'form'
+    ),
+    R(
+      'ogerman.inner_counterpoint',
+      'Two or more inner lines move by m2/M2/m3 with common-tone retention across changes',
+      'songwriter',
+      'harmony',
+      8,
+      'verse'
+    ),
+    R(
+      'ogerman.texture_resolution',
+      'Release tension by registral descent, density thinning, or cell return — not functional cadence',
+      'songwriter',
+      'form',
+      8,
+      'chorus'
+    ),
+  ],
   clare_fischer: [
     R('fisch.poly_plan', 'Poly-planar voicings', 'songwriter', 'harmony', 9, 'verse'),
     R('fisch.latino_clave', 'Latin clave + jazz changes', 'songwriter', 'rhythm', 8, 'global'),

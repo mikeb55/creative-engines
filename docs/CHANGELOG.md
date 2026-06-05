@@ -2,6 +2,12 @@
 
 ### Added
 
+- **Claus Ogerman v2 Studio Orchestral composer (`co:*`)** — composed orchestral continuum slice (`clausOgermanSlice.ts`): harmonic suspension, inner-voice counterpoint, texture resolution, string layered sustain, cyclic 3-chord cells, veil/echo/commentary orchestra rotation; golden-path precompute + locked harmony routing + smoke **`ogermanSliceSmoke.test.ts`**.
+- **Ogerman VRB bundle** — **`ogermanVrbFingerprints.ts`** — 8 fingerprints + negative discriminators (Quincy / Sebesky / Jenkins-Riddle / riff-logic bleed); bundle id **`ogerman_continuum`**; aliases `claus_ogerman` / `ogerman` / `co`.
+- **Ogerman Big Band rules** — six named rules in **`bigBandRuleRegistry.ts`**: StringContinuum, InnerVoiceMotion, BrassEpisodic, ClimaxAccumulation, OrchestraRelation, CyclicCell.
+- **Ogerman evaluation profile** — **`ogermanStyleProfile.ts`** with pass/fail thresholds and negative discriminator hard fails.
+- **Ogerman assigned to Studio Orchestral Jazz** — **`composerGroupDefinitions.ts`** fully implemented; songwriter **`claus_ogerman`** + arranger **`ogerman`** in **`HomeGenerate.tsx`** Studio Orchestral optgroup.
+
 - **Eberhard Weber v2 Song Mode slice (`ew:*`)** — bass-led harmonic field architecture (`weberFieldSlice.ts`): pedal persistence, slow upper refresh, bass-as-harmony-source, revoicing-over-resolution; golden-path precompute + locked harmony routing + smoke **`weberFieldSliceSmoke.test.ts`**.
 - **Weber VRB bundle** — **`weberVrbFingerprints.ts`** — 8 fingerprints + negative discriminators; aliases `eberhard_weber` / `weber` / `weber_field`.
 - **Weber Big Band rules** — six named rules in **`bigBandRuleRegistry.ts`**: BassForeground, KeyboardPlane, WindLineLength, DrumColor, ResonantSilence, PedalField.

@@ -149,6 +149,51 @@ const HOLMAN_COMPOSER_RULES: BigBandRule[] = [
 ];
 
 /** Eberhard Weber — bass-led harmonic field over sustained pedal axis. */
+const OGERMAN_COMPOSER_RULES: BigBandRule[] = [
+  R(
+    'ogerman.string_continuum',
+    'StringContinuumRule: strings carry harmonic argument, registral shading, and counterpoint — divided 4–6 layers; moving middles required',
+    'composer',
+    'orchestration',
+    87
+  ),
+  R(
+    'ogerman.inner_voice_motion',
+    'InnerVoiceMotionRule: 2+ inner voices move by step or semitone across harmonic changes; block pad unanimity penalised',
+    'composer',
+    'harmony',
+    86
+  ),
+  R(
+    'ogerman.brass_episodic',
+    'BrassEpisodicRule: brass architectural and episodic — enters at formal climaxes only; coloristic wind doublings over power brass',
+    'composer',
+    'orchestration',
+    84
+  ),
+  R(
+    'ogerman.climax_accumulation',
+    'ClimaxAccumulationRule: climax by register accumulation and pedal tension over 8–32 bars — not brass punch or functional cadential release',
+    'composer',
+    'density',
+    85
+  ),
+  R(
+    'ogerman.orchestra_relation',
+    'OrchestraRelationRule: orchestra rotates veil/echo/commentary every 8–16 bars; static background beyond 8 bars penalised',
+    'composer',
+    'form',
+    83
+  ),
+  R(
+    'ogerman.cyclic_cell',
+    'CyclicCellRule: harmonic spans from 3-chord cyclic cells; return to cell rather than resolving functionally',
+    'composer',
+    'harmony',
+    86
+  ),
+];
+
 const WEBER_COMPOSER_RULES: BigBandRule[] = [
   R(
     'weber.bass_foreground',
@@ -300,6 +345,9 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
   weber: WEBER_COMPOSER_RULES,
   eberhard_weber: WEBER_COMPOSER_RULES,
   weber_field: WEBER_COMPOSER_RULES,
+  ogerman: OGERMAN_COMPOSER_RULES,
+  claus_ogerman: OGERMAN_COMPOSER_RULES,
+  ogerman_continuum: OGERMAN_COMPOSER_RULES,
   /** Quincy Jones — LA studio punch / crossover pop–jazz / tight rhythm-section locks. */
   quincy_jones: [
     R('quincy_jones.tight_brass', 'Brass punches locked to rhythm-section kicks & backbeats', 'composer', 'orchestration', 84),

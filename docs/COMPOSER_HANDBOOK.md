@@ -72,9 +72,9 @@ Engine: **`engines/composer-os-v2/core/groups/composerGroupEngine.ts`** · defin
 | `soloistSpotlight` | 0.75 | Solo as featured event |
 | `sectionalContrastMode` | `discrete` | Clear A / B / lift blocks |
 
-**Members (fully implemented):** Don Sebesky, Quincy Jones, Oliver Nelson, Sammy Nestico, Clare Fischer, Count Basie, Thad Jones, Bill Holman, Duke Ellington, Billy Strayhorn, Charles Mingus.
+**Members (fully implemented):** Don Sebesky, Quincy Jones, Oliver Nelson, Sammy Nestico, Clare Fischer, Count Basie, Thad Jones, Bill Holman, Duke Ellington, Billy Strayhorn, Charles Mingus, Claus Ogerman.
 
-**Partial / future:** Ogerman, Bob James, Mandel, Schifrin, Deodato, McFarland.
+**Partial / future:** Bob James, Mandel, Schifrin, Deodato, McFarland.
 
 ### Post-Bop Core
 
@@ -221,6 +221,7 @@ Canonical Song Mode / Big Band composers in **`engines/composer-os-v2`**. **Slic
 | Eberhard Weber | `eberhard_weber` | `ew:*` | fully implemented | Bass-led harmonic field: pedal persistence, slow upper refresh, revoicing over resolution | `pedalPersistence`, `upperChordRefreshRate`, `functionalCadenceRate`, `revoicingInsteadOfResolution`, `bassAsHarmonySource` |
 | Billy Strayhorn | `billy_strayhorn` | `bs:*` | fully implemented | Chromatic song architecture + extended-tone melody/harmony fusion | `chromaticContinuity`, `extendedToneMelody`, `parallelColorMotion`, `phraseArcLength`, `innerVoiceActivity`, `closedBlockSustain` |
 | Don Sebesky | `don_sebesky` | `ds:*` | fully implemented | CTI production-orchestra: groove bed, string halo, melody-legible reharm, tiered lifts | `groovePersistence`, `stringProminence`, `melodyLegibility`, `functionalLegibility`, `liftToBlareArc`, `soloistSpotlight`, `centerFillDensity` |
+| Claus Ogerman | `claus_ogerman` | `co:*` | fully implemented | Composed orchestral continuum: harmonic suspension, inner-voice counterpoint, texture resolution, cyclic cells | `harmonicSuspension`, `innerVoiceActivity`, `resolutionByTexture`, `stringContinuum`, `orchestralRelation` |
 | Carla Bley | `carla_bley` | `cbl:*` | fully implemented | Formal irony ECM: legible topics reframed by deadpan presentation and strategic displacement | `formalIronyIndex`, `deadpanPresentation`, `tonicLegibility`, `cadenceDeflection`, `motifContamination`, `climaxDeflation`, `repriseDefamiliarization` |
 | Bill Holman | `bill_holman` | `bh:*` | fully implemented | Chart-first linear counterpoint: lines generate harmony, sax soli, spread shout choruses | `lineIndependence`, `voiceLeadingSmoothness`, `saxSoliDensity`, `shoutChorusSpread`, `approachNoteWeight`, `countermelodyActivity` |
 
@@ -285,6 +286,38 @@ Sebesky is the **first CTI-world composer** in Composer OS. Every other orchestr
 **Reference works:** Wes Montgomery *Bumpin* · *A Day in the Life* (Beatles recast) · Freddie Hubbard *First Light* · Milt Jackson *Sunflower* · Jim Hall *Concierto* · *Giant Box* (Firebird / *Birds of Fire* synthesis).
 
 **Evaluation:** **`sebeskyStyleProfile.ts`** — pass when groove ≥ 0.70, strings ≥ 0.45, functional ≥ 0.60, lifts ≥ 2, center fill ≥ 0.65; hard fail on floating time, ECM porosity, Schneider slow-swell-only arcs, melody abstraction.
+
+---
+
+### Claus Ogerman (`claus_ogerman`)
+
+Ogerman is **not** a jazz arranger who adds strings. He is a **composer** who fuses jazz harmony, post-Romantic string writing, and post-serial color into **one syntax** — harmony, inner-voice counterpoint, and orchestral color generated as a single continuum.
+
+| | **Sebesky (CTI groove-orchestra)** | **Ogerman (orchestral continuum)** |
+|---|-------------------------------------|-------------------------------------|
+| Harmonic engine | Functional-plus-colour under tune | Upper extensions persist through root change as structural tones |
+| Inner voices | Center-filled pad / double | 2+ independent m2/M2/m3 lines; common-tone retention |
+| Resolution | Tiered lift-to-blare | Registral descent, density thinning, cyclic cell return — not V–I |
+| Strings | Halo / pad / swell support | 4–6 layered sustain + moving middles — harmonic argument |
+| Orchestra role | Answers and crowns soloist | Rotates veil / echo / commentary every 8–16 bars |
+
+**Song Mode slice** — **`clausOgermanSlice.ts`** (`co:*` receipts): 3-chord cyclic cells span large forms; harmonic suspension; inner-voice motion; texture resolution; string continuum layers; orchestral mode rotation.
+
+**Five parameters** (0–1, defaults in parentheses):
+
+| Parameter | Default | Musical role |
+|-----------|---------|--------------|
+| `harmonicSuspension` | 0.75 | 9ths/11ths/13ths persist through root changes |
+| `innerVoiceActivity` | 0.70 | Independent inner lines; 60–75% common-tone retention |
+| `resolutionByTexture` | 0.72 | Release by registral settling / thinning / cell return |
+| `stringContinuum` | 0.78 | 4–6 string layers; sustained upper + moving middles |
+| `orchestralRelation` | 0.65 | Veil / echo / commentary rotation — never static wallpaper |
+
+**Big Band arranger id:** **`ogerman`** (maps from UI **`claus_ogerman`**) — six rules: StringContinuum, InnerVoiceMotion, BrassEpisodic, ClimaxAccumulation, OrchestraRelation, CyclicCell.
+
+**VRB bundle id:** **`ogerman_continuum`** — 8 fingerprints + Quincy / Sebesky / Jenkins-Riddle / riff-logic negative discriminators.
+
+**Evaluation:** **`ogermanStyleProfile.ts`** — pass when harmonicSuspension ≥ 0.68, innerVoiceActivity ≥ 0.62, resolutionByTexture ≥ 0.65, stringContinuum ≥ 0.70, orchestral rotation present; hard fail on brass-punch dominance, sax-soli rhetoric, sentimental homophony, 2-bar riff form logic.
 
 ---
 

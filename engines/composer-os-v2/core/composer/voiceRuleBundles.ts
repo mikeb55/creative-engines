@@ -13,6 +13,7 @@ import { JAN_GARBAREK_VRF_FINGERPRINT_RECEIPTS } from './janGarbarekVrbFingerpri
 import { BILL_HOLMAN_VRF_FINGERPRINT_RECEIPTS } from './holmanVrbFingerprints';
 import { CARLA_BLEY_VRF_FINGERPRINT_RECEIPTS } from './carlaBleyVrbFingerprints';
 import { WEBER_FIELD_VRF_FINGERPRINT_RECEIPTS } from './weberVrbFingerprints';
+import { OGERMAN_CONTINUUM_VRF_FINGERPRINT_RECEIPTS } from './ogermanVrbFingerprints';
 import { BILLY_STRAYHORN_VRF_FINGERPRINT_RECEIPTS } from './billyStrayhornVrbFingerprints';
 import { DON_SEBESKY_VRF_FINGERPRINT_RECEIPTS } from './donSebeskyVrbFingerprints';
 import { WAYNE_SHORTER_WS_HARM_FINGERPRINTS } from './wayneShorterHarmFingerprints';
@@ -1323,6 +1324,48 @@ const WEBER_FIELD: VoiceRuleBundle = {
     registerInterlock: false,
     intervalPreference: 'modal_sparse',
   },
+};
+
+const OGERMAN_CONTINUUM: VoiceRuleBundle = {
+  voiceId: 'ogerman_continuum',
+  harmonicRhythm: {
+    minChordDurationBars: 2,
+    maxChordDurationBars: 6,
+    allowMidBarChange: false,
+  },
+  bassPolicy: {
+    role: 'pedal-or-drone',
+    allowOctaveDoubling: false,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 12,
+    maxSpreadSemitones: 52,
+    clusterSizeNotes: [6, 8],
+    forbidParallelFifths: false,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'diatonic-step',
+    maxLeapSemitones: 9,
+    preferredIntervalSets: [1, 2, 3, 4, 8, 9, 12],
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 2,
+    mutateSingleVoiceAtTime: true,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: OGERMAN_CONTINUUM_VRF_FINGERPRINT_RECEIPTS,
+  },
+  formPolicy: {
+    narrativeArc: 'continuous-curve',
+    sectionRecallEnforced: true,
+    noCadentialRelease: true,
+  },
+  rhythmPolicy: { antiMetric: false },
+  repairPolicy: {
+    resolveParallels: false,
+    maxVoiceOverlap: 4,
+  },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
 };
 
 const JAN_GARBAREK: VoiceRuleBundle = {
@@ -3675,6 +3718,10 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   eberhard_weber: WEBER_FIELD,
   weber: WEBER_FIELD,
   ew: WEBER_FIELD,
+  ogerman_continuum: OGERMAN_CONTINUUM,
+  claus_ogerman: OGERMAN_CONTINUUM,
+  ogerman: OGERMAN_CONTINUUM,
+  co: OGERMAN_CONTINUUM,
   john_coltrane: JOHN_COLTRANE,
   wayne_shorter: WAYNE_SHORTER,
   bill_evans: BILL_EVANS,

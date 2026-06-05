@@ -157,7 +157,8 @@ export function validateBarryHarrisConformance(
     const maxBassJump =
       metadata?.songwriterStyleId === 'wayne_shorter' ||
       metadata?.songwriterStyleId === 'thelonious_monk' ||
-      metadata?.songwriterStyleId === 'bill_holman'
+      metadata?.songwriterStyleId === 'bill_holman' ||
+      metadata?.songwriterStyleId === 'claus_ogerman'
         ? 18
         : 14;
     if (

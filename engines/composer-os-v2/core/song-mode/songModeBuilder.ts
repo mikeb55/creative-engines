@@ -3507,6 +3507,11 @@ function chordSymbolsForSection(
     resolvedPoolId =
       tier === 0 ? 'weber_pedal_field' : tier === 1 ? 'weber_bass_led_chamber' : 'weber_resonant_arc';
   }
+  if (songwriterId === 'claus_ogerman') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0 ? 'ogerman_cyclic_cell' : tier === 1 ? 'ogerman_string_continuum' : 'ogerman_texture_arc';
+  }
   if (songwriterId === 'bill_holman') {
     const tier = Math.abs(seed) % 3;
     resolvedPoolId =

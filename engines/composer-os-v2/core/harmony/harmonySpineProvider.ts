@@ -121,6 +121,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   { match: (m) => m?.songwriterStyleId === 'bill_holman', effKey: 'billHolmanEffectiveHarmonyBars', sliceId: 'bill_holman' },
   { match: (m) => m?.songwriterStyleId === 'carla_bley', effKey: 'carlaBleyEffectiveHarmonyBars', sliceId: 'carla_bley' },
   { match: (m) => m?.songwriterStyleId === 'eberhard_weber', effKey: 'eberhardWeberEffectiveHarmonyBars', sliceId: 'eberhard_weber' },
+  { match: (m) => m?.songwriterStyleId === 'claus_ogerman', effKey: 'clausOgermanEffectiveHarmonyBars', sliceId: 'claus_ogerman' },
   { match: (m) => m?.songwriterStyleId === 'bacharach', effKey: 'bacharachEffectiveHarmonyBars', sliceId: 'bacharach' },
   { match: (m) => m?.songwriterStyleId === 'donald_fagen', effKey: 'donaldFagenEffectiveHarmonyBars', sliceId: 'donald_fagen' },
   { match: (m) => m?.songwriterStyleId === 'ecm_chamber', effKey: 'ecmChamberEffectiveHarmonyBars', sliceId: 'ecm_chamber' },

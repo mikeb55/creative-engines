@@ -34,7 +34,10 @@ export type BigBandComposerId =
   | 'bley'
   | 'weber'
   | 'eberhard_weber'
-  | 'weber_field';
+  | 'weber_field'
+  | 'ogerman'
+  | 'claus_ogerman'
+  | 'ogerman_continuum';
 
 export type BigBandEraId =
   | 'swing'
