@@ -50,6 +50,7 @@ export type SongwriterRuleId =
   | 'kenny_wheeler'
   | 'jan_garbarek'
   | 'bill_holman'
+  | 'carla_bley'
   | 'clare_fischer'
   | 'manny_albam'
   | 'oliver_nelson'

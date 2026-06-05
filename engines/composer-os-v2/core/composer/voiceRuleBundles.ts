@@ -11,6 +11,7 @@ import {
 import { KENNY_WHEELER_VRF_FINGERPRINT_RECEIPTS } from './kennyWheelerVrbFingerprints';
 import { JAN_GARBAREK_VRF_FINGERPRINT_RECEIPTS } from './janGarbarekVrbFingerprints';
 import { BILL_HOLMAN_VRF_FINGERPRINT_RECEIPTS } from './holmanVrbFingerprints';
+import { CARLA_BLEY_VRF_FINGERPRINT_RECEIPTS } from './carlaBleyVrbFingerprints';
 import { BILLY_STRAYHORN_VRF_FINGERPRINT_RECEIPTS } from './billyStrayhornVrbFingerprints';
 import { DON_SEBESKY_VRF_FINGERPRINT_RECEIPTS } from './donSebeskyVrbFingerprints';
 import { WAYNE_SHORTER_WS_HARM_FINGERPRINTS } from './wayneShorterHarmFingerprints';
@@ -1374,6 +1375,55 @@ const BILL_HOLMAN: VoiceRuleBundle = {
     rhythmicIndependenceFloor: 0.68,
     registerInterlock: true,
     intervalPreference: 'diatonic',
+  },
+};
+
+const CARLA_BLEY: VoiceRuleBundle = {
+  voiceId: 'carla_bley',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 4,
+    allowMidBarChange: true,
+  },
+  bassPolicy: {
+    role: 'pedal-or-drone',
+    allowOctaveDoubling: false,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 6,
+    maxSpreadSemitones: 22,
+    clusterSizeNotes: [2, 5],
+    forbidParallelFifths: false,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'angular',
+    maxLeapSemitones: 12,
+    preferredIntervalSets: [2, 3, 4, 5, 7],
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 1,
+    mutateSingleVoiceAtTime: true,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: CARLA_BLEY_VRF_FINGERPRINT_RECEIPTS,
+  },
+  formPolicy: {
+    narrativeArc: 'suite',
+    sectionRecallEnforced: true,
+    noCadentialRelease: true,
+  },
+  rhythmPolicy: { antiMetric: false },
+  repairPolicy: {
+    resolveParallels: false,
+    maxVoiceOverlap: 4,
+  },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.4,
+    registerInterlock: false,
+    intervalPreference: 'modal_sparse',
   },
 };
 
@@ -3565,6 +3615,8 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   jan_garbarek: JAN_GARBAREK,
   bill_holman: BILL_HOLMAN,
   holman: BILL_HOLMAN,
+  carla_bley: CARLA_BLEY,
+  bley: CARLA_BLEY,
   garbarek: JAN_GARBAREK,
   jg: JAN_GARBAREK,
   john_coltrane: JOHN_COLTRANE,

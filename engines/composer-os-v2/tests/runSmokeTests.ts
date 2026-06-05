@@ -55,6 +55,7 @@ import { runOliverNelsonSliceSmokeTests } from './oliverNelsonSliceSmoke.test';
 import { runWheelerLyricSliceSmokeTests } from './wheelerLyricSliceSmoke.test';
 import { runJanGarbarekSliceSmokeTests } from './janGarbarekSliceSmoke.test';
 import { runBillHolmanSliceSmokeTests } from './billHolmanSliceSmoke.test';
+import { runCarlaBleySliceSmokeTests } from './carlaBleySliceSmoke.test';
 import { runBillyStrayhornSliceSmokeTests } from './billyStrayhornSliceSmoke.test';
 import { runDonSebeskySliceSmokeTests } from './donSebeskySliceSmoke.test';
 import { runEcmChamberVariantSweepTests } from './ecmChamberVariantSweep.test';
@@ -208,6 +209,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Kenny Wheeler songwriter slice', run: runWheelerLyricSliceSmokeTests },
   { label: 'Jan Garbarek songwriter slice', run: runJanGarbarekSliceSmokeTests },
   { label: 'Bill Holman songwriter slice', run: runBillHolmanSliceSmokeTests },
+  { label: 'Carla Bley songwriter slice', run: runCarlaBleySliceSmokeTests },
   { label: 'Billy Strayhorn songwriter slice', run: runBillyStrayhornSliceSmokeTests },
   { label: 'Don Sebesky songwriter slice', run: runDonSebeskySliceSmokeTests },
   { label: 'Oliver Nelson songwriter slice', run: runOliverNelsonSliceSmokeTests },

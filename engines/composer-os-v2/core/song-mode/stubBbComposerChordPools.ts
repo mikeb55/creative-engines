@@ -237,6 +237,30 @@ export const holman_counterline = chunk64((i) => {
   return [`${a}m9`, `${b}maj9(add9)`, `${c}m7`, `${d}maj13/${b}`];
 });
 
+export const bley_hymn_topic = chunk64((i) => {
+  const a = ROOTS[i % 12];
+  const b = ROOTS[(i + 5) % 12];
+  const c = ROOTS[(i + 7) % 12];
+  const d = ROOTS[(i + 10) % 12];
+  return [`${a}maj7(add9)`, `${b}sus4(add9)`, `${c}6/9`, `${d}maj7`];
+});
+
+export const bley_march_topic = chunk64((i) => {
+  const a = ROOTS[(i + 2) % 12];
+  const b = ROOTS[(i + 9) % 12];
+  const c = ROOTS[(i + 4) % 12];
+  const d = ROOTS[(i + 11) % 12];
+  return [`${a}maj7`, `${b}7`, `${c}maj7`, `${d}7`];
+});
+
+export const bley_ballad_topic = chunk64((i) => {
+  const a = ROOTS[(i + 1) % 12];
+  const b = ROOTS[(i + 6) % 12];
+  const c = ROOTS[(i + 3) % 12];
+  const d = ROOTS[(i + 8) % 12];
+  return [`${a}maj9`, `${b}6/9`, `${c}maj7`, `${d}6`];
+});
+
 /** Assign into `SONGWRITER_CHORD_POOLS` — three tiers per composer (seed % 3 resolver in builder). */
 export const STUB_BB_COMPOSER_CHORD_POOLS: Record<string, StubBbChordPoolShape> = {
   nestico_swing,
@@ -260,6 +284,9 @@ export const STUB_BB_COMPOSER_CHORD_POOLS: Record<string, StubBbChordPoolShape> 
   holman_sax_soli,
   holman_shout_spread,
   holman_counterline,
+  bley_hymn_topic,
+  bley_march_topic,
+  bley_ballad_topic,
   /** Messiaen Mode 2 — octatonic (1-2-1-2): dim7 / aug / dom7(b9) as colour (transpositions 1–3 via row). */
   messiaen_mode2: chunk64((i) => {
     const trans = (i % 3) + 1;

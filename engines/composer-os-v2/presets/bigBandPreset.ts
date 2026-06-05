@@ -60,6 +60,8 @@ export const bigBandPreset: Preset = {
       'jan_garbarek',
       'bill_holman',
       'holman',
+      'carla_bley',
+      'bley',
     ],
   },
 };

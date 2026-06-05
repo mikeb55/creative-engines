@@ -49,9 +49,9 @@ Engine: **`engines/composer-os-v2/core/groups/composerGroupEngine.ts`** · defin
 | `soloistSpotlight` | 0.45 | Solo as colour, not feature |
 | `sectionalContrastMode` | `gradual` | Sections melt into each other |
 
-**Members (fully implemented):** `maria_schneider`, `kenny_wheeler`, `gil_evans`, `henry_threadgill`, `bill_evans` (dual — default ECM), `pat_metheny`, `bob_brookmeyer`, `ecm_chamber`.
+**Members (fully implemented):** `maria_schneider`, `kenny_wheeler`, `gil_evans`, `henry_threadgill`, `bill_evans` (dual — default ECM), `pat_metheny`, `bob_brookmeyer`, `ecm_chamber`, **Jan Garbarek**, **Carla Bley**.
 
-**Partial / future:** Garbarek, Weber, Bley, Surman, Towner.
+**Partial / future:** Weber, Surman, Towner.
 
 ### Studio Orchestral Jazz
 
@@ -164,6 +164,7 @@ Compiled harmonic voice bundles live in **`engines/composer-os-v2/core/composer/
 | **Maria Schneider** (`maria_schneider`) | 11 | **deep** |
 | **Kenny Wheeler** (`kenny_wheeler`) | 12 | **deep** |
 | **Jan Garbarek** (`jan_garbarek`, alias `garbarek`) | 12 | **deep** |
+| **Carla Bley** (`carla_bley`, alias `bley`) | 12 | **deep** |
 | **Thad Jones** (`thad_jones`) | 12 | **deep** |
 | **Charles Mingus** (`charles_mingus`) | 11 | **deep** |
 | **Henry Threadgill** (`henry_threadgill`) | 26 | **deep** |
@@ -373,6 +374,55 @@ Garbarek is the most **melodically archetypal** voice in the **ECM Chamber Jazz*
 **Reference works:** *I Took Up the Runes* · *Visible World* · *Rites* · *All Those Born With Wings* · *Dis* · *Officium*
 
 **Evaluation:** **`garbarekStyleProfile.ts`** — pass on melodic sustain, pedal stability, slow harmonic rate, inner-voice restraint, modal identity, silence weighting, cadential openness; hard fail on Wheeler polyaxial independence, Schneider swell arcs, Threadgill anti-metric density, walking bass, fast harmony, ii–V–I closures.
+
+---
+
+### Carla Bley (`carla_bley`)
+
+Bley is the most **formally intelligent and ironically structured** voice in ECM Chamber Jazz. Music makes clarity itself ironic — surfaces may sound plain, hymn-like, or march-like, but composition lives in how that material is **repositioned, interrupted, hollowed out, or dryly re-voiced**.
+
+**Three pillars**
+
+1. **Formal irony** — sections behave like characters; material returns with altered meaning.
+2. **Deadpan presentation** — dynamic rhetoric and climax inflation stay lower than the material promises.
+3. **Tonal legibility with displacement** — center stays detectable; cadences sidestepped or drained of rhetorical payoff.
+
+**ECM separators**
+
+| | **Bley** | **Wheeler** | **Garbarek** | **Schneider** | **Threadgill** |
+|---|----------|-------------|--------------|---------------|----------------|
+| Move | Reframes legible topic | Suspends polyaxial field | Ritualizes modal center | Blooms orchestrally | Systematizes cells |
+| Cadence | Deadpan deflection | Open 6/9 / slash | Open modal / drone | Rich non-triadic swell | Pitch-set seams |
+| Texture | Low-gloss collage | Brittle chamber | Sparse ritual | Tiered narrative | Anti-metric bloom |
+
+**Irony mechanisms (musical rules)**
+
+| Mechanism | Rule |
+|-----------|------|
+| `climaxUnderCut` | Major build → within 4 bars: density drop, pause, or plain landing |
+| `topicMismatch` | Legible hymn/march/cabaret topic staged, then reframed by understatement |
+| `quotationWindow` | 5–15% stylized reference (march/hymn/cabaret) as comment, not development |
+| `repriseDefamiliarization` | Return with altered orchestration, register, harmony, or bar length |
+
+**Song Mode slice** — **`carlaBleySlice.ts`** (`cbl:*` receipts): topic staging → motif contamination → climax deflation → reprise with altered meaning.
+
+**Seven parameters** (0–1, defaults in parentheses):
+
+| Parameter | Default | Musical role | Sweet spot |
+|-----------|---------|--------------|------------|
+| `formalIronyIndex` | 0.70 | Probability section introduces legible topic then reframes it | 0.62–0.78 |
+| `deadpanPresentation` | 0.75 | Keeps swell/gloss below what material promises | 0.68–0.82 |
+| `tonicLegibility` | 0.65 | Tonal center detectable in 65%+ of sections | 0.58–0.72 |
+| `cadenceDeflection` | 0.60 | Dominant prep resolves away from root-position tonic | 0.52–0.68 |
+| `motifContamination` | 0.55 | Repeated phrases alter exactly one feature | 0.48–0.62 |
+| `climaxDeflation` | 0.55 | Major builds undercut within 1–4 bars | 0.48–0.62 |
+| `repriseDefamiliarization` | 0.65 | Returns with strongly altered domain | 0.58–0.72 |
+
+**Big Band arranger id:** **`bley`** — six rules (TopicStaging, RepriseReframing, ClimaxDeflation, DeadpanCadence, QuotationWindow, LowGlossOrchestration).
+
+**Reference works:** *Fancy Chamber Music* · *Trios* · *Andando el Tiempo* · *Life Goes On* · *Appearing Nightly* · *Big Band Theory*
+
+**Evaluation:** **`bleyStyleProfile.ts`** — pass on sectional irony ≥0.60, cadential dryness, tonal legibility with derailment, formal deflation, motivic contamination; hard fail on Wheeler slash independence, Schneider swell, Garbarek drone ritual, Threadgill cell fragmentation without topic play.
 
 ---
 

@@ -549,6 +549,12 @@ const songwriterRules: Partial<Record<SongwriterRuleId, SongwritingRuleEntry[]>>
     R('holman.voice_leading', 'Classical voice-leading gate on all soli', 'songwriter', 'harmony', 8, 'global'),
     R('holman.countermelody', 'Independent singable counter-lines', 'songwriter', 'melody', 8, 'chorus'),
   ],
+  carla_bley: [
+    R('bley.formal_irony', 'Legible style-topic introduced then reframed by understatement or displacement', 'songwriter', 'form', 9, 'global'),
+    R('bley.deadpan_presentation', 'Dynamic rhetoric and climax inflation kept lower than material promises', 'songwriter', 'orchestration', 9, 'verse'),
+    R('bley.cadence_deflection', 'Functional cadence sidestepped with dry wrong-note elegance', 'songwriter', 'harmony', 8, 'chorus'),
+    R('bley.climax_deflation', 'Major build gestures undercut within 1–4 bars', 'songwriter', 'density', 8, 'bridge'),
+  ],
   maria_schneider: [
     R(
       'schneider.voicing_language',

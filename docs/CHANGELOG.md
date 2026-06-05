@@ -2,6 +2,19 @@
 
 ---
 
+## [1.8.6] — 2026-06-05
+
+### Added
+
+- **Carla Bley v2 Song Mode slice (`cbl:*`)** — formal irony ECM architecture (`carlaBleySlice.ts`): topic staging → motif contamination → climax deflation → reprise with altered meaning; golden-path precompute + locked harmony routing + smoke **`carlaBleySliceSmoke.test.ts`**.
+- **Bley VRB bundle** — **`carlaBleyVrbFingerprints.ts`** — 12 fingerprints with probability targets; aliases `carla_bley` / `bley`.
+- **Bley Big Band rules** — six named rules in **`bigBandRuleRegistry.ts`**: TopicStaging, RepriseReframing, ClimaxDeflation, DeadpanCadence, QuotationWindow, LowGlossOrchestration.
+- **Bley evaluation profile** — **`bleyStyleProfile.ts`** with Garbarek / Schneider / Wheeler discrimination hard fails.
+- **Bley assigned to ECM Chamber Jazz** — **`composerGroupDefinitions.ts`** fully implemented; songwriter **`carla_bley`** + arranger **`bley`** in **`HomeGenerate.tsx`** ECM optgroup.
+- **`formalIronyIndex`** — new slice parameter type for irony-driven section reframing.
+
+---
+
 ## [1.8.5] — 2026-06-05
 
 ### Added

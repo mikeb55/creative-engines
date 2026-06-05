@@ -3426,6 +3426,11 @@ function chordSymbolsForSection(
     resolvedPoolId =
       tier === 0 ? 'holman_sax_soli' : tier === 1 ? 'holman_shout_spread' : 'holman_counterline';
   }
+  if (songwriterId === 'carla_bley') {
+    const tier = Math.abs(seed) % 3;
+    resolvedPoolId =
+      tier === 0 ? 'bley_hymn_topic' : tier === 1 ? 'bley_march_topic' : 'bley_ballad_topic';
+  }
   if (songwriterId === 'billy_strayhorn') {
     const tier = Math.abs(seed) % 3;
     resolvedPoolId =
@@ -3518,6 +3523,7 @@ function chordSymbolsForSection(
       songwriterId === 'sammy_nestico' ||
       songwriterId === 'bob_brookmeyer' ||
       songwriterId === 'bill_holman' ||
+      songwriterId === 'carla_bley' ||
       songwriterId === 'clare_fischer' ||
       songwriterId === 'oliver_nelson' ||
       songwriterId === 'quincy_jones' ||
@@ -3536,6 +3542,14 @@ function chordSymbolsForSection(
         'chartFirst:true',
         'lineIndependence:true',
         `holman_pool:${resolvedPoolId}`,
+      ];
+    }
+    if (songwriterId === 'carla_bley') {
+      rowTags = [
+        ...rowTags,
+        'formalIrony:true',
+        'deadpanPresentation:true',
+        `bley_pool:${resolvedPoolId}`,
       ];
     }
     if (songwriterId === 'oliver_nelson') {

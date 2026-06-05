@@ -29,7 +29,9 @@ export type BigBandComposerId =
   | 'garbarek'
   | 'jan_garbarek'
   | 'bill_holman'
-  | 'holman';
+  | 'holman'
+  | 'carla_bley'
+  | 'bley';
 
 export type BigBandEraId =
   | 'swing'

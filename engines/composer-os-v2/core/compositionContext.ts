@@ -42,6 +42,8 @@ import type {
   JanGarbarekSliceParams,
 } from './song-mode/janGarbarekSlice';
 import type { BillHolmanSliceParams } from './song-mode/billHolmanSlice';
+import type { CarlaBleySliceParams } from './song-mode/carlaBleySlice';
+import type { CarlaBleyEpisodePlan } from './song-mode/bleyEpisodeTypes';
 import type { BasieEpisodePlan } from './song-mode/basieEpisodeTypes';
 import type { BasieTestamentMode } from './song-mode/basieSlice';
 import type {
@@ -1846,6 +1848,27 @@ export interface GenerationMetadata {
   billHolmanSliceReceipt?: string;
   billHolmanEffectiveHarmonyBars?: string[];
   billHolmanDeviceReceipts?: string[];
+  /** Carla Bley — formal irony ECM slice (`carlaBleySlice.ts`, receipts `cbl:*`). */
+  carlaBleyDiagnostics?: {
+    songwriterId: 'carla_bley';
+    barsConsidered: number;
+    ironyTouches: number;
+    deflationTouches: number;
+    deadpanTouches: number;
+    plainChordTouches: number;
+    repriseTouches: number;
+    topicStagingTouches: number;
+    episodeCount?: number;
+    formalIronyIndex?: number;
+    deviceReceipts?: string[];
+  };
+  carlaBleySliceParams?: CarlaBleySliceParams;
+  carlaBleyEpisodePlan?: CarlaBleyEpisodePlan;
+  carlaBleyEpisodePlanSummary?: string;
+  carlaBleyDeflationPivotBar?: number;
+  carlaBleySliceReceipt?: string;
+  carlaBleyEffectiveHarmonyBars?: string[];
+  carlaBleyDeviceReceipts?: string[];
   /** Count Basie — Kansas City swing / riff-head slice (`basieSlice.ts`). */
   basieTestamentMode?: BasieTestamentMode;
   basieResolvedTestament?: BasieTestamentMode;
@@ -2477,6 +2500,8 @@ export interface CompositionContext {
   lineFirstHierarchy?: boolean;
   /** When true, chart-first linear lines generate harmony (`billHolmanSlice.ts`). */
   chartFirstLinearHierarchy?: boolean;
+  /** When true, formal irony topics reframe harmony (`carlaBleySlice.ts`). */
+  formalIronyHierarchy?: boolean;
   /** V65 P1 — Song schema document (section architecture); bridged at pipeline entry. */
   song?: import('./section-architecture/sectionArchitectureTypes').Song;
 }

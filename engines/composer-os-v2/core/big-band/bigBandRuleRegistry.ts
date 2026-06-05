@@ -148,6 +148,52 @@ const HOLMAN_COMPOSER_RULES: BigBandRule[] = [
   ),
 ];
 
+/** Carla Bley — formal irony: legible topics reframed by deadpan presentation. */
+const CARLA_BLEY_COMPOSER_RULES: BigBandRule[] = [
+  R(
+    'bley.topic_staging',
+    'TopicStagingRule: sections open with a clearly legible style-topic (hymn, march, cabaret, ballad, chamber dance) detectable within 4 bars with distinct instrumentation signature',
+    'composer',
+    'form',
+    86
+  ),
+  R(
+    'bley.reprise_reframing',
+    'RepriseReframingRule: when material returns at least one domain strongly altered — orchestration, register, harmonic support, tempo feel, or bar extension; pure literal reprise fails',
+    'composer',
+    'form',
+    85
+  ),
+  R(
+    'bley.climax_deflation',
+    'ClimaxDeflationRule: every major orchestral build followed within 4 bars by 40%+ density reduction, pause, plain tonic-family landing, or comic thin scoring',
+    'composer',
+    'density',
+    84
+  ),
+  R(
+    'bley.deadpan_cadence',
+    'DeadpanCadenceRule: major phrase endings avoid full-density root-confirming emotionally affirmative closure in ≥60% of cadential events',
+    'composer',
+    'harmony',
+    83
+  ),
+  R(
+    'bley.quotation_window',
+    'QuotationWindowRule: brief idiomatic reference (march, hymn, cabaret, tango, church, fanfare) at 5–15% duration; quotation is comment not development',
+    'composer',
+    'form',
+    82
+  ),
+  R(
+    'bley.low_gloss_orchestration',
+    'LowGlossOrchestrationRule: suppress continuous atmospheric pad writing; sustained bloom over 8 consecutive bars requires formal justification',
+    'composer',
+    'orchestration',
+    81
+  ),
+];
+
 const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
   ellington: [
     R('ellington.counterpoint_density', '≥2 independent lines when not thin', 'composer', 'density', 82),
@@ -203,6 +249,8 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
   jan_garbarek: JAN_GARBAREK_COMPOSER_RULES,
   bill_holman: HOLMAN_COMPOSER_RULES,
   holman: HOLMAN_COMPOSER_RULES,
+  carla_bley: CARLA_BLEY_COMPOSER_RULES,
+  bley: CARLA_BLEY_COMPOSER_RULES,
   /** Quincy Jones — LA studio punch / crossover pop–jazz / tight rhythm-section locks. */
   quincy_jones: [
     R('quincy_jones.tight_brass', 'Brass punches locked to rhythm-section kicks & backbeats', 'composer', 'orchestration', 84),
