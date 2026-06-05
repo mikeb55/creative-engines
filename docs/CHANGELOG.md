@@ -1,5 +1,11 @@
 ## [Unreleased]
 
+## [2.0.1] - 2026-06-05
+
+- feat(verlaine): ship Tom Verlaine as first-class v2 art-rock composer (`tv:*`)
+- feat(ui): expose 6 riff VRB stubs in songwriter dropdown (EVH, Holdsworth, Sonic Youth, Wes, Joe Pass, Scott Henderson)
+- chore(dist): rebuild exe v2.0.1
+
 ### Added
 
 - **UI — riff VRB stub_exposed dropdown** — **`HomeGenerate.tsx`** surfaces six existing riff **`VoiceRuleBundle`** stubs in songwriter + arranger production-world optgroups: Eddie Van Halen (`EVH:*`), Allan Holdsworth (`AH:*`), Sonic Youth (`SY:*`), Wes Montgomery (`WM:*`), Joe Pass (`JP:*`), Scott Henderson (`SH:*`). VRB present; Song Mode golden-path slices pending.
@@ -30,8 +36,6 @@
 - **Towner evaluation profile** — **`townerStyleProfile.ts`** with pass/fail thresholds and ECM negative discriminators.
 - **Towner assigned to ECM Chamber Jazz** — **`composerGroupDefinitions.ts`** **`ECM_CHAMBER_JAZZ`** group; songwriter **`ralph_towner`** + arranger **`towner`** in **`HomeGenerate.tsx`** ECM optgroup.
 
-### Added
-
 - **John Surman v2 ECM composer (`js:*`)** — British folk-minimalist slice (`johnSurmanSlice.ts`): folk modal centers, minimalist ostinato, dark reed register, structural silence; golden-path precompute + locked harmony routing + smoke **`surmanFolkModalSmoke.test.ts`** seed **97001**.
 - **Surman VRB bundle** — **`surmanVrbFingerprints.ts`** — 8 fingerprints + negative discriminators (Garbarek / Wheeler / Weber / Bley / jazz bleed); bundle id **`surman_folk_modal`**; aliases `john_surman` / `surman` / `js`.
 - **Surman Big Band rules** — five named rules in **`bigBandRuleRegistry.ts`**: FolkModalHarmony, DarkReedMelody, MinimalistOstinato, ChamberSpace, FolkPhraseContour.
@@ -47,8 +51,6 @@
 - **UI — McCoy Tyner** — added to primary songwriter dropdown; quartal slice already in golden path.
 - **UI — Gershwin / Cole Porter** — added as primary songwriter entries (arranger rows unchanged); slices already wired.
 - **UI — Ornette Coleman** — confirmed **In library** songwriter row + VRB stub profile (no golden-path slice this pass).
-
-### Added
 
 - **Lalo Schifrin v2 Film composer (`ls:*`)** — groove-native jazz-Latin film slice (`laloSchifrinSlice.ts`): odd-meter riff accents, Latin percussion grid, brass attack strata, modal altered vamps, compact motivic cells; golden-path precompute + locked harmony routing + **`filmComposerSlices.test.ts`** seed **94001**.
 - **Schifrin VRB bundle** — **`schifrinVrbFingerprints.ts`** — 8 fingerprints + negative discriminators (Herrmann / Morricone / Goldsmith / Mancini bleed); bundle id **`schifrin_groove`**; aliases `lalo_schifrin` / `schifrin` / `ls`.
