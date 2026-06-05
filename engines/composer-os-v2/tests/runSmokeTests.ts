@@ -56,6 +56,7 @@ import { runWheelerLyricSliceSmokeTests } from './wheelerLyricSliceSmoke.test';
 import { runJanGarbarekSliceSmokeTests } from './janGarbarekSliceSmoke.test';
 import { runSurmanFolkModalSmokeTests } from './surmanFolkModalSmoke.test';
 import { runTownerGuitarPolySmokeTests } from './townerGuitarPolySmoke.test';
+import { runMandelLyricWarmthSmokeTests } from './mandelLyricWarmthSmoke.test';
 import { runWeberFieldSliceSmokeTests } from './weberFieldSliceSmoke.test';
 import { runOgermanSliceSmokeTests } from './ogermanSliceSmoke.test';
 import { runBillHolmanSliceSmokeTests } from './billHolmanSliceSmoke.test';
@@ -225,6 +226,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Jan Garbarek songwriter slice', run: runJanGarbarekSliceSmokeTests },
   { label: 'John Surman songwriter slice', run: runSurmanFolkModalSmokeTests },
   { label: 'Ralph Towner songwriter slice', run: runTownerGuitarPolySmokeTests },
+  { label: 'Johnny Mandel songwriter slice', run: runMandelLyricWarmthSmokeTests },
   { label: 'Eberhard Weber songwriter slice', run: runWeberFieldSliceSmokeTests },
   { label: 'Claus Ogerman songwriter slice', run: runOgermanSliceSmokeTests },
   { label: 'Bill Holman songwriter slice', run: runBillHolmanSliceSmokeTests },

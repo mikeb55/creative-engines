@@ -2,6 +2,12 @@
 
 ### Added
 
+- **Johnny Mandel v2 Studio Orchestral composer (`jmd:*`)** — melody-forward lyric warmth slice (`johnnyMandelSlice.ts`): song-centered melody on extensions, mechanical inner-voice warmth, Hollywood-jazz orchestral framing; golden-path precompute + locked harmony routing + smoke **`mandelLyricWarmthSmoke.test.ts`** seed **99001**. Receipt prefix **`jmd:*`** (not `jm:*` — Joni Mitchell owns `jm:*`).
+- **Mandel VRB bundle** — **`mandelVrbFingerprints.ts`** — 8 fingerprints + negative discriminators (Ogerman / Quincy / Sebesky / Nelson / Nestico bleed); bundle id **`mandel_lyric_warmth`**; aliases `johnny_mandel` / `mandel` / `jmd`.
+- **Mandel Big Band rules** — six named rules in **`bigBandRuleRegistry.ts`**: MelodyForward, InnerVoiceWarmth, BorrowedMinor, WarmBrass, OrchestraFraming, SoftenedCadence.
+- **Mandel evaluation profile** — **`mandelStyleProfile.ts`** with pass/fail thresholds and Studio Orchestral negative discriminators.
+- **Mandel assigned to Studio Orchestral Jazz** — **`composerGroupDefinitions.ts`** **`STUDIO_ORCHESTRAL_JAZZ`** group; songwriter **`johnny_mandel`** + arranger **`mandel`** in **`HomeGenerate.tsx`** Studio Orchestral optgroup.
+
 - **Ralph Towner v2 ECM composer (`rt:*`)** — guitar-born polyphonic slice (`ralphTownerSlice.ts`): fingerstyle voicing, melody-from-arpeggio, open-string resonance, slow harmonic fields, classical counterpoint; golden-path precompute + locked harmony routing + smoke **`townerGuitarPolySmoke.test.ts`** seed **98001**.
 - **Towner VRB bundle** — **`townerVrbFingerprints.ts`** — 8 fingerprints + negative discriminators (Garbarek / Wheeler / Weber / Surman / Bley / generic classical guitar); bundle id **`towner_guitar_polyphony`**; aliases `ralph_towner` / `towner` / `rt`.
 - **Towner Big Band rules** — five named rules in **`bigBandRuleRegistry.ts`**: GuitarBornHarmony, MelodyFromVoicing, ResonanceArchitecture, ClassicalCounterpoint, ChamberDialogue.

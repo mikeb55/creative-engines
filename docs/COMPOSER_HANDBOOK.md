@@ -72,9 +72,9 @@ Engine: **`engines/composer-os-v2/core/groups/composerGroupEngine.ts`** · defin
 | `soloistSpotlight` | 0.75 | Solo as featured event |
 | `sectionalContrastMode` | `discrete` | Clear A / B / lift blocks |
 
-**Members (fully implemented):** Don Sebesky, Quincy Jones, Oliver Nelson, Sammy Nestico, Clare Fischer, Count Basie, Thad Jones, Bill Holman, Duke Ellington, Billy Strayhorn, Charles Mingus, Claus Ogerman.
+**Members (fully implemented):** Don Sebesky, Quincy Jones, Oliver Nelson, Sammy Nestico, Clare Fischer, Count Basie, Thad Jones, Bill Holman, Duke Ellington, Billy Strayhorn, Charles Mingus, Claus Ogerman, Johnny Mandel.
 
-**Partial / future:** Bob James, Mandel, Deodato, McFarland.
+**Partial / future:** Bob James, Deodato, McFarland.
 
 ### Film Soundtrack
 
@@ -245,6 +245,7 @@ Canonical Song Mode / Big Band composers in **`engines/composer-os-v2`**. **Slic
 | Billy Strayhorn | `billy_strayhorn` | `bs:*` | fully implemented | Chromatic song architecture + extended-tone melody/harmony fusion | `chromaticContinuity`, `extendedToneMelody`, `parallelColorMotion`, `phraseArcLength`, `innerVoiceActivity`, `closedBlockSustain` |
 | Don Sebesky | `don_sebesky` | `ds:*` | fully implemented | CTI production-orchestra: groove bed, string halo, melody-legible reharm, tiered lifts | `groovePersistence`, `stringProminence`, `melodyLegibility`, `functionalLegibility`, `liftToBlareArc`, `soloistSpotlight`, `centerFillDensity` |
 | Claus Ogerman | `claus_ogerman` | `co:*` | fully implemented | Composed orchestral continuum: harmonic suspension, inner-voice counterpoint, texture resolution, cyclic cells | `harmonicSuspension`, `innerVoiceActivity`, `resolutionByTexture`, `stringContinuum`, `orchestralRelation` |
+| Johnny Mandel | `johnny_mandel` | `jmd:*` | fully implemented | Melody-forward Studio Orchestral warmth: extensions on tune, semitone inner motion, borrowed iv-minor, softened 6/9 cadences, orchestra frames soloist | `melodyForward`, `mechanicalWarmth`, `songHarmony`, `orchestralFraming`, `hollywoodAwareness` |
 | Carla Bley | `carla_bley` | `cbl:*` | fully implemented | Formal irony ECM: legible topics reframed by deadpan presentation and strategic displacement | `formalIronyIndex`, `deadpanPresentation`, `tonicLegibility`, `cadenceDeflection`, `motifContamination`, `climaxDeflation`, `repriseDefamiliarization` |
 | Bill Holman | `bill_holman` | `bh:*` | fully implemented | Chart-first linear counterpoint: lines generate harmony, sax soli, spread shout choruses | `lineIndependence`, `voiceLeadingSmoothness`, `saxSoliDensity`, `shoutChorusSpread`, `approachNoteWeight`, `countermelodyActivity` |
 

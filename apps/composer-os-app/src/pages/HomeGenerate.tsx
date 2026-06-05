@@ -723,6 +723,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'mahler', label: 'Mahler' },
   { id: 'maria_schneider', label: 'Maria Schneider' },
   { id: 'don_sebesky', label: 'Don Sebesky' },
+  { id: 'johnny_mandel', label: 'Johnny Mandel' },
   { id: 'claus_ogerman', label: 'Claus Ogerman' },
   { id: 'jan_garbarek', label: 'Jan Garbarek' },
   { id: 'john_surman', label: 'John Surman' },
@@ -991,6 +992,7 @@ const SONGWRITER_GROUP_SHIPPED_ORDER: readonly string[] = [
   'herbie_hancock',
   'billy_strayhorn',
   'don_sebesky',
+  'johnny_mandel',
   'claus_ogerman',
 ];
 
@@ -1352,6 +1354,7 @@ const ARRANGER_OPTIONS: { id: string; label: string }[] = [
   { id: 'gerald_wilson', label: 'Gerald Wilson' },
   { id: 'neal_hefti', label: 'Neal Hefti' },
   { id: 'don_sebesky', label: 'Don Sebesky' },
+  { id: 'mandel', label: 'Johnny Mandel' },
   { id: 'ogerman', label: 'Claus Ogerman' },
   { id: 'schifrin', label: 'Lalo Schifrin' },
   /** SQ VRB arrangers — surfaced only on the String Quartet preset. */

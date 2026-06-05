@@ -406,6 +406,12 @@ import {
   resolveDonSebeskySliceParams,
 } from './donSebeskySlice';
 import {
+  accumulateJohnnyMandelHarmonyDiagnostics,
+  createJohnnyMandelHarmonyAccumulator,
+  finalizeJohnnyMandelMetadata,
+  precomputeJohnnyMandelEffectiveHarmonyBars,
+} from './johnnyMandelSlice';
+import {
   accumulateBacharachHarmonyDiagnostics,
   createBacharachHarmonyAccumulator,
   finalizeBacharachMetadata,
@@ -2852,6 +2858,8 @@ function buildGuitarPart(
     normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'quincy_jones';
   const isSongwriterDonSebesky =
     normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'don_sebesky';
+  const isSongwriterJohnnyMandel =
+    normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'johnny_mandel';
   const isSongwriterFrippKingCrimson = genMeta?.songwriterStyleId === 'fripp_king_crimson';
   const bwAccum = createBrianWilsonHarmonyAccumulator();
   const swAccum = createStevieWonderHarmonyAccumulator();
@@ -2899,6 +2907,7 @@ function buildGuitarPart(
   const nelsonAccum = createOliverNelsonHarmonyAccumulator();
   const qjJonesAccum = createQuincyJonesHarmonyAccumulator();
   const dsSebeskyAccum = createDonSebeskyHarmonyAccumulator();
+  const jmdAccum = createJohnnyMandelHarmonyAccumulator();
   const baAccum = createBacharachHarmonyAccumulator();
   const dfAccum = createDonaldFagenHarmonyAccumulator();
   const eccAccum = createEcmChamberHarmonyAccumulator();
@@ -3093,6 +3102,9 @@ function buildGuitarPart(
   }
   if (isSongwriterDonSebesky && isDuoGoldenPath) {
     precomputeDonSebeskyEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterJohnnyMandel && isDuoGoldenPath) {
+    precomputeJohnnyMandelEffectiveHarmonyBars(context);
   }
   if (isSongwriterBacharach && isDuoGoldenPath) {
     precomputeBacharachEffectiveHarmonyBars(context);
@@ -3589,6 +3601,13 @@ function buildGuitarPart(
         b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
         resolveBarSymbol(context, b).symbol,
         dsSebeskyAccum
+      );
+    }
+    if (isSongwriterJohnnyMandel) {
+      accumulateJohnnyMandelHarmonyDiagnostics(
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
+        jmdAccum
       );
     }
     if (isSongwriterBacharach) {
@@ -4552,6 +4571,13 @@ function buildGuitarPart(
       context.generationMetadata,
       dsSebeskyAccum,
       resolveDonSebeskySliceParams(context.generationMetadata)
+    );
+  }
+  if (isSongwriterJohnnyMandel && context.generationMetadata) {
+    finalizeJohnnyMandelMetadata(
+      context.generationMetadata,
+      jmdAccum,
+      context.generationMetadata.johnnyMandelDeviceReceipts
     );
   }
 

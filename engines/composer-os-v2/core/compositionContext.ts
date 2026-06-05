@@ -57,6 +57,10 @@ import type {
   ClausOgermanSliceParams,
   OgermanContinuumPlan,
 } from './song-mode/clausOgermanSlice';
+import type {
+  JohnnyMandelSliceParams,
+  MandelLyricWarmthPlan,
+} from './song-mode/johnnyMandelSlice';
 import type { LaloSchifrinSliceParams } from './song-mode/laloSchifrinSlice';
 import type { BillHolmanSliceParams } from './song-mode/billHolmanSlice';
 import type { CarlaBleySliceParams } from './song-mode/carlaBleySlice';
@@ -1552,6 +1556,24 @@ export interface GenerationMetadata {
   donSebeskySliceParams?: DonSebeskySliceParams;
   donSebeskyProductionSections?: SebeskyProductionSection[];
   donSebeskyLiftEventCount?: number;
+  /** Johnny Mandel — melody-forward Studio Orchestral warmth slice (`johnnyMandelSlice.ts`, receipts `jmd:*`). */
+  johnnyMandelDiagnostics?: {
+    songwriterId: 'johnny_mandel';
+    barsConsidered: number;
+    extensionTouches: number;
+    innerWarmthTouches: number;
+    borrowedIvTouches: number;
+    softenedCadenceTouches: number;
+    brassCushionTouches: number;
+    minPhraseSpan?: number;
+    sliceParams?: JohnnyMandelSliceParams;
+    deviceReceipts?: string[];
+  };
+  mandelLyricWarmthPlan?: MandelLyricWarmthPlan;
+  johnnyMandelSliceParams?: JohnnyMandelSliceParams;
+  johnnyMandelSliceReceipt?: string;
+  johnnyMandelEffectiveHarmonyBars?: string[];
+  johnnyMandelDeviceReceipts?: string[];
   /** George Gershwin — Songbook / concert jazz harmony (`gershwinSlice.ts`). */
   gershwinDiagnostics?: {
     songwriterId: 'gershwin';

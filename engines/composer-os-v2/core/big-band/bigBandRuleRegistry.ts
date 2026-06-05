@@ -318,6 +318,51 @@ const OGERMAN_COMPOSER_RULES: BigBandRule[] = [
   ),
 ];
 
+const MANDEL_COMPOSER_RULES: BigBandRule[] = [
+  R(
+    'mandel.melody_forward',
+    'MelodyForwardRule: primary melody drives harmonic language; lands on extensions at strong points; 4–8 bar lyrical arcs; conjunct with expressive leaps at peaks',
+    'composer',
+    'harmony',
+    86
+  ),
+  R(
+    'mandel.inner_voice_warmth',
+    'InnerVoiceWarmthRule: semitone/whole-step inner motion at most chord changes; common tones retained; contrary/oblique to melody — precision warmth not orchestral mass',
+    'composer',
+    'harmony',
+    85
+  ),
+  R(
+    'mandel.borrowed_minor',
+    'BorrowedMinorRule: borrowed iv-minor inflection as structural warmth device embedded in progression — not decorative',
+    'composer',
+    'harmony',
+    83
+  ),
+  R(
+    'mandel.warm_brass',
+    'WarmBrassRule: brass as chorale/cushion/pad; rounded attack by voicing/register; mid-register bias; suppress punchy unison stabs',
+    'composer',
+    'orchestration',
+    84
+  ),
+  R(
+    'mandel.orchestra_framing',
+    'OrchestraFramingRule: orchestra frames soloist; selective countermelodies; dense continuous commentary penalised; tuttis as formal support',
+    'composer',
+    'orchestration',
+    82
+  ),
+  R(
+    'mandel.softened_cadence',
+    'SoftenedCadenceRule: resolve clearly but arrive on 6/9 or extended tonic; plain triad tonic arrival penalised; inner extensions retained at endings',
+    'composer',
+    'harmony',
+    85
+  ),
+];
+
 const WEBER_COMPOSER_RULES: BigBandRule[] = [
   R(
     'weber.bass_foreground',
@@ -478,6 +523,9 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
   ogerman: OGERMAN_COMPOSER_RULES,
   claus_ogerman: OGERMAN_COMPOSER_RULES,
   ogerman_continuum: OGERMAN_COMPOSER_RULES,
+  mandel: MANDEL_COMPOSER_RULES,
+  johnny_mandel: MANDEL_COMPOSER_RULES,
+  mandel_lyric_warmth: MANDEL_COMPOSER_RULES,
   schifrin: SCHIFRIN_COMPOSER_RULES,
   lalo_schifrin: SCHIFRIN_COMPOSER_RULES,
   schifrin_groove: SCHIFRIN_COMPOSER_RULES,

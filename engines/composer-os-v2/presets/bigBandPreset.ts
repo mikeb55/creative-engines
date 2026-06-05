@@ -74,6 +74,9 @@ export const bigBandPreset: Preset = {
       'towner',
       'ralph_towner',
       'towner_guitar_polyphony',
+      'mandel',
+      'johnny_mandel',
+      'mandel_lyric_warmth',
     ],
   },
 };

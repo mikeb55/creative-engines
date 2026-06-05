@@ -502,6 +502,21 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   }
 
   /**
+   * Johnny Mandel: `precomputeJohnnyMandelEffectiveHarmonyBars` applies melody-forward lyric warmth voicing.
+   * After precompute, `johnnyMandelEffectiveHarmonyBars` is full-form and authoritative.
+   */
+  const mandelEff = meta?.johnnyMandelEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'johnny_mandel' &&
+    Array.isArray(mandelEff) &&
+    mandelEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return mandelEff[barIndex - 1]!;
+  }
+
+  /**
    * Gershwin: `precomputeGershwinEffectiveHarmonyBars` applies Songbook / chromatic / rhythm grid devices — receipts **`gg:*`**.
    */
   const ggEff = meta?.gershwinEffectiveHarmonyBars;

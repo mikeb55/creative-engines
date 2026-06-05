@@ -111,6 +111,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   gerald_wilson: 'keys',
   neal_hefti: 'keys',
   don_sebesky: 'keys',
+  johnny_mandel: 'keys',
   arcade_fire: 'keys',
   blur: 'keys',
   pavement: 'keys',

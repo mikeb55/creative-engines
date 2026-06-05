@@ -46,7 +46,10 @@ export type BigBandComposerId =
   | 'surman_folk_modal'
   | 'towner'
   | 'ralph_towner'
-  | 'towner_guitar_polyphony';
+  | 'towner_guitar_polyphony'
+  | 'mandel'
+  | 'johnny_mandel'
+  | 'mandel_lyric_warmth';
 
 export type BigBandEraId =
   | 'swing'

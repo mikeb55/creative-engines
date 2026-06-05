@@ -134,6 +134,7 @@ const BIG_BAND_CHARTS = new Set<string>([
   'gerald_wilson',
   'neal_hefti',
   'don_sebesky',
+  'johnny_mandel',
 ]);
 
 /**

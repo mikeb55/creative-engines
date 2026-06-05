@@ -84,6 +84,7 @@ import { townerStyleProfile } from '../core/evaluation/townerStyleProfile';
 import { ogermanStyleProfile } from '../core/evaluation/ogermanStyleProfile';
 import { quincyStyleProfile } from '../core/evaluation/quincyStyleProfile';
 import { sebeskyStyleProfile } from '../core/evaluation/sebeskyStyleProfile';
+import { mandelStyleProfile } from '../core/evaluation/mandelStyleProfile';
 import { thadJonesStyleProfile } from '../core/evaluation/thadJonesStyleProfile';
 import { gilEvansStyleProfile } from '../core/evaluation/gilEvansStyleProfile';
 import { bobBrookmeyerStyleProfile } from '../core/evaluation/bobBrookmeyerStyleProfile';
@@ -2576,6 +2577,10 @@ function bigBandEvaluationStyleProfile(
       return quincyStyleProfile;
     case 'sebesky':
       return sebeskyStyleProfile;
+    case 'mandel':
+    case 'johnny_mandel':
+    case 'mandel_lyric_warmth':
+      return mandelStyleProfile;
     case 'thad_jones':
     case 'thad':
       return thadJonesStyleProfile;

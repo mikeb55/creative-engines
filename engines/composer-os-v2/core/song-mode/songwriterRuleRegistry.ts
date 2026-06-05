@@ -805,6 +805,14 @@ const songwriterRules: Partial<Record<SongwriterRuleId, SongwritingRuleEntry[]>>
     R('seb.dramatic_mod', 'Dramatic mod lifts', 'songwriter', 'harmony', 8, 'bridge'),
     R('seb.groove_orchestra', 'Groove + orchestral weight', 'songwriter', 'rhythm', 8, 'global'),
   ],
+  johnny_mandel: [
+    R('jmd.melody_extensions', 'Melody lands on 3rd/6th/7th/9th at strong points', 'songwriter', 'melody', 9, 'global'),
+    R('jmd.inner_warmth', 'Semitone inner motion + common tones at chord changes', 'songwriter', 'harmony', 9, 'verse'),
+    R('jmd.borrowed_iv', 'Borrowed iv-minor warmth inflection in major', 'songwriter', 'harmony', 8, 'bridge'),
+    R('jmd.softened_cadence', 'Resolve on 6/9 or maj9 tonic — not plain triad', 'songwriter', 'harmony', 8, 'chorus'),
+    R('jmd.orchestra_frame', 'Orchestra frames soloist; selective countermelodies', 'songwriter', 'form', 8, 'global'),
+    R('jmd.hollywood_pacing', 'Scene-aware transitions and softened sectional entrances', 'songwriter', 'form', 7, 'global'),
+  ],
   radiohead: [
     R('radiohead.modal_colour', 'Modal harmony + colour shifts', 'songwriter', 'harmony', 7, 'verse'),
     R('radiohead.irregular_form', 'Irregular phrase / form motion', 'songwriter', 'form', 7, 'form'),

@@ -480,6 +480,21 @@ export const MELODY_PROFILES: Partial<Record<SongwriterRuleId, MelodyBehaviourPl
       modalIntervalPreference: true,
     },
   },
+  johnny_mandel: {
+    intervalTendency: 'stepwise',
+    rhythmicSubdivision: 'half_quarter',
+    repetitionVsVariationBias: 0.48,
+    phraseLength: 6,
+    contourProfile: 'wide_arc',
+    phraseAsymmetryTendency: 0.42,
+    cadenceFrequency: 'medium',
+    devices: ['melody_on_extensions', 'inner_voice_semitone', 'borrowed_iv_minor', 'softened_cadence', 'warm_brass_blend'],
+    malLeadHints: {
+      attackDensity: 'low',
+      interOnsetSpacing: 'wide',
+      avoidStrongBeatOneAttack: false,
+    },
+  },
   john_coltrane: {
     intervalTendency: 'angular',
     rhythmicSubdivision: 'eighth_patterns',
