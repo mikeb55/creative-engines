@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+### Added
+
+- **Allan Holdsworth v2 scale-derived fusion composer (`AH:*`)** — scale-family interval-subset slice (`holdsworthScaleSlice.ts`): scaleMembershipPriority 0.90, functional root avoidance, chromatic VL, subset voicing; golden-path precompute + locked harmony routing + smoke **`holdsworthScaleSliceSmoke.test.ts`** seed **96001**. Receipt prefix **`AH:`** (uppercase) — distinct from Andrew Hill **`ah:*`**.
+- **Holdsworth VRB bundle upgrade** — **`holdsworthVrbFingerprints.ts`** — 8 fingerprints + negative discriminators (Henderson / Joe Pass / Verlaine / Wes / Hill bleed); bundle id **`allan_holdsworth_scale_derived`**; riff stub **`ALLAN_HOLDSWORTH`** in **`riffVrbStubs.ts`** retained with merged **`riffProfile`**.
+- **Holdsworth Big Band rules** — six named rules in **`bigBandRuleRegistry.ts`**: ScaleMembership, IntervalSubset, ScalePersistence, ChromaticVL, FunctionalAvoidance, IntegratedLine.
+- **Holdsworth evaluation profile** — **`holdsworthStyleProfile.ts`** with pass/fail thresholds and fusion negative discriminators.
+- **Holdsworth Rock / Fusion group** — **`composerGroupDefinitions.ts`** **`ROCK_FUSION`** — Allan Holdsworth promoted to **`fully_implemented`**; handbook updated.
+
 ## [2.0.1] - 2026-06-05
 
 - feat(verlaine): ship Tom Verlaine as first-class v2 art-rock composer (`tv:*`)

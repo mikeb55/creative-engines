@@ -13,6 +13,7 @@ import { JAN_GARBAREK_VRF_FINGERPRINT_RECEIPTS } from './janGarbarekVrbFingerpri
 import { SURMAN_FOLK_MODAL_VRF_FINGERPRINT_RECEIPTS } from './surmanVrbFingerprints';
 import { TOWNER_GUITAR_POLYPHONY_VRF_FINGERPRINT_RECEIPTS } from './townerVrbFingerprints';
 import { VERLAINE_SUSPENDED_FIELD_VRF_FINGERPRINT_RECEIPTS } from './verlainVrbFingerprints';
+import { HOLDSWORTH_SCALE_DERIVED_VRF_FINGERPRINT_RECEIPTS } from './holdsworthVrbFingerprints';
 import { BILL_HOLMAN_VRF_FINGERPRINT_RECEIPTS } from './holmanVrbFingerprints';
 import { CARLA_BLEY_VRF_FINGERPRINT_RECEIPTS } from './carlaBleyVrbFingerprints';
 import { WEBER_FIELD_VRF_FINGERPRINT_RECEIPTS } from './weberVrbFingerprints';
@@ -1465,6 +1466,56 @@ const SURMAN_FOLK_MODAL: VoiceRuleBundle = {
     registerInterlock: false,
     intervalPreference: 'modal_sparse',
   },
+};
+
+const ALLAN_HOLDSWORTH_SCALE_DERIVED: VoiceRuleBundle = {
+  ...ALLAN_HOLDSWORTH,
+  voiceId: 'allan_holdsworth_scale_derived',
+  harmonicRhythm: {
+    minChordDurationBars: 2,
+    maxChordDurationBars: 8,
+    allowMidBarChange: true,
+  },
+  bassPolicy: {
+    role: 'root',
+    allowOctaveDoubling: true,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 4,
+    maxSpreadSemitones: 32,
+    clusterSizeNotes: [1, 3],
+    forbidParallelFifths: false,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'angular',
+    maxLeapSemitones: 14,
+    preferredIntervalSets: [1, 2, 4, 5, 6, 7, 9],
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 1,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: [
+      ...(ALLAN_HOLDSWORTH.orchestrationPolicy.fingerprintReceipts ?? []),
+      ...HOLDSWORTH_SCALE_DERIVED_VRF_FINGERPRINT_RECEIPTS,
+    ],
+  },
+  formPolicy: {
+    narrativeArc: 'free',
+    sectionRecallEnforced: false,
+    noCadentialRelease: true,
+  },
+  rhythmPolicy: {
+    antiMetric: true,
+  },
+  repairPolicy: {
+    resolveParallels: false,
+    maxVoiceOverlap: 5,
+  },
+  contrapuntalLinePolicy: ALLAN_HOLDSWORTH.contrapuntalLinePolicy,
+  duoVoicePolicy: ALLAN_HOLDSWORTH.duoVoicePolicy,
+  riffProfile: ALLAN_HOLDSWORTH.riffProfile,
 };
 
 const VERLAINE_SUSPENDED_FIELD: VoiceRuleBundle = {
@@ -4105,8 +4156,9 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   joe_pass: JOE_PASS,
   joe: JOE_PASS,
   pass: JOE_PASS,
-  allan_holdsworth: ALLAN_HOLDSWORTH,
-  holdsworth: ALLAN_HOLDSWORTH,
+  allan_holdsworth: ALLAN_HOLDSWORTH_SCALE_DERIVED,
+  holdsworth: ALLAN_HOLDSWORTH_SCALE_DERIVED,
+  allan_holdsworth_scale_derived: ALLAN_HOLDSWORTH_SCALE_DERIVED,
   scott_henderson: SCOTT_HENDERSON,
   henderson: SCOTT_HENDERSON,
   sonic_youth: SONIC_YOUTH,

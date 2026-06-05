@@ -1566,14 +1566,53 @@ function wireRiffVrbSongwriterRules(): void {
   ];
   rules.allan_holdsworth = [
     R(
-      'riff.allan_holdsworth.sigma',
-      'Riff VRB σ24 — chromatic legato outside fusion line (reuses pat_metheny rule family)',
+      'holdsworth.scale_membership',
+      'Scale-family membership drives voicing and melody — interval subsets not root grammar',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'holdsworth.interval_subset',
+      'maj7#11 / maj9 / min9 / m(maj7) / alt subsets — reject plain triads',
+      'songwriter',
+      'harmony',
+      9,
+      'verse'
+    ),
+    R(
+      'holdsworth.scale_persistence',
+      'Hold one pitch collection 4–12 bars — chromatic recolor within family',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'holdsworth.chromatic_vl',
+      'Chromatic voice-leading with delayed resolution within scale pool',
       'songwriter',
       'melody',
       8,
       'global'
     ),
-    ...metheny,
+    R(
+      'holdsworth.functional_avoidance',
+      'Penalize ii–V–I, plain dom7, blues turnaround — non-functional subset loops',
+      'songwriter',
+      'form',
+      9,
+      'global'
+    ),
+    R(
+      'holdsworth.integrated_line',
+      'Line and chord from same pitch collection — integrated scale system',
+      'songwriter',
+      'melody',
+      8,
+      'global'
+    ),
   ];
   rules.scott_henderson = [
     R(

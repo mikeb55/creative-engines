@@ -706,6 +706,22 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   }
 
   /**
+   * Allan Holdsworth: `precomputeHoldsworthEffectiveHarmonyBars` applies scale-derived subset voicing.
+   * After precompute, `holdsworthEffectiveHarmonyBars` is full-form and authoritative.
+   * Receipt prefix **`AH:`** (uppercase) — distinct from Andrew Hill **`ah:*`**.
+   */
+  const holdsworthEff = meta?.holdsworthEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'allan_holdsworth' &&
+    Array.isArray(holdsworthEff) &&
+    holdsworthEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return holdsworthEff[barIndex - 1]!;
+  }
+
+  /**
    * Tom Verlaine: `precomputeVerlaineEffectiveHarmonyBars` applies suspended modal field voicing.
    * After precompute, `verlaineEffectiveHarmonyBars` is full-form and authoritative.
    */

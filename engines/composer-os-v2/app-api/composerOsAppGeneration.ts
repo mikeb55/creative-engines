@@ -82,6 +82,7 @@ import { weberStyleProfile } from '../core/evaluation/weberStyleProfile';
 import { surmanStyleProfile } from '../core/evaluation/surmanStyleProfile';
 import { townerStyleProfile } from '../core/evaluation/townerStyleProfile';
 import { verlaineStyleProfile } from '../core/evaluation/verlaineStyleProfile';
+import { holdsworthStyleProfile } from '../core/evaluation/holdsworthStyleProfile';
 import { ogermanStyleProfile } from '../core/evaluation/ogermanStyleProfile';
 import { quincyStyleProfile } from '../core/evaluation/quincyStyleProfile';
 import { sebeskyStyleProfile } from '../core/evaluation/sebeskyStyleProfile';
@@ -2567,6 +2568,10 @@ function bigBandEvaluationStyleProfile(
     case 'verlaine_suspended_field':
     case 'tv':
       return verlaineStyleProfile;
+    case 'allan_holdsworth':
+    case 'holdsworth':
+    case 'allan_holdsworth_scale_derived':
+      return holdsworthStyleProfile;
     case 'holman':
     case 'bill_holman':
       return holmanStyleProfile;

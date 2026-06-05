@@ -339,7 +339,7 @@ export const COMPOSER_GROUP_DEFINITIONS: readonly ComposerGroupDefinition[] = [
     defaults: ROCK_FUSION_DEFAULTS,
     members: [
       { composerId: 'eddie_van_halen', status: 'stub_exposed' },
-      { composerId: 'allan_holdsworth', status: 'stub_exposed' },
+      { composerId: 'allan_holdsworth', status: 'fully_implemented' },
       { composerId: 'scott_henderson', status: 'stub_exposed' },
     ],
   },

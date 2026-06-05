@@ -54,6 +54,10 @@ import type {
   VerlaineSliceParams,
 } from './song-mode/verlainFieldSlice';
 import type {
+  HoldsworthScalePlan,
+  HoldsworthSliceParams,
+} from './song-mode/holdsworthScaleSlice';
+import type {
   WeberFieldPlan,
   EberhardWeberSliceParams,
 } from './song-mode/weberFieldSlice';
@@ -1975,6 +1979,24 @@ export interface GenerationMetadata {
   verlaineSliceReceipt?: string;
   verlaineEffectiveHarmonyBars?: string[];
   verlaineDeviceReceipts?: string[];
+  /** Allan Holdsworth — scale-derived fusion slice (`holdsworthScaleSlice.ts`, receipts `AH:*`). */
+  holdsworthDiagnostics?: {
+    songwriterId: 'allan_holdsworth';
+    barsConsidered: number;
+    scaleDerivedTouches: number;
+    scaleHoldTouches: number;
+    chromaticVlTouches: number;
+    intervalSubsetTouches: number;
+    functionalStripTouches: number;
+    minSectionSpan?: number;
+    sliceParams?: HoldsworthSliceParams;
+    deviceReceipts?: string[];
+  };
+  holdsworthScalePlan?: HoldsworthScalePlan;
+  holdsworthSliceParams?: HoldsworthSliceParams;
+  holdsworthSliceReceipt?: string;
+  holdsworthEffectiveHarmonyBars?: string[];
+  holdsworthDeviceReceipts?: string[];
   /** Eberhard Weber — bass-led harmonic field slice (`weberFieldSlice.ts`, receipts `ew:*`). */
   eberhardWeberDiagnostics?: {
     songwriterId: 'eberhard_weber';

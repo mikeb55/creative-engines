@@ -214,12 +214,19 @@ export function runBehaviourGates(
     opts?.compositionContext?.generationMetadata?.songwriterStyleId === 'ralph_towner';
   const verlaineStructuralRelax =
     opts?.compositionContext?.generationMetadata?.songwriterStyleId === 'verlaine';
+  const holdsworthStructuralRelax =
+    opts?.compositionContext?.generationMetadata?.songwriterStyleId === 'allan_holdsworth';
   const mandelStructuralRelax =
     opts?.compositionContext?.generationMetadata?.songwriterStyleId === 'johnny_mandel';
   const barryStructuralRelax =
     opts?.compositionContext?.generationMetadata?.songwriterStyleId === 'john_barry';
   const bassStructuralRelax =
-    zappaStructuralRelax || townerStructuralRelax || verlaineStructuralRelax || mandelStructuralRelax || barryStructuralRelax;
+    zappaStructuralRelax ||
+    townerStructuralRelax ||
+    verlaineStructuralRelax ||
+    holdsworthStructuralRelax ||
+    mandelStructuralRelax ||
+    barryStructuralRelax;
   const duoCtx = { compositionContext: opts?.compositionContext };
   const guitarBarCount =
     score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar')?.measures.length ?? 0;

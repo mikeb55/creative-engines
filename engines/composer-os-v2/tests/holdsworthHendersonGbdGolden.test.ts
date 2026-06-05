@@ -86,12 +86,13 @@ function runDistinctGolden(fx: HoldsworthHendersonGbdDistinctGolden): { name: st
 
   const targetBundle = getVoiceRuleBundle(fx.targetHarmonicVoice);
   const baselineBundle = getVoiceRuleBundle(fx.baselineHarmonicVoice);
+  const expectedTargetVoiceId = targetBundle.voiceId;
   const targetRp = targetBundle.riffProfile;
   const baselineRp = baselineBundle.riffProfile;
   const receipts = targetBundle.orchestrationPolicy.fingerprintReceipts ?? [];
 
   const checks: Record<string, boolean> = {
-    voiceBundle: target.context?.voiceBundle?.voiceId === fx.targetHarmonicVoice,
+    voiceBundle: target.context?.voiceBundle?.voiceId === expectedTargetVoiceId,
     harmonicVoice: target.context?.generationMetadata?.harmonicVoice === fx.targetHarmonicVoice,
     fingerprintReceipt: receipts.some((r) => r.includes(fx.fingerprintReceiptIncludes)),
     pitchDiff: pitchDiff >= fx.minGuitarPitchesDifferent,

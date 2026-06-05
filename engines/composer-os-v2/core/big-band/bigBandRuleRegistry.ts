@@ -170,6 +170,52 @@ const TOWNER_COMPOSER_RULES: BigBandRule[] = [
   ),
 ];
 
+/** Allan Holdsworth — scale-derived interval-subset fusion harmony. */
+const HOLDSWORTH_COMPOSER_RULES: BigBandRule[] = [
+  R(
+    'holdsworth.scale_membership',
+    'ScaleMembershipRule: derive voicings and melody from one active scale-family; chord identity from interval-set membership not root grammar',
+    'composer',
+    'harmony',
+    90
+  ),
+  R(
+    'holdsworth.interval_subset',
+    'IntervalSubsetVoicingRule: maj7#11 / maj9 / min9 / m(maj7) / alt subsets dominate; penalize plain triads and root-position stacks',
+    'composer',
+    'harmony',
+    88
+  ),
+  R(
+    'holdsworth.scale_persistence',
+    'ScaleFamilyPersistenceRule: hold one pitch collection 4–12 bars; chromatic recolor within family not functional pivot',
+    'composer',
+    'harmony',
+    87
+  ),
+  R(
+    'holdsworth.chromatic_vl',
+    'ChromaticVoiceLeadingRule: delayed resolution via chromatic approach within scale pool; legato distant targets',
+    'composer',
+    'harmony',
+    86
+  ),
+  R(
+    'holdsworth.functional_avoidance',
+    'FunctionalRootAvoidanceRule: penalize ii–V–I, plain dom7, blues turnaround; reward non-functional subset loops',
+    'composer',
+    'form',
+    89
+  ),
+  R(
+    'holdsworth.integrated_line',
+    'IntegratedLineHarmonyRule: melody and chord from same pitch collection — line defines harmony not block grammar',
+    'composer',
+    'melody',
+    85
+  ),
+];
+
 /** Tom Verlaine — suspended modal field art-rock; bass displacement under static upper shape. */
 const VERLAINE_COMPOSER_RULES: BigBandRule[] = [
   R(
@@ -609,6 +655,9 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
   television: VERLAINE_COMPOSER_RULES,
   verlaine_suspended_field: VERLAINE_COMPOSER_RULES,
   tv: VERLAINE_COMPOSER_RULES,
+  allan_holdsworth: HOLDSWORTH_COMPOSER_RULES,
+  holdsworth: HOLDSWORTH_COMPOSER_RULES,
+  allan_holdsworth_scale_derived: HOLDSWORTH_COMPOSER_RULES,
   bill_holman: HOLMAN_COMPOSER_RULES,
   holman: HOLMAN_COMPOSER_RULES,
   carla_bley: CARLA_BLEY_COMPOSER_RULES,

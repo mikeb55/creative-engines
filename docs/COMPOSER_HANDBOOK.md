@@ -141,7 +141,9 @@ Engine: **`engines/composer-os-v2/core/groups/composerGroupEngine.ts`** · defin
 | `soloistSpotlight` | 0.78 | Hero-line emphasis |
 | `sectionalContrastMode` | `blowing_sections` | Verse/chorus or solo rotation |
 
-**Members (stub_exposed — VRB present, Song Mode pending):** Eddie Van Halen (`EVH:*`), Allan Holdsworth (`AH:*`), Scott Henderson (`SH:*`).
+**Members (stub_exposed — VRB present, Song Mode pending):** Eddie Van Halen (`EVH:*`), Scott Henderson (`SH:*`).
+
+**Members (fully implemented):** Allan Holdsworth (`AH:*`) — scale-derived interval-subset fusion slice; receipt prefix **`AH:`** uppercase (Andrew Hill owns lowercase **`ah:*`**).
 
 ### Jazz Guitar
 
@@ -606,6 +608,32 @@ Verlaine is **field-based art-rock harmonic design**: static or slowly shifting 
 **Production group:** **`ART_ROCK_POST_PUNK`** — alongside Sonic Youth, Fripp / King Crimson, Tom Morello.
 
 **Evaluation:** **`verlaineStyleProfile.ts`** — pass on modal field + suspended surface + bass displacement + progression avoidance; hard fail on Fripp process-loop, Morello power cells, Towner ECM pastoral, Weber pedal field, altered-dominant jazz density.
+
+---
+
+### Allan Holdsworth (`allan_holdsworth`)
+
+Holdsworth is **scale-derived fusion harmony**: chords are **interval subsets** of an active pitch collection — chord, scale, and line form one integrated system, not functional root-position stacks.
+
+**Song Mode slice** — **`holdsworthScaleSlice.ts`** (`AH:*` receipts — uppercase; Andrew Hill owns lowercase **`ah:*`**): scale membership → interval subset voicing → scale-family persistence → chromatic voice-leading → functional root avoidance → integrated line/harmony.
+
+**Five parameters** (0–1, defaults in parentheses):
+
+| Parameter | Default | Musical role |
+|-----------|---------|--------------|
+| `scaleMembershipPriority` | 0.90 | Voicings and melody from one scale-family; interval-set identity not root grammar |
+| `functionalRootAvoidance` | 0.88 | Penalize ii–V–I, plain dom7, blues turnaround |
+| `chromaticVoiceLeadingRate` | 0.84 | Chromatic approach + delayed resolution within scale pool |
+| `intervalSubsetVoicingBias` | 0.86 | maj7#11 / maj9 / min9 / m(maj7) / alt subsets over triads |
+| `scaleFamilyPersistence` | 0.80 | Hold one collection 4–12 bars; recolor within family |
+
+**VRB bundle id:** **`allan_holdsworth_scale_derived`** — 8 fingerprints + Henderson / Joe Pass / Verlaine / Wes / Hill negative discriminators; riff stub **`ALLAN_HOLDSWORTH`** retained with merged **`riffProfile`**.
+
+**Big Band arranger ids:** **`holdsworth`**, **`allan_holdsworth`** — six rules (ScaleMembership, IntervalSubset, ScalePersistence, ChromaticVL, FunctionalAvoidance, IntegratedLine).
+
+**Production group:** **`ROCK_FUSION`** — alongside Eddie Van Halen (stub), Scott Henderson (stub).
+
+**Evaluation:** **`holdsworthStyleProfile.ts`** — pass on scale membership + subset voicing + scale persistence; hard fail on functional cadence / plain triad bleed.
 
 ---
 
