@@ -22,7 +22,9 @@ Presets live in **`src/engine/ecmVrb.js`**; app state in **`VrbProfileContext`**
 
 ## Group Mode — production worlds
 
-**Group Mode** clusters composers by **production logic** — how groove, space, strings, cadence, and sectional architecture behave on record — not by harmonic vocabulary alone. Five active production groups ship shared defaults; composers **inherit group defaults** and override only where distinct.
+**Group Mode** clusters composers by **production logic** — how groove, space, strings, cadence, and sectional architecture behave on record — not by harmonic vocabulary alone. Seven active production groups ship shared defaults; composers **inherit group defaults** and override only where distinct.
+
+**Member status:** **`fully_implemented`** — Song Mode slice + locked harmony on golden path. **`stub_exposed`** — riff **`VoiceRuleBundle`** present and selectable in Generate UI; Song Mode slice pending. **`partial_future`** — group-assigned, not yet surfaced. **`precursor_reserved`** — placeholder only.
 
 ### Why groups exist
 
@@ -116,7 +118,51 @@ Engine: **`engines/composer-os-v2/core/groups/composerGroupEngine.ts`** · defin
 | `soloistSpotlight` | 0.55 | Lines equal — no featured jazz solo arc |
 | `sectionalContrastMode` | `gradual` | Modal center shifts slowly |
 
-**Members (fully implemented):** Tom Verlaine (`tv:*`), Sonic Youth, Fripp / King Crimson (riff VRB), Tom Morello (riff VRB).
+**Members (fully implemented):** Tom Verlaine (`tv:*`), Fripp / King Crimson (riff VRB), Tom Morello (riff VRB).
+
+**Members (stub_exposed — VRB present, Song Mode pending):** Sonic Youth (`SY:*`).
+
+### Rock / Fusion
+
+**Identity:** Rock-to-fusion guitar lead production — riff-forward cells, arena studio gloss, solo spotlight. Not post-bop head-out, not ECM spatial dissolve, not art-rock suspended field.
+
+**Defaults:**
+
+| Parameter | Default | Musical meaning |
+|-----------|---------|-----------------|
+| `groovePersistence` | 0.72 | Strong rock/fusion pulse |
+| `registralPorosity` | 0.38 | Focused guitar register |
+| `stringProminence` | 0.05 | No orchestral body |
+| `cadentialResolution` | `functional_modal` | Riff cadence + modal outside colour |
+| `ensembleDensityCurve` | `blowing_arc` | Solo build over groove |
+| `silenceWeighting` | `rhythmic` | Pocket breath, not ECM space |
+| `productionGloss` | 0.48 | Rock/fusion studio sheen |
+| `melodyFraming` | `spotlighted` | Lead guitar featured |
+| `soloistSpotlight` | 0.78 | Hero-line emphasis |
+| `sectionalContrastMode` | `blowing_sections` | Verse/chorus or solo rotation |
+
+**Members (stub_exposed — VRB present, Song Mode pending):** Eddie Van Halen (`EVH:*`), Allan Holdsworth (`AH:*`), Scott Henderson (`SH:*`).
+
+### Jazz Guitar
+
+**Identity:** Swing-to-bop jazz guitar — octave doubling, chord-melody clarity, bebop phrasing. Not rock riff grid, not ECM pastoral, not big-band arranger lift.
+
+**Defaults:**
+
+| Parameter | Default | Musical meaning |
+|-----------|---------|-----------------|
+| `groovePersistence` | 0.68 | Swing/fusion groove anchored |
+| `registralPorosity` | 0.42 | Natural guitar spacing |
+| `stringProminence` | 0.05 | Combo world |
+| `cadentialResolution` | `functional_modal` | ii–V–I and bebop cadence |
+| `ensembleDensityCurve` | `blowing_arc` | Head → solo → head |
+| `silenceWeighting` | `rhythmic` | Phrase breath |
+| `productionGloss` | 0.35 | Dry-warm jazz guitar |
+| `melodyFraming` | `head_based` | Stated line, improvised variation |
+| `soloistSpotlight` | 0.72 | Guitar primary in blows |
+| `sectionalContrastMode` | `blowing_sections` | Solo rotation contrast |
+
+**Members (stub_exposed — VRB present, Song Mode pending):** Wes Montgomery (`WM:*`), Joe Pass (`JP:*`).
 
 ### Post-Bop Core
 

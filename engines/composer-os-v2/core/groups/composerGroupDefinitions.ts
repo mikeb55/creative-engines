@@ -17,7 +17,9 @@ export type ComposerGroupId =
   | 'STUDIO_ORCHESTRAL_JAZZ'
   | 'POST_BOP_CORE'
   | 'FILM_SOUNDTRACK'
-  | 'ART_ROCK_POST_PUNK';
+  | 'ART_ROCK_POST_PUNK'
+  | 'ROCK_FUSION'
+  | 'JAZZ_GUITAR';
 
 /** Full default parameter object for an active production group. */
 export interface GroupParams {
@@ -33,7 +35,11 @@ export interface GroupParams {
   sectionalContrastMode: SectionalContrastMode;
 }
 
-export type ComposerGroupMemberStatus = 'fully_implemented' | 'partial_future' | 'precursor_reserved';
+export type ComposerGroupMemberStatus =
+  | 'fully_implemented'
+  | 'stub_exposed'
+  | 'partial_future'
+  | 'precursor_reserved';
 
 export interface ComposerGroupDefinition {
   id: ComposerGroupId;
@@ -100,6 +106,20 @@ export const COMPOSER_ID_ALIASES: Readonly<Record<string, string>> = {
   verlaine_suspended_field: 'verlaine',
   fripp: 'fripp_king_crimson',
   morello: 'morello',
+  evh: 'eddie_van_halen',
+  van_halen: 'eddie_van_halen',
+  eddie_van_halen: 'eddie_van_halen',
+  holdsworth: 'allan_holdsworth',
+  allan_holdsworth: 'allan_holdsworth',
+  sonic_youth: 'sonic_youth',
+  sy: 'sonic_youth',
+  wes: 'wes_montgomery',
+  wes_montgomery: 'wes_montgomery',
+  montgomery: 'wes_montgomery',
+  pass: 'joe_pass',
+  joe_pass: 'joe_pass',
+  scott_henderson: 'scott_henderson',
+  henderson: 'scott_henderson',
   holman: 'bill_holman',
   bill_holman: 'bill_holman',
   charlie: 'charlie_parker',
@@ -187,6 +207,32 @@ const ART_ROCK_POST_PUNK_DEFAULTS: GroupParams = {
   melodyFraming: 'integrated',
   soloistSpotlight: 0.55,
   sectionalContrastMode: 'gradual',
+};
+
+const ROCK_FUSION_DEFAULTS: GroupParams = {
+  groovePersistence: 0.72,
+  registralPorosity: 0.38,
+  stringProminence: 0.05,
+  cadentialResolution: 'functional_modal',
+  ensembleDensityCurve: 'blowing_arc',
+  silenceWeighting: 'rhythmic',
+  productionGloss: 0.48,
+  melodyFraming: 'spotlighted',
+  soloistSpotlight: 0.78,
+  sectionalContrastMode: 'blowing_sections',
+};
+
+const JAZZ_GUITAR_DEFAULTS: GroupParams = {
+  groovePersistence: 0.68,
+  registralPorosity: 0.42,
+  stringProminence: 0.05,
+  cadentialResolution: 'functional_modal',
+  ensembleDensityCurve: 'blowing_arc',
+  silenceWeighting: 'rhythmic',
+  productionGloss: 0.35,
+  melodyFraming: 'head_based',
+  soloistSpotlight: 0.72,
+  sectionalContrastMode: 'blowing_sections',
 };
 
 export const COMPOSER_GROUP_DEFINITIONS: readonly ComposerGroupDefinition[] = [
@@ -281,9 +327,30 @@ export const COMPOSER_GROUP_DEFINITIONS: readonly ComposerGroupDefinition[] = [
     defaults: ART_ROCK_POST_PUNK_DEFAULTS,
     members: [
       { composerId: 'verlaine', status: 'fully_implemented' },
-      { composerId: 'sonic_youth', status: 'fully_implemented' },
+      { composerId: 'sonic_youth', status: 'stub_exposed' },
       { composerId: 'fripp_king_crimson', status: 'fully_implemented' },
       { composerId: 'morello', status: 'fully_implemented' },
+    ],
+  },
+  {
+    id: 'ROCK_FUSION',
+    description:
+      'Rock / fusion guitar production logic. Riff-forward lead, arena-to-fusion studio gloss, solo spotlight — EVH, Holdsworth, Scott Henderson.',
+    defaults: ROCK_FUSION_DEFAULTS,
+    members: [
+      { composerId: 'eddie_van_halen', status: 'stub_exposed' },
+      { composerId: 'allan_holdsworth', status: 'stub_exposed' },
+      { composerId: 'scott_henderson', status: 'stub_exposed' },
+    ],
+  },
+  {
+    id: 'JAZZ_GUITAR',
+    description:
+      'Jazz guitar production logic. Swing-to-bop phrasing, chord-melody clarity, octave doubling — Wes Montgomery, Joe Pass.',
+    defaults: JAZZ_GUITAR_DEFAULTS,
+    members: [
+      { composerId: 'wes_montgomery', status: 'stub_exposed' },
+      { composerId: 'joe_pass', status: 'stub_exposed' },
     ],
   },
 ] as const;
@@ -295,6 +362,8 @@ export const COMPOSER_GROUP_DISPLAY_LABELS: Record<ComposerGroupId, string> = {
   POST_BOP_CORE: 'Post-Bop Core',
   FILM_SOUNDTRACK: 'Film Soundtrack',
   ART_ROCK_POST_PUNK: 'Art Rock / Post-Punk',
+  ROCK_FUSION: 'Rock / Fusion',
+  JAZZ_GUITAR: 'Jazz Guitar',
 };
 
 const DUAL_GROUP_COMPOSER_IDS = new Set<string>(Object.keys(DUAL_GROUP_COMPOSER_ASSIGNMENTS));

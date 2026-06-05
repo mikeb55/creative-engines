@@ -2,6 +2,9 @@
 
 ### Added
 
+- **UI — riff VRB stub_exposed dropdown** — **`HomeGenerate.tsx`** surfaces six existing riff **`VoiceRuleBundle`** stubs in songwriter + arranger production-world optgroups: Eddie Van Halen (`EVH:*`), Allan Holdsworth (`AH:*`), Sonic Youth (`SY:*`), Wes Montgomery (`WM:*`), Joe Pass (`JP:*`), Scott Henderson (`SH:*`). VRB present; Song Mode golden-path slices pending.
+- **Rock / Fusion + Jazz Guitar groups** — **`composerGroupDefinitions.ts`** **`ROCK_FUSION`** (EVH, Holdsworth, Henderson) and **`JAZZ_GUITAR`** (Wes, Joe Pass); **`stub_exposed`** member status; Sonic Youth demoted to **`stub_exposed`** under **Art Rock / Post-Punk** (removed from Shipped full slice optgroup).
+
 - **Tom Verlaine v2 art-rock composer (`tv:*`)** — suspended modal field slice (`verlainFieldSlice.ts`): static modal centers, bass displacement under upper shape, extension retention, progression avoidance; golden-path precompute + locked harmony routing + smoke **`verlainFieldSliceSmoke.test.ts`** seed **95001**.
 - **Verlaine VRB bundle** — **`verlainVrbFingerprints.ts`** — 8 fingerprints + negative discriminators (Fripp / Morello / Towner / Weber / jazz-lush / arena-pop bleed); bundle id **`verlaine_suspended_field`**; aliases `verlaine` / `tom_verlaine` / `television` / `tv`; riff stub **`VERLAINE`** in **`riffVrbStubs.ts`** retained with **`riffProfile`** merged into full bundle.
 - **Verlaine Big Band rules** — six named rules in **`bigBandRuleRegistry.ts`**: ModalFieldPersistence, SuspendedChordSurface, BassDisplacement, ExtensionRetention, SupraChordMelody, ProgressionAvoidance.

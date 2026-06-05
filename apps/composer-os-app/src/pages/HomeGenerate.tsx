@@ -695,6 +695,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'bernard_herrmann', label: 'Bernard Herrmann' },
   { id: 'debussy', label: 'Debussy' },
   { id: 'donald_fagen', label: 'Donald Fagen' },
+  { id: 'eddie_van_halen', label: 'Eddie Van Halen' },
   { id: 'duke_ellington', label: 'Duke Ellington' },
   { id: 'frank_zappa', label: 'Frank Zappa' },
   { id: 'fripp_king_crimson', label: 'Fripp / King Crimson' },
@@ -718,6 +719,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'lachenmann', label: 'Lachenmann' },
   { id: 'ligeti', label: 'Ligeti' },
   { id: 'joni_mitchell', label: 'Joni Mitchell' },
+  { id: 'joe_pass', label: 'Joe Pass' },
   { id: 'kendrick_lamar', label: 'Kendrick Lamar' },
   { id: 'kurt_weill', label: 'Kurt Weill' },
   { id: 'mahler', label: 'Mahler' },
@@ -759,6 +761,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'satie', label: 'Erik Satie' },
   { id: 'steve_reich', label: 'Steve Reich' },
   { id: 'schubert', label: 'Schubert' },
+  { id: 'scott_henderson', label: 'Scott Henderson' },
   { id: 'shostakovich', label: 'Shostakovich' },
   { id: 'smokey_robinson', label: 'Smokey Robinson' },
   { id: 'sonic_youth', label: 'Sonic Youth' },
@@ -770,9 +773,11 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'turtle_island', label: 'Turtle Island Quartet' },
   { id: 'dave_brubeck', label: 'Dave Brubeck' },
   { id: 'andrew_hill', label: 'Andrew Hill' },
+  { id: 'allan_holdsworth', label: 'Allan Holdsworth' },
   { id: 'arvo_part', label: 'Arvo Pärt (Tintinnabuli)' },
   { id: 'charlie_parker', label: 'Charlie Parker' },
   { id: 'wayne_shorter', label: 'Wayne Shorter' },
+  { id: 'wes_montgomery', label: 'Wes Montgomery' },
   { id: 'xtc', label: 'XTC' },
 ];
 
@@ -966,7 +971,6 @@ const SONGWRITER_GROUP_SHIPPED_ORDER: readonly string[] = [
   'stevie_wonder',
   'radiohead',
   'james_brown',
-  'sonic_youth',
   'pat_metheny',
   'jim_hall',
   'wayne_shorter',
@@ -1025,6 +1029,8 @@ const PRODUCTION_WORLD_SONGWRITER_ID_SET = new Set<string>([
   ...songwriterIdsForProductionGroup('FILM_SOUNDTRACK'),
   ...songwriterIdsForProductionGroup('POST_BOP_CORE'),
   ...songwriterIdsForProductionGroup('ART_ROCK_POST_PUNK'),
+  ...songwriterIdsForProductionGroup('ROCK_FUSION'),
+  ...songwriterIdsForProductionGroup('JAZZ_GUITAR'),
 ]);
 
 const SONGWRITER_GROUP_SHIPPED_ORDER_FILTERED = SONGWRITER_GROUP_SHIPPED_ORDER.filter(
@@ -1049,9 +1055,9 @@ const VISUALLY_HIDDEN: CSSProperties = {
 };
 
 const ARIA_SONGWRITER_GROUPS_DESC =
-  'Songwriters are grouped by production world (ECM Chamber Jazz, Studio Orchestral Jazz, Film Soundtrack, Post-Bop Core, Art Rock / Post-Punk), then Shipped full slice, Shipped singer-songwriter slice, Ready to build, and In library.';
+  'Songwriters are grouped by production world (ECM Chamber Jazz, Studio Orchestral Jazz, Film Soundtrack, Post-Bop Core, Art Rock / Post-Punk, Rock / Fusion, Jazz Guitar), then Shipped full slice, Shipped singer-songwriter slice, Ready to build, and In library.';
 const ARIA_ARRANGER_GROUPS_DESC =
-  'Arrangers are grouped by production world (ECM Chamber Jazz, Studio Orchestral Jazz, Film Soundtrack, Post-Bop Core, Art Rock / Post-Punk), then Big band core research-backed and Charts and studio voices.';
+  'Arrangers are grouped by production world (ECM Chamber Jazz, Studio Orchestral Jazz, Film Soundtrack, Post-Bop Core, Art Rock / Post-Punk, Rock / Fusion, Jazz Guitar), then Big band core research-backed and Charts and studio voices.';
 
 function uint8ArrayToBase64(bytes: Uint8Array): string {
   const chunk = 0x8000;
@@ -1117,6 +1123,26 @@ function SongwriterSelectOptionGroups({ onOptionHover }: { onOptionHover?: (id: 
           const o = SONGWRITER_OPTION_BY_ID.get(id)!;
           return (
             <option key={`artrock-${id}`} value={o.id} {...optHover(o.id)}>
+              {o.label}
+            </option>
+          );
+        })}
+      </optgroup>
+      <optgroup label={COMPOSER_GROUP_DISPLAY_LABELS.ROCK_FUSION}>
+        {songwriterIdsForProductionGroup('ROCK_FUSION').map((id) => {
+          const o = SONGWRITER_OPTION_BY_ID.get(id)!;
+          return (
+            <option key={`rockfusion-${id}`} value={o.id} {...optHover(o.id)}>
+              {o.label}
+            </option>
+          );
+        })}
+      </optgroup>
+      <optgroup label={COMPOSER_GROUP_DISPLAY_LABELS.JAZZ_GUITAR}>
+        {songwriterIdsForProductionGroup('JAZZ_GUITAR').map((id) => {
+          const o = SONGWRITER_OPTION_BY_ID.get(id)!;
+          return (
+            <option key={`jazzguitar-${id}`} value={o.id} {...optHover(o.id)}>
               {o.label}
             </option>
           );
@@ -1372,6 +1398,12 @@ const ARRANGER_OPTIONS: { id: string; label: string }[] = [
   { id: 'ogerman', label: 'Claus Ogerman' },
   { id: 'schifrin', label: 'Lalo Schifrin' },
   { id: 'barry', label: 'John Barry' },
+  { id: 'evh', label: 'Eddie Van Halen' },
+  { id: 'holdsworth', label: 'Allan Holdsworth' },
+  { id: 'sonic_youth', label: 'Sonic Youth' },
+  { id: 'wes', label: 'Wes Montgomery' },
+  { id: 'pass', label: 'Joe Pass' },
+  { id: 'scott_henderson', label: 'Scott Henderson' },
   /** SQ VRB arrangers — surfaced only on the String Quartet preset. */
   { id: 'beethoven_late', label: 'Beethoven (Late Quartets)' },
   { id: 'bartok', label: 'Bartók' },
@@ -1447,6 +1479,9 @@ const ARRANGER_PRODUCTION_WORLD_ID_SET = new Set<string>([
   ...arrangerIdsForProductionGroup('STUDIO_ORCHESTRAL_JAZZ'),
   ...arrangerIdsForProductionGroup('FILM_SOUNDTRACK'),
   ...arrangerIdsForProductionGroup('POST_BOP_CORE'),
+  ...arrangerIdsForProductionGroup('ART_ROCK_POST_PUNK'),
+  ...arrangerIdsForProductionGroup('ROCK_FUSION'),
+  ...arrangerIdsForProductionGroup('JAZZ_GUITAR'),
 ]);
 
 const ARRANGER_GROUP_CORE_ORDER_FILTERED = ARRANGER_GROUP_CORE_ORDER.filter(
@@ -1519,6 +1554,42 @@ function ArrangerSelectOptionGroups(props?: { variant?: 'default' | 'string_quar
             const o = ARRANGER_OPTION_BY_ID.get(id)!;
             return (
               <option key={`postbop-arr-${id}`} value={o.id}>
+                {o.label}
+              </option>
+            );
+          })}
+      </optgroup>
+      <optgroup label={COMPOSER_GROUP_DISPLAY_LABELS.ART_ROCK_POST_PUNK}>
+        {arrangerIdsForProductionGroup('ART_ROCK_POST_PUNK')
+          .filter((id) => ARRANGER_OPTION_BY_ID.has(id))
+          .map((id) => {
+            const o = ARRANGER_OPTION_BY_ID.get(id)!;
+            return (
+              <option key={`artrock-arr-${id}`} value={o.id}>
+                {o.label}
+              </option>
+            );
+          })}
+      </optgroup>
+      <optgroup label={COMPOSER_GROUP_DISPLAY_LABELS.ROCK_FUSION}>
+        {arrangerIdsForProductionGroup('ROCK_FUSION')
+          .filter((id) => ARRANGER_OPTION_BY_ID.has(id))
+          .map((id) => {
+            const o = ARRANGER_OPTION_BY_ID.get(id)!;
+            return (
+              <option key={`rockfusion-arr-${id}`} value={o.id}>
+                {o.label}
+              </option>
+            );
+          })}
+      </optgroup>
+      <optgroup label={COMPOSER_GROUP_DISPLAY_LABELS.JAZZ_GUITAR}>
+        {arrangerIdsForProductionGroup('JAZZ_GUITAR')
+          .filter((id) => ARRANGER_OPTION_BY_ID.has(id))
+          .map((id) => {
+            const o = ARRANGER_OPTION_BY_ID.get(id)!;
+            return (
+              <option key={`jazzguitar-arr-${id}`} value={o.id}>
                 {o.label}
               </option>
             );

@@ -76,7 +76,12 @@ export function isPostBopCore(composerId: string): boolean {
 export function listGroupMemberComposerIds(groupId: ComposerGroupId): readonly string[] {
   const def = getGroupDefinition(groupId);
   if (!def) return [];
-  const order: Record<string, number> = { fully_implemented: 0, partial_future: 1, precursor_reserved: 2 };
+  const order: Record<string, number> = {
+    fully_implemented: 0,
+    stub_exposed: 1,
+    partial_future: 2,
+    precursor_reserved: 3,
+  };
   return [...def.members]
     .sort((a, b) => (order[a.status] ?? 9) - (order[b.status] ?? 9))
     .map((m) => m.composerId);
