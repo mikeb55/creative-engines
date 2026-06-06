@@ -1,6 +1,15 @@
 ## [Unreleased]
 
+### Changed
+
+- **Fripp mosaic eval calibration (rc12 hotfix)** — `evaluateMosaicSections.ts` Signature 4 (silence discipline): rest-ratio fail upper **0.45 → 0.60**; mean phrase-length fail **> 4 → > 8 bars** — duo/KC space tolerance.
+- **Fripp phrase detection fix (hotfix)** — Fripp sig4 replaces bar-empty phrase splitter with **≥0.5 beat rest gap** note-group count on **melody voice (v1)** when present (pass **≥ 3 groups**); comp voice no longer bridges gaps into one 16-bar phrase.
+
 ### Added
+
+- **Mosaic Section Eval Profiles (rc12 hotfix)** — `evaluateMosaicSections.ts`: section-scoped signature profiles for **`fripp`**, **`jack_white`**, **`wayne_shorter`** (4 signatures each, 0–1 linear interpolation, weighted sum + min 2 signatures ≥ 0.6); wires mosaic section retry eval for Three Mirrors trio.
+
+- **Mosaic GCE Section Retry (rc12)** — `runMosaicSectionRetry`: regenerates failing section only, max 2 attempts; passing sections preserved unchanged; `mosaicSourceMotif` persists across retry — motif family maintained; surgical metadata merge — no wholesale overwrite; graceful: if retry exhausted, original output kept with warning.
 
 - **Mosaic Dispatch Registry Fix (rc11)** — `holdsworth` alias → `allan_holdsworth`; `ornette_coleman` stub → nearest fit (`andrew_hill`, pending dedicated slice); all `COMPOSER_ID_ALIASES` gaps resolved in dispatch registry via alias registration; `getDispatchEntry`: alias normalization fallback — no more hard throws on unknown composer ids when a canonical/stub target exists.
 

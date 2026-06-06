@@ -133,6 +133,11 @@ import {
 } from './customLockedHarmonyRouting';
 import { isMosaicModeActive } from '../mosaic-mode/mosaicBarHelpers';
 import { evaluateMosaicSections } from '../mosaic-mode/evaluateMosaicSections';
+import {
+  bindMosaicSectionRetrySession,
+  clearMosaicSectionRetrySession,
+  runMosaicSectionRetrySync,
+} from '../mosaic-mode/mosaicSectionRetry';
 import { scoreMosaicMotifSimilarity } from '../mosaic-mode/mosaicMotifSimilarity';
 import { validateSongModeMotifSystem } from '../motif/songModeMotifEngine';
 import { validateSongModePhraseEngineV1 } from './songModePhraseEngineV1';
@@ -2619,12 +2624,35 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   }
   if (isMosaicModeActive(appliedContext)) {
     try {
-      const mosaicSectionEvalResults = evaluateMosaicSections(score, appliedContext);
+      let mosaicSectionEvalResults = evaluateMosaicSections(score, appliedContext);
+      bindMosaicSectionRetrySession({
+        getScore: () => score,
+        setScore: (next) => {
+          score = next;
+        },
+        plans,
+      });
+      try {
+        for (const section of mosaicSectionEvalResults) {
+          if (section.passed) continue;
+          console.log(`Section ${section.sectionLabel} failed GCE — attempting retry`);
+          const retried = runMosaicSectionRetrySync(appliedContext, section.sectionLabel, 2);
+          if (retried) {
+            console.log(`Section ${section.sectionLabel} retry succeeded`);
+          } else {
+            console.warn(`Section ${section.sectionLabel} retry exhausted — keeping original output`);
+          }
+        }
+        mosaicSectionEvalResults = evaluateMosaicSections(score, appliedContext);
+      } finally {
+        clearMosaicSectionRetrySession();
+      }
       appliedContext.generationMetadata = {
         ...appliedContext.generationMetadata,
         mosaicSectionEvalResults,
       };
     } catch (err) {
+      clearMosaicSectionRetrySession();
       console.warn(
         '[duo-section-eval] evaluateMosaicSections failed:',
         err instanceof Error ? err.message : String(err)

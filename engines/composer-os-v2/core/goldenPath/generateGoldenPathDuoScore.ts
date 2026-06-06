@@ -15,8 +15,10 @@ import {
   buildMosaicTonicMap,
   cloneDuoSectionContext,
   precomputeMosaicEffectiveHarmonyBars,
+  type MosaicModeSectionPlanEntry,
   type MosaicTonicMap,
 } from '../mosaic-mode/precomputeMosaicEffectiveHarmonyBars';
+import { fragmentBarMeterMapFromFull } from '../regeneration/barMeterMapFragment';
 import { resolveMosaicSectionStyles } from '../mosaic-mode/resolveMosaicSectionStyles';
 import {
   buildMosaicMotifVariants,
@@ -8119,4 +8121,94 @@ export function generateGoldenPathDuoScore(
     assertGuitarScoreMatchesHarmonyContext(afterExpressive, context, 'before_return_generateGoldenPathDuoScore');
   }
   return afterExpressive;
+}
+
+function buildMosaicRetryFragmentPlan(section: MosaicModeSectionPlanEntry): MosaicModeSectionPlanEntry[] {
+  const span = section.endBar - section.startBar + 1;
+  if (span < 2) {
+    return [{ ...section, startBar: 1, endBar: span }];
+  }
+  return [
+    { ...section, startBar: 1, endBar: span - 1 },
+    {
+      sectionLabel: `__mosaic_retry_pad_${section.sectionLabel}`,
+      startBar: span,
+      endBar: span,
+      songwriterStyleId: section.songwriterStyleId,
+      ...(section.timeSignature ? { timeSignature: section.timeSignature } : {}),
+      phraseRole: 'release',
+    },
+  ];
+}
+
+/**
+ * Mosaic GCE section retry — regenerate one section span for splice into the parent score.
+ * Preserves parent `mosaicSourceMotif`; does not regenerate the source cell.
+ */
+export function regenerateMosaicSectionForRetry(
+  parentContext: CompositionContext,
+  plans: GoldenPathPlans,
+  sectionLabel: string,
+  retryOrdinal: number,
+  duoScoreOpts?: GenerateGoldenPathDuoScoreOpts
+): ScoreModel | null {
+  const plan = parentContext.generationMetadata?.mosaicSectionPlan;
+  const section = plan?.find((s) => s.sectionLabel === sectionLabel);
+  if (!section) return null;
+
+  const span = section.endBar - section.startBar + 1;
+  const tonicMap = buildMosaicTonicMap(plan ?? [], parentContext);
+  const tonicPc = tonicMap[section.sectionLabel] ?? 0;
+  const parentMeta = parentContext.generationMetadata;
+  const fragmentPlan = buildMosaicRetryFragmentPlan(section);
+
+  let fragmentContext = cloneDuoSectionContext(parentContext, section, tonicPc);
+  fragmentContext = {
+    ...fragmentContext,
+    seed: parentContext.seed + retryOrdinal * 9973 + sectionLabel.length * 17,
+    generationMetadata: {
+      ...fragmentContext.generationMetadata,
+      mosaicSourceMotif: parentMeta?.mosaicSourceMotif,
+      mosaicSectionMotifVariants: parentMeta?.mosaicSectionMotifVariants,
+      mosaicSectionPlan: fragmentPlan.length >= 2 ? fragmentPlan : undefined,
+      songwriterStyleId: section.songwriterStyleId,
+      mosaicLockRegistry: undefined,
+      mosaicMergedHarmonyBars: undefined,
+      mosaicSectionOwnership: undefined,
+      mosaicSectionEvalResults: undefined,
+      mosaicMotifSimilarityReceipts: undefined,
+      songModeHookFirstIdentity: false,
+    },
+  };
+
+  if (fragmentPlan.length >= 2) {
+    const routing = resolveMosaicSectionStyles(fragmentContext.form, fragmentContext.generationMetadata);
+    precomputeMosaicEffectiveHarmonyBars(
+      fragmentContext,
+      routing,
+      buildMosaicTonicMap(fragmentPlan, fragmentContext)
+    );
+  } else {
+    const entry = getDispatchEntry(section.songwriterStyleId);
+    entry?.precompute(fragmentContext);
+  }
+
+  const fullMeter = parentContext.barMeterMap ?? parentMeta?.barMeterMap;
+  if (fullMeter) {
+    const fragMeter = fragmentBarMeterMapFromFull(fullMeter, section.startBar, span);
+    if (fragMeter) {
+      fragmentContext.barMeterMap = fragMeter;
+      fragmentContext.generationMetadata!.barMeterMap = fragMeter;
+    }
+  }
+
+  try {
+    return generateGoldenPathDuoScore(fragmentContext, plans, duoScoreOpts);
+  } catch (err) {
+    console.warn(
+      `[mosaic-section-retry] fragment generation failed for "${sectionLabel}" attempt ${retryOrdinal}:`,
+      err instanceof Error ? err.message : String(err)
+    );
+    return null;
+  }
 }
