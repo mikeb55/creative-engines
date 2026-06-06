@@ -190,6 +190,28 @@ export function runDuoSongModeIntegrationTests(): { ok: boolean; name: string; d
       name: 'integration: metadata receipts contain tv:* and jma:* prefixes',
       detail: !hasTv || !hasJma ? `tv=${hasTv} jma=${hasJma}` : undefined,
     });
+
+    const evalResults = md?.duoSectionEvalResults;
+    const evalOk =
+      Array.isArray(evalResults) &&
+      evalResults.length === 2 &&
+      evalResults[0]?.composerId === 'verlaine' &&
+      evalResults[1]?.composerId === 'marr' &&
+      evalResults.every(
+        (entry) =>
+          typeof entry.sectionLabel === 'string' &&
+          typeof entry.passed === 'boolean' &&
+          typeof entry.scores?.overall === 'number' &&
+          Array.isArray(entry.failures)
+      );
+    out.push({
+      ok: evalOk === true,
+      name: 'integration: duoSectionEvalResults — 2 sections verlaine + marr, no throw',
+      detail:
+        evalOk === true
+          ? undefined
+          : `evalResults=${JSON.stringify(evalResults?.map((e) => ({ label: e.sectionLabel, composer: e.composerId })))}`,
+    });
   } finally {
     restore();
   }

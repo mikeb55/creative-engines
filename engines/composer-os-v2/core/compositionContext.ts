@@ -560,6 +560,16 @@ export interface GenerationMetadata {
     composerId: string;
     expectedHarmonyBars: string[];
   }>;
+  /** Duo Song Mode Step 7 — per-section GCE/style evaluation results (one profile per section). */
+  duoSectionEvalResults?: Array<{
+    sectionLabel: string;
+    startBar: number;
+    endBar: number;
+    composerId: string;
+    passed: boolean;
+    scores: Record<string, number>;
+    failures: string[];
+  }>;
   /** Duo Song Mode Step 3 — global bar index (1-based) → section label from duo precompute orchestrator. */
   duoSectionOwnership?: Record<number, string>;
   /** String Quartet StylePanel — SQ rhythm engine id (`bartok_bulgarian_aksak`, `free_proportional`, `baroque_dance`, `reich_phasing_grid`, `viennese_waltz`, `jewish_klezmer`, …). */

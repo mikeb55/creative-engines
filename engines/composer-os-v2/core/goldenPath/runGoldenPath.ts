@@ -132,6 +132,7 @@ import {
   resolveEffectiveHarmonyTruth,
 } from './customLockedHarmonyRouting';
 import { isDuoModeActive } from '../duo-song-mode/duoBarHelpers';
+import { evaluateDuoSections } from '../duo-song-mode/evaluateDuoSections';
 import { validateSongModeMotifSystem } from '../motif/songModeMotifEngine';
 import { validateSongModePhraseEngineV1 } from './songModePhraseEngineV1';
 import { partitionSongModePhraseIssues } from '../song-mode/songModePhraseBehaviourRules';
@@ -2598,6 +2599,24 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     assertScoreMatchesLockedHarmonyWire(score, options, appliedContext);
   } catch (e) {
     errors.push(e instanceof Error ? e.message : String(e));
+  }
+  if (isDuoModeActive(appliedContext)) {
+    try {
+      const duoSectionEvalResults = evaluateDuoSections(score, appliedContext);
+      appliedContext.generationMetadata = {
+        ...appliedContext.generationMetadata,
+        duoSectionEvalResults,
+      };
+    } catch (err) {
+      console.warn(
+        '[duo-section-eval] evaluateDuoSections failed:',
+        err instanceof Error ? err.message : String(err)
+      );
+      appliedContext.generationMetadata = {
+        ...appliedContext.generationMetadata,
+        duoSectionEvalResults: [],
+      };
+    }
   }
   applyKeySignatureToScoreAndContext(score, appliedContext, {
     keySignatureMode: options?.keySignatureMode,
