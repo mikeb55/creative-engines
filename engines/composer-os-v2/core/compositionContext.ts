@@ -542,6 +542,13 @@ export interface GenerationMetadata {
   motifReuseSuggestions?: Array<{ assetId: string; targetMode: string; role: string; note: string }>;
   /** Active songwriter style id — used to gate style-specific harmonic behaviour. */
   songwriterStyleId?: string;
+  /** Duo Song Mode — per-section songwriter routing (Step 1); 2+ entries enables duo mode in {@link resolveSectionSongwritingStyles}. */
+  duoSongModeSectionPlan?: Array<{
+    sectionLabel: string;
+    startBar: number;
+    endBar: number;
+    songwriterStyleId: string;
+  }>;
   /** String Quartet StylePanel — SQ rhythm engine id (`bartok_bulgarian_aksak`, `free_proportional`, `baroque_dance`, `reich_phasing_grid`, `viennese_waltz`, `jewish_klezmer`, …). */
   sqRhythmEngineId?: string;
   /** String Quartet — rhythm engine fingerprint receipts (`BG_RHYTHM_*`, …) for telemetry / eval. */

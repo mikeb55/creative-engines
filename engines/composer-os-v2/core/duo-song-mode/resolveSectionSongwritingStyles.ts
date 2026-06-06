@@ -1,28 +1,15 @@
 import type { FormMap, GenerationMetadata } from '../compositionContext';
 
 /** One section entry from {@link GenerationMetadata.duoSongModeSectionPlan} (Step 1). */
-export interface DuoSongModeSectionPlanEntry {
-  sectionLabel: string;
-  startBar: number;
-  endBar: number;
-  songwriterStyleId: string;
-}
+export type DuoSongModeSectionPlanEntry = NonNullable<
+  GenerationMetadata['duoSongModeSectionPlan']
+>[number];
 
 export interface SectionComposerRouting {
   mode: 'single' | 'duo';
   primarySongwriterStyleId: string;
   barComposerMap: Record<number, string>;
   sectionComposerMap: DuoSongModeSectionPlanEntry[];
-}
-
-type GenerationMetadataWithDuoPlan = GenerationMetadata & {
-  duoSongModeSectionPlan?: DuoSongModeSectionPlanEntry[];
-};
-
-function readDuoSongModeSectionPlan(
-  generationMetadata: GenerationMetadata
-): DuoSongModeSectionPlanEntry[] | undefined {
-  return (generationMetadata as GenerationMetadataWithDuoPlan).duoSongModeSectionPlan;
 }
 
 function buildSingleComposerRouting(
@@ -64,7 +51,7 @@ export function resolveSectionSongwritingStyles(
   formMap: FormMap,
   generationMetadata: GenerationMetadata
 ): SectionComposerRouting {
-  const plan = readDuoSongModeSectionPlan(generationMetadata);
+  const plan = generationMetadata.duoSongModeSectionPlan;
 
   if (!plan || plan.length === 0 || plan.length < 2) {
     const songwriterStyleId = generationMetadata.songwriterStyleId;
