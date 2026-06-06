@@ -553,6 +553,7 @@ export interface GenerationMetadata {
       numerator: number;
       denominator: number;
     };
+    phraseRole?: 'statement' | 'development' | 'climax' | 'release';
   }>;
   /** Mosaic Mode Step 3 — full-form merged effective harmony (one symbol per bar, bar 1 at index 0). */
   mosaicMergedHarmonyBars?: string[];

@@ -26,6 +26,11 @@ import {
   buildTransitionBarNotes,
   isMosaicTransitionBar,
 } from '../mosaic-mode/mosaicTransitionBars';
+import {
+  buildPhraseRoleHints,
+  resolvePhraseRole,
+  type PhraseRoleHints,
+} from '../mosaic-mode/mosaicPhrasePlanner';
 import type { CoreMotif } from '../motif/motifEngineTypes';
 import {
   getEffectivePitchProfileForBar,
@@ -1894,6 +1899,90 @@ function mosaicTransitionAttackBeats(noteCount: number, meter: BarMeterSignature
   return [numBeats - 2, numBeats - 1.5, numBeats - 1];
 }
 
+const MOSAIC_PHRASE_ROLE_DYNAMIC_STEP = 12;
+
+function mosaicPhraseRoleHintsForBar(
+  bar: number,
+  context: CompositionContext
+): PhraseRoleHints | null {
+  if (!isMosaicModeActive(context) || context.generationMetadata?.songModeHookFirstIdentity) {
+    return null;
+  }
+  const plan = context.generationMetadata?.mosaicSectionPlan;
+  if (!plan?.length) return null;
+  const section = mosaicSectionContainingBar(bar, plan);
+  if (!section) return null;
+  const role = resolvePhraseRole(section);
+  return role ? buildPhraseRoleHints(role) : null;
+}
+
+function applyMosaicPhraseRoleDensityLevel(
+  level: 'sparse' | 'medium' | 'dense',
+  mult: number
+): 'sparse' | 'medium' | 'dense' {
+  if (mult <= 0.65) return 'sparse';
+  if (mult < 0.9) {
+    if (level === 'dense') return 'medium';
+    return 'sparse';
+  }
+  if (mult >= 1.25) return 'dense';
+  if (mult > 1.0) {
+    if (level === 'sparse') return 'medium';
+    return 'medium';
+  }
+  return level;
+}
+
+function applyMosaicPhraseRoleGuitarThinning(m: MeasureModel, mult: number): void {
+  if (mult >= 0.999) return;
+  const noteEvents = m.events.filter((e): e is NoteEvent => e.kind === 'note');
+  const target = Math.max(1, Math.round(noteEvents.length * mult));
+  if (noteEvents.length <= target) return;
+  const toRemove = new Set<(typeof m.events)[number]>();
+  const ranked = [...noteEvents].sort((a, b) => {
+    const am = a.motifRef?.startsWith('mosaic_motif_') ? 1 : 0;
+    const bm = b.motifRef?.startsWith('mosaic_motif_') ? 1 : 0;
+    if (am !== bm) return am - bm;
+    return b.startBeat - a.startBeat;
+  });
+  for (let i = 0; i < ranked.length - target; i++) toRemove.add(ranked[i]!);
+  m.events = m.events.filter((e) => !toRemove.has(e));
+}
+
+function applyMosaicPhraseRoleDynamics(m: MeasureModel, shift: number): void {
+  if (shift === 0) return;
+  const delta = shift * MOSAIC_PHRASE_ROLE_DYNAMIC_STEP;
+  for (const e of m.events) {
+    if (e.kind !== 'note') continue;
+    const cur = e.velocity ?? 80;
+    e.velocity = Math.min(127, Math.max(1, cur + delta));
+  }
+}
+
+function applyMosaicPhraseRoleAfterGuitarBar(
+  m: MeasureModel,
+  bar: number,
+  context: CompositionContext
+): void {
+  if (!isMosaicModeActive(context) || context.generationMetadata?.songModeHookFirstIdentity) return;
+  const hints = mosaicPhraseRoleHintsForBar(bar, context);
+  if (!hints) return;
+  const mult = hints.densityMultiplier;
+  const thinMult = mult < 1 ? mult : mult < 1.25 ? 1 / mult : 1;
+  if (thinMult < 0.999) applyMosaicPhraseRoleGuitarThinning(m, thinMult);
+}
+
+function applyMosaicPhraseRoleDynamicsToMeasures(
+  measures: MeasureModel[],
+  context: CompositionContext
+): void {
+  if (!isMosaicModeActive(context) || context.generationMetadata?.songModeHookFirstIdentity) return;
+  for (const m of measures) {
+    const hints = mosaicPhraseRoleHintsForBar(m.index, context);
+    if (hints) applyMosaicPhraseRoleDynamics(m, hints.dynamicShift);
+  }
+}
+
 /** Quarter-beat grid — keeps MusicXML division sums stable. */
 function qBeat(x: number): number {
   return Math.round(x * 4) / 4;
@@ -3519,6 +3608,9 @@ function buildGuitarPart(
     if (!variants || !plan) return;
     const section = plan.find((s) => s.startBar === bar);
     if (!section) return;
+    const role = resolvePhraseRole(section);
+    const roleHints = role ? buildPhraseRoleHints(role) : null;
+    if (roleHints?.motifProminence === 'absent') return;
     const variant = variants[section.sectionLabel];
     if (!variant || !('intervalPattern' in variant)) return;
     const core = variant as CoreMotif;
@@ -3543,9 +3635,13 @@ function buildGuitarPart(
       if (rh.startBeat >= barCap - 1e-6) continue;
       const duration = Math.min(rh.duration, barCap - rh.startBeat);
       if (duration <= 0) continue;
+      const motifVel =
+        roleHints?.motifProminence === 'support'
+          ? Math.max(1, 80 - MOSAIC_PHRASE_ROLE_DYNAMIC_STEP)
+          : undefined;
       addEvent(
         m,
-        createNote(pitch, snapAttackBeatToGrid(rh.startBeat), duration, 1, motifRef)
+        createNote(pitch, snapAttackBeatToGrid(rh.startBeat), duration, 1, motifRef, undefined, motifVel)
       );
       if (i < core.intervalPattern.length) {
         pitch += core.intervalPattern[i]!;
@@ -4305,6 +4401,7 @@ function buildGuitarPart(
       emitMosaicMotifAtSectionStart(m, b, effectiveLow, effectiveHigh);
       runDuoDispatchApplyForMeasure(m, b, effectiveLow, effectiveHigh);
       appendMosaicTransitionBarNotes(m, b, effectiveLow, effectiveHigh);
+      applyMosaicPhraseRoleAfterGuitarBar(m, b, context);
       measures.push(m);
       continue;
     }
@@ -4441,6 +4538,7 @@ function buildGuitarPart(
       emitMosaicMotifAtSectionStart(m, b, effectiveLow, effectiveHigh);
       runDuoDispatchApplyForMeasure(m, b, effectiveLow, effectiveHigh);
       appendMosaicTransitionBarNotes(m, b, effectiveLow, effectiveHigh);
+      applyMosaicPhraseRoleAfterGuitarBar(m, b, context);
       measures.push(m);
       continue;
     }
@@ -4610,6 +4708,15 @@ function buildGuitarPart(
         densityLevel = archDensityFinal;
       }
       densityLevel = applyZappaSectionDensityBehavior(densityLevel, zappaSectionBehavior);
+      if (isMosaicModeActive(context) && !context.generationMetadata?.songModeHookFirstIdentity) {
+        const phraseHints = mosaicPhraseRoleHintsForBar(b, context);
+        if (phraseHints) {
+          densityLevel = applyMosaicPhraseRoleDensityLevel(
+            densityLevel,
+            phraseHints.densityMultiplier
+          );
+        }
+      }
       if ((isEcmM || isEcmS) && tex?.guitarRole === 'silence') {
         addEvent(m, createRest(0, measureBeatSpanQuartersOf(m)));
       } else if (
@@ -4839,6 +4946,7 @@ function buildGuitarPart(
     emitMosaicMotifAtSectionStart(m, b, effectiveLow, effectiveHigh);
     runDuoDispatchApplyForMeasure(m, b, effectiveLow, effectiveHigh);
     appendMosaicTransitionBarNotes(m, b, effectiveLow, effectiveHigh);
+    applyMosaicPhraseRoleAfterGuitarBar(m, b, context);
     measures.push(m);
   }
 
@@ -5163,6 +5271,10 @@ function buildGuitarPart(
 
   if (isSongwriterCharlieParker && context.generationMetadata) {
     finalizeCharlieParkerMetadata(context.generationMetadata, cpAccum);
+  }
+
+  if (isMosaicModeActive(context) && !context.generationMetadata?.songModeHookFirstIdentity) {
+    applyMosaicPhraseRoleDynamicsToMeasures(measures, context);
   }
 
   const guitarPartDraft: PartModel = {
@@ -6529,6 +6641,10 @@ function buildBassPart(
     if (anyViol && context.generationMetadata) {
       context.generationMetadata.frankZappaBassBeatCommitmentViolated = true;
     }
+  }
+
+  if (isMosaicModeActive(context) && !context.generationMetadata?.songModeHookFirstIdentity) {
+    applyMosaicPhraseRoleDynamicsToMeasures(measures, context);
   }
 
   return {

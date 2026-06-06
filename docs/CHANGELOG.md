@@ -2,6 +2,10 @@
 
 ### Added
 
+- **Mosaic Phrase Planning Layer (rc8)** — `phraseRole` optional field on `MosaicSectionPlan` entry (`'statement'|'development'|'climax'|'release'`); `resolvePhraseRole`: pure resolver; `buildPhraseRoleHints`: density, dynamic, motif prominence per role; applied at section `startBar` before dispatch — graceful no-op when absent; new files `mosaicPhrasePlanner.ts`, `mosaicPhrasePlanner.test.ts`.
+
+### Added
+
 - **Mosaic Time Signatures Per Section (rc7)** — Optional `timeSignature` field on `MosaicSectionPlan` entry `{ numerator, denominator }`; defaults to 4/4 when absent; time signature written to score at each section `startBar`; motif and transition beat placement respects section meter; CLI `--sections` JSON accepts `timeSignature` per section.
 
 ### Added
