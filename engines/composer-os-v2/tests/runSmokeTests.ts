@@ -59,6 +59,7 @@ import { runTownerGuitarPolySmokeTests } from './townerGuitarPolySmoke.test';
 import { runVerlainFieldSliceSmokeTests } from './verlainFieldSliceSmoke.test';
 import { runHoldsworthScaleSliceSmokeTests } from './holdsworthScaleSliceSmoke.test';
 import { runJackWhiteDroneSmokeTests } from './jackWhiteDroneSmoke.test';
+import { runBeefheartFragmentSmokeTests } from './beefheartFragmentSmoke.test';
 import { runMarrMelodicRhythmSmokeTests } from './marrMelodicRhythmSmoke.test';
 import { runMandelLyricWarmthSmokeTests } from './mandelLyricWarmthSmoke.test';
 import { runWeberFieldSliceSmokeTests } from './weberFieldSliceSmoke.test';
@@ -233,6 +234,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Tom Verlaine songwriter slice', run: runVerlainFieldSliceSmokeTests },
   { label: 'Allan Holdsworth songwriter slice', run: runHoldsworthScaleSliceSmokeTests },
   { label: 'Jack White songwriter slice', run: runJackWhiteDroneSmokeTests },
+  { label: 'Captain Beefheart songwriter slice', run: runBeefheartFragmentSmokeTests },
   { label: 'Johnny Marr songwriter slice', run: runMarrMelodicRhythmSmokeTests },
   { label: 'Johnny Mandel songwriter slice', run: runMandelLyricWarmthSmokeTests },
   { label: 'Eberhard Weber songwriter slice', run: runWeberFieldSliceSmokeTests },

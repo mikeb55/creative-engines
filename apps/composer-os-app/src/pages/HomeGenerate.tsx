@@ -679,6 +679,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'antonio_carlos_jobim', label: 'Antônio Carlos Jobim' },
   { id: 'bach', label: 'Bach' },
   { id: 'bacharach', label: 'Bacharach' },
+  { id: 'beefheart', label: 'Captain Beefheart' },
   { id: 'angelo_badalamenti', label: 'Angelo Badalamenti' },
   { id: 'barry_harris', label: 'Barry Harris' },
   { id: 'beatles', label: 'Beatles' },
@@ -1033,6 +1034,7 @@ const PRODUCTION_WORLD_SONGWRITER_ID_SET = new Set<string>([
   ...songwriterIdsForProductionGroup('ART_ROCK_POST_PUNK'),
   ...songwriterIdsForProductionGroup('ROCK_FUSION'),
   ...songwriterIdsForProductionGroup('JAZZ_GUITAR'),
+  ...songwriterIdsForProductionGroup('AVANT_BLUES'),
 ]);
 
 const SONGWRITER_GROUP_SHIPPED_ORDER_FILTERED = SONGWRITER_GROUP_SHIPPED_ORDER.filter(
@@ -1145,6 +1147,16 @@ function SongwriterSelectOptionGroups({ onOptionHover }: { onOptionHover?: (id: 
           const o = SONGWRITER_OPTION_BY_ID.get(id)!;
           return (
             <option key={`jazzguitar-${id}`} value={o.id} {...optHover(o.id)}>
+              {o.label}
+            </option>
+          );
+        })}
+      </optgroup>
+      <optgroup label={COMPOSER_GROUP_DISPLAY_LABELS.AVANT_BLUES}>
+        {songwriterIdsForProductionGroup('AVANT_BLUES').map((id) => {
+          const o = SONGWRITER_OPTION_BY_ID.get(id)!;
+          return (
+            <option key={`avantblues-${id}`} value={o.id} {...optHover(o.id)}>
               {o.label}
             </option>
           );
@@ -1403,6 +1415,7 @@ const ARRANGER_OPTIONS: { id: string; label: string }[] = [
   { id: 'evh', label: 'Eddie Van Halen' },
   { id: 'holdsworth', label: 'Allan Holdsworth' },
   { id: 'jack_white', label: 'Jack White' },
+  { id: 'beefheart', label: 'Captain Beefheart' },
   { id: 'marr', label: 'Johnny Marr' },
   { id: 'sonic_youth', label: 'Sonic Youth' },
   { id: 'wes', label: 'Wes Montgomery' },
@@ -1486,6 +1499,7 @@ const ARRANGER_PRODUCTION_WORLD_ID_SET = new Set<string>([
   ...arrangerIdsForProductionGroup('ART_ROCK_POST_PUNK'),
   ...arrangerIdsForProductionGroup('ROCK_FUSION'),
   ...arrangerIdsForProductionGroup('JAZZ_GUITAR'),
+  ...arrangerIdsForProductionGroup('AVANT_BLUES'),
 ]);
 
 const ARRANGER_GROUP_CORE_ORDER_FILTERED = ARRANGER_GROUP_CORE_ORDER.filter(
@@ -1594,6 +1608,18 @@ function ArrangerSelectOptionGroups(props?: { variant?: 'default' | 'string_quar
             const o = ARRANGER_OPTION_BY_ID.get(id)!;
             return (
               <option key={`jazzguitar-arr-${id}`} value={o.id}>
+                {o.label}
+              </option>
+            );
+          })}
+      </optgroup>
+      <optgroup label={COMPOSER_GROUP_DISPLAY_LABELS.AVANT_BLUES}>
+        {arrangerIdsForProductionGroup('AVANT_BLUES')
+          .filter((id) => ARRANGER_OPTION_BY_ID.has(id))
+          .map((id) => {
+            const o = ARRANGER_OPTION_BY_ID.get(id)!;
+            return (
+              <option key={`avantblues-arr-${id}`} value={o.id}>
                 {o.label}
               </option>
             );

@@ -255,6 +255,45 @@ const JWHITE_COMPOSER_RULES: BigBandRule[] = [
   ),
 ];
 
+/** Captain Beefheart — composed blues-fragment polyphony; independent periodicity, wrong-note recurrence. */
+const BEEFHEART_COMPOSER_RULES: BigBandRule[] = [
+  R(
+    'beefheart.blues_transformed',
+    'Blues center detectable; functional progression removed; tones distributed across independent parts as friction; suppress 12-bar resolution',
+    'composer',
+    'harmony',
+    90
+  ),
+  R(
+    'beefheart.independent_periodicity',
+    'Each part own cell length, mismatched accent cycles; sync at phrase junctions not bar boundaries',
+    'composer',
+    'rhythm',
+    91
+  ),
+  R(
+    'beefheart.wrong_note_recurrence',
+    'Dissonant notes recur in same contour or rhythmic slot; m2 and tritone as authored friction; never one-off spikes',
+    'composer',
+    'harmony',
+    92
+  ),
+  R(
+    'beefheart.asymmetric_modules',
+    '3/5/7/9-beat cells; compact fragment then varied repetition; no square 4+4 phrasing as default',
+    'composer',
+    'form',
+    88
+  ),
+  R(
+    'beefheart.resolution_suppression',
+    'No cadential release; tension resets by repetition or cut; coexistence not resolution; suppress V–I and blues turnaround closure',
+    'composer',
+    'harmony',
+    93
+  ),
+];
+
 /** Johnny Marr — melodic rhythm guitar; partial voicings, open-string resonance, top-note melody. */
 const MARR_COMPOSER_RULES: BigBandRule[] = [
   R(
@@ -738,6 +777,10 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
   allan_holdsworth_scale_derived: HOLDSWORTH_COMPOSER_RULES,
   jack_white: JWHITE_COMPOSER_RULES,
   jack_white_drone_riff: JWHITE_COMPOSER_RULES,
+  beefheart: BEEFHEART_COMPOSER_RULES,
+  captain_beefheart: BEEFHEART_COMPOSER_RULES,
+  beefheart_fragment_polyphony: BEEFHEART_COMPOSER_RULES,
+  don_van_vliet: BEEFHEART_COMPOSER_RULES,
   marr: MARR_COMPOSER_RULES,
   johnny_marr: MARR_COMPOSER_RULES,
   marr_melodic_rhythm: MARR_COMPOSER_RULES,

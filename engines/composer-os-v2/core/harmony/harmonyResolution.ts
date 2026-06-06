@@ -754,6 +754,24 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   }
 
   /**
+   * Captain Beefheart: `precomputeBeefheartEffectiveHarmonyBars` applies blues-fragment polyphony.
+   * After precompute, `beefheartEffectiveHarmonyBars` is full-form and authoritative.
+   * Receipt prefix **`cbf:*`** — Count Basie owns **`cb:*`**.
+   * LOCK note: resolution suppression — effective bars hold tension without cadential confirmation;
+   * export truth follows precomputed symbols, not tonal reconciliation passes (model: john_surman branch).
+   */
+  const beefheartEff = meta?.beefheartEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'beefheart' &&
+    Array.isArray(beefheartEff) &&
+    beefheartEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return beefheartEff[barIndex - 1]!;
+  }
+
+  /**
    * Tom Verlaine: `precomputeVerlaineEffectiveHarmonyBars` applies suspended modal field voicing.
    * After precompute, `verlaineEffectiveHarmonyBars` is full-form and authoritative.
    */

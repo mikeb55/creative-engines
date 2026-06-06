@@ -689,6 +689,35 @@ Jack White is **drone-centered riff writing under constraint**: simple harmonic 
 
 ---
 
+### Captain Beefheart (`beefheart`)
+
+Beefheart is the most **radical harmonic build** in Composer OS: composed blues-fragment polyphony where blues DNA survives but is broken into angular cells, redistributed across independent parts, and locked into repeatable structures that refuse conventional harmonic or metric reconciliation. Every dissonance recurs; every wrong note belongs to a repeating contour, interval schema, or contrapuntal collision rule.
+
+**Song Mode slice** — **`beefheartFragmentSlice.ts`** (`cbf:*` receipts — Count Basie owns **`cb:*`**): blues transformation → independent part periodicity → wrong-note recurrence → asymmetric phrase modules → resolution suppression → dense separated texture.
+
+**Six parameters** (0–1, defaults in parentheses):
+
+| Parameter | Default | Musical role |
+|-----------|---------|--------------|
+| `bluesTransformationRate` | 0.85 | Blues center detectable; functional progression removed; tones distributed as friction |
+| `independentPartPeriodicity` | 0.90 | Each part own cell length; mismatched accent cycles; sync at phrase junctions |
+| `wrongNoteRecurrence` | 0.88 | Dissonant notes recur in same contour/slot — never one-off spikes |
+| `asymmetricPhraseModule` | 0.85 | 3/5/7/9-beat cells; carved utterances not square 4+4 phrasing |
+| `resolutionSuppression` | 0.92 | No cadential release; tension resets by repetition or sectional cut |
+| `denseSeparatedTexture` | 0.80 | Multiple sharply profiled lines simultaneously legible |
+
+**VRB bundle id:** **`beefheart_fragment_polyphony`** — 8 fingerprints + delta blues / rock / random noise / Ornette / Zappa / Ayler / Pere Ubu negative discriminators.
+
+**Big Band arranger ids:** **`beefheart`**, **`beefheart_fragment_polyphony`** — five rules (`beefheart.*`).
+
+**Production group:** **`AVANT_BLUES`** — Beefheart **`fully_implemented`**.
+
+**Evaluation:** **`beefheartStyleProfile.ts`** — pass on blues transformation + part periodicity + wrong-note recurrence; hard fail on random noise (no recurrence schema), delta blues 12-bar bleed, Ornette swing bleed.
+
+**LOCK note:** resolution suppression means effective bars hold tension without cadential confirmation; export truth follows precomputed symbols.
+
+---
+
 ### Eberhard Weber (`eberhard_weber`)
 
 Weber is the most **bass-centred harmonic architect** in ECM Chamber Jazz. Harmony is a **field sustained by the bass axis** — upper color clusters refresh slowly while the pedal holds. Tension releases through **revoicing, register, and spacing**, not functional cadence.

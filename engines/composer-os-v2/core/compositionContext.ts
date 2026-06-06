@@ -62,6 +62,10 @@ import type {
   JackWhiteSliceParams,
 } from './song-mode/jackWhiteDroneSlice';
 import type {
+  BeefheartFragmentPlan,
+  BeefheartSliceParams,
+} from './song-mode/beefheartFragmentSlice';
+import type {
   MarrMelodicPlan,
   MarrSliceParams,
 } from './song-mode/marrMelodicSlice';
@@ -2032,6 +2036,32 @@ export interface GenerationMetadata {
   jackWhiteSliceReceipt?: string;
   jackWhiteEffectiveHarmonyBars?: string[];
   jackWhiteDeviceReceipts?: string[];
+  /** Captain Beefheart — blues-fragment polyphony slice (`beefheartFragmentSlice.ts`, receipts `cbf:*`). */
+  beefheartDiagnostics?: {
+    songwriterId: 'beefheart';
+    barsConsidered: number;
+    bluesTransformTouches: number;
+    partCycleTouches: number;
+    wrongRepeatTouches: number;
+    asymModuleTouches: number;
+    resolutionSuppressTouches: number;
+    denseLineTouches: number;
+    minSectionSpan?: number;
+    sliceParams?: BeefheartSliceParams;
+    bluesTransformation: number;
+    independentPartPeriodicity: number;
+    wrongNoteRecurrence: number;
+    asymmetricPhraseModule: number;
+    resolutionSuppression: number;
+    denseSeparatedTexture: number;
+    wrongNoteRecurrencePairs?: number;
+    deviceReceipts?: string[];
+  };
+  beefheartFragmentPlan?: BeefheartFragmentPlan;
+  beefheartSliceParams?: BeefheartSliceParams;
+  beefheartSliceReceipt?: string;
+  beefheartEffectiveHarmonyBars?: string[];
+  beefheartDeviceReceipts?: string[];
   /** Johnny Marr — melodic rhythm guitar slice (`marrMelodicSlice.ts`, receipts `jma:*`). */
   marrDiagnostics?: {
     songwriterId: 'marr';

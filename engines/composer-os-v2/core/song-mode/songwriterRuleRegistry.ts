@@ -1656,6 +1656,48 @@ function wireRiffVrbSongwriterRules(): void {
       'global'
     ),
   ];
+  rules.beefheart = [
+    R(
+      'beefheart.blues_transformed',
+      'Blues center detectable; functional progression removed; tones distributed as friction across independent parts',
+      'songwriter',
+      'harmony',
+      10,
+      'global'
+    ),
+    R(
+      'beefheart.independent_periodicity',
+      'Each part own cell length; mismatched accent cycles; sync at phrase junctions not bar boundaries',
+      'songwriter',
+      'rhythm',
+      10,
+      'global'
+    ),
+    R(
+      'beefheart.wrong_note_recurrence',
+      'Dissonant notes recur in same contour or rhythmic slot; m2/tritone friction; never one-off spikes',
+      'songwriter',
+      'harmony',
+      10,
+      'global'
+    ),
+    R(
+      'beefheart.asymmetric_modules',
+      '3/5/7/9-beat cells; compact fragment then varied repetition; no square 4+4 default',
+      'songwriter',
+      'form',
+      9,
+      'global'
+    ),
+    R(
+      'beefheart.resolution_suppression',
+      'No cadential release; tension resets by repetition or cut; suppress V–I and blues turnaround',
+      'songwriter',
+      'harmony',
+      10,
+      'global'
+    ),
+  ];
   rules.marr = [
     R(
       'marr.melodic_rhythm',

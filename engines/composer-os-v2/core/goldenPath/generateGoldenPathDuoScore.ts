@@ -321,6 +321,12 @@ import {
   precomputeJackWhiteEffectiveHarmonyBars,
 } from './jackWhiteDroneSlice';
 import {
+  accumulateBeefheartHarmonyDiagnostics,
+  createBeefheartHarmonyAccumulator,
+  finalizeBeefheartMetadata,
+  precomputeBeefheartEffectiveHarmonyBars,
+} from './beefheartFragmentSlice';
+import {
   accumulateMarrHarmonyDiagnostics,
   createMarrHarmonyAccumulator,
   finalizeMarrMetadata,
@@ -2582,6 +2588,14 @@ function buildSongwriterMelodyProfile(
         intervalBias: 'leaping',
         rhythmicFeel: 'syncopated',
       };
+    case 'beefheart':
+      return {
+        phraseIntentBias: 'neutral',
+        densityBias: 0.28,
+        offbeatBias: 0.72,
+        intervalBias: 'chromatic',
+        rhythmicFeel: 'syncopated',
+      };
     case 'scott_henderson':
       return {
         phraseIntentBias: 'ascending',
@@ -2870,6 +2884,7 @@ function buildGuitarPart(
   const isSongwriterVerlaine = genMeta?.songwriterStyleId === 'verlaine';
   const isSongwriterAllanHoldsworth = genMeta?.songwriterStyleId === 'allan_holdsworth';
   const isSongwriterJackWhite = genMeta?.songwriterStyleId === 'jack_white';
+  const isSongwriterBeefheart = genMeta?.songwriterStyleId === 'beefheart';
   const isSongwriterMarr = genMeta?.songwriterStyleId === 'marr';
   const isSongwriterEberhardWeber = genMeta?.songwriterStyleId === 'eberhard_weber';
   const isSongwriterClausOgerman =
@@ -2938,6 +2953,7 @@ function buildGuitarPart(
   const tvAccum = createVerlaineHarmonyAccumulator();
   const holdsworthAccum = createHoldsworthHarmonyAccumulator();
   const jackWhiteAccum = createJackWhiteHarmonyAccumulator();
+  const beefheartAccum = createBeefheartHarmonyAccumulator();
   const marrAccum = createMarrHarmonyAccumulator();
   const ewAccum = createEberhardWeberHarmonyAccumulator();
   const coAccum = createClausOgermanHarmonyAccumulator();
@@ -3112,6 +3128,9 @@ function buildGuitarPart(
   }
   if (isSongwriterJackWhite && isDuoGoldenPath) {
     precomputeJackWhiteEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterBeefheart && isDuoGoldenPath) {
+    precomputeBeefheartEffectiveHarmonyBars(context);
   }
   if (isSongwriterMarr && isDuoGoldenPath) {
     precomputeMarrEffectiveHarmonyBars(context);
@@ -3574,6 +3593,13 @@ function buildGuitarPart(
         b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
         resolveBarSymbol(context, b).symbol,
         jackWhiteAccum
+      );
+    }
+    if (isSongwriterBeefheart) {
+      accumulateBeefheartHarmonyDiagnostics(
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
+        beefheartAccum
       );
     }
     if (isSongwriterMarr) {
@@ -4618,6 +4644,9 @@ function buildGuitarPart(
   }
   if (isSongwriterJackWhite && context.generationMetadata) {
     finalizeJackWhiteMetadata(context.generationMetadata, jackWhiteAccum);
+  }
+  if (isSongwriterBeefheart && context.generationMetadata) {
+    finalizeBeefheartMetadata(context.generationMetadata, beefheartAccum);
   }
   if (isSongwriterMarr && context.generationMetadata) {
     finalizeMarrMetadata(context.generationMetadata, marrAccum);

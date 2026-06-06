@@ -93,6 +93,10 @@ export const bigBandPreset: Preset = {
       'barry',
       'john_barry',
       'barry_thematic_monolith',
+      'beefheart',
+      'captain_beefheart',
+      'beefheart_fragment_polyphony',
+      'don_van_vliet',
     ],
   },
 };

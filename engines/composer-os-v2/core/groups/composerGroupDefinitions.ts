@@ -19,7 +19,8 @@ export type ComposerGroupId =
   | 'FILM_SOUNDTRACK'
   | 'ART_ROCK_POST_PUNK'
   | 'ROCK_FUSION'
-  | 'JAZZ_GUITAR';
+  | 'JAZZ_GUITAR'
+  | 'AVANT_BLUES';
 
 /** Full default parameter object for an active production group. */
 export interface GroupParams {
@@ -114,6 +115,11 @@ export const COMPOSER_ID_ALIASES: Readonly<Record<string, string>> = {
   jack_white: 'jack_white',
   white: 'jack_white',
   the_white_stripes: 'jack_white',
+  beefheart: 'beefheart',
+  captain_beefheart: 'beefheart',
+  don_van_vliet: 'beefheart',
+  beefheart_fragment_polyphony: 'beefheart',
+  trout_mask: 'beefheart',
   marr: 'marr',
   johnny_marr: 'marr',
   marr_melodic_rhythm: 'marr',
@@ -241,6 +247,19 @@ const JAZZ_GUITAR_DEFAULTS: GroupParams = {
   sectionalContrastMode: 'blowing_sections',
 };
 
+const AVANT_BLUES_DEFAULTS: GroupParams = {
+  groovePersistence: 0.48,
+  registralPorosity: 0.62,
+  stringProminence: 0.08,
+  cadentialResolution: 'suspended',
+  ensembleDensityCurve: 'slow_bloom',
+  silenceWeighting: 'structural',
+  productionGloss: 0.18,
+  melodyFraming: 'integrated',
+  soloistSpotlight: 0.62,
+  sectionalContrastMode: 'gradual',
+};
+
 export const COMPOSER_GROUP_DEFINITIONS: readonly ComposerGroupDefinition[] = [
   {
     id: 'ECM_CHAMBER_JAZZ',
@@ -361,6 +380,13 @@ export const COMPOSER_GROUP_DEFINITIONS: readonly ComposerGroupDefinition[] = [
       { composerId: 'joe_pass', status: 'stub_exposed' },
     ],
   },
+  {
+    id: 'AVANT_BLUES',
+    description:
+      'Avant blues production logic. Blues DNA fractured across independent parts — mismatched periodicity, authored wrong-note recurrence, resolution suppression. Captain Beefheart composed polyphony.',
+    defaults: AVANT_BLUES_DEFAULTS,
+    members: [{ composerId: 'beefheart', status: 'fully_implemented' }],
+  },
 ] as const;
 
 /** UI-facing labels for production-world optgroups. */
@@ -372,6 +398,7 @@ export const COMPOSER_GROUP_DISPLAY_LABELS: Record<ComposerGroupId, string> = {
   ART_ROCK_POST_PUNK: 'Art Rock / Post-Punk',
   ROCK_FUSION: 'Rock / Fusion',
   JAZZ_GUITAR: 'Jazz Guitar',
+  AVANT_BLUES: 'Avant Blues',
 };
 
 const DUAL_GROUP_COMPOSER_IDS = new Set<string>(Object.keys(DUAL_GROUP_COMPOSER_ASSIGNMENTS));

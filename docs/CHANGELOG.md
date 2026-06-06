@@ -2,6 +2,14 @@
 
 ### Added
 
+- **Captain Beefheart v2 avant-blues composer (`cbf:*`)** — composed blues-fragment polyphony slice (`beefheartFragmentSlice.ts`): bluesTransformation 0.85, independentPartPeriodicity 0.90, wrongNoteRecurrence 0.88, asymmetricPhraseModule 0.85, resolutionSuppression 0.92, denseSeparatedTexture 0.80; golden-path precompute + locked harmony routing + smoke **`beefheartFragmentSmoke.test.ts`** seed **66001**. Receipt prefix **`cbf:*`** — Count Basie owns **`cb:*`**.
+- **Beefheart VRB bundle** — **`beefheartVrbFingerprints.ts`** — 8 fingerprints + delta blues / rock / Ornette / Zappa / Ayler / Pere Ubu negative discriminators; bundle id **`beefheart_fragment_polyphony`**.
+- **Beefheart Big Band rules** — five named rules in **`bigBandRuleRegistry.ts`**: BluesTransformed, IndependentPeriodicity, WrongNoteRecurrence, AsymmetricModules, ResolutionSuppression (`beefheart.*`).
+- **Beefheart evaluation profile** — **`beefheartStyleProfile.ts`** with pass/fail thresholds and avant-blues negative discriminators.
+- **Beefheart Generate UI** — **`beefheart`** in **`HomeGenerate.tsx`** songwriter + arranger lists; new **`AVANT_BLUES`** production group — Beefheart **`fully_implemented`**.
+
+### Added
+
 - **Johnny Marr v2 art-rock composer (`jma:*`)** — melodic rhythm guitar slice (`marrMelodicSlice.ts`): partialVoicing 0.88, topNoteMelody 0.85, openStringResonance 0.80, addNoteHarmony 0.82, pendulumSubdivision 0.83; golden-path precompute + locked harmony routing + smoke **`marrMelodicRhythmSmoke.test.ts`** seed **55001**. Receipt prefix **`jma:*`** — distinct from Joni Mitchell `jm:*`, Mandel `jmd:*`, Jack White `jw:*`, John Williams `jwill:*`.
 - **Marr VRB bundle** — **`marrVrbFingerprints.ts`** — 8 fingerprints + McGuinn / The Edge / Andy Summers / Bernard Butler / generic rock negative discriminators; bundle id **`marr_melodic_rhythm`**.
 - **Marr Big Band rules** — five named rules in **`bigBandRuleRegistry.ts`**: MelodicRhythm, PartialVoicing, AddNoteSurface, PendulumSubdivision, SuspendedArrival (`marr.*`).

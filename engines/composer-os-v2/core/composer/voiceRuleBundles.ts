@@ -15,6 +15,7 @@ import { TOWNER_GUITAR_POLYPHONY_VRF_FINGERPRINT_RECEIPTS } from './townerVrbFin
 import { VERLAINE_SUSPENDED_FIELD_VRF_FINGERPRINT_RECEIPTS } from './verlainVrbFingerprints';
 import { HOLDSWORTH_SCALE_DERIVED_VRF_FINGERPRINT_RECEIPTS } from './holdsworthVrbFingerprints';
 import { JACK_WHITE_DRONE_RIFF_VRF_FINGERPRINT_RECEIPTS } from './jackWhiteVrbFingerprints';
+import { BEEFHEART_FRAGMENT_POLYPHONY_VRF_FINGERPRINT_RECEIPTS } from './beefheartVrbFingerprints';
 import { MARR_MELODIC_RHYTHM_VRF_FINGERPRINT_RECEIPTS } from './marrVrbFingerprints';
 import { BILL_HOLMAN_VRF_FINGERPRINT_RECEIPTS } from './holmanVrbFingerprints';
 import { CARLA_BLEY_VRF_FINGERPRINT_RECEIPTS } from './carlaBleyVrbFingerprints';
@@ -1568,6 +1569,57 @@ const MARR_MELODIC_RHYTHM: VoiceRuleBundle = {
     rhythmicIndependenceFloor: 0.58,
     registerInterlock: false,
     intervalPreference: 'modal_sparse',
+  },
+};
+
+const BEEFHEART_FRAGMENT_POLYPHONY: VoiceRuleBundle = {
+  voiceId: 'beefheart_fragment_polyphony',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 3,
+    allowMidBarChange: true,
+  },
+  bassPolicy: {
+    role: 'pattern-bass',
+    allowOctaveDoubling: true,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 8,
+    maxSpreadSemitones: 36,
+    clusterSizeNotes: [1, 3],
+    forbidParallelFifths: false,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'gesture-physical',
+    maxLeapSemitones: 14,
+    preferredIntervalSets: [1, 3, 4, 5, 6, 7],
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 0,
+    mutateSingleVoiceAtTime: true,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: [...BEEFHEART_FRAGMENT_POLYPHONY_VRF_FINGERPRINT_RECEIPTS],
+  },
+  formPolicy: {
+    narrativeArc: 'through-composed-noise-grammar',
+    sectionRecallEnforced: true,
+    noCadentialRelease: true,
+  },
+  rhythmPolicy: {
+    antiMetric: true,
+  },
+  repairPolicy: {
+    resolveParallels: false,
+    maxVoiceOverlap: 6,
+  },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.82,
+    registerInterlock: false,
+    intervalPreference: 'blues_chromatic',
   },
 };
 
@@ -4265,6 +4317,10 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   allan_holdsworth_scale_derived: ALLAN_HOLDSWORTH_SCALE_DERIVED,
   jack_white: JACK_WHITE_DRONE_RIFF,
   jack_white_drone_riff: JACK_WHITE_DRONE_RIFF,
+  beefheart: BEEFHEART_FRAGMENT_POLYPHONY,
+  captain_beefheart: BEEFHEART_FRAGMENT_POLYPHONY,
+  beefheart_fragment_polyphony: BEEFHEART_FRAGMENT_POLYPHONY,
+  don_van_vliet: BEEFHEART_FRAGMENT_POLYPHONY,
   marr: MARR_MELODIC_RHYTHM,
   johnny_marr: MARR_MELODIC_RHYTHM,
   marr_melodic_rhythm: MARR_MELODIC_RHYTHM,
