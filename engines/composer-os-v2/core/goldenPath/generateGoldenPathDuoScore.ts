@@ -1901,6 +1901,83 @@ function mosaicTransitionAttackBeats(noteCount: number, meter: BarMeterSignature
 
 const MOSAIC_PHRASE_ROLE_DYNAMIC_STEP = 12;
 
+/** Clone sealed score and re-inject section-start motif notes (durations not grid-trimmed). */
+function injectMosaicMotifNotesPostFinalize(
+  score: ScoreModel,
+  context: CompositionContext,
+  guitarMap: InstrumentRegisterMap
+): ScoreModel {
+  if (!isMosaicModeActive(context) || context.generationMetadata?.songModeHookFirstIdentity) {
+    return score;
+  }
+  const meta = context.generationMetadata;
+  const variants = meta?.mosaicSectionMotifVariants;
+  const plan = meta?.mosaicSectionPlan;
+  if (!variants || !plan?.length) return score;
+  const out = structuredClone(score) as ScoreModel;
+  const guitar = out.parts.find(
+    (p) => p.instrumentIdentity === 'clean_electric_guitar' || p.id === 'guitar'
+  );
+  if (!guitar) return out;
+
+  for (const section of plan) {
+    const bar = section.startBar;
+    const m = guitar.measures.find((x) => x.index === bar);
+    if (!m) continue;
+    const role = resolvePhraseRole(section);
+    const roleHints = role ? buildPhraseRoleHints(role) : null;
+    if (roleHints?.motifProminence === 'absent') continue;
+    const variant = variants[section.sectionLabel];
+    if (!variant || !('intervalPattern' in variant)) continue;
+    const core = variant as CoreMotif;
+    for (let ei = m.events.length - 1; ei >= 0; ei--) {
+      const e = m.events[ei]!;
+      if (e.kind === 'note' && (e as NoteEvent).motifRef?.startsWith('mosaic_motif_')) {
+        m.events.splice(ei, 1);
+      }
+    }
+    const [zLow, zHigh] = getRegisterForBar(guitarMap, bar, context);
+    const registerWindow = getEffectiveRegisterWindowForBar(bar, context, 'guitar');
+    let effectiveLow = Math.max(zLow, registerWindow?.floor ?? 52);
+    let effectiveHigh = Math.min(zHigh, registerWindow?.ceil ?? 84, 79);
+    const tonicMap = buildMosaicTonicMap(plan, context);
+    const tonicPc = tonicMap[section.sectionLabel] ?? 0;
+    const sourceLabel = plan[0]?.sectionLabel;
+    const sourceTonic = sourceLabel ? (tonicMap[sourceLabel] ?? 0) : 0;
+    let delta = tonicPc - sourceTonic;
+    if (delta > 6) delta -= 12;
+    if (delta < -6) delta += 12;
+    let startMidi = 60 + tonicPc + delta;
+    while (startMidi < effectiveLow) startMidi += 12;
+    while (startMidi > effectiveHigh) startMidi -= 12;
+    startMidi = Math.max(effectiveLow, Math.min(effectiveHigh, startMidi));
+    const motifRef = `mosaic_motif_${section.sectionLabel}`;
+    let pitch = startMidi;
+    const noteCount = core.rhythmPattern.length;
+    const sectionMeter = mosaicSectionMeterForEntry(section);
+    const barCap = mosaicBarBeatSpanQuarters(sectionMeter);
+    const motifVel =
+      roleHints?.motifProminence === 'support'
+        ? Math.max(1, 80 - MOSAIC_PHRASE_ROLE_DYNAMIC_STEP)
+        : undefined;
+    for (let i = 0; i < noteCount; i++) {
+      const rh = core.rhythmPattern[i]!;
+      if (rh.startBeat >= barCap - 1e-6) continue;
+      const duration = Math.min(rh.duration, barCap - rh.startBeat);
+      if (duration <= 0) continue;
+      addEvent(
+        m,
+        createNote(pitch, rh.startBeat, duration, 1, motifRef, undefined, motifVel)
+      );
+      if (i < core.intervalPattern.length) {
+        pitch += core.intervalPattern[i]!;
+        pitch = Math.max(effectiveLow, Math.min(effectiveHigh, pitch));
+      }
+    }
+  }
+  return out;
+}
+
 function mosaicPhraseRoleHintsForBar(
   bar: number,
   context: CompositionContext
@@ -3596,58 +3673,12 @@ function buildGuitarPart(
     setDuoDispatchApplyScratch(null);
   };
   const emitMosaicMotifAtSectionStart = (
-    m: MeasureModel,
-    bar: number,
-    effectiveLow: number,
-    effectiveHigh: number
+    _m: MeasureModel,
+    _bar: number,
+    _effectiveLow: number,
+    _effectiveHigh: number
   ): void => {
-    if (!isMosaicModeActive(context) || context.generationMetadata?.songModeHookFirstIdentity) return;
-    const meta = context.generationMetadata;
-    const variants = meta?.mosaicSectionMotifVariants;
-    const plan = meta?.mosaicSectionPlan;
-    if (!variants || !plan) return;
-    const section = plan.find((s) => s.startBar === bar);
-    if (!section) return;
-    const role = resolvePhraseRole(section);
-    const roleHints = role ? buildPhraseRoleHints(role) : null;
-    if (roleHints?.motifProminence === 'absent') return;
-    const variant = variants[section.sectionLabel];
-    if (!variant || !('intervalPattern' in variant)) return;
-    const core = variant as CoreMotif;
-    const tonicMap = buildMosaicTonicMap(plan, context);
-    const tonicPc = tonicMap[section.sectionLabel] ?? 0;
-    const sourceLabel = plan[0]?.sectionLabel;
-    const sourceTonic = sourceLabel ? (tonicMap[sourceLabel] ?? 0) : 0;
-    let delta = tonicPc - sourceTonic;
-    if (delta > 6) delta -= 12;
-    if (delta < -6) delta += 12;
-    let startMidi = 60 + tonicPc + delta;
-    while (startMidi < effectiveLow) startMidi += 12;
-    while (startMidi > effectiveHigh) startMidi -= 12;
-    startMidi = Math.max(effectiveLow, Math.min(effectiveHigh, startMidi));
-    const motifRef = `mosaic_motif_${section.sectionLabel}`;
-    let pitch = startMidi;
-    const noteCount = Math.min(core.rhythmPattern.length, core.intervalPattern.length + 1);
-    const sectionMeter = mosaicSectionMeterForEntry(section);
-    const barCap = mosaicBarBeatSpanQuarters(sectionMeter);
-    for (let i = 0; i < noteCount; i++) {
-      const rh = core.rhythmPattern[i]!;
-      if (rh.startBeat >= barCap - 1e-6) continue;
-      const duration = Math.min(rh.duration, barCap - rh.startBeat);
-      if (duration <= 0) continue;
-      const motifVel =
-        roleHints?.motifProminence === 'support'
-          ? Math.max(1, 80 - MOSAIC_PHRASE_ROLE_DYNAMIC_STEP)
-          : undefined;
-      addEvent(
-        m,
-        createNote(pitch, snapAttackBeatToGrid(rh.startBeat), duration, 1, motifRef, undefined, motifVel)
-      );
-      if (i < core.intervalPattern.length) {
-        pitch += core.intervalPattern[i]!;
-        pitch = Math.max(effectiveLow, Math.min(effectiveHigh, pitch));
-      }
-    }
+    /** Motif notes injected post-finalize via `injectMosaicMotifNotesPostFinalize` (duration protection). */
   };
   const appendMosaicTransitionBarNotes = (
     m: MeasureModel,
@@ -8035,6 +8066,9 @@ export function generateGoldenPathDuoScore(
   }
   const zappaFerociousMode =
     context.generationMetadata?.zappaStyleMode === 'bluesrockFerocious';
+  if (isMosaicModeActive(context) && !context.generationMetadata?.songModeHookFirstIdentity) {
+    afterExpressive = injectMosaicMotifNotesPostFinalize(afterExpressive, context, plans.guitarMap);
+  }
   if (isGuitarBassDuoFamily(context.presetId)) {
     debugPrintDuoAttackGridIfEnabled(afterExpressive, 'post-seal');
     if (!zappaFerociousMode) {

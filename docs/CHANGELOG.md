@@ -2,6 +2,10 @@
 
 ### Added
 
+- **Mosaic Motif Engine Upgrade (rc9)** — `generateMosaicSourceMotif`: 5 new rules (noteCount 4–5, one P4 leap, stepwise fill, one contour hinge, offbeat onset, final note = deg 5); `rf:*` transform: sequence by +2, onset rotation (NOT inversion); `ws:*` transform: NEW — interpolation note + onset displacement; duration protection: motif notes survive `normalizeMeasureToEighthBeatGrid` via post-finalize reinject; all pairs similarity target > 0.40.
+
+### Added
+
 - **Mosaic Phrase Planning Layer (rc8)** — `phraseRole` optional field on `MosaicSectionPlan` entry (`'statement'|'development'|'climax'|'release'`); `resolvePhraseRole`: pure resolver; `buildPhraseRoleHints`: density, dynamic, motif prominence per role; applied at section `startBar` before dispatch — graceful no-op when absent; new files `mosaicPhrasePlanner.ts`, `mosaicPhrasePlanner.test.ts`.
 
 ### Added
