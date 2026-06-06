@@ -19,6 +19,15 @@ import {
 } from '../mosaic-mode/precomputeMosaicEffectiveHarmonyBars';
 import { resolveMosaicSectionStyles } from '../mosaic-mode/resolveMosaicSectionStyles';
 import {
+  buildMosaicMotifVariants,
+  generateMosaicSourceMotif,
+} from '../mosaic-mode/mosaicMotifEngine';
+import {
+  buildTransitionBarNotes,
+  isMosaicTransitionBar,
+} from '../mosaic-mode/mosaicTransitionBars';
+import type { CoreMotif } from '../motif/motifEngineTypes';
+import {
   getEffectivePitchProfileForBar,
   getEffectiveRegisterWindowForBar,
   getEffectiveTuningProfileForBar,
@@ -1512,6 +1521,49 @@ function rehearsalForBar(barIndex: number, context: CompositionContext): string 
     if (m.bar === barIndex) return m.label;
   }
   return undefined;
+}
+
+const MOSAIC_COMPOSER_REHEARSAL_DISPLAY: Record<string, string> = {
+  fripp: 'FRIPP',
+  jack_white: 'JACK WHITE',
+  wayne_shorter: 'W. SHORTER',
+  verlaine: 'VERLAINE',
+  beefheart: 'BEEFHEART',
+  holdsworth: 'HOLDSWORTH',
+  marr: 'MARR',
+  brian_wilson: 'BRIAN WILSON',
+  stevie_wonder: 'STEVIE WONDER',
+  radiohead: 'RADIOHEAD',
+  james_brown: 'JAMES BROWN',
+  joni_mitchell: 'JONI MITCHELL',
+  sonic_youth: 'SONIC YOUTH',
+  pat_metheny: 'PAT METHENY',
+  frank_zappa: 'FRANK ZAPPA',
+  barry_harris: 'BARRY HARRIS',
+  bill_evans: 'BILL EVANS',
+};
+
+function mosaicComposerRehearsalDisplayName(songwriterStyleId: string): string {
+  return (
+    MOSAIC_COMPOSER_REHEARSAL_DISPLAY[songwriterStyleId] ??
+    songwriterStyleId.replace(/_/g, ' ').toUpperCase()
+  );
+}
+
+/** Mosaic duo: section-start rehearsal labels use composer names (not generic A/B form labels). */
+function wireMosaicComposerRehearsalMarks(context: CompositionContext): void {
+  if (!isMosaicModeActive(context)) return;
+  const plan = context.generationMetadata?.mosaicSectionPlan;
+  if (!plan?.length) return;
+  const byBar = new Map(context.rehearsalMarkPlan.marks.map((m) => [m.bar, m.label] as const));
+  for (const section of plan) {
+    byBar.set(section.startBar, mosaicComposerRehearsalDisplayName(section.songwriterStyleId));
+  }
+  context.rehearsalMarkPlan = {
+    marks: [...byBar.entries()]
+      .map(([bar, label]) => ({ bar, label }))
+      .sort((a, b) => a.bar - b.bar),
+  };
 }
 
 /** ECM Metheny: 6–8 bar arc — fewer cadences; phrase-over-barline feel via late entries on phase 1. */
@@ -3079,6 +3131,19 @@ function buildGuitarPart(
       entry.precompute(sectionContext);
     }
   }
+  if (isMosaicModeActive(context)) {
+    wireMosaicComposerRehearsalMarks(context);
+  }
+  if (isMosaicModeActive(context) && !genMeta?.songModeHookFirstIdentity) {
+    const mosaicSourceMotif = generateMosaicSourceMotif(context.seed, totalBarsFromContext(context));
+    const mosaicSectionVariants = buildMosaicMotifVariants(
+      mosaicSourceMotif,
+      genMeta?.mosaicSectionPlan ?? [],
+      buildMosaicTonicMap(genMeta?.mosaicSectionPlan ?? [], context)
+    );
+    genMeta.mosaicSourceMotif = mosaicSourceMotif;
+    genMeta.mosaicSectionMotifVariants = mosaicSectionVariants;
+  }
   if (isSongwriterBrianWilson && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeBrianWilsonEffectiveHarmonyBars(context);
   }
@@ -3367,6 +3432,89 @@ function buildGuitarPart(
     setDuoDispatchApplyScratch({ seed, effectiveLow, effectiveHigh });
     entry.apply(m, bar, context);
     setDuoDispatchApplyScratch(null);
+  };
+  const emitMosaicMotifAtSectionStart = (
+    m: MeasureModel,
+    bar: number,
+    effectiveLow: number,
+    effectiveHigh: number
+  ): void => {
+    if (!isMosaicModeActive(context) || context.generationMetadata?.songModeHookFirstIdentity) return;
+    const meta = context.generationMetadata;
+    const variants = meta?.mosaicSectionMotifVariants;
+    const plan = meta?.mosaicSectionPlan;
+    if (!variants || !plan) return;
+    const section = plan.find((s) => s.startBar === bar);
+    if (!section) return;
+    const variant = variants[section.sectionLabel];
+    if (!variant || !('intervalPattern' in variant)) return;
+    const core = variant as CoreMotif;
+    const tonicMap = buildMosaicTonicMap(plan, context);
+    const tonicPc = tonicMap[section.sectionLabel] ?? 0;
+    const sourceLabel = plan[0]?.sectionLabel;
+    const sourceTonic = sourceLabel ? (tonicMap[sourceLabel] ?? 0) : 0;
+    let delta = tonicPc - sourceTonic;
+    if (delta > 6) delta -= 12;
+    if (delta < -6) delta += 12;
+    let startMidi = 60 + tonicPc + delta;
+    while (startMidi < effectiveLow) startMidi += 12;
+    while (startMidi > effectiveHigh) startMidi -= 12;
+    startMidi = Math.max(effectiveLow, Math.min(effectiveHigh, startMidi));
+    const motifRef = `mosaic_motif_${section.sectionLabel}`;
+    let pitch = startMidi;
+    const noteCount = Math.min(core.rhythmPattern.length, core.intervalPattern.length + 1);
+    for (let i = 0; i < noteCount; i++) {
+      const rh = core.rhythmPattern[i]!;
+      addEvent(
+        m,
+        createNote(pitch, snapAttackBeatToGrid(rh.startBeat), rh.duration, 1, motifRef)
+      );
+      if (i < core.intervalPattern.length) {
+        pitch += core.intervalPattern[i]!;
+        pitch = Math.max(effectiveLow, Math.min(effectiveHigh, pitch));
+      }
+    }
+  };
+  const appendMosaicTransitionBarNotes = (
+    m: MeasureModel,
+    bar: number,
+    effectiveLow: number,
+    effectiveHigh: number
+  ): void => {
+    if (!isMosaicModeActive(context) || context.generationMetadata?.songModeHookFirstIdentity) return;
+    const meta = context.generationMetadata;
+    const plan = meta?.mosaicSectionPlan;
+    const variants = meta?.mosaicSectionMotifVariants;
+    if (!plan || !variants) return;
+    const { isTransition, incomingSection } = isMosaicTransitionBar(bar, plan);
+    if (!isTransition || !incomingSection) return;
+    const variant = variants[incomingSection.sectionLabel];
+    if (!variant || !('intervalPattern' in variant)) return;
+    const tonicMap = buildMosaicTonicMap(plan, context);
+    const transitionNotes = buildTransitionBarNotes(
+      bar,
+      incomingSection,
+      variant as CoreMotif,
+      tonicMap[incomingSection.sectionLabel] ?? 0
+    );
+    for (const note of transitionNotes) {
+      let pitch = note.pitch;
+      while (pitch < effectiveLow) pitch += 12;
+      while (pitch > effectiveHigh) pitch -= 12;
+      pitch = Math.max(effectiveLow, Math.min(effectiveHigh, pitch));
+      addEvent(
+        m,
+        createNote(
+          pitch,
+          snapAttackBeatToGrid(note.startBeat),
+          note.duration,
+          1,
+          note.motifRef,
+          undefined,
+          note.velocity
+        )
+      );
+    }
   };
   if (isSongwriterFrankZappa) {
     genMeta.frankZappaDiffReceipts = genMeta.frankZappaDiffReceipts ?? ['FZ_DIFF_01', 'FZ_DIFF_02'];
@@ -4069,7 +4217,9 @@ function buildGuitarPart(
       if (guitarBarIsBusy(m)) consecutiveBusyGuitarBars++;
       else consecutiveBusyGuitarBars = 0;
       applyZappaOutputRegisterForBar(m, effectiveLow, effectiveHigh, zappaSectionBehavior);
+      emitMosaicMotifAtSectionStart(m, b, effectiveLow, effectiveHigh);
       runDuoDispatchApplyForMeasure(m, b, effectiveLow, effectiveHigh);
+      appendMosaicTransitionBarNotes(m, b, effectiveLow, effectiveHigh);
       measures.push(m);
       continue;
     }
@@ -4203,7 +4353,9 @@ function buildGuitarPart(
         );
       }
       applyZappaOutputRegisterForBar(m, effectiveLow, effectiveHigh, zappaSectionBehavior);
+      emitMosaicMotifAtSectionStart(m, b, effectiveLow, effectiveHigh);
       runDuoDispatchApplyForMeasure(m, b, effectiveLow, effectiveHigh);
+      appendMosaicTransitionBarNotes(m, b, effectiveLow, effectiveHigh);
       measures.push(m);
       continue;
     }
@@ -4599,7 +4751,9 @@ function buildGuitarPart(
       normalizeMeasureQuarterGrid(m);
     }
     applyZappaOutputRegisterForBar(m, effectiveLow, effectiveHigh, zappaSectionBehavior);
+    emitMosaicMotifAtSectionStart(m, b, effectiveLow, effectiveHigh);
     runDuoDispatchApplyForMeasure(m, b, effectiveLow, effectiveHigh);
+    appendMosaicTransitionBarNotes(m, b, effectiveLow, effectiveHigh);
     measures.push(m);
   }
 

@@ -133,6 +133,7 @@ import {
 } from './customLockedHarmonyRouting';
 import { isMosaicModeActive } from '../mosaic-mode/mosaicBarHelpers';
 import { evaluateMosaicSections } from '../mosaic-mode/evaluateMosaicSections';
+import { scoreMosaicMotifSimilarity } from '../mosaic-mode/mosaicMotifSimilarity';
 import { validateSongModeMotifSystem } from '../motif/songModeMotifEngine';
 import { validateSongModePhraseEngineV1 } from './songModePhraseEngineV1';
 import { partitionSongModePhraseIssues } from '../song-mode/songModePhraseBehaviourRules';
@@ -2627,6 +2628,21 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       appliedContext.generationMetadata = {
         ...appliedContext.generationMetadata,
         mosaicSectionEvalResults: [],
+      };
+    }
+    if (
+      isMosaicModeActive(appliedContext) &&
+      !appliedContext.generationMetadata?.songModeHookFirstIdentity &&
+      appliedContext.generationMetadata?.mosaicSectionMotifVariants
+    ) {
+      appliedContext.generationMetadata = {
+        ...appliedContext.generationMetadata,
+        mosaicMotifSimilarityReceipts: scoreMosaicMotifSimilarity(
+          appliedContext.generationMetadata.mosaicSectionMotifVariants as Record<
+            string,
+            import('../motif/motifEngineTypes').CoreMotif
+          >
+        ),
       };
     }
   }

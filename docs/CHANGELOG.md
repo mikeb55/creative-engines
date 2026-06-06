@@ -2,6 +2,14 @@
 
 ### Added
 
+- **Mosaic Transition Bars (rc6)** — `isMosaicTransitionBar`: detects bar immediately before section boundary; `buildTransitionBarNotes`: anticipatory fragment (beats 3–4 only) drawn from incoming motif variant, transposed to incoming tonic; `motifRef` `mosaic_transition_{sectionLabel}`; append-only — does not replace outgoing composer notes; gated: `isMosaicModeActive && !songModeHookFirstIdentity`; new files `mosaicTransitionBars.ts`, `mosaicTransitionBars.test.ts`.
+
+### Added
+
+- **Mosaic Motif Engine MVP (rc5)** — `generateMosaicSourceMotif`: seeded source cell independent of composer; `transformMotifForSection`: rf/jw/tv/jma composer transforms + tonic delta; `buildMosaicMotifVariants`: per-section via `buildMosaicTonicMap`; emission at section-start bars only, `motifRef` `mosaic_motif_{sectionLabel}`; `mosaicMotifSimilarityReceipts`: diagnostic only, no gate; gate: `isMosaicModeActive && !songModeHookFirstIdentity`; new files `mosaicMotifEngine.ts`, `mosaicMotifSimilarity.ts`; `compositionContext.ts`: 3 optional metadata fields added.
+
+### Added
+
 - **Robert Fripp v2 process systems composer (`rf:*`)** — era-dependent systems slice (`frippSystemsSlice.ts`): three modes Red / Discipline / Loop; intervalFieldPriority 0.88, interlockPatternRate 0.85, dissonanceManagement 0.82, loopAccumulationLogic 0.80, asymmetricGroupingRate 0.83; golden-path precompute + locked harmony routing + smoke **`frippSystemsSmoke.test.ts`** seed **11001**. Receipt prefix **`rf:*`** — distinct from Fripp/KC **`fk:*`**.
 - **Fripp VRB bundle upgrade** — **`frippVrbFingerprints.ts`** — 8 fingerprints + Holdsworth / Verlaine / Marr / Sonic Youth / Eno / generic prog negative discriminators; bundle id **`fripp_systems_process`**; riff stub **`FRIPP`** in **`riffVrbStubs.ts`** retained with merged **`riffProfile`**.
 - **Fripp Big Band rules** — five named rules in **`bigBandRuleRegistry.ts`**: IntervalFieldHarmony, InterlockPattern, DissonanceAsStructure, ProcessAudibility, AsymmetricGrouping (`fripp.*`).
