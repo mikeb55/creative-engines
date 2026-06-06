@@ -549,6 +549,10 @@ export interface GenerationMetadata {
     endBar: number;
     songwriterStyleId: string;
   }>;
+  /** Duo Song Mode Step 3 — full-form merged effective harmony (one symbol per bar, bar 1 at index 0). */
+  duoMergedHarmonyBars?: string[];
+  /** Duo Song Mode Step 3 — global bar index (1-based) → section label from duo precompute orchestrator. */
+  duoSectionOwnership?: Record<number, string>;
   /** String Quartet StylePanel — SQ rhythm engine id (`bartok_bulgarian_aksak`, `free_proportional`, `baroque_dance`, `reich_phasing_grid`, `viennese_waltz`, `jewish_klezmer`, …). */
   sqRhythmEngineId?: string;
   /** String Quartet — rhythm engine fingerprint receipts (`BG_RHYTHM_*`, …) for telemetry / eval. */
