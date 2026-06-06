@@ -4,6 +4,11 @@
 outputs/
 output/
 projects/
+
+# Generated Composer OS output folders (local smoke / desktop exports)
+Guitar-Bass Duos/
+Mike Composer Combi Songs/
+Mike Composer Files/
 __pycache__/
 node_modules/
 launchers/logs/
