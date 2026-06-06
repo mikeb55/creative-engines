@@ -23,7 +23,10 @@ import { resolveMosaicSectionStyles } from '../mosaic-mode/resolveMosaicSectionS
 import {
   buildMosaicMotifVariants,
   generateMosaicSourceMotif,
+  mosaicMotifNotesForBar,
+  mosaicVrbTilesMotifAcrossSection,
 } from '../mosaic-mode/mosaicMotifEngine';
+import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
 import {
   buildTransitionBarNotes,
   isMosaicTransitionBar,
@@ -1923,25 +1926,21 @@ function injectMosaicMotifNotesPostFinalize(
   if (!guitar) return out;
 
   for (const section of plan) {
-    const bar = section.startBar;
-    const m = guitar.measures.find((x) => x.index === bar);
-    if (!m) continue;
     const role = resolvePhraseRole(section);
     const roleHints = role ? buildPhraseRoleHints(role) : null;
     if (roleHints?.motifProminence === 'absent') continue;
     const variant = variants[section.sectionLabel];
     if (!variant || !('intervalPattern' in variant)) continue;
     const core = variant as CoreMotif;
-    for (let ei = m.events.length - 1; ei >= 0; ei--) {
-      const e = m.events[ei]!;
-      if (e.kind === 'note' && (e as NoteEvent).motifRef?.startsWith('mosaic_motif_')) {
-        m.events.splice(ei, 1);
-      }
-    }
-    const [zLow, zHigh] = getRegisterForBar(guitarMap, bar, context);
-    const registerWindow = getEffectiveRegisterWindowForBar(bar, context, 'guitar');
-    let effectiveLow = Math.max(zLow, registerWindow?.floor ?? 52);
-    let effectiveHigh = Math.min(zHigh, registerWindow?.ceil ?? 84, 79);
+    const tileSection = mosaicVrbTilesMotifAcrossSection(section.songwriterStyleId);
+    const sectionBars = tileSection
+      ? Array.from(
+          { length: section.endBar - section.startBar + 1 },
+          (_, i) => section.startBar + i
+        )
+      : [section.startBar];
+    const sectionMeter = mosaicSectionMeterForEntry(section);
+    const barCap = mosaicBarBeatSpanQuarters(sectionMeter);
     const tonicMap = buildMosaicTonicMap(plan, context);
     const tonicPc = tonicMap[section.sectionLabel] ?? 0;
     const sourceLabel = plan[0]?.sectionLabel;
@@ -1949,31 +1948,68 @@ function injectMosaicMotifNotesPostFinalize(
     let delta = tonicPc - sourceTonic;
     if (delta > 6) delta -= 12;
     if (delta < -6) delta += 12;
-    let startMidi = 60 + tonicPc + delta;
-    while (startMidi < effectiveLow) startMidi += 12;
-    while (startMidi > effectiveHigh) startMidi -= 12;
-    startMidi = Math.max(effectiveLow, Math.min(effectiveHigh, startMidi));
     const motifRef = `mosaic_motif_${section.sectionLabel}`;
-    let pitch = startMidi;
-    const noteCount = core.rhythmPattern.length;
-    const sectionMeter = mosaicSectionMeterForEntry(section);
-    const barCap = mosaicBarBeatSpanQuarters(sectionMeter);
     const motifVel =
       roleHints?.motifProminence === 'support'
         ? Math.max(1, 80 - MOSAIC_PHRASE_ROLE_DYNAMIC_STEP)
         : undefined;
-    for (let i = 0; i < noteCount; i++) {
-      const rh = core.rhythmPattern[i]!;
-      if (rh.startBeat >= barCap - 1e-6) continue;
-      const duration = Math.min(rh.duration, barCap - rh.startBeat);
-      if (duration <= 0) continue;
-      addEvent(
-        m,
-        createNote(pitch, rh.startBeat, duration, 1, motifRef, undefined, motifVel)
-      );
-      if (i < core.intervalPattern.length) {
-        pitch += core.intervalPattern[i]!;
-        pitch = Math.max(effectiveLow, Math.min(effectiveHigh, pitch));
+
+    for (const bar of sectionBars) {
+      const m = guitar.measures.find((x) => x.index === bar);
+      if (!m) continue;
+      const [zLow, zHigh] = getRegisterForBar(guitarMap, bar, context);
+      const registerWindow = getEffectiveRegisterWindowForBar(bar, context, 'guitar');
+      const effectiveLow = Math.max(zLow, registerWindow?.floor ?? 52);
+      const effectiveHigh = Math.min(zHigh, registerWindow?.ceil ?? 84, 79);
+      let startMidi = 60 + tonicPc + delta;
+      while (startMidi < effectiveLow) startMidi += 12;
+      while (startMidi > effectiveHigh) startMidi -= 12;
+      startMidi = Math.max(effectiveLow, Math.min(effectiveHigh, startMidi));
+
+      for (let ei = m.events.length - 1; ei >= 0; ei--) {
+        const e = m.events[ei]!;
+        if (tileSection) {
+          if (e.kind === 'note') m.events.splice(ei, 1);
+        } else if (e.kind === 'note' && (e as NoteEvent).motifRef?.startsWith('mosaic_motif_')) {
+          m.events.splice(ei, 1);
+        }
+      }
+
+      if (tileSection) {
+        const barNotes = mosaicMotifNotesForBar(
+          core,
+          section.songwriterStyleId,
+          context.seed,
+          barCap,
+          bar - section.startBar,
+          startMidi,
+          effectiveLow,
+          effectiveHigh
+        );
+        for (const n of barNotes) {
+          addEvent(
+            m,
+            createNote(n.pitch, n.startBeat, n.duration, 1, motifRef, undefined, motifVel)
+          );
+        }
+        continue;
+      }
+
+      let pitch = startMidi;
+      const noteCount = core.rhythmPattern.length;
+      for (let i = 0; i < noteCount; i++) {
+        const rh = core.rhythmPattern[i]!;
+        if (rh.startBeat >= barCap - 1e-6) continue;
+        const duration = Math.min(rh.duration, barCap - rh.startBeat);
+        if (duration <= 0) continue;
+        addEvent(
+          m,
+          createNote(pitch, rh.startBeat, duration, 1, motifRef, undefined, motifVel)
+        );
+        if (i < core.intervalPattern.length) {
+          pitch += core.intervalPattern[i]!;
+          pitch = Math.max(effectiveLow, Math.min(effectiveHigh, pitch));
+        }
       }
     }
   }
@@ -4748,6 +4784,11 @@ function buildGuitarPart(
             densityLevel,
             phraseHints.densityMultiplier
           );
+        }
+        const barComposer = composerForBar(b, context);
+        const barVrb = getVoiceRuleBundle(barComposer);
+        if (barVrb.targetNotesPerBar !== undefined && barVrb.targetNotesPerBar >= 4) {
+          densityLevel = 'dense';
         }
       }
       if ((isEcmM || isEcmS) && tex?.guitarRole === 'silence') {

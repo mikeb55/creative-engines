@@ -1646,7 +1646,15 @@ const FRIPP_SYSTEMS_PROCESS: VoiceRuleBundle = {
   melodicPolicy: {
     contour: 'pattern-loop',
     maxLeapSemitones: 12,
-    preferredIntervalSets: [1, 4, 5, 6, 7],
+    preferredIntervalSets: [1, 5, 7, 8, 11],
+    preferredIntervalWeights: {
+      1: 0.3,
+      11: 0.2,
+      5: 0.2,
+      7: 0.15,
+      8: 0.1,
+    },
+    maxConsecutiveSteps: 2,
   },
   orchestrationPolicy: {
     anchorToneCount: 0,
@@ -1664,7 +1672,10 @@ const FRIPP_SYSTEMS_PROCESS: VoiceRuleBundle = {
   },
   rhythmPolicy: {
     antiMetric: true,
+    pulseCell: { pattern: [1, 0, 0, 1, 0, 1, 0, 0], weight: 0.7 },
   },
+  targetNotesPerBar: 4,
+  densityVariance: 0.2,
   repairPolicy: {
     resolveParallels: false,
     maxVoiceOverlap: 4,

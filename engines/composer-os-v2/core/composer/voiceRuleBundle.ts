@@ -302,6 +302,10 @@ export interface VoiceRuleBundle {
     contour: MelodicContourPolicy;
     maxLeapSemitones: number;
     preferredIntervalSets?: number[];
+    /** Weighted semitone intervals (ic1..12) — mosaic / riff generators snap toward these when set. */
+    preferredIntervalWeights?: Partial<Record<number, number>>;
+    /** Max consecutive stepwise intervals (|iv| ≤ 2) before a leap is required. */
+    maxConsecutiveSteps?: number;
     /** Ligeti / research — ic1/ic2 stepwise preference (alias readable in tests). */
     preferredIntervals?: number[];
     /** Pat Metheny — informational */
@@ -336,6 +340,8 @@ export interface VoiceRuleBundle {
     gospelShoutThreshold?: number;
     /** Ligeti Etudes — polyrhythmic phase offset / two-hand canon. */
     phaseDisplacement?: boolean;
+    /** Displaced-accent pulse cell on eighth-note grid (1 = attack, 0 = rest). */
+    pulseCell?: { pattern: readonly number[]; weight: number };
   };
 
   repairPolicy: {
@@ -519,6 +525,10 @@ export interface VoiceRuleBundle {
   morriconeRomanticModeAvailable?: boolean;
   /** Badalamenti film stub — Vln I lead / inner jazz cushion / Vc pedal (documented). */
   badalamentiThreeTierTexture?: import('../counterpoint/vrbProfiles/sqVrbProfileTypes').SqBadalamentiThreeTierTexture;
+  /** Mosaic / phrase generators — target melody attacks per bar (optional). */
+  targetNotesPerBar?: number;
+  /** Mosaic / phrase generators — ±fraction around targetNotesPerBar (e.g. 0.2 → 3–5 when target is 4). */
+  densityVariance?: number;
   /** Research riff posture (funk / rock guitar VRBs). */
   riffProfile?: import('./riffProfileTypes').RiffProfile;
   /** GCE blend σ hint (riff-family stubs). */

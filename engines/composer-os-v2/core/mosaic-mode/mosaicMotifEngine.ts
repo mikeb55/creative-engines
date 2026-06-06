@@ -6,6 +6,7 @@ import type { CoreMotif, MotifRegisterTag, MotifRoleTag } from '../motif/motifEn
 import { seededUnit } from '../goldenPath/guitarBassDuoHarmony';
 import type { MosaicModeSectionPlan } from './precomputeMosaicEffectiveHarmonyBars';
 import type { MosaicTonicMap } from './precomputeMosaicEffectiveHarmonyBars';
+import type { VoiceRuleBundle } from '../composer/voiceRuleBundle';
 import { getVoiceRuleBundle, NEUTRAL_VOICE_RULE_BUNDLE } from '../composer/voiceRuleBundles';
 import {
   SONGWRITER_STYLE_PROFILES,
@@ -59,6 +60,254 @@ function oneHingeContourDirs(intervalCount: number, seed: number): number[] {
     dirs.push(i < hingeAt ? firstSign : -firstSign);
   }
   return dirs;
+}
+
+function snapIntervalToPreferredWeights(
+  iv: number,
+  weights: Readonly<Partial<Record<number, number>>> | undefined,
+  preferredSets: readonly number[] | undefined,
+  seed: number,
+  salt: number
+): number {
+  const sign = iv >= 0 ? 1 : -1;
+  const mag = Math.abs(iv);
+  const fromWeights =
+    weights &&
+    Object.entries(weights)
+      .filter(([, w]) => (w ?? 0) > 0.05)
+      .map(([k]) => Number(k));
+  const pool =
+    fromWeights && fromWeights.length > 0
+      ? fromWeights
+      : preferredSets?.length
+        ? [...preferredSets]
+        : null;
+  if (!pool?.length) return iv;
+
+  let best = pool[0]!;
+  let bestScore = -Infinity;
+  for (const p of pool) {
+    const weight = weights?.[p] ?? 1;
+    const proximity = 1 / (1 + Math.abs(mag - p));
+    const jitter = seededUnit(seed, salt, p) * 0.02;
+    const score = weight * proximity + jitter;
+    if (score > bestScore) {
+      bestScore = score;
+      best = p;
+    }
+  }
+  return sign * best;
+}
+
+function enforceMaxConsecutiveSteps(intervals: number[], maxSteps: number): number[] {
+  if (maxSteps < 1 || intervals.length === 0) return [...intervals];
+  const out = [...intervals];
+  let run = 0;
+  for (let i = 0; i < out.length; i++) {
+    const abs = Math.abs(out[i]!);
+    if (abs <= 2) {
+      run++;
+      if (run > maxSteps) {
+        const sign = out[i]! >= 0 ? 1 : -1;
+        out[i] = sign * (abs === 2 ? 5 : 7);
+        run = 0;
+      }
+    } else {
+      run = 0;
+    }
+  }
+  return out;
+}
+
+function buildRhythmFromPulseCell(
+  pattern: readonly number[],
+  noteCount: number,
+  barBeats: number,
+  barIndexInSection = 0,
+  eighthDuration = barBeats >= 5 ? 1.0 : 0.5
+): CoreMotif['rhythmPattern'] {
+  if (pattern.length === 0 || noteCount <= 0) return [];
+  const slotCount = Math.max(1, Math.round(barBeats / eighthDuration));
+  const phase = barIndexInSection % 3;
+  const noteDuration = barBeats >= 5 ? 1.0 : eighthDuration;
+  const attackBeats: number[] = [];
+  for (let s = 0; s < slotCount * 2 && attackBeats.length < noteCount; s++) {
+    if (!pattern[(s + phase) % pattern.length]) continue;
+    const beat = s * eighthDuration;
+    if (beat + noteDuration > barBeats + 1e-6) continue;
+    if (!attackBeats.some((b) => Math.abs(b - beat) < 1e-6)) attackBeats.push(beat);
+  }
+  let guard = 0;
+  while (attackBeats.length < noteCount && guard < slotCount * 4) {
+    const s = guard;
+    if (pattern[(s + phase) % pattern.length]) {
+      const beat = s * eighthDuration;
+      if (beat + noteDuration <= barBeats + 1e-6 && !attackBeats.some((b) => Math.abs(b - beat) < 1e-6)) {
+        attackBeats.push(beat);
+      }
+    }
+    guard++;
+  }
+  attackBeats.sort((a, b) => a - b);
+  return attackBeats.slice(0, noteCount).map((startBeat) => ({
+    startBeat,
+    duration: noteDuration,
+  }));
+}
+
+function resolveNotesPerBar(vrb: VoiceRuleBundle, seed: number, sectionBar: number): number | undefined {
+  const target = vrb.targetNotesPerBar;
+  if (target === undefined) return undefined;
+  const variance = vrb.densityVariance ?? 0;
+  if (variance <= 0) return target;
+  const min = Math.max(1, Math.round(target * (1 - variance)));
+  const max = Math.max(min, Math.round(target * (1 + variance)));
+  const u = seededUnit(seed, sectionBar, 94200);
+  return min + Math.floor(u * (max - min + 1));
+}
+
+function expandMotifForVrbPolicy(
+  motif: CoreMotif,
+  vrb: VoiceRuleBundle,
+  seed: number,
+  barBeats: number,
+  barIndexInSection: number
+): CoreMotif {
+  const notesPerBar = resolveNotesPerBar(vrb, seed, barIndexInSection);
+  const pulseCell = vrb.rhythmPolicy.pulseCell;
+  if (notesPerBar === undefined && !pulseCell) return motif;
+
+  const noteCount = notesPerBar ?? motif.rhythmPattern.length;
+  const weights = vrb.melodicPolicy.preferredIntervalWeights;
+  const preferredSets = vrb.melodicPolicy.preferredIntervalSets;
+  const frippCell = [1, 4, -5] as const;
+  let intervalPattern: number[];
+  if (weights || preferredSets?.length) {
+    intervalPattern = Array.from(
+      { length: Math.max(0, noteCount - 1) },
+      (_, i) => frippCell[i % frippCell.length]!
+    );
+  } else {
+    intervalPattern = [...motif.intervalPattern];
+    while (intervalPattern.length < Math.max(0, noteCount - 1)) {
+      const pickIdx = intervalPattern.length % Math.max(1, motif.intervalPattern.length);
+      intervalPattern.push(motif.intervalPattern[pickIdx] ?? 5);
+    }
+    intervalPattern = intervalPattern.slice(0, Math.max(0, noteCount - 1));
+    intervalPattern = intervalPattern.map((iv, i) =>
+      snapIntervalToPreferredWeights(
+        iv,
+        weights,
+        preferredSets,
+        seed,
+        94300 + barIndexInSection * 16 + i
+      )
+    );
+  }
+  if (vrb.melodicPolicy.maxConsecutiveSteps !== undefined) {
+    intervalPattern = enforceMaxConsecutiveSteps(
+      intervalPattern,
+      vrb.melodicPolicy.maxConsecutiveSteps
+    );
+  }
+  const rhythmPattern = pulseCell
+    ? buildRhythmFromPulseCell(pulseCell.pattern, noteCount, barBeats, barIndexInSection)
+    : motif.rhythmPattern.slice(0, noteCount).map((r) => ({ ...r }));
+
+  return {
+    ...motif,
+    intervalPattern,
+    rhythmPattern,
+    contourPattern: contourFromIntervals(intervalPattern),
+  };
+}
+
+export function mosaicVrbTilesMotifAcrossSection(songwriterStyleId: string): boolean {
+  const vrb = getVoiceRuleBundle(songwriterStyleId);
+  return vrb.targetNotesPerBar !== undefined || vrb.rhythmPolicy.pulseCell !== undefined;
+}
+
+export type MosaicMotifBarNote = { pitch: number; startBeat: number; duration: number };
+
+function nudgePitchAwayFromBluesInterval(
+  pitch: number,
+  prevPitch: number,
+  effectiveLow: number,
+  effectiveHigh: number
+): number {
+  let p = pitch;
+  let guard = 0;
+  while (guard < 24) {
+    const delta = p - prevPitch;
+    if (Math.abs(delta) !== 3 && Math.abs(delta) !== 6) break;
+    p += delta >= 0 ? 1 : -1;
+    p = Math.max(effectiveLow, Math.min(effectiveHigh, p));
+    guard++;
+  }
+  return p;
+}
+
+export function mosaicMotifNotesForBar(
+  core: CoreMotif,
+  songwriterStyleId: string,
+  seed: number,
+  barBeats: number,
+  barIndexInSection: number,
+  startMidi: number,
+  effectiveLow: number,
+  effectiveHigh: number
+): MosaicMotifBarNote[] {
+  const vrb = getVoiceRuleBundle(songwriterStyleId);
+  const expanded = expandMotifForVrbPolicy(core, vrb, seed, barBeats, barIndexInSection);
+  const notes: MosaicMotifBarNote[] = [];
+  let pitch = startMidi;
+  let prevPitch: number | null = null;
+  for (let i = 0; i < expanded.rhythmPattern.length; i++) {
+    const rh = expanded.rhythmPattern[i]!;
+    if (rh.startBeat >= barBeats - 1e-6) continue;
+    const tailGap = 0.5;
+    const maxDur = Math.max(0, barBeats - rh.startBeat - tailGap);
+    const duration = Math.min(rh.duration, maxDur);
+    if (duration <= 0) continue;
+    if (i > 0 && i - 1 < expanded.intervalPattern.length) {
+      pitch += expanded.intervalPattern[i - 1]!;
+      while (pitch < effectiveLow) pitch += 12;
+      while (pitch > effectiveHigh) pitch -= 12;
+    }
+    if (prevPitch !== null) {
+      pitch = nudgePitchAwayFromBluesInterval(pitch, prevPitch, effectiveLow, effectiveHigh);
+    }
+    notes.push({ pitch, startBeat: rh.startBeat, duration });
+    prevPitch = pitch;
+  }
+  return notes;
+}
+
+function applyVrbIntervalRhythmPolicy(
+  intervalPattern: number[],
+  rhythmPattern: CoreMotif['rhythmPattern'],
+  vrb: VoiceRuleBundle,
+  seed: number,
+  barBeats: number
+): { intervalPattern: number[]; rhythmPattern: CoreMotif['rhythmPattern'] } {
+  const hasWeights = Boolean(vrb.melodicPolicy.preferredIntervalWeights);
+  const hasSets = Boolean(vrb.melodicPolicy.preferredIntervalSets?.length);
+  const hasPulse = Boolean(vrb.rhythmPolicy.pulseCell);
+  const hasDensity = vrb.targetNotesPerBar !== undefined;
+  if (!hasWeights && !hasSets && !hasPulse && !hasDensity && vrb.melodicPolicy.maxConsecutiveSteps === undefined) {
+    return { intervalPattern, rhythmPattern };
+  }
+
+  const motif: CoreMotif = {
+    id: 'vrb_policy_scratch',
+    intervalPattern,
+    rhythmPattern,
+    contourPattern: contourFromIntervals(intervalPattern),
+    roleTags: [],
+    registerTags: [],
+  };
+  const expanded = expandMotifForVrbPolicy(motif, vrb, seed, barBeats, 0);
+  return { intervalPattern: expanded.intervalPattern, rhythmPattern: expanded.rhythmPattern };
 }
 
 function snapToBluesInterval(iv: number, pool: readonly number[] = BLUES_INTERVAL_POOL): number {
@@ -467,7 +716,8 @@ function transformWsDelta(
 function applyNamedDeltaOverride(
   prefix: string,
   motif: CoreMotif,
-  source: CoreMotif
+  source: CoreMotif,
+  songwriterStyleId?: string
 ): CoreMotif {
   const key = normalizePrefix(prefix);
   let { intervalPattern, rhythmPattern } = {
@@ -476,11 +726,45 @@ function applyNamedDeltaOverride(
   };
 
   if (key === 'rf') {
-    intervalPattern = intervalPattern.map((iv) => {
-      const sequenced = ((Math.abs(iv) + 2) % 12) * (iv >= 0 ? 1 : -1);
-      return clampIntervalMagnitude(sequenced, 7);
-    });
-    rhythmPattern = rotateRhythmOnsets(rhythmPattern);
+    const styleId = songwriterStyleId ?? 'fripp';
+    const vrb = getVoiceRuleBundle(styleId);
+    if (vrb.melodicPolicy.preferredIntervalWeights || vrb.melodicPolicy.preferredIntervalSets?.length) {
+      intervalPattern = intervalPattern.map((iv, i) =>
+        clampIntervalMagnitude(
+          snapIntervalToPreferredWeights(
+            iv,
+            vrb.melodicPolicy.preferredIntervalWeights,
+            vrb.melodicPolicy.preferredIntervalSets,
+            0,
+            94400 + i
+          ),
+          vrb.melodicPolicy.maxLeapSemitones ?? 12
+        )
+      );
+      if (vrb.melodicPolicy.maxConsecutiveSteps !== undefined) {
+        intervalPattern = enforceMaxConsecutiveSteps(
+          intervalPattern,
+          vrb.melodicPolicy.maxConsecutiveSteps
+        );
+      }
+    } else {
+      intervalPattern = intervalPattern.map((iv) => {
+        const sequenced = ((Math.abs(iv) + 2) % 12) * (iv >= 0 ? 1 : -1);
+        return clampIntervalMagnitude(sequenced, 7);
+      });
+    }
+    const barBeats = 5;
+    if (vrb.rhythmPolicy.pulseCell || vrb.targetNotesPerBar !== undefined) {
+      ({ intervalPattern, rhythmPattern } = applyVrbIntervalRhythmPolicy(
+        intervalPattern,
+        rhythmPattern,
+        vrb,
+        0,
+        barBeats
+      ));
+    } else {
+      rhythmPattern = rotateRhythmOnsets(rhythmPattern);
+    }
   } else if (key === 'jw') {
     intervalPattern = intervalPattern.map((iv, i) => {
       if (i === 0 || i === intervalPattern.length - 1) return clampIntervalMagnitude(iv, 7);
@@ -541,7 +825,7 @@ export function transformMotifForSection(
 
   const prefixKey = normalizePrefix(composerPrefix);
   if (NAMED_DELTA_PREFIXES.has(prefixKey)) {
-    result = applyNamedDeltaOverride(prefixKey, result, source);
+    result = applyNamedDeltaOverride(prefixKey, result, source, styleId);
     result = { ...result, id: `mosaic_variant_${sectionLabel}` };
   }
 

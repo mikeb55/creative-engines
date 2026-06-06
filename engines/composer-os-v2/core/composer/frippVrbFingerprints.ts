@@ -1,3 +1,12 @@
+// INTERVAL + PULSE PASS — rc15
+// interval_coherence was 15.7%, rhythmic_fingerprint was 18.8% at rc14.
+// See rc14 comment for blues suppression history.
+
+// BLUES SUPPRESSION PASS — rc14
+// blues_rate was 30.6% (threshold 30%) at rc12.
+// Reduced b7/b3 weights, replaced pentatonic minor with Phrygian subset.
+// See mosaicEvalDiagnostics warn log for per-signature history.
+
 /**
  * Robert Fripp — VRB fingerprint receipts (8 targets + negative discriminators).
  * Era-dependent process systems — Red / Discipline / Loop — not generic prog diatonicism.
@@ -10,6 +19,8 @@ export const FRIPP_SYSTEMS_PROCESS_VRF_FINGERPRINT_RECEIPTS = [
   'RF_ILK_01 — InterlockPatternRule: target 0.85 — Discipline mode: two guitars from independent pitch/rhythm cells; shared pulse, mismatched grouping; composite resultant pattern = musical object; register separation + attack-point offset mandatory; Frame by Frame / Elephant Talk / Thela Hun Ginjeet / Discipline references.',
   'RF_LAC_01 — LoopAccumulationRule: target 0.80 — Frippertronics mode: additive build, decay-aware density ceiling, release by non-reinforcement; transparent layer entry; first layers pitch center/skeleton; middle color/registral contrast; late friction only if clarity held; decay creates form; no hidden overdubs.',
   'RF_MEL_01 — MelodicIntervalCellRule: target 0.68 — line construction from interval cells not scalar sheets; P4/P5/m6/tritone structural events; m2 adjacency tension marker; reduced blues inflection; sequential cells over long bebop lines; phrase crosses bar perception.',
+  'RF_INT_02 — preferredIntervalWeights: m2 0.30, M7 0.20, P4 0.20, P5 0.15, m6 0.10; other ≤0.05; maxConsecutiveSteps=2 before leap.',
+  'RF_RHY_01 — pulseCell [1,0,0,1,0,1,0,0] weight 0.70 on eighth grid (5/4 displaced accent); targetNotesPerBar=4 densityVariance=0.2.',
   'RF_ASY_01 — AsymmetricGroupingRule: target 0.83 — common pulse with asymmetric grouping cycles; 5-over-4, cross-accent, divided attention; Discipline era pattern interdependence; penalize straight 4/4 backbeat, symmetric phrase starts, blues-rock turnaround alignment.',
   'RF_PRC_01 — ProcessAudibilityRule: target 0.68 — listener can infer compositional system; pattern interdependence audible; dissonance structural; resolution by spacing or decay not cadence; rule-constrained generation with audible hazard; not emotive freeform or smooth jazz-fusion flow.',
   'RF_TXD_01 — TexturalDensityControlRule: target 0.82 — density grows by process and registral occupation then self-limits; each layer sharply profiled; Loop saturation = stop adding; Discipline composite from two lean lines not one thick voicing; penalize wall-of-sound comping, Marr shimmer, Holdsworth scalar ribbon.',

@@ -6,7 +6,38 @@ import type { CompositionContext } from '../compositionContext';
 import { regenerateMosaicSectionForRetry } from '../goldenPath/generateGoldenPathDuoScore';
 import type { GoldenPathPlans } from '../goldenPath/generateGoldenPathDuoScore';
 import type { MeasureModel, ScoreModel } from '../score-model/scoreModelTypes';
-import { evaluateMosaicSections } from './evaluateMosaicSections';
+import { evaluateMosaicSections, type DuoSectionEvalResult } from './evaluateMosaicSections';
+import {
+  formatEvalFailureReport,
+  type MosaicEvalResult,
+} from './mosaicEvalDiagnostics';
+
+const logger = {
+  warn(message: string): void {
+    console.warn(message);
+  },
+};
+
+const DEFAULT_OVERALL_THRESHOLD = 6.2;
+const DEFAULT_SIGNATURE_THRESHOLD = 6.0;
+
+function duoSectionEvalToMosaicEvalResult(duo: DuoSectionEvalResult): MosaicEvalResult {
+  const signatures: MosaicEvalResult['signatures'] = {};
+  for (const [key, value] of Object.entries(duo.scores)) {
+    if (key === 'overall') continue;
+    signatures[key] = {
+      value,
+      threshold: DEFAULT_SIGNATURE_THRESHOLD,
+      pass: value >= DEFAULT_SIGNATURE_THRESHOLD,
+    };
+  }
+  return {
+    score: duo.scores.overall ?? 0,
+    threshold: DEFAULT_OVERALL_THRESHOLD,
+    signatures,
+    pass: duo.passed,
+  };
+}
 
 export interface MosaicSectionRetrySession {
   getScore: () => ScoreModel;
@@ -136,6 +167,7 @@ export function runMosaicSectionRetrySync(
   if (!preserved) return false;
 
   let score = session.getScore();
+  let lastFailedEval: DuoSectionEvalResult | undefined;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     const fragment = regenerateMosaicSectionForRetry(
@@ -166,8 +198,24 @@ export function runMosaicSectionRetrySync(
       };
       return true;
     }
+
+    if (sectionResult) {
+      lastFailedEval = sectionResult;
+    }
   }
 
   restorePreservedMetadata(context, preserved);
+
+  const evalForReport = lastFailedEval ?? preserved.failingEvalResult;
+  if (evalForReport) {
+    const report = formatEvalFailureReport(
+      failingSectionLabel,
+      evalForReport.composerId,
+      duoSectionEvalToMosaicEvalResult(evalForReport),
+      true
+    );
+    logger.warn(report);
+  }
+
   return false;
 }
