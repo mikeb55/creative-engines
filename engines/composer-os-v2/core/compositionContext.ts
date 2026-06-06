@@ -542,26 +542,26 @@ export interface GenerationMetadata {
   motifReuseSuggestions?: Array<{ assetId: string; targetMode: string; role: string; note: string }>;
   /** Active songwriter style id — used to gate style-specific harmonic behaviour. */
   songwriterStyleId?: string;
-  /** Duo Song Mode — per-section songwriter routing (Step 1); 2+ entries enables duo mode in {@link resolveSectionSongwritingStyles}. */
-  duoSongModeSectionPlan?: Array<{
+  /** Mosaic Mode — per-section songwriter routing (Step 1); 2+ entries enables duo mode in {@link resolveMosaicSectionStyles}. */
+  mosaicSectionPlan?: Array<{
     sectionLabel: string;
     startBar: number;
     /** endBar is inclusive — last bar IN this section */
     endBar: number;
     songwriterStyleId: string;
   }>;
-  /** Duo Song Mode Step 3 — full-form merged effective harmony (one symbol per bar, bar 1 at index 0). */
-  duoMergedHarmonyBars?: string[];
-  /** Duo Song Mode Step 6 — per-section LOCK contracts (order-independent; one entry per section). */
-  duoSectionLockRegistry?: Array<{
+  /** Mosaic Mode Step 3 — full-form merged effective harmony (one symbol per bar, bar 1 at index 0). */
+  mosaicMergedHarmonyBars?: string[];
+  /** Mosaic Mode Step 6 — per-section LOCK contracts (order-independent; one entry per section). */
+  mosaicLockRegistry?: Array<{
     sectionLabel: string;
     startBar: number;
     endBar: number;
     composerId: string;
     expectedHarmonyBars: string[];
   }>;
-  /** Duo Song Mode Step 7 — per-section GCE/style evaluation results (one profile per section). */
-  duoSectionEvalResults?: Array<{
+  /** Mosaic Mode Step 7 — per-section GCE/style evaluation results (one profile per section). */
+  mosaicSectionEvalResults?: Array<{
     sectionLabel: string;
     startBar: number;
     endBar: number;
@@ -570,8 +570,8 @@ export interface GenerationMetadata {
     scores: Record<string, number>;
     failures: string[];
   }>;
-  /** Duo Song Mode Step 3 — global bar index (1-based) → section label from duo precompute orchestrator. */
-  duoSectionOwnership?: Record<number, string>;
+  /** Mosaic Mode Step 3 — global bar index (1-based) → section label from duo precompute orchestrator. */
+  mosaicSectionOwnership?: Record<number, string>;
   /** String Quartet StylePanel — SQ rhythm engine id (`bartok_bulgarian_aksak`, `free_proportional`, `baroque_dance`, `reich_phasing_grid`, `viennese_waltz`, `jewish_klezmer`, …). */
   sqRhythmEngineId?: string;
   /** String Quartet — rhythm engine fingerprint receipts (`BG_RHYTHM_*`, …) for telemetry / eval. */

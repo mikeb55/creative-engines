@@ -131,8 +131,8 @@ import {
   logSongModeHarmonyDebug,
   resolveEffectiveHarmonyTruth,
 } from './customLockedHarmonyRouting';
-import { isDuoModeActive } from '../duo-song-mode/duoBarHelpers';
-import { evaluateDuoSections } from '../duo-song-mode/evaluateDuoSections';
+import { isMosaicModeActive } from '../mosaic-mode/mosaicBarHelpers';
+import { evaluateMosaicSections } from '../mosaic-mode/evaluateMosaicSections';
 import { validateSongModeMotifSystem } from '../motif/songModeMotifEngine';
 import { validateSongModePhraseEngineV1 } from './songModePhraseEngineV1';
 import { partitionSongModePhraseIssues } from '../song-mode/songModePhraseBehaviourRules';
@@ -1357,7 +1357,7 @@ export interface RunGoldenPathOptions {
    * (or `VITE_COMPOSER_OS_CLAVE_GRID_OVERLAY`) is truthy; invalid payloads yield a skipped receipt.
    */
   claveGridOverlay?: ClaveGridSpec;
-  duoSongModeSectionPlan?: Array<{
+  mosaicSectionPlan?: Array<{
     sectionLabel: string;
     startBar: number;
     endBar: number;
@@ -1902,10 +1902,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     }
   }
   const context = buildContextForGoldenPath(seed, effectiveOptions);
-  if (options?.duoSongModeSectionPlan) {
+  if (options?.mosaicSectionPlan) {
     context.generationMetadata = {
       ...context.generationMetadata,
-      duoSongModeSectionPlan: options.duoSongModeSectionPlan,
+      mosaicSectionPlan: options.mosaicSectionPlan,
     };
   }
   const motifAuthorityLevelRequested = resolveMotifAuthorityLevel(options);
@@ -2577,7 +2577,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       );
       for (const issue of motifIssues) {
         if (
-          isDuoModeActive(appliedContext) &&
+          isMosaicModeActive(appliedContext) &&
           issue.includes('consecutive bars without motif-mapped notes')
         ) {
           // TODO: per-section consecutive bar motif validation — implement in future step
@@ -2612,21 +2612,21 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   } catch (e) {
     errors.push(e instanceof Error ? e.message : String(e));
   }
-  if (isDuoModeActive(appliedContext)) {
+  if (isMosaicModeActive(appliedContext)) {
     try {
-      const duoSectionEvalResults = evaluateDuoSections(score, appliedContext);
+      const mosaicSectionEvalResults = evaluateMosaicSections(score, appliedContext);
       appliedContext.generationMetadata = {
         ...appliedContext.generationMetadata,
-        duoSectionEvalResults,
+        mosaicSectionEvalResults,
       };
     } catch (err) {
       console.warn(
-        '[duo-section-eval] evaluateDuoSections failed:',
+        '[duo-section-eval] evaluateMosaicSections failed:',
         err instanceof Error ? err.message : String(err)
       );
       appliedContext.generationMetadata = {
         ...appliedContext.generationMetadata,
-        duoSectionEvalResults: [],
+        mosaicSectionEvalResults: [],
       };
     }
   }

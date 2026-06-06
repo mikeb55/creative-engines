@@ -1,12 +1,12 @@
 /**
- * Duo Song Mode Step 2 — pure resolver unit tests (no generation).
+ * Mosaic Mode Step 2 — pure resolver unit tests (no generation).
  */
 
 import type { FormMap, GenerationMetadata } from '../core/compositionContext';
 import {
-  resolveSectionSongwritingStyles,
-  type DuoSongModeSectionPlanEntry,
-} from '../core/duo-song-mode/resolveSectionSongwritingStyles';
+  resolveMosaicSectionStyles,
+  type MosaicModeSectionPlanEntry,
+} from '../core/mosaic-mode/resolveMosaicSectionStyles';
 
 function formMap(totalBars: number): FormMap {
   return { sections: [], totalBars };
@@ -14,7 +14,7 @@ function formMap(totalBars: number): FormMap {
 
 function metadata(
   overrides: Partial<GenerationMetadata> & {
-    duoSongModeSectionPlan?: DuoSongModeSectionPlanEntry[];
+    mosaicSectionPlan?: MosaicModeSectionPlanEntry[];
   } = {}
 ): GenerationMetadata {
   return {
@@ -47,12 +47,12 @@ function throwsGapError(fn: () => unknown): boolean {
   }
 }
 
-export function runResolveSectionSongwritingStylesTests(): { ok: boolean; name: string }[] {
+export function runResolveMosaicSectionStylesTests(): { ok: boolean; name: string }[] {
   const out: { ok: boolean; name: string }[] = [];
 
-  const singleUndefined = resolveSectionSongwritingStyles(
+  const singleUndefined = resolveMosaicSectionStyles(
     formMap(16),
-    metadata({ songwriterStyleId: 'verlaine', duoSongModeSectionPlan: undefined })
+    metadata({ songwriterStyleId: 'verlaine', mosaicSectionPlan: undefined })
   );
   out.push({
     ok:
@@ -61,14 +61,14 @@ export function runResolveSectionSongwritingStylesTests(): { ok: boolean; name: 
       singleUndefined.sectionComposerMap.length === 0 &&
       assertEveryBarMapped(singleUndefined.barComposerMap, 16) &&
       [1, 8, 16].every((bar) => singleUndefined.barComposerMap[bar] === 'verlaine'),
-    name: 'single mode: undefined duoSongModeSectionPlan → mode single, all bars map to songwriterStyleId',
+    name: 'single mode: undefined mosaicSectionPlan → mode single, all bars map to songwriterStyleId',
   });
 
-  const duoBasic = resolveSectionSongwritingStyles(
+  const duoBasic = resolveMosaicSectionStyles(
     formMap(16),
     metadata({
       songwriterStyleId: 'barry_harris',
-      duoSongModeSectionPlan: [
+      mosaicSectionPlan: [
         { sectionLabel: 'verse', startBar: 1, endBar: 8, songwriterStyleId: 'verlaine' },
         { sectionLabel: 'chorus', startBar: 9, endBar: 16, songwriterStyleId: 'marr' },
       ],
@@ -84,10 +84,10 @@ export function runResolveSectionSongwritingStylesTests(): { ok: boolean; name: 
     name: 'duo mode basic: verse verlaine 1–8, chorus marr 9–16',
   });
 
-  const duoBoundary = resolveSectionSongwritingStyles(
+  const duoBoundary = resolveMosaicSectionStyles(
     formMap(16),
     metadata({
-      duoSongModeSectionPlan: [
+      mosaicSectionPlan: [
         { sectionLabel: 'A', startBar: 1, endBar: 8, songwriterStyleId: 'verlaine' },
         { sectionLabel: 'B', startBar: 9, endBar: 16, songwriterStyleId: 'marr' },
       ],
@@ -109,10 +109,10 @@ export function runResolveSectionSongwritingStylesTests(): { ok: boolean; name: 
 
   out.push({
     ok: throwsGapError(() =>
-      resolveSectionSongwritingStyles(
+      resolveMosaicSectionStyles(
         formMap(16),
         metadata({
-          duoSongModeSectionPlan: [
+          mosaicSectionPlan: [
             { sectionLabel: 'verse', startBar: 1, endBar: 8, songwriterStyleId: 'verlaine' },
             { sectionLabel: 'chorus', startBar: 10, endBar: 16, songwriterStyleId: 'marr' },
           ],
@@ -122,10 +122,10 @@ export function runResolveSectionSongwritingStylesTests(): { ok: boolean; name: 
     name: 'duo mode gap detection: missing bar 9 throws descriptive error',
   });
 
-  const trio = resolveSectionSongwritingStyles(
+  const trio = resolveMosaicSectionStyles(
     formMap(24),
     metadata({
-      duoSongModeSectionPlan: [
+      mosaicSectionPlan: [
         { sectionLabel: 'verse', startBar: 1, endBar: 8, songwriterStyleId: 'verlaine' },
         { sectionLabel: 'chorus', startBar: 9, endBar: 16, songwriterStyleId: 'marr' },
         { sectionLabel: 'outro', startBar: 17, endBar: 24, songwriterStyleId: 'fripp' },
@@ -146,7 +146,7 @@ export function runResolveSectionSongwritingStylesTests(): { ok: boolean; name: 
 }
 
 if (require.main === module) {
-  const rows = runResolveSectionSongwritingStylesTests();
+  const rows = runResolveMosaicSectionStylesTests();
   let failed = 0;
   for (const row of rows) {
     const mark = row.ok ? 'PASS' : 'FAIL';

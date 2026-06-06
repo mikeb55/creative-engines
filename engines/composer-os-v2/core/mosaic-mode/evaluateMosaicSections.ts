@@ -1,9 +1,9 @@
 /**
- * Duo Song Mode Step 7 — section-scoped style/GCE evaluation (one profile per section).
+ * Mosaic Mode Step 7 — section-scoped style/GCE evaluation (one profile per section).
  */
 
 import type { CompositionContext } from '../compositionContext';
-import type { SectionLockEntry } from './precomputeDuoEffectiveHarmonyBars';
+import type { SectionLockEntry } from './precomputeMosaicEffectiveHarmonyBars';
 import { songModeEvalProfileForSongwriter } from '../evaluation/songModeEvaluationProfiles';
 import type { ExtractedStyleFeatures, StyleDimensionDefinition, StyleDimensionScore, StyleProfile, StyleProfileEvaluationInput, StyleProfileEvaluationResult } from '../evaluation/evaluationTypes';
 import { extractScoreModelFeatures } from '../evaluation/featureExtractor';
@@ -304,11 +304,11 @@ function evaluateSectionEntry(score: ScoreModel, entry: SectionLockEntry): DuoSe
 /**
  * Evaluate each duo section against its composer style profile (order-independent, pure).
  */
-export function evaluateDuoSections(
+export function evaluateMosaicSections(
   score: ScoreModel,
   context: CompositionContext
 ): DuoSectionEvalResult[] {
-  const registry = context.generationMetadata?.duoSectionLockRegistry;
+  const registry = context.generationMetadata?.mosaicLockRegistry;
   if (!registry || registry.length === 0) return [];
 
   const results: DuoSectionEvalResult[] = [];

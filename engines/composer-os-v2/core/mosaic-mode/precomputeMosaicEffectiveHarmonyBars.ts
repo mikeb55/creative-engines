@@ -1,5 +1,5 @@
 /**
- * Duo Song Mode Step 3 — per-section tonic map + precompute orchestrator + merged harmony wire.
+ * Mosaic Mode Step 3 — per-section tonic map + precompute orchestrator + merged harmony wire.
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
@@ -7,17 +7,17 @@ import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAn
 import {
   extractEffectiveHarmonyFromMetadata,
   getDispatchEntry,
-} from './duoComposerDispatch';
-import type { SectionComposerRouting } from './resolveSectionSongwritingStyles';
+} from './mosaicComposerDispatch';
+import type { SectionComposerRouting } from './resolveMosaicSectionStyles';
 
-export type DuoSongModeSectionPlan = NonNullable<GenerationMetadata['duoSongModeSectionPlan']>;
+export type MosaicModeSectionPlan = NonNullable<GenerationMetadata['mosaicSectionPlan']>;
 
-export type DuoSongModeSectionPlanEntry = DuoSongModeSectionPlan[number];
+export type MosaicModeSectionPlanEntry = MosaicModeSectionPlan[number];
 
 /** sectionLabel → tonic pitch class (0–11). */
-export type DuoTonicMap = Record<string, number>;
+export type MosaicTonicMap = Record<string, number>;
 
-export interface DuoMergedHarmonyBars {
+export interface MosaicMergedHarmonyBars {
   bars: string[];
   sectionOwnership: Record<number, string>;
 }
@@ -49,7 +49,7 @@ function chordSymbolAtBar(context: CompositionContext, barIndex: number): string
   const tb = context.form.totalBars;
   if (barIndex < 1 || barIndex > tb) {
     throw new Error(
-      `precomputeDuoEffectiveHarmonyBars: bar ${barIndex} out of range 1–${tb}`
+      `precomputeMosaicEffectiveHarmonyBars: bar ${barIndex} out of range 1–${tb}`
     );
   }
 
@@ -69,24 +69,24 @@ function chordSymbolAtBar(context: CompositionContext, barIndex: number): string
   }
 
   throw new Error(
-    `buildDuoTonicMap: no authoritative harmony at bar ${barIndex} — set lockedHarmonyBarsRaw or parsedCustomProgressionBars covering totalBars`
+    `buildMosaicTonicMap: no authoritative harmony at bar ${barIndex} — set lockedHarmonyBarsRaw or parsedCustomProgressionBars covering totalBars`
   );
 }
 
 /**
  * For each section, infer tonic from that section's first bar (not global bar 1).
  */
-export function buildDuoTonicMap(
-  sectionPlan: DuoSongModeSectionPlan,
+export function buildMosaicTonicMap(
+  sectionPlan: MosaicModeSectionPlan,
   context: CompositionContext
-): DuoTonicMap {
-  const map: DuoTonicMap = {};
+): MosaicTonicMap {
+  const map: MosaicTonicMap = {};
   for (const section of sectionPlan) {
     const symbol = chordSymbolAtBar(context, section.startBar);
     const tonicPc = harmonyRootPc(symbol);
     if (tonicPc === undefined) {
       throw new Error(
-        `buildDuoTonicMap: could not infer tonic pitch class from "${symbol}" at bar ${section.startBar} (section "${section.sectionLabel}")`
+        `buildMosaicTonicMap: could not infer tonic pitch class from "${symbol}" at bar ${section.startBar} (section "${section.sectionLabel}")`
       );
     }
     map[section.sectionLabel] = tonicPc;
@@ -96,13 +96,13 @@ export function buildDuoTonicMap(
 
 function assertSectionsCoverForm(
   totalBars: number,
-  sections: readonly DuoSongModeSectionPlanEntry[]
+  sections: readonly MosaicModeSectionPlanEntry[]
 ): void {
   const covered = new Set<number>();
   for (const section of sections) {
     if (section.startBar > section.endBar) {
       throw new Error(
-        `precomputeDuoEffectiveHarmonyBars: section "${section.sectionLabel}" has startBar ${section.startBar} > endBar ${section.endBar}`
+        `precomputeMosaicEffectiveHarmonyBars: section "${section.sectionLabel}" has startBar ${section.startBar} > endBar ${section.endBar}`
       );
     }
     for (let bar = section.startBar; bar <= section.endBar; bar++) {
@@ -119,7 +119,7 @@ function assertSectionsCoverForm(
         ? missing.join(', ')
         : `${missing.slice(0, 12).join(', ')} … (+${missing.length - 12} more)`;
     throw new Error(
-      `precomputeDuoEffectiveHarmonyBars: section plan does not cover every bar 1–${totalBars}; unmapped bar(s): ${listed}`
+      `precomputeMosaicEffectiveHarmonyBars: section plan does not cover every bar 1–${totalBars}; unmapped bar(s): ${listed}`
     );
   }
 }
@@ -137,7 +137,7 @@ function sliceLockedHarmony(
 function applySectionTonicBar1Wrapper(
   sectionContext: CompositionContext,
   parentContext: CompositionContext,
-  section: DuoSongModeSectionPlanEntry
+  section: MosaicModeSectionPlanEntry
 ): void {
   const parentLocked = parentContext.lockedHarmonyBarsRaw;
   if (!parentLocked || parentLocked.length < section.startBar) return;
@@ -162,7 +162,7 @@ function applySectionTonicBar1Wrapper(
 
 export function cloneDuoSectionContext(
   context: CompositionContext,
-  section: DuoSongModeSectionPlanEntry,
+  section: MosaicModeSectionPlanEntry,
   tonicPc: number
 ): CompositionContext {
   const span = section.endBar - section.startBar + 1;
@@ -224,13 +224,13 @@ function extractEffectiveHarmonyBars(
   if (!Array.isArray(bars) || bars.length === 0) {
     const entry = getDispatchEntry(composerId);
     throw new Error(
-      `precomputeDuoEffectiveHarmonyBars: ${entry?.effectiveHarmonyKey ?? 'effectiveHarmonyBars'} missing after precompute (section "${sectionLabel}", composer "${composerId}")`
+      `precomputeMosaicEffectiveHarmonyBars: ${entry?.effectiveHarmonyKey ?? 'effectiveHarmonyBars'} missing after precompute (section "${sectionLabel}", composer "${composerId}")`
     );
   }
   return bars;
 }
 
-function assertNoOverlappingSectionRanges(sections: readonly DuoSongModeSectionPlanEntry[]): void {
+function assertNoOverlappingSectionRanges(sections: readonly MosaicModeSectionPlanEntry[]): void {
   const barOwner = new Map<number, string>();
   for (const section of sections) {
     for (let bar = section.startBar; bar <= section.endBar; bar++) {
@@ -246,7 +246,7 @@ function assertNoOverlappingSectionRanges(sections: readonly DuoSongModeSectionP
 }
 
 function buildSectionLockRegistry(
-  sections: readonly DuoSongModeSectionPlanEntry[],
+  sections: readonly MosaicModeSectionPlanEntry[],
   mergedBars: readonly string[]
 ): SectionLockEntry[] {
   const registry: SectionLockEntry[] = [];
@@ -257,7 +257,7 @@ function buildSectionLockRegistry(
       const symbol = mergedBars[bar - 1];
       if (symbol === undefined || symbol === '') {
         throw new Error(
-          `precomputeDuoEffectiveHarmonyBars: empty merged harmony at bar ${bar} for section "${section.sectionLabel}"`
+          `precomputeMosaicEffectiveHarmonyBars: empty merged harmony at bar ${bar} for section "${section.sectionLabel}"`
         );
       }
       expectedHarmonyBars[localIndex] = symbol;
@@ -276,17 +276,17 @@ function buildSectionLockRegistry(
 /**
  * Run section-scoped precomputes and stitch one full-form merged harmony array.
  */
-export function precomputeDuoEffectiveHarmonyBars(
+export function precomputeMosaicEffectiveHarmonyBars(
   context: CompositionContext,
   routing: SectionComposerRouting,
-  tonicMap: DuoTonicMap
-): DuoMergedHarmonyBars {
+  tonicMap: MosaicTonicMap
+): MosaicMergedHarmonyBars {
   const totalBars = context.form.totalBars;
   const sections = routing.sectionComposerMap;
 
   if (routing.mode !== 'duo' || sections.length < 2) {
     throw new Error(
-      'precomputeDuoEffectiveHarmonyBars: routing.mode must be "duo" with at least 2 sections'
+      'precomputeMosaicEffectiveHarmonyBars: routing.mode must be "duo" with at least 2 sections'
     );
   }
 
@@ -299,14 +299,14 @@ export function precomputeDuoEffectiveHarmonyBars(
     const tonicPc = tonicMap[section.sectionLabel];
     if (tonicPc === undefined) {
       throw new Error(
-        `precomputeDuoEffectiveHarmonyBars: missing tonic for section "${section.sectionLabel}" in tonicMap`
+        `precomputeMosaicEffectiveHarmonyBars: missing tonic for section "${section.sectionLabel}" in tonicMap`
       );
     }
 
     const entry = getDispatchEntry(section.songwriterStyleId);
     if (!entry) {
       throw new Error(
-        `DUO: no dispatch entry for composer ${section.songwriterStyleId} — add to duoComposerDispatch.ts`
+        `DUO: no dispatch entry for composer ${section.songwriterStyleId} — add to mosaicComposerDispatch.ts`
       );
     }
 
@@ -323,7 +323,7 @@ export function precomputeDuoEffectiveHarmonyBars(
     const expectedSpan = section.endBar - section.startBar + 1;
     if (sectionBars.length !== expectedSpan) {
       throw new Error(
-        `precomputeDuoEffectiveHarmonyBars: section "${section.sectionLabel}" effective bars length ${sectionBars.length} !== expected ${expectedSpan}`
+        `precomputeMosaicEffectiveHarmonyBars: section "${section.sectionLabel}" effective bars length ${sectionBars.length} !== expected ${expectedSpan}`
       );
     }
 
@@ -332,7 +332,7 @@ export function precomputeDuoEffectiveHarmonyBars(
       const symbol = sectionBars[sectionLocalIndex];
       if (symbol === undefined || symbol === '') {
         throw new Error(
-          `precomputeDuoEffectiveHarmonyBars: empty harmony at global bar ${globalBar} (section "${section.sectionLabel}")`
+          `precomputeMosaicEffectiveHarmonyBars: empty harmony at global bar ${globalBar} (section "${section.sectionLabel}")`
         );
       }
       bars[globalBar - 1] = symbol;
@@ -370,24 +370,24 @@ export function precomputeDuoEffectiveHarmonyBars(
     const symbol = bars[bar - 1];
     if (symbol === undefined || symbol === '') {
       throw new Error(
-        `precomputeDuoEffectiveHarmonyBars: merged harmony has gap at bar ${bar}`
+        `precomputeMosaicEffectiveHarmonyBars: merged harmony has gap at bar ${bar}`
       );
     }
     if (sectionOwnership[bar] === undefined) {
       throw new Error(
-        `precomputeDuoEffectiveHarmonyBars: sectionOwnership missing for bar ${bar}`
+        `precomputeMosaicEffectiveHarmonyBars: sectionOwnership missing for bar ${bar}`
       );
     }
   }
 
-  const merged: DuoMergedHarmonyBars = { bars, sectionOwnership };
+  const merged: MosaicMergedHarmonyBars = { bars, sectionOwnership };
 
   assertNoOverlappingSectionRanges(sections);
-  const duoSectionLockRegistry = buildSectionLockRegistry(sections, bars);
+  const mosaicLockRegistry = buildSectionLockRegistry(sections, bars);
 
-  context.generationMetadata.duoMergedHarmonyBars = bars;
-  context.generationMetadata.duoSectionOwnership = sectionOwnership;
-  context.generationMetadata.duoSectionLockRegistry = duoSectionLockRegistry;
+  context.generationMetadata.mosaicMergedHarmonyBars = bars;
+  context.generationMetadata.mosaicSectionOwnership = sectionOwnership;
+  context.generationMetadata.mosaicLockRegistry = mosaicLockRegistry;
 
   return merged;
 }

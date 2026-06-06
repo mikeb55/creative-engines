@@ -1055,8 +1055,8 @@ export function apiGenerate(
           ? ((body as { musicContext: MusicContext }).musicContext as MusicContext)
           : undefined,
     };
-    if (body.duoSongModeSectionPlan) {
-      req_.duoSongModeSectionPlan = body.duoSongModeSectionPlan;
+    if (body.mosaicSectionPlan) {
+      req_.mosaicSectionPlan = body.mosaicSectionPlan;
     }
     const genCorr = req_.__generateCorrelationId;
     if (genCorr != null) {

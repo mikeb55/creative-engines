@@ -1,5 +1,5 @@
 /**
- * Duo Song Mode — composer dispatch registry (precompute / accumulate / apply / finalize).
+ * Mosaic Mode — composer dispatch registry (precompute / accumulate / apply / finalize).
  * One entry per slice-authority composer; registry is sole duo dispatch authority.
  */
 
@@ -75,7 +75,7 @@ function fn<T extends (...args: never[]) => unknown>(
 ): T {
   const f = mod[name];
   if (typeof f !== 'function') {
-    throw new Error(`duoComposerDispatch: missing ${name} in slice module`);
+    throw new Error(`mosaicComposerDispatch: missing ${name} in slice module`);
   }
   return f as T;
 }

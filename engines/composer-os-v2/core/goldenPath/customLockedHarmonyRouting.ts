@@ -131,7 +131,7 @@ function resolveHarmonyTruthFromSectionLockRegistry(
   md: GenerationMetadata,
   totalBars: number
 ): string[] | undefined {
-  const registry = md.duoSectionLockRegistry;
+  const registry = md.mosaicLockRegistry;
   if (!registry || registry.length === 0) return undefined;
   const bars: string[] = new Array(totalBars);
   for (const entry of registry) {
@@ -167,6 +167,11 @@ export function resolveEffectiveHarmonyTruth(
     matchesLength(opts.harmonyContext.bars)
   ) {
     return [...opts.harmonyContext.bars];
+  }
+
+  const fromMerged = coerceStringBarArray(md.mosaicMergedHarmonyBars);
+  if (fromMerged && matchesLength(fromMerged)) {
+    return [...fromMerged];
   }
 
   const fromSectionLockRegistry = resolveHarmonyTruthFromSectionLockRegistry(md, opts.totalBars);
@@ -241,7 +246,7 @@ export function assertCustomLockedRouting(
 
 /** Modular duo LOCK — one independent contract per section (order-independent). */
 export function assertSectionLockRegistry(score: ScoreModel, context: CompositionContext): void {
-  const registry = context.generationMetadata?.duoSectionLockRegistry;
+  const registry = context.generationMetadata?.mosaicLockRegistry;
   if (!registry || registry.length === 0) return;
 
   const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
@@ -276,9 +281,9 @@ export function assertScoreMatchesLockedHarmonyWire(
   /** Full-bar paste: score chords must match wire (custom_locked Song Mode, or Guitar–Bass Duo long-form custom). */
   if (options?.harmonyMode !== 'custom_locked' && options?.harmonyMode !== 'custom') return;
   const md = context?.generationMetadata as GenerationMetadata | undefined;
-  if (md?.duoSectionLockRegistry && md.duoSectionLockRegistry.length > 0) {
+  if (md?.mosaicLockRegistry && md.mosaicLockRegistry.length > 0) {
     if (!context) {
-      throw new Error('LOCK FAIL: duoSectionLockRegistry set but CompositionContext missing.');
+      throw new Error('LOCK FAIL: mosaicLockRegistry set but CompositionContext missing.');
     }
     assertSectionLockRegistry(score, context);
     return;

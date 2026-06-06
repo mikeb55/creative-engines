@@ -344,8 +344,8 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           ecmMode: req.presetId === 'ecm_chamber' ? req.ecmMode ?? 'ECM_METHENY_QUARTET' : undefined,
           totalBars,
           longFormEnabled: req.longFormEnabled,
-          ...(req.duoSongModeSectionPlan
-            ? { duoSongModeSectionPlan: req.duoSongModeSectionPlan }
+          ...(req.mosaicSectionPlan
+            ? { mosaicSectionPlan: req.mosaicSectionPlan }
             : {}),
           keySignatureMode: req.keySignatureMode,
           tonalCenterOverride: req.tonalCenterOverride,

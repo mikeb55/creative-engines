@@ -1,13 +1,13 @@
 /**
- * Duo Song Mode integration — full golden-path generation with section plan seed 77777.
+ * Mosaic Mode integration — full golden-path generation with section plan seed 77777.
  */
 
 import { assertScoreMatchesLockedHarmonyWire } from '../core/goldenPath/customLockedHarmonyRouting';
 import {
-  buildDuoTonicMap,
-  precomputeDuoEffectiveHarmonyBars,
-} from '../core/duo-song-mode/precomputeDuoEffectiveHarmonyBars';
-import { resolveSectionSongwritingStyles } from '../core/duo-song-mode/resolveSectionSongwritingStyles';
+  buildMosaicTonicMap,
+  precomputeMosaicEffectiveHarmonyBars,
+} from '../core/mosaic-mode/precomputeMosaicEffectiveHarmonyBars';
+import { resolveMosaicSectionStyles } from '../core/mosaic-mode/resolveMosaicSectionStyles';
 import type { GoldenPathResult } from '../core/goldenPath/runGoldenPath';
 import { lockedHarmonyChordSymbolsEquivalent } from '../core/harmony/chordProgressionParser';
 
@@ -43,11 +43,11 @@ function patchGenerateGoldenPathDuoScoreForDuoPlan(): () => void {
   ) {
     context.generationMetadata = {
       ...context.generationMetadata,
-      duoSongModeSectionPlan: DUO_PLAN,
+      mosaicSectionPlan: DUO_PLAN,
     };
-    const routing = resolveSectionSongwritingStyles(context.form, context.generationMetadata);
-    const tonicMap = buildDuoTonicMap(routing.sectionComposerMap, context);
-    precomputeDuoEffectiveHarmonyBars(context, routing, tonicMap);
+    const routing = resolveMosaicSectionStyles(context.form, context.generationMetadata);
+    const tonicMap = buildMosaicTonicMap(routing.sectionComposerMap, context);
+    precomputeMosaicEffectiveHarmonyBars(context, routing, tonicMap);
     return original.call(gp, context, plans, opts);
   };
   return () => {
@@ -86,7 +86,7 @@ function allReceiptStrings(result: GoldenPathResult): string {
   return parts.join('\n');
 }
 
-export function runDuoSongModeIntegrationTests(): { ok: boolean; name: string; detail?: string }[] {
+export function runMosaicModeIntegrationTests(): { ok: boolean; name: string; detail?: string }[] {
   const out: { ok: boolean; name: string; detail?: string }[] = [];
   const locked = lockedProgression16();
   const progressionText = locked.join(' | ');
@@ -191,7 +191,7 @@ export function runDuoSongModeIntegrationTests(): { ok: boolean; name: string; d
       detail: !hasTv || !hasJma ? `tv=${hasTv} jma=${hasJma}` : undefined,
     });
 
-    const evalResults = md?.duoSectionEvalResults;
+    const evalResults = md?.mosaicSectionEvalResults;
     const evalOk =
       Array.isArray(evalResults) &&
       evalResults.length === 2 &&
@@ -206,7 +206,7 @@ export function runDuoSongModeIntegrationTests(): { ok: boolean; name: string; d
       );
     out.push({
       ok: evalOk === true,
-      name: 'integration: duoSectionEvalResults — 2 sections verlaine + marr, no throw',
+      name: 'integration: mosaicSectionEvalResults — 2 sections verlaine + marr, no throw',
       detail:
         evalOk === true
           ? undefined
@@ -220,7 +220,7 @@ export function runDuoSongModeIntegrationTests(): { ok: boolean; name: string; d
 }
 
 if (require.main === module) {
-  const rows = runDuoSongModeIntegrationTests();
+  const rows = runMosaicModeIntegrationTests();
   let failed = 0;
   for (const row of rows) {
     const mark = row.ok ? 'PASS' : 'FAIL';

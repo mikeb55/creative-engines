@@ -4,20 +4,20 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
-import { composerForBar, isDuoModeActive } from '../duo-song-mode/duoBarHelpers';
+import { composerForBar, isMosaicModeActive } from '../mosaic-mode/mosaicBarHelpers';
 import {
   createHarmonyAccumulatorForComposer,
   getDispatchEntry,
   setDuoDispatchApplyScratch,
   setDuoDispatchFinalizeAccumulator,
-} from '../duo-song-mode/duoComposerDispatch';
+} from '../mosaic-mode/mosaicComposerDispatch';
 import {
-  buildDuoTonicMap,
+  buildMosaicTonicMap,
   cloneDuoSectionContext,
-  precomputeDuoEffectiveHarmonyBars,
-  type DuoTonicMap,
-} from '../duo-song-mode/precomputeDuoEffectiveHarmonyBars';
-import { resolveSectionSongwritingStyles } from '../duo-song-mode/resolveSectionSongwritingStyles';
+  precomputeMosaicEffectiveHarmonyBars,
+  type MosaicTonicMap,
+} from '../mosaic-mode/precomputeMosaicEffectiveHarmonyBars';
+import { resolveMosaicSectionStyles } from '../mosaic-mode/resolveMosaicSectionStyles';
 import {
   getEffectivePitchProfileForBar,
   getEffectiveRegisterWindowForBar,
@@ -3011,9 +3011,9 @@ function buildGuitarPart(
   const omMessiaenAccum = createMessiaenHarmonyAccumulator();
   const cpAccum = createCharlieParkerHarmonyAccumulator();
   const duoComposerAccumulators = new Map<string, unknown>();
-  if (isDuoModeActive(context)) {
+  if (isMosaicModeActive(context)) {
     const seenDuoComposerIds = new Set<string>();
-    for (const section of genMeta?.duoSongModeSectionPlan ?? []) {
+    for (const section of genMeta?.mosaicSectionPlan ?? []) {
       const composerId = section.songwriterStyleId;
       if (seenDuoComposerIds.has(composerId)) continue;
       seenDuoComposerIds.add(composerId);
@@ -3034,25 +3034,25 @@ function buildGuitarPart(
   const activeAbstract =
     contrapuntalLineSet ?? context.generationMetadata?.contrapuntalLineSet ?? null;
   const lineFirstDuoAbstract = isLineFirstDuoAbstractFromSet(activeAbstract, context);
-  if (isDuoModeActive(context) && !genMeta?.duoSectionLockRegistry) {
-    const routing = resolveSectionSongwritingStyles(context.form, genMeta);
-    precomputeDuoEffectiveHarmonyBars(
+  if (isMosaicModeActive(context) && !genMeta?.mosaicLockRegistry) {
+    const routing = resolveMosaicSectionStyles(context.form, genMeta);
+    precomputeMosaicEffectiveHarmonyBars(
       context,
       routing,
-      buildDuoTonicMap(genMeta?.duoSongModeSectionPlan ?? [], context)
+      buildMosaicTonicMap(genMeta?.mosaicSectionPlan ?? [], context)
     );
   }
-  const duoSectionPrecomputePlan = genMeta?.duoSongModeSectionPlan;
+  const duoSectionPrecomputePlan = genMeta?.mosaicSectionPlan;
   if (
-    isDuoModeActive(context) &&
-    !genMeta?.duoSectionLockRegistry &&
+    isMosaicModeActive(context) &&
+    !genMeta?.mosaicLockRegistry &&
     duoSectionPrecomputePlan &&
     duoSectionPrecomputePlan.length > 0
   ) {
     const seenComposerIds = new Set<string>();
-    const duoTonicMapForPrecompute: DuoTonicMap =
-      (genMeta as { duoTonicMap?: DuoTonicMap } | undefined)?.duoTonicMap ??
-      buildDuoTonicMap(duoSectionPrecomputePlan, context);
+    const duoTonicMapForPrecompute: MosaicTonicMap =
+      (genMeta as { duoTonicMap?: MosaicTonicMap } | undefined)?.duoTonicMap ??
+      buildMosaicTonicMap(duoSectionPrecomputePlan, context);
     for (const section of duoSectionPrecomputePlan) {
       const composerId = section.songwriterStyleId;
       if (seenComposerIds.has(composerId)) continue;
@@ -3060,7 +3060,7 @@ function buildGuitarPart(
       const entry = getDispatchEntry(composerId);
       if (!entry) {
         throw new Error(
-          `DUO: no dispatch entry for composer ${composerId} — add to duoComposerDispatch.ts`
+          `DUO: no dispatch entry for composer ${composerId} — add to mosaicComposerDispatch.ts`
         );
       }
       const tonicPc = duoTonicMapForPrecompute[section.sectionLabel];
@@ -3079,239 +3079,239 @@ function buildGuitarPart(
       entry.precompute(sectionContext);
     }
   }
-  if (isSongwriterBrianWilson && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterBrianWilson && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeBrianWilsonEffectiveHarmonyBars(context);
   }
-  if (isSongwriterStevieWonder && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterStevieWonder && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeStevieWonderEffectiveHarmonyBars(context);
   }
-  if (isSongwriterRadiohead && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterRadiohead && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeRadioheadEffectiveHarmonyBars(context);
   }
-  if (isSongwriterJamesBrown && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterJamesBrown && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeJamesBrownEffectiveHarmonyBars(context);
   }
-  if ((isSongwriterJoniMitchell || styleJoniMitchellSurface) && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if ((isSongwriterJoniMitchell || styleJoniMitchellSurface) && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeJoniMitchellEffectiveHarmonyBars(context);
   }
-  if ((isSongwriterSonicYouth || styleSonicYouthSurface) && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if ((isSongwriterSonicYouth || styleSonicYouthSurface) && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeSonicYouthEffectiveHarmonyBars(context);
   }
-  if ((isSongwriterPatMetheny || stylePatMethenySurface) && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if ((isSongwriterPatMetheny || stylePatMethenySurface) && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputePatMethenyEffectiveHarmonyBars(context);
   }
-  if (isSongwriterWayneShorter && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterWayneShorter && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeWayneShorterEffectiveHarmonyBars(context);
   }
-  if (isSongwriterFrankZappa && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterFrankZappa && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     attachFrankZappaHarmonyContext(context);
   }
   const duoRiffLaneId = resolveDuoRiffVrbLaneId(genMeta);
-  if (duoRiffLaneId && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (duoRiffLaneId && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     applyRiffVrbDuoSongwriterBranch(context, duoRiffLaneId, true);
   }
-  if (isSongwriterBarryHarris && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterBarryHarris && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeBarryHarrisEffectiveHarmonyBars(context);
   }
-  if (isSongwriterBillEvans && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterBillEvans && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeBillEvansEffectiveHarmonyBars(context);
   }
-  if (isSongwriterDebussy && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterDebussy && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeDebussyEffectiveHarmonyBars(context);
   }
-  if (isSongwriterBernardHerrmann && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterBernardHerrmann && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeBernardHerrmannEffectiveHarmonyBars(context);
   }
-  if (isSongwriterJohnWilliams && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterJohnWilliams && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeJohnWilliamsEffectiveHarmonyBars(context);
   }
-  if (isSongwriterEnnioMorricone && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterEnnioMorricone && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeEnnioMorriconeEffectiveHarmonyBars(context);
   }
-  if (isSongwriterNinoRota && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterNinoRota && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeNinoRotaEffectiveHarmonyBars(context);
   }
-  if (isSongwriterJerryGoldsmith && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterJerryGoldsmith && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeJerryGoldsmithEffectiveHarmonyBars(context);
   }
-  if (isSongwriterPhilipGlass && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterPhilipGlass && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputePhilipGlassEffectiveHarmonyBars(context);
   }
-  if (isSongwriterSteveReich && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterSteveReich && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeSteveReichEffectiveHarmonyBars(context);
   }
-  if (isSongwriterMessiaen && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterMessiaen && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeMessiaenEffectiveHarmonyBars(context);
   }
-  if (isSongwriterHansZimmer && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterHansZimmer && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeHansZimmerEffectiveHarmonyBars(context);
   }
-  if (isSongwriterAngeloBadalamenti && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterAngeloBadalamenti && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeAngeloBadalamentiEffectiveHarmonyBars(context);
   }
-  if (isSongwriterDukeEllington && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterDukeEllington && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeDukeEllingtonEffectiveHarmonyBars(context);
   }
-  if (isSongwriterBillyStrayhorn && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterBillyStrayhorn && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeBillyStrayhornEffectiveHarmonyBars(context);
   }
-  if (isSongwriterMilesDavis && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterMilesDavis && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeMilesDavisEffectiveHarmonyBars(context);
   }
-  if (isSongwriterBartok && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterBartok && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeBartokEffectiveHarmonyBars(context);
   }
-  if (isSongwriterBerg && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterBerg && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeBergEffectiveHarmonyBars(context);
   }
-  if (isSongwriterGershwin && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterGershwin && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeGershwinEffectiveHarmonyBars(context);
   }
-  if (isSongwriterArvoPart && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterArvoPart && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeArvoPartEffectiveHarmonyBars(context);
   }
-  if (isSongwriterSatie && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterSatie && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeSatieEffectiveHarmonyBars(context);
   }
-  if (isSongwriterPrince && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterPrince && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputePrinceEffectiveHarmonyBars(context);
   }
-  if (isSongwriterBeatles && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterBeatles && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeBeatlesEffectiveHarmonyBars(context);
   }
-  if (isSongwriterFelaKuti && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterFelaKuti && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeFelaKutiEffectiveHarmonyBars(context);
   }
-  if (isSongwriterColePorter && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterColePorter && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeColePorterEffectiveHarmonyBars(context);
   }
-  if (isSongwriterMariaSchneider && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterMariaSchneider && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeMariaSchneiderEffectiveHarmonyBars(context);
   }
-  if (isSongwriterKennyWheeler && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterKennyWheeler && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeKennyWheelerEffectiveHarmonyBars(context);
   }
-  if (isSongwriterJanGarbarek && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterJanGarbarek && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeJanGarbarekEffectiveHarmonyBars(context);
   }
-  if (isSongwriterJohnSurman && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterJohnSurman && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeJohnSurmanEffectiveHarmonyBars(context);
   }
-  if (isSongwriterRalphTowner && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterRalphTowner && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeRalphTownerEffectiveHarmonyBars(context);
   }
-  if (isSongwriterVerlaine && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterVerlaine && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeVerlaineEffectiveHarmonyBars(context);
   }
-  if (isSongwriterAllanHoldsworth && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterAllanHoldsworth && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeHoldsworthEffectiveHarmonyBars(context);
   }
-  if (isSongwriterJackWhite && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterJackWhite && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeJackWhiteEffectiveHarmonyBars(context);
   }
-  if (isSongwriterBeefheart && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterBeefheart && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeBeefheartEffectiveHarmonyBars(context);
   }
-  if (isSongwriterFripp && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterFripp && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeFrippEffectiveHarmonyBars(context);
   }
-  if (isSongwriterMarr && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterMarr && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeMarrEffectiveHarmonyBars(context);
   }
-  if (isSongwriterEberhardWeber && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterEberhardWeber && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeEberhardWeberEffectiveHarmonyBars(context);
   }
-  if (isSongwriterClausOgerman && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterClausOgerman && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeClausOgermanEffectiveHarmonyBars(context);
   }
-  if (isSongwriterLaloSchifrin && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterLaloSchifrin && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeLaloSchifrinEffectiveHarmonyBars(context);
   }
-  if (isSongwriterBillHolman && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterBillHolman && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeBillHolmanEffectiveHarmonyBars(context);
   }
-  if (isSongwriterCarlaBley && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterCarlaBley && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeCarlaBleyEffectiveHarmonyBars(context);
   }
-  if (isSongwriterGilEvans && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterGilEvans && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeGilEvansEffectiveHarmonyBars(context);
   }
-  if (isSongwriterThadJones && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterThadJones && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeThadJonesEffectiveHarmonyBars(context);
   }
-  if (isSongwriterCharlesMingus && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterCharlesMingus && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeCharlesMingusEffectiveHarmonyBars(context);
   }
-  if (isSongwriterHenryThreadgill && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterHenryThreadgill && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeHenryThreadgillEffectiveHarmonyBars(context);
   }
-  if (isSongwriterCountBasie && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterCountBasie && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeBasieEffectiveHarmonyBars(context);
   }
-  if (isSongwriterSammyNestico && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterSammyNestico && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeSammyNesticoEffectiveHarmonyBars(context);
   }
-  if (isSongwriterBobBrookmeyer && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterBobBrookmeyer && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeBobBrookmeyerEffectiveHarmonyBars(context);
   }
-  if (isSongwriterClareFischer && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterClareFischer && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeClareFischerEffectiveHarmonyBars(context);
   }
-  if (isSongwriterOliverNelson && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterOliverNelson && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeOliverNelsonEffectiveHarmonyBars(context);
   }
-  if (isSongwriterQuincyJones && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterQuincyJones && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeQuincyJonesEffectiveHarmonyBars(context);
   }
-  if (isSongwriterDonSebesky && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterDonSebesky && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeDonSebeskyEffectiveHarmonyBars(context);
   }
-  if (isSongwriterJohnnyMandel && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterJohnnyMandel && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeJohnnyMandelEffectiveHarmonyBars(context);
   }
-  if (isSongwriterJohnBarry && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterJohnBarry && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeJohnBarryEffectiveHarmonyBars(context);
   }
-  if (isSongwriterBacharach && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterBacharach && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeBacharachEffectiveHarmonyBars(context);
   }
-  if (isSongwriterFagen && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterFagen && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeDonaldFagenEffectiveHarmonyBars(context);
   }
-  if (isSongwriterEcmChamber && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterEcmChamber && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeEcmChamberEffectiveHarmonyBars(context);
   }
-  if (isSongwriterJobim && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterJobim && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeJobimEffectiveHarmonyBars(context);
   }
-  if (isSongwriterHerbieHancock && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterHerbieHancock && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeHerbieHancockEffectiveHarmonyBars(context);
   }
-  if (isSongwriterSondheim && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterSondheim && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeSondheimEffectiveHarmonyBars(context);
   }
-  if (isSongwriterKateBush && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterKateBush && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeKateBushEffectiveHarmonyBars(context);
   }
-  if (isSongwriterTheloniousMonk && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterTheloniousMonk && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeTheloniousMonkEffectiveHarmonyBars(context);
   }
-  if (isSongwriterJohnColtrane && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterJohnColtrane && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeJohnColtraneEffectiveHarmonyBars(context);
   }
-  if (isSongwriterMccoyTyner && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterMccoyTyner && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeMccoyTynerEffectiveHarmonyBars(context);
   }
-  if (isSongwriterAndrewHill && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterAndrewHill && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeAndrewHillEffectiveHarmonyBars(context);
   }
-  if (isSongwriterJimHall && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterJimHall && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeJimHallEffectiveHarmonyBars(context);
   }
-  if (isSongwriterCharlieParker && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterCharlieParker && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeCharlieParkerEffectiveHarmonyBars(context);
   }
-  if (isSongwriterFrippKingCrimson && isDuoGoldenPath && !genMeta?.duoSectionLockRegistry) {
+  if (isSongwriterFrippKingCrimson && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeFrippKingCrimsonEffectiveHarmonyBars(context);
   }
 
@@ -3360,7 +3360,7 @@ function buildGuitarPart(
     effectiveLow: number,
     effectiveHigh: number
   ): void => {
-    if (!isDuoModeActive(context)) return;
+    if (!isMosaicModeActive(context)) return;
     const composerId = composerForBar(bar, context);
     const entry = getDispatchEntry(composerId);
     if (!entry?.apply) return;
@@ -3452,7 +3452,7 @@ function buildGuitarPart(
   }
 
   for (let b = 1; b <= tb; b++) {
-    if (isDuoModeActive(context)) {
+    if (isMosaicModeActive(context)) {
       const duoComposerId = composerForBar(b, context);
       const duoEntry = getDispatchEntry(duoComposerId);
       const duoAcc = duoComposerAccumulators.get(duoComposerId);
@@ -4603,9 +4603,9 @@ function buildGuitarPart(
     measures.push(m);
   }
 
-  if (isDuoModeActive(context) && context.generationMetadata) {
+  if (isMosaicModeActive(context) && context.generationMetadata) {
     const seenDuoFinalizeIds = new Set<string>();
-    for (const section of genMeta?.duoSongModeSectionPlan ?? []) {
+    for (const section of genMeta?.mosaicSectionPlan ?? []) {
       const composerId = section.songwriterStyleId;
       if (seenDuoFinalizeIds.has(composerId)) continue;
       seenDuoFinalizeIds.add(composerId);

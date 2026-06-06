@@ -68,12 +68,12 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   }
 
   if (
-    meta?.duoMergedHarmonyBars &&
-    meta.duoMergedHarmonyBars.length === tb &&
+    meta?.mosaicMergedHarmonyBars &&
+    meta.mosaicMergedHarmonyBars.length === tb &&
     barIndex >= 1 &&
     barIndex <= tb
   ) {
-    return meta.duoMergedHarmonyBars[barIndex - 1]!;
+    return meta.mosaicMergedHarmonyBars[barIndex - 1]!;
   }
 
   /**

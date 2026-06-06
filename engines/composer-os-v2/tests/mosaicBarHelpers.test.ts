@@ -1,9 +1,9 @@
 /**
- * Duo Song Mode Step 5 — composerForBar + isDuoModeActive unit tests.
+ * Mosaic Mode Step 5 — composerForBar + isMosaicModeActive unit tests.
  */
 
 import type { CompositionContext, GenerationMetadata } from '../core/compositionContext';
-import { composerForBar, isDuoModeActive } from '../core/duo-song-mode/duoBarHelpers';
+import { composerForBar, isMosaicModeActive } from '../core/mosaic-mode/mosaicBarHelpers';
 
 function contextWithMeta(metadata: Partial<GenerationMetadata>): CompositionContext {
   return {
@@ -33,7 +33,7 @@ function contextWithMeta(metadata: Partial<GenerationMetadata>): CompositionCont
   };
 }
 
-export function runDuoBarHelpersTests(): { ok: boolean; name: string }[] {
+export function runMosaicBarHelpersTests(): { ok: boolean; name: string }[] {
   const out: { ok: boolean; name: string }[] = [];
 
   const duoPlan = [
@@ -43,9 +43,9 @@ export function runDuoBarHelpersTests(): { ok: boolean; name: string }[] {
 
   const duoContext = contextWithMeta({
     songwriterStyleId: 'verlaine',
-    duoSongModeSectionPlan: duoPlan,
-    duoMergedHarmonyBars: Array.from({ length: 16 }, () => 'Am7'),
-    duoSectionOwnership: {
+    mosaicSectionPlan: duoPlan,
+    mosaicMergedHarmonyBars: Array.from({ length: 16 }, () => 'Am7'),
+    mosaicSectionOwnership: {
       1: 'verse',
       8: 'verse',
       9: 'chorus',
@@ -70,31 +70,31 @@ export function runDuoBarHelpersTests(): { ok: boolean; name: string }[] {
   });
 
   out.push({
-    ok: isDuoModeActive(duoContext),
-    name: 'isDuoModeActive: plan with 2+ entries → true',
+    ok: isMosaicModeActive(duoContext),
+    name: 'isMosaicModeActive: plan with 2+ entries → true',
   });
 
   out.push({
-    ok: !isDuoModeActive(contextWithMeta({ duoSongModeSectionPlan: undefined })),
-    name: 'isDuoModeActive: undefined plan → false',
+    ok: !isMosaicModeActive(contextWithMeta({ mosaicSectionPlan: undefined })),
+    name: 'isMosaicModeActive: undefined plan → false',
   });
 
   out.push({
-    ok: !isDuoModeActive(
+    ok: !isMosaicModeActive(
       contextWithMeta({
-        duoSongModeSectionPlan: [
+        mosaicSectionPlan: [
           { sectionLabel: 'verse', startBar: 1, endBar: 16, songwriterStyleId: 'verlaine' },
         ],
       })
     ),
-    name: 'isDuoModeActive: single entry plan → false',
+    name: 'isMosaicModeActive: single entry plan → false',
   });
 
   return out;
 }
 
 if (require.main === module) {
-  const rows = runDuoBarHelpersTests();
+  const rows = runMosaicBarHelpersTests();
   let failed = 0;
   for (const row of rows) {
     const mark = row.ok ? 'PASS' : 'FAIL';

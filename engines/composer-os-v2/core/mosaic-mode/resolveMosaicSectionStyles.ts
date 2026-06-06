@@ -1,15 +1,15 @@
 import type { FormMap, GenerationMetadata } from '../compositionContext';
 
-/** One section entry from {@link GenerationMetadata.duoSongModeSectionPlan} (Step 1). */
-export type DuoSongModeSectionPlanEntry = NonNullable<
-  GenerationMetadata['duoSongModeSectionPlan']
+/** One section entry from {@link GenerationMetadata.mosaicSectionPlan} (Step 1). */
+export type MosaicModeSectionPlanEntry = NonNullable<
+  GenerationMetadata['mosaicSectionPlan']
 >[number];
 
 export interface SectionComposerRouting {
   mode: 'single' | 'duo';
   primarySongwriterStyleId: string;
   barComposerMap: Record<number, string>;
-  sectionComposerMap: DuoSongModeSectionPlanEntry[];
+  sectionComposerMap: MosaicModeSectionPlanEntry[];
 }
 
 function buildSingleComposerRouting(
@@ -44,20 +44,20 @@ function findUnmappedBars(
 
 /**
  * Pure resolver: map each form bar to a songwriter style from metadata.
- * Single-composer when `duoSongModeSectionPlan` is absent or has fewer than 2 entries;
+ * Single-composer when `mosaicSectionPlan` is absent or has fewer than 2 entries;
  * duo mode when the plan has 2+ contiguous section ranges covering every bar.
  */
-export function resolveSectionSongwritingStyles(
+export function resolveMosaicSectionStyles(
   formMap: FormMap,
   generationMetadata: GenerationMetadata
 ): SectionComposerRouting {
-  const plan = generationMetadata.duoSongModeSectionPlan;
+  const plan = generationMetadata.mosaicSectionPlan;
 
   if (!plan || plan.length === 0 || plan.length < 2) {
     const songwriterStyleId = generationMetadata.songwriterStyleId;
     if (!songwriterStyleId) {
       throw new Error(
-        'resolveSectionSongwritingStyles: songwriterStyleId is required when duoSongModeSectionPlan is absent or has fewer than 2 entries'
+        'resolveMosaicSectionStyles: songwriterStyleId is required when mosaicSectionPlan is absent or has fewer than 2 entries'
       );
     }
     return buildSingleComposerRouting(formMap, songwriterStyleId);
@@ -67,14 +67,14 @@ export function resolveSectionSongwritingStyles(
   for (const section of plan) {
     if (section.startBar > section.endBar) {
       throw new Error(
-        `resolveSectionSongwritingStyles: section "${section.sectionLabel}" has startBar ${section.startBar} > endBar ${section.endBar}`
+        `resolveMosaicSectionStyles: section "${section.sectionLabel}" has startBar ${section.startBar} > endBar ${section.endBar}`
       );
     }
     for (let bar = section.startBar; bar <= section.endBar; bar++) {
       const existing = barComposerMap[bar];
       if (existing !== undefined && existing !== section.songwriterStyleId) {
         throw new Error(
-          `resolveSectionSongwritingStyles: bar ${bar} is covered by overlapping sections with different songwriterStyleId values ("${existing}" vs "${section.songwriterStyleId}")`
+          `resolveMosaicSectionStyles: bar ${bar} is covered by overlapping sections with different songwriterStyleId values ("${existing}" vs "${section.songwriterStyleId}")`
         );
       }
       barComposerMap[bar] = section.songwriterStyleId;
@@ -88,7 +88,7 @@ export function resolveSectionSongwritingStyles(
         ? unmappedBars.join(', ')
         : `${unmappedBars.slice(0, 12).join(', ')} … (+${unmappedBars.length - 12} more)`;
     throw new Error(
-      `resolveSectionSongwritingStyles: duoSongModeSectionPlan does not cover every bar 1–${formMap.totalBars}; unmapped bar(s): ${listed}`
+      `resolveMosaicSectionStyles: mosaicSectionPlan does not cover every bar 1–${formMap.totalBars}; unmapped bar(s): ${listed}`
     );
   }
 

@@ -1,5 +1,5 @@
 /**
- * Duo Song Mode Step 4 — per-bar harmony dispatch in getChordForBar.
+ * Mosaic Mode Step 4 — per-bar harmony dispatch in getChordForBar.
  */
 
 import type { CompositionContext, GenerationMetadata } from '../core/compositionContext';
@@ -53,8 +53,8 @@ export function runHarmonyResolutionDuoDispatchTests(): { ok: boolean; name: str
 
   const duoContext = minimalContext(16, {
     songwriterStyleId: 'verlaine',
-    duoMergedHarmonyBars: merged,
-    duoSectionOwnership: {
+    mosaicMergedHarmonyBars: merged,
+    mosaicSectionOwnership: {
       1: 'verse',
       8: 'verse',
       9: 'chorus',
@@ -89,7 +89,7 @@ export function runHarmonyResolutionDuoDispatchTests(): { ok: boolean; name: str
 
   out.push({
     ok: getChordForBar(1, verlaineContext) === verlaineOnly[0],
-    name: 'single-composer fallback: Verlaine branch fires when duoMergedHarmonyBars undefined',
+    name: 'single-composer fallback: Verlaine branch fires when mosaicMergedHarmonyBars undefined',
   });
 
   const marrOnly = Array.from({ length: 16 }, (_, i) => `MarrEff-${i + 1}`);
@@ -100,18 +100,18 @@ export function runHarmonyResolutionDuoDispatchTests(): { ok: boolean; name: str
 
   out.push({
     ok: getChordForBar(12, marrContext) === marrOnly[11],
-    name: 'single-composer fallback: Marr branch fires when duoMergedHarmonyBars undefined',
+    name: 'single-composer fallback: Marr branch fires when mosaicMergedHarmonyBars undefined',
   });
 
   const wrongLengthContext = minimalContext(16, {
     songwriterStyleId: 'verlaine',
-    duoMergedHarmonyBars: merged.slice(0, 8),
+    mosaicMergedHarmonyBars: merged.slice(0, 8),
     verlaineEffectiveHarmonyBars: verlaineOnly,
   });
 
   out.push({
     ok: getChordForBar(1, wrongLengthContext) === verlaineOnly[0],
-    name: 'array length guard: duoMergedHarmonyBars length !== tb → falls through to Verlaine branch',
+    name: 'array length guard: mosaicMergedHarmonyBars length !== tb → falls through to Verlaine branch',
   });
 
   out.push({

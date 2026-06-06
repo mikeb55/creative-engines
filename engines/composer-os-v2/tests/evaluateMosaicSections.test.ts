@@ -1,13 +1,13 @@
 /**
- * Duo Song Mode Step 7 — evaluateDuoSections unit tests.
+ * Mosaic Mode Step 7 — evaluateMosaicSections unit tests.
  */
 
 import type { CompositionContext, GenerationMetadata } from '../core/compositionContext';
 import {
-  evaluateDuoSections,
+  evaluateMosaicSections,
   type DuoSectionEvalResult,
-} from '../core/duo-song-mode/evaluateDuoSections';
-import type { SectionLockEntry } from '../core/duo-song-mode/precomputeDuoEffectiveHarmonyBars';
+} from '../core/mosaic-mode/evaluateMosaicSections';
+import type { SectionLockEntry } from '../core/mosaic-mode/precomputeMosaicEffectiveHarmonyBars';
 import type { ScoreModel } from '../core/score-model/scoreModelTypes';
 
 function minimalContext(
@@ -31,7 +31,7 @@ function minimalContext(
     generationMetadata: {
       generatedAt: '2026-06-06T00:00:00.000Z',
       songwriterStyleId: 'verlaine',
-      duoSectionLockRegistry: registry,
+      mosaicLockRegistry: registry,
       ...extra,
     },
     validation: {} as CompositionContext['validation'],
@@ -79,13 +79,13 @@ function registryEntry(
   };
 }
 
-export function runEvaluateDuoSectionsTests(): { ok: boolean; name: string; detail?: string }[] {
+export function runEvaluateMosaicSectionsTests(): { ok: boolean; name: string; detail?: string }[] {
   const out: { ok: boolean; name: string; detail?: string }[] = [];
 
-  const emptyRegistry = evaluateDuoSections(scoreWithBars(['Em7']), minimalContext(undefined));
+  const emptyRegistry = evaluateMosaicSections(scoreWithBars(['Em7']), minimalContext(undefined));
   out.push({
     ok: emptyRegistry.length === 0,
-    name: 'evaluateDuoSections: no registry → returns []',
+    name: 'evaluateMosaicSections: no registry → returns []',
     detail: emptyRegistry.length !== 0 ? `got ${emptyRegistry.length}` : undefined,
   });
 
@@ -97,7 +97,7 @@ export function runEvaluateDuoSectionsTests(): { ok: boolean; name: string; deta
     endBar: 8,
     expectedHarmonyBars: verlaineBars,
   });
-  const verlaineResults = evaluateDuoSections(
+  const verlaineResults = evaluateMosaicSections(
     scoreWithBars(verlaineBars),
     minimalContext([verlaineEntry])
   );
@@ -107,7 +107,7 @@ export function runEvaluateDuoSectionsTests(): { ok: boolean; name: string; deta
       verlaineResults[0]?.composerId === 'verlaine' &&
       typeof verlaineResults[0]?.scores.overall === 'number' &&
       verlaineResults[0]?.scores.modalFieldPersistence != null,
-    name: 'evaluateDuoSections: Verlaine section → Verlaine profile dimensions scored',
+    name: 'evaluateMosaicSections: Verlaine section → Verlaine profile dimensions scored',
     detail:
       verlaineResults[0] == null
         ? 'no result'
@@ -122,7 +122,7 @@ export function runEvaluateDuoSectionsTests(): { ok: boolean; name: string; deta
     endBar: 16,
     expectedHarmonyBars: marrBars,
   });
-  const marrResults = evaluateDuoSections(
+  const marrResults = evaluateMosaicSections(
     scoreWithBars(marrBars, 9),
     minimalContext([marrEntry])
   );
@@ -131,14 +131,14 @@ export function runEvaluateDuoSectionsTests(): { ok: boolean; name: string; deta
       marrResults.length === 1 &&
       marrResults[0]?.composerId === 'marr' &&
       typeof marrResults[0]?.scores.partialVoicingRate === 'number',
-    name: 'evaluateDuoSections: Marr section → Marr profile dimensions scored',
+    name: 'evaluateMosaicSections: Marr section → Marr profile dimensions scored',
     detail: marrResults[0] == null ? 'no result' : `composer=${marrResults[0].composerId}`,
   });
 
   let unknownThrew = false;
   let unknownResults: DuoSectionEvalResult[] = [];
   try {
-    unknownResults = evaluateDuoSections(
+    unknownResults = evaluateMosaicSections(
       scoreWithBars(['C']),
       minimalContext([
         registryEntry({
@@ -155,11 +155,11 @@ export function runEvaluateDuoSectionsTests(): { ok: boolean; name: string; deta
   }
   out.push({
     ok: !unknownThrew && unknownResults.length === 0,
-    name: 'evaluateDuoSections: unknown composer → skips, does not throw',
+    name: 'evaluateMosaicSections: unknown composer → skips, does not throw',
     detail: unknownThrew ? 'threw' : `results=${unknownResults.length}`,
   });
 
-  const dualVerlaine = evaluateDuoSections(
+  const dualVerlaine = evaluateMosaicSections(
     scoreWithBars([...verlaineBars, ...verlaineBars.map((c) => c.replace('Esus2', 'Dsus2'))]),
     minimalContext([
       registryEntry({ sectionLabel: 'A', composerId: 'verlaine', startBar: 1, endBar: 8, expectedHarmonyBars: verlaineBars }),
@@ -180,31 +180,31 @@ export function runEvaluateDuoSectionsTests(): { ok: boolean; name: string; deta
       dualVerlaine[0]?.composerId === 'verlaine' &&
       dualVerlaine[1]?.composerId === 'verlaine' &&
       dualVerlaine[0] !== dualVerlaine[1],
-    name: 'evaluateDuoSections: two sections same composer → two independent results',
+    name: 'evaluateMosaicSections: two sections same composer → two independent results',
   });
 
   const ctx = minimalContext([verlaineEntry]);
   const score = scoreWithBars(verlaineBars);
   const ctxBefore = JSON.stringify(ctx);
   const scoreBefore = JSON.stringify(score);
-  evaluateDuoSections(score, ctx);
+  evaluateMosaicSections(score, ctx);
   out.push({
     ok: JSON.stringify(ctx) === ctxBefore && JSON.stringify(score) === scoreBefore,
-    name: 'evaluateDuoSections: pure function — score and context unchanged',
+    name: 'evaluateMosaicSections: pure function — score and context unchanged',
   });
 
   out.push({
     ok:
       verlaineResults[0]?.scores.modalFieldPersistence != null &&
       marrResults[0]?.scores.partialVoicingRate != null,
-    name: 'evaluateDuoSections: fixture profiles verlaine + marr registered',
+    name: 'evaluateMosaicSections: fixture profiles verlaine + marr registered',
   });
 
   return out;
 }
 
 if (require.main === module) {
-  const rows = runEvaluateDuoSectionsTests();
+  const rows = runEvaluateMosaicSectionsTests();
   let failed = 0;
   for (const row of rows) {
     const mark = row.ok ? 'PASS' : 'FAIL';

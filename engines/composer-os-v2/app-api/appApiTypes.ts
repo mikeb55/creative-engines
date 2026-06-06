@@ -344,7 +344,7 @@ export interface GenerateRequest {
   drumArticulation?: 'auto' | 'brushes' | 'sticks';
   /** Guitar–Bass Duo / Song Mode: long-form planning when `totalBars` is 16, 24, 32, 40, 48, 56, or 64 (with matching chord length). */
   longFormEnabled?: boolean;
-  duoSongModeSectionPlan?: Array<{
+  mosaicSectionPlan?: Array<{
     sectionLabel: string;
     startBar: number;
     endBar: number;

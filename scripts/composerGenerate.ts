@@ -38,7 +38,7 @@ function rehearsalDisplayName(songwriterStyleId: string): string {
 
 function addRehearsalMarksToMusicXml(
   xml: string,
-  plan: NonNullable<GenerateRequest['duoSongModeSectionPlan']>
+  plan: NonNullable<GenerateRequest['mosaicSectionPlan']>
 ): string {
   let out = xml;
   for (const section of plan) {
@@ -70,9 +70,9 @@ if (!chords.trim()) {
   process.exit(1);
 }
 
-let duoSongModeSectionPlan: GenerateRequest['duoSongModeSectionPlan'];
+let mosaicSectionPlan: GenerateRequest['mosaicSectionPlan'];
 try {
-  duoSongModeSectionPlan = JSON.parse(sectionsRaw) as GenerateRequest['duoSongModeSectionPlan'];
+  mosaicSectionPlan = JSON.parse(sectionsRaw) as GenerateRequest['mosaicSectionPlan'];
 } catch (e) {
   console.error('Invalid --sections JSON:', e instanceof Error ? e.message : String(e));
   process.exit(1);
@@ -94,7 +94,7 @@ const request: GenerateRequest = {
     },
   },
   chordProgressionText: chords,
-  duoSongModeSectionPlan,
+  mosaicSectionPlan,
 };
 
 const result = apiGenerate(request, getComposerFilesRoot());
@@ -119,8 +119,8 @@ if (result.filepath && outputArg) {
   fs.copyFileSync(result.filepath, dest);
   console.log('Output:', dest);
   console.log('Size:', fs.statSync(dest).size, 'bytes');
-  if (duoSongModeSectionPlan && duoSongModeSectionPlan.length > 0) {
-    const marked = addRehearsalMarksToMusicXml(fs.readFileSync(dest, 'utf8'), duoSongModeSectionPlan);
+  if (mosaicSectionPlan && mosaicSectionPlan.length > 0) {
+    const marked = addRehearsalMarksToMusicXml(fs.readFileSync(dest, 'utf8'), mosaicSectionPlan);
     fs.writeFileSync(dest, marked, 'utf8');
     console.log('Size:', fs.statSync(dest).size, 'bytes');
   }

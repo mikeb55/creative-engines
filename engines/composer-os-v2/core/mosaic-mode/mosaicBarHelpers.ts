@@ -7,10 +7,10 @@ export function composerForBar(barIndex: number, context: CompositionContext): s
   const meta = context.generationMetadata;
   const fallback = meta.songwriterStyleId ?? '';
 
-  if (meta.duoMergedHarmonyBars && meta.duoSectionOwnership) {
-    const owner = meta.duoSectionOwnership[barIndex];
+  if (meta.mosaicMergedHarmonyBars && meta.mosaicSectionOwnership) {
+    const owner = meta.mosaicSectionOwnership[barIndex];
     if (owner === undefined) return fallback;
-    const section = meta.duoSongModeSectionPlan?.find((s) => s.sectionLabel === owner);
+    const section = meta.mosaicSectionPlan?.find((s) => s.sectionLabel === owner);
     if (section) return section.songwriterStyleId;
     return owner;
   }
@@ -18,8 +18,8 @@ export function composerForBar(barIndex: number, context: CompositionContext): s
   return fallback;
 }
 
-/** True when metadata carries a 2+ section Duo Song Mode plan. */
-export function isDuoModeActive(context: CompositionContext): boolean {
-  const plan = context.generationMetadata.duoSongModeSectionPlan;
+/** True when metadata carries a 2+ section Mosaic Mode plan. */
+export function isMosaicModeActive(context: CompositionContext): boolean {
+  const plan = context.generationMetadata.mosaicSectionPlan;
   return Array.isArray(plan) && plan.length >= 2;
 }
