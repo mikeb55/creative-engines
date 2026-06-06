@@ -14,8 +14,10 @@ import {
 import {
   buildDuoTonicMap,
   cloneDuoSectionContext,
+  precomputeDuoEffectiveHarmonyBars,
   type DuoTonicMap,
 } from '../duo-song-mode/precomputeDuoEffectiveHarmonyBars';
+import { resolveSectionSongwritingStyles } from '../duo-song-mode/resolveSectionSongwritingStyles';
 import {
   getEffectivePitchProfileForBar,
   getEffectiveRegisterWindowForBar,
@@ -3032,6 +3034,14 @@ function buildGuitarPart(
   const activeAbstract =
     contrapuntalLineSet ?? context.generationMetadata?.contrapuntalLineSet ?? null;
   const lineFirstDuoAbstract = isLineFirstDuoAbstractFromSet(activeAbstract, context);
+  if (isDuoModeActive(context) && !genMeta?.duoSectionLockRegistry) {
+    const routing = resolveSectionSongwritingStyles(context.form, genMeta);
+    precomputeDuoEffectiveHarmonyBars(
+      context,
+      routing,
+      buildDuoTonicMap(genMeta?.duoSongModeSectionPlan ?? [], context)
+    );
+  }
   const duoSectionPrecomputePlan = genMeta?.duoSongModeSectionPlan;
   if (
     isDuoModeActive(context) &&

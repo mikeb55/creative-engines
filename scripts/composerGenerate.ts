@@ -9,15 +9,59 @@ function argValue(flag: string): string | undefined {
   return process.argv[i + 1];
 }
 
+const COMPOSER_REHEARSAL_DISPLAY: Record<string, string> = {
+  fripp: 'FRIPP',
+  jack_white: 'JACK WHITE',
+  wayne_shorter: 'W. SHORTER',
+  verlaine: 'VERLAINE',
+  beefheart: 'BEEFHEART',
+  holdsworth: 'HOLDSWORTH',
+  marr: 'MARR',
+  brian_wilson: 'BRIAN WILSON',
+  stevie_wonder: 'STEVIE WONDER',
+  radiohead: 'RADIOHEAD',
+  james_brown: 'JAMES BROWN',
+  joni_mitchell: 'JONI MITCHELL',
+  sonic_youth: 'SONIC YOUTH',
+  pat_metheny: 'PAT METHENY',
+  frank_zappa: 'FRANK ZAPPA',
+  barry_harris: 'BARRY HARRIS',
+  bill_evans: 'BILL EVANS',
+};
+
+function rehearsalDisplayName(songwriterStyleId: string): string {
+  return (
+    COMPOSER_REHEARSAL_DISPLAY[songwriterStyleId] ??
+    songwriterStyleId.replace(/_/g, ' ').toUpperCase()
+  );
+}
+
+function addRehearsalMarksToMusicXml(
+  xml: string,
+  plan: NonNullable<GenerateRequest['duoSongModeSectionPlan']>
+): string {
+  let out = xml;
+  for (const section of plan) {
+    const label = rehearsalDisplayName(section.songwriterStyleId);
+    const rehearsal = `<direction placement="above"><direction-type><rehearsal font-weight="bold" font-size="14">${label}</rehearsal></direction-type></direction>`;
+    const measurePattern = new RegExp(
+      `(<measure[^>]*\\bnumber="${section.startBar}"[^>]*>)([\\s\\S]*?)(<note)`,
+      'g'
+    );
+    out = out.replace(measurePattern, `$1$2${rehearsal}$3`);
+  }
+  return out;
+}
+
 const preset = argValue('--preset') ?? 'guitar_bass_duo';
 const bars = Number(argValue('--bars') ?? '64');
 const seed = Number(argValue('--seed') ?? '77001');
 const bpm = Number(argValue('--bpm') ?? '120');
 const chords = argValue('--chords') ?? '';
-const outputDir = argValue('--output') ?? '';
+const outputArg = argValue('--output') ?? '';
 const sectionsRaw = argValue('--sections') ?? '[]';
 
-if (!outputDir.trim()) {
+if (!outputArg.trim()) {
   console.error('Missing required --output path.');
   process.exit(1);
 }
@@ -55,7 +99,7 @@ const request: GenerateRequest = {
 
 const result = apiGenerate(request, getComposerFilesRoot());
 
-if (!result.success || !result.filepath) {
+if (!result.filepath) {
   const errors: string[] = [];
   if (result.error) errors.push(result.error);
   if ('validation' in result && result.validation?.errors?.length) {
@@ -68,7 +112,22 @@ if (!result.success || !result.filepath) {
   process.exit(1);
 }
 
-fs.mkdirSync(outputDir, { recursive: true });
-const destPath = path.join(outputDir, path.basename(result.filepath));
-fs.copyFileSync(result.filepath, destPath);
-console.log(`Generated: ${destPath}`);
+if (result.filepath && outputArg) {
+  const filename = path.basename(result.filepath);
+  const dest = path.join(outputArg, filename);
+  fs.mkdirSync(outputArg, { recursive: true });
+  fs.copyFileSync(result.filepath, dest);
+  console.log('Output:', dest);
+  console.log('Size:', fs.statSync(dest).size, 'bytes');
+  if (duoSongModeSectionPlan && duoSongModeSectionPlan.length > 0) {
+    const marked = addRehearsalMarksToMusicXml(fs.readFileSync(dest, 'utf8'), duoSongModeSectionPlan);
+    fs.writeFileSync(dest, marked, 'utf8');
+    console.log('Size:', fs.statSync(dest).size, 'bytes');
+  }
+  if (!result.success) {
+    console.log('Validation warnings:');
+    const resultErrors = (result as { errors?: string[] }).errors ?? result.validation?.errors ?? [];
+    resultErrors.forEach((e) => console.log(' -', e));
+    console.log('File written.', 'Open in Sibelius for review.');
+  }
+}
