@@ -17,6 +17,7 @@ import {
   attachFrankZappaHarmonyContext,
   createFrankZappaHarmonyAccumulator,
 } from '../goldenPath/frankZappaSlice';
+import { COMPOSER_ID_ALIASES } from '../groups/composerGroupDefinitions';
 
 export type ComposerDispatchEntry = {
   composerId: string;
@@ -178,6 +179,33 @@ const SLICE_ROWS: SliceRow[] = [
   { composerId: 'frank_zappa', mod: 'goldenPath/frankZappaSlice', precompute: 'attachFrankZappaHarmonyContext', accumulate: 'accumulateFrankZappaHarmonyDiagnostics', createAcc: 'createFrankZappaHarmonyAccumulator', finalize: '__zappa__', apply: '__zappa__', effKey: 'frankZappaEffectiveHarmonyBars' },
 ];
 
+/**
+ * Alias keys referencing existing SLICE_ROWS entries (no duplicate slice wiring).
+ * holdsworth → allan_holdsworth (also in COMPOSER_ID_ALIASES; listed here explicitly).
+ */
+const SLICE_ROW_ALIAS_IDS: Readonly<Record<string, string>> = {
+  holdsworth: 'allan_holdsworth',
+};
+
+/**
+ * Stub aliases for composer ids without a dedicated mosaic slice yet.
+ * Values must resolve to an existing SLICE_ROWS composerId (directly or via COMPOSER_ID_ALIASES).
+ */
+const DISPATCH_STUB_ALIASES: Readonly<Record<string, string>> = {
+  /** Stub pending dedicated ornette_coleman slice — POST_BOP open-cadence fit (andrew_hill). */
+  ornette_coleman: 'andrew_hill',
+  ornette: 'andrew_hill',
+  harmolodics: 'andrew_hill',
+  free_jazz: 'andrew_hill',
+  lonely_woman: 'andrew_hill',
+  /** Guitar ids with VRB/stub only — nearest ROCK_FUSION / ART_ROCK / JAZZ_GUITAR dispatch fit. */
+  morello: 'fripp',
+  eddie_van_halen: 'allan_holdsworth',
+  wes_montgomery: 'jim_hall',
+  joe_pass: 'jim_hall',
+  scott_henderson: 'allan_holdsworth',
+};
+
 const modCache = new Map<string, Record<string, unknown>>();
 
 function getMod(path: string): Record<string, unknown> {
@@ -317,12 +345,49 @@ const registryById = new Map<string, ComposerDispatchEntry>(
   DUO_COMPOSER_REGISTRY.map((entry) => [entry.composerId, entry])
 );
 
+/** Walk alias/stub chain to a canonical SLICE_ROWS composerId present in registryById. */
+function resolveCanonicalDispatchId(composerId: string): string | undefined {
+  let id = composerId.trim();
+  if (!id) return undefined;
+  const seen = new Set<string>();
+  while (id && !seen.has(id)) {
+    seen.add(id);
+    if (registryById.has(id)) return id;
+    const next =
+      SLICE_ROW_ALIAS_IDS[id] ?? DISPATCH_STUB_ALIASES[id] ?? COMPOSER_ID_ALIASES[id];
+    if (!next || next === id) return undefined;
+    id = next;
+  }
+  return undefined;
+}
+
+function registerDispatchAliases(): void {
+  const aliasKeys = new Set<string>([
+    ...Object.keys(SLICE_ROW_ALIAS_IDS),
+    ...Object.keys(COMPOSER_ID_ALIASES),
+    ...Object.keys(DISPATCH_STUB_ALIASES),
+  ]);
+  for (const alias of aliasKeys) {
+    const canonical = resolveCanonicalDispatchId(alias);
+    if (!canonical) continue;
+    const entry = registryById.get(canonical);
+    if (entry) registryById.set(alias, entry);
+  }
+}
+
+registerDispatchAliases();
+
 export function getDispatchEntry(composerId: string): ComposerDispatchEntry | undefined {
-  return registryById.get(composerId);
+  const direct = registryById.get(composerId);
+  if (direct) return direct;
+  const canonical = resolveCanonicalDispatchId(composerId);
+  return canonical ? registryById.get(canonical) : undefined;
 }
 
 export function createHarmonyAccumulatorForComposer(composerId: string): unknown | null {
-  const row = SLICE_ROWS.find((r) => r.composerId === composerId);
+  const entry = getDispatchEntry(composerId);
+  if (!entry) return null;
+  const row = SLICE_ROWS.find((r) => r.composerId === entry.composerId);
   if (!row?.createAcc) return null;
   if (row.composerId === 'frank_zappa') {
     return createFrankZappaHarmonyAccumulator();
