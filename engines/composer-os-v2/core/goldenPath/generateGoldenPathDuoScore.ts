@@ -4,6 +4,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { composerForBar, isDuoModeActive } from '../duo-song-mode/duoBarHelpers';
 import {
   getEffectivePitchProfileForBar,
   getEffectiveRegisterWindowForBar,
@@ -3128,7 +3129,12 @@ function buildGuitarPart(
   if (isSongwriterRalphTowner && isDuoGoldenPath) {
     precomputeRalphTownerEffectiveHarmonyBars(context);
   }
-  if (isSongwriterVerlaine && isDuoGoldenPath) {
+  if (
+    (isSongwriterVerlaine ||
+      (isDuoModeActive(context) &&
+        genMeta?.duoSongModeSectionPlan?.some((s) => s.songwriterStyleId === 'verlaine'))) &&
+    !genMeta?.duoSectionLockRegistry
+  ) {
     precomputeVerlaineEffectiveHarmonyBars(context);
   }
   if (isSongwriterAllanHoldsworth && isDuoGoldenPath) {
@@ -3143,7 +3149,12 @@ function buildGuitarPart(
   if (isSongwriterFripp && isDuoGoldenPath) {
     precomputeFrippEffectiveHarmonyBars(context);
   }
-  if (isSongwriterMarr && isDuoGoldenPath) {
+  if (
+    (isSongwriterMarr ||
+      (isDuoModeActive(context) &&
+        genMeta?.duoSongModeSectionPlan?.some((s) => s.songwriterStyleId === 'marr'))) &&
+    !genMeta?.duoSectionLockRegistry
+  ) {
     precomputeMarrEffectiveHarmonyBars(context);
   }
   if (isSongwriterEberhardWeber && isDuoGoldenPath) {
@@ -3585,7 +3596,10 @@ function buildGuitarPart(
         rtAccum
       );
     }
-    if (isSongwriterVerlaine) {
+    if (
+      isSongwriterVerlaine ||
+      (isDuoModeActive(context) && composerForBar(b, context) === 'verlaine')
+    ) {
       accumulateVerlaineHarmonyDiagnostics(
         b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
         resolveBarSymbol(context, b).symbol,
@@ -3620,7 +3634,10 @@ function buildGuitarPart(
         frippAccum
       );
     }
-    if (isSongwriterMarr) {
+    if (
+      isSongwriterMarr ||
+      (isDuoModeActive(context) && composerForBar(b, context) === 'marr')
+    ) {
       accumulateMarrHarmonyDiagnostics(
         b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
         resolveBarSymbol(context, b).symbol,
@@ -4654,7 +4671,12 @@ function buildGuitarPart(
   if (isSongwriterRalphTowner && context.generationMetadata) {
     finalizeRalphTownerMetadata(context.generationMetadata, rtAccum);
   }
-  if (isSongwriterVerlaine && context.generationMetadata) {
+  if (
+    (isSongwriterVerlaine || isDuoModeActive(context)) &&
+    context.generationMetadata &&
+    (genMeta?.duoSongModeSectionPlan?.some((s) => s.songwriterStyleId === 'verlaine') ??
+      isSongwriterVerlaine)
+  ) {
     finalizeVerlaineMetadata(context.generationMetadata, tvAccum);
   }
   if (isSongwriterAllanHoldsworth && context.generationMetadata) {
@@ -4669,7 +4691,12 @@ function buildGuitarPart(
   if (isSongwriterFripp && context.generationMetadata) {
     finalizeFrippMetadata(context.generationMetadata, frippAccum);
   }
-  if (isSongwriterMarr && context.generationMetadata) {
+  if (
+    (isSongwriterMarr || isDuoModeActive(context)) &&
+    context.generationMetadata &&
+    (genMeta?.duoSongModeSectionPlan?.some((s) => s.songwriterStyleId === 'marr') ??
+      isSongwriterMarr)
+  ) {
     finalizeMarrMetadata(context.generationMetadata, marrAccum);
   }
   if (isSongwriterEberhardWeber && context.generationMetadata) {

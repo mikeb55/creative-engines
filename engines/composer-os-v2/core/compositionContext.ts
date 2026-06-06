@@ -546,11 +546,20 @@ export interface GenerationMetadata {
   duoSongModeSectionPlan?: Array<{
     sectionLabel: string;
     startBar: number;
+    /** endBar is inclusive — last bar IN this section */
     endBar: number;
     songwriterStyleId: string;
   }>;
   /** Duo Song Mode Step 3 — full-form merged effective harmony (one symbol per bar, bar 1 at index 0). */
   duoMergedHarmonyBars?: string[];
+  /** Duo Song Mode Step 6 — per-section LOCK contracts (order-independent; one entry per section). */
+  duoSectionLockRegistry?: Array<{
+    sectionLabel: string;
+    startBar: number;
+    endBar: number;
+    composerId: string;
+    expectedHarmonyBars: string[];
+  }>;
   /** Duo Song Mode Step 3 — global bar index (1-based) → section label from duo precompute orchestrator. */
   duoSectionOwnership?: Record<number, string>;
   /** String Quartet StylePanel — SQ rhythm engine id (`bartok_bulgarian_aksak`, `free_proportional`, `baroque_dance`, `reich_phasing_grid`, `viennese_waltz`, `jewish_klezmer`, …). */

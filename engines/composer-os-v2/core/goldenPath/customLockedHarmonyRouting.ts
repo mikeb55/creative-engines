@@ -127,6 +127,27 @@ function registryEntryMatches(entry: EffectiveHarmonyTruthRegistryEntry, md: Gen
   );
 }
 
+function resolveHarmonyTruthFromSectionLockRegistry(
+  md: GenerationMetadata,
+  totalBars: number
+): string[] | undefined {
+  const registry = md.duoSectionLockRegistry;
+  if (!registry || registry.length === 0) return undefined;
+  const bars: string[] = new Array(totalBars);
+  for (const entry of registry) {
+    for (let bar = entry.startBar; bar <= entry.endBar; bar++) {
+      const localIndex = bar - entry.startBar;
+      const symbol = entry.expectedHarmonyBars[localIndex];
+      if (symbol === undefined || symbol === '') return undefined;
+      bars[bar - 1] = symbol;
+    }
+  }
+  if (bars.length !== totalBars || bars.some((symbol) => symbol === undefined || symbol === '')) {
+    return undefined;
+  }
+  return bars;
+}
+
 export function resolveEffectiveHarmonyTruth(
   md: GenerationMetadata | undefined,
   opts: {
@@ -146,6 +167,11 @@ export function resolveEffectiveHarmonyTruth(
     matchesLength(opts.harmonyContext.bars)
   ) {
     return [...opts.harmonyContext.bars];
+  }
+
+  const fromSectionLockRegistry = resolveHarmonyTruthFromSectionLockRegistry(md, opts.totalBars);
+  if (fromSectionLockRegistry && matchesLength(fromSectionLockRegistry)) {
+    return fromSectionLockRegistry;
   }
 
   for (const entry of EFFECTIVE_HARMONY_TRUTH_REGISTRY) {
@@ -213,6 +239,31 @@ export function assertCustomLockedRouting(
   }
 }
 
+/** Modular duo LOCK — one independent contract per section (order-independent). */
+export function assertSectionLockRegistry(score: ScoreModel, context: CompositionContext): void {
+  const registry = context.generationMetadata?.duoSectionLockRegistry;
+  if (!registry || registry.length === 0) return;
+
+  const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  if (!g) {
+    throw new Error('LOCK FAIL: missing guitar part for section lock registry check.');
+  }
+
+  for (const entry of registry) {
+    for (let bar = entry.startBar; bar <= entry.endBar; bar++) {
+      const localIndex = bar - entry.startBar;
+      const expected = entry.expectedHarmonyBars[localIndex];
+      const m = g.measures.find((x) => x.index === bar);
+      const actual = m?.chord ?? '';
+      if (!lockedHarmonyChordSymbolsEquivalent(actual, expected ?? '')) {
+        throw new Error(
+          `LOCK FAIL: section ${entry.sectionLabel} bar ${bar} composer ${entry.composerId} expected ${expected ?? ''} got ${actual}`
+        );
+      }
+    }
+  }
+}
+
 /** Immediately before `generateGoldenPathDuoScore` — custom_locked is absolute authority */
 /** After score build: every guitar measure chord must match locked wire (custom_locked only). */
 export function assertScoreMatchesLockedHarmonyWire(
@@ -225,6 +276,13 @@ export function assertScoreMatchesLockedHarmonyWire(
   /** Full-bar paste: score chords must match wire (custom_locked Song Mode, or Guitar–Bass Duo long-form custom). */
   if (options?.harmonyMode !== 'custom_locked' && options?.harmonyMode !== 'custom') return;
   const md = context?.generationMetadata as GenerationMetadata | undefined;
+  if (md?.duoSectionLockRegistry && md.duoSectionLockRegistry.length > 0) {
+    if (!context) {
+      throw new Error('LOCK FAIL: duoSectionLockRegistry set but CompositionContext missing.');
+    }
+    assertSectionLockRegistry(score, context);
+    return;
+  }
   const tb = context?.form.totalBars ?? wire.length;
   const expectedWire =
     resolveEffectiveHarmonyTruth(md, {

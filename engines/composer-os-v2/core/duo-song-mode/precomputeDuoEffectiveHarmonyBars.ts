@@ -20,6 +20,16 @@ export interface DuoMergedHarmonyBars {
   sectionOwnership: Record<number, string>;
 }
 
+/** One section harmonic contract for modular LOCK validation (bar ranges independent). */
+export interface SectionLockEntry {
+  sectionLabel: string;
+  startBar: number;
+  /** endBar is inclusive — last bar IN this section */
+  endBar: number;
+  composerId: string;
+  expectedHarmonyBars: string[];
+}
+
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 
 function harmonyRootPc(symbol: string): number | undefined {
@@ -219,6 +229,49 @@ function extractEffectiveHarmonyBars(
   );
 }
 
+function assertNoOverlappingSectionRanges(sections: readonly DuoSongModeSectionPlanEntry[]): void {
+  const barOwner = new Map<number, string>();
+  for (const section of sections) {
+    for (let bar = section.startBar; bar <= section.endBar; bar++) {
+      const existing = barOwner.get(bar);
+      if (existing !== undefined) {
+        throw new Error(
+          `DUO LOCK: overlapping sections at bar ${bar} — sections ${existing} and ${section.sectionLabel}`
+        );
+      }
+      barOwner.set(bar, section.sectionLabel);
+    }
+  }
+}
+
+function buildSectionLockRegistry(
+  sections: readonly DuoSongModeSectionPlanEntry[],
+  mergedBars: readonly string[]
+): SectionLockEntry[] {
+  const registry: SectionLockEntry[] = [];
+  for (const section of sections) {
+    const expectedHarmonyBars: string[] = [];
+    for (let bar = section.startBar; bar <= section.endBar; bar++) {
+      const localIndex = bar - section.startBar;
+      const symbol = mergedBars[bar - 1];
+      if (symbol === undefined || symbol === '') {
+        throw new Error(
+          `precomputeDuoEffectiveHarmonyBars: empty merged harmony at bar ${bar} for section "${section.sectionLabel}"`
+        );
+      }
+      expectedHarmonyBars[localIndex] = symbol;
+    }
+    registry.push({
+      sectionLabel: section.sectionLabel,
+      startBar: section.startBar,
+      endBar: section.endBar,
+      composerId: section.songwriterStyleId,
+      expectedHarmonyBars,
+    });
+  }
+  return registry;
+}
+
 /**
  * Run section-scoped precomputes and stitch one full-form merged harmony array.
  */
@@ -265,9 +318,9 @@ export function precomputeDuoEffectiveHarmonyBars(
       );
     }
 
-    for (let localBar = 1; localBar <= expectedSpan; localBar++) {
-      const globalBar = localBar + section.startBar - 1;
-      const symbol = sectionBars[localBar - 1];
+    for (let globalBar = section.startBar; globalBar <= section.endBar; globalBar++) {
+      const sectionLocalIndex = globalBar - section.startBar;
+      const symbol = sectionBars[sectionLocalIndex];
       if (symbol === undefined || symbol === '') {
         throw new Error(
           `precomputeDuoEffectiveHarmonyBars: empty harmony at global bar ${globalBar} (section "${section.sectionLabel}")`
@@ -275,6 +328,32 @@ export function precomputeDuoEffectiveHarmonyBars(
       }
       bars[globalBar - 1] = symbol;
       sectionOwnership[globalBar] = section.sectionLabel;
+    }
+
+    if (section.songwriterStyleId === 'verlaine') {
+      context.generationMetadata.verlaineEffectiveHarmonyBars = [...sectionBars];
+      const sectionMeta = sectionContext.generationMetadata;
+      if (sectionMeta.verlaineDeviceReceipts?.length) {
+        context.generationMetadata.verlaineDeviceReceipts = [...sectionMeta.verlaineDeviceReceipts];
+      }
+      if (sectionMeta.verlaineFieldPlan) {
+        context.generationMetadata.verlaineFieldPlan = sectionMeta.verlaineFieldPlan;
+      }
+      if (sectionMeta.verlaineSliceParams) {
+        context.generationMetadata.verlaineSliceParams = sectionMeta.verlaineSliceParams;
+      }
+    } else if (section.songwriterStyleId === 'marr') {
+      context.generationMetadata.marrEffectiveHarmonyBars = [...sectionBars];
+      const sectionMeta = sectionContext.generationMetadata;
+      if (sectionMeta.marrDeviceReceipts?.length) {
+        context.generationMetadata.marrDeviceReceipts = [...sectionMeta.marrDeviceReceipts];
+      }
+      if (sectionMeta.marrMelodicPlan) {
+        context.generationMetadata.marrMelodicPlan = sectionMeta.marrMelodicPlan;
+      }
+      if (sectionMeta.marrSliceParams) {
+        context.generationMetadata.marrSliceParams = sectionMeta.marrSliceParams;
+      }
     }
   }
 
@@ -294,8 +373,12 @@ export function precomputeDuoEffectiveHarmonyBars(
 
   const merged: DuoMergedHarmonyBars = { bars, sectionOwnership };
 
+  assertNoOverlappingSectionRanges(sections);
+  const duoSectionLockRegistry = buildSectionLockRegistry(sections, bars);
+
   context.generationMetadata.duoMergedHarmonyBars = bars;
   context.generationMetadata.duoSectionOwnership = sectionOwnership;
+  context.generationMetadata.duoSectionLockRegistry = duoSectionLockRegistry;
 
   return merged;
 }
