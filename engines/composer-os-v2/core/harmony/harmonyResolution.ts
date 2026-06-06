@@ -67,6 +67,15 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
     return hcCanon.bars[barIndex - 1]!;
   }
 
+  if (
+    meta?.duoMergedHarmonyBars &&
+    meta.duoMergedHarmonyBars.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return meta.duoMergedHarmonyBars[barIndex - 1]!;
+  }
+
   /**
    * Brian Wilson Pet Sounds: `precomputeBrianWilsonEffectiveHarmonyBars` layers devices on top of the locked
    * progression. After precompute, `brianWilsonEffectiveHarmonyBars` is full-form and authoritative for bar reads.
