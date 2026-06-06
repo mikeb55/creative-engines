@@ -549,6 +549,10 @@ export interface GenerationMetadata {
     /** endBar is inclusive — last bar IN this section */
     endBar: number;
     songwriterStyleId: string;
+    timeSignature?: {
+      numerator: number;
+      denominator: number;
+    };
   }>;
   /** Mosaic Mode Step 3 — full-form merged effective harmony (one symbol per bar, bar 1 at index 0). */
   mosaicMergedHarmonyBars?: string[];

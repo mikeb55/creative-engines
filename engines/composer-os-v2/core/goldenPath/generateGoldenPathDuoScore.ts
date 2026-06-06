@@ -89,8 +89,8 @@ import type {
   DuoElectricVoiceRole,
 } from '../score-model/scoreModelTypes';
 import { measureBeatSpanQuartersOf } from '../score-model/measureBeatSpan';
-import type { BarMeterMap } from '../rhythm/barMeterTypes';
-import { resolveMeasureBeatSpanQuarters } from '../rhythm/oddMeterQuantiser';
+import type { BarMeterMap, BarMeterSignature } from '../rhythm/barMeterTypes';
+import { DEFAULT_BAR_METER, resolveMeasureBeatSpanQuarters } from '../rhythm/oddMeterQuantiser';
 import { guitarBassDuoPreset } from '../../presets/guitarBassDuoPreset';
 import { GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID, isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 import { applyPhraseFirstSingleLineMonophony, buildPhraseFirstDuoScore } from './duoSingleLinePhraseFirstPipeline';
@@ -1832,6 +1832,68 @@ function stampAllMeasuresBeatSpansFromContext(score: ScoreModel, context: Compos
   }
 }
 
+type MosaicSectionPlanEntry = NonNullable<
+  CompositionContext['generationMetadata']
+>['mosaicSectionPlan'] extends Array<infer E>
+  ? E
+  : never;
+
+function mosaicSectionMeterForEntry(
+  section: MosaicSectionPlanEntry | undefined
+): BarMeterSignature {
+  return section?.timeSignature ?? DEFAULT_BAR_METER;
+}
+
+function mosaicSectionContainingBar(
+  bar: number,
+  plan: MosaicSectionPlanEntry[]
+): MosaicSectionPlanEntry | undefined {
+  return plan.find((s) => bar >= s.startBar && bar <= s.endBar);
+}
+
+function buildMosaicSectionBarMeterMap(
+  plan: MosaicSectionPlanEntry[],
+  totalBars: number
+): BarMeterMap | undefined {
+  const sorted = [...plan].sort((a, b) => a.startBar - b.startBar);
+  let current: BarMeterSignature = DEFAULT_BAR_METER;
+  const map: BarMeterMap = {};
+  let anyCustom = false;
+  for (let b = 1; b <= totalBars; b++) {
+    const atStart = sorted.find((s) => s.startBar === b);
+    if (atStart) {
+      current = mosaicSectionMeterForEntry(atStart);
+    }
+    map[b] = { numerator: current.numerator, denominator: current.denominator };
+    if (current.numerator !== 4 || current.denominator !== 4) {
+      anyCustom = true;
+    }
+  }
+  if (!anyCustom) {
+    const meters = sorted.map((s) => mosaicSectionMeterForEntry(s));
+    for (let i = 1; i < meters.length; i++) {
+      const prev = meters[i - 1]!;
+      const next = meters[i]!;
+      if (prev.numerator !== next.numerator || prev.denominator !== next.denominator) {
+        anyCustom = true;
+        break;
+      }
+    }
+  }
+  return anyCustom ? map : undefined;
+}
+
+function mosaicBarBeatSpanQuarters(meter: BarMeterSignature): number {
+  return (meter.numerator * 4) / meter.denominator;
+}
+
+function mosaicTransitionAttackBeats(noteCount: number, meter: BarMeterSignature): number[] {
+  const numBeats = mosaicBarBeatSpanQuarters(meter);
+  if (noteCount <= 1) return [numBeats - 2];
+  if (noteCount === 2) return [numBeats - 2, numBeats - 1];
+  return [numBeats - 2, numBeats - 1.5, numBeats - 1];
+}
+
 /** Quarter-beat grid — keeps MusicXML division sums stable. */
 function qBeat(x: number): number {
   return Math.round(x * 4) / 4;
@@ -3143,6 +3205,17 @@ function buildGuitarPart(
     );
     genMeta.mosaicSourceMotif = mosaicSourceMotif;
     genMeta.mosaicSectionMotifVariants = mosaicSectionVariants;
+    const mosaicPlan = genMeta?.mosaicSectionPlan ?? [];
+    if (mosaicPlan.length > 0) {
+      const mosaicMeterMap = buildMosaicSectionBarMeterMap(
+        mosaicPlan,
+        totalBarsFromContext(context)
+      );
+      if (mosaicMeterMap) {
+        context.barMeterMap = mosaicMeterMap;
+        genMeta.barMeterMap = mosaicMeterMap;
+      }
+    }
   }
   if (isSongwriterBrianWilson && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeBrianWilsonEffectiveHarmonyBars(context);
@@ -3463,11 +3536,16 @@ function buildGuitarPart(
     const motifRef = `mosaic_motif_${section.sectionLabel}`;
     let pitch = startMidi;
     const noteCount = Math.min(core.rhythmPattern.length, core.intervalPattern.length + 1);
+    const sectionMeter = mosaicSectionMeterForEntry(section);
+    const barCap = mosaicBarBeatSpanQuarters(sectionMeter);
     for (let i = 0; i < noteCount; i++) {
       const rh = core.rhythmPattern[i]!;
+      if (rh.startBeat >= barCap - 1e-6) continue;
+      const duration = Math.min(rh.duration, barCap - rh.startBeat);
+      if (duration <= 0) continue;
       addEvent(
         m,
-        createNote(pitch, snapAttackBeatToGrid(rh.startBeat), rh.duration, 1, motifRef)
+        createNote(pitch, snapAttackBeatToGrid(rh.startBeat), duration, 1, motifRef)
       );
       if (i < core.intervalPattern.length) {
         pitch += core.intervalPattern[i]!;
@@ -3491,13 +3569,20 @@ function buildGuitarPart(
     const variant = variants[incomingSection.sectionLabel];
     if (!variant || !('intervalPattern' in variant)) return;
     const tonicMap = buildMosaicTonicMap(plan, context);
+    const outgoingSection = mosaicSectionContainingBar(bar, plan);
+    const outgoingMeter = mosaicSectionMeterForEntry(outgoingSection);
     const transitionNotes = buildTransitionBarNotes(
       bar,
       incomingSection,
       variant as CoreMotif,
       tonicMap[incomingSection.sectionLabel] ?? 0
     );
-    for (const note of transitionNotes) {
+    const attacks = mosaicTransitionAttackBeats(transitionNotes.length, outgoingMeter);
+    const barCap = mosaicBarBeatSpanQuarters(outgoingMeter);
+    for (let i = 0; i < transitionNotes.length; i++) {
+      const note = transitionNotes[i]!;
+      const startBeat = attacks[i];
+      if (startBeat === undefined || startBeat < 0 || startBeat >= barCap) continue;
       let pitch = note.pitch;
       while (pitch < effectiveLow) pitch += 12;
       while (pitch > effectiveHigh) pitch -= 12;
@@ -3506,7 +3591,7 @@ function buildGuitarPart(
         m,
         createNote(
           pitch,
-          snapAttackBeatToGrid(note.startBeat),
+          snapAttackBeatToGrid(startBeat),
           note.duration,
           1,
           note.motifRef,

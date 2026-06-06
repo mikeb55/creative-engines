@@ -1363,6 +1363,10 @@ export interface RunGoldenPathOptions {
     startBar: number;
     endBar: number;
     songwriterStyleId: string;
+    timeSignature?: {
+      numerator: number;
+      denominator: number;
+    };
   }>;
 }
 

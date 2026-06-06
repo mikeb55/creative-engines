@@ -2,6 +2,10 @@
 
 ### Added
 
+- **Mosaic Time Signatures Per Section (rc7)** — Optional `timeSignature` field on `MosaicSectionPlan` entry `{ numerator, denominator }`; defaults to 4/4 when absent; time signature written to score at each section `startBar`; motif and transition beat placement respects section meter; CLI `--sections` JSON accepts `timeSignature` per section.
+
+### Added
+
 - **Mosaic Transition Bars (rc6)** — `isMosaicTransitionBar`: detects bar immediately before section boundary; `buildTransitionBarNotes`: anticipatory fragment (beats 3–4 only) drawn from incoming motif variant, transposed to incoming tonic; `motifRef` `mosaic_transition_{sectionLabel}`; append-only — does not replace outgoing composer notes; gated: `isMosaicModeActive && !songModeHookFirstIdentity`; new files `mosaicTransitionBars.ts`, `mosaicTransitionBars.test.ts`.
 
 ### Added
