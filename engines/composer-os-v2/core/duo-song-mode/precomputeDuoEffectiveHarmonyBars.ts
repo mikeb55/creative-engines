@@ -4,8 +4,10 @@
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
-import { precomputeVerlaineEffectiveHarmonyBars } from '../song-mode/verlainFieldSlice';
-import { precomputeMarrEffectiveHarmonyBars } from '../song-mode/marrMelodicSlice';
+import {
+  extractEffectiveHarmonyFromMetadata,
+  getDispatchEntry,
+} from './duoComposerDispatch';
 import type { SectionComposerRouting } from './resolveSectionSongwritingStyles';
 
 export type DuoSongModeSectionPlan = NonNullable<GenerationMetadata['duoSongModeSectionPlan']>;
@@ -131,7 +133,34 @@ function sliceLockedHarmony(
   return bars.slice(startBar - 1, endBar);
 }
 
-function cloneContextForSection(
+/** Parent locked-harmony bar 1 tonic wrapper — section precompute reads bar 1 as section tonic. */
+function applySectionTonicBar1Wrapper(
+  sectionContext: CompositionContext,
+  parentContext: CompositionContext,
+  section: DuoSongModeSectionPlanEntry
+): void {
+  const parentLocked = parentContext.lockedHarmonyBarsRaw;
+  if (!parentLocked || parentLocked.length < section.startBar) return;
+  const sectionTonicSymbol = parentLocked[section.startBar - 1];
+  if (!sectionTonicSymbol) return;
+  const span = section.endBar - section.startBar + 1;
+  const wrapped = sectionContext.lockedHarmonyBarsRaw
+    ? [...sectionContext.lockedHarmonyBarsRaw]
+    : new Array<string>(span).fill(sectionTonicSymbol);
+  if (wrapped.length >= 1) {
+    wrapped[0] = sectionTonicSymbol;
+  }
+  sectionContext.lockedHarmonyBarsRaw = wrapped;
+  if (sectionContext.generationMetadata.parsedCustomProgressionBars) {
+    const parsed = [...sectionContext.generationMetadata.parsedCustomProgressionBars];
+    if (parsed.length >= 1) {
+      parsed[0] = sectionTonicSymbol;
+      sectionContext.generationMetadata.parsedCustomProgressionBars = parsed;
+    }
+  }
+}
+
+export function cloneDuoSectionContext(
   context: CompositionContext,
   section: DuoSongModeSectionPlanEntry,
   tonicPc: number
@@ -186,47 +215,19 @@ function cloneContextForSection(
   };
 }
 
-function runPrecomputeForComposer(context: CompositionContext, composerId: string): void {
-  switch (composerId) {
-    case 'verlaine':
-      precomputeVerlaineEffectiveHarmonyBars(context);
-      return;
-    case 'marr':
-      precomputeMarrEffectiveHarmonyBars(context);
-      return;
-    default:
-      throw new Error(
-        `precomputeDuoEffectiveHarmonyBars: unsupported duo section composer "${composerId}" — supported: verlaine, marr`
-      );
-  }
-}
-
 function extractEffectiveHarmonyBars(
   metadata: GenerationMetadata,
   composerId: string,
   sectionLabel: string
 ): string[] {
-  if (composerId === 'verlaine') {
-    const bars = metadata.verlaineEffectiveHarmonyBars;
-    if (!Array.isArray(bars) || bars.length === 0) {
-      throw new Error(
-        `precomputeDuoEffectiveHarmonyBars: verlaineEffectiveHarmonyBars missing after precompute (section "${sectionLabel}")`
-      );
-    }
-    return bars;
+  const bars = extractEffectiveHarmonyFromMetadata(metadata, composerId);
+  if (!Array.isArray(bars) || bars.length === 0) {
+    const entry = getDispatchEntry(composerId);
+    throw new Error(
+      `precomputeDuoEffectiveHarmonyBars: ${entry?.effectiveHarmonyKey ?? 'effectiveHarmonyBars'} missing after precompute (section "${sectionLabel}", composer "${composerId}")`
+    );
   }
-  if (composerId === 'marr') {
-    const bars = metadata.marrEffectiveHarmonyBars;
-    if (!Array.isArray(bars) || bars.length === 0) {
-      throw new Error(
-        `precomputeDuoEffectiveHarmonyBars: marrEffectiveHarmonyBars missing after precompute (section "${sectionLabel}")`
-      );
-    }
-    return bars;
-  }
-  throw new Error(
-    `precomputeDuoEffectiveHarmonyBars: unsupported duo section composer "${composerId}"`
-  );
+  return bars;
 }
 
 function assertNoOverlappingSectionRanges(sections: readonly DuoSongModeSectionPlanEntry[]): void {
@@ -302,8 +303,16 @@ export function precomputeDuoEffectiveHarmonyBars(
       );
     }
 
-    const sectionContext = cloneContextForSection(context, section, tonicPc);
-    runPrecomputeForComposer(sectionContext, section.songwriterStyleId);
+    const entry = getDispatchEntry(section.songwriterStyleId);
+    if (!entry) {
+      throw new Error(
+        `DUO: no dispatch entry for composer ${section.songwriterStyleId} — add to duoComposerDispatch.ts`
+      );
+    }
+
+    const sectionContext = cloneDuoSectionContext(context, section, tonicPc);
+    applySectionTonicBar1Wrapper(sectionContext, context, section);
+    entry.precompute(sectionContext);
 
     const sectionBars = extractEffectiveHarmonyBars(
       sectionContext.generationMetadata,
@@ -330,9 +339,11 @@ export function precomputeDuoEffectiveHarmonyBars(
       sectionOwnership[globalBar] = section.sectionLabel;
     }
 
+    const parentMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
+    const sectionMeta = sectionContext.generationMetadata as GenerationMetadata & Record<string, unknown>;
+    (parentMeta as Record<string, unknown>)[entry.effectiveHarmonyKey as string] = [...sectionBars];
+
     if (section.songwriterStyleId === 'verlaine') {
-      context.generationMetadata.verlaineEffectiveHarmonyBars = [...sectionBars];
-      const sectionMeta = sectionContext.generationMetadata;
       if (sectionMeta.verlaineDeviceReceipts?.length) {
         context.generationMetadata.verlaineDeviceReceipts = [...sectionMeta.verlaineDeviceReceipts];
       }
@@ -343,8 +354,6 @@ export function precomputeDuoEffectiveHarmonyBars(
         context.generationMetadata.verlaineSliceParams = sectionMeta.verlaineSliceParams;
       }
     } else if (section.songwriterStyleId === 'marr') {
-      context.generationMetadata.marrEffectiveHarmonyBars = [...sectionBars];
-      const sectionMeta = sectionContext.generationMetadata;
       if (sectionMeta.marrDeviceReceipts?.length) {
         context.generationMetadata.marrDeviceReceipts = [...sectionMeta.marrDeviceReceipts];
       }

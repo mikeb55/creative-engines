@@ -5,12 +5,16 @@
 import type { CompositionContext, GenerationMetadata } from '../core/compositionContext';
 import {
   buildDuoTonicMap,
+  cloneDuoSectionContext,
   precomputeDuoEffectiveHarmonyBars,
   type DuoSongModeSectionPlan,
 } from '../core/duo-song-mode/precomputeDuoEffectiveHarmonyBars';
+import { getDispatchEntry } from '../core/duo-song-mode/duoComposerDispatch';
 import type { SectionComposerRouting } from '../core/duo-song-mode/resolveSectionSongwritingStyles';
 import { precomputeVerlaineEffectiveHarmonyBars } from '../core/song-mode/verlainFieldSlice';
 import { precomputeMarrEffectiveHarmonyBars } from '../core/song-mode/marrMelodicSlice';
+import { precomputeBeefheartEffectiveHarmonyBars } from '../core/song-mode/beefheartFragmentSlice';
+import { inferTonicPitchClassFromBar1 } from '../core/song-mode/brianWilsonPetSoundsSlice';
 
 const SEED = 95001;
 
@@ -181,6 +185,63 @@ export function runPrecomputeDuoEffectiveHarmonyBarsTests(): { ok: boolean; name
       precomputeDuoEffectiveHarmonyBars(minimalContext(locked), gapRouting, tonicMap)
     ),
     name: 'gap detection: plan with missing bar 9 throws before returning',
+  });
+
+  const beefheartEntry = getDispatchEntry('beefheart');
+  out.push({
+    ok: beefheartEntry !== undefined && typeof beefheartEntry.precompute === 'function',
+    name: 'registry lookup: beefheart dispatch entry has precompute',
+  });
+
+  const unknownPlan: DuoSongModeSectionPlan = [
+    { sectionLabel: 'verse', startBar: 1, endBar: 8, songwriterStyleId: 'verlaine' },
+    { sectionLabel: 'chorus', startBar: 9, endBar: 16, songwriterStyleId: 'not_a_real_composer' as 'marr' },
+  ];
+  const unknownRouting: SectionComposerRouting = {
+    mode: 'duo',
+    primarySongwriterStyleId: 'verlaine',
+    barComposerMap: Object.fromEntries(
+      Array.from({ length: 16 }, (_, i) => [i + 1, i < 8 ? 'verlaine' : 'not_a_real_composer'])
+    ),
+    sectionComposerMap: unknownPlan,
+  };
+  let unknownComposerMessage = '';
+  try {
+    precomputeDuoEffectiveHarmonyBars(minimalContext(locked), unknownRouting, tonicMap);
+  } catch (err) {
+    unknownComposerMessage = err instanceof Error ? err.message : String(err);
+  }
+  out.push({
+    ok:
+      unknownComposerMessage.includes('not_a_real_composer') &&
+      unknownComposerMessage.includes('duoComposerDispatch.ts'),
+    name: 'unknown composer throws with message naming composer and registry file',
+  });
+
+  const beefheartPlan: DuoSongModeSectionPlan = [
+    { sectionLabel: 'verse', startBar: 1, endBar: 8, songwriterStyleId: 'verlaine' },
+    { sectionLabel: 'chorus', startBar: 9, endBar: 16, songwriterStyleId: 'beefheart' },
+  ];
+  const beefheartRouting: SectionComposerRouting = {
+    mode: 'duo',
+    primarySongwriterStyleId: 'verlaine',
+    barComposerMap: Object.fromEntries(
+      Array.from({ length: 16 }, (_, i) => [i + 1, i < 8 ? 'verlaine' : 'beefheart'])
+    ),
+    sectionComposerMap: beefheartPlan,
+  };
+  const beefheartTonicMap = buildDuoTonicMap(beefheartPlan, context);
+  const chorusSection = beefheartPlan[1]!;
+  const chorusTonicPc = beefheartTonicMap.chorus;
+  const beefheartChorusCtx = cloneDuoSectionContext(context, chorusSection, chorusTonicPc);
+  const parentBar9 = locked[8];
+  if (beefheartChorusCtx.lockedHarmonyBarsRaw) {
+    beefheartChorusCtx.lockedHarmonyBarsRaw[0] = parentBar9!;
+  }
+  precomputeBeefheartEffectiveHarmonyBars(beefheartChorusCtx);
+  out.push({
+    ok: inferTonicPitchClassFromBar1(beefheartChorusCtx) === beefheartTonicMap.chorus,
+    name: 'tonic wrapper: secondary section bar 1 matches section startBar tonic (beefheart chorus)',
   });
 
   return out;
