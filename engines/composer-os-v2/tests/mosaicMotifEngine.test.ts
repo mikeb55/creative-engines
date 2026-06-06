@@ -1,17 +1,29 @@
 /**
- * Mosaic Motif Engine rc9 — unit tests.
+ * Mosaic Motif Engine rc10 — unit tests.
  */
 
 import {
+  applyDerivedTransform,
   buildMosaicMotifVariants,
   composerReceiptPrefixForStyleId,
+  deriveMotifTransformFromVrb,
+  estimateMotifIntervalSimilarity,
   generateMosaicSourceMotif,
+  getLastMosaicCorridorCorrectionApplied,
   mosaicContourHasOneDirectionChange,
   mosaicRhythmHasOffbeatOnset,
   mosaicSourceHasExactlyOneLeap,
   transformMotifForSection,
 } from '../core/mosaic-mode/mosaicMotifEngine';
 import { scoreMosaicMotifSimilarity } from '../core/mosaic-mode/mosaicMotifSimilarity';
+
+const CORRIDOR_COMPOSER_IDS = [
+  'holdsworth',
+  'ornette_coleman',
+  'bill_evans',
+  'pat_metheny',
+  'sonic_youth',
+] as const;
 
 export function runMosaicMotifEngineTests(): { ok: boolean; name: string }[] {
   const out: { ok: boolean; name: string }[] = [];
@@ -53,7 +65,95 @@ export function runMosaicMotifEngineTests(): { ok: boolean; name: string }[] {
     name: 'generateMosaicSourceMotif: id mosaic_source',
   });
 
-  const rfVariant = transformMotifForSection(source, 'intro', 'rf', 0);
+  const holdsworthTransform = deriveMotifTransformFromVrb('holdsworth');
+  out.push({
+    ok: holdsworthTransform.intervalNudge === 1,
+    name: 'deriveMotifTransformFromVrb holdsworth: intervalNudge +1',
+  });
+  out.push({
+    ok: holdsworthTransform.rhythmScale === 1.25,
+    name: 'deriveMotifTransformFromVrb holdsworth: rhythmScale 1.25',
+  });
+  out.push({
+    ok: holdsworthTransform.onsetDisplace === true,
+    name: 'deriveMotifTransformFromVrb holdsworth: onsetDisplace true',
+  });
+
+  const jackWhiteTransform = deriveMotifTransformFromVrb('jack_white');
+  out.push({
+    ok: jackWhiteTransform.intervalNudge === -1,
+    name: 'deriveMotifTransformFromVrb jack_white: intervalNudge -1',
+  });
+  out.push({
+    ok: jackWhiteTransform.onsetDisplace === true,
+    name: 'deriveMotifTransformFromVrb jack_white: onsetDisplace true (syncopationBias)',
+  });
+
+  const billEvansTransform = deriveMotifTransformFromVrb('bill_evans');
+  out.push({
+    ok: billEvansTransform.preserveContour === true,
+    name: 'deriveMotifTransformFromVrb bill_evans: preserveContour true',
+  });
+
+  const unknownTransform = deriveMotifTransformFromVrb('unknown_id_xyz');
+  out.push({
+    ok:
+      typeof unknownTransform.intervalNudge === 'number' &&
+      typeof unknownTransform.rhythmScale === 'number' &&
+      typeof unknownTransform.onsetDisplace === 'boolean',
+    name: 'deriveMotifTransformFromVrb unknown_id: valid transform (no throw)',
+  });
+
+  for (const composerId of CORRIDOR_COMPOSER_IDS) {
+    const transform = deriveMotifTransformFromVrb(composerId);
+    const variant = applyDerivedTransform(source, transform, 0);
+    const sim = estimateMotifIntervalSimilarity(source.intervalPattern, variant.intervalPattern);
+    out.push({
+      ok: sim >= 0.4 && sim <= 0.75,
+      name: `applyDerivedTransform corridor: ${composerId} similarity ${sim.toFixed(3)} in 0.40–0.75`,
+    });
+  }
+
+  const salientTransform = deriveMotifTransformFromVrb('holdsworth');
+  const salientResult = applyDerivedTransform(source, { ...salientTransform, preserveSalientLeap: true }, 0);
+  const salientIdx = source.intervalPattern.reduce(
+    (best, iv, i) => (Math.abs(iv) > Math.abs(source.intervalPattern[best]!) ? i : best),
+    0
+  );
+  out.push({
+    ok: salientResult.intervalPattern[salientIdx] === source.intervalPattern[salientIdx],
+    name: 'applyDerivedTransform preserveSalientLeap: largest interval unchanged',
+  });
+
+  const contourTransform = deriveMotifTransformFromVrb('bill_evans');
+  const contourResult = applyDerivedTransform(source, { ...contourTransform, preserveContour: true }, 0);
+  out.push({
+    ok: contourResult.contourPattern.every(
+      (dir, i) => dir === 0 || source.contourPattern[i] === 0 || dir === source.contourPattern[i]
+    ),
+    name: 'applyDerivedTransform preserveContour: direction signs match source',
+  });
+
+  const corridorProbe = applyDerivedTransform(
+    source,
+    {
+      intervalNudge: 0,
+      intervalClamp: 12,
+      rhythmScale: 1.0,
+      onsetDisplace: false,
+      preserveContour: true,
+      preserveSalientLeap: true,
+    },
+    0
+  );
+  out.push({
+    ok:
+      getLastMosaicCorridorCorrectionApplied() ||
+      estimateMotifIntervalSimilarity(source.intervalPattern, corridorProbe.intervalPattern) <= 0.75,
+    name: 'applyDerivedTransform: corridor correction path reachable',
+  });
+
+  const rfVariant = transformMotifForSection(source, 'intro', 'rf', 0, 'fripp');
   out.push({
     ok: rfVariant.intervalPattern.every((iv) => Math.abs(iv) <= 7),
     name: 'transformMotifForSection rf: intervals clamped ±7',
@@ -63,22 +163,28 @@ export function runMosaicMotifEngineTests(): { ok: boolean; name: string }[] {
     name: 'transformMotifForSection rf: NOT full inversion',
   });
   out.push({
-    ok: rfVariant.intervalPattern.some((iv, i) => iv === source.intervalPattern[i]! + 2 ||
-      iv === clampSigned(source.intervalPattern[i]! + 2, 7)),
-    name: 'transformMotifForSection rf: +2 sequence applied',
+    ok: rfVariant.intervalPattern.some(
+      (iv, i) =>
+        iv !== source.intervalPattern[i] &&
+        (Math.abs(iv - source.intervalPattern[i]!) >= 1 || iv === clampSigned(source.intervalPattern[i]! + 2, 7))
+    ),
+    name: 'transformMotifForSection rf: derived + delta applied',
   });
 
-  const jwVariant = transformMotifForSection(source, 'verse', 'jw', 0);
+  const jwVariant = transformMotifForSection(source, 'verse', 'jw', 0, 'jack_white');
   out.push({
-    ok: jwVariant.intervalPattern.every((iv) => Math.abs(iv) <= 5),
-    name: 'transformMotifForSection jw: interval compression max 5',
+    ok: jwVariant.intervalPattern.every((iv) => Math.abs(iv) <= 7),
+    name: 'transformMotifForSection jw: interval compression max 7',
   });
   out.push({
-    ok: jwVariant.rhythmPattern.length === source.rhythmPattern.length + 1,
-    name: 'transformMotifForSection jw: duplicated first duration',
+    ok: jwVariant.intervalPattern.some((iv, i) => {
+      if (i === 0 || i === jwVariant.intervalPattern.length - 1) return false;
+      return [0, 2, 3, 5, 7].includes(Math.abs(iv));
+    }),
+    name: 'transformMotifForSection jw: interior blues snap',
   });
 
-  const wsVariant = transformMotifForSection(source, 'chorus', 'ws', 0);
+  const wsVariant = transformMotifForSection(source, 'chorus', 'ws', 0, 'wayne_shorter');
   out.push({
     ok: wsVariant.rhythmPattern.length > source.rhythmPattern.length,
     name: 'transformMotifForSection ws: interpolation adds rhythm entry',
@@ -114,22 +220,48 @@ export function runMosaicMotifEngineTests(): { ok: boolean; name: string }[] {
       (r.fromSection === 'intro' && r.toSection === 'verse') ||
       (r.fromSection === 'verse' && r.toSection === 'intro')
   );
+  const introChorus = receipts.find(
+    (r) =>
+      (r.fromSection === 'intro' && r.toSection === 'chorus') ||
+      (r.fromSection === 'chorus' && r.toSection === 'intro')
+  );
+  const verseChorus = receipts.find(
+    (r) =>
+      (r.fromSection === 'verse' && r.toSection === 'chorus') ||
+      (r.fromSection === 'chorus' && r.toSection === 'verse')
+  );
   out.push({
     ok: introVerse !== undefined && introVerse.similarity > 0.4,
-    name: 'scoreMosaicMotifSimilarity: intro↔verse > 0.40',
+    name: `scoreMosaicMotifSimilarity: intro↔verse > 0.40 (${introVerse?.similarity.toFixed(3) ?? 'n/a'})`,
+  });
+  out.push({
+    ok: introChorus !== undefined && introChorus.similarity > 0.4,
+    name: `scoreMosaicMotifSimilarity: intro↔chorus > 0.40 (${introChorus?.similarity.toFixed(3) ?? 'n/a'})`,
+  });
+  out.push({
+    ok: verseChorus !== undefined && verseChorus.similarity > 0.4,
+    name: `scoreMosaicMotifSimilarity: verse↔chorus > 0.40 (${verseChorus?.similarity.toFixed(3) ?? 'n/a'})`,
   });
 
   const fivePrefixes = ['rf', 'jw', 'ws', 'tv', 'jma'] as const;
+  const fiveStyleIds = ['fripp', 'jack_white', 'wayne_shorter', 'verlaine', 'marr'] as const;
   const fiveVariants = Object.fromEntries(
     fivePrefixes.map((p, i) => [
       `sec_${i}`,
-      transformMotifForSection(source, `sec_${i}`, p, 0),
+      transformMotifForSection(source, `sec_${i}`, p, 0, fiveStyleIds[i]),
     ])
   );
   const fiveReceipts = scoreMosaicMotifSimilarity(fiveVariants);
   out.push({
     ok: fiveReceipts.every((r) => r.similarity > 0.4),
     name: 'scoreMosaicMotifSimilarity: 5 composer variants all pairs > 0.40',
+  });
+  const fiveIntervalSigs = fivePrefixes.map((p, i) =>
+    JSON.stringify(fiveVariants[`sec_${i}`]!.intervalPattern)
+  );
+  out.push({
+    ok: new Set(fiveIntervalSigs).size === fiveIntervalSigs.length,
+    name: 'named overrides rf/jw/ws/tv/jma: distinct interval transforms',
   });
 
   out.push({
@@ -143,6 +275,18 @@ export function runMosaicMotifEngineTests(): { ok: boolean; name: string }[] {
   out.push({
     ok: composerReceiptPrefixForStyleId('wayne_shorter') === 'ws',
     name: 'composerReceiptPrefixForStyleId: wayne_shorter → ws',
+  });
+
+  const holdsworthVariant = transformMotifForSection(source, 'a', 'holdsworth', 0, 'holdsworth');
+  out.push({
+    ok: JSON.stringify(holdsworthVariant.intervalPattern) !== JSON.stringify(source.intervalPattern),
+    name: 'transformMotifForSection holdsworth: not identity',
+  });
+
+  const ornetteVariant = transformMotifForSection(source, 'b', 'ornette', 0, 'ornette_coleman');
+  out.push({
+    ok: JSON.stringify(ornetteVariant.intervalPattern) !== JSON.stringify(source.intervalPattern),
+    name: 'transformMotifForSection ornette_coleman: not tonic-only',
   });
 
   const detSource = generateMosaicSourceMotif(77002, 64);

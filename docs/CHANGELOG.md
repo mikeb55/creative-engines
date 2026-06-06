@@ -2,6 +2,8 @@
 
 ### Added
 
+- **Mosaic Motif Transform Library (rc10)** — `deriveMotifTransformFromVrb`: reads VRB + `SongwriterStyleProfile` at runtime to derive transform per composer automatically; `applyDerivedTransform`: applies derived transform with Perplexity corridor correction (0.40–0.75); named overrides (`rf`/`jw`/`ws`/`tv`/`jma`) now delta layers on top of derived transform, not replacements; all mosaic composers get musically characteristic transforms; final fallback: tonic transposition only for truly unknown composers.
+
 - **Mosaic Motif Engine Upgrade (rc9)** — `generateMosaicSourceMotif`: 5 new rules (noteCount 4–5, one P4 leap, stepwise fill, one contour hinge, offbeat onset, final note = deg 5); `rf:*` transform: sequence by +2, onset rotation (NOT inversion); `ws:*` transform: NEW — interpolation note + onset displacement; duration protection: motif notes survive `normalizeMeasureToEighthBeatGrid` via post-finalize reinject; all pairs similarity target > 0.40.
 
 ### Added

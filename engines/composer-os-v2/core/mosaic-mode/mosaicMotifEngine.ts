@@ -1,14 +1,32 @@
 /**
- * Mosaic Mode — seeded source motif + per-section composer transforms (rc9).
+ * Mosaic Mode — seeded source motif + per-section composer transforms (rc10).
  */
 
 import type { CoreMotif, MotifRegisterTag, MotifRoleTag } from '../motif/motifEngineTypes';
 import { seededUnit } from '../goldenPath/guitarBassDuoHarmony';
 import type { MosaicModeSectionPlan } from './precomputeMosaicEffectiveHarmonyBars';
 import type { MosaicTonicMap } from './precomputeMosaicEffectiveHarmonyBars';
+import { getVoiceRuleBundle, NEUTRAL_VOICE_RULE_BUNDLE } from '../composer/voiceRuleBundles';
+import {
+  SONGWRITER_STYLE_PROFILES,
+  normalizeSongwriterStyleKey,
+} from '../song-mode/songwriterStyleProfiles';
 
 const BLUES_INTERVAL_POOL = [0, 2, 3, 5] as const;
+const JW_BLUES_SNAP_POOL = [0, 2, 3, 5, 7] as const;
 const STEP_POOL = [1, 2] as const;
+const NAMED_DELTA_PREFIXES = new Set(['rf', 'jw', 'ws', 'tv', 'jma']);
+
+let lastCorridorCorrectionApplied = false;
+
+export interface DerivedMotifTransform {
+  intervalNudge: number;
+  intervalClamp: number;
+  rhythmScale: number;
+  onsetDisplace: boolean;
+  preserveContour: boolean;
+  preserveSalientLeap: boolean;
+}
 
 function roundHalf(x: number): number {
   return Math.round(x * 2) / 2;
@@ -43,12 +61,12 @@ function oneHingeContourDirs(intervalCount: number, seed: number): number[] {
   return dirs;
 }
 
-function snapToBluesInterval(iv: number): number {
+function snapToBluesInterval(iv: number, pool: readonly number[] = BLUES_INTERVAL_POOL): number {
   const sign = iv >= 0 ? 1 : -1;
   const mag = Math.abs(iv);
-  let best: number = BLUES_INTERVAL_POOL[0]!;
+  let best: number = pool[0]!;
   let bestDist = Infinity;
-  for (const p of BLUES_INTERVAL_POOL) {
+  for (const p of pool) {
     const d = Math.abs(mag - p);
     if (d < bestDist) {
       bestDist = d;
@@ -145,17 +163,279 @@ function rotateRhythmOnsets(rhythm: CoreMotif['rhythmPattern']): CoreMotif['rhyt
   });
 }
 
-function transformWs(
+function salientLeapIndex(intervals: number[]): number {
+  if (intervals.length === 0) return 0;
+  return intervals.reduce(
+    (best, iv, i) => (Math.abs(iv) > Math.abs(intervals[best]!) ? i : best),
+    0
+  );
+}
+
+function normalizePrefix(prefix: string): string {
+  return prefix.endsWith(':') ? prefix.slice(0, -1) : prefix;
+}
+
+function shortestTonicDelta(delta: number): number {
+  let d = delta;
+  if (d > 6) d -= 12;
+  if (d < -6) d += 12;
+  return d;
+}
+
+function applyTonicTranspositionOnly(
+  source: CoreMotif,
+  sectionLabel: string,
+  tonicDeltaSemitones: number
+): CoreMotif {
+  const delta = shortestTonicDelta(tonicDeltaSemitones);
+  const intervalPattern = [...source.intervalPattern];
+  if (intervalPattern.length > 0 && delta !== 0) {
+    const last = intervalPattern.length - 1;
+    intervalPattern[last] = clampIntervalMagnitude(intervalPattern[last]! + delta, 12);
+  }
+  return {
+    id: `mosaic_variant_${sectionLabel}`,
+    intervalPattern,
+    rhythmPattern: source.rhythmPattern.map((r) => ({ ...r })),
+    contourPattern: contourFromIntervals(intervalPattern),
+    roleTags: ['mosaic_variant' as MotifRoleTag],
+    registerTags: ['mid' as MotifRegisterTag],
+  };
+}
+
+export function deriveMotifTransformFromVrb(songwriterStyleId: string): DerivedMotifTransform {
+  const vrb = getVoiceRuleBundle(songwriterStyleId);
+  const profileKey = normalizeSongwriterStyleKey(songwriterStyleId);
+  const profile = profileKey ? SONGWRITER_STYLE_PROFILES[profileKey] : null;
+
+  const intervalPref = vrb.duoVoicePolicy?.intervalPreference as string | undefined;
+  let intervalNudge = 0;
+  if (intervalPref === 'blues_chromatic' || intervalPref === 'narrow') {
+    intervalNudge = -1;
+  } else if (intervalPref === 'wide' || (vrb.melodicPolicy.maxLeapSemitones ?? 7) >= 12) {
+    intervalNudge = 1;
+  }
+
+  const intervalClamp = Math.min(vrb.melodicPolicy.maxLeapSemitones ?? 7, 10);
+
+  let rhythmScale = 1.0;
+  if (vrb.rhythmPolicy.antiMetric === true) {
+    rhythmScale = 1.25;
+  } else if ((profile?.syncopationBias ?? 0) > 0.6) {
+    rhythmScale = 0.75;
+  }
+
+  const rhythmAnticipation =
+    (vrb.rhythmPolicy as { anticipationRateMax?: number }).anticipationRateMax ??
+    vrb.anticipationRateMax ??
+    0;
+  const onsetDisplace =
+    rhythmAnticipation > 0.3 ||
+    (profile?.syncopationBias ?? 0) > 0.5 ||
+    vrb.rhythmPolicy.antiMetric === true;
+
+  const preserveContour = vrb.melodicPolicy.contour !== 'angular';
+  const preserveSalientLeap = (vrb.melodicPolicy.maxLeapSemitones ?? 7) >= 7;
+
+  return {
+    intervalNudge,
+    intervalClamp,
+    rhythmScale,
+    onsetDisplace,
+    preserveContour,
+    preserveSalientLeap,
+  };
+}
+
+export function estimateMotifIntervalSimilarity(source: number[], result: number[]): number {
+  const n = Math.max(source.length, result.length);
+  if (n === 0) return 1;
+  let diffSum = 0;
+  for (let i = 0; i < Math.min(source.length, result.length); i++) {
+    diffSum += Math.abs(result[i]! - source[i]!);
+  }
+  return 1 - diffSum / (n * 12);
+}
+
+function enforcePerplexityCorridor(
+  sourceIntervals: number[],
+  intervalPattern: number[],
+  rhythmPattern: CoreMotif['rhythmPattern'],
+  sourceRhythm: CoreMotif['rhythmPattern'],
+  intervalClamp: number,
+  preserveSalientLeap = false
+): { intervalPattern: number[]; rhythmPattern: CoreMotif['rhythmPattern']; corrected: boolean } {
+  let intervals = [...intervalPattern];
+  const rhythm = rhythmPattern.map((r) => ({ ...r }));
+  let corrected = false;
+  const salientIdx = salientLeapIndex(sourceIntervals);
+  const salientVal = sourceIntervals[salientIdx]!;
+  const maxNonSalientDrift = 2;
+
+  const nudgeIndexAwayFromSource = (i: number): boolean => {
+    if (i < 0 || i >= intervals.length) return false;
+    if (preserveSalientLeap && i === salientIdx) return false;
+    const src = sourceIntervals[i] ?? 0;
+    const cur = intervals[i]!;
+    const step = Math.abs(cur - src + 1) >= Math.abs(cur - src - 1) ? 1 : -1;
+    let toward = cur + step;
+    if (i > 0 && i < intervals.length - 1 && Math.abs(toward - src) > maxNonSalientDrift) {
+      toward = src + maxNonSalientDrift * Math.sign(toward - src);
+    }
+    intervals[i] = clampIntervalMagnitude(toward, intervalClamp);
+    return intervals[i] !== cur;
+  };
+
+  let guard = 0;
+  let similarity = estimateMotifIntervalSimilarity(sourceIntervals, intervals);
+  while (similarity > 0.75 && guard < 24) {
+    let moved = false;
+    for (let i = 1; i < intervals.length - 1; i++) {
+      if (nudgeIndexAwayFromSource(i)) {
+        corrected = true;
+        moved = true;
+        break;
+      }
+    }
+    if (!moved && intervals.length > 0) {
+      moved = nudgeIndexAwayFromSource(0);
+      if (moved) corrected = true;
+    }
+    if (!moved) break;
+    similarity = estimateMotifIntervalSimilarity(sourceIntervals, intervals);
+    guard++;
+  }
+
+  guard = 0;
+  while (similarity > 0.75 && guard < 8) {
+    let moved = false;
+    for (let i = 0; i < intervals.length; i++) {
+      if (preserveSalientLeap && i === salientIdx) continue;
+      const src = sourceIntervals[i] ?? 0;
+      const cur = intervals[i]!;
+      const step = Math.abs(cur - src + 1) >= Math.abs(cur - src - 1) ? 1 : -1;
+      const toward = cur + step;
+      const next = clampIntervalMagnitude(toward, intervalClamp);
+      if (next === cur) continue;
+      intervals[i] = next;
+      corrected = true;
+      moved = true;
+      break;
+    }
+    if (!moved) break;
+    similarity = estimateMotifIntervalSimilarity(sourceIntervals, intervals);
+    guard++;
+  }
+
+  guard = 0;
+  while (similarity < 0.4 && guard < 8) {
+    const resultSalientIdx = salientLeapIndex(intervals);
+    if (resultSalientIdx >= 0 && resultSalientIdx < intervals.length) {
+      intervals[resultSalientIdx] = salientVal;
+      corrected = true;
+    }
+    similarity = estimateMotifIntervalSimilarity(sourceIntervals, intervals);
+    guard++;
+  }
+
+  void sourceRhythm;
+  void rhythm;
+  return { intervalPattern: intervals, rhythmPattern, corrected };
+}
+
+export function getLastMosaicCorridorCorrectionApplied(): boolean {
+  return lastCorridorCorrectionApplied;
+}
+
+export function applyDerivedTransform(
+  source: CoreMotif,
+  t: DerivedMotifTransform,
+  tonicDeltaSemitones: number
+): CoreMotif {
+  lastCorridorCorrectionApplied = false;
+  const sourceIntervals = [...source.intervalPattern];
+  const sourceRhythm = source.rhythmPattern.map((r) => ({ ...r }));
+  const sourceContour = [...source.contourPattern];
+  const salientIdx = salientLeapIndex(sourceIntervals);
+  const salientVal = sourceIntervals[salientIdx]!;
+
+  const intervalPattern = [...sourceIntervals];
+  const delta = shortestTonicDelta(tonicDeltaSemitones);
+  if (intervalPattern.length > 0 && delta !== 0) {
+    intervalPattern[0] = clampIntervalMagnitude(intervalPattern[0]! + delta, t.intervalClamp);
+  }
+
+  for (let i = 1; i < intervalPattern.length - 1; i++) {
+    intervalPattern[i] = clampIntervalMagnitude(intervalPattern[i]! + t.intervalNudge, t.intervalClamp);
+  }
+
+  if (t.preserveSalientLeap && salientIdx >= 0 && salientIdx < intervalPattern.length) {
+    intervalPattern[salientIdx] = salientVal;
+  }
+
+  if (t.preserveContour) {
+    for (let i = 0; i < intervalPattern.length; i++) {
+      const srcDir = sourceContour[i] ?? 0;
+      const cur = intervalPattern[i]!;
+      if (srcDir === 0 || cur === 0) continue;
+      if (Math.sign(cur) !== Math.sign(srcDir)) {
+        intervalPattern[i] = -cur;
+      }
+    }
+  }
+
+  let rhythmPattern = sourceRhythm.map((r) => ({ ...r }));
+  if (t.rhythmScale !== 1.0) {
+    rhythmPattern = rhythmPattern.map((r) => ({
+      startBeat: r.startBeat,
+      duration: Math.max(0.5, Math.min(3.0, roundHalf(r.duration * t.rhythmScale))),
+    }));
+  }
+
+  if (t.onsetDisplace) {
+    for (let i = 1; i < rhythmPattern.length - 1; i++) {
+      const onset = rhythmPattern[i]!;
+      if (Math.abs(onset.startBeat % 1) < 1e-6) {
+        rhythmPattern[i] = { startBeat: onset.startBeat + 0.5, duration: onset.duration };
+        break;
+      }
+    }
+  }
+
+  let similarity = estimateMotifIntervalSimilarity(sourceIntervals, intervalPattern);
+  const corridor = enforcePerplexityCorridor(
+    sourceIntervals,
+    intervalPattern,
+    rhythmPattern,
+    sourceRhythm,
+    t.intervalClamp,
+    t.preserveSalientLeap
+  );
+  intervalPattern.splice(0, intervalPattern.length, ...corridor.intervalPattern);
+  rhythmPattern = corridor.rhythmPattern;
+  if (corridor.corrected) lastCorridorCorrectionApplied = true;
+  similarity = estimateMotifIntervalSimilarity(sourceIntervals, intervalPattern);
+  void similarity;
+
+  return {
+    id: source.id,
+    intervalPattern,
+    rhythmPattern,
+    contourPattern: contourFromIntervals(intervalPattern),
+    roleTags: ['mosaic_variant' as MotifRoleTag],
+    registerTags: ['mid' as MotifRegisterTag],
+  };
+}
+
+function transformWsDelta(
   intervals: number[],
-  rhythm: CoreMotif['rhythmPattern']
+  rhythm: CoreMotif['rhythmPattern'],
+  sourceIntervals: number[]
 ): { intervalPattern: number[]; rhythmPattern: CoreMotif['rhythmPattern'] } {
   if (intervals.length === 0 || rhythm.length === 0) {
     return { intervalPattern: [...intervals], rhythmPattern: rhythm.map((r) => ({ ...r })) };
   }
-  const leapIdx = intervals.reduce(
-    (best, iv, i) => (Math.abs(iv) > Math.abs(intervals[best]!) ? i : best),
-    0
-  );
+  const leapIdx = Math.min(salientLeapIndex(sourceIntervals), intervals.length - 1);
   const leap = intervals[leapIdx]!;
   const half1 = Math.round(leap / 2);
   const half2 = leap - half1;
@@ -171,67 +451,70 @@ function transformWs(
     rhythmPattern.splice(leapIdx + 1, 0, { startBeat: midStart, duration: 0.5 });
   }
 
-  if (rhythmPattern[2] && rhythmPattern[2].startBeat % 1 === 0) {
-    rhythmPattern[2] = {
-      startBeat: rhythmPattern[2].startBeat + 0.5,
-      duration: rhythmPattern[2].duration,
-    };
+  for (let i = 1; i < rhythmPattern.length - 1; i++) {
+    if (Math.abs(rhythmPattern[i]!.startBeat % 1) < 1e-6) {
+      rhythmPattern[i] = {
+        startBeat: rhythmPattern[i]!.startBeat + 0.5,
+        duration: rhythmPattern[i]!.duration,
+      };
+      break;
+    }
   }
 
   return { intervalPattern, rhythmPattern };
 }
 
-function applyComposerTransform(
+function applyNamedDeltaOverride(
   prefix: string,
-  intervals: number[],
-  rhythm: CoreMotif['rhythmPattern']
-): { intervalPattern: number[]; rhythmPattern: CoreMotif['rhythmPattern'] } {
-  const key = prefix.endsWith(':') ? prefix.slice(0, -1) : prefix;
+  motif: CoreMotif,
+  source: CoreMotif
+): CoreMotif {
+  const key = normalizePrefix(prefix);
+  let { intervalPattern, rhythmPattern } = {
+    intervalPattern: [...motif.intervalPattern],
+    rhythmPattern: motif.rhythmPattern.map((r) => ({ ...r })),
+  };
 
   if (key === 'rf') {
-    const intervalPattern = intervals.map((iv) => clampIntervalMagnitude(iv + 2, 7));
-    const rhythmPattern = rotateRhythmOnsets(rhythm);
-    return { intervalPattern, rhythmPattern };
-  }
-
-  if (key === 'jw') {
-    const intervalPattern = intervals.map((iv, i) => {
-      if (i === 0 || i === intervals.length - 1) return clampIntervalMagnitude(iv, 5);
-      return clampIntervalMagnitude(snapToBluesInterval(iv), 5);
+    intervalPattern = intervalPattern.map((iv) => {
+      const sequenced = ((Math.abs(iv) + 2) % 12) * (iv >= 0 ? 1 : -1);
+      return clampIntervalMagnitude(sequenced, 7);
     });
-    const rhythmPattern = [...rhythm.map((r) => ({ ...r }))];
-    if (rhythmPattern.length > 0) {
-      rhythmPattern.push({ ...rhythmPattern[0]! });
-    }
-    return { intervalPattern, rhythmPattern };
-  }
-
-  if (key === 'ws') {
-    return transformWs(intervals, rhythm);
-  }
-
-  if (key === 'tv') {
-    const intervalPattern = intervals.map((iv) =>
+    rhythmPattern = rotateRhythmOnsets(rhythmPattern);
+  } else if (key === 'jw') {
+    intervalPattern = intervalPattern.map((iv, i) => {
+      if (i === 0 || i === intervalPattern.length - 1) return clampIntervalMagnitude(iv, 7);
+      return clampIntervalMagnitude(snapToBluesInterval(iv, JW_BLUES_SNAP_POOL), 7);
+    });
+  } else if (key === 'ws') {
+    ({ intervalPattern, rhythmPattern } = transformWsDelta(
+      intervalPattern,
+      rhythmPattern,
+      source.intervalPattern
+    ));
+  } else if (key === 'tv') {
+    intervalPattern = intervalPattern.map((iv) =>
       Math.abs(iv) > 3 ? (iv >= 0 ? 2 : -2) : iv
     );
-    return { intervalPattern, rhythmPattern: rhythm.map((r) => ({ ...r })) };
-  }
-
-  if (key === 'jma') {
-    const intervalPattern = intervals.map((iv) => {
+  } else if (key === 'jma') {
+    intervalPattern = intervalPattern.map((iv, i) => {
+      if (i === 0 || i === intervalPattern.length - 1) return iv;
       const sign = iv >= 0 ? 1 : -1;
       return clampIntervalMagnitude(sign * (Math.abs(iv) + 1), 7);
     });
-    const rhythmPattern = rhythm.map((r) => ({
+    rhythmPattern = rhythmPattern.map((r) => ({
       startBeat: r.startBeat,
       duration: Math.max(0.5, roundHalf(r.duration * 0.75)),
     }));
-    return { intervalPattern, rhythmPattern };
+  } else {
+    void source;
   }
 
   return {
-    intervalPattern: intervals.map((iv) => iv),
-    rhythmPattern: rhythm.map((r) => ({ ...r })),
+    ...motif,
+    intervalPattern,
+    rhythmPattern,
+    contourPattern: contourFromIntervals(intervalPattern),
   };
 }
 
@@ -239,19 +522,32 @@ export function transformMotifForSection(
   source: CoreMotif,
   sectionLabel: string,
   composerPrefix: string,
-  tonicDeltaSemitones: number
+  tonicDeltaSemitones: number,
+  songwriterStyleId?: string
 ): CoreMotif {
-  void tonicDeltaSemitones;
-  const { intervalPattern, rhythmPattern } = applyComposerTransform(
-    composerPrefix,
-    [...source.intervalPattern],
-    source.rhythmPattern
-  );
+  const styleId = songwriterStyleId ?? composerPrefix;
+  const vrb = getVoiceRuleBundle(styleId);
+  const profileKey = normalizeSongwriterStyleKey(styleId);
+  const profile = profileKey ? SONGWRITER_STYLE_PROFILES[profileKey] : null;
+
+  let result: CoreMotif;
+  if (vrb.voiceId === NEUTRAL_VOICE_RULE_BUNDLE.voiceId && !profile) {
+    result = applyTonicTranspositionOnly(source, sectionLabel, tonicDeltaSemitones);
+  } else {
+    const transform = deriveMotifTransformFromVrb(styleId);
+    result = applyDerivedTransform(source, transform, tonicDeltaSemitones);
+    result = { ...result, id: `mosaic_variant_${sectionLabel}` };
+  }
+
+  const prefixKey = normalizePrefix(composerPrefix);
+  if (NAMED_DELTA_PREFIXES.has(prefixKey)) {
+    result = applyNamedDeltaOverride(prefixKey, result, source);
+    result = { ...result, id: `mosaic_variant_${sectionLabel}` };
+  }
+
   return {
+    ...result,
     id: `mosaic_variant_${sectionLabel}`,
-    intervalPattern,
-    rhythmPattern,
-    contourPattern: contourFromIntervals(intervalPattern),
     roleTags: ['mosaic_variant' as MotifRoleTag],
     registerTags: ['mid' as MotifRegisterTag],
   };
@@ -289,7 +585,8 @@ export function buildMosaicMotifVariants(
       source,
       section.sectionLabel,
       prefix,
-      delta
+      delta,
+      section.songwriterStyleId
     );
   }
   return out;
