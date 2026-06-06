@@ -60,6 +60,7 @@ import { runVerlainFieldSliceSmokeTests } from './verlainFieldSliceSmoke.test';
 import { runHoldsworthScaleSliceSmokeTests } from './holdsworthScaleSliceSmoke.test';
 import { runJackWhiteDroneSmokeTests } from './jackWhiteDroneSmoke.test';
 import { runBeefheartFragmentSmokeTests } from './beefheartFragmentSmoke.test';
+import { runFrippSystemsSmokeTests } from './frippSystemsSmoke.test';
 import { runMarrMelodicRhythmSmokeTests } from './marrMelodicRhythmSmoke.test';
 import { runMandelLyricWarmthSmokeTests } from './mandelLyricWarmthSmoke.test';
 import { runWeberFieldSliceSmokeTests } from './weberFieldSliceSmoke.test';
@@ -235,6 +236,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Allan Holdsworth songwriter slice', run: runHoldsworthScaleSliceSmokeTests },
   { label: 'Jack White songwriter slice', run: runJackWhiteDroneSmokeTests },
   { label: 'Captain Beefheart songwriter slice', run: runBeefheartFragmentSmokeTests },
+  { label: 'Robert Fripp systems songwriter slice', run: runFrippSystemsSmokeTests },
   { label: 'Johnny Marr songwriter slice', run: runMarrMelodicRhythmSmokeTests },
   { label: 'Johnny Mandel songwriter slice', run: runMandelLyricWarmthSmokeTests },
   { label: 'Eberhard Weber songwriter slice', run: runWeberFieldSliceSmokeTests },

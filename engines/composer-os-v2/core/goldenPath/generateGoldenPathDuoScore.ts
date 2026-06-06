@@ -327,6 +327,12 @@ import {
   precomputeBeefheartEffectiveHarmonyBars,
 } from './beefheartFragmentSlice';
 import {
+  accumulateFrippHarmonyDiagnostics,
+  createFrippHarmonyAccumulator,
+  finalizeFrippMetadata,
+  precomputeFrippEffectiveHarmonyBars,
+} from './frippSystemsSlice';
+import {
   accumulateMarrHarmonyDiagnostics,
   createMarrHarmonyAccumulator,
   finalizeMarrMetadata,
@@ -2885,6 +2891,7 @@ function buildGuitarPart(
   const isSongwriterAllanHoldsworth = genMeta?.songwriterStyleId === 'allan_holdsworth';
   const isSongwriterJackWhite = genMeta?.songwriterStyleId === 'jack_white';
   const isSongwriterBeefheart = genMeta?.songwriterStyleId === 'beefheart';
+  const isSongwriterFripp = genMeta?.songwriterStyleId === 'fripp';
   const isSongwriterMarr = genMeta?.songwriterStyleId === 'marr';
   const isSongwriterEberhardWeber = genMeta?.songwriterStyleId === 'eberhard_weber';
   const isSongwriterClausOgerman =
@@ -2954,6 +2961,7 @@ function buildGuitarPart(
   const holdsworthAccum = createHoldsworthHarmonyAccumulator();
   const jackWhiteAccum = createJackWhiteHarmonyAccumulator();
   const beefheartAccum = createBeefheartHarmonyAccumulator();
+  const frippAccum = createFrippHarmonyAccumulator();
   const marrAccum = createMarrHarmonyAccumulator();
   const ewAccum = createEberhardWeberHarmonyAccumulator();
   const coAccum = createClausOgermanHarmonyAccumulator();
@@ -3131,6 +3139,9 @@ function buildGuitarPart(
   }
   if (isSongwriterBeefheart && isDuoGoldenPath) {
     precomputeBeefheartEffectiveHarmonyBars(context);
+  }
+  if (isSongwriterFripp && isDuoGoldenPath) {
+    precomputeFrippEffectiveHarmonyBars(context);
   }
   if (isSongwriterMarr && isDuoGoldenPath) {
     precomputeMarrEffectiveHarmonyBars(context);
@@ -3600,6 +3611,13 @@ function buildGuitarPart(
         b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
         resolveBarSymbol(context, b).symbol,
         beefheartAccum
+      );
+    }
+    if (isSongwriterFripp) {
+      accumulateFrippHarmonyDiagnostics(
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
+        frippAccum
       );
     }
     if (isSongwriterMarr) {
@@ -4647,6 +4665,9 @@ function buildGuitarPart(
   }
   if (isSongwriterBeefheart && context.generationMetadata) {
     finalizeBeefheartMetadata(context.generationMetadata, beefheartAccum);
+  }
+  if (isSongwriterFripp && context.generationMetadata) {
+    finalizeFrippMetadata(context.generationMetadata, frippAccum);
   }
   if (isSongwriterMarr && context.generationMetadata) {
     finalizeMarrMetadata(context.generationMetadata, marrAccum);

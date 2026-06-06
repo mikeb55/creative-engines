@@ -126,6 +126,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   { match: (m) => m?.songwriterStyleId === 'allan_holdsworth', effKey: 'holdsworthEffectiveHarmonyBars', sliceId: 'allan_holdsworth' },
   { match: (m) => m?.songwriterStyleId === 'jack_white', effKey: 'jackWhiteEffectiveHarmonyBars', sliceId: 'jack_white' },
   { match: (m) => m?.songwriterStyleId === 'beefheart', effKey: 'beefheartEffectiveHarmonyBars', sliceId: 'beefheart' },
+  { match: (m) => m?.songwriterStyleId === 'fripp', effKey: 'frippEffectiveHarmonyBars', sliceId: 'fripp' },
   { match: (m) => m?.songwriterStyleId === 'marr', effKey: 'marrEffectiveHarmonyBars', sliceId: 'marr' },
   { match: (m) => m?.songwriterStyleId === 'bill_holman', effKey: 'billHolmanEffectiveHarmonyBars', sliceId: 'bill_holman' },
   { match: (m) => m?.songwriterStyleId === 'carla_bley', effKey: 'carlaBleyEffectiveHarmonyBars', sliceId: 'carla_bley' },

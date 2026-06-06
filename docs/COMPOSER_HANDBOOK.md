@@ -118,7 +118,7 @@ Engine: **`engines/composer-os-v2/core/groups/composerGroupEngine.ts`** · defin
 | `soloistSpotlight` | 0.55 | Lines equal — no featured jazz solo arc |
 | `sectionalContrastMode` | `gradual` | Modal center shifts slowly |
 
-**Members (fully implemented):** Tom Verlaine (`tv:*`), Fripp / King Crimson (riff VRB), Tom Morello (riff VRB).
+**Members (fully implemented):** Tom Verlaine (`tv:*`), Johnny Marr (`jma:*`), Robert Fripp (`rf:*`), Fripp / King Crimson (`fk:*`), Tom Morello (riff VRB).
 
 **Members (stub_exposed — VRB present, Song Mode pending):** Sonic Youth (`SY:*`).
 
@@ -634,6 +634,40 @@ Marr is **melodic rhythm guitar**: partial voicings, open-string resonance, and 
 **Production group:** **`ART_ROCK_POST_PUNK`** — alongside Verlaine, Sonic Youth, Fripp / King Crimson, Tom Morello.
 
 **Evaluation:** **`marrStyleProfile.ts`** — pass on partial voicing + top-note melody + open-string resonance + add-note harmony + pendulum subdivision + modal ambiguity; hard fail on McGuinn jangle, Edge delay-grid, Summers jazz stabs, Butler romantic mass, blues lead lines, barre block strumming.
+
+---
+
+### Robert Fripp (`fripp`)
+
+Fripp is **era-dependent process systems**: harmony as interval-field relations, registral layering, and rhythmic process — not chord-function in rock or jazz sense. Three compositional modes encode different harmonic grammars within one slice.
+
+**Song Mode slice** — **`frippSystemsSlice.ts`** (`rf:*` receipts — distinct from Fripp/KC **`fk:*`**): interval-field harmony → interlock pattern → dissonance management → loop accumulation → asymmetric grouping → process audibility.
+
+**Era modes** (selectable; default **`discipline`**):
+
+| Mode | Musical role |
+|------|--------------|
+| **`red`** | Tritone/semitone/octatonic pressure; heavy riff; structurally unresolved upper voices |
+| **`discipline`** | Gamelan-derived interlock; pentatonic cells; composite resultant harmony |
+| **`loop`** | Frippertronics additive decay; transparent layer entry; release by attrition not cadence |
+
+**Six parameters** (0–1, defaults in parentheses):
+
+| Parameter | Default | Musical role |
+|-----------|---------|--------------|
+| `intervalFieldPriority` | 0.88 | Harmony from interval-relations not chord-function; weak V–I |
+| `interlockPatternRate` | 0.85 | Shared pulse, independent grouping; composite from two lean lines |
+| `dissonanceManagement` | 0.82 | Tritone/m2 structural; Red high tolerance; Discipline vertical collision |
+| `loopAccumulationLogic` | 0.80 | Loop mode only: additive build, saturation stop, decay form |
+| `asymmetricGroupingRate` | 0.83 | 5-over-4, cross-accent; cell governs phrase not barline |
+
+**VRB bundle id:** **`fripp_systems_process`** — 8 fingerprints + Holdsworth / Verlaine / Marr / Sonic Youth / Eno / generic prog negative discriminators; riff stub **`FRIPP`** retained with merged **`riffProfile`**.
+
+**Big Band arranger ids:** **`fripp`**, **`fripp_systems_process`** — five rules (`fripp.*`).
+
+**Production group:** **`ART_ROCK_POST_PUNK`** — alongside Verlaine, Marr, Sonic Youth, Fripp/KC, Tom Morello.
+
+**Evaluation:** **`frippStyleProfile.ts`** — pass on interval field + interlock + dissonance + melodic cells + asymmetric grouping + process audibility; hardest bleed guard: **Holdsworth** scalar ribbon.
 
 ---
 

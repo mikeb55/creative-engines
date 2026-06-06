@@ -333,6 +333,45 @@ const MARR_COMPOSER_RULES: BigBandRule[] = [
   ),
 ];
 
+/** Robert Fripp — era-dependent process systems; interval-field harmony, interlock, asymmetric grouping. */
+const FRIPP_COMPOSER_RULES: BigBandRule[] = [
+  R(
+    'fripp.interval_field_harmony',
+    'Harmony from interval relations not chord function; weak cadence weighting; suppress V–I and blues turnaround',
+    'composer',
+    'harmony',
+    90
+  ),
+  R(
+    'fripp.interlock_pattern',
+    'Shared pulse, independent grouping; composite resultant from two lean lines; not lead plus accompaniment',
+    'composer',
+    'rhythm',
+    91
+  ),
+  R(
+    'fripp.dissonance_as_structure',
+    'Tritone and semitone retained as structural objects; Red high dissonance tolerance; Discipline collision from interlocking layers',
+    'composer',
+    'harmony',
+    89
+  ),
+  R(
+    'fripp.process_audibility',
+    'Compositional system audible in result; pattern interdependence; release by spacing or decay not cadence',
+    'composer',
+    'form',
+    88
+  ),
+  R(
+    'fripp.asymmetric_grouping',
+    'Common pulse, mismatched grouping cycles; cross-accent, 5-over-4 logic; cell governs phrase not barline',
+    'composer',
+    'rhythm',
+    87
+  ),
+];
+
 /** Tom Verlaine — suspended modal field art-rock; bass displacement under static upper shape. */
 const VERLAINE_COMPOSER_RULES: BigBandRule[] = [
   R(
@@ -781,6 +820,8 @@ const composerRules: Record<BigBandComposerId, BigBandRule[]> = {
   captain_beefheart: BEEFHEART_COMPOSER_RULES,
   beefheart_fragment_polyphony: BEEFHEART_COMPOSER_RULES,
   don_van_vliet: BEEFHEART_COMPOSER_RULES,
+  fripp: FRIPP_COMPOSER_RULES,
+  fripp_systems_process: FRIPP_COMPOSER_RULES,
   marr: MARR_COMPOSER_RULES,
   johnny_marr: MARR_COMPOSER_RULES,
   marr_melodic_rhythm: MARR_COMPOSER_RULES,

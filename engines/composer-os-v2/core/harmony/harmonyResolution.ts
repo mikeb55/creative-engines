@@ -754,6 +754,22 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   }
 
   /**
+   * Robert Fripp: `precomputeFrippEffectiveHarmonyBars` applies era-dependent process systems.
+   * After precompute, `frippEffectiveHarmonyBars` is full-form and authoritative.
+   * Receipt prefix **`rf:*`** — distinct from Fripp/KC **`fk:*`**.
+   */
+  const frippEff = meta?.frippEffectiveHarmonyBars;
+  if (
+    meta?.songwriterStyleId === 'fripp' &&
+    Array.isArray(frippEff) &&
+    frippEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return frippEff[barIndex - 1]!;
+  }
+
+  /**
    * Captain Beefheart: `precomputeBeefheartEffectiveHarmonyBars` applies blues-fragment polyphony.
    * After precompute, `beefheartEffectiveHarmonyBars` is full-form and authoritative.
    * Receipt prefix **`cbf:*`** — Count Basie owns **`cb:*`**.

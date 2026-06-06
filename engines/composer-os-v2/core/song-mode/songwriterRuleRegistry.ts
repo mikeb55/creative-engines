@@ -1780,8 +1780,46 @@ function wireRiffVrbSongwriterRules(): void {
     ...fripp,
   ];
   rules.fripp = [
-    R('riff.fripp.sigma', 'Riff VRB σ27 — Fripp process (reuses fripp_king_crimson rule family)', 'songwriter', 'rhythm', 8, 'global'),
-    ...fripp,
+    R(
+      'fripp.interval_field_harmony',
+      'Harmony from interval relations not chord function; weak cadence weighting; suppress V–I and blues turnaround',
+      'songwriter',
+      'harmony',
+      10,
+      'global'
+    ),
+    R(
+      'fripp.interlock_pattern',
+      'Shared pulse, independent grouping; composite resultant from two lean lines; not lead plus accompaniment',
+      'songwriter',
+      'rhythm',
+      10,
+      'global'
+    ),
+    R(
+      'fripp.dissonance_as_structure',
+      'Tritone and semitone retained as structural objects; Red high dissonance tolerance; Discipline collision from interlocking layers',
+      'songwriter',
+      'harmony',
+      9,
+      'global'
+    ),
+    R(
+      'fripp.process_audibility',
+      'Compositional system audible in result; pattern interdependence; release by spacing or decay not cadence',
+      'songwriter',
+      'form',
+      9,
+      'global'
+    ),
+    R(
+      'fripp.asymmetric_grouping',
+      'Common pulse, mismatched grouping cycles; cross-accent, 5-over-4 logic; cell governs phrase not barline',
+      'songwriter',
+      'rhythm',
+      9,
+      'global'
+    ),
   ];
 }
 wireRiffVrbSongwriterRules();

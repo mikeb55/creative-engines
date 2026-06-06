@@ -2,6 +2,14 @@
 
 ### Added
 
+- **Robert Fripp v2 process systems composer (`rf:*`)** — era-dependent systems slice (`frippSystemsSlice.ts`): three modes Red / Discipline / Loop; intervalFieldPriority 0.88, interlockPatternRate 0.85, dissonanceManagement 0.82, loopAccumulationLogic 0.80, asymmetricGroupingRate 0.83; golden-path precompute + locked harmony routing + smoke **`frippSystemsSmoke.test.ts`** seed **11001**. Receipt prefix **`rf:*`** — distinct from Fripp/KC **`fk:*`**.
+- **Fripp VRB bundle upgrade** — **`frippVrbFingerprints.ts`** — 8 fingerprints + Holdsworth / Verlaine / Marr / Sonic Youth / Eno / generic prog negative discriminators; bundle id **`fripp_systems_process`**; riff stub **`FRIPP`** in **`riffVrbStubs.ts`** retained with merged **`riffProfile`**.
+- **Fripp Big Band rules** — five named rules in **`bigBandRuleRegistry.ts`**: IntervalFieldHarmony, InterlockPattern, DissonanceAsStructure, ProcessAudibility, AsymmetricGrouping (`fripp.*`).
+- **Fripp evaluation profile** — **`frippStyleProfile.ts`** with pass/fail thresholds and era-specific bonus scoring; hardest bleed guard: Holdsworth.
+- **Fripp Generate UI** — **`fripp`** in **`HomeGenerate.tsx`** songwriter + arranger lists; **`ART_ROCK_POST_PUNK`** group — Fripp stub upgraded to **`fully_implemented`**.
+
+### Added
+
 - **Captain Beefheart v2 avant-blues composer (`cbf:*`)** — composed blues-fragment polyphony slice (`beefheartFragmentSlice.ts`): bluesTransformation 0.85, independentPartPeriodicity 0.90, wrongNoteRecurrence 0.88, asymmetricPhraseModule 0.85, resolutionSuppression 0.92, denseSeparatedTexture 0.80; golden-path precompute + locked harmony routing + smoke **`beefheartFragmentSmoke.test.ts`** seed **66001**. Receipt prefix **`cbf:*`** — Count Basie owns **`cb:*`**.
 - **Beefheart VRB bundle** — **`beefheartVrbFingerprints.ts`** — 8 fingerprints + delta blues / rock / Ornette / Zappa / Ayler / Pere Ubu negative discriminators; bundle id **`beefheart_fragment_polyphony`**.
 - **Beefheart Big Band rules** — five named rules in **`bigBandRuleRegistry.ts`**: BluesTransformed, IndependentPeriodicity, WrongNoteRecurrence, AsymmetricModules, ResolutionSuppression (`beefheart.*`).

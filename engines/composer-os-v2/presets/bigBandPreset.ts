@@ -97,6 +97,8 @@ export const bigBandPreset: Preset = {
       'captain_beefheart',
       'beefheart_fragment_polyphony',
       'don_van_vliet',
+      'fripp',
+      'fripp_systems_process',
     ],
   },
 };

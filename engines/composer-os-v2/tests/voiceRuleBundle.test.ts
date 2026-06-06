@@ -662,11 +662,13 @@ function testFusionArtRockRiffVrbStubsRegistry(): boolean {
     getVoiceRuleBundle('television').voiceId === 'verlaine_suspended_field' &&
     morello.voiceId === 'morello' &&
     getVoiceRuleBundle('ratm').voiceId === 'morello' &&
-    fripp.voiceId === 'fripp' &&
+    fripp.voiceId === 'fripp_systems_process' &&
+    getVoiceRuleBundle('fripp_systems_process').voiceId === 'fripp_systems_process' &&
     getVoiceRuleBundle('king_crimson').voiceId === 'fripp' &&
     mahavishnu.riffProfile.meterPolicy === 'odd_grouped' &&
     mahavishnu.riffProfile.polyGroupingMode === true &&
-    Boolean(fripp.riffProfile.processLoopPolicy) &&
+    Boolean(fripp.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('RF_ERA_'))) &&
+    Boolean(fripp.riffProfile?.processLoopPolicy) &&
     Boolean(verlaine.riffProfile.counterpartVoicePolicy) &&
     morello.riffProfile.allowPitchStreak === true &&
     weather.riffProfile.ensembleInterlockMode === 'layeredOstinati'

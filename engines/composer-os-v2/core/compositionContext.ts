@@ -66,6 +66,11 @@ import type {
   BeefheartSliceParams,
 } from './song-mode/beefheartFragmentSlice';
 import type {
+  FrippSystemsPlan,
+  FrippSliceParams,
+  FrippEraSystemMode,
+} from './song-mode/frippSystemsSlice';
+import type {
   MarrMelodicPlan,
   MarrSliceParams,
 } from './song-mode/marrMelodicSlice';
@@ -2062,6 +2067,37 @@ export interface GenerationMetadata {
   beefheartSliceReceipt?: string;
   beefheartEffectiveHarmonyBars?: string[];
   beefheartDeviceReceipts?: string[];
+  /** Robert Fripp — era-dependent process systems slice (`frippSystemsSlice.ts`, receipts `rf:*`). */
+  frippEraSystemMode?: FrippEraSystemMode;
+  frippDiagnostics?: {
+    songwriterId: 'fripp';
+    barsConsidered: number;
+    intervalFieldTouches: number;
+    interlockTouches: number;
+    dissonanceTouches: number;
+    melodicCellTouches: number;
+    asymGroupTouches: number;
+    processAudibleTouches: number;
+    minSectionSpan?: number;
+    sliceParams?: FrippSliceParams;
+    intervalFieldHarmony: number;
+    interlockPattern: number;
+    dissonanceManagement: number;
+    melodicIntervalCell: number;
+    asymmetricGrouping: number;
+    processAudibility: number;
+    texturalDensityControl: number;
+    tritoneRetention?: number;
+    compositePulse?: number;
+    layerTransparency?: number;
+    eraMode?: FrippEraSystemMode;
+    deviceReceipts?: string[];
+  };
+  frippSystemsPlan?: FrippSystemsPlan;
+  frippSliceParams?: FrippSliceParams;
+  frippSliceReceipt?: string;
+  frippEffectiveHarmonyBars?: string[];
+  frippDeviceReceipts?: string[];
   /** Johnny Marr — melodic rhythm guitar slice (`marrMelodicSlice.ts`, receipts `jma:*`). */
   marrDiagnostics?: {
     songwriterId: 'marr';

@@ -79,6 +79,7 @@ export const EFFECTIVE_HARMONY_TRUTH_REGISTRY: readonly EffectiveHarmonyTruthReg
   { songwriterStyleIds: ['allan_holdsworth'], metadataKey: 'holdsworthEffectiveHarmonyBars' },
   { songwriterStyleIds: ['jack_white'], metadataKey: 'jackWhiteEffectiveHarmonyBars' },
   { songwriterStyleIds: ['beefheart'], metadataKey: 'beefheartEffectiveHarmonyBars' },
+  { songwriterStyleIds: ['fripp'], metadataKey: 'frippEffectiveHarmonyBars' },
   { songwriterStyleIds: ['marr'], metadataKey: 'marrEffectiveHarmonyBars' },
   { songwriterStyleIds: ['bill_holman'], metadataKey: 'billHolmanEffectiveHarmonyBars' },
   { songwriterStyleIds: ['carla_bley'], metadataKey: 'carlaBleyEffectiveHarmonyBars' },

@@ -16,6 +16,7 @@ import { VERLAINE_SUSPENDED_FIELD_VRF_FINGERPRINT_RECEIPTS } from './verlainVrbF
 import { HOLDSWORTH_SCALE_DERIVED_VRF_FINGERPRINT_RECEIPTS } from './holdsworthVrbFingerprints';
 import { JACK_WHITE_DRONE_RIFF_VRF_FINGERPRINT_RECEIPTS } from './jackWhiteVrbFingerprints';
 import { BEEFHEART_FRAGMENT_POLYPHONY_VRF_FINGERPRINT_RECEIPTS } from './beefheartVrbFingerprints';
+import { FRIPP_SYSTEMS_PROCESS_VRF_FINGERPRINT_RECEIPTS } from './frippVrbFingerprints';
 import { MARR_MELODIC_RHYTHM_VRF_FINGERPRINT_RECEIPTS } from './marrVrbFingerprints';
 import { BILL_HOLMAN_VRF_FINGERPRINT_RECEIPTS } from './holmanVrbFingerprints';
 import { CARLA_BLEY_VRF_FINGERPRINT_RECEIPTS } from './carlaBleyVrbFingerprints';
@@ -1620,6 +1621,61 @@ const BEEFHEART_FRAGMENT_POLYPHONY: VoiceRuleBundle = {
     rhythmicIndependenceFloor: 0.82,
     registerInterlock: false,
     intervalPreference: 'blues_chromatic',
+  },
+};
+
+const FRIPP_SYSTEMS_PROCESS: VoiceRuleBundle = {
+  ...FRIPP,
+  voiceId: 'fripp_systems_process',
+  harmonicRhythm: {
+    minChordDurationBars: 2,
+    maxChordDurationBars: 8,
+    allowMidBarChange: true,
+  },
+  bassPolicy: {
+    role: 'pattern-bass',
+    allowOctaveDoubling: false,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 5,
+    maxSpreadSemitones: 36,
+    clusterSizeNotes: [1, 4],
+    forbidParallelFifths: false,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: {
+    contour: 'pattern-loop',
+    maxLeapSemitones: 12,
+    preferredIntervalSets: [1, 4, 5, 6, 7],
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 0,
+    mutateSingleVoiceAtTime: true,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: [
+      ...(FRIPP.orchestrationPolicy.fingerprintReceipts ?? []),
+      ...FRIPP_SYSTEMS_PROCESS_VRF_FINGERPRINT_RECEIPTS,
+    ],
+  },
+  formPolicy: {
+    narrativeArc: 'minimalist-process',
+    sectionRecallEnforced: true,
+    noCadentialRelease: true,
+  },
+  rhythmPolicy: {
+    antiMetric: true,
+  },
+  repairPolicy: {
+    resolveParallels: false,
+    maxVoiceOverlap: 4,
+  },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.78,
+    registerInterlock: true,
+    intervalPreference: 'chromatic_polytonal',
   },
 };
 
@@ -4285,7 +4341,8 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   ecm_chamber: ECM_CHAMBER,
   ecm: ECM_CHAMBER,
   fripp_king_crimson: FRIPP_KING_CRIMSON,
-  fripp: FRIPP,
+  fripp: FRIPP_SYSTEMS_PROCESS,
+  fripp_systems_process: FRIPP_SYSTEMS_PROCESS,
   king_crimson: FRIPP,
   crimson: FRIPP_KING_CRIMSON,
   weather_report: WEATHER_REPORT,
