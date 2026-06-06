@@ -1055,6 +1055,9 @@ export function apiGenerate(
           ? ((body as { musicContext: MusicContext }).musicContext as MusicContext)
           : undefined,
     };
+    if (body.duoSongModeSectionPlan) {
+      req_.duoSongModeSectionPlan = body.duoSongModeSectionPlan;
+    }
     const genCorr = req_.__generateCorrelationId;
     if (genCorr != null) {
       const normalizedAlt = normalizeAlternateGuitarTuningRequest(req_.alternateGuitarTuning);

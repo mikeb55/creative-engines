@@ -344,6 +344,12 @@ export interface GenerateRequest {
   drumArticulation?: 'auto' | 'brushes' | 'sticks';
   /** Guitar–Bass Duo / Song Mode: long-form planning when `totalBars` is 16, 24, 32, 40, 48, 56, or 64 (with matching chord length). */
   longFormEnabled?: boolean;
+  duoSongModeSectionPlan?: Array<{
+    sectionLabel: string;
+    startBar: number;
+    endBar: number;
+    songwriterStyleId: string;
+  }>;
   /**
    * V3.4 — MusicXML key policy: `auto` infers from chords unless a parseable `tonalCenter` / `tonalCenterOverride` is set;
    * `override` is legacy alias for explicit key (same explicit-string authority); `none` hides key signature.

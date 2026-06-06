@@ -1357,6 +1357,12 @@ export interface RunGoldenPathOptions {
    * (or `VITE_COMPOSER_OS_CLAVE_GRID_OVERLAY`) is truthy; invalid payloads yield a skipped receipt.
    */
   claveGridOverlay?: ClaveGridSpec;
+  duoSongModeSectionPlan?: Array<{
+    sectionLabel: string;
+    startBar: number;
+    endBar: number;
+    songwriterStyleId: string;
+  }>;
 }
 
 function clamp01(n: number): number {
@@ -1896,6 +1902,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     }
   }
   const context = buildContextForGoldenPath(seed, effectiveOptions);
+  if (options?.duoSongModeSectionPlan) {
+    context.generationMetadata = {
+      ...context.generationMetadata,
+      duoSongModeSectionPlan: options.duoSongModeSectionPlan,
+    };
+  }
   const motifAuthorityLevelRequested = resolveMotifAuthorityLevel(options);
   const motifAuthorityEligible = isMotifAuthorityPilotPreset(
     options?.presetId ?? context.presetId,
