@@ -42,6 +42,7 @@ import {
 } from '../constants/generateProducerLanes';
 import { GenerateProducerLaneChooser } from '../components/GenerateProducerLaneChooser';
 import { GenerateSharedContextStrip } from '../components/GenerateSharedContextStrip';
+import { ComposerLauncher } from '../components/ComposerLauncher';
 import { FORM_OPTIONS } from '../constants/formOptions';
 import {
   clampSongFormBarCount,
@@ -2449,6 +2450,9 @@ export function HomeGenerate({
   const { contrapuntalConfig } = useContrapuntal();
   const { publishGridFromXml, setPlaybackBeat: setGridPlaybackBeat, setIsPlaying: setGridIsPlaying, clearGrid } =
     useLastGenerate();
+  const [homeTab, setHomeTab] = useState<'composers' | 'generate'>('composers');
+  const [composerLauncherSelectedId, setComposerLauncherSelectedId] = useState<string | null>(null);
+  const pendingComposerGenerateRef = useRef(false);
   const [presetId, setPresetId] = useState('song_mode');
   const [generateProducerId, setGenerateProducerId] = useState<GenerateProducerId>('song_mode');
   const [vaultChartPanelOpen, setVaultChartPanelOpen] = useState(false);
@@ -2555,6 +2559,20 @@ export function HomeGenerate({
   const [mosaicSections, setMosaicSections] = useState<MosaicSectionPlanEntry[]>([]);
   const [mosaicOutputFormat, setMosaicOutputFormat] = useState<MosaicOutputFormatUi>('none');
   const songwriterStyle = useMemo(() => resolveEffectivePrimarySongwriter(styleProfile), [styleProfile]);
+
+  const applyPrimarySongwriter = useCallback((id: string) => {
+    const migrated = migrateLegacySongwriterValue(id);
+    setStyleProfile((prev) => ({
+      harmonic: migrated.harmonic ?? { voiceId: id as HarmonicVoiceId },
+      rhythm: migrated.rhythm ?? prev.rhythm,
+      pairPresetId: prev.pairPresetId,
+      arrangerBlend: prev.arrangerBlend,
+    }));
+    setPresetId('song_mode');
+    setGenerateProducerId('song_mode');
+    setComposerLauncherSelectedId(id);
+    if (songModeDiversityPresetId) setSongModeDiversityPresetId('');
+  }, [songModeDiversityPresetId]);
 
   useEffect(() => {
     const prevPid = sqPresetTransitionRef.current;
@@ -3103,7 +3121,7 @@ export function HomeGenerate({
 
       const fx = applyGenerateProducerSideEffects(id);
       if (fx.riffSubMode) setRiffSubMode(fx.riffSubMode);
-      if (fx.songwriterStyle) setSongwriterStyle(fx.songwriterStyle);
+      if (fx.songwriterStyle) applyPrimarySongwriter(fx.songwriterStyle);
       if (fx.rhythmEngineId === 'new_orleans_second_line') {
         setStyleProfile((p) => ({
           ...p,
@@ -3123,7 +3141,7 @@ export function HomeGenerate({
       setVaultChartPanelOpen(id === 'vault');
       setIrealChartPanelOpen(id === 'ireal');
     },
-    [isPresetSupportedForProducer, secondLineRhythmPresetId]
+    [applyPrimarySongwriter, isPresetSupportedForProducer, secondLineRhythmPresetId]
   );
 
   useEffect(() => {
@@ -4769,6 +4787,29 @@ export function HomeGenerate({
     ]
   );
 
+  const handleComposerOpenGenerate = useCallback(
+    (id: string) => {
+      applyPrimarySongwriter(id);
+      setHomeTab('generate');
+    },
+    [applyPrimarySongwriter],
+  );
+
+  const handleComposerGenerateNow = useCallback(
+    (id: string) => {
+      applyPrimarySongwriter(id);
+      pendingComposerGenerateRef.current = true;
+      setHomeTab('generate');
+    },
+    [applyPrimarySongwriter],
+  );
+
+  useEffect(() => {
+    if (homeTab !== 'generate' || !pendingComposerGenerateRef.current) return;
+    pendingComposerGenerateRef.current = false;
+    void generate();
+  }, [homeTab, generate]);
+
   function dirnameOnly(fp: string): string {
     const p = fp.replace(/[/\\]+$/, '');
     const li = Math.max(p.lastIndexOf('\\'), p.lastIndexOf('/'));
@@ -5413,6 +5454,49 @@ export function HomeGenerate({
 
   return (
     <section>
+      <nav
+        role="tablist"
+        aria-label="Generate workspace"
+        style={{ display: 'flex', gap: '0.45rem', marginBottom: '1rem', flexWrap: 'wrap' }}
+      >
+        <button
+          type="button"
+          role="tab"
+          id="co-home-tab-composers"
+          aria-selected={homeTab === 'composers'}
+          aria-controls="co-home-panel-composers"
+          className={homeTab === 'composers' ? '' : 'secondary'}
+          onClick={() => setHomeTab('composers')}
+        >
+          Composers
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id="co-home-tab-generate"
+          aria-selected={homeTab === 'generate'}
+          aria-controls="co-home-panel-generate"
+          className={homeTab === 'generate' ? '' : 'secondary'}
+          onClick={() => setHomeTab('generate')}
+        >
+          Generate
+        </button>
+      </nav>
+
+      {homeTab === 'composers' ? (
+        <div role="tabpanel" id="co-home-panel-composers" aria-labelledby="co-home-tab-composers">
+          <ComposerLauncher
+            composers={SONGWRITER_OPTIONS}
+            selectedId={composerLauncherSelectedId ?? songwriterStyle}
+            onSelect={setComposerLauncherSelectedId}
+            onOpenGenerate={handleComposerOpenGenerate}
+            onGenerateNow={handleComposerGenerateNow}
+            isActive={homeTab === 'composers'}
+            onRecordRecent={() => {}}
+          />
+        </div>
+      ) : (
+        <div role="tabpanel" id="co-home-panel-generate" aria-labelledby="co-home-tab-generate">
       <h2>Generate</h2>
 
       {outputDir && (
@@ -12330,6 +12414,8 @@ export function HomeGenerate({
               </button>
             </div>
           )}
+        </div>
+      )}
         </div>
       )}
     </section>
