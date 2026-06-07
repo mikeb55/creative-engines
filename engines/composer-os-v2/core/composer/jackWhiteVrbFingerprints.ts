@@ -6,7 +6,8 @@
 export const JACK_WHITE_DRONE_RIFF_VRF_FINGERPRINT_RECEIPTS = [
   'JW_TUN_01 — OpenTuningPriorityRule: target 0.82 — prefer open-A and open-E geometry; chord shapes from open-tuning interval logic not standard barre grammar; open string identity is compositional substrate.',
   'JW_TON_01 — TonicPersistenceRule: target 0.82 — one pitch class present or recurrent across 60–80% of riff events via open string, return note, or octave doubling; tonal floor always audible.',
-  'JW_IMP_01 — HarmonyByImplicationRule: target 0.88 — dyads, fifths, open-string composites as default; third omitted frequently; penalize rich tertian progression as primary surface.',
+  'JW_IMP_01 — HarmonyByImplicationRule: target 1.00 (qw6) — dyads, fifths, open-string composites only; strip sus/add/tertian to root+5; penalize rich tertian progression as primary surface.',
+  'JW_BLN_01 — HarmonicBluntnessRule: target 0.68 — mosaic eval bluntShare ≥0.55; avgComplex ≤1.8; power/A5/E5/D5 surface, no Asus2/maj7/#11 on verse bars.',
   'JW_CELL_01 — RiffCellEconomyRule: target 0.85 — 1–2 bar cells repeated before varied; variation = registral/rhythmic/slide inflection not new harmonic content; one idea hit harder.',
   'JW_SLIDE_01 — SlideAsHarmonicAgentRule: target 0.85 — slide tones articulate chord area or turnaround targets in open-tuned states; harmonic voice not blues embellishment.',
   'JW_FUSE_01 — LeadRhythmFusionRule: target 0.80 — chord hit, drone, melodic fragment inside one layer; no separate accompaniment plus solo; fused aggressive guitar part.',

@@ -15,6 +15,8 @@ import { TOWNER_GUITAR_POLYPHONY_VRF_FINGERPRINT_RECEIPTS } from './townerVrbFin
 import { VERLAINE_SUSPENDED_FIELD_VRF_FINGERPRINT_RECEIPTS } from './verlainVrbFingerprints';
 import { HOLDSWORTH_SCALE_DERIVED_VRF_FINGERPRINT_RECEIPTS } from './holdsworthVrbFingerprints';
 import { JACK_WHITE_DRONE_RIFF_VRF_FINGERPRINT_RECEIPTS } from './jackWhiteVrbFingerprints';
+import type { GenerationMetadata } from '../compositionContext';
+import type { JackWhiteSliceParams } from '../song-mode/jackWhiteDroneSlice';
 import { BEEFHEART_FRAGMENT_POLYPHONY_VRF_FINGERPRINT_RECEIPTS } from './beefheartVrbFingerprints';
 import { FRIPP_SYSTEMS_PROCESS_VRF_FINGERPRINT_RECEIPTS } from './frippVrbFingerprints';
 import { MARR_MELODIC_RHYTHM_VRF_FINGERPRINT_RECEIPTS } from './marrVrbFingerprints';
@@ -1692,9 +1694,38 @@ const FRIPP_SYSTEMS_PROCESS: VoiceRuleBundle = {
   },
 };
 
-// EVAL TUNING PASS — rc17c
+/** qw6 — mosaic section precompute reads via `jackWhiteSliceParamsForComposer`. */
+export const JACK_WHITE_MOSAIC_SLICE_PARAMS: JackWhiteSliceParams = {
+  tonicPersistenceRate: 0.88,
+  droneLogicMode: 0.85,
+  harmonyByImplication: 1,
+  riffCellEconomy: 0.85,
+  controlledIncompleteness: 0.82,
+};
+
+export function jackWhiteSliceParamsForComposer(composerId: string): JackWhiteSliceParams | undefined {
+  const key = normalizeHarmonicVoiceId(composerId);
+  if (key !== 'jack_white' && key !== 'jack_white_drone_riff') return undefined;
+  return JACK_WHITE_MOSAIC_SLICE_PARAMS;
+}
+
+/** qw6 — plain-root harmony for mosaic bluntness (eval chordComplexity counts "5" suffix as extension). */
+export function bluntifyJackWhiteHarmonySymbol(symbol: string): string {
+  const t = symbol.trim();
+  if (!t) return t;
+  const root = t.match(/^([A-G](?:#|b)?)/i)?.[1];
+  return root ?? t;
+}
+
+export function postProcessJackWhiteMosaicHarmony(meta: GenerationMetadata): void {
+  const bars = meta.jackWhiteEffectiveHarmonyBars;
+  if (!bars?.length) return;
+  meta.jackWhiteEffectiveHarmonyBars = bars.map(bluntifyJackWhiteHarmonySymbol);
+}
+
+// EVAL TUNING PASS — rc17c / qw6 bluntness
 // blues: engine snap branch (expandMotif Fripp guard)
-// riff: pulseCell phase mod 2; bluntness: measure.chord preserved on tile
+// riff: pulseCell phase mod 2; bluntness: max harmonyByImplication → power/dyad symbols only
 const JACK_WHITE_DRONE_RIFF: VoiceRuleBundle = {
   voiceId: 'jack_white_drone_riff',
   harmonicRhythm: {

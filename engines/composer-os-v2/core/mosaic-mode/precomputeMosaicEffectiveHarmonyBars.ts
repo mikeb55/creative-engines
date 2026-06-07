@@ -9,6 +9,10 @@ import {
   getDispatchEntry,
 } from './mosaicComposerDispatch';
 import type { SectionComposerRouting } from './resolveMosaicSectionStyles';
+import {
+  jackWhiteSliceParamsForComposer,
+  postProcessJackWhiteMosaicHarmony,
+} from '../composer/voiceRuleBundles';
 
 export type MosaicModeSectionPlan = NonNullable<GenerationMetadata['mosaicSectionPlan']>;
 
@@ -196,6 +200,11 @@ export function cloneDuoSectionContext(
     genMeta.parsedCustomProgressionBars = slicedParsed;
   }
 
+  const jwSliceParams = jackWhiteSliceParamsForComposer(section.songwriterStyleId);
+  if (jwSliceParams) {
+    genMeta.jackWhiteSliceParams = jwSliceParams;
+  }
+
   return {
     ...context,
     form: {
@@ -313,6 +322,9 @@ export function precomputeMosaicEffectiveHarmonyBars(
     const sectionContext = cloneDuoSectionContext(context, section, tonicPc);
     applySectionTonicBar1Wrapper(sectionContext, context, section);
     entry.precompute(sectionContext);
+    if (section.songwriterStyleId === 'jack_white') {
+      postProcessJackWhiteMosaicHarmony(sectionContext.generationMetadata);
+    }
 
     const sectionBars = extractEffectiveHarmonyBars(
       sectionContext.generationMetadata,
