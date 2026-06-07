@@ -1,16 +1,20 @@
 /**
- * Song Mode → Mosaic thin mapper (V78e).
+ * Song Mode → Mosaic thin mapper (V78e / V79b v2).
  * Compiled sections → mosaicSectionPlan entries; no runSongMode re-compile.
+ * Per-section songwriterStyleId: explicit override → sectionEngine router → primary fallback.
  */
 
 import { compiledSectionKindToFormLabel } from '../form/resolveFormPrecedence';
 import type { MosaicModeSectionPlanEntry } from '../mosaic-mode/precomputeMosaicEffectiveHarmonyBars';
 import type { PhraseRole } from '../mosaic-mode/mosaicPhrasePlanner';
 import type { CompiledSong, SectionChordPlan } from './songCompilationTypes';
-import type { SongSectionKind } from './songModeTypes';
+import { defaultSectionEngineForKind } from './songModeSectionEngineTypes';
+import type { SongModeSectionEngine, SongSectionKind } from './songModeTypes';
 
-type SectionChordPlanWithMeter = SectionChordPlan & {
+type SectionChordPlanExtended = SectionChordPlan & {
   timeSignature?: { numerator: number; denominator: number };
+  songwriterStyleId?: string;
+  sectionEngine?: SongModeSectionEngine;
 };
 
 function phraseRoleForSectionKind(kind: SongSectionKind): PhraseRole | undefined {
@@ -28,6 +32,37 @@ function phraseRoleForSectionKind(kind: SongSectionKind): PhraseRole | undefined
       return _exhaustive;
     }
   }
+}
+
+/** Section engines that map 1:1 to mosaic composer dispatch ids. */
+function songwriterStyleIdFromSectionEngine(engine: SongModeSectionEngine): string | undefined {
+  switch (engine) {
+    case 'wayne_shorter':
+      return 'wayne_shorter';
+    case 'ecm_chamber':
+      return 'ecm_chamber';
+    default:
+      return undefined;
+  }
+}
+
+function resolveSectionSongwriterStyleId(
+  section: SectionChordPlanExtended,
+  defaultStyleId: string
+): string {
+  const explicit = section.songwriterStyleId?.trim();
+  if (explicit) return explicit;
+
+  if (section.sectionEngine) {
+    const fromEngine = songwriterStyleIdFromSectionEngine(section.sectionEngine);
+    if (fromEngine) return fromEngine;
+  }
+
+  const kindEngine = defaultSectionEngineForKind(section.sectionKind);
+  const fromKind = songwriterStyleIdFromSectionEngine(kindEngine);
+  if (fromKind) return fromKind;
+
+  return defaultStyleId;
 }
 
 export function mapSongModeToMosaicSectionPlan(
@@ -58,7 +93,7 @@ export function mapSongModeToMosaicSectionPlan(
     bar = endBar + 1;
 
     const phraseRole = phraseRoleForSectionKind(section.sectionKind);
-    const ext = section as SectionChordPlanWithMeter;
+    const ext = section as SectionChordPlanExtended;
     const timeSignature =
       ext.timeSignature?.numerator != null && ext.timeSignature?.denominator != null
         ? {
@@ -71,7 +106,7 @@ export function mapSongModeToMosaicSectionPlan(
       sectionLabel,
       startBar,
       endBar,
-      songwriterStyleId: defaultStyleId,
+      songwriterStyleId: resolveSectionSongwriterStyleId(ext, defaultStyleId),
       ...(timeSignature ? { timeSignature } : {}),
       ...(phraseRole ? { phraseRole } : {}),
     });
