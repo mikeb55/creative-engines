@@ -13,6 +13,7 @@ import {
   mergeRiffProfilePatch,
 } from '../core/riff-generator/riffReceiptCompiler';
 import type { ScoreModel } from '../core/score-model/scoreModelTypes';
+import type { RiffBarCount } from '../core/riff-generator/riffTypes';
 
 const SEED = 84002;
 const CHORDS = Array.from({ length: 12 }, (_, i) => (i % 2 === 0 ? 'E7' : 'A7'));
@@ -27,13 +28,14 @@ function frankZappaProfileWithout(receiptId: string): RiffProfile {
 function buildScore(profile: RiffProfile): ScoreModel {
   return buildRiffScoreModel({
     seed: SEED,
-    bars: CHORDS.length,
+    bars: CHORDS.length as RiffBarCount,
     density: 'medium',
     style: 'neutral',
     grid: 'eighth',
     lineMode: 'single_line',
     bassEnabled: false,
     soloEnabled: true,
+    bpm: 120,
     vrbId: 'frank_zappa',
     chordSymbols: CHORDS,
     riffProfile: profile,

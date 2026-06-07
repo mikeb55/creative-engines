@@ -7,6 +7,7 @@ import { planQuartetDensity } from './quartetDensityPlanner';
 import { planDefaultQuartetForm } from './quartetFormPlanner';
 import { planQuartetTexture } from './quartetTexturePlanner';
 import type { QuartetDensityPlan } from './quartetPlanTypes';
+import type { DensityBand } from '../orchestration/orchestrationTypes';
 import type { QuartetFormPlan } from './quartetPlanTypes';
 import type { QuartetTexturePlan } from './quartetPlanTypes';
 import {
@@ -69,12 +70,15 @@ export function runStringQuartetMode(input: StringQuartetRunInput): StringQuarte
   const sectionArchitectureContext =
     input.sectionArchitectureContext ?? createSectionArchitectureRuntimeContext(input.song, 'string_quartet', input.seed);
   const texturePlan = planQuartetTexture(formPlan, input.seed);
-  const densityPlan = sectionArchitectureContext
+  const densityPlan: QuartetDensityPlan = sectionArchitectureContext
     ? {
         slices: planQuartetDensity(formPlan).slices.map((slice) => {
           const formSlice = formPlan.slices.find((s) => s.index === slice.formSliceIndex);
           const hint = getSectionArchitectureDensityHint(formSlice?.startBar ?? 1, sectionArchitectureContext);
-          return hint ? { ...slice, density: hint === 'medium' ? 'moderate' : hint } : slice;
+          const density: DensityBand = hint
+            ? ((hint === 'medium' ? 'moderate' : hint) as DensityBand)
+            : slice.density;
+          return hint ? { ...slice, density } : slice;
         }),
       }
     : planQuartetDensity(formPlan);

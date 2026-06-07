@@ -5,9 +5,22 @@
 export * from './notationTimingConstants';
 export * from './notationTimingEngine';
 export * from './musicxmlMeasurePacker';
-export * from './musicxmlTimingValidation';
+export {
+  validateMeasureDurations,
+  validateVoiceAlignment,
+  type ValidationReport as MusicXmlValidationReport,
+} from './musicxmlTimingValidation';
 export * from './scoreModel';
-export * from './barComposer';
+export {
+  validateMeasure,
+  validateScore,
+  composeVoice,
+  composeMeasure,
+} from './barComposer';
 export * from './scoreToTimedEvents';
-export * from './notationValidation';
+export {
+  validateAcceptanceScore,
+  validateEllingtonAcceptance,
+  type ValidationReport as NotationValidationReport,
+} from './notationValidation';
 export * from './barFirstMusicXMLWriter';

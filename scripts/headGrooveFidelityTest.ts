@@ -88,7 +88,7 @@ function analyzePattern(bar1: GrooveDrumEvent[]): {
   const snare = bar1.filter(
     (e) => e.pitch === GmDrumPitch.SNARE || e.pitch === GmDrumPitch.SNARE_RIM,
   ).length;
-  const hihat = bar1.filter(isHiHatFamily).length;
+  const hihat = bar1.filter((e) => isHiHatFamily(e.pitch)).length;
   const ride = bar1.filter((e) => e.pitch === GmDrumPitch.RIDE).length;
 
   const notes: string[] = [];
@@ -193,7 +193,7 @@ function run(): void {
   console.log('\n--- Bar 1 hit counts ---');
   console.log(`  Kick:   ${analysis.kick}`);
   console.log(`  Snare:  ${analysis.snare}`);
-  console.log(`  Hi-hat family (+ ride counted separately): closed/open/foot = ${bar1.filter(isHiHatFamily).length}, ride = ${analysis.ride}`);
+  console.log(`  Hi-hat family (+ ride counted separately): closed/open/foot = ${bar1.filter((e) => isHiHatFamily(e.pitch)).length}, ride = ${analysis.ride}`);
   console.log(`  Cymbal layer total (hat+ride): ${analysis.hihat}`);
 
   console.log('\n--- Pattern read ---');

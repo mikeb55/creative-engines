@@ -187,7 +187,10 @@ export function realiseTritonicFromWyble(
     anchorBars,
     anchorChecksum: wybleCtx.harmony.checksum,
     timeline: nudgeTimelineForBehaviourBiases(
-      scheduleTritonicTimeline(floatingCells, mode, { barCount: anchorBars.length }),
+      scheduleTritonicTimeline(floatingCells, mode, {
+        barCount: anchorBars.length,
+        vaultAnchored: true,
+      }),
       barBiasesFinal,
     ),
     receiptMetrics,

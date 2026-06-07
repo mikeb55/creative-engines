@@ -35,7 +35,7 @@ export interface ParsedBacharachManifest {
   songwriterSyncopationBias: number | null;
   songwriterDensityBias: number | null;
   manifestBehaviourGates: boolean | null;
-  songModeSectionShapingDiagnostics: SongModeSectionShapingDiagnosticsEvalSnapshot;
+  songModeSectionShapingDiagnostics?: SongModeSectionShapingDiagnosticsEvalSnapshot;
   parseError?: string;
 }
 

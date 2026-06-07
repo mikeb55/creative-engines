@@ -41,7 +41,7 @@ function parseArgs(argv: string[]): {
   let count = 5;
   let seedStart = 95200;
   let baseline: 'neutral' | 'none' = 'neutral';
-  let primarySongwriter = DEFAULT_STEVIE_PRIMARY;
+  let primarySongwriter: string = DEFAULT_STEVIE_PRIMARY;
 
   const tail = getEvalArgvTail(argv);
   for (let i = 0; i < tail.length; i++) {

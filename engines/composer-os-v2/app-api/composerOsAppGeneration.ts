@@ -21,7 +21,12 @@ import type { StringQuartetTextureArchetype } from '../core/string-quartet/strin
 import { resolveBarMeterMapForGenerateRequest } from '../core/section-architecture/resolveGenerationBarMeterMap';
 import { runSongMode } from '../core/song-mode/runSongMode';
 import type { SectionChordPlan } from '../core/song-mode/songCompilationTypes';
-import type { GrooveScaffoldSettings, SectionType, Song } from '../core/section-architecture/sectionArchitectureTypes';
+import type {
+  GrooveScaffoldSettings,
+  SectionPreset,
+  SectionType,
+  Song,
+} from '../core/section-architecture/sectionArchitectureTypes';
 import { buildChordProgressionTextForDuoFromCompiledSong } from '../core/song-mode/songModeBuilder';
 import {
   adaptLeadSheetMusicXmlForSongMode,
@@ -1104,7 +1109,7 @@ function buildGrooveScaffoldSongFromChordPlan(params: {
   chordPlan: SectionChordPlan[];
   grooveScaffold: GrooveScaffoldSettings;
 }): Song {
-  const sections: Song['sections'] = [];
+  const sections: SectionPreset[] = [];
   let startBar = 1;
   for (const [idx, block] of params.chordPlan.entries()) {
     const length = Math.max(1, block.chordSymbols.length);

@@ -185,22 +185,38 @@ function scoreSchifrin(input: StyleProfileEvaluationInput): StyleProfileEvaluati
     label: d.label,
     weight: d.weight,
     score: byId[d.id] ?? 1,
+    weightedScore: (byId[d.id] ?? 1) * d.weight,
   }));
 
-  const weighted = dimensions.reduce((sum, d) => sum + d.score * d.weight, 0);
+  const weighted = dimensions.reduce((sum, d) => sum + d.score * (d.weight ?? 0), 0);
   const hardFails = evaluateSchifrinHardFails(f);
-  const pass = weighted >= 7.0 && hardFails.length === 0;
+  const threshold = input.profile.threshold ?? 7;
+  const pass = weighted >= threshold && hardFails.length === 0;
+  let weakestDimensionId = dimensions[0]?.id ?? '';
+  let strongestDimensionId = dimensions[0]?.id ?? '';
+  for (const d of dimensions) {
+    const curWeak = dimensions.find((x) => x.id === weakestDimensionId);
+    if (curWeak && d.score < curWeak.score) weakestDimensionId = d.id ?? weakestDimensionId;
+    const curStrong = dimensions.find((x) => x.id === strongestDimensionId);
+    if (curStrong && d.score > curStrong.score) strongestDimensionId = d.id ?? strongestDimensionId;
+  }
 
   return {
+    styleId: input.profile.id,
+    styleName: input.profile.name ?? input.profile.label ?? input.profile.id,
     pass,
     finalStyleScore: weighted,
     dimensions,
+    weakestDimensionId,
+    strongestDimensionId,
+    threshold,
     hardFails: hardFails.length ? hardFails : undefined,
   };
 }
 
 export const schifrinStyleProfile: StyleProfile<unknown, ExtractedStyleFeatures> = {
   id: 'schifrin',
+  name: 'Lalo Schifrin — Groove Film / Jazz-Latin',
   label: 'Lalo Schifrin — Groove Film / Jazz-Latin',
   threshold: 7.0,
   dimensions: schifrinDimensions,

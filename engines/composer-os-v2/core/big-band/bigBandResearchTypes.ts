@@ -55,7 +55,23 @@ export type BigBandComposerId =
   | 'barry_thematic_monolith'
   | 'marr'
   | 'johnny_marr'
-  | 'marr_melodic_rhythm';
+  | 'marr_melodic_rhythm'
+  | 'verlaine'
+  | 'tom_verlaine'
+  | 'television'
+  | 'verlaine_suspended_field'
+  | 'tv'
+  | 'allan_holdsworth'
+  | 'holdsworth'
+  | 'allan_holdsworth_scale_derived'
+  | 'jack_white'
+  | 'jack_white_drone_riff'
+  | 'beefheart'
+  | 'captain_beefheart'
+  | 'beefheart_fragment_polyphony'
+  | 'don_van_vliet'
+  | 'fripp'
+  | 'fripp_systems_process';
 
 export type BigBandEraId =
   | 'swing'
@@ -66,7 +82,7 @@ export type BigBandEraId =
   | 'hard_bop'
   | 'fusion';
 
-export type RuleEffectType = 'density' | 'rhythm' | 'harmony' | 'orchestration' | 'form';
+export type RuleEffectType = 'density' | 'rhythm' | 'harmony' | 'orchestration' | 'form' | 'melody';
 
 export type RuleCategory =
   | 'composer'

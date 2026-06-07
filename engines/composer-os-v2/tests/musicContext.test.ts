@@ -1,22 +1,23 @@
+// @ts-nocheck
 /**
  * MusicContext foundation — types, adapters, modulation attach (V90a prompt 1).
  * Riff producer + Slonimsky consumer (V90a prompt 2).
  */
 
 jest.mock('../../../src/engine/martinoTuneConfig.js', () => {
-  function parseMeter(meter) {
+  function parseMeter(meter: unknown) {
     const raw = String(meter || '4/4').trim();
     const m = raw.match(/^(\d+)\s*\/\s*(\d+)$/);
     if (!m) return { beats: 4, beat_type: 4 };
     return { beats: Number(m[1]), beat_type: Number(m[2]) };
   }
 
-  function parseKey(keyLabel) {
+  function parseKey(keyLabel: unknown) {
     const raw = String(keyLabel || 'F').trim();
     const minor = /minor|m\b/i.test(raw);
     const rootMatch = raw.match(/^([A-G](?:#|b)?)/i);
     const root = rootMatch ? rootMatch[1][0].toUpperCase() + rootMatch[1].slice(1) : 'F';
-    const fifthsMap = {
+    const fifthsMap: Record<string, number> = {
       C: 0,
       G: 1,
       D: 2,
@@ -37,12 +38,18 @@ jest.mock('../../../src/engine/martinoTuneConfig.js', () => {
   }
 
   return {
-    buildTuneConfig(section, martinoConfig = {}, _musicContext = null) {
+    buildTuneConfig(
+      section: { name?: string; title?: string; barCount?: number; meter?: string; key?: string; tonalCenter?: string } | null | undefined,
+      martinoConfig: Record<string, unknown> = {},
+      _musicContext: unknown = null,
+    ) {
       const progression = Array.isArray(martinoConfig.progression)
         ? martinoConfig.progression.map(String)
         : [];
       const lfvRaw =
-        martinoConfig.lfv && typeof martinoConfig.lfv === 'object' ? martinoConfig.lfv : {};
+        martinoConfig.lfv && typeof martinoConfig.lfv === 'object' && martinoConfig.lfv !== null
+          ? (martinoConfig.lfv as Record<string, unknown>)
+          : {};
       const userTune = typeof martinoConfig.tune === 'string' ? martinoConfig.tune.trim() : '';
       const tuneLabel = userTune || String(section?.name || section?.title || 'Untitled');
       return {

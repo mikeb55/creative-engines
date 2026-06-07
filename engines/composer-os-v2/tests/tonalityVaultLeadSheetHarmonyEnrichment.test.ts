@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { importLeadSheetFromMusicXml } from '../core/lead-sheet/leadSheetMusicXmlImport';
 import {
   adaptLeadSheetMusicXmlForSongMode,

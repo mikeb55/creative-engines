@@ -41,7 +41,7 @@ function parseArgs(argv: string[]): {
   let count = 5;
   let seedStart = 95500;
   let baseline: 'neutral' | 'none' = 'neutral';
-  let primarySongwriter = DEFAULT_JM_PRIMARY;
+  let primarySongwriter: string = DEFAULT_JM_PRIMARY;
 
   const tail = getEvalArgvTail(argv);
   for (let i = 0; i < tail.length; i++) {
@@ -173,7 +173,7 @@ function antiElaborationTotal(j: Record<string, unknown>): number {
   const g = j.joniMitchellAntiElaborationGuards;
   if (g && typeof g === 'object' && !Array.isArray(g)) {
     const o = g as Record<string, unknown>;
-    const a = [o.dominantFamilyStripped, o.twoFiveOneFlattened, o.twoBarHoldForced, o.maj7CadenceMuted].reduce(
+    const a = [o.dominantFamilyStripped, o.twoFiveOneFlattened, o.twoBarHoldForced, o.maj7CadenceMuted].reduce<number>(
       (s, x) => s + (typeof x === 'number' ? x : 0),
       0
     );

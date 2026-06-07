@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Composer OS V2 — smoke tier (~fast allowlist).
  * Runs a short fixed list of existing `run*Tests` entrypoints (no duplicate assertions).

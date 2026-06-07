@@ -52,7 +52,11 @@ export type StyleFeatureValue =
   | null;
 export interface ExtractedStyleFeatures {
   rhythmic?: Record<string, StyleFeatureValue>;
+  /** Alias for {@link rhythmic} — legacy style profile field name. */
+  rhythm?: Record<string, StyleFeatureValue>;
   melodic?: Record<string, StyleFeatureValue>;
+  /** Alias for {@link melodic} — legacy style profile field name. */
+  melody?: Record<string, StyleFeatureValue>;
   harmonic?: Record<string, StyleFeatureValue>;
   formal?: Record<string, StyleFeatureValue>;
   orchestration?: Record<string, StyleFeatureValue>;
@@ -81,10 +85,12 @@ export interface FeatureExtractor<TGeneratedOutput = unknown> {
 }
 export interface StyleDimensionScore {
   id: string;
-  label: string;
+  /** Legacy alias for {@link id}. */
+  dimensionId?: string;
+  label?: string;
   score: Score10;
   weight: number;
-  weightedScore: number;
+  weightedScore?: number;
   targetDescription?: string;
   observedDescription?: string;
   confidence?: Score01;
@@ -107,6 +113,13 @@ export interface StyleProfileEvaluationResult {
   pass: boolean;
   threshold: Score10;
   notes?: string[];
+  /** Legacy alias for {@link styleId}. */
+  composerId?: string;
+  /** Legacy alias for {@link dimensions}. */
+  dimensionScores?: StyleDimensionScore[];
+  /** Legacy alias for {@link finalStyleScore}. */
+  overallScore?: Score10;
+  hardFails?: unknown[];
 }
 export interface StyleScoringContext<TGeneratedOutput = unknown> {
   output: TGeneratedOutput;
@@ -121,7 +134,9 @@ export interface StyleProfile<
   TFeatures extends ExtractedStyleFeatures = ExtractedStyleFeatures,
 > {
   id: string;
-  name: string;
+  name?: string;
+  /** Legacy alias for {@link name}. */
+  label?: string;
   family?:
     | 'bigBand'
     | 'jazz'
@@ -132,13 +147,33 @@ export interface StyleProfile<
     | 'film'
     | 'electronic'
     | 'experimental'
-    | 'custom';
+    | 'custom'
+    | 'fusion'
+    | 'ecmChamber';
+  /** Legacy alias for {@link family}. */
+  composerFamily?:
+    | 'bigBand'
+    | 'jazz'
+    | 'rock'
+    | 'songwriter'
+    | 'classical'
+    | 'chamber'
+    | 'film'
+    | 'electronic'
+    | 'experimental'
+    | 'custom'
+    | 'fusion'
+    | 'ecmChamber';
   description?: string;
   referenceArtists?: string[];
   requiredFeatures?: Array<keyof TFeatures | string>;
   dimensions: StyleDimensionDefinition[];
   threshold: Score10;
   score: (
+    input: StyleProfileEvaluationInput<TGeneratedOutput, TFeatures>
+  ) => StyleProfileEvaluationResult;
+  /** Legacy alias for {@link score}. */
+  evaluate?: (
     input: StyleProfileEvaluationInput<TGeneratedOutput, TFeatures>
   ) => StyleProfileEvaluationResult;
   /** Blended weight in `combinedEvaluator` (default 0.1). Bebop / Modern Jazz / classical / folk override. */
@@ -323,4 +358,29 @@ export interface EvaluatorRuntimeReport<TGeneratedOutput = unknown> {
   refinementTarget?: RefinementTarget;
   candidate?: GeneratedCandidate<TGeneratedOutput>;
   timestampIso: string;
+}
+
+/** Canonical or legacy overall style score. */
+export function readStyleScore(result: StyleProfileEvaluationResult): Score10 {
+  return result.finalStyleScore ?? result.overallScore ?? 0;
+}
+
+export function readStylePass(result: StyleProfileEvaluationResult): boolean {
+  return result.pass ?? false;
+}
+
+export function readProfileThreshold(profile: Pick<StyleProfile, 'threshold'>): Score10 {
+  return profile.threshold ?? 7;
+}
+
+export function readProfileName(profile: Pick<StyleProfile, 'id' | 'name' | 'label'>): string {
+  return profile.name ?? profile.label ?? profile.id;
+}
+
+export function dimensionWeightedScore(d: StyleDimensionScore): number {
+  return d.weightedScore ?? d.score * (d.weight ?? 0);
+}
+
+export function dimensionIdOf(d: StyleDimensionScore): string {
+  return d.id ?? d.dimensionId ?? '';
 }

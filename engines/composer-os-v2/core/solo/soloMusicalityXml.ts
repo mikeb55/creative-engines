@@ -491,9 +491,9 @@ function hardenTypeDotInPart(partBlock: string): string {
   let ctx: MeasureTimeContext = { ...DEFAULT_MEASURE_TIME_CONTEXT };
   return partBlock.replace(
     /<measure([^>]*)number="(\d+)"([^>]*)>([\s\S]*?)<\/measure>/g,
-    (full, a1, numStr, a2, body) => {
+    (full: string, a1: string, numStr: string, a2: string, body: string) => {
       ctx = advanceMeasureContext(ctx, body);
-      const newBody = body.replace(/<note>([\s\S]*?)<\/note>/g, (noteFull, inner) => {
+      const newBody = body.replace(/<note>([\s\S]*?)<\/note>/g, (noteFull: string, inner: string) => {
         const fixed = fixNoteInnerTypeDot(inner, ctx.divisions);
         return `<note>${fixed}</note>`;
       });

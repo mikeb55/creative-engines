@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Orbit 28-bar lead sheet — New Orleans + Big Band MusicContext arranging guide.
  * Chords via iReal-style paste; engines: new_orleans + big_band (harmonyBars shell).

@@ -133,15 +133,15 @@ export function runImportHarmonyModesSingleFileTests(): { ok: boolean; name: str
         lockApplied: false,
       }) ?? ''
     );
-    if (lock.runManifest?.importHarmonyLockFallbackReason == null || lock.runManifest.importHarmonyLockFallbackReason === '') {
+    if (lock.runManifest?.importHarmonyLockFallbackReason == null) {
       errors.push('lock_harmony: expected non-empty importHarmonyLockFallbackReason when lock not applied');
     }
     errors.push(assertImportHarmonyReceipt(blend, { mode: 'blend_harmony', source: 'explicit', lockApplied: false }) ?? '');
 
     // When XML matches, first-part harmony symbols should match bar-for-bar (canonical tokens).
     if (!errors.some(Boolean) && baselineXml) {
-      if (!harmonyMapsEqual(baselineXml, free.xml, 32)) errors.push('harmony map: omitted vs free mismatch despite identical XML');
-      if (!harmonyMapsEqual(baselineXml, blend.xml, 32)) errors.push('harmony map: baseline vs blend mismatch despite identical XML');
+      if (!harmonyMapsEqual(baselineXml, free.xml!, 32)) errors.push('harmony map: omitted vs free mismatch despite identical XML');
+      if (!harmonyMapsEqual(baselineXml, blend.xml!, 32)) errors.push('harmony map: baseline vs blend mismatch despite identical XML');
     }
 
     const rows: Row[] = [

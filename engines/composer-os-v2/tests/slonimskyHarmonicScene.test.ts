@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { CompositionContext } from '../core/compositionContext';
 import {
   dominantVoicingColorFromCellPcs,

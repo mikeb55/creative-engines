@@ -16,6 +16,7 @@ import {
 import type { RiffProfile } from '../core/composer/riffProfileTypes';
 import { getVoiceRuleBundle } from '../core/composer/voiceRuleBundles';
 import type { ScoreModel } from '../core/score-model/scoreModelTypes';
+import type { RiffBarCount } from '../core/riff-generator/riffTypes';
 
 const CHORDS = Array.from({ length: 12 }, (_, i) =>
   i % 3 === 0 ? 'Dmaj7#11' : i % 3 === 1 ? 'A7alt/D' : 'Gmaj7'
@@ -30,13 +31,14 @@ function seedForReceipt(id: ZappaFzStubReceiptId): number {
 function buildScore(profile: RiffProfile, seed: number): ScoreModel {
   return buildRiffScoreModel({
     seed,
-    bars: CHORDS.length,
+    bars: CHORDS.length as RiffBarCount,
     density: 'medium',
     style: 'neutral',
     grid: 'eighth',
     lineMode: 'single_line',
     bassEnabled: true,
     soloEnabled: true,
+    bpm: 120,
     vrbId: 'frank_zappa',
     chordSymbols: CHORDS,
     riffProfile: profile,

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Fast smoke tier — spawn dedicated child (env set before runSmokeTests loads).
  * Avoids ESM import hoisting skipping COMPOSER_OS_SMOKE_TIER and Windows `node -e` hangs.

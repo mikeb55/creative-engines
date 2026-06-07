@@ -186,7 +186,7 @@ function testDuoEightBarPipelineTruthPasses(): boolean {
 function testMissingEffectiveBarsOnLockedRunThrows(): boolean {
   try {
     assertExportTruth({
-      scoreModel: { parts: [], tempo: 120 } as ScoreModel,
+      scoreModel: { parts: [], tempo: 120 } as unknown as ScoreModel,
       exportedXml: '<score-partwise></score-partwise>',
       effectiveBars: undefined,
       lockedBars: ['Cmaj7'],

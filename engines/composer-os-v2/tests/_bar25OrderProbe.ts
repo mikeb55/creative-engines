@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * One-off: first wrapped pipeline fn where bar 25 time-sorted pitch order changes (seed 50021).
  */

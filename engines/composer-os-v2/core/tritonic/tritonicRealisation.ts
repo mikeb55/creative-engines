@@ -307,6 +307,7 @@ export function realiseTritonicFromVault(
   const timeline = nudgeTimelineForBehaviourBiases(
     scheduleTritonicTimeline(floatingCells, ctx.mode, {
       barCount: anchorBars.length,
+      vaultAnchored: true,
     }),
     biases,
   );
@@ -580,7 +581,9 @@ export function realiseTritonicSolo(preset: TritonicMusicContextPreset): Tritoni
           ? {
               ...r,
               payload: {
-                ...r.payload,
+                ...(typeof r.payload === 'object' && r.payload !== null
+                  ? (r.payload as Record<string, unknown>)
+                  : {}),
                 noteDensityPerBar,
                 expandedSoloNoteCount: soloNotes.length,
                 strandNoteCount: strands.singerSafeMotif.length,

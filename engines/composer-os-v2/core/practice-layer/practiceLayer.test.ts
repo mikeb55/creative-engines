@@ -96,7 +96,7 @@ describe('buildPracticeLayerFromMusicContext', () => {
     const layer = buildPracticeLayerFromMusicContext(sampleCtx());
     expect(layer.practiceSequence[0]?.focus).toBe('key_center');
     expect(layer.practiceSequence[1]?.focus).toBe('chord_vocabulary');
-    expect(layer.practiceSequence.at(-1)?.focus).toBe('rhythm');
+    expect(layer.practiceSequence[layer.practiceSequence.length - 1]?.focus).toBe('rhythm');
   });
 });
 

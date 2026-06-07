@@ -213,8 +213,6 @@ export interface SqVrbGceScorerAdjustments {
   subMediantColorCredit?: number;
   /** PG: 2-bar chord-change counts as phrase boundary. */
   chordTransitionAsBoundary?: boolean;
-  /** PG: suppress wall-to-wall penalty (continuous arpeggiation valid). */
-  wallToWallPhrasePenalty?: number;
   /** PG: credit additive density increase across phrase repetitions. */
   additiveLayeringCredit?: number;
   /** MI/PG: single modal centre — no modulation penalty. */

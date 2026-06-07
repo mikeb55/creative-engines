@@ -23,6 +23,8 @@ import {
 import { stringifyCsv } from './eval/sophisticatedPopStyleEvalCore';
 import { buildBatchSectionShapingAbMarkdown } from './eval/songModeSectionShapingEvalTable';
 
+export type { BacharachEvalCsvRow } from './eval/bacharachSongModeEvalCore';
+
 export const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
 
 export const DEFAULT_NEUTRAL_PRIMARY = 'carole_king';

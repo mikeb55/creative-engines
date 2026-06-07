@@ -42,7 +42,7 @@ function parseArgs(argv: string[]): {
   let count = 5;
   let seedStart = 95100;
   let baseline: 'neutral' | 'none' = 'neutral';
-  let primarySongwriter = DEFAULT_BRIAN_WILSON_PRIMARY;
+  let primarySongwriter: string = DEFAULT_BRIAN_WILSON_PRIMARY;
 
   const tail = getEvalArgvTail(argv);
   for (let i = 0; i < tail.length; i++) {

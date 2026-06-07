@@ -70,6 +70,7 @@ function testSoloPartWhenEnabled(): boolean {
     vrbId: 'frank_zappa',
     chordSymbols: ['E7', 'A7', 'D7', 'G7'],
     riffProfile: profile,
+    bpm: 120,
   });
   const on = buildRiffScoreModel({
     seed: 424242,
@@ -77,6 +78,7 @@ function testSoloPartWhenEnabled(): boolean {
     density: 'medium',
     style: 'neutral',
     grid: 'eighth',
+    bpm: 120,
     lineMode: 'single_line',
     bassEnabled: false,
     soloEnabled: true,

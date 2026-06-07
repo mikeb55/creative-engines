@@ -47,7 +47,7 @@ export function deriveContinuedCell(from: TritonicCell, barIndex: number): Trito
 
   // augment — widen registral spread via octave-equivalent displacement on top note
   const notes = [...base] as PitchClass[];
-  const topIdx = notes.reduce((best, n, idx) => (n > notes[best]! ? idx : best), 0);
+  const topIdx = notes.reduce<number>((best, n, idx) => (n > notes[best]! ? idx : best), 0);
   notes[topIdx] = ((notes[topIdx]! + 1) % 12) as PitchClass;
   return {
     ...from,

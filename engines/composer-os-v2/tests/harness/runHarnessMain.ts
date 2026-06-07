@@ -6,7 +6,7 @@ import { isFastExcludedSuiteName } from './fastExcludeSuites';
 
 export type SuiteEntry = {
   name: string;
-  run: () => { name: string; ok: boolean }[] | { success: boolean };
+  run: () => { name: string; ok: boolean }[] | { success: boolean } | boolean | { passed: number; failed: number };
 };
 
 export function resolveTestMode(): 'fast' | 'full' {
@@ -63,7 +63,11 @@ export function runHarnessMain(suites: SuiteEntry[], chunkBanner?: string): void
     console.log(`\n=== ${suite.name} ===`);
     const rows = Array.isArray(results)
       ? results
-      : [{ name: suite.name, ok: (results as { success: boolean }).success }];
+      : typeof results === 'boolean'
+        ? [{ name: suite.name, ok: results }]
+        : 'passed' in results
+          ? [{ name: suite.name, ok: results.failed === 0 }]
+          : [{ name: suite.name, ok: (results as { success: boolean }).success }];
     let p = 0;
     let f = 0;
     for (const r of rows) {

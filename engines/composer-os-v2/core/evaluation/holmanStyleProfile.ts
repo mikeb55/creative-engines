@@ -213,7 +213,7 @@ function scoreHolman(
       : []),
   ];
 
-  let finalStyleScore = dimensions.reduce((acc, d) => acc + d.weightedScore, 0);
+  let finalStyleScore = dimensions.reduce((acc, d) => acc + (d.weightedScore ?? d.score * d.weight), 0);
   if (hardFails.length > 0) finalStyleScore = Math.min(finalStyleScore, 4.0);
 
   let weakestDimensionId = dimensions[0]?.id ?? '';
@@ -239,7 +239,7 @@ function scoreHolman(
 
   return {
     styleId: input.profile.id,
-    styleName: input.profile.name,
+    styleName: input.profile.name ?? input.profile.label ?? input.profile.id,
     dimensions,
     finalStyleScore,
     weakestDimensionId,
@@ -258,3 +258,4 @@ export const holmanStyleProfile: StyleProfile<unknown, ExtractedStyleFeatures> =
   dimensions: holmanDimensions,
   score: scoreHolman,
 };
+

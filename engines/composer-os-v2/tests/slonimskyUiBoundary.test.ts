@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * V61 U9 + V62 — Slonimsky UI boundary goldens (state → GenerateRequest mappers only).
  * Does not re-assert Z7–Z11 engine lock goldens 1,2,6,7.

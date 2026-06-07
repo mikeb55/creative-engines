@@ -99,7 +99,7 @@ const request: GenerateRequest = {
 
 const result = apiGenerate(request, getComposerFilesRoot());
 
-if (!result.filepath) {
+if (!result.success || !('filepath' in result) || !result.filepath) {
   const errors: string[] = [];
   if (result.error) errors.push(result.error);
   if ('validation' in result && result.validation?.errors?.length) {
@@ -127,7 +127,7 @@ if (result.filepath && outputArg) {
   if (!result.success) {
     console.log('Validation warnings:');
     const resultErrors = (result as { errors?: string[] }).errors ?? result.validation?.errors ?? [];
-    resultErrors.forEach((e) => console.log(' -', e));
+    resultErrors.forEach((e: string) => console.log(' -', e));
     console.log('File written.', 'Open in Sibelius for review.');
   }
 }

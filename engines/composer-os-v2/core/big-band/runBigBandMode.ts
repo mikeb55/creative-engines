@@ -9,6 +9,7 @@ import { planBigBandDensity } from './bigBandDensityPlanner';
 import { resolveBigBandEraRules } from './bigBandEraResolver';
 import { planBigBandForm } from './bigBandFormPlanner';
 import type { BigBandDensityPlan, BigBandEnhancedPlanning } from './bigBandPlanTypes';
+import type { DensityBand } from '../orchestration/orchestrationTypes';
 import type { BigBandFormPlan } from './bigBandPlanTypes';
 import type { BigBandSectionPlan } from './bigBandPlanTypes';
 import { loadBigBandResearchFromPath, loadBigBandResearchFromEnvOrDefault } from './bigBandResearchParser';
@@ -173,12 +174,15 @@ export function runBigBandMode(input: BigBandRunInput): BigBandRunResult {
   sectionPlan = applyBigBandEnsembleMask(sectionPlan, ensembleMask);
   const sectionArchitectureContext =
     input.sectionArchitectureContext ?? createSectionArchitectureRuntimeContext(input.song, 'big_band', runSeed);
-  const densityPlan = sectionArchitectureContext
+  const densityPlan: BigBandDensityPlan = sectionArchitectureContext
     ? {
         slices: planBigBandDensity(formPlan).slices.map((slice) => {
           const formSlice = formPlan.slices.find((s) => s.index === slice.formSliceIndex);
           const hint = getSectionArchitectureDensityHint(formSlice?.startBar ?? 1, sectionArchitectureContext);
-          return hint ? { ...slice, density: hint === 'medium' ? 'moderate' : hint } : slice;
+          const density: DensityBand = hint
+            ? ((hint === 'medium' ? 'moderate' : hint) as DensityBand)
+            : slice.density;
+          return hint ? { ...slice, density } : slice;
         }),
       }
     : planBigBandDensity(formPlan);

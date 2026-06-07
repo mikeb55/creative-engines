@@ -13,7 +13,7 @@ const req: Partial<GenerateRequest> = {
   styleStack: { primary: 'barry_harris', styleBlend: { primary: 'strong', secondary: 'off', colour: 'off' } },
   seed: 424242,
   title: 'Indie Dual Guitar Tuning Proof Fixture',
-  styleProfile: 'STYLE_INDEPENDENT_ART_POP',
+  styleProfile: 'STYLE_INDIE_ART_POP',
   primarySongwriterStyle: 'donald_fagen',
   debugFixtureMode: 'indie_dual_guitar_tuning_proof',
 };

@@ -13,7 +13,7 @@ import type { MusicContext, MusicContextHarmony, MusicContextReceipt } from './m
 export type HarmonyBarsMusicContextParams = {
   harmonyBars: readonly string[];
   sourceEngineId: string;
-  presetId: string;
+  presetId?: string;
   seed?: number;
   bpm?: number;
   receipts?: readonly MusicContextReceipt[];
@@ -34,7 +34,7 @@ export function buildMusicContextFromHarmonyBars(
   return {
     schemaVersion: '1.0',
     seed: params.seed ?? 0,
-    presetId: params.presetId,
+    presetId: params.presetId ?? 'unknown',
     key: { root, mode },
     meter: { beats: 4, beatType: 4 },
     bpm: params.bpm ?? 120,

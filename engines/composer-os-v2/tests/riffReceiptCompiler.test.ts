@@ -20,10 +20,10 @@ import {
   compileResearchReceiptLines,
 } from '../core/riff-generator/riffReceiptCompiler';
 import { resolveRiffGeneratorProfileWithMeta } from '../core/riff-generator/resolveRiffGeneratorProfile';
-import type { RiffProfile } from '../core/composer/riffProfileTypes';
+import type { RiffProfile, RiffProfilePatch } from '../core/composer/riffProfileTypes';
 
 function receiptHasPatchField(
-  patch: Partial<RiffProfile>,
+  patch: RiffProfilePatch,
   id: string
 ): boolean {
   if (id.startsWith('sly_horns_')) return (patch.hornStabTopology?.length ?? 0) > 0;

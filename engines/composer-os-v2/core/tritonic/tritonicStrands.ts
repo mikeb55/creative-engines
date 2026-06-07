@@ -63,7 +63,7 @@ export function projectedStrandMidisFromCells(cells: readonly TritonicCell[]): n
     const targetPc = ((currentMidi % 12) + 12) % 12;
     melodyVoiceIdx = to.notes.findIndex((n) => n === targetPc);
     if (melodyVoiceIdx < 0) {
-      melodyVoiceIdx = to.notes.reduce(
+      melodyVoiceIdx = to.notes.reduce<number>(
         (best, n, idx) =>
           Math.abs(pitchClassMovement(targetPc, n)) <
           Math.abs(pitchClassMovement(targetPc, to.notes[best]!))

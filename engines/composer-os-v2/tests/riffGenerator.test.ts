@@ -403,7 +403,7 @@ export function runRiffGeneratorTests(): { ok: boolean; name: string }[] {
       const hasRoot = bass.allowedPcs.some((e) => e.pc === rootPc);
       if (!hasRoot) return false;
       if (c.extSemi !== undefined) {
-        return bass.allowedPcs.some((e) => e.pc === extPc(c.sym, c.extSemi));
+        return bass.allowedPcs.some((e) => e.pc === extPc(c.sym, c.extSemi!));
       }
       return true;
     });

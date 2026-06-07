@@ -235,7 +235,7 @@ const FZ_GTR_01: ZappaFzReceiptFingerprint = {
   id: 'FZ_GTR_01',
   detect: ({ profile }) =>
     (profile?.ornamentPolicy?.slides ?? false) ||
-    (profile?.tuningPolicy?.tuningOptions?.zappaCleanToneIslands ?? 0) > 0,
+    Number(profile?.tuningPolicy?.tuningOptions?.zappaCleanToneIslands ?? 0) > 0,
   scoreContribution: ({ profile }) =>
     clampScore(
       4 +

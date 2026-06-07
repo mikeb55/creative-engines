@@ -97,7 +97,7 @@ function scoreNestico(
     };
   });
 
-  const finalStyleScore = dimensions.reduce((acc, d) => acc + d.weightedScore, 0);
+  const finalStyleScore = dimensions.reduce((acc, d) => acc + (d.weightedScore ?? d.score * d.weight), 0);
 
   let weakestDimensionId = dimensions[0]?.id ?? '';
   let strongestDimensionId = dimensions[0]?.id ?? '';
@@ -116,7 +116,7 @@ function scoreNestico(
 
   return {
     styleId: input.profile.id,
-    styleName: input.profile.name,
+    styleName: input.profile.name ?? input.profile.label ?? input.profile.id,
     dimensions,
     finalStyleScore,
     weakestDimensionId,
@@ -134,3 +134,4 @@ export const sammyNesticoStyleProfile: StyleProfile<unknown, ExtractedStyleFeatu
   dimensions: nesticoDimensions,
   score: scoreNestico,
 };
+

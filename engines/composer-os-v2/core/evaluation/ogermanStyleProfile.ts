@@ -182,22 +182,38 @@ function scoreOgerman(input: StyleProfileEvaluationInput): StyleProfileEvaluatio
     label: d.label,
     weight: d.weight,
     score: byId[d.id] ?? 1,
+    weightedScore: (byId[d.id] ?? 1) * d.weight,
   }));
 
-  const weighted = dimensions.reduce((sum, d) => sum + d.score * d.weight, 0);
+  const weighted = dimensions.reduce((sum, d) => sum + d.score * (d.weight ?? 0), 0);
   const hardFails = [...evaluateOgermanHardFails(f), ...evaluateOgermanDiscrimination(input)];
-  const pass = weighted >= 7.0 && hardFails.length === 0;
+  const threshold = input.profile.threshold ?? 7;
+  const pass = weighted >= threshold && hardFails.length === 0;
+  let weakestDimensionId = dimensions[0]?.id ?? '';
+  let strongestDimensionId = dimensions[0]?.id ?? '';
+  for (const d of dimensions) {
+    const curWeak = dimensions.find((x) => x.id === weakestDimensionId);
+    if (curWeak && d.score < curWeak.score) weakestDimensionId = d.id ?? weakestDimensionId;
+    const curStrong = dimensions.find((x) => x.id === strongestDimensionId);
+    if (curStrong && d.score > curStrong.score) strongestDimensionId = d.id ?? strongestDimensionId;
+  }
 
   return {
+    styleId: input.profile.id,
+    styleName: input.profile.name ?? input.profile.label ?? input.profile.id,
     pass,
     finalStyleScore: weighted,
     dimensions,
+    weakestDimensionId,
+    strongestDimensionId,
+    threshold,
     hardFails: hardFails.length ? hardFails : undefined,
   };
 }
 
 export const ogermanStyleProfile: StyleProfile<unknown, ExtractedStyleFeatures> = {
   id: 'ogerman',
+  name: 'Claus Ogerman — Orchestral Continuum',
   label: 'Claus Ogerman — Orchestral Continuum',
   threshold: 7.0,
   dimensions: ogermanDimensions,

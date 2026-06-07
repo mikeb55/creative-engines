@@ -5,6 +5,7 @@
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import type { PitchClass } from '../harmony/pitchFieldSpineTypes';
 import { coreMotifToMusicContextMotif } from '../music-context/musicContextAdapters';
+import type { MotifRegisterTag, MotifRoleTag } from '../motif/motifEngineTypes';
 import type { MusicContextMotif } from '../music-context/musicContextTypes';
 import type { CompositionContext } from '../compositionContext';
 import { generateZappaSolo } from '../solo/zappasoloEngine';
@@ -277,8 +278,8 @@ function soloLineToMotif(line: SoloLine, level: ZappaSoloParticipationLevel): Mu
       duration: n.durationBeats,
     })),
     contourPattern,
-    roleTags: ['solo'],
-    registerTags: ['mid'],
+    roleTags: ['solo' as unknown as MotifRoleTag],
+    registerTags: ['mid'] as MotifRegisterTag[],
   };
   const motif = coreMotifToMusicContextMotif(core, 'zappa_solo');
   motif.anchorMidi = midis[0];

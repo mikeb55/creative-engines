@@ -20,6 +20,8 @@ export type ScheduleTimelineOptions = {
   /** When set (vault path), events stay within this bar span. */
   barCount?: number;
   beatsPerBar?: number;
+  /** Vault-anchored solo: one cell per bar when cells fill the span. */
+  vaultAnchored?: boolean;
 };
 
 const DEFAULT_BEATS_PER_BAR = 4;
@@ -119,7 +121,10 @@ export function scheduleTritonicTimeline(
 ): TritonicTimelineEvent[] {
   if (cells.length === 0) return [];
   const barCount = options?.barCount ?? defaultBarSpan(cells.length, mode);
-  if (options?.barCount != null && cells.length >= barCount) {
+  if (options?.barCount != null && cells.length > barCount) {
+    return scheduleOnePerBar(cells, barCount);
+  }
+  if (options?.vaultAnchored && options?.barCount != null && cells.length >= barCount) {
     return scheduleOnePerBar(cells, barCount);
   }
   if (mode === 'bb') return scheduleDense(cells, barCount);

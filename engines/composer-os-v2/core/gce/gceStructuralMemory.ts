@@ -72,7 +72,7 @@ export interface StructuralFingerprintMeta {
   id: string;
   format: StructuralFingerprint['format'];
   songwriterId: string;
-  gceScore: number;
+  gceScore?: number;
   gceGateOverride?: number;
   intentTags?: GceIntentTag[];
   notes?: string;

@@ -49,7 +49,7 @@ function scoreDuoVerlaineSection(input: StyleProfileEvaluationInput): StyleProfi
     const s = byId[d.id] ?? 1;
     return { id: d.id, label: d.label, score: s, weight: d.weight, weightedScore: s * d.weight };
   });
-  const finalStyleScore = dimensions.reduce((acc, d) => acc + d.weightedScore, 0);
+  const finalStyleScore = dimensions.reduce((acc, d) => acc + (d.weightedScore ?? d.score * d.weight), 0);
   const failures: string[] = [];
   if ((featureNum(h.susAddRate) ?? 0) < 0.42) {
     failures.push('chordSurfaceBias below 0.78 — insufficient sus/add/slash surface.');
@@ -57,7 +57,7 @@ function scoreDuoVerlaineSection(input: StyleProfileEvaluationInput): StyleProfi
   const pass = finalStyleScore >= input.profile.threshold && failures.length === 0;
   return {
     styleId: input.profile.id,
-    styleName: input.profile.name,
+    styleName: input.profile.name ?? input.profile.label ?? input.profile.id,
     dimensions,
     finalStyleScore,
     weakestDimensionId: dimensions[0]?.id ?? '',

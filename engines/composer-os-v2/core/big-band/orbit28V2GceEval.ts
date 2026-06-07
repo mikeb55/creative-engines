@@ -88,7 +88,7 @@ function maxMidiInBar(score: ScoreModel, partId: string, bar: number): number {
   let max = 0;
   for (const e of m.events) {
     if (e.kind !== 'note') continue;
-    max = Math.max(max, (e as NoteEvent).midi);
+    max = Math.max(max, (e as NoteEvent).pitch);
   }
   return max;
 }
@@ -258,7 +258,7 @@ export function evaluateOrbit28V2Gce(score: ScoreModel): Orbit28V2GceScores {
   // 8. Human playability
   let playScore = 7;
   let outOfRange = 0;
-  const bounds: Record<string, [number, number]> = {
+  const bounds: Record<string, readonly [number, number]> = {
     bb_alto_sax: BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES],
     bb_tenor_sax: BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES],
     bb_trumpets: BIG_BAND_MIDI_BOUNDS[BB_PART_TRUMPETS],
@@ -270,7 +270,7 @@ export function evaluateOrbit28V2Gce(score: ScoreModel): Orbit28V2GceScores {
     for (const m of p.measures) {
       for (const e of m.events) {
         if (e.kind !== 'note') continue;
-        const midi = (e as NoteEvent).midi;
+        const midi = (e as NoteEvent).pitch;
         if (midi < lo || midi > hi) outOfRange++;
       }
     }

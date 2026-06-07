@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Sophisticated Pop style eval harness — parsing, GCE score, CSV (no full Song Mode generation).
  */

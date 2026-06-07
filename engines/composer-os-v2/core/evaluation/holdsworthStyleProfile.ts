@@ -4,6 +4,7 @@
 
 import type {
   ExtractedStyleFeatures,
+  Score10,
   StyleDimensionDefinition,
   StyleDimensionScore,
   StyleProfile,
@@ -91,9 +92,9 @@ function scoreScalePersistence(phraseHold: number | null, chordChange: number | 
   return 1;
 }
 
-function evaluateHoldsworthDimensions(
-  features: ExtractedStyleFeatures
-): StyleDimensionScore[] {
+type HoldsworthDimensionScore = { dimensionId: string; score: Score10 };
+
+function evaluateHoldsworthDimensions(features: ExtractedStyleFeatures): HoldsworthDimensionScore[] {
   const h = features.harmonic ?? {};
   const m = features.melodic ?? {};
   const f = features.formal ?? {};
@@ -129,10 +130,12 @@ function evaluateHoldsworthDimensions(
 
 export const holdsworthStyleProfile: StyleProfile<unknown, ExtractedStyleFeatures> = {
   id: 'allan_holdsworth',
+  name: 'Allan Holdsworth — scale-derived fusion',
   label: 'Allan Holdsworth — scale-derived fusion',
   composerFamily: 'fusion',
+  threshold: 7,
   dimensions: holdsworthDimensions,
-  evaluate(input: StyleProfileEvaluationInput<ExtractedStyleFeatures>): StyleProfileEvaluationResult {
+  score(input: StyleProfileEvaluationInput): StyleProfileEvaluationResult {
     const dimensionScores = evaluateHoldsworthDimensions(input.features);
     const weighted =
       dimensionScores.reduce((sum, d) => {
@@ -149,10 +152,33 @@ export const holdsworthStyleProfile: StyleProfile<unknown, ExtractedStyleFeature
     if ((triadRate ?? 0) > 0.35) {
       hardFails.push('plain_triad_bleed');
     }
+    const dimensions: StyleDimensionScore[] = dimensionScores.map((d) => {
+      const dimId = d.dimensionId ?? 'unknown';
+      const dimDef = holdsworthDimensions.find((x) => x.id === dimId);
+      const weight = dimDef?.weight ?? 0;
+      return {
+        id: dimId,
+        label: dimDef?.label ?? dimId,
+        score: d.score,
+        weight,
+        weightedScore: d.score * weight,
+      };
+    });
+    const weakestDimensionId =
+      dimensions.reduce((min, d) => (d.score < min.score ? d : min), dimensions[0]!).id ?? '';
+    const strongestDimensionId =
+      dimensions.reduce((max, d) => (d.score > max.score ? d : max), dimensions[0]!).id ?? '';
     return {
+      styleId: 'allan_holdsworth',
+      styleName: 'Allan Holdsworth — scale-derived fusion',
       composerId: 'allan_holdsworth',
       overallScore: weighted,
-      dimensionScores,
+      dimensions,
+      finalStyleScore: weighted,
+      weakestDimensionId,
+      strongestDimensionId,
+      pass: weighted >= 7 && hardFails.length === 0,
+      threshold: 7,
       hardFails: hardFails.length ? hardFails : undefined,
       notes: hardFails.length
         ? ['Holdsworth negative discriminators triggered — check functional / triad bleed.']

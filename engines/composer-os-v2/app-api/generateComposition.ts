@@ -126,6 +126,7 @@ export interface GenerateResult {
     readiness: { shareable: boolean; release: number; mx: number };
     errors: string[];
     warnings?: string[];
+    totalBars?: number;
   };
   runManifest?: {
     seed: number;
@@ -192,6 +193,20 @@ export interface GenerateResult {
     sectionRegenerationPartialScore?: boolean;
     /** Big Band / String Quartet — Z10/Z11 Slonimsky cell receipts from realisation. */
     slonimskyEnsembleCellReceipts?: string[];
+    /** Import-harmony lead-sheet telemetry (Song Mode / duo). */
+    importHarmonyShouldParseLeadSheetInput?: boolean;
+    importHarmonyLeadSheetPipelineStage?: string;
+    importHarmonyLeadSheetAdaptDetail?: string;
+    importHarmonyChordEventCount?: number;
+    importHarmonyTimelineEventCount?: number;
+    /** Martino linear engine receipts. */
+    martinoStderrExcerpt?: string;
+    martinoVersionUsed?: string;
+    martinoActivityMap?: string;
+    martinoLfvFlags?: Array<{ index: number; out_of_range: boolean }>;
+    martinoWarnings?: string[];
+    martinoReadinessScore?: number;
+    martinoProvenance?: Record<string, unknown>;
   };
   /** Resolved title used for the score (user or default). */
   scoreTitle?: string;
@@ -253,6 +268,8 @@ export interface GenerateResult {
   slonimskyEnsembleCellReceipts?: string[];
   /** Phase 6+7 — `instrumentGroup === 'guitar'`: voicings for UI fretboard + TAB export. */
   guitarVoicings?: GuitarVoicing[];
+  /** Martino linear engine LFV flags echoed at result root. */
+  lfvFlags?: Array<{ index: number; out_of_range: boolean }>;
 }
 
 export function generateComposition(req: GenerateRequest, outputDir: string): GenerateResult {

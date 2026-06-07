@@ -32,7 +32,7 @@ import type {
 import { scoreModelFeatureExtractor } from '../core/evaluation/featureExtractor';
 import { GCE_CATEGORY_ORDER, defaultGceWeights } from '../core/evaluation/gceEvaluator';
 import { defaultLockGates } from '../core/evaluation/lockGates';
-import type { ScoreModel } from '../score-model/scoreModelTypes';
+import type { ScoreModel } from '../core/score-model/scoreModelTypes';
 import { resolveMelodicPartId } from '../core/gce/resolveMelodicPartId';
 import {
   STEELY_ORBIT_V2_FINGERPRINT_RULE_COUNT,
@@ -153,13 +153,13 @@ function buildSteelyOrbitEvalStyleProfile(): StyleProfile<unknown, ExtractedStyl
           ...d,
           id: `songwriter_bacharach_${d.id}`,
           label: `Bacharach: ${d.label}`,
-          weightedScore: d.weightedScore * 0.5,
+          weightedScore: (d.weightedScore ?? d.score * d.weight) * 0.5,
         })),
         ...fischer.dimensions.map((d) => ({
           ...d,
           id: `arranger_fischer_${d.id}`,
           label: `Fischer: ${d.label}`,
-          weightedScore: d.weightedScore * 0.5,
+          weightedScore: (d.weightedScore ?? d.score * d.weight) * 0.5,
         })),
       ];
       let weakestDimensionId = dimensions[0]?.id ?? '';
@@ -204,7 +204,7 @@ function printWinningEvalBreakdown(ev: CombinedEvaluationResult): void {
   }
   console.log('\nStyle dimension breakdown (Bacharach + Fischer blend):');
   for (const d of ev.style.dimensions) {
-    console.log(`  ${d.label}: ${d.score.toFixed(2)}  (w×score=${d.weightedScore.toFixed(3)})`);
+    console.log(`  ${d.label}: ${d.score.toFixed(2)}  (w×score=${(d.weightedScore ?? d.score * d.weight).toFixed(3)})`);
   }
   if (ev.style.notes?.length) {
     console.log('Style sub-scores:', ev.style.notes.join('  '));
@@ -223,7 +223,7 @@ function printWatchPillars(ev: CombinedEvaluationResult): void {
 }
 
 function barHasVoice1Pitch(score: ScoreModel, partId: string, bar: number): boolean {
-  const p = score.parts.find((x) => x.id === partId);
+  const p = score.parts.find((x: ScoreModel['parts'][number]) => x.id === partId);
   const m = p?.measures[bar - 1];
   if (!m) return false;
   for (const e of m.events) {
@@ -251,7 +251,7 @@ function validateSteelyV17Export(score: ScoreModel): { ok: boolean; messages: st
     ok = false;
     messages.push(`part count ${score.parts.length} (need 7)`);
   }
-  const drums = score.parts.find((p) => p.id === 'bb_drums');
+  const drums = score.parts.find((p: ScoreModel['parts'][number]) => p.id === 'bb_drums');
   if (drums) {
     for (let b = 1; b <= 64; b++) {
       if (!barHasAnyDrumHit(score, b)) {

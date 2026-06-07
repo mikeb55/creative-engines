@@ -6,6 +6,7 @@ import type {
   StyleProfileEvaluationInput,
   StyleProfileEvaluationResult,
 } from './evaluationTypes';
+import { readProfileName, readProfileThreshold } from './evaluationTypes';
 import { gilEvansStyleProfile } from './gilEvansStyleProfile';
 import { schneiderStyleProfile } from './schneiderStyleProfile';
 
@@ -83,6 +84,7 @@ export function evaluateSebeskyHardFails(features: ExtractedStyleFeatures): Sebe
   const fails: SebeskyHardFailReason[] = [];
   const harmonic = features.harmonic ?? {};
   const rhythmic = features.rhythmic ?? {};
+  const melodic = features.melodic ?? {};
   const orch = features.orchestration ?? {};
   const formal = features.formal ?? {};
 
@@ -190,7 +192,7 @@ function scoreSebesky(
     };
   });
 
-  const finalStyleScore = dimensions.reduce((acc, d) => acc + d.weightedScore, 0);
+  const finalStyleScore = dimensions.reduce((acc, d) => acc + (d.weightedScore ?? d.score * d.weight), 0);
   const hardFails = [...evaluateSebeskyHardFails(input.features), ...evaluateSebeskyEcmDiscrimination(input)];
 
   let weakestDimensionId = dimensions[0]?.id ?? '';
@@ -210,13 +212,13 @@ function scoreSebesky(
 
   return {
     styleId: input.profile.id,
-    styleName: input.profile.name,
+    styleName: readProfileName(input.profile),
     dimensions,
     finalStyleScore,
     weakestDimensionId,
     strongestDimensionId,
-    pass: finalStyleScore >= input.profile.threshold && hardFails.length === 0,
-    threshold: input.profile.threshold,
+    pass: finalStyleScore >= readProfileThreshold(input.profile) && hardFails.length === 0,
+    threshold: readProfileThreshold(input.profile),
     notes: hardFails.length ? hardFails.map((f) => f.message) : undefined,
   };
 }
@@ -229,3 +231,4 @@ export const sebeskyStyleProfile: StyleProfile<unknown, ExtractedStyleFeatures> 
   dimensions: sebeskyDimensions,
   score: scoreSebesky,
 };
+
