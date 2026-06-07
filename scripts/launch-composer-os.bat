@@ -1,10 +1,10 @@
 @echo off
-REM Composer OS — local dev launcher (Electron desktop app).
-REM Runs npm run desktop:dev from apps/composer-os-desktop (build + electron .).
+REM Composer OS — local dev launcher (Vite web app + API).
+REM Delegates to scripts/vite-dev-launcher.ps1 (streams npm run dev --prefix apps/composer-os-app).
 setlocal
 cd /d "%~dp0\.."
-if not exist "apps\composer-os-desktop\package.json" (
-  echo ERROR: apps\composer-os-desktop\package.json not found.
+if not exist "apps\composer-os-app\package.json" (
+  echo ERROR: apps\composer-os-app\package.json not found.
   echo Working directory: %CD%
   echo Move this repo or fix the shortcut target path.
   pause
@@ -17,15 +17,7 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo.
-echo Composer OS — Electron desktop dev
-echo Repository: %CD%
-echo Command:    npm run desktop:dev --prefix apps/composer-os-desktop
-echo.
-echo Leave this window open while Electron runs. Press Ctrl+C to stop.
-echo.
-
-npm run desktop:dev --prefix apps/composer-os-desktop
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0vite-dev-launcher.ps1" -RepoRoot "%CD%"
 set "ERR=%ERRORLEVEL%"
 if not "%ERR%"=="0" (
   echo.
