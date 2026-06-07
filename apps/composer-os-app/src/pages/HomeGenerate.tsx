@@ -1387,12 +1387,11 @@ function clampMeterPart(raw: string, fallback: number): number {
 }
 
 /**
- * String Quartet sentinel arranger id. When selected the SQ preset
- * generation path omits the arranger style-pairing block entirely
- * (no overlay). Engine receives no `stylePairing.arrangerStyle`
- * value for SQ + None.
+ * Arranger "none" sentinel (`""`). When selected, generation omits
+ * `stylePairing.arrangerStyle` so the engine auto-resolves from the
+ * primary songwriter only.
  */
-const ARRANGER_NONE_ID = 'none';
+const ARRANGER_NONE_ID = '';
 
 const ARRANGER_OPTIONS: { id: string; label: string }[] = [
   { id: 'ellington', label: 'Duke Ellington' },
@@ -1523,20 +1522,18 @@ function ArrangerSelectOptionGroups(props?: { variant?: 'default' | 'string_quar
   const isSq = props?.variant === 'string_quartet';
   return (
     <>
+      <option value="">None (engine auto-resolves)</option>
       {isSq && (
-        <>
-          <option value={ARRANGER_NONE_ID}>— None (no arranger) —</option>
-          <optgroup label="String Quartet VRB">
-            {ARRANGER_GROUP_SQ_VRB_ORDER.filter((id) => ARRANGER_OPTION_BY_ID.has(id)).map((id) => {
-              const o = ARRANGER_OPTION_BY_ID.get(id)!;
-              return (
-                <option key={`sqvrb-${id}`} value={o.id}>
-                  {o.label}
-                </option>
-              );
-            })}
-          </optgroup>
-        </>
+        <optgroup label="String Quartet VRB">
+          {ARRANGER_GROUP_SQ_VRB_ORDER.filter((id) => ARRANGER_OPTION_BY_ID.has(id)).map((id) => {
+            const o = ARRANGER_OPTION_BY_ID.get(id)!;
+            return (
+              <option key={`sqvrb-${id}`} value={o.id}>
+                {o.label}
+              </option>
+            );
+          })}
+        </optgroup>
       )}
       <optgroup label={COMPOSER_GROUP_DISPLAY_LABELS.ECM_CHAMBER_JAZZ}>
         {arrangerIdsForProductionGroup('ECM_CHAMBER_JAZZ')
@@ -1655,18 +1652,14 @@ function ArrangerSelectOptionGroups(props?: { variant?: 'default' | 'string_quar
   );
 }
 
-/** Initial / fallback arranger id used outside the String Quartet preset. */
-const ARRANGER_DEFAULT_NON_SQ_ID = 'thad';
-
 /**
  * Two-way reset for arranger when the user switches presets.
  *
  * - Into `string_quartet`: a previously selected jazz arranger (not in the
- *   SQ VRB family and not `none`) is inappropriate → reset to `none`.
- *   SQ VRB selections + `none` carry over.
- * - Out of `string_quartet`: a previously selected SQ VRB arranger (or
- *   the SQ-only `none` sentinel) has no matching option in the other
- *   presets' dropdowns → reset to the default jazz arranger (`thad`).
+ *   SQ VRB family and not none) is inappropriate → reset to none.
+ *   SQ VRB selections + none carry over.
+ * - Out of `string_quartet`: a previously selected SQ VRB arranger has no
+ *   matching option in the other presets' dropdowns → reset to none.
  *   Jazz arranger selections carry over.
  */
 function nextArrangerOnPresetChange(prevArranger: string, nextPresetId: string): string {
@@ -1675,9 +1668,24 @@ function nextArrangerOnPresetChange(prevArranger: string, nextPresetId: string):
     if (ARRANGER_SQ_VRB_IDS.has(prevArranger)) return prevArranger;
     return ARRANGER_NONE_ID;
   }
-  if (prevArranger === ARRANGER_NONE_ID) return ARRANGER_DEFAULT_NON_SQ_ID;
-  if (ARRANGER_SQ_VRB_IDS.has(prevArranger)) return ARRANGER_DEFAULT_NON_SQ_ID;
+  if (prevArranger === ARRANGER_NONE_ID) return ARRANGER_NONE_ID;
+  if (ARRANGER_SQ_VRB_IDS.has(prevArranger)) return ARRANGER_NONE_ID;
   return prevArranger;
+}
+
+function buildStylePairingPayload(
+  songwriterStyle: string,
+  arranger: string,
+  era?: string
+): { songwriterStyle: string; arrangerStyle: string; era?: string } | undefined {
+  const arrangerTrim = arranger.trim();
+  if (!arrangerTrim && !era) return undefined;
+  const block: { songwriterStyle: string; arrangerStyle?: string; era?: string } = {
+    songwriterStyle,
+  };
+  if (arrangerTrim) block.arrangerStyle = arrangerTrim;
+  if (era) block.era = era;
+  return block as { songwriterStyle: string; arrangerStyle: string; era?: string };
 }
 
 function isSqKnownIncompatibleBlend(idA: string, idB: string): boolean {
@@ -2527,7 +2535,7 @@ export function HomeGenerate({
     rhythm: { engineId: null, presetId: null, contextKeys: [] },
     pairPresetId: null,
   }));
-  const [arrangerStyle, setArrangerStyle] = useState('thad');
+  const [arrangerStyle, setArrangerStyle] = useState(ARRANGER_NONE_ID);
   const arrangerStyleLiveRef = useRef(arrangerStyle);
   arrangerStyleLiveRef.current = arrangerStyle;
   const sqPresetTransitionRef = useRef(presetId);
@@ -3704,27 +3712,15 @@ export function HomeGenerate({
         );
         const stylePairingSong =
           presetId === 'song_mode'
-            ? {
-                songwriterStyle: songwriterStyle,
-                arrangerStyle: arrangerStyle,
-                ...(eraForPairing ? { era: eraForPairing } : {}),
-              }
+            ? buildStylePairingPayload(songwriterStyle, arrangerStyle, eraForPairing)
             : undefined;
         const stylePairingBigBand =
           presetId === 'big_band'
-            ? {
-                songwriterStyle: songwriterStyle,
-                arrangerStyle: arrangerStyle,
-                ...(eraForPairing ? { era: eraForPairing } : {}),
-              }
+            ? buildStylePairingPayload(songwriterStyle, arrangerStyle, eraForPairing)
             : undefined;
         const stylePairingStringQuartet =
           presetId === 'string_quartet' && sqArrangerSlot1 !== ARRANGER_NONE_ID
-            ? {
-                songwriterStyle: songwriterStyle,
-                arrangerStyle: sqArrangerSlot1,
-                ...(eraForPairing ? { era: eraForPairing } : {}),
-              }
+            ? buildStylePairingPayload(songwriterStyle, sqArrangerSlot1, eraForPairing)
             : undefined;
 
         const tonalTrim = tonalCenter.trim();
@@ -9831,7 +9827,7 @@ export function HomeGenerate({
                 onChange={(e) => {
                   const v = e.target.value;
                   setSqArrangerSlot1(v);
-                  setArrangerStyle(v === ARRANGER_NONE_ID ? ARRANGER_NONE_ID : v);
+                  setArrangerStyle(v);
                   if (v === ARRANGER_NONE_ID) setSqArrangerSlot2(ARRANGER_NONE_ID);
                 }}
                 disabled={loading}
