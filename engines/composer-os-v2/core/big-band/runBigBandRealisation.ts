@@ -25,6 +25,8 @@ import { deriveChordBarsFromProgressionOrLeadSheet } from '../regeneration/ensem
 import { planBigBandVoicing } from './bigBandVoicingPlanner';
 import { runBigBandMode, type BigBandRunInput, type BigBandRunResult } from './runBigBandMode';
 import { runEnsembleExportPipeline } from '../export/ensembleExport';
+import { applyLeadSheetFormat } from '../goldenPath/generateLeadSheetScore';
+import { applyMelodyBassFormat } from '../goldenPath/generateMelodyBassScore';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import { validateEnsembleVoicing } from '../voicing/voicingValidation';
 import type { EnsembleVoicingPlan } from '../voicing/voicingTypes';
@@ -79,6 +81,8 @@ export function runBigBandRealisation(
     ensembleLeadSheetMusicXml?: string;
     /** Jest / A–B: omit orchestration `wybleVoiceLayout` so the BB score skips Wyble alto/tenor sax separation. */
     suppressWybleVoiceLayoutForTest?: boolean;
+    /** Mosaic Mode — optional composition context (format flag + section plan). */
+    context?: CompositionContext;
   }
 ): BigBandRealisationResult {
   const planning = runBigBandMode(input);
@@ -265,6 +269,20 @@ export function runBigBandRealisation(
         applySteelyOrbitV17Finishing(score);
         applySteelyOrbitV22Humanisation(score);
       }
+    }
+
+    const context =
+      input.context ?? planning.sectionArchitectureContext ?? input.sectionArchitectureContext;
+    const planWithTonics = context?.generationMetadata?.mosaicSectionPlan ?? [];
+    const mosaicOutputFormat = (
+      context?.generationMetadata as GenerationMetadata & {
+        mosaicOutputFormat?: 'melody-bass-chords' | 'lead-sheet';
+      }
+    )?.mosaicOutputFormat;
+    if (mosaicOutputFormat === 'lead-sheet') {
+      score = applyLeadSheetFormat(score, planWithTonics);
+    } else if (mosaicOutputFormat === 'melody-bass-chords') {
+      score = applyMelodyBassFormat(score, planWithTonics);
     }
 
     exportPipeline = runEnsembleExportPipeline(score, {
