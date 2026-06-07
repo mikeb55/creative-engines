@@ -25,6 +25,7 @@ import {
   type MosaicEvalResult,
 } from '../mosaic-mode/mosaicEvalDiagnostics';
 import { isMosaicModeActive } from '../mosaic-mode/mosaicBarHelpers';
+import { injectMosaicMotifNotesPostFinalizeBigBand } from '../mosaic-mode/mosaicTilePipeline';
 import { getDispatchEntry } from '../mosaic-mode/mosaicComposerDispatch';
 import {
   buildMosaicTonicMap,
@@ -116,6 +117,9 @@ function buildBigBandMosaicCompositionContext(args: {
     parsedCustomProgressionBars: [...args.chordBars],
     ...(args.inheritedMetadata?.mosaicOutputFormat
       ? { mosaicOutputFormat: args.inheritedMetadata.mosaicOutputFormat }
+      : {}),
+    ...(args.inheritedMetadata?.allowMosaicPostFinalizeInject === true
+      ? { allowMosaicPostFinalizeInject: true }
       : {}),
   };
 
@@ -611,6 +615,11 @@ export function runBigBandRealisation(
 
     if (mosaicContext && isMosaicModeActive(mosaicContext)) {
       score = runBigBandMosaicEvalAndRetry(score, mosaicContext, scoreBuildInput);
+      score = injectMosaicMotifNotesPostFinalizeBigBand(
+        score,
+        mosaicContext,
+        input.bbMosaicEnabled
+      );
     }
 
     exportPipeline = runEnsembleExportPipeline(score, {

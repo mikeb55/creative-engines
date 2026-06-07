@@ -2,10 +2,16 @@
  * Mosaic Mode — post-finalize tile inject, underfill pad, overfill trim (5/4+ bars).
  */
 
+import { BB_PART_SAXES } from '../big-band/buildBigBandOrchestrationPlan';
 import type { CompositionContext } from '../compositionContext';
 import type { CoreMotif } from '../motif/motifEngineTypes';
+import {
+  buildMosaicMotifVariants,
+  generateMosaicSourceMotif,
+} from './mosaicMotifEngine';
 import type { InstrumentRegisterMap } from '../register-map/registerMapTypes';
 import { getEffectiveRegisterWindowForBar } from '../section-architecture/effectiveContextForBar';
+import { BIG_BAND_MIDI_BOUNDS } from '../voicing/voicingProfiles';
 import { DEFAULT_BAR_METER } from '../rhythm/oddMeterQuantiser';
 import type { BarMeterSignature } from '../rhythm/barMeterTypes';
 import { measureBeatSpanQuartersOf } from '../score-model/measureBeatSpan';
@@ -13,6 +19,7 @@ import { addEvent, createNote, createRest } from '../score-model/scoreEventBuild
 import type {
   MeasureModel,
   NoteEvent,
+  PartModel,
   ScoreEvent,
   ScoreModel,
 } from '../score-model/scoreModelTypes';
@@ -33,6 +40,24 @@ const ROOT_AT_START = /^([A-G](?:#|b)?)/i;
 type BarInjectSnapshot = {
   events: ScoreEvent[];
   chord?: string;
+};
+
+/** Big-band lead melody carrier — `melodyPitchAlto` / head-lead authority in score builder. */
+export const BB_MOSAIC_INJECT_LEAD_PART_ID = 'bb_alto_sax' as const;
+
+/** Never receive post-finalize motif inject (comp, rhythm, pads, brass sections). */
+export const BB_MOSAIC_INJECT_EXCLUDED_PART_IDS = [
+  'bb_drums',
+  'bb_rhythm_section',
+  'bb_piano',
+  'bb_tenor_sax',
+  'bb_trumpets',
+  'bb_trombones',
+] as const;
+
+type MosaicInjectPartTarget = {
+  resolvePart: (score: ScoreModel) => PartModel | undefined;
+  getRegisterForBar: (bar: number, context: CompositionContext) => [number, number];
 };
 
 export function isMosaicInjectEligibleSection(section: MosaicSectionPlanEntry): boolean {
@@ -90,16 +115,44 @@ function guitarPartFromScore(score: ScoreModel) {
   );
 }
 
-function snapshotEligibleBars(
+function guitarInjectTarget(guitarMap: InstrumentRegisterMap): MosaicInjectPartTarget {
+  return {
+    resolvePart: guitarPartFromScore,
+    getRegisterForBar: (bar, context) => {
+      const [zLow, zHigh] = getRegisterForBar(guitarMap, bar, context);
+      const registerWindow = getEffectiveRegisterWindowForBar(bar, context, 'guitar');
+      const effectiveLow = Math.max(zLow, registerWindow?.floor ?? 52);
+      const effectiveHigh = Math.min(zHigh, registerWindow?.ceil ?? 84, 79);
+      return [effectiveLow, effectiveHigh];
+    },
+  };
+}
+
+function bigBandLeadInjectTarget(): MosaicInjectPartTarget {
+  return {
+    resolvePart: (score) =>
+      score.parts.find((p) => p.id === BB_MOSAIC_INJECT_LEAD_PART_ID),
+    getRegisterForBar: (bar, context) => {
+      const bounds = BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES]!;
+      const registerWindow = getEffectiveRegisterWindowForBar(bar, context, 'bb_alto_sax');
+      const effectiveLow = Math.max(bounds[0], registerWindow?.floor ?? bounds[0]);
+      const effectiveHigh = Math.min(bounds[1], registerWindow?.ceil ?? bounds[1]);
+      return [effectiveLow, effectiveHigh];
+    },
+  };
+}
+
+function snapshotEligibleBarsForTarget(
   score: ScoreModel,
-  sections: readonly MosaicSectionPlanEntry[]
+  sections: readonly MosaicSectionPlanEntry[],
+  target: MosaicInjectPartTarget
 ): Map<number, BarInjectSnapshot> {
-  const guitar = guitarPartFromScore(score);
+  const part = target.resolvePart(score);
   const out = new Map<number, BarInjectSnapshot>();
-  if (!guitar) return out;
+  if (!part) return out;
   for (const section of sections) {
     for (let bar = section.startBar; bar <= section.endBar; bar++) {
-      const m = guitar.measures.find((x) => x.index === bar);
+      const m = part.measures.find((x) => x.index === bar);
       if (!m) continue;
       out.set(bar, {
         events: structuredClone(m.events),
@@ -110,18 +163,40 @@ function snapshotEligibleBars(
   return out;
 }
 
+function snapshotEligibleBars(
+  score: ScoreModel,
+  sections: readonly MosaicSectionPlanEntry[]
+): Map<number, BarInjectSnapshot> {
+  return snapshotEligibleBarsForTarget(score, sections, {
+    resolvePart: guitarPartFromScore,
+    getRegisterForBar: () => [55, 79],
+  });
+}
+
+function revertInjectedBarFromSnapshotForTarget(
+  score: ScoreModel,
+  snapshot: Map<number, BarInjectSnapshot>,
+  bar: number,
+  target: MosaicInjectPartTarget
+): void {
+  const part = target.resolvePart(score);
+  const snap = snapshot.get(bar);
+  if (!part || !snap) return;
+  const m = part.measures.find((x) => x.index === bar);
+  if (!m) return;
+  m.events = structuredClone(snap.events);
+  m.chord = snap.chord;
+}
+
 function revertInjectedBarFromSnapshot(
   score: ScoreModel,
   snapshot: Map<number, BarInjectSnapshot>,
   bar: number
 ): void {
-  const guitar = guitarPartFromScore(score);
-  const snap = snapshot.get(bar);
-  if (!guitar || !snap) return;
-  const m = guitar.measures.find((x) => x.index === bar);
-  if (!m) return;
-  m.events = structuredClone(snap.events);
-  m.chord = snap.chord;
+  revertInjectedBarFromSnapshotForTarget(score, snapshot, bar, {
+    resolvePart: guitarPartFromScore,
+    getRegisterForBar: () => [55, 79],
+  });
 }
 
 export function applyMosaicInjectHarmonyFallback(
@@ -136,10 +211,32 @@ export function applyMosaicInjectHarmonyFallback(
       const m = guitar.measures.find((x) => x.index === bar);
       if (!m) continue;
       const before = snapshot.get(bar)?.chord;
-      if (
-        mosaicInjectHarmonyBarViolated(before, m.chord, bar, section.endBar)
-      ) {
+      if (mosaicInjectHarmonyBarViolated(before, m.chord, bar, section.endBar)) {
         revertInjectedBarFromSnapshot(score, snapshot, bar);
+        console.log(
+          `[mosaicInject] harmony revert section=${section.sectionLabel} bar=${bar}`
+        );
+      }
+    }
+  }
+}
+
+/** Part-agnostic harmony revert after post-finalize inject (BB lead uses this in tests + pipeline). */
+export function applyMosaicInjectHarmonyFallbackForTarget(
+  score: ScoreModel,
+  snapshot: Map<number, BarInjectSnapshot>,
+  sections: readonly MosaicSectionPlanEntry[],
+  target: MosaicInjectPartTarget
+): void {
+  const part = target.resolvePart(score);
+  if (!part) return;
+  for (const section of sections) {
+    for (let bar = section.startBar; bar <= section.endBar; bar++) {
+      const m = part.measures.find((x) => x.index === bar);
+      if (!m) continue;
+      const before = snapshot.get(bar)?.chord;
+      if (mosaicInjectHarmonyBarViolated(before, m.chord, bar, section.endBar)) {
+        revertInjectedBarFromSnapshotForTarget(score, snapshot, bar, target);
         console.log(
           `[mosaicInject] harmony revert section=${section.sectionLabel} bar=${bar}`
         );
@@ -280,7 +377,13 @@ export function injectMosaicMotifNotesPostFinalize(
     return injectEligibleSectionsOnly(score, context, guitarMap);
   }
 
-  return injectMosaicMotifNotesPostFinalizeCore(score, context, guitarMap);
+  return injectMosaicMotifNotesPostFinalizeCore(
+    score,
+    context,
+    undefined,
+    guitarInjectTarget(guitarMap),
+    guitarMap
+  );
 }
 
 /** Section-scoped lift: inject only into mosaicOwned + injectEligible non-spine sections. */
@@ -289,35 +392,48 @@ export function injectEligibleSectionsOnly(
   context: CompositionContext,
   guitarMap: InstrumentRegisterMap
 ): ScoreModel {
+  return injectEligibleSectionsForTarget(
+    score,
+    context,
+    guitarInjectTarget(guitarMap)
+  );
+}
+
+function injectEligibleSectionsForTarget(
+  score: ScoreModel,
+  context: CompositionContext,
+  target: MosaicInjectPartTarget
+): ScoreModel {
   const meta = context.generationMetadata;
   const plan = meta?.mosaicSectionPlan ?? [];
   const eligible = plan.filter(isMosaicInjectEligibleSection);
   if (!eligible.length) return score;
 
-  const snapshot = snapshotEligibleBars(score, eligible);
+  const snapshot = snapshotEligibleBarsForTarget(score, eligible, target);
   const injected = injectMosaicMotifNotesPostFinalizeCore(
     structuredClone(score) as ScoreModel,
     context,
-    guitarMap,
-    eligible
+    eligible,
+    target
   );
-  applyMosaicInjectHarmonyFallback(injected, snapshot, eligible);
+  applyMosaicInjectHarmonyFallbackForTarget(injected, snapshot, eligible, target);
   return injected;
 }
 
 function injectMosaicMotifNotesPostFinalizeCore(
   score: ScoreModel,
   context: CompositionContext,
-  guitarMap: InstrumentRegisterMap,
-  sectionFilter?: readonly MosaicSectionPlanEntry[]
+  sectionFilter: readonly MosaicSectionPlanEntry[] | undefined,
+  target: MosaicInjectPartTarget,
+  guitarMap?: InstrumentRegisterMap
 ): ScoreModel {
   const meta = context.generationMetadata;
   const variants = meta?.mosaicSectionMotifVariants;
   const plan = sectionFilter ?? meta?.mosaicSectionPlan;
   if (!variants || !plan?.length) return score;
   const out = structuredClone(score) as ScoreModel;
-  const guitar = guitarPartFromScore(out);
-  if (!guitar) return out;
+  const injectPart = target.resolvePart(out);
+  if (!injectPart) return out;
   const tonicPlan = meta?.mosaicSectionPlan ?? plan;
 
   for (const section of plan) {
@@ -352,12 +468,11 @@ function injectMosaicMotifNotesPostFinalizeCore(
     let carryPitch: number | undefined;
 
     for (const bar of sectionBars) {
-      const m = guitar.measures.find((x) => x.index === bar);
+      const m = injectPart.measures.find((x) => x.index === bar);
       if (!m) continue;
-      const [zLow, zHigh] = getRegisterForBar(guitarMap, bar, context);
-      const registerWindow = getEffectiveRegisterWindowForBar(bar, context, 'guitar');
-      const effectiveLow = Math.max(zLow, registerWindow?.floor ?? 52);
-      const effectiveHigh = Math.min(zHigh, registerWindow?.ceil ?? 84, 79);
+      const [effectiveLow, effectiveHigh] = guitarMap
+        ? guitarInjectTarget(guitarMap).getRegisterForBar(bar, context)
+        : target.getRegisterForBar(bar, context);
       let startMidi = 60 + tonicPc + delta;
       while (startMidi < effectiveLow) startMidi += 12;
       while (startMidi > effectiveHigh) startMidi -= 12;
@@ -418,4 +533,54 @@ function injectMosaicMotifNotesPostFinalizeCore(
     }
   }
   return out;
+}
+
+function mosaicPlanHasBigBandPresetRole(
+  plan: readonly MosaicModeSectionPlanEntry[]
+): boolean {
+  return plan.some(
+    (entry) =>
+      (entry as MosaicModeSectionPlanEntry & { presetRole?: string }).presetRole ===
+      'big_band'
+  );
+}
+
+/** True when BB post-finalize motif inject gates are satisfied (default off). */
+export function isBigBandMosaicInjectGated(
+  context: CompositionContext,
+  bbMosaicEnabled?: boolean
+): boolean {
+  if (!isMosaicModeActive(context)) return false;
+  if (bbMosaicEnabled !== true) return false;
+  if (context.generationMetadata?.allowMosaicPostFinalizeInject !== true) return false;
+  const plan = context.generationMetadata?.mosaicSectionPlan ?? [];
+  return mosaicPlanHasBigBandPresetRole(plan);
+}
+
+function ensureMosaicMotifVariantsForInject(context: CompositionContext): void {
+  const meta = context.generationMetadata;
+  if (!meta) return;
+  const existing = meta.mosaicSectionMotifVariants;
+  if (existing && Object.keys(existing).length > 0) return;
+  const plan = meta.mosaicSectionPlan ?? [];
+  if (!plan.length) return;
+  const totalBars = Math.max(...plan.map((s) => s.endBar), 1);
+  const source = generateMosaicSourceMotif(context.seed, totalBars);
+  const tonicMap = buildMosaicTonicMap(plan, context);
+  meta.mosaicSourceMotif = source;
+  meta.mosaicSectionMotifVariants = buildMosaicMotifVariants(source, plan, tonicMap);
+}
+
+/**
+ * Big-band post-finalize motif inject — lead alto only; section-scoped V79f bypass reused.
+ * Gates: `presetRole === 'big_band'`, `bbMosaicEnabled`, `allowMosaicPostFinalizeInject`.
+ */
+export function injectMosaicMotifNotesPostFinalizeBigBand(
+  score: ScoreModel,
+  context: CompositionContext,
+  bbMosaicEnabled?: boolean
+): ScoreModel {
+  if (!isBigBandMosaicInjectGated(context, bbMosaicEnabled)) return score;
+  ensureMosaicMotifVariantsForInject(context);
+  return injectEligibleSectionsForTarget(score, context, bigBandLeadInjectTarget());
 }
