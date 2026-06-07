@@ -2631,7 +2631,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     try {
       let mosaicSectionEvalResults = evaluateMosaicSections(score, appliedContext);
       bindMosaicSectionRetrySession({
-        getScore: () => score,
+        getScore: () => score!,
         setScore: (next) => {
           score = next;
         },

@@ -192,12 +192,12 @@ const SLICE_ROW_ALIAS_IDS: Readonly<Record<string, string>> = {
  * Values must resolve to an existing SLICE_ROWS composerId (directly or via COMPOSER_ID_ALIASES).
  */
 const DISPATCH_STUB_ALIASES: Readonly<Record<string, string>> = {
-  /** Stub pending dedicated ornette_coleman slice — POST_BOP open-cadence fit (andrew_hill). */
-  ornette_coleman: 'andrew_hill',
-  ornette: 'andrew_hill',
-  harmolodics: 'andrew_hill',
-  free_jazz: 'andrew_hill',
-  lonely_woman: 'andrew_hill',
+  // rc19 — ornette_coleman remapped from andrew_hill stub to wayne_shorter; full ornette profile planned
+  ornette_coleman: 'wayne_shorter',
+  ornette: 'wayne_shorter',
+  harmolodics: 'wayne_shorter',
+  free_jazz: 'wayne_shorter',
+  lonely_woman: 'wayne_shorter',
   /** Guitar ids with VRB/stub only — nearest ROCK_FUSION / ART_ROCK / JAZZ_GUITAR dispatch fit. */
   morello: 'fripp',
   eddie_van_halen: 'allan_holdsworth',
