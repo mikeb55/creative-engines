@@ -890,7 +890,22 @@ const WAYNE_SHORTER: VoiceRuleBundle = {
   },
   melodicPolicy: {
     contour: 'orbiting',
-    maxLeapSemitones: 9,
+    maxLeapSemitones: 5,
+    preferredIntervalSets: [1, 2, 5],
+    preferredIntervalWeights: {
+      1: 0.15,
+      2: 0.2,
+      5: 0.35,
+      3: 0.05,
+      4: 0.05,
+      6: 0.05,
+      7: 0.05,
+      8: 0.05,
+      9: 0.05,
+      10: 0.05,
+      11: 0.05,
+      12: 0.05,
+    },
   },
   orchestrationPolicy: {
     anchorToneCount: 1,
@@ -908,7 +923,13 @@ const WAYNE_SHORTER: VoiceRuleBundle = {
     narrativeArc: 'free',
     sectionRecallEnforced: false,
   },
-  rhythmPolicy: { antiMetric: false },
+  rhythmPolicy: {
+    antiMetric: false,
+    // qw8 — fourthSecondIntervalFamily + restRatio: ≥3 active beats, offbeat bias for metricDisplacement
+    pulseCell: { pattern: [0, 1, 0, 1, 1, 0, 1, 0], weight: 0.75 },
+  },
+  targetNotesPerBar: 4,
+  densityVariance: 0.12,
   repairPolicy: {
     resolveParallels: true,
     maxVoiceOverlap: 3,

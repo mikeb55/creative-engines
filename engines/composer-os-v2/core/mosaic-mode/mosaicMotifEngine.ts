@@ -181,12 +181,19 @@ function expandMotifForVrbPolicy(
   const weights = vrb.melodicPolicy.preferredIntervalWeights;
   const preferredSets = vrb.melodicPolicy.preferredIntervalSets;
   const frippCell = [1, 4, -5] as const;
+  const wayneCell = [5, -2, 1, -2] as const;
   const isFrippFixedCell = vrb.voiceId === 'fripp' || vrb.voiceId?.startsWith('fripp');
+  const isWayneFixedCell = vrb.voiceId === 'wayne_shorter' && Boolean(weights);
   let intervalPattern: number[];
   if (isFrippFixedCell && (weights || preferredSets?.length)) {
     intervalPattern = Array.from(
       { length: Math.max(0, noteCount - 1) },
       (_, i) => frippCell[i % frippCell.length]!
+    );
+  } else if (isWayneFixedCell) {
+    intervalPattern = Array.from(
+      { length: Math.max(0, noteCount - 1) },
+      (_, i) => wayneCell[i % wayneCell.length]!
     );
   } else if (weights) {
     intervalPattern = [...motif.intervalPattern];
@@ -272,13 +279,22 @@ export function mosaicMotifNotesForBar(
   barIndexInSection: number,
   startMidi: number,
   effectiveLow: number,
-  effectiveHigh: number
+  effectiveHigh: number,
+  continueFromPitch?: number
 ): MosaicMotifBarNote[] {
   const vrb = getVoiceRuleBundle(songwriterStyleId);
   const expanded = expandMotifForVrbPolicy(core, vrb, seed, barBeats, barIndexInSection);
   const notes: MosaicMotifBarNote[] = [];
   let pitch = startMidi;
-  let prevPitch: number | null = null;
+  let prevPitch: number | null = continueFromPitch ?? null;
+  let intervalIdx = 0;
+  const skipBluesNudge = vrb.voiceId === 'wayne_shorter';
+  if (continueFromPitch != null && expanded.intervalPattern.length > 0) {
+    pitch = continueFromPitch + expanded.intervalPattern[0]!;
+    while (pitch < effectiveLow) pitch += 12;
+    while (pitch > effectiveHigh) pitch -= 12;
+    intervalIdx = 1;
+  }
   for (let i = 0; i < expanded.rhythmPattern.length; i++) {
     const rh = expanded.rhythmPattern[i]!;
     if (rh.startBeat >= barBeats - 1e-6) continue;
@@ -286,12 +302,13 @@ export function mosaicMotifNotesForBar(
     const maxDur = Math.max(0, barBeats - rh.startBeat - tailGap);
     const duration = Math.min(rh.duration, maxDur);
     if (duration <= 0) continue;
-    if (i > 0 && i - 1 < expanded.intervalPattern.length) {
-      pitch += expanded.intervalPattern[i - 1]!;
+    if (i > 0 && intervalIdx < expanded.intervalPattern.length) {
+      pitch += expanded.intervalPattern[intervalIdx]!;
+      intervalIdx++;
       while (pitch < effectiveLow) pitch += 12;
       while (pitch > effectiveHigh) pitch -= 12;
     }
-    if (prevPitch !== null) {
+    if (prevPitch !== null && !skipBluesNudge) {
       pitch = nudgePitchAwayFromBluesInterval(pitch, prevPitch, effectiveLow, effectiveHigh);
     }
     notes.push({ pitch, startBeat: rh.startBeat, duration });
@@ -793,6 +810,21 @@ function applyNamedDeltaOverride(
       rhythmPattern,
       source.intervalPattern
     ));
+    const styleId = songwriterStyleId ?? 'wayne_shorter';
+    const vrb = getVoiceRuleBundle(styleId);
+    if (
+      vrb.melodicPolicy.preferredIntervalWeights ||
+      vrb.rhythmPolicy.pulseCell ||
+      vrb.targetNotesPerBar !== undefined
+    ) {
+      ({ intervalPattern, rhythmPattern } = applyVrbIntervalRhythmPolicy(
+        intervalPattern,
+        rhythmPattern,
+        vrb,
+        0,
+        4
+      ));
+    }
   } else if (key === 'tv') {
     intervalPattern = intervalPattern.map((iv) =>
       Math.abs(iv) > 3 ? (iv >= 0 ? 2 : -2) : iv

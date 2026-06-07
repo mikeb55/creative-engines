@@ -193,6 +193,8 @@ export function injectMosaicMotifNotesPostFinalize(
         ? Math.max(1, 80 - MOSAIC_PHRASE_ROLE_DYNAMIC_STEP)
         : undefined;
 
+    let carryPitch: number | undefined;
+
     for (const bar of sectionBars) {
       const m = guitar.measures.find((x) => x.index === bar);
       if (!m) continue;
@@ -225,13 +227,17 @@ export function injectMosaicMotifNotesPostFinalize(
           bar - section.startBar,
           startMidi,
           effectiveLow,
-          effectiveHigh
+          effectiveHigh,
+          carryPitch
         );
         for (const n of barNotes) {
           addEvent(
             m,
             createNote(n.pitch, n.startBeat, n.duration, 1, motifRef, undefined, motifVel)
           );
+        }
+        if (barNotes.length > 0) {
+          carryPitch = barNotes[barNotes.length - 1]!.pitch;
         }
         if (savedChord) m.chord = savedChord;
         continue;
