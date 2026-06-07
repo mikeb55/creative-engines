@@ -20,6 +20,7 @@ import { buildStringQuartetMusicContextFromGenerateInput } from '../core/string-
 import type { StringQuartetTextureArchetype } from '../core/string-quartet/stringQuartetMusicContextTypes';
 import { resolveBarMeterMapForGenerateRequest } from '../core/section-architecture/resolveGenerationBarMeterMap';
 import { runSongMode } from '../core/song-mode/runSongMode';
+import { mapBigBandToMosaicSectionPlan } from '../core/big-band/bigBandToMosaicMapper';
 import { mapSongModeToMosaicSectionPlan } from '../core/song-mode/songModeToMosaicMapper';
 import type { SectionChordPlan } from '../core/song-mode/songCompilationTypes';
 import type {
@@ -279,14 +280,42 @@ export const SUPPORTED_APP_PRESET_IDS = [
 
 export type SupportedAppPresetId = (typeof SUPPORTED_APP_PRESET_IDS)[number];
 
-function mosaicContextFromGenerateRequest(req: GenerateRequest): CompositionContext | undefined {
-  if (!req.mosaicSectionPlan?.length && !req.mosaicOutputFormat) {
+function mosaicContextFromGenerateRequest(
+  req: GenerateRequest,
+  options?: {
+    bbPlan?: { formPlan: import('../core/big-band/bigBandPlanTypes').BigBandFormPlan; sectionPlan: import('../core/big-band/bigBandPlanTypes').BigBandSectionPlan };
+    defaultSongwriterStyleId?: string;
+  }
+): CompositionContext | undefined {
+  const mosaicExplicitOptIn =
+    req.bbMosaicEnabled === true ||
+    (Array.isArray(req.mosaicSectionPlan) && req.mosaicSectionPlan.length >= 2) ||
+    req.mosaicOutputFormat != null;
+  if (!mosaicExplicitOptIn) {
     return undefined;
   }
+
+  let mosaicPlan = req.mosaicSectionPlan;
+  if ((!mosaicPlan || mosaicPlan.length < 2) && options?.bbPlan) {
+    const mapped = mapBigBandToMosaicSectionPlan(options.bbPlan, {
+      songwriterStyleId: options.defaultSongwriterStyleId,
+    });
+    if (mapped.length >= 2) {
+      mosaicPlan = mapped;
+    }
+  }
+
+  if (!mosaicPlan?.length && !req.mosaicOutputFormat) {
+    return undefined;
+  }
+
   return {
     generationMetadata: {
-      mosaicSectionPlan: req.mosaicSectionPlan ?? [],
+      ...(mosaicPlan?.length ? { mosaicSectionPlan: mosaicPlan } : {}),
       mosaicOutputFormat: req.mosaicOutputFormat,
+      ...(options?.defaultSongwriterStyleId
+        ? { songwriterStyleId: options.defaultSongwriterStyleId }
+        : {}),
     } as GenerationMetadata & { mosaicOutputFormat?: 'melody-bass-chords' | 'lead-sheet' },
   } as CompositionContext;
 }
@@ -2850,8 +2879,16 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     zappaStyleMode: req.zappaStyleMode,
     seed: runSeed,
   });
-  const bbMosaicContext = mosaicContextFromGenerateRequest(req);
-  const bigBandRealisationInput: BigBandRunInput & { formId?: string; bpm?: number; context?: CompositionContext } = {
+  const bbMosaicContext = mosaicContextFromGenerateRequest(req, {
+    bbPlan: { formPlan: bb.formPlan, sectionPlan: bb.sectionPlan },
+    defaultSongwriterStyleId: ensembleSongwriterStyleId,
+  });
+  const bigBandRealisationInput: BigBandRunInput & {
+    formId?: string;
+    bpm?: number;
+    context?: CompositionContext;
+    bbMosaicEnabled?: boolean;
+  } = {
     seed: req.seed,
     title,
     totalBars: bbTotalBars,
@@ -2896,6 +2933,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     ...(req.feelMode ? { feelMode: req.feelMode } : {}),
     ...(req.drumArticulation ? { drumArticulation: req.drumArticulation } : {}),
     ...(bbMosaicContext ? { context: bbMosaicContext } : {}),
+    ...(req.bbMosaicEnabled === true ? { bbMosaicEnabled: true } : {}),
   };
   const sectionRegenBase = req.sectionRegeneration?.baseMusicXml?.trim();
   let realised: ReturnType<typeof runBigBandRealisation>;

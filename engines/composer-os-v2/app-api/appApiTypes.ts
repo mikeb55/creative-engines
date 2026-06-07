@@ -353,6 +353,12 @@ export interface GenerateRequest {
     mosaicOwned?: boolean;
     injectEligible?: boolean;
   }>;
+  /**
+   * Big Band — opt-in per-section Mosaic dispatch (V80a BB-M2).
+   * When true, maps form slices → mosaic plan unless explicit {@link mosaicSectionPlan} is set.
+   * Default off — existing BB requests unchanged.
+   */
+  bbMosaicEnabled?: boolean;
   /** Mosaic Mode — ensemble export layout (`melody-bass-chords` | `lead-sheet`). */
   mosaicOutputFormat?: 'melody-bass-chords' | 'lead-sheet';
   /**
