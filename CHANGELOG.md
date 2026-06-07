@@ -1,3 +1,30 @@
+## v2.4.0 — Song Mode ↔ Mosaic integration (2026-06-07)
+
+Release tag **`v2.4.0`**. Baseline after **`v2.3.0`** (`f14eaaba`).
+
+### V79 arc — Song Mode ↔ Mosaic integration
+
+| Step | Commit | Scope |
+|------|--------|--------|
+| **V79a** | **`673e865d`** | BB + SQ app pass-through — `mosaicSectionPlan`, `mosaicOutputFormat` wired through generate/API. Follow-ups: **`e390465b`** (Song Mode mosaic injection gated to explicit opt-in) · **`7be52ef9`** (allowlist pre-existing Jack White smoke rows). |
+| **V79b** | **`739ecd0f`** | Per-section composer routing — `songModeToMosaicMapper` v2. |
+| **V79c** | **`4ab5dfdd`** | Generate UI mosaic section planner (`MosaicSectionPlanner.tsx`). |
+| **V79d** | **`8b27925c`** | Pipeline-truth LOCK — mosaic harmony aligned with Song Mode spine. |
+| **V79e** | **`48d65098`** | Song Mode end-to-end mosaic smoke harness (`songModeMosaicSmoke.test.ts`). |
+| **V79f** | **`f1d11ffe`** | Hook-first vs multi-composer policy — section-scoped bypass lift (`allowMosaicPostFinalizeInject`, `spineProtected` / `mosaicOwned` / `injectEligible`, harmony diff auto-revert). |
+| **V79g** | *(this release)* | Ship hygiene — CHANGELOG, roadmap, **`v2.4.0`** tag. |
+
+### V78 arc (shipped in v2.3.0)
+
+| Step | Commit | Scope |
+|------|--------|--------|
+| **V78** | **`05fb79f7`** | LFV fractional scoring, 80% threshold — `lfv_integrity` 1.0, overall 0.900. |
+| **V78c** | **`b036849a`** | BB integration — `mosaicOutputFormat` wired at ScoreModel output. |
+| **V78d** | **`55be2520`** | SQ integration — format flag wired at ScoreModel output. |
+| **V78e** | **`f14eaaba`** | Song Mode → Mosaic thin mapper wired at `runGoldenPath` handoff. |
+
+---
+
 ### V78 — LFV integrity fix
 - _lfv_ok_for_activity_bar: passes if ≥80% of notes in range
 - score_lfv_integrity: fail=0.5 not 0.0

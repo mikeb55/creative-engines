@@ -1,6 +1,12 @@
-# Composer OS Roadmap [2026-05-25]
+# Composer OS Roadmap [2026-06-07]
 
-**Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
+**Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](../CHANGELOG.md), [docs/CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
+
+**V79 — COMPLETE (2026-06-07):** Song Mode ↔ Mosaic integration — BB/SQ app pass-through (**`673e865d`** + opt-in gate **`e390465b`**) · per-section composer routing mapper v2 (**`739ecd0f`**) · Generate UI mosaic section planner (**`4ab5dfdd`**) · pipeline-truth LOCK harmony spine (**`8b27925c`**) · Song Mode end-to-end mosaic smoke (**`48d65098`**) · hook-first section-scoped bypass lift (**`f1d11ffe`**) · ship **`v2.4.0`**. See [CHANGELOG.md](../CHANGELOG.md) § **v2.4.0**.
+
+**V78 — COMPLETE (2026-06-07, tag `v2.3.0`):** LFV integrity fix (**`05fb79f7`**) · BB mosaic output format at ScoreModel (**`b036849a`**) · SQ mosaic output format (**`55be2520`**) · Song Mode → Mosaic thin mapper at golden-path handoff (**`f14eaaba`**).
+
+**V80 — NEXT BACKLOG (candidates):** duo depth · multi-chorus quality · MusicXML import phase 3+ · Wyble parity · ECM GCE orchestration · Jack White slice fix (**2** allowlisted smoke rows: drone-riff diagnostics receipt, harmonyByImplication). Re-sequence when product shifts — see **§ What to do next**.
 
 **V30 — COMPLETE (2026-05-05):** **Odd meter UI parity** (mixed-meter badge on chart preview + paste / iReal result blocks); **MusicXML import Phase 1** (`parseMusicXml` / core **`ParsedChart`** path); **Duo expansion** — Song Mode **pairing cards** + swap (**`pat_metheny`**, **`bacharach`**, **`ecm_chamber`**), **Duo intent** selector (UI), **Duo Health** pill on success, **ECM Chamber safe sweep** badge + Advanced override (**UI-only**). Duo expansion here was **surfaces + diagnostics**, not a duo golden-path slice rebuild.
 
@@ -425,8 +431,11 @@ Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartók** native bundle (not in
 
 ---
 
-## Current (as of 2026-05-30 snapshot)
+## Current (as of 2026-06-07 snapshot)
 
+- **V79 — Song Mode ↔ Mosaic integration — COMPLETE (2026-06-07):** Explicit opt-in mosaic dispatch from Song Mode; per-section composer routing; Generate UI section planner; pipeline-truth LOCK on harmony spine; hook-first bypass lift behind **`allowMosaicPostFinalizeInject`** (default off). Jest **535**/0; smoke **652**/0 (full tier). Tag **`v2.4.0`**.
+- **V78 — LFV + ensemble mosaic format + Song Mode mapper — COMPLETE (`v2.3.0`):** Martino LFV integrity; BB/SQ **`mosaicOutputFormat`** ScoreModel wiring; **`mapSongModeToMosaicSectionPlan`** at golden-path handoff.
+- **V80 backlog (candidates):** duo depth · multi-chorus quality · MusicXML import phase 3+ · Wyble parity · ECM GCE orchestration · Jack White slice fix (allowlisted smoke: drone-riff diagnostics receipt, harmonyByImplication).
 - **Zappa Solo MusicContext producer (2026-05-30) — V106p2 shipped:** `buildMusicContextFromZappaSolo()` — melodic dramatist over supplied harmony; solo arc claim/agitation/fracture/crooked_landing; Population participation primary/secondary/tertiary; receipt `zappa_solo_realisation_complete`; always-on. Jest node **478**/0 (**60** suites).
 - **Population Composer hybrid MusicContext (2026-05-30) — V106p1 shipped:** `buildMusicContextFromPopulation()` — ecology selection across tritonic · monk · wayne_shorter · vault · big_band; dramatic arc phases (`build` · `suspend` · `fracture` · `cadence` · `restart`); receipt `population_composer_realisation_complete`; always-on. Jest node **469**/0 (**59** suites).
 - **String Quartet SQ rhythm engines (2026-05-14) — 6 / 7 shipped:** Native **`sqRhythmEngineId`** engines on **`GenerationMetadata`** (receipts + Style Panel wiring): **`bartok_bulgarian_aksak`** (`BG_RHYTHM_*`) · **`free_proportional`** (`FP_RHYTHM_*`) · **`baroque_dance`** (`BD_RHYTHM_*`) · **`reich_phasing_grid`** (`RP_RHYTHM_*`) · **`viennese_waltz`** (`VW_RHYTHM_*`) · **`jewish_klezmer`** (`KL_RHYTHM_*`). Style context prefixes: **`bg`**, **`fp`**, **`bd`**, **`rp`**, **`vw`**, **`kl`**. Cross-preset rhythm engines (Fela Kuti, Greek Rebetiko, Brazilian, Second Line, Cuban / Afro-Cuban) unchanged. **Remaining (deferred, not abandoned):** **Swing adapted for SQ** (`sq_swing`) — Perplexity research + execution prompt queued for a future sprint (Turtle Island–aligned grammar).
