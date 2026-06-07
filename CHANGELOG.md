@@ -1,3 +1,36 @@
+## v2.5.0 — Mixed-Preset Assembly + Import (2026-06-07)
+
+Release tag **`v2.5.0`**. Baseline after **`v2.4.0`** (`a78f8b0a`).
+
+### V80 arc — Mixed-preset assembly + import pipeline
+
+| Step | Commit | Scope |
+|------|--------|--------|
+| **V80b** | **`18e49bd2`** | BB Mosaic dispatch — mapper + harmony dispatch + eval + retry. |
+| **V80c** | **`00afdda0`** | Section role tag + golden path router — INS-1 + INS-2. |
+| **V80d** | **`cdac241e`** | BB tile inject — lead-voice motif, section-scoped, harmony revert (BB-M4). |
+| **V80e** | **`21e66125`** | SQ Mosaic dispatch — mapper + harmony dispatch + eval + retry (SQ-M1 + SQ-M2). |
+| **V80f-verify** | **`2f15b808`** | BB + SQ mosaic end-to-end smoke harness — 7 cases, flag-on paths proven. |
+| **V80g** | **`067ad54f`** | SQ motif soft-target into contrapuntal engine — pre-build seed, voice-leading preserved (SQ-M3). |
+| **V80h** | **`187199c0`** | MusicXML merge + UI gating — `AssembledScoreModel`, real fragment realizers, scoped late passes (INS-3 + INS-4). |
+| **V80i** | **`325f6a71`** | Mixed-preset export integrity — part×bar coverage, scope guard, round-trip validation (INS-5). |
+| **V80k** | **`a3589cbc`** | MusicXML + MIDI import — `MosaicImportTimeline` IR, parsers, harmony lock + motif adapters (IMP-1 + IMP-2 + IMP-3). |
+| **V80l** | **`91899bad`** | Variation engine — N evaluated candidates per section from import seed, auto-select by GCE score (IMP-4). |
+| **V80m** | **`52114366`** | Style-transfer — pinned melody reharmonised in composer voice, strength blend, V80j spectrum honoured (IMP-5). |
+| **V80n** | *(this release)* | Ship hygiene — CHANGELOG, roadmap, **`v2.5.0`** tag, desktop exe rebuild. |
+
+**Design gates (decisions only, no ship commit):** **V80a** (mixed-preset assembly architecture) · **V80f** (BB/SQ realizer contract) · **V80j** (import harmony spectrum IMP-1 vs IMP-5).
+
+**Three tracks shipped:**
+
+1. **Track 1 — BB + SQ fully Mosaic-dispatched:** per-section harmony precompute, eval profiles, retry, BB tile inject, SQ contrapuntal soft-target, E2E smoke harness.
+2. **Track 2 — MIDI/MusicXML import → variation + style-transfer:** `MosaicImportTimeline` IR, harmony lock/blend spectrum, variation engine (IMP-4), style-transfer with pinned melody (IMP-5).
+3. **Track 3 — Mixed-preset MusicXML merge:** duo + BB + SQ fragments in one score (`AssembledScoreModel`), scoped late passes, export integrity receipts (INS-5).
+
+**Verify:** Jest **580**/580 · Smoke **652** PASS / **0** unexpected failures (full tier).
+
+---
+
 ## v2.4.0 — Song Mode ↔ Mosaic integration (2026-06-07)
 
 Release tag **`v2.4.0`**. Baseline after **`v2.3.0`** (`f14eaaba`).
