@@ -6,7 +6,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import type { GenerateRequest, ImportHarmonyMode } from './appApiTypes';
-import type { GenerationMetadata } from '../core/compositionContext';
+import type { CompositionContext, GenerationMetadata } from '../core/compositionContext';
 import { COMPOSER_OS_VERSION } from './composerOsConfig';
 import { generateComposition, type GenerateResult } from './generateComposition';
 import { runSqToBbWorkflowApp } from './sqToBbWorkflowApp';
@@ -215,6 +215,18 @@ export const SUPPORTED_APP_PRESET_IDS = [
 ] as const;
 
 export type SupportedAppPresetId = (typeof SUPPORTED_APP_PRESET_IDS)[number];
+
+function mosaicContextFromGenerateRequest(req: GenerateRequest): CompositionContext | undefined {
+  if (!req.mosaicSectionPlan?.length && !req.mosaicOutputFormat) {
+    return undefined;
+  }
+  return {
+    generationMetadata: {
+      mosaicSectionPlan: req.mosaicSectionPlan ?? [],
+      mosaicOutputFormat: req.mosaicOutputFormat,
+    } as GenerationMetadata & { mosaicOutputFormat?: 'melody-bass-chords' | 'lead-sheet' },
+  };
+}
 
 function validationForStructural(ok: boolean, errors: string[]): GenerateResult['validation'] {
   return {
@@ -2770,7 +2782,8 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     zappaStyleMode: req.zappaStyleMode,
     seed: runSeed,
   });
-  const bigBandRealisationInput: BigBandRunInput & { formId?: string; bpm?: number } = {
+  const bbMosaicContext = mosaicContextFromGenerateRequest(req);
+  const bigBandRealisationInput: BigBandRunInput & { formId?: string; bpm?: number; context?: CompositionContext } = {
     seed: req.seed,
     title,
     totalBars: bbTotalBars,
@@ -2814,6 +2827,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     ...(req.figureResponse ? { figureResponse: req.figureResponse } : {}),
     ...(req.feelMode ? { feelMode: req.feelMode } : {}),
     ...(req.drumArticulation ? { drumArticulation: req.drumArticulation } : {}),
+    ...(bbMosaicContext ? { context: bbMosaicContext } : {}),
   };
   const sectionRegenBase = req.sectionRegeneration?.baseMusicXml?.trim();
   let realised: ReturnType<typeof runBigBandRealisation>;
@@ -3158,7 +3172,13 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     zappaStyleMode: req.zappaStyleMode,
     seed: effectiveSeed,
   });
-  const quartetRealisationInput: StringQuartetRunInput & { formId?: string; era?: BigBandEraId; bpm?: number } = {
+  const sqMosaicContext = mosaicContextFromGenerateRequest(req);
+  const quartetRealisationInput: StringQuartetRunInput & {
+    formId?: string;
+    era?: BigBandEraId;
+    bpm?: number;
+    context?: CompositionContext;
+  } = {
     seed: effectiveSeed,
     title,
     totalBars: req.totalBars ?? importedSongResult?.song.totalBars,
@@ -3193,6 +3213,7 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
       : {}),
     ...(effectiveSong ? { song: effectiveSong } : {}),
     ...(stringQuartetGenerationMetadata ? { generationMetadata: stringQuartetGenerationMetadata } : {}),
+    ...(sqMosaicContext ? { context: sqMosaicContext } : {}),
   };
   const sectionRegenBaseSq = req.sectionRegeneration?.baseMusicXml?.trim();
   let realised: ReturnType<typeof runQuartetRealisation>;

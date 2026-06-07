@@ -350,6 +350,8 @@ export interface GenerateRequest {
     endBar: number;
     songwriterStyleId: string;
   }>;
+  /** Mosaic Mode — ensemble export layout (`melody-bass-chords` | `lead-sheet`). */
+  mosaicOutputFormat?: 'melody-bass-chords' | 'lead-sheet';
   /**
    * V3.4 — MusicXML key policy: `auto` infers from chords unless a parseable `tonalCenter` / `tonalCenterOverride` is set;
    * `override` is legacy alias for explicit key (same explicit-string authority); `none` hides key signature.
