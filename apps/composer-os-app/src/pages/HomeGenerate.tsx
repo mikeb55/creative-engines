@@ -4452,14 +4452,22 @@ export function HomeGenerate({
                     section.songwriterStyleId === 'default' || !section.songwriterStyleId.trim()
                       ? songwriterStyle.trim()
                       : section.songwriterStyleId.trim();
+                  const presetRole = section.presetRole ?? 'duo';
                   return {
                     sectionLabel: section.sectionLabel.trim(),
                     startBar: section.startBar,
                     endBar: section.endBar,
                     songwriterStyleId: styleId,
                     ...(section.timeSignature ? { timeSignature: section.timeSignature } : {}),
+                    ...(presetRole !== 'duo' ? { presetRole } : {}),
                   };
                 }),
+                ...(mosaicSections.some((s) => (s.presetRole ?? 'duo') === 'big_band')
+                  ? { bbMosaicEnabled: true as const }
+                  : {}),
+                ...(mosaicSections.some((s) => s.presetRole === 'string_quartet')
+                  ? { sqMosaicEnabled: true as const }
+                  : {}),
                 ...(mosaicOutputFormat !== 'none' ? { mosaicOutputFormat } : {}),
               }
             : {}),

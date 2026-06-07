@@ -560,6 +560,8 @@ export interface GenerationMetadata {
     mosaicOwned?: boolean;
     /** Tile inject may fire when true and {@link allowMosaicPostFinalizeInject} is on. */
     injectEligible?: boolean;
+    /** INS-1 — ensemble realizer for this section (`duo` default when absent). */
+    presetRole?: 'duo' | 'big_band' | 'string_quartet';
   }>;
   /** Song Mode hook-first: lift mosaic post-finalize inject on eligible non-spine sections (default off). */
   allowMosaicPostFinalizeInject?: boolean;
@@ -597,6 +599,14 @@ export interface GenerationMetadata {
   }>;
   /** Mosaic Mode rc12 — section GCE retry outcome receipt when a failing section passes on retry. */
   mosaicSectionRetryReceipt?: string;
+  /** INS-2 — stub realizer receipts from golden-path section router (INS-3 merges fragments). */
+  mosaicSectionRealizationResults?: Array<{
+    sectionLabel: string;
+    startBar: number;
+    endBar: number;
+    presetRole: 'duo' | 'big_band' | 'string_quartet';
+    stub?: boolean;
+  }>;
   /** String Quartet StylePanel — SQ rhythm engine id (`bartok_bulgarian_aksak`, `free_proportional`, `baroque_dance`, `reich_phasing_grid`, `viennese_waltz`, `jewish_klezmer`, …). */
   sqRhythmEngineId?: string;
   /** String Quartet — rhythm engine fingerprint receipts (`BG_RHYTHM_*`, …) for telemetry / eval. */

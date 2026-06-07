@@ -1,0 +1,18 @@
+**12 remaining after V80b:**
+
+| # | Session | What | Model |
+|---|---|---|---|
+| 1 | V80c | INS-1 + INS-2 — section role tag + golden path router | Sonnet 4.6 |
+| 2 | V80d | BB-M4 — BB tile inject | Opus 4.8 |
+| 3 | V80e | SQ-M1 + SQ-M2 — SQ mapper + dispatch + eval + retry | Sonnet 4.6 |
+| 4 | V80f | Design gate — Contrapuntal contract | Opus 4.8 |
+| 5 | V80g | SQ-M3 — SQ tile inject | Opus 4.8 |
+| 6 | V80h | INS-3 + INS-4 — MusicXML merge + UI gating | Opus 4.8 |
+| 7 | V80i | INS-5 — export integrity | Sonnet 4.6 |
+| 8 | V80j | Design gate — Import IR | Opus 4.8 |
+| 9 | V80k | IMP-1 + IMP-2 + IMP-3 — MusicXML + MIDI import | Sonnet 4.6 |
+| 10 | V80l | IMP-4 — variation engine | Opus 4.8 |
+| 11 | V80m | IMP-5 — style-transfer | Opus 4.8 |
+| 12 | V80n | Ship hygiene — CHANGELOG, roadmap, tag v2.5.0, exe rebuild | Sonnet 4.6 |
+
+3 of those are design gates (no code). After all 12, the full vision is built: multi-composer songs, BB/SQ insertable anywhere, MIDI/MusicXML import with variations and style-transfer.

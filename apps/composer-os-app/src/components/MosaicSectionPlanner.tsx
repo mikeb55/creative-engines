@@ -4,12 +4,15 @@
 
 import type { CSSProperties } from 'react';
 
+export type MosaicPresetRoleUi = 'duo' | 'big_band' | 'string_quartet';
+
 export type MosaicSectionPlanEntry = {
   sectionLabel: string;
   startBar: number;
   endBar: number;
   songwriterStyleId: string;
   timeSignature?: { numerator: number; denominator: number };
+  presetRole?: MosaicPresetRoleUi;
 };
 
 export type MosaicOutputFormatUi = 'none' | 'melody-bass-chords' | 'lead-sheet';
@@ -21,6 +24,12 @@ const COMPOSER_OPTIONS: { id: string; label: string }[] = [
   { id: 'wayne_shorter', label: 'Wayne Shorter' },
   { id: 'ecm_chamber', label: 'ECM Chamber' },
   { id: 'sonic_youth', label: 'Sonic Youth' },
+];
+
+const PRESET_ROLE_OPTIONS: { id: MosaicPresetRoleUi; label: string }[] = [
+  { id: 'duo', label: 'Duo' },
+  { id: 'big_band', label: 'Big Band' },
+  { id: 'string_quartet', label: 'String Quartet' },
 ];
 
 const METER_OPTIONS: { id: string; label: string; ts?: { numerator: number; denominator: number } }[] = [
@@ -46,6 +55,7 @@ function nextSectionDefaults(sections: MosaicSectionPlanEntry[]): Omit<MosaicSec
     startBar,
     endBar: startBar + 7,
     songwriterStyleId: 'default',
+    presetRole: 'duo',
   };
 }
 
@@ -90,7 +100,7 @@ export function MosaicSectionPlanner(props: {
         padding: '0.65rem 0.75rem',
         border: '1px solid var(--border-subtle, rgba(128,128,128,0.25))',
         borderRadius: 8,
-        maxWidth: 720,
+        maxWidth: 860,
       }}
     >
       <h3 style={{ margin: '0 0 0.35rem', fontSize: '0.95rem', color: 'var(--text)' }}>Mosaic sections</h3>
@@ -107,7 +117,8 @@ export function MosaicSectionPlanner(props: {
               key={`mosaic-row-${index}-${row.sectionLabel}-${row.startBar}`}
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'minmax(72px, 1fr) 64px 64px minmax(120px, 1.2fr) minmax(96px, 0.9fr) auto',
+                gridTemplateColumns:
+                  'minmax(72px, 1fr) 64px 64px minmax(120px, 1.2fr) minmax(96px, 0.9fr) minmax(108px, 1fr) auto',
                 gap: '0.35rem',
                 alignItems: 'end',
               }}
@@ -174,6 +185,21 @@ export function MosaicSectionPlanner(props: {
                   {METER_OPTIONS.map((m) => (
                     <option key={m.id || 'inherit'} value={m.id}>
                       {m.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                Preset
+                <select
+                  value={row.presetRole ?? 'duo'}
+                  disabled={disabled}
+                  onChange={(e) => updateRow(index, { presetRole: e.target.value as MosaicPresetRoleUi })}
+                  style={inputStyle}
+                >
+                  {PRESET_ROLE_OPTIONS.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.label}
                     </option>
                   ))}
                 </select>

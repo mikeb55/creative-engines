@@ -65,7 +65,10 @@ import { runBehaviourGates } from '../score-integrity/behaviourGates';
 import { applyContrapuntalPass4MusicXmlMerge } from '../counterpoint/contrapuntalPass4MusicXmlMerge';
 import { applyMelodyBassFormat } from './generateMelodyBassScore';
 import { applyLeadSheetFormat } from './generateLeadSheetScore';
-import { buildMosaicTonicMap } from '../mosaic-mode/precomputeMosaicEffectiveHarmonyBars';
+import {
+  buildMosaicTonicMap,
+  type MosaicModeSectionPlanEntry,
+} from '../mosaic-mode/precomputeMosaicEffectiveHarmonyBars';
 import { exportScoreModelToMusicXml } from '../export/musicxmlExporter';
 import { assertExportTruth, buildSpineSymbolsForExportTruth } from '../export/assertExportTruth';
 import { applyKeySignatureToScoreAndContext } from '../harmony/keyInference';
@@ -1376,8 +1379,106 @@ export interface RunGoldenPathOptions {
       denominator: number;
     };
     phraseRole?: 'statement' | 'development' | 'climax' | 'release';
+    presetRole?: 'duo' | 'big_band' | 'string_quartet';
   }>;
   mosaicOutputFormat?: 'melody-bass-chords' | 'lead-sheet';
+  /** INS-2 — opt-in delegate mosaic sections tagged `big_band` (default off). */
+  bbMosaicEnabled?: boolean;
+  /** INS-2 — opt-in delegate mosaic sections tagged `string_quartet` (default off). */
+  sqMosaicEnabled?: boolean;
+}
+
+/** V80a — per-section ensemble realizer output (INS-3 merges scoreFragment). */
+export type MosaicPresetRole = 'duo' | 'big_band' | 'string_quartet';
+
+export interface SectionRealizationResult {
+  sectionLabel: string;
+  startBar: number;
+  endBar: number;
+  presetRole: MosaicPresetRole;
+  scoreFragment?: ScoreModel;
+}
+
+function resolveMosaicPresetRole(entry: MosaicModeSectionPlanEntry): MosaicPresetRole {
+  return entry.presetRole ?? 'duo';
+}
+
+function mosaicSectionDelegationEnabled(
+  entry: MosaicModeSectionPlanEntry,
+  options?: RunGoldenPathOptions
+): boolean {
+  const role = resolveMosaicPresetRole(entry);
+  if (role === 'duo') return false;
+  if (role === 'big_band') return options?.bbMosaicEnabled === true;
+  if (role === 'string_quartet') return options?.sqMosaicEnabled === true;
+  return false;
+}
+
+/** INS-3 stub — logs intent; returns empty fragment placeholder. */
+export function runBigBandRealisationForSection(
+  entry: MosaicModeSectionPlanEntry,
+  context: CompositionContext
+): SectionRealizationResult {
+  console.log(
+    `[mosaic-router] delegate section "${entry.sectionLabel}" bars ${entry.startBar}-${entry.endBar} to big_band realizer (stub) seed=${context.seed}`
+  );
+  return {
+    sectionLabel: entry.sectionLabel,
+    startBar: entry.startBar,
+    endBar: entry.endBar,
+    presetRole: 'big_band',
+    scoreFragment: undefined,
+  };
+}
+
+/** INS-3 stub — logs intent; returns empty fragment placeholder. */
+export function runQuartetRealisationForSection(
+  entry: MosaicModeSectionPlanEntry,
+  context: CompositionContext
+): SectionRealizationResult {
+  console.log(
+    `[mosaic-router] delegate section "${entry.sectionLabel}" bars ${entry.startBar}-${entry.endBar} to string_quartet realizer (stub) seed=${context.seed}`
+  );
+  return {
+    sectionLabel: entry.sectionLabel,
+    startBar: entry.startBar,
+    endBar: entry.endBar,
+    presetRole: 'string_quartet',
+    scoreFragment: undefined,
+  };
+}
+
+function runMosaicSectionPresetRouter(
+  context: CompositionContext,
+  options?: RunGoldenPathOptions
+): SectionRealizationResult[] {
+  const plan = context.generationMetadata?.mosaicSectionPlan;
+  if (!plan || plan.length < 2) return [];
+
+  const results: SectionRealizationResult[] = [];
+  for (const entry of plan) {
+    if (!mosaicSectionDelegationEnabled(entry, options)) continue;
+    const role = resolveMosaicPresetRole(entry);
+    if (role === 'big_band') {
+      results.push(runBigBandRealisationForSection(entry, context));
+    } else if (role === 'string_quartet') {
+      results.push(runQuartetRealisationForSection(entry, context));
+    }
+  }
+
+  if (results.length > 0) {
+    context.generationMetadata = {
+      ...context.generationMetadata,
+      mosaicSectionRealizationResults: results.map((r) => ({
+        sectionLabel: r.sectionLabel,
+        startBar: r.startBar,
+        endBar: r.endBar,
+        presetRole: r.presetRole,
+        stub: true,
+      })),
+    };
+  }
+  return results;
 }
 
 function clamp01(n: number): number {
@@ -2536,6 +2637,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
         ],
       };
     } else {
+      runMosaicSectionPresetRouter(appliedContext, options);
       score = generateGoldenPathDuoScore(appliedContext, plans, {
         bpm: options?.bpm,
         variationEnabled: options?.variationEnabled === true,
