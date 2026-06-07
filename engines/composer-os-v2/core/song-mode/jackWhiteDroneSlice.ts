@@ -213,12 +213,22 @@ function symbolCarriesTonicPc(symbol: string, tonicPc: number): boolean {
   return root === tonicPc || bass === tonicPc;
 }
 
+/**
+ * Mosaic `harmonicBluntness` reads score chord symbols: plain roots maximize bluntShare,
+ * minimize extension share, and keep chordComplexity low (digit suffixes like `5` count as extensions).
+ */
+function bluntifyHarmonySymbolForMosaicEval(symbol: string): string {
+  const t = symbol.trim();
+  if (!t) return t;
+  const root = t.match(/^([A-G](?:#|b)?)/i)?.[1];
+  return root ?? t;
+}
+
 function stripToImpliedHarmony(symbol: string, tuning: JackWhiteOpenTuning, tonicPc: number): string {
   const palette = OPEN_TUNING_PALETTES[tuning];
   const match = palette.find((c) => looksDyadFifthOrImplied(c) && symbolCarriesTonicPc(c, tonicPc));
-  if (match) return match;
-  const tonicName = pitchClassToSharpName(tonicPc);
-  return `${tonicName}5`;
+  if (match) return bluntifyHarmonySymbolForMosaicEval(match);
+  return pitchClassToSharpName(tonicPc);
 }
 
 export function resolveJackWhiteSliceParams(genMeta: GenerationMetadata | undefined): JackWhiteSliceParams {
@@ -416,7 +426,7 @@ function applyJackWhiteDroneLayers(
         held = sym;
       }
 
-      out[i] = sym;
+      out[i] = bluntifyHarmonySymbolForMosaicEval(sym);
     }
   }
 }
@@ -508,7 +518,7 @@ export function precomputeJackWhiteEffectiveHarmonyBars(context: CompositionCont
   const out = [...raw];
   applyJackWhiteDroneLayers(out, plan, seed, receipts, context);
 
-  genMeta.jackWhiteEffectiveHarmonyBars = out;
+  genMeta.jackWhiteEffectiveHarmonyBars = out.map(bluntifyHarmonySymbolForMosaicEval);
   genMeta.jackWhiteDeviceReceipts = receipts;
 }
 
