@@ -225,7 +225,7 @@ function mosaicContextFromGenerateRequest(req: GenerateRequest): CompositionCont
       mosaicSectionPlan: req.mosaicSectionPlan ?? [],
       mosaicOutputFormat: req.mosaicOutputFormat,
     } as GenerationMetadata & { mosaicOutputFormat?: 'melody-bass-chords' | 'lead-sheet' },
-  };
+  } as CompositionContext;
 }
 
 function validationForStructural(ok: boolean, errors: string[]): GenerateResult['validation'] {
@@ -1549,15 +1549,23 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           })
         : undefined
     : effectiveSong;
-  const mosaicPlan = mapSongModeToMosaicSectionPlan(sm.compiledSong, {
-    songwriterStyleId: req.primarySongwriterStyle,
-  });
+  const mosaicExplicitOptIn =
+    (Array.isArray(req.mosaicSectionPlan) && req.mosaicSectionPlan.length >= 2) ||
+    req.mosaicOutputFormat != null;
+  const mosaicPlan = mosaicExplicitOptIn
+    ? req.mosaicSectionPlan && req.mosaicSectionPlan.length >= 2
+      ? req.mosaicSectionPlan
+      : mapSongModeToMosaicSectionPlan(sm.compiledSong, {
+          songwriterStyleId: req.primarySongwriterStyle,
+        })
+    : [];
   const songModeGoldenPathOptions: RunGoldenPathOptions = {
     styleStack: mapAppStyleStackToEngine(req.styleStack),
     presetId: 'guitar_bass_duo',
     scoreTitle: title,
     songModeHookFirstIdentity: true,
     ...(mosaicPlan.length >= 2 ? { mosaicSectionPlan: mosaicPlan } : {}),
+    ...(req.mosaicOutputFormat ? { mosaicOutputFormat: req.mosaicOutputFormat } : {}),
     /** Explicit default matches UI default when `styleProfile` omitted (legacy clients). */
     styleProfile:
       req.styleProfile ??
