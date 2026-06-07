@@ -244,10 +244,10 @@ const server = app.listen(PORT, '127.0.0.1', () => {
   console.log(`Composer OS API on http://localhost:${PORT}`);
 });
 
-server.on('error', (err: NodeJS.ErrnoException) => {
+server.on('error', (err: any) => {
   if (err.code === 'EADDRINUSE') {
-    console.error(`Port ${PORT} already in use (EADDRINUSE). Set PORT to a free port.`);
-  } else {
-    console.error(err);
+    console.error('Port 3001 already in use — kill stale processes and relaunch');
+    process.exit(1);
   }
+  throw err;
 });
