@@ -695,6 +695,10 @@ export interface GenerationMetadata {
   importMelodyLineFull?: import('./import/mosaicImportTimeline').ImportMelodyNote[];
   /** V80k IMP-4: evaluated import variation candidates (gated; default off). */
   variationResult?: import('./import/mosaicVariationEngine').VariationResult;
+  /** V80m IMP-5: style-transfer result (pinned melody + slice harmony). */
+  styleTransferResult?: import('./import/mosaicStyleTransfer').StyleTransferResult;
+  /** V80m IMP-5: BB/SQ re-orchestration applied during style-transfer. */
+  styleTransferReorchestrateApplied?: boolean;
   /** Song Mode: aggregated section shaping metrics for manifests, UI notes, and eval harnesses. */
   songModeSectionShapingDiagnostics?: SongModeSectionShapingDiagnosticsV1;
   /** V65 P4 — opt-in section-aware symbolic drum accompaniment diagnostics. */

@@ -166,6 +166,13 @@ import {
   shouldRunVariationEngine,
   wireImportTimelineToContext,
 } from '../import/mosaicVariationEngine';
+import {
+  applyStyleTransfer,
+  extractGuitarMelodyNotes,
+  pinMelodyOnScore,
+  retainedMelodyProof,
+  shouldRunStyleTransfer,
+} from '../import/mosaicStyleTransfer';
 import { validateSongModeMotifSystem } from '../motif/songModeMotifEngine';
 import { validateSongModePhraseEngineV1 } from './songModePhraseEngineV1';
 import { partitionSongModePhraseIssues } from '../song-mode/songModePhraseBehaviourRules';
@@ -1419,6 +1426,16 @@ export interface RunGoldenPathOptions {
   variationIndex?: number;
   /** V80k IMP-4 — lock import harmony spine (default true). */
   preserveImportHarmony?: boolean;
+  /** V80m IMP-5 — opt-in import style-transfer (default off). */
+  styleTransfer?: boolean;
+  /** V80m IMP-5 — composer slice for style-transfer reharm (else primarySongwriterStyle). */
+  targetComposer?: string;
+  /** V80m IMP-5 — 0=hug import harmony, 1=full slice reharm (default 0.5). */
+  styleTransferStrength?: number;
+  /** V80m IMP-5 — pin IR melody (default true). */
+  preserveMelody?: boolean;
+  /** V80m IMP-5 — apply ensemble voicing (BB/SQ; default false on duo). */
+  reorchestrate?: boolean;
 }
 
 export type { MosaicPresetRole, SectionRealizationResult, AssembledScoreModel };
@@ -2751,6 +2768,11 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     generateVariations: options?.generateVariations,
     variationCount: options?.variationCount,
   });
+  const styleTransferActive =
+    shouldRunStyleTransfer({
+      importTimeline: options?.importTimeline,
+      styleTransfer: options?.styleTransfer,
+    }) && !variationEngineActive;
   const sectionPlanForVariations =
     appliedContext.generationMetadata?.mosaicSectionPlan ?? options?.mosaicSectionPlan ?? [];
   let score: ScoreModel | undefined;
@@ -2769,13 +2791,44 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
         appliedContext.generationMetadata?.mosaicSectionPlan,
         options
       );
-      score = generateGoldenPathDuoScore(appliedContext, plans, {
-        bpm: options?.bpm,
-        variationEnabled: options?.variationEnabled === true,
-        ecmShapingEnabled: options?.ecmShapingEnabled,
-        orchestrationEnabled: options?.orchestrationEnabled,
-        identityCellEnabled: options?.identityCellEnabled,
-      });
+      if (styleTransferActive && options?.importTimeline) {
+        const targetComposer =
+          options.targetComposer?.trim() ||
+          options.primarySongwriterStyle?.trim() ||
+          appliedContext.generationMetadata?.songwriterStyleId ||
+          'jack_white';
+        const styleTransferResult = applyStyleTransfer(
+          {
+            importTimeline: options.importTimeline,
+            targetComposer,
+            styleTransferStrength: options.styleTransferStrength,
+            preserveMelody: options.preserveMelody,
+            reharmonize: true,
+            reorchestrate: options.reorchestrate,
+          },
+          {
+            context: appliedContext,
+            plans,
+            importHarmonyMode: options.importHarmonyMode,
+          }
+        );
+        score = styleTransferResult.scoreFragment;
+        appliedContext.lockedHarmonyBarsRaw = [...styleTransferResult.appliedHarmonyBars];
+        appliedContext.generationMetadata = {
+          ...appliedContext.generationMetadata,
+          styleTransferResult,
+          parsedCustomProgressionBars: [...styleTransferResult.appliedHarmonyBars],
+          customHarmonyLocked: (options.styleTransferStrength ?? 0.5) < 0.95,
+        };
+      } else {
+        score = generateGoldenPathDuoScore(appliedContext, plans, {
+          bpm: options?.bpm,
+          variationEnabled: options?.variationEnabled === true,
+          ecmShapingEnabled: options?.ecmShapingEnabled,
+          orchestrationEnabled: options?.orchestrationEnabled,
+          identityCellEnabled: options?.identityCellEnabled,
+        });
+      }
       if (mixedPresetActive && score) {
         const assembledRun = runMixedPresetAssembly(score, appliedContext, options);
         score = assembledRun.score;
@@ -3070,6 +3123,26 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   logEcmPhaseProbe(probeEcm, 'before_export', score, {
     guitarMeasures: guitarMeasureCount,
   });
+  const styleTransferResult = appliedContext.generationMetadata?.styleTransferResult;
+  if (
+    styleTransferResult &&
+    options?.importTimeline &&
+    (options.preserveMelody ?? true)
+  ) {
+    score = pinMelodyOnScore(score, options.importTimeline.melodyLine);
+    appliedContext.generationMetadata = {
+      ...appliedContext.generationMetadata,
+      styleTransferResult: {
+        ...styleTransferResult,
+        scoreFragment: score,
+        retainedMelody: retainedMelodyProof(
+          score,
+          options.importTimeline.melodyLine,
+          options.preserveMelody ?? true
+        ),
+      },
+    };
+  }
   const mixedPresetAssembled =
     appliedContext.generationMetadata?.mixedPresetAssemblyApplied === true;
   if (!mixedPresetAssembled) {

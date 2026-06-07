@@ -385,6 +385,16 @@ export interface GenerateRequest {
   variationIndex?: number;
   /** V80k IMP-4 — lock import harmony spine; vary melody/rhythm only (default true). */
   preserveImportHarmony?: boolean;
+  /** V80m IMP-5 — opt-in style-transfer: pinned melody, slice harmony/orchestration. */
+  styleTransfer?: boolean;
+  /** V80m IMP-5 — target composer for style-transfer (else primary songwriter). */
+  targetComposer?: string;
+  /** V80m IMP-5 — departure from imported harmony (0–1; default 0.5). */
+  styleTransferStrength?: number;
+  /** V80m IMP-5 — keep IR melody pitch-for-pitch (default true). */
+  preserveMelody?: boolean;
+  /** V80m IMP-5 — apply ensemble voicing on BB/SQ presets. */
+  reorchestrate?: boolean;
   /**
    * V3.4 — MusicXML key policy: `auto` infers from chords unless a parseable `tonalCenter` / `tonalCenterOverride` is set;
    * `override` is legacy alias for explicit key (same explicit-string authority); `none` hides key signature.
