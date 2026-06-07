@@ -7,9 +7,69 @@ import * as os from 'os';
 import * as path from 'path';
 import { apiGenerate } from '../app-api/composerOsApiCore';
 import type { GenerateRequest } from '../app-api/appApiTypes';
+import { importTimelineToLockedHarmony } from '../core/import/importTimelineAdapters';
+import type { MosaicImportTimeline } from '../core/import/mosaicImportTimeline';
+import {
+  IMPORT_EXPLICIT_HARMONY_CONFIDENCE,
+  MOSAIC_IMPORT_TIMELINE_SCHEMA_VERSION,
+} from '../core/import/mosaicImportTimeline';
 import { normalizeChordToken, parseChordProgressionInputWithBarCount } from '../core/harmony/chordProgressionParser';
 import { extractHarmoniesFromFirstPartXml } from '../core/export/chordSymbolMusicXml';
 import { expectedPitchTableForTuning } from '../core/song-mode/indieDualGuitarTuningFixture';
+
+const MOSAIC_SECTION_PLAN = [
+  { sectionLabel: 'import', startBar: 1, endBar: 8, songwriterStyleId: 'verlaine' as const },
+];
+
+function lockedBarsForGoldenPath(iBars: string[]): string[] {
+  return Array.from({ length: 8 }, (_, i) => iBars[i % iBars.length] ?? 'C');
+}
+
+function makeImportIr(overrides?: Partial<MosaicImportTimeline>): MosaicImportTimeline {
+  const harmonyByBar = Array.from({ length: 8 }, (_, i) => ({
+    bar: i + 1,
+    chordSymbol: ['C', 'Am', 'F', 'G', 'C', 'Am', 'F', 'G'][i] ?? 'C',
+    confidence: 0.75,
+    fieldOrigin: 'inferred' as const,
+  }));
+  harmonyByBar[0] = {
+    bar: 1,
+    chordSymbol: 'C',
+    confidence: IMPORT_EXPLICIT_HARMONY_CONFIDENCE,
+    fieldOrigin: 'explicit',
+  };
+  return {
+    schemaVersion: MOSAIC_IMPORT_TIMELINE_SCHEMA_VERSION,
+    sourceFormat: 'musicxml',
+    bars: 8,
+    timeSig: { num: 4, den: 4 },
+    keyEstimate: { tonic: 'C', mode: 'major', confidence: 0.9, fieldOrigin: 'explicit' },
+    harmonyByBar,
+    melodyLine: [
+      { bar: 1, onsetBeat: 0, durationBeats: 2, midiPitch: 60, confidence: 1, fieldOrigin: 'explicit' },
+      { bar: 1, onsetBeat: 2, durationBeats: 2, midiPitch: 64, confidence: 1, fieldOrigin: 'explicit' },
+      { bar: 2, onsetBeat: 0, durationBeats: 4, midiPitch: 67, confidence: 1, fieldOrigin: 'explicit' },
+    ],
+    parseDiagnostics: ['warn:missing_clef'],
+    ...overrides,
+  };
+}
+
+function duoImportBase(extra: Partial<GenerateRequest> = {}): Partial<GenerateRequest> {
+  const ir = makeImportIr();
+  const locked = lockedBarsForGoldenPath(importTimelineToLockedHarmony(ir));
+  return {
+    presetId: 'guitar_bass_duo',
+    styleStack: { primary: 'barry_harris', styleBlend: { primary: 'strong', secondary: 'off', colour: 'off' } },
+    seed: 88101,
+    harmonyMode: 'custom_locked',
+    chordProgressionText: locked.join(' | '),
+    totalBars: 8,
+    importTimeline: ir,
+    mosaicSectionPlan: MOSAIC_SECTION_PLAN,
+    ...extra,
+  };
+}
 
 /** Same progression as `songModeMusicXml.test.ts` / HomeGenerate Song Mode 32-bar paste. */
 const SONG_MODE_32_BAR_REGRESSION =
@@ -451,6 +511,89 @@ export function runAppApiBoundaryTests(): { ok: boolean; name: string }[] {
     out.push({
       ok: vrbEcho.requestEcho?.vrbProfile?.presetId === 'nordic_studio',
       name: 'ECM vrbProfile passes through apiGenerate into requestEcho',
+    });
+
+    const importEchoRun = apiGenerate(
+      duoImportBase({
+        seed: 88102,
+        importHarmonyMode: 'lock_harmony',
+        preserveImportHarmony: true,
+      }),
+      tmp
+    ) as { success?: boolean; importEcho?: { sourceFormat?: string }; filepath?: string };
+    out.push({
+      ok: importEchoRun.importEcho?.sourceFormat === 'musicxml',
+      name: 'V80 boundary: apiGenerate with importTimeline exposes importEcho',
+    });
+
+    const variationEchoRun = apiGenerate(
+      duoImportBase({
+        seed: 88103,
+        generateVariations: true,
+        variationCount: 4,
+        variationMode: 'melodic',
+        preserveImportHarmony: true,
+      }),
+      tmp
+    ) as { variationEcho?: { candidates?: unknown[] } };
+    out.push({
+      ok: (variationEchoRun.variationEcho?.candidates?.length ?? 0) > 0,
+      name: 'V80 boundary: apiGenerate with generateVariations exposes variationEcho',
+    });
+
+    const styleTransferEchoRun = apiGenerate(
+      duoImportBase({
+        seed: 88104,
+        styleTransfer: true,
+        targetComposer: 'jack_white',
+        styleTransferStrength: 1,
+        preserveMelody: true,
+      }),
+      tmp
+    ) as { styleTransferEcho?: { composerApplied?: string; melodyRetained?: boolean } };
+    out.push({
+      ok:
+        styleTransferEchoRun.styleTransferEcho?.composerApplied === 'jack_white' &&
+        styleTransferEchoRun.styleTransferEcho?.melodyRetained === true,
+      name: 'V80 boundary: apiGenerate with styleTransfer exposes styleTransferEcho',
+    });
+
+    const filepathRun = apiGenerate(
+      duoImportBase({ seed: 88105, importHarmonyMode: 'lock_harmony' }),
+      tmp
+    ) as { success?: boolean; filepath?: string };
+    out.push({
+      ok:
+        filepathRun.success === true &&
+        typeof filepathRun.filepath === 'string' &&
+        filepathRun.filepath.trim().length > 0 &&
+        fs.existsSync(filepathRun.filepath),
+      name: 'V80 boundary: apiGenerate successful import run returns non-empty filepath on disk',
+    });
+
+    const plainRun = apiGenerate(
+      {
+        presetId: 'guitar_bass_duo',
+        styleStack: { primary: 'barry_harris', styleBlend: { primary: 'strong', secondary: 'off', colour: 'off' } },
+        seed: 88106,
+      },
+      tmp
+    ) as {
+      success?: boolean;
+      importEcho?: unknown;
+      variationEcho?: unknown;
+      styleTransferEcho?: unknown;
+      filepath?: string;
+    };
+    out.push({
+      ok:
+        plainRun.success === true &&
+        plainRun.importEcho === undefined &&
+        plainRun.variationEcho === undefined &&
+        plainRun.styleTransferEcho === undefined &&
+        typeof plainRun.filepath === 'string' &&
+        plainRun.filepath.trim().length > 0,
+      name: 'V80 boundary regression: plain apiGenerate has no echoes and normal filepath',
     });
   } finally {
     try {

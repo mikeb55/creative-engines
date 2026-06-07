@@ -1054,6 +1054,51 @@ export function apiGenerate(
         typeof (body as { musicContext?: unknown }).musicContext === 'object'
           ? ((body as { musicContext: MusicContext }).musicContext as MusicContext)
           : undefined,
+      importTimeline: (() => {
+        const raw = body.importTimeline;
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+        return raw as GenerateRequest['importTimeline'];
+      })(),
+      importHarmonyMode:
+        body.importHarmonyMode === 'lock_harmony' ||
+        body.importHarmonyMode === 'blend_harmony' ||
+        body.importHarmonyMode === 'free_harmony'
+          ? body.importHarmonyMode
+          : undefined,
+      generateVariations: body.generateVariations === true ? true : undefined,
+      variationCount: (() => {
+        const n = coerceFiniteNumber(body.variationCount);
+        if (n === undefined) return undefined;
+        const i = Math.round(n);
+        return i >= 1 ? i : undefined;
+      })(),
+      variationMode:
+        body.variationMode === 'harmonic' ||
+        body.variationMode === 'melodic' ||
+        body.variationMode === 'rhythmic' ||
+        body.variationMode === 'full'
+          ? body.variationMode
+          : undefined,
+      variationIndex: (() => {
+        const n = coerceFiniteNumber(body.variationIndex);
+        if (n === undefined) return undefined;
+        const i = Math.round(n);
+        return i >= 0 ? i : undefined;
+      })(),
+      preserveImportHarmony:
+        typeof body.preserveImportHarmony === 'boolean' ? body.preserveImportHarmony : undefined,
+      styleTransfer: body.styleTransfer === true ? true : undefined,
+      targetComposer:
+        typeof body.targetComposer === 'string' && body.targetComposer.trim()
+          ? body.targetComposer.trim()
+          : undefined,
+      styleTransferStrength: (() => {
+        const n = coerceFiniteNumber(body.styleTransferStrength);
+        if (n === undefined) return undefined;
+        return Math.min(1, Math.max(0, n));
+      })(),
+      preserveMelody: typeof body.preserveMelody === 'boolean' ? body.preserveMelody : undefined,
+      reorchestrate: typeof body.reorchestrate === 'boolean' ? body.reorchestrate : undefined,
     };
     if (body.mosaicSectionPlan) {
       req_.mosaicSectionPlan = body.mosaicSectionPlan;

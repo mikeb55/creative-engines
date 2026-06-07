@@ -54,6 +54,68 @@ export function withMosaicImportMode(
   return { ...state, importMode: mode };
 }
 
+export type MosaicImportPartialConfig = {
+  variationCount?: number;
+  variationMode?: "harmonic" | "melodic" | "rhythmic" | "full";
+  preserveImportHarmony?: boolean;
+  styleTransferStrength?: number;
+  targetComposer?: string;
+};
+
+export type MosaicImportPartialResult = {
+  partial: Partial<GenerateRequest>;
+  mutexWarning: string | null;
+};
+
+export function buildMosaicImportGeneratePartial(input: {
+  timeline: MosaicImportTimeline | null;
+  mode: MosaicImportMode | null;
+  config?: MosaicImportPartialConfig;
+}): MosaicImportPartialResult {
+  const { timeline, mode, config = {} } = input;
+  if (!timeline || !mode) return { partial: {}, mutexWarning: null };
+  const base: Partial<GenerateRequest> = { importTimeline: timeline };
+  if (mode === "lock") {
+    return {
+      partial: { ...base, importHarmonyMode: "lock_harmony", preserveImportHarmony: true },
+      mutexWarning: null,
+    };
+  }
+  if (mode === "variations") {
+    return {
+      partial: {
+        ...base,
+        generateVariations: true,
+        variationCount: config.variationCount ?? 4,
+        variationMode: config.variationMode ?? "full",
+        preserveImportHarmony: config.preserveImportHarmony ?? true,
+      },
+      mutexWarning: null,
+    };
+  }
+  return {
+    partial: {
+      ...base,
+      styleTransfer: true,
+      targetComposer: config.targetComposer,
+      styleTransferStrength: config.styleTransferStrength ?? 0.5,
+      preserveMelody: true,
+    },
+    mutexWarning: null,
+  };
+}
+
+export function resolveMosaicImportPartial(primary: Partial<GenerateRequest>): {
+  partial: Partial<GenerateRequest>;
+  mutexWarning: string | null;
+} {
+  if (primary.generateVariations && primary.styleTransfer) {
+    const { styleTransfer: _st, targetComposer: _tc, styleTransferStrength: _ss, preserveMelody: _pm, reorchestrate: _ro, ...rest } = primary;
+    return { partial: rest, mutexWarning: "Both variations and style-transfer were requested; variations wins." };
+  }
+  return { partial: primary, mutexWarning: null };
+}
+
 export async function parseMosaicImportFile(
   file: File,
 ): Promise<{
@@ -124,11 +186,17 @@ export function useMosaicImportWorkflow() {
     setState((prev) => ({ ...prev, importMode: mode }));
   }, []);
 
-  const toGenerateRequestPartial = useCallback((): Partial<GenerateRequest> => {
-    if (!state.importTimeline || !state.importMode) return {};
-    // V81c — wire importTimeline + mode flags into GenerateRequest.
-    return {};
-  }, [state.importMode, state.importTimeline]);
+  const toGenerateRequestPartial = useCallback(
+    (config?: MosaicImportPartialConfig): Partial<GenerateRequest> => {
+      const built = buildMosaicImportGeneratePartial({
+        timeline: state.importTimeline,
+        mode: state.importMode,
+        config,
+      });
+      return resolveMosaicImportPartial(built.partial).partial;
+    },
+    [state.importMode, state.importTimeline],
+  );
 
   const actions = useMemo(
     () => ({

@@ -42,7 +42,18 @@ import {
 } from '../constants/generateProducerLanes';
 import { GenerateProducerLaneChooser } from '../components/GenerateProducerLaneChooser';
 import { GenerateSharedContextStrip } from '../components/GenerateSharedContextStrip';
-import { useMosaicImportWorkflow } from '../components/mosaic-import/useMosaicImportWorkflow';
+import {
+  buildMosaicImportGeneratePartial,
+  resolveMosaicImportPartial,
+  useMosaicImportWorkflow,
+  type MosaicImportMode,
+} from '../components/mosaic-import/useMosaicImportWorkflow';
+import type {
+  ImportEcho,
+  MixedPresetEcho,
+  StyleTransferEcho,
+  VariationEcho,
+} from '@composer-os/app-api/appApiTypes';
 
 const MosaicImportPanel = lazy(() =>
   import('../components/mosaic-import/MosaicImportPanel').then((m) => ({ default: m.MosaicImportPanel })),
@@ -2111,7 +2122,73 @@ type GenResult = {
   gceScore?: number;
   /** Song Mode — ship gate threshold met when scored. */
   gceGatePassed?: boolean;
+  importEcho?: ImportEcho;
+  variationEcho?: VariationEcho;
+  styleTransferEcho?: StyleTransferEcho;
+  mixedPresetEcho?: MixedPresetEcho;
 };
+
+/** Best-effort MusicXML/output path for receipt + Open folder (BB planning JSON uses ensembleMusicXmlFilepath). */
+function resolveGenerateOutputFilepath(r: {
+  filepath?: string;
+  ensembleMusicXmlFilepath?: string;
+  manifestPath?: string;
+  success?: boolean;
+}): string | undefined {
+  const fp = typeof r.filepath === 'string' ? r.filepath.trim() : '';
+  if (fp) {
+    if (fp.toLowerCase().endsWith('.json') && typeof r.ensembleMusicXmlFilepath === 'string') {
+      const ens = r.ensembleMusicXmlFilepath.trim();
+      if (ens) return ens;
+    }
+    return fp;
+  }
+  const ens = typeof r.ensembleMusicXmlFilepath === 'string' ? r.ensembleMusicXmlFilepath.trim() : '';
+  if (ens) return ens;
+  const mp = typeof r.manifestPath === 'string' ? r.manifestPath.trim() : '';
+  if (mp) {
+    const norm = mp.replace(/\\/g, '/');
+    const meta = norm.match(/^(.*)\/_meta\/([^/]+)\.manifest\.json$/i);
+    if (meta) return `${meta[1]}/${meta[2]}.musicxml`;
+    if (/\.manifest\.json$/i.test(norm)) return norm.replace(/\.manifest\.json$/i, '.musicxml');
+  }
+  return undefined;
+}
+
+function formatV80EchoReceiptLines(r: {
+  importEcho?: ImportEcho;
+  variationEcho?: VariationEcho;
+  styleTransferEcho?: StyleTransferEcho;
+  mixedPresetEcho?: MixedPresetEcho;
+}): string[] {
+  const lines: string[] = [];
+  if (r.importEcho) {
+    lines.push(
+      'Imported: ' + r.importEcho.bars + ' bars, ' + r.importEcho.sourceFormat + ', harmony mode ' + r.importEcho.importHarmonyMode,
+    );
+  }
+  if (r.variationEcho) {
+    const ve = r.variationEcho;
+    const score =
+      ve.candidates.find((c) => c.variationIndex === ve.autoSelected)?.evalScore ?? ve.baselineScore;
+    lines.push(
+      'Variations: ' + ve.candidates.length + ' candidates, auto-selected #' + ve.autoSelected + ' (score ' + score.toFixed(2) + ')',
+    );
+  }
+  if (r.styleTransferEcho) {
+    const st = r.styleTransferEcho;
+    lines.push(
+      'Style-transfer: ' + st.composerApplied + ', strength ' + st.strengthApplied + ', melody retained ' + (st.melodyRetained ? 'yes' : 'no'),
+    );
+  }
+  if (r.mixedPresetEcho) {
+    const mp = r.mixedPresetEcho;
+    lines.push(
+      'Mixed-preset: ' + mp.sections.length + ' sections, integrity ' + (mp.exportIntegrityPassed ? 'pass' : 'fail'),
+    );
+  }
+  return lines;
+}
 
 type DuoHealthLevel = 'green' | 'amber' | 'red';
 
@@ -2495,6 +2572,9 @@ export function HomeGenerate({
   const { publishGridFromXml, setPlaybackBeat: setGridPlaybackBeat, setIsPlaying: setGridIsPlaying, clearGrid } =
     useLastGenerate();
   const mosaicImportWorkflow = useMosaicImportWorkflow();
+  const mosaicImportWorkflowRef = useRef(mosaicImportWorkflow);
+  mosaicImportWorkflowRef.current = mosaicImportWorkflow;
+  const [mosaicImportWarning, setMosaicImportWarning] = useState<string | null>(null);
   const [homeTab, setHomeTab] = useState<'composers' | 'generate'>('composers');
   const [composerLauncherSelectedId, setComposerLauncherSelectedId] = useState<string | null>(null);
   const pendingComposerGenerateRef = useRef(false);
@@ -3705,7 +3785,7 @@ export function HomeGenerate({
   }, [restoreMartinoFromSession]);
 
   const generate = useCallback(
-    async (opts?: { seedOverride?: number; variationOverride?: string }) => {
+    async (opts?: { seedOverride?: number; variationOverride?: string; mosaicImportMode?: MosaicImportMode }) => {
       if (presetId === 'sq_to_bb') {
         return;
       }
@@ -3722,6 +3802,7 @@ export function HomeGenerate({
       }
       setLoading(true);
       setError(null);
+      setMosaicImportWarning(null);
       if (presetId === 'martino_linear') {
         setMartinoFeedback(null);
         setMartinoXmlString(null);
@@ -4526,7 +4607,21 @@ export function HomeGenerate({
         }
         const riffOpSent = riffGenerateOpRef.current;
         riffGenerateOpRef.current = 'full';
-        const r = (await enqueue(generatePayload)) as GenResult;
+        const wf = mosaicImportWorkflowRef.current;
+        const importModeForRequest = opts?.mosaicImportMode ?? wf.state.importMode;
+        const mosaicBuilt = buildMosaicImportGeneratePartial({
+          timeline: wf.state.importTimeline,
+          mode: importModeForRequest,
+          config: { targetComposer: songwriterStyle },
+        });
+        const mosaicResolved = resolveMosaicImportPartial(mosaicBuilt.partial);
+        if (mosaicResolved.mutexWarning) setMosaicImportWarning(mosaicResolved.mutexWarning);
+        const mosaicImportPartial = mosaicResolved.partial;
+        const payloadToSend =
+          Object.keys(mosaicImportPartial).length > 0
+            ? { ...generatePayload, ...mosaicImportPartial }
+            : generatePayload;
+        const r = (await enqueue(payloadToSend)) as GenResult;
         if (unlockHarmonyAfterReharmApply) {
           reharmApplyHarmonyUnlockRef.current = false;
         }
@@ -4828,6 +4923,14 @@ export function HomeGenerate({
     ]
   );
 
+  const handleMosaicImportModeGenerate = useCallback(
+    (mode: MosaicImportMode) => {
+      mosaicImportWorkflow.actions.setMode(mode);
+      void generate({ mosaicImportMode: mode });
+    },
+    [generate, mosaicImportWorkflow.actions],
+  );
+
   const handleComposerOpenGenerate = useCallback(
     (id: string) => {
       applyPrimarySongwriter(id);
@@ -4871,6 +4974,7 @@ export function HomeGenerate({
 
   const v = result?.validation;
   const rm = result?.runManifest;
+  const resultOutputFilepath = result ? resolveGenerateOutputFilepath(result) : undefined;
   const sectionShapeDiag = rm?.songModeSectionShapingDiagnostics;
   const sectionShapeDescriptors = rm?.songModeSectionBehaviourDescriptors ?? [];
   const songModeProfileRuleRows = buildSongModeProfileRuleRows(rm?.songModeProfileRuleDiagnostics);
@@ -5051,7 +5155,7 @@ export function HomeGenerate({
   const outputKindDesc = result
     ? (() => {
         const base = describeOutputKind(summaryPresetId);
-        const pathEcho = `${result.filepath ?? ''} ${result.filename ?? ''}`;
+        const pathEcho = `${resultOutputFilepath ?? result.filepath ?? ''} ${result.filename ?? ''}`;
         if (pathEcho.toLowerCase().includes('.musicxml') && base.headline === 'Planning only') {
           return {
             category: 'full_score_musicxml' as const,
@@ -5575,7 +5679,11 @@ export function HomeGenerate({
       />
 
       <Suspense fallback={null}>
-        <MosaicImportPanel workflow={mosaicImportWorkflow} />
+        <MosaicImportPanel
+          workflow={mosaicImportWorkflow}
+          generateBusy={loading}
+          onImportModeGenerate={handleMosaicImportModeGenerate}
+        />
       </Suspense>
 
       {showVaultChartPanel ? (
@@ -11787,11 +11895,42 @@ export function HomeGenerate({
                   <span style={{ color: 'var(--text-muted)' }}>Creative note:</span> {rm.experimentalCreativeLabel}
                 </p>
               )}
-              {result.filepath && (
-                <p style={{ margin: '0.5rem 0 0', wordBreak: 'break-word' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Output path:</span> {result.filepath}
+              {resultOutputFilepath && (
+                <p
+                  style={{
+                    margin: '0.5rem 0 0',
+                    wordBreak: 'break-word',
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                  }}
+                >
+                  <span>
+                    <span style={{ color: 'var(--text-muted)' }}>Output:</span> {resultOutputFilepath}
+                  </span>
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => void openFolder(dirnameOnly(resultOutputFilepath))}
+                  >
+                    Open folder
+                  </button>
                 </p>
               )}
+              {formatV80EchoReceiptLines(result).map((line) => (
+                <p
+                  key={line}
+                  style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}
+                >
+                  {line}
+                </p>
+              ))}
+              {mosaicImportWarning ? (
+                <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  {mosaicImportWarning}
+                </p>
+              ) : null}
               {summaryPresetId === 'martino_linear' && martinoBridgeMeta && (
                 <div style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
                   {martinoBridgeMeta.version && (
@@ -12434,7 +12573,7 @@ export function HomeGenerate({
             </button>
             <button
               type="button"
-              onClick={() => result?.filepath && openFolder(dirnameOnly(result.filepath))}
+              onClick={() => resultOutputFilepath && openFolder(dirnameOnly(resultOutputFilepath))}
             >
               Open this file&apos;s folder
             </button>

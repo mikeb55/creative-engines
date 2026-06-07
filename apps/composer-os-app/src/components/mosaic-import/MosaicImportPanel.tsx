@@ -119,9 +119,16 @@ export interface MosaicImportPanelProps {
   workflow: MosaicImportWorkflow;
   /** When true, `<details>` starts expanded (tests). */
   defaultOpen?: boolean;
+  generateBusy?: boolean;
+  onImportModeGenerate?: (mode: MosaicImportMode) => void;
 }
 
-export function MosaicImportPanel({ workflow, defaultOpen = false }: MosaicImportPanelProps) {
+export function MosaicImportPanel({
+  workflow,
+  defaultOpen = false,
+  generateBusy = false,
+  onImportModeGenerate,
+}: MosaicImportPanelProps) {
   const { state, actions } = workflow;
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -304,7 +311,11 @@ export function MosaicImportPanel({ workflow, defaultOpen = false }: MosaicImpor
                 className={state.importMode === id ? undefined : 'secondary'}
                 aria-pressed={state.importMode === id}
                 data-testid={`mosaic-import-mode-${id}`}
-                onClick={() => actions.setMode(id)}
+                disabled={generateBusy || !ir}
+                onClick={() => {
+                  actions.setMode(id);
+                  onImportModeGenerate?.(id);
+                }}
               >
                 {label}
               </button>

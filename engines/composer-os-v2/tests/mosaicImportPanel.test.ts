@@ -4,9 +4,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { Midi } from '@tonejs/midi';
+import type { MosaicImportTimeline } from '@composer-os/core/import/mosaicImportTimeline';
 import {
+  buildMosaicImportGeneratePartial,
   confidenceStripColor,
   parseMosaicImportFile,
+  resolveMosaicImportPartial,
   withMosaicImportMode,
 } from '../../../apps/composer-os-app/src/components/mosaic-import/useMosaicImportWorkflow';
 
@@ -108,6 +111,66 @@ describe('mosaicImportPanel workflow', () => {
   });
 });
 
+
+function mockTimeline(): MosaicImportTimeline {
+  return {
+    schemaVersion: 1,
+    sourceFormat: 'musicxml',
+    bars: 8,
+    timeSig: { num: 4, den: 4 },
+    keyEstimate: { tonic: 'C', mode: 'major', confidence: 0.9, fieldOrigin: 'explicit' },
+    harmonyByBar: [],
+    melodyLine: [],
+  };
+}
+
+describe('buildMosaicImportGeneratePartial', () => {
+  test("A) mode lock maps lock_harmony + preserveImportHarmony", () => {
+    const tl = mockTimeline();
+    const { partial } = buildMosaicImportGeneratePartial({ timeline: tl, mode: 'lock' });
+    expect(partial.importTimeline).toBe(tl);
+    expect(partial.importHarmonyMode).toBe('lock_harmony');
+    expect(partial.preserveImportHarmony).toBe(true);
+  });
+
+  test("B) mode variations sets generateVariations; styleTransfer absent", () => {
+    const { partial } = buildMosaicImportGeneratePartial({ timeline: mockTimeline(), mode: 'variations' });
+    expect(partial.generateVariations).toBe(true);
+    expect(partial.variationCount).toBe(4);
+    expect(partial.variationMode).toBe('full');
+    expect(partial.styleTransfer).toBeUndefined();
+  });
+
+  test("C) mode styleTransfer sets styleTransfer; generateVariations absent", () => {
+    const { partial } = buildMosaicImportGeneratePartial({
+      timeline: mockTimeline(),
+      mode: 'styleTransfer',
+      config: { targetComposer: 'bill_evans', styleTransferStrength: 0.5 },
+    });
+    expect(partial.styleTransfer).toBe(true);
+    expect(partial.targetComposer).toBe('bill_evans');
+    expect(partial.styleTransferStrength).toBe(0.5);
+    expect(partial.preserveMelody).toBe(true);
+    expect(partial.generateVariations).toBeUndefined();
+  });
+
+  test('D) no import returns empty partial', () => {
+    expect(buildMosaicImportGeneratePartial({ timeline: null, mode: 'lock' }).partial).toEqual({});
+    expect(buildMosaicImportGeneratePartial({ timeline: mockTimeline(), mode: null }).partial).toEqual({});
+  });
+
+  test('mutex: variations wins when both flags present', () => {
+    const { partial, mutexWarning } = resolveMosaicImportPartial({
+      generateVariations: true,
+      styleTransfer: true,
+      variationCount: 3,
+    });
+    expect(partial.generateVariations).toBe(true);
+    expect(partial.styleTransfer).toBeUndefined();
+    expect(mutexWarning).toMatch(/variations wins/i);
+  });
+});
+
 describe('HomeGenerate mosaic import wiring', () => {
   test('lazy MosaicImportPanel mount and workflow hook', () => {
     const src = fs.readFileSync(
@@ -118,6 +181,7 @@ describe('HomeGenerate mosaic import wiring', () => {
     expect(src).toContain('lazy(');
     expect(src).toContain('MosaicImportPanel');
     expect(src).toContain('<Suspense');
-    expect(src).toContain('<MosaicImportPanel workflow={mosaicImportWorkflow} />');
+    expect(src).toContain('<MosaicImportPanel');
+    expect(src).toContain('workflow={mosaicImportWorkflow}');
   });
 });
