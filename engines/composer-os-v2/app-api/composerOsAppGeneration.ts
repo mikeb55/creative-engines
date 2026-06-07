@@ -6,6 +6,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import type { GenerateRequest, ImportHarmonyMode } from './appApiTypes';
+import {
+  buildGenerateResultEchoes,
+  buildGenerateResultEchoManifest,
+  v80GoldenPathOptionsFromGenerateRequest,
+} from './buildGenerateResultEchoes';
 import type { CompositionContext, GenerationMetadata } from '../core/compositionContext';
 import { COMPOSER_OS_VERSION } from './composerOsConfig';
 import { generateComposition, type GenerateResult } from './generateComposition';
@@ -1847,6 +1852,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     ...(typeof req.formId === 'string' && req.formId.trim() ? { formId: req.formId.trim() as FormId } : {}),
     ...(songModeCompiledSectionForm.length > 0 ? { songModeCompiledSectionForm } : {}),
     ...(isClaveGridOverlayEnvEnabled() && req.claveGridOverlay ? { claveGridOverlay: req.claveGridOverlay } : {}),
+    ...v80GoldenPathOptionsFromGenerateRequest(req),
   };
 
   const wantsSongModeSectionRegen =
@@ -2177,6 +2183,15 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
         console.warn('VALIDATION BYPASSED:', (e as Error)?.message);
       }
     }
+    const songModeV80EchoManifest = buildGenerateResultEchoManifest(
+      buildGenerateResultEchoes({
+        generationMetadata: gp.context.generationMetadata,
+        importTimeline: req.importTimeline,
+        importHarmonyMode: normalizedImportHarmonyMode,
+        exportIntegrityPassed: gp.exportIntegrityPassed,
+        variationMode: req.variationMode,
+      })
+    );
     writeOutputManifest(filepath, {
       presetId: 'song_mode',
       styleStack: gp.runManifest?.activeModules ?? [],
@@ -2482,6 +2497,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       motifAuthorityLevel: gp.context.generationMetadata.motifAuthorityLevel,
       motifDevelopmentSummary: gp.context.generationMetadata.motifDevelopmentSummary,
       importHarmonyPolicyVersion: gp.context.generationMetadata.importHarmonyPolicyVersion,
+      v80Echo: songModeV80EchoManifest,
       gceScore: bestGceScore >= 0 ? bestGceScore : undefined,
       gceGatePassed: bestGceScore >= GCE_GATE_MIN,
       validation: {
@@ -2620,6 +2636,15 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           importHarmonyLockFallbackReason: gp.runManifest.importHarmonyLockFallbackReason,
           importHarmonyLockedBarsCount: gp.runManifest.importHarmonyLockedBarsCount,
           motifDevelopmentSummary: gp.runManifest.motifDevelopmentSummary,
+          v80Echo: buildGenerateResultEchoManifest(
+            buildGenerateResultEchoes({
+              generationMetadata: gp.context.generationMetadata,
+              importTimeline: req.importTimeline,
+              importHarmonyMode: normalizedImportHarmonyMode,
+              exportIntegrityPassed: validation.exportIntegrityPassed,
+              variationMode: req.variationMode,
+            })
+          ),
         }
       : undefined,
     scoreTitle: scoreTitleResolved,
@@ -2629,6 +2654,13 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     ...(midiFilepath ? { midiFilepath } : {}),
     gceScore: bestGceScore >= 0 ? bestGceScore : undefined,
     gceGatePassed: bestGceScore >= GCE_GATE_MIN,
+    ...buildGenerateResultEchoes({
+      generationMetadata: gp.context.generationMetadata,
+      importTimeline: req.importTimeline,
+      importHarmonyMode: normalizedImportHarmonyMode,
+      exportIntegrityPassed: validation.exportIntegrityPassed,
+      variationMode: req.variationMode,
+    }),
   };
 }
 

@@ -389,6 +389,7 @@ export function writeOutputManifest(
     riffQualityRules?: import('../core/riff-generator/riffQualityRules').RiffQualityManifestCompact;
     /** Stage 4: echoed when import-harmony telemetry is present (`core/importHarmonyPolicy.ts`). */
     importHarmonyPolicyVersion?: number;
+    v80Echo?: import('./appApiTypes').GenerateResultEchoManifest;
   }
 ): void {
   const manifestPath = manifestPathForMusicXml(xmlFilepath);
@@ -718,6 +719,7 @@ export function writeOutputManifest(
     riffInternalGatePassed: meta.riffInternalGatePassed,
     riffQualityRules: meta.riffQualityRules,
     importHarmonyPolicyVersion: meta.importHarmonyPolicyVersion,
+    v80Echo: meta.v80Echo,
   };
   fs.writeFileSync(manifestPath, JSON.stringify(entry, null, 0), 'utf-8');
 }

@@ -164,4 +164,6 @@ export interface RunManifest {
   importHarmonyLockedBarsCount?: number;
   motifAuthorityLevel?: MotifDevelopmentSummary['motifAuthorityLevel'];
   motifDevelopmentSummary?: MotifDevelopmentSummary;
+  /** V80 — compact import / variation / style-transfer / mixed-preset audit echo. */
+  v80Echo?: import('../../app-api/appApiTypes').GenerateResultEchoManifest;
 }

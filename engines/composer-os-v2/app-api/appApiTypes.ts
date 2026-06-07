@@ -884,6 +884,8 @@ export interface OutputEntry {
   };
   /** Stage 4: import-harmony policy contract version when import-harmony telemetry is written (`core/importHarmonyPolicy.ts`). */
   importHarmonyPolicyVersion?: number;
+  /** V80 — compact import / variation / style-transfer / mixed-preset audit echo. */
+  v80Echo?: GenerateResultEchoManifest;
   /** Brian Wilson Pet Sounds — diagnostics / receipts (Song Mode manifest echo). */
   brianWilsonPetSoundsDiagnostics?: GenerationMetadata['brianWilsonPetSoundsDiagnostics'];
   brianWilsonPetSoundsDeviceReceipts?: GenerationMetadata['brianWilsonPetSoundsDeviceReceipts'];
@@ -1173,6 +1175,75 @@ export interface OutputEntry {
   frankZappaEffectiveHarmonyBars?: GenerationMetadata['frankZappaEffectiveHarmonyBars'];
   frankZappaAntiElaborationGuards?: GenerationMetadata['frankZappaAntiElaborationGuards'];
   frankZappaEligibilityStats?: GenerationMetadata['frankZappaEligibilityStats'];
+}
+
+/** V80 — compact import IR echo for Generate UI (no full melody arrays). */
+export interface ImportEcho {
+  sourceFormat: 'musicxml' | 'midi';
+  bars: number;
+  keyEstimate: { tonic: string; mode: string; confidence: number };
+  /** Per-bar harmony confidence for display strip. */
+  harmonyConfidenceByBar: number[];
+  harmonyOriginByBar: ('explicit' | 'inferred' | 'carried' | 'defaulted')[];
+  parseDiagnostics: string[];
+  importHarmonyMode: string;
+}
+
+/** V80l — variation candidate scores + metadata (no score fragments). */
+export interface VariationEcho {
+  candidates: {
+    variationIndex: number;
+    sectionLabel: string;
+    mode: string;
+    evalScore: number;
+  }[];
+  autoSelected: number;
+  baselineScore: number;
+}
+
+/** V80m — style-transfer receipt for Generate UI. */
+export interface StyleTransferEcho {
+  composerApplied: string;
+  strengthApplied: number;
+  harmonyDeltaBars: number[];
+  melodyRetained: boolean;
+  evalScore: number;
+}
+
+/** V80h — mixed-preset assembly summary for Generate UI. */
+export interface MixedPresetEcho {
+  applied: boolean;
+  exportIntegrityPassed: boolean;
+  sections: {
+    label: string;
+    startBar: number;
+    endBar: number;
+    presetRole: string;
+    partCount: number;
+  }[];
+  totalParts: number;
+}
+
+/** V80 — compact run-manifest echo (audit after the fact). */
+export interface GenerateResultEchoManifest {
+  import?: {
+    sourceFormat: 'musicxml' | 'midi';
+    harmonyMode: string;
+    parseDiagnosticCount: number;
+  };
+  variation?: {
+    autoSelected: number;
+    candidateScores: number[];
+  };
+  styleTransfer?: {
+    composer: string;
+    strength: number;
+    melodyRetained: boolean;
+  };
+  mixedPreset?: {
+    exportIntegrityPassed: boolean;
+    sections: { label: string; presetRole: string }[];
+  };
 }
 
 /** POST /api/melodic-variation-pack — minimal note (HTTP contract calls this NoteEvent: pitch MIDI + duration in quarters). */

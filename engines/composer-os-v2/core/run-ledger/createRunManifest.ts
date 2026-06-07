@@ -98,6 +98,7 @@ export interface CreateRunManifestInput {
   grooveScaffoldReceipt?: GenerationMetadata['grooveScaffoldReceipt'];
   grooveScaffoldReceipts?: GenerationMetadata['grooveScaffoldReceipts'];
   grooveScaffoldDiagnostics?: GenerationMetadata['grooveScaffoldDiagnostics'];
+  v80Echo?: import('../../app-api/appApiTypes').GenerateResultEchoManifest;
 }
 
 /** Create run manifest. */
@@ -188,5 +189,6 @@ export function createRunManifest(input: CreateRunManifestInput): RunManifest {
     grooveScaffoldReceipt: input.grooveScaffoldReceipt,
     grooveScaffoldReceipts: input.grooveScaffoldReceipts,
     grooveScaffoldDiagnostics: input.grooveScaffoldDiagnostics,
+    v80Echo: input.v80Echo,
   };
 }

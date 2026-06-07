@@ -2,7 +2,22 @@
  * Composer OS V2 — App API: generate composition
  */
 
-import type { GenerateRequest, ImportHarmonyMode, SectionRegenerationParams, StyleProfile } from './appApiTypes';
+import type {
+  GenerateRequest,
+  GenerateResultEchoManifest,
+  ImportEcho,
+  ImportHarmonyMode,
+  MixedPresetEcho,
+  SectionRegenerationParams,
+  StyleProfile,
+  StyleTransferEcho,
+  VariationEcho,
+} from './appApiTypes';
+import {
+  buildGenerateResultEchoes,
+  buildGenerateResultEchoManifest,
+  v80GoldenPathOptionsFromGenerateRequest,
+} from './buildGenerateResultEchoes';
 import { runDuoSectionRegeneration } from '../core/regeneration/runDuoSectionRegeneration';
 import { COMPOSER_OS_VERSION } from './composerOsConfig';
 import { manifestPathForMusicXml } from './composerOsOutputPaths';
@@ -207,6 +222,8 @@ export interface GenerateResult {
     martinoWarnings?: string[];
     martinoReadinessScore?: number;
     martinoProvenance?: Record<string, unknown>;
+    /** V80 — compact import / variation / style-transfer / mixed-preset audit echo. */
+    v80Echo?: GenerateResultEchoManifest;
   };
   /** Resolved title used for the score (user or default). */
   scoreTitle?: string;
@@ -270,6 +287,14 @@ export interface GenerateResult {
   guitarVoicings?: GuitarVoicing[];
   /** Martino linear engine LFV flags echoed at result root. */
   lfvFlags?: Array<{ index: number; out_of_range: boolean }>;
+  /** V80k — import IR display strip (absent when no import timeline). */
+  importEcho?: ImportEcho;
+  /** V80l — variation candidate scores (no score fragments). */
+  variationEcho?: VariationEcho;
+  /** V80m — style-transfer receipt. */
+  styleTransferEcho?: StyleTransferEcho;
+  /** V80h — mixed-preset assembly summary. */
+  mixedPresetEcho?: MixedPresetEcho;
 }
 
 export function generateComposition(req: GenerateRequest, outputDir: string): GenerateResult {
@@ -409,6 +434,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
             ? { stochasticRenderOrdinal: req.stochasticRenderOrdinal }
             : {}),
           ...(isClaveGridOverlayEnvEnabled() && req.claveGridOverlay ? { claveGridOverlay: req.claveGridOverlay } : {}),
+          ...v80GoldenPathOptionsFromGenerateRequest(req),
         });
   result.context.generationMetadata = {
     ...result.context.generationMetadata,
@@ -431,6 +457,15 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     result.runManifest.harmonyBlendRaw = harmonyBlendRaw;
     result.runManifest.importHarmonyPolicyVersion = IMPORT_HARMONY_POLICY_VERSION;
   }
+
+  const v80Echoes = buildGenerateResultEchoes({
+    generationMetadata: result.context.generationMetadata,
+    importTimeline: req.importTimeline,
+    importHarmonyMode: normalizedImportHarmonyMode,
+    exportIntegrityPassed: result.exportIntegrityPassed,
+    variationMode: req.variationMode,
+  });
+  const v80EchoManifest = buildGenerateResultEchoManifest(v80Echoes);
 
   let chordExportDiagnostics: ChordExportDiagnosticsReceipt | undefined;
   const parsedBarsForDx = result.context?.generationMetadata.parsedCustomProgressionBars;
@@ -651,6 +686,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       frankZappaDiffReceipts: result.context.generationMetadata.frankZappaDiffReceipts,
       zappaSectionBehaviorBySection: result.context.generationMetadata.zappaSectionBehaviorBySection,
       importHarmonyPolicyVersion: result.context.generationMetadata.importHarmonyPolicyVersion,
+      v80Echo: v80EchoManifest,
       validation: {
         scoreIntegrity: result.integrityPassed,
         exportIntegrity: result.exportIntegrityPassed,
@@ -797,6 +833,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           importHarmonyLockFallbackReason: result.runManifest.importHarmonyLockFallbackReason,
           importHarmonyLockedBarsCount: result.runManifest.importHarmonyLockedBarsCount,
           motifDevelopmentSummary: result.runManifest.motifDevelopmentSummary,
+          v80Echo: v80EchoManifest,
         }
       : undefined,
     scoreTitle: scoreTitleResolved,
@@ -828,5 +865,6 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
         : {}),
     },
     voice2PolyphonyDiagnostics: result.context.generationMetadata.voice2PolyphonyDiagnostics,
+    ...v80Echoes,
   };
 }
