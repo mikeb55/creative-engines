@@ -22,6 +22,8 @@ import { runStringQuartetMode, type StringQuartetRunInput, type StringQuartetRun
 import { applySqContrapuntalPass4MergeOnScore } from '../counterpoint/contrapuntalPass4MusicXmlMerge';
 import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
 import { runEnsembleExportPipeline } from '../export/ensembleExport';
+import { applyLeadSheetFormat } from '../goldenPath/generateLeadSheetScore';
+import { applyMelodyBassFormat } from '../goldenPath/generateMelodyBassScore';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import { validateEnsembleVoicing } from '../voicing/voicingValidation';
 import type { EnsembleVoicingPlan } from '../voicing/voicingTypes';
@@ -115,6 +117,8 @@ export function runQuartetRealisation(
     barMeterMap?: BarMeterMap;
     /** When set with Frank Zappa string-quartet slice flags, drives SQ harmony precompute + score builder Zappa path. */
     generationMetadata?: GenerationMetadata;
+    /** Mosaic Mode — optional composition context (format flag + section plan). */
+    context?: CompositionContext;
     blendStrength?: 'light' | 'medium' | 'strong';
     duoIntent?: 'conversational' | 'supportive';
   }
@@ -177,7 +181,7 @@ export function runQuartetRealisation(
   }
 
   const slonimskyEnsembleCellReceipts: string[] = [];
-  const score = buildQuartetScoreModel({
+  let score = buildQuartetScoreModel({
     title: planning.title,
     seed: input.seed,
     formPlan: planning.formPlan,
@@ -225,6 +229,20 @@ export function runQuartetRealisation(
         : metaForMerge.songwriterStyleId ?? '';
     const bundle = swId ? getVoiceRuleBundle(swId) : undefined;
     applySqContrapuntalPass4MergeOnScore(score, metaForMerge, bundle);
+  }
+
+  const context =
+    input.context ?? planning.sectionArchitectureContext ?? input.sectionArchitectureContext;
+  const planWithTonics = context?.generationMetadata?.mosaicSectionPlan ?? [];
+  const mosaicOutputFormat = (
+    context?.generationMetadata as GenerationMetadata & {
+      mosaicOutputFormat?: 'melody-bass-chords' | 'lead-sheet';
+    }
+  )?.mosaicOutputFormat;
+  if (mosaicOutputFormat === 'lead-sheet') {
+    score = applyLeadSheetFormat(score, planWithTonics);
+  } else if (mosaicOutputFormat === 'melody-bass-chords') {
+    score = applyMelodyBassFormat(score, planWithTonics);
   }
 
   const exportPipeline = runEnsembleExportPipeline(score, {
