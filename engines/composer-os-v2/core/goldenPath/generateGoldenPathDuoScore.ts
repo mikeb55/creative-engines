@@ -2060,6 +2060,8 @@ function injectMosaicMotifNotesPostFinalize(
       while (startMidi > effectiveHigh) startMidi -= 12;
       startMidi = Math.max(effectiveLow, Math.min(effectiveHigh, startMidi));
 
+      const savedChord = tileSection ? m.chord : undefined;
+
       for (let ei = m.events.length - 1; ei >= 0; ei--) {
         const e = m.events[ei]!;
         if (tileSection) {
@@ -2086,6 +2088,7 @@ function injectMosaicMotifNotesPostFinalize(
             createNote(n.pitch, n.startBeat, n.duration, 1, motifRef, undefined, motifVel)
           );
         }
+        if (savedChord) m.chord = savedChord;
         continue;
       }
 

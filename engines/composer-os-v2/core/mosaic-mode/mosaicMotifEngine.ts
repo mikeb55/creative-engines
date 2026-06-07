@@ -128,7 +128,7 @@ function buildRhythmFromPulseCell(
 ): CoreMotif['rhythmPattern'] {
   if (pattern.length === 0 || noteCount <= 0) return [];
   const slotCount = Math.max(1, Math.round(barBeats / eighthDuration));
-  const phase = barIndexInSection % 3;
+  const phase = barIndexInSection % 2;
   const noteDuration = barBeats >= 5 ? 1.0 : eighthDuration;
   const attackBeats: number[] = [];
   for (let s = 0; s < slotCount * 2 && attackBeats.length < noteCount; s++) {
@@ -181,11 +181,28 @@ function expandMotifForVrbPolicy(
   const weights = vrb.melodicPolicy.preferredIntervalWeights;
   const preferredSets = vrb.melodicPolicy.preferredIntervalSets;
   const frippCell = [1, 4, -5] as const;
+  const isFrippFixedCell = vrb.voiceId === 'fripp' || vrb.voiceId?.startsWith('fripp');
   let intervalPattern: number[];
-  if (weights || preferredSets?.length) {
+  if (isFrippFixedCell && (weights || preferredSets?.length)) {
     intervalPattern = Array.from(
       { length: Math.max(0, noteCount - 1) },
       (_, i) => frippCell[i % frippCell.length]!
+    );
+  } else if (weights) {
+    intervalPattern = [...motif.intervalPattern];
+    while (intervalPattern.length < Math.max(0, noteCount - 1)) {
+      const pickIdx = intervalPattern.length % Math.max(1, motif.intervalPattern.length);
+      intervalPattern.push(motif.intervalPattern[pickIdx] ?? 5);
+    }
+    intervalPattern = intervalPattern.slice(0, Math.max(0, noteCount - 1));
+    intervalPattern = intervalPattern.map((iv, i) =>
+      snapIntervalToPreferredWeights(
+        iv,
+        weights,
+        preferredSets,
+        seed,
+        94300 + barIndexInSection * 16 + i
+      )
     );
   } else {
     intervalPattern = [...motif.intervalPattern];
@@ -197,7 +214,7 @@ function expandMotifForVrbPolicy(
     intervalPattern = intervalPattern.map((iv, i) =>
       snapIntervalToPreferredWeights(
         iv,
-        weights,
+        undefined,
         preferredSets,
         seed,
         94300 + barIndexInSection * 16 + i

@@ -1690,6 +1690,9 @@ const FRIPP_SYSTEMS_PROCESS: VoiceRuleBundle = {
   },
 };
 
+// EVAL TUNING PASS — rc17c
+// blues: engine snap branch (expandMotif Fripp guard)
+// riff: pulseCell phase mod 2; bluntness: measure.chord preserved on tile
 const JACK_WHITE_DRONE_RIFF: VoiceRuleBundle = {
   voiceId: 'jack_white_drone_riff',
   harmonicRhythm: {
@@ -1710,8 +1713,14 @@ const JACK_WHITE_DRONE_RIFF: VoiceRuleBundle = {
   },
   melodicPolicy: {
     contour: 'angular',
-    maxLeapSemitones: 12,
-    preferredIntervalSets: [1, 2, 4, 5, 7],
+    maxLeapSemitones: 5,
+    preferredIntervalWeights: {
+      1: 0.35,
+      2: 0.3,
+      3: 0.2,
+      4: 0.1,
+      5: 0.05,
+    },
   },
   orchestrationPolicy: {
     anchorToneCount: 1,
@@ -1726,7 +1735,12 @@ const JACK_WHITE_DRONE_RIFF: VoiceRuleBundle = {
   },
   rhythmPolicy: {
     antiMetric: false,
+    pulseCell: {
+      pattern: [1, 0, 1, 0, 0, 1, 0, 0],
+      weight: 0.8,
+    },
   },
+  targetNotesPerBar: 4,
   repairPolicy: {
     resolveParallels: false,
     maxVoiceOverlap: 4,
