@@ -13,6 +13,11 @@ import {
 import { injectMosaicMotifNotesPostFinalizeBigBand } from '../mosaic-mode/mosaicTilePipeline';
 import { validateScoreModel } from './scoreModelValidation';
 import {
+  assertDuoScopedPassScope,
+  snapshotMixedPresetScopeEvents,
+  validateMixedPresetScore,
+} from './validateScoreModel';
+import {
   BEATS_PER_MEASURE,
   type MeasureModel,
   type PartModel,
@@ -217,15 +222,10 @@ export function assembleSections(results: SectionRealizationResult[]): Assembled
     throw new Error(`assembleSections: invalid score - ${validation.errors.slice(0, 5).join('; ')}`);
   }
 
-  for (const part of score.parts) {
-    for (const m of part.measures) {
-      if (m.events.length === 0) {
-        throw new Error(`assembleSections: empty measure part=${part.id} bar=${m.index}`);
-      }
-    }
-  }
+  const assembledForValidation = { score, assemblyPlan, globalPartRegistry, sectionOwnership };
+  validateMixedPresetScore(assembledForValidation);
 
-  return { score, assemblyPlan, globalPartRegistry, sectionOwnership };
+  return assembledForValidation;
 }
 
 function filterPlanByRole(
@@ -305,8 +305,11 @@ export function applyScopedLatePasses(
   }
 
   if (outputFormat === 'melody-bass-chords') {
+    const mbBefore = snapshotMixedPresetScopeEvents(score, assembled);
     score = applyMelodyBassFormatScoped(score, assembled, filterPlanByRole(plan, 'duo'), tonicMap);
+    assertDuoScopedPassScope(mbBefore, score, assembled, 'applyMelodyBassFormat');
   } else if (outputFormat === 'lead-sheet') {
+    const lsBefore = snapshotMixedPresetScopeEvents(score, assembled);
     for (const section of assembled.assemblyPlan.filter((s) => s.presetRole === 'duo')) {
       const entry = plan.find((p) => p.sectionLabel === section.sectionLabel);
       if (!entry) continue;
@@ -322,6 +325,7 @@ export function applyScopedLatePasses(
         }
       }
     }
+    assertDuoScopedPassScope(lsBefore, score, assembled, 'applyLeadSheetFormat');
   }
 
   return score;
