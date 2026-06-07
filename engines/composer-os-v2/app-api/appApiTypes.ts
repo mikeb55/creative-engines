@@ -373,6 +373,18 @@ export interface GenerateRequest {
    * Default off — existing hook-first bypass unchanged.
    */
   allowMosaicPostFinalizeInject?: boolean;
+  /** V80k IMP-4 — parsed MosaicImportTimeline IR (MusicXML/MIDI ingest). */
+  importTimeline?: import('../core/import/mosaicImportTimeline').MosaicImportTimeline;
+  /** V80k IMP-4 — opt-in import variation engine (default off). */
+  generateVariations?: boolean;
+  /** V80k IMP-4 — candidate count per section (default 4 when variations enabled). */
+  variationCount?: number;
+  /** V80k IMP-4 — which motif dimensions to vary. */
+  variationMode?: 'harmonic' | 'melodic' | 'rhythmic' | 'full';
+  /** V80k IMP-4 — pick a specific candidate index (else autoSelected). */
+  variationIndex?: number;
+  /** V80k IMP-4 — lock import harmony spine; vary melody/rhythm only (default true). */
+  preserveImportHarmony?: boolean;
   /**
    * V3.4 — MusicXML key policy: `auto` infers from chords unless a parseable `tonalCenter` / `tonalCenterOverride` is set;
    * `override` is legacy alias for explicit key (same explicit-string authority); `none` hides key signature.

@@ -691,6 +691,10 @@ export interface GenerationMetadata {
   importHarmonyChordEventCount?: number;
   /** Stage 1: imported harmony timeline storage event count (`importedHarmonyTimeline.events`). */
   importHarmonyTimelineEventCount?: number;
+  /** V80k IMP-4: full imported melody line retained for variation engine. */
+  importMelodyLineFull?: import('./import/mosaicImportTimeline').ImportMelodyNote[];
+  /** V80k IMP-4: evaluated import variation candidates (gated; default off). */
+  variationResult?: import('./import/mosaicVariationEngine').VariationResult;
   /** Song Mode: aggregated section shaping metrics for manifests, UI notes, and eval harnesses. */
   songModeSectionShapingDiagnostics?: SongModeSectionShapingDiagnosticsV1;
   /** V65 P4 — opt-in section-aware symbolic drum accompaniment diagnostics. */

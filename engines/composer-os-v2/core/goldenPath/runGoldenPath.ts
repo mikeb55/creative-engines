@@ -159,6 +159,13 @@ import {
   runMosaicSectionRetrySync,
 } from '../mosaic-mode/mosaicSectionRetry';
 import { scoreMosaicMotifSimilarity } from '../mosaic-mode/mosaicMotifSimilarity';
+import type { MosaicImportTimeline } from '../import/mosaicImportTimeline';
+import {
+  applySelectedVariationToScore,
+  generateVariations,
+  shouldRunVariationEngine,
+  wireImportTimelineToContext,
+} from '../import/mosaicVariationEngine';
 import { validateSongModeMotifSystem } from '../motif/songModeMotifEngine';
 import { validateSongModePhraseEngineV1 } from './songModePhraseEngineV1';
 import { partitionSongModePhraseIssues } from '../song-mode/songModePhraseBehaviourRules';
@@ -1400,6 +1407,18 @@ export interface RunGoldenPathOptions {
   bbMosaicEnabled?: boolean;
   /** INS-2 — opt-in delegate mosaic sections tagged `string_quartet` (default off). */
   sqMosaicEnabled?: boolean;
+  /** V80k IMP-4 — parsed MosaicImportTimeline IR. */
+  importTimeline?: MosaicImportTimeline;
+  /** V80k IMP-4 — opt-in import variation engine (default off). */
+  generateVariations?: boolean;
+  /** V80k IMP-4 — candidate count per section (default 4). */
+  variationCount?: number;
+  /** V80k IMP-4 — harmonic | melodic | rhythmic | full. */
+  variationMode?: 'harmonic' | 'melodic' | 'rhythmic' | 'full';
+  /** V80k IMP-4 — explicit candidate pick (else autoSelected). */
+  variationIndex?: number;
+  /** V80k IMP-4 — lock import harmony spine (default true). */
+  preserveImportHarmony?: boolean;
 }
 
 export type { MosaicPresetRole, SectionRealizationResult, AssembledScoreModel };
@@ -2120,6 +2139,13 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       ...(options.mosaicOutputFormat ? { mosaicOutputFormat: options.mosaicOutputFormat } : {}),
     };
   }
+  if (options?.importTimeline) {
+    wireImportTimelineToContext(
+      context,
+      options.importTimeline,
+      options.preserveImportHarmony
+    );
+  }
   const motifAuthorityLevelRequested = resolveMotifAuthorityLevel(options);
   const motifAuthorityEligible = isMotifAuthorityPilotPreset(
     options?.presetId ?? context.presetId,
@@ -2720,6 +2746,13 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     orchestrationEnabled: options?.orchestrationEnabled,
     identityCellEnabled: options?.identityCellEnabled,
   });
+  const variationEngineActive = shouldRunVariationEngine({
+    importTimeline: options?.importTimeline,
+    generateVariations: options?.generateVariations,
+    variationCount: options?.variationCount,
+  });
+  const sectionPlanForVariations =
+    appliedContext.generationMetadata?.mosaicSectionPlan ?? options?.mosaicSectionPlan ?? [];
   let score: ScoreModel | undefined;
   try {
     if (options?.debugFixtureMode === 'indie_dual_guitar_tuning_proof') {
@@ -2746,6 +2779,28 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       if (mixedPresetActive && score) {
         const assembledRun = runMixedPresetAssembly(score, appliedContext, options);
         score = assembledRun.score;
+      }
+      if (variationEngineActive && options?.importTimeline && sectionPlanForVariations.length > 0) {
+        const variationResult = generateVariations(
+          {
+            importTimeline: options.importTimeline,
+            sectionPlan: sectionPlanForVariations,
+            variationCount: options.variationCount,
+            variationMode: options.variationMode,
+            preserveImportHarmony: options.preserveImportHarmony,
+          },
+          { context: appliedContext, plans }
+        );
+        appliedContext.generationMetadata = {
+          ...appliedContext.generationMetadata,
+          variationResult,
+        };
+        score = applySelectedVariationToScore(
+          score,
+          variationResult,
+          sectionPlanForVariations,
+          options.variationIndex
+        );
       }
     }
   } finally {
