@@ -156,6 +156,11 @@ import {
 } from '../types/composerEraOptions';
 import type { SqToBbStyleProfileId } from '../types/sqToBbWorkflowUi';
 import { StylePanel, type UiInstrumentGroup } from '../components/StylePanel';
+import {
+  MosaicSectionPlanner,
+  type MosaicOutputFormatUi,
+  type MosaicSectionPlanEntry,
+} from '../components/MosaicSectionPlanner';
 import { GuitarFretboardView } from '../components/GuitarFretboardView';
 import { RhythmBlendControls } from '../components/RhythmBlendControls';
 import {
@@ -2547,6 +2552,8 @@ export function HomeGenerate({
   const [grooveScaffoldDensity, setGrooveScaffoldDensity] = useState<GrooveScaffoldDensityUi>('medium');
   const [grooveScaffoldFillFrequency, setGrooveScaffoldFillFrequency] =
     useState<GrooveScaffoldFillFrequencyUi>('normal');
+  const [mosaicSections, setMosaicSections] = useState<MosaicSectionPlanEntry[]>([]);
+  const [mosaicOutputFormat, setMosaicOutputFormat] = useState<MosaicOutputFormatUi>('none');
   const songwriterStyle = useMemo(() => resolveEffectivePrimarySongwriter(styleProfile), [styleProfile]);
 
   useEffect(() => {
@@ -4391,6 +4398,24 @@ export function HomeGenerate({
                 improvMode: true as const,
                 improvVoiceId: styleProfile.harmonic.voiceId ?? undefined,
                 stochasticVariance: stochasticVarianceUi,
+              }
+            : {}),
+          ...(mosaicSections.length >= 2
+            ? {
+                mosaicSectionPlan: mosaicSections.map((section) => {
+                  const styleId =
+                    section.songwriterStyleId === 'default' || !section.songwriterStyleId.trim()
+                      ? songwriterStyle.trim()
+                      : section.songwriterStyleId.trim();
+                  return {
+                    sectionLabel: section.sectionLabel.trim(),
+                    startBar: section.startBar,
+                    endBar: section.endBar,
+                    songwriterStyleId: styleId,
+                    ...(section.timeSignature ? { timeSignature: section.timeSignature } : {}),
+                  };
+                }),
+                ...(mosaicOutputFormat !== 'none' ? { mosaicOutputFormat } : {}),
               }
             : {}),
         };
@@ -6894,6 +6919,13 @@ export function HomeGenerate({
             onChromaticStrengthChange={setGbdChromaticStrength}
             disabled={loading}
           />
+          <MosaicSectionPlanner
+            sections={mosaicSections}
+            onChange={setMosaicSections}
+            outputFormat={mosaicOutputFormat}
+            onOutputFormatChange={setMosaicOutputFormat}
+            disabled={loading}
+          />
         </>
       )}
       {presetId === 'guitar_bass_duo_single_line' && (
@@ -9095,6 +9127,13 @@ export function HomeGenerate({
             onImprovModeChange={setImprovModeUi}
             stochasticVariance={stochasticVarianceUi}
             onStochasticVarianceChange={setStochasticVarianceUi}
+          />
+          <MosaicSectionPlanner
+            sections={mosaicSections}
+            onChange={setMosaicSections}
+            outputFormat={mosaicOutputFormat}
+            onOutputFormatChange={setMosaicOutputFormat}
+            disabled={loading}
           />
           {uiInstrumentGroup === 'big_band' && (
             <BigBandRhythmControls
