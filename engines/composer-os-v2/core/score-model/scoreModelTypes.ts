@@ -113,6 +113,8 @@ export interface MeasureModel {
   index: number; // 1-based
   events: ScoreEvent[];
   chord?: string;
+  /** Lead-sheet / melody-bass format section chord symbol (also mirrored to {@link chord} for export). */
+  chordSymbol?: string;
   rehearsalMark?: string;
   /**
    * Quarter-note beats in this measure (e.g. 3.5 for 7/8). When omitted, treated as {@link BEATS_PER_MEASURE}.

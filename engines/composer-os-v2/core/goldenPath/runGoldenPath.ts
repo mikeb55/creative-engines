@@ -63,6 +63,8 @@ import { placeMotifsAcrossBars, placeMotifsForEcmForm } from '../motif/motifTrac
 import { runScoreIntegrityGate } from '../score-integrity/scoreIntegrityGate';
 import { runBehaviourGates } from '../score-integrity/behaviourGates';
 import { applyContrapuntalPass4MusicXmlMerge } from '../counterpoint/contrapuntalPass4MusicXmlMerge';
+import { applyMelodyBassFormat } from './generateMelodyBassScore';
+import { buildMosaicTonicMap } from '../mosaic-mode/precomputeMosaicEffectiveHarmonyBars';
 import { exportScoreModelToMusicXml } from '../export/musicxmlExporter';
 import { assertExportTruth, buildSpineSymbolsForExportTruth } from '../export/assertExportTruth';
 import { applyKeySignatureToScoreAndContext } from '../harmony/keyInference';
@@ -1372,7 +1374,9 @@ export interface RunGoldenPathOptions {
       numerator: number;
       denominator: number;
     };
+    phraseRole?: 'statement' | 'development' | 'climax' | 'release';
   }>;
+  mosaicOutputFormat?: 'melody-bass-chords' | 'lead-sheet';
 }
 
 function clamp01(n: number): number {
@@ -1916,6 +1920,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     context.generationMetadata = {
       ...context.generationMetadata,
       mosaicSectionPlan: options.mosaicSectionPlan,
+      ...(options.mosaicOutputFormat ? { mosaicOutputFormat: options.mosaicOutputFormat } : {}),
     };
   }
   const motifAuthorityLevelRequested = resolveMotifAuthorityLevel(options);
@@ -2806,6 +2811,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     guitarMeasures: guitarMeasureCount,
   });
   score = applyContrapuntalPass4MusicXmlMerge(score, appliedContext);
+  if (appliedContext.generationMetadata?.mosaicOutputFormat === 'melody-bass-chords') {
+    const mosaicPlan = appliedContext.generationMetadata.mosaicSectionPlan ?? [];
+    const tonicMap =
+      mosaicPlan.length > 0 ? buildMosaicTonicMap(mosaicPlan, appliedContext) : {};
+    score = applyMelodyBassFormat(score, mosaicPlan, tonicMap);
+  }
   const barMeterForMusicXml =
     appliedContext.barMeterMap ?? appliedContext.generationMetadata?.barMeterMap;
   let exportResult: ReturnType<typeof exportScoreModelToMusicXml>;

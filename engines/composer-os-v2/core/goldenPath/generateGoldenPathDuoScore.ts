@@ -65,6 +65,7 @@ declare module '../compositionContext' {
     artRockRiffContext?: string;
     riffProfileReceipt?: string;
     riffVrbDuoLaneReceipt?: string;
+    mosaicOutputFormat?: 'melody-bass-chords' | 'lead-sheet';
   }
 }
 import { chordTonesForChordSymbolWithContext, shouldUseUserChordSemanticsForTones } from '../harmony/harmonyChordTonePolicy';
@@ -1906,6 +1907,99 @@ function mosaicTransitionAttackBeats(noteCount: number, meter: BarMeterSignature
 
 const MOSAIC_PHRASE_ROLE_DYNAMIC_STEP = 12;
 
+/** Per-voice duration sums (matches scoreModelValidation measureDurationByVoice). */
+function measureDurationByVoiceForPad(measure: MeasureModel): Map<number, number> {
+  const byVoice = new Map<number, number>();
+  for (const e of measure.events) {
+    const v = e.voice ?? 1;
+    byVoice.set(v, (byVoice.get(v) ?? 0) + e.duration);
+  }
+  return byVoice;
+}
+
+/** Mosaic 5/4+ bars: pad underfilled voices with gap + trailing rests (generation fill only). */
+function padMosaicUnderfillBars(score: ScoreModel, context: CompositionContext): ScoreModel {
+  if (!isMosaicModeActive(context)) return score;
+  const out = structuredClone(score) as ScoreModel;
+  for (const part of out.parts) {
+    for (const m of part.measures) {
+      const cap = measureBeatSpanQuartersOf(m);
+      if (cap <= 4) continue;
+      const voices = new Map<number, ScoreEvent[]>();
+      for (const e of m.events) {
+        const v = e.voice ?? 1;
+        if (!voices.has(v)) voices.set(v, []);
+        voices.get(v)!.push(e);
+      }
+      const newEvents: ScoreEvent[] = [];
+      for (const [voice, events] of voices.entries()) {
+        const sorted = [...events].sort((a, b) => a.startBeat - b.startBeat);
+        let cursor = 0;
+        for (const e of sorted) {
+          const sb = e.startBeat;
+          if (sb - cursor > 0.01) {
+            const gap = createRest(cursor, sb - cursor, voice);
+            newEvents.push(gap);
+          }
+          newEvents.push(e);
+          cursor = Math.max(cursor, sb + e.duration);
+        }
+        if (cap - cursor > 0.01) {
+          const trail = createRest(cursor, cap - cursor, voice);
+          newEvents.push(trail);
+        }
+      }
+      if (newEvents.length === 0) continue;
+      m.events = newEvents;
+    }
+  }
+  return out;
+}
+
+/** Mosaic 5/4+ bars: trim overfilled voices from the end (generation fill only). */
+function trimMosaicOverfillBars(score: ScoreModel, context: CompositionContext): ScoreModel {
+  if (!isMosaicModeActive(context)) return score;
+  const out = structuredClone(score) as ScoreModel;
+  for (const part of out.parts) {
+    for (const m of part.measures) {
+      const cap = measureBeatSpanQuartersOf(m);
+      if (cap <= 4) continue;
+      const voices = new Map<number, ScoreEvent[]>();
+      for (const e of m.events) {
+        const v = e.voice ?? 1;
+        if (!voices.has(v)) voices.set(v, []);
+        voices.get(v)!.push(e);
+      }
+      for (const [voice, events] of voices.entries()) {
+        let total = 0;
+        for (const e of events) {
+          total += e.duration;
+        }
+        if (total - cap < 0.01) continue;
+        let trimmed = total;
+        for (let i = events.length - 1; i >= 0 && trimmed > cap; i--) {
+          const e = events[i]!;
+          const dur = e.duration;
+          const excess = trimmed - cap;
+          if (excess >= dur) {
+            const idx = m.events.indexOf(e);
+            if (idx !== -1) m.events.splice(idx, 1);
+            trimmed -= dur;
+          } else {
+            e.duration = dur - excess;
+            trimmed = cap;
+          }
+        }
+        const remaining = m.events.filter((ev) => (ev.voice ?? 1) === voice);
+        if (remaining.length === 0) {
+          m.events.push(createRest(0, cap, voice));
+        }
+      }
+    }
+  }
+  return out;
+}
+
 /** Clone sealed score and re-inject section-start motif notes (durations not grid-trimmed). */
 function injectMosaicMotifNotesPostFinalize(
   score: ScoreModel,
@@ -1969,7 +2063,7 @@ function injectMosaicMotifNotesPostFinalize(
       for (let ei = m.events.length - 1; ei >= 0; ei--) {
         const e = m.events[ei]!;
         if (tileSection) {
-          if (e.kind === 'note') m.events.splice(ei, 1);
+          if (e.kind === 'note' || e.kind === 'rest') m.events.splice(ei, 1);
         } else if (e.kind === 'note' && (e as NoteEvent).motifRef?.startsWith('mosaic_motif_')) {
           m.events.splice(ei, 1);
         }
@@ -8111,6 +8205,8 @@ export function generateGoldenPathDuoScore(
     context.generationMetadata?.zappaStyleMode === 'bluesrockFerocious';
   if (isMosaicModeActive(context) && !context.generationMetadata?.songModeHookFirstIdentity) {
     afterExpressive = injectMosaicMotifNotesPostFinalize(afterExpressive, context, plans.guitarMap);
+    afterExpressive = padMosaicUnderfillBars(afterExpressive, context);
+    afterExpressive = trimMosaicOverfillBars(afterExpressive, context);
   }
   if (isGuitarBassDuoFamily(context.presetId)) {
     debugPrintDuoAttackGridIfEnabled(afterExpressive, 'post-seal');
