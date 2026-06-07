@@ -16,12 +16,45 @@ export type RhythmEngineId =
   | 'baroque_dance'
   | 'reich_phasing_grid'
   | 'viennese_waltz'
-  | 'jewish_klezmer';
+  | 'jewish_klezmer'
+  | 'straight_rock'
+  | 'shuffle_blues_rock'
+  | 'funk_rock'
+  | 'half_time_hip_hop'
+  | 'reggae_family'
+  | 'hard_rock_metal'
+  | 'prog_5_4'
+  | 'prog_7_8'
+  | 'prog_7_4'
+  | 'jazz_rock_fusion'
+  | 'afrobeat_rock';
 
 /** All shipped harmonic writers — excludes rhythm-only Song Mode engines. */
 export type HarmonicVoiceId = Exclude<SongwriterRuleId, RhythmEngineId>;
 
-export type RhythmContextPrefix = 'fk' | 'gr' | 'br' | 'sl' | 'cu' | 'bg' | 'fp' | 'bd' | 'rp' | 'vw' | 'kl';
+export type RhythmContextPrefix =
+  | 'fk'
+  | 'gr'
+  | 'br'
+  | 'sl'
+  | 'cu'
+  | 'bg'
+  | 'fp'
+  | 'bd'
+  | 'rp'
+  | 'vw'
+  | 'kl'
+  | 'sr'
+  | 'sb'
+  | 'fn'
+  | 'ht'
+  | 'rg'
+  | 'hr'
+  | 'p5'
+  | 'p8'
+  | 'p4'
+  | 'jf'
+  | 'ar';
 
 /** Curated harmonic voice labels — mirror HomeGenerate `SONGWRITER_OPTIONS`. */
 export const HARMONIC_VOICE_LABELS: Pick<
@@ -107,6 +140,17 @@ export function resolveRhythmContextKeys(engineId: RhythmEngineId, presetId: str
     reich_phasing_grid: 'rp',
     viennese_waltz: 'vw',
     jewish_klezmer: 'kl',
+    straight_rock: 'sr',
+    shuffle_blues_rock: 'sb',
+    funk_rock: 'fn',
+    half_time_hip_hop: 'ht',
+    reggae_family: 'rg',
+    hard_rock_metal: 'hr',
+    prog_5_4: 'p5',
+    prog_7_8: 'p8',
+    prog_7_4: 'p4',
+    jazz_rock_fusion: 'jf',
+    afrobeat_rock: 'ar',
   };
   const prefix = prefixMap[engineId];
   return presetId ? [`${prefix}:core`, `${prefix}:${presetId}`] : [`${prefix}:core`];
@@ -144,6 +188,17 @@ export function migrateLegacySongwriterValue(value: string): Partial<StyleProfil
     reich_phasing_grid: 'reich_phasing_grid',
     viennese_waltz: 'viennese_waltz',
     jewish_klezmer: 'jewish_klezmer',
+    straight_rock: 'straight_rock',
+    shuffle_blues_rock: 'shuffle_blues_rock',
+    funk_rock: 'funk_rock',
+    half_time_hip_hop: 'half_time_hip_hop',
+    reggae_family: 'reggae_family',
+    hard_rock_metal: 'hard_rock_metal',
+    prog_5_4: 'prog_5_4',
+    prog_7_8: 'prog_7_8',
+    prog_7_4: 'prog_7_4',
+    jazz_rock_fusion: 'jazz_rock_fusion',
+    afrobeat_rock: 'afrobeat_rock',
   };
   if (value in rhythmMap) {
     return { rhythm: { engineId: rhythmMap[value]!, presetId: null, contextKeys: [] } };

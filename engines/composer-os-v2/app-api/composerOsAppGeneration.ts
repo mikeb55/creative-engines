@@ -52,6 +52,15 @@ import { mergeBaroqueDanceSqRhythmIntoMetadata } from '../core/rhythm/baroqueDan
 import { mergeReichPhasingGridSqRhythmIntoMetadata } from '../core/rhythm/reichPhasingGridRhythmEngine';
 import { mergeVienneseWaltzSqRhythmIntoMetadata } from '../core/rhythm/vienneseWaltzRhythmEngine';
 import { mergeJewishKlezmerSqRhythmIntoMetadata } from '../core/rhythm/jewishKlezmerRhythmEngine';
+import {
+  DEFAULT_ROCK_FUSION_PRESET_BY_ENGINE,
+  getRockFusionPresetById,
+  isShippedRockFusionRhythmEngineId,
+  rockFusionRhythmReceiptsForPreset,
+  ROCK_FUSION_CONTEXT_PREFIX_BY_ENGINE,
+  SHIPPED_ROCK_FUSION_RHYTHM_ENGINE_IDS,
+  type RockFusionEngineId,
+} from '../core/rhythm/rockFusionRhythmPresets';
 import { runSongModeSectionRegeneration } from '../core/regeneration/runDuoSectionRegeneration';
 import {
   runBigBandSectionRegenerationPipeline,
@@ -152,6 +161,60 @@ import type { IntervalPatternId } from '../core/slonimsky/slonimskyEngine';
 import type { MusicContext } from '../core/music-context/musicContextTypes';
 import { writeDrumGuide } from '../core/export/midiDrumGuideWriter';
 import { writeScoreMidi } from '../core/export/midiScoreWriter';
+
+export { SHIPPED_ROCK_FUSION_RHYTHM_ENGINE_IDS };
+
+type ShippedRockFusionRhythmEngineId = (typeof SHIPPED_ROCK_FUSION_RHYTHM_ENGINE_IDS)[number];
+
+export function shippedRockFusionRhythmEngineId(
+  id: string | undefined
+): ShippedRockFusionRhythmEngineId | undefined {
+  if (!id) return undefined;
+  return isShippedRockFusionRhythmEngineId(id) ? id : undefined;
+}
+
+function rockFusionPresetIdFromContextKeys(keys: string[] | undefined): {
+  engineId: RockFusionEngineId;
+  presetId: string;
+} | undefined {
+  if (!Array.isArray(keys) || keys.length === 0) return undefined;
+  for (const engineId of SHIPPED_ROCK_FUSION_RHYTHM_ENGINE_IDS) {
+    const prefix = ROCK_FUSION_CONTEXT_PREFIX_BY_ENGINE[engineId];
+    const presetKey = keys.find((k) => k.startsWith(`${prefix}:`) && k !== `${prefix}:core`);
+    if (presetKey) {
+      return { engineId, presetId: presetKey.slice(prefix.length + 1) };
+    }
+    if (keys.includes(`${prefix}:core`)) {
+      return { engineId, presetId: DEFAULT_ROCK_FUSION_PRESET_BY_ENGINE[engineId] };
+    }
+  }
+  return undefined;
+}
+
+export function mergeRockFusionRhythmIntoMetadata(
+  meta: GenerationMetadata,
+  engineId: RockFusionEngineId,
+  presetId?: string | null
+): GenerationMetadata {
+  const pid = presetId?.trim() || DEFAULT_ROCK_FUSION_PRESET_BY_ENGINE[engineId];
+  const preset = getRockFusionPresetById(pid) ?? getRockFusionPresetById(DEFAULT_ROCK_FUSION_PRESET_BY_ENGINE[engineId]);
+  if (!preset) return meta;
+  return {
+    ...meta,
+    rockFusionRhythmEngineId: engineId,
+    rockFusionRhythmPresetId: preset.id,
+    rockFusionRhythmReceipts: rockFusionRhythmReceiptsForPreset(preset),
+  } as GenerationMetadata;
+}
+
+function applyRockFusionRhythmFromContextKeys(
+  meta: GenerationMetadata,
+  keys: string[] | undefined
+): GenerationMetadata {
+  const resolved = rockFusionPresetIdFromContextKeys(keys);
+  if (!resolved) return meta;
+  return mergeRockFusionRhythmIntoMetadata(meta, resolved.engineId, resolved.presetId);
+}
 
 export const SHIPPED_SQ_RHYTHM_ENGINE_IDS = [
   'bartok_bulgarian_aksak',
@@ -435,7 +498,8 @@ function buildStringQuartetGenerationMetadata(
   const sw = ensembleSlonimskySongwriterIdFromRequest(req)?.trim().toLowerCase();
   const sqR = shippedSqRhythmEngineId(req.sqRhythmEngineId);
   const sqVrb = req.sqArrangerVrb;
-  if (!sw && !sqR && !sqVrb) return undefined;
+  const rockFusion = rockFusionPresetIdFromContextKeys(req.styleGenerationContextKeys);
+  if (!sw && !sqR && !sqVrb && !rockFusion) return undefined;
 
   const meta: GenerationMetadata = {
     generatedAt: new Date().toISOString(),
@@ -457,25 +521,21 @@ function buildStringQuartetGenerationMetadata(
       meta.harmonySource = 'custom';
     }
   }
+  let out: GenerationMetadata = meta;
   if (sqR === 'bartok_bulgarian_aksak') {
-    return mergeBartokBulgarianAksakSqRhythmIntoMetadata(meta);
+    out = mergeBartokBulgarianAksakSqRhythmIntoMetadata(meta);
+  } else if (sqR === 'free_proportional') {
+    out = mergeFreeProportionalSqRhythmIntoMetadata(meta);
+  } else if (sqR === 'baroque_dance') {
+    out = mergeBaroqueDanceSqRhythmIntoMetadata(meta);
+  } else if (sqR === 'reich_phasing_grid') {
+    out = mergeReichPhasingGridSqRhythmIntoMetadata(meta);
+  } else if (sqR === 'viennese_waltz') {
+    out = mergeVienneseWaltzSqRhythmIntoMetadata(meta);
+  } else if (sqR === 'jewish_klezmer') {
+    out = mergeJewishKlezmerSqRhythmIntoMetadata(meta);
   }
-  if (sqR === 'free_proportional') {
-    return mergeFreeProportionalSqRhythmIntoMetadata(meta);
-  }
-  if (sqR === 'baroque_dance') {
-    return mergeBaroqueDanceSqRhythmIntoMetadata(meta);
-  }
-  if (sqR === 'reich_phasing_grid') {
-    return mergeReichPhasingGridSqRhythmIntoMetadata(meta);
-  }
-  if (sqR === 'viennese_waltz') {
-    return mergeVienneseWaltzSqRhythmIntoMetadata(meta);
-  }
-  if (sqR === 'jewish_klezmer') {
-    return mergeJewishKlezmerSqRhythmIntoMetadata(meta);
-  }
-  return meta;
+  return applyRockFusionRhythmFromContextKeys(out, req.styleGenerationContextKeys);
 }
 
 function slonimskyEnsembleCellReceiptsFromRealised(realised: {

@@ -8,7 +8,18 @@ export type RhythmEngineId =
   | 'rebetiko'
   | 'brazilian'
   | 'second_line'
-  | 'cuban';
+  | 'cuban'
+  | 'straight_rock'
+  | 'shuffle_blues_rock'
+  | 'funk_rock'
+  | 'half_time_hip_hop'
+  | 'reggae_family'
+  | 'hard_rock_metal'
+  | 'prog_5_4'
+  | 'prog_7_8'
+  | 'prog_7_4'
+  | 'jazz_rock_fusion'
+  | 'afrobeat_rock';
 
 export interface AfrobeatPresetRef {
   engine: 'afrobeat';
@@ -29,7 +40,7 @@ export interface RebetikoPresetRef {
   presetId: string;
   meter: '9/8' | '7/8' | '10/8' | '6/8' | '2/4' | '4/4';
   groups: number[];
-  gridSteps: 8 | 12 | 14 | 16 | 18 | 20;
+  gridSteps: 8 | 12 | 14 | 16 | 18 | 20 | 28;
   lanes: {
     low: number[];
     high: number[];
@@ -38,7 +49,31 @@ export interface RebetikoPresetRef {
   };
 }
 
-export type RhythmPresetRef = AfrobeatPresetRef | RebetikoPresetRef;
+export interface RockFusionPresetRef {
+  engine:
+    | 'straight_rock'
+    | 'shuffle_blues_rock'
+    | 'funk_rock'
+    | 'half_time_hip_hop'
+    | 'reggae_family'
+    | 'hard_rock_metal'
+    | 'prog_5_4'
+    | 'prog_7_8'
+    | 'prog_7_4'
+    | 'jazz_rock_fusion'
+    | 'afrobeat_rock';
+  presetId: string;
+  meter: string;
+  gridSteps: 14 | 16 | 20 | 28;
+  groups?: number[];
+  lanes: {
+    kick: number[];
+    snare: number[];
+    hiHat: number[];
+  };
+}
+
+export type RhythmPresetRef = AfrobeatPresetRef | RebetikoPresetRef | RockFusionPresetRef;
 
 export interface BarRange {
   /** 1-based, inclusive */

@@ -10,6 +10,8 @@ export type StylePanelProps = {
   onChange: (next: StyleProfile) => void;
   harmonicVoiceGroups: Array<{ label: string; voices: Array<{ id: HarmonicVoiceId; label: string }> }>;
   rhythmEngines: Array<{ id: RhythmEngineId; label: string }>;
+  /** When set, renders rhythm engines in optgroups (overrides flat {@link rhythmEngines} order). */
+  rhythmEngineGroups?: Array<{ label: string; engines: Array<{ id: RhythmEngineId; label: string }> }>;
   /** Song Mode primary harmonic select — stable id for tests / a11y */
   harmonicSelectId?: string;
   rhythmSelectId?: string;
@@ -35,6 +37,7 @@ export function StylePanel(props: StylePanelProps) {
     onChange,
     harmonicVoiceGroups,
     rhythmEngines,
+    rhythmEngineGroups,
     instrumentGroup = 'big_band',
     onInstrumentGroupChange,
     guitarOutputMode = 'both',
@@ -129,11 +132,21 @@ export function StylePanel(props: StylePanelProps) {
           }}
         >
           <option value="">None</option>
-          {rhythmEngines.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.label}
-            </option>
-          ))}
+          {rhythmEngineGroups?.length
+            ? rhythmEngineGroups.map((g) => (
+                <optgroup key={g.label} label={g.label}>
+                  {g.engines.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ))
+            : rhythmEngines.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.label}
+                </option>
+              ))}
         </select>
       </div>
 

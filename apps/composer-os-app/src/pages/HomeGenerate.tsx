@@ -257,6 +257,7 @@ import { DEFAULT_BRAZILIAN_RHYTHM_PRESET_ID } from '../slices/brazilianRhythmSli
 import { DEFAULT_SECOND_LINE_RHYTHM_PRESET_ID } from '../slices/secondLineRhythmSlice';
 import { DEFAULT_CUBAN_RHYTHM_PRESET_ID } from '../slices/cubanRhythmSlice';
 import { DEFAULT_GREEK_RHYTHM_PRESET_ID } from '../slices/greekRhythmSlice';
+import { DEFAULT_ROCK_FUSION_PRESET_BY_ENGINE } from '@composer-os/core/rhythm/rockFusionRhythmPresets';
 
 const FORM_OPTION_IDS_EXCLUDED_FROM_UI = new Set([
   'through5',
@@ -803,10 +804,20 @@ const RHYTHM_ONLY_SONGWRITER_IDS = new Set<string>([
   'reich_phasing_grid',
   'viennese_waltz',
   'jewish_klezmer',
+  'straight_rock',
+  'shuffle_blues_rock',
+  'funk_rock',
+  'half_time_hip_hop',
+  'reggae_family',
+  'hard_rock_metal',
+  'prog_5_4',
+  'prog_7_8',
+  'prog_7_4',
+  'jazz_rock_fusion',
+  'afrobeat_rock',
 ]);
 
-/** Primary Style Panel excludes rhythm engines; secondary blend dropdown still lists them. */
-const RHYTHM_SONGWRITER_OPTIONS: { id: string; label: string }[] = [
+const RHYTHM_ENGINE_GROUP_WORLD: { id: RhythmEngineId; label: string }[] = [
   { id: 'fela_kuti', label: 'Fela Kuti / Tony Allen' },
   { id: 'greek_rebetiko', label: 'Greek Rebetiko' },
   { id: 'brazilian', label: 'Brazilian' },
@@ -818,6 +829,40 @@ const RHYTHM_SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'reich_phasing_grid', label: 'Reich / Phasing Grid' },
   { id: 'viennese_waltz', label: 'Viennese Waltz' },
   { id: 'jewish_klezmer', label: 'Jewish / Klezmer' },
+];
+
+const RHYTHM_ENGINE_GROUP_ROCK_FUSION: { id: RhythmEngineId; label: string }[] = [
+  { id: 'straight_rock', label: 'Straight Rock' },
+  { id: 'shuffle_blues_rock', label: 'Shuffle / Blues Rock' },
+  { id: 'funk_rock', label: 'Funk Rock' },
+  { id: 'half_time_hip_hop', label: 'Half-Time / Hip-Hop' },
+  { id: 'reggae_family', label: 'Reggae Family' },
+  { id: 'hard_rock_metal', label: 'Hard Rock / Metal' },
+  { id: 'prog_5_4', label: '5/4 Prog Rock' },
+  { id: 'prog_7_8', label: '7/8 Prog Rock' },
+  { id: 'prog_7_4', label: '7/4 Prog Rock' },
+  { id: 'jazz_rock_fusion', label: 'Jazz-Rock Fusion' },
+  { id: 'afrobeat_rock', label: 'Afrobeat Rock' },
+];
+
+const RHYTHM_ENGINE_GROUPS: Array<{ label: string; engines: { id: RhythmEngineId; label: string }[] }> = [
+  { label: 'World & Classical', engines: RHYTHM_ENGINE_GROUP_WORLD },
+  { label: 'Rock & Fusion', engines: RHYTHM_ENGINE_GROUP_ROCK_FUSION },
+];
+
+const RHYTHM_ENGINE_LIST: { id: RhythmEngineId; label: string }[] = RHYTHM_ENGINE_GROUPS.flatMap(
+  (g) => g.engines
+);
+
+function defaultRockFusionPresetId(engineId: RhythmEngineId | null): string | null {
+  if (!engineId || !(engineId in DEFAULT_ROCK_FUSION_PRESET_BY_ENGINE)) return null;
+  return DEFAULT_ROCK_FUSION_PRESET_BY_ENGINE[engineId as keyof typeof DEFAULT_ROCK_FUSION_PRESET_BY_ENGINE];
+}
+
+/** Primary Style Panel excludes rhythm engines; secondary blend dropdown still lists them. */
+const RHYTHM_SONGWRITER_OPTIONS: { id: string; label: string }[] = [
+  ...RHYTHM_ENGINE_GROUP_WORLD,
+  ...RHYTHM_ENGINE_GROUP_ROCK_FUSION,
 ];
 
 const SONGWRITER_OPTIONS_WITH_RHYTHM: { id: string; label: string }[] = [
@@ -926,20 +971,6 @@ function buildHarmonicVoiceGroups(opts?: { sqVrbFirst?: boolean }): Array<{
 
 const HARMONIC_VOICE_GROUPS = buildHarmonicVoiceGroups();
 const HARMONIC_VOICE_GROUPS_SQ = buildHarmonicVoiceGroups({ sqVrbFirst: true });
-
-const RHYTHM_ENGINE_LIST: { id: RhythmEngineId; label: string }[] = [
-  { id: 'fela_kuti', label: 'Fela Kuti / Tony Allen' },
-  { id: 'greek_rebetiko', label: 'Greek Rebetiko' },
-  { id: 'brazilian', label: 'Brazilian' },
-  { id: 'new_orleans_second_line', label: 'New Orleans Second Line' },
-  { id: 'cuban_afro_cuban', label: 'Cuban / Afro-Cuban' },
-  { id: 'bartok_bulgarian_aksak', label: 'Bartók / Bulgarian Aksak' },
-  { id: 'free_proportional', label: 'Free / Proportional' },
-  { id: 'baroque_dance', label: 'Baroque Dance' },
-  { id: 'reich_phasing_grid', label: 'Reich / Phasing Grid' },
-  { id: 'viennese_waltz', label: 'Viennese Waltz' },
-  { id: 'jewish_klezmer', label: 'Jewish / Klezmer' },
-];
 
 /** Effective Song Mode primary id for engine routing (harmonic wins; rhythm-only preserves legacy ids). */
 function resolveEffectivePrimarySongwriter(profile: StyleProfile): string {
@@ -2681,7 +2712,7 @@ export function HomeGenerate({
   const [guitar1CustomTuning, setGuitar1CustomTuning] = useState(['E2', 'A2', 'D3', 'G3', 'B3', 'E4']);
   const [guitar2CustomTuning, setGuitar2CustomTuning] = useState(['E2', 'A2', 'D3', 'G3', 'B3', 'E4']);
   const [includeVocalLeadSheet, setIncludeVocalLeadSheet] = useState(false);
-  const [era, setEra] = useState('post_bop');
+  const [era, setEra] = useState('');
   const [ensembleConfigId, setEnsembleConfigId] = useState('full_band');
   const [scoreTitle, setScoreTitle] = useState('');
   /** Guitar–Bass Duo: optional chord line — 8 bars (tiled to 32 in long-form) or 32 bars (locked). When non-empty, engine uses custom harmony. */
@@ -4035,7 +4066,7 @@ export function HomeGenerate({
                             ? 'standard'
                             : styleProfile.rhythm.engineId === 'jewish_klezmer'
                               ? 'kl_chain'
-                              : null);
+                              : defaultRockFusionPresetId(styleProfile.rhythm.engineId));
 
         const songModeStyleGenerationKeys =
           presetId === 'song_mode'
@@ -9193,6 +9224,7 @@ export function HomeGenerate({
             }}
             harmonicVoiceGroups={HARMONIC_VOICE_GROUPS}
             rhythmEngines={RHYTHM_ENGINE_LIST}
+            rhythmEngineGroups={RHYTHM_ENGINE_GROUPS}
             harmonicSelectId="co-sm-primary-songwriter"
             rhythmSelectId="co-sm-rhythm-engine"
             instrumentGroup={uiInstrumentGroup}
@@ -9661,6 +9693,7 @@ export function HomeGenerate({
             }}
             harmonicVoiceGroups={HARMONIC_VOICE_GROUPS}
             rhythmEngines={RHYTHM_ENGINE_LIST}
+            rhythmEngineGroups={RHYTHM_ENGINE_GROUPS}
             harmonicSelectId="co-bb-songwriter"
             rhythmSelectId="co-bb-rhythm-engine"
             instrumentGroup={uiInstrumentGroup}
@@ -9771,6 +9804,7 @@ export function HomeGenerate({
             }}
             harmonicVoiceGroups={HARMONIC_VOICE_GROUPS_SQ}
             rhythmEngines={RHYTHM_ENGINE_LIST}
+            rhythmEngineGroups={RHYTHM_ENGINE_GROUPS}
             harmonicSelectId="co-sq-songwriter"
             rhythmSelectId="co-sq-rhythm-engine"
             instrumentGroup={uiInstrumentGroup}
