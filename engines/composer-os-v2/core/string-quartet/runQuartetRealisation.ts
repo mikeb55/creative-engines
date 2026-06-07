@@ -5,12 +5,31 @@
 import type { BigBandEraId } from '../big-band/bigBandResearchTypes';
 import type { LeadSheet } from '../lead-sheet/leadSheetTypes';
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import {
+  evaluateMosaicSections,
+  type DuoSectionEvalResult,
+} from '../mosaic-mode/evaluateMosaicSections';
+import {
+  formatEvalFailureReport,
+  type MosaicEvalResult,
+} from '../mosaic-mode/mosaicEvalDiagnostics';
+import { isMosaicModeActive } from '../mosaic-mode/mosaicBarHelpers';
+import { getDispatchEntry } from '../mosaic-mode/mosaicComposerDispatch';
+import {
+  buildMosaicTonicMap,
+  cloneDuoSectionContext,
+  precomputeMosaicEffectiveHarmonyBars,
+  type MosaicModeSectionPlanEntry,
+} from '../mosaic-mode/precomputeMosaicEffectiveHarmonyBars';
+import { resolveMosaicSectionStyles } from '../mosaic-mode/resolveMosaicSectionStyles';
 import { applyReferenceInfluence } from '../reference-import/applyReferenceInfluence';
 import { extractReferenceBehaviour } from '../reference-import/extractReferenceBehaviour';
 import { parseMusicXmlReference } from '../reference-import/musicXmlReferenceParser';
 import type { ReferenceInfluenceEnvelope } from '../reference-import/referenceReuseTypes';
 import { stringQuartetPreset } from '../../presets/stringQuartetPreset';
-import { buildQuartetScoreModel } from './quartetScoreBuilder';
+import { buildQuartetScoreModel, type BuildQuartetScoreModelInput } from './quartetScoreBuilder';
+import type { QuartetFormPlan, QuartetTexturePlan } from './quartetPlanTypes';
+import { mapStringQuartetToMosaicSectionPlan } from './stringQuartetToMosaicMapper';
 import {
   isSongwriterFrankZappaStringQuartet,
   precomputeZappaSQEffectiveHarmonyBars,
@@ -24,7 +43,7 @@ import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
 import { runEnsembleExportPipeline } from '../export/ensembleExport';
 import { applyLeadSheetFormat } from '../goldenPath/generateLeadSheetScore';
 import { applyMelodyBassFormat } from '../goldenPath/generateMelodyBassScore';
-import type { ScoreModel } from '../score-model/scoreModelTypes';
+import type { MeasureModel, ScoreModel } from '../score-model/scoreModelTypes';
 import { validateEnsembleVoicing } from '../voicing/voicingValidation';
 import type { EnsembleVoicingPlan } from '../voicing/voicingTypes';
 import type { BarMeterMap } from '../rhythm/barMeterTypes';
@@ -92,6 +111,301 @@ function buildZappaStringQuartetPrecomputeContext(params: {
   } as unknown as CompositionContext;
 }
 
+function buildQuartetMosaicCompositionContext(args: {
+  seed: number;
+  chordBars: string[];
+  formPlan: QuartetFormPlan;
+  mosaicPlan: MosaicModeSectionPlanEntry[];
+  songwriterStyleId?: string;
+  barMeterMap?: BarMeterMap;
+  inheritedMetadata?: GenerationMetadata;
+}): CompositionContext {
+  const tb = args.chordBars.length;
+  const sections = args.formPlan.slices.map((sl) => ({
+    label: String(sl.phase ?? `slice_${sl.index}`),
+    startBar: sl.startBar,
+    length: Math.max(1, sl.endBar - sl.startBar + 1),
+  }));
+
+  const generationMetadata: GenerationMetadata = {
+    generatedAt: new Date().toISOString(),
+    ...(args.songwriterStyleId ? { songwriterStyleId: args.songwriterStyleId } : {}),
+    mosaicSectionPlan: args.mosaicPlan,
+    parsedCustomProgressionBars: [...args.chordBars],
+    ...(args.inheritedMetadata?.mosaicOutputFormat
+      ? { mosaicOutputFormat: args.inheritedMetadata.mosaicOutputFormat }
+      : {}),
+    ...(args.inheritedMetadata?.allowMosaicPostFinalizeInject === true
+      ? { allowMosaicPostFinalizeInject: true }
+      : {}),
+  };
+
+  return {
+    systemVersion: '2.0.0',
+    presetId: 'string_quartet',
+    seed: args.seed,
+    form: { totalBars: tb, sections },
+    lockedHarmonyBarsRaw: [...args.chordBars],
+    generationMetadata,
+    ...(args.barMeterMap ? { barMeterMap: args.barMeterMap } : {}),
+  } as unknown as CompositionContext;
+}
+
+function resolveQuartetMosaicPlan(
+  input: StringQuartetRunInput & { context?: CompositionContext; sqMosaicEnabled?: boolean },
+  planning: StringQuartetRunResult
+): MosaicModeSectionPlanEntry[] {
+  const explicitPlan = input.context?.generationMetadata?.mosaicSectionPlan;
+  const mosaicExplicitOptIn =
+    input.sqMosaicEnabled === true ||
+    (Array.isArray(explicitPlan) && explicitPlan.length >= 2);
+  if (!mosaicExplicitOptIn) return [];
+
+  if (explicitPlan && explicitPlan.length >= 2) {
+    return explicitPlan.map((entry) => ({ ...entry }));
+  }
+
+  return mapStringQuartetToMosaicSectionPlan(
+    { formPlan: planning.formPlan, texturePlan: planning.texturePlan },
+    {
+      songwriterStyleId:
+        typeof input.songwriterStyleId === 'string' ? input.songwriterStyleId.trim() : undefined,
+    }
+  );
+}
+
+function applyQuartetMosaicHarmonyDispatch(
+  chordBars: string[],
+  planning: StringQuartetRunResult,
+  mosaicPlan: MosaicModeSectionPlanEntry[],
+  input: StringQuartetRunInput & { context?: CompositionContext; barMeterMap?: BarMeterMap }
+): { chordBars: string[]; mosaicContext: CompositionContext } {
+  const inheritedMeta = input.context?.generationMetadata;
+  const mosaicContext = buildQuartetMosaicCompositionContext({
+    seed: input.seed,
+    chordBars,
+    formPlan: planning.formPlan,
+    mosaicPlan,
+    songwriterStyleId:
+      typeof input.songwriterStyleId === 'string' ? input.songwriterStyleId.trim() : undefined,
+    barMeterMap: input.barMeterMap,
+    inheritedMetadata: inheritedMeta,
+  });
+
+  const routing = resolveMosaicSectionStyles(mosaicContext.form, mosaicContext.generationMetadata);
+  const tonicMap = buildMosaicTonicMap(mosaicPlan, mosaicContext);
+  const merged = precomputeMosaicEffectiveHarmonyBars(mosaicContext, routing, tonicMap);
+
+  return { chordBars: [...merged.bars], mosaicContext };
+}
+
+function cloneMeasure(m: MeasureModel): MeasureModel {
+  return {
+    ...m,
+    events: m.events.map((ev) => ({ ...ev })),
+  };
+}
+
+function spliceScoreSectionMeasures(
+  base: ScoreModel,
+  fragment: ScoreModel,
+  startBar: number,
+  endBar: number
+): ScoreModel {
+  const span = endBar - startBar + 1;
+  const out = structuredClone(base) as ScoreModel;
+  for (const part of out.parts) {
+    const fragPart = fragment.parts.find((p) => p.id === part.id);
+    if (!fragPart) continue;
+    const kept = part.measures.filter((m) => m.index < startBar || m.index > endBar);
+    const inserted = fragPart.measures
+      .filter((m) => m.index >= 1 && m.index <= span)
+      .map((m) => {
+        const cloned = cloneMeasure(m);
+        cloned.index = m.index + startBar - 1;
+        return cloned;
+      });
+    part.measures = [...kept, ...inserted].sort((a, b) => a.index - b.index);
+  }
+  return out;
+}
+
+function regenerateQuartetMosaicSection(
+  scoreBuildInput: BuildQuartetScoreModelInput,
+  mosaicContext: CompositionContext,
+  section: MosaicModeSectionPlanEntry,
+  retryOrdinal: number
+): ScoreModel | null {
+  const span = section.endBar - section.startBar + 1;
+  const formSlice = scoreBuildInput.formPlan.slices.find(
+    (s) => s.startBar === section.startBar && s.endBar === section.endBar
+  );
+  if (!formSlice) return null;
+
+  const tonicMap = buildMosaicTonicMap(
+    mosaicContext.generationMetadata.mosaicSectionPlan ?? [],
+    mosaicContext
+  );
+  const tonicPc = tonicMap[section.sectionLabel] ?? 0;
+  const fragmentContext = cloneDuoSectionContext(mosaicContext, section, tonicPc);
+  fragmentContext.seed = mosaicContext.seed + retryOrdinal * 9973 + section.sectionLabel.length * 17;
+
+  const entry = getDispatchEntry(section.songwriterStyleId);
+  if (!entry) return null;
+  entry.precompute(fragmentContext);
+
+  const sectionBars = (fragmentContext.generationMetadata as GenerationMetadata & Record<string, unknown>)[
+    entry.effectiveHarmonyKey as string
+  ] as string[] | undefined;
+  if (!sectionBars || sectionBars.length !== span) return null;
+
+  const fragmentFormPlan: QuartetFormPlan = {
+    totalBars: span,
+    slices: [{ ...formSlice, index: 0, startBar: 1, endBar: span }],
+  };
+  const fragmentTexturePlan: QuartetTexturePlan = {
+    slices: scoreBuildInput.texturePlan.slices
+      .filter((s) => s.formSliceIndex === formSlice.index)
+      .map((s) => ({ ...s, formSliceIndex: 0 })),
+  };
+
+  try {
+    return buildQuartetScoreModel({
+      ...scoreBuildInput,
+      seed: scoreBuildInput.seed + retryOrdinal * 9973,
+      formPlan: fragmentFormPlan,
+      texturePlan: fragmentTexturePlan,
+      chordBars: [...sectionBars],
+    });
+  } catch (err) {
+    console.warn(
+      `[sq-mosaic-retry] fragment score build failed for "${section.sectionLabel}" attempt ${retryOrdinal}:`,
+      err instanceof Error ? err.message : String(err)
+    );
+    return null;
+  }
+}
+
+const SQ_MOSAIC_OVERALL_THRESHOLD = 6.2;
+const SQ_MOSAIC_SIGNATURE_THRESHOLD = 6.0;
+
+function duoSectionEvalToMosaicEvalResult(duo: DuoSectionEvalResult): MosaicEvalResult {
+  const signatures: MosaicEvalResult['signatures'] = {};
+  for (const [key, value] of Object.entries(duo.scores)) {
+    if (key === 'overall') continue;
+    signatures[key] = {
+      value,
+      threshold: SQ_MOSAIC_SIGNATURE_THRESHOLD,
+      pass: value >= SQ_MOSAIC_SIGNATURE_THRESHOLD,
+    };
+  }
+  return {
+    score: duo.scores.overall ?? 0,
+    threshold: SQ_MOSAIC_OVERALL_THRESHOLD,
+    signatures,
+    pass: duo.passed,
+  };
+}
+
+function runQuartetMosaicEvalAndRetry(
+  score: ScoreModel,
+  mosaicContext: CompositionContext,
+  scoreBuildInput: BuildQuartetScoreModelInput,
+  maxRetries = 2
+): ScoreModel {
+  if (!isMosaicModeActive(mosaicContext)) return score;
+
+  try {
+    let evalResults = evaluateMosaicSections(score, mosaicContext);
+    let current = score;
+
+    for (const section of evalResults) {
+      if (section.passed) continue;
+      console.log(`[sq-mosaic] section ${section.sectionLabel} failed GCE — attempting retry`);
+      console.warn(
+        formatEvalFailureReport(
+          section.sectionLabel,
+          section.composerId,
+          duoSectionEvalToMosaicEvalResult(section),
+          maxRetries <= 0
+        )
+      );
+      const planEntry = mosaicContext.generationMetadata.mosaicSectionPlan?.find(
+        (s) => s.sectionLabel === section.sectionLabel
+      );
+      if (!planEntry) continue;
+      if ((planEntry as MosaicModeSectionPlanEntry & { presetRole?: string }).presetRole !== 'string_quartet') {
+        continue;
+      }
+
+      let retried = false;
+      let lastFailedEval: DuoSectionEvalResult | undefined = section;
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        const fragment = regenerateQuartetMosaicSection(
+          scoreBuildInput,
+          mosaicContext,
+          planEntry,
+          attempt
+        );
+        if (!fragment) continue;
+
+        const trialScore = spliceScoreSectionMeasures(
+          current,
+          fragment,
+          planEntry.startBar,
+          planEntry.endBar
+        );
+        const trialEval = evaluateMosaicSections(trialScore, mosaicContext);
+        const sectionResult = trialEval.find((r) => r.sectionLabel === section.sectionLabel);
+        if (sectionResult?.passed) {
+          current = trialScore;
+          retried = true;
+          mosaicContext.generationMetadata = {
+            ...mosaicContext.generationMetadata,
+            mosaicSectionRetryReceipt: `section ${section.sectionLabel} retry attempt ${attempt} passed`,
+          };
+          console.log(`[sq-mosaic] section ${section.sectionLabel} retry succeeded`);
+          break;
+        }
+        if (sectionResult) {
+          lastFailedEval = sectionResult;
+        }
+      }
+
+      if (!retried) {
+        console.warn(`[sq-mosaic] section ${section.sectionLabel} retry exhausted — keeping original output`);
+        if (lastFailedEval) {
+          console.warn(
+            formatEvalFailureReport(
+              section.sectionLabel,
+              lastFailedEval.composerId,
+              duoSectionEvalToMosaicEvalResult(lastFailedEval),
+              true
+            )
+          );
+        }
+      }
+    }
+
+    evalResults = evaluateMosaicSections(current, mosaicContext);
+    mosaicContext.generationMetadata = {
+      ...mosaicContext.generationMetadata,
+      mosaicSectionEvalResults: evalResults,
+    };
+    return current;
+  } catch (err) {
+    console.warn(
+      '[sq-mosaic] evaluateMosaicSections failed:',
+      err instanceof Error ? err.message : String(err)
+    );
+    mosaicContext.generationMetadata = {
+      ...mosaicContext.generationMetadata,
+      mosaicSectionEvalResults: [],
+    };
+    return score;
+  }
+}
+
 export interface QuartetRealisationResult {
   planning: StringQuartetRunResult;
   voicingPlan: EnsembleVoicingPlan;
@@ -119,6 +433,8 @@ export function runQuartetRealisation(
     generationMetadata?: GenerationMetadata;
     /** Mosaic Mode — optional composition context (format flag + section plan). */
     context?: CompositionContext;
+    /** V80e — opt-in SQ per-section mosaic dispatch (default off). */
+    sqMosaicEnabled?: boolean;
     blendStrength?: 'light' | 'medium' | 'strong';
     duoIntent?: 'conversational' | 'supportive';
   }
@@ -148,7 +464,7 @@ export function runQuartetRealisation(
       : undefined;
 
   const tb = planning.formPlan.totalBars;
-  const chordBars = deriveChordBarsFromProgressionOrLeadSheet({
+  let chordBars = deriveChordBarsFromProgressionOrLeadSheet({
     chordProgressionText: typeof input.chordProgressionText === 'string' ? input.chordProgressionText : undefined,
     leadSheet: input.leadSheet,
     totalBars: tb,
@@ -180,8 +496,16 @@ export function runQuartetRealisation(
     zappaSQEffectiveHarmonyBars = Array.isArray(sqBars) ? sqBars : undefined;
   }
 
+  const mosaicPlan = resolveQuartetMosaicPlan(input, planning);
+  let mosaicContext: CompositionContext | undefined;
+  if (mosaicPlan.length >= 2 && chordBars && chordBars.length === tb && tb > 0) {
+    const dispatched = applyQuartetMosaicHarmonyDispatch(chordBars, planning, mosaicPlan, input);
+    chordBars = dispatched.chordBars;
+    mosaicContext = dispatched.mosaicContext;
+  }
+
   const slonimskyEnsembleCellReceipts: string[] = [];
-  let score = buildQuartetScoreModel({
+  const scoreBuildInput: BuildQuartetScoreModelInput = {
     title: planning.title,
     seed: input.seed,
     formPlan: planning.formPlan,
@@ -208,7 +532,9 @@ export function runQuartetRealisation(
       : {}),
     ...(planning.sectionArchitectureContext ? { sectionArchitectureContext: planning.sectionArchitectureContext } : {}),
     slonimskyEnsembleCellReceipts,
-  });
+  };
+
+  let score = buildQuartetScoreModel(scoreBuildInput);
 
   if (slonimskyEnsembleCellReceipts.length > 0) {
     const base = generationMetadataForScore ?? { generatedAt: new Date().toISOString() };
@@ -231,8 +557,15 @@ export function runQuartetRealisation(
     applySqContrapuntalPass4MergeOnScore(score, metaForMerge, bundle);
   }
 
+  if (mosaicContext && isMosaicModeActive(mosaicContext)) {
+    score = runQuartetMosaicEvalAndRetry(score, mosaicContext, scoreBuildInput);
+  }
+
   const context =
-    input.context ?? planning.sectionArchitectureContext ?? input.sectionArchitectureContext;
+    mosaicContext ??
+    input.context ??
+    planning.sectionArchitectureContext ??
+    input.sectionArchitectureContext;
   const planWithTonics = context?.generationMetadata?.mosaicSectionPlan ?? [];
   const mosaicOutputFormat = (
     context?.generationMetadata as GenerationMetadata & {

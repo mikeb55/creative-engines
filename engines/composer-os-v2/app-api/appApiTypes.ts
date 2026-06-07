@@ -359,6 +359,12 @@ export interface GenerateRequest {
    * Default off — existing BB requests unchanged.
    */
   bbMosaicEnabled?: boolean;
+  /**
+   * String Quartet — opt-in per-section Mosaic dispatch (V80e SQ-M2).
+   * When true, maps form slices → mosaic plan unless explicit {@link mosaicSectionPlan} is set.
+   * Default off — existing SQ requests unchanged.
+   */
+  sqMosaicEnabled?: boolean;
   /** Mosaic Mode — ensemble export layout (`melody-bass-chords` | `lead-sheet`). */
   mosaicOutputFormat?: 'melody-bass-chords' | 'lead-sheet';
   /**
