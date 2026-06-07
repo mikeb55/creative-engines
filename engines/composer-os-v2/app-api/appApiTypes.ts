@@ -349,9 +349,18 @@ export interface GenerateRequest {
     startBar: number;
     endBar: number;
     songwriterStyleId: string;
+    spineProtected?: boolean;
+    mosaicOwned?: boolean;
+    injectEligible?: boolean;
   }>;
   /** Mosaic Mode — ensemble export layout (`melody-bass-chords` | `lead-sheet`). */
   mosaicOutputFormat?: 'melody-bass-chords' | 'lead-sheet';
+  /**
+   * Song Mode hook-first: when true, post-finalize mosaic tile inject may run on
+   * {@link mosaicSectionPlan} entries with mosaicOwned + injectEligible and not spineProtected.
+   * Default off — existing hook-first bypass unchanged.
+   */
+  allowMosaicPostFinalizeInject?: boolean;
   /**
    * V3.4 — MusicXML key policy: `auto` infers from chords unless a parseable `tonalCenter` / `tonalCenterOverride` is set;
    * `override` is legacy alias for explicit key (same explicit-string authority); `none` hides key signature.

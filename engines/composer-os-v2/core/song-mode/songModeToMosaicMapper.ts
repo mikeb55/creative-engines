@@ -34,6 +34,25 @@ function phraseRoleForSectionKind(kind: SongSectionKind): PhraseRole | undefined
   }
 }
 
+/** Spine-protected sections keep hook-first mosaic inject bypass even when lift flag is on. */
+function spineProtectedForSection(kind: SongSectionKind, sectionLabel: string): boolean {
+  const lab = sectionLabel.toLowerCase();
+  if (/\b(intro[-_]?hook|intro_hook)\b/.test(lab)) return true;
+  if (/\brefrain\b/.test(lab)) return true;
+  if (/\b(final[-_]?cadence|final_cadence)\b/.test(lab)) return true;
+  if (/\binterlude\b/.test(lab)) return false;
+  switch (kind) {
+    case 'chorus':
+    case 'pre_chorus':
+      return true;
+    case 'verse':
+    case 'bridge':
+      return false;
+    default:
+      return false;
+  }
+}
+
 /** Section engines that map 1:1 to mosaic composer dispatch ids. */
 function songwriterStyleIdFromSectionEngine(engine: SongModeSectionEngine): string | undefined {
   switch (engine) {
@@ -109,6 +128,9 @@ export function mapSongModeToMosaicSectionPlan(
       songwriterStyleId: resolveSectionSongwriterStyleId(ext, defaultStyleId),
       ...(timeSignature ? { timeSignature } : {}),
       ...(phraseRole ? { phraseRole } : {}),
+      spineProtected: spineProtectedForSection(section.sectionKind, sectionLabel),
+      mosaicOwned: true,
+      injectEligible: false,
     });
   }
 

@@ -554,7 +554,15 @@ export interface GenerationMetadata {
       denominator: number;
     };
     phraseRole?: 'statement' | 'development' | 'climax' | 'release';
+    /** Hook-first spine sections — post-finalize mosaic inject bypass is permanent when true. */
+    spineProtected?: boolean;
+    /** Section is Mosaic-dispatched (Song Mode → mosaic mapper). */
+    mosaicOwned?: boolean;
+    /** Tile inject may fire when true and {@link allowMosaicPostFinalizeInject} is on. */
+    injectEligible?: boolean;
   }>;
+  /** Song Mode hook-first: lift mosaic post-finalize inject on eligible non-spine sections (default off). */
+  allowMosaicPostFinalizeInject?: boolean;
   /** Mosaic Mode Step 3 — full-form merged effective harmony (one symbol per bar, bar 1 at index 0). */
   mosaicMergedHarmonyBars?: string[];
   /** Mosaic Mode Step 6 — per-section LOCK contracts (order-independent; one entry per section). */
