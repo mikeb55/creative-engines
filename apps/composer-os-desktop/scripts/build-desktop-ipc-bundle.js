@@ -5,6 +5,8 @@ const esbuild = require('esbuild');
 const path = require('path');
 const fs = require('fs');
 const { copyNapiCanvasToResources } = require('./copy-napi-canvas-resources');
+const { composerOsMdStubPlugin } = require('./esbuild-md-stub-plugin');
+const { composerOsMosaicSliceRequirePlugin } = require('./esbuild-mosaic-slice-require-plugin');
 
 const repoRoot = path.resolve(__dirname, '../../..');
 const entry = path.join(repoRoot, 'apps', 'composer-os-desktop', 'electron', 'ipcEntry.ts');
@@ -21,6 +23,7 @@ esbuild
     target: 'node18',
     format: 'cjs',
     external: ['electron', '@napi-rs/canvas'],
+    plugins: [composerOsMdStubPlugin, composerOsMosaicSliceRequirePlugin],
   })
   .then(() => {
     console.log('desktop-ipc bundle built:', outFile);

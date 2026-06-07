@@ -52,6 +52,21 @@ function setStartupState(next: StartupState): void {
   }
 }
 
+/** Live dev UI (Vite) — set COMPOSER_OS_DEV_UI_URL from the launcher; never hard-code host/port here. */
+function getDevUiUrl(): string | null {
+  const raw = process.env.COMPOSER_OS_DEV_UI_URL?.trim();
+  if (!raw || app.isPackaged) return null;
+  return raw;
+}
+
+function isAllowedDevNavigation(url: string, devBase: string): boolean {
+  try {
+    return new URL(url).origin === new URL(devBase).origin;
+  } catch {
+    return false;
+  }
+}
+
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
   app.quit();
@@ -232,6 +247,10 @@ function createWindowShell(): BrowserWindow {
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
 
   win.webContents.on('will-navigate', (event, url) => {
+    const devBase = getDevUiUrl();
+    if (devBase && isAllowedDevNavigation(url, devBase)) {
+      return;
+    }
     try {
       const u = new URL(url);
       if (u.protocol === 'http:' || u.protocol === 'https:') {
@@ -312,6 +331,35 @@ async function launchApp(): Promise<void> {
   win.once('ready-to-show', () => {
     if (!win.isDestroyed()) win.show();
   });
+
+  const devUiUrl = getDevUiUrl();
+  if (devUiUrl) {
+    const outputDir = resolveDefaultOutputDir();
+    try {
+      fs.mkdirSync(outputDir, { recursive: true });
+      fs.accessSync(outputDir, fs.constants.W_OK);
+    } catch {
+      setStartupState('fatal_error');
+      loadErrorPage(
+        win,
+        'Composer OS cannot use the output folder (missing or not writable). Check disk space and folder permissions.'
+      );
+      return;
+    }
+    try {
+      setStartupState('starting_backend');
+      registerDesktopIpc(outputDir);
+      hydrateAnthropicKeyFromAllSources();
+      setStartupState('loading_ui');
+      await win.loadURL(devUiUrl);
+      setStartupState('ready');
+    } catch (err) {
+      setStartupState('fatal_error');
+      const msg = err instanceof Error ? err.message : String(err);
+      loadErrorPage(win, msg);
+    }
+    return;
+  }
 
   const uiPath = resolveUiPath();
   const vr = verifyUiBundleAtPath(uiPath);

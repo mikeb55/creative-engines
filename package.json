@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "npm run dev --prefix apps/composer-os-app",
+    "dev:electron": "node scripts/dev-electron.mjs",
     "dev:win": "powershell -ExecutionPolicy Bypass -File .\\scripts\\launch-composer-os.ps1",
     "test": "npm run test --prefix engines/conductor-engine && npm run test --prefix engines/big-band-architecture-engine && npm run test --prefix engines/arranger-assist-engine && npm run test --prefix engines/selective-big-band-generation-engine && npm run test --prefix engines/contemporary-counterpoint-engine && npm run test --prefix engines/composer-os-v2 && npm run test --prefix apps/composer-os-app && npm run test --prefix apps/composer-os-desktop",
     "test:fullstack": "tsx --tsconfig tsconfig.json validation/full-stack/fullStackValidation.ts",

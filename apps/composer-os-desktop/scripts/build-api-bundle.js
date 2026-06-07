@@ -6,6 +6,8 @@ const esbuild = require('esbuild');
 const path = require('path');
 const fs = require('fs');
 const { copyNapiCanvasToResources } = require('./copy-napi-canvas-resources');
+const { composerOsMdStubPlugin } = require('./esbuild-md-stub-plugin');
+const { composerOsMosaicSliceRequirePlugin } = require('./esbuild-mosaic-slice-require-plugin');
 
 const repoRoot = path.resolve(__dirname, '../../..');
 const apiEntry = path.join(repoRoot, 'scripts', 'startComposerOsAppApi.ts');
@@ -23,6 +25,7 @@ esbuild
     target: 'node18',
     format: 'cjs',
     external: ['@napi-rs/canvas'],
+    plugins: [composerOsMdStubPlugin, composerOsMosaicSliceRequirePlugin],
     // Resolved at runtime; native binary is packaged via package.json `build.extraResources` (canvas.node).
   })
   .then(() => {
