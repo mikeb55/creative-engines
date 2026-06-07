@@ -20,6 +20,7 @@ import { buildStringQuartetMusicContextFromGenerateInput } from '../core/string-
 import type { StringQuartetTextureArchetype } from '../core/string-quartet/stringQuartetMusicContextTypes';
 import { resolveBarMeterMapForGenerateRequest } from '../core/section-architecture/resolveGenerationBarMeterMap';
 import { runSongMode } from '../core/song-mode/runSongMode';
+import { mapSongModeToMosaicSectionPlan } from '../core/song-mode/songModeToMosaicMapper';
 import type { SectionChordPlan } from '../core/song-mode/songCompilationTypes';
 import type {
   GrooveScaffoldSettings,
@@ -1536,11 +1537,15 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           })
         : undefined
     : effectiveSong;
+  const mosaicPlan = mapSongModeToMosaicSectionPlan(sm.compiledSong, {
+    songwriterStyleId: req.primarySongwriterStyle,
+  });
   const songModeGoldenPathOptions: RunGoldenPathOptions = {
     styleStack: mapAppStyleStackToEngine(req.styleStack),
     presetId: 'guitar_bass_duo',
     scoreTitle: title,
     songModeHookFirstIdentity: true,
+    ...(mosaicPlan.length >= 2 ? { mosaicSectionPlan: mosaicPlan } : {}),
     /** Explicit default matches UI default when `styleProfile` omitted (legacy clients). */
     styleProfile:
       req.styleProfile ??

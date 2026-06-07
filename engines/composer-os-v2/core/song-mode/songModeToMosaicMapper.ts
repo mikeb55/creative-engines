@@ -1,0 +1,81 @@
+/**
+ * Song Mode → Mosaic thin mapper (V78e).
+ * Compiled sections → mosaicSectionPlan entries; no runSongMode re-compile.
+ */
+
+import { compiledSectionKindToFormLabel } from '../form/resolveFormPrecedence';
+import type { MosaicModeSectionPlanEntry } from '../mosaic-mode/precomputeMosaicEffectiveHarmonyBars';
+import type { PhraseRole } from '../mosaic-mode/mosaicPhrasePlanner';
+import type { CompiledSong, SectionChordPlan } from './songCompilationTypes';
+import type { SongSectionKind } from './songModeTypes';
+
+type SectionChordPlanWithMeter = SectionChordPlan & {
+  timeSignature?: { numerator: number; denominator: number };
+};
+
+function phraseRoleForSectionKind(kind: SongSectionKind): PhraseRole | undefined {
+  switch (kind) {
+    case 'verse':
+      return 'development';
+    case 'pre_chorus':
+      return 'statement';
+    case 'chorus':
+      return 'climax';
+    case 'bridge':
+      return 'release';
+    default: {
+      const _exhaustive: never = kind;
+      return _exhaustive;
+    }
+  }
+}
+
+export function mapSongModeToMosaicSectionPlan(
+  compiled: CompiledSong,
+  options?: { songwriterStyleId?: string }
+): MosaicModeSectionPlanEntry[] {
+  const chordPlan = compiled.chordPlan ?? [];
+  if (chordPlan.length < 2) return [];
+
+  const defaultStyleId =
+    options?.songwriterStyleId?.trim() ||
+    compiled.songwriting?.resolvedStyle?.primaryId?.trim() ||
+    '';
+
+  const kindCounts: Partial<Record<SongSectionKind, number>> = {};
+  let bar = 1;
+  const entries: MosaicModeSectionPlanEntry[] = [];
+
+  for (const section of chordPlan) {
+    const barLength = section.chordSymbols?.length ?? 0;
+    if (barLength < 1) continue;
+
+    const ord = kindCounts[section.sectionKind] ?? 0;
+    kindCounts[section.sectionKind] = ord + 1;
+    const sectionLabel = compiledSectionKindToFormLabel(section.sectionKind, ord);
+    const startBar = bar;
+    const endBar = bar + barLength - 1;
+    bar = endBar + 1;
+
+    const phraseRole = phraseRoleForSectionKind(section.sectionKind);
+    const ext = section as SectionChordPlanWithMeter;
+    const timeSignature =
+      ext.timeSignature?.numerator != null && ext.timeSignature?.denominator != null
+        ? {
+            numerator: ext.timeSignature.numerator,
+            denominator: ext.timeSignature.denominator,
+          }
+        : undefined;
+
+    entries.push({
+      sectionLabel,
+      startBar,
+      endBar,
+      songwriterStyleId: defaultStyleId,
+      ...(timeSignature ? { timeSignature } : {}),
+      ...(phraseRole ? { phraseRole } : {}),
+    });
+  }
+
+  return entries.length >= 2 ? entries : [];
+}
