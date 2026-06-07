@@ -12,6 +12,8 @@ import {
 import { validateWrittenMusicXmlComplete } from '../core/export/validateMusicXmlWrittenStrict';
 import { isMosaicModeActive } from '../core/mosaic-mode/mosaicBarHelpers';
 import type { MosaicModeSectionPlanEntry } from '../core/mosaic-mode/precomputeMosaicEffectiveHarmonyBars';
+import type { AbstractLineSet, LineRole } from '../core/counterpoint/abstractLineSet';
+import * as mosaicTilePipeline from '../core/mosaic-mode/mosaicTilePipeline';
 import { runQuartetRealisation } from '../core/string-quartet/runQuartetRealisation';
 import type { ScoreModel } from '../core/score-model/scoreModelTypes';
 
@@ -50,6 +52,62 @@ function baseMosaicPlan(): MosaicModeSectionPlanEntry[] {
       spineProtected: true,
     },
   ];
+}
+
+function injectEligiblePlan(): MosaicModeSectionPlanEntry[] {
+  return baseMosaicPlan().map((s) =>
+    s.sectionLabel === 'development'
+      ? { ...s, injectEligible: true, spineProtected: false }
+      : { ...s, injectEligible: false }
+  );
+}
+
+function intervalClass(a: number, b: number): number {
+  return Math.abs(a - b) % 12;
+}
+
+function lineSetHasParallelOctaveOrFifth(lines: AbstractLineSet): boolean {
+  const roles: LineRole[] = ['soprano', 'alto', 'tenor', 'bass'];
+  const grid = new Map<number, Partial<Record<LineRole, number>>>();
+  for (const v of lines.voices) {
+    for (const n of v.notes) {
+      const k = Math.round(n.offsetBars * 64) / 64;
+      let slot = grid.get(k);
+      if (!slot) {
+        slot = {};
+        grid.set(k, slot);
+      }
+      slot[v.role] = n.pitchMidi;
+    }
+  }
+  const keys = [...grid.keys()].sort((a, b) => a - b);
+  let prev: Partial<Record<LineRole, number>> | undefined;
+  for (const k of keys) {
+    const curr = grid.get(k)!;
+    if (prev) {
+      for (const [hi, lo] of [
+        ['soprano', 'bass'],
+        ['soprano', 'alto'],
+        ['alto', 'tenor'],
+      ] as const) {
+        const p1 = prev[hi];
+        const p2 = prev[lo];
+        const c1 = curr[hi];
+        const c2 = curr[lo];
+        if (p1 == null || p2 == null || c1 == null || c2 == null) continue;
+        const icp = intervalClass(p1, p2);
+        const icc = intervalClass(c1, c2);
+        const d1 = c1 - p1;
+        const d2 = c2 - p2;
+        const sameDir = Math.sign(d1) === Math.sign(d2) && d1 !== 0 && d2 !== 0;
+        if (!sameDir) continue;
+        if (icp === 0 && icc === 0 && Math.abs(c1 - p1) >= 12) return true;
+        if (icp === 7 && icc === 7) return true;
+      }
+    }
+    prev = curr;
+  }
+  return false;
 }
 
 function sqMosaicContext(
@@ -337,6 +395,122 @@ describe('String Quartet mosaic smoke (V80e)', () => {
     } finally {
       precomputeMod.precomputeMosaicEffectiveHarmonyBars = origPrecompute;
       jest.restoreAllMocks();
+    }
+  });
+});
+
+describe('String Quartet mosaic contrapuntal guides (V80f)', () => {
+  it('A: flag off → no guide built, no soft-targeting metadata', () => {
+    const plan = injectEligiblePlan();
+    const context = sqMosaicContext(plan, { allowMosaicPostFinalizeInject: true });
+    const r = runQuartetRealisation(
+      sqRealiseInput({ sqMosaicEnabled: false, context, seed: SEED_OFF + 1 })
+    );
+    expect(r.planning.validation.ok).toBe(true);
+    expect(r.ensembleHarmonyMetadata?.mosaicSqContrapuntalGuides).toBeUndefined();
+    expect(r.ensembleHarmonyMetadata?.contrapuntalLineSet).toBeUndefined();
+  });
+
+  it('B: flag on + injectEligible section → guide built, motif bias on soprano, voice-leading intact', () => {
+    const plan = injectEligiblePlan();
+    const context = sqMosaicContext(plan, { allowMosaicPostFinalizeInject: true });
+    const r = runQuartetRealisation(sqRealiseInput({ sqMosaicEnabled: true, context, seed: 88013 }));
+
+    expect(r.planning.validation.ok).toBe(true);
+    const guides = r.ensembleHarmonyMetadata?.mosaicSqContrapuntalGuides;
+    expect(guides).toBeDefined();
+    expect(guides!.development).toBeDefined();
+    expect(guides!.development.motifContour?.length).toBeGreaterThan(0);
+    expect(guides!.contrast).toBeUndefined();
+
+    const lines = r.ensembleHarmonyMetadata?.contrapuntalLineSet as AbstractLineSet | undefined;
+    expect(lines).toBeDefined();
+    expect(lines!.sourceMode).toBe('melody_plus_chords');
+    expect(lineSetHasParallelOctaveOrFifth(lines!)).toBe(false);
+
+    const soprano = lines!.voices.find((v) => v.role === 'soprano');
+    expect(soprano?.notes.length).toBeGreaterThan(0);
+    const guide = guides!.development;
+    const soft = guide.motifAnchors.find((a) => a.weight === 'soft' && a.pitchMidi != null);
+    if (soft) {
+      const match = soprano!.notes.find(
+        (n) =>
+          Math.floor(n.offsetBars) + 1 === soft.bar &&
+          Math.abs(n.offsetBars % 1 - soft.beat / 4) < 0.2
+      );
+      expect(match).toBeDefined();
+    }
+  });
+
+  it('C: spineProtected section → no guide entry for protected section', () => {
+    const plan = baseMosaicPlan().map((s) =>
+      s.sectionLabel === 'contrast'
+        ? { ...s, injectEligible: true, spineProtected: true }
+        : { ...s, injectEligible: true, spineProtected: false }
+    );
+    const context = sqMosaicContext(plan, { allowMosaicPostFinalizeInject: true });
+    const r = runQuartetRealisation(sqRealiseInput({ sqMosaicEnabled: true, context, seed: 88014 }));
+
+    const guides = r.ensembleHarmonyMetadata?.mosaicSqContrapuntalGuides ?? {};
+    expect(guides.development).toBeDefined();
+    expect(guides.contrast).toBeUndefined();
+  });
+
+  it('D: SQ path never calls injectMosaicMotifNotesPostFinalize', () => {
+    const plan = injectEligiblePlan();
+    const context = sqMosaicContext(plan, { allowMosaicPostFinalizeInject: true });
+    const spy = jest
+      .spyOn(mosaicTilePipeline, 'injectMosaicMotifNotesPostFinalize')
+      .mockImplementation((score) => score);
+
+    try {
+      runQuartetRealisation(sqRealiseInput({ sqMosaicEnabled: true, context, seed: 88015 }));
+      expect(spy).not.toHaveBeenCalled();
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('E: hard cadence downbeat anchor honoured; soft anchor may deviate', () => {
+    const plan = injectEligiblePlan();
+    const context = sqMosaicContext(plan, { allowMosaicPostFinalizeInject: true });
+    const r = runQuartetRealisation(sqRealiseInput({ sqMosaicEnabled: true, context, seed: 88016 }));
+
+    const guides = r.ensembleHarmonyMetadata?.mosaicSqContrapuntalGuides?.development;
+    const lines = r.ensembleHarmonyMetadata?.contrapuntalLineSet as AbstractLineSet | undefined;
+    expect(guides).toBeDefined();
+    expect(lines).toBeDefined();
+
+    const hard = guides!.motifAnchors.find(
+      (a) => a.weight === 'hard' && a.pitchMidi != null && Math.abs(a.beat) < 1e-6
+    );
+    const soft = guides!.motifAnchors.find((a) => a.weight === 'soft' && a.pitchMidi != null);
+    const soprano = lines!.voices.find((v) => v.role === 'soprano')!;
+
+    expect(hard).toBeDefined();
+    expect(soft).toBeDefined();
+
+    const hardNote = soprano.notes.find(
+      (n) =>
+        Math.floor(n.offsetBars) + 1 === hard!.bar && Math.abs((n.offsetBars % 1) * 4 - hard!.beat) < 0.2
+    );
+    expect(hardNote?.pitchMidi).toBe(hard!.pitchMidi);
+
+    const gridSoft = guides!.motifAnchors.find(
+      (a) =>
+        a.weight === 'soft' &&
+        a.pitchMidi != null &&
+        (Math.abs(a.beat) < 1e-6 || Math.abs(a.beat - 2) < 1e-6)
+    );
+    if (gridSoft) {
+      const softNote = soprano.notes.find(
+        (n) =>
+          Math.floor(n.offsetBars) + 1 === gridSoft.bar &&
+          Math.abs((n.offsetBars % 1) * 4 - gridSoft.beat) < 0.2
+      );
+      if (softNote && softNote.pitchMidi !== gridSoft.pitchMidi) {
+        expect(Math.abs(softNote.pitchMidi - gridSoft.pitchMidi)).toBeLessThanOrEqual(8);
+      }
     }
   });
 });

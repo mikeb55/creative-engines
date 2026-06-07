@@ -591,6 +591,11 @@ export interface GenerationMetadata {
   mosaicSourceMotif?: CoreMotif | MotifShape;
   /** Mosaic Mode motif MVP — per-section transformed variants keyed by sectionLabel. */
   mosaicSectionMotifVariants?: Record<string, CoreMotif | MotifShape>;
+  /** V80f — SQ mosaic contrapuntal soft-target guides keyed by sectionLabel. */
+  mosaicSqContrapuntalGuides?: Record<
+    string,
+    import('./string-quartet/mosaicSqContrapuntalGuide').MosaicSqContrapuntalGuide
+  >;
   /** Mosaic Mode motif MVP — pairwise section similarity diagnostics (non-blocking). */
   mosaicMotifSimilarityReceipts?: Array<{
     fromSection: string;

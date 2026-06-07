@@ -35,6 +35,61 @@ import type {
   LineRoleTag,
   NoteEvent,
 } from './abstractLineSet';
+import type {
+  MosaicSqContrapuntalGuide,
+  MosaicSqContrapuntalGuideMap,
+} from '../string-quartet/mosaicSqContrapuntalGuide';
+
+export type ContrapuntalGenerateLinesOptions = {
+  mosaicSqGuides?: MosaicSqContrapuntalGuideMap;
+};
+
+const MOSAIC_SQ_SOFT_BIAS = 0.42;
+
+function resolveMosaicGuideForBar(
+  bar1: number,
+  guides: MosaicSqContrapuntalGuideMap | undefined,
+): MosaicSqContrapuntalGuide | undefined {
+  if (!guides) return undefined;
+  for (const guide of Object.values(guides)) {
+    if (bar1 >= guide.startBar && bar1 <= guide.endBar && !guide.protectedBars.includes(bar1)) {
+      return guide;
+    }
+  }
+  return undefined;
+}
+
+function mosaicAnchorForOnset(
+  guide: MosaicSqContrapuntalGuide,
+  bar1: number,
+  beatInBar: number,
+): MosaicSqContrapuntalGuide['motifAnchors'][number] | undefined {
+  let best: MosaicSqContrapuntalGuide['motifAnchors'][number] | undefined;
+  let bestDist = 0.35;
+  for (const anchor of guide.motifAnchors) {
+    if (anchor.bar !== bar1) continue;
+    const dist = Math.abs(anchor.beat - beatInBar);
+    if (dist <= bestDist) {
+      bestDist = dist;
+      best = anchor;
+    }
+  }
+  return best;
+}
+
+function applyMosaicSqPitchBias(
+  pitch: number,
+  guide: MosaicSqContrapuntalGuide | undefined,
+  bar1: number,
+  beatInBar: number,
+): number {
+  if (!guide) return pitch;
+  const anchor = mosaicAnchorForOnset(guide, bar1, beatInBar);
+  if (!anchor || anchor.pitchMidi == null) return pitch;
+  if (anchor.weight === 'hard') return anchor.pitchMidi;
+  const delta = anchor.pitchMidi - pitch;
+  return pitch + Math.round(delta * MOSAIC_SQ_SOFT_BIAS);
+}
 
 function augmentAbstractLineSetSchema(vrbId: string, lines: AbstractLineSet): AbstractLineSet {
   if (vrbId === 'fripp_king_crimson') {
@@ -302,6 +357,7 @@ function buildSwingChordLineSetForVrb(
   vrbId: string,
   vrbContextMap?: VrbContextMap | null,
   formSections?: readonly SqToBbFormSectionRef[] | null,
+  mosaicSqGuides?: MosaicSqContrapuntalGuideMap,
 ): AbstractLineSet {
   const wire = readSqToBbVrbWire(context);
   const contextMap = vrbContextMap ?? wire.contextMap;
@@ -337,8 +393,10 @@ function buildSwingChordLineSetForVrb(
     tenor: undefined,
     bass: undefined,
   };
+  const hasMosaicGuides = Boolean(mosaicSqGuides && Object.keys(mosaicSqGuides).length > 0);
   for (let b = 0; b < lengthBars; b++) {
     const bar = b + 1;
+    const mosaicGuide = resolveMosaicGuideForBar(bar, mosaicSqGuides);
     const barVrbId = resolveVrbForBar(bar, contextMap, globalFallback, sections).vrbId || vrbId;
     const barDissonance =
       getVoiceRuleBundle(barVrbId).contrapuntalLinePolicy?.dissonanceProfile ?? dissonanceProfile;
@@ -363,6 +421,11 @@ function buildSwingChordLineSetForVrb(
           )
         ) {
           pitch += role === 'bass' ? -1 : 1;
+          curr[role] = pitch;
+        }
+        if (role === 'soprano' && mosaicGuide) {
+          const beatInBar = off * 4;
+          pitch = applyMosaicSqPitchBias(pitch, mosaicGuide, bar, beatInBar);
           curr[role] = pitch;
         }
         byRole[role].notes.push({
@@ -392,7 +455,7 @@ function buildSwingChordLineSetForVrb(
     cadenceTags,
     densityEnvelope,
     dissonanceProfile: { ...dissonanceProfile },
-    sourceMode: 'chords_only',
+    sourceMode: hasMosaicGuides ? 'melody_plus_chords' : 'chords_only',
     lengthBars,
     styleSourceVrbId: vrbId,
   };
@@ -527,15 +590,26 @@ export class ContrapuntalLineEngine {
   ) {}
 
   /** Alias for `generateLines` (Pass 3 naming). */
-  generate(lengthBars: number, sourceMode: AbstractLineSet['sourceMode']): AbstractLineSet {
-    return this.generateLines(lengthBars, sourceMode);
+  generate(
+    lengthBars: number,
+    sourceMode: AbstractLineSet['sourceMode'],
+    options?: ContrapuntalGenerateLinesOptions,
+  ): AbstractLineSet {
+    return this.generateLines(lengthBars, sourceMode, options);
   }
 
-  generateLines(lengthBars: number, sourceMode: AbstractLineSet['sourceMode']): AbstractLineSet {
-    void sourceMode;
+  generateLines(
+    lengthBars: number,
+    sourceMode: AbstractLineSet['sourceMode'],
+    options?: ContrapuntalGenerateLinesOptions,
+  ): AbstractLineSet {
+    const mosaicSqGuides = options?.mosaicSqGuides;
+    const effectiveSourceMode =
+      mosaicSqGuides && Object.keys(mosaicSqGuides).length > 0 ? 'melody_plus_chords' : sourceMode;
+    void effectiveSourceMode;
     const seed = this.context.seed ?? 0;
     const bpm = resolveGenerationBpm(this.context);
-    if (this.vrbId === 'bartok') {
+    if (this.vrbId === 'bartok' && !mosaicSqGuides) {
       return augmentAbstractLineSetSchema(this.vrbId, buildBartokLineSet(this.context, lengthBars, seed));
     }
     const pol = getVoiceRuleBundle(this.vrbId).contrapuntalLinePolicy;
@@ -547,6 +621,7 @@ export class ContrapuntalLineEngine {
         this.vrbId,
         this.vrbContextMap,
         this.formSections,
+        mosaicSqGuides,
       );
       const swung = applySqSwingRhythmToLineSet(raw, this.vrbId, bpm, lengthBars);
       const antimetric = applySqAntimetricRhythmToLineSet(swung, this.vrbId, bpm);

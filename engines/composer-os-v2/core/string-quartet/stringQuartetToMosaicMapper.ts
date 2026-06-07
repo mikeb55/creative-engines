@@ -102,3 +102,5 @@ export function mapStringQuartetToMosaicSectionPlan(
 
   return entries.length >= 2 ? entries : [];
 }
+export { buildMosaicSqContrapuntalGuides } from './mosaicSqContrapuntalGuideBuilder';
+

@@ -31,6 +31,10 @@ import { buildQuartetScoreModel, type BuildQuartetScoreModelInput } from './quar
 import type { QuartetFormPlan, QuartetTexturePlan } from './quartetPlanTypes';
 import { mapStringQuartetToMosaicSectionPlan } from './stringQuartetToMosaicMapper';
 import {
+  precomputeMosaicSqContrapuntalLines,
+  resolveMosaicSqContrapuntalGuides,
+} from './precomputeMosaicSqContrapuntalLines';
+import {
   isSongwriterFrankZappaStringQuartet,
   precomputeZappaSQEffectiveHarmonyBars,
 } from './zappaStringQuartetSlice';
@@ -502,6 +506,29 @@ export function runQuartetRealisation(
     const dispatched = applyQuartetMosaicHarmonyDispatch(chordBars, planning, mosaicPlan, input);
     chordBars = dispatched.chordBars;
     mosaicContext = dispatched.mosaicContext;
+  }
+
+  const primarySongwriterId =
+    typeof input.songwriterStyleId === 'string' && input.songwriterStyleId.trim()
+      ? input.songwriterStyleId.trim()
+      : mosaicContext?.generationMetadata?.songwriterStyleId ?? 'bartok';
+
+  if (mosaicContext) {
+    const guides = resolveMosaicSqContrapuntalGuides(
+      mosaicContext,
+      primarySongwriterId,
+      input.sqMosaicEnabled
+    );
+    if (guides) {
+      precomputeMosaicSqContrapuntalLines(mosaicContext, guides, primarySongwriterId);
+      const mosaicMeta = mosaicContext.generationMetadata;
+      generationMetadataForScore = {
+        ...(generationMetadataForScore ?? { generatedAt: new Date().toISOString() }),
+        ...mosaicMeta,
+        contrapuntalLineSet: mosaicMeta.contrapuntalLineSet,
+        mosaicSqContrapuntalGuides: guides,
+      };
+    }
   }
 
   const slonimskyEnsembleCellReceipts: string[] = [];
