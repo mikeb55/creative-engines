@@ -1672,10 +1672,12 @@ const FRIPP_SYSTEMS_PROCESS: VoiceRuleBundle = {
   },
   rhythmPolicy: {
     antiMetric: true,
-    pulseCell: { pattern: [1, 0, 0, 1, 0, 1, 0, 0], weight: 0.7 },
+    // qw4 — silenceDiscipline: contiguous gesture + one-beat tail gap (restRatio ~0.12–0.35 on 5/4);
+    // avoids wide internal rests that pad to >0.60 restRatio while keeping inter-bar phrase groups.
+    pulseCell: { pattern: [1, 1, 1, 1, 0, 0, 0, 0], weight: 0.75 },
   },
   targetNotesPerBar: 4,
-  densityVariance: 0.2,
+  densityVariance: 0.1,
   repairPolicy: {
     resolveParallels: false,
     maxVoiceOverlap: 4,
