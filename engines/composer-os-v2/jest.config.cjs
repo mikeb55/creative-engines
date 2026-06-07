@@ -17,9 +17,10 @@ const JEST_TEST_DECL = /^\s*(describe|it|test)\(/m;
 
 /**
  * @param {string} baseDir
+ * @param {string} [patternRoot]
  * @returns {string[]}
  */
-function discoverJestTestMatchPatterns(baseDir) {
+function discoverJestTestMatchPatterns(baseDir, patternRoot = baseDir) {
   /** @type {string[]} */
   const patterns = [];
 
@@ -33,10 +34,11 @@ function discoverJestTestMatchPatterns(baseDir) {
         walk(absPath, relPath);
         continue;
       }
-      if (!entry.name.endsWith('.test.ts')) continue;
+      if (!/\.test\.tsx?$/.test(entry.name)) continue;
       const source = fs.readFileSync(absPath, 'utf8');
       if (JEST_TEST_DECL.test(source)) {
-        patterns.push(`<rootDir>/${relPath.replace(/\\/g, '/')}`);
+        const relToRoot = path.relative(patternRoot, absPath).replace(/\\/g, '/');
+        patterns.push(`<rootDir>/${relToRoot}`);
       }
     }
   }
@@ -55,6 +57,10 @@ module.exports = {
       roots: ['<rootDir>'],
       testMatch: discoverJestTestMatchPatterns(engineRoot),
       moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
+      moduleNameMapper: {
+        '^@composer-os/(.*)$': '<rootDir>/$1',
+        '^@composer-os$': '<rootDir>',
+      },
       transform: {
         '^.+\\.tsx?$': [
           'ts-jest',

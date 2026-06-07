@@ -7,6 +7,8 @@ module.exports = {
   setupFilesAfterEnv: ['@testing-library/jest-dom'],
   moduleNameMapper: {
     '^@engine/(.*)$': '<rootDir>/../../src/engine/$1',
+    '^@composer-os/(.*)$': '<rootDir>/../../engines/composer-os-v2/$1',
+    '^@composer-os$': '<rootDir>/../../engines/composer-os-v2',
   },
   transform: {
     '^.+\\.tsx?$': 'babel-jest',

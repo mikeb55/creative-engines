@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback, useRef, Fragment, useMemo } from 'react';
+﻿import { useState, useEffect, useCallback, useRef, Fragment, useMemo, lazy, Suspense } from 'react';
 import type { CSSProperties } from 'react';
 import {
   initPlayback,
@@ -42,6 +42,11 @@ import {
 } from '../constants/generateProducerLanes';
 import { GenerateProducerLaneChooser } from '../components/GenerateProducerLaneChooser';
 import { GenerateSharedContextStrip } from '../components/GenerateSharedContextStrip';
+import { useMosaicImportWorkflow } from '../components/mosaic-import/useMosaicImportWorkflow';
+
+const MosaicImportPanel = lazy(() =>
+  import('../components/mosaic-import/MosaicImportPanel').then((m) => ({ default: m.MosaicImportPanel })),
+);
 import { ComposerLauncher } from '../components/ComposerLauncher';
 import { FORM_OPTIONS } from '../constants/formOptions';
 import {
@@ -2489,6 +2494,7 @@ export function HomeGenerate({
   const { contrapuntalConfig } = useContrapuntal();
   const { publishGridFromXml, setPlaybackBeat: setGridPlaybackBeat, setIsPlaying: setGridIsPlaying, clearGrid } =
     useLastGenerate();
+  const mosaicImportWorkflow = useMosaicImportWorkflow();
   const [homeTab, setHomeTab] = useState<'composers' | 'generate'>('composers');
   const [composerLauncherSelectedId, setComposerLauncherSelectedId] = useState<string | null>(null);
   const pendingComposerGenerateRef = useRef(false);
@@ -5567,6 +5573,10 @@ export function HomeGenerate({
         exportIntegrity={sharedStripExportIntegrity}
         tritonicFloatOver={tritonicFloatOverText}
       />
+
+      <Suspense fallback={null}>
+        <MosaicImportPanel workflow={mosaicImportWorkflow} />
+      </Suspense>
 
       {showVaultChartPanel ? (
       <details

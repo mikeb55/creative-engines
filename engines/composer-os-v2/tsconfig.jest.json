@@ -4,5 +4,10 @@
     "types": ["node", "jest"],
     "isolatedModules": true
   },
-  "include": ["core/**/*.ts", "tests/**/*.ts", "scripts/exportWybleOnOffExamples.ts"]
+  "include": [
+    "core/**/*.ts",
+    "tests/**/*.ts",
+    "scripts/exportWybleOnOffExamples.ts",
+    "../../apps/composer-os-app/src/components/mosaic-import/**/*.ts"
+  ]
 }
