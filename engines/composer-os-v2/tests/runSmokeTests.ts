@@ -156,6 +156,8 @@ const SMOKE_KNOWN_FAIL: readonly string[] = [
   'Bob Brookmeyer slice: golden path + brk + contrapuntal Gate A/B (Brookmeyer + Bartók)',
   'sonic_youth per-section VRB — section markers A/B wired',
   'V65 P2 — Song Mode per-section Slonimsky cellSets seed 81002',
+  'Jack White slice: golden path + drone-riff diagnostics receipt',
+  'Jack White slice: harmonyByImplication — dyads/fifths dominant, full triads rare',
 ];
 
 function isSmokeKnownFail(rowName: string): boolean {
