@@ -197,6 +197,11 @@ function addSectionChordSymbols(
   for (const entry of sectionPlan) {
     const measure = part.measures.find((m) => m.index === entry.startBar);
     if (!measure) continue;
+    const spineChord = measure.chord?.trim();
+    if (spineChord) {
+      assignSectionChordSymbol(measure, spineChord);
+      continue;
+    }
     const tonicPc =
       tonicMap[entry.sectionLabel] ??
       (entry as MosaicModeSectionPlanEntry & { tonicPitchClass?: number }).tonicPitchClass ??

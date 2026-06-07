@@ -14,6 +14,7 @@ import {
 import {
   buildMosaicTonicMap,
   cloneDuoSectionContext,
+  padCustomLockedMosaicUnderfillBars,
   precomputeMosaicEffectiveHarmonyBars,
   type MosaicModeSectionPlanEntry,
   type MosaicTonicMap,
@@ -8003,6 +8004,7 @@ export function generateGoldenPathDuoScore(
     afterExpressive = injectMosaicMotifNotesPostFinalize(afterExpressive, context, plans.guitarMap);
     afterExpressive = padMosaicUnderfillBars(afterExpressive, context);
     afterExpressive = trimMosaicOverfillBars(afterExpressive, context);
+    afterExpressive = padCustomLockedMosaicUnderfillBars(afterExpressive, context);
   }
   if (isGuitarBassDuoFamily(context.presetId)) {
     debugPrintDuoAttackGridIfEnabled(afterExpressive, 'post-seal');

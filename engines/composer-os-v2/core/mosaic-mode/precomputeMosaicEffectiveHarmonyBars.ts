@@ -4,6 +4,9 @@
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
+import { measureBeatSpanQuartersOf } from '../score-model/measureBeatSpan';
+import type { ScoreEvent, ScoreModel } from '../score-model/scoreModelTypes';
+import { isMosaicModeActive } from './mosaicBarHelpers';
 import {
   extractEffectiveHarmonyFromMetadata,
   getDispatchEntry,
@@ -75,6 +78,76 @@ function chordSymbolAtBar(context: CompositionContext, barIndex: number): string
   throw new Error(
     `buildMosaicTonicMap: no authoritative harmony at bar ${barIndex} — set lockedHarmonyBarsRaw or parsedCustomProgressionBars covering totalBars`
   );
+}
+
+/**
+ * Pipeline-truth LOCK: when custom_locked spine covers the form, export/score harmony reads
+ * must match pasted symbols — slice precompute may enrich symbols for section eval only.
+ */
+function overlayLockedSpineOnMergedBars(context: CompositionContext, bars: string[]): void {
+  if (context.generationMetadata.customHarmonyLocked !== true) return;
+
+  const totalBars = context.form.totalBars;
+  const locked = context.lockedHarmonyBarsRaw;
+  if (locked && locked.length === totalBars) {
+    for (let i = 0; i < totalBars; i++) {
+      const symbol = locked[i]?.trim();
+      if (symbol) bars[i] = symbol;
+    }
+    return;
+  }
+
+  const parsed = context.generationMetadata.parsedCustomProgressionBars;
+  if (parsed && parsed.length === totalBars) {
+    for (let i = 0; i < totalBars; i++) {
+      const symbol = parsed[i]?.trim();
+      if (symbol) bars[i] = symbol;
+    }
+  }
+}
+
+/**
+ * Pipeline-truth LOCK: pad underfilled mosaic voices on 4/4 bars when custom_locked spine is active.
+ * `padMosaicUnderfillBars` only pads non-4/4 meters; locked long-form mosaic still needs full bar spans.
+ */
+export function padCustomLockedMosaicUnderfillBars(
+  score: ScoreModel,
+  context: CompositionContext
+): ScoreModel {
+  if (!isMosaicModeActive(context)) return score;
+  if (context.generationMetadata.customHarmonyLocked !== true) return score;
+
+  const out = structuredClone(score) as ScoreModel;
+  for (const part of out.parts) {
+    for (const m of part.measures) {
+      const cap = measureBeatSpanQuartersOf(m);
+      const voices = new Map<number, ScoreEvent[]>();
+      for (const e of m.events) {
+        const v = e.voice ?? 1;
+        if (!voices.has(v)) voices.set(v, []);
+        voices.get(v)!.push(e);
+      }
+      if (voices.size === 0) continue;
+      const newEvents: ScoreEvent[] = [];
+      for (const [voice, events] of voices.entries()) {
+        const sorted = [...events].sort((a, b) => a.startBeat - b.startBeat);
+        let cursor = 0;
+        for (const e of sorted) {
+          const sb = e.startBeat;
+          if (sb - cursor > 0.01) {
+            newEvents.push({ kind: 'rest', startBeat: cursor, duration: sb - cursor, voice });
+          }
+          newEvents.push(e);
+          cursor = Math.max(cursor, sb + e.duration);
+        }
+        if (cap - cursor > 0.01) {
+          newEvents.push({ kind: 'rest', startBeat: cursor, duration: cap - cursor, voice });
+        }
+      }
+      m.events = newEvents.sort((a, b) => a.startBeat - b.startBeat);
+    }
+  }
+  return out;
 }
 
 /**
@@ -377,6 +450,8 @@ export function precomputeMosaicEffectiveHarmonyBars(
       }
     }
   }
+
+  overlayLockedSpineOnMergedBars(context, bars);
 
   for (let bar = 1; bar <= totalBars; bar++) {
     const symbol = bars[bar - 1];
