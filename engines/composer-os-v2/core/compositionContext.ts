@@ -611,7 +611,15 @@ export interface GenerationMetadata {
     endBar: number;
     presetRole: 'duo' | 'big_band' | 'string_quartet';
     stub?: boolean;
+    activePartIds?: string[];
+    partCount?: number;
   }>;
+  /** V80a INS-3 — mixed-preset assembly ran (scoped late passes applied). */
+  mixedPresetAssemblyApplied?: boolean;
+  /** V80a — union part ids from assembled score registry. */
+  assembledScoreRegistry?: string[];
+  /** V80a — global bar index → section label ownership map. */
+  assembledSectionOwnership?: Record<number, string>;
   /** String Quartet StylePanel — SQ rhythm engine id (`bartok_bulgarian_aksak`, `free_proportional`, `baroque_dance`, `reich_phasing_grid`, `viennese_waltz`, `jewish_klezmer`, …). */
   sqRhythmEngineId?: string;
   /** String Quartet — rhythm engine fingerprint receipts (`BG_RHYTHM_*`, …) for telemetry / eval. */

@@ -69,6 +69,20 @@ import {
   buildMosaicTonicMap,
   type MosaicModeSectionPlanEntry,
 } from '../mosaic-mode/precomputeMosaicEffectiveHarmonyBars';
+import { runBigBandRealisation } from '../big-band/runBigBandRealisation';
+import { runQuartetRealisation } from '../string-quartet/runQuartetRealisation';
+import type {
+  AssembledScoreModel,
+  MosaicPresetRole,
+  SectionRealizationResult,
+} from '../score-model/assembledScoreModel';
+import { defaultLatePassPermissions, partToDescriptor } from '../score-model/assembledScoreModel';
+import {
+  applyScopedLatePasses,
+  assembleSections,
+  extractDuoSectionFragment,
+  sectionHarmonyBars,
+} from '../score-model/scoreModelAssembler';
 import { exportScoreModelToMusicXml } from '../export/musicxmlExporter';
 import { assertExportTruth, buildSpineSymbolsForExportTruth } from '../export/assertExportTruth';
 import { applyKeySignatureToScoreAndContext } from '../harmony/keyInference';
@@ -1388,16 +1402,7 @@ export interface RunGoldenPathOptions {
   sqMosaicEnabled?: boolean;
 }
 
-/** V80a — per-section ensemble realizer output (INS-3 merges scoreFragment). */
-export type MosaicPresetRole = 'duo' | 'big_band' | 'string_quartet';
-
-export interface SectionRealizationResult {
-  sectionLabel: string;
-  startBar: number;
-  endBar: number;
-  presetRole: MosaicPresetRole;
-  scoreFragment?: ScoreModel;
-}
+export type { MosaicPresetRole, SectionRealizationResult, AssembledScoreModel };
 
 function resolveMosaicPresetRole(entry: MosaicModeSectionPlanEntry): MosaicPresetRole {
   return entry.presetRole ?? 'duo';
@@ -1414,71 +1419,161 @@ function mosaicSectionDelegationEnabled(
   return false;
 }
 
-/** INS-3 stub — logs intent; returns empty fragment placeholder. */
+function resolveSectionSongwriterStyleId(entry: MosaicModeSectionPlanEntry): string | undefined {
+  const id = entry.songwriterStyleId?.trim();
+  if (!id || id === 'default') return undefined;
+  return id;
+}
+
+function buildFragmentContext(
+  context: CompositionContext,
+  entry: MosaicModeSectionPlanEntry,
+  span: number,
+  sectionChords: string[]
+): CompositionContext {
+  const localEntry: MosaicModeSectionPlanEntry = {
+    ...entry,
+    startBar: 1,
+    endBar: span,
+  };
+  return {
+    ...context,
+    form: {
+      totalBars: span,
+      sections: [{ label: entry.sectionLabel, startBar: 1, length: span }],
+    },
+    lockedHarmonyBarsRaw: [...sectionChords],
+    generationMetadata: {
+      ...context.generationMetadata,
+      mosaicSectionPlan: [localEntry],
+      parsedCustomProgressionBars: [...sectionChords],
+    },
+  } as CompositionContext;
+}
+
+/** INS-3 — BB realizer for one mosaic section (local bars 1..span). */
 export function runBigBandRealisationForSection(
   entry: MosaicModeSectionPlanEntry,
   context: CompositionContext
 ): SectionRealizationResult {
-  console.log(
-    `[mosaic-router] delegate section "${entry.sectionLabel}" bars ${entry.startBar}-${entry.endBar} to big_band realizer (stub) seed=${context.seed}`
-  );
+  const span = entry.endBar - entry.startBar + 1;
+  const sectionChords = sectionHarmonyBars(context, entry);
+  const fragmentContext = buildFragmentContext(context, entry, span, sectionChords);
+  const bb = runBigBandRealisation({
+    seed: context.seed,
+    title: 'Big Band Section',
+    totalBars: span,
+    chordProgressionText: sectionChords.join(' | '),
+    suppressWybleVoiceLayoutForTest: true,
+    context: fragmentContext,
+    bbMosaicEnabled: false,
+    songwriterStyleId: resolveSectionSongwriterStyleId(entry),
+  });
+  if (!bb.score) {
+    throw new Error(`runBigBandRealisationForSection: no score for "${entry.sectionLabel}"`);
+  }
+  const activePartIds = bb.score.parts.map((p) => p.id);
   return {
     sectionLabel: entry.sectionLabel,
     startBar: entry.startBar,
     endBar: entry.endBar,
     presetRole: 'big_band',
-    scoreFragment: undefined,
+    partSet: bb.score.parts.map(partToDescriptor),
+    scoreFragment: bb.score,
+    harmonyBars: sectionChords,
+    activePartIds,
+    latePassPermissions: defaultLatePassPermissions('big_band'),
   };
 }
 
-/** INS-3 stub — logs intent; returns empty fragment placeholder. */
+/** INS-3 — SQ realizer for one mosaic section (local bars 1..span). */
 export function runQuartetRealisationForSection(
   entry: MosaicModeSectionPlanEntry,
   context: CompositionContext
 ): SectionRealizationResult {
-  console.log(
-    `[mosaic-router] delegate section "${entry.sectionLabel}" bars ${entry.startBar}-${entry.endBar} to string_quartet realizer (stub) seed=${context.seed}`
-  );
+  const span = entry.endBar - entry.startBar + 1;
+  const sectionChords = sectionHarmonyBars(context, entry);
+  const fragmentContext = buildFragmentContext(context, entry, span, sectionChords);
+  const sq = runQuartetRealisation({
+    seed: context.seed,
+    title: 'String Quartet Section',
+    totalBars: span,
+    chordProgressionText: sectionChords.join(' | '),
+    suppressWybleVoiceLayoutForTest: true,
+    context: fragmentContext,
+    sqMosaicEnabled: false,
+    songwriterStyleId: resolveSectionSongwriterStyleId(entry),
+  });
+  if (!sq.score) {
+    throw new Error(`runQuartetRealisationForSection: no score for "${entry.sectionLabel}"`);
+  }
+  const activePartIds = sq.score.parts.map((p) => p.id);
   return {
     sectionLabel: entry.sectionLabel,
     startBar: entry.startBar,
     endBar: entry.endBar,
     presetRole: 'string_quartet',
-    scoreFragment: undefined,
+    partSet: sq.score.parts.map(partToDescriptor),
+    scoreFragment: sq.score,
+    harmonyBars: sectionChords,
+    activePartIds,
+    latePassPermissions: defaultLatePassPermissions('string_quartet'),
   };
 }
 
-function runMosaicSectionPresetRouter(
+function isMixedPresetMosaicActive(
+  plan: MosaicModeSectionPlanEntry[] | undefined,
+  options?: RunGoldenPathOptions
+): boolean {
+  if (!plan || plan.length < 2) return false;
+  return plan.some((entry) => mosaicSectionDelegationEnabled(entry, options));
+}
+
+function buildMixedPresetSectionResults(
+  duoScore: ScoreModel,
   context: CompositionContext,
   options?: RunGoldenPathOptions
 ): SectionRealizationResult[] {
-  const plan = context.generationMetadata?.mosaicSectionPlan;
-  if (!plan || plan.length < 2) return [];
-
+  const plan = context.generationMetadata?.mosaicSectionPlan ?? [];
   const results: SectionRealizationResult[] = [];
   for (const entry of plan) {
-    if (!mosaicSectionDelegationEnabled(entry, options)) continue;
     const role = resolveMosaicPresetRole(entry);
-    if (role === 'big_band') {
+    if (role === 'duo') {
+      results.push(extractDuoSectionFragment(duoScore, entry, sectionHarmonyBars(context, entry)));
+    } else if (role === 'big_band' && options?.bbMosaicEnabled === true) {
       results.push(runBigBandRealisationForSection(entry, context));
-    } else if (role === 'string_quartet') {
+    } else if (role === 'string_quartet' && options?.sqMosaicEnabled === true) {
       results.push(runQuartetRealisationForSection(entry, context));
+    } else {
+      results.push(extractDuoSectionFragment(duoScore, entry, sectionHarmonyBars(context, entry)));
     }
   }
-
-  if (results.length > 0) {
-    context.generationMetadata = {
-      ...context.generationMetadata,
-      mosaicSectionRealizationResults: results.map((r) => ({
-        sectionLabel: r.sectionLabel,
-        startBar: r.startBar,
-        endBar: r.endBar,
-        presetRole: r.presetRole,
-        stub: true,
-      })),
-    };
-  }
   return results;
+}
+
+function runMixedPresetAssembly(
+  duoScore: ScoreModel,
+  context: CompositionContext,
+  options?: RunGoldenPathOptions
+): { score: ScoreModel; assembled: AssembledScoreModel } {
+  const results = buildMixedPresetSectionResults(duoScore, context, options);
+  const assembled = assembleSections(results);
+  const score = applyScopedLatePasses(assembled, context, options);
+  context.generationMetadata = {
+    ...context.generationMetadata,
+    mixedPresetAssemblyApplied: true,
+    mosaicSectionRealizationResults: results.map((r) => ({
+      sectionLabel: r.sectionLabel,
+      startBar: r.startBar,
+      endBar: r.endBar,
+      presetRole: r.presetRole,
+      activePartIds: r.activePartIds,
+      partCount: r.partSet.length,
+    })),
+    assembledScoreRegistry: assembled.globalPartRegistry.map((p) => p.id),
+    assembledSectionOwnership: assembled.sectionOwnership,
+  };
+  return { score, assembled };
 }
 
 function clamp01(n: number): number {
@@ -2637,7 +2732,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
         ],
       };
     } else {
-      runMosaicSectionPresetRouter(appliedContext, options);
+      const mixedPresetActive = isMixedPresetMosaicActive(
+        appliedContext.generationMetadata?.mosaicSectionPlan,
+        options
+      );
       score = generateGoldenPathDuoScore(appliedContext, plans, {
         bpm: options?.bpm,
         variationEnabled: options?.variationEnabled === true,
@@ -2645,6 +2743,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
         orchestrationEnabled: options?.orchestrationEnabled,
         identityCellEnabled: options?.identityCellEnabled,
       });
+      if (mixedPresetActive && score) {
+        const assembledRun = runMixedPresetAssembly(score, appliedContext, options);
+        score = assembledRun.score;
+      }
     }
   } finally {
     logEcmPhaseProbe(probeEcm, 'after_render', score, {
@@ -2913,13 +3015,23 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   logEcmPhaseProbe(probeEcm, 'before_export', score, {
     guitarMeasures: guitarMeasureCount,
   });
-  score = applyContrapuntalPass4MusicXmlMerge(score, appliedContext);
-  if (appliedContext.generationMetadata?.mosaicOutputFormat === 'melody-bass-chords') {
+  const mixedPresetAssembled =
+    appliedContext.generationMetadata?.mixedPresetAssemblyApplied === true;
+  if (!mixedPresetAssembled) {
+    score = applyContrapuntalPass4MusicXmlMerge(score, appliedContext);
+  }
+  if (
+    !mixedPresetAssembled &&
+    appliedContext.generationMetadata?.mosaicOutputFormat === 'melody-bass-chords'
+  ) {
     const mosaicPlan = appliedContext.generationMetadata.mosaicSectionPlan ?? [];
     const tonicMap =
       mosaicPlan.length > 0 ? buildMosaicTonicMap(mosaicPlan, appliedContext) : {};
     score = applyMelodyBassFormat(score, mosaicPlan, tonicMap);
-  } else if (appliedContext.generationMetadata?.mosaicOutputFormat === 'lead-sheet') {
+  } else if (
+    !mixedPresetAssembled &&
+    appliedContext.generationMetadata?.mosaicOutputFormat === 'lead-sheet'
+  ) {
     const mosaicPlan = appliedContext.generationMetadata.mosaicSectionPlan ?? [];
     const tonicMap =
       mosaicPlan.length > 0 ? buildMosaicTonicMap(mosaicPlan, appliedContext) : {};
@@ -2966,7 +3078,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     if (!mxBar.valid) errors.push(...mxBar.errors);
     if (!writtenComplete.valid) errors.push(...writtenComplete.errors);
 
-    if (dualGuitarRoute) {
+    if (mixedPresetAssembled) {
+      instrumentMetadataPassed = true;
+    } else if (dualGuitarRoute) {
       const dualGuitarMeta = validateIndieArtPopDualGuitarIdentityInMusicXml(xml);
       instrumentMetadataPassed = dualGuitarMeta.valid;
       if (!dualGuitarMeta.valid) errors.push(...dualGuitarMeta.errors);

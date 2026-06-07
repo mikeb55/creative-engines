@@ -24,7 +24,24 @@ const COMPOSER_OPTIONS: { id: string; label: string }[] = [
   { id: 'wayne_shorter', label: 'Wayne Shorter' },
   { id: 'ecm_chamber', label: 'ECM Chamber' },
   { id: 'sonic_youth', label: 'Sonic Youth' },
+  { id: 'verlaine', label: 'Verlaine' },
+  { id: 'marr', label: 'Marr' },
+  { id: 'bartok', label: 'Bartok (SQ VRB)' },
 ];
+
+const BB_COMPOSER_IDS = new Set(['default', 'verlaine', 'marr', 'wayne_shorter', 'ecm_chamber']);
+const SQ_COMPOSER_IDS = new Set(['default', 'bartok', 'verlaine', 'marr', 'wayne_shorter', 'ecm_chamber']);
+
+function composersForPresetRole(role: MosaicPresetRoleUi | undefined): typeof COMPOSER_OPTIONS {
+  const r = role ?? 'duo';
+  if (r === 'big_band') return COMPOSER_OPTIONS.filter((o) => BB_COMPOSER_IDS.has(o.id));
+  if (r === 'string_quartet') return COMPOSER_OPTIONS.filter((o) => SQ_COMPOSER_IDS.has(o.id));
+  return COMPOSER_OPTIONS;
+}
+
+function hasMixedPresetSections(sections: MosaicSectionPlanEntry[]): boolean {
+  return sections.some((s) => (s.presetRole ?? 'duo') !== 'duo');
+}
 
 const PRESET_ROLE_OPTIONS: { id: MosaicPresetRoleUi; label: string }[] = [
   { id: 'duo', label: 'Duo' },
@@ -69,7 +86,19 @@ export function MosaicSectionPlanner(props: {
   const { sections, onChange, outputFormat, onOutputFormatChange, disabled } = props;
 
   function updateRow(index: number, patch: Partial<MosaicSectionPlanEntry>) {
-    onChange(sections.map((row, i) => (i === index ? { ...row, ...patch } : row)));
+    onChange(
+      sections.map((row, i) => {
+        if (i !== index) return row;
+        const next = { ...row, ...patch };
+        if (patch.presetRole && patch.presetRole !== 'duo') {
+          const allowed = composersForPresetRole(patch.presetRole).map((o) => o.id);
+          if (!allowed.includes(next.songwriterStyleId)) {
+            next.songwriterStyleId = 'default';
+          }
+        }
+        return next;
+      })
+    );
   }
 
   function removeRow(index: number) {
@@ -106,6 +135,12 @@ export function MosaicSectionPlanner(props: {
       <h3 style={{ margin: '0 0 0.35rem', fontSize: '0.95rem', color: 'var(--text)' }}>Mosaic sections</h3>
       <p style={{ margin: '0 0 0.65rem', fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
         Plan 2+ sections with a composer per slice. Sent on Generate when at least two sections are defined.
+        {hasMixedPresetSections(sections) ? (
+          <>
+            {' '}
+            Mixed-preset export combines sections into one score (duo + Big Band + String Quartet parts).
+          </>
+        ) : null}
       </p>
 
       {sections.length === 0 ? (
@@ -164,7 +199,7 @@ export function MosaicSectionPlanner(props: {
                   onChange={(e) => updateRow(index, { songwriterStyleId: e.target.value })}
                   style={inputStyle}
                 >
-                  {COMPOSER_OPTIONS.map((o) => (
+                  {composersForPresetRole(row.presetRole).map((o) => (
                     <option key={o.id} value={o.id}>
                       {o.label}
                     </option>
@@ -249,7 +284,9 @@ export function MosaicSectionPlanner(props: {
           >
             <option value="none">None</option>
             <option value="melody-bass-chords">Melody + bass + chords</option>
-            <option value="lead-sheet">Lead sheet</option>
+            <option value="lead-sheet" disabled={hasMixedPresetSections(sections)}>
+              Lead sheet{hasMixedPresetSections(sections) ? ' (duo-only)' : ''}
+            </option>
           </select>
         </label>
       </div>
