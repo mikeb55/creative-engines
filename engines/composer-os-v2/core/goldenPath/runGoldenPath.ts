@@ -64,6 +64,7 @@ import { runScoreIntegrityGate } from '../score-integrity/scoreIntegrityGate';
 import { runBehaviourGates } from '../score-integrity/behaviourGates';
 import { applyContrapuntalPass4MusicXmlMerge } from '../counterpoint/contrapuntalPass4MusicXmlMerge';
 import { applyMelodyBassFormat } from './generateMelodyBassScore';
+import { applyLeadSheetFormat } from './generateLeadSheetScore';
 import { buildMosaicTonicMap } from '../mosaic-mode/precomputeMosaicEffectiveHarmonyBars';
 import { exportScoreModelToMusicXml } from '../export/musicxmlExporter';
 import { assertExportTruth, buildSpineSymbolsForExportTruth } from '../export/assertExportTruth';
@@ -2816,6 +2817,11 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     const tonicMap =
       mosaicPlan.length > 0 ? buildMosaicTonicMap(mosaicPlan, appliedContext) : {};
     score = applyMelodyBassFormat(score, mosaicPlan, tonicMap);
+  } else if (appliedContext.generationMetadata?.mosaicOutputFormat === 'lead-sheet') {
+    const mosaicPlan = appliedContext.generationMetadata.mosaicSectionPlan ?? [];
+    const tonicMap =
+      mosaicPlan.length > 0 ? buildMosaicTonicMap(mosaicPlan, appliedContext) : {};
+    score = applyLeadSheetFormat(score, mosaicPlan, tonicMap);
   }
   const barMeterForMusicXml =
     appliedContext.barMeterMap ?? appliedContext.generationMetadata?.barMeterMap;
