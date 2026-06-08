@@ -8,6 +8,8 @@ import type { MosaicImportTimeline } from '@composer-os/core/import/mosaicImport
 import {
   buildMosaicImportGeneratePartial,
   confidenceStripColor,
+  DEFAULT_MOSAIC_VARIATION_CONFIG,
+  mosaicVariationConfigToPartialConfig,
   parseMosaicImportFile,
   resolveMosaicImportPartial,
   withMosaicImportMode,
@@ -104,6 +106,8 @@ describe('mosaicImportPanel workflow', () => {
       fileName: null,
       sourceFormat: null,
       tempoBpm: null,
+      variationConfig: DEFAULT_MOSAIC_VARIATION_CONFIG,
+      variationIndex: null,
     };
     expect(withMosaicImportMode(base, 'lock').importMode).toBe('lock');
     expect(withMosaicImportMode(base, 'variations').importMode).toBe('variations');
@@ -138,7 +142,25 @@ describe('buildMosaicImportGeneratePartial', () => {
     expect(partial.generateVariations).toBe(true);
     expect(partial.variationCount).toBe(4);
     expect(partial.variationMode).toBe('full');
+    expect(partial.preserveImportHarmony).toBe(false);
     expect(partial.styleTransfer).toBeUndefined();
+  });
+
+  test('B2) mode variations reads config overrides', () => {
+    const { partial } = buildMosaicImportGeneratePartial({
+      timeline: mockTimeline(),
+      mode: 'variations',
+      config: {
+        variationCount: 6,
+        variationMode: 'harmonic',
+        preserveImportHarmony: true,
+        variationIndex: 2,
+      },
+    });
+    expect(partial.variationCount).toBe(6);
+    expect(partial.variationMode).toBe('harmonic');
+    expect(partial.preserveImportHarmony).toBe(true);
+    expect(partial.variationIndex).toBe(2);
   });
 
   test("C) mode styleTransfer sets styleTransfer; generateVariations absent", () => {
@@ -172,16 +194,83 @@ describe('buildMosaicImportGeneratePartial', () => {
 });
 
 describe('HomeGenerate mosaic import wiring', () => {
+  const homePath = path.join(__dirname, '../../../apps/composer-os-app/src/pages/HomeGenerate.tsx');
+  const panelPath = path.join(
+    __dirname,
+    '../../../apps/composer-os-app/src/components/mosaic-import/MosaicImportPanel.tsx',
+  );
+  const resultsPath = path.join(
+    __dirname,
+    '../../../apps/composer-os-app/src/components/mosaic-import/MosaicVariationResults.tsx',
+  );
+  const configPath = path.join(
+    __dirname,
+    '../../../apps/composer-os-app/src/components/mosaic-import/MosaicVariationConfig.tsx',
+  );
+
   test('lazy MosaicImportPanel mount and workflow hook', () => {
-    const src = fs.readFileSync(
-      path.join(__dirname, '../../../apps/composer-os-app/src/pages/HomeGenerate.tsx'),
-      'utf-8',
-    );
+    const src = fs.readFileSync(homePath, 'utf-8');
     expect(src).toContain('useMosaicImportWorkflow');
     expect(src).toContain('lazy(');
     expect(src).toContain('MosaicImportPanel');
     expect(src).toContain('<Suspense');
     expect(src).toContain('<MosaicImportPanel');
     expect(src).toContain('workflow={mosaicImportWorkflow}');
+  });
+
+  test('A) variation config mounts only in variations mode', () => {
+    const panelSrc = fs.readFileSync(panelPath, 'utf-8');
+    expect(panelSrc).toContain("importMode === 'variations'");
+    expect(panelSrc).toContain('MosaicVariationConfig');
+    expect(panelSrc).toContain('lazy(');
+  });
+
+  test('B) config values map into generate partial helper', () => {
+    const mapped = mosaicVariationConfigToPartialConfig({
+      count: 5,
+      mode: 'rhythmic',
+      preserveHarmony: true,
+    });
+    const { partial } = buildMosaicImportGeneratePartial({
+      timeline: mockTimeline(),
+      mode: 'variations',
+      config: mapped,
+    });
+    expect(partial.variationCount).toBe(5);
+    expect(partial.variationMode).toBe('rhythmic');
+    expect(partial.preserveImportHarmony).toBe(true);
+  });
+
+  test('C) candidate list component renders variationEcho fields', () => {
+    const resultsSrc = fs.readFileSync(resultsPath, 'utf-8');
+    expect(resultsSrc).toContain('variationEcho.candidates');
+    expect(resultsSrc).toContain('evalScore');
+    expect(resultsSrc).toContain('variationIndex');
+    expect(resultsSrc).toContain('Use this');
+    const homeSrc = fs.readFileSync(homePath, 'utf-8');
+    expect(homeSrc).toContain('MosaicVariationResults');
+    expect(homeSrc).toContain('result.variationEcho');
+  });
+
+  test('D) Use this wires variationIndex re-generate', () => {
+    const homeSrc = fs.readFileSync(homePath, 'utf-8');
+    expect(homeSrc).toContain('mosaicVariationIndex');
+    expect(homeSrc).toContain('setVariationIndex');
+    expect(homeSrc).toContain('handleMosaicVariationUse');
+    expect(homeSrc).toContain("mosaicImportMode: 'variations'");
+  });
+
+  test('E) baseline score shown alongside candidates', () => {
+    const resultsSrc = fs.readFileSync(resultsPath, 'utf-8');
+    expect(resultsSrc).toContain('baselineScore');
+    expect(resultsSrc).toContain('Original');
+    expect(resultsSrc).toContain('mosaic-variation-baseline');
+  });
+
+  test('variation config component exposes count/mode/harmony controls', () => {
+    const configSrc = fs.readFileSync(configPath, 'utf-8');
+    expect(configSrc).toContain('mosaic-variation-count');
+    expect(configSrc).toContain('mosaic-variation-mode-select');
+    expect(configSrc).toContain('mosaic-variation-preserve-harmony');
   });
 });

@@ -12,6 +12,18 @@ export type MosaicImportMode = 'lock' | 'variations' | 'styleTransfer';
 
 export type MosaicImportFileExt = 'midi' | 'musicxml';
 
+export type MosaicVariationConfigState = {
+  count: number;
+  mode: 'harmonic' | 'melodic' | 'rhythmic' | 'full';
+  preserveHarmony: boolean;
+};
+
+export const DEFAULT_MOSAIC_VARIATION_CONFIG: MosaicVariationConfigState = {
+  count: 4,
+  mode: 'full',
+  preserveHarmony: false,
+};
+
 export interface MosaicImportWorkflowState {
   importTimeline: MosaicImportTimeline | null;
   importMode: MosaicImportMode | null;
@@ -21,6 +33,9 @@ export interface MosaicImportWorkflowState {
   sourceFormat: ImportSourceFormat | null;
   /** MIDI header BPM when available; MusicXML ingest has no tempo on IR. */
   tempoBpm: number | null;
+  variationConfig: MosaicVariationConfigState;
+  /** User-picked variation index for re-generate; null = engine auto-select. */
+  variationIndex: number | null;
 }
 
 const INITIAL_STATE: MosaicImportWorkflowState = {
@@ -31,6 +46,8 @@ const INITIAL_STATE: MosaicImportWorkflowState = {
   fileName: null,
   sourceFormat: null,
   tempoBpm: null,
+  variationConfig: DEFAULT_MOSAIC_VARIATION_CONFIG,
+  variationIndex: null,
 };
 
 export function detectMosaicImportFormat(fileName: string): MosaicImportFileExt | null {
@@ -56,16 +73,27 @@ export function withMosaicImportMode(
 
 export type MosaicImportPartialConfig = {
   variationCount?: number;
-  variationMode?: "harmonic" | "melodic" | "rhythmic" | "full";
+  variationMode?: 'harmonic' | 'melodic' | 'rhythmic' | 'full';
   preserveImportHarmony?: boolean;
   styleTransferStrength?: number;
   targetComposer?: string;
+  variationIndex?: number | null;
 };
 
 export type MosaicImportPartialResult = {
   partial: Partial<GenerateRequest>;
   mutexWarning: string | null;
 };
+
+export function mosaicVariationConfigToPartialConfig(
+  config: MosaicVariationConfigState,
+): Pick<MosaicImportPartialConfig, 'variationCount' | 'variationMode' | 'preserveImportHarmony'> {
+  return {
+    variationCount: config.count,
+    variationMode: config.mode,
+    preserveImportHarmony: config.preserveHarmony,
+  };
+}
 
 export function buildMosaicImportGeneratePartial(input: {
   timeline: MosaicImportTimeline | null;
@@ -75,23 +103,24 @@ export function buildMosaicImportGeneratePartial(input: {
   const { timeline, mode, config = {} } = input;
   if (!timeline || !mode) return { partial: {}, mutexWarning: null };
   const base: Partial<GenerateRequest> = { importTimeline: timeline };
-  if (mode === "lock") {
+  if (mode === 'lock') {
     return {
-      partial: { ...base, importHarmonyMode: "lock_harmony", preserveImportHarmony: true },
+      partial: { ...base, importHarmonyMode: 'lock_harmony', preserveImportHarmony: true },
       mutexWarning: null,
     };
   }
-  if (mode === "variations") {
-    return {
-      partial: {
-        ...base,
-        generateVariations: true,
-        variationCount: config.variationCount ?? 4,
-        variationMode: config.variationMode ?? "full",
-        preserveImportHarmony: config.preserveImportHarmony ?? true,
-      },
-      mutexWarning: null,
+  if (mode === 'variations') {
+    const partial: Partial<GenerateRequest> = {
+      ...base,
+      generateVariations: true,
+      variationCount: config.variationCount ?? DEFAULT_MOSAIC_VARIATION_CONFIG.count,
+      variationMode: config.variationMode ?? DEFAULT_MOSAIC_VARIATION_CONFIG.mode,
+      preserveImportHarmony: config.preserveImportHarmony ?? DEFAULT_MOSAIC_VARIATION_CONFIG.preserveHarmony,
     };
+    if (config.variationIndex != null) {
+      partial.variationIndex = config.variationIndex;
+    }
+    return { partial, mutexWarning: null };
   }
   return {
     partial: {
@@ -111,7 +140,7 @@ export function resolveMosaicImportPartial(primary: Partial<GenerateRequest>): {
 } {
   if (primary.generateVariations && primary.styleTransfer) {
     const { styleTransfer: _st, targetComposer: _tc, styleTransferStrength: _ss, preserveMelody: _pm, reorchestrate: _ro, ...rest } = primary;
-    return { partial: rest, mutexWarning: "Both variations and style-transfer were requested; variations wins." };
+    return { partial: rest, mutexWarning: 'Both variations and style-transfer were requested; variations wins.' };
   }
   return { partial: primary, mutexWarning: null };
 }
@@ -163,6 +192,8 @@ export function useMosaicImportWorkflow() {
         fileName: file.name,
         sourceFormat: timeline.sourceFormat,
         tempoBpm,
+        variationConfig: DEFAULT_MOSAIC_VARIATION_CONFIG,
+        variationIndex: null,
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -174,6 +205,8 @@ export function useMosaicImportWorkflow() {
         fileName: file.name,
         sourceFormat: detectMosaicImportFormat(file.name),
         tempoBpm: null,
+        variationConfig: DEFAULT_MOSAIC_VARIATION_CONFIG,
+        variationIndex: null,
       });
     }
   }, []);
@@ -186,16 +219,31 @@ export function useMosaicImportWorkflow() {
     setState((prev) => ({ ...prev, importMode: mode }));
   }, []);
 
+  const setVariationConfig = useCallback((patch: Partial<MosaicVariationConfigState>) => {
+    setState((prev) => ({
+      ...prev,
+      variationConfig: { ...prev.variationConfig, ...patch },
+    }));
+  }, []);
+
+  const setVariationIndex = useCallback((variationIndex: number | null) => {
+    setState((prev) => ({ ...prev, variationIndex }));
+  }, []);
+
   const toGenerateRequestPartial = useCallback(
-    (config?: MosaicImportPartialConfig): Partial<GenerateRequest> => {
+    (overrides?: MosaicImportPartialConfig): Partial<GenerateRequest> => {
       const built = buildMosaicImportGeneratePartial({
         timeline: state.importTimeline,
         mode: state.importMode,
-        config,
+        config: {
+          ...mosaicVariationConfigToPartialConfig(state.variationConfig),
+          variationIndex: state.variationIndex,
+          ...overrides,
+        },
       });
       return resolveMosaicImportPartial(built.partial).partial;
     },
-    [state.importMode, state.importTimeline],
+    [state.importMode, state.importTimeline, state.variationConfig, state.variationIndex],
   );
 
   const actions = useMemo(
@@ -203,8 +251,10 @@ export function useMosaicImportWorkflow() {
       loadFile,
       clearImport,
       setMode,
+      setVariationConfig,
+      setVariationIndex,
     }),
-    [clearImport, loadFile, setMode],
+    [clearImport, loadFile, setMode, setVariationConfig, setVariationIndex],
   );
 
   return { state, actions, toGenerateRequestPartial };

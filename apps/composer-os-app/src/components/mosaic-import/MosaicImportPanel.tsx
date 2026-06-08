@@ -1,4 +1,6 @@
 import {
+  lazy,
+  Suspense,
   useCallback,
   useRef,
   useState,
@@ -13,6 +15,10 @@ import {
   type MosaicImportMode,
   type MosaicImportWorkflow,
 } from './useMosaicImportWorkflow';
+
+const MosaicVariationConfig = lazy(() =>
+  import('./MosaicVariationConfig').then((m) => ({ default: m.MosaicVariationConfig })),
+);
 
 const ACCEPT =
   '.mid,.midi,.musicxml,.mxl,.xml,application/vnd.recordare.musicxml+xml,application/vnd.recordare.musicxml,audio/midi,audio/x-midi';
@@ -321,6 +327,12 @@ export function MosaicImportPanel({
               </button>
             ))}
           </div>
+
+          {state.importMode === 'variations' ? (
+            <Suspense fallback={null}>
+              <MosaicVariationConfig workflow={workflow} />
+            </Suspense>
+          ) : null}
         </div>
       ) : null}
     </details>

@@ -44,6 +44,7 @@ import { GenerateProducerLaneChooser } from '../components/GenerateProducerLaneC
 import { GenerateSharedContextStrip } from '../components/GenerateSharedContextStrip';
 import {
   buildMosaicImportGeneratePartial,
+  mosaicVariationConfigToPartialConfig,
   resolveMosaicImportPartial,
   useMosaicImportWorkflow,
   type MosaicImportMode,
@@ -57,6 +58,9 @@ import type {
 
 const MosaicImportPanel = lazy(() =>
   import('../components/mosaic-import/MosaicImportPanel').then((m) => ({ default: m.MosaicImportPanel })),
+);
+const MosaicVariationResults = lazy(() =>
+  import('../components/mosaic-import/MosaicVariationResults').then((m) => ({ default: m.MosaicVariationResults })),
 );
 import { ComposerLauncher } from '../components/ComposerLauncher';
 import { FORM_OPTIONS } from '../constants/formOptions';
@@ -3785,7 +3789,12 @@ export function HomeGenerate({
   }, [restoreMartinoFromSession]);
 
   const generate = useCallback(
-    async (opts?: { seedOverride?: number; variationOverride?: string; mosaicImportMode?: MosaicImportMode }) => {
+    async (opts?: {
+      seedOverride?: number;
+      variationOverride?: string;
+      mosaicImportMode?: MosaicImportMode;
+      mosaicVariationIndex?: number;
+    }) => {
       if (presetId === 'sq_to_bb') {
         return;
       }
@@ -4609,10 +4618,19 @@ export function HomeGenerate({
         riffGenerateOpRef.current = 'full';
         const wf = mosaicImportWorkflowRef.current;
         const importModeForRequest = opts?.mosaicImportMode ?? wf.state.importMode;
+        const variationIndexForRequest =
+          opts?.mosaicVariationIndex ?? wf.state.variationIndex ?? undefined;
+        if (opts?.mosaicVariationIndex != null) {
+          wf.actions.setVariationIndex(opts.mosaicVariationIndex);
+        }
         const mosaicBuilt = buildMosaicImportGeneratePartial({
           timeline: wf.state.importTimeline,
           mode: importModeForRequest,
-          config: { targetComposer: songwriterStyle },
+          config: {
+            ...mosaicVariationConfigToPartialConfig(wf.state.variationConfig),
+            targetComposer: songwriterStyle,
+            ...(variationIndexForRequest != null ? { variationIndex: variationIndexForRequest } : {}),
+          },
         });
         const mosaicResolved = resolveMosaicImportPartial(mosaicBuilt.partial);
         if (mosaicResolved.mutexWarning) setMosaicImportWarning(mosaicResolved.mutexWarning);
@@ -4929,6 +4947,13 @@ export function HomeGenerate({
       void generate({ mosaicImportMode: mode });
     },
     [generate, mosaicImportWorkflow.actions],
+  );
+
+  const handleMosaicVariationUse = useCallback(
+    (variationIndex: number) => {
+      void generate({ mosaicImportMode: 'variations', mosaicVariationIndex: variationIndex });
+    },
+    [generate],
   );
 
   const handleComposerOpenGenerate = useCallback(
@@ -11926,6 +11951,16 @@ export function HomeGenerate({
                   {line}
                 </p>
               ))}
+              {result.variationEcho ? (
+                <Suspense fallback={null}>
+                  <MosaicVariationResults
+                    variationEcho={result.variationEcho}
+                    selectedVariationIndex={mosaicImportWorkflow.state.variationIndex}
+                    generateBusy={loading}
+                    onUseVariation={handleMosaicVariationUse}
+                  />
+                </Suspense>
+              ) : null}
               {mosaicImportWarning ? (
                 <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                   {mosaicImportWarning}
