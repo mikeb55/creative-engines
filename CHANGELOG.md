@@ -1,3 +1,29 @@
+## v2.6.0 — UI Surface for Import / Variation / Style-Transfer / Mixed-Preset (2026-06-08)
+
+Release tag **`v2.6.0`**. Baseline after **`v2.5.0`** (`3ea1f5eb`).
+
+### V81 arc — Generate tab UI for V80 engines
+
+| Step | Commit | Scope |
+|------|--------|--------|
+| **V81a** | **`ddc8d83c`** | API echo — surface V80 engine results (variation / style-transfer / mixed-preset / import) in `GenerateResult` + manifest. |
+| **V81b** | **`1acc7b55`** | Mosaic Import panel — file picker, parse to IR, display-only summary + confidence strip, mode buttons. |
+| *(chore)* | **`aa1cb5a3`** | Gitignore `docs/RoadMaps` working notes. |
+| **V81c** | **`23043450`** | Wire import into generate + `apiGenerate` boundary pass-through + output path receipt. |
+| **V81d** | **`a05b5122`** | Variation picker — config panel, post-generate candidate list, re-generate with `variationIndex`. |
+| **V81e** | **`14a7e616`** | Style-transfer controls — composer target, strength slider, preserve-melody + reorchestrate toggles, results panel. |
+| **V81e-fix** | **`dbfc2998`** | Custom output filename, Open library folder, desktop Browse defaults to library path. |
+| **V81e-fix2** | **`22bd0443`** | Output name field moved to top of Generate tab (below library folder). |
+| **V81f** | **`b9b8bb82`** | Section planner visual timeline — colour blocks, suggest-from-import, overlap/gap/mixed warnings. |
+| **V81g** | **`b01ef26b`** | Receipt upgrades — export-integrity badge fix, mixed-preset badge, Download XML / Save a copy. |
+| **V81h** | *(this release)* | Ship hygiene — CHANGELOG, roadmap, **`v2.6.0`** tag, desktop exe rebuild. |
+
+**Summary:** V80 engines (shipped in **`v2.5.0`** with no Generate UI) are now fully reachable from the **Generate** tab — MIDI/MusicXML import, variation picker, style-transfer controls, mixed-preset section planner with visual timeline, and an upgraded receipt with Download XML.
+
+**Verify:** Jest **631**/631 · Smoke **657** PASS / **0** unexpected failures (full tier).
+
+---
+
 ## v2.5.0 — Mixed-Preset Assembly + Import (2026-06-07)
 
 Release tag **`v2.5.0`**. Baseline after **`v2.4.0`** (`a78f8b0a`).

@@ -1,6 +1,8 @@
-# Composer OS Roadmap [2026-06-07]
+# Composer OS Roadmap [2026-06-08]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](../CHANGELOG.md), [docs/CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
+
+**V81 — COMPLETE (2026-06-08, tag `v2.6.0`):** Full Generate-tab UI for V80 engines — import panel (**`1acc7b55`**) · API echo (**`ddc8d83c`**) · generate wiring (**`23043450`**) · variation picker (**`a05b5122`**) · style-transfer controls (**`14a7e616`**) · output filename + library folder (**`dbfc2998`** · **`22bd0443`**) · section planner timeline (**`b9b8bb82`**) · receipt upgrades (**`b01ef26b`**) · ship **`v2.6.0`**. See [CHANGELOG.md](../CHANGELOG.md) § **v2.6.0**.
 
 **V80 — COMPLETE (2026-06-07, tag `v2.5.0`):** **Track 1** — BB + SQ fully Mosaic-dispatched (**`18e49bd2`** · **`00afdda0`** · **`cdac241e`** · **`21e66125`** · **`2f15b808`** · **`067ad54f`**) · **Track 2** — MIDI/MusicXML import → variation + style-transfer (**`a3589cbc`** · **`91899bad`** · **`52114366`**) · **Track 3** — mixed-preset MusicXML merge duo + BB + SQ in one score (**`187199c0`** · **`325f6a71`**) · ship **`v2.5.0`**. See [CHANGELOG.md](../CHANGELOG.md) § **v2.5.0**.
 
@@ -8,7 +10,7 @@
 
 **V78 — COMPLETE (2026-06-07, tag `v2.3.0`):** LFV integrity fix (**`05fb79f7`**) · BB mosaic output format at ScoreModel (**`b036849a`**) · SQ mosaic output format (**`55be2520`**) · Song Mode → Mosaic thin mapper at golden-path handoff (**`f14eaaba`**).
 
-**Post-v2.5.0 backlog (candidates):** Jack White slice fix (**2** allowlisted smoke rows) · App.tsx Composer Engines tab consolidation · **`HomeGenerate.tsx`** Babel deopt file split · **`desktop:dev`** prod-path `.md` loader · variation/style-transfer UI (engine only) · duo depth · multi-chorus quality · MusicXML import phase 3+ · Wyble parity · ECM GCE orchestration. See **§ Current**.
+**Post-v2.6.0 backlog (V82 candidates):** Interactive confidence heatmap (click-to-override) · variation contour SVG previews · pre-generate candidate preview (needs preview API) · section planner drag-to-resize · style-transfer dry-run preview · **`IR.sectionStarts`** (rehearsal-mark parsing for true section auto-fill) · Jack White slice fix (**2** allowlisted smoke rows) · App.tsx Composer Engines tab consolidation · **`HomeGenerate.tsx`** Babel deopt file split · **`desktop:dev`** prod-path `.md` loader · duo depth · multi-chorus quality · MusicXML import phase 3+ · Wyble parity · ECM GCE orchestration. See **§ Current**.
 
 **V30 — COMPLETE (2026-05-05):** **Odd meter UI parity** (mixed-meter badge on chart preview + paste / iReal result blocks); **MusicXML import Phase 1** (`parseMusicXml` / core **`ParsedChart`** path); **Duo expansion** — Song Mode **pairing cards** + swap (**`pat_metheny`**, **`bacharach`**, **`ecm_chamber`**), **Duo intent** selector (UI), **Duo Health** pill on success, **ECM Chamber safe sweep** badge + Advanced override (**UI-only**). Duo expansion here was **surfaces + diagnostics**, not a duo golden-path slice rebuild.
 
@@ -433,17 +435,23 @@ Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartók** native bundle (not in
 
 ---
 
-## Current (as of 2026-06-07 snapshot — **v2.5.0**)
+## Current (as of 2026-06-08 snapshot — **v2.6.0**)
 
+- **V81 — Generate UI for V80 engines — COMPLETE (2026-06-08):** Mosaic Import panel · import → generate wiring · variation picker · style-transfer controls · output filename + library folder · section planner visual timeline + suggest-from-import · receipt export-integrity badge fix + mixed-preset badge + Download XML. Jest **631**/0; smoke **657**/0 unexpected (full tier). Tag **`v2.6.0`**.
 - **V80 — Mixed-preset assembly + import — COMPLETE (2026-06-07):** **Track 1** BB + SQ Mosaic dispatch + E2E smoke · **Track 2** MusicXML/MIDI import IR + variation (IMP-4) + style-transfer (IMP-5) · **Track 3** mixed-preset MusicXML merge + export integrity (INS-3–5). Jest **580**/0; smoke **652**/0 unexpected (full tier). Tag **`v2.5.0`**.
 - **V79 — Song Mode ↔ Mosaic integration — COMPLETE (2026-06-07):** Explicit opt-in mosaic dispatch from Song Mode; per-section composer routing; Generate UI section planner; pipeline-truth LOCK on harmony spine; hook-first bypass lift behind **`allowMosaicPostFinalizeInject`** (default off). Jest **535**/0; smoke **652**/0 (full tier). Tag **`v2.4.0`**.
 - **V78 — LFV + ensemble mosaic format + Song Mode mapper — COMPLETE (`v2.3.0`):** Martino LFV integrity; BB/SQ **`mosaicOutputFormat`** ScoreModel wiring; **`mapSongModeToMosaicSectionPlan`** at golden-path handoff.
-- **Post-v2.5.0 backlog (candidates):**
-  - **Jack White slice fix** — **2** allowlisted smoke rows (drone-riff diagnostics receipt, harmonyByImplication); **5** total known-fail rows in smoke allowlist (Brookmeyer, sonic_youth, V65 P2, 2× Jack White).
+- **Post-v2.6.0 backlog (V82 — deferred):**
+  - **Interactive confidence heatmap** — click-to-override on import preview
+  - **Variation contour SVG previews**
+  - **Pre-generate candidate preview** — needs preview API
+  - **Section planner drag-to-resize** on visual timeline
+  - **Style-transfer dry-run preview**
+  - **`IR.sectionStarts`** — rehearsal-mark parsing for true section auto-fill (not on `MosaicImportTimeline` today)
+  - **Jack White slice fix** — **2** allowlisted smoke rows; **5** total known-fail rows (Brookmeyer, sonic_youth, V65 P2 Slonimsky, 2× Jack White)
   - **App.tsx "Composer Engines" tab consolidation**
   - **`HomeGenerate.tsx` ~500KB Babel deopt** — file split
   - **`desktop:dev` full Electron prod path `.md` loader**
-  - **Variation / style-transfer UI surface** — engine shipped (IMP-4 + IMP-5); no Generate UI yet
   - *(carry-forward)* duo depth · multi-chorus quality · MusicXML import phase 3+ · Wyble parity · ECM GCE orchestration
 - **Zappa Solo MusicContext producer (2026-05-30) — V106p2 shipped:** `buildMusicContextFromZappaSolo()` — melodic dramatist over supplied harmony; solo arc claim/agitation/fracture/crooked_landing; Population participation primary/secondary/tertiary; receipt `zappa_solo_realisation_complete`; always-on. Jest node **478**/0 (**60** suites).
 - **Population Composer hybrid MusicContext (2026-05-30) — V106p1 shipped:** `buildMusicContextFromPopulation()` — ecology selection across tritonic · monk · wayne_shorter · vault · big_band; dramatic arc phases (`build` · `suspend` · `fracture` · `cadence` · `restart`); receipt `population_composer_realisation_complete`; always-on. Jest node **469**/0 (**59** suites).
