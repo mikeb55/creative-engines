@@ -5700,6 +5700,36 @@ export function HomeGenerate({
         </p>
       )}
 
+      <div style={{ marginBottom: '1rem', maxWidth: 520 }}>
+        <label
+          htmlFor="co-output-label"
+          style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: '0.88rem' }}
+        >
+          Output name (optional)
+        </label>
+        <input
+          id="co-output-label"
+          type="text"
+          value={outputLabel}
+          onChange={(e) => setOutputLabel(e.target.value)}
+          placeholder="e.g. jack-white-bridge-v2"
+          disabled={loading}
+          data-testid="co-output-label"
+          style={{
+            width: '100%',
+            padding: '0.45rem 0.6rem',
+            borderRadius: 6,
+            border: '1px solid var(--border)',
+            background: 'var(--bg-input, var(--bg))',
+            color: 'var(--text)',
+          }}
+        />
+        <p style={{ margin: '0.35rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+          Sets the saved filename to <code style={{ fontSize: '0.76rem' }}>&lt;name&gt;_&lt;seed&gt;.musicxml</code>.
+          Leave blank for the default auto-name.
+        </p>
+      </div>
+
       <GenerateProducerLaneChooser
         producerId={generateProducerId}
         onSelectProducer={handleSelectGenerateProducer}
@@ -10207,36 +10237,6 @@ export function HomeGenerate({
         </label>
         <p style={{ margin: '0.35rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)', maxWidth: 520 }}>
           Exports a kick/snare MIDI guide and JSON sidecar next to the score when enabled.
-        </p>
-      </div>
-
-      <div style={{ marginBottom: '0.85rem', maxWidth: 520 }}>
-        <label
-          htmlFor="co-output-label"
-          style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: '0.88rem' }}
-        >
-          Output name (optional)
-        </label>
-        <input
-          id="co-output-label"
-          type="text"
-          value={outputLabel}
-          onChange={(e) => setOutputLabel(e.target.value)}
-          placeholder="e.g. jack-white-bridge-v2"
-          disabled={loading}
-          data-testid="co-output-label"
-          style={{
-            width: '100%',
-            padding: '0.45rem 0.6rem',
-            borderRadius: 6,
-            border: '1px solid var(--border)',
-            background: 'var(--bg-input, var(--bg))',
-            color: 'var(--text)',
-          }}
-        />
-        <p style={{ margin: '0.35rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-          Sets the saved filename to <code style={{ fontSize: '0.76rem' }}>&lt;name&gt;_&lt;seed&gt;.musicxml</code>.
-          Leave blank for the default auto-name.
         </p>
       </div>
 
