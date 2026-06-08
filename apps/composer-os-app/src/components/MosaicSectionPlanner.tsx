@@ -2,7 +2,18 @@
  * Mosaic Mode — per-section composer plan + output format (Generate UI).
  */
 
-import type { CSSProperties } from 'react';
+import { useMemo, useRef, useState, type CSSProperties } from 'react';
+import type { MosaicImportTimeline } from '@composer-os/core/import/mosaicImportTimeline';
+import { MosaicSectionTimeline } from './MosaicSectionTimeline';
+import {
+  computeMosaicPlannerWarnings,
+  computeTimelineBlocks,
+  planHasContent,
+  resolvePlannerTotalBars,
+  suggestSectionsFromImport,
+  warningSummaryCounts,
+  warningsForSection,
+} from './mosaicSectionPlannerUtils';
 
 export type MosaicPresetRoleUi = 'duo' | 'big_band' | 'string_quartet';
 
@@ -76,14 +87,59 @@ function nextSectionDefaults(sections: MosaicSectionPlanEntry[]): Omit<MosaicSec
   };
 }
 
+function badgeStyle(level: 'error' | 'warning' | 'info'): CSSProperties {
+  const palette = {
+    error: { bg: 'rgba(220,38,38,0.14)', fg: '#b91c1c', border: 'rgba(220,38,38,0.35)' },
+    warning: { bg: 'rgba(217,119,6,0.14)', fg: '#b45309', border: 'rgba(217,119,6,0.35)' },
+    info: { bg: 'rgba(59,130,246,0.12)', fg: '#1d4ed8', border: 'rgba(59,130,246,0.3)' },
+  }[level];
+  return {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 4,
+    fontSize: '0.68rem',
+    fontWeight: 600,
+    padding: '2px 6px',
+    borderRadius: 999,
+    background: palette.bg,
+    color: palette.fg,
+    border: `1px solid ${palette.border}`,
+    whiteSpace: 'nowrap',
+  };
+}
+
+function MosaicWarningBadge(props: { level: 'error' | 'warning' | 'info'; message: string }) {
+  const prefix = props.level === 'error' ? '!' : props.level === 'warning' ? '⚠' : 'i';
+  return (
+    <span style={badgeStyle(props.level)} title={props.message} data-warning-level={props.level}>
+      {prefix} {props.message}
+    </span>
+  );
+}
+
 export function MosaicSectionPlanner(props: {
   sections: MosaicSectionPlanEntry[];
   onChange: (sections: MosaicSectionPlanEntry[]) => void;
   outputFormat: MosaicOutputFormatUi;
   onOutputFormatChange: (format: MosaicOutputFormatUi) => void;
+  importTimeline?: MosaicImportTimeline | null;
   disabled?: boolean;
 }) {
-  const { sections, onChange, outputFormat, onOutputFormatChange, disabled } = props;
+  const { sections, onChange, outputFormat, onOutputFormatChange, importTimeline, disabled } = props;
+  const rowRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
+
+  const totalBars = resolvePlannerTotalBars(sections, importTimeline);
+  const timelineBlocks = useMemo(
+    () => computeTimelineBlocks(sections, totalBars),
+    [sections, totalBars],
+  );
+  const warnings = useMemo(
+    () => computeMosaicPlannerWarnings(sections, totalBars, outputFormat),
+    [sections, totalBars, outputFormat],
+  );
+  const summary = warningSummaryCounts(warnings);
+  const globalWarnings = warnings.filter((w) => w.sectionIndex === undefined);
 
   function updateRow(index: number, patch: Partial<MosaicSectionPlanEntry>) {
     onChange(
@@ -97,7 +153,7 @@ export function MosaicSectionPlanner(props: {
           }
         }
         return next;
-      })
+      }),
     );
   }
 
@@ -109,6 +165,25 @@ export function MosaicSectionPlanner(props: {
     const defaults = nextSectionDefaults(sections);
     const label = sections.length === 0 ? 'intro' : sections.length === 1 ? 'verse' : 'chorus';
     onChange([...sections, { sectionLabel: label, ...defaults }]);
+  }
+
+  function handleSuggestFromImport() {
+    if (!importTimeline) return;
+    const suggested = suggestSectionsFromImport(importTimeline);
+    if (suggested.length === 0) return;
+    if (planHasContent(sections)) {
+      const ok = window.confirm(
+        'Replace the current section plan with suggestions from the import? This cannot be undone except by editing manually.',
+      );
+      if (!ok) return;
+    }
+    onChange(suggested);
+  }
+
+  function scrollToSection(sectionIndex: number) {
+    setHighlightedIndex(sectionIndex);
+    const el = rowRefs.current[sectionIndex];
+    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   const inputStyle: CSSProperties = {
@@ -143,113 +218,195 @@ export function MosaicSectionPlanner(props: {
         ) : null}
       </p>
 
+      {importTimeline ? (
+        <div style={{ marginBottom: '0.55rem' }}>
+          <button
+            type="button"
+            className="secondary"
+            disabled={disabled}
+            data-testid="mosaic-suggest-from-import"
+            onClick={handleSuggestFromImport}
+            style={{ fontSize: '0.8rem', padding: '0.35rem 0.6rem' }}
+          >
+            Suggest sections from import
+          </button>
+          <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            {importTimeline.bars} bars from {importTimeline.sourceFormat}
+          </span>
+        </div>
+      ) : null}
+
+      {warnings.length > 0 ? (
+        <div
+          data-testid="mosaic-planner-warning-summary"
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '0.35rem',
+            marginBottom: '0.5rem',
+            alignItems: 'center',
+          }}
+        >
+          {summary.error > 0 ? (
+            <MosaicWarningBadge level="error" message={`${summary.error} error${summary.error === 1 ? '' : 's'}`} />
+          ) : null}
+          {summary.warning > 0 ? (
+            <MosaicWarningBadge
+              level="warning"
+              message={`${summary.warning} warning${summary.warning === 1 ? '' : 's'}`}
+            />
+          ) : null}
+          {summary.info > 0 ? (
+            <MosaicWarningBadge level="info" message={`${summary.info} info`} />
+          ) : null}
+          {globalWarnings.map((w) => (
+            <MosaicWarningBadge key={w.id} level={w.level} message={w.message} />
+          ))}
+        </div>
+      ) : null}
+
+      {sections.length > 0 ? (
+        <MosaicSectionTimeline
+          blocks={timelineBlocks}
+          totalBars={totalBars}
+          highlightedIndex={highlightedIndex}
+          onBlockClick={scrollToSection}
+        />
+      ) : null}
+
       {sections.length === 0 ? (
         <p style={{ margin: '0 0 0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>No sections yet.</p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', marginBottom: '0.65rem' }}>
-          {sections.map((row, index) => (
-            <div
-              key={`mosaic-row-${index}-${row.sectionLabel}-${row.startBar}`}
-              style={{
-                display: 'grid',
-                gridTemplateColumns:
-                  'minmax(72px, 1fr) 64px 64px minmax(120px, 1.2fr) minmax(96px, 0.9fr) minmax(108px, 1fr) auto',
-                gap: '0.35rem',
-                alignItems: 'end',
-              }}
-            >
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                Label
-                <input
-                  type="text"
-                  value={row.sectionLabel}
-                  disabled={disabled}
-                  onChange={(e) => updateRow(index, { sectionLabel: e.target.value })}
-                  style={inputStyle}
-                  placeholder="intro"
-                />
-              </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                Start
-                <input
-                  type="number"
-                  min={1}
-                  value={row.startBar}
-                  disabled={disabled}
-                  onChange={(e) => updateRow(index, { startBar: Math.max(1, Number(e.target.value) || 1) })}
-                  style={inputStyle}
-                />
-              </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                End
-                <input
-                  type="number"
-                  min={1}
-                  value={row.endBar}
-                  disabled={disabled}
-                  onChange={(e) => updateRow(index, { endBar: Math.max(1, Number(e.target.value) || 1) })}
-                  style={inputStyle}
-                />
-              </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                Composer
-                <select
-                  value={row.songwriterStyleId || 'default'}
-                  disabled={disabled}
-                  onChange={(e) => updateRow(index, { songwriterStyleId: e.target.value })}
-                  style={inputStyle}
-                >
-                  {composersForPresetRole(row.presetRole).map((o) => (
-                    <option key={o.id} value={o.id}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                Meter
-                <select
-                  value={meterIdForSection(row)}
-                  disabled={disabled}
-                  onChange={(e) => {
-                    const opt = METER_OPTIONS.find((m) => m.id === e.target.value);
-                    updateRow(index, { timeSignature: opt?.ts });
-                  }}
-                  style={inputStyle}
-                >
-                  {METER_OPTIONS.map((m) => (
-                    <option key={m.id || 'inherit'} value={m.id}>
-                      {m.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                Preset
-                <select
-                  value={row.presetRole ?? 'duo'}
-                  disabled={disabled}
-                  onChange={(e) => updateRow(index, { presetRole: e.target.value as MosaicPresetRoleUi })}
-                  style={inputStyle}
-                >
-                  {PRESET_ROLE_OPTIONS.map((o) => (
-                    <option key={o.id} value={o.id}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <button
-                type="button"
-                className="secondary"
-                disabled={disabled}
-                onClick={() => removeRow(index)}
-                style={{ padding: '0.35rem 0.5rem', fontSize: '0.78rem', alignSelf: 'end' }}
+          {sections.map((row, index) => {
+            const rowWarnings = warningsForSection(warnings, index);
+            const isHighlighted = highlightedIndex === index;
+            return (
+              <div
+                key={`mosaic-row-${index}-${row.sectionLabel}-${row.startBar}`}
+                ref={(el) => {
+                  rowRefs.current[index] = el;
+                }}
+                data-testid={`mosaic-section-row-${index}`}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns:
+                    'minmax(72px, 1fr) 64px 64px minmax(120px, 1.2fr) minmax(96px, 0.9fr) minmax(108px, 1fr) auto',
+                  gap: '0.35rem',
+                  alignItems: 'end',
+                  padding: '0.25rem',
+                  borderRadius: 6,
+                  background: isHighlighted ? 'rgba(59,130,246,0.08)' : 'transparent',
+                  outline: isHighlighted ? '1px solid rgba(59,130,246,0.35)' : 'none',
+                }}
               >
-                Remove
-              </button>
-            </div>
-          ))}
+                <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                  Label
+                  <input
+                    type="text"
+                    value={row.sectionLabel}
+                    disabled={disabled}
+                    onChange={(e) => updateRow(index, { sectionLabel: e.target.value })}
+                    style={inputStyle}
+                    placeholder="intro"
+                  />
+                </label>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                  Start
+                  <input
+                    type="number"
+                    min={1}
+                    value={row.startBar}
+                    disabled={disabled}
+                    onChange={(e) => updateRow(index, { startBar: Math.max(1, Number(e.target.value) || 1) })}
+                    style={inputStyle}
+                  />
+                </label>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                  End
+                  <input
+                    type="number"
+                    min={1}
+                    value={row.endBar}
+                    disabled={disabled}
+                    onChange={(e) => updateRow(index, { endBar: Math.max(1, Number(e.target.value) || 1) })}
+                    style={inputStyle}
+                  />
+                </label>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                  Composer
+                  <select
+                    value={row.songwriterStyleId || 'default'}
+                    disabled={disabled}
+                    onChange={(e) => updateRow(index, { songwriterStyleId: e.target.value })}
+                    style={inputStyle}
+                  >
+                    {composersForPresetRole(row.presetRole).map((o) => (
+                      <option key={o.id} value={o.id}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                  Meter
+                  <select
+                    value={meterIdForSection(row)}
+                    disabled={disabled}
+                    onChange={(e) => {
+                      const opt = METER_OPTIONS.find((m) => m.id === e.target.value);
+                      updateRow(index, { timeSignature: opt?.ts });
+                    }}
+                    style={inputStyle}
+                  >
+                    {METER_OPTIONS.map((m) => (
+                      <option key={m.id || 'inherit'} value={m.id}>
+                        {m.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                  Preset
+                  <select
+                    value={row.presetRole ?? 'duo'}
+                    disabled={disabled}
+                    onChange={(e) => updateRow(index, { presetRole: e.target.value as MosaicPresetRoleUi })}
+                    style={inputStyle}
+                  >
+                    {PRESET_ROLE_OPTIONS.map((o) => (
+                      <option key={o.id} value={o.id}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={disabled}
+                  onClick={() => removeRow(index)}
+                  style={{ padding: '0.35rem 0.5rem', fontSize: '0.78rem', alignSelf: 'end' }}
+                >
+                  Remove
+                </button>
+                {rowWarnings.length > 0 ? (
+                  <div
+                    style={{
+                      gridColumn: '1 / -1',
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '0.3rem',
+                    }}
+                  >
+                    {rowWarnings.map((w) => (
+                      <MosaicWarningBadge key={w.id} level={w.level} message={w.message} />
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
         </div>
       )}
 

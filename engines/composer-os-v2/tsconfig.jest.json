@@ -8,6 +8,7 @@
     "core/**/*.ts",
     "tests/**/*.ts",
     "scripts/exportWybleOnOffExamples.ts",
-    "../../apps/composer-os-app/src/components/mosaic-import/**/*.ts"
+    "../../apps/composer-os-app/src/components/mosaic-import/**/*.ts",
+    "../../apps/composer-os-app/src/components/mosaicSectionPlannerUtils.ts"
   ]
 }

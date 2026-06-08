@@ -7234,6 +7234,7 @@ export function HomeGenerate({
             onChange={setMosaicSections}
             outputFormat={mosaicOutputFormat}
             onOutputFormatChange={setMosaicOutputFormat}
+            importTimeline={mosaicImportWorkflow.state.importTimeline}
             disabled={loading}
           />
         </>
@@ -9444,6 +9445,7 @@ export function HomeGenerate({
             onChange={setMosaicSections}
             outputFormat={mosaicOutputFormat}
             onOutputFormatChange={setMosaicOutputFormat}
+            importTimeline={mosaicImportWorkflow.state.importTimeline}
             disabled={loading}
           />
           {uiInstrumentGroup === 'big_band' && (
