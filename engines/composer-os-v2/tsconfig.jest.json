@@ -9,6 +9,7 @@
     "tests/**/*.ts",
     "scripts/exportWybleOnOffExamples.ts",
     "../../apps/composer-os-app/src/components/mosaic-import/**/*.ts",
-    "../../apps/composer-os-app/src/components/mosaicSectionPlannerUtils.ts"
+    "../../apps/composer-os-app/src/components/mosaicSectionPlannerUtils.ts",
+    "../../apps/composer-os-app/src/lib/generateReceiptUi.ts"
   ]
 }

@@ -43,6 +43,13 @@ import {
 import { GenerateProducerLaneChooser } from '../components/GenerateProducerLaneChooser';
 import { GenerateSharedContextStrip } from '../components/GenerateSharedContextStrip';
 import {
+  buildGenerateXmlDownloadName,
+  buildMixedPresetBadgeView,
+  hasDownloadableGenerateXml,
+  resolveExportIntegrityBadge,
+  triggerBrowserXmlDownload,
+} from '../lib/generateReceiptUi';
+import {
   buildMosaicImportGeneratePartial,
   mosaicStyleTransferConfigToPartialConfig,
   mosaicVariationConfigToPartialConfig,
@@ -2189,12 +2196,6 @@ function formatV80EchoReceiptLines(r: {
     const st = r.styleTransferEcho;
     lines.push(
       'Style-transfer: ' + st.composerApplied + ', strength ' + st.strengthApplied + ', melody retained ' + (st.melodyRetained ? 'yes' : 'no'),
-    );
-  }
-  if (r.mixedPresetEcho) {
-    const mp = r.mixedPresetEcho;
-    lines.push(
-      'Mixed-preset: ' + mp.sections.length + ' sections, integrity ' + (mp.exportIntegrityPassed ? 'pass' : 'fail'),
     );
   }
   return lines;
@@ -5161,13 +5162,41 @@ export function HomeGenerate({
     return parts.length ? parts.join(' · ') : '—';
   }, [bpm, presetId, songwriterStyle, zappaMetersByBar.length, composerMeterPresetId]);
 
-  const sharedStripExportIntegrity = useMemo((): 'pass' | 'fail' | 'pending' | 'unknown' => {
-    if (loading) return 'pending';
-    if (!result && !error) return 'unknown';
-    if (exportIntegrityFlag === true || receiptExportOk) return 'pass';
-    if (exportIntegrityFlag === false || receiptHardFail) return 'fail';
-    return 'unknown';
-  }, [loading, result, error, exportIntegrityFlag, receiptExportOk, receiptHardFail]);
+  const sharedStripExportIntegrity = useMemo(
+    () =>
+      resolveExportIntegrityBadge({
+        loading,
+        hasError: !!error,
+        success: result?.success,
+        exportIntegrityPassed: exportIntegrityFlag,
+      }),
+    [loading, error, result?.success, exportIntegrityFlag],
+  );
+
+  const mixedPresetBadge = useMemo(
+    () => (result?.mixedPresetEcho ? buildMixedPresetBadgeView(result.mixedPresetEcho) : null),
+    [result?.mixedPresetEcho],
+  );
+
+  const showDownloadGenerateXml = hasDownloadableGenerateXml(result);
+
+  const handleDownloadGenerateXml = useCallback(() => {
+    const xml = result?.xml;
+    if (!xml?.trim()) return;
+    const downloadName = buildGenerateXmlDownloadName({
+      outputLabel,
+      filename: result?.filename,
+      seed: baseSeed,
+    });
+    const base = downloadName.replace(/\.musicxml$/i, '');
+    if (isDesktopIpc()) {
+      void saveMusicXmlForSideExport(xml, base).then((res) => {
+        if (!res.ok) setError(res.error);
+      });
+      return;
+    }
+    triggerBrowserXmlDownload(xml, downloadName);
+  }, [result?.xml, result?.filename, outputLabel, baseSeed]);
 
   const tritonicFloatOverText = useMemo(
     () =>
@@ -11783,6 +11812,31 @@ export function HomeGenerate({
             </p>
           )}
 
+          {mixedPresetBadge ? (
+            <div
+              data-testid="mixed-preset-receipt-badge"
+              style={{
+                marginTop: '0.5rem',
+                marginBottom: '0.35rem',
+                display: 'inline-flex',
+                flexDirection: 'column',
+                gap: 4,
+                padding: '0.45rem 0.65rem',
+                borderRadius: 8,
+                border: `1px solid ${mixedPresetBadge.integrityPass ? 'rgba(34,197,94,0.45)' : 'rgba(239,68,68,0.45)'}`,
+                background: mixedPresetBadge.integrityPass ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.1)',
+                maxWidth: 520,
+              }}
+            >
+              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text)' }}>
+                {mixedPresetBadge.headline}
+              </span>
+              {mixedPresetBadge.rolesLine ? (
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{mixedPresetBadge.rolesLine}</span>
+              ) : null}
+            </div>
+          ) : null}
+
           {result?.success &&
             uiInstrumentGroup === 'guitar' &&
             (guitarOutputModeUi === 'tab' || guitarOutputModeUi === 'both') && (
@@ -12661,6 +12715,15 @@ export function HomeGenerate({
           )}
 
           <div style={{ marginTop: '1rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+            {showDownloadGenerateXml ? (
+              <button
+                type="button"
+                data-testid="download-generate-xml"
+                onClick={() => handleDownloadGenerateXml()}
+              >
+                {isDesktopIpc() ? 'Save a copy…' : 'Download XML'}
+              </button>
+            ) : null}
             <button type="button" className="secondary" onClick={() => openFolder()}>
               Open library folder
             </button>
