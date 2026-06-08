@@ -80,7 +80,7 @@ import {
 } from '../core/slonimsky/slonimskyPatternService';
 import { resolveEffectiveGenerationSeed } from '../core/creative-controls/creativeControlResolver';
 import { experimentalLabelForLevel } from '../core/creative-controls/experimentalEvaluator';
-import { manifestPathForMusicXml } from './composerOsOutputPaths';
+import { buildLabeledMusicXmlFilename, manifestPathForMusicXml } from './composerOsOutputPaths';
 import { assertExportTruth, buildSpineSymbolsForExportTruth } from '../core/export/assertExportTruth';
 import { validateLockedHarmonyMusicXmlTruthFromFile } from '../core/export/validateLockedHarmonyMusicXml';
 import { writeOutputManifest } from './writeOutputManifest';
@@ -2126,7 +2126,11 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   let vocalLeadSheetFilepath: string | undefined;
   let midiFilepath: string | undefined;
   if (gp.xml) {
-    filename = `composer_os_song_mode_${tsSafe}_${effectiveSeed}.musicxml`;
+    filename = buildLabeledMusicXmlFilename(
+      req.outputLabel,
+      effectiveSeed,
+      `composer_os_song_mode_${tsSafe}_${effectiveSeed}.musicxml`,
+    );
     fs.mkdirSync(outputDir, { recursive: true });
     filepath = path.join(outputDir, filename);
     fs.writeFileSync(filepath, gp.xml, 'utf-8');
@@ -3031,7 +3035,11 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     ensembleXmlBodyOverride ??
     (realised.exportPipeline.ok ? realised.exportPipeline.xml : undefined);
   if (ensembleXmlOut?.trim()) {
-    ensembleMusicXmlFilename = `big_band_${tsSafe}_${runSeed}.musicxml`;
+    ensembleMusicXmlFilename = buildLabeledMusicXmlFilename(
+      req.outputLabel,
+      runSeed,
+      `big_band_${tsSafe}_${runSeed}.musicxml`,
+    );
     fs.mkdirSync(outputDir, { recursive: true });
     ensembleMusicXmlFilepath = path.join(outputDir, ensembleMusicXmlFilename);
     fs.writeFileSync(ensembleMusicXmlFilepath, ensembleXmlOut, 'utf-8');
@@ -3409,7 +3417,11 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     quartetXmlOverride ??
     (realised.exportPipeline.ok ? realised.exportPipeline.xml : undefined);
   if (realised.exportPipeline.ok && quartetXmlOut?.trim()) {
-    const xmlFilename = `string_quartet_${tsSafe}_${effectiveSeed}.musicxml`;
+    const xmlFilename = buildLabeledMusicXmlFilename(
+      req.outputLabel,
+      effectiveSeed,
+      `string_quartet_${tsSafe}_${effectiveSeed}.musicxml`,
+    );
     fs.mkdirSync(outputDir, { recursive: true });
     const xmlFilepath = path.join(outputDir, xmlFilename);
     fs.writeFileSync(xmlFilepath, quartetXmlOut, 'utf-8');

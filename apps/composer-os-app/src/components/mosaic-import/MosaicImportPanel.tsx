@@ -15,6 +15,7 @@ import {
   type MosaicImportMode,
   type MosaicImportWorkflow,
 } from './useMosaicImportWorkflow';
+import { isDesktopIpc } from '../../services/api';
 
 const MosaicVariationConfig = lazy(() =>
   import('./MosaicVariationConfig').then((m) => ({ default: m.MosaicVariationConfig })),
@@ -124,6 +125,23 @@ const MODE_BUTTONS: { id: MosaicImportMode; label: string }[] = [
   { id: 'styleTransfer', label: 'Style-Transfer' },
 ];
 
+async function fileFromDesktopPath(filepath: string): Promise<File> {
+  const bridge = window.composerOsDesktop;
+  if (!bridge?.invokeApi) {
+    throw new Error('Desktop IPC bridge is not available.');
+  }
+  const res = (await bridge.invokeApi('composer-os-api:read-file-binary', { path: filepath })) as {
+    base64: string;
+    fileName: string;
+  };
+  const binary = atob(res.base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new File([bytes], res.fileName);
+}
+
 export interface MosaicImportPanelProps {
   workflow: MosaicImportWorkflow;
   /** When true, `<details>` starts expanded (tests). */
@@ -133,6 +151,10 @@ export interface MosaicImportPanelProps {
   /** Primary songwriter id — default style-transfer target. */
   defaultTargetComposer?: string;
   composerOptions?: readonly { id: string; label: string }[];
+  /** Composer OS library root (same as HomeGenerate "Library folder:"). */
+  libraryFolderPath?: string;
+  /** Desktop IPC only — opens library folder in Explorer. */
+  onOpenLibraryFolder?: () => void;
 }
 
 export function MosaicImportPanel({
@@ -142,14 +164,31 @@ export function MosaicImportPanel({
   onImportModeGenerate,
   defaultTargetComposer,
   composerOptions = [],
+  libraryFolderPath,
+  onOpenLibraryFolder,
 }: MosaicImportPanelProps) {
   const { state, actions } = workflow;
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
 
-  const onBrowse = useCallback(() => {
+  const onBrowse = useCallback(async () => {
+    if (isDesktopIpc() && window.composerOsDesktop?.invokeApi) {
+      try {
+        const picked = (await window.composerOsDesktop.invokeApi('composer-os-api:pick-mosaic-import-file', {
+          defaultPath: libraryFolderPath,
+        })) as { ok?: boolean; canceled?: boolean; filepath?: string };
+        if (!picked?.ok || !picked.filepath) return;
+        if (!detectMosaicImportFormat(picked.filepath)) return;
+        const file = await fileFromDesktopPath(picked.filepath);
+        void actions.loadFile(file);
+      } catch {
+        /* fall back to hidden file input */
+        inputRef.current?.click();
+      }
+      return;
+    }
     inputRef.current?.click();
-  }, []);
+  }, [actions, libraryFolderPath]);
 
   const ingestFile = useCallback(
     (file: File | null | undefined) => {
@@ -235,9 +274,43 @@ export function MosaicImportPanel({
         <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text)' }}>
           Drop .mid / .midi / .musicxml / .mxl / .xml here
         </p>
-        <button type="button" className="secondary" style={{ marginTop: '0.65rem' }} onClick={onBrowse}>
+        <button
+          type="button"
+          className="secondary"
+          style={{ marginTop: '0.65rem' }}
+          data-testid="mosaic-import-browse"
+          onClick={(e) => {
+            e.stopPropagation();
+            void onBrowse();
+          }}
+        >
           Browse
         </button>
+        {libraryFolderPath ? (
+          <p style={{ margin: '0.55rem 0 0', fontSize: '0.8rem' }}>
+            {onOpenLibraryFolder ? (
+              <button
+                type="button"
+                className="secondary"
+                data-testid="mosaic-import-open-library"
+                onClick={onOpenLibraryFolder}
+                style={{ fontSize: '0.8rem', padding: '0.2rem 0.45rem' }}
+              >
+                Open library folder
+              </button>
+            ) : (
+              <>
+                <span style={{ color: 'var(--text-muted)' }}>Library folder: </span>
+                <code
+                  data-testid="mosaic-import-library-path"
+                  style={{ userSelect: 'all', fontSize: '0.78rem', wordBreak: 'break-all' }}
+                >
+                  {libraryFolderPath}
+                </code>
+              </>
+            )}
+          </p>
+        ) : null}
         {state.fileName ? (
           <p style={{ margin: '0.65rem 0 0', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
             Loaded: <strong style={{ color: 'var(--text)' }}>{state.fileName}</strong>

@@ -98,6 +98,27 @@ export function getOutputPath(kind: SongEngineOutputKind, libraryRoot?: string):
 /** Internal subfolder under each preset output dir for `.manifest.json` files (MusicXML stays next to user). */
 export const OUTPUT_META_FOLDER = '_meta';
 
+/** Filesystem-safe slug for optional user output label (filename only; not score title). */
+export function sanitizeOutputLabel(raw: string): string {
+  return raw
+    .trim()
+    .toLowerCase()
+    .replace(/[^\w.-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^[-.]+|[-.]+$/g, '');
+}
+
+/** When `outputLabel` is set, `<slug>_<seed>.musicxml`; otherwise keep auto-name. */
+export function buildLabeledMusicXmlFilename(
+  outputLabel: string | undefined,
+  seed: number,
+  autoFilename: string,
+): string {
+  const slug = outputLabel?.trim() ? sanitizeOutputLabel(outputLabel) : '';
+  if (slug) return `${slug}_${seed}.musicxml`;
+  return autoFilename;
+}
+
 /** Canonical path for the disk manifest JSON for a given MusicXML file. */
 export function manifestPathForMusicXml(xmlFilepath: string): string {
   const dir = path.dirname(xmlFilepath);

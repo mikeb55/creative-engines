@@ -20,7 +20,7 @@ import {
 } from './buildGenerateResultEchoes';
 import { runDuoSectionRegeneration } from '../core/regeneration/runDuoSectionRegeneration';
 import { COMPOSER_OS_VERSION } from './composerOsConfig';
-import { manifestPathForMusicXml } from './composerOsOutputPaths';
+import { buildLabeledMusicXmlFilename, manifestPathForMusicXml } from './composerOsOutputPaths';
 import { writeOutputManifest } from './writeOutputManifest';
 import { runGoldenPath } from '../core/goldenPath/runGoldenPath';
 import { isClaveGridOverlayEnvEnabled } from '../core/rhythm/claveGridOverlay';
@@ -494,7 +494,11 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     const ts = new Date().toISOString();
     /** Full precision + seed avoids same-second overwrites (e.g. Try Another back-to-back). */
     const tsSafe = ts.replace(/[:.]/g, '-');
-    filename = `composer_os_${req.presetId}_${tsSafe}_${effectiveSeed}.musicxml`;
+    filename = buildLabeledMusicXmlFilename(
+      req.outputLabel,
+      effectiveSeed,
+      `composer_os_${req.presetId}_${tsSafe}_${effectiveSeed}.musicxml`,
+    );
     fs.mkdirSync(outputDir, { recursive: true });
     filepath = path.join(outputDir, filename);
     let xmlOut = result.xml;

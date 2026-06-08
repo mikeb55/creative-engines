@@ -8,7 +8,7 @@ import {
   stop,
 } from '../playback';
 import type { PlaybackSequence } from '../playback';
-import { api, displayOutputPath, type OutputDirectoryResponse } from '../services/api';
+import { api, displayOutputPath, isDesktopIpc, type OutputDirectoryResponse } from '../services/api';
 import type { AnalyticalModeResult, MusicContext } from '@composer-os/core/music-context/musicContextTypes';
 import { useCompositionSong } from '@renderer/context/CompositionSongContext';
 import { useDrumSelection } from '@renderer/context/DrumSelectionContext';
@@ -2811,6 +2811,7 @@ export function HomeGenerate({
   const [era, setEra] = useState('');
   const [ensembleConfigId, setEnsembleConfigId] = useState('full_band');
   const [scoreTitle, setScoreTitle] = useState('');
+  const [outputLabel, setOutputLabel] = useState('');
   /** Guitar–Bass Duo: optional chord line — 8 bars (tiled to 32 in long-form) or 32 bars (locked). When non-empty, engine uses custom harmony. */
   const [chordProgressionText, setChordProgressionText] = useState('');
   /** Reharm Apply: next request uses `harmonyMode: custom` once so the engine reparses wire before LOCK assert (vs stale `custom_locked`). */
@@ -4250,6 +4251,7 @@ export function HomeGenerate({
           variationEnabled: variationEnabled,
           styleStack: isScorePreset ? DEFAULT_SCORE_STYLE_STACK : MINIMAL_STYLE_STACK,
           title: scoreTitle.trim() || undefined,
+          outputLabel: outputLabel.trim() || undefined,
           ...(presetId === 'ecm_chamber' ? { ecmMode } : {}),
           ...(isGuitarBassDuoFamily(presetId) || presetId === 'song_mode'
             ? { c4Strength: c4Strength, blendStrength: blendStrength, songModeJamesBrownFunkOverlay: funkGroove }
@@ -4872,6 +4874,7 @@ export function HomeGenerate({
       ensembleConfigId,
       presetId,
       scoreTitle,
+      outputLabel,
       chordProgressionText,
       musicXmlSource,
       leadSheetFileName,
@@ -5721,6 +5724,8 @@ export function HomeGenerate({
           onImportModeGenerate={handleMosaicImportModeGenerate}
           defaultTargetComposer={songwriterStyle}
           composerOptions={SONGWRITER_OPTIONS}
+          libraryFolderPath={outputDir ? displayOutputPath(outputDir) : undefined}
+          onOpenLibraryFolder={isDesktopIpc() ? () => void openFolder() : undefined}
         />
       </Suspense>
 
@@ -10202,6 +10207,36 @@ export function HomeGenerate({
         </label>
         <p style={{ margin: '0.35rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)', maxWidth: 520 }}>
           Exports a kick/snare MIDI guide and JSON sidecar next to the score when enabled.
+        </p>
+      </div>
+
+      <div style={{ marginBottom: '0.85rem', maxWidth: 520 }}>
+        <label
+          htmlFor="co-output-label"
+          style={{ display: 'block', marginBottom: 0.3, color: 'var(--text-muted)', fontSize: '0.88rem' }}
+        >
+          Output name (optional)
+        </label>
+        <input
+          id="co-output-label"
+          type="text"
+          value={outputLabel}
+          onChange={(e) => setOutputLabel(e.target.value)}
+          placeholder="e.g. jack-white-bridge-v2"
+          disabled={loading}
+          data-testid="co-output-label"
+          style={{
+            width: '100%',
+            padding: '0.45rem 0.6rem',
+            borderRadius: 6,
+            border: '1px solid var(--border)',
+            background: 'var(--bg-input, var(--bg))',
+            color: 'var(--text)',
+          }}
+        />
+        <p style={{ margin: '0.35rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+          Sets the saved filename to <code style={{ fontSize: '0.76rem' }}>&lt;name&gt;_&lt;seed&gt;.musicxml</code>.
+          Leave blank for the default auto-name.
         </p>
       </div>
 

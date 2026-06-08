@@ -43,6 +43,8 @@ function isDesktopIpc(): boolean {
   );
 }
 
+export { isDesktopIpc };
+
 async function ipcInvoke<T>(channel: string, payload?: unknown): Promise<T> {
   const bridge = window.composerOsDesktop;
   if (!bridge?.invokeApi) {

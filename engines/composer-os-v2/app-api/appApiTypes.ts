@@ -291,6 +291,8 @@ export interface GenerateRequest {
   locks?: AppLocks;
   /** Omitted → preset default title (e.g. Guitar-Bass Duo Study). */
   title?: string;
+  /** Optional disk filename stem (without seed suffix); e.g. `jack-white-bridge-v2` → `jack-white-bridge-v2_<seed>.musicxml`. */
+  outputLabel?: string;
   /**
    * Guitar–Bass Duo: built-in cycle vs user progression.
    * When `custom`, `chordProgressionText` is required (may be empty string from client → error).

@@ -9,9 +9,11 @@ import {
   getOutputDirectoryForPreset,
   ensureOutputDirectoryForPreset,
   PRESET_OUTPUT_SUBFOLDER,
+  buildLabeledMusicXmlFilename,
   manifestPathForMusicXml,
   normalizeLibraryFolderOpenTarget,
   resolveComposerLibraryRoot,
+  sanitizeOutputLabel,
 } from '../app-api/composerOsOutputPaths';
 import { runRiffGeneratorApp } from '../app-api/riffGeneratorApp';
 import type { GenerateRequest } from '../app-api/appApiTypes';
@@ -84,6 +86,17 @@ export function runComposerOsOutputPathsTests(): TestResult[] {
     const opened = normalizeLibraryFolderOpenTarget(mf);
     if (path.resolve(opened) !== path.resolve(gbd)) fail('normalizeLibraryFolderOpenTarget strips _meta');
     else pass('normalizeLibraryFolderOpenTarget strips _meta');
+
+    if (sanitizeOutputLabel('  Jack White!!  ') !== 'jack-white') fail('sanitizeOutputLabel');
+    else pass('sanitizeOutputLabel');
+
+    const labeled = buildLabeledMusicXmlFilename('jack-white-bridge-v2', 42, 'composer_os_x.musicxml');
+    if (labeled !== 'jack-white-bridge-v2_42.musicxml') fail('buildLabeledMusicXmlFilename with label');
+    else pass('buildLabeledMusicXmlFilename with label');
+
+    const fallback = buildLabeledMusicXmlFilename('', 42, 'composer_os_x.musicxml');
+    if (fallback !== 'composer_os_x.musicxml') fail('buildLabeledMusicXmlFilename fallback');
+    else pass('buildLabeledMusicXmlFilename fallback');
 
     const riffDirResolved = ensureOutputDirectoryForPreset('riff_generator');
     const riffReq: GenerateRequest = {

@@ -109,6 +109,37 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
     return { path: result.filePaths[0] };
   });
 
+  ipcMain.handle('composer-os-api:pick-mosaic-import-file', async (_event, body: unknown) => {
+    const { dialog } = await import('electron');
+    const defaultPathRaw =
+      body && typeof body === 'object' && typeof (body as { defaultPath?: unknown }).defaultPath === 'string'
+        ? (body as { defaultPath: string }).defaultPath.trim()
+        : '';
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      defaultPath: defaultPathRaw || outputDir,
+      filters: [
+        { name: 'Music files', extensions: ['mid', 'midi', 'musicxml', 'mxl', 'xml'] },
+      ],
+    });
+    if (result.canceled || !result.filePaths?.[0]) {
+      return { ok: false, canceled: true as const };
+    }
+    return { ok: true as const, filepath: result.filePaths[0] };
+  });
+
+  ipcMain.handle('composer-os-api:read-file-binary', async (_event, body: unknown) => {
+    const pathRaw =
+      body && typeof body === 'object' && typeof (body as { path?: unknown }).path === 'string'
+        ? (body as { path: string }).path.trim()
+        : '';
+    if (!pathRaw) {
+      throw new Error('composer-os-api:read-file-binary: missing path');
+    }
+    const buf = await readFile(pathRaw);
+    return { base64: buf.toString('base64'), fileName: path.basename(pathRaw) };
+  });
+
   ipcMain.handle('composer-os-api:pick-session-save-path', async () => {
     const { dialog } = await import('electron');
     const result = await dialog.showSaveDialog({

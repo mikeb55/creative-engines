@@ -646,6 +646,10 @@ export function apiGenerate(
       seed: typeof body.seed === 'number' ? body.seed : Math.floor(Math.random() * 1e9),
       locks: body.locks,
       title: typeof body.title === 'string' ? body.title : undefined,
+      outputLabel:
+        typeof body.outputLabel === 'string' && body.outputLabel.trim() !== ''
+          ? body.outputLabel.trim()
+          : undefined,
       harmonyMode:
         body.harmonyMode === 'custom' ||
         body.harmonyMode === 'builtin' ||
