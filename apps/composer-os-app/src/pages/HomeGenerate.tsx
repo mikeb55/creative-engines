@@ -44,6 +44,7 @@ import { GenerateProducerLaneChooser } from '../components/GenerateProducerLaneC
 import { GenerateSharedContextStrip } from '../components/GenerateSharedContextStrip';
 import {
   buildMosaicImportGeneratePartial,
+  mosaicStyleTransferConfigToPartialConfig,
   mosaicVariationConfigToPartialConfig,
   resolveMosaicImportPartial,
   useMosaicImportWorkflow,
@@ -61,6 +62,11 @@ const MosaicImportPanel = lazy(() =>
 );
 const MosaicVariationResults = lazy(() =>
   import('../components/mosaic-import/MosaicVariationResults').then((m) => ({ default: m.MosaicVariationResults })),
+);
+const MosaicStyleTransferResults = lazy(() =>
+  import('../components/mosaic-import/MosaicStyleTransferResults').then((m) => ({
+    default: m.MosaicStyleTransferResults,
+  })),
 );
 import { ComposerLauncher } from '../components/ComposerLauncher';
 import { FORM_OPTIONS } from '../constants/formOptions';
@@ -4628,8 +4634,13 @@ export function HomeGenerate({
           mode: importModeForRequest,
           config: {
             ...mosaicVariationConfigToPartialConfig(wf.state.variationConfig),
-            targetComposer: songwriterStyle,
+            ...mosaicStyleTransferConfigToPartialConfig(wf.state.styleTransferConfig),
             ...(variationIndexForRequest != null ? { variationIndex: variationIndexForRequest } : {}),
+            ...(importModeForRequest === 'styleTransfer' &&
+            !wf.state.styleTransferConfig.targetComposer.trim() &&
+            songwriterStyle.trim()
+              ? { targetComposer: songwriterStyle.trim() }
+              : {}),
           },
         });
         const mosaicResolved = resolveMosaicImportPartial(mosaicBuilt.partial);
@@ -5708,6 +5719,8 @@ export function HomeGenerate({
           workflow={mosaicImportWorkflow}
           generateBusy={loading}
           onImportModeGenerate={handleMosaicImportModeGenerate}
+          defaultTargetComposer={songwriterStyle}
+          composerOptions={SONGWRITER_OPTIONS}
         />
       </Suspense>
 
@@ -11958,6 +11971,14 @@ export function HomeGenerate({
                     selectedVariationIndex={mosaicImportWorkflow.state.variationIndex}
                     generateBusy={loading}
                     onUseVariation={handleMosaicVariationUse}
+                  />
+                </Suspense>
+              ) : null}
+              {result.styleTransferEcho ? (
+                <Suspense fallback={null}>
+                  <MosaicStyleTransferResults
+                    styleTransferEcho={result.styleTransferEcho}
+                    composerLabel={primarySongwriterDisplayLabel(result.styleTransferEcho.composerApplied)}
                   />
                 </Suspense>
               ) : null}

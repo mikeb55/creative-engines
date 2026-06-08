@@ -19,6 +19,9 @@ import {
 const MosaicVariationConfig = lazy(() =>
   import('./MosaicVariationConfig').then((m) => ({ default: m.MosaicVariationConfig })),
 );
+const MosaicStyleTransferConfig = lazy(() =>
+  import('./MosaicStyleTransferConfig').then((m) => ({ default: m.MosaicStyleTransferConfig })),
+);
 
 const ACCEPT =
   '.mid,.midi,.musicxml,.mxl,.xml,application/vnd.recordare.musicxml+xml,application/vnd.recordare.musicxml,audio/midi,audio/x-midi';
@@ -127,6 +130,9 @@ export interface MosaicImportPanelProps {
   defaultOpen?: boolean;
   generateBusy?: boolean;
   onImportModeGenerate?: (mode: MosaicImportMode) => void;
+  /** Primary songwriter id — default style-transfer target. */
+  defaultTargetComposer?: string;
+  composerOptions?: readonly { id: string; label: string }[];
 }
 
 export function MosaicImportPanel({
@@ -134,6 +140,8 @@ export function MosaicImportPanel({
   defaultOpen = false,
   generateBusy = false,
   onImportModeGenerate,
+  defaultTargetComposer,
+  composerOptions = [],
 }: MosaicImportPanelProps) {
   const { state, actions } = workflow;
   const inputRef = useRef<HTMLInputElement>(null);
@@ -331,6 +339,16 @@ export function MosaicImportPanel({
           {state.importMode === 'variations' ? (
             <Suspense fallback={null}>
               <MosaicVariationConfig workflow={workflow} />
+            </Suspense>
+          ) : null}
+
+          {state.importMode === 'styleTransfer' ? (
+            <Suspense fallback={null}>
+              <MosaicStyleTransferConfig
+                workflow={workflow}
+                composerOptions={composerOptions}
+                defaultTargetComposer={defaultTargetComposer}
+              />
             </Suspense>
           ) : null}
         </div>

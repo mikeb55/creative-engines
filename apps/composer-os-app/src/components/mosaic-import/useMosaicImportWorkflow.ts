@@ -24,6 +24,20 @@ export const DEFAULT_MOSAIC_VARIATION_CONFIG: MosaicVariationConfigState = {
   preserveHarmony: false,
 };
 
+export type MosaicStyleTransferConfigState = {
+  targetComposer: string;
+  strength: number;
+  preserveMelody: boolean;
+  reorchestrate: boolean;
+};
+
+export const DEFAULT_MOSAIC_STYLE_TRANSFER_CONFIG: MosaicStyleTransferConfigState = {
+  targetComposer: '',
+  strength: 0.5,
+  preserveMelody: true,
+  reorchestrate: false,
+};
+
 export interface MosaicImportWorkflowState {
   importTimeline: MosaicImportTimeline | null;
   importMode: MosaicImportMode | null;
@@ -34,6 +48,7 @@ export interface MosaicImportWorkflowState {
   /** MIDI header BPM when available; MusicXML ingest has no tempo on IR. */
   tempoBpm: number | null;
   variationConfig: MosaicVariationConfigState;
+  styleTransferConfig: MosaicStyleTransferConfigState;
   /** User-picked variation index for re-generate; null = engine auto-select. */
   variationIndex: number | null;
 }
@@ -47,6 +62,7 @@ const INITIAL_STATE: MosaicImportWorkflowState = {
   sourceFormat: null,
   tempoBpm: null,
   variationConfig: DEFAULT_MOSAIC_VARIATION_CONFIG,
+  styleTransferConfig: DEFAULT_MOSAIC_STYLE_TRANSFER_CONFIG,
   variationIndex: null,
 };
 
@@ -77,6 +93,8 @@ export type MosaicImportPartialConfig = {
   preserveImportHarmony?: boolean;
   styleTransferStrength?: number;
   targetComposer?: string;
+  preserveMelody?: boolean;
+  reorchestrate?: boolean;
   variationIndex?: number | null;
 };
 
@@ -92,6 +110,20 @@ export function mosaicVariationConfigToPartialConfig(
     variationCount: config.count,
     variationMode: config.mode,
     preserveImportHarmony: config.preserveHarmony,
+  };
+}
+
+export function mosaicStyleTransferConfigToPartialConfig(
+  config: MosaicStyleTransferConfigState,
+): Pick<
+  MosaicImportPartialConfig,
+  'targetComposer' | 'styleTransferStrength' | 'preserveMelody' | 'reorchestrate'
+> {
+  return {
+    targetComposer: config.targetComposer.trim() || undefined,
+    styleTransferStrength: config.strength,
+    preserveMelody: config.preserveMelody,
+    reorchestrate: config.reorchestrate,
   };
 }
 
@@ -127,8 +159,9 @@ export function buildMosaicImportGeneratePartial(input: {
       ...base,
       styleTransfer: true,
       targetComposer: config.targetComposer,
-      styleTransferStrength: config.styleTransferStrength ?? 0.5,
-      preserveMelody: true,
+      styleTransferStrength: config.styleTransferStrength ?? DEFAULT_MOSAIC_STYLE_TRANSFER_CONFIG.strength,
+      preserveMelody: config.preserveMelody ?? DEFAULT_MOSAIC_STYLE_TRANSFER_CONFIG.preserveMelody,
+      reorchestrate: config.reorchestrate ?? DEFAULT_MOSAIC_STYLE_TRANSFER_CONFIG.reorchestrate,
     },
     mutexWarning: null,
   };
@@ -193,6 +226,7 @@ export function useMosaicImportWorkflow() {
         sourceFormat: timeline.sourceFormat,
         tempoBpm,
         variationConfig: DEFAULT_MOSAIC_VARIATION_CONFIG,
+        styleTransferConfig: DEFAULT_MOSAIC_STYLE_TRANSFER_CONFIG,
         variationIndex: null,
       });
     } catch (err) {
@@ -206,6 +240,7 @@ export function useMosaicImportWorkflow() {
         sourceFormat: detectMosaicImportFormat(file.name),
         tempoBpm: null,
         variationConfig: DEFAULT_MOSAIC_VARIATION_CONFIG,
+        styleTransferConfig: DEFAULT_MOSAIC_STYLE_TRANSFER_CONFIG,
         variationIndex: null,
       });
     }
@@ -230,6 +265,13 @@ export function useMosaicImportWorkflow() {
     setState((prev) => ({ ...prev, variationIndex }));
   }, []);
 
+  const setStyleTransferConfig = useCallback((patch: Partial<MosaicStyleTransferConfigState>) => {
+    setState((prev) => ({
+      ...prev,
+      styleTransferConfig: { ...prev.styleTransferConfig, ...patch },
+    }));
+  }, []);
+
   const toGenerateRequestPartial = useCallback(
     (overrides?: MosaicImportPartialConfig): Partial<GenerateRequest> => {
       const built = buildMosaicImportGeneratePartial({
@@ -237,13 +279,20 @@ export function useMosaicImportWorkflow() {
         mode: state.importMode,
         config: {
           ...mosaicVariationConfigToPartialConfig(state.variationConfig),
+          ...mosaicStyleTransferConfigToPartialConfig(state.styleTransferConfig),
           variationIndex: state.variationIndex,
           ...overrides,
         },
       });
       return resolveMosaicImportPartial(built.partial).partial;
     },
-    [state.importMode, state.importTimeline, state.variationConfig, state.variationIndex],
+    [
+      state.importMode,
+      state.importTimeline,
+      state.styleTransferConfig,
+      state.variationConfig,
+      state.variationIndex,
+    ],
   );
 
   const actions = useMemo(
@@ -252,9 +301,10 @@ export function useMosaicImportWorkflow() {
       clearImport,
       setMode,
       setVariationConfig,
+      setStyleTransferConfig,
       setVariationIndex,
     }),
-    [clearImport, loadFile, setMode, setVariationConfig, setVariationIndex],
+    [clearImport, loadFile, setMode, setStyleTransferConfig, setVariationConfig, setVariationIndex],
   );
 
   return { state, actions, toGenerateRequestPartial };

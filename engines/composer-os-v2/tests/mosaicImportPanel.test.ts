@@ -8,7 +8,9 @@ import type { MosaicImportTimeline } from '@composer-os/core/import/mosaicImport
 import {
   buildMosaicImportGeneratePartial,
   confidenceStripColor,
+  DEFAULT_MOSAIC_STYLE_TRANSFER_CONFIG,
   DEFAULT_MOSAIC_VARIATION_CONFIG,
+  mosaicStyleTransferConfigToPartialConfig,
   mosaicVariationConfigToPartialConfig,
   parseMosaicImportFile,
   resolveMosaicImportPartial,
@@ -107,6 +109,7 @@ describe('mosaicImportPanel workflow', () => {
       sourceFormat: null,
       tempoBpm: null,
       variationConfig: DEFAULT_MOSAIC_VARIATION_CONFIG,
+      styleTransferConfig: DEFAULT_MOSAIC_STYLE_TRANSFER_CONFIG,
       variationIndex: null,
     };
     expect(withMosaicImportMode(base, 'lock').importMode).toBe('lock');
@@ -173,7 +176,26 @@ describe('buildMosaicImportGeneratePartial', () => {
     expect(partial.targetComposer).toBe('bill_evans');
     expect(partial.styleTransferStrength).toBe(0.5);
     expect(partial.preserveMelody).toBe(true);
+    expect(partial.reorchestrate).toBe(false);
     expect(partial.generateVariations).toBeUndefined();
+  });
+
+  test('C2) mode styleTransfer reads config overrides', () => {
+    const mapped = mosaicStyleTransferConfigToPartialConfig({
+      targetComposer: 'frank_zappa',
+      strength: 0.75,
+      preserveMelody: false,
+      reorchestrate: true,
+    });
+    const { partial } = buildMosaicImportGeneratePartial({
+      timeline: mockTimeline(),
+      mode: 'styleTransfer',
+      config: mapped,
+    });
+    expect(partial.targetComposer).toBe('frank_zappa');
+    expect(partial.styleTransferStrength).toBe(0.75);
+    expect(partial.preserveMelody).toBe(false);
+    expect(partial.reorchestrate).toBe(true);
   });
 
   test('D) no import returns empty partial', () => {
@@ -206,6 +228,14 @@ describe('HomeGenerate mosaic import wiring', () => {
   const configPath = path.join(
     __dirname,
     '../../../apps/composer-os-app/src/components/mosaic-import/MosaicVariationConfig.tsx',
+  );
+  const styleTransferConfigPath = path.join(
+    __dirname,
+    '../../../apps/composer-os-app/src/components/mosaic-import/MosaicStyleTransferConfig.tsx',
+  );
+  const styleTransferResultsPath = path.join(
+    __dirname,
+    '../../../apps/composer-os-app/src/components/mosaic-import/MosaicStyleTransferResults.tsx',
   );
 
   test('lazy MosaicImportPanel mount and workflow hook', () => {
@@ -272,5 +302,64 @@ describe('HomeGenerate mosaic import wiring', () => {
     expect(configSrc).toContain('mosaic-variation-count');
     expect(configSrc).toContain('mosaic-variation-mode-select');
     expect(configSrc).toContain('mosaic-variation-preserve-harmony');
+  });
+
+  test('A2) style-transfer config mounts only in styleTransfer mode', () => {
+    const panelSrc = fs.readFileSync(panelPath, 'utf-8');
+    expect(panelSrc).toContain("importMode === 'styleTransfer'");
+    expect(panelSrc).toContain('MosaicStyleTransferConfig');
+    expect(panelSrc).toContain('lazy(');
+    expect(panelSrc).not.toMatch(/importMode === 'styleTransfer'[\s\S]*MosaicVariationConfig/);
+  });
+
+  test('B2) style-transfer config values map into generate partial helper', () => {
+    const mapped = mosaicStyleTransferConfigToPartialConfig({
+      targetComposer: 'debussy',
+      strength: 0.35,
+      preserveMelody: false,
+      reorchestrate: true,
+    });
+    const { partial } = buildMosaicImportGeneratePartial({
+      timeline: mockTimeline(),
+      mode: 'styleTransfer',
+      config: mapped,
+    });
+    expect(partial.targetComposer).toBe('debussy');
+    expect(partial.styleTransferStrength).toBe(0.35);
+    expect(partial.preserveMelody).toBe(false);
+    expect(partial.reorchestrate).toBe(true);
+  });
+
+  test('C2) preserveMelody unchecked shows warning in config component', () => {
+    const configSrc = fs.readFileSync(styleTransferConfigPath, 'utf-8');
+    expect(configSrc).toContain('mosaic-style-transfer-preserve-melody');
+    expect(configSrc).toContain('mosaic-style-transfer-melody-warning');
+    expect(configSrc).toContain('Melody may be altered');
+  });
+
+  test('D2) style-transfer results panel renders styleTransferEcho fields', () => {
+    const resultsSrc = fs.readFileSync(styleTransferResultsPath, 'utf-8');
+    expect(resultsSrc).toContain('composerApplied');
+    expect(resultsSrc).toContain('strengthApplied');
+    expect(resultsSrc).toContain('harmonyDeltaBars');
+    expect(resultsSrc).toContain('melodyRetained');
+    expect(resultsSrc).toContain('evalScore');
+    const homeSrc = fs.readFileSync(homePath, 'utf-8');
+    expect(homeSrc).toContain('MosaicStyleTransferResults');
+    expect(homeSrc).toContain('result.styleTransferEcho');
+  });
+
+  test('E2) melodyRetained=false uses amber indicator in results', () => {
+    const resultsSrc = fs.readFileSync(styleTransferResultsPath, 'utf-8');
+    expect(resultsSrc).toContain('mosaic-style-transfer-melody-indicator');
+    expect(resultsSrc).toContain('melodyNoStyle');
+    expect(resultsSrc).toMatch(/melodyRetained\s*\?\s*melodyYesStyle\s*:\s*melodyNoStyle/);
+  });
+
+  test('style-transfer config exposes composer/strength/toggle controls', () => {
+    const configSrc = fs.readFileSync(styleTransferConfigPath, 'utf-8');
+    expect(configSrc).toContain('mosaic-style-transfer-composer-select');
+    expect(configSrc).toContain('mosaic-style-transfer-strength-slider');
+    expect(configSrc).toContain('mosaic-style-transfer-reorchestrate');
   });
 });
