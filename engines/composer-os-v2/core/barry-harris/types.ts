@@ -158,6 +158,14 @@ export type BarryHarrisChordMelodySummary = {
   identityAnnotationCount?: number;
   /** V82f — per-note bh:cm:* observability receipts from chord-melody pipeline. */
   cmReceipts?: string[];
+  /** V80L — mean inner-voice step (semitones) across voiced events. */
+  avgVoiceLeadingStep?: number;
+  /** V80L — share of events with guitar-feasible voicings (0–1). */
+  guitarFeasiblePct?: number;
+  /** V80L — widest fret span among guitar-feasible stacks. */
+  maxGuitarFretSpan?: number;
+  /** V80L — formatted scale-of-chords pair lines per section label. */
+  scaleOfChordsBySection?: Record<string, string>;
 };
 
 export type MelodyNoteForChordMelody = {

@@ -139,6 +139,9 @@ describe('generateResultEcho', () => {
     expect(r.styleTransferEcho?.composerApplied).toBe('barry_harris');
     expect(r.styleTransferEcho?.chordMelody?.noteCount).toBe(ir.melodyLine.length);
     expect(typeof r.styleTransferEcho?.chordMelody?.borrowedDensity).toBe('number');
+    expect(typeof r.styleTransferEcho?.chordMelody?.avgVoiceLeadingStep).toBe('number');
+    expect(typeof r.styleTransferEcho?.chordMelody?.guitarFeasiblePct).toBe('number');
+    expect(r.styleTransferEcho?.chordMelody?.scaleOfChordsBySection?.import).toMatch(/6.*dim7/i);
     expect(r.runManifest?.v80Echo?.styleTransfer?.chordMelodyBorrowedDensity).toBeDefined();
   });
 

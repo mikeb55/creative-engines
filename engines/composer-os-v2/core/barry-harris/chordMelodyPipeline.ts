@@ -12,7 +12,7 @@ import { assignPhrasingRoles } from './phrasingRoles';
 import { applyVoicingEngineToResolved, harmonizePhrase } from './voicingEngine';
 import { precomputeBarryHarrisChordMelodyFoundation } from './precomputeFoundation';
 import { selectChordMelodyNoteChoice } from './selector';
-import { pitchClassToSharpName, sixthDimPair } from './scaleOfChords';
+import { formatScaleOfChordsPairsLine, pitchClassToSharpName, sixthDimPair } from './scaleOfChords';
 import type {
   BarryHarrisChordMelodyFoundation,
   BarryHarrisChordMelodySummary,
@@ -159,10 +159,63 @@ export function buildBarryHarrisChordMelodyReceipts(
   return receipts;
 }
 
+function avgVoiceLeadingStepSemitones(resolved: readonly ResolvedChordMelodyNote[]): number {
+  const ordered = [...resolved]
+    .filter((r) => r.phrasingRole !== 'single')
+    .sort((a, b) => a.bar - b.bar || a.onsetBeat - b.onsetBeat);
+  let total = 0;
+  let count = 0;
+  for (let i = 1; i < ordered.length; i++) {
+    const cost = ordered[i]!.voiceLeadingCost;
+    if (cost != null) {
+      total += cost;
+      count++;
+      continue;
+    }
+    const prevInner = [...(ordered[i - 1]!.innerVoicingMidis ?? [])].sort((a, b) => a - b);
+    const currInner = [...(ordered[i]!.innerVoicingMidis ?? [])].sort((a, b) => a - b);
+    if (prevInner.length === 0 || currInner.length === 0) continue;
+    const used = new Set<number>();
+    for (const a of prevInner) {
+      let bestIdx = -1;
+      let bestDist = Infinity;
+      for (let j = 0; j < currInner.length; j++) {
+        if (used.has(j)) continue;
+        const dist = Math.abs(currInner[j]! - a);
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestIdx = j;
+        }
+      }
+      if (bestIdx < 0) continue;
+      used.add(bestIdx);
+      total += bestDist;
+      count++;
+    }
+  }
+  return count > 0 ? total / count : 0;
+}
+
+function guitarVoicingStats(resolved: readonly ResolvedChordMelodyNote[]): {
+  guitarFeasiblePct: number;
+  maxGuitarFretSpan: number;
+} {
+  const withGuitar = resolved.filter((r) => r.guitarFeasible != null);
+  const feasible = withGuitar.filter((r) => r.guitarFeasible === true);
+  const spans = feasible
+    .map((r) => r.guitarFretSpan)
+    .filter((span): span is number => typeof span === 'number' && span >= 0);
+  return {
+    guitarFeasiblePct: withGuitar.length > 0 ? feasible.length / withGuitar.length : 1,
+    maxGuitarFretSpan: spans.length > 0 ? Math.max(...spans) : 0,
+  };
+}
+
 export function summarizeBarryHarrisNoteChoices(
   noteChoices: readonly ChordMelodyNoteChoice[],
   resolvedNotes?: readonly ResolvedChordMelodyNote[],
-  cmReceipts?: readonly string[]
+  cmReceipts?: readonly string[],
+  foundation?: BarryHarrisChordMelodyFoundation
 ): BarryHarrisChordMelodySummary {
   const noteCount = noteChoices.length;
   let sixthCount = 0;
@@ -175,6 +228,15 @@ export function summarizeBarryHarrisNoteChoices(
   }
   const resolved = resolvedNotes ?? applyIdentitiesToNoteChoices(noteChoices);
   const identityAnnotationCount = resolved.reduce((n, r) => n + r.identityAnnotations.length, 0);
+  const guitar = guitarVoicingStats(resolved);
+  const scaleOfChordsBySection = foundation
+    ? Object.fromEntries(
+        Object.entries(foundation.scalesBySection).map(([sectionLabel, scale]) => [
+          sectionLabel,
+          formatScaleOfChordsPairsLine(scale),
+        ])
+      )
+    : undefined;
   return {
     noteCount,
     sixthCount,
@@ -182,6 +244,12 @@ export function summarizeBarryHarrisNoteChoices(
     borrowedCount,
     borrowedDensity: noteCount > 0 ? borrowedCount / noteCount : 0,
     identityAnnotationCount,
+    avgVoiceLeadingStep: avgVoiceLeadingStepSemitones(resolved),
+    guitarFeasiblePct: guitar.guitarFeasiblePct,
+    maxGuitarFretSpan: guitar.maxGuitarFretSpan,
+    ...(scaleOfChordsBySection && Object.keys(scaleOfChordsBySection).length
+      ? { scaleOfChordsBySection }
+      : {}),
     ...(cmReceipts?.length ? { cmReceipts: [...cmReceipts] } : {}),
   };
 }
@@ -204,7 +272,7 @@ export function runBarryHarrisChordMelodyPipeline(
   const resolvedNotes = harmonizePhrase(withPhrasing, melody);
   const cmReceipts = buildBarryHarrisChordMelodyReceipts(foundation, noteChoices, resolvedNotes);
   const harmonyBars = harmonyBarsFromResolvedNotes(foundation, resolvedNotes, totalBars, fallbackBars);
-  const summary = summarizeBarryHarrisNoteChoices(noteChoices, resolvedNotes, cmReceipts);
+  const summary = summarizeBarryHarrisNoteChoices(noteChoices, resolvedNotes, cmReceipts, foundation);
   return { noteChoices, resolvedNotes, harmonyBars, summary, cmReceipts };
 }
 

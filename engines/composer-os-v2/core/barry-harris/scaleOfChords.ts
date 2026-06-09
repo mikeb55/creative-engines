@@ -87,3 +87,13 @@ export function sixthDimPartnerSymbol(sixthRootPc: number, sixthQuality: '6' | '
     dim7Symbol: `${dimName}dim7`,
   };
 }
+
+/** Musician-facing scale-of-chords strip: `C6 ↔ Bdim7 | F6 ↔ Edim7 | …`. */
+export function formatScaleOfChordsPairsLine(scale: ScaleOfChords): string {
+  return scale.pairs
+    .map((pair) => {
+      const { sixthSymbol, dim7Symbol } = sixthDimPartnerSymbol(pair.sixthRootPc, pair.sixthQuality);
+      return `${sixthSymbol} ↔ ${dim7Symbol}`;
+    })
+    .join(' | ');
+}

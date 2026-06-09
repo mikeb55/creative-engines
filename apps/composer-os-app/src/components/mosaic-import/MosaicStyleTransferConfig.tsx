@@ -36,6 +36,26 @@ function strengthLabel(strength: number): string {
   return strength < 0.5 ? 'Preserve harmony' : 'Full reharmonisation';
 }
 
+const bhModeStyle: CSSProperties = {
+  margin: '0.55rem 0 0',
+  padding: '0.55rem 0.65rem',
+  borderRadius: 6,
+  border: '1px solid var(--border)',
+  background: 'rgba(91, 141, 239, 0.08)',
+};
+
+const bhModeTitleStyle: CSSProperties = {
+  margin: 0,
+  fontSize: '0.82rem',
+  fontWeight: 600,
+  color: 'var(--text)',
+};
+
+const bhModeDescStyle: CSSProperties = {
+  ...helperStyle,
+  margin: '0.25rem 0 0',
+};
+
 export interface MosaicStyleTransferConfigProps {
   workflow: MosaicImportWorkflow;
   composerOptions: readonly ComposerOption[];
@@ -66,6 +86,7 @@ export function MosaicStyleTransferConfig({
   }, [composerFilter, composerOptions]);
 
   const selectedInList = composerOptions.some((o) => o.id === cfg.targetComposer);
+  const isBarryHarrisChordMelody = cfg.targetComposer === 'barry_harris';
 
   return (
     <div
@@ -112,6 +133,19 @@ export function MosaicStyleTransferConfig({
           ))}
         </select>
       </div>
+
+      {isBarryHarrisChordMelody ? (
+        <div
+          data-testid="mosaic-bh-chord-melody-mode"
+          style={bhModeStyle}
+          role="status"
+        >
+          <p style={bhModeTitleStyle}>Barry Harris Chord-Melody</p>
+          <p style={bhModeDescStyle}>
+            Harmonise your melody using the 6th-diminished scale of chords.
+          </p>
+        </div>
+      ) : null}
 
       <div style={{ ...rowStyle, flexDirection: 'column', alignItems: 'stretch' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem 0.75rem' }}>

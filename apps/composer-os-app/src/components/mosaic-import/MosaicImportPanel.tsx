@@ -383,7 +383,7 @@ export function MosaicImportPanel({
           <HarmonyConfidenceStrip bars={ir.harmonyByBar} />
 
           <p style={{ margin: '0.65rem 0 0', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-            Melody: {ir.melodyLine.length} notes 뿯½ range {melodyRangeSummary(ir.melodyLine)}
+            Melody: {ir.melodyLine.length} notes — range {melodyRangeSummary(ir.melodyLine)}
           </p>
 
           <div
@@ -422,6 +422,15 @@ export function MosaicImportPanel({
                 composerOptions={composerOptions}
                 defaultTargetComposer={defaultTargetComposer}
               />
+              {state.styleTransferConfig.targetComposer === 'barry_harris' ? (
+                <p
+                  style={{ margin: '0.55rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}
+                  data-testid="mosaic-bh-input-guidance"
+                >
+                  Import a MIDI/MusicXML melody, or type chord symbols below. Barry Harris works
+                  best with jazz standards and chromatic melodies.
+                </p>
+              ) : null}
             </Suspense>
           ) : null}
         </div>

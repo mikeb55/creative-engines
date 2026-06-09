@@ -1217,6 +1217,14 @@ export interface StyleTransferEcho {
     dim7Count: number;
     borrowedCount: number;
     borrowedDensity: number;
+    /** V80L — mean inner-voice step in semitones. */
+    avgVoiceLeadingStep?: number;
+    /** V80L — share of guitar-feasible voicings (0–1). */
+    guitarFeasiblePct?: number;
+    /** V80L — widest fret span among feasible stacks. */
+    maxGuitarFretSpan?: number;
+    /** V80L — `C6 ↔ Bdim7 | …` lines keyed by section label. */
+    scaleOfChordsBySection?: Record<string, string>;
   };
 }
 

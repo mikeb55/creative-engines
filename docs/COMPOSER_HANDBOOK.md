@@ -318,6 +318,29 @@ Canonical Song Mode / Big Band composers in **`engines/composer-os-v2`**. **Slic
 | Carla Bley | `carla_bley` | `cbl:*` | fully implemented | Formal irony ECM: legible topics reframed by deadpan presentation and strategic displacement | `formalIronyIndex`, `deadpanPresentation`, `tonicLegibility`, `cadenceDeflection`, `motifContamination`, `climaxDeflation`, `repriseDefamiliarization` |
 | Bill Holman | `bill_holman` | `bh:*` | fully implemented | Chart-first linear counterpoint: lines generate harmony, sax soli, spread shout choruses | `lineIndependence`, `voiceLeadingSmoothness`, `saxSoliDensity`, `shoutChorusSpread`, `approachNoteWeight`, `countermelodyActivity` |
 
+---
+
+## Barry Harris Chord-Melody
+
+**What it does:** Reinterprets your chart harmony as Barry Harris **6th** and **diminished 7th** chords, builds an **8-rung scale-of-chords ladder** per section, then harmonises **each melody note** with voice-led block voicings (melody on top). Passing chromatic tones can borrow from the partner dim7 chord in the ladder.
+
+**How to use it (Generate tab):**
+
+1. Expand **Import (MIDI / MusicXML)** and load a melody + harmony (or paste chord symbols in the progression field).
+2. Choose **Style-Transfer** mode.
+3. Set **Target composer** to **Barry Harris** — the **Barry Harris Chord-Melody** banner appears.
+4. Adjust **Strength** (1.0 = full BH reharm; lower blends with imported harmony).
+5. Keep **Preserve melody** checked unless you want the tune rewritten.
+6. **Generate** — results show rung mix, voice-leading step, guitar feasibility, and the section **scale of chords** (e.g. `C6 ↔ Bdim7 | F6 ↔ Edim7 | …`).
+
+**Scale-of-chords pairs:** Each **6th chord** (major 6 or minor 6) pairs with a **diminished 7th** a half-step below its root — the Barry Harris “sixth-diminished” family. The engine walks this ladder to voice-lead under your melody.
+
+**Receipts:** Per-note **`bh:cm:*`** lines on the generate receipt — `select` (sixth/dim7 choice), `borrowed` (chromatic partner tone), `reinterpret` / `identity` (chart-friendly spellings). Use them to audit note-by-note decisions.
+
+**Known limitations:** Mostly diatonic stepwise melodies skew toward **6th** voicings with fewer **dim7** passing chords. Stronger chromatic/jazz-standard lines activate more borrowed and dim7 rungs. Planned **V81:** explicit passing-dim insertion on weak beats for plainer melodies.
+
+**Quick guide:** **`docs/BH_QUICK_GUIDE.md`**
+
 ### Partial / referenced only
 
 | Composer | Id | Status | Notes |

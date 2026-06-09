@@ -1,5 +1,20 @@
 ## [Unreleased]
 
+## [2.8.0] - 2026-06-09
+
+### Added
+
+- **Barry Harris Chord-Melody Engine (UI + ship)** — Dedicated **Barry Harris Chord-Melody** mode in Mosaic style-transfer when **Barry Harris** is the target composer: scale-of-chords display, rung breakdown (sixth / dim7 / borrowed %), average voice-leading step, and guitar feasibility in generate results. Import guidance for MIDI/MusicXML + chord symbols. **`docs/BH_QUICK_GUIDE.md`** (musician quick start). Handbook section on chord-melody workflow and **`bh:cm:*`** receipts.
+
+- **Barry Harris Chord-Melody Engine**
+  - 8-rung ladder architecture: pre-voice-led 6th↔dim7 scale of chords
+  - Import MIDI/MusicXML or type chords → BH reharmonisation
+  - Style-transfer: "Barry-ify my melody" with strength blend 0–1
+  - Guitar voicings: close-position + drop-2, fret-span constraint
+  - Phrasing roles: full/dyad/single per beat strength
+  - Per-note **`bh:cm:*`** receipts for diagnostics
+  - Eval harness + 3 benchmark tests (ladder fidelity, jazz melody, Hookpad)
+
 ## [2.7.0] - 2026-06-09
 
 ### Added

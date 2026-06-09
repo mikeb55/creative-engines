@@ -362,4 +362,15 @@ describe('HomeGenerate mosaic import wiring', () => {
     expect(configSrc).toContain('mosaic-style-transfer-strength-slider');
     expect(configSrc).toContain('mosaic-style-transfer-reorchestrate');
   });
+
+  test('V80L: barry_harris chord-melody UI surfaces', () => {
+    const configSrc = fs.readFileSync(styleTransferConfigPath, 'utf-8');
+    expect(configSrc).toContain('mosaic-bh-chord-melody-mode');
+    expect(configSrc).toContain('Barry Harris Chord-Melody');
+    const panelSrc = fs.readFileSync(panelPath, 'utf-8');
+    expect(panelSrc).toContain('mosaic-bh-input-guidance');
+    const resultsSrc = fs.readFileSync(styleTransferResultsPath, 'utf-8');
+    expect(resultsSrc).toContain('mosaic-style-transfer-chord-melody-rungs');
+    expect(resultsSrc).toContain('mosaic-style-transfer-scale-of-chords');
+  });
 });

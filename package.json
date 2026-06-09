@@ -1,6 +1,6 @@
 {
   "name": "creative-engines",
-  "version": "1.9.4",
+  "version": "2.8.0",
   "private": true,
   "scripts": {
     "dev": "npm run dev --prefix apps/composer-os-app",
