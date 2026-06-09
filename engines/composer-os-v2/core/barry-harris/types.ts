@@ -75,6 +75,8 @@ export type PhrasingRole = 'full' | 'dyad' | 'single';
 
 export type VoicingVariant = 'sixth-block' | 'borrowed-replacement' | 'dyad' | 'single';
 
+export type ChordMelodyEventKind = 'structural' | 'passing_dim';
+
 export type ResolvedChordMelodyNote = ChordMelodyNoteChoice & {
   exportSymbol: string;
   identityAnnotations: IdentityAnnotation[];
@@ -93,6 +95,42 @@ export type ResolvedChordMelodyNote = ChordMelodyNoteChoice & {
   voicingChordColour?: 'sixth' | 'dim7';
   ladderRungIndex?: number | null;
   ladderHit?: boolean;
+  /** V81b+c — structural vs weak-beat passing dim row. */
+  eventKind?: ChordMelodyEventKind;
+  harmonyOnly?: boolean;
+  syntheticMelodyMidi?: number;
+  /** V81d — per-part MIDI when preset is string_quartet. violin1 null = sustain only (passing_dim). */
+  sqVoiceMidis?: {
+    violin1: number | null;
+    violin1SustainMidi?: number;
+    violin2: number;
+    viola: number;
+    cello: number;
+  };
+  sqFeasibilityWarnings?: string[];
+  /** V81f — per-part MIDI when preset is big_band. alto1 null = sustain only (passing_dim). */
+  bbVoiceMidis?: {
+    alto1: number | null;
+    alto1SustainMidi?: number;
+    alto2: number;
+    tenor1: number;
+    tenor2: number;
+    bari: number;
+  };
+  bbFeasibilityWarnings?: string[];
+  /** V81d — export duration for passing_dim inner voices (beats). */
+  exportDurationBeats?: number;
+  /** V81f — bari sax duration on passing_dim (beats). */
+  exportBariDurationBeats?: number;
+  /** V81e — family-change entry exceeded 7st inner leap (warn receipt). */
+  familyChangeLeapWarn?: boolean;
+};
+
+/** Post-phrasing harmony timeline row (V81b+c). */
+export type ChordMelodyHarmonyEvent = ResolvedChordMelodyNote & {
+  eventKind: ChordMelodyEventKind;
+  harmonyOnly?: boolean;
+  syntheticMelodyMidi?: number;
 };
 
 export type BhFamily = SixthDimPair;
@@ -166,6 +204,11 @@ export type BarryHarrisChordMelodySummary = {
   maxGuitarFretSpan?: number;
   /** V80L — formatted scale-of-chords pair lines per section label. */
   scaleOfChordsBySection?: Record<string, string>;
+  /** V81b+c — weak-beat passing dim events inserted. */
+  passingDimCount?: number;
+  /** V81b+c — passingDimCount / eligible structural sixth count. */
+  passingDimDensity?: number;
+  structuralSixthCount?: number;
 };
 
 export type MelodyNoteForChordMelody = {

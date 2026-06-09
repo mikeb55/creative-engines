@@ -1,5 +1,21 @@
 ## [Unreleased]
 
+## [2.9.0] - 2026-06-09
+
+### Barry Harris Extensions
+
+- Passing diminished insertion (weak-beat approach chords, 25–40% density)
+- Song Mode BH entry (`scoreMelodyToImportMelody` adapter)
+- String Quartet voicing (4-part distribution, inner-voice passing dims)
+- Big Band sax soli (5-voice AATBS, Bari root doubling)
+
+### Engine fixes
+
+- Family-change VL cap reduced 10st → 7st (warn receipt when fallback to 10st)
+- Drop-2 K scoring widened for upper-register melody (close top above E5)
+- Half-bar rest export artifact resolved (passing-dim + harmony hold durations)
+- SQ `DISSONANCE_TOP` rotation fix (dissonant inner drops to viola register)
+
 ## [2.8.0] - 2026-06-09
 
 ### Added

@@ -10,6 +10,8 @@ import type { CompositionContext } from '../core/compositionContext';
 
 import {
 
+  applyChordMelodyToScore,
+
   applyIdentitiesToNoteChoices,
 
   blockMidisForResolved,
@@ -23,6 +25,7 @@ import {
   sixthDimPartnerSymbol,
 
 } from '../core/barry-harris';
+import { exportScoreModelToMusicXml } from '../core/export/musicxmlExporter';
 
 import type { MosaicImportTimeline } from '../core/import/mosaicImportTimeline';
 
@@ -352,7 +355,30 @@ export function runBarryHarrisSliceSmokeTests(): { name: string; ok: boolean }[]
 
   });
 
-
+  const sqFoundation = precomputeBarryHarrisChordMelodyFoundation(textContext);
+  const sqPipeline = runBarryHarrisChordMelodyPipeline(sqFoundation, melody16, 16, CHORDS_16, {
+    presetId: 'string_quartet',
+  });
+  const sqScore = applyChordMelodyToScore(
+    {
+      title: 'BH SQ smoke',
+      parts: [],
+    },
+    sqPipeline.resolvedNotes,
+    melody16,
+    'string_quartet'
+  );
+  const sqXml = exportScoreModelToMusicXml(sqScore, { bpm: 120, preserveChordKindLiterals: true });
+  const sqPartIds = sqScore.parts.map((p) => p.id);
+  out.push({
+    ok:
+      sqPipeline.resolvedNotes.length > 0 &&
+      sqScore.parts.length >= 4 &&
+      ['sq_violin_1', 'sq_violin_2', 'sq_viola', 'sq_cello'].every((id) => sqPartIds.includes(id)) &&
+      sqXml.success === true &&
+      (sqXml.xml?.length ?? 0) > 0,
+    name: 'Barry Harris chord-melody: string_quartet preset exports 4-part MusicXML',
+  });
 
   return out;
 

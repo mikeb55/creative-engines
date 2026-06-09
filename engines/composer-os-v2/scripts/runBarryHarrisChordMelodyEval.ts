@@ -11,6 +11,9 @@ const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
 function main(): void {
   const report = runBarryHarrisChordMelodyEvalCore(REPO_ROOT);
   console.log(JSON.stringify(report));
+  console.log(
+    `[eval:barry_harris] passingDimCount=${report.passingDimCount ?? 0} passingDimDensity=${(report.passingDimDensity ?? 0).toFixed(3)} KPI=${report.passingDimKpi ?? 'WARN'}`
+  );
   if (!report.pass) {
     console.error('[eval:barry_harris] FAIL - see output/barry-harris-eval/');
     process.exit(1);

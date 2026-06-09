@@ -4,11 +4,17 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import type { ImportMelodyNote } from '../import/mosaicImportTimeline';
+import type { ImportMelodyNote, MosaicImportTimeline } from '../import/mosaicImportTimeline';
 import type { CompositionContext } from '../compositionContext';
 import { blockMidisForResolved } from './blockVoicings';
 import { applyIdentitiesToNoteChoices } from './identities';
 import { assignPhrasingRoles } from './phrasingRoles';
+import {
+  countEligibleStructuralSixths,
+  insertPassingDiminishedEvents,
+  passingDimReceiptForEvent,
+} from './insertPassingDiminishedEvents';
+import { scoreMelodyToImportMelody, type ScoreMelodyNote } from './scoreMelodyToImportMelody';
 import { applyVoicingEngineToResolved, harmonizePhrase } from './voicingEngine';
 import { precomputeBarryHarrisChordMelodyFoundation } from './precomputeFoundation';
 import { selectChordMelodyNoteChoice } from './selector';
@@ -18,11 +24,32 @@ import type {
   BarryHarrisChordMelodySummary,
   BarryHarrisIdentityId,
   ChordMelodyBarAnchor,
+  ChordMelodyHarmonyEvent,
   ChordMelodyNoteChoice,
   MelodyNoteForChordMelody,
   ResolvedChordMelodyNote,
   SixthDimPair,
 } from './types';
+
+export type BarryHarrisChordMelodyPipelineOptions = {
+  songMode?: boolean;
+  generatedMelody?: readonly ScoreMelodyNote[];
+  importTimeline?: MosaicImportTimeline;
+  presetId?: string;
+};
+
+export function resolveChordMelodyMelodyNotes(
+  melody: readonly ImportMelodyNote[],
+  options?: BarryHarrisChordMelodyPipelineOptions
+): ImportMelodyNote[] {
+  if (options?.songMode && options.generatedMelody) {
+    return scoreMelodyToImportMelody(options.generatedMelody);
+  }
+  if (options?.importTimeline) {
+    return [...options.importTimeline.melodyLine];
+  }
+  return [...melody];
+}
 
 const CM_IDENTITY_RULE_LABEL: Record<BarryHarrisIdentityId, string> = {
   m6_m7b5: 'm6_m7b5',
@@ -128,7 +155,8 @@ export function harmonyBarsFromResolvedNotes(
 export function buildBarryHarrisChordMelodyReceipts(
   foundation: BarryHarrisChordMelodyFoundation,
   noteChoices: readonly ChordMelodyNoteChoice[],
-  resolvedNotes: readonly ResolvedChordMelodyNote[]
+  resolvedNotes: readonly ResolvedChordMelodyNote[],
+  harmonyEvents?: readonly ChordMelodyHarmonyEvent[]
 ): string[] {
   const receipts: string[] = [];
   for (const barAnchor of foundation.choices) {
@@ -136,9 +164,16 @@ export function buildBarryHarrisChordMelodyReceipts(
       `bh:cm:reinterpret@bar${barAnchor.bar}:${barAnchor.fakeBookSymbol}→${anchorSymbolFromPair(barAnchor.anchor)}`
     );
   }
+  const structuralResolved = harmonyEvents
+    ? harmonyEvents.filter((e) => e.eventKind === 'structural')
+    : resolvedNotes;
   for (let i = 0; i < noteChoices.length; i++) {
     const choice = noteChoices[i]!;
-    const resolved = resolvedNotes[i]!;
+    const resolved =
+      structuralResolved.find(
+        (r) => r.bar === choice.bar && Math.abs(r.onsetBeat - choice.onsetBeat) < 0.02
+      ) ?? structuralResolved[i];
+    if (!resolved) continue;
     const pc = choice.melodyPc;
     if (choice.kind === 'borrowed') {
       receipts.push(
@@ -154,6 +189,16 @@ export function buildBarryHarrisChordMelodyReceipts(
       receipts.push(
         `bh:cm:identity@bar${choice.bar}:onset=${choice.onsetBeat}:${before}→${ann.equivalentSymbol}:rule=${CM_IDENTITY_RULE_LABEL[ann.id]}`
       );
+    }
+    if (resolved.familyChangeLeapWarn) {
+      receipts.push(`bh:cm:family_change_leap_warn@bar${choice.bar}`);
+    }
+  }
+  if (harmonyEvents) {
+    for (const event of harmonyEvents) {
+      if (event.eventKind === 'passing_dim') {
+        receipts.push(passingDimReceiptForEvent(event));
+      }
     }
   }
   return receipts;
@@ -215,7 +260,8 @@ export function summarizeBarryHarrisNoteChoices(
   noteChoices: readonly ChordMelodyNoteChoice[],
   resolvedNotes?: readonly ResolvedChordMelodyNote[],
   cmReceipts?: readonly string[],
-  foundation?: BarryHarrisChordMelodyFoundation
+  foundation?: BarryHarrisChordMelodyFoundation,
+  harmonyEvents?: readonly ChordMelodyHarmonyEvent[]
 ): BarryHarrisChordMelodySummary {
   const noteCount = noteChoices.length;
   let sixthCount = 0;
@@ -229,6 +275,16 @@ export function summarizeBarryHarrisNoteChoices(
   const resolved = resolvedNotes ?? applyIdentitiesToNoteChoices(noteChoices);
   const identityAnnotationCount = resolved.reduce((n, r) => n + r.identityAnnotations.length, 0);
   const guitar = guitarVoicingStats(resolved);
+  const passingDimCount =
+    harmonyEvents?.filter((e) => e.eventKind === 'passing_dim').length ??
+    resolved.filter((r) => r.eventKind === 'passing_dim').length;
+  const structuralSixthCount = harmonyEvents
+    ? countEligibleStructuralSixths(harmonyEvents)
+    : countEligibleStructuralSixths(
+        resolved.map((r) => ({ ...r, eventKind: r.eventKind ?? 'structural' })) as ChordMelodyHarmonyEvent[]
+      );
+  const passingDimDensity =
+    structuralSixthCount > 0 ? passingDimCount / structuralSixthCount : 0;
   const scaleOfChordsBySection = foundation
     ? Object.fromEntries(
         Object.entries(foundation.scalesBySection).map(([sectionLabel, scale]) => [
@@ -247,6 +303,9 @@ export function summarizeBarryHarrisNoteChoices(
     avgVoiceLeadingStep: avgVoiceLeadingStepSemitones(resolved),
     guitarFeasiblePct: guitar.guitarFeasiblePct,
     maxGuitarFretSpan: guitar.maxGuitarFretSpan,
+    passingDimCount,
+    passingDimDensity,
+    structuralSixthCount,
     ...(scaleOfChordsBySection && Object.keys(scaleOfChordsBySection).length
       ? { scaleOfChordsBySection }
       : {}),
@@ -258,22 +317,39 @@ export function runBarryHarrisChordMelodyPipeline(
   foundation: BarryHarrisChordMelodyFoundation,
   melody: readonly ImportMelodyNote[],
   totalBars: number,
-  fallbackBars: readonly string[]
+  fallbackBars: readonly string[],
+  options?: BarryHarrisChordMelodyPipelineOptions
 ): {
   noteChoices: ChordMelodyNoteChoice[];
   resolvedNotes: ResolvedChordMelodyNote[];
+  harmonyEvents: ChordMelodyHarmonyEvent[];
   harmonyBars: string[];
   summary: BarryHarrisChordMelodySummary;
   cmReceipts: string[];
 } {
-  const noteChoices = resolveBarryHarrisNoteChoices(foundation, melody);
+  const melodyEvents = resolveChordMelodyMelodyNotes(melody, options);
+  const noteChoices = resolveBarryHarrisNoteChoices(foundation, melodyEvents);
   const withIdentities = applyIdentitiesToNoteChoices(noteChoices);
-  const withPhrasing = assignPhrasingRoles(withIdentities, melody, totalBars);
-  const resolvedNotes = harmonizePhrase(withPhrasing, melody);
-  const cmReceipts = buildBarryHarrisChordMelodyReceipts(foundation, noteChoices, resolvedNotes);
+  const withPhrasing = assignPhrasingRoles(withIdentities, melodyEvents, totalBars);
+  const harmonyEvents = insertPassingDiminishedEvents(withPhrasing, melodyEvents);
+  const resolvedNotes = harmonizePhrase(harmonyEvents, melodyEvents, {
+    presetId: options?.presetId,
+  });
+  const cmReceipts = buildBarryHarrisChordMelodyReceipts(
+    foundation,
+    noteChoices,
+    resolvedNotes,
+    harmonyEvents
+  );
   const harmonyBars = harmonyBarsFromResolvedNotes(foundation, resolvedNotes, totalBars, fallbackBars);
-  const summary = summarizeBarryHarrisNoteChoices(noteChoices, resolvedNotes, cmReceipts, foundation);
-  return { noteChoices, resolvedNotes, harmonyBars, summary, cmReceipts };
+  const summary = summarizeBarryHarrisNoteChoices(
+    noteChoices,
+    resolvedNotes,
+    cmReceipts,
+    foundation,
+    harmonyEvents
+  );
+  return { noteChoices, resolvedNotes, harmonyEvents, harmonyBars, summary, cmReceipts };
 }
 
 export const BARRY_HARRIS_EVAL_CHORDS_16 = [
@@ -325,6 +401,9 @@ export type BarryHarrisChordMelodyEvalReport = {
   blockVoicingOk: boolean;
   reinterpretOk: boolean;
   noteCount: number;
+  passingDimCount?: number;
+  passingDimDensity?: number;
+  passingDimKpi?: 'PASS' | 'WARN';
 };
 
 export function runBarryHarrisChordMelodyEvalCore(repoRoot: string): BarryHarrisChordMelodyEvalReport {
@@ -357,10 +436,11 @@ export function runBarryHarrisChordMelodyEvalCore(repoRoot: string): BarryHarris
     pipeline.summary.borrowedDensity >= 0.05 && pipeline.summary.borrowedDensity <= 0.85;
 
   let blockVoicingOk = true;
-  for (let i = 0; i < resolved.length; i++) {
-    const r = resolved[i]!;
-    const mel = BARRY_HARRIS_EVAL_MELODY_16[i];
-    if (!mel) continue;
+  for (const mel of BARRY_HARRIS_EVAL_MELODY_16) {
+    const r = pipeline.resolvedNotes.find(
+      (n) => n.bar === mel.bar && Math.abs(n.onsetBeat - mel.onsetBeat) < 0.02 && !n.harmonyOnly
+    );
+    if (!r) continue;
     const inner = blockMidisForResolved(r, mel.midiPitch, 'guitar_bass_duo');
     if (inner.some((p) => p >= mel.midiPitch)) blockVoicingOk = false;
     const melodyPc = ((mel.midiPitch % 12) + 12) % 12;
@@ -378,6 +458,15 @@ export function runBarryHarrisChordMelodyEvalCore(repoRoot: string): BarryHarris
     reinterpretOk &&
     pipeline.noteChoices.length === BARRY_HARRIS_EVAL_MELODY_16.length;
 
+  const passingDimDensity = pipeline.summary.passingDimDensity ?? 0;
+  const passingDimKpi: 'PASS' | 'WARN' =
+    passingDimDensity >= 0.15 && passingDimDensity <= 0.5 ? 'PASS' : 'WARN';
+  if (passingDimKpi === 'WARN') {
+    console.warn(
+      `[eval:barry_harris] passingDimDensity ${passingDimDensity.toFixed(3)} outside 0.15-0.50 KPI band`
+    );
+  }
+
   const report: BarryHarrisChordMelodyEvalReport = {
     pass,
     selectorCoverage,
@@ -387,6 +476,9 @@ export function runBarryHarrisChordMelodyEvalCore(repoRoot: string): BarryHarris
     blockVoicingOk,
     reinterpretOk,
     noteCount: pipeline.summary.noteCount,
+    passingDimCount: pipeline.summary.passingDimCount,
+    passingDimDensity,
+    passingDimKpi,
   };
 
   const outDir = path.join(repoRoot, 'output', 'barry-harris-eval');

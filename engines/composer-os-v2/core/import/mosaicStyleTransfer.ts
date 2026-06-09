@@ -354,7 +354,8 @@ export function applyStyleTransfer(
         foundation,
         melody,
         totalBars,
-        importedBars
+        importedBars,
+        { importTimeline: req.importTimeline }
       );
       barryHarrisNoteChoices = pipeline.noteChoices;
       barryHarrisChordMelody = pipeline.summary;

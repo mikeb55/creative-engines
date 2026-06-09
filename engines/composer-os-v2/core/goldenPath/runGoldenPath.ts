@@ -3172,12 +3172,15 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       options.importTimeline.melodyLine,
       appliedContext.form.totalBars
     );
-    const resolvedNotes = applyVoicingEngineToResolved(withPhrasing, options.importTimeline.melodyLine);
+    const bhPresetId = appliedContext.presetId ?? 'guitar_bass_duo';
+    const resolvedNotes = applyVoicingEngineToResolved(withPhrasing, options.importTimeline.melodyLine, {
+      presetId: bhPresetId,
+    });
     score = applyChordMelodyToScore(
       score,
       resolvedNotes,
       options.importTimeline.melodyLine,
-      appliedContext.presetId ?? 'guitar_bass_duo'
+      bhPresetId
     );
     appliedContext.generationMetadata = {
       ...appliedContext.generationMetadata,

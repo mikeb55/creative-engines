@@ -115,7 +115,7 @@ function avgInnerVoiceStep(resolved: readonly ResolvedChordMelodyNote[]): number
 function scoreChordMelodyBenchmark(
   harmonyBars: readonly string[],
   melody: readonly ImportMelodyNote[],
-  presetId: 'guitar_bass_duo' = 'guitar_bass_duo'
+  presetId: 'guitar_bass_duo' | 'string_quartet' | 'big_band' = 'guitar_bass_duo'
 ): {
   pipeline: ReturnType<typeof runBarryHarrisChordMelodyPipeline>;
   scored: ScoreModel;
@@ -127,18 +127,36 @@ function scoreChordMelodyBenchmark(
     generationMetadata: {},
   } as CompositionContext;
   const foundation = precomputeBarryHarrisChordMelodyFoundation(context);
-  const pipeline = runBarryHarrisChordMelodyPipeline(foundation, melody, harmonyBars.length, harmonyBars);
-  const emptyScore: ScoreModel = {
-    title: 'BH benchmark',
-    parts: [
-      {
-        id: 'guitar',
-        name: 'Guitar',
-        instrumentIdentity: 'clean_electric_guitar',
-        measures: [],
-      },
-    ],
-  };
+  const pipeline = runBarryHarrisChordMelodyPipeline(foundation, melody, harmonyBars.length, harmonyBars, {
+    presetId,
+  });
+  const emptyScore: ScoreModel =
+    presetId === 'string_quartet'
+      ? {
+          title: 'BH SQ benchmark',
+          parts: [
+            { id: 'sq_violin_1', name: 'Violin I', instrumentIdentity: 'violin_1', measures: [] },
+            { id: 'sq_violin_2', name: 'Violin II', instrumentIdentity: 'violin_2', measures: [] },
+            { id: 'sq_viola', name: 'Viola', instrumentIdentity: 'viola', measures: [] },
+            { id: 'sq_cello', name: 'Cello', instrumentIdentity: 'cello', measures: [] },
+          ],
+        }
+      : presetId === 'big_band'
+        ? {
+            title: 'BH BB benchmark',
+            parts: [],
+          }
+        : {
+          title: 'BH benchmark',
+          parts: [
+            {
+              id: 'guitar',
+              name: 'Guitar',
+              instrumentIdentity: 'clean_electric_guitar',
+              measures: [],
+            },
+          ],
+        };
   const scored = applyChordMelodyToScore(emptyScore, pipeline.resolvedNotes, melody, presetId);
   return { pipeline, scored, xml: '' };
 }
@@ -1026,7 +1044,9 @@ describe('Barry Harris chord-melody foundation', () => {
 
     const { pipeline, scored } = scoreChordMelodyBenchmark(harmonyBars, jazzMelody);
     const resolved = pipeline.resolvedNotes;
-    expect(resolved).toHaveLength(jazzMelody.length);
+    const structural = resolved.filter((r) => r.eventKind !== 'passing_dim');
+    expect(structural).toHaveLength(jazzMelody.length);
+    expect(pipeline.summary.passingDimCount ?? 0).toBeGreaterThan(0);
 
     const dimPct = dim7ParticipationRate(resolved) * 100;
     expect(dimPct).toBeGreaterThan(0);
@@ -1039,8 +1059,99 @@ describe('Barry Harris chord-melody foundation', () => {
 
     console.log('\n=== Benchmark B — Jazz Melody ===');
     console.log(`event count: ${resolved.length} (input ${jazzMelody.length})`);
+    console.log(
+      `passingDimCount: ${pipeline.summary.passingDimCount ?? 0} passingDimDensity: ${(pipeline.summary.passingDimDensity ?? 0).toFixed(3)}`
+    );
     console.log(`dim7 participation: ${dimPct.toFixed(1)}%`);
     console.log(`avg inner-voice VL step: ${avgVl.toFixed(2)} semitones`);
     console.log(`exported symbols sample: ${symbols.join(' | ') || '(none)'}`);
+  });
+
+  test('Benchmark B — string quartet feasibility warnings on jazz melody', () => {
+    const harmonyBars = ['G', 'G', 'Am7', 'D7', 'Bm7', 'Bm7', 'D7', 'G'];
+    const jazzMelody = [
+      melodyNote(1, 0, 66),
+      melodyNote(1, 2, 71),
+      melodyNote(2, 0, 69),
+      melodyNote(2, 2, 67),
+      melodyNote(3, 0, 69),
+      melodyNote(3, 2, 68),
+      melodyNote(4, 0, 70),
+      melodyNote(4, 2, 66),
+      melodyNote(5, 0, 71),
+      melodyNote(5, 2, 69),
+      melodyNote(6, 0, 71),
+      melodyNote(6, 2, 66),
+      melodyNote(7, 0, 70),
+      melodyNote(7, 2, 68),
+      melodyNote(8, 0, 67),
+      melodyNote(8, 2, 71),
+    ];
+
+    const { pipeline, scored } = scoreChordMelodyBenchmark(harmonyBars, jazzMelody, 'string_quartet');
+    const resolved = pipeline.resolvedNotes;
+    const passingDims = resolved.filter((r) => r.eventKind === 'passing_dim');
+    expect(passingDims.length).toBeGreaterThan(0);
+    for (const pd of passingDims) {
+      expect(pd.sqVoiceMidis?.violin1).toBeNull();
+      expect(pd.sqVoiceMidis?.violin2).toBeDefined();
+      expect(pd.sqVoiceMidis?.viola).toBeDefined();
+      expect(pd.sqVoiceMidis?.cello).toBeDefined();
+    }
+
+    const allWarnings = resolved.flatMap((r) => r.sqFeasibilityWarnings ?? []);
+    const xml = exportBenchmarkXml('BH_Benchmark_JazzMelody_SQ.musicxml', scored);
+    expect(scored.parts.length).toBeGreaterThanOrEqual(4);
+    expect(xml.length).toBeGreaterThan(0);
+    expect(xml).toMatch(/sq_violin_1|Vln\.I/i);
+
+    console.log('\n=== Benchmark B — Jazz Melody (string_quartet) ===');
+    console.log(`SQ feasibility warning count: ${allWarnings.length}`);
+    console.log(`warning sample: ${allWarnings.slice(0, 8).join('; ') || '(none)'}`);
+    console.log(`passing_dim inner-voice rows: ${passingDims.length}`);
+  });
+  test('Benchmark B — big band feasibility warnings on jazz melody', () => {
+    const harmonyBars = ['G', 'G', 'Am7', 'D7', 'Bm7', 'Bm7', 'D7', 'G'];
+    const jazzMelody = [
+      melodyNote(1, 0, 66),
+      melodyNote(1, 2, 71),
+      melodyNote(2, 0, 69),
+      melodyNote(2, 2, 67),
+      melodyNote(3, 0, 69),
+      melodyNote(3, 2, 68),
+      melodyNote(4, 0, 70),
+      melodyNote(4, 2, 66),
+      melodyNote(5, 0, 71),
+      melodyNote(5, 2, 69),
+      melodyNote(6, 0, 71),
+      melodyNote(6, 2, 66),
+      melodyNote(7, 0, 70),
+      melodyNote(7, 2, 68),
+      melodyNote(8, 0, 67),
+      melodyNote(8, 2, 71),
+    ];
+
+    const { pipeline, scored } = scoreChordMelodyBenchmark(harmonyBars, jazzMelody, 'big_band');
+    const resolved = pipeline.resolvedNotes;
+    const passingDims = resolved.filter((r) => r.eventKind === 'passing_dim');
+    expect(passingDims.length).toBeGreaterThan(0);
+    for (const pd of passingDims) {
+      expect(pd.bbVoiceMidis?.alto1).toBeNull();
+      expect(pd.bbVoiceMidis?.alto2).toBeDefined();
+      expect(pd.bbVoiceMidis?.tenor1).toBeDefined();
+      expect(pd.bbVoiceMidis?.tenor2).toBeDefined();
+      expect(pd.bbVoiceMidis?.bari).toBeDefined();
+    }
+
+    const allWarnings = resolved.flatMap((r) => r.bbFeasibilityWarnings ?? []);
+    const xml = exportBenchmarkXml('BH_Benchmark_JazzMelody_BB.musicxml', scored);
+    expect(scored.parts.length).toBeGreaterThanOrEqual(5);
+    expect(xml.length).toBeGreaterThan(0);
+    expect(xml).toMatch(/Alto Sax 1|bh_bb_alto_sax_1/i);
+
+    console.log('\n=== Benchmark B — Jazz Melody (big_band) ===');
+    console.log(`BB feasibility warning count: ${allWarnings.length}`);
+    console.log(`warning sample: ${allWarnings.slice(0, 8).join('; ') || '(none)'}`);
+    console.log(`passing_dim 5-voice rows: ${passingDims.length}`);
   });
 });

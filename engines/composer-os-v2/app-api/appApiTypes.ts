@@ -1225,6 +1225,9 @@ export interface StyleTransferEcho {
     maxGuitarFretSpan?: number;
     /** V80L — `C6 ↔ Bdim7 | …` lines keyed by section label. */
     scaleOfChordsBySection?: Record<string, string>;
+    /** V81b+c — weak-beat passing dim insertions. */
+    passingDimCount?: number;
+    passingDimDensity?: number;
   };
 }
 

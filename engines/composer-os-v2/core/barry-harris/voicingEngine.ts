@@ -7,10 +7,20 @@ import type { ScoreModel } from '../score-model/scoreModelTypes';
 import { closeBlockVoicingBelowMelody, drop2VoicingBelowMelody } from './blockVoicings';
 import { dim7ChordTones, sixthChordTones } from './chordTones';
 import { chordTonePcsForResolved } from './identities';
+import { assessBhVoicingFeasibility } from './bhVoicingFeasibility';
+import { isDrop2InnerSpacing } from './guitarVoicingFeasibility';
 import {
-  assessGuitarFeasibility,
-  isDrop2InnerSpacing,
-} from './guitarVoicingFeasibility';
+  applyBigBandDistribution,
+  spreadBbDimVoicingBelowMelody,
+} from './bigBandSaxSoliVoicing';
+import { applyStringQuartetDistribution, spreadSqDimVoicingBelowMelody } from './stringQuartetVoicing';
+import {
+  SQ_PART_V1,
+  SQ_PART_V2,
+  SQ_PART_VA,
+  SQ_PART_VC,
+} from '../string-quartet/stringQuartetTypes';
+import type { PartModel } from '../score-model/scoreModelTypes';
 import {
   buildLadder,
   familyKey,
@@ -35,7 +45,24 @@ export { isDrop2InnerSpacing };
 export type VoicingSpacingPreference = 'close' | 'drop2' | 'all';
 export type VoicingEngineOptions = {
   spacingPreference?: VoicingSpacingPreference;
+  presetId?: string;
 };
+
+const SQ_PP_VELOCITY = 34;
+const BB_MP_VELOCITY = 64;
+
+const FAMILY_CHANGE_LEAP_IDEAL = 7;
+const FAMILY_CHANGE_LEAP_MAX = 10;
+const CLOSE_VOICING_K = 10;
+const DROP2_VOICING_K_LOW = 5.6;
+const DROP2_VOICING_K_UPPER = 8.0;
+const UPPER_REGISTER_CLOSE_TOP_MIDI = 76;
+
+const BB_PART_ALTO1 = 'bh_bb_alto_sax_1';
+const BB_PART_ALTO2 = 'bh_bb_alto_sax_2';
+const BB_PART_TENOR1 = 'bh_bb_tenor_sax_1';
+const BB_PART_TENOR2 = 'bh_bb_tenor_sax_2';
+const BB_PART_BARI = 'bh_bb_bari_sax';
 
 function mod12(pc: number): number {
   return ((pc % 12) + 12) % 12;
@@ -52,6 +79,19 @@ function findMelodyNote(
   onsetBeat: number
 ): ImportMelodyNote | undefined {
   return melody.find((n) => n.bar === bar && Math.abs(n.onsetBeat - onsetBeat) < 0.02);
+}
+
+function applyPassingDimOverrides(
+  resolved: ResolvedChordMelodyNote,
+  mapped: ResolvedChordMelodyNote
+): ResolvedChordMelodyNote {
+  if (resolved.eventKind !== 'passing_dim') return mapped;
+  return {
+    ...mapped,
+    ladderHit: false,
+    voicingChordColour: 'dim7',
+    voicingHint: 'bb-dim7-passing',
+  };
 }
 
 function variantFromShape(shapeType: VoicingShapeType, borrowed: boolean): VoicingVariant {
@@ -251,7 +291,8 @@ function finalizeInner(
   resolved: ResolvedChordMelodyNote,
   melodyMidi: number,
   source: LadderSource,
-  family: BhFamily
+  family: BhFamily,
+  presetId?: string
 ): number[] {
   let out = dedupeInnerVoices(inner);
   if (resolved.kind === 'borrowed') {
@@ -260,7 +301,17 @@ function finalizeInner(
   const tonePcs = tonesForSource(family, source);
   out = out.filter((m) => mod12(m) !== mod12(melodyMidi) && tonePcs.includes(mod12(m)));
   if (out.length === 0 && resolved.phrasingRole !== 'single') {
-    out = closeBlockVoicingBelowMelody(melodyMidi, tonePcs, mod12(melodyMidi));
+    if (
+      (presetId === 'string_quartet' || presetId === 'big_band') &&
+      (source === 'dim' || resolved.eventKind === 'passing_dim')
+    ) {
+      out =
+        presetId === 'big_band'
+          ? spreadBbDimVoicingBelowMelody(melodyMidi, tonePcs)
+          : spreadSqDimVoicingBelowMelody(melodyMidi, tonePcs);
+    } else {
+      out = closeBlockVoicingBelowMelody(melodyMidi, tonePcs, mod12(melodyMidi));
+    }
   }
   return dedupeInnerVoices(out);
 }
@@ -269,14 +320,25 @@ function refineRealizationInner(
   realization: RealizedVoicing,
   resolved: ResolvedChordMelodyNote,
   melodyMidi: number,
-  prevInner: readonly number[] | null
+  prevInner: readonly number[] | null,
+  presetId?: string
 ): RealizedVoicing {
   const family = resolved.anchor;
   const tonePcs = tonesForSource(family, realization.source);
-  let inner = finalizeInner(realization.innerVoicingMidis, resolved, melodyMidi, realization.source, family);
+  let inner = finalizeInner(
+    realization.innerVoicingMidis,
+    resolved,
+    melodyMidi,
+    realization.source,
+    family,
+    presetId
+  );
   inner = alignInnerToPrevious(inner, prevInner, melodyMidi, tonePcs);
   const stack = [...inner, melodyMidi].sort((a, b) => a - b);
-  const feasibility = assessGuitarFeasibility(stack, { allowStretch: true });
+  const feasibility = assessBhVoicingFeasibility(stack, presetId, {
+    allowStretch: true,
+    phrasingRole: resolved.phrasingRole,
+  });
   return {
     ...realization,
     innerVoicingMidis: inner,
@@ -304,7 +366,8 @@ function collectCandidates(
   exactRung: LadderRung | null,
   spacingPreference: VoicingSpacingPreference,
   onsetBeat: number,
-  prevInner: readonly number[] | null
+  prevInner: readonly number[] | null,
+  presetId?: string
 ): RealizedVoicing[] {
   const melodyPc = mod12(melodyMidi);
   const rung = exactRung ?? chromaticApproach(ladder, melodyPc, onsetBeat) ?? nearestRung(ladder, melodyPc);
@@ -312,6 +375,7 @@ function collectCandidates(
   let candidates = realizeRungAtMelody(rung, melodyMidi, {
     spacingPreference: pref,
     allowStretch: true,
+    presetId,
   });
 
   if (resolved.phrasingRole === 'dyad') {
@@ -322,7 +386,7 @@ function collectCandidates(
 
   const out: RealizedVoicing[] = [];
   for (const c of candidates) {
-    out.push(refineRealizationInner(c, resolved, melodyMidi, prevInner));
+    out.push(refineRealizationInner(c, resolved, melodyMidi, prevInner, presetId));
   }
   return out;
 }
@@ -365,18 +429,53 @@ function capInnerForPhrasing(
   return deduped;
 }
 
+type FamilyEntryPick = {
+  realization: RealizedVoicing | null;
+  leapWarn: boolean;
+};
+
+function closeTopInnerMidi(melodyMidi: number, tonePcs: readonly number[]): number {
+  const inner = closeBlockVoicingBelowMelody(melodyMidi, tonePcs, mod12(melodyMidi));
+  return inner.length > 0 ? Math.max(...inner) : 0;
+}
+
+function spacingShapeScoreBonus(
+  shapeType: VoicingShapeType,
+  melodyMidi: number,
+  tonePcs: readonly number[]
+): number {
+  const closeTop = closeTopInnerMidi(melodyMidi, tonePcs);
+  const upperRegister = closeTop > UPPER_REGISTER_CLOSE_TOP_MIDI;
+  if (shapeType === 'drop2') {
+    const k = upperRegister ? DROP2_VOICING_K_UPPER : DROP2_VOICING_K_LOW;
+    return -k;
+  }
+  if (shapeType === 'close' && !upperRegister) {
+    return -CLOSE_VOICING_K;
+  }
+  return 0;
+}
+
 function pickFamilyEntryRung(
   ladder: readonly LadderRung[],
   melodyMidi: number,
   spacingPreference: VoicingSpacingPreference,
-  prevInner: readonly number[] | null
-): RealizedVoicing | null {
-  let best: RealizedVoicing | null = null;
-  let bestDisp = Infinity;
+  prevInner: readonly number[] | null,
+  presetId?: string
+): FamilyEntryPick {
+  let idealBest: RealizedVoicing | null = null;
+  let idealDisp = Infinity;
+  let maxBest: RealizedVoicing | null = null;
+  let maxDisp = Infinity;
+
   for (const rung of ladder) {
     const pref = spacingPreference === 'all' ? 'all' : spacingPreference;
-    for (const c of realizeRungAtMelody(rung, melodyMidi, { spacingPreference: pref, allowStretch: true })) {
-      const stackFeasibility = assessGuitarFeasibility([...c.innerVoicingMidis, melodyMidi], {
+    for (const c of realizeRungAtMelody(rung, melodyMidi, {
+      spacingPreference: pref,
+      allowStretch: true,
+      presetId,
+    })) {
+      const stackFeasibility = assessBhVoicingFeasibility([...c.innerVoicingMidis, melodyMidi], presetId, {
         allowStretch: true,
       });
       if (!stackFeasibility.feasible || c.innerVoicingMidis.length > 3) continue;
@@ -384,13 +483,20 @@ function pickFamilyEntryRung(
         prevInner && prevInner.length > 0
           ? maxInnerDisplacement(prevInner, c.innerVoicingMidis)
           : c.innerVoicingMidis.reduce((s, m) => s + Math.abs(m - (melodyMidi - 12)), 0);
-      if (disp < bestDisp) {
-        bestDisp = disp;
-        best = c;
+      if (disp <= FAMILY_CHANGE_LEAP_IDEAL && disp < idealDisp) {
+        idealDisp = disp;
+        idealBest = c;
+      }
+      if (disp <= FAMILY_CHANGE_LEAP_MAX && disp < maxDisp) {
+        maxDisp = disp;
+        maxBest = c;
       }
     }
   }
-  return best;
+
+  if (idealBest) return { realization: idealBest, leapWarn: false };
+  if (maxBest) return { realization: maxBest, leapWarn: true };
+  return { realization: null, leapWarn: false };
 }
 
 function innerVoiceCost(prevInner: readonly number[], currInner: readonly number[]): number {
@@ -419,13 +525,15 @@ function pickRealization(
   familyChanged: boolean,
   melodyMidi: number,
   spacingPreference: VoicingSpacingPreference = 'close',
-  sameRungBannedFp?: string | null
+  sameRungBannedFp?: string | null,
+  presetId?: string,
+  tonePcs?: readonly number[]
 ): RealizedVoicing | null {
   if (candidates.length === 0) return null;
 
   let pool = alternateSameRungRealization(candidates, recentFingerprints, sameRungBannedFp);
   const feasiblePool = pool.filter((c) => {
-    const stackFeasibility = assessGuitarFeasibility([...c.innerVoicingMidis, melodyMidi], {
+    const stackFeasibility = assessBhVoicingFeasibility([...c.innerVoicingMidis, melodyMidi], presetId, {
       allowStretch: true,
     });
     return stackFeasibility.feasible;
@@ -436,7 +544,7 @@ function pickRealization(
   let bestScore = Infinity;
 
   for (const c of pool) {
-    const stackFeasibility = assessGuitarFeasibility([...c.innerVoicingMidis, melodyMidi], {
+    const stackFeasibility = assessBhVoicingFeasibility([...c.innerVoicingMidis, melodyMidi], presetId, {
       allowStretch: true,
     });
     if (!stackFeasibility.feasible) continue;
@@ -448,7 +556,10 @@ function pickRealization(
       repeatPenalty += 120;
     }
     const disp = prevInner ? maxInnerLeap(prevInner, c.innerVoicingMidis) : 0;
-    const score = familyChanged ? disp * 1.5 + repeatPenalty : vl * 5 + lane + repeatPenalty;
+    let score = familyChanged ? disp * 1.5 + repeatPenalty : vl * 5 + lane + repeatPenalty;
+    if (tonePcs && tonePcs.length > 0) {
+      score += spacingShapeScoreBonus(c.shapeType, melodyMidi, tonePcs);
+    }
 
     if (score < bestScore) {
       bestScore = score;
@@ -478,29 +589,42 @@ function finalizeExportStack(
   innerIn: readonly number[],
   melodyMidi: number,
   prevInner: readonly number[] | null,
-  tonePcs: readonly number[]
-): { inner: number[]; stack: number[]; feasibility: ReturnType<typeof assessGuitarFeasibility> } {
+  tonePcs: readonly number[],
+  presetId?: string
+): { inner: number[]; stack: number[]; feasibility: ReturnType<typeof assessBhVoicingFeasibility> } {
   let inner = dedupeInnerVoices(innerIn);
   if (prevInner && prevInner.length > 0) {
     inner = alignInnerToPrevious(inner, prevInner, melodyMidi, tonePcs);
   }
   inner = capInnerForPhrasing(inner, resolved.phrasingRole, prevInner);
   let stack = [...inner, melodyMidi].sort((a, b) => a - b);
-  let feasibility = assessGuitarFeasibility(stack, { allowStretch: true });
+  let feasibility = assessBhVoicingFeasibility(stack, presetId, {
+    allowStretch: true,
+    phrasingRole: resolved.phrasingRole,
+  });
   while (!feasibility.feasible && inner.length > 1) {
     inner = inner.slice(1);
     stack = [...inner, melodyMidi].sort((a, b) => a - b);
-    feasibility = assessGuitarFeasibility(stack, { allowStretch: true });
+    feasibility = assessBhVoicingFeasibility(stack, presetId, {
+      allowStretch: true,
+      phrasingRole: resolved.phrasingRole,
+    });
   }
   if (!feasibility.feasible) {
     inner = innerBelowMelodyMinDisplacement(melodyMidi, tonePcs, prevInner);
     inner = capInnerForPhrasing(inner, resolved.phrasingRole, prevInner);
     stack = [...inner, melodyMidi].sort((a, b) => a - b);
-    feasibility = assessGuitarFeasibility(stack, { allowStretch: true });
+    feasibility = assessBhVoicingFeasibility(stack, presetId, {
+      allowStretch: true,
+      phrasingRole: resolved.phrasingRole,
+    });
     while (!feasibility.feasible && inner.length > 1) {
       inner = inner.slice(1);
       stack = [...inner, melodyMidi].sort((a, b) => a - b);
-      feasibility = assessGuitarFeasibility(stack, { allowStretch: true });
+      feasibility = assessBhVoicingFeasibility(stack, presetId, {
+        allowStretch: true,
+        phrasingRole: resolved.phrasingRole,
+      });
     }
   }
   if (!feasibility.feasible) {
@@ -511,7 +635,10 @@ function finalizeExportStack(
     while (bass >= melodyMidi) bass -= 12;
     inner = [bass];
     stack = [...inner, melodyMidi].sort((a, b) => a - b);
-    feasibility = assessGuitarFeasibility(stack, { allowStretch: true });
+    feasibility = assessBhVoicingFeasibility(stack, presetId, {
+      allowStretch: true,
+      phrasingRole: resolved.phrasingRole,
+    });
   }
   return { inner, stack, feasibility };
 }
@@ -527,7 +654,8 @@ function mapFromBaseVoicing(
     | 'voicingFingerprint'
   >,
   melodyMidi: number,
-  prevInner: readonly number[] | null
+  prevInner: readonly number[] | null,
+  presetId?: string
 ): ResolvedChordMelodyNote {
   const source: LadderSource = resolved.kind === 'dim7' ? 'dim' : 'sixth';
   const tonePcs = tonesForSource(resolved.anchor, source);
@@ -536,14 +664,16 @@ function mapFromBaseVoicing(
     resolved,
     melodyMidi,
     source,
-    resolved.anchor
+    resolved.anchor,
+    presetId
   );
   const { inner: innerOut, stack, feasibility } = finalizeExportStack(
     resolved,
     inner,
     melodyMidi,
     prevInner,
-    tonePcs
+    tonePcs,
+    presetId
   );
   const vlCost = prevInner ? innerVoiceCost(prevInner, innerOut) : null;
   return {
@@ -569,20 +699,22 @@ function mapToResolved(
   melodyMidi: number,
   ladderHit: boolean,
   voiceLeadingCost: number,
-  prevInner: readonly number[] | null
+  prevInner: readonly number[] | null,
+  presetId?: string
 ): ResolvedChordMelodyNote {
   const ladderSymbol = ladderSymbolForSource(resolved.anchor, realization.source);
   const colour: 'sixth' | 'dim7' = realization.source === 'dim' ? 'dim7' : 'sixth';
 
   const tonePcs = tonesForSource(resolved.anchor, realization.source);
   let { inner } = rebuildStackIfNeeded(realization, melodyMidi, resolved.anchor, prevInner);
-  inner = finalizeInner(inner, resolved, melodyMidi, realization.source, resolved.anchor);
+  inner = finalizeInner(inner, resolved, melodyMidi, realization.source, resolved.anchor, presetId);
   const { inner: innerOut, stack, feasibility } = finalizeExportStack(
     resolved,
     inner,
     melodyMidi,
     prevInner,
-    tonePcs
+    tonePcs,
+    presetId
   );
   inner = innerOut;
 
@@ -612,9 +744,18 @@ function buildVoicingFromRungResolved(
   realization: RealizedVoicing,
   ladderHit: boolean,
   voiceLeadingCost: number,
-  prevInner: readonly number[] | null
+  prevInner: readonly number[] | null,
+  presetId?: string
 ): ResolvedChordMelodyNote {
-  return mapToResolved(resolved, realization, melodyMidi, ladderHit, voiceLeadingCost, prevInner);
+  return mapToResolved(
+    resolved,
+    realization,
+    melodyMidi,
+    ladderHit,
+    voiceLeadingCost,
+    prevInner,
+    presetId
+  );
 }
 
 export function buildBaseVoicing(
@@ -678,12 +819,60 @@ export function buildBaseVoicing(
   };
 }
 
+
+function applyBigBandHarmonizePass(
+  notes: readonly ResolvedChordMelodyNote[],
+  melody: readonly ImportMelodyNote[]
+): ResolvedChordMelodyNote[] {
+  let heldMelodyMidi: number | null = null;
+  return notes.map((note) => {
+    const mel = findMelodyNote(melody, note.bar, note.onsetBeat);
+    const melodyMidi = mel?.midiPitch ?? note.syntheticMelodyMidi;
+    if (melodyMidi == null) return note;
+    const distributed = applyBigBandDistribution(
+      note,
+      melodyMidi,
+      heldMelodyMidi,
+      melody,
+      notes
+    );
+    if (note.eventKind !== 'passing_dim' && !note.harmonyOnly) {
+      heldMelodyMidi = mel?.midiPitch ?? melodyMidi;
+    }
+    return distributed;
+  });
+}
+
+function applyStringQuartetHarmonizePass(
+  notes: readonly ResolvedChordMelodyNote[],
+  melody: readonly ImportMelodyNote[]
+): ResolvedChordMelodyNote[] {
+  let heldMelodyMidi: number | null = null;
+  return notes.map((note) => {
+    const mel = findMelodyNote(melody, note.bar, note.onsetBeat);
+    const melodyMidi = mel?.midiPitch ?? note.syntheticMelodyMidi;
+    if (melodyMidi == null) return note;
+    const distributed = applyStringQuartetDistribution(
+      note,
+      melodyMidi,
+      heldMelodyMidi,
+      melody,
+      notes
+    );
+    if (note.eventKind !== 'passing_dim' && !note.harmonyOnly) {
+      heldMelodyMidi = mel?.midiPitch ?? melodyMidi;
+    }
+    return distributed;
+  });
+}
+
 export function harmonizePhrase(
   resolvedNotes: readonly ResolvedChordMelodyNote[],
   melody: readonly ImportMelodyNote[],
   options: VoicingEngineOptions = {}
 ): ResolvedChordMelodyNote[] {
   const spacingPreference = options.spacingPreference ?? 'all';
+  const presetId = options.presetId;
   const ordered = [...resolvedNotes].sort((a, b) => a.bar - b.bar || a.onsetBeat - b.onsetBeat);
   const ladderCache = new Map<string, LadderRung[]>();
   const lastFpByRungMelody = new Map<string, string>();
@@ -696,7 +885,8 @@ export function harmonizePhrase(
 
   for (const resolved of ordered) {
     const mel = findMelodyNote(melody, resolved.bar, resolved.onsetBeat);
-    if (!mel) {
+    const melodyMidi = mel?.midiPitch ?? resolved.syntheticMelodyMidi;
+    if (melodyMidi == null) {
       out.push({
         ...resolved,
         exportStackMidis: [],
@@ -723,11 +913,19 @@ export function harmonizePhrase(
     const vlPrevInner = familyChanged ? null : prevInner;
 
     if (resolved.phrasingRole === 'single') {
-      const melodyPc = mod12(mel.midiPitch);
+      const melodyPc = mod12(melodyMidi);
       const rung = findRungForMelodyPc(ladder, melodyPc) ?? nearestRung(ladder, melodyPc);
-      const realization = singleNoteVoicing(rung, mel.midiPitch);
-      const mapped = mapToResolved(resolved, realization, mel.midiPitch, rung.melodyPc === melodyPc, 0, vlPrevInner);
-      out.push(mapped);
+      const realization = singleNoteVoicing(rung, melodyMidi, presetId);
+      const mapped = mapToResolved(
+        resolved,
+        realization,
+        melodyMidi,
+        rung.melodyPc === melodyPc,
+        0,
+        vlPrevInner,
+        presetId
+      );
+      out.push(applyPassingDimOverrides(resolved, mapped));
       prevInner = mapped.innerVoicingMidis;
       prevLane = realization.laneSignature;
       prevFamilyKey = fk;
@@ -736,32 +934,38 @@ export function harmonizePhrase(
       continue;
     }
 
-    const melodyPc = mod12(mel.midiPitch);
+    const melodyPc = mod12(melodyMidi);
     const exactRung = findRungForMelodyPc(ladder, melodyPc);
-    const ladderHit = exactRung !== undefined;
+    const ladderHit =
+      resolved.eventKind === 'passing_dim' ? false : exactRung !== undefined;
 
     let candidates = collectCandidates(
       resolved,
-      mel.midiPitch,
+      melodyMidi,
       ladder,
       exactRung ?? null,
       spacingPreference,
       resolved.onsetBeat,
-      vlPrevInner
+      vlPrevInner,
+      presetId
     );
 
     if (candidates.length === 0) {
-      const fallback = buildBaseVoicing(resolved, mel.midiPitch, resolved.phrasingRole);
-      const mappedFallback = mapFromBaseVoicing(resolved, fallback, mel.midiPitch, vlPrevInner);
-      out.push(mappedFallback);
+      const fallback = buildBaseVoicing(resolved, melodyMidi, resolved.phrasingRole);
+      const mappedFallback = mapFromBaseVoicing(resolved, fallback, melodyMidi, vlPrevInner, presetId);
+      out.push(applyPassingDimOverrides(resolved, mappedFallback));
       prevInner = mappedFallback.innerVoicingMidis;
       prevFamilyKey = fk;
       continue;
     }
 
     let picked: RealizedVoicing | null = null;
+    let familyLeapWarn = false;
+    const tonePcsForScoring = tonesForSource(resolved.anchor, resolved.kind === 'dim7' ? 'dim' : 'sixth');
     if (familyChanged) {
-      picked = pickFamilyEntryRung(ladder, mel.midiPitch, spacingPreference, prevInner);
+      const entry = pickFamilyEntryRung(ladder, melodyMidi, spacingPreference, prevInner, presetId);
+      picked = entry.realization;
+      familyLeapWarn = entry.leapWarn;
       if (!picked) {
         picked = pickRealization(
           candidates,
@@ -769,8 +973,11 @@ export function harmonizePhrase(
           null,
           recentFingerprints,
           true,
-          mel.midiPitch,
-          spacingPreference
+          melodyMidi,
+          spacingPreference,
+          undefined,
+          presetId,
+          tonePcsForScoring
         );
       }
     } else {
@@ -782,31 +989,40 @@ export function harmonizePhrase(
         prevLane,
         recentFingerprints,
         false,
-        mel.midiPitch,
+        melodyMidi,
         spacingPreference,
-        sameRungBannedFp
+        sameRungBannedFp,
+        presetId,
+        tonePcsForScoring
       );
     }
 
     if (!picked) {
-      const fallback = buildBaseVoicing(resolved, mel.midiPitch, resolved.phrasingRole);
-      const mappedFallback = mapFromBaseVoicing(resolved, fallback, mel.midiPitch, vlPrevInner);
-      out.push(mappedFallback);
+      const fallback = buildBaseVoicing(resolved, melodyMidi, resolved.phrasingRole);
+      const mappedFallback = mapFromBaseVoicing(resolved, fallback, melodyMidi, vlPrevInner, presetId);
+      out.push(applyPassingDimOverrides(resolved, mappedFallback));
       prevInner = mappedFallback.innerVoicingMidis;
       prevFamilyKey = fk;
       continue;
     }
 
     const vlCost = vlPrevInner ? innerVoiceCost(vlPrevInner, picked.innerVoicingMidis) : 0;
-    const mapped = buildVoicingFromRungResolved(
+    const mapped = applyPassingDimOverrides(
       resolved,
-      exactRung ?? nearestRung(ladder, melodyPc),
-      mel.midiPitch,
-      picked,
-      ladderHit,
-      vlCost,
-      vlPrevInner
+      buildVoicingFromRungResolved(
+        resolved,
+        exactRung ?? nearestRung(ladder, melodyPc),
+        melodyMidi,
+        picked,
+        ladderHit,
+        vlCost,
+        vlPrevInner,
+        presetId
+      )
     );
+    if (familyLeapWarn) {
+      mapped.familyChangeLeapWarn = true;
+    }
     out.push(mapped);
 
     const rungKey = `${(exactRung ?? nearestRung(ladder, melodyPc)).index}:${melodyPc}`;
@@ -819,6 +1035,12 @@ export function harmonizePhrase(
     if (recentFingerprints.length > 4) recentFingerprints.shift();
   }
 
+  if (presetId === 'big_band') {
+    return applyBigBandHarmonizePass(out, melody);
+  }
+  if (presetId === 'string_quartet') {
+    return applyStringQuartetHarmonizePass(out, melody);
+  }
   return out;
 }
 
@@ -842,12 +1064,269 @@ function targetPartsForPreset(score: ScoreModel, presetId: string) {
   return score.parts.filter((p) => p.instrumentIdentity === 'clean_electric_guitar');
 }
 
+function ensureSqParts(score: ScoreModel): PartModel[] {
+  const defs: Array<{ id: string; name: string; instrumentIdentity: string }> = [
+    { id: SQ_PART_V1, name: 'Violin I', instrumentIdentity: 'violin_1' },
+    { id: SQ_PART_V2, name: 'Violin II', instrumentIdentity: 'violin_2' },
+    { id: SQ_PART_VA, name: 'Viola', instrumentIdentity: 'viola' },
+    { id: SQ_PART_VC, name: 'Cello', instrumentIdentity: 'cello' },
+  ];
+  const parts: PartModel[] = [];
+  for (const d of defs) {
+    let part = score.parts.find((p) => p.id === d.id);
+    if (!part) {
+      part = { id: d.id, name: d.name, instrumentIdentity: d.instrumentIdentity, measures: [] };
+      score.parts.push(part);
+    }
+    parts.push(part);
+  }
+  return parts;
+}
+
+function melodyHoldDurationBeats(
+  mel: ImportMelodyNote,
+  melody: readonly ImportMelodyNote[],
+  barBeats = 4
+): number {
+  const next = melody
+    .filter((m) => m.bar === mel.bar && m.onsetBeat > mel.onsetBeat)
+    .sort((a, b) => a.onsetBeat - b.onsetBeat)[0];
+  if (next) return Math.max(mel.durationBeats, next.onsetBeat - mel.onsetBeat);
+  return Math.max(mel.durationBeats, barBeats - mel.onsetBeat);
+}
+
+function findOrCreateMeasure(part: PartModel, bar: number) {
+  let measure = part.measures.find((m) => m.index === bar);
+  if (!measure) {
+    measure = { index: bar, events: [] };
+    part.measures.push(measure);
+  }
+  return measure;
+}
+
+function pushSqNote(
+  part: PartModel,
+  bar: number,
+  pitch: number,
+  startBeat: number,
+  duration: number,
+  velocity?: number
+): void {
+  const measure = findOrCreateMeasure(part, bar);
+  measure.events = measure.events.filter(
+    (e) =>
+      !(e.kind === 'note' && e.pitch === pitch && Math.abs(e.startBeat - startBeat) < 0.02)
+  );
+  measure.events.push({
+    kind: 'note',
+    pitch,
+    startBeat,
+    duration,
+    voice: 1,
+    ...(velocity != null ? { velocity } : {}),
+  });
+  measure.events.sort((a, b) => a.startBeat - b.startBeat);
+}
+
+function applyChordMelodyToScoreStringQuartet(
+  score: ScoreModel,
+  resolvedNotes: readonly ResolvedChordMelodyNote[],
+  melody: readonly ImportMelodyNote[]
+): ScoreModel {
+  const out = structuredClone(score) as ScoreModel;
+  const sqParts = ensureSqParts(out);
+  const partById = new Map(sqParts.map((p) => [p.id, p]));
+  const vn1 = partById.get(SQ_PART_V1)!;
+  const vn2 = partById.get(SQ_PART_V2)!;
+  const vla = partById.get(SQ_PART_VA)!;
+  const vc = partById.get(SQ_PART_VC)!;
+
+  const byBar = new Map<number, ResolvedChordMelodyNote[]>();
+  for (const r of resolvedNotes) {
+    const list = byBar.get(r.bar) ?? [];
+    list.push(r);
+    byBar.set(r.bar, list);
+  }
+
+  for (const [bar, notes] of byBar) {
+    const strong = notes.filter((n) => isStrongBeat(n.onsetBeat));
+    const barPick = strong[0] ?? notes[0];
+    const barSymbol = barPick ? harmonySymbolForResolved(barPick) : undefined;
+    for (const part of sqParts) {
+      const measure = findOrCreateMeasure(part, bar);
+      if (barSymbol) {
+        measure.chord = barSymbol;
+        measure.chordSymbol = barSymbol;
+      }
+    }
+  }
+
+  const resolvedByOnset = new Map<string, ResolvedChordMelodyNote>();
+  for (const r of resolvedNotes) {
+    resolvedByOnset.set(`${r.bar}:${r.onsetBeat.toFixed(4)}`, r);
+  }
+
+  for (const mel of melody) {
+    const resolved =
+      resolvedByOnset.get(`${mel.bar}:${mel.onsetBeat.toFixed(4)}`) ??
+      resolvedNotes.find((r) => r.bar === mel.bar && Math.abs(r.onsetBeat - mel.onsetBeat) < 0.02);
+    if (!resolved || resolved.harmonyOnly) continue;
+
+    const sq = resolved.sqVoiceMidis;
+    const dur = mel.durationBeats;
+    if (sq) {
+      if (sq.violin1 != null) pushSqNote(vn1, mel.bar, sq.violin1, mel.onsetBeat, dur);
+      pushSqNote(vn2, mel.bar, sq.violin2, mel.onsetBeat, dur);
+      pushSqNote(vla, mel.bar, sq.viola, mel.onsetBeat, dur);
+      pushSqNote(vc, mel.bar, sq.cello, mel.onsetBeat, dur);
+    } else {
+      let stack =
+        resolved.exportStackMidis.length > 0 ? [...resolved.exportStackMidis] : [mel.midiPitch];
+      if (!stack.includes(mel.midiPitch)) stack.push(mel.midiPitch);
+      stack.sort((a, b) => a - b);
+      for (const pitch of stack) {
+        pushSqNote(vn1, mel.bar, pitch, mel.onsetBeat, dur);
+      }
+    }
+    resolved.blockVoicingMidis = resolved.innerVoicingMidis;
+  }
+
+  for (const r of resolvedNotes) {
+    if (!r.harmonyOnly || r.eventKind !== 'passing_dim') continue;
+    const sq = r.sqVoiceMidis;
+    if (!sq) continue;
+    const dur = r.exportDurationBeats ?? 0.5;
+    pushSqNote(vn2, r.bar, sq.violin2, r.onsetBeat, dur, SQ_PP_VELOCITY);
+    pushSqNote(vla, r.bar, sq.viola, r.onsetBeat, dur, SQ_PP_VELOCITY);
+    pushSqNote(vc, r.bar, sq.cello, r.onsetBeat, dur, SQ_PP_VELOCITY);
+  }
+
+  for (const part of sqParts) {
+    part.measures.sort((a, b) => a.index - b.index);
+  }
+  return out;
+}
+
+
+function ensureBbParts(score: ScoreModel): PartModel[] {
+  const defs: Array<{ id: string; name: string; instrumentIdentity: string }> = [
+    { id: BB_PART_ALTO1, name: 'Alto Sax 1', instrumentIdentity: 'alto_sax' },
+    { id: BB_PART_ALTO2, name: 'Alto Sax 2', instrumentIdentity: 'alto_sax' },
+    { id: BB_PART_TENOR1, name: 'Tenor Sax 1', instrumentIdentity: 'tenor_sax' },
+    { id: BB_PART_TENOR2, name: 'Tenor Sax 2', instrumentIdentity: 'tenor_sax' },
+    { id: BB_PART_BARI, name: 'Bari Sax', instrumentIdentity: 'baritone_sax' },
+  ];
+  const parts: PartModel[] = [];
+  for (const d of defs) {
+    let part = score.parts.find((p) => p.id === d.id);
+    if (!part) {
+      part = { id: d.id, name: d.name, instrumentIdentity: d.instrumentIdentity, measures: [] };
+      score.parts.push(part);
+    }
+    parts.push(part);
+  }
+  return parts;
+}
+
+function pushBbNote(
+  part: PartModel,
+  bar: number,
+  pitch: number,
+  startBeat: number,
+  duration: number,
+  velocity?: number
+): void {
+  pushSqNote(part, bar, pitch, startBeat, duration, velocity);
+}
+
+function applyChordMelodyToScoreBigBand(
+  score: ScoreModel,
+  resolvedNotes: readonly ResolvedChordMelodyNote[],
+  melody: readonly ImportMelodyNote[]
+): ScoreModel {
+  const out = structuredClone(score) as ScoreModel;
+  const bbParts = ensureBbParts(out);
+  const partById = new Map(bbParts.map((p) => [p.id, p]));
+  const a1 = partById.get(BB_PART_ALTO1)!;
+  const a2 = partById.get(BB_PART_ALTO2)!;
+  const t1 = partById.get(BB_PART_TENOR1)!;
+  const t2 = partById.get(BB_PART_TENOR2)!;
+  const bari = partById.get(BB_PART_BARI)!;
+
+  const byBar = new Map<number, ResolvedChordMelodyNote[]>();
+  for (const r of resolvedNotes) {
+    const list = byBar.get(r.bar) ?? [];
+    list.push(r);
+    byBar.set(r.bar, list);
+  }
+
+  for (const [bar, notes] of byBar) {
+    const strong = notes.filter((n) => isStrongBeat(n.onsetBeat));
+    const barPick = strong[0] ?? notes[0];
+    const barSymbol = barPick ? harmonySymbolForResolved(barPick) : undefined;
+    for (const part of bbParts) {
+      const measure = findOrCreateMeasure(part, bar);
+      if (barSymbol) {
+        measure.chord = barSymbol;
+        measure.chordSymbol = barSymbol;
+      }
+    }
+  }
+
+  const resolvedByOnset = new Map<string, ResolvedChordMelodyNote>();
+  for (const r of resolvedNotes) {
+    resolvedByOnset.set(`${r.bar}:${r.onsetBeat.toFixed(4)}`, r);
+  }
+
+  for (const mel of melody) {
+    const resolved =
+      resolvedByOnset.get(`${mel.bar}:${mel.onsetBeat.toFixed(4)}`) ??
+      resolvedNotes.find((r) => r.bar === mel.bar && Math.abs(r.onsetBeat - mel.onsetBeat) < 0.02);
+    if (!resolved || resolved.harmonyOnly) continue;
+
+    const bb = resolved.bbVoiceMidis;
+    const dur = mel.durationBeats;
+    if (bb) {
+      if (bb.alto1 != null) pushBbNote(a1, mel.bar, bb.alto1, mel.onsetBeat, dur);
+      pushBbNote(a2, mel.bar, bb.alto2, mel.onsetBeat, dur);
+      pushBbNote(t1, mel.bar, bb.tenor1, mel.onsetBeat, dur);
+      pushBbNote(t2, mel.bar, bb.tenor2, mel.onsetBeat, dur);
+      pushBbNote(bari, mel.bar, bb.bari, mel.onsetBeat, dur);
+    }
+    resolved.blockVoicingMidis = resolved.innerVoicingMidis;
+  }
+
+  for (const r of resolvedNotes) {
+    if (!r.harmonyOnly || r.eventKind !== 'passing_dim') continue;
+    const bb = r.bbVoiceMidis;
+    if (!bb) continue;
+    const innerDur = r.exportDurationBeats ?? 0.5;
+    const bariDur = r.exportBariDurationBeats ?? 1;
+    pushBbNote(a2, r.bar, bb.alto2, r.onsetBeat, innerDur, BB_MP_VELOCITY);
+    pushBbNote(t1, r.bar, bb.tenor1, r.onsetBeat, innerDur, BB_MP_VELOCITY);
+    pushBbNote(t2, r.bar, bb.tenor2, r.onsetBeat, innerDur, BB_MP_VELOCITY);
+    pushBbNote(bari, r.bar, bb.bari, r.onsetBeat, bariDur, BB_MP_VELOCITY);
+  }
+
+  for (const part of bbParts) {
+    part.measures.sort((a, b) => a.index - b.index);
+  }
+  return out;
+}
+
 export function applyChordMelodyToScore(
   score: ScoreModel,
   resolvedNotes: readonly ResolvedChordMelodyNote[],
   melody: readonly ImportMelodyNote[],
   presetId: string
 ): ScoreModel {
+  if (presetId === 'big_band') {
+    return applyChordMelodyToScoreBigBand(score, resolvedNotes, melody);
+  }
+  if (presetId === 'string_quartet') {
+    return applyChordMelodyToScoreStringQuartet(score, resolvedNotes, melody);
+  }
+
   const out = structuredClone(score) as ScoreModel;
   const parts = targetPartsForPreset(out, presetId);
   if (parts.length === 0) return out;
@@ -885,7 +1364,7 @@ export function applyChordMelodyToScore(
     const resolved =
       resolvedByOnset.get(`${mel.bar}:${mel.onsetBeat.toFixed(4)}`) ??
       resolvedNotes.find((r) => r.bar === mel.bar && Math.abs(r.onsetBeat - mel.onsetBeat) < 0.02);
-    if (!resolved) continue;
+    if (!resolved || resolved.harmonyOnly) continue;
 
     let stack =
       resolved.exportStackMidis.length > 0 ? [...resolved.exportStackMidis] : [mel.midiPitch];
@@ -909,12 +1388,13 @@ export function applyChordMelodyToScore(
       );
 
       const symbol = harmonySymbolForResolved(resolved);
+      const holdDur = melodyHoldDurationBeats(mel, melody);
       if (stack.length === 1) {
         measure.events.push({
           kind: 'note',
           pitch: mel.midiPitch,
           startBeat: mel.onsetBeat,
-          duration: mel.durationBeats,
+          duration: holdDur,
           voice: 1,
         });
       } else {
@@ -922,7 +1402,7 @@ export function applyChordMelodyToScore(
           kind: 'chord',
           pitches: stack,
           startBeat: mel.onsetBeat,
-          duration: mel.durationBeats,
+          duration: holdDur,
           voice: 1,
           chordSymbol: symbol,
         });

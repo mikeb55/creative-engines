@@ -2,7 +2,7 @@
  * V80k ladder — register-placed voicing realizations per rung (close / drop-2 / shell / dyad).
  */
 import { closeBlockVoicingBelowMelody, drop2VoicingBelowMelody } from './blockVoicings';
-import { assessGuitarFeasibility } from './guitarVoicingFeasibility';
+import { assessBhVoicingFeasibility } from './bhVoicingFeasibility';
 import type { LadderRung, RealizedVoicing, VoicingShapeType } from './types';
 
 export type LadderRegisterRange = {
@@ -16,6 +16,7 @@ export type LadderRealizerOptions = {
   registerRange?: LadderRegisterRange;
   spacingPreference?: LadderSpacingPreference;
   allowStretch?: boolean;
+  presetId?: string;
 };
 
 const DEFAULT_REGISTER: LadderRegisterRange = { minMelodyMidi: 55, maxMelodyMidi: 79 };
@@ -47,11 +48,12 @@ function finalizeRealization(
   melodyMidi: number,
   innerVoicingMidis: number[],
   shapeType: VoicingShapeType,
-  allowStretch: boolean
+  allowStretch: boolean,
+  presetId?: string
 ): RealizedVoicing | null {
   const inner = [...innerVoicingMidis].sort((a, b) => a - b);
   const pitches = [...inner, melodyMidi].sort((a, b) => a - b);
-  const feasibility = assessGuitarFeasibility(pitches, { allowStretch });
+  const feasibility = assessBhVoicingFeasibility(pitches, presetId, { allowStretch });
   if (!feasibility.feasible) return null;
   return {
     rungIndex: rung.index,
@@ -99,31 +101,37 @@ function pushUnique(realizations: RealizedVoicing[], candidate: RealizedVoicing 
 export function closeVoicingVariants(
   rung: LadderRung,
   melodyMidi: number,
-  allowStretch = true
+  allowStretch = true,
+  presetId?: string
 ): RealizedVoicing[] {
   const inner = closeBlockVoicingBelowMelody(melodyMidi, tonePcsForRung(rung));
-  const realized = finalizeRealization(rung, melodyMidi, inner, 'close', allowStretch);
+  const realized = finalizeRealization(rung, melodyMidi, inner, 'close', allowStretch, presetId);
   return realized ? [realized] : [];
 }
 
 export function drop2VoicingVariants(
   rung: LadderRung,
   melodyMidi: number,
-  allowStretch = true
+  allowStretch = true,
+  presetId?: string
 ): RealizedVoicing[] {
   const inner = drop2VoicingBelowMelody(melodyMidi, tonePcsForRung(rung));
-  const realized = finalizeRealization(rung, melodyMidi, inner, 'drop2', allowStretch);
+  const realized = finalizeRealization(rung, melodyMidi, inner, 'drop2', allowStretch, presetId);
   return realized ? [realized] : [];
 }
 
 export function shellVoicingVariants(
   rung: LadderRung,
   melodyMidi: number,
-  allowStretch = true
+  allowStretch = true,
+  presetId?: string
 ): RealizedVoicing[] {
   const out: RealizedVoicing[] = [];
   for (const pcs of shellInnerPcSets(rung)) {
-    pushUnique(out, finalizeRealization(rung, melodyMidi, placeInnerFromPcs(melodyMidi, pcs), 'shell', allowStretch));
+    pushUnique(
+      out,
+      finalizeRealization(rung, melodyMidi, placeInnerFromPcs(melodyMidi, pcs), 'shell', allowStretch, presetId)
+    );
   }
   return out;
 }
@@ -131,7 +139,8 @@ export function shellVoicingVariants(
 export function dyadVoicingVariants(
   rung: LadderRung,
   melodyMidi: number,
-  allowStretch = true
+  allowStretch = true,
+  presetId?: string
 ): RealizedVoicing[] {
   const out: RealizedVoicing[] = [];
   const innerPcs = rung.abstractClose.map(mod12).filter((pc) => pc !== mod12(rung.melodyPc));
@@ -141,15 +150,19 @@ export function dyadVoicingVariants(
       while (mod12(bass) !== pc) bass -= 1;
       bass -= 12 * drop;
       if (bass >= melodyMidi) continue;
-      pushUnique(out, finalizeRealization(rung, melodyMidi, [bass], 'dyad', allowStretch));
+      pushUnique(out, finalizeRealization(rung, melodyMidi, [bass], 'dyad', allowStretch, presetId));
     }
   }
  return out;
 }
 
-export function singleNoteVoicing(rung: LadderRung, melodyMidi: number): RealizedVoicing {
+export function singleNoteVoicing(
+  rung: LadderRung,
+  melodyMidi: number,
+  presetId?: string
+): RealizedVoicing {
   const pitches = [melodyMidi];
-  const feasibility = assessGuitarFeasibility(pitches);
+  const feasibility = assessBhVoicingFeasibility(pitches, presetId);
   return {
     rungIndex: rung.index,
     source: rung.source,
@@ -170,6 +183,7 @@ export function realizeRungAtMelody(
 ): RealizedVoicing[] {
   const allowStretch = options.allowStretch ?? true;
   const pref = options.spacingPreference ?? 'all';
+  const presetId = options.presetId;
   const realizations: RealizedVoicing[] = [];
 
   if (mod12(melodyMidi) !== mod12(rung.melodyPc)) {
@@ -177,14 +191,18 @@ export function realizeRungAtMelody(
   }
 
   if (pref === 'all' || pref === 'close') {
-    for (const r of closeVoicingVariants(rung, melodyMidi, allowStretch)) pushUnique(realizations, r);
+    for (const r of closeVoicingVariants(rung, melodyMidi, allowStretch, presetId))
+      pushUnique(realizations, r);
   }
   if (pref === 'all' || pref === 'drop2') {
-    for (const r of drop2VoicingVariants(rung, melodyMidi, allowStretch)) pushUnique(realizations, r);
+    for (const r of drop2VoicingVariants(rung, melodyMidi, allowStretch, presetId))
+      pushUnique(realizations, r);
   }
   if (pref === 'all') {
-    for (const r of shellVoicingVariants(rung, melodyMidi, allowStretch)) pushUnique(realizations, r);
-    for (const r of dyadVoicingVariants(rung, melodyMidi, allowStretch)) pushUnique(realizations, r);
+    for (const r of shellVoicingVariants(rung, melodyMidi, allowStretch, presetId))
+      pushUnique(realizations, r);
+    for (const r of dyadVoicingVariants(rung, melodyMidi, allowStretch, presetId))
+      pushUnique(realizations, r);
   }
 
   return realizations;
