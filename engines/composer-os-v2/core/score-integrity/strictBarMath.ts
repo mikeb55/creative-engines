@@ -120,6 +120,40 @@ export function validateSibeliusUndottedBeatAtoms(score: ScoreModel): StrictBarM
   return { valid: errors.length === 0, errors };
 }
 
+/** Pad sparse inner-voicing lanes (e.g. BH chord-melody voice 2) with rests so per-voice bar sums match the meter. */
+export function fillSparseVoiceRestGaps(
+  score: ScoreModel,
+  instrumentIdentity: string,
+  voice: number
+): ScoreModel {
+  const out = structuredClone(score) as ScoreModel;
+  const part = out.parts.find((p) => p.instrumentIdentity === instrumentIdentity);
+  if (!part) return out;
+
+  for (const m of part.measures) {
+    const beatSpan = measureBeatSpanQuartersOf(m);
+    const other = m.events.filter((e) => (e.voice ?? 1) !== voice);
+    const voiceEvents = m.events.filter((e) => (e.voice ?? 1) === voice);
+    if (voiceEvents.length === 0) continue;
+
+    const sorted = [...voiceEvents].sort((a, b) => a.startBeat - b.startBeat);
+    const filled: ScoreEvent[] = [];
+    let cursor = 0;
+    for (const e of sorted) {
+      if (e.startBeat > cursor + EPS) {
+        filled.push({ kind: 'rest', startBeat: cursor, duration: e.startBeat - cursor, voice });
+      }
+      filled.push({ ...e, voice });
+      cursor = Math.max(cursor, e.startBeat + e.duration);
+    }
+    if (cursor < beatSpan - EPS) {
+      filled.push({ kind: 'rest', startBeat: cursor, duration: beatSpan - cursor, voice });
+    }
+    m.events = [...other, ...filled].sort((a, b) => a.startBeat - b.startBeat);
+  }
+  return out;
+}
+
 export function validateStrictBarMath(score: ScoreModel): StrictBarMathResult {
   const errors: string[] = [];
 

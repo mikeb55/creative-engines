@@ -697,6 +697,8 @@ export interface GenerationMetadata {
   variationResult?: import('./import/mosaicVariationEngine').VariationResult;
   /** V80m IMP-5: style-transfer result (pinned melody + slice harmony). */
   styleTransferResult?: import('./import/mosaicStyleTransfer').StyleTransferResult;
+  /** V82a: preserveMelody flag from style-transfer request (default true when omitted). */
+  styleTransferPreserveMelody?: boolean;
   /** V80m IMP-5: BB/SQ re-orchestration applied during style-transfer. */
   styleTransferReorchestrateApplied?: boolean;
   /** Song Mode: aggregated section shaping metrics for manifests, UI notes, and eval harnesses. */

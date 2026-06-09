@@ -169,6 +169,11 @@ export function resolveEffectiveHarmonyTruth(
     return [...opts.harmonyContext.bars];
   }
 
+  const stApplied = md.styleTransferResult?.appliedHarmonyBars;
+  if (stApplied && matchesLength(stApplied)) {
+    return [...stApplied];
+  }
+
   const fromMerged = coerceStringBarArray(md.mosaicMergedHarmonyBars);
   if (fromMerged && matchesLength(fromMerged)) {
     return [...fromMerged];

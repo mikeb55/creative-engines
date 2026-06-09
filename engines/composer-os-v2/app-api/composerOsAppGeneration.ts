@@ -1467,6 +1467,8 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           ? importedSongResult.lockedHarmonyBars.join('|')
           : '';
   const useLockedCustomHarmony = rawCustomHarmony.length > 0 && !useLeadSheetHarmony;
+  /** True only when user paste or imported timeline actually requested lock — not internal songwriter scaffold. */
+  let harmonyLockFromUserOrImport = false;
   let lockedHarmonyBarsAuthoritative: string[] | undefined;
   if (useLockedCustomHarmony) {
     if (process.env.COMPOSER_OS_SONG_MODE_CHORD_DEBUG === '1') {
@@ -1508,6 +1510,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       };
     }
     lockedHarmonyBarsAuthoritative = [...parsedHarmony.bars];
+    harmonyLockFromUserOrImport = true;
   }
 
   let songwriterLockedBars: string[] | undefined;
@@ -1573,14 +1576,21 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     lockedHarmonyBarsAuthoritative = [...importedTimelineBars];
     chordProgressionText = lockedHarmonyBarsAuthoritative.join('|');
     harmonyModeForRun = 'custom_locked';
+    harmonyLockFromUserOrImport = true;
   } else if (!useLockedCustomHarmony && useLeadSheetHarmony) {
     lockedHarmonyBarsAuthoritative = [...(leadSheetAdapted?.lockedChordBars ?? [])];
     chordProgressionText = lockedHarmonyBarsAuthoritative.join('|');
     harmonyModeForRun = 'custom_locked';
-  } else if (!useLockedCustomHarmony && songwriterLockedBars && songwriterLockedBars.length > 0) {
+    harmonyLockFromUserOrImport = true;
+  } else if (
+    !useLockedCustomHarmony &&
+    !useBuiltinLongFormWithoutUserPaste &&
+    songwriterLockedBars &&
+    songwriterLockedBars.length > 0
+  ) {
+    // Songwriter scaffold seeds custom harmony; slice devices (e.g. Barry Harris sixth–dim) may transform bars.
     chordProgressionText = songwriterLockedBars.join('|');
-    harmonyModeForRun = 'custom_locked';
-    lockedHarmonyBarsAuthoritative = songwriterLockedBars;
+    harmonyModeForRun = 'custom';
   }
 
   const blendMergeActive =
@@ -1611,6 +1621,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       lockedHarmonyBarsAuthoritative = merged;
       chordProgressionText = merged.join('|');
       harmonyModeForRun = 'custom_locked';
+      harmonyLockFromUserOrImport = true;
     }
   }
   logSongModeHarmonyDebug({
@@ -2037,6 +2048,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
 
   /** Compare score/XML only when Song Mode actually ran `custom_locked` (engine metadata), not when local parse arrays exist without lock wiring. */
   const songModeHarmonyLockAssertionsActive =
+    harmonyLockFromUserOrImport &&
     mdLockedTruth.customHarmonyLocked === true &&
     gp.context.generationMetadata.sectionRegenerationPartialScore !== true &&
     lockedHarmonyBarsAuthoritative &&
@@ -2070,7 +2082,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           )
         );
       }
-      if (process.env.COMPOSER_OS_DESKTOP_IPC === '1') {
+      if (process.env.COMPOSER_OS_DESKTOP_IPC === '1' && harmonyLockFromUserOrImport) {
         for (let b = 1; b <= 4; b++) {
           const got = getChordForBar(b, gp.context);
           const exp = harmonyBarsForLockedAssertions![b - 1]!;

@@ -1,8 +1,10 @@
-﻿/**
- * V81 auto-validation CLI (7 tests).
+/**
+ * V81 auto-validation CLI (8 tests).
  * Run: npx tsx --tsconfig ../../tsconfig.json scripts/runV81AutoValidation.ts
  */
 
+import * as fs from 'fs';
+import * as path from 'path';
 import type { CompositionContext } from '../core/compositionContext';
 import { dim7ChordTones, sixthChordTones } from '../core/barry-harris/chordTones';
 import {
@@ -15,6 +17,10 @@ import {
   scoreMelodyToImportMelody,
 } from '../core/barry-harris';
 import { exportScoreModelToMusicXml } from '../core/export/musicxmlExporter';
+import { runGoldenPathOnce } from '../core/goldenPath/runGoldenPath';
+import { importTimelineToLockedHarmony } from '../core/import/importTimelineAdapters';
+import { musicXmlToImportTimeline } from '../core/import/musicXmlToImportTimeline';
+import { melodyLinesMatchPitchForPitch } from '../core/import/mosaicStyleTransfer';
 import type { ImportMelodyNote } from '../core/import/mosaicImportTimeline';
 import { planLeadMelody } from '../core/song-mode/leadMelodyPlanner';
 import { planMelodyBehaviour } from '../core/song-mode/melodyBehaviourPlanner';
@@ -27,6 +33,30 @@ import type { ResolvedChordMelodyNote } from '../core/barry-harris/types';
 import type { ScoreModel } from '../core/score-model/scoreModelTypes';
 
 const UPPER_REGISTER_CLOSE_TOP_MIDI = 76;
+
+const JAZZ_BENCHMARK_FIXTURE = path.join(
+  __dirname,
+  '..',
+  'core',
+  'barry-harris',
+  'test-fixtures',
+  'BH_Benchmark_JazzMelody.musicxml'
+);
+const JAZZ_BENCHMARK_LEGACY = path.join(
+  'C:',
+  'Users',
+  'mike',
+  'Documents',
+  'Mike Composer Files',
+  'barry_harris',
+  'BH_Benchmark_JazzMelody.musicxml'
+);
+
+function resolveJazzBenchmarkMusicXmlPath(): string {
+  if (fs.existsSync(JAZZ_BENCHMARK_FIXTURE)) return JAZZ_BENCHMARK_FIXTURE;
+  if (fs.existsSync(JAZZ_BENCHMARK_LEGACY)) return JAZZ_BENCHMARK_LEGACY;
+  throw new Error(`BH jazz benchmark fixture missing: ${JAZZ_BENCHMARK_FIXTURE}`);
+}
 
 type AssertResult = { label: string; pass: boolean; detail?: string };
 
@@ -452,6 +482,81 @@ function melodyMidiForResolved(r: ResolvedChordMelodyNote, melody: readonly Impo
   return m?.midiPitch ?? 60;
 }
 
+function test8StyleTransferJazzBenchmark(): boolean {
+  const xml = fs.readFileSync(resolveJazzBenchmarkMusicXmlPath(), 'utf8');
+  const ir = musicXmlToImportTimeline(xml);
+  const locked = importTimelineToLockedHarmony(ir);
+  const totalBars = Math.max(locked.length, ir.bars, 8);
+  const inputMelody = ir.melodyLine;
+
+  const gp = runGoldenPathOnce(88108, {
+    presetId: 'guitar_bass_duo',
+    harmonyMode: 'custom_locked',
+    lockedHarmonyBarsRaw: [...locked],
+    parsedChordBars: [...locked],
+    chordProgressionText: locked.join(' | '),
+    totalBars,
+    importTimeline: ir,
+    styleTransfer: true,
+    targetComposer: 'barry_harris',
+    styleTransferStrength: 1,
+    preserveMelody: true,
+    reorchestrate: false,
+    suppressWybleVoiceLayoutForTest: true,
+  });
+
+  const st = gp.context?.generationMetadata?.styleTransferResult;
+  const cm = st?.barryHarrisChordMelody;
+  const cmReceipts =
+    cm?.cmReceipts ??
+    gp.context?.generationMetadata?.barryHarrisChordMelodyReceipts ??
+    [];
+  const pdReceipts = passingDimReceipts(cmReceipts);
+  const density = cm?.passingDimDensity ?? 0;
+  const retained = st?.retainedMelody ?? [];
+  const melodyPreserved =
+    inputMelody.length === 16 &&
+    retained.length === 16 &&
+    melodyLinesMatchPitchForPitch(inputMelody, retained);
+  const generationOk =
+    gp.score != null &&
+    gp.score.parts.length > 0 &&
+    (gp.xml?.length ?? 0) > 0 &&
+    st?.composerApplied === 'barry_harris' &&
+    !gp.errors.some((e) => /DESKTOP SONG MODE HARMONY|authority check/i.test(e));
+
+  console.log('\n--- TEST 8 style-transfer jazz benchmark ---');
+  console.log(`fixture: ${resolveJazzBenchmarkMusicXmlPath()}`);
+  console.log(`generationOk: ${generationOk} (gp.success=${gp.success})`);
+  console.log(`input melody notes: ${inputMelody.length}`);
+  console.log(`retainedMelody notes: ${retained.length}`);
+  console.log(`passingDimCount: ${cm?.passingDimCount ?? 0}`);
+  console.log(`passingDimDensity: ${density.toFixed(3)}`);
+  console.log(`first passing_dim receipt: ${pdReceipts[0] ?? '(none)'}`);
+
+  const densityOk = density >= 0.25 && density <= 0.4;
+
+  return printAssertions('TEST 8 — Style-transfer jazz benchmark', [
+    {
+      label: 'generation succeeds (style-transfer output, no authority failure)',
+      pass: generationOk,
+      detail: gp.errors[0] ?? 'ok',
+    },
+    { label: 'input has 16 melody notes', pass: inputMelody.length === 16 },
+    { label: '>=1 passing_dim receipt', pass: pdReceipts.length >= 1, detail: String(pdReceipts.length) },
+    {
+      label: 'passingDimDensity in [0.25, 0.40]',
+      pass: densityOk,
+      detail: density.toFixed(3),
+    },
+    {
+      label: 'all 16 melody notes preserved',
+      pass: melodyPreserved,
+      detail: `retained=${retained.length}`,
+    },
+  ]);
+}
+
 function test7Drop2UpperRegister(): boolean {
   const { pipeline } = scoreBenchmark(JAZZ_HARMONY, JAZZ_MELODY, 'guitar_bass_duo');
   const structural = pipeline.resolvedNotes.filter((r) => r.eventKind !== 'passing_dim' && !r.harmonyOnly);
@@ -486,10 +591,11 @@ function main(): void {
     test5RestArtifact(),
     test6FamilyChangeLeapWarn(),
     test7Drop2UpperRegister(),
+    test8StyleTransferJazzBenchmark(),
   ];
   const passed = results.filter(Boolean).length;
-  console.log(`\nSummary: ${passed}/7 tests passed`);
-  process.exit(passed === 7 ? 0 : 1);
+  console.log(`\nSummary: ${passed}/8 tests passed`);
+  process.exit(passed === 8 ? 0 : 1);
 }
 
 main();

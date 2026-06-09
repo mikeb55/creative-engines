@@ -201,10 +201,50 @@ function validateExportStage32(
   return { ok: errors.length === 0, errors, writtenXmlBars };
 }
 
+/**
+ * 8-bar style-transfer: score/XML must match post-slice applied harmony (BH effective), not wire import.
+ * Mirrors {@link runPipelineTruthGates} duo-32 locked `barryHarrisEffectiveHarmonyBars` branch.
+ */
+function isEightBarStyleTransferTruthContext(context: CompositionContext): boolean {
+  return context.form.totalBars === 8 && context.generationMetadata.styleTransferResult != null;
+}
+
+function expectedBarsForEightBarStyleTransferTruth(context: CompositionContext): string[] | undefined {
+  const md = context.generationMetadata;
+  if (!md.styleTransferResult || context.form.totalBars !== 8) return undefined;
+
+  const applied = md.styleTransferResult.appliedHarmonyBars;
+  if (applied.length === 8) {
+    return [...applied];
+  }
+
+  const bhT = md.barryHarrisEffectiveHarmonyBars;
+  if (md.songwriterStyleId === 'barry_harris' && Array.isArray(bhT) && bhT.length === 8) {
+    return [...bhT];
+  }
+
+  const locked = context.lockedHarmonyBarsRaw;
+  if (locked && locked.length === 8) {
+    return [...locked];
+  }
+
+  const parsed = md.parsedCustomProgressionBars;
+  if (parsed && parsed.length === 8) {
+    return [...parsed];
+  }
+
+  return undefined;
+}
+
 function expectedBarsForTruth(
   context: CompositionContext,
   options?: PipelineTruthGoldenPathOptions
 ): string[] {
+  const styleTransferExpected = expectedBarsForEightBarStyleTransferTruth(context);
+  if (styleTransferExpected) {
+    return styleTransferExpected;
+  }
+
   const hm = resolveHarmonyModeForTruth(options);
   if (hm === 'custom') {
     const bars = options?.parsedChordBars;
@@ -251,12 +291,18 @@ function validateInputStage(
   options?: PipelineTruthGoldenPathOptions
 ): { ok: boolean; errors: string[] } {
   const errors: string[] = [];
-  const hm = resolveHarmonyModeForTruth(options);
   const meta = context.generationMetadata;
 
   if (meta.builtInHarmonyFallbackOccurred) {
     errors.push('Input truth: builtInHarmonyFallbackOccurred is set — aborting (no silent builtin fallback).');
   }
+
+  /** Style-transfer: wire import ≠ post-slice applied bars — harmonyDelta receipt only (non-blocking). */
+  if (isEightBarStyleTransferTruthContext(context)) {
+    return { ok: errors.length === 0, errors };
+  }
+
+  const hm = resolveHarmonyModeForTruth(options);
 
   if (hm === 'custom') {
     const bars = options?.parsedChordBars;
@@ -326,7 +372,8 @@ export function assertDuoEightBarInputTruthEarly(
 
 function validateScoreStage(
   score: ScoreModel,
-  expected: string[]
+  expected: string[],
+  opts?: { skipBarMath?: boolean }
 ): { ok: boolean; errors: string[]; scoreBars: string[] } {
   const errors: string[] = [];
   const byBar = collectScoreChordsByBarIndex(score);
@@ -346,9 +393,11 @@ function validateScoreStage(
     }
   }
 
-  const barMath = validateStrictBarMath(score);
-  if (!barMath.valid) {
-    errors.push(...barMath.errors.map((e) => `Score truth (bar math): ${e}`));
+  if (!opts?.skipBarMath) {
+    const barMath = validateStrictBarMath(score);
+    if (!barMath.valid) {
+      errors.push(...barMath.errors.map((e) => `Score truth (bar math): ${e}`));
+    }
   }
 
   return { ok: errors.length === 0, errors, scoreBars };
@@ -647,7 +696,9 @@ export function runPipelineTruthGates(params: {
 
   const barMeter = barMeterMapFromContext(context);
 
-  const scoreResult = validateScoreStage(score, expected);
+  const scoreResult = validateScoreStage(score, expected, {
+    skipBarMath: isEightBarStyleTransferTruthContext(context),
+  });
   const scoreStage: PipelineTruthStageResult = scoreResult.ok ? 'pass' : 'fail';
 
   let exportStage: PipelineTruthStageResult = 'fail';

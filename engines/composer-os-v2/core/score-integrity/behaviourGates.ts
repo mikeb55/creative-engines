@@ -47,6 +47,7 @@ import {
 } from './duoLockQuality';
 import { validateDuoMelodyIdentityV3 } from './duoMelodyIdentityV3';
 import { isFrankZappaSongwriterId } from '../gce/frankZappaStructuralFingerprint';
+import { isStyleTransferPreserveMelodyActive } from '../import/mosaicStyleTransfer';
 
 export interface SectionContrastResult {
   valid: boolean;
@@ -319,12 +320,27 @@ export function runBehaviourGates(
   if (!duoMusical.valid) errors.push(...duoMusical.errors);
   const duoMusicalValid = duoMusical.valid;
 
+  const styleTransferPreserveMelodyRelax = isStyleTransferPreserveMelodyActive(
+    opts?.compositionContext?.generationMetadata
+  );
+  const bassRhythmicCellSubstr = 'rhythmic cell repeated across more than two consecutive bars';
   const bassIdentity = validateBassIdentity(score, {
     presetId: opts?.presetId,
     zappaStructuralRelax: bassStructuralRelax,
   });
-  if (!bassIdentity.valid) errors.push(...bassIdentity.errors);
-  const bassIdentityValid = bassIdentity.valid;
+  if (!bassIdentity.valid) {
+    if (styleTransferPreserveMelodyRelax) {
+      const blocking = bassIdentity.errors.filter((e) => !e.includes(bassRhythmicCellSubstr));
+      const rhythmic = bassIdentity.errors.filter((e) => e.includes(bassRhythmicCellSubstr));
+      if (songMode) duoIdentityWarnings.push(...rhythmic);
+      errors.push(...blocking);
+    } else {
+      errors.push(...bassIdentity.errors);
+    }
+  }
+  const bassIdentityValid = styleTransferPreserveMelodyRelax
+    ? bassIdentity.errors.filter((e) => !e.includes(bassRhythmicCellSubstr)).length === 0
+    : bassIdentity.valid;
 
   const phraseAuthority = validateDuoPhraseAuthority(score, {
     presetId: opts?.presetId,

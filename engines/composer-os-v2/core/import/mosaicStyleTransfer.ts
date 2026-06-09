@@ -140,7 +140,8 @@ export function pinMelodyOnScore(score: ScoreModel, melody: readonly ImportMelod
   const barsWithMelody = new Set(melody.map((n) => n.bar));
   for (const m of guitar.measures) {
     if (!barsWithMelody.has(m.index)) continue;
-    m.events = m.events.filter((e) => e.kind !== 'note' || (e.voice ?? 1) !== 1);
+    /** Clear all voice-1 events (notes + rests) — duo scaffold leaves rests that overlap pinned import melody. */
+    m.events = m.events.filter((e) => (e.voice ?? 1) !== 1);
   }
 
   for (const note of melody) {
@@ -425,6 +426,14 @@ export function shouldRunStyleTransfer(options: {
   styleTransfer?: boolean;
 }): boolean {
   return options.styleTransfer === true && !!options.importTimeline;
+}
+
+/** Style-transfer with pinned import melody — motif/bass duo-LOCK relax gates apply. */
+export function isStyleTransferPreserveMelodyActive(
+  md: import('../compositionContext').GenerationMetadata | undefined
+): boolean {
+  if (!md?.styleTransferResult) return false;
+  return md.styleTransferPreserveMelody !== false;
 }
 
 export function applyStyleTransferToScore(

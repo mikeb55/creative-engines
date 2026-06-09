@@ -97,7 +97,7 @@ export function buildGenerateResultEchoes(input: BuildGenerateResultEchoesInput)
       },
       harmonyConfidenceByBar: ir.harmonyByBar.map((h) => h.confidence),
       harmonyOriginByBar: ir.harmonyByBar.map((h) => h.fieldOrigin),
-      parseDiagnostics: [...ir.parseDiagnostics],
+      parseDiagnostics: [...(ir.parseDiagnostics ?? [])],
       importHarmonyMode: input.importHarmonyMode ?? md.importHarmonyMode ?? 'free_harmony',
     };
   }

@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+## [2.9.1] - 2026-06-09
+
+### Fixed
+
+- **V82a — Barry Harris Style-Transfer validation** — 8-bar pipeline truth expects post-BH `appliedHarmonyBars` (not wire import); motif consecutive-bar and bass rhythmic anti-loop relax when style-transfer + `preserveMelody`; `pinMelodyOnScore` clears all voice-1 events; deferred bar-math / locked-wire assert after chord-melody overlay; `resolveEffectiveHarmonyTruth` routes style-transfer applied bars. Auto-validation **TEST 8** (BH jazz benchmark fixture).
+
+- **Song Mode harmony authority** — `harmonyLockFromUserOrImport` gate: songwriter scaffold no longer treated as user-locked harmony when `free_harmony` / no paste/import.
+
 ## [2.9.0] - 2026-06-09
 
 ### Barry Harris Extensions

@@ -93,7 +93,11 @@ import { validateExportIntegrity } from '../export/exportHardening';
 import { runReleaseReadinessGate } from '../readiness/releaseReadinessGate';
 import { createRunManifest } from '../run-ledger/createRunManifest';
 import { validateScoreModel } from '../score-model/scoreModelValidation';
-import { validateStrictBarMath, validateStrictBarMathSibeliusSafe } from '../score-integrity/strictBarMath';
+import {
+  fillSparseVoiceRestGaps,
+  validateStrictBarMath,
+  validateStrictBarMathSibeliusSafe,
+} from '../score-integrity/strictBarMath';
 import { getStyleModuleDisplayName } from '../style-modules/styleModuleRegistry';
 import { validateExportedMusicXmlBarMath } from '../export/validateMusicXmlBarMath';
 import { validateWrittenMusicXmlComplete } from '../export/validateMusicXmlWrittenStrict';
@@ -2823,6 +2827,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
         appliedContext.generationMetadata = {
           ...appliedContext.generationMetadata,
           styleTransferResult,
+          styleTransferPreserveMelody: options.preserveMelody !== false,
           parsedCustomProgressionBars: [...styleTransferResult.appliedHarmonyBars],
           customHarmonyLocked: (options.styleTransferStrength ?? 0.5) < 0.95,
         };
@@ -2921,6 +2926,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       const zappaMotifPhraseRelax = isFrankZappaSongwriterId(
         appliedContext.generationMetadata?.songwriterStyleId
       );
+      const styleTransferPreserveMelodyRelax =
+        appliedContext.generationMetadata?.styleTransferResult != null &&
+        options?.preserveMelody !== false;
       for (const issue of motifIssues) {
         if (
           isMosaicModeActive(appliedContext) &&
@@ -2935,7 +2943,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
           issue.includes(literalWarning) ||
           issue.includes(similarityWarning) ||
           issue.includes(slidingMotifCoverageWarning) ||
-          (zappaMotifPhraseRelax && issue.includes('consecutive bars without motif-mapped notes'));
+          (zappaMotifPhraseRelax && issue.includes('consecutive bars without motif-mapped notes')) ||
+          (styleTransferPreserveMelodyRelax &&
+            issue.includes('consecutive bars without motif-mapped notes'));
         if (routeToPhraseWarnings) {
           songModePhraseWarnings = [...(songModePhraseWarnings ?? []), issue];
         } else {
@@ -2953,10 +2963,15 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     }
   }
   appendHarmonyPipelineTrace(appliedContext, 'score_builder', 'generateGoldenPathDuoScore finished');
-  try {
-    assertScoreMatchesLockedHarmonyWire(score, options, appliedContext);
-  } catch (e) {
-    errors.push(e instanceof Error ? e.message : String(e));
+  const styleTransferDeferLockedWire =
+    appliedContext.generationMetadata?.styleTransferResult != null &&
+    (options?.preserveMelody ?? true);
+  if (!styleTransferDeferLockedWire) {
+    try {
+      assertScoreMatchesLockedHarmonyWire(score, options, appliedContext);
+    } catch (e) {
+      errors.push(e instanceof Error ? e.message : String(e));
+    }
   }
   if (isMosaicModeActive(appliedContext)) {
     try {
@@ -3034,7 +3049,13 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   if (!modelValidation.valid) errors.push(...modelValidation.errors);
 
   // Rhythm is finalized + validated once inside generateGoldenPathDuoScore; parts/measures/events are frozen — read-only gate.
-  const strictBarMath = isIndieTuningFixture ? { valid: true, errors: [] } : validateStrictBarMath(score);
+  const styleTransferDeferBarMath =
+    appliedContext.generationMetadata?.styleTransferResult != null &&
+    (options?.preserveMelody ?? true);
+  let strictBarMath =
+    isIndieTuningFixture || styleTransferDeferBarMath
+      ? { valid: true, errors: [] as string[] }
+      : validateStrictBarMath(score);
   if (!strictBarMath.valid) {
     errors.push(...strictBarMath.errors);
     const rich = validateStrictBarMathSibeliusSafe(score);
@@ -3186,6 +3207,28 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       ...appliedContext.generationMetadata,
       barryHarrisResolvedNotes: resolvedNotes,
     };
+  }
+  if (styleTransferDeferBarMath && !isIndieTuningFixture) {
+    score = fillSparseVoiceRestGaps(score, 'clean_electric_guitar', 2);
+    strictBarMath = validateStrictBarMath(score);
+    if (!strictBarMath.valid) {
+      errors.push(...strictBarMath.errors);
+      const rich = validateStrictBarMathSibeliusSafe(score);
+      const seen = new Set<string>();
+      for (const d of rich.details) {
+        const line = `[bar-math-debug] part=${d.partId} (${d.instrumentIdentity}) bar=${d.measureIndex} voice=${d.voice} sum=${d.summedDuration} cursorEnd=${d.timelineCursorEnd} events=${d.eventsJson}`;
+        if (seen.has(line)) continue;
+        seen.add(line);
+        errors.push(line);
+      }
+    }
+  }
+  if (styleTransferDeferLockedWire) {
+    try {
+      assertScoreMatchesLockedHarmonyWire(score, options, appliedContext);
+    } catch (e) {
+      errors.push(e instanceof Error ? e.message : String(e));
+    }
   }
   const mixedPresetAssembled =
     appliedContext.generationMetadata?.mixedPresetAssemblyApplied === true;
