@@ -1,6 +1,8 @@
-# Composer OS Roadmap [2026-06-08]
+# Composer OS Roadmap [2026-06-09]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](../CHANGELOG.md), [docs/CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
+
+**V82 — COMPLETE (2026-06-09, tag `v2.7.0`):** Barry Harris **chord-melody** on style-transfer path — sixth/dim7/borrowed note selector · fake-book reinterpret · identity spellings · melody-top block voicings · **`bh:cm:*`** per-note receipts · **`barry_harris`** VRB observability · **`npm run eval:barry_harris`** · smoke depth (+3 rows). Legacy bebop slice **`bh:bebop_*`** / **`bh:sixth_*`** unchanged. See [CHANGELOG.md](CHANGELOG.md) § **2.7.0**.
 
 **V81 — COMPLETE (2026-06-08, tag `v2.6.0`):** Full Generate-tab UI for V80 engines — import panel (**`1acc7b55`**) · API echo (**`ddc8d83c`**) · generate wiring (**`23043450`**) · variation picker (**`a05b5122`**) · style-transfer controls (**`14a7e616`**) · output filename + library folder (**`dbfc2998`** · **`22bd0443`**) · section planner timeline (**`b9b8bb82`**) · receipt upgrades (**`b01ef26b`**) · ship **`v2.6.0`**. See [CHANGELOG.md](../CHANGELOG.md) § **v2.6.0**.
 
@@ -10,7 +12,7 @@
 
 **V78 — COMPLETE (2026-06-07, tag `v2.3.0`):** LFV integrity fix (**`05fb79f7`**) · BB mosaic output format at ScoreModel (**`b036849a`**) · SQ mosaic output format (**`55be2520`**) · Song Mode → Mosaic thin mapper at golden-path handoff (**`f14eaaba`**).
 
-**Post-v2.6.0 backlog (V82 candidates):** Interactive confidence heatmap (click-to-override) · variation contour SVG previews · pre-generate candidate preview (needs preview API) · section planner drag-to-resize · style-transfer dry-run preview · **`IR.sectionStarts`** (rehearsal-mark parsing for true section auto-fill) · Jack White slice fix (**2** allowlisted smoke rows) · App.tsx Composer Engines tab consolidation · **`HomeGenerate.tsx`** Babel deopt file split · **`desktop:dev`** prod-path `.md` loader · duo depth · multi-chorus quality · MusicXML import phase 3+ · Wyble parity · ECM GCE orchestration. See **§ Current**.
+**Post-v2.7.0 backlog:** Interactive confidence heatmap (click-to-override) · variation contour SVG previews · pre-generate candidate preview (needs preview API) · section planner drag-to-resize · style-transfer dry-run preview · **`IR.sectionStarts`** (rehearsal-mark parsing for true section auto-fill) · Jack White slice fix (**2** allowlisted smoke rows) · App.tsx Composer Engines tab consolidation · **`HomeGenerate.tsx`** Babel deopt file split · **`desktop:dev`** prod-path `.md` loader · duo depth · multi-chorus quality · MusicXML import phase 3+ · Wyble parity · ECM GCE orchestration. See **§ Current**.
 
 **V30 — COMPLETE (2026-05-05):** **Odd meter UI parity** (mixed-meter badge on chart preview + paste / iReal result blocks); **MusicXML import Phase 1** (`parseMusicXml` / core **`ParsedChart`** path); **Duo expansion** — Song Mode **pairing cards** + swap (**`pat_metheny`**, **`bacharach`**, **`ecm_chamber`**), **Duo intent** selector (UI), **Duo Health** pill on success, **ECM Chamber safe sweep** badge + Advanced override (**UI-only**). Duo expansion here was **surfaces + diagnostics**, not a duo golden-path slice rebuild.
 

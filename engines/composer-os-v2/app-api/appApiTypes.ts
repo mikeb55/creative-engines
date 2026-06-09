@@ -1210,6 +1210,14 @@ export interface StyleTransferEcho {
   harmonyDeltaBars: number[];
   melodyRetained: boolean;
   evalScore: number;
+  /** V82d — Barry Harris chord-melody summary (barry_harris style-transfer only). */
+  chordMelody?: {
+    noteCount: number;
+    sixthCount: number;
+    dim7Count: number;
+    borrowedCount: number;
+    borrowedDensity: number;
+  };
 }
 
 /** V80h — mixed-preset assembly summary for Generate UI. */
@@ -1241,6 +1249,8 @@ export interface GenerateResultEchoManifest {
     composer: string;
     strength: number;
     melodyRetained: boolean;
+    /** V82d — Barry Harris borrowed-note density when composer is barry_harris. */
+    chordMelodyBorrowedDensity?: number;
   };
   mixedPreset?: {
     exportIntegrityPassed: boolean;

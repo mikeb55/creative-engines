@@ -1005,6 +1005,63 @@ const BILL_EVANS_FINGERPRINT_RECEIPTS = [
   'BE_DIFF_03 — Versus Jarrett: less rhythmic propulsion, no folk/gospel inflections, less open vamp LH, more impressionist reharm.',
 ] as const;
 
+/** Barry Harris (bebop pedagogue) — V82 chord-melody VRB observability; not John Barry (`barry_thematic_monolith`). */
+const BARRY_HARRIS_CM_VRB_RECEIPTS = [
+  'BH_CM_01 — Melody locked as top voice; close 6th/dim7 block stacks strictly below.',
+  'BH_CM_02 — Inner voices stepwise bias; max leap 12 semitones (moduleValidation gate).',
+  'BH_CM_03 — Borrowed partner tones from adjacent sixth-dim pair when melody pc off-ladder.',
+] as const;
+
+const BARRY_HARRIS: VoiceRuleBundle = {
+  voiceId: 'barry_harris',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 4,
+    allowMidBarChange: true,
+  },
+  bassPolicy: {
+    role: 'walking-bass',
+    allowOctaveDoubling: false,
+  },
+  voicingPolicy: {
+    minSpreadSemitones: 3,
+    maxSpreadSemitones: 19,
+    clusterSizeNotes: [3, 4],
+    forbidParallelFifths: true,
+    forbidOctaveDoubling: true,
+  },
+  melodicPolicy: {
+    contour: 'diatonic-step',
+    maxLeapSemitones: 12,
+    preferredIntervalSets: [1, 2, 3],
+  },
+  orchestrationPolicy: {
+    anchorToneCount: 0,
+    mutateSingleVoiceAtTime: true,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: [...BARRY_HARRIS_CM_VRB_RECEIPTS],
+  },
+  formPolicy: {
+    narrativeArc: 'continuous-curve',
+    sectionRecallEnforced: true,
+  },
+  rhythmPolicy: {
+    antiMetric: false,
+  },
+  repairPolicy: {
+    resolveParallels: true,
+    maxVoiceOverlap: 3,
+  },
+  contrapuntalLinePolicy: DUO_CONTRAPUNTAL_POLICY_JAZZ,
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.6,
+    registerInterlock: true,
+    intervalPreference: 'chromatic_upper_extension',
+  },
+};
+
 const BILL_EVANS: VoiceRuleBundle = {
   voiceId: 'bill_evans',
   harmonicRhythm: {
@@ -4381,6 +4438,9 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   wayne_shorter: WAYNE_SHORTER,
   bill_evans: BILL_EVANS,
   evans: BILL_EVANS,
+  barry_harris: BARRY_HARRIS,
+  barry_harris_chord_melody: BARRY_HARRIS,
+  bh_cm: BARRY_HARRIS,
   herbie_hancock: HERBIE_HANCOCK,
   hancock: HERBIE_HANCOCK,
   herbie: HERBIE_HANCOCK,

@@ -23,6 +23,12 @@ import {
   IMPORT_HARD_LOCK_CONFIDENCE,
 } from './mosaicImportTimeline';
 import { importTimelineToLockedHarmony, importTimelineToMotifSeed } from './importTimelineAdapters';
+import {
+  precomputeBarryHarrisChordMelodyFoundation,
+  runBarryHarrisChordMelodyPipeline,
+  type BarryHarrisChordMelodySummary,
+  type ChordMelodyNoteChoice,
+} from '../barry-harris';
 
 export type MosaicSectionEvalResult = DuoSectionEvalResult;
 
@@ -43,6 +49,9 @@ export interface StyleTransferResult {
   composerApplied: string;
   strengthApplied: number;
   evalResult: MosaicSectionEvalResult;
+  /** V82d — Barry Harris chord-melody note resolutions (style-transfer only). */
+  barryHarrisChordMelody?: BarryHarrisChordMelodySummary;
+  barryHarrisNoteChoices?: ChordMelodyNoteChoice[];
 }
 
 export interface ApplyStyleTransferDeps {
@@ -333,14 +342,31 @@ export function applyStyleTransfer(
   };
 
   let sliceBars = importedBars;
+  let barryHarrisChordMelody: BarryHarrisChordMelodySummary | undefined;
+  let barryHarrisNoteChoices: ChordMelodyNoteChoice[] | undefined;
   const entry = getDispatchEntry(req.targetComposer);
   if (entry && req.reharmonize !== false) {
     entry.precompute(transferCtx);
-    sliceBars = padHarmonyBars(
-      extractEffectiveHarmonyFromMetadata(transferCtx.generationMetadata, req.targetComposer) ??
-        importedBars,
-      totalBars
-    );
+    if (req.targetComposer === 'barry_harris') {
+      const foundation = precomputeBarryHarrisChordMelodyFoundation(transferCtx, req.importTimeline);
+      transferCtx.generationMetadata.barryHarrisChordMelodyFoundation = foundation;
+      const pipeline = runBarryHarrisChordMelodyPipeline(
+        foundation,
+        melody,
+        totalBars,
+        importedBars
+      );
+      barryHarrisNoteChoices = pipeline.noteChoices;
+      barryHarrisChordMelody = pipeline.summary;
+      transferCtx.generationMetadata.barryHarrisChordMelodyReceipts = pipeline.cmReceipts;
+      sliceBars = padHarmonyBars(pipeline.harmonyBars, totalBars);
+    } else {
+      sliceBars = padHarmonyBars(
+        extractEffectiveHarmonyFromMetadata(transferCtx.generationMetadata, req.targetComposer) ??
+          importedBars,
+        totalBars
+      );
+    }
   }
 
   const blended =
@@ -388,6 +414,8 @@ export function applyStyleTransfer(
     composerApplied: req.targetComposer,
     strengthApplied: strength,
     evalResult,
+    ...(barryHarrisChordMelody ? { barryHarrisChordMelody } : {}),
+    ...(barryHarrisNoteChoices ? { barryHarrisNoteChoices } : {}),
   };
 }
 

@@ -129,6 +129,9 @@ export function buildGenerateResultEchoes(input: BuildGenerateResultEchoesInput)
       harmonyDeltaBars: parseHarmonyDeltaBarIndices(styleTransferResult.harmonyDelta),
       melodyRetained,
       evalScore: styleTransferResult.evalResult.scores.overall ?? 0,
+      ...(styleTransferResult.barryHarrisChordMelody
+        ? { chordMelody: styleTransferResult.barryHarrisChordMelody }
+        : {}),
     };
   }
 
@@ -177,6 +180,9 @@ export function buildGenerateResultEchoManifest(
       composer: echoes.styleTransferEcho.composerApplied,
       strength: echoes.styleTransferEcho.strengthApplied,
       melodyRetained: echoes.styleTransferEcho.melodyRetained,
+      ...(echoes.styleTransferEcho.chordMelody
+        ? { chordMelodyBorrowedDensity: echoes.styleTransferEcho.chordMelody.borrowedDensity }
+        : {}),
     };
   }
 

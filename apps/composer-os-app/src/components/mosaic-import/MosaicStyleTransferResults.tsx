@@ -45,6 +45,13 @@ export function MosaicStyleTransferResults({
       <p style={rowStyle} data-testid="mosaic-style-transfer-eval-score">
         Eval score: {st.evalScore.toFixed(2)}
       </p>
+      {st.chordMelody ? (
+        <p style={rowStyle} data-testid="mosaic-style-transfer-chord-melody">
+          Chord-melody: {st.chordMelody.sixthCount} sixth / {st.chordMelody.dim7Count} dim7 /{' '}
+          {st.chordMelody.borrowedCount} borrowed (
+          {(st.chordMelody.borrowedDensity * 100).toFixed(0)}%)
+        </p>
+      ) : null}
     </div>
   );
 }

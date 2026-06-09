@@ -1233,6 +1233,12 @@ export interface GenerationMetadata {
     slashFlattenedToRoot: number;
     denseAlterationReduced: number;
   };
+  /** V82b+c — chord-melody precompute stash (engine-internal; not API-echoed). */
+  barryHarrisChordMelodyFoundation?: import('./barry-harris/types').BarryHarrisChordMelodyFoundation;
+  /** V82e — identity-resolved note choices + block voicing hints (engine-internal). */
+  barryHarrisResolvedNotes?: import('./barry-harris/types').ResolvedChordMelodyNote[];
+  /** V82f — per-note `bh:cm:*` chord-melody observability receipts. */
+  barryHarrisChordMelodyReceipts?: string[];
   /** Bill Evans (impressionist / rootless-style extensions) — slice diagnostics + effective harmony. */
   billEvansDiagnostics?: {
     songwriterId: 'bill_evans';

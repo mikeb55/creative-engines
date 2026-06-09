@@ -172,4 +172,31 @@ describe('styleTransfer', () => {
     expect(melodyLinesMatchPitchForPitch(result!.retainedMelody, ir.melodyLine)).toBe(true);
     expect(gp.score.parts.some((p) => p.id === 'style_transfer_bb_comp')).toBe(true);
   });
+
+  test('H: barry_harris target runs chord-melody pipeline and echoes summary', () => {
+    const ir = makeImportIr();
+    const locked = lockedBarsForGoldenPath(importTimelineToLockedHarmony(ir));
+    const gp = runGoldenPathOnce(88104, {
+      presetId: 'guitar_bass_duo',
+      harmonyMode: 'custom_locked',
+      lockedHarmonyBarsRaw: locked,
+      parsedChordBars: locked,
+      chordProgressionText: locked.join(' | '),
+      totalBars: 8,
+      importTimeline: ir,
+      styleTransfer: true,
+      targetComposer: 'barry_harris',
+      styleTransferStrength: 1,
+      preserveMelody: true,
+      mosaicSectionPlan: [
+        { sectionLabel: 'import', startBar: 1, endBar: 8, songwriterStyleId: 'barry_harris' },
+      ],
+      suppressWybleVoiceLayoutForTest: true,
+    });
+    const result = gp.context.generationMetadata?.styleTransferResult;
+    expect(result?.composerApplied).toBe('barry_harris');
+    expect(melodyLinesMatchPitchForPitch(result!.retainedMelody, ir.melodyLine)).toBe(true);
+    expect(result?.barryHarrisChordMelody?.noteCount).toBe(ir.melodyLine.length);
+    expect(result?.barryHarrisNoteChoices?.length).toBe(ir.melodyLine.length);
+  });
 });

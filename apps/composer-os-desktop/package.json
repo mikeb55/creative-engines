@@ -1,6 +1,6 @@
 {
   "name": "composer-os-desktop",
-  "version": "1.6.0",
+  "version": "2.7.0",
   "description": "Composer OS Windows Desktop Application",
   "main": "dist/main.js",
   "author": "Creative Engines",

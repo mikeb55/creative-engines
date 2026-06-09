@@ -33,6 +33,8 @@
     "eval:james_brown": "tsx --tsconfig ../../tsconfig.json scripts/runJamesBrownSongModeEval.ts",
     "eval:style-soph-pop": "tsx --tsconfig ../../tsconfig.json scripts/runSophisticatedPopStyleEval.ts",
     "eval:bacharach": "tsx --tsconfig ../../tsconfig.json scripts/runBacharachSongModeEval.ts",
+    "eval:barry_harris": "tsx --tsconfig ../../tsconfig.json scripts/runBarryHarrisChordMelodyEval.ts",
+    "test:barry-harris-v82-validation": "tsx --tsconfig ../../tsconfig.json scripts/runBarryHarrisV82ValidationTest.ts",
     "workflow:bacharach": "tsx --tsconfig ../../tsconfig.json scripts/runBacharachWorkflow.ts",
     "mine:bacharach": "tsx --tsconfig ../../tsconfig.json scripts/runBacharachReferenceMining.ts",
     "orbit:steely-v1": "tsx --tsconfig ../../tsconfig.json scripts/generateSteelyOrbitV1.ts",

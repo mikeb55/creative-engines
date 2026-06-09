@@ -173,6 +173,10 @@ import {
   retainedMelodyProof,
   shouldRunStyleTransfer,
 } from '../import/mosaicStyleTransfer';
+import {
+  applyBarryHarrisBlockVoicingsToScore,
+  applyIdentitiesToNoteChoices,
+} from '../barry-harris';
 import { validateSongModeMotifSystem } from '../motif/songModeMotifEngine';
 import { validateSongModePhraseEngineV1 } from './songModePhraseEngineV1';
 import { partitionSongModePhraseIssues } from '../song-mode/songModePhraseBehaviourRules';
@@ -2820,6 +2824,28 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
           parsedCustomProgressionBars: [...styleTransferResult.appliedHarmonyBars],
           customHarmonyLocked: (options.styleTransferStrength ?? 0.5) < 0.95,
         };
+        if (
+          targetComposer === 'barry_harris' &&
+          styleTransferResult.barryHarrisNoteChoices?.length &&
+          options.importTimeline
+        ) {
+          const resolvedNotes = applyIdentitiesToNoteChoices(
+            styleTransferResult.barryHarrisNoteChoices
+          );
+          score = applyBarryHarrisBlockVoicingsToScore(
+            score,
+            resolvedNotes,
+            options.importTimeline.melodyLine,
+            appliedContext.presetId ?? 'guitar_bass_duo'
+          );
+          appliedContext.generationMetadata = {
+            ...appliedContext.generationMetadata,
+            barryHarrisResolvedNotes: resolvedNotes,
+            ...(styleTransferResult.barryHarrisChordMelody?.cmReceipts?.length
+              ? { barryHarrisChordMelodyReceipts: styleTransferResult.barryHarrisChordMelody.cmReceipts }
+              : {}),
+          };
+        }
       } else {
         score = generateGoldenPathDuoScore(appliedContext, plans, {
           bpm: options?.bpm,

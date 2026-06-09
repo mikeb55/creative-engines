@@ -1,5 +1,11 @@
 ## [Unreleased]
 
+## [2.7.0] - 2026-06-09
+
+### Added
+
+- **V82 — Barry Harris chord-melody (style-transfer path)** — Import a melody with fake-book harmony and reharmonise through Barry Harris sixth–diminished logic: each melody note maps to a **6th chord**, **diminished passing chord**, or **borrowed partner** from the scale-of-chords ladder; identities rename chords to chart-friendly spellings (m6↔m7♭5, dim7↔dom7 enharmonics, maj9 on Ⅴ); **block voicings** stack close 6th/dim7 tones under the melody as the top voice. **`bh:cm:*`** per-note receipts (`select`, `borrowed`, `reinterpret`, `identity`) accompany generation; **`npm run eval:barry_harris`** validates selector coverage, borrowed density, identities, and top-note voicing on a 16-bar reference chart. Style-transfer to **`barry_harris`** echoes chord-melody summary in generate results. Minimal **`barry_harris`** VRB documents voicing observability (melody-top block, stepwise inner voices, max leap 12). Legacy bebop slice **`bh:bebop_*`** / **`bh:sixth_*`** receipts unchanged.
+
 ### Changed
 
 - **Fripp mosaic eval calibration (rc12 hotfix)** — `evaluateMosaicSections.ts` Signature 4 (silence discipline): rest-ratio fail upper **0.45 → 0.60**; mean phrase-length fail **> 4 → > 8 bars** — duo/KC space tolerance.

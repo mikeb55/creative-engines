@@ -7,6 +7,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { dim7RootPcForSixthRoot, stashBarryHarrisChordMelodyFoundation } from '../barry-harris';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -226,7 +227,7 @@ function applySixthDiminishedColourPass(
     out[b - 1] = sixth;
     receipts.push(`bh:sixth_dim_tonic@bar${b}`);
     const next = b < tb ? out[b] : '';
-    const dimRootPc = (harmonyRootPc(sixth)! + 2 + 12) % 12;
+    const dimRootPc = dim7RootPcForSixthRoot(harmonyRootPc(sixth)!);
     if (next && b < tb && !isProtectedBar(b + 1, context) && seededUnit(seed, b, 883602) < 0.18) {
       out[b] = `${pitchClassToSharpName(dimRootPc)}dim7`;
       receipts.push(`bh:sixth_dim_pass@bar${b + 1}`);
@@ -294,6 +295,22 @@ export function precomputeBarryHarrisEffectiveHarmonyBars(context: CompositionCo
   genMeta.barryHarrisEffectiveHarmonyBars = out;
   genMeta.barryHarrisDeviceReceipts = receipts;
   genMeta.barryHarrisAntiElaborationGuards = guards;
+
+  if (hasAuthoritativeHarmonySpineForChordMelody(context)) {
+    try {
+      stashBarryHarrisChordMelodyFoundation(context);
+    } catch {
+      // Locked/import spine required for section tonic map — skip when unavailable.
+    }
+  }
+}
+
+function hasAuthoritativeHarmonySpineForChordMelody(context: CompositionContext): boolean {
+  const tb = context.form.totalBars;
+  if (context.lockedHarmonyBarsRaw?.length === tb) return true;
+  if (context.generationMetadata?.parsedCustomProgressionBars?.length === tb) return true;
+  if (context.harmonyContext?.bars.length === tb) return true;
+  return false;
 }
 
 export function finalizeBarryHarrisMetadata(metadata: GenerationMetadata, acc: BarryHarrisHarmonyAccumulator): void {

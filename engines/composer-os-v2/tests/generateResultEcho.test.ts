@@ -120,6 +120,28 @@ describe('generateResultEcho', () => {
     expect(r.styleTransferEcho!.harmonyDeltaBars.length).toBeGreaterThan(0);
   });
 
+  test('B2: barry_harris style-transfer exposes chordMelody echo summary', () => {
+    const ir = makeImportIr();
+    const locked = lockedBarsForGoldenPath(importTimelineToLockedHarmony(ir));
+    const r = runGenerate({
+      harmonyMode: 'custom_locked',
+      chordProgressionText: locked.join(' | '),
+      totalBars: 8,
+      importTimeline: ir,
+      styleTransfer: true,
+      targetComposer: 'barry_harris',
+      styleTransferStrength: 1,
+      preserveMelody: true,
+      mosaicSectionPlan: [
+        { sectionLabel: 'import', startBar: 1, endBar: 8, songwriterStyleId: 'barry_harris' },
+      ],
+    });
+    expect(r.styleTransferEcho?.composerApplied).toBe('barry_harris');
+    expect(r.styleTransferEcho?.chordMelody?.noteCount).toBe(ir.melodyLine.length);
+    expect(typeof r.styleTransferEcho?.chordMelody?.borrowedDensity).toBe('number');
+    expect(r.runManifest?.v80Echo?.styleTransfer?.chordMelodyBorrowedDensity).toBeDefined();
+  });
+
   test('C: mixed-preset run exposes mixedPresetEcho with section part counts', () => {
     const locked = lockedHarmony48();
     const r = runGenerate({
