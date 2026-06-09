@@ -12,10 +12,12 @@ export type {
   ChordMelodyNoteChoice,
   IdentityAnnotation,
   MelodyNoteForChordMelody,
+  PhrasingRole,
   ResolvedChordMelodyNote,
   ScaleOfChords,
   SixthDimPair,
   VoicingHint,
+  VoicingVariant,
 } from './types';
 
 export {
@@ -43,7 +45,14 @@ export {
 } from './precomputeFoundation';
 
 export { selectChordMelodyNoteChoice, selectChordMelodyNoteChoices } from './selector';
-export { resolveBorrowedNoteChoice } from './borrowed';
+export { resolveBorrowedNoteChoice, classifyBorrowedTonePc } from './borrowed';
+export { assignPhrasingRoles } from './phrasingRoles';
+export {
+  applyChordMelodyToScore,
+  applyVoicingEngineToResolved,
+  assertMelodyIsTopOfStack,
+  buildBaseVoicing,
+} from './voicingEngine';
 export {
   applyIdentitiesToNoteChoice,
   applyIdentitiesToNoteChoices,

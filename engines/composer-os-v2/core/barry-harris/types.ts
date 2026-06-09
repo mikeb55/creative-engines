@@ -1,5 +1,5 @@
 /**
- * V82b+c / V82d / V82e - Barry Harris chord-melody types.
+ * V82b+c / V82d / V82e / V80j - Barry Harris chord-melody types.
  */
 
 import type { BarRange } from '../section-architecture/sectionArchitectureTypes';
@@ -48,6 +48,7 @@ export type ChordMelodyNoteChoice =
       activeSymbol: string;
       partnerSymbol: string;
       borrowedFrom: 'sixth' | 'dim7';
+      borrowedTonePc: number;
     });
 
 export type BarryHarrisIdentityId =
@@ -70,10 +71,23 @@ export type VoicingHint =
   | 'bb-dim7-passing'
   | 'sq-drop2-block';
 
+export type PhrasingRole = 'full' | 'dyad' | 'single';
+
+export type VoicingVariant = 'sixth-block' | 'borrowed-replacement' | 'dyad' | 'single';
+
 export type ResolvedChordMelodyNote = ChordMelodyNoteChoice & {
   exportSymbol: string;
   identityAnnotations: IdentityAnnotation[];
   voicingHint: VoicingHint;
+  phrasingRole: PhrasingRole;
+  voicingVariant: VoicingVariant;
+  exportStackMidis: number[];
+  innerVoicingMidis: number[];
+  borrowedReplacementPc?: number;
+  voicingFingerprint: string;
+  voiceLeadingCost?: number | null;
+  guitarFretSpan?: number | null;
+  guitarFeasible?: boolean | null;
   blockVoicingMidis?: number[];
 };
 
@@ -96,7 +110,7 @@ export type BarryHarrisChordMelodySummary = {
   borrowedCount: number;
   borrowedDensity: number;
   identityAnnotationCount?: number;
-  /** V82f — per-note h:cm:* observability receipts from chord-melody pipeline. */
+  /** V82f — per-note bh:cm:* observability receipts from chord-melody pipeline. */
   cmReceipts?: string[];
 };
 
@@ -104,4 +118,13 @@ export type MelodyNoteForChordMelody = {
   bar: number;
   onsetBeat: number;
   melodyPc: number;
+  durationBeats?: number;
+};
+
+export type MelodyNoteWithDuration = {
+  bar: number;
+  onsetBeat: number;
+  durationBeats: number;
+  melodyPc: number;
+  midiPitch: number;
 };

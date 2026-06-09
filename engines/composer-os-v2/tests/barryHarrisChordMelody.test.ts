@@ -7,11 +7,12 @@ import {
   applyIdentitiesToNoteChoice,
   applyIdentitiesToNoteChoices,
   buildBarryHarrisChordMelodyReceipts,
+  buildBaseVoicing,
   buildHarmonyBarsFromSources,
   buildScaleOfChords,
   closeBlockVoicingBelowMelody,
-  dim7RootPcForSixthRoot,
   drop2VoicingBelowMelody,
+  dim7RootPcForSixthRoot,
   precomputeBarryHarrisChordMelodyFoundation,
   reinterpretFakeBookSymbol,
   reinterpretHarmonyBars,
@@ -21,6 +22,10 @@ import {
   sixthDimPartnerSymbol,
   summarizeBarryHarrisNoteChoices,
 } from '../core/barry-harris';
+import { dim7ChordTones, sixthChordTones } from '../core/barry-harris/chordTones';
+import { exportScoreModelToMusicXml } from '../core/export/musicxmlExporter';
+import { extractHarmoniesFromFirstPartXml } from '../core/export/chordSymbolMusicXml';
+import { runGoldenPathOnce } from '../core/goldenPath/runGoldenPath';
 import type { MosaicImportTimeline } from '../core/import/mosaicImportTimeline';
 import { IMPORT_CANDIDATE_MIN_CONFIDENCE } from '../core/import/mosaicImportTimeline';
 
@@ -256,5 +261,233 @@ describe('Barry Harris chord-melody foundation', () => {
     expect(pipeline.resolvedNotes).toHaveLength(1);
     expect(pipeline.resolvedNotes[0]?.exportSymbol).toBeTruthy();
     expect(pipeline.summary.identityAnnotationCount).toBeGreaterThan(0);
+    expect(pipeline.resolvedNotes[0]?.exportStackMidis.length).toBeGreaterThan(0);
+    expect(pipeline.resolvedNotes[0]?.phrasingRole).toBeTruthy();
+  });
+
+  test('V80j forward reinterpret mappings (m7b5, alt dom, maj9)', () => {
+    expect(reinterpretFakeBookSymbol('C#m7b5')).toEqual({
+      sixthRootPc: 4,
+      sixthQuality: 'm6',
+      dim7RootPc: 3,
+    });
+    expect(reinterpretFakeBookSymbol('F#7')).toEqual({
+      sixthRootPc: 7,
+      sixthQuality: 'm6',
+      dim7RootPc: 6,
+    });
+    expect(reinterpretFakeBookSymbol('Gmaj9')).toEqual({
+      sixthRootPc: 2,
+      sixthQuality: '6',
+      dim7RootPc: 1,
+    });
+  });
+
+  test('V80j MusicXML export has chord stacks and BH harmony symbols', () => {
+    const melody = [
+      { bar: 1, onsetBeat: 0, durationBeats: 1, midiPitch: 60, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 1, onsetBeat: 1, durationBeats: 1, midiPitch: 61, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 2, onsetBeat: 0, durationBeats: 1, midiPitch: 67, confidence: 1, fieldOrigin: 'explicit' as const },
+    ];
+    const ir: MosaicImportTimeline = {
+      schemaVersion: 1,
+      sourceFormat: 'midi',
+      bars: 4,
+      timeSig: { num: 4, den: 4 },
+      keyEstimate: { tonic: 'C', mode: 'major', confidence: 0.9, fieldOrigin: 'explicit' },
+      harmonyByBar: CHORDS.map((chordSymbol, i) => ({
+        bar: i + 1,
+        chordSymbol,
+        confidence: IMPORT_CANDIDATE_MIN_CONFIDENCE,
+        fieldOrigin: 'explicit' as const,
+      })),
+      melodyLine: melody,
+    };
+    const gp = runGoldenPathOnce(88001, {
+      presetId: 'guitar_bass_duo',
+      harmonyMode: 'custom_locked',
+      lockedHarmonyBarsRaw: [...CHORDS, ...CHORDS, ...CHORDS, ...CHORDS],
+      totalBars: 16,
+      importTimeline: {
+        ...ir,
+        bars: 16,
+        harmonyByBar: Array.from({ length: 16 }, (_, i) => ({
+          bar: i + 1,
+          chordSymbol: CHORDS[i % CHORDS.length]!,
+          confidence: IMPORT_CANDIDATE_MIN_CONFIDENCE,
+          fieldOrigin: 'explicit' as const,
+        })),
+        melodyLine: [
+          ...melody,
+          ...melody.map((n) => ({ ...n, bar: n.bar + 4 })),
+          ...melody.map((n) => ({ ...n, bar: n.bar + 8 })),
+          ...melody.map((n) => ({ ...n, bar: n.bar + 12 })),
+        ],
+      },
+      styleTransfer: true,
+      targetComposer: 'barry_harris',
+      styleTransferStrength: 1,
+      preserveMelody: true,
+      suppressWybleVoiceLayoutForTest: true,
+    });
+    const xmlResult = exportScoreModelToMusicXml(gp.score, { bpm: 120, preserveChordKindLiterals: true });
+    expect(xmlResult.success).toBe(true);
+    const xml = xmlResult.xml ?? '';
+    expect(xml).toMatch(/<chord\/>/);
+    const guitarPart = xml.match(/<part id="[^"]*"[\s\S]*?<\/part>/g)?.find((p) => p.includes('Guitar') || p.includes('guitar'));
+    expect(guitarPart).toBeTruthy();
+    const noteCount = (guitarPart?.match(/<note>/g) ?? []).length;
+    expect(noteCount).toBeGreaterThan(melody.length);
+    const harmonies = extractHarmoniesFromFirstPartXml(xml);
+    const bhSymbols = [...harmonies.values()].some((s) => /6|dim7|m6/i.test(s));
+    expect(bhSymbols).toBe(true);
+    expect(xml).not.toMatch(/Cmaj7/);
+    const resolved =
+      (gp.context.generationMetadata?.barryHarrisResolvedNotes as import('../core/barry-harris').ResolvedChordMelodyNote[]) ??
+      [];
+    for (const r of resolved) {
+      const mel = melody.find((n) => n.bar === r.bar && Math.abs(n.onsetBeat - r.onsetBeat) < 0.02);
+      if (!mel || r.exportStackMidis.length === 0) continue;
+      expect(Math.max(...r.exportStackMidis)).toBe(mel.midiPitch);
+      if (r.phrasingRole === 'dyad') expect(r.exportStackMidis.length).toBe(2);
+      if (r.phrasingRole === 'single') expect(r.exportStackMidis.length).toBe(1);
+      if (r.phrasingRole === 'full') expect(r.exportStackMidis.length).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  test('V80j-fix sixth chord voicings include required 6th degree pitch class', () => {
+    function stackPcs(midis: readonly number[]): number[] {
+      return [...new Set(midis.map((m) => ((m % 12) + 12) % 12))];
+    }
+    function fullVoicing(
+      bar: number,
+      sixthRootPc: number,
+      quality: '6' | 'm6',
+      melodyMidi: number,
+      requiredPc: number
+    ) {
+      const dim7RootPc = dim7RootPcForSixthRoot(sixthRootPc);
+      const anchor = { sixthRootPc, sixthQuality: quality, dim7RootPc };
+      const resolved = applyIdentitiesToNoteChoice({
+        bar,
+        onsetBeat: 0,
+        sectionLabel: 'A',
+        fakeBookSymbol: 'C',
+        anchor,
+        scalePairIndex: 0,
+        melodyPc: ((melodyMidi % 12) + 12) % 12,
+        kind: 'sixth',
+        chordSymbol: quality === 'm6' ? 'Am6' : 'C6',
+        droppedTonePc: ((sixthRootPc + 9) % 12 + 12) % 12,
+      });
+      const voiced = buildBaseVoicing({ ...resolved, phrasingRole: 'full' }, melodyMidi, 'full');
+      expect(stackPcs(voiced.exportStackMidis)).toContain(requiredPc);
+      expect(sixthChordTones(sixthRootPc, quality)).toHaveLength(4);
+    }
+
+    fullVoicing(1, 0, '6', 67, 9); // C6 + G melody -> A (pc 9)
+    fullVoicing(2, 5, '6', 69, 2); // F6 + A melody -> D (pc 2)
+    fullVoicing(3, 9, 'm6', 60, 6); // Am6 + C melody -> F# (pc 6)
+    fullVoicing(4, 4, 'm6', 76, 1); // Em6 + E5 melody -> C# (pc 1)
+  });
+
+  test('V80j-fix dim7 voicing uses four dim7 chord tones when selector picks dim7', () => {
+    const anchor = { sixthRootPc: 0, sixthQuality: '6' as const, dim7RootPc: 11 };
+    const dimTones = dim7ChordTones(11);
+    expect(dimTones).toHaveLength(4);
+    expect(dimTones).toEqual([11, 2, 5, 8]); // B D F Ab
+
+    const resolved = applyIdentitiesToNoteChoice({
+      bar: 1,
+      onsetBeat: 1,
+      sectionLabel: 'A',
+      fakeBookSymbol: 'C',
+      anchor,
+      scalePairIndex: 0,
+      melodyPc: 11,
+      kind: 'dim7',
+      chordSymbol: 'Bdim7',
+      droppedTonePc: 8,
+    });
+    const voiced = buildBaseVoicing({ ...resolved, phrasingRole: 'full' }, 71, 'full');
+    const pcs = [...new Set(voiced.exportStackMidis.map((m) => ((m % 12) + 12) % 12))].sort((a, b) => a - b);
+    expect(pcs).toEqual([...dimTones].sort((a, b) => a - b));
+    expect(resolved.chordSymbol).toBe('Bdim7');
+  });
+
+  test('V80j-fix golden path preserves imported melody event count and melody-on-top stacks', () => {
+    const melody = [
+      { bar: 1, onsetBeat: 0, durationBeats: 1, midiPitch: 60, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 1, onsetBeat: 1, durationBeats: 0.5, midiPitch: 62, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 1, onsetBeat: 1.5, durationBeats: 0.5, midiPitch: 64, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 1, onsetBeat: 2, durationBeats: 1, midiPitch: 67, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 1, onsetBeat: 3, durationBeats: 0.5, midiPitch: 69, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 1, onsetBeat: 3.5, durationBeats: 0.5, midiPitch: 71, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 2, onsetBeat: 0, durationBeats: 1, midiPitch: 65, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 2, onsetBeat: 1, durationBeats: 1, midiPitch: 69, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 2, onsetBeat: 2, durationBeats: 1, midiPitch: 72, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 2, onsetBeat: 3, durationBeats: 1, midiPitch: 74, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 3, onsetBeat: 0, durationBeats: 1, midiPitch: 57, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 3, onsetBeat: 1, durationBeats: 1, midiPitch: 60, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 3, onsetBeat: 2, durationBeats: 1, midiPitch: 62, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 3, onsetBeat: 3, durationBeats: 1, midiPitch: 64, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 4, onsetBeat: 0, durationBeats: 1, midiPitch: 64, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 4, onsetBeat: 1, durationBeats: 1, midiPitch: 67, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 4, onsetBeat: 2, durationBeats: 1, midiPitch: 71, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 4, onsetBeat: 3, durationBeats: 1, midiPitch: 76, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 1, onsetBeat: 0.5, durationBeats: 0.5, midiPitch: 61, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 2, onsetBeat: 0.5, durationBeats: 0.5, midiPitch: 66, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 3, onsetBeat: 0.5, durationBeats: 0.5, midiPitch: 58, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 4, onsetBeat: 0.5, durationBeats: 0.5, midiPitch: 65, confidence: 1, fieldOrigin: 'explicit' as const },
+    ];
+    expect(melody.length).toBeGreaterThanOrEqual(20);
+
+    const ir: MosaicImportTimeline = {
+      schemaVersion: 1,
+      sourceFormat: 'midi',
+      bars: 16,
+      timeSig: { num: 4, den: 4 },
+      keyEstimate: { tonic: 'C', mode: 'major', confidence: 0.9, fieldOrigin: 'explicit' },
+      harmonyByBar: ['C', 'F', 'Am', 'Em', 'C', 'F', 'Am', 'Em', 'C', 'F', 'Am', 'Em', 'C', 'F', 'Am', 'Em'].map(
+        (chordSymbol, i) => ({
+          bar: i + 1,
+          chordSymbol,
+          confidence: IMPORT_CANDIDATE_MIN_CONFIDENCE,
+          fieldOrigin: 'explicit' as const,
+        })
+      ),
+      melodyLine: melody,
+    };
+    const gp = runGoldenPathOnce(88002, {
+      presetId: 'guitar_bass_duo',
+      harmonyMode: 'custom_locked',
+      lockedHarmonyBarsRaw: ['C', 'F', 'Am', 'Em', 'C', 'F', 'Am', 'Em', 'C', 'F', 'Am', 'Em', 'C', 'F', 'Am', 'Em'],
+      totalBars: 16,
+      importTimeline: ir,
+      styleTransfer: true,
+      targetComposer: 'barry_harris',
+      styleTransferStrength: 1,
+      preserveMelody: true,
+      suppressWybleVoiceLayoutForTest: true,
+    });
+    const xmlResult = exportScoreModelToMusicXml(gp.score, { bpm: 120, preserveChordKindLiterals: true });
+    expect(xmlResult.success).toBe(true);
+    const guitar = gp.score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+    let guitarEventCount = 0;
+    for (const m of guitar?.measures.filter((meas) => meas.index <= 4) ?? []) {
+      guitarEventCount += m.events.filter((e) => e.kind === 'note' || e.kind === 'chord').length;
+    }
+    expect(guitarEventCount).toBeGreaterThanOrEqual(20);
+
+    const resolved =
+      (gp.context.generationMetadata?.barryHarrisResolvedNotes as import('../core/barry-harris').ResolvedChordMelodyNote[]) ??
+      [];
+    const resolvedHookpad = resolved.filter((r) => r.bar >= 1 && r.bar <= 4);
+    expect(resolvedHookpad.length).toBe(melody.length);
+    for (const r of resolvedHookpad) {
+      const mel = melody.find((n) => n.bar === r.bar && Math.abs(n.onsetBeat - r.onsetBeat) < 0.02);
+      if (!mel || r.exportStackMidis.length === 0) continue;
+      expect(Math.max(...r.exportStackMidis)).toBe(mel.midiPitch);
+    }
   });
 });

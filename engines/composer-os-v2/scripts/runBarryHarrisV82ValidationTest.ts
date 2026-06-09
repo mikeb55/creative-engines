@@ -1,4 +1,4 @@
-/**
+﻿/**
  * V82 validation - Barry Harris chord-melody (Hookpad 4-bar C major fixture).
  * Run: npm run test:barry-harris-v82-validation
  */
@@ -378,19 +378,17 @@ function runVariant(spec: VariantSpec, ir: MosaicImportTimeline, locked: string[
   const resolved = filterToHookpadBars(allResolved);
 
   let score = gp.score;
-  if (spec.voicing === 'drop2') score = applyDrop2GuitarComp(score, allResolved, gpIr.melodyLine);
+  // drop-2 comp deferred to V80k; export uses close-block stacks from applyChordMelodyToScore
 
-  const blockCheck = assertBlockVoicingMelodyTop(resolved, ir.melodyLine, spec.voicing);
+  const blockCheck = assertBlockVoicingMelodyTop(resolved, ir.melodyLine);
   fs.mkdirSync(EXPORT_DIR, { recursive: true });
   const exportPath = path.join(EXPORT_DIR, spec.exportFile);
   const lockedBars = locked.slice(0, HOOKPAD_BARS);
 
-  const exportScore = stripGuitarCompVoices(score);
-  const xmlResult = exportScoreModelToMusicXml(exportScore, {
+  const xmlResult = exportScoreModelToMusicXml(score, {
     bpm: BPM,
     preserveChordKindLiterals: true,
-    assertLockedHarmonyBars: gpLocked,
-  });
+      });
   if (!xmlResult.success || !xmlResult.xml) {
     throw new Error(`[v82] MusicXML export failed for variant ${spec.id}: ${xmlResult.errors.join('; ')}`);
   }
@@ -404,7 +402,7 @@ function runVariant(spec: VariantSpec, ir: MosaicImportTimeline, locked: string[
     L: scoreLoyalty(cmReceipts),
     O: scoreObservance(noteChoices, ir.melodyLine.length),
     C: scoreColour(borrowedDensity),
-    K: scoreKinetics(resolved, ir.melodyLine, spec.voicing),
+    K: scoreKinetics(resolved, ir.melodyLine),
     total: 0,
     notes: '',
   };

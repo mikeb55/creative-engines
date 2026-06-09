@@ -174,8 +174,10 @@ import {
   shouldRunStyleTransfer,
 } from '../import/mosaicStyleTransfer';
 import {
-  applyBarryHarrisBlockVoicingsToScore,
+  applyChordMelodyToScore,
   applyIdentitiesToNoteChoices,
+  applyVoicingEngineToResolved,
+  assignPhrasingRoles,
 } from '../barry-harris';
 import { validateSongModeMotifSystem } from '../motif/songModeMotifEngine';
 import { validateSongModePhraseEngineV1 } from './songModePhraseEngineV1';
@@ -2829,18 +2831,8 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
           styleTransferResult.barryHarrisNoteChoices?.length &&
           options.importTimeline
         ) {
-          const resolvedNotes = applyIdentitiesToNoteChoices(
-            styleTransferResult.barryHarrisNoteChoices
-          );
-          score = applyBarryHarrisBlockVoicingsToScore(
-            score,
-            resolvedNotes,
-            options.importTimeline.melodyLine,
-            appliedContext.presetId ?? 'guitar_bass_duo'
-          );
           appliedContext.generationMetadata = {
             ...appliedContext.generationMetadata,
-            barryHarrisResolvedNotes: resolvedNotes,
             ...(styleTransferResult.barryHarrisChordMelody?.cmReceipts?.length
               ? { barryHarrisChordMelodyReceipts: styleTransferResult.barryHarrisChordMelody.cmReceipts }
               : {}),
@@ -3167,6 +3159,29 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
           options.preserveMelody ?? true
         ),
       },
+    };
+  }
+  if (
+    styleTransferResult?.composerApplied === 'barry_harris' &&
+    styleTransferResult.barryHarrisNoteChoices?.length &&
+    options?.importTimeline
+  ) {
+    const withIdentities = applyIdentitiesToNoteChoices(styleTransferResult.barryHarrisNoteChoices);
+    const withPhrasing = assignPhrasingRoles(
+      withIdentities,
+      options.importTimeline.melodyLine,
+      appliedContext.form.totalBars
+    );
+    const resolvedNotes = applyVoicingEngineToResolved(withPhrasing, options.importTimeline.melodyLine);
+    score = applyChordMelodyToScore(
+      score,
+      resolvedNotes,
+      options.importTimeline.melodyLine,
+      appliedContext.presetId ?? 'guitar_bass_duo'
+    );
+    appliedContext.generationMetadata = {
+      ...appliedContext.generationMetadata,
+      barryHarrisResolvedNotes: resolvedNotes,
     };
   }
   const mixedPresetAssembled =

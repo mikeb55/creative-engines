@@ -1,5 +1,5 @@
 /**
- * V82b+c - Fake-book harmony to 6th/m6 anchor.
+ * V82b+c / V80j - Fake-book harmony to 6th/m6 anchor.
  */
 
 import type { CompositionContext } from '../compositionContext';
@@ -10,6 +10,10 @@ import { dim7RootPcForSixthRoot, sixthDimPair } from './scaleOfChords';
 import type { SixthDimPair } from './types';
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/i;
+
+function mod12(pc: number): number {
+  return ((pc % 12) + 12) % 12;
+}
 
 function harmonyRootPc(symbol: string): number | undefined {
   const h = parseChordSymbol(symbol).harmonyPart;
@@ -60,6 +64,38 @@ function isDiminishedSeventh(symbol: string): boolean {
   return /\bdim7\b|°7|o7/.test(hp) || (/\bdim\b|°/.test(hp) && /7/.test(hp));
 }
 
+/** Half-dim / m7b5 — inverse of identities m6_m7b5 (m6 root + 3 semitones). */
+function isHalfDiminished(symbol: string): boolean {
+  const hp = parseChordSymbol(symbol).harmonyPart.toLowerCase();
+  return /\bm7b5\b|m7♭5|ø7|ø|half.?dim|hdim/.test(hp);
+}
+
+/** Maj9 — inverse of identities six_on_five_maj9 (6 root − 7 semitones). */
+function isMajorNinth(symbol: string): boolean {
+  const hp = parseChordSymbol(symbol).harmonyPart.toLowerCase();
+  return /\bmaj9\b|ma9\b|maj9\b|△9/.test(hp);
+}
+
+/** Alt dominant family — inverse of identities m6_on_flat2_dom7alt (m6 root − 1 semitone). */
+function isPlainDominantSeventh(symbol: string): boolean {
+  const hp = parseChordSymbol(symbol).harmonyPart.toLowerCase();
+  const m = hp.match(ROOT_AT_START);
+  if (!m?.[1]) return false;
+  const rest = hp.slice(m[1].length).replace(/\s/g, '');
+  return /^7($|[^a-z])/.test(rest) || rest === '7';
+}
+
+function hasAlteredRootAccidental(symbol: string): boolean {
+  const m = parseChordSymbol(symbol).harmonyPart.match(ROOT_AT_START);
+  return !!(m?.[1] && /[#b]/i.test(m[1]));
+}
+
+function isAltDominantFamily(symbol: string): boolean {
+  const hp = parseChordSymbol(symbol).harmonyPart.toLowerCase();
+  if (/7alt|7#9|7b9|7♭9|7#11|7♯11|7b13|7♭13/.test(hp)) return true;
+  return isPlainDominantSeventh(symbol) && hasAlteredRootAccidental(symbol);
+}
+
 function inferSixthQuality(symbol: string): '6' | 'm6' {
   const hp = parseChordSymbol(symbol).harmonyPart.toLowerCase();
   const m = hp.match(ROOT_AT_START);
@@ -78,9 +114,23 @@ export function reinterpretFakeBookSymbol(symbol: string): SixthDimPair | undefi
   if (!norm) return undefined;
   const rootPc = harmonyRootPc(norm);
   if (rootPc === undefined) return undefined;
+
   if (isDiminishedSeventh(norm)) {
-    return sixthDimPair((rootPc + 1) % 12, inferSixthQuality(norm));
+    return sixthDimPair(mod12(rootPc + 1), inferSixthQuality(norm));
   }
+
+  if (isHalfDiminished(norm)) {
+    return sixthDimPair(mod12(rootPc + 3), 'm6');
+  }
+
+  if (isMajorNinth(norm)) {
+    return sixthDimPair(mod12(rootPc + 7), '6');
+  }
+
+  if (isAltDominantFamily(norm)) {
+    return sixthDimPair(mod12(rootPc + 1), 'm6');
+  }
+
   return {
     sixthRootPc: rootPc,
     sixthQuality: inferSixthQuality(norm),

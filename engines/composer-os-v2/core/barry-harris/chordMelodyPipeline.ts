@@ -8,6 +8,8 @@ import type { ImportMelodyNote } from '../import/mosaicImportTimeline';
 import type { CompositionContext } from '../compositionContext';
 import { blockMidisForResolved } from './blockVoicings';
 import { applyIdentitiesToNoteChoices } from './identities';
+import { assignPhrasingRoles } from './phrasingRoles';
+import { applyVoicingEngineToResolved } from './voicingEngine';
 import { precomputeBarryHarrisChordMelodyFoundation } from './precomputeFoundation';
 import { selectChordMelodyNoteChoice } from './selector';
 import { pitchClassToSharpName, sixthDimPair } from './scaleOfChords';
@@ -197,7 +199,9 @@ export function runBarryHarrisChordMelodyPipeline(
   cmReceipts: string[];
 } {
   const noteChoices = resolveBarryHarrisNoteChoices(foundation, melody);
-  const resolvedNotes = applyIdentitiesToNoteChoices(noteChoices);
+  const withIdentities = applyIdentitiesToNoteChoices(noteChoices);
+  const withPhrasing = assignPhrasingRoles(withIdentities, melody, totalBars);
+  const resolvedNotes = applyVoicingEngineToResolved(withPhrasing, melody);
   const cmReceipts = buildBarryHarrisChordMelodyReceipts(foundation, noteChoices, resolvedNotes);
   const harmonyBars = harmonyBarsFromResolvedNotes(foundation, resolvedNotes, totalBars, fallbackBars);
   const summary = summarizeBarryHarrisNoteChoices(noteChoices, resolvedNotes, cmReceipts);

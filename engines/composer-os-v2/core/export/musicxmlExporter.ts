@@ -16,6 +16,16 @@ import type {
 } from '../score-model/scoreModelTypes';
 import { DIVISIONS, MEASURE_DIVISIONS } from '../score-model/scoreModelTypes';
 import { buildHarmonyXmlLine } from './chordSymbolMusicXml';
+
+function buildHarmonyXmlLineWithOffset(chordSymbol: string, offsetTicks: number): string {
+  if (offsetTicks <= 0) return buildHarmonyXmlLine(chordSymbol);
+  const line = buildHarmonyXmlLine(chordSymbol);
+  return line.replace('<harmony>', `<harmony>\n      <offset>${offsetTicks}</offset>`);
+}
+
+function measureHasBarryHarrisOnsetHarmony(measure: MeasureModel): boolean {
+  return measure.events.some((e) => e.kind === 'chord' && !!(e as ChordEvent).chordSymbol);
+}
 import {
   GUITAR_BASS_DUO_BASS_INSTRUMENT_SOUND,
   GUITAR_BASS_DUO_BASS_PART_NAME,
@@ -1105,6 +1115,9 @@ function eventsToXml(
       const parts = decompose(durDiv);
       if (e.kind === 'chord') {
         const chordEv = e;
+        if (chordEv.chordSymbol && typeof chordEv.chordSymbol === 'string') {
+          xml += buildHarmonyXmlLineWithOffset(chordEv.chordSymbol, safeStart);
+        }
         let syAug = { dynamicsAttr: '', notationsXml: '' };
         if (isSonicYouthEvent(chordEv)) {
           syAug = sonicYouthChordExportAugmentation(chordEv);
@@ -1472,10 +1485,12 @@ ${stavesAndClefXml}${transposeXml}    </attributes>
             ? assertLocked[i]
             : undefined;
         const chordForHarmony = lockedChord ?? m.chord;
+        const bhOnsetHarmony = measureHasBarryHarrisOnsetHarmony(m);
         /** Lead-sheet chord symbols: duo harmony staff only (`guitar` / ensemble piano), never bass or Zappa solo. */
         const writesLeadSheetHarmony =
           chordForHarmony &&
           !opts.omitChordSymbols &&
+          !bhOnsetHarmony &&
           (part.id === 'guitar' ||
             part.id === 'solo' ||
             part.id === 'zappa_solo' ||
