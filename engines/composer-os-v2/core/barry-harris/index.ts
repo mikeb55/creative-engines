@@ -18,6 +18,13 @@ export type {
   SixthDimPair,
   VoicingHint,
   VoicingVariant,
+  BhFamily,
+  LadderRung,
+  RealizedVoicing,
+  LadderTrack,
+  HarmonizedEvent,
+  LadderSource,
+  VoicingShapeType,
 } from './types';
 
 export {
@@ -29,6 +36,7 @@ export {
 
 export {
   buildScaleOfChords,
+  buildBhOrderedScale,
   dim7RootPcForSixthRoot,
   harmonyRootPcFromSymbol,
   isMinorTonicHarmonySymbol,
@@ -47,12 +55,31 @@ export {
 export { selectChordMelodyNoteChoice, selectChordMelodyNoteChoices } from './selector';
 export { resolveBorrowedNoteChoice, classifyBorrowedTonePc } from './borrowed';
 export { assignPhrasingRoles } from './phrasingRoles';
+export { buildLadder, familyKey, findRungForMelodyPc, nearestRung } from './ladderBuilder';
+export { realizeLadder, realizeRungAtMelody, singleNoteVoicing } from './ladderRealizer';
 export {
   applyChordMelodyToScore,
   applyVoicingEngineToResolved,
   assertMelodyIsTopOfStack,
   buildBaseVoicing,
+  chordMelodyVoiceLeadingScore,
+  dim7ParticipationRate,
+  harmonizePhrase,
+  isDrop2Voicing,
+  isDrop2InnerSpacing,
+  ladderRungHitRate,
+  maxConsecutiveIdenticalFingerprints,
+  harmonySymbolForResolved,
 } from './voicingEngine';
+export type { VoicingEngineOptions, VoicingSpacingPreference } from './voicingEngine';
+export {
+  assessGuitarFeasibility,
+  GUITAR_MAX_FRET_SPAN,
+  GUITAR_OPEN_STRING_MIDIS,
+  GUITAR_STRETCH_FRET_SPAN,
+  isGuitarVoicingFeasible,
+} from './guitarVoicingFeasibility';
+export type { GuitarFeasibilityResult } from './guitarVoicingFeasibility';
 export {
   applyIdentitiesToNoteChoice,
   applyIdentitiesToNoteChoices,

@@ -9,7 +9,7 @@ import type { CompositionContext } from '../compositionContext';
 import { blockMidisForResolved } from './blockVoicings';
 import { applyIdentitiesToNoteChoices } from './identities';
 import { assignPhrasingRoles } from './phrasingRoles';
-import { applyVoicingEngineToResolved } from './voicingEngine';
+import { applyVoicingEngineToResolved, harmonizePhrase } from './voicingEngine';
 import { precomputeBarryHarrisChordMelodyFoundation } from './precomputeFoundation';
 import { selectChordMelodyNoteChoice } from './selector';
 import { pitchClassToSharpName, sixthDimPair } from './scaleOfChords';
@@ -201,7 +201,7 @@ export function runBarryHarrisChordMelodyPipeline(
   const noteChoices = resolveBarryHarrisNoteChoices(foundation, melody);
   const withIdentities = applyIdentitiesToNoteChoices(noteChoices);
   const withPhrasing = assignPhrasingRoles(withIdentities, melody, totalBars);
-  const resolvedNotes = applyVoicingEngineToResolved(withPhrasing, melody);
+  const resolvedNotes = harmonizePhrase(withPhrasing, melody);
   const cmReceipts = buildBarryHarrisChordMelodyReceipts(foundation, noteChoices, resolvedNotes);
   const harmonyBars = harmonyBarsFromResolvedNotes(foundation, resolvedNotes, totalBars, fallbackBars);
   const summary = summarizeBarryHarrisNoteChoices(noteChoices, resolvedNotes, cmReceipts);

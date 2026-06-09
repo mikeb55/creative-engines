@@ -2,14 +2,22 @@
  * V82b+c / V82d - Barry Harris sixth-dim + chord-melody selector tests.
  */
 
+import * as fs from 'fs';
+import * as path from 'path';
 import type { CompositionContext } from '../core/compositionContext';
 import {
   applyIdentitiesToNoteChoice,
   applyIdentitiesToNoteChoices,
+  applyChordMelodyToScore,
+  applyVoicingEngineToResolved,
+  assignPhrasingRoles,
+  harmonySymbolForResolved,
+  assessGuitarFeasibility,
   buildBarryHarrisChordMelodyReceipts,
   buildBaseVoicing,
   buildHarmonyBarsFromSources,
   buildScaleOfChords,
+  buildLadder,
   closeBlockVoicingBelowMelody,
   drop2VoicingBelowMelody,
   dim7RootPcForSixthRoot,
@@ -22,14 +30,118 @@ import {
   sixthDimPartnerSymbol,
   summarizeBarryHarrisNoteChoices,
 } from '../core/barry-harris';
+import {
+  dim7ParticipationRate,
+  isDrop2Voicing,
+  ladderRungHitRate,
+  maxConsecutiveIdenticalFingerprints,
+} from '../core/barry-harris/voicingEngine';
 import { dim7ChordTones, sixthChordTones } from '../core/barry-harris/chordTones';
 import { exportScoreModelToMusicXml } from '../core/export/musicxmlExporter';
 import { extractHarmoniesFromFirstPartXml } from '../core/export/chordSymbolMusicXml';
 import { runGoldenPathOnce } from '../core/goldenPath/runGoldenPath';
 import type { MosaicImportTimeline } from '../core/import/mosaicImportTimeline';
 import { IMPORT_CANDIDATE_MIN_CONFIDENCE } from '../core/import/mosaicImportTimeline';
+import type { ImportMelodyNote } from '../core/import/mosaicImportTimeline';
+import type { ResolvedChordMelodyNote } from '../core/barry-harris/types';
+import type { ScoreModel } from '../core/score-model/scoreModelTypes';
 
 const CHORDS = ['Cmaj7', 'Am7', 'Dm7', 'G7'];
+
+const BENCHMARK_EXPORT_DIR = 'C:\\Users\\mike\\Documents\\Mike Composer Files\\barry_harris';
+
+const PC_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
+
+function mod12(pc: number): number {
+  return ((pc % 12) + 12) % 12;
+}
+
+function stackPcs(midis: readonly number[]): number[] {
+  return [...new Set(midis.map((m) => mod12(m)))].sort((a, b) => a - b);
+}
+
+function pcSetLabel(pcs: readonly number[]): string {
+  return pcs.map((pc) => PC_NAMES[pc]!).join(' ');
+}
+
+function melodyNote(
+  bar: number,
+  onsetBeat: number,
+  midiPitch: number,
+  durationBeats = 1
+): ImportMelodyNote {
+  return { bar, onsetBeat, durationBeats, midiPitch, confidence: 1, fieldOrigin: 'explicit' };
+}
+
+function exportBenchmarkXml(filename: string, scored: ScoreModel): string {
+  fs.mkdirSync(BENCHMARK_EXPORT_DIR, { recursive: true });
+  const xmlResult = exportScoreModelToMusicXml(scored, { bpm: 120, preserveChordKindLiterals: true });
+  expect(xmlResult.success).toBe(true);
+  const xml = xmlResult.xml ?? '';
+  fs.writeFileSync(path.join(BENCHMARK_EXPORT_DIR, filename), xml, 'utf-8');
+  return xml;
+}
+
+function avgInnerVoiceStep(resolved: readonly ResolvedChordMelodyNote[]): number {
+  const ordered = [...resolved]
+    .filter((r) => r.phrasingRole !== 'single' && r.innerVoicingMidis.length > 0)
+    .sort((a, b) => a.bar - b.bar || a.onsetBeat - b.onsetBeat);
+  let totalLeap = 0;
+  let leaps = 0;
+  for (let i = 1; i < ordered.length; i++) {
+    const prevInner = [...ordered[i - 1]!.innerVoicingMidis].sort((a, b) => a - b);
+    const currInner = [...ordered[i]!.innerVoicingMidis].sort((a, b) => a - b);
+    const used = new Set<number>();
+    for (const a of prevInner) {
+      let bestIdx = -1;
+      let bestDist = Infinity;
+      for (let j = 0; j < currInner.length; j++) {
+        if (used.has(j)) continue;
+        const dist = Math.abs(currInner[j]! - a);
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestIdx = j;
+        }
+      }
+      if (bestIdx < 0) continue;
+      used.add(bestIdx);
+      totalLeap += bestDist;
+      leaps++;
+    }
+  }
+  return leaps > 0 ? totalLeap / leaps : 0;
+}
+
+function scoreChordMelodyBenchmark(
+  harmonyBars: readonly string[],
+  melody: readonly ImportMelodyNote[],
+  presetId: 'guitar_bass_duo' = 'guitar_bass_duo'
+): {
+  pipeline: ReturnType<typeof runBarryHarrisChordMelodyPipeline>;
+  scored: ScoreModel;
+  xml: string;
+} {
+  const context = {
+    form: { totalBars: harmonyBars.length, sections: [] },
+    lockedHarmonyBarsRaw: [...harmonyBars],
+    generationMetadata: {},
+  } as CompositionContext;
+  const foundation = precomputeBarryHarrisChordMelodyFoundation(context);
+  const pipeline = runBarryHarrisChordMelodyPipeline(foundation, melody, harmonyBars.length, harmonyBars);
+  const emptyScore: ScoreModel = {
+    title: 'BH benchmark',
+    parts: [
+      {
+        id: 'guitar',
+        name: 'Guitar',
+        instrumentIdentity: 'clean_electric_guitar',
+        measures: [],
+      },
+    ],
+  };
+  const scored = applyChordMelodyToScore(emptyScore, pipeline.resolvedNotes, melody, presetId);
+  return { pipeline, scored, xml: '' };
+}
 
 describe('Barry Harris chord-melody foundation', () => {
   test('sixth-dim partner is one semitone below sixth root (locked pairs)', () => {
@@ -489,5 +601,446 @@ describe('Barry Harris chord-melody foundation', () => {
       if (!mel || r.exportStackMidis.length === 0) continue;
       expect(Math.max(...r.exportStackMidis)).toBe(mel.midiPitch);
     }
+  });
+
+  test('V80k ladder average inner-voice step <= 3 semitones', () => {
+    const context = {
+      form: { totalBars: 4, sections: [] },
+      lockedHarmonyBarsRaw: CHORDS,
+      generationMetadata: {},
+    } as CompositionContext;
+    const foundation = precomputeBarryHarrisChordMelodyFoundation(context);
+    const melody = [
+      { bar: 1, onsetBeat: 0, durationBeats: 1, midiPitch: 60, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 1, onsetBeat: 1, durationBeats: 1, midiPitch: 62, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 1, onsetBeat: 2, durationBeats: 1, midiPitch: 64, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 2, onsetBeat: 0, durationBeats: 1, midiPitch: 65, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 2, onsetBeat: 2, durationBeats: 1, midiPitch: 69, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 3, onsetBeat: 0, durationBeats: 1, midiPitch: 69, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 4, onsetBeat: 0, durationBeats: 1, midiPitch: 76, confidence: 1, fieldOrigin: 'explicit' as const },
+    ];
+    const pipeline = runBarryHarrisChordMelodyPipeline(foundation, melody, 4, CHORDS);
+    const voiced = pipeline.resolvedNotes;
+    const ordered = [...voiced].sort((a, b) => a.bar - b.bar || a.onsetBeat - b.onsetBeat);
+    let totalLeap = 0;
+    let leaps = 0;
+    for (let i = 1; i < ordered.length; i++) {
+      const prevInner = [...ordered[i - 1]!.innerVoicingMidis].sort((a, b) => a - b);
+      const currInner = [...ordered[i]!.innerVoicingMidis].sort((a, b) => a - b);
+      const used = new Set<number>();
+      for (const a of prevInner) {
+        let bestIdx = -1;
+        let bestDist = Infinity;
+        for (let j = 0; j < currInner.length; j++) {
+          if (used.has(j)) continue;
+          const dist = Math.abs(currInner[j]! - a);
+          if (dist < bestDist) {
+            bestDist = dist;
+            bestIdx = j;
+          }
+        }
+        if (bestIdx < 0) continue;
+        used.add(bestIdx);
+        totalLeap += bestDist;
+        leaps++;
+      }
+    }
+    expect(leaps).toBeGreaterThan(0);
+    expect(totalLeap / leaps).toBeLessThanOrEqual(3);
+  });
+
+  test('V80k ladder rung hit rate >= 80%', () => {
+    const context = {
+      form: { totalBars: 4, sections: [] },
+      lockedHarmonyBarsRaw: CHORDS,
+      generationMetadata: {},
+    } as CompositionContext;
+    const foundation = precomputeBarryHarrisChordMelodyFoundation(context);
+    const melody = [
+      { bar: 1, onsetBeat: 0, durationBeats: 1, midiPitch: 60, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 1, onsetBeat: 1, durationBeats: 1, midiPitch: 62, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 1, onsetBeat: 2, durationBeats: 1, midiPitch: 64, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 2, onsetBeat: 0, durationBeats: 1, midiPitch: 65, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 2, onsetBeat: 2, durationBeats: 1, midiPitch: 69, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 3, onsetBeat: 0, durationBeats: 1, midiPitch: 69, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 4, onsetBeat: 0, durationBeats: 1, midiPitch: 76, confidence: 1, fieldOrigin: 'explicit' as const },
+    ];
+    const pipeline = runBarryHarrisChordMelodyPipeline(foundation, melody, 4, CHORDS);
+    expect(ladderRungHitRate(pipeline.resolvedNotes)).toBeGreaterThanOrEqual(0.8);
+  });
+
+  test('V80k ladder chord-change max voice displacement <= 6 semitones', () => {
+    const context = {
+      form: { totalBars: 4, sections: [] },
+      lockedHarmonyBarsRaw: CHORDS,
+      generationMetadata: {},
+    } as CompositionContext;
+    const foundation = precomputeBarryHarrisChordMelodyFoundation(context);
+    const melody = [
+      { bar: 1, onsetBeat: 0, durationBeats: 1, midiPitch: 60, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 2, onsetBeat: 0, durationBeats: 1, midiPitch: 65, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 3, onsetBeat: 0, durationBeats: 1, midiPitch: 69, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 4, onsetBeat: 0, durationBeats: 1, midiPitch: 74, confidence: 1, fieldOrigin: 'explicit' as const },
+    ];
+    const pipeline = runBarryHarrisChordMelodyPipeline(foundation, melody, 4, CHORDS);
+    const voiced = pipeline.resolvedNotes;
+    let maxDisp = 0;
+    for (let i = 1; i < voiced.length; i++) {
+      const prev = voiced[i - 1]!;
+      const curr = voiced[i]!;
+      if (prev.phrasingRole === 'single' || curr.phrasingRole === 'single') continue;
+      if (prev.anchor.sixthRootPc !== curr.anchor.sixthRootPc) {
+        const prevInner = [...prev.innerVoicingMidis].sort((a, b) => a - b);
+        const currInner = [...curr.innerVoicingMidis].sort((a, b) => a - b);
+        const used = new Set<number>();
+        let disp = 0;
+        for (const a of prevInner) {
+          let bestIdx = -1;
+          let bestDist = Infinity;
+          for (let j = 0; j < currInner.length; j++) {
+            if (used.has(j)) continue;
+            const dist = Math.abs(currInner[j]! - a);
+            if (dist < bestDist) {
+              bestDist = dist;
+              bestIdx = j;
+            }
+          }
+        if (bestIdx < 0) continue;
+        used.add(bestIdx);
+        disp = Math.max(disp, bestDist);
+      }
+      maxDisp = Math.max(maxDisp, disp);
+      }
+    }
+    expect(maxDisp).toBeLessThanOrEqual(6);
+  });
+
+  test('V80k-fix dim7 participation >= 15% of harmonised events', () => {
+    const context = {
+      form: { totalBars: 4, sections: [] },
+      lockedHarmonyBarsRaw: CHORDS,
+      generationMetadata: {},
+    } as CompositionContext;
+    const foundation = precomputeBarryHarrisChordMelodyFoundation(context);
+    const melody = [
+      { bar: 1, onsetBeat: 0, durationBeats: 1, midiPitch: 60, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 1, onsetBeat: 1, durationBeats: 1, midiPitch: 62, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 1, onsetBeat: 2, durationBeats: 1, midiPitch: 64, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 2, onsetBeat: 0, durationBeats: 1, midiPitch: 65, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 2, onsetBeat: 2, durationBeats: 1, midiPitch: 69, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 3, onsetBeat: 0, durationBeats: 1, midiPitch: 69, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 4, onsetBeat: 0, durationBeats: 1, midiPitch: 76, confidence: 1, fieldOrigin: 'explicit' as const },
+    ];
+    const pipeline = runBarryHarrisChordMelodyPipeline(foundation, melody, 4, CHORDS);
+    const voiced = pipeline.resolvedNotes;
+    expect(dim7ParticipationRate(voiced)).toBeGreaterThanOrEqual(0.15);
+  });
+
+  test('V80k-fix no more than 2 consecutive identical voicing fingerprints', () => {
+    const context = {
+      form: { totalBars: 4, sections: [] },
+      lockedHarmonyBarsRaw: CHORDS,
+      generationMetadata: {},
+    } as CompositionContext;
+    const foundation = precomputeBarryHarrisChordMelodyFoundation(context);
+    const melody = [
+      { bar: 1, onsetBeat: 0, durationBeats: 1, midiPitch: 60, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 1, onsetBeat: 1, durationBeats: 1, midiPitch: 60, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 2, onsetBeat: 0, durationBeats: 1, midiPitch: 65, confidence: 1, fieldOrigin: 'explicit' as const },
+    ];
+    const pipeline = runBarryHarrisChordMelodyPipeline(foundation, melody, 4, CHORDS);
+    const voiced = pipeline.resolvedNotes;
+    expect(maxConsecutiveIdenticalFingerprints(voiced)).toBeLessThanOrEqual(2);
+  });
+
+  test('V80k all full/dyad voicings pass guitar feasibility (fret span <= 5)', () => {
+    const context = {
+      form: { totalBars: 4, sections: [] },
+      lockedHarmonyBarsRaw: CHORDS,
+      generationMetadata: {},
+    } as CompositionContext;
+    const foundation = precomputeBarryHarrisChordMelodyFoundation(context);
+    const melody = [
+      { bar: 1, onsetBeat: 0, durationBeats: 1, midiPitch: 60, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 1, onsetBeat: 1, durationBeats: 1, midiPitch: 64, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 2, onsetBeat: 0, durationBeats: 1, midiPitch: 67, confidence: 1, fieldOrigin: 'explicit' as const },
+    ];
+    const pipeline = runBarryHarrisChordMelodyPipeline(foundation, melody, 4, CHORDS);
+    const voiced = pipeline.resolvedNotes;
+    for (const r of voiced) {
+      if (r.phrasingRole === 'single') continue;
+      expect(r.guitarFeasible).toBe(true);
+      expect((r.guitarFretSpan ?? 99)).toBeLessThanOrEqual(5);
+      const check = assessGuitarFeasibility(r.exportStackMidis, { allowStretch: true });
+      expect(check.feasible).toBe(true);
+      expect(check.fretSpan).toBeLessThanOrEqual(5);
+    }
+  });
+
+  test('V80k drop-2 variant includes drop-2 spacing voicing', () => {
+    const context = {
+      form: { totalBars: 4, sections: [] },
+      lockedHarmonyBarsRaw: CHORDS,
+      generationMetadata: {},
+    } as CompositionContext;
+    const foundation = precomputeBarryHarrisChordMelodyFoundation(context);
+    const melody = [
+      { bar: 1, onsetBeat: 0, durationBeats: 1, midiPitch: 60, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 1, onsetBeat: 1, durationBeats: 1, midiPitch: 62, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 2, onsetBeat: 0, durationBeats: 1, midiPitch: 65, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 3, onsetBeat: 0, durationBeats: 1, midiPitch: 69, confidence: 1, fieldOrigin: 'explicit' as const },
+    ];
+    const pipeline = runBarryHarrisChordMelodyPipeline(foundation, melody, 4, CHORDS);
+    const dropVoiced = applyVoicingEngineToResolved(pipeline.resolvedNotes, melody, { spacingPreference: 'drop2' });
+    expect(
+      dropVoiced.some((r) => isDrop2Voicing(r, melody.find((m) => m.bar === r.bar && Math.abs(m.onsetBeat - r.onsetBeat) < 0.02)?.midiPitch ?? 60))
+    ).toBe(true);
+  });
+
+  test('V80k-export ladder rung source drives MusicXML chord symbols and melody count', () => {
+    const hookpadMelody = [
+      { bar: 1, onsetBeat: 0, durationBeats: 1, midiPitch: 67, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 1, onsetBeat: 1, durationBeats: 1, midiPitch: 67, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 1, onsetBeat: 1.5, durationBeats: 0.5, midiPitch: 60, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 1, onsetBeat: 2, durationBeats: 1, midiPitch: 67, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 1, onsetBeat: 3, durationBeats: 0.5, midiPitch: 67, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 1, onsetBeat: 3.5, durationBeats: 0.5, midiPitch: 60, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 2, onsetBeat: 0, durationBeats: 1, midiPitch: 69, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 2, onsetBeat: 1, durationBeats: 1, midiPitch: 69, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 2, onsetBeat: 1.5, durationBeats: 0.5, midiPitch: 65, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 2, onsetBeat: 2, durationBeats: 1, midiPitch: 69, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 2, onsetBeat: 3, durationBeats: 0.5, midiPitch: 69, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 2, onsetBeat: 3.5, durationBeats: 0.5, midiPitch: 65, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 3, onsetBeat: 0, durationBeats: 1, midiPitch: 69, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 3, onsetBeat: 1, durationBeats: 1, midiPitch: 69, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 3, onsetBeat: 1.5, durationBeats: 0.5, midiPitch: 69, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 3, onsetBeat: 2, durationBeats: 1, midiPitch: 69, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 3, onsetBeat: 3, durationBeats: 0.5, midiPitch: 69, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 3, onsetBeat: 3.5, durationBeats: 0.5, midiPitch: 69, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 4, onsetBeat: 0, durationBeats: 1, midiPitch: 67, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 4, onsetBeat: 1, durationBeats: 1, midiPitch: 67, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 4, onsetBeat: 1.5, durationBeats: 0.5, midiPitch: 64, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 4, onsetBeat: 2, durationBeats: 1, midiPitch: 67, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 4, onsetBeat: 3, durationBeats: 0.5, midiPitch: 67, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 4, onsetBeat: 3.5, durationBeats: 0.5, midiPitch: 64, confidence: 1, fieldOrigin: 'explicit' as const },
+    ];
+    expect(hookpadMelody.length).toBe(24);
+
+    const context = {
+      form: { totalBars: 4, sections: [] },
+      lockedHarmonyBarsRaw: ['C', 'F', 'Am', 'Em'],
+      generationMetadata: {},
+    } as CompositionContext;
+    const foundation = precomputeBarryHarrisChordMelodyFoundation(context);
+    const pipeline = runBarryHarrisChordMelodyPipeline(
+      foundation,
+      hookpadMelody,
+      4,
+      ['C', 'F', 'Am', 'Em']
+    );
+    const voiced = pipeline.resolvedNotes;
+
+    for (const r of voiced) {
+      const sym = harmonySymbolForResolved(r);
+      if (r.voicingChordColour === 'dim7') {
+        expect(sym).toMatch(/dim7/i);
+        const expected = [...dim7ChordTones(r.anchor.dim7RootPc)].sort((a, b) => a - b);
+        const pcs = [...new Set(r.exportStackMidis.map((m) => ((m % 12) + 12) % 12))].sort((a, b) => a - b);
+        expect(pcs).toEqual(expected);
+      } else if (r.voicingChordColour === 'sixth') {
+        expect(sym).toMatch(/6/);
+      }
+    }
+
+    const dimProbePipeline = runBarryHarrisChordMelodyPipeline(
+      foundation,
+      [{ bar: 1, onsetBeat: 0, durationBeats: 1, midiPitch: 62, confidence: 1, fieldOrigin: 'explicit' as const }],
+      4,
+      ['C', 'F', 'Am', 'Em']
+    );
+    const dimProbeVoiced = dimProbePipeline.resolvedNotes;
+    expect(dimProbeVoiced.some((r) => r.voicingChordColour === 'dim7')).toBe(true);
+
+    expect(maxConsecutiveIdenticalFingerprints(voiced)).toBeLessThanOrEqual(2);
+
+    const emptyScore = {
+      title: 'BH export test',
+      parts: [
+        {
+          id: 'guitar',
+          name: 'Guitar',
+          instrumentIdentity: 'clean_electric_guitar',
+          measures: [],
+        },
+      ],
+    };
+    const scored = applyChordMelodyToScore(emptyScore as import('../core/score-model/scoreModelTypes').ScoreModel, voiced, hookpadMelody, 'guitar_bass_duo');
+    const guitar = scored.parts[0]!;
+    let melodyEvents = 0;
+    for (const m of guitar.measures) {
+      melodyEvents += m.events.filter((e) => e.kind === 'chord' || e.kind === 'note').length;
+    }
+    expect(melodyEvents).toBe(24);
+
+    const xmlResult = exportScoreModelToMusicXml(scored, { bpm: 120, preserveChordKindLiterals: true });
+    expect(xmlResult.success).toBe(true);
+    const xml = xmlResult.xml ?? '';
+    const dimProbeMelody = [
+      { bar: 1, onsetBeat: 0, durationBeats: 1, midiPitch: 62, confidence: 1, fieldOrigin: 'explicit' as const },
+    ];
+    const dimScored = applyChordMelodyToScore(
+      structuredClone(emptyScore) as import('../core/score-model/scoreModelTypes').ScoreModel,
+      dimProbeVoiced,
+      dimProbeMelody,
+      'guitar_bass_duo'
+    );
+    const dimXmlResult = exportScoreModelToMusicXml(dimScored, { bpm: 120, preserveChordKindLiterals: true });
+    expect(dimXmlResult.success).toBe(true);
+    expect((dimXmlResult.xml ?? '').match(/dim7/gi)?.length ?? 0).toBeGreaterThan(0);
+    const guitarNotes = (xml.match(/<note>/g) ?? []).length;
+    expect(guitarNotes).toBeGreaterThanOrEqual(24);
+  });
+
+  test('V80k drop-2 variant voicings differ from close variant', () => {
+    const context = {
+      form: { totalBars: 4, sections: [] },
+      lockedHarmonyBarsRaw: CHORDS,
+      generationMetadata: {},
+    } as CompositionContext;
+    const foundation = precomputeBarryHarrisChordMelodyFoundation(context);
+    const melody = [
+      { bar: 1, onsetBeat: 0, durationBeats: 1, midiPitch: 60, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 1, onsetBeat: 1, durationBeats: 1, midiPitch: 62, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 2, onsetBeat: 0, durationBeats: 1, midiPitch: 65, confidence: 1, fieldOrigin: 'explicit' as const },
+      { bar: 3, onsetBeat: 0, durationBeats: 1, midiPitch: 69, confidence: 1, fieldOrigin: 'explicit' as const },
+    ];
+    const pipeline = runBarryHarrisChordMelodyPipeline(foundation, melody, 4, CHORDS);
+    const closeVoiced = applyVoicingEngineToResolved(pipeline.resolvedNotes, melody, { spacingPreference: 'close' });
+    const dropVoiced = applyVoicingEngineToResolved(pipeline.resolvedNotes, melody, { spacingPreference: 'drop2' });
+    const closeSigs = closeVoiced.map((r) => r.voicingFingerprint).join('|');
+    const dropSigs = dropVoiced.map((r) => r.voicingFingerprint).join('|');
+    expect(dropSigs).not.toBe(closeSigs);
+  });
+
+  test('Benchmark A — ladder fidelity (synthetic 8-note C-major scale)', () => {
+    const harmonyBars = ['C', 'C'];
+    const ladderMelody = [
+      melodyNote(1, 0, 60),
+      melodyNote(1, 1, 62),
+      melodyNote(1, 2, 64),
+      melodyNote(1, 3, 65),
+      melodyNote(2, 0, 67),
+      melodyNote(2, 1, 68),
+      melodyNote(2, 2, 69),
+      melodyNote(2, 3, 71),
+    ];
+    const expectedPattern = ['sixth', 'dim7', 'sixth', 'dim7', 'sixth', 'dim7', 'sixth', 'dim7'] as const;
+    const expectedVoicingPcs: number[][] = [
+      [0, 4, 7, 9],
+      [2, 5, 8, 11],
+      [0, 4, 7, 9],
+      [2, 5, 8, 11],
+      [0, 4, 7, 9],
+      [2, 5, 8, 11],
+      [0, 4, 7, 9],
+      [2, 5, 8, 11],
+    ];
+    const expectedSymbols = ['C6', 'Bdim7', 'C6', 'Bdim7', 'C6', 'Bdim7', 'C6', 'Bdim7'];
+    const cAnchor = reinterpretFakeBookSymbol('C');
+    const ladder = buildLadder(cAnchor);
+
+    const { pipeline, scored } = scoreChordMelodyBenchmark(harmonyBars, ladderMelody);
+    const resolved = pipeline.resolvedNotes;
+    expect(resolved).toHaveLength(8);
+
+    const rows: string[] = [];
+    for (let i = 0; i < ladderMelody.length; i++) {
+      const mel = ladderMelody[i]!;
+      const r = resolved[i]!;
+      const actualColour = r.voicingChordColour ?? (r.kind === 'dim7' ? 'dim7' : 'sixth');
+      const expectedColour = expectedPattern[i]!;
+      const actualPcs = stackPcs(r.exportStackMidis);
+      const expectedPcs = expectedVoicingPcs[i]!;
+      const rung = ladder[i]!;
+      const sym = harmonySymbolForResolved(r);
+      const colourPass = actualColour === expectedColour;
+      const symPass = sym === expectedSymbols[i];
+      const ladderPass = r.ladderHit === true && r.ladderRungIndex === rung.index;
+      const tonePass =
+        r.phrasingRole === 'full'
+          ? actualPcs.length === expectedPcs.length && actualPcs.every((pc, j) => pc === expectedPcs[j])
+          : actualPcs.every((pc) => expectedPcs.includes(pc));
+      const pass = colourPass && symPass && ladderPass && tonePass;
+      rows.push(
+        `${PC_NAMES[mod12(mel.midiPitch)]!.padEnd(3)} | ${expectedColour.padEnd(5)} | ${actualColour.padEnd(5)} | ${pass ? 'PASS' : 'FAIL'} (${r.phrasingRole}, ${pcSetLabel(actualPcs)})`
+      );
+      expect(actualColour).toBe(expectedColour);
+      expect(sym).toBe(expectedSymbols[i]);
+      expect(r.ladderHit).toBe(true);
+      expect(r.ladderRungIndex).toBe(rung.index);
+      expect(rung.source).toBe(expectedColour === 'sixth' ? '6' : 'dim');
+      if (r.phrasingRole === 'full') {
+        expect(actualPcs).toEqual(expectedPcs);
+      } else {
+        expect(actualPcs.every((pc) => expectedPcs.includes(pc))).toBe(true);
+      }
+    }
+
+    const colourPattern = resolved.map(
+      (r) => r.voicingChordColour ?? (r.kind === 'dim7' ? 'dim7' : 'sixth')
+    );
+    expect(colourPattern.join('-')).toBe('sixth-dim7-sixth-dim7-sixth-dim7-sixth-dim7');
+
+    const xml = exportBenchmarkXml('BH_Benchmark_LadderFidelity.musicxml', scored);
+    const perNoteSymbols = resolved.map((r) => harmonySymbolForResolved(r));
+    expect(perNoteSymbols).toEqual(expectedSymbols);
+    expect(xml).toMatch(/dim7|°7|o7/i);
+
+    console.log('\n=== Benchmark A — Ladder Fidelity ===');
+    console.log('melody | expected rung | actual rung | pass/fail');
+    console.log('-------|---------------|-------------|----------');
+    for (const row of rows) console.log(row);
+    console.log(`Exported symbols sample: ${expectedSymbols.slice(0, 4).join(', ')}…`);
+  });
+
+  test('Benchmark B — jazz melody (Embraceable-You-style changes)', () => {
+    const harmonyBars = ['G', 'G', 'Am7', 'D7', 'Bm7', 'Bm7', 'D7', 'G'];
+    const jazzMelody = [
+      melodyNote(1, 0, 66),
+      melodyNote(1, 2, 71),
+      melodyNote(2, 0, 69),
+      melodyNote(2, 2, 67),
+      melodyNote(3, 0, 69),
+      melodyNote(3, 2, 68),
+      melodyNote(4, 0, 70),
+      melodyNote(4, 2, 66),
+      melodyNote(5, 0, 71),
+      melodyNote(5, 2, 69),
+      melodyNote(6, 0, 71),
+      melodyNote(6, 2, 66),
+      melodyNote(7, 0, 70),
+      melodyNote(7, 2, 68),
+      melodyNote(8, 0, 67),
+      melodyNote(8, 2, 71),
+    ];
+
+    const { pipeline, scored } = scoreChordMelodyBenchmark(harmonyBars, jazzMelody);
+    const resolved = pipeline.resolvedNotes;
+    expect(resolved).toHaveLength(jazzMelody.length);
+
+    const dimPct = dim7ParticipationRate(resolved) * 100;
+    expect(dimPct).toBeGreaterThan(0);
+
+    const avgVl = avgInnerVoiceStep(resolved);
+    expect(avgVl).toBeLessThanOrEqual(3);
+
+    const xml = exportBenchmarkXml('BH_Benchmark_JazzMelody.musicxml', scored);
+    const symbols = [...extractHarmoniesFromFirstPartXml(xml).values()].slice(0, 8);
+
+    console.log('\n=== Benchmark B — Jazz Melody ===');
+    console.log(`event count: ${resolved.length} (input ${jazzMelody.length})`);
+    console.log(`dim7 participation: ${dimPct.toFixed(1)}%`);
+    console.log(`avg inner-voice VL step: ${avgVl.toFixed(2)} semitones`);
+    console.log(`exported symbols sample: ${symbols.join(' | ') || '(none)'}`);
   });
 });

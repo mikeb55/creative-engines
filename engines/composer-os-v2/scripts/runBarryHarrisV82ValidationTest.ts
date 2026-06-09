@@ -1,4 +1,4 @@
-﻿/**
+/**
  * V82 validation - Barry Harris chord-melody (Hookpad 4-bar C major fixture).
  * Run: npm run test:barry-harris-v82-validation
  */
@@ -7,7 +7,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type { CompositionContext } from '../core/compositionContext';
 import {
+  applyChordMelodyToScore,
   applyIdentitiesToNoteChoices,
+  applyVoicingEngineToResolved,
+  assignPhrasingRoles,
+  chordMelodyVoiceLeadingScore,
+  harmonySymbolForResolved,
   blockMidisForResolved,
   chordTonePcsForResolved,
   drop2VoicingBelowMelody,
@@ -286,39 +291,9 @@ function scoreColour(borrowedDensity: number): number {
   return Math.max(0, 10 - Math.ceil(delta / 5) * 2);
 }
 
-function scoreKinetics(
-  resolved: readonly ResolvedChordMelodyNote[],
-  melody: readonly ImportMelodyNote[],
-  voicing: VoicingMode
-): number {
-  const ordered = [...resolved].sort((a, b) => a.bar - b.bar || a.onsetBeat - b.onsetBeat);
-  if (ordered.length < 2) return 10;
-  let totalMotion = 0;
-  let transitions = 0;
-  for (let i = 1; i < ordered.length; i++) {
-    const prev = ordered[i - 1]!;
-    const curr = ordered[i]!;
-    const melPrev = melody.find((n) => n.bar === prev.bar && Math.abs(n.onsetBeat - prev.onsetBeat) < 0.02);
-    const melCurr = melody.find((n) => n.bar === curr.bar && Math.abs(n.onsetBeat - curr.onsetBeat) < 0.02);
-    if (!melPrev || !melCurr) continue;
-    const innerPrev =
-      voicing === 'drop2'
-        ? drop2VoicingBelowMelody(melPrev.midiPitch, chordTonePcsForResolved(prev), droppedTonePcForResolved(prev))
-        : blockMidisForResolved(prev, melPrev.midiPitch, 'guitar_bass_duo');
-    const innerCurr =
-      voicing === 'drop2'
-        ? drop2VoicingBelowMelody(melCurr.midiPitch, chordTonePcsForResolved(curr), droppedTonePcForResolved(curr))
-        : blockMidisForResolved(curr, melCurr.midiPitch, 'guitar_bass_duo');
-    const n = Math.max(innerPrev.length, innerCurr.length);
-    for (let v = 0; v < n; v++) {
-      const a = innerPrev[Math.min(v, innerPrev.length - 1)] ?? innerPrev[0] ?? 0;
-      const b = innerCurr[Math.min(v, innerCurr.length - 1)] ?? innerCurr[0] ?? 0;
-      totalMotion += Math.abs(b - a);
-    }
-    transitions++;
-  }
-  if (transitions === 0) return 10;
-  return Math.max(0, Math.min(10, 10 - totalMotion / transitions / 3));
+/** K reads voiceLeadingCost from harmonizePhrase. */
+function scoreKinetics(resolved: readonly ResolvedChordMelodyNote[]): number {
+  return chordMelodyVoiceLeadingScore(resolved);
 }
 
 function borrowedBeatList(noteChoices: readonly ChordMelodyNoteChoice[]): string {
@@ -375,12 +350,19 @@ function runVariant(spec: VariantSpec, ir: MosaicImportTimeline, locked: string[
   const allResolved =
     (gp.context.generationMetadata?.barryHarrisResolvedNotes as ResolvedChordMelodyNote[] | undefined) ??
     applyIdentitiesToNoteChoices(allNoteChoices);
-  const resolved = filterToHookpadBars(allResolved);
+  const resolvedBase = filterToHookpadBars(
+    allNoteChoices.length > 0 ? allNoteChoices : allResolved
+  );
+  const withPhrasing = assignPhrasingRoles(resolvedBase, ir.melodyLine, HOOKPAD_BARS);
 
-  let score = gp.score;
-  // drop-2 comp deferred to V80k; export uses close-block stacks from applyChordMelodyToScore
+  let score = trimScoreToBars(gp.score, HOOKPAD_BARS);
+  const voicedResolved = applyVoicingEngineToResolved(withPhrasing, ir.melodyLine, {
+    spacingPreference: spec.voicing === 'drop2' ? 'drop2' : 'close',
+  });
+  printLadderExportDiagnostic('Variant ' + spec.id, ir.melodyLine, voicedResolved);
+  score = applyChordMelodyToScore(score, voicedResolved, ir.melodyLine, 'guitar_bass_duo');
 
-  const blockCheck = assertBlockVoicingMelodyTop(resolved, ir.melodyLine);
+  const blockCheck = assertBlockVoicingMelodyTop(voicedResolved, ir.melodyLine, spec.voicing);
   fs.mkdirSync(EXPORT_DIR, { recursive: true });
   const exportPath = path.join(EXPORT_DIR, spec.exportFile);
   const lockedBars = locked.slice(0, HOOKPAD_BARS);
@@ -402,7 +384,7 @@ function runVariant(spec: VariantSpec, ir: MosaicImportTimeline, locked: string[
     L: scoreLoyalty(cmReceipts),
     O: scoreObservance(noteChoices, ir.melodyLine.length),
     C: scoreColour(borrowedDensity),
-    K: scoreKinetics(resolved, ir.melodyLine),
+    K: scoreKinetics(voicedResolved),
     total: 0,
     notes: '',
   };
@@ -432,6 +414,69 @@ function runVariant(spec: VariantSpec, ir: MosaicImportTimeline, locked: string[
   };
 }
 
+
+const PC_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
+
+function midiNoteName(midi: number): string {
+  return PC_NAMES[((midi % 12) + 12) % 12]!;
+}
+
+function ladderSourceLabel(r: ResolvedChordMelodyNote): string {
+  const fp = r.voicingFingerprint ?? '';
+  if (fp.startsWith('dim:')) return 'dim';
+  if (fp.startsWith('6:')) return '6';
+  if (r.voicingChordColour === 'dim7') return 'dim';
+  if (r.voicingChordColour === 'sixth') return '6';
+  return '?';
+}
+
+function printLadderExportDiagnostic(
+  label: string,
+  melody: readonly ImportMelodyNote[],
+  voiced: readonly ResolvedChordMelodyNote[]
+): void {
+  console.log('\n--- Ladder / export diagnostic (' + label + ') ---');
+  console.log('bar | beat | melody | rung | source | export symbol | voicing notes | vlCost');
+  console.log('----+------+--------+------+--------+---------------+--------------+-------');
+  const ordered = [...voiced].sort((a, b) => a.bar - b.bar || a.onsetBeat - b.onsetBeat);
+  for (const r of ordered) {
+    const mel = melody.find((n) => n.bar === r.bar && Math.abs(n.onsetBeat - r.onsetBeat) < 0.02);
+    const sym = harmonySymbolForResolved(r);
+    const notes = r.exportStackMidis.map(midiNoteName).join('/');
+    const vlCost =
+      typeof r.voiceLeadingCost === 'number'
+        ? r.voiceLeadingCost.toFixed(2)
+        : r.voiceLeadingCost === null
+          ? 'null'
+          : '?';
+    console.log(
+      String(r.bar).padStart(3) +
+        ' | ' +
+        String(r.onsetBeat).padStart(4) +
+        ' | ' +
+        (mel ? midiNoteName(mel.midiPitch).padStart(6) : '?'.padStart(6)) +
+        ' | ' +
+        String(r.ladderRungIndex ?? '?').padStart(4) +
+        ' | ' +
+        ladderSourceLabel(r).padStart(6) +
+        ' | ' +
+        sym.padEnd(13) +
+        ' | ' +
+        notes.padEnd(12) +
+        ' | ' +
+        vlCost
+    );
+  }
+  const dimExports = ordered.filter((r) => /dim7/i.test(harmonySymbolForResolved(r))).length;
+  console.log(
+    'Melody events: ' +
+      melody.length +
+      ' | Voiced: ' +
+      ordered.length +
+      ' | dim7 export symbols: ' +
+      dimExports
+  );
+}
 function printReceiptDump(label: string, receipts: readonly string[]): void {
   console.log(`\n========== bh:cm:* receipts - ${label} ==========`);
   for (const r of receipts) console.log(r);
@@ -467,6 +512,11 @@ function main(): void {
   const previewPipeline = runBarryHarrisChordMelodyPipeline(previewFoundation, ir.melodyLine, HOOKPAD_BARS, locked);
   console.log('\n--- Chord-melody summary (preview pipeline) ---');
   console.log(JSON.stringify(previewPipeline.summary, null, 2));
+  const previewVoiced = applyVoicingEngineToResolved(
+    assignPhrasingRoles(previewPipeline.resolvedNotes, ir.melodyLine, HOOKPAD_BARS),
+    ir.melodyLine
+  );
+  printLadderExportDiagnostic('preview pipeline', ir.melodyLine, previewVoiced);
 
   const results: VariantRunResult[] = [];
   for (const spec of VARIANTS) {

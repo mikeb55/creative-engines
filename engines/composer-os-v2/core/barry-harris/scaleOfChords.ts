@@ -3,6 +3,7 @@
  */
 
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
+import { dim7ChordTones, sixthChordTones } from './chordTones';
 import type { ScaleOfChords, SixthDimPair } from './types';
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
@@ -51,6 +52,15 @@ export function buildScaleOfChords(sectionTonicPc: number, minorKey = false): Sc
     ? buildPairsFromOffsets(tonic, MINOR_SIXTH_OFFSETS, MINOR_SIXTH_QUALITIES)
     : buildPairsFromOffsets(tonic, MAJOR_SIXTH_OFFSETS, MAJOR_SIXTH_QUALITIES);
   return { sectionTonicPc: tonic, pairs };
+}
+
+/** Eight-note BH scale (union of 6th + partner dim7) ordered from sixth root ascending. */
+export function buildBhOrderedScale(pair: SixthDimPair): number[] {
+  const sixth = sixthChordTones(pair.sixthRootPc, pair.sixthQuality);
+  const dim = dim7ChordTones(pair.dim7RootPc);
+  const union = [...new Set([...sixth, ...dim])];
+  const root = ((pair.sixthRootPc % 12) + 12) % 12;
+  return union.sort((a, b) => ((a - root + 12) % 12) - ((b - root + 12) % 12));
 }
 
 export function pitchClassToSharpName(pc: number): string {

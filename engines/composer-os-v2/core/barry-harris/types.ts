@@ -89,6 +89,52 @@ export type ResolvedChordMelodyNote = ChordMelodyNoteChoice & {
   guitarFretSpan?: number | null;
   guitarFeasible?: boolean | null;
   blockVoicingMidis?: number[];
+  /** V80k-fix — whether voicing stack uses 6th or partner dim7 chord tones. */
+  voicingChordColour?: 'sixth' | 'dim7';
+  ladderRungIndex?: number | null;
+  ladderHit?: boolean;
+};
+
+export type BhFamily = SixthDimPair;
+
+export type LadderSource = '6' | 'dim';
+
+export type LadderRung = {
+  index: number;
+  melodyPc: number;
+  source: LadderSource;
+  abstractClose: number[];
+  family: BhFamily;
+};
+
+export type VoicingShapeType = 'close' | 'drop2' | 'shell' | 'dyad' | 'single';
+
+export type RealizedVoicing = {
+  rungIndex: number;
+  source: LadderSource;
+  shapeType: VoicingShapeType;
+  pitches: number[];
+  innerVoicingMidis: number[];
+  voicingFingerprint: string;
+  guitarFeasible: boolean;
+  guitarFretSpan: number;
+  laneSignature: string;
+};
+
+export type LadderTrack = {
+  familyKey: string;
+  rungIndex: number;
+  realizationIndex: number;
+  laneSignature: string;
+};
+
+export type HarmonizedEvent = {
+  resolved: ResolvedChordMelodyNote;
+  melodyMidi: number;
+  ladderHit: boolean;
+  rungIndex: number | null;
+  source: LadderSource | 'borrowed' | 'approach' | 'single';
+  track: LadderTrack | null;
 };
 
 export type BarryHarrisSectionSpan = {
