@@ -1,5 +1,11 @@
 ## [Unreleased]
 
+## [2.10.2] - 2026-06-10
+
+### Changed
+
+- **Arranger** — Optional **Output name** field between settings and Run (passes `outputLabel` to generate). **Open MusicXML** replaces Save-dialog download; desktop opens the saved file with the system default app (`shell.openPath` via `composer-os-api:open-file-default-app`). **Download MIDI** unchanged.
+
 ## [2.10.1] - 2026-06-10
 
 ### Fixed

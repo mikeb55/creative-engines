@@ -268,6 +268,12 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
     if (!pathRaw) return;
     await shell.showItemInFolder(pathRaw);
   });
+  ipcMain.handle('composer-os-api:open-file-default-app', async (_event, filePath: unknown) => {
+    const pathRaw = typeof filePath === 'string' ? filePath.trim() : '';
+    if (!pathRaw) return { ok: false, error: 'Missing file path' };
+    const error = await shell.openPath(pathRaw);
+    return { ok: error === '', error };
+  });
   console.log('[ipcEntry] registering generate-wayne-shorter');
   ipcMain.handle(
     'composer-os-api:generate-wayne-shorter',

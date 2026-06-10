@@ -434,6 +434,47 @@
   transform: translateX(18px);
 }
 
+.outputNameBlock {
+  margin-bottom: 20px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 22px;
+}
+
+.outputNameLabel {
+  display: block;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.outputNameInput {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 14px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #1f1f26;
+  color: var(--text);
+}
+
+.outputNameInput::placeholder {
+  color: var(--text-muted);
+}
+
+.outputNameInput:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.outputNameInput:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .btnRun {
   width: 100%;
   font: inherit;

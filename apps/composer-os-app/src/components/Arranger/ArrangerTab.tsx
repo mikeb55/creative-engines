@@ -56,6 +56,16 @@ type ArrangerGenResult = {
 };
 
 
+
+function normalizeArrangerOutputLabel(raw: string): string {
+  return raw
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 function basenameOnly(fp: string): string {
   const p = fp.replace(/[/\\]+$/, '');
   const li = Math.max(p.lastIndexOf('\\'), p.lastIndexOf('/'));
@@ -72,6 +82,18 @@ function triggerBrowserFileDownload(blob: Blob, filename: string): void {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+async function openMusicXmlFile(filepath: string): Promise<void> {
+  if (isDesktopIpc() && window.composerOsDesktop?.openFileDefaultApp) {
+    const r = await window.composerOsDesktop.openFileDefaultApp(filepath);
+    if (!r.ok) throw new Error(r.error || 'Could not open file');
+    return;
+  }
+  const r = await api.openOutputFolder({ path: filepath });
+  if (!r.success && r.message) {
+    throw new Error(r.message);
+  }
 }
 
 async function downloadPathToBrowser(filepath: string): Promise<void> {
@@ -137,6 +159,7 @@ export function ArrangerTab() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [folderError, setFolderError] = useState<string | null>(null);
   const [revealOpened, setRevealOpened] = useState(false);
+  const [outputLabel, setOutputLabel] = useState('');
   const runTokenRef = useRef(0);
   const loadedFileRef = useRef<string | null>(null);
 
@@ -266,7 +289,7 @@ export function ArrangerTab() {
     setRevealOpened(false);
     setErrorCode('E0');
     try {
-      const payload = buildArrangerGeneratePayload({
+      const builtPayload = buildArrangerGeneratePayload({
         timeline,
         presetId,
         seed,
@@ -276,6 +299,8 @@ export function ArrangerTab() {
         reorchestrate: cfg.reorchestrate,
         bpm: state.tempoBpm,
       });
+      const labelSlug = normalizeArrangerOutputLabel(outputLabel);
+      const payload = labelSlug ? { ...builtPayload, outputLabel: labelSlug } : builtPayload;
       const r = (await enqueue(payload)) as ArrangerGenResult;
       if (token !== runTokenRef.current) return;
       if (!r?.success) {
@@ -294,7 +319,7 @@ export function ArrangerTab() {
       setErrorCode(mapArrangerError(err));
       setRunPhase('error');
     }
-  }, [cfg, presetId, seed, state.parseError, state.tempoBpm, timeline]);
+  }, [cfg, outputLabel, presetId, seed, state.parseError, state.tempoBpm, timeline]);
 
   const onCancel = useCallback(() => {
     runTokenRef.current += 1;
@@ -571,6 +596,22 @@ export function ArrangerTab() {
               </div>
             </section>
 
+            <div className={styles.outputNameBlock}>
+              <label className={styles.outputNameLabel} htmlFor="arranger-output-label">
+                Output name (optional)
+              </label>
+              <input
+                id="arranger-output-label"
+                type="text"
+                className={styles.outputNameInput}
+                value={outputLabel}
+                onChange={(e) => setOutputLabel(e.target.value)}
+                placeholder="e.g. my-jazz-study"
+                disabled={runPhase === 'progress'}
+                data-testid="arranger-output-label"
+              />
+            </div>
+
             <section aria-labelledby="arranger-step-run">
               <div className={styles.stepLabel} id="arranger-step-run">
                 Step 4 - Run
@@ -637,12 +678,12 @@ export function ArrangerTab() {
                       className={styles.btnDownloadPrimary}
                       onClick={() => {
                         setFolderError(null);
-                        void downloadPathToBrowser(outputPath).catch((e) =>
+                        void openMusicXmlFile(outputPath).catch((e) =>
                           setFolderError(e instanceof Error ? e.message : String(e)),
                         );
                       }}
                     >
-                      Download MusicXML
+                      Open MusicXML
                     </button>
                     {midiPath ? (
                       <button
@@ -685,6 +726,7 @@ export function ArrangerTab() {
                         setRunPhase('idle');
                         setResult(null);
                         setRevealOpened(false);
+                        setOutputLabel('');
                       }}
                     >
                       Run again with this melody
