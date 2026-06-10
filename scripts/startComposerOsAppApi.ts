@@ -19,7 +19,6 @@ import {
   apiListOutputs,
   apiGetOutputDirectory,
   apiGetDiagnostics,
-  apiOpenOutputFolder,
   apiSystemCheck,
   apiPdfGenerateFromPdf,
   apiMelodicVariationPack,
@@ -28,6 +27,8 @@ import {
   apiExportGuitarPro,
   apiGenerateComping,
 } from '../engines/composer-os-v2/app-api/composerOsApiCore';
+import { openOutputFolderRoute } from './openOutputFolderRoute';
+import { resolveDownloadFileTarget, sendDownloadFile } from './downloadFileRoute';
 import type { GenerateRequest } from '../engines/composer-os-v2/app-api/appApiTypes';
 
 process.on('uncaughtException', (err) => {
@@ -154,9 +155,20 @@ app.get('/api/diagnostics', (_req: Request, res: Response) => {
   }
 });
 
+
+app.get('/api/download-file', (req: Request, res: Response) => {
+  const pathParam = typeof req.query.path === 'string' ? req.query.path : undefined;
+  const resolved = resolveDownloadFileTarget(OUTPUT_DIR, pathParam);
+  if (!resolved.ok) {
+    res.status(resolved.status).json({ error: resolved.message });
+    return;
+  }
+  sendDownloadFile(res, resolved.absolutePath, resolved.fileName);
+});
+
 app.post('/api/open-output-folder', (req: Request, res: Response) => {
   console.log('[API][route] /api/open-output-folder hit', req.body);
-  apiOpenOutputFolder(OUTPUT_DIR, req.body as { path?: string }).then((r) => {
+  openOutputFolderRoute(OUTPUT_DIR, req.body as { path?: string }).then((r) => {
     console.log('[API][route] /api/open-output-folder response', r);
     res.json(r);
   });

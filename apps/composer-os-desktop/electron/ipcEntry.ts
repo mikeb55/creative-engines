@@ -12,7 +12,6 @@ import {
   apiListOutputs,
   apiGetOutputDirectory,
   apiGetDiagnostics,
-  apiOpenOutputFolder,
   apiSystemCheck,
   apiPdfGenerateFromPdf,
   apiMelodicVariationPack,
@@ -23,6 +22,7 @@ import {
   type PdfGenerateFromPdfRequest,
   getComposerOsRuntimeBuildInfo,
 } from '../../../engines/composer-os-v2/app-api/composerOsApiCore';
+import { openOutputFolderRoute } from '../../../scripts/openOutputFolderRoute';
 import {
   hydrateAnthropicKeyFromAllSources,
   saveAnthropicApiKeyToSecretStore,
@@ -258,7 +258,7 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
   ipcMain.handle('composer-os-api:open-output-folder', (_e, body: unknown) => {
     const b = body && typeof body === 'object' ? (body as { path?: string }) : {};
     console.log('[OPEN-FOLDER] ipc composer-os-api:open-output-folder', { path: b.path });
-    return apiOpenOutputFolder(outputDir, b);
+    return openOutputFolderRoute(outputDir, b);
   });
   ipcMain.handle('composer-os-api:open-midi-file', async (_event, body: unknown) => {
     const pathRaw =

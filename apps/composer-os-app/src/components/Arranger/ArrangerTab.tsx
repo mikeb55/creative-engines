@@ -55,16 +55,23 @@ type ArrangerGenResult = {
   runManifest?: { exportIntegrityPassed?: boolean };
 };
 
-function dirnameOnly(fp: string): string {
-  const p = fp.replace(/[/\\]+$/, '');
-  const li = Math.max(p.lastIndexOf('\\'), p.lastIndexOf('/'));
-  return li >= 0 ? p.slice(0, li) : p;
-}
 
 function basenameOnly(fp: string): string {
   const p = fp.replace(/[/\\]+$/, '');
   const li = Math.max(p.lastIndexOf('\\'), p.lastIndexOf('/'));
   return li >= 0 ? p.slice(li + 1) : p;
+}
+
+function triggerBrowserFileDownload(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 async function downloadPathToBrowser(filepath: string): Promise<void> {
@@ -76,19 +83,29 @@ async function downloadPathToBrowser(filepath: string): Promise<void> {
     const binary = atob(res.base64);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    const blob = new Blob([bytes]);
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = res.fileName?.trim() || name;
-    a.rel = 'noopener';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    triggerBrowserFileDownload(new Blob([bytes]), res.fileName?.trim() || name);
     return;
   }
-  await api.openOutputFolder({ path: dirnameOnly(filepath) });
+  const url = `/api/download-file?path=${encodeURIComponent(filepath)}`;
+  let r: Response;
+  try {
+    r = await fetch(url);
+  } catch {
+    throw new Error('Composer OS is not reachable. Make sure the app is running and try again.');
+  }
+  if (!r.ok) {
+    const text = await r.text();
+    let msg = text;
+    try {
+      const j = JSON.parse(text) as { error?: string };
+      if (j.error) msg = j.error;
+    } catch {
+      /* use raw */
+    }
+    throw new Error(msg || `Download failed (${r.status})`);
+  }
+  const blob = await r.blob();
+  triggerBrowserFileDownload(blob, name);
 }
 
 async function fileFromDesktopPath(filepath: string): Promise<File> {
@@ -119,7 +136,7 @@ export function ArrangerTab() {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [folderError, setFolderError] = useState<string | null>(null);
-  const [pathCopied, setPathCopied] = useState(false);
+  const [revealOpened, setRevealOpened] = useState(false);
   const runTokenRef = useRef(0);
   const loadedFileRef = useRef<string | null>(null);
 
@@ -246,6 +263,7 @@ export function ArrangerTab() {
     setRunPhase('progress');
     setResult(null);
     setFolderError(null);
+    setRevealOpened(false);
     setErrorCode('E0');
     try {
       const payload = buildArrangerGeneratePayload({
@@ -284,26 +302,20 @@ export function ArrangerTab() {
     setRunPhase('idle');
   }, []);
 
-  const copyOutputPath = useCallback(async () => {
-    if (!outputPath) return;
-    try {
-      await navigator.clipboard.writeText(outputPath);
-      setPathCopied(true);
-      window.setTimeout(() => setPathCopied(false), 1600);
-    } catch {
-      setFolderError('Could not copy path to clipboard.');
-    }
-  }, [outputPath]);
-  const openFileFolder = useCallback(async (filepath: string) => {
-    if (!isDesktopIpc()) return;
+  const onRevealInFolder = useCallback(async (filepath: string) => {
     setFolderError(null);
+    setRevealOpened(false);
     console.log('[UI][open-folder] click=open-file-folder', { filepath });
     try {
-      const payload = { path: dirnameOnly(filepath) };
+      const payload = { path: filepath };
       console.log('[UI][open-folder] request open-file-folder', payload);
       const r = await api.openOutputFolder(payload);
       console.log('[UI][open-folder] response open-file-folder', r);
-      if (!r.success && r.message) setFolderError(r.message);
+      if (r.success) {
+        setRevealOpened(true);
+        return;
+      }
+      if (r.message) setFolderError(r.message);
     } catch (e) {
       console.log('[UI][open-folder] exception open-file-folder', e);
       setFolderError(e instanceof Error ? e.message : String(e));
@@ -313,7 +325,7 @@ export function ArrangerTab() {
   const progressStages = useMemo(() => {
     const composerLabel = arrangerComposerLabel(cfg.targetComposer || DEFAULT_COMPOSER_ID);
     return ARRANGER_PROGRESS_STAGES.map((label, i) => {
-      if (i === 1) return `Applying ${composerLabel} harmony…`;
+      if (i === 1) return `Applying ${composerLabel} harmony...`;
       return label;
     });
   }, [cfg.targetComposer]);
@@ -340,7 +352,7 @@ export function ArrangerTab() {
       <div className={styles.flow}>
         <section aria-labelledby="arranger-step-upload">
           <div className={styles.stepLabel} id="arranger-step-upload">
-            Step 1 — Upload melody
+            Step 1 - Upload melody
           </div>
           {!hasFile ? (
             <div
@@ -375,7 +387,7 @@ export function ArrangerTab() {
               </svg>
               <p className={styles.dropzoneText}>Drop your MIDI or MusicXML file here</p>
               <button type="button" className={styles.btnBrowse} onClick={(e) => { e.stopPropagation(); void onBrowse(); }}>
-                Browse…
+                Browse...
               </button>
               <p className={styles.dropzoneFormats}>Accepted formats: .mid .midi .musicxml .mxl .xml</p>
             </div>
@@ -422,7 +434,7 @@ export function ArrangerTab() {
           <>
             <section aria-labelledby="arranger-step-arranger">
               <div className={styles.stepLabel} id="arranger-step-arranger">
-                Step 2 — Arranger
+                Step 2 - Arranger
               </div>
               <div className={styles.arrangerCard}>
                 <div className={styles.arrangerFixedLabel}>
@@ -464,14 +476,12 @@ export function ArrangerTab() {
 
             <section aria-labelledby="arranger-step-settings">
               <div className={styles.stepLabel} id="arranger-step-settings">
-                Step 3 — Settings
+                Step 3 - Settings
               </div>
               <div className={styles.settingsCard}>
-                <h3>This arrangement will…</h3>
+                <h3>This arrangement will...</h3>
                 <div className={styles.settingLine}>
-                  <span className={styles.checkIcon} aria-hidden="true">
-                    ✓
-                  </span>
+                  <span className={styles.checkIcon} aria-hidden="true" />
                   <div>
                     <div className={styles.settingMain}>
                       {cfg.preserveMelody
@@ -482,9 +492,7 @@ export function ArrangerTab() {
                   </div>
                 </div>
                 <div className={styles.settingLine}>
-                  <span className={styles.checkIcon} aria-hidden="true">
-                    ✓
-                  </span>
+                  <span className={styles.checkIcon} aria-hidden="true" />
                   <div>
                     <div className={styles.settingMain}>
                       Apply {arrangerComposerLabel(cfg.targetComposer || DEFAULT_COMPOSER_ID)} harmony
@@ -493,9 +501,7 @@ export function ArrangerTab() {
                   </div>
                 </div>
                 <div className={styles.settingLine}>
-                  <span className={styles.checkIcon} aria-hidden="true">
-                    ✓
-                  </span>
+                  <span className={styles.checkIcon} aria-hidden="true" />
                   <div>
                     <div className={styles.settingMain}>{presetLabel}</div>
                     <div className={styles.settingHint}>(Preset: {presetId})</div>
@@ -508,9 +514,7 @@ export function ArrangerTab() {
                     aria-expanded={advancedOpen}
                     onClick={() => setAdvancedOpen((o) => !o)}
                   >
-                    <span className={styles.triangle} aria-hidden="true">
-                      ▶
-                    </span>{' '}
+                    <span className={`${styles.triangle} ${styles.trianglePlay}`} aria-hidden="true" />{' '}
                     Advanced settings
                   </button>
                   <div className={`${styles.disclosurePanel} ${advancedOpen ? styles.disclosurePanelOpen : ''}`}>
@@ -569,7 +573,7 @@ export function ArrangerTab() {
 
             <section aria-labelledby="arranger-step-run">
               <div className={styles.stepLabel} id="arranger-step-run">
-                Step 4 — Run
+                Step 4 - Run
               </div>
 
               {runPhase === 'idle' ? (
@@ -597,7 +601,7 @@ export function ArrangerTab() {
                           : undefined;
                       return (
                         <li key={label} className={liClass}>
-                          <span className={styles.stageMarker}>{done ? '✓' : active ? '…' : ''}</span>
+                          <span className={styles.stageMarker} aria-hidden="true">{done ? <span className={styles.stageMarkerCheck} /> : active ? <span className={styles.stageMarkerDots}>...</span> : null}</span>
                           {label}
                         </li>
                       );
@@ -609,7 +613,7 @@ export function ArrangerTab() {
                   <div className={styles.progressMeta}>
                     Elapsed: <strong>{formatElapsed(elapsed)}</strong>
                   </div>
-                  <p className={styles.progressHint}>Usually takes 30–90 seconds. Stay on this page.</p>
+                  <p className={styles.progressHint}>Usually takes 30-90 seconds. Stay on this page.</p>
                   <button type="button" className={styles.btnCancel} onClick={onCancel}>
                     Cancel
                   </button>
@@ -619,9 +623,7 @@ export function ArrangerTab() {
               {runPhase === 'result' && outputPath ? (
                 <div className={styles.resultPanel} data-testid="arranger-result">
                   <div className={styles.resultHeader}>
-                    <span className={styles.resultHeaderIcon} aria-hidden="true">
-                      ✓
-                    </span>
+                    <span className={styles.resultHeaderIcon} aria-hidden="true" />
                     <h2>Your arrangement is ready.</h2>
                   </div>
                   <p className={styles.resultFilename}>{basenameOnly(outputPath)}</p>
@@ -633,7 +635,12 @@ export function ArrangerTab() {
                     <button
                       type="button"
                       className={styles.btnDownloadPrimary}
-                      onClick={() => void downloadPathToBrowser(outputPath)}
+                      onClick={() => {
+                        setFolderError(null);
+                        void downloadPathToBrowser(outputPath).catch((e) =>
+                          setFolderError(e instanceof Error ? e.message : String(e)),
+                        );
+                      }}
                     >
                       Download MusicXML
                     </button>
@@ -641,59 +648,48 @@ export function ArrangerTab() {
                       <button
                         type="button"
                         className={styles.btnDownloadSecondary}
-                        onClick={() => void downloadPathToBrowser(midiPath)}
+                        onClick={() => {
+                          setFolderError(null);
+                          void downloadPathToBrowser(midiPath).catch((e) =>
+                            setFolderError(e instanceof Error ? e.message : String(e)),
+                          );
+                        }}
                       >
                         Download MIDI
                       </button>
                     ) : null}
                   </div>
                   <div className={styles.resultLinks}>
-                    {isDesktopIpc() ? (
-                      <button
-                        type="button"
-                        className={styles.resultLink}
-                        onClick={() => void openFileFolder(outputPath)}
-                      >
-                        Reveal in folder
-                      </button>
+                    <button
+                      type="button"
+                      className={styles.resultLink}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        void onRevealInFolder(outputPath);
+                      }}
+                    >
+                      Reveal in folder
+                    </button>
+                    {revealOpened ? (
+                      <p className={styles.revealSuccess} role="status">
+                        Opened in File Explorer
+                      </p>
                     ) : null}
                     <button
                       type="button"
                       className={styles.resultLink}
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
                         setRunPhase('idle');
                         setResult(null);
+                        setRevealOpened(false);
                       }}
                     >
                       Run again with this melody
                     </button>
                   </div>
-                  {!isDesktopIpc() ? (
-                    <div className={styles.outputPathBlock} data-testid="arranger-output-path">
-                      <label className={styles.outputPathLabel} htmlFor="arranger-output-path">
-                        Output location
-                      </label>
-                      <div className={styles.outputPathRow}>
-                        <input
-                          id="arranger-output-path"
-                          readOnly
-                          value={outputPath}
-                          className={styles.outputPathInput}
-                          onFocus={(e) => e.target.select()}
-                        />
-                        <button
-                          type="button"
-                          className={styles.outputPathCopyBtn}
-                          onClick={() => void copyOutputPath()}
-                        >
-                          {pathCopied ? 'Copied' : 'Copy'}
-                        </button>
-                      </div>
-                      <p className={styles.outputPathHint}>
-                        Browser dev cannot open Explorer from this page. Copy the path and paste it into File Explorer.
-                      </p>
-                    </div>
-                  ) : null}
                   {folderError ? (
                     <p className={styles.folderError} role="alert">
                       {folderError}
@@ -706,9 +702,7 @@ export function ArrangerTab() {
                       aria-expanded={detailsOpen}
                       onClick={() => setDetailsOpen((o) => !o)}
                     >
-                      <span className={styles.triangle} aria-hidden="true">
-                        ▶
-                      </span>{' '}
+                      <span className={`${styles.triangle} ${styles.trianglePlay}`} aria-hidden="true" />{' '}
                       Arrangement details
                     </button>
                     <div className={`${styles.detailsBody} ${detailsOpen ? styles.detailsBodyOpen : ''}`}>
@@ -724,9 +718,7 @@ export function ArrangerTab() {
                 <div data-testid="arranger-error">
                   <div className={styles.errorBanner} role="alert">
                     <div className={styles.errorBannerHeader}>
-                      <span className={styles.errorIcon} aria-hidden="true">
-                        ⚠
-                      </span>
+                      <span className={styles.errorIcon} aria-hidden="true">!</span>
                       <p className={styles.errorMessage}>{ARRANGER_ERROR_MESSAGES[errorCode]}</p>
                     </div>
                   </div>

@@ -1,5 +1,11 @@
 ## [Unreleased]
 
+## [2.10.1] - 2026-06-10
+
+### Fixed
+
+- **V82 — Arranger post-ship fixes** — **Download MusicXML** / **Download MIDI** trigger real browser downloads via `GET /api/download-file` (library path validated). **Reveal in folder** always shown in browser dev and desktop; Windows opens Explorer with file selected (`explorer.exe /select`). Removed browser-only copy-path fallback and garbled Unicode in Arranger UI (ASCII labels + CSS icon glyphs). Desktop IPC uses shared `openOutputFolderRoute` helper.
+
 ## [2.10.0] - 2026-06-10
 
 ### Added
