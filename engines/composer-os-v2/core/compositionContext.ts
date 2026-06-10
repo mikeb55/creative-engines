@@ -701,6 +701,8 @@ export interface GenerationMetadata {
   styleTransferResult?: import('./import/mosaicStyleTransfer').StyleTransferResult;
   /** V82a: preserveMelody flag from style-transfer request (default true when omitted). */
   styleTransferPreserveMelody?: boolean;
+  /** Style-transfer: Wayne pass-1 harmony is authoritative — skip duo re-precompute (avoids slash drift). */
+  styleTransferWayneHarmonyAuthoritative?: boolean;
   /** V80m IMP-5: BB/SQ re-orchestration applied during style-transfer. */
   styleTransferReorchestrateApplied?: boolean;
   /** Song Mode: aggregated section shaping metrics for manifests, UI notes, and eval harnesses. */

@@ -3333,7 +3333,14 @@ function buildGuitarPart(
   if ((isSongwriterPatMetheny || stylePatMethenySurface) && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputePatMethenyEffectiveHarmonyBars(context);
   }
-  if (isSongwriterWayneShorter && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  const wayneStyleTransferAuthoritative =
+    isSongwriterWayneShorter && genMeta?.styleTransferWayneHarmonyAuthoritative === true;
+  if (
+    isSongwriterWayneShorter &&
+    isDuoGoldenPath &&
+    !genMeta?.mosaicLockRegistry &&
+    !wayneStyleTransferAuthoritative
+  ) {
     precomputeWayneShorterEffectiveHarmonyBars(context);
   }
   if (isSongwriterFrankZappa && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {

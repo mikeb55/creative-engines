@@ -386,6 +386,11 @@ export function applyStyleTransfer(
   transferCtx.generationMetadata.parsedCustomProgressionBars = [...blended];
   transferCtx.generationMetadata.customHarmonyLocked = strength < 0.95;
 
+  if (req.targetComposer === 'wayne_shorter' && req.reharmonize !== false) {
+    transferCtx.generationMetadata.styleTransferWayneHarmonyAuthoritative = true;
+    transferCtx.generationMetadata.wayneShorterEffectiveHarmonyBars = [...blended];
+  }
+
   const seedResult = importTimelineToMotifSeed(req.importTimeline);
   transferCtx.generationMetadata.mosaicSourceMotif = seedResult.coreMotif;
   transferCtx.generationMetadata.importMelodyLineFull = seedResult.fullMelodyLine;

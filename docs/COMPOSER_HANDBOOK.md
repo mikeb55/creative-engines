@@ -343,6 +343,8 @@ Canonical Song Mode / Big Band composers in **`engines/composer-os-v2`**. **Slic
 
 **Three-way reharm comparison test (V83):** Script **`engines/composer-os-v2/scripts/runV83ThreeWayReharmAutoTest.ts`** feeds one benchmark melody (`BH_Benchmark_JazzMelody.musicxml`) through three style-transfer composers (**Barry Harris**, **Radiohead**, **Robert Fripp** / registry id `fripp`) and writes side-by-side MusicXML to your **Song Mode** folder. The test asserts melody lock, real reharm (not pass-through), pairwise harmonic contrast, and **MusicXML schema validity** (including no out-of-scope `<offset>` inside `<harmony>` — Sibelius-safe). Run: `npx tsx --tsconfig tsconfig.json engines/composer-os-v2/scripts/runV83ThreeWayReharmAutoTest.ts`.
 
+**Wayne Shorter style-transfer reharm:** **`wayne_shorter`** is available as a **style-transfer / reharmonisation** target (Arranger tab, mosaic import, or `targetComposer: 'wayne_shorter'`). Post-bop devices (**`ws:*`**, lateral modal colour, extended symbols such as `Gmaj9#11`) export as **shareable MusicXML** — single authoritative harmony pass; no slash-vs-locked drift. On very short imported charts, **`gp.success`** may still fail duo phrase gates while export succeeds (known follow-up).
+
 **MusicXML export notation (V83c):** Shareable exports now place **feel/tempo** and **chord symbols** **above the staff** — italic feel text sits in the measure-1 tempo direction next to the metronome mark; harmony blocks use `placement="above"`. Exports pass Composer OS **MusicXML schema validation** (no mixed `direction-type` children, no `<offset>` inside `<harmony>`) before the green shareable receipt.
 
 ---
