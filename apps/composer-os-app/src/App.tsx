@@ -5,6 +5,14 @@ import { Outputs } from './pages/Outputs';
 import { UserGuide } from './pages/UserGuide';
 import { ComposerCredits } from './pages/ComposerCredits';
 import { SlonimskyEtudes } from './pages/SlonimskyEtudes';
+import { ArrangerTab } from './components/Arranger/ArrangerTab';
+import {
+  navigateToRoute,
+  PRIMARY_NAV_ROUTES,
+  routeFromPathname,
+  routeNavLabel,
+  type AppRouteId,
+} from './router/appRouter';
 import { DiagnosticsPanel, type LastGenerationSummary } from './components/DiagnosticsPanel';
 import { api } from './services/api';
 import { CompositionSongProvider } from '@renderer/context/CompositionSongContext';
@@ -23,17 +31,7 @@ import { ContrapuntalProvider } from '@renderer/context/ContrapuntalContext';
 import { LastGenerateProvider } from '@renderer/context/LastGenerateContext';
 import { GridWorkspace } from '@renderer/pages/GridWorkspace';
 
-type Tab =
-  | 'home'
-  | 'structure'
-  | 'ensemble'
-  | 'grid'
-  | 'presets'
-  | 'outputs'
-  | 'composer-engines'
-  | 'slonimsky-etudes'
-  | 'guide'
-  | 'credits';
+type Tab = AppRouteId;
 
 function ComposerEngines() {
   const [wsTitle, setWsTitle] = React.useState('');
@@ -393,11 +391,22 @@ function parseEmbeddedUiStamp(): {
 }
 
 export default function App() {
-  const [tab, setTab] = useState<Tab>('home');
+  const [tab, setTab] = useState<Tab>(() => routeFromPathname(window.location.pathname));
   const [refreshOutputs, setRefreshOutputs] = useState(0);
   const [lastGeneration, setLastGeneration] = useState<LastGenerationSummary>({ status: 'none' });
   const [desktopVersion, setDesktopVersion] = useState<string | null>(null);
   const embeddedStamp = parseEmbeddedUiStamp();
+
+  const goToTab = useCallback((next: Tab) => {
+    navigateToRoute(next);
+    setTab(next);
+  }, []);
+
+  useEffect(() => {
+    const onPopState = () => setTab(routeFromPathname(window.location.pathname));
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
 
   useEffect(() => {
     if (window.composerOsDesktop?.getDesktopMeta) {
@@ -449,44 +458,34 @@ export default function App() {
           </p>
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
-          <VrbStatusIndicator onNavigate={() => setTab('structure')} />
+          <VrbStatusIndicator onNavigate={() => goToTab('structure')} />
         </div>
         <nav style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
-          {(['home', 'structure', 'ensemble', 'grid', 'presets', 'outputs'] as const).map((t) => (
+          {PRIMARY_NAV_ROUTES.map((t) => (
             <button
               key={t}
               className={tab === t ? '' : 'secondary'}
-              onClick={() => setTab(t)}
+              onClick={() => goToTab(t)}
             >
-              {t === 'home'
-                ? 'Generate'
-                : t === 'structure'
-                  ? 'Structure'
-                  : t === 'ensemble'
-                    ? 'Ensemble'
-                    : t === 'grid'
-                      ? 'Grid'
-                      : t === 'presets'
-                      ? 'Presets'
-                      : 'Outputs'}
+              {routeNavLabel(t)}
             </button>
           ))}
           <button
             className={tab === 'composer-engines' ? '' : 'secondary'}
-            onClick={() => setTab('composer-engines')}
+            onClick={() => goToTab('composer-engines')}
           >
             Composer Engines
           </button>
           <button
             className={tab === 'slonimsky-etudes' ? '' : 'secondary'}
-            onClick={() => setTab('slonimsky-etudes')}
+            onClick={() => goToTab('slonimsky-etudes')}
             type="button"
           >
             Slonimsky Etudes
           </button>
           <button
             className={tab === 'guide' ? '' : 'secondary'}
-            onClick={() => setTab('guide')}
+            onClick={() => goToTab('guide')}
             type="button"
             title="How to use Composer OS"
           >
@@ -494,7 +493,7 @@ export default function App() {
           </button>
           <button
             className={tab === 'credits' ? '' : 'secondary'}
-            onClick={() => setTab('credits')}
+            onClick={() => goToTab('credits')}
             type="button"
             title="Credits and how Composer OS is developed"
           >
@@ -507,6 +506,7 @@ export default function App() {
       <DeferredQueueIndicator />
 
       {tab === 'home' && <HomeGenerate onResult={onResult} />}
+      {tab === 'arranger' && <ArrangerTab />}
       {tab === 'structure' && <StructureWorkspace />}
       {tab === 'ensemble' && <EnsembleWorkspace />}
       {tab === 'grid' && <GridWorkspace />}

@@ -1,5 +1,11 @@
 ## [Unreleased]
 
+## [2.10.0] - 2026-06-10
+
+### Added
+
+- **V82c — Arranger tab** — New **Arranger** nav route (`/arranger`): 4-step wizard (upload melody → choose Barry Harris / style-transfer composer → settings → run). Mosaic import parsing (MIDI/MusicXML), confidence dots, progress stages, result panel with MusicXML/MIDI download. Style-transfer payload routes through **Song Mode** (same path as Generate mosaic style-transfer). Browser dev: copyable output path when Explorer reveal unavailable; desktop IPC: **Reveal in folder**.
+
 ## [2.9.1] - 2026-06-09
 
 ### Fixed
