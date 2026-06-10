@@ -581,7 +581,72 @@ function test7Drop2UpperRegister(): boolean {
   ]);
 }
 
+const V83C_NOTATION_CHECK_PATH = path.join(
+  'C:',
+  'Users',
+  'mike',
+  'Documents',
+  'Mike Composer Files',
+  'Song Mode',
+  'v83c-notation-check.musicxml'
+);
+
+/** V83c QA asset — dense BH style-transfer export for Sibelius notation check. */
+function writeV83cNotationCheck(): void {
+  const xml = fs.readFileSync(resolveJazzBenchmarkMusicXmlPath(), 'utf8');
+  const ir = musicXmlToImportTimeline(xml);
+  const locked = importTimelineToLockedHarmony(ir);
+  const totalBars = Math.max(locked.length, ir.bars, 8);
+  const gp = runGoldenPathOnce(88108, {
+    presetId: 'guitar_bass_duo',
+    harmonyMode: 'custom_locked',
+    lockedHarmonyBarsRaw: [...locked],
+    parsedChordBars: [...locked],
+    chordProgressionText: locked.join(' | '),
+    totalBars,
+    importTimeline: ir,
+    styleTransfer: true,
+    targetComposer: 'barry_harris',
+    styleTransferStrength: 1,
+    preserveMelody: true,
+    reorchestrate: false,
+    suppressWybleVoiceLayoutForTest: true,
+  });
+  const st = gp.context?.generationMetadata?.styleTransferResult;
+  const generationOk =
+    gp.score != null &&
+    gp.score.parts.length > 0 &&
+    (gp.xml?.length ?? 0) > 0 &&
+    st?.composerApplied === 'barry_harris' &&
+    !gp.errors.some((e) => /DESKTOP SONG MODE HARMONY|authority check/i.test(e));
+  if (!generationOk || !gp.xml) {
+    throw new Error(`V83c QA export failed: ${gp.errors.join('; ')}`);
+  }
+  fs.mkdirSync(path.dirname(V83C_NOTATION_CHECK_PATH), { recursive: true });
+  fs.writeFileSync(V83C_NOTATION_CHECK_PATH, gp.xml, 'utf8');
+  const m1 = gp.xml.match(/<measure number="1">([\s\S]*?)<\/measure>/)?.[1] ?? '';
+  const feelAbove =
+    /<direction placement="above">[\s\S]*?<words font-style="italic">[^<]+feel; straight 8ths<\/words>/.test(m1);
+  const harmonyAbove = m1.includes('<harmony placement="above">');
+  const tempoBeforeHarmony =
+    m1.indexOf('<metronome>') >= 0 && m1.indexOf('<metronome>') < m1.indexOf('<harmony');
+  const noBelowFeel = !m1.includes('placement="below"><direction-type><words>Feel:');
+  console.log(`\nV83c notation check written: ${V83C_NOTATION_CHECK_PATH}`);
+  console.log(`bytes: ${gp.xml.length}`);
+  console.log(`feel in above direction (italic): ${feelAbove}`);
+  console.log(`harmony placement="above": ${harmonyAbove}`);
+  console.log(`tempo before harmony: ${tempoBeforeHarmony}`);
+  console.log(`no legacy below-staff feel: ${noBelowFeel}`);
+  if (!feelAbove || !harmonyAbove || !tempoBeforeHarmony || !noBelowFeel) {
+    throw new Error('V83c QA XML failed notation placement assertions');
+  }
+}
+
 function main(): void {
+  if (process.argv.includes('--write-v83c-qa')) {
+    writeV83cNotationCheck();
+    return;
+  }
   console.log('V81 auto-validation\n');
   const results = [
     test1PassingDimDensity(),
