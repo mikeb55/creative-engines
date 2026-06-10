@@ -35,6 +35,7 @@ declare global {
         desktopMode: 'ipc';
       }>;
       invokeApi: (channel: string, payload?: unknown) => Promise<unknown>;
+      openFileDefaultApp?: (path: string) => Promise<{ ok: boolean; error?: string }>;
       getRuntimeBuildInfo?: () => Promise<Record<string, unknown>>;
       /** Desktop: persist Anthropic key with OS DPAPI (`safeStorage`); enables PDF vision without User env vars. */
       saveAnthropicApiKey?: (apiKey: string) => Promise<{ ok: boolean; error?: string }>;
