@@ -337,9 +337,13 @@ Canonical Song Mode / Big Band composers in **`engines/composer-os-v2`**. **Slic
 
 **Receipts:** Per-note **`bh:cm:*`** lines on the generate receipt — `select` (sixth/dim7 choice), `borrowed` (chromatic partner tone), `reinterpret` / `identity` (chart-friendly spellings). Use them to audit note-by-note decisions.
 
-**Known limitations:** Mostly diatonic stepwise melodies skew toward **6th** voicings with fewer **dim7** passing chords. Stronger chromatic/jazz-standard lines activate more borrowed and dim7 rungs. Planned **V81:** explicit passing-dim insertion on weak beats for plainer melodies.
+**Duo comp rhythm (V83d Phase 1):** On **Song Mode** / **`guitar_bass_duo`** preset, BH chord-melody keeps your **melody pitches and onsets** locked on voice **1** while **inner comp (voice 2)** moves on **off-beats** (typically beat **1** after a melody on **0**, beat **3** after melody on **2**). **Passing diminished** motion is **audible** in the export (not receipts-only). Open the MusicXML in Sibelius to hear/see the staggered comp under the tune.
+
+**Known limitations:** Mostly diatonic stepwise melodies still skew toward **6th** voicings; **V81** passing-dim insertion on weak beats is live (receipts + duo export). **Melody rhythm** enrichment (syncopation on the tune itself) is **V83d Phase 2** — comp-side rhythm only in Phase 1. On very short imports, **`gp.success`** may fail phrase gates while export remains shareable (known follow-up).
 
 **Quick guide:** **`docs/BH_QUICK_GUIDE.md`**
+
+**V83d Phase 1 validation:** `npx tsx --tsconfig tsconfig.json engines/composer-os-v2/scripts/runV83dPhase1AutoValidation.ts` — asserts passing dims and inner stagger in **exported** duo XML, melody pitch/onset lock, schema validity.
 
 **Three-way reharm comparison test (V83):** Script **`engines/composer-os-v2/scripts/runV83ThreeWayReharmAutoTest.ts`** feeds one benchmark melody (`BH_Benchmark_JazzMelody.musicxml`) through three style-transfer composers (**Barry Harris**, **Radiohead**, **Robert Fripp** / registry id `fripp`) and writes side-by-side MusicXML to your **Song Mode** folder. The test asserts melody lock, real reharm (not pass-through), pairwise harmonic contrast, and **MusicXML schema validity** (including no out-of-scope `<offset>` inside `<harmony>` — Sibelius-safe). Run: `npx tsx --tsconfig tsconfig.json engines/composer-os-v2/scripts/runV83ThreeWayReharmAutoTest.ts`.
 

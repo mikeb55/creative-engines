@@ -2,6 +2,12 @@
 
 ### Added
 
+- **V83d Phase 1 — BH duo comp-side rhythm (melody preserved)** — **`voicingEngine.ts`** **`applyChordMelodyToScoreGuitarDuo`**: passing **`passing_dim`** harmony events now export to **`guitar_bass_duo`** as voice-2 comp attacks on weak beats (beats **1** / **3**); structural inner voicings **stagger** to off-beats under locked melody onsets (voice **1** unchanged). Style-transfer path wires **`insertPassingDiminishedEvents`** before voicing (**`runGoldenPath.ts`**). **`runV83dPhase1AutoValidation.ts`** asserts exported onsets + pitch lock + schema (not receipt-only). **`runV81AutoValidation.ts`** TEST 5 — per-voice bar duration sums for multi-voice guitar export.
+
+### Known issues (logged)
+
+- **V83d / BH style-transfer — `gp.success` phrase gate on 8-bar import (unchanged follow-up):** Shareable MusicXML export and pipeline-truth pass; **`gp.success`** may still be **false** on short benchmark imports (phrase authority, duo LOCK) — same class of issue as **V83** Wayne note below; does not block export integrity.
+
 - **V83 — three-way reharm auto-test** — `engines/composer-os-v2/scripts/runV83ThreeWayReharmAutoTest.ts` runs the BH jazz benchmark melody through **barry_harris**, **radiohead** (swap for **wayne_shorter**), and **fripp** style-transfer reharm; asserts melody preservation, harmony change, pairwise contrast, and **MusicXML schema** (no `<offset>` inside `<harmony>`, stringsync parse). Outputs to `Song Mode/reharm-*.musicxml`.
 
 ### Fixed

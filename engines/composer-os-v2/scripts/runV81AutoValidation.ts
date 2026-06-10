@@ -398,19 +398,23 @@ function test5RestArtifact(): boolean {
   const bad: string[] = [];
   for (const m of measures) {
     const barNum = m[1]!;
-    const { sum, divisions: expected } = parseMeasureDurationUnits(m[2]!, divisions);
-    if (m[2]!.includes('<divisions>')) {
-      const d = m[2]!.match(/<divisions>(\d+)<\/divisions>/);
+    const inner = m[2]!;
+    if (inner.includes('<divisions>')) {
+      const d = inner.match(/<divisions>(\d+)<\/divisions>/);
       if (d) divisions = Number(d[1]);
     }
-    if (Math.abs(sum - expected) > 0.5) {
-      allBarsOk = false;
-      bad.push(`bar ${barNum}: sum=${sum} expected=${expected}`);
+    const voiceSegments = inner.split(/<backup>/);
+    for (let vi = 0; vi < voiceSegments.length; vi++) {
+      const { sum, divisions: expected } = parseMeasureDurationUnits(voiceSegments[vi]!, divisions);
+      if (Math.abs(sum - expected) > 0.5) {
+        allBarsOk = false;
+        bad.push(`bar ${barNum} voice ${vi + 1}: sum=${sum} expected=${expected}`);
+      }
     }
   }
 
   return printAssertions('TEST 5 — Rest artifact guitar export', [
-    { label: 'each bar note+rest durations sum to bar length', pass: allBarsOk, detail: bad.slice(0, 4).join('; ') || `${measures.length} bars checked` },
+    { label: 'each bar voice note+rest durations sum to bar length', pass: allBarsOk, detail: bad.slice(0, 4).join('; ') || `${measures.length} bars checked` },
   ]);
 }
 

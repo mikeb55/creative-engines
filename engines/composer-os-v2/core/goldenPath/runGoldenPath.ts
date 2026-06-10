@@ -182,6 +182,7 @@ import {
   applyIdentitiesToNoteChoices,
   applyVoicingEngineToResolved,
   assignPhrasingRoles,
+  insertPassingDiminishedEvents,
 } from '../barry-harris';
 import { validateSongModeMotifSystem } from '../motif/songModeMotifEngine';
 import { validateSongModePhraseEngineV1 } from './songModePhraseEngineV1';
@@ -3194,7 +3195,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       appliedContext.form.totalBars
     );
     const bhPresetId = appliedContext.presetId ?? 'guitar_bass_duo';
-    const resolvedNotes = applyVoicingEngineToResolved(withPhrasing, options.importTimeline.melodyLine, {
+    const melodyLine = options.importTimeline.melodyLine;
+    const harmonyEvents = insertPassingDiminishedEvents(withPhrasing, melodyLine);
+    const resolvedNotes = applyVoicingEngineToResolved(harmonyEvents, melodyLine, {
       presetId: bhPresetId,
     });
     score = applyChordMelodyToScore(

@@ -1,6 +1,8 @@
-# Composer OS Roadmap [2026-06-09]
+# Composer OS Roadmap [2026-06-10]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](../CHANGELOG.md), [docs/CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
+
+**V83d Phase 1 — COMPLETE (2026-06-10):** BH **`guitar_bass_duo`** comp-side rhythm — passing **`passing_dim`** events export to score (was receipts-only); inner comp voices **stagger** to weak beats under locked melody; **`runV83dPhase1AutoValidation.ts`**; smoke **664**/0; V81 **8/8**. **Next — V83d Phase 2:** melody rhythm enrichment (`preservePitchSequence`, composer profiles). **`gp.success`** phrase gate on 8-bar import unchanged (known follow-up).
 
 **V80L — COMPLETE (2026-06-09, tag `v2.8.0`):** Barry Harris **chord-melody UI + docs + ship** — Mosaic style-transfer **Barry Harris Chord-Melody** mode banner · scale-of-chords + rung/VL/guitar sanity readouts · import guidance · **`docs/BH_QUICK_GUIDE.md`** · handbook section · echo fields (`avgVoiceLeadingStep`, `guitarFeasiblePct`, `scaleOfChordsBySection`) · desktop **`v2.8.0`**. Engine ladder shipped in **V82 / `v2.7.0`**.
 
@@ -14,7 +16,7 @@
 
 **V78 — COMPLETE (2026-06-07, tag `v2.3.0`):** LFV integrity fix (**`05fb79f7`**) · BB mosaic output format at ScoreModel (**`b036849a`**) · SQ mosaic output format (**`55be2520`**) · Song Mode → Mosaic thin mapper at golden-path handoff (**`f14eaaba`**).
 
-**Post-v2.8.0 backlog:** Interactive confidence heatmap (click-to-override) · variation contour SVG previews · pre-generate candidate preview (needs preview API) · section planner drag-to-resize · style-transfer dry-run preview · **`IR.sectionStarts`** (rehearsal-mark parsing for true section auto-fill) · Barry Harris **passing-dim on weak beats (V81)** · Jack White slice fix (**2** allowlisted smoke rows) · App.tsx Composer Engines tab consolidation · **`HomeGenerate.tsx`** Babel deopt file split · **`desktop:dev`** prod-path `.md` loader · duo depth · multi-chorus quality · MusicXML import phase 3+ · Wyble parity · ECM GCE orchestration. See **§ Current**.
+**Post-v2.8.0 backlog:** Interactive confidence heatmap (click-to-override) · variation contour SVG previews · pre-generate candidate preview (needs preview API) · section planner drag-to-resize · style-transfer dry-run preview · **`IR.sectionStarts`** (rehearsal-mark parsing for true section auto-fill) · **V83d Phase 2** melody rhythm enrichment · Jack White slice fix (**2** allowlisted smoke rows) · App.tsx Composer Engines tab consolidation · **`HomeGenerate.tsx`** Babel deopt file split · **`desktop:dev`** prod-path `.md` loader · duo depth · multi-chorus quality · MusicXML import phase 3+ · Wyble parity · ECM GCE orchestration. See **§ Current**.
 
 **V30 — COMPLETE (2026-05-05):** **Odd meter UI parity** (mixed-meter badge on chart preview + paste / iReal result blocks); **MusicXML import Phase 1** (`parseMusicXml` / core **`ParsedChart`** path); **Duo expansion** — Song Mode **pairing cards** + swap (**`pat_metheny`**, **`bacharach`**, **`ecm_chamber`**), **Duo intent** selector (UI), **Duo Health** pill on success, **ECM Chamber safe sweep** badge + Advanced override (**UI-only**). Duo expansion here was **surfaces + diagnostics**, not a duo golden-path slice rebuild.
 
@@ -440,8 +442,10 @@ Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartók** native bundle (not in
 
 ---
 
-## Current (as of 2026-06-08 snapshot — **v2.6.0**)
+## Current (as of 2026-06-10 snapshot)
 
+- **V83d Phase 1 — BH duo comp rhythm — COMPLETE (2026-06-10):** Passing dims + inner-voice off-beat stagger on **`guitar_bass_duo`**; melody preserved; **`runV83dPhase1AutoValidation.ts`**; smoke **664**/0; V81 **8/8**. **Next:** **V83d Phase 2** — melody rhythm enrichment.
+- **V83a+b+c — Arranger + notation — COMPLETE (2026-06-10):** Arranger preset dropdown · MusicXML above-staff feel/harmony (Sibelius-safe) · three-way reharm auto-test.
 - **V81 — Generate UI for V80 engines — COMPLETE (2026-06-08):** Mosaic Import panel · import → generate wiring · variation picker · style-transfer controls · output filename + library folder · section planner visual timeline + suggest-from-import · receipt export-integrity badge fix + mixed-preset badge + Download XML. Jest **631**/0; smoke **657**/0 unexpected (full tier). Tag **`v2.6.0`**.
 - **V80 — Mixed-preset assembly + import — COMPLETE (2026-06-07):** **Track 1** BB + SQ Mosaic dispatch + E2E smoke · **Track 2** MusicXML/MIDI import IR + variation (IMP-4) + style-transfer (IMP-5) · **Track 3** mixed-preset MusicXML merge + export integrity (INS-3–5). Jest **580**/0; smoke **652**/0 unexpected (full tier). Tag **`v2.5.0`**.
 - **V79 — Song Mode ↔ Mosaic integration — COMPLETE (2026-06-07):** Explicit opt-in mosaic dispatch from Song Mode; per-section composer routing; Generate UI section planner; pipeline-truth LOCK on harmony spine; hook-first bypass lift behind **`allowMosaicPostFinalizeInject`** (default off). Jest **535**/0; smoke **652**/0 (full tier). Tag **`v2.4.0`**.

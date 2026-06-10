@@ -13,7 +13,11 @@ import {
   applyBigBandDistribution,
   spreadBbDimVoicingBelowMelody,
 } from './bigBandSaxSoliVoicing';
-import { applyStringQuartetDistribution, spreadSqDimVoicingBelowMelody } from './stringQuartetVoicing';
+import {
+  applyStringQuartetDistribution,
+  passingDimExportDurationBeats,
+  spreadSqDimVoicingBelowMelody,
+} from './stringQuartetVoicing';
 import {
   SQ_PART_V1,
   SQ_PART_V2,
@@ -50,6 +54,9 @@ export type VoicingEngineOptions = {
 
 const SQ_PP_VELOCITY = 34;
 const BB_MP_VELOCITY = 64;
+/** V83d — duo comp inner / passing-dim attacks (softer than melody). */
+const DUO_COMP_INNER_VELOCITY = 42;
+const DUO_PASSING_DIM_VELOCITY = 34;
 
 const FAMILY_CHANGE_LEAP_IDEAL = 7;
 const FAMILY_CHANGE_LEAP_MAX = 10;
@@ -1127,20 +1134,243 @@ function pushSqNote(
   duration: number,
   velocity?: number
 ): void {
+  pushDuoGuitarNote(part, bar, pitch, startBeat, duration, 1, velocity);
+}
+
+/** V83d — weak-beat inner placement for structural BH voicings (melody onsets unchanged). */
+function duoInnerStaggerOnset(melodyOnset: number): number {
+  const beat = ((melodyOnset % 4) + 4) % 4;
+  if (Math.abs(beat) < 0.05) return 1;
+  if (Math.abs(beat - 2) < 0.05) return 3;
+  return Math.min(3.75, melodyOnset + 0.5);
+}
+
+function duoInnerStaggerDuration(
+  innerOnset: number,
+  melodyOnset: number,
+  holdDur: number,
+  barBeats = 4
+): number {
+  const melodyEnd = melodyOnset + holdDur;
+  const span = Math.min(melodyEnd - innerOnset, barBeats - innerOnset);
+  return Math.max(0.5, Math.min(1.25, span));
+}
+
+function pushDuoGuitarNote(
+  part: PartModel,
+  bar: number,
+  pitch: number,
+  startBeat: number,
+  duration: number,
+  voice: number,
+  velocity?: number
+): void {
   const measure = findOrCreateMeasure(part, bar);
   measure.events = measure.events.filter(
     (e) =>
-      !(e.kind === 'note' && e.pitch === pitch && Math.abs(e.startBeat - startBeat) < 0.02)
+      !(
+        e.kind === 'note' &&
+        (e as { pitch: number }).pitch === pitch &&
+        Math.abs(e.startBeat - startBeat) < 0.02 &&
+        ((e as { voice?: number }).voice ?? 1) === voice
+      )
   );
   measure.events.push({
     kind: 'note',
     pitch,
     startBeat,
     duration,
-    voice: 1,
+    voice,
     ...(velocity != null ? { velocity } : {}),
   });
   measure.events.sort((a, b) => a.startBeat - b.startBeat);
+}
+
+function stripVoice2CompEvents(measure: MeasureModel): void {
+  measure.events = measure.events.filter((e) => {
+    if (e.kind !== 'note' && e.kind !== 'chord') return true;
+    return ((e as { voice?: number }).voice ?? 1) === 1;
+  });
+}
+
+function hasPassingDimAt(
+  bar: number,
+  onset: number,
+  resolvedNotes: readonly ResolvedChordMelodyNote[]
+): boolean {
+  return resolvedNotes.some(
+    (r) =>
+      r.eventKind === 'passing_dim' &&
+      r.bar === bar &&
+      Math.abs(r.onsetBeat - onset) < 0.02
+  );
+}
+
+function applyChordMelodyToScoreGuitarDuo(
+  score: ScoreModel,
+  resolvedNotes: readonly ResolvedChordMelodyNote[],
+  melody: readonly ImportMelodyNote[],
+  presetId: string
+): ScoreModel {
+  const out = structuredClone(score) as ScoreModel;
+  const parts = targetPartsForPreset(out, presetId);
+  if (parts.length === 0) return out;
+
+  const barsTouched = new Set<number>([
+    ...melody.map((m) => m.bar),
+    ...resolvedNotes.filter((r) => r.eventKind === 'passing_dim').map((r) => r.bar),
+  ]);
+  for (const part of parts) {
+    for (const bar of barsTouched) {
+      const measure = findOrCreateMeasure(part, bar);
+      stripVoice2CompEvents(measure);
+    }
+  }
+
+  const byBar = new Map<number, ResolvedChordMelodyNote[]>();
+  for (const r of resolvedNotes) {
+    const list = byBar.get(r.bar) ?? [];
+    list.push(r);
+    byBar.set(r.bar, list);
+  }
+
+  for (const [bar, notes] of byBar) {
+    const strong = notes.filter((n) => isStrongBeat(n.onsetBeat));
+    const barPick = strong[0] ?? notes[0];
+    const barSymbol = barPick ? harmonySymbolForResolved(barPick) : undefined;
+    for (const part of parts) {
+      const measure = findOrCreateMeasure(part, bar);
+      if (barSymbol) {
+        measure.chord = barSymbol;
+        measure.chordSymbol = barSymbol;
+      }
+    }
+  }
+
+  const resolvedByOnset = new Map<string, ResolvedChordMelodyNote>();
+  for (const r of resolvedNotes) {
+    resolvedByOnset.set(`${r.bar}:${r.onsetBeat.toFixed(4)}`, r);
+  }
+
+  for (const mel of melody) {
+    const resolved =
+      resolvedByOnset.get(`${mel.bar}:${mel.onsetBeat.toFixed(4)}`) ??
+      resolvedNotes.find((r) => r.bar === mel.bar && Math.abs(r.onsetBeat - mel.onsetBeat) < 0.02);
+    if (!resolved || resolved.harmonyOnly) continue;
+
+    const inner =
+      resolved.innerVoicingMidis.length > 0
+        ? [...resolved.innerVoicingMidis]
+        : resolved.exportStackMidis.filter((p) => p !== mel.midiPitch);
+    resolved.blockVoicingMidis = resolved.innerVoicingMidis;
+
+    const symbol = harmonySymbolForResolved(resolved);
+    const holdDur = melodyHoldDurationBeats(mel, melody);
+    const innerOnset = duoInnerStaggerOnset(mel.onsetBeat);
+    const innerDur = duoInnerStaggerDuration(innerOnset, mel.onsetBeat, holdDur);
+
+    for (const part of parts) {
+      const measure = findOrCreateMeasure(part, mel.bar);
+
+      measure.events = measure.events.filter((e) => {
+        if ((e.kind !== 'note' && e.kind !== 'chord') || (e as { voice?: number }).voice !== 1) {
+          return true;
+        }
+        return Math.abs(e.startBeat - mel.onsetBeat) >= 0.02;
+      });
+
+      measure.events.push({
+        kind: 'note',
+        pitch: mel.midiPitch,
+        startBeat: mel.onsetBeat,
+        duration: holdDur,
+        voice: 1,
+      });
+
+      if (
+        inner.length > 0 &&
+        Math.abs(innerOnset - mel.onsetBeat) >= 0.02 &&
+        !hasPassingDimAt(mel.bar, innerOnset, resolvedNotes)
+      ) {
+        if (inner.length === 1) {
+          pushDuoGuitarNote(
+            part,
+            mel.bar,
+            inner[0]!,
+            innerOnset,
+            innerDur,
+            2,
+            DUO_COMP_INNER_VELOCITY
+          );
+        } else {
+          const measureInner = findOrCreateMeasure(part, mel.bar);
+          measureInner.events = measureInner.events.filter(
+            (e) =>
+              !(
+                e.kind === 'chord' &&
+                ((e as { voice?: number }).voice ?? 1) === 2 &&
+                Math.abs(e.startBeat - innerOnset) < 0.02
+              )
+          );
+          measureInner.events.push({
+            kind: 'chord',
+            pitches: [...inner].sort((a, b) => a - b),
+            startBeat: innerOnset,
+            duration: innerDur,
+            voice: 2,
+          });
+          measureInner.events.sort((a, b) => a.startBeat - b.startBeat);
+        }
+      }
+
+      measure.events.sort((a, b) => a.startBeat - b.startBeat);
+    }
+  }
+
+  for (const r of resolvedNotes) {
+    if (!r.harmonyOnly || r.eventKind !== 'passing_dim') continue;
+    const inner = r.innerVoicingMidis.length > 0 ? r.innerVoicingMidis : r.exportStackMidis;
+    if (inner.length === 0) continue;
+    const dur = r.exportDurationBeats ?? passingDimExportDurationBeats(r, resolvedNotes);
+    const symbol = harmonySymbolForResolved(r);
+
+    for (const part of parts) {
+      if (inner.length === 1) {
+        pushDuoGuitarNote(
+          part,
+          r.bar,
+          inner[0]!,
+          r.onsetBeat,
+          dur,
+          2,
+          DUO_PASSING_DIM_VELOCITY
+        );
+      } else {
+        const measure = findOrCreateMeasure(part, r.bar);
+        measure.events = measure.events.filter(
+          (e) =>
+            !(
+              e.kind === 'chord' &&
+              ((e as { voice?: number }).voice ?? 1) === 2 &&
+              Math.abs(e.startBeat - r.onsetBeat) < 0.02
+            )
+        );
+        measure.events.push({
+          kind: 'chord',
+          pitches: [...inner].sort((a, b) => a - b),
+          startBeat: r.onsetBeat,
+          duration: dur,
+          voice: 2,
+        });
+        measure.events.sort((a, b) => a.startBeat - b.startBeat);
+      }
+    }
+  }
+
+  for (const part of parts) {
+    part.measures.sort((a, b) => a.index - b.index);
+  }
+  return out;
 }
 
 function applyChordMelodyToScoreStringQuartet(
@@ -1357,95 +1587,7 @@ export function applyChordMelodyToScore(
     return applyChordMelodyToScoreStringQuartet(score, resolvedNotes, melody);
   }
 
-  const out = structuredClone(score) as ScoreModel;
-  const parts = targetPartsForPreset(out, presetId);
-  if (parts.length === 0) return out;
-
-  const byBar = new Map<number, ResolvedChordMelodyNote[]>();
-  for (const r of resolvedNotes) {
-    const list = byBar.get(r.bar) ?? [];
-    list.push(r);
-    byBar.set(r.bar, list);
-  }
-
-  for (const [bar, notes] of byBar) {
-    const strong = notes.filter((n) => isStrongBeat(n.onsetBeat));
-    const barPick = strong[0] ?? notes[0];
-    const barSymbol = barPick ? harmonySymbolForResolved(barPick) : undefined;
-    for (const part of parts) {
-      let measure = part.measures.find((m) => m.index === bar);
-      if (!measure) {
-        measure = { index: bar, events: [] };
-        part.measures.push(measure);
-      }
-      if (barSymbol) {
-        measure.chord = barSymbol;
-        measure.chordSymbol = barSymbol;
-      }
-    }
-  }
-
-  const resolvedByOnset = new Map<string, ResolvedChordMelodyNote>();
-  for (const r of resolvedNotes) {
-    resolvedByOnset.set(`${r.bar}:${r.onsetBeat.toFixed(4)}`, r);
-  }
-
-  for (const mel of melody) {
-    const resolved =
-      resolvedByOnset.get(`${mel.bar}:${mel.onsetBeat.toFixed(4)}`) ??
-      resolvedNotes.find((r) => r.bar === mel.bar && Math.abs(r.onsetBeat - mel.onsetBeat) < 0.02);
-    if (!resolved || resolved.harmonyOnly) continue;
-
-    let stack =
-      resolved.exportStackMidis.length > 0 ? [...resolved.exportStackMidis] : [mel.midiPitch];
-    if (!stack.includes(mel.midiPitch)) stack.push(mel.midiPitch);
-    stack.sort((a, b) => a - b);
-    resolved.blockVoicingMidis = resolved.innerVoicingMidis;
-
-    for (const part of parts) {
-      let measure = part.measures.find((m) => m.index === mel.bar);
-      if (!measure) {
-        measure = { index: mel.bar, events: [] };
-        part.measures.push(measure);
-      }
-
-      measure.events = measure.events.filter(
-        (e) =>
-          !(
-            (e.kind === 'note' || e.kind === 'chord') &&
-            Math.abs(e.startBeat - mel.onsetBeat) < 0.02
-          )
-      );
-
-      const symbol = harmonySymbolForResolved(resolved);
-      const holdDur = melodyHoldDurationBeats(mel, melody);
-      if (stack.length === 1) {
-        measure.events.push({
-          kind: 'note',
-          pitch: mel.midiPitch,
-          startBeat: mel.onsetBeat,
-          duration: holdDur,
-          voice: 1,
-        });
-      } else {
-        measure.events.push({
-          kind: 'chord',
-          pitches: stack,
-          startBeat: mel.onsetBeat,
-          duration: holdDur,
-          voice: 1,
-          chordSymbol: symbol,
-        });
-      }
-
-      measure.events.sort((a, b) => a.startBeat - b.startBeat);
-    }
-  }
-
-  for (const part of parts) {
-    part.measures.sort((a, b) => a.index - b.index);
-  }
-  return out;
+  return applyChordMelodyToScoreGuitarDuo(score, resolvedNotes, melody, presetId);
 }
 
 export function assertMelodyIsTopOfStack(resolved: ResolvedChordMelodyNote, melodyMidi: number): boolean {
