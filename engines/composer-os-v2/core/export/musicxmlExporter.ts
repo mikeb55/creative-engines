@@ -17,10 +17,9 @@ import type {
 import { DIVISIONS, MEASURE_DIVISIONS } from '../score-model/scoreModelTypes';
 import { buildHarmonyXmlLine } from './chordSymbolMusicXml';
 
-function buildHarmonyXmlLineWithOffset(chordSymbol: string, offsetTicks: number): string {
-  if (offsetTicks <= 0) return buildHarmonyXmlLine(chordSymbol);
-  const line = buildHarmonyXmlLine(chordSymbol);
-  return line.replace('<harmony>', `<harmony>\n      <offset>${offsetTicks}</offset>`);
+/** Mid-measure harmony: sequential rests/notes already advance the XML cursor — no &lt;offset&gt; in &lt;harmony&gt; (invalid in MusicXML 3.1 partwise / Sibelius). */
+function buildHarmonyXmlLineWithOffset(chordSymbol: string, _offsetTicks: number): string {
+  return buildHarmonyXmlLine(chordSymbol);
 }
 
 function measureHasBarryHarrisOnsetHarmony(measure: MeasureModel): boolean {

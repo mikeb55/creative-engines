@@ -1,5 +1,17 @@
 ## [Unreleased]
 
+### Added
+
+- **V83 — three-way reharm auto-test** — `engines/composer-os-v2/scripts/runV83ThreeWayReharmAutoTest.ts` runs the BH jazz benchmark melody through **barry_harris**, **radiohead** (swap for **wayne_shorter**), and **fripp** style-transfer reharm; asserts melody preservation, harmony change, pairwise contrast, and **MusicXML schema** (no `<offset>` inside `<harmony>`, stringsync parse). Outputs to `Song Mode/reharm-*.musicxml`.
+
+### Fixed
+
+- **MusicXML export — harmony `<offset>`** — `musicxmlExporter.ts` no longer injects `<offset>` inside `<harmony>` for mid-measure Barry Harris chord events; sequential rest/note placement already positions harmony (fixes Sibelius “offset is not defined in this scope” on reharm exports). `musicxmlValidation.ts` — `findHarmonyChildOffsetViolations` + strengthened `validateMusicXmlSchema`.
+
+### Known issues (logged)
+
+- **wayne_shorter style-transfer export** — reharm precompute succeeds but export returns **0-byte MusicXML** on extended symbols (e.g. `Gmaj9#11`); parked; three-way test uses **radiohead** instead.
+
 ## [2.10.2a] - 2026-06-10
 
 ### Changed

@@ -157,6 +157,7 @@ Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartók** native bundle (not in
 
 ## Known issues — engine (2026-04-29)
 
+- **`wayne_shorter` style-transfer export (parked, 2026-06-10):** Slice + mosaic dispatch are shipped; style-transfer **reharm precompute works** but **MusicXML export fails** (0-byte XML) on extended chord symbols (e.g. `Gmaj9#11`, slash spellings). **V83 three-way reharm auto-test** swaps **radiohead** for contrast. Fix tracked as export/pipeline-truth, not slice backlog.
 - **`ecm_chamber` golden path — heap pressure (mitigated):** **`runGoldenPath.ts`** caps the duo-lock **variant seed sweep** for **`ecm_chamber`** via **`ecmChamberVariantSweepLimit(totalBars)`** — **≥32 bars → 1** candidate seed, **16–31 → 2**, **≤15 → 3** (missing/invalid bar count defaults as **32** → **1**). Non-ECM presets still use the full **6-offset** sweep (**`GOLDEN_PATH_VARIANT_SEED_OFFSETS`**). Very heavy single-process batches may still warrant **`GCE_SINGLE_PRESET`** as a safety valve. Code: **`engines/composer-os-v2/core/goldenPath/runGoldenPath.ts`**.
 - **GCE v2.0 preset benchmark (2026-04-19):** Non-ECM presets **7.8–8.1/10** overall (seed **50021**, 32 bars, 100 BPM); universal weakest pillar **Melodic Identity**. **`ecm_chamber`** long-form runs use the bounded sweep above; if heap exhaustion persists, batch presets (**`GCE_SINGLE_PRESET`**) or raise Node heap before assuming an unfixed engine bug. Tables: [GCE_FRAMEWORK_V2.md](GCE_FRAMEWORK_V2.md), [CHANGELOG.md](CHANGELOG.md).
 
