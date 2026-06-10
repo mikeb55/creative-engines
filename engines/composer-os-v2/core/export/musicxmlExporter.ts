@@ -219,6 +219,12 @@ function resolveExportBpm(opts: MusicXmlExportOptions, score: ScoreModel): numbe
   return Math.min(500, Math.max(20, n));
 }
 
+/** Player-facing feel caption for measure-1 tempo direction (internal feel detail stays in metadata). */
+function formatPlayerFacingFeelLabel(tempoFeel: 'slow' | 'medium' | 'fast'): string {
+  const label = tempoFeel.charAt(0).toUpperCase() + tempoFeel.slice(1);
+  return `${label} feel; straight 8ths`;
+}
+
 /** Song form sections on score (attached in runGoldenPath when `formId` is set); not on `ScoreModel` type. */
 type FormSectionExport = { startBar: number; label: string };
 
@@ -1437,6 +1443,15 @@ ${stavesAndClefXml}${transposeXml}    </attributes>
 
         if (i === 0 && partIndex === 0) {
           const bpm = resolveExportBpm(opts, score);
+          const feelDirectionTypeXml =
+            score.feelProfile != null
+              ? `      <direction-type>
+        <words font-style="italic">${escapeXml(
+          formatPlayerFacingFeelLabel(score.feelProfile.tempoFeel)
+        )}</words>
+      </direction-type>
+`
+              : '';
           xml += `    <direction placement="above">
       <direction-type>
         <metronome>
@@ -1444,32 +1459,9 @@ ${stavesAndClefXml}${transposeXml}    </attributes>
           <per-minute>${bpm}</per-minute>
         </metronome>
       </direction-type>
-      <sound tempo="${bpm}"/>
+${feelDirectionTypeXml}      <sound tempo="${bpm}"/>
     </direction>
 `;
-        }
-
-        const dynTok = score.measureDynamicsMarkings?.[measureNumber];
-        if (dynTok && partIndex === 0) {
-          const allowed = new Set([
-            'pp',
-            'p',
-            'mp',
-            'mf',
-            'f',
-            'ff',
-            'fff',
-            'fp',
-            'sfz',
-          ]);
-          if (allowed.has(dynTok)) {
-            xml += `    <direction placement="below">
-      <direction-type>
-        <dynamics><${dynTok}/></dynamics>
-      </direction-type>
-    </direction>
-`;
-          }
         }
 
         /**
@@ -1513,6 +1505,44 @@ ${stavesAndClefXml}${transposeXml}    </attributes>
           xml += buildHarmonyXmlLine(chordForHarmony);
         }
 
+        /** Section rehearsal marks once on top staff (part 0); after beat-1 harmony, before notes. */
+        if (partIndex === 0) {
+          const formRehearsalLabel = rehearsalLabelFromScoreForm(score, measureNumber);
+          if (formRehearsalLabel) {
+            xml += `    <direction placement="above"><direction-type><rehearsal enclosure="rectangle">${escapeXml(
+              formRehearsalLabel
+            )}</rehearsal></direction-type></direction>\n`;
+          }
+          if (m.rehearsalMark) {
+            xml += `    <direction placement="above"><direction-type><rehearsal enclosure="rectangle">${escapeXml(
+              formatSectionRehearsalLabel(m.rehearsalMark)
+            )}</rehearsal></direction-type></direction>\n`;
+          }
+        }
+
+        const dynTok = score.measureDynamicsMarkings?.[measureNumber];
+        if (dynTok && partIndex === 0) {
+          const allowed = new Set([
+            'pp',
+            'p',
+            'mp',
+            'mf',
+            'f',
+            'ff',
+            'fff',
+            'fp',
+            'sfz',
+          ]);
+          if (allowed.has(dynTok)) {
+            xml += `    <direction placement="below">
+      <direction-type>
+        <dynamics><${dynTok}/></dynamics>
+      </direction-type>
+    </direction>
+`;
+          }
+        }
+
         const measure1TuningWords = score.exportMeasure1TuningWordsByPartId?.[part.id];
         if (i === 0 && measure1TuningWords) {
           xml += `    <direction placement="above"><direction-type><words>${escapeXml(
@@ -1529,33 +1559,12 @@ ${stavesAndClefXml}${transposeXml}    </attributes>
         }
 
         if (i === 0) {
-          const feelEl =
-            partIndex === 0 && score.feelProfile
-              ? `    <direction placement="below"><direction-type><words>${escapeXml(
-                  `Feel: ${score.feelProfile.tempoFeel}; straight notation (export); duo`
-                )}</words></direction-type></direction>\n`
-              : '';
           const ks = score.keySignature;
           const keyCaption =
             partIndex === 0 && ks?.caption
               ? `    <direction placement="above"><direction-type><words>${escapeXml(ks.caption)}</words></direction-type></direction>\n`
               : '';
-          xml += `${keyCaption}${feelEl}`;
-        }
-
-        /** Section rehearsal marks once on top staff (part 0); after harmony/sound so beat-1 chord stays first. */
-        if (partIndex === 0) {
-          const formRehearsalLabel = rehearsalLabelFromScoreForm(score, measureNumber);
-          if (formRehearsalLabel) {
-            xml += `    <direction placement="above"><direction-type><rehearsal enclosure="rectangle">${escapeXml(
-              formRehearsalLabel
-            )}</rehearsal></direction-type></direction>\n`;
-          }
-          if (m.rehearsalMark) {
-            xml += `    <direction placement="above"><direction-type><rehearsal enclosure="rectangle">${escapeXml(
-              formatSectionRehearsalLabel(m.rehearsalMark)
-            )}</rehearsal></direction-type></direction>\n`;
-          }
+          xml += keyCaption;
         }
 
         xml +=

@@ -43,7 +43,7 @@ function validateMusicXML(xml: string): { pass: boolean; errors: string[] } {
   if (measureCount === 0) errors.push('No measures');
   const rehearsalMatch = xml.match(/<rehearsal>/g);
   if (!rehearsalMatch || rehearsalMatch.length === 0) errors.push('No rehearsal marks');
-  const harmonyMatch = xml.match(/<harmony>/g);
+  const harmonyMatch = xml.match(/<harmony[\s>]/g);
   if (!harmonyMatch || harmonyMatch.length === 0) errors.push('No chord symbols');
   return { pass: errors.length === 0, errors };
 }

@@ -726,7 +726,7 @@ function parseNoteBlock(nb: string): {
 
 /** First `<harmony>` in measure → compact symbol for GCE (extended jazz tokens). */
 function chordLabelFromMeasureHarmonyXml(measureXml: string): string | undefined {
-  const block = measureXml.match(/<harmony>([\s\S]*?)<\/harmony>/i)?.[1];
+  const block = measureXml.match(/<harmony[^>]*>([\s\S]*?)<\/harmony>/i)?.[1];
   if (!block) return undefined;
   const rs = block.match(/<root-step>([A-G])<\/root-step>/i)?.[1];
   const ra = block.match(/<root-alter>(-?\d+)<\/root-alter>/i);

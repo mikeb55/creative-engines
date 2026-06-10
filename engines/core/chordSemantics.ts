@@ -304,7 +304,7 @@ export function buildHarmonyXmlLine(
         })()
       : '';
   const staffEl = opts?.staffNumber !== undefined ? `<staff>${opts.staffNumber}</staff>` : '';
-  return `    <harmony>${staffEl}<root><root-step>${r.rootStep}</root-step>${alterEl}</root><kind text="${escapeXmlForHarmony(
+  return `    <harmony placement="above">${staffEl}<root><root-step>${r.rootStep}</root-step>${alterEl}</root><kind text="${escapeXmlForHarmony(
     kindAttrText
   )}">${escapeXmlForHarmony(kindContent)}</kind>${bassEl}${degreeXml}</harmony>\n`;
 }

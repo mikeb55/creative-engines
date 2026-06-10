@@ -334,7 +334,7 @@ export function runAppApiBoundaryTests(): { ok: boolean; name: string }[] {
       indieXml.includes('<score-part id="guitar_2">') &&
       indieXml.includes('<part-name>Clean Electric Guitar</part-name>') &&
       indieXml.includes('<part-name>Electric Guitar 2</part-name>');
-    const hasChordSymbols = (indieXml.match(/<harmony>/g) ?? []).length >= 8;
+    const hasChordSymbols = (indieXml.match(/<harmony[\s>]/g) ?? []).length >= 8;
     const notWyble = !(indieDualGuitar.runManifest?.activeModules ?? []).includes('jimmy_wyble_engine');
     const g2Part = indieXml.match(/<part id="guitar_2"[\s\S]*?<\/part>/);
     let guitar2SingleBackupPerMeasure = false;

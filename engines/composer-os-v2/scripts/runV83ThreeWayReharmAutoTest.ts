@@ -174,7 +174,7 @@ function runComposer(
     }
   }
 
-  if (!/<harmony>/.test(xml)) warnings.push('no <harmony> in exported XML');
+  if (!/<harmony[\s>]/.test(xml)) warnings.push('no <harmony> in exported XML');
 
   const schema = validateMusicXmlSchema(xml);
   const harmonyOffsetViolations = findHarmonyChildOffsetViolations(xml);

@@ -4,6 +4,10 @@
  */
 
 import { validateMusicXml } from './musicXmlValidator';
+import {
+  findDirectionTypeScopeViolations,
+  validateMusicXmlSchema,
+} from '../../engines/composer-os-v2/core/export/musicxmlValidation';
 
 function minimalScorePartwise(body: string): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -116,6 +120,37 @@ export function runMusicXmlValidatorGateTests(): { name: string; ok: boolean }[]
     ok:
       !octBad.valid &&
       octBad.errors.some((e) => /displayOctave/i.test(e)),
+  });
+
+  const mixedDirectionType = minimalScorePartwise(`
+  <part id="P1">
+    <measure number="1">
+      <direction placement="above"><direction-type>
+        <metronome><beat-unit>quarter</beat-unit><per-minute>120</per-minute></metronome>
+        <words font-style="italic">Medium feel</words>
+      </direction-type><sound tempo="120"/></direction>
+    </measure>
+  </part>`);
+  out.push({
+    name: 'MusicXML validator: metronome+words in one direction-type rejected',
+    ok:
+      !validateMusicXmlSchema(mixedDirectionType).valid &&
+      findDirectionTypeScopeViolations(mixedDirectionType).length > 0,
+  });
+
+  const splitDirectionType = minimalScorePartwise(`
+  <part id="P1">
+    <measure number="1">
+      <direction placement="above">
+        <direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>120</per-minute></metronome></direction-type>
+        <direction-type><words font-style="italic">Medium feel</words></direction-type>
+        <sound tempo="120"/>
+      </direction>
+    </measure>
+  </part>`);
+  out.push({
+    name: 'MusicXML validator: split metronome/words direction-types pass schema',
+    ok: validateMusicXmlSchema(splitDirectionType).valid,
   });
 
   return out;

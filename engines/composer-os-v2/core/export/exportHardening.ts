@@ -47,7 +47,7 @@ export function validateExportIntegrity(xml: string, opts?: ValidateExportIntegr
   const emptyMeasure = xml.match(/<measure[^>]*>\s*<\/measure>/);
   if (emptyMeasure) errors.push('Empty measure without rest');
 
-  const chordCount = (xml.match(/<harmony>/g) || []).length;
+  const chordCount = (xml.match(/<harmony[\s>]/g) || []).length;
   const partCountForChords = partCountForTime;
   /** One harmony per measure on lead part only — expect chordCount ≈ measureCount / partCount (duo: half the raw measure tags). */
   const measuresPerPart = partCountForChords > 0 ? measureCount / partCountForChords : 0;

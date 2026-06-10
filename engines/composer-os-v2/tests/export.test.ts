@@ -4,7 +4,12 @@
 
 import { exportScoreModelToMusicXml, exportToMusicXml } from '../core/export/musicxmlExporter';
 import { exportPhase182AGuitarPolyphonyDiagnosticMusicXml } from '../core/export/polyphonyDiagnosticExport';
-import { validateMusicXmlSchema, reParseMusicXml } from '../core/export/musicxmlValidation';
+import {
+  validateMusicXmlSchema,
+  reParseMusicXml,
+  findDirectionTypeScopeViolations,
+  findHarmonyChildOffsetViolations,
+} from '../core/export/musicxmlValidation';
 import { checkSibeliusSafe } from '../core/export/sibeliusSafeProfile';
 import {
   formatChordSymbolForDisplay,
@@ -67,6 +72,44 @@ function testSchemaValidationFailsForInvalid(): boolean {
   const xml = '<?xml?><invalid-root/>';
   const r = validateMusicXmlSchema(xml);
   return !r.valid;
+}
+
+function testSchemaValidationFailsForMixedDirectionTypeChildren(): boolean {
+  const xml = `<?xml?><score-partwise version="3.1">
+<part><measure number="1">
+<direction placement="above"><direction-type>
+<metronome><beat-unit>quarter</beat-unit><per-minute>120</per-minute></metronome>
+<words font-style="italic">Medium feel; straight 8ths</words>
+</direction-type><sound tempo="120"/></direction>
+</measure></part></score-partwise>`;
+  const r = validateMusicXmlSchema(xml);
+  return (
+    !r.valid &&
+    findDirectionTypeScopeViolations(xml).length > 0 &&
+    r.errors.some((e) => /direction-type/i.test(e))
+  );
+}
+
+function testSchemaValidationPassesForSplitDirectionTypeChildren(): boolean {
+  const xml = `<?xml?><score-partwise version="3.1">
+<part><measure number="1">
+<direction placement="above">
+<direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>120</per-minute></metronome></direction-type>
+<direction-type><words font-style="italic">Medium feel; straight 8ths</words></direction-type>
+<sound tempo="120"/>
+</direction>
+</measure></part></score-partwise>`;
+  const r = validateMusicXmlSchema(xml);
+  return r.valid && findDirectionTypeScopeViolations(xml).length === 0;
+}
+
+function testSchemaValidationFailsForHarmonyChildOffset(): boolean {
+  const xml = `<?xml?><score-partwise version="3.1">
+<part><measure number="1">
+<harmony><root><root-step>C</root-step></root><kind>major</kind><offset>4</offset></harmony>
+</measure></part></score-partwise>`;
+  const r = validateMusicXmlSchema(xml);
+  return !r.valid && findHarmonyChildOffsetViolations(xml).length > 0;
 }
 
 function testReParseReturnsResult(): boolean {
@@ -387,6 +430,9 @@ export function runExportTests(): { name: string; ok: boolean }[] {
     ['Bass MusicXML uses acoustic bass MIDI (not vocal)', testBassMusicXmlUsesAcousticBassMidi],
     ['Schema validation passes for valid', testSchemaValidationPassesForValid],
     ['Schema validation fails for invalid', testSchemaValidationFailsForInvalid],
+    ['Schema validation fails for metronome+words in one direction-type', testSchemaValidationFailsForMixedDirectionTypeChildren],
+    ['Schema validation passes for split metronome/words direction-types', testSchemaValidationPassesForSplitDirectionTypeChildren],
+    ['Schema validation fails for harmony child offset', testSchemaValidationFailsForHarmonyChildOffset],
     ['Re-parse returns result', testReParseReturnsResult],
     ['Sibelius safe passes for valid', testSibeliusSafePassesForValid],
     ['Sibelius safe fails for invalid', testSibeliusSafeFailsForInvalid],
