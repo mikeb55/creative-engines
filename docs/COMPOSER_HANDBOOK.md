@@ -341,6 +341,31 @@ Canonical Song Mode / Big Band composers in **`engines/composer-os-v2`**. **Slic
 
 **Quick guide:** **`docs/BH_QUICK_GUIDE.md`**
 
+---
+
+## Arranger tab
+
+**What it does:** Dedicated **Arranger** nav route (`/arranger`) — upload a melody + harmony (MIDI or MusicXML), pick a style-transfer composer (default **Barry Harris** for chord-melody), choose an output **Preset**, then run. Exports shareable **MusicXML** and **MIDI** to your Song Mode library; desktop **Open MusicXML** launches the system default app.
+
+**Four-step wizard:**
+
+1. **Upload** — Drop or browse `.mid` / `.musicxml` / `.mxl`; confidence dots show import quality.
+2. **Composer** — Style-transfer target (Barry Harris, Bill Evans, Jobim, …); Barry Harris shows the **6th-diminished chord-melody** subtitle.
+3. **Settings** — Tempo, seed, strength, preserve melody, optional output name, and **Preset** (see below).
+4. **Run** — Progress stages through harmony → voicings → chord-melody → export; **Open MusicXML**, **Download MIDI**, **Reveal in folder** on success.
+
+**Preset dropdown (Step 3):**
+
+| Preset | Id | Use when |
+|--------|-----|----------|
+| **Song Mode** | `song_mode` | Default — guitar–bass duo style-transfer (same path as Generate mosaic import). Best for BH chord-melody charts and lead-sheet export. |
+| **String Quartet** | `string_quartet` | Four string parts (Vn I/II, Viola, Cello) with BH voicing distribution and inner-voice passing dims. |
+| **Big Band** | `big_band` | Five sax soli voices (AATBS) with BH big-band voicing rules and bari doubling. |
+
+**Song Mode** remains the default. **String Quartet** and **Big Band** reorchestrate the same imported melody and locked harmony through ensemble-specific BH chord-melody routers (see **V81** extensions in **CHANGELOG**).
+
+**Workflow tip:** Start with **Song Mode** + **Barry Harris** + strength **1.0** to validate harmony and melody lock; switch **Preset** to **String Quartet** or **Big Band** when you need ensemble parts without re-importing.
+
 ### Partial / referenced only
 
 | Composer | Id | Status | Notes |

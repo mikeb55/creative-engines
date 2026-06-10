@@ -1,5 +1,15 @@
 ## [Unreleased]
 
+## [2.10.2a] - 2026-06-10
+
+### Changed
+
+- **Desktop** — Portable/installer **`package.json`** version **2.10.2a** (matches Arranger tab ship).
+
+### Added
+
+- **V83a+b — Arranger preset dropdown** — Step 3 **Preset** selector on the **Arranger** tab: **Song Mode** (default guitar–bass style-transfer path), **String Quartet** (four strings + piano harmony staff), **Big Band** (full sax soli / ensemble export). Same mosaic import + style-transfer composer list; **`presetId`** routes to the matching golden-path realisation.
+
 ## [2.10.2] - 2026-06-10
 
 ### Changed

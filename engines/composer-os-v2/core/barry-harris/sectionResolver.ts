@@ -19,9 +19,8 @@ function sectionStartsToSpans(starts: readonly DeepImportSectionStart[], totalBa
 }
 
 function readDeepImportSectionStarts(context: CompositionContext): DeepImportSectionStart[] {
-  const meta = context.generationMetadata as Record<string, unknown> | undefined;
-  const fromMeta = meta?.musicXmlDeepImportSectionStarts;
-  if (Array.isArray(fromMeta) && fromMeta.length > 0) return fromMeta as DeepImportSectionStart[];
+  const fromMeta = context.generationMetadata?.musicXmlDeepImportSectionStarts;
+  if (Array.isArray(fromMeta) && fromMeta.length > 0) return fromMeta;
   return [];
 }
 

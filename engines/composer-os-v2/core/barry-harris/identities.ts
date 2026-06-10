@@ -151,7 +151,7 @@ export function applyIdentitiesToNoteChoice(choice: ChordMelodyNoteChoice): Reso
     exportSymbol,
     identityAnnotations: annotations,
     voicingHint: voicingHintForChoice(choice),
-  };
+  } as unknown as ResolvedChordMelodyNote;
 }
 
 export function applyIdentitiesToNoteChoices(

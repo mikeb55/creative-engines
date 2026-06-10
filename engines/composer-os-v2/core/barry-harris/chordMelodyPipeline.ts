@@ -411,7 +411,7 @@ export function runBarryHarrisChordMelodyEvalCore(repoRoot: string): BarryHarris
     form: { totalBars: 16, sections: [] },
     lockedHarmonyBarsRaw: [...BARRY_HARRIS_EVAL_CHORDS_16],
     generationMetadata: {},
-  } as CompositionContext;
+  } as unknown as CompositionContext;
 
   const foundation = precomputeBarryHarrisChordMelodyFoundation(context);
   const pipeline = runBarryHarrisChordMelodyPipeline(

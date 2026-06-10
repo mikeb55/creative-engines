@@ -72,8 +72,23 @@ export function composerSubtitle(composerId: string): string {
   return 'Style-transfer arrangement';
 }
 
+/** Arranger Step 3 preset dropdown — Song Mode default + ensemble reorchestrate paths. */
+export const ARRANGER_PRESET_IDS = ['song_mode', 'string_quartet', 'big_band'] as const;
+
+export type ArrangerPresetId = (typeof ARRANGER_PRESET_IDS)[number];
+
+export function normalizeArrangerPresetId(presetId: string): ArrangerPresetId {
+  const id = presetId.trim();
+  return (ARRANGER_PRESET_IDS as readonly string[]).includes(id)
+    ? (id as ArrangerPresetId)
+    : ARRANGER_GENERATE_PRESET_ID;
+}
+
 export function listArrangerPresetOptions(): readonly AppPresetCard[] {
-  return APP_PRESET_REGISTRY.filter((p) => p.supported && p.id === ARRANGER_GENERATE_PRESET_ID);
+  const byId = new Map(APP_PRESET_REGISTRY.map((p) => [p.id, p]));
+  return ARRANGER_PRESET_IDS.map((id) => byId.get(id)).filter(
+    (p): p is AppPresetCard => !!p?.supported,
+  );
 }
 
 export function confidenceDotCount(confidence: number): number {
@@ -108,7 +123,7 @@ export function formatElapsed(elapsedSeconds: number): string {
 /** Default style-transfer strength for Arranger (HomeGenerate mosaic default is 0.5). */
 export const ARRANGER_DEFAULT_STYLE_TRANSFER_STRENGTH = 1.0;
 
-/** Style-transfer arranger runs through Song Mode (same as HomeGenerate mosaic path). */
+/** Default Arranger preset (Song Mode style-transfer path). */
 export const ARRANGER_GENERATE_PRESET_ID = 'song_mode' as const;
 
 export const ARRANGER_DEFAULT_STYLE_STACK = {
@@ -135,6 +150,7 @@ export function buildArrangerGeneratePayload(input: {
   bpm?: number | null;
 }): Partial<GenerateRequest> {
   const composerId = input.targetComposer.trim() || 'barry_harris';
+  const presetId = normalizeArrangerPresetId(input.presetId);
   const strength = input.strength ?? ARRANGER_DEFAULT_STYLE_TRANSFER_STRENGTH;
   const locked = importTimelineToLockedHarmony(input.timeline);
   const totalBars = input.timeline.bars;
@@ -151,7 +167,7 @@ export function buildArrangerGeneratePayload(input: {
   });
   const tonal = input.timeline.keyEstimate.tonic?.trim();
   const out: Partial<GenerateRequest> = {
-    presetId: ARRANGER_GENERATE_PRESET_ID,
+    presetId,
     seed: input.seed,
     styleStack: arrangerStyleStackForComposer(composerId),
     primarySongwriterStyle: composerId,

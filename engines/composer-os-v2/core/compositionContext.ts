@@ -563,6 +563,8 @@ export interface GenerationMetadata {
     /** INS-1 — ensemble realizer for this section (`duo` default when absent). */
     presetRole?: 'duo' | 'big_band' | 'string_quartet';
   }>;
+  /** V82b+c — MusicXML deep-import section markers for Barry Harris section resolver. */
+  musicXmlDeepImportSectionStarts?: Array<{ bar: number; label: string }>;
   /** Song Mode hook-first: lift mosaic post-finalize inject on eligible non-spine sections (default off). */
   allowMosaicPostFinalizeInject?: boolean;
   /** Mosaic Mode Step 3 — full-form merged effective harmony (one symbol per bar, bar 1 at index 0). */

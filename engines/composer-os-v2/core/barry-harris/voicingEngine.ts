@@ -657,7 +657,7 @@ function mapFromBaseVoicing(
   prevInner: readonly number[] | null,
   presetId?: string
 ): ResolvedChordMelodyNote {
-  const source: LadderSource = resolved.kind === 'dim7' ? 'dim' : 'sixth';
+  const source: LadderSource = resolved.kind === 'dim7' ? 'dim' : '6';
   const tonePcs = tonesForSource(resolved.anchor, source);
   let inner = finalizeInner(
     voicing.innerVoicingMidis,
@@ -961,7 +961,7 @@ export function harmonizePhrase(
 
     let picked: RealizedVoicing | null = null;
     let familyLeapWarn = false;
-    const tonePcsForScoring = tonesForSource(resolved.anchor, resolved.kind === 'dim7' ? 'dim' : 'sixth');
+    const tonePcsForScoring = tonesForSource(resolved.anchor, resolved.kind === 'dim7' ? 'dim' : '6');
     if (familyChanged) {
       const entry = pickFamilyEntryRung(ladder, melodyMidi, spacingPreference, prevInner, presetId);
       picked = entry.realization;
@@ -1065,19 +1065,34 @@ function targetPartsForPreset(score: ScoreModel, presetId: string) {
 }
 
 function ensureSqParts(score: ScoreModel): PartModel[] {
-  const defs: Array<{ id: string; name: string; instrumentIdentity: string }> = [
-    { id: SQ_PART_V1, name: 'Violin I', instrumentIdentity: 'violin_1' },
-    { id: SQ_PART_V2, name: 'Violin II', instrumentIdentity: 'violin_2' },
-    { id: SQ_PART_VA, name: 'Viola', instrumentIdentity: 'viola' },
-    { id: SQ_PART_VC, name: 'Cello', instrumentIdentity: 'cello' },
+  const defs: Array<{
+    id: string;
+    name: string;
+    instrumentIdentity: string;
+    midiProgram: number;
+    clef: 'treble' | 'bass';
+  }> = [
+    { id: SQ_PART_V1, name: 'Violin I', instrumentIdentity: 'violin_1', midiProgram: 40, clef: 'treble' },
+    { id: SQ_PART_V2, name: 'Violin II', instrumentIdentity: 'violin_2', midiProgram: 40, clef: 'treble' },
+    { id: SQ_PART_VA, name: 'Viola', instrumentIdentity: 'viola', midiProgram: 41, clef: 'treble' },
+    { id: SQ_PART_VC, name: 'Cello', instrumentIdentity: 'cello', midiProgram: 42, clef: 'bass' },
   ];
   const parts: PartModel[] = [];
   for (const d of defs) {
-    let part = score.parts.find((p) => p.id === d.id);
-    if (!part) {
-      part = { id: d.id, name: d.name, instrumentIdentity: d.instrumentIdentity, measures: [] };
-      score.parts.push(part);
+    const existing = score.parts.find((p) => p.id === d.id);
+    if (existing) {
+      parts.push(existing);
+      continue;
     }
+    const part: PartModel = {
+      id: d.id,
+      name: d.name,
+      instrumentIdentity: d.instrumentIdentity,
+      midiProgram: d.midiProgram,
+      clef: d.clef,
+      measures: [],
+    };
+    score.parts.push(part);
     parts.push(part);
   }
   return parts;
@@ -1209,20 +1224,35 @@ function applyChordMelodyToScoreStringQuartet(
 
 
 function ensureBbParts(score: ScoreModel): PartModel[] {
-  const defs: Array<{ id: string; name: string; instrumentIdentity: string }> = [
-    { id: BB_PART_ALTO1, name: 'Alto Sax 1', instrumentIdentity: 'alto_sax' },
-    { id: BB_PART_ALTO2, name: 'Alto Sax 2', instrumentIdentity: 'alto_sax' },
-    { id: BB_PART_TENOR1, name: 'Tenor Sax 1', instrumentIdentity: 'tenor_sax' },
-    { id: BB_PART_TENOR2, name: 'Tenor Sax 2', instrumentIdentity: 'tenor_sax' },
-    { id: BB_PART_BARI, name: 'Bari Sax', instrumentIdentity: 'baritone_sax' },
+  const defs: Array<{
+    id: string;
+    name: string;
+    instrumentIdentity: string;
+    midiProgram: number;
+    clef: 'treble' | 'bass';
+  }> = [
+    { id: BB_PART_ALTO1, name: 'Alto Sax 1', instrumentIdentity: 'alto_sax', midiProgram: 65, clef: 'treble' },
+    { id: BB_PART_ALTO2, name: 'Alto Sax 2', instrumentIdentity: 'alto_sax', midiProgram: 65, clef: 'treble' },
+    { id: BB_PART_TENOR1, name: 'Tenor Sax 1', instrumentIdentity: 'tenor_sax', midiProgram: 66, clef: 'treble' },
+    { id: BB_PART_TENOR2, name: 'Tenor Sax 2', instrumentIdentity: 'tenor_sax', midiProgram: 66, clef: 'treble' },
+    { id: BB_PART_BARI, name: 'Bari Sax', instrumentIdentity: 'baritone_sax', midiProgram: 67, clef: 'treble' },
   ];
   const parts: PartModel[] = [];
   for (const d of defs) {
-    let part = score.parts.find((p) => p.id === d.id);
-    if (!part) {
-      part = { id: d.id, name: d.name, instrumentIdentity: d.instrumentIdentity, measures: [] };
-      score.parts.push(part);
+    const existing = score.parts.find((p) => p.id === d.id);
+    if (existing) {
+      parts.push(existing);
+      continue;
     }
+    const part: PartModel = {
+      id: d.id,
+      name: d.name,
+      instrumentIdentity: d.instrumentIdentity,
+      midiProgram: d.midiProgram,
+      clef: d.clef,
+      measures: [],
+    };
+    score.parts.push(part);
     parts.push(part);
   }
   return parts;
