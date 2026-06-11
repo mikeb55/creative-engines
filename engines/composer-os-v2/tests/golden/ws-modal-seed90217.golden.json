@@ -1,0 +1,197 @@
+{
+  "seed": 90217,
+  "fixture": "WS_Benchmark_ModalMelody.musicxml",
+  "profile": "ws_isolation_provisional (FROZEN)",
+  "noteCount": 21,
+  "events": [
+    {
+      "bar": 1,
+      "onset": "0.0000",
+      "duration": "1.5000",
+      "pitch": 74,
+      "articulation": "tenuto",
+      "velocity": 76,
+      "accent": "stress"
+    },
+    {
+      "bar": 1,
+      "onset": "1.5000",
+      "duration": "2.5000",
+      "pitch": 77,
+      "articulation": "tenuto",
+      "velocity": 71,
+      "accent": "none"
+    },
+    {
+      "bar": 2,
+      "onset": "0.5000",
+      "duration": "0.2500",
+      "pitch": 69,
+      "articulation": "tenuto",
+      "velocity": 72,
+      "accent": "none"
+    },
+    {
+      "bar": 2,
+      "onset": "0.7500",
+      "duration": "0.7500",
+      "pitch": 74,
+      "articulation": "tenuto",
+      "velocity": 78,
+      "accent": "none"
+    },
+    {
+      "bar": 2,
+      "onset": "1.5000",
+      "duration": "2.5000",
+      "pitch": 76,
+      "articulation": "tenuto",
+      "velocity": 80,
+      "accent": "none"
+    },
+    {
+      "bar": 2,
+      "onset": "4.0000",
+      "duration": "0.5000",
+      "pitch": 67,
+      "articulation": "tenuto",
+      "velocity": 81,
+      "accent": "none"
+    },
+    {
+      "bar": 3,
+      "onset": "0.0000",
+      "duration": "2.0000",
+      "pitch": 69,
+      "articulation": "tenuto",
+      "velocity": 81,
+      "accent": "none"
+    },
+    {
+      "bar": 3,
+      "onset": "2.0000",
+      "duration": "2.0000",
+      "pitch": 72,
+      "articulation": "tenuto",
+      "velocity": 79,
+      "accent": "none"
+    },
+    {
+      "bar": 4,
+      "onset": "0.0000",
+      "duration": "2.0000",
+      "pitch": 76,
+      "articulation": "tenuto",
+      "velocity": 78,
+      "accent": "none"
+    },
+    {
+      "bar": 4,
+      "onset": "2.0000",
+      "duration": "0.2500",
+      "pitch": 70,
+      "articulation": "tenuto",
+      "velocity": 79,
+      "accent": "none"
+    },
+    {
+      "bar": 4,
+      "onset": "2.2500",
+      "duration": "1.7500",
+      "pitch": 67,
+      "articulation": "tenuto",
+      "velocity": 76,
+      "accent": "stress"
+    },
+    {
+      "bar": 5,
+      "onset": "1.0000",
+      "duration": "1.0000",
+      "pitch": 65,
+      "articulation": "tenuto",
+      "velocity": 77,
+      "accent": "stress"
+    },
+    {
+      "bar": 5,
+      "onset": "2.0000",
+      "duration": "2.0000",
+      "pitch": 67,
+      "articulation": "tenuto",
+      "velocity": 72,
+      "accent": "none"
+    },
+    {
+      "bar": 6,
+      "onset": "0.0000",
+      "duration": "1.2500",
+      "pitch": 68,
+      "articulation": "tenuto",
+      "velocity": 81,
+      "accent": "none"
+    },
+    {
+      "bar": 6,
+      "onset": "1.2500",
+      "duration": "0.2500",
+      "pitch": 72,
+      "articulation": "tenuto",
+      "velocity": 80,
+      "accent": "none"
+    },
+    {
+      "bar": 6,
+      "onset": "1.5000",
+      "duration": "1.0000",
+      "pitch": 74,
+      "articulation": "tenuto",
+      "velocity": 81,
+      "accent": "none"
+    },
+    {
+      "bar": 6,
+      "onset": "2.5000",
+      "duration": "1.5000",
+      "pitch": 77,
+      "articulation": "tenuto",
+      "velocity": 79,
+      "accent": "none"
+    },
+    {
+      "bar": 7,
+      "onset": "0.2500",
+      "duration": "4.0000",
+      "pitch": 76,
+      "articulation": "tenuto",
+      "velocity": 77,
+      "accent": "stress"
+    },
+    {
+      "bar": 8,
+      "onset": "3.7500",
+      "duration": "1.0000",
+      "pitch": 69,
+      "articulation": "tenuto",
+      "velocity": 77,
+      "accent": "stress"
+    },
+    {
+      "bar": 8,
+      "onset": "3.7500",
+      "duration": "1.0000",
+      "pitch": 72,
+      "articulation": "tenuto",
+      "velocity": 82,
+      "accent": "none"
+    },
+    {
+      "bar": 8,
+      "onset": "3.7500",
+      "duration": "1.0000",
+      "pitch": 74,
+      "articulation": "tenuto",
+      "velocity": 77,
+      "accent": "stress"
+    }
+  ]
+}

@@ -1,7 +1,8 @@
 /**
- * Wayne Shorter premium-melody conformance thresholds (V86 Commit 2b).
- * Separate from BH thresholds -- Wayne uses modal float (float_preserve, modal_lyric).
- * NO phrase-density arc check (BH-specific).
+ * Wayne Shorter premium-melody conformance thresholds (V86 Commit 2c - FROZEN).
+ * Calibrated on native modal benchmark WS_Benchmark_ModalMelody.musicxml seed 90217.
+ * Separate from BH thresholds - no phrase-density arc check (BH-specific).
+ * BH uniform-float isolation (BH_Benchmark_JazzMelody) sits at IOI-entropy floor edge.
  */
 
 import type { ImportMelodyNote } from '../import/mosaicImportTimeline';
@@ -9,21 +10,29 @@ import type { PremiumMelodyExpressiveNote } from '../premium-melody/enrichMelody
 import type { PremiumMelodyRhythmEnrichmentMeta } from '../premium-melody/premiumMelodyCellLibrary';
 import { melodyOffbeatRatio, melodyIoiEntropy } from '../premium-melody/premiumMelodyMetrics';
 
-const WS_OFFBEAT_RATIO_MIN = 0.28;
-const WS_OFFBEAT_RATIO_MAX = 0.52;
-const WS_IOI_ENTROPY_MIN = 1.4;
-const WS_VELOCITY_SPREAD_MIN = 4;
-const WS_VELOCITY_SPREAD_MAX = 12;
+/** Modal benchmark seed 90217: ~0.571. BH isolation uniform-float: ~0.500 (lower band). */
+export const WS_OFFBEAT_RATIO_MIN = 0.28;
+export const WS_OFFBEAT_RATIO_MAX = 0.58;
+/** Modal benchmark: ~3.35. BH isolation uniform-float: ~1.84 (edge pass). */
+export const WS_IOI_ENTROPY_MIN = 1.83;
+/** Both benchmarks land ~11 on seed 90217; max 12 keeps headroom. */
+export const WS_VELOCITY_SPREAD_MIN = 4;
+export const WS_VELOCITY_SPREAD_MAX = 12;
 
 export interface WsPremiumMelodyConformanceResult {
   pass: boolean;
   offbeatRatio: number;
+  offbeatRatioMin: number;
+  offbeatRatioMax: number;
   offbeatRatioPass: boolean;
   ioiEntropy: number;
+  ioiEntropyMin: number;
   ioiEntropyPass: boolean;
   velocityMin: number;
   velocityMax: number;
   velocitySpread: number;
+  velocitySpreadMin: number;
+  velocitySpreadMax: number;
   velocitySpreadPass: boolean;
   details: string[];
 }
@@ -50,25 +59,46 @@ export function validateWsPremiumMelodyConformance(
 
   const details: string[] = [];
   if (!offbeatRatioPass) {
-    details.push('offbeatRatio ' + offbeatRatio.toFixed(3) + ' outside [' + WS_OFFBEAT_RATIO_MIN + ', ' + WS_OFFBEAT_RATIO_MAX + ']');
+    details.push(
+      'offbeatRatio ' +
+        offbeatRatio.toFixed(3) +
+        ' outside [' +
+        WS_OFFBEAT_RATIO_MIN +
+        ', ' +
+        WS_OFFBEAT_RATIO_MAX +
+        ']'
+    );
   }
   if (!ioiEntropyPass) {
     details.push('ioiEntropy ' + ioiEntropy.toFixed(3) + ' < ' + WS_IOI_ENTROPY_MIN);
   }
   if (!velocitySpreadPass) {
-    details.push('velocitySpread ' + velocitySpread + ' outside [' + WS_VELOCITY_SPREAD_MIN + ', ' + WS_VELOCITY_SPREAD_MAX + ']');
+    details.push(
+      'velocitySpread ' +
+        velocitySpread +
+        ' outside [' +
+        WS_VELOCITY_SPREAD_MIN +
+        ', ' +
+        WS_VELOCITY_SPREAD_MAX +
+        ']'
+    );
   }
 
   const pass = offbeatRatioPass && ioiEntropyPass && velocitySpreadPass;
   return {
     pass,
     offbeatRatio,
+    offbeatRatioMin: WS_OFFBEAT_RATIO_MIN,
+    offbeatRatioMax: WS_OFFBEAT_RATIO_MAX,
     offbeatRatioPass,
     ioiEntropy,
+    ioiEntropyMin: WS_IOI_ENTROPY_MIN,
     ioiEntropyPass,
     velocityMin,
     velocityMax,
     velocitySpread,
+    velocitySpreadMin: WS_VELOCITY_SPREAD_MIN,
+    velocitySpreadMax: WS_VELOCITY_SPREAD_MAX,
     velocitySpreadPass,
     details,
   };

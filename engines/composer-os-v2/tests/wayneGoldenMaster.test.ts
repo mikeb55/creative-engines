@@ -1,7 +1,8 @@
 ﻿/**
- * V86 Commit 2a - Wayne Shorter golden-master baseline (isolation, seed 90217).
- * Byte-exact characterization of Wayne premium-melody rhythm + expression + export on reused BH pitches (isolation/determinism only)\.
- * PROVISIONAL - re-approved in 2b (tuning) and 2c (native modal benchmark)\. Not Wayne-authentic\.
+ * V86 Commit 2c - Wayne Shorter golden-master (FROZEN, seed 90217).
+ * Byte-exact characterization of Wayne premium-melody rhythm + expression + export
+ * on native modal benchmark WS_Benchmark_ModalMelody.musicxml.
+ * FROZEN - regenerate only in a commit whose stated purpose is changing Wayne output.
  */
 
 import * as crypto from 'crypto';
@@ -15,18 +16,18 @@ import type { Articulation, NoteEvent, ScoreModel } from '../core/score-model/sc
 import type { PremiumMelodyDurationAccentKind } from '../core/premium-melody/enrichMelodyExpression';
 
 export const WS_GOLDEN_SEED = 90217;
-export const WS_GOLDEN_FIXTURE_NAME = 'BH_Benchmark_JazzMelody.musicxml';
-export const WS_GOLDEN_PROFILE = 'ws_isolation_provisional (PROVISIONAL)';
+export const WS_GOLDEN_FIXTURE_NAME = 'WS_Benchmark_ModalMelody.musicxml';
+export const WS_GOLDEN_PROFILE = 'ws_isolation_provisional (FROZEN)';
 
 const GOLDEN_DIR = path.join(__dirname, 'golden');
-const JSON_FIXTURE = path.join(GOLDEN_DIR, 'ws-isolation-seed90217.golden.json');
-const XML_FIXTURE = path.join(GOLDEN_DIR, 'ws-isolation-seed90217.golden.musicxml');
+const JSON_FIXTURE = path.join(GOLDEN_DIR, 'ws-modal-seed90217.golden.json');
+const XML_FIXTURE = path.join(GOLDEN_DIR, 'ws-modal-seed90217.golden.musicxml');
 
 const BENCHMARK_FIXTURE = path.join(
   __dirname,
   '..',
   'core',
-  'barry-harris',
+  'wayne-shorter',
   'test-fixtures',
   WS_GOLDEN_FIXTURE_NAME
 );
@@ -111,7 +112,7 @@ export function serializeWsGoldenJson(payload: WsGoldenJsonPayload): string {
 
 export function runWsGoldenPath(): { score: ScoreModel; xml: string } {
   if (!fs.existsSync(BENCHMARK_FIXTURE)) {
-    throw new Error(`BH jazz benchmark fixture missing: ${BENCHMARK_FIXTURE}`);
+    throw new Error(`WS modal benchmark fixture missing: ${BENCHMARK_FIXTURE}`);
   }
   const ir = musicXmlToImportTimeline(fs.readFileSync(BENCHMARK_FIXTURE, 'utf8'));
   const locked = importTimelineToLockedHarmony(ir);
@@ -309,6 +310,3 @@ if (require.main === module) {
   console.error('Usage: npx tsx wayneGoldenMaster.test.ts write-fixtures | run');
   process.exit(1);
 }
-
-
-
