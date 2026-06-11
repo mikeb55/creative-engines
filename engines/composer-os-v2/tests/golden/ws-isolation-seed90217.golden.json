@@ -25,7 +25,7 @@
     {
       "bar": 2,
       "onset": "0.0000",
-      "duration": "0.2500",
+      "duration": "2.0000",
       "pitch": 69,
       "articulation": "tenuto",
       "velocity": 71,
@@ -33,8 +33,8 @@
     },
     {
       "bar": 2,
-      "onset": "0.2500",
-      "duration": "3.7500",
+      "onset": "2.0000",
+      "duration": "2.0000",
       "pitch": 67,
       "articulation": "tenuto",
       "velocity": 72,
@@ -43,28 +43,28 @@
     {
       "bar": 3,
       "onset": "0.0000",
-      "duration": "2.5000",
+      "duration": "2.0000",
       "pitch": 69,
       "articulation": "tenuto",
-      "velocity": 83,
+      "velocity": 79,
       "accent": "none"
     },
     {
       "bar": 3,
-      "onset": "2.5000",
+      "onset": "2.0000",
       "duration": "2.0000",
       "pitch": 70,
       "articulation": "tenuto",
-      "velocity": 83,
+      "velocity": 79,
       "accent": "none"
     },
     {
       "bar": 4,
-      "onset": "0.5000",
-      "duration": "1.7500",
+      "onset": "0.2500",
+      "duration": "2.0000",
       "pitch": 71,
       "articulation": "tenuto",
-      "velocity": 85,
+      "velocity": 81,
       "accent": "none"
     },
     {
@@ -73,61 +73,61 @@
       "duration": "2.0000",
       "pitch": 66,
       "articulation": "tenuto",
-      "velocity": 85,
+      "velocity": 81,
       "accent": "none"
     },
     {
       "bar": 5,
-      "onset": "0.0000",
-      "duration": "2.5000",
+      "onset": "0.5000",
+      "duration": "1.2500",
       "pitch": 71,
       "articulation": "tenuto",
-      "velocity": 85,
+      "velocity": 81,
       "accent": "none"
     },
     {
       "bar": 5,
-      "onset": "2.5000",
-      "duration": "2.0000",
+      "onset": "1.7500",
+      "duration": "2.2500",
       "pitch": 69,
       "articulation": "tenuto",
-      "velocity": 86,
+      "velocity": 82,
       "accent": "none"
     },
     {
       "bar": 6,
-      "onset": "0.2500",
-      "duration": "1.7500",
-      "pitch": 71,
-      "articulation": "tenuto",
-      "velocity": 83,
-      "accent": "none"
-    },
-    {
-      "bar": 6,
-      "onset": "2.0000",
-      "duration": "2.0000",
-      "pitch": 66,
-      "articulation": "tenuto",
-      "velocity": 84,
-      "accent": "none"
-    },
-    {
-      "bar": 7,
-      "onset": "0.2500",
+      "onset": "0.0000",
       "duration": "2.2500",
       "pitch": 71,
       "articulation": "tenuto",
-      "velocity": 83,
+      "velocity": 79,
+      "accent": "none"
+    },
+    {
+      "bar": 6,
+      "onset": "2.2500",
+      "duration": "2.0000",
+      "pitch": 66,
+      "articulation": "tenuto",
+      "velocity": 80,
       "accent": "none"
     },
     {
       "bar": 7,
-      "onset": "2.5000",
+      "onset": "0.5000",
+      "duration": "2.2500",
+      "pitch": 71,
+      "articulation": "tenuto",
+      "velocity": 79,
+      "accent": "none"
+    },
+    {
+      "bar": 7,
+      "onset": "2.7500",
       "duration": "2.0000",
       "pitch": 70,
       "articulation": "tenuto",
-      "velocity": 84,
+      "velocity": 80,
       "accent": "none"
     },
     {
@@ -136,7 +136,7 @@
       "duration": "1.7500",
       "pitch": 67,
       "articulation": "tenuto",
-      "velocity": 82,
+      "velocity": 78,
       "accent": "none"
     },
     {

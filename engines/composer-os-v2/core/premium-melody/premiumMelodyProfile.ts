@@ -3,6 +3,8 @@
  * Composer-specific builders (e.g. buildBarryHarrisPremiumMelodyProfile) map local profiles here.
  */
 
+import type { PremiumMelodyCellFamily } from './premiumMelodyCellLibrary';
+
 /** Beat-1/3 grounded structural landing (Barry Harris default). */
 export type PremiumMelodyStructuralLandingMode = 'bh_grounded' | 'float_preserve';
 
@@ -42,4 +44,9 @@ export interface PremiumMelodyProfile {
   expressionCharacter?: PremiumMelodyExpressionCharacter;
   /** XOR salt mixed into per-note rhythm PRNG derivation (0 = legacy BH). */
   rhythmSeedSalt?: number;
+  /**
+   * Per-family weight multiplier applied after all phase-position logic.
+   * undefined (default) = no change; BH builders must NOT set this field.
+   */
+  cellFamilyWeightScale?: Partial<Record<PremiumMelodyCellFamily, number>>;
 }

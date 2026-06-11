@@ -186,7 +186,10 @@ import {
   insertPassingDiminishedEvents,
   resolveBhMelodyRhythmProfile,
 } from '../barry-harris';
-import { enrichMelodyRhythm, enrichMelodyExpression, pinPremiumMelodyExport } from '../premium-melody';
+import {
+  runPremiumMelodyHarmonyRhythmExpressionPipeline,
+  applyPremiumMelodyPinExport,
+} from '../premium-melody';
 import { buildWayneShorterIsolationProvisionalProfile } from '../wayne-shorter/wsPremiumMelodyProfile';
 import { validateSongModeMotifSystem } from '../motif/songModeMotifEngine';
 import { validateSongModePhraseEngineV1 } from './songModePhraseEngineV1';
@@ -3218,14 +3221,18 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       )
     );
     const rhythmMeta = { familyCounts: {}, totalNotes: 0 };
-    const rhythmMelody =
-      bhPresetId === 'guitar_bass_duo'
-        ? enrichMelodyRhythm(melodyLine, bhRhythmProfile, { seed, meta: rhythmMeta })
-        : melodyLine;
-    const exportMelody =
-      bhPresetId === 'guitar_bass_duo'
-        ? enrichMelodyExpression(rhythmMelody, bhRhythmProfile, { seed, rhythmMeta })
-        : melodyLine;
+    let rhythmMelody: typeof melodyLine = melodyLine;
+    let exportMelody: typeof melodyLine = melodyLine;
+    if (bhPresetId === 'guitar_bass_duo') {
+      const bhPipeline = runPremiumMelodyHarmonyRhythmExpressionPipeline(
+        melodyLine,
+        bhRhythmProfile,
+        seed
+      );
+      rhythmMelody = bhPipeline.rhythmMelody;
+      exportMelody = bhPipeline.exportMelody as typeof melodyLine;
+      Object.assign(rhythmMeta, bhPipeline.rhythmMeta);
+    }
     score = applyChordMelodyToScore(score, resolvedNotes, melodyLine, bhPresetId, {
       exportMelody,
     });
@@ -3242,14 +3249,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   ) {
     const wsProfile = buildWayneShorterIsolationProvisionalProfile();
     const melodyLine = options.importTimeline.melodyLine;
-    const rhythmMeta = { familyCounts: {}, totalNotes: 0 };
-    const rhythmMelody = enrichMelodyRhythm(melodyLine, wsProfile, { seed, meta: rhythmMeta });
-    const exportMelody = enrichMelodyExpression(rhythmMelody, wsProfile, { seed, rhythmMeta });
-    score = pinPremiumMelodyExport(score, exportMelody);
+    const wsPinResult = applyPremiumMelodyPinExport(score, melodyLine, wsProfile, seed);
+    score = wsPinResult.score;
     appliedContext.generationMetadata = {
       ...appliedContext.generationMetadata,
       waynePremiumMelodyProfile: wsProfile.id,
-      waynePremiumMelodyRhythmMeta: rhythmMeta,
+      waynePremiumMelodyRhythmMeta: wsPinResult.rhythmMeta,
     };
   }
   if (styleTransferDeferBarMath && !isIndieTuningFixture) {

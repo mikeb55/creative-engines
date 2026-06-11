@@ -64,13 +64,16 @@ const CELL_TEMPLATES: Record<PremiumMelodyCellFamily, PremiumMelodyCellTemplate[
 /**
  * Base weight for a cell family given profile params and phrase position.
  * indexInPhrase / phraseLength drive climax proximity weighting.
+ * cellFamilyWeightScale (optional) applies a per-family multiplier after all phase logic;
+ * omitting it (undefined) leaves weights unchanged — safe for BH.
  */
 export function familyWeightForPhase(
   family: PremiumMelodyCellFamily,
   syncopationShiftRate: number,
   anticipationBias: number,
   indexInPhrase: number,
-  phraseLength: number
+  phraseLength: number,
+  cellFamilyWeightScale?: Partial<Record<PremiumMelodyCellFamily, number>>
 ): number {
   const phaseNorm = phraseLength > 1 ? indexInPhrase / (phraseLength - 1) : 0.5;
   const sparse = phaseNorm < 0.28;
@@ -95,6 +98,10 @@ export function familyWeightForPhase(
     if (family === "long_gap" || family === "delayed") w *= 1.35;
     if (family === "triplet_pickup") w *= 0.65;
   }
+  if (cellFamilyWeightScale) {
+    const scale = cellFamilyWeightScale[family];
+    if (scale !== undefined) w *= scale;
+  }
   return Math.max(0.05, w);
 }
 
@@ -116,6 +123,7 @@ export function pickWeightedTemplate(
  * - Profile-driven base weights (syncopationShiftRate, anticipationBias)
  * - Anti-repeat penalty: >28% recent-window share, or immediate repeat
  * - Triplet cap when projected offbeat rate > 72%
+ * - Optional cellFamilyWeightScale multiplier (undefined = no change, BH safe)
  */
 export function selectRhythmCellForNote(
   syncopationShiftRate: number,
@@ -125,7 +133,8 @@ export function selectRhythmCellForNote(
   recentFamilies: PremiumMelodyCellFamily[],
   projectedOffbeatRate: number,
   rand: () => number,
-  projectedOffbeatBlockThreshold = 0.72
+  projectedOffbeatBlockThreshold = 0.72,
+  cellFamilyWeightScale?: Partial<Record<PremiumMelodyCellFamily, number>>
 ): PremiumMelodyCellFamily {
   const blocked = new Set<PremiumMelodyCellFamily>();
   if (projectedOffbeatRate > projectedOffbeatBlockThreshold) {
@@ -142,7 +151,7 @@ export function selectRhythmCellForNote(
 
   const weights: [PremiumMelodyCellFamily, number][] = ALL_FAMILIES.map((f) => {
     if (blocked.has(f)) return [f, 0];
-    let w = familyWeightForPhase(f, syncopationShiftRate, anticipationBias, indexInPhrase, phraseLength);
+    let w = familyWeightForPhase(f, syncopationShiftRate, anticipationBias, indexInPhrase, phraseLength, cellFamilyWeightScale);
     const share = (recentCount.get(f) ?? 0) / recentTotal;
     if (share > 0.22) w *= 0.25;
     if (lastFamily === f) w *= 0.45;

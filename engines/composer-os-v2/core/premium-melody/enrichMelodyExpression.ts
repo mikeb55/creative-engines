@@ -59,11 +59,11 @@ const VELOCITY_BASE = 74;
 const VELOCITY_PEAK = 96;
 const VELOCITY_CADENCE = 80;
 
-/** PROVISIONAL (V86 2-pre-2) — tune in Wayne 2b. */
+/** Tuned in Wayne 2b — spread target 4–12 per phrase (peak lowered 84->80). */
 const MODAL_LYRIC_VELOCITY_MIN = 62;
 const MODAL_LYRIC_VELOCITY_MAX = 92;
 const MODAL_LYRIC_VELOCITY_BASE = 70;
-const MODAL_LYRIC_VELOCITY_PEAK = 84;
+const MODAL_LYRIC_VELOCITY_PEAK = 80;
 const MODAL_LYRIC_VELOCITY_CADENCE = 76;
 
 function sortMelody(notes: readonly ImportMelodyNote[]): ImportMelodyNote[] {
@@ -134,7 +134,8 @@ function replayCellFamilies(
       recentFamilies.slice(-7),
       projectedOffbeatRate,
       rand,
-      projectedOffbeatBlockThreshold
+      projectedOffbeatBlockThreshold,
+      profile.cellFamilyWeightScale
     );
     pickWeightedTemplate(family, recentFamilies, rand);
     recentFamilies.push(family);
@@ -168,7 +169,7 @@ function phraseArcVelocity(
   return Math.round(Math.min(VELOCITY_MAX, Math.max(VELOCITY_MIN, v)));
 }
 
-/** PROVISIONAL (V86 2-pre-2) — softer arc; tune in Wayne 2b. */
+/** Tuned in Wayne 2b — softer arc; spread target 4–12 per phrase. */
 function phraseArcVelocityModalLyric(
   indexInPhrase: number,
   phraseLen: number,
@@ -212,7 +213,7 @@ function assignArticulation(
   return 'tenuto';
 }
 
-/** PROVISIONAL (V86 2-pre-2) — lighter articulation weighting; tune in Wayne 2b. */
+/** Tuned in Wayne 2b — lighter articulation weighting for modal float. */
 function assignArticulationModalLyric(
   family: PremiumMelodyCellFamily | 'structural',
   isLanding: boolean,

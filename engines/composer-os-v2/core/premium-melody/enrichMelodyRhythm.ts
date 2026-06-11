@@ -156,7 +156,8 @@ export function enrichMelodyRhythm(
       recentFamilies.slice(-7),
       projectedOffbeatRate,
       rand,
-      projectedOffbeatBlockThreshold
+      projectedOffbeatBlockThreshold,
+      profile.cellFamilyWeightScale
     );
     const template = pickWeightedTemplate(family, recentFamilies, rand);
     let onsetBeat = interiorOnsetFromCellLibrary(note.onsetBeat, family, template);

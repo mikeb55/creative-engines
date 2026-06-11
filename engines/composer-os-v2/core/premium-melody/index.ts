@@ -63,3 +63,10 @@ export {
   type PinPremiumMelodyExportOptions,
 } from './premiumMelodyPin';
 
+export {
+  runPremiumMelodyHarmonyRhythmExpressionPipeline,
+  applyPremiumMelodyPinExport,
+  type PremiumMelodyPipelineResult,
+  type PremiumMelodyPinResult,
+} from './premiumMelodyRouting';
+
