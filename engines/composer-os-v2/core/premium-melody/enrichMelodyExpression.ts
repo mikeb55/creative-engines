@@ -59,6 +59,13 @@ const VELOCITY_BASE = 74;
 const VELOCITY_PEAK = 96;
 const VELOCITY_CADENCE = 80;
 
+/** PROVISIONAL (V86 2-pre-2) — tune in Wayne 2b. */
+const MODAL_LYRIC_VELOCITY_MIN = 62;
+const MODAL_LYRIC_VELOCITY_MAX = 92;
+const MODAL_LYRIC_VELOCITY_BASE = 70;
+const MODAL_LYRIC_VELOCITY_PEAK = 84;
+const MODAL_LYRIC_VELOCITY_CADENCE = 76;
+
 function sortMelody(notes: readonly ImportMelodyNote[]): ImportMelodyNote[] {
   return [...notes].sort(
     (a, b) => a.bar - b.bar || a.onsetBeat - b.onsetBeat || a.midiPitch - b.midiPitch
@@ -161,6 +168,32 @@ function phraseArcVelocity(
   return Math.round(Math.min(VELOCITY_MAX, Math.max(VELOCITY_MIN, v)));
 }
 
+/** PROVISIONAL (V86 2-pre-2) — softer arc; tune in Wayne 2b. */
+function phraseArcVelocityModalLyric(
+  indexInPhrase: number,
+  phraseLen: number,
+  isLanding: boolean,
+  rand01: number
+): number {
+  if (phraseLen <= 1) return MODAL_LYRIC_VELOCITY_BASE;
+  const t = indexInPhrase / Math.max(1, phraseLen - 1);
+  let v: number;
+  if (isLanding) {
+    v = MODAL_LYRIC_VELOCITY_CADENCE + rand01 * 2;
+  } else if (t < 0.25) {
+    v = MODAL_LYRIC_VELOCITY_BASE + t * 10;
+  } else if (t > 0.85) {
+    v = MODAL_LYRIC_VELOCITY_PEAK - (t - 0.85) * 28;
+  } else {
+    const peakT = 0.5;
+    const dist = Math.abs(t - peakT);
+    v = MODAL_LYRIC_VELOCITY_PEAK - dist * 10 + rand01 * 3;
+  }
+  return Math.round(
+    Math.min(MODAL_LYRIC_VELOCITY_MAX, Math.max(MODAL_LYRIC_VELOCITY_MIN, v))
+  );
+}
+
 function assignArticulation(
   family: PremiumMelodyCellFamily | 'structural',
   isLanding: boolean,
@@ -176,6 +209,22 @@ function assignArticulation(
   if (family === 'anticipate' || family === 'and_of_2') return 'tenuto';
   if (family === 'delayed' || family === 'dotted') return 'tenuto';
   if (family === 'triplet_pickup') return 'staccato';
+  return 'tenuto';
+}
+
+/** PROVISIONAL (V86 2-pre-2) — lighter articulation weighting; tune in Wayne 2b. */
+function assignArticulationModalLyric(
+  family: PremiumMelodyCellFamily | 'structural',
+  isLanding: boolean,
+  shortOffbeat: boolean,
+  runningInterior: boolean
+): Articulation {
+  if (isLanding) return 'tenuto';
+  if (shortOffbeat && family === 'triplet_pickup') return 'staccato';
+  if (runningInterior && (family === 'and_of_2' || family === 'dotted')) return 'tenuto';
+  if (family === 'anticipate' || family === 'and_of_2' || family === 'delayed' || family === 'dotted') {
+    return 'tenuto';
+  }
   return 'tenuto';
 }
 
@@ -229,56 +278,154 @@ export function enrichMelodyExpression(
 
   const out: PremiumMelodyExpressiveNote[] = ordered.map((note, index) => {
     switch (expressionCharacter) {
-      case 'bh_bebop':
+      case 'bh_bebop': {
+        const family = families[index]!;
+        const isLanding = isStructuralLandingIndex(index, roles);
+        const phraseIdx = indexInPhrase(ordered, index, roles);
+        const phraseLen = phraseLengthAt(index, roles, ordered.length);
+        const noteSeed = deriveMelodyRhythmSeed(baseSeed, index + 10007, rhythmSeedSalt);
+        const rand = mulberry32(noteSeed);
+
+        const ioi = ioiToNext(ordered, index);
+        const shortOffbeat = isOffbeatOnset(note.onsetBeat) && ioi <= 0.75 && note.durationBeats <= 0.75;
+        const running = isRunningInterior(ordered, index, roles);
+
+        const articulation = assignArticulation(family, isLanding, shortOffbeat, running);
+        articulationCounts[articulation] = (articulationCounts[articulation] ?? 0) + 1;
+
+        if (isLanding) {
+          structuralLandingTotal++;
+          if (articulation === 'accent') structuralLandingAccentHits++;
+        }
+
+        const velocity = phraseArcVelocity(phraseIdx, phraseLen, isLanding, rand());
+        velocityMin = Math.min(velocityMin, velocity);
+        velocityMax = Math.max(velocityMax, velocity);
+
+        const sortedPhraseStarts = [...roles.phraseStarts].sort((a, b) => a - b);
+        let phraseKey = 0;
+        for (const start of sortedPhraseStarts) {
+          if (start <= index) phraseKey = start;
+          else break;
+        }
+        const bucket = phraseVelocities.get(phraseKey) ?? [];
+        bucket.push(velocity);
+        phraseVelocities.set(phraseKey, bucket);
+
+        let durationAccent: PremiumMelodyDurationAccentKind = 'none';
+        if (isLanding || (phraseIdx === Math.floor(phraseLen * 0.55) && articulation === 'tenuto')) {
+          durationAccent = 'stress';
+          durationAccentCount++;
+        } else if (shortOffbeat && articulation === 'staccato') {
+          durationAccent = 'stress';
+          durationAccentCount++;
+        }
+
+        return {
+          ...note,
+          articulation,
+          velocity,
+          durationAccent,
+        };
+      }
+      case 'modal_lyric': {
+        const family = families[index]!;
+        const isLanding = isStructuralLandingIndex(index, roles);
+        const phraseIdx = indexInPhrase(ordered, index, roles);
+        const phraseLen = phraseLengthAt(index, roles, ordered.length);
+        const noteSeed = deriveMelodyRhythmSeed(baseSeed, index + 10007, rhythmSeedSalt);
+        const rand = mulberry32(noteSeed);
+
+        const ioi = ioiToNext(ordered, index);
+        const shortOffbeat = isOffbeatOnset(note.onsetBeat) && ioi <= 0.75 && note.durationBeats <= 0.75;
+        const running = isRunningInterior(ordered, index, roles);
+
+        const articulation = assignArticulationModalLyric(family, isLanding, shortOffbeat, running);
+        articulationCounts[articulation] = (articulationCounts[articulation] ?? 0) + 1;
+
+        if (isLanding) {
+          structuralLandingTotal++;
+          if (articulation === 'accent') structuralLandingAccentHits++;
+        }
+
+        const velocity = phraseArcVelocityModalLyric(phraseIdx, phraseLen, isLanding, rand());
+        velocityMin = Math.min(velocityMin, velocity);
+        velocityMax = Math.max(velocityMax, velocity);
+
+        const sortedPhraseStarts = [...roles.phraseStarts].sort((a, b) => a - b);
+        let phraseKey = 0;
+        for (const start of sortedPhraseStarts) {
+          if (start <= index) phraseKey = start;
+          else break;
+        }
+        const bucket = phraseVelocities.get(phraseKey) ?? [];
+        bucket.push(velocity);
+        phraseVelocities.set(phraseKey, bucket);
+
+        let durationAccent: PremiumMelodyDurationAccentKind = 'none';
+        if (isLanding && articulation === 'tenuto') {
+          durationAccent = 'stress';
+          durationAccentCount++;
+        }
+
+        return {
+          ...note,
+          articulation,
+          velocity,
+          durationAccent,
+        };
+      }
       default: {
-    const family = families[index]!;
-    const isLanding = isStructuralLandingIndex(index, roles);
-    const phraseIdx = indexInPhrase(ordered, index, roles);
-    const phraseLen = phraseLengthAt(index, roles, ordered.length);
-    const noteSeed = deriveMelodyRhythmSeed(baseSeed, index + 10007, rhythmSeedSalt);
-    const rand = mulberry32(noteSeed);
+        const _exhaustive: never = expressionCharacter;
+        void _exhaustive;
+        const family = families[index]!;
+        const isLanding = isStructuralLandingIndex(index, roles);
+        const phraseIdx = indexInPhrase(ordered, index, roles);
+        const phraseLen = phraseLengthAt(index, roles, ordered.length);
+        const noteSeed = deriveMelodyRhythmSeed(baseSeed, index + 10007, rhythmSeedSalt);
+        const rand = mulberry32(noteSeed);
 
-    const ioi = ioiToNext(ordered, index);
-    const shortOffbeat = isOffbeatOnset(note.onsetBeat) && ioi <= 0.75 && note.durationBeats <= 0.75;
-    const running = isRunningInterior(ordered, index, roles);
+        const ioi = ioiToNext(ordered, index);
+        const shortOffbeat = isOffbeatOnset(note.onsetBeat) && ioi <= 0.75 && note.durationBeats <= 0.75;
+        const running = isRunningInterior(ordered, index, roles);
 
-    const articulation = assignArticulation(family, isLanding, shortOffbeat, running);
-    articulationCounts[articulation] = (articulationCounts[articulation] ?? 0) + 1;
+        const articulation = assignArticulation(family, isLanding, shortOffbeat, running);
+        articulationCounts[articulation] = (articulationCounts[articulation] ?? 0) + 1;
 
-    if (isLanding) {
-      structuralLandingTotal++;
-      if (articulation === 'accent') structuralLandingAccentHits++;
-    }
+        if (isLanding) {
+          structuralLandingTotal++;
+          if (articulation === 'accent') structuralLandingAccentHits++;
+        }
 
-    const velocity = phraseArcVelocity(phraseIdx, phraseLen, isLanding, rand());
-    velocityMin = Math.min(velocityMin, velocity);
-    velocityMax = Math.max(velocityMax, velocity);
+        const velocity = phraseArcVelocity(phraseIdx, phraseLen, isLanding, rand());
+        velocityMin = Math.min(velocityMin, velocity);
+        velocityMax = Math.max(velocityMax, velocity);
 
-    const sortedPhraseStarts = [...roles.phraseStarts].sort((a, b) => a - b);
-    let phraseKey = 0;
-    for (const start of sortedPhraseStarts) {
-      if (start <= index) phraseKey = start;
-      else break;
-    }
-    const bucket = phraseVelocities.get(phraseKey) ?? [];
-    bucket.push(velocity);
-    phraseVelocities.set(phraseKey, bucket);
+        const sortedPhraseStarts = [...roles.phraseStarts].sort((a, b) => a - b);
+        let phraseKey = 0;
+        for (const start of sortedPhraseStarts) {
+          if (start <= index) phraseKey = start;
+          else break;
+        }
+        const bucket = phraseVelocities.get(phraseKey) ?? [];
+        bucket.push(velocity);
+        phraseVelocities.set(phraseKey, bucket);
 
-    let durationAccent: PremiumMelodyDurationAccentKind = 'none';
-    if (isLanding || (phraseIdx === Math.floor(phraseLen * 0.55) && articulation === 'tenuto')) {
-      durationAccent = 'stress';
-      durationAccentCount++;
-    } else if (shortOffbeat && articulation === 'staccato') {
-      durationAccent = 'stress';
-      durationAccentCount++;
-    }
+        let durationAccent: PremiumMelodyDurationAccentKind = 'none';
+        if (isLanding || (phraseIdx === Math.floor(phraseLen * 0.55) && articulation === 'tenuto')) {
+          durationAccent = 'stress';
+          durationAccentCount++;
+        } else if (shortOffbeat && articulation === 'staccato') {
+          durationAccent = 'stress';
+          durationAccentCount++;
+        }
 
-    return {
-      ...note,
-      articulation,
-      velocity,
-      durationAccent,
-    };
+        return {
+          ...note,
+          articulation,
+          velocity,
+          durationAccent,
+        };
       }
     }
   });

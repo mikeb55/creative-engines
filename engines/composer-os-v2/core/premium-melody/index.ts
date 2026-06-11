@@ -57,3 +57,9 @@ export {
   type PremiumMelodyExpressiveNote,
   type PremiumMelodyExpressionEnrichmentMeta,
 } from './enrichMelodyExpression';
+
+export {
+  pinPremiumMelodyExport,
+  type PinPremiumMelodyExportOptions,
+} from './premiumMelodyPin';
+

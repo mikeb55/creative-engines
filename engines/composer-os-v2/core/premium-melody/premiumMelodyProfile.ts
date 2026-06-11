@@ -4,10 +4,10 @@
  */
 
 /** Beat-1/3 grounded structural landing (Barry Harris default). */
-export type PremiumMelodyStructuralLandingMode = 'bh_grounded';
+export type PremiumMelodyStructuralLandingMode = 'bh_grounded' | 'float_preserve';
 
 /** Barry Harris bebop articulation + velocity arc (default expression character). */
-export type PremiumMelodyExpressionCharacter = 'bh_bebop';
+export type PremiumMelodyExpressionCharacter = 'bh_bebop' | 'modal_lyric';
 
 export const PREMIUM_MELODY_DEFAULT_OFFBEAT_TRIM_CEILING = 0.74;
 export const PREMIUM_MELODY_DEFAULT_BAR_SLOT_NUDGES_ENABLED = true;

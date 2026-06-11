@@ -116,6 +116,18 @@ function structuralLandingOnsetBhGrounded(
   return nearestStructuralBeat(note.onsetBeat);
 }
 
+/** Preserve imported onsets on phrase starts/ends (Wayne float path). */
+function structuralLandingOnsetFloatPreserve(
+  note: ImportMelodyNote,
+  index: number,
+  roles: PremiumMelodyPhraseRoles
+): number {
+  if (roles.phraseStarts.has(index) || roles.phraseEnds.has(index)) {
+    return note.onsetBeat;
+  }
+  return note.onsetBeat;
+}
+
 export function structuralLandingOnset(
   note: ImportMelodyNote,
   index: number,
@@ -125,6 +137,8 @@ export function structuralLandingOnset(
   switch (mode) {
     case 'bh_grounded':
       return structuralLandingOnsetBhGrounded(note, index, roles);
+    case 'float_preserve':
+      return structuralLandingOnsetFloatPreserve(note, index, roles);
     default: {
       const _exhaustive: never = mode;
       return structuralLandingOnsetBhGrounded(note, index, roles);
