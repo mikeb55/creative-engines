@@ -17,6 +17,7 @@ import {
   applyStringQuartetDistribution,
   passingDimExportDurationBeats,
   spreadSqDimVoicingBelowMelody,
+  widenSqDimInner,
 } from './stringQuartetVoicing';
 import {
   SQ_PART_V1,
@@ -269,6 +270,295 @@ function alignInnerToPrevious(
   return innerBelowMelodyMinDisplacement(melodyMidi, tonePcs, prevInner);
 }
 
+function greedyInnerWithinLeapCap(
+  prevInner: readonly number[],
+  melodyMidi: number,
+  tonePcs: readonly number[],
+  maxLeap: number
+): number[] {
+  const melodyPc = mod12(melodyMidi);
+  const pcs = tonePcs.filter((pc) => pc !== melodyPc);
+  const out: number[] = [];
+  const usedPcs = new Set<number>();
+
+  for (const prev of prevInner) {
+    let bestMidi: number | null = null;
+    let bestDist = Infinity;
+    for (const pc of pcs) {
+      if (usedPcs.has(pc)) continue;
+      for (let m = melodyMidi - 12; m >= melodyMidi - 72; m--) {
+        if (mod12(m) !== pc || m >= melodyMidi) continue;
+        const d = Math.abs(m - prev);
+        if (d <= maxLeap && d < bestDist) {
+          bestDist = d;
+          bestMidi = m;
+        }
+      }
+    }
+    if (bestMidi != null) {
+      out.push(bestMidi);
+      usedPcs.add(mod12(bestMidi));
+    }
+  }
+
+  if (out.length > 0) return out.sort((a, b) => a - b);
+  return innerBelowMelodyMinDisplacement(melodyMidi, tonePcs, prevInner);
+}
+
+function isAndOfOnePassingDimOnset(onsetBeat: number): boolean {
+  return Math.abs(onsetBeat - 0.5) < 0.05;
+}
+
+function andOfOnePassingDimVoicingHeadroom(melodyMidi: number): number {
+  return melodyMidi + 12;
+}
+
+function buildAndOfOnePassingDimInner(
+  melodyMidi: number,
+  dimTonePcs: readonly number[],
+  prevInner: readonly number[] | null,
+  nextMelodyMidi: number | undefined,
+  presetId?: string
+): number[] {
+  const headroom = andOfOnePassingDimVoicingHeadroom(melodyMidi);
+  let inner = spreadSqDimVoicingBelowMelody(headroom, dimTonePcs);
+  if (inner.length < 2) {
+    inner = ensureMinDimInnerVoices(headroom, dimTonePcs, 3);
+  }
+  inner = widenSqDimInner(inner, headroom);
+  if (prevInner && prevInner.length > 0) {
+    inner = alignInnerToPrevious(inner, prevInner, headroom, dimTonePcs);
+  }
+  if (nextMelodyMidi != null) {
+    const nextTonePcs = dimTonePcs;
+    inner = alignPassingDimInnerTowardNext(
+      inner,
+      headroom,
+      dimTonePcs,
+      nextMelodyMidi,
+      nextTonePcs,
+      prevInner
+    );
+  }
+  inner = dedupeInnerVoices(inner).slice(0, 3).sort((a, b) => a - b);
+  const stack = [...inner, headroom].sort((a, b) => a - b);
+  const feasibility = assessBhVoicingFeasibility(stack, presetId, {
+    allowStretch: true,
+    phrasingRole: 'full',
+  });
+  if (!feasibility.feasible && inner.length >= 2) {
+    inner = ensureMinDimInnerVoices(headroom, dimTonePcs, 2);
+  }
+  return inner.length >= 2 ? inner : ensureMinDimInnerVoices(headroom, dimTonePcs, 3);
+}
+
+function constrainInnerAdjacentLeap(
+  prevInner: readonly number[],
+  inner: readonly number[],
+  melodyMidi: number,
+  tonePcs: readonly number[],
+  maxLeap: number,
+  presetId?: string
+): number[] {
+  return constrainInnerFamilyChangeLeap(prevInner, inner, melodyMidi, tonePcs, maxLeap, presetId);
+}
+
+function constrainInnerFamilyChangeLeap(
+  prevInner: readonly number[],
+  inner: readonly number[],
+  melodyMidi: number,
+  tonePcs: readonly number[],
+  maxLeap: number,
+  presetId?: string
+): number[] {
+  if (prevInner.length === 0) return dedupeInnerVoices(inner);
+  if (maxInnerDisplacement(prevInner, inner) <= maxLeap) return dedupeInnerVoices(inner);
+
+  const candidates: number[][] = [
+    dedupeInnerVoices(inner),
+    innerBelowMelodyMinDisplacement(melodyMidi, tonePcs, prevInner),
+    closeBlockVoicingBelowMelody(melodyMidi, tonePcs, mod12(melodyMidi)),
+    greedyInnerWithinLeapCap(prevInner, melodyMidi, tonePcs, maxLeap),
+  ];
+
+  for (const base of [...candidates]) {
+    for (const shift of [-24, -12, 12, 24]) {
+      const shifted = shiftedInnerBelowMelody(base, melodyMidi, shift);
+      if (shifted) candidates.push(shifted);
+    }
+  }
+
+  let best = greedyInnerWithinLeapCap(prevInner, melodyMidi, tonePcs, maxLeap);
+  let bestDisp = maxInnerDisplacement(prevInner, best);
+
+  for (const cand of candidates) {
+    const c = dedupeInnerVoices(cand).filter(
+      (m) => tonePcs.includes(mod12(m)) && m < melodyMidi
+    );
+    if (c.length === 0) continue;
+    const stack = [...c, melodyMidi].sort((a, b) => a - b);
+    const feasibility = assessBhVoicingFeasibility(stack, presetId, { allowStretch: true });
+    if (!feasibility.feasible) continue;
+    const disp = maxInnerDisplacement(prevInner, c);
+    if (disp < bestDisp) {
+      bestDisp = disp;
+      best = c;
+    }
+    if (disp <= maxLeap) return c;
+  }
+
+  return best;
+}
+
+function applyStructuralInnerLeapCap(
+  mapped: ResolvedChordMelodyNote,
+  resolved: ResolvedChordMelodyNote,
+  melodyMidi: number,
+  tonePcs: readonly number[],
+  prevStructuralInner: readonly number[] | null,
+  presetId?: string,
+  familyChanged = false
+): ResolvedChordMelodyNote {
+  if (presetId && presetId !== 'guitar_bass_duo') return mapped;
+  if (resolved.eventKind === 'passing_dim') return mapped;
+  if (!prevStructuralInner || prevStructuralInner.length === 0) return mapped;
+  if ((mapped.innerVoicingMidis?.length ?? 0) === 0) return mapped;
+
+  let constrained = constrainInnerAdjacentLeap(
+    prevStructuralInner,
+    mapped.innerVoicingMidis,
+    melodyMidi,
+    tonePcs,
+    FAMILY_CHANGE_LEAP_MAX,
+    presetId
+  );
+  let disp = maxInnerDisplacement(prevStructuralInner, constrained);
+
+  if (disp > FAMILY_CHANGE_LEAP_MAX) {
+    const greedy = greedyInnerWithinLeapCap(
+      prevStructuralInner,
+      melodyMidi,
+      tonePcs,
+      FAMILY_CHANGE_LEAP_MAX
+    );
+    if (greedy.length > 0) {
+      const greedyDisp = maxInnerDisplacement(prevStructuralInner, greedy);
+      if (greedyDisp <= FAMILY_CHANGE_LEAP_MAX || greedyDisp < disp) {
+        constrained = greedy;
+        disp = greedyDisp;
+      }
+    }
+  }
+
+  if (disp > FAMILY_CHANGE_LEAP_MAX) {
+    const close = innerBelowMelodyMinDisplacement(melodyMidi, tonePcs, prevStructuralInner);
+    const closeDisp = maxInnerDisplacement(prevStructuralInner, close);
+    if (closeDisp < disp) {
+      constrained = close;
+      disp = closeDisp;
+    }
+  }
+
+  const stack = [...constrained, melodyMidi].sort((a, b) => a - b);
+  return {
+    ...mapped,
+    innerVoicingMidis: constrained,
+    exportStackMidis: stack,
+    blockVoicingMidis: constrained,
+    pitches: stack,
+    familyChangeLeapWarn:
+      familyChanged && disp > FAMILY_CHANGE_LEAP_IDEAL
+        ? true
+        : mapped.familyChangeLeapWarn,
+  };
+}
+
+function enforceGlobalStructuralInnerLeapCap(
+  notes: readonly ResolvedChordMelodyNote[],
+  melody: readonly ImportMelodyNote[],
+  presetId?: string
+): ResolvedChordMelodyNote[] {
+  const out = notes.map((n) => ({ ...n }));
+  let lastStructuralInner: number[] | null = null;
+
+  for (let i = 0; i < out.length; i++) {
+    const resolved = out[i]!;
+    if (resolved.eventKind === 'passing_dim' || resolved.harmonyOnly) continue;
+    if ((resolved.innerVoicingMidis?.length ?? 0) === 0) continue;
+
+    const mel = findMelodyNote(melody, resolved.bar, resolved.onsetBeat);
+    const melodyMidi = mel?.midiPitch ?? resolved.syntheticMelodyMidi;
+    if (melodyMidi == null) continue;
+
+    const tonePcs = chordTonePcsForResolved(resolved);
+    if (lastStructuralInner && lastStructuralInner.length > 0) {
+      out[i] = applyStructuralInnerLeapCap(
+        resolved,
+        resolved,
+        melodyMidi,
+        tonePcs,
+        lastStructuralInner,
+        presetId
+      );
+    }
+    lastStructuralInner = out[i]!.innerVoicingMidis;
+  }
+
+  return out;
+}
+
+function ensureMinDimInnerVoices(
+  melodyMidi: number,
+  tonePcs: readonly number[],
+  minNotes: number
+): number[] {
+  let inner = closeBlockVoicingBelowMelody(melodyMidi, tonePcs, mod12(melodyMidi));
+  inner = dedupeInnerVoices(inner);
+  const melodyPc = mod12(melodyMidi);
+  for (const pc of tonePcs) {
+    if (inner.length >= minNotes) break;
+    if (pc === melodyPc || inner.some((m) => mod12(m) === pc)) continue;
+    let m = melodyMidi - 1;
+    while (mod12(m) !== pc) m -= 1;
+    while (m >= melodyMidi) m -= 12;
+    inner.push(m);
+    inner = dedupeInnerVoices(inner).sort((a, b) => a - b);
+  }
+  return inner.slice(0, 3);
+}
+
+function alignPassingDimInnerTowardNext(
+  inner: readonly number[],
+  melodyMidi: number,
+  dimTonePcs: readonly number[],
+  nextMelodyMidi: number,
+  nextTonePcs: readonly number[],
+  prevInner: readonly number[] | null
+): number[] {
+  let out = ensureMinDimInnerVoices(melodyMidi, dimTonePcs, 2);
+  out = alignInnerToPrevious(out, prevInner, melodyMidi, dimTonePcs);
+  const nextInner = closeBlockVoicingBelowMelody(nextMelodyMidi, nextTonePcs, mod12(nextMelodyMidi));
+  if (nextInner.length === 0) return out.slice(0, 3);
+
+  const trial: number[] = [];
+  for (const voice of out) {
+    let best = voice;
+    let bestDist = Infinity;
+    for (const pc of dimTonePcs) {
+      for (let m = melodyMidi - 12; m >= melodyMidi - 48; m--) {
+        if (mod12(m) !== pc || m >= melodyMidi) continue;
+        const toNext = Math.min(...nextInner.map((n) => Math.abs(n - m)));
+        if (toNext < bestDist) {
+          bestDist = toNext;
+          best = m;
+        }
+      }
+    }
+    trial.push(best);
+  }
+  return dedupeInnerVoices(trial).slice(0, 3).sort((a, b) => a - b);
+}
+
 function applyBorrowedReplacement(
   inner: readonly number[],
   borrowedTonePc: number,
@@ -448,6 +738,49 @@ type FamilyEntryPick = {
   leapWarn: boolean;
 };
 
+function shiftedInnerBelowMelody(inner: readonly number[], melodyMidi: number, shift: number): number[] | null {
+  const shifted = inner.map((m) => m + shift).sort((a, b) => a - b);
+  if (shifted.length !== inner.length) return null;
+  if (shifted.some((m) => m >= melodyMidi)) return null;
+  return shifted;
+}
+
+function familyEntryDisplacementVariant(
+  prevInner: readonly number[] | null,
+  candidate: RealizedVoicing,
+  melodyMidi: number,
+  presetId?: string
+): { disp: number; variant: RealizedVoicing } {
+  let bestDisp =
+    prevInner && prevInner.length > 0
+      ? maxInnerDisplacement(prevInner, candidate.innerVoicingMidis)
+      : candidate.innerVoicingMidis.reduce((s, m) => s + Math.abs(m - (melodyMidi - 12)), 0);
+  let bestVariant = candidate;
+  const innerCandidates: number[][] = [candidate.innerVoicingMidis];
+  for (const shift of [-24, -12, 12, 24]) {
+    const shifted = shiftedInnerBelowMelody(candidate.innerVoicingMidis, melodyMidi, shift);
+    if (shifted) innerCandidates.push(shifted);
+  }
+  for (const inner of innerCandidates) {
+    const stack = [...inner, melodyMidi].sort((a, b) => a - b);
+    const feasibility = assessBhVoicingFeasibility(stack, presetId, { allowStretch: true });
+    if (!feasibility.feasible) continue;
+    const disp =
+      prevInner && prevInner.length > 0
+        ? maxInnerDisplacement(prevInner, inner)
+        : inner.reduce((s, m) => s + Math.abs(m - (melodyMidi - 12)), 0);
+    if (disp < bestDisp) {
+      bestDisp = disp;
+      bestVariant = {
+        ...candidate,
+        innerVoicingMidis: [...inner],
+        exportStackMidis: stack,
+      };
+    }
+  }
+  return { disp: bestDisp, variant: bestVariant };
+}
+
 function closeTopInnerMidi(melodyMidi: number, tonePcs: readonly number[]): number {
   const inner = closeBlockVoicingBelowMelody(melodyMidi, tonePcs, mod12(melodyMidi));
   return inner.length > 0 ? Math.max(...inner) : 0;
@@ -475,6 +808,7 @@ function pickFamilyEntryRung(
   melodyMidi: number,
   spacingPreference: VoicingSpacingPreference,
   prevInner: readonly number[] | null,
+  family: BhFamily,
   presetId?: string
 ): FamilyEntryPick {
   let idealBest: RealizedVoicing | null = null;
@@ -493,23 +827,63 @@ function pickFamilyEntryRung(
         allowStretch: true,
       });
       if (!stackFeasibility.feasible || c.innerVoicingMidis.length > 3) continue;
-      const disp =
-        prevInner && prevInner.length > 0
-          ? maxInnerDisplacement(prevInner, c.innerVoicingMidis)
-          : c.innerVoicingMidis.reduce((s, m) => s + Math.abs(m - (melodyMidi - 12)), 0);
+      const { disp, variant } = familyEntryDisplacementVariant(prevInner, c, melodyMidi, presetId);
       if (disp <= FAMILY_CHANGE_LEAP_IDEAL && disp < idealDisp) {
         idealDisp = disp;
-        idealBest = c;
+        idealBest = variant;
       }
       if (disp <= FAMILY_CHANGE_LEAP_MAX && disp < maxDisp) {
         maxDisp = disp;
-        maxBest = c;
+        maxBest = variant;
       }
     }
   }
 
   if (idealBest) return { realization: idealBest, leapWarn: false };
   if (maxBest) return { realization: maxBest, leapWarn: true };
+
+  let minBest: RealizedVoicing | null = null;
+  let minDisp = Infinity;
+  for (const rung of ladder) {
+    const pref = spacingPreference === 'all' ? 'all' : spacingPreference;
+    for (const c of realizeRungAtMelody(rung, melodyMidi, {
+      spacingPreference: pref,
+      allowStretch: true,
+      presetId,
+    })) {
+      const stackFeasibility = assessBhVoicingFeasibility([...c.innerVoicingMidis, melodyMidi], presetId, {
+        allowStretch: true,
+      });
+      if (!stackFeasibility.feasible || c.innerVoicingMidis.length > 3) continue;
+      const { disp, variant } = familyEntryDisplacementVariant(prevInner, c, melodyMidi, presetId);
+      if (disp < minDisp) {
+        minDisp = disp;
+        minBest = variant;
+      }
+    }
+  }
+  if (minBest) {
+    const tonePcs = tonesForSource(family, minBest.source);
+    const constrained = constrainInnerFamilyChangeLeap(
+      prevInner ?? [],
+      minBest.innerVoicingMidis,
+      melodyMidi,
+      tonePcs,
+      FAMILY_CHANGE_LEAP_MAX,
+      presetId
+    );
+    const stack = [...constrained, melodyMidi].sort((a, b) => a - b);
+    const finalDisp = maxInnerDisplacement(prevInner ?? [], constrained);
+    return {
+      realization: {
+        ...minBest,
+        innerVoicingMidis: constrained,
+        exportStackMidis: stack,
+        pitches: stack,
+      },
+      leapWarn: finalDisp > FAMILY_CHANGE_LEAP_IDEAL,
+    };
+  }
   return { realization: null, leapWarn: false };
 }
 
@@ -751,6 +1125,48 @@ function mapToResolved(
   };
 }
 
+function buildGreedyFamilyChangeVoicing(
+  resolved: ResolvedChordMelodyNote,
+  melodyMidi: number,
+  prevInner: readonly number[],
+  tonePcs: readonly number[],
+  presetId?: string
+): ResolvedChordMelodyNote | null {
+  let greedy = greedyInnerWithinLeapCap(prevInner, melodyMidi, tonePcs, FAMILY_CHANGE_LEAP_MAX);
+  if (greedy.length === 0) {
+    greedy = innerBelowMelodyMinDisplacement(melodyMidi, tonePcs, prevInner);
+  }
+  while (greedy.length > 0) {
+    const stack = [...greedy, melodyMidi].sort((a, b) => a - b);
+    const feasibility = assessBhVoicingFeasibility(stack, presetId, {
+      allowStretch: true,
+      phrasingRole: resolved.phrasingRole,
+    });
+    if (feasibility.feasible) {
+      const disp = maxInnerDisplacement(prevInner, greedy);
+      if (disp <= FAMILY_CHANGE_LEAP_MAX) {
+        return {
+        ...resolved,
+        exportStackMidis: stack,
+        innerVoicingMidis: greedy,
+        voicingVariant: 'sixth-block',
+        voicingFingerprint: `family-greedy:${stack.join(',')}`,
+        voicingChordColour: resolved.kind === 'dim7' ? 'dim7' : 'sixth',
+        ladderRungIndex: null,
+        ladderHit: false,
+        voiceLeadingCost: innerVoiceCost(prevInner, greedy),
+        guitarFretSpan: feasibility.fretSpan,
+        guitarFeasible: feasibility.feasible,
+        blockVoicingMidis: greedy,
+        familyChangeLeapWarn: disp > FAMILY_CHANGE_LEAP_IDEAL,
+        };
+      }
+    }
+    greedy = greedy.slice(1);
+  }
+  return null;
+}
+
 function buildVoicingFromRungResolved(
   resolved: ResolvedChordMelodyNote,
   rung: LadderRung,
@@ -892,6 +1308,7 @@ export function harmonizePhrase(
   const lastFpByRungMelody = new Map<string, string>();
 
   let prevInner: number[] | null = null;
+  let lastStructuralInner: number[] | null = null;
   let prevLane: string | null = null;
   let prevFamilyKey: string | null = null;
   const recentFingerprints: string[] = [];
@@ -925,22 +1342,103 @@ export function harmonizePhrase(
 
     const familyChanged = prevFamilyKey !== null && prevFamilyKey !== fk;
     const vlPrevInner = familyChanged ? null : prevInner;
+    const familyChangePrevInner =
+      familyChanged && lastStructuralInner && lastStructuralInner.length > 0
+        ? lastStructuralInner
+        : prevInner;
+
+    if (resolved.eventKind === 'passing_dim') {
+      const dimTonePcs = dim7ChordTones(resolved.anchor.dim7RootPc);
+      const isAndOfOne = isAndOfOnePassingDimOnset(resolved.onsetBeat);
+      const nextStructural = ordered
+        .slice(ordered.indexOf(resolved) + 1)
+        .find((r) => r.eventKind === 'structural' && !r.harmonyOnly);
+      let inner: number[];
+      if (isAndOfOne && presetId === 'guitar_bass_duo') {
+        const nextMel = nextStructural
+          ? findMelodyNote(melody, nextStructural.bar, nextStructural.onsetBeat)
+          : undefined;
+        const nextMelodyMidi =
+          nextMel?.midiPitch ?? nextStructural?.syntheticMelodyMidi ?? melodyMidi + 2;
+        inner = buildAndOfOnePassingDimInner(
+          melodyMidi,
+          dimTonePcs,
+          prevInner,
+          nextMelodyMidi,
+          presetId
+        );
+      } else if (nextStructural) {
+        const nextMel = findMelodyNote(melody, nextStructural.bar, nextStructural.onsetBeat);
+        const nextMelodyMidi = nextMel?.midiPitch ?? nextStructural.syntheticMelodyMidi ?? melodyMidi;
+        const nextTonePcs = chordTonePcsForResolved(nextStructural);
+        inner = alignPassingDimInnerTowardNext(
+          [],
+          melodyMidi,
+          dimTonePcs,
+          nextMelodyMidi,
+          nextTonePcs,
+          prevInner
+        );
+      } else {
+        inner = ensureMinDimInnerVoices(melodyMidi, dimTonePcs, 2);
+        inner = alignInnerToPrevious(inner, prevInner, melodyMidi, dimTonePcs);
+      }
+      const stackHeadroom = isAndOfOne ? andOfOnePassingDimVoicingHeadroom(melodyMidi) : melodyMidi;
+      const stack = [...inner, stackHeadroom].sort((a, b) => a - b);
+      const feasibility = assessBhVoicingFeasibility(stack, presetId, {
+        allowStretch: true,
+        phrasingRole: 'full',
+      });
+      out.push(
+        applyPassingDimOverrides(resolved, {
+          ...resolved,
+          exportStackMidis: stack,
+          innerVoicingMidis: inner,
+          voicingVariant: 'sixth-block',
+          voicingFingerprint: `dim:passing:${isAndOfOne ? 'and1:' : ''}${stack.join(',')}`,
+          voicingChordColour: 'dim7',
+          ladderHit: false,
+          voiceLeadingCost: prevInner ? innerVoiceCost(prevInner, inner) : null,
+          guitarFretSpan: feasibility.fretSpan,
+          guitarFeasible: feasibility.feasible,
+          blockVoicingMidis: inner,
+          exportDurationBeats: isAndOfOne
+            ? passingDimExportDurationBeats(resolved, ordered)
+            : resolved.exportDurationBeats,
+        })
+      );
+      prevInner = inner;
+      prevFamilyKey = fk;
+      continue;
+    }
 
     if (resolved.phrasingRole === 'single') {
       const melodyPc = mod12(melodyMidi);
+      const singleTonePcs = tonesForSource(resolved.anchor, resolved.kind === 'dim7' ? 'dim' : '6');
       const rung = findRungForMelodyPc(ladder, melodyPc) ?? nearestRung(ladder, melodyPc);
       const realization = singleNoteVoicing(rung, melodyMidi, presetId);
-      const mapped = mapToResolved(
+      const mapped = applyStructuralInnerLeapCap(
+        applyPassingDimOverrides(
+          resolved,
+          mapToResolved(
+            resolved,
+            realization,
+            melodyMidi,
+            rung.melodyPc === melodyPc,
+            0,
+            vlPrevInner,
+            presetId
+          )
+        ),
         resolved,
-        realization,
         melodyMidi,
-        rung.melodyPc === melodyPc,
-        0,
-        vlPrevInner,
+        singleTonePcs,
+        lastStructuralInner,
         presetId
       );
-      out.push(applyPassingDimOverrides(resolved, mapped));
+      out.push(mapped);
       prevInner = mapped.innerVoicingMidis;
+      lastStructuralInner = mapped.innerVoicingMidis;
       prevLane = realization.laneSignature;
       prevFamilyKey = fk;
       recentFingerprints.push(mapped.voicingFingerprint);
@@ -952,6 +1450,26 @@ export function harmonizePhrase(
     const exactRung = findRungForMelodyPc(ladder, melodyPc);
     const ladderHit =
       resolved.eventKind === 'passing_dim' ? false : exactRung !== undefined;
+    const tonePcsForScoring = tonesForSource(resolved.anchor, resolved.kind === 'dim7' ? 'dim' : '6');
+
+    if (familyChanged && familyChangePrevInner && familyChangePrevInner.length > 0) {
+      const greedyMapped = buildGreedyFamilyChangeVoicing(
+        resolved,
+        melodyMidi,
+        familyChangePrevInner,
+        tonePcsForScoring,
+        presetId
+      );
+      if (greedyMapped) {
+        out.push(applyPassingDimOverrides(resolved, greedyMapped));
+        prevInner = greedyMapped.innerVoicingMidis;
+        lastStructuralInner = greedyMapped.innerVoicingMidis;
+        prevFamilyKey = fk;
+        recentFingerprints.push(greedyMapped.voicingFingerprint);
+        if (recentFingerprints.length > 4) recentFingerprints.shift();
+        continue;
+      }
+    }
 
     let candidates = collectCandidates(
       resolved,
@@ -966,25 +1484,53 @@ export function harmonizePhrase(
 
     if (candidates.length === 0) {
       const fallback = buildBaseVoicing(resolved, melodyMidi, resolved.phrasingRole);
-      const mappedFallback = mapFromBaseVoicing(resolved, fallback, melodyMidi, vlPrevInner, presetId);
+      let mappedFallback = mapFromBaseVoicing(resolved, fallback, melodyMidi, vlPrevInner, presetId);
+      if (familyChanged && familyChangePrevInner && familyChangePrevInner.length > 0) {
+        const greedyMapped = buildGreedyFamilyChangeVoicing(
+          resolved,
+          melodyMidi,
+          familyChangePrevInner,
+          tonePcsForScoring,
+          presetId
+        );
+        if (greedyMapped) mappedFallback = greedyMapped;
+      } else {
+        mappedFallback = applyStructuralInnerLeapCap(
+          mappedFallback,
+          resolved,
+          melodyMidi,
+          tonePcsForScoring,
+          lastStructuralInner,
+          presetId
+        );
+      }
       out.push(applyPassingDimOverrides(resolved, mappedFallback));
       prevInner = mappedFallback.innerVoicingMidis;
+      if (resolved.eventKind !== 'passing_dim') {
+        lastStructuralInner = mappedFallback.innerVoicingMidis;
+      }
       prevFamilyKey = fk;
       continue;
     }
 
     let picked: RealizedVoicing | null = null;
     let familyLeapWarn = false;
-    const tonePcsForScoring = tonesForSource(resolved.anchor, resolved.kind === 'dim7' ? 'dim' : '6');
     if (familyChanged) {
-      const entry = pickFamilyEntryRung(ladder, melodyMidi, spacingPreference, prevInner, presetId);
+      const entry = pickFamilyEntryRung(
+        ladder,
+        melodyMidi,
+        spacingPreference,
+        familyChangePrevInner,
+        resolved.anchor,
+        presetId
+      );
       picked = entry.realization;
       familyLeapWarn = entry.leapWarn;
       if (!picked) {
         picked = pickRealization(
           candidates,
-          null,
-          null,
+          familyChangePrevInner,
+          prevLane,
           recentFingerprints,
           true,
           melodyMidi,
@@ -993,6 +1539,25 @@ export function harmonizePhrase(
           presetId,
           tonePcsForScoring
         );
+        if (picked && familyChangePrevInner && familyChangePrevInner.length > 0) {
+          const constrained = constrainInnerFamilyChangeLeap(
+            familyChangePrevInner,
+            picked.innerVoicingMidis,
+            melodyMidi,
+            tonePcsForScoring,
+            FAMILY_CHANGE_LEAP_MAX,
+            presetId
+          );
+          const stack = [...constrained, melodyMidi].sort((a, b) => a - b);
+          picked = {
+            ...picked,
+            innerVoicingMidis: constrained,
+            exportStackMidis: stack,
+            pitches: stack,
+          };
+          const disp = maxInnerDisplacement(familyChangePrevInner, constrained);
+          if (disp > FAMILY_CHANGE_LEAP_IDEAL) familyLeapWarn = true;
+        }
       }
     } else {
       const rungKey = `${(exactRung ?? nearestRung(ladder, melodyPc)).index}:${melodyPc}`;
@@ -1013,15 +1578,23 @@ export function harmonizePhrase(
 
     if (!picked) {
       const fallback = buildBaseVoicing(resolved, melodyMidi, resolved.phrasingRole);
-      const mappedFallback = mapFromBaseVoicing(resolved, fallback, melodyMidi, vlPrevInner, presetId);
+      const mappedFallback = applyStructuralInnerLeapCap(
+        mapFromBaseVoicing(resolved, fallback, melodyMidi, vlPrevInner, presetId),
+        resolved,
+        melodyMidi,
+        tonePcsForScoring,
+        lastStructuralInner,
+        presetId
+      );
       out.push(applyPassingDimOverrides(resolved, mappedFallback));
       prevInner = mappedFallback.innerVoicingMidis;
+      lastStructuralInner = mappedFallback.innerVoicingMidis;
       prevFamilyKey = fk;
       continue;
     }
 
     const vlCost = vlPrevInner ? innerVoiceCost(vlPrevInner, picked.innerVoicingMidis) : 0;
-    const mapped = applyPassingDimOverrides(
+    let mapped = applyPassingDimOverrides(
       resolved,
       buildVoicingFromRungResolved(
         resolved,
@@ -1034,8 +1607,37 @@ export function harmonizePhrase(
         presetId
       )
     );
-    if (familyLeapWarn) {
-      mapped.familyChangeLeapWarn = true;
+    if (familyChanged && familyChangePrevInner && familyChangePrevInner.length > 0) {
+      const constrained = constrainInnerFamilyChangeLeap(
+        familyChangePrevInner,
+        mapped.innerVoicingMidis,
+        melodyMidi,
+        tonePcsForScoring,
+        FAMILY_CHANGE_LEAP_MAX,
+        presetId
+      );
+      const stack = [...constrained, melodyMidi].sort((a, b) => a - b);
+      const disp = maxInnerDisplacement(familyChangePrevInner, constrained);
+      mapped = {
+        ...mapped,
+        innerVoicingMidis: constrained,
+        exportStackMidis: stack,
+        blockVoicingMidis: constrained,
+        familyChangeLeapWarn: disp > FAMILY_CHANGE_LEAP_IDEAL,
+      };
+      familyLeapWarn = mapped.familyChangeLeapWarn === true;
+    } else {
+      mapped = applyStructuralInnerLeapCap(
+        mapped,
+        resolved,
+        melodyMidi,
+        tonePcsForScoring,
+        lastStructuralInner,
+        presetId
+      );
+      if (familyLeapWarn) {
+        mapped.familyChangeLeapWarn = true;
+      }
     }
     out.push(mapped);
 
@@ -1043,19 +1645,26 @@ export function harmonizePhrase(
     lastFpByRungMelody.set(rungKey, mapped.voicingFingerprint);
 
     prevInner = mapped.innerVoicingMidis;
+    if (resolved.eventKind !== 'passing_dim') {
+      lastStructuralInner = mapped.innerVoicingMidis;
+    }
     prevLane = picked.laneSignature;
     prevFamilyKey = fk;
     recentFingerprints.push(mapped.voicingFingerprint);
     if (recentFingerprints.length > 4) recentFingerprints.shift();
   }
 
+  const leapCapped =
+    presetId === 'guitar_bass_duo'
+      ? enforceGlobalStructuralInnerLeapCap(out, melody, presetId)
+      : out;
   if (presetId === 'big_band') {
-    return applyBigBandHarmonizePass(out, melody);
+    return applyBigBandHarmonizePass(leapCapped, melody);
   }
   if (presetId === 'string_quartet') {
-    return applyStringQuartetHarmonizePass(out, melody);
+    return applyStringQuartetHarmonizePass(leapCapped, melody);
   }
-  return out;
+  return leapCapped;
 }
 
 export function applyVoicingEngineToResolved(
@@ -1144,9 +1753,33 @@ function pushSqNote(
   pushDuoGuitarNote(part, bar, pitch, startBeat, duration, 1, velocity);
 }
 
+function hasAndOfOnePassingDimInBar(
+  bar: number,
+  resolvedNotes: readonly ResolvedChordMelodyNote[]
+): boolean {
+  return resolvedNotes.some(
+    (r) =>
+      r.eventKind === 'passing_dim' &&
+      r.bar === bar &&
+      isAndOfOnePassingDimOnset(r.onsetBeat)
+  );
+}
+
 /** V83d — weak-beat inner placement for structural BH voicings (melody onsets unchanged). */
-function duoInnerStaggerOnset(melodyOnset: number): number {
+function duoInnerStaggerOnset(
+  melodyOnset: number,
+  bar?: number,
+  resolvedNotes?: readonly ResolvedChordMelodyNote[]
+): number {
   const beat = ((melodyOnset % 4) + 4) % 4;
+  if (
+    bar != null &&
+    resolvedNotes != null &&
+    Math.abs(beat) < 0.05 &&
+    hasAndOfOnePassingDimInBar(bar, resolvedNotes)
+  ) {
+    return melodyOnset;
+  }
   if (Math.abs(beat) < 0.05) return 1;
   if (Math.abs(beat - 2) < 0.05) return 3;
   return Math.min(3.75, melodyOnset + 0.5);
@@ -1294,7 +1927,7 @@ function applyChordMelodyToScoreGuitarDuo(
     resolved.blockVoicingMidis = resolved.innerVoicingMidis;
 
     const holdDur = melodyHoldDurationBeats(exportMel, sortedExportMelody);
-    const innerOnset = duoInnerStaggerOnset(exportMel.onsetBeat);
+    const innerOnset = duoInnerStaggerOnset(exportMel.onsetBeat, exportMel.bar, resolvedNotes);
     const innerDur = duoInnerStaggerDuration(innerOnset, exportMel.onsetBeat, holdDur);
 
     for (const part of parts) {
@@ -1308,10 +1941,12 @@ function applyChordMelodyToScoreGuitarDuo(
         voice: 1,
       });
 
+      const andOfOneInBar = hasAndOfOnePassingDimInBar(exportMel.bar, resolvedNotes);
       if (
         inner.length > 0 &&
         Math.abs(innerOnset - exportMel.onsetBeat) >= 0.02 &&
-        !hasPassingDimAt(exportMel.bar, innerOnset, resolvedNotes)
+        !hasPassingDimAt(exportMel.bar, innerOnset, resolvedNotes) &&
+        !(andOfOneInBar && Math.abs(exportMel.onsetBeat) < 0.05)
       ) {
         if (inner.length === 1) {
           pushDuoGuitarNote(

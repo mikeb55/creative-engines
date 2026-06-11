@@ -27,8 +27,10 @@ function measureHasBarryHarrisOnsetHarmony(measure: MeasureModel): boolean {
 }
 import {
   GUITAR_BASS_DUO_BASS_INSTRUMENT_SOUND,
+  GUITAR_BASS_DUO_BASS_MIDI_PROGRAM_ZERO_BASED,
   GUITAR_BASS_DUO_BASS_PART_NAME,
 } from '../instrument-profiles/guitarBassDuoExportNames';
+import { CLEAN_ELECTRIC_GUITAR } from '../instrument-profiles/guitarProfile';
 import {
   beatSpanToTicks,
   decomposeTicksToMinimalParts,
@@ -183,6 +185,21 @@ function instrumentSoundXmlForPart(p: PartModel): string {
     return `<instrument-sound>${RIFF_SOLO_GUITAR_SOUND_ID}</instrument-sound>`;
   }
   return '';
+}
+
+function defaultMidiProgramZeroBasedForPart(p: PartModel): number {
+  if (p.instrumentIdentity === 'clean_electric_guitar') return CLEAN_ELECTRIC_GUITAR.midiProgram;
+  if (p.instrumentIdentity === 'acoustic_upright_bass') return GUITAR_BASS_DUO_BASS_MIDI_PROGRAM_ZERO_BASED;
+  if (p.instrumentIdentity === 'electric_guitar_solo') return 30;
+  return 0;
+}
+
+/** GM 1-indexed MusicXML `<midi-program>` — never emit NaN. */
+function musicXmlMidiProgramForPart(p: PartModel): number {
+  const zeroBased = Number.isFinite(p.midiProgram)
+    ? p.midiProgram
+    : defaultMidiProgramZeroBasedForPart(p);
+  return Math.min(128, Math.max(1, Math.round(zeroBased) + 1));
 }
 
 function escapeXml(s: string): string {
@@ -1323,7 +1340,7 @@ export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXml
         }
         if (isRiffCleanGuitarPart(p)) return riffCleanGuitarScorePartXml(p);
         if (isRiffOverdrivenSoloPart(p)) return riffSoloGuitarScorePartXml(p);
-        const mxProg = Math.min(128, Math.max(1, p.midiProgram + 1));
+        const mxProg = musicXmlMidiProgramForPart(p);
         const display = partDisplayNameForExport(p);
         const scoreInstName = p.scoreInstrumentName ?? display;
         const soundEl = instrumentSoundXmlForPart(p);

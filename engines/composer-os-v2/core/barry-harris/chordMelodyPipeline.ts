@@ -31,11 +31,15 @@ import type {
   SixthDimPair,
 } from './types';
 
+import type { BhMelodyRhythmProfile } from './bhMelodyRhythmProfile';
+
 export type BarryHarrisChordMelodyPipelineOptions = {
   songMode?: boolean;
   generatedMelody?: readonly ScoreMelodyNote[];
   importTimeline?: MosaicImportTimeline;
   presetId?: string;
+  /** V83e — BH comp rhythm profile (passing-dim placement incl. and-of-1). */
+  bhRhythmProfile?: BhMelodyRhythmProfile;
 };
 
 export function resolveChordMelodyMelodyNotes(
@@ -167,12 +171,17 @@ export function buildBarryHarrisChordMelodyReceipts(
   const structuralResolved = harmonyEvents
     ? harmonyEvents.filter((e) => e.eventKind === 'structural')
     : resolvedNotes;
+  const harmonizedByOnset = new Map(
+    resolvedNotes.map((r) => [`${r.bar}:${r.onsetBeat.toFixed(4)}`, r] as const)
+  );
   for (let i = 0; i < noteChoices.length; i++) {
     const choice = noteChoices[i]!;
     const resolved =
+      harmonizedByOnset.get(`${choice.bar}:${choice.onsetBeat.toFixed(4)}`) ??
       structuralResolved.find(
         (r) => r.bar === choice.bar && Math.abs(r.onsetBeat - choice.onsetBeat) < 0.02
-      ) ?? structuralResolved[i];
+      ) ??
+      structuralResolved[i];
     if (!resolved) continue;
     const pc = choice.melodyPc;
     if (choice.kind === 'borrowed') {
@@ -331,7 +340,7 @@ export function runBarryHarrisChordMelodyPipeline(
   const noteChoices = resolveBarryHarrisNoteChoices(foundation, melodyEvents);
   const withIdentities = applyIdentitiesToNoteChoices(noteChoices);
   const withPhrasing = assignPhrasingRoles(withIdentities, melodyEvents, totalBars);
-  const harmonyEvents = insertPassingDiminishedEvents(withPhrasing, melodyEvents);
+  const harmonyEvents = insertPassingDiminishedEvents(withPhrasing, melodyEvents, options?.bhRhythmProfile);
   const resolvedNotes = harmonizePhrase(harmonyEvents, melodyEvents, {
     presetId: options?.presetId,
   });

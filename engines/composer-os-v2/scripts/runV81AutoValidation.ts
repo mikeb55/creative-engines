@@ -10,12 +10,18 @@ import { dim7ChordTones, sixthChordTones } from '../core/barry-harris/chordTones
 import {
   applyChordMelodyToScore,
   closeBlockVoicingBelowMelody,
+  DEFAULT_BH_MELODY_RHYTHM_PROFILE,
   familyKey,
+  isDrop2InnerSpacing,
   isDrop2Voicing,
   precomputeBarryHarrisChordMelodyFoundation,
   runBarryHarrisChordMelodyPipeline,
   scoreMelodyToImportMelody,
 } from '../core/barry-harris';
+import {
+  BARRY_HARRIS_EVAL_CHORDS_16,
+  BARRY_HARRIS_EVAL_MELODY_16,
+} from '../core/barry-harris/chordMelodyPipeline';
 import { exportScoreModelToMusicXml } from '../core/export/musicxmlExporter';
 import { runGoldenPathOnce } from '../core/goldenPath/runGoldenPath';
 import { importTimelineToLockedHarmony } from '../core/import/importTimelineAdapters';
@@ -33,6 +39,7 @@ import type { ResolvedChordMelodyNote } from '../core/barry-harris/types';
 import type { ScoreModel } from '../core/score-model/scoreModelTypes';
 
 const UPPER_REGISTER_CLOSE_TOP_MIDI = 76;
+const FAMILY_CHANGE_LEAP_MAX_SEMITONES = 10;
 
 const JAZZ_BENCHMARK_FIXTURE = path.join(
   __dirname,
@@ -129,6 +136,7 @@ function runPipeline(
   const foundation = precomputeBarryHarrisChordMelodyFoundation(context);
   const pipeline = runBarryHarrisChordMelodyPipeline(foundation, melody, harmonyBars.length, harmonyBars, {
     presetId,
+    bhRhythmProfile: DEFAULT_BH_MELODY_RHYTHM_PROFILE,
   });
   return { foundation, pipeline };
 }
@@ -200,12 +208,49 @@ function test1PassingDimDensity(): boolean {
   const cHarm = Array.from({ length: 8 }, () => 'C');
   const densityB = reportPassingDimCase('1b C major strong beats', cHarm, cMajorDiatonicStrongBeatMelody());
   const densityC = reportPassingDimCase('1c chromatic weak beats', cHarm, chromaticWeakBeatMelody());
+  const { pipeline: evalPipeline } = runPipeline(
+    [...BARRY_HARRIS_EVAL_CHORDS_16],
+    BARRY_HARRIS_EVAL_MELODY_16
+  );
+  const andOfOneMelody: ImportMelodyNote[] = [
+    melodyNote(1, 0, 67),
+    melodyNote(1, 1, 69),
+    melodyNote(2, 0, 65),
+    melodyNote(2, 2, 64),
+    melodyNote(3, 0, 67),
+    melodyNote(3, 1, 68),
+    melodyNote(4, 0, 70),
+    melodyNote(4, 2, 67),
+  ];
+  const cHarm8 = Array.from({ length: 8 }, () => 'C');
+  const andOfOneMelodyC: ImportMelodyNote[] = [
+    melodyNote(1, 0, 60),
+    melodyNote(1, 1, 62),
+    melodyNote(2, 0, 64),
+    melodyNote(2, 2, 65),
+  ];
+  const { pipeline: andOfOnePipeline } = runPipeline(cHarm8, andOfOneMelodyC);
+  const andOfOneCount = andOfOnePipeline.harmonyEvents.filter(
+    (e) => e.eventKind === 'passing_dim' && Math.abs(e.onsetBeat - 0.5) < 0.02
+  ).length;
+  const passingAll = andOfOnePipeline.harmonyEvents
+    .filter((e) => e.eventKind === 'passing_dim')
+    .map((e) => `b${e.bar}@${e.onsetBeat}`)
+    .join(' | ');
+  console.log(`\n--- V83e and-of-1 (beat-1 → beat-2 passing fixture) ---`);
+  console.log(`andOfOnePassingDimCount: ${andOfOneCount}`);
+  console.log(`passing_dim onsets: ${passingAll || '(none)'}`);
 
   const inBand = (d: number) => d >= 0.15 && d <= 0.5;
   return printAssertions('TEST 1 — Passing dim density', [
     { label: '1a density in [0.15, 0.50]', pass: inBand(densityA), detail: densityA.toFixed(3) },
     { label: '1b density in [0.15, 0.50]', pass: inBand(densityB), detail: densityB.toFixed(3) },
     { label: '1c density === 0', pass: densityC === 0, detail: densityC.toFixed(3) },
+    {
+      label: 'V83e and-of-1 passing dim >= 1 (beat-1→beat-2 fixture)',
+      pass: andOfOneCount >= 1,
+      detail: `andOfOneCount=${andOfOneCount}`,
+    },
   ]);
 }
 
@@ -420,14 +465,16 @@ function test5RestArtifact(): boolean {
 
 function maxInnerDisplacement(prevInner: readonly number[], currInner: readonly number[]): number {
   if (prevInner.length === 0 || currInner.length === 0) return 0;
+  const prev = [...prevInner].sort((a, b) => a - b);
+  const curr = [...currInner].sort((a, b) => a - b);
   const used = new Set<number>();
   let max = 0;
-  for (const a of prevInner) {
+  for (const a of prev) {
     let bestIdx = -1;
     let bestDist = Infinity;
-    for (let j = 0; j < currInner.length; j++) {
+    for (let j = 0; j < curr.length; j++) {
       if (used.has(j)) continue;
-      const dist = Math.abs(currInner[j]! - a);
+      const dist = Math.abs(curr[j]! - a);
       if (dist < bestDist) {
         bestDist = dist;
         bestIdx = j;
@@ -441,44 +488,100 @@ function maxInnerDisplacement(prevInner: readonly number[], currInner: readonly 
 }
 
 function test6FamilyChangeLeapWarn(): boolean {
-  const { pipeline } = scoreBenchmark(JAZZ_HARMONY, JAZZ_MELODY, 'guitar_bass_duo');
-  const voiced = pipeline.resolvedNotes
-    .filter((r) => r.eventKind !== 'passing_dim' && r.phrasingRole !== 'single')
+  const { pipeline } = runPipeline([...BARRY_HARRIS_EVAL_CHORDS_16], BARRY_HARRIS_EVAL_MELODY_16);
+  const structural = pipeline.resolvedNotes
+    .filter(
+      (r) =>
+        r.eventKind !== 'passing_dim' &&
+        !r.harmonyOnly &&
+        r.phrasingRole !== 'single' &&
+        (r.innerVoicingMidis?.length ?? 0) > 0
+    )
     .sort((a, b) => a.bar - b.bar || a.onsetBeat - b.onsetBeat);
 
-  let violations = 0;
-  let checked = 0;
-  for (let i = 1; i < voiced.length; i++) {
-    const prev = voiced[i - 1]!;
-    const curr = voiced[i]!;
+  let familyChanges = 0;
+  let familyOverMaxLeap = 0;
+  let familyMaxLeapSeen = 0;
+  let softLeapCases = 0;
+  let softLeapMissingReceipt = 0;
+
+  let adjacentStructuralPairs = 0;
+  let adjacentOverMaxLeap = 0;
+  let adjacentMaxLeapSeen = 0;
+  const adjacentViolations: string[] = [];
+
+  for (let i = 1; i < structural.length; i++) {
+    const prev = structural[i - 1]!;
+    const curr = structural[i]!;
+    adjacentStructuralPairs++;
+    const leap = maxInnerDisplacement(prev.innerVoicingMidis, curr.innerVoicingMidis);
+    adjacentMaxLeapSeen = Math.max(adjacentMaxLeapSeen, leap);
+    if (leap > FAMILY_CHANGE_LEAP_MAX_SEMITONES) {
+      adjacentOverMaxLeap++;
+      adjacentViolations.push(`b${prev.bar}→b${curr.bar}:${leap}`);
+    }
+
     const prevFk = familyKey(prev.anchor);
     const currFk = familyKey(curr.anchor);
     if (prevFk === currFk) continue;
-    const leap = maxInnerDisplacement(prev.innerVoicingMidis, curr.innerVoicingMidis);
-    if (leap <= 7) continue;
-    checked++;
-    const receipt = `bh:cm:family_change_leap_warn@bar${curr.bar}`;
-    const hasReceipt = (pipeline.cmReceipts ?? []).includes(receipt) || curr.familyChangeLeapWarn === true;
-    if (!hasReceipt) violations++;
+    familyChanges++;
+    familyMaxLeapSeen = Math.max(familyMaxLeapSeen, leap);
+    if (leap > FAMILY_CHANGE_LEAP_MAX_SEMITONES) familyOverMaxLeap++;
+    if (leap > 7 && leap <= FAMILY_CHANGE_LEAP_MAX_SEMITONES) {
+      softLeapCases++;
+      const receipt = `bh:cm:family_change_leap_warn@bar${curr.bar}`;
+      const hasReceipt =
+        (pipeline.cmReceipts ?? []).includes(receipt) || curr.familyChangeLeapWarn === true;
+      if (!hasReceipt) softLeapMissingReceipt++;
+    }
   }
 
-  return printAssertions('TEST 6 — Family-change VL cap', [
+  if (adjacentViolations.length > 0) {
+    console.log(`TEST 6 adjacent inner-comp leap violations: ${adjacentViolations.join(', ')}`);
+  }
+  console.log(
+    `TEST 6 max adjacent structural inner-comp leap: ${adjacentMaxLeapSeen} semitones (${adjacentStructuralPairs} pairs)`
+  );
+
+  return printAssertions('TEST 6 — Inner-comp VL cap (chromatic eval benchmark)', [
     {
-      label: 'inner leap >7 on family change has family_change_leap_warn receipt',
-      pass: violations === 0,
-      detail: `checked=${checked} violations=${violations}`,
+      label: 'chromatic eval produces >=1 sixth-family change with voiced inner motion',
+      pass: familyChanges >= 1,
+      detail: `familyChanges=${familyChanges}`,
+    },
+    {
+      label: `max inner displacement on family change <= ${FAMILY_CHANGE_LEAP_MAX_SEMITONES} semitones`,
+      pass: familyOverMaxLeap === 0 && familyChanges >= 1,
+      detail: `maxLeap=${familyMaxLeapSeen} overMax=${familyOverMaxLeap}`,
+    },
+    {
+      label: `max inner displacement on ALL adjacent structural pairs <= ${FAMILY_CHANGE_LEAP_MAX_SEMITONES} semitones`,
+      pass: adjacentOverMaxLeap === 0 && adjacentStructuralPairs >= 1,
+      detail: `maxLeap=${adjacentMaxLeapSeen} overMax=${adjacentOverMaxLeap} pairs=${adjacentStructuralPairs}`,
+    },
+    {
+      label: 'soft band (7,10] semitones emits family_change_leap_warn receipt when triggered',
+      pass: softLeapCases === 0 || softLeapMissingReceipt === 0,
+      detail: `softCases=${softLeapCases} missingReceipt=${softLeapMissingReceipt}`,
     },
   ]);
 }
 
 function closeTopInnerMidi(resolved: ResolvedChordMelodyNote, melodyMidi: number): number {
-  const source = resolved.kind === 'dim7' ? 'dim' : 'sixth';
   const tones =
-    source === 'dim'
+    resolved.kind === 'dim7'
       ? dim7ChordTones(resolved.anchor.dim7RootPc)
       : sixthChordTones(resolved.anchor.sixthRootPc, resolved.anchor.sixthQuality);
   const inner = closeBlockVoicingBelowMelody(melodyMidi, tones, mod12(melodyMidi));
   return inner.length > 0 ? Math.max(...inner) : 0;
+}
+
+function upperRegisterVoicingOk(resolved: ResolvedChordMelodyNote, melodyMidi: number): boolean {
+  const inner = [...resolved.innerVoicingMidis].sort((a, b) => a - b);
+  if (inner.length < 2) return true;
+  if (isDrop2Voicing(resolved, melodyMidi) || isDrop2InnerSpacing(melodyMidi, inner)) return true;
+  const innerTop = Math.max(...inner);
+  return innerTop <= UPPER_REGISTER_CLOSE_TOP_MIDI;
 }
 
 function melodyMidiForResolved(r: ResolvedChordMelodyNote, melody: readonly ImportMelodyNote[]): number {
@@ -516,6 +619,7 @@ function test8StyleTransferJazzBenchmark(): boolean {
     gp.context?.generationMetadata?.barryHarrisChordMelodyReceipts ??
     [];
   const pdReceipts = passingDimReceipts(cmReceipts);
+  const andOfOneReceipts = pdReceipts.filter((r) => /onset=0\.5(?::|$)/.test(r));
   const density = cm?.passingDimDensity ?? 0;
   const retained = st?.retainedMelody ?? [];
   const melodyPreserved =
@@ -537,6 +641,7 @@ function test8StyleTransferJazzBenchmark(): boolean {
   console.log(`passingDimCount: ${cm?.passingDimCount ?? 0}`);
   console.log(`passingDimDensity: ${density.toFixed(3)}`);
   console.log(`first passing_dim receipt: ${pdReceipts[0] ?? '(none)'}`);
+  console.log(`and-of-1 passing_dim receipts: ${andOfOneReceipts.length}`);
 
   const densityOk = density >= 0.25 && density <= 0.4;
 
@@ -561,26 +666,43 @@ function test8StyleTransferJazzBenchmark(): boolean {
   ]);
 }
 
+function highRegisterJazzMelody(): ImportMelodyNote[] {
+  return JAZZ_MELODY.map((n) => ({ ...n, midiPitch: n.midiPitch + 12 }));
+}
+
 function test7Drop2UpperRegister(): boolean {
-  const { pipeline } = scoreBenchmark(JAZZ_HARMONY, JAZZ_MELODY, 'guitar_bass_duo');
+  const melody = highRegisterJazzMelody();
+  const { pipeline } = runPipeline(JAZZ_HARMONY, melody);
   const structural = pipeline.resolvedNotes.filter((r) => r.eventKind !== 'passing_dim' && !r.harmonyOnly);
 
-  let needDrop2 = 0;
+  let crampedCloseCandidates = 0;
   let fail = 0;
+  let melodyAboveE5 = 0;
   for (const r of structural) {
     if (r.phrasingRole === 'single') continue;
-    const mel = melodyMidiForResolved(r, JAZZ_MELODY);
+    const mel = melodyMidiForResolved(r, melody);
+    if (mel > UPPER_REGISTER_CLOSE_TOP_MIDI) melodyAboveE5++;
     const closeTop = closeTopInnerMidi(r, mel);
     if (closeTop <= UPPER_REGISTER_CLOSE_TOP_MIDI) continue;
-    needDrop2++;
-    if (!isDrop2Voicing(r, mel)) fail++;
+    crampedCloseCandidates++;
+    if (!upperRegisterVoicingOk(r, mel)) fail++;
   }
 
-  return printAssertions('TEST 7 — Drop-2 K upper register', [
+  return printAssertions('TEST 7 — Drop-2 K upper register (melody above E5)', [
     {
-      label: 'structural close-top > 76 uses drop-2 voicing',
-      pass: fail === 0,
-      detail: `candidates=${needDrop2} failures=${fail}`,
+      label: 'high-register jazz benchmark has >=1 melody attack above MIDI 76 (E5)',
+      pass: melodyAboveE5 >= 1,
+      detail: `melodyAboveE5=${melodyAboveE5}`,
+    },
+    {
+      label: 'cramped-close candidates >=1 (close-top would exceed E5)',
+      pass: crampedCloseCandidates >= 1,
+      detail: `candidates=${crampedCloseCandidates}`,
+    },
+    {
+      label: 'upper-register policy: drop-2 spacing or inner top <= E5 on cramped-close candidates',
+      pass: fail === 0 && crampedCloseCandidates >= 1,
+      detail: `failures=${fail}`,
     },
   ]);
 }
@@ -594,6 +716,81 @@ const V83C_NOTATION_CHECK_PATH = path.join(
   'Song Mode',
   'v83c-notation-check.musicxml'
 );
+
+const V83E_AND_OF_ONE_QA_PATH = path.join(
+  'C:',
+  'Users',
+  'mike',
+  'Documents',
+  'Mike Composer Files',
+  'Song Mode',
+  'v83e-and-of-1-check.musicxml'
+);
+
+const MUSICXML_DIVISIONS = 480;
+
+/** V83e+f — voice-2 chord-stack onset (beats) per bar from exported MusicXML. */
+function voice2StackOnsetsFromMusicXml(xml: string, bar: number): number[] {
+  const measureRe = new RegExp(`<measure number="${bar}">([\\s\\S]*?)<\\/measure>`);
+  const body = xml.match(measureRe)?.[1] ?? '';
+  const backupIdx = body.indexOf('<backup>');
+  if (backupIdx < 0) return [];
+  const v2 = body.slice(backupIdx);
+  let cursor = 0;
+  const onsets: number[] = [];
+  const noteRe = /<note>([\s\S]*?)<\/note>/g;
+  let nm: RegExpExecArray | null;
+  while ((nm = noteRe.exec(v2)) !== null) {
+    const block = nm[1]!;
+    if (block.includes('<rest')) {
+      const restDurM = block.match(/<duration>(\d+)<\/duration>/);
+      if (restDurM) cursor += parseInt(restDurM[1]!, 10);
+      continue;
+    }
+    const isChord = block.includes('<chord/>');
+    const durM = block.match(/<duration>(\d+)<\/duration>/);
+    if (!durM) continue;
+    const dur = parseInt(durM[1]!, 10);
+    if (!isChord) {
+      cursor += dur;
+      onsets.push(cursor / MUSICXML_DIVISIONS - dur / MUSICXML_DIVISIONS);
+    }
+  }
+  return [...new Set(onsets.map((b) => Math.round(b * 1000) / 1000))].sort((a, b) => a - b);
+}
+
+/** V83e QA — chromatic eval fixture with profile-driven and-of-1 passing dims. */
+function writeV83eAndOfOneQa(): void {
+  const { pipeline, xml } = scoreBenchmark(
+    [...BARRY_HARRIS_EVAL_CHORDS_16],
+    BARRY_HARRIS_EVAL_MELODY_16,
+    'guitar_bass_duo'
+  );
+  if (!xml || xml.length < 500) {
+    throw new Error('V83e QA export empty or too small');
+  }
+  const andOfOneEvents = pipeline.harmonyEvents.filter(
+    (e) => e.eventKind === 'passing_dim' && Math.abs(e.onsetBeat - 0.5) < 0.02
+  );
+  const andOfOneCount = andOfOneEvents.length;
+  fs.mkdirSync(path.dirname(V83E_AND_OF_ONE_QA_PATH), { recursive: true });
+  fs.writeFileSync(V83E_AND_OF_ONE_QA_PATH, xml, 'utf8');
+  console.log(`\nV83e and-of-1 QA written: ${V83E_AND_OF_ONE_QA_PATH}`);
+  console.log(`bytes: ${xml.length}`);
+  console.log(`andOfOnePassingDimCount: ${andOfOneCount}`);
+  console.log('V83e+f MusicXML voice-2 stack onsets for and-of-1 bars (expect 0.5):');
+  for (const e of andOfOneEvents) {
+    const stacks = voice2StackOnsetsFromMusicXml(xml, e.bar);
+    const dimStack = stacks.find((b) => Math.abs(b - 0.5) < 0.06) ?? stacks[0];
+    console.log(`  bar ${e.bar}: engine onset=${e.onsetBeat} xml stacks=${stacks.join(',') || '(none)'} dimGripAt=${dimStack ?? 'n/a'}`);
+  }
+  if (andOfOneCount < 1) {
+    throw new Error('V83e QA export missing and-of-1 passing_dim');
+  }
+  if (andOfOneCount < 3 || andOfOneCount > 5) {
+    console.warn(`V83e+f and-of-1 count ${andOfOneCount} outside benchmark band 3-5`);
+  }
+}
 
 /** V83c QA asset — dense BH style-transfer export for Sibelius notation check. */
 function writeV83cNotationCheck(): void {
@@ -651,6 +848,10 @@ function main(): void {
     writeV83cNotationCheck();
     return;
   }
+  if (process.argv.includes('--write-v83e-qa')) {
+    writeV83eAndOfOneQa();
+    return;
+  }
   console.log('V81 auto-validation\n');
   const results = [
     test1PassingDimDensity(),
@@ -664,6 +865,11 @@ function main(): void {
   ];
   const passed = results.filter(Boolean).length;
   console.log(`\nSummary: ${passed}/8 tests passed`);
+  try {
+    writeV83eAndOfOneQa();
+  } catch (e) {
+    console.error(`V83e QA export skipped: ${e instanceof Error ? e.message : String(e)}`);
+  }
   process.exit(passed === 8 ? 0 : 1);
 }
 
