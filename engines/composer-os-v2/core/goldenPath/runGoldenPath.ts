@@ -2835,6 +2835,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
           styleTransferPreserveMelody: options.preserveMelody !== false,
           parsedCustomProgressionBars: [...styleTransferResult.appliedHarmonyBars],
           customHarmonyLocked: (options.styleTransferStrength ?? 0.5) < 0.95,
+          ...(targetComposer === 'wayne_shorter' && options.preserveMelody !== false
+            ? {
+                styleTransferWayneHarmonyAuthoritative: true,
+                wayneShorterEffectiveHarmonyBars: [...styleTransferResult.appliedHarmonyBars],
+              }
+            : {}),
         };
         if (
           targetComposer === 'barry_harris' &&

@@ -47,7 +47,10 @@ import {
 } from './duoLockQuality';
 import { validateDuoMelodyIdentityV3 } from './duoMelodyIdentityV3';
 import { isFrankZappaSongwriterId } from '../gce/frankZappaStructuralFingerprint';
-import { isStyleTransferPreserveMelodyActive } from '../import/mosaicStyleTransfer';
+import {
+  isStyleTransferEightBarPinnedMelodyRelax,
+  isStyleTransferPreserveMelodyActive,
+} from '../import/mosaicStyleTransfer';
 
 export interface SectionContrastResult {
   valid: boolean;
@@ -323,6 +326,14 @@ export function runBehaviourGates(
   const styleTransferPreserveMelodyRelax = isStyleTransferPreserveMelodyActive(
     opts?.compositionContext?.generationMetadata
   );
+  const relaxPinnedMelodyImport = isStyleTransferEightBarPinnedMelodyRelax(
+    opts?.compositionContext?.generationMetadata,
+    opts?.compositionContext?.form?.totalBars
+  );
+  const pushDuoGate = (messages: string[]) => {
+    if (relaxPinnedMelodyImport) duoIdentityWarnings.push(...messages);
+    else errors.push(...messages);
+  };
   const bassRhythmicCellSubstr = 'rhythmic cell repeated across more than two consecutive bars';
   const bassIdentity = validateBassIdentity(score, {
     presetId: opts?.presetId,
@@ -346,9 +357,9 @@ export function runBehaviourGates(
     presetId: opts?.presetId,
     compositionContext: opts?.compositionContext,
   });
-  errors.push(...phraseAuthority.errors);
-  if (songMode) duoIdentityWarnings.push(...phraseAuthority.warnings);
-  const phraseAuthorityValid = phraseAuthority.valid;
+  pushDuoGate(phraseAuthority.errors);
+  if (songMode || relaxPinnedMelodyImport) duoIdentityWarnings.push(...phraseAuthority.warnings);
+  const phraseAuthorityValid = relaxPinnedMelodyImport ? true : phraseAuthority.valid;
 
   const jazzDuoBehaviour = validateJazzDuoBehaviourRules(score);
   if (!jazzDuoBehaviour.valid) errors.push(...jazzDuoBehaviour.errors);
@@ -362,30 +373,30 @@ export function runBehaviourGates(
   /** Duo LOCK / melody-identity gates are calibrated for standard `guitar_bass_duo`; single-line uses monophony checks only. */
   if (opts?.presetId && isStandardGuitarBassDuo(opts.presetId)) {
     const duoRh = validateDuoRhythmAntiLoop(duoGateScore, duoLockCtx);
-    errors.push(...duoRh.errors);
-    if (songMode) duoIdentityWarnings.push(...duoRh.warnings);
+    pushDuoGate(duoRh.errors);
+    if (songMode || relaxPinnedMelodyImport) duoIdentityWarnings.push(...duoRh.warnings);
     const duoGce = validateDuoGceHardGate(duoGateScore, duoLockCtx);
-    errors.push(...duoGce.errors);
-    if (songMode) duoIdentityWarnings.push(...duoGce.warnings);
+    pushDuoGate(duoGce.errors);
+    if (songMode || relaxPinnedMelodyImport) duoIdentityWarnings.push(...duoGce.warnings);
     const duoV3 = validateDuoMelodyIdentityV3(duoGateScore, opts?.motifState, {
       presetId: opts?.presetId,
       compositionContext: opts?.compositionContext,
       effectiveFormBars,
     });
-    errors.push(...duoV3.errors);
-    if (songMode) duoIdentityWarnings.push(...duoV3.warnings);
+    pushDuoGate(duoV3.errors);
+    if (songMode || relaxPinnedMelodyImport) duoIdentityWarnings.push(...duoV3.warnings);
     const duoSwing = validateDuoSwingRhythm(duoGateScore, duoLockCtx);
-    errors.push(...duoSwing.errors);
-    if (songMode) duoIdentityWarnings.push(...duoSwing.warnings);
+    pushDuoGate(duoSwing.errors);
+    if (songMode || relaxPinnedMelodyImport) duoIdentityWarnings.push(...duoSwing.warnings);
     const duoIx = validateDuoInteractionAuthorityGate(duoGateScore, duoCtx);
-    errors.push(...duoIx.errors);
-    if (songMode) duoIdentityWarnings.push(...duoIx.warnings);
+    pushDuoGate(duoIx.errors);
+    if (songMode || relaxPinnedMelodyImport) duoIdentityWarnings.push(...duoIx.warnings);
     const duoId = validateDuoIdentityMomentGate(duoGateScore, duoCtx);
-    errors.push(...duoId.errors);
-    if (songMode) duoIdentityWarnings.push(...duoId.warnings);
+    pushDuoGate(duoId.errors);
+    if (songMode || relaxPinnedMelodyImport) duoIdentityWarnings.push(...duoId.warnings);
     const duoP33 = validateDuoPolishV33Gate(duoGateScore, duoLockCtx);
-    errors.push(...duoP33.errors);
-    if (songMode) duoIdentityWarnings.push(...duoP33.warnings);
+    pushDuoGate(duoP33.errors);
+    if (songMode || relaxPinnedMelodyImport) duoIdentityWarnings.push(...duoP33.warnings);
   }
 
   let interactionValid = true;

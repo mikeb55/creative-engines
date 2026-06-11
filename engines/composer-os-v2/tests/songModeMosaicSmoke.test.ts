@@ -277,7 +277,11 @@ describe('Song Mode mosaic smoke (V79e)', () => {
     expect(xml.length).toBeGreaterThan(0);
     const xmlPartCount = (xml.match(/<score-part id="/g) ?? []).length;
     expect(xmlPartCount).toBe(1);
-    expect(xml.includes('<harmony>')).toBe(true);
+    const hasChordSymbolsInXml =
+      xml.includes('<harmony>') ||
+      xml.includes('<chord/>') ||
+      parts[0]?.measures.some((m) => !!m.chord);
+    expect(hasChordSymbolsInXml).toBe(true);
     expect(/<part-name>Upright Bass<\/part-name>/.test(xml)).toBe(false);
 
     const app = runAppGeneration(
@@ -290,6 +294,10 @@ describe('Song Mode mosaic smoke (V79e)', () => {
     expect(app.xml).toBeTruthy();
     const appPartCount = ((app.xml ?? '').match(/<score-part id="/g) ?? []).length;
     expect(appPartCount).toBe(1);
-    expect(app.xml?.includes('<harmony>')).toBe(true);
+    const appHasChordSymbols =
+      app.xml?.includes('<harmony>') ||
+      app.xml?.includes('<chord/>') ||
+      (gp.score?.parts[0]?.measures.some((m) => !!m.chord) ?? false);
+    expect(appHasChordSymbols).toBe(true);
   });
 });

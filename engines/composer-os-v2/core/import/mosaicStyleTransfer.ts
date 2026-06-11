@@ -441,6 +441,16 @@ export function isStyleTransferPreserveMelodyActive(
   return md.styleTransferPreserveMelody !== false;
 }
 
+/**
+ * 8-bar import + pinned melody: duo phrase/LOCK gates target generated melody, not import-tied rhythm/contour.
+ */
+export function isStyleTransferEightBarPinnedMelodyRelax(
+  md: import('../compositionContext').GenerationMetadata | undefined,
+  totalBars: number | undefined
+): boolean {
+  return isStyleTransferPreserveMelodyActive(md) && totalBars === 8;
+}
+
 export function applyStyleTransferToScore(
   baseScore: ScoreModel,
   result: StyleTransferResult
