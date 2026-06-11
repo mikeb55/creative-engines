@@ -186,7 +186,8 @@ import {
   insertPassingDiminishedEvents,
   resolveBhMelodyRhythmProfile,
 } from '../barry-harris';
-import { enrichMelodyRhythm, enrichMelodyExpression } from '../premium-melody';
+import { enrichMelodyRhythm, enrichMelodyExpression, pinPremiumMelodyExport } from '../premium-melody';
+import { buildWayneShorterIsolationProvisionalProfile } from '../wayne-shorter/wsPremiumMelodyProfile';
 import { validateSongModeMotifSystem } from '../motif/songModeMotifEngine';
 import { validateSongModePhraseEngineV1 } from './songModePhraseEngineV1';
 import { partitionSongModePhraseIssues } from '../song-mode/songModePhraseBehaviourRules';
@@ -3231,6 +3232,24 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     appliedContext.generationMetadata = {
       ...appliedContext.generationMetadata,
       barryHarrisResolvedNotes: resolvedNotes,
+    };
+  }
+  if (
+    styleTransferResult?.composerApplied === 'wayne_shorter' &&
+    options?.importTimeline &&
+    (appliedContext.presetId ?? 'guitar_bass_duo') === 'guitar_bass_duo' &&
+    (options.preserveMelody ?? true)
+  ) {
+    const wsProfile = buildWayneShorterIsolationProvisionalProfile();
+    const melodyLine = options.importTimeline.melodyLine;
+    const rhythmMeta = { familyCounts: {}, totalNotes: 0 };
+    const rhythmMelody = enrichMelodyRhythm(melodyLine, wsProfile, { seed, meta: rhythmMeta });
+    const exportMelody = enrichMelodyExpression(rhythmMelody, wsProfile, { seed, rhythmMeta });
+    score = pinPremiumMelodyExport(score, exportMelody);
+    appliedContext.generationMetadata = {
+      ...appliedContext.generationMetadata,
+      waynePremiumMelodyProfile: wsProfile.id,
+      waynePremiumMelodyRhythmMeta: rhythmMeta,
     };
   }
   if (styleTransferDeferBarMath && !isIndieTuningFixture) {
