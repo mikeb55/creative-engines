@@ -4,6 +4,26 @@ Practical notes for **using** Composer OS—generation, evaluation, and quality 
 
 ---
 
+## Musician shell (Electron desktop v1)
+
+**Default desktop window** for musicians — not the full React Generate UI.
+
+**Launch:** double-click **`Composer-OS.exe`** (or **`npm start`** from **`apps/composer-os-desktop`** after build). No terminal required.
+
+**Controls:**
+- **Composer** — dropdown from premium-melody **`registry.json`** (sorted by name). Active writers in **Composers**; frozen Barry Harris / Wayne Shorter benchmarks in **Reference**.
+- **Seed** — integer **1–999999999**; updates when composer changes.
+- **Randomise** — sets a 6-digit seed (**100000–999999**); does not generate.
+- **Generate** — runs Song Mode (**32 bars**, balanced creative control) for the selected composer; disables controls while running.
+
+**Output:** MusicXML written to **`<Documents>/Mike Composer Files/Song Mode/`** as **`{composerSlug}_{seed}.musicxml`**. The app tries to open the file in your OS default app; if that fails, Explorer highlights the file.
+
+**Developer full UI:** set environment variable **`COMPOSER_OS_FULL_UI=1`** before launch to load the React **`composer-os-app`** shell instead.
+
+**Security:** musician window uses **`contextIsolation`**, **`nodeIntegration: false`**, **`sandbox: true`**, and **`preload-musician.js`** exposing only **`window.composerOsMusician.generate`** and **`onStatus`**.
+
+---
+
 ## ECM VRB — room character (header chip)
 
 **VRB** in the app header (**`VRB: Nordic Studio`**) is **not** a reverb plugin and **not** the harmonic **VoiceRuleBundle** roster below. It is an **ECM Records–style room profile**: how dry or spacious the generated material should feel — room size, decay tail, early reflections, damping. Composer OS passes this as metadata on every generate call so exports and downstream scoring share one acoustic “stage.”

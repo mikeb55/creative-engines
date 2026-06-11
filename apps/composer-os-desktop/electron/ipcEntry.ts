@@ -551,3 +551,9 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
     return { ok: true };
   });
 }
+
+export { apiGenerate } from '../../../engines/composer-os-v2/app-api/composerOsApiCore';
+export {
+  ensureOutputDirectoryForPreset,
+  buildLabeledMusicXmlFilename,
+} from '../../../engines/composer-os-v2/app-api/composerOsOutputPaths';

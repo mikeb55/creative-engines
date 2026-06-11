@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Composer OS</title>
+    <link rel="stylesheet" href="musician.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="header">
+        <h1>Composer OS</h1>
+        <p class="subtitle">Song Mode — generate MusicXML</p>
+      </header>
+
+      <form id="generate-form" class="form" autocomplete="off">
+        <label class="field" for="composer">
+          <span class="label">Composer</span>
+          <select id="composer" name="composer" required></select>
+        </label>
+
+        <label class="field" for="seed">
+          <span class="label">Seed</span>
+          <input id="seed" name="seed" type="number" min="1" max="999999999" step="1" required />
+        </label>
+
+        <div class="actions">
+          <button type="button" id="randomise" class="btn secondary">Randomise</button>
+          <button type="submit" id="generate" class="btn primary">Generate</button>
+        </div>
+      </form>
+
+      <p id="status" class="status" aria-live="polite">Loading composers…</p>
+    </main>
+    <script src="musician.js"></script>
+  </body>
+</html>

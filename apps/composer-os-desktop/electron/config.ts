@@ -46,11 +46,14 @@ export function resolveApiBundlePath(): string | null {
 }
 
 export function resolveDesktopIpcBundlePath(): string | null {
-  const candidates = [
-    path.join(process.resourcesPath, 'desktop-ipc.bundle.cjs'),
+  const candidates: string[] = [];
+  if (typeof process.resourcesPath === 'string' && process.resourcesPath.length > 0) {
+    candidates.push(path.join(process.resourcesPath, 'desktop-ipc.bundle.cjs'));
+  }
+  candidates.push(
     path.join(__dirname, '..', 'resources', 'desktop-ipc.bundle.cjs'),
-    path.join(app.getAppPath(), 'resources', 'desktop-ipc.bundle.cjs'),
-  ];
+    path.join(app.getAppPath(), 'resources', 'desktop-ipc.bundle.cjs')
+  );
   for (const p of candidates) {
     if (fs.existsSync(p)) return p;
   }
