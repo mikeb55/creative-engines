@@ -182,11 +182,11 @@ import {
   applyIdentitiesToNoteChoices,
   applyVoicingEngineToResolved,
   assignPhrasingRoles,
-  enrichMelodyRhythm,
-  enrichMelodyExpression,
+  buildBarryHarrisPremiumMelodyProfile,
   insertPassingDiminishedEvents,
   resolveBhMelodyRhythmProfile,
 } from '../barry-harris';
+import { enrichMelodyRhythm, enrichMelodyExpression } from '../premium-melody';
 import { validateSongModeMotifSystem } from '../motif/songModeMotifEngine';
 import { validateSongModePhraseEngineV1 } from './songModePhraseEngineV1';
 import { partitionSongModePhraseIssues } from '../song-mode/songModePhraseBehaviourRules';
@@ -3211,8 +3211,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     const resolvedNotes = applyVoicingEngineToResolved(harmonyEvents, melodyLine, {
       presetId: bhPresetId,
     });
-    const bhRhythmProfile = resolveBhMelodyRhythmProfile(
-      options.barryHarrisProfile ?? appliedContext.generationMetadata?.barryHarrisProfile
+    const bhRhythmProfile = buildBarryHarrisPremiumMelodyProfile(
+      resolveBhMelodyRhythmProfile(
+        options.barryHarrisProfile ?? appliedContext.generationMetadata?.barryHarrisProfile
+      )
     );
     const rhythmMeta = { familyCounts: {}, totalNotes: 0 };
     const rhythmMelody =

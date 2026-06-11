@@ -115,6 +115,7 @@ export {
   BH_MELODY_RHYTHM_PROFILES,
   resolveBhMelodyRhythmProfile,
 } from './bhMelodyRhythmProfile';
+export { buildBarryHarrisPremiumMelodyProfile } from './bhPremiumMelodyProfile';
 export {
   enrichMelodyExpression,
   assertPreserveMelodyTimingGrid,
