@@ -7,6 +7,11 @@ import type { Articulation } from '../score-model/scoreModelTypes';
 import type { ImportMelodyNote } from '../import/mosaicImportTimeline';
 import type { PremiumMelodyProfile } from './premiumMelodyProfile';
 import {
+  PREMIUM_MELODY_DEFAULT_EXPRESSION_CHARACTER,
+  PREMIUM_MELODY_DEFAULT_PROJECTED_OFFBEAT_BLOCK_THRESHOLD,
+  PREMIUM_MELODY_DEFAULT_RHYTHM_SEED_SALT,
+} from './premiumMelodyProfile';
+import {
   BEATS_PER_BAR,
   type PremiumMelodyCellFamily,
   type PremiumMelodyRhythmEnrichmentMeta,
@@ -98,7 +103,9 @@ function replayCellFamilies(
   ordered: readonly ImportMelodyNote[],
   profile: PremiumMelodyProfile,
   roles: PremiumMelodyPhraseRoles,
-  baseSeed: number
+  baseSeed: number,
+  rhythmSeedSalt: number,
+  projectedOffbeatBlockThreshold: number
 ): (PremiumMelodyCellFamily | 'structural')[] {
   const recentFamilies: PremiumMelodyCellFamily[] = [];
   let offbeatCount = 0;
@@ -110,7 +117,7 @@ function replayCellFamilies(
     const phraseIdx = indexInPhrase(ordered, index, roles);
     const phrLen = phraseLengthAt(index, roles, ordered.length);
     const projectedOffbeatRate = interiorCount > 0 ? offbeatCount / interiorCount : 0;
-    const noteSeed = deriveMelodyRhythmSeed(baseSeed, index);
+    const noteSeed = deriveMelodyRhythmSeed(baseSeed, index, rhythmSeedSalt);
     const rand = mulberry32(noteSeed);
     const family = selectRhythmCellForNote(
       profile.syncopationShiftRate,
@@ -119,7 +126,8 @@ function replayCellFamilies(
       phrLen,
       recentFamilies.slice(-7),
       projectedOffbeatRate,
-      rand
+      rand,
+      projectedOffbeatBlockThreshold
     );
     pickWeightedTemplate(family, recentFamilies, rand);
     recentFamilies.push(family);
@@ -192,9 +200,23 @@ export function enrichMelodyExpression(
   }
 ): PremiumMelodyExpressiveNote[] {
   const ordered = sortMelody(rhythmMelody);
-  const roles = detectPhraseRoles(ordered);
+  const roles = detectPhraseRoles(ordered, {
+    restPhraseBreakBeats: profile.restPhraseBreakBeats,
+    longNotePhraseBreakBeats: profile.longNotePhraseBreakBeats,
+  });
   const baseSeed = options?.seed ?? 88109;
-  const families = replayCellFamilies(ordered, profile, roles, baseSeed);
+  const rhythmSeedSalt = profile.rhythmSeedSalt ?? PREMIUM_MELODY_DEFAULT_RHYTHM_SEED_SALT;
+  const projectedOffbeatBlockThreshold =
+    profile.projectedOffbeatBlockThreshold ?? PREMIUM_MELODY_DEFAULT_PROJECTED_OFFBEAT_BLOCK_THRESHOLD;
+  const expressionCharacter = profile.expressionCharacter ?? PREMIUM_MELODY_DEFAULT_EXPRESSION_CHARACTER;
+  const families = replayCellFamilies(
+    ordered,
+    profile,
+    roles,
+    baseSeed,
+    rhythmSeedSalt,
+    projectedOffbeatBlockThreshold
+  );
 
   const articulationCounts: Partial<Record<Articulation, number>> = {};
   let durationAccentCount = 0;
@@ -206,11 +228,14 @@ export function enrichMelodyExpression(
   const phraseVelocities = new Map<number, number[]>();
 
   const out: PremiumMelodyExpressiveNote[] = ordered.map((note, index) => {
+    switch (expressionCharacter) {
+      case 'bh_bebop':
+      default: {
     const family = families[index]!;
     const isLanding = isStructuralLandingIndex(index, roles);
     const phraseIdx = indexInPhrase(ordered, index, roles);
     const phraseLen = phraseLengthAt(index, roles, ordered.length);
-    const noteSeed = deriveMelodyRhythmSeed(baseSeed, index + 10007);
+    const noteSeed = deriveMelodyRhythmSeed(baseSeed, index + 10007, rhythmSeedSalt);
     const rand = mulberry32(noteSeed);
 
     const ioi = ioiToNext(ordered, index);
@@ -254,6 +279,8 @@ export function enrichMelodyExpression(
       velocity,
       durationAccent,
     };
+      }
+    }
   });
 
   for (const velocities of phraseVelocities.values()) {

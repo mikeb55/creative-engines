@@ -11,6 +11,10 @@ export function mulberry32(seed: number): () => number {
 }
 
 /** Deterministic per-note seed derived from generation seed and note index. */
-export function deriveMelodyRhythmSeed(baseSeed: number, noteIndex: number): number {
-  return ((baseSeed ^ (noteIndex * 2654435761)) >>> 0);
+export function deriveMelodyRhythmSeed(
+  baseSeed: number,
+  noteIndex: number,
+  rhythmSeedSalt = 0
+): number {
+  return ((baseSeed ^ (noteIndex * 2654435761) ^ rhythmSeedSalt) >>> 0);
 }

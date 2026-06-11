@@ -5,6 +5,13 @@
 import type { ImportMelodyNote } from '../import/mosaicImportTimeline';
 import type { PremiumMelodyProfile } from './premiumMelodyProfile';
 import {
+  PREMIUM_MELODY_DEFAULT_BAR_SLOT_NUDGES_ENABLED,
+  PREMIUM_MELODY_DEFAULT_OFFBEAT_TRIM_CEILING,
+  PREMIUM_MELODY_DEFAULT_PROJECTED_OFFBEAT_BLOCK_THRESHOLD,
+  PREMIUM_MELODY_DEFAULT_RHYTHM_SEED_SALT,
+  PREMIUM_MELODY_DEFAULT_STRUCTURAL_LANDING_MODE,
+} from './premiumMelodyProfile';
+import {
   BEATS_PER_BAR,
   type PremiumMelodyCellFamily,
   type PremiumMelodyRhythmEnrichmentMeta,
@@ -51,11 +58,12 @@ export function assertPreservePitchSequence(
 
 function trimOffbeatOverflow(
   notes: readonly ImportMelodyNote[],
-  roles: ReturnType<typeof detectPhraseRoles>
+  roles: ReturnType<typeof detectPhraseRoles>,
+  offbeatTrimCeiling: number
 ): ImportMelodyNote[] {
   let out = [...notes];
   for (let pass = 0; pass < 6; pass++) {
-    if (melodyOffbeatRatio(out) <= 0.74) break;
+    if (melodyOffbeatRatio(out) <= offbeatTrimCeiling) break;
     const idx = out.findIndex((n, i) => !isStructuralLandingIndex(i, roles) && isOffbeatOnset(n.onsetBeat));
     if (idx < 0) break;
     const beat = ((out[idx]!.onsetBeat % BEATS_PER_BAR) + BEATS_PER_BAR) % BEATS_PER_BAR;
@@ -100,7 +108,19 @@ export function enrichMelodyRhythm(
   const ordered = [...melody].sort(
     (a, b) => a.bar - b.bar || a.onsetBeat - b.onsetBeat || a.midiPitch - b.midiPitch
   );
-  const roles = detectPhraseRoles(ordered);
+  const offbeatTrimCeiling = profile.offbeatTrimCeiling ?? PREMIUM_MELODY_DEFAULT_OFFBEAT_TRIM_CEILING;
+  const barSlotNudgesEnabled =
+    profile.barSlotNudgesEnabled ?? PREMIUM_MELODY_DEFAULT_BAR_SLOT_NUDGES_ENABLED;
+  const structuralLandingMode =
+    profile.structuralLandingMode ?? PREMIUM_MELODY_DEFAULT_STRUCTURAL_LANDING_MODE;
+  const projectedOffbeatBlockThreshold =
+    profile.projectedOffbeatBlockThreshold ?? PREMIUM_MELODY_DEFAULT_PROJECTED_OFFBEAT_BLOCK_THRESHOLD;
+  const rhythmSeedSalt = profile.rhythmSeedSalt ?? PREMIUM_MELODY_DEFAULT_RHYTHM_SEED_SALT;
+
+  const roles = detectPhraseRoles(ordered, {
+    restPhraseBreakBeats: profile.restPhraseBreakBeats,
+    longNotePhraseBreakBeats: profile.longNotePhraseBreakBeats,
+  });
 
   const baseSeed = options?.seed ?? 88109;
   const recentFamilies: PremiumMelodyCellFamily[] = [];
@@ -114,14 +134,18 @@ export function enrichMelodyRhythm(
 
   const withOnsets = ordered.map((note, index) => {
     if (isStructuralLandingIndex(index, roles)) {
-      return { ...note, onsetBeat: structuralLandingOnset(note, index, roles), fieldOrigin: note.fieldOrigin };
+      return {
+        ...note,
+        onsetBeat: structuralLandingOnset(note, index, roles, structuralLandingMode),
+        fieldOrigin: note.fieldOrigin,
+      };
     }
 
     const phraseIdx = indexInPhrase(ordered, index, roles);
     const phrLen = phraseLengthAt(index, roles, ordered.length);
     const projectedOffbeatRate = interiorCount > 0 ? offbeatCount / interiorCount : 0;
 
-    const noteSeed = deriveMelodyRhythmSeed(baseSeed, index);
+    const noteSeed = deriveMelodyRhythmSeed(baseSeed, index, rhythmSeedSalt);
     const rand = mulberry32(noteSeed);
 
     const family = selectRhythmCellForNote(
@@ -131,7 +155,8 @@ export function enrichMelodyRhythm(
       phrLen,
       recentFamilies.slice(-7),
       projectedOffbeatRate,
-      rand
+      rand,
+      projectedOffbeatBlockThreshold
     );
     const template = pickWeightedTemplate(family, recentFamilies, rand);
     let onsetBeat = interiorOnsetFromCellLibrary(note.onsetBeat, family, template);
@@ -140,10 +165,10 @@ export function enrichMelodyRhythm(
     const barCount = barNoteCounts.get(note.bar) ?? 1;
     const barSlotsFirst = [2.5, 2.75, 2.67];
     const barSlotsSecond = [3.0, 3.25, 3.5, 3.75];
-    if (barCount >= 2 && inBarIndex === 0 && onsetBeat > 2.75) {
+    if (barSlotNudgesEnabled && barCount >= 2 && inBarIndex === 0 && onsetBeat > 2.75) {
       onsetBeat = barSlotsFirst[(note.bar + index) % barSlotsFirst.length]!;
     }
-    if (barCount >= 2 && inBarIndex === 1 && onsetBeat <= 2.75) {
+    if (barSlotNudgesEnabled && barCount >= 2 && inBarIndex === 1 && onsetBeat <= 2.75) {
       onsetBeat = barSlotsSecond[(note.bar + index) % barSlotsSecond.length]!;
     }
 
@@ -164,7 +189,7 @@ export function enrichMelodyRhythm(
   });
 
   let collisionFree = resolvePremiumMelodyOnsetCollisionsSmart(withOnsets);
-  collisionFree = trimOffbeatOverflow(collisionFree, roles);
+  collisionFree = trimOffbeatOverflow(collisionFree, roles, offbeatTrimCeiling);
 
   const withDuration = collisionFree.map((note) => ({
     ...note,

@@ -1,8 +1,16 @@
 import type { ImportMelodyNote } from '../import/mosaicImportTimeline';
 import { BEATS_PER_BAR } from './premiumMelodyCellLibrary';
+import {
+  PREMIUM_MELODY_DEFAULT_LONG_NOTE_PHRASE_BREAK_BEATS,
+  PREMIUM_MELODY_DEFAULT_REST_PHRASE_BREAK_BEATS,
+  PREMIUM_MELODY_DEFAULT_STRUCTURAL_LANDING_MODE,
+  type PremiumMelodyStructuralLandingMode,
+} from './premiumMelodyProfile';
 
-const LONG_NOTE_BEATS = 1.25;
-const REST_SILENCE_BEATS = 1.75;
+export type PremiumMelodyPhraseDetectionOptions = {
+  restPhraseBreakBeats?: number;
+  longNotePhraseBreakBeats?: number;
+};
 
 export type PremiumMelodyPhraseRoles = {
   phraseStarts: Set<number>;
@@ -23,18 +31,31 @@ function silentGapBeats(prev: ImportMelodyNote, curr: ImportMelodyNote): number 
 }
 
 /** Rest / breath / skipped-bar boundary - not normal within-bar harmonic rhythm. */
-function isRestLikePhraseBreak(prev: ImportMelodyNote, curr: ImportMelodyNote): boolean {
+function isRestLikePhraseBreak(
+  prev: ImportMelodyNote,
+  curr: ImportMelodyNote,
+  restPhraseBreakBeats: number,
+  longNotePhraseBreakBeats: number
+): boolean {
   if (curr.bar > prev.bar + 1) return true;
   const gap = ioiBeats(prev, curr);
   const silence = silentGapBeats(prev, curr);
-  if (silence >= REST_SILENCE_BEATS) return true;
+  if (silence >= restPhraseBreakBeats) return true;
   if (gap >= BEATS_PER_BAR + 0.5) return true;
-  if (prev.durationBeats >= LONG_NOTE_BEATS && silence >= 1) return true;
+  if (prev.durationBeats >= longNotePhraseBreakBeats && silence >= 1) return true;
   return false;
 }
 
 /** Phrase boundaries from rests / long IOIs - not fixed indices. */
-export function detectPhraseRoles(melody: readonly ImportMelodyNote[]): PremiumMelodyPhraseRoles {
+export function detectPhraseRoles(
+  melody: readonly ImportMelodyNote[],
+  options?: PremiumMelodyPhraseDetectionOptions
+): PremiumMelodyPhraseRoles {
+  const restPhraseBreakBeats =
+    options?.restPhraseBreakBeats ?? PREMIUM_MELODY_DEFAULT_REST_PHRASE_BREAK_BEATS;
+  const longNotePhraseBreakBeats =
+    options?.longNotePhraseBreakBeats ?? PREMIUM_MELODY_DEFAULT_LONG_NOTE_PHRASE_BREAK_BEATS;
+
   const phraseStarts = new Set<number>();
   const phraseEnds = new Set<number>();
   if (melody.length === 0) return { phraseStarts, phraseEnds };
@@ -45,7 +66,7 @@ export function detectPhraseRoles(melody: readonly ImportMelodyNote[]): PremiumM
   for (let i = 1; i < melody.length; i++) {
     const prev = melody[i - 1]!;
     const curr = melody[i]!;
-    if (isRestLikePhraseBreak(prev, curr)) {
+    if (isRestLikePhraseBreak(prev, curr, restPhraseBreakBeats, longNotePhraseBreakBeats)) {
       phraseStarts.add(i);
       phraseEnds.add(i - 1);
     }
@@ -74,7 +95,7 @@ function nearestStructuralBeat(onsetBeat: number): number {
   return best;
 }
 
-export function structuralLandingOnset(
+function structuralLandingOnsetBhGrounded(
   note: ImportMelodyNote,
   index: number,
   roles: PremiumMelodyPhraseRoles
@@ -93,6 +114,22 @@ export function structuralLandingOnset(
   }
 
   return nearestStructuralBeat(note.onsetBeat);
+}
+
+export function structuralLandingOnset(
+  note: ImportMelodyNote,
+  index: number,
+  roles: PremiumMelodyPhraseRoles,
+  mode: PremiumMelodyStructuralLandingMode = PREMIUM_MELODY_DEFAULT_STRUCTURAL_LANDING_MODE
+): number {
+  switch (mode) {
+    case 'bh_grounded':
+      return structuralLandingOnsetBhGrounded(note, index, roles);
+    default: {
+      const _exhaustive: never = mode;
+      return structuralLandingOnsetBhGrounded(note, index, roles);
+    }
+  }
 }
 
 export function indexInPhrase(

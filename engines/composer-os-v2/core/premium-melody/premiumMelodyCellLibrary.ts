@@ -124,10 +124,11 @@ export function selectRhythmCellForNote(
   phraseLength: number,
   recentFamilies: PremiumMelodyCellFamily[],
   projectedOffbeatRate: number,
-  rand: () => number
+  rand: () => number,
+  projectedOffbeatBlockThreshold = 0.72
 ): PremiumMelodyCellFamily {
   const blocked = new Set<PremiumMelodyCellFamily>();
-  if (projectedOffbeatRate > 0.72) {
+  if (projectedOffbeatRate > projectedOffbeatBlockThreshold) {
     blocked.add('triplet_pickup');
     blocked.add('anticipate');
   }
