@@ -1,10 +1,32 @@
-/**
- * V83d Phase 2 - BH melody rhythm enrichment (onsets only; pitches locked).
+﻿/**
+ * V85 Phase 3 - BH melody rhythm enrichment (onsets only; pitches locked).
+ * Replaces V83d Phase 2 interior onset logic with cell library selection.
  */
 
 import type { ImportMelodyNote } from '../import/mosaicImportTimeline';
-import { isStrongBeat, isWeakBeat } from './voicingEngine';
+import { isStrongBeat } from './voicingEngine';
 import type { BhMelodyRhythmProfile } from './bhMelodyRhythmProfile';
+import {
+  BEATS_PER_BAR,
+  type BhCellFamily,
+  type BhRhythmEnrichmentMeta,
+  deriveBhMelodyRhythmSeed,
+  interiorOnsetFromCellLibrary,
+  melodyIoiEntropy,
+  mulberry32,
+  pickWeightedTemplate,
+  resolveBhMelodyOnsetCollisionsSmart,
+  selectRhythmCellForNote,
+} from './bhRhythmCellLibrary';
+
+// Re-export Phase 3 metrics so callers import from one place.
+export {
+  onsetClassDominance,
+  melodyIoiEntropy,
+  durationTrigramDiversity,
+  phraseDensityArcPresent,
+} from './bhRhythmCellLibrary';
+export type { BhRhythmEnrichmentMeta, BhCellFamily } from './bhRhythmCellLibrary';
 
 export class PreservePitchSequenceError extends Error {
   constructor(message: string) {
@@ -31,7 +53,6 @@ export function assertPreservePitchSequence(
   }
 }
 
-const BEATS_PER_BAR = 4;
 const LONG_NOTE_BEATS = 1.25;
 const REST_SILENCE_BEATS = 1.75;
 
@@ -53,7 +74,7 @@ function silentGapBeats(prev: ImportMelodyNote, curr: ImportMelodyNote): number 
   return absoluteOnsetBeats(curr) - prevEnd;
 }
 
-/** Rest / breath / skipped-bar boundary — not normal within-bar harmonic rhythm. */
+/** Rest / breath / skipped-bar boundary - not normal within-bar harmonic rhythm. */
 function isRestLikePhraseBreak(prev: ImportMelodyNote, curr: ImportMelodyNote): boolean {
   if (curr.bar > prev.bar + 1) return true;
   const gap = ioiBeats(prev, curr);
@@ -64,7 +85,7 @@ function isRestLikePhraseBreak(prev: ImportMelodyNote, curr: ImportMelodyNote): 
   return false;
 }
 
-/** Phrase boundaries from rests / long IOIs / phrase starts — not fixed indices. */
+/** Phrase boundaries from rests / long IOIs - not fixed indices. */
 function detectPhraseRoles(melody: readonly ImportMelodyNote[]): PhraseRoles {
   const phraseStarts = new Set<number>();
   const phraseEnds = new Set<number>();
@@ -89,7 +110,7 @@ function isStructuralLandingIndex(index: number, roles: PhraseRoles): boolean {
   return roles.phraseStarts.has(index) || roles.phraseEnds.has(index);
 }
 
-/** Beat 1 or beat 3 (0-indexed 0 or 2) — structural anchor grid. */
+/** Beat 1 or beat 3 (0-indexed 0 or 2) - structural anchor grid. */
 function nearestStructuralBeat(onsetBeat: number): number {
   const beat = ((onsetBeat % BEATS_PER_BAR) + BEATS_PER_BAR) % BEATS_PER_BAR;
   const candidates = [0, 2];
@@ -122,40 +143,6 @@ function structuralLandingOnset(note: ImportMelodyNote, index: number, roles: Ph
   return nearestStructuralBeat(note.onsetBeat);
 }
 
-/** Interior BH enrichment — anticipation / delayed attack, not uniform displacement. */
-function interiorEnrichedOnset(
-  note: ImportMelodyNote,
-  indexInPhrase: number,
-  profile: BhMelodyRhythmProfile
-): number {
-  const onsetBeat = note.onsetBeat;
-  const beat = ((onsetBeat % BEATS_PER_BAR) + BEATS_PER_BAR) % BEATS_PER_BAR;
-  const useAnticipation = profile.anticipationBias >= 0.55;
-  const groundedAnchor = indexInPhrase > 0 && indexInPhrase % 4 === 0;
-
-  if (groundedAnchor && isStrongBeat(onsetBeat)) return onsetBeat;
-
-  if (isStrongBeat(onsetBeat)) {
-    if (Math.abs(beat) < 0.05) {
-      return useAnticipation ? 0.5 : 0.75;
-    }
-    if (Math.abs(beat - 2) < 0.05) {
-      return useAnticipation ? 2.5 : 2.75;
-    }
-  }
-
-  if (isWeakBeat(onsetBeat)) {
-    const nudge = (indexInPhrase + note.bar) % 3 !== 0;
-    if (nudge) {
-      const nudged = useAnticipation ? onsetBeat - 0.25 : onsetBeat + 0.25;
-      if (nudged >= 0 && nudged <= BEATS_PER_BAR - 0.25) return nudged;
-    }
-    return onsetBeat;
-  }
-
-  return onsetBeat;
-}
-
 function indexInPhrase(melody: readonly ImportMelodyNote[], index: number, roles: PhraseRoles): number {
   let start = 0;
   for (const s of [...roles.phraseStarts].sort((a, b) => a - b)) {
@@ -165,20 +152,33 @@ function indexInPhrase(melody: readonly ImportMelodyNote[], index: number, roles
   return index - start;
 }
 
-/** Keep same-bar onsets strictly increasing (min 0.5 beat gap). */
-function resolveBhMelodyOnsetCollisions(notes: readonly ImportMelodyNote[]): ImportMelodyNote[] {
-  const out: ImportMelodyNote[] = [];
-  const lastOnsetByBar = new Map<number, number>();
-  for (const note of notes) {
-    let onsetBeat = note.onsetBeat;
-    const prev = lastOnsetByBar.get(note.bar);
-    if (prev != null && onsetBeat <= prev + 0.24) {
-      onsetBeat = Math.min(3.75, prev + 0.5);
+function phraseLengthAt(index: number, roles: PhraseRoles, total: number): number {
+  const starts = [...roles.phraseStarts].sort((a, b) => a - b);
+  for (let i = 0; i < starts.length; i++) {
+    const s = starts[i]!;
+    if (s > index) {
+      return s - (starts[i - 1] ?? 0);
     }
-    lastOnsetByBar.set(note.bar, onsetBeat);
-    out.push({ ...note, onsetBeat });
   }
-  return out;
+  const lastStart = starts[starts.length - 1] ?? 0;
+  return total - lastStart;
+}
+
+function isOffbeatOnset(onsetBeat: number): boolean {
+  return Math.abs(onsetBeat - Math.round(onsetBeat)) > 0.11;
+}
+
+function trimOffbeatOverflow(notes: readonly ImportMelodyNote[], roles: PhraseRoles): ImportMelodyNote[] {
+  let out = [...notes];
+  for (let pass = 0; pass < 6; pass++) {
+    if (melodyOffbeatRatio(out) <= 0.74) break;
+    const idx = out.findIndex((n, i) => !isStructuralLandingIndex(i, roles) && isOffbeatOnset(n.onsetBeat));
+    if (idx < 0) break;
+    const beat = ((out[idx]!.onsetBeat % BEATS_PER_BAR) + BEATS_PER_BAR) % BEATS_PER_BAR;
+    const anchor = beat < 1.5 ? 0 : beat < 3.5 ? 2 : 0;
+    out = out.map((n, i) => (i === idx ? { ...n, onsetBeat: anchor } : n));
+  }
+  return resolveBhMelodyOnsetCollisionsSmart(out);
 }
 
 function holdDurationToNext(
@@ -195,26 +195,84 @@ function holdDurationToNext(
 }
 
 /**
- * Returns the same pitch sequence with BH-profile onsets only.
+ * Returns same pitch sequence with BH-profile onsets only (V85 Phase 3 - cell library).
  * Throws if output pitches diverge from input (preservePitchSequence contract).
  */
 export function enrichMelodyRhythm(
   melody: readonly ImportMelodyNote[],
-  profile: BhMelodyRhythmProfile
+  profile: BhMelodyRhythmProfile,
+  options?: { seed?: number; meta?: BhRhythmEnrichmentMeta }
 ): ImportMelodyNote[] {
   const ordered = [...melody].sort(
     (a, b) => a.bar - b.bar || a.onsetBeat - b.onsetBeat || a.midiPitch - b.midiPitch
   );
   const roles = detectPhraseRoles(ordered);
 
+  const baseSeed = options?.seed ?? 88109;
+  const recentFamilies: BhCellFamily[] = [];
+  const familyCounts: Partial<Record<BhCellFamily, number>> = {};
+  let offbeatCount = 0;
+  let interiorCount = 0;
+
+  const barNoteCounts = new Map<number, number>();
+  for (const n of ordered) barNoteCounts.set(n.bar, (barNoteCounts.get(n.bar) ?? 0) + 1);
+  const barNoteSeen = new Map<number, number>();
+
   const withOnsets = ordered.map((note, index) => {
-    const onsetBeat = isStructuralLandingIndex(index, roles)
-      ? structuralLandingOnset(note, index, roles)
-      : interiorEnrichedOnset(note, indexInPhrase(ordered, index, roles), profile);
+    if (isStructuralLandingIndex(index, roles)) {
+      return { ...note, onsetBeat: structuralLandingOnset(note, index, roles), fieldOrigin: note.fieldOrigin };
+    }
+
+    // Cell-library interior onset
+    const phraseIdx = indexInPhrase(ordered, index, roles);
+    const phrLen = phraseLengthAt(index, roles, ordered.length);
+    const projectedOffbeatRate =
+      interiorCount > 0 ? offbeatCount / interiorCount : 0;
+
+    const noteSeed = deriveBhMelodyRhythmSeed(baseSeed, index);
+    const rand = mulberry32(noteSeed);
+
+    const family = selectRhythmCellForNote(
+      profile.syncopationShiftRate,
+      profile.anticipationBias,
+      phraseIdx,
+      phrLen,
+      recentFamilies.slice(-7),
+      projectedOffbeatRate,
+      rand
+    );
+    const template = pickWeightedTemplate(family, recentFamilies, rand);
+    let onsetBeat = interiorOnsetFromCellLibrary(note.onsetBeat, family, template);
+    const inBarIndex = barNoteSeen.get(note.bar) ?? 0;
+    barNoteSeen.set(note.bar, inBarIndex + 1);
+    const barCount = barNoteCounts.get(note.bar) ?? 1;
+    const barSlotsFirst = [2.5, 2.75, 2.67];
+    const barSlotsSecond = [3.0, 3.25, 3.5, 3.75];
+    if (barCount >= 2 && inBarIndex === 0 && onsetBeat > 2.75) {
+      onsetBeat = barSlotsFirst[(note.bar + index) % barSlotsFirst.length]!;
+    }
+    if (barCount >= 2 && inBarIndex === 1 && onsetBeat <= 2.75) {
+      onsetBeat = barSlotsSecond[(note.bar + index) % barSlotsSecond.length]!;
+    }
+
+    recentFamilies.push(family);
+    if (recentFamilies.length > 20) recentFamilies.shift();
+    familyCounts[family] = (familyCounts[family] ?? 0) + 1;
+    interiorCount++;
+
+    const beat = ((onsetBeat % BEATS_PER_BAR) + BEATS_PER_BAR) % BEATS_PER_BAR;
+    const onQuarter =
+      Math.abs(beat) < 0.05 ||
+      Math.abs(beat - 1) < 0.05 ||
+      Math.abs(beat - 2) < 0.05 ||
+      Math.abs(beat - 3) < 0.05;
+    if (!onQuarter) offbeatCount++;
+
     return { ...note, onsetBeat, fieldOrigin: note.fieldOrigin };
   });
 
-  const collisionFree = resolveBhMelodyOnsetCollisions(withOnsets);
+  let collisionFree = resolveBhMelodyOnsetCollisionsSmart(withOnsets);
+  collisionFree = trimOffbeatOverflow(collisionFree, roles);
 
   const withDuration = collisionFree.map((note) => ({
     ...note,
@@ -222,8 +280,31 @@ export function enrichMelodyRhythm(
   }));
 
   assertPreservePitchSequence(ordered, withDuration);
+
+  // Populate meta if provided
+  if (options?.meta) {
+    const m = options.meta;
+    m.familyCounts = familyCounts;
+    m.totalNotes = ordered.length;
+    m.offbeatRatio = interiorCount > 0 ? offbeatCount / interiorCount : 0;
+    m.ioiEntropy = melodyIoiEntropy(withDuration);
+    let maxCount = 0;
+    let dominant: BhCellFamily | undefined;
+    for (const [f, c] of Object.entries(familyCounts) as [BhCellFamily, number][]) {
+      if (c > maxCount) {
+        maxCount = c;
+        dominant = f;
+      }
+    }
+    m.dominantFamily = dominant;
+  }
+
   return withDuration;
 }
+
+// ---------------------------------------------------------------------------
+// Phase 2 metrics (preserved from V83d Phase 2)
+// ---------------------------------------------------------------------------
 
 /** 0-1 - attacks off the quarter grid (beats 0/1/2/3). */
 export function melodySyncopationScore(melody: readonly ImportMelodyNote[]): number {

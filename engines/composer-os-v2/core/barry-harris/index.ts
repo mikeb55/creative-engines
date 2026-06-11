@@ -96,6 +96,21 @@ export {
   PreservePitchSequenceError,
 } from './enrichMelodyRhythm';
 export {
+  onsetClassDominance,
+  melodyIoiEntropy,
+  durationTrigramDiversity,
+  phraseDensityArcPresent,
+  resolveBhMelodyOnsetCollisionsSmart,
+  deriveBhMelodyRhythmSeed,
+  mulberry32,
+  familyWeightForPhase,
+  selectRhythmCellForNote,
+  pickWeightedTemplate,
+  interiorOnsetFromCellLibrary,
+  BEATS_PER_BAR,
+} from './bhRhythmCellLibrary';
+export type { BhRhythmEnrichmentMeta, BhCellFamily, CellTemplate } from './bhRhythmCellLibrary';
+export {
   DEFAULT_BH_MELODY_RHYTHM_PROFILE,
   BH_MELODY_RHYTHM_PROFILES,
   resolveBhMelodyRhythmProfile,

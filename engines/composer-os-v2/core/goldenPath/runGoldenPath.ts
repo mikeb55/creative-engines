@@ -3215,7 +3215,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     );
     const exportMelody =
       bhPresetId === 'guitar_bass_duo'
-        ? enrichMelodyRhythm(melodyLine, bhRhythmProfile)
+        ? enrichMelodyRhythm(melodyLine, bhRhythmProfile, { seed })
         : melodyLine;
     score = applyChordMelodyToScore(score, resolvedNotes, melodyLine, bhPresetId, {
       exportMelody,
