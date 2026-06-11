@@ -1,4 +1,4 @@
-﻿/**
+/**
  * V85 Phase 3 - BH melody rhythm enrichment (onsets only; pitches locked).
  * Replaces V83d Phase 2 interior onset logic with cell library selection.
  */
@@ -345,6 +345,36 @@ export function melodyStructuralLandingCount(melody: readonly ImportMelodyNote[]
     if (isStrongBeat(ordered[i]!.onsetBeat)) count++;
   }
   return count;
+}
+
+
+/** Phrase boundaries for expression pass (same detector as rhythm enrichment). */
+export type BhPhraseRoles = {
+  phraseStarts: Set<number>;
+  phraseEnds: Set<number>;
+};
+
+export function bhDetectPhraseRoles(melody: readonly ImportMelodyNote[]): BhPhraseRoles {
+  const ordered = [...melody].sort(
+    (a, b) => a.bar - b.bar || a.onsetBeat - b.onsetBeat || a.midiPitch - b.midiPitch
+  );
+  return detectPhraseRoles(ordered);
+}
+
+export function isBhStructuralLandingIndex(index: number, roles: BhPhraseRoles): boolean {
+  return isStructuralLandingIndex(index, roles);
+}
+
+export function bhIndexInPhrase(
+  melody: readonly ImportMelodyNote[],
+  index: number,
+  roles: BhPhraseRoles
+): number {
+  return indexInPhrase(melody, index, roles);
+}
+
+export function bhPhraseLengthAt(index: number, roles: BhPhraseRoles, total: number): number {
+  return phraseLengthAt(index, roles, total);
 }
 
 /** Distinct IOI buckets (16th-quantized) across consecutive attacks. */

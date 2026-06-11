@@ -47,6 +47,8 @@ export interface NoteEvent {
   articulation?: Articulation;
   /** MIDI velocity 1–127; optional expressive shaping (ghost notes, comp). */
   velocity?: number;
+  /** Export-only duration emphasis (MusicXML stress); does not change note duration. */
+  durationAccent?: 'none' | 'stress';
   /** Optional motif/riff identity tag (symbolic layer; not exported to MusicXML). */
   motifRef?: string;
 }

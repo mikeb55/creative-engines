@@ -11,6 +11,8 @@ export interface BhMelodyRhythmProfile {
   syncopationShiftRate: number;
   /** 0–1 — prefer eighth anticipations (±0.5) over weak-quarter slots. */
   anticipationBias: number;
+  /** 0–1 — V83e+f and-of-1 passing-dim selection weight (inactive below 0.35). */
+  offbeatPassingDimBias: number;
 }
 
 export const BH_MELODY_RHYTHM_PROFILES: Record<BhMelodyRhythmProfileId, BhMelodyRhythmProfile> = {
@@ -18,16 +20,19 @@ export const BH_MELODY_RHYTHM_PROFILES: Record<BhMelodyRhythmProfileId, BhMelody
     id: 'bebop_step',
     syncopationShiftRate: 1,
     anticipationBias: 0.7,
+    offbeatPassingDimBias: 0.75,
   },
   enclosure_heavy: {
     id: 'enclosure_heavy',
     syncopationShiftRate: 0.85,
     anticipationBias: 0.9,
+    offbeatPassingDimBias: 0.85,
   },
   scalar_embellish: {
     id: 'scalar_embellish',
     syncopationShiftRate: 0.75,
     anticipationBias: 0.45,
+    offbeatPassingDimBias: 0.35,
   },
 };
 

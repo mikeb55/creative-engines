@@ -1245,6 +1245,8 @@ export interface GenerationMetadata {
   barryHarrisResolvedNotes?: import('./barry-harris/types').ResolvedChordMelodyNote[];
   /** V82f — per-note `bh:cm:*` chord-melody observability receipts. */
   barryHarrisChordMelodyReceipts?: string[];
+  /** V83d Phase 2 / V85 — BH melody rhythm profile id (`bebop_step` | `enclosure_heavy` | `scalar_embellish`). */
+  barryHarrisProfile?: string;
   /** Bill Evans (impressionist / rootless-style extensions) — slice diagnostics + effective harmony. */
   billEvansDiagnostics?: {
     songwriterId: 'bill_evans';

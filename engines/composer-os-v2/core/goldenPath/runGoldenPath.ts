@@ -183,6 +183,7 @@ import {
   applyVoicingEngineToResolved,
   assignPhrasingRoles,
   enrichMelodyRhythm,
+  enrichMelodyExpression,
   insertPassingDiminishedEvents,
   resolveBhMelodyRhythmProfile,
 } from '../barry-harris';
@@ -3213,9 +3214,14 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     const bhRhythmProfile = resolveBhMelodyRhythmProfile(
       options.barryHarrisProfile ?? appliedContext.generationMetadata?.barryHarrisProfile
     );
+    const rhythmMeta = { familyCounts: {}, totalNotes: 0 };
+    const rhythmMelody =
+      bhPresetId === 'guitar_bass_duo'
+        ? enrichMelodyRhythm(melodyLine, bhRhythmProfile, { seed, meta: rhythmMeta })
+        : melodyLine;
     const exportMelody =
       bhPresetId === 'guitar_bass_duo'
-        ? enrichMelodyRhythm(melodyLine, bhRhythmProfile, { seed })
+        ? enrichMelodyExpression(rhythmMelody, bhRhythmProfile, { seed, rhythmMeta })
         : melodyLine;
     score = applyChordMelodyToScore(score, resolvedNotes, melodyLine, bhPresetId, {
       exportMelody,

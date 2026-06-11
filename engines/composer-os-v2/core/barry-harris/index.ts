@@ -115,6 +115,19 @@ export {
   BH_MELODY_RHYTHM_PROFILES,
   resolveBhMelodyRhythmProfile,
 } from './bhMelodyRhythmProfile';
+export {
+  enrichMelodyExpression,
+  assertPreserveMelodyTimingGrid,
+  distinctArticulationTypes,
+  phraseVelocitySpread,
+  PreserveMelodyTimingGridError,
+} from './enrichMelodyExpression';
+export type {
+  BhExpressiveMelodyNote,
+  BhExpressionEnrichmentMeta,
+  BhDurationAccentKind,
+} from './enrichMelodyExpression';
+
 export type { BhMelodyRhythmProfile, BhMelodyRhythmProfileId } from './bhMelodyRhythmProfile';
 export {
   assessGuitarFeasibility,

@@ -1,5 +1,5 @@
-﻿/**
- * V85 Phase 3 - BH melody rhythm cell library auto-validation.
+/**
+ * V85 Phase 3 + 3b - BH melody rhythm cell library + expression auto-validation.
  * Run: npx tsx --tsconfig tsconfig.json engines/composer-os-v2/scripts/runV85Phase3AutoValidation.ts
  */
 
@@ -16,8 +16,17 @@ import {
   melodyIoiEntropy,
   onsetClassDominance,
   phraseDensityArcPresent,
+  bhDetectPhraseRoles,
   type BhRhythmEnrichmentMeta,
 } from '../core/barry-harris/enrichMelodyRhythm';
+import {
+  assertPreserveMelodyTimingGrid,
+  distinctArticulationTypes,
+  enrichMelodyExpression,
+  phraseVelocitySpread,
+  type BhExpressionEnrichmentMeta,
+  type BhExpressiveMelodyNote,
+} from '../core/barry-harris/enrichMelodyExpression';
 import { DEFAULT_BH_MELODY_RHYTHM_PROFILE } from '../core/barry-harris/bhMelodyRhythmProfile';
 import {
   findDirectionTypeScopeViolations,
@@ -30,28 +39,20 @@ import { musicXmlToImportTimeline } from '../core/import/musicXmlToImportTimelin
 import type { ImportMelodyNote } from '../core/import/mosaicImportTimeline';
 import type { NoteEvent, ScoreModel } from '../core/score-model/scoreModelTypes';
 
-// ---------------------------------------------------------------------------
-// Phase 2 thresholds (unchanged from V83d)
-// ---------------------------------------------------------------------------
 const OFFBEAT_RATIO_MIN = 0.55;
 const OFFBEAT_RATIO_MAX = 0.75;
 const SYNC_DELTA_MIN = 0.15;
 const SYNC_DELTA_MAX = 0.85;
 
-// ---------------------------------------------------------------------------
-// Phase 3 thresholds (calibrated after first run)
-// ---------------------------------------------------------------------------
 const IOI_BUCKETS_MIN = 5;
-// Calibrated on BH_Benchmark_JazzMelody (seed 88109) after V85 Phase 3 cell library:
-// buckets=11 entropy=3.374 dominance=0.250 trigrams=13 families=5 arc=true offbeat=0.688
-const ONSET_DOMINANCE_MAX = 0.30;  // dominant onset class <= 30% (degenerate ladder ~0.45+)
-const IOI_ENTROPY_MIN = 2.0;       // Shannon entropy floor (bits); degenerate ladder ~1.0
-const DURATION_TRIGRAM_MIN = 6;    // distinct duration 3-grams; degenerate ~1-2
-const CELL_FAMILIES_MIN = 3;       // >= 3 distinct cell families used
+const ONSET_DOMINANCE_MAX = 0.30;
+const IOI_ENTROPY_MIN = 2.0;
+const DURATION_TRIGRAM_MIN = 6;
+const CELL_FAMILIES_MIN = 3;
 
-// ---------------------------------------------------------------------------
-// File paths
-// ---------------------------------------------------------------------------
+const ARTICULATION_TYPES_MIN = 3;
+const PHRASE_VELOCITY_SPREAD_MIN = 8;
+
 const V85_PHASE3_QA_PATH = path.join(
   'C:',
   'Users',
@@ -71,6 +72,8 @@ const JAZZ_BENCHMARK_FIXTURE = path.join(
   'BH_Benchmark_JazzMelody.musicxml'
 );
 
+const CALIBRATION_SEED = 88109;
+
 function resolveJazzBenchmarkMusicXmlPath(): string {
   if (fs.existsSync(JAZZ_BENCHMARK_FIXTURE)) return JAZZ_BENCHMARK_FIXTURE;
   throw new Error(`BH jazz benchmark fixture missing: ${JAZZ_BENCHMARK_FIXTURE}`);
@@ -80,10 +83,10 @@ function guitarPart(score: ScoreModel) {
   return score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
 }
 
-function voice1MelodyFromScore(score: ScoreModel): ImportMelodyNote[] {
+function voice1ExpressiveFromScore(score: ScoreModel): BhExpressiveMelodyNote[] {
   const part = guitarPart(score);
   if (!part) return [];
-  const out: ImportMelodyNote[] = [];
+  const out: BhExpressiveMelodyNote[] = [];
   for (const m of part.measures) {
     for (const e of m.events) {
       if (e.kind !== 'note') continue;
@@ -96,10 +99,33 @@ function voice1MelodyFromScore(score: ScoreModel): ImportMelodyNote[] {
         midiPitch: n.pitch,
         confidence: 1,
         fieldOrigin: 'explicit',
+        ...(n.articulation ? { articulation: n.articulation } : {}),
+        ...(n.velocity != null ? { velocity: n.velocity } : {}),
+        ...(n.durationAccent ? { durationAccent: n.durationAccent } : {}),
       });
     }
   }
   return out.sort((a, b) => a.bar - b.bar || a.onsetBeat - b.onsetBeat || a.midiPitch - b.midiPitch);
+}
+
+function voice1MelodyFromScore(score: ScoreModel): ImportMelodyNote[] {
+  return voice1ExpressiveFromScore(score);
+}
+
+function minPhraseVelocitySpread(notes: readonly BhExpressiveMelodyNote[]): number {
+  const roles = bhDetectPhraseRoles(notes);
+  const starts = [...roles.phraseStarts].sort((a, b) => a - b);
+  let worst = 0;
+  for (let si = 0; si < starts.length; si++) {
+    const start = starts[si]!;
+    const end = si + 1 < starts.length ? starts[si + 1]! - 1 : notes.length - 1;
+    const slice = notes.slice(start, end + 1);
+    const { spread } = phraseVelocitySpread(slice);
+    if (slice.filter((n) => n.velocity != null).length >= 2) {
+      worst = Math.max(worst, spread);
+    }
+  }
+  return worst;
 }
 
 type AssertResult = { label: string; pass: boolean; detail?: string };
@@ -119,9 +145,11 @@ function writePhase3QaExport(): {
   xml: string;
   scored: ScoreModel;
   inputMelody: ImportMelodyNote[];
-  enrichedMelody: ImportMelodyNote[];
-  exportedMelody: ImportMelodyNote[];
+  rhythmMelody: ImportMelodyNote[];
+  expressiveMelody: BhExpressiveMelodyNote[];
+  exportedMelody: BhExpressiveMelodyNote[];
   meta: BhRhythmEnrichmentMeta;
+  exprMeta: BhExpressionEnrichmentMeta;
 } {
   const xmlPath = resolveJazzBenchmarkMusicXmlPath();
   const ir = musicXmlToImportTimeline(fs.readFileSync(xmlPath, 'utf8'));
@@ -133,12 +161,27 @@ function writePhase3QaExport(): {
     familyCounts: {},
     totalNotes: 0,
   };
-  const enrichedMelody = enrichMelodyRhythm(inputMelody, DEFAULT_BH_MELODY_RHYTHM_PROFILE, {
-    seed: 88109,
+  const rhythmMelody = enrichMelodyRhythm(inputMelody, DEFAULT_BH_MELODY_RHYTHM_PROFILE, {
+    seed: CALIBRATION_SEED,
     meta,
   });
 
-  const gp = runGoldenPathOnce(88109, {
+  const exprMeta: BhExpressionEnrichmentMeta = {
+    articulationCounts: {},
+    durationAccentCount: 0,
+    velocityMin: 0,
+    velocityMax: 0,
+    perPhraseVelocitySpread: 0,
+    structuralLandingAccentHits: 0,
+    structuralLandingTotal: 0,
+  };
+  const expressiveMelody = enrichMelodyExpression(rhythmMelody, DEFAULT_BH_MELODY_RHYTHM_PROFILE, {
+    seed: CALIBRATION_SEED,
+    rhythmMeta: meta,
+    meta: exprMeta,
+  });
+
+  const gp = runGoldenPathOnce(CALIBRATION_SEED, {
     presetId: 'guitar_bass_duo',
     harmonyMode: 'custom_locked',
     lockedHarmonyBarsRaw: [...locked],
@@ -162,11 +205,6 @@ function writePhase3QaExport(): {
     !gp.errors.some((e) => /DESKTOP SONG MODE HARMONY|authority check/i.test(e));
 
   if (!generationOk || !gp.xml || !gp.score) {
-    const outDir = path.dirname(V85_PHASE3_QA_PATH);
-    if (fs.existsSync(outDir)) {
-      const existing = fs.readdirSync(outDir).filter((f) => f.includes('v85') || f.includes('BH'));
-      console.log(`Song Mode folder listing (v85/BH): ${existing.join(', ') || '(none)'}`);
-    }
     throw new Error(`V85 Phase 3 QA export failed: ${gp.errors[0] ?? 'no xml/score'}`);
   }
 
@@ -175,25 +213,27 @@ function writePhase3QaExport(): {
   console.log(`\nV85 Phase 3 QA written: ${V85_PHASE3_QA_PATH}`);
   console.log(`bytes: ${gp.xml.length}`);
 
-  const exportedMelody = voice1MelodyFromScore(gp.score);
+  const exportedMelody = voice1ExpressiveFromScore(gp.score);
   return {
     xml: gp.xml,
     scored: gp.score,
     inputMelody,
-    enrichedMelody,
+    rhythmMelody,
+    expressiveMelody,
     exportedMelody,
     meta,
+    exprMeta,
   };
 }
 
 function assertPhase2Metrics(
   inputMelody: readonly ImportMelodyNote[],
-  enrichedMelody: readonly ImportMelodyNote[],
+  rhythmMelody: readonly ImportMelodyNote[],
   exportedMelody: readonly ImportMelodyNote[],
   xml: string
 ): boolean {
   const preSync = melodySyncopationScore(inputMelody);
-  const postSync = melodySyncopationScore(enrichedMelody);
+  const postSync = melodySyncopationScore(rhythmMelody);
   const syncDelta = postSync - preSync;
   const offbeat = melodyOffbeatRatio(exportedMelody);
   const structuralLandings = melodyStructuralLandingCount(exportedMelody);
@@ -236,7 +276,7 @@ function assertPhase2Metrics(
       detail: pitchDetail,
     },
     {
-      label: `>= 3 distinct IOI buckets (exported v1)`,
+      label: '>= 3 distinct IOI buckets (exported v1)',
       pass: ioiBuckets >= 3,
       detail: `buckets=${ioiBuckets}`,
     },
@@ -251,7 +291,7 @@ function assertPhase2Metrics(
 }
 
 function assertPhase3Metrics(
-  enrichedMelody: readonly ImportMelodyNote[],
+  rhythmMelody: readonly ImportMelodyNote[],
   exportedMelody: readonly ImportMelodyNote[],
   meta: BhRhythmEnrichmentMeta
 ): boolean {
@@ -262,7 +302,6 @@ function assertPhase3Metrics(
   const densityArc = phraseDensityArcPresent(exportedMelody);
   const familiesUsed = Object.keys(meta.familyCounts).length;
 
-  // Print calibration numbers
   console.log('\n--- Phase 3 calibration numbers (observed) ---');
   console.log(`  IOI buckets:        ${ioiBuckets}`);
   console.log(`  Onset dominance:    ${dominance.toFixed(3)} (threshold: <= ${ONSET_DOMINANCE_MAX})`);
@@ -309,21 +348,84 @@ function assertPhase3Metrics(
   ]);
 }
 
+function assertPhase3bMetrics(
+  rhythmMelody: readonly ImportMelodyNote[],
+  expressiveMelody: readonly BhExpressiveMelodyNote[],
+  exportedMelody: readonly BhExpressiveMelodyNote[],
+  exprMeta: BhExpressionEnrichmentMeta
+): boolean {
+  let timingOk = false;
+  let timingDetail = '';
+  try {
+    assertPreserveMelodyTimingGrid(rhythmMelody, expressiveMelody);
+    assertPreserveMelodyTimingGrid(rhythmMelody, exportedMelody);
+    timingOk = true;
+    timingDetail = `notes=${rhythmMelody.length}`;
+  } catch (e) {
+    timingDetail = e instanceof Error ? e.message : String(e);
+  }
+
+  const articTypesExpr = distinctArticulationTypes(expressiveMelody);
+  const articTypesExport = distinctArticulationTypes(exportedMelody);
+  const phraseSpreadExpr = exprMeta.perPhraseVelocitySpread;
+  const phraseSpreadExport = minPhraseVelocitySpread(exportedMelody);
+  const landingHits = exprMeta.structuralLandingAccentHits;
+  const landingTotal = exprMeta.structuralLandingTotal;
+
+  console.log('\n--- Phase 3b calibration numbers (observed) ---');
+  console.log(`  Timing grid preserved (expr): ${timingOk}`);
+  console.log(`  Articulation types (expr):    ${articTypesExpr}`);
+  console.log(`  Articulation types (export):  ${articTypesExport}`);
+  console.log(`  Per-phrase velocity spread:   expr=${phraseSpreadExpr.toFixed(2)} exportMinPhrase=${phraseSpreadExport}`);
+  console.log(`  Velocity min/max (expr):      ${exprMeta.velocityMin}-${exprMeta.velocityMax}`);
+  console.log(`  Structural landing accents:   ${landingHits}/${landingTotal}`);
+  console.log(`  Duration accent count:        ${exprMeta.durationAccentCount}`);
+  console.log(`  Articulation counts:          ${JSON.stringify(exprMeta.articulationCounts)}`);
+
+  return printAssertions('V85 Phase 3b - expression checks', [
+    {
+      label: 'timing grid unchanged vs rhythm-only (expr + export)',
+      pass: timingOk,
+      detail: timingDetail,
+    },
+    {
+      label: `>= ${ARTICULATION_TYPES_MIN} articulation types (exported v1)`,
+      pass: articTypesExport >= ARTICULATION_TYPES_MIN,
+      detail: `types=${articTypesExport}`,
+    },
+    {
+      label: 'structural landings have accents (expression pass)',
+      pass: landingTotal === 0 || landingHits === landingTotal,
+      detail: `accents=${landingHits}/${landingTotal}`,
+    },
+    {
+      label: `per-phrase velocity spread >= ${PHRASE_VELOCITY_SPREAD_MIN} (expr meta)`,
+      pass: phraseSpreadExpr >= PHRASE_VELOCITY_SPREAD_MIN,
+      detail: `spread=${phraseSpreadExpr.toFixed(2)}`,
+    },
+    {
+      label: `per-phrase velocity spread >= ${PHRASE_VELOCITY_SPREAD_MIN} (exported phrases)`,
+      pass: phraseSpreadExport >= PHRASE_VELOCITY_SPREAD_MIN,
+      detail: `minPhraseSpread=${phraseSpreadExport}`,
+    },
+  ]);
+}
+
 function main(): void {
-  console.log('V85 Phase 3 auto-validation\n');
+  console.log('V85 Phase 3 + 3b auto-validation\n');
 
   const qa = writePhase3QaExport();
 
-  const p2ok = assertPhase2Metrics(
-    qa.inputMelody,
-    qa.enrichedMelody,
+  const p2ok = assertPhase2Metrics(qa.inputMelody, qa.rhythmMelody, qa.exportedMelody, qa.xml);
+  const p3ok = assertPhase3Metrics(qa.rhythmMelody, qa.exportedMelody, qa.meta);
+  const p3bok = assertPhase3bMetrics(
+    qa.rhythmMelody,
+    qa.expressiveMelody,
     qa.exportedMelody,
-    qa.xml
+    qa.exprMeta
   );
 
-  const p3ok = assertPhase3Metrics(qa.enrichedMelody, qa.exportedMelody, qa.meta);
-
-  const allOk = p2ok && p3ok;
+  const allOk = p2ok && p3ok && p3bok;
   console.log(`\nV85 Phase 3 overall: ${allOk ? 'PASS' : 'FAIL'}`);
   process.exit(allOk ? 0 : 1);
 }

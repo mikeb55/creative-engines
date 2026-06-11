@@ -3,7 +3,6 @@
  */
 
 import type { ImportMelodyNote } from '../import/mosaicImportTimeline';
-import type { ScoreModel } from '../score-model/scoreModelTypes';
 import { closeBlockVoicingBelowMelody, drop2VoicingBelowMelody } from './blockVoicings';
 import { dim7ChordTones, sixthChordTones } from './chordTones';
 import { chordTonePcsForResolved } from './identities';
@@ -25,7 +24,7 @@ import {
   SQ_PART_VA,
   SQ_PART_VC,
 } from '../string-quartet/stringQuartetTypes';
-import type { PartModel } from '../score-model/scoreModelTypes';
+import type { MeasureModel, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
 import {
   buildLadder,
   familyKey,
@@ -1448,8 +1447,7 @@ export function harmonizePhrase(
 
     const melodyPc = mod12(melodyMidi);
     const exactRung = findRungForMelodyPc(ladder, melodyPc);
-    const ladderHit =
-      resolved.eventKind === 'passing_dim' ? false : exactRung !== undefined;
+    const ladderHit = exactRung !== undefined;
     const tonePcsForScoring = tonesForSource(resolved.anchor, resolved.kind === 'dim7' ? 'dim' : '6');
 
     if (familyChanged && familyChangePrevInner && familyChangePrevInner.length > 0) {
@@ -1506,9 +1504,7 @@ export function harmonizePhrase(
       }
       out.push(applyPassingDimOverrides(resolved, mappedFallback));
       prevInner = mappedFallback.innerVoicingMidis;
-      if (resolved.eventKind !== 'passing_dim') {
-        lastStructuralInner = mappedFallback.innerVoicingMidis;
-      }
+      lastStructuralInner = mappedFallback.innerVoicingMidis;
       prevFamilyKey = fk;
       continue;
     }
@@ -1645,9 +1641,7 @@ export function harmonizePhrase(
     lastFpByRungMelody.set(rungKey, mapped.voicingFingerprint);
 
     prevInner = mapped.innerVoicingMidis;
-    if (resolved.eventKind !== 'passing_dim') {
-      lastStructuralInner = mapped.innerVoicingMidis;
-    }
+    lastStructuralInner = mapped.innerVoicingMidis;
     prevLane = picked.laneSignature;
     prevFamilyKey = fk;
     recentFingerprints.push(mapped.voicingFingerprint);
@@ -1933,12 +1927,20 @@ function applyChordMelodyToScoreGuitarDuo(
     for (const part of parts) {
       const measure = findOrCreateMeasure(part, exportMel.bar);
 
+      const expr = exportMel as ImportMelodyNote & {
+        articulation?: 'staccato' | 'tenuto' | 'accent';
+        velocity?: number;
+        durationAccent?: 'none' | 'stress';
+      };
       measure.events.push({
         kind: 'note',
         pitch: exportMel.midiPitch,
         startBeat: exportMel.onsetBeat,
         duration: holdDur,
         voice: 1,
+        ...(expr.articulation ? { articulation: expr.articulation } : {}),
+        ...(expr.velocity != null ? { velocity: expr.velocity } : {}),
+        ...(expr.durationAccent === 'stress' ? { durationAccent: 'stress' as const } : {}),
       });
 
       const andOfOneInBar = hasAndOfOnePassingDimInBar(exportMel.bar, resolvedNotes);

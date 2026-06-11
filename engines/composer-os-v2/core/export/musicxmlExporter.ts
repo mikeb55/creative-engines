@@ -317,6 +317,17 @@ function emitRestTicks(parts: number[], voice: number, staffXml?: string): strin
   return xml;
 }
 
+function buildArticulationNotations(
+  articulation?: string,
+  durationAccent?: 'none' | 'stress'
+): string {
+  const tags: string[] = [];
+  if (articulation) tags.push(`<${articulation}/>`);
+  if (durationAccent === 'stress') tags.push('<stress/>');
+  if (tags.length === 0) return '';
+  return `<notations><articulations>${tags.join('')}</articulations></notations>`;
+}
+
 function emitPitchedTicks(
   parts: number[],
   voice: number,
@@ -1207,7 +1218,8 @@ function eventsToXml(
           const alterEl = alter !== 0 ? `<alter>${alter}</alter>` : '';
           const pitchXml = `<pitch><step>${step}</step>${alterEl}<octave>${octave}</octave></pitch>`;
           const art = (note as { articulation?: string }).articulation;
-          const notationsEl = art ? `<notations><articulations><${art}/></articulations></notations>` : '';
+          const durationAccent = (note as { durationAccent?: 'none' | 'stress' }).durationAccent;
+          const notationsEl = buildArticulationNotations(art, durationAccent);
           const vel = (note as { velocity?: number }).velocity;
           const dynAttr =
             vel !== undefined

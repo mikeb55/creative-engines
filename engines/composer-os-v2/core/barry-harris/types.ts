@@ -85,6 +85,8 @@ export type ResolvedChordMelodyNote = ChordMelodyNoteChoice & {
   voicingVariant: VoicingVariant;
   exportStackMidis: number[];
   innerVoicingMidis: number[];
+  /** Full voiced stack (inner + melody) when distinct from exportStackMidis during VL passes. */
+  pitches?: number[];
   borrowedReplacementPc?: number;
   voicingFingerprint: string;
   voiceLeadingCost?: number | null;
@@ -153,6 +155,8 @@ export type RealizedVoicing = {
   shapeType: VoicingShapeType;
   pitches: number[];
   innerVoicingMidis: number[];
+  /** Inner + melody stack after family-change / displacement variant selection. */
+  exportStackMidis?: number[];
   voicingFingerprint: string;
   guitarFeasible: boolean;
   guitarFretSpan: number;
