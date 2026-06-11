@@ -75,11 +75,32 @@ export {
   harmonizePhrase,
   isDrop2Voicing,
   isDrop2InnerSpacing,
+  isStrongBeat,
+  isWeakBeat,
   ladderRungHitRate,
   maxConsecutiveIdenticalFingerprints,
   harmonySymbolForResolved,
 } from './voicingEngine';
-export type { VoicingEngineOptions, VoicingSpacingPreference } from './voicingEngine';
+export type {
+  ApplyChordMelodyToScoreOptions,
+  VoicingEngineOptions,
+  VoicingSpacingPreference,
+} from './voicingEngine';
+export {
+  enrichMelodyRhythm,
+  assertPreservePitchSequence,
+  melodySyncopationScore,
+  melodyOffbeatRatio,
+  melodyStructuralLandingCount,
+  distinctMelodyIoiBuckets,
+  PreservePitchSequenceError,
+} from './enrichMelodyRhythm';
+export {
+  DEFAULT_BH_MELODY_RHYTHM_PROFILE,
+  BH_MELODY_RHYTHM_PROFILES,
+  resolveBhMelodyRhythmProfile,
+} from './bhMelodyRhythmProfile';
+export type { BhMelodyRhythmProfile, BhMelodyRhythmProfileId } from './bhMelodyRhythmProfile';
 export {
   assessGuitarFeasibility,
   GUITAR_MAX_FRET_SPAN,

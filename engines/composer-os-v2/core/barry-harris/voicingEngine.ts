@@ -75,9 +75,16 @@ function mod12(pc: number): number {
   return ((pc % 12) + 12) % 12;
 }
 
-function isStrongBeat(onsetBeat: number): boolean {
+/** V83d — quarter-grid strong beats (beats 1 and 3 in 4/4). */
+export function isStrongBeat(onsetBeat: number): boolean {
   const beat = ((onsetBeat % 4) + 4) % 4;
   return Math.abs(beat) < 0.05 || Math.abs(beat - 2) < 0.05;
+}
+
+/** V83d — weak beats (beats 2 and 4 in 4/4) for duo comp / melody enrichment. */
+export function isWeakBeat(onsetBeat: number): boolean {
+  const beat = ((onsetBeat % 4) + 4) % 4;
+  return Math.abs(beat - 1) < 0.05 || Math.abs(beat - 3) < 0.05;
 }
 
 function findMelodyNote(
@@ -1206,24 +1213,42 @@ function hasPassingDimAt(
   );
 }
 
+export type ApplyChordMelodyToScoreOptions = {
+  /** V83d Phase 2 — enriched melody onsets for v1 export (harmony lookup stays on `melody`). */
+  exportMelody?: readonly ImportMelodyNote[];
+};
+
 function applyChordMelodyToScoreGuitarDuo(
   score: ScoreModel,
   resolvedNotes: readonly ResolvedChordMelodyNote[],
   melody: readonly ImportMelodyNote[],
-  presetId: string
+  presetId: string,
+  options?: ApplyChordMelodyToScoreOptions
 ): ScoreModel {
+  const exportMelody = options?.exportMelody ?? melody;
+  const sortMelody = (notes: readonly ImportMelodyNote[]) =>
+    [...notes].sort(
+      (a, b) => a.bar - b.bar || a.onsetBeat - b.onsetBeat || a.midiPitch - b.midiPitch
+    );
+  const sortedMelody = sortMelody(melody);
+  const sortedExportMelody = sortMelody(exportMelody);
   const out = structuredClone(score) as ScoreModel;
   const parts = targetPartsForPreset(out, presetId);
   if (parts.length === 0) return out;
 
   const barsTouched = new Set<number>([
     ...melody.map((m) => m.bar),
+    ...exportMelody.map((m) => m.bar),
     ...resolvedNotes.filter((r) => r.eventKind === 'passing_dim').map((r) => r.bar),
   ]);
   for (const part of parts) {
     for (const bar of barsTouched) {
       const measure = findOrCreateMeasure(part, bar);
       stripVoice2CompEvents(measure);
+      measure.events = measure.events.filter((e) => {
+        if (e.kind !== 'note' && e.kind !== 'chord') return true;
+        return ((e as { voice?: number }).voice ?? 1) !== 1;
+      });
     }
   }
 
@@ -1252,50 +1277,46 @@ function applyChordMelodyToScoreGuitarDuo(
     resolvedByOnset.set(`${r.bar}:${r.onsetBeat.toFixed(4)}`, r);
   }
 
-  for (const mel of melody) {
+  for (let i = 0; i < sortedExportMelody.length; i++) {
+    const exportMel = sortedExportMelody[i]!;
+    const origMel = sortedMelody[i] ?? exportMel;
     const resolved =
-      resolvedByOnset.get(`${mel.bar}:${mel.onsetBeat.toFixed(4)}`) ??
-      resolvedNotes.find((r) => r.bar === mel.bar && Math.abs(r.onsetBeat - mel.onsetBeat) < 0.02);
+      resolvedByOnset.get(`${origMel.bar}:${origMel.onsetBeat.toFixed(4)}`) ??
+      resolvedNotes.find(
+        (r) => r.bar === origMel.bar && Math.abs(r.onsetBeat - origMel.onsetBeat) < 0.02
+      );
     if (!resolved || resolved.harmonyOnly) continue;
 
     const inner =
       resolved.innerVoicingMidis.length > 0
         ? [...resolved.innerVoicingMidis]
-        : resolved.exportStackMidis.filter((p) => p !== mel.midiPitch);
+        : resolved.exportStackMidis.filter((p) => p !== exportMel.midiPitch);
     resolved.blockVoicingMidis = resolved.innerVoicingMidis;
 
-    const symbol = harmonySymbolForResolved(resolved);
-    const holdDur = melodyHoldDurationBeats(mel, melody);
-    const innerOnset = duoInnerStaggerOnset(mel.onsetBeat);
-    const innerDur = duoInnerStaggerDuration(innerOnset, mel.onsetBeat, holdDur);
+    const holdDur = melodyHoldDurationBeats(exportMel, sortedExportMelody);
+    const innerOnset = duoInnerStaggerOnset(exportMel.onsetBeat);
+    const innerDur = duoInnerStaggerDuration(innerOnset, exportMel.onsetBeat, holdDur);
 
     for (const part of parts) {
-      const measure = findOrCreateMeasure(part, mel.bar);
-
-      measure.events = measure.events.filter((e) => {
-        if ((e.kind !== 'note' && e.kind !== 'chord') || (e as { voice?: number }).voice !== 1) {
-          return true;
-        }
-        return Math.abs(e.startBeat - mel.onsetBeat) >= 0.02;
-      });
+      const measure = findOrCreateMeasure(part, exportMel.bar);
 
       measure.events.push({
         kind: 'note',
-        pitch: mel.midiPitch,
-        startBeat: mel.onsetBeat,
+        pitch: exportMel.midiPitch,
+        startBeat: exportMel.onsetBeat,
         duration: holdDur,
         voice: 1,
       });
 
       if (
         inner.length > 0 &&
-        Math.abs(innerOnset - mel.onsetBeat) >= 0.02 &&
-        !hasPassingDimAt(mel.bar, innerOnset, resolvedNotes)
+        Math.abs(innerOnset - exportMel.onsetBeat) >= 0.02 &&
+        !hasPassingDimAt(exportMel.bar, innerOnset, resolvedNotes)
       ) {
         if (inner.length === 1) {
           pushDuoGuitarNote(
             part,
-            mel.bar,
+            exportMel.bar,
             inner[0]!,
             innerOnset,
             innerDur,
@@ -1303,7 +1324,7 @@ function applyChordMelodyToScoreGuitarDuo(
             DUO_COMP_INNER_VELOCITY
           );
         } else {
-          const measureInner = findOrCreateMeasure(part, mel.bar);
+          const measureInner = findOrCreateMeasure(part, exportMel.bar);
           measureInner.events = measureInner.events.filter(
             (e) =>
               !(
@@ -1578,7 +1599,8 @@ export function applyChordMelodyToScore(
   score: ScoreModel,
   resolvedNotes: readonly ResolvedChordMelodyNote[],
   melody: readonly ImportMelodyNote[],
-  presetId: string
+  presetId: string,
+  options?: ApplyChordMelodyToScoreOptions
 ): ScoreModel {
   if (presetId === 'big_band') {
     return applyChordMelodyToScoreBigBand(score, resolvedNotes, melody);
@@ -1587,7 +1609,7 @@ export function applyChordMelodyToScore(
     return applyChordMelodyToScoreStringQuartet(score, resolvedNotes, melody);
   }
 
-  return applyChordMelodyToScoreGuitarDuo(score, resolvedNotes, melody, presetId);
+  return applyChordMelodyToScoreGuitarDuo(score, resolvedNotes, melody, presetId, options);
 }
 
 export function assertMelodyIsTopOfStack(resolved: ResolvedChordMelodyNote, melodyMidi: number): boolean {

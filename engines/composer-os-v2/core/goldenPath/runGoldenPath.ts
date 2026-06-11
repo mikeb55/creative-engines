@@ -182,7 +182,9 @@ import {
   applyIdentitiesToNoteChoices,
   applyVoicingEngineToResolved,
   assignPhrasingRoles,
+  enrichMelodyRhythm,
   insertPassingDiminishedEvents,
+  resolveBhMelodyRhythmProfile,
 } from '../barry-harris';
 import { validateSongModeMotifSystem } from '../motif/songModeMotifEngine';
 import { validateSongModePhraseEngineV1 } from './songModePhraseEngineV1';
@@ -1447,6 +1449,8 @@ export interface RunGoldenPathOptions {
   preserveMelody?: boolean;
   /** V80m IMP-5 — apply ensemble voicing (BB/SQ; default false on duo). */
   reorchestrate?: boolean;
+  /** V83d Phase 2 — BH melody rhythm profile id (bebop_step default). */
+  barryHarrisProfile?: string;
 }
 
 export type { MosaicPresetRole, SectionRealizationResult, AssembledScoreModel };
@@ -3200,12 +3204,16 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     const resolvedNotes = applyVoicingEngineToResolved(harmonyEvents, melodyLine, {
       presetId: bhPresetId,
     });
-    score = applyChordMelodyToScore(
-      score,
-      resolvedNotes,
-      options.importTimeline.melodyLine,
-      bhPresetId
+    const bhRhythmProfile = resolveBhMelodyRhythmProfile(
+      options.barryHarrisProfile ?? appliedContext.generationMetadata?.barryHarrisProfile
     );
+    const exportMelody =
+      bhPresetId === 'guitar_bass_duo'
+        ? enrichMelodyRhythm(melodyLine, bhRhythmProfile)
+        : melodyLine;
+    score = applyChordMelodyToScore(score, resolvedNotes, melodyLine, bhPresetId, {
+      exportMelody,
+    });
     appliedContext.generationMetadata = {
       ...appliedContext.generationMetadata,
       barryHarrisResolvedNotes: resolvedNotes,
