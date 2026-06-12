@@ -191,6 +191,7 @@ import {
   applyPremiumMelodyPinExport,
 } from '../premium-melody';
 import { buildWayneShorterIsolationProvisionalProfile } from '../wayne-shorter/wsPremiumMelodyProfile';
+import { buildBillEvansIsolationProvisionalProfile } from '../bill-evans/bePremiumMelodyProfile';
 import { validateSongModeMotifSystem } from '../motif/songModeMotifEngine';
 import { validateSongModePhraseEngineV1 } from './songModePhraseEngineV1';
 import { partitionSongModePhraseIssues } from '../song-mode/songModePhraseBehaviourRules';
@@ -3255,6 +3256,22 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       ...appliedContext.generationMetadata,
       waynePremiumMelodyProfile: wsProfile.id,
       waynePremiumMelodyRhythmMeta: wsPinResult.rhythmMeta,
+    };
+  }
+  if (
+    styleTransferResult?.composerApplied === 'bill_evans' &&
+    options?.importTimeline &&
+    (appliedContext.presetId ?? 'guitar_bass_duo') === 'guitar_bass_duo' &&
+    (options.preserveMelody ?? true)
+  ) {
+    const beProfile = buildBillEvansIsolationProvisionalProfile();
+    const melodyLine = options.importTimeline.melodyLine;
+    const bePinResult = applyPremiumMelodyPinExport(score, melodyLine, beProfile, seed);
+    score = bePinResult.score;
+    appliedContext.generationMetadata = {
+      ...appliedContext.generationMetadata,
+      bePremiumMelodyProfile: beProfile.id,
+      bePremiumMelodyRhythmMeta: bePinResult.rhythmMeta,
     };
   }
   if (styleTransferDeferBarMath && !isIndieTuningFixture) {
