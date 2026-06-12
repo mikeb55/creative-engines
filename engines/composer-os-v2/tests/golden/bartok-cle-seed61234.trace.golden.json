@@ -159,7 +159,7 @@
             "candidateMidi": 73,
             "shortlistRank": 0,
             "voiceScore": "0.860075",
-            "tieBreakKey": 194950,
+            "tieBreakKey": 469940,
             "dimensions": {
               "accent": "0.282667",
               "axis": "1.000000",
@@ -218,7 +218,7 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.742978",
+        "finalScore": "4.776477",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
           "axisCoverage": 0.75,
@@ -229,9 +229,9 @@
         },
         "chosenMidiByRole": {
           "soprano": 84,
-          "alto": 73,
+          "alto": 78,
           "tenor": 71,
-          "bass": 54
+          "bass": 49
         },
         "activeFunction": "tonic_axis",
         "collectionId": "octatonic",
@@ -256,18 +256,18 @@
           },
           {
             "role": "alto",
-            "candidateMidi": 73,
+            "candidateMidi": 78,
             "shortlistRank": 0,
-            "voiceScore": "0.808661",
-            "tieBreakKey": 588650,
+            "voiceScore": "0.881603",
+            "tieBreakKey": 148260,
             "dimensions": {
               "accent": "0.540000",
               "axis": "1.000000",
-              "cell": "0.520000",
-              "collection": "0.911634",
-              "contour": "1.000000",
+              "cell": "0.920000",
+              "collection": "1.016823",
+              "contour": "0.700000",
               "imitation": "0.700000",
-              "register": "1.000000",
+              "register": "0.902778",
               "vertical": "1.000000"
             }
           },
@@ -290,16 +290,16 @@
           },
           {
             "role": "bass",
-            "candidateMidi": 54,
-            "shortlistRank": 0,
-            "voiceScore": "0.881153",
-            "tieBreakKey": 549070,
+            "candidateMidi": 49,
+            "shortlistRank": 1,
+            "voiceScore": "0.841711",
+            "tieBreakKey": 148260,
             "dimensions": {
               "accent": "0.540000",
               "axis": "1.000000",
-              "cell": "0.920000",
-              "collection": "0.958160",
-              "contour": "0.580000",
+              "cell": "0.680000",
+              "collection": "0.859040",
+              "contour": "0.880000",
               "imitation": "0.700000",
               "register": "0.943548",
               "vertical": "1.000000"
@@ -318,19 +318,19 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.515578",
+        "finalScore": "4.531054",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
           "axisCoverage": 0.75,
-          "ensembleMultiplier": 1.45464,
-          "imitationConsistency": 0.94,
+          "ensembleMultiplier": 1.3223999999999998,
+          "imitationConsistency": 1,
           "spacingBalance": 1,
           "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
-          "soprano": 84,
-          "alto": 73,
-          "tenor": 71,
+          "soprano": 85,
+          "alto": 82,
+          "tenor": 73,
           "bass": 54
         },
         "activeFunction": "tonic_axis",
@@ -339,67 +339,67 @@
         "candidates": [
           {
             "role": "soprano",
-            "candidateMidi": 84,
-            "shortlistRank": 4,
-            "voiceScore": "0.777507",
-            "tieBreakKey": 366290,
+            "candidateMidi": 85,
+            "shortlistRank": 0,
+            "voiceScore": "0.806946",
+            "tieBreakKey": 421840,
             "dimensions": {
               "accent": "0.282667",
-              "axis": "0.880000",
-              "cell": "0.520000",
-              "collection": "1.019857",
-              "contour": "1.000000",
+              "axis": "1.000000",
+              "cell": "0.600000",
+              "collection": "0.964229",
+              "contour": "0.940000",
               "imitation": "0.700000",
-              "register": "0.883333",
+              "register": "0.863889",
               "vertical": "1.000000"
             }
           },
           {
             "role": "alto",
-            "candidateMidi": 73,
-            "shortlistRank": 0,
-            "voiceScore": "0.788075",
-            "tieBreakKey": 549070,
+            "candidateMidi": 82,
+            "shortlistRank": 1,
+            "voiceScore": "0.800275",
+            "tieBreakKey": 501710,
             "dimensions": {
               "accent": "0.282667",
-              "axis": "1.000000",
-              "cell": "0.520000",
+              "axis": "0.880000",
+              "cell": "0.840000",
               "collection": "0.911634",
-              "contour": "1.000000",
+              "contour": "0.760000",
               "imitation": "0.700000",
-              "register": "1.000000",
+              "register": "0.825000",
               "vertical": "1.000000"
             }
           },
           {
             "role": "tenor",
-            "candidateMidi": 71,
+            "candidateMidi": 73,
             "shortlistRank": 0,
-            "voiceScore": "0.771451",
-            "tieBreakKey": 375370,
+            "voiceScore": "0.808799",
+            "tieBreakKey": 501710,
             "dimensions": {
               "accent": "0.282667",
               "axis": "1.000000",
-              "cell": "0.520000",
-              "collection": "0.773743",
-              "contour": "1.000000",
+              "cell": "0.680000",
+              "collection": "0.894103",
+              "contour": "0.880000",
               "imitation": "0.700000",
-              "register": "0.830645",
+              "register": "0.785484",
               "vertical": "1.000000"
             }
           },
           {
             "role": "bass",
             "candidateMidi": 54,
-            "shortlistRank": 2,
-            "voiceScore": "0.821366",
-            "tieBreakKey": 688040,
+            "shortlistRank": 0,
+            "voiceScore": "0.865366",
+            "tieBreakKey": 33510,
             "dimensions": {
               "accent": "0.282667",
               "axis": "1.000000",
-              "cell": "0.520000",
+              "cell": "0.920000",
               "collection": "0.958160",
-              "contour": "1.000000",
+              "contour": "0.700000",
               "imitation": "0.700000",
               "register": "0.943548",
               "vertical": "1.000000"
@@ -418,20 +418,20 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.777666",
+        "finalScore": "4.637936",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
           "axisCoverage": 0.75,
-          "ensembleMultiplier": 1.3223999999999998,
-          "imitationConsistency": 1,
+          "ensembleMultiplier": 1.254,
+          "imitationConsistency": 0.7,
           "spacingBalance": 1,
           "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
-          "soprano": 81,
-          "alto": 73,
+          "soprano": 86,
+          "alto": 76,
           "tenor": 69,
-          "bass": 50
+          "bass": 53
         },
         "activeFunction": "subdominant_axis",
         "collectionId": "octatonic",
@@ -439,35 +439,35 @@
         "candidates": [
           {
             "role": "soprano",
-            "candidateMidi": 81,
-            "shortlistRank": 1,
-            "voiceScore": "0.890475",
-            "tieBreakKey": 576000,
+            "candidateMidi": 86,
+            "shortlistRank": 0,
+            "voiceScore": "0.896610",
+            "tieBreakKey": 925400,
             "dimensions": {
               "accent": "0.916667",
               "axis": "1.000000",
               "cell": "0.850000",
-              "collection": "0.964229",
-              "contour": "0.820000",
+              "collection": "0.982771",
+              "contour": "0.940000",
               "imitation": "0.700000",
-              "register": "0.941667",
+              "register": "0.844444",
               "vertical": "1.000000"
             }
           },
           {
             "role": "alto",
-            "candidateMidi": 73,
-            "shortlistRank": 0,
-            "voiceScore": "0.849760",
-            "tieBreakKey": 911460,
+            "candidateMidi": 76,
+            "shortlistRank": 3,
+            "voiceScore": "0.861826",
+            "tieBreakKey": 307990,
             "dimensions": {
               "accent": "0.916667",
-              "axis": "0.880000",
+              "axis": "1.000000",
               "cell": "0.850000",
               "collection": "0.788914",
-              "contour": "1.000000",
+              "contour": "0.640000",
               "imitation": "0.700000",
-              "register": "1.000000",
+              "register": "0.941667",
               "vertical": "1.000000"
             }
           },
@@ -475,14 +475,14 @@
             "role": "tenor",
             "candidateMidi": 69,
             "shortlistRank": 1,
-            "voiceScore": "0.892138",
-            "tieBreakKey": 974890,
+            "voiceScore": "0.887338",
+            "tieBreakKey": 566350,
             "dimensions": {
               "accent": "0.916667",
               "axis": "1.000000",
               "cell": "0.850000",
               "collection": "0.894103",
-              "contour": "0.880000",
+              "contour": "0.760000",
               "imitation": "0.700000",
               "register": "0.875806",
               "vertical": "1.000000"
@@ -490,16 +490,16 @@
           },
           {
             "role": "bass",
-            "candidateMidi": 50,
-            "shortlistRank": 0,
-            "voiceScore": "0.895624",
-            "tieBreakKey": 925400,
+            "candidateMidi": 53,
+            "shortlistRank": 2,
+            "voiceScore": "0.882372",
+            "tieBreakKey": 392550,
             "dimensions": {
               "accent": "0.916667",
-              "axis": "1.000000",
+              "axis": "0.880000",
               "cell": "0.850000",
-              "collection": "0.875560",
-              "contour": "0.760000",
+              "collection": "0.908600",
+              "contour": "0.940000",
               "imitation": "0.700000",
               "register": "0.966129",
               "vertical": "1.000000"
@@ -518,20 +518,20 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.318540",
+        "finalScore": "4.478020",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
           "axisCoverage": 0.75,
-          "ensembleMultiplier": 1.254,
-          "imitationConsistency": 0.7,
+          "ensembleMultiplier": 1.3223999999999998,
+          "imitationConsistency": 1,
           "spacingBalance": 1,
           "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
           "soprano": 86,
-          "alto": 73,
-          "tenor": 69,
-          "bass": 52
+          "alto": 81,
+          "tenor": 74,
+          "bass": 59
         },
         "activeFunction": "subdominant_axis",
         "collectionId": "octatonic",
@@ -540,15 +540,15 @@
           {
             "role": "soprano",
             "candidateMidi": 86,
-            "shortlistRank": 0,
-            "voiceScore": "0.855770",
-            "tieBreakKey": 984920,
+            "shortlistRank": 2,
+            "voiceScore": "0.796770",
+            "tieBreakKey": 776450,
             "dimensions": {
               "accent": "0.282667",
               "axis": "1.000000",
-              "cell": "0.920000",
+              "cell": "0.520000",
               "collection": "0.982771",
-              "contour": "0.700000",
+              "contour": "1.000000",
               "imitation": "0.700000",
               "register": "0.844444",
               "vertical": "1.000000"
@@ -556,52 +556,52 @@
           },
           {
             "role": "alto",
-            "candidateMidi": 73,
+            "candidateMidi": 81,
             "shortlistRank": 0,
-            "voiceScore": "0.739640",
-            "tieBreakKey": 319340,
+            "voiceScore": "0.841853",
+            "tieBreakKey": 25890,
             "dimensions": {
               "accent": "0.282667",
-              "axis": "0.880000",
-              "cell": "0.520000",
-              "collection": "0.788914",
-              "contour": "1.000000",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.911634",
+              "contour": "0.700000",
               "imitation": "0.700000",
-              "register": "1.000000",
+              "register": "0.844444",
               "vertical": "1.000000"
             }
           },
           {
             "role": "tenor",
-            "candidateMidi": 69,
-            "shortlistRank": 0,
-            "voiceScore": "0.809418",
-            "tieBreakKey": 983930,
+            "candidateMidi": 74,
+            "shortlistRank": 2,
+            "voiceScore": "0.777395",
+            "tieBreakKey": 689030,
             "dimensions": {
               "accent": "0.282667",
               "axis": "1.000000",
-              "cell": "0.520000",
-              "collection": "0.894103",
-              "contour": "1.000000",
-              "imitation": "0.800000",
-              "register": "0.875806",
+              "cell": "0.920000",
+              "collection": "0.911297",
+              "contour": "0.700000",
+              "imitation": "0.300000",
+              "register": "0.762903",
               "vertical": "1.000000"
             }
           },
           {
             "role": "bass",
-            "candidateMidi": 52,
-            "shortlistRank": 4,
-            "voiceScore": "0.803922",
-            "tieBreakKey": 25890,
+            "candidateMidi": 59,
+            "shortlistRank": 1,
+            "voiceScore": "0.812334",
+            "tieBreakKey": 344010,
             "dimensions": {
               "accent": "0.282667",
-              "axis": "1.000000",
-              "cell": "0.680000",
-              "collection": "0.743400",
-              "contour": "0.880000",
+              "axis": "0.760000",
+              "cell": "1.000000",
+              "collection": "0.958160",
+              "contour": "0.640000",
               "imitation": "0.700000",
-              "register": "0.988710",
+              "register": "0.830645",
               "vertical": "1.000000"
             }
           }
@@ -618,20 +618,20 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.575140",
+        "finalScore": "4.789702",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
           "axisCoverage": 0.75,
-          "ensembleMultiplier": 1.254,
-          "imitationConsistency": 0.7,
+          "ensembleMultiplier": 1.45464,
+          "imitationConsistency": 0.94,
           "spacingBalance": 1,
           "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
           "soprano": 86,
-          "alto": 73,
-          "tenor": 69,
-          "bass": 52
+          "alto": 76,
+          "tenor": 73,
+          "bass": 57
         },
         "activeFunction": "subdominant_axis",
         "collectionId": "octatonic",
@@ -656,52 +656,52 @@
           },
           {
             "role": "alto",
-            "candidateMidi": 73,
-            "shortlistRank": 0,
-            "voiceScore": "0.832226",
-            "tieBreakKey": 25740,
+            "candidateMidi": 76,
+            "shortlistRank": 4,
+            "voiceScore": "0.803493",
+            "tieBreakKey": 412240,
             "dimensions": {
               "accent": "0.540000",
-              "axis": "0.880000",
-              "cell": "0.920000",
+              "axis": "1.000000",
+              "cell": "0.680000",
               "collection": "0.788914",
-              "contour": "1.000000",
+              "contour": "0.700000",
               "imitation": "0.700000",
-              "register": "1.000000",
+              "register": "0.941667",
               "vertical": "1.000000"
             }
           },
           {
             "role": "tenor",
-            "candidateMidi": 69,
-            "shortlistRank": 0,
-            "voiceScore": "0.878005",
-            "tieBreakKey": 222420,
+            "candidateMidi": 73,
+            "shortlistRank": 1,
+            "voiceScore": "0.866928",
+            "tieBreakKey": 808380,
             "dimensions": {
               "accent": "0.540000",
-              "axis": "1.000000",
-              "cell": "0.920000",
-              "collection": "0.894103",
-              "contour": "1.000000",
-              "imitation": "0.700000",
-              "register": "0.875806",
+              "axis": "0.880000",
+              "cell": "1.000000",
+              "collection": "0.773743",
+              "contour": "0.940000",
+              "imitation": "0.900000",
+              "register": "0.785484",
               "vertical": "1.000000"
             }
           },
           {
             "role": "bass",
-            "candidateMidi": 52,
-            "shortlistRank": 2,
-            "voiceScore": "0.862909",
-            "tieBreakKey": 326410,
+            "candidateMidi": 57,
+            "shortlistRank": 0,
+            "voiceScore": "0.869892",
+            "tieBreakKey": 808380,
             "dimensions": {
               "accent": "0.540000",
               "axis": "1.000000",
               "cell": "0.920000",
-              "collection": "0.743400",
-              "contour": "1.000000",
+              "collection": "0.859040",
+              "contour": "0.880000",
               "imitation": "0.700000",
-              "register": "0.988710",
+              "register": "0.875806",
               "vertical": "1.000000"
             }
           }
@@ -718,20 +718,20 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.466666",
+        "finalScore": "4.648363",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
           "axisCoverage": 0.75,
-          "ensembleMultiplier": 1.3223999999999998,
-          "imitationConsistency": 1,
+          "ensembleMultiplier": 1.45464,
+          "imitationConsistency": 0.94,
           "spacingBalance": 1,
           "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
           "soprano": 81,
-          "alto": 73,
-          "tenor": 69,
-          "bass": 50
+          "alto": 74,
+          "tenor": 68,
+          "bass": 52
         },
         "activeFunction": "subdominant_axis",
         "collectionId": "octatonic",
@@ -756,52 +756,52 @@
           },
           {
             "role": "alto",
-            "candidateMidi": 73,
-            "shortlistRank": 0,
-            "voiceScore": "0.739640",
-            "tieBreakKey": 627460,
+            "candidateMidi": 74,
+            "shortlistRank": 4,
+            "voiceScore": "0.814102",
+            "tieBreakKey": 104450,
             "dimensions": {
               "accent": "0.282667",
-              "axis": "0.880000",
-              "cell": "0.520000",
-              "collection": "0.788914",
-              "contour": "1.000000",
+              "axis": "1.000000",
+              "cell": "0.680000",
+              "collection": "0.929166",
+              "contour": "0.880000",
               "imitation": "0.700000",
-              "register": "1.000000",
+              "register": "0.980556",
               "vertical": "1.000000"
             }
           },
           {
             "role": "tenor",
-            "candidateMidi": 69,
-            "shortlistRank": 0,
-            "voiceScore": "0.793418",
-            "tieBreakKey": 675380,
+            "candidateMidi": 68,
+            "shortlistRank": 2,
+            "voiceScore": "0.788724",
+            "tieBreakKey": 958860,
             "dimensions": {
               "accent": "0.282667",
-              "axis": "1.000000",
-              "cell": "0.520000",
-              "collection": "0.894103",
-              "contour": "1.000000",
-              "imitation": "0.700000",
-              "register": "0.875806",
+              "axis": "0.880000",
+              "cell": "0.920000",
+              "collection": "0.911297",
+              "contour": "0.700000",
+              "imitation": "0.500000",
+              "register": "0.898387",
               "vertical": "1.000000"
             }
           },
           {
             "role": "bass",
-            "candidateMidi": 50,
-            "shortlistRank": 1,
-            "voiceScore": "0.825904",
-            "tieBreakKey": 77930,
+            "candidateMidi": 52,
+            "shortlistRank": 2,
+            "voiceScore": "0.830322",
+            "tieBreakKey": 104450,
             "dimensions": {
               "accent": "0.282667",
               "axis": "1.000000",
-              "cell": "0.680000",
-              "collection": "0.875560",
-              "contour": "0.880000",
+              "cell": "0.920000",
+              "collection": "0.743400",
+              "contour": "0.700000",
               "imitation": "0.700000",
-              "register": "0.966129",
+              "register": "0.988710",
               "vertical": "1.000000"
             }
           }
@@ -818,19 +818,19 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.754281",
+        "finalScore": "4.878103",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
           "axisCoverage": 0.75,
-          "ensembleMultiplier": 1.254,
-          "imitationConsistency": 0.88,
+          "ensembleMultiplier": 1.45464,
+          "imitationConsistency": 0.94,
           "spacingBalance": 1,
           "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
-          "soprano": 79,
-          "alto": 73,
-          "tenor": 69,
+          "soprano": 81,
+          "alto": 79,
+          "tenor": 70,
           "bass": 50
         },
         "activeFunction": "subdominant_axis",
@@ -839,52 +839,52 @@
         "candidates": [
           {
             "role": "soprano",
-            "candidateMidi": 79,
-            "shortlistRank": 0,
-            "voiceScore": "0.899216",
-            "tieBreakKey": 516769,
+            "candidateMidi": 81,
+            "shortlistRank": 1,
+            "voiceScore": "0.884903",
+            "tieBreakKey": 588740,
             "dimensions": {
               "accent": "0.916667",
               "axis": "1.000000",
               "cell": "0.850000",
-              "collection": "0.982771",
-              "contour": "0.880000",
+              "collection": "0.834429",
+              "contour": "1.000000",
               "imitation": "0.700000",
-              "register": "0.980556",
+              "register": "0.941667",
               "vertical": "1.000000"
             }
           },
           {
             "role": "alto",
-            "candidateMidi": 73,
-            "shortlistRank": 0,
-            "voiceScore": "0.872200",
-            "tieBreakKey": 796580,
+            "candidateMidi": 79,
+            "shortlistRank": 1,
+            "voiceScore": "0.884333",
+            "tieBreakKey": 390630,
             "dimensions": {
               "accent": "0.916667",
-              "axis": "0.880000",
+              "axis": "1.000000",
               "cell": "0.850000",
               "collection": "0.929166",
-              "contour": "1.000000",
+              "contour": "0.700000",
               "imitation": "0.700000",
-              "register": "1.000000",
+              "register": "0.883333",
               "vertical": "1.000000"
             }
           },
           {
             "role": "tenor",
-            "candidateMidi": 69,
+            "candidateMidi": 70,
             "shortlistRank": 0,
-            "voiceScore": "0.925681",
-            "tieBreakKey": 873740,
+            "voiceScore": "0.854237",
+            "tieBreakKey": 949640,
             "dimensions": {
               "accent": "0.916667",
-              "axis": "1.000000",
+              "axis": "0.880000",
               "cell": "0.850000",
-              "collection": "0.773743",
-              "contour": "1.000000",
-              "imitation": "1.000000",
-              "register": "0.875806",
+              "collection": "0.945686",
+              "contour": "0.880000",
+              "imitation": "0.600000",
+              "register": "0.853226",
               "vertical": "1.000000"
             }
           },
@@ -892,14 +892,14 @@
             "role": "bass",
             "candidateMidi": 50,
             "shortlistRank": 0,
-            "voiceScore": "0.902251",
-            "tieBreakKey": 956890,
+            "voiceScore": "0.897451",
+            "tieBreakKey": 936350,
             "dimensions": {
               "accent": "0.916667",
               "axis": "1.000000",
               "cell": "0.850000",
               "collection": "0.859040",
-              "contour": "1.000000",
+              "contour": "0.880000",
               "imitation": "0.700000",
               "register": "0.966129",
               "vertical": "1.000000"
@@ -918,20 +918,20 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.301479",
+        "finalScore": "4.654669",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
-          "axisCoverage": 0.5,
-          "ensembleMultiplier": 1.276,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.45464,
           "imitationConsistency": 0.94,
           "spacingBalance": 1,
           "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
-          "soprano": 81,
-          "alto": 73,
-          "tenor": 70,
-          "bass": 55
+          "soprano": 85,
+          "alto": 79,
+          "tenor": 74,
+          "bass": 57
         },
         "activeFunction": "subdominant_axis",
         "collectionId": "octatonic",
@@ -939,69 +939,69 @@
         "candidates": [
           {
             "role": "soprano",
-            "candidateMidi": 81,
+            "candidateMidi": 85,
             "shortlistRank": 1,
-            "voiceScore": "0.804463",
-            "tieBreakKey": 167240,
+            "voiceScore": "0.818542",
+            "tieBreakKey": 433580,
             "dimensions": {
               "accent": "0.282667",
-              "axis": "1.000000",
-              "cell": "0.680000",
-              "collection": "0.834429",
-              "contour": "0.880000",
+              "axis": "0.880000",
+              "cell": "0.840000",
+              "collection": "0.982771",
+              "contour": "0.760000",
               "imitation": "0.700000",
-              "register": "0.941667",
+              "register": "0.863889",
               "vertical": "1.000000"
             }
           },
           {
             "role": "alto",
-            "candidateMidi": 73,
+            "candidateMidi": 79,
             "shortlistRank": 0,
-            "voiceScore": "0.762080",
-            "tieBreakKey": 988540,
+            "voiceScore": "0.786213",
+            "tieBreakKey": 167240,
             "dimensions": {
               "accent": "0.282667",
-              "axis": "0.880000",
+              "axis": "1.000000",
               "cell": "0.520000",
               "collection": "0.929166",
               "contour": "1.000000",
               "imitation": "0.700000",
-              "register": "1.000000",
+              "register": "0.883333",
               "vertical": "1.000000"
             }
           },
           {
             "role": "tenor",
-            "candidateMidi": 70,
-            "shortlistRank": 1,
-            "voiceScore": "0.765917",
-            "tieBreakKey": 802590,
+            "candidateMidi": 74,
+            "shortlistRank": 0,
+            "voiceScore": "0.876244",
+            "tieBreakKey": 522340,
             "dimensions": {
               "accent": "0.282667",
-              "axis": "0.880000",
-              "cell": "0.600000",
-              "collection": "0.945686",
-              "contour": "0.940000",
-              "imitation": "0.600000",
-              "register": "0.853226",
+              "axis": "1.000000",
+              "cell": "0.840000",
+              "collection": "0.894103",
+              "contour": "0.760000",
+              "imitation": "1.000000",
+              "register": "0.762903",
               "vertical": "1.000000"
             }
           },
           {
             "role": "bass",
-            "candidateMidi": 55,
-            "shortlistRank": 0,
-            "voiceScore": "0.848692",
-            "tieBreakKey": 948610,
+            "candidateMidi": 57,
+            "shortlistRank": 2,
+            "voiceScore": "0.816490",
+            "tieBreakKey": 948390,
             "dimensions": {
               "accent": "0.282667",
               "axis": "1.000000",
               "cell": "0.920000",
-              "collection": "0.875560",
-              "contour": "0.700000",
+              "collection": "0.743400",
+              "contour": "0.580000",
               "imitation": "0.700000",
-              "register": "0.920968",
+              "register": "0.875806",
               "vertical": "1.000000"
             }
           }
@@ -1018,20 +1018,20 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.699063",
+        "finalScore": "4.875869",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
           "axisCoverage": 0.75,
-          "ensembleMultiplier": 1.3223999999999998,
-          "imitationConsistency": 1,
+          "ensembleMultiplier": 1.45464,
+          "imitationConsistency": 0.94,
           "spacingBalance": 1,
           "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
-          "soprano": 81,
-          "alto": 73,
-          "tenor": 69,
-          "bass": 55
+          "soprano": 85,
+          "alto": 79,
+          "tenor": 74,
+          "bass": 57
         },
         "activeFunction": "subdominant_axis",
         "collectionId": "octatonic",
@@ -1039,69 +1039,69 @@
         "candidates": [
           {
             "role": "soprano",
-            "candidateMidi": 81,
-            "shortlistRank": 2,
-            "voiceScore": "0.876303",
+            "candidateMidi": 85,
+            "shortlistRank": 1,
+            "voiceScore": "0.866782",
             "tieBreakKey": 499260,
             "dimensions": {
               "accent": "0.540000",
-              "axis": "1.000000",
+              "axis": "0.880000",
               "cell": "0.920000",
-              "collection": "0.834429",
+              "collection": "0.982771",
               "contour": "1.000000",
               "imitation": "0.700000",
-              "register": "0.941667",
+              "register": "0.863889",
               "vertical": "1.000000"
             }
           },
           {
             "role": "alto",
-            "candidateMidi": 73,
+            "candidateMidi": 79,
             "shortlistRank": 0,
-            "voiceScore": "0.854667",
-            "tieBreakKey": 948390,
+            "voiceScore": "0.878800",
+            "tieBreakKey": 985680,
             "dimensions": {
               "accent": "0.540000",
-              "axis": "0.880000",
+              "axis": "1.000000",
               "cell": "0.920000",
               "collection": "0.929166",
               "contour": "1.000000",
               "imitation": "0.700000",
-              "register": "1.000000",
+              "register": "0.883333",
               "vertical": "1.000000"
             }
           },
           {
             "role": "tenor",
-            "candidateMidi": 69,
-            "shortlistRank": 1,
-            "voiceScore": "0.837147",
-            "tieBreakKey": 199190,
+            "candidateMidi": 74,
+            "shortlistRank": 0,
+            "voiceScore": "0.919231",
+            "tieBreakKey": 800180,
             "dimensions": {
               "accent": "0.540000",
               "axis": "1.000000",
-              "cell": "1.000000",
-              "collection": "0.773743",
-              "contour": "0.940000",
-              "imitation": "0.500000",
-              "register": "0.875806",
+              "cell": "0.920000",
+              "collection": "0.894103",
+              "contour": "1.000000",
+              "imitation": "1.000000",
+              "register": "0.762903",
               "vertical": "1.000000"
             }
           },
           {
             "role": "bass",
-            "candidateMidi": 55,
-            "shortlistRank": 0,
-            "voiceScore": "0.881278",
+            "candidateMidi": 57,
+            "shortlistRank": 2,
+            "voiceScore": "0.853877",
             "tieBreakKey": 668970,
             "dimensions": {
               "accent": "0.540000",
               "axis": "1.000000",
               "cell": "0.920000",
-              "collection": "0.875560",
+              "collection": "0.743400",
               "contour": "1.000000",
               "imitation": "0.700000",
-              "register": "0.920968",
+              "register": "0.875806",
               "vertical": "1.000000"
             }
           }
@@ -1118,20 +1118,20 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.415681",
+        "finalScore": "4.715779",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
           "axisCoverage": 0.75,
-          "ensembleMultiplier": 1.254,
-          "imitationConsistency": 0.88,
+          "ensembleMultiplier": 1.45464,
+          "imitationConsistency": 0.94,
           "spacingBalance": 1,
           "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
-          "soprano": 79,
-          "alto": 73,
+          "soprano": 82,
+          "alto": 74,
           "tenor": 69,
-          "bass": 50
+          "bass": 55
         },
         "activeFunction": "subdominant_axis",
         "collectionId": "octatonic",
@@ -1139,50 +1139,50 @@
         "candidates": [
           {
             "role": "soprano",
-            "candidateMidi": 79,
-            "shortlistRank": 0,
-            "voiceScore": "0.827176",
-            "tieBreakKey": 820000,
+            "candidateMidi": 82,
+            "shortlistRank": 1,
+            "voiceScore": "0.814851",
+            "tieBreakKey": 869270,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "0.880000",
+              "cell": "0.760000",
+              "collection": "1.019857",
+              "contour": "0.820000",
+              "imitation": "0.700000",
+              "register": "0.922222",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 74,
+            "shortlistRank": 2,
+            "voiceScore": "0.847297",
+            "tieBreakKey": 869270,
             "dimensions": {
               "accent": "0.282667",
               "axis": "1.000000",
-              "cell": "0.680000",
-              "collection": "0.982771",
-              "contour": "0.880000",
+              "cell": "0.920000",
+              "collection": "0.911634",
+              "contour": "0.700000",
               "imitation": "0.700000",
               "register": "0.980556",
               "vertical": "1.000000"
             }
           },
           {
-            "role": "alto",
-            "candidateMidi": 73,
-            "shortlistRank": 0,
-            "voiceScore": "0.762080",
-            "tieBreakKey": 946970,
-            "dimensions": {
-              "accent": "0.282667",
-              "axis": "0.880000",
-              "cell": "0.520000",
-              "collection": "0.929166",
-              "contour": "1.000000",
-              "imitation": "0.700000",
-              "register": "1.000000",
-              "vertical": "1.000000"
-            }
-          },
-          {
             "role": "tenor",
             "candidateMidi": 69,
-            "shortlistRank": 1,
-            "voiceScore": "0.822161",
-            "tieBreakKey": 228820,
+            "shortlistRank": 0,
+            "voiceScore": "0.874161",
+            "tieBreakKey": 375250,
             "dimensions": {
               "accent": "0.282667",
               "axis": "1.000000",
-              "cell": "0.520000",
+              "cell": "0.920000",
               "collection": "0.773743",
-              "contour": "1.000000",
+              "contour": "0.700000",
               "imitation": "1.000000",
               "register": "0.875806",
               "vertical": "1.000000"
@@ -1190,18 +1190,18 @@
           },
           {
             "role": "bass",
-            "candidateMidi": 50,
-            "shortlistRank": 0,
-            "voiceScore": "0.849331",
-            "tieBreakKey": 546780,
+            "candidateMidi": 55,
+            "shortlistRank": 1,
+            "voiceScore": "0.822292",
+            "tieBreakKey": 224970,
             "dimensions": {
               "accent": "0.282667",
               "axis": "1.000000",
-              "cell": "0.920000",
-              "collection": "0.859040",
-              "contour": "0.700000",
+              "cell": "0.680000",
+              "collection": "0.875560",
+              "contour": "0.880000",
               "imitation": "0.700000",
-              "register": "0.966129",
+              "register": "0.920968",
               "vertical": "1.000000"
             }
           }
@@ -1218,20 +1218,20 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.758769",
+        "finalScore": "4.879082",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
           "axisCoverage": 0.75,
-          "ensembleMultiplier": 1.3223999999999998,
-          "imitationConsistency": 1,
+          "ensembleMultiplier": 1.45464,
+          "imitationConsistency": 0.94,
           "spacingBalance": 1,
-          "verticalIntervalProfile": 0.8
+          "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
-          "soprano": 79,
-          "alto": 73,
-          "tenor": 67,
-          "bass": 50
+          "soprano": 84,
+          "alto": 74,
+          "tenor": 71,
+          "bass": 55
         },
         "activeFunction": "tonic_axis",
         "collectionId": "diatonic",
@@ -1239,15 +1239,32 @@
         "candidates": [
           {
             "role": "soprano",
-            "candidateMidi": 79,
-            "shortlistRank": 0,
-            "voiceScore": "0.890668",
-            "tieBreakKey": 859940,
+            "candidateMidi": 84,
+            "shortlistRank": 2,
+            "voiceScore": "0.860767",
+            "tieBreakKey": 983830,
             "dimensions": {
               "accent": "0.916667",
               "axis": "1.000000",
               "cell": "0.850000",
-              "collection": "0.861714",
+              "collection": "0.742857",
+              "contour": "0.880000",
+              "imitation": "0.700000",
+              "register": "0.883333",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 74,
+            "shortlistRank": 0,
+            "voiceScore": "0.887528",
+            "tieBreakKey": 983830,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "1.000000",
+              "cell": "0.850000",
+              "collection": "0.849829",
               "contour": "1.000000",
               "imitation": "0.700000",
               "register": "0.980556",
@@ -1255,53 +1272,36 @@
             }
           },
           {
-            "role": "alto",
-            "candidateMidi": 73,
-            "shortlistRank": 0,
-            "voiceScore": "0.834784",
-            "tieBreakKey": 344270,
+            "role": "tenor",
+            "candidateMidi": 71,
+            "shortlistRank": 4,
+            "voiceScore": "0.862080",
+            "tieBreakKey": 955870,
             "dimensions": {
               "accent": "0.916667",
               "axis": "0.880000",
               "cell": "0.850000",
-              "collection": "0.695314",
-              "contour": "1.000000",
-              "imitation": "0.700000",
-              "register": "1.000000",
-              "vertical": "1.000000"
-            }
-          },
-          {
-            "role": "tenor",
-            "candidateMidi": 67,
-            "shortlistRank": 0,
-            "voiceScore": "0.945938",
-            "tieBreakKey": 983830,
-            "dimensions": {
-              "accent": "0.916667",
-              "axis": "1.000000",
-              "cell": "0.850000",
-              "collection": "0.913417",
+              "collection": "0.803177",
               "contour": "0.880000",
-              "imitation": "1.000000",
-              "register": "0.920968",
+              "imitation": "0.800000",
+              "register": "0.830645",
               "vertical": "1.000000"
             }
           },
           {
             "role": "bass",
-            "candidateMidi": 50,
+            "candidateMidi": 55,
             "shortlistRank": 0,
-            "voiceScore": "0.906476",
+            "voiceScore": "0.911528",
             "tieBreakKey": 326780,
             "dimensions": {
               "accent": "0.916667",
               "axis": "1.000000",
               "cell": "0.850000",
-              "collection": "0.882514",
+              "collection": "0.930651",
               "contour": "1.000000",
               "imitation": "0.700000",
-              "register": "0.966129",
+              "register": "0.920968",
               "vertical": "1.000000"
             }
           }
@@ -1318,20 +1318,20 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.332687",
+        "finalScore": "4.630770",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
-          "axisCoverage": 0.5,
-          "ensembleMultiplier": 1.276,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.45464,
           "imitationConsistency": 0.94,
           "spacingBalance": 1,
           "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
-          "soprano": 84,
-          "alto": 73,
-          "tenor": 71,
-          "bass": 55
+          "soprano": 87,
+          "alto": 79,
+          "tenor": 74,
+          "bass": 60
         },
         "activeFunction": "tonic_axis",
         "collectionId": "diatonic",
@@ -1339,15 +1339,32 @@
         "candidates": [
           {
             "role": "soprano",
-            "candidateMidi": 84,
+            "candidateMidi": 87,
+            "shortlistRank": 2,
+            "voiceScore": "0.760810",
+            "tieBreakKey": 36400,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "0.880000",
+              "cell": "0.760000",
+              "collection": "0.668571",
+              "contour": "0.820000",
+              "imitation": "0.700000",
+              "register": "0.825000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 79,
             "shortlistRank": 0,
-            "voiceScore": "0.824127",
-            "tieBreakKey": 756660,
+            "voiceScore": "0.840936",
+            "tieBreakKey": 878520,
             "dimensions": {
               "accent": "0.282667",
               "axis": "1.000000",
               "cell": "0.920000",
-              "collection": "0.742857",
+              "collection": "0.896183",
               "contour": "0.700000",
               "imitation": "0.700000",
               "register": "0.883333",
@@ -1355,53 +1372,36 @@
             }
           },
           {
-            "role": "alto",
-            "candidateMidi": 73,
-            "shortlistRank": 0,
-            "voiceScore": "0.724664",
-            "tieBreakKey": 397290,
-            "dimensions": {
-              "accent": "0.282667",
-              "axis": "0.880000",
-              "cell": "0.520000",
-              "collection": "0.695314",
-              "contour": "1.000000",
-              "imitation": "0.700000",
-              "register": "1.000000",
-              "vertical": "1.000000"
-            }
-          },
-          {
             "role": "tenor",
-            "candidateMidi": 71,
-            "shortlistRank": 1,
-            "voiceScore": "0.804960",
-            "tieBreakKey": 129069,
+            "candidateMidi": 74,
+            "shortlistRank": 2,
+            "voiceScore": "0.845375",
+            "tieBreakKey": 878520,
             "dimensions": {
               "accent": "0.282667",
-              "axis": "0.880000",
-              "cell": "0.840000",
-              "collection": "0.803177",
-              "contour": "0.760000",
-              "imitation": "0.800000",
-              "register": "0.830645",
+              "axis": "1.000000",
+              "cell": "0.760000",
+              "collection": "0.866171",
+              "contour": "0.820000",
+              "imitation": "0.900000",
+              "register": "0.762903",
               "vertical": "1.000000"
             }
           },
           {
             "role": "bass",
-            "candidateMidi": 55,
-            "shortlistRank": 0,
-            "voiceScore": "0.858608",
+            "candidateMidi": 60,
+            "shortlistRank": 1,
+            "voiceScore": "0.826470",
             "tieBreakKey": 970930,
             "dimensions": {
               "accent": "0.282667",
               "axis": "1.000000",
               "cell": "0.920000",
-              "collection": "0.930651",
+              "collection": "0.802286",
               "contour": "0.700000",
               "imitation": "0.700000",
-              "register": "0.920968",
+              "register": "0.808065",
               "vertical": "1.000000"
             }
           }
@@ -1418,20 +1418,20 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.537287",
+        "finalScore": "4.809370",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
-          "axisCoverage": 0.5,
-          "ensembleMultiplier": 1.276,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.45464,
           "imitationConsistency": 0.94,
           "spacingBalance": 1,
           "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
-          "soprano": 84,
-          "alto": 73,
-          "tenor": 71,
-          "bass": 55
+          "soprano": 87,
+          "alto": 79,
+          "tenor": 74,
+          "bass": 60
         },
         "activeFunction": "tonic_axis",
         "collectionId": "diatonic",
@@ -1439,15 +1439,32 @@
         "candidates": [
           {
             "role": "soprano",
-            "candidateMidi": 84,
-            "shortlistRank": 0,
-            "voiceScore": "0.860567",
+            "candidateMidi": 87,
+            "shortlistRank": 2,
+            "voiceScore": "0.820850",
             "tieBreakKey": 400450,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "0.880000",
+              "cell": "0.920000",
+              "collection": "0.668571",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.825000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 79,
+            "shortlistRank": 0,
+            "voiceScore": "0.873523",
+            "tieBreakKey": 734190,
             "dimensions": {
               "accent": "0.540000",
               "axis": "1.000000",
               "cell": "0.920000",
-              "collection": "0.742857",
+              "collection": "0.896183",
               "contour": "1.000000",
               "imitation": "0.700000",
               "register": "0.883333",
@@ -1455,53 +1472,36 @@
             }
           },
           {
-            "role": "alto",
-            "candidateMidi": 73,
-            "shortlistRank": 0,
-            "voiceScore": "0.817250",
-            "tieBreakKey": 472310,
-            "dimensions": {
-              "accent": "0.540000",
-              "axis": "0.880000",
-              "cell": "0.920000",
-              "collection": "0.695314",
-              "contour": "1.000000",
-              "imitation": "0.700000",
-              "register": "1.000000",
-              "vertical": "1.000000"
-            }
-          },
-          {
             "role": "tenor",
-            "candidateMidi": 71,
-            "shortlistRank": 2,
-            "voiceScore": "0.847947",
+            "candidateMidi": 74,
+            "shortlistRank": 0,
+            "voiceScore": "0.898762",
             "tieBreakKey": 676810,
             "dimensions": {
               "accent": "0.540000",
-              "axis": "0.880000",
+              "axis": "1.000000",
               "cell": "0.920000",
-              "collection": "0.803177",
+              "collection": "0.866171",
               "contour": "1.000000",
-              "imitation": "0.800000",
-              "register": "0.830645",
+              "imitation": "0.900000",
+              "register": "0.762903",
               "vertical": "1.000000"
             }
           },
           {
             "role": "bass",
-            "candidateMidi": 55,
+            "candidateMidi": 60,
             "shortlistRank": 0,
-            "voiceScore": "0.891195",
+            "voiceScore": "0.859057",
             "tieBreakKey": 163540,
             "dimensions": {
               "accent": "0.540000",
               "axis": "1.000000",
               "cell": "0.920000",
-              "collection": "0.930651",
+              "collection": "0.802286",
               "contour": "1.000000",
               "imitation": "0.700000",
-              "register": "0.920968",
+              "register": "0.808065",
               "vertical": "1.000000"
             }
           }
@@ -1518,20 +1518,20 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.493569",
+        "finalScore": "4.664282",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
           "axisCoverage": 0.75,
-          "ensembleMultiplier": 1.3223999999999998,
-          "imitationConsistency": 1,
+          "ensembleMultiplier": 1.45464,
+          "imitationConsistency": 0.94,
           "spacingBalance": 1,
-          "verticalIntervalProfile": 0.8
+          "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
-          "soprano": 79,
-          "alto": 73,
-          "tenor": 67,
-          "bass": 50
+          "soprano": 84,
+          "alto": 74,
+          "tenor": 71,
+          "bass": 55
         },
         "activeFunction": "tonic_axis",
         "collectionId": "diatonic",
@@ -1539,15 +1539,32 @@
         "candidates": [
           {
             "role": "soprano",
-            "candidateMidi": 79,
+            "candidateMidi": 84,
             "shortlistRank": 0,
-            "voiceScore": "0.845628",
-            "tieBreakKey": 379280,
+            "voiceScore": "0.800527",
+            "tieBreakKey": 248700,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.760000",
+              "collection": "0.742857",
+              "contour": "0.820000",
+              "imitation": "0.700000",
+              "register": "0.883333",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 74,
+            "shortlistRank": 1,
+            "voiceScore": "0.837408",
+            "tieBreakKey": 248700,
             "dimensions": {
               "accent": "0.282667",
               "axis": "1.000000",
               "cell": "0.920000",
-              "collection": "0.861714",
+              "collection": "0.849829",
               "contour": "0.700000",
               "imitation": "0.700000",
               "register": "0.980556",
@@ -1555,53 +1572,36 @@
             }
           },
           {
-            "role": "alto",
-            "candidateMidi": 73,
-            "shortlistRank": 0,
-            "voiceScore": "0.724664",
-            "tieBreakKey": 379280,
+            "role": "tenor",
+            "candidateMidi": 71,
+            "shortlistRank": 2,
+            "voiceScore": "0.810560",
+            "tieBreakKey": 124740,
             "dimensions": {
               "accent": "0.282667",
               "axis": "0.880000",
-              "cell": "0.520000",
-              "collection": "0.695314",
-              "contour": "1.000000",
-              "imitation": "0.700000",
-              "register": "1.000000",
-              "vertical": "1.000000"
-            }
-          },
-          {
-            "role": "tenor",
-            "candidateMidi": 67,
-            "shortlistRank": 0,
-            "voiceScore": "0.888818",
-            "tieBreakKey": 577590,
-            "dimensions": {
-              "accent": "0.282667",
-              "axis": "1.000000",
-              "cell": "0.840000",
-              "collection": "0.913417",
-              "contour": "0.760000",
-              "imitation": "1.000000",
-              "register": "0.920968",
+              "cell": "0.760000",
+              "collection": "0.803177",
+              "contour": "0.820000",
+              "imitation": "0.900000",
+              "register": "0.830645",
               "vertical": "1.000000"
             }
           },
           {
             "role": "bass",
-            "candidateMidi": 50,
+            "candidateMidi": 55,
             "shortlistRank": 0,
-            "voiceScore": "0.853556",
+            "voiceScore": "0.858608",
             "tieBreakKey": 577590,
             "dimensions": {
               "accent": "0.282667",
               "axis": "1.000000",
               "cell": "0.920000",
-              "collection": "0.882514",
+              "collection": "0.930651",
               "contour": "0.700000",
               "imitation": "0.700000",
-              "register": "0.966129",
+              "register": "0.920968",
               "vertical": "1.000000"
             }
           }
@@ -1618,20 +1618,20 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.620488",
+        "finalScore": "4.879045",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
           "axisCoverage": 0.75,
-          "ensembleMultiplier": 1.254,
-          "imitationConsistency": 0.88,
+          "ensembleMultiplier": 1.45464,
+          "imitationConsistency": 0.94,
           "spacingBalance": 1,
           "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
           "soprano": 83,
-          "alto": 73,
-          "tenor": 69,
-          "bass": 52
+          "alto": 76,
+          "tenor": 72,
+          "bass": 57
         },
         "activeFunction": "subdominant_axis",
         "collectionId": "lydian_acoustic",
@@ -1640,15 +1640,15 @@
           {
             "role": "soprano",
             "candidateMidi": 83,
-            "shortlistRank": 4,
-            "voiceScore": "0.855784",
-            "tieBreakKey": 502009,
+            "shortlistRank": 1,
+            "voiceScore": "0.868384",
+            "tieBreakKey": 224720,
             "dimensions": {
               "accent": "0.916667",
               "axis": "1.000000",
               "cell": "0.850000",
               "collection": "0.760320",
-              "contour": "0.760000",
+              "contour": "0.940000",
               "imitation": "0.700000",
               "register": "0.902778",
               "vertical": "1.000000"
@@ -1656,52 +1656,52 @@
           },
           {
             "role": "alto",
-            "candidateMidi": 73,
+            "candidateMidi": 76,
             "shortlistRank": 0,
-            "voiceScore": "0.841165",
-            "tieBreakKey": 828760,
+            "voiceScore": "0.878320",
+            "tieBreakKey": 502009,
             "dimensions": {
               "accent": "0.916667",
-              "axis": "0.760000",
+              "axis": "1.000000",
               "cell": "0.850000",
-              "collection": "0.915200",
-              "contour": "1.000000",
+              "collection": "0.832000",
+              "contour": "0.880000",
               "imitation": "0.700000",
-              "register": "1.000000",
+              "register": "0.941667",
               "vertical": "1.000000"
             }
           },
           {
             "role": "tenor",
-            "candidateMidi": 69,
-            "shortlistRank": 3,
-            "voiceScore": "0.879975",
-            "tieBreakKey": 785460,
+            "candidateMidi": 72,
+            "shortlistRank": 0,
+            "voiceScore": "0.912844",
+            "tieBreakKey": 959340,
             "dimensions": {
               "accent": "0.916667",
-              "axis": "1.000000",
+              "axis": "0.880000",
               "cell": "0.850000",
-              "collection": "0.718080",
-              "contour": "0.880000",
-              "imitation": "0.800000",
-              "register": "0.875806",
+              "collection": "0.913920",
+              "contour": "0.940000",
+              "imitation": "1.000000",
+              "register": "0.808065",
               "vertical": "1.000000"
             }
           },
           {
             "role": "bass",
-            "candidateMidi": 52,
-            "shortlistRank": 0,
-            "voiceScore": "0.888630",
+            "candidateMidi": 57,
+            "shortlistRank": 2,
+            "voiceScore": "0.862318",
             "tieBreakKey": 331050,
             "dimensions": {
               "accent": "0.916667",
               "axis": "1.000000",
               "cell": "0.850000",
-              "collection": "0.800000",
+              "collection": "0.704000",
               "contour": "0.880000",
               "imitation": "0.700000",
-              "register": "0.988710",
+              "register": "0.875806",
               "vertical": "1.000000"
             }
           }
@@ -1718,20 +1718,20 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.544566",
+        "finalScore": "4.685724",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
           "axisCoverage": 0.75,
-          "ensembleMultiplier": 1.3223999999999998,
-          "imitationConsistency": 1,
+          "ensembleMultiplier": 1.45464,
+          "imitationConsistency": 0.94,
           "spacingBalance": 1,
           "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
-          "soprano": 81,
-          "alto": 73,
-          "tenor": 69,
-          "bass": 52
+          "soprano": 84,
+          "alto": 76,
+          "tenor": 71,
+          "bass": 57
         },
         "activeFunction": "subdominant_axis",
         "collectionId": "lydian_acoustic",
@@ -1739,69 +1739,69 @@
         "candidates": [
           {
             "role": "soprano",
-            "candidateMidi": 81,
-            "shortlistRank": 4,
-            "voiceScore": "0.810088",
-            "tieBreakKey": 912890,
+            "candidateMidi": 84,
+            "shortlistRank": 0,
+            "voiceScore": "0.862002",
+            "tieBreakKey": 134940,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "0.880000",
+              "cell": "1.000000",
+              "collection": "0.967680",
+              "contour": "0.940000",
+              "imitation": "0.700000",
+              "register": "0.883333",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 76,
+            "shortlistRank": 0,
+            "voiceScore": "0.845000",
+            "tieBreakKey": 757970,
             "dimensions": {
               "accent": "0.282667",
               "axis": "1.000000",
-              "cell": "0.760000",
-              "collection": "0.760320",
-              "contour": "0.880000",
+              "cell": "0.920000",
+              "collection": "0.832000",
+              "contour": "1.000000",
               "imitation": "0.700000",
               "register": "0.941667",
               "vertical": "1.000000"
             }
           },
           {
-            "role": "alto",
-            "candidateMidi": 73,
-            "shortlistRank": 0,
-            "voiceScore": "0.803045",
-            "tieBreakKey": 480320,
-            "dimensions": {
-              "accent": "0.282667",
-              "axis": "0.760000",
-              "cell": "0.920000",
-              "collection": "0.915200",
-              "contour": "1.000000",
-              "imitation": "0.700000",
-              "register": "1.000000",
-              "vertical": "1.000000"
-            }
-          },
-          {
             "role": "tenor",
-            "candidateMidi": 69,
+            "candidateMidi": 71,
             "shortlistRank": 2,
-            "voiceScore": "0.829255",
-            "tieBreakKey": 564280,
+            "voiceScore": "0.795345",
+            "tieBreakKey": 143150,
             "dimensions": {
               "accent": "0.282667",
               "axis": "1.000000",
-              "cell": "0.920000",
+              "cell": "0.840000",
               "collection": "0.718080",
-              "contour": "1.000000",
-              "imitation": "0.700000",
-              "register": "0.875806",
+              "contour": "0.940000",
+              "imitation": "0.600000",
+              "register": "0.830645",
               "vertical": "1.000000"
             }
           },
           {
             "role": "bass",
-            "candidateMidi": 52,
-            "shortlistRank": 0,
-            "voiceScore": "0.852510",
+            "candidateMidi": 57,
+            "shortlistRank": 1,
+            "voiceScore": "0.826198",
             "tieBreakKey": 193290,
             "dimensions": {
               "accent": "0.282667",
               "axis": "1.000000",
               "cell": "0.920000",
-              "collection": "0.800000",
+              "collection": "0.704000",
               "contour": "1.000000",
               "imitation": "0.700000",
-              "register": "0.988710",
+              "register": "0.875806",
               "vertical": "1.000000"
             }
           }
@@ -1818,20 +1818,20 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.566322",
+        "finalScore": "4.778445",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
           "axisCoverage": 0.75,
-          "ensembleMultiplier": 1.254,
-          "imitationConsistency": 0.88,
+          "ensembleMultiplier": 1.45464,
+          "imitationConsistency": 0.94,
           "spacingBalance": 1,
           "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
-          "soprano": 81,
-          "alto": 73,
-          "tenor": 71,
-          "bass": 52
+          "soprano": 83,
+          "alto": 76,
+          "tenor": 72,
+          "bass": 57
         },
         "activeFunction": "subdominant_axis",
         "collectionId": "lydian_acoustic",
@@ -1839,15 +1839,32 @@
         "candidates": [
           {
             "role": "soprano",
-            "candidateMidi": 81,
-            "shortlistRank": 1,
-            "voiceScore": "0.865928",
-            "tieBreakKey": 688680,
+            "candidateMidi": 83,
+            "shortlistRank": 0,
+            "voiceScore": "0.875784",
+            "tieBreakKey": 920640,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "1.000000",
+              "cell": "1.000000",
+              "collection": "0.760320",
+              "contour": "0.940000",
+              "imitation": "0.700000",
+              "register": "0.902778",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 76,
+            "shortlistRank": 0,
+            "voiceScore": "0.865587",
+            "tieBreakKey": 901060,
             "dimensions": {
               "accent": "0.540000",
               "axis": "1.000000",
               "cell": "0.920000",
-              "collection": "0.760320",
+              "collection": "0.832000",
               "contour": "1.000000",
               "imitation": "0.700000",
               "register": "0.941667",
@@ -1855,53 +1872,36 @@
             }
           },
           {
-            "role": "alto",
-            "candidateMidi": 73,
-            "shortlistRank": 0,
-            "voiceScore": "0.823632",
-            "tieBreakKey": 337800,
-            "dimensions": {
-              "accent": "0.540000",
-              "axis": "0.760000",
-              "cell": "0.920000",
-              "collection": "0.915200",
-              "contour": "1.000000",
-              "imitation": "0.700000",
-              "register": "1.000000",
-              "vertical": "1.000000"
-            }
-          },
-          {
             "role": "tenor",
-            "candidateMidi": 71,
-            "shortlistRank": 1,
-            "voiceScore": "0.848732",
-            "tieBreakKey": 31579,
+            "candidateMidi": 72,
+            "shortlistRank": 0,
+            "voiceScore": "0.833111",
+            "tieBreakKey": 570750,
             "dimensions": {
               "accent": "0.540000",
-              "axis": "1.000000",
-              "cell": "0.760000",
-              "collection": "0.718080",
-              "contour": "0.880000",
-              "imitation": "0.900000",
-              "register": "0.830645",
+              "axis": "0.880000",
+              "cell": "0.840000",
+              "collection": "0.913920",
+              "contour": "0.940000",
+              "imitation": "0.700000",
+              "register": "0.808065",
               "vertical": "1.000000"
             }
           },
           {
             "role": "bass",
-            "candidateMidi": 52,
-            "shortlistRank": 0,
-            "voiceScore": "0.873097",
+            "candidateMidi": 57,
+            "shortlistRank": 1,
+            "voiceScore": "0.846785",
             "tieBreakKey": 570750,
             "dimensions": {
               "accent": "0.540000",
               "axis": "1.000000",
               "cell": "0.920000",
-              "collection": "0.800000",
+              "collection": "0.704000",
               "contour": "1.000000",
               "imitation": "0.700000",
-              "register": "0.988710",
+              "register": "0.875806",
               "vertical": "1.000000"
             }
           }
@@ -1918,20 +1918,20 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.533512",
+        "finalScore": "4.679324",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
           "axisCoverage": 0.75,
-          "ensembleMultiplier": 1.3223999999999998,
-          "imitationConsistency": 1,
+          "ensembleMultiplier": 1.45464,
+          "imitationConsistency": 0.94,
           "spacingBalance": 1,
           "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
-          "soprano": 83,
-          "alto": 73,
+          "soprano": 84,
+          "alto": 76,
           "tenor": 71,
-          "bass": 52
+          "bass": 57
         },
         "activeFunction": "subdominant_axis",
         "collectionId": "lydian_acoustic",
@@ -1939,35 +1939,35 @@
         "candidates": [
           {
             "role": "soprano",
-            "candidateMidi": 83,
+            "candidateMidi": 84,
             "shortlistRank": 0,
-            "voiceScore": "0.856144",
-            "tieBreakKey": 651220,
+            "voiceScore": "0.846002",
+            "tieBreakKey": 517490,
             "dimensions": {
               "accent": "0.282667",
-              "axis": "1.000000",
-              "cell": "1.000000",
-              "collection": "0.760320",
-              "contour": "0.880000",
+              "axis": "0.880000",
+              "cell": "0.920000",
+              "collection": "0.967680",
+              "contour": "0.940000",
               "imitation": "0.700000",
-              "register": "0.902778",
+              "register": "0.883333",
               "vertical": "1.000000"
             }
           },
           {
             "role": "alto",
-            "candidateMidi": 73,
+            "candidateMidi": 76,
             "shortlistRank": 0,
-            "voiceScore": "0.788645",
-            "tieBreakKey": 785840,
+            "voiceScore": "0.830600",
+            "tieBreakKey": 651220,
             "dimensions": {
               "accent": "0.282667",
-              "axis": "0.760000",
+              "axis": "1.000000",
               "cell": "0.840000",
-              "collection": "0.915200",
+              "collection": "0.832000",
               "contour": "1.000000",
               "imitation": "0.700000",
-              "register": "1.000000",
+              "register": "0.941667",
               "vertical": "1.000000"
             }
           },
@@ -1975,33 +1975,33 @@
             "role": "tenor",
             "candidateMidi": 71,
             "shortlistRank": 1,
-            "voiceScore": "0.797745",
-            "tieBreakKey": 298680,
+            "voiceScore": "0.830545",
+            "tieBreakKey": 245590,
             "dimensions": {
               "accent": "0.282667",
               "axis": "1.000000",
-              "cell": "0.840000",
+              "cell": "0.760000",
               "collection": "0.718080",
-              "contour": "1.000000",
-              "imitation": "0.600000",
+              "contour": "0.940000",
+              "imitation": "0.900000",
               "register": "0.830645",
               "vertical": "1.000000"
             }
           },
           {
             "role": "bass",
-            "candidateMidi": 52,
-            "shortlistRank": 0,
-            "voiceScore": "0.841310",
+            "candidateMidi": 57,
+            "shortlistRank": 3,
+            "voiceScore": "0.814998",
             "tieBreakKey": 336410,
             "dimensions": {
               "accent": "0.282667",
               "axis": "1.000000",
               "cell": "0.840000",
-              "collection": "0.800000",
+              "collection": "0.704000",
               "contour": "1.000000",
               "imitation": "0.700000",
-              "register": "0.988710",
+              "register": "0.875806",
               "vertical": "1.000000"
             }
           }
@@ -2018,18 +2018,18 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.674007",
+        "finalScore": "4.909890",
         "ensembleFactors": {
-          "antiParallelPenalty": 0.45,
+          "antiParallelPenalty": 1,
           "axisCoverage": 0.75,
-          "ensembleMultiplier": 1.3223999999999998,
-          "imitationConsistency": 1,
+          "ensembleMultiplier": 1.45464,
+          "imitationConsistency": 0.94,
           "spacingBalance": 1,
           "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
-          "soprano": 83,
-          "alto": 73,
+          "soprano": 82,
+          "alto": 76,
           "tenor": 71,
           "bass": 54
         },
@@ -2039,35 +2039,35 @@
         "candidates": [
           {
             "role": "soprano",
-            "candidateMidi": 83,
-            "shortlistRank": 0,
-            "voiceScore": "0.886779",
-            "tieBreakKey": 299080,
+            "candidateMidi": 82,
+            "shortlistRank": 2,
+            "voiceScore": "0.836311",
+            "tieBreakKey": 556580,
             "dimensions": {
               "accent": "0.916667",
-              "axis": "1.000000",
+              "axis": "0.880000",
               "cell": "0.850000",
-              "collection": "0.861714",
-              "contour": "1.000000",
+              "collection": "0.742857",
+              "contour": "0.880000",
               "imitation": "0.700000",
-              "register": "0.902778",
+              "register": "0.922222",
               "vertical": "1.000000"
             }
           },
           {
             "role": "alto",
-            "candidateMidi": 73,
-            "shortlistRank": 0,
-            "voiceScore": "0.823289",
-            "tieBreakKey": 673970,
+            "candidateMidi": 76,
+            "shortlistRank": 1,
+            "voiceScore": "0.873611",
+            "tieBreakKey": 142060,
             "dimensions": {
               "accent": "0.916667",
-              "axis": "0.760000",
+              "axis": "1.000000",
               "cell": "0.850000",
-              "collection": "0.803474",
+              "collection": "0.772571",
               "contour": "1.000000",
               "imitation": "0.700000",
-              "register": "1.000000",
+              "register": "0.941667",
               "vertical": "1.000000"
             }
           },
@@ -2091,15 +2091,15 @@
           {
             "role": "bass",
             "candidateMidi": 54,
-            "shortlistRank": 0,
-            "voiceScore": "0.899870",
-            "tieBreakKey": 30410,
+            "shortlistRank": 1,
+            "voiceScore": "0.897470",
+            "tieBreakKey": 142060,
             "dimensions": {
               "accent": "0.916667",
               "axis": "1.000000",
               "cell": "0.850000",
               "collection": "0.882514",
-              "contour": "0.880000",
+              "contour": "0.820000",
               "imitation": "0.700000",
               "register": "0.943548",
               "vertical": "1.000000"
@@ -2118,19 +2118,19 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.504207",
+        "finalScore": "4.784246",
         "ensembleFactors": {
-          "antiParallelPenalty": 0.45,
+          "antiParallelPenalty": 1,
           "axisCoverage": 0.75,
-          "ensembleMultiplier": 1.3223999999999998,
-          "imitationConsistency": 1,
+          "ensembleMultiplier": 1.45464,
+          "imitationConsistency": 0.94,
           "spacingBalance": 1,
           "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
           "soprano": 83,
-          "alto": 73,
-          "tenor": 71,
+          "alto": 76,
+          "tenor": 72,
           "bass": 54
         },
         "activeFunction": "tonic_axis",
@@ -2141,14 +2141,14 @@
             "role": "soprano",
             "candidateMidi": 83,
             "shortlistRank": 0,
-            "voiceScore": "0.862739",
-            "tieBreakKey": 402240,
+            "voiceScore": "0.874539",
+            "tieBreakKey": 369410,
             "dimensions": {
               "accent": "0.282667",
               "axis": "1.000000",
-              "cell": "0.920000",
+              "cell": "1.000000",
               "collection": "0.861714",
-              "contour": "1.000000",
+              "contour": "0.940000",
               "imitation": "0.700000",
               "register": "0.902778",
               "vertical": "1.000000"
@@ -2156,35 +2156,35 @@
           },
           {
             "role": "alto",
-            "candidateMidi": 73,
-            "shortlistRank": 0,
-            "voiceScore": "0.785169",
-            "tieBreakKey": 931390,
+            "candidateMidi": 76,
+            "shortlistRank": 1,
+            "voiceScore": "0.835491",
+            "tieBreakKey": 367820,
             "dimensions": {
               "accent": "0.282667",
-              "axis": "0.760000",
+              "axis": "1.000000",
               "cell": "0.920000",
-              "collection": "0.803474",
+              "collection": "0.772571",
               "contour": "1.000000",
               "imitation": "0.700000",
-              "register": "1.000000",
+              "register": "0.941667",
               "vertical": "1.000000"
             }
           },
           {
             "role": "tenor",
-            "candidateMidi": 71,
-            "shortlistRank": 0,
-            "voiceScore": "0.873799",
-            "tieBreakKey": 503880,
+            "candidateMidi": 72,
+            "shortlistRank": 1,
+            "voiceScore": "0.853287",
+            "tieBreakKey": 12970,
             "dimensions": {
               "accent": "0.282667",
-              "axis": "1.000000",
-              "cell": "0.920000",
-              "collection": "0.913417",
-              "contour": "1.000000",
-              "imitation": "0.800000",
-              "register": "0.830645",
+              "axis": "0.880000",
+              "cell": "1.000000",
+              "collection": "0.708686",
+              "contour": "0.940000",
+              "imitation": "1.000000",
+              "register": "0.808065",
               "vertical": "1.000000"
             }
           },
@@ -2218,20 +2218,20 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.337946",
+        "finalScore": "4.575046",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
           "axisCoverage": 0.75,
-          "ensembleMultiplier": 1.254,
-          "imitationConsistency": 0.7,
+          "ensembleMultiplier": 1.45464,
+          "imitationConsistency": 0.94,
           "spacingBalance": 1,
           "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
-          "soprano": 88,
-          "alto": 73,
+          "soprano": 84,
+          "alto": 78,
           "tenor": 71,
-          "bass": 54
+          "bass": 64
         },
         "activeFunction": "tonic_axis",
         "collectionId": "diatonic",
@@ -2239,35 +2239,35 @@
         "candidates": [
           {
             "role": "soprano",
-            "candidateMidi": 88,
-            "shortlistRank": 0,
-            "voiceScore": "0.835678",
-            "tieBreakKey": 366760,
+            "candidateMidi": 84,
+            "shortlistRank": 3,
+            "voiceScore": "0.755567",
+            "tieBreakKey": 301750,
             "dimensions": {
               "accent": "0.540000",
-              "axis": "1.000000",
-              "cell": "0.920000",
-              "collection": "0.742857",
-              "contour": "0.700000",
+              "axis": "0.880000",
+              "cell": "0.600000",
+              "collection": "0.668571",
+              "contour": "0.940000",
               "imitation": "0.700000",
-              "register": "0.805556",
+              "register": "0.883333",
               "vertical": "1.000000"
             }
           },
           {
             "role": "alto",
-            "candidateMidi": 73,
+            "candidateMidi": 78,
             "shortlistRank": 0,
-            "voiceScore": "0.733756",
-            "tieBreakKey": 953410,
+            "voiceScore": "0.818884",
+            "tieBreakKey": 663430,
             "dimensions": {
               "accent": "0.540000",
-              "axis": "0.760000",
-              "cell": "0.520000",
-              "collection": "0.803474",
-              "contour": "1.000000",
+              "axis": "1.000000",
+              "cell": "0.680000",
+              "collection": "0.849829",
+              "contour": "0.880000",
               "imitation": "0.700000",
-              "register": "1.000000",
+              "register": "0.902778",
               "vertical": "1.000000"
             }
           },
@@ -2275,33 +2275,33 @@
             "role": "tenor",
             "candidateMidi": 71,
             "shortlistRank": 0,
-            "voiceScore": "0.830385",
-            "tieBreakKey": 663430,
+            "voiceScore": "0.847185",
+            "tieBreakKey": 112370,
             "dimensions": {
               "accent": "0.540000",
               "axis": "1.000000",
-              "cell": "0.520000",
+              "cell": "0.440000",
               "collection": "0.913417",
-              "contour": "1.000000",
-              "imitation": "0.800000",
+              "contour": "0.940000",
+              "imitation": "1.000000",
               "register": "0.830645",
               "vertical": "1.000000"
             }
           },
           {
             "role": "bass",
-            "candidateMidi": 54,
-            "shortlistRank": 1,
-            "voiceScore": "0.828336",
-            "tieBreakKey": 366760,
+            "candidateMidi": 64,
+            "shortlistRank": 4,
+            "voiceScore": "0.796231",
+            "tieBreakKey": 448380,
             "dimensions": {
               "accent": "0.540000",
               "axis": "1.000000",
-              "cell": "0.520000",
-              "collection": "0.882514",
-              "contour": "1.000000",
+              "cell": "0.680000",
+              "collection": "0.802286",
+              "contour": "0.450000",
               "imitation": "0.700000",
-              "register": "0.943548",
+              "register": "0.717742",
               "vertical": "1.000000"
             }
           }
@@ -2318,20 +2318,20 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.505746",
+        "finalScore": "4.732846",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
           "axisCoverage": 0.75,
-          "ensembleMultiplier": 1.254,
-          "imitationConsistency": 0.7,
+          "ensembleMultiplier": 1.45464,
+          "imitationConsistency": 0.94,
           "spacingBalance": 1,
           "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
-          "soprano": 88,
-          "alto": 73,
+          "soprano": 84,
+          "alto": 78,
           "tenor": 71,
-          "bass": 54
+          "bass": 64
         },
         "activeFunction": "tonic_axis",
         "collectionId": "diatonic",
@@ -2339,35 +2339,35 @@
         "candidates": [
           {
             "role": "soprano",
-            "candidateMidi": 88,
+            "candidateMidi": 84,
             "shortlistRank": 1,
-            "voiceScore": "0.841238",
+            "voiceScore": "0.808327",
             "tieBreakKey": 258320,
             "dimensions": {
               "accent": "0.282667",
-              "axis": "1.000000",
+              "axis": "0.880000",
               "cell": "0.920000",
-              "collection": "0.742857",
+              "collection": "0.668571",
               "contour": "1.000000",
               "imitation": "0.700000",
-              "register": "0.805556",
+              "register": "0.883333",
               "vertical": "1.000000"
             }
           },
           {
             "role": "alto",
-            "candidateMidi": 73,
+            "candidateMidi": 78,
             "shortlistRank": 0,
-            "voiceScore": "0.785169",
-            "tieBreakKey": 14710,
+            "voiceScore": "0.846297",
+            "tieBreakKey": 231870,
             "dimensions": {
               "accent": "0.282667",
-              "axis": "0.760000",
+              "axis": "1.000000",
               "cell": "0.920000",
-              "collection": "0.803474",
+              "collection": "0.849829",
               "contour": "1.000000",
               "imitation": "0.700000",
-              "register": "1.000000",
+              "register": "0.902778",
               "vertical": "1.000000"
             }
           },
@@ -2375,7 +2375,7 @@
             "role": "tenor",
             "candidateMidi": 71,
             "shortlistRank": 0,
-            "voiceScore": "0.905799",
+            "voiceScore": "0.889799",
             "tieBreakKey": 808210,
             "dimensions": {
               "accent": "0.282667",
@@ -2383,25 +2383,25 @@
               "cell": "0.920000",
               "collection": "0.913417",
               "contour": "1.000000",
-              "imitation": "1.000000",
+              "imitation": "0.900000",
               "register": "0.830645",
               "vertical": "1.000000"
             }
           },
           {
             "role": "bass",
-            "candidateMidi": 54,
-            "shortlistRank": 0,
-            "voiceScore": "0.863750",
+            "candidateMidi": 64,
+            "shortlistRank": 1,
+            "voiceScore": "0.831244",
             "tieBreakKey": 945200,
             "dimensions": {
               "accent": "0.282667",
               "axis": "1.000000",
               "cell": "0.920000",
-              "collection": "0.882514",
+              "collection": "0.802286",
               "contour": "1.000000",
               "imitation": "0.700000",
-              "register": "0.943548",
+              "register": "0.717742",
               "vertical": "1.000000"
             }
           }
@@ -2418,20 +2418,20 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.570481",
+        "finalScore": "4.812432",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
           "axisCoverage": 0.75,
-          "ensembleMultiplier": 1.254,
-          "imitationConsistency": 0.7,
+          "ensembleMultiplier": 1.45464,
+          "imitationConsistency": 0.94,
           "spacingBalance": 1,
           "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
-          "soprano": 86,
-          "alto": 73,
-          "tenor": 69,
-          "bass": 55
+          "soprano": 81,
+          "alto": 79,
+          "tenor": 70,
+          "bass": 62
         },
         "activeFunction": "subdominant_axis",
         "collectionId": "diatonic",
@@ -2439,69 +2439,69 @@
         "candidates": [
           {
             "role": "soprano",
-            "candidateMidi": 86,
+            "candidateMidi": 81,
             "shortlistRank": 0,
-            "voiceScore": "0.848422",
-            "tieBreakKey": 727610,
+            "voiceScore": "0.859483",
+            "tieBreakKey": 56870,
             "dimensions": {
               "accent": "0.916667",
               "axis": "1.000000",
               "cell": "0.850000",
-              "collection": "0.668571",
-              "contour": "0.880000",
+              "collection": "0.742857",
+              "contour": "0.820000",
               "imitation": "0.700000",
-              "register": "0.844444",
+              "register": "0.941667",
               "vertical": "1.000000"
             }
           },
           {
             "role": "alto",
-            "candidateMidi": 73,
-            "shortlistRank": 0,
-            "voiceScore": "0.849617",
-            "tieBreakKey": 564930,
+            "candidateMidi": 79,
+            "shortlistRank": 1,
+            "voiceScore": "0.856517",
+            "tieBreakKey": 232380,
             "dimensions": {
               "accent": "0.916667",
-              "axis": "0.880000",
+              "axis": "1.000000",
               "cell": "0.850000",
-              "collection": "0.788023",
-              "contour": "1.000000",
+              "collection": "0.695314",
+              "contour": "0.940000",
               "imitation": "0.700000",
-              "register": "1.000000",
+              "register": "0.883333",
               "vertical": "1.000000"
             }
           },
           {
             "role": "tenor",
-            "candidateMidi": 69,
-            "shortlistRank": 0,
-            "voiceScore": "0.891070",
-            "tieBreakKey": 434610,
+            "candidateMidi": 70,
+            "shortlistRank": 1,
+            "voiceScore": "0.882717",
+            "tieBreakKey": 232380,
             "dimensions": {
               "accent": "0.916667",
-              "axis": "1.000000",
+              "axis": "0.880000",
               "cell": "0.850000",
-              "collection": "0.787429",
-              "contour": "0.880000",
-              "imitation": "0.800000",
-              "register": "0.875806",
+              "collection": "0.708686",
+              "contour": "0.940000",
+              "imitation": "1.000000",
+              "register": "0.853226",
               "vertical": "1.000000"
             }
           },
           {
             "role": "bass",
-            "candidateMidi": 55,
+            "candidateMidi": 62,
             "shortlistRank": 1,
-            "voiceScore": "0.871581",
-            "tieBreakKey": 111530,
+            "voiceScore": "0.856536",
+            "tieBreakKey": 232380,
             "dimensions": {
               "accent": "0.916667",
               "axis": "1.000000",
               "cell": "0.850000",
               "collection": "0.722057",
-              "contour": "0.940000",
+              "contour": "0.880000",
               "imitation": "0.700000",
-              "register": "0.920968",
+              "register": "0.762903",
               "vertical": "1.000000"
             }
           }
@@ -2518,20 +2518,20 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.260724",
+        "finalScore": "4.586577",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
           "axisCoverage": 0.75,
-          "ensembleMultiplier": 1.254,
-          "imitationConsistency": 0.5800000000000001,
+          "ensembleMultiplier": 1.45464,
+          "imitationConsistency": 0.94,
           "spacingBalance": 1,
           "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
-          "soprano": 86,
-          "alto": 73,
-          "tenor": 67,
-          "bass": 57
+          "soprano": 85,
+          "alto": 81,
+          "tenor": 74,
+          "bass": 67
         },
         "activeFunction": "subdominant_axis",
         "collectionId": "diatonic",
@@ -2539,69 +2539,69 @@
         "candidates": [
           {
             "role": "soprano",
-            "candidateMidi": 86,
-            "shortlistRank": 0,
-            "voiceScore": "0.800782",
-            "tieBreakKey": 888810,
+            "candidateMidi": 85,
+            "shortlistRank": 1,
+            "voiceScore": "0.803034",
+            "tieBreakKey": 672610,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "0.880000",
+              "cell": "0.920000",
+              "collection": "0.757714",
+              "contour": "0.760000",
+              "imitation": "0.700000",
+              "register": "0.863889",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 81,
+            "shortlistRank": 2,
+            "voiceScore": "0.826803",
+            "tieBreakKey": 672610,
             "dimensions": {
               "accent": "0.282667",
               "axis": "1.000000",
-              "cell": "0.760000",
-              "collection": "0.668571",
-              "contour": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.772571",
+              "contour": "0.880000",
               "imitation": "0.700000",
               "register": "0.844444",
               "vertical": "1.000000"
             }
           },
           {
-            "role": "alto",
-            "candidateMidi": 73,
-            "shortlistRank": 0,
-            "voiceScore": "0.782697",
-            "tieBreakKey": 154270,
-            "dimensions": {
-              "accent": "0.282667",
-              "axis": "0.880000",
-              "cell": "0.760000",
-              "collection": "0.788023",
-              "contour": "1.000000",
-              "imitation": "0.700000",
-              "register": "1.000000",
-              "vertical": "1.000000"
-            }
-          },
-          {
             "role": "tenor",
-            "candidateMidi": 67,
-            "shortlistRank": 4,
-            "voiceScore": "0.758461",
-            "tieBreakKey": 514470,
+            "candidateMidi": 74,
+            "shortlistRank": 3,
+            "voiceScore": "0.811377",
+            "tieBreakKey": 942170,
             "dimensions": {
               "accent": "0.282667",
               "axis": "1.000000",
-              "cell": "0.600000",
+              "cell": "0.920000",
               "collection": "0.708686",
-              "contour": "0.880000",
-              "imitation": "0.600000",
-              "register": "0.920968",
+              "contour": "0.760000",
+              "imitation": "0.700000",
+              "register": "0.762903",
               "vertical": "1.000000"
             }
           },
           {
             "role": "bass",
-            "candidateMidi": 57,
-            "shortlistRank": 0,
-            "voiceScore": "0.839089",
-            "tieBreakKey": 406780,
+            "candidateMidi": 67,
+            "shortlistRank": 4,
+            "voiceScore": "0.788184",
+            "tieBreakKey": 841120,
             "dimensions": {
               "accent": "0.282667",
               "axis": "1.000000",
-              "cell": "0.920000",
-              "collection": "0.802286",
-              "contour": "0.880000",
+              "cell": "0.840000",
+              "collection": "0.722057",
+              "contour": "0.700000",
               "imitation": "0.700000",
-              "register": "0.875806",
+              "register": "0.650000",
               "vertical": "1.000000"
             }
           }
@@ -2618,20 +2618,20 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.254134",
+        "finalScore": "4.644953",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
           "axisCoverage": 0.75,
-          "ensembleMultiplier": 1.254,
-          "imitationConsistency": 0.4,
+          "ensembleMultiplier": 1.45464,
+          "imitationConsistency": 0.94,
           "spacingBalance": 1,
           "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
-          "soprano": 91,
-          "alto": 73,
-          "tenor": 69,
-          "bass": 62
+          "soprano": 87,
+          "alto": 81,
+          "tenor": 74,
+          "bass": 67
         },
         "activeFunction": "subdominant_axis",
         "collectionId": "diatonic",
@@ -2639,69 +2639,69 @@
         "candidates": [
           {
             "role": "soprano",
-            "candidateMidi": 91,
-            "shortlistRank": 4,
-            "voiceScore": "0.806361",
-            "tieBreakKey": 592440,
+            "candidateMidi": 87,
+            "shortlistRank": 2,
+            "voiceScore": "0.822850",
+            "tieBreakKey": 221650,
             "dimensions": {
               "accent": "0.540000",
-              "axis": "1.000000",
-              "cell": "0.840000",
-              "collection": "0.668571",
-              "contour": "0.700000",
+              "axis": "0.880000",
+              "cell": "0.920000",
+              "collection": "0.742857",
+              "contour": "0.880000",
               "imitation": "0.700000",
-              "register": "0.747222",
+              "register": "0.825000",
               "vertical": "1.000000"
             }
           },
           {
             "role": "alto",
-            "candidateMidi": 73,
+            "candidateMidi": 81,
             "shortlistRank": 0,
-            "voiceScore": "0.803284",
-            "tieBreakKey": 916580,
+            "voiceScore": "0.823389",
+            "tieBreakKey": 221650,
             "dimensions": {
               "accent": "0.540000",
-              "axis": "0.880000",
+              "axis": "1.000000",
               "cell": "0.760000",
-              "collection": "0.788023",
+              "collection": "0.772571",
               "contour": "1.000000",
               "imitation": "0.700000",
-              "register": "1.000000",
+              "register": "0.844444",
               "vertical": "1.000000"
             }
           },
           {
             "role": "tenor",
-            "candidateMidi": 69,
+            "candidateMidi": 74,
             "shortlistRank": 0,
-            "voiceScore": "0.792137",
-            "tieBreakKey": 964250,
+            "voiceScore": "0.831964",
+            "tieBreakKey": 538070,
             "dimensions": {
               "accent": "0.540000",
               "axis": "1.000000",
-              "cell": "0.920000",
-              "collection": "0.787429",
-              "contour": "0.880000",
-              "imitation": "0.300000",
-              "register": "0.875806",
+              "cell": "0.760000",
+              "collection": "0.708686",
+              "contour": "1.000000",
+              "imitation": "0.800000",
+              "register": "0.762903",
               "vertical": "1.000000"
             }
           },
           {
             "role": "bass",
-            "candidateMidi": 62,
-            "shortlistRank": 2,
-            "voiceScore": "0.817803",
-            "tieBreakKey": 207640,
+            "candidateMidi": 67,
+            "shortlistRank": 0,
+            "voiceScore": "0.809570",
+            "tieBreakKey": 592440,
             "dimensions": {
               "accent": "0.540000",
               "axis": "1.000000",
-              "cell": "0.840000",
+              "cell": "0.760000",
               "collection": "0.722057",
-              "contour": "0.700000",
+              "contour": "1.000000",
               "imitation": "0.700000",
-              "register": "0.762903",
+              "register": "0.650000",
               "vertical": "1.000000"
             }
           }
@@ -2718,20 +2718,20 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.161934",
+        "finalScore": "4.544153",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
           "axisCoverage": 0.75,
-          "ensembleMultiplier": 1.254,
-          "imitationConsistency": 0.4,
+          "ensembleMultiplier": 1.45464,
+          "imitationConsistency": 0.94,
           "spacingBalance": 1,
           "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
-          "soprano": 91,
-          "alto": 73,
-          "tenor": 69,
-          "bass": 62
+          "soprano": 87,
+          "alto": 81,
+          "tenor": 74,
+          "bass": 67
         },
         "activeFunction": "subdominant_axis",
         "collectionId": "diatonic",
@@ -2739,60 +2739,60 @@
         "candidates": [
           {
             "role": "soprano",
-            "candidateMidi": 91,
-            "shortlistRank": 2,
-            "voiceScore": "0.795921",
+            "candidateMidi": 87,
+            "shortlistRank": 3,
+            "voiceScore": "0.783810",
             "tieBreakKey": 116890,
             "dimensions": {
               "accent": "0.282667",
-              "axis": "1.000000",
+              "axis": "0.880000",
               "cell": "0.760000",
-              "collection": "0.668571",
+              "collection": "0.742857",
               "contour": "1.000000",
               "imitation": "0.700000",
-              "register": "0.747222",
+              "register": "0.825000",
               "vertical": "1.000000"
             }
           },
           {
             "role": "alto",
-            "candidateMidi": 73,
+            "candidateMidi": 81,
             "shortlistRank": 0,
-            "voiceScore": "0.782697",
-            "tieBreakKey": 549340,
+            "voiceScore": "0.802803",
+            "tieBreakKey": 895710,
             "dimensions": {
               "accent": "0.282667",
-              "axis": "0.880000",
+              "axis": "1.000000",
               "cell": "0.760000",
-              "collection": "0.788023",
+              "collection": "0.772571",
               "contour": "1.000000",
               "imitation": "0.700000",
-              "register": "1.000000",
+              "register": "0.844444",
               "vertical": "1.000000"
             }
           },
           {
             "role": "tenor",
-            "candidateMidi": 69,
-            "shortlistRank": 1,
-            "voiceScore": "0.750750",
+            "candidateMidi": 74,
+            "shortlistRank": 0,
+            "voiceScore": "0.811377",
             "tieBreakKey": 240300,
             "dimensions": {
               "accent": "0.282667",
               "axis": "1.000000",
               "cell": "0.760000",
-              "collection": "0.787429",
+              "collection": "0.708686",
               "contour": "1.000000",
-              "imitation": "0.300000",
-              "register": "0.875806",
+              "imitation": "0.800000",
+              "register": "0.762903",
               "vertical": "1.000000"
             }
           },
           {
             "role": "bass",
-            "candidateMidi": 62,
+            "candidateMidi": 67,
             "shortlistRank": 0,
-            "voiceScore": "0.798016",
+            "voiceScore": "0.788984",
             "tieBreakKey": 264590,
             "dimensions": {
               "accent": "0.282667",
@@ -2801,7 +2801,7 @@
               "collection": "0.722057",
               "contour": "1.000000",
               "imitation": "0.700000",
-              "register": "0.762903",
+              "register": "0.650000",
               "vertical": "1.000000"
             }
           }
@@ -2818,20 +2818,20 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.530232",
+        "finalScore": "4.929260",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
           "axisCoverage": 0.75,
-          "ensembleMultiplier": 1.254,
-          "imitationConsistency": 0.5800000000000001,
+          "ensembleMultiplier": 1.45464,
+          "imitationConsistency": 0.94,
           "spacingBalance": 1,
-          "verticalIntervalProfile": 0.8
+          "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
-          "soprano": 86,
-          "alto": 73,
-          "tenor": 67,
-          "bass": 60
+          "soprano": 84,
+          "alto": 79,
+          "tenor": 71,
+          "bass": 62
         },
         "activeFunction": "tonic_axis",
         "collectionId": "octatonic",
@@ -2839,69 +2839,69 @@
         "candidates": [
           {
             "role": "soprano",
-            "candidateMidi": 86,
-            "shortlistRank": 1,
-            "voiceScore": "0.888654",
-            "tieBreakKey": 670140,
+            "candidateMidi": 84,
+            "shortlistRank": 3,
+            "voiceScore": "0.879287",
+            "tieBreakKey": 421720,
             "dimensions": {
               "accent": "0.916667",
               "axis": "1.000000",
               "cell": "0.850000",
-              "collection": "1.045943",
-              "contour": "0.700000",
+              "collection": "0.905143",
+              "contour": "0.820000",
               "imitation": "0.700000",
-              "register": "0.844444",
+              "register": "0.883333",
               "vertical": "1.000000"
             }
           },
           {
             "role": "alto",
-            "candidateMidi": 73,
+            "candidateMidi": 79,
             "shortlistRank": 0,
-            "voiceScore": "0.890884",
-            "tieBreakKey": 670140,
+            "voiceScore": "0.919346",
+            "tieBreakKey": 36390,
             "dimensions": {
               "accent": "0.916667",
-              "axis": "0.880000",
+              "axis": "1.000000",
               "cell": "0.850000",
-              "collection": "1.045943",
-              "contour": "1.000000",
+              "collection": "1.102994",
+              "contour": "0.880000",
               "imitation": "0.700000",
-              "register": "1.000000",
+              "register": "0.883333",
               "vertical": "1.000000"
             }
           },
           {
             "role": "tenor",
-            "candidateMidi": 67,
-            "shortlistRank": 1,
-            "voiceScore": "0.860877",
-            "tieBreakKey": 294840,
+            "candidateMidi": 71,
+            "shortlistRank": 0,
+            "voiceScore": "0.886352",
+            "tieBreakKey": 999520,
             "dimensions": {
               "accent": "0.916667",
-              "axis": "1.000000",
+              "axis": "0.880000",
               "cell": "0.850000",
-              "collection": "1.081783",
-              "contour": "0.880000",
-              "imitation": "0.300000",
-              "register": "0.920968",
+              "collection": "0.969874",
+              "contour": "0.820000",
+              "imitation": "0.800000",
+              "register": "0.830645",
               "vertical": "1.000000"
             }
           },
           {
             "role": "bass",
-            "candidateMidi": 60,
-            "shortlistRank": 4,
-            "voiceScore": "0.875330",
-            "tieBreakKey": 537110,
+            "candidateMidi": 62,
+            "shortlistRank": 1,
+            "voiceScore": "0.887097",
+            "tieBreakKey": 36390,
             "dimensions": {
               "accent": "0.916667",
               "axis": "1.000000",
               "cell": "0.850000",
-              "collection": "0.806400",
-              "contour": "0.880000",
+              "collection": "0.931840",
+              "contour": "0.700000",
               "imitation": "0.700000",
-              "register": "0.808065",
+              "register": "0.762903",
               "vertical": "1.000000"
             }
           }
@@ -2918,19 +2918,19 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.239822",
+        "finalScore": "4.760004",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
-          "axisCoverage": 0.5,
-          "ensembleMultiplier": 1.1,
-          "imitationConsistency": 0.52,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.45464,
+          "imitationConsistency": 0.94,
           "spacingBalance": 1,
           "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
-          "soprano": 91,
-          "alto": 73,
-          "tenor": 71,
+          "soprano": 85,
+          "alto": 79,
+          "tenor": 72,
           "bass": 62
         },
         "activeFunction": "tonic_axis",
@@ -2939,67 +2939,67 @@
         "candidates": [
           {
             "role": "soprano",
-            "candidateMidi": 91,
-            "shortlistRank": 0,
-            "voiceScore": "0.860649",
-            "tieBreakKey": 714150,
+            "candidateMidi": 85,
+            "shortlistRank": 1,
+            "voiceScore": "0.848434",
+            "tieBreakKey": 348110,
             "dimensions": {
               "accent": "0.282667",
-              "axis": "1.000000",
+              "axis": "0.880000",
               "cell": "0.840000",
-              "collection": "1.166629",
-              "contour": "0.700000",
+              "collection": "1.106286",
+              "contour": "0.940000",
               "imitation": "0.700000",
-              "register": "0.747222",
+              "register": "0.863889",
               "vertical": "1.000000"
             }
           },
           {
             "role": "alto",
-            "candidateMidi": 73,
+            "candidateMidi": 79,
             "shortlistRank": 0,
-            "voiceScore": "0.823964",
-            "tieBreakKey": 891060,
+            "voiceScore": "0.857226",
+            "tieBreakKey": 998960,
             "dimensions": {
               "accent": "0.282667",
-              "axis": "0.880000",
+              "axis": "1.000000",
               "cell": "0.760000",
-              "collection": "1.045943",
+              "collection": "1.102994",
               "contour": "1.000000",
               "imitation": "0.700000",
-              "register": "1.000000",
+              "register": "0.883333",
               "vertical": "1.000000"
             }
           },
           {
             "role": "tenor",
-            "candidateMidi": 71,
-            "shortlistRank": 0,
-            "voiceScore": "0.828432",
-            "tieBreakKey": 715660,
+            "candidateMidi": 72,
+            "shortlistRank": 2,
+            "voiceScore": "0.861387",
+            "tieBreakKey": 714150,
             "dimensions": {
               "accent": "0.282667",
-              "axis": "0.880000",
-              "cell": "0.920000",
-              "collection": "0.969874",
-              "contour": "0.760000",
-              "imitation": "0.700000",
-              "register": "0.830645",
+              "axis": "1.000000",
+              "cell": "0.840000",
+              "collection": "0.839314",
+              "contour": "0.940000",
+              "imitation": "0.900000",
+              "register": "0.808065",
               "vertical": "1.000000"
             }
           },
           {
             "role": "bass",
             "candidateMidi": 62,
-            "shortlistRank": 0,
-            "voiceScore": "0.853377",
-            "tieBreakKey": 88090,
+            "shortlistRank": 1,
+            "voiceScore": "0.835777",
+            "tieBreakKey": 714150,
             "dimensions": {
               "accent": "0.282667",
               "axis": "1.000000",
-              "cell": "0.920000",
+              "cell": "0.760000",
               "collection": "0.931840",
-              "contour": "0.880000",
+              "contour": "1.000000",
               "imitation": "0.700000",
               "register": "0.762903",
               "vertical": "1.000000"
@@ -3018,19 +3018,19 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.232140",
+        "finalScore": "4.783004",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
           "axisCoverage": 0.75,
-          "ensembleMultiplier": 1.254,
-          "imitationConsistency": 0.3,
+          "ensembleMultiplier": 1.45464,
+          "imitationConsistency": 0.94,
           "spacingBalance": 1,
-          "verticalIntervalProfile": 0.8
+          "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
-          "soprano": 96,
-          "alto": 73,
-          "tenor": 67,
+          "soprano": 85,
+          "alto": 79,
+          "tenor": 72,
           "bass": 62
         },
         "activeFunction": "tonic_axis",
@@ -3039,52 +3039,52 @@
         "candidates": [
           {
             "role": "soprano",
-            "candidateMidi": 96,
-            "shortlistRank": 4,
-            "voiceScore": "0.834620",
-            "tieBreakKey": 22770,
+            "candidateMidi": 85,
+            "shortlistRank": 2,
+            "voiceScore": "0.852074",
+            "tieBreakKey": 511780,
             "dimensions": {
               "accent": "0.540000",
-              "axis": "1.000000",
-              "cell": "0.840000",
-              "collection": "0.905143",
-              "contour": "0.700000",
+              "axis": "0.880000",
+              "cell": "0.760000",
+              "collection": "1.106286",
+              "contour": "1.000000",
               "imitation": "0.700000",
-              "register": "0.650000",
+              "register": "0.863889",
               "vertical": "1.000000"
             }
           },
           {
             "role": "alto",
-            "candidateMidi": 73,
+            "candidateMidi": 79,
             "shortlistRank": 0,
-            "voiceScore": "0.844551",
-            "tieBreakKey": 500739,
+            "voiceScore": "0.877812",
+            "tieBreakKey": 946680,
             "dimensions": {
               "accent": "0.540000",
-              "axis": "0.880000",
+              "axis": "1.000000",
               "cell": "0.760000",
-              "collection": "1.045943",
+              "collection": "1.102994",
               "contour": "1.000000",
               "imitation": "0.700000",
-              "register": "1.000000",
+              "register": "0.883333",
               "vertical": "1.000000"
             }
           },
           {
             "role": "tenor",
-            "candidateMidi": 67,
-            "shortlistRank": 3,
-            "voiceScore": "0.752343",
-            "tieBreakKey": 511780,
+            "candidateMidi": 72,
+            "shortlistRank": 4,
+            "voiceScore": "0.839574",
+            "tieBreakKey": 781180,
             "dimensions": {
               "accent": "0.540000",
               "axis": "1.000000",
-              "cell": "0.440000",
-              "collection": "1.081783",
-              "contour": "0.760000",
-              "imitation": "0.250000",
-              "register": "0.920968",
+              "cell": "0.760000",
+              "collection": "0.839314",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.808065",
               "vertical": "1.000000"
             }
           },
@@ -3118,19 +3118,19 @@
         },
         "tupleCount": 625,
         "beamWidth": 32,
-        "finalScore": "4.220740",
+        "finalScore": "4.705804",
         "ensembleFactors": {
           "antiParallelPenalty": 1,
           "axisCoverage": 0.75,
-          "ensembleMultiplier": 1.254,
-          "imitationConsistency": 0.3,
+          "ensembleMultiplier": 1.45464,
+          "imitationConsistency": 0.94,
           "spacingBalance": 1,
-          "verticalIntervalProfile": 0.8
+          "verticalIntervalProfile": 1
         },
         "chosenMidiByRole": {
-          "soprano": 96,
-          "alto": 73,
-          "tenor": 67,
+          "soprano": 85,
+          "alto": 79,
+          "tenor": 72,
           "bass": 62
         },
         "activeFunction": "tonic_axis",
@@ -3139,59 +3139,59 @@
         "candidates": [
           {
             "role": "soprano",
-            "candidateMidi": 96,
-            "shortlistRank": 0,
-            "voiceScore": "0.824180",
+            "candidateMidi": 85,
+            "shortlistRank": 2,
+            "voiceScore": "0.836634",
             "tieBreakKey": 866820,
             "dimensions": {
               "accent": "0.282667",
-              "axis": "1.000000",
+              "axis": "0.880000",
               "cell": "0.760000",
-              "collection": "0.905143",
+              "collection": "1.106286",
               "contour": "1.000000",
               "imitation": "0.700000",
-              "register": "0.650000",
+              "register": "0.863889",
               "vertical": "1.000000"
             }
           },
           {
             "role": "alto",
-            "candidateMidi": 73,
+            "candidateMidi": 79,
             "shortlistRank": 0,
-            "voiceScore": "0.823964",
-            "tieBreakKey": 24770,
+            "voiceScore": "0.857226",
+            "tieBreakKey": 508000,
             "dimensions": {
               "accent": "0.282667",
-              "axis": "0.880000",
+              "axis": "1.000000",
               "cell": "0.760000",
-              "collection": "1.045943",
+              "collection": "1.102994",
               "contour": "1.000000",
               "imitation": "0.700000",
-              "register": "1.000000",
+              "register": "0.883333",
               "vertical": "1.000000"
             }
           },
           {
             "role": "tenor",
-            "candidateMidi": 67,
-            "shortlistRank": 0,
-            "voiceScore": "0.792557",
+            "candidateMidi": 72,
+            "shortlistRank": 4,
+            "voiceScore": "0.818987",
             "tieBreakKey": 63580,
             "dimensions": {
               "accent": "0.282667",
               "axis": "1.000000",
               "cell": "0.760000",
-              "collection": "1.081783",
+              "collection": "0.839314",
               "contour": "1.000000",
-              "imitation": "0.250000",
-              "register": "0.920968",
+              "imitation": "0.700000",
+              "register": "0.808065",
               "vertical": "1.000000"
             }
           },
           {
             "role": "bass",
             "candidateMidi": 62,
-            "shortlistRank": 0,
+            "shortlistRank": 1,
             "voiceScore": "0.835777",
             "tieBreakKey": 790830,
             "dimensions": {

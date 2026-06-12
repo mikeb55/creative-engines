@@ -37,12 +37,12 @@
             "offsetBars": "0.5000"
           },
           {
-            "pitchMidi": 84,
+            "pitchMidi": 85,
             "durationBars": "0.2500",
             "offsetBars": "0.7500"
           },
           {
-            "pitchMidi": 81,
+            "pitchMidi": 86,
             "durationBars": "0.2500",
             "offsetBars": "1.0000"
           },
@@ -62,42 +62,42 @@
             "offsetBars": "1.7500"
           },
           {
-            "pitchMidi": 79,
+            "pitchMidi": 81,
             "durationBars": "0.2500",
             "offsetBars": "2.0000"
           },
           {
-            "pitchMidi": 81,
+            "pitchMidi": 85,
             "durationBars": "0.2500",
             "offsetBars": "2.2500"
           },
           {
-            "pitchMidi": 81,
+            "pitchMidi": 85,
             "durationBars": "0.2500",
             "offsetBars": "2.5000"
           },
           {
-            "pitchMidi": 79,
+            "pitchMidi": 82,
             "durationBars": "0.2500",
             "offsetBars": "2.7500"
           },
           {
-            "pitchMidi": 79,
+            "pitchMidi": 84,
             "durationBars": "0.2500",
             "offsetBars": "3.0000"
           },
           {
-            "pitchMidi": 84,
+            "pitchMidi": 87,
             "durationBars": "0.2500",
             "offsetBars": "3.2500"
           },
           {
-            "pitchMidi": 84,
+            "pitchMidi": 87,
             "durationBars": "0.2500",
             "offsetBars": "3.5000"
           },
           {
-            "pitchMidi": 79,
+            "pitchMidi": 84,
             "durationBars": "0.2500",
             "offsetBars": "3.7500"
           },
@@ -107,22 +107,22 @@
             "offsetBars": "4.0000"
           },
           {
-            "pitchMidi": 81,
+            "pitchMidi": 84,
             "durationBars": "0.2500",
             "offsetBars": "4.2500"
           },
           {
-            "pitchMidi": 81,
+            "pitchMidi": 83,
             "durationBars": "0.2500",
             "offsetBars": "4.5000"
           },
           {
-            "pitchMidi": 83,
+            "pitchMidi": 84,
             "durationBars": "0.2500",
             "offsetBars": "4.7500"
           },
           {
-            "pitchMidi": 83,
+            "pitchMidi": 82,
             "durationBars": "0.2500",
             "offsetBars": "5.0000"
           },
@@ -132,52 +132,52 @@
             "offsetBars": "5.2500"
           },
           {
-            "pitchMidi": 88,
+            "pitchMidi": 84,
             "durationBars": "0.2500",
             "offsetBars": "5.5000"
           },
           {
-            "pitchMidi": 88,
+            "pitchMidi": 84,
             "durationBars": "0.2500",
             "offsetBars": "5.7500"
           },
           {
-            "pitchMidi": 86,
+            "pitchMidi": 81,
             "durationBars": "0.2500",
             "offsetBars": "6.0000"
           },
           {
-            "pitchMidi": 86,
+            "pitchMidi": 85,
             "durationBars": "0.2500",
             "offsetBars": "6.2500"
           },
           {
-            "pitchMidi": 91,
+            "pitchMidi": 87,
             "durationBars": "0.2500",
             "offsetBars": "6.5000"
           },
           {
-            "pitchMidi": 91,
+            "pitchMidi": 87,
             "durationBars": "0.2500",
             "offsetBars": "6.7500"
           },
           {
-            "pitchMidi": 86,
+            "pitchMidi": 84,
             "durationBars": "0.2500",
             "offsetBars": "7.0000"
           },
           {
-            "pitchMidi": 91,
+            "pitchMidi": 85,
             "durationBars": "0.2500",
             "offsetBars": "7.2500"
           },
           {
-            "pitchMidi": 96,
+            "pitchMidi": 85,
             "durationBars": "0.2500",
             "offsetBars": "7.5000"
           },
           {
-            "pitchMidi": 96,
+            "pitchMidi": 85,
             "durationBars": "0.2500",
             "offsetBars": "7.7500"
           }
@@ -188,7 +188,168 @@
         "tags": [
           "harmonic_fill"
         ],
-        "notes": []
+        "notes": [
+          {
+            "pitchMidi": 73,
+            "durationBars": "0.2500",
+            "offsetBars": "0.1250"
+          },
+          {
+            "pitchMidi": 73,
+            "durationBars": "0.2500",
+            "offsetBars": "0.3750"
+          },
+          {
+            "pitchMidi": 78,
+            "durationBars": "0.2500",
+            "offsetBars": "0.6250"
+          },
+          {
+            "pitchMidi": 82,
+            "durationBars": "0.2500",
+            "offsetBars": "0.8750"
+          },
+          {
+            "pitchMidi": 76,
+            "durationBars": "0.2500",
+            "offsetBars": "1.1250"
+          },
+          {
+            "pitchMidi": 81,
+            "durationBars": "0.2500",
+            "offsetBars": "1.3750"
+          },
+          {
+            "pitchMidi": 76,
+            "durationBars": "0.2500",
+            "offsetBars": "1.6250"
+          },
+          {
+            "pitchMidi": 74,
+            "durationBars": "0.2500",
+            "offsetBars": "1.8750"
+          },
+          {
+            "pitchMidi": 79,
+            "durationBars": "0.2500",
+            "offsetBars": "2.1250"
+          },
+          {
+            "pitchMidi": 79,
+            "durationBars": "0.2500",
+            "offsetBars": "2.3750"
+          },
+          {
+            "pitchMidi": 79,
+            "durationBars": "0.2500",
+            "offsetBars": "2.6250"
+          },
+          {
+            "pitchMidi": 74,
+            "durationBars": "0.2500",
+            "offsetBars": "2.8750"
+          },
+          {
+            "pitchMidi": 74,
+            "durationBars": "0.2500",
+            "offsetBars": "3.1250"
+          },
+          {
+            "pitchMidi": 79,
+            "durationBars": "0.2500",
+            "offsetBars": "3.3750"
+          },
+          {
+            "pitchMidi": 79,
+            "durationBars": "0.2500",
+            "offsetBars": "3.6250"
+          },
+          {
+            "pitchMidi": 74,
+            "durationBars": "0.2500",
+            "offsetBars": "3.8750"
+          },
+          {
+            "pitchMidi": 76,
+            "durationBars": "0.2500",
+            "offsetBars": "4.1250"
+          },
+          {
+            "pitchMidi": 76,
+            "durationBars": "0.2500",
+            "offsetBars": "4.3750"
+          },
+          {
+            "pitchMidi": 76,
+            "durationBars": "0.2500",
+            "offsetBars": "4.6250"
+          },
+          {
+            "pitchMidi": 76,
+            "durationBars": "0.2500",
+            "offsetBars": "4.8750"
+          },
+          {
+            "pitchMidi": 76,
+            "durationBars": "0.2500",
+            "offsetBars": "5.1250"
+          },
+          {
+            "pitchMidi": 76,
+            "durationBars": "0.2500",
+            "offsetBars": "5.3750"
+          },
+          {
+            "pitchMidi": 78,
+            "durationBars": "0.2500",
+            "offsetBars": "5.6250"
+          },
+          {
+            "pitchMidi": 78,
+            "durationBars": "0.2500",
+            "offsetBars": "5.8750"
+          },
+          {
+            "pitchMidi": 79,
+            "durationBars": "0.2500",
+            "offsetBars": "6.1250"
+          },
+          {
+            "pitchMidi": 81,
+            "durationBars": "0.2500",
+            "offsetBars": "6.3750"
+          },
+          {
+            "pitchMidi": 81,
+            "durationBars": "0.2500",
+            "offsetBars": "6.6250"
+          },
+          {
+            "pitchMidi": 81,
+            "durationBars": "0.2500",
+            "offsetBars": "6.8750"
+          },
+          {
+            "pitchMidi": 79,
+            "durationBars": "0.2500",
+            "offsetBars": "7.1250"
+          },
+          {
+            "pitchMidi": 79,
+            "durationBars": "0.2500",
+            "offsetBars": "7.3750"
+          },
+          {
+            "pitchMidi": 79,
+            "durationBars": "0.2500",
+            "offsetBars": "7.6250"
+          },
+          {
+            "pitchMidi": 79,
+            "durationBars": "0.2500",
+            "offsetBars": "7.8750"
+          }
+        ]
       },
       {
         "role": "tenor",
@@ -213,7 +374,7 @@
             "offsetBars": "1.7813"
           },
           {
-            "pitchMidi": 71,
+            "pitchMidi": 73,
             "durationBars": "0.2500",
             "offsetBars": "2.0313"
           },
@@ -223,32 +384,32 @@
             "offsetBars": "2.2813"
           },
           {
-            "pitchMidi": 69,
+            "pitchMidi": 74,
             "durationBars": "0.2500",
             "offsetBars": "2.5313"
           },
           {
-            "pitchMidi": 69,
+            "pitchMidi": 73,
             "durationBars": "0.2500",
             "offsetBars": "2.7813"
           },
           {
-            "pitchMidi": 69,
+            "pitchMidi": 68,
             "durationBars": "0.2500",
             "offsetBars": "3.0313"
           },
           {
-            "pitchMidi": 69,
+            "pitchMidi": 70,
             "durationBars": "0.2500",
             "offsetBars": "3.2813"
           },
           {
-            "pitchMidi": 70,
+            "pitchMidi": 74,
             "durationBars": "0.2500",
             "offsetBars": "3.5313"
           },
           {
-            "pitchMidi": 69,
+            "pitchMidi": 74,
             "durationBars": "0.2500",
             "offsetBars": "3.7813"
           },
@@ -258,37 +419,37 @@
             "offsetBars": "4.0313"
           },
           {
-            "pitchMidi": 67,
+            "pitchMidi": 71,
             "durationBars": "0.2500",
             "offsetBars": "4.2813"
           },
           {
-            "pitchMidi": 71,
+            "pitchMidi": 74,
             "durationBars": "0.2500",
             "offsetBars": "4.5313"
           },
           {
-            "pitchMidi": 71,
+            "pitchMidi": 74,
             "durationBars": "0.2500",
             "offsetBars": "4.7813"
           },
           {
-            "pitchMidi": 67,
+            "pitchMidi": 71,
             "durationBars": "0.2500",
             "offsetBars": "5.0313"
           },
           {
-            "pitchMidi": 69,
+            "pitchMidi": 72,
             "durationBars": "0.2500",
             "offsetBars": "5.2813"
           },
           {
-            "pitchMidi": 69,
+            "pitchMidi": 71,
             "durationBars": "0.2500",
             "offsetBars": "5.5313"
           },
           {
-            "pitchMidi": 71,
+            "pitchMidi": 72,
             "durationBars": "0.2500",
             "offsetBars": "5.7813"
           },
@@ -303,7 +464,7 @@
             "offsetBars": "6.2813"
           },
           {
-            "pitchMidi": 71,
+            "pitchMidi": 72,
             "durationBars": "0.2500",
             "offsetBars": "6.5313"
           },
@@ -318,37 +479,37 @@
             "offsetBars": "7.0313"
           },
           {
-            "pitchMidi": 69,
+            "pitchMidi": 70,
             "durationBars": "0.2500",
             "offsetBars": "7.2813"
           },
           {
-            "pitchMidi": 67,
+            "pitchMidi": 74,
             "durationBars": "0.2500",
             "offsetBars": "7.5313"
           },
           {
-            "pitchMidi": 69,
+            "pitchMidi": 74,
             "durationBars": "0.2500",
             "offsetBars": "7.7813"
           },
           {
-            "pitchMidi": 69,
+            "pitchMidi": 74,
             "durationBars": "0.2500",
             "offsetBars": "8.0313"
           },
           {
-            "pitchMidi": 67,
+            "pitchMidi": 71,
             "durationBars": "0.2500",
             "offsetBars": "8.2813"
           },
           {
-            "pitchMidi": 71,
+            "pitchMidi": 72,
             "durationBars": "0.2500",
             "offsetBars": "8.5313"
           },
           {
-            "pitchMidi": 67,
+            "pitchMidi": 72,
             "durationBars": "0.2500",
             "offsetBars": "8.7813"
           }
@@ -362,163 +523,118 @@
         "notes": [
           {
             "pitchMidi": 46,
-            "durationBars": "0.3750",
+            "durationBars": "0.5000",
             "offsetBars": "0.3750"
           },
           {
             "pitchMidi": 47,
-            "durationBars": "0.3750",
+            "durationBars": "0.5000",
             "offsetBars": "0.6250"
           },
           {
-            "pitchMidi": 54,
-            "durationBars": "0.3750",
+            "pitchMidi": 49,
+            "durationBars": "0.5000",
             "offsetBars": "0.8750"
           },
           {
-            "pitchMidi": 54,
-            "durationBars": "0.3750",
-            "offsetBars": "1.1250"
-          },
-          {
-            "pitchMidi": 50,
-            "durationBars": "0.3750",
+            "pitchMidi": 53,
+            "durationBars": "0.5000",
             "offsetBars": "1.3750"
           },
           {
-            "pitchMidi": 52,
-            "durationBars": "0.3750",
+            "pitchMidi": 59,
+            "durationBars": "0.5000",
             "offsetBars": "1.6250"
           },
           {
-            "pitchMidi": 52,
-            "durationBars": "0.3750",
+            "pitchMidi": 57,
+            "durationBars": "0.5000",
             "offsetBars": "1.8750"
           },
           {
             "pitchMidi": 50,
-            "durationBars": "0.3750",
-            "offsetBars": "2.1250"
-          },
-          {
-            "pitchMidi": 50,
-            "durationBars": "0.3750",
+            "durationBars": "0.5000",
             "offsetBars": "2.3750"
           },
           {
-            "pitchMidi": 55,
-            "durationBars": "0.3750",
+            "pitchMidi": 57,
+            "durationBars": "0.5000",
             "offsetBars": "2.6250"
           },
           {
-            "pitchMidi": 55,
-            "durationBars": "0.3750",
+            "pitchMidi": 57,
+            "durationBars": "0.5000",
             "offsetBars": "2.8750"
           },
           {
-            "pitchMidi": 50,
-            "durationBars": "0.3750",
-            "offsetBars": "3.1250"
-          },
-          {
-            "pitchMidi": 50,
-            "durationBars": "0.3750",
+            "pitchMidi": 55,
+            "durationBars": "0.5000",
             "offsetBars": "3.3750"
           },
           {
-            "pitchMidi": 55,
-            "durationBars": "0.3750",
+            "pitchMidi": 60,
+            "durationBars": "0.5000",
             "offsetBars": "3.6250"
           },
           {
-            "pitchMidi": 55,
-            "durationBars": "0.3750",
+            "pitchMidi": 60,
+            "durationBars": "0.5000",
             "offsetBars": "3.8750"
           },
           {
-            "pitchMidi": 50,
-            "durationBars": "0.3750",
-            "offsetBars": "4.1250"
-          },
-          {
-            "pitchMidi": 52,
-            "durationBars": "0.3750",
+            "pitchMidi": 57,
+            "durationBars": "0.5000",
             "offsetBars": "4.3750"
           },
           {
-            "pitchMidi": 52,
-            "durationBars": "0.3750",
+            "pitchMidi": 57,
+            "durationBars": "0.5000",
             "offsetBars": "4.6250"
           },
           {
-            "pitchMidi": 52,
-            "durationBars": "0.3750",
+            "pitchMidi": 57,
+            "durationBars": "0.5000",
             "offsetBars": "4.8750"
           },
           {
-            "pitchMidi": 52,
-            "durationBars": "0.3750",
-            "offsetBars": "5.1250"
-          },
-          {
             "pitchMidi": 54,
-            "durationBars": "0.3750",
-            "offsetBars": "5.3750"
-          },
-          {
-            "pitchMidi": 54,
-            "durationBars": "0.3750",
+            "durationBars": "0.5000",
             "offsetBars": "5.6250"
           },
           {
-            "pitchMidi": 54,
-            "durationBars": "0.3750",
+            "pitchMidi": 64,
+            "durationBars": "0.5000",
             "offsetBars": "5.8750"
           },
           {
-            "pitchMidi": 54,
-            "durationBars": "0.3750",
+            "pitchMidi": 64,
+            "durationBars": "0.5000",
             "offsetBars": "6.1250"
           },
           {
-            "pitchMidi": 55,
-            "durationBars": "0.3750",
+            "pitchMidi": 62,
+            "durationBars": "0.5000",
             "offsetBars": "6.3750"
           },
           {
-            "pitchMidi": 57,
-            "durationBars": "0.3750",
+            "pitchMidi": 67,
+            "durationBars": "0.5000",
             "offsetBars": "6.6250"
           },
           {
             "pitchMidi": 62,
-            "durationBars": "0.3750",
-            "offsetBars": "6.8750"
-          },
-          {
-            "pitchMidi": 62,
-            "durationBars": "0.3750",
-            "offsetBars": "7.1250"
-          },
-          {
-            "pitchMidi": 60,
-            "durationBars": "0.3750",
+            "durationBars": "0.5000",
             "offsetBars": "7.3750"
           },
           {
             "pitchMidi": 62,
-            "durationBars": "0.3750",
+            "durationBars": "0.5000",
             "offsetBars": "7.6250"
           },
           {
             "pitchMidi": 62,
-            "durationBars": "0.3750",
+            "durationBars": "0.5000",
             "offsetBars": "7.8750"
-          },
-          {
-            "pitchMidi": 62,
-            "durationBars": "0.3750",
-            "offsetBars": "8.1250"
           }
         ]
       }

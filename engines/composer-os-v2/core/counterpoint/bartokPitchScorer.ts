@@ -307,17 +307,22 @@ function compareTuple(a: { finalScore: number; tieMidi: number; tieBreakKey: num
   return a.tieBreakKey - b.tieBreakKey;
 }
 
-function altoOnsetBarFraction(barIndex: number): number {
-  return barIndex + BARTOK_PITCH_ADDITIVE_OFFSET.alto + (barIndex % 2) * 0.25;
+function altoOnsetBarFraction(barIndex: number, beatIndexInBar: number): number {
+  return barIndex + BARTOK_PITCH_ADDITIVE_OFFSET.alto + beatIndexInBar * 0.25;
 }
 
 function bassOnsetBarFraction(barIndex: number, beatIndexInBar: number): number {
   return barIndex + BARTOK_PITCH_ADDITIVE_OFFSET.bass + beatIndexInBar * 0.25;
 }
 
-function slotBarFraction(globalSlotIndex: number): number {
-  const barIndex = Math.floor(globalSlotIndex / 4);
-  return barIndex + BARTOK_PITCH_ADDITIVE_OFFSET.soprano + (globalSlotIndex % 4) * 0.25;
+/** Bass emission rhythm only — does not affect tuple scoring or enumeration. */
+const BARTOK_BASS_EMIT_CYCLE_3_2_3: readonly boolean[] = [true, true, true, false, false, true, true, true];
+const BARTOK_BASS_EMIT_CYCLE_2_3_3: readonly boolean[] = [true, true, false, false, true, true, true, false];
+
+function shouldEmitBassAtSlot(globalSlotIndex: number, seed: number): boolean {
+  const phraseIndex = Math.floor(globalSlotIndex / 4);
+  const cycle = rng01(seed, 9193 + phraseIndex) >= 0.5 ? BARTOK_BASS_EMIT_CYCLE_2_3_3 : BARTOK_BASS_EMIT_CYCLE_3_2_3;
+  return cycle[globalSlotIndex % 8] ?? false;
 }
 
 
@@ -390,8 +395,6 @@ export function buildBartokScoredLineSet(
 
     const developmental = slot.phraseIndex >= developmentalPhraseStart;
     const leadMidi = g >= 4 ? sopranoHistory[g - 4] ?? null : null;
-    const barFrac = slotBarFraction(g);
-    const altoFixed = Math.abs(barFrac - altoOnsetBarFraction(barIndex)) > 0.02;
 
     const scorerCtx = { tonicPc, phrase, slotInPhrase: slot.slotInPhrase, beatIndexInBar, developmental, leadMidi };
     const tupleSeed: Record<LineRole, number> = {
@@ -403,9 +406,7 @@ export function buildBartokScoredLineSet(
 
     const shortlists = VOICE_ORDER.map((role) => {
       const prev = state[role];
-      const fixed = role === "alto" ? altoFixed : false;
-      const fixedMidi = fixed ? state[role] ?? undefined : undefined;
-      return buildShortlist(role, enumerateRaw(role, prev, fixed, fixedMidi), prev, normalizedSeed, g, scorerCtx, tupleSeed);
+      return buildShortlist(role, enumerateRaw(role, prev, false, undefined), prev, normalizedSeed, g, scorerCtx, tupleSeed);
     });
 
     type TuplePick = {
@@ -477,12 +478,18 @@ export function buildBartokScoredLineSet(
     byRole.soprano.notes.push({ pitchMidi: chosen.mids.soprano, durationBars: 0.25, offsetBars: off });
     const tenOff = barIndex + BARTOK_PITCH_TENOR_DELAY_BARS + BARTOK_PITCH_ADDITIVE_OFFSET.tenor + beatIndexInBar * 0.25 + BARTOK_PITCH_TENOR_PHASE;
     if (tenOff < lengthBars + 0.999) byRole.tenor.notes.push({ pitchMidi: chosen.mids.tenor, durationBars: 0.25, offsetBars: tenOff });
-    if (!altoFixed) byRole.alto.notes.push({ pitchMidi: chosen.mids.alto, durationBars: 0.25, offsetBars: altoOnsetBarFraction(barIndex) });
-    byRole.bass.notes.push({
-      pitchMidi: chosen.mids.bass,
-      durationBars: 0.375,
-      offsetBars: bassOnsetBarFraction(barIndex, beatIndexInBar),
+    byRole.alto.notes.push({
+      pitchMidi: chosen.mids.alto,
+      durationBars: 0.25,
+      offsetBars: altoOnsetBarFraction(barIndex, beatIndexInBar),
     });
+    if (shouldEmitBassAtSlot(g, normalizedSeed)) {
+      byRole.bass.notes.push({
+        pitchMidi: chosen.mids.bass,
+        durationBars: 0.5,
+        offsetBars: bassOnsetBarFraction(barIndex, beatIndexInBar),
+      });
+    }
   }
 
   const imitationMap: ImitationEvent[] = [{

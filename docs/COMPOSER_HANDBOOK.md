@@ -342,15 +342,14 @@ Canonical Song Mode / Big Band composers in **`engines/composer-os-v2`**. **Slic
 
 ## Bartók CLE pitch scoring (duo golden path)
 
-**What it does:** On **`guitar_bass_duo`** with primary **`bartok`**, **`ContrapuntalLineEngine`** builds a four-voice **`AbstractLineSet`** via **`buildBartokScoredLineSet`** (`bartokPitchScorer.ts`): per-slot shortlist + **625-tuple** beam search against **`docs/bartok_pitch_spec.md`** / **`bartokPitchScoringConfig.ts`**. Soprano + delayed tenor imitation export to guitar; bass maps through **`fillBassMeasureFromAbstractBassLine`**.
+**What it does:** On **`guitar_bass_duo`** with primary **`bartok`**, **`ContrapuntalLineEngine`** builds a four-voice **`AbstractLineSet`** via **`buildBartokScoredLineSet`** (`bartokPitchScorer.ts`): per-slot shortlist + **625-tuple** beam search against **`docs/bartok_pitch_spec.md`** / **`bartokPitchScoringConfig.ts`**. **Export is 2-voice by design:** soprano → **`fillGuitarMeasureFromAbstractSoprano`** (guitar); bass → **`fillBassMeasureFromAbstractBassLine`**. Alto and tenor are **scored and stored on the lineSet** for vertical/voice-leading context (e.g. **32** alto notes in golden seed **61234**) but **do not become separate MusicXML parts**.
 
 **QA export (seed 61234):** From repo root — `npx tsx engines/composer-os-v2/scripts/bartokCleGenerateQaMusicXml.ts` → **`qa-output/bartok/bartok_cle_duo_seed61234.musicxml`** (gitignored generated artifact; folder convention only).
 
-**Checkpoint (2026-06-12 — not final freeze):** **Frozen E2 bass bug fixed** — bass pitches now come from the scorer every quarter slot (was empty lineSet → wiring fallback MIDI 40). Golden master **`bartok-cle-seed61234`** re-approved; duo QA GCE **4.8 → 5.9** on seed **61234**.
+**Checkpoint (2026-06-06 — not final freeze):** Bass rhythm asymmetry via phrase-level emit mask (**`3+2+3`** / **`2+3+3`**; scoring/enumeration unchanged); alto onset grid fixed (removed **`altoFixed`** pin). Golden master **`bartok-cle-seed61234`** re-approved; duo QA GCE seed **61234**: **5.9 → 6.4**.
 
 **Open follow-ups (next passes):**
-- **Bass rhythm density** — scorer currently emits **32** bass attacks (one per soprano quarter slot); likely **too square/dense** for Bartók — needs rhythmic variation / sparse anchor pattern (separate iteration).
-- **Alto onset grid** — **`altoFixed`** has the same quarter-grid misalignment as the old bass bug; **`lineSet.alto.notes`** still empty until fixed.
+- **Transformational counterpoint** — inversion / mirror / axis relationships driving bass (next quality ceiling; not further rhythm-density work).
 - **Imitation modes** — **`pickImitationMode`** metadata only; tenor-only **`imitationFit`** wiring deferred.
 
 **Gates:** smoke **`bartokCleGoldenMaster`** (seed **61234**); BH **`bhGoldenMaster`** must stay byte-identical when touching this path.
