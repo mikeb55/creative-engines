@@ -4,6 +4,34 @@
 
 export type { PremiumMelodyProfile } from './premiumMelodyProfile';
 
+export type {
+  PremiumMelodyPitchProfile,
+  PremiumMelodyPitchSlotContext,
+  PremiumMelodyPitchSlotList,
+  PremiumMelodyPhrasePlannerConfig,
+  PremiumMelodySlotScorerConfig,
+  PremiumMelodySurfaceRulesConfig,
+  PremiumMelodyPitchTraceEvent,
+  PremiumMelodyPitchSlotId,
+  PremiumMelodyPitchOrnamentAnnotations,
+} from './premiumMelodyPitchProfile';
+
+export {
+  assertValidPremiumMelodyPitchProfile,
+  PREMIUM_MELODY_SURFACE_ORNAMENT_ORDER,
+} from './premiumMelodyPitchProfile';
+
+export {
+  derivePremiumMelodyPitchSlotSeed,
+  derivePremiumMelodyPhrasePlanSeed,
+  derivePremiumMelodySurfaceOrnamentSeed,
+  buildPremiumMelodyPitchSlotList,
+  runPremiumMelodyPitchPipeline,
+  applyPremiumMelodySurfaceOrnaments,
+  type PremiumMelodyPitchPipelineOptions,
+  type PremiumMelodyPitchPipelineResult,
+} from './premiumMelodyPitchPipeline';
+
 export { mulberry32, deriveMelodyRhythmSeed } from './premiumMelodyPrng';
 
 export {
@@ -66,6 +94,8 @@ export {
 export {
   runPremiumMelodyHarmonyRhythmExpressionPipeline,
   applyPremiumMelodyPinExport,
+  harmonyByBarFromImportTimeline,
+  type PremiumMelodyPipelineOptions,
   type PremiumMelodyPipelineResult,
   type PremiumMelodyPinResult,
 } from './premiumMelodyRouting';

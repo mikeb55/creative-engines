@@ -74,6 +74,20 @@ export interface PremiumMelodyPitchSlotContext {
   approachPatternOffsetSemitones?: number;
   /** Chord boundary slot (harmony change). */
   isChordBoundary?: boolean;
+  /** V89 opt-in — call-and-response phrase pair role. */
+  callResponseRole?: 'call' | 'response' | 'none';
+  callResponsePairIndex?: number;
+  callResponseMutationKind?: PremiumMelodyCallResponseMutationKind;
+  callResponseGroupIndex?: number;
+  /** Interval/rhythm DNA similarity to paired call bar (response slots). */
+  callResponseSimilarity?: number;
+  /** Response / turnaround chord-fit override mode. */
+  phraseModeChordFit?: 'response' | 'turnaround';
+  bar3IntensityLift?: boolean;
+  phraseEndSustainTarget?: boolean;
+  longTargetVibratoEligible?: boolean;
+  riffCellIndex?: number;
+  riffCellIntervals?: readonly number[];
 }
 
 export type PremiumMelodyPitchSlotList = readonly PremiumMelodyPitchSlotContext[];
@@ -83,7 +97,15 @@ export type PremiumMelodyContourArc =
   | 'ascending'
   | 'wave'
   | 'modal_float'
-  | 'angular';
+  | 'angular'
+  | 'call_response_variation';
+
+export type PremiumMelodyCallResponseMutationKind =
+  | 'truncate'
+  | 'extend'
+  | 'invert'
+  | 'transpose'
+  | 'chromatic_swap';
 
 export type PremiumMelodyTonalCenterMode =
   | 'chord_root'
@@ -150,6 +172,41 @@ export interface PremiumMelodyApproachPatternConfig {
   enabled: true;
 }
 
+export interface PremiumMelodyBluesInflectionConfig {
+  enabled: true;
+  minorThirdFifthMultiplier: number;
+  flatSeventhMultiplier: number;
+  weakBeatMultiplier: number;
+  globalWeight: number;
+}
+
+export interface PremiumMelodyPentatonicAnchorConfig {
+  enabled: true;
+  /** Pitch classes relative to chord root (default minor pentatonic + b5). */
+  anchorPitchClasses: readonly number[];
+  baseWeight: number;
+  anchorHitBonus: number;
+}
+
+export interface PremiumMelodyRiffCellRecallConfig {
+  enabled: true;
+  cells: ReadonlyArray<{ intervals: readonly number[]; weight: number }>;
+  firstRecallMultiplier: number;
+  secondRecallMultiplier: number;
+  exactTranspositionMultiplier: number;
+  exactCopyPenalty: number;
+}
+
+export interface PremiumMelodyCallResponsePhraseScoreConfig {
+  enabled: true;
+  callSimilarityTarget: number;
+  responseMutationBonus: number;
+  exactPhraseRepeatPenalty: number;
+  bar3IntensityLift: number;
+  phraseEndSustainBonus: number;
+  longTargetVibratoBonus: number;
+}
+
 export interface PremiumMelodySlotScorerConfig {
   weightInterval: number;
   weightPrevInterval: number;
@@ -199,6 +256,11 @@ export interface PremiumMelodyPitchProfile {
   guideTone?: PremiumMelodyGuideToneConfig;
   climaxArc?: PremiumMelodyClimaxArcConfig;
   approachPattern?: PremiumMelodyApproachPatternConfig;
+  /** V89 opt-in — blues inflection scoring (Hendrix). */
+  bluesInflection?: PremiumMelodyBluesInflectionConfig;
+  pentatonicAnchor?: PremiumMelodyPentatonicAnchorConfig;
+  riffCellRecall?: PremiumMelodyRiffCellRecallConfig;
+  callResponsePhraseScore?: PremiumMelodyCallResponsePhraseScoreConfig;
 }
 
 export interface PremiumMelodyPitchTraceEvent {

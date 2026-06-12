@@ -56,4 +56,6 @@ export interface PremiumMelodyProfile {
   modalLyricVelocityPeak?: number;
   /** Optional `modal_lyric` interior rand jitter span (default **3**). */
   modalLyricVelocityJitter?: number;
+  /** When true, last note in each bar clamps duration to bar end (BE lyrical export bar-math). */
+  clampLastNoteToBarEnd?: boolean;
 }

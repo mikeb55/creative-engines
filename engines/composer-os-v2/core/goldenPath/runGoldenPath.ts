@@ -192,6 +192,7 @@ import {
 } from '../premium-melody';
 import { buildWayneShorterIsolationProvisionalProfile } from '../wayne-shorter/wsPremiumMelodyProfile';
 import { buildBillEvansIsolationProvisionalProfile } from '../bill-evans/bePremiumMelodyProfile';
+import { buildHendrixIsolationProvisionalProfile } from '../hendrix/jhPremiumMelodyProfile';
 import { validateSongModeMotifSystem } from '../motif/songModeMotifEngine';
 import { validateSongModePhraseEngineV1 } from './songModePhraseEngineV1';
 import { partitionSongModePhraseIssues } from '../song-mode/songModePhraseBehaviourRules';
@@ -3296,6 +3297,31 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       bePremiumMelodyRhythmMeta: bePinResult.rhythmMeta,
       ...(beProfile.pitchProfile != null && bePinResult.pitchTrace != null
         ? { bePremiumMelodyPitchTrace: bePinResult.pitchTrace }
+        : {}),
+    };
+  }
+  if (
+    styleTransferResult?.composerApplied === 'hendrix' &&
+    options?.importTimeline &&
+    (appliedContext.presetId ?? 'guitar_bass_duo') === 'guitar_bass_duo' &&
+    (options.preserveMelody ?? true)
+  ) {
+    const jhProfile = buildHendrixIsolationProvisionalProfile();
+    const melodyLine = options.importTimeline.melodyLine;
+    const jhHarmonyByBar: Record<number, string> = {};
+    for (const h of options.importTimeline.harmonyByBar) {
+      jhHarmonyByBar[h.bar] = h.chordSymbol;
+    }
+    const jhPinResult = applyPremiumMelodyPinExport(score, melodyLine, jhProfile, seed, undefined, {
+      harmonyByBar: jhHarmonyByBar,
+    });
+    score = jhPinResult.score;
+    appliedContext.generationMetadata = {
+      ...appliedContext.generationMetadata,
+      jhPremiumMelodyProfile: jhProfile.id,
+      jhPremiumMelodyRhythmMeta: jhPinResult.rhythmMeta,
+      ...(jhProfile.pitchProfile != null && jhPinResult.pitchTrace != null
+        ? { jhPremiumMelodyPitchTrace: jhPinResult.pitchTrace }
         : {}),
     };
   }

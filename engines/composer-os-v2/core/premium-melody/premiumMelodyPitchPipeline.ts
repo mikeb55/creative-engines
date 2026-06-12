@@ -22,6 +22,12 @@ import {
 } from './premiumMelodyPhrase';
 import type { PremiumMelodyExpressiveNote } from './enrichMelodyExpression';
 import {
+  chordFitVectorForSlot,
+  mergeOptionalPitchOverlays,
+  optionalPitchScoreMultiplier,
+  runOptionalPitchPrePass,
+} from './premiumMelodyOptionalPitchMechanisms';
+import {
   assertValidPremiumMelodyPitchProfile,
   PREMIUM_MELODY_SURFACE_ORNAMENT_ORDER,
   type PremiumMelodyChordFitVector,
@@ -639,6 +645,12 @@ function contourTargetDeltaForArc(arc: PremiumMelodyContourArc, progress: number
       return Math.round(2 * Math.sin(p * Math.PI * 0.75));
     case 'angular':
       return p > 0.45 && p < 0.55 ? 7 : Math.round(2 * Math.sin(p * Math.PI));
+    case 'call_response_variation': {
+      const segment = Math.min(3, Math.floor(p * 4));
+      if (segment === 3) return 5;
+      if (segment === 2) return 3;
+      return segment % 2 === 0 ? -2 : 3;
+    }
     default: {
       const _exhaustive: never = arc;
       return 0;
@@ -793,6 +805,15 @@ export function buildPremiumMelodyPitchSlotList(
     if (overlay.isChordBoundary != null) slot.isChordBoundary = overlay.isChordBoundary;
   }
 
+  const optionalOverlays = runOptionalPitchPrePass(
+    ordered,
+    roles,
+    slots,
+    pitchProfile,
+    normalizedSeed
+  );
+  mergeOptionalPitchOverlays(slots, optionalOverlays);
+
   return slots;
 }
 
@@ -908,7 +929,11 @@ function scoreCandidate(
   if (prevMidi != null && leapRecoveryActive && interval <= 2) prevIntervalFactor = 1.3;
 
   const role = chordFitRole(midi, slot.harmonyChordSymbol);
-  const chordFit = chordFitMultiplier(role, resolveActiveChordFitVector(scorer, slot.harmonyChordSymbol));
+  const activeChordFit =
+    slot.phraseModeChordFit != null
+      ? chordFitVectorForSlot(scorer, slot.phraseModeChordFit)
+      : resolveActiveChordFitVector(scorer, slot.harmonyChordSymbol);
+  const chordFit = chordFitMultiplier(role, activeChordFit);
 
   let metric = 1;
   if (slot.metricalStrength === 'strong' && interval <= 2) metric *= 1.2;
@@ -1021,6 +1046,11 @@ function scoreCandidate(
   }
   if (scorer.weightPhraseArc != null) {
     product *= Math.pow(phraseArc, scorer.weightPhraseArc);
+  }
+
+  const pitchProfile = options?.pitchProfile;
+  if (pitchProfile != null) {
+    product *= optionalPitchScoreMultiplier(midi, prevMidi, slot, pitchProfile);
   }
 
   return product;
