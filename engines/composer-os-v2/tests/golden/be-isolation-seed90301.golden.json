@@ -8,7 +8,7 @@
       "bar": 1,
       "onset": "0.0000",
       "duration": "2.0000",
-      "pitch": 66,
+      "pitch": 65,
       "articulation": "tenuto",
       "velocity": 76,
       "accent": "stress"
@@ -17,7 +17,7 @@
       "bar": 1,
       "onset": "2.0000",
       "duration": "2.0000",
-      "pitch": 71,
+      "pitch": 65,
       "articulation": "tenuto",
       "velocity": 71,
       "accent": "none"
@@ -26,7 +26,7 @@
       "bar": 2,
       "onset": "0.0000",
       "duration": "2.0000",
-      "pitch": 69,
+      "pitch": 65,
       "articulation": "tenuto",
       "velocity": 71,
       "accent": "none"
@@ -44,99 +44,99 @@
       "bar": 3,
       "onset": "0.0000",
       "duration": "2.0000",
-      "pitch": 69,
+      "pitch": 67,
       "articulation": "tenuto",
-      "velocity": 79,
+      "velocity": 75,
       "accent": "none"
     },
     {
       "bar": 3,
       "onset": "2.0000",
       "duration": "2.0000",
-      "pitch": 70,
+      "pitch": 67,
       "articulation": "tenuto",
-      "velocity": 79,
+      "velocity": 76,
       "accent": "none"
     },
     {
       "bar": 4,
       "onset": "0.0000",
       "duration": "2.2500",
-      "pitch": 71,
+      "pitch": 69,
       "articulation": "tenuto",
-      "velocity": 81,
+      "velocity": 77,
       "accent": "none"
     },
     {
       "bar": 4,
       "onset": "2.2500",
       "duration": "2.0000",
-      "pitch": 66,
+      "pitch": 73,
       "articulation": "tenuto",
-      "velocity": 81,
+      "velocity": 77,
       "accent": "none"
     },
     {
       "bar": 5,
       "onset": "0.0000",
       "duration": "2.7500",
-      "pitch": 71,
+      "pitch": 75,
       "articulation": "tenuto",
-      "velocity": 81,
+      "velocity": 77,
       "accent": "none"
     },
     {
       "bar": 5,
       "onset": "2.7500",
       "duration": "2.0000",
-      "pitch": 69,
+      "pitch": 75,
       "articulation": "tenuto",
-      "velocity": 82,
+      "velocity": 77,
       "accent": "none"
     },
     {
       "bar": 6,
       "onset": "0.2500",
       "duration": "1.7500",
-      "pitch": 71,
+      "pitch": 74,
       "articulation": "tenuto",
-      "velocity": 79,
+      "velocity": 76,
       "accent": "none"
     },
     {
       "bar": 6,
       "onset": "2.0000",
       "duration": "2.0000",
-      "pitch": 66,
+      "pitch": 78,
       "articulation": "tenuto",
-      "velocity": 80,
+      "velocity": 76,
       "accent": "none"
     },
     {
       "bar": 7,
       "onset": "0.2500",
       "duration": "2.5000",
-      "pitch": 71,
+      "pitch": 73,
       "articulation": "tenuto",
-      "velocity": 79,
+      "velocity": 75,
       "accent": "none"
     },
     {
       "bar": 7,
       "onset": "2.7500",
       "duration": "2.0000",
-      "pitch": 70,
+      "pitch": 72,
       "articulation": "tenuto",
-      "velocity": 80,
+      "velocity": 77,
       "accent": "none"
     },
     {
       "bar": 8,
       "onset": "0.0000",
       "duration": "2.0000",
-      "pitch": 67,
+      "pitch": 71,
       "articulation": "tenuto",
-      "velocity": 78,
+      "velocity": 75,
       "accent": "none"
     },
     {
