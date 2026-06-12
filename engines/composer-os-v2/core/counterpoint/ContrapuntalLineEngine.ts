@@ -39,6 +39,7 @@ import type {
   MosaicSqContrapuntalGuide,
   MosaicSqContrapuntalGuideMap,
 } from '../string-quartet/mosaicSqContrapuntalGuide';
+import { buildBartokScoredLineSet } from './bartokPitchScorer';
 
 export type ContrapuntalGenerateLinesOptions = {
   mosaicSqGuides?: MosaicSqContrapuntalGuideMap;
@@ -466,95 +467,7 @@ function buildBrookmeyerLineSet(context: CompositionContext, lengthBars: number,
 }
 
 function buildBartokLineSet(context: CompositionContext, lengthBars: number, seed: number): AbstractLineSet {
-  const policy = getVoiceRuleBundle('bartok').contrapuntalLinePolicy!;
-  const dissonanceProfile = policy.dissonanceProfile;
-  const additive: Record<LineRole, number> = {
-    soprano: 0,
-    alto: 0.125,
-    tenor: 0.25,
-    bass: 0.375,
-  };
-  /** ic1 / tritone-class / resolving step — repeats every bar (additive displacement on entries). */
-  const cell = [1, 6, 6, -7] as const;
-  const voices: AbstractLineSet['voices'] = (['soprano', 'alto', 'tenor', 'bass'] as const).map((role) => ({
-    role,
-    tags:
-      role === 'soprano'
-        ? (['melodic_lead'] as LineRoleTag[])
-        : role === 'tenor'
-          ? (['canonic_follower', 'rhythmic_anchor'] as LineRoleTag[])
-          : (['harmonic_fill'] as LineRoleTag[]),
-    notes: [] as NoteEvent[],
-  }));
-  const byRole = Object.fromEntries(voices.map((v) => [v.role, v])) as Record<
-    LineRole,
-    (typeof voices)[0]
-  >;
-  const delayBars = 1;
-  const intervalAnswer = -12;
-  /** Stagger follower vs downbeat pile-up with leader (keeps Gate B strong-beat co-onset ≤2 consecutive). */
-  const tenorPhase = 1 / 32;
-  let p = 60 + (Math.abs(seed) % 12);
-  let idx = 0;
-  for (let b = 0; b < lengthBars; b++) {
-    for (let k = 0; k < 4; k++) {
-      if (idx > 0) p += cell[(idx - 1) % 4];
-      const off = b + additive.soprano + k * 0.25;
-      byRole.soprano.notes.push({
-        pitchMidi: p,
-        durationBars: 0.25,
-        offsetBars: off,
-      });
-      const tenOff = b + delayBars + additive.tenor + k * 0.25 + tenorPhase;
-      if (tenOff < lengthBars + 0.999) {
-        byRole.tenor.notes.push({
-          pitchMidi: p + intervalAnswer,
-          durationBars: 0.25,
-          offsetBars: tenOff,
-        });
-      }
-      idx++;
-    }
-  }
-  for (let b = 0; b < lengthBars; b++) {
-    const sym = resolveBarSymbol(context, b + 1).symbol;
-    const rpc = rootPcFromBarSymbol(sym);
-    const ap = midiForVoice('alto', (rpc + 1) % 12, 4) + (b % 3) + Math.floor((seed + b) % 3);
-    byRole.alto.notes.push({
-      pitchMidi: ap,
-      durationBars: 0.25,
-      offsetBars: b + additive.alto + (b % 2) * 0.25,
-    });
-    const bp = midiForVoice('bass', (rpc + 11) % 12, 2) - (b % 2);
-    byRole.bass.notes.push({
-      pitchMidi: bp,
-      durationBars: 0.375,
-      offsetBars: b + additive.bass,
-    });
-  }
-  const imitationMap: ImitationEvent[] = [
-    {
-      sourceVoice: 'soprano',
-      imitatingVoice: 'tenor',
-      delayBars,
-      intervalSemitones: intervalAnswer,
-      type: 'strict',
-    },
-  ];
-  enforceRegisterInterlock(voices);
-  const densityEnvelope: DensityEnvelope = {
-    segments: [{ startBar: 1, endBar: lengthBars, density: lengthBars > 8 ? 'dense' : 'sparse' }],
-  };
-  return {
-    voices,
-    cadenceTags: [{ positionBars: lengthBars, type: 'modal', strength: 'medium' }],
-    densityEnvelope,
-    imitationMap,
-    dissonanceProfile: { ...dissonanceProfile },
-    sourceMode: 'chords_only',
-    lengthBars,
-    styleSourceVrbId: 'bartok',
-  };
+  return buildBartokScoredLineSet(context, lengthBars, seed).lineSet;
 }
 
 /** Placeholder: SQ staff / technique assignment from AbstractLineSet. */

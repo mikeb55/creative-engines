@@ -340,6 +340,23 @@ Canonical Song Mode / Big Band composers in **`engines/composer-os-v2`**. **Slic
 
 ---
 
+## Bartók CLE pitch scoring (duo golden path)
+
+**What it does:** On **`guitar_bass_duo`** with primary **`bartok`**, **`ContrapuntalLineEngine`** builds a four-voice **`AbstractLineSet`** via **`buildBartokScoredLineSet`** (`bartokPitchScorer.ts`): per-slot shortlist + **625-tuple** beam search against **`docs/bartok_pitch_spec.md`** / **`bartokPitchScoringConfig.ts`**. Soprano + delayed tenor imitation export to guitar; bass maps through **`fillBassMeasureFromAbstractBassLine`**.
+
+**QA export (seed 61234):** From repo root — `npx tsx engines/composer-os-v2/scripts/bartokCleGenerateQaMusicXml.ts` → **`qa-output/bartok/bartok_cle_duo_seed61234.musicxml`** (gitignored generated artifact; folder convention only).
+
+**Checkpoint (2026-06-12 — not final freeze):** **Frozen E2 bass bug fixed** — bass pitches now come from the scorer every quarter slot (was empty lineSet → wiring fallback MIDI 40). Golden master **`bartok-cle-seed61234`** re-approved; duo QA GCE **4.8 → 5.9** on seed **61234**.
+
+**Open follow-ups (next passes):**
+- **Bass rhythm density** — scorer currently emits **32** bass attacks (one per soprano quarter slot); likely **too square/dense** for Bartók — needs rhythmic variation / sparse anchor pattern (separate iteration).
+- **Alto onset grid** — **`altoFixed`** has the same quarter-grid misalignment as the old bass bug; **`lineSet.alto.notes`** still empty until fixed.
+- **Imitation modes** — **`pickImitationMode`** metadata only; tenor-only **`imitationFit`** wiring deferred.
+
+**Gates:** smoke **`bartokCleGoldenMaster`** (seed **61234**); BH **`bhGoldenMaster`** must stay byte-identical when touching this path.
+
+---
+
 ## Barry Harris Chord-Melody
 
 **What it does:** Reinterprets your chart harmony as Barry Harris **6th** and **diminished 7th** chords, builds an **8-rung scale-of-chords ladder** per section, then harmonises **each melody note** with voice-led block voicings (melody on top). Passing chromatic tones can borrow from the partner dim7 chord in the ladder.

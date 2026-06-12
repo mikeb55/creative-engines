@@ -5,7 +5,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N rows (M suites)` in the smoke summary, then sync **N** + **M** into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): full **622** PASS rows, **113** suites; fast subset unchanged until refreshed.
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): full **666** PASS rows, **117** suites; fast subset unchanged until refreshed.
  *
  * **Fast subset:** `COMPOSER_OS_SMOKE_TIER=fast` or `npm run test:composer-smoke-fast` — skips `SMOKE_FAST_EXCLUDE` suites (local dev).
  * **Full tier (default / CI):** unset or `COMPOSER_OS_SMOKE_TIER=full` — all suites in `smokeSuites`.
@@ -130,6 +130,7 @@ import { runFzDiff01ReceiptTests } from './fzDiff01Receipt.test';
 import { runFzDiff02ReceiptTests } from './fzDiff02Receipt.test';
 import { runZappaFzReceiptFingerprintTests } from './zappaFzReceiptFingerprints.test';
 import { runZappaPerSectionTests } from './zappaPerSection.test';
+import { runBartokClePitchScoringGoldenMasterTests } from './bartokClePitchScoringGoldenMaster.test';
 
 type Row = { name: string; ok: boolean };
 
@@ -231,6 +232,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Thad Jones songwriter slice', run: runThadJonesSliceSmokeTests },
   { label: 'Count Basie songwriter slice', run: runBasieSliceSmokeTests },
   { label: 'Bob Brookmeyer songwriter slice', run: runBobBrookmeyerSliceSmokeTests },
+  { label: 'Bartok CLE pitch-scoring golden master (seed 61234)', run: () => toRows(runBartokClePitchScoringGoldenMasterTests()) },
   { label: 'Kenny Wheeler songwriter slice', run: runWheelerLyricSliceSmokeTests },
   { label: 'Jan Garbarek songwriter slice', run: runJanGarbarekSliceSmokeTests },
   { label: 'John Surman songwriter slice', run: runSurmanFolkModalSmokeTests },

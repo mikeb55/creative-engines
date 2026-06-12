@@ -1,0 +1,3212 @@
+{
+  "seed": 61234,
+  "trace": {
+    "seed": 61234,
+    "lengthBars": 8,
+    "styleSourceVrbId": "bartok",
+    "imitationMode": "free_counterpoint_with_motif_echo",
+    "phraseAxisStreak": 1,
+    "slots": [
+      {
+        "slot": {
+          "globalSlotIndex": 0,
+          "barIndex": 0,
+          "beatIndexInBar": 0,
+          "slotInPhrase": 0,
+          "phraseIndex": 0,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.817565",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.3223999999999998,
+          "imitationConsistency": 1,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 1
+        },
+        "chosenMidiByRole": {
+          "soprano": 78,
+          "alto": 73,
+          "tenor": 66,
+          "bass": 46
+        },
+        "activeFunction": "tonic_axis",
+        "collectionId": "octatonic",
+        "cellId": "legacy_166m7",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 78,
+            "shortlistRank": 0,
+            "voiceScore": "0.907568",
+            "tieBreakKey": 669840,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "1.000000",
+              "cell": "0.850000",
+              "collection": "1.075486",
+              "contour": "0.800000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 3,
+            "voiceScore": "0.890195",
+            "tieBreakKey": 575380,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "1.000000",
+              "cell": "0.850000",
+              "collection": "0.911634",
+              "contour": "0.800000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 66,
+            "shortlistRank": 0,
+            "voiceScore": "0.909509",
+            "tieBreakKey": 720220,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "1.000000",
+              "cell": "0.850000",
+              "collection": "0.997269",
+              "contour": "0.800000",
+              "imitation": "0.700000",
+              "register": "0.943548",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 46,
+            "shortlistRank": 1,
+            "voiceScore": "0.860625",
+            "tieBreakKey": 669840,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "0.880000",
+              "cell": "0.850000",
+              "collection": "0.859040",
+              "contour": "0.800000",
+              "imitation": "0.700000",
+              "register": "0.875806",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 1,
+          "barIndex": 0,
+          "beatIndexInBar": 1,
+          "slotInPhrase": 1,
+          "phraseIndex": 0,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.808115",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.45464,
+          "imitationConsistency": 0.94,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 1
+        },
+        "chosenMidiByRole": {
+          "soprano": 79,
+          "alto": 73,
+          "tenor": 66,
+          "bass": 47
+        },
+        "activeFunction": "tonic_axis",
+        "collectionId": "octatonic",
+        "cellId": "legacy_166m7",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 79,
+            "shortlistRank": 1,
+            "voiceScore": "0.868976",
+            "tieBreakKey": 946410,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "0.880000",
+              "cell": "1.000000",
+              "collection": "0.982771",
+              "contour": "0.940000",
+              "imitation": "0.700000",
+              "register": "0.980556",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.860075",
+            "tieBreakKey": 194950,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.911634",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 66,
+            "shortlistRank": 0,
+            "voiceScore": "0.877989",
+            "tieBreakKey": 595610,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.997269",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.943548",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 47,
+            "shortlistRank": 0,
+            "voiceScore": "0.843896",
+            "tieBreakKey": 470150,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "1.000000",
+              "collection": "0.743400",
+              "contour": "0.940000",
+              "imitation": "0.700000",
+              "register": "0.898387",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 2,
+          "barIndex": 0,
+          "beatIndexInBar": 2,
+          "slotInPhrase": 2,
+          "phraseIndex": 0,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.742978",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.45464,
+          "imitationConsistency": 0.94,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 1
+        },
+        "chosenMidiByRole": {
+          "soprano": 84,
+          "alto": 73,
+          "tenor": 71,
+          "bass": 54
+        },
+        "activeFunction": "tonic_axis",
+        "collectionId": "octatonic",
+        "cellId": "legacy_166m7",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 84,
+            "shortlistRank": 0,
+            "voiceScore": "0.851947",
+            "tieBreakKey": 515360,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "0.880000",
+              "cell": "0.920000",
+              "collection": "1.019857",
+              "contour": "0.700000",
+              "imitation": "0.700000",
+              "register": "0.883333",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.808661",
+            "tieBreakKey": 588650,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "1.000000",
+              "cell": "0.520000",
+              "collection": "0.911634",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 71,
+            "shortlistRank": 0,
+            "voiceScore": "0.844038",
+            "tieBreakKey": 566520,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.773743",
+              "contour": "0.700000",
+              "imitation": "0.700000",
+              "register": "0.830645",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 54,
+            "shortlistRank": 0,
+            "voiceScore": "0.881153",
+            "tieBreakKey": 549070,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.958160",
+              "contour": "0.580000",
+              "imitation": "0.700000",
+              "register": "0.943548",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 3,
+          "barIndex": 0,
+          "beatIndexInBar": 3,
+          "slotInPhrase": 3,
+          "phraseIndex": 0,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.515578",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.45464,
+          "imitationConsistency": 0.94,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 1
+        },
+        "chosenMidiByRole": {
+          "soprano": 84,
+          "alto": 73,
+          "tenor": 71,
+          "bass": 54
+        },
+        "activeFunction": "tonic_axis",
+        "collectionId": "octatonic",
+        "cellId": "legacy_166m7",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 84,
+            "shortlistRank": 4,
+            "voiceScore": "0.777507",
+            "tieBreakKey": 366290,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "0.880000",
+              "cell": "0.520000",
+              "collection": "1.019857",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.883333",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.788075",
+            "tieBreakKey": 549070,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.520000",
+              "collection": "0.911634",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 71,
+            "shortlistRank": 0,
+            "voiceScore": "0.771451",
+            "tieBreakKey": 375370,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.520000",
+              "collection": "0.773743",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.830645",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 54,
+            "shortlistRank": 2,
+            "voiceScore": "0.821366",
+            "tieBreakKey": 688040,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.520000",
+              "collection": "0.958160",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.943548",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 4,
+          "barIndex": 1,
+          "beatIndexInBar": 0,
+          "slotInPhrase": 0,
+          "phraseIndex": 1,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.777666",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.3223999999999998,
+          "imitationConsistency": 1,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 1
+        },
+        "chosenMidiByRole": {
+          "soprano": 81,
+          "alto": 73,
+          "tenor": 69,
+          "bass": 50
+        },
+        "activeFunction": "subdominant_axis",
+        "collectionId": "octatonic",
+        "cellId": "tritone_axis",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 81,
+            "shortlistRank": 1,
+            "voiceScore": "0.890475",
+            "tieBreakKey": 576000,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "1.000000",
+              "cell": "0.850000",
+              "collection": "0.964229",
+              "contour": "0.820000",
+              "imitation": "0.700000",
+              "register": "0.941667",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.849760",
+            "tieBreakKey": 911460,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "0.880000",
+              "cell": "0.850000",
+              "collection": "0.788914",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 69,
+            "shortlistRank": 1,
+            "voiceScore": "0.892138",
+            "tieBreakKey": 974890,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "1.000000",
+              "cell": "0.850000",
+              "collection": "0.894103",
+              "contour": "0.880000",
+              "imitation": "0.700000",
+              "register": "0.875806",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 50,
+            "shortlistRank": 0,
+            "voiceScore": "0.895624",
+            "tieBreakKey": 925400,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "1.000000",
+              "cell": "0.850000",
+              "collection": "0.875560",
+              "contour": "0.760000",
+              "imitation": "0.700000",
+              "register": "0.966129",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 5,
+          "barIndex": 1,
+          "beatIndexInBar": 1,
+          "slotInPhrase": 1,
+          "phraseIndex": 1,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.318540",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.254,
+          "imitationConsistency": 0.7,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 1
+        },
+        "chosenMidiByRole": {
+          "soprano": 86,
+          "alto": 73,
+          "tenor": 69,
+          "bass": 52
+        },
+        "activeFunction": "subdominant_axis",
+        "collectionId": "octatonic",
+        "cellId": "tritone_axis",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 86,
+            "shortlistRank": 0,
+            "voiceScore": "0.855770",
+            "tieBreakKey": 984920,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.982771",
+              "contour": "0.700000",
+              "imitation": "0.700000",
+              "register": "0.844444",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.739640",
+            "tieBreakKey": 319340,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "0.880000",
+              "cell": "0.520000",
+              "collection": "0.788914",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 69,
+            "shortlistRank": 0,
+            "voiceScore": "0.809418",
+            "tieBreakKey": 983930,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.520000",
+              "collection": "0.894103",
+              "contour": "1.000000",
+              "imitation": "0.800000",
+              "register": "0.875806",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 52,
+            "shortlistRank": 4,
+            "voiceScore": "0.803922",
+            "tieBreakKey": 25890,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.680000",
+              "collection": "0.743400",
+              "contour": "0.880000",
+              "imitation": "0.700000",
+              "register": "0.988710",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 6,
+          "barIndex": 1,
+          "beatIndexInBar": 2,
+          "slotInPhrase": 2,
+          "phraseIndex": 1,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.575140",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.254,
+          "imitationConsistency": 0.7,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 1
+        },
+        "chosenMidiByRole": {
+          "soprano": 86,
+          "alto": 73,
+          "tenor": 69,
+          "bass": 52
+        },
+        "activeFunction": "subdominant_axis",
+        "collectionId": "octatonic",
+        "cellId": "tritone_axis",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 86,
+            "shortlistRank": 0,
+            "voiceScore": "0.892210",
+            "tieBreakKey": 782390,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.982771",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.844444",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.832226",
+            "tieBreakKey": 25740,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "0.880000",
+              "cell": "0.920000",
+              "collection": "0.788914",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 69,
+            "shortlistRank": 0,
+            "voiceScore": "0.878005",
+            "tieBreakKey": 222420,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.894103",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.875806",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 52,
+            "shortlistRank": 2,
+            "voiceScore": "0.862909",
+            "tieBreakKey": 326410,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.743400",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.988710",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 7,
+          "barIndex": 1,
+          "beatIndexInBar": 3,
+          "slotInPhrase": 3,
+          "phraseIndex": 1,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.466666",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.3223999999999998,
+          "imitationConsistency": 1,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 1
+        },
+        "chosenMidiByRole": {
+          "soprano": 81,
+          "alto": 73,
+          "tenor": 69,
+          "bass": 50
+        },
+        "activeFunction": "subdominant_axis",
+        "collectionId": "octatonic",
+        "cellId": "tritone_axis",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 81,
+            "shortlistRank": 0,
+            "voiceScore": "0.858035",
+            "tieBreakKey": 627460,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.964229",
+              "contour": "0.700000",
+              "imitation": "0.700000",
+              "register": "0.941667",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.739640",
+            "tieBreakKey": 627460,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "0.880000",
+              "cell": "0.520000",
+              "collection": "0.788914",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 69,
+            "shortlistRank": 0,
+            "voiceScore": "0.793418",
+            "tieBreakKey": 675380,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.520000",
+              "collection": "0.894103",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.875806",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 50,
+            "shortlistRank": 1,
+            "voiceScore": "0.825904",
+            "tieBreakKey": 77930,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.680000",
+              "collection": "0.875560",
+              "contour": "0.880000",
+              "imitation": "0.700000",
+              "register": "0.966129",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 8,
+          "barIndex": 2,
+          "beatIndexInBar": 0,
+          "slotInPhrase": 0,
+          "phraseIndex": 2,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.754281",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.254,
+          "imitationConsistency": 0.88,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 1
+        },
+        "chosenMidiByRole": {
+          "soprano": 79,
+          "alto": 73,
+          "tenor": 69,
+          "bass": 50
+        },
+        "activeFunction": "subdominant_axis",
+        "collectionId": "octatonic",
+        "cellId": "tritone_axis",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 79,
+            "shortlistRank": 0,
+            "voiceScore": "0.899216",
+            "tieBreakKey": 516769,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "1.000000",
+              "cell": "0.850000",
+              "collection": "0.982771",
+              "contour": "0.880000",
+              "imitation": "0.700000",
+              "register": "0.980556",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.872200",
+            "tieBreakKey": 796580,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "0.880000",
+              "cell": "0.850000",
+              "collection": "0.929166",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 69,
+            "shortlistRank": 0,
+            "voiceScore": "0.925681",
+            "tieBreakKey": 873740,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "1.000000",
+              "cell": "0.850000",
+              "collection": "0.773743",
+              "contour": "1.000000",
+              "imitation": "1.000000",
+              "register": "0.875806",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 50,
+            "shortlistRank": 0,
+            "voiceScore": "0.902251",
+            "tieBreakKey": 956890,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "1.000000",
+              "cell": "0.850000",
+              "collection": "0.859040",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.966129",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 9,
+          "barIndex": 2,
+          "beatIndexInBar": 1,
+          "slotInPhrase": 1,
+          "phraseIndex": 2,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.301479",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.5,
+          "ensembleMultiplier": 1.276,
+          "imitationConsistency": 0.94,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 1
+        },
+        "chosenMidiByRole": {
+          "soprano": 81,
+          "alto": 73,
+          "tenor": 70,
+          "bass": 55
+        },
+        "activeFunction": "subdominant_axis",
+        "collectionId": "octatonic",
+        "cellId": "tritone_axis",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 81,
+            "shortlistRank": 1,
+            "voiceScore": "0.804463",
+            "tieBreakKey": 167240,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.680000",
+              "collection": "0.834429",
+              "contour": "0.880000",
+              "imitation": "0.700000",
+              "register": "0.941667",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.762080",
+            "tieBreakKey": 988540,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "0.880000",
+              "cell": "0.520000",
+              "collection": "0.929166",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 70,
+            "shortlistRank": 1,
+            "voiceScore": "0.765917",
+            "tieBreakKey": 802590,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "0.880000",
+              "cell": "0.600000",
+              "collection": "0.945686",
+              "contour": "0.940000",
+              "imitation": "0.600000",
+              "register": "0.853226",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 55,
+            "shortlistRank": 0,
+            "voiceScore": "0.848692",
+            "tieBreakKey": 948610,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.875560",
+              "contour": "0.700000",
+              "imitation": "0.700000",
+              "register": "0.920968",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 10,
+          "barIndex": 2,
+          "beatIndexInBar": 2,
+          "slotInPhrase": 2,
+          "phraseIndex": 2,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.699063",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.3223999999999998,
+          "imitationConsistency": 1,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 1
+        },
+        "chosenMidiByRole": {
+          "soprano": 81,
+          "alto": 73,
+          "tenor": 69,
+          "bass": 55
+        },
+        "activeFunction": "subdominant_axis",
+        "collectionId": "octatonic",
+        "cellId": "tritone_axis",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 81,
+            "shortlistRank": 2,
+            "voiceScore": "0.876303",
+            "tieBreakKey": 499260,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.834429",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.941667",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.854667",
+            "tieBreakKey": 948390,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "0.880000",
+              "cell": "0.920000",
+              "collection": "0.929166",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 69,
+            "shortlistRank": 1,
+            "voiceScore": "0.837147",
+            "tieBreakKey": 199190,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "1.000000",
+              "cell": "1.000000",
+              "collection": "0.773743",
+              "contour": "0.940000",
+              "imitation": "0.500000",
+              "register": "0.875806",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 55,
+            "shortlistRank": 0,
+            "voiceScore": "0.881278",
+            "tieBreakKey": 668970,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.875560",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.920968",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 11,
+          "barIndex": 2,
+          "beatIndexInBar": 3,
+          "slotInPhrase": 3,
+          "phraseIndex": 2,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.415681",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.254,
+          "imitationConsistency": 0.88,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 1
+        },
+        "chosenMidiByRole": {
+          "soprano": 79,
+          "alto": 73,
+          "tenor": 69,
+          "bass": 50
+        },
+        "activeFunction": "subdominant_axis",
+        "collectionId": "octatonic",
+        "cellId": "tritone_axis",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 79,
+            "shortlistRank": 0,
+            "voiceScore": "0.827176",
+            "tieBreakKey": 820000,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.680000",
+              "collection": "0.982771",
+              "contour": "0.880000",
+              "imitation": "0.700000",
+              "register": "0.980556",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.762080",
+            "tieBreakKey": 946970,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "0.880000",
+              "cell": "0.520000",
+              "collection": "0.929166",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 69,
+            "shortlistRank": 1,
+            "voiceScore": "0.822161",
+            "tieBreakKey": 228820,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.520000",
+              "collection": "0.773743",
+              "contour": "1.000000",
+              "imitation": "1.000000",
+              "register": "0.875806",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 50,
+            "shortlistRank": 0,
+            "voiceScore": "0.849331",
+            "tieBreakKey": 546780,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.859040",
+              "contour": "0.700000",
+              "imitation": "0.700000",
+              "register": "0.966129",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 12,
+          "barIndex": 3,
+          "beatIndexInBar": 0,
+          "slotInPhrase": 0,
+          "phraseIndex": 3,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.758769",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.3223999999999998,
+          "imitationConsistency": 1,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 0.8
+        },
+        "chosenMidiByRole": {
+          "soprano": 79,
+          "alto": 73,
+          "tenor": 67,
+          "bass": 50
+        },
+        "activeFunction": "tonic_axis",
+        "collectionId": "diatonic",
+        "cellId": "tritone_axis",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 79,
+            "shortlistRank": 0,
+            "voiceScore": "0.890668",
+            "tieBreakKey": 859940,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "1.000000",
+              "cell": "0.850000",
+              "collection": "0.861714",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.980556",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.834784",
+            "tieBreakKey": 344270,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "0.880000",
+              "cell": "0.850000",
+              "collection": "0.695314",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 67,
+            "shortlistRank": 0,
+            "voiceScore": "0.945938",
+            "tieBreakKey": 983830,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "1.000000",
+              "cell": "0.850000",
+              "collection": "0.913417",
+              "contour": "0.880000",
+              "imitation": "1.000000",
+              "register": "0.920968",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 50,
+            "shortlistRank": 0,
+            "voiceScore": "0.906476",
+            "tieBreakKey": 326780,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "1.000000",
+              "cell": "0.850000",
+              "collection": "0.882514",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.966129",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 13,
+          "barIndex": 3,
+          "beatIndexInBar": 1,
+          "slotInPhrase": 1,
+          "phraseIndex": 3,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.332687",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.5,
+          "ensembleMultiplier": 1.276,
+          "imitationConsistency": 0.94,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 1
+        },
+        "chosenMidiByRole": {
+          "soprano": 84,
+          "alto": 73,
+          "tenor": 71,
+          "bass": 55
+        },
+        "activeFunction": "tonic_axis",
+        "collectionId": "diatonic",
+        "cellId": "tritone_axis",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 84,
+            "shortlistRank": 0,
+            "voiceScore": "0.824127",
+            "tieBreakKey": 756660,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.742857",
+              "contour": "0.700000",
+              "imitation": "0.700000",
+              "register": "0.883333",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.724664",
+            "tieBreakKey": 397290,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "0.880000",
+              "cell": "0.520000",
+              "collection": "0.695314",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 71,
+            "shortlistRank": 1,
+            "voiceScore": "0.804960",
+            "tieBreakKey": 129069,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "0.880000",
+              "cell": "0.840000",
+              "collection": "0.803177",
+              "contour": "0.760000",
+              "imitation": "0.800000",
+              "register": "0.830645",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 55,
+            "shortlistRank": 0,
+            "voiceScore": "0.858608",
+            "tieBreakKey": 970930,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.930651",
+              "contour": "0.700000",
+              "imitation": "0.700000",
+              "register": "0.920968",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 14,
+          "barIndex": 3,
+          "beatIndexInBar": 2,
+          "slotInPhrase": 2,
+          "phraseIndex": 3,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.537287",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.5,
+          "ensembleMultiplier": 1.276,
+          "imitationConsistency": 0.94,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 1
+        },
+        "chosenMidiByRole": {
+          "soprano": 84,
+          "alto": 73,
+          "tenor": 71,
+          "bass": 55
+        },
+        "activeFunction": "tonic_axis",
+        "collectionId": "diatonic",
+        "cellId": "tritone_axis",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 84,
+            "shortlistRank": 0,
+            "voiceScore": "0.860567",
+            "tieBreakKey": 400450,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.742857",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.883333",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.817250",
+            "tieBreakKey": 472310,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "0.880000",
+              "cell": "0.920000",
+              "collection": "0.695314",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 71,
+            "shortlistRank": 2,
+            "voiceScore": "0.847947",
+            "tieBreakKey": 676810,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "0.880000",
+              "cell": "0.920000",
+              "collection": "0.803177",
+              "contour": "1.000000",
+              "imitation": "0.800000",
+              "register": "0.830645",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 55,
+            "shortlistRank": 0,
+            "voiceScore": "0.891195",
+            "tieBreakKey": 163540,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.930651",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.920968",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 15,
+          "barIndex": 3,
+          "beatIndexInBar": 3,
+          "slotInPhrase": 3,
+          "phraseIndex": 3,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.493569",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.3223999999999998,
+          "imitationConsistency": 1,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 0.8
+        },
+        "chosenMidiByRole": {
+          "soprano": 79,
+          "alto": 73,
+          "tenor": 67,
+          "bass": 50
+        },
+        "activeFunction": "tonic_axis",
+        "collectionId": "diatonic",
+        "cellId": "tritone_axis",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 79,
+            "shortlistRank": 0,
+            "voiceScore": "0.845628",
+            "tieBreakKey": 379280,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.861714",
+              "contour": "0.700000",
+              "imitation": "0.700000",
+              "register": "0.980556",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.724664",
+            "tieBreakKey": 379280,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "0.880000",
+              "cell": "0.520000",
+              "collection": "0.695314",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 67,
+            "shortlistRank": 0,
+            "voiceScore": "0.888818",
+            "tieBreakKey": 577590,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.840000",
+              "collection": "0.913417",
+              "contour": "0.760000",
+              "imitation": "1.000000",
+              "register": "0.920968",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 50,
+            "shortlistRank": 0,
+            "voiceScore": "0.853556",
+            "tieBreakKey": 577590,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.882514",
+              "contour": "0.700000",
+              "imitation": "0.700000",
+              "register": "0.966129",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 16,
+          "barIndex": 4,
+          "beatIndexInBar": 0,
+          "slotInPhrase": 0,
+          "phraseIndex": 4,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.620488",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.254,
+          "imitationConsistency": 0.88,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 1
+        },
+        "chosenMidiByRole": {
+          "soprano": 83,
+          "alto": 73,
+          "tenor": 69,
+          "bass": 52
+        },
+        "activeFunction": "subdominant_axis",
+        "collectionId": "lydian_acoustic",
+        "cellId": "semitone_wedge",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 83,
+            "shortlistRank": 4,
+            "voiceScore": "0.855784",
+            "tieBreakKey": 502009,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "1.000000",
+              "cell": "0.850000",
+              "collection": "0.760320",
+              "contour": "0.760000",
+              "imitation": "0.700000",
+              "register": "0.902778",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.841165",
+            "tieBreakKey": 828760,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "0.760000",
+              "cell": "0.850000",
+              "collection": "0.915200",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 69,
+            "shortlistRank": 3,
+            "voiceScore": "0.879975",
+            "tieBreakKey": 785460,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "1.000000",
+              "cell": "0.850000",
+              "collection": "0.718080",
+              "contour": "0.880000",
+              "imitation": "0.800000",
+              "register": "0.875806",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 52,
+            "shortlistRank": 0,
+            "voiceScore": "0.888630",
+            "tieBreakKey": 331050,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "1.000000",
+              "cell": "0.850000",
+              "collection": "0.800000",
+              "contour": "0.880000",
+              "imitation": "0.700000",
+              "register": "0.988710",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 17,
+          "barIndex": 4,
+          "beatIndexInBar": 1,
+          "slotInPhrase": 1,
+          "phraseIndex": 4,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.544566",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.3223999999999998,
+          "imitationConsistency": 1,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 1
+        },
+        "chosenMidiByRole": {
+          "soprano": 81,
+          "alto": 73,
+          "tenor": 69,
+          "bass": 52
+        },
+        "activeFunction": "subdominant_axis",
+        "collectionId": "lydian_acoustic",
+        "cellId": "semitone_wedge",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 81,
+            "shortlistRank": 4,
+            "voiceScore": "0.810088",
+            "tieBreakKey": 912890,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.760000",
+              "collection": "0.760320",
+              "contour": "0.880000",
+              "imitation": "0.700000",
+              "register": "0.941667",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.803045",
+            "tieBreakKey": 480320,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "0.760000",
+              "cell": "0.920000",
+              "collection": "0.915200",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 69,
+            "shortlistRank": 2,
+            "voiceScore": "0.829255",
+            "tieBreakKey": 564280,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.718080",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.875806",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 52,
+            "shortlistRank": 0,
+            "voiceScore": "0.852510",
+            "tieBreakKey": 193290,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.800000",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.988710",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 18,
+          "barIndex": 4,
+          "beatIndexInBar": 2,
+          "slotInPhrase": 2,
+          "phraseIndex": 4,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.566322",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.254,
+          "imitationConsistency": 0.88,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 1
+        },
+        "chosenMidiByRole": {
+          "soprano": 81,
+          "alto": 73,
+          "tenor": 71,
+          "bass": 52
+        },
+        "activeFunction": "subdominant_axis",
+        "collectionId": "lydian_acoustic",
+        "cellId": "semitone_wedge",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 81,
+            "shortlistRank": 1,
+            "voiceScore": "0.865928",
+            "tieBreakKey": 688680,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.760320",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.941667",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.823632",
+            "tieBreakKey": 337800,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "0.760000",
+              "cell": "0.920000",
+              "collection": "0.915200",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 71,
+            "shortlistRank": 1,
+            "voiceScore": "0.848732",
+            "tieBreakKey": 31579,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "1.000000",
+              "cell": "0.760000",
+              "collection": "0.718080",
+              "contour": "0.880000",
+              "imitation": "0.900000",
+              "register": "0.830645",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 52,
+            "shortlistRank": 0,
+            "voiceScore": "0.873097",
+            "tieBreakKey": 570750,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.800000",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.988710",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 19,
+          "barIndex": 4,
+          "beatIndexInBar": 3,
+          "slotInPhrase": 3,
+          "phraseIndex": 4,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.533512",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.3223999999999998,
+          "imitationConsistency": 1,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 1
+        },
+        "chosenMidiByRole": {
+          "soprano": 83,
+          "alto": 73,
+          "tenor": 71,
+          "bass": 52
+        },
+        "activeFunction": "subdominant_axis",
+        "collectionId": "lydian_acoustic",
+        "cellId": "semitone_wedge",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 83,
+            "shortlistRank": 0,
+            "voiceScore": "0.856144",
+            "tieBreakKey": 651220,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "1.000000",
+              "collection": "0.760320",
+              "contour": "0.880000",
+              "imitation": "0.700000",
+              "register": "0.902778",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.788645",
+            "tieBreakKey": 785840,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "0.760000",
+              "cell": "0.840000",
+              "collection": "0.915200",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 71,
+            "shortlistRank": 1,
+            "voiceScore": "0.797745",
+            "tieBreakKey": 298680,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.840000",
+              "collection": "0.718080",
+              "contour": "1.000000",
+              "imitation": "0.600000",
+              "register": "0.830645",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 52,
+            "shortlistRank": 0,
+            "voiceScore": "0.841310",
+            "tieBreakKey": 336410,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.840000",
+              "collection": "0.800000",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.988710",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 20,
+          "barIndex": 5,
+          "beatIndexInBar": 0,
+          "slotInPhrase": 0,
+          "phraseIndex": 5,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.674007",
+        "ensembleFactors": {
+          "antiParallelPenalty": 0.45,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.3223999999999998,
+          "imitationConsistency": 1,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 1
+        },
+        "chosenMidiByRole": {
+          "soprano": 83,
+          "alto": 73,
+          "tenor": 71,
+          "bass": 54
+        },
+        "activeFunction": "tonic_axis",
+        "collectionId": "diatonic",
+        "cellId": "axis_pivot",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 83,
+            "shortlistRank": 0,
+            "voiceScore": "0.886779",
+            "tieBreakKey": 299080,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "1.000000",
+              "cell": "0.850000",
+              "collection": "0.861714",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.902778",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.823289",
+            "tieBreakKey": 673970,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "0.760000",
+              "cell": "0.850000",
+              "collection": "0.803474",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 71,
+            "shortlistRank": 0,
+            "voiceScore": "0.945319",
+            "tieBreakKey": 940080,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "1.000000",
+              "cell": "0.850000",
+              "collection": "0.913417",
+              "contour": "1.000000",
+              "imitation": "1.000000",
+              "register": "0.830645",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 54,
+            "shortlistRank": 0,
+            "voiceScore": "0.899870",
+            "tieBreakKey": 30410,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "1.000000",
+              "cell": "0.850000",
+              "collection": "0.882514",
+              "contour": "0.880000",
+              "imitation": "0.700000",
+              "register": "0.943548",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 21,
+          "barIndex": 5,
+          "beatIndexInBar": 1,
+          "slotInPhrase": 1,
+          "phraseIndex": 5,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.504207",
+        "ensembleFactors": {
+          "antiParallelPenalty": 0.45,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.3223999999999998,
+          "imitationConsistency": 1,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 1
+        },
+        "chosenMidiByRole": {
+          "soprano": 83,
+          "alto": 73,
+          "tenor": 71,
+          "bass": 54
+        },
+        "activeFunction": "tonic_axis",
+        "collectionId": "diatonic",
+        "cellId": "axis_pivot",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 83,
+            "shortlistRank": 0,
+            "voiceScore": "0.862739",
+            "tieBreakKey": 402240,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.861714",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.902778",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.785169",
+            "tieBreakKey": 931390,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "0.760000",
+              "cell": "0.920000",
+              "collection": "0.803474",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 71,
+            "shortlistRank": 0,
+            "voiceScore": "0.873799",
+            "tieBreakKey": 503880,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.913417",
+              "contour": "1.000000",
+              "imitation": "0.800000",
+              "register": "0.830645",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 54,
+            "shortlistRank": 0,
+            "voiceScore": "0.863750",
+            "tieBreakKey": 12970,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.882514",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.943548",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 22,
+          "barIndex": 5,
+          "beatIndexInBar": 2,
+          "slotInPhrase": 2,
+          "phraseIndex": 5,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.337946",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.254,
+          "imitationConsistency": 0.7,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 1
+        },
+        "chosenMidiByRole": {
+          "soprano": 88,
+          "alto": 73,
+          "tenor": 71,
+          "bass": 54
+        },
+        "activeFunction": "tonic_axis",
+        "collectionId": "diatonic",
+        "cellId": "axis_pivot",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 88,
+            "shortlistRank": 0,
+            "voiceScore": "0.835678",
+            "tieBreakKey": 366760,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.742857",
+              "contour": "0.700000",
+              "imitation": "0.700000",
+              "register": "0.805556",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.733756",
+            "tieBreakKey": 953410,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "0.760000",
+              "cell": "0.520000",
+              "collection": "0.803474",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 71,
+            "shortlistRank": 0,
+            "voiceScore": "0.830385",
+            "tieBreakKey": 663430,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "1.000000",
+              "cell": "0.520000",
+              "collection": "0.913417",
+              "contour": "1.000000",
+              "imitation": "0.800000",
+              "register": "0.830645",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 54,
+            "shortlistRank": 1,
+            "voiceScore": "0.828336",
+            "tieBreakKey": 366760,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "1.000000",
+              "cell": "0.520000",
+              "collection": "0.882514",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.943548",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 23,
+          "barIndex": 5,
+          "beatIndexInBar": 3,
+          "slotInPhrase": 3,
+          "phraseIndex": 5,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.505746",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.254,
+          "imitationConsistency": 0.7,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 1
+        },
+        "chosenMidiByRole": {
+          "soprano": 88,
+          "alto": 73,
+          "tenor": 71,
+          "bass": 54
+        },
+        "activeFunction": "tonic_axis",
+        "collectionId": "diatonic",
+        "cellId": "axis_pivot",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 88,
+            "shortlistRank": 1,
+            "voiceScore": "0.841238",
+            "tieBreakKey": 258320,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.742857",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.805556",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.785169",
+            "tieBreakKey": 14710,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "0.760000",
+              "cell": "0.920000",
+              "collection": "0.803474",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 71,
+            "shortlistRank": 0,
+            "voiceScore": "0.905799",
+            "tieBreakKey": 808210,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.913417",
+              "contour": "1.000000",
+              "imitation": "1.000000",
+              "register": "0.830645",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 54,
+            "shortlistRank": 0,
+            "voiceScore": "0.863750",
+            "tieBreakKey": 945200,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.882514",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.943548",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 24,
+          "barIndex": 6,
+          "beatIndexInBar": 0,
+          "slotInPhrase": 0,
+          "phraseIndex": 6,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.570481",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.254,
+          "imitationConsistency": 0.7,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 1
+        },
+        "chosenMidiByRole": {
+          "soprano": 86,
+          "alto": 73,
+          "tenor": 69,
+          "bass": 55
+        },
+        "activeFunction": "subdominant_axis",
+        "collectionId": "diatonic",
+        "cellId": "minor3_cycle",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 86,
+            "shortlistRank": 0,
+            "voiceScore": "0.848422",
+            "tieBreakKey": 727610,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "1.000000",
+              "cell": "0.850000",
+              "collection": "0.668571",
+              "contour": "0.880000",
+              "imitation": "0.700000",
+              "register": "0.844444",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.849617",
+            "tieBreakKey": 564930,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "0.880000",
+              "cell": "0.850000",
+              "collection": "0.788023",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 69,
+            "shortlistRank": 0,
+            "voiceScore": "0.891070",
+            "tieBreakKey": 434610,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "1.000000",
+              "cell": "0.850000",
+              "collection": "0.787429",
+              "contour": "0.880000",
+              "imitation": "0.800000",
+              "register": "0.875806",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 55,
+            "shortlistRank": 1,
+            "voiceScore": "0.871581",
+            "tieBreakKey": 111530,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "1.000000",
+              "cell": "0.850000",
+              "collection": "0.722057",
+              "contour": "0.940000",
+              "imitation": "0.700000",
+              "register": "0.920968",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 25,
+          "barIndex": 6,
+          "beatIndexInBar": 1,
+          "slotInPhrase": 1,
+          "phraseIndex": 6,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.260724",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.254,
+          "imitationConsistency": 0.5800000000000001,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 1
+        },
+        "chosenMidiByRole": {
+          "soprano": 86,
+          "alto": 73,
+          "tenor": 67,
+          "bass": 57
+        },
+        "activeFunction": "subdominant_axis",
+        "collectionId": "diatonic",
+        "cellId": "minor3_cycle",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 86,
+            "shortlistRank": 0,
+            "voiceScore": "0.800782",
+            "tieBreakKey": 888810,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.760000",
+              "collection": "0.668571",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.844444",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.782697",
+            "tieBreakKey": 154270,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "0.880000",
+              "cell": "0.760000",
+              "collection": "0.788023",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 67,
+            "shortlistRank": 4,
+            "voiceScore": "0.758461",
+            "tieBreakKey": 514470,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.600000",
+              "collection": "0.708686",
+              "contour": "0.880000",
+              "imitation": "0.600000",
+              "register": "0.920968",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 57,
+            "shortlistRank": 0,
+            "voiceScore": "0.839089",
+            "tieBreakKey": 406780,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.802286",
+              "contour": "0.880000",
+              "imitation": "0.700000",
+              "register": "0.875806",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 26,
+          "barIndex": 6,
+          "beatIndexInBar": 2,
+          "slotInPhrase": 2,
+          "phraseIndex": 6,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.254134",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.254,
+          "imitationConsistency": 0.4,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 1
+        },
+        "chosenMidiByRole": {
+          "soprano": 91,
+          "alto": 73,
+          "tenor": 69,
+          "bass": 62
+        },
+        "activeFunction": "subdominant_axis",
+        "collectionId": "diatonic",
+        "cellId": "minor3_cycle",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 91,
+            "shortlistRank": 4,
+            "voiceScore": "0.806361",
+            "tieBreakKey": 592440,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "1.000000",
+              "cell": "0.840000",
+              "collection": "0.668571",
+              "contour": "0.700000",
+              "imitation": "0.700000",
+              "register": "0.747222",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.803284",
+            "tieBreakKey": 916580,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "0.880000",
+              "cell": "0.760000",
+              "collection": "0.788023",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 69,
+            "shortlistRank": 0,
+            "voiceScore": "0.792137",
+            "tieBreakKey": 964250,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.787429",
+              "contour": "0.880000",
+              "imitation": "0.300000",
+              "register": "0.875806",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 62,
+            "shortlistRank": 2,
+            "voiceScore": "0.817803",
+            "tieBreakKey": 207640,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "1.000000",
+              "cell": "0.840000",
+              "collection": "0.722057",
+              "contour": "0.700000",
+              "imitation": "0.700000",
+              "register": "0.762903",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 27,
+          "barIndex": 6,
+          "beatIndexInBar": 3,
+          "slotInPhrase": 3,
+          "phraseIndex": 6,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.161934",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.254,
+          "imitationConsistency": 0.4,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 1
+        },
+        "chosenMidiByRole": {
+          "soprano": 91,
+          "alto": 73,
+          "tenor": 69,
+          "bass": 62
+        },
+        "activeFunction": "subdominant_axis",
+        "collectionId": "diatonic",
+        "cellId": "minor3_cycle",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 91,
+            "shortlistRank": 2,
+            "voiceScore": "0.795921",
+            "tieBreakKey": 116890,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.760000",
+              "collection": "0.668571",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.747222",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.782697",
+            "tieBreakKey": 549340,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "0.880000",
+              "cell": "0.760000",
+              "collection": "0.788023",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 69,
+            "shortlistRank": 1,
+            "voiceScore": "0.750750",
+            "tieBreakKey": 240300,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.760000",
+              "collection": "0.787429",
+              "contour": "1.000000",
+              "imitation": "0.300000",
+              "register": "0.875806",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 62,
+            "shortlistRank": 0,
+            "voiceScore": "0.798016",
+            "tieBreakKey": 264590,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.760000",
+              "collection": "0.722057",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.762903",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 28,
+          "barIndex": 7,
+          "beatIndexInBar": 0,
+          "slotInPhrase": 0,
+          "phraseIndex": 7,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.530232",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.254,
+          "imitationConsistency": 0.5800000000000001,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 0.8
+        },
+        "chosenMidiByRole": {
+          "soprano": 86,
+          "alto": 73,
+          "tenor": 67,
+          "bass": 60
+        },
+        "activeFunction": "tonic_axis",
+        "collectionId": "octatonic",
+        "cellId": "minor3_cycle",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 86,
+            "shortlistRank": 1,
+            "voiceScore": "0.888654",
+            "tieBreakKey": 670140,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "1.000000",
+              "cell": "0.850000",
+              "collection": "1.045943",
+              "contour": "0.700000",
+              "imitation": "0.700000",
+              "register": "0.844444",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.890884",
+            "tieBreakKey": 670140,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "0.880000",
+              "cell": "0.850000",
+              "collection": "1.045943",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 67,
+            "shortlistRank": 1,
+            "voiceScore": "0.860877",
+            "tieBreakKey": 294840,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "1.000000",
+              "cell": "0.850000",
+              "collection": "1.081783",
+              "contour": "0.880000",
+              "imitation": "0.300000",
+              "register": "0.920968",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 60,
+            "shortlistRank": 4,
+            "voiceScore": "0.875330",
+            "tieBreakKey": 537110,
+            "dimensions": {
+              "accent": "0.916667",
+              "axis": "1.000000",
+              "cell": "0.850000",
+              "collection": "0.806400",
+              "contour": "0.880000",
+              "imitation": "0.700000",
+              "register": "0.808065",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 29,
+          "barIndex": 7,
+          "beatIndexInBar": 1,
+          "slotInPhrase": 1,
+          "phraseIndex": 7,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.239822",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.5,
+          "ensembleMultiplier": 1.1,
+          "imitationConsistency": 0.52,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 1
+        },
+        "chosenMidiByRole": {
+          "soprano": 91,
+          "alto": 73,
+          "tenor": 71,
+          "bass": 62
+        },
+        "activeFunction": "tonic_axis",
+        "collectionId": "octatonic",
+        "cellId": "minor3_cycle",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 91,
+            "shortlistRank": 0,
+            "voiceScore": "0.860649",
+            "tieBreakKey": 714150,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.840000",
+              "collection": "1.166629",
+              "contour": "0.700000",
+              "imitation": "0.700000",
+              "register": "0.747222",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.823964",
+            "tieBreakKey": 891060,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "0.880000",
+              "cell": "0.760000",
+              "collection": "1.045943",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 71,
+            "shortlistRank": 0,
+            "voiceScore": "0.828432",
+            "tieBreakKey": 715660,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "0.880000",
+              "cell": "0.920000",
+              "collection": "0.969874",
+              "contour": "0.760000",
+              "imitation": "0.700000",
+              "register": "0.830645",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 62,
+            "shortlistRank": 0,
+            "voiceScore": "0.853377",
+            "tieBreakKey": 88090,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.920000",
+              "collection": "0.931840",
+              "contour": "0.880000",
+              "imitation": "0.700000",
+              "register": "0.762903",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 30,
+          "barIndex": 7,
+          "beatIndexInBar": 2,
+          "slotInPhrase": 2,
+          "phraseIndex": 7,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.232140",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.254,
+          "imitationConsistency": 0.3,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 0.8
+        },
+        "chosenMidiByRole": {
+          "soprano": 96,
+          "alto": 73,
+          "tenor": 67,
+          "bass": 62
+        },
+        "activeFunction": "tonic_axis",
+        "collectionId": "octatonic",
+        "cellId": "minor3_cycle",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 96,
+            "shortlistRank": 4,
+            "voiceScore": "0.834620",
+            "tieBreakKey": 22770,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "1.000000",
+              "cell": "0.840000",
+              "collection": "0.905143",
+              "contour": "0.700000",
+              "imitation": "0.700000",
+              "register": "0.650000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.844551",
+            "tieBreakKey": 500739,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "0.880000",
+              "cell": "0.760000",
+              "collection": "1.045943",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 67,
+            "shortlistRank": 3,
+            "voiceScore": "0.752343",
+            "tieBreakKey": 511780,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "1.000000",
+              "cell": "0.440000",
+              "collection": "1.081783",
+              "contour": "0.760000",
+              "imitation": "0.250000",
+              "register": "0.920968",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 62,
+            "shortlistRank": 1,
+            "voiceScore": "0.856363",
+            "tieBreakKey": 22770,
+            "dimensions": {
+              "accent": "0.540000",
+              "axis": "1.000000",
+              "cell": "0.760000",
+              "collection": "0.931840",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.762903",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      },
+      {
+        "slot": {
+          "globalSlotIndex": 31,
+          "barIndex": 7,
+          "beatIndexInBar": 3,
+          "slotInPhrase": 3,
+          "phraseIndex": 7,
+          "kind": "soprano_quarter"
+        },
+        "tupleCount": 625,
+        "beamWidth": 32,
+        "finalScore": "4.220740",
+        "ensembleFactors": {
+          "antiParallelPenalty": 1,
+          "axisCoverage": 0.75,
+          "ensembleMultiplier": 1.254,
+          "imitationConsistency": 0.3,
+          "spacingBalance": 1,
+          "verticalIntervalProfile": 0.8
+        },
+        "chosenMidiByRole": {
+          "soprano": 96,
+          "alto": 73,
+          "tenor": 67,
+          "bass": 62
+        },
+        "activeFunction": "tonic_axis",
+        "collectionId": "octatonic",
+        "cellId": "minor3_cycle",
+        "candidates": [
+          {
+            "role": "soprano",
+            "candidateMidi": 96,
+            "shortlistRank": 0,
+            "voiceScore": "0.824180",
+            "tieBreakKey": 866820,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.760000",
+              "collection": "0.905143",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.650000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "alto",
+            "candidateMidi": 73,
+            "shortlistRank": 0,
+            "voiceScore": "0.823964",
+            "tieBreakKey": 24770,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "0.880000",
+              "cell": "0.760000",
+              "collection": "1.045943",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "1.000000",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "tenor",
+            "candidateMidi": 67,
+            "shortlistRank": 0,
+            "voiceScore": "0.792557",
+            "tieBreakKey": 63580,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.760000",
+              "collection": "1.081783",
+              "contour": "1.000000",
+              "imitation": "0.250000",
+              "register": "0.920968",
+              "vertical": "1.000000"
+            }
+          },
+          {
+            "role": "bass",
+            "candidateMidi": 62,
+            "shortlistRank": 0,
+            "voiceScore": "0.835777",
+            "tieBreakKey": 790830,
+            "dimensions": {
+              "accent": "0.282667",
+              "axis": "1.000000",
+              "cell": "0.760000",
+              "collection": "0.931840",
+              "contour": "1.000000",
+              "imitation": "0.700000",
+              "register": "0.762903",
+              "vertical": "1.000000"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
