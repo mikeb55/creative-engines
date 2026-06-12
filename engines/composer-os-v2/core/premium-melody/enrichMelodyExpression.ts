@@ -6,6 +6,7 @@
 import type { Articulation } from '../score-model/scoreModelTypes';
 import type { ImportMelodyNote } from '../import/mosaicImportTimeline';
 import type { PremiumMelodyProfile } from './premiumMelodyProfile';
+import type { PremiumMelodyPitchOrnamentAnnotations } from './premiumMelodyPitchProfile';
 import {
   PREMIUM_MELODY_DEFAULT_EXPRESSION_CHARACTER,
   PREMIUM_MELODY_DEFAULT_PROJECTED_OFFBEAT_BLOCK_THRESHOLD,
@@ -34,6 +35,8 @@ export interface PremiumMelodyExpressiveNote extends ImportMelodyNote {
   articulation?: Articulation;
   velocity?: number;
   durationAccent?: PremiumMelodyDurationAccentKind;
+  /** Pitch-layer surface ornament tags (annotations only). */
+  pitchOrnamentAnnotations?: PremiumMelodyPitchOrnamentAnnotations;
 }
 
 export interface PremiumMelodyExpressionEnrichmentMeta {
@@ -174,8 +177,12 @@ function phraseArcVelocityModalLyric(
   indexInPhrase: number,
   phraseLen: number,
   isLanding: boolean,
-  rand01: number
+  rand01: number,
+  peakOverride?: number,
+  jitterOverride?: number
 ): number {
+  const peak = peakOverride ?? MODAL_LYRIC_VELOCITY_PEAK;
+  const jitter = jitterOverride ?? 3;
   if (phraseLen <= 1) return MODAL_LYRIC_VELOCITY_BASE;
   const t = indexInPhrase / Math.max(1, phraseLen - 1);
   let v: number;
@@ -184,11 +191,11 @@ function phraseArcVelocityModalLyric(
   } else if (t < 0.25) {
     v = MODAL_LYRIC_VELOCITY_BASE + t * 10;
   } else if (t > 0.85) {
-    v = MODAL_LYRIC_VELOCITY_PEAK - (t - 0.85) * 28;
+    v = peak - (t - 0.85) * 28;
   } else {
     const peakT = 0.5;
     const dist = Math.abs(t - peakT);
-    v = MODAL_LYRIC_VELOCITY_PEAK - dist * 10 + rand01 * 3;
+    v = peak - dist * 10 + rand01 * jitter;
   }
   return Math.round(
     Math.min(MODAL_LYRIC_VELOCITY_MAX, Math.max(MODAL_LYRIC_VELOCITY_MIN, v))
@@ -349,7 +356,14 @@ export function enrichMelodyExpression(
           if (articulation === 'accent') structuralLandingAccentHits++;
         }
 
-        const velocity = phraseArcVelocityModalLyric(phraseIdx, phraseLen, isLanding, rand());
+        const velocity = phraseArcVelocityModalLyric(
+          phraseIdx,
+          phraseLen,
+          isLanding,
+          rand(),
+          profile.modalLyricVelocityPeak,
+          profile.modalLyricVelocityJitter
+        );
         velocityMin = Math.min(velocityMin, velocity);
         velocityMax = Math.max(velocityMax, velocity);
 

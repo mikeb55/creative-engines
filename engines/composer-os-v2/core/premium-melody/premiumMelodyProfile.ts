@@ -4,6 +4,7 @@
  */
 
 import type { PremiumMelodyCellFamily } from './premiumMelodyCellLibrary';
+import type { PremiumMelodyPitchProfile } from './premiumMelodyPitchProfile';
 
 /** Beat-1/3 grounded structural landing (Barry Harris default). */
 export type PremiumMelodyStructuralLandingMode = 'bh_grounded' | 'float_preserve';
@@ -49,4 +50,10 @@ export interface PremiumMelodyProfile {
    * undefined (default) = no change; BH builders must NOT set this field.
    */
   cellFamilyWeightScale?: Partial<Record<PremiumMelodyCellFamily, number>>;
+  /** Pitch layer config — absent = import pitches unchanged (BH default). */
+  pitchProfile?: PremiumMelodyPitchProfile;
+  /** Optional `modal_lyric` peak MIDI velocity (default **80** — Wayne 2b). */
+  modalLyricVelocityPeak?: number;
+  /** Optional `modal_lyric` interior rand jitter span (default **3**). */
+  modalLyricVelocityJitter?: number;
 }

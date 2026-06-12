@@ -1,6 +1,6 @@
 /**
- * V87 Commit 2a - Bill Evans premium-melody auto-validation.
- * Runs golden path seed 90301 on BH isolation benchmark (2a).
+ * V87 Commit 2b - Bill Evans premium-melody auto-validation.
+ * Runs golden path seed 90301 on BH isolation benchmark (pitch layer active).
  * Run: npx tsx --tsconfig tsconfig.json engines/composer-os-v2/scripts/runBePremiumMelodyAutoValidation.ts
  */
 
@@ -12,8 +12,17 @@ import { buildBillEvansIsolationProvisionalProfile } from '../core/bill-evans/be
 import { validateBePremiumMelodyConformance } from '../core/bill-evans/bePremiumMelodyValidation';
 import { musicXmlToImportTimeline } from '../core/import/musicXmlToImportTimeline';
 import { melodyOffbeatRatio } from '../core/premium-melody/premiumMelodyMetrics';
+import { runPremiumMelodyPitchPipeline } from '../core/premium-melody/premiumMelodyPitchPipeline';
 
-const BE_QA_PATH = path.join('C:', 'Users', 'mike', 'Documents', 'Mike Composer Files', 'Song Mode', 'be-v86-2a-check.musicxml');
+const BE_QA_PATH = path.join(
+  'C:',
+  'Users',
+  'mike',
+  'Documents',
+  'Mike Composer Files',
+  'Song Mode',
+  'be-v86-2b-check.musicxml'
+);
 
 const BENCHMARK_FIXTURE = path.join(
   __dirname,
@@ -27,7 +36,7 @@ const BENCHMARK_FIXTURE = path.join(
 const BE_GOLDEN_SEED = 90301;
 
 function main(): void {
-  console.log('=== Bill Evans V87 Commit 2a Auto-Validation ===');
+  console.log('=== Bill Evans V87 Commit 2b Auto-Validation ===');
   console.log('Seed: ' + BE_GOLDEN_SEED);
 
   if (!fs.existsSync(BENCHMARK_FIXTURE)) {
@@ -52,6 +61,16 @@ function main(): void {
   const { rhythmMelody, exportMelody, rhythmMeta } =
     runPremiumMelodyHarmonyRhythmExpressionPipeline(rawMelodyLine, profile, BE_GOLDEN_SEED);
 
+  const pitchMelody =
+    profile.pitchProfile != null
+      ? runPremiumMelodyPitchPipeline(
+          rhythmMelody,
+          profile,
+          profile.pitchProfile,
+          BE_GOLDEN_SEED
+        ).pitchMelody
+      : rhythmMelody;
+
   const postTrimOffbeatRatio = melodyOffbeatRatio(rhythmMelody);
   const rhythmMetaForValidation = { ...rhythmMeta, offbeatRatio: postTrimOffbeatRatio };
 
@@ -59,16 +78,14 @@ function main(): void {
     .sort(([, a], [, b]) => (b as number) - (a as number))
     .map(([f, c]) => f + '=' + c)
     .join(', ');
-  const longGapCount = rhythmMeta.familyCounts['long_gap'] ?? 0;
-  const delayedCount = rhythmMeta.familyCounts['delayed'] ?? 0;
-  const combinedShare = rhythmMeta.totalNotes > 0 ? ((longGapCount + delayedCount) / rhythmMeta.totalNotes) * 100 : 0;
-
   console.log('Family counts: ' + familySummary);
-  console.log('long_gap+delayed combined share: ' + combinedShare.toFixed(1) + '% (informational)');
 
-  const validation = validateBePremiumMelodyConformance(rhythmMelody, exportMelody, rhythmMetaForValidation);
+  const validation = validateBePremiumMelodyConformance(rhythmMelody, exportMelody, rhythmMetaForValidation, {
+    importMelody: rawMelodyLine,
+    pitchMelody,
+  });
 
-  console.log('\n--- Validation Results ---');
+  console.log('\n--- Validation Results (2b-provisional) ---');
   console.log(
     'offbeatRatio: ' +
       validation.offbeatRatio.toFixed(3) +
@@ -82,9 +99,11 @@ function main(): void {
   console.log(
     'ioiEntropy:   ' +
       validation.ioiEntropy.toFixed(3) +
-      ' >= ' +
+      ' [' +
       validation.ioiEntropyMin +
-      ' -> ' +
+      ', ' +
+      validation.ioiEntropyMax +
+      '] -> ' +
       (validation.ioiEntropyPass ? 'PASS' : 'FAIL')
   );
   console.log(
@@ -101,6 +120,36 @@ function main(): void {
       '] -> ' +
       (validation.velocitySpreadPass ? 'PASS' : 'FAIL')
   );
+
+  if (validation.pitchTrace) {
+    const pt = validation.pitchTrace;
+    console.log(
+      'pitchDifferRate: ' +
+        pt.differRate.toFixed(3) +
+        ' >= ' +
+        pt.differRateMin +
+        ' -> ' +
+        (pt.differRatePass ? 'PASS' : 'FAIL')
+    );
+    console.log(
+      'stepwiseMotion:  ' +
+        pt.stepwiseRate.toFixed(3) +
+        ' >= ' +
+        pt.stepwiseRateMin +
+        ' (' +
+        pt.motionPairs +
+        ' pairs) -> ' +
+        (pt.stepwiseRatePass ? 'PASS' : 'FAIL')
+    );
+    console.log(
+      'largeLeapRate:   ' +
+        pt.largeLeapRate.toFixed(3) +
+        ' <= ' +
+        pt.largeLeapMax +
+        ' -> ' +
+        (pt.largeLeapPass ? 'PASS' : 'FAIL')
+    );
+  }
 
   if (validation.details.length > 0) {
     console.log('\nFailures:');

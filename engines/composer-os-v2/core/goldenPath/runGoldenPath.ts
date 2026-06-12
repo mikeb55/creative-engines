@@ -3272,6 +3272,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       ...appliedContext.generationMetadata,
       bePremiumMelodyProfile: beProfile.id,
       bePremiumMelodyRhythmMeta: bePinResult.rhythmMeta,
+      ...(beProfile.pitchProfile != null && bePinResult.pitchTrace != null
+        ? { bePremiumMelodyPitchTrace: bePinResult.pitchTrace }
+        : {}),
     };
   }
   if (styleTransferDeferBarMath && !isIndieTuningFixture) {

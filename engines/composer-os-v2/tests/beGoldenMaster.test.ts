@@ -16,7 +16,7 @@ import type { PremiumMelodyDurationAccentKind } from '../core/premium-melody/enr
 
 export const BE_GOLDEN_SEED = 90301;
 export const BE_GOLDEN_FIXTURE_NAME = 'BH_Benchmark_JazzMelody.musicxml';
-export const BE_GOLDEN_PROFILE = 'be_isolation_provisional (PROVISIONAL)';
+export const BE_GOLDEN_PROFILE = 'be_jazz_ballad_v1 (PROVISIONAL 2b)';
 
 const GOLDEN_DIR = path.join(__dirname, 'golden');
 const JSON_FIXTURE = path.join(GOLDEN_DIR, 'be-isolation-seed90301.golden.json');
