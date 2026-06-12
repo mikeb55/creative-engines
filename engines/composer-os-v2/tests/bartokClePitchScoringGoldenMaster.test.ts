@@ -79,6 +79,7 @@ function serializeTrace(trace: BartokPitchScoringTrace) {
     lengthBars: trace.lengthBars,
     styleSourceVrbId: trace.styleSourceVrbId,
     imitationMode: trace.imitationMode,
+    phraseImitationModes: [...trace.phraseImitationModes],
     phraseAxisStreak: trace.phraseAxisStreak,
     slots: trace.slots.map((s) => ({
       slot: s.slot,
@@ -92,6 +93,9 @@ function serializeTrace(trace: BartokPitchScoringTrace) {
       activeFunction: s.activeFunction,
       collectionId: s.collectionId,
       cellId: s.cellId,
+      phraseImitationMode: s.phraseImitationMode,
+      sourceMotifInterval: s.sourceMotifInterval,
+      transformationByRole: s.transformationByRole,
       candidates: s.candidates.map((c) => ({
         role: c.role,
         candidateMidi: c.candidateMidi,

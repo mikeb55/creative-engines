@@ -14,6 +14,15 @@ export type BartokImitationMode =
   | 'free_counterpoint_with_motif_echo'
   | 'contrary_axis_response';
 
+export type BartokTransformationKind =
+  | 'inversional'
+  | 'contrary_axis'
+  | 'interval_cycle'
+  | 'transposition'
+  | 'motif_echo'
+  | 'neutral'
+  | 'parallel_penalty';
+
 export type BartokCellContourClass =
   | 'arch_wedge'
   | 'pivot_tritone'
@@ -72,13 +81,20 @@ export type BartokPitchTupleTrace = {
   activeFunction: BartokActiveFunction;
   collectionId: BartokCollectionId;
   cellId: string;
+  phraseImitationMode: BartokImitationMode;
+  sourceMotifInterval: number | null;
+  transformationByRole: Readonly<Partial<Record<'alto' | 'bass', BartokTransformationKind>>>;
+  /** Validation probe — omitted from golden serialize. */
+  marginVsNonTransformational?: number;
 };
 
 export type BartokPitchScoringTrace = {
   seed: number;
   lengthBars: number;
   styleSourceVrbId: 'bartok';
+  /** Phrase 0 mode (legacy field); see phraseImitationModes for per-phrase picks. */
   imitationMode: BartokImitationMode;
+  phraseImitationModes: readonly BartokImitationMode[];
   slots: BartokPitchTupleTrace[];
   phraseAxisStreak: number;
 };

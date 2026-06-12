@@ -86,3 +86,46 @@ bartok-beam 8081
 bartok-axis-transition 8167
 Tie order on equal finalScore: finalScore, then structural priority, then
 lower candidateMidi, then lower tieBreakKey.
+
+## 10. Phrase-scale inversion window scoring
+Applies only when phrase imitationMode is inversional_imitation or
+contrary_axis_response (alto/bass imitation dimension + ensemble multiplier
+gate). Sustained mirror writing over a sliding note window is rewarded;
+single-interval spot inversion scores near neutral.
+
+| constant | value | purpose |
+|----------|-------|---------|
+| BARTOK_PITCH_INVERSION_WINDOW_MIN_NOTES | 3 | Minimum consecutive notes in window |
+| BARTOK_PITCH_INVERSION_WINDOW_MAX_NOTES | 5 | Maximum consecutive notes in window |
+| BARTOK_PITCH_INVERSION_SPOT_NEUTRAL_CAP | 0.58 | Lone single-interval inversion cap (~neutral) |
+| BARTOK_PITCH_INVERSION_SUSTAIN_PEAK | 0.92 | Imitation dimension peak for sustained window |
+| BARTOK_PITCH_INVERSION_SUSTAIN_MIN_FRACTION | 0.67 | Min inversional hit rate to lift above neutral |
+| BARTOK_PITCH_INVERSION_SIGN_MIN_FRACTION | 0.67 | Min opposite-sign rate vs soprano source |
+| BARTOK_PITCH_INVERSION_SIGN_PENALTY | 0.75 | Multiplier when sign pattern fails |
+| BARTOK_PITCH_INVERSION_ENSEMBLE_SUSTAIN_MIN | 0.67 | Min fraction to apply successfulInversionalAnswer x1.16 |
+
+## 11. Phrase-position climax weighting
+Normalized phrase position `t = slotInPhrase / (PHRASE_SLOTS - 1)` in [0, 1].
+Applies multipliers to `cell`, `register`, and `contour` dimensions only inside
+`voiceDimensions` (soprano/bass register spread-aware; alto/tenor center-only
+unchanged). Complements §10 inversion-window scoring — does not replace it.
+
+| constant | value | purpose |
+|----------|-------|---------|
+| BARTOK_PITCH_PHRASE_SLOTS | 4 | Phrase length in slots (matches `% 4` phrase loop) |
+| BARTOK_PITCH_CLIMAX_CENTER_T | 0.65 | Peak registral + interval intensity (~slot 2) |
+| BARTOK_PITCH_CLIMAX_APPROACH_HALF_WIDTH | 0.15 | Bell weight half-width around climax center |
+| BARTOK_PITCH_EARLY_PHRASE_MAX_T | 0.30 | Early-phrase band cutoff |
+| BARTOK_PITCH_SPREAD_TARGET_MIN_SEMITONES | 12 | Pre-climax spread baseline (~1 octave) |
+| BARTOK_PITCH_SPREAD_TARGET_PEAK_SEMITONES | 28 | Climax spread target (~2.3 octaves) |
+| BARTOK_PITCH_SPREAD_EARLY_MAX_SEMITONES | 18 | Premature wide-spread cap in early phrase |
+| BARTOK_PITCH_SPREAD_POST_CLIMAX_TARGET_SEMITONES | 14 | Post-climax contraction target |
+| BARTOK_PITCH_CLIMAX_CELL_IDS | tritone_axis, minor3_cycle | Near-climax cell preference set |
+| BARTOK_PITCH_CLIMAX_CELL_BOOST | 1.12 | Multiplier on cell when cellId matches at climax |
+| BARTOK_PITCH_CLIMAX_INTERVAL_TRITONE_SEMITONES | 6 | Tritone interval-content match |
+| BARTOK_PITCH_CLIMAX_INTERVAL_MINOR3_SEMITONES | 3 | Minor-third interval-content match |
+| BARTOK_PITCH_CLIMAX_INTERVAL_CONTENT_BOOST | 1.08 | Near-climax boost when step matches tritone/m3 |
+| BARTOK_PITCH_CLIMAX_REGISTER_BOOST_MAX | 1.15 | Max registerMul at spread-peak match |
+| BARTOK_PITCH_CLIMAX_REGISTER_PENALTY_MIN | 0.88 | Early over-spread register floor |
+| BARTOK_PITCH_CLIMAX_CONTOUR_CALM_BOOST | 1.10 | Post-climax small-step contour reward |
+| BARTOK_PITCH_CLIMAX_CONTRACTION_BOOST | 1.08 | Post-climax spread-narrowing reward |

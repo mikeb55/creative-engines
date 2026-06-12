@@ -346,13 +346,22 @@ Canonical Song Mode / Big Band composers in **`engines/composer-os-v2`**. **Slic
 
 **QA export (seed 61234):** From repo root — `npx tsx engines/composer-os-v2/scripts/bartokCleGenerateQaMusicXml.ts` → **`qa-output/bartok/bartok_cle_duo_seed61234.musicxml`** (gitignored generated artifact; folder convention only).
 
-**Checkpoint (2026-06-06 — not final freeze):** Bass rhythm asymmetry via phrase-level emit mask (**`3+2+3`** / **`2+3+3`**; scoring/enumeration unchanged); alto onset grid fixed (removed **`altoFixed`** pin). Golden master **`bartok-cle-seed61234`** re-approved; duo QA GCE seed **61234**: **5.9 → 6.4**.
+**Bartók CLE golden-master (V88 — FROZEN):** Gate B4 locked harmony (**8** bars: F♯m7♭5 · B7alt · Emaj7 · Gm7 ×2) on **`guitar_bass_duo`** with primary **`bartok`**. **`buildBartokScoredLineSet`** (`bartokPitchScorer.ts`) materialises a four-voice **`AbstractLineSet`** (soprano / alto / tenor / bass): per-voice shortlist (**5** candidates) + **625-tuple** beam search (**beam width 32**) scored against **`docs/bartok_pitch_spec.md`** §1–11 and **`bartokPitchScoringConfig.ts`** — five-cell library, axis-function transitions, collection-fit table, per-voice scorer exponents, ensemble factors (vertical profile, axis coverage, imitation consistency, anti-parallel penalty, spacing balance), candidate leap windows, phrase-scale **inversion-window** scoring (§10), and **phrase-position climax / contraction** weighting (§11). **`pickImitationMode`** drives strict transposition, interval-cycle, inversional, motivic-echo, and contrary-axis responses; bass emit-mask (**`3+2+3`** / **`2+3+3`**) preserves asymmetric folk rhythm without changing beam enumeration.
 
-**Open follow-ups (next passes):**
-- **Transformational counterpoint** — inversion / mirror / axis relationships driving bass (next quality ceiling; not further rhythm-density work).
-- **Imitation modes** — **`pickImitationMode`** metadata only; tenor-only **`imitationFit`** wiring deferred.
+**Frozen fixtures (seed 61234):** **`engines/composer-os-v2/tests/golden/bartok-cle-seed61234.lineSet.golden.json`** (sha256 **`a1c94bc9bf09…`**) + **`.trace.golden.json`** (sha256 **`496cf6c415c6…`**). **`bartokClePitchScoringGoldenMaster.test.ts`** regenerates and asserts **byte-for-byte** JSON equality (not regen-and-pass). **FROZEN:** regenerate fixtures only in a commit whose stated purpose is changing Bartók CLE pitch-scoring output. BH / Wayne / Evans premium-melody golden masters **byte-identical** untouched when touching this path.
 
-**Gates:** smoke **`bartokCleGoldenMaster`** (seed **61234**); BH **`bhGoldenMaster`** must stay byte-identical when touching this path.
+**Duo QA GCE eval trajectory (seed 61234, music evaluation):**
+
+| Pass | Overall | Notes |
+|------|---------|-------|
+| Baseline | **4.8** | Square rhythm, frozen bass, weak voice interaction |
+| Rhythm / alto grid | **5.9 → 6.4** | Bass emit-mask; alto onset grid fixed |
+| Transformational counterpoint | **7.0 → 7.6** | Inversion-window scoring (§10); imitation modes wired |
+| Climax / contraction (§11) | **8.0** | Registral spread peak + post-climax calm; structural criticisms resolved |
+
+**V88.2 open follow-ups (refinement, not structural):** more folk-derived cells in the cell library; sharper registral shocks / voice crossings at section peaks; distinctive closing cadence gesture — quality polish above the **8.0** freeze bar, not reopening beam or export architecture.
+
+**Gates:** smoke **`bartokCleGoldenMaster`** (seed **61234**); BH **`bhGoldenMaster`** + **`runV81AutoValidation.ts`** (**8**/8) must stay byte-identical when touching this path.
 
 ---
 

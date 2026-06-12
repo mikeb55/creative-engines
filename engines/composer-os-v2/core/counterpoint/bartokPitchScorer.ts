@@ -40,6 +40,31 @@ import {
   BARTOK_PITCH_VOICE_COLLECTION_BIAS,
   BARTOK_PITCH_VOICE_EXPONENTS,
   BARTOK_PITCH_VOICE_MIDI_RANGE,
+  BARTOK_PITCH_INVERSION_ENSEMBLE_SUSTAIN_MIN,
+  BARTOK_PITCH_INVERSION_SIGN_MIN_FRACTION,
+  BARTOK_PITCH_INVERSION_SIGN_PENALTY,
+  BARTOK_PITCH_INVERSION_SPOT_NEUTRAL_CAP,
+  BARTOK_PITCH_INVERSION_SUSTAIN_MIN_FRACTION,
+  BARTOK_PITCH_INVERSION_SUSTAIN_PEAK,
+  BARTOK_PITCH_INVERSION_WINDOW_MAX_NOTES,
+  BARTOK_PITCH_INVERSION_WINDOW_MIN_NOTES,
+  BARTOK_PITCH_CLIMAX_APPROACH_HALF_WIDTH,
+  BARTOK_PITCH_CLIMAX_CELL_BOOST,
+  BARTOK_PITCH_CLIMAX_CELL_IDS,
+  BARTOK_PITCH_CLIMAX_CENTER_T,
+  BARTOK_PITCH_CLIMAX_CONTOUR_CALM_BOOST,
+  BARTOK_PITCH_CLIMAX_CONTRACTION_BOOST,
+  BARTOK_PITCH_CLIMAX_INTERVAL_CONTENT_BOOST,
+  BARTOK_PITCH_CLIMAX_INTERVAL_MINOR3_SEMITONES,
+  BARTOK_PITCH_CLIMAX_INTERVAL_TRITONE_SEMITONES,
+  BARTOK_PITCH_CLIMAX_REGISTER_BOOST_MAX,
+  BARTOK_PITCH_CLIMAX_REGISTER_PENALTY_MIN,
+  BARTOK_PITCH_EARLY_PHRASE_MAX_T,
+  BARTOK_PITCH_PHRASE_SLOTS,
+  BARTOK_PITCH_SPREAD_EARLY_MAX_SEMITONES,
+  BARTOK_PITCH_SPREAD_POST_CLIMAX_TARGET_SEMITONES,
+  BARTOK_PITCH_SPREAD_TARGET_MIN_SEMITONES,
+  BARTOK_PITCH_SPREAD_TARGET_PEAK_SEMITONES,
   type BartokCollectionSpec,
   type BartokScorerExponentDim,
 } from './bartokPitchScoringConfig';
@@ -51,6 +76,7 @@ import type {
   BartokPitchScoringTrace,
   BartokPitchScoringSlotRef,
   BartokPitchTupleTrace,
+  BartokTransformationKind,
   CellLibraryEntry,
 } from './bartokPitchScoringTypes';
 
@@ -99,12 +125,12 @@ function weightedPick<T extends { weight: number }>(items: readonly T[], seed: n
   return items[items.length - 1]!;
 }
 
-function pickImitationMode(seed: number): BartokImitationMode {
+function pickImitationMode(seed: number, phraseIndex: number): BartokImitationMode {
   const items = (Object.keys(BARTOK_PITCH_IMITATION_PRIORS) as BartokImitationMode[]).map((id) => ({
     id,
     weight: BARTOK_PITCH_IMITATION_PRIORS[id],
   }));
-  return weightedPick(items, seed, 17).id;
+  return weightedPick(items, seed, 17 + phraseIndex).id;
 }
 
 function pickCell(seed: number, phraseIndex: number): CellLibraryEntry {
@@ -166,9 +192,274 @@ function cellFit(prev: number | null, midi: number, cell: CellLibraryEntry, slot
   return Math.max(0.2, 1 - Math.abs(midi - prev - expected) * 0.08);
 }
 
-function imitationFit(role: LineRole, midi: number, leadMidi: number | null): number {
-  if (role !== "tenor" || leadMidi == null) return 0.7;
-  return Math.max(0.25, 1 - Math.abs(midi - (leadMidi + BARTOK_PITCH_IMITATION_INTERVAL)) * 0.1);
+type BassAltoImitationCtx = {
+  phrase: PhraseState;
+  slotInPhrase: number;
+  tonicPc: number;
+  sopranoMidi: number;
+  sopranoPrev: number | null;
+  globalSlotIndex: number;
+  sopranoHistory: readonly number[];
+  altoHistory: readonly number[];
+  bassHistory: readonly number[];
+};
+
+type InversionWindowResult = {
+  fraction: number;
+  signOkFraction: number;
+  intervalCount: number;
+};
+
+function sourceMotifInterval(ctx: BassAltoImitationCtx): number {
+  if (ctx.slotInPhrase > 0 && ctx.sopranoPrev != null) {
+    return ctx.sopranoMidi - ctx.sopranoPrev;
+  }
+  if (ctx.globalSlotIndex >= 4) {
+    const prevPhraseSoprano = ctx.sopranoHistory[ctx.globalSlotIndex - 4];
+    if (prevPhraseSoprano != null) return ctx.sopranoMidi - prevPhraseSoprano;
+  }
+  return ctx.phrase.cell.intervals[0] ?? 0;
+}
+
+function expectedResponseInterval(
+  mode: BartokImitationMode,
+  sourceInterval: number,
+  phrase: PhraseState,
+  slotInPhrase: number,
+): number {
+  switch (mode) {
+    case 'strict_transposition':
+      return sourceInterval;
+    case 'strict_interval_cycle':
+      return slotInPhrase === 0
+        ? phrase.cell.intervals[0] ?? sourceInterval
+        : phrase.cell.intervals[(slotInPhrase - 1) % 4] ?? sourceInterval;
+    case 'inversional_imitation':
+      return -sourceInterval;
+    case 'contrary_axis_response':
+      return -sourceInterval;
+    case 'free_counterpoint_with_motif_echo':
+      return slotInPhrase === 0
+        ? phrase.cell.intervals[0] ?? sourceInterval
+        : phrase.cell.intervals[(slotInPhrase - 1) % 4] ?? sourceInterval;
+  }
+}
+
+function expectedResponseMidi(prev: number | null, expectedInterval: number, role: LineRole): number | null {
+  if (prev == null) return null;
+  const { min, max } = BARTOK_PITCH_VOICE_MIDI_RANGE[role];
+  const target = prev + expectedInterval;
+  if (target < min || target > max) return null;
+  return target;
+}
+
+function classifyTransformation(
+  mode: BartokImitationMode,
+  actualInterval: number,
+  expectedInterval: number,
+  sourceInterval: number,
+): BartokTransformationKind {
+  if (Math.abs(actualInterval - expectedInterval) <= 1) {
+    switch (mode) {
+      case 'inversional_imitation':
+        return 'inversional';
+      case 'contrary_axis_response':
+        return 'contrary_axis';
+      case 'strict_interval_cycle':
+        return 'interval_cycle';
+      case 'strict_transposition':
+        return 'transposition';
+      case 'free_counterpoint_with_motif_echo':
+        return 'motif_echo';
+    }
+  }
+  if (
+    (mode === 'inversional_imitation' || mode === 'contrary_axis_response') &&
+    sourceInterval !== 0 &&
+    actualInterval !== 0 &&
+    Math.sign(actualInterval) === Math.sign(sourceInterval)
+  ) {
+    return 'parallel_penalty';
+  }
+  return 'neutral';
+}
+
+function sopranoIntervalAtSlot(
+  k: number,
+  sopranoHistory: readonly number[],
+  phrase: PhraseState,
+): number | null {
+  const sop = sopranoHistory[k];
+  if (sop == null) return null;
+  const slotInPhrase = k % 4;
+  if (slotInPhrase > 0) {
+    const prev = sopranoHistory[k - 1];
+    if (prev == null) return null;
+    return sop - prev;
+  }
+  if (k >= 4) {
+    const prevPhraseSoprano = sopranoHistory[k - 4];
+    if (prevPhraseSoprano != null) return sop - prevPhraseSoprano;
+  }
+  return phrase.cell.intervals[0] ?? 0;
+}
+
+function voiceMidiAtSlot(
+  role: 'alto' | 'bass',
+  k: number,
+  globalSlotIndex: number,
+  candidateMidi: number,
+  altoHistory: readonly number[],
+  bassHistory: readonly number[],
+): number | null {
+  if (k === globalSlotIndex) return candidateMidi;
+  const history = role === 'alto' ? altoHistory : bassHistory;
+  const midi = history[k];
+  return midi == null ? null : midi;
+}
+
+function voiceIntervalAtSlot(
+  role: 'alto' | 'bass',
+  k: number,
+  globalSlotIndex: number,
+  candidateMidi: number,
+  altoHistory: readonly number[],
+  bassHistory: readonly number[],
+): number | null {
+  if (k <= 0) return null;
+  const midi = voiceMidiAtSlot(role, k, globalSlotIndex, candidateMidi, altoHistory, bassHistory);
+  const prev = voiceMidiAtSlot(role, k - 1, globalSlotIndex, candidateMidi, altoHistory, bassHistory);
+  if (midi == null || prev == null) return null;
+  return midi - prev;
+}
+
+function computeInversionWindowScore(
+  role: 'alto' | 'bass',
+  candidateMidi: number,
+  ctx: BassAltoImitationCtx,
+): InversionWindowResult | null {
+  const mode = ctx.phrase.imitationMode;
+  if (mode !== 'inversional_imitation' && mode !== 'contrary_axis_response') return null;
+
+  const phraseStart = ctx.globalSlotIndex - ctx.slotInPhrase;
+  const notesInPhrase = ctx.slotInPhrase + 1;
+  const windowNotes = Math.min(BARTOK_PITCH_INVERSION_WINDOW_MAX_NOTES, notesInPhrase);
+  let windowStart = ctx.globalSlotIndex - windowNotes + 1;
+  if (windowStart < phraseStart) windowStart = phraseStart;
+  const effectiveNotes = ctx.globalSlotIndex - windowStart + 1;
+  const intervalCount = effectiveNotes - 1;
+  if (intervalCount < 1) {
+    return { fraction: 0, signOkFraction: 0, intervalCount: 0 };
+  }
+
+  let hits = 0;
+  let signOk = 0;
+  let evaluated = 0;
+  for (let k = windowStart + 1; k <= ctx.globalSlotIndex; k++) {
+    const source = sopranoIntervalAtSlot(k, ctx.sopranoHistory, ctx.phrase);
+    const actual = voiceIntervalAtSlot(
+      role,
+      k,
+      ctx.globalSlotIndex,
+      candidateMidi,
+      ctx.altoHistory,
+      ctx.bassHistory,
+    );
+    if (source == null || actual == null) continue;
+    const slotInPhrase = k % 4;
+    const expected = expectedResponseInterval(mode, source, ctx.phrase, slotInPhrase);
+    evaluated += 1;
+    const kind = classifyTransformation(mode, actual, expected, source);
+    if (kind === 'inversional' || kind === 'contrary_axis') hits += 1;
+    if (source !== 0 && actual !== 0 && Math.sign(actual) !== Math.sign(source)) signOk += 1;
+  }
+
+  if (evaluated === 0) {
+    return { fraction: 0, signOkFraction: 0, intervalCount: 0 };
+  }
+  return {
+    fraction: hits / evaluated,
+    signOkFraction: signOk / evaluated,
+    intervalCount,
+  };
+}
+
+function inversionWindowImitationBoost(window: InversionWindowResult): number | null {
+  if (window.intervalCount < BARTOK_PITCH_INVERSION_WINDOW_MIN_NOTES - 1) return null;
+  if (window.fraction < BARTOK_PITCH_INVERSION_SUSTAIN_MIN_FRACTION) return null;
+  const span = 1 - BARTOK_PITCH_INVERSION_SUSTAIN_MIN_FRACTION;
+  const t = span > 0 ? (window.fraction - BARTOK_PITCH_INVERSION_SUSTAIN_MIN_FRACTION) / span : 1;
+  let windowScore =
+    BARTOK_PITCH_INVERSION_SPOT_NEUTRAL_CAP +
+    (BARTOK_PITCH_INVERSION_SUSTAIN_PEAK - BARTOK_PITCH_INVERSION_SPOT_NEUTRAL_CAP) * Math.min(1, Math.max(0, t));
+  if (window.signOkFraction < BARTOK_PITCH_INVERSION_SIGN_MIN_FRACTION) {
+    windowScore *= BARTOK_PITCH_INVERSION_SIGN_PENALTY;
+  }
+  return windowScore;
+}
+
+function imitationFit(
+  role: LineRole,
+  midi: number,
+  prev: number | null,
+  leadMidi: number | null,
+  bassAltoCtx?: BassAltoImitationCtx,
+): number {
+  if (role === 'tenor') {
+    if (leadMidi == null) return 0.7;
+    return Math.max(0.25, 1 - Math.abs(midi - (leadMidi + BARTOK_PITCH_IMITATION_INTERVAL)) * 0.1);
+  }
+  if (role !== 'alto' && role !== 'bass') return 0.7;
+  if (prev == null || !bassAltoCtx) return 0.85;
+
+  const source = sourceMotifInterval(bassAltoCtx);
+  const expected = expectedResponseInterval(
+    bassAltoCtx.phrase.imitationMode,
+    source,
+    bassAltoCtx.phrase,
+    bassAltoCtx.slotInPhrase,
+  );
+  const actual = midi - prev;
+  const mode = bassAltoCtx.phrase.imitationMode;
+  const penaltyRate = mode === 'free_counterpoint_with_motif_echo' ? 0.05 : 0.08;
+  let score = Math.max(0.2, 1 - Math.abs(actual - expected) * penaltyRate);
+
+  if (
+    (mode === 'inversional_imitation' || mode === 'contrary_axis_response') &&
+    source !== 0 &&
+    actual !== 0 &&
+    Math.sign(actual) === Math.sign(source)
+  ) {
+    score = Math.min(score, 0.28);
+  }
+  if (mode === 'inversional_imitation' || mode === 'contrary_axis_response') {
+    const window = computeInversionWindowScore(role, midi, bassAltoCtx);
+    if (window) {
+      const boost = inversionWindowImitationBoost(window);
+      if (boost != null) {
+        score = Math.max(score, boost);
+      } else if (window.intervalCount < BARTOK_PITCH_INVERSION_WINDOW_MIN_NOTES - 1) {
+        score = Math.min(score, BARTOK_PITCH_INVERSION_SPOT_NEUTRAL_CAP);
+      }
+    }
+  }
+  if (mode === 'strict_transposition' && Math.abs(actual - source) <= 1) {
+    score = Math.max(score, 0.9);
+  }
+  if (mode === 'strict_interval_cycle' && Math.abs(actual - expected) <= 1) {
+    score = Math.max(score, 0.88);
+  }
+
+  return score;
+}
+
+function bassAltoImitationConsistency(
+  role: 'alto' | 'bass',
+  tuple: Record<LineRole, number>,
+  prevVoice: number | null,
+  ctx: BassAltoImitationCtx,
+): number {
+  return imitationFit(role, tuple[role], prevVoice, null, ctx);
 }
 
 function verticalFit(role: LineRole, midi: number, tuple: Record<LineRole, number>): number {
@@ -176,6 +467,95 @@ function verticalFit(role: LineRole, midi: number, tuple: Record<LineRole, numbe
   for (let j = 0; j < idx; j++) if (tuple[VOICE_ORDER[j]!]! - midi < BARTOK_PITCH_MIN_VERTICAL_GAP) return 0.15;
   for (let j = idx + 1; j < VOICE_ORDER.length; j++) if (midi - tuple[VOICE_ORDER[j]!]! < BARTOK_PITCH_MIN_VERTICAL_GAP) return 0.15;
   return 1;
+}
+
+function phrasePositionT(slotInPhrase: number): number {
+  if (BARTOK_PITCH_PHRASE_SLOTS <= 1) return 0;
+  return slotInPhrase / (BARTOK_PITCH_PHRASE_SLOTS - 1);
+}
+
+function climaxBellWeight(t: number): number {
+  const hw = BARTOK_PITCH_CLIMAX_APPROACH_HALF_WIDTH;
+  if (hw <= 0) return t === BARTOK_PITCH_CLIMAX_CENTER_T ? 1 : 0;
+  const d = Math.abs(t - BARTOK_PITCH_CLIMAX_CENTER_T) / hw;
+  return Math.max(0, 1 - d);
+}
+
+function climaxDimensionMultipliers(args: {
+  role: LineRole;
+  midi: number;
+  prev: number | null;
+  tuple: Record<LineRole, number>;
+  slotInPhrase: number;
+  phrase: PhraseState;
+  globalSlotIndex: number;
+  sopranoHistory: readonly number[];
+  bassHistory: readonly number[];
+}): { cellMul: number; registerMul: number; contourMul: number } {
+  const t = phrasePositionT(args.slotInPhrase);
+  const bell = climaxBellWeight(t);
+  const spread = args.tuple.soprano - args.tuple.bass;
+  const prevSpread =
+    args.globalSlotIndex > 0
+      ? (args.sopranoHistory[args.globalSlotIndex - 1] ?? args.tuple.soprano) -
+        (args.bassHistory[args.globalSlotIndex - 1] ?? args.tuple.bass)
+      : spread;
+
+  let cellMul = 1;
+  let registerMul = 1;
+  let contourMul = 1;
+
+  if (bell > 0) {
+    if (BARTOK_PITCH_CLIMAX_CELL_IDS.has(args.phrase.cell.cellId)) {
+      cellMul *= 1 + bell * (BARTOK_PITCH_CLIMAX_CELL_BOOST - 1);
+    }
+    if (args.prev != null) {
+      const step = Math.abs(args.midi - args.prev);
+      if (
+        step === BARTOK_PITCH_CLIMAX_INTERVAL_TRITONE_SEMITONES ||
+        step === BARTOK_PITCH_CLIMAX_INTERVAL_MINOR3_SEMITONES
+      ) {
+        cellMul *= 1 + bell * (BARTOK_PITCH_CLIMAX_INTERVAL_CONTENT_BOOST - 1);
+      }
+    }
+  }
+
+  if (args.role === 'soprano' || args.role === 'bass') {
+    if (t < BARTOK_PITCH_EARLY_PHRASE_MAX_T && spread > BARTOK_PITCH_SPREAD_EARLY_MAX_SEMITONES) {
+      registerMul = BARTOK_PITCH_CLIMAX_REGISTER_PENALTY_MIN;
+    } else if (bell > 0) {
+      const targetSpread =
+        BARTOK_PITCH_SPREAD_TARGET_MIN_SEMITONES +
+        bell * (BARTOK_PITCH_SPREAD_TARGET_PEAK_SEMITONES - BARTOK_PITCH_SPREAD_TARGET_MIN_SEMITONES);
+      const spreadFit = Math.max(
+        0,
+        1 - Math.abs(spread - targetSpread) / BARTOK_PITCH_SPREAD_TARGET_PEAK_SEMITONES,
+      );
+      registerMul = 1 + bell * spreadFit * (BARTOK_PITCH_CLIMAX_REGISTER_BOOST_MAX - 1);
+    } else if (t > BARTOK_PITCH_CLIMAX_CENTER_T) {
+      const spreadFit = Math.max(
+        0,
+        1 -
+          Math.abs(spread - BARTOK_PITCH_SPREAD_POST_CLIMAX_TARGET_SEMITONES) /
+            BARTOK_PITCH_SPREAD_TARGET_PEAK_SEMITONES,
+      );
+      registerMul = 1 + spreadFit * (BARTOK_PITCH_CLIMAX_REGISTER_BOOST_MAX - 1) * 0.5;
+      if (spread < prevSpread) {
+        registerMul *= BARTOK_PITCH_CLIMAX_CONTRACTION_BOOST;
+      }
+    }
+  }
+
+  if (t > BARTOK_PITCH_CLIMAX_CENTER_T) {
+    if (args.prev != null && Math.abs(args.midi - args.prev) <= 2) {
+      contourMul = BARTOK_PITCH_CLIMAX_CONTOUR_CALM_BOOST;
+    }
+    if (spread < prevSpread) {
+      contourMul *= BARTOK_PITCH_CLIMAX_CONTRACTION_BOOST;
+    }
+  }
+
+  return { cellMul, registerMul, contourMul };
 }
 
 function voiceDimensions(
@@ -190,22 +570,51 @@ function voiceDimensions(
     beatIndexInBar: number;
     developmental: boolean;
     leadMidi: number | null;
+    globalSlotIndex: number;
+    sopranoHistory: readonly number[];
+    altoHistory: readonly number[];
+    bassHistory: readonly number[];
   },
 ): Record<BartokScorerExponentDim, number> {
+  const sopranoPrev = ctx.globalSlotIndex > 0 ? ctx.sopranoHistory[ctx.globalSlotIndex - 1] ?? null : null;
+  const bassAltoCtx: BassAltoImitationCtx = {
+    phrase: ctx.phrase,
+    slotInPhrase: ctx.slotInPhrase,
+    tonicPc: ctx.tonicPc,
+    sopranoMidi: tuple.soprano,
+    sopranoPrev,
+    globalSlotIndex: ctx.globalSlotIndex,
+    sopranoHistory: ctx.sopranoHistory,
+    altoHistory: ctx.altoHistory,
+    bassHistory: ctx.bassHistory,
+  };
   const accent = Math.min(1.2, bartokAccentFitScore(ctx.beatIndexInBar, "symmetric") / 1.2);
+  const climax = climaxDimensionMultipliers({
+    role,
+    midi,
+    prev,
+    tuple,
+    slotInPhrase: ctx.slotInPhrase,
+    phrase: ctx.phrase,
+    globalSlotIndex: ctx.globalSlotIndex,
+    sopranoHistory: ctx.sopranoHistory,
+    bassHistory: ctx.bassHistory,
+  });
+  const contourBase = prev == null ? 0.8 : Math.max(0.45, 1 - Math.abs(midi - prev) * 0.06);
+  const registerBase = (() => {
+    const { min, max } = BARTOK_PITCH_VOICE_MIDI_RANGE[role];
+    const d = Math.abs(midi - (min + max) / 2) / ((max - min) / 2);
+    return Math.max(0.4, 1 - d * 0.35);
+  })();
   return {
     axis: axisFit(midi, ctx.tonicPc, ctx.phrase.activeFunction),
     collection: collectionFit(midi, ctx.tonicPc, role, ctx.phrase.collectionId, ctx.developmental) / 1.4,
-    cell: cellFit(prev, midi, ctx.phrase.cell, ctx.slotInPhrase),
-    imitation: imitationFit(role, midi, ctx.leadMidi),
+    cell: cellFit(prev, midi, ctx.phrase.cell, ctx.slotInPhrase) * climax.cellMul,
+    imitation: imitationFit(role, midi, prev, ctx.leadMidi, bassAltoCtx),
     accent,
     vertical: verticalFit(role, midi, tuple),
-    contour: prev == null ? 0.8 : Math.max(0.45, 1 - Math.abs(midi - prev) * 0.06),
-    register: (() => {
-      const { min, max } = BARTOK_PITCH_VOICE_MIDI_RANGE[role];
-      const d = Math.abs(midi - (min + max) / 2) / ((max - min) / 2);
-      return Math.max(0.4, 1 - d * 0.35);
-    })(),
+    contour: contourBase * climax.contourMul,
+    register: registerBase * climax.registerMul,
   };
 }
 
@@ -225,6 +634,12 @@ function ensembleScore(
   prevTuple: Record<LineRole, number> | null,
   phrase: PhraseState,
   tonicPc: number,
+  prevVoice: VoiceMidiState,
+  sopranoHistory: readonly number[],
+  altoHistory: readonly number[],
+  bassHistory: readonly number[],
+  globalSlotIndex: number,
+  slotInPhrase: number,
 ): { score: number; factors: Record<string, number> } {
   const mids = VOICE_ORDER.map((r) => tuple[r]);
   const spacingBalance = VOICE_ORDER.every((r, i) => i === 0 || mids[i - 1]! - mids[i]! >= BARTOK_PITCH_MIN_VERTICAL_GAP) ? 1 : 0.2;
@@ -233,8 +648,23 @@ function ensembleScore(
   const verticalIntervalProfile = Math.min(1, icSet.size / 5);
   const axisHits = mids.filter((m) => AXIS_PCS[phrase.activeFunction].includes(pcRelativeToTonic(m, tonicPc))).length;
   const axisCoverage = axisHits / 4;
+  const sopranoPrev = globalSlotIndex > 0 ? sopranoHistory[globalSlotIndex - 1] ?? null : null;
+  const bassAltoCtx: BassAltoImitationCtx = {
+    phrase,
+    slotInPhrase,
+    tonicPc,
+    sopranoMidi: tuple.soprano,
+    sopranoPrev,
+    globalSlotIndex,
+    sopranoHistory,
+    altoHistory,
+    bassHistory,
+  };
   const tenorTarget = tuple.soprano + BARTOK_PITCH_IMITATION_INTERVAL;
-  const imitationConsistency = Math.max(0.3, 1 - Math.abs(tuple.tenor - tenorTarget) * 0.06);
+  const tenorConsistency = Math.max(0.3, 1 - Math.abs(tuple.tenor - tenorTarget) * 0.06);
+  const altoConsistency = bassAltoImitationConsistency('alto', tuple, prevVoice.alto, bassAltoCtx);
+  const bassConsistency = bassAltoImitationConsistency('bass', tuple, prevVoice.bass, bassAltoCtx);
+  const imitationConsistency = (tenorConsistency + altoConsistency + bassConsistency) / 3;
   let antiParallelPenalty = 1;
   if (prevTuple) {
     for (const role of VOICE_ORDER) {
@@ -254,6 +684,25 @@ function ensembleScore(
   const isTriad = pcs.size === 3 && pcs.has(0) && pcs.has(4) && pcs.has(7);
   if (pcs.size >= 4 && !isTriad) mult *= BARTOK_PITCH_ENSEMBLE_MULTIPLIERS.collectionCompletionNonTriad;
   if (Math.abs(tuple.tenor - tenorTarget) <= 1) mult *= BARTOK_PITCH_ENSEMBLE_MULTIPLIERS.successfulInversionalAnswer;
+  const source = sourceMotifInterval(bassAltoCtx);
+  const expected = expectedResponseInterval(phrase.imitationMode, source, phrase, slotInPhrase);
+  for (const role of ['alto', 'bass'] as const) {
+    const prev = prevVoice[role];
+    if (prev == null) continue;
+    const window = computeInversionWindowScore(role, tuple[role], bassAltoCtx);
+    if (
+      !window ||
+      window.intervalCount < BARTOK_PITCH_INVERSION_WINDOW_MIN_NOTES - 1 ||
+      window.fraction < BARTOK_PITCH_INVERSION_ENSEMBLE_SUSTAIN_MIN
+    ) {
+      continue;
+    }
+    const actual = tuple[role] - prev;
+    const kind = classifyTransformation(phrase.imitationMode, actual, expected, source);
+    if (kind === 'inversional' || kind === 'contrary_axis') {
+      mult *= BARTOK_PITCH_ENSEMBLE_MULTIPLIERS.successfulInversionalAnswer;
+    }
+  }
   const w = BARTOK_PITCH_ENSEMBLE_WEIGHTS;
   const base =
     verticalIntervalProfile * w.verticalIntervalProfile +
@@ -274,6 +723,94 @@ function enumerateRaw(role: LineRole, prev: number | null, fixed: boolean, fixed
   const out: number[] = [];
   for (let m = lo; m <= hi; m++) out.push(m);
   return out;
+}
+
+function transformationTargetMidis(
+  role: LineRole,
+  prev: number | null,
+  scorerCtx: Parameters<typeof voiceDimensions>[4],
+  sopranoProxy: number,
+): number[] {
+  if (role !== 'alto' && role !== 'bass') return [];
+  const sopranoPrev =
+    scorerCtx.globalSlotIndex > 0 ? scorerCtx.sopranoHistory[scorerCtx.globalSlotIndex - 1] ?? null : null;
+  const bassAltoCtx: BassAltoImitationCtx = {
+    phrase: scorerCtx.phrase,
+    slotInPhrase: scorerCtx.slotInPhrase,
+    tonicPc: scorerCtx.tonicPc,
+    sopranoMidi: sopranoProxy,
+    sopranoPrev,
+    globalSlotIndex: scorerCtx.globalSlotIndex,
+    sopranoHistory: scorerCtx.sopranoHistory,
+    altoHistory: scorerCtx.altoHistory,
+    bassHistory: scorerCtx.bassHistory,
+  };
+  const source = sourceMotifInterval(bassAltoCtx);
+  const expected = expectedResponseInterval(
+    scorerCtx.phrase.imitationMode,
+    source,
+    scorerCtx.phrase,
+    scorerCtx.slotInPhrase,
+  );
+  const target = expectedResponseMidi(prev, expected, role);
+  return target == null ? [] : [target];
+}
+
+function enumerateWithTransformationTargets(
+  role: LineRole,
+  prev: number | null,
+  scorerCtx: Parameters<typeof voiceDimensions>[4],
+  sopranoProxy: number,
+): number[] {
+  const raw = enumerateRaw(role, prev, false, undefined);
+  if (role !== 'alto' && role !== 'bass') return raw;
+  const targets = transformationTargetMidis(role, prev, scorerCtx, sopranoProxy);
+  if (targets.length === 0) return raw;
+  const merged = new Set(raw);
+  for (const t of targets) merged.add(t);
+  return [...merged].sort((a, b) => a - b);
+}
+
+function ensureTransformationTargetsInShortlist(
+  role: LineRole,
+  list: ShortlistEntry[],
+  prev: number | null,
+  seed: number,
+  slotIndex: number,
+  scorerCtx: Parameters<typeof voiceDimensions>[4],
+  tupleSeed: Record<LineRole, number>,
+): ShortlistEntry[] {
+  const targets = transformationTargetMidis(role, prev, scorerCtx, tupleSeed.soprano);
+  if (targets.length === 0) return list;
+  let out = [...list];
+  for (const target of targets) {
+    if (out.some((e) => e.midi === target)) continue;
+    const dims = voiceDimensions(role, target, prev, tupleSeed, scorerCtx);
+    const voiceScore = combineVoiceScore(role, dims);
+    const tieBreakKey = Math.floor(
+      rng01(seed, BARTOK_PITCH_SUBSTREAM_SALTS.shortlist + slotIndex * 17 + target) * 1_000_000,
+    );
+    const entry: ShortlistEntry = { midi: target, voiceScore, dims, tieBreakKey };
+    out.push(entry);
+    out.sort((a, b) => {
+      if (b.voiceScore !== a.voiceScore) return b.voiceScore - a.voiceScore;
+      if (a.midi !== b.midi) return a.midi - b.midi;
+      return a.tieBreakKey - b.tieBreakKey;
+    });
+    if (out.length > BARTOK_PITCH_SHORTLIST_SIZE) {
+      out = out.slice(0, BARTOK_PITCH_SHORTLIST_SIZE);
+    }
+    if (!out.some((e) => e.midi === target)) {
+      out = out.slice(0, BARTOK_PITCH_SHORTLIST_SIZE - 1);
+      out.push(entry);
+      out.sort((a, b) => {
+        if (b.voiceScore !== a.voiceScore) return b.voiceScore - a.voiceScore;
+        if (a.midi !== b.midi) return a.midi - b.midi;
+        return a.tieBreakKey - b.tieBreakKey;
+      });
+    }
+  }
+  return out.slice(0, BARTOK_PITCH_SHORTLIST_SIZE);
 }
 
 type ShortlistEntry = { midi: number; voiceScore: number; dims: Record<BartokScorerExponentDim, number>; tieBreakKey: number };
@@ -299,6 +836,48 @@ function buildShortlist(
     return a.tieBreakKey - b.tieBreakKey;
   });
   return scored.slice(0, BARTOK_PITCH_SHORTLIST_SIZE);
+}
+
+function isTransformationalTuplePick(
+  pick: { mids: Record<LineRole, number> },
+  phrase: PhraseState,
+  slotInPhrase: number,
+  prevVoice: VoiceMidiState,
+  sopranoHistory: readonly number[],
+  altoHistory: readonly number[],
+  bassHistory: readonly number[],
+  globalSlotIndex: number,
+  tonicPc: number,
+): boolean {
+  const sopranoPrev = globalSlotIndex > 0 ? sopranoHistory[globalSlotIndex - 1] ?? null : null;
+  const ctx: BassAltoImitationCtx = {
+    phrase,
+    slotInPhrase,
+    tonicPc,
+    sopranoMidi: pick.mids.soprano,
+    sopranoPrev,
+    globalSlotIndex,
+    sopranoHistory,
+    altoHistory,
+    bassHistory,
+  };
+  const source = sourceMotifInterval(ctx);
+  const expected = expectedResponseInterval(phrase.imitationMode, source, phrase, slotInPhrase);
+  for (const role of ['alto', 'bass'] as const) {
+    const prev = prevVoice[role];
+    if (prev == null) continue;
+    const actual = pick.mids[role] - prev;
+    const kind = classifyTransformation(phrase.imitationMode, actual, expected, source);
+    if (
+      kind === 'inversional' ||
+      kind === 'contrary_axis' ||
+      kind === 'interval_cycle' ||
+      kind === 'transposition'
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function compareTuple(a: { finalScore: number; tieMidi: number; tieBreakKey: number }, b: { finalScore: number; tieMidi: number; tieBreakKey: number }): number {
@@ -336,7 +915,7 @@ export function buildBartokScoredLineSet(
   const normalizedSeed = Math.abs(seed) | 0;
   const totalSlots = lengthBars * 4;
   const developmentalPhraseStart = Math.floor(totalSlots / 4 / 2);
-  const imitationMode = pickImitationMode(normalizedSeed);
+  const phraseImitationModes: BartokImitationMode[] = [];
 
   const voices: AbstractLineSet["voices"] = (VOICE_ORDER as LineRole[]).map((role) => ({
     role,
@@ -359,11 +938,14 @@ export function buildBartokScoredLineSet(
     cell: pickCell(normalizedSeed, 0),
     activeFunction: "tonic_axis",
     collectionId: pickCollection(normalizedSeed, 0, false),
-    imitationMode,
+    imitationMode: pickImitationMode(normalizedSeed, 0),
   };
+  phraseImitationModes.push(phrase.imitationMode);
 
   const traceSlots: BartokPitchTupleTrace[] = [];
   const sopranoHistory: number[] = [];
+  const altoHistory: number[] = [];
+  const bassHistory: number[] = [];
   let prevTuple: Record<LineRole, number> | null = null;
 
   for (let g = 0; g < totalSlots; g++) {
@@ -382,12 +964,18 @@ export function buildBartokScoredLineSet(
     if (slot.slotInPhrase === 0) {
       const phraseIndex = slot.phraseIndex;
       const developmental = phraseIndex >= developmentalPhraseStart;
+      const phraseMode = pickImitationMode(normalizedSeed, phraseIndex);
       phrase = {
         cell: pickCell(normalizedSeed, phraseIndex),
         activeFunction: pickNextAxis(normalizedSeed, phraseIndex, prevAxis, axisStreak),
         collectionId: pickCollection(normalizedSeed, phraseIndex, developmental),
-        imitationMode,
+        imitationMode: phraseMode,
       };
+      if (phraseIndex >= phraseImitationModes.length) {
+        phraseImitationModes.push(phraseMode);
+      } else {
+        phraseImitationModes[phraseIndex] = phraseMode;
+      }
       if (phrase.activeFunction === prevAxis) axisStreak++;
       else axisStreak = 1;
       prevAxis = phrase.activeFunction;
@@ -396,7 +984,18 @@ export function buildBartokScoredLineSet(
     const developmental = slot.phraseIndex >= developmentalPhraseStart;
     const leadMidi = g >= 4 ? sopranoHistory[g - 4] ?? null : null;
 
-    const scorerCtx = { tonicPc, phrase, slotInPhrase: slot.slotInPhrase, beatIndexInBar, developmental, leadMidi };
+    const scorerCtx = {
+      tonicPc,
+      phrase,
+      slotInPhrase: slot.slotInPhrase,
+      beatIndexInBar,
+      developmental,
+      leadMidi,
+      globalSlotIndex: g,
+      sopranoHistory,
+      altoHistory,
+      bassHistory,
+    };
     const tupleSeed: Record<LineRole, number> = {
       soprano: state.soprano ?? 60 + (normalizedSeed % 12),
       alto: state.alto ?? state.soprano ?? 55,
@@ -406,7 +1005,14 @@ export function buildBartokScoredLineSet(
 
     const shortlists = VOICE_ORDER.map((role) => {
       const prev = state[role];
-      return buildShortlist(role, enumerateRaw(role, prev, false, undefined), prev, normalizedSeed, g, scorerCtx, tupleSeed);
+      const raw =
+        role === 'alto' || role === 'bass'
+          ? enumerateWithTransformationTargets(role, prev, scorerCtx, tupleSeed.soprano)
+          : enumerateRaw(role, prev, false, undefined);
+      const base = buildShortlist(role, raw, prev, normalizedSeed, g, scorerCtx, tupleSeed);
+      return role === 'alto' || role === 'bass'
+        ? ensureTransformationTargetsInShortlist(role, base, prev, normalizedSeed, g, scorerCtx, tupleSeed)
+        : base;
     });
 
     type TuplePick = {
@@ -438,7 +1044,18 @@ export function buildBartokScoredLineSet(
           tieBreakKey: sl.tieBreakKey,
         });
       }
-      const ens = ensembleScore(mids, prevTuple, phrase, tonicPc);
+      const ens = ensembleScore(
+        mids,
+        prevTuple,
+        phrase,
+        tonicPc,
+        state,
+        sopranoHistory,
+        altoHistory,
+        bassHistory,
+        g,
+        slot.slotInPhrase,
+      );
       tuples.push({
         mids,
         finalScore: voiceSum + ens.score,
@@ -457,9 +1074,62 @@ export function buildBartokScoredLineSet(
     const chosen = tied[0] ?? beam[0];
     if (!chosen) continue;
 
+    const prevVoiceForTrace: VoiceMidiState = { ...state };
+
+    let bestNonTransformational = -Infinity;
+    for (const t of tuples) {
+      if (
+        isTransformationalTuplePick(
+          t,
+          phrase,
+          slot.slotInPhrase,
+          prevVoiceForTrace,
+          sopranoHistory,
+          altoHistory,
+          bassHistory,
+          g,
+          tonicPc,
+        )
+      ) {
+        continue;
+      }
+      if (t.finalScore > bestNonTransformational) bestNonTransformational = t.finalScore;
+    }
+    const marginVsNonTransformational =
+      bestNonTransformational > -Infinity ? chosen.finalScore - bestNonTransformational : undefined;
+
     for (const role of VOICE_ORDER) state[role] = chosen.mids[role];
     sopranoHistory[g] = chosen.mids.soprano;
+    altoHistory[g] = chosen.mids.alto;
+    bassHistory[g] = chosen.mids.bass;
     prevTuple = { ...chosen.mids };
+
+    const sopranoPrev = g > 0 ? sopranoHistory[g - 1] ?? null : null;
+    const traceBassAltoCtx: BassAltoImitationCtx = {
+      phrase,
+      slotInPhrase: slot.slotInPhrase,
+      tonicPc,
+      sopranoMidi: chosen.mids.soprano,
+      sopranoPrev,
+      globalSlotIndex: g,
+      sopranoHistory,
+      altoHistory,
+      bassHistory,
+    };
+    const sourceInterval = sourceMotifInterval(traceBassAltoCtx);
+    const expectedInterval = expectedResponseInterval(phrase.imitationMode, sourceInterval, phrase, slot.slotInPhrase);
+    const transformationByRole: Partial<Record<'alto' | 'bass', BartokTransformationKind>> = {};
+    for (const role of ['alto', 'bass'] as const) {
+      const prevVoice = prevVoiceForTrace[role];
+      if (prevVoice == null) continue;
+      const actual = chosen.mids[role] - prevVoice;
+      transformationByRole[role] = classifyTransformation(
+        phrase.imitationMode,
+        actual,
+        expectedInterval,
+        sourceInterval,
+      );
+    }
 
     traceSlots.push({
       slot,
@@ -472,6 +1142,10 @@ export function buildBartokScoredLineSet(
       activeFunction: phrase.activeFunction,
       collectionId: phrase.collectionId,
       cellId: phrase.cell.cellId,
+      phraseImitationMode: phrase.imitationMode,
+      sourceMotifInterval: sourceInterval,
+      transformationByRole,
+      marginVsNonTransformational,
     });
 
     const off = barIndex + BARTOK_PITCH_ADDITIVE_OFFSET.soprano + beatIndexInBar * 0.25;
@@ -519,7 +1193,8 @@ export function buildBartokScoredLineSet(
     seed: normalizedSeed,
     lengthBars,
     styleSourceVrbId: "bartok",
-    imitationMode,
+    imitationMode: phraseImitationModes[0] ?? pickImitationMode(normalizedSeed, 0),
+    phraseImitationModes,
     slots: traceSlots,
     phraseAxisStreak: axisStreak,
   };
