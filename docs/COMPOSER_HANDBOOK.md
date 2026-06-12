@@ -361,6 +361,17 @@ Canonical Song Mode / Big Band composers in **`engines/composer-os-v2`**. **Slic
 
 **V88.2 open follow-ups (refinement, not structural):** more folk-derived cells in the cell library; sharper registral shocks / voice crossings at section peaks; distinctive closing cadence gesture — quality polish above the **8.0** freeze bar, not reopening beam or export architecture.
 
+**V89 V0 locked-soprano proof (checkpoint — not freeze, not production):** Standalone script **`bartokCleV0LockedSopranoProof.ts`** proves the **cantus-firmus** path on **Violin I**: a fixed imported melody is locked as **soprano** via **`cantusFirmusMidiBySlot`** (one MIDI per slot, **32** slots = **8** bars × **4**); **alto / tenor / bass** are generated around it by the same **V88** scorer (**`buildBartokScoredLineSet`** + beam search). Harmony is **hand-supplied** (**`Cmaj7` · `Am7` · `Dm7` · `G7` ×2**) — not extracted from import yet. QA export: **`qa-output/bartok/bartok_cle_v0_locked_soprano_seed61234.musicxml`**. Music eval **6.3/10** — concept validated (locked soprano + lower-voice Bartók response + determinism); quality bar below V88 **8.0** freeze. **V88 golden master byte-identical** after this work (fixtures sha256 **`a1c94bc9bf09…`** / **`496cf6c415c6…`**); duo golden path untouched.
+
+**Cantus-only feasibility augmentation:** When a locked soprano MIDI sits above the lower-voice enumeration floor, raw shortlist pools can miss spacing-feasible midis → empty beam tuples. **`augmentRawForCantusFeasibility`** in **`bartokPitchScorer.ts`** (slot-0 shortlist only, lower voices) extends each role’s raw pool downward within register bounds so beam search can still find valid **ATB** tuples — golden-path scoring unchanged when **`cantusFirmusMidiBySlot`** is absent.
+
+**Bartók CLE locked-melody open follow-ups (not V0 code):**
+
+| Track | Scope |
+|-------|--------|
+| **V1** | Real harmony extraction from imported MusicXML / MIDI (replaces hand-supplied chart on **`bartokCleV0LockedSopranoProof.ts`**) |
+| **V2** | Per-phrase **concentrated response** — ChatGPT top fix: pick **one** distinctive melodic window from Violin I per phrase and answer with an unmistakable inversion / contrary-motion gesture, instead of weak continuous response across all slots. Depends on **V2 phrase-grid generalization** (~**15+** hardcoded **4-slot** sites) — lands in **V2**, not earlier |
+
 **Gates:** smoke **`bartokCleGoldenMaster`** (seed **61234**); BH **`bhGoldenMaster`** + **`runV81AutoValidation.ts`** (**8**/8) must stay byte-identical when touching this path.
 
 ---
