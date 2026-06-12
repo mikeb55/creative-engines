@@ -771,6 +771,22 @@ function enumerateWithTransformationTargets(
   return [...merged].sort((a, b) => a - b);
 }
 
+/** When cantus locks soprano, ensure lower-voice raw pools include spacing-feasible midis (slot-0 only). */
+function augmentRawForCantusFeasibility(
+  role: LineRole,
+  raw: readonly number[],
+  cantusMidi: number,
+): number[] {
+  if (role === 'soprano') return [...raw];
+  const roleIdx = VOICE_ORDER.indexOf(role);
+  const upperBound = cantusMidi - roleIdx * BARTOK_PITCH_MIN_VERTICAL_GAP;
+  const { min, max } = BARTOK_PITCH_VOICE_MIDI_RANGE[role];
+  const merged = new Set(raw);
+  const hi = Math.min(max, upperBound);
+  for (let m = hi; m >= Math.max(min, hi - 8); m--) merged.add(m);
+  return [...merged].sort((a, b) => a - b);
+}
+
 function ensureTransformationTargetsInShortlist(
   role: LineRole,
   list: ShortlistEntry[],
@@ -909,6 +925,7 @@ export function buildBartokScoredLineSet(
   context: CompositionContext,
   lengthBars: number,
   seed: number,
+  cantusFirmusMidiBySlot?: readonly number[],
 ): { lineSet: AbstractLineSet; trace: BartokPitchScoringTrace } {
   const policy = getVoiceRuleBundle("bartok").contrapuntalLinePolicy!;
   const dissonanceProfile = policy.dissonanceProfile;
@@ -1006,10 +1023,16 @@ export function buildBartokScoredLineSet(
     const shortlists = VOICE_ORDER.map((role) => {
       const prev = state[role];
       const raw =
-        role === 'alto' || role === 'bass'
-          ? enumerateWithTransformationTargets(role, prev, scorerCtx, tupleSeed.soprano)
-          : enumerateRaw(role, prev, false, undefined);
-      const base = buildShortlist(role, raw, prev, normalizedSeed, g, scorerCtx, tupleSeed);
+        role === 'soprano' && cantusFirmusMidiBySlot != null
+          ? enumerateRaw('soprano', prev, true, cantusFirmusMidiBySlot[g])
+          : role === 'alto' || role === 'bass'
+            ? enumerateWithTransformationTargets(role, prev, scorerCtx, tupleSeed.soprano)
+            : enumerateRaw(role, prev, false, undefined);
+      const rawForShortlist =
+        cantusFirmusMidiBySlot != null && role !== 'soprano'
+          ? augmentRawForCantusFeasibility(role, raw, cantusFirmusMidiBySlot[g]!)
+          : raw;
+      const base = buildShortlist(role, rawForShortlist, prev, normalizedSeed, g, scorerCtx, tupleSeed);
       return role === 'alto' || role === 'bass'
         ? ensureTransformationTargetsInShortlist(role, base, prev, normalizedSeed, g, scorerCtx, tupleSeed)
         : base;
