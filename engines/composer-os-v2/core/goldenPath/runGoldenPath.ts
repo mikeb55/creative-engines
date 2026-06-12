@@ -2835,6 +2835,16 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
         );
         score = styleTransferResult.scoreFragment;
         appliedContext.lockedHarmonyBarsRaw = [...styleTransferResult.appliedHarmonyBars];
+        if (targetComposer === 'bill_evans') {
+          const guitarPart = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+          if (guitarPart) {
+            const scoreHarmonyBars = [...guitarPart.measures]
+              .sort((a, b) => a.index - b.index)
+              .map((m) => m.chord ?? styleTransferResult.appliedHarmonyBars[m.index - 1] ?? '');
+            styleTransferResult.appliedHarmonyBars = scoreHarmonyBars;
+            appliedContext.lockedHarmonyBarsRaw = [...scoreHarmonyBars];
+          }
+        }
         appliedContext.generationMetadata = {
           ...appliedContext.generationMetadata,
           styleTransferResult,
@@ -2845,6 +2855,11 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
             ? {
                 styleTransferWayneHarmonyAuthoritative: true,
                 wayneShorterEffectiveHarmonyBars: [...styleTransferResult.appliedHarmonyBars],
+              }
+            : {}),
+          ...(targetComposer === 'bill_evans' && options.preserveMelody !== false
+            ? {
+                billEvansEffectiveHarmonyBars: [...styleTransferResult.appliedHarmonyBars],
               }
             : {}),
         };
@@ -3266,8 +3281,15 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   ) {
     const beProfile = buildBillEvansIsolationProvisionalProfile();
     const melodyLine = options.importTimeline.melodyLine;
-    const bePinResult = applyPremiumMelodyPinExport(score, melodyLine, beProfile, seed);
+    const beHarmonyByBar: Record<number, string> = {};
+    for (const h of options.importTimeline.harmonyByBar) {
+      beHarmonyByBar[h.bar] = h.chordSymbol;
+    }
+    const bePinResult = applyPremiumMelodyPinExport(score, melodyLine, beProfile, seed, undefined, {
+      harmonyByBar: beHarmonyByBar,
+    });
     score = bePinResult.score;
+    score = fillSparseVoiceRestGaps(score, 'clean_electric_guitar', 1);
     appliedContext.generationMetadata = {
       ...appliedContext.generationMetadata,
       bePremiumMelodyProfile: beProfile.id,

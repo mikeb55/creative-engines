@@ -1,6 +1,6 @@
 /**
- * V87 Commit 2b - Bill Evans premium-melody auto-validation.
- * Runs golden path seed 90301 on BH isolation benchmark (pitch layer active).
+ * V87 Commit 2c — Bill Evans premium-melody auto-validation (FROZEN thresholds).
+ * Runs golden path seed 90301 on native lyrical benchmark BE_Benchmark_LyricalBallad.musicxml.
  * Run: npx tsx --tsconfig tsconfig.json engines/composer-os-v2/scripts/runBePremiumMelodyAutoValidation.ts
  */
 
@@ -9,7 +9,13 @@ import * as path from 'path';
 import { runBeGoldenPath } from '../tests/beGoldenMaster.test';
 import { runPremiumMelodyHarmonyRhythmExpressionPipeline } from '../core/premium-melody/premiumMelodyRouting';
 import { buildBillEvansIsolationProvisionalProfile } from '../core/bill-evans/bePremiumMelodyProfile';
-import { validateBePremiumMelodyConformance } from '../core/bill-evans/bePremiumMelodyValidation';
+import {
+  BE_GUIDE_TONE_PROXIMITY_MAX,
+  BE_GUIDE_TONE_PROXIMITY_MIN,
+  BE_GUIDE_TONE_EXACT_HIT_RATE_MAX,
+  BE_GUIDE_TONE_EXACT_HIT_RATE_MIN,
+  validateBePremiumMelodyConformance,
+} from '../core/bill-evans/bePremiumMelodyValidation';
 import { musicXmlToImportTimeline } from '../core/import/musicXmlToImportTimeline';
 import { melodyOffbeatRatio } from '../core/premium-melody/premiumMelodyMetrics';
 import { runPremiumMelodyPitchPipeline } from '../core/premium-melody/premiumMelodyPitchPipeline';
@@ -21,22 +27,22 @@ const BE_QA_PATH = path.join(
   'Documents',
   'Mike Composer Files',
   'Song Mode',
-  'be-v86-2b-check.musicxml'
+  'be-v86-2c-check.musicxml'
 );
 
 const BENCHMARK_FIXTURE = path.join(
   __dirname,
   '..',
   'core',
-  'barry-harris',
+  'bill-evans',
   'test-fixtures',
-  'BH_Benchmark_JazzMelody.musicxml'
+  'BE_Benchmark_LyricalBallad.musicxml'
 );
 
 const BE_GOLDEN_SEED = 90301;
 
 function main(): void {
-  console.log('=== Bill Evans V87 Commit 2b Auto-Validation ===');
+  console.log('=== Bill Evans V87 Commit 2c Auto-Validation ===');
   console.log('Seed: ' + BE_GOLDEN_SEED);
 
   if (!fs.existsSync(BENCHMARK_FIXTURE)) {
@@ -58,18 +64,26 @@ function main(): void {
   console.log('Raw melody notes from fixture: ' + rawMelodyLine.length);
 
   const profile = buildBillEvansIsolationProvisionalProfile();
-  const { rhythmMelody, exportMelody, rhythmMeta } =
-    runPremiumMelodyHarmonyRhythmExpressionPipeline(rawMelodyLine, profile, BE_GOLDEN_SEED);
+  const harmonyByBar: Record<number, string> = {};
+  for (const h of ir.harmonyByBar) {
+    harmonyByBar[h.bar] = h.chordSymbol;
+  }
+  const pipelineOpts = { harmonyByBar };
 
-  const pitchMelody =
+  const { rhythmMelody, exportMelody, rhythmMeta } =
+    runPremiumMelodyHarmonyRhythmExpressionPipeline(rawMelodyLine, profile, BE_GOLDEN_SEED, pipelineOpts);
+
+  const pitchResult =
     profile.pitchProfile != null
       ? runPremiumMelodyPitchPipeline(
           rhythmMelody,
           profile,
           profile.pitchProfile,
-          BE_GOLDEN_SEED
-        ).pitchMelody
-      : rhythmMelody;
+          BE_GOLDEN_SEED,
+          pipelineOpts
+        )
+      : null;
+  const pitchMelody = pitchResult?.pitchMelody ?? rhythmMelody;
 
   const postTrimOffbeatRatio = melodyOffbeatRatio(rhythmMelody);
   const rhythmMetaForValidation = { ...rhythmMeta, offbeatRatio: postTrimOffbeatRatio };
@@ -83,9 +97,11 @@ function main(): void {
   const validation = validateBePremiumMelodyConformance(rhythmMelody, exportMelody, rhythmMetaForValidation, {
     importMelody: rawMelodyLine,
     pitchMelody,
+    slotList: pitchResult?.slotList,
+    pitchTrace: pitchResult?.pitchTrace,
   });
 
-  console.log('\n--- Validation Results (2b-provisional) ---');
+  console.log('\n--- Validation Results (2c FROZEN) ---');
   console.log(
     'offbeatRatio: ' +
       validation.offbeatRatio.toFixed(3) +
@@ -120,6 +136,39 @@ function main(): void {
       '] -> ' +
       (validation.velocitySpreadPass ? 'PASS' : 'FAIL')
   );
+
+  if (validation.pitchV2) {
+    const v2 = validation.pitchV2;
+    console.log('climaxArc:      ' + (v2.climaxPass ? 'PASS' : 'FAIL'));
+    console.log(
+      'guideToneProx:  ' +
+        v2.guideToneProximityAvg.toFixed(3) +
+        ' [' +
+        BE_GUIDE_TONE_PROXIMITY_MIN +
+        ', ' +
+        BE_GUIDE_TONE_PROXIMITY_MAX +
+        '] -> ' +
+        (v2.guideToneProximityPass ? 'PASS' : 'FAIL')
+    );
+    console.log(
+      'guideToneHit:   ' +
+        v2.guideToneExactHitRateAvg.toFixed(3) +
+        ' [' +
+        BE_GUIDE_TONE_EXACT_HIT_RATE_MIN +
+        ', ' +
+        BE_GUIDE_TONE_EXACT_HIT_RATE_MAX +
+        '] -> ' +
+        (v2.guideToneExactHitRatePass ? 'PASS' : 'FAIL')
+    );
+    console.log(
+      'approachRate:   ' +
+        v2.approachBoundaryRate.toFixed(3) +
+        ' (' +
+        v2.chordBoundaryCount +
+        ' boundaries) >= 0.50 -> ' +
+        (v2.approachBoundaryPass ? 'PASS' : 'FAIL')
+    );
+  }
 
   if (validation.pitchTrace) {
     const pt = validation.pitchTrace;

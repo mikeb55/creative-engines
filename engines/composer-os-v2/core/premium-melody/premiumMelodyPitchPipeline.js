@@ -16,6 +16,8 @@ var __copyProps = (to, from, except, desc) => {
   return to;
 };
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// engines/composer-os-v2/core/premium-melody/premiumMelodyPitchPipeline.ts
 var premiumMelodyPitchPipeline_exports = {};
 __export(premiumMelodyPitchPipeline_exports, {
   applyPremiumMelodySurfaceOrnaments: () => applyPremiumMelodySurfaceOrnaments,
@@ -26,11 +28,306 @@ __export(premiumMelodyPitchPipeline_exports, {
   runPremiumMelodyPitchPipeline: () => runPremiumMelodyPitchPipeline
 });
 module.exports = __toCommonJS(premiumMelodyPitchPipeline_exports);
-var import_chordSymbolAnalysis = require("../harmony/chordSymbolAnalysis");
-var import_premiumMelodyPrng = require("./premiumMelodyPrng");
-var import_premiumMelodyCellLibrary = require("./premiumMelodyCellLibrary");
-var import_premiumMelodyPhrase = require("./premiumMelodyPhrase");
-var import_premiumMelodyPitchProfile = require("./premiumMelodyPitchProfile");
+
+// engines/composer-os-v2/core/goldenPath/guitarBassDuoHarmony.ts
+function chordTonesForGoldenChord(chord) {
+  switch (chord) {
+    case "Dmin9":
+      return { root: 38, third: 41, fifth: 45, seventh: 48 };
+    case "G13":
+      return { root: 43, third: 47, fifth: 50, seventh: 42 };
+    case "Cmaj9":
+      return { root: 36, third: 40, fifth: 43, seventh: 48 };
+    case "A7alt":
+      return { root: 45, third: 49, fifth: 52, seventh: 44 };
+    default:
+      return { root: 40, third: 44, fifth: 47, seventh: 46 };
+  }
+}
+
+// engines/core/leadSheetChordNormalize.ts
+var VALID_SLASH_BASS = /^[A-G][#b]?$/i;
+function normalizeHarmonySynonyms(harmony) {
+  let h = harmony;
+  h = h.replace(/\u0394/g, "maj").replace(/Δ/g, "maj");
+  h = h.replace(/^Maj\b/i, "maj");
+  h = h.replace(/\badd2\b/gi, "add9");
+  h = h.replace(/^[-–](?=\d)/, "m");
+  h = h.replace(/\bminor\b/gi, "m");
+  h = h.replace(/\bmin(?=\d)/gi, "m");
+  h = h.replace(/\bmin\b/gi, "m");
+  h = h.replace(/\bmi(?=\d)/gi, "m");
+  h = h.replace(
+    /^M(7|9|11|13|6|69)?(?=\b|(?=[#(])|$)/,
+    (_, n) => n ? `maj${n}` : "maj"
+  );
+  h = h.replace(/^M$/, "maj");
+  return h;
+}
+function normalizeLeadSheetChordSpelling(input) {
+  const s = input.trim();
+  if (!s) return s;
+  if (/^tonic_wash$/i.test(s)) return "tonic_wash";
+  const m = s.match(/^([A-G](?:#|b)?)(.*)$/i);
+  if (!m) return s;
+  const root = m[1];
+  let rest = m[2] ?? "";
+  let harmony = rest;
+  let bass = "";
+  const slashIdx = rest.lastIndexOf("/");
+  if (slashIdx >= 0) {
+    const possibleBass = rest.slice(slashIdx + 1).trim();
+    if (VALID_SLASH_BASS.test(possibleBass)) {
+      harmony = rest.slice(0, slashIdx);
+      bass = possibleBass;
+    }
+  }
+  harmony = normalizeHarmonySynonyms(harmony);
+  harmony = harmony.replace(/maj7\s*\/\s*9\b/gi, "maj9");
+  harmony = harmony.replace(/maj7\s*\/\s*13\b/gi, "maj13");
+  harmony = harmony.replace(/min7\s*\/\s*9\b/gi, "m9");
+  harmony = harmony.replace(/min7\s*\/\s*11\b/gi, "m11");
+  harmony = harmony.replace(/\bm7\s*\/\s*9\b/gi, "m9");
+  harmony = harmony.replace(/\bm7\s*\/\s*11\b/gi, "m11");
+  harmony = harmony.replace(/6\s*\/\s*9/g, "69");
+  return bass ? `${root}${harmony}/${bass}` : `${root}${harmony}`;
+}
+
+// engines/composer-os-v2/core/harmony/chordSymbolAnalysis.ts
+var ROOT_RE = /^([A-G](?:#|b)?)/i;
+function noteNameToPitchClass(name) {
+  const n = name.trim();
+  const table = {
+    C: 0,
+    "C#": 1,
+    Db: 1,
+    D: 2,
+    "D#": 3,
+    Eb: 3,
+    E: 4,
+    F: 5,
+    "F#": 6,
+    Gb: 6,
+    G: 7,
+    "G#": 8,
+    Ab: 8,
+    A: 9,
+    "A#": 10,
+    Bb: 10,
+    B: 11,
+    Cb: 11,
+    Bs: 1,
+    Ebb: 3,
+    Fb: 4
+  };
+  const u = n.charAt(0).toUpperCase() + n.slice(1);
+  if (table[u] !== void 0) return table[u];
+  return void 0;
+}
+function parseChordSymbol(symbol) {
+  const rawTrim = symbol.trim();
+  if (/^tonic_wash$/i.test(rawTrim)) {
+    return { display: "tonic_wash", harmonyPart: "tonic_wash" };
+  }
+  const s = normalizeLeadSheetChordSpelling(rawTrim);
+  const slash = s.indexOf("/");
+  if (slash < 0) {
+    return { display: s, harmonyPart: s };
+  }
+  const harmonyPart = s.slice(0, slash).trim();
+  const bassPart = s.slice(slash + 1).trim();
+  const slashBassPc = noteNameToPitchClass(bassPart);
+  return { display: s, harmonyPart, slashBassPc };
+}
+function chordTonesForChordSymbol(fullChord, opts) {
+  const p = parseChordSymbol(fullChord);
+  return chordTonesFromSymbol(p.harmonyPart, opts);
+}
+function goldenCanonicalHarmony(h) {
+  const t = h.trim();
+  if (/^D(min9|m9|-9)$/i.test(t)) return "Dmin9";
+  if (/^G13$/i.test(t)) return "G13";
+  if (/^G7$/i.test(t)) return "G13";
+  if (/^C(maj9|maj7)$/i.test(t)) return "Cmaj9";
+  if (/^C$/i.test(t)) return "Cmaj9";
+  if (/^A7(alt)?$/i.test(t)) return "A7alt";
+  return null;
+}
+function chordTonesFromSymbol(harmonyPart, opts) {
+  const h = harmonyPart.trim();
+  if (!opts?.lockedHarmony) {
+    const canon = goldenCanonicalHarmony(h);
+    if (canon) {
+      return chordTonesForGoldenChord(canon);
+    }
+  }
+  const rm = h.match(ROOT_RE);
+  if (!rm) {
+    return { root: 40, third: 44, fifth: 47, seventh: 46 };
+  }
+  const rootPc = noteNameToPitchClass(rm[1]);
+  if (rootPc === void 0) {
+    return { root: 40, third: 44, fifth: 47, seventh: 46 };
+  }
+  const rest = h.slice(rm[1].length).toLowerCase();
+  const minorThird = /^(m|min|dim|ø|°)/.test(rest) || /m7|m9|m11|m13/.test(rest);
+  const maj7 = /maj|Δ|ma7|M7/.test(rest);
+  const dom = /^(7|9|11|13)/.test(rest) || /7alt|7#|7b|sus/.test(rest) || /13|11|9/.test(rest);
+  const halfDim = /ø|m7b5|half/.test(rest);
+  const thirdPc = (rootPc + (minorThird || halfDim ? 3 : 4)) % 12;
+  const fifthPc = (rootPc + (halfDim ? 6 : 7)) % 12;
+  let seventhPc;
+  if (maj7) seventhPc = (rootPc + 11) % 12;
+  else if (/6/.test(rest) && !dom) seventhPc = (rootPc + 9) % 12;
+  else seventhPc = (rootPc + 10) % 12;
+  const oct = (pc) => 36 + pc;
+  if (opts?.shorterMode) {
+    const ninthPc = (rootPc + (minorThird ? 2 : 2)) % 12;
+    const eleventhPc = (rootPc + (minorThird ? 5 : 5)) % 12;
+    const thirteenthPc = (rootPc + (minorThird ? 8 : 9)) % 12;
+    const chromApproachPc = (seventhPc + 1) % 12;
+    return {
+      root: oct(seventhPc),
+      third: oct(ninthPc),
+      fifth: oct(eleventhPc),
+      seventh: oct(thirteenthPc)
+    };
+  }
+  return {
+    root: oct(rootPc),
+    third: oct(thirdPc),
+    fifth: oct(fifthPc),
+    seventh: oct(seventhPc)
+  };
+}
+
+// engines/composer-os-v2/core/premium-melody/premiumMelodyPrng.ts
+function mulberry32(seed) {
+  let s = seed >>> 0;
+  return () => {
+    s = s + 1831565813 >>> 0;
+    let z = s;
+    z = Math.imul(z ^ z >>> 15, z | 1);
+    z ^= z + Math.imul(z ^ z >>> 7, z | 61);
+    return ((z ^ z >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+// engines/composer-os-v2/core/premium-melody/premiumMelodyCellLibrary.ts
+var BEATS_PER_BAR = 4;
+var CELL_TEMPLATES = {
+  anticipate: [
+    { family: "anticipate", anchorOffset: -0.5 },
+    { family: "anticipate", anchorOffset: -0.25 }
+  ],
+  delayed: [
+    { family: "delayed", anchorOffset: 0.25 },
+    { family: "delayed", anchorOffset: 0.5 }
+  ],
+  triplet_pickup: [
+    { family: "triplet_pickup", anchorOffset: -(1 / 3) },
+    { family: "triplet_pickup", anchorOffset: 1 / 3 }
+  ],
+  and_of_2: [{ family: "and_of_2", anchorOffset: 0.5 }],
+  long_gap: [
+    { family: "long_gap", anchorOffset: 0 },
+    { family: "long_gap", anchorOffset: 0.75 }
+  ],
+  dotted: [
+    { family: "dotted", anchorOffset: 0.25 },
+    { family: "dotted", anchorOffset: -0.25 }
+  ]
+};
+
+// engines/composer-os-v2/core/premium-melody/premiumMelodyProfile.ts
+var PREMIUM_MELODY_DEFAULT_REST_PHRASE_BREAK_BEATS = 1.75;
+var PREMIUM_MELODY_DEFAULT_LONG_NOTE_PHRASE_BREAK_BEATS = 1.25;
+
+// engines/composer-os-v2/core/premium-melody/premiumMelodyPhrase.ts
+function absoluteOnsetBeats(note) {
+  return note.bar * BEATS_PER_BAR + note.onsetBeat;
+}
+function ioiBeats(prev, curr) {
+  return absoluteOnsetBeats(curr) - absoluteOnsetBeats(prev);
+}
+function silentGapBeats(prev, curr) {
+  const prevEnd = absoluteOnsetBeats(prev) + prev.durationBeats;
+  return absoluteOnsetBeats(curr) - prevEnd;
+}
+function isRestLikePhraseBreak(prev, curr, restPhraseBreakBeats, longNotePhraseBreakBeats) {
+  if (curr.bar > prev.bar + 1) return true;
+  const gap = ioiBeats(prev, curr);
+  const silence = silentGapBeats(prev, curr);
+  if (silence >= restPhraseBreakBeats) return true;
+  if (gap >= BEATS_PER_BAR + 0.5) return true;
+  if (prev.durationBeats >= longNotePhraseBreakBeats && silence >= 1) return true;
+  return false;
+}
+function detectPhraseRoles(melody, options) {
+  const restPhraseBreakBeats = options?.restPhraseBreakBeats ?? PREMIUM_MELODY_DEFAULT_REST_PHRASE_BREAK_BEATS;
+  const longNotePhraseBreakBeats = options?.longNotePhraseBreakBeats ?? PREMIUM_MELODY_DEFAULT_LONG_NOTE_PHRASE_BREAK_BEATS;
+  const phraseStarts = /* @__PURE__ */ new Set();
+  const phraseEnds = /* @__PURE__ */ new Set();
+  if (melody.length === 0) return { phraseStarts, phraseEnds };
+  phraseStarts.add(0);
+  phraseEnds.add(melody.length - 1);
+  for (let i = 1; i < melody.length; i++) {
+    const prev = melody[i - 1];
+    const curr = melody[i];
+    if (isRestLikePhraseBreak(prev, curr, restPhraseBreakBeats, longNotePhraseBreakBeats)) {
+      phraseStarts.add(i);
+      phraseEnds.add(i - 1);
+    }
+  }
+  return { phraseStarts, phraseEnds };
+}
+function isStructuralLandingIndex(index, roles) {
+  return roles.phraseStarts.has(index) || roles.phraseEnds.has(index);
+}
+function indexInPhrase(melody, index, roles) {
+  let start = 0;
+  for (const s of [...roles.phraseStarts].sort((a, b) => a - b)) {
+    if (s <= index) start = s;
+    else break;
+  }
+  return index - start;
+}
+function phraseLengthAt(index, roles, total) {
+  const starts = [...roles.phraseStarts].sort((a, b) => a - b);
+  for (let i = 0; i < starts.length; i++) {
+    const s = starts[i];
+    if (s > index) {
+      return s - (starts[i - 1] ?? 0);
+    }
+  }
+  const lastStart = starts[starts.length - 1] ?? 0;
+  return total - lastStart;
+}
+function isOffbeatOnset(onsetBeat) {
+  return Math.abs(onsetBeat - Math.round(onsetBeat)) > 0.11;
+}
+function isPremiumMelodyStrongBeat(onsetBeat) {
+  const beat = (onsetBeat % 4 + 4) % 4;
+  return Math.abs(beat) < 0.05 || Math.abs(beat - 2) < 0.05;
+}
+
+// engines/composer-os-v2/core/premium-melody/premiumMelodyPitchProfile.ts
+var PREMIUM_MELODY_SURFACE_ORNAMENT_ORDER = [
+  "approach",
+  "enclosure",
+  "blues",
+  "grace",
+  "bend"
+];
+function assertValidPremiumMelodyPitchProfile(pitchProfile) {
+  if (!Number.isFinite(pitchProfile.pitchSeedSalt) || pitchProfile.pitchSeedSalt < 1) {
+    throw new Error(
+      `PremiumMelodyPitchProfile.pitchSeedSalt must be >= 1 when pitch layer enabled (got ${pitchProfile.pitchSeedSalt})`
+    );
+  }
+}
+
+// engines/composer-os-v2/core/premium-melody/premiumMelodyPitchPipeline.ts
 function fnv1a32(input) {
   let h = 2166136261;
   for (let i = 0; i < input.length; i++) {
@@ -65,18 +362,18 @@ function durationBucket(durationBeats) {
   return "rest_gap";
 }
 function metricalStrength(onsetBeat) {
-  if ((0, import_premiumMelodyPhrase.isPremiumMelodyStrongBeat)(onsetBeat)) return "strong";
-  if ((0, import_premiumMelodyPhrase.isOffbeatOnset)(onsetBeat)) return "weak";
+  if (isPremiumMelodyStrongBeat(onsetBeat)) return "strong";
+  if (isOffbeatOnset(onsetBeat)) return "weak";
   return "medium";
 }
 function harmonyRootPc(chordSymbol) {
-  const parsed = (0, import_chordSymbolAnalysis.parseChordSymbol)(chordSymbol);
+  const parsed = parseChordSymbol(chordSymbol);
   const rm = parsed.harmonyPart.match(/^([A-G](?:#|b)?)/i);
   if (!rm) return 0;
-  return (0, import_chordSymbolAnalysis.noteNameToPitchClass)(rm[1]) ?? 0;
+  return noteNameToPitchClass(rm[1]) ?? 0;
 }
 function chordThirdPc(chordSymbol) {
-  const tones = (0, import_chordSymbolAnalysis.chordTonesForChordSymbol)(chordSymbol, { lockedHarmony: true });
+  const tones = chordTonesForChordSymbol(chordSymbol, { lockedHarmony: true });
   return (tones.third % 12 + 12) % 12;
 }
 function tonalCenterPcForMode(mode, chordSymbol, cadenceResolutionPc) {
@@ -98,20 +395,20 @@ function tonalCenterPcForMode(mode, chordSymbol, cadenceResolutionPc) {
 function phrasePositionKind(index, roles, ordered) {
   if (roles.phraseStarts.has(index)) return "phrase_start";
   if (roles.phraseEnds.has(index)) return "phrase_cadence";
-  const phraseIdx = (0, import_premiumMelodyPhrase.indexInPhrase)(ordered, index, roles);
-  const phraseLen = (0, import_premiumMelodyPhrase.phraseLengthAt)(index, roles, ordered.length);
+  const phraseIdx = indexInPhrase(ordered, index, roles);
+  const phraseLen = phraseLengthAt(index, roles, ordered.length);
   if (phraseLen > 2 && phraseIdx === Math.floor(phraseLen * 0.55)) return "phrase_peak";
   const prev = ordered[index - 1];
   const curr = ordered[index];
   if (prev && curr.bar > prev.bar + 1) return "phrase_rest";
-  const gap = curr.bar * import_premiumMelodyCellLibrary.BEATS_PER_BAR + curr.onsetBeat - (prev.bar * import_premiumMelodyCellLibrary.BEATS_PER_BAR + prev.onsetBeat + prev.durationBeats);
+  const gap = curr.bar * BEATS_PER_BAR + curr.onsetBeat - (prev.bar * BEATS_PER_BAR + prev.onsetBeat + prev.durationBeats);
   if (gap >= 1.75) return "phrase_rest";
   return "phrase_interior";
 }
 function slotAccent(index, roles, onsetBeat) {
-  if ((0, import_premiumMelodyPhrase.isStructuralLandingIndex)(index, roles)) return "structural";
+  if (isStructuralLandingIndex(index, roles)) return "structural";
   if (roles.phraseEnds.has(index)) return "cadential";
-  if ((0, import_premiumMelodyPhrase.isOffbeatOnset)(onsetBeat)) return "syncopated";
+  if (isOffbeatOnset(onsetBeat)) return "syncopated";
   return "none";
 }
 function tieState(index, ordered) {
@@ -119,10 +416,10 @@ function tieState(index, ordered) {
   const prev = ordered[index - 1];
   const next = ordered[index + 1];
   if (!prev || prev.midiPitch !== curr.midiPitch) return "none";
-  const prevEnd = prev.bar * import_premiumMelodyCellLibrary.BEATS_PER_BAR + prev.onsetBeat + prev.durationBeats;
-  const currStart = curr.bar * import_premiumMelodyCellLibrary.BEATS_PER_BAR + curr.onsetBeat;
+  const prevEnd = prev.bar * BEATS_PER_BAR + prev.onsetBeat + prev.durationBeats;
+  const currStart = curr.bar * BEATS_PER_BAR + curr.onsetBeat;
   if (currStart > prevEnd + 0.05) return "none";
-  const continues = next != null && next.midiPitch === curr.midiPitch && next.bar * import_premiumMelodyCellLibrary.BEATS_PER_BAR + next.onsetBeat <= currStart + curr.durationBeats + 0.05;
+  const continues = next != null && next.midiPitch === curr.midiPitch && next.bar * BEATS_PER_BAR + next.onsetBeat <= currStart + curr.durationBeats + 0.05;
   if (continues && index > 0 && ordered[index - 1].midiPitch === curr.midiPitch) {
     return "tie_continue";
   }
@@ -137,11 +434,11 @@ function noteRole(phrasePosition, bucket) {
   return "passing";
 }
 function chordSixthPc(chordSymbol) {
-  const tones = (0, import_chordSymbolAnalysis.chordTonesForChordSymbol)(chordSymbol, { lockedHarmony: true });
+  const tones = chordTonesForChordSymbol(chordSymbol, { lockedHarmony: true });
   return (tones.root + 9) % 12;
 }
 function chordFitRole(midi, chordSymbol) {
-  const tones = (0, import_chordSymbolAnalysis.chordTonesForChordSymbol)(chordSymbol, { lockedHarmony: true });
+  const tones = chordTonesForChordSymbol(chordSymbol, { lockedHarmony: true });
   const pc = (midi % 12 + 12) % 12;
   if (pc === tones.root % 12) return "root";
   if (pc === tones.third % 12) return "third";
@@ -253,11 +550,11 @@ function derivePitchV2PrePassSeed(normalizedSeed, pitchSeedSalt) {
 }
 function primaryGuideCandidates(chordSymbol) {
   const thirdPc = chordThirdPc(chordSymbol);
-  const seventhPc = ((0, import_chordSymbolAnalysis.chordTonesForChordSymbol)(chordSymbol, { lockedHarmony: true }).seventh % 12 + 12) % 12;
+  const seventhPc = (chordTonesForChordSymbol(chordSymbol, { lockedHarmony: true }).seventh % 12 + 12) % 12;
   return [thirdPc, seventhPc];
 }
 function secondaryGuidePc(chordSymbol, primaryPc) {
-  const tones = (0, import_chordSymbolAnalysis.chordTonesForChordSymbol)(chordSymbol, { lockedHarmony: true });
+  const tones = chordTonesForChordSymbol(chordSymbol, { lockedHarmony: true });
   const root = tones.root % 12;
   const candidates = [chordSixthPc(chordSymbol), (root + 2) % 12, (tones.fifth + 2) % 12];
   let best = candidates[0];
@@ -349,7 +646,7 @@ function pickApproachPattern(rand, length) {
 function runPitchV2PhrasePrePass(ordered, roles, slots, pitchProfile, normalizedSeed, options) {
   const overlays = ordered.map(() => ({}));
   if (!pitchV2AnyEnabled(pitchProfile)) return overlays;
-  const rand = (0, import_premiumMelodyPrng.mulberry32)(derivePitchV2PrePassSeed(normalizedSeed, pitchProfile.pitchSeedSalt));
+  const rand = mulberry32(derivePitchV2PrePassSeed(normalizedSeed, pitchProfile.pitchSeedSalt));
   const phraseStarts = [...roles.phraseStarts].sort((a, b) => a - b);
   for (let pi = 0; pi < phraseStarts.length; pi++) {
     const start = phraseStarts[pi];
@@ -486,13 +783,13 @@ function resolveHarmonySymbol(bar, harmonyByBar) {
   return harmonyByBar?.[bar] ?? harmonyByBar?.[bar - 1] ?? "Cmaj9";
 }
 function planPremiumMelodyPhraseTargets(ordered, roles, planner, normalizedSeed, pitchSeedSalt, options) {
-  const rand = (0, import_premiumMelodyPrng.mulberry32)(derivePremiumMelodyPhrasePlanSeed(normalizedSeed, pitchSeedSalt));
+  const rand = mulberry32(derivePremiumMelodyPhrasePlanSeed(normalizedSeed, pitchSeedSalt));
   const out = [];
   for (let index = 0; index < ordered.length; index++) {
     const note = ordered[index];
     const chordSymbol = resolveHarmonySymbol(note.bar, options?.harmonyByBar);
-    const phraseIdx = (0, import_premiumMelodyPhrase.indexInPhrase)(ordered, index, roles);
-    const phraseLen = (0, import_premiumMelodyPhrase.phraseLengthAt)(index, roles, ordered.length);
+    const phraseIdx = indexInPhrase(ordered, index, roles);
+    const phraseLen = phraseLengthAt(index, roles, ordered.length);
     const progress = phraseLen > 1 ? phraseIdx / (phraseLen - 1) : 0;
     const tonalCenterPc = tonalCenterPcForMode(
       planner.tonalCenterMode,
@@ -502,7 +799,7 @@ function planPremiumMelodyPhraseTargets(ordered, roles, planner, normalizedSeed,
     let cadenceTargetPc = null;
     if (roles.phraseEnds.has(index)) {
       const thirdPc = chordThirdPc(chordSymbol);
-      const seventhPc = ((0, import_chordSymbolAnalysis.chordTonesForChordSymbol)(chordSymbol, { lockedHarmony: true }).seventh % 12 + 12) % 12;
+      const seventhPc = (chordTonesForChordSymbol(chordSymbol, { lockedHarmony: true }).seventh % 12 + 12) % 12;
       const prevPitch = index > 0 ? ordered[index - 1].midiPitch : note.midiPitch;
       cadenceTargetPc = Math.abs(prevPitch % 12 - thirdPc) <= Math.abs(prevPitch % 12 - seventhPc) ? thirdPc : seventhPc;
     }
@@ -519,7 +816,7 @@ function planPremiumMelodyPhraseTargets(ordered, roles, planner, normalizedSeed,
 }
 function buildPremiumMelodyPitchSlotList(rhythmMelody, pitchProfile, profile, normalizedSeed, options) {
   const ordered = canonicalMelodySort(rhythmMelody);
-  const roles = (0, import_premiumMelodyPhrase.detectPhraseRoles)(ordered, {
+  const roles = detectPhraseRoles(ordered, {
     restPhraseBreakBeats: profile.restPhraseBreakBeats,
     longNotePhraseBreakBeats: profile.longNotePhraseBreakBeats
   });
@@ -633,7 +930,7 @@ function composerRuleMultiplier(midi, prevMidi, slot, signatureRules) {
   if (signatureRules.includes("be_voice_leading")) {
     if (interval === 5 || interval === 7) mult *= 0.2;
     const thirdPc = chordThirdPc(slot.harmonyChordSymbol);
-    const seventhPc = ((0, import_chordSymbolAnalysis.chordTonesForChordSymbol)(slot.harmonyChordSymbol, { lockedHarmony: true }).seventh % 12 + 12) % 12;
+    const seventhPc = (chordTonesForChordSymbol(slot.harmonyChordSymbol, { lockedHarmony: true }).seventh % 12 + 12) % 12;
     if (interval <= 2 && (currPc === thirdPc || currPc === seventhPc)) mult *= 1.35;
   }
   if (signatureRules.includes("ws_modal_pivot")) {
@@ -677,6 +974,10 @@ function scoreCandidate(midi, prevMidi, slot, scorer, signatureRules, leapRecove
   }
   const composerRules = composerRuleMultiplier(midi, prevMidi, slot, signatureRules);
   const contourWeight = scorer.localContourWeight ?? scorer.weightContour;
+  const guideToneCfg = options?.pitchProfile?.guideTone;
+  const sigma = guideToneCfg?.proximitySigma ?? 2;
+  const hitPrimary = guideToneCfg?.hitBonusPrimary ?? 1.5;
+  const hitSecondary = guideToneCfg?.hitBonusSecondary ?? 1.3;
   let guideToneProximity = 1;
   if (scorer.weightGuideToneProximity != null && slot.guideTonePc != null) {
     const guideMidi = nearestMidiToGuidePc(
@@ -685,13 +986,25 @@ function scoreCandidate(midi, prevMidi, slot, scorer, signatureRules, leapRecove
       slot.registerBandMinMidi,
       slot.registerBandMaxMidi
     );
-    guideToneProximity = Math.exp(-Math.pow(midi - guideMidi, 2) / (2 * 2 * 2));
+    guideToneProximity = Math.exp(-Math.pow(midi - guideMidi, 2) / (2 * sigma * sigma));
   }
   let guideToneHit = 1;
   if (slot.guideTonePc != null && scorer.weightGuideToneProximity != null) {
     const pc = (midi % 12 + 12) % 12;
-    if (pc === slot.guideTonePc) guideToneHit = 1.5;
-    else if (slot.secondaryGuideTonePc != null && pc === slot.secondaryGuideTonePc) guideToneHit = 1.3;
+    if (pc === slot.guideTonePc) guideToneHit = hitPrimary;
+    else if (slot.secondaryGuideTonePc != null && pc === slot.secondaryGuideTonePc) guideToneHit = hitSecondary;
+  }
+  let climaxColorTone = 1;
+  const climaxCfg = options?.pitchProfile?.climaxArc;
+  if (climaxCfg?.colorToneBiasEnabled === true && slot.climaxSlotIndex != null && slot.slotIndex === slot.climaxSlotIndex && slot.guideTonePc != null && (role === "ninth" || role === "thirteenth")) {
+    const guideMidi = nearestMidiToGuidePc(
+      midi,
+      slot.guideTonePc,
+      slot.registerBandMinMidi,
+      slot.registerBandMaxMidi
+    );
+    const window = climaxCfg.colorToneProximitySemitones ?? 2;
+    if (Math.abs(midi - guideMidi) <= window) climaxColorTone = 1.35;
   }
   let targetChordTone = 1;
   if (slot.isApproachTarget === true) {
@@ -714,7 +1027,7 @@ function scoreCandidate(midi, prevMidi, slot, scorer, signatureRules, leapRecove
   }
   let product = Math.pow(intervalFactor, scorer.weightInterval) * Math.pow(prevIntervalFactor, scorer.weightPrevInterval) * Math.pow(chordFit, scorer.weightChordFit) * Math.pow(metric, scorer.weightMetric) * Math.pow(range, scorer.weightRange) * Math.pow(contour, contourWeight) * Math.pow(composerRules, scorer.weightComposerRules);
   if (scorer.weightGuideToneProximity != null) {
-    product *= Math.pow(guideToneProximity, scorer.weightGuideToneProximity) * guideToneHit;
+    product *= Math.pow(guideToneProximity, scorer.weightGuideToneProximity) * guideToneHit * climaxColorTone;
   }
   if (slot.isApproachTarget === true && scorer.approachPatternRate != null) {
     product *= targetChordTone;
@@ -785,6 +1098,31 @@ function pickSlotMidi(note, slot, prevMidi, leapRecoverySlots, pitchProfile, nor
   if (constraints?.maxMidi != null) {
     candidates = candidates.filter((c) => c.midi <= constraints.maxMidi);
   }
+  const maxGuideRate = pitchProfile.guideTone?.maxExactHitRatePerBar;
+  if (maxGuideRate != null && slot.guideTonePc != null && slot.noteRole !== "rest_placeholder") {
+    const barState = constraints?.barGuideState;
+    const barNotes = barState?.noteCount ?? 0;
+    const barHits = barState?.exactHits ?? 0;
+    candidates = candidates.filter((c) => {
+      const pc = (c.midi % 12 + 12) % 12;
+      if (pc !== slot.guideTonePc) return true;
+      return (barHits + 1) / (barNotes + 1) <= maxGuideRate + 1e-9;
+    });
+  }
+  const minGuideRate = pitchProfile.guideTone?.minExactHitRatePerBar;
+  if (minGuideRate != null && slot.guideTonePc != null && slot.noteRole !== "rest_placeholder") {
+    const barState = constraints?.barGuideState;
+    const barNotes = barState?.noteCount ?? 0;
+    const barHits = barState?.exactHits ?? 0;
+    const projectedNotes = barNotes + 1;
+    const minHitsNeeded = Math.ceil(minGuideRate * projectedNotes - 1e-9);
+    candidates = candidates.filter((c) => {
+      const pc = (c.midi % 12 + 12) % 12;
+      const projectedHits = barHits + (pc === slot.guideTonePc ? 1 : 0);
+      if (projectedHits >= minHitsNeeded) return true;
+      return pc === slot.guideTonePc;
+    });
+  }
   const candidateCount = candidates.length;
   if (candidateCount === 0) {
     return {
@@ -794,7 +1132,7 @@ function pickSlotMidi(note, slot, prevMidi, leapRecoverySlots, pitchProfile, nor
       candidateCount: 0
     };
   }
-  const rand = (0, import_premiumMelodyPrng.mulberry32)(
+  const rand = mulberry32(
     derivePremiumMelodyPitchSlotSeed(normalizedSeed, slot.slotId, pitchProfile.pitchSeedSalt)
   );
   const scored = candidates.map((c) => ({
@@ -806,7 +1144,10 @@ function pickSlotMidi(note, slot, prevMidi, leapRecoverySlots, pitchProfile, nor
       scorer,
       pitchProfile.signatureRules,
       leapRecoveryActive,
-      constraints?.approachIdealMidi != null ? { approachIdealMidi: constraints.approachIdealMidi } : void 0
+      {
+        ...constraints?.approachIdealMidi != null ? { approachIdealMidi: constraints.approachIdealMidi } : {},
+        pitchProfile
+      }
     )
   }));
   const pick = weightedPickMidi(scored, scorer.temperature, rand);
@@ -816,6 +1157,121 @@ function pickSlotMidi(note, slot, prevMidi, leapRecoverySlots, pitchProfile, nor
     topScore: pick.topScore,
     candidateCount
   };
+}
+function isPrimaryGuideToneHit(slot, midi) {
+  if (slot.guideTonePc == null) return false;
+  return (midi % 12 + 12) % 12 === slot.guideTonePc;
+}
+function forceGuideTonePick(ordered, slot, slots, picks, slotIndex, pitchProfile, normalizedSeed, extra) {
+  let prevMidi = null;
+  for (let j = slotIndex - 1; j >= 0; j--) {
+    if (picks[j] != null) {
+      prevMidi = picks[j].chosenMidi;
+      break;
+    }
+  }
+  const scorer = pitchProfile.slotScorer;
+  let candidates = enumerateCandidates(
+    slot,
+    scorer,
+    prevMidi,
+    pitchProfile.phrasePlanner.registerMinMidi,
+    pitchProfile.phrasePlanner.registerMaxMidi,
+    pitchProfile
+  ).filter((c) => isPrimaryGuideToneHit(slot, c.midi));
+  if (extra?.minMidi != null) candidates = candidates.filter((c) => c.midi >= extra.minMidi);
+  if (extra?.maxMidi != null) candidates = candidates.filter((c) => c.midi <= extra.maxMidi);
+  if (candidates.length === 0) return null;
+  const rand = mulberry32(
+    derivePremiumMelodyPitchSlotSeed(normalizedSeed, slot.slotId, pitchProfile.pitchSeedSalt)
+  );
+  const scored = candidates.map((c) => ({
+    midi: c.midi,
+    score: scoreCandidate(c.midi, prevMidi, slot, scorer, pitchProfile.signatureRules, false, {
+      pitchProfile
+    })
+  }));
+  const pick = weightedPickMidi(scored, scorer.temperature, rand);
+  return {
+    chosenMidi: pick.midi,
+    chosenRank: pick.rank,
+    topScore: pick.topScore,
+    candidateCount: candidates.length
+  };
+}
+function countPrimaryGuideToneHits(slots, picks) {
+  let hits = 0;
+  for (const slot of slots) {
+    if (slot.guideTonePc == null || slot.noteRole === "rest_placeholder") continue;
+    if (slot.approachWindowRole === "intermediate") continue;
+    const pick = picks[slot.slotIndex];
+    if (pick != null && isPrimaryGuideToneHit(slot, pick.chosenMidi)) hits++;
+  }
+  return hits;
+}
+function repairGuideToneHitBand(ordered, slots, picks, pitchProfile, normalizedSeed) {
+  const guideCfg = pitchProfile.guideTone;
+  if (guideCfg?.enabled !== true) return;
+  const eligible = slots.filter(
+    (s) => s.guideTonePc != null && s.noteRole !== "rest_placeholder" && s.approachWindowRole !== "intermediate"
+  );
+  const total = eligible.length;
+  if (total === 0) return;
+  const globalMin = guideCfg.targetGlobalExactHitRateMin ?? guideCfg.minExactHitRatePerBar ?? 0.6;
+  const globalMax = guideCfg.targetGlobalExactHitRateMax ?? guideCfg.maxExactHitRatePerBar ?? 0.7;
+  const minHits = Math.ceil(globalMin * total - 1e-9);
+  const maxHits = Math.floor(globalMax * total + 1e-9);
+  const byBar = /* @__PURE__ */ new Map();
+  for (const slot of eligible) {
+    const list = byBar.get(slot.bar) ?? [];
+    list.push(slot);
+    byBar.set(slot.bar, list);
+  }
+  for (const barSlots of byBar.values()) {
+    const barHits = barSlots.filter(
+      (s) => picks[s.slotIndex] != null && isPrimaryGuideToneHit(s, picks[s.slotIndex].chosenMidi)
+    ).length;
+    if (barHits > 0) continue;
+    const target = barSlots[barSlots.length - 1];
+    const forced = forceGuideTonePick(ordered, target, slots, picks, target.slotIndex, pitchProfile, normalizedSeed);
+    if (forced != null) picks[target.slotIndex] = forced;
+  }
+  const nonClimaxMisses = () => eligible.filter((s) => {
+    if (s.climaxSlotIndex === s.slotIndex) return false;
+    const pick = picks[s.slotIndex];
+    return pick == null || !isPrimaryGuideToneHit(s, pick.chosenMidi);
+  });
+  while (countPrimaryGuideToneHits(slots, picks) < minHits) {
+    const misses = nonClimaxMisses();
+    if (misses.length === 0) break;
+    const target = misses[misses.length - 1];
+    const forced = forceGuideTonePick(ordered, target, slots, picks, target.slotIndex, pitchProfile, normalizedSeed);
+    if (forced == null) break;
+    picks[target.slotIndex] = forced;
+  }
+  const nonClimaxHits = () => eligible.filter((s) => {
+    if (s.climaxSlotIndex === s.slotIndex) return false;
+    const pick = picks[s.slotIndex];
+    return pick != null && isPrimaryGuideToneHit(s, pick.chosenMidi);
+  });
+  while (countPrimaryGuideToneHits(slots, picks) > maxHits) {
+    const hits = nonClimaxHits();
+    if (hits.length === 0) break;
+    const barCounts = /* @__PURE__ */ new Map();
+    for (const s of hits) barCounts.set(s.bar, (barCounts.get(s.bar) ?? 0) + 1);
+    const target = hits.find((s) => (barCounts.get(s.bar) ?? 0) > 1) ?? hits[hits.length - 1];
+    const pick = pickSlotMidi(
+      ordered[target.slotIndex],
+      target,
+      null,
+      0,
+      pitchProfile,
+      normalizedSeed,
+      { barGuideState: { exactHits: 0, noteCount: 0 } }
+    );
+    if (isPrimaryGuideToneHit(target, pick.chosenMidi)) break;
+    picks[target.slotIndex] = pick;
+  }
 }
 function repairClimaxSlotPicks(ordered, slots, picks, pitchProfile, normalizedSeed) {
   if (pitchProfile.climaxArc?.enabled !== true) return;
@@ -845,7 +1301,7 @@ function repairClimaxSlotPicks(ordered, slots, picks, pitchProfile, normalizedSe
         break;
       }
     }
-    picks[climaxIdx] = pickSlotMidi(
+    let climaxPick = pickSlotMidi(
       ordered[climaxIdx],
       climaxSlot,
       chainPrev,
@@ -854,7 +1310,40 @@ function repairClimaxSlotPicks(ordered, slots, picks, pitchProfile, normalizedSe
       normalizedSeed,
       { minMidi: floorMidi }
     );
-    const climaxMidi = picks[climaxIdx].chosenMidi;
+    if (climaxPick.chosenMidi < floorMidi) {
+      const forced = forceGuideTonePick(
+        ordered,
+        climaxSlot,
+        slots,
+        picks,
+        climaxIdx,
+        pitchProfile,
+        normalizedSeed,
+        { minMidi: floorMidi }
+      );
+      if (forced != null) climaxPick = forced;
+      else {
+        const scorer = pitchProfile.slotScorer;
+        let candidates = enumerateCandidates(
+          climaxSlot,
+          scorer,
+          chainPrev,
+          pitchProfile.phrasePlanner.registerMinMidi,
+          pitchProfile.phrasePlanner.registerMaxMidi,
+          pitchProfile
+        ).filter((c) => c.midi >= floorMidi);
+        if (candidates.length > 0) {
+          climaxPick = {
+            chosenMidi: candidates[candidates.length - 1].midi,
+            chosenRank: 0,
+            topScore: 0,
+            candidateCount: candidates.length
+          };
+        }
+      }
+    }
+    picks[climaxIdx] = climaxPick;
+    const climaxMidi = climaxPick.chosenMidi;
     for (const neighborOffset of [-1, 1]) {
       const ni = climaxIdx + neighborOffset;
       if (ni < 0 || ni >= slots.length) continue;
@@ -887,12 +1376,32 @@ function scoreAndAssignPremiumMelodyPitches(ordered, slots, pitchProfile, normal
   const picks = new Array(ordered.length);
   let prevMidi = null;
   let leapRecoverySlots = 0;
+  const barGuideExactHits = /* @__PURE__ */ new Map();
+  const barGuideNoteCounts = /* @__PURE__ */ new Map();
+  function barGuideStateFor(slot) {
+    return {
+      exactHits: barGuideExactHits.get(slot.bar) ?? 0,
+      noteCount: barGuideNoteCounts.get(slot.bar) ?? 0
+    };
+  }
+  function recordGuidePick(slot, midi) {
+    if (slot.noteRole === "rest_placeholder" || slot.guideTonePc == null) return;
+    const bar = slot.bar;
+    barGuideNoteCounts.set(bar, (barGuideNoteCounts.get(bar) ?? 0) + 1);
+    const pc = (midi % 12 + 12) % 12;
+    if (pc === slot.guideTonePc) {
+      barGuideExactHits.set(bar, (barGuideExactHits.get(bar) ?? 0) + 1);
+    }
+  }
   for (let i = 0; i < ordered.length; i++) {
     const slot = slots[i];
     if (slot.approachWindowRole === "intermediate") continue;
     const note = ordered[i];
-    const pick = pickSlotMidi(note, slot, prevMidi, leapRecoverySlots, pitchProfile, normalizedSeed);
+    const pick = pickSlotMidi(note, slot, prevMidi, leapRecoverySlots, pitchProfile, normalizedSeed, {
+      barGuideState: barGuideStateFor(slot)
+    });
     picks[i] = pick;
+    recordGuidePick(slot, pick.chosenMidi);
     if (slot.noteRole !== "rest_placeholder") {
       if (prevMidi != null && intervalSemitones(prevMidi, pick.chosenMidi) > 5) {
         leapRecoverySlots = scorer.leapRecoveryBars;
@@ -904,6 +1413,7 @@ function scoreAndAssignPremiumMelodyPitches(ordered, slots, pitchProfile, normal
       prevMidi = pick.chosenMidi;
     }
   }
+  repairGuideToneHitBand(ordered, slots, picks, pitchProfile, normalizedSeed);
   repairClimaxSlotPicks(ordered, slots, picks, pitchProfile, normalizedSeed);
   for (let i = 0; i < ordered.length; i++) {
     const slot = slots[i];
@@ -968,7 +1478,7 @@ function scoreAndAssignPremiumMelodyPitches(ordered, slots, pitchProfile, normal
   return { melody: out, trace };
 }
 function runPremiumMelodyPitchPipeline(rhythmMelody, profile, pitchProfile, normalizedSeed, options) {
-  (0, import_premiumMelodyPitchProfile.assertValidPremiumMelodyPitchProfile)(pitchProfile);
+  assertValidPremiumMelodyPitchProfile(pitchProfile);
   const ordered = canonicalMelodySort(rhythmMelody);
   const slotList = buildPremiumMelodyPitchSlotList(
     rhythmMelody,
@@ -1044,10 +1554,10 @@ function applyPremiumMelodySurfaceOrnaments(expressiveMelody, slotList, pitchPro
     const annotations = {
       ...expressive.pitchOrnamentAnnotations ?? {}
     };
-    for (let oi = 0; oi < import_premiumMelodyPitchProfile.PREMIUM_MELODY_SURFACE_ORNAMENT_ORDER.length; oi++) {
-      const kind = import_premiumMelodyPitchProfile.PREMIUM_MELODY_SURFACE_ORNAMENT_ORDER[oi];
+    for (let oi = 0; oi < PREMIUM_MELODY_SURFACE_ORNAMENT_ORDER.length; oi++) {
+      const kind = PREMIUM_MELODY_SURFACE_ORNAMENT_ORDER[oi];
       if (!surfaceOrnamentApplicable(kind, rules)) continue;
-      const rand = (0, import_premiumMelodyPrng.mulberry32)(
+      const rand = mulberry32(
         derivePremiumMelodySurfaceOrnamentSeed(
           normalizedSeed,
           slot.slotId,

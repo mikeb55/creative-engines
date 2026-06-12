@@ -1,11 +1,14 @@
 /**
- * PROVISIONAL — Bill Evans premium-melody profile (V87 Commit 2b).
- * Stylistic anchor: "My Foolish Heart" / "Peace Piece" / "Blue in Green" —
- * floating pulse, arch contour, stepwise voice-leading, chord-tone cadences.
- * Reuses BH benchmark pitches for isolation until native benchmark in 2c.
+ * FROZEN — Bill Evans premium-melody profile (V87 Commit 2c).
+ * Stylistic anchor: lyrical ballad float — arch contour, stepwise voice-leading,
+ * guide-tone cadences (3rd/7th track on BE_Benchmark_LyricalBallad).
+ * Pitch v2: guide-tone track, climax-arc, approach-pattern (opt-in engine blocks).
  */
 
-import type { PremiumMelodyPitchProfile } from '../premium-melody/premiumMelodyPitchProfile';
+import type {
+  PremiumMelodyPitchProfile,
+  PremiumMelodySignatureRuleId,
+} from '../premium-melody/premiumMelodyPitchProfile';
 import type { PremiumMelodyProfile } from '../premium-melody/premiumMelodyProfile';
 
 export const BE_JAZZ_BALLAD_PITCH_PROFILE_ID = 'be_jazz_ballad_v1';
@@ -20,22 +23,25 @@ export function buildBillEvansJazzBalladPitchProfile(): PremiumMelodyPitchProfil
       contourArc: 'arch',
       registerMinMidi: 55,
       registerMaxMidi: 79,
-      /** Runtime picks chord 3rd or 7th closer to prev pitch at phrase cadences. */
       cadenceResolutionPc: 4,
       tonalCenterMode: 'chord_third',
       phraseBreakSource: 'premium_melody_phrase',
     },
     slotScorer: {
       weightInterval: 1.0,
-      weightPrevInterval: 1.35,
-      weightChordFit: 1.5,
-      weightMetric: 0.85,
-      weightRange: 1.1,
-      weightContour: 1.25,
+      weightPrevInterval: 1.2,
+      weightChordFit: 1.7,
+      weightGuideToneProximity: 2.1,
+      weightMetric: 0.8,
+      weightRange: 1.0,
+      weightContour: 1.0,
+      localContourWeight: 0.95,
+      weightPhraseArc: 1.35,
       weightComposerRules: 1.0,
-      temperature: 0.42,
-      maxLeapSemitones: 7,
+      temperature: 0.4,
+      maxLeapSemitones: 5,
       leapRecoveryBars: 2,
+      approachPatternRate: 0.6,
       intervalPreference: {
         1: 1.45,
         2: 1.35,
@@ -61,7 +67,57 @@ export function buildBillEvansJazzBalladPitchProfile(): PremiumMelodyPitchProfil
         extension: 1.0,
         avoid: 0.2,
       },
+      chordFitVectorFunctional: {
+        root: 0.5,
+        third: 1.6,
+        fifth: 0.7,
+        seventh: 1.7,
+        ninth: 1.3,
+        eleventh: 0.8,
+        thirteenth: 1.1,
+        extension: 1.0,
+        avoid: 0.2,
+      },
+      chordFitVectorTonicMajor: {
+        root: 0.6,
+        third: 1.5,
+        fifth: 0.7,
+        sixth: 1.4,
+        seventh: 1.0,
+        ninth: 1.2,
+        eleventh: 0.8,
+        thirteenth: 1.0,
+        extension: 1.0,
+        avoid: 0.2,
+      },
     },
+    guideTone: {
+      enabled: true,
+      proximitySigma: 1.5,
+      hitBonusPrimary: 1.7,
+      hitBonusSecondary: 1.4,
+      minExactHitRatePerBar: 0.5,
+      maxExactHitRatePerBar: 0.7,
+      targetGlobalExactHitRateMin: 0.6,
+      targetGlobalExactHitRateMax: 0.7,
+      barPrimaryGuideTonePc: {
+        1: 5,
+        2: 5,
+        3: 4,
+        4: 6,
+        5: 7,
+        6: 9,
+        7: 5,
+        8: 4,
+      },
+    },
+    climaxArc: {
+      enabled: true,
+      climaxMaxLeapSemitones: 5,
+      colorToneBiasEnabled: true,
+      colorToneProximitySemitones: 2,
+    },
+    approachPattern: { enabled: true },
     surfaceRules: {
       enclosureEnabled: true,
       approachSemitones: [1, -1, 2],
@@ -69,7 +125,7 @@ export function buildBillEvansJazzBalladPitchProfile(): PremiumMelodyPitchProfil
       graceNoteRate: 0.05,
       bendTagRate: 0,
     },
-    signatureRules: [],
+    signatureRules: ['be_voice_leading' as PremiumMelodySignatureRuleId],
   };
 }
 
@@ -78,17 +134,15 @@ export function buildBillEvansIsolationProvisionalProfile(): PremiumMelodyProfil
     id: BE_ISOLATION_PROVISIONAL_PROFILE_ID,
     syncopationShiftRate: 0.22,
     anticipationBias: 0.25,
-    /** Trim to 2b-provisional offbeat band (0.20–0.40) on BH isolation benchmark. */
     offbeatTrimCeiling: 0.36,
     projectedOffbeatBlockThreshold: 0.42,
     barSlotNudgesEnabled: false,
+    clampLastNoteToBarEnd: true,
     structuralLandingMode: 'float_preserve',
     expressionCharacter: 'modal_lyric',
     rhythmSeedSalt: 90301,
-    /** Narrower ballad dynamics vs Wayne modal_lyric defaults (spread ≤10). */
     modalLyricVelocityPeak: 77,
     modalLyricVelocityJitter: 1.5,
-    /** Ballad pulse: favour on-beat long_gap cells → lower offbeat + IOI entropy. */
     cellFamilyWeightScale: {
       long_gap: 4.0,
       delayed: 0.35,

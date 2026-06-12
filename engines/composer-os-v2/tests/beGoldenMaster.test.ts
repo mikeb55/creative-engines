@@ -1,7 +1,8 @@
 /**
- * V87 Commit 2a - Bill Evans golden-master baseline (isolation, seed 90301).
- * Byte-exact characterization on reused BH pitches (isolation/determinism only).
- * PROVISIONAL - native benchmark lands in 2c; freezes after 2c threshold calibration.
+ * V87 Commit 2c — Bill Evans golden-master (FROZEN, seed 90301).
+ * Byte-exact characterization of Bill Evans premium-melody rhythm + expression + pitch
+ * on native lyrical benchmark BE_Benchmark_LyricalBallad.musicxml.
+ * FROZEN — regenerate only in a commit whose stated purpose is changing Bill Evans output.
  */
 
 import * as crypto from 'crypto';
@@ -15,18 +16,18 @@ import type { Articulation, NoteEvent, ScoreModel } from '../core/score-model/sc
 import type { PremiumMelodyDurationAccentKind } from '../core/premium-melody/enrichMelodyExpression';
 
 export const BE_GOLDEN_SEED = 90301;
-export const BE_GOLDEN_FIXTURE_NAME = 'BH_Benchmark_JazzMelody.musicxml';
-export const BE_GOLDEN_PROFILE = 'be_jazz_ballad_v1 (PROVISIONAL 2b)';
+export const BE_GOLDEN_FIXTURE_NAME = 'BE_Benchmark_LyricalBallad.musicxml';
+export const BE_GOLDEN_PROFILE = 'be_jazz_ballad_v1 (FROZEN 2c)';
 
 const GOLDEN_DIR = path.join(__dirname, 'golden');
-const JSON_FIXTURE = path.join(GOLDEN_DIR, 'be-isolation-seed90301.golden.json');
-const XML_FIXTURE = path.join(GOLDEN_DIR, 'be-isolation-seed90301.golden.musicxml');
+const JSON_FIXTURE = path.join(GOLDEN_DIR, 'be-lyrical-seed90301.golden.json');
+const XML_FIXTURE = path.join(GOLDEN_DIR, 'be-lyrical-seed90301.golden.musicxml');
 
 const BENCHMARK_FIXTURE = path.join(
   __dirname,
   '..',
   'core',
-  'barry-harris',
+  'bill-evans',
   'test-fixtures',
   BE_GOLDEN_FIXTURE_NAME
 );
@@ -111,7 +112,7 @@ export function serializeBeGoldenJson(payload: BeGoldenJsonPayload): string {
 
 export function runBeGoldenPath(): { score: ScoreModel; xml: string } {
   if (!fs.existsSync(BENCHMARK_FIXTURE)) {
-    throw new Error(`BH jazz benchmark fixture missing: ${BENCHMARK_FIXTURE}`);
+    throw new Error(`Bill Evans benchmark fixture missing: ${BENCHMARK_FIXTURE}`);
   }
   const ir = musicXmlToImportTimeline(fs.readFileSync(BENCHMARK_FIXTURE, 'utf8'));
   const locked = importTimelineToLockedHarmony(ir);

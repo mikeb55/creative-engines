@@ -76,14 +76,19 @@ function trimOffbeatOverflow(
 function holdDurationToNext(
   note: ImportMelodyNote,
   melody: readonly ImportMelodyNote[],
-  barBeats = BEATS_PER_BAR
+  barBeats = BEATS_PER_BAR,
+  clampLastNoteToBarEnd = false
 ): number {
   const idx = melody.indexOf(note);
   const next = idx >= 0 ? melody[idx + 1] : undefined;
   if (next && next.bar === note.bar && next.onsetBeat > note.onsetBeat) {
     return Math.max(0.25, next.onsetBeat - note.onsetBeat);
   }
-  return Math.max(note.durationBeats, barBeats - note.onsetBeat);
+  const barRemainder = barBeats - note.onsetBeat;
+  if (clampLastNoteToBarEnd) {
+    return Math.max(0.25, barRemainder);
+  }
+  return Math.max(note.durationBeats, barRemainder);
 }
 
 /** Fraction of attacks on non-integer beats. */
@@ -194,7 +199,12 @@ export function enrichMelodyRhythm(
 
   const withDuration = collisionFree.map((note) => ({
     ...note,
-    durationBeats: holdDurationToNext(note, collisionFree),
+    durationBeats: holdDurationToNext(
+      note,
+      collisionFree,
+      BEATS_PER_BAR,
+      profile.clampLastNoteToBarEnd === true
+    ),
   }));
 
   assertPreservePitchSequence(ordered, withDuration);
