@@ -398,6 +398,11 @@ export interface GenerateRequest {
   /** V80m IMP-5 — apply ensemble voicing on BB/SQ presets. */
   reorchestrate?: boolean;
   /**
+   * Internal — Musician shell Evans-only: bundled benchmark → style-transfer + premium-melody pin.
+   * Set only from desktop Musician IPC for `bill_evans`.
+   */
+  musicianPremiumMelody?: boolean;
+  /**
    * V3.4 — MusicXML key policy: `auto` infers from chords unless a parseable `tonalCenter` / `tonalCenterOverride` is set;
    * `override` is legacy alias for explicit key (same explicit-string authority); `none` hides key signature.
    */

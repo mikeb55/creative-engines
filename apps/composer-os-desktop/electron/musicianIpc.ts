@@ -205,8 +205,9 @@ export async function handleMusicianGenerate(
         primarySongwriterStyle: composerSlug,
         seed,
         totalBars: 32,
-        creativeControlLevel: 'balanced',
+        creativeControlLevel: composerSlug === 'bill_evans' ? 'stable' : 'balanced',
         outputLabel: composerSlug,
+        ...(composerSlug === 'bill_evans' ? { musicianPremiumMelody: true } : {}),
       },
       libraryRoot
     );

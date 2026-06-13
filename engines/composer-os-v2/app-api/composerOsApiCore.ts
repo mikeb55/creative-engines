@@ -1103,6 +1103,7 @@ export function apiGenerate(
       })(),
       preserveMelody: typeof body.preserveMelody === 'boolean' ? body.preserveMelody : undefined,
       reorchestrate: typeof body.reorchestrate === 'boolean' ? body.reorchestrate : undefined,
+      musicianPremiumMelody: body.musicianPremiumMelody === true ? true : undefined,
     };
     if (body.mosaicSectionPlan) {
       req_.mosaicSectionPlan = body.mosaicSectionPlan;

@@ -51,6 +51,10 @@ import {
 } from '../core/lead-sheet/universalLeadSheetBuilder';
 import { importLeadSheetFromMusicXml } from '../core/lead-sheet/leadSheetMusicXmlImport';
 import { runGoldenPath, type GoldenPathResult, type RunGoldenPathOptions } from '../core/goldenPath/runGoldenPath';
+import {
+  mergeBeMusicianPremiumMelodyIntoGoldenPathOptions,
+  shouldApplyBeMusicianPremiumMelodyBridge,
+} from '../core/bill-evans/beMusicianPremiumMelodyBridge';
 import { isClaveGridOverlayEnvEnabled } from '../core/rhythm/claveGridOverlay';
 import { mergeBartokBulgarianAksakSqRhythmIntoMetadata } from '../core/rhythm/bartokBulgarianAksakRhythmEngine';
 import { mergeFreeProportionalSqRhythmIntoMetadata } from '../core/rhythm/freeProportionalRhythmEngine';
@@ -1866,6 +1870,17 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     ...v80GoldenPathOptionsFromGenerateRequest(req),
   };
 
+  const songModeGoldenPathOptionsForRun = shouldApplyBeMusicianPremiumMelodyBridge(
+    req.primarySongwriterStyle,
+    req.musicianPremiumMelody,
+    req.importTimeline != null
+  )
+    ? mergeBeMusicianPremiumMelodyIntoGoldenPathOptions(
+        songModeGoldenPathOptions,
+        resolvedSongModeTotalBars
+      )
+    : songModeGoldenPathOptions;
+
   const wantsSongModeSectionRegen =
     typeof req.sectionRegeneration?.baseMusicXml === 'string' &&
     req.sectionRegeneration.baseMusicXml.trim().length > 0 &&
@@ -1909,7 +1924,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       effectiveSeed,
       resolvedSongModeTotalBars,
       lockedHarmonyBarsAuthoritative!,
-      songModeGoldenPathOptions
+      songModeGoldenPathOptionsForRun
     );
     if (!regen.ok) {
       return {
@@ -1934,7 +1949,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     gp = regen.result;
     songModeSectionRegenApplied = true;
   } else {
-    gp = runGoldenPath(effectiveSeed, songModeGoldenPathOptions);
+    gp = runGoldenPath(effectiveSeed, songModeGoldenPathOptionsForRun);
   }
 
   gp.context.generationMetadata.importHarmonyMode = normalizedImportHarmonyMode;
@@ -1982,7 +1997,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     if (!gceResult.passed) {
       for (let i = 0; i < GCE_GATE_MAX_RETRIES; i++) {
         const retrySeed = effectiveSeed + GCE_RETRY_SEED_OFFSETS[i]!;
-        const retryGp = runGoldenPath(retrySeed, songModeGoldenPathOptions);
+        const retryGp = runGoldenPath(retrySeed, songModeGoldenPathOptionsForRun);
         retryGp.context.generationMetadata.importHarmonyMode = normalizedImportHarmonyMode;
         retryGp.context.generationMetadata.importHarmonyModeSource = importHarmonyModeSource;
         retryGp.context.generationMetadata.harmonyBlendRaw = harmonyBlendRaw;
