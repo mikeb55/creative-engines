@@ -1,8 +1,8 @@
 /**
- * PROVISIONAL — Jimi Hendrix premium-melody profile (V89 Commit 2a/2b).
+ * FROZEN — Jimi Hendrix premium-melody profile (V89 Commit 2c).
  * Pitch layer jh_blues_lead_v1: blues inflection, pentatonic anchor, riff recall,
  * call-response phrase architecture (4th optional pitch mechanism).
- * Reuses BH benchmark pitches for isolation/determinism only — native benchmark in 2c.
+ * Calibrated on native benchmark JH_Benchmark_BluesRockLead.musicxml seed 90303.
  */
 
 import type {

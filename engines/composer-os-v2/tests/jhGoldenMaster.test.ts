@@ -1,7 +1,8 @@
 /**
- * V89 Commit 2a - Jimi Hendrix golden-master baseline (isolation, seed 90303).
- * Byte-exact characterization on reused BH pitches (isolation/determinism only).
- * PROVISIONAL - native benchmark lands in 2c; freezes after 2c threshold calibration.
+ * V89 Commit 2c — Jimi Hendrix golden-master (FROZEN, seed 90303).
+ * Byte-exact characterization of Hendrix premium-melody rhythm + expression + pitch
+ * on native blues-rock benchmark JH_Benchmark_BluesRockLead.musicxml.
+ * FROZEN — regenerate only in a commit whose stated purpose is changing Hendrix output.
  */
 
 import * as crypto from 'crypto';
@@ -15,18 +16,18 @@ import type { Articulation, NoteEvent, ScoreModel } from '../core/score-model/sc
 import type { PremiumMelodyDurationAccentKind } from '../core/premium-melody/enrichMelodyExpression';
 
 export const JH_GOLDEN_SEED = 90303;
-export const JH_GOLDEN_FIXTURE_NAME = 'BH_Benchmark_JazzMelody.musicxml';
-export const JH_GOLDEN_PROFILE = 'jh_blues_lead_v1 (PROVISIONAL)';
+export const JH_GOLDEN_FIXTURE_NAME = 'JH_Benchmark_BluesRockLead.musicxml';
+export const JH_GOLDEN_PROFILE = 'jh_blues_lead_v1 (FROZEN 2c)';
 
 const GOLDEN_DIR = path.join(__dirname, 'golden');
-const JSON_FIXTURE = path.join(GOLDEN_DIR, 'jh-isolation-seed90303.golden.json');
-const XML_FIXTURE = path.join(GOLDEN_DIR, 'jh-isolation-seed90303.golden.musicxml');
+const JSON_FIXTURE = path.join(GOLDEN_DIR, 'jh-blues-lead-seed90303.golden.json');
+const XML_FIXTURE = path.join(GOLDEN_DIR, 'jh-blues-lead-seed90303.golden.musicxml');
 
 const BENCHMARK_FIXTURE = path.join(
   __dirname,
   '..',
   'core',
-  'barry-harris',
+  'hendrix',
   'test-fixtures',
   JH_GOLDEN_FIXTURE_NAME
 );
@@ -111,7 +112,7 @@ export function serializeJhGoldenJson(payload: JhGoldenJsonPayload): string {
 
 export function runJhGoldenPath(): { score: ScoreModel; xml: string } {
   if (!fs.existsSync(BENCHMARK_FIXTURE)) {
-    throw new Error(`BH jazz benchmark fixture missing: ${BENCHMARK_FIXTURE}`);
+    throw new Error(`Hendrix benchmark fixture missing: ${BENCHMARK_FIXTURE}`);
   }
   const ir = musicXmlToImportTimeline(fs.readFileSync(BENCHMARK_FIXTURE, 'utf8'));
   const locked = importTimelineToLockedHarmony(ir);

@@ -1,0 +1,128 @@
+{
+  "reservedComposerSlugs": ["barry_harris", "john_barry", "barry"],
+  "reservedPrefixes": ["bh", "barry", "bz"],
+  "globalDenyPaths": [
+    "engines/composer-os-v2/tests/bhGoldenMaster.test.ts",
+    "engines/composer-os-v2/core/barry-harris",
+    "engines/composer-os-v2/core/premium-melody",
+    "engines/composer-os-v2/core/score-integrity/behaviourGates.ts",
+    "engines/composer-os-v2/core/evaluation/barryStyleProfile.ts",
+    "engines/composer-os-v2/core/composer/barryVrbFingerprints.ts",
+    "engines/composer-os-v2/core/song-mode/songwriterRuleRegistry.ts"
+  ],
+  "composers": [
+    {
+      "slug": "barry_harris",
+      "displayName": "Barry Harris",
+      "prefix": "bh",
+      "coreDir": "barry-harris",
+      "builderPrefix": "BarryHarris",
+      "seed": 88109,
+      "v86Track": "V86",
+      "frozen": true,
+      "scaffolded": true,
+      "goldenFixtureBasename": "bh-benchmark-seed88109"
+    },
+    {
+      "slug": "wayne_shorter",
+      "displayName": "Wayne Shorter",
+      "prefix": "ws",
+      "coreDir": "wayne-shorter",
+      "builderPrefix": "WayneShorter",
+      "seed": 90217,
+      "v86Track": "V86",
+      "frozen": true,
+      "scaffolded": true,
+      "goldenFixtureBasename": "ws-modal-seed90217"
+    },
+    {
+      "slug": "bill_evans",
+      "displayName": "Bill Evans",
+      "prefix": "be",
+      "coreDir": "bill-evans",
+      "builderPrefix": "BillEvans",
+      "seed": 90301,
+      "v86Track": "V87",
+      "frozen": true,
+      "scaffolded": true,
+      "goldenFixtureBasename": "be-lyrical-seed90301"
+    },
+    {
+      "slug": "bacharach",
+      "displayName": "Bacharach",
+      "prefix": "ba",
+      "coreDir": "bacharach",
+      "builderPrefix": "Bacharach",
+      "seed": 90302,
+      "frozen": false,
+      "scaffolded": false
+    },
+    {
+      "slug": "hendrix",
+      "displayName": "Jimi Hendrix",
+      "prefix": "jh",
+      "coreDir": "hendrix",
+      "builderPrefix": "Hendrix",
+      "seed": 90303,
+      "v86Track": "V89",
+      "frozen": true,
+      "scaffolded": true,
+      "goldenFixtureBasename": "jh-blues-lead-seed90303"
+    },
+    {
+      "slug": "thelonious_monk",
+      "displayName": "Thelonious Monk",
+      "prefix": "tm",
+      "coreDir": "thelonious-monk",
+      "builderPrefix": "TheloniousMonk",
+      "seed": 90304,
+      "v86Track": "V90",
+      "frozen": false,
+      "scaffolded": false
+    },
+    {
+      "slug": "fripp",
+      "displayName": "Robert Fripp",
+      "prefix": "fp",
+      "coreDir": "fripp-king-crimson",
+      "builderPrefix": "Fripp",
+      "seed": 90305,
+      "v86Track": "V91",
+      "frozen": false,
+      "scaffolded": false
+    },
+    {
+      "slug": "joni_mitchell",
+      "displayName": "Joni Mitchell",
+      "prefix": "jm",
+      "coreDir": "joni-mitchell",
+      "builderPrefix": "JoniMitchell",
+      "seed": 90306,
+      "v86Track": "V92",
+      "frozen": false,
+      "scaffolded": false
+    },
+    {
+      "slug": "sonic_youth",
+      "displayName": "Sonic Youth",
+      "prefix": "sy",
+      "coreDir": "sonic-youth",
+      "builderPrefix": "SonicYouth",
+      "seed": 90307,
+      "v86Track": "V93",
+      "frozen": false,
+      "scaffolded": false
+    },
+    {
+      "slug": "frank_zappa",
+      "displayName": "Frank Zappa",
+      "prefix": "fz",
+      "coreDir": "frank-zappa",
+      "builderPrefix": "FrankZappa",
+      "seed": 90308,
+      "v86Track": "V94",
+      "frozen": false,
+      "scaffolded": false
+    }
+  ]
+}

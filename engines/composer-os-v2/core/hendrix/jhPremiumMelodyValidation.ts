@@ -1,7 +1,7 @@
 /**
- * Jimi Hendrix premium-melody conformance thresholds (V89 Commit 2a/2b — PROVISIONAL).
+ * FROZEN — Jimi Hendrix premium-melody conformance thresholds (V89 Commit 2c).
  * Separate from BH thresholds — no phrase-density arc check (BH-specific).
- * Tune in 2c; freeze after native benchmark calibration.
+ * Calibrated on native benchmark JH_Benchmark_BluesRockLead.musicxml seed 90303.
  */
 
 import type { ImportMelodyNote } from '../import/mosaicImportTimeline';
@@ -19,13 +19,13 @@ export const JH_IOI_ENTROPY_MIN = 1.4;
 export const JH_VELOCITY_SPREAD_MIN = 4;
 export const JH_VELOCITY_SPREAD_MAX = 12;
 
-/** PROVISIONAL — minor-pentatonic + blues anchor hit rate on pitch output. */
+/** FROZEN 2c — minor-pentatonic + blues anchor hit rate on pitch output. */
 export const JH_PENTATONIC_ANCHOR_HIT_RATE_MIN = 0.35;
-/** PROVISIONAL — at least one b3/b5/b7 inflection note per phrase-scale output. */
+/** FROZEN 2c — at least one b3/b5/b7 inflection note per phrase-scale output. */
 export const JH_BLUES_INFLECTION_NOTE_MIN = 1;
-/** PROVISIONAL — riff cell assigned on at least one slot per output. */
+/** FROZEN 2c — riff cell assigned on at least one slot per output. */
 export const JH_RIFF_CELL_SLOT_MIN = 4;
-/** PROVISIONAL — response-bar import DNA similarity (BH isolation observes ~0.125; tightens at 2c). */
+/** FROZEN 2c — response-bar import DNA similarity band on native blues-rock benchmark. */
 export const JH_CALL_RESPONSE_SIMILARITY_MIN = 0.08;
 export const JH_CALL_RESPONSE_SIMILARITY_MAX = 0.25;
 export const JH_CALL_RESPONSE_SIMILARITY_TARGET = 0.55;

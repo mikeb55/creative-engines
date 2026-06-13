@@ -43,8 +43,9 @@
       "builderPrefix": "BillEvans",
       "seed": 90301,
       "v86Track": "V87",
-      "frozen": false,
-      "scaffolded": false
+      "frozen": true,
+      "scaffolded": true,
+      "goldenFixtureBasename": "be-lyrical-seed90301"
     },
     {
       "slug": "bacharach",
@@ -53,7 +54,6 @@
       "coreDir": "bacharach",
       "builderPrefix": "Bacharach",
       "seed": 90302,
-      "v86Track": "V88",
       "frozen": false,
       "scaffolded": false
     },
@@ -65,8 +65,9 @@
       "builderPrefix": "Hendrix",
       "seed": 90303,
       "v86Track": "V89",
-      "frozen": false,
-      "scaffolded": false
+      "frozen": true,
+      "scaffolded": true,
+      "goldenFixtureBasename": "jh-blues-lead-seed90303"
     },
     {
       "slug": "thelonious_monk",
