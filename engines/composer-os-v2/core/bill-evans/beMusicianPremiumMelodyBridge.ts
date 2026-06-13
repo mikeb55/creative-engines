@@ -129,5 +129,6 @@ export function mergeBeMusicianPremiumMelodyIntoGoldenPathOptions(
   return {
     ...options,
     ...extras,
+    songModeHookFirstIdentity: false,
   };
 }

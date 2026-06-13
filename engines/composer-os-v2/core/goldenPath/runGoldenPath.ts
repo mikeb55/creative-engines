@@ -1458,6 +1458,8 @@ export interface RunGoldenPathOptions {
   reorchestrate?: boolean;
   /** V83d Phase 2 — BH melody rhythm profile id (bebop_step default). */
   barryHarrisProfile?: string;
+  /** Evans Musician shell bridge — tiled benchmark IR merged into golden-path options. */
+  beMusicianPremiumMelodyBridge?: boolean;
 }
 
 export type { MosaicPresetRole, SectionRealizationResult, AssembledScoreModel };
@@ -3196,24 +3198,30 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     guitarMeasures: guitarMeasureCount,
   });
   const styleTransferResult = appliedContext.generationMetadata?.styleTransferResult;
+  const evansMusicianBridgePinEligible =
+    options?.beMusicianPremiumMelodyBridge === true &&
+    options?.targetComposer === 'bill_evans' &&
+    (appliedContext.presetId ?? 'guitar_bass_duo') === 'guitar_bass_duo';
   if (
-    styleTransferResult &&
     options?.importTimeline &&
-    (options.preserveMelody ?? true)
+    (options.preserveMelody ?? true) &&
+    (styleTransferResult || evansMusicianBridgePinEligible)
   ) {
     score = pinMelodyOnScore(score, options.importTimeline.melodyLine);
-    appliedContext.generationMetadata = {
-      ...appliedContext.generationMetadata,
-      styleTransferResult: {
-        ...styleTransferResult,
-        scoreFragment: score,
-        retainedMelody: retainedMelodyProof(
-          score,
-          options.importTimeline.melodyLine,
-          options.preserveMelody ?? true
-        ),
-      },
-    };
+    if (styleTransferResult) {
+      appliedContext.generationMetadata = {
+        ...appliedContext.generationMetadata,
+        styleTransferResult: {
+          ...styleTransferResult,
+          scoreFragment: score,
+          retainedMelody: retainedMelodyProof(
+            score,
+            options.importTimeline.melodyLine,
+            options.preserveMelody ?? true
+          ),
+        },
+      };
+    }
   }
   if (
     styleTransferResult?.composerApplied === 'barry_harris' &&
@@ -3275,10 +3283,11 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     };
   }
   if (
-    styleTransferResult?.composerApplied === 'bill_evans' &&
     options?.importTimeline &&
     (appliedContext.presetId ?? 'guitar_bass_duo') === 'guitar_bass_duo' &&
-    (options.preserveMelody ?? true)
+    (options.preserveMelody ?? true) &&
+    (styleTransferResult?.composerApplied === 'bill_evans' ||
+      (options?.beMusicianPremiumMelodyBridge === true && options?.targetComposer === 'bill_evans'))
   ) {
     const beProfile = buildBillEvansIsolationProvisionalProfile();
     const melodyLine = options.importTimeline.melodyLine;
