@@ -731,6 +731,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'carla_bley', label: 'Carla Bley' },
   { id: 'billy_strayhorn', label: 'Billy Strayhorn' },
   { id: 'bob_dylan', label: 'Bob Dylan' },
+  { id: 'bob_brookmeyer', label: 'Bob Brookmeyer' },
   { id: 'brian_wilson', label: 'Brian Wilson' },
   { id: 'carole_king', label: 'Carole King' },
   { id: 'bernard_herrmann', label: 'Bernard Herrmann' },
@@ -1065,6 +1066,8 @@ const SONGWRITER_GROUP_SHIPPED_ORDER: readonly string[] = [
   'count_basie',
   'bill_evans',
   'satie',
+  'debussy',
+  'messiaen',
   'steve_reich',
   'fripp_king_crimson',
   'fripp',
@@ -1073,12 +1076,14 @@ const SONGWRITER_GROUP_SHIPPED_ORDER: readonly string[] = [
   'donald_fagen',
   'frank_zappa',
   'ecm_chamber',
+  'kenny_wheeler',
   'antonio_carlos_jobim',
   'herbie_hancock',
   'billy_strayhorn',
   'don_sebesky',
   'johnny_mandel',
   'claus_ogerman',
+  'bob_brookmeyer',
 ];
 
 /** Shipped writers shown under the Singer-Songwriter subgroup (full slice; separate optgroup label). */

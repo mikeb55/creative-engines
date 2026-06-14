@@ -316,6 +316,38 @@ This is the **Song Mode primary songwriter** id **`ecm_chamber`** — not the sa
 - **Harmony:** static modal centres, bass displacement, progression avoidance (`tv:*` receipts).
 - **Best BPM:** mid-tempo rock feel; pair with **post-punk** / **art-rock** arranger hints when experimenting.
 
+### Song Mode — Debussy primary songwriter (`debussy`)
+
+**Debussy** appears under **Shipped (full slice)**. Full impressionist slice via **`debussySlice.ts`** — parallel planing, whole-tone colour, pentatonic melody bias (`db:*` receipts).
+
+- **Sound:** colour-first harmony, phrase rubato against pulse.
+- **Harmony:** planing streams, modal colour shifts, sparse cadential softness.
+- **Best BPM:** slow–moderate; pair with **classical** or **ECM Chamber** arranger hints for chamber colour.
+
+### Song Mode — Olivier Messiaen primary songwriter (`messiaen`)
+
+**Messiaen** appears under **Shipped (full slice)**. Limited-transposition modes, additive rhythm, birdsong motifs (`om:*` receipts).
+
+- **Sound:** static colour fields, mode rotation, transcendence-tail cadences.
+- **Harmony:** no bare **V→I** closures; spine holds **≥2** bars per chord.
+- **Best BPM:** slow; optional **`messiaenPeriodMode`** on generate payload for period flavour.
+
+### Song Mode — Kenny Wheeler primary songwriter (`kenny_wheeler`)
+
+**Kenny Wheeler** appears under **Shipped (full slice)** (also listed under **ECM Chamber Jazz** production world). Slice via **`wheelerLyricSlice.ts`** — polyaxial lyrical ECM harmony (`kw:*` / device receipts).
+
+- **Sound:** brittle intervallic melody, spacious ECM chamber bias.
+- **Harmony:** upper-structure voicings, independent bass, soft cadential landing.
+- **Best BPM:** 50–80; aliases **`wheeler`**, **`kw`**.
+
+### Song Mode — Bob Brookmeyer primary songwriter (`bob_brookmeyer`)
+
+**Bob Brookmeyer** appears under **Shipped (full slice)** (also listed under **ECM Chamber Jazz** production world). Line-first valve-trombone grammar via **`bobBrookmeyerSlice.ts`** (`brk:*` receipts).
+
+- **Sound:** linear counterpoint, valve-trombone voicing bias, big-band lineage without shout-chorus default.
+- **Harmony:** guide-tone linearity with Brookmeyer colour passes.
+- **Best BPM:** medium swing; aliases **`brookmeyer`**, **`bob brookmeyer`**.
+
 ### Song Mode — Pat Metheny primary songwriter (`pat_metheny`)
 
 Primary id **`pat_metheny`** — aliases **`metheny`**, **`pm`** also resolve to this profile.
