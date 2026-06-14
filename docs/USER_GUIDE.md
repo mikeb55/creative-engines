@@ -286,7 +286,7 @@ When **Songwriter** is **Dave Brubeck**, **Thelonious Monk**, or **Wayne Shorter
 
 ### Song Mode — Dave Brubeck primary songwriter (`dave_brubeck`)
 
-**Dave Brubeck** appears under **Shipped (full slice)** with other Song Mode writers. The engine resolves **`dave_brubeck`** like other catalogue ids (**registry**, **style profile**, pairing metadata). Use the **meter map** block above for Brubeck-specific odd-meter tiles.
+**Dave Brubeck** is **In library** — not **Shipped (full slice)**. There is no **`brubeckSlice.ts`**; the engine resolves **`dave_brubeck`** via **registry**, **style profile**, and pairing metadata. Song Mode still exposes Brubeck **odd-meter meter-map** presets (see **Odd-meter meter map** above).
 
 ### Song Mode — Bacharach primary songwriter
 
@@ -307,6 +307,14 @@ This is the **Song Mode primary songwriter** id **`ecm_chamber`** — not the sa
 - **Sounds like:** Keith Jarrett, Jan Garbarek, Tord Gustavsen
 - **Harmony:** Cmaj7#11, Gmaj9(no3), modal drift, sparse slow-moving roots, wide open voicings
 - **Best BPM:** 50–80, slow and spacious
+
+### Song Mode — Tom Verlaine primary songwriter (`verlaine`)
+
+**Tom Verlaine** appears under **Shipped (full slice)**. Primary id **`verlaine`** — aliases **`tom_verlaine`**, **`television`**, **`tv`** resolve to the same profile (no separate **`television`** composer id).
+
+- **Sound:** suspended modal field, angular art-punk guitar language vs dense noise-rock.
+- **Harmony:** static modal centres, bass displacement, progression avoidance (`tv:*` receipts).
+- **Best BPM:** mid-tempo rock feel; pair with **post-punk** / **art-rock** arranger hints when experimenting.
 
 ### Song Mode — Pat Metheny primary songwriter (`pat_metheny`)
 

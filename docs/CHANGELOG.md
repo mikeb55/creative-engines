@@ -2,6 +2,8 @@
 
 ### Added
 
+- **Composer surfacing batch — Coltrane, Sonic Youth, Verlaine, Brubeck docs** — **`john_coltrane`**, **`sonic_youth`**, and **`verlaine`** added to **`SONGWRITER_GROUP_SHIPPED_ORDER`** in **`HomeGenerate.tsx`** (slices + smoke already shipped: **`johnColtraneSlice.ts`**, **`sonicYouthSlice.ts`**, **`verlainFieldSlice.ts`**). Alias **`television`** → **`verlaine`** unchanged. **`dave_brubeck`** docs corrected to **In library** / no **`brubeckSlice.ts`** (**`USER_GUIDE.md`**, **`COMPOSER_OS_ROADMAP.md`**).
+
 - **feat(bartok-cle): V88 frozen — transformational counterpoint complete, eval 8.0/10 (seed 61234). Window-inversion + climax/contraction scoring added. Golden master frozen.** — **`bartokPitchScorer.ts`** + **`bartokPitchScoringConfig.ts`**: phrase-scale inversion-window scoring (**`docs/bartok_pitch_spec.md`** §10) and phrase-position climax / contraction weighting (§11). Eval trajectory seed **61234**: **4.8 → 5.9 → 6.4 → 7.0 → 7.6 → 8.0** (structural criticisms resolved: frozen bass, square rhythm, weak voice interaction, isolated inversions, lack of climax). Frozen fixtures **`bartok-cle-seed61234.lineSet.golden.json`** (sha256 **`a1c94bc9bf09`**) + **`.trace.golden.json`** (**`496cf6c415c6`**); **`bartokClePitchScoringGoldenMaster.test.ts`** byte-exact oracle. BH / premium-melody golden masters **unchanged**. Gates: smoke **666/666**, BH **8/8**, **`bhGoldenMaster`** byte-identical, **`bartokCleGoldenMaster`** PASS.
 
 ### Fixed
