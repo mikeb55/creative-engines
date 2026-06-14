@@ -701,6 +701,8 @@ export interface GenerationMetadata {
   styleTransferResult?: import('./import/mosaicStyleTransfer').StyleTransferResult;
   /** V82a: preserveMelody flag from style-transfer request (default true when omitted). */
   styleTransferPreserveMelody?: boolean;
+  /** Evans Musician shell bridge — tiled 8→N benchmark import (prototype path; not native 8-bar oracle). */
+  beMusicianPremiumMelodyBridge?: boolean;
   /** Style-transfer: Wayne pass-1 harmony is authoritative — skip duo re-precompute (avoids slash drift). */
   styleTransferWayneHarmonyAuthoritative?: boolean;
   /** V80m IMP-5: BB/SQ re-orchestration applied during style-transfer. */

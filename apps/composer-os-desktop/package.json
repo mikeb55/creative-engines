@@ -67,6 +67,7 @@
       "resources/open-folder-helpers.cjs",
       "resources/musician/**/*",
       "resources/registry/**/*",
+      "resources/test-fixtures/BE_Benchmark_LyricalBallad.musicxml",
       "resources/ui/**/*"
     ],
     "extraResources": [
@@ -139,6 +140,10 @@
       {
         "from": "resources/registry/premium-melody-composer-registry.json",
         "to": "registry/premium-melody-composer-registry.json"
+      },
+      {
+        "from": "resources/test-fixtures/BE_Benchmark_LyricalBallad.musicxml",
+        "to": "test-fixtures/BE_Benchmark_LyricalBallad.musicxml"
       }
     ],
     "win": {

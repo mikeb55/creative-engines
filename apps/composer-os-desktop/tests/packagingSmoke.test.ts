@@ -21,6 +21,16 @@ describe('Packaging smoke (desktop)', () => {
     expect(martino?.from).toContain('martino');
   });
 
+  it('electron-builder extraResources includes Evans Musician benchmark fixture', () => {
+    const pkg = JSON.parse(fs.readFileSync(path.join(desktopRoot, 'package.json'), 'utf-8')) as {
+      build?: { extraResources?: Array<{ from?: string; to?: string }> };
+    };
+    const extras = pkg.build?.extraResources ?? [];
+    const beFixture = extras.find((e) => e.to === 'test-fixtures/BE_Benchmark_LyricalBallad.musicxml');
+    expect(beFixture).toBeDefined();
+    expect(beFixture?.from).toContain('resources/test-fixtures/BE_Benchmark_LyricalBallad.musicxml');
+  });
+
   it('electron-builder config is present and icon resolves', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(desktopRoot, 'package.json'), 'utf-8'));
     expect(pkg.build?.productName).toBe('Composer OS Desktop');
@@ -42,6 +52,14 @@ describe('Packaging smoke (desktop)', () => {
     expect(fs.existsSync(path.join(desktopRoot, 'resources', 'desktop-ipc.bundle.cjs'))).toBe(true);
     expect(fs.existsSync(path.join(desktopRoot, 'resources', 'open-folder-helpers.cjs'))).toBe(true);
     expect(fs.existsSync(path.join(desktopRoot, 'resources', 'ui', 'index.html'))).toBe(true);
+    const beFixture = path.join(
+      desktopRoot,
+      'resources',
+      'test-fixtures',
+      'BE_Benchmark_LyricalBallad.musicxml'
+    );
+    expect(fs.existsSync(beFixture)).toBe(true);
+    expect(fs.statSync(beFixture).size).toBeGreaterThan(1024);
     const stampPath = path.join(desktopRoot, 'resources', 'ui', 'composer-os-ui-stamp.json');
     expect(fs.existsSync(stampPath)).toBe(true);
     const stamp = JSON.parse(fs.readFileSync(stampPath, 'utf-8')) as { productId: string; appShellVersion: string };
