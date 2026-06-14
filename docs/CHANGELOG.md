@@ -8,6 +8,8 @@
 
 ### Fixed
 
+- **Evans Musician 32-bar bridge** — Bill Evans premium melody now plays end-to-end on the 32-bar Musician/desktop path (premium pin reordered before behaviour gates, tile-seam bar-math / co-onset repair at 8→32 bar seams, **`BE_Benchmark_LyricalBallad.musicxml`** fixture packaged into the desktop IPC bundle).
+
 - **V87 Commit 2b2 — premium-melody compiled JS sync (QA export pitch-v2)** — Rebuilt **`core/premium-melody/`** compiled output from TypeScript source: **`premiumMelodyRouting.js`**, **`index.js`**, new **`premiumMelodyPitchPipeline.js`**, **`premiumMelodyPitchProfile.js`**. Stale **`premiumMelodyRouting.js`** (rhythm → expression only) was loaded via **`index.js`** during golden-path pin export, so **`be-v86-2b2-check.musicxml`** and **`beGoldenMaster`** fixtures kept **import** pitches while auto-validation passed pitch-v2 on an isolated pipeline call. Export now matches pitch-v2 (seed **90301**: **65,65,65,67,67,67,69,73,75,75,74,78,73,72,71,71**). **`be-isolation-seed90301.golden.*`** re-approved (sha256 **20b402433695** / **36dacebeba3b**). BH / Wayne golden masters **byte-identical**. Gates: smoke **664/664**, **`bhGoldenMaster`** / **`wayneGoldenMaster`** / **`beGoldenMaster`** PASS, **`premiumMelodyPitchPipeline.test.ts`** PASS.
 
 ### Added
