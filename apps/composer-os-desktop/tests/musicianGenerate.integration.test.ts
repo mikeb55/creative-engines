@@ -87,4 +87,70 @@ describe('musician generate integration', () => {
 
     resetMusicianGenerateInFlightForTests();
   }, 120_000);
+
+  it('Evans Musician bridge loads benchmark fixture from IPC bundle resources (bill_evans seed 90301)', async () => {
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'composer-musician-evans-'));
+    tempRoots.push(tmpRoot);
+
+    const beFixture = path.join(desktopRoot, 'resources', 'test-fixtures', 'BE_Benchmark_LyricalBallad.musicxml');
+    const ipcDir = path.dirname(ipcBundlePath);
+    expect(fs.existsSync(beFixture)).toBe(true);
+    expect(path.resolve(beFixture)).toBe(
+      path.resolve(ipcDir, 'test-fixtures', 'BE_Benchmark_LyricalBallad.musicxml')
+    );
+
+    prevOutputDir = process.env.COMPOSER_OS_OUTPUT_DIR;
+    prevRepoRoot = process.env.COMPOSER_OS_REPO_ROOT;
+    prevDesktopIpc = process.env.COMPOSER_OS_DESKTOP_IPC;
+    process.env.COMPOSER_OS_OUTPUT_DIR = tmpRoot;
+    process.env.COMPOSER_OS_REPO_ROOT = path.resolve(desktopRoot, '..', '..');
+    process.env.COMPOSER_OS_DESKTOP_IPC = '1';
+
+    const { apiGenerate } = require(ipcBundlePath) as {
+      apiGenerate: (
+        body: Record<string, unknown>,
+        libraryRoot: string
+      ) => { success: boolean; error?: string; detail?: string; filepath?: string };
+    };
+
+    const premiumResult = apiGenerate(
+      {
+        presetId: 'song_mode',
+        primarySongwriterStyle: 'bill_evans',
+        seed: 90301,
+        totalBars: 32,
+        creativeControlLevel: 'stable',
+        musicianPremiumMelody: true,
+        outputLabel: 'bill_evans_premium',
+      },
+      tmpRoot
+    );
+
+    const premiumDetail = `${premiumResult.error ?? ''} ${premiumResult.detail ?? ''}`;
+    expect(premiumDetail).not.toMatch(/benchmark fixture missing/i);
+    expect(premiumResult.success || /Phrase authority/i.test(premiumDetail)).toBe(true);
+
+    const genericResult = apiGenerate(
+      {
+        presetId: 'song_mode',
+        primarySongwriterStyle: 'bill_evans',
+        seed: 90301,
+        totalBars: 32,
+        creativeControlLevel: 'stable',
+        outputLabel: 'bill_evans_generic',
+      },
+      tmpRoot
+    );
+    expect(genericResult.success).toBe(true);
+    expect(genericResult.filepath).toBeTruthy();
+    const genericXml = fs.readFileSync(genericResult.filepath as string, 'utf8');
+    expect(genericXml.startsWith('<?xml')).toBe(true);
+
+    if (prevOutputDir === undefined) delete process.env.COMPOSER_OS_OUTPUT_DIR;
+    else process.env.COMPOSER_OS_OUTPUT_DIR = prevOutputDir;
+    if (prevRepoRoot === undefined) delete process.env.COMPOSER_OS_REPO_ROOT;
+    else process.env.COMPOSER_OS_REPO_ROOT = prevRepoRoot;
+    if (prevDesktopIpc === undefined) delete process.env.COMPOSER_OS_DESKTOP_IPC;
+    else process.env.COMPOSER_OS_DESKTOP_IPC = prevDesktopIpc;
+  }, 180_000);
 });

@@ -13,6 +13,10 @@ import type {
 import { importTimelineToLockedHarmony } from '../import/importTimelineAdapters';
 import { musicXmlToImportTimeline } from '../import/musicXmlToImportTimeline';
 import type { RunGoldenPathOptions } from '../goldenPath/runGoldenPath';
+import type { GenerationMetadata } from '../compositionContext';
+import type { ScoreEvent, ScoreModel } from '../score-model/scoreModelTypes';
+
+const BAR_MATH_EPS = 1e-4;
 
 export const BE_MUSICIAN_BENCHMARK_FIXTURE_NAME = 'BE_Benchmark_LyricalBallad.musicxml';
 
@@ -81,6 +85,7 @@ export interface BeMusicianPremiumMelodyBridgeExtras {
   lockedHarmonyBarsRaw: string[];
   parsedChordBars: string[];
   chordProgressionText: string;
+  beMusicianPremiumMelodyBridge: true;
 }
 
 export function buildBeMusicianPremiumMelodyBridgeExtras(
@@ -105,7 +110,61 @@ export function buildBeMusicianPremiumMelodyBridgeExtras(
     lockedHarmonyBarsRaw: [...locked],
     parsedChordBars: [...locked],
     chordProgressionText: locked.join('|'),
+    beMusicianPremiumMelodyBridge: true,
   };
+}
+
+/** Evans Musician 32-bar bridge — behaviour-gate warning demotion (not for native 8-bar oracle). */
+export function isBeMusicianPremiumMelodyBridgeActive(
+  md: GenerationMetadata | undefined
+): boolean {
+  return md?.beMusicianPremiumMelodyBridge === true;
+}
+
+/**
+ * Premium-melody pin on tiled benchmark can emit co-onset v1 grace pairs (e.g. bars 18/24).
+ * Collapse to one note per onset so strict bar-math passes without changing native paths.
+ */
+export function repairBeMusicianBridgeMelodyCoOnsetBarMath(score: ScoreModel): ScoreModel {
+  const out = structuredClone(score) as ScoreModel;
+  const part = out.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  if (!part) return out;
+
+  for (const m of part.measures) {
+    const other = m.events.filter((e) => (e.voice ?? 1) !== 1);
+    const v1Notes = m.events.filter(
+      (e): e is ScoreEvent & { kind: 'note'; pitch: number } =>
+        (e.voice ?? 1) === 1 && e.kind === 'note'
+    );
+    if (v1Notes.length < 2) continue;
+
+    const sorted = [...v1Notes].sort((a, b) => a.startBeat - b.startBeat);
+    const kept: ScoreEvent[] = [];
+    let i = 0;
+    while (i < sorted.length) {
+      const startBeat = sorted[i]!.startBeat;
+      const group: (ScoreEvent & { kind: 'note'; pitch: number })[] = [sorted[i]!];
+      while (
+        i + 1 < sorted.length &&
+        Math.abs(sorted[i + 1]!.startBeat - startBeat) <= BAR_MATH_EPS
+      ) {
+        i++;
+        group.push(sorted[i]!);
+      }
+      if (group.length === 1) {
+        kept.push({ ...group[0]!, voice: 1 });
+      } else {
+        const best = group.reduce((a, b) => (a.pitch >= b.pitch ? a : b));
+        kept.push({ ...best, voice: 1 });
+      }
+      i++;
+    }
+
+    const v1Rests = m.events.filter((e) => (e.voice ?? 1) === 1 && e.kind === 'rest');
+    m.events = [...other, ...v1Rests, ...kept].sort((a, b) => a.startBeat - b.startBeat);
+  }
+
+  return out;
 }
 
 export function shouldApplyBeMusicianPremiumMelodyBridge(

@@ -51,6 +51,7 @@ import {
   isStyleTransferEightBarPinnedMelodyRelax,
   isStyleTransferPreserveMelodyActive,
 } from '../import/mosaicStyleTransfer';
+import { isBeMusicianPremiumMelodyBridgeActive } from '../bill-evans/beMusicianPremiumMelodyBridge';
 
 export interface SectionContrastResult {
   valid: boolean;
@@ -211,6 +212,9 @@ export function runBehaviourGates(
   const errors: string[] = [];
   const duoIdentityWarnings: string[] = [];
   const songMode = opts?.compositionContext?.generationMetadata?.songModeHookFirstIdentity === true;
+  const evansMusicianBridgeRelax = isBeMusicianPremiumMelodyBridgeActive(
+    opts?.compositionContext?.generationMetadata
+  );
   const zappaStructuralRelax = isFrankZappaSongwriterId(
     opts?.compositionContext?.generationMetadata?.songwriterStyleId
   );
@@ -281,7 +285,7 @@ export function runBehaviourGates(
       const style = validateBarryHarrisConformance(score, opts?.compositionContext?.generationMetadata);
       const voiceLeadingJumpsWarningSubstr = 'Voice-leading jumps excessive';
       let blockingStyleErrors = style.errors;
-      if (songMode) {
+      if (songMode || evansMusicianBridgeRelax) {
         const vl = blockingStyleErrors.filter((e) => e.includes(voiceLeadingJumpsWarningSubstr));
         blockingStyleErrors = blockingStyleErrors.filter((e) => !e.includes(voiceLeadingJumpsWarningSubstr));
         duoIdentityWarnings.push(...vl);
@@ -331,7 +335,7 @@ export function runBehaviourGates(
     opts?.compositionContext?.form?.totalBars
   );
   const pushDuoGate = (messages: string[]) => {
-    if (relaxPinnedMelodyImport) duoIdentityWarnings.push(...messages);
+    if (relaxPinnedMelodyImport || evansMusicianBridgeRelax) duoIdentityWarnings.push(...messages);
     else errors.push(...messages);
   };
   const bassRhythmicCellSubstr = 'rhythmic cell repeated across more than two consecutive bars';

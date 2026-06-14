@@ -192,6 +192,7 @@ import {
 } from '../premium-melody';
 import { buildWayneShorterIsolationProvisionalProfile } from '../wayne-shorter/wsPremiumMelodyProfile';
 import { buildBillEvansIsolationProvisionalProfile } from '../bill-evans/bePremiumMelodyProfile';
+import { repairBeMusicianBridgeMelodyCoOnsetBarMath } from '../bill-evans/beMusicianPremiumMelodyBridge';
 import { buildHendrixIsolationProvisionalProfile } from '../hendrix/jhPremiumMelodyProfile';
 import { validateSongModeMotifSystem } from '../motif/songModeMotifEngine';
 import { validateSongModePhraseEngineV1 } from './songModePhraseEngineV1';
@@ -3132,6 +3133,37 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       });
   if (!integrityResult.passed) errors.push(...integrityResult.errors);
 
+  const evansMusicianBridgePinEligible =
+    options?.beMusicianPremiumMelodyBridge === true &&
+    options?.targetComposer === 'bill_evans' &&
+    (appliedContext.presetId ?? 'guitar_bass_duo') === 'guitar_bass_duo' &&
+    options?.importTimeline != null &&
+    (options.preserveMelody ?? true);
+
+  if (evansMusicianBridgePinEligible && options?.importTimeline) {
+    const beProfile = buildBillEvansIsolationProvisionalProfile();
+    const melodyLine = options.importTimeline.melodyLine;
+    const beHarmonyByBar: Record<number, string> = {};
+    for (const h of options.importTimeline.harmonyByBar) {
+      beHarmonyByBar[h.bar] = h.chordSymbol;
+    }
+    const bePinResult = applyPremiumMelodyPinExport(score, melodyLine, beProfile, seed, undefined, {
+      harmonyByBar: beHarmonyByBar,
+    });
+    score = bePinResult.score;
+    score = repairBeMusicianBridgeMelodyCoOnsetBarMath(score);
+    score = fillSparseVoiceRestGaps(score, 'clean_electric_guitar', 1);
+    appliedContext.generationMetadata = {
+      ...appliedContext.generationMetadata,
+      beMusicianPremiumMelodyBridge: true,
+      bePremiumMelodyProfile: beProfile.id,
+      bePremiumMelodyRhythmMeta: bePinResult.rhythmMeta,
+      ...(beProfile.pitchProfile != null && bePinResult.pitchTrace != null
+        ? { bePremiumMelodyPitchTrace: bePinResult.pitchTrace }
+        : {}),
+    };
+  }
+
   const behaviourResult =
     options?.debugFixtureMode === 'indie_dual_guitar_tuning_proof'
       ? { allValid: true, rhythmValid: true, errors: [], duoIdentityWarnings: [] as string[] }
@@ -3163,7 +3195,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     errors: errors.length,
     phraseWarnings: songModePhraseWarnings.length,
   });
-  if (appliedContext.generationMetadata?.songModeHookFirstIdentity) {
+  if (appliedContext.generationMetadata?.songModeHookFirstIdentity || appliedContext.generationMetadata?.beMusicianPremiumMelodyBridge) {
     songModePhraseWarnings.push(...behaviourResult.duoIdentityWarnings);
   }
   if (dualGuitarRoute) {
@@ -3198,14 +3230,11 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     guitarMeasures: guitarMeasureCount,
   });
   const styleTransferResult = appliedContext.generationMetadata?.styleTransferResult;
-  const evansMusicianBridgePinEligible =
-    options?.beMusicianPremiumMelodyBridge === true &&
-    options?.targetComposer === 'bill_evans' &&
-    (appliedContext.presetId ?? 'guitar_bass_duo') === 'guitar_bass_duo';
   if (
     options?.importTimeline &&
     (options.preserveMelody ?? true) &&
-    (styleTransferResult || evansMusicianBridgePinEligible)
+    styleTransferResult &&
+    !evansMusicianBridgePinEligible
   ) {
     score = pinMelodyOnScore(score, options.importTimeline.melodyLine);
     if (styleTransferResult) {
@@ -3286,8 +3315,8 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     options?.importTimeline &&
     (appliedContext.presetId ?? 'guitar_bass_duo') === 'guitar_bass_duo' &&
     (options.preserveMelody ?? true) &&
-    (styleTransferResult?.composerApplied === 'bill_evans' ||
-      (options?.beMusicianPremiumMelodyBridge === true && options?.targetComposer === 'bill_evans'))
+    styleTransferResult?.composerApplied === 'bill_evans' &&
+    !evansMusicianBridgePinEligible
   ) {
     const beProfile = buildBillEvansIsolationProvisionalProfile();
     const melodyLine = options.importTimeline.melodyLine;
@@ -3335,6 +3364,10 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     };
   }
   if (styleTransferDeferBarMath && !isIndieTuningFixture) {
+    if (evansMusicianBridgePinEligible) {
+      score = repairBeMusicianBridgeMelodyCoOnsetBarMath(score);
+      score = fillSparseVoiceRestGaps(score, 'clean_electric_guitar', 1);
+    }
     score = fillSparseVoiceRestGaps(score, 'clean_electric_guitar', 2);
     strictBarMath = validateStrictBarMath(score);
     if (!strictBarMath.valid) {

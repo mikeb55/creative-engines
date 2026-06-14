@@ -5,6 +5,7 @@ const esbuild = require('esbuild');
 const path = require('path');
 const fs = require('fs');
 const { copyNapiCanvasToResources } = require('./copy-napi-canvas-resources');
+const { copyBeEvansBenchmarkFixtureToResources } = require('./copy-be-evans-benchmark-fixture');
 const { composerOsMdStubPlugin } = require('./esbuild-md-stub-plugin');
 const { composerOsMosaicSliceRequirePlugin } = require('./esbuild-mosaic-slice-require-plugin');
 
@@ -28,6 +29,7 @@ esbuild
   .then(() => {
     console.log('desktop-ipc bundle built:', outFile);
     copyNapiCanvasToResources();
+    copyBeEvansBenchmarkFixtureToResources();
   })
   .catch((err) => {
     console.error(err);
