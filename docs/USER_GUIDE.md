@@ -159,14 +159,14 @@ Separate from the Song Mode **LeadSheet MusicXML input** panel above. Parallel i
 
 | Limit | Status |
 |--------|--------|
-| **Bar cap** | **First 8 bars only** of the input leadsheet are processed |
+| **Bar cap** | Processes the **full leadsheet** up to **64 bars** (reads actual input bar count; **8-bar** inputs unchanged) |
 | **Input** | Sibelius-style **MusicXML** leadsheets (melody + chord symbols on top staff). **MIDI** / **`.mxl`** not yet supported on this path |
 | **Output** | **Guitar + String Quartet** (5 parts). **Viola is currently silent** (known orchestration bug) |
 | **Composers** | **debussy**, **kenny_wheeler**, **bartok** proven on Orbit compare — profiles differ mainly in **harmonic language**; rhythmic/texture behaviour is largely shared |
 | **GCE/LOCK** | Available via **CLI/test harness only** (`runLeadSheetOrbitGceLockProofCli.ts`, `leadSheetPhase7StringRealizationProof.test.ts`) — **not** in desktop Generate UI |
 | **UI** | Lead Sheet Input panel remains behind **`COMPOSER_OS_FULL_UI=1`**; this eval checkpoint does **not** ungate it |
 
-**Known issues:** silent viola · **rhythmAntiLoop** LOCK often fails on grid-perfect pad-like writing · composer profiles change harmony more than overall behaviour.
+**Known issues:** silent viola · **rhythmAntiLoop** LOCK often fails on grid-perfect pad-like writing · composer profiles change harmony more than overall behaviour · **sparse-chord leadsheets** (e.g. ~10 chord symbols across 40 bars) may leave long unlabeled harmonic stretches — later bars may inherit/default rather than express dense harmonic change.
 
 **Desktop GUI (Phase 6 — full Generate UI required):**
 

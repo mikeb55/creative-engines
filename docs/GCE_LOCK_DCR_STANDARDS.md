@@ -42,17 +42,18 @@ Report these as structurally limited / N/A-leaning where appropriate; **do not**
 - **Range / idiomaticity**
 - **GCE hard gates** (always blockers)
 
-A **5.x** short-form score (e.g. Orbit leadsheet ~5.3–5.4 after Phase 7 GCE wiring) is **not** release quality; it may combine real underperformance **and** measurement distortion from the 8-bar limit.
+A **5.x** short-form score (e.g. Orbit leadsheet ~5.3–5.4 after Phase 7 GCE wiring) is **not** release quality; it may combine real underperformance **and** measurement distortion when judged on **8-bar** fragments only.
 
 ### §1.2 Roadmap triage (leadsheet-input / low GCE)
 
+**>8-bar / full-chart** leadsheet-input measurement is **shipped** (full input up to **64-bar** cap; **`4b5a791a`**). Re-score on full-chart material before deep composer-grammar work.
+
 When GCE is low on **leadsheet-input** or other short-form material:
 
-1. Ask whether the score is **distorted by short-form limits**
-2. **Fix measurement first:** **>8-bar / full-chart** input → re-score
-3. **Then** decide whether the next work is rhythm, harmony correctness, or deeper composer grammar
-4. **Do not** optimize deep composer-behavioural grammar until the engine has been scored on fair full-chart material
-5. **Immediate fixable craft** on short-form still matters: `rhythmAntiLoop`, chord-fidelity / normalization, range / idiomaticity
+1. Ask whether the score is **distorted by short-form limits** — prefer **full-chart** (≤64 bars) re-score when available
+2. **Then** decide whether the next work is rhythm, harmony correctness, or deeper composer grammar
+3. **Do not** optimize deep composer-behavioural grammar until fair full-chart scoring is done
+4. **Immediate fixable craft** still matters: `rhythmAntiLoop`, chord-fidelity / normalization, range / idiomaticity · **sparse-chord** leadsheets may inherit/default across long unlabeled stretches
 
 See **`docs/COMPOSER_OS_ROADMAP.md`** for tier ordering (quality-unblocking → craft depth → input reach → housekeeping).
 
