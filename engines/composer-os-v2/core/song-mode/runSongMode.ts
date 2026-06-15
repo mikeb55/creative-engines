@@ -33,6 +33,7 @@ import type { AuthorRuleId, ClassicalSongRuleId, SongwriterRuleId } from './song
 import type { BeatlesContextMode, BeatlesFormTemplateId, BeatlesMelodicLens } from '../compositionContext';
 import type { StylePairingInput } from '../style-pairing/stylePairingTypes';
 import { DEFAULT_PRIMARY_SONGWRITER_STYLE, normalizeSongwriterStyleKey } from './songwriterStyleProfiles';
+import { resolveSongModeStudyTitle } from '../../app-api/scoreTitleDefaults';
 
 export type SongModeStructureVariant = 'default' | 'extended';
 
@@ -93,11 +94,13 @@ export interface SongModeRunResult {
  * Full structural Song Mode run: sections → hook/chorus/melody planners → style resolution → rules → compiled song → lead sheet → validation.
  */
 export function runSongMode(input: SongModeRunInput): SongModeRunResult {
-  const title = input.title ?? `Song Mode Study ${input.seed}`;
-  const voiceType = input.voiceType ?? DEFAULT_SONG_VOICE_TYPE;
-  const sectionBarTarget = input.totalBars ?? 32;
   const primaryResolved =
     normalizeSongwriterStyleKey(input.primarySongwriterStyle ?? '') ?? DEFAULT_PRIMARY_SONGWRITER_STYLE;
+  const title =
+    input.title?.trim() ||
+    resolveSongModeStudyTitle(primaryResolved, input.seed);
+  const voiceType = input.voiceType ?? DEFAULT_SONG_VOICE_TYPE;
+  const sectionBarTarget = input.totalBars ?? 32;
   const beatlesTpl = input.beatlesFormTemplate ?? 'vv_br_v';
   const sections =
     input.variant === 'extended'

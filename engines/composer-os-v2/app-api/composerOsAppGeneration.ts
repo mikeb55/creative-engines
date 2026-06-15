@@ -1141,28 +1141,7 @@ export function runAppGeneration(req: GenerateRequest, outputDir: string): Gener
   }
 }
 
-const SONGWRITER_DISPLAY_TITLE_MAP: Record<string, string> = {
-  donald_fagen: 'Donald Fagen',
-  frank_zappa: 'Frank Zappa',
-  henry_threadgill: 'Henry Threadgill',
-  charles_mingus: 'Charles Mingus',
-  pat_metheny: 'Pat Metheny',
-  wayne_shorter: 'Wayne Shorter',
-  bill_evans: 'Bill Evans',
-  thelonious_monk: 'Thelonious Monk',
-  bacharach: 'Burt Bacharach',
-  beatles: 'Beatles',
-  barry_harris: 'Barry Harris',
-};
-
-function songModeDefaultTitleFromSongwriter(req: GenerateRequest): string {
-  const key =
-    typeof req.primarySongwriterStyle === 'string' ? req.primarySongwriterStyle.trim().toLowerCase() : '';
-  if (!key) return `Song Mode Study ${req.seed}`;
-  const display = SONGWRITER_DISPLAY_TITLE_MAP[key];
-  if (!display) return `Song Mode Study ${req.seed}`;
-  return `${display} Study ${req.seed}`;
-}
+import { resolveSongModeStudyTitle } from './scoreTitleDefaults';
 
 function chordPlanToProgressionText(chordPlan: SectionChordPlan[]): string {
   return chordPlan.flatMap((s) => s.chordSymbols).join(' ');
@@ -1273,7 +1252,7 @@ function buildGrooveScaffoldSongFromChordPlan(params: {
 function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResult {
   const ts = new Date().toISOString();
   const tsSafe = ts.replace(/[:.]/g, '-');
-  const title = req.title?.trim() || songModeDefaultTitleFromSongwriter(req);
+  const title = req.title?.trim() || resolveSongModeStudyTitle(req.primarySongwriterStyle, req.seed);
   const effectiveSeed = resolveEffectiveGenerationSeed({
     seed: req.seed,
     variationId: req.variationId,
