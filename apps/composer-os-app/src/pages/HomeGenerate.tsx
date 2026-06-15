@@ -1,10 +1,9 @@
 ﻿import { useState, useEffect, useCallback, useRef, Fragment, useMemo, lazy, Suspense } from 'react';
 import type { CSSProperties } from 'react';
 import {
-  initPlayback,
-  parseXmlToPlaybackSequence,
+  auditionFromGenerateResult,
   pause,
-  play,
+  playAuditionSequence,
   stop,
 } from '../playback';
 import type { PlaybackSequence } from '../playback';
@@ -3070,8 +3069,7 @@ export function HomeGenerate({
       console.warn('[playback] no notes in sequence (parse mismatch or empty score)');
       return;
     }
-    await initPlayback();
-    await play(playbackSeq, (beat) => {
+    await playAuditionSequence(playbackSeq, (beat) => {
       setPlaybackBeat(beat);
       setGridPlaybackBeat(beat);
     });
@@ -4755,31 +4753,34 @@ export function HomeGenerate({
           const bpm = r.requestEcho?.bpm ?? 120;
           const ts = iRealParsedChart?.timeSignature;
           const timeSig = ts ? `${ts.num}/${ts.den}` : '4/4';
-          const applyPlaybackFromXml = (xml: string) => {
-            if (presetId === 'martino_linear') setMartinoXmlString(xml);
-            setPlaybackSeq(parseXmlToPlaybackSequence(xml, bpm, timeSig));
-            publishGridFromXml(xml, bpm, timeSig);
-            setPlaybackBeat(0);
-            setGridPlaybackBeat(0);
-            setIsPlaying(false);
-            setGridIsPlaying(false);
-          };
-          const playbackFilepath =
-            typeof r.ensembleMusicXmlFilepath === 'string' && r.ensembleMusicXmlFilepath.trim().length > 0
-              ? r.ensembleMusicXmlFilepath.trim()
-              : r.filepath;
-          if (playbackFilepath && typeof window !== 'undefined' && window.composerOsDesktop?.invokeApi) {
-            void window.composerOsDesktop
-              .invokeApi('composer-os-api:read-file', { path: playbackFilepath })
-              .then((xml) => {
-                if (typeof xml === 'string') applyPlaybackFromXml(xml);
-              })
-              .catch((e) => {
-                console.warn('[playback] desktop read-file failed:', playbackFilepath, e);
+          void auditionFromGenerateResult(r, {
+            bpm,
+            timeSig,
+            composerId: songwriterStyle,
+            seed: r.runManifest?.seed,
+            autoPlay: false,
+            onSequence: (seq) => {
+              setPlaybackSeq(seq);
+              setPlaybackBeat(0);
+              setGridPlaybackBeat(0);
+              setIsPlaying(false);
+              setGridIsPlaying(false);
+            },
+          }).then((outcome) => {
+            if (outcome.loadedXml) {
+              if (presetId === 'martino_linear') setMartinoXmlString(outcome.loadedXml);
+              publishGridFromXml(outcome.loadedXml, bpm, timeSig);
+            } else if (outcome.status === 'failed' || outcome.status === 'no_notes') {
+              clearGrid();
+            }
+            if (outcome.status === 'no_notes') {
+              console.warn('[playback] No playable notes', {
+                composerId: songwriterStyle,
+                seed: r.runManifest?.seed,
+                filepath: outcome.filepath,
               });
-          } else if (r.xml) {
-            applyPlaybackFromXml(r.xml);
-          }
+            }
+          });
         }
         if (
           r.runManifest?.presetId === 'song_mode' &&

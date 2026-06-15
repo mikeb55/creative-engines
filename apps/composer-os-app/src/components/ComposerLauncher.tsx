@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../services/api';
 import { buildWriterRecipeCardModel } from '../utils/writerRecipeCardModel';
+import { AuditionDock } from './AuditionDock';
 
 export type ComposerOption = { id: string; label: string };
 
@@ -447,7 +448,6 @@ export function ComposerLauncher({
   selectedId,
   onSelect,
   onOpenGenerate,
-  onGenerateNow,
   isActive,
   onRecordRecent,
 }: ComposerLauncherProps) {
@@ -564,7 +564,6 @@ export function ComposerLauncher({
   }, [isActive, onOpenGenerate, onRecordRecent, selectedId]);
 
   const selectedComposer = selectedId ? composerById.get(selectedId) : null;
-  const selectedTier = selectedId ? resolveComposerTier(selectedId) : null;
 
   const handleSelect = (id: string) => {
     onSelect(id);
@@ -753,48 +752,11 @@ export function ComposerLauncher({
 
       <StandaloneEnginesSection />
 
-      <div
-        style={{
-          flexShrink: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '0.75rem',
-          padding: '0.65rem 0.75rem',
-          border: '1px solid var(--border)',
-          borderRadius: 8,
-          background: 'var(--bg-panel, rgba(128,128,128,0.06))',
-          marginTop: '0.35rem',
-        }}
-      >
-        <div style={{ minWidth: 0 }}>
-          {selectedComposer ? (
-            <>
-              <div style={{ fontWeight: 600, fontSize: '0.92rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {selectedComposer.label}
-              </div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                {selectedTier ? TIER_BADGE[selectedTier] : 'Library'}
-              </div>
-            </>
-          ) : (
-            <span style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>Select a composer</span>
-          )}
-        </div>
-        <div style={{ display: 'flex', gap: '0.45rem', flexShrink: 0 }}>
-          <button
-            type="button"
-            className="secondary"
-            disabled={!selectedId}
-            onClick={() => selectedId && onOpenGenerate(selectedId)}
-          >
-            Open Generate
-          </button>
-          <button type="button" disabled={!selectedId} onClick={() => selectedId && onGenerateNow(selectedId)}>
-            Generate now
-          </button>
-        </div>
-      </div>
+      <AuditionDock
+        composerId={selectedId}
+        composerLabel={selectedComposer?.label ?? null}
+        onOpenFullControls={onOpenGenerate}
+      />
     </div>
   );
 }
