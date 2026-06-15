@@ -38,6 +38,8 @@
     "test:composer-smoke": "npm --prefix engines/composer-os-v2 run test:smoke --",
     "test:composer-smoke-fast": "npm --prefix engines/composer-os-v2 run test:smoke-fast --",
     "composer:generate": "tsx scripts/composerGenerate.ts",
+    "composer:manifest": "node scripts/buildComposerRegistryManifest.mjs --write",
+    "composer:manifest:check": "node scripts/checkComposerRegistryManifest.mjs",
     "test:composer-release": "npm --prefix engines/composer-os-v2 run test:full && npm --prefix engines/composer-os-v2 run test:ecm && npm --prefix apps/composer-os-desktop run build"
   },
   "devDependencies": {
