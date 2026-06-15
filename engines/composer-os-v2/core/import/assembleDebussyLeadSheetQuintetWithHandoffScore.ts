@@ -16,8 +16,9 @@ import type { MosaicImportTimeline } from './mosaicImportTimeline';
 export function assembleDebussyLeadSheetQuintetWithHandoffScore(
   seed = 90104,
   plan: readonly DebussyLeadSheetMelodyHandoffSegment[] = DEFAULT_DEBUSSY_LEADSHEET_MELODY_HANDOFF_PLAN,
-  importTimeline?: MosaicImportTimeline
+  importTimeline?: MosaicImportTimeline,
+  composerId = 'debussy'
 ): DebussyLeadSheetMelodyHandoffResult {
-  const base = assembleDebussyLeadSheetQuintetScore(seed, importTimeline);
+  const base = assembleDebussyLeadSheetQuintetScore(seed, importTimeline, composerId);
   return applyDebussyLeadSheetMelodyHandoff(base, plan, seed);
 }

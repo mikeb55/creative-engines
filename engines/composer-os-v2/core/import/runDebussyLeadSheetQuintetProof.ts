@@ -11,6 +11,8 @@ import {
   SQ_PART_VC,
 } from '../string-quartet/stringQuartetTypes';
 
+import type { MosaicImportTimeline } from './mosaicImportTimeline';
+
 export const EXPECTED_QUINTET_PART_IDS = ['guitar', SQ_PART_V1, SQ_PART_V2, SQ_PART_VA, SQ_PART_VC] as const;
 
 export interface DebussyLeadSheetQuintetProofResult {
@@ -30,8 +32,12 @@ export interface DebussyLeadSheetQuintetProofResult {
   musicXmlExportOk: boolean;
 }
 
-export function runDebussyLeadSheetQuintetProof(seed = 90103): DebussyLeadSheetQuintetProofResult {
-  const assembly = assembleDebussyLeadSheetQuintetScore(seed);
+export function runDebussyLeadSheetQuintetProof(
+  seed = 90103,
+  importTimeline?: MosaicImportTimeline,
+  composerId = 'debussy'
+): DebussyLeadSheetQuintetProofResult {
+  const assembly = assembleDebussyLeadSheetQuintetScore(seed, importTimeline, composerId);
   const { score, spine, melodyPinned, partIds, partNames, hasBassPart, stringNoteCount, musicContextBarCount } =
     assembly;
 

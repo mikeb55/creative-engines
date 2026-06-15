@@ -1,5 +1,5 @@
 /**
- * Shared debussy leadsheet-input harmony spine (Phase 1 + Phase 2).
+ * Shared leadsheet-input harmony spine (Phase 1 + Phase 2; composerId param Phase 5).
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
@@ -72,7 +72,11 @@ export function buildDebussyLeadSheetProofImportTimeline(): MosaicImportTimeline
   };
 }
 
-function buildProofCompositionContext(seed: number, lockedBars: string[]): CompositionContext {
+function buildProofCompositionContext(
+  seed: number,
+  lockedBars: string[],
+  composerId: string
+): CompositionContext {
   const preset = guitarBassDuoPreset;
   const sections = [
     { label: 'A', startBar: 1, length: 4 },
@@ -110,7 +114,7 @@ function buildProofCompositionContext(seed: number, lockedBars: string[]): Compo
       harmonyModeRequested: 'custom_locked',
       parsedCustomProgressionBars: [...lockedBars],
       customHarmonyLocked: true,
-      songwriterStyleId: 'debussy',
+      songwriterStyleId: composerId,
       builtInHarmonyFallbackOccurred: false,
     },
     validation: { gates: [], passed: true },
@@ -122,10 +126,14 @@ function buildProofCompositionContext(seed: number, lockedBars: string[]): Compo
 }
 
 export interface DebussyLeadSheetHarmonySpine {
+  composerId: string;
   seed: number;
   importTimeline: MosaicImportTimeline;
   context: CompositionContext;
   importedHarmonyBars: string[];
+  /** Slice precompute output for the active composer (Phase 5 generic). */
+  effectiveHarmonyBars: string[];
+  /** Debussy-only legacy field; populated when composerId === 'debussy'. */
   debussyEffectiveHarmonyBars: string[];
   appliedHarmonyBars: string[];
   generationMetadata: GenerationMetadata;
@@ -133,25 +141,27 @@ export interface DebussyLeadSheetHarmonySpine {
 
 export function buildDebussyLeadSheetHarmonySpine(
   seed = 90101,
-  importTimeline: MosaicImportTimeline = buildDebussyLeadSheetProofImportTimeline()
+  importTimeline: MosaicImportTimeline = buildDebussyLeadSheetProofImportTimeline(),
+  composerId = 'debussy'
 ): DebussyLeadSheetHarmonySpine {
   const importedHarmonyBars = importTimelineToLockedHarmony(importTimeline);
-  const context = buildProofCompositionContext(seed, importedHarmonyBars);
+  const context = buildProofCompositionContext(seed, importedHarmonyBars, composerId);
 
   context.lockedHarmonyBarsRaw = [...importedHarmonyBars];
   context.generationMetadata = {
     ...context.generationMetadata,
     parsedCustomProgressionBars: [...importedHarmonyBars],
+    songwriterStyleId: composerId,
   };
 
-  const entry = getDispatchEntry('debussy');
+  const entry = getDispatchEntry(composerId);
   if (!entry) {
-    throw new Error('debussy dispatch entry missing');
+    throw new Error(`${composerId} dispatch entry missing`);
   }
   entry.precompute(context);
 
   const sliceBars =
-    extractEffectiveHarmonyFromMetadata(context.generationMetadata, 'debussy') ?? importedHarmonyBars;
+    extractEffectiveHarmonyFromMetadata(context.generationMetadata, composerId) ?? importedHarmonyBars;
   const appliedHarmonyBars = buildStyleTransferHarmonyBars(
     importedHarmonyBars,
     sliceBars,
@@ -162,14 +172,18 @@ export function buildDebussyLeadSheetHarmonySpine(
 
   context.lockedHarmonyBarsRaw = [...appliedHarmonyBars];
   context.generationMetadata.parsedCustomProgressionBars = [...appliedHarmonyBars];
-  context.generationMetadata.debussyEffectiveHarmonyBars = [...sliceBars];
+  if (composerId === 'debussy') {
+    context.generationMetadata.debussyEffectiveHarmonyBars = [...sliceBars];
+  }
 
   return {
+    composerId,
     seed,
     importTimeline,
     context,
     importedHarmonyBars,
-    debussyEffectiveHarmonyBars: [...sliceBars],
+    effectiveHarmonyBars: [...sliceBars],
+    debussyEffectiveHarmonyBars: composerId === 'debussy' ? [...sliceBars] : [],
     appliedHarmonyBars,
     generationMetadata: context.generationMetadata,
   };

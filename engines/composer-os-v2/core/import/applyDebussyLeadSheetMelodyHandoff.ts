@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Phase 3 - apply melody hand-off to Phase 2 quintet using ContrapuntalLineEngine (call-only).
  */
 
@@ -51,11 +51,11 @@ function buildHandoffMosaicGuide(melody: readonly ImportMelodyNote[], totalBars:
   };
 }
 
-function contextForContrapuntalEngine(base: CompositionContext, seed: number): CompositionContext {
+function contextForContrapuntalEngine(base: CompositionContext, seed: number, composerId: string): CompositionContext {
   return {
     ...base,
     seed,
-    voiceBundle: getVoiceRuleBundle('debussy'),
+    voiceBundle: getVoiceRuleBundle(composerId),
   };
 }
 
@@ -64,8 +64,9 @@ function generateHandoffLineSet(
   melody: readonly ImportMelodyNote[],
   totalBars: number,
   seed: number,
+  composerId: string,
 ): AbstractLineSet {
-  const engine = new ContrapuntalLineEngine('debussy', contextForContrapuntalEngine(context, seed));
+  const engine = new ContrapuntalLineEngine(composerId, contextForContrapuntalEngine(context, seed, composerId));
   const mosaicSqGuides = buildHandoffMosaicGuide(melody, totalBars);
   const raw = engine.generateLines(totalBars, 'chords_only', { mosaicSqGuides });
   return engine.applyVrbFilter(raw);
@@ -193,9 +194,10 @@ export function applyDebussyLeadSheetMelodyHandoff(
   const melody = importTimeline.melodyLine;
   const totalBars = appliedHarmonyBars.length;
   const score = structuredClone(base.score) as ScoreModel;
-  score.title = 'Debussy LeadSheet Handoff Proof';
+  const composerId = spine.composerId ?? 'debussy';
+  score.title = `${composerId} LeadSheet Handoff Proof`;
 
-  const lineSet = generateHandoffLineSet(spine.context, melody, totalBars, seed);
+  const lineSet = generateHandoffLineSet(spine.context, melody, totalBars, seed, composerId);
   const perBarMelodyOwnership = buildPerBarMelodyOwnership(plan, totalBars);
   let handoffVariationDetected = false;
 

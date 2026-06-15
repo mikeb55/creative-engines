@@ -57,13 +57,15 @@ export interface DebussyLeadSheetQuintetAssemblyResult {
 
 export function assembleDebussyLeadSheetQuintetScore(
   seed = 90103,
-  importTimeline?: MosaicImportTimeline
+  importTimeline?: MosaicImportTimeline,
+  composerId = 'debussy'
 ): DebussyLeadSheetQuintetAssemblyResult {
-  const spine = buildDebussyLeadSheetHarmonySpine(seed, importTimeline);
+  const spine = buildDebussyLeadSheetHarmonySpine(seed, importTimeline, composerId);
+  const proofTitle = `${composerId} LeadSheet Quintet Proof`;
   const { importTimeline: resolvedImportTimeline, appliedHarmonyBars, generationMetadata } = spine;
 
   let guitarScore = buildMelodyOnlyHarmonyScaffoldScore(appliedHarmonyBars, {
-    title: 'Debussy LeadSheet Quintet Proof',
+    title: proofTitle,
   });
   guitarScore = pinMelodyOnScore(guitarScore, resolvedImportTimeline.melodyLine);
   const melodyPinned = verifyPinnedMelodyOnScore(guitarScore, resolvedImportTimeline.melodyLine);
@@ -81,12 +83,12 @@ export function assembleDebussyLeadSheetQuintetScore(
   });
 
   const quartetScore = buildQuartetScoreModel({
-    title: 'Debussy LeadSheet Quintet Proof',
+    title: proofTitle,
     seed,
     formPlan,
     texturePlan,
     chordBars: appliedHarmonyBars,
-    songwriterStyleId: 'debussy',
+    songwriterStyleId: composerId,
     generationMetadata: generationMetadata as GenerationMetadata,
   });
 

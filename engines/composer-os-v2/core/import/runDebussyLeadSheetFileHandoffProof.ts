@@ -14,15 +14,19 @@ import {
 } from './loadDebussyLeadSheetImportTimelineFromMusicXmlFile';
 
 export interface DebussyLeadSheetFileHandoffProofResult extends DebussyLeadSheetHandoffProofResult {
+  composerId: string;
   sourceFile: string;
   importedHarmonyBars: string[];
+  appliedHarmonyBars: string[];
+  effectiveHarmonyBars: string[];
   fileChordMatch: boolean;
   differsFromHardcodedProofChords: boolean;
 }
 
 export function runDebussyLeadSheetFileHandoffProof(
   musicXmlFilePath: string,
-  seed = 90105
+  seed = 90105,
+  composerId = 'debussy'
 ): DebussyLeadSheetFileHandoffProofResult {
   const importTimeline = loadDebussyLeadSheetImportTimelineFromMusicXmlFile(musicXmlFilePath);
   const importedHarmonyBars = importTimelineToLockedHarmony(importTimeline);
@@ -33,7 +37,7 @@ export function runDebussyLeadSheetFileHandoffProof(
     (sym, i) => normalizeChordToken(sym) !== normalizeChordToken(DEBUSSY_LEADSHEET_PROOF_CHORDS[i] ?? '')
   );
 
-  const handoff = assembleDebussyLeadSheetQuintetWithHandoffScore(seed, undefined, importTimeline);
+  const handoff = assembleDebussyLeadSheetQuintetWithHandoffScore(seed, undefined, importTimeline, composerId);
   const { score, perBarMelodyOwnership, melodyCarrierPartIds, handoffVariationDetected } = handoff;
 
   const partsDump = score.parts.map((p) => {
@@ -50,8 +54,11 @@ export function runDebussyLeadSheetFileHandoffProof(
 
   return {
     seed,
+    composerId,
     sourceFile: musicXmlFilePath,
     importedHarmonyBars,
+    appliedHarmonyBars: handoff.spine.appliedHarmonyBars,
+    effectiveHarmonyBars: handoff.spine.effectiveHarmonyBars,
     fileChordMatch,
     differsFromHardcodedProofChords,
     partIds: handoff.partIds,
