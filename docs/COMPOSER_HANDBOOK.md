@@ -24,6 +24,22 @@ Practical notes for **using** Composer OS—generation, evaluation, and quality 
 
 ---
 
+## AuditionDock (full React UI — Phase 1)
+
+**Component:** **`AuditionDock.tsx`** on the **Composers** tab; **Generate** tab playback refactored onto the same helper.
+
+**User flow:** Pick composer → **Listen** → seeded **Song Mode** generate → in-browser playback (**Tone.js** via **`playbackEngine`**).
+
+**Shared helper:** **`auditionFromGenerateResult`** — load MusicXML from generate result (inline **`xml`** or desktop **`composer-os-api:read-file`**), **`parseXmlToPlaybackSequence`**, **`no_notes`** status when the parsed sequence is empty, then **`playAuditionSequence`**.
+
+**Request builder:** **`buildAuditionGenerateRequest`** — default **32 bars**, **120 BPM**, tonal centre **C**, **`creativeControlLevel: balanced`**. **`SONG_MODE_DUO_ARRANGEMENT_COMPOSERS`**: **`debussy`**, **`messiaen`**, **`steve_reich`** — documented in **`composerCoverageManifest.json`** as auditioning on **Song Mode duo**, not their SQ / process-music native surfaces.
+
+**Explicit non-goals (Phase 1):** No lead-sheet / pasted-chord / import audition. No quintet or full-ensemble dock routing per composer. Those are future phases.
+
+**Smoke:** **`npm run test:composer-smoke`** — **674**/0 (**121** suites) at ship.
+
+---
+
 ## ECM VRB — room character (header chip)
 
 **VRB** in the app header (**`VRB: Nordic Studio`**) is **not** a reverb plugin and **not** the harmonic **VoiceRuleBundle** roster below. It is an **ECM Records–style room profile**: how dry or spacious the generated material should feel — room size, decay tail, early reflections, damping. Composer OS passes this as metadata on every generate call so exports and downstream scoring share one acoustic “stage.”

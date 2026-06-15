@@ -17,6 +17,7 @@ Composer OS is an application that **generates instrumental music** from your ch
 - **Outputs** — Browse recent outputs and open your library folder or a specific file’s folder.
 - **Slonimsky Etudes** — Open the **Slonimsky Etudes** tab for a standalone pattern etude study tool (separate from Generate). See **What’s New — May 2026** at the end of this guide.
 - **Composer Engines** — Use three standalone engines (Wayne Shorter, Thelonious Monk, Charlie Parker). **Opening the output folder from the browser** may not work; the **desktop app** is better for “reveal in folder” behaviour.
+- **Composers tab — AuditionDock (Listen)** — Pick a composer, press **Listen**, hear a **short generated demo** (seeded **32-bar Song Mode** run). Does **not** play your pasted chart or imported lead sheet — that is a later phase.
 - **Diagnostics** — Check that the backend is reachable, see where files are written, and optionally run a **system check** (full checkout + `npm` required).
 
 **Modes available in the Generate dropdown**
@@ -490,6 +491,18 @@ Three harmony modes are available:
 The run receipt shows what harmony mode was applied, how many bars were locked, and the policy version used.
 
 The app also extracts behavioural hints from the imported file — density, register spread, and melodic contour — and attaches them to the run manifest as reference influence metadata. These are advisory only and do not override note generation.
+
+### Composers tab — AuditionDock (in-app Listen)
+
+**Where:** **Composers** tab (**`ComposerLauncher`**), dock at bottom of the composer browser.
+
+**What it does:** Select a composer → **Listen** → app runs a **fresh generate** (balanced creative control, **32 bars**, **120 BPM**, key **C**) and plays the result through the shared Tone.js playback path (**`auditionFromGenerateResult`**). **Play** / **Pause** / **Stop** after a successful generate.
+
+**Current limit (Phase 1):** Audition plays **composer-invented material from the demo seed**, not your lead-sheet chords, pasted progression, or MusicXML import. To hear **your** chart, use **Generate** (or **Arranger**) with your inputs and export to notation software.
+
+**Arrangement honesty:** Most composers audition on the **Song Mode guitar–bass duo** path. **Debussy**, **Messiaen**, and **Steve Reich** also audition on **Song Mode duo** — they do **not** switch to String Quartet or other native ensemble presets in the dock (see **`composerCoverageManifest.json`** **`arrangementPath`** notes). Full ensemble arrangement coverage is **not** implied for every composer id in the browser.
+
+**Empty output:** If generate succeeds but MusicXML has no playable notes, status shows **No playable notes** (empty-notes gate).
 
 ### Slonimsky Etudes (standalone tab)
 
