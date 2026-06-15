@@ -40,33 +40,36 @@ Practical notes for **using** Composer OS—generation, evaluation, and quality 
 
 ---
 
-## Leadsheet-input engine (Phases 1–4 — CLI proof, not product UI)
+## Leadsheet-input engine (Phases 1–6 — proof + desktop GUI)
 
-**What it is:** A **CLI-only proof** that ingests a **MusicXML leadsheet**, applies **Debussy** harmony reharm, assembles **guitar + string quartet** (five parts, no bass), runs a **melody hand-off** (**guitar → violin I → cello → guitar** over **8** bars), and exports **MusicXML**. It uses a **parallel import path** under **`engines/composer-os-v2/core/import/`** — it **does not** call **`generateGoldenPathDuoScore`**.
+**What it is:** A **parallel import proof** that ingests a **MusicXML leadsheet**, applies **composer-specific** harmony (**`debussy`** or **`kenny_wheeler`** today), assembles **guitar + string quartet** (five parts, no bass), runs a **melody hand-off** (**guitar → violin I → cello → guitar** over **8** bars), and exports **MusicXML**. Path: **`engines/composer-os-v2/core/import/`** — **does not** call **`generateGoldenPathDuoScore`**. **GUI + CLI** both available; still **not** a polished general-purpose product.
 
-**How to run (from repository root):**
+**Desktop GUI (Phase 6):**
+
+1. Launch full Generate UI: **`COMPOSER_OS_FULL_UI=1 npm start`** from **`apps/composer-os-desktop`**.
+2. On **Generate**, use **Lead Sheet Input (File→Open)** — pick **Debussy** or **Kenny Wheeler**, then **Open MusicXML leadsheet…**.
+3. Exported quintet saves under **`{Composer OS output}/leadsheet-input/`**.
+
+**CLI proof (Phases 1–5):**
 
 ```bash
 npx tsx --tsconfig tsconfig.json engines/composer-os-v2/scripts/runDebussyLeadSheetInputProofCli.ts
 ```
 
-**What the CLI does:**
-1. Runs Phase **1** (hardcoded proof timeline), Phase **2** (quintet assembly), Phase **3** (melody hand-off), and Phase **4** (bundled sample MusicXML file ingest).
-2. Writes JSON summaries + `.musicxml` exports to **`engines/composer-os-v2/output/debussy-leadsheet-input-proof/`**.
-3. Runs **`debussyLeadSheetInputProof.test.ts`** assertions; exits **1** on any failure.
+Writes JSON summaries + `.musicxml` to **`engines/composer-os-v2/output/debussy-leadsheet-input-proof/`** and runs proof gates.
 
 **Bundled Phase 4 sample file:** **`engines/composer-os-v2/resources/test-fixtures/debussy-leadsheet-file-proof/debussy_file_proof_leadsheet.musicxml`**.
 
 **Current limits (read before expecting product behaviour):**
 | Limit | Status |
 |--------|--------|
-| **Composer** | **Debussy only** — no second writer yet (Phase 5 backlog) |
+| **Composers** | **`debussy`**, **`kenny_wheeler`** only — widen backlog |
 | **Input format** | **MusicXML only** — **MIDI deferred** |
-| **UI** | **CLI only** — no Generate **File → Open**, no desktop import dialog |
+| **UI** | **GUI** (full desktop UI) **+ CLI** — not Song Mode Generate paste panel |
 | **Scope** | **8-bar proof** — not full-chart realisation |
 | **Product** | Proof engine — **not** a finished end-user feature |
 
-**Related docs:** [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md) (parallel import layer) · [COMPOSER_OS_ROADMAP.md](COMPOSER_OS_ROADMAP.md) (Phase 5 / GUI / MIDI backlog).
+**Related docs:** [USER_GUIDE.md](USER_GUIDE.md) · [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md) · [COMPOSER_OS_ROADMAP.md](COMPOSER_OS_ROADMAP.md).
 
 ---
 

@@ -151,13 +151,35 @@ Details: **`docs/CHANGELOG.md`** → **[2026-04-28]**.
 - **Harmony display (Raw / Enriched / Compare):** available on the **technical generate request** for integrations and advanced flows; the main Generate screen may not expose every option yet. See the plain guide linked above.
 - **Explicitly deferred:** Big Band, ECM, other Song Mode writers, and universal LeadSheet rollout.
 
-### Leadsheet-input engine (Debussy quintet — CLI proof, Phases 1–4)
+### Leadsheet-input engine (quintet + melody hand-off — Phases 1–6)
 
-Separate from the Generate UI LeadSheet panel above. **CLI-only proof** — not wired to **File → Open** or desktop import yet.
+Separate from the Song Mode **LeadSheet MusicXML input** panel above. Parallel import path: MusicXML file → composer-specific harmony → **guitar + string quartet** (five parts, no bass) → melody hand-off → exported MusicXML. **Not** a polished general-purpose product — **8-bar proof-oriented**, **MusicXML-only**, **two composers proven** (**debussy**, **kenny_wheeler**).
 
-- **What it does:** MusicXML leadsheet → Debussy harmony → **guitar + string quartet** → melody hand-off (**guitar → Vn1 → cello → guitar**) → MusicXML export (**8-bar** proof).
-- **Run from repo root:** `npx tsx --tsconfig tsconfig.json engines/composer-os-v2/scripts/runDebussyLeadSheetInputProofCli.ts` — outputs under **`engines/composer-os-v2/output/debussy-leadsheet-input-proof/`**.
-- **Limits:** **Debussy-only** · **MusicXML-only** (no MIDI) · **CLI-only** · not a finished product feature. See [COMPOSER_HANDBOOK.md](COMPOSER_HANDBOOK.md) § Leadsheet-input engine.
+**Desktop GUI (Phase 6 — full Generate UI required):**
+
+1. From **`apps/composer-os-desktop`**, launch with full UI (default window is the slim Musician shell):
+
+   ```powershell
+   $env:COMPOSER_OS_FULL_UI='1'; npm start
+   ```
+
+2. Open the **Generate** tab. Find **Lead Sheet Input (File→Open)** (above Mosaic import).
+
+3. Choose **Composer:** **Debussy** or **Kenny Wheeler**.
+
+4. Click **Open MusicXML leadsheet…**, pick a local **`.musicxml`**, **`.xml`**, or **`.mxl`** file. Canceling the dialog shows **No file selected.** — no output written.
+
+5. On success, status shows file name, bar/part counts, and save path under your Composer OS output folder **`leadsheet-input/`** (e.g. `{filename}_{composerId}_quintet.musicxml`).
+
+**CLI proof (still available from repo root):**
+
+```bash
+npx tsx --tsconfig tsconfig.json engines/composer-os-v2/scripts/runDebussyLeadSheetInputProofCli.ts
+```
+
+Outputs under **`engines/composer-os-v2/output/debussy-leadsheet-input-proof/`** (includes Phase 5 composer compare).
+
+See [COMPOSER_HANDBOOK.md](COMPOSER_HANDBOOK.md) § Leadsheet-input engine.
 
 ---
 
