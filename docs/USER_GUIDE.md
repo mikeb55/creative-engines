@@ -151,9 +151,22 @@ Details: **`docs/CHANGELOG.md`** → **[2026-04-28]**.
 - **Harmony display (Raw / Enriched / Compare):** available on the **technical generate request** for integrations and advanced flows; the main Generate screen may not expose every option yet. See the plain guide linked above.
 - **Explicitly deferred:** Big Band, ECM, other Song Mode writers, and universal LeadSheet rollout.
 
-### Leadsheet-input engine (quintet + melody hand-off — Phases 1–6)
+### Leadsheet-input engine (quintet + melody hand-off — Phases 1–7)
 
-Separate from the Song Mode **LeadSheet MusicXML input** panel above. Parallel import path: MusicXML file → composer-specific harmony → **guitar + string quartet** (five parts, no bass) → melody hand-off → exported MusicXML. **Not** a polished general-purpose product — **8-bar proof-oriented**, **MusicXML-only**, **two composers proven** (**debussy**, **kenny_wheeler**).
+Separate from the Song Mode **LeadSheet MusicXML input** panel above. Parallel import path: MusicXML file → composer-specific harmony → **guitar + string quartet** (five parts, no bass) → melody hand-off → string realization → exported MusicXML. **Not** a polished general-purpose product.
+
+#### Leadsheet engine (current limits)
+
+| Limit | Status |
+|--------|--------|
+| **Bar cap** | **First 8 bars only** of the input leadsheet are processed |
+| **Input** | Sibelius-style **MusicXML** leadsheets (melody + chord symbols on top staff). **MIDI** / **`.mxl`** not yet supported on this path |
+| **Output** | **Guitar + String Quartet** (5 parts). **Viola is currently silent** (known orchestration bug) |
+| **Composers** | **debussy**, **kenny_wheeler**, **bartok** proven on Orbit compare — profiles differ mainly in **harmonic language**; rhythmic/texture behaviour is largely shared |
+| **GCE/LOCK** | Available via **CLI/test harness only** (`runLeadSheetOrbitGceLockProofCli.ts`, `leadSheetPhase7StringRealizationProof.test.ts`) — **not** in desktop Generate UI |
+| **UI** | Lead Sheet Input panel remains behind **`COMPOSER_OS_FULL_UI=1`**; this eval checkpoint does **not** ungate it |
+
+**Known issues:** silent viola · **rhythmAntiLoop** LOCK often fails on grid-perfect pad-like writing · composer profiles change harmony more than overall behaviour.
 
 **Desktop GUI (Phase 6 — full Generate UI required):**
 
@@ -178,6 +191,12 @@ npx tsx --tsconfig tsconfig.json engines/composer-os-v2/scripts/runDebussyLeadSh
 ```
 
 Outputs under **`engines/composer-os-v2/output/debussy-leadsheet-input-proof/`** (includes Phase 5 composer compare).
+
+**GCE/LOCK Orbit proof (eval harness only — no UI):**
+
+```bash
+npx tsx --tsconfig tsconfig.json engines/composer-os-v2/scripts/runLeadSheetOrbitGceLockProofCli.ts
+```
 
 See [COMPOSER_HANDBOOK.md](COMPOSER_HANDBOOK.md) § Leadsheet-input engine.
 

@@ -40,9 +40,9 @@ Practical notes for **using** Composer OS—generation, evaluation, and quality 
 
 ---
 
-## Leadsheet-input engine (Phases 1–6 — proof + desktop GUI)
+## Leadsheet-input engine (Phases 1–7 — proof + desktop GUI)
 
-**What it is:** A **parallel import proof** that ingests a **MusicXML leadsheet**, applies **composer-specific** harmony (**`debussy`** or **`kenny_wheeler`** today), assembles **guitar + string quartet** (five parts, no bass), runs a **melody hand-off** (**guitar → violin I → cello → guitar** over **8** bars), and exports **MusicXML**. Path: **`engines/composer-os-v2/core/import/`** — **does not** call **`generateGoldenPathDuoScore`**. **GUI + CLI** both available; still **not** a polished general-purpose product.
+**What it is:** A **parallel import proof** that ingests a **MusicXML leadsheet**, applies **composer-specific** harmony, assembles **guitar + string quartet** (five parts, no bass), runs a **melody hand-off** (**guitar → violin I → cello → guitar** over **8** bars), applies **string realization** (Phase 7), and exports **MusicXML**. Path: **`engines/composer-os-v2/core/import/`** — **does not** call **`generateGoldenPathDuoScore`**. **GUI + CLI** both available; still **not** a polished general-purpose product.
 
 **Desktop GUI (Phase 6):**
 
@@ -63,11 +63,15 @@ Writes JSON summaries + `.musicxml` to **`engines/composer-os-v2/output/debussy-
 **Current limits (read before expecting product behaviour):**
 | Limit | Status |
 |--------|--------|
-| **Composers** | **`debussy`**, **`kenny_wheeler`** only — widen backlog |
-| **Input format** | **MusicXML only** — **MIDI deferred** |
-| **UI** | **GUI** (full desktop UI) **+ CLI** — not Song Mode Generate paste panel |
-| **Scope** | **8-bar proof** — not full-chart realisation |
+| **Bar cap** | **First 8 bars only** |
+| **Input** | Sibelius **MusicXML** leadsheets (melody + chords on top staff). **MIDI** / **`.mxl`** not yet supported |
+| **Output** | Guitar + String Quartet (**5** parts). **Viola currently silent** (known bug) |
+| **Composers** | **`debussy`**, **`kenny_wheeler`**, **`bartok`** on Orbit proof — harmony differs most; rhythm/texture largely shared |
+| **GCE/LOCK** | **`runLeadSheetOrbitGceLockProofCli.ts`** + proof tests only — **not** in desktop UI |
+| **UI** | **`COMPOSER_OS_FULL_UI=1`** File→Open panel — not Song Mode paste panel |
 | **Product** | Proof engine — **not** a finished end-user feature |
+
+**Known issues:** silent viola · **rhythmAntiLoop** LOCK often fails (grid-perfect writing) · composer profiles change harmony more than behaviour.
 
 **Related docs:** [USER_GUIDE.md](USER_GUIDE.md) · [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md) · [COMPOSER_OS_ROADMAP.md](COMPOSER_OS_ROADMAP.md).
 
