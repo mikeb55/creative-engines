@@ -66,6 +66,11 @@ import type {
 const MosaicImportPanel = lazy(() =>
   import('../components/mosaic-import/MosaicImportPanel').then((m) => ({ default: m.MosaicImportPanel })),
 );
+const LeadSheetInputDesktopPanel = lazy(() =>
+  import('../components/leadsheet-input/LeadSheetInputDesktopPanel').then((m) => ({
+    default: m.LeadSheetInputDesktopPanel,
+  })),
+);
 const MosaicVariationResults = lazy(() =>
   import('../components/mosaic-import/MosaicVariationResults').then((m) => ({ default: m.MosaicVariationResults })),
 );
@@ -5784,6 +5789,12 @@ export function HomeGenerate({
         exportIntegrity={sharedStripExportIntegrity}
         tritonicFloatOver={tritonicFloatOverText}
       />
+
+      {isDesktopIpc() ? (
+        <Suspense fallback={null}>
+          <LeadSheetInputDesktopPanel />
+        </Suspense>
+      ) : null}
 
       <Suspense fallback={null}>
         <MosaicImportPanel

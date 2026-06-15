@@ -30,6 +30,10 @@ import {
 import { getOutputDir } from '../../composer-os-app/src/lib/outputPaths';
 import { loadSessionFile, saveSessionFile } from '../../../engines/composer-os-v2/core/sessions/sessionStore';
 import type { ComposerSessionV1 } from '../../../engines/composer-os-v2/core/sessions/sessionTypes';
+import {
+  apiRunLeadSheetFileInput,
+  type LeadSheetFileInputRequest,
+} from '../../../engines/composer-os-v2/app-api/runLeadSheetFileInputApi';
 
 function resolveEnginesRoot(): string {
   return app.isPackaged
@@ -107,6 +111,34 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
     });
     if (result.canceled || !result.filePaths?.[0]) return { path: null };
     return { path: result.filePaths[0] };
+  });
+
+  ipcMain.handle('composer-os-api:pick-leadsheet-file', async (_event, body: unknown) => {
+    const { dialog } = await import('electron');
+    const defaultPathRaw =
+      body && typeof body === 'object' && typeof (body as { defaultPath?: unknown }).defaultPath === 'string'
+        ? (body as { defaultPath: string }).defaultPath.trim()
+        : '';
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      defaultPath: defaultPathRaw || outputDir,
+      filters: [{ name: 'MusicXML leadsheet', extensions: ['musicxml', 'mxl', 'xml'] }],
+    });
+    if (result.canceled || !result.filePaths?.[0]) {
+      return { ok: false, canceled: true as const };
+    }
+    return { ok: true as const, filepath: result.filePaths[0] };
+  });
+
+  ipcMain.handle('composer-os-api:run-leadsheet-file-input', (_event, body: unknown) => {
+    const b =
+      body && typeof body === 'object'
+        ? (body as Partial<LeadSheetFileInputRequest>)
+        : ({} as Partial<LeadSheetFileInputRequest>);
+    const filePath = typeof b.filePath === 'string' ? b.filePath.trim() : '';
+    const composerId = b.composerId === 'kenny_wheeler' ? 'kenny_wheeler' : 'debussy';
+    const seed = typeof b.seed === 'number' && Number.isFinite(b.seed) ? b.seed : undefined;
+    return apiRunLeadSheetFileInput({ filePath, composerId, seed }, outputDir);
   });
 
   ipcMain.handle('composer-os-api:pick-mosaic-import-file', async (_event, body: unknown) => {

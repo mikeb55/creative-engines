@@ -35,6 +35,13 @@ describe('Desktop IPC clean-room (static)', () => {
     expect(ipc).toContain('getComposerOsRuntimeBuildInfo');
   });
 
+  it('ipc entry registers leadsheet file-input handlers (Phase 6)', () => {
+    const ipc = fs.readFileSync(path.join(desktopRoot, 'electron', 'ipcEntry.ts'), 'utf-8');
+    expect(ipc).toContain('composer-os-api:pick-leadsheet-file');
+    expect(ipc).toContain('composer-os-api:run-leadsheet-file-input');
+    expect(ipc).toContain('apiRunLeadSheetFileInput');
+  });
+
   it('renderer api uses IPC when integration is ipc', () => {
     const api = fs.readFileSync(
       path.join(desktopRoot, '..', 'composer-os-app', 'src', 'services', 'api.ts'),
