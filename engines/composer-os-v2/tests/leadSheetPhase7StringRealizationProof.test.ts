@@ -11,9 +11,26 @@ import {
   dumpLeadSheetQuintetBarVoices,
 } from '../core/import/leadSheetStringRealizationPass';
 import { runDebussyLeadSheetHandoffProof } from '../core/import/runDebussyLeadSheetHandoffProof';
+import {
+  formatLeadSheetGceLockReport,
+  runLeadSheetGceLockEval,
+  serializeLeadSheetGceLockEval,
+} from '../core/import/leadSheetGceLockEvalRunner';
+import { resolveOrbitLeadSheetProofPath } from '../core/import/resolveOrbitLeadSheetProofPath';
+import * as path from 'path';
 
-const ORBIT_FIXTURE =
-  'C:/Dev/Guitar and String Quartet/outputs/Orbit in 4_4 - first 8 bars only 15 June 2026.musicxml';
+const GCE_CATEGORY_IDS = [
+  'cadentialClarity',
+  'melodicIdentity',
+  'phraseGrammar',
+  'harmonyAndLanguage',
+  'rhythmicIdentity',
+  'structureAndForm',
+  'arrangementAndOrchestration',
+  'economyAndFocus',
+  'tensionAndRelease',
+  'thematicRecallPotential',
+] as const;
 
 function hasMotionInBar(parts: Record<string, string>, ownerPartId: string): boolean {
   for (const [pid, dump] of Object.entries(parts)) {
@@ -102,14 +119,38 @@ export function runLeadSheetPhase7StringRealizationProofTests(): { ok: boolean; 
       });
     }
 
-    if (fs.existsSync(ORBIT_FIXTURE)) {
-      const tl = loadDebussyLeadSheetImportTimelineFromMusicXmlFile(ORBIT_FIXTURE);
+    const orbitFixture = resolveOrbitLeadSheetProofPath(path.join(__dirname, '..'));
+    if (orbitFixture) {
+      const tl = loadDebussyLeadSheetImportTimelineFromMusicXmlFile(orbitFixture);
       for (const composerId of ['debussy', 'kenny_wheeler'] as const) {
         const { handoff, range } = runPhase7Proof(composerId, 90106, tl);
         out.push({
           ok: handoff.phase7?.melodyOwnershipEnforced === true && range.ok,
           name: `phase7 orbit ${composerId}: file handoff realization`,
         });
+
+        const evalResult = runLeadSheetGceLockEval({
+          score: handoff.score,
+          composerId,
+          seed: 90106,
+          sourceFile: orbitFixture,
+        });
+        out.push({
+          ok:
+            evalResult.scoringMode === 'feature-linked' &&
+            GCE_CATEGORY_IDS.every((c) => typeof evalResult.gce.categories[c] === 'number') &&
+            evalResult.lock.gates.length === 6,
+          name: `phase7 orbit ${composerId}: GCE+LOCK eval wired (feature-linked, 10 categories, 6 LOCK gates)`,
+        });
+
+        if (process.env.LEADSHEET_GCE_LOCK_DUMP === '1') {
+          const dumpDir = path.join(__dirname, '..', 'output', 'leadsheet-gce-lock-proof');
+          fs.mkdirSync(dumpDir, { recursive: true });
+          const jsonPath = path.join(dumpDir, `orbit-${composerId}-gce-lock-eval.json`);
+          fs.writeFileSync(jsonPath, JSON.stringify(serializeLeadSheetGceLockEval(evalResult), null, 2), 'utf8');
+          console.log(formatLeadSheetGceLockReport(evalResult));
+          console.log('Wrote', jsonPath);
+        }
       }
     }
   } catch (e) {
