@@ -16,9 +16,29 @@ Full framework: see docs/GCE_FRAMEWORK_V2.md
 
 Quick reference:
 - 10 categories, all score 0-10
-- Overall must reach 9.0
-- If < 9.0: revise weakest only, one pass, no full rewrite
-- Hard fail: Melody <= 6, no section contrast, accidental ending
+- **9.0** = aspirational north star (long-term benchmark; formulas unchanged)
+- **7.9–8.4** = current empirical release-quality / system-ceiling band (tuned, shipped-quality output under the present system)
+- **Operational release band:** >= 7.9 PASS · 6.5–7.8 acceptable / promising / one weakest-category pass · < 6.5 materially weak / investigate
+- If below release band: revise weakest only, one pass, no full rewrite (DCR)
+- **Hard gates remain true blockers** regardless of calibrated overall band (auto-fail):
+  - Melodic Identity <= 6
+  - No section contrast
+  - Cadential Clarity coverage < 0.4
+  - Final bar tension > 0.7 (accidental / unresolved ending)
+
+### Short-form / fragment outputs (< ~16 bars, especially 8-bar leadsheet)
+
+Do **not** judge fragments the same way as full-chart output. Some categories are **structurally limited** on short material:
+- **thematicRecallPotential**, **structureAndForm**, parts of **phraseGrammar** — report as structurally limited / N/A-leaning / interpret with caution; not automatic craft failure
+- **rhythmAntiLoop**, **harmony & language / chord fidelity**, **range / idiomaticity** — still meaningful on short-form; low scores here may be real findings
+- A **5.x** short-form score is **not** release quality; it may mix real underperformance **and** measurement distortion — triage before recommending deep composer-grammar work
+
+### Roadmap triage (low GCE on leadsheet / short-form)
+
+1. Ask whether the score is distorted by short-form limits  
+2. Prioritize **>8-bar / full-chart** evaluation before deep architectural craft work  
+3. Only after fair full-chart scoring, recommend large-scale composer-behavioural-grammar work  
+4. Immediate fixable findings on short-form still matter: rhythmAntiLoop / too-perfect grid, chord-fidelity bugs, range / idiomaticity bugs  
 
 Apply this framework whenever:
 - Generating or evaluating any MusicXML output

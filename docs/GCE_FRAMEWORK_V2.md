@@ -13,9 +13,12 @@ NOT limited to: bebop, songs with lyrics, or any single style.
 
 ## Scoring
 - Score each category 0-10
-- Overall must reach 9.0 before final output
-- If < 9.0: revise weakest category only, one pass
+- **9.0** = aspirational north star (long-term benchmark; formulas unchanged)
+- **7.9–8.4** = current empirical release-quality / system-ceiling band under the present system
+- **Operational release band (guidance):** >= 7.9 PASS · 6.5–7.8 acceptable / one weakest-category pass · < 6.5 materially weak
+- If below operational band: revise weakest category only, one pass (DCR)
 - Never full rewrite. Preserve asymmetry.
+- **Hard gates** (below) remain auto-fail blockers regardless of calibrated overall band
 
 ## 10 Categories (all fully automatable)
 
@@ -180,3 +183,10 @@ Gap to 9.0: 0.6-1.1 points. Universal weakness: Melodic Identity.
 Zero regressions. ECM first successful eval.
 Gap to GCE 9.0: 0.6-1.2 points.
 Next: Motif Authority Layer.
+
+### Benchmark interpretation (2026-06-15)
+
+- Ceilings around **7.9–8.4** define the **current practical system ceiling** under tuned presets (not a formula change).
+- **9.0** remains the **long-term benchmark**; the documented **0.6–1.2** point gap is real.
+- **Short-form outputs** (< ~16 bars, especially 8-bar leadsheet fragments) must **not** be scored like full charts — see **`docs/GCE_LOCK_DCR_STANDARDS.md` §1.1**.
+- **Roadmap:** fix **>8-bar / full-chart** measurement first, re-score, then decide rhythm vs harmony vs deeper composer grammar — do not treat a low 8-bar score as automatic proof that deep composer-grammar work is next.

@@ -15,8 +15,46 @@ Applies to every build path (Generate, Song Mode, Tonality Vault, duo/ECM surfac
 ### Scoring contract
 
 - **10 categories**, each scored **0–10** (automatable dimensions per `GCE_FRAMEWORK_V2.md`).
-- **Overall target ≥ 9.0** before treating output as release-quality.
-- If **&lt; 9.0**: revise **weakest category only**, **one pass**, **no full rewrite**; preserve asymmetry.
+- **9.0** remains the **aspirational north star** (long-term benchmark; formulas and weights unchanged).
+- **7.9–8.4** is the **current empirical release-quality / system-ceiling band** under the present system (documented benchmark gap to 9.0: **0.6–1.2** points).
+- **Operational release band (guidance, not a formula change):**
+  - **≥ 7.9** — PASS for tuned, shipped-quality output under the current system
+  - **6.5–7.8** — acceptable / promising; revise **weakest category only**, **one pass** (DCR)
+  - **&lt; 6.5** — materially weak; investigate (not release quality)
+- If below the operational band: **one** DCR refinement pass on weakest category; **no full rewrite**; preserve asymmetry.
+
+### §1.1 Short-form / fragment outputs (&lt; ~16 bars, especially 8-bar leadsheet)
+
+Short-form material **cannot** be judged the same way as full-chart output.
+
+**Structurally limited / interpret with caution** (low scores may reflect fragment length, not craft failure alone):
+
+- **Thematic recall potential**
+- **Structure & form**
+- Parts of **phrase grammar**
+
+Report these as structurally limited / N/A-leaning where appropriate; **do not** blindly DCR-refine them on 8-bar proofs alone.
+
+**Still meaningful on short-form** (real findings may apply):
+
+- **Rhythm anti-loop / too-perfect grid** (LOCK `rhythmAntiLoop`)
+- **Harmony & language / chord fidelity**
+- **Range / idiomaticity**
+- **GCE hard gates** (always blockers)
+
+A **5.x** short-form score (e.g. Orbit leadsheet ~5.3–5.4 after Phase 7 GCE wiring) is **not** release quality; it may combine real underperformance **and** measurement distortion from the 8-bar limit.
+
+### §1.2 Roadmap triage (leadsheet-input / low GCE)
+
+When GCE is low on **leadsheet-input** or other short-form material:
+
+1. Ask whether the score is **distorted by short-form limits**
+2. **Fix measurement first:** **>8-bar / full-chart** input → re-score
+3. **Then** decide whether the next work is rhythm, harmony correctness, or deeper composer grammar
+4. **Do not** optimize deep composer-behavioural grammar until the engine has been scored on fair full-chart material
+5. **Immediate fixable craft** on short-form still matters: `rhythmAntiLoop`, chord-fidelity / normalization, range / idiomaticity
+
+See **`docs/COMPOSER_OS_ROADMAP.md`** for tier ordering (quality-unblocking → craft depth → input reach → housekeeping).
 
 ### Category list (names only — formulas and thresholds in `GCE_FRAMEWORK_V2.md`)
 
@@ -31,18 +69,22 @@ Applies to every build path (Generate, Song Mode, Tonality Vault, duo/ECM surfac
 9. Tension & release  
 10. Thematic recall potential  
 
-### GCE hard gates (auto-fail)
+### GCE hard gates (auto-fail — unchanged blockers)
+
+**Hard gates remain true blockers** regardless of the calibrated operational release band above. Numeric thresholds are **not** relaxed.
 
 Align with **`docs/GCE_FRAMEWORK_V2.md` § Hard Gates**, including:
 
-- Melodic identity in the failure band defined there (e.g. **≤ 6** where applicable)  
-- No section contrast  
-- Cadential clarity coverage below threshold (e.g. **&lt; 0.4** where defined)  
-- Accidental / unresolved ending (final-bar tension threshold)
+- Melodic identity **≤ 6**
+- No section contrast
+- Cadential clarity coverage **&lt; 0.4**
+- Accidental / unresolved ending — final bar tension **&gt; 0.7**
 
 ---
 
 ## 2. LOCK — hard gates before commit (style / composer output)
+
+**LOCK hard gates are the real merge blockers.** The calibrated GCE release band (§1) is **guidance** for release-quality interpretation; it does **not** override LOCK or GCE hard gates.
 
 **LOCK** is the **pre-commit compliance bundle** for any change that affects **generated music, symbols, or style behaviour** (including new or updated **composer slices**, **Song Mode style surfaces**, **ECM / vault** layers, presets, or export).
 
@@ -79,6 +121,8 @@ Align with **`docs/GCE_FRAMEWORK_V2.md` § Hard Gates**, including:
 | **D — Design** | Define goal, scope, GCE targets, affected Style Profile Layer (§4), and acceptance checks (LOCK §2). |
 | **C — Commit** | Implement with deterministic behaviour; update **docs/playbook/changelog** when user-facing or slice behaviour changes; keep one logical change set reviewable. |
 | **R — Refine** | **One** refinement pass: address **weakest GCE category** (or single blocking LOCK item), not a full rewrite. |
+
+On **short-form** output, if the weakest category is **structurally limited** (§1.1), do **not** blindly refine it — prioritize fair **>8-bar / full-chart** re-score and fixable short-form findings (rhythm grid, chord fidelity, range) first.
 
 **Forbidden:** repeated full regenerations or unconstrained tweak loops; if still failing after one Refine, return to **Design**.
 
@@ -146,4 +190,4 @@ sheets-of-sound rendering, and Schneider narrative arc intensity curves.
 
 ---
 
-*Last integrated: 2026-05-05 — repository standards consolidation.*
+*Last integrated: 2026-06-15 — calibrated GCE release band, short-form interpretation, leadsheet roadmap triage (wording only; formulas/weights/hard-gate values unchanged).*

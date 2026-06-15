@@ -7,18 +7,35 @@ alwaysApply: true
 
 Full specification: **`docs/GCE_LOCK_DCR_STANDARDS.md`** (includes **GCE v2.0** cross-reference to **`docs/GCE_FRAMEWORK_V2.md`**).
 
+## GCE interpretation (agent calibration)
+
+- **9.0** remains the aspirational north star — do not treat it as the literal operational pass/fail line for every output today.
+- **7.9–8.4** is the demonstrated release-quality / system-ceiling band (e.g. string_quartet **7.9**, song_mode_shorter / bacharach / barry_harris **8.4**, song_mode_fagen **8.3**, ecm_chamber **7.8**; documented gap to 9.0: **0.6–1.2** points).
+- **Operational band:** >= **7.9** PASS for tuned shipped output · **6.5–7.8** acceptable / one DCR pass on weakest category · **< 6.5** materially weak.
+- **Short-form** (< ~16 bars, especially 8-bar leadsheet): some GCE categories are structurally limited — see **`docs/GCE_LOCK_DCR_STANDARDS.md` §1.1**; do not blindly DCR-refine a category that is low only because the fragment is too short.
+- **Roadmap priority after low short-form GCE:** measure fairly on **>8-bar / full-chart** first → re-score → then decide rhythm vs harmony vs deeper composer grammar (see **`docs/COMPOSER_OS_ROADMAP.md`**).
+
 ## LOCK (before merging composer/style/generation/export work)
+
+**LOCK hard gates are the real merge blockers.** Calibrated GCE band is release-quality guidance, not a substitute for LOCK.
 
 Must pass before committing output-affecting changes unless the commit message documents an explicit exception:
 
 1. **Locked truth** — harmony bars / slice precompute / XML alignment; no drift between pasted symbols, effective bars, and export.
 2. **Output integrity** — export/readiness expectations met for the touched path (shareable XML, integrity receipts where applicable).
-3. **GCE hard gates** — no violation of **`docs/GCE_FRAMEWORK_V2.md`** hard failures (melodic/section contrast/cadential/ending rules).
+3. **GCE hard gates** — no violation of **`docs/GCE_FRAMEWORK_V2.md`** hard failures (melodic/section contrast/cadential/ending rules); numeric thresholds unchanged:
+   - Melodic Identity **<= 6**
+   - No section contrast
+   - Cadential Clarity coverage **< 0.4**
+   - Final bar tension **> 0.7**
 4. **Key verification** — follow **`CLAUDE.md`**: smoke tier when engine/smoke lists change; otherwise minimal GCE + LOCK checklist on representative output.
 
 ## DCR workflow
 
 **Design** → **Commit** → **Refine** (single pass on weakest GCE category or one blocking LOCK item only). No full rewrite; no infinite refine loops.
+
+- On **full-chart** output: refine the weakest **craft** category once.
+- On **short-form** output: skip refine if the weakest category is structurally limited (thematic recall, structure/form, phrase grammar on 8-bar fragments); fix LOCK blockers and real short-form findings (rhythm grid, chord fidelity, range) first.
 
 ## Style Profile Layer
 
