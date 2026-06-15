@@ -1,5 +1,5 @@
 /**
- * Phase 1 + Phase 2 - debussy leadsheet-input parallel bypass proofs.
+ * Phase 1 + Phase 2 + Phase 3 - debussy leadsheet-input parallel bypass proofs.
  */
 
 import { normalizeChordToken } from '../core/harmony/chordProgressionParser';
@@ -12,6 +12,7 @@ import {
   EXPECTED_QUINTET_PART_IDS,
   runDebussyLeadSheetQuintetProof,
 } from '../core/import/runDebussyLeadSheetQuintetProof';
+import { runDebussyLeadSheetHandoffProof } from '../core/import/runDebussyLeadSheetHandoffProof';
 import { runGoldenPathOnce } from '../core/goldenPath/runGoldenPath';
 
 export function runDebussyLeadSheetInputProofTests(): { ok: boolean; name: string }[] {
@@ -83,6 +84,44 @@ export function runDebussyLeadSheetInputProofTests(): { ok: boolean; name: strin
     out.push({
       ok: quintet.musicXmlExportOk && quintet.musicXml.includes('sq_violin_1') && quintet.musicXml.includes('guitar'),
       name: 'quintet proof: MusicXML export for inspection',
+    });
+
+    const handoff = runDebussyLeadSheetHandoffProof(90104);
+
+    out.push({
+      ok:
+        handoff.partIds.length === 5 &&
+        EXPECTED_QUINTET_PART_IDS.every((id, i) => handoff.partIds[i] === id) &&
+        !handoff.hasBassPart,
+      name: 'handoff proof: quintet shape preserved (5 parts, no bass)',
+    });
+
+    out.push({
+      ok:
+        handoff.perBarMelodyOwnership.length === 8 &&
+        handoff.melodyCarrierPartIds.includes('guitar') &&
+        handoff.melodyCarrierPartIds.includes('sq_violin_1') &&
+        handoff.melodyCarrierPartIds.includes('sq_cello') &&
+        handoff.melodyCarrierPartIds.length >= 2,
+      name: 'handoff proof: melody moves across guitar, V1, and cello',
+    });
+
+    out.push({
+      ok: handoff.handoffVariationDetected && handoff.guitarMelodyAbsentOnHandoffBars,
+      name: 'handoff proof: ContrapuntalLineEngine variation and guitar harmony on hand-off bars',
+    });
+
+    out.push({
+      ok:
+        handoff.melodyPinnedOnGuitarSegments &&
+        handoff.guitarMelodyBars.join(',') === '1,2,7,8' &&
+        handoff.guitarHarmonyBars.join(',') === '3,4,5,6',
+      name: 'handoff proof: guitar melody only on bars 1-2 and 7-8',
+    });
+
+    out.push({
+      ok: handoff.musicXmlExportOk && handoff.musicXml.includes('sq_cello') && handoff.musicXml.includes('guitar'),
+      name: 'handoff proof: MusicXML export for inspection',
     });
 
     const duo = runGoldenPathOnce(90102, {
