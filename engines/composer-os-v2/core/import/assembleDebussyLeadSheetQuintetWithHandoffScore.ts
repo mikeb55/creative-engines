@@ -8,7 +8,7 @@ import {
   type DebussyLeadSheetMelodyHandoffResult,
 } from './applyDebussyLeadSheetMelodyHandoff';
 import {
-  DEFAULT_DEBUSSY_LEADSHEET_MELODY_HANDOFF_PLAN,
+  buildLeadSheetMelodyHandoffPlan,
   type DebussyLeadSheetMelodyHandoffSegment,
 } from './debussyLeadSheetMelodyHandoffPlan';
 import type { MosaicImportTimeline } from './mosaicImportTimeline';
@@ -23,12 +23,14 @@ export type DebussyLeadSheetQuintetWithHandoffResult = DebussyLeadSheetMelodyHan
 
 export function assembleDebussyLeadSheetQuintetWithHandoffScore(
   seed = 90104,
-  plan: readonly DebussyLeadSheetMelodyHandoffSegment[] = DEFAULT_DEBUSSY_LEADSHEET_MELODY_HANDOFF_PLAN,
+  plan?: readonly DebussyLeadSheetMelodyHandoffSegment[],
   importTimeline?: MosaicImportTimeline,
   composerId = 'debussy',
 ): DebussyLeadSheetQuintetWithHandoffResult {
   const base = assembleDebussyLeadSheetQuintetScore(seed, importTimeline, composerId);
-  const handoff = applyDebussyLeadSheetMelodyHandoff(base, plan, seed);
+  const effectivePlan =
+    plan ?? buildLeadSheetMelodyHandoffPlan(base.spine.appliedHarmonyBars.length);
+  const handoff = applyDebussyLeadSheetMelodyHandoff(base, effectivePlan, seed);
   const phase7 = applyLeadSheetPhase7StringRealization({
     score: handoff.score,
     melody: handoff.spine.importTimeline.melodyLine,

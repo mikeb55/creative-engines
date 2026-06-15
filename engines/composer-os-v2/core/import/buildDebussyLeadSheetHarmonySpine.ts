@@ -72,16 +72,31 @@ export function buildDebussyLeadSheetProofImportTimeline(): MosaicImportTimeline
   };
 }
 
+
+function buildProofSections(totalBars: number): { label: string; startBar: number; length: number }[] {
+  const sections: { label: string; startBar: number; length: number }[] = [];
+  const labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let startBar = 1;
+  let idx = 0;
+  while (startBar <= totalBars) {
+    const length = Math.min(4, totalBars - startBar + 1);
+    sections.push({
+      label: labels[idx] ?? `S${idx}`,
+      startBar,
+      length,
+    });
+    startBar += length;
+    idx += 1;
+  }
+  return sections;
+}
 function buildProofCompositionContext(
   seed: number,
   lockedBars: string[],
   composerId: string
 ): CompositionContext {
   const preset = guitarBassDuoPreset;
-  const sections = [
-    { label: 'A', startBar: 1, length: 4 },
-    { label: 'B', startBar: 5, length: 4 },
-  ];
+  const sections = buildProofSections(lockedBars.length);
   const form = { sections, totalBars: lockedBars.length };
   return {
     systemVersion: '2.0.0',

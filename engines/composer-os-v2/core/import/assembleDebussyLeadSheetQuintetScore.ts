@@ -26,10 +26,13 @@ import { pinMelodyOnScore, verifyPinnedMelodyOnScore } from './mosaicStyleTransf
 
 const SQ_PART_IDS = [SQ_PART_V1, SQ_PART_V2, SQ_PART_VA, SQ_PART_VC] as const;
 
-function buildEightBarQuartetFormPlan(): QuartetFormPlan {
+function buildQuartetFormPlanForBars(totalBars: number): QuartetFormPlan {
+  if (totalBars < 1) {
+    throw new Error('buildQuartetFormPlanForBars: totalBars must be >= 1');
+  }
   return {
-    totalBars: 8,
-    slices: [{ index: 0, phase: 'statement', startBar: 1, endBar: 8 }],
+    totalBars,
+    slices: [{ index: 0, phase: 'statement', startBar: 1, endBar: totalBars }],
   };
 }
 
@@ -70,7 +73,7 @@ export function assembleDebussyLeadSheetQuintetScore(
   guitarScore = pinMelodyOnScore(guitarScore, resolvedImportTimeline.melodyLine);
   const melodyPinned = verifyPinnedMelodyOnScore(guitarScore, resolvedImportTimeline.melodyLine);
 
-  const formPlan = buildEightBarQuartetFormPlan();
+  const formPlan = buildQuartetFormPlanForBars(appliedHarmonyBars.length);
   const texturePlan = planQuartetTexture(formPlan, seed);
 
   const roles = assignStringQuartetRoles(seed);

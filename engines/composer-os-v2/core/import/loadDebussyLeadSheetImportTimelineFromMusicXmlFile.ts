@@ -35,8 +35,5 @@ export function loadDebussyLeadSheetImportTimelineFromMusicXmlFile(
 ): MosaicImportTimeline {
   const resolved = path.resolve(filePath);
   const xml = fs.readFileSync(resolved, 'utf8');
-  return musicXmlToImportTimeline(xml, {
-    targetBars: 8,
-    ...options,
-  });
+  return musicXmlToImportTimeline(xml, options);
 }

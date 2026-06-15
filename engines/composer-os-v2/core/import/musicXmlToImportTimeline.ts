@@ -32,9 +32,15 @@ const STEP_TO_PC: Record<string, number> = {
 
 const FIFTHS_TO_TONIC = ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'Ab', 'Eb', 'Bb', 'F'] as const;
 
+/** Safe upper bound for leadsheet-input MusicXML import (full-chart mode). */
+export const LEADSHEET_IMPORT_MAX_BARS = 64;
+
 export interface MusicXmlImportTimelineOptions {
   importMelodyPartId?: string;
+  /** When set, truncates import to this many bars (tests/fixtures only). */
   targetBars?: number;
+  /** Cap imported bar count; defaults to {@link LEADSHEET_IMPORT_MAX_BARS}. */
+  maxBars?: number;
 }
 
 interface RawXmlNote {
@@ -287,10 +293,15 @@ export function musicXmlToImportTimeline(
   diagnostics.push(...deep.warnings);
 
   const importedBars = Math.max(1, deep.chordsByBar.length, Object.keys(deep.meterByBar).length);
-  const totalBars =
+  const maxBars = Math.max(
+    1,
+    Math.floor(options?.maxBars ?? LEADSHEET_IMPORT_MAX_BARS),
+  );
+  const requestedBars =
     typeof options?.targetBars === 'number' && options.targetBars >= 1
       ? Math.floor(options.targetBars)
       : importedBars;
+  const totalBars = Math.min(Math.max(1, requestedBars), maxBars);
 
   const firstMeter = deep.meterByBar[1] ?? { numerator: 4, denominator: 4 };
   const timeSig = { num: firstMeter.numerator, den: firstMeter.denominator };
