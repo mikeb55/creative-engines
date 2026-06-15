@@ -60,7 +60,7 @@ export function runDebussyLeadSheetInputProof(seed = 90101): DebussyLeadSheetInp
     measures.push({ bar: m.index, chord: m.chord, melodyPitches });
   }
 
-  const exportResult = exportScoreModelToMusicXml(score, { title: score.title });
+  const exportResult = exportScoreModelToMusicXml(score);
 
   return {
     seed,

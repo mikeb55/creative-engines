@@ -131,8 +131,10 @@ export interface DebussyLeadSheetHarmonySpine {
   generationMetadata: GenerationMetadata;
 }
 
-export function buildDebussyLeadSheetHarmonySpine(seed = 90101): DebussyLeadSheetHarmonySpine {
-  const importTimeline = buildDebussyLeadSheetProofImportTimeline();
+export function buildDebussyLeadSheetHarmonySpine(
+  seed = 90101,
+  importTimeline: MosaicImportTimeline = buildDebussyLeadSheetProofImportTimeline()
+): DebussyLeadSheetHarmonySpine {
   const importedHarmonyBars = importTimelineToLockedHarmony(importTimeline);
   const context = buildProofCompositionContext(seed, importedHarmonyBars);
 

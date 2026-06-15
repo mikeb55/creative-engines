@@ -39,7 +39,7 @@ export function runDebussyLeadSheetHandoffProof(seed = 90104): DebussyLeadSheetH
     return { id: p.id, name: p.name, noteCount };
   });
 
-  const exportResult = exportScoreModelToMusicXml(score, { title: score.title });
+  const exportResult = exportScoreModelToMusicXml(score);
 
   return {
     seed,

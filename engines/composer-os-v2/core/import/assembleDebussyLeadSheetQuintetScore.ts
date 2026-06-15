@@ -18,7 +18,10 @@ import {
 } from '../string-quartet/stringQuartetMusicContextRealisation';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import { buildMelodyOnlyHarmonyScaffoldScore } from './buildMelodyOnlyHarmonyScaffoldScore';
-import { buildDebussyLeadSheetHarmonySpine } from './buildDebussyLeadSheetHarmonySpine';
+import {
+  buildDebussyLeadSheetHarmonySpine,
+} from './buildDebussyLeadSheetHarmonySpine';
+import type { MosaicImportTimeline } from './mosaicImportTimeline';
 import { pinMelodyOnScore, verifyPinnedMelodyOnScore } from './mosaicStyleTransfer';
 
 const SQ_PART_IDS = [SQ_PART_V1, SQ_PART_V2, SQ_PART_VA, SQ_PART_VC] as const;
@@ -52,15 +55,18 @@ export interface DebussyLeadSheetQuintetAssemblyResult {
   musicContextBarCount: number;
 }
 
-export function assembleDebussyLeadSheetQuintetScore(seed = 90103): DebussyLeadSheetQuintetAssemblyResult {
-  const spine = buildDebussyLeadSheetHarmonySpine(seed);
-  const { importTimeline, appliedHarmonyBars, generationMetadata } = spine;
+export function assembleDebussyLeadSheetQuintetScore(
+  seed = 90103,
+  importTimeline?: MosaicImportTimeline
+): DebussyLeadSheetQuintetAssemblyResult {
+  const spine = buildDebussyLeadSheetHarmonySpine(seed, importTimeline);
+  const { importTimeline: resolvedImportTimeline, appliedHarmonyBars, generationMetadata } = spine;
 
   let guitarScore = buildMelodyOnlyHarmonyScaffoldScore(appliedHarmonyBars, {
     title: 'Debussy LeadSheet Quintet Proof',
   });
-  guitarScore = pinMelodyOnScore(guitarScore, importTimeline.melodyLine);
-  const melodyPinned = verifyPinnedMelodyOnScore(guitarScore, importTimeline.melodyLine);
+  guitarScore = pinMelodyOnScore(guitarScore, resolvedImportTimeline.melodyLine);
+  const melodyPinned = verifyPinnedMelodyOnScore(guitarScore, resolvedImportTimeline.melodyLine);
 
   const formPlan = buildEightBarQuartetFormPlan();
   const texturePlan = planQuartetTexture(formPlan, seed);

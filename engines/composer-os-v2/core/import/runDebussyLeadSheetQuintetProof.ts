@@ -45,7 +45,7 @@ export function runDebussyLeadSheetQuintetProof(seed = 90103): DebussyLeadSheetQ
     return { id: p.id, name: p.name, noteCount, bar1Chord: p.measures[0]?.chord };
   });
 
-  const exportResult = exportScoreModelToMusicXml(score, { title: score.title });
+  const exportResult = exportScoreModelToMusicXml(score);
 
   return {
     seed,

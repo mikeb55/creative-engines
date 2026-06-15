@@ -11,11 +11,13 @@ import {
   DEFAULT_DEBUSSY_LEADSHEET_MELODY_HANDOFF_PLAN,
   type DebussyLeadSheetMelodyHandoffSegment,
 } from './debussyLeadSheetMelodyHandoffPlan';
+import type { MosaicImportTimeline } from './mosaicImportTimeline';
 
 export function assembleDebussyLeadSheetQuintetWithHandoffScore(
   seed = 90104,
   plan: readonly DebussyLeadSheetMelodyHandoffSegment[] = DEFAULT_DEBUSSY_LEADSHEET_MELODY_HANDOFF_PLAN,
+  importTimeline?: MosaicImportTimeline
 ): DebussyLeadSheetMelodyHandoffResult {
-  const base = assembleDebussyLeadSheetQuintetScore(seed);
+  const base = assembleDebussyLeadSheetQuintetScore(seed, importTimeline);
   return applyDebussyLeadSheetMelodyHandoff(base, plan, seed);
 }

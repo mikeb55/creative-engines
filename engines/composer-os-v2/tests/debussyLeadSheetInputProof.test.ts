@@ -13,6 +13,12 @@ import {
   runDebussyLeadSheetQuintetProof,
 } from '../core/import/runDebussyLeadSheetQuintetProof';
 import { runDebussyLeadSheetHandoffProof } from '../core/import/runDebussyLeadSheetHandoffProof';
+import { runDebussyLeadSheetFileHandoffProof } from '../core/import/runDebussyLeadSheetFileHandoffProof';
+import {
+  DEBUSSY_LEADSHEET_FILE_PROOF_CHORDS,
+  resolveDebussyLeadSheetFileProofPath,
+} from '../core/import/loadDebussyLeadSheetImportTimelineFromMusicXmlFile';
+import * as path from 'path';
 import { runGoldenPathOnce } from '../core/goldenPath/runGoldenPath';
 
 export function runDebussyLeadSheetInputProofTests(): { ok: boolean; name: string }[] {
@@ -141,6 +147,39 @@ export function runDebussyLeadSheetInputProofTests(): { ok: boolean; name: strin
     out.push({
       ok: duoHasGuitar && duoHasBass,
       name: 'regression: normal debussy duo generate still produces guitar + bass',
+    });
+
+    const filePath = resolveDebussyLeadSheetFileProofPath(path.join(__dirname, '..'));
+    const fileHandoff = runDebussyLeadSheetFileHandoffProof(filePath, 90105);
+
+    out.push({
+      ok: fileHandoff.fileChordMatch,
+      name: 'file proof: sample MusicXML chords ingested via musicXmlToImportTimeline',
+    });
+
+    out.push({
+      ok:
+        fileHandoff.importedHarmonyBars.some(
+          (sym, i) => normalizeChordToken(sym) !== normalizeChordToken(DEBUSSY_LEADSHEET_PROOF_CHORDS[i] ?? '')
+        ) &&
+        fileHandoff.importedHarmonyBars.every(
+          (sym, i) => normalizeChordToken(sym) === normalizeChordToken(DEBUSSY_LEADSHEET_FILE_PROOF_CHORDS[i] ?? '')
+        ),
+      name: 'file proof: harmony trace differs from hardcoded proof and matches sample file',
+    });
+
+    out.push({
+      ok:
+        fileHandoff.partIds.length === 5 &&
+        EXPECTED_QUINTET_PART_IDS.every((id, i) => fileHandoff.partIds[i] === id) &&
+        !fileHandoff.hasBassPart &&
+        fileHandoff.handoffVariationDetected,
+      name: 'file proof: quintet hand-off (5 parts, no bass, no duo)',
+    });
+
+    out.push({
+      ok: fileHandoff.musicXmlExportOk && fileHandoff.musicXml.includes('guitar'),
+      name: 'file proof: MusicXML export succeeds',
     });
   } catch (e) {
     out.push({

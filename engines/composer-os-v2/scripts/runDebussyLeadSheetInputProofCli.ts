@@ -6,6 +6,8 @@ import * as path from 'path';
 import { runDebussyLeadSheetInputProof } from '../core/import/runDebussyLeadSheetInputProof';
 import { runDebussyLeadSheetQuintetProof } from '../core/import/runDebussyLeadSheetQuintetProof';
 import { runDebussyLeadSheetHandoffProof } from '../core/import/runDebussyLeadSheetHandoffProof';
+import { runDebussyLeadSheetFileHandoffProof } from '../core/import/runDebussyLeadSheetFileHandoffProof';
+import { resolveDebussyLeadSheetFileProofPath } from '../core/import/loadDebussyLeadSheetImportTimelineFromMusicXmlFile';
 import { runDebussyLeadSheetInputProofTests } from '../tests/debussyLeadSheetInputProof.test';
 
 const outDir = path.join(__dirname, '..', 'output', 'debussy-leadsheet-input-proof');
@@ -20,6 +22,12 @@ fs.writeFileSync(path.join(outDir, 'quintet-proof-summary.json'), JSON.stringify
 fs.writeFileSync(path.join(outDir, 'quintet-proof-score.musicxml'), quintet.musicXml, 'utf8');
 
 const handoff = runDebussyLeadSheetHandoffProof(90104);
+
+const fileProofPath = resolveDebussyLeadSheetFileProofPath(path.join(__dirname, '..'));
+const fileHandoff = runDebussyLeadSheetFileHandoffProof(fileProofPath, 90105);
+const fileHandoffSummary = { ...fileHandoff, musicXml: `[${fileHandoff.musicXml.length} chars]` };
+fs.writeFileSync(path.join(outDir, 'file-handoff-proof-summary.json'), JSON.stringify(fileHandoffSummary, null, 2), 'utf8');
+fs.writeFileSync(path.join(outDir, 'file-handoff-proof-score.musicxml'), fileHandoff.musicXml, 'utf8');
 const handoffSummary = { ...handoff, musicXml: `[${handoff.musicXml.length} chars]` };
 fs.writeFileSync(path.join(outDir, 'handoff-proof-summary.json'), JSON.stringify(handoffSummary, null, 2), 'utf8');
 fs.writeFileSync(path.join(outDir, 'handoff-proof-score.musicxml'), handoff.musicXml, 'utf8');
