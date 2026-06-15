@@ -1,13 +1,17 @@
 /**
- * Phase 1 - debussy leadsheet-input parallel duo bypass proof.
+ * Phase 1 + Phase 2 - debussy leadsheet-input parallel bypass proofs.
  */
 
 import { normalizeChordToken } from '../core/harmony/chordProgressionParser';
 import {
   DEBUSSY_LEADSHEET_PROOF_CHORDS,
   DEBUSSY_LEADSHEET_PROOF_MELODY,
-  runDebussyLeadSheetInputProof,
-} from '../core/import/runDebussyLeadSheetInputProof';
+} from '../core/import/buildDebussyLeadSheetHarmonySpine';
+import { runDebussyLeadSheetInputProof } from '../core/import/runDebussyLeadSheetInputProof';
+import {
+  EXPECTED_QUINTET_PART_IDS,
+  runDebussyLeadSheetQuintetProof,
+} from '../core/import/runDebussyLeadSheetQuintetProof';
 import { runGoldenPathOnce } from '../core/goldenPath/runGoldenPath';
 
 export function runDebussyLeadSheetInputProofTests(): { ok: boolean; name: string }[] {
@@ -54,6 +58,33 @@ export function runDebussyLeadSheetInputProofTests(): { ok: boolean; name: strin
       name: 'proof: score exports to MusicXML for inspection',
     });
 
+    const quintet = runDebussyLeadSheetQuintetProof(90103);
+
+    out.push({
+      ok: quintet.partIds.length === 5 && EXPECTED_QUINTET_PART_IDS.every((id, i) => quintet.partIds[i] === id),
+      name: 'quintet proof: score has exactly Guitar + V1 + V2 + Va + Vc',
+    });
+
+    out.push({
+      ok: quintet.melodyPinned && quintet.stringNoteCount > 0,
+      name: 'quintet proof: guitar melody pinned and strings have notes',
+    });
+
+    out.push({
+      ok:
+        !quintet.hasBassPart &&
+        quintet.musicContextBarCount === 8 &&
+        quintet.appliedHarmonyBars.some((sym, i) =>
+          normalizeChordToken(sym) !== normalizeChordToken(DEBUSSY_LEADSHEET_PROOF_CHORDS[i] ?? '')
+        ),
+      name: 'quintet proof: no bass part, debussy harmony on string spine',
+    });
+
+    out.push({
+      ok: quintet.musicXmlExportOk && quintet.musicXml.includes('sq_violin_1') && quintet.musicXml.includes('guitar'),
+      name: 'quintet proof: MusicXML export for inspection',
+    });
+
     const duo = runGoldenPathOnce(90102, {
       presetId: 'guitar_bass_duo',
       primarySongwriterStyle: 'debussy',
@@ -75,7 +106,7 @@ export function runDebussyLeadSheetInputProofTests(): { ok: boolean; name: strin
   } catch (e) {
     out.push({
       ok: false,
-      name: `debussyLeadSheetInputProof: ${e instanceof Error ? e.message : String(e)}`,
+      name: 'debussyLeadSheetInputProof: ' + (e instanceof Error ? e.message : String(e)),
     });
   }
 
