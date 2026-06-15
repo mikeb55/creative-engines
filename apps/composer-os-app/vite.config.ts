@@ -19,6 +19,8 @@ export default defineConfig({
       '@engine': path.resolve(__dirname, '../../src/engine'),
       '@engine/': path.resolve(__dirname, '../../src/engine/'),
     },
+    // Prefer TypeScript sources over stray compiled .js siblings under engines/composer-os-v2.
+    extensions: ['.mts', '.ts', '.tsx', '.mjs', '.js', '.jsx', '.json'],
   },
   server: {
     host: '127.0.0.1',
