@@ -151,6 +151,14 @@ Details: **`docs/CHANGELOG.md`** → **[2026-04-28]**.
 - **Harmony display (Raw / Enriched / Compare):** available on the **technical generate request** for integrations and advanced flows; the main Generate screen may not expose every option yet. See the plain guide linked above.
 - **Explicitly deferred:** Big Band, ECM, other Song Mode writers, and universal LeadSheet rollout.
 
+### Leadsheet-input engine (Debussy quintet — CLI proof, Phases 1–4)
+
+Separate from the Generate UI LeadSheet panel above. **CLI-only proof** — not wired to **File → Open** or desktop import yet.
+
+- **What it does:** MusicXML leadsheet → Debussy harmony → **guitar + string quartet** → melody hand-off (**guitar → Vn1 → cello → guitar**) → MusicXML export (**8-bar** proof).
+- **Run from repo root:** `npx tsx --tsconfig tsconfig.json engines/composer-os-v2/scripts/runDebussyLeadSheetInputProofCli.ts` — outputs under **`engines/composer-os-v2/output/debussy-leadsheet-input-proof/`**.
+- **Limits:** **Debussy-only** · **MusicXML-only** (no MIDI) · **CLI-only** · not a finished product feature. See [COMPOSER_HANDBOOK.md](COMPOSER_HANDBOOK.md) § Leadsheet-input engine.
+
 ---
 
 ## 3) How to run the app locally
