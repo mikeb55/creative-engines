@@ -13,12 +13,17 @@ import {
 } from './debussyLeadSheetMelodyHandoffPlan';
 import type { MosaicImportTimeline } from './mosaicImportTimeline';
 import {
+  applyLeadSheetAccompanimentRhythmAntiLoopPass,
+  type LeadSheetAccompanimentRhythmAntiLoopDiagnostics,
+} from './leadSheetAccompanimentRhythmAntiLoopPass';
+import {
   applyLeadSheetPhase7StringRealization,
   type LeadSheetPhase7Diagnostics,
 } from './leadSheetStringRealizationPass';
 
 export type DebussyLeadSheetQuintetWithHandoffResult = DebussyLeadSheetMelodyHandoffResult & {
   phase7?: LeadSheetPhase7Diagnostics;
+  rhythmAntiLoop?: LeadSheetAccompanimentRhythmAntiLoopDiagnostics;
 };
 
 export function assembleDebussyLeadSheetQuintetWithHandoffScore(
@@ -38,9 +43,16 @@ export function assembleDebussyLeadSheetQuintetWithHandoffScore(
     perBarMelodyOwnership: handoff.perBarMelodyOwnership,
     seed,
   });
+  const rhythmAntiLoop = applyLeadSheetAccompanimentRhythmAntiLoopPass({
+    score: phase7.score,
+    perBarMelodyOwnership: handoff.perBarMelodyOwnership,
+    seed,
+    composerId,
+  });
   return {
     ...handoff,
-    score: phase7.score,
+    score: rhythmAntiLoop.score,
     phase7: phase7.diagnostics,
+    rhythmAntiLoop: rhythmAntiLoop.diagnostics,
   };
 }
