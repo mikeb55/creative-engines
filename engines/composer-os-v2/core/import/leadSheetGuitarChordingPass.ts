@@ -209,9 +209,15 @@ function hasV2AtBeat(
   );
 }
 
+/** UI 0.5 = 1.0 (composer baseline). Wider range than v1 for clearer lighter/busier response. */
 function guitarCompScale(guitarCompDensity: number): number {
   const clamped = Math.max(0, Math.min(1, guitarCompDensity));
-  return 0.55 + clamped * 0.9;
+  return 0.4 + clamped * 1.2;
+}
+
+function sustainSkipGate(composerId: string, compScale: number): number {
+  const base = composerId === 'bartok' ? 0.35 : composerId === 'debussy' ? 0.55 : 0.45;
+  return Math.min(0.92, base * (2 - compScale));
 }
 
 function buildAnchors(
@@ -272,9 +278,8 @@ function buildAnchors(
     const n = v1[i]!;
     if (n.duration < 1 && composerId !== 'debussy') continue;
     if (hasV2AtBeat(measure, n.startBeat)) continue;
-    const sustainGate =
-      (composerId === 'bartok' ? 0.35 : composerId === 'debussy' ? 0.55 : 0.45) / compScale;
-    if (seededUnit(seed, bar, 10 + i, 'sustain') >= Math.min(0.95, sustainGate)) continue;
+    const sustainGate = sustainSkipGate(composerId, compScale);
+    if (seededUnit(seed, bar, 10 + i, 'sustain') >= sustainGate) continue;
     if (n.duration >= 1 || composerId === 'debussy') {
       anchors.push({
         bar,
