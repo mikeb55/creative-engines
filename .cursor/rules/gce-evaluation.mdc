@@ -1,13 +1,31 @@
 ---
-description: GCE v2.0 universal evaluation — Composer OS MusicXML and musical output.
+description: GCE v2.0 universal evaluation — formal repo gates vs musician-facing critique in chat.
 alwaysApply: true
 ---
 
 # GCE v2.0 — Universal Music Evaluation Standard
-# Applied automatically to ALL Composer OS musical output
 
-Every time Composer OS generates MusicXML output, evaluate
-against GCE v2.0 before confirming success.
+GCE has **two agent modes**. Pick the right one before scoring or advising.
+
+## Mode selection
+
+| Mode | When to use |
+|------|-------------|
+| **Formal / technical** | Editing or reviewing Composer OS code · running the official GCE evaluator (`gceStyleEval`, eval scripts, smoke harness) · LOCK / DCR / hard gates / quality gates · release readiness or CI pass/fail · interpreting **automated** scores from the system |
+| **Musician-facing / conversational** | Mike asks in chat: “GCE this”, “GCE score”, “evaluate this piece”, “is this good?”, “pros and cons?”, “what would raise it?” — **unless** he explicitly asks for formal Composer OS validation |
+
+**Default for pipeline work:** formal. **Default for casual chat critique:** musician-facing.
+
+---
+
+## 1. Formal / technical GCE (strict gate mode)
+
+Every time Composer OS **generates MusicXML output** or you **run the official evaluator**, use formal GCE only.
+
+- Hard gates remain hard gates; formulas, weights, and thresholds are authoritative and **unchanged**
+- **9.0** = aspirational north star · **7.9–8.4** = current empirical release-quality band
+- Short-form caveats below still apply
+- Do **not** weaken or reinterpret formal GCE / LOCK semantics in this mode
 
 Full framework: see docs/GCE_FRAMEWORK_V2.md
 
@@ -40,9 +58,40 @@ Do **not** judge fragments the same way as full-chart output. Some categories ar
 3. Only after fair full-chart scoring, recommend large-scale composer-behavioural-grammar work  
 4. Immediate fixable findings on short-form still matter: rhythmAntiLoop / too-perfect grid, chord-fidelity bugs, range / idiomaticity bugs  
 
-Apply this framework whenever:
-- Generating or evaluating any MusicXML output
-- Reviewing chord progressions or melody lines
-- Assessing any musical sketch, song, or arrangement
+Apply **formal** GCE whenever:
+- Generating or evaluating Composer OS MusicXML output
 - Running gceStyleEval or any evaluation script
 - Changing composer slices, Song Mode style surfaces, ECM/vault layers, or export paths (also satisfy LOCK + Style Profile Layer in `docs/GCE_LOCK_DCR_STANDARDS.md`)
+
+---
+
+## 2. Musician-facing GCE (conversational critique mode)
+
+When Mike requests evaluation **in conversation** (see table above), treat “GCE” as a **musical critique framework** aligned with the GCE scale — **not** a literal repo release gate.
+
+**Do:**
+- Give a musically useful overall score on the 0–10 GCE scale
+- Be critical and specific, but not mechanically punitive
+- Distinguish musical issues from notation / audio / export limitations
+- State clearly that the score is about **musical quality**, not repo release readiness
+- Prioritise concrete observations: melody, rhythm, harmony, orchestration, form (within fragment scope), idiom / stylistic fit, tension–release, playability, notation clarity
+- Category scores **only when they add clarity** (not mandatory full 10-category dump)
+
+**Do not (unless formal validation explicitly requested):**
+- Auto-apply hard gates or PASS/FAIL release verdicts
+- Treat every sub-9 score as failure
+- Jump from one low musical score to “requires major architecture changes”
+- Conflate chat critique with LOCK / DCR / CI outcomes
+
+**Chat output shape** — usually open with:
+
+> Interpreting GCE here as musician-facing critique, not formal repo release gating.
+
+Then provide:
+1. Overall score (GCE scale)
+2. Top strengths (2–4 concrete points)
+3. Top weaknesses (2–4 concrete points)
+4. Single highest-leverage next improvement
+5. Brief tag for that improvement: **musical refinement** (rewrite / reorchestrate) · **technical fix** (notation, engraving, timing) · **architectural concern** (only if clearly warranted **and** explicitly requested)
+
+**Short-form / fragments in chat** — same as formal § below: mark thematic recall, large-scale structure & form, and global phrase grammar as **N/A / structurally limited** on 8-bar ideas and snippets; still give honest feedback on rhythm, harmony, voice-leading, melodic interest, register, spacing, and loopiness.

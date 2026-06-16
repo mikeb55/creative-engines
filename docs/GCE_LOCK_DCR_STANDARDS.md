@@ -23,6 +23,26 @@ Applies to every build path (Generate, Song Mode, Tonality Vault, duo/ECM surfac
   - **&lt; 6.5** — materially weak; investigate (not release quality)
 - If below the operational band: **one** DCR refinement pass on weakest category; **no full rewrite**; preserve asymmetry.
 
+### §1.0 Two GCE modes (formal vs musician-facing)
+
+The same **GCE v2.0** category vocabulary serves two contexts. **Formulas, weights, thresholds, and hard gates are identical in both** — only **how the agent applies** them differs.
+
+| Mode | Context | Agent behaviour |
+|------|---------|-----------------|
+| **Formal / technical** | Code changes, official evaluator runs, LOCK / DCR, release readiness, CI, automated harness scores | Strict repo definition: hard gates block; operational band (≥7.9 PASS, etc.) applies; DCR on weakest category; no weakening of semantics |
+| **Musician-facing / conversational** | Chat requests: “GCE this”, “evaluate this piece”, “is this good?”, “pros and cons?”, “what would raise it?” | Musical critique on the GCE scale; **not** a release gate unless formal validation is explicitly requested |
+
+**Musician-facing rules (chat only):**
+- Overall score + 2–4 strengths + 2–4 weaknesses + one highest-leverage improvement
+- Tag improvement as musical refinement, technical fix, or architectural concern (architecture only when clearly warranted and explicitly requested)
+- Do not auto-apply hard gates or treat sub-9 as automatic failure
+- Open with: *“Interpreting GCE here as musician-facing critique, not formal repo release gating.”*
+- Category scores optional — include only when they clarify
+
+**Formal rules (repo / pipeline):** unchanged — see §1 scoring contract, §1.1 short-form, hard gates §1 (bottom), and §2 LOCK.
+
+Agent quick rule: **`.cursor/rules/gce-evaluation.mdc`** (mode table + §1 formal + §2 musician-facing).
+
 ### §1.1 Short-form / fragment outputs (&lt; ~16 bars, especially 8-bar leadsheet)
 
 Short-form material **cannot** be judged the same way as full-chart output.
@@ -191,4 +211,4 @@ sheets-of-sound rendering, and Schneider narrative arc intensity curves.
 
 ---
 
-*Last integrated: 2026-06-15 — calibrated GCE release band, short-form interpretation, leadsheet roadmap triage (wording only; formulas/weights/hard-gate values unchanged).*
+*Last integrated: 2026-06-16 — §1.0 formal vs musician-facing GCE modes (agent interpretation only; formulas/weights/hard-gate values unchanged).*

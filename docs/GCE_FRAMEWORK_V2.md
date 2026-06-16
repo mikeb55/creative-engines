@@ -11,6 +11,24 @@ Applies to: songs, sketches, études, arrangements,
 works in progress, instrumental pieces, ensemble output.
 NOT limited to: bebop, songs with lyrics, or any single style.
 
+## Agent interpretation — two modes (formulas unchanged)
+
+This document is the **authoritative formal specification** for automated evaluation and repo quality gates. The categories and hard gates below are **not** relaxed in any mode.
+
+| Mode | Use when |
+|------|----------|
+| **Formal / technical** | Composer OS code, official evaluator runs, LOCK / DCR, release readiness, automated scores |
+| **Musician-facing / conversational** | Chat critique (“GCE this”, “is this good?”, etc.) unless formal validation is explicitly requested |
+
+In **musician-facing** mode, agents score musical quality on the same 0–10 scale and GCE category vocabulary, but:
+- Do **not** treat the score as repo PASS/FAIL or apply hard gates unless formal validation is requested
+- Do **not** treat sub-9 as automatic failure or jump to architecture changes from one low score
+- Distinguish musical issues from notation / export limitations
+- On short fragments, mark thematic recall, large-scale structure & form, and global phrase grammar as **N/A / structurally limited** (see `docs/GCE_LOCK_DCR_STANDARDS.md` §1.1)
+- Prefer: overall score, strengths, weaknesses, one highest-leverage improvement (musical / technical / architectural tag)
+
+Full chat behaviour: **`.cursor/rules/gce-evaluation.mdc` §2** · **`docs/GCE_LOCK_DCR_STANDARDS.md` §1.0**.
+
 ## Scoring
 - Score each category 0-10
 - **9.0** = aspirational north star (long-term benchmark; formulas unchanged)

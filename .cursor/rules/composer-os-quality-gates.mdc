@@ -7,7 +7,13 @@ alwaysApply: true
 
 Full specification: **`docs/GCE_LOCK_DCR_STANDARDS.md`** (includes **GCE v2.0** cross-reference to **`docs/GCE_FRAMEWORK_V2.md`**).
 
-## GCE interpretation (agent calibration)
+## GCE mode (formal vs musician-facing)
+
+This rule file governs **formal / technical GCE** only — repo gates, LOCK, DCR, release readiness, automated evaluator output.
+
+For **conversational** requests (“GCE this”, “is this good?”, “pros and cons?”), use **musician-facing critique mode** per **`.cursor/rules/gce-evaluation.mdc` §2** and **`docs/GCE_LOCK_DCR_STANDARDS.md` §1.3**. Do not apply LOCK pass/fail or hard-gate auto-fail in chat unless Mike explicitly asks for formal Composer OS validation.
+
+## GCE interpretation (agent calibration — formal mode)
 
 - **9.0** remains the aspirational north star — do not treat it as the literal operational pass/fail line for every output today.
 - **7.9–8.4** is the demonstrated release-quality / system-ceiling band (e.g. string_quartet **7.9**, song_mode_shorter / bacharach / barry_harris **8.4**, song_mode_fagen **8.3**, ecm_chamber **7.8**; documented gap to 9.0: **0.6–1.2** points).
