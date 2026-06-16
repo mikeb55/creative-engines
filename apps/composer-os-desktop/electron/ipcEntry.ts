@@ -124,7 +124,7 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
     const result = await dialog.showOpenDialog({
       properties: ['openFile'],
       defaultPath: defaultPathRaw || outputDir,
-      filters: [{ name: 'MusicXML leadsheet', extensions: ['musicxml', 'xml'] }],
+      filters: [{ name: 'MusicXML or MIDI leadsheet', extensions: ['musicxml', 'xml', 'mid', 'midi'] }],
     });
     if (result.canceled || !result.filePaths?.[0]) {
       return { ok: false, canceled: true as const };

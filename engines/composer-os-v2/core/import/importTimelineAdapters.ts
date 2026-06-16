@@ -60,10 +60,20 @@ export function importTimelineToLockedHarmony(ir: MosaicImportTimeline): string[
 }
 
 function barMeetsHardLockThreshold(h: MosaicImportTimeline['harmonyByBar'][number]): boolean {
+  if (h.fieldOrigin === 'inferred') {
+    return false;
+  }
   if (h.fieldOrigin === 'explicit') {
     return h.confidence >= Math.min(IMPORT_HARD_LOCK_CONFIDENCE, 0.7);
   }
   return h.confidence >= IMPORT_HARD_LOCK_CONFIDENCE;
+}
+
+function importTimelineEligibleForHardLock(ir: MosaicImportTimeline): boolean {
+  if (ir.sourceFormat === 'midi') {
+    return false;
+  }
+  return ir.harmonyByBar.some((h) => h.fieldOrigin === 'explicit');
 }
 
 /**
@@ -79,7 +89,9 @@ export function evaluateImportHarmonyLock(
 
   const lockRequested = importHarmonyMode === 'lock_harmony';
   const hasHarmony = ir.harmonyByBar.some((h) => h.confidence >= IMPORT_CANDIDATE_MIN_CONFIDENCE);
+  const hardLockEligibleTimeline = importTimelineEligibleForHardLock(ir);
   const allHardLockEligible =
+    hardLockEligibleTimeline &&
     hasHarmony &&
     ir.harmonyByBar
       .filter((h) => h.confidence >= IMPORT_CANDIDATE_MIN_CONFIDENCE)

@@ -161,12 +161,15 @@ export function buildDebussyLeadSheetHarmonySpine(
 ): DebussyLeadSheetHarmonySpine {
   const importedHarmonyBars = importTimelineToLockedHarmony(importTimeline);
   const context = buildProofCompositionContext(seed, importedHarmonyBars, composerId);
+  const harmonyAdvisoryOnly = importTimeline.sourceFormat === 'midi';
 
   context.lockedHarmonyBarsRaw = [...importedHarmonyBars];
   context.generationMetadata = {
     ...context.generationMetadata,
     parsedCustomProgressionBars: [...importedHarmonyBars],
     songwriterStyleId: composerId,
+    customHarmonyLocked: harmonyAdvisoryOnly ? false : context.generationMetadata.customHarmonyLocked,
+    ...(harmonyAdvisoryOnly ? { importHarmonyAdvisoryOnly: true } : {}),
   };
 
   const entry = getDispatchEntry(composerId);

@@ -23,6 +23,10 @@ export interface LeadSheetFileInputResponse {
   canceled?: boolean;
   composerId?: LeadSheetFileInputComposerId;
   sourceFileName?: string;
+  sourceFormat?: 'musicxml' | 'midi';
+  harmonyProvenance?: 'explicit' | 'inferred-advisory';
+  harmonyConfidenceByBar?: number[];
+  midiQuantizeNote?: string;
   barCount?: number;
   partCount?: number;
   partIds?: string[];
@@ -46,10 +50,18 @@ export function apiRunLeadSheetFileInput(
 ): LeadSheetFileInputResponse {
   const filePath = typeof req.filePath === 'string' ? req.filePath.trim() : '';
   if (!filePath) {
-    return { ok: false, error: 'No MusicXML file path provided.' };
+    return { ok: false, error: 'No leadsheet file path provided.' };
   }
   if (!fs.existsSync(filePath)) {
     return { ok: false, error: `File not found: ${filePath}` };
+  }
+  const ext = path.extname(filePath).toLowerCase();
+  const allowedExt = new Set(['.musicxml', '.xml', '.mid', '.midi']);
+  if (!allowedExt.has(ext)) {
+    return {
+      ok: false,
+      error: `Unsupported file type "${ext}". Use .musicxml, .xml, .mid, or .midi.`,
+    };
   }
   const composerId = req.composerId;
   if (!isAllowedComposer(composerId)) {
@@ -94,11 +106,21 @@ export function apiRunLeadSheetFileInput(
     fs.writeFileSync(savedMusicXmlPath, proof.musicXml, 'utf8');
 
     const barCount = proof.effectiveHarmonyBars?.length ?? proof.importedHarmonyBars?.length ?? 0;
+    const harmonyConfidenceByBar = proof.harmonyByBar.map((h) => h.confidence);
 
     return {
       ok: true,
       composerId,
       sourceFileName,
+      sourceFormat: proof.sourceFormat,
+      harmonyProvenance: proof.harmonyAdvisoryOnly ? 'inferred-advisory' : 'explicit',
+      harmonyConfidenceByBar,
+      ...(proof.sourceFormat === 'midi'
+        ? {
+            midiQuantizeNote:
+              'MIDI input v1: single-track melody only. Multi-track Sibelius/DAW exports will mislabel melody and harmony — use MusicXML for those scores. Melody quantizes to eighth notes; harmony is inferred and advisory.',
+          }
+        : {}),
       barCount,
       partCount: partIds.length,
       partIds: [...partIds],

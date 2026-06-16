@@ -160,7 +160,7 @@ Separate from the Song Mode **LeadSheet MusicXML input** panel above. Parallel i
 | Limit | Status |
 |--------|--------|
 | **Bar cap** | Processes the **full leadsheet** up to **64 bars** (reads actual input bar count; **8-bar** inputs unchanged) |
-| **Input** | Sibelius-style **MusicXML** leadsheets (melody + chord symbols on top staff). **MIDI** / **`.mxl`** not yet supported on this path |
+| **Input** | **MusicXML** leadsheets (melody + chord symbols) or **MIDI** (`.mid`/`.midi`). **MIDI input v1 supports single-track melody MIDI** — one non-drum melody part only. **Multi-track exports** (Sibelius/DAW with separate lead, harmony, and drums) **will mislabel melody and harmony**. For multi-track scores, use **MusicXML** export; multi-track MIDI support is planned for **v2**. MIDI import **quantizes melody to eighth notes**; harmony is **inferred and advisory only** (never hard-locked). **`.mxl`** not yet supported |
 | **Output** | **Guitar + String Quartet** (5 parts). **Viola is currently silent** (known orchestration bug) |
 | **Composers** | **debussy**, **kenny_wheeler**, **bartok** proven on Orbit compare — profiles differ mainly in **harmonic language**; rhythmic/texture behaviour is largely shared |
 | **GCE/LOCK** | Available via **CLI/test harness only** (`runLeadSheetOrbitGceLockProofCli.ts`, `leadSheetPhase7StringRealizationProof.test.ts`) — **not** in desktop Generate UI |
@@ -180,7 +180,7 @@ Separate from the Song Mode **LeadSheet MusicXML input** panel above. Parallel i
 
 3. Choose **Composer:** **Debussy** or **Kenny Wheeler**.
 
-4. Click **Open MusicXML leadsheet…**, pick a local **`.musicxml`**, **`.xml`**, or **`.mxl`** file. Canceling the dialog shows **No file selected.** — no output written.
+4. Click **Open MusicXML or MIDI leadsheet…**, pick a local **`.musicxml`**, **`.xml`**, **`.mid`**, or **`.midi`** file. **MIDI v1:** use **single-track melody MIDI** only. Multi-track Sibelius/DAW exports (lead + harmony + drums) will mislabel melody and harmony — use **MusicXML** for those scores until **v2**. For MIDI, the panel shows **MIDI — inferred harmony (advisory)** with per-bar confidence. Canceling the dialog shows **No file selected.** — no output written.
 
 5. On success, status shows file name, bar/part counts, and save path under your Composer OS output folder **`leadsheet-input/`** (e.g. `{filename}_{composerId}_quintet.musicxml`).
 

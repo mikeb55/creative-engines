@@ -18,6 +18,10 @@ export interface LeadSheetFileInputResponse {
   canceled?: boolean;
   composerId?: LeadSheetFileInputComposerId;
   sourceFileName?: string;
+  sourceFormat?: 'musicxml' | 'midi';
+  harmonyProvenance?: 'explicit' | 'inferred-advisory';
+  harmonyConfidenceByBar?: number[];
+  midiQuantizeNote?: string;
   barCount?: number;
   partCount?: number;
   partIds?: string[];
@@ -36,7 +40,7 @@ export interface LeadSheetPickFileResponse {
   error?: string;
 }
 
-export async function pickLeadSheetMusicXmlFile(): Promise<LeadSheetPickFileResponse> {
+export async function pickLeadSheetFile(): Promise<LeadSheetPickFileResponse> {
   if (!isDesktopIpc() || !window.composerOsDesktop?.invokeApi) {
     return { ok: false, error: 'Desktop IPC is not available.' };
   }
@@ -44,6 +48,11 @@ export async function pickLeadSheetMusicXmlFile(): Promise<LeadSheetPickFileResp
     'composer-os-api:pick-leadsheet-file',
     {}
   ) as Promise<LeadSheetPickFileResponse>;
+}
+
+/** @deprecated Use pickLeadSheetFile */
+export async function pickLeadSheetMusicXmlFile(): Promise<LeadSheetPickFileResponse> {
+  return pickLeadSheetFile();
 }
 
 export async function runLeadSheetFileInputDesktop(body: {

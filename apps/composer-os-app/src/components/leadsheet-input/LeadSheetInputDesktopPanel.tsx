@@ -2,11 +2,55 @@ import { useCallback, useState, type CSSProperties } from 'react';
 import { isDesktopIpc } from '../../services/api';
 import {
   LEADSHEET_FILE_INPUT_COMPOSER_OPTIONS,
-  pickLeadSheetMusicXmlFile,
+  pickLeadSheetFile,
   runLeadSheetFileInputDesktop,
   type LeadSheetFileInputComposerId,
   type LeadSheetFileInputResponse,
 } from '../../services/leadSheetFileInputDesktop';
+
+const CONFIDENCE_COLORS = {
+  high: 'rgba(46, 125, 50, 0.85)',
+  mid: 'rgba(255, 193, 7, 0.85)',
+  low: 'rgba(220, 53, 69, 0.75)',
+} as const;
+
+function confidenceStripColor(confidence: number): keyof typeof CONFIDENCE_COLORS {
+  if (confidence >= 0.85) return 'high';
+  if (confidence >= 0.5) return 'mid';
+  return 'low';
+}
+
+function HarmonyConfidenceStrip({ confidences }: { confidences: number[] }) {
+  if (confidences.length === 0) {
+    return <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>No harmony bars</span>;
+  }
+  return (
+    <div
+      role="img"
+      aria-label="Harmony confidence by bar"
+      style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}
+    >
+      {confidences.map((confidence, i) => {
+        const tier = confidenceStripColor(confidence);
+        const title = `Bar ${i + 1}: confidence ${(confidence * 100).toFixed(0)}%`;
+        return (
+          <span
+            key={i}
+            title={title}
+            style={{
+              width: 18,
+              height: 18,
+              borderRadius: 3,
+              background: CONFIDENCE_COLORS[tier],
+              display: 'inline-block',
+              flexShrink: 0,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
 
 const panelStyle: CSSProperties = {
   marginBottom: '1rem',
@@ -55,10 +99,10 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
 
   const onOpenLeadSheetFile = useCallback(async () => {
     setStatusKind('running');
-    setStatusMessage('Choosing MusicXML file…');
+    setStatusMessage('Choosing leadsheet file…');
     setLastResult(null);
 
-    const picked = await pickLeadSheetMusicXmlFile();
+    const picked = await pickLeadSheetFile();
     if (picked.canceled || !picked.ok || !picked.filepath) {
       setStatusKind('canceled');
       setStatusMessage('No file selected.');
@@ -110,8 +154,11 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
         Lead Sheet Input (File→Open)
       </h2>
       <p style={{ margin: '0 0 0.75rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-        Desktop-only path: MusicXML file → quintet + melody hand-off (parallel to Generate). Supports Debussy,
-        Kenny Wheeler, and Bartók.
+        Desktop-only path: MusicXML or MIDI leadsheet → quintet + melody hand-off (parallel to Generate).
+        Supports Debussy, Kenny Wheeler, and Bartók.{' '}
+        <strong>MIDI input v1 supports single-track melody MIDI.</strong> Multi-track exports (Sibelius/DAW
+        with separate lead / harmony / drums) will mislabel melody and harmony. For multi-track scores, use
+        MusicXML export. Multi-track MIDI support will come in v2. MIDI import quantizes melody to eighth notes.
       </p>
 
       <label htmlFor="leadsheet-input-composer" style={{ display: 'block', fontSize: '0.85rem', marginBottom: 4 }}>
@@ -137,8 +184,20 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
         disabled={statusKind === 'running'}
         style={{ fontSize: '0.9rem' }}
       >
-        {statusKind === 'running' ? 'Running…' : 'Open MusicXML leadsheet…'}
+        {statusKind === 'running' ? 'Running…' : 'Open MusicXML or MIDI leadsheet…'}
       </button>
+
+      {lastResult?.ok && lastResult.sourceFormat === 'midi' ? (
+        <div style={{ marginTop: '0.75rem', fontSize: '0.82rem' }}>
+          <strong>MIDI — inferred harmony (advisory)</strong>
+          {lastResult.midiQuantizeNote ? (
+            <div style={{ marginTop: 4, color: 'var(--text-muted)' }}>{lastResult.midiQuantizeNote}</div>
+          ) : null}
+          {lastResult.harmonyConfidenceByBar ? (
+            <HarmonyConfidenceStrip confidences={lastResult.harmonyConfidenceByBar} />
+          ) : null}
+        </div>
+      ) : null}
 
       {statusMessage ? (
         <div role="status" style={statusStyle}>

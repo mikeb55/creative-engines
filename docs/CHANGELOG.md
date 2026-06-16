@@ -6,7 +6,8 @@
 
 ### Added
 
-- **GCE two-mode agent guidance (canonical index + parked legacy)** — **`docs/GCE_CANONICAL.md`** is the single agent entry point: **formal / technical** GCE (repo gates, evaluator, LOCK/DCR/CI) vs **musician-facing** chat critique (default unless formal validation or LOCK/DCR/CI requested). Live rules: **`.cursor/rules/gce-evaluation.mdc`**, **`docs/GCE_LOCK_DCR_STANDARDS.md`** §1.0–§1.3, **`docs/GCE_FRAMEWORK_V2.md`**, **`AGENTS.md`**. **Parked** (historical only, do not use for guidance): **`docs/GCE_FRAMEWORK.md`**, **`rules/gce_evaluation_framework.md`**, **`rules/gce/*.md`**, stale sections of **`docs/RULES_of_EXCELLENCE.md`**. No formula, weight, threshold, or hard-gate changes.
+- **MIDI leadsheet input v1 (single-track only)** — Desktop **Lead Sheet Input** accepts **`.mid`/`.midi`** via **`loadDebussyLeadSheetImportTimelineFromFile`** → **`midiToImportTimeline`** → quintet hand-off (same path as MusicXML). Bounded chord vocabulary (**`midiChordInferenceTemplates.ts`**); harmony **inferred and advisory only** (never hard-lock from MIDI). **v1 limit:** **single-track melody MIDI** only — multi-track Sibelius/DAW exports (lead + harmony + drums) mislabel melody/harmony; use **MusicXML** until **v2** lead-track selection. Panel + **`docs/USER_GUIDE.md`** document the limit.
+ — **`docs/GCE_CANONICAL.md`** is the single agent entry point: **formal / technical** GCE (repo gates, evaluator, LOCK/DCR/CI) vs **musician-facing** chat critique (default unless formal validation or LOCK/DCR/CI requested). Live rules: **`.cursor/rules/gce-evaluation.mdc`**, **`docs/GCE_LOCK_DCR_STANDARDS.md`** §1.0–§1.3, **`docs/GCE_FRAMEWORK_V2.md`**, **`AGENTS.md`**. **Parked** (historical only, do not use for guidance): **`docs/GCE_FRAMEWORK.md`**, **`rules/gce_evaluation_framework.md`**, **`rules/gce/*.md`**, stale sections of **`docs/RULES_of_EXCELLENCE.md`**. No formula, weight, threshold, or hard-gate changes.
 
 ### Added
 
