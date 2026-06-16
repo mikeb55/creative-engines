@@ -5743,6 +5743,12 @@ export function HomeGenerate({
         </p>
       )}
 
+      {isDesktopIpc() ? (
+        <Suspense fallback={null}>
+          <LeadSheetInputDesktopPanel />
+        </Suspense>
+      ) : null}
+
       <div style={{ marginBottom: '1rem', maxWidth: 520 }}>
         <label
           htmlFor="co-output-label"
@@ -5789,12 +5795,6 @@ export function HomeGenerate({
         exportIntegrity={sharedStripExportIntegrity}
         tritonicFloatOver={tritonicFloatOverText}
       />
-
-      {isDesktopIpc() ? (
-        <Suspense fallback={null}>
-          <LeadSheetInputDesktopPanel />
-        </Suspense>
-      ) : null}
 
       <Suspense fallback={null}>
         <MosaicImportPanel

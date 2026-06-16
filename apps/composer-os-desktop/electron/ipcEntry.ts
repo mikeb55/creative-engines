@@ -32,6 +32,8 @@ import { loadSessionFile, saveSessionFile } from '../../../engines/composer-os-v
 import type { ComposerSessionV1 } from '../../../engines/composer-os-v2/core/sessions/sessionTypes';
 import {
   apiRunLeadSheetFileInput,
+  LEADSHEET_FILE_INPUT_COMPOSERS,
+  type LeadSheetFileInputComposerId,
   type LeadSheetFileInputRequest,
 } from '../../../engines/composer-os-v2/app-api/runLeadSheetFileInputApi';
 
@@ -122,7 +124,7 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
     const result = await dialog.showOpenDialog({
       properties: ['openFile'],
       defaultPath: defaultPathRaw || outputDir,
-      filters: [{ name: 'MusicXML leadsheet', extensions: ['musicxml', 'mxl', 'xml'] }],
+      filters: [{ name: 'MusicXML leadsheet', extensions: ['musicxml', 'xml'] }],
     });
     if (result.canceled || !result.filePaths?.[0]) {
       return { ok: false, canceled: true as const };
@@ -136,7 +138,12 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
         ? (body as Partial<LeadSheetFileInputRequest>)
         : ({} as Partial<LeadSheetFileInputRequest>);
     const filePath = typeof b.filePath === 'string' ? b.filePath.trim() : '';
-    const composerId = b.composerId === 'kenny_wheeler' ? 'kenny_wheeler' : 'debussy';
+    const rawComposerId = b.composerId;
+    const composerId: LeadSheetFileInputComposerId =
+      typeof rawComposerId === 'string' &&
+      (LEADSHEET_FILE_INPUT_COMPOSERS as readonly string[]).includes(rawComposerId)
+        ? (rawComposerId as LeadSheetFileInputComposerId)
+        : 'debussy';
     const seed = typeof b.seed === 'number' && Number.isFinite(b.seed) ? b.seed : undefined;
     return apiRunLeadSheetFileInput({ filePath, composerId, seed }, outputDir);
   });

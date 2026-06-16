@@ -1,4 +1,5 @@
 import { useCallback, useState, type CSSProperties } from 'react';
+import { isDesktopIpc } from '../../services/api';
 import {
   LEADSHEET_FILE_INPUT_COMPOSER_OPTIONS,
   pickLeadSheetMusicXmlFile,
@@ -79,6 +80,17 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
       return;
     }
 
+    if (result.savedMusicXmlPath && isDesktopIpc() && window.composerOsDesktop?.openFileDefaultApp) {
+      const openR = await window.composerOsDesktop.openFileDefaultApp(result.savedMusicXmlPath);
+      if (!openR.ok) {
+        setStatusKind('success');
+        setStatusMessage(
+          `Saved quintet (${result.partCount ?? 0} parts, ${result.barCount ?? 0} bars) for ${result.sourceFileName ?? fileName}. Could not open file: ${openR.error ?? 'unknown error'}.`
+        );
+        return;
+      }
+    }
+
     setStatusKind('success');
     setStatusMessage(
       `Saved quintet (${result.partCount ?? 0} parts, ${result.barCount ?? 0} bars) for ${result.sourceFileName ?? fileName}.`
@@ -98,8 +110,8 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
         Lead Sheet Input (File→Open)
       </h2>
       <p style={{ margin: '0 0 0.75rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-        Desktop-only path: MusicXML file → quintet + melody hand-off (parallel to Generate). Supports Debussy
-        and Kenny Wheeler.
+        Desktop-only path: MusicXML file → quintet + melody hand-off (parallel to Generate). Supports Debussy,
+        Kenny Wheeler, and Bartók.
       </p>
 
       <label htmlFor="leadsheet-input-composer" style={{ display: 'block', fontSize: '0.85rem', marginBottom: 4 }}>

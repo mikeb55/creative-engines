@@ -8,7 +8,7 @@ import path from 'path';
 import { runDebussyLeadSheetFileHandoffProof } from '../core/import/runDebussyLeadSheetFileHandoffProof';
 import { EXPECTED_QUINTET_PART_IDS } from '../core/import/runDebussyLeadSheetQuintetProof';
 
-export const LEADSHEET_FILE_INPUT_COMPOSERS = ['debussy', 'kenny_wheeler'] as const;
+export const LEADSHEET_FILE_INPUT_COMPOSERS = ['debussy', 'kenny_wheeler', 'bartok'] as const;
 export type LeadSheetFileInputComposerId = (typeof LEADSHEET_FILE_INPUT_COMPOSERS)[number];
 
 export interface LeadSheetFileInputRequest {
@@ -55,7 +55,7 @@ export function apiRunLeadSheetFileInput(
   if (!isAllowedComposer(composerId)) {
     return {
       ok: false,
-      error: `Unsupported composer: ${composerId}. Use debussy or kenny_wheeler.`,
+      error: `Unsupported composer: ${composerId}. Use debussy, kenny_wheeler, or bartok.`,
     };
   }
 

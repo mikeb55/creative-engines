@@ -14,7 +14,7 @@ export function runLeadSheetFileInputDesktopApiTests(): { ok: boolean; name: str
   const tmpOut = fs.mkdtempSync(path.join(os.tmpdir(), 'cos-leadsheet-phase6-'));
   const filePath = resolveDebussyLeadSheetFileProofPath(path.join(__dirname, '..'));
 
-  for (const composerId of ['debussy', 'kenny_wheeler'] as const) {
+  for (const composerId of ['debussy', 'kenny_wheeler', 'bartok'] as const) {
     try {
       const res = apiRunLeadSheetFileInput({ filePath, composerId }, tmpOut);
       out.push({
