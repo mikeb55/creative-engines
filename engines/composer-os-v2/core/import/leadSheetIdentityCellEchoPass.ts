@@ -13,8 +13,8 @@ import { fitMelodyPitchesToPartRange, getLeadSheetPartMidiBounds, isLeadSheetStr
 
 const STRING_PART_IDS = ['sq_violin_1', 'sq_violin_2', 'sq_viola', 'sq_cello'] as const;
 const ANCHOR_BARS = [14, 28, 38] as const;
-const ECHO_VOICE = 2;
-const ANSWER_VOICE = 2;
+const ECHO_VOICE = 1;
+const ANSWER_VOICE = 1;
 const MOTIF_REF = 'identityCellEcho';
 
 /** Design fallback when import bars 1-2 are empty. D4-A4-G4-F4 + A4 pickup; kernel [+7,-2,-2]. */
@@ -312,6 +312,7 @@ function appendPlannedNotes(
   partId: string,
   notes: PlannedNote[],
   voice: number,
+  ownership: readonly PerBarMelodyOwnership[],
 ): number {
   if (!isLeadSheetStringPartId(partId)) return 0;
   const part = score.parts.find((p) => p.id === partId);
@@ -319,6 +320,7 @@ function appendPlannedNotes(
 
   let added = 0;
   for (const n of notes) {
+    if (ownerForBar(ownership, n.bar) === partId) continue;
     const measure = ensureMeasure(part, n.bar);
     const event = createNote(n.midiPitch, n.onsetBeat, n.durationBeats, voice, MOTIF_REF);
     measure.events = [...measure.events, event].sort((a, b) => a.startBeat - b.startBeat);
@@ -374,8 +376,8 @@ export function applyLeadSheetIdentityCellEchoPass(
       ).map(clampNoteToMeasure);
     }
 
-    const echoCount = appendPlannedNotes(score, echoPartId, echoPlanned, ECHO_VOICE);
-    const answerCount = appendPlannedNotes(score, answerPartId, answerPlanned, ANSWER_VOICE);
+    const echoCount = appendPlannedNotes(score, echoPartId, echoPlanned, ECHO_VOICE, input.perBarMelodyOwnership);
+    const answerCount = appendPlannedNotes(score, answerPartId, answerPlanned, ANSWER_VOICE, input.perBarMelodyOwnership);
 
     anchorDiagnostics.push({
       anchorBar,
