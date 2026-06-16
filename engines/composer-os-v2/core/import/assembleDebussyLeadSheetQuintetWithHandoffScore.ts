@@ -40,6 +40,10 @@ import {
   applyLeadSheetKennyWheelerContrastArcPass,
   type LeadSheetKennyWheelerContrastArcDiagnostics,
 } from './leadSheetKennyWheelerContrastArcPass';
+import {
+  applyLeadSheetGuitarChordingPass,
+  type LeadSheetGuitarChordingPassDiagnostics,
+} from './leadSheetGuitarChordingPass';
 
 export type DebussyLeadSheetQuintetWithHandoffResult = DebussyLeadSheetMelodyHandoffResult & {
   phase7?: LeadSheetPhase7Diagnostics;
@@ -48,6 +52,7 @@ export type DebussyLeadSheetQuintetWithHandoffResult = DebussyLeadSheetMelodyHan
   bartokContrastArc?: LeadSheetBartokContrastArcDiagnostics;
   debussyContrastArc?: LeadSheetDebussyContrastArcDiagnostics;
   kennyWheelerContrastArc?: LeadSheetKennyWheelerContrastArcDiagnostics;
+  guitarChording?: LeadSheetGuitarChordingPassDiagnostics;
   sixteenthGridClamp?: LeadSheetQuintetSixteenthGridClampDiagnostics;
 };
 
@@ -113,7 +118,13 @@ export function assembleDebussyLeadSheetQuintetWithHandoffScore(
     scoreBeforeClamp = contrastArc.score;
     kennyWheelerContrastArc = contrastArc.diagnostics;
   }
-  const sixteenthGridClamp = applyLeadSheetQuintetSixteenthGridClampPass(scoreBeforeClamp);
+  const guitarChording = applyLeadSheetGuitarChordingPass({
+    score: scoreBeforeClamp,
+    appliedHarmonyBars: handoff.spine.appliedHarmonyBars,
+    composerId,
+    seed,
+  });
+  const sixteenthGridClamp = applyLeadSheetQuintetSixteenthGridClampPass(guitarChording.score);
   return {
     ...handoff,
     score: sixteenthGridClamp.score,
@@ -123,6 +134,7 @@ export function assembleDebussyLeadSheetQuintetWithHandoffScore(
     bartokContrastArc,
     debussyContrastArc,
     kennyWheelerContrastArc,
+    guitarChording: guitarChording.diagnostics,
     sixteenthGridClamp: sixteenthGridClamp.diagnostics,
   };
 }
