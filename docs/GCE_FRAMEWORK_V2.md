@@ -140,7 +140,7 @@ Useful legacy material (jazz / workflow — **not** a substitute for this univer
 | `Project Logs/GCE_Jazz_Transformation_Log.md`, `GCE_Transformation_Log_Orbit.md` | Project history tied to GCE-aligned tune work. |
 | `BarryEngine/` (e.g. `gce_scoring.py`) | Phrase/section-level scoring hooks in Python — different data model than Composer OS `ScoreModel`; useful for **tension–release** and **form** intuition only. |
 
-**Relationship:** `docs/GCE_FRAMEWORK.md` remains the earlier **song-oriented** Cursor/Claude rubric (10 subjective categories + hard gates). **This file (v2.0)** is the **master engineering standard** for measurable, automatable evaluation across **all** Composer OS outputs.
+**Relationship:** **`docs/GCE_CANONICAL.md`** is the agent entry point. **`docs/GCE_FRAMEWORK.md`** and **`rules/gce_evaluation_framework.md`** are **parked** (historical only). **This file (v2.0)** is the **master engineering standard** for measurable, automatable evaluation across **all** Composer OS outputs.
 
 ## Latest Benchmark (2026-04-19, seed 50021)
 | Preset | Score | Weakest |

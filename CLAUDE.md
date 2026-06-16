@@ -46,7 +46,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Documentation
 
 - **Ship discipline (same commit as the feature):** When merging a **shipped feature**, update in **one commit** (no separate approval step; docs are part of ship): **`docs/CHANGELOG.md`** (`[Unreleased]` or dated entry); **relevant architecture doc** (typically **`docs/COMPOSER_OS_ARCHITECTURE.md`** when API/pipeline surfaces change—otherwise the architecture-facing doc that matches the change); **`docs/COMPOSER_OS_ROADMAP.md`** when priorities / Current / checklist shift. **`docs/COMPOSER_OS_PLAYBOOK.md`** (+ regenerated **`.docx`**) when playbook-worthy presets/composers/UI change—same rule as existing playbook bullet below.
-- **`docs/GCE_LOCK_DCR_STANDARDS.md`** — **GCE v2.0**, **LOCK** pre-commit gates, **DCR** workflow (Design · Commit · Refine), **Style Profile Layer** per composer slice/style surface; applies to all builds including ECM/style surfaces. Canonical GCE math remains **`docs/GCE_FRAMEWORK_V2.md`**.
+- **`docs/GCE_CANONICAL.md`** — **agent entry point** for GCE (formal vs musician-facing modes; parked legacy list).
+- **`docs/GCE_LOCK_DCR_STANDARDS.md`** — **GCE v2.0**, **LOCK** pre-commit gates, **DCR** workflow (Design · Commit · Refine), **Style Profile Layer** per composer slice/style surface; applies to all builds including ECM/style surfaces. Canonical GCE math remains **`docs/GCE_FRAMEWORK_V2.md`**. Agent quick rule: **`.cursor/rules/gce-evaluation.mdc`** (two modes; chat defaults musician-facing unless LOCK/DCR/CI or formal validation requested).
 - **`docs/COMPOSER_OS_PLAYBOOK.md`** is the primary user-facing playbook (workflows, presets, scenarios, export notes).
 - Update it whenever new composers (songwriter slices), presets, or meter presets are added or materially changed.
 - After any playbook edit, regenerate the Word export: **`node scripts/generateComposerOsPlaybookDocx.mjs`**

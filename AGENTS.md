@@ -1,6 +1,6 @@
 # Agent instructions — Composer OS
 
-Full Composer OS guidance: **`CLAUDE.md`**. Cursor rules: **`.cursor/rules/`**.
+Full Composer OS guidance: **`CLAUDE.md`**. Cursor rules: **`.cursor/rules/`**. GCE entry point: **`docs/GCE_CANONICAL.md`**.
 
 ## GCE — two modes
 

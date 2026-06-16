@@ -1,5 +1,7 @@
 # GCE — Countermelody / Line Interaction
 
+> **PARKED — v1 extension lens (2026-06-16).** Qualitative reference only. Formal evaluation: `docs/GCE_FRAMEWORK_V2.md`. Agent modes: `docs/GCE_CANONICAL.md`.
+
 **Activation:** When 2 or more meaningful lines are present.
 
 ---

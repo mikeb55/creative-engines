@@ -1,5 +1,7 @@
 # GCE — Swing Authority
 
+> **PARKED — v1 extension lens (2026-06-16).** Qualitative reference only. Formal evaluation: `docs/GCE_FRAMEWORK_V2.md` (Rhythmic identity). Agent modes: `docs/GCE_CANONICAL.md`.
+
 **Activation:** When the idiom calls for swing, groove, or jazz-pop phrasing.
 
 ---

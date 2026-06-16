@@ -5,6 +5,8 @@ alwaysApply: true
 
 # GCE v2.0 — Universal Music Evaluation Standard
 
+**Index:** `docs/GCE_CANONICAL.md` (live sources + parked legacy list).
+
 GCE has **two agent modes**. Pick the right one before scoring or advising.
 
 ## Mode selection

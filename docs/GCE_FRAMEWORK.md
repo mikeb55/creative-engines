@@ -1,4 +1,8 @@
 ---
+> **PARKED — superseded (2026-06-16).** Do not use for agent guidance or release gates.
+> **Canonical:** `docs/GCE_CANONICAL.md` → `.cursor/rules/gce-evaluation.mdc`, `docs/GCE_LOCK_DCR_STANDARDS.md`, `docs/GCE_FRAMEWORK_V2.md`.
+> Retained below as historical song-rubric reference only.
+
 GCE – SONG EVALUATION FRAMEWORK (FOR CURSOR / CLAUDE)
 
 AIM:

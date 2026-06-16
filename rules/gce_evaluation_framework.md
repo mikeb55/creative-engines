@@ -1,5 +1,9 @@
 # GCE Evaluation Framework
 
+> **PARKED — superseded (2026-06-16).** Do not use for agent guidance or release gates.
+> **Canonical:** `docs/GCE_CANONICAL.md` → `.cursor/rules/gce-evaluation.mdc`, `docs/GCE_LOCK_DCR_STANDARDS.md`, `docs/GCE_FRAMEWORK_V2.md`.
+> The mandatory “≥9.0 before MusicXML export” rule below is **not** current repo policy. Retained as historical v1.0 reference only.
+
 **Version 1.0**  
 **Universal — applies to all styles, ensembles, projects**
 

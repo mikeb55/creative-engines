@@ -184,6 +184,7 @@ Every **composer slice** (primary `SongwriterRuleId`) and, where relevant, **Son
 
 ## 6. Cross-references
 
+- **`docs/GCE_CANONICAL.md`** — agent entry point (two modes; parked legacy list)
 - `docs/GCE_FRAMEWORK_V2.md` — full GCE v2.0 mathematics and benchmarks  
 - `.cursor/rules/gce-evaluation.mdc` — agent-applied GCE reminder  
 - `.cursor/rules/composer-os-quality-gates.mdc` — LOCK + DCR + Style Layer reminders  

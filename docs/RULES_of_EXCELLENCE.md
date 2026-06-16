@@ -1,5 +1,7 @@
 # Rules of Excellence — Composer OS (assembled export)
 
+> **Snapshot — may lag live rules (2026-06-16).** For agent guidance use **`docs/GCE_CANONICAL.md`** and the live paths listed there. Do not treat this assembled export as overriding `.cursor/rules/gce-evaluation.mdc` or `docs/GCE_LOCK_DCR_STANDARDS.md`.
+
 **Purpose:** Single downloadable snapshot of **GCE**, **LOCK**, **DCR**, Style Profile Layer, Cursor agent rules, canonical GCE v2.0 math, playbook evaluation hooks, and benchmarks.
 
 **Assembled from** (same repo, no wording changes except this header):
