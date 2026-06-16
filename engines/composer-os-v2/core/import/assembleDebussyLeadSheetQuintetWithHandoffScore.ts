@@ -28,11 +28,16 @@ import {
   applyLeadSheetPhase7StringRealization,
   type LeadSheetPhase7Diagnostics,
 } from './leadSheetStringRealizationPass';
+import {
+  applyLeadSheetBartokContrastArcPass,
+  type LeadSheetBartokContrastArcDiagnostics,
+} from './leadSheetBartokContrastArcPass';
 
 export type DebussyLeadSheetQuintetWithHandoffResult = DebussyLeadSheetMelodyHandoffResult & {
   phase7?: LeadSheetPhase7Diagnostics;
   rhythmAntiLoop?: LeadSheetAccompanimentRhythmAntiLoopDiagnostics;
   identityCellEcho?: LeadSheetIdentityCellEchoDiagnostics;
+  bartokContrastArc?: LeadSheetBartokContrastArcDiagnostics;
   sixteenthGridClamp?: LeadSheetQuintetSixteenthGridClampDiagnostics;
 };
 
@@ -66,13 +71,26 @@ export function assembleDebussyLeadSheetQuintetWithHandoffScore(
     appliedHarmonyBars: handoff.spine.appliedHarmonyBars,
     seed,
   });
-  const sixteenthGridClamp = applyLeadSheetQuintetSixteenthGridClampPass(identityCellEcho.score);
+  let scoreBeforeClamp = identityCellEcho.score;
+  let bartokContrastArc: LeadSheetBartokContrastArcDiagnostics | undefined;
+  if (composerId === 'bartok') {
+    const contrastArc = applyLeadSheetBartokContrastArcPass({
+      score: identityCellEcho.score,
+      appliedHarmonyBars: handoff.spine.appliedHarmonyBars,
+      perBarMelodyOwnership: handoff.perBarMelodyOwnership,
+      seed,
+    });
+    scoreBeforeClamp = contrastArc.score;
+    bartokContrastArc = contrastArc.diagnostics;
+  }
+  const sixteenthGridClamp = applyLeadSheetQuintetSixteenthGridClampPass(scoreBeforeClamp);
   return {
     ...handoff,
     score: sixteenthGridClamp.score,
     phase7: phase7.diagnostics,
     rhythmAntiLoop: rhythmAntiLoop.diagnostics,
     identityCellEcho: identityCellEcho.diagnostics,
+    bartokContrastArc,
     sixteenthGridClamp: sixteenthGridClamp.diagnostics,
   };
 }
