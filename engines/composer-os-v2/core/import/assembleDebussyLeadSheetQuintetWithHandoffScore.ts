@@ -17,6 +17,10 @@ import {
   type LeadSheetAccompanimentRhythmAntiLoopDiagnostics,
 } from './leadSheetAccompanimentRhythmAntiLoopPass';
 import {
+  applyLeadSheetIdentityCellEchoPass,
+  type LeadSheetIdentityCellEchoDiagnostics,
+} from './leadSheetIdentityCellEchoPass';
+import {
   applyLeadSheetPhase7StringRealization,
   type LeadSheetPhase7Diagnostics,
 } from './leadSheetStringRealizationPass';
@@ -24,6 +28,7 @@ import {
 export type DebussyLeadSheetQuintetWithHandoffResult = DebussyLeadSheetMelodyHandoffResult & {
   phase7?: LeadSheetPhase7Diagnostics;
   rhythmAntiLoop?: LeadSheetAccompanimentRhythmAntiLoopDiagnostics;
+  identityCellEcho?: LeadSheetIdentityCellEchoDiagnostics;
 };
 
 export function assembleDebussyLeadSheetQuintetWithHandoffScore(
@@ -49,10 +54,18 @@ export function assembleDebussyLeadSheetQuintetWithHandoffScore(
     seed,
     composerId,
   });
+  const identityCellEcho = applyLeadSheetIdentityCellEchoPass({
+    score: rhythmAntiLoop.score,
+    melodyLine: handoff.spine.importTimeline.melodyLine,
+    perBarMelodyOwnership: handoff.perBarMelodyOwnership,
+    appliedHarmonyBars: handoff.spine.appliedHarmonyBars,
+    seed,
+  });
   return {
     ...handoff,
-    score: rhythmAntiLoop.score,
+    score: identityCellEcho.score,
     phase7: phase7.diagnostics,
     rhythmAntiLoop: rhythmAntiLoop.diagnostics,
+    identityCellEcho: identityCellEcho.diagnostics,
   };
 }
