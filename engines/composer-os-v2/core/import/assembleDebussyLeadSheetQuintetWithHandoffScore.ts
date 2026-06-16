@@ -36,6 +36,10 @@ import {
   applyLeadSheetDebussyContrastArcPass,
   type LeadSheetDebussyContrastArcDiagnostics,
 } from './leadSheetDebussyContrastArcPass';
+import {
+  applyLeadSheetKennyWheelerContrastArcPass,
+  type LeadSheetKennyWheelerContrastArcDiagnostics,
+} from './leadSheetKennyWheelerContrastArcPass';
 
 export type DebussyLeadSheetQuintetWithHandoffResult = DebussyLeadSheetMelodyHandoffResult & {
   phase7?: LeadSheetPhase7Diagnostics;
@@ -43,6 +47,7 @@ export type DebussyLeadSheetQuintetWithHandoffResult = DebussyLeadSheetMelodyHan
   identityCellEcho?: LeadSheetIdentityCellEchoDiagnostics;
   bartokContrastArc?: LeadSheetBartokContrastArcDiagnostics;
   debussyContrastArc?: LeadSheetDebussyContrastArcDiagnostics;
+  kennyWheelerContrastArc?: LeadSheetKennyWheelerContrastArcDiagnostics;
   sixteenthGridClamp?: LeadSheetQuintetSixteenthGridClampDiagnostics;
 };
 
@@ -79,6 +84,7 @@ export function assembleDebussyLeadSheetQuintetWithHandoffScore(
   let scoreBeforeClamp = identityCellEcho.score;
   let bartokContrastArc: LeadSheetBartokContrastArcDiagnostics | undefined;
   let debussyContrastArc: LeadSheetDebussyContrastArcDiagnostics | undefined;
+  let kennyWheelerContrastArc: LeadSheetKennyWheelerContrastArcDiagnostics | undefined;
   if (composerId === 'bartok') {
     const contrastArc = applyLeadSheetBartokContrastArcPass({
       score: identityCellEcho.score,
@@ -97,6 +103,15 @@ export function assembleDebussyLeadSheetQuintetWithHandoffScore(
     });
     scoreBeforeClamp = contrastArc.score;
     debussyContrastArc = contrastArc.diagnostics;
+  } else if (composerId === 'kenny_wheeler') {
+    const contrastArc = applyLeadSheetKennyWheelerContrastArcPass({
+      score: identityCellEcho.score,
+      appliedHarmonyBars: handoff.spine.appliedHarmonyBars,
+      perBarMelodyOwnership: handoff.perBarMelodyOwnership,
+      seed,
+    });
+    scoreBeforeClamp = contrastArc.score;
+    kennyWheelerContrastArc = contrastArc.diagnostics;
   }
   const sixteenthGridClamp = applyLeadSheetQuintetSixteenthGridClampPass(scoreBeforeClamp);
   return {
@@ -107,6 +122,7 @@ export function assembleDebussyLeadSheetQuintetWithHandoffScore(
     identityCellEcho: identityCellEcho.diagnostics,
     bartokContrastArc,
     debussyContrastArc,
+    kennyWheelerContrastArc,
     sixteenthGridClamp: sixteenthGridClamp.diagnostics,
   };
 }
