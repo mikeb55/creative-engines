@@ -14,6 +14,8 @@ const CONFIDENCE_COLORS = {
   low: 'rgba(220, 53, 69, 0.75)',
 } as const;
 
+const MAX_CANDIDATES = 3;
+
 function confidenceStripColor(confidence: number): keyof typeof CONFIDENCE_COLORS {
   if (confidence >= 0.85) return 'high';
   if (confidence >= 0.5) return 'mid';
@@ -54,7 +56,7 @@ function HarmonyConfidenceStrip({ confidences }: { confidences: number[] }) {
 
 const panelStyle: CSSProperties = {
   marginBottom: '1rem',
-  maxWidth: 560,
+  maxWidth: 720,
   padding: '0.75rem 0.85rem',
   borderRadius: 8,
   border: '1px solid var(--border)',
@@ -102,10 +104,35 @@ const sliderLabelStyle: CSSProperties = {
   marginBottom: 4,
 };
 
+const galleryStyle: CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+  gap: '0.5rem',
+  marginTop: '0.75rem',
+};
+
 type StatusKind = 'idle' | 'running' | 'canceled' | 'success' | 'error';
 
 function hiddenVariationSeed(): number {
   return Math.floor(Math.random() * 900_000) + 100_000;
+}
+
+function outputFileName(savedMusicXmlPath: string | undefined): string {
+  if (!savedMusicXmlPath) return '—';
+  return savedMusicXmlPath.replace(/^.*[/\\]/, '');
+}
+
+function candidateCardStyle(selected: boolean): CSSProperties {
+  return {
+    padding: '0.65rem 0.75rem',
+    borderRadius: 6,
+    border: selected ? '2px solid rgba(46, 125, 50, 0.85)' : '1px solid var(--border)',
+    background: selected ? 'rgba(46, 125, 50, 0.08)' : 'var(--bg)',
+    fontSize: '0.82rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.35rem',
+  };
 }
 
 function VariationSlider(props: {
@@ -148,49 +175,62 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
   const [guitarCompDensity, setGuitarCompDensity] = useState(0.5);
   const [statusKind, setStatusKind] = useState<StatusKind>('idle');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [lastResult, setLastResult] = useState<LeadSheetFileInputResponse | null>(null);
+  const [candidates, setCandidates] = useState<LeadSheetFileInputResponse[]>([]);
+  const [selectedCandidateIndex, setSelectedCandidateIndex] = useState<number | null>(null);
   const [lastFilePath, setLastFilePath] = useState<string | null>(null);
   const [lastSourceFileName, setLastSourceFileName] = useState<string | null>(null);
 
   const runPipeline = useCallback(
-    async (filePath: string, sourceFileName: string, variationSeed: number) => {
+    async (filePath: string, sourceFileName: string) => {
       setStatusKind('running');
-      setStatusMessage(`Running leadsheet pipeline for ${sourceFileName} (${composerId})…`);
-      setLastResult(null);
+      setCandidates([]);
+      setSelectedCandidateIndex(null);
 
-      const result = await runLeadSheetFileInputDesktop({
-        filePath,
-        composerId,
-        seed: variationSeed,
-        rhythmicActivity,
-        guitarCompDensity,
-      });
+      const batchResults: LeadSheetFileInputResponse[] = [];
 
-      setLastResult(result);
-      if (!result.ok) {
-        setStatusKind('error');
-        setStatusMessage(result.error ?? 'Leadsheet pipeline failed.');
-        return;
-      }
+      for (let i = 0; i < MAX_CANDIDATES; i++) {
+        setStatusMessage(
+          `Running leadsheet pipeline for ${sourceFileName} (${composerId})… ${i + 1}/${MAX_CANDIDATES}`
+        );
 
-      if (result.savedMusicXmlPath && isDesktopIpc() && window.composerOsDesktop?.openFileDefaultApp) {
-        const openR = await window.composerOsDesktop.openFileDefaultApp(result.savedMusicXmlPath);
-        if (!openR.ok) {
-          setStatusKind('success');
-          setStatusMessage(
-            `Saved quintet (${result.partCount ?? 0} parts, ${result.barCount ?? 0} bars) for ${result.sourceFileName ?? sourceFileName}. Could not open file: ${openR.error ?? 'unknown error'}.`
-          );
+        const result = await runLeadSheetFileInputDesktop({
+          filePath,
+          composerId,
+          seed: hiddenVariationSeed(),
+          rhythmicActivity,
+          guitarCompDensity,
+        });
+
+        if (!result.ok) {
+          setStatusKind('error');
+          setStatusMessage(result.error ?? `Leadsheet pipeline failed on version ${i + 1}/${MAX_CANDIDATES}.`);
           return;
         }
+
+        batchResults.push(result);
       }
 
+      setCandidates(batchResults);
+      setSelectedCandidateIndex(null);
       setStatusKind('success');
-      setStatusMessage(
-        `Saved quintet (${result.partCount ?? 0} parts, ${result.barCount ?? 0} bars) for ${result.sourceFileName ?? sourceFileName}.`
-      );
+      setStatusMessage(`3 versions ready for ${sourceFileName}. Pick one below.`);
     },
     [composerId, guitarCompDensity, rhythmicActivity]
   );
+
+  const onUseCandidate = useCallback(async (index: number) => {
+    const candidate = candidates[index];
+    if (!candidate?.savedMusicXmlPath) return;
+
+    setSelectedCandidateIndex(index);
+
+    if (isDesktopIpc() && window.composerOsDesktop?.openFileDefaultApp) {
+      const openR = await window.composerOsDesktop.openFileDefaultApp(candidate.savedMusicXmlPath);
+      if (!openR.ok) {
+        setStatusMessage(`Could not open file: ${openR.error ?? 'unknown error'}.`);
+      }
+    }
+  }, [candidates]);
 
   const onOpenLeadSheetFile = useCallback(async () => {
     setStatusMessage('Choosing leadsheet file…');
@@ -204,12 +244,14 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
     const fileName = picked.filepath.replace(/^.*[/\\]/, '');
     setLastFilePath(picked.filepath);
     setLastSourceFileName(fileName);
-    await runPipeline(picked.filepath, fileName, hiddenVariationSeed());
+    await runPipeline(picked.filepath, fileName);
   }, [runPipeline]);
 
   const onAnotherVersion = useCallback(async () => {
     if (!lastFilePath || !lastSourceFileName) return;
-    await runPipeline(lastFilePath, lastSourceFileName, hiddenVariationSeed());
+    setCandidates([]);
+    setSelectedCandidateIndex(null);
+    await runPipeline(lastFilePath, lastSourceFileName);
   }, [lastFilePath, lastSourceFileName, runPipeline]);
 
   const statusStyle =
@@ -220,6 +262,9 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
         : statusMutedStyle;
 
   const canAnotherVersion = lastFilePath != null && statusKind !== 'running';
+
+  const midiDisplayCandidate =
+    selectedCandidateIndex != null ? candidates[selectedCandidateIndex] : candidates[0];
 
   return (
     <section style={panelStyle} aria-labelledby="leadsheet-input-desktop-heading">
@@ -293,14 +338,14 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
         ) : null}
       </div>
 
-      {lastResult?.ok && lastResult.sourceFormat === 'midi' ? (
+      {midiDisplayCandidate?.ok && midiDisplayCandidate.sourceFormat === 'midi' ? (
         <div style={{ marginTop: '0.75rem', fontSize: '0.82rem' }}>
           <strong>MIDI — inferred harmony (advisory)</strong>
-          {lastResult.midiQuantizeNote ? (
-            <div style={{ marginTop: 4, color: 'var(--text-muted)' }}>{lastResult.midiQuantizeNote}</div>
+          {midiDisplayCandidate.midiQuantizeNote ? (
+            <div style={{ marginTop: 4, color: 'var(--text-muted)' }}>{midiDisplayCandidate.midiQuantizeNote}</div>
           ) : null}
-          {lastResult.harmonyConfidenceByBar ? (
-            <HarmonyConfidenceStrip confidences={lastResult.harmonyConfidenceByBar} />
+          {midiDisplayCandidate.harmonyConfidenceByBar ? (
+            <HarmonyConfidenceStrip confidences={midiDisplayCandidate.harmonyConfidenceByBar} />
           ) : null}
         </div>
       ) : null}
@@ -308,17 +353,43 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
       {statusMessage ? (
         <div role="status" style={statusStyle}>
           {statusMessage}
-          {lastResult?.ok && lastResult.savedMusicXmlPath ? (
-            <div style={{ marginTop: '0.45rem', fontSize: '0.8rem', wordBreak: 'break-all' }}>
-              Output: {lastResult.savedMusicXmlPath}
-            </div>
-          ) : null}
-          {lastResult?.ok && lastResult.partIds ? (
-            <div style={{ marginTop: '0.35rem', fontSize: '0.8rem' }}>
-              Parts: {lastResult.partIds.join(', ')}
-              {lastResult.handoffVariationDetected ? ' · melody hand-off ✓' : ''}
-            </div>
-          ) : null}
+        </div>
+      ) : null}
+
+      {candidates.length > 0 ? (
+        <div style={galleryStyle} aria-label="Generated version gallery">
+          {candidates.map((candidate, i) => {
+            const selected = selectedCandidateIndex === i;
+            return (
+              <article
+                key={candidate.savedMusicXmlPath ?? i}
+                style={candidateCardStyle(selected)}
+                aria-current={selected ? 'true' : undefined}
+              >
+                <div style={{ fontWeight: 600 }}>Version {i + 1}</div>
+                <div
+                  style={{ fontSize: '0.75rem', wordBreak: 'break-all', color: 'var(--text-muted)' }}
+                  title={candidate.savedMusicXmlPath}
+                >
+                  {outputFileName(candidate.savedMusicXmlPath)}
+                </div>
+                <div>
+                  {candidate.partCount ?? 0} parts · {candidate.barCount ?? 0} bars
+                </div>
+                {candidate.handoffVariationDetected ? (
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>melody hand-off ✓</div>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => void onUseCandidate(i)}
+                  disabled={statusKind === 'running'}
+                  style={{ fontSize: '0.82rem', marginTop: '0.25rem' }}
+                >
+                  Use this
+                </button>
+              </article>
+            );
+          })}
         </div>
       ) : null}
     </section>
