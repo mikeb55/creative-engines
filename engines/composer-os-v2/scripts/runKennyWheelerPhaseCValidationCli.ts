@@ -28,7 +28,7 @@ const EXPORT_PATH = path.join(
   'metaphysics_40bar_90106_kenny_wheeler_phaseC.musicxml',
 );
 
-function maxBar(score: { parts: { measures: { index: number }[] }[] }): number {
+function maxBar(score: { parts: { measures: { index: number }[] }[] } }): number {
   let m = 0;
   for (const p of score.parts) {
     for (const bar of p.measures) m = Math.max(m, bar.index);

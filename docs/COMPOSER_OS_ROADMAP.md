@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-06-13]
+# Composer OS Roadmap [2026-06-16]
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](../CHANGELOG.md), [docs/CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
@@ -457,7 +457,9 @@ Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartók** native bundle (not in
 
 ---
 
-## Current (as of 2026-06-13 snapshot)
+## Current (as of 2026-06-16 snapshot)
+
+- **Leadsheet-input V96 — variation controls — SHIPPED (2026-06-16, `2d0e9d40`):** **`LeadSheetInputDesktopPanel`** — **Another version** (hidden seed reroll) · **Rhythmic activity** slider → `rhythmAntiLoopIntensity` gentle/moderate + micro-timing scale · **Guitar comp** slider → `guitarCompDensity` on guitar chording pass. Export `{stem}_{composerId}_v{runId}_quintet.musicxml`. Handoff: **[HANDOVER_2026-06-16.md](HANDOVER_2026-06-16.md)**. **Next:** **3-up variation gallery**.
 
 - **Premium-melody golden oracles (smoke-listed):** **`bhGoldenMaster`** (88109) · **`wayneGoldenMaster`** (90217) · **`beGoldenMaster`** (90301, FROZEN 2c) · **`jhGoldenMaster`** (90303, FROZEN 2c) · **`bartokClePitchScoringGoldenMaster`** (61234). Registry frozen tier: **BH** · **Wayne** · **Evans** · **Hendrix** (Musician **Reference** optgroup).
 - **Musician shell:** Default desktop window — composer dropdown from **`premium-melody-composer-registry.json`**, seed, **32-bar Song Mode** generate; frozen composers under **Reference**. See [COMPOSER_HANDBOOK.md](COMPOSER_HANDBOOK.md) § Musician shell.
@@ -619,7 +621,11 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 
 ### Future work — Guitar Quintet (leadsheet-input engine)
 
-**Guitar chording (future — part of guitar-density step)**
+**Variation controls v1 — SHIPPED (2026-06-16, `2d0e9d40`):** Another version · Rhythmic activity · Guitar comp sliders; end-to-end UI → IPC → API → assembly → passes. See **[HANDOVER_2026-06-16.md](HANDOVER_2026-06-16.md)**.
+
+**Next — 3-up variation gallery:** one action runs three hidden-seed arrangements in parallel (or quick sequence); user picks one; no visible seed.
+
+**Guitar chording (shipped Phase D; density knob above)**
 
 The quintet guitar is currently **single-note only** — it carries the imported melody line and rests otherwise. A future **guitar-density** pass should add guitar **dyads** / **triads** / **chords**, not just fill empty bars. Goal: guitar behaves like a real guitar (polyphonic), not a single-line voice.
 

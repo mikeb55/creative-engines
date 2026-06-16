@@ -27,6 +27,7 @@ export function GenerateSharedContextStrip(props: {
   exportIntegrity: 'pass' | 'fail' | 'pending' | 'unknown';
   tritonicFloatOver?: string | null;
   seedDisabled?: boolean;
+  hideSeed?: boolean;
 }) {
   const integrityColor =
     props.exportIntegrity === 'pass'
@@ -69,32 +70,34 @@ export function GenerateSharedContextStrip(props: {
           <span style={label}>Time</span>
           <span style={{ fontSize: '0.85rem', color: 'var(--text)' }}>{props.time || '—'}</span>
         </div>
-        <div style={cell}>
-          <span style={label}>Seed</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-            <code
-              style={{
-                fontSize: '0.82rem',
-                padding: '0.15rem 0.35rem',
-                borderRadius: 4,
-                border: '1px solid var(--border)',
-              }}
-            >
-              {props.seed}
-            </code>
-            {props.onRerollSeed ? (
-              <button
-                type="button"
-                className="secondary"
-                disabled={props.seedDisabled}
-                onClick={props.onRerollSeed}
-                style={{ fontSize: '0.75rem', padding: '0.2rem 0.45rem' }}
+        {!props.hideSeed ? (
+          <div style={cell}>
+            <span style={label}>Seed</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+              <code
+                style={{
+                  fontSize: '0.82rem',
+                  padding: '0.15rem 0.35rem',
+                  borderRadius: 4,
+                  border: '1px solid var(--border)',
+                }}
               >
-                Reroll
-              </button>
-            ) : null}
-          </span>
-        </div>
+                {props.seed}
+              </code>
+              {props.onRerollSeed ? (
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={props.seedDisabled}
+                  onClick={props.onRerollSeed}
+                  style={{ fontSize: '0.75rem', padding: '0.2rem 0.45rem' }}
+                >
+                  Reroll
+                </button>
+              ) : null}
+            </span>
+          </div>
+        ) : null}
         <div style={cell}>
           <span style={label}>Export integrity</span>
           <span style={{ fontSize: '0.85rem', color: integrityColor, fontWeight: 600 }}>

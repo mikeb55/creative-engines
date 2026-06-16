@@ -5792,6 +5792,7 @@ export function HomeGenerate({
         seed={baseSeed}
         onRerollSeed={() => setBaseSeed(Math.floor(Math.random() * 1e9))}
         seedDisabled={loading}
+        hideSeed={isDesktopIpc()}
         exportIntegrity={sharedStripExportIntegrity}
         tritonicFloatOver={tritonicFloatOverText}
       />
