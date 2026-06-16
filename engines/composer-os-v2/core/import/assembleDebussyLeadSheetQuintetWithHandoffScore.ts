@@ -15,6 +15,7 @@ import type { MosaicImportTimeline } from './mosaicImportTimeline';
 import {
   applyLeadSheetAccompanimentRhythmAntiLoopPass,
   type LeadSheetAccompanimentRhythmAntiLoopDiagnostics,
+  type LeadSheetRhythmAntiLoopIntensity,
 } from './leadSheetAccompanimentRhythmAntiLoopPass';
 import {
   applyLeadSheetIdentityCellEchoPass,
@@ -51,7 +52,15 @@ import {
 
 export type LeadSheetQuintetAssemblyOptions = {
   skipGuitarMelodyMicroTiming?: boolean;
+  /** 0 = calmer, 1 = more active. Maps to rhythmAntiLoop gentle/moderate + micro-timing scale. */
+  rhythmicActivity?: number;
+  /** 0 = lighter guitar comp, 0.5 = baseline, 1 = busier. */
+  guitarCompDensity?: number;
 };
+
+function rhythmicActivityToIntensity(activity: number): LeadSheetRhythmAntiLoopIntensity {
+  return activity >= 0.5 ? 'moderate' : 'gentle';
+}
 
 export type DebussyLeadSheetQuintetWithHandoffResult = DebussyLeadSheetMelodyHandoffResult & {
   phase7?: LeadSheetPhase7Diagnostics;
@@ -88,6 +97,7 @@ export function assembleDebussyLeadSheetQuintetWithHandoffScore(
     perBarMelodyOwnership: handoff.perBarMelodyOwnership,
     seed,
     composerId,
+    rhythmAntiLoopIntensity: rhythmicActivityToIntensity(assemblyOptions?.rhythmicActivity ?? 0.35),
   });
   const identityCellEcho = applyLeadSheetIdentityCellEchoPass({
     score: rhythmAntiLoop.score,
@@ -133,6 +143,7 @@ export function assembleDebussyLeadSheetQuintetWithHandoffScore(
     appliedHarmonyBars: handoff.spine.appliedHarmonyBars,
     composerId,
     seed,
+    guitarCompDensity: assemblyOptions?.guitarCompDensity ?? 0.5,
   });
   const guitarMelodyMicroTiming = assemblyOptions?.skipGuitarMelodyMicroTiming
     ? { score: guitarChording.score, diagnostics: undefined }
@@ -140,6 +151,7 @@ export function assembleDebussyLeadSheetQuintetWithHandoffScore(
         score: guitarChording.score,
         composerId,
         seed,
+        rhythmicActivity: assemblyOptions?.rhythmicActivity ?? 0.35,
       });
   const sixteenthGridClamp = applyLeadSheetQuintetSixteenthGridClampPass(guitarMelodyMicroTiming.score);
   return {

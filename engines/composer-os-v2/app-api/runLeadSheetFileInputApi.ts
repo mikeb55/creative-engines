@@ -15,6 +15,10 @@ export interface LeadSheetFileInputRequest {
   filePath: string;
   composerId: LeadSheetFileInputComposerId;
   seed?: number;
+  /** 0 = calmer rhythmic activity, 1 = more active. */
+  rhythmicActivity?: number;
+  /** 0 = lighter guitar comp, 0.5 = baseline, 1 = busier. */
+  guitarCompDensity?: number;
 }
 
 export interface LeadSheetFileInputResponse {
@@ -73,7 +77,18 @@ export function apiRunLeadSheetFileInput(
 
   try {
     const seed = req.seed ?? DEFAULT_SEED;
-    const proof = runDebussyLeadSheetFileHandoffProof(filePath, seed, composerId);
+    const rhythmicActivity =
+      typeof req.rhythmicActivity === 'number' && Number.isFinite(req.rhythmicActivity)
+        ? Math.max(0, Math.min(1, req.rhythmicActivity))
+        : 0.35;
+    const guitarCompDensity =
+      typeof req.guitarCompDensity === 'number' && Number.isFinite(req.guitarCompDensity)
+        ? Math.max(0, Math.min(1, req.guitarCompDensity))
+        : 0.5;
+    const proof = runDebussyLeadSheetFileHandoffProof(filePath, seed, composerId, {
+      rhythmicActivity,
+      guitarCompDensity,
+    });
 
     const partIds = proof.partIds;
     const quintetMatch =
@@ -102,7 +117,8 @@ export function apiRunLeadSheetFileInput(
       .slice(0, 60);
     const outDir = path.join(outputDir, 'leadsheet-input');
     fs.mkdirSync(outDir, { recursive: true });
-    const savedMusicXmlPath = path.join(outDir, `${safeStem}_${composerId}_quintet.musicxml`);
+    const runId = Date.now();
+    const savedMusicXmlPath = path.join(outDir, `${safeStem}_${composerId}_v${runId}_quintet.musicxml`);
     fs.writeFileSync(savedMusicXmlPath, proof.musicXml, 'utf8');
 
     const barCount = proof.effectiveHarmonyBars?.length ?? proof.importedHarmonyBars?.length ?? 0;

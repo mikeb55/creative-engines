@@ -145,7 +145,15 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
         ? (rawComposerId as LeadSheetFileInputComposerId)
         : 'debussy';
     const seed = typeof b.seed === 'number' && Number.isFinite(b.seed) ? b.seed : undefined;
-    return apiRunLeadSheetFileInput({ filePath, composerId, seed }, outputDir);
+    const rhythmicActivity =
+      typeof b.rhythmicActivity === 'number' && Number.isFinite(b.rhythmicActivity)
+        ? b.rhythmicActivity
+        : undefined;
+    const guitarCompDensity =
+      typeof b.guitarCompDensity === 'number' && Number.isFinite(b.guitarCompDensity)
+        ? b.guitarCompDensity
+        : undefined;
+    return apiRunLeadSheetFileInput({ filePath, composerId, seed, rhythmicActivity, guitarCompDensity }, outputDir);
   });
 
   ipcMain.handle('composer-os-api:pick-mosaic-import-file', async (_event, body: unknown) => {

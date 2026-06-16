@@ -20,6 +20,8 @@ export interface LeadSheetGuitarChordingPassInput {
   appliedHarmonyBars: readonly string[];
   composerId: LeadSheetGuitarChordingComposerId | string;
   seed?: number;
+  /** 0 = lighter comp, 0.5 = composer baseline, 1 = busier comp. */
+  guitarCompDensity?: number;
 }
 
 export interface LeadSheetGuitarChordingPassDiagnostics {
@@ -207,7 +209,19 @@ function hasV2AtBeat(
   );
 }
 
-function buildAnchors(score: ScoreModel, bar: number, composerId: string, seed: number): ChordAnchor[] {
+function guitarCompScale(guitarCompDensity: number): number {
+  const clamped = Math.max(0, Math.min(1, guitarCompDensity));
+  return 0.55 + clamped * 0.9;
+}
+
+function buildAnchors(
+  score: ScoreModel,
+  bar: number,
+  composerId: string,
+  seed: number,
+  guitarCompDensity = 0.5,
+): ChordAnchor[] {
+  const compScale = guitarCompScale(guitarCompDensity);
   const guitar = score.parts.find((p) => p.id === 'guitar');
   const measure = guitar?.measures.find((m) => m.index === bar);
   if (!measure) return [];
@@ -217,7 +231,8 @@ function buildAnchors(score: ScoreModel, bar: number, composerId: string, seed: 
 
   if (v1.length === 0) {
     const u = seededUnit(seed, bar, 0, 'empty');
-    const density = composerId === 'bartok' ? 0.22 : composerId === 'debussy' ? 0.35 : 0.28;
+    const density =
+      (composerId === 'bartok' ? 0.22 : composerId === 'debussy' ? 0.35 : 0.28) * compScale;
     if (u < density) {
       anchors.push({ bar, startBeat: 0, duration: composerId === 'debussy' ? 2 : 1, reason: 'empty_bar' });
     }
@@ -226,7 +241,8 @@ function buildAnchors(score: ScoreModel, bar: number, composerId: string, seed: 
 
   const first = v1[0]!;
   const last = v1[v1.length - 1]!;
-  const density = composerId === 'bartok' ? 0.28 : composerId === 'debussy' ? 0.42 : 0.34;
+  const density =
+    (composerId === 'bartok' ? 0.28 : composerId === 'debussy' ? 0.42 : 0.34) * compScale;
 
   if (seededUnit(seed, bar, 1, 'phrase_start') < density && !hasV2AtBeat(measure, first.startBeat)) {
     anchors.push({
@@ -256,8 +272,9 @@ function buildAnchors(score: ScoreModel, bar: number, composerId: string, seed: 
     const n = v1[i]!;
     if (n.duration < 1 && composerId !== 'debussy') continue;
     if (hasV2AtBeat(measure, n.startBeat)) continue;
-    const sustainGate = composerId === 'bartok' ? 0.35 : composerId === 'debussy' ? 0.55 : 0.45;
-    if (seededUnit(seed, bar, 10 + i, 'sustain') >= sustainGate) continue;
+    const sustainGate =
+      (composerId === 'bartok' ? 0.35 : composerId === 'debussy' ? 0.55 : 0.45) / compScale;
+    if (seededUnit(seed, bar, 10 + i, 'sustain') >= Math.min(0.95, sustainGate)) continue;
     if (n.duration >= 1 || composerId === 'debussy') {
       anchors.push({
         bar,
@@ -303,6 +320,7 @@ export function applyLeadSheetGuitarChordingPass(
   input: LeadSheetGuitarChordingPassInput,
 ): LeadSheetGuitarChordingPassResult {
   const seed = input.seed ?? 90106;
+  const guitarCompDensity = input.guitarCompDensity ?? 0.5;
   const composerId = input.composerId;
   const score = structuredClone(input.score) as ScoreModel;
   const guitar = score.parts.find((p) => p.id === 'guitar');
@@ -342,7 +360,7 @@ export function applyLeadSheetGuitarChordingPass(
     const measure = guitar.measures.find((m) => m.index === bar);
     if (!measure) continue;
 
-    const anchors = buildAnchors(score, bar, composerId, seed);
+    const anchors = buildAnchors(score, bar, composerId, seed, guitarCompDensity);
     for (const anchor of anchors) {
       feasibilityChecks += 1;
       const voicing = tryVoicing(anchor.melodyMidi, tonePcs, plan.useDrop2, plan.targetSize, plan.kind);

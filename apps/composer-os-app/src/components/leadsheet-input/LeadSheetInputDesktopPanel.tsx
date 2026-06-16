@@ -89,19 +89,111 @@ const statusErrorStyle: CSSProperties = {
   fontSize: '0.85rem',
 };
 
+const sliderRowStyle: CSSProperties = {
+  marginBottom: '0.75rem',
+};
+
+const sliderLabelStyle: CSSProperties = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'baseline',
+  gap: '0.5rem',
+  fontSize: '0.85rem',
+  marginBottom: 4,
+};
+
 type StatusKind = 'idle' | 'running' | 'canceled' | 'success' | 'error';
+
+function hiddenVariationSeed(): number {
+  return Math.floor(Math.random() * 900_000) + 100_000;
+}
+
+function VariationSlider(props: {
+  id: string;
+  label: string;
+  leftHint: string;
+  rightHint: string;
+  value: number;
+  onChange: (value: number) => void;
+  disabled?: boolean;
+}) {
+  const pct = Math.round(props.value * 100);
+  return (
+    <div style={sliderRowStyle}>
+      <div style={sliderLabelStyle}>
+        <label htmlFor={props.id}>{props.label}</label>
+        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }} aria-hidden="true">
+          {props.leftHint} ↔ {props.rightHint}
+        </span>
+      </div>
+      <input
+        id={props.id}
+        type="range"
+        min={0}
+        max={100}
+        step={1}
+        value={pct}
+        onChange={(e) => props.onChange(Number.parseInt(e.target.value, 10) / 100)}
+        disabled={props.disabled}
+        aria-valuetext={`${pct}% toward ${props.rightHint}`}
+        style={{ width: '100%', maxWidth: 360 }}
+      />
+    </div>
+  );
+}
 
 export function LeadSheetInputDesktopPanel(): JSX.Element {
   const [composerId, setComposerId] = useState<LeadSheetFileInputComposerId>('debussy');
+  const [rhythmicActivity, setRhythmicActivity] = useState(0.35);
+  const [guitarCompDensity, setGuitarCompDensity] = useState(0.5);
   const [statusKind, setStatusKind] = useState<StatusKind>('idle');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<LeadSheetFileInputResponse | null>(null);
+  const [lastFilePath, setLastFilePath] = useState<string | null>(null);
+  const [lastSourceFileName, setLastSourceFileName] = useState<string | null>(null);
+
+  const runPipeline = useCallback(
+    async (filePath: string, sourceFileName: string, variationSeed: number) => {
+      setStatusKind('running');
+      setStatusMessage(`Running leadsheet pipeline for ${sourceFileName} (${composerId})…`);
+      setLastResult(null);
+
+      const result = await runLeadSheetFileInputDesktop({
+        filePath,
+        composerId,
+        seed: variationSeed,
+        rhythmicActivity,
+        guitarCompDensity,
+      });
+
+      setLastResult(result);
+      if (!result.ok) {
+        setStatusKind('error');
+        setStatusMessage(result.error ?? 'Leadsheet pipeline failed.');
+        return;
+      }
+
+      if (result.savedMusicXmlPath && isDesktopIpc() && window.composerOsDesktop?.openFileDefaultApp) {
+        const openR = await window.composerOsDesktop.openFileDefaultApp(result.savedMusicXmlPath);
+        if (!openR.ok) {
+          setStatusKind('success');
+          setStatusMessage(
+            `Saved quintet (${result.partCount ?? 0} parts, ${result.barCount ?? 0} bars) for ${result.sourceFileName ?? sourceFileName}. Could not open file: ${openR.error ?? 'unknown error'}.`
+          );
+          return;
+        }
+      }
+
+      setStatusKind('success');
+      setStatusMessage(
+        `Saved quintet (${result.partCount ?? 0} parts, ${result.barCount ?? 0} bars) for ${result.sourceFileName ?? sourceFileName}.`
+      );
+    },
+    [composerId, guitarCompDensity, rhythmicActivity]
+  );
 
   const onOpenLeadSheetFile = useCallback(async () => {
-    setStatusKind('running');
     setStatusMessage('Choosing leadsheet file…');
-    setLastResult(null);
-
     const picked = await pickLeadSheetFile();
     if (picked.canceled || !picked.ok || !picked.filepath) {
       setStatusKind('canceled');
@@ -110,36 +202,15 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
     }
 
     const fileName = picked.filepath.replace(/^.*[/\\]/, '');
-    setStatusMessage(`Running leadsheet pipeline for ${fileName} (${composerId})…`);
+    setLastFilePath(picked.filepath);
+    setLastSourceFileName(fileName);
+    await runPipeline(picked.filepath, fileName, hiddenVariationSeed());
+  }, [runPipeline]);
 
-    const result = await runLeadSheetFileInputDesktop({
-      filePath: picked.filepath,
-      composerId,
-    });
-
-    setLastResult(result);
-    if (!result.ok) {
-      setStatusKind('error');
-      setStatusMessage(result.error ?? 'Leadsheet pipeline failed.');
-      return;
-    }
-
-    if (result.savedMusicXmlPath && isDesktopIpc() && window.composerOsDesktop?.openFileDefaultApp) {
-      const openR = await window.composerOsDesktop.openFileDefaultApp(result.savedMusicXmlPath);
-      if (!openR.ok) {
-        setStatusKind('success');
-        setStatusMessage(
-          `Saved quintet (${result.partCount ?? 0} parts, ${result.barCount ?? 0} bars) for ${result.sourceFileName ?? fileName}. Could not open file: ${openR.error ?? 'unknown error'}.`
-        );
-        return;
-      }
-    }
-
-    setStatusKind('success');
-    setStatusMessage(
-      `Saved quintet (${result.partCount ?? 0} parts, ${result.barCount ?? 0} bars) for ${result.sourceFileName ?? fileName}.`
-    );
-  }, [composerId]);
+  const onAnotherVersion = useCallback(async () => {
+    if (!lastFilePath || !lastSourceFileName) return;
+    await runPipeline(lastFilePath, lastSourceFileName, hiddenVariationSeed());
+  }, [lastFilePath, lastSourceFileName, runPipeline]);
 
   const statusStyle =
     statusKind === 'success'
@@ -147,6 +218,8 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
       : statusKind === 'error'
         ? statusErrorStyle
         : statusMutedStyle;
+
+  const canAnotherVersion = lastFilePath != null && statusKind !== 'running';
 
   return (
     <section style={panelStyle} aria-labelledby="leadsheet-input-desktop-heading">
@@ -178,14 +251,47 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
         ))}
       </select>
 
-      <button
-        type="button"
-        onClick={() => void onOpenLeadSheetFile()}
+      <VariationSlider
+        id="leadsheet-rhythmic-activity"
+        label="Rhythmic activity"
+        leftHint="calmer"
+        rightHint="more active"
+        value={rhythmicActivity}
+        onChange={setRhythmicActivity}
         disabled={statusKind === 'running'}
-        style={{ fontSize: '0.9rem' }}
-      >
-        {statusKind === 'running' ? 'Running…' : 'Open MusicXML or MIDI leadsheet…'}
-      </button>
+      />
+
+      <VariationSlider
+        id="leadsheet-guitar-comp"
+        label="Guitar comp"
+        leftHint="lighter"
+        rightHint="busier"
+        value={guitarCompDensity}
+        onChange={setGuitarCompDensity}
+        disabled={statusKind === 'running'}
+      />
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
+        <button
+          type="button"
+          onClick={() => void onOpenLeadSheetFile()}
+          disabled={statusKind === 'running'}
+          style={{ fontSize: '0.9rem' }}
+        >
+          {statusKind === 'running' ? 'Running…' : 'Open MusicXML or MIDI leadsheet…'}
+        </button>
+        {canAnotherVersion ? (
+          <button
+            type="button"
+            className="secondary"
+            onClick={() => void onAnotherVersion()}
+            disabled={statusKind === 'running'}
+            style={{ fontSize: '0.9rem' }}
+          >
+            Another version
+          </button>
+        ) : null}
+      </div>
 
       {lastResult?.ok && lastResult.sourceFormat === 'midi' ? (
         <div style={{ marginTop: '0.75rem', fontSize: '0.82rem' }}>

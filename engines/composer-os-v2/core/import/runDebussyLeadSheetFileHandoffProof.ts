@@ -6,7 +6,7 @@ import { normalizeChordToken } from '../harmony/chordProgressionParser';
 import { exportScoreModelToMusicXml } from '../export/musicxmlExporter';
 import { importTimelineToLockedHarmony } from './importTimelineAdapters';
 import { type DebussyLeadSheetHandoffProofResult } from './runDebussyLeadSheetHandoffProof';
-import { assembleDebussyLeadSheetQuintetWithHandoffScore } from './assembleDebussyLeadSheetQuintetWithHandoffScore';
+import { assembleDebussyLeadSheetQuintetWithHandoffScore, type LeadSheetQuintetAssemblyOptions } from './assembleDebussyLeadSheetQuintetWithHandoffScore';
 import { DEBUSSY_LEADSHEET_PROOF_CHORDS } from './buildDebussyLeadSheetHarmonySpine';
 import {
   DEBUSSY_LEADSHEET_FILE_PROOF_CHORDS,
@@ -31,7 +31,8 @@ export interface DebussyLeadSheetFileHandoffProofResult extends DebussyLeadSheet
 export function runDebussyLeadSheetFileHandoffProof(
   filePath: string,
   seed = 90105,
-  composerId = 'debussy'
+  composerId = 'debussy',
+  assemblyOptions?: LeadSheetQuintetAssemblyOptions,
 ): DebussyLeadSheetFileHandoffProofResult {
   const importTimeline = loadDebussyLeadSheetImportTimelineFromFile(filePath);
   const importedHarmonyBars = importTimelineToLockedHarmony(importTimeline);
@@ -44,7 +45,7 @@ export function runDebussyLeadSheetFileHandoffProof(
     (sym, i) => normalizeChordToken(sym) !== normalizeChordToken(DEBUSSY_LEADSHEET_PROOF_CHORDS[i] ?? '')
   );
 
-  const handoff = assembleDebussyLeadSheetQuintetWithHandoffScore(seed, undefined, importTimeline, composerId);
+  const handoff = assembleDebussyLeadSheetQuintetWithHandoffScore(seed, undefined, importTimeline, composerId, assemblyOptions);
   const { score, perBarMelodyOwnership, melodyCarrierPartIds, handoffVariationDetected } = handoff;
 
   const partsDump = score.parts.map((p) => {

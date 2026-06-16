@@ -12,6 +12,8 @@ export interface LeadSheetGuitarMelodyMicroTimingPassInput {
   score: ScoreModel;
   composerId: LeadSheetGuitarMelodyMicroTimingComposerId | string;
   seed?: number;
+  /** 0 = calmer micro-timing, 1 = more active; default 0.35 (gentle side). */
+  rhythmicActivity?: number;
 }
 
 export interface LeadSheetGuitarMelodyMicroTimingPassDiagnostics {
@@ -474,7 +476,10 @@ export function applyLeadSheetGuitarMelodyMicroTimingPass(
   }
 
   const band = DENSITY_BAND[composerId];
-  const densityTarget = band.min + (band.max - band.min) * seededUnit(seed, 0, 0, 'density');
+  const activity = Math.max(0, Math.min(1, input.rhythmicActivity ?? 0.35));
+  const activityScale = 0.65 + activity * 0.7;
+  const densityTarget =
+    (band.min + (band.max - band.min) * seededUnit(seed, 0, 0, 'density')) * activityScale;
 
   let totalMelodyNotes = 0;
   for (const measure of guitar.measures) {

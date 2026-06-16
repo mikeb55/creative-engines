@@ -59,6 +59,8 @@ export async function runLeadSheetFileInputDesktop(body: {
   filePath: string;
   composerId: LeadSheetFileInputComposerId;
   seed?: number;
+  rhythmicActivity?: number;
+  guitarCompDensity?: number;
 }): Promise<LeadSheetFileInputResponse> {
   if (!isDesktopIpc() || !window.composerOsDesktop?.invokeApi) {
     return { ok: false, error: 'Desktop IPC is not available.' };
