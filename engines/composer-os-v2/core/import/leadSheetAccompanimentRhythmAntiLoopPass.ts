@@ -9,8 +9,15 @@ import type { PerBarMelodyOwnership } from './debussyLeadSheetMelodyHandoffPlan'
 const PRIMARY_ACCOMP_PARTS = ['sq_violin_2', 'sq_viola'] as const;
 const CONDITIONAL_ACCOMP_PARTS = ['sq_violin_1', 'sq_cello'] as const;
 
-const MAX_SHIFT_BEATS = 1 / 12;
+const GENTLE_MAX_SHIFT_BEATS = 1 / 12;
+const MODERATE_MAX_SHIFT_BEATS = 1 / 6;
 const MIN_OFF_GRID_SHIFT = 1 / 24;
+const GENTLE_NUDGE_GATE = 0.12;
+const GENTLE_TEMPLATE_CYCLE_BARS = 4;
+const GENTLE_TEMPLATE_SLOTS = 3;
+const MODERATE_TEMPLATE_CYCLE_BARS = 2;
+
+export type LeadSheetRhythmAntiLoopIntensity = 'gentle' | 'moderate';
 
 export type LeadSheetRhythmAntiLoopComposerId = 'debussy' | 'kenny_wheeler' | 'bartok' | string;
 
@@ -19,12 +26,15 @@ export interface LeadSheetAccompanimentRhythmAntiLoopInput {
   perBarMelodyOwnership: readonly PerBarMelodyOwnership[];
   seed?: number;
   composerId?: LeadSheetRhythmAntiLoopComposerId;
+  /** Default gentle — selective micro-nudge on Phase 7 accompaniment (swing target 0.88–0.96). */
+  rhythmAntiLoopIntensity?: LeadSheetRhythmAntiLoopIntensity;
 }
 
 export interface LeadSheetAccompanimentRhythmAntiLoopDiagnostics {
   barsTouched: number;
   notesAdjusted: number;
   partsTouched: string[];
+  intensity: LeadSheetRhythmAntiLoopIntensity;
 }
 
 export interface LeadSheetAccompanimentRhythmAntiLoopResult {
@@ -119,16 +129,22 @@ function pickTemplates(composerId: string, noteCount: number): readonly RhythmTe
   return TEMPLATES_1[key] ?? TEMPLATES_1.debussy!;
 }
 
+function maxShiftBeats(intensity: LeadSheetRhythmAntiLoopIntensity): number {
+  return intensity === 'moderate' ? MODERATE_MAX_SHIFT_BEATS : GENTLE_MAX_SHIFT_BEATS;
+}
+
 function microShift(
   seed: number,
   bar: number,
   partId: string,
   noteIdx: number,
   composerId: string,
+  intensity: LeadSheetRhythmAntiLoopIntensity,
 ): number {
+  const cap = maxShiftBeats(intensity);
   const u = seededUnit(seed, bar, partId, noteIdx + 17, composerId);
   const sign = u < 0.5 ? -1 : 1;
-  const mag = MIN_OFF_GRID_SHIFT + (u % 0.5) * (MAX_SHIFT_BEATS - MIN_OFF_GRID_SHIFT);
+  const mag = MIN_OFF_GRID_SHIFT + (u % 0.5) * (cap - MIN_OFF_GRID_SHIFT);
   let shift = sign * mag;
 
   const norm = normalizeComposerId(composerId);
@@ -143,7 +159,7 @@ function microShift(
     if (partId === 'sq_violin_2') shift -= 1 / 24;
   }
 
-  return Math.max(-MAX_SHIFT_BEATS, Math.min(MAX_SHIFT_BEATS, shift));
+  return Math.max(-cap, Math.min(cap, shift));
 }
 
 function clampNoteTiming(start: number, duration: number, beatSpan: number): { start: number; duration: number } {
@@ -167,6 +183,7 @@ function applyTemplateToNotes(
   bar: number,
   partId: string,
   composerId: string,
+  intensity: LeadSheetRhythmAntiLoopIntensity,
 ): NoteEvent[] {
   const sorted = [...notes].sort((a, b) => a.startBeat - b.startBeat);
   const count = Math.min(sorted.length, template.length);
@@ -177,19 +194,55 @@ function applyTemplateToNotes(
     const [startFrac, durFrac] = template[i]!;
     const baseStart = startFrac * beatSpan;
     const baseDur = durFrac * beatSpan;
-    const shift = microShift(seed, bar, partId, i, composerId);
+    const shift = microShift(seed, bar, partId, i, composerId, intensity);
     const { start, duration } = clampNoteTiming(baseStart + shift, baseDur, beatSpan);
     out.push({ ...note, startBeat: start, duration });
   }
 
   for (let i = count; i < sorted.length; i++) {
     const note = sorted[i]!;
-    const shift = microShift(seed, bar, partId, i, composerId);
+    const shift = microShift(seed, bar, partId, i, composerId, intensity);
     const { start, duration } = clampNoteTiming(note.startBeat + shift, note.duration, beatSpan);
     out.push({ ...note, startBeat: start, duration });
   }
 
   return out.sort((a, b) => a.startBeat - b.startBeat);
+}
+
+function applyGentleNudgeToNotes(
+  notes: NoteEvent[],
+  beatSpan: number,
+  seed: number,
+  bar: number,
+  partId: string,
+  composerId: string,
+): NoteEvent[] {
+  const templateSlot = Math.floor((bar - 1) / GENTLE_TEMPLATE_CYCLE_BARS) % GENTLE_TEMPLATE_SLOTS;
+  return [...notes]
+    .sort((a, b) => a.startBeat - b.startBeat)
+    .map((note, i) => {
+      const gate = seededUnit(seed, bar, partId, i + templateSlot * 11, composerId);
+      if (gate > GENTLE_NUDGE_GATE) return note;
+      const shift = microShift(seed, bar, partId, i + templateSlot, composerId, 'gentle');
+      const { start, duration } = clampNoteTiming(note.startBeat + shift, note.duration, beatSpan);
+      return { ...note, startBeat: start, duration };
+    });
+}
+
+function templateVariantIndex(
+  seed: number,
+  bar: number,
+  partId: string,
+  composerId: string,
+  intensity: LeadSheetRhythmAntiLoopIntensity,
+  templateCount: number,
+): number {
+  if (intensity === 'gentle') {
+    const cycle = Math.floor((bar - 1) / GENTLE_TEMPLATE_CYCLE_BARS) % GENTLE_TEMPLATE_SLOTS;
+    return cycle % templateCount;
+  }
+  const cycle = Math.floor((bar - 1) / MODERATE_TEMPLATE_CYCLE_BARS);
+  return (cycle + Math.floor(seededUnit(seed, bar, partId, 0, composerId) * templateCount)) % templateCount;
 }
 
 function replaceVoiceOneNotes(measure: MeasureModel, newNotes: NoteEvent[]): void {
@@ -206,6 +259,7 @@ export function applyLeadSheetAccompanimentRhythmAntiLoopPass(
 ): LeadSheetAccompanimentRhythmAntiLoopResult {
   const seed = input.seed ?? 90106;
   const composerId = input.composerId ?? 'debussy';
+  const intensity = input.rhythmAntiLoopIntensity ?? 'gentle';
   const score = structuredClone(input.score) as ScoreModel;
 
   const barsTouchedSet = new Set<number>();
@@ -230,12 +284,31 @@ export function applyLeadSheetAccompanimentRhythmAntiLoopPass(
       if (notes.length === 0) continue;
 
       const beatSpan = measureBeatSpan(measure);
-      const templates = pickTemplates(composerId, notes.length);
-      const variantIdx =
-        Math.floor(seededUnit(seed, bar, partId, 0, composerId) * templates.length) % templates.length;
-      const template = templates[variantIdx]!;
-
-      const adjusted = applyTemplateToNotes(notes, template, beatSpan, seed, bar, partId, composerId);
+      const adjusted =
+        intensity === 'gentle'
+          ? applyGentleNudgeToNotes(notes, beatSpan, seed, bar, partId, composerId)
+          : (() => {
+              const templates = pickTemplates(composerId, notes.length);
+              const variantIdx = templateVariantIndex(
+                seed,
+                bar,
+                partId,
+                composerId,
+                intensity,
+                templates.length,
+              );
+              const template = templates[variantIdx]!;
+              return applyTemplateToNotes(
+                notes,
+                template,
+                beatSpan,
+                seed,
+                bar,
+                partId,
+                composerId,
+                intensity,
+              );
+            })();
       replaceVoiceOneNotes(measure, adjusted);
 
       barsTouchedSet.add(bar);
@@ -250,6 +323,7 @@ export function applyLeadSheetAccompanimentRhythmAntiLoopPass(
       barsTouched: barsTouchedSet.size,
       notesAdjusted,
       partsTouched: [...partsTouchedSet].sort(),
+      intensity,
     },
   };
 }

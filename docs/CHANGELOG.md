@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+### Changed
+
+- **Leadsheet-input engine — Phase A rhythmAntiLoop gentle default** — **`leadSheetAccompanimentRhythmAntiLoopPass.ts`** adds **`rhythmAntiLoopIntensity`** (`gentle` | `moderate`; default **`gentle`**: selective ±1/12-beat micro-nudge on Phase 7 accompaniment, 4-bar / 3-slot cycle; **`moderate`**: full composer template rewrite ±1/6). Metaphysics **90106** LOCK **`rhythmAntiLoop`** **3/3** pass (swing **0.97** / **0.97** / **0.96**); Orbit **8/8** + Phase 7 proof **17/17** unchanged.
+
 ### Added
 
 - **GCE two-mode agent guidance (canonical index + parked legacy)** — **`docs/GCE_CANONICAL.md`** is the single agent entry point: **formal / technical** GCE (repo gates, evaluator, LOCK/DCR/CI) vs **musician-facing** chat critique (default unless formal validation or LOCK/DCR/CI requested). Live rules: **`.cursor/rules/gce-evaluation.mdc`**, **`docs/GCE_LOCK_DCR_STANDARDS.md`** §1.0–§1.3, **`docs/GCE_FRAMEWORK_V2.md`**, **`AGENTS.md`**. **Parked** (historical only, do not use for guidance): **`docs/GCE_FRAMEWORK.md`**, **`rules/gce_evaluation_framework.md`**, **`rules/gce/*.md`**, stale sections of **`docs/RULES_of_EXCELLENCE.md`**. No formula, weight, threshold, or hard-gate changes.
