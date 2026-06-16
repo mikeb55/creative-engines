@@ -32,12 +32,17 @@ import {
   applyLeadSheetBartokContrastArcPass,
   type LeadSheetBartokContrastArcDiagnostics,
 } from './leadSheetBartokContrastArcPass';
+import {
+  applyLeadSheetDebussyContrastArcPass,
+  type LeadSheetDebussyContrastArcDiagnostics,
+} from './leadSheetDebussyContrastArcPass';
 
 export type DebussyLeadSheetQuintetWithHandoffResult = DebussyLeadSheetMelodyHandoffResult & {
   phase7?: LeadSheetPhase7Diagnostics;
   rhythmAntiLoop?: LeadSheetAccompanimentRhythmAntiLoopDiagnostics;
   identityCellEcho?: LeadSheetIdentityCellEchoDiagnostics;
   bartokContrastArc?: LeadSheetBartokContrastArcDiagnostics;
+  debussyContrastArc?: LeadSheetDebussyContrastArcDiagnostics;
   sixteenthGridClamp?: LeadSheetQuintetSixteenthGridClampDiagnostics;
 };
 
@@ -73,6 +78,7 @@ export function assembleDebussyLeadSheetQuintetWithHandoffScore(
   });
   let scoreBeforeClamp = identityCellEcho.score;
   let bartokContrastArc: LeadSheetBartokContrastArcDiagnostics | undefined;
+  let debussyContrastArc: LeadSheetDebussyContrastArcDiagnostics | undefined;
   if (composerId === 'bartok') {
     const contrastArc = applyLeadSheetBartokContrastArcPass({
       score: identityCellEcho.score,
@@ -82,6 +88,15 @@ export function assembleDebussyLeadSheetQuintetWithHandoffScore(
     });
     scoreBeforeClamp = contrastArc.score;
     bartokContrastArc = contrastArc.diagnostics;
+  } else if (composerId === 'debussy') {
+    const contrastArc = applyLeadSheetDebussyContrastArcPass({
+      score: identityCellEcho.score,
+      appliedHarmonyBars: handoff.spine.appliedHarmonyBars,
+      perBarMelodyOwnership: handoff.perBarMelodyOwnership,
+      seed,
+    });
+    scoreBeforeClamp = contrastArc.score;
+    debussyContrastArc = contrastArc.diagnostics;
   }
   const sixteenthGridClamp = applyLeadSheetQuintetSixteenthGridClampPass(scoreBeforeClamp);
   return {
@@ -91,6 +106,7 @@ export function assembleDebussyLeadSheetQuintetWithHandoffScore(
     rhythmAntiLoop: rhythmAntiLoop.diagnostics,
     identityCellEcho: identityCellEcho.diagnostics,
     bartokContrastArc,
+    debussyContrastArc,
     sixteenthGridClamp: sixteenthGridClamp.diagnostics,
   };
 }
