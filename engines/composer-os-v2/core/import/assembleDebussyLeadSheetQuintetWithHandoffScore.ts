@@ -21,6 +21,10 @@ import {
   type LeadSheetIdentityCellEchoDiagnostics,
 } from './leadSheetIdentityCellEchoPass';
 import {
+  applyLeadSheetQuintetSixteenthGridClampPass,
+  type LeadSheetQuintetSixteenthGridClampDiagnostics,
+} from './leadSheetQuintetSixteenthGridClampPass';
+import {
   applyLeadSheetPhase7StringRealization,
   type LeadSheetPhase7Diagnostics,
 } from './leadSheetStringRealizationPass';
@@ -29,6 +33,7 @@ export type DebussyLeadSheetQuintetWithHandoffResult = DebussyLeadSheetMelodyHan
   phase7?: LeadSheetPhase7Diagnostics;
   rhythmAntiLoop?: LeadSheetAccompanimentRhythmAntiLoopDiagnostics;
   identityCellEcho?: LeadSheetIdentityCellEchoDiagnostics;
+  sixteenthGridClamp?: LeadSheetQuintetSixteenthGridClampDiagnostics;
 };
 
 export function assembleDebussyLeadSheetQuintetWithHandoffScore(
@@ -61,11 +66,13 @@ export function assembleDebussyLeadSheetQuintetWithHandoffScore(
     appliedHarmonyBars: handoff.spine.appliedHarmonyBars,
     seed,
   });
+  const sixteenthGridClamp = applyLeadSheetQuintetSixteenthGridClampPass(identityCellEcho.score);
   return {
     ...handoff,
-    score: identityCellEcho.score,
+    score: sixteenthGridClamp.score,
     phase7: phase7.diagnostics,
     rhythmAntiLoop: rhythmAntiLoop.diagnostics,
     identityCellEcho: identityCellEcho.diagnostics,
+    sixteenthGridClamp: sixteenthGridClamp.diagnostics,
   };
 }
