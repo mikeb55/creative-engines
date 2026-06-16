@@ -20,6 +20,8 @@ This document is the **authoritative formal specification** for automated evalua
 | **Formal / technical** | Composer OS code, official evaluator runs, LOCK / DCR, release readiness, automated scores |
 | **Musician-facing / conversational** | Chat critique (“GCE this”, “is this good?”, etc.) unless formal validation is explicitly requested |
 
+**Default for chat:** musician-facing — unless the user asks for **formal Composer OS validation** or mentions **LOCK**, **DCR**, or **CI**. Pipeline and evaluator work default to formal / technical.
+
 In **musician-facing** mode, agents score musical quality on the same 0–10 scale and GCE category vocabulary, but:
 - Do **not** treat the score as repo PASS/FAIL or apply hard gates unless formal validation is requested
 - Do **not** treat sub-9 as automatic failure or jump to architecture changes from one low score

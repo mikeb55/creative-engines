@@ -14,7 +14,7 @@ GCE has **two agent modes**. Pick the right one before scoring or advising.
 | **Formal / technical** | Editing or reviewing Composer OS code · running the official GCE evaluator (`gceStyleEval`, eval scripts, smoke harness) · LOCK / DCR / hard gates / quality gates · release readiness or CI pass/fail · interpreting **automated** scores from the system |
 | **Musician-facing / conversational** | Mike asks in chat: “GCE this”, “GCE score”, “evaluate this piece”, “is this good?”, “pros and cons?”, “what would raise it?” — **unless** he explicitly asks for formal Composer OS validation |
 
-**Default for pipeline work:** formal. **Default for casual chat critique:** musician-facing.
+**Default mode:** Unless the prompt asks for **formal Composer OS validation** or mentions **LOCK**, **DCR**, or **CI**, use **musician-facing** GCE for chat evaluation. Use **formal / technical** GCE for pipeline work (code, evaluator runs, release readiness).
 
 ---
 

@@ -43,6 +43,15 @@ The same **GCE v2.0** category vocabulary serves two contexts. **Formulas, weigh
 
 Agent quick rule: **`.cursor/rules/gce-evaluation.mdc`** (mode table + §1 formal + §2 musician-facing).
 
+### §1.3 Default mode (agents)
+
+| Context | Default mode |
+|---------|----------------|
+| Chat evaluation (“GCE this”, “is this good?”, “pros and cons?”, “what would raise it?”) | **Musician-facing** — unless the user asks for **formal Composer OS validation** or mentions **LOCK**, **DCR**, or **CI** |
+| Code changes, official evaluator runs, automated harness scores, release readiness | **Formal / technical** |
+
+In musician-facing chat, open with: *“Interpreting GCE here as musician-facing critique, not formal repo release gating.”* Full output shape: §1.0 musician-facing rules above.
+
 ### §1.1 Short-form / fragment outputs (&lt; ~16 bars, especially 8-bar leadsheet)
 
 Short-form material **cannot** be judged the same way as full-chart output.
@@ -211,4 +220,4 @@ sheets-of-sound rendering, and Schneider narrative arc intensity curves.
 
 ---
 
-*Last integrated: 2026-06-16 — §1.0 formal vs musician-facing GCE modes (agent interpretation only; formulas/weights/hard-gate values unchanged).*
+*Last integrated: 2026-06-16 — §1.0–§1.3 formal vs musician-facing GCE modes + default-mode rule (agent interpretation only; formulas/weights/hard-gate values unchanged).*
