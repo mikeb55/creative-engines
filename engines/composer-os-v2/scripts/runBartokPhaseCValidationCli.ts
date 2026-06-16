@@ -117,11 +117,19 @@ const rhythmAntiLoopPass = rhythmGate?.status === 'pass';
 const sub16 = scanQuintetSubSixteenthNotes(bartokMeta.score);
 const bars = analyzeLeadSheetBartokContrastArc(bartokMeta.score);
 
-fs.mkdirSync(path.dirname(EXPORT_PATH), { recursive: true });
-const exportResult = exportScoreModelToMusicXml(bartokMeta.score, { outputPath: EXPORT_PATH });
-if (!exportResult.success) {
+const exportResult = exportScoreModelToMusicXml(bartokMeta.score);
+if (!exportResult.success || !exportResult.xml) {
   console.error('Export failed', exportResult.errors);
   process.exit(1);
+}
+const MUSICXML_PATHS = [
+  EXPORT_PATH,
+  path.join(__dirname, '..', 'output', 'bartok_phaseC_validation_90106.musicxml'),
+];
+for (const xmlPath of MUSICXML_PATHS) {
+  fs.mkdirSync(path.dirname(xmlPath), { recursive: true });
+  fs.writeFileSync(xmlPath, exportResult.xml, 'utf8');
+  console.log('Wrote MusicXML:', xmlPath, '(' + exportResult.xml.length + ' bytes)');
 }
 
 const phase7 = runLeadSheetPhase7StringRealizationProofTests();
