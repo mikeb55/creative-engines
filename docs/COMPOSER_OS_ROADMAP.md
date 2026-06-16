@@ -617,6 +617,21 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 
 ## Future / Research Backlog
 
+### Future work — Guitar Quintet (leadsheet-input engine)
+
+**Guitar chording (future — part of guitar-density step)**
+
+The quintet guitar is currently **single-note only** — it carries the imported melody line and rests otherwise. A future **guitar-density** pass should add guitar **dyads** / **triads** / **chords**, not just fill empty bars. Goal: guitar behaves like a real guitar (polyphonic), not a single-line voice.
+
+**Requirements when built:**
+
+- **Composer-aware chording** — Debussy: colour-tone dyads / quartal voicings; Bartók: sparse percussive stabs; Kenny Wheeler: jazz comping language.
+- **Melody pin inviolable** — chords are added underneath/around pinned melody notes; melody pitch order is never altered.
+- **Sequencing** — apply only **after** composer archetype passes exist, so guitar chording inherits the same per-composer character (do not implement a generic chording layer first).
+- **Playability** — idiomatic guitar voicings; nothing finer than **16th notes**.
+
+Path: **`engines/composer-os-v2/core/import/`** (leadsheet-input **guitar + string quartet** quintet). See **Current** · **Leadsheet-input engine** and [COMPOSER_HANDBOOK.md](COMPOSER_HANDBOOK.md) § Leadsheet-input engine.
+
 ### SQ Rhythm engines — String Quartet preset (2026-05-14)
 
 **Status: 6 / 7 shipped.** Live **`sqRhythmEngineId`** engines (receipt bundles **`engines/composer-os-v2/core/rhythm/*RhythmEngine.ts`**, merge **`composerOsAppGeneration.ts`**, Style Panel **`HomeGenerate.tsx`**):
