@@ -44,6 +44,14 @@ import {
   applyLeadSheetGuitarChordingPass,
   type LeadSheetGuitarChordingPassDiagnostics,
 } from './leadSheetGuitarChordingPass';
+import {
+  applyLeadSheetGuitarMelodyMicroTimingPass,
+  type LeadSheetGuitarMelodyMicroTimingPassDiagnostics,
+} from './leadSheetGuitarMelodyMicroTimingPass';
+
+export type LeadSheetQuintetAssemblyOptions = {
+  skipGuitarMelodyMicroTiming?: boolean;
+};
 
 export type DebussyLeadSheetQuintetWithHandoffResult = DebussyLeadSheetMelodyHandoffResult & {
   phase7?: LeadSheetPhase7Diagnostics;
@@ -53,6 +61,7 @@ export type DebussyLeadSheetQuintetWithHandoffResult = DebussyLeadSheetMelodyHan
   debussyContrastArc?: LeadSheetDebussyContrastArcDiagnostics;
   kennyWheelerContrastArc?: LeadSheetKennyWheelerContrastArcDiagnostics;
   guitarChording?: LeadSheetGuitarChordingPassDiagnostics;
+  guitarMelodyMicroTiming?: LeadSheetGuitarMelodyMicroTimingPassDiagnostics;
   sixteenthGridClamp?: LeadSheetQuintetSixteenthGridClampDiagnostics;
 };
 
@@ -61,6 +70,7 @@ export function assembleDebussyLeadSheetQuintetWithHandoffScore(
   plan?: readonly DebussyLeadSheetMelodyHandoffSegment[],
   importTimeline?: MosaicImportTimeline,
   composerId = 'debussy',
+  assemblyOptions?: LeadSheetQuintetAssemblyOptions,
 ): DebussyLeadSheetQuintetWithHandoffResult {
   const base = assembleDebussyLeadSheetQuintetScore(seed, importTimeline, composerId);
   const effectivePlan =
@@ -124,7 +134,14 @@ export function assembleDebussyLeadSheetQuintetWithHandoffScore(
     composerId,
     seed,
   });
-  const sixteenthGridClamp = applyLeadSheetQuintetSixteenthGridClampPass(guitarChording.score);
+  const guitarMelodyMicroTiming = assemblyOptions?.skipGuitarMelodyMicroTiming
+    ? { score: guitarChording.score, diagnostics: undefined }
+    : applyLeadSheetGuitarMelodyMicroTimingPass({
+        score: guitarChording.score,
+        composerId,
+        seed,
+      });
+  const sixteenthGridClamp = applyLeadSheetQuintetSixteenthGridClampPass(guitarMelodyMicroTiming.score);
   return {
     ...handoff,
     score: sixteenthGridClamp.score,
@@ -135,6 +152,7 @@ export function assembleDebussyLeadSheetQuintetWithHandoffScore(
     debussyContrastArc,
     kennyWheelerContrastArc,
     guitarChording: guitarChording.diagnostics,
+    guitarMelodyMicroTiming: guitarMelodyMicroTiming.diagnostics,
     sixteenthGridClamp: sixteenthGridClamp.diagnostics,
   };
 }
