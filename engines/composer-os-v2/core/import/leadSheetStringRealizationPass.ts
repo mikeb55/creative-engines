@@ -16,9 +16,21 @@ import {
 
 const STRING_PART_IDS = ['sq_violin_1', 'sq_violin_2', 'sq_viola', 'sq_cello'] as const;
 const JB_INNER_BACKBEAT_PART_IDS = ['sq_violin_2', 'sq_viola'] as const;
+type JamesBrownInnerBackbeatPartId = (typeof JB_INNER_BACKBEAT_PART_IDS)[number];
 const JB_BACKBEAT_STAB = 0.5;
+/** Full-section pocket anchors — force beat-1 when 20% omit gate would drop it (seed 90106). */
+const JB_FULL_BEAT1_ANCHOR_BARS = new Set([11, 12, 19, 20]);
 /** Cello band tops at 65 — inner JB stabs sit above overlap. */
 const JB_INNER_VOICE_FLOOR_MIDI = 66;
+
+/** JB Pass C — sectional groove density (Phase 7 only; james_brown leadsheet). */
+export type JamesBrownGrooveIntensity = 'sparse' | 'full' | 'peak';
+
+export function jamesBrownGrooveIntensityForBar(bar: number): JamesBrownGrooveIntensity {
+  if (bar >= 25 && bar <= 28) return 'peak';
+  if (bar >= 9 && bar <= 24) return 'full';
+  return 'sparse';
+}
 
 export interface LeadSheetPhase7Diagnostics {
   melodyOwnershipEnforced: boolean;
@@ -47,6 +59,10 @@ function seededUnit(seed: number, bar: number, partId: string, slot: number): nu
   let h = seed ^ (bar * 7919) ^ (slot * 104729);
   for (let i = 0; i < partId.length; i++) h = (h * 31 + partId.charCodeAt(i)) | 0;
   return ((h >>> 0) % 1000) / 1000;
+}
+
+function jamesBrownSparseInnerPartId(bar: number, seed: number): JamesBrownInnerBackbeatPartId {
+  return seededUnit(seed, bar, 'jb_sparse_inner', 0) < 0.5 ? 'sq_violin_2' : 'sq_viola';
 }
 
 function measureNotes(measure: MeasureModel | undefined) {
@@ -153,6 +169,7 @@ function buildJamesBrownStaticCelloBassEvents(
   chordSymbol: string,
   bar: number,
   seed: number,
+  intensity: JamesBrownGrooveIntensity = 'full',
 ): MeasureModel['events'] {
   const tones = chordTonesForChordSymbol(chordSymbol, { lockedHarmony: true });
   const STAB = 0.5;
@@ -179,16 +196,19 @@ function buildJamesBrownStaticCelloBassEvents(
     return pitch;
   };
 
-  // ~20% of bars omit beat 1 so and-of-3 leads the pocket.
-  if (seededUnit(seed, bar, 'sq_cello', 0) >= 0.2) {
+  // ~20% of bars omit beat 1 so and-of-3 leads the pocket; anchor bars always keep beat-1.
+  const forceBeat1Anchor = JB_FULL_BEAT1_ANCHOR_BARS.has(bar);
+  if (forceBeat1Anchor || seededUnit(seed, bar, 'sq_cello', 0) >= 0.2) {
     events.push(createNote(fitPitchToPartRange(tones.root, 'sq_cello'), 0, STAB, 1));
   }
 
   const pushPitch = pickPushPitch(1);
   events.push(createNote(pushPitch, 2.5, STAB, 1));
 
-  // And-of-4 (3.5): every other bar (even bar numbers).
-  if (bar % 2 === 0) {
+  // And-of-4 (3.5): full = even bars; peak = every bar; sparse = omitted.
+  const includeAndOf4 =
+    intensity === 'peak' || (intensity === 'full' && bar % 2 === 0);
+  if (includeAndOf4) {
     events.push(createNote(pickPushPitch(3, pushPitch), 3.5, STAB, 1));
   }
 
@@ -298,13 +318,23 @@ function enrichAccompanimentMotionForBar(
     const notes = measureNotes(measure);
     const needsMotion = notes.length === 0 || isStaticPadMeasure(measure);
     if (!needsMotion) continue;
-    const motion =
-      composerId === 'james_brown' && partId === 'sq_cello'
-        ? buildJamesBrownStaticCelloBassEvents(chordSymbol, bar, seed)
-        : composerId === 'james_brown' &&
-            (JB_INNER_BACKBEAT_PART_IDS as readonly string[]).includes(partId)
-          ? buildJamesBrownInnerStringBackbeatEvents(chordSymbol, partId, bar, seed)
-          : buildMotionAccompanimentEvents(chordSymbol, partId, bar, seed);
+
+    let motion: MeasureModel['events'] = [];
+    if (composerId === 'james_brown') {
+      const intensity = jamesBrownGrooveIntensityForBar(bar);
+      if (partId === 'sq_cello') {
+        motion = buildJamesBrownStaticCelloBassEvents(chordSymbol, bar, seed, intensity);
+      } else if ((JB_INNER_BACKBEAT_PART_IDS as readonly string[]).includes(partId)) {
+        if (intensity === 'sparse' && partId !== jamesBrownSparseInnerPartId(bar, seed)) {
+          continue;
+        }
+        motion = buildJamesBrownInnerStringBackbeatEvents(chordSymbol, partId, bar, seed);
+      } else {
+        motion = buildMotionAccompanimentEvents(chordSymbol, partId, bar, seed);
+      }
+    } else {
+      motion = buildMotionAccompanimentEvents(chordSymbol, partId, bar, seed);
+    }
     if (motion.length === 0) continue;
     replaceVoiceOneEvents(measure, motion);
     applied = true;
