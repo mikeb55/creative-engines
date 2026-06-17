@@ -96,6 +96,7 @@ export function assembleDebussyLeadSheetQuintetWithHandoffScore(
     appliedHarmonyBars: handoff.spine.appliedHarmonyBars,
     perBarMelodyOwnership: handoff.perBarMelodyOwnership,
     seed,
+    composerId,
   });
   const rhythmAntiLoop = applyLeadSheetAccompanimentRhythmAntiLoopPass({
     score: phase7.score,

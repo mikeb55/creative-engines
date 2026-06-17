@@ -31,6 +31,7 @@ export interface LeadSheetPhase7RealizationInput {
   appliedHarmonyBars: readonly string[];
   perBarMelodyOwnership: readonly PerBarMelodyOwnership[];
   seed?: number;
+  composerId?: string;
 }
 
 export interface LeadSheetPhase7RealizationResult {
@@ -136,6 +137,39 @@ function pickAccompanimentPitches(chordSymbol: string, partId: string, bar: numb
   return normalized.slice(0, 2);
 }
 
+function fitPitchToPartRange(pitch: number, partId: string): number {
+  const [lo, hi] = getLeadSheetPartMidiBounds(partId);
+  let out = pitch;
+  while (out < lo) out += 12;
+  while (out > hi) out -= 12;
+  return Math.max(lo, Math.min(hi, out));
+}
+
+function buildJamesBrownStaticCelloBassEvents(
+  chordSymbol: string,
+  bar: number,
+  seed: number,
+): MeasureModel['events'] {
+  const tones = chordTonesForChordSymbol(chordSymbol, { lockedHarmony: true });
+  const rootPitch = fitPitchToPartRange(tones.root, 'sq_cello');
+
+  const pushCandidates = [tones.root, tones.fifth, tones.third, tones.seventh].filter(
+    (p): p is number => typeof p === 'number' && Number.isFinite(p),
+  );
+  const u = seededUnit(seed, bar, 'sq_cello', 1);
+  let pushRaw = pushCandidates[0] ?? tones.root;
+  if (u < 0.55 && tones.root != null) pushRaw = tones.root;
+  else if (u < 0.85 && tones.fifth != null) pushRaw = tones.fifth;
+  else if (pushCandidates.length > 2) pushRaw = pushCandidates[2]!;
+  else if (tones.fifth != null) pushRaw = tones.fifth;
+  const pushPitch = fitPitchToPartRange(pushRaw, 'sq_cello');
+
+  return [
+    createNote(rootPitch, 0, 1.5, 1),
+    createNote(pushPitch, 1.5, 0.75, 1),
+  ];
+}
+
 function buildMotionAccompanimentEvents(
   chordSymbol: string,
   partId: string,
@@ -166,6 +200,7 @@ function enrichAccompanimentMotionForBar(
   ownerPartId: string,
   chordSymbol: string,
   seed: number,
+  composerId?: string,
 ): boolean {
   let applied = false;
   for (const partId of STRING_PART_IDS) {
@@ -180,7 +215,10 @@ function enrichAccompanimentMotionForBar(
     const notes = measureNotes(measure);
     const needsMotion = notes.length === 0 || isStaticPadMeasure(measure);
     if (!needsMotion) continue;
-    const motion = buildMotionAccompanimentEvents(chordSymbol, partId, bar, seed);
+    const motion =
+      composerId === 'james_brown' && partId === 'sq_cello'
+        ? buildJamesBrownStaticCelloBassEvents(chordSymbol, bar, seed)
+        : buildMotionAccompanimentEvents(chordSymbol, partId, bar, seed);
     if (motion.length === 0) continue;
     replaceVoiceOneEvents(measure, motion);
     applied = true;
@@ -263,7 +301,7 @@ export function applyLeadSheetPhase7StringRealization(
       matched: ownerMelodyMatchesImport(score, ownerPartId, bar, barMelody),
     });
 
-    if (enrichAccompanimentMotionForBar(score, bar, ownerPartId, chord, seed)) {
+    if (enrichAccompanimentMotionForBar(score, bar, ownerPartId, chord, seed, input.composerId)) {
       accompanimentBarsWithMotion.push(bar);
     }
   }
