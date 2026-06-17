@@ -597,7 +597,7 @@ export function applyKennyWheelerStyleSurface(metadata: GenerationMetadata, prim
   if (primarySongwriterStyle == null || primarySongwriterStyle.trim() === '') return;
   if (normalizeSongwriterStyleKey(primarySongwriterStyle) !== 'kenny_wheeler') return;
 
-  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) - 0.12);
+  metadata.songwriterDensityBias = clamp01((metadata.songwriterDensityBias ?? 0.5) - 0.06);
   metadata.songwriterSyncopationBias = clamp01((metadata.songwriterSyncopationBias ?? 0.5) - 0.08);
   metadata.songwriterSpaceBias = clamp01((metadata.songwriterSpaceBias ?? 0.5) + 0.32);
   metadata.songwriterCadenceSoftness = clamp01((metadata.songwriterCadenceSoftness ?? 0.5) + 0.34);
