@@ -625,6 +625,10 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 
 **Next — 3-up variation gallery:** one action runs three hidden-seed arrangements in parallel (or quick sequence); user picks one; no visible seed.
 
+**James Brown — Pass A.1 static cello bass (shipped V2.1 baseline, 2026-06-17):** `buildJamesBrownStaticCelloBassEvents` — static `sq_cello` bars = beat **1** + and-of-**3** (0.0 + 2.5), 0.5-beat root/5th stabs; optional and-of-**4** (3.5) on gated bars. Melody-owner bars unchanged.
+
+**Parked — JB anti-loop templates (do not change yet):** at `rhythmicActivity ≥ 0.5`, `james_brown` currently falls back to Debussy `TEMPLATES_2` for 2-note patterns; needs jb-specific templates or `sq_cello` gating to avoid 1+3 remap. Micro feel tweak to 3.5 hit rate is separate follow-up.
+
 **Guitar chording (shipped Phase D; density knob above)**
 
 The quintet guitar is currently **single-note only** — it carries the imported melody line and rests otherwise. A future **guitar-density** pass should add guitar **dyads** / **triads** / **chords**, not just fill empty bars. Goal: guitar behaves like a real guitar (polyphonic), not a single-line voice.

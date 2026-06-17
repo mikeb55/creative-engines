@@ -153,21 +153,36 @@ function buildJamesBrownStaticCelloBassEvents(
   const tones = chordTonesForChordSymbol(chordSymbol, { lockedHarmony: true });
   const rootPitch = fitPitchToPartRange(tones.root, 'sq_cello');
 
-  const pushCandidates = [tones.root, tones.fifth, tones.third, tones.seventh].filter(
-    (p): p is number => typeof p === 'number' && Number.isFinite(p),
-  );
+  // Push pitch: root or 5th only (no scalar/chromatic approaches in this pass).
   const u = seededUnit(seed, bar, 'sq_cello', 1);
-  let pushRaw = pushCandidates[0] ?? tones.root;
+  let pushRaw = tones.root;
   if (u < 0.55 && tones.root != null) pushRaw = tones.root;
-  else if (u < 0.85 && tones.fifth != null) pushRaw = tones.fifth;
-  else if (pushCandidates.length > 2) pushRaw = pushCandidates[2]!;
   else if (tones.fifth != null) pushRaw = tones.fifth;
   const pushPitch = fitPitchToPartRange(pushRaw, 'sq_cello');
 
-  return [
-    createNote(rootPitch, 0, 1.5, 1),
-    createNote(pushPitch, 1.5, 0.75, 1),
+  // Optional and-of-4 (3.5): every 4th bar in the chart (bar % 4 === 0), gated by seed
+  // so ~75% of those bars take the third stab — keeps most bars at two-hit density.
+  const includeAndOf4 = bar % 4 === 0 && seededUnit(seed, bar, 'sq_cello', 2) < 0.75;
+
+  const STAB = 0.5;
+  const events: MeasureModel['events'] = [
+    createNote(rootPitch, 0, STAB, 1),
+    createNote(pushPitch, 2.5, STAB, 1),
   ];
+
+  if (includeAndOf4) {
+    const u2 = seededUnit(seed, bar, 'sq_cello', 3);
+    let secondPushRaw = pushRaw;
+    if (tones.fifth != null && tones.root != null) {
+      secondPushRaw = u2 < 0.5 ? tones.fifth : tones.root;
+      if (secondPushRaw === pushRaw) {
+        secondPushRaw = pushRaw === tones.root ? tones.fifth : tones.root;
+      }
+    }
+    events.push(createNote(fitPitchToPartRange(secondPushRaw, 'sq_cello'), 3.5, STAB, 1));
+  }
+
+  return events;
 }
 
 function buildMotionAccompanimentEvents(
