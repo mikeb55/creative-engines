@@ -304,7 +304,7 @@ function buildEmergingBar(
   seed: number,
   ownerPartId: string,
   score: ScoreModel,
-  guideState: { vn2?: number; va?: number },
+  guideState: { va?: number },
 ): Map<StringPartId, NoteEvent[]> {
   const out = new Map<StringPartId, NoteEvent[]>();
 
@@ -312,12 +312,6 @@ function buildEmergingBar(
     out.set('sq_cello', [
       createNote(chordPitchForPart(chordSymbol, 'sq_cello', 'root', -1), snap16(0.5), snapDur(3.5), 1),
     ]);
-  }
-
-  if (ownerPartId !== 'sq_violin_2') {
-    const vn2Line = buildGuideToneLine(chordSymbol, 'sq_violin_2', bar, seed, 2, guideState.vn2);
-    guideState.vn2 = vn2Line.lastPitch;
-    out.set('sq_violin_2', vn2Line.notes);
   }
 
   if (ownerPartId !== 'sq_viola') {
@@ -338,7 +332,7 @@ function buildFullJazzBar(
   seed: number,
   ownerPartId: string,
   score: ScoreModel,
-  guideState: { vn2?: number; va?: number },
+  guideState: { va?: number },
 ): Map<StringPartId, NoteEvent[]> {
   if (isCadentialBar(bar)) {
     return buildCadentialVoicing(chordSymbol, ownerPartId);
@@ -348,12 +342,6 @@ function buildFullJazzBar(
 
   if (ownerPartId !== 'sq_cello') {
     mergePartNotes(out, 'sq_cello', buildWalkingCello(chordSymbol, bar, seed, ownerPartId));
-  }
-
-  if (ownerPartId !== 'sq_violin_2') {
-    const vn2Line = buildGuideToneLine(chordSymbol, 'sq_violin_2', bar, seed, 3, guideState.vn2);
-    guideState.vn2 = vn2Line.lastPitch;
-    out.set('sq_violin_2', vn2Line.notes);
   }
 
   if (ownerPartId !== 'sq_viola') {
@@ -404,7 +392,7 @@ function buildReturnBar(
   seed: number,
   ownerPartId: string,
   score: ScoreModel,
-  guideState: { vn2?: number; va?: number },
+  guideState: { va?: number },
 ): Map<StringPartId, NoteEvent[]> {
   if (isCadentialBar(bar)) {
     return buildCadentialVoicing(chordSymbol, ownerPartId);
@@ -422,12 +410,6 @@ function buildReturnBar(
         createNote(chordPitchForPart(chordSymbol, 'sq_cello', 'third', -1), snap16(2.5), snapDur(1.5), 1),
       ]);
     }
-  }
-
-  if (ownerPartId !== 'sq_violin_2') {
-    const vn2Line = buildGuideToneLine(chordSymbol, 'sq_violin_2', bar, seed, 3, guideState.vn2);
-    guideState.vn2 = vn2Line.lastPitch;
-    out.set('sq_violin_2', vn2Line.notes);
   }
 
   if (ownerPartId !== 'sq_viola') {
@@ -448,7 +430,7 @@ function buildBarAccompaniment(
   seed: number,
   ownerPartId: string,
   score: ScoreModel,
-  guideState: { vn2?: number; va?: number },
+  guideState: { va?: number },
 ): Map<StringPartId, NoteEvent[]> {
   const phase = macroPhaseForBar(bar);
   if (phase === 'sparse') return buildSparseBar(chordSymbol, bar, seed, ownerPartId, score);
@@ -533,7 +515,7 @@ export function applyLeadSheetKennyWheelerContrastArcPass(
   const seed = input.seed ?? 90106;
   const score = structuredClone(input.score) as ScoreModel;
   const totalBars = input.appliedHarmonyBars.length;
-  const guideState: { vn2?: number; va?: number } = {};
+  const guideState: { va?: number } = {};
 
   for (let bar = 1; bar <= totalBars; bar++) {
     const ownerPartId = ownerForBar(input.perBarMelodyOwnership, bar);
