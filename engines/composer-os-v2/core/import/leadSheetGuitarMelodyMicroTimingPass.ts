@@ -6,7 +6,7 @@
 import { BEATS_PER_MEASURE, type NoteEvent, type ScoreModel } from '../score-model/scoreModelTypes';
 import { SIXTEENTH_GRID_BEATS } from './leadSheetQuintetSixteenthGridClampPass';
 
-export type LeadSheetGuitarMelodyMicroTimingComposerId = 'bartok' | 'debussy' | 'kenny_wheeler';
+export type LeadSheetGuitarMelodyMicroTimingComposerId = 'bartok' | 'debussy' | 'kenny_wheeler' | 'james_brown';
 
 export interface LeadSheetGuitarMelodyMicroTimingPassInput {
   score: ScoreModel;
@@ -33,10 +33,16 @@ const DENSITY_BAND: Record<LeadSheetGuitarMelodyMicroTimingComposerId, { min: nu
   bartok: { min: 0.18, max: 0.28 },
   debussy: { min: 0.12, max: 0.2 },
   kenny_wheeler: { min: 0.16, max: 0.24 },
+  james_brown: { min: 0.14, max: 0.22 },
 };
 
 function normalizeComposerId(composerId: string): LeadSheetGuitarMelodyMicroTimingComposerId | null {
-  if (composerId === 'kenny_wheeler' || composerId === 'bartok' || composerId === 'debussy') {
+  if (
+    composerId === 'kenny_wheeler' ||
+    composerId === 'bartok' ||
+    composerId === 'debussy' ||
+    composerId === 'james_brown'
+  ) {
     return composerId;
   }
   return null;
@@ -113,6 +119,7 @@ function notePriority(
   if (composerId === 'bartok' && bar % 3 === 1) score += 1.5;
   if (composerId === 'debussy' && bar % 4 === 0) score += 1;
   if (composerId === 'kenny_wheeler' && bar % 2 === 1) score += 0.75;
+  if (composerId === 'james_brown' && (bar % 2 === 0 || Math.abs((bar - 1) % 4) < 1e-9)) score += 0.85;
   return score;
 }
 
@@ -179,6 +186,22 @@ function pickTarget16th(
     }
     const pick = Math.floor(seededUnit(seed, bar, idx, 'ken2') * options.length);
     return options[pick]!;
+  }
+
+  if (composerId === 'james_brown') {
+    const backbeat = options.filter((t) => Math.abs(t - 1) < 1e-9 || Math.abs(t - 3) < 1e-9);
+    if (backbeat.length > 0) {
+      const pick = Math.floor(seededUnit(seed, bar, idx, 'jb') * backbeat.length);
+      return backbeat[pick]!;
+    }
+    const offbeat = options.filter((t) => {
+      const mod = t % 0.5;
+      return Math.abs(mod - 0.25) < 1e-9;
+    });
+    if (offbeat.length > 0) {
+      const pick = Math.floor(seededUnit(seed, bar, idx, 'jb2') * offbeat.length);
+      return offbeat[pick]!;
+    }
   }
 
   return pickBartokTarget16th(currentStart, beatSpan, bar, idx, noteCount, seed);

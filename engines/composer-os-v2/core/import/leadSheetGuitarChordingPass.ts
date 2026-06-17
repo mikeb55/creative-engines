@@ -13,7 +13,7 @@ import type { NoteEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import { createNote } from '../score-model/scoreEventBuilder';
 import { SIXTEENTH_GRID_BEATS } from './leadSheetQuintetSixteenthGridClampPass';
 
-export type LeadSheetGuitarChordingComposerId = 'bartok' | 'debussy' | 'kenny_wheeler';
+export type LeadSheetGuitarChordingComposerId = 'bartok' | 'debussy' | 'kenny_wheeler' | 'james_brown';
 
 export interface LeadSheetGuitarChordingPassInput {
   score: ScoreModel;

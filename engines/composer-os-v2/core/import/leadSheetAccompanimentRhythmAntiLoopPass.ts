@@ -19,7 +19,7 @@ const MODERATE_TEMPLATE_CYCLE_BARS = 2;
 
 export type LeadSheetRhythmAntiLoopIntensity = 'gentle' | 'moderate';
 
-export type LeadSheetRhythmAntiLoopComposerId = 'debussy' | 'kenny_wheeler' | 'bartok' | string;
+export type LeadSheetRhythmAntiLoopComposerId = 'debussy' | 'kenny_wheeler' | 'bartok' | 'james_brown' | string;
 
 export interface LeadSheetAccompanimentRhythmAntiLoopInput {
   score: ScoreModel;
@@ -97,7 +97,7 @@ const TEMPLATES_1: Record<string, readonly RhythmTemplate[]> = {
 };
 
 function normalizeComposerId(composerId: string): string {
-  if (composerId === 'kenny_wheeler' || composerId === 'bartok' || composerId === 'debussy') {
+  if (composerId === 'kenny_wheeler' || composerId === 'bartok' || composerId === 'debussy' || composerId === 'james_brown') {
     return composerId;
   }
   return 'debussy';
