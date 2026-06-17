@@ -15,6 +15,10 @@ import {
 } from './leadSheetPartMidiBounds';
 
 const STRING_PART_IDS = ['sq_violin_1', 'sq_violin_2', 'sq_viola', 'sq_cello'] as const;
+const JB_INNER_BACKBEAT_PART_IDS = ['sq_violin_2', 'sq_viola'] as const;
+const JB_BACKBEAT_STAB = 0.5;
+/** Cello band tops at 65 — inner JB stabs sit above overlap. */
+const JB_INNER_VOICE_FLOOR_MIDI = 66;
 
 export interface LeadSheetPhase7Diagnostics {
   melodyOwnershipEnforced: boolean;
@@ -191,6 +195,64 @@ function buildJamesBrownStaticCelloBassEvents(
   return events;
 }
 
+function fitPitchAboveCelloBand(raw: number, partId: string): number {
+  const [lo, hi] = getLeadSheetPartMidiBounds(partId);
+  const floor = Math.max(lo, JB_INNER_VOICE_FLOOR_MIDI);
+  let pitch = raw;
+  while (pitch < floor) pitch += 12;
+  while (pitch > hi) pitch -= 12;
+  return Math.max(floor, Math.min(hi, pitch));
+}
+
+function pickJamesBrownInnerBackbeatPitch(
+  chordSymbol: string,
+  partId: string,
+  bar: number,
+  seed: number,
+  slot: number,
+): number {
+  const tones = chordTonesForChordSymbol(chordSymbol, { lockedHarmony: true });
+  const pool = [tones.third, tones.fifth, tones.seventh, tones.root].filter(
+    (p): p is number => typeof p === 'number' && Number.isFinite(p),
+  );
+  if (pool.length === 0) {
+    return fitPitchAboveCelloBand(tones.root ?? 0, partId);
+  }
+  const partBias = partId === 'sq_violin_2' ? 0 : 1;
+  const u = seededUnit(seed, bar, partId, slot);
+  const idx = (Math.floor(u * pool.length) + partBias) % pool.length;
+  return fitPitchAboveCelloBand(pool[idx]!, partId);
+}
+
+function buildJamesBrownInnerStringBackbeatEvents(
+  chordSymbol: string,
+  partId: string,
+  bar: number,
+  seed: number,
+): MeasureModel['events'] {
+  const beat2Pitch = pickJamesBrownInnerBackbeatPitch(chordSymbol, partId, bar, seed, 1);
+  let beat4Pitch = pickJamesBrownInnerBackbeatPitch(chordSymbol, partId, bar, seed, 3);
+  if (beat4Pitch === beat2Pitch) {
+    const tones = chordTonesForChordSymbol(chordSymbol, { lockedHarmony: true });
+    const altPc =
+      partId === 'sq_viola'
+        ? (tones.seventh ?? tones.fifth ?? tones.third ?? tones.root)
+        : (tones.fifth ?? tones.third ?? tones.seventh ?? tones.root);
+    if (typeof altPc === 'number' && Number.isFinite(altPc)) {
+      beat4Pitch = fitPitchAboveCelloBand(altPc, partId);
+    }
+    if (beat4Pitch === beat2Pitch) {
+      const [lo, hi] = getLeadSheetPartMidiBounds(partId);
+      beat4Pitch = Math.min(hi, beat2Pitch + (partId === 'sq_viola' ? 3 : 4));
+      if (beat4Pitch > hi) beat4Pitch = Math.max(lo, beat2Pitch - 3);
+    }
+  }
+  return [
+    createNote(beat2Pitch, 1.0, JB_BACKBEAT_STAB, 1),
+    createNote(beat4Pitch, 3.0, JB_BACKBEAT_STAB, 1),
+  ];
+}
+
 function buildMotionAccompanimentEvents(
   chordSymbol: string,
   partId: string,
@@ -239,7 +301,10 @@ function enrichAccompanimentMotionForBar(
     const motion =
       composerId === 'james_brown' && partId === 'sq_cello'
         ? buildJamesBrownStaticCelloBassEvents(chordSymbol, bar, seed)
-        : buildMotionAccompanimentEvents(chordSymbol, partId, bar, seed);
+        : composerId === 'james_brown' &&
+            (JB_INNER_BACKBEAT_PART_IDS as readonly string[]).includes(partId)
+          ? buildJamesBrownInnerStringBackbeatEvents(chordSymbol, partId, bar, seed)
+          : buildMotionAccompanimentEvents(chordSymbol, partId, bar, seed);
     if (motion.length === 0) continue;
     replaceVoiceOneEvents(measure, motion);
     applied = true;
