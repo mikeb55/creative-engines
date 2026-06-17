@@ -42,6 +42,10 @@ import {
   type LeadSheetKennyWheelerContrastArcDiagnostics,
 } from './leadSheetKennyWheelerContrastArcPass';
 import {
+  applyLeadSheetJamesBrownFunkArcPass,
+  type LeadSheetJamesBrownFunkArcDiagnostics,
+} from './leadSheetJamesBrownFunkArcPass';
+import {
   applyLeadSheetGuitarChordingPass,
   type LeadSheetGuitarChordingPassDiagnostics,
 } from './leadSheetGuitarChordingPass';
@@ -69,6 +73,7 @@ export type DebussyLeadSheetQuintetWithHandoffResult = DebussyLeadSheetMelodyHan
   bartokContrastArc?: LeadSheetBartokContrastArcDiagnostics;
   debussyContrastArc?: LeadSheetDebussyContrastArcDiagnostics;
   kennyWheelerContrastArc?: LeadSheetKennyWheelerContrastArcDiagnostics;
+  jamesBrownFunkArc?: LeadSheetJamesBrownFunkArcDiagnostics;
   guitarChording?: LeadSheetGuitarChordingPassDiagnostics;
   guitarMelodyMicroTiming?: LeadSheetGuitarMelodyMicroTimingPassDiagnostics;
   sixteenthGridClamp?: LeadSheetQuintetSixteenthGridClampDiagnostics;
@@ -110,6 +115,7 @@ export function assembleDebussyLeadSheetQuintetWithHandoffScore(
   let bartokContrastArc: LeadSheetBartokContrastArcDiagnostics | undefined;
   let debussyContrastArc: LeadSheetDebussyContrastArcDiagnostics | undefined;
   let kennyWheelerContrastArc: LeadSheetKennyWheelerContrastArcDiagnostics | undefined;
+  let jamesBrownFunkArc: LeadSheetJamesBrownFunkArcDiagnostics | undefined;
   if (composerId === 'bartok') {
     const contrastArc = applyLeadSheetBartokContrastArcPass({
       score: identityCellEcho.score,
@@ -137,6 +143,14 @@ export function assembleDebussyLeadSheetQuintetWithHandoffScore(
     });
     scoreBeforeClamp = contrastArc.score;
     kennyWheelerContrastArc = contrastArc.diagnostics;
+  } else if (composerId === 'james_brown') {
+    const funkArc = applyLeadSheetJamesBrownFunkArcPass({
+      score: identityCellEcho.score,
+      seed,
+      composerId,
+    });
+    scoreBeforeClamp = funkArc.score;
+    jamesBrownFunkArc = funkArc.diagnostics;
   }
   const guitarChording = applyLeadSheetGuitarChordingPass({
     score: scoreBeforeClamp,
@@ -163,6 +177,7 @@ export function assembleDebussyLeadSheetQuintetWithHandoffScore(
     bartokContrastArc,
     debussyContrastArc,
     kennyWheelerContrastArc,
+    jamesBrownFunkArc,
     guitarChording: guitarChording.diagnostics,
     guitarMelodyMicroTiming: guitarMelodyMicroTiming.diagnostics,
     sixteenthGridClamp: sixteenthGridClamp.diagnostics,
