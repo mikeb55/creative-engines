@@ -273,6 +273,9 @@ export function applyLeadSheetAccompanimentRhythmAntiLoopPass(
     const targetParts = accompPartsForBar(ownerPartId);
 
     for (const partId of targetParts) {
+      if (normalizeComposerId(composerId) === 'james_brown' && partId === 'sq_cello') {
+        continue;
+      }
       const part = score.parts.find((p) => p.id === partId);
       if (!part) continue;
       const measure = part.measures.find((m) => m.index === bar);
