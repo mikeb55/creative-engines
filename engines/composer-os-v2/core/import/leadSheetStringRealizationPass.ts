@@ -151,35 +151,41 @@ function buildJamesBrownStaticCelloBassEvents(
   seed: number,
 ): MeasureModel['events'] {
   const tones = chordTonesForChordSymbol(chordSymbol, { lockedHarmony: true });
-  const rootPitch = fitPitchToPartRange(tones.root, 'sq_cello');
-
-  // Push pitch: root or 5th only (no scalar/chromatic approaches in this pass).
-  const u = seededUnit(seed, bar, 'sq_cello', 1);
-  let pushRaw = tones.root;
-  if (u < 0.55 && tones.root != null) pushRaw = tones.root;
-  else if (tones.fifth != null) pushRaw = tones.fifth;
-  const pushPitch = fitPitchToPartRange(pushRaw, 'sq_cello');
-
-  // Optional and-of-4 (3.5): every 4th bar in the chart (bar % 4 === 0), gated by seed
-  // so ~75% of those bars take the third stab — keeps most bars at two-hit density.
-  const includeAndOf4 = bar % 4 === 0 && seededUnit(seed, bar, 'sq_cello', 2) < 0.75;
-
   const STAB = 0.5;
-  const events: MeasureModel['events'] = [
-    createNote(rootPitch, 0, STAB, 1),
-    createNote(pushPitch, 2.5, STAB, 1),
-  ];
+  const events: MeasureModel['events'] = [];
 
-  if (includeAndOf4) {
-    const u2 = seededUnit(seed, bar, 'sq_cello', 3);
-    let secondPushRaw = pushRaw;
-    if (tones.fifth != null && tones.root != null) {
-      secondPushRaw = u2 < 0.5 ? tones.fifth : tones.root;
-      if (secondPushRaw === pushRaw) {
-        secondPushRaw = pushRaw === tones.root ? tones.fifth : tones.root;
-      }
+  const pickPushPitch = (slot: number, avoidMidi?: number): number => {
+    const u = seededUnit(seed, bar, 'sq_cello', slot);
+    let raw = tones.root;
+    if (u < 0.18) {
+      const c = seededUnit(seed, bar, 'sq_cello', slot + 20);
+      if (c < 0.34 && tones.third != null) raw = tones.third;
+      else if (c < 0.67 && tones.seventh != null) raw = tones.seventh;
+      else if (tones.root != null) raw = tones.root + (c < 0.5 ? -1 : 1);
+    } else if (u < 0.73 && tones.root != null) {
+      raw = tones.root;
+    } else if (tones.fifth != null) {
+      raw = tones.fifth;
     }
-    events.push(createNote(fitPitchToPartRange(secondPushRaw, 'sq_cello'), 3.5, STAB, 1));
+    let pitch = fitPitchToPartRange(raw, 'sq_cello');
+    if (avoidMidi != null && pitch === avoidMidi && tones.root != null && tones.fifth != null) {
+      const alt = raw === tones.root ? tones.fifth : tones.root;
+      pitch = fitPitchToPartRange(alt, 'sq_cello');
+    }
+    return pitch;
+  };
+
+  // ~20% of bars omit beat 1 so and-of-3 leads the pocket.
+  if (seededUnit(seed, bar, 'sq_cello', 0) >= 0.2) {
+    events.push(createNote(fitPitchToPartRange(tones.root, 'sq_cello'), 0, STAB, 1));
+  }
+
+  const pushPitch = pickPushPitch(1);
+  events.push(createNote(pushPitch, 2.5, STAB, 1));
+
+  // And-of-4 (3.5): every other bar (even bar numbers).
+  if (bar % 2 === 0) {
+    events.push(createNote(pickPushPitch(3, pushPitch), 3.5, STAB, 1));
   }
 
   return events;
