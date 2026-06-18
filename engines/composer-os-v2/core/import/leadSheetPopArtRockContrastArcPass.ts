@@ -14,7 +14,9 @@ import { SIXTEENTH_GRID_BEATS } from './leadSheetQuintetSixteenthGridClampPass';
 const STRING_PART_IDS = ['sq_violin_1', 'sq_violin_2', 'sq_viola', 'sq_cello'] as const;
 type StringPartId = (typeof STRING_PART_IDS)[number];
 
-const BACKBEAT_ONSETS = [1, 3] as const;
+const BACKBEAT_BEAT2 = 1.0;
+const BACKBEAT_BEAT4 = 3.0;
+const BACKBEAT_ONSETS = [BACKBEAT_BEAT2, BACKBEAT_BEAT4] as const;
 const PHRASE_END_BARS = new Set([4, 8, 12, 16, 20, 24, 28, 32, 36, 40]);
 const PEAK_BARS = new Set([25, 26, 27, 28]);
 
@@ -130,26 +132,30 @@ function planedPowerGrip(chordSymbol: string, sus4Colour: boolean): { root: numb
   return { root, planed: [root, root, voicedFifth] };
 }
 
+function literalBackbeatOnsets(): number[] {
+  return [BACKBEAT_BEAT2, BACKBEAT_BEAT4];
+}
+
 function backbeatOnsetsForPhase(phase: ArtRockMacroPhase, bar: number, seed: number): number[] {
   const u = seededUnit(seed, bar, 0, 'backbeat');
   if (phase === 'sparse') {
-    return u < 0.45 ? [3] : u < 0.75 ? [1] : [];
+    return u < 0.45 ? [BACKBEAT_BEAT4] : u < 0.75 ? [BACKBEAT_BEAT2] : [];
   }
   if (phase === 'emerging') {
-    return u < 0.2 ? [0] : [...BACKBEAT_ONSETS];
+    return u < 0.2 ? [0] : literalBackbeatOnsets();
   }
   if (phase === 'build') {
-    const onsets: number[] = [...BACKBEAT_ONSETS];
+    const onsets: number[] = literalBackbeatOnsets();
     if (u < 0.35) onsets.unshift(0);
     if (PEAK_BARS.has(bar) && u > 0.55) onsets.push(2);
     return [...new Set(onsets)].sort((a, b) => a - b);
   }
   if (phase === 'peak') {
-    const onsets: number[] = [0, ...BACKBEAT_ONSETS];
+    const onsets: number[] = [0, ...literalBackbeatOnsets()];
     if (bar === 26) onsets.push(0.5, 2, 2.5, 3.5);
-    return [...new Set(onsets.map(snap16))].filter((o) => o < BEATS_PER_MEASURE).sort((a, b) => a - b);
+    return [...new Set(onsets)].filter((o) => o < BEATS_PER_MEASURE).sort((a, b) => a - b);
   }
-  return u < 0.4 ? [3] : [];
+  return u < 0.4 ? [BACKBEAT_BEAT4] : [];
 }
 
 function hitDurationForPhase(phase: ArtRockMacroPhase, onset: number): number {
@@ -185,7 +191,8 @@ function buildGuitarV2ForBar(bar: number, chordSymbol: string, seed: number): No
   const onsets = backbeatOnsetsForPhase(phase, bar, seed);
   return onsets.map((onset) => {
     const duration = hitDurationForPhase(phase, onset);
-    return createNote(grip.root, snap16(onset), duration, 2, undefined, grip.planed);
+    const startBeat = BACKBEAT_ONSETS.some((b) => Math.abs(onset - b) < 1e-9) ? onset : snap16(onset);
+    return createNote(grip.root, startBeat, duration, 2, undefined, grip.planed);
   });
 }
 
