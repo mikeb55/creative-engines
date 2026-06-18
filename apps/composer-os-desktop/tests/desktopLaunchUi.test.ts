@@ -3,10 +3,22 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import { execSync } from 'node:child_process';
+import { mapLeadSheetFileInputResponseToPanelState } from '../../composer-os-app/src/services/leadSheetFileInputDesktop';
 
 const desktopRoot = path.resolve(__dirname, '..');
 const mainPath = path.join(desktopRoot, 'electron', 'main.ts');
 const uiStampPath = path.join(desktopRoot, 'resources', 'ui', 'composer-os-ui-stamp.json');
+const leadSheetPanelPath = path.join(
+  desktopRoot,
+  '..',
+  'composer-os-app',
+  'src',
+  'components',
+  'leadsheet-input',
+  'LeadSheetInputDesktopPanel.tsx'
+);
+const verifyMidiScriptPath = path.join(__dirname, 'verifyMidiLeadSheetAdvisory.ts');
 
 describe('Desktop packaged launch UI (static)', () => {
   const main = fs.readFileSync(mainPath, 'utf-8');
@@ -48,5 +60,28 @@ describe('Desktop packaged launch UI (static)', () => {
     expect(stamp.supportedPages).toEqual(
       expect.arrayContaining(['Generate', 'Presets', 'Outputs'])
     );
+  });
+
+  it('single-track MIDI run surfaces harmony inferred advisory for Lead Sheet Input banner', () => {
+    const panelSrc = fs.readFileSync(leadSheetPanelPath, 'utf-8');
+    expect(panelSrc).toContain('data-testid="leadsheet-harmony-advisory"');
+    expect(panelSrc).toContain('Harmony inferred (advisory)');
+
+    const repoRoot = path.join(desktopRoot, '../..');
+    const out = execSync(
+      `npx tsx --tsconfig ${path.join(repoRoot, 'tsconfig.json')} ${verifyMidiScriptPath}`,
+      { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }
+    );
+    expect(out.trim()).toBe('ok');
+
+    const mockMidiResponse = {
+      ok: true,
+      sourceFormat: 'midi' as const,
+      harmonyProvenance: 'inferred-advisory' as const,
+      midiQuantizeNote:
+        'MIDI input v1: single-track melody only. Melody quantizes to eighth notes; harmony is inferred and advisory.',
+    };
+    const panelState = mapLeadSheetFileInputResponseToPanelState(mockMidiResponse);
+    expect(panelState.advisory).toMatch(/single-track|inferred/i);
   });
 });

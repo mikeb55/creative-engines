@@ -2,6 +2,7 @@ import { useCallback, useState, type CSSProperties } from 'react';
 import { isDesktopIpc } from '../../services/api';
 import {
   LEADSHEET_FILE_INPUT_COMPOSER_OPTIONS,
+  mapLeadSheetFileInputResponseToPanelState,
   pickLeadSheetFile,
   runLeadSheetFileInputDesktop,
   type LeadSheetFileInputComposerId,
@@ -88,6 +89,15 @@ const statusErrorStyle: CSSProperties = {
   borderRadius: 6,
   background: 'rgba(220, 53, 69, 0.12)',
   border: '1px solid rgba(220, 53, 69, 0.45)',
+  fontSize: '0.85rem',
+};
+
+const advisoryBannerStyle: CSSProperties = {
+  marginTop: '0.75rem',
+  padding: '0.65rem 0.75rem',
+  borderRadius: 6,
+  background: 'rgba(255, 193, 7, 0.12)',
+  border: '1px solid rgba(255, 193, 7, 0.45)',
   fontSize: '0.85rem',
 };
 
@@ -179,12 +189,16 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
   const [selectedCandidateIndex, setSelectedCandidateIndex] = useState<number | null>(null);
   const [lastFilePath, setLastFilePath] = useState<string | null>(null);
   const [lastSourceFileName, setLastSourceFileName] = useState<string | null>(null);
+  const [advisory, setAdvisory] = useState<string | null>(null);
+  const [harmonyConfidenceByBar, setHarmonyConfidenceByBar] = useState<number[]>([]);
 
   const runPipeline = useCallback(
     async (filePath: string, sourceFileName: string) => {
       setStatusKind('running');
       setCandidates([]);
       setSelectedCandidateIndex(null);
+      setAdvisory(null);
+      setHarmonyConfidenceByBar([]);
 
       const batchResults: LeadSheetFileInputResponse[] = [];
 
@@ -210,6 +224,9 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
         batchResults.push(result);
       }
 
+      const panelState = mapLeadSheetFileInputResponseToPanelState(batchResults[0]!);
+      setAdvisory(panelState.advisory ?? null);
+      setHarmonyConfidenceByBar(panelState.harmonyConfidenceByBar ?? []);
       setCandidates(batchResults);
       setSelectedCandidateIndex(null);
       setStatusKind('success');
@@ -262,9 +279,6 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
         : statusMutedStyle;
 
   const canAnotherVersion = lastFilePath != null && statusKind !== 'running';
-
-  const midiDisplayCandidate =
-    selectedCandidateIndex != null ? candidates[selectedCandidateIndex] : candidates[0];
 
   return (
     <section style={panelStyle} aria-labelledby="leadsheet-input-desktop-heading">
@@ -338,21 +352,24 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
         ) : null}
       </div>
 
-      {midiDisplayCandidate?.ok && midiDisplayCandidate.sourceFormat === 'midi' ? (
-        <div style={{ marginTop: '0.75rem', fontSize: '0.82rem' }}>
-          <strong>MIDI — inferred harmony (advisory)</strong>
-          {midiDisplayCandidate.midiQuantizeNote ? (
-            <div style={{ marginTop: 4, color: 'var(--text-muted)' }}>{midiDisplayCandidate.midiQuantizeNote}</div>
-          ) : null}
-          {midiDisplayCandidate.harmonyConfidenceByBar ? (
-            <HarmonyConfidenceStrip confidences={midiDisplayCandidate.harmonyConfidenceByBar} />
-          ) : null}
-        </div>
-      ) : null}
-
       {statusMessage ? (
         <div role="status" style={statusStyle}>
           {statusMessage}
+        </div>
+      ) : null}
+
+      {advisory ? (
+        <div
+          role="status"
+          aria-label="Harmony inferred advisory"
+          data-testid="leadsheet-harmony-advisory"
+          style={advisoryBannerStyle}
+        >
+          <strong>Harmony inferred (advisory)</strong>
+          <div style={{ marginTop: 4, color: 'var(--text-muted)' }}>{advisory}</div>
+          {harmonyConfidenceByBar.length > 0 ? (
+            <HarmonyConfidenceStrip confidences={harmonyConfidenceByBar} />
+          ) : null}
         </div>
       ) : null}
 

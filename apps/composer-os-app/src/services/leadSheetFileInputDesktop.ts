@@ -34,6 +34,36 @@ export interface LeadSheetFileInputResponse {
   savedMusicXmlPath?: string;
 }
 
+/** Panel-facing slice derived from a successful API / IPC response. */
+export interface LeadSheetFileInputPanelState {
+  advisory?: string;
+  harmonyConfidenceByBar?: number[];
+  sourceFormat?: 'musicxml' | 'midi';
+}
+
+const INFERRED_HARMONY_ADVISORY_FALLBACK =
+  'Harmony was inferred from melody content and is advisory only — not locked from the source file.';
+
+export function deriveLeadSheetHarmonyAdvisory(
+  response: Pick<LeadSheetFileInputResponse, 'harmonyProvenance' | 'midiQuantizeNote'>
+): string | undefined {
+  if (response.harmonyProvenance !== 'inferred-advisory') return undefined;
+  return response.midiQuantizeNote?.trim() || INFERRED_HARMONY_ADVISORY_FALLBACK;
+}
+
+export function mapLeadSheetFileInputResponseToPanelState(
+  response: LeadSheetFileInputResponse
+): LeadSheetFileInputPanelState {
+  const advisory = deriveLeadSheetHarmonyAdvisory(response);
+  const panelState: LeadSheetFileInputPanelState = {};
+  if (advisory) panelState.advisory = advisory;
+  if (response.harmonyConfidenceByBar?.length) {
+    panelState.harmonyConfidenceByBar = response.harmonyConfidenceByBar;
+  }
+  if (response.sourceFormat) panelState.sourceFormat = response.sourceFormat;
+  return panelState;
+}
+
 export interface LeadSheetPickFileResponse {
   ok: boolean;
   canceled?: boolean;
