@@ -8,6 +8,11 @@ import path from 'path';
 import { apiRunLeadSheetFileInput } from '../app-api/runLeadSheetFileInputApi';
 import { resolveDebussyLeadSheetFileProofPath } from '../core/import/loadDebussyLeadSheetImportTimelineFromMusicXmlFile';
 import { EXPECTED_QUINTET_PART_IDS } from '../core/import/runDebussyLeadSheetQuintetProof';
+import { resolveArtRockCanonicalFixturePath } from './leadSheetPopArtRockContrastArcProof.test';
+
+const ART_ROCK_METAPHYSICS_SEED = 90106;
+/** Full-chart quintet MusicXML should exceed a short 8-bar stub export. */
+const MIN_ART_ROCK_MUSICXML_BYTES = 8_000;
 
 export function runLeadSheetFileInputDesktopApiTests(): { ok: boolean; name: string }[] {
   const out: { ok: boolean; name: string }[] = [];
@@ -46,6 +51,39 @@ export function runLeadSheetFileInputDesktopApiTests(): { ok: boolean; name: str
     tmpOut
   );
   out.push({ ok: badComposer.ok === false, name: 'phase6 unsupported composer rejected' });
+
+  const metaphysicsPath = resolveArtRockCanonicalFixturePath(path.join(__dirname, '..'));
+  try {
+    const res = apiRunLeadSheetFileInput(
+      { filePath: metaphysicsPath, composerId: 'art_rock', seed: ART_ROCK_METAPHYSICS_SEED },
+      tmpOut,
+    );
+    const xmlBytes =
+      res.savedMusicXmlPath && fs.existsSync(res.savedMusicXmlPath)
+        ? fs.statSync(res.savedMusicXmlPath).size
+        : 0;
+    out.push({
+      ok:
+        res.ok === true &&
+        res.composerId === 'art_rock' &&
+        res.partCount === 5 &&
+        res.barCount === 40 &&
+        res.hasBassPart === false &&
+        res.hasDuoParts === false &&
+        res.handoffVariationDetected === true &&
+        res.musicXmlExportOk === true &&
+        EXPECTED_QUINTET_PART_IDS.every((id, i) => res.partIds?.[i] === id) &&
+        typeof res.savedMusicXmlPath === 'string' &&
+        fs.existsSync(res.savedMusicXmlPath!) &&
+        xmlBytes >= MIN_ART_ROCK_MUSICXML_BYTES,
+      name: `phase6 apiRunLeadSheetFileInput art_rock Metaphysics 40-bar seed ${ART_ROCK_METAPHYSICS_SEED}`,
+    });
+  } catch (e) {
+    out.push({
+      ok: false,
+      name: `phase6 apiRunLeadSheetFileInput art_rock Metaphysics: ${e instanceof Error ? e.message : String(e)}`,
+    });
+  }
 
   return out;
 }
