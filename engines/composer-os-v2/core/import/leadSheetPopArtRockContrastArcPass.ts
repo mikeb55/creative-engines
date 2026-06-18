@@ -18,6 +18,7 @@ const BACKBEAT_BEAT2 = 1.0;
 const BACKBEAT_BEAT4 = 3.0;
 const BACKBEAT_ONSETS = [BACKBEAT_BEAT2, BACKBEAT_BEAT4] as const;
 const PHRASE_END_BARS = new Set([4, 8, 12, 16, 20, 24, 28, 32, 36, 40]);
+const SUS4_LANDING_BARS = new Set([8, 16, 24, 32, 40]);
 const PEAK_BARS = new Set([26]);
 
 export type ArtRockMacroPhase = 'sparse' | 'emerging' | 'build' | 'peak' | 'tail';
@@ -96,6 +97,23 @@ function textureStateForBar(bar: number): ArtRockTextureState {
 
 function isPhraseEndBar(bar: number): boolean {
   return PHRASE_END_BARS.has(bar);
+}
+
+function isSus4LandingBar(bar: number): boolean {
+  return SUS4_LANDING_BARS.has(bar);
+}
+
+function sus4PitchForPart(chordSymbol: string, partId: string, role: ChordRole | 'fourth'): number {
+  const grip = planedPowerGrip(chordSymbol, true);
+  let pitch: number;
+  if (role === 'root') pitch = grip.root;
+  else if (role === 'fourth') pitch = grip.planed[1] ?? grip.root + 5;
+  else if (role === 'fifth') pitch = grip.planed[2] ?? grip.root + 7;
+  else pitch = grip.planed[1] ?? grip.root + 4;
+  const [lo, hi] = getLeadSheetPartMidiBounds(partId);
+  while (pitch < lo) pitch += 12;
+  while (pitch > hi) pitch -= 12;
+  return Math.max(lo, Math.min(hi, pitch));
 }
 
 function chordPitchForPart(
@@ -186,7 +204,7 @@ function replaceAccompanimentVoice1(measure: MeasureModel, notes: NoteEvent[]): 
 
 function buildGuitarV2ForBar(bar: number, chordSymbol: string, seed: number): NoteEvent[] {
   const phase = macroPhaseForArtRockBar(bar);
-  const sus4Colour = isPhraseEndBar(bar) && phase !== 'sparse';
+  const sus4Colour = isSus4LandingBar(bar) && phase !== 'sparse';
   const grip = planedPowerGrip(chordSymbol, sus4Colour);
   const onsets = backbeatOnsetsForPhase(phase, bar, seed);
   return onsets.map((onset) => {
@@ -194,6 +212,22 @@ function buildGuitarV2ForBar(bar: number, chordSymbol: string, seed: number): No
     const startBeat = BACKBEAT_ONSETS.some((b) => Math.abs(onset - b) < 1e-9) ? onset : snap16(onset);
     return createNote(grip.root, startBeat, duration, 2, undefined, grip.planed);
   });
+}
+
+function accompanimentPitch(
+  bar: number,
+  chordSymbol: string,
+  partId: string,
+  role: ChordRole,
+  octaveShift = 0,
+): number {
+  if (isSus4LandingBar(bar)) {
+    if (role === 'third') {
+      return sus4PitchForPart(chordSymbol, partId, 'fourth');
+    }
+    return sus4PitchForPart(chordSymbol, partId, role);
+  }
+  return chordPitchForPart(chordSymbol, partId, role, octaveShift);
 }
 
 function buildStringBar(
@@ -213,7 +247,7 @@ function buildStringBar(
 
   if (phase === 'emerging') {
     if (ownerPartId !== va) {
-      out.set(va, [createNote(chordPitchForPart(chordSymbol, va, 'fifth'), 0, 4, 1)]);
+      out.set(va, [createNote(accompanimentPitch(bar, chordSymbol, va, 'fifth'), 0, 4, 1)]);
     }
     return out;
   }
@@ -221,28 +255,28 @@ function buildStringBar(
   const u = seededUnit(seed, bar, 3, 'strings');
   if (phase === 'build') {
     if (ownerPartId !== vn1 && u < 0.42) {
-      out.set(vn1, [createNote(chordPitchForPart(chordSymbol, vn1, 'root', 1), 0, 4, 1)]);
+      out.set(vn1, [createNote(accompanimentPitch(bar, chordSymbol, vn1, 'root', 1), 0, 4, 1)]);
     }
     if (ownerPartId !== vn2 && u < 0.55) {
-      out.set(vn2, [createNote(chordPitchForPart(chordSymbol, vn2, 'third', 1), 0, 2, 1)]);
+      out.set(vn2, [createNote(accompanimentPitch(bar, chordSymbol, vn2, 'third', 1), 0, 2, 1)]);
     }
     if (ownerPartId !== vc && u < 0.5) {
-      out.set(vc, [createNote(chordPitchForPart(chordSymbol, vc, 'root', -1), 2, 2, 1)]);
+      out.set(vc, [createNote(accompanimentPitch(bar, chordSymbol, vc, 'root', -1), 2, 2, 1)]);
     }
     return out;
   }
 
   if (ownerPartId !== vn1) {
-    out.set(vn1, [createNote(chordPitchForPart(chordSymbol, vn1, 'root', 1), 0, 4, 1)]);
+    out.set(vn1, [createNote(accompanimentPitch(bar, chordSymbol, vn1, 'root', 1), 0, 4, 1)]);
   }
   if (ownerPartId !== vn2 && bar !== 26) {
-    out.set(vn2, [createNote(chordPitchForPart(chordSymbol, vn2, 'fifth', 1), 0, 4, 1)]);
+    out.set(vn2, [createNote(accompanimentPitch(bar, chordSymbol, vn2, 'fifth', 1), 0, 4, 1)]);
   }
   if (ownerPartId !== va) {
-    out.set(va, [createNote(chordPitchForPart(chordSymbol, va, 'third'), 1, 1, 1)]);
+    out.set(va, [createNote(accompanimentPitch(bar, chordSymbol, va, 'third'), 1, 1, 1)]);
   }
   if (ownerPartId !== vc) {
-    out.set(vc, [createNote(chordPitchForPart(chordSymbol, vc, 'root', -1), 3, 1, 1)]);
+    out.set(vc, [createNote(accompanimentPitch(bar, chordSymbol, vc, 'root', -1), 3, 1, 1)]);
   }
   return out;
 }
@@ -288,7 +322,7 @@ export function analyzeLeadSheetPopArtRockContrastArc(
     const v2 = measure?.events.filter((e) => e.kind === 'note' && (e.voice ?? 1) === 2) ?? [];
     const backbeatPresent = v2.some((n) => BACKBEAT_ONSETS.some((b) => Math.abs(n.startBeat - b) < 0.02));
     const planedPowerPresent = v2.some((n) => (n.pitches?.length ?? 0) >= 2);
-    const sus4ColourPresent = isPhraseEndBar(bar) && planedPowerPresent && phase !== 'sparse';
+    const sus4ColourPresent = isSus4LandingBar(bar) && planedPowerPresent && phase !== 'sparse';
     return {
       bar,
       macroPhase: phase,
