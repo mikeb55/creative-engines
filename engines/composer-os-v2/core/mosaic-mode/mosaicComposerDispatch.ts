@@ -204,6 +204,8 @@ const DISPATCH_STUB_ALIASES: Readonly<Record<string, string>> = {
   wes_montgomery: 'jim_hall',
   joe_pass: 'jim_hall',
   scott_henderson: 'allan_holdsworth',
+  /** Leadsheet-input art-rock contrast voice — harmony via Verlaine field slice; texture via PopArtRock pass. */
+  art_rock: 'verlaine',
 };
 
 const modCache = new Map<string, Record<string, unknown>>();

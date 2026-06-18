@@ -66,7 +66,8 @@ function generateHandoffLineSet(
   seed: number,
   composerId: string,
 ): AbstractLineSet {
-  const engine = new ContrapuntalLineEngine(composerId, contextForContrapuntalEngine(context, seed, composerId));
+  const engineVrbId = composerId === 'art_rock' ? 'verlaine' : composerId;
+  const engine = new ContrapuntalLineEngine(engineVrbId, contextForContrapuntalEngine(context, seed, engineVrbId));
   const mosaicSqGuides = buildHandoffMosaicGuide(melody, totalBars);
   const raw = engine.generateLines(totalBars, 'chords_only', { mosaicSqGuides });
   return engine.applyVrbFilter(raw);

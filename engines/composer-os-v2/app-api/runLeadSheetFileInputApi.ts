@@ -13,7 +13,13 @@ import {
 import { runDebussyLeadSheetFileHandoffProof } from '../core/import/runDebussyLeadSheetFileHandoffProof';
 import { EXPECTED_QUINTET_PART_IDS } from '../core/import/runDebussyLeadSheetQuintetProof';
 
-export const LEADSHEET_FILE_INPUT_COMPOSERS = ['debussy', 'kenny_wheeler', 'bartok', 'james_brown'] as const;
+export const LEADSHEET_FILE_INPUT_COMPOSERS = [
+  'debussy',
+  'kenny_wheeler',
+  'bartok',
+  'james_brown',
+  'art_rock',
+] as const;
 export type LeadSheetFileInputComposerId = (typeof LEADSHEET_FILE_INPUT_COMPOSERS)[number];
 
 export interface LeadSheetFileInputRequest {

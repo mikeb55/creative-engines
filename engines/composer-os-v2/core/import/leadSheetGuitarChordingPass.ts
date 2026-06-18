@@ -13,7 +13,12 @@ import type { NoteEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import { createNote } from '../score-model/scoreEventBuilder';
 import { SIXTEENTH_GRID_BEATS } from './leadSheetQuintetSixteenthGridClampPass';
 
-export type LeadSheetGuitarChordingComposerId = 'bartok' | 'debussy' | 'kenny_wheeler' | 'james_brown';
+export type LeadSheetGuitarChordingComposerId =
+  | 'bartok'
+  | 'debussy'
+  | 'kenny_wheeler'
+  | 'james_brown'
+  | 'art_rock';
 
 export interface LeadSheetGuitarChordingPassInput {
   score: ScoreModel;
@@ -329,6 +334,23 @@ export function applyLeadSheetGuitarChordingPass(
   const composerId = input.composerId;
   const score = structuredClone(input.score) as ScoreModel;
   const guitar = score.parts.find((p) => p.id === 'guitar');
+  if (composerId === 'art_rock') {
+    return {
+      score,
+      diagnostics: {
+        chordBarCountBefore: countGuitarChordBars(score),
+        chordBarCountAfter: countGuitarChordBars(score),
+        eventsAdded: 0,
+        dyadCount: 0,
+        triadCount: 0,
+        shellCount: 0,
+        feasibilityChecks: 0,
+        feasibilityPasses: 0,
+        feasibilitySkips: 0,
+        composerId,
+      },
+    };
+  }
   if (!guitar) {
     return {
       score,
