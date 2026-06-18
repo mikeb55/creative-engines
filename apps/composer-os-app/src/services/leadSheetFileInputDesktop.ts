@@ -13,6 +13,10 @@ export const LEADSHEET_FILE_INPUT_COMPOSER_OPTIONS = [
 
 export type LeadSheetFileInputComposerId = (typeof LEADSHEET_FILE_INPUT_COMPOSER_OPTIONS)[number]['id'];
 
+export type LeadSheetHarmonyProvenanceBar = 'inferred-advisory' | 'user-override' | 'explicit';
+
+export type LeadSheetHarmonyOverridesByBar = Record<number, string>;
+
 export interface LeadSheetFileInputResponse {
   ok: boolean;
   error?: string;
@@ -22,6 +26,7 @@ export interface LeadSheetFileInputResponse {
   sourceFormat?: 'musicxml' | 'midi';
   harmonyProvenance?: 'explicit' | 'inferred-advisory';
   harmonyConfidenceByBar?: number[];
+  harmonyProvenanceByBar?: LeadSheetHarmonyProvenanceBar[];
   midiQuantizeNote?: string;
   barCount?: number;
   partCount?: number;
@@ -38,6 +43,7 @@ export interface LeadSheetFileInputResponse {
 export interface LeadSheetFileInputPanelState {
   advisory?: string;
   harmonyConfidenceByBar?: number[];
+  harmonyProvenanceByBar?: LeadSheetHarmonyProvenanceBar[];
   sourceFormat?: 'musicxml' | 'midi';
 }
 
@@ -60,8 +66,25 @@ export function mapLeadSheetFileInputResponseToPanelState(
   if (response.harmonyConfidenceByBar?.length) {
     panelState.harmonyConfidenceByBar = response.harmonyConfidenceByBar;
   }
+  if (response.harmonyProvenanceByBar?.length) {
+    panelState.harmonyProvenanceByBar = response.harmonyProvenanceByBar;
+  }
   if (response.sourceFormat) panelState.sourceFormat = response.sourceFormat;
   return panelState;
+}
+
+export function buildLeadSheetHarmonyOverridePayload(
+  overridesByBar: LeadSheetHarmonyOverridesByBar
+): LeadSheetHarmonyOverridesByBar | undefined {
+  const out: LeadSheetHarmonyOverridesByBar = {};
+  for (const [key, value] of Object.entries(overridesByBar)) {
+    const bar = Number(key);
+    if (!Number.isInteger(bar) || bar < 1) continue;
+    const symbol = value.trim();
+    if (!symbol) continue;
+    out[bar] = symbol;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
 }
 
 export interface LeadSheetPickFileResponse {
@@ -92,6 +115,7 @@ export async function runLeadSheetFileInputDesktop(body: {
   seed?: number;
   rhythmicActivity?: number;
   guitarCompDensity?: number;
+  harmonyOverridesByBar?: LeadSheetHarmonyOverridesByBar;
 }): Promise<LeadSheetFileInputResponse> {
   if (!isDesktopIpc() || !window.composerOsDesktop?.invokeApi) {
     return { ok: false, error: 'Desktop IPC is not available.' };

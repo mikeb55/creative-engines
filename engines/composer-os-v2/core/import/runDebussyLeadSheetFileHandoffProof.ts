@@ -12,6 +12,7 @@ import {
   DEBUSSY_LEADSHEET_FILE_PROOF_CHORDS,
   loadDebussyLeadSheetImportTimelineFromFile,
 } from './loadDebussyLeadSheetImportTimelineFromMusicXmlFile';
+import { applyLeadSheetHarmonyOverrides } from './applyLeadSheetHarmonyOverrides';
 import type { ImportHarmonyBar, ImportSourceFormat, MosaicImportTimeline } from './mosaicImportTimeline';
 
 export interface DebussyLeadSheetFileHandoffProofResult extends DebussyLeadSheetHandoffProofResult {
@@ -34,7 +35,10 @@ export function runDebussyLeadSheetFileHandoffProof(
   composerId = 'debussy',
   assemblyOptions?: LeadSheetQuintetAssemblyOptions,
 ): DebussyLeadSheetFileHandoffProofResult {
-  const importTimeline = loadDebussyLeadSheetImportTimelineFromFile(filePath);
+  let importTimeline = loadDebussyLeadSheetImportTimelineFromFile(filePath);
+  if (assemblyOptions?.harmonyOverridesByBar) {
+    importTimeline = applyLeadSheetHarmonyOverrides(importTimeline, assemblyOptions.harmonyOverridesByBar);
+  }
   const importedHarmonyBars = importTimelineToLockedHarmony(importTimeline);
   const fileChordMatch =
     importTimeline.sourceFormat === 'musicxml' &&

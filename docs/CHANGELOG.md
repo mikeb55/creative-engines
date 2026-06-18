@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+### Added
+
+- **Lead Sheet Input V97 — per-bar harmony overrides (MIDI advisory)** — Desktop **Lead Sheet Input** confidence strip bars are clickable; **Save** / **Clear** on a chord symbol sends **`harmonyOverridesByBar`** through IPC → **`runLeadSheetFileInputApi`** → **`applyLeadSheetHarmonyOverrides`** after MIDI inference. Overridden bars get **`user-override`** provenance; non-overridden MIDI bars stay **`inferred-advisory`** (whole chart not hard-locked). Proof: **`leadSheetHarmonyOverrideProof.test.ts`**.
+
 ### Changed
 
 - **Leadsheet-input engine — Phase A rhythmAntiLoop gentle default** — **`leadSheetAccompanimentRhythmAntiLoopPass.ts`** adds **`rhythmAntiLoopIntensity`** (`gentle` | `moderate`; default **`gentle`**: selective ±1/12-beat micro-nudge on Phase 7 accompaniment, 4-bar / 3-slot cycle; **`moderate`**: full composer template rewrite ±1/6). Metaphysics **90106** LOCK **`rhythmAntiLoop`** **3/3** pass (swing **0.97** / **0.97** / **0.96**); Orbit **8/8** + Phase 7 proof **17/17** unchanged.

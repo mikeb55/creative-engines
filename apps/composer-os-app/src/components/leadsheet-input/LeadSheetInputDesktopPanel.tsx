@@ -2,11 +2,14 @@ import { useCallback, useState, type CSSProperties } from 'react';
 import { isDesktopIpc } from '../../services/api';
 import {
   LEADSHEET_FILE_INPUT_COMPOSER_OPTIONS,
+  buildLeadSheetHarmonyOverridePayload,
   mapLeadSheetFileInputResponseToPanelState,
   pickLeadSheetFile,
   runLeadSheetFileInputDesktop,
   type LeadSheetFileInputComposerId,
   type LeadSheetFileInputResponse,
+  type LeadSheetHarmonyOverridesByBar,
+  type LeadSheetHarmonyProvenanceBar,
 } from '../../services/leadSheetFileInputDesktop';
 
 const CONFIDENCE_COLORS = {
@@ -23,28 +26,58 @@ function confidenceStripColor(confidence: number): keyof typeof CONFIDENCE_COLOR
   return 'low';
 }
 
-function HarmonyConfidenceStrip({ confidences }: { confidences: number[] }) {
+const OVERRIDE_BAR_COLOR = 'rgba(103, 58, 183, 0.85)';
+
+function HarmonyConfidenceStrip(props: {
+  confidences: number[];
+  provenanceByBar?: LeadSheetHarmonyProvenanceBar[];
+  overridesByBar: LeadSheetHarmonyOverridesByBar;
+  selectedBar: number | null;
+  disabled?: boolean;
+  onSelectBar: (bar: number) => void;
+}) {
+  const { confidences, provenanceByBar, overridesByBar, selectedBar, disabled, onSelectBar } = props;
   if (confidences.length === 0) {
     return <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>No harmony bars</span>;
   }
   return (
     <div
-      role="img"
+      role="group"
       aria-label="Harmony confidence by bar"
+      data-testid="leadsheet-harmony-override-strip"
       style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}
     >
       {confidences.map((confidence, i) => {
+        const bar = i + 1;
         const tier = confidenceStripColor(confidence);
-        const title = `Bar ${i + 1}: confidence ${(confidence * 100).toFixed(0)}%`;
+        const isOverridden =
+          provenanceByBar?.[i] === 'user-override' || overridesByBar[bar] != null;
+        const overrideSymbol = overridesByBar[bar];
+        const title = isOverridden
+          ? `Bar ${bar}: override ${overrideSymbol ?? 'saved'}`
+          : `Bar ${bar}: confidence ${(confidence * 100).toFixed(0)}%`;
+        const isSelected = selectedBar === bar;
         return (
-          <span
-            key={i}
+          <button
+            key={bar}
+            type="button"
             title={title}
+            aria-label={title}
+            aria-pressed={isSelected}
+            disabled={disabled}
+            onClick={() => onSelectBar(bar)}
             style={{
               width: 18,
               height: 18,
               borderRadius: 3,
-              background: CONFIDENCE_COLORS[tier],
+              padding: 0,
+              cursor: disabled ? 'not-allowed' : 'pointer',
+              background: isOverridden ? OVERRIDE_BAR_COLOR : CONFIDENCE_COLORS[tier],
+              border: isSelected
+                ? '2px solid rgba(25, 118, 210, 0.95)'
+                : isOverridden
+                  ? '2px solid rgba(103, 58, 183, 1)'
+                  : '1px solid transparent',
               display: 'inline-block',
               flexShrink: 0,
             }}
@@ -191,15 +224,21 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
   const [lastSourceFileName, setLastSourceFileName] = useState<string | null>(null);
   const [advisory, setAdvisory] = useState<string | null>(null);
   const [harmonyConfidenceByBar, setHarmonyConfidenceByBar] = useState<number[]>([]);
+  const [harmonyProvenanceByBar, setHarmonyProvenanceByBar] = useState<LeadSheetHarmonyProvenanceBar[]>([]);
+  const [harmonyOverridesByBar, setHarmonyOverridesByBar] = useState<LeadSheetHarmonyOverridesByBar>({});
+  const [selectedOverrideBar, setSelectedOverrideBar] = useState<number | null>(null);
+  const [overrideDraft, setOverrideDraft] = useState('');
 
   const runPipeline = useCallback(
-    async (filePath: string, sourceFileName: string) => {
+    async (filePath: string, sourceFileName: string, overrides: LeadSheetHarmonyOverridesByBar) => {
       setStatusKind('running');
       setCandidates([]);
       setSelectedCandidateIndex(null);
       setAdvisory(null);
       setHarmonyConfidenceByBar([]);
+      setHarmonyProvenanceByBar([]);
 
+      const overridePayload = buildLeadSheetHarmonyOverridePayload(overrides);
       const batchResults: LeadSheetFileInputResponse[] = [];
 
       for (let i = 0; i < MAX_CANDIDATES; i++) {
@@ -213,6 +252,7 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
           seed: hiddenVariationSeed(),
           rhythmicActivity,
           guitarCompDensity,
+          harmonyOverridesByBar: overridePayload,
         });
 
         if (!result.ok) {
@@ -227,6 +267,7 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
       const panelState = mapLeadSheetFileInputResponseToPanelState(batchResults[0]!);
       setAdvisory(panelState.advisory ?? null);
       setHarmonyConfidenceByBar(panelState.harmonyConfidenceByBar ?? []);
+      setHarmonyProvenanceByBar(panelState.harmonyProvenanceByBar ?? []);
       setCandidates(batchResults);
       setSelectedCandidateIndex(null);
       setStatusKind('success');
@@ -261,15 +302,51 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
     const fileName = picked.filepath.replace(/^.*[/\\]/, '');
     setLastFilePath(picked.filepath);
     setLastSourceFileName(fileName);
-    await runPipeline(picked.filepath, fileName);
+    setHarmonyOverridesByBar({});
+    setSelectedOverrideBar(null);
+    setOverrideDraft('');
+    await runPipeline(picked.filepath, fileName, {});
   }, [runPipeline]);
 
   const onAnotherVersion = useCallback(async () => {
     if (!lastFilePath || !lastSourceFileName) return;
     setCandidates([]);
     setSelectedCandidateIndex(null);
-    await runPipeline(lastFilePath, lastSourceFileName);
-  }, [lastFilePath, lastSourceFileName, runPipeline]);
+    await runPipeline(lastFilePath, lastSourceFileName, harmonyOverridesByBar);
+  }, [harmonyOverridesByBar, lastFilePath, lastSourceFileName, runPipeline]);
+
+  const onSelectOverrideBar = useCallback(
+    (bar: number) => {
+      setSelectedOverrideBar(bar);
+      setOverrideDraft(harmonyOverridesByBar[bar] ?? '');
+    },
+    [harmonyOverridesByBar]
+  );
+
+  const onSaveOverride = useCallback(async () => {
+    if (!lastFilePath || !lastSourceFileName || selectedOverrideBar == null) return;
+    const symbol = overrideDraft.trim();
+    if (!symbol) return;
+    const nextOverrides = { ...harmonyOverridesByBar, [selectedOverrideBar]: symbol };
+    setHarmonyOverridesByBar(nextOverrides);
+    await runPipeline(lastFilePath, lastSourceFileName, nextOverrides);
+  }, [
+    harmonyOverridesByBar,
+    lastFilePath,
+    lastSourceFileName,
+    overrideDraft,
+    runPipeline,
+    selectedOverrideBar,
+  ]);
+
+  const onClearOverride = useCallback(async () => {
+    if (!lastFilePath || !lastSourceFileName || selectedOverrideBar == null) return;
+    const nextOverrides = { ...harmonyOverridesByBar };
+    delete nextOverrides[selectedOverrideBar];
+    setHarmonyOverridesByBar(nextOverrides);
+    setOverrideDraft('');
+    await runPipeline(lastFilePath, lastSourceFileName, nextOverrides);
+  }, [harmonyOverridesByBar, lastFilePath, lastSourceFileName, runPipeline, selectedOverrideBar]);
 
   const statusStyle =
     statusKind === 'success'
@@ -368,7 +445,53 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
           <strong>Harmony inferred (advisory)</strong>
           <div style={{ marginTop: 4, color: 'var(--text-muted)' }}>{advisory}</div>
           {harmonyConfidenceByBar.length > 0 ? (
-            <HarmonyConfidenceStrip confidences={harmonyConfidenceByBar} />
+            <HarmonyConfidenceStrip
+              confidences={harmonyConfidenceByBar}
+              provenanceByBar={harmonyProvenanceByBar}
+              overridesByBar={harmonyOverridesByBar}
+              selectedBar={selectedOverrideBar}
+              disabled={statusKind === 'running'}
+              onSelectBar={onSelectOverrideBar}
+            />
+          ) : null}
+          {selectedOverrideBar != null && advisory ? (
+            <div
+              data-testid="leadsheet-harmony-override-editor"
+              style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}
+            >
+              <label htmlFor="leadsheet-harmony-override-input" style={{ fontSize: '0.82rem' }}>
+                Bar {selectedOverrideBar} chord
+              </label>
+              <input
+                id="leadsheet-harmony-override-input"
+                type="text"
+                value={overrideDraft}
+                onChange={(e) => setOverrideDraft(e.target.value)}
+                disabled={statusKind === 'running'}
+                placeholder="e.g. Dm7"
+                style={{ flex: '1 1 120px', maxWidth: 160, fontSize: '0.82rem' }}
+              />
+              <button
+                type="button"
+                onClick={() => void onSaveOverride()}
+                disabled={statusKind === 'running' || !overrideDraft.trim()}
+                style={{ fontSize: '0.82rem' }}
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => void onClearOverride()}
+                disabled={
+                  statusKind === 'running' ||
+                  (harmonyOverridesByBar[selectedOverrideBar] == null && !overrideDraft.trim())
+                }
+                style={{ fontSize: '0.82rem' }}
+              >
+                Clear
+              </button>
+            </div>
           ) : null}
         </div>
       ) : null}

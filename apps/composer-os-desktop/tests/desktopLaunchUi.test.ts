@@ -65,6 +65,8 @@ describe('Desktop packaged launch UI (static)', () => {
   it('single-track MIDI run surfaces harmony inferred advisory for Lead Sheet Input banner', () => {
     const panelSrc = fs.readFileSync(leadSheetPanelPath, 'utf-8');
     expect(panelSrc).toContain('data-testid="leadsheet-harmony-advisory"');
+    expect(panelSrc).toContain('data-testid="leadsheet-harmony-override-strip"');
+    expect(panelSrc).toContain('data-testid="leadsheet-harmony-override-editor"');
     expect(panelSrc).toContain('Harmony inferred (advisory)');
 
     const repoRoot = path.join(desktopRoot, '../..');

@@ -5,6 +5,11 @@
 
 import fs from 'fs';
 import path from 'path';
+import {
+  buildLeadSheetHarmonyDisplayByBar,
+  type LeadSheetHarmonyOverridesByBar,
+  type LeadSheetHarmonyProvenanceBar,
+} from '../core/import/applyLeadSheetHarmonyOverrides';
 import { runDebussyLeadSheetFileHandoffProof } from '../core/import/runDebussyLeadSheetFileHandoffProof';
 import { EXPECTED_QUINTET_PART_IDS } from '../core/import/runDebussyLeadSheetQuintetProof';
 
@@ -19,6 +24,8 @@ export interface LeadSheetFileInputRequest {
   rhythmicActivity?: number;
   /** 0 = lighter guitar comp, 0.5 = baseline, 1 = busier. */
   guitarCompDensity?: number;
+  /** 1-based bar index → chord symbol override (MIDI advisory path). */
+  harmonyOverridesByBar?: LeadSheetHarmonyOverridesByBar;
 }
 
 export interface LeadSheetFileInputResponse {
@@ -30,6 +37,7 @@ export interface LeadSheetFileInputResponse {
   sourceFormat?: 'musicxml' | 'midi';
   harmonyProvenance?: 'explicit' | 'inferred-advisory';
   harmonyConfidenceByBar?: number[];
+  harmonyProvenanceByBar?: LeadSheetHarmonyProvenanceBar[];
   midiQuantizeNote?: string;
   barCount?: number;
   partCount?: number;
@@ -43,6 +51,20 @@ export interface LeadSheetFileInputResponse {
 }
 
 const DEFAULT_SEED = 90106;
+
+function parseHarmonyOverridesByBar(raw: unknown): LeadSheetHarmonyOverridesByBar | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const out: LeadSheetHarmonyOverridesByBar = {};
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof value !== 'string') continue;
+    const bar = Number(key);
+    if (!Number.isInteger(bar) || bar < 1) continue;
+    const trimmed = value.trim();
+    if (!trimmed) continue;
+    out[bar] = trimmed;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
 
 function isAllowedComposer(id: string): id is LeadSheetFileInputComposerId {
   return (LEADSHEET_FILE_INPUT_COMPOSERS as readonly string[]).includes(id);
@@ -85,9 +107,11 @@ export function apiRunLeadSheetFileInput(
       typeof req.guitarCompDensity === 'number' && Number.isFinite(req.guitarCompDensity)
         ? Math.max(0, Math.min(1, req.guitarCompDensity))
         : 0.5;
+    const harmonyOverridesByBar = parseHarmonyOverridesByBar(req.harmonyOverridesByBar);
     const proof = runDebussyLeadSheetFileHandoffProof(filePath, seed, composerId, {
       rhythmicActivity,
       guitarCompDensity,
+      harmonyOverridesByBar,
     });
 
     const partIds = proof.partIds;
@@ -122,7 +146,7 @@ export function apiRunLeadSheetFileInput(
     fs.writeFileSync(savedMusicXmlPath, proof.musicXml, 'utf8');
 
     const barCount = proof.effectiveHarmonyBars?.length ?? proof.importedHarmonyBars?.length ?? 0;
-    const harmonyConfidenceByBar = proof.harmonyByBar.map((h) => h.confidence);
+    const harmonyDisplay = buildLeadSheetHarmonyDisplayByBar(proof.importTimeline);
 
     return {
       ok: true,
@@ -130,7 +154,8 @@ export function apiRunLeadSheetFileInput(
       sourceFileName,
       sourceFormat: proof.sourceFormat,
       harmonyProvenance: proof.harmonyAdvisoryOnly ? 'inferred-advisory' : 'explicit',
-      harmonyConfidenceByBar,
+      harmonyConfidenceByBar: harmonyDisplay.confidenceByBar,
+      harmonyProvenanceByBar: harmonyDisplay.provenanceByBar,
       ...(proof.sourceFormat === 'midi'
         ? {
             midiQuantizeNote:

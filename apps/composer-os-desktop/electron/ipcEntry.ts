@@ -153,7 +153,14 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
       typeof b.guitarCompDensity === 'number' && Number.isFinite(b.guitarCompDensity)
         ? b.guitarCompDensity
         : undefined;
-    return apiRunLeadSheetFileInput({ filePath, composerId, seed, rhythmicActivity, guitarCompDensity }, outputDir);
+    const harmonyOverridesByBar =
+      b.harmonyOverridesByBar && typeof b.harmonyOverridesByBar === 'object'
+        ? (b.harmonyOverridesByBar as LeadSheetFileInputRequest['harmonyOverridesByBar'])
+        : undefined;
+    return apiRunLeadSheetFileInput(
+      { filePath, composerId, seed, rhythmicActivity, guitarCompDensity, harmonyOverridesByBar },
+      outputDir
+    );
   });
 
   ipcMain.handle('composer-os-api:pick-mosaic-import-file', async (_event, body: unknown) => {

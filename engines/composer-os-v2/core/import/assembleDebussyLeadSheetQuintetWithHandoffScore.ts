@@ -54,12 +54,16 @@ import {
   type LeadSheetGuitarMelodyMicroTimingPassDiagnostics,
 } from './leadSheetGuitarMelodyMicroTimingPass';
 
+import type { LeadSheetHarmonyOverridesByBar } from './applyLeadSheetHarmonyOverrides';
+
 export type LeadSheetQuintetAssemblyOptions = {
   skipGuitarMelodyMicroTiming?: boolean;
   /** 0 = calmer, 1 = more active. Maps to rhythmAntiLoop gentle/moderate + micro-timing scale. */
   rhythmicActivity?: number;
   /** 0 = lighter guitar comp, 0.5 = baseline, 1 = busier. */
   guitarCompDensity?: number;
+  /** 1-based bar index → chord symbol; applied after import inference. */
+  harmonyOverridesByBar?: LeadSheetHarmonyOverridesByBar;
 };
 
 function rhythmicActivityToIntensity(activity: number): LeadSheetRhythmAntiLoopIntensity {

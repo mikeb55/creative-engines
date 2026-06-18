@@ -60,7 +60,7 @@ export function importTimelineToLockedHarmony(ir: MosaicImportTimeline): string[
 }
 
 function barMeetsHardLockThreshold(h: MosaicImportTimeline['harmonyByBar'][number]): boolean {
-  if (h.fieldOrigin === 'inferred') {
+  if (h.fieldOrigin === 'inferred' || h.fieldOrigin === 'user-override') {
     return false;
   }
   if (h.fieldOrigin === 'explicit') {

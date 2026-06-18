@@ -7,7 +7,7 @@ export const IMPORT_EIGHTH_GRID_BEATS = 0.5;
 export const IMPORT_QUANTIZE_SNAP_TOLERANCE_BEATS = 0.25;
 
 export type ImportSourceFormat = 'musicxml' | 'midi';
-export type ImportFieldOrigin = 'explicit' | 'inferred' | 'carried' | 'defaulted';
+export type ImportFieldOrigin = 'explicit' | 'inferred' | 'carried' | 'defaulted' | 'user-override';
 
 export interface ImportTimeSignature {
   num: number;
