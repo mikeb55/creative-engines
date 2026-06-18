@@ -2,6 +2,7 @@
  * Art Rock pop contrast arc proof - Metaphysics 40-bar density arc gate.
  */
 
+import fs from 'fs';
 import path from 'path';
 import { assembleDebussyLeadSheetQuintetWithHandoffScore } from '../core/import/assembleDebussyLeadSheetQuintetWithHandoffScore';
 import { loadDebussyLeadSheetImportTimelineFromMusicXmlFile } from '../core/import/loadDebussyLeadSheetImportTimelineFromMusicXmlFile';
@@ -9,18 +10,25 @@ import {
   analyzeLeadSheetPopArtRockContrastArc,
   measureArtRockDensityRegionAverages,
 } from '../core/import/leadSheetPopArtRockContrastArcPass';
-import { resolveMetaphysicsLeadSheetProofPath } from '../core/import/resolveOrbitLeadSheetProofPath';
 
 const PROOF_SEED = 90106;
 
+/** Committed canonical Metaphysics leadsheet (40 bars) — Art Rock contrast-arc proof input. */
+export const ART_ROCK_CANONICAL_FIXTURE_REL =
+  'resources/test-fixtures/metaphysics-leadsheet/V1.12-Metaphysics.musicxml';
+
+export function resolveArtRockCanonicalFixturePath(fromDir = path.join(__dirname, '..')): string {
+  return path.join(fromDir, ART_ROCK_CANONICAL_FIXTURE_REL);
+}
+
 export function runLeadSheetPopArtRockContrastArcProofTests(): { ok: boolean; name: string }[] {
   const out: { ok: boolean; name: string }[] = [];
-  const fixture = resolveMetaphysicsLeadSheetProofPath(path.join(__dirname, '..'));
-  if (!fixture) {
-    out.push({
-      ok: true,
-      name: 'art_rock arc: skipped (Metaphysics fixture not on disk)',
-    });
+  const fixture = resolveArtRockCanonicalFixturePath();
+  out.push({
+    ok: fs.existsSync(fixture),
+    name: `art_rock arc: committed canonical fixture present (${ART_ROCK_CANONICAL_FIXTURE_REL})`,
+  });
+  if (!fs.existsSync(fixture)) {
     return out;
   }
 
