@@ -155,6 +155,25 @@ function literalBackbeatOnsets(): number[] {
   return [BACKBEAT_BEAT2, BACKBEAT_BEAT4];
 }
 
+function isPrePeakCompRampBar(bar: number): boolean {
+  return bar >= 17 && bar <= 25;
+}
+
+/** Thinner guitar v2 comp in bars 17–25 only; ramps to bar 26 peak without full 2&4 until late. */
+function prePeakGuitarCompOnsets(bar: number, seed: number): number[] {
+  const u = seededUnit(seed, bar, 1, 'prepeak-comp');
+  const skip = seededUnit(seed, bar, 2, 'prepeak-skip');
+  if (bar <= 21) {
+    if (skip < 0.48) return [];
+    return u < 0.5 ? [BACKBEAT_BEAT2] : [BACKBEAT_BEAT4];
+  }
+  if (bar <= 23) {
+    if (skip < 0.32) return [];
+    return u < 0.55 ? [BACKBEAT_BEAT2] : [BACKBEAT_BEAT4];
+  }
+  return u < 0.5 ? [BACKBEAT_BEAT2] : [BACKBEAT_BEAT4];
+}
+
 function backbeatOnsetsForPhase(phase: ArtRockMacroPhase, bar: number, seed: number): number[] {
   const u = seededUnit(seed, bar, 0, 'backbeat');
   if (phase === 'sparse') {
@@ -164,6 +183,9 @@ function backbeatOnsetsForPhase(phase: ArtRockMacroPhase, bar: number, seed: num
     return u < 0.2 ? [0] : literalBackbeatOnsets();
   }
   if (phase === 'build') {
+    if (isPrePeakCompRampBar(bar)) {
+      return prePeakGuitarCompOnsets(bar, seed);
+    }
     const onsets: number[] = literalBackbeatOnsets();
     if (u < 0.22) onsets.unshift(0);
     return [...new Set(onsets)].sort((a, b) => a - b);
