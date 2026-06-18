@@ -18,7 +18,7 @@ const BACKBEAT_BEAT2 = 1.0;
 const BACKBEAT_BEAT4 = 3.0;
 const BACKBEAT_ONSETS = [BACKBEAT_BEAT2, BACKBEAT_BEAT4] as const;
 const PHRASE_END_BARS = new Set([4, 8, 12, 16, 20, 24, 28, 32, 36, 40]);
-const PEAK_BARS = new Set([25, 26, 27, 28]);
+const PEAK_BARS = new Set([26]);
 
 export type ArtRockMacroPhase = 'sparse' | 'emerging' | 'build' | 'peak' | 'tail';
 export type ArtRockTextureState = 'breath' | 'pulse' | 'planed' | 'anthemic' | 'hush';
@@ -79,8 +79,9 @@ function ownerForBar(ownership: readonly PerBarMelodyOwnership[], bar: number): 
 export function macroPhaseForArtRockBar(bar: number): ArtRockMacroPhase {
   if (bar <= 8) return 'sparse';
   if (bar <= 16) return 'emerging';
-  if (bar <= 24) return 'build';
-  if (bar <= 28) return 'peak';
+  if (bar <= 25) return 'build';
+  if (bar === 26) return 'peak';
+  if (bar <= 28) return 'build';
   return 'tail';
 }
 
@@ -146,8 +147,7 @@ function backbeatOnsetsForPhase(phase: ArtRockMacroPhase, bar: number, seed: num
   }
   if (phase === 'build') {
     const onsets: number[] = literalBackbeatOnsets();
-    if (u < 0.35) onsets.unshift(0);
-    if (PEAK_BARS.has(bar) && u > 0.55) onsets.push(2);
+    if (u < 0.22) onsets.unshift(0);
     return [...new Set(onsets)].sort((a, b) => a - b);
   }
   if (phase === 'peak') {
@@ -220,13 +220,13 @@ function buildStringBar(
 
   const u = seededUnit(seed, bar, 3, 'strings');
   if (phase === 'build') {
-    if (ownerPartId !== vn1 && u < 0.7) {
+    if (ownerPartId !== vn1 && u < 0.42) {
       out.set(vn1, [createNote(chordPitchForPart(chordSymbol, vn1, 'root', 1), 0, 4, 1)]);
     }
-    if (ownerPartId !== vn2) {
+    if (ownerPartId !== vn2 && u < 0.55) {
       out.set(vn2, [createNote(chordPitchForPart(chordSymbol, vn2, 'third', 1), 0, 2, 1)]);
     }
-    if (ownerPartId !== vc) {
+    if (ownerPartId !== vc && u < 0.5) {
       out.set(vc, [createNote(chordPitchForPart(chordSymbol, vc, 'root', -1), 2, 2, 1)]);
     }
     return out;
