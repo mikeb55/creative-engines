@@ -4,11 +4,13 @@
 
 import { isDesktopIpc } from './api';
 
+/** Keep ids aligned with `runLeadSheetFileInputApi.ts` LEADSHEET_FILE_INPUT_COMPOSERS. */
 export const LEADSHEET_FILE_INPUT_COMPOSER_OPTIONS = [
   { id: 'debussy' as const, label: 'Debussy' },
   { id: 'kenny_wheeler' as const, label: 'Kenny Wheeler' },
   { id: 'james_brown' as const, label: 'James Brown' },
   { id: 'bartok' as const, label: 'Bartók' },
+  { id: 'art_rock' as const, label: 'Art Rock' },
 ];
 
 export type LeadSheetFileInputComposerId = (typeof LEADSHEET_FILE_INPUT_COMPOSER_OPTIONS)[number]['id'];

@@ -364,7 +364,7 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
       </h2>
       <p style={{ margin: '0 0 0.75rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
         Desktop-only path: MusicXML or MIDI leadsheet → quintet + melody hand-off (parallel to Generate).
-        Supports Debussy, Kenny Wheeler, and Bartók.{' '}
+        Composer picker: Debussy, Kenny Wheeler, James Brown, Bartók, and Art Rock.{' '}
         <strong>MIDI input v1 supports single-track melody MIDI.</strong> Multi-track exports (Sibelius/DAW
         with separate lead / harmony / drums) will mislabel melody and harmony. For multi-track scores, use
         MusicXML export. Multi-track MIDI support will come in v2. MIDI import quantizes melody to eighth notes.

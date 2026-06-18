@@ -2,11 +2,16 @@
 import {
   buildLeadSheetHarmonyOverridePayload,
   deriveLeadSheetHarmonyAdvisory,
+  LEADSHEET_FILE_INPUT_COMPOSER_OPTIONS,
   mapLeadSheetFileInputResponseToPanelState,
   type LeadSheetFileInputResponse,
 } from '../src/services/leadSheetFileInputDesktop';
 
 describe('leadSheetFileInputDesktop panel mapping', () => {
+  it('includes art_rock in desktop leadsheet composer options', () => {
+    expect(LEADSHEET_FILE_INPUT_COMPOSER_OPTIONS.some((opt) => opt.id === 'art_rock')).toBe(true);
+  });
+
   it('maps inferred-advisory MIDI response to panel advisory', () => {
     const response: LeadSheetFileInputResponse = {
       ok: true,
