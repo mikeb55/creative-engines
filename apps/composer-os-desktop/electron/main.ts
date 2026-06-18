@@ -45,6 +45,11 @@ function loadEnv(): void {
 }
 loadEnv();
 
+/** Packaged builds default to full React UI (`resources/ui`). Musician shell: set COMPOSER_OS_FULL_UI=0 before launch. */
+if (app.isPackaged) {
+  process.env.COMPOSER_OS_FULL_UI = '1';
+}
+
 let mainWindow: BrowserWindow | null = null;
 let startupState: StartupState = 'booting';
 let cachedUiStamp: ComposerOsUiStamp | null = null;

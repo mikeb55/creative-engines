@@ -7,6 +7,7 @@ import { isDesktopIpc } from './api';
 export const LEADSHEET_FILE_INPUT_COMPOSER_OPTIONS = [
   { id: 'debussy' as const, label: 'Debussy' },
   { id: 'kenny_wheeler' as const, label: 'Kenny Wheeler' },
+  { id: 'james_brown' as const, label: 'James Brown' },
   { id: 'bartok' as const, label: 'Bartók' },
 ];
 
