@@ -4,6 +4,10 @@
 
 import { useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { MosaicImportTimeline } from '@composer-os/core/import/mosaicImportTimeline';
+import {
+  cloneMosaicSectionPlanPresetPlan,
+  listMosaicSectionPlanPresets,
+} from '@composer-os/core/mosaic-mode/mosaicSectionPlanPresets';
 import { MosaicSectionTimeline } from './MosaicSectionTimeline';
 import {
   computeMosaicPlannerWarnings,
@@ -117,17 +121,22 @@ function MosaicWarningBadge(props: { level: 'error' | 'warning' | 'info'; messag
   );
 }
 
+const MOSAIC_SECTION_PLAN_PRESETS = listMosaicSectionPlanPresets();
+
 export function MosaicSectionPlanner(props: {
   sections: MosaicSectionPlanEntry[];
   onChange: (sections: MosaicSectionPlanEntry[]) => void;
   outputFormat: MosaicOutputFormatUi;
   onOutputFormatChange: (format: MosaicOutputFormatUi) => void;
   importTimeline?: MosaicImportTimeline | null;
+  onTotalBarsChange?: (totalBars: number) => void;
   disabled?: boolean;
 }) {
-  const { sections, onChange, outputFormat, onOutputFormatChange, importTimeline, disabled } = props;
+  const { sections, onChange, outputFormat, onOutputFormatChange, importTimeline, onTotalBarsChange, disabled } =
+    props;
   const rowRefs = useRef<Array<HTMLDivElement | null>>([]);
   const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
+  const [selectedPresetId, setSelectedPresetId] = useState('');
 
   const totalBars = resolvePlannerTotalBars(sections, importTimeline);
   const timelineBlocks = useMemo(
@@ -180,6 +189,20 @@ export function MosaicSectionPlanner(props: {
     onChange(suggested);
   }
 
+  function handleLoadSectionPlanPreset() {
+    if (!selectedPresetId) return;
+    const preset = MOSAIC_SECTION_PLAN_PRESETS.find((entry) => entry.id === selectedPresetId);
+    if (!preset) return;
+    if (planHasContent(sections)) {
+      const ok = window.confirm(
+        `Replace the current section plan with "${preset.name}"? This cannot be undone except by editing manually.`,
+      );
+      if (!ok) return;
+    }
+    onChange(cloneMosaicSectionPlanPresetPlan(preset.id) as MosaicSectionPlanEntry[]);
+    onTotalBarsChange?.(preset.totalBars);
+  }
+
   function scrollToSection(sectionIndex: number) {
     setHighlightedIndex(sectionIndex);
     const el = rowRefs.current[sectionIndex];
@@ -217,6 +240,38 @@ export function MosaicSectionPlanner(props: {
           </>
         ) : null}
       </p>
+
+      {MOSAIC_SECTION_PLAN_PRESETS.length > 0 ? (
+        <div style={{ marginBottom: '0.55rem', display: 'flex', flexWrap: 'wrap', gap: '0.45rem', alignItems: 'flex-end' }}>
+          <label style={{ fontSize: '0.78rem' }}>
+            Section plan preset
+            <select
+              value={selectedPresetId}
+              disabled={disabled}
+              data-testid="mosaic-section-plan-preset-select"
+              onChange={(e) => setSelectedPresetId(e.target.value)}
+              style={{ ...inputStyle, display: 'block', marginTop: 2, minWidth: 220 }}
+            >
+              <option value="">— choose preset —</option>
+              {MOSAIC_SECTION_PLAN_PRESETS.map((preset) => (
+                <option key={preset.id} value={preset.id}>
+                  {preset.name} ({preset.totalBars} bars)
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            className="secondary"
+            disabled={disabled || !selectedPresetId}
+            data-testid="mosaic-load-section-plan-preset"
+            onClick={handleLoadSectionPlanPreset}
+            style={{ fontSize: '0.8rem', padding: '0.35rem 0.6rem' }}
+          >
+            Load preset
+          </button>
+        </div>
+      ) : null}
 
       {importTimeline ? (
         <div style={{ marginBottom: '0.55rem' }}>
