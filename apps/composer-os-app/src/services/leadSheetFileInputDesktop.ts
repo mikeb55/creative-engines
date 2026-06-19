@@ -5,15 +5,29 @@
 import { isDesktopIpc } from './api';
 
 /** Keep ids aligned with `runLeadSheetFileInputApi.ts` LEADSHEET_FILE_INPUT_COMPOSERS. */
-export const LEADSHEET_FILE_INPUT_COMPOSER_OPTIONS = [
-  { id: 'debussy' as const, label: 'Debussy' },
-  { id: 'kenny_wheeler' as const, label: 'Kenny Wheeler' },
-  { id: 'james_brown' as const, label: 'James Brown' },
-  { id: 'bartok' as const, label: 'Bartók' },
-  { id: 'art_rock' as const, label: 'Art Rock' },
-];
+export type LeadSheetFileInputComposerId =
+  | 'debussy'
+  | 'kenny_wheeler'
+  | 'james_brown'
+  | 'bartok'
+  | 'art_rock';
 
-export type LeadSheetFileInputComposerId = (typeof LEADSHEET_FILE_INPUT_COMPOSER_OPTIONS)[number]['id'];
+export const LEADSHEET_FILE_INPUT_COMPOSER_OPTIONS: ReadonlyArray<{
+  id: LeadSheetFileInputComposerId;
+  label: string;
+  title?: string;
+}> = [
+  { id: 'debussy', label: 'Debussy' },
+  { id: 'kenny_wheeler', label: 'Kenny Wheeler' },
+  { id: 'james_brown', label: 'James Brown' },
+  { id: 'bartok', label: 'Bartók' },
+  {
+    id: 'art_rock',
+    label: 'Art Rock',
+    title:
+      'Sparse intro, dense peak, open ending; modal power-chord color with backbeat—geared to indie, post-rock, or cinematic charts more than jazz or funk.',
+  },
+];
 
 export type LeadSheetHarmonyProvenanceBar = 'inferred-advisory' | 'user-override' | 'explicit';
 

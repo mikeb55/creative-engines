@@ -20,6 +20,12 @@ const CONFIDENCE_COLORS = {
 
 const MAX_CANDIDATES = 3;
 
+function leadSheetComposerRosterText(): string {
+  const labels = LEADSHEET_FILE_INPUT_COMPOSER_OPTIONS.map((o) => o.label);
+  if (labels.length <= 1) return labels[0] ?? '';
+  return `${labels.slice(0, -1).join(', ')}, and ${labels[labels.length - 1]}`;
+}
+
 function confidenceStripColor(confidence: number): keyof typeof CONFIDENCE_COLORS {
   if (confidence >= 0.85) return 'high';
   if (confidence >= 0.5) return 'mid';
@@ -364,7 +370,7 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
       </h2>
       <p style={{ margin: '0 0 0.75rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
         Desktop-only path: MusicXML or MIDI leadsheet → quintet + melody hand-off (parallel to Generate).
-        Composer picker: Debussy, Kenny Wheeler, James Brown, Bartók, and Art Rock.{' '}
+        Composer picker: {leadSheetComposerRosterText()}.{' '}
         <strong>MIDI input v1 supports single-track melody MIDI.</strong> Multi-track exports (Sibelius/DAW
         with separate lead / harmony / drums) will mislabel melody and harmony. For multi-track scores, use
         MusicXML export. Multi-track MIDI support will come in v2. MIDI import quantizes melody to eighth notes.
@@ -381,7 +387,7 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
         style={{ width: '100%', maxWidth: 280, marginBottom: '0.75rem' }}
       >
         {LEADSHEET_FILE_INPUT_COMPOSER_OPTIONS.map((opt) => (
-          <option key={opt.id} value={opt.id}>
+          <option key={opt.id} value={opt.id} title={opt.title}>
             {opt.label}
           </option>
         ))}
