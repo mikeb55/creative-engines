@@ -7285,6 +7285,7 @@ export function HomeGenerate({
             outputFormat={mosaicOutputFormat}
             onOutputFormatChange={setMosaicOutputFormat}
             importTimeline={mosaicImportWorkflow.state.importTimeline}
+            plannerTotalBars={totalBars}
             onTotalBarsChange={setTotalBars}
             disabled={loading}
           />
@@ -9497,6 +9498,7 @@ export function HomeGenerate({
             outputFormat={mosaicOutputFormat}
             onOutputFormatChange={setMosaicOutputFormat}
             importTimeline={mosaicImportWorkflow.state.importTimeline}
+            plannerTotalBars={totalBars}
             onTotalBarsChange={setTotalBars}
             disabled={loading}
           />

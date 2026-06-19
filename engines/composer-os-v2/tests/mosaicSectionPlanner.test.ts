@@ -8,6 +8,7 @@ import {
   computeTimelineBlocks,
   hasMixedPresetSections,
   presetRoleColor,
+  resolvePlannerTotalBars,
   suggestSectionsFromImport,
 } from '../../../apps/composer-os-app/src/components/mosaicSectionPlannerUtils';
 
@@ -121,5 +122,15 @@ describe('mosaicSectionPlanner', () => {
     ];
     const warnings = computeMosaicPlannerWarnings(sections, 8, 'lead-sheet');
     expect(warnings.some((w) => w.level === 'warning' && w.message.includes('Lead sheet'))).toBe(true);
+  });
+
+  test('I) resolvePlannerTotalBars prefers section/preset span over shorter import', () => {
+    const sections: MosaicSectionPlanEntry[] = [
+      { sectionLabel: 'intro', startBar: 1, endBar: 8, songwriterStyleId: 'verlaine' },
+      { sectionLabel: 'tail', startBar: 29, endBar: 40, songwriterStyleId: 'verlaine' },
+    ];
+    const ir = makeIr({ bars: 19 });
+    expect(resolvePlannerTotalBars(sections, ir)).toBe(40);
+    expect(resolvePlannerTotalBars(sections, ir, 40)).toBe(40);
   });
 });

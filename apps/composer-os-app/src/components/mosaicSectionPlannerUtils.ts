@@ -50,10 +50,17 @@ export function partCountForPresetRole(role: MosaicPresetRoleUi | undefined): nu
 export function resolvePlannerTotalBars(
   sections: MosaicSectionPlanEntry[],
   importTimeline?: MosaicImportTimeline | null,
+  explicitTotalBars?: number,
 ): number {
-  if (importTimeline && importTimeline.bars > 0) return importTimeline.bars;
-  if (sections.length === 0) return 1;
-  return Math.max(1, ...sections.map((s) => Math.max(s.startBar, s.endBar)));
+  const sectionTotal =
+    sections.length === 0 ? 0 : Math.max(1, ...sections.map((s) => Math.max(s.startBar, s.endBar)));
+  const importBars = importTimeline && importTimeline.bars > 0 ? importTimeline.bars : 0;
+  const explicit =
+    explicitTotalBars != null && Number.isFinite(explicitTotalBars) && explicitTotalBars > 0
+      ? explicitTotalBars
+      : 0;
+  const total = Math.max(sectionTotal, importBars, explicit);
+  return total > 0 ? total : 1;
 }
 
 export function computeTimelineBlocks(

@@ -3,7 +3,6 @@
  * Inline plan shape mirrors runThreeMirrorsSmoke.ts / mixedPresetAssembly.test.ts.
  */
 
-import { getDispatchEntry } from './mosaicComposerDispatch';
 import type { MosaicModeSectionPlanEntry } from './precomputeMosaicEffectiveHarmonyBars';
 
 export const TELEVISION_FIELD_SUITE_PRESET_ID = 'television_field_suite' as const;
@@ -81,14 +80,4 @@ export function cloneMosaicSectionPlanPresetPlan(id: string): MosaicModeSectionP
     throw new Error(`mosaicSectionPlanPresets: unknown preset id "${id}"`);
   }
   return preset.plan.map((entry) => ({ ...entry }));
-}
-
-export function assertMosaicSectionPlanPresetVoicesValid(preset: MosaicSectionPlanPreset): void {
-  for (const section of preset.plan) {
-    if (!getDispatchEntry(section.songwriterStyleId)) {
-      throw new Error(
-        `mosaicSectionPlanPresets: invalid songwriterStyleId "${section.songwriterStyleId}" in section "${section.sectionLabel}"`,
-      );
-    }
-  }
 }

@@ -5,7 +5,6 @@
 import {
   TELEVISION_FIELD_SUITE_PRESET,
   TELEVISION_FIELD_SUITE_PRESET_ID,
-  assertMosaicSectionPlanPresetVoicesValid,
   cloneMosaicSectionPlanPresetPlan,
   getMosaicSectionPlanPreset,
   listMosaicSectionPlanPresetIds,
@@ -23,7 +22,6 @@ describe('mosaicSectionPlanPresets', () => {
   });
 
   test('B) all referenced voice ids are valid dispatch entries', () => {
-    expect(() => assertMosaicSectionPlanPresetVoicesValid(TELEVISION_FIELD_SUITE_PRESET)).not.toThrow();
     for (const section of TELEVISION_FIELD_SUITE_PRESET.plan) {
       expect(getDispatchEntry(section.songwriterStyleId)).toBeDefined();
     }

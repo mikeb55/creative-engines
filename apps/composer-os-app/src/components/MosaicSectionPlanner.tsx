@@ -5,8 +5,8 @@
 import { useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { MosaicImportTimeline } from '@composer-os/core/import/mosaicImportTimeline';
 import {
-  cloneMosaicSectionPlanPresetPlan,
   listMosaicSectionPlanPresets,
+  type MosaicSectionPlanPreset,
 } from '@composer-os/core/mosaic-mode/mosaicSectionPlanPresets';
 import { MosaicSectionTimeline } from './MosaicSectionTimeline';
 import {
@@ -129,16 +129,25 @@ export function MosaicSectionPlanner(props: {
   outputFormat: MosaicOutputFormatUi;
   onOutputFormatChange: (format: MosaicOutputFormatUi) => void;
   importTimeline?: MosaicImportTimeline | null;
+  plannerTotalBars?: number;
   onTotalBarsChange?: (totalBars: number) => void;
   disabled?: boolean;
 }) {
-  const { sections, onChange, outputFormat, onOutputFormatChange, importTimeline, onTotalBarsChange, disabled } =
-    props;
+  const {
+    sections,
+    onChange,
+    outputFormat,
+    onOutputFormatChange,
+    importTimeline,
+    plannerTotalBars,
+    onTotalBarsChange,
+    disabled,
+  } = props;
   const rowRefs = useRef<Array<HTMLDivElement | null>>([]);
   const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
   const [selectedPresetId, setSelectedPresetId] = useState('');
 
-  const totalBars = resolvePlannerTotalBars(sections, importTimeline);
+  const totalBars = resolvePlannerTotalBars(sections, importTimeline, plannerTotalBars);
   const timelineBlocks = useMemo(
     () => computeTimelineBlocks(sections, totalBars),
     [sections, totalBars],
@@ -189,18 +198,31 @@ export function MosaicSectionPlanner(props: {
     onChange(suggested);
   }
 
-  function handleLoadSectionPlanPreset() {
-    if (!selectedPresetId) return;
-    const preset = MOSAIC_SECTION_PLAN_PRESETS.find((entry) => entry.id === selectedPresetId);
-    if (!preset) return;
+  function applySectionPlanPreset(preset: MosaicSectionPlanPreset) {
     if (planHasContent(sections)) {
       const ok = window.confirm(
         `Replace the current section plan with "${preset.name}"? This cannot be undone except by editing manually.`,
       );
-      if (!ok) return;
+      if (!ok) return false;
     }
-    onChange(cloneMosaicSectionPlanPresetPlan(preset.id) as MosaicSectionPlanEntry[]);
+    onChange(preset.plan.map((entry) => ({ ...entry })) as MosaicSectionPlanEntry[]);
     onTotalBarsChange?.(preset.totalBars);
+    return true;
+  }
+
+  function handlePresetSelectChange(presetId: string) {
+    setSelectedPresetId(presetId);
+    if (!presetId) return;
+    const preset = MOSAIC_SECTION_PLAN_PRESETS.find((entry) => entry.id === presetId);
+    if (!preset) return;
+    applySectionPlanPreset(preset);
+  }
+
+  function handleLoadSectionPlanPreset() {
+    if (!selectedPresetId) return;
+    const preset = MOSAIC_SECTION_PLAN_PRESETS.find((entry) => entry.id === selectedPresetId);
+    if (!preset) return;
+    applySectionPlanPreset(preset);
   }
 
   function scrollToSection(sectionIndex: number) {
@@ -249,7 +271,7 @@ export function MosaicSectionPlanner(props: {
               value={selectedPresetId}
               disabled={disabled}
               data-testid="mosaic-section-plan-preset-select"
-              onChange={(e) => setSelectedPresetId(e.target.value)}
+              onChange={(e) => handlePresetSelectChange(e.target.value)}
               style={{ ...inputStyle, display: 'block', marginTop: 2, minWidth: 220 }}
             >
               <option value="">— choose preset —</option>
