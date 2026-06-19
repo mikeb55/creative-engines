@@ -1,6 +1,9 @@
 # Local secrets (never commit)
 .env
 
+# Accidental root-level tsc emit (Electron main compiled outside apps/composer-os-desktop/dist/)
+/main.js
+
 outputs/
 output/
 projects/
