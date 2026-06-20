@@ -33,6 +33,13 @@ describe('Desktop packaged launch UI (static)', () => {
     expect(isFullUiIdx).toBeGreaterThan(loadEnvIdx);
   });
 
+  it('dev defaults to full UI unless COMPOSER_OS_MUSICIAN_SHELL=1', () => {
+    const fnBlock = main.slice(main.indexOf('function isFullUiEnabled()'), main.indexOf('function resolveMusicianUiIndexPath()'));
+    expect(fnBlock).toContain('if (app.isPackaged)');
+    expect(fnBlock).toContain("process.env.COMPOSER_OS_FULL_UI === '1'");
+    expect(fnBlock).toContain("process.env.COMPOSER_OS_MUSICIAN_SHELL !== '1'");
+  });
+
   it('launchApp loads verified resources/ui when full UI enabled, musician only as fallback', () => {
     expect(main).toContain('const fullUiEnabled = isFullUiEnabled();');
     expect(main).toContain('const uiPath = resolveUiPath();');

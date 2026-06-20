@@ -45,7 +45,7 @@ function loadEnv(): void {
 }
 loadEnv();
 
-/** Packaged builds default to full React UI (`resources/ui`). Musician shell: set COMPOSER_OS_FULL_UI=0 before launch. */
+/** Packaged builds always use full React UI (`resources/ui`). Dev defaults to full UI; musician shell: COMPOSER_OS_MUSICIAN_SHELL=1. */
 if (app.isPackaged) {
   process.env.COMPOSER_OS_FULL_UI = '1';
 }
@@ -70,7 +70,10 @@ function getDevUiUrl(): string | null {
 }
 
 function isFullUiEnabled(): boolean {
-  return process.env.COMPOSER_OS_FULL_UI === '1';
+  if (app.isPackaged) {
+    return process.env.COMPOSER_OS_FULL_UI === '1';
+  }
+  return process.env.COMPOSER_OS_MUSICIAN_SHELL !== '1';
 }
 
 function resolveMusicianUiIndexPath(): string {
