@@ -1,15 +1,36 @@
 ﻿import { describe, expect, it } from 'vitest';
 import {
+  ART_ROCK_LEADSHEET_HELPER_TEXT,
   buildLeadSheetHarmonyOverridePayload,
   deriveLeadSheetHarmonyAdvisory,
+  getLeadSheetComposerDescription,
   LEADSHEET_FILE_INPUT_COMPOSER_OPTIONS,
   mapLeadSheetFileInputResponseToPanelState,
+  previewLeadSheetOutputFilename,
+  sanitizeLeadSheetOutputLabel,
   type LeadSheetFileInputResponse,
 } from '../src/services/leadSheetFileInputDesktop';
 
 describe('leadSheetFileInputDesktop panel mapping', () => {
   it('includes art_rock in desktop leadsheet composer options', () => {
     expect(LEADSHEET_FILE_INPUT_COMPOSER_OPTIONS.some((opt) => opt.id === 'art_rock')).toBe(true);
+  });
+
+  it('exposes Art Rock helper text for the guided panel', () => {
+    expect(getLeadSheetComposerDescription('art_rock')).toBe(ART_ROCK_LEADSHEET_HELPER_TEXT);
+    expect(ART_ROCK_LEADSHEET_HELPER_TEXT).toBe(
+      'Sparse intro, dense peak, open ending — modal power-chord color with a rock backbeat, for indie, post-rock, or cinematic charts.'
+    );
+  });
+
+  it('builds output filename preview from label or source file', () => {
+    expect(sanitizeLeadSheetOutputLabel('  my-bridge take  ')).toBe('my-bridge_take');
+    expect(previewLeadSheetOutputFilename('my-bridge', 'art_rock')).toBe(
+      'my-bridge_art_rock_v<timestamp>_quintet.musicxml'
+    );
+    expect(previewLeadSheetOutputFilename('', 'debussy', 'Chart One.musicxml')).toBe(
+      'Chart_One_debussy_v<timestamp>_quintet.musicxml'
+    );
   });
 
   it('maps inferred-advisory MIDI response to panel advisory', () => {

@@ -12,6 +12,9 @@ export type LeadSheetFileInputComposerId =
   | 'bartok'
   | 'art_rock';
 
+export const ART_ROCK_LEADSHEET_HELPER_TEXT =
+  'Sparse intro, dense peak, open ending — modal power-chord color with a rock backbeat, for indie, post-rock, or cinematic charts.';
+
 export const LEADSHEET_FILE_INPUT_COMPOSER_OPTIONS: ReadonlyArray<{
   id: LeadSheetFileInputComposerId;
   label: string;
@@ -21,13 +24,30 @@ export const LEADSHEET_FILE_INPUT_COMPOSER_OPTIONS: ReadonlyArray<{
   { id: 'kenny_wheeler', label: 'Kenny Wheeler' },
   { id: 'james_brown', label: 'James Brown' },
   { id: 'bartok', label: 'Bartók' },
-  {
-    id: 'art_rock',
-    label: 'Art Rock',
-    title:
-      'Sparse intro, dense peak, open ending; modal power-chord color with backbeat—geared to indie, post-rock, or cinematic charts more than jazz or funk.',
-  },
+  { id: 'art_rock', label: 'Art Rock', title: ART_ROCK_LEADSHEET_HELPER_TEXT },
 ];
+
+export function getLeadSheetComposerDescription(composerId: LeadSheetFileInputComposerId): string | undefined {
+  if (composerId === 'art_rock') return ART_ROCK_LEADSHEET_HELPER_TEXT;
+  return LEADSHEET_FILE_INPUT_COMPOSER_OPTIONS.find((opt) => opt.id === composerId)?.title;
+}
+
+export function sanitizeLeadSheetOutputLabel(raw: string): string {
+  return raw.trim().replace(/[^\w.-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 60);
+}
+
+export function previewLeadSheetOutputFilename(
+  outputLabel: string,
+  composerId: LeadSheetFileInputComposerId,
+  sourceFileName?: string | null
+): string {
+  const stem =
+    sanitizeLeadSheetOutputLabel(outputLabel) ||
+    (sourceFileName
+      ? sourceFileName.replace(/\.[^.]+$/, '').replace(/[^\w.-]+/g, '_').slice(0, 60)
+      : 'leadsheet');
+  return `${stem}_${composerId}_v<timestamp>_quintet.musicxml`;
+}
 
 export type LeadSheetHarmonyProvenanceBar = 'inferred-advisory' | 'user-override' | 'explicit';
 
@@ -132,6 +152,8 @@ export async function runLeadSheetFileInputDesktop(body: {
   rhythmicActivity?: number;
   guitarCompDensity?: number;
   harmonyOverridesByBar?: LeadSheetHarmonyOverridesByBar;
+  /** Optional user-facing stem for saved MusicXML filename. */
+  outputLabel?: string;
 }): Promise<LeadSheetFileInputResponse> {
   if (!isDesktopIpc() || !window.composerOsDesktop?.invokeApi) {
     return { ok: false, error: 'Desktop IPC is not available.' };

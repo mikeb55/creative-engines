@@ -85,6 +85,30 @@ export function runLeadSheetFileInputDesktopApiTests(): { ok: boolean; name: str
     });
   }
 
+  try {
+    const labeled = apiRunLeadSheetFileInput(
+      { filePath, composerId: 'debussy', outputLabel: 'my-bridge-take' },
+      tmpOut
+    );
+    const labeledBase = labeled.savedMusicXmlPath
+      ? path.basename(labeled.savedMusicXmlPath)
+      : '';
+    out.push({
+      ok:
+        labeled.ok === true &&
+        labeledBase.startsWith('my-bridge-take_debussy_v') &&
+        labeledBase.endsWith('_quintet.musicxml') &&
+        typeof labeled.savedMusicXmlPath === 'string' &&
+        fs.existsSync(labeled.savedMusicXmlPath!),
+      name: 'phase6 apiRunLeadSheetFileInput honors outputLabel stem',
+    });
+  } catch (e) {
+    out.push({
+      ok: false,
+      name: `phase6 apiRunLeadSheetFileInput outputLabel: ${e instanceof Error ? e.message : String(e)}`,
+    });
+  }
+
   return out;
 }
 

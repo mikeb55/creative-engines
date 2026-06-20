@@ -32,6 +32,8 @@ export interface LeadSheetFileInputRequest {
   guitarCompDensity?: number;
   /** 1-based bar index → chord symbol override (MIDI advisory path). */
   harmonyOverridesByBar?: LeadSheetHarmonyOverridesByBar;
+  /** Optional user-facing stem for saved MusicXML filename. */
+  outputLabel?: string;
 }
 
 export interface LeadSheetFileInputResponse {
@@ -141,10 +143,16 @@ export function apiRunLeadSheetFileInput(
     }
 
     const sourceFileName = path.basename(filePath);
-    const safeStem = sourceFileName
-      .replace(/\.[^.]+$/, '')
-      .replace(/[^\w.-]+/g, '_')
-      .slice(0, 60);
+    const outputLabelStem =
+      typeof req.outputLabel === 'string'
+        ? req.outputLabel.trim().replace(/[^\w.-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 60)
+        : '';
+    const safeStem =
+      outputLabelStem ||
+      sourceFileName
+        .replace(/\.[^.]+$/, '')
+        .replace(/[^\w.-]+/g, '_')
+        .slice(0, 60);
     const outDir = path.join(outputDir, 'leadsheet-input');
     fs.mkdirSync(outDir, { recursive: true });
     const runId = Date.now();

@@ -157,8 +157,9 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
       b.harmonyOverridesByBar && typeof b.harmonyOverridesByBar === 'object'
         ? (b.harmonyOverridesByBar as LeadSheetFileInputRequest['harmonyOverridesByBar'])
         : undefined;
+    const outputLabel = typeof b.outputLabel === 'string' ? b.outputLabel : undefined;
     return apiRunLeadSheetFileInput(
-      { filePath, composerId, seed, rhythmicActivity, guitarCompDensity, harmonyOverridesByBar },
+      { filePath, composerId, seed, rhythmicActivity, guitarCompDensity, harmonyOverridesByBar, outputLabel },
       outputDir
     );
   });

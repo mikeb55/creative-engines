@@ -1,10 +1,12 @@
-import { useCallback, useState, type CSSProperties } from 'react';
-import { isDesktopIpc } from '../../services/api';
+import { useCallback, useMemo, useState, type CSSProperties } from 'react';
+import { api, isDesktopIpc } from '../../services/api';
 import {
   LEADSHEET_FILE_INPUT_COMPOSER_OPTIONS,
   buildLeadSheetHarmonyOverridePayload,
+  getLeadSheetComposerDescription,
   mapLeadSheetFileInputResponseToPanelState,
   pickLeadSheetFile,
+  previewLeadSheetOutputFilename,
   runLeadSheetFileInputDesktop,
   type LeadSheetFileInputComposerId,
   type LeadSheetFileInputResponse,
@@ -18,13 +20,7 @@ const CONFIDENCE_COLORS = {
   low: 'rgba(220, 53, 69, 0.75)',
 } as const;
 
-const MAX_CANDIDATES = 3;
-
-function leadSheetComposerRosterText(): string {
-  const labels = LEADSHEET_FILE_INPUT_COMPOSER_OPTIONS.map((o) => o.label);
-  if (labels.length <= 1) return labels[0] ?? '';
-  return `${labels.slice(0, -1).join(', ')}, and ${labels[labels.length - 1]}`;
-}
+const MAX_COMPARE_CANDIDATES = 3;
 
 function confidenceStripColor(confidence: number): keyof typeof CONFIDENCE_COLORS {
   if (confidence >= 0.85) return 'high';
@@ -33,6 +29,12 @@ function confidenceStripColor(confidence: number): keyof typeof CONFIDENCE_COLOR
 }
 
 const OVERRIDE_BAR_COLOR = 'rgba(103, 58, 183, 0.85)';
+
+function dirnameOnly(fp: string): string {
+  const p = fp.replace(/[/\\]+$/, '');
+  const li = Math.max(p.lastIndexOf('\\'), p.lastIndexOf('/'));
+  return li >= 0 ? p.slice(0, li) : p;
+}
 
 function HarmonyConfidenceStrip(props: {
   confidences: number[];
@@ -103,6 +105,17 @@ const panelStyle: CSSProperties = {
   background: 'var(--bg-panel)',
 };
 
+const stepStyle: CSSProperties = {
+  marginBottom: '1rem',
+};
+
+const stepHeadingStyle: CSSProperties = {
+  margin: '0 0 0.45rem',
+  fontSize: '0.88rem',
+  fontWeight: 600,
+  color: 'var(--text)',
+};
+
 const statusOkStyle: CSSProperties = {
   marginTop: '0.75rem',
   padding: '0.65rem 0.75rem',
@@ -137,6 +150,15 @@ const advisoryBannerStyle: CSSProperties = {
   borderRadius: 6,
   background: 'rgba(255, 193, 7, 0.12)',
   border: '1px solid rgba(255, 193, 7, 0.45)',
+  fontSize: '0.85rem',
+};
+
+const resultPanelStyle: CSSProperties = {
+  marginTop: '0.75rem',
+  padding: '0.75rem 0.85rem',
+  borderRadius: 6,
+  background: 'rgba(46, 125, 50, 0.08)',
+  border: '1px solid rgba(46, 125, 50, 0.45)',
   fontSize: '0.85rem',
 };
 
@@ -220,12 +242,14 @@ function VariationSlider(props: {
 
 export function LeadSheetInputDesktopPanel(): JSX.Element {
   const [composerId, setComposerId] = useState<LeadSheetFileInputComposerId>('debussy');
+  const [outputLabel, setOutputLabel] = useState('');
   const [rhythmicActivity, setRhythmicActivity] = useState(0.35);
   const [guitarCompDensity, setGuitarCompDensity] = useState(0.5);
   const [statusKind, setStatusKind] = useState<StatusKind>('idle');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [candidates, setCandidates] = useState<LeadSheetFileInputResponse[]>([]);
-  const [selectedCandidateIndex, setSelectedCandidateIndex] = useState<number | null>(null);
+  const [result, setResult] = useState<LeadSheetFileInputResponse | null>(null);
+  const [compareCandidates, setCompareCandidates] = useState<LeadSheetFileInputResponse[]>([]);
+  const [selectedCompareIndex, setSelectedCompareIndex] = useState<number | null>(null);
   const [lastFilePath, setLastFilePath] = useState<string | null>(null);
   const [lastSourceFileName, setLastSourceFileName] = useState<string | null>(null);
   const [advisory, setAdvisory] = useState<string | null>(null);
@@ -234,69 +258,134 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
   const [harmonyOverridesByBar, setHarmonyOverridesByBar] = useState<LeadSheetHarmonyOverridesByBar>({});
   const [selectedOverrideBar, setSelectedOverrideBar] = useState<number | null>(null);
   const [overrideDraft, setOverrideDraft] = useState('');
+  const [folderError, setFolderError] = useState<string | null>(null);
+
+  const composerDescription = getLeadSheetComposerDescription(composerId);
+  const filenamePreview = useMemo(
+    () => previewLeadSheetOutputFilename(outputLabel, composerId, lastSourceFileName),
+    [composerId, lastSourceFileName, outputLabel]
+  );
+
+  const applyPanelStateFromResult = useCallback((response: LeadSheetFileInputResponse) => {
+    const panelState = mapLeadSheetFileInputResponseToPanelState(response);
+    setAdvisory(panelState.advisory ?? null);
+    setHarmonyConfidenceByBar(panelState.harmonyConfidenceByBar ?? []);
+    setHarmonyProvenanceByBar(panelState.harmonyProvenanceByBar ?? []);
+  }, []);
+
+  const runOnce = useCallback(
+    async (
+      filePath: string,
+      _sourceFileName: string,
+      overrides: LeadSheetHarmonyOverridesByBar
+    ): Promise<LeadSheetFileInputResponse | null> => {
+      const overridePayload = buildLeadSheetHarmonyOverridePayload(overrides);
+      const trimmedLabel = outputLabel.trim();
+      return runLeadSheetFileInputDesktop({
+        filePath,
+        composerId,
+        seed: hiddenVariationSeed(),
+        rhythmicActivity,
+        guitarCompDensity,
+        harmonyOverridesByBar: overridePayload,
+        ...(trimmedLabel ? { outputLabel: trimmedLabel } : {}),
+      });
+    },
+    [composerId, guitarCompDensity, outputLabel, rhythmicActivity]
+  );
 
   const runPipeline = useCallback(
-    async (filePath: string, sourceFileName: string, overrides: LeadSheetHarmonyOverridesByBar) => {
+    async (
+      filePath: string,
+      sourceFileName: string,
+      overrides: LeadSheetHarmonyOverridesByBar,
+      candidateCount: number
+    ) => {
       setStatusKind('running');
-      setCandidates([]);
-      setSelectedCandidateIndex(null);
-      setAdvisory(null);
-      setHarmonyConfidenceByBar([]);
-      setHarmonyProvenanceByBar([]);
+      setCompareCandidates([]);
+      setSelectedCompareIndex(null);
+      setFolderError(null);
 
-      const overridePayload = buildLeadSheetHarmonyOverridePayload(overrides);
       const batchResults: LeadSheetFileInputResponse[] = [];
 
-      for (let i = 0; i < MAX_CANDIDATES; i++) {
+      for (let i = 0; i < candidateCount; i++) {
         setStatusMessage(
-          `Running leadsheet pipeline for ${sourceFileName} (${composerId})… ${i + 1}/${MAX_CANDIDATES}`
+          candidateCount === 1
+            ? `Generating quintet for ${sourceFileName} (${composerId})…`
+            : `Generating version ${i + 1}/${candidateCount} for ${sourceFileName}…`
         );
 
-        const result = await runLeadSheetFileInputDesktop({
-          filePath,
-          composerId,
-          seed: hiddenVariationSeed(),
-          rhythmicActivity,
-          guitarCompDensity,
-          harmonyOverridesByBar: overridePayload,
-        });
+        const pipelineResult = await runOnce(filePath, sourceFileName, overrides);
 
-        if (!result.ok) {
+        if (!pipelineResult?.ok) {
+          setResult(null);
           setStatusKind('error');
-          setStatusMessage(result.error ?? `Leadsheet pipeline failed on version ${i + 1}/${MAX_CANDIDATES}.`);
+          setStatusMessage(
+            pipelineResult?.error ??
+              `Leadsheet pipeline failed${candidateCount > 1 ? ` on version ${i + 1}/${candidateCount}` : ''}.`
+          );
           return;
         }
 
-        batchResults.push(result);
+        batchResults.push(pipelineResult);
       }
 
-      const panelState = mapLeadSheetFileInputResponseToPanelState(batchResults[0]!);
-      setAdvisory(panelState.advisory ?? null);
-      setHarmonyConfidenceByBar(panelState.harmonyConfidenceByBar ?? []);
-      setHarmonyProvenanceByBar(panelState.harmonyProvenanceByBar ?? []);
-      setCandidates(batchResults);
-      setSelectedCandidateIndex(null);
-      setStatusKind('success');
-      setStatusMessage(`3 versions ready for ${sourceFileName}. Pick one below.`);
+      const primary = batchResults[0]!;
+      applyPanelStateFromResult(primary);
+      setResult(primary);
+
+      if (candidateCount > 1) {
+        setCompareCandidates(batchResults);
+        setSelectedCompareIndex(null);
+        setStatusKind('success');
+        setStatusMessage(`${candidateCount} versions ready. Compare below in More options.`);
+      } else {
+        setStatusKind('success');
+        setStatusMessage(`Quintet ready for ${sourceFileName}.`);
+      }
     },
-    [composerId, guitarCompDensity, rhythmicActivity]
+    [applyPanelStateFromResult, composerId, runOnce]
   );
 
-  const onUseCandidate = useCallback(async (index: number) => {
-    const candidate = candidates[index];
-    if (!candidate?.savedMusicXmlPath) return;
-
-    setSelectedCandidateIndex(index);
-
-    if (isDesktopIpc() && window.composerOsDesktop?.openFileDefaultApp) {
-      const openR = await window.composerOsDesktop.openFileDefaultApp(candidate.savedMusicXmlPath);
-      if (!openR.ok) {
-        setStatusMessage(`Could not open file: ${openR.error ?? 'unknown error'}.`);
-      }
+  const onGenerate = useCallback(async () => {
+    if (!lastFilePath || !lastSourceFileName) {
+      setStatusKind('error');
+      setStatusMessage('Choose a MusicXML or MIDI leadsheet file first.');
+      return;
     }
-  }, [candidates]);
+    await runPipeline(lastFilePath, lastSourceFileName, harmonyOverridesByBar, 1);
+  }, [harmonyOverridesByBar, lastFilePath, lastSourceFileName, runPipeline]);
 
-  const onOpenLeadSheetFile = useCallback(async () => {
+  const onGenerateCompareBatch = useCallback(async () => {
+    if (!lastFilePath || !lastSourceFileName) return;
+    await runPipeline(lastFilePath, lastSourceFileName, harmonyOverridesByBar, MAX_COMPARE_CANDIDATES);
+  }, [harmonyOverridesByBar, lastFilePath, lastSourceFileName, runPipeline]);
+
+  const onOpenFolder = useCallback(async (folderPath: string) => {
+    setFolderError(null);
+    try {
+      const r = await api.openOutputFolder({ path: folderPath });
+      if (!r.success && r.message) {
+        setFolderError(r.message);
+      }
+    } catch (e) {
+      setFolderError(e instanceof Error ? e.message : String(e));
+    }
+  }, []);
+
+  const onOpenFile = useCallback(async (filePath: string) => {
+    setFolderError(null);
+    if (!isDesktopIpc() || !window.composerOsDesktop?.openFileDefaultApp) {
+      setFolderError('Open file is only available in the desktop app.');
+      return;
+    }
+    const openR = await window.composerOsDesktop.openFileDefaultApp(filePath);
+    if (!openR.ok) {
+      setFolderError(openR.error ?? 'Could not open file.');
+    }
+  }, []);
+
+  const onChooseLeadSheetFile = useCallback(async () => {
     setStatusMessage('Choosing leadsheet file…');
     const picked = await pickLeadSheetFile();
     if (picked.canceled || !picked.ok || !picked.filepath) {
@@ -311,14 +400,19 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
     setHarmonyOverridesByBar({});
     setSelectedOverrideBar(null);
     setOverrideDraft('');
-    await runPipeline(picked.filepath, fileName, {});
-  }, [runPipeline]);
+    setResult(null);
+    setCompareCandidates([]);
+    setSelectedCompareIndex(null);
+    setAdvisory(null);
+    setHarmonyConfidenceByBar([]);
+    setHarmonyProvenanceByBar([]);
+    setStatusKind('idle');
+    setStatusMessage(`Loaded ${fileName}. Pick a style and click Generate.`);
+  }, []);
 
   const onAnotherVersion = useCallback(async () => {
     if (!lastFilePath || !lastSourceFileName) return;
-    setCandidates([]);
-    setSelectedCandidateIndex(null);
-    await runPipeline(lastFilePath, lastSourceFileName, harmonyOverridesByBar);
+    await runPipeline(lastFilePath, lastSourceFileName, harmonyOverridesByBar, 1);
   }, [harmonyOverridesByBar, lastFilePath, lastSourceFileName, runPipeline]);
 
   const onSelectOverrideBar = useCallback(
@@ -335,7 +429,7 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
     if (!symbol) return;
     const nextOverrides = { ...harmonyOverridesByBar, [selectedOverrideBar]: symbol };
     setHarmonyOverridesByBar(nextOverrides);
-    await runPipeline(lastFilePath, lastSourceFileName, nextOverrides);
+    await runPipeline(lastFilePath, lastSourceFileName, nextOverrides, 1);
   }, [
     harmonyOverridesByBar,
     lastFilePath,
@@ -351,7 +445,7 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
     delete nextOverrides[selectedOverrideBar];
     setHarmonyOverridesByBar(nextOverrides);
     setOverrideDraft('');
-    await runPipeline(lastFilePath, lastSourceFileName, nextOverrides);
+    await runPipeline(lastFilePath, lastSourceFileName, nextOverrides, 1);
   }, [harmonyOverridesByBar, lastFilePath, lastSourceFileName, runPipeline, selectedOverrideBar]);
 
   const statusStyle =
@@ -361,183 +455,308 @@ export function LeadSheetInputDesktopPanel(): JSX.Element {
         ? statusErrorStyle
         : statusMutedStyle;
 
-  const canAnotherVersion = lastFilePath != null && statusKind !== 'running';
+  const canGenerate = lastFilePath != null && statusKind !== 'running';
+  const savedPath = result?.savedMusicXmlPath;
 
   return (
-    <section style={panelStyle} aria-labelledby="leadsheet-input-desktop-heading">
-      <h2 id="leadsheet-input-desktop-heading" style={{ margin: '0 0 0.35rem', fontSize: '1rem' }}>
-        Lead Sheet Input (File→Open)
+    <section style={panelStyle} aria-labelledby="leadsheet-input-desktop-heading" data-testid="leadsheet-guided-panel">
+      <h2 id="leadsheet-input-desktop-heading" style={{ margin: '0 0 0.75rem', fontSize: '1rem' }}>
+        Lead Sheet Input
       </h2>
-      <p style={{ margin: '0 0 0.75rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-        Desktop-only path: MusicXML or MIDI leadsheet → quintet + melody hand-off (parallel to Generate).
-        Composer picker: {leadSheetComposerRosterText()}.{' '}
-        <strong>MIDI input v1 supports single-track melody MIDI.</strong> Multi-track exports (Sibelius/DAW
-        with separate lead / harmony / drums) will mislabel melody and harmony. For multi-track scores, use
-        MusicXML export. Multi-track MIDI support will come in v2. MIDI import quantizes melody to eighth notes.
-      </p>
 
-      <label htmlFor="leadsheet-input-composer" style={{ display: 'block', fontSize: '0.85rem', marginBottom: 4 }}>
-        Composer
-      </label>
-      <select
-        id="leadsheet-input-composer"
-        value={composerId}
-        onChange={(e) => setComposerId(e.target.value as LeadSheetFileInputComposerId)}
-        disabled={statusKind === 'running'}
-        style={{ width: '100%', maxWidth: 280, marginBottom: '0.75rem' }}
-      >
-        {LEADSHEET_FILE_INPUT_COMPOSER_OPTIONS.map((opt) => (
-          <option key={opt.id} value={opt.id} title={opt.title}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-
-      <VariationSlider
-        id="leadsheet-rhythmic-activity"
-        label="Rhythmic activity"
-        leftHint="calmer"
-        rightHint="more active"
-        value={rhythmicActivity}
-        onChange={setRhythmicActivity}
-        disabled={statusKind === 'running'}
-      />
-
-      <VariationSlider
-        id="leadsheet-guitar-comp"
-        label="Guitar comp"
-        leftHint="lighter"
-        rightHint="busier"
-        value={guitarCompDensity}
-        onChange={setGuitarCompDensity}
-        disabled={statusKind === 'running'}
-      />
-
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
-        <button
-          type="button"
-          onClick={() => void onOpenLeadSheetFile()}
-          disabled={statusKind === 'running'}
-          style={{ fontSize: '0.9rem' }}
-        >
-          {statusKind === 'running' ? 'Running…' : 'Open MusicXML or MIDI leadsheet…'}
-        </button>
-        {canAnotherVersion ? (
+      <div style={stepStyle}>
+        <h3 style={stepHeadingStyle}>1. Load MusicXML or MIDI</h3>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
           <button
             type="button"
             className="secondary"
-            onClick={() => void onAnotherVersion()}
+            onClick={() => void onChooseLeadSheetFile()}
             disabled={statusKind === 'running'}
             style={{ fontSize: '0.9rem' }}
           >
-            Another version
+            Choose file…
           </button>
+          <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+            {lastSourceFileName ? `Loaded: ${lastSourceFileName}` : 'No file selected'}
+          </span>
+        </div>
+      </div>
+
+      <div style={stepStyle}>
+        <h3 style={stepHeadingStyle}>2. Style</h3>
+        <label htmlFor="leadsheet-input-composer" style={{ display: 'block', fontSize: '0.85rem', marginBottom: 4 }}>
+          Composer
+        </label>
+        <select
+          id="leadsheet-input-composer"
+          value={composerId}
+          onChange={(e) => setComposerId(e.target.value as LeadSheetFileInputComposerId)}
+          disabled={statusKind === 'running'}
+          style={{ width: '100%', maxWidth: 280, marginBottom: '0.45rem' }}
+        >
+          {LEADSHEET_FILE_INPUT_COMPOSER_OPTIONS.map((opt) => (
+            <option key={opt.id} value={opt.id} title={opt.title}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+        {composerDescription ? (
+          <p
+            data-testid="leadsheet-composer-description"
+            style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.45 }}
+          >
+            <strong>{LEADSHEET_FILE_INPUT_COMPOSER_OPTIONS.find((o) => o.id === composerId)?.label}:</strong>{' '}
+            {composerDescription}
+          </p>
         ) : null}
       </div>
 
-      {statusMessage ? (
+      <div style={stepStyle}>
+        <h3 style={stepHeadingStyle}>3. Output name (optional)</h3>
+        <label htmlFor="leadsheet-output-label" className="visually-hidden">
+          Output name
+        </label>
+        <input
+          id="leadsheet-output-label"
+          type="text"
+          value={outputLabel}
+          onChange={(e) => setOutputLabel(e.target.value)}
+          placeholder="e.g. my-bridge-take"
+          disabled={statusKind === 'running'}
+          data-testid="leadsheet-output-label"
+          style={{
+            width: '100%',
+            maxWidth: 360,
+            padding: '0.45rem 0.6rem',
+            borderRadius: 6,
+            border: '1px solid var(--border)',
+            background: 'var(--bg-input, var(--bg))',
+            color: 'var(--text)',
+          }}
+        />
+        <p style={{ margin: '0.35rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+          Saves as <code style={{ fontSize: '0.76rem' }}>{filenamePreview}</code>
+        </p>
+      </div>
+
+      <div style={stepStyle}>
+        <h3 style={stepHeadingStyle}>4. Generate</h3>
+        <button
+          type="button"
+          onClick={() => void onGenerate()}
+          disabled={!canGenerate}
+          data-testid="leadsheet-generate-primary"
+          style={{ fontSize: '0.95rem' }}
+        >
+          {statusKind === 'running' ? 'Generating…' : 'Generate'}
+        </button>
+      </div>
+
+      {statusMessage && statusKind !== 'success' ? (
         <div role="status" style={statusStyle}>
           {statusMessage}
         </div>
       ) : null}
 
-      {advisory ? (
-        <div
-          role="status"
-          aria-label="Harmony inferred advisory"
-          data-testid="leadsheet-harmony-advisory"
-          style={advisoryBannerStyle}
-        >
-          <strong>Harmony inferred (advisory)</strong>
-          <div style={{ marginTop: 4, color: 'var(--text-muted)' }}>{advisory}</div>
-          {harmonyConfidenceByBar.length > 0 ? (
-            <HarmonyConfidenceStrip
-              confidences={harmonyConfidenceByBar}
-              provenanceByBar={harmonyProvenanceByBar}
-              overridesByBar={harmonyOverridesByBar}
-              selectedBar={selectedOverrideBar}
-              disabled={statusKind === 'running'}
-              onSelectBar={onSelectOverrideBar}
-            />
-          ) : null}
-          {selectedOverrideBar != null && advisory ? (
-            <div
-              data-testid="leadsheet-harmony-override-editor"
-              style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}
+      {savedPath && statusKind === 'success' ? (
+        <div style={stepStyle} data-testid="leadsheet-result-panel">
+          <h3 style={stepHeadingStyle}>5. Output</h3>
+          <div style={resultPanelStyle} role="status">
+            <p style={{ margin: '0 0 0.5rem', fontWeight: 600 }}>{statusMessage ?? 'Quintet ready.'}</p>
+            <p
+              data-testid="leadsheet-output-path"
+              style={{ margin: '0 0 0.5rem', wordBreak: 'break-all', fontFamily: 'ui-monospace, monospace', fontSize: '0.8rem' }}
             >
-              <label htmlFor="leadsheet-harmony-override-input" style={{ fontSize: '0.82rem' }}>
-                Bar {selectedOverrideBar} chord
-              </label>
-              <input
-                id="leadsheet-harmony-override-input"
-                type="text"
-                value={overrideDraft}
-                onChange={(e) => setOverrideDraft(e.target.value)}
-                disabled={statusKind === 'running'}
-                placeholder="e.g. Dm7"
-                style={{ flex: '1 1 120px', maxWidth: 160, fontSize: '0.82rem' }}
-              />
+              {savedPath}
+            </p>
+            <p style={{ margin: '0 0 0.65rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+              {result?.partCount ?? 0} parts · {result?.barCount ?? 0} bars
+              {result?.handoffVariationDetected ? ' · melody hand-off ✓' : ''}
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
               <button
                 type="button"
-                onClick={() => void onSaveOverride()}
-                disabled={statusKind === 'running' || !overrideDraft.trim()}
-                style={{ fontSize: '0.82rem' }}
+                className="secondary"
+                onClick={() => void onOpenFolder(dirnameOnly(savedPath))}
+                data-testid="leadsheet-open-folder"
               >
-                Save
+                Open folder
               </button>
               <button
                 type="button"
                 className="secondary"
-                onClick={() => void onClearOverride()}
-                disabled={
-                  statusKind === 'running' ||
-                  (harmonyOverridesByBar[selectedOverrideBar] == null && !overrideDraft.trim())
-                }
-                style={{ fontSize: '0.82rem' }}
+                onClick={() => void onOpenFile(savedPath)}
+                data-testid="leadsheet-open-file"
               >
-                Clear
+                Open file
               </button>
             </div>
-          ) : null}
+            {folderError ? (
+              <p style={{ margin: '0.5rem 0 0', fontSize: '0.82rem', color: 'var(--error)' }}>
+                {folderError}
+              </p>
+            ) : null}
+          </div>
         </div>
       ) : null}
 
-      {candidates.length > 0 ? (
-        <div style={galleryStyle} aria-label="Generated version gallery">
-          {candidates.map((candidate, i) => {
-            const selected = selectedCandidateIndex === i;
-            return (
-              <article
-                key={candidate.savedMusicXmlPath ?? i}
-                style={candidateCardStyle(selected)}
-                aria-current={selected ? 'true' : undefined}
+      <details style={{ marginTop: '0.5rem' }}>
+        <summary style={{ cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}>
+          More options
+        </summary>
+        <div style={{ marginTop: '0.75rem' }}>
+          <VariationSlider
+            id="leadsheet-rhythmic-activity"
+            label="Rhythmic activity"
+            leftHint="calmer"
+            rightHint="more active"
+            value={rhythmicActivity}
+            onChange={setRhythmicActivity}
+            disabled={statusKind === 'running'}
+          />
+
+          <VariationSlider
+            id="leadsheet-guitar-comp"
+            label="Guitar comp"
+            leftHint="lighter"
+            rightHint="busier"
+            value={guitarCompDensity}
+            onChange={setGuitarCompDensity}
+            disabled={statusKind === 'running'}
+          />
+
+          <p style={{ margin: '0 0 0.75rem', fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
+            <strong>MIDI input v1 supports single-track melody MIDI.</strong> Multi-track exports (Sibelius/DAW with
+            separate lead / harmony / drums) will mislabel melody and harmony. For multi-track scores, use MusicXML
+            export. Multi-track MIDI support will come in v2. MIDI import quantizes melody to eighth notes.
+          </p>
+
+          {canGenerate ? (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => void onAnotherVersion()}
+                disabled={statusKind === 'running'}
               >
-                <div style={{ fontWeight: 600 }}>Version {i + 1}</div>
-                <div
-                  style={{ fontSize: '0.75rem', wordBreak: 'break-all', color: 'var(--text-muted)' }}
-                  title={candidate.savedMusicXmlPath}
-                >
-                  {outputFileName(candidate.savedMusicXmlPath)}
-                </div>
-                <div>
-                  {candidate.partCount ?? 0} parts · {candidate.barCount ?? 0} bars
-                </div>
-                {candidate.handoffVariationDetected ? (
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>melody hand-off ✓</div>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={() => void onUseCandidate(i)}
+                Another version
+              </button>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => void onGenerateCompareBatch()}
+                disabled={statusKind === 'running'}
+              >
+                Generate 3 versions to compare
+              </button>
+            </div>
+          ) : null}
+
+          {advisory ? (
+            <div
+              role="status"
+              aria-label="Harmony inferred advisory"
+              data-testid="leadsheet-harmony-advisory"
+              style={advisoryBannerStyle}
+            >
+              <strong>Harmony inferred (advisory)</strong>
+              <div style={{ marginTop: 4, color: 'var(--text-muted)' }}>{advisory}</div>
+              {harmonyConfidenceByBar.length > 0 ? (
+                <HarmonyConfidenceStrip
+                  confidences={harmonyConfidenceByBar}
+                  provenanceByBar={harmonyProvenanceByBar}
+                  overridesByBar={harmonyOverridesByBar}
+                  selectedBar={selectedOverrideBar}
                   disabled={statusKind === 'running'}
-                  style={{ fontSize: '0.82rem', marginTop: '0.25rem' }}
+                  onSelectBar={onSelectOverrideBar}
+                />
+              ) : null}
+              {selectedOverrideBar != null && advisory ? (
+                <div
+                  data-testid="leadsheet-harmony-override-editor"
+                  style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}
                 >
-                  Use this
-                </button>
-              </article>
-            );
-          })}
+                  <label htmlFor="leadsheet-harmony-override-input" style={{ fontSize: '0.82rem' }}>
+                    Bar {selectedOverrideBar} chord
+                  </label>
+                  <input
+                    id="leadsheet-harmony-override-input"
+                    type="text"
+                    value={overrideDraft}
+                    onChange={(e) => setOverrideDraft(e.target.value)}
+                    disabled={statusKind === 'running'}
+                    placeholder="e.g. Dm7"
+                    style={{ flex: '1 1 120px', maxWidth: 160, fontSize: '0.82rem' }}
+                  />
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => void onSaveOverride()}
+                    disabled={statusKind === 'running' || !overrideDraft.trim()}
+                    style={{ fontSize: '0.82rem' }}
+                  >
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => void onClearOverride()}
+                    disabled={
+                      statusKind === 'running' ||
+                      (harmonyOverridesByBar[selectedOverrideBar] == null && !overrideDraft.trim())
+                    }
+                    style={{ fontSize: '0.82rem' }}
+                  >
+                    Clear
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {compareCandidates.length > 0 ? (
+            <div style={galleryStyle} aria-label="Generated version gallery">
+              {compareCandidates.map((candidate, i) => {
+                const selected = selectedCompareIndex === i;
+                return (
+                  <article
+                    key={candidate.savedMusicXmlPath ?? i}
+                    style={candidateCardStyle(selected)}
+                    aria-current={selected ? 'true' : undefined}
+                  >
+                    <div style={{ fontWeight: 600 }}>Version {i + 1}</div>
+                    <div
+                      style={{ fontSize: '0.75rem', wordBreak: 'break-all', color: 'var(--text-muted)' }}
+                      title={candidate.savedMusicXmlPath}
+                    >
+                      {outputFileName(candidate.savedMusicXmlPath)}
+                    </div>
+                    <div>
+                      {candidate.partCount ?? 0} parts · {candidate.barCount ?? 0} bars
+                    </div>
+                    {candidate.handoffVariationDetected ? (
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>melody hand-off ✓</div>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="secondary"
+                      onClick={() => {
+                        setSelectedCompareIndex(i);
+                        setResult(candidate);
+                        applyPanelStateFromResult(candidate);
+                      }}
+                      disabled={statusKind === 'running'}
+                      style={{ fontSize: '0.82rem', marginTop: '0.25rem' }}
+                    >
+                      Use in result
+                    </button>
+                  </article>
+                );
+              })}
+            </div>
+          ) : null}
         </div>
-      ) : null}
+      </details>
     </section>
   );
 }
