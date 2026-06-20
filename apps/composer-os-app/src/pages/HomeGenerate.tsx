@@ -7199,6 +7199,16 @@ export function HomeGenerate({
 
       {showSongModeTileControls && (
         <>
+          <MosaicSectionPlanner
+            sections={mosaicSections}
+            onChange={setMosaicSections}
+            outputFormat={mosaicOutputFormat}
+            onOutputFormatChange={setMosaicOutputFormat}
+            importTimeline={mosaicImportWorkflow.state.importTimeline}
+            plannerTotalBars={totalBars}
+            onTotalBarsChange={setTotalBars}
+            disabled={loading}
+          />
           <SlonimskyUniversalPanel
             state={slonimskyMacro}
             onChange={setSlonimskyMacro}
@@ -9491,16 +9501,6 @@ export function HomeGenerate({
             onImprovModeChange={setImprovModeUi}
             stochasticVariance={stochasticVarianceUi}
             onStochasticVarianceChange={setStochasticVarianceUi}
-          />
-          <MosaicSectionPlanner
-            sections={mosaicSections}
-            onChange={setMosaicSections}
-            outputFormat={mosaicOutputFormat}
-            onOutputFormatChange={setMosaicOutputFormat}
-            importTimeline={mosaicImportWorkflow.state.importTimeline}
-            plannerTotalBars={totalBars}
-            onTotalBarsChange={setTotalBars}
-            disabled={loading}
           />
           {uiInstrumentGroup === 'big_band' && (
             <BigBandRhythmControls
