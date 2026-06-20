@@ -48,12 +48,6 @@ function mergeIntervals(intervals: Array<{ start: number; end: number }>): Array
   return merged;
 }
 
-function soundingIntervals(events: ScoreEvent[]): Array<{ start: number; end: number }> {
-  return events
-    .filter((e) => e.kind === 'note' || e.kind === 'chord')
-    .map(eventInterval);
-}
-
 function subtractInterval(
   start: number,
   end: number,
@@ -97,11 +91,17 @@ function toRest(event: ScoreEvent): RestEvent {
   };
 }
 
+function occupiedIntervals(events: ScoreEvent[]): Array<{ start: number; end: number }> {
+  return events
+    .filter((e) => e.kind === 'note' || e.kind === 'chord' || e.kind === 'rest')
+    .map(eventInterval);
+}
+
 function stripMelodyMeasure(measure: MeasureModel): void {
   const span = measureBeatSpan(measure);
   const voice1 = measure.events.filter((e) => !isVoice2(e.voice));
   const voice2 = measure.events.filter((e) => isVoice2(e.voice));
-  const v1Cover = soundingIntervals(voice1);
+  const v1Cover = occupiedIntervals(voice1);
   const gapRests: RestEvent[] = [];
   for (const v2 of voice2) {
     const { start, end } = eventInterval(v2);

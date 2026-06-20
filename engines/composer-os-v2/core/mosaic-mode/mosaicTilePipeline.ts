@@ -484,7 +484,7 @@ function injectMosaicMotifNotesPostFinalizeCore(
         const e = m.events[ei]!;
         if (tileSection) {
           if (e.kind === 'note' || e.kind === 'rest') m.events.splice(ei, 1);
-        } else if (e.kind === 'note' && (e as NoteEvent).motifRef?.startsWith('mosaic_motif_')) {
+        } else if ((e.voice ?? 1) === 1 && (e.kind === 'note' || e.kind === 'rest')) {
           m.events.splice(ei, 1);
         }
       }

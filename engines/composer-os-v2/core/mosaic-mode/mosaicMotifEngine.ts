@@ -119,6 +119,21 @@ function enforceMaxConsecutiveSteps(intervals: number[], maxSteps: number): numb
   return out;
 }
 
+/** Fripp qw4 pulse cell is a 2-beat eighth grid; tile across full 4/4 for bar-math. */
+function buildFrippFourFourSpikyRhythm(
+  noteCount: number,
+  barBeats: number
+): CoreMotif['rhythmPattern'] {
+  const eighth = 0.5;
+  const rhythm: CoreMotif['rhythmPattern'] = [];
+  for (let i = 0; i < noteCount; i++) {
+    const startBeat = i * eighth;
+    if (startBeat + eighth > barBeats + 1e-6) break;
+    rhythm.push({ startBeat, duration: eighth });
+  }
+  return rhythm;
+}
+
 function buildRhythmFromPulseCell(
   pattern: readonly number[],
   noteCount: number,
@@ -177,13 +192,16 @@ function expandMotifForVrbPolicy(
   const pulseCell = vrb.rhythmPolicy.pulseCell;
   if (notesPerBar === undefined && !pulseCell) return motif;
 
-  const noteCount = notesPerBar ?? motif.rhythmPattern.length;
+  let noteCount = notesPerBar ?? motif.rhythmPattern.length;
   const weights = vrb.melodicPolicy.preferredIntervalWeights;
   const preferredSets = vrb.melodicPolicy.preferredIntervalSets;
   const frippCell = [1, 4, -5] as const;
   const wayneCell = [5, -2, 1, -2] as const;
   const isFrippFixedCell = vrb.voiceId === 'fripp' || vrb.voiceId?.startsWith('fripp');
   const isWayneFixedCell = vrb.voiceId === 'wayne_shorter' && Boolean(weights);
+  if (isFrippFixedCell && barBeats === 4) {
+    noteCount = Math.max(noteCount, 8);
+  }
   let intervalPattern: number[];
   if (isFrippFixedCell && (weights || preferredSets?.length)) {
     intervalPattern = Array.from(
@@ -234,9 +252,12 @@ function expandMotifForVrbPolicy(
       vrb.melodicPolicy.maxConsecutiveSteps
     );
   }
-  const rhythmPattern = pulseCell
-    ? buildRhythmFromPulseCell(pulseCell.pattern, noteCount, barBeats, barIndexInSection)
-    : motif.rhythmPattern.slice(0, noteCount).map((r) => ({ ...r }));
+  const rhythmPattern =
+    isFrippFixedCell && barBeats === 4
+      ? buildFrippFourFourSpikyRhythm(noteCount, barBeats)
+      : pulseCell
+        ? buildRhythmFromPulseCell(pulseCell.pattern, noteCount, barBeats, barIndexInSection)
+        : motif.rhythmPattern.slice(0, noteCount).map((r) => ({ ...r }));
 
   return {
     ...motif,
@@ -284,6 +305,8 @@ export function mosaicMotifNotesForBar(
 ): MosaicMotifBarNote[] {
   const vrb = getVoiceRuleBundle(songwriterStyleId);
   const expanded = expandMotifForVrbPolicy(core, vrb, seed, barBeats, barIndexInSection);
+  const isFrippFourFourBar =
+    (vrb.voiceId === 'fripp' || vrb.voiceId?.startsWith('fripp')) && barBeats === 4;
   const notes: MosaicMotifBarNote[] = [];
   let pitch = startMidi;
   let prevPitch: number | null = continueFromPitch ?? null;
@@ -298,7 +321,7 @@ export function mosaicMotifNotesForBar(
   for (let i = 0; i < expanded.rhythmPattern.length; i++) {
     const rh = expanded.rhythmPattern[i]!;
     if (rh.startBeat >= barBeats - 1e-6) continue;
-    const tailGap = 0.5;
+    const tailGap = isFrippFourFourBar ? 0 : 0.5;
     const maxDur = Math.max(0, barBeats - rh.startBeat - tailGap);
     const duration = Math.min(rh.duration, maxDur);
     if (duration <= 0) continue;
