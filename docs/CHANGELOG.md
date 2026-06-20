@@ -37,6 +37,8 @@
 
 ### Fixed
 
+- **Art Rock mosaic — skip Metheny behaviour gate on riff VRB paths** — **`behaviourGates.ts`** skips **`validateMethenyConformance`** when primary or **`mosaicSectionPlan`** includes Art Rock riff VRB composers (**`verlaine`** / **`marr`** / **`fripp`** / **`morello`**, or **`riffFamilyForSongwriterId === 'art_rock'`**); never skips when **`styleStack.primary === 'metheny'`**. Fixes unfair **"Density too busy for Metheny"** on Television Field Suite without changing Metheny thresholds or real **`pat_metheny`** / **`ecm_chamber`** paths. Proof: **`scripts/validateArtRockMosaicArc.ts`** (seed **90106**, golden path PASS).
+
 - **Desktop leadsheet GUI build unblock (Phase 6)** — Vite resolved stray compiled **`musicXmlDeepImport.js`** ahead of **`musicXmlDeepImport.ts`**, breaking Rollup named imports; **`apps/composer-os-app/vite.config.ts`** now prefers **`.ts`** before **`.js`** in **`resolve.extensions`** (parsing unchanged). Commit **`48cf6775`**.
 
 - **Evans Musician 32-bar bridge** — Bill Evans premium melody now plays end-to-end on the 32-bar Musician/desktop path (premium pin reordered before behaviour gates, tile-seam bar-math / co-onset repair at 8→32 bar seams, **`BE_Benchmark_LyricalBallad.musicxml`** fixture packaged into the desktop IPC bundle).

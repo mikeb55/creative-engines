@@ -52,6 +52,31 @@ import {
   isStyleTransferPreserveMelodyActive,
 } from '../import/mosaicStyleTransfer';
 import { isBeMusicianPremiumMelodyBridgeActive } from '../bill-evans/beMusicianPremiumMelodyBridge';
+import { riffFamilyForSongwriterId } from '../song-mode/songwriterStyleProfiles';
+
+/** Art Rock mosaic / riff VRB composers — skip Metheny secondary gate only (not primary Metheny paths). */
+const ART_ROCK_METHENY_GATE_BYPASS_COMPOSER_IDS = new Set(['verlaine', 'marr', 'fripp', 'morello']);
+
+function isArtRockMethenyGateBypassPath(compositionContext?: CompositionContext): boolean {
+  const md = compositionContext?.generationMetadata;
+  if (!md) return false;
+
+  const primary = md.songwriterStyleId?.trim().toLowerCase();
+  if (primary) {
+    if (ART_ROCK_METHENY_GATE_BYPASS_COMPOSER_IDS.has(primary)) return true;
+    if (riffFamilyForSongwriterId(primary) === 'art_rock') return true;
+  }
+
+  const plan = md.mosaicSectionPlan;
+  if (Array.isArray(plan)) {
+    for (const entry of plan) {
+      const sid = entry.songwriterStyleId?.trim().toLowerCase();
+      if (sid && ART_ROCK_METHENY_GATE_BYPASS_COMPOSER_IDS.has(sid)) return true;
+    }
+  }
+
+  return false;
+}
 
 export interface SectionContrastResult {
   valid: boolean;
@@ -306,7 +331,14 @@ export function runBehaviourGates(
   const methenySongwriterId = opts?.compositionContext?.generationMetadata?.songwriterStyleId;
   const skipMethenyForSongwriter =
     methenySongwriterId === 'claus_ogerman' || methenySongwriterId === 'don_sebesky';
-  if (styleModules.includes('metheny') && opts?.presetId !== 'ecm_chamber' && !skipMethenyForSongwriter) {
+  const skipMethenyForArtRockPath =
+    styleStack?.primary !== 'metheny' && isArtRockMethenyGateBypassPath(opts?.compositionContext);
+  if (
+    styleModules.includes('metheny') &&
+    opts?.presetId !== 'ecm_chamber' &&
+    !skipMethenyForSongwriter &&
+    !skipMethenyForArtRockPath
+  ) {
     const metheny = validateMethenyConformance(guitarBarCount > 8 ? duoGateScore : score);
     methenyValid = metheny.valid;
     if (!metheny.valid) errors.push(...metheny.errors);
