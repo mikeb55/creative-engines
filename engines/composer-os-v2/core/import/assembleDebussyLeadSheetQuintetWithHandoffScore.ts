@@ -68,6 +68,8 @@ export type LeadSheetQuintetAssemblyOptions = {
   guitarCompDensity?: number;
   /** 1-based bar index → chord symbol; applied after import inference. */
   harmonyOverridesByBar?: LeadSheetHarmonyOverridesByBar;
+  /** Visible MusicXML work-title; proof title when omitted. */
+  scoreTitle?: string;
 };
 
 function rhythmicActivityToIntensity(activity: number): LeadSheetRhythmAntiLoopIntensity {
@@ -95,7 +97,9 @@ export function assembleDebussyLeadSheetQuintetWithHandoffScore(
   composerId = 'debussy',
   assemblyOptions?: LeadSheetQuintetAssemblyOptions,
 ): DebussyLeadSheetQuintetWithHandoffResult {
-  const base = assembleDebussyLeadSheetQuintetScore(seed, importTimeline, composerId);
+  const base = assembleDebussyLeadSheetQuintetScore(seed, importTimeline, composerId, {
+    scoreTitle: assemblyOptions?.scoreTitle,
+  });
   const effectivePlan =
     plan ?? buildLeadSheetMelodyHandoffPlan(base.spine.appliedHarmonyBars.length);
   const handoff = applyDebussyLeadSheetMelodyHandoff(base, effectivePlan, seed);

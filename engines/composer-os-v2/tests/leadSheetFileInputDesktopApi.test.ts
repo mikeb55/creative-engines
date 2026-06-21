@@ -93,14 +93,37 @@ export function runLeadSheetFileInputDesktopApiTests(): { ok: boolean; name: str
     const labeledBase = labeled.savedMusicXmlPath
       ? path.basename(labeled.savedMusicXmlPath)
       : '';
+    const labeledXml =
+      labeled.savedMusicXmlPath && fs.existsSync(labeled.savedMusicXmlPath)
+        ? fs.readFileSync(labeled.savedMusicXmlPath, 'utf8')
+        : '';
     out.push({
       ok:
         labeled.ok === true &&
         labeledBase.startsWith('my-bridge-take_debussy_v') &&
         labeledBase.endsWith('_quintet.musicxml') &&
         typeof labeled.savedMusicXmlPath === 'string' &&
-        fs.existsSync(labeled.savedMusicXmlPath!),
-      name: 'phase6 apiRunLeadSheetFileInput honors outputLabel stem',
+        fs.existsSync(labeled.savedMusicXmlPath!) &&
+        labeledXml.includes('<work-title>my-bridge-take</work-title>'),
+      name: 'phase6 apiRunLeadSheetFileInput outputLabel stem + MusicXML work-title',
+    });
+
+    const underscored = apiRunLeadSheetFileInput(
+      { filePath, composerId: 'debussy', outputLabel: 'meters_return' },
+      tmpOut
+    );
+    const underscoredXml =
+      underscored.savedMusicXmlPath && fs.existsSync(underscored.savedMusicXmlPath)
+        ? fs.readFileSync(underscored.savedMusicXmlPath, 'utf8')
+        : '';
+    out.push({
+      ok:
+        underscored.ok === true &&
+        (underscored.savedMusicXmlPath
+          ? path.basename(underscored.savedMusicXmlPath).startsWith('meters_return_debussy_v')
+          : false) &&
+        underscoredXml.includes('<work-title>meters return</work-title>'),
+      name: 'phase6 apiRunLeadSheetFileInput humanizes underscores in work-title only',
     });
   } catch (e) {
     out.push({

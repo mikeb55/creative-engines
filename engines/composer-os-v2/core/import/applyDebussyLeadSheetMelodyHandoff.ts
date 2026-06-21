@@ -196,7 +196,6 @@ export function applyDebussyLeadSheetMelodyHandoff(
   const totalBars = appliedHarmonyBars.length;
   const score = structuredClone(base.score) as ScoreModel;
   const composerId = spine.composerId ?? 'debussy';
-  score.title = `${composerId} LeadSheet Handoff Proof`;
 
   const lineSet = generateHandoffLineSet(spine.context, melody, totalBars, seed, composerId);
   const perBarMelodyOwnership = buildPerBarMelodyOwnership(plan, totalBars);

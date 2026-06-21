@@ -10,6 +10,7 @@ import {
   type LeadSheetHarmonyOverridesByBar,
   type LeadSheetHarmonyProvenanceBar,
 } from '../core/import/applyLeadSheetHarmonyOverrides';
+import { resolveLeadSheetQuintetScoreTitle } from '../core/import/assembleDebussyLeadSheetQuintetScore';
 import { runDebussyLeadSheetFileHandoffProof } from '../core/import/runDebussyLeadSheetFileHandoffProof';
 import { EXPECTED_QUINTET_PART_IDS } from '../core/import/runDebussyLeadSheetQuintetProof';
 
@@ -120,6 +121,7 @@ export function apiRunLeadSheetFileInput(
       rhythmicActivity,
       guitarCompDensity,
       harmonyOverridesByBar,
+      scoreTitle: resolveLeadSheetQuintetScoreTitle(req.outputLabel, composerId),
     });
 
     const partIds = proof.partIds;

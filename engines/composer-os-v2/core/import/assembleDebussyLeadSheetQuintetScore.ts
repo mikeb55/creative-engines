@@ -26,6 +26,25 @@ import { pinMelodyOnScore, verifyPinnedMelodyOnScore } from './mosaicStyleTransf
 
 const SQ_PART_IDS = [SQ_PART_V1, SQ_PART_V2, SQ_PART_VA, SQ_PART_VC] as const;
 
+const MAX_LEADSHEET_SCORE_TITLE_LEN = 200;
+
+export type LeadSheetQuintetScoreTitleOptions = {
+  /** User-facing score title; falls back to proof title when omitted. */
+  scoreTitle?: string;
+};
+
+/** Visible score title from optional user output label (underscores → spaces). */
+export function resolveLeadSheetQuintetScoreTitle(
+  outputLabel: string | undefined,
+  composerId: string
+): string {
+  const trimmed = typeof outputLabel === 'string' ? outputLabel.trim() : '';
+  if (trimmed) {
+    return trimmed.replace(/_/g, ' ').slice(0, MAX_LEADSHEET_SCORE_TITLE_LEN);
+  }
+  return `${composerId} LeadSheet Quintet Proof`;
+}
+
 function buildQuartetFormPlanForBars(totalBars: number): QuartetFormPlan {
   if (totalBars < 1) {
     throw new Error('buildQuartetFormPlanForBars: totalBars must be >= 1');
@@ -61,10 +80,14 @@ export interface DebussyLeadSheetQuintetAssemblyResult {
 export function assembleDebussyLeadSheetQuintetScore(
   seed = 90103,
   importTimeline?: MosaicImportTimeline,
-  composerId = 'debussy'
+  composerId = 'debussy',
+  titleOpts?: LeadSheetQuintetScoreTitleOptions
 ): DebussyLeadSheetQuintetAssemblyResult {
   const spine = buildDebussyLeadSheetHarmonySpine(seed, importTimeline, composerId);
-  const proofTitle = `${composerId} LeadSheet Quintet Proof`;
+  const proofTitle =
+    typeof titleOpts?.scoreTitle === 'string' && titleOpts.scoreTitle.trim()
+      ? titleOpts.scoreTitle.trim().slice(0, MAX_LEADSHEET_SCORE_TITLE_LEN)
+      : `${composerId} LeadSheet Quintet Proof`;
   const { importTimeline: resolvedImportTimeline, appliedHarmonyBars, generationMetadata } = spine;
 
   let guitarScore = buildMelodyOnlyHarmonyScaffoldScore(appliedHarmonyBars, {
