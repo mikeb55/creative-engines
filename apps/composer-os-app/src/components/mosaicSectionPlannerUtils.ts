@@ -262,3 +262,62 @@ export function suggestSectionsFromImport(ir: MosaicImportTimeline): MosaicSecti
 export function planHasContent(sections: MosaicSectionPlanEntry[]): boolean {
   return sections.length > 0;
 }
+
+/** Supported meter denominators — aligned with Structure MeterEditor / compositionSongUi. */
+export const VALID_METER_DENOMINATORS = [2, 4, 8, 16] as const;
+
+export type MeterTimeSignature = { numerator: number; denominator: number };
+
+/** Clamp numerator on blur/commit: integer 1–32. */
+export function clampMeterNumerator(raw: string | number, fallback = 4): number {
+  const n = Math.round(typeof raw === 'string' ? parseFloat(raw) : raw);
+  if (!Number.isFinite(n) || n <= 0) return fallback;
+  return Math.min(32, Math.max(1, n));
+}
+
+/** Clamp denominator on blur/commit: must be 2, 4, 8, or 16. */
+export function clampMeterDenominator(raw: string | number, fallback = 4): number {
+  const n = Math.round(typeof raw === 'string' ? parseFloat(raw) : raw);
+  if (VALID_METER_DENOMINATORS.includes(n as (typeof VALID_METER_DENOMINATORS)[number])) return n;
+  return fallback;
+}
+
+export function normalizeTimeSignature(
+  numerator: string | number,
+  denominator: string | number,
+  fallback: MeterTimeSignature = { numerator: 4, denominator: 4 },
+): MeterTimeSignature {
+  return {
+    numerator: clampMeterNumerator(numerator, fallback.numerator),
+    denominator: clampMeterDenominator(denominator, fallback.denominator),
+  };
+}
+
+export function isValidTimeSignature(ts: MeterTimeSignature): boolean {
+  return (
+    Number.isInteger(ts.numerator) &&
+    ts.numerator >= 1 &&
+    ts.numerator <= 32 &&
+    VALID_METER_DENOMINATORS.includes(ts.denominator as (typeof VALID_METER_DENOMINATORS)[number])
+  );
+}
+
+/** Read meter parts for UI display; `inherits` true when section has no explicit timeSignature. */
+export function readSectionMeterParts(section: MosaicSectionPlanEntry): {
+  numerator: number;
+  denominator: number;
+  inherits: boolean;
+} {
+  const ts = section.timeSignature;
+  if (!ts) {
+    return { numerator: 4, denominator: 4, inherits: true };
+  }
+  return {
+    ...normalizeTimeSignature(ts.numerator, ts.denominator),
+    inherits: false,
+  };
+}
+
+export function formatMeterLabel(ts: MeterTimeSignature): string {
+  return `${ts.numerator}/${ts.denominator}`;
+}

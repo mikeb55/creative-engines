@@ -4,10 +4,15 @@
 import type { MosaicImportTimeline } from '@composer-os/core/import/mosaicImportTimeline';
 import type { MosaicSectionPlanEntry } from '../../../apps/composer-os-app/src/components/MosaicSectionPlanner';
 import {
+  clampMeterDenominator,
+  clampMeterNumerator,
   computeMosaicPlannerWarnings,
   computeTimelineBlocks,
+  formatMeterLabel,
   hasMixedPresetSections,
+  normalizeTimeSignature,
   presetRoleColor,
+  readSectionMeterParts,
   resolvePlannerTotalBars,
   suggestSectionsFromImport,
 } from '../../../apps/composer-os-app/src/components/mosaicSectionPlannerUtils';
@@ -132,5 +137,49 @@ describe('mosaicSectionPlanner', () => {
     const ir = makeIr({ bars: 19 });
     expect(resolvePlannerTotalBars(sections, ir)).toBe(40);
     expect(resolvePlannerTotalBars(sections, ir, 40)).toBe(40);
+  });
+
+  test('J) free meter round-trip — arbitrary signatures preserved in readSectionMeterParts', () => {
+    const cases = [
+      { numerator: 7, denominator: 8 },
+      { numerator: 11, denominator: 8 },
+      { numerator: 5, denominator: 4 },
+      { numerator: 13, denominator: 16 },
+    ];
+    for (const ts of cases) {
+      const section: MosaicSectionPlanEntry = {
+        sectionLabel: 'odd',
+        startBar: 1,
+        endBar: 8,
+        songwriterStyleId: 'verlaine',
+        timeSignature: ts,
+      };
+      const read = readSectionMeterParts(section);
+      expect(read.inherits).toBe(false);
+      expect(read.numerator).toBe(ts.numerator);
+      expect(read.denominator).toBe(ts.denominator);
+      expect(formatMeterLabel(normalizeTimeSignature(ts.numerator, ts.denominator))).toBe(
+        `${ts.numerator}/${ts.denominator}`,
+      );
+    }
+  });
+
+  test('J2) inherit meter — no timeSignature on section', () => {
+    const section: MosaicSectionPlanEntry = {
+      sectionLabel: 'inherit',
+      startBar: 1,
+      endBar: 8,
+      songwriterStyleId: 'verlaine',
+    };
+    expect(readSectionMeterParts(section).inherits).toBe(true);
+  });
+
+  test('K) bad meter input rejection — clamp on commit', () => {
+    expect(clampMeterNumerator(0, 4)).toBe(4);
+    expect(clampMeterNumerator(-3, 4)).toBe(4);
+    expect(clampMeterNumerator(33, 4)).toBe(32);
+    expect(clampMeterDenominator(7, 4)).toBe(4);
+    expect(clampMeterDenominator(0, 8)).toBe(8);
+    expect(normalizeTimeSignature(0, 7)).toEqual({ numerator: 4, denominator: 4 });
   });
 });

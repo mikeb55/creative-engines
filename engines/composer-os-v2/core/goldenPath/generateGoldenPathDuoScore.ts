@@ -3291,6 +3291,17 @@ function buildGuitarPart(
   if (isMosaicModeActive(context)) {
     wireMosaicComposerRehearsalMarks(context);
   }
+  const mosaicPlanForMeter = genMeta?.mosaicSectionPlan ?? [];
+  if (isMosaicModeActive(context) && mosaicPlanForMeter.length > 0) {
+    const mosaicMeterMap = buildMosaicSectionBarMeterMap(
+      mosaicPlanForMeter,
+      totalBarsFromContext(context)
+    );
+    if (mosaicMeterMap) {
+      context.barMeterMap = mosaicMeterMap;
+      genMeta.barMeterMap = mosaicMeterMap;
+    }
+  }
   if (isMosaicModeActive(context) && !genMeta?.songModeHookFirstIdentity) {
     const mosaicSourceMotif = generateMosaicSourceMotif(context.seed, totalBarsFromContext(context));
     const mosaicSectionVariants = buildMosaicMotifVariants(
@@ -3300,17 +3311,6 @@ function buildGuitarPart(
     );
     genMeta.mosaicSourceMotif = mosaicSourceMotif;
     genMeta.mosaicSectionMotifVariants = mosaicSectionVariants;
-    const mosaicPlan = genMeta?.mosaicSectionPlan ?? [];
-    if (mosaicPlan.length > 0) {
-      const mosaicMeterMap = buildMosaicSectionBarMeterMap(
-        mosaicPlan,
-        totalBarsFromContext(context)
-      );
-      if (mosaicMeterMap) {
-        context.barMeterMap = mosaicMeterMap;
-        genMeta.barMeterMap = mosaicMeterMap;
-      }
-    }
   }
   if (isSongwriterBrianWilson && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeBrianWilsonEffectiveHarmonyBars(context);

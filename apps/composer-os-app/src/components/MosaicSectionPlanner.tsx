@@ -10,11 +10,16 @@ import {
 } from '@composer-os/core/mosaic-mode/mosaicSectionPlanPresets';
 import { MosaicSectionTimeline } from './MosaicSectionTimeline';
 import {
+  clampMeterDenominator,
+  clampMeterNumerator,
   computeMosaicPlannerWarnings,
   computeTimelineBlocks,
+  normalizeTimeSignature,
   planHasContent,
+  readSectionMeterParts,
   resolvePlannerTotalBars,
   suggestSectionsFromImport,
+  VALID_METER_DENOMINATORS,
   warningSummaryCounts,
   warningsForSection,
 } from './mosaicSectionPlannerUtils';
@@ -64,20 +69,91 @@ const PRESET_ROLE_OPTIONS: { id: MosaicPresetRoleUi; label: string }[] = [
   { id: 'string_quartet', label: 'String Quartet' },
 ];
 
-const METER_OPTIONS: { id: string; label: string; ts?: { numerator: number; denominator: number } }[] = [
-  { id: '', label: 'Optional (inherit)' },
-  { id: '4/4', label: '4/4', ts: { numerator: 4, denominator: 4 } },
-  { id: '3/4', label: '3/4', ts: { numerator: 3, denominator: 4 } },
-  { id: '5/4', label: '5/4', ts: { numerator: 5, denominator: 4 } },
-];
+function MosaicSectionMeterField(props: {
+  section: MosaicSectionPlanEntry;
+  disabled?: boolean;
+  inputStyle: CSSProperties;
+  onCommit: (patch: Partial<MosaicSectionPlanEntry>) => void;
+}) {
+  const { section, disabled, inputStyle, onCommit } = props;
+  const meter = readSectionMeterParts(section);
 
-function meterIdForSection(section: MosaicSectionPlanEntry): string {
-  const ts = section.timeSignature;
-  if (!ts) return '';
-  if (ts.numerator === 4 && ts.denominator === 4) return '4/4';
-  if (ts.numerator === 3 && ts.denominator === 4) return '3/4';
-  if (ts.numerator === 5 && ts.denominator === 4) return '5/4';
-  return '';
+  const commitMeter = (numerator: number, denominator: number) => {
+    onCommit({ timeSignature: normalizeTimeSignature(numerator, denominator) });
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <label
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+          fontSize: '0.68rem',
+          color: 'var(--text-muted)',
+          cursor: disabled ? 'default' : 'pointer',
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={meter.inherits}
+          disabled={disabled}
+          data-testid="mosaic-meter-inherit"
+          title="Use chart/project default meter for this section"
+          onChange={(e) => {
+            if (e.target.checked) {
+              onCommit({ timeSignature: undefined });
+            } else {
+              onCommit({ timeSignature: { numerator: 4, denominator: 4 } });
+            }
+          }}
+        />
+        Inherit
+      </label>
+      {!meter.inherits ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <input
+            type="number"
+            min={1}
+            max={32}
+            aria-label="Meter numerator"
+            data-testid="mosaic-meter-numerator"
+            title="Numerator 1–32"
+            value={meter.numerator}
+            disabled={disabled}
+            onChange={(e) => {
+              const v = clampMeterNumerator(e.target.value, meter.numerator);
+              commitMeter(v, meter.denominator);
+            }}
+            onBlur={(e) => {
+              const v = clampMeterNumerator(e.target.value, meter.numerator);
+              if (v !== meter.numerator) commitMeter(v, meter.denominator);
+            }}
+            style={{ ...inputStyle, width: '100%', minWidth: 0 }}
+          />
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>/</span>
+          <select
+            aria-label="Meter denominator"
+            data-testid="mosaic-meter-denominator"
+            title="Denominator: 2, 4, 8, or 16"
+            value={meter.denominator}
+            disabled={disabled}
+            onChange={(e) => {
+              const v = clampMeterDenominator(e.target.value, meter.denominator);
+              commitMeter(meter.numerator, v);
+            }}
+            style={{ ...inputStyle, width: '100%', minWidth: 0 }}
+          >
+            {VALID_METER_DENOMINATORS.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 function nextSectionDefaults(sections: MosaicSectionPlanEntry[]): Omit<MosaicSectionPlanEntry, 'sectionLabel'> {
@@ -164,6 +240,9 @@ export function MosaicSectionPlanner(props: {
       sections.map((row, i) => {
         if (i !== index) return row;
         const next = { ...row, ...patch };
+        if ('timeSignature' in patch && patch.timeSignature === undefined) {
+          delete next.timeSignature;
+        }
         if (patch.presetRole && patch.presetRole !== 'duo') {
           const allowed = composersForPresetRole(patch.presetRole).map((o) => o.id);
           if (!allowed.includes(next.songwriterStyleId)) {
@@ -255,6 +334,10 @@ export function MosaicSectionPlanner(props: {
       <h3 style={{ margin: '0 0 0.35rem', fontSize: '0.95rem', color: 'var(--text)' }}>Mosaic sections</h3>
       <p style={{ margin: '0 0 0.65rem', fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
         Plan 2+ sections with a composer per slice. Sent on Generate when at least two sections are defined.
+        {' '}
+        <strong style={{ fontWeight: 600 }}>Meter:</strong> Inherit uses the chart/project default (usually 4/4).
+        Uncheck Inherit to set a custom signature per section (e.g. 7/8, 11/8, 13/16).
+        Exotic meters may have soft rhythm/export limits on non-duo sections.
         {hasMixedPresetSections(sections) ? (
           <>
             {' '}
@@ -368,7 +451,7 @@ export function MosaicSectionPlanner(props: {
                 style={{
                   display: 'grid',
                   gridTemplateColumns:
-                    'minmax(72px, 1fr) 64px 64px minmax(120px, 1.2fr) minmax(96px, 0.9fr) minmax(108px, 1fr) auto',
+                    'minmax(72px, 1fr) 64px 64px minmax(120px, 1.2fr) minmax(120px, 1fr) minmax(96px, 0.9fr) auto',
                   gap: '0.35rem',
                   alignItems: 'end',
                   padding: '0.25rem',
@@ -427,21 +510,12 @@ export function MosaicSectionPlanner(props: {
                 </label>
                 <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                   Meter
-                  <select
-                    value={meterIdForSection(row)}
+                  <MosaicSectionMeterField
+                    section={row}
                     disabled={disabled}
-                    onChange={(e) => {
-                      const opt = METER_OPTIONS.find((m) => m.id === e.target.value);
-                      updateRow(index, { timeSignature: opt?.ts });
-                    }}
-                    style={inputStyle}
-                  >
-                    {METER_OPTIONS.map((m) => (
-                      <option key={m.id || 'inherit'} value={m.id}>
-                        {m.label}
-                      </option>
-                    ))}
-                  </select>
+                    inputStyle={inputStyle}
+                    onCommit={(patch) => updateRow(index, patch)}
+                  />
                 </label>
                 <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                   Preset

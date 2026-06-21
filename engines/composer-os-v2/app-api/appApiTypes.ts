@@ -351,6 +351,11 @@ export interface GenerateRequest {
     startBar: number;
     endBar: number;
     songwriterStyleId: string;
+    timeSignature?: {
+      numerator: number;
+      denominator: number;
+    };
+    presetRole?: 'duo' | 'big_band' | 'string_quartet';
     spineProtected?: boolean;
     mosaicOwned?: boolean;
     injectEligible?: boolean;
