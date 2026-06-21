@@ -1565,19 +1565,32 @@ function mosaicComposerRehearsalDisplayName(songwriterStyleId: string): string {
   );
 }
 
-/** Mosaic duo: section-start rehearsal labels use composer names (not generic A/B form labels). */
+/** Raw rehearsal text; exporter {@link formatSectionRehearsalLabel} title-cases on MusicXML export. */
+function mosaicSectionRehearsalMarkLabel(section: {
+  sectionLabel: string;
+  songwriterStyleId: string;
+}): string | undefined {
+  const sectionLabel = section.sectionLabel.trim().replace(/_/g, ' ');
+  const composerId = section.songwriterStyleId.trim();
+  const composer = composerId ? mosaicComposerRehearsalDisplayName(composerId) : '';
+  if (!sectionLabel && !composer) return undefined;
+  if (!sectionLabel) return composer;
+  if (!composer) return sectionLabel;
+  return `${sectionLabel}: ${composer}`;
+}
+
+/** Mosaic duo: one rehearsal mark per section start ("Label: Composer"); replaces inherited long-form A/B marks. */
 function wireMosaicComposerRehearsalMarks(context: CompositionContext): void {
   if (!isMosaicModeActive(context)) return;
   const plan = context.generationMetadata?.mosaicSectionPlan;
   if (!plan?.length) return;
-  const byBar = new Map(context.rehearsalMarkPlan.marks.map((m) => [m.bar, m.label] as const));
+  const marks: Array<{ bar: number; label: string }> = [];
   for (const section of plan) {
-    byBar.set(section.startBar, mosaicComposerRehearsalDisplayName(section.songwriterStyleId));
+    const label = mosaicSectionRehearsalMarkLabel(section);
+    if (label) marks.push({ bar: section.startBar, label });
   }
   context.rehearsalMarkPlan = {
-    marks: [...byBar.entries()]
-      .map(([bar, label]) => ({ bar, label }))
-      .sort((a, b) => a.bar - b.bar),
+    marks: marks.sort((a, b) => a.bar - b.bar),
   };
 }
 
