@@ -4260,7 +4260,7 @@ export function HomeGenerate({
           ...(bigBandConfig ? { bigBandConfig } : {}),
           ...(stringQuartetConfig ? { stringQuartetConfig } : {}),
           ...(contrapuntalConfig ? { contrapuntalConfig } : {}),
-          ...(!generateDrumGuide && !bandModeEnabled ? { skipDrumGuide: true as const } : {}),
+          ...(!generateDrumGuide ? { skipDrumGuide: true as const } : {}),
           ...(bandModeEnabled ? { bandModeEnabled: true as const } : {}),
           variationEnabled: variationEnabled,
           styleStack: isScorePreset ? DEFAULT_SCORE_STYLE_STACK : MINIMAL_STYLE_STACK,
@@ -10291,14 +10291,16 @@ export function HomeGenerate({
             type="checkbox"
             checked={generateDrumGuide}
             onChange={(e) => setGenerateDrumGuide(e.target.checked)}
-            disabled={loading || bandModeEnabled}
+            disabled={loading}
             aria-label="Generate drum guide (SD3)"
           />
           Generate drum guide (SD3)
         </label>
         <p style={{ margin: '0.35rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)', maxWidth: 520 }}>
           Exports a kick/snare MIDI guide and JSON sidecar next to the score when enabled.
-          {bandModeEnabled ? ' Band mode always includes the drum guide.' : ''}
+          {bandModeEnabled
+            ? ' Band mode still adds Drums to the MusicXML when this is off — only the sidecar files are skipped.'
+            : ''}
         </p>
       </div>
 

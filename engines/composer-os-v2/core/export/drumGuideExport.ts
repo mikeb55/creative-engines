@@ -63,14 +63,13 @@ function resolveDrumGuideBars(
   };
 }
 
-/** Band mode ON always exports drum guide; otherwise honour skipDrumGuide. */
+/** Honour skipDrumGuide; band mode drums in MusicXML are written separately. */
 export function shouldExportDrumGuide(
   skipDrumGuide: boolean | undefined,
-  bandModeEnabled: boolean | undefined,
+  _bandModeEnabled: boolean | undefined,
   skipPartialRegen = false
 ): boolean {
   if (skipPartialRegen) return false;
-  if (bandModeEnabled === true) return true;
   return skipDrumGuide !== true;
 }
 

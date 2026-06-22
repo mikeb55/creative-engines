@@ -591,7 +591,7 @@ export interface GenerateRequest {
   frippPolymeterSecondaryPresetId?: string;
   /**
    * When `true`, skip writing SD3-style drum guide MIDI/JSON next to the score. Omitted → guides are written.
-   * Ignored when {@link bandModeEnabled} is `true` (Band mode always exports the drum guide bundle).
+   * Applies with or without {@link bandModeEnabled} (Band mode drums in MusicXML are independent).
    */
   skipDrumGuide?: boolean;
   /**
