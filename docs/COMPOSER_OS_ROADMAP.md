@@ -624,6 +624,32 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 
 ## Future / Research Backlog
 
+### Band Mode — multi-block arranger (seed → varied long form)
+
+GOAL: input a short seed (e.g. 8 bars) and build longer forms (16/32/48/64) where each block VARIES, not just repeats.
+
+Variation dimensions wanted (all four):
+
+- different composer voice per block (verlaine/marr/fripp already exist)
+- different time signature per block (odd-meter quantiser already built)
+- harmony develops/reharmonises across blocks
+- arrangement thickens (instruments added as piece progresses)
+
+Block relationship: FREE — each block its own progression (not a tiled repeat).
+
+DESIGN DIRECTION (not yet built):
+
+- Reuse the EXISTING section system (intro/build/peak/tail already assign per-section composer voices) rather than tiling custom_locked.
+- Each block stays custom_locked internally (chords = bars per block) → no fight with the length lock.
+- NEW work needed = a "conductor" layer that takes a LIST of blocks and assembles one piece, handling arrangement thickening across blocks.
+- Constraint inherited from engine: total length multiple of 8, range 8–64.
+
+OPEN QUESTIONS before build:
+
+- input format for the block list (per-block: chords, composer, time sig)?
+- how does "harmony develops" work if blocks are free — manual per block, or auto-derived from block 1?
+- does arrangement thickening need new instrument-add logic or can it reuse band-mode parts?
+
 ### Band Mode — user-supplied progressions & variable length
 
 - Custom chord progressions now work via `runBandModeCustomProgression.ts` (proven: 19-chord 4-key non-diatonic, 0 substitutions). Needs a clean input interface, not hand-edited scripts.
