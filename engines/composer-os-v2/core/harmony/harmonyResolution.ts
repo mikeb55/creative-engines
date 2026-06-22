@@ -46,6 +46,24 @@ function assertLockedMatchesParsedWhenBothFull(
   }
 }
 
+/** Full-form locked/custom spine outranks mosaicMergedHarmonyBars for export truth; slice effective bars still run first. */
+function shouldPreferCustomHarmonySpineOverMosaic(context: CompositionContext): boolean {
+  const meta = context.generationMetadata;
+  const tb = context.form.totalBars;
+  const locked = context.lockedHarmonyBarsRaw;
+  const parsed = meta.parsedCustomProgressionBars;
+
+  if (meta.customHarmonyLocked === true) {
+    if (locked && locked.length === tb) return true;
+    if (parsed && parsed.length === tb) return true;
+  }
+  if (meta.harmonySource === 'custom') {
+    if (locked && locked.length === tb) return true;
+    if (parsed && parsed.length === tb) return true;
+  }
+  return false;
+}
+
 function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: CompositionContext): string {
   const locked = context.lockedHarmonyBarsRaw;
   const meta = context.generationMetadata;
@@ -68,6 +86,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   }
 
   if (
+    !shouldPreferCustomHarmonySpineOverMosaic(context) &&
     meta?.mosaicMergedHarmonyBars &&
     meta.mosaicMergedHarmonyBars.length === tb &&
     barIndex >= 1 &&

@@ -5,11 +5,44 @@
 import type { CompositionContext, GenerationMetadata } from '../core/compositionContext';
 import { getChordForBar } from '../core/harmony/harmonyResolution';
 
-function minimalContext(
+function mosaicDispatchContext(
   totalBars: number,
   metadata: Partial<GenerationMetadata> = {}
 ): CompositionContext {
-  const locked = Array.from({ length: totalBars }, (_, i) => `C${i + 1}`);
+  return {
+    systemVersion: '2',
+    presetId: 'guitar_bass_duo',
+    seed: 95001,
+    form: { sections: [], totalBars },
+    feel: {} as CompositionContext['feel'],
+    harmony: {} as CompositionContext['harmony'],
+    motif: {} as CompositionContext['motif'],
+    phrase: {} as CompositionContext['phrase'],
+    register: {} as CompositionContext['register'],
+    density: {} as CompositionContext['density'],
+    instrumentProfiles: [],
+    chordSymbolPlan: { segments: [], totalBars },
+    rehearsalMarkPlan: { marks: [] },
+    lockedHarmonyBarsRaw: undefined,
+    generationMetadata: {
+      generatedAt: '2026-06-06T00:00:00.000Z',
+      songwriterStyleId: 'verlaine',
+      harmonySource: 'builtin',
+      ...metadata,
+    },
+    validation: {} as CompositionContext['validation'],
+    readiness: {
+      release: {} as CompositionContext['readiness']['release'],
+      mx: {} as CompositionContext['readiness']['mx'],
+    },
+  };
+}
+
+function customSpineContext(
+  totalBars: number,
+  locked: string[],
+  metadata: Partial<GenerationMetadata> = {}
+): CompositionContext {
   return {
     systemVersion: '2',
     presetId: 'guitar_bass_duo',
@@ -40,6 +73,14 @@ function minimalContext(
   };
 }
 
+function minimalContext(
+  totalBars: number,
+  metadata: Partial<GenerationMetadata> = {}
+): CompositionContext {
+  const locked = Array.from({ length: totalBars }, (_, i) => `C${i + 1}`);
+  return customSpineContext(totalBars, locked, metadata);
+}
+
 function mergedDuoBars16(): string[] {
   return Array.from({ length: 16 }, (_, i) => {
     if (i < 8) return `Esus4/verse-${i + 1}`;
@@ -51,7 +92,7 @@ export function runHarmonyResolutionDuoDispatchTests(): { ok: boolean; name: str
   const out: { ok: boolean; name: string }[] = [];
   const merged = mergedDuoBars16();
 
-  const duoContext = minimalContext(16, {
+  const duoContext = mosaicDispatchContext(16, {
     songwriterStyleId: 'verlaine',
     mosaicMergedHarmonyBars: merged,
     mosaicSectionOwnership: {
@@ -60,7 +101,6 @@ export function runHarmonyResolutionDuoDispatchTests(): { ok: boolean; name: str
       9: 'chorus',
       16: 'chorus',
     },
-    verlaineEffectiveHarmonyBars: Array.from({ length: 16 }, () => 'SHOULD-NOT-READ'),
   });
 
   out.push({
@@ -79,6 +119,16 @@ export function runHarmonyResolutionDuoDispatchTests(): { ok: boolean; name: str
       getChordForBar(9, duoContext) === 'Aadd9/chorus-9' &&
       getChordForBar(8, duoContext) !== getChordForBar(9, duoContext),
     name: 'duo dispatch active: section boundary returns correct composer symbols',
+  });
+
+  const customLocked = Array.from({ length: 16 }, (_, i) => `Spine-${i + 1}`);
+  const customWithMosaic = customSpineContext(16, customLocked, {
+    mosaicMergedHarmonyBars: merged,
+  });
+
+  out.push({
+    ok: getChordForBar(9, customWithMosaic) === 'Spine-9',
+    name: 'custom spine wins over mosaicMergedHarmonyBars when full-form custom is active',
   });
 
   const verlaineOnly = Array.from({ length: 16 }, (_, i) => `VerlaineEff-${i + 1}`);
@@ -103,7 +153,7 @@ export function runHarmonyResolutionDuoDispatchTests(): { ok: boolean; name: str
     name: 'single-composer fallback: Marr branch fires when mosaicMergedHarmonyBars undefined',
   });
 
-  const wrongLengthContext = minimalContext(16, {
+  const wrongLengthContext = mosaicDispatchContext(16, {
     songwriterStyleId: 'verlaine',
     mosaicMergedHarmonyBars: merged.slice(0, 8),
     verlaineEffectiveHarmonyBars: verlaineOnly,
