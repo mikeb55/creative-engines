@@ -1,0 +1,146 @@
+ i am confused - one sentence to explain this in non technical human-friendly terms
+
+
+i am confused - one sentence to explain this in non technical human-friendly terms
+
+i am confused - one sentence to explain this in non technical human-friendly terms
+
+
+*******************
+
+Prompt Rules
+
+ 1. confirm you will minimise your commentary to brief sentences or better yet human-friendly bullet points.
+
+ 2. all prompts to be contained in a text box easily copied . followed by 'AIMS:' brief bullet point descritption of the promtps objectives and expected results
+
+3. avoid phrases like 'Regenerate seed 90106 ' i am a human. not a computer . there is no facility for me to generate a numbered seed
+
+4. before the text box containing the easy to copy prompt, say who it is for , e.g. 'For cursor' (to run code) or 'for Claude' (second opinion on thinking or prompt), or 'for ChatGPT' (GCE evaluate music) or 'for Mike' (listening)
+ 
+
+5. never ask if i am ready for a prompt. give your best, tight prompt, best suited to prevent cursor drifiting once you understand what is needed.
+
+
+
+**********************************************
+
+
+GCE CRITERIA
+  
+
+Composer OS — How AI agents access scoring criteria (GCE · LOCK · DCR · Style Profile Layer)
+
+CONTEXT
+Composer OS is a deterministic music-generation repo. Quality is governed by four integrated systems documented in-repo. Agents do NOT invent rubrics — they read canonical docs and/or run official evaluators in code.
+
+ENTRY POINT (read this first)
+docs/GCE_CANONICAL.md — single index for all agents (Cursor, Claude Code, Perplexity, ChatGPT)
+
+LIVE AUTHORITATIVE SOURCES
+| Role | Path |
+| Formal math + hard gates | docs/GCE_FRAMEWORK_V2.md |
+| Integrated workflow (GCE + LOCK + DCR + Style Layer) | docs/GCE_LOCK_DCR_STANDARDS.md |
+| Agent mode selection + chat output shape | .cursor/rules/gce-evaluation.mdc |
+| Pre-commit gates only | .cursor/rules/composer-os-quality-gates.mdc |
+| Repo agent handoff | AGENTS.md |
+| Architecture / pipeline eval hooks | docs/COMPOSER_OS_ARCHITECTURE.md |
+
+DO NOT USE (parked legacy — historical only)
+docs/GCE_FRAMEWORK.md, rules/gce_evaluation_framework.md, rules/gce/*.md, docs/RULES_of_EXCELLENCE.md
+
+────────────────────────────────────────
+1. GCE v2.0 — Grand Criteria of Excellence (musical quality score)
+────────────────────────────────────────
+What: 10 categories, each 0–10, weighted into overall score.
+Categories: cadential clarity · melodic identity · phrase grammar · harmony & language · rhythmic identity · structure & form · arrangement & orchestration · economy & focus · tension & release · thematic recall potential.
+Formulas/weights/thresholds: docs/GCE_FRAMEWORK_V2.md only.
+
+Calibrated bands (guidance — formulas unchanged):
+- 9.0 = aspirational north star (long-term benchmark)
+- 7.9–8.4 = current empirical release-quality / system-ceiling band
+- ≥7.9 = operational PASS for tuned shipped output
+- 6.5–7.8 = acceptable; one DCR pass on weakest category
+- <6.5 = materially weak; investigate
+
+GCE HARD GATES (auto-fail regardless of overall score):
+- Melodic identity ≤ 6
+- No section contrast
+- Cadential clarity coverage < 0.4
+- Final bar tension > 0.7 (accidental / unresolved ending)
+
+Short-form caveat (< ~16 bars, especially 8-bar leadsheets):
+Some categories are structurally limited (thematic recall, structure & form, parts of phrase grammar). Still meaningful: rhythm anti-loop, harmony/chord fidelity, range/idiomaticity, hard gates.
+
+TWO AGENT MODES (same math; different application):
+| Mode | When | Behaviour |
+| Formal / technical | Code changes, evaluator runs, LOCK/DCR/CI, release readiness, automated harness scores | Hard gates block; operational band applies; DCR one pass on weakest category |
+| Musician-facing / conversational | Chat: "GCE this", "is this good?", "pros and cons?" | Musical critique on 0–10 scale; NOT repo PASS/FAIL unless user explicitly asks for formal validation or mentions LOCK/DCR/CI |
+
+Default for chat: musician-facing. Open chat critiques with:
+"Interpreting GCE here as musician-facing critique, not formal repo release gating."
+
+Chat output shape (musician-facing): overall score · 2–4 strengths · 2–4 weaknesses · one highest-leverage improvement · tag as musical refinement / technical fix / architectural concern.
+
+────────────────────────────────────────
+2. LOCK — pre-commit compliance (merge blockers)
+────────────────────────────────────────
+LOCK hard gates are the real merge blockers. Calibrated GCE band is guidance; it does not override LOCK or GCE hard gates.
+
+L — Locked truth: harmony bars / slice precompute / effective harmony must match export XML and getChordForBar routing; no drift between UI symbols, engine bars, and MusicXML.
+O — Output integrity: export/readiness gates pass (exportIntegrityPassed receipt, schema-safe XML, shareable output paths).
+C — Category hard fails: no GCE hard gate violations on representative output.
+K — Key verification: engine/smoke changes → npm run test:composer-smoke; slice/docs → design-time GCE checklist on representative seeds.
+
+Runtime receipts on Generate: behaviourGatesPassed, exportIntegrityPassed (see behaviourGates.ts, composerOsAppGeneration.ts).
+
+────────────────────────────────────────
+3. DCR — build workflow (Design · Commit · Refine)
+────────────────────────────────────────
+Not "DPR" — the repo term is DCR.
+D — Design: goal, scope, GCE targets, Style Profile Layer, LOCK acceptance checks.
+C — Commit: implement deterministically; ship docs/changelog/playbook with user-facing changes.
+R — Refine: ONE pass on weakest GCE category OR single blocking LOCK item. No full rewrite. No infinite tweak loops. If still failing after one Refine → return to Design.
+
+On short-form: skip blind refine of structurally limited categories; re-score on full chart (≤64 bars) first.
+
+────────────────────────────────────────
+4. Style Profile Layer — per-composer monitoring
+────────────────────────────────────────
+Every composer slice (SongwriterRuleId) and relevant StyleProfile must define:
+- Primary GCE categories to monitor for that voice
+- Engine hooks (harmony precompute, melody profile, style engine)
+- Diagnostics (receipt prefixes: ec:*, fz:*, ba:*, etc.)
+- Eval entry points: slice smoke tests, npm run eval:<name>
+
+────────────────────────────────────────
+HOW AGENTS ACTUALLY RUN SCORES (code, not guesswork)
+────────────────────────────────────────
+Automated GCE implementation lives under engines/composer-os-v2/core/gce/ and core/evaluation/:
+- gceEvaluator.ts, gceAutoScorers.ts, lockGates.ts, featureExtractor.ts
+- behaviourGates.ts — pipeline behaviour + LOCK suite at generation time
+- leadSheetGceLockEvalRunner.ts — leadsheet quintet path: evaluateGce + evaluateLock
+
+CLI / npm entry points:
+- npm run eval:gce-styles — cross-preset style sweep (engines/composer-os-v2/scripts/gceStyleEval.ts)
+- npm run eval:<composer> — per-slice harness (eval:brian_wilson, eval:fagen, eval:bacharach, eval:ecm-texture, etc.)
+- npm run test:composer-smoke — aggregate smoke tier (~489 PASS rows / 94 suites full; sync CLAUDE.md + roadmap when allowlist changes)
+- Leadsheet proof CLIs: runLeadSheetOrbitGceLockProofCli.ts, runDebussyLeadSheetInputProofCli.ts, etc.
+
+Typical agent workflow for formal validation:
+1. Read docs/GCE_CANONICAL.md + docs/GCE_LOCK_DCR_STANDARDS.md
+2. Generate or load representative MusicXML/score for the touched path
+3. Run official evaluator script or smoke test for that slice
+4. Report: overall GCE, weakest category, hard gate PASS/FAIL, LOCK receipts
+5. If below band: one DCR refine on weakest craft category only
+
+Typical agent workflow for chat critique:
+1. Default musician-facing mode unless user says LOCK/DCR/CI/formal validation
+2. Apply GCE vocabulary musically; mark short-form structural limits
+3. Do not auto-fail sub-9 scores or recommend architecture rewrites from one low score
+
+────────────────────────────────────────
+QUICK PROMPT FOR ANOTHER ASSISTANT
+────────────────────────────────────────
+"You are evaluating Composer OS output. Start at docs/GCE_CANONICAL.md. Use formal mode only if I ask for LOCK/DCR/CI/release validation. Otherwise musician-facing critique. Hard gates and formulas are in docs/GCE_FRAMEWORK_V2.md. Pre-commit rules in docs/GCE_LOCK_DCR_STANDARDS.md. Do not use docs/GCE_FRAMEWORK.md or rules/gce_evaluation_framework.md (legacy). Prefer running npm run eval:<slice> or smoke tests over subjective invention."
+grantturnerstudio@gmail.com. Press tab to insert.
