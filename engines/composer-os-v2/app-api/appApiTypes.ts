@@ -1206,7 +1206,7 @@ export interface ImportEcho {
   keyEstimate: { tonic: string; mode: string; confidence: number };
   /** Per-bar harmony confidence for display strip. */
   harmonyConfidenceByBar: number[];
-  harmonyOriginByBar: ('explicit' | 'inferred' | 'carried' | 'defaulted')[];
+  harmonyOriginByBar: ('explicit' | 'inferred' | 'carried' | 'defaulted' | 'user-override')[];
   parseDiagnostics: string[];
   importHarmonyMode: string;
 }
