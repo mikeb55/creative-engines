@@ -39,6 +39,23 @@ const PROOF_SEED = 90106;
 const NON_MOSAIC_BAND_SEED = 88888;
 const SHORT_DUO_BARS = 16;
 const TOTAL_BARS = TELEVISION_FIELD_SUITE_PRESET.totalBars;
+const BAND_MODE_SMOKE_TOTAL = 8;
+
+/** Line-buffered progress on Windows (avoid silent block buffer during long runs). */
+function bandModeSmokeProgressLine(line: string): void {
+  process.stdout.write(`${line}\n`);
+}
+
+function runBandModeSmokeStep(index: number, shortLabel: string, run: () => boolean): boolean {
+  bandModeSmokeProgressLine(`[${index}/${BAND_MODE_SMOKE_TOTAL}] ${shortLabel} ... running`);
+  const t0 = Date.now();
+  const ok = run();
+  const elapsedSec = ((Date.now() - t0) / 1000).toFixed(1);
+  bandModeSmokeProgressLine(
+    `[${index}/${BAND_MODE_SMOKE_TOTAL}] ${shortLabel} ... ${ok ? 'PASS' : 'FAIL'} (${elapsedSec}s)`
+  );
+  return ok;
+}
 
 function lockedHarmony40(): string[] {
   const cycle = ['Em', 'Am', 'D', 'G', 'C', 'B7', 'Em', 'Am'];
@@ -216,14 +233,19 @@ function drumBarMathOk(score: ScoreModel): boolean {
 }
 
 export function runBandModeSmokeTests(): { name: string; ok: boolean }[] {
+  bandModeSmokeProgressLine(
+    `Running ${BAND_MODE_SMOKE_TOTAL} Band mode smoke tests (~60s expected); output streams incrementally.`
+  );
+
   const out: { name: string; ok: boolean }[] = [];
   const tmpOn = fs.mkdtempSync(path.join(os.tmpdir(), 'co-band-mode-on-'));
   const tmpOnNoMosaic = fs.mkdtempSync(path.join(os.tmpdir(), 'co-band-mode-on-nomosaic-'));
   const tmpOff = fs.mkdtempSync(path.join(os.tmpdir(), 'co-band-mode-off-'));
   const tmpOffProof = fs.mkdtempSync(path.join(os.tmpdir(), 'co-band-mode-off-proof-'));
 
-  let bandOnOk = false;
-  try {
+  const bandOnOk = runBandModeSmokeStep(1, 'Band mode ON TV Suite 90106', () => {
+    let ok = false;
+    try {
     const req = tvSuiteGenerateRequest(true);
     const result = generateComposition(req, tmpOn);
     if (result.success && result.filepath && result.xml) {
@@ -249,7 +271,7 @@ export function runBandModeSmokeTests(): { name: string; ok: boolean }[] {
       const bar1 = sidecar.bars?.[0];
       const partIds = xmlPartIds(result.xml);
       const partNames = xmlScorePartNames(result.xml);
-      bandOnOk =
+      ok =
         result.validation.behaviourGatesPassed === true &&
         result.validation.exportIntegrityPassed === true &&
         result.validation.strictBarMathPassed === true &&
@@ -270,16 +292,19 @@ export function runBandModeSmokeTests(): { name: string; ok: boolean }[] {
         partNames.some((n) => /^drums?$/i.test(n)) &&
         xmlHasUnpitchedArtRockDrums(result.xml);
     }
-  } finally {
-    try {
-      fs.rmSync(tmpOn, { recursive: true, force: true });
-    } catch {
-      /* ignore */
+    return ok;
+    } finally {
+      try {
+        fs.rmSync(tmpOn, { recursive: true, force: true });
+      } catch {
+        /* ignore */
+      }
     }
-  }
+  });
 
-  let bandOnNoMosaicOk = false;
-  try {
+  const bandOnNoMosaicOk = runBandModeSmokeStep(2, 'Band mode ON no mosaic 88888', () => {
+    let ok = false;
+    try {
     const reqNoMosaic: GenerateRequest = {
       presetId: 'guitar_bass_duo',
       styleStack: { primary: 'barry_harris' },
@@ -307,7 +332,7 @@ export function runBandModeSmokeTests(): { name: string; ok: boolean }[] {
       };
       const midStat = fs.existsSync(midPath) ? fs.statSync(midPath) : undefined;
       const partIds = xmlPartIds(resultNoMosaic.xml);
-      bandOnNoMosaicOk =
+      ok =
         midStat != null &&
         midStat.size > 0 &&
         fs.existsSync(jsonPath) &&
@@ -320,16 +345,19 @@ export function runBandModeSmokeTests(): { name: string; ok: boolean }[] {
         partIds.includes(ART_ROCK_BAND_DRUMS_PART_ID) &&
         xmlHasUnpitchedArtRockDrums(resultNoMosaic.xml);
     }
-  } finally {
-    try {
-      fs.rmSync(tmpOnNoMosaic, { recursive: true, force: true });
-    } catch {
-      /* ignore */
+    return ok;
+    } finally {
+      try {
+        fs.rmSync(tmpOnNoMosaic, { recursive: true, force: true });
+      } catch {
+        /* ignore */
+      }
     }
-  }
+  });
 
-  let bandOffOk = false;
-  try {
+  const bandOffOk = runBandModeSmokeStep(3, 'Band mode OFF skipDrumGuide', () => {
+    let ok = false;
+    try {
     const reqOff: GenerateRequest = {
       presetId: 'guitar_bass_duo',
       styleStack: { primary: 'barry_harris' },
@@ -345,44 +373,49 @@ export function runBandModeSmokeTests(): { name: string; ok: boolean }[] {
       const base = path.basename(resultOff.filepath, path.extname(resultOff.filepath));
       const midPath = path.join(dir, `${base}_drum_guide.mid`);
       const partIds = xmlPartIds(resultOff.xml);
-      bandOffOk =
+      ok =
         !fs.existsSync(midPath) &&
         resultOff.drumGuideFilepath == null &&
         resultOff.bandModeEnabled !== true &&
         partIds.length === 2 &&
         !partIds.includes(ART_ROCK_BAND_DRUMS_PART_ID);
     }
-  } finally {
-    try {
-      fs.rmSync(tmpOff, { recursive: true, force: true });
-    } catch {
-      /* ignore */
+    return ok;
+    } finally {
+      try {
+        fs.rmSync(tmpOff, { recursive: true, force: true });
+      } catch {
+        /* ignore */
+      }
     }
-  }
+  });
 
-  let bandOffProofByteStable = false;
-  try {
+  const bandOffProofByteStable = runBandModeSmokeStep(4, 'Band mode OFF proof 90106', () => {
+    let ok = false;
+    try {
     const reqOffProof = tvSuiteGenerateRequest(false);
     delete reqOffProof.bandModeEnabled;
     const resultOffProof = generateComposition(reqOffProof, tmpOffProof);
     if (resultOffProof.success && resultOffProof.xml) {
       const partIds = xmlPartIds(resultOffProof.xml);
-      bandOffProofByteStable =
+      ok =
         partIds.length === 2 &&
         !resultOffProof.xml.includes(ART_ROCK_BAND_DRUMS_PART_ID) &&
         resultOffProof.validation.behaviourGatesPassed === true &&
         resultOffProof.validation.strictBarMathPassed === true;
     }
-  } finally {
-    try {
-      fs.rmSync(tmpOffProof, { recursive: true, force: true });
-    } catch {
-      /* ignore */
+    return ok;
+    } finally {
+      try {
+        fs.rmSync(tmpOffProof, { recursive: true, force: true });
+      } catch {
+        /* ignore */
+      }
     }
-  }
+  });
 
-  let stage2GateBundleOk = false;
-  try {
+  const stage2GateBundleOk = runBandModeSmokeStep(5, 'Band Stage 2 gates 90106', () => {
+    try {
     const gpOff = runGoldenPath(PROOF_SEED, tvSuiteGoldenPathOptions(false));
     const gpOn = runGoldenPath(PROOF_SEED, tvSuiteGoldenPathOptions(true));
     const scoreOff = gpOff.score;
@@ -396,7 +429,7 @@ export function runBandModeSmokeTests(): { name: string; ok: boolean }[] {
     const ratioOnFiltered = typeof ratioOnRaw === 'number' ? ratioOnRaw : -2;
     const guitarSame = partEventsFingerprint(scoreOff, 'guitar') === partEventsFingerprint(scoreOn, 'guitar');
     const bassSame = partEventsFingerprint(scoreOff, 'bass') === partEventsFingerprint(scoreOn, 'bass');
-    stage2GateBundleOk =
+    return (
       gpOff.strictBarMathPassed === true &&
       gpOn.strictBarMathPassed === true &&
       gpOn.behaviourGatesPassed === true &&
@@ -408,13 +441,15 @@ export function runBandModeSmokeTests(): { name: string; ok: boolean }[] {
       ratioOnFiltered >= 0 &&
       Math.abs(ratioOff - ratioOnFiltered) < 1e-9 &&
       guitarSame &&
-      bassSame;
-  } catch {
-    stage2GateBundleOk = false;
-  }
+      bassSame
+    );
+    } catch {
+      return false;
+    }
+  });
 
-  let appendIdempotentOk = false;
-  try {
+  const appendIdempotentOk = runBandModeSmokeStep(6, 'appendArtRockBandDrums idempotent', () => {
+    try {
     const gp = runGoldenPath(PROOF_SEED, tvSuiteGoldenPathOptions(true));
     const beforeHash = crypto
       .createHash('sha256')
@@ -427,15 +462,16 @@ export function runBandModeSmokeTests(): { name: string; ok: boolean }[] {
       .update(partEventsFingerprint(afterSecond, 'guitar') + partEventsFingerprint(afterSecond, 'bass'))
       .digest('hex');
     const drumCount = afterSecond.parts.filter((p) => p.id === ART_ROCK_BAND_DRUMS_PART_ID).length;
-    appendIdempotentOk = beforeHash === afterHash && drumCount === 1;
-  } catch {
-    appendIdempotentOk = false;
-  }
+    return beforeHash === afterHash && drumCount === 1;
+    } catch {
+      return false;
+    }
+  });
 
-  let stage3Gate90106Ok = false;
   let stage3Density90106 = { intro: 0, build: 0, peak: 0, tail: 0 };
   let stage3Velocity90106 = { intro: 0, peak: 0, tail: 0 };
-  try {
+  const stage3Gate90106Ok = runBandModeSmokeStep(7, 'Band Stage 3 gates 90106', () => {
+    try {
     const gp = runGoldenPath(PROOF_SEED, tvSuiteGoldenPathOptions(true));
     const score = gp.score;
     stage3Density90106 = {
@@ -462,7 +498,7 @@ export function runBandModeSmokeTests(): { name: string; ok: boolean }[] {
         const sum = (evs: typeof m.events) => evs.reduce((a, e) => a + e.duration, 0);
         return Math.abs(sum(v1) - span) < 1e-5 && Math.abs(sum(v2) - span) < 1e-5;
       });
-    stage3Gate90106Ok =
+    return (
       stage3Density90106.build > stage3Density90106.intro &&
       stage3Density90106.peak > stage3Density90106.build &&
       stage3Density90106.peak > stage3Density90106.tail &&
@@ -474,13 +510,15 @@ export function runBandModeSmokeTests(): { name: string; ok: boolean }[] {
       stage3Velocity90106.tail < stage3Velocity90106.peak &&
       stage3Velocity90106.intro <= ART_ROCK_VELOCITY_BY_TIER.sparse + 1 &&
       stage3Velocity90106.peak >= ART_ROCK_VELOCITY_BY_TIER.busy - 1 &&
-      fillBarMath;
-  } catch {
-    stage3Gate90106Ok = false;
-  }
+      fillBarMath
+    );
+    } catch {
+      return false;
+    }
+  });
 
-  let stage3Gate88888Ok = false;
-  try {
+  const stage3Gate88888Ok = runBandModeSmokeStep(8, 'Band Stage 3 no-mosaic 88888', () => {
+    try {
     const gp = runGoldenPath(NON_MOSAIC_BAND_SEED, {
       presetId: 'guitar_bass_duo',
       styleStack: { primary: 'barry_harris', weights: { primary: 1 } },
@@ -499,15 +537,17 @@ export function runBandModeSmokeTests(): { name: string; ok: boolean }[] {
         break;
       }
     }
-    stage3Gate88888Ok =
+    return (
       gp.strictBarMathPassed === true &&
       drumBarMathOk(score) &&
       allMedium &&
       drumBarAvgVelocity(score, 1, SHORT_DUO_BARS) >= ART_ROCK_VELOCITY_BY_TIER.medium - 1 &&
-      drumBarAvgVelocity(score, 1, SHORT_DUO_BARS) <= ART_ROCK_VELOCITY_BY_TIER.medium + 1;
-  } catch {
-    stage3Gate88888Ok = false;
-  }
+      drumBarAvgVelocity(score, 1, SHORT_DUO_BARS) <= ART_ROCK_VELOCITY_BY_TIER.medium + 1
+    );
+    } catch {
+      return false;
+    }
+  });
 
   out.push({
     ok: bandOnOk,
