@@ -591,8 +591,14 @@ export interface GenerateRequest {
   frippPolymeterSecondaryPresetId?: string;
   /**
    * When `true`, skip writing SD3-style drum guide MIDI/JSON next to the score. Omitted → guides are written.
+   * Ignored when {@link bandModeEnabled} is `true` (Band mode always exports the drum guide bundle).
    */
   skipDrumGuide?: boolean;
+  /**
+   * Band mode Stage 1 — Guitar/Bass score unchanged; exports labeled G/B + drum-guide bundle.
+   * When mosaic plan is present, drum guide uses fixed 4/4 Art Rock grid (not G/B onset proxy).
+   */
+  bandModeEnabled?: boolean;
   /**
    * String quartet + Frank Zappa: opt out of the SQ harmony slice (per-part device receipts).
    * When omitted and songwriter is `frank_zappa`, the slice is enabled.
@@ -898,6 +904,10 @@ export interface OutputEntry {
   importHarmonyPolicyVersion?: number;
   /** V80 — compact import / variation / style-transfer / mixed-preset audit echo. */
   v80Echo?: GenerateResultEchoManifest;
+  /** Band mode Stage 1 — G/B + drum-guide bundle was requested. */
+  bandMode?: boolean;
+  /** Band mode — drum guide sidecar source when written. */
+  drumGuideSource?: 'gb_onset_proxy' | 'art_rock_mosaic_grid';
   /** Brian Wilson Pet Sounds — diagnostics / receipts (Song Mode manifest echo). */
   brianWilsonPetSoundsDiagnostics?: GenerationMetadata['brianWilsonPetSoundsDiagnostics'];
   brianWilsonPetSoundsDeviceReceipts?: GenerationMetadata['brianWilsonPetSoundsDeviceReceipts'];

@@ -390,6 +390,8 @@ export function writeOutputManifest(
     /** Stage 4: echoed when import-harmony telemetry is present (`core/importHarmonyPolicy.ts`). */
     importHarmonyPolicyVersion?: number;
     v80Echo?: import('./appApiTypes').GenerateResultEchoManifest;
+    bandMode?: boolean;
+    drumGuideSource?: 'gb_onset_proxy' | 'art_rock_mosaic_grid';
   }
 ): void {
   const manifestPath = manifestPathForMusicXml(xmlFilepath);
@@ -720,6 +722,8 @@ export function writeOutputManifest(
     riffQualityRules: meta.riffQualityRules,
     importHarmonyPolicyVersion: meta.importHarmonyPolicyVersion,
     v80Echo: meta.v80Echo,
+    bandMode: meta.bandMode,
+    drumGuideSource: meta.drumGuideSource,
   };
   fs.writeFileSync(manifestPath, JSON.stringify(entry, null, 0), 'utf-8');
 }

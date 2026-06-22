@@ -2890,6 +2890,7 @@ export function HomeGenerate({
   const [stochasticVarianceUi, setStochasticVarianceUi] = useState(0);
   const [funkGroove, setFunkGroove] = useState(false);
   const [generateDrumGuide, setGenerateDrumGuide] = useState(true);
+  const [bandModeEnabled, setBandModeEnabled] = useState(false);
   const [riffFamily, setRiffFamily] = useState<RiffFamilyTag>('rock');
   const [riffVrbId, setRiffVrbId] = useState(defaultRiffVrbIdForFamily('rock'));
   const [riffOddMeterPreset, setRiffOddMeterPreset] = useState<RiffOddMeterSelectValue>(RIFF_ODD_METER_NONE);
@@ -4259,7 +4260,8 @@ export function HomeGenerate({
           ...(bigBandConfig ? { bigBandConfig } : {}),
           ...(stringQuartetConfig ? { stringQuartetConfig } : {}),
           ...(contrapuntalConfig ? { contrapuntalConfig } : {}),
-          ...(!generateDrumGuide ? { skipDrumGuide: true as const } : {}),
+          ...(!generateDrumGuide && !bandModeEnabled ? { skipDrumGuide: true as const } : {}),
+          ...(bandModeEnabled ? { bandModeEnabled: true as const } : {}),
           variationEnabled: variationEnabled,
           styleStack: isScorePreset ? DEFAULT_SCORE_STYLE_STACK : MINIMAL_STYLE_STACK,
           title: scoreTitle.trim() || undefined,
@@ -4942,6 +4944,7 @@ export function HomeGenerate({
       slonimskyEtudeCellFamily,
       funkGroove,
       generateDrumGuide,
+      bandModeEnabled,
       formId,
       bigBandFormId,
       songFormBarPreset,
@@ -10288,15 +10291,44 @@ export function HomeGenerate({
             type="checkbox"
             checked={generateDrumGuide}
             onChange={(e) => setGenerateDrumGuide(e.target.checked)}
-            disabled={loading}
+            disabled={loading || bandModeEnabled}
             aria-label="Generate drum guide (SD3)"
           />
           Generate drum guide (SD3)
         </label>
         <p style={{ margin: '0.35rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)', maxWidth: 520 }}>
           Exports a kick/snare MIDI guide and JSON sidecar next to the score when enabled.
+          {bandModeEnabled ? ' Band mode always includes the drum guide.' : ''}
         </p>
       </div>
+
+      {isGuitarBassDuoFamily(presetId) && (
+        <div style={{ marginBottom: '0.85rem' }}>
+          <label
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              fontSize: '0.88rem',
+              color: 'var(--text)',
+              cursor: loading ? 'default' : 'pointer',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={bandModeEnabled}
+              onChange={(e) => setBandModeEnabled(e.target.checked)}
+              disabled={loading}
+              aria-label="Band mode (Guitar/Bass plus drum guide)"
+            />
+            Band mode (G/B + drum guide)
+          </label>
+          <p style={{ margin: '0.35rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)', maxWidth: 520 }}>
+            Keeps the Guitar/Bass score unchanged and exports a labeled drum-guide bundle. With a mosaic
+            plan, uses a fixed 4/4 Art Rock kick/snare/hat grid instead of guitar/bass attack timing.
+          </p>
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
         {!isSqToBbWorkflow && (
