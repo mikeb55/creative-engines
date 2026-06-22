@@ -1,4 +1,9 @@
-# Composer OS Roadmap [2026-06-16]
+# Composer OS Roadmap [2026-06-22]
+
+## ✅ Active Now (top priority — everything below is backlog)
+- Band mode: working with custom progressions + drums. Next: make drums musical (currently static).
+- Wire band mode + custom progressions into the desktop app (runAppGeneration) so the .exe exposes them.
+- Open question: variable-length output on the locked path (currently bar count = chord count).
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](../CHANGELOG.md), [docs/CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
