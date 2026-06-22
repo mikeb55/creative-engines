@@ -625,6 +625,12 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 - OPEN: confirm whether short (4/8-bar) input can be extended to arbitrary length, or if bar count is locked to progression length. **`totalBars` is a separate `GenerateRequest` field, but with `harmonyMode: custom_locked` (Band/custom path) parsed chords must equal `totalBars` exactly—no auto-repeat of shorter progressions. Tiling/cycling exists only on other modes (`custom` 8→32 tile, Song Mode songwriter scaffold).**
 - OPEN: drum part is currently static (no section variation / fills). Band mode generates + exports correctly but drums are not yet musical.
 
+### Desktop app — surface Band mode + custom progressions
+
+- Desktop generates via `runAppGeneration` → `generateComposition` (duo only). Band mode + custom progressions currently bypass the app wrapper (script calls `generateComposition` directly).
+- OPEN: wire `runAppGeneration` (`composerOsAppGeneration.ts`) to support `bandModeEnabled` + user progressions, so the `.exe` exposes what the script already does.
+- NOTE: current `release/Composer-OS.exe` (built pre-band-work) does not include tonight's runner; rebuild only meaningful AFTER the wiring above.
+
 ### Future work — Guitar Quintet (leadsheet-input engine)
 
 **Variation controls v1 — SHIPPED (2026-06-16, `2d0e9d40`):** Another version · Rhythmic activity · Guitar comp sliders; end-to-end UI → IPC → API → assembly → passes. See **[HANDOVER_2026-06-16.md](HANDOVER_2026-06-16.md)**.
