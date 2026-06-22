@@ -514,21 +514,30 @@ function injectMosaicMotifNotesPostFinalizeCore(
         continue;
       }
 
+      // Non-tile sections: only section.startBar — lay out motif durations sequentially
+      // (source rhythmPattern offbeat onsets can gap/overlap and underfill 4/4).
       let pitch = startMidi;
+      let cursor = 0;
       const noteCount = core.rhythmPattern.length;
+      let placedMotifNotes = 0;
       for (let i = 0; i < noteCount; i++) {
         const rh = core.rhythmPattern[i]!;
-        if (rh.startBeat >= barCap - 1e-6) continue;
-        const duration = Math.min(rh.duration, barCap - rh.startBeat);
+        if (cursor >= barCap - 1e-6) break;
+        const duration = Math.min(rh.duration, barCap - cursor);
         if (duration <= 0) continue;
         addEvent(
           m,
-          createNote(pitch, rh.startBeat, duration, 1, motifRef, undefined, motifVel)
+          createNote(pitch, cursor, duration, 1, motifRef, undefined, motifVel)
         );
+        placedMotifNotes++;
+        cursor += duration;
         if (i < core.intervalPattern.length) {
           pitch += core.intervalPattern[i]!;
           pitch = Math.max(effectiveLow, Math.min(effectiveHigh, pitch));
         }
+      }
+      if (placedMotifNotes > 0 && cursor < barCap - 1e-6) {
+        addEvent(m, createRest(cursor, barCap - cursor, 1));
       }
     }
   }
