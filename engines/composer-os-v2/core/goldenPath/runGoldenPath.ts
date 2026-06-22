@@ -102,6 +102,7 @@ import { getStyleModuleDisplayName } from '../style-modules/styleModuleRegistry'
 import { validateExportedMusicXmlBarMath } from '../export/validateMusicXmlBarMath';
 import { validateWrittenMusicXmlComplete } from '../export/validateMusicXmlWrittenStrict';
 import { validateGuitarBassDuoBassIdentityInMusicXml } from '../export/validateBassIdentityInMusicXml';
+import { appendArtRockBandDrumsToScore } from '../export/appendArtRockBandDrumsToScore';
 import { validateIndieArtPopDualGuitarIdentityInMusicXml } from '../export/validateIndieArtPopDualGuitarIdentityInMusicXml';
 import {
   assertDuoEightBarInputTruthEarly,
@@ -1461,6 +1462,8 @@ export interface RunGoldenPathOptions {
   barryHarrisProfile?: string;
   /** Evans Musician shell bridge — tiled benchmark IR merged into golden-path options. */
   beMusicianPremiumMelodyBridge?: boolean;
+  /** Band mode Stage 2 — append scored Art Rock drums staff after mosaic melody-bass format. */
+  bandModeEnabled?: boolean;
 }
 
 export type { MosaicPresetRole, SectionRealizationResult, AssembledScoreModel };
@@ -3410,6 +3413,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     const tonicMap =
       mosaicPlan.length > 0 ? buildMosaicTonicMap(mosaicPlan, appliedContext) : {};
     score = applyLeadSheetFormat(score, mosaicPlan, tonicMap);
+  }
+  if (options?.bandModeEnabled === true && !mixedPresetAssembled) {
+    score = appendArtRockBandDrumsToScore(score, appliedContext, true);
   }
   const barMeterForMusicXml =
     appliedContext.barMeterMap ?? appliedContext.generationMetadata?.barMeterMap;

@@ -58,5 +58,6 @@ scripts/orbitV42CleanMidi.py
 scripts/orbit_compare_data.json
 smoke-out.txt
 smoke-out2.txt
+_ci-smoke-proxy.log
 
 docs/RoadMaps/

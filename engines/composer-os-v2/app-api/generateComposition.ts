@@ -42,7 +42,7 @@ import { isGuitarBassDuoFamily } from '../core/presets/guitarBassDuoPresetIds';
 import type { FormId } from '../core/form/formPlanner';
 import type { GenerationMetadata } from '../core/compositionContext';
 import { IMPORT_HARMONY_POLICY_VERSION } from '../core/importHarmonyPolicy';
-import { writeDrumGuide } from '../core/export/midiDrumGuideWriter';
+import { exportDrumGuideBundle, shouldExportDrumGuide } from '../core/export/drumGuideExport';
 import { writeScoreMidi } from '../core/export/midiScoreWriter';
 import { getVoiceRuleBundle } from '../core/composer/voiceRuleBundles';
 import { buildFormSections } from '../core/composer/formController';
@@ -98,6 +98,12 @@ export interface GenerateResult {
   filepath?: string;
   /** Full-score `.mid` path when written next to the MusicXML export. */
   midiFilepath?: string;
+  /** SD3 drum guide `.mid` when written next to the MusicXML export. */
+  drumGuideFilepath?: string;
+  /** Band mode Stage 1 — G/B + drum-guide bundle was requested. */
+  bandModeEnabled?: boolean;
+  /** Drum guide sidecar source when band mode or SD3 guide exported. */
+  drumGuideSource?: 'gb_onset_proxy' | 'art_rock_mosaic_grid';
   /**
    * Big Band: primary `filepath` may point at planning JSON; when ensemble MusicXML was written,
    * this is the `.musicxml` path for preview/playback (same folder).
@@ -435,6 +441,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
             : {}),
           ...(isClaveGridOverlayEnvEnabled() && req.claveGridOverlay ? { claveGridOverlay: req.claveGridOverlay } : {}),
           ...v80GoldenPathOptionsFromGenerateRequest(req),
+          ...(req.bandModeEnabled === true ? { bandModeEnabled: true as const } : {}),
         });
   result.context.generationMetadata = {
     ...result.context.generationMetadata,
@@ -487,6 +494,8 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
   let filename: string | undefined;
   let filepath: string | undefined;
   let midiFilepath: string | undefined;
+  let drumGuideFilepath: string | undefined;
+  let drumGuideSource: 'gb_onset_proxy' | 'art_rock_mosaic_grid' | undefined;
   let outputXml: string | undefined = result.xml;
   let scoreForDrumGuide = result.score;
 
@@ -603,12 +612,23 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     fs.writeFileSync(filepath, xmlOut, 'utf-8');
     outputXml = xmlOut;
     const skipMidiDrumGuides = result.context.generationMetadata.sectionRegenerationPartialScore === true;
-    if (!req.skipDrumGuide && !skipMidiDrumGuides) {
+    if (shouldExportDrumGuide(req.skipDrumGuide, req.bandModeEnabled, skipMidiDrumGuides)) {
       try {
         const barMeterForDrums =
           result.context.barMeterMap ?? result.context.generationMetadata?.barMeterMap;
         const baseName = path.basename(filepath, path.extname(filepath));
-        writeDrumGuide(scoreForDrumGuide, outputDir, baseName, barMeterForDrums, req.bpm);
+        const mosaicPlan =
+          req.mosaicSectionPlan ?? result.context.generationMetadata?.mosaicSectionPlan;
+        const drumResult = exportDrumGuideBundle(scoreForDrumGuide, outputDir, baseName, {
+          barMeterMap: barMeterForDrums,
+          bpmOverride: req.bpm,
+          bandModeEnabled: req.bandModeEnabled,
+          mosaicSectionPlan: mosaicPlan,
+        });
+        if (drumResult) {
+          drumGuideFilepath = drumResult.midPath;
+          drumGuideSource = drumResult.drumGuideSource;
+        }
       } catch (e) {
         console.warn('Drum guide export failed:', (e as Error)?.message ?? e);
       }
@@ -691,6 +711,8 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       zappaSectionBehaviorBySection: result.context.generationMetadata.zappaSectionBehaviorBySection,
       importHarmonyPolicyVersion: result.context.generationMetadata.importHarmonyPolicyVersion,
       v80Echo: v80EchoManifest,
+      bandMode: req.bandModeEnabled === true ? true : undefined,
+      drumGuideSource,
       validation: {
         scoreIntegrity: result.integrityPassed,
         exportIntegrity: result.exportIntegrityPassed,
@@ -767,6 +789,9 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     filename,
     filepath,
     midiFilepath,
+    drumGuideFilepath,
+    bandModeEnabled: req.bandModeEnabled === true ? true : undefined,
+    drumGuideSource,
     manifestPath: filepath ? manifestPathForMusicXml(filepath) : undefined,
     harmonySource: result.context.generationMetadata.harmonySource,
     customChordProgressionSummary: result.context.generationMetadata.customChordProgressionSummary,

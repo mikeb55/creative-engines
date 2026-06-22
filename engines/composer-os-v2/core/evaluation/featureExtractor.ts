@@ -61,6 +61,15 @@ function maxConcurrentInMeasure(m: MeasureModel, beatSpan: number): number {
   return maxC;
 }
 
+/** Percussion staves must not pollute LOCK sectionContrast rhythm fingerprint (Band mode Stage 2). */
+function isPercussionRhythmFingerprintPart(part: PartModel): boolean {
+  if (part.id === 'bb_drums' || part.id === 'groove_drums' || part.id === 'art_rock_band_drums') {
+    return true;
+  }
+  if (part.instrumentIdentity.endsWith('_drums')) return true;
+  return false;
+}
+
 function isPianoPart(part: PartModel): boolean {
   if (part.songModePresentAsPianoComp === true) return true;
   if (part.midiProgram === 0) return true;
@@ -126,6 +135,7 @@ export function extractScoreModelFeatures(output: ScoreModel): ExtractedStyleFea
     const merged: ScoreEvent[] = [];
     let span = 4;
     for (const part of parts) {
+      if (isPercussionRhythmFingerprintPart(part)) continue;
       const m = part.measures[b - 1];
       if (!m) continue;
       span = measureBeatSpan(m);
@@ -167,6 +177,7 @@ export function extractScoreModelFeatures(output: ScoreModel): ExtractedStyleFea
     const merged: ScoreEvent[] = [];
     let span = 4;
     for (const part of parts) {
+      if (isPercussionRhythmFingerprintPart(part)) continue;
       const m = part.measures[b - 1];
       if (!m) continue;
       span = measureBeatSpan(m);
@@ -185,6 +196,7 @@ export function extractScoreModelFeatures(output: ScoreModel): ExtractedStyleFea
   let onsetTotal = 0;
   let onsetAligned = 0;
   for (const part of parts) {
+    if (isPercussionRhythmFingerprintPart(part)) continue;
     const r = collectOnsets(part.measures);
     onsetTotal += r.total;
     onsetAligned += r.aligned;

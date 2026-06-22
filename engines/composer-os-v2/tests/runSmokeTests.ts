@@ -75,6 +75,7 @@ import { runAlternateGuitarTuningsTests } from './alternateGuitarTunings.test';
 import { runImportHarmonyEnsembleSmokeTests } from './importHarmonyEnsembleSmoke.test';
 import { runZappaStringQuartetSmokeTests } from './zappaStringQuartetSmoke.test';
 import { runDrumGuideExportSmokeTests } from './drumGuideExportSmoke.test';
+import { runBandModeSmokeTests } from './bandModeSmoke.test';
 import { runZappaBigBandSmokeTests } from './zappaBigBandSmoke.test';
 import { runUniversalLeadSheetRepeatSmokeTests } from './universalLeadSheetBuilder.test';
 import { runVocalMelodySmokeTests } from './vocalMelodySmoke.test';
@@ -263,6 +264,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Import harmony ensemble (Big Band / String Quartet)', run: runImportHarmonyEnsembleSmokeTests },
   { label: 'Zappa String Quartet (SQ slice + odd meter)', run: runZappaStringQuartetSmokeTests },
   { label: 'SD3 drum guide export (MIDI + JSON sidecar)', run: runDrumGuideExportSmokeTests },
+  { label: 'Band mode Stage 3 (section-aware drums + Stage 2 regression)', run: runBandModeSmokeTests },
   { label: 'Zappa Big Band (FZ harmony + Zappa Classic meter)', run: runZappaBigBandSmokeTests },
   { label: 'Tonality Vault quality (inspector, riff modes, LSM, reharm, BB routing, rule sets)', run: runVaultQualitySmokeTests },
   { label: 'VoiceRuleBundle compiler + gil_evans wiring', run: runVoiceRuleBundleTests },

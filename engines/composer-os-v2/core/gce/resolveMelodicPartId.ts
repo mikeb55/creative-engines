@@ -4,7 +4,7 @@
 
 import type { NoteEvent, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
 
-const DRUM_IDS = new Set<string>(['bb_drums', 'groove_drums']);
+const DRUM_IDS = new Set<string>(['bb_drums', 'groove_drums', 'art_rock_band_drums']);
 const BASS_IDS = new Set<string>(['bb_rhythm_section']);
 
 function leadVoiceNoteCount(part: PartModel): number {

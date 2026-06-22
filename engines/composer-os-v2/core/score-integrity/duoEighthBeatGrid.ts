@@ -107,6 +107,7 @@ export function validateScoreDuoAttackGrid(score: ScoreModel): DuoAttackGridVali
   for (const p of score.parts) {
     /** Afrobeat drum grid is 16ths — exempt from duo eighth attack seal (`felaKutiSlice.ts`). */
     if (p.instrumentIdentity === 'fela_afrobeat_drums') continue;
+    if (p.instrumentIdentity === 'art_rock_band_drums') continue;
     /** Zappa solo staff — ferocity bursts use sub-eighth spacing; validated via bar-math + export, not duo grid. */
     if (p.id === 'zappa_solo') continue;
     for (const m of p.measures) {

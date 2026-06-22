@@ -172,7 +172,7 @@ function instrumentSoundXmlForPart(p: PartModel): string {
   if (p.instrumentIdentity === 'acoustic_upright_bass') {
     return `<instrument-sound>${GUITAR_BASS_DUO_BASS_INSTRUMENT_SOUND}</instrument-sound>`;
   }
-  if (p.instrumentIdentity === 'big_band_jazz_drums' || p.instrumentIdentity === 'fela_afrobeat_drums') {
+  if (p.instrumentIdentity === 'big_band_jazz_drums' || p.instrumentIdentity === 'fela_afrobeat_drums' || p.instrumentIdentity === 'art_rock_band_drums') {
     return '';
   }
   if (isBigBandPianoPart(p) || isStringQuartetPianoPart(p) || isSongModeKeysCompPianoPart(p)) {
@@ -217,6 +217,7 @@ const PART_ABBREV: Record<string, string> = {
   bb_drums: 'Dr.',
   fela_drums: 'Perc.',
   groove_drums: 'Dr.',
+  art_rock_band_drums: 'Dr.',
   sq_violin_1: 'Vln.I',
   sq_violin_2: 'Vln.II',
   sq_viola: 'Vla.',
@@ -922,6 +923,149 @@ function bigBandDrumsEventsToXml(
   return xml;
 }
 
+/** Art Rock Band mode Stage 2 — basic rock kit, two voices (v1 hat+snare, v2 kick). */
+function artRockBandDrumsEventsToXml(
+  measure: MeasureModel,
+  measureIndex: number,
+  part: PartModel,
+  decompose: (ticks: number) => number[],
+  measureCapacity: number
+): string {
+  const partId = part.id;
+  const instId = riffScoreInstrumentIdForPart(part) ?? `${part.id}-I1`;
+  let raw = measure.events.filter((e) => e.kind === 'note' || e.kind === 'rest');
+  const byVoice = new Map<number, ScoreEvent[]>();
+  for (const e of raw) {
+    const v = e.voice ?? 1;
+    if (!byVoice.has(v)) byVoice.set(v, []);
+    byVoice.get(v)!.push(e);
+  }
+  const voices = [...byVoice.keys()].sort((a, b) => a - b);
+  const staffPolyphonyXml = STAFF_1_XML;
+
+  let xml = '';
+  for (let vi = 0; vi < voices.length; vi++) {
+    const voice = voices[vi]!;
+    if (vi > 0) {
+      xml += `        <backup><duration>${measureCapacity}</duration></backup>\n`;
+    }
+    let cursor = 0;
+    const voiceEvents = [...(byVoice.get(voice) ?? [])].sort((a, b) => {
+      if (a.startBeat !== b.startBeat) return a.startBeat - b.startBeat;
+      if (a.kind === 'note' && b.kind === 'note') return a.pitch - b.pitch;
+      return 0;
+    });
+    let voiceTickSum = 0;
+    let i = 0;
+    while (i < voiceEvents.length) {
+      const e = voiceEvents[i]!;
+      const sb = e.startBeat;
+      const eb = sb + e.duration;
+      const { start: startDiv, end: endDiv } = beatSpanToTicks(sb, eb, measureCapacity);
+      const safeStart = Math.max(startDiv, cursor);
+      if (endDiv <= safeStart) {
+        i++;
+        continue;
+      }
+
+      if (safeStart > cursor) {
+        const restDiv = safeStart - cursor;
+        const parts = decompose(restDiv);
+        xml += emitRestTicks(parts, voice, staffPolyphonyXml);
+        for (const p of parts) voiceTickSum += p;
+        cursor = safeStart;
+      }
+
+      const durDiv = endDiv - safeStart;
+      const parts = decompose(durDiv);
+
+      if (e.kind === 'rest') {
+        xml += emitRestTicks(parts, voice, staffPolyphonyXml);
+        for (const p of parts) voiceTickSum += p;
+        cursor = endDiv;
+        i++;
+        continue;
+      }
+
+      if (e.kind !== 'note') {
+        i++;
+        continue;
+      }
+
+      if (voice === 1) {
+        const notePitches =
+          e.pitches && e.pitches.length > 0 ? e.pitches : [e.pitch];
+        for (let pi = 0; pi < notePitches.length; pi++) {
+          const pitch = notePitches[pi]!;
+          if (pitch !== DRUM_GM_HH && pitch !== DRUM_GM_SN) {
+            throw new Error(
+              `MusicXML export: part ${partId} measure ${measureIndex + 1} voice 1 expects hat (${DRUM_GM_HH}) or snare (${DRUM_GM_SN}), got ${pitch}`
+            );
+          }
+          const snare = pitch === DRUM_GM_SN;
+          for (const t of parts) {
+            xml += drumKitNoteXml({
+              chord: pi > 0,
+              step: snare ? 'D' : 'F',
+              octave: snare ? 4 : 5,
+              ticks480: t,
+              voice: 1,
+              stem: snare ? 'down' : 'up',
+              notehead: snare ? 'normal' : 'x',
+              instrumentId: instId,
+              ...(snare ? {} : { accidentalXml: '<accidental>sharp</accidental>' }),
+            });
+            if (pi === 0) voiceTickSum += t;
+          }
+        }
+        cursor = endDiv;
+        i++;
+        continue;
+      }
+
+      if (voice === 2 && e.pitch === DRUM_GM_BD) {
+        for (const t of parts) {
+          xml += drumKitNoteXml({
+            chord: false,
+            step: 'F',
+            octave: 4,
+            ticks480: t,
+            voice: 2,
+            stem: 'down',
+            notehead: 'normal',
+            instrumentId: instId,
+          });
+          voiceTickSum += t;
+        }
+        cursor = endDiv;
+        i++;
+        continue;
+      }
+
+      throw new Error(
+        `MusicXML export: part ${partId} measure ${measureIndex + 1} voice ${voice}: unsupported drum event (${
+          e.kind === 'note' ? `pitch ${e.pitch}` : e.kind
+        })`
+      );
+    }
+
+    if (cursor < measureCapacity) {
+      const restDiv = measureCapacity - cursor;
+      const parts = decompose(restDiv);
+      xml += emitRestTicks(parts, voice, staffPolyphonyXml);
+      for (const p of parts) voiceTickSum += p;
+    }
+
+    if (voiceTickSum !== measureCapacity) {
+      throw new Error(
+        `MusicXML export: part ${partId} measure ${measureIndex + 1} voice ${voice}: tick sum ${voiceTickSum} ≠ expected ${measureCapacity} (art rock drums)`
+      );
+    }
+  }
+
+  return xml;
+}
+
 /** Phase 6+7 — guitar instrument group: notation staff + TAB staff from live voicings (voice 1 / voice 2 + backup). */
 function guitarInstrumentGroupTabEventsToXml(
   _measure: MeasureModel,
@@ -1329,6 +1473,21 @@ export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXml
       <score-instrument id="${p.id}-I1"><instrument-name>Drum Set</instrument-name></score-instrument>
     </score-part>`;
         }
+        if (p.instrumentIdentity === 'art_rock_band_drums') {
+          const abbr = PART_ABBREV[p.id] ?? 'Dr.';
+          return `    <score-part id="${p.id}">
+      <part-name>Drums</part-name>
+      <part-abbreviation>${escapeXml(abbr)}</part-abbreviation>
+      <score-instrument id="${p.id}-I1"><instrument-name>Drum Set</instrument-name></score-instrument>
+      <midi-instrument id="${p.id}-I1">
+        <midi-channel>10</midi-channel>
+        <midi-program>1</midi-program>
+        <midi-unpitched>1</midi-unpitched>
+        <volume>78.7402</volume>
+        <pan>0</pan>
+      </midi-instrument>
+    </score-part>`;
+        }
         if (p.instrumentIdentity === 'fela_afrobeat_drums') {
           return felaAfrobeatScorePartXml(p.id);
         }
@@ -1381,13 +1540,14 @@ ${partList}
     for (let partIndex = 0; partIndex < score.parts.length; partIndex++) {
       const part = score.parts[partIndex];
       const isBigBandDrums = part.instrumentIdentity === 'big_band_jazz_drums';
+      const isArtRockBandDrums = part.instrumentIdentity === 'art_rock_band_drums';
       const isFelaAfrobeatDrums = part.instrumentIdentity === 'fela_afrobeat_drums';
       const isGrooveDrums = part.instrumentIdentity === GROOVE_DRUMS_INSTRUMENT_IDENTITY || part.id === 'groove_drums';
       const clefSign = part.clef === 'bass' ? 'F' : 'G';
       const clefLine = part.clef === 'bass' ? 4 : 2;
       const clefOctaveChangeXml = '';
       let clefXml: string;
-      if (isBigBandDrums || isFelaAfrobeatDrums || isGrooveDrums) {
+      if (isBigBandDrums || isArtRockBandDrums || isFelaAfrobeatDrums || isGrooveDrums) {
         clefXml = '<clef number="1"><sign>percussion</sign><line>2</line></clef>';
       } else if (
         part.instrumentIdentity === 'string_quartet_viola' ||
@@ -1599,6 +1759,8 @@ ${feelDirectionTypeXml}      <sound tempo="${bpm}"/>
         xml +=
           part.instrumentIdentity === 'big_band_jazz_drums'
             ? bigBandDrumsEventsToXml(m, i, part, decompose, opts, measureCapacity)
+            : part.instrumentIdentity === 'art_rock_band_drums'
+              ? artRockBandDrumsEventsToXml(m, i, part, decompose, measureCapacity)
             : part.instrumentIdentity === 'fela_afrobeat_drums'
               ? felaAfrobeatDrumsEventsToXml(m, i, part, decompose, measureCapacity)
               : isGrooveDrums

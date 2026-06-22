@@ -170,6 +170,7 @@ import { importMusicXmlToImportedSong } from '../core/musicXmlDeepImport';
 import type { IntervalPatternId } from '../core/slonimsky/slonimskyEngine';
 import type { MusicContext } from '../core/music-context/musicContextTypes';
 import { writeDrumGuide } from '../core/export/midiDrumGuideWriter';
+import { exportDrumGuideBundle, shouldExportDrumGuide } from '../core/export/drumGuideExport';
 import { writeScoreMidi } from '../core/export/midiScoreWriter';
 
 export { SHIPPED_ROCK_FUSION_RHYTHM_ENGINE_IDS };
@@ -1847,6 +1848,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     ...(songModeCompiledSectionForm.length > 0 ? { songModeCompiledSectionForm } : {}),
     ...(isClaveGridOverlayEnvEnabled() && req.claveGridOverlay ? { claveGridOverlay: req.claveGridOverlay } : {}),
     ...v80GoldenPathOptionsFromGenerateRequest(req),
+    ...(req.bandModeEnabled === true ? { bandModeEnabled: true as const } : {}),
   };
 
   const songModeGoldenPathOptionsForRun = shouldApplyBeMusicianPremiumMelodyBridge(
@@ -2141,12 +2143,21 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     filepath = path.join(outputDir, filename);
     fs.writeFileSync(filepath, gp.xml, 'utf-8');
     const skipMidiDrumFromPartialRegen = gp.context.generationMetadata.sectionRegenerationPartialScore === true;
-    if (!req.skipDrumGuide && !skipMidiDrumFromPartialRegen) {
+    let drumGuideSource: 'gb_onset_proxy' | 'art_rock_mosaic_grid' | undefined;
+    if (shouldExportDrumGuide(req.skipDrumGuide, req.bandModeEnabled, skipMidiDrumFromPartialRegen)) {
       try {
         const barMeterForDrums =
           gp.context.barMeterMap ?? gp.context.generationMetadata?.barMeterMap ?? req.barMeterMap;
         const baseName = path.basename(filepath, path.extname(filepath));
-        writeDrumGuide(gp.score, outputDir, baseName, barMeterForDrums, req.bpm);
+        const mosaicPlan =
+          req.mosaicSectionPlan ?? gp.context.generationMetadata?.mosaicSectionPlan;
+        const drumResult = exportDrumGuideBundle(gp.score, outputDir, baseName, {
+          barMeterMap: barMeterForDrums,
+          bpmOverride: req.bpm,
+          bandModeEnabled: req.bandModeEnabled,
+          mosaicSectionPlan: mosaicPlan,
+        });
+        if (drumResult) drumGuideSource = drumResult.drumGuideSource;
       } catch (e) {
         console.warn('Drum guide export failed:', (e as Error)?.message ?? e);
       }
@@ -2508,6 +2519,8 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       motifDevelopmentSummary: gp.context.generationMetadata.motifDevelopmentSummary,
       importHarmonyPolicyVersion: gp.context.generationMetadata.importHarmonyPolicyVersion,
       v80Echo: songModeV80EchoManifest,
+      bandMode: req.bandModeEnabled === true ? true : undefined,
+      drumGuideSource,
       gceScore: bestGceScore >= 0 ? bestGceScore : undefined,
       gceGatePassed: bestGceScore >= GCE_GATE_MIN,
       validation: {
@@ -3049,7 +3062,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     fs.mkdirSync(outputDir, { recursive: true });
     ensembleMusicXmlFilepath = path.join(outputDir, ensembleMusicXmlFilename);
     fs.writeFileSync(ensembleMusicXmlFilepath, ensembleXmlOut, 'utf-8');
-    if (!sectionRegenPartial && !req.skipDrumGuide) {
+    if (shouldExportDrumGuide(req.skipDrumGuide, req.bandModeEnabled, sectionRegenPartial)) {
       try {
         if (realised.score) {
           const baseName = path.basename(ensembleMusicXmlFilepath, '.musicxml');
@@ -3431,7 +3444,7 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     fs.mkdirSync(outputDir, { recursive: true });
     const xmlFilepath = path.join(outputDir, xmlFilename);
     fs.writeFileSync(xmlFilepath, quartetXmlOut, 'utf-8');
-    if (!sectionRegenPartialSq && !req.skipDrumGuide) {
+    if (shouldExportDrumGuide(req.skipDrumGuide, req.bandModeEnabled, sectionRegenPartialSq)) {
       try {
         if (realised.score) {
           const baseName = path.basename(xmlFilepath, '.musicxml');
