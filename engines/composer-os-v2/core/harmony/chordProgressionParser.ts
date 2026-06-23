@@ -170,6 +170,16 @@ export function expandChordProgressionBarsToCount(
   return out;
 }
 
+/** Cycle seed bars to `totalBars` (partial tail repeat — Musician UI / band-mode script). */
+export function cyclePadChordProgressionBars(seedBars: readonly string[], totalBars: number): string[] {
+  if (seedBars.length === 0 || totalBars < 1) return [];
+  const out: string[] = [];
+  for (let i = 0; i < totalBars; i++) {
+    out.push(seedBars[i % seedBars.length]!);
+  }
+  return out;
+}
+
 /**
  * Wyble etude / variable length: one primary chord per bar, any count ≥ 1.
  * Same separator and slash-chord rules as `parseChordProgressionInputWithBarCount`; no fixed bar target.

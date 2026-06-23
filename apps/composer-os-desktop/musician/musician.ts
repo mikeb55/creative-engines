@@ -1,4 +1,6 @@
-/** Musician shell renderer — plain DOM, no framework. */
+/**
+ * Musician shell renderer — plain DOM, no framework.
+ */
 
 interface MusicianComposerOption {
   slug: string;
@@ -11,6 +13,9 @@ interface MusicianComposerOption {
 interface MusicianGenerateRequest {
   composerSlug: string;
   seed: number;
+  chordProgressionText?: string;
+  totalBars?: number;
+  songwriterStyleId?: string;
 }
 
 interface MusicianGenerateResponseSuccess {
@@ -50,6 +55,9 @@ declare global {
 }
 
 const composerSelect = document.getElementById('composer') as HTMLSelectElement;
+const progressionInput = document.getElementById('progression') as HTMLTextAreaElement;
+const totalBarsSelect = document.getElementById('total-bars') as HTMLSelectElement;
+const lengthField = document.querySelector('.field-length') as HTMLLabelElement;
 const seedInput = document.getElementById('seed') as HTMLInputElement;
 const randomiseBtn = document.getElementById('randomise') as HTMLButtonElement;
 const generateBtn = document.getElementById('generate') as HTMLButtonElement;
@@ -66,9 +74,21 @@ function setStatus(text: string, isError = false): void {
 
 function setControlsEnabled(enabled: boolean): void {
   composerSelect.disabled = !enabled;
+  progressionInput.disabled = !enabled;
+  totalBarsSelect.disabled = !enabled;
   seedInput.disabled = !enabled;
   randomiseBtn.disabled = !enabled;
   generateBtn.disabled = !enabled;
+}
+
+function hasPastedProgression(): boolean {
+  return progressionInput.value.trim().length > 0;
+}
+
+function syncLengthFieldVisibility(): void {
+  const show = hasPastedProgression();
+  lengthField.hidden = !show;
+  lengthField.classList.toggle('is-visible', show);
 }
 
 function defaultComposerSlug(list: MusicianComposerOption[]): string {
@@ -115,10 +135,18 @@ function parseSeedInput(): number | null {
   return n;
 }
 
+function parseTotalBarsInput(): number | null {
+  const n = Number.parseInt(totalBarsSelect.value, 10);
+  if (!Number.isInteger(n)) return null;
+  return n;
+}
+
 composerSelect.addEventListener('change', () => {
   const picked = composers.find((c) => c.slug === composerSelect.value);
   if (picked) seedInput.value = String(picked.defaultSeed);
 });
+
+progressionInput.addEventListener('input', syncLengthFieldVisibility);
 
 randomiseBtn.addEventListener('click', () => {
   seedInput.value = String(randomSeed());
@@ -135,11 +163,23 @@ form.addEventListener('submit', async (event) => {
     return;
   }
 
+  const progressionRaw = progressionInput.value.trim();
+  const request: MusicianGenerateRequest = { composerSlug, seed };
+  if (progressionRaw.length > 0) {
+    const totalBars = parseTotalBarsInput();
+    if (totalBars === null) {
+      setStatus('Choose a valid bar length.', true);
+      return;
+    }
+    request.chordProgressionText = progressionRaw;
+    request.totalBars = totalBars;
+  }
+
   generating = true;
   setControlsEnabled(false);
 
   try {
-    const response = await window.composerOsMusician.generate({ composerSlug, seed });
+    const response = await window.composerOsMusician.generate(request);
     if (!response.ok) {
       if (response.errorCode !== 'BUSY') {
         const debug = typeof response.detail === 'string' ? ` [${response.detail}]` : '';
@@ -166,6 +206,7 @@ window.composerOsMusician.onStatus((event) => {
       return;
     }
     fillComposerOptions(composers);
+    syncLengthFieldVisibility();
     setStatus(event.message ?? 'Ready');
     setControlsEnabled(true);
     return;
@@ -177,3 +218,5 @@ window.composerOsMusician.onStatus((event) => {
     setStatus(event.message, isError);
   }
 });
+
+syncLengthFieldVisibility();

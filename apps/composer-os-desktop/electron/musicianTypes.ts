@@ -10,6 +10,12 @@ export type MusicianErrorCode =
 export interface MusicianGenerateRequest {
   composerSlug: string;
   seed: number;
+  /** Optional paste — auto-padded to {@link totalBars} on the main process before generate. */
+  chordProgressionText?: string;
+  /** Target piece length when {@link chordProgressionText} is set (default 32). */
+  totalBars?: number;
+  /** Override whole-piece songwriter style (defaults to {@link composerSlug}). */
+  songwriterStyleId?: string;
 }
 
 export interface MusicianGenerateResponseSuccess {

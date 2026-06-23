@@ -2,6 +2,9 @@
 (() => {
   // musician/musician.ts
   var composerSelect = document.getElementById("composer");
+  var progressionInput = document.getElementById("progression");
+  var totalBarsSelect = document.getElementById("total-bars");
+  var lengthField = document.querySelector(".field-length");
   var seedInput = document.getElementById("seed");
   var randomiseBtn = document.getElementById("randomise");
   var generateBtn = document.getElementById("generate");
@@ -15,9 +18,19 @@
   }
   function setControlsEnabled(enabled) {
     composerSelect.disabled = !enabled;
+    progressionInput.disabled = !enabled;
+    totalBarsSelect.disabled = !enabled;
     seedInput.disabled = !enabled;
     randomiseBtn.disabled = !enabled;
     generateBtn.disabled = !enabled;
+  }
+  function hasPastedProgression() {
+    return progressionInput.value.trim().length > 0;
+  }
+  function syncLengthFieldVisibility() {
+    const show = hasPastedProgression();
+    lengthField.hidden = !show;
+    lengthField.classList.toggle("is-visible", show);
   }
   function defaultComposerSlug(list) {
     const active = list.find((c) => !c.frozen);
@@ -59,11 +72,18 @@
       return null;
     return n;
   }
+  function parseTotalBarsInput() {
+    const n = Number.parseInt(totalBarsSelect.value, 10);
+    if (!Number.isInteger(n))
+      return null;
+    return n;
+  }
   composerSelect.addEventListener("change", () => {
     const picked = composers.find((c) => c.slug === composerSelect.value);
     if (picked)
       seedInput.value = String(picked.defaultSeed);
   });
+  progressionInput.addEventListener("input", syncLengthFieldVisibility);
   randomiseBtn.addEventListener("click", () => {
     seedInput.value = String(randomSeed());
   });
@@ -77,10 +97,21 @@
       setStatus("Enter a valid seed (1-999999999).", true);
       return;
     }
+    const progressionRaw = progressionInput.value.trim();
+    const request = { composerSlug, seed };
+    if (progressionRaw.length > 0) {
+      const totalBars = parseTotalBarsInput();
+      if (totalBars === null) {
+        setStatus("Choose a valid bar length.", true);
+        return;
+      }
+      request.chordProgressionText = progressionRaw;
+      request.totalBars = totalBars;
+    }
     generating = true;
     setControlsEnabled(false);
     try {
-      const response = await window.composerOsMusician.generate({ composerSlug, seed });
+      const response = await window.composerOsMusician.generate(request);
       if (!response.ok) {
         if (response.errorCode !== "BUSY") {
           const debug = typeof response.detail === "string" ? ` [${response.detail}]` : "";
@@ -106,6 +137,7 @@
         return;
       }
       fillComposerOptions(composers);
+      syncLengthFieldVisibility();
       setStatus(event.message ?? "Ready");
       setControlsEnabled(true);
       return;
@@ -115,4 +147,5 @@
       setStatus(event.message, isError);
     }
   });
+  syncLengthFieldVisibility();
 })();

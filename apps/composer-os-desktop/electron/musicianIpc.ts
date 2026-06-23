@@ -14,6 +14,64 @@ import type {
   MusicianStatusEvent,
 } from './musicianTypes';
 
+const SONG_FORM_BAR_OPTIONS = [8, 16, 24, 32, 40, 48, 56, 64] as const;
+
+function isAllowedSongFormBarCount(n: number): boolean {
+  return (SONG_FORM_BAR_OPTIONS as readonly number[]).includes(n);
+}
+
+function normalizeProgressionSeparators(input: string): string {
+  return input
+    .replace(/\r\n/g, '\n')
+    .replace(/[,;]/g, '|')
+    .replace(/\n+/g, '|')
+    .trim();
+}
+
+function parseMusicianSeedBars(
+  rawText: string
+): { ok: true; bars: string[] } | { ok: false; error: string } {
+  const trimmed = normalizeProgressionSeparators(rawText);
+  if (!trimmed) {
+    return { ok: false, error: 'Chord progression is empty.' };
+  }
+  const bars: string[] = [];
+  for (const cell of trimmed.split('|')) {
+    const token = cell.trim().split(/\s+/).filter(Boolean)[0]?.trim();
+    if (!token) continue;
+    bars.push(token);
+  }
+  if (bars.length === 0) {
+    return { ok: false, error: 'No chords found. Separate bars with | , ; or newlines.' };
+  }
+  return { ok: true, bars };
+}
+
+function cyclePadBars(seedBars: readonly string[], totalBars: number): string[] {
+  if (seedBars.length === 0 || totalBars < 1) return [];
+  const out: string[] = [];
+  for (let i = 0; i < totalBars; i++) {
+    out.push(seedBars[i % seedBars.length]!);
+  }
+  return out;
+}
+
+export function buildPaddedLockedProgressionText(
+  rawText: string,
+  totalBars: number
+): { ok: true; text: string; seedBarCount: number } | { ok: false; error: string } {
+  if (!isAllowedSongFormBarCount(totalBars)) {
+    return {
+      ok: false,
+      error: `totalBars must be one of: ${SONG_FORM_BAR_OPTIONS.join(', ')}.`,
+    };
+  }
+  const parsed = parseMusicianSeedBars(rawText);
+  if (!parsed.ok) return { ok: false, error: parsed.error };
+  const padded = cyclePadBars(parsed.bars, totalBars);
+  return { ok: true, text: padded.join(' | '), seedBarCount: parsed.bars.length };
+}
+
 type ApiGenerateFn = (
   body: Record<string, unknown>,
   composerLibraryRoot: string
@@ -197,10 +255,54 @@ export async function handleMusicianGenerate(
     const { apiGenerate, ensureOutputDirectoryForPreset, buildLabeledMusicXmlFilename } =
       loadDesktopIpcBundle();
 
-    ensureOutputDirectoryForPreset('song_mode', libraryRoot);
+    const rawProgression =
+      typeof body?.chordProgressionText === 'string' ? body.chordProgressionText.trim() : '';
+    const hasCustomProgression = rawProgression.length > 0;
+    const songwriterStyle =
+      typeof body?.songwriterStyleId === 'string' && body.songwriterStyleId.trim()
+        ? body.songwriterStyleId.trim()
+        : composerSlug;
 
-    const result = apiGenerate(
-      {
+    let presetId: 'song_mode' | 'guitar_bass_duo' = 'song_mode';
+    let apiGenerateBody: Record<string, unknown>;
+
+    if (hasCustomProgression) {
+      const totalBars =
+        typeof body?.totalBars === 'number' && isAllowedSongFormBarCount(body.totalBars)
+          ? body.totalBars
+          : typeof body?.totalBars === 'number'
+            ? null
+            : 32;
+      if (totalBars === null) {
+        return failure(
+          'INVALID_REQUEST',
+          `Choose a valid length: ${SONG_FORM_BAR_OPTIONS.join(', ')} bars.`
+        );
+      }
+      const padded = buildPaddedLockedProgressionText(rawProgression, totalBars);
+      if (!padded.ok) {
+        return failure('INVALID_REQUEST', 'Could not read chord progression.', padded.error);
+      }
+      presetId = 'guitar_bass_duo';
+      apiGenerateBody = {
+        presetId,
+        styleStack: {
+          primary: 'barry_harris',
+          styleBlend: { primary: 'strong', secondary: 'off', colour: 'off' },
+        },
+        primarySongwriterStyle: songwriterStyle,
+        seed,
+        totalBars,
+        longFormEnabled: totalBars > 8,
+        bandModeEnabled: true,
+        harmonyMode: 'custom_locked',
+        chordProgressionText: padded.text,
+        creativeControlLevel: composerSlug === 'bill_evans' ? 'stable' : 'balanced',
+        outputLabel: composerSlug,
+        ...(composerSlug === 'bill_evans' ? { musicianPremiumMelody: true } : {}),
+      };
+    } else {
+      apiGenerateBody = {
         presetId: 'song_mode',
         primarySongwriterStyle: composerSlug,
         seed,
@@ -208,9 +310,12 @@ export async function handleMusicianGenerate(
         creativeControlLevel: composerSlug === 'bill_evans' ? 'stable' : 'balanced',
         outputLabel: composerSlug,
         ...(composerSlug === 'bill_evans' ? { musicianPremiumMelody: true } : {}),
-      },
-      libraryRoot
-    );
+      };
+    }
+
+    ensureOutputDirectoryForPreset(presetId, libraryRoot);
+
+    const result = apiGenerate(apiGenerateBody, libraryRoot);
 
     if (!result || (result as { success?: boolean }).success === false) {
       const errResult = result as { error?: string; detail?: string };
@@ -230,8 +335,8 @@ export async function handleMusicianGenerate(
     let outputPath = gen.filepath?.trim() ?? '';
 
     if (!outputPath || !fs.existsSync(outputPath)) {
-      const songModeDir = ensureOutputDirectoryForPreset('song_mode', libraryRoot);
-      const candidate = path.join(songModeDir, expectedFilename);
+      const presetDir = ensureOutputDirectoryForPreset(presetId, libraryRoot);
+      const candidate = path.join(presetDir, expectedFilename);
       if (fs.existsSync(candidate)) {
         outputPath = candidate;
       }
@@ -245,8 +350,8 @@ export async function handleMusicianGenerate(
       );
     }
 
-    const songModeDir = ensureOutputDirectoryForPreset('song_mode', libraryRoot);
-    const normalizedPath = path.join(songModeDir, expectedFilename);
+    const presetDir = ensureOutputDirectoryForPreset(presetId, libraryRoot);
+    const normalizedPath = path.join(presetDir, expectedFilename);
     if (path.resolve(outputPath) !== path.resolve(normalizedPath)) {
       fs.mkdirSync(path.dirname(normalizedPath), { recursive: true });
       fs.copyFileSync(outputPath, normalizedPath);

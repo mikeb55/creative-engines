@@ -10,13 +10,39 @@
     <main class="shell">
       <header class="header">
         <h1>Composer OS</h1>
-        <p class="subtitle">Song Mode — generate MusicXML</p>
+        <p class="subtitle">Quick Generate — Song Mode or pasted chords</p>
       </header>
 
       <form id="generate-form" class="form" autocomplete="off">
         <label class="field" for="composer">
           <span class="label">Composer</span>
           <select id="composer" name="composer" required></select>
+        </label>
+
+        <label class="field" for="progression">
+          <span class="label">Chord progression (optional)</span>
+          <textarea
+            id="progression"
+            name="progression"
+            rows="4"
+            spellcheck="false"
+            placeholder="Dm9 | G13 | Cmaj9 | A7alt — any length; we fill to your bar count"
+          ></textarea>
+          <span class="hint">Separate bars with | , ; or newlines. Leave blank for built-in Song Mode harmony.</span>
+        </label>
+
+        <label class="field field-length" for="total-bars">
+          <span class="label">Length (bars)</span>
+          <select id="total-bars" name="totalBars">
+            <option value="8">8</option>
+            <option value="16">16</option>
+            <option value="24">24</option>
+            <option value="32" selected>32</option>
+            <option value="40">40</option>
+            <option value="48">48</option>
+            <option value="56">56</option>
+            <option value="64">64</option>
+          </select>
         </label>
 
         <label class="field" for="seed">
