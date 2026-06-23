@@ -682,6 +682,27 @@ OPEN QUESTIONS before build:
 
   **Composer chips:** don't hardcode only 3 — read available ids from `mosaicComposerDispatch.ts` (may be more than verlaine/marr/fripp).
 
+  **BUILD SEQUENCE (4 units)** — combine within proven engine surface, isolate across engine unknowns:
+
+  - **MILESTONE A — Quick Generate (EASY).** Combines back-wiring + front UI:
+    - Route `chordProgressionText` / `totalBars` / `harmonyMode` / optional whole-piece composer through `runAppGeneration` → `generateComposition` (engine ready).
+    - UI: one progression box + length dropdown (16/24/32/48/64) + composer picker.
+    - Ship first — catches the app up to today's pre-expand length feature.
+
+  - **MILESTONE B — Block cards + manipulation (MEDIUM).** Combines cards + reorder:
+    - Scaffold picker → N empty 8-bar cards, each with chord box + composer chip (read ids from `mosaicComposerDispatch.ts`).
+    - Duplicate / move-left-right / delete / "same chords-new voice"; reindex `startBar`/`endBar` to stay contiguous each change.
+    - Engine ready (`mosaicSectionPlan`).
+    - FOLD IN item 5 (per-block generation state: clean/fell-back/failed) ONLY IF engine already reports fallbacks. If it does NOT expose fallback info, SPLIT 5 out — it needs an engine-reporting change first; do not stall B on it.
+
+  - **STEP C — Per-block meter (MEDIUM-HARD).** Separate, after B is solid.
+    - Mosaic supports per-section meter, but odd-meter + voice-leading is the most likely validation-edge source. One meter bug must not block the card work — hence standalone.
+
+  - **STEP D — Arrangement intensity sparse/normal/full (HARD / BLOCKED).** Isolated.
+    - This is the "arrangement thickens" dimension, NOT confirmed built in engine. Do NOT schedule or bundle until a read-only check verifies engine support. Building UI for it now risks a control with no backing feature.
+
+  **PRINCIPLE:** A and B are safe combinations (proven engine ground). 5, 6, 7 stay splittable because each carries an engine question that could stall whatever it's bundled with.
+
 ### Future work — Guitar Quintet (leadsheet-input engine)
 
 **Variation controls v1 — SHIPPED (2026-06-16, `2d0e9d40`):** Another version · Rhythmic activity · Guitar comp sliders; end-to-end UI → IPC → API → assembly → passes. See **[HANDOVER_2026-06-16.md](HANDOVER_2026-06-16.md)**.
