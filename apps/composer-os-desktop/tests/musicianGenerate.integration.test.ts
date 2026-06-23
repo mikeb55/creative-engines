@@ -32,70 +32,27 @@ describe('musician progression padding', () => {
 describe('musician Milestone A apiGenerate body wiring', () => {
   const composerSlug = 'wayne_shorter';
   const seed = 90217;
-  let buildPaddedLockedProgressionText: (
-    rawText: string,
-    totalBars: number
-  ) =>
-    | { ok: true; text: string; seedBarCount: number }
-    | { ok: false; error: string };
+  let buildMusicianApiGenerateBody: (
+    request: import('../electron/musicianTypes').MusicianGenerateRequest
+  ) => import('../electron/musicianIpc').BuildMusicianApiGenerateBodyResult;
 
   beforeAll(async () => {
-    ({ buildPaddedLockedProgressionText } = await import('../electron/musicianIpc'));
+    ({ buildMusicianApiGenerateBody } = await import('../electron/musicianIpc'));
   });
 
-  /** Mirror of musicianIpc.ts apiGenerateBody branches — keep in sync with handleMusicianGenerate. */
-  function musicianApiGenerateBodyForTest(
-    request: { chordProgressionText?: string; totalBars?: number; songwriterStyleId?: string }
-  ): Record<string, unknown> {
-    const rawProgression =
-      typeof request.chordProgressionText === 'string' ? request.chordProgressionText.trim() : '';
-    const hasCustomProgression = rawProgression.length > 0;
-    const songwriterStyle =
-      typeof request.songwriterStyleId === 'string' && request.songwriterStyleId.trim()
-        ? request.songwriterStyleId.trim()
-        : composerSlug;
-
-    if (!hasCustomProgression) {
-      return {
-        presetId: 'song_mode',
-        primarySongwriterStyle: composerSlug,
-        seed,
-        totalBars: 32,
-        creativeControlLevel: composerSlug === 'bill_evans' ? 'stable' : 'balanced',
-        outputLabel: composerSlug,
-        ...(composerSlug === 'bill_evans' ? { musicianPremiumMelody: true } : {}),
-      };
-    }
-
-    const totalBars =
-      typeof request.totalBars === 'number' &&
-      [8, 16, 24, 32, 40, 48, 56, 64].includes(request.totalBars)
-        ? request.totalBars
-        : 32;
-    const padded = buildPaddedLockedProgressionText(rawProgression, totalBars);
-    if (!padded.ok) throw new Error(padded.error);
-
-    return {
-      presetId: 'guitar_bass_duo',
-      styleStack: {
-        primary: 'barry_harris',
-        styleBlend: { primary: 'strong', secondary: 'off', colour: 'off' },
-      },
-      primarySongwriterStyle: songwriterStyle,
-      seed,
-      totalBars,
-      longFormEnabled: totalBars > 8,
-      bandModeEnabled: true,
-      harmonyMode: 'custom_locked',
-      chordProgressionText: padded.text,
-      creativeControlLevel: composerSlug === 'bill_evans' ? 'stable' : 'balanced',
-      outputLabel: composerSlug,
-      ...(composerSlug === 'bill_evans' ? { musicianPremiumMelody: true } : {}),
-    };
+  function bodyFor(request: {
+    chordProgressionText?: string;
+    totalBars?: number;
+    songwriterStyleId?: string;
+  }): Record<string, unknown> {
+    const built = buildMusicianApiGenerateBody({ composerSlug, seed, ...request });
+    expect(built.ok).toBe(true);
+    if (!built.ok) throw new Error('expected valid body');
+    return built.body;
   }
 
   it('Case 1 — empty progression keeps song_mode path frozen', () => {
-    const body = musicianApiGenerateBodyForTest({});
+    const body = bodyFor({});
     expect(body.presetId).toBe('song_mode');
     expect(body.totalBars).toBe(32);
     expect(body.chordProgressionText).toBeUndefined();
@@ -104,7 +61,7 @@ describe('musician Milestone A apiGenerate body wiring', () => {
 
   it('Case 2 — pasted 8 chords at totalBars 8 uses guitar_bass_duo custom_locked', () => {
     const eightChords = 'Dm9 | G13 | Cmaj9 | A7alt | Em7 | A7 | Dm7 | G7';
-    const body = musicianApiGenerateBodyForTest({ chordProgressionText: eightChords, totalBars: 8 });
+    const body = bodyFor({ chordProgressionText: eightChords, totalBars: 8 });
     expect(body.presetId).toBe('guitar_bass_duo');
     expect(body.harmonyMode).toBe('custom_locked');
     expect(body.bandModeEnabled).toBe(true);
@@ -114,7 +71,7 @@ describe('musician Milestone A apiGenerate body wiring', () => {
 
   it('Case 3 — short 19-chord paste pads to 24 bars with longFormEnabled', () => {
     const nineteenChords = Array.from({ length: 19 }, (_, i) => `C${i + 1}`).join(' | ');
-    const body = musicianApiGenerateBodyForTest({ chordProgressionText: nineteenChords, totalBars: 24 });
+    const body = bodyFor({ chordProgressionText: nineteenChords, totalBars: 24 });
     expect(body.totalBars).toBe(24);
     expect(body.longFormEnabled).toBe(true);
     const bars = (body.chordProgressionText as string).split(' | ');
@@ -125,10 +82,7 @@ describe('musician Milestone A apiGenerate body wiring', () => {
   });
 
   it('Case 4 — defaults: barry_harris styleStack and primarySongwriterStyle === composerSlug', () => {
-    const body = musicianApiGenerateBodyForTest({
-      chordProgressionText: 'Dm9 | G13 | Cmaj9 | A7alt',
-      totalBars: 8,
-    });
+    const body = bodyFor({ chordProgressionText: 'Dm9 | G13 | Cmaj9 | A7alt', totalBars: 8 });
     const styleStack = body.styleStack as { primary: string };
     expect(styleStack.primary).toBe('barry_harris');
     expect(body.primarySongwriterStyle).toBe('wayne_shorter');

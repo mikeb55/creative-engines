@@ -211,6 +211,78 @@ function failure(errorCode: MusicianErrorCode, message: string, detail?: string)
   return { ok: false, errorCode, message, ...(detail ? { detail } : {}) };
 }
 
+export type BuildMusicianApiGenerateBodyResult =
+  | { ok: true; body: Record<string, unknown>; presetId: 'song_mode' | 'guitar_bass_duo' }
+  | { ok: false; reason: 'invalid_total_bars' }
+  | { ok: false; reason: 'invalid_progression'; error: string };
+
+/** Pure apiGenerate payload from a validated MusicianGenerateRequest (no IPC / I/O). */
+export function buildMusicianApiGenerateBody(
+  request: MusicianGenerateRequest
+): BuildMusicianApiGenerateBodyResult {
+  const composerSlug = request.composerSlug;
+  const seed = request.seed;
+  const rawProgression =
+    typeof request.chordProgressionText === 'string' ? request.chordProgressionText.trim() : '';
+  const hasCustomProgression = rawProgression.length > 0;
+  const songwriterStyle =
+    typeof request.songwriterStyleId === 'string' && request.songwriterStyleId.trim()
+      ? request.songwriterStyleId.trim()
+      : composerSlug;
+
+  if (!hasCustomProgression) {
+    return {
+      ok: true,
+      presetId: 'song_mode',
+      body: {
+        presetId: 'song_mode',
+        primarySongwriterStyle: composerSlug,
+        seed,
+        totalBars: 32,
+        creativeControlLevel: composerSlug === 'bill_evans' ? 'stable' : 'balanced',
+        outputLabel: composerSlug,
+        ...(composerSlug === 'bill_evans' ? { musicianPremiumMelody: true } : {}),
+      },
+    };
+  }
+
+  const totalBars =
+    typeof request.totalBars === 'number' && isAllowedSongFormBarCount(request.totalBars)
+      ? request.totalBars
+      : typeof request.totalBars === 'number'
+        ? null
+        : 32;
+  if (totalBars === null) {
+    return { ok: false, reason: 'invalid_total_bars' };
+  }
+  const padded = buildPaddedLockedProgressionText(rawProgression, totalBars);
+  if (!padded.ok) {
+    return { ok: false, reason: 'invalid_progression', error: padded.error };
+  }
+
+  return {
+    ok: true,
+    presetId: 'guitar_bass_duo',
+    body: {
+      presetId: 'guitar_bass_duo',
+      styleStack: {
+        primary: 'barry_harris',
+        styleBlend: { primary: 'strong', secondary: 'off', colour: 'off' },
+      },
+      primarySongwriterStyle: songwriterStyle,
+      seed,
+      totalBars,
+      longFormEnabled: totalBars > 8,
+      bandModeEnabled: true,
+      harmonyMode: 'custom_locked',
+      chordProgressionText: padded.text,
+      creativeControlLevel: composerSlug === 'bill_evans' ? 'stable' : 'balanced',
+      outputLabel: composerSlug,
+      ...(composerSlug === 'bill_evans' ? { musicianPremiumMelody: true } : {}),
+    },
+  };
+}
+
 export async function handleMusicianGenerate(
   raw: unknown,
   libraryRoot: string,
@@ -255,63 +327,23 @@ export async function handleMusicianGenerate(
     const { apiGenerate, ensureOutputDirectoryForPreset, buildLabeledMusicXmlFilename } =
       loadDesktopIpcBundle();
 
-    const rawProgression =
-      typeof body?.chordProgressionText === 'string' ? body.chordProgressionText.trim() : '';
-    const hasCustomProgression = rawProgression.length > 0;
-    const songwriterStyle =
-      typeof body?.songwriterStyleId === 'string' && body.songwriterStyleId.trim()
-        ? body.songwriterStyleId.trim()
-        : composerSlug;
-
-    let presetId: 'song_mode' | 'guitar_bass_duo' = 'song_mode';
-    let apiGenerateBody: Record<string, unknown>;
-
-    if (hasCustomProgression) {
-      const totalBars =
-        typeof body?.totalBars === 'number' && isAllowedSongFormBarCount(body.totalBars)
-          ? body.totalBars
-          : typeof body?.totalBars === 'number'
-            ? null
-            : 32;
-      if (totalBars === null) {
+    const built = buildMusicianApiGenerateBody({
+      composerSlug,
+      seed,
+      chordProgressionText: body?.chordProgressionText,
+      totalBars: body?.totalBars,
+      songwriterStyleId: body?.songwriterStyleId,
+    });
+    if (!built.ok) {
+      if (built.reason === 'invalid_total_bars') {
         return failure(
           'INVALID_REQUEST',
           `Choose a valid length: ${SONG_FORM_BAR_OPTIONS.join(', ')} bars.`
         );
       }
-      const padded = buildPaddedLockedProgressionText(rawProgression, totalBars);
-      if (!padded.ok) {
-        return failure('INVALID_REQUEST', 'Could not read chord progression.', padded.error);
-      }
-      presetId = 'guitar_bass_duo';
-      apiGenerateBody = {
-        presetId,
-        styleStack: {
-          primary: 'barry_harris',
-          styleBlend: { primary: 'strong', secondary: 'off', colour: 'off' },
-        },
-        primarySongwriterStyle: songwriterStyle,
-        seed,
-        totalBars,
-        longFormEnabled: totalBars > 8,
-        bandModeEnabled: true,
-        harmonyMode: 'custom_locked',
-        chordProgressionText: padded.text,
-        creativeControlLevel: composerSlug === 'bill_evans' ? 'stable' : 'balanced',
-        outputLabel: composerSlug,
-        ...(composerSlug === 'bill_evans' ? { musicianPremiumMelody: true } : {}),
-      };
-    } else {
-      apiGenerateBody = {
-        presetId: 'song_mode',
-        primarySongwriterStyle: composerSlug,
-        seed,
-        totalBars: 32,
-        creativeControlLevel: composerSlug === 'bill_evans' ? 'stable' : 'balanced',
-        outputLabel: composerSlug,
-        ...(composerSlug === 'bill_evans' ? { musicianPremiumMelody: true } : {}),
-      };
+      return failure('INVALID_REQUEST', 'Could not read chord progression.', built.error);
     }
+    const { body: apiGenerateBody, presetId } = built;
 
     ensureOutputDirectoryForPreset(presetId, libraryRoot);
 
