@@ -153,6 +153,24 @@ export function parseChordProgressionInput(input: string): ParseChordProgression
 }
 
 /**
+ * Repeat `seedBars` end-to-end until `totalBars` length (pure cycle, no variation).
+ * Returns null when seed is empty or `totalBars` is not a multiple of seed length.
+ */
+export function expandChordProgressionBarsToCount(
+  seedBars: string[],
+  totalBars: number
+): string[] | null {
+  const seedLen = seedBars.length;
+  if (seedLen === 0 || totalBars % seedLen !== 0) return null;
+  const repeats = totalBars / seedLen;
+  const out: string[] = [];
+  for (let i = 0; i < repeats; i++) {
+    out.push(...seedBars);
+  }
+  return out;
+}
+
+/**
  * Wyble etude / variable length: one primary chord per bar, any count ≥ 1.
  * Same separator and slash-chord rules as `parseChordProgressionInputWithBarCount`; no fixed bar target.
  */

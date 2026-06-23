@@ -117,6 +117,8 @@ import { scoreNarrativeMomentsSoft } from './duoNarrativeMoments';
 import {
   parseChordProgressionInput,
   parseChordProgressionInputWithBarCount,
+  parseChordProgressionInputFlexible,
+  expandChordProgressionBarsToCount,
   normalizeChordToken,
   buildHarmonyPlanFromBars,
   buildChordSymbolPlanFromBars,
@@ -1989,15 +1991,65 @@ export function runGoldenPath(seed: number = 12345, options?: RunGoldenPathOptio
         parsed = { ok: true, bars: [...p8.bars, ...p8.bars] };
       }
     } else {
-      const single = parseChordProgressionInputWithBarCount(text, expectedBars);
-      if (!single.ok) {
-        return harmonyParseFailureGoldenPathResult(
-          seed,
-          opts,
-          `Invalid chord progression — not applied. ${single.error}`
-        );
+      if (opts?.harmonyMode === 'custom_locked') {
+        const seedParse = parseChordProgressionInputFlexible(text);
+        if (!seedParse.ok) {
+          return harmonyParseFailureGoldenPathResult(
+            seed,
+            opts,
+            `Invalid chord progression — not applied. ${seedParse.error}`
+          );
+        }
+        const seedLen = seedParse.bars.length;
+        if (seedLen === expectedBars) {
+          const single = parseChordProgressionInputWithBarCount(text, expectedBars);
+          if (!single.ok) {
+            return harmonyParseFailureGoldenPathResult(
+              seed,
+              opts,
+              `Invalid chord progression — not applied. ${single.error}`
+            );
+          }
+          parsed = single;
+        } else if (seedLen < expectedBars) {
+          if (expectedBars % seedLen !== 0) {
+            return harmonyParseFailureGoldenPathResult(
+              seed,
+              opts,
+              `Invalid chord progression — not applied. Seed progression has ${seedLen} bars; totalBars is ${expectedBars}. Seed length must divide evenly into totalBars (no padding).`
+            );
+          }
+          const expanded = expandChordProgressionBarsToCount(seedParse.bars, expectedBars);
+          if (!expanded) {
+            return harmonyParseFailureGoldenPathResult(
+              seed,
+              opts,
+              `Invalid chord progression — not applied. Seed progression has ${seedLen} bars; totalBars is ${expectedBars}. Seed length must divide evenly into totalBars (no padding).`
+            );
+          }
+          parsed = { ok: true, bars: expanded };
+        } else {
+          const single = parseChordProgressionInputWithBarCount(text, expectedBars);
+          if (!single.ok) {
+            return harmonyParseFailureGoldenPathResult(
+              seed,
+              opts,
+              `Invalid chord progression — not applied. ${single.error}`
+            );
+          }
+          parsed = single;
+        }
+      } else {
+        const single = parseChordProgressionInputWithBarCount(text, expectedBars);
+        if (!single.ok) {
+          return harmonyParseFailureGoldenPathResult(
+            seed,
+            opts,
+            `Invalid chord progression — not applied. ${single.error}`
+          );
+        }
+        parsed = single;
       }
-      parsed = single;
     }
     if (typeof process !== 'undefined' && process.env?.COMPOSER_OS_DEBUG_CUSTOM_CHORDS === '1') {
       console.log('[V3.5] USING CUSTOM CHORDS:', parsed.bars);
