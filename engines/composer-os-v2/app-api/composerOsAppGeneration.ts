@@ -2156,6 +2156,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           bpmOverride: req.bpm,
           bandModeEnabled: req.bandModeEnabled,
           mosaicSectionPlan: mosaicPlan,
+          compositionContext: gp.context,
         });
         if (drumResult) drumGuideSource = drumResult.drumGuideSource;
       } catch (e) {

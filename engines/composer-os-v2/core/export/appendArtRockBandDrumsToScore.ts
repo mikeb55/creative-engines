@@ -1,4 +1,5 @@
 import type { CompositionContext } from '../compositionContext';
+import type { MosaicModeSectionPlanEntry } from '../mosaic-mode/precomputeMosaicEffectiveHarmonyBars';
 import { resolveMeasureBeatSpanQuarters } from '../rhythm/oddMeterQuantiser';
 import type { MeasureModel, NoteEvent, PartModel, RestEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import { createPart, createNote, createRest } from '../score-model/scoreEventBuilder';
@@ -6,7 +7,7 @@ import {
   artRockKickStartsForSpec,
   artRockVoice1SegmentsForSpec,
   resolveArtRockDrumBarSpec,
-  shouldUseArtRockMosaicDrumGuide,
+  resolveArtRockDrumBarSpecFromPlan,
   type ArtRockVoice1Segment,
 } from './artRockBandDrumGuide';
 
@@ -17,6 +18,62 @@ export const ART_ROCK_GM_SNARE = 38;
 export const ART_ROCK_GM_CLOSED_HAT = 42;
 
 const EPS = 1e-6;
+
+const CUSTOM_LOCKED_DRUM_SECTION_LABELS = ['intro', 'A', 'B', 'outro'] as const;
+
+/** Minimal 2–4 section plan so mosaic drum arc engages on custom_locked Band mode (drums only). */
+export function buildCustomLockedBandDrumSectionPlan(
+  totalBars: number,
+  songwriterStyleId: string
+): MosaicModeSectionPlanEntry[] {
+  if (totalBars < 2) {
+    throw new Error(`Band mode drums: custom_locked synthesis requires totalBars >= 2 (got ${totalBars})`);
+  }
+  const sectionCount = totalBars >= 16 ? 4 : totalBars >= 8 ? 3 : 2;
+  const baseLen = Math.floor(totalBars / sectionCount);
+  let remainder = totalBars % sectionCount;
+  const plan: MosaicModeSectionPlanEntry[] = [];
+  let startBar = 1;
+  for (let i = 0; i < sectionCount; i++) {
+    const len = baseLen + (remainder > 0 ? 1 : 0);
+    if (remainder > 0) remainder -= 1;
+    const endBar = startBar + len - 1;
+    plan.push({
+      sectionLabel: CUSTOM_LOCKED_DRUM_SECTION_LABELS[i] ?? `S${i + 1}`,
+      startBar,
+      endBar,
+      songwriterStyleId,
+    });
+    startBar = endBar + 1;
+  }
+  return plan;
+}
+
+export interface BandModeDrumArcResolution {
+  useMosaicArc: boolean;
+  /** Present only for synthesized custom_locked arcs; real mosaic plans keep hardcoded TV-suite breakpoints. */
+  proportionalPlan?: MosaicModeSectionPlanEntry[];
+}
+
+/** Opt-in drum arc: real mosaic plan unchanged; synthesize only custom_locked + band mode + no plan. */
+export function resolveBandModeDrumArcPlan(
+  context: CompositionContext | undefined,
+  totalBars: number
+): BandModeDrumArcResolution {
+  const existing = context?.generationMetadata?.mosaicSectionPlan;
+  if (Array.isArray(existing) && existing.length >= 2) {
+    return { useMosaicArc: true };
+  }
+  if (context?.generationMetadata?.customHarmonyLocked !== true) {
+    return { useMosaicArc: false };
+  }
+  const styleId =
+    context.generationMetadata?.songwriterStyleId ??
+    context.styleStack?.primary ??
+    'verlaine';
+  const proportionalPlan = buildCustomLockedBandDrumSectionPlan(totalBars, styleId);
+  return { useMosaicArc: true, proportionalPlan };
+}
 
 type VoiceSegment =
   | { kind: 'rest'; startBeat: number; duration: number }
@@ -89,12 +146,16 @@ function voiceTwoFromKickStarts(
 export function buildArtRockBandMeasureEventsForBar(
   barIndex: number,
   beatSpan: number,
-  useMosaicArc: boolean
+  useMosaicArc: boolean,
+  proportionalPlan?: MosaicModeSectionPlanEntry[]
 ): Array<NoteEvent | RestEvent> {
   if (Math.abs(beatSpan - 4) > EPS) {
     throw new Error(`Band mode drums: only 4/4 bars supported (span=${beatSpan})`);
   }
-  const spec = resolveArtRockDrumBarSpec(barIndex, useMosaicArc);
+  const spec =
+    useMosaicArc && proportionalPlan
+      ? resolveArtRockDrumBarSpecFromPlan(barIndex, proportionalPlan)
+      : resolveArtRockDrumBarSpec(barIndex, useMosaicArc);
   const voiceOne = segmentsToVoiceEvents(
     toVoiceSegments(artRockVoice1SegmentsForSpec(spec, beatSpan, barIndex)),
     1,
@@ -122,18 +183,18 @@ function stampDrumMeasureSpans(part: PartModel, context: CompositionContext): vo
 
 function fillMeasureWithPattern(
   m: MeasureModel,
-  useMosaicArc: boolean
+  useMosaicArc: boolean,
+  proportionalPlan?: MosaicModeSectionPlanEntry[]
 ): void {
   const span = m.measureBeatSpanQuarters ?? 4;
-  m.events = buildArtRockBandMeasureEventsForBar(m.index, span, useMosaicArc);
+  m.events = buildArtRockBandMeasureEventsForBar(m.index, span, useMosaicArc, proportionalPlan);
 }
 
 export function buildArtRockBandDrumsPart(
   totalBars: number,
   context?: CompositionContext
 ): PartModel {
-  const plan = context?.generationMetadata?.mosaicSectionPlan;
-  const useMosaicArc = shouldUseArtRockMosaicDrumGuide(true, plan);
+  const arc = resolveBandModeDrumArcPlan(context, totalBars);
   const part = createPart(
     ART_ROCK_BAND_DRUMS_PART_ID,
     'Drums',
@@ -145,7 +206,7 @@ export function buildArtRockBandDrumsPart(
     () => undefined
   );
   for (const m of part.measures) {
-    fillMeasureWithPattern(m, useMosaicArc);
+    fillMeasureWithPattern(m, arc.useMosaicArc, arc.proportionalPlan);
   }
   return part;
 }
@@ -169,15 +230,14 @@ export function appendArtRockBandDrumsToScore(
   const drumPart = buildArtRockBandDrumsPart(totalBars, context);
   stampDrumMeasureSpans(drumPart, context);
 
-  const plan = context.generationMetadata?.mosaicSectionPlan;
-  const useMosaicArc = shouldUseArtRockMosaicDrumGuide(true, plan);
+  const arc = resolveBandModeDrumArcPlan(context, totalBars);
 
   for (const m of drumPart.measures) {
     const span = m.measureBeatSpanQuarters ?? 4;
     if (Math.abs(span - 4) > EPS) {
       throw new Error(`Band mode drums: bar ${m.index} span ${span} - only 4/4 supported in Stage 3`);
     }
-    fillMeasureWithPattern(m, useMosaicArc);
+    fillMeasureWithPattern(m, arc.useMosaicArc, arc.proportionalPlan);
   }
   return { ...score, parts: [...score.parts, drumPart] };
 }

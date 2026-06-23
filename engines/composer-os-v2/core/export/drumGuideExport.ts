@@ -4,7 +4,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import type { GenerationMetadata } from '../compositionContext';
+import type { CompositionContext, GenerationMetadata } from '../compositionContext';
 import type { BarMeterMap } from '../rhythm/barMeterTypes';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import {
@@ -13,6 +13,7 @@ import {
   shouldUseArtRockMosaicDrumGuide,
   type ArtRockDrumGuideSource,
 } from './artRockBandDrumGuide';
+import { resolveBandModeDrumArcPlan } from './appendArtRockBandDrumsToScore';
 import {
   PPQ,
   reduceToBeatOnsets,
@@ -27,6 +28,8 @@ export interface DrumGuideBundleOptions {
   bpmOverride?: number;
   bandModeEnabled?: boolean;
   mosaicSectionPlan?: MosaicSectionPlanSlice;
+  /** When set, custom_locked drum arc synthesis matches scored Drums staff. */
+  compositionContext?: CompositionContext;
 }
 
 export interface DrumGuideBundleResult {
@@ -49,12 +52,15 @@ function scoreTotalBars(score: ScoreModel): number {
 function resolveDrumGuideBars(
   score: ScoreModel,
   options?: DrumGuideBundleOptions
-): { bars: DrumGuideBar[]; source: ArtRockDrumGuideSource } {
-  const plan = options?.mosaicSectionPlan;
-  if (shouldUseArtRockMosaicDrumGuide(options?.bandModeEnabled, plan)) {
+): { bars: DrumGuideBar[]; source: ArtRockDrumGuideSource; proportionalPlan?: MosaicSectionPlanSlice } {
+  const totalBars = scoreTotalBars(score);
+  const arc = resolveBandModeDrumArcPlan(options?.compositionContext, totalBars);
+  const plan = options?.mosaicSectionPlan ?? options?.compositionContext?.generationMetadata?.mosaicSectionPlan;
+  if (shouldUseArtRockMosaicDrumGuide(options?.bandModeEnabled, arc.proportionalPlan ?? plan)) {
     return {
-      bars: buildArtRockBandDrumGuideBars(scoreTotalBars(score), plan),
+      bars: buildArtRockBandDrumGuideBars(totalBars, plan, arc.proportionalPlan),
       source: 'art_rock_mosaic_grid',
+      proportionalPlan: arc.proportionalPlan,
     };
   }
   return {
@@ -93,7 +99,7 @@ export function exportDrumGuideBundle(
   }
   if (!hasBars) return undefined;
 
-  const { bars, source } = resolveDrumGuideBars(score, options);
+  const { bars, source, proportionalPlan } = resolveDrumGuideBars(score, options);
   if (bars.length === 0) return undefined;
 
   const bpm = options?.bpmOverride ?? score.tempo ?? 120;
@@ -119,7 +125,7 @@ export function exportDrumGuideBundle(
       ...(source === 'art_rock_mosaic_grid'
         ? {
             closedHatTicks: [
-              ...artRockDrumGuideTicksForBar(r.barIndex, true).closedHatTicks,
+              ...artRockDrumGuideTicksForBar(r.barIndex, true, proportionalPlan).closedHatTicks,
             ],
           }
         : {}),

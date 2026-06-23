@@ -624,6 +624,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           bpmOverride: req.bpm,
           bandModeEnabled: req.bandModeEnabled,
           mosaicSectionPlan: mosaicPlan,
+          compositionContext: result.context,
         });
         if (drumResult) {
           drumGuideFilepath = drumResult.midPath;

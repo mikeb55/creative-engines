@@ -88,6 +88,53 @@ export function resolveArtRockDrumBarSpec(
   return { tier, isFill, velocity };
 }
 
+function artRockTiersForSectionCount(sectionCount: number): ArtRockDrumTier[] {
+  if (sectionCount <= 2) return ['sparse', 'medium'].slice(0, sectionCount);
+  if (sectionCount === 3) return ['sparse', 'medium', 'busy'];
+  return ['sparse', 'medium', 'busy', 'thin'];
+}
+
+function sectionIndexForBarInPlan(
+  barIndex: number,
+  plan: MosaicModeSectionPlanEntry[]
+): number {
+  for (let i = 0; i < plan.length; i++) {
+    const section = plan[i]!;
+    if (barIndex >= section.startBar && barIndex <= section.endBar) return i;
+  }
+  return Math.max(0, plan.length - 1);
+}
+
+/** Section-index tier map for synthesized custom_locked drum arcs (fills at section endBar). */
+export function artRockSectionTierForPlanBar(
+  barIndex: number,
+  plan: MosaicModeSectionPlanEntry[]
+): ArtRockDrumTier {
+  const sectionIndex = sectionIndexForBarInPlan(barIndex, plan);
+  const tiers = artRockTiersForSectionCount(plan.length);
+  return tiers[Math.min(sectionIndex, tiers.length - 1)] ?? 'medium';
+}
+
+export function isArtRockPlanSectionBoundaryFillBar(
+  barIndex: number,
+  plan: MosaicModeSectionPlanEntry[]
+): boolean {
+  for (let i = 0; i < plan.length - 1; i++) {
+    if (plan[i]!.endBar === barIndex) return true;
+  }
+  return false;
+}
+
+export function resolveArtRockDrumBarSpecFromPlan(
+  barIndex: number,
+  plan: MosaicModeSectionPlanEntry[]
+): ArtRockDrumBarSpec {
+  const isFill = isArtRockPlanSectionBoundaryFillBar(barIndex, plan);
+  const tier = artRockSectionTierForPlanBar(barIndex, plan);
+  const velocity = isFill ? ART_ROCK_FILL_VELOCITY : ART_ROCK_VELOCITY_BY_TIER[tier];
+  return { tier, isFill, velocity };
+}
+
 /** Voice 1 segments — medium baseline (Stage 2 flat pattern). */
 export function artRockMediumVoice1Segments(beatSpan: number): ArtRockVoice1Segment[] {
   const out: ArtRockVoice1Segment[] = [];
@@ -190,11 +237,10 @@ export function artRockFillVoice1Segments(beatSpan: number, sectionTier: ArtRock
 export function artRockVoice1SegmentsForSpec(
   spec: ArtRockDrumBarSpec,
   beatSpan: number,
-  barIndex: number
+  _barIndex: number
 ): ArtRockVoice1Segment[] {
   if (spec.isFill) {
-    const sectionTier = artRockSectionTierForBar(barIndex);
-    return artRockFillVoice1Segments(beatSpan, sectionTier);
+    return artRockFillVoice1Segments(beatSpan, spec.tier);
   }
   switch (spec.tier) {
     case 'sparse':
@@ -221,14 +267,13 @@ export function artRockKickStartsForSpec(
     throw new Error(`Band mode drums: only 4/4 kick grids supported (span=${beatSpan})`);
   }
   if (spec.isFill) {
-    const sectionTier = artRockSectionTierForBar(barIndex);
-    if (sectionTier === 'sparse') {
+    if (spec.tier === 'sparse') {
       return [0, 2, 2.5, 3];
     }
-    if (sectionTier === 'medium') {
+    if (spec.tier === 'medium') {
       return [0, 1.5, 2, 2.5, 3];
     }
-    if (sectionTier === 'busy') {
+    if (spec.tier === 'busy') {
       return [0, 1, 1.5, 2, 2.5, 3, 3.5];
     }
     return [0, 2, 2.5, 3];
@@ -273,9 +318,13 @@ function ticksFromVoice1Segments(segments: ArtRockVoice1Segment[]): {
 
 export function artRockDrumGuideTicksForBar(
   barIndex: number,
-  useMosaicArc: boolean
+  useMosaicArc: boolean,
+  proportionalPlan?: MosaicModeSectionPlanEntry[]
 ): { kickTicks: number[]; snareTicks: number[]; closedHatTicks: number[] } {
-  const spec = resolveArtRockDrumBarSpec(barIndex, useMosaicArc);
+  const spec =
+    useMosaicArc && proportionalPlan
+      ? resolveArtRockDrumBarSpecFromPlan(barIndex, proportionalPlan)
+      : resolveArtRockDrumBarSpec(barIndex, useMosaicArc);
   const beatSpan = 4;
   const voice1 = artRockVoice1SegmentsForSpec(spec, beatSpan, barIndex);
   const kicks = artRockKickStartsForSpec(spec, beatSpan, barIndex);
@@ -290,12 +339,16 @@ export function artRockDrumGuideTicksForBar(
 /** Section-aware guide bars when mosaic plan present; flat medium otherwise. */
 export function buildArtRockBandDrumGuideBars(
   totalBars: number,
-  mosaicSectionPlan?: MosaicModeSectionPlanEntry[]
+  mosaicSectionPlan?: MosaicModeSectionPlanEntry[],
+  proportionalPlan?: MosaicModeSectionPlanEntry[]
 ): DrumGuideBar[] {
-  const useMosaicArc = Array.isArray(mosaicSectionPlan) && mosaicSectionPlan.length >= 2;
+  const useMosaicArc = shouldUseArtRockMosaicDrumGuide(
+    true,
+    proportionalPlan ?? mosaicSectionPlan
+  );
   const out: DrumGuideBar[] = [];
   for (let bar = 1; bar <= totalBars; bar++) {
-    const ticks = artRockDrumGuideTicksForBar(bar, useMosaicArc);
+    const ticks = artRockDrumGuideTicksForBar(bar, useMosaicArc, proportionalPlan);
     out.push({
       barIndex: bar,
       meterNumerator: 4,
