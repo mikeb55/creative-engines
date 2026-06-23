@@ -662,6 +662,26 @@ OPEN QUESTIONS before build:
 - OPEN: wire `runAppGeneration` (`composerOsAppGeneration.ts`) to support `bandModeEnabled` + user progressions, so the `.exe` exposes what the script already does.
 - NOTE: current `release/Composer-OS.exe` (built pre-band-work) does not include tonight's runner; rebuild only meaningful AFTER the wiring above.
 
+- **Band mode desktop UI — staged two-tab design (UX review + engine testing, 2026-06-23):** Wire Band mode + custom progressions into the desktop app using **section cards, not a spreadsheet**. Precedents: Band-in-a-Box (chord-sheet input + part markers), Ableton Session View (rearrangeable scene blocks), MuseScore (rehearsal marks survive to notation). Two tabs:
+
+  **UI DESIGN (from UX review — staged):**
+
+  - **TAB 1 "Quick Generate"** — wire today's pre-expand feature: one progression box + length selector (16/24/32/48/64) + optional whole-piece composer. SMALLEST viable desktop win.
+  - **TAB 2 "Arrange in Blocks"** — the multi-block arranger: scaffold picker (pick length → N empty 8-bar cards) → each card has chords + composer chip → duplicate / move-left-right / delete. Rehearsal marks auto-emit (already working in engine: `Block0: Verlaine` etc.).
+
+  **Smart defaults:** new block copies previous meter; "duplicate block"; "same chords / new voice"; scaffold-first (32 bars = 4 empty cards) which also enforces the multiple-of-8, max-64 constraint at the UI.
+
+  **STAGED ROLLOUT (matches engine readiness):**
+
+  1. Tab 1 (progression + length) — wiring only, engine ready.
+  2. Tab 2 cards: chords + composer, fixed 8-bar blocks, duplicate/reorder — engine ready (`mosaicSectionPlan`).
+  3. Per-block meter — engine ready (mosaic) but stage late; most likely to hit validation edges.
+  4. Arrangement intensity (sparse/normal/full) per block — **DEFER:** this is the "arrangement thickens" dimension, NOT yet confirmed built in engine. Do not build UI for it until engine support is verified.
+
+  **ENGINE-DRIVEN UX REQUIREMENT (from testing):** not every per-block progression survives golden-path voice-leading (e.g. a unique Am7 block fell back to the verlaine palette). Block cards MUST show a per-block generation state (clean / fell-back / failed) so users understand silent fallbacks. This is GAP 1 surfacing — not in the UX review, comes from our own runs.
+
+  **Composer chips:** don't hardcode only 3 — read available ids from `mosaicComposerDispatch.ts` (may be more than verlaine/marr/fripp).
+
 ### Future work — Guitar Quintet (leadsheet-input engine)
 
 **Variation controls v1 — SHIPPED (2026-06-16, `2d0e9d40`):** Another version · Rhythmic activity · Guitar comp sliders; end-to-end UI → IPC → API → assembly → passes. See **[HANDOVER_2026-06-16.md](HANDOVER_2026-06-16.md)**.
