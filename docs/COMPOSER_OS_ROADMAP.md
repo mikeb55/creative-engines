@@ -1,9 +1,7 @@
-# Composer OS Roadmap [2026-06-22]
+# Composer OS Roadmap [2026-06-23]
 
 ## ✅ Active Now (top priority — everything below is backlog)
-- Band mode: working with custom progressions + drums. Next: make drums musical (currently static).
-- Wire band mode + custom progressions into the desktop app (runAppGeneration) so the .exe exposes them.
-- Open question: variable-length output on the locked path (currently bar count = chord count).
+- Band mode — **next:** musical drums (currently static; no section variation / fills). Sole open Band Mode milestone.
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](../CHANGELOG.md), [docs/CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
@@ -650,17 +648,28 @@ OPEN QUESTIONS before build:
 - how does "harmony develops" work if blocks are free — manual per block, or auto-derived from block 1?
 - does arrangement thickening need new instrument-add logic or can it reuse band-mode parts?
 
+WARNING (from 8→32 GCE run): the GCE evaluator OVER-CREDITS pure repeats. Thematic recall scored 10.0 on copy-pasted blocks; "no section contrast" hard gate did NOT fire because intro/build/peak/tail count as distinct roles even when musical content is identical each block. So a passing GCE on repeated material is misleading — judge block variation by ear / by content-difference metrics, not the current section-role scorer.
+
+FINDINGS (investigation) — foundation is the MOSAIC path, not intro/build/peak/tail:
+
+- ALREADY EXISTS (mosaic): per-section composer voice (`composerForBar` / `mosaicSectionPlan`), per-section time signature (`mosaicSectionPlan[].timeSignature` → odd-meter quantiser), per-section reharmonisation (`precomputeMosaicEffectiveHarmonyBars` on a harmony slice).
+- 3 of 4 variation dimensions are already built in mosaic — composer, meter, reharm. Arrangement-thickening is the 4th, still to confirm.
+- GAP 1: no per-block `chordProgressionText` API. Free per-block progressions = stitch all blocks into ONE parent locked array + `mosaicSectionPlan` `startBar`/`endBar` ranges (not a chord string per block).
+- GAP 2: the "conductor" — a layer letting the USER specify a list of blocks (chords + composer + meter each) that assembles into the parent locked array + `mosaicSectionPlan`.
+- REVISED SCOPE: not build-from-scratch. = (a) input format for block list, (b) translate block list → parent progression + `mosaicSectionPlan` ranges, (c) reuse existing mosaic per-section composer/meter/reharm. Smaller than first feared.
+- Key files: `duoLongFormPlanner.ts`, `resolveMosaicSectionStyles.ts`, `mosaicBarHelpers.ts`, `scoreModelAssembler.ts`, `precomputeMosaicEffectiveHarmonyBars.ts`, `mosaicTilePipeline.ts`.
+
 ### Band Mode — user-supplied progressions & variable length
 
-- Custom chord progressions now work via `runBandModeCustomProgression.ts` (proven: 19-chord 4-key non-diatonic, 0 substitutions). Needs a clean input interface, not hand-edited scripts.
-- OPEN: confirm whether short (4/8-bar) input can be extended to arbitrary length, or if bar count is locked to progression length. **`totalBars` is a separate `GenerateRequest` field, but with `harmonyMode: custom_locked` (Band/custom path) parsed chords must equal `totalBars` exactly—no auto-repeat of shorter progressions. Tiling/cycling exists only on other modes (`custom` 8→32 tile, Song Mode songwriter scaffold).**
-- OPEN: drum part is currently static (no section variation / fills). Band mode generates + exports correctly but drums are not yet musical.
+- **DONE (2026-06-23, `dc15bad8`):** Custom chord progressions — Musician shell: paste progression → `guitar_bass_duo` + `harmonyMode: custom_locked` + `bandModeEnabled` via `handleMusicianGenerate` / `runAppGeneration`. Replaces hand-edited `runBandModeCustomProgression.ts` scripts for desktop users.
+- **DONE (2026-06-23, `dc15bad8`):** Variable length / auto-pad — short seed cycles to target length (`buildPaddedLockedProgressionText`; 8/16/24/32/40/48/56/64). Musician UI: progression box + length dropdown.
+- **OPEN (sole remaining Band Mode milestone):** Drum part is static (no section variation / fills). Band mode generates + exports correctly but drums are not yet musical.
 
 ### Desktop app — surface Band mode + custom progressions
 
-- Desktop generates via `runAppGeneration` → `generateComposition` (duo only). Band mode + custom progressions currently bypass the app wrapper (script calls `generateComposition` directly).
-- OPEN: wire `runAppGeneration` (`composerOsAppGeneration.ts`) to support `bandModeEnabled` + user progressions, so the `.exe` exposes what the script already does.
-- NOTE: current `release/Composer-OS.exe` (built pre-band-work) does not include tonight's runner; rebuild only meaningful AFTER the wiring above.
+- **Musician shell (`dc15bad8`):** Quick Generate path shipped — custom progression + variable length on desktop via Musician IPC (not full `runAppGeneration` web app yet).
+- Desktop **web** app still generates via `runAppGeneration` → `generateComposition` (duo only) for Band mode + custom progressions outside Musician.
+- OPEN: wire `runAppGeneration` (`composerOsAppGeneration.ts`) to support `bandModeEnabled` + user progressions in the main Generate UI, so the web app matches Musician.
 
 - **Band mode desktop UI — staged two-tab design (UX review + engine testing, 2026-06-23):** Wire Band mode + custom progressions into the desktop app using **section cards, not a spreadsheet**. Precedents: Band-in-a-Box (chord-sheet input + part markers), Ableton Session View (rearrangeable scene blocks), MuseScore (rehearsal marks survive to notation). Two tabs:
 
@@ -684,10 +693,7 @@ OPEN QUESTIONS before build:
 
   **BUILD SEQUENCE (4 units)** — combine within proven engine surface, isolate across engine unknowns:
 
-  - **MILESTONE A — Quick Generate (EASY).** Combines back-wiring + front UI:
-    - Route `chordProgressionText` / `totalBars` / `harmonyMode` / optional whole-piece composer through `runAppGeneration` → `generateComposition` (engine ready).
-    - UI: one progression box + length dropdown (16/24/32/48/64) + composer picker.
-    - Ship first — catches the app up to today's pre-expand length feature.
+  - **MILESTONE A — Quick Generate (EASY).** **DONE (2026-06-23, `dc15bad8`).** Musician shell: progression box + length dropdown + composer picker → `chordProgressionText` / `totalBars` / `harmonyMode: custom_locked` / optional whole-piece composer through IPC → `apiGenerate` → `generateComposition`. Auto-pad shorter seeds to selected length.
 
   - **MILESTONE B — Block cards + manipulation (MEDIUM).** Combines cards + reorder:
     - Scaffold picker → N empty 8-bar cards, each with chord box + composer chip (read ids from `mosaicComposerDispatch.ts`).
