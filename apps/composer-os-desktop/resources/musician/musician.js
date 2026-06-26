@@ -1,6 +1,6 @@
 "use strict";
 (() => {
-  // electron/stitchMosaicBlocks.ts
+  // ../../engines/composer-os-v2/core/mosaic-mode/stitchMosaicBlocks.ts
   var BARS_PER_MOSAIC_BLOCK = 8;
   function normalizeProgressionSeparators(input) {
     return input.replace(/\r\n/g, "\n").replace(/[,;]/g, "|").replace(/\n+/g, "|").trim();

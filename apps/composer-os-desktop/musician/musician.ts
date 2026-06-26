@@ -6,7 +6,7 @@ import { buildBlocksGenerateRequest } from '../electron/buildBlocksGenerateReque
 import {
   BARS_PER_MOSAIC_BLOCK,
   reindexMosaicSectionPlan,
-} from '../electron/stitchMosaicBlocks';
+} from '../../../engines/composer-os-v2/core/mosaic-mode/stitchMosaicBlocks';
 import {
   DEFAULT_MOSAIC_COMPOSER_IDS,
   FEATURED_MOSAIC_COMPOSER_IDS,

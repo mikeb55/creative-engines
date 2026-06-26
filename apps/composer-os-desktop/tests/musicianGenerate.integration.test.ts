@@ -52,7 +52,7 @@ describe('musician Tab 2 mosaic stitch', () => {
   }
 
   it('1 — 2-block stitch (verlaine, marr): parent text order + A/B plan', async () => {
-    const { stitchMosaicBlocks } = await import('../electron/stitchMosaicBlocks');
+    const { stitchMosaicBlocks } = await import('../../../engines/composer-os-v2/core/mosaic-mode/stitchMosaicBlocks');
     const stitched = stitchMosaicBlocks([
       { chordsText: blockA, songwriterStyleId: 'verlaine' },
       { chordsText: blockB, songwriterStyleId: 'marr' },
@@ -91,7 +91,7 @@ describe('musician Tab 2 mosaic stitch', () => {
   });
 
   it('2 — reorder: swap blocks 0↔2 keeps block-3 chords + composer at bars 1–8', async () => {
-    const { stitchMosaicBlocks } = await import('../electron/stitchMosaicBlocks');
+    const { stitchMosaicBlocks } = await import('../../../engines/composer-os-v2/core/mosaic-mode/stitchMosaicBlocks');
     const blocks = [
       { chordsText: blockA, songwriterStyleId: 'verlaine' },
       { chordsText: blockB, songwriterStyleId: 'marr' },
@@ -109,7 +109,7 @@ describe('musician Tab 2 mosaic stitch', () => {
   });
 
   it('3 — duplicate: +1 section, matching chords + composer on adjacent pair', async () => {
-    const { stitchMosaicBlocks } = await import('../electron/stitchMosaicBlocks');
+    const { stitchMosaicBlocks } = await import('../../../engines/composer-os-v2/core/mosaic-mode/stitchMosaicBlocks');
     const blocks = [
       { chordsText: blockA, songwriterStyleId: 'verlaine' },
       { chordsText: blockB, songwriterStyleId: 'marr' },
@@ -134,7 +134,7 @@ describe('musician Tab 2 mosaic stitch', () => {
   });
 
   it('4 — delete middle (3→2): parent = block1 + block3, labels A,B', async () => {
-    const { stitchMosaicBlocks } = await import('../electron/stitchMosaicBlocks');
+    const { stitchMosaicBlocks } = await import('../../../engines/composer-os-v2/core/mosaic-mode/stitchMosaicBlocks');
     const blocks = [
       { chordsText: blockA, songwriterStyleId: 'verlaine' },
       { chordsText: blockB, songwriterStyleId: 'marr' },
@@ -159,7 +159,7 @@ describe('musician Tab 2 mosaic stitch', () => {
   });
 
   it('5 — chords never appear in mosaicSectionPlan JSON', async () => {
-    const { stitchMosaicBlocks } = await import('../electron/stitchMosaicBlocks');
+    const { stitchMosaicBlocks } = await import('../../../engines/composer-os-v2/core/mosaic-mode/stitchMosaicBlocks');
     const stitched = stitchMosaicBlocks([
       { chordsText: blockA, songwriterStyleId: 'verlaine' },
       { chordsText: blockB, songwriterStyleId: 'marr' },
@@ -174,7 +174,7 @@ describe('musician Tab 2 mosaic stitch', () => {
   });
 
   it('6 — validation rejects <2 blocks and 7-chord block', async () => {
-    const { stitchMosaicBlocks } = await import('../electron/stitchMosaicBlocks');
+    const { stitchMosaicBlocks } = await import('../../../engines/composer-os-v2/core/mosaic-mode/stitchMosaicBlocks');
     const oneBlock = stitchMosaicBlocks([
       { chordsText: blockA, songwriterStyleId: 'verlaine' },
     ]);
@@ -190,7 +190,7 @@ describe('musician Tab 2 mosaic stitch', () => {
 
   it('mosaic IPC body carries mosaicSectionPlan + guitar_bass_duo locked harmony', async () => {
     const { buildMusicianApiGenerateBody } = await import('../electron/musicianIpc');
-    const { stitchMosaicBlocks } = await import('../electron/stitchMosaicBlocks');
+    const { stitchMosaicBlocks } = await import('../../../engines/composer-os-v2/core/mosaic-mode/stitchMosaicBlocks');
     const stitched = stitchMosaicBlocks([
       { chordsText: blockA, songwriterStyleId: 'verlaine' },
       { chordsText: blockB, songwriterStyleId: 'marr' },

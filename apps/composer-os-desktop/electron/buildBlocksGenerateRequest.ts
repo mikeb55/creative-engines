@@ -2,7 +2,7 @@
  * Tab 2 card state -> MusicianGenerateRequest (extracted from musician.ts blocks-generate handler).
  */
 import type { MusicianGenerateRequest } from './musicianTypes';
-import { stitchMosaicBlocks } from './stitchMosaicBlocks';
+import { stitchMosaicBlocks } from '../../../engines/composer-os-v2/core/mosaic-mode/stitchMosaicBlocks';
 
 export interface BlockCardState {
   chords: string;
