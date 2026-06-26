@@ -1,7 +1,7 @@
 # Composer OS Roadmap [2026-06-23]
 
 ## ✅ Active Now (top priority — everything below is backlog)
-- Band mode — **next:** musical drums (currently static; no section variation / fills). Sole open Band Mode milestone.
+- **Milestone B — Block cards + manipulation** (desktop Tab 2 “Arrange in Blocks”: scaffold → 8-bar cards, chords + composer chip, duplicate/reorder/delete). **Band Mode engine complete** — progressions, variable length, and section-varying drums shipped (`2414fcbe`).
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](../CHANGELOG.md), [docs/CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
 
@@ -663,7 +663,7 @@ FINDINGS (investigation) — foundation is the MOSAIC path, not intro/build/peak
 
 - **DONE (2026-06-23, `dc15bad8`):** Custom chord progressions — Musician shell: paste progression → `guitar_bass_duo` + `harmonyMode: custom_locked` + `bandModeEnabled` via `handleMusicianGenerate` / `runAppGeneration`. Replaces hand-edited `runBandModeCustomProgression.ts` scripts for desktop users.
 - **DONE (2026-06-23, `dc15bad8`):** Variable length / auto-pad — short seed cycles to target length (`buildPaddedLockedProgressionText`; 8/16/24/32/40/48/56/64). Musician UI: progression box + length dropdown.
-- **OPEN (sole remaining Band Mode milestone):** Drum part is static (no section variation / fills). Band mode generates + exports correctly but drums are not yet musical.
+- **DONE (2026-06-23, `2414fcbe`):** Section-varying drums on **custom_locked** Band Mode — when no real `mosaicSectionPlan`, synthesize a minimal 2–4 section plan from `totalBars` so existing mosaic drum arc engages (`resolveBandModeDrumArcPlan` → sparse/medium/busy/thin tiers + proportional boundary fills at section `endBar`, not hardcoded 8/20/28). Real mosaic plans (e.g. TV Suite) unchanged. Sidecar source `art_rock_mosaic_grid`. **Band Mode engine work complete.**
 
 ### Desktop app — surface Band mode + custom progressions
 
@@ -695,7 +695,7 @@ FINDINGS (investigation) — foundation is the MOSAIC path, not intro/build/peak
 
   - **MILESTONE A — Quick Generate (EASY).** **DONE (2026-06-23, `dc15bad8`).** Musician shell: progression box + length dropdown + composer picker → `chordProgressionText` / `totalBars` / `harmonyMode: custom_locked` / optional whole-piece composer through IPC → `apiGenerate` → `generateComposition`. Auto-pad shorter seeds to selected length.
 
-  - **MILESTONE B — Block cards + manipulation (MEDIUM).** Combines cards + reorder:
+  - **MILESTONE B — Block cards + manipulation (MEDIUM).** **NEXT.** Combines cards + reorder:
     - Scaffold picker → N empty 8-bar cards, each with chord box + composer chip (read ids from `mosaicComposerDispatch.ts`).
     - Duplicate / move-left-right / delete / "same chords-new voice"; reindex `startBar`/`endBar` to stay contiguous each change.
     - Engine ready (`mosaicSectionPlan`).
