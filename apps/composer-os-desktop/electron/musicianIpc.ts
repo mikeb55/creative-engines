@@ -5,6 +5,7 @@ import { app, shell, type BrowserWindow, type IpcMain } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
 import { resolveDesktopIpcBundlePath } from './config';
+import { buildMosaicBlocksGeneratePayload } from '../../../engines/composer-os-v2/core/mosaic-mode/buildMosaicBlocksGeneratePayload';
 import type {
   MusicianComposerOption,
   MusicianErrorCode,
@@ -312,28 +313,14 @@ export function buildMusicianApiGenerateBody(
       }
     }
 
-    return {
-      ok: true,
-      presetId: 'guitar_bass_duo',
-      body: {
-        presetId: 'guitar_bass_duo',
-        styleStack: {
-          primary: 'barry_harris',
-          styleBlend: { primary: 'strong', secondary: 'off', colour: 'off' },
-        },
-        primarySongwriterStyle: mosaicPlan[0]!.songwriterStyleId,
-        seed,
-        totalBars,
-        longFormEnabled: true,
-        bandModeEnabled: true,
-        harmonyMode: 'custom_locked',
-        chordProgressionText: rawProgression,
-        mosaicSectionPlan: mosaicPlan,
-        creativeControlLevel: composerSlug === 'bill_evans' ? 'stable' : 'balanced',
-        outputLabel: composerSlug,
-        ...(composerSlug === 'bill_evans' ? { musicianPremiumMelody: true } : {}),
-      },
-    };
+    const mosaicPayload = buildMosaicBlocksGeneratePayload({
+      composerSlug,
+      seed,
+      totalBars,
+      chordProgressionText: rawProgression,
+      mosaicSectionPlan: mosaicPlan,
+    });
+    return { ok: true, presetId: mosaicPayload.presetId, body: mosaicPayload.body };
   }
 
   if (!hasCustomProgression) {
