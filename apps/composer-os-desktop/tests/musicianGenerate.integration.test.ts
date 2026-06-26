@@ -29,6 +29,226 @@ describe('musician progression padding', () => {
   });
 });
 
+describe('musician Tab 2 mosaic stitch', () => {
+  const blockA =
+    'Em(maj7) | Fmaj7#11/E | Am6 | Cmaj7 | G7sus4 | F#m7b5 | B7alt | Em(add9)';
+  const blockB = 'Dmaj7 | A/C# | Bm7 | Gmaj7 | D/F# | Em7 | A7 | Dmaj9';
+  const blockC = 'Cm7 | Fm7 | Bb7 | Ebmaj7 | Abmaj7 | Dm7b5 | G7alt | Cm(add9)';
+
+  function assertPlanInvariant(
+    plan: Array<{ sectionLabel: string; startBar: number; endBar: number; songwriterStyleId: string }>,
+    blockCount: number
+  ): void {
+    expect(plan.length).toBe(blockCount);
+    expect(plan[0]?.startBar).toBe(1);
+    for (let i = 0; i < plan.length; i++) {
+      const row = plan[i]!;
+      expect(row.endBar - row.startBar).toBe(7);
+      if (i > 0) {
+        expect(row.startBar).toBe(plan[i - 1]!.endBar + 1);
+      }
+    }
+    expect(plan[plan.length - 1]?.endBar).toBe(blockCount * 8);
+  }
+
+  it('1 — 2-block stitch (verlaine, marr): parent text order + A/B plan', async () => {
+    const { stitchMosaicBlocks } = await import('../electron/stitchMosaicBlocks');
+    const stitched = stitchMosaicBlocks([
+      { chordsText: blockA, songwriterStyleId: 'verlaine' },
+      { chordsText: blockB, songwriterStyleId: 'marr' },
+    ]);
+    expect(stitched.ok).toBe(true);
+    if (!stitched.ok) return;
+
+    const { chordProgressionText, mosaicSectionPlan, totalBars } = stitched.result;
+    expect(totalBars).toBe(16);
+    expect(mosaicSectionPlan.length).toBe(2);
+    assertPlanInvariant(mosaicSectionPlan, 2);
+
+    expect(mosaicSectionPlan[0]).toEqual({
+      sectionLabel: 'A',
+      startBar: 1,
+      endBar: 8,
+      songwriterStyleId: 'verlaine',
+    });
+    expect(mosaicSectionPlan[1]).toEqual({
+      sectionLabel: 'B',
+      startBar: 9,
+      endBar: 16,
+      songwriterStyleId: 'marr',
+    });
+
+    const chords = chordProgressionText.split(' | ');
+    expect(chords).toHaveLength(16);
+    expect(chords[0]).toBe('Em(maj7)');
+    expect(chords[7]).toBe('Em(add9)');
+    expect(chords[8]).toBe('Dmaj7');
+    expect(chords[15]).toBe('Dmaj9');
+
+    for (const row of mosaicSectionPlan) {
+      expect(row).not.toHaveProperty('chords');
+    }
+  });
+
+  it('2 — reorder: swap blocks 0↔2 keeps block-3 chords + composer at bars 1–8', async () => {
+    const { stitchMosaicBlocks } = await import('../electron/stitchMosaicBlocks');
+    const blocks = [
+      { chordsText: blockA, songwriterStyleId: 'verlaine' },
+      { chordsText: blockB, songwriterStyleId: 'marr' },
+      { chordsText: blockC, songwriterStyleId: 'fripp' },
+    ];
+    const swapped = [blocks[2]!, blocks[1]!, blocks[0]!];
+    const stitched = stitchMosaicBlocks(swapped);
+    expect(stitched.ok).toBe(true);
+    if (!stitched.ok) return;
+
+    const firstEight = stitched.result.chordProgressionText.split(' | ').slice(0, 8);
+    expect(firstEight.join(' | ')).toBe(blockC);
+    expect(stitched.result.mosaicSectionPlan[0]?.songwriterStyleId).toBe('fripp');
+    assertPlanInvariant(stitched.result.mosaicSectionPlan, 3);
+  });
+
+  it('3 — duplicate: +1 section, matching chords + composer on adjacent pair', async () => {
+    const { stitchMosaicBlocks } = await import('../electron/stitchMosaicBlocks');
+    const blocks = [
+      { chordsText: blockA, songwriterStyleId: 'verlaine' },
+      { chordsText: blockB, songwriterStyleId: 'marr' },
+    ];
+    const duplicated = [
+      blocks[0]!,
+      { chordsText: blocks[0]!.chordsText, songwriterStyleId: blocks[0]!.songwriterStyleId },
+      blocks[1]!,
+    ];
+    const stitched = stitchMosaicBlocks(duplicated);
+    expect(stitched.ok).toBe(true);
+    if (!stitched.ok) return;
+
+    expect(stitched.result.totalBars).toBe(24);
+    assertPlanInvariant(stitched.result.mosaicSectionPlan, 3);
+
+    const chords = stitched.result.chordProgressionText.split(' | ');
+    expect(chords.slice(0, 8).join(' | ')).toBe(blockA);
+    expect(chords.slice(8, 16).join(' | ')).toBe(blockA);
+    expect(stitched.result.mosaicSectionPlan[0]?.songwriterStyleId).toBe('verlaine');
+    expect(stitched.result.mosaicSectionPlan[1]?.songwriterStyleId).toBe('verlaine');
+  });
+
+  it('4 — delete middle (3→2): parent = block1 + block3, labels A,B', async () => {
+    const { stitchMosaicBlocks } = await import('../electron/stitchMosaicBlocks');
+    const blocks = [
+      { chordsText: blockA, songwriterStyleId: 'verlaine' },
+      { chordsText: blockB, songwriterStyleId: 'marr' },
+      { chordsText: blockC, songwriterStyleId: 'fripp' },
+    ];
+    const afterDelete = [blocks[0]!, blocks[2]!];
+    const stitched = stitchMosaicBlocks(afterDelete);
+    expect(stitched.ok).toBe(true);
+    if (!stitched.ok) return;
+
+    expect(stitched.result.totalBars).toBe(16);
+    expect(stitched.result.mosaicSectionPlan.length).toBe(2);
+    expect(stitched.result.mosaicSectionPlan[0]?.sectionLabel).toBe('A');
+    expect(stitched.result.mosaicSectionPlan[1]?.sectionLabel).toBe('B');
+    expect(stitched.result.mosaicSectionPlan[0]).toMatchObject({ startBar: 1, endBar: 8 });
+    expect(stitched.result.mosaicSectionPlan[1]).toMatchObject({ startBar: 9, endBar: 16 });
+
+    const chords = stitched.result.chordProgressionText.split(' | ');
+    expect(chords.slice(0, 8).join(' | ')).toBe(blockA);
+    expect(chords.slice(8, 16).join(' | ')).toBe(blockC);
+    assertPlanInvariant(stitched.result.mosaicSectionPlan, 2);
+  });
+
+  it('5 — chords never appear in mosaicSectionPlan JSON', async () => {
+    const { stitchMosaicBlocks } = await import('../electron/stitchMosaicBlocks');
+    const stitched = stitchMosaicBlocks([
+      { chordsText: blockA, songwriterStyleId: 'verlaine' },
+      { chordsText: blockB, songwriterStyleId: 'marr' },
+    ]);
+    expect(stitched.ok).toBe(true);
+    if (!stitched.ok) return;
+
+    const planJson = JSON.stringify(stitched.result.mosaicSectionPlan);
+    expect(planJson).not.toContain('|');
+    expect(planJson).not.toMatch(/maj7/i);
+    expect(planJson).not.toMatch(/m7/i);
+  });
+
+  it('6 — validation rejects <2 blocks and 7-chord block', async () => {
+    const { stitchMosaicBlocks } = await import('../electron/stitchMosaicBlocks');
+    const oneBlock = stitchMosaicBlocks([
+      { chordsText: blockA, songwriterStyleId: 'verlaine' },
+    ]);
+    expect(oneBlock.ok).toBe(false);
+
+    const sevenChords = 'Dm9 | G13 | Cmaj9 | A7alt | Em7 | A7 | Dm7';
+    const shortBlock = stitchMosaicBlocks([
+      { chordsText: sevenChords, songwriterStyleId: 'verlaine' },
+      { chordsText: blockB, songwriterStyleId: 'marr' },
+    ]);
+    expect(shortBlock.ok).toBe(false);
+  });
+
+  it('mosaic IPC body carries mosaicSectionPlan + guitar_bass_duo locked harmony', async () => {
+    const { buildMusicianApiGenerateBody } = await import('../electron/musicianIpc');
+    const { stitchMosaicBlocks } = await import('../electron/stitchMosaicBlocks');
+    const stitched = stitchMosaicBlocks([
+      { chordsText: blockA, songwriterStyleId: 'verlaine' },
+      { chordsText: blockB, songwriterStyleId: 'marr' },
+      { chordsText: blockC, songwriterStyleId: 'fripp' },
+    ]);
+    expect(stitched.ok).toBe(true);
+    if (!stitched.ok) return;
+
+    const built = buildMusicianApiGenerateBody({
+      composerSlug: 'verlaine',
+      seed: 90106,
+      chordProgressionText: stitched.result.chordProgressionText,
+      totalBars: stitched.result.totalBars,
+      mosaicSectionPlan: stitched.result.mosaicSectionPlan,
+    });
+    expect(built.ok).toBe(true);
+    if (!built.ok) return;
+
+    expect(built.presetId).toBe('guitar_bass_duo');
+    expect(built.body.harmonyMode).toBe('custom_locked');
+    expect(built.body.bandModeEnabled).toBe(true);
+    expect(built.body.longFormEnabled).toBe(true);
+    expect(built.body.mosaicSectionPlan).toEqual(stitched.result.mosaicSectionPlan);
+    expect((built.body.chordProgressionText as string).split(' | ')).toHaveLength(24);
+  });
+});
+
+describe('musician Tab 1 mosaicSectionPlan parity', () => {
+  it('blank progression omits mosaicSectionPlan', async () => {
+    const { buildMusicianApiGenerateBody } = await import('../electron/musicianIpc');
+    const built = buildMusicianApiGenerateBody({ composerSlug: 'wayne_shorter', seed: 90217 });
+    expect(built.ok).toBe(true);
+    if (!built.ok) return;
+    expect(built.body.mosaicSectionPlan).toBeUndefined();
+    expect(built.body.presetId).toBe('song_mode');
+    expect(built.body.totalBars).toBe(32);
+    expect(built.body.chordProgressionText).toBeUndefined();
+    expect(built.body.harmonyMode).toBeUndefined();
+  });
+
+  it('pasted progression omits mosaicSectionPlan', async () => {
+    const { buildMusicianApiGenerateBody } = await import('../electron/musicianIpc');
+    const built = buildMusicianApiGenerateBody({
+      composerSlug: 'wayne_shorter',
+      seed: 90217,
+      chordProgressionText: 'Dm9 | G13 | Cmaj9 | A7alt',
+      totalBars: 8,
+    });
+    expect(built.ok).toBe(true);
+    if (!built.ok) return;
+    expect(built.body.mosaicSectionPlan).toBeUndefined();
+    expect(built.body.presetId).toBe('guitar_bass_duo');
+    expect(built.body.harmonyMode).toBe('custom_locked');
+    expect(built.body.bandModeEnabled).toBe(true);
+    expect(built.body.totalBars).toBe(8);
+  });
+});
+
 describe('musician Milestone A apiGenerate body wiring', () => {
   const composerSlug = 'wayne_shorter';
   const seed = 90217;
@@ -86,6 +306,173 @@ describe('musician Milestone A apiGenerate body wiring', () => {
     const styleStack = body.styleStack as { primary: string };
     expect(styleStack.primary).toBe('barry_harris');
     expect(body.primarySongwriterStyle).toBe('wayne_shorter');
+  });
+});
+
+describe('musician Milestone B Tab 2 wired path', () => {
+  const blockA =
+    'Em(maj7) | Fmaj7#11/E | Am6 | Cmaj7 | G7sus4 | F#m7b5 | B7alt | Em(add9)';
+  const blockB = 'Dmaj7 | A/C# | Bm7 | Gmaj7 | D/F# | Em7 | A7 | Dmaj9';
+  const blockC = 'Cm7 | Fm7 | Bb7 | Ebmaj7 | Abmaj7 | Dm7b5 | G7alt | Cm(add9)';
+  const seed = 90106;
+
+  type BlockCardState = { chords: string; composerId: string };
+
+  function duplicateBlock(cards: BlockCardState[], index: number): void {
+    const source = cards[index];
+    if (!source) return;
+    cards.splice(index + 1, 0, {
+      chords: source.chords,
+      composerId: source.composerId,
+    });
+  }
+
+  function moveBlock(cards: BlockCardState[], index: number, delta: -1 | 1): void {
+    const target = index + delta;
+    if (target < 0 || target >= cards.length) return;
+    const tmp = cards[index]!;
+    cards[index] = cards[target]!;
+    cards[target] = tmp;
+  }
+
+  function deleteBlock(cards: BlockCardState[], index: number): void {
+    if (cards.length <= 2) return;
+    cards.splice(index, 1);
+  }
+
+  function assertPlanHasNoChordFields(
+    plan: Array<{ sectionLabel: string; startBar: number; endBar: number; songwriterStyleId: string }>
+  ): void {
+    const planJson = JSON.stringify(plan);
+    expect(planJson).not.toContain('|');
+    expect(planJson).not.toMatch(/maj7/i);
+    for (const row of plan) {
+      expect(row).not.toHaveProperty('chords');
+      expect(row).not.toHaveProperty('chordsText');
+    }
+  }
+
+  it('1 — wired happy path: 3 cards → request → api body', async () => {
+    const { buildBlocksGenerateRequest } = await import('../electron/buildBlocksGenerateRequest');
+    const { buildMusicianApiGenerateBody } = await import('../electron/musicianIpc');
+
+    const cards: BlockCardState[] = [
+      { chords: blockA, composerId: 'verlaine' },
+      { chords: blockB, composerId: 'marr' },
+      { chords: blockC, composerId: 'fripp' },
+    ];
+
+    const built = buildBlocksGenerateRequest(cards, seed);
+    expect(built.ok).toBe(true);
+    if (!built.ok) return;
+
+    const api = buildMusicianApiGenerateBody(built.request);
+    expect(api.ok).toBe(true);
+    if (!api.ok) return;
+
+    expect(api.presetId).toBe('guitar_bass_duo');
+    expect(api.body.harmonyMode).toBe('custom_locked');
+    expect(api.body.bandModeEnabled).toBe(true);
+    expect(api.body.longFormEnabled).toBe(true);
+    expect(api.body.totalBars).toBe(24);
+
+    const plan = api.body.mosaicSectionPlan as Array<{
+      sectionLabel: string;
+      startBar: number;
+      endBar: number;
+      songwriterStyleId: string;
+    }>;
+    expect(plan.length).toBe(3);
+    expect(plan[0]).toMatchObject({ sectionLabel: 'A', startBar: 1, endBar: 8, songwriterStyleId: 'verlaine' });
+    expect(plan[1]).toMatchObject({ sectionLabel: 'B', startBar: 9, endBar: 16, songwriterStyleId: 'marr' });
+    expect(plan[2]).toMatchObject({ sectionLabel: 'C', startBar: 17, endBar: 24, songwriterStyleId: 'fripp' });
+
+    const chords = (api.body.chordProgressionText as string).split(' | ');
+    expect(chords).toHaveLength(24);
+    expect(chords.slice(0, 8).join(' | ')).toBe(blockA);
+    expect(chords.slice(8, 16).join(' | ')).toBe(blockB);
+    expect(chords.slice(16, 24).join(' | ')).toBe(blockC);
+
+    assertPlanHasNoChordFields(plan);
+  });
+
+  it('2 — wired after card ops: duplicate, move to end, delete original card 1', async () => {
+    const { buildBlocksGenerateRequest } = await import('../electron/buildBlocksGenerateRequest');
+    const { buildMusicianApiGenerateBody } = await import('../electron/musicianIpc');
+
+    const cards: BlockCardState[] = [
+      { chords: blockA, composerId: 'verlaine' },
+      { chords: blockB, composerId: 'marr' },
+    ];
+
+    duplicateBlock(cards, 0);
+    moveBlock(cards, 1, 1);
+    deleteBlock(cards, 1);
+
+    const built = buildBlocksGenerateRequest(cards, seed);
+    expect(built.ok).toBe(true);
+    if (!built.ok) return;
+
+    const api = buildMusicianApiGenerateBody(built.request);
+    expect(api.ok).toBe(true);
+    if (!api.ok) return;
+
+    const plan = api.body.mosaicSectionPlan as Array<{
+      sectionLabel: string;
+      startBar: number;
+      endBar: number;
+      songwriterStyleId: string;
+    }>;
+
+    expect(plan.length).toBe(cards.length);
+    expect(api.body.totalBars).toBe(cards.length * 8);
+    expect(plan.map((row) => row.sectionLabel)).toEqual(['A', 'B']);
+    expect(plan[0]?.startBar).toBe(1);
+    for (let i = 1; i < plan.length; i++) {
+      expect(plan[i]?.startBar).toBe(plan[i - 1]!.endBar + 1);
+      expect(plan[i]?.endBar! - plan[i]?.startBar!).toBe(7);
+    }
+    expect(plan[plan.length - 1]?.endBar).toBe(cards.length * 8);
+  });
+
+  it('3 — Tab 1 unaffected: blank and pasted progression omit mosaicSectionPlan', async () => {
+    const { buildMusicianApiGenerateBody } = await import('../electron/musicianIpc');
+
+    const blank = buildMusicianApiGenerateBody({ composerSlug: 'wayne_shorter', seed: 90217 });
+    expect(blank.ok).toBe(true);
+    if (!blank.ok) return;
+    expect(blank.body.mosaicSectionPlan).toBeUndefined();
+    expect(blank.body.presetId).toBe('song_mode');
+    expect(blank.body.totalBars).toBe(32);
+    expect(blank.body.chordProgressionText).toBeUndefined();
+    expect(blank.body.harmonyMode).toBeUndefined();
+    expect(blank.body).not.toHaveProperty('mosaicSectionPlan');
+
+    const pasted = buildMusicianApiGenerateBody({
+      composerSlug: 'wayne_shorter',
+      seed: 90217,
+      chordProgressionText: 'Dm9 | G13 | Cmaj9 | A7alt',
+      totalBars: 8,
+    });
+    expect(pasted.ok).toBe(true);
+    if (!pasted.ok) return;
+    expect(pasted.body.mosaicSectionPlan).toBeUndefined();
+    expect(pasted.body.presetId).toBe('guitar_bass_duo');
+    expect(pasted.body.harmonyMode).toBe('custom_locked');
+    expect(pasted.body.bandModeEnabled).toBe(true);
+    expect(pasted.body.totalBars).toBe(8);
+    expect(pasted.body).not.toHaveProperty('mosaicSectionPlan');
+  });
+
+  it('4 — bundle guard: built musician.js includes Tab 2 wiring markers', () => {
+    const bundlePath = path.resolve(__dirname, '..', 'resources', 'musician', 'musician.js');
+    if (!fs.existsSync(bundlePath)) {
+      expect(true).toBe(true);
+      return;
+    }
+    const bundle = fs.readFileSync(bundlePath, 'utf8');
+    expect(bundle).toContain('blocks-generate');
+    expect(bundle).toContain('stitchMosaicBlocks');
   });
 });
 

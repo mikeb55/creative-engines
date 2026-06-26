@@ -10,6 +10,7 @@ import type {
   MusicianErrorCode,
   MusicianGenerateRequest,
   MusicianGenerateResponse,
+  MusicianMosaicSectionPlanEntry,
   MusicianRegistryFile,
   MusicianStatusEvent,
 } from './musicianTypes';
@@ -92,6 +93,7 @@ interface DesktopIpcBundle {
 }
 
 let cachedComposers: MusicianComposerOption[] = [];
+let cachedMosaicComposerIds: string[] = [];
 let registryLoadError: string | null = null;
 let generateInFlight = false;
 
@@ -153,6 +155,19 @@ export function resolveMusicianRegistryPath(): string {
   return devRepo;
 }
 
+/** Dispatch-backed mosaic composer ids — generated at build from mosaicComposerDispatch SLICE_ROWS. */
+export function resolveMosaicComposerIdsPath(): string {
+  const packaged =
+    typeof process.resourcesPath === 'string' && process.resourcesPath.length > 0
+      ? path.join(process.resourcesPath, 'registry', 'mosaic-composer-ids.json')
+      : '';
+  const devResources = path.join(__dirname, '..', 'resources', 'registry', 'mosaic-composer-ids.json');
+  if (app.isPackaged && packaged && fs.existsSync(packaged)) return packaged;
+  if (fs.existsSync(devResources)) return devResources;
+  if (packaged && fs.existsSync(packaged)) return packaged;
+  return devResources;
+}
+
 export function mapRegistryComposers(raw: MusicianRegistryFile['composers']): MusicianComposerOption[] {
   return raw
     .filter((c) => typeof c.slug === 'string' && typeof c.displayName === 'string' && typeof c.seed === 'number')
@@ -197,6 +212,33 @@ export function getCachedMusicianComposers(): MusicianComposerOption[] {
   return cachedComposers;
 }
 
+/** Dispatch-backed composer ids for Tab 2 Arrange in Blocks (read-only registry JSON). */
+export function loadMosaicComposerIdsAtStartup(): string[] {
+  try {
+    const idsPath = resolveMosaicComposerIdsPath();
+    if (!fs.existsSync(idsPath)) {
+      cachedMosaicComposerIds = [];
+      return cachedMosaicComposerIds;
+    }
+    const parsed = JSON.parse(fs.readFileSync(idsPath, 'utf-8')) as { composerIds?: string[] };
+    const ids = Array.isArray(parsed.composerIds)
+      ? parsed.composerIds.filter((id) => typeof id === 'string' && id.trim())
+      : [];
+    cachedMosaicComposerIds = [...new Set(ids)].sort((a, b) => a.localeCompare(b));
+  } catch {
+    cachedMosaicComposerIds = [];
+  }
+  return cachedMosaicComposerIds;
+}
+
+export function getCachedMosaicComposerIds(): string[] {
+  return cachedMosaicComposerIds;
+}
+
+function isMosaicBlocksRequest(plan: MusicianMosaicSectionPlanEntry[] | undefined): plan is MusicianMosaicSectionPlanEntry[] {
+  return Array.isArray(plan) && plan.length >= 2;
+}
+
 function isValidSeed(seed: unknown): seed is number {
   return typeof seed === 'number' && Number.isInteger(seed) && seed >= 1 && seed <= 999_999_999;
 }
@@ -222,6 +264,9 @@ export function buildMusicianApiGenerateBody(
 ): BuildMusicianApiGenerateBodyResult {
   const composerSlug = request.composerSlug;
   const seed = request.seed;
+  const mosaicPlan = isMosaicBlocksRequest(request.mosaicSectionPlan)
+    ? request.mosaicSectionPlan
+    : undefined;
   const rawProgression =
     typeof request.chordProgressionText === 'string' ? request.chordProgressionText.trim() : '';
   const hasCustomProgression = rawProgression.length > 0;
@@ -229,6 +274,67 @@ export function buildMusicianApiGenerateBody(
     typeof request.songwriterStyleId === 'string' && request.songwriterStyleId.trim()
       ? request.songwriterStyleId.trim()
       : composerSlug;
+
+  if (mosaicPlan) {
+    if (!hasCustomProgression) {
+      return { ok: false, reason: 'invalid_progression', error: 'Stitched chord progression is empty.' };
+    }
+    const bars = rawProgression.split(' | ');
+    const totalBars =
+      typeof request.totalBars === 'number' && request.totalBars === bars.length
+        ? request.totalBars
+        : bars.length;
+    if (bars.length < 16 || bars.length % 8 !== 0) {
+      return {
+        ok: false,
+        reason: 'invalid_progression',
+        error: 'Mosaic parent length must be a multiple of 8 (≥16 bars).',
+      };
+    }
+    const expectedSections = bars.length / 8;
+    if (mosaicPlan.length !== expectedSections) {
+      return {
+        ok: false,
+        reason: 'invalid_progression',
+        error: `mosaicSectionPlan length (${mosaicPlan.length}) does not match ${expectedSections} blocks.`,
+      };
+    }
+    for (let i = 0; i < mosaicPlan.length; i++) {
+      const section = mosaicPlan[i]!;
+      const wantStart = i * 8 + 1;
+      const wantEnd = i * 8 + 8;
+      if (section.startBar !== wantStart || section.endBar !== wantEnd || !section.songwriterStyleId.trim()) {
+        return {
+          ok: false,
+          reason: 'invalid_progression',
+          error: `mosaicSectionPlan block ${i} bar range must be ${wantStart}–${wantEnd} with a composer.`,
+        };
+      }
+    }
+
+    return {
+      ok: true,
+      presetId: 'guitar_bass_duo',
+      body: {
+        presetId: 'guitar_bass_duo',
+        styleStack: {
+          primary: 'barry_harris',
+          styleBlend: { primary: 'strong', secondary: 'off', colour: 'off' },
+        },
+        primarySongwriterStyle: mosaicPlan[0]!.songwriterStyleId,
+        seed,
+        totalBars,
+        longFormEnabled: true,
+        bandModeEnabled: true,
+        harmonyMode: 'custom_locked',
+        chordProgressionText: rawProgression,
+        mosaicSectionPlan: mosaicPlan,
+        creativeControlLevel: composerSlug === 'bill_evans' ? 'stable' : 'balanced',
+        outputLabel: composerSlug,
+        ...(composerSlug === 'bill_evans' ? { musicianPremiumMelody: true } : {}),
+      },
+    };
+  }
 
   if (!hasCustomProgression) {
     return {
@@ -310,17 +416,19 @@ export async function handleMusicianGenerate(
     return failure('INVALID_REQUEST', 'Enter a valid seed (1-999999999).');
   }
 
+  const mosaicPlan = isMosaicBlocksRequest(body?.mosaicSectionPlan) ? body.mosaicSectionPlan : undefined;
   const composer = cachedComposers.find((c) => c.slug === composerSlug);
-  if (!composer) {
+  if (!mosaicPlan && !composer) {
     return failure('UNKNOWN_COMPOSER', 'That composer is not available.');
   }
+  const displayName = composer?.displayName ?? composerSlug.replace(/_/g, ' ');
 
   generateInFlight = true;
   sendStatus(win, {
     phase: 'generating',
     composerSlug,
     seed,
-    message: `Generating... (${composer.displayName}, seed ${seed})`,
+    message: `Generating... (${displayName}, seed ${seed})`,
   });
 
   try {
@@ -333,6 +441,7 @@ export async function handleMusicianGenerate(
       chordProgressionText: body?.chordProgressionText,
       totalBars: body?.totalBars,
       songwriterStyleId: body?.songwriterStyleId,
+      mosaicSectionPlan: body?.mosaicSectionPlan,
     });
     if (!built.ok) {
       if (built.reason === 'invalid_total_bars') {
@@ -438,9 +547,10 @@ export function registerMusicianIpc(
 
 export function emitMusicianReadyStatus(win: BrowserWindow | null): void {
   const composers = getCachedMusicianComposers();
+  const mosaicComposerIds = getCachedMosaicComposerIds();
   const message =
     composers.length === 0 ? 'Composer list unavailable' : 'Ready';
-  sendStatus(win, { phase: 'ready', composers, message });
+  sendStatus(win, { phase: 'ready', composers, mosaicComposerIds, message });
 }
 
 /** Test-only reset for in-flight guard between cases. */

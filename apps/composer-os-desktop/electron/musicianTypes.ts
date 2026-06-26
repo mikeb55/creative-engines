@@ -7,6 +7,13 @@ export type MusicianErrorCode =
   | 'ENGINE_CRASH'
   | 'BUSY';
 
+export interface MusicianMosaicSectionPlanEntry {
+  sectionLabel: string;
+  startBar: number;
+  endBar: number;
+  songwriterStyleId: string;
+}
+
 export interface MusicianGenerateRequest {
   composerSlug: string;
   seed: number;
@@ -16,6 +23,8 @@ export interface MusicianGenerateRequest {
   totalBars?: number;
   /** Override whole-piece songwriter style (defaults to {@link composerSlug}). */
   songwriterStyleId?: string;
+  /** Tab 2 Arrange in Blocks — section metadata only (no chord symbols). ≥2 sections. */
+  mosaicSectionPlan?: MusicianMosaicSectionPlanEntry[];
 }
 
 export interface MusicianGenerateResponseSuccess {
@@ -49,6 +58,8 @@ export type MusicianStatusEvent =
   | {
       phase: 'ready';
       composers: MusicianComposerOption[];
+      /** Dispatch-backed mosaic composer ids (from DUO_COMPOSER_REGISTRY). */
+      mosaicComposerIds?: string[];
       message?: string;
     }
   | {
