@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback, useRef, Fragment, useMemo, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, Fragment, useMemo, lazy, Suspense } from 'react';
 import type { CSSProperties } from 'react';
 import {
   auditionFromGenerateResult,
@@ -78,6 +78,9 @@ const MosaicStyleTransferResults = lazy(() =>
   import('../components/mosaic-import/MosaicStyleTransferResults').then((m) => ({
     default: m.MosaicStyleTransferResults,
   })),
+);
+const MosaicBlocksPanel = lazy(() =>
+  import('../components/MosaicBlocksPanel').then((m) => ({ default: m.MosaicBlocksPanel })),
 );
 import { ComposerLauncher } from '../components/ComposerLauncher';
 import { FORM_OPTIONS } from '../constants/formOptions';
@@ -199,6 +202,7 @@ import {
   type MosaicOutputFormatUi,
   type MosaicSectionPlanEntry,
 } from '../components/MosaicSectionPlanner';
+import type { BlockCardState } from '../components/MosaicBlocksPanel';
 import { GuitarFretboardView } from '../components/GuitarFretboardView';
 import { RhythmBlendControls } from '../components/RhythmBlendControls';
 import {
@@ -2706,6 +2710,11 @@ export function HomeGenerate({
     useState<GrooveScaffoldFillFrequencyUi>('normal');
   const [mosaicSections, setMosaicSections] = useState<MosaicSectionPlanEntry[]>([]);
   const [mosaicOutputFormat, setMosaicOutputFormat] = useState<MosaicOutputFormatUi>('none');
+  const [blocksPanelOpen, setBlocksPanelOpen] = useState(false);
+  const [blockCards, setBlockCards] = useState<BlockCardState[]>([
+    { chords: '', composerId: '' },
+    { chords: '', composerId: '' },
+  ]);
   const songwriterStyle = useMemo(() => resolveEffectivePrimarySongwriter(styleProfile), [styleProfile]);
 
   const applyPrimarySongwriter = useCallback((id: string) => {
@@ -7304,6 +7313,15 @@ export function HomeGenerate({
             onTotalBarsChange={setTotalBars}
             disabled={loading}
           />
+          <Suspense fallback={null}>
+            <MosaicBlocksPanel
+              open={blocksPanelOpen}
+              onOpenChange={setBlocksPanelOpen}
+              blockCards={blockCards}
+              onBlockCardsChange={setBlockCards}
+              disabled={loading}
+            />
+          </Suspense>
         </>
       )}
       {presetId === 'guitar_bass_duo_single_line' && (
