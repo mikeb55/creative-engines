@@ -26,11 +26,6 @@ import {
 import { registerOpenOutputFolderIpc } from './openFolderMain';
 import { hydrateAnthropicKeyFromAllSources } from './anthropicKeyHydration';
 import { hydrateAnthropicKeyFromWindowsStores } from './winAnthropicEnv';
-import {
-  emitMusicianReadyStatus,
-  loadMusicianRegistryAtStartup,
-  registerMusicianIpc,
-} from './musicianIpc';
 
 function loadEnv(): void {
   const envPath = app.isPackaged
@@ -45,7 +40,7 @@ function loadEnv(): void {
 }
 loadEnv();
 
-/** Packaged builds always use full React UI (`resources/ui`). Dev defaults to full UI; musician shell: COMPOSER_OS_MUSICIAN_SHELL=1. */
+/** Packaged builds always use full React UI (`resources/ui`). */
 if (app.isPackaged) {
   process.env.COMPOSER_OS_FULL_UI = '1';
 }
@@ -67,23 +62,6 @@ function getDevUiUrl(): string | null {
   const raw = process.env.COMPOSER_OS_DEV_UI_URL?.trim();
   if (!raw || app.isPackaged) return null;
   return raw;
-}
-
-function isFullUiEnabled(): boolean {
-  if (app.isPackaged) {
-    return process.env.COMPOSER_OS_FULL_UI === '1';
-  }
-  return process.env.COMPOSER_OS_MUSICIAN_SHELL !== '1';
-}
-
-function resolveMusicianUiIndexPath(): string {
-  if (app.isPackaged && typeof process.resourcesPath === 'string' && process.resourcesPath.length > 0) {
-    const packaged = path.join(process.resourcesPath, 'musician', 'index.html');
-    if (fs.existsSync(packaged)) return packaged;
-  }
-  const devBuilt = path.join(__dirname, '..', 'resources', 'musician', 'index.html');
-  if (fs.existsSync(devBuilt)) return devBuilt;
-  return devBuilt;
 }
 
 function isAllowedDevNavigation(url: string, devBase: string): boolean {
@@ -252,9 +230,8 @@ function registerDesktopIpc(outputDir: string): void {
   }
 }
 
-function createWindowShell(fullUiEnabled: boolean): BrowserWindow {
-  const preloadFilename = fullUiEnabled ? 'preload.js' : 'preload-musician.js';
-  const preloadPath = path.join(__dirname, preloadFilename);
+function createWindowShell(): BrowserWindow {
+  const preloadPath = path.join(__dirname, 'preload.js');
   const iconPath = getWindowIconPath();
   const win = new BrowserWindow({
     title: `Composer OS - v${app.getVersion()}`,
@@ -267,7 +244,7 @@ function createWindowShell(fullUiEnabled: boolean): BrowserWindow {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: !fullUiEnabled,
+      sandbox: false,
       preload: fs.existsSync(preloadPath) ? preloadPath : undefined,
     },
     icon: fs.existsSync(iconPath) ? iconPath : undefined,
@@ -277,7 +254,7 @@ function createWindowShell(fullUiEnabled: boolean): BrowserWindow {
 
   win.webContents.on('will-navigate', (event, url) => {
     const devBase = getDevUiUrl();
-    if (fullUiEnabled && devBase && isAllowedDevNavigation(url, devBase)) {
+    if (devBase && isAllowedDevNavigation(url, devBase)) {
       return;
     }
     try {
@@ -353,8 +330,7 @@ function loadWrongBundleUiPage(win: BrowserWindow, vr: UiBundleVerifyFail): void
 
 async function launchApp(): Promise<void> {
   setStartupState('booting');
-  const fullUiEnabled = isFullUiEnabled();
-  mainWindow = createWindowShell(fullUiEnabled);
+  mainWindow = createWindowShell();
   const win = mainWindow;
   loadLoadingPage(win);
   win.once('ready-to-show', () => {
@@ -378,71 +354,49 @@ async function launchApp(): Promise<void> {
     setStartupState('starting_backend');
     registerDesktopIpc(outputDir);
 
-    if (!fullUiEnabled) {
-      registerMusicianIpc(ipcMain, outputDir, () => mainWindow);
-      win.webContents.once('did-finish-load', () => {
-        emitMusicianReadyStatus(mainWindow);
-      });
-    }
-
     hydrateAnthropicKeyFromAllSources();
 
-    if (fullUiEnabled) {
-      const devUiUrl = getDevUiUrl();
-      if (devUiUrl) {
-        setStartupState('loading_ui');
-        await win.loadURL(devUiUrl);
-        setStartupState('ready');
-        return;
-      }
-
-      const uiPath = resolveUiPath();
-      const vr = verifyUiBundleAtPath(uiPath);
-      if (!vr.ok) {
-        cachedUiStamp = null;
-        cachedUiPath = vr.resolvedPath;
-        setStartupState('fatal_error');
-        loadWrongBundleUiPage(win, vr);
-        return;
-      }
-
-      cachedUiStamp = vr.stamp;
-      cachedUiPath = vr.resolvedPath;
-      console.log(
-        '[Composer OS Desktop] UI bundle',
-        JSON.stringify(
-          {
-            path: cachedUiPath,
-            uiBuildTimestamp: cachedUiStamp.buildTimestamp,
-            uiGitCommit: cachedUiStamp.gitCommit,
-            uiAppShellVersion: cachedUiStamp.appShellVersion,
-            uiProductId: cachedUiStamp.productId,
-          },
-          null,
-          2
-        )
-      );
-
-      const indexHtml = path.join(uiPath, 'index.html');
-      if (!fs.existsSync(indexHtml)) {
-        throw new Error(`UI index missing: ${indexHtml}`);
-      }
+    const devUiUrl = getDevUiUrl();
+    if (devUiUrl) {
       setStartupState('loading_ui');
-      await win.loadFile(indexHtml);
+      await win.loadURL(devUiUrl);
       setStartupState('ready');
       return;
     }
 
-    cachedUiStamp = null;
-    cachedUiPath = '';
-
-    const musicianIndex = resolveMusicianUiIndexPath();
-    if (!fs.existsSync(musicianIndex)) {
-      throw new Error(`Musician UI index missing: ${musicianIndex}`);
+    const uiPath = resolveUiPath();
+    const vr = verifyUiBundleAtPath(uiPath);
+    if (!vr.ok) {
+      cachedUiStamp = null;
+      cachedUiPath = vr.resolvedPath;
+      setStartupState('fatal_error');
+      loadWrongBundleUiPage(win, vr);
+      return;
     }
 
+    cachedUiStamp = vr.stamp;
+    cachedUiPath = vr.resolvedPath;
+    console.log(
+      '[Composer OS Desktop] UI bundle',
+      JSON.stringify(
+        {
+          path: cachedUiPath,
+          uiBuildTimestamp: cachedUiStamp.buildTimestamp,
+          uiGitCommit: cachedUiStamp.gitCommit,
+          uiAppShellVersion: cachedUiStamp.appShellVersion,
+          uiProductId: cachedUiStamp.productId,
+        },
+        null,
+        2
+      )
+    );
+
+    const indexHtml = path.join(uiPath, 'index.html');
+    if (!fs.existsSync(indexHtml)) {
+      throw new Error(`UI index missing: ${indexHtml}`);
+    }
     setStartupState('loading_ui');
-    await win.loadFile(musicianIndex);
+    await win.loadFile(indexHtml);
     setStartupState('ready');
   } catch (err) {
     setStartupState('fatal_error');
@@ -454,7 +408,6 @@ async function launchApp(): Promise<void> {
 if (gotLock) {
   app.whenReady().then(() => {
     app.setName(DESKTOP_PRODUCT_NAME);
-    loadMusicianRegistryAtStartup();
     if (process.platform === 'win32') {
       app.setAppUserModelId(DESKTOP_APP_ID);
     }

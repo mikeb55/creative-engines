@@ -1,5 +1,5 @@
 /**
- * Packaged desktop launch must default to full composer-os-app UI, not musician shell.
+ * Packaged desktop launch must use full composer-os-app UI only (no musician shell).
  */
 import * as fs from 'fs';
 import * as path from 'path';
@@ -29,32 +29,23 @@ describe('Desktop packaged launch UI (static)', () => {
     const afterLoadEnv = main.slice(loadEnvIdx, loadEnvIdx + 400);
     expect(afterLoadEnv).toMatch(/app\.isPackaged/);
     expect(afterLoadEnv).toContain("process.env.COMPOSER_OS_FULL_UI = '1'");
-    const isFullUiIdx = main.indexOf('function isFullUiEnabled()');
-    expect(isFullUiIdx).toBeGreaterThan(loadEnvIdx);
   });
 
-  it('dev defaults to full UI unless COMPOSER_OS_MUSICIAN_SHELL=1', () => {
-    const fnBlock = main.slice(main.indexOf('function isFullUiEnabled()'), main.indexOf('function resolveMusicianUiIndexPath()'));
-    expect(fnBlock).toContain('if (app.isPackaged)');
-    expect(fnBlock).toContain("process.env.COMPOSER_OS_FULL_UI === '1'");
-    expect(fnBlock).toContain("process.env.COMPOSER_OS_MUSICIAN_SHELL !== '1'");
-  });
+  it('launchApp always loads verified resources/ui (no musician shell fallback)', () => {
+    expect(main).not.toContain('COMPOSER_OS_MUSICIAN_SHELL');
+    expect(main).not.toContain('isFullUiEnabled');
+    expect(main).not.toContain('resolveMusicianUiIndexPath');
+    expect(main).not.toContain('registerMusicianIpc');
+    expect(main).not.toContain('preload-musician');
+    expect(main).not.toContain('loadMusicianRegistryAtStartup');
+    expect(main).not.toContain('musicianIndex');
+    expect(main).not.toContain("from './musicianIpc'");
 
-  it('launchApp loads verified resources/ui when full UI enabled, musician only as fallback', () => {
-    expect(main).toContain('const fullUiEnabled = isFullUiEnabled();');
     expect(main).toContain('const uiPath = resolveUiPath();');
     expect(main).toContain('verifyUiBundleAtPath(uiPath)');
     expect(main).toContain("path.join(uiPath, 'index.html')");
     expect(main).toContain('await win.loadFile(indexHtml)');
-    expect(main).toContain('resolveMusicianUiIndexPath()');
-    expect(main).toContain('await win.loadFile(musicianIndex)');
-
-    const fullUiBlock = main.slice(main.indexOf('if (fullUiEnabled)'), main.indexOf('cachedUiStamp = null'));
-    expect(fullUiBlock).toContain('verifyUiBundleAtPath');
-    expect(fullUiBlock).not.toContain('musicianIndex');
-
-    const musicianFallback = main.slice(main.indexOf('cachedUiStamp = null'));
-    expect(musicianFallback).toContain('resolveMusicianUiIndexPath()');
+    expect(main).toContain("path.join(__dirname, 'preload.js')");
   });
 
   it('bundled UI stamp lists Generate/Presets/Outputs (not musician-only shell)', () => {
