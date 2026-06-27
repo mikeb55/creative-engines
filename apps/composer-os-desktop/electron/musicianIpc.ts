@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { resolveDesktopIpcBundlePath } from './config';
 import { buildMosaicBlocksGeneratePayload } from '../../../engines/composer-os-v2/core/mosaic-mode/buildMosaicBlocksGeneratePayload';
+import { validateMosaicBlocksGenerateInput } from '../../../engines/composer-os-v2/core/mosaic-mode/validateMosaicBlocksGenerateInput';
 import type {
   MusicianComposerOption,
   MusicianErrorCode,
@@ -277,48 +278,21 @@ export function buildMusicianApiGenerateBody(
       : composerSlug;
 
   if (mosaicPlan) {
-    if (!hasCustomProgression) {
-      return { ok: false, reason: 'invalid_progression', error: 'Stitched chord progression is empty.' };
-    }
-    const bars = rawProgression.split(' | ');
-    const totalBars =
-      typeof request.totalBars === 'number' && request.totalBars === bars.length
-        ? request.totalBars
-        : bars.length;
-    if (bars.length < 16 || bars.length % 8 !== 0) {
-      return {
-        ok: false,
-        reason: 'invalid_progression',
-        error: 'Mosaic parent length must be a multiple of 8 (≥16 bars).',
-      };
-    }
-    const expectedSections = bars.length / 8;
-    if (mosaicPlan.length !== expectedSections) {
-      return {
-        ok: false,
-        reason: 'invalid_progression',
-        error: `mosaicSectionPlan length (${mosaicPlan.length}) does not match ${expectedSections} blocks.`,
-      };
-    }
-    for (let i = 0; i < mosaicPlan.length; i++) {
-      const section = mosaicPlan[i]!;
-      const wantStart = i * 8 + 1;
-      const wantEnd = i * 8 + 8;
-      if (section.startBar !== wantStart || section.endBar !== wantEnd || !section.songwriterStyleId.trim()) {
-        return {
-          ok: false,
-          reason: 'invalid_progression',
-          error: `mosaicSectionPlan block ${i} bar range must be ${wantStart}–${wantEnd} with a composer.`,
-        };
-      }
+    const validated = validateMosaicBlocksGenerateInput({
+      chordProgressionText: rawProgression,
+      totalBars: request.totalBars,
+      mosaicSectionPlan: mosaicPlan,
+    });
+    if (!validated.ok) {
+      return { ok: false, reason: 'invalid_progression', error: validated.error };
     }
 
     const mosaicPayload = buildMosaicBlocksGeneratePayload({
       composerSlug,
       seed,
-      totalBars,
-      chordProgressionText: rawProgression,
-      mosaicSectionPlan: mosaicPlan,
+      totalBars: validated.totalBars,
+      chordProgressionText: validated.chordProgressionText,
+      mosaicSectionPlan: validated.mosaicSectionPlan,
     });
     return { ok: true, presetId: mosaicPayload.presetId, body: mosaicPayload.body };
   }
