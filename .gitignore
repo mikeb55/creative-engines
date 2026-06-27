@@ -19,6 +19,7 @@ launchers/logs/
 # Charlie Parker engine — CLI stderr redirect / generated MusicXML
 engines/charlie-parker-engine/stderr.txt
 engines/charlie-parker-engine/outputs/*.musicxml
+engines/composer-os-v2/core/mosaic-mode/*.js
 
 # Office lock files
 ~$*.pptx
