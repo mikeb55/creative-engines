@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const { copyNapiCanvasToResources } = require('./copy-napi-canvas-resources');
 const { copyBeEvansBenchmarkFixtureToResources } = require('./copy-be-evans-benchmark-fixture');
+const { composerOsExcludeTestFilesPlugin } = require('./esbuild-exclude-test-files-plugin');
 const { composerOsMdStubPlugin } = require('./esbuild-md-stub-plugin');
 const { composerOsMosaicSliceRequirePlugin } = require('./esbuild-mosaic-slice-require-plugin');
 
@@ -24,7 +25,11 @@ esbuild
     target: 'node18',
     format: 'cjs',
     external: ['electron', '@napi-rs/canvas'],
-    plugins: [composerOsMdStubPlugin, composerOsMosaicSliceRequirePlugin],
+    plugins: [
+      composerOsExcludeTestFilesPlugin,
+      composerOsMdStubPlugin,
+      composerOsMosaicSliceRequirePlugin,
+    ],
   })
   .then(() => {
     console.log('desktop-ipc bundle built:', outFile);
