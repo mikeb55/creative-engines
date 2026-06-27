@@ -203,6 +203,9 @@ import {
   type MosaicSectionPlanEntry,
 } from '../components/MosaicSectionPlanner';
 import type { BlockCardState } from '../components/MosaicBlocksPanel';
+import { stitchMosaicBlocks } from '@composer-os/core/mosaic-mode/stitchMosaicBlocks';
+import { validateMosaicBlocksGenerateInput } from '@composer-os/core/mosaic-mode/validateMosaicBlocksGenerateInput';
+import { buildMosaicBlocksGeneratePayload } from '@composer-os/core/mosaic-mode/buildMosaicBlocksGeneratePayload';
 import { GuitarFretboardView } from '../components/GuitarFretboardView';
 import { RhythmBlendControls } from '../components/RhythmBlendControls';
 import {
@@ -3939,6 +3942,104 @@ export function HomeGenerate({
           16,
           Number.isFinite(totalBars) && totalBars > 0 ? totalBars : 24
         );
+        const blocksModeActive =
+          presetId === 'guitar_bass_duo' && blocksPanelOpen && blockCards.length >= 2;
+        if (blocksModeActive) {
+          const stitched = stitchMosaicBlocks(
+            blockCards.map((b) => ({
+              chordsText: b.chords,
+              songwriterStyleId: b.composerId,
+            }))
+          );
+          if (!stitched.ok) {
+            setError(stitched.error);
+            notifyGenPhase('failed');
+            onResult({
+              record: {},
+              summary: { status: 'failed', at: new Date().toISOString() },
+            });
+            return;
+          }
+          const validated = validateMosaicBlocksGenerateInput({
+            chordProgressionText: stitched.result.chordProgressionText,
+            totalBars: stitched.result.totalBars,
+            mosaicSectionPlan: stitched.result.mosaicSectionPlan,
+          });
+          if (!validated.ok) {
+            setError(validated.error);
+            return;
+          }
+          const composerSlug = validated.mosaicSectionPlan[0]!.songwriterStyleId;
+          const { body } = buildMosaicBlocksGeneratePayload({
+            composerSlug,
+            seed,
+            totalBars: validated.totalBars,
+            chordProgressionText: validated.chordProgressionText,
+            mosaicSectionPlan: validated.mosaicSectionPlan,
+          });
+          const r = (await enqueue(body)) as GenResult;
+          if (reharmApplyHarmonyUnlockRef.current) {
+            reharmApplyHarmonyUnlockRef.current = false;
+          }
+          setLiveGuitarVoicings(Array.isArray(r.guitarVoicings) ? r.guitarVoicings : []);
+          setResult({
+            ...r,
+            _uiHadLeadSheetInputForRun: hadLeadSheetInputForRun,
+            _uiLeadSheetPreflightErrorForRun: uiLeadSheetPreflightErrorForRun,
+            _uiLeadSheetInputSourceForRun: uiLeadSheetInputSourceForRun,
+            _uiLeadSheetFileNameForRun: uiLeadSheetFileNameForRun,
+          });
+          {
+            const bpm = r.requestEcho?.bpm ?? 120;
+            const ts = iRealParsedChart?.timeSignature;
+            const timeSig = ts ? `${ts.num}/${ts.den}` : '4/4';
+            void auditionFromGenerateResult(r, {
+              bpm,
+              timeSig,
+              composerId: songwriterStyle,
+              seed: r.runManifest?.seed,
+              autoPlay: false,
+              onSequence: (seq) => {
+                setPlaybackSeq(seq);
+                setPlaybackBeat(0);
+                setGridPlaybackBeat(0);
+                setIsPlaying(false);
+                setGridIsPlaying(false);
+              },
+            }).then((outcome) => {
+              if (outcome.loadedXml) {
+                if (presetId === 'martino_linear') setMartinoXmlString(outcome.loadedXml);
+                publishGridFromXml(outcome.loadedXml, bpm, timeSig);
+              } else if (outcome.status === 'failed' || outcome.status === 'no_notes') {
+                clearGrid();
+              }
+              if (outcome.status === 'no_notes') {
+                console.warn('[playback] No playable notes', {
+                  composerId: songwriterStyle,
+                  seed: r.runManifest?.seed,
+                  filepath: outcome.filepath,
+                });
+              }
+            });
+          }
+          const ok = !!r.success;
+          if (!ok) {
+            const errMsg =
+              (r as { error?: string }).error ??
+              (r.validation?.errors?.length ? r.validation.errors.join(' ') : undefined);
+            if (errMsg) setError(errMsg);
+            else if (!r.success) setError('Generation failed.');
+          }
+          notifyGenPhase(ok ? 'succeeded' : 'failed');
+          const shareable = r.validation?.readiness?.shareable;
+          const at = new Date().toISOString();
+          onResult({
+            record: r as Record<string, unknown>,
+            summary: { status: ok ? 'success' : 'failed', shareable, at },
+          });
+          api.getOutputDirectory().then((o) => setOutputDir(o)).catch(() => {});
+          return;
+        }
         const coreFields = mapCoreUiToGenerationFields({
           presetId,
           seed,
@@ -4979,6 +5080,8 @@ export function HomeGenerate({
       martinoLfvMin,
       martinoLfvMax,
       martinoExplainMode,
+      blocksPanelOpen,
+      blockCards,
     ]
   );
 
