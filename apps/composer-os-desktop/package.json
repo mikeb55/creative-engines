@@ -64,7 +64,6 @@
       "resources/desktop-ipc.bundle.cjs",
       "resources/composer-os-build-stamp.json",
       "resources/open-folder-helpers.cjs",
-      "resources/musician/**/*",
       "resources/registry/**/*",
       "resources/test-fixtures/BE_Benchmark_LyricalBallad.musicxml",
       "resources/ui/**/*"
@@ -131,10 +130,6 @@
           "**/*.xml",
           "**/*.md"
         ]
-      },
-      {
-        "from": "resources/musician",
-        "to": "musician"
       },
       {
         "from": "resources/registry/premium-melody-composer-registry.json",
