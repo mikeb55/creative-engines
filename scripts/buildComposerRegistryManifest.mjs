@@ -10,6 +10,7 @@ const ROOT = path.join(__dirname, '..');
 const MANIFEST_PATH = path.join(ROOT, 'composerCoverageManifest.json');
 const HOME_GENERATE = path.join(ROOT, 'apps/composer-os-app/src/pages/HomeGenerate.tsx');
 const DISPATCH_TS = path.join(ROOT, 'engines/composer-os-v2/core/mosaic-mode/mosaicComposerDispatch.ts');
+const SLICE_ROWS_TS = path.join(ROOT, 'engines/composer-os-v2/core/mosaic-mode/mosaicComposerSliceRows.ts');
 const RUN_SMOKE = path.join(ROOT, 'engines/composer-os-v2/tests/runSmokeTests.ts');
 const SMOKE_DIR = path.join(ROOT, 'engines/composer-os-v2/tests');
 const CORE_DIR = path.join(ROOT, 'engines/composer-os-v2/core');
@@ -41,9 +42,10 @@ function parseSongwriterOptions(source) {
 }
 
 function parseSliceRows(source) {
-  const start = source.indexOf('const SLICE_ROWS: SliceRow[] = [');
-  const end = source.indexOf('];', start);
-  if (start < 0 || end < 0) throw new Error('buildComposerRegistryManifest: missing SLICE_ROWS');
+  const start = source.indexOf('SLICE_ROWS');
+  const arrayStart = source.indexOf('[', start);
+  const end = source.indexOf('];', arrayStart);
+  if (start < 0 || arrayStart < 0 || end < 0) throw new Error('buildComposerRegistryManifest: missing SLICE_ROWS');
   const block = source.slice(start, end);
   const rows = new Map();
   const rowRe =
@@ -135,6 +137,7 @@ function sliceFileRel(modPath) {
 export function buildComposerCoverageManifest() {
   const homeSource = fs.readFileSync(HOME_GENERATE, 'utf8');
   const dispatchSource = fs.readFileSync(DISPATCH_TS, 'utf8');
+  const sliceRowsSource = fs.readFileSync(SLICE_ROWS_TS, 'utf8');
   const runSmokeSource = fs.readFileSync(RUN_SMOKE, 'utf8');
 
   const songwriterOptions = parseSongwriterOptions(homeSource);
@@ -144,7 +147,7 @@ export function buildComposerCoverageManifest() {
   const shippedSingerSet = new Set(shippedSinger);
   const shippedIds = new Set([...shippedOrder, ...shippedSinger]);
 
-  const sliceRows = parseSliceRows(dispatchSource);
+  const sliceRows = parseSliceRows(sliceRowsSource);
   const sliceRowAliasIds = parseAliasMap(dispatchSource, 'SLICE_ROW_ALIAS_IDS');
   const dispatchStubAliases = parseAliasMap(dispatchSource, 'DISPATCH_STUB_ALIASES');
 

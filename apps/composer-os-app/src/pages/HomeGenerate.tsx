@@ -3953,6 +3953,7 @@ export function HomeGenerate({
           );
           if (!stitched.ok) {
             setError(stitched.error);
+            setLoading(false);
             notifyGenPhase('failed');
             onResult({
               record: {},
@@ -3967,6 +3968,12 @@ export function HomeGenerate({
           });
           if (!validated.ok) {
             setError(validated.error);
+            setLoading(false);
+            notifyGenPhase('failed');
+            onResult({
+              record: {},
+              summary: { status: 'failed', at: new Date().toISOString() },
+            });
             return;
           }
           const composerSlug = validated.mosaicSectionPlan[0]!.songwriterStyleId;

@@ -5,7 +5,7 @@
 
 import { useMemo } from 'react';
 import type { CSSProperties } from 'react';
-import { DUO_COMPOSER_REGISTRY } from '@composer-os/core/mosaic-mode/mosaicComposerDispatch';
+import { DUO_COMPOSER_ROSTER_IDS } from '@composer-os/core/mosaic-mode/mosaicComposerSliceRows';
 import {
   BARS_PER_MOSAIC_BLOCK,
   parseBlockChords,
@@ -21,7 +21,7 @@ const MAX_MOSAIC_BLOCKS = 8;
 
 const FEATURED_COMPOSER_IDS = ['verlaine', 'marr', 'fripp'] as const;
 
-const DUO_COMPOSER_IDS = DUO_COMPOSER_REGISTRY.map((entry) => entry.composerId);
+const DUO_COMPOSER_IDS = DUO_COMPOSER_ROSTER_IDS;
 
 const FEATURED_IN_REGISTRY = FEATURED_COMPOSER_IDS.filter((id) => DUO_COMPOSER_IDS.includes(id));
 
@@ -93,6 +93,19 @@ const iconBtnStyle: CSSProperties = {
   padding: '0.2rem 0.45rem',
   fontSize: '0.85rem',
   lineHeight: 1,
+};
+
+/** Match HomeGenerate page-level Chord progression textarea (dark theme). */
+const chordTextareaStyle: CSSProperties = {
+  width: '100%',
+  boxSizing: 'border-box',
+  padding: '0.5rem 0.6rem',
+  borderRadius: 6,
+  border: '1px solid var(--border)',
+  background: 'var(--bg-input, var(--bg))',
+  color: 'var(--text)',
+  fontFamily: 'inherit',
+  fontSize: '0.82rem',
 };
 
 export function MosaicBlocksPanel(props: {
@@ -306,7 +319,7 @@ export function MosaicBlocksPanel(props: {
                     spellCheck={false}
                     disabled={disabled}
                     placeholder="8 chords - e.g. Cmaj7 | Dm7 | G7 | Cmaj7"
-                    style={{ width: '100%', fontFamily: 'inherit', fontSize: '0.82rem' }}
+                    style={chordTextareaStyle}
                     onChange={(e) => updateCard(index, { chords: e.target.value })}
                   />
                 </label>

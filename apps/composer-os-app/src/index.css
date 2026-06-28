@@ -37,11 +37,16 @@ button:hover { background: var(--accent-hover); }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 button.secondary { background: var(--bg-panel); color: var(--text); border: 1px solid var(--border); }
 
-select, input {
+select, input, textarea {
   font: inherit;
   padding: 0.4rem 0.6rem;
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--bg-panel);
   color: var(--text);
+}
+
+textarea:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
