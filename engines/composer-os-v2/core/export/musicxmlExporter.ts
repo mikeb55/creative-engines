@@ -510,6 +510,39 @@ function grooveDrumsScorePartXml(partId: string): string {
     </score-part>`;
 }
 
+const ART_ROCK_GM_INSTRUMENTS = [
+  DRUM_GM_BD,
+  DRUM_GM_SN,
+  DRUM_GM_HH,
+] as const;
+
+function artRockBandDrumsScorePartXml(partId: string): string {
+  const abbr = PART_ABBREV[partId] ?? 'Dr.';
+  const scoreInstruments = ART_ROCK_GM_INSTRUMENTS.map((gm) => {
+    const id = grooveInstrumentId(partId, gm);
+    return `
+      <score-instrument id="${id}">
+        <instrument-name>GM ${gm}</instrument-name>
+        <instrument-sound>drum.kit</instrument-sound>
+      </score-instrument>`;
+  }).join('');
+  const midiInstruments = ART_ROCK_GM_INSTRUMENTS.map((gm) => {
+    const id = grooveInstrumentId(partId, gm);
+    return `
+      <midi-instrument id="${id}">
+        <midi-channel>10</midi-channel>
+        <midi-program>1</midi-program>
+        <midi-unpitched>${gm}</midi-unpitched>
+        <volume>78.7402</volume>
+        <pan>0</pan>
+      </midi-instrument>`;
+  }).join('');
+  return `    <score-part id="${partId}">
+      <part-name>Drums</part-name>
+      <part-abbreviation>${escapeXml(abbr)}</part-abbreviation>${scoreInstruments}${midiInstruments}
+    </score-part>`;
+}
+
 /**
  * GM drum MIDI → MusicXML unpitched **display** step/octave.
  * Use treble-staff–range positions (octaves 4–5) so Sibelius/Finale place notes on the
@@ -932,7 +965,6 @@ function artRockBandDrumsEventsToXml(
   measureCapacity: number
 ): string {
   const partId = part.id;
-  const instId = riffScoreInstrumentIdForPart(part) ?? `${part.id}-I1`;
   let raw = measure.events.filter((e) => e.kind === 'note' || e.kind === 'rest');
   const byVoice = new Map<number, ScoreEvent[]>();
   for (const e of raw) {
@@ -1012,7 +1044,7 @@ function artRockBandDrumsEventsToXml(
               voice: 1,
               stem: snare ? 'down' : 'up',
               notehead: snare ? 'normal' : 'x',
-              instrumentId: instId,
+              instrumentId: grooveInstrumentId(partId, pitch),
               ...(snare ? {} : { accidentalXml: '<accidental>sharp</accidental>' }),
             });
             if (pi === 0) voiceTickSum += t;
@@ -1033,7 +1065,7 @@ function artRockBandDrumsEventsToXml(
             voice: 2,
             stem: 'down',
             notehead: 'normal',
-            instrumentId: instId,
+            instrumentId: grooveInstrumentId(partId, DRUM_GM_BD),
           });
           voiceTickSum += t;
         }
@@ -1474,19 +1506,7 @@ export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXml
     </score-part>`;
         }
         if (p.instrumentIdentity === 'art_rock_band_drums') {
-          const abbr = PART_ABBREV[p.id] ?? 'Dr.';
-          return `    <score-part id="${p.id}">
-      <part-name>Drums</part-name>
-      <part-abbreviation>${escapeXml(abbr)}</part-abbreviation>
-      <score-instrument id="${p.id}-I1"><instrument-name>Drum Set</instrument-name></score-instrument>
-      <midi-instrument id="${p.id}-I1">
-        <midi-channel>10</midi-channel>
-        <midi-program>1</midi-program>
-        <midi-unpitched>1</midi-unpitched>
-        <volume>78.7402</volume>
-        <pan>0</pan>
-      </midi-instrument>
-    </score-part>`;
+          return artRockBandDrumsScorePartXml(p.id);
         }
         if (p.instrumentIdentity === 'fela_afrobeat_drums') {
           return felaAfrobeatScorePartXml(p.id);
