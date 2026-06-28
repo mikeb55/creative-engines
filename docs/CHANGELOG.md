@@ -6,6 +6,8 @@
 
 ### Changed
 
+- **Milestone C — Arrange in blocks integrated into main Composer OS UI** — Folded standalone Musician shell blocks workflow into **`HomeGenerate.tsx`**: **`ArrangeInBlocksPanel`**, shared **`stitchMosaicBlocks`** / mosaic-blocks payload helpers, duo-gated generate branch, editable block chord fields, browser-safe composer roster. Standalone Musician shell retired; blocks-mode tests ported. Commits **`2cf1fe16`**–**`e1a8f812`**.
+
 - **Leadsheet-input engine — Phase A rhythmAntiLoop gentle default** — **`leadSheetAccompanimentRhythmAntiLoopPass.ts`** adds **`rhythmAntiLoopIntensity`** (`gentle` | `moderate`; default **`gentle`**: selective ±1/12-beat micro-nudge on Phase 7 accompaniment, 4-bar / 3-slot cycle; **`moderate`**: full composer template rewrite ±1/6). Metaphysics **90106** LOCK **`rhythmAntiLoop`** **3/3** pass (swing **0.97** / **0.97** / **0.96**); Orbit **8/8** + Phase 7 proof **17/17** unchanged.
 
 ### Added
@@ -36,6 +38,8 @@
 - **feat(bartok-cle): V88 frozen — transformational counterpoint complete, eval 8.0/10 (seed 61234). Window-inversion + climax/contraction scoring added. Golden master frozen.** — **`bartokPitchScorer.ts`** + **`bartokPitchScoringConfig.ts`**: phrase-scale inversion-window scoring (**`docs/bartok_pitch_spec.md`** §10) and phrase-position climax / contraction weighting (§11). Eval trajectory seed **61234**: **4.8 → 5.9 → 6.4 → 7.0 → 7.6 → 8.0** (structural criticisms resolved: frozen bass, square rhythm, weak voice interaction, isolated inversions, lack of climax). Frozen fixtures **`bartok-cle-seed61234.lineSet.golden.json`** (sha256 **`a1c94bc9bf09`**) + **`.trace.golden.json`** (**`496cf6c415c6`**); **`bartokClePitchScoringGoldenMaster.test.ts`** byte-exact oracle. BH / premium-melody golden masters **unchanged**. Gates: smoke **666/666**, BH **8/8**, **`bhGoldenMaster`** byte-identical, **`bartokCleGoldenMaster`** PASS.
 
 ### Fixed
+
+- **Art-rock band drum MusicXML export** — **`art_rock_band_drums`** now declares per-GM-pitch score-instrument + midi-instrument pairs (kick **36**, snare **38**, hat **42**) on channel **10**, matching **`grooveDrumsScorePartXml`** (was single **`midi-unpitched` 1** → silent in Sibelius). Score-instrument elements grouped before midi-instrument for schema validity. Sibelius-verified: drums play, no schema warning. Commit **`1c5fa289`**.
 
 - **Art Rock mosaic — skip Metheny behaviour gate on riff VRB paths** — **`behaviourGates.ts`** skips **`validateMethenyConformance`** when primary or **`mosaicSectionPlan`** includes Art Rock riff VRB composers (**`verlaine`** / **`marr`** / **`fripp`** / **`morello`**, or **`riffFamilyForSongwriterId === 'art_rock'`**); never skips when **`styleStack.primary === 'metheny'`**. Fixes unfair **"Density too busy for Metheny"** on Television Field Suite without changing Metheny thresholds or real **`pat_metheny`** / **`ecm_chamber`** paths. Proof: **`scripts/validateArtRockMosaicArc.ts`** (seed **90106**, golden path PASS).
 
