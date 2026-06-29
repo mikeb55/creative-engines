@@ -1,7 +1,7 @@
-agree ? disagree? if agree, improve the prompt from Claude:
+agree ? disagree? whichever way, improve the prompt from Claude:
 
 
-i am confused - one sentence to explain this in non technical human-friendly terms
+give one sentence to explain this in non technical human-friendly terms
 
 i am confused - one sentence to explain this in non technical human-friendly terms
 
