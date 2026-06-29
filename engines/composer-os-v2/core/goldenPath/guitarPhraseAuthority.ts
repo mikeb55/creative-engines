@@ -7,6 +7,8 @@ import { createNote, createRest, addEvent } from '../score-model/scoreEventBuild
 import { snapAttackBeatToGrid } from '../score-integrity/duoEighthBeatGrid';
 import { clampPitch, seededUnit } from './guitarBassDuoHarmony';
 import { chordTonesForChordSymbol, type ChordTonesOptions } from '../harmony/chordSymbolAnalysis';
+import { resolveDuoHarmonyForSymbol } from '../harmony/duoVaultHarmony';
+import { isStandardGuitarBassDuo } from '../presets/guitarBassDuoPresetIds';
 import type { ResolvedTuningVoicingContext } from '../song-mode/alternateGuitarTuningVoicingMaps';
 import {
   generateSlonimskyPattern,
@@ -67,6 +69,56 @@ export function guitarChordTonesInRange(
     third: liftToneToRange(t.third, low, high),
     fifth: liftToneToRange(t.fifth, low, high),
     seventh: liftToneToRange(t.seventh, low, high),
+  };
+}
+
+function normalizePc(pc: number): number {
+  return ((pc % 12) + 12) % 12;
+}
+
+function liftPcToRange(pc: number, refMidi: number, low: number, high: number): number {
+  const refPc = normalizePc(refMidi);
+  const targetPc = normalizePc(pc);
+  let delta = targetPc - refPc;
+  if (delta > 6) delta -= 12;
+  if (delta < -6) delta += 12;
+  return liftToneToRange(refMidi + delta, low, high);
+}
+
+/** Stage 3 — vault phrase-fill pool for standard `guitar_bass_duo` only (emitGuitarPhraseBar). */
+function phraseFillTonesFromVaultResolver(
+  chord: string,
+  low: number,
+  high: number,
+  chordToneOpts?: ChordTonesOptions
+): GuitarChordTonesInRangeResult {
+  const locked = chordToneOpts?.lockedHarmony ?? true;
+  const res = resolveDuoHarmonyForSymbol(chord, { lockedHarmony: locked });
+  const legacy = guitarChordTonesInRange(chord, low, high, chordToneOpts);
+  if (res.source === 'fallback') return legacy;
+
+  const pool = res.melodyPcs.length > 0 ? res.melodyPcs : [res.rootPc];
+  const nearestPoolPc = (refMidi: number): number => {
+    const refPc = normalizePc(refMidi);
+    if (pool.some((pc) => normalizePc(pc) === refPc)) return refPc;
+    let best = pool[0]!;
+    let bd = 99;
+    for (const pc of pool) {
+      const npc = normalizePc(pc);
+      const d = Math.min(Math.abs(npc - refPc), 12 - Math.abs(npc - refPc));
+      if (d < bd) {
+        bd = d;
+        best = npc;
+      }
+    }
+    return normalizePc(best);
+  };
+
+  return {
+    root: liftPcToRange(res.rootPc, legacy.root, low, high),
+    third: liftPcToRange(nearestPoolPc(legacy.third), legacy.third, low, high),
+    fifth: liftPcToRange(nearestPoolPc(legacy.fifth), legacy.fifth, low, high),
+    seventh: liftPcToRange(nearestPoolPc(legacy.seventh), legacy.seventh, low, high),
   };
 }
 
@@ -234,6 +286,8 @@ export function emitGuitarPhraseBar(params: {
   triadPairs?: boolean;
   /** Alternate-tuning duo: per-bar Slonimsky interior (1.5–3.5) when pattern resolves; sparse only. */
   slonimskyCtx?: SlonimskyContext;
+  /** When `guitar_bass_duo`, phrase-fill uses Tonality Vault resolver (Stage 3). */
+  presetId?: string;
 }): void {
   const {
     m,
@@ -253,12 +307,16 @@ export function emitGuitarPhraseBar(params: {
     chordToneOpts,
     triadPairs,
     slonimskyCtx,
+    presetId,
   } = params;
 
   /** Duo: attacks only on eighth-beat grid; durations still use quarter-beat rounding where needed. */
   const pos = swingDuo ? snapAttackBeatToGrid : qBeat;
 
-  const tones = guitarChordTonesInRange(chord, effectiveLow, effectiveHigh, chordToneOpts);
+  const tones =
+    presetId !== undefined && isStandardGuitarBassDuo(presetId)
+      ? phraseFillTonesFromVaultResolver(chord, effectiveLow, effectiveHigh, chordToneOpts)
+      : guitarChordTonesInRange(chord, effectiveLow, effectiveHigh, chordToneOpts);
   const endStrong = resolvePhraseEndForDuo(tones, anchorMidi, effectiveLow, effectiveHigh, seed, bar);
   const uPen = seededUnit(seed, bar, 401);
   const pen = uPen < 0.4 ? tones.fifth : tones.root;

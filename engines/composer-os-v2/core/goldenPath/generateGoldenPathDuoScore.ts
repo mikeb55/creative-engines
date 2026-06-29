@@ -4818,6 +4818,7 @@ function buildGuitarPart(
           chordToneOpts,
           triadPairs: stackIds.includes('triad_pairs'),
           slonimskyCtx: slonimskyBarCtx,
+          presetId: context.presetId,
         });
       }
     }
