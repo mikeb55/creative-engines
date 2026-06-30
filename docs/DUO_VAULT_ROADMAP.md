@@ -15,27 +15,26 @@ Canonical staged plan for wiring Tonality Vault into the `guitar_bass_duo` harmo
     - Gate: hook melody stays idiomatic; vault color audible; GCE pillars stable on Song Mode hook tests.
   - **4b — Baseline duoLock contour path (high-value, ~87% of bars — where the baseline finally MOVES).**
     - Files: `motifGenerator.ts` (seed), `motifTracker.ts` (transpose), `generateGoldenPathDuoScore.ts:4572–4607` (emission).
-    - **FIRST STEP IS A READ-ONLY DESIGN PASS, not wiring:** design the contour-snap rule before touching code — how to snap landing PCs to vault `melodyPcs` while preserving the motif's interval shape (snap-at-emission vs re-realize-from-interval-pattern via vault pool walk). Decide the snap strength deliberately.
-    - **HARD GATE — MOTIF IDENTITY PRESERVATION:** the snapped motif must remain recognizably the **SAME** motif (interval contour intact), **NOT** flattened into vault triads. This is the central failure mode of this stage — over-snapping destroys motif identity, under-snapping makes vault inaudible. The design must state how it balances the two, and the gate must verify motif contour similarity holds (not just that PCs are vault-legal).
-    - Gate: baseline seeds (e.g. 50021) show audible vault color on ~87% of bars; GCE melodic identity + tension/release hold; motif contour recognizably preserved; V3 still PASS.
+    - **4b.1 — Interval identity baseline (done; `7f2968c7`).** Scoped test on generic `guitar_bass_duo` proves ~8–9/32 motif bars preserve strict 3-note interval identity from `pl.notes` through register clamp + orchestration lift + legacy `snapGuitarToChord` — **NOT** vault pitch-class survival. Establishes tolerance stack and clean-bar list for downstream vault work.
+    - **4b.2 — Vault placement + survival telemetry (MEASUREMENT milestone, not audibility).**
+      - Place vault contour tones at `generateGoldenPathDuoScore.ts:4572` on baseline motif bars, gated `isStandardGuitarBassDuo`. Attach per-note receipts (`bar`, note index, chosen vault pc, resolver `source`, `plPitch`) to metadata.
+      - Read survival **AFTER** `applyDuoOrchestrationPass` (`:7777`): `vaultPcSurvived`, `vaultPcLostToLegacySnap`, `vaultSourceFallback`, `contourNullReturns`. Headline metric = `vaultPcSurvived / vaultSnapFired`.
+      - **DONE** = placement fires on motif bars **AND** survival vs loss is quantified at the final-score seam **AND** roadmap states low survival is **EXPECTED** until 4b.3. **NOT done** = "vault is live" from fired count alone.
+      - Fail loud: resolver `source === 'fallback'` on a snap bar, or contour starvation — never silent legacy revert.
+      - Gate: 4b.1 PASS bars stay green (interval identity within clamp+lift tolerance); survival counters reported; high survival **not** required.
+    - **4b.3 — Orchestration respects vault on tagged motif notes only (first AUDIBLE vault, narrow).**
+      - Make `snapGuitarToChord` (`duoOrchestrationPass.ts:58`) vault-aware **ONLY** when a note carries a `vaultSnapReceipt` — pull to nearest vault `melodyPc` in register, same pool as the phrase-fill vault path (`guitarPhraseAuthority.ts:88–122`).
+      - Scope = receipt-tagged motif bars (~8–9 clean bars + any other snapped bars), **NOT** global orchestration. This is where survival rises and vault first becomes audible.
+      - Gate: `vaultPcSurvived / vaultSnapFired` rises materially on baseline seeds; 4b.1 interval identity still holds on PASS bars.
   - **4c — Phrase tail + hook-return (smaller chord-tone touches).**
     - Files: `generateGoldenPathDuoScore.ts:4617–4627` (phrase-tail Wyble tone), `motifShape.ts:253–272` (hook-return realization).
     - Plan: point their chord-tone lookups at `resolveDuoHarmonyForSymbol` instead of legacy pools, gated `isStandardGuitarBassDuo`.
     - Gate: endings/returns take vault-compatible tones without breaking cadence clarity or section identity.
-  - **4d — Downstream single-authority completion (vault becomes SOLE authority on guitar v1).**
-    - After motif tone sourcing (4a/4b/4c) is in place, verify which downstream steps still independently re-derive or overwrite guitar v1 tones on the duo path. **Read-only verification comes first:** identify **WHICH** of the candidates below actually fire on baseline duo seeds once motif owns the bars; **redirect only** steps that still overwrite vault-backed guitar v1 output. Goal is not just "vault audible," but **no surviving parallel chord-tone hierarchy for guitar v1**.
-    - Candidates to check:
-      - `duoEnforcePhraseEndCadence` (`generateGoldenPathDuoScore.ts:2349`) — cadence snap / final-note overwrite
-      - `emitGuitarDuoIdentityBar7` (`guitarPhraseAuthority.ts:182`) — bar-7 identity gesture
-      - `snapGuitarToChord` (`duoOrchestrationPass.ts:59`) — orchestration snap
-      - `chordTonePitchesInRange` / `strictEnforceGlobalLeaps` (`ecmShapingPass.ts`) — leap-repair pool
-      - `applyLateClosingGuitarContourNudge` (`generateGoldenPathDuoScore.ts:6660`) — closing contour nudge
-      - `nudgeDuoGuitarPhraseEndsForVariety` (`generateGoldenPathDuoScore.ts:6714`) — bar-5 ending rewrite
-    - Also note any canonical rewrite issues on this path (for example unwanted `G7` → `G13` style rewrites) that would undermine a single-authority vault story.
-    - Gate:
-      - No downstream step on `guitar_bass_duo` re-derives guitar v1 tones from `chordTonesFromSymbol`, `guitarChordTonesInRange`, or another parallel heuristic hierarchy where vault should be authoritative.
-      - Cadence, identity, closing, and repair bars either consume vault-backed output or are explicitly verified harmless / moot on the duo path.
-      - Vault is the **sole authority** for the duo guitar v1 line.
+  - **4d — Vault single-authority everywhere (full pass, later).**
+    - After 4b.3 proves audible vault on tagged motif notes, extend vault-aware tone sourcing to **all** remaining guitar v1 authorities — not only receipt-tagged motif bars.
+    - Scope: vault-aware phrase fill (beyond Stage 3 dormancy), leap repair (`ecmShapingPass.ts` / `strictEnforceGlobalLeaps`), cadence (`duoEnforcePhraseEndCadence`), non-motif bars, identity gestures (`emitGuitarDuoIdentityBar7`), closing nudges (`applyLateClosingGuitarContourNudge`, `nudgeDuoGuitarPhraseEndsForVariety`).
+    - Removes all remaining legacy chord-tone hierarchies (`chordTonesFromSymbol`, `guitarChordTonesInRange`) where vault should be authoritative on `guitar_bass_duo`.
+    - Gate: Stage 5 vault-fired regression passes at final score seam; no downstream step re-derives guitar v1 from parallel heuristics; vault is **sole authority** for the duo guitar v1 line.
   - All Stage 4 work gated `isStandardGuitarBassDuo(context.presetId)` (`guitar_bass_duo` only). ECM, `song_mode*`, `single_line` stay legacy unless explicitly extended.
 - **Stage 5 — Standing "vault-fired" regression test (NEW; catches inert swaps).**
   - CI-level test asserting that on a representative `guitar_bass_duo` baseline seed, vault-derived pitch classes **APPEAR IN THE FINAL SCORED** guitar v1 notes — checked at the emitted-score seam, **AFTER** all downstream re-computers (cadence snap, orchestration, leap-repair), not merely that `resolveDuoHarmonyForSymbol` was called.
