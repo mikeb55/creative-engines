@@ -22,18 +22,25 @@ Canonical staged plan for wiring Tonality Vault into the `guitar_bass_duo` harmo
       - **DONE** = placement fires on motif bars **AND** survival vs loss is quantified at the final-score seam **AND** `KNOWN_VAULT_LIFT_BREAKS` in `baselineMotifIntervalIdentity.test.ts` tracks lift-debt bars explicitly (test green, honest). Confidence seeds: fired=28/26, survived/fired≈0.46/0.54.
       - Fail loud: resolver `source === 'fallback'` on a snap bar, or contour starvation — never silent legacy revert.
       - Gate: non-debt PASS bars stay green; unlisted interval breaks still FAIL; known-break bars shrink when debt is resolved.
-    - **4b.3 — Lift respects vault on tagged motif notes (NARROW; first audible vault fix).**
-      - Teach the lift/snap layer (`liftGuitarLowMidInA`, `liftGuitarRegisterInSectionB`, `snapGuitarToChord` in `duoOrchestrationPass.ts`) to recognise notes carrying a `vaultSnapReceipt` and **PRESERVE** their vault pitch class instead of re-snapping to legacy root/3/5/7.
-      - Scope = receipt-tagged motif notes ONLY, not global orchestration. Non-motif/cadence/phrase-fill lift stays for 4d.
-      - Success = `KNOWN_VAULT_LIFT_BREAKS` shrinks toward empty and `survived/fired` rises, with the interval test still honest (no tolerance widening).
+    - **4b.3 — Type-1 vault-lift fix: receipt skip + declined register-only lift (done; `Stage 4b.3` commit).**
+      - **Receipt-tagged motif notes:** `liftGuitarLowMidInA` / `liftGuitarRegisterInSectionB` skip legacy lift+snap when a committed `:4572` `duoVaultMotifSnapReceipt` exists (`buildVaultReceiptByEventIdx`).
+      - **4b.2-declined motif notes (interval-guard reject, no receipt):** record `duoVaultDeclinedNotes` at placement; orchestration uses **`tryDeclinedRegisterOnlyLiftPitch`** — same-pitch-class register nudge via `registerOnlyLiftMidi`, **no** legacy root/3/5/7 snap; must pass **`motifBarPasses4b1AfterVaultOrchestration`** or fall back to pre-orchestration baseline (same emitted pitch as old full-skip).
+      - **Bar baselines:** `duoVaultMotifBarBaselines` (`goldenMidis`, `preOrchestrationMidis`, effective register window) recorded at `:4572` for gate simulation.
+      - **Proof seed 50021:** `KNOWN_VAULT_LIFT_BREAKS` **empty**; baseline interval test **PASS**; `roleContrast` **0.0929**; `runGoldenPathOnce` **success**; survival ratio **~0.64** (up from **~0.46** pre-4b.3).
+      - **50213 interval test:** `KNOWN_VAULT_LIFT_BREAKS` **empty** (Type-1 resolved); register-clamp bars classified **`EXCLUDED_REGISTER_CLAMP`** — not lift debt.
       - **Note A (suppress vault where lift would break it)** — TEMPORARY guard-rail option only; explicitly **NOT** the definition of vault working.
-      - Gate: `vaultPcSurvived / vaultSnapFired` rises materially on baseline seeds; 4b.2 non-debt PASS bars stay green.
+    - **4b.4 — Declined-note register lift vs duoLock role contrast (KNOWN DEBT; seed 50213).**
+      - **Separate from Type-1 interval fix (4b.3).** Interval identity + Type-1 lift breaks are resolved on confidence seeds; **50213 `roleContrastScore` remains below the duoLock gate (`0.06`).**
+      - **Observed:** pre-4b.3 marginal **0.0603** → post-4b.3 **0.0554** with `gp.success` **false** on seed **50213** — not a wiring bug.
+      - **Diagnostic (read-only, seed 50213 declined bars 1/9/13/19/21/25/27):** `tryDeclinedRegisterOnlyLiftPitch` applied **zero** register nudges — A-section note0 candidates (+12) all **`motifBarPasses4b1AfterVaultOrchestration` reject** → baseline-clamped; bar **9** note0 blocked by outer A prob gate before `tryDeclined`; bar **19** declined notes blocked by outer B prob gate; bar **21** note2 candidate **79** → 4b1 reject. Register-only mode **equals full-skip for emitted pitches** on this seed → role contrast does not move.
+      - **Scope for 4b.4:** reconcile declined-note register lift with **`roleContrastScore`** / duoLock quality on marginal baseline seeds — e.g. bar-level 4b1 model aligned with per-note apply, register-only tolerance carve-out, or orchestration register policy that restores contrast without re-opening Type-1 legacy snap. **Do not** widen interval test tolerance to mask this.
+      - **Gate:** seed **50213** (and peer marginal duo baseline seeds) **`roleContrastScore ≥ 0.06`** with **`baselineMotifIntervalIdentity`** still honest (`KNOWN_VAULT_LIFT_BREAKS` stays empty on Type-1).
   - **4c — Phrase tail + hook-return (smaller chord-tone touches).**
     - Files: `generateGoldenPathDuoScore.ts:4617–4627` (phrase-tail Wyble tone), `motifShape.ts:253–272` (hook-return realization).
     - Plan: point their chord-tone lookups at `resolveDuoHarmonyForSymbol` instead of legacy pools, gated `isStandardGuitarBassDuo`.
     - Gate: endings/returns take vault-compatible tones without breaking cadence clarity or section identity.
   - **4d — Vault single-authority everywhere (full pass, later).**
-    - After 4b.3 proves audible vault on tagged motif notes, extend vault-aware tone sourcing to **all** remaining guitar v1 authorities — not only receipt-tagged motif bars.
+    - After **4b.3** (Type-1) + **4b.4** (role-contrast debt on declined register lift) are closed on baseline seeds, extend vault-aware tone sourcing to **all** remaining guitar v1 authorities — not only receipt-tagged / declined-motif bars.
     - Scope: vault-aware phrase fill (beyond Stage 3 dormancy), leap repair (`ecmShapingPass.ts` / `strictEnforceGlobalLeaps`), cadence (`duoEnforcePhraseEndCadence`), non-motif bars, identity gestures (`emitGuitarDuoIdentityBar7`), closing nudges (`applyLateClosingGuitarContourNudge`, `nudgeDuoGuitarPhraseEndsForVariety`).
     - Removes all remaining legacy chord-tone hierarchies (`chordTonesFromSymbol`, `guitarChordTonesInRange`) where vault should be authoritative on `guitar_bass_duo`.
     - Gate: Stage 5 vault-fired regression passes at final score seam; no downstream step re-derives guitar v1 from parallel heuristics; vault is **sole authority** for the duo guitar v1 line.

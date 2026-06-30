@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+### Changed
+
+- **Stage 4b.3 — Duo vault Type-1 lift fix (declined register-only + receipt skip)** — **`duoOrchestrationPass.ts`**: committed **`duoVaultMotifSnapReceipt`** notes skip legacy lift/snap; **`duoVaultDeclinedNotes`** (recorded in **`duoVaultMotifContourSnap.ts`**) get **`tryDeclinedRegisterOnlyLiftPitch`** (same-pitch-class octave/register nudge only, gated by **`motifBarPasses4b1AfterVaultOrchestration`**). **`duoVaultMotifBarBaselines`** on **`generationMetadata`** at **`generateGoldenPathDuoScore.ts`** `:4572`. **`baselineMotifIntervalIdentity.test.ts`**: **`KNOWN_VAULT_LIFT_BREAKS`** cleared on seeds **50021** / **50213**; register-clamp bars → **`EXCLUDED_REGISTER_CLAMP`**. **50021:** interval test PASS, **`roleContrast` 0.0929**, gp success. **50213:** Type-1 PASS; **`roleContrast` 0.0554** (< **0.06**) — **KNOWN DEBT → Stage 4b.4** (register-only falls through to baseline on this seed; not a wiring bug). See **`docs/DUO_VAULT_ROADMAP.md`**.
+
 ### Added
 
 - **Lead Sheet Input V97 — per-bar harmony overrides (MIDI advisory)** — Desktop **Lead Sheet Input** confidence strip bars are clickable; **Save** / **Clear** on a chord symbol sends **`harmonyOverridesByBar`** through IPC → **`runLeadSheetFileInputApi`** → **`applyLeadSheetHarmonyOverrides`** after MIDI inference. Overridden bars get **`user-override`** provenance; non-overridden MIDI bars stay **`inferred-advisory`** (whole chart not hard-locked). Proof: **`leadSheetHarmonyOverrideProof.test.ts`**.

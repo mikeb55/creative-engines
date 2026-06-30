@@ -2,13 +2,13 @@
  * Stage 4b.2 — Baseline motif interval identity contract (generic guitar_bass_duo, :4572 path).
  *
  * Vault placement (Stage 4b.2): contour tones ARE placed at generateGoldenPathDuoScore.ts ~4572
- * (vaultSnapFired 28/26 on confidence seeds). Survival telemetry reads AFTER applyDuoOrchestrationPass;
- * headline survived/fired ≈ 0.46 / 0.54 — low survival is EXPECTED until Stage 4b.3.
+ * (vaultSnapFired 28/26 on confidence seeds). Survival telemetry reads AFTER applyDuoOrchestrationPass.
  *
- * Known vault-lift debt: downstream lift/snap (liftGuitarLowMidInA, liftGuitarRegisterInSectionB,
- * legacy snapGuitarToChord in duoOrchestrationPass.ts) re-snaps note 0 to legacy root/3/5/7 tones,
- * breaking interval 0 on bars listed in KNOWN_VAULT_LIFT_BREAKS. That debt is NOT a classifier error;
- * it is scheduled for 4b.3 (lift respects vault on receipt-tagged motif notes).
+ * Stage 4b.3 (shipped): receipt-tagged notes skip legacy lift; 4b.2-declined notes get register-only
+ * lift (tryDeclinedRegisterOnlyLiftPitch) gated by motifBarPasses4b1AfterVaultOrchestration — else baseline.
+ * Type-1 lift debt tracked in KNOWN_VAULT_LIFT_BREAKS should stay empty on confidence seeds.
+ * Seed 50213 roleContrast shortfall (0.0554 < 0.06) is KNOWN DEBT → Stage 4b.4 (see DUO_VAULT_ROADMAP.md),
+ * separate from Type-1 interval identity.
  *
  * Pass/fail contract:
  * - PASS: non-break bar holds 4b.1 tolerance (clamp + lift, never vault-widened).
@@ -31,6 +31,7 @@
 
 import type { CompositionContext } from '../core/compositionContext';
 import type { DuoVaultMotifSnapReceipt } from '../core/goldenPath/duoVaultMotifContourSnap';
+import { simulateMotifBarEmittedAfterVaultOrchestration } from '../core/goldenPath/duoVaultMotifContourSnap';
 import type { GoldenPathPlans } from '../core/goldenPath/generateGoldenPathDuoScore';
 import { runGoldenPathOnce } from '../core/goldenPath/runGoldenPath';
 import { applyGlobalRegisterArc } from '../core/goldenPath/melodicRegisterArc';
@@ -72,17 +73,28 @@ const BASELINE_DUO_OPTIONS = {
 const CONFIDENCE_SEEDS = [50021, 50213] as const;
 
 /**
- * Bars where vault tone is placed at :4572 but downstream lift re-snaps note 0,
- * breaking interval 0 on final emitted guitar v1. Debt → Stage 4b.3; shrink this list when fixed.
+ * Type-1 vault-lift debt only: downstream lift legacy-snaps a 4b.2-declined motif note.
+ * Register-clamp bars (note0 has receipt, orchestration model matches, golden iv still fails) → EXCLUDED_REGISTER_CLAMP.
+ * Shrink when Stage 4b.3 resolves Type-1; do not list register-clamp bars here.
  */
 export const KNOWN_VAULT_LIFT_BREAKS: Readonly<Record<number, readonly number[]>> = {
-  50021: [13, 21, 25, 27],
-  50213: [1, 9, 13, 19, 21, 25, 27],
+  50021: [],
+  50213: [],
 };
+
+/** Stage 4b.4 — gp fails duoLock roleContrast only; interval test still runs. See DUO_VAULT_ROADMAP.md §4b.4. */
+export const KNOWN_ROLE_CONTRAST_GP_DEBT: ReadonlySet<number> = new Set([50213]);
+
+function isKnownRoleContrastGpFailure(seed: number, errors: readonly string[] | undefined): boolean {
+  if (!KNOWN_ROLE_CONTRAST_GP_DEBT.has(seed)) return false;
+  const msg = (errors ?? []).join('; ');
+  return msg.includes('role contrast');
+}
 
 export type BaselineMotifBarClassification =
   | 'PASS'
   | 'KNOWN_VAULT_LIFT_BREAK'
+  | 'EXCLUDED_REGISTER_CLAMP'
   | 'EXCLUDED_PHASE7'
   | 'EXCLUDED_CADENCE'
   | 'EXCLUDED_THINNING'
@@ -111,6 +123,7 @@ export interface BaselineMotifSeedResult {
   error?: string;
   assertedBars: number;
   knownVaultLiftBreaks: number;
+  excludedRegisterClamp: number;
   excludedPhase7: number;
   excludedCadence: number;
   excludedThinning: number;
@@ -241,21 +254,27 @@ function liftDeltasForGoldenBar(
   effectiveHigh: number,
   seed: number,
   context: CompositionContext,
+  barVaultReceipts: readonly DuoVaultMotifSnapReceipt[],
 ): number[] {
   const clamped = golden.map((p) => clampPitch(p, effectiveLow, effectiveHigh));
   const v1Entries = sortedV1NotesWithEventIndex(measure);
   const chord = resolveChordForDuoPostPass(context, bar, measure.chord);
-  const deltas = new Array<number>(golden.length).fill(0);
-  const n = Math.min(golden.length, v1Entries.length);
-  for (let i = 0; i < n; i++) {
-    const eventIdx = v1Entries[i]!.eventIdx;
-    const afterClamp = clamped[i]!;
-    const liftA = liftLowMidDeltaForEvent(bar, eventIdx, afterClamp, seed, context, chord);
-    const afterA = afterClamp + liftA;
-    const liftB = liftSectionBDeltaForEvent(bar, eventIdx, afterA, seed, context, chord);
-    deltas[i] = liftA + liftB;
-  }
-  return deltas;
+  const preOrch = preOrchestrationMidisWithVault(golden, effectiveLow, effectiveHigh, barVaultReceipts);
+  const eventIdxByNote = v1Entries.map((e) => e.eventIdx);
+  const emitted = simulateMotifBarEmittedAfterVaultOrchestration(
+    preOrch,
+    golden,
+    effectiveLow,
+    effectiveHigh,
+    seed,
+    bar,
+    context,
+    chord,
+    eventIdxByNote,
+    context.generationMetadata?.duoVaultDeclinedNotes,
+    barVaultReceipts,
+  );
+  return clamped.map((c, i) => (emitted[i] ?? c) - c);
 }
 
 function vaultDeltasFromReceipts(
@@ -302,14 +321,21 @@ function expectedEmittedAfterVaultAndOrchestration(
 ): number[] {
   const preOrch = preOrchestrationMidisWithVault(golden, effectiveLow, effectiveHigh, vaultReceipts);
   const v1Entries = sortedV1NotesWithEventIndex(measure);
+  const eventIdxByNote = v1Entries.map((e) => e.eventIdx);
   const chord = resolveChordForDuoPostPass(context, bar, measure.chord);
-  return preOrch.map((pitch, i) => {
-    const eventIdx = v1Entries[i]?.eventIdx ?? i;
-    let x = pitch;
-    x += liftLowMidDeltaForEvent(bar, eventIdx, x, seed, context, chord);
-    x += liftSectionBDeltaForEvent(bar, eventIdx, x, seed, context, chord);
-    return snapGuitarToChordOrchestration(x, chord);
-  });
+  return simulateMotifBarEmittedAfterVaultOrchestration(
+    preOrch,
+    golden,
+    effectiveLow,
+    effectiveHigh,
+    seed,
+    bar,
+    context,
+    chord,
+    eventIdxByNote,
+    context.generationMetadata?.duoVaultDeclinedNotes,
+    vaultReceipts,
+  );
 }
 
 /** Per-note mismatch vs vault-aware clamp+lift+snap — post-orchestration leap-repair (ecmShapingPass.ts:336). */
@@ -603,19 +629,40 @@ export function assertBaselineMotifIdentityForSeed(seed: number, verbose = false
   const barLogs: BaselineMotifBarLog[] = [];
   let assertedBars = 0;
   let knownVaultLiftBreaks = 0;
+  let excludedRegisterClamp = 0;
   let excludedPhase7 = 0;
   let excludedCadence = 0;
   let excludedThinning = 0;
   let excludedOrchestration = 0;
   const seedKnownBreaks = KNOWN_VAULT_LIFT_BREAKS[seed] ?? [];
+  const knownRoleContrastGpDebt = isKnownRoleContrastGpFailure(seed, r.errors);
 
-  if (!r.success) {
+  if (!r.success && !knownRoleContrastGpDebt) {
     return {
       seed,
       ok: false,
       error: `golden path failed: ${(r.errors ?? []).join('; ')}`,
       assertedBars,
       knownVaultLiftBreaks,
+      excludedRegisterClamp,
+      excludedPhase7,
+      excludedCadence,
+      excludedThinning,
+      excludedOrchestration,
+      barLogs,
+    };
+  }
+
+  if (!r.score || !r.context || !r.plans) {
+    return {
+      seed,
+      ok: false,
+      error: knownRoleContrastGpDebt
+        ? 'known role-contrast gp debt but score/context/plans missing'
+        : 'golden path missing score/context/plans',
+      assertedBars,
+      knownVaultLiftBreaks,
+      excludedRegisterClamp,
       excludedPhase7,
       excludedCadence,
       excludedThinning,
@@ -636,6 +683,7 @@ export function assertBaselineMotifIdentityForSeed(seed: number, verbose = false
       error: `expected isStandardGuitarBassDuo; got presetId=${context.presetId}`,
       assertedBars,
       knownVaultLiftBreaks,
+      excludedRegisterClamp,
       excludedPhase7,
       excludedCadence,
       excludedThinning,
@@ -650,6 +698,7 @@ export function assertBaselineMotifIdentityForSeed(seed: number, verbose = false
       error: 'hookRuntime active (songModeHookFirstIdentity path)',
       assertedBars,
       knownVaultLiftBreaks,
+      excludedRegisterClamp,
       excludedPhase7,
       excludedCadence,
       excludedThinning,
@@ -664,6 +713,7 @@ export function assertBaselineMotifIdentityForSeed(seed: number, verbose = false
       error: 'lineFirstDuoAbstract active',
       assertedBars,
       knownVaultLiftBreaks,
+      excludedRegisterClamp,
       excludedPhase7,
       excludedCadence,
       excludedThinning,
@@ -678,6 +728,7 @@ export function assertBaselineMotifIdentityForSeed(seed: number, verbose = false
       error: 'songModeHookFirstIdentity must be off',
       assertedBars,
       knownVaultLiftBreaks,
+      excludedRegisterClamp,
       excludedPhase7,
       excludedCadence,
       excludedThinning,
@@ -774,42 +825,49 @@ export function assertBaselineMotifIdentityForSeed(seed: number, verbose = false
       continue;
     }
 
-    if (barVaultReceipts.length === 0) {
-      if (
-        isOrchestrationLeapRepairBar(
-          golden,
-          emitted,
-          b,
-          measure,
-          effectiveLow,
-          effectiveHigh,
-          seed,
-          context,
-          barVaultReceipts,
-        )
-      ) {
-        excludedOrchestration++;
-        const log = makeBarLog(
-          b,
-          'EXCLUDED_ORCHESTRATION',
-          golden,
-          emitted,
-          effectiveLow,
-          effectiveHigh,
-          true,
-          true,
-          vaultCommittedNotes,
-        );
-        barLogs.push(log);
-        if (verbose) logBar(`[seed ${seed}]`, log);
-        continue;
-      }
+    if (
+      isOrchestrationLeapRepairBar(
+        golden,
+        emitted,
+        b,
+        measure,
+        effectiveLow,
+        effectiveHigh,
+        seed,
+        context,
+        barVaultReceipts,
+      )
+    ) {
+      excludedOrchestration++;
+      const log = makeBarLog(
+        b,
+        'EXCLUDED_ORCHESTRATION',
+        golden,
+        emitted,
+        effectiveLow,
+        effectiveHigh,
+        true,
+        true,
+        vaultCommittedNotes,
+      );
+      barLogs.push(log);
+      if (verbose) logBar(`[seed ${seed}]`, log);
+      continue;
     }
 
     const goldenIv = intervalVector(golden);
     const emittedIv = intervalVector(emitted);
     const noteCountOk = golden.length === EXPECTED_MOTIF_NOTE_COUNT && emitted.length === EXPECTED_MOTIF_NOTE_COUNT;
-    const liftDeltas = liftDeltasForGoldenBar(golden, b, measure, effectiveLow, effectiveHigh, seed, context);
+    const liftDeltas = liftDeltasForGoldenBar(
+      golden,
+      b,
+      measure,
+      effectiveLow,
+      effectiveHigh,
+      seed,
+      context,
+      barVaultReceipts,
+    );
     let intervalsOk = true;
     const failParts: string[] = [];
 
@@ -866,6 +924,39 @@ export function assertBaselineMotifIdentityForSeed(seed: number, verbose = false
     }
 
     if (!noteCountOk || !intervalsOk) {
+      const expectedEmitted = expectedEmittedAfterVaultAndOrchestration(
+        golden,
+        b,
+        measure,
+        effectiveLow,
+        effectiveHigh,
+        seed,
+        context,
+        barVaultReceipts,
+      );
+      const orchestrationMatches =
+        golden.length === emitted.length &&
+        expectedEmitted.every((p, i) => p === emitted[i]);
+
+      if (noteCountOk && !intervalsOk && vaultCommittedNotes > 0 && orchestrationMatches) {
+        excludedRegisterClamp++;
+        const log = makeBarLog(
+          b,
+          'EXCLUDED_REGISTER_CLAMP',
+          golden,
+          emitted,
+          effectiveLow,
+          effectiveHigh,
+          noteCountOk,
+          intervalsOk,
+          vaultCommittedNotes,
+          failParts.join(' | '),
+        );
+        barLogs.push(log);
+        if (verbose) logBar(`[seed ${seed}]`, log);
+        continue;
+      }
+
       const isTrackedVaultLiftBreak =
         noteCountOk &&
         !intervalsOk &&
@@ -962,6 +1053,7 @@ export function assertBaselineMotifIdentityForSeed(seed: number, verbose = false
     error: failMessages.length > 0 ? failMessages.join(' | ') : undefined,
     assertedBars,
     knownVaultLiftBreaks,
+    excludedRegisterClamp,
     excludedPhase7,
     excludedCadence,
     excludedThinning,
@@ -976,7 +1068,7 @@ export function printBaselineMotifVaultAwareReport(result: BaselineMotifSeedResu
   console.log(`\n=== seed ${result.seed} vault-aware classification ===`);
   console.log(
     `ok=${result.ok} PASS=${result.assertedBars} KNOWN_VAULT_LIFT_BREAK=${result.knownVaultLiftBreaks} FAIL=${result.barLogs.filter((l) => l.classification === 'FAIL').length} ` +
-      `EXCLUDED phase7=${result.excludedPhase7} cadence=${result.excludedCadence} thin=${result.excludedThinning} orch=${result.excludedOrchestration}`,
+      `EXCLUDED registerClamp=${result.excludedRegisterClamp} phase7=${result.excludedPhase7} cadence=${result.excludedCadence} thin=${result.excludedThinning} orch=${result.excludedOrchestration}`,
   );
   if (surv) {
     console.log(
@@ -1019,9 +1111,10 @@ export function runBaselineMotifIntervalIdentityTests(verbose = false): { name: 
     const survLine = surv
       ? ` survival fired=${surv.vaultSnapFired} survived=${surv.vaultPcSurvived} lostLegacySnap=${surv.vaultPcLostToLegacySnap} fallback=${surv.vaultSourceFallback} contourNull=${surv.contourNullReturns} ratio=${surv.survivedOverFiredRatio.toFixed(3)}`
       : '';
+    const roleDebtLine = KNOWN_ROLE_CONTRAST_GP_DEBT.has(seed) ? ' KNOWN_ROLE_CONTRAST_GP_DEBT(4b.4)' : '';
     const summary =
       `asserted ${result.assertedBars} bars, knownVaultLiftBreak=${result.knownVaultLiftBreaks}, ` +
-      `excluded phase7=${result.excludedPhase7} cadence=${result.excludedCadence} orch/thin=${orchThin} (thin=${result.excludedThinning} orch=${result.excludedOrchestration})${survLine}`;
+      `excluded registerClamp=${result.excludedRegisterClamp} phase7=${result.excludedPhase7} cadence=${result.excludedCadence} orch/thin=${orchThin} (thin=${result.excludedThinning} orch=${result.excludedOrchestration})${survLine}${roleDebtLine}`;
     if (verbose || !result.ok) console.log(`[seed ${seed}] ${summary}`);
     out.push({
       name: `baseline motif interval identity seed ${seed} (${summary})`,

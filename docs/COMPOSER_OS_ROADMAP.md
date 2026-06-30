@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-06-23]
+# Composer OS Roadmap [2026-06-30]
 
 ## ✅ Active Now (top priority — everything below is backlog)
 - **Milestone B — Block cards + manipulation** (desktop Tab 2 “Arrange in Blocks”: scaffold → 8-bar cards, chords + composer chip, duplicate/reorder/delete). **Band Mode engine complete** — progressions, variable length, and section-varying drums shipped (`2414fcbe`).
@@ -460,7 +460,9 @@ Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartók** native bundle (not in
 
 ---
 
-## Current (as of 2026-06-16 snapshot)
+## Current (as of 2026-06-30 snapshot)
+
+- **Duo vault Stage 4b.3 — SHIPPED:** Type-1 vault-lift fix on **`guitar_bass_duo`** baseline motif path — receipt skip + declined-note register-only lift (**`duoOrchestrationPass.ts`**, **`duoVaultMotifContourSnap.ts`**). Seed **50021** proof: **`KNOWN_VAULT_LIFT_BREAKS` empty**, interval test PASS, **`roleContrast` 0.0929**. **KNOWN DEBT → Stage 4b.4:** seed **50213** **`roleContrast` 0.0554** (< **0.06**) — pre-existing marginal **0.0603** drops slightly below threshold; register-only diagnostic shows **4b1 gate rejects all register candidates** (same emitted pitches as full-skip); **not** a wiring bug. Detail: **[DUO_VAULT_ROADMAP.md](DUO_VAULT_ROADMAP.md)** § **4b.3** / **4b.4**.
 
 - **Leadsheet-input V96 — variation controls — SHIPPED (2026-06-16, `2d0e9d40`):** **`LeadSheetInputDesktopPanel`** — **Another version** (hidden seed reroll) · **Rhythmic activity** slider → `rhythmAntiLoopIntensity` gentle/moderate + micro-timing scale · **Guitar comp** slider → `guitarCompDensity` on guitar chording pass. Export `{stem}_{composerId}_v{runId}_quintet.musicxml`. Handoff: **[HANDOVER_2026-06-16.md](HANDOVER_2026-06-16.md)**. **Next:** **3-up variation gallery**.
 

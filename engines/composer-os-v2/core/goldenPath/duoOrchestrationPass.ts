@@ -5,7 +5,7 @@
 
 import type { CompositionContext } from '../compositionContext';
 import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
-import type { ScoreModel, PartModel, NoteEvent } from '../score-model/scoreModelTypes';
+import type { ScoreModel, PartModel, NoteEvent, MeasureModel } from '../score-model/scoreModelTypes';
 import { createRest } from '../score-model/scoreEventBuilder';
 import { guitarChordTonesInRange } from './guitarPhraseAuthority';
 import { chordTonesForChordSymbolWithContext } from '../harmony/harmonyChordTonePolicy';
@@ -13,6 +13,11 @@ import { resolveChordForDuoPostPass } from '../harmony/harmonyResolution';
 import { pitchClassToBassMidi } from '../harmony/chordSymbolAnalysis';
 import { clampPitch, seededUnit } from './guitarBassDuoHarmony';
 import { enforceDuoVoiceLeadingPostOrchestration, enforceEcmPostEditGuards } from './ecmShapingPass';
+import type { DuoVaultDeclinedNote, DuoVaultMotifSnapReceipt } from './duoVaultMotifContourSnap';
+import {
+  motifBarPasses4b1AfterVaultOrchestration,
+  registerOnlyLiftMidi,
+} from './duoVaultMotifContourSnap';
 
 const G_LOW = 55;
 const G_HIGH = 79;
@@ -53,6 +58,104 @@ function isDuoIdentityGuitarBar(barIndex: number): boolean {
 /** Bar 6 is the immediate lead-in to the identity bar — keep B-section lift off so bar 7 can stay the interval peak vs bar 6. */
 function skipBRegisterLiftForDuoIdentity(barIndex: number): boolean {
   return barIndex === 6 || barIndex === 7;
+}
+
+function sortedV1EventIndices(m: MeasureModel): number[] {
+  const entries: { startBeat: number; eventIdx: number }[] = [];
+  m.events.forEach((e, idx) => {
+    if (e.kind === 'note' && ((e as NoteEvent).voice ?? 1) === 1) {
+      entries.push({ startBeat: e.startBeat, eventIdx: idx });
+    }
+  });
+  entries.sort((a, b) => a.startBeat - b.startBeat);
+  return entries.map(({ eventIdx }) => eventIdx);
+}
+
+/** Map guitar v1 event index → vault receipt for receipt-tagged motif notes on this bar. */
+function buildVaultReceiptByEventIdx(
+  barIndex: number,
+  measure: MeasureModel,
+  receipts: readonly DuoVaultMotifSnapReceipt[] | undefined,
+): Map<number, DuoVaultMotifSnapReceipt> {
+  const out = new Map<number, DuoVaultMotifSnapReceipt>();
+  if (!receipts?.length) return out;
+  const barReceipts = receipts.filter((r) => r.bar === barIndex);
+  if (barReceipts.length === 0) return out;
+  const v1EventIdxs = sortedV1EventIndices(measure);
+  for (const rec of barReceipts) {
+    const eventIdx = v1EventIdxs[rec.noteIndex];
+    if (eventIdx !== undefined) out.set(eventIdx, rec);
+  }
+  return out;
+}
+
+/** Map guitar v1 event index → declined motif noteIndex (for register-only lift). */
+function buildDeclinedMotifNoteIndexByEventIdx(
+  barIndex: number,
+  measure: MeasureModel,
+  declined: readonly DuoVaultDeclinedNote[] | undefined,
+): Map<number, number> {
+  const out = new Map<number, number>();
+  if (!declined?.length) return out;
+  const barDeclined = declined.filter((d) => d.bar === barIndex);
+  if (barDeclined.length === 0) return out;
+  const v1EventIdxs = sortedV1EventIndices(measure);
+  for (const d of barDeclined) {
+    const eventIdx = v1EventIdxs[d.noteIndex];
+    if (eventIdx !== undefined) out.set(eventIdx, d.noteIndex);
+  }
+  return out;
+}
+
+function tryDeclinedRegisterOnlyLiftPitch(
+  n: NoteEvent,
+  measure: MeasureModel,
+  motifNoteIndex: number,
+  context: CompositionContext,
+  seed: number,
+  chord: string,
+  receipts: readonly DuoVaultMotifSnapReceipt[] | undefined,
+  declined: readonly DuoVaultDeclinedNote[] | undefined,
+  eventIdxByNote: readonly number[],
+  sectionBPass: boolean,
+): number {
+  const baseline = context.generationMetadata?.duoVaultMotifBarBaselines?.find((b) => b.bar === measure.index);
+  if (!baseline || motifNoteIndex < 0 || motifNoteIndex >= baseline.preOrchestrationMidis.length) {
+    return n.pitch;
+  }
+  const eventIdx = eventIdxByNote[motifNoteIndex] ?? motifNoteIndex;
+  const label = sectionLabelForBar(measure.index, context);
+  if (sectionBPass) {
+    if (skipBRegisterLiftForDuoIdentity(measure.index)) return n.pitch;
+    if (!isSectionB(label)) return n.pitch;
+    if (seededUnit(seed, measure.index * 600 + eventIdx, 21001) >= 0.35) return n.pitch;
+  } else {
+    if (!isSectionA(label)) return n.pitch;
+    if (n.pitch >= GUITAR_LIFT_BELOW) return n.pitch;
+    if (seededUnit(seed, measure.index * 700 + eventIdx, 21002) >= 0.6) return n.pitch;
+  }
+
+  const proposed = registerOnlyLiftMidi(n.pitch, baseline.effectiveLow, baseline.effectiveHigh);
+  if (proposed === n.pitch) return n.pitch;
+
+  if (
+    !motifBarPasses4b1AfterVaultOrchestration(
+      baseline.preOrchestrationMidis,
+      baseline.goldenMidis,
+      baseline.effectiveLow,
+      baseline.effectiveHigh,
+      seed,
+      measure.index,
+      context,
+      chord,
+      eventIdxByNote,
+      declined,
+      receipts,
+    )
+  ) {
+    return n.pitch;
+  }
+  return proposed;
 }
 
 function snapGuitarToChord(pitch: number, chord: string): number {
@@ -117,17 +220,40 @@ function liftGuitarRegisterInSectionB(
   context: CompositionContext,
   seed: number
 ): void {
+  const receipts = context.generationMetadata?.duoVaultMotifSnapReceipts;
+  const declined = context.generationMetadata?.duoVaultDeclinedNotes;
   for (const m of guitar.measures) {
     if (skipBRegisterLiftForDuoIdentity(m.index)) continue;
     const label = sectionLabelForBar(m.index, context);
     if (!isSectionB(label)) continue;
     const chord = chordForBar(context, m.index, m.chord);
+    const vaultByEvent = buildVaultReceiptByEventIdx(m.index, m, receipts);
+    const declinedMotifByEvent = buildDeclinedMotifNoteIndexByEventIdx(m.index, m, declined);
+    const v1EventIdxs = sortedV1EventIndices(m);
     m.events.forEach((e, idx) => {
       if (e.kind !== 'note') return;
       const n = e as NoteEvent;
       // Polyphony inner voice: do not lift/snap voice 2 (Phase 18.2B register contract).
       if ((n.voice ?? 1) === 2) return;
       if (seededUnit(seed, m.index * 600 + idx, 21001) >= 0.35) return;
+      if (vaultByEvent.get(idx)) return;
+      const declinedMotifIdx = declinedMotifByEvent.get(idx);
+      if (declinedMotifIdx !== undefined) {
+        const reg = tryDeclinedRegisterOnlyLiftPitch(
+          n,
+          m,
+          declinedMotifIdx,
+          context,
+          seed,
+          chord,
+          receipts,
+          declined,
+          v1EventIdxs,
+          true,
+        );
+        if (reg !== n.pitch) m.events[idx] = { ...n, pitch: reg };
+        return;
+      }
       const np = clampPitch(n.pitch + 1, G_LOW, G_HIGH);
       const snapped = snapGuitarToChord(np, chord);
       if (snapped !== n.pitch) m.events[idx] = { ...n, pitch: snapped };
@@ -136,11 +262,16 @@ function liftGuitarRegisterInSectionB(
 }
 
 function liftGuitarLowMidInA(guitar: PartModel, context: CompositionContext, seed: number): void {
+  const receipts = context.generationMetadata?.duoVaultMotifSnapReceipts;
+  const declined = context.generationMetadata?.duoVaultDeclinedNotes;
   for (const m of guitar.measures) {
     if (isSongModeHookProtectedGuitarBar(m.index, context)) continue;
     const label = sectionLabelForBar(m.index, context);
     if (!isSectionA(label)) continue;
     const chord = chordForBar(context, m.index, m.chord);
+    const vaultByEvent = buildVaultReceiptByEventIdx(m.index, m, receipts);
+    const declinedMotifByEvent = buildDeclinedMotifNoteIndexByEventIdx(m.index, m, declined);
+    const v1EventIdxs = sortedV1EventIndices(m);
     m.events.forEach((e, idx) => {
       if (e.kind !== 'note') return;
       const n = e as NoteEvent;
@@ -148,9 +279,27 @@ function liftGuitarLowMidInA(guitar: PartModel, context: CompositionContext, see
       if ((n.voice ?? 1) === 2) return;
       if (n.pitch >= GUITAR_LIFT_BELOW) return;
       if (seededUnit(seed, m.index * 700 + idx, 21002) >= 0.6) return;
+      if (vaultByEvent.get(idx)) return;
+      const declinedMotifIdx = declinedMotifByEvent.get(idx);
+      if (declinedMotifIdx !== undefined) {
+        const reg = tryDeclinedRegisterOnlyLiftPitch(
+          n,
+          m,
+          declinedMotifIdx,
+          context,
+          seed,
+          chord,
+          receipts,
+          declined,
+          v1EventIdxs,
+          false,
+        );
+        if (reg !== n.pitch) m.events[idx] = { ...n, pitch: reg };
+        return;
+      }
       const np = clampPitch(n.pitch + 1, G_LOW, G_HIGH);
       const snapped = snapGuitarToChord(np, chord);
-      m.events[idx] = { ...n, pitch: snapped };
+      if (snapped !== n.pitch) m.events[idx] = { ...n, pitch: snapped };
     });
   }
 }

@@ -4626,6 +4626,21 @@ function buildGuitarPart(
           vaultSnappedMidis = placement.finalMidis;
           duoVaultMotifSnapReceipts.push(...placement.receipts);
           duoVaultContourNullReturns += placement.contourNullReturns;
+          if (context.generationMetadata) {
+            const baselines = context.generationMetadata.duoVaultMotifBarBaselines ?? [];
+            if (!baselines.some((bl) => bl.bar === b)) {
+              context.generationMetadata.duoVaultMotifBarBaselines = [
+                ...baselines,
+                {
+                  bar: b,
+                  goldenMidis: motifNotes.map((n) => n.pitch),
+                  preOrchestrationMidis: [...placement.finalMidis],
+                  effectiveLow,
+                  effectiveHigh,
+                },
+              ];
+            }
+          }
         }
       }
       let vaultSnapNoteIdx = 0;

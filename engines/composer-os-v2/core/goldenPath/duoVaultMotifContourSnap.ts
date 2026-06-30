@@ -30,6 +30,22 @@ export interface DuoVaultMotifSnapReceipt {
   snappedMidi: number;
 }
 
+/** Stage 4b.3 — vault contour evaluated but 4b.2 interval guard declined commit (metadata only). */
+export interface DuoVaultDeclinedNote {
+  bar: number;
+  noteIndex: number;
+  reason: 'interval-contract-declined';
+}
+
+/** Stage 4b.3 — motif bar golden + :4572 pre-orchestration midis for declined register-only lift checks. */
+export interface DuoVaultMotifBarBaseline {
+  bar: number;
+  goldenMidis: number[];
+  preOrchestrationMidis: number[];
+  effectiveLow: number;
+  effectiveHigh: number;
+}
+
 export interface DuoVaultMotifSurvivalTelemetry {
   vaultSnapFired: number;
   vaultPcSurvived: number;
@@ -399,6 +415,148 @@ export function barPasses4b1MotifIntervalContract(
   return true;
 }
 
+/** Nearest higher octave of the same pitch class toward +1 register lift intent (no legacy snap). */
+export function registerOnlyLiftMidi(currentMidi: number, low: number, high: number): number {
+  const pc = normalizePc(currentMidi);
+  const target = currentMidi + 1;
+  const candidates: number[] = [];
+  let midi = pc;
+  while (midi < low) midi += 12;
+  while (midi <= high) {
+    if (midi > currentMidi) candidates.push(midi);
+    midi += 12;
+  }
+  if (candidates.length === 0) return currentMidi;
+  const atOrAbove = candidates.filter((c) => c >= target);
+  const pool = atOrAbove.length > 0 ? atOrAbove : candidates;
+  let best = pool[0]!;
+  let bd = Math.abs(best - target);
+  for (const c of pool) {
+    const d = Math.abs(c - target);
+    if (d < bd) {
+      bd = d;
+      best = c;
+    }
+  }
+  return best;
+}
+
+function declinedNoteIndicesForBarFromList(
+  bar: number,
+  declined: readonly DuoVaultDeclinedNote[] | undefined,
+): Set<number> {
+  return new Set((declined ?? []).filter((d) => d.bar === bar).map((d) => d.noteIndex));
+}
+
+function receiptNoteIndicesForBarFromList(
+  bar: number,
+  receipts: readonly DuoVaultMotifSnapReceipt[] | undefined,
+): Set<number> {
+  return new Set((receipts ?? []).filter((r) => r.bar === bar).map((r) => r.noteIndex));
+}
+
+function simulateDeclinedNoteAfterOrchestration(
+  preOrchPitch: number,
+  noteIndex: number,
+  bar: number,
+  seed: number,
+  context: CompositionContext,
+  low: number,
+  high: number,
+  eventIdxByNote: readonly number[],
+): number {
+  let x = preOrchPitch;
+  const eventIdx = eventIdxByNote[noteIndex] ?? noteIndex;
+  const label = sectionLabelForBar(bar, context);
+  if (!isOrchestrationSectionB(label) && x < GUITAR_LIFT_BELOW) {
+    if (seededUnit(seed, bar * 700 + eventIdx, LIFT_LOW_MID_SALT) < LIFT_LOW_MID_GATE) {
+      x = registerOnlyLiftMidi(x, low, high);
+    }
+  }
+  if (!skipBRegisterLiftForDuoIdentity(bar) && isOrchestrationSectionB(label)) {
+    if (seededUnit(seed, bar * 600 + eventIdx, LIFT_SECTION_B_SALT) < LIFT_SECTION_B_GATE) {
+      x = registerOnlyLiftMidi(x, low, high);
+    }
+  }
+  return x;
+}
+
+/** Full-bar orchestration model: receipt skip · declined register-only · legacy lift+snap. */
+export function simulateMotifBarEmittedAfterVaultOrchestration(
+  preOrchMidis: readonly number[],
+  goldenMidis: readonly number[],
+  low: number,
+  high: number,
+  seed: number,
+  bar: number,
+  context: CompositionContext,
+  chord: string,
+  eventIdxByNote: readonly number[],
+  declined: readonly DuoVaultDeclinedNote[] | undefined,
+  receipts: readonly DuoVaultMotifSnapReceipt[] | undefined,
+): number[] {
+  const declinedSet = declinedNoteIndicesForBarFromList(bar, declined);
+  const receiptSet = receiptNoteIndicesForBarFromList(bar, receipts);
+  return preOrchMidis.map((pitch, i) => {
+    if (receiptSet.has(i)) return pitch;
+    if (declinedSet.has(i)) {
+      return simulateDeclinedNoteAfterOrchestration(
+        pitch,
+        i,
+        bar,
+        seed,
+        context,
+        low,
+        high,
+        eventIdxByNote,
+      );
+    }
+    const eventIdx = eventIdxByNote[i] ?? i;
+    let x = pitch;
+    x += liftLowMidDelta(bar, eventIdx, x, seed, context, chord);
+    x += liftSectionBDelta(bar, eventIdx, x, seed, context, chord);
+    return snapGuitarToChordOrchestration(x, chord);
+  });
+}
+
+/** 4b.1 interval contract with vault-orchestration model (declined register-only + receipt skip). */
+export function motifBarPasses4b1AfterVaultOrchestration(
+  preOrchMidis: readonly number[],
+  goldenMidis: readonly number[],
+  low: number,
+  high: number,
+  seed: number,
+  bar: number,
+  context: CompositionContext,
+  chord: string,
+  eventIdxByNote: readonly number[],
+  declined: readonly DuoVaultDeclinedNote[] | undefined,
+  receipts: readonly DuoVaultMotifSnapReceipt[] | undefined,
+): boolean {
+  if (preOrchMidis.length !== goldenMidis.length) return false;
+  const goldenIv = motifIntervalVector([...goldenMidis]);
+  const liftDeltas = liftDeltasForMotifBarAtEmission(goldenMidis, low, high, bar, seed, context, chord);
+  const emitted = simulateMotifBarEmittedAfterVaultOrchestration(
+    preOrchMidis,
+    goldenMidis,
+    low,
+    high,
+    seed,
+    bar,
+    context,
+    chord,
+    eventIdxByNote,
+    declined,
+    receipts,
+  );
+  const emittedIv = motifIntervalVector(emitted);
+  for (let j = 0; j < goldenIv.length; j++) {
+    const tol = intervalToleranceForGoldenInterval(goldenMidis, low, high, liftDeltas, j);
+    if (Math.abs(emittedIv[j]! - goldenIv[j]!) > tol + 1e-9) return false;
+  }
+  return true;
+}
+
 export interface PerNoteVaultMotifPlacementResult {
   finalMidis: number[];
   receipts: DuoVaultMotifSnapReceipt[];
@@ -451,6 +609,13 @@ export function applyPerNoteVaultMotifPlacement(
       committedReceipts.push(snapReceipt);
     } else {
       contourNullReturns++;
+      if (context.generationMetadata) {
+        const declined = context.generationMetadata.duoVaultDeclinedNotes ?? [];
+        context.generationMetadata.duoVaultDeclinedNotes = [
+          ...declined,
+          { bar, noteIndex: i, reason: 'interval-contract-declined' },
+        ];
+      }
     }
   }
 

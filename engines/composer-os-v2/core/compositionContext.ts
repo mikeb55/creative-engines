@@ -433,6 +433,10 @@ export interface GenerationMetadata {
   longFormDuo?: boolean;
   /** Stage 4b.2 — per-note vault contour snap receipts at baseline motif emission (:4572). */
   duoVaultMotifSnapReceipts?: import('./goldenPath/duoVaultMotifContourSnap').DuoVaultMotifSnapReceipt[];
+  /** Stage 4b.3 — motif notes vault-evaluated but interval guard declined commit (lift must not legacy-snap). */
+  duoVaultDeclinedNotes?: import('./goldenPath/duoVaultMotifContourSnap').DuoVaultDeclinedNote[];
+  /** Stage 4b.3 — per-bar golden + :4572 pre-orchestration midis for declined register-only lift. */
+  duoVaultMotifBarBaselines?: import('./goldenPath/duoVaultMotifContourSnap').DuoVaultMotifBarBaseline[];
   /** Stage 4b.2 — motif notes skipped because resolver returned fallback (not vault). */
   duoVaultSourceFallbackNoteCount?: number;
   /** Stage 4b.2 — contour pool starved; note kept at clamped pl.notes (counted, not silent). */
