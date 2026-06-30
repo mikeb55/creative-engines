@@ -87,6 +87,14 @@ export interface BaselineMotifSeedResult {
   excludedCadence: number;
   excludedThinning: number;
   excludedOrchestration: number;
+  vaultSurvival?: {
+    vaultSnapFired: number;
+    vaultPcSurvived: number;
+    vaultPcLostToLegacySnap: number;
+    vaultSourceFallback: number;
+    contourNullReturns: number;
+    survivedOverFiredRatio: number;
+  };
   barLogs: BaselineMotifBarLog[];
 }
 
@@ -668,6 +676,18 @@ export function assertBaselineMotifIdentityForSeed(seed: number, verbose = false
     assertedBars++;
   }
 
+  const surv = context.generationMetadata?.duoVaultMotifSurvivalTelemetry;
+  const vaultSurvival = surv
+    ? {
+        vaultSnapFired: surv.vaultSnapFired,
+        vaultPcSurvived: surv.vaultPcSurvived,
+        vaultPcLostToLegacySnap: surv.vaultPcLostToLegacySnap,
+        vaultSourceFallback: surv.vaultSourceFallback,
+        contourNullReturns: surv.contourNullReturns,
+        survivedOverFiredRatio: surv.survivedOverFiredRatio,
+      }
+    : undefined;
+
   return {
     seed,
     ok: true,
@@ -676,6 +696,7 @@ export function assertBaselineMotifIdentityForSeed(seed: number, verbose = false
     excludedCadence,
     excludedThinning,
     excludedOrchestration,
+    vaultSurvival,
     barLogs,
   };
 }
@@ -685,7 +706,11 @@ export function runBaselineMotifIntervalIdentityTests(verbose = false): { name: 
   for (const seed of CONFIDENCE_SEEDS) {
     const result = assertBaselineMotifIdentityForSeed(seed, verbose);
     const orchThin = result.excludedThinning + result.excludedOrchestration;
-    const summary = `asserted ${result.assertedBars} bars, excluded phase7=${result.excludedPhase7} cadence=${result.excludedCadence} orch/thin=${orchThin} (thin=${result.excludedThinning} orch=${result.excludedOrchestration})`;
+    const surv = result.vaultSurvival;
+    const survLine = surv
+      ? ` survival fired=${surv.vaultSnapFired} survived=${surv.vaultPcSurvived} lostLegacySnap=${surv.vaultPcLostToLegacySnap} fallback=${surv.vaultSourceFallback} contourNull=${surv.contourNullReturns} ratio=${surv.survivedOverFiredRatio.toFixed(3)}`
+      : '';
+    const summary = `asserted ${result.assertedBars} bars, excluded phase7=${result.excludedPhase7} cadence=${result.excludedCadence} orch/thin=${orchThin} (thin=${result.excludedThinning} orch=${result.excludedOrchestration})${survLine}`;
     if (verbose || !result.ok) console.log(`[seed ${seed}] ${summary}`);
     out.push({
       name: `baseline motif interval identity seed ${seed} (${summary})`,

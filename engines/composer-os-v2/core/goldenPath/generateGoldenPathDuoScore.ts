@@ -645,6 +645,15 @@ import {
 import { applyDuoPitchVariationToGuitar } from './duoPitchVariationPass';
 import { applyECMShapingPass } from './ecmShapingPass';
 import { applyDuoOrchestrationPass } from './duoOrchestrationPass';
+import {
+  computeDuoVaultMotifSurvivalTelemetry,
+  shouldApplyDuoVaultMotifContourSnap,
+  snapMotifBarToVaultContour,
+  vaultSnapPreservesClampedIntervals,
+  type DuoVaultMotifSnapReceipt,
+} from './duoVaultMotifContourSnap';
+import { resolveDuoHarmonyForSymbol } from '../harmony/duoVaultHarmony';
+import { isStandardGuitarBassDuo } from '../presets/guitarBassDuoPresetIds';
 import { applyEcmIdentityCellPass } from './identityCell';
 import { applyGlobalRegisterArc } from './melodicRegisterArc';
 import {
@@ -3760,6 +3769,10 @@ function buildGuitarPart(
     };
   }
 
+  const duoVaultMotifSnapReceipts: DuoVaultMotifSnapReceipt[] = [];
+  let duoVaultSourceFallbackNoteCount = 0;
+  let duoVaultContourNullReturns = 0;
+
   for (let b = 1; b <= tb; b++) {
     if (isMosaicModeActive(context)) {
       const duoComposerId = composerForBar(b, context);
@@ -4567,9 +4580,50 @@ function buildGuitarPart(
       }
       const raw: { pitch: number; start: number; dur: number }[] = [];
       const barCapMotif = measureBeatSpanQuartersOf(m);
+      const useVaultMotifSnap = shouldApplyDuoVaultMotifContourSnap(
+        context.presetId,
+        !!hookRuntime,
+        lineFirstDuoAbstract,
+        placements.length > 0,
+        skipMotifForIdentity
+      );
+      let vaultSnappedMidis: number[] | undefined;
+      if (useVaultMotifSnap) {
+        const motifNotes = placements
+          .flatMap((pl) => pl.notes)
+          .sort((a, b) => a.startBeat - b.startBeat);
+        const motifChord = resolveBarSymbol(context, b).symbol;
+        const lockedHarmony = chordToneOpts?.lockedHarmony ?? true;
+        const harmonyProbe = resolveDuoHarmonyForSymbol(motifChord, { lockedHarmony });
+        if (harmonyProbe.source !== 'vault') {
+          duoVaultSourceFallbackNoteCount += motifNotes.length;
+        } else {
+          const snap = snapMotifBarToVaultContour(
+            motifNotes,
+            motifChord,
+            effectiveLow,
+            effectiveHigh,
+            seed,
+            b,
+            lockedHarmony,
+            () => {
+              duoVaultContourNullReturns++;
+            }
+          );
+          if (vaultSnapPreservesClampedIntervals(snap.snappedMidis, motifNotes, effectiveLow, effectiveHigh)) {
+            vaultSnappedMidis = snap.snappedMidis;
+            duoVaultMotifSnapReceipts.push(...snap.receipts);
+          } else {
+            duoVaultContourNullReturns += motifNotes.length;
+          }
+        }
+      }
+      let vaultSnapNoteIdx = 0;
       for (const pl of placements) {
-        for (const n of pl.notes) {
-          let pitch = Math.max(effectiveLow, Math.min(effectiveHigh, n.pitch));
+        const sortedPlNotes = [...pl.notes].sort((a, b) => a.startBeat - b.startBeat);
+        for (const n of sortedPlNotes) {
+          let pitch = vaultSnappedMidis ? vaultSnappedMidis[vaultSnapNoteIdx++]! : n.pitch;
+          pitch = Math.max(effectiveLow, Math.min(effectiveHigh, pitch));
           const dur = Math.min(n.duration, Math.max(0, barCapMotif - n.startBeat));
           if (dur > 0 && n.startBeat < barCapMotif) {
             const rawStart = n.startBeat + staggerForMotif;
@@ -5275,6 +5329,14 @@ function buildGuitarPart(
   };
   if (isDuoGoldenPath && context.presetId !== 'ecm_chamber') {
     applyPhraseVariationPass(guitarPartDraft, context, seed);
+  }
+  if (isStandardGuitarBassDuo(context.presetId) && context.generationMetadata) {
+    context.generationMetadata = {
+      ...context.generationMetadata,
+      duoVaultMotifSnapReceipts,
+      duoVaultSourceFallbackNoteCount,
+      duoVaultContourNullReturns,
+    };
   }
   return guitarPartDraft;
 }
@@ -7775,6 +7837,23 @@ export function generateGoldenPathDuoScore(
     context.presetId !== GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID
   ) {
     applyDuoOrchestrationPass(afterExpressive, context, context.seed);
+  }
+  if (isStandardGuitarBassDuo(context.presetId) && context.generationMetadata) {
+    const snapReceipts = context.generationMetadata.duoVaultMotifSnapReceipts ?? [];
+    const fallbackNotes = context.generationMetadata.duoVaultSourceFallbackNoteCount ?? 0;
+    const contourNull = context.generationMetadata.duoVaultContourNullReturns ?? 0;
+    const telemetry = computeDuoVaultMotifSurvivalTelemetry(
+      afterExpressive,
+      snapReceipts,
+      context,
+      context.seed,
+      contourNull,
+      fallbackNotes
+    );
+    context.generationMetadata = {
+      ...context.generationMetadata,
+      duoVaultMotifSurvivalTelemetry: telemetry,
+    };
   }
   if (context.harmonyContext) {
     assertGuitarScoreMatchesHarmonyContext(afterExpressive, context, 'after_applyDuoOrchestrationPass');

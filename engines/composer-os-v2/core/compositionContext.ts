@@ -431,6 +431,25 @@ export interface GenerationMetadata {
   ecmPhraseEdgeSpaceApplied?: boolean;
   /** Guitar–Bass Duo: opt-in 32-bar long-form route (V4.0) */
   longFormDuo?: boolean;
+  /** Stage 4b.2 — per-note vault contour snap receipts at baseline motif emission (:4572). */
+  duoVaultMotifSnapReceipts?: import('./goldenPath/duoVaultMotifContourSnap').DuoVaultMotifSnapReceipt[];
+  /** Stage 4b.2 — motif notes skipped because resolver returned fallback (not vault). */
+  duoVaultSourceFallbackNoteCount?: number;
+  /** Stage 4b.2 — contour pool starved; note kept at clamped pl.notes (counted, not silent). */
+  duoVaultContourNullReturns?: number;
+  /** Stage 4b.2 — post-orchestration vault PC survival telemetry (read after applyDuoOrchestrationPass). */
+  duoVaultMotifSurvivalTelemetry?: import('./goldenPath/duoVaultMotifContourSnap').DuoVaultMotifSurvivalTelemetry;
+  /** Isolation eval — Bill Evans premium melody profile id echo. */
+  bePremiumMelodyProfile?: string;
+  /** Isolation eval — Wayne Shorter premium melody profile id echo. */
+  waynePremiumMelodyProfile?: string;
+  /** Isolation eval — Jimi Hendrix premium melody profile id echo. */
+  jhPremiumMelodyProfile?: string;
+  beMusicianPremiumMelodyBridge?: boolean;
+  bePremiumMelodyRhythmMeta?: unknown;
+  bePremiumMelodyPitchTrace?: unknown;
+  waynePremiumMelodyRhythmMeta?: unknown;
+  jhPremiumMelodyRhythmMeta?: unknown;
   modulationPlanActive?: boolean;
   /** Explicit bar count when long-form or extended forms are used */
   totalBars?: number;
