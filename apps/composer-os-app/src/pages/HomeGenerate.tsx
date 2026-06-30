@@ -2115,6 +2115,16 @@ type GenResult = {
     importHarmonyLockFallbackReason?: string;
     importHarmonyLockedBarsCount?: number;
     slonimskyEnsembleCellReceipts?: string[];
+    /** Stage 4b — vault motif survival (`guitar_bass_duo` only). */
+    duoVaultMotifEnabled?: boolean;
+    duoVaultMotifSurvivalTelemetry?: {
+      vaultSnapFired: number;
+      vaultPcSurvived: number;
+      vaultPcLostToLegacySnap: number;
+      vaultSourceFallback: number;
+      contourNullReturns: number;
+      survivedOverFiredRatio: number;
+    };
   };
   slonimskyEnsembleCellReceipts?: string[];
   scoreTitle?: string;
@@ -2132,6 +2142,7 @@ type GenResult = {
     c4Strength?: 'light' | 'medium' | 'strong';
     blendStrength?: 'light' | 'medium' | 'strong';
     duoIntent?: 'conversational' | 'supportive';
+    duoVaultMotifEnabled?: boolean;
     leadSheetHarmonyDisplayMode?: HarmonyDisplayModeUi;
     leadSheetHarmonyDisplayModeEffective?: HarmonyDisplayModeUi;
     groove?: number;
@@ -2344,6 +2355,29 @@ function computeSongModeDuoHealthReadout(r: GenResult | null): {
   }
 
   return { independence, spacing, sourceLabel: 'Voice-2 + Space slider + register bias (proxy)' };
+}
+
+function resolveDuoVaultMotifEnabledForResult(r: GenResult | null): boolean | null {
+  if (r?.runManifest?.presetId !== 'guitar_bass_duo') return null;
+  if (r.requestEcho?.duoVaultMotifEnabled === false) return false;
+  if (r.runManifest.duoVaultMotifEnabled === false) return false;
+  if (r.requestEcho?.duoVaultMotifEnabled === true) return true;
+  if (r.runManifest.duoVaultMotifEnabled === true) return true;
+  return true;
+}
+
+function extractDuoVaultSurvivalTelemetry(r: GenResult | null): NonNullable<
+  GenResult['runManifest']
+>['duoVaultMotifSurvivalTelemetry'] | null {
+  if (resolveDuoVaultMotifEnabledForResult(r) === false) return null;
+  if (r?.runManifest?.presetId !== 'guitar_bass_duo') return null;
+  const t = r.runManifest.duoVaultMotifSurvivalTelemetry;
+  if (!t || typeof t.vaultSnapFired !== 'number') return null;
+  return t;
+}
+
+function extractDuoVaultMotifEnabled(r: GenResult | null): boolean | null {
+  return resolveDuoVaultMotifEnabledForResult(r);
 }
 
 type SongModeSectionRoleUi = 'OPENING' | 'BRIDGE_LIFT' | 'RETURN' | 'WHOLE' | 'OUTRO';
@@ -3047,6 +3081,7 @@ export function HomeGenerate({
     Record<string, number>
   >({});
   const [duoIntent, setDuoIntent] = useState<'conversational' | 'supportive'>('conversational');
+  const [duoVaultMotifEnabled, setDuoVaultMotifEnabled] = useState(true);
   /** ECM Chamber Song Mode — UI-only override label for sweep depth (no API wiring). */
   const [ecmFullSweepOverride, setEcmFullSweepOverride] = useState(false);
   /** Last vault RNG options (for remix parity) — set on each successful vault Generate. */
@@ -3984,7 +4019,7 @@ export function HomeGenerate({
             chordProgressionText: validated.chordProgressionText,
             mosaicSectionPlan: validated.mosaicSectionPlan,
           });
-          const r = (await enqueue(body)) as GenResult;
+          const r = (await enqueue({ ...body, duoVaultMotifEnabled })) as GenResult;
           if (reharmApplyHarmonyUnlockRef.current) {
             reharmApplyHarmonyUnlockRef.current = false;
           }
@@ -4423,6 +4458,7 @@ export function HomeGenerate({
                   ? { styleGenerationContextKeys: slonimskyUiExtras.styleGenerationContextKeys }
                   : {}),
                 ...(slonimskyUiExtras.harmonicVoice ? { harmonicVoice: slonimskyUiExtras.harmonicVoice } : {}),
+                duoVaultMotifEnabled,
               }
             : {}),
           ...(presetId === 'guitar_bass_duo_single_line'
@@ -5372,6 +5408,8 @@ export function HomeGenerate({
     : null;
   const echo = result?.requestEcho;
   const duoHealthReadout = useMemo(() => computeSongModeDuoHealthReadout(result), [result]);
+  const duoVaultActiveReadout = useMemo(() => extractDuoVaultSurvivalTelemetry(result), [result]);
+  const duoVaultEnabledForRun = useMemo(() => extractDuoVaultMotifEnabled(result), [result]);
   const receiptPrimarySongwriterStyle =
     echo?.primarySongwriterStyle?.trim() ||
     rm?.songModeProfileRuleDiagnostics?.primarySongwriterStyleId?.trim() ||
@@ -7413,6 +7451,42 @@ export function HomeGenerate({
             onChromaticStrengthChange={setGbdChromaticStrength}
             disabled={loading}
           />
+          <div
+            style={{
+              marginBottom: '1rem',
+              maxWidth: 560,
+              padding: '0.55rem 0.7rem',
+              borderRadius: 8,
+              border: '1px solid var(--border-subtle, rgba(128,128,128,0.25))',
+            }}
+          >
+            <label
+              htmlFor="gbd-duo-vault-motif-toggle"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                fontSize: '0.85rem',
+                cursor: loading ? 'default' : 'pointer',
+                color: 'var(--text)',
+              }}
+            >
+              <input
+                id="gbd-duo-vault-motif-toggle"
+                type="checkbox"
+                checked={duoVaultMotifEnabled}
+                onChange={(e) => setDuoVaultMotifEnabled(e.target.checked)}
+                disabled={loading}
+                data-testid="duo-vault-motif-toggle"
+              />
+              Vault motif snap
+            </label>
+            <p style={{ margin: '0.35rem 0 0', fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
+              {duoVaultMotifEnabled
+                ? 'On — vault contour snap at motif emission (default). Same seed with off hears pre-vault path.'
+                : 'Off — legacy lift/snap only; vault pipeline skipped for A/B listening.'}
+            </p>
+          </div>
           <MosaicSectionPlanner
             sections={mosaicSections}
             onChange={setMosaicSections}
@@ -11999,6 +12073,41 @@ export function HomeGenerate({
             >
               Generated (not shareable)
             </p>
+          )}
+
+          {summaryPresetId === 'guitar_bass_duo' && duoVaultEnabledForRun !== null && (
+            <div
+              data-testid="duo-vault-active-badge"
+              style={{
+                marginTop: '0.5rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '0.45rem',
+                padding: '0.35rem 0.7rem',
+                borderRadius: 999,
+                border:
+                  duoVaultEnabledForRun === false
+                    ? '1px solid rgba(148,163,184,0.45)'
+                    : '1px solid rgba(34,197,94,0.45)',
+                background:
+                  duoVaultEnabledForRun === false
+                    ? 'rgba(148,163,184,0.12)'
+                    : 'rgba(34,197,94,0.12)',
+                fontSize: '0.82rem',
+                lineHeight: 1.35,
+              }}
+            >
+              <span style={{ fontWeight: 700, color: 'var(--text)' }}>
+                {duoVaultEnabledForRun === false ? 'Vault Off' : 'Vault Active'}
+              </span>
+              {duoVaultEnabledForRun !== false && duoVaultActiveReadout ? (
+                <span style={{ color: 'var(--text-muted)' }}>
+                  Vault: {duoVaultActiveReadout.vaultPcSurvived}/{duoVaultActiveReadout.vaultSnapFired} notes
+                  survived
+                </span>
+              ) : null}
+            </div>
           )}
 
           {mixedPresetBadge ? (

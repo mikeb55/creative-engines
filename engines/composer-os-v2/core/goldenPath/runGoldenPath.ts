@@ -1316,6 +1316,8 @@ export interface RunGoldenPathOptions {
   blendStrength?: 'light' | 'medium' | 'strong';
   /** Song Mode: duo conversational vs supportive (metadata → `generationMetadata.duoIntent`). */
   duoIntent?: 'conversational' | 'supportive';
+  /** Standard `guitar_bass_duo` only — false skips :4572 vault motif snap (default on). */
+  duoVaultMotifEnabled?: boolean;
   /** User Chromatic Strength — caps Slonimsky `allowedOutsideLevel` vs songwriter profile. */
   chromaticStrength?: 'off' | 'subtle' | 'prominent';
   /** Feature flag: Motif Authority V1 (default off). */
@@ -2719,6 +2721,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       duoIntent: options.duoIntent,
     };
   }
+  if (options?.presetId === 'guitar_bass_duo') {
+    context.generationMetadata = {
+      ...context.generationMetadata,
+      duoVaultMotifEnabled: options.duoVaultMotifEnabled !== false,
+    };
+  }
   if (
     options?.chromaticStrength === 'off' ||
     options?.chromaticStrength === 'subtle' ||
@@ -2814,6 +2822,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     plans;
 
   const appliedContext = styleStack ? applyStyleStack(context, styleStack) : context;
+  if (options?.presetId === 'guitar_bass_duo') {
+    appliedContext.generationMetadata = {
+      ...appliedContext.generationMetadata,
+      duoVaultMotifEnabled: options.duoVaultMotifEnabled !== false,
+    };
+  }
   attachVoiceRuleBundleAndHarmonicScenes(appliedContext, harmonicVoiceOptionsForGoldenPath(options), {
     skipHarmonicSceneLog: true,
   });
@@ -3711,6 +3725,23 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     importHarmonyLockedBarsCount: appliedContext.generationMetadata.importHarmonyLockedBarsCount,
     motifAuthorityLevel: appliedContext.generationMetadata.motifAuthorityLevel,
     motifDevelopmentSummary: appliedContext.generationMetadata.motifDevelopmentSummary,
+    duoVaultMotifEnabled:
+      manifestPresetId === 'guitar_bass_duo' ? options?.duoVaultMotifEnabled !== false : undefined,
+    duoVaultMotifSurvivalTelemetry: (() => {
+      if (manifestPresetId !== 'guitar_bass_duo') return undefined;
+      if (options?.duoVaultMotifEnabled === false) return undefined;
+      if (appliedContext.generationMetadata.duoVaultMotifEnabled === false) return undefined;
+      const t = appliedContext.generationMetadata.duoVaultMotifSurvivalTelemetry;
+      if (!t) return undefined;
+      return {
+        vaultSnapFired: t.vaultSnapFired,
+        vaultPcSurvived: t.vaultPcSurvived,
+        vaultPcLostToLegacySnap: t.vaultPcLostToLegacySnap,
+        vaultSourceFallback: t.vaultSourceFallback,
+        contourNullReturns: t.contourNullReturns,
+        survivedOverFiredRatio: t.survivedOverFiredRatio,
+      };
+    })(),
   });
 
   const success =

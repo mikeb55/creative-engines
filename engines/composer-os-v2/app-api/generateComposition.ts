@@ -203,6 +203,7 @@ export interface GenerateResult {
     /** Present when `importHarmonyBlendActive`; raw blend weight sent by client. */
     importHarmonyBlendEffective?: number;
     motifDevelopmentSummary?: GenerationMetadata['motifDevelopmentSummary'];
+    duoVaultMotifSurvivalTelemetry?: import('../core/run-ledger/runLedgerTypes').DuoVaultMotifSurvivalTelemetryEcho;
     /** Ensemble reference-import hints (Big Band / String Quartet optional MusicXML). */
     referenceSourceKind?: string;
     referenceBehaviourSummary?: string;
@@ -408,6 +409,9 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           req.chromaticStrength === 'subtle' ||
           req.chromaticStrength === 'prominent'
             ? { chromaticStrength: req.chromaticStrength }
+            : {}),
+          ...(req.presetId === 'guitar_bass_duo'
+            ? { duoVaultMotifEnabled: req.duoVaultMotifEnabled !== false }
             : {}),
           songModeLeadSheetMelodyAnchors: importedAnchors,
           leadSheetPerformanceBlend: req.leadSheetPerformanceBlend,
@@ -863,6 +867,8 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           importHarmonyLockFallbackReason: result.runManifest.importHarmonyLockFallbackReason,
           importHarmonyLockedBarsCount: result.runManifest.importHarmonyLockedBarsCount,
           motifDevelopmentSummary: result.runManifest.motifDevelopmentSummary,
+          duoVaultMotifEnabled: result.runManifest.duoVaultMotifEnabled,
+          duoVaultMotifSurvivalTelemetry: result.runManifest.duoVaultMotifSurvivalTelemetry,
           v80Echo: v80EchoManifest,
         }
       : undefined,
@@ -893,6 +899,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
             },
           }
         : {}),
+      ...(req.presetId === 'guitar_bass_duo' ? { duoVaultMotifEnabled: req.duoVaultMotifEnabled !== false } : {}),
     },
     voice2PolyphonyDiagnostics: result.context.generationMetadata.voice2PolyphonyDiagnostics,
     ...v80Echoes,

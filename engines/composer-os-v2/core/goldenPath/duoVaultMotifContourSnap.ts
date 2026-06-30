@@ -627,9 +627,11 @@ export function shouldApplyDuoVaultMotifContourSnap(
   hookRuntimeActive: boolean,
   lineFirstDuoAbstractActive: boolean,
   hasPlacements: boolean,
-  skipMotifForIdentity: boolean
+  skipMotifForIdentity: boolean,
+  duoVaultMotifEnabled = true
 ): boolean {
   return (
+    duoVaultMotifEnabled &&
     isStandardGuitarBassDuo(presetId) &&
     !hookRuntimeActive &&
     !lineFirstDuoAbstractActive &&

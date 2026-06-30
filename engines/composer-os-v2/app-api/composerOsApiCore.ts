@@ -794,6 +794,8 @@ export function apiGenerate(
           : undefined,
       duoIntent:
         body.duoIntent === 'conversational' || body.duoIntent === 'supportive' ? body.duoIntent : undefined,
+      duoVaultMotifEnabled:
+        presetIdResolved === 'guitar_bass_duo' ? body.duoVaultMotifEnabled !== false : undefined,
       chromaticStrength:
         body.chromaticStrength === 'off' ||
         body.chromaticStrength === 'subtle' ||

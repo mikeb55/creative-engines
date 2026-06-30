@@ -164,6 +164,20 @@ export interface RunManifest {
   importHarmonyLockedBarsCount?: number;
   motifAuthorityLevel?: MotifDevelopmentSummary['motifAuthorityLevel'];
   motifDevelopmentSummary?: MotifDevelopmentSummary;
+  /** Stage 4b — vault motif contour snap on/off (`guitar_bass_duo` only; default on). */
+  duoVaultMotifEnabled?: boolean;
+  /** Stage 4b — vault motif survival headline (standard `guitar_bass_duo` only; no receipt payload). */
+  duoVaultMotifSurvivalTelemetry?: DuoVaultMotifSurvivalTelemetryEcho;
   /** V80 — compact import / variation / style-transfer / mixed-preset audit echo. */
   v80Echo?: import('../../app-api/appApiTypes').GenerateResultEchoManifest;
+}
+
+/** UI/API echo of `generationMetadata.duoVaultMotifSurvivalTelemetry` (receipts omitted). */
+export interface DuoVaultMotifSurvivalTelemetryEcho {
+  vaultSnapFired: number;
+  vaultPcSurvived: number;
+  vaultPcLostToLegacySnap: number;
+  vaultSourceFallback: number;
+  contourNullReturns: number;
+  survivedOverFiredRatio: number;
 }

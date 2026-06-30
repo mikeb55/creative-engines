@@ -4585,7 +4585,8 @@ function buildGuitarPart(
         !!hookRuntime,
         lineFirstDuoAbstract,
         placements.length > 0,
-        skipMotifForIdentity
+        skipMotifForIdentity,
+        context.generationMetadata?.duoVaultMotifEnabled !== false
       );
       let vaultSnappedMidis: number[] | undefined;
       if (useVaultMotifSnap) {
@@ -5355,7 +5356,11 @@ function buildGuitarPart(
   if (isDuoGoldenPath && context.presetId !== 'ecm_chamber') {
     applyPhraseVariationPass(guitarPartDraft, context, seed);
   }
-  if (isStandardGuitarBassDuo(context.presetId) && context.generationMetadata) {
+  if (
+    isStandardGuitarBassDuo(context.presetId) &&
+    context.generationMetadata &&
+    context.generationMetadata.duoVaultMotifEnabled !== false
+  ) {
     context.generationMetadata = {
       ...context.generationMetadata,
       duoVaultMotifSnapReceipts,
@@ -7863,7 +7868,11 @@ export function generateGoldenPathDuoScore(
   ) {
     applyDuoOrchestrationPass(afterExpressive, context, context.seed);
   }
-  if (isStandardGuitarBassDuo(context.presetId) && context.generationMetadata) {
+  if (
+    isStandardGuitarBassDuo(context.presetId) &&
+    context.generationMetadata &&
+    context.generationMetadata.duoVaultMotifEnabled !== false
+  ) {
     const snapReceipts = context.generationMetadata.duoVaultMotifSnapReceipts ?? [];
     const fallbackNotes = context.generationMetadata.duoVaultSourceFallbackNoteCount ?? 0;
     const contourNull = context.generationMetadata.duoVaultContourNullReturns ?? 0;

@@ -497,6 +497,8 @@ export interface GenerateRequest {
   blendStrength?: 'light' | 'medium' | 'strong';
   /** Song Mode: duo conversational vs supportive posture (optional). */
   duoIntent?: 'conversational' | 'supportive';
+  /** Guitar–Bass Duo (`guitar_bass_duo` only): opt-out skips :4572 vault motif snap (default on). */
+  duoVaultMotifEnabled?: boolean;
   /** Song Mode V65 P5b: opt-in symbolic drum scaffold controls. */
   grooveScaffold?: GrooveScaffoldSettings;
   /**

@@ -475,6 +475,9 @@ function requestEchoFromReq(req: GenerateRequest): NonNullable<GenerateResult['r
       ? { sqArrangerBlendVoiceId: req.sqArrangerVrb.voiceId.trim() }
       : {}),
     ...(sectionRegenEcho ? { sectionRegeneration: sectionRegenEcho } : {}),
+    ...(req.presetId === 'guitar_bass_duo'
+      ? { duoVaultMotifEnabled: req.duoVaultMotifEnabled !== false }
+      : {}),
   } as NonNullable<GenerateResult['requestEcho']>;
 }
 

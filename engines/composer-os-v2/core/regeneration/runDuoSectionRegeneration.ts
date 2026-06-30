@@ -121,6 +121,9 @@ export function duoRunGoldenPathOptionsFromGenerateRequest(
     ...(typeof req.stochasticRenderOrdinal === 'number'
       ? { stochasticRenderOrdinal: req.stochasticRenderOrdinal }
       : {}),
+    ...(req.presetId === 'guitar_bass_duo'
+      ? { duoVaultMotifEnabled: req.duoVaultMotifEnabled !== false }
+      : {}),
     ...overrides,
   };
   return base;

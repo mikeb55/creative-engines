@@ -443,6 +443,8 @@ export interface GenerationMetadata {
   duoVaultContourNullReturns?: number;
   /** Stage 4b.2 — post-orchestration vault PC survival telemetry (read after applyDuoOrchestrationPass). */
   duoVaultMotifSurvivalTelemetry?: import('./goldenPath/duoVaultMotifContourSnap').DuoVaultMotifSurvivalTelemetry;
+  /** Standard `guitar_bass_duo` only — opt-out skips :4572 vault motif snap (default on). */
+  duoVaultMotifEnabled?: boolean;
   /** Isolation eval — Bill Evans premium melody profile id echo. */
   bePremiumMelodyProfile?: string;
   /** Isolation eval — Wayne Shorter premium melody profile id echo. */

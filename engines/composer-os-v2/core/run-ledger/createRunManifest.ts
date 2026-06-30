@@ -95,6 +95,8 @@ export interface CreateRunManifestInput {
   importHarmonyLockedBarsCount?: RunManifest['importHarmonyLockedBarsCount'];
   motifAuthorityLevel?: RunManifest['motifAuthorityLevel'];
   motifDevelopmentSummary?: RunManifest['motifDevelopmentSummary'];
+  duoVaultMotifEnabled?: RunManifest['duoVaultMotifEnabled'];
+  duoVaultMotifSurvivalTelemetry?: RunManifest['duoVaultMotifSurvivalTelemetry'];
   grooveScaffoldReceipt?: GenerationMetadata['grooveScaffoldReceipt'];
   grooveScaffoldReceipts?: GenerationMetadata['grooveScaffoldReceipts'];
   grooveScaffoldDiagnostics?: GenerationMetadata['grooveScaffoldDiagnostics'];
@@ -186,6 +188,8 @@ export function createRunManifest(input: CreateRunManifestInput): RunManifest {
     importHarmonyLockedBarsCount: input.importHarmonyLockedBarsCount,
     motifAuthorityLevel: input.motifAuthorityLevel,
     motifDevelopmentSummary: input.motifDevelopmentSummary,
+    duoVaultMotifEnabled: input.duoVaultMotifEnabled,
+    duoVaultMotifSurvivalTelemetry: input.duoVaultMotifSurvivalTelemetry,
     grooveScaffoldReceipt: input.grooveScaffoldReceipt,
     grooveScaffoldReceipts: input.grooveScaffoldReceipts,
     grooveScaffoldDiagnostics: input.grooveScaffoldDiagnostics,
