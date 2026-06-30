@@ -325,6 +325,138 @@ export function vaultSnapPreservesClampedIntervals(
   return true;
 }
 
+function clampDeltasForGolden(golden: number[], low: number, high: number): number[] {
+  return golden.map((p) => clampPitch(p, low, high) - p);
+}
+
+/** Mirrors baselineMotifIntervalIdentity.test.ts intervalToleranceForInterval (4b.1 contract). */
+function intervalToleranceForGoldenInterval(
+  golden: number[],
+  low: number,
+  high: number,
+  liftDeltas: number[],
+  intervalIndex: number
+): number {
+  const clampD = clampDeltasForGolden(golden, low, high);
+  const combined = clampD.map((c, i) => c + (liftDeltas[i] ?? 0));
+  return Math.abs(combined[intervalIndex + 1]! - combined[intervalIndex]!);
+}
+
+function liftDeltasForMotifBarAtEmission(
+  golden: number[],
+  low: number,
+  high: number,
+  bar: number,
+  seed: number,
+  context: CompositionContext,
+  chord: string
+): number[] {
+  return golden.map((p, noteIndex) => {
+    const pre = clampPitch(p, low, high);
+    const liftA = liftLowMidDelta(bar, noteIndex, pre, seed, context, chord);
+    const afterA = pre + liftA;
+    const liftB = liftSectionBDelta(bar, noteIndex, afterA, seed, context, chord);
+    return liftA + liftB;
+  });
+}
+
+function simulateEmittedPitchAfterOrchestration(
+  preOrchPitch: number,
+  bar: number,
+  noteIndex: number,
+  seed: number,
+  context: CompositionContext,
+  chord: string
+): number {
+  let x = preOrchPitch;
+  x += liftLowMidDelta(bar, noteIndex, x, seed, context, chord);
+  x += liftSectionBDelta(bar, noteIndex, x, seed, context, chord);
+  return snapGuitarToChordOrchestration(x, chord);
+}
+
+/** Stage 4b.1 interval contract — golden pl.notes vs orchestration-modeled emission at :4572. */
+export function barPasses4b1MotifIntervalContract(
+  preOrchMidis: number[],
+  goldenMidis: number[],
+  low: number,
+  high: number,
+  seed: number,
+  bar: number,
+  context: CompositionContext,
+  chord: string
+): boolean {
+  if (preOrchMidis.length !== goldenMidis.length) return false;
+  const goldenIv = motifIntervalVector(goldenMidis);
+  const liftDeltas = liftDeltasForMotifBarAtEmission(goldenMidis, low, high, bar, seed, context, chord);
+  const emitted = preOrchMidis.map((p, i) =>
+    simulateEmittedPitchAfterOrchestration(p, bar, i, seed, context, chord)
+  );
+  const emittedIv = motifIntervalVector(emitted);
+  for (let j = 0; j < goldenIv.length; j++) {
+    const tol = intervalToleranceForGoldenInterval(goldenMidis, low, high, liftDeltas, j);
+    if (Math.abs(emittedIv[j]! - goldenIv[j]!) > tol + 1e-9) return false;
+  }
+  return true;
+}
+
+export interface PerNoteVaultMotifPlacementResult {
+  finalMidis: number[];
+  receipts: DuoVaultMotifSnapReceipt[];
+  contourNullReturns: number;
+}
+
+/**
+ * Stage 4b.2b — per-note vault commit with 4b.1 tolerance guard.
+ * Already-vault-pc notes count as placed (not null). Notes failing 4b.1 contract keep clamped pl.
+ */
+export function applyPerNoteVaultMotifPlacement(
+  snap: { snappedMidis: number[]; receipts: DuoVaultMotifSnapReceipt[]; vaultSource: DuoHarmonySource },
+  motifNotes: MotifNote[],
+  melodyPcs: readonly number[],
+  chord: string,
+  low: number,
+  high: number,
+  seed: number,
+  bar: number,
+  context: CompositionContext
+): PerNoteVaultMotifPlacementResult {
+  const sorted = [...motifNotes].sort((a, b) => a.startBeat - b.startBeat);
+  const clamped = sorted.map((n) => clampPitch(n.pitch, low, high));
+  const golden = sorted.map((n) => n.pitch);
+  const vaultPcSet = new Set(melodyPcs.map(normalizePc));
+  const finalMidis = [...clamped];
+  const committedReceipts: DuoVaultMotifSnapReceipt[] = [];
+  let contourNullReturns = 0;
+
+  for (let i = 0; i < sorted.length; i++) {
+    const snapped = snap.snappedMidis[i]!;
+    const clampedPitch = clamped[i]!;
+    const snapReceipt = snap.receipts[i]!;
+
+    if (vaultPcSet.has(normalizePc(clampedPitch)) && snapped === clampedPitch) {
+      committedReceipts.push(snapReceipt);
+      continue;
+    }
+
+    if (snapped === clampedPitch) {
+      continue;
+    }
+
+    const candidate = [...finalMidis];
+    candidate[i] = snapped;
+    if (
+      barPasses4b1MotifIntervalContract(candidate, golden, low, high, seed, bar, context, chord)
+    ) {
+      finalMidis[i] = snapped;
+      committedReceipts.push(snapReceipt);
+    } else {
+      contourNullReturns++;
+    }
+  }
+
+  return { finalMidis, receipts: committedReceipts, contourNullReturns };
+}
+
 export function shouldApplyDuoVaultMotifContourSnap(
   presetId: string | undefined,
   hookRuntimeActive: boolean,

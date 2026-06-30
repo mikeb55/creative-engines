@@ -646,10 +646,10 @@ import { applyDuoPitchVariationToGuitar } from './duoPitchVariationPass';
 import { applyECMShapingPass } from './ecmShapingPass';
 import { applyDuoOrchestrationPass } from './duoOrchestrationPass';
 import {
+  applyPerNoteVaultMotifPlacement,
   computeDuoVaultMotifSurvivalTelemetry,
   shouldApplyDuoVaultMotifContourSnap,
   snapMotifBarToVaultContour,
-  vaultSnapPreservesClampedIntervals,
   type DuoVaultMotifSnapReceipt,
 } from './duoVaultMotifContourSnap';
 import { resolveDuoHarmonyForSymbol } from '../harmony/duoVaultHarmony';
@@ -4610,12 +4610,22 @@ function buildGuitarPart(
               duoVaultContourNullReturns++;
             }
           );
-          if (vaultSnapPreservesClampedIntervals(snap.snappedMidis, motifNotes, effectiveLow, effectiveHigh)) {
-            vaultSnappedMidis = snap.snappedMidis;
-            duoVaultMotifSnapReceipts.push(...snap.receipts);
-          } else {
-            duoVaultContourNullReturns += motifNotes.length;
-          }
+          const pcs =
+            harmonyProbe.melodyPcs.length > 0 ? harmonyProbe.melodyPcs : [harmonyProbe.rootPc];
+          const placement = applyPerNoteVaultMotifPlacement(
+            snap,
+            motifNotes,
+            pcs,
+            motifChord,
+            effectiveLow,
+            effectiveHigh,
+            seed,
+            b,
+            context
+          );
+          vaultSnappedMidis = placement.finalMidis;
+          duoVaultMotifSnapReceipts.push(...placement.receipts);
+          duoVaultContourNullReturns += placement.contourNullReturns;
         }
       }
       let vaultSnapNoteIdx = 0;
