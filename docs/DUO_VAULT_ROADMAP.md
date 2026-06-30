@@ -2,6 +2,23 @@
 
 Canonical staged plan for wiring Tonality Vault into the `guitar_bass_duo` harmony path. Vault is the single harmonic authority. Each stage is independently shippable.
 
+## Session close — 2026-06-30 (**CLOSED — scope frozen**)
+
+**Status:** This session is **closed**. No new duo-vault work without an explicit restart prompt. Do not expand scope in drive-by commits.
+
+| Area | Status |
+|------|--------|
+| **4b.1–4b.3** | **DONE.** Vault contour snap at `:4572` + survival telemetry + Type-1 lift fix (receipt skip + declined register-only lift). Vault **survives orchestration lift** on `guitar_bass_duo`; proof seed **50021** (`KNOWN_VAULT_LIFT_BREAKS` empty, `roleContrast` 0.0929, gp success). |
+| **4a (Song Mode hook pool swap)** | Not advanced this session beyond prior plan text; duo baseline path (4b) is the shipped proof surface. |
+| **Vault On/Off toggle + receipt badge** | Shipped in code; **bug found and fixed** (mosaic-blocks generate path omitted `duoVaultMotifEnabled`; badge treated missing manifest flag as on). **Needs app/API rebuild + manual A/B retest** before marking UI milestone done. |
+| **4b.4 (50213 role-contrast debt)** | **Logged, NOT started.** Easy effort next session. |
+| **4c, 4d** | **NOT started.** Not scoped further this session. |
+| **Stages 5–8** | Unchanged backlog. |
+
+**Out of scope (explicit):** Reharm-style rich voicings (upper-structure / quadratonic chord stacks, dense colour voicings) are **OUT OF SCOPE** for the duo golden-path vault workstream. That belongs to the separate **Tonality Vault chart / Reharm** product (`generateReharmCandidates`, Chord Inspector, paste/iReal/PDF vault lane) and is **untouched** by this roadmap. Duo vault here = **motif pitch-class authority** via `resolveDuoHarmonyForSymbol` at `:4572`, not chart reharm voicing export.
+
+**Next session (when restarted):** (1) Rebuild + retest vault toggle A/B on `guitar_bass_duo`. (2) Optional **4b.4** on seed 50213 role contrast. (3) Do not start 4c/4d until 4b.4 debt is accepted or deferred in writing.
+
 ## Stages
 
 - **Stage 0 — Audit (done).** Repo read, over-architected design shrunk to a thin first slice (pure resolver + tests); vault confirmed as single harmonic authority.
@@ -29,17 +46,17 @@ Canonical staged plan for wiring Tonality Vault into the `guitar_bass_duo` harmo
       - **Proof seed 50021:** `KNOWN_VAULT_LIFT_BREAKS` **empty**; baseline interval test **PASS**; `roleContrast` **0.0929**; `runGoldenPathOnce` **success**; survival ratio **~0.64** (up from **~0.46** pre-4b.3).
       - **50213 interval test:** `KNOWN_VAULT_LIFT_BREAKS` **empty** (Type-1 resolved); register-clamp bars classified **`EXCLUDED_REGISTER_CLAMP`** — not lift debt.
       - **Note A (suppress vault where lift would break it)** — TEMPORARY guard-rail option only; explicitly **NOT** the definition of vault working.
-    - **4b.4 — Declined-note register lift vs duoLock role contrast (KNOWN DEBT; seed 50213).**
+    - **4b.4 — Declined-note register lift vs duoLock role contrast (KNOWN DEBT; seed 50213; NOT STARTED — easy effort).**
       - **Separate from Type-1 interval fix (4b.3).** Interval identity + Type-1 lift breaks are resolved on confidence seeds; **50213 `roleContrastScore` remains below the duoLock gate (`0.06`).**
       - **Observed:** pre-4b.3 marginal **0.0603** → post-4b.3 **0.0554** with `gp.success` **false** on seed **50213** — not a wiring bug.
       - **Diagnostic (read-only, seed 50213 declined bars 1/9/13/19/21/25/27):** `tryDeclinedRegisterOnlyLiftPitch` applied **zero** register nudges — A-section note0 candidates (+12) all **`motifBarPasses4b1AfterVaultOrchestration` reject** → baseline-clamped; bar **9** note0 blocked by outer A prob gate before `tryDeclined`; bar **19** declined notes blocked by outer B prob gate; bar **21** note2 candidate **79** → 4b1 reject. Register-only mode **equals full-skip for emitted pitches** on this seed → role contrast does not move.
       - **Scope for 4b.4:** reconcile declined-note register lift with **`roleContrastScore`** / duoLock quality on marginal baseline seeds — e.g. bar-level 4b1 model aligned with per-note apply, register-only tolerance carve-out, or orchestration register policy that restores contrast without re-opening Type-1 legacy snap. **Do not** widen interval test tolerance to mask this.
       - **Gate:** seed **50213** (and peer marginal duo baseline seeds) **`roleContrastScore ≥ 0.06`** with **`baselineMotifIntervalIdentity`** still honest (`KNOWN_VAULT_LIFT_BREAKS` stays empty on Type-1).
-  - **4c — Phrase tail + hook-return (smaller chord-tone touches).**
+  - **4c — Phrase tail + hook-return (NOT STARTED; deferred).**
     - Files: `generateGoldenPathDuoScore.ts:4617–4627` (phrase-tail Wyble tone), `motifShape.ts:253–272` (hook-return realization).
     - Plan: point their chord-tone lookups at `resolveDuoHarmonyForSymbol` instead of legacy pools, gated `isStandardGuitarBassDuo`.
     - Gate: endings/returns take vault-compatible tones without breaking cadence clarity or section identity.
-  - **4d — Vault single-authority everywhere (full pass, later).**
+  - **4d — Vault single-authority everywhere (NOT STARTED; deferred).**
     - After **4b.3** (Type-1) + **4b.4** (role-contrast debt on declined register lift) are closed on baseline seeds, extend vault-aware tone sourcing to **all** remaining guitar v1 authorities — not only receipt-tagged / declined-motif bars.
     - Scope: vault-aware phrase fill (beyond Stage 3 dormancy), leap repair (`ecmShapingPass.ts` / `strictEnforceGlobalLeaps`), cadence (`duoEnforcePhraseEndCadence`), non-motif bars, identity gestures (`emitGuitarDuoIdentityBar7`), closing nudges (`applyLateClosingGuitarContourNudge`, `nudgeDuoGuitarPhraseEndsForVariety`).
     - Removes all remaining legacy chord-tone hierarchies (`chordTonesFromSymbol`, `guitarChordTonesInRange`) where vault should be authoritative on `guitar_bass_duo`.
@@ -53,10 +70,10 @@ Canonical staged plan for wiring Tonality Vault into the `guitar_bass_duo` harmo
   - Extend vault handling to maj7#11, altered dominants, dense color chords.
   - Define explicit fallback policy for symbols with no clean mapping (phantom sevenths, odd add9s from Stage 1): vault either constrains to a safe reduced set or declines with a bounded, documented fallback.
   - Gate: advanced chords sound better; GCE harmony & language + cadential clarity hold or improve; fallbacks documented and predictable.
-- **Stage 7 — UI reachability (NEW; engine → user).**
-  - Confirm the vault-backed duo path used in tests is the **SAME** path React "Generate" invokes for `guitar_bass_duo` — not only the `runGoldenPathOnce` harness.
-  - If there's a gap (CLI harness vs UI codepath), wire the UI to the vault-integrated path.
-  - Gate: pressing Generate on the duo preset in the real UI produces vault-backed harmony end-to-end, proven — not harness-only.
+- **Stage 7 — UI reachability (partial; toggle + badge wired, retest pending).**
+  - **Done in code:** `duoVaultMotifEnabled` toggle (`guitar_bass_duo` only) gates `:4572`; receipt badge echoes `duoVaultMotifSurvivalTelemetry` when vault on.
+  - **Pending:** Rebuild desktop/web API bundle; confirm toggle off → no vault receipts/telemetry and **Vault Off** badge (same seed A/B listen).
+  - Original gate still applies: React Generate path must match harness — mosaic-blocks branch now passes toggle (bug fix).
 - **Stage 8 — Regression + adoption.**
   - Re-run baseline GCE + V3 on the updated motif + phrase-fill integration; add listening checks on simple and medium progressions.
   - Adoption gate (**ALL** must hold): targeted GCE categories hold or improve; standing vault-fired test (Stage 5) passes; UI reachability (Stage 7) confirmed; motif identity preserved.
