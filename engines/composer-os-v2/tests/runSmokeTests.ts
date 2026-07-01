@@ -136,6 +136,7 @@ import { runBhGoldenMasterTests } from './bhGoldenMaster.test';
 import { runwayneGoldenMasterTests } from './wayneGoldenMaster.test';
 import { runbeGoldenMasterTests } from './beGoldenMaster.test';
 import { runjhGoldenMasterTests } from './jhGoldenMaster.test';
+import { smokeSuiteRowsFromRun } from './smokeRowSafe';
 
 type Row = { name: string; ok: boolean };
 
@@ -326,7 +327,7 @@ function main(): void {
 
   for (const suite of suitesToRun) {
     const t0 = Date.now();
-    const rows = toRows(suite.run());
+    const rows = toRows(smokeSuiteRowsFromRun(suite.label, suite.run));
     console.log(`=== ${suite.label} (${Date.now() - t0}ms) ===`);
     for (const r of rows) {
       if (r.ok) {

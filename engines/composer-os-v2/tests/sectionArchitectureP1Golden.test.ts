@@ -10,6 +10,7 @@ import {
   getSectionArchitectureDensityScalar,
   instrumentOverrideForBar,
 } from '../core/section-architecture/effectiveContextForBar';
+import { runSmokeRows } from './smokeRowSafe';
 
 const CHORDS_16 = Array.from({ length: 16 }, () => 'Dm7');
 
@@ -195,11 +196,11 @@ function testGbdThreeSection80002(): boolean {
 }
 
 export function runSectionArchitectureP1GoldenTests(): { name: string; ok: boolean }[] {
-  return [
+  return runSmokeRows([
     [
       'V65 P1 — Song Mode SY 5-section seed 80001 (pitch + density per section)',
       testSongModeSyFiveSection80001,
     ],
     ['V65 P1 — GBD 3-section seed 80002 (riffMode + density)', testGbdThreeSection80002],
-  ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
+  ]);
 }

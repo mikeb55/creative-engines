@@ -11,13 +11,14 @@ Canonical staged plan for wiring Tonality Vault into the `guitar_bass_duo` harmo
 | **4b.1–4b.3** | **DONE.** Vault contour snap at `:4572` + survival telemetry + Type-1 lift fix (receipt skip + declined register-only lift). Vault **survives orchestration lift** on `guitar_bass_duo`; proof seed **50021** (`KNOWN_VAULT_LIFT_BREAKS` empty, `roleContrast` 0.0929, gp success). |
 | **4a (Song Mode hook pool swap)** | Not advanced this session beyond prior plan text; duo baseline path (4b) is the shipped proof surface. |
 | **Vault On/Off toggle + receipt badge** | Shipped in code; **bug found and fixed** (mosaic-blocks generate path omitted `duoVaultMotifEnabled`; badge treated missing manifest flag as on). **Needs app/API rebuild + manual A/B retest** before marking UI milestone done. |
-| **4b.4 (50213 role-contrast debt)** | **Logged, NOT started.** Easy effort next session. |
+| **4b.4 (50213 role-contrast debt)** | **Logged, NOT started.** Easy effort next session. Seed **50213** — `roleContrastScore` below duoLock gate (`0.06`). See **§4b.4** below. |
+| **4b.5 (section-arch golden — contour starvation, seed 80001)** | **Harness fixed (2026-07-01); musical debt open.** Smoke catches `DuoVaultMotifContourStarvationError` as FAIL row (no job-killing throw). Underlying vault pool starvation on bar 1 `Dm7` **not** fixed. See **§4b.5** below. |
 | **4c, 4d** | **NOT started.** Not scoped further this session. |
 | **Stages 5–8** | Unchanged backlog. |
 
 **Out of scope (explicit):** Reharm-style rich voicings (upper-structure / quadratonic chord stacks, dense colour voicings) are **OUT OF SCOPE** for the duo golden-path vault workstream. That belongs to the separate **Tonality Vault chart / Reharm** product (`generateReharmCandidates`, Chord Inspector, paste/iReal/PDF vault lane) and is **untouched** by this roadmap. Duo vault here = **motif pitch-class authority** via `resolveDuoHarmonyForSymbol` at `:4572`, not chart reharm voicing export.
 
-**Next session (when restarted):** (1) Rebuild + retest vault toggle A/B on `guitar_bass_duo`. (2) Optional **4b.4** on seed 50213 role contrast. (3) Do not start 4c/4d until 4b.4 debt is accepted or deferred in writing.
+**Next session (when restarted):** (1) ~~Rebuild + retest vault toggle A/B on `guitar_bass_duo`~~ (done 2026-07-01 locally). (2) Optional **4b.4** on seed 50213 role contrast. (3) **4b.5** — fix underlying contour pool starvation on seed **80001** (smoke harness no longer crashes). (4) Do not start 4c/4d until 4b.4 / 4b.5 debt is accepted or deferred in writing.
 
 ## Stages
 
@@ -52,6 +53,13 @@ Canonical staged plan for wiring Tonality Vault into the `guitar_bass_duo` harmo
       - **Diagnostic (read-only, seed 50213 declined bars 1/9/13/19/21/25/27):** `tryDeclinedRegisterOnlyLiftPitch` applied **zero** register nudges — A-section note0 candidates (+12) all **`motifBarPasses4b1AfterVaultOrchestration` reject** → baseline-clamped; bar **9** note0 blocked by outer A prob gate before `tryDeclined`; bar **19** declined notes blocked by outer B prob gate; bar **21** note2 candidate **79** → 4b1 reject. Register-only mode **equals full-skip for emitted pitches** on this seed → role contrast does not move.
       - **Scope for 4b.4:** reconcile declined-note register lift with **`roleContrastScore`** / duoLock quality on marginal baseline seeds — e.g. bar-level 4b1 model aligned with per-note apply, register-only tolerance carve-out, or orchestration register policy that restores contrast without re-opening Type-1 legacy snap. **Do not** widen interval test tolerance to mask this.
       - **Gate:** seed **50213** (and peer marginal duo baseline seeds) **`roleContrastScore ≥ 0.06`** with **`baselineMotifIntervalIdentity`** still honest (`KNOWN_VAULT_LIFT_BREAKS` stays empty on Type-1).
+    - **4b.5 — Section-architecture golden: `DuoVaultMotifContourStarvationError` (KNOWN DEBT; seed 80001; harness done — musical fix NOT STARTED).**
+      - **Separate from 4b.4 (50213 role contrast).** Different seed, path, and failure mode — do not conflate.
+      - **Pre-existing; not part of the 2026-06-30 session close workstream.** Confirmed **not** caused by vault toggle/badge fix, `skipScoreMidiExport`, or docs-only pushes.
+      - **Trigger:** **`sectionArchitectureP1Golden.test.ts`** — `testSongModeSyFiveSection80001` (seed **80001**, `presetId: guitar_bass_duo`, Song Mode SY five-section architecture golden). Error: `Stage 4b.2: vault contour pool starved on bar 1 chord=Dm7 noteIndex=0` (`duoVaultMotifContourSnap.ts` → `generateGoldenPathDuoScore.ts`).
+      - **Harness (done 2026-07-01):** `tests/smokeRowSafe.ts` + `sectionArchitectureP1Golden.test.ts` + `runSmokeTests.ts` — `DuoVaultMotifContourStarvationError` becomes a counted **FAIL** smoke row instead of an uncaught abort. Production 4b.2 fail-loud policy unchanged.
+      - **Musical debt (NOT STARTED — after 4b.4 optional):** vault register-complete pool still starves on locked `Dm7` bar 1 for this golden — fix pool coverage / section-arch + vault interaction, **or** gate vault contour snap off this golden until coverage is sufficient. **Do not** weaken 4b.2 fail-loud on production duo paths without an explicit decision.
+      - **Gate:** seed **80001** section-arch P1 golden **PASS** (green row, not graceful FAIL); no `DuoVaultMotifContourStarvationError` on generate path for this fixture.
   - **4c — Phrase tail + hook-return (NOT STARTED; deferred).**
     - Files: `generateGoldenPathDuoScore.ts:4617–4627` (phrase-tail Wyble tone), `motifShape.ts:253–272` (hook-return realization).
     - Plan: point their chord-tone lookups at `resolveDuoHarmonyForSymbol` instead of legacy pools, gated `isStandardGuitarBassDuo`.
