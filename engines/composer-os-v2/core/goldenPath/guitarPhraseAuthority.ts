@@ -136,6 +136,28 @@ export function snapGuitarPitchToChordWindow(
   return bd <= maxDelta ? best : pitch;
 }
 
+/** Vault melody PCs as MIDI candidates in [low, high] for leap-repair pools (Stage 4d.3). Returns null → use legacy. */
+export function vaultMelodyPitchesInRange(
+  chord: string,
+  low: number,
+  high: number,
+  context: CompositionContext,
+  chordToneOpts?: ChordTonesOptions
+): number[] | null {
+  if (!isStandardGuitarBassDuo(context.presetId)) return null;
+  const locked = chordToneOpts?.lockedHarmony ?? true;
+  const res = resolveDuoHarmonyForSymbol(chord, { lockedHarmony: locked });
+  if (res.source === 'fallback' || res.melodyPcs.length === 0) return null;
+  const midis: number[] = [];
+  for (const vpc of res.melodyPcs) {
+    const pc = normalizePc(vpc);
+    for (let m = low; m <= high; m++) {
+      if (normalizePc(m) === pc) midis.push(m);
+    }
+  }
+  return midis.length > 0 ? [...new Set(midis)].sort((a, b) => a - b) : null;
+}
+
 function liftPcToRange(pc: number, refMidi: number, low: number, high: number): number {
   const refPc = normalizePc(refMidi);
   const targetPc = normalizePc(pc);

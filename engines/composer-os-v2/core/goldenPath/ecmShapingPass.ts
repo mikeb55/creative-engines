@@ -6,14 +6,14 @@
 import type { CompositionContext } from '../compositionContext';
 import type { ScoreModel, PartModel, NoteEvent, RestEvent, MeasureModel } from '../score-model/scoreModelTypes';
 import { createRest } from '../score-model/scoreEventBuilder';
-import { guitarChordTonesInRange } from './guitarPhraseAuthority';
+import { guitarChordTonesInRange, vaultMelodyPitchesInRange } from './guitarPhraseAuthority';
 import { chordTonesForChordSymbolWithContext, shouldUseUserChordSemanticsForTones } from '../harmony/harmonyChordTonePolicy';
 import { resolveChordForDuoPostPass } from '../harmony/harmonyResolution';
 import { pitchClassToBassMidi } from '../harmony/chordSymbolAnalysis';
 import { clampPitch, seededUnit } from './guitarBassDuoHarmony';
 import { enforceVoice2BassRegisterSeparation18_2B_4, stripVoice2IfCrossingMelody } from './guitarVoice2WybleLayer';
 import { collectMelodyMidiChronological } from '../score-integrity/guitarVoiceMelody';
-import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
+import { isGuitarBassDuoFamily, isStandardGuitarBassDuo } from '../presets/guitarBassDuoPresetIds';
 
 const G_LOW = 55;
 const G_HIGH = 79;
@@ -28,6 +28,35 @@ function chordForBar(context: CompositionContext, barIndex: number, mChord?: str
   return resolveChordForDuoPostPass(context, barIndex, mChord);
 }
 
+function sortedV1EventIndicesForLeapRepair(m: MeasureModel): number[] {
+  const entries: { startBeat: number; eventIdx: number }[] = [];
+  m.events.forEach((e, idx) => {
+    if (e.kind === 'note' && ((e as NoteEvent).voice ?? 1) === 1) {
+      entries.push({ startBeat: e.startBeat, eventIdx: idx });
+    }
+  });
+  entries.sort((a, b) => a.startBeat - b.startBeat);
+  return entries.map(({ eventIdx }) => eventIdx);
+}
+
+function leapRepairSkipForVaultMotifNote(
+  bar: number,
+  measure: MeasureModel,
+  noteEventIdx: number,
+  context: CompositionContext
+): boolean {
+  if (!isStandardGuitarBassDuo(context.presetId)) return false;
+  const receipts = context.generationMetadata?.duoVaultMotifSnapReceipts;
+  const declined = context.generationMetadata?.duoVaultDeclinedNotes;
+  if (!receipts?.length && !declined?.length) return false;
+  const v1Idxs = sortedV1EventIndicesForLeapRepair(measure);
+  const motifNoteIndex = v1Idxs.indexOf(noteEventIdx);
+  if (motifNoteIndex < 0) return false;
+  if (receipts?.some((r) => r.bar === bar && r.noteIndex === motifNoteIndex)) return true;
+  if (declined?.some((d) => d.bar === bar && d.noteIndex === motifNoteIndex)) return true;
+  return false;
+}
+
 function chordTonePitchesInRange(
   chord: string,
   low: number,
@@ -35,12 +64,12 @@ function chordTonePitchesInRange(
   context: CompositionContext
 ): number[] {
   if (low >= G_LOW) {
-    const t = guitarChordTonesInRange(
-      chord,
-      low,
-      high,
-      shouldUseUserChordSemanticsForTones(context) ? { lockedHarmony: true } : undefined
-    );
+    const chordToneOpts = shouldUseUserChordSemanticsForTones(context)
+      ? { lockedHarmony: true }
+      : undefined;
+    const vaultMidis = vaultMelodyPitchesInRange(chord, low, high, context, chordToneOpts);
+    if (vaultMidis) return vaultMidis;
+    const t = guitarChordTonesInRange(chord, low, high, chordToneOpts);
     return [t.root, t.third, t.fifth, t.seventh].map((x) => Math.round(x));
   }
   const t = chordTonesForChordSymbolWithContext(chord, context);
@@ -158,6 +187,12 @@ function strictEnforceGlobalLeaps(
         isGuitarBassDuoFamily(context.presetId) &&
         context.form.totalBars === 32 &&
         refs[i].bar === 25
+      ) {
+        continue;
+      }
+      if (
+        part.id === 'guitar' &&
+        leapRepairSkipForVaultMotifNote(refs[i].bar, m2, refs[i].ei, context)
       ) {
         continue;
       }
