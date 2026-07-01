@@ -90,15 +90,53 @@ export function vaultRegisterCompletePoolMidi(
   high: number
 ): number[] {
   const out = new Set<number>();
+  const poolLow = Math.min(low, high);
+  const poolHigh = Math.max(low, high);
   for (const pc of melodyPcs) {
     let midi = normalizePc(pc);
-    while (midi < low) midi += 12;
-    while (midi <= high) {
+    while (midi < poolLow) midi += 12;
+    while (midi <= poolHigh) {
       out.add(midi);
       midi += 12;
     }
   }
   return [...out].sort((a, b) => a - b);
+}
+
+const VAULT_POOL_MIN_CANDIDATES = 2;
+/** Pool-only search band — wider than emission register; does not change note-emission clamp. */
+const VAULT_POOL_SEARCH_FLOOR = 28;
+const VAULT_POOL_SEARCH_CEILING = 96;
+const VAULT_POOL_WIDEN_MAX_SEMITONES = 48;
+
+/**
+ * Build vault contour pool for snap/contour walk. Uses emission [low, high] first; if fewer than
+ * two candidates (section-arch ceiling vs duo floor squeeze), widen pool-only bounds until pool ≥ 2
+ * or the search band is exhausted — emission register elsewhere stays unchanged.
+ */
+export function resolveVaultContourPoolMidi(
+  melodyPcs: readonly number[],
+  emissionLow: number,
+  emissionHigh: number
+): number[] {
+  const anchorLow = Math.min(emissionLow, emissionHigh);
+  const anchorHigh = Math.max(emissionLow, emissionHigh);
+
+  let pool = vaultRegisterCompletePoolMidi(melodyPcs, anchorLow, anchorHigh);
+  if (pool.length >= VAULT_POOL_MIN_CANDIDATES) return pool;
+
+  for (let extra = 12; extra <= VAULT_POOL_WIDEN_MAX_SEMITONES; extra += 12) {
+    const poolLow = Math.max(VAULT_POOL_SEARCH_FLOOR, anchorLow - extra);
+    const poolHigh = Math.min(VAULT_POOL_SEARCH_CEILING, anchorHigh + extra);
+    pool = vaultRegisterCompletePoolMidi(melodyPcs, poolLow, poolHigh);
+    if (pool.length >= VAULT_POOL_MIN_CANDIDATES) return pool;
+  }
+
+  return vaultRegisterCompletePoolMidi(
+    melodyPcs,
+    VAULT_POOL_SEARCH_FLOOR,
+    VAULT_POOL_SEARCH_CEILING
+  );
 }
 
 function sectionLabelForBar(bar: number, context: CompositionContext): string {
@@ -260,8 +298,8 @@ export function snapMotifBarToVaultContour(
 
   const pcs = res.melodyPcs.length > 0 ? res.melodyPcs : [res.rootPc];
   const vaultPcSet = new Set(pcs.map(normalizePc));
-  const pool = vaultRegisterCompletePoolMidi(pcs, low, high);
-  if (pool.length < 2) {
+  const pool = resolveVaultContourPoolMidi(pcs, low, high);
+  if (pool.length < VAULT_POOL_MIN_CANDIDATES) {
     throw new DuoVaultMotifContourStarvationError(bar, chord, 0);
   }
 
