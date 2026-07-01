@@ -8171,7 +8171,7 @@ export function generateGoldenPathDuoScore(
     }
   }
   grooveScaffoldPass(afterExpressive, context, context.song);
-  finalizeAndSealDuoScoreBarMath(afterExpressive);
+  finalizeAndSealDuoScoreBarMath(afterExpressive, context.presetId);
   if (zappaFerocitySoloLane && context.generationMetadata?.soloLine) {
     afterExpressive = mergeZappaSoloPart(afterExpressive, context.generationMetadata.soloLine);
     const zappaSoloPart = afterExpressive.parts.find((p) => p.id === 'zappa_solo');

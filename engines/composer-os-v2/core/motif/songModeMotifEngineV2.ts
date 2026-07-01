@@ -10,7 +10,7 @@ import { getChordForBar } from '../harmony/harmonyResolution';
 import { guitarChordTonesInRange } from '../goldenPath/guitarPhraseAuthority';
 import { clampPitch, seededUnit } from '../goldenPath/guitarBassDuoHarmony';
 import { snapAttackBeatToGrid } from '../score-integrity/duoEighthBeatGrid';
-import { chordTonesForChordSymbol, type ChordTonesOptions } from '../harmony/chordSymbolAnalysis';
+import type { ChordTonesOptions } from '../harmony/chordSymbolAnalysis';
 import type {
   CoreMotif,
   Motif,
@@ -29,15 +29,10 @@ import {
   mergeTouchingSamePitchNotesForValidator,
   motifShapeWithReturnAttacks,
   realizeReturnMidiFromMotifShape,
+  rootPcForDuoHarmonicTransposition,
 } from './motifShape';
 
 const MOTIF_REF = 'song_motif';
-
-/** Same PC delta as `realizeReturnMidiFromMotifShape` (not MIDI root lift per register). */
-function rootPcFromChordSymbol(chord: string, opts?: ChordTonesOptions): number {
-  const t = chordTonesForChordSymbol(chord, opts);
-  return ((Math.round(t.root) % 12) + 12) % 12;
-}
 
 function shortestRootPcDelta(pc1: number, pc2: number): number {
   let d = pc2 - pc1;
@@ -97,11 +92,12 @@ function hookFirstReturnPitchesFromShape(
   zHigh: number,
   seed: number,
   hookRepetitionBias: number = 0.5,
-  chordToneOpts?: ChordTonesOptions
+  chordToneOpts?: ChordTonesOptions,
+  presetId?: string,
 ): number[] {
   if (bar1Pitches.length === 0) return [];
-  const r1pc = rootPcFromChordSymbol(chord1, chordToneOpts);
-  const r25pc = rootPcFromChordSymbol(chord25, chordToneOpts);
+  const r1pc = rootPcForDuoHarmonicTransposition(chord1, chordToneOpts, presetId);
+  const r25pc = rootPcForDuoHarmonicTransposition(chord25, chordToneOpts, presetId);
   const delta = shortestRootPcDelta(r1pc, r25pc);
   const p = bar1Pitches.map((pitch) => pitch + delta);
   const hint = clampPitch(bar1Pitches[0] + delta, zLow, zHigh);
@@ -738,7 +734,8 @@ export function buildSongModeMotifV2Runtime(params: {
     chord1,
     stLo,
     stHi,
-    chordToneOpts
+    chordToneOpts,
+    context.presetId,
   );
   const returnExpectedMotifShape = motifShapeWithReturnAttacks(statementMotifShape, returnRhythm);
 
@@ -792,7 +789,17 @@ export function buildSongModeMotifV2Runtime(params: {
               throw new Error('hook-first return: could not extract MotifShape from guitar bar 1');
             }
             const hookRepBias = (params.context?.generationMetadata as any)?.songwriterHookRepetitionBias ?? 0.5;
-            return hookFirstReturnPitchesFromShape(bar1, chord1, ch, zLow, zHigh, seed, hookRepBias, chordToneOpts);
+            return hookFirstReturnPitchesFromShape(
+              bar1,
+              chord1,
+              ch,
+              zLow,
+              zHigh,
+              seed,
+              hookRepBias,
+              chordToneOpts,
+              context.presetId,
+            );
           })()
         : realizeReturnMidiFromMotifShape(
             statementMotifShape,
@@ -803,7 +810,8 @@ export function buildSongModeMotifV2Runtime(params: {
             zLow,
             zHigh,
             seed,
-            chordToneOpts
+            chordToneOpts,
+            context.presetId,
           );
       const rhReturn = hookFirst ? stmtRh.slice(0, rp.length) : returnRhythm;
       emitMeasureFromPitches(m, rp, rhReturn, MOTIF_REF);

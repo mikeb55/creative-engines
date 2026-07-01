@@ -5,12 +5,13 @@
 
 import type { PartModel } from '../score-model/scoreModelTypes';
 import { getChordForBar } from '../harmony/harmonyResolution';
-import { guitarChordTonesInRange } from '../goldenPath/guitarPhraseAuthority';
 import { clampPitch } from '../goldenPath/guitarBassDuoHarmony';
 import { snapAttackBeatToGrid } from '../score-integrity/duoEighthBeatGrid';
 import { chordTonesForChordSymbol, type ChordTonesOptions } from '../harmony/chordSymbolAnalysis';
+import { resolveDuoHarmonyForSymbol } from '../harmony/duoVaultHarmony';
 import type { CompositionContext } from '../compositionContext';
 import { shouldUseUserChordSemanticsForTones } from '../harmony/harmonyChordTonePolicy';
+import { isStandardGuitarBassDuo } from '../presets/guitarBassDuoPresetIds';
 
 const VALIDATOR_LOW = 55;
 const VALIDATOR_HIGH = 79;
@@ -50,9 +51,29 @@ function intervalsFromPitches(pitches: number[]): number[] {
   return out;
 }
 
+function normalizePc(pc: number): number {
+  return ((pc % 12) + 12) % 12;
+}
+
 function rootPcFromChordSymbol(chord: string, opts?: ChordTonesOptions): number {
   const t = chordTonesForChordSymbol(chord, opts);
-  return ((Math.round(t.root) % 12) + 12) % 12;
+  return normalizePc(Math.round(t.root));
+}
+
+/** Stage 4c — vault root PC for hook transposition + shape relative-PC extraction on standard duo. */
+export function rootPcForDuoHarmonicTransposition(
+  chord: string,
+  chordToneOpts?: ChordTonesOptions,
+  presetId?: string,
+): number {
+  if (presetId !== undefined && isStandardGuitarBassDuo(presetId)) {
+    const locked = chordToneOpts?.lockedHarmony ?? true;
+    const res = resolveDuoHarmonyForSymbol(chord, { lockedHarmony: locked });
+    if (res.source !== 'fallback') {
+      return normalizePc(res.rootPc);
+    }
+  }
+  return rootPcFromChordSymbol(chord, chordToneOpts);
 }
 
 /** Shortest signed semitone delta between two chord roots (same as common harmonic transposition). */
@@ -133,13 +154,12 @@ export function extractMotifShapeFromStatement(
   chord: string,
   low: number,
   high: number,
-  chordToneOpts?: ChordTonesOptions
+  chordToneOpts?: ChordTonesOptions,
+  presetId?: string,
 ): MotifShape {
   const n = Math.min(pitches.length, stmtRh.length);
   const p = pitches.slice(0, n);
-  const tones = guitarChordTonesInRange(chord, low, high, chordToneOpts);
-  const rootMidi = Math.round(tones.root);
-  const rootPc = ((rootMidi % 12) + 12) % 12;
+  const rootPc = rootPcForDuoHarmonicTransposition(chord, chordToneOpts, presetId);
   const ivs = intervalsFromPitches(p);
   const contour = ivs.map((iv) => (iv > 0 ? 1 : iv < 0 ? -1 : 0));
   let peakIx = 0;
@@ -168,7 +188,8 @@ export function extractMotifShapeFromGuitarBar(
   chord: string,
   low: number,
   high: number,
-  chordToneOpts?: ChordTonesOptions
+  chordToneOpts?: ChordTonesOptions,
+  presetId?: string,
 ): MotifShape | null {
   const m = guitar.measures.find((x) => x.index === bar);
   if (!m) return null;
@@ -180,7 +201,7 @@ export function extractMotifShapeFromGuitarBar(
   if (notes.length < 2) return null;
   const pitches = notes.map((n) => n.pitch);
   const stmtRh = notes.map((n) => ({ start: n.startBeat, dur: n.duration }));
-  return extractMotifShapeFromStatement(pitches, stmtRh, chord, low, high, chordToneOpts);
+  return extractMotifShapeFromStatement(pitches, stmtRh, chord, low, high, chordToneOpts, presetId);
 }
 
 export function extractMotifShapeFromGuitarBarContext(
@@ -190,7 +211,7 @@ export function extractMotifShapeFromGuitarBarContext(
 ): MotifShape | null {
   const opts = shouldUseUserChordSemanticsForTones(context) ? { lockedHarmony: true } : undefined;
   const chord = getChordForBar(bar, context);
-  return extractMotifShapeFromGuitarBar(guitar, bar, chord, VALIDATOR_LOW, VALIDATOR_HIGH, opts);
+  return extractMotifShapeFromGuitarBar(guitar, bar, chord, VALIDATOR_LOW, VALIDATOR_HIGH, opts, context.presetId);
 }
 
 /** Same weights as simMotifToRealization family: interval primary, rhythm + anchors supporting. */
@@ -259,11 +280,12 @@ export function realizeReturnMidiFromMotifShape(
   zLow: number,
   zHigh: number,
   _seed: number,
-  chordToneOpts?: ChordTonesOptions
+  chordToneOpts?: ChordTonesOptions,
+  presetId?: string,
 ): number[] {
   if (statementPitches.length === 0) return [];
-  const r1pc = rootPcFromChordSymbol(chord1, chordToneOpts);
-  const r25pc = rootPcFromChordSymbol(chord25, chordToneOpts);
+  const r1pc = rootPcForDuoHarmonicTransposition(chord1, chordToneOpts, presetId);
+  const r25pc = rootPcForDuoHarmonicTransposition(chord25, chordToneOpts, presetId);
   const delta = shortestRootPcDelta(r1pc, r25pc);
   const raw = statementPitches.map((p) => p + delta);
   const hint = clampPitch(statementP0 + delta, zLow, zHigh);

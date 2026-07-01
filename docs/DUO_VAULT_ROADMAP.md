@@ -13,13 +13,13 @@ Canonical staged plan for wiring Tonality Vault into the `guitar_bass_duo` harmo
 | **Vault On/Off toggle + receipt badge** | Shipped in code; **bug found and fixed** (mosaic-blocks generate path omitted `duoVaultMotifEnabled`; badge treated missing manifest flag as on). **Needs app/API rebuild + manual A/B retest** before marking UI milestone done. |
 | **4b.4 (50213 role-contrast debt)** | **DONE (2026-07-01).** Bass macro B-half routing + post-orchestration duplicate-pitch nudge. Seed **50213** **`roleContrast` 0.1174**, gp success; **50021** unchanged clean. See **§4b.4** below. |
 | **4b.5 (section-arch golden — contour starvation, seed 80001)** | **DONE (2026-07-01).** Pool-only register fallback in **`resolveVaultContourPoolMidi`**; seed **80001** generates + P1 golden **PASS**. Residual: **`duoVaultContourNullReturns: 23`** on **80001** (soft degradation — notes clamp to pl, no crash); minor known behavior, **not** a new stage. See **§4b.5** below. |
-| **4c — phrase tail + hook-return** | **PARTIAL (2026-07-01).** **Site 1 (phrase tail)** shipped — vault resolver at motif phrasetail (`generateGoldenPathDuoScore.ts` ~`:4759`), preset-scoped `isStandardGuitarBassDuo`, tuning-map overlay unchanged; fallback → legacy inherited. **Site 2 (hook-return)** **NOT started** (`motifShape.ts` / Song Mode hook path). |
+| **4c — phrase tail + hook-return** | **DONE (2026-07-01).** Site 1: vault resolver at motif phrasetail (`generateGoldenPathDuoScore.ts` ~`:4759`). Site 2: vault **`rootPc`** for hook-return transposition via **`rootPcForDuoHarmonicTransposition`** (`motifShape.ts`, `songModeMotifEngineV2.ts`, `duoBarMathFinalize` bar 25); shape extraction aligned. Preset-scoped `isStandardGuitarBassDuo`; fallback → legacy inherited. |
 | **4d** | **NOT started.** Unblocked by **4b.5** close. |
 | **Stages 5–8** | Unchanged backlog. |
 
 **Out of scope (explicit):** Reharm-style rich voicings (upper-structure / quadratonic chord stacks, dense colour voicings) are **OUT OF SCOPE** for the duo golden-path vault workstream. That belongs to the separate **Tonality Vault chart / Reharm** product (`generateReharmCandidates`, Chord Inspector, paste/iReal/PDF vault lane) and is **untouched** by this roadmap. Duo vault here = **motif pitch-class authority** via `resolveDuoHarmonyForSymbol` at `:4572`, not chart reharm voicing export.
 
-**Next session (when restarted):** (1) ~~Rebuild + retest vault toggle A/B on `guitar_bass_duo`~~ (done 2026-07-01 locally). (2) ~~**4b.4** on seed 50213 role contrast~~ (done 2026-07-01). (3) ~~**4b.5** section-arch pool fallback on seed **80001**~~ (done 2026-07-01). (4) ~~**4c site 1** phrase tail~~ (done 2026-07-01). (5) **4c site 2** hook-return, **4d**, or Stage 5+ only with explicit scope prompt.
+**Next session (when restarted):** (1) ~~Rebuild + retest vault toggle A/B on `guitar_bass_duo`~~ (done 2026-07-01 locally). (2) ~~**4b.4** on seed 50213 role contrast~~ (done 2026-07-01). (3) ~~**4b.5** section-arch pool fallback on seed **80001**~~ (done 2026-07-01). (4) ~~**4c** phrase tail + hook-return~~ (done 2026-07-01). (5) **4d**, or Stage 5+ only with explicit scope prompt.
 
 ## Stages
 
@@ -61,16 +61,17 @@ Canonical staged plan for wiring Tonality Vault into the `guitar_bass_duo` harmo
       - **Proof:** seed **80001** generates clean; **`sectionArchitectureP1Golden.test.ts`** **80001** + **80002** **PASS**; smoke-fast **V65 P1** row green; **50021** / **50213** baseline motif identity **PASS**.
       - **Residual (minor known behavior — not new debt / no stage):** seed **80001** may still report **`duoVaultContourNullReturns: 23`** — per-note contour starvation callbacks on narrow intro windows; notes **clamp to pl** rather than crash. Acceptable soft degradation on 16-bar section-arch Song Mode path; production **32-bar** baselines unaffected.
       - **Gate met:** seed **80001** section-arch P1 golden **PASS**; no **`DuoVaultMotifContourStarvationError`** on generate path for this fixture.
-  - **4c — Phrase tail + hook-return (PARTIAL — site 1 done 2026-07-01; site 2 not started).**
+  - **4c — Phrase tail + hook-return (DONE; 2026-07-01).**
     - **4c.1 — Site 1: motif phrase tail (DONE).**
       - File/site: `generateGoldenPathDuoScore.ts` ~`:4759–4771` (motif-bar v2 phrasetail `endTone` before Wyble strip/re-inject).
       - Shipped: export **`phraseFillTonesFromVaultResolver`** from **`guitarPhraseAuthority.ts`**; **`duoChordTonesWithOptionalTuningMap(..., useVaultPhraseTones)`** uses vault base when `isStandardGuitarBassDuo(context.presetId)` — no **`duoVaultMotifEnabled`** gate (Stage 3 precedent); alternate-tuning voicing map overlay unchanged; resolver **`source === 'fallback'`** → legacy base automatically.
       - Proof: **`baselineMotifIntervalIdentity.test.ts`** seeds **50021** / **50213** PASS; **`assertPhraseTailVaultPcSeed50213`** replays production path on motif bars (28 bars, 20 vault chords) — final score lacks **`debugSource: 'phrasetail'`** because Wyble strips/re-injects v2.
       - Gate met: baseline interval identity unchanged; phrasetail **`endTone`** on vault-resolved chords lands on vault pitch class.
-    - **4c.2 — Site 2: hook-return (NOT STARTED).**
-      - Files: `motifShape.ts:253–272` (`realizeReturnMidiFromMotifShape`), `songModeMotifEngineV2.ts` hook-return paths, `duoBarMathFinalize` bar 25.
-      - Plan: vault **`rootPc`** for transposition / return realization instead of legacy **`chordTonesForSymbol`** pool.
-      - Gate: hook returns take vault-compatible tones without breaking cadence clarity or section identity.
+    - **4c.2 — Site 2: hook-return (DONE).**
+      - Files: **`motifShape.ts`** (`rootPcForDuoHarmonicTransposition`, `realizeReturnMidiFromMotifShape`, `extractMotifShapeFromStatement`), **`songModeMotifEngineV2.ts`** (`hookFirstReturnPitchesFromShape`), **`duoBarMathFinalize.ts`** (`restoreGuitarBar25HookPitchesFromBar1` + **`finalizeAndSealDuoScoreBarMath(score, presetId)`**).
+      - Shipped: vault **`rootPc`** (via **`resolveDuoHarmonyForSymbol`**) replaces legacy **`chordTonesForSymbol`** root for harmonic transposition delta on standard duo; same helper used in shape extraction (`startRelativePc` / `peakRelativePc`) to prevent vault/legacy root drift; fallback → legacy inherited.
+      - Proof: **`songModeRegressionBaseline.test.ts`** seed **50021** (bar 1/25 shape + contour) **PASS**; Bacharach / Fagen / Wayne slice smokes with hook **PASS**; seed **80001** section-arch P1 golden **PASS** (16-bar, unaffected).
+      - Gate met: existing hook identity guards green (`similarityMotifShapePitchStructure ≥ 0.7`, contour, **`validateSongModeHookIdentity`**).
   - **4d — Vault single-authority everywhere (NOT STARTED; deferred).**
     - After **4b.3** (Type-1) + **4b.4** (role-contrast on baseline seeds) are closed, extend vault-aware tone sourcing to **all** remaining guitar v1 authorities — not only receipt-tagged / declined-motif bars.
     - Scope: vault-aware phrase fill (beyond Stage 3 dormancy), leap repair (`ecmShapingPass.ts` / `strictEnforceGlobalLeaps`), cadence (`duoEnforcePhraseEndCadence`), non-motif bars, identity gestures (`emitGuitarDuoIdentityBar7`), closing nudges (`applyLateClosingGuitarContourNudge`, `nudgeDuoGuitarPhraseEndsForVariety`).

@@ -386,7 +386,7 @@ function clampUprightBassNotesToHardRange(score: ScoreModel): void {
  * Authoritative end of rhythm pipeline: finalize → validate once → freeze parts.
  * Call only after all passes that may alter startBeat/duration (performance, expressive, ECM envelopes).
  */
-export function finalizeAndSealDuoScoreBarMath(score: ScoreModel): void {
+export function finalizeAndSealDuoScoreBarMath(score: ScoreModel, presetId?: string): void {
   finalizeScoreBarMathPerVoice(score);
   /** Guitar–Bass Duo only: eighth-beat seal + Sibelius-friendly bass notation grouping (ECM / other presets skip). */
   if (score.duoRhythmSnap === 'eighth_beats') {
@@ -409,7 +409,7 @@ export function finalizeAndSealDuoScoreBarMath(score: ScoreModel): void {
     }
   }
   const hookBias = (score as any)._hookRepetitionBias ?? 0.5;
-  if (hookBias > 0.6) restoreGuitarBar25HookPitchesFromBar1(score);
+  if (hookBias > 0.6) restoreGuitarBar25HookPitchesFromBar1(score, presetId);
   clampGuitarBar24LastNoteOctaveBeforeBar25(score);
   clampCleanElectricGuitarNotesToHardRange(score);
   clampUprightBassNotesToHardRange(score);
@@ -429,7 +429,7 @@ export function finalizeAndSealDuoScoreBarMath(score: ScoreModel): void {
  * `realizeReturnMidiFromMotifShape`). Literal bar-1 MIDI copy breaks MotifShape similarity when chord₁ ≠ chord₂₅
  * (relative-PCs no longer match). Timing unchanged.
  */
-function restoreGuitarBar25HookPitchesFromBar1(score: ScoreModel): void {
+function restoreGuitarBar25HookPitchesFromBar1(score: ScoreModel, presetId?: string): void {
   if (score.duoRhythmSnap !== 'eighth_beats') return;
   const guitar = score.parts.find((p) => p.id === 'guitar' && p.instrumentIdentity === 'clean_electric_guitar');
   if (!guitar || !guitar.measures.some((m) => m.index === 32)) return;
@@ -445,7 +445,15 @@ function restoreGuitarBar25HookPitchesFromBar1(score: ScoreModel): void {
     .filter((e) => e.kind === 'note')
     .sort((a, b) => a.startBeat - b.startBeat) as NoteEvent[];
   if (n1.length === 0 || n25.length === 0) return;
-  const stmtShape = extractMotifShapeFromGuitarBar(guitar, 1, chord1, HOOK_REGISTER_LOW, HOOK_REGISTER_HIGH);
+  const stmtShape = extractMotifShapeFromGuitarBar(
+    guitar,
+    1,
+    chord1,
+    HOOK_REGISTER_LOW,
+    HOOK_REGISTER_HIGH,
+    { lockedHarmony: true },
+    presetId,
+  );
   if (!stmtShape) return;
   const pitches1 = n1.map((n) => n.pitch);
   const p0 = pitches1[0]!;
@@ -457,7 +465,9 @@ function restoreGuitarBar25HookPitchesFromBar1(score: ScoreModel): void {
     p0,
     HOOK_REGISTER_LOW,
     HOOK_REGISTER_HIGH,
-    0
+    0,
+    { lockedHarmony: true },
+    presetId,
   );
   const sameChord =
     chord1.trim().toLowerCase() === chord25.trim().toLowerCase();
