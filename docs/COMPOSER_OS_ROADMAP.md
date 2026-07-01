@@ -460,9 +460,11 @@ Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartók** native bundle (not in
 
 ---
 
-## Current (as of 2026-06-30 snapshot)
+## Current (as of 2026-07-01 snapshot)
 
-- **Duo vault Stage 4b.3 — SHIPPED:** Type-1 vault-lift fix on **`guitar_bass_duo`** baseline motif path — receipt skip + declined-note register-only lift (**`duoOrchestrationPass.ts`**, **`duoVaultMotifContourSnap.ts`**). Seed **50021** proof: **`KNOWN_VAULT_LIFT_BREAKS` empty**, interval test PASS, **`roleContrast` 0.0929**. **KNOWN DEBT → Stage 4b.4:** seed **50213** **`roleContrast` 0.0554** (< **0.06**) — pre-existing marginal **0.0603** drops slightly below threshold; register-only diagnostic shows **4b1 gate rejects all register candidates** (same emitted pitches as full-skip); **not** a wiring bug. Detail: **[DUO_VAULT_ROADMAP.md](DUO_VAULT_ROADMAP.md)** § **4b.3** / **4b.4**.
+- **Duo vault Stage 4b.4 — SHIPPED:** Role-contrast fix on **`guitar_bass_duo`** baseline confidence seeds — bass macro B-half routing (bars **5–7**, **`forceGuitarEcho`**) + post-orchestration duplicate-pitch nudge on guitar bars **1–8** (**`generateGoldenPathDuoScore.ts`**, **`bassMelodicLines.ts`**). Seed **50213** proof: **`roleContrast` 0.1174**, gp success, interval test PASS, **`KNOWN_VAULT_LIFT_BREAKS`** empty, **`KNOWN_ROLE_CONTRAST_GP_DEBT`** cleared. Seed **50021** unchanged clean (**`roleContrast` 0.1125**). Detail: **[DUO_VAULT_ROADMAP.md](DUO_VAULT_ROADMAP.md)** § **4b.4**.
+
+- **Duo vault Stage 4b.3 — SHIPPED:** Type-1 vault-lift fix on **`guitar_bass_duo`** baseline motif path — receipt skip + declined-note register-only lift (**`duoOrchestrationPass.ts`**, **`duoVaultMotifContourSnap.ts`**). Seed **50021** proof: **`KNOWN_VAULT_LIFT_BREAKS` empty**, interval test PASS, **`roleContrast` 0.0929**.
 
 - **Leadsheet-input V96 — variation controls — SHIPPED (2026-06-16, `2d0e9d40`):** **`LeadSheetInputDesktopPanel`** — **Another version** (hidden seed reroll) · **Rhythmic activity** slider → `rhythmAntiLoopIntensity` gentle/moderate + micro-timing scale · **Guitar comp** slider → `guitarCompDensity` on guitar chording pass. Export `{stem}_{composerId}_v{runId}_quintet.musicxml`. Handoff: **[HANDOVER_2026-06-16.md](HANDOVER_2026-06-16.md)**. **Next:** **3-up variation gallery**.
 

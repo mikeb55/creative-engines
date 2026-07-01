@@ -797,6 +797,65 @@ function duoChordTonesWithOptionalTuningMap(
   return applyTuningVoicingMapToChordTones(base, chord, low, high, voicingCtx, context.seed, bar, salt);
 }
 
+/**
+ * Duo V3.1 role contrast: consecutive motif attacks at the same pitch tie into one activity
+ * count. Nudge later duplicates to the nearest distinct chord tone (motif emission only).
+ */
+function nudgeMotifConsecutiveDuplicatePitches(
+  raw: { pitch: number; start: number; dur: number }[],
+  chord: string,
+  effectiveLow: number,
+  effectiveHigh: number,
+): void {
+  if (raw.length < 2) return;
+  const tones = guitarChordTonesInRange(chord, effectiveLow, effectiveHigh);
+  const pool = [tones.root, tones.third, tones.fifth, tones.seventh].map((p) =>
+    clampPitch(Math.round(p), effectiveLow, effectiveHigh),
+  );
+  for (let i = 1; i < raw.length; i++) {
+    const prev = raw[i - 1]!.pitch;
+    if (raw[i]!.pitch !== prev) continue;
+    let best = raw[i]!.pitch;
+    let bestGap = 99;
+    for (const c of pool) {
+      if (c === prev) continue;
+      const gap = Math.abs(c - prev);
+      if (gap < bestGap) {
+        bestGap = gap;
+        best = c;
+      }
+    }
+    if (best !== raw[i]!.pitch) raw[i]!.pitch = best;
+  }
+}
+
+/** Post-phrase pass: fix consecutive v1 duplicate pitches (Stage 4 / cadence may re-snap to chord tones). */
+function nudgeMeasureConsecutiveDuplicateV1Pitches(
+  m: MeasureModel,
+  chord: string,
+  effectiveLow: number,
+  effectiveHigh: number,
+): void {
+  const v1 = m.events
+    .map((e, idx) => ({ e, idx }))
+    .filter((x) => x.e.kind === 'note' && ((x.e as NoteEvent).voice ?? 1) === 1)
+    .sort((a, b) => (a.e as NoteEvent).startBeat - (b.e as NoteEvent).startBeat);
+  for (let i = 1; i < v1.length; i++) {
+    const prev = v1[i - 1]!.e as NoteEvent;
+    const cur = v1[i]!.e as NoteEvent;
+    if (cur.pitch === prev.pitch) {
+      const pair = [
+        { pitch: prev.pitch, start: prev.startBeat, dur: prev.duration },
+        { pitch: cur.pitch, start: cur.startBeat, dur: cur.duration },
+      ];
+      nudgeMotifConsecutiveDuplicatePitches(pair, chord, effectiveLow, effectiveHigh);
+      if (pair[1]!.pitch !== cur.pitch) {
+        m.events[v1[i]!.idx] = { ...cur, pitch: pair[1]!.pitch };
+      }
+    }
+  }
+}
+
 /** Indie route name is historical; eligibility matches `styleProfileSupportsAlternateGuitarTuning` / `runGoldenPath` `isIndieArtPopDualGuitarRoute`. */
 function shouldUseIndieArtPopDualGuitarRoute(context: CompositionContext): boolean {
   const sp = normalizeStyleProfileId(context.generationMetadata?.styleProfile);
@@ -6108,6 +6167,10 @@ function buildBassPart(
     if (duoGoldenBass && bassPlanStyle === 'sparse') {
       simplifyForDuo = true;
     }
+    /** V3.1 role-contrast macro B-half (bars 5–7): favour syncopated melodic bass over simplify/quarter-stride. */
+    if (duoGoldenBass && b >= 5 && b <= 7 && !guitarActivityHot) {
+      simplifyForDuo = false;
+    }
 
     if (duoGoldenBass && !simplifyForDuo) {
       const gm = guitarPart.measures.find((x) => x.index === b);
@@ -6557,6 +6620,7 @@ function buildBassPart(
                 ? 1.06
                 : 1.12,
         guitarPhraseContour,
+        forceGuitarEcho: duoGoldenBass && b >= 5 && b <= 7 && !guitarActivityHot,
       });
     }
 
@@ -7867,6 +7931,27 @@ export function generateGoldenPathDuoScore(
     context.presetId !== GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID
   ) {
     applyDuoOrchestrationPass(afterExpressive, context, context.seed);
+    if (isStandardGuitarBassDuo(context.presetId)) {
+      const guitarPostOrch = afterExpressive.parts.find(
+        (p) => p.instrumentIdentity === 'clean_electric_guitar',
+      );
+      if (guitarPostOrch) {
+        const roleContrastBars = Math.min(8, tb);
+        for (let bar = 1; bar <= roleContrastBars; bar++) {
+          const gm = guitarPostOrch.measures.find((x) => x.index === bar);
+          if (!gm) continue;
+          const [zLow, zHigh] = getRegisterForBar(plans.guitarMap, bar, context);
+          const effectiveLow = zLow;
+          const effectiveHigh = Math.min(79, zHigh);
+          nudgeMeasureConsecutiveDuplicateV1Pitches(
+            gm,
+            resolveBarSymbol(context, bar).symbol,
+            effectiveLow,
+            effectiveHigh,
+          );
+        }
+      }
+    }
   }
   if (
     isStandardGuitarBassDuo(context.presetId) &&

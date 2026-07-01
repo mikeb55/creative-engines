@@ -734,6 +734,8 @@ export function emitMelodicBassBar(params: {
   bassPhraseRetryAttempt?: number;
   /** 8-bar phrase: guitar contour (first vs last half) — biases chord-tone weights. */
   guitarPhraseContour?: 'asc' | 'desc' | 'static';
+  /** Duo V3.1 role-contrast macro B-half: force guitar-echo syncopated bass line. */
+  forceGuitarEcho?: boolean;
 }): void {
   const {
     m,
@@ -760,6 +762,7 @@ export function emitMelodicBassBar(params: {
     phraseBehaviourMode,
     bassPhraseRetryAttempt,
     guitarPhraseContour,
+    forceGuitarEcho,
   } = params;
   const steady = !!duoSteadyWalking;
   const modeRetry = bassPhraseRetryAttempt ?? phraseRhythmVariant ?? 0;
@@ -798,8 +801,9 @@ export function emitMelodicBassBar(params: {
     );
 
   const useEcho =
-    guitarFirstPitchInBar !== undefined &&
-    (section === 'B' || (section === 'A_prime' && seededUnit(sForMelody, bar, 814) < 0.38));
+    forceGuitarEcho === true ||
+    (guitarFirstPitchInBar !== undefined &&
+      (section === 'B' || (section === 'A_prime' && seededUnit(sForMelody, bar, 814) < 0.38)));
   let echoPitch =
     guitarFirstPitchInBar !== undefined
       ? echoGuitarToBass(guitarFirstPitchInBar, walkLow, effectiveHigh)

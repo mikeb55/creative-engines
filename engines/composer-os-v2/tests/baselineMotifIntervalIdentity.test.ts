@@ -7,8 +7,7 @@
  * Stage 4b.3 (shipped): receipt-tagged notes skip legacy lift; 4b.2-declined notes get register-only
  * lift (tryDeclinedRegisterOnlyLiftPitch) gated by motifBarPasses4b1AfterVaultOrchestration — else baseline.
  * Type-1 lift debt tracked in KNOWN_VAULT_LIFT_BREAKS should stay empty on confidence seeds.
- * Seed 50213 roleContrast shortfall (0.0554 < 0.06) is KNOWN DEBT → Stage 4b.4 (see DUO_VAULT_ROADMAP.md),
- * separate from Type-1 interval identity.
+ * Seed 50213 roleContrast shortfall resolved in Stage 4b.4 (see DUO_VAULT_ROADMAP.md §4b.4).
  *
  * Pass/fail contract:
  * - PASS: non-break bar holds 4b.1 tolerance (clamp + lift, never vault-widened).
@@ -82,8 +81,8 @@ export const KNOWN_VAULT_LIFT_BREAKS: Readonly<Record<number, readonly number[]>
   50213: [],
 };
 
-/** Stage 4b.4 — gp fails duoLock roleContrast only; interval test still runs. See DUO_VAULT_ROADMAP.md §4b.4. */
-export const KNOWN_ROLE_CONTRAST_GP_DEBT: ReadonlySet<number> = new Set([50213]);
+/** Stage 4b.4 — gp fails duoLock roleContrast only; interval test still runs when listed. Empty = no debt. */
+export const KNOWN_ROLE_CONTRAST_GP_DEBT: ReadonlySet<number> = new Set();
 
 function isKnownRoleContrastGpFailure(seed: number, errors: readonly string[] | undefined): boolean {
   if (!KNOWN_ROLE_CONTRAST_GP_DEBT.has(seed)) return false;
