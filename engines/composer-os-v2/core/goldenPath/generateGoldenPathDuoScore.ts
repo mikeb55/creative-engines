@@ -2402,9 +2402,40 @@ function duoBoostPhraseEndLanding(m: MeasureModel, bar: number, isDuo: boolean):
   }
 }
 
+function sortedV1NoteEventIndicesForCadence(m: MeasureModel): number[] {
+  const entries: { startBeat: number; eventIdx: number }[] = [];
+  m.events.forEach((e, idx) => {
+    if (e.kind === 'note' && ((e as NoteEvent).voice ?? 1) === 1) {
+      entries.push({ startBeat: e.startBeat, eventIdx: idx });
+    }
+  });
+  entries.sort((a, b) => a.startBeat - b.startBeat);
+  return entries.map(({ eventIdx }) => eventIdx);
+}
+
+/** Stage 4d.1 — skip cadence snap when phrase-end note is vault-receipt or vault-declined motif (4b.3). */
+function cadenceSnapSkipForVaultMotifNote(
+  bar: number,
+  m: MeasureModel,
+  noteEventIdx: number,
+  context: CompositionContext,
+  snapReceipts?: readonly DuoVaultMotifSnapReceipt[]
+): boolean {
+  const receipts = snapReceipts ?? context.generationMetadata?.duoVaultMotifSnapReceipts;
+  const declined = context.generationMetadata?.duoVaultDeclinedNotes;
+  if (!receipts?.length && !declined?.length) return false;
+  const v1Idxs = sortedV1NoteEventIndicesForCadence(m);
+  const motifNoteIndex = v1Idxs.indexOf(noteEventIdx);
+  if (motifNoteIndex < 0) return false;
+  if (receipts?.some((r) => r.bar === bar && r.noteIndex === motifNoteIndex)) return true;
+  if (declined?.some((d) => d.bar === bar && d.noteIndex === motifNoteIndex)) return true;
+  return false;
+}
+
 /**
  * Bar-4 cadence (4-bar cycle, `bar` 1-indexed): lengthen final voice-1 note toward the next attack / bar end,
  * then snap melody pitch to nearest chord tone (root/3/5/7) in register. Duo golden path: every phrase boundary (`bar % 4 === 0`).
+ * Stage 4d.1: standard `guitar_bass_duo` uses vault phrase-fill tones (same resolver as 4c phrasetail); skips snap on 4b.3 motif notes.
  */
 function duoEnforcePhraseEndCadence(
   m: MeasureModel,
@@ -2412,13 +2443,27 @@ function duoEnforcePhraseEndCadence(
   context: CompositionContext,
   effectiveLow: number,
   effectiveHigh: number,
-  songModeHook: boolean
+  songModeHook: boolean,
+  snapReceipts?: readonly DuoVaultMotifSnapReceipt[]
 ): void {
   void songModeHook;
   if (bar % 4 !== 0) return;
 
   const chord = resolveBarSymbol(context, bar).symbol;
-  const tones = chordTonesForChordSymbolWithContext(chord, context);
+  const chordToneOpts: ChordTonesOptions | undefined = shouldUseUserChordSemanticsForTones(context)
+    ? { lockedHarmony: true }
+    : undefined;
+  const tones = isStandardGuitarBassDuo(context.presetId)
+    ? phraseFillTonesFromVaultResolver(chord, effectiveLow, effectiveHigh, chordToneOpts)
+    : (() => {
+        const legacy = chordTonesForChordSymbolWithContext(chord, context);
+        return {
+          root: liftToneToRange(legacy.root, effectiveLow, effectiveHigh),
+          third: liftToneToRange(legacy.third, effectiveLow, effectiveHigh),
+          fifth: liftToneToRange(legacy.fifth, effectiveLow, effectiveHigh),
+          seventh: liftToneToRange(legacy.seventh, effectiveLow, effectiveHigh),
+        };
+      })();
   const v1 = m.events.filter(
     (e): e is NoteEvent => e.kind === 'note' && ((e as NoteEvent).voice ?? 1) === 1
   );
@@ -2439,14 +2484,16 @@ function duoEnforcePhraseEndCadence(
     if (n.duration + 1e-9 < capDur) n.duration = capDur;
   }
 
-  const candidates = [
-    liftToneToRange(tones.root, effectiveLow, effectiveHigh),
-    liftToneToRange(tones.third, effectiveLow, effectiveHigh),
-    liftToneToRange(tones.fifth, effectiveLow, effectiveHigh),
-    liftToneToRange(tones.seventh, effectiveLow, effectiveHigh),
-  ];
+  const candidates = [tones.root, tones.third, tones.fifth, tones.seventh];
 
   for (const n of finals) {
+    const eventIdx = m.events.indexOf(n);
+    if (
+      eventIdx >= 0 &&
+      cadenceSnapSkipForVaultMotifNote(bar, m, eventIdx, context, snapReceipts)
+    ) {
+      continue;
+    }
     let best = candidates[0]!;
     let bestD = Math.abs(n.pitch - best);
     for (let i = 1; i < candidates.length; i++) {
@@ -4496,7 +4543,7 @@ function buildGuitarPart(
       }
       normalizeMeasureToEighthBeatGrid(m);
       duoBoostPhraseEndLanding(m, b, true);
-      duoEnforcePhraseEndCadence(m, b, context, effectiveLow, effectiveHigh, songModeHook);
+      duoEnforcePhraseEndCadence(m, b, context, effectiveLow, effectiveHigh, songModeHook, duoVaultMotifSnapReceipts);
       normalizeMeasureToEighthBeatGrid(m);
       if (b === 25 && context.seed === 50021) {
         const _b25AfterSecondNormalize = m.events
@@ -4989,7 +5036,7 @@ function buildGuitarPart(
       }
       normalizeMeasureToEighthBeatGrid(m);
       duoBoostPhraseEndLanding(m, b, true);
-      duoEnforcePhraseEndCadence(m, b, context, effectiveLow, effectiveHigh, songModeHook);
+      duoEnforcePhraseEndCadence(m, b, context, effectiveLow, effectiveHigh, songModeHook, duoVaultMotifSnapReceipts);
       normalizeMeasureToEighthBeatGrid(m);
       if (isSongwriterFagen && fagenAnyColourBiases) {
         applyDonaldFagenGuitarBarPasses(m, b, context, seed, effectiveLow, effectiveHigh, {
