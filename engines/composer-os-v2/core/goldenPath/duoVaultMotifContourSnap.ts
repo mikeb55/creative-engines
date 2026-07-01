@@ -8,7 +8,7 @@ import { resolveDuoHarmonyForSymbol } from '../harmony/duoVaultHarmony';
 import type { MotifNote } from '../motif/motifTypes';
 import { isStandardGuitarBassDuo } from '../presets/guitarBassDuoPresetIds';
 import type { ScoreModel, MeasureModel } from '../score-model/scoreModelTypes';
-import { guitarChordTonesInRange } from './guitarPhraseAuthority';
+import { snapGuitarPitchToChordWindow } from './guitarPhraseAuthority';
 import { clampPitch, seededUnit } from './guitarBassDuoHarmony';
 import { resolveChordForDuoPostPass } from '../harmony/harmonyResolution';
 
@@ -152,24 +152,12 @@ function skipBRegisterLiftForDuoIdentity(barIndex: number): boolean {
   return barIndex === 6 || barIndex === 7;
 }
 
-function snapGuitarToChordOrchestration(pitch: number, chord: string): number {
-  const pool = guitarChordTonesInRange(chord, ORCH_G_LOW, ORCH_G_HIGH);
-  const pcs = new Set(
-    [pool.root, pool.third, pool.fifth, pool.seventh].map((p) => normalizePc(Math.round(p)))
-  );
-  const pc = normalizePc(pitch);
-  if (pcs.has(pc)) return pitch;
-  let best = pitch;
-  let bd = 99;
-  for (const c of [pool.root, pool.third, pool.fifth, pool.seventh]) {
-    const cc = clampPitch(Math.round(c), ORCH_G_LOW, ORCH_G_HIGH);
-    const d = Math.abs(cc - pitch);
-    if (d <= 2 && d < bd) {
-      bd = d;
-      best = cc;
-    }
-  }
-  return bd <= 2 ? best : pitch;
+function snapGuitarToChordOrchestration(
+  pitch: number,
+  chord: string,
+  context: CompositionContext
+): number {
+  return snapGuitarPitchToChordWindow(pitch, chord, ORCH_G_LOW, ORCH_G_HIGH, context);
 }
 
 function liftLowMidDelta(
@@ -185,7 +173,7 @@ function liftLowMidDelta(
   if (preLiftPitch >= GUITAR_LIFT_BELOW) return 0;
   if (seededUnit(seed, bar * 700 + eventIdx, LIFT_LOW_MID_SALT) >= LIFT_LOW_MID_GATE) return 0;
   const lifted = clampPitch(preLiftPitch + 1, ORCH_G_LOW, ORCH_G_HIGH);
-  return snapGuitarToChordOrchestration(lifted, chord) - preLiftPitch;
+  return snapGuitarToChordOrchestration(lifted, chord, context) - preLiftPitch;
 }
 
 function liftSectionBDelta(
@@ -201,7 +189,7 @@ function liftSectionBDelta(
   if (!isOrchestrationSectionB(label)) return 0;
   if (seededUnit(seed, bar * 600 + eventIdx, LIFT_SECTION_B_SALT) >= LIFT_SECTION_B_GATE) return 0;
   const lifted = clampPitch(preLiftPitch + 1, ORCH_G_LOW, ORCH_G_HIGH);
-  return snapGuitarToChordOrchestration(lifted, chord) - preLiftPitch;
+  return snapGuitarToChordOrchestration(lifted, chord, context) - preLiftPitch;
 }
 
 function voice1PitchesForMeasure(m: MeasureModel): number[] {
@@ -425,7 +413,7 @@ function simulateEmittedPitchAfterOrchestration(
   let x = preOrchPitch;
   x += liftLowMidDelta(bar, noteIndex, x, seed, context, chord);
   x += liftSectionBDelta(bar, noteIndex, x, seed, context, chord);
-  return snapGuitarToChordOrchestration(x, chord);
+  return snapGuitarToChordOrchestration(x, chord, context);
 }
 
 /** Stage 4b.1 interval contract — golden pl.notes vs orchestration-modeled emission at :4572. */
@@ -553,7 +541,7 @@ export function simulateMotifBarEmittedAfterVaultOrchestration(
     let x = pitch;
     x += liftLowMidDelta(bar, eventIdx, x, seed, context, chord);
     x += liftSectionBDelta(bar, eventIdx, x, seed, context, chord);
-    return snapGuitarToChordOrchestration(x, chord);
+    return snapGuitarToChordOrchestration(x, chord, context);
   });
 }
 

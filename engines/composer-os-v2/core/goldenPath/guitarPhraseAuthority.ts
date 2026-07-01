@@ -3,6 +3,7 @@
  */
 
 import type { MeasureModel } from '../score-model/scoreModelTypes';
+import type { CompositionContext } from '../compositionContext';
 import { createNote, createRest, addEvent } from '../score-model/scoreEventBuilder';
 import { snapAttackBeatToGrid } from '../score-integrity/duoEighthBeatGrid';
 import { clampPitch, seededUnit } from './guitarBassDuoHarmony';
@@ -74,6 +75,65 @@ export function guitarChordTonesInRange(
 
 function normalizePc(pc: number): number {
   return ((pc % 12) + 12) % 12;
+}
+
+/**
+ * Stage 4d.2 — orchestration register-lift snap: nearest harmony PC within ±maxDelta semitones.
+ * Standard `guitar_bass_duo` prefers vault melody PCs; falls back to legacy root/3/5/7 when resolver source is fallback.
+ */
+export function snapGuitarPitchToChordWindow(
+  pitch: number,
+  chord: string,
+  low: number,
+  high: number,
+  context?: CompositionContext,
+  maxDelta = 2,
+  chordToneOpts?: ChordTonesOptions
+): number {
+  const pc = normalizePc(pitch);
+
+  const snapToPcPool = (melodyPcs: readonly number[]): number => {
+    const pool = [...new Set(melodyPcs.map(normalizePc))];
+    if (pool.includes(pc)) return pitch;
+    let best = pitch;
+    let bd = 99;
+    for (const vpc of pool) {
+      for (let m = low; m <= high; m++) {
+        if (normalizePc(m) !== vpc) continue;
+        const d = Math.abs(m - pitch);
+        if (d <= maxDelta && d < bd) {
+          bd = d;
+          best = m;
+        }
+      }
+    }
+    return bd <= maxDelta ? best : pitch;
+  };
+
+  if (context && isStandardGuitarBassDuo(context.presetId)) {
+    const locked = chordToneOpts?.lockedHarmony ?? true;
+    const res = resolveDuoHarmonyForSymbol(chord, { lockedHarmony: locked });
+    if (res.source !== 'fallback' && res.melodyPcs.length > 0) {
+      return snapToPcPool(res.melodyPcs);
+    }
+  }
+
+  const pool = guitarChordTonesInRange(chord, low, high, chordToneOpts);
+  const legacyPcs = new Set(
+    [pool.root, pool.third, pool.fifth, pool.seventh].map((p) => normalizePc(Math.round(p)))
+  );
+  if (legacyPcs.has(pc)) return pitch;
+  let best = pitch;
+  let bd = 99;
+  for (const c of [pool.root, pool.third, pool.fifth, pool.seventh]) {
+    const cc = clampPitch(Math.round(c), low, high);
+    const d = Math.abs(cc - pitch);
+    if (d <= maxDelta && d < bd) {
+      bd = d;
+      best = cc;
+    }
+  }
+  return bd <= maxDelta ? best : pitch;
 }
 
 function liftPcToRange(pc: number, refMidi: number, low: number, high: number): number {

@@ -7,7 +7,7 @@ import type { CompositionContext } from '../compositionContext';
 import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 import type { ScoreModel, PartModel, NoteEvent, MeasureModel } from '../score-model/scoreModelTypes';
 import { createRest } from '../score-model/scoreEventBuilder';
-import { guitarChordTonesInRange } from './guitarPhraseAuthority';
+import { snapGuitarPitchToChordWindow } from './guitarPhraseAuthority';
 import { chordTonesForChordSymbolWithContext } from '../harmony/harmonyChordTonePolicy';
 import { resolveChordForDuoPostPass } from '../harmony/harmonyResolution';
 import { pitchClassToBassMidi } from '../harmony/chordSymbolAnalysis';
@@ -158,22 +158,8 @@ function tryDeclinedRegisterOnlyLiftPitch(
   return proposed;
 }
 
-function snapGuitarToChord(pitch: number, chord: string): number {
-  const pool = guitarChordTonesInRange(chord, G_LOW, G_HIGH);
-  const pcs = new Set([pool.root, pool.third, pool.fifth, pool.seventh].map((p) => ((Math.round(p) % 12) + 12) % 12));
-  const pc = ((pitch % 12) + 12) % 12;
-  if (pcs.has(pc)) return pitch;
-  let best = pitch;
-  let bd = 99;
-  for (const c of [pool.root, pool.third, pool.fifth, pool.seventh]) {
-    const cc = clampPitch(Math.round(c), G_LOW, G_HIGH);
-    const d = Math.abs(cc - pitch);
-    if (d <= 2 && d < bd) {
-      bd = d;
-      best = cc;
-    }
-  }
-  return bd <= 2 ? best : pitch;
+function snapGuitarToChord(pitch: number, chord: string, context: CompositionContext): number {
+  return snapGuitarPitchToChordWindow(pitch, chord, G_LOW, G_HIGH, context);
 }
 
 function thinInteriorNotesInBars(
@@ -255,7 +241,7 @@ function liftGuitarRegisterInSectionB(
         return;
       }
       const np = clampPitch(n.pitch + 1, G_LOW, G_HIGH);
-      const snapped = snapGuitarToChord(np, chord);
+      const snapped = snapGuitarToChord(np, chord, context);
       if (snapped !== n.pitch) m.events[idx] = { ...n, pitch: snapped };
     });
   }
@@ -298,7 +284,7 @@ function liftGuitarLowMidInA(guitar: PartModel, context: CompositionContext, see
         return;
       }
       const np = clampPitch(n.pitch + 1, G_LOW, G_HIGH);
-      const snapped = snapGuitarToChord(np, chord);
+      const snapped = snapGuitarToChord(np, chord, context);
       if (snapped !== n.pitch) m.events[idx] = { ...n, pitch: snapped };
     });
   }
