@@ -2936,7 +2936,7 @@ export function HomeGenerate({
   const [stochasticVarianceUi, setStochasticVarianceUi] = useState(0);
   const [funkGroove, setFunkGroove] = useState(false);
   const [generateDrumGuide, setGenerateDrumGuide] = useState(true);
-  const [exportScoreMidi, setExportScoreMidi] = useState(true);
+  const [exportScoreMidi, setExportScoreMidi] = useState(false);
   const [bandModeEnabled, setBandModeEnabled] = useState(false);
   const [riffFamily, setRiffFamily] = useState<RiffFamilyTag>('rock');
   const [riffVrbId, setRiffVrbId] = useState(defaultRiffVrbIdForFamily('rock'));
@@ -4023,7 +4023,7 @@ export function HomeGenerate({
           const r = (await enqueue({
             ...body,
             duoVaultMotifEnabled,
-            ...( !exportScoreMidi ? { skipScoreMidiExport: true as const } : {}),
+            ...(exportScoreMidi ? { skipScoreMidiExport: false as const } : {}),
           })) as GenResult;
           if (reharmApplyHarmonyUnlockRef.current) {
             reharmApplyHarmonyUnlockRef.current = false;
@@ -4418,8 +4418,8 @@ export function HomeGenerate({
           ...(stringQuartetConfig ? { stringQuartetConfig } : {}),
           ...(contrapuntalConfig ? { contrapuntalConfig } : {}),
           ...(!generateDrumGuide ? { skipDrumGuide: true as const } : {}),
-          ...(isGuitarBassDuoFamily(presetId) && !exportScoreMidi
-            ? { skipScoreMidiExport: true as const }
+          ...(isGuitarBassDuoFamily(presetId) && exportScoreMidi
+            ? { skipScoreMidiExport: false as const }
             : {}),
           ...(bandModeEnabled ? { bandModeEnabled: true as const } : {}),
           variationEnabled: variationEnabled,

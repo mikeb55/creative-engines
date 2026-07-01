@@ -85,7 +85,7 @@ export function shouldExportScoreMidi(
   skipPartialRegen = false
 ): boolean {
   if (skipPartialRegen) return false;
-  return skipScoreMidiExport !== true;
+  return skipScoreMidiExport === false;
 }
 
 /**

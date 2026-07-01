@@ -597,8 +597,8 @@ export interface GenerateRequest {
    */
   skipDrumGuide?: boolean;
   /**
-   * When `true`, skip writing the main score `.mid` next to MusicXML (`writeScoreMidi`).
-   * Omitted → score MIDI is written when the score has renderable notes. Independent of {@link skipDrumGuide}.
+   * When `true` or omitted, skip writing the main score `.mid` next to MusicXML (`writeScoreMidi`).
+   * Set `false` to opt in to score MIDI export when the score has renderable notes. Independent of {@link skipDrumGuide}.
    */
   skipScoreMidiExport?: boolean;
   /**
