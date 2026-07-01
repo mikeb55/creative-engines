@@ -597,6 +597,11 @@ export interface GenerateRequest {
    */
   skipDrumGuide?: boolean;
   /**
+   * When `true`, skip writing the main score `.mid` next to MusicXML (`writeScoreMidi`).
+   * Omitted → score MIDI is written when the score has renderable notes. Independent of {@link skipDrumGuide}.
+   */
+  skipScoreMidiExport?: boolean;
+  /**
    * Band mode Stage 1 — Guitar/Bass score unchanged; exports labeled G/B + drum-guide bundle.
    * When mosaic plan is present, drum guide uses fixed 4/4 Art Rock grid (not G/B onset proxy).
    */

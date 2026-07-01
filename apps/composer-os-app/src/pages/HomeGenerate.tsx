@@ -2936,6 +2936,7 @@ export function HomeGenerate({
   const [stochasticVarianceUi, setStochasticVarianceUi] = useState(0);
   const [funkGroove, setFunkGroove] = useState(false);
   const [generateDrumGuide, setGenerateDrumGuide] = useState(true);
+  const [exportScoreMidi, setExportScoreMidi] = useState(true);
   const [bandModeEnabled, setBandModeEnabled] = useState(false);
   const [riffFamily, setRiffFamily] = useState<RiffFamilyTag>('rock');
   const [riffVrbId, setRiffVrbId] = useState(defaultRiffVrbIdForFamily('rock'));
@@ -4019,7 +4020,11 @@ export function HomeGenerate({
             chordProgressionText: validated.chordProgressionText,
             mosaicSectionPlan: validated.mosaicSectionPlan,
           });
-          const r = (await enqueue({ ...body, duoVaultMotifEnabled })) as GenResult;
+          const r = (await enqueue({
+            ...body,
+            duoVaultMotifEnabled,
+            ...( !exportScoreMidi ? { skipScoreMidiExport: true as const } : {}),
+          })) as GenResult;
           if (reharmApplyHarmonyUnlockRef.current) {
             reharmApplyHarmonyUnlockRef.current = false;
           }
@@ -4413,6 +4418,9 @@ export function HomeGenerate({
           ...(stringQuartetConfig ? { stringQuartetConfig } : {}),
           ...(contrapuntalConfig ? { contrapuntalConfig } : {}),
           ...(!generateDrumGuide ? { skipDrumGuide: true as const } : {}),
+          ...(isGuitarBassDuoFamily(presetId) && !exportScoreMidi
+            ? { skipScoreMidiExport: true as const }
+            : {}),
           ...(bandModeEnabled ? { bandModeEnabled: true as const } : {}),
           variationEnabled: variationEnabled,
           styleStack: isScorePreset ? DEFAULT_SCORE_STYLE_STACK : MINIMAL_STYLE_STACK,
@@ -5097,6 +5105,7 @@ export function HomeGenerate({
       slonimskyEtudeCellFamily,
       funkGroove,
       generateDrumGuide,
+      exportScoreMidi,
       bandModeEnabled,
       formId,
       bigBandFormId,
@@ -10505,6 +10514,34 @@ export function HomeGenerate({
             : ''}
         </p>
       </div>
+
+      {isGuitarBassDuoFamily(presetId) && (
+        <div style={{ marginBottom: '0.85rem' }}>
+          <label
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              fontSize: '0.88rem',
+              color: 'var(--text)',
+              cursor: loading ? 'default' : 'pointer',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={exportScoreMidi}
+              onChange={(e) => setExportScoreMidi(e.target.checked)}
+              disabled={loading}
+              aria-label="Export MIDI file"
+            />
+            Export MIDI file
+          </label>
+          <p style={{ margin: '0.35rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)', maxWidth: 520 }}>
+            Writes a companion <code>.mid</code> next to the MusicXML. Turn off if you only open scores in
+            Sibelius or MuseScore. Does not affect the drum guide toggle above.
+          </p>
+        </div>
+      )}
 
       {isGuitarBassDuoFamily(presetId) && (
         <div style={{ marginBottom: '0.85rem' }}>

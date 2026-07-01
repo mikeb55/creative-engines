@@ -42,7 +42,11 @@ import { isGuitarBassDuoFamily } from '../core/presets/guitarBassDuoPresetIds';
 import type { FormId } from '../core/form/formPlanner';
 import type { GenerationMetadata } from '../core/compositionContext';
 import { IMPORT_HARMONY_POLICY_VERSION } from '../core/importHarmonyPolicy';
-import { exportDrumGuideBundle, shouldExportDrumGuide } from '../core/export/drumGuideExport';
+import {
+  exportDrumGuideBundle,
+  shouldExportDrumGuide,
+  shouldExportScoreMidi,
+} from '../core/export/drumGuideExport';
 import { writeScoreMidi } from '../core/export/midiScoreWriter';
 import { getVoiceRuleBundle } from '../core/composer/voiceRuleBundles';
 import { buildFormSections } from '../core/composer/formController';
@@ -638,7 +642,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
         console.warn('Drum guide export failed:', (e as Error)?.message ?? e);
       }
     }
-    if (!skipMidiDrumGuides) {
+    if (shouldExportScoreMidi(req.skipScoreMidiExport, skipMidiDrumGuides)) {
       try {
         const barMeterForScore =
           result.context.barMeterMap ?? result.context.generationMetadata?.barMeterMap;

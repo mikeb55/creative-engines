@@ -6,6 +6,8 @@
 
 ### Added
 
+- **Generate — optional skip score MIDI export** — **`skipScoreMidiExport`** on **`GenerateRequest`** gates **`writeScoreMidi`** in **`generateComposition`** and BB/SQ paths in **`composerOsAppGeneration`**. Guitar–Bass Duo UI: **Export MIDI file** checkbox (default on); independent of drum guide. LOCK/GCE unchanged.
+
 - **Lead Sheet Input V97 — per-bar harmony overrides (MIDI advisory)** — Desktop **Lead Sheet Input** confidence strip bars are clickable; **Save** / **Clear** on a chord symbol sends **`harmonyOverridesByBar`** through IPC → **`runLeadSheetFileInputApi`** → **`applyLeadSheetHarmonyOverrides`** after MIDI inference. Overridden bars get **`user-override`** provenance; non-overridden MIDI bars stay **`inferred-advisory`** (whole chart not hard-locked). Proof: **`leadSheetHarmonyOverrideProof.test.ts`**.
 
 ### Changed

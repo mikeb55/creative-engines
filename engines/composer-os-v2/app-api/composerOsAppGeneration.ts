@@ -170,7 +170,7 @@ import { importMusicXmlToImportedSong } from '../core/musicXmlDeepImport';
 import type { IntervalPatternId } from '../core/slonimsky/slonimskyEngine';
 import type { MusicContext } from '../core/music-context/musicContextTypes';
 import { writeDrumGuide } from '../core/export/midiDrumGuideWriter';
-import { exportDrumGuideBundle, shouldExportDrumGuide } from '../core/export/drumGuideExport';
+import { exportDrumGuideBundle, shouldExportDrumGuide, shouldExportScoreMidi } from '../core/export/drumGuideExport';
 import { writeScoreMidi } from '../core/export/midiScoreWriter';
 
 export { SHIPPED_ROCK_FUSION_RHYTHM_ENGINE_IDS };
@@ -2166,7 +2166,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
         console.warn('Drum guide export failed:', (e as Error)?.message ?? e);
       }
     }
-    if (!skipMidiDrumFromPartialRegen) {
+    if (shouldExportScoreMidi(req.skipScoreMidiExport, skipMidiDrumFromPartialRegen)) {
       try {
         const barMeterForScore =
           gp.context.barMeterMap ?? gp.context.generationMetadata?.barMeterMap ?? req.barMeterMap;
@@ -3077,7 +3077,11 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
       }
     }
     try {
-      if (!sectionRegenPartial && realised.score && ensembleMusicXmlFilepath) {
+      if (
+        shouldExportScoreMidi(req.skipScoreMidiExport, sectionRegenPartial) &&
+        realised.score &&
+        ensembleMusicXmlFilepath
+      ) {
         const baseName = path.basename(ensembleMusicXmlFilepath, '.musicxml');
         ensembleMidiFilepath = writeScoreMidi(realised.score, outputDir, baseName, resolvedBbBarMeterMap ?? req.barMeterMap, req.bpm);
       }
@@ -3459,7 +3463,7 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
       }
     }
     try {
-      if (!sectionRegenPartialSq && realised.score) {
+      if (shouldExportScoreMidi(req.skipScoreMidiExport, sectionRegenPartialSq) && realised.score) {
         const baseName = path.basename(xmlFilepath, '.musicxml');
         quartetMidiFilepath = writeScoreMidi(realised.score, outputDir, baseName, resolvedSqBarMeterMap ?? req.barMeterMap, req.bpm);
       }

@@ -79,6 +79,15 @@ export function shouldExportDrumGuide(
   return skipDrumGuide !== true;
 }
 
+/** Honour skipScoreMidiExport; section-regen partial scores skip score MIDI regardless. */
+export function shouldExportScoreMidi(
+  skipScoreMidiExport: boolean | undefined,
+  skipPartialRegen = false
+): boolean {
+  if (skipPartialRegen) return false;
+  return skipScoreMidiExport !== true;
+}
+
 /**
  * Writes `_drum_guide.mid` + `_drum_guide.json`. Art Rock fixed grid when band mode + mosaic plan;
  * otherwise existing G/B onset proxy via {@link reduceToBeatOnsets}.
