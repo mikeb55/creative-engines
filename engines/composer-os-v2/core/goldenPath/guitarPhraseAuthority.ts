@@ -85,8 +85,8 @@ function liftPcToRange(pc: number, refMidi: number, low: number, high: number): 
   return liftToneToRange(refMidi + delta, low, high);
 }
 
-/** Stage 3 — vault phrase-fill pool for standard `guitar_bass_duo` only (emitGuitarPhraseBar). */
-function phraseFillTonesFromVaultResolver(
+/** Stage 3 / 4c — vault phrase-fill tone slots for standard `guitar_bass_duo` (phrase bar + motif phrasetail). */
+export function phraseFillTonesFromVaultResolver(
   chord: string,
   low: number,
   high: number,

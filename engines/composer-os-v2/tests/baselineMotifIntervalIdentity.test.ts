@@ -47,8 +47,9 @@ import type { InstrumentRegisterMap } from '../core/register-map/registerMapType
 import type { MeasureModel, ScoreModel } from '../core/score-model/scoreModelTypes';
 import { CLEAN_ELECTRIC_GUITAR } from '../core/instrument-profiles/guitarProfile';
 import { seededUnit } from '../core/goldenPath/guitarBassDuoHarmony';
-import { guitarChordTonesInRange } from '../core/goldenPath/guitarPhraseAuthority';
+import { guitarChordTonesInRange, phraseFillTonesFromVaultResolver, resolvePhraseEndForDuo } from '../core/goldenPath/guitarPhraseAuthority';
 import { resolveChordForDuoPostPass } from '../core/harmony/harmonyResolution';
+import { resolveDuoHarmonyForSymbol } from '../core/harmony/duoVaultHarmony';
 
 const GUITAR_FLOOR_FOR_SEPARATION = 60;
 /** duoOrchestrationPass.ts:22 -- liftGuitarLowMidInA pitch ceiling. */
@@ -777,6 +778,7 @@ export function assertBaselineMotifIdentityForSeed(seed: number, verbose = false
         error: `missing guitar measure bar ${b}`,
         assertedBars,
         knownVaultLiftBreaks,
+        excludedRegisterClamp,
         excludedPhase7,
         excludedCadence,
         excludedThinning,
@@ -1101,6 +1103,83 @@ export function printBaselineMotifVaultAwareReport(result: BaselineMotifSeedResu
   }
 }
 
+/** Stage 4c — phrasetail production path (vault resolver + resolvePhraseEndForDuo) on 50213 motif bars. */
+export function assertPhraseTailVaultPcSeed50213(): {
+  ok: boolean;
+  error?: string;
+  motifBarsChecked: number;
+  vaultEndTonesChecked: number;
+} {
+  const r = runGoldenPathOnce(50213, { ...BASELINE_DUO_OPTIONS });
+  if (!r.success && !isKnownRoleContrastGpFailure(50213, r.errors)) {
+    return {
+      ok: false,
+      error: `golden path failed: ${(r.errors ?? []).join('; ')}`,
+      motifBarsChecked: 0,
+      vaultEndTonesChecked: 0,
+    };
+  }
+  if (!r.score || !r.context || !r.plans) {
+    return { ok: false, error: 'missing score/context/plans', motifBarsChecked: 0, vaultEndTonesChecked: 0 };
+  }
+  const guitar = r.score.parts.find(
+    (p) => p.id === 'guitar' || p.instrumentIdentity === 'clean_electric_guitar',
+  );
+  if (!guitar) {
+    return { ok: false, error: 'no guitar part', motifBarsChecked: 0, vaultEndTonesChecked: 0 };
+  }
+
+  const normalizePc = (pc: number) => ((pc % 12) + 12) % 12;
+  const motifBars = [
+    ...new Set(r.plans.motifState.placements.map((p) => p.startBar).filter((bar) => !isPhase7IdentityBar(bar))),
+  ].sort((a, b) => a - b);
+  if (motifBars.length === 0) {
+    return { ok: false, error: 'no motif placement bars on 50213', motifBarsChecked: 0, vaultEndTonesChecked: 0 };
+  }
+
+  let vaultEndTonesChecked = 0;
+  const chordToneOpts = { lockedHarmony: true } as const;
+  for (const bar of motifBars) {
+    const measure = guitar.measures.find((m) => m.index === bar);
+    const chord = measure?.chord?.trim();
+    if (!chord) continue;
+    const { effectiveLow, effectiveHigh } = computeEffectiveRegisterForBar(bar, r.context, r.plans);
+    const tones = phraseFillTonesFromVaultResolver(chord, effectiveLow, effectiveHigh, chordToneOpts);
+    const endTone = resolvePhraseEndForDuo(
+      tones,
+      undefined,
+      effectiveLow,
+      effectiveHigh,
+      50213,
+      bar,
+    );
+    const res = resolveDuoHarmonyForSymbol(chord, { lockedHarmony: true });
+    if (res.source !== 'vault') continue;
+    vaultEndTonesChecked++;
+    const vaultPcs = new Set(
+      (res.melodyPcs.length > 0 ? res.melodyPcs : [res.rootPc]).map(normalizePc),
+    );
+    vaultPcs.add(normalizePc(res.rootPc));
+    if (!vaultPcs.has(normalizePc(endTone))) {
+      return {
+        ok: false,
+        error: `bar ${bar} phrasetail endTone ${endTone} not vault PC for ${chord}`,
+        motifBarsChecked: motifBars.length,
+        vaultEndTonesChecked,
+      };
+    }
+  }
+  if (vaultEndTonesChecked === 0) {
+    return {
+      ok: false,
+      error: 'no vault-resolved chords on motif bars',
+      motifBarsChecked: motifBars.length,
+      vaultEndTonesChecked: 0,
+    };
+  }
+  return { ok: true, motifBarsChecked: motifBars.length, vaultEndTonesChecked };
+}
+
 export function runBaselineMotifIntervalIdentityTests(verbose = false): { name: string; ok: boolean }[] {
   const out: { name: string; ok: boolean }[] = [];
   for (const seed of CONFIDENCE_SEEDS) {
@@ -1123,6 +1202,14 @@ export function runBaselineMotifIntervalIdentityTests(verbose = false): { name: 
       console.error(`FAIL seed ${seed}: ${result.error}`);
     }
   }
+  const phraseTail = assertPhraseTailVaultPcSeed50213();
+  if (!phraseTail.ok) {
+    console.error(`FAIL phrase-tail vault PC 50213: ${phraseTail.error}`);
+  }
+  out.push({
+    name: `50213 phrase-tail vault endTone path (${phraseTail.motifBarsChecked} motif bars, ${phraseTail.vaultEndTonesChecked} vault chords)`,
+    ok: phraseTail.ok,
+  });
   return out;
 }
 

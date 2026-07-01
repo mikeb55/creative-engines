@@ -621,6 +621,7 @@ import {
   applyTuningVoicingMapToChordTones,
   guitarChordTonesInRange,
   liftToneToRange,
+  phraseFillTonesFromVaultResolver,
   resolvePhraseEndForDuo,
   type PhraseIntent,
 } from './guitarPhraseAuthority';
@@ -778,7 +779,7 @@ const DUO_DEFAULT_STYLE_STACK: StyleStack = {
 
 const GUITAR_FLOOR_FOR_SEPARATION = 60;
 
-/** Optional alternate-tuning voicing map on top of `guitarChordTonesInRange` (pilot: `new_standard` only in registry). */
+/** Optional alternate-tuning voicing map on top of chord-tone base (legacy or vault phrase-fill). */
 function duoChordTonesWithOptionalTuningMap(
   chord: string,
   low: number,
@@ -787,9 +788,12 @@ function duoChordTonesWithOptionalTuningMap(
   bar: number,
   partRole: 'guitar' | 'guitar_2',
   chordToneOpts: ChordTonesOptions | undefined,
-  salt: number
+  salt: number,
+  useVaultPhraseTones = false
 ) {
-  const base = guitarChordTonesInRange(chord, low, high, chordToneOpts);
+  const base = useVaultPhraseTones
+    ? phraseFillTonesFromVaultResolver(chord, low, high, chordToneOpts)
+    : guitarChordTonesInRange(chord, low, high, chordToneOpts);
   const sectionTuning = getEffectiveTuningProfileForBar(bar, context, partRole);
   const voicingCtx = sectionTuning?.tuningId
     ? buildResolvedTuningVoicingContextFromPresetId(sectionTuning.tuningId, partRole)
@@ -4761,7 +4765,8 @@ function buildGuitarPart(
           b,
           'guitar',
           chordToneOpts,
-          26410
+          26410,
+          isStandardGuitarBassDuo(context.presetId)
         );
         const endTone = resolvePhraseEndForDuo(tones, anchorMidi, effectiveLow, effectiveHigh, seed, b);
         /** Voice 1: rest through bar end; phrase-resolution tail on voice 2 (Wyble counter-line). */
