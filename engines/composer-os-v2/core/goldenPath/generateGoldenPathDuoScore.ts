@@ -836,9 +836,11 @@ function nudgeMotifConsecutiveDuplicatePitches(
 /** Post-phrase pass: fix consecutive v1 duplicate pitches (Stage 4 / cadence may re-snap to chord tones). */
 function nudgeMeasureConsecutiveDuplicateV1Pitches(
   m: MeasureModel,
+  bar: number,
   chord: string,
   effectiveLow: number,
   effectiveHigh: number,
+  context: CompositionContext,
 ): void {
   const v1 = m.events
     .map((e, idx) => ({ e, idx }))
@@ -848,6 +850,7 @@ function nudgeMeasureConsecutiveDuplicateV1Pitches(
     const prev = v1[i - 1]!.e as NoteEvent;
     const cur = v1[i]!.e as NoteEvent;
     if (cur.pitch === prev.pitch) {
+      if (vaultMotifPitchMutationSkipForV1Note(bar, i, context)) continue;
       const pair = [
         { pitch: prev.pitch, start: prev.startBeat, dur: prev.duration },
         { pitch: cur.pitch, start: cur.startBeat, dur: cur.duration },
@@ -2416,19 +2419,45 @@ function sortedV1NoteEventIndicesForCadence(m: MeasureModel): number[] {
   return entries.map(({ eventIdx }) => eventIdx);
 }
 
-/** Stage 4a.1 — skip Slonimsky pitch overwrite on vault-receipt or vault-declined motif notes (4b.3). */
-function slonimskySkipForVaultMotifNote(
+/**
+ * Stage 5.1 — merge in-loop motif receipts with metadata (hook emit).
+ * Empty local `[]` is not authoritative; must not block metadata lookup at phrase-end cadence.
+ */
+function vaultMotifSnapReceiptsForGuard(
+  context: CompositionContext,
+  localSnapReceipts?: readonly DuoVaultMotifSnapReceipt[],
+): readonly DuoVaultMotifSnapReceipt[] | undefined {
+  const meta = context.generationMetadata?.duoVaultMotifSnapReceipts;
+  const local = localSnapReceipts?.length ? localSnapReceipts : undefined;
+  if (!local?.length && !meta?.length) return undefined;
+  if (!local?.length) return meta;
+  if (!meta?.length) return local;
+  return [...local, ...meta];
+}
+
+/** Skip pitch mutation on vault-receipt or vault-declined v1 motif notes (4b.3 / Stage 5.1). */
+function vaultMotifPitchMutationSkipForV1Note(
   bar: number,
   v1SortedNoteIndex: number,
-  context: CompositionContext
+  context: CompositionContext,
+  localSnapReceipts?: readonly DuoVaultMotifSnapReceipt[],
 ): boolean {
   if (!isStandardGuitarBassDuo(context.presetId)) return false;
-  const receipts = context.generationMetadata?.duoVaultMotifSnapReceipts;
+  const receipts = vaultMotifSnapReceiptsForGuard(context, localSnapReceipts);
   const declined = context.generationMetadata?.duoVaultDeclinedNotes;
   if (!receipts?.length && !declined?.length) return false;
   if (receipts?.some((r) => r.bar === bar && r.noteIndex === v1SortedNoteIndex)) return true;
   if (declined?.some((d) => d.bar === bar && d.noteIndex === v1SortedNoteIndex)) return true;
   return false;
+}
+
+/** Stage 4a.1 — skip Slonimsky pitch overwrite on vault-receipt or vault-declined motif notes (4b.3). */
+function slonimskySkipForVaultMotifNote(
+  bar: number,
+  v1SortedNoteIndex: number,
+  context: CompositionContext,
+): boolean {
+  return vaultMotifPitchMutationSkipForV1Note(bar, v1SortedNoteIndex, context);
 }
 
 /** Stage 4d.1 — skip cadence snap when phrase-end note is vault-receipt or vault-declined motif (4b.3). */
@@ -2437,17 +2466,12 @@ function cadenceSnapSkipForVaultMotifNote(
   m: MeasureModel,
   noteEventIdx: number,
   context: CompositionContext,
-  snapReceipts?: readonly DuoVaultMotifSnapReceipt[]
+  snapReceipts?: readonly DuoVaultMotifSnapReceipt[],
 ): boolean {
-  const receipts = snapReceipts ?? context.generationMetadata?.duoVaultMotifSnapReceipts;
-  const declined = context.generationMetadata?.duoVaultDeclinedNotes;
-  if (!receipts?.length && !declined?.length) return false;
   const v1Idxs = sortedV1NoteEventIndicesForCadence(m);
   const motifNoteIndex = v1Idxs.indexOf(noteEventIdx);
   if (motifNoteIndex < 0) return false;
-  if (receipts?.some((r) => r.bar === bar && r.noteIndex === motifNoteIndex)) return true;
-  if (declined?.some((d) => d.bar === bar && d.noteIndex === motifNoteIndex)) return true;
-  return false;
+  return vaultMotifPitchMutationSkipForV1Note(bar, motifNoteIndex, context, snapReceipts);
 }
 
 /**
@@ -8017,9 +8041,11 @@ export function generateGoldenPathDuoScore(
           const effectiveHigh = Math.min(79, zHigh);
           nudgeMeasureConsecutiveDuplicateV1Pitches(
             gm,
+            bar,
             resolveBarSymbol(context, bar).symbol,
             effectiveLow,
             effectiveHigh,
+            context,
           );
         }
       }

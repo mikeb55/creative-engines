@@ -18,8 +18,10 @@ Canonical staged plan for wiring Tonality Vault into the `guitar_bass_duo` harmo
 | **4d.1 — phrase-end cadence** | **DONE (2026-07-01).** **`duoEnforcePhraseEndCadence`** uses **`phraseFillTonesFromVaultResolver`** on standard duo; skips pitch snap on 4b.3 vault-receipt / declined motif notes at phrase end. Proof: **50021** / **50213** baseline interval PASS; **80001** P1 golden PASS; **`duoIdentityV32`** cadence area PASS. |
 | **4d.2 — orchestration snap** | **DONE (2026-07-01).** Shared **`snapGuitarPitchToChordWindow`**; **`snapGuitarToChord`** vault-aware on category-3 notes (no receipt/decline). **4b.3** receipt-skip + declined register-only **unchanged**. **Telemetry note (benign, not regression):** seed **50021** `vaultSnapFired` **28→21**, `duoVaultDeclinedNotes` **+7** — **`barPasses4b1MotifIntervalContract`** sim at `:4572` now matches vault orchestration snap; fewer interval-gate commits, **not** reduced orchestration vault reach. All regression suites **PASS**. |
 | **4d.3 — global leap repair** | **DONE (2026-07-01).** **`vaultMelodyPitchesInRange`** + **`strictEnforceGlobalLeaps`** / **`resolvePitchTowardPrev`** vault pool on standard duo; receipt/declined skip (4b.3). Bass leap repair unchanged. **Telemetry:** fired/declined/survival **unchanged** vs post-4d.2 on **50021** / **50213** (leap repair post-`:4572`, no interval-gate sim shift). All regression suites **PASS**. |
-| **4d.4+ — remaining legacy snap sites** | **NEXT.** Identity/closing nudges (`emitGuitarDuoIdentityBar7`, `applyLateClosingGuitarContourNudge`, `nudgeDuoGuitarPhraseEndsForVariety`), v2 Wyble vault-awareness (**`KNOWN_VAULT_HOOK_EMIT_RESIDUAL`** PC **9**), Stage 5 standing vault-fired test. |
-| **Stages 5–8** | Unchanged backlog. |
+| **4d.4+ — remaining legacy snap sites** | **NEXT.** Identity/closing nudges (`emitGuitarDuoIdentityBar7`, `applyLateClosingGuitarContourNudge`, `nudgeDuoGuitarPhraseEndsForVariety`), v2 Wyble vault-awareness (**`KNOWN_VAULT_HOOK_EMIT_RESIDUAL`** PC **9**). |
+| **5.1 — unified vault-pitch guards + cadence receipt fix** | **DONE (2026-07-02).** **`vaultMotifSnapReceiptsForGuard`** + **`vaultMotifPitchMutationSkipForV1Note`**; cadence empty-`[]` bug fixed; duplicate-pitch nudge guarded. v2 Wyble deferred to **5.4**. Proof: **50021** / **50213** regression suites **PASS**. |
+| **5.2 — final vault re-snap + standing test** | **NEXT.** |
+| **Stages 5.3–8** | Unchanged backlog. |
 
 **Out of scope (explicit):** Reharm-style rich voicings (upper-structure / quadratonic chord stacks, dense colour voicings) are **OUT OF SCOPE** for the duo golden-path vault workstream. That belongs to the separate **Tonality Vault chart / Reharm** product (`generateReharmCandidates`, Chord Inspector, paste/iReal/PDF vault lane) and is **untouched** by this roadmap. Duo vault here = **motif pitch-class authority** via `resolveDuoHarmonyForSymbol` at `:4572`, not chart reharm voicing export.
 
@@ -117,10 +119,15 @@ Mirrors the honesty model of **`KNOWN_VAULT_LIFT_BREAKS`** in **`baselineMotifIn
 
 **Emit truth (seed 50021, GP receipts):** v1 **`[64, 72, 76, 72]`** at hook emit — vault PCs **`{4, 0, 4, 0}`** ⊆ **`{0, 4, 7}`**; **4** bar-1 receipts at noteIndex **0–3**. Post-**4a.1** v1 bar 1 holds vault PCs on tagged indices; v2 may still carry PC **9**.
 
-- **Stage 5 — Standing "vault-fired" regression test (NEW; catches inert swaps).**
-  - CI-level test asserting that on a representative `guitar_bass_duo` baseline seed, vault-derived pitch classes **APPEAR IN THE FINAL SCORED** guitar v1 notes — checked at the emitted-score seam, **AFTER** all downstream re-computers (cadence snap, orchestration, leap-repair), not merely that `resolveDuoHarmonyForSymbol` was called.
-  - **FAILS if:** the vault branch never executes, **OR** vault tones are computed but overwritten before final emission (the exact Stage 3 dormancy case GCE + smoke tests did **NOT** catch).
-  - Coverage: both motif emission (4b) and phrase-fill site (`emitGuitarPhraseBar` line 261).
+- **Stage 5.1 — Unified vault-pitch guards + cadence receipt fix (DONE; 2026-07-02).**
+  - Files: **`generateGoldenPathDuoScore.ts`** — **`vaultMotifSnapReceiptsForGuard`**, **`vaultMotifPitchMutationSkipForV1Note`**; **`cadenceSnapSkipForVaultMotifNote`** / **`slonimskySkipForVaultMotifNote`** delegate to shared skip; **`nudgeMeasureConsecutiveDuplicateV1Pitches`** guarded post-orchestration (bars **1–8**).
+  - Shipped: empty in-loop **`duoVaultMotifSnapReceipts`** no longer blocks metadata hook receipts at phrase-end cadence; duplicate-pitch legacy snap skips receipt/declined v1 notes.
+  - Out of scope: v2 Wyble (**5.4**); final vault re-snap (**5.2**).
+  - Proof: **`baselineMotifIntervalIdentity`** **50021** / **50213**, **`songModeRegressionBaseline`**, **`duoIdentityV32`**, **`sectionArchitectureP1Golden`**, **`duoVaultHarmony.smoke`** **PASS**.
+- **Stage 5.2 — Final vault re-snap + standing "vault-fired" regression test (NEXT).**
+  - CI-level test asserting vault PCs **appear in final scored** guitar v1 after all downstream passes.
+  - **FAILS if:** vault branch never executes, **OR** vault tones overwritten before final emission.
+  - Coverage: motif emission (4b) and phrase-fill site (`emitGuitarPhraseBar`).
 - **Stage 6 — Advanced chords + fallback policy.**
   - Extend vault handling to maj7#11, altered dominants, dense color chords.
   - Define explicit fallback policy for symbols with no clean mapping (phantom sevenths, odd add9s from Stage 1): vault either constrains to a safe reduced set or declines with a bounded, documented fallback.
