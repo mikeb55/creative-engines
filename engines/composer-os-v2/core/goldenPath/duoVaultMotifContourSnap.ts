@@ -735,6 +735,31 @@ export function applyPerNoteVaultMotifPlacement(
   return { finalMidis, receipts: committedReceipts, contourNullReturns };
 }
 
+/**
+ * Stage 4b.2 snap exclusion for canonical builtin-cycle **G13** (bars 3–4 of the default 8-bar duo plan).
+ *
+ * `chordSymbolMapper` maps bare quality `13` → vault `13#11#9` for Inspector / iReal / paste import.
+ * Golden-path generation intentionally keeps **legacy snap-off** on that symbol until a deliberate vault-snap
+ * policy mini-project (see `docs/DUO_VAULT_ROADMAP.md` — deferred Option 1). Enabling snap on builtin G13
+ * fails 2/23 `duoIdentityV32` stress seeds on existing behaviour gates (seeds 22, 25).
+ *
+ * **Known deliberate inconsistency:** `7` / `dom7` → same vault id and **do** vault-snap when they appear on a
+ * generation path; only canonical builtin **G13** is excluded here — scope limit, not an oversight.
+ *
+ * Custom / `custom_locked` progressions with user **G13** are **not** excluded (user chord semantics).
+ */
+export function isBuiltinGoldenPathG13MotifSnapExcluded(
+  motifChord: string,
+  context: CompositionContext,
+): boolean {
+  if (!/^G13$/i.test(motifChord.trim())) return false;
+  const md = context.generationMetadata;
+  if (md?.customHarmonyLocked) return false;
+  if (md?.harmonySource === 'custom') return false;
+  if (context.lockedHarmonyBarsRaw?.length) return false;
+  return true;
+}
+
 export function shouldApplyDuoVaultMotifContourSnap(
   presetId: string | undefined,
   hookRuntimeActive: boolean,

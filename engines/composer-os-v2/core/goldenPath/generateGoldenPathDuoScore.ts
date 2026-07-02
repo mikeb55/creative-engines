@@ -651,6 +651,7 @@ import {
   applyDuoVaultFinalResnapPass,
   applyPerNoteVaultMotifPlacement,
   computeDuoVaultMotifSurvivalTelemetry,
+  isBuiltinGoldenPathG13MotifSnapExcluded,
   shouldApplyDuoVaultMotifContourSnap,
   snapMotifBarToVaultContour,
   stampPostOrchestrationMidiOnVaultReceipts,
@@ -4721,8 +4722,13 @@ function buildGuitarPart(
         const motifChord = resolveBarSymbol(context, b).symbol;
         const lockedHarmony = chordToneOpts?.lockedHarmony ?? true;
         const harmonyProbe = resolveDuoHarmonyForSymbol(motifChord, { lockedHarmony });
-        if (harmonyProbe.source !== 'vault') {
-          duoVaultSourceFallbackNoteCount += motifNotes.length;
+        const skipVaultMotifSnapForBar =
+          harmonyProbe.source !== 'vault' ||
+          isBuiltinGoldenPathG13MotifSnapExcluded(motifChord, context);
+        if (skipVaultMotifSnapForBar) {
+          if (harmonyProbe.source !== 'vault') {
+            duoVaultSourceFallbackNoteCount += motifNotes.length;
+          }
         } else {
           const snap = snapMotifBarToVaultContour(
             motifNotes,

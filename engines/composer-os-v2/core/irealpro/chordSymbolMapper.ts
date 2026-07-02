@@ -94,6 +94,7 @@ const QUALITY_RULES: Rule[] = [
   { match: (s) => s === 'min' || s === 'm', vaultId: 'min9' },
   { match: (s) => s === '-', vaultId: 'min9' },
   { match: (s) => s === '13#11' || s === '7#11', vaultId: '13#11#9' },
+  { match: (s) => s === '13', vaultId: '13#11#9' },
   { match: (s) => s === '13b9' || s === '7b9', vaultId: '13b9' },
   { match: (s) => s === '7#9#5' || s === '7alt', vaultId: '7#9#5' },
   { match: (s) => s === 'dom7' || s === '7', vaultId: '13#11#9' },
