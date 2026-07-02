@@ -20,6 +20,8 @@ import type {
   MeasureModel,
 } from '../score-model/scoreModelTypes';
 import type { SongModeHookIdentity } from '../motif/motifEngineTypes';
+import type { CompositionContext } from '../compositionContext';
+import { vaultMotifPitchMutationSkipForV1Note, v1SortedNoteIndexForEvent } from './duoVaultMotifContourSnap';
 
 /** Short melodic/rhythmic fragment candidate. */
 export type MotifContour = 'up' | 'down' | 'arch' | 'flat';
@@ -154,14 +156,16 @@ interface NoteRef {
   ei: number;
 }
 
-function collectSortedNoteRefs(part: PartModel, startBar: number, endBar: number): NoteRef[] {
+function collectSortedNoteRefs(part: PartModel, startBar: number, endBar: number, voice = 0): NoteRef[] {
   const refs: NoteRef[] = [];
   for (let mi = 0; mi < part.measures.length; mi++) {
     const m = part.measures[mi]!;
     if (m.index < startBar || m.index > endBar) continue;
     for (let ei = 0; ei < m.events.length; ei++) {
       const ev = m.events[ei]!;
-      if (isNoteEvent(ev)) refs.push({ mi, ei });
+      if (!isNoteEvent(ev)) continue;
+      if (voice > 0 && (ev.voice ?? 1) !== voice) continue;
+      refs.push({ mi, ei });
     }
   }
   refs.sort((a, b) => {
@@ -295,7 +299,15 @@ function enforceContourTwoNotes(
 }
 
 /** Bars 1–16: same literal opening chain at anchors 1 / 5 / 9 / 13 (recurrence across the A section). */
-export function applyMotifToASection(part: PartModel, primary: MutationMotifCell): PartModel {
+export function applyMotifToASection(
+  part: PartModel,
+  primary: MutationMotifCell,
+  context?: CompositionContext,
+  vaultPitchLock?: boolean,
+): PartModel {
+  if (vaultPitchLock && (context?.generationMetadata?.duoVaultMotifSnapReceipts?.length ?? 0) > 0) {
+    return part;
+  }
   const out = clonePartModel(part);
   const anchors = [1, 5, 9, 13];
   const pcs = primary.pitchClasses;
@@ -306,7 +318,7 @@ export function applyMotifToASection(part: PartModel, primary: MutationMotifCell
   const aBand = registerBandForTrebleMotif(primary.registerBand, out);
 
   for (const bar of anchors) {
-    const refs = collectSortedNoteRefs(out, bar, bar);
+    const refs = collectSortedNoteRefs(out, bar, bar, 1);
     if (refs.length === 0) continue;
 
     if (sharedChain === undefined) {
@@ -323,6 +335,7 @@ export function applyMotifToASection(part: PartModel, primary: MutationMotifCell
 
     const maxNotes = Math.min(sharedChain!.length, refs.length);
     for (let i = 0; i < maxNotes; i++) {
+      if (context && vaultMotifPitchMutationSkipForV1Note(bar, i, context)) continue;
       const r = refs[i]!;
       const ev = out.measures[r.mi]!.events[r.ei] as NoteEvent;
       out.measures[r.mi]!.events[r.ei] = { ...ev, pitch: sharedChain![i]! };
@@ -333,6 +346,10 @@ export function applyMotifToASection(part: PartModel, primary: MutationMotifCell
 
 export interface PhraseEngineV2ApplyOptions {
   seed?: number;
+  /** When set, vault-receipt / declined motif notes skip pitch mutation (Stage 5.2). */
+  context?: CompositionContext;
+  /** When true with vault receipts on score, skip all pitch edits (rhythm-only recall). */
+  vaultPitchLock?: boolean;
 }
 
 /**
@@ -413,7 +430,11 @@ export function applyPhraseEngineV2(
   opts?: PhraseEngineV2ApplyOptions
 ): PartModel {
   let out = clonePartModel(part);
-  const refs = collectSortedNoteRefs(out, PHRASE_ENGINE_V2_DEVELOPMENT_LO, PHRASE_ENGINE_V2_DEVELOPMENT_HI);
+  const context = opts?.context;
+  const vaultPitchLock =
+    opts?.vaultPitchLock === true &&
+    (context?.generationMetadata?.duoVaultMotifSnapReceipts?.length ?? 0) > 0;
+  const refs = collectSortedNoteRefs(out, PHRASE_ENGINE_V2_DEVELOPMENT_LO, PHRASE_ENGINE_V2_DEVELOPMENT_HI, 1);
 
   for (const cell of pool.cells) {
     if (cell.weight <= 0) continue;
@@ -428,7 +449,11 @@ export function applyPhraseEngineV2(
       if (!durationsMatchFigure(notes, pattern)) continue;
 
       for (let j = 0; j < patLen; j++) {
+        if (vaultPitchLock) continue;
         const r = slice[j]!;
+        const m = out.measures[r.mi]!;
+        const v1Idx = v1SortedNoteIndexForEvent(m, r.ei);
+        if (context && v1Idx >= 0 && vaultMotifPitchMutationSkipForV1Note(m.index, v1Idx, context)) continue;
         const ev = out.measures[r.mi]!.events[r.ei] as NoteEvent;
         const nextPitch = stepTowardPitch(ev.pitch, targets[j]!);
         out.measures[r.mi]!.events[r.ei] = { ...ev, pitch: nextPitch };
@@ -459,11 +484,12 @@ export function applyPhraseEngineV2(
     let sharedDevOpeningChain: number[] | undefined;
     for (const phraseStart of devStarts) {
       const phraseEnd = phraseStart + PHRASE_ENGINE_V2_PHRASE_BARS - 1;
-      const phraseRefs = collectSortedNoteRefs(out, phraseStart, phraseEnd);
+      const phraseRefs = collectSortedNoteRefs(out, phraseStart, phraseEnd, 1);
       if (phraseRefs.length === 0) continue;
 
       const mutated = mutatedShared;
 
+      if (!vaultPitchLock) {
       /** Primary spine/PC so B-section openings match A-section literal motif (GCE sliding-window recurrence). */
       const anchorPc =
         primary.pitchClasses.length > 0
@@ -494,6 +520,9 @@ export function applyPhraseEngineV2(
         const kMax = Math.min(4, chain.length, phraseRefs.length);
         for (let i = 0; i < kMax; i++) {
           const r = phraseRefs[i]!;
+          const m = out.measures[r.mi]!;
+          const v1Idx = v1SortedNoteIndexForEvent(m, r.ei);
+          if (context && v1Idx >= 0 && vaultMotifPitchMutationSkipForV1Note(m.index, v1Idx, context)) continue;
           let pitch = chain[i]!;
           if (registerBandFromMidi(pitch) !== band) {
             console.warn(
@@ -507,13 +536,23 @@ export function applyPhraseEngineV2(
       } else if (phraseRefs.length >= 2) {
         const r0 = phraseRefs[0]!;
         const r1 = phraseRefs[1]!;
-        const ev0 = out.measures[r0.mi]!.events[r0.ei] as NoteEvent;
-        const ev1 = out.measures[r1.mi]!.events[r1.ei] as NoteEvent;
-        let [np0, np1] = enforceContourTwoNotes(ev0.pitch, ev1.pitch, mutated.contourCode);
-        np0 = clampMidiToRegisterBand(np0, band);
-        np1 = clampMidiToRegisterBand(np1, band);
-        out.measures[r0.mi]!.events[r0.ei] = { ...ev0, pitch: np0 };
-        out.measures[r1.mi]!.events[r1.ei] = { ...ev1, pitch: np1 };
+        const m0 = out.measures[r0.mi]!;
+        const m1 = out.measures[r1.mi]!;
+        const v1Idx0 = v1SortedNoteIndexForEvent(m0, r0.ei);
+        const v1Idx1 = v1SortedNoteIndexForEvent(m1, r1.ei);
+        const skip0 =
+          context && v1Idx0 >= 0 && vaultMotifPitchMutationSkipForV1Note(m0.index, v1Idx0, context);
+        const skip1 =
+          context && v1Idx1 >= 0 && vaultMotifPitchMutationSkipForV1Note(m1.index, v1Idx1, context);
+        if (!skip0 || !skip1) {
+          const ev0 = out.measures[r0.mi]!.events[r0.ei] as NoteEvent;
+          const ev1 = out.measures[r1.mi]!.events[r1.ei] as NoteEvent;
+          let [np0, np1] = enforceContourTwoNotes(ev0.pitch, ev1.pitch, mutated.contourCode);
+          np0 = clampMidiToRegisterBand(np0, band);
+          np1 = clampMidiToRegisterBand(np1, band);
+          if (!skip0) out.measures[r0.mi]!.events[r0.ei] = { ...ev0, pitch: np0 };
+          if (!skip1) out.measures[r1.mi]!.events[r1.ei] = { ...ev1, pitch: np1 };
+        }
       }
 
       const motifPcs = [...new Set([...primary.pitchClasses, ...mutated.pitchClasses])];
@@ -526,26 +565,36 @@ export function applyPhraseEngineV2(
         const ratio = matchCount / phraseRefs.length;
         if (ratio < MOTIF_PHRASE_MATCH_QUOTA) {
           const lastR = phraseRefs[phraseRefs.length - 1]!;
-          const lev = out.measures[lastR.mi]!.events[lastR.ei] as NoteEvent;
-          const goalPc = motifPcs[0]!;
-          let newP = nearestMidiCarryingPc(lev.pitch, goalPc);
-          newP = clampMidiToRegisterBand(newP, band);
-          out.measures[lastR.mi]!.events[lastR.ei] = { ...lev, pitch: newP };
+          const mLast = out.measures[lastR.mi]!;
+          const v1LastIdx = v1SortedNoteIndexForEvent(mLast, lastR.ei);
+          if (!(context && v1LastIdx >= 0 && vaultMotifPitchMutationSkipForV1Note(mLast.index, v1LastIdx, context))) {
+            const lev = out.measures[lastR.mi]!.events[lastR.ei] as NoteEvent;
+            const goalPc = motifPcs[0]!;
+            let newP = nearestMidiCarryingPc(lev.pitch, goalPc);
+            newP = clampMidiToRegisterBand(newP, band);
+            out.measures[lastR.mi]!.events[lastR.ei] = { ...lev, pitch: newP };
+          }
         }
       }
+      }
 
+      if (!vaultPitchLock) {
       for (const r of phraseRefs) {
+        const m = out.measures[r.mi]!;
+        const v1Idx = v1SortedNoteIndexForEvent(m, r.ei);
+        if (context && v1Idx >= 0 && vaultMotifPitchMutationSkipForV1Note(m.index, v1Idx, context)) continue;
         const evn = out.measures[r.mi]!.events[r.ei] as NoteEvent;
-        const m = evn.pitch;
-        if (registerBandFromMidi(m) !== band) {
+        const pv = evn.pitch;
+        if (registerBandFromMidi(pv) !== band) {
           console.warn(
-            `[PhraseEngineV2] register drift phrase=${phraseStart} bar=${out.measures[r.mi]!.index} midi=${m} band=${band}`
+            `[PhraseEngineV2] register drift phrase=${phraseStart} bar=${out.measures[r.mi]!.index} midi=${pv} band=${band}`
           );
           out.measures[r.mi]!.events[r.ei] = {
             ...evn,
-            pitch: clampMidiToRegisterBand(m, band),
+            pitch: clampMidiToRegisterBand(pv, band),
           };
         }
+      }
       }
     }
   }

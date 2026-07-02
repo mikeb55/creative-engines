@@ -180,4 +180,8 @@ export interface DuoVaultMotifSurvivalTelemetryEcho {
   vaultSourceFallback: number;
   contourNullReturns: number;
   survivedOverFiredRatio: number;
+  /** Stage 5.2 — final re-snap safety net (0 = upstream guards sufficient). */
+  reSnapCorrectionsNeeded?: number;
+  reSnapAlreadyCompliant?: number;
+  reSnapDeclinedNotesChecked?: number;
 }

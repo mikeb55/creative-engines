@@ -647,10 +647,13 @@ import { applyDuoPitchVariationToGuitar } from './duoPitchVariationPass';
 import { applyECMShapingPass } from './ecmShapingPass';
 import { applyDuoOrchestrationPass } from './duoOrchestrationPass';
 import {
+  applyDuoVaultFinalResnapPass,
   applyPerNoteVaultMotifPlacement,
   computeDuoVaultMotifSurvivalTelemetry,
   shouldApplyDuoVaultMotifContourSnap,
   snapMotifBarToVaultContour,
+  stampPostOrchestrationMidiOnVaultReceipts,
+  vaultMotifPitchMutationSkipForV1Note,
   type DuoVaultMotifSnapReceipt,
 } from './duoVaultMotifContourSnap';
 import { resolveDuoHarmonyForSymbol } from '../harmony/duoVaultHarmony';
@@ -2417,38 +2420,6 @@ function sortedV1NoteEventIndicesForCadence(m: MeasureModel): number[] {
   });
   entries.sort((a, b) => a.startBeat - b.startBeat);
   return entries.map(({ eventIdx }) => eventIdx);
-}
-
-/**
- * Stage 5.1 — merge in-loop motif receipts with metadata (hook emit).
- * Empty local `[]` is not authoritative; must not block metadata lookup at phrase-end cadence.
- */
-function vaultMotifSnapReceiptsForGuard(
-  context: CompositionContext,
-  localSnapReceipts?: readonly DuoVaultMotifSnapReceipt[],
-): readonly DuoVaultMotifSnapReceipt[] | undefined {
-  const meta = context.generationMetadata?.duoVaultMotifSnapReceipts;
-  const local = localSnapReceipts?.length ? localSnapReceipts : undefined;
-  if (!local?.length && !meta?.length) return undefined;
-  if (!local?.length) return meta;
-  if (!meta?.length) return local;
-  return [...local, ...meta];
-}
-
-/** Skip pitch mutation on vault-receipt or vault-declined v1 motif notes (4b.3 / Stage 5.1). */
-function vaultMotifPitchMutationSkipForV1Note(
-  bar: number,
-  v1SortedNoteIndex: number,
-  context: CompositionContext,
-  localSnapReceipts?: readonly DuoVaultMotifSnapReceipt[],
-): boolean {
-  if (!isStandardGuitarBassDuo(context.presetId)) return false;
-  const receipts = vaultMotifSnapReceiptsForGuard(context, localSnapReceipts);
-  const declined = context.generationMetadata?.duoVaultDeclinedNotes;
-  if (!receipts?.length && !declined?.length) return false;
-  if (receipts?.some((r) => r.bar === bar && r.noteIndex === v1SortedNoteIndex)) return true;
-  if (declined?.some((d) => d.bar === bar && d.noteIndex === v1SortedNoteIndex)) return true;
-  return false;
 }
 
 /** Stage 4a.1 — skip Slonimsky pitch overwrite on vault-receipt or vault-declined motif notes (4b.3). */
@@ -5507,18 +5478,25 @@ function buildGuitarPart(
     measures,
   };
   if (isDuoGoldenPath && context.presetId !== 'ecm_chamber') {
-    applyPhraseVariationPass(guitarPartDraft, context, seed);
+    applyPhraseVariationPass(guitarPartDraft, context, seed, duoVaultMotifSnapReceipts);
   }
   if (
     isStandardGuitarBassDuo(context.presetId) &&
     context.generationMetadata &&
     context.generationMetadata.duoVaultMotifEnabled !== false
   ) {
-    /** Hook path pushes receipts at emit into metadata; baseline path uses local array — merge both. */
+    /** Hook path pushes receipts at emit into metadata; baseline path uses local array — merge with orchestration winning on bar:noteIndex. */
     const hookEmitReceipts = context.generationMetadata.duoVaultMotifSnapReceipts ?? [];
+    const mergedReceipts = new Map<string, DuoVaultMotifSnapReceipt>();
+    for (const r of hookEmitReceipts) {
+      mergedReceipts.set(`${r.bar}:${r.noteIndex}`, r);
+    }
+    for (const r of duoVaultMotifSnapReceipts) {
+      mergedReceipts.set(`${r.bar}:${r.noteIndex}`, r);
+    }
     context.generationMetadata = {
       ...context.generationMetadata,
-      duoVaultMotifSnapReceipts: [...hookEmitReceipts, ...duoVaultMotifSnapReceipts],
+      duoVaultMotifSnapReceipts: [...mergedReceipts.values()],
       duoVaultSourceFallbackNoteCount,
       duoVaultContourNullReturns,
     };
@@ -8056,7 +8034,14 @@ export function generateGoldenPathDuoScore(
     context.generationMetadata &&
     context.generationMetadata.duoVaultMotifEnabled !== false
   ) {
-    const snapReceipts = context.generationMetadata.duoVaultMotifSnapReceipts ?? [];
+    const snapReceipts = stampPostOrchestrationMidiOnVaultReceipts(
+      afterExpressive,
+      context.generationMetadata.duoVaultMotifSnapReceipts ?? [],
+    );
+    context.generationMetadata = {
+      ...context.generationMetadata,
+      duoVaultMotifSnapReceipts: snapReceipts,
+    };
     const fallbackNotes = context.generationMetadata.duoVaultSourceFallbackNoteCount ?? 0;
     const contourNull = context.generationMetadata.duoVaultContourNullReturns ?? 0;
     const telemetry = computeDuoVaultMotifSurvivalTelemetry(
@@ -8134,7 +8119,13 @@ export function generateGoldenPathDuoScore(
     if (gSong) {
       applySongModeMelodicContinuityPass(gSong, context);
       applySongModePhraseEndLandingRepair(gSong, context);
-      applySongModeGuitarDensityFloor(gSong, context);
+      const vaultMotifDensitySkip =
+        isStandardGuitarBassDuo(context.presetId) &&
+        (context.generationMetadata?.duoVaultMotifSnapReceipts?.length ?? 0) > 0 &&
+        context.generationMetadata?.duoVaultMotifEnabled !== false;
+      if (!vaultMotifDensitySkip) {
+        applySongModeGuitarDensityFloor(gSong, context);
+      }
       applySongModePhraseEndLandingRepair(gSong, context);
     }
   }
@@ -8202,10 +8193,16 @@ export function generateGoldenPathDuoScore(
     applyFrankZappaImpliedInnerVoicePass(afterExpressive, context);
   }
   stampAllMeasuresBeatSpansFromContext(afterExpressive, context);
-  applyVoiceBundleVoicingSpreadFloor(afterExpressive, context);
-  applyVoiceBundleRepairReceipt(afterExpressive, context);
-  applyVoiceBundleParallelRepairPass(afterExpressive, context);
-  applyVoiceBundleOverlapMitigation(afterExpressive, context);
+  const vaultMotifVoiceBundleSkip =
+    isStandardGuitarBassDuo(context.presetId) &&
+    (context.generationMetadata?.duoVaultMotifSnapReceipts?.length ?? 0) > 0 &&
+    context.generationMetadata?.duoVaultMotifEnabled !== false;
+  if (!vaultMotifVoiceBundleSkip) {
+    applyVoiceBundleVoicingSpreadFloor(afterExpressive, context);
+    applyVoiceBundleRepairReceipt(afterExpressive, context);
+    applyVoiceBundleParallelRepairPass(afterExpressive, context);
+    applyVoiceBundleOverlapMitigation(afterExpressive, context);
+  }
   /** Last pitch pass before seal — GCE melodicIdentity reads final guitar MIDI. */
   if (
     context.generationMetadata?.songModeHookFirstIdentity === true &&
@@ -8228,8 +8225,14 @@ export function generateGoldenPathDuoScore(
       }
       const primaryMotif = primaryMutationCellFromPool(motifPool);
       const guitarAfterA =
-        primaryMotif !== undefined ? applyMotifToASection(gPhraseV2, primaryMotif) : gPhraseV2;
-      const guitarPhraseV2 = applyPhraseEngineV2(guitarAfterA, motifPool, { seed: context.seed ?? 0 });
+        primaryMotif !== undefined
+          ? applyMotifToASection(gPhraseV2, primaryMotif, context, true)
+          : gPhraseV2;
+      const guitarPhraseV2 = applyPhraseEngineV2(guitarAfterA, motifPool, {
+        seed: context.seed ?? 0,
+        context,
+        vaultPitchLock: true,
+      });
       const pi = afterExpressive.parts.indexOf(gPhraseV2);
       if (pi >= 0) afterExpressive.parts[pi] = guitarPhraseV2;
       const bPhraseV2 = afterExpressive.parts.find((p) => p.id === 'bass');
@@ -8264,7 +8267,13 @@ export function generateGoldenPathDuoScore(
     }
   }
   grooveScaffoldPass(afterExpressive, context, context.song);
-  finalizeAndSealDuoScoreBarMath(afterExpressive, context.presetId);
+  const duoVaultFinalReSnapTelemetry = finalizeAndSealDuoScoreBarMath(afterExpressive, context.presetId, {
+    vaultFinalResnap:
+      isStandardGuitarBassDuo(context.presetId) &&
+      context.generationMetadata?.duoVaultMotifEnabled !== false
+        ? (s) => applyDuoVaultFinalResnapPass(s, context)
+        : undefined,
+  });
   if (zappaFerocitySoloLane && context.generationMetadata?.soloLine) {
     afterExpressive = mergeZappaSoloPart(afterExpressive, context.generationMetadata.soloLine);
     const zappaSoloPart = afterExpressive.parts.find((p) => p.id === 'zappa_solo');
@@ -8371,6 +8380,34 @@ export function generateGoldenPathDuoScore(
   logEcmInternalPhaseProbe(probeEcm, 'before_return_score', afterExpressive);
   if (context.harmonyContext) {
     assertGuitarScoreMatchesHarmonyContext(afterExpressive, context, 'before_return_generateGoldenPathDuoScore');
+  }
+  if (
+    isStandardGuitarBassDuo(context.presetId) &&
+    context.generationMetadata &&
+    context.generationMetadata.duoVaultMotifEnabled !== false
+  ) {
+    const reSnapTelemetry = duoVaultFinalReSnapTelemetry ?? {
+      correctionsNeeded: 0,
+      alreadyCompliant: 0,
+      declinedNotesChecked: 0,
+      byBar: [],
+    };
+    const snapReceipts = context.generationMetadata.duoVaultMotifSnapReceipts ?? [];
+    const fallbackNotes = context.generationMetadata.duoVaultSourceFallbackNoteCount ?? 0;
+    const contourNull = context.generationMetadata.duoVaultContourNullReturns ?? 0;
+    const telemetry = computeDuoVaultMotifSurvivalTelemetry(
+      afterExpressive,
+      snapReceipts,
+      context,
+      context.seed,
+      contourNull,
+      fallbackNotes,
+      reSnapTelemetry,
+    );
+    context.generationMetadata = {
+      ...context.generationMetadata,
+      duoVaultMotifSurvivalTelemetry: telemetry,
+    };
   }
   return afterExpressive;
 }

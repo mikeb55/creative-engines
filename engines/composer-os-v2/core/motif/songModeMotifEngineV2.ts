@@ -672,6 +672,7 @@ function appendHookVaultEmitSnapReceipts(
   context: CompositionContext,
   bar: number,
   pitches: number[],
+  rhythm: readonly { start: number; dur: number }[],
   chord: string,
   chordToneOpts?: ChordTonesOptions
 ): void {
@@ -684,6 +685,8 @@ function appendHookVaultEmitSnapReceipts(
   const newReceipts: DuoVaultMotifSnapReceipt[] = pitches.map((pitch, noteIndex) => ({
     bar,
     noteIndex,
+    startBeat:
+      rhythm[noteIndex] !== undefined ? snapAttackBeatToGrid(rhythm[noteIndex]!.start) : undefined,
     vaultPcChosen: normalizeHookVaultPc(pitch),
     vaultSource: res.source,
     plPitch: pitch,
@@ -751,7 +754,7 @@ function emitMeasureFromPitches(
   }
   if (sum < 4 - 1e-4) addEvent(m, createRest(sum, 4 - sum));
   if (poolSource === 'vault') {
-    appendHookVaultEmitSnapReceipts(context, bar, pitches.slice(0, n), chord, chordToneOpts);
+    appendHookVaultEmitSnapReceipts(context, bar, pitches.slice(0, n), rhythm.slice(0, n), chord, chordToneOpts);
   }
 }
 

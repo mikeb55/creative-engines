@@ -6,8 +6,9 @@ import type { CompositionContext } from '../compositionContext';
 import type { DuoHarmonySource } from '../harmony/duoVaultHarmony';
 import { resolveDuoHarmonyForSymbol } from '../harmony/duoVaultHarmony';
 import type { MotifNote } from '../motif/motifTypes';
+import { isProtectedBar } from '../score-integrity/identityLock';
 import { isStandardGuitarBassDuo } from '../presets/guitarBassDuoPresetIds';
-import type { ScoreModel, MeasureModel } from '../score-model/scoreModelTypes';
+import type { NoteEvent, ScoreModel, MeasureModel } from '../score-model/scoreModelTypes';
 import { snapGuitarPitchToChordWindow } from './guitarPhraseAuthority';
 import { clampPitch, seededUnit } from './guitarBassDuoHarmony';
 import { resolveChordForDuoPostPass } from '../harmony/harmonyResolution';
@@ -24,10 +25,14 @@ const LIFT_SECTION_B_GATE = 0.35;
 export interface DuoVaultMotifSnapReceipt {
   bar: number;
   noteIndex: number;
+  /** Voice-1 attack (beats); stable across finalize undotted expand (Stage 5.2). */
+  startBeat?: number;
   vaultPcChosen: number;
   vaultSource: DuoHarmonySource;
   plPitch: number;
   snappedMidi: number;
+  /** Post-orchestration v1 MIDI at receipt noteIndex — stable re-snap compliance seam (Stage 5.2). */
+  postOrchestrationMidi?: number;
 }
 
 /** Stage 4b.3 — vault contour evaluated but 4b.2 interval guard declined commit (metadata only). */
@@ -46,6 +51,22 @@ export interface DuoVaultMotifBarBaseline {
   effectiveHigh: number;
 }
 
+/** Stage 5.2 — per-bar final re-snap standing signal (after all overlays + finalize). */
+export interface DuoVaultReSnapBarTelemetry {
+  bar: number;
+  correctionsNeeded: number;
+  alreadyCompliant: number;
+  declinedNotesChecked: number;
+}
+
+/** Stage 5.2 — aggregate final vault re-snap pass (safety net; 0 corrections = guards sufficient). */
+export interface DuoVaultReSnapTelemetry {
+  correctionsNeeded: number;
+  alreadyCompliant: number;
+  declinedNotesChecked: number;
+  byBar: DuoVaultReSnapBarTelemetry[];
+}
+
 export interface DuoVaultMotifSurvivalTelemetry {
   vaultSnapFired: number;
   vaultPcSurvived: number;
@@ -54,6 +75,8 @@ export interface DuoVaultMotifSurvivalTelemetry {
   contourNullReturns: number;
   survivedOverFiredRatio: number;
   receipts: DuoVaultMotifSnapReceipt[];
+  /** Final-seam re-snap (Stage 5.2); standing regression expects correctionsNeeded === 0 on confidence seeds. */
+  reSnap: DuoVaultReSnapTelemetry;
 }
 
 export class DuoVaultMotifResolverFallbackError extends Error {
@@ -81,6 +104,50 @@ export class DuoVaultMotifContourStarvationError extends Error {
 
 function normalizePc(pc: number): number {
   return ((pc % 12) + 12) % 12;
+}
+
+/**
+ * Stage 5.1 — merge in-loop motif receipts with metadata (hook emit).
+ * Empty local `[]` is not authoritative; must not block metadata lookup at phrase-end cadence.
+ */
+export function vaultMotifSnapReceiptsForGuard(
+  context: CompositionContext,
+  localSnapReceipts?: readonly DuoVaultMotifSnapReceipt[],
+): readonly DuoVaultMotifSnapReceipt[] | undefined {
+  const meta = context.generationMetadata?.duoVaultMotifSnapReceipts;
+  const local = localSnapReceipts?.length ? localSnapReceipts : undefined;
+  if (!local?.length && !meta?.length) return undefined;
+  if (!local?.length) return meta;
+  if (!meta?.length) return local;
+  return [...local, ...meta];
+}
+
+/** Skip pitch mutation on vault-receipt or vault-declined v1 motif notes (4b.3 / Stage 5.1). */
+export function vaultMotifPitchMutationSkipForV1Note(
+  bar: number,
+  v1SortedNoteIndex: number,
+  context: CompositionContext,
+  localSnapReceipts?: readonly DuoVaultMotifSnapReceipt[],
+): boolean {
+  if (!isStandardGuitarBassDuo(context.presetId)) return false;
+  const receipts = vaultMotifSnapReceiptsForGuard(context, localSnapReceipts);
+  const declined = context.generationMetadata?.duoVaultDeclinedNotes;
+  if (!receipts?.length && !declined?.length) return false;
+  if (receipts?.some((r) => r.bar === bar && r.noteIndex === v1SortedNoteIndex)) return true;
+  if (declined?.some((d) => d.bar === bar && d.noteIndex === v1SortedNoteIndex)) return true;
+  return false;
+}
+
+/** Sorted voice-1 note index for an event in a measure (startBeat order). */
+export function v1SortedNoteIndexForEvent(m: MeasureModel, eventIdx: number): number {
+  const entries: { startBeat: number; eventIdx: number }[] = [];
+  m.events.forEach((e, idx) => {
+    if (e.kind === 'note' && ((e as { voice?: number }).voice ?? 1) === 1) {
+      entries.push({ startBeat: e.startBeat, eventIdx: idx });
+    }
+  });
+  entries.sort((a, b) => a.startBeat - b.startBeat);
+  return entries.findIndex(({ eventIdx: i }) => i === eventIdx);
 }
 
 /** Lift each vault melody pc into every octave within [low, high]. */
@@ -210,6 +277,24 @@ function sortedV1EventIndices(m: MeasureModel): number[] {
   return entries.map(({ eventIdx }) => eventIdx);
 }
 
+/** Stamp orch-era guitar v1 MIDI on each receipt after `applyDuoOrchestrationPass` (before C overlays / finalize). */
+export function stampPostOrchestrationMidiOnVaultReceipts(
+  score: ScoreModel,
+  receipts: readonly DuoVaultMotifSnapReceipt[],
+): DuoVaultMotifSnapReceipt[] {
+  const guitar = score.parts.find(
+    (p) => p.id === 'guitar' || p.instrumentIdentity === 'clean_electric_guitar',
+  );
+  if (!guitar || receipts.length === 0) return [...receipts];
+
+  return receipts.map((rec) => {
+    const measure = guitar.measures.find((m) => m.index === rec.bar);
+    if (!measure) return rec;
+    const midi = voice1PitchesForMeasure(measure)[rec.noteIndex];
+    return midi === undefined ? rec : { ...rec, postOrchestrationMidi: midi };
+  });
+}
+
 function pickNearestPoolMidi(targetMidi: number, pool: number[]): number {
   let best = pool[0]!;
   let bd = Math.abs(best - targetMidi);
@@ -307,6 +392,7 @@ export function snapMotifBarToVaultContour(
   receipts.push({
     bar,
     noteIndex: 0,
+    startBeat: sorted[0]!.startBeat,
     vaultPcChosen: normalizePc(curr),
     vaultSource: res.source,
     plPitch: sorted[0]!.pitch,
@@ -333,6 +419,7 @@ export function snapMotifBarToVaultContour(
     receipts.push({
       bar,
       noteIndex: i,
+      startBeat: sorted[i]!.startBeat,
       vaultPcChosen: normalizePc(curr),
       vaultSource: res.source,
       plPitch: sorted[i]!.pitch,
@@ -680,8 +767,172 @@ function expectedPitchAfterOrchestrationLift(
   return p;
 }
 
+const EMPTY_RE_SNAP_TELEMETRY: DuoVaultReSnapTelemetry = {
+  correctionsNeeded: 0,
+  alreadyCompliant: 0,
+  declinedNotesChecked: 0,
+  byBar: [],
+};
+
+function emptyReSnapTelemetry(): DuoVaultReSnapTelemetry {
+  return { ...EMPTY_RE_SNAP_TELEMETRY, byBar: [] };
+}
+
+function resolveReceiptV1Event(
+  measure: MeasureModel,
+  rec: DuoVaultMotifSnapReceipt,
+): { eventIdx: number; pitch: number } | undefined {
+  const eventIdxs = sortedV1EventIndices(measure);
+  const eventIdx = eventIdxs[rec.noteIndex];
+  if (eventIdx === undefined) return undefined;
+  const ev = measure.events[eventIdx];
+  if (ev?.kind !== 'note') return undefined;
+  return { eventIdx, pitch: (ev as NoteEvent).pitch };
+}
+
+function getOrCreateReSnapBarTelemetry(
+  byBar: Map<number, DuoVaultReSnapBarTelemetry>,
+  bar: number,
+): DuoVaultReSnapBarTelemetry {
+  let row = byBar.get(bar);
+  if (!row) {
+    row = { bar, correctionsNeeded: 0, alreadyCompliant: 0, declinedNotesChecked: 0 };
+    byBar.set(bar, row);
+  }
+  return row;
+}
+
+/** Nearest MIDI in [low, high] with the given pitch class; preserves octave proximity to `nearMidi`. */
+function nearestMidiWithPitchClass(nearMidi: number, pc: number, low: number, high: number): number {
+  const targetPc = normalizePc(pc);
+  if (normalizePc(nearMidi) === targetPc) {
+    return clampPitch(nearMidi, low, high);
+  }
+  let best = nearMidi;
+  let bestDist = 999;
+  for (let midi = low; midi <= high; midi++) {
+    if (normalizePc(midi) !== targetPc) continue;
+    const d = Math.abs(midi - nearMidi);
+    if (d < bestDist) {
+      bestDist = d;
+      best = midi;
+    }
+  }
+  return clampPitch(best, low, high);
+}
+
 /**
- * Read guitar v1 survival AFTER applyDuoOrchestrationPass - final score seam for Stage 4b.2.
+ * Stage 5.2 — final vault re-snap at true output seam (after C1–C7 + finalize).
+ * Receipt notes: restore drifted PC to stored vaultPc in register. Rhythm untouched.
+ * Declined notes: no vault PC force — register-only bounds vs pre-orchestration baseline.
+ */
+export function applyDuoVaultFinalResnapPass(
+  score: ScoreModel,
+  context: CompositionContext,
+): DuoVaultReSnapTelemetry {
+  if (!isStandardGuitarBassDuo(context.presetId)) return emptyReSnapTelemetry();
+  if (context.generationMetadata?.duoVaultMotifEnabled === false) return emptyReSnapTelemetry();
+
+  const receipts = context.generationMetadata?.duoVaultMotifSnapReceipts ?? [];
+  const declined = context.generationMetadata?.duoVaultDeclinedNotes ?? [];
+  const baselines = context.generationMetadata?.duoVaultMotifBarBaselines ?? [];
+  if (receipts.length === 0 && declined.length === 0) return emptyReSnapTelemetry();
+
+  const guitar = score.parts.find(
+    (p) => p.id === 'guitar' || p.instrumentIdentity === 'clean_electric_guitar',
+  );
+  if (!guitar) return emptyReSnapTelemetry();
+
+  const byBar = new Map<number, DuoVaultReSnapBarTelemetry>();
+
+  for (const rec of receipts) {
+    const measure = guitar.measures.find((m) => m.index === rec.bar);
+    if (!measure) continue;
+    const row = getOrCreateReSnapBarTelemetry(byBar, rec.bar);
+    const resolved = resolveReceiptV1Event(measure, rec);
+    if (!resolved) continue;
+    const current = resolved.pitch;
+
+    if (isProtectedBar(rec.bar, context)) {
+      row.alreadyCompliant++;
+      continue;
+    }
+
+    const baseline = baselines.find((b) => b.bar === rec.bar);
+    const low = baseline?.effectiveLow ?? ORCH_G_LOW;
+    const high = baseline?.effectiveHigh ?? ORCH_G_HIGH;
+
+    const chord = resolveChordForDuoPostPass(context, rec.bar, measure.chord);
+    const expectedLift = expectedPitchAfterOrchestrationLift(
+      rec.snappedMidi,
+      rec.bar,
+      rec.noteIndex,
+      context.seed ?? 0,
+      context,
+      chord,
+    );
+
+    if (
+      normalizePc(current) === normalizePc(rec.vaultPcChosen) ||
+      current === expectedLift ||
+      (rec.postOrchestrationMidi !== undefined && current === rec.postOrchestrationMidi)
+    ) {
+      row.alreadyCompliant++;
+      continue;
+    }
+
+    const restored = nearestMidiWithPitchClass(current, rec.vaultPcChosen, low, high);
+    if (restored !== current) {
+      const ev = measure.events[resolved.eventIdx] as NoteEvent;
+      measure.events[resolved.eventIdx] = { ...ev, pitch: restored };
+      row.correctionsNeeded++;
+    } else {
+      row.alreadyCompliant++;
+    }
+  }
+
+  for (const d of declined) {
+    const measure = guitar.measures.find((m) => m.index === d.bar);
+    if (!measure) continue;
+    const row = getOrCreateReSnapBarTelemetry(byBar, d.bar);
+    row.declinedNotesChecked++;
+
+    const baseline = baselines.find((b) => b.bar === d.bar);
+    if (!baseline || d.noteIndex < 0 || d.noteIndex >= baseline.preOrchestrationMidis.length) continue;
+
+    const pitches = voice1PitchesForMeasure(measure);
+    const current = pitches[d.noteIndex];
+    if (current === undefined) continue;
+
+    const eventIdxs = sortedV1EventIndices(measure);
+    const eventIdx = eventIdxs[d.noteIndex];
+    if (eventIdx === undefined) continue;
+
+    const low = baseline.effectiveLow;
+    const high = baseline.effectiveHigh;
+    let target = current;
+
+    if (current < low || current > high) {
+      target = clampPitch(registerOnlyLiftMidi(current, low, high), low, high);
+    }
+
+    if (target !== current) {
+      const ev = measure.events[eventIdx] as NoteEvent;
+      measure.events[eventIdx] = { ...ev, pitch: target };
+    }
+  }
+
+  const byBarList = [...byBar.values()].sort((a, b) => a.bar - b.bar);
+  return {
+    correctionsNeeded: byBarList.reduce((s, r) => s + r.correctionsNeeded, 0),
+    alreadyCompliant: byBarList.reduce((s, r) => s + r.alreadyCompliant, 0),
+    declinedNotesChecked: byBarList.reduce((s, r) => s + r.declinedNotesChecked, 0),
+    byBar: byBarList,
+  };
+}
+
+/**
+ * Read guitar v1 survival on `score` (post-orchestration or final seam) + Stage 5.2 re-snap telemetry.
  */
 export function computeDuoVaultMotifSurvivalTelemetry(
   score: ScoreModel,
@@ -689,7 +940,8 @@ export function computeDuoVaultMotifSurvivalTelemetry(
   context: CompositionContext,
   seed: number,
   contourNullReturns = 0,
-  vaultSourceFallback = 0
+  vaultSourceFallback = 0,
+  reSnap: DuoVaultReSnapTelemetry = emptyReSnapTelemetry(),
 ): DuoVaultMotifSurvivalTelemetry {
   const guitar = score.parts.find(
     (p) => p.id === 'guitar' || p.instrumentIdentity === 'clean_electric_guitar'
@@ -709,7 +961,6 @@ export function computeDuoVaultMotifSurvivalTelemetry(
     const measure = guitar?.measures.find((m) => m.index === bar);
     if (!measure) continue;
     const emitted = voice1PitchesForMeasure(measure);
-    const eventIdxs = sortedV1EventIndices(measure);
     const chord = resolveChordForDuoPostPass(context, bar, measure.chord);
     const sortedReceipts = [...barReceipts].sort((a, b) => a.noteIndex - b.noteIndex);
 
@@ -722,11 +973,10 @@ export function computeDuoVaultMotifSurvivalTelemetry(
         continue;
       }
 
-      const eventIdx = eventIdxs[rec.noteIndex] ?? rec.noteIndex;
       const expectedLift = expectedPitchAfterOrchestrationLift(
         rec.snappedMidi,
         bar,
-        eventIdx,
+        rec.noteIndex,
         seed,
         context,
         chord
@@ -746,5 +996,6 @@ export function computeDuoVaultMotifSurvivalTelemetry(
     contourNullReturns,
     survivedOverFiredRatio: vaultSnapFired > 0 ? vaultPcSurvived / vaultSnapFired : 0,
     receipts: [...receipts],
+    reSnap,
   };
 }

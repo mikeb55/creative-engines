@@ -3740,6 +3740,9 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
         vaultSourceFallback: t.vaultSourceFallback,
         contourNullReturns: t.contourNullReturns,
         survivedOverFiredRatio: t.survivedOverFiredRatio,
+        reSnapCorrectionsNeeded: t.reSnap.correctionsNeeded,
+        reSnapAlreadyCompliant: t.reSnap.alreadyCompliant,
+        reSnapDeclinedNotesChecked: t.reSnap.declinedNotesChecked,
       };
     })(),
   });

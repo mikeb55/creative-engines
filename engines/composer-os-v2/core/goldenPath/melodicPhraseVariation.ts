@@ -4,8 +4,12 @@
 
 import type { CompositionContext } from '../compositionContext';
 import type { MeasureModel, NoteEvent, PartModel } from '../score-model/scoreModelTypes';
-import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
+import { isGuitarBassDuoFamily, isStandardGuitarBassDuo } from '../presets/guitarBassDuoPresetIds';
 import { clampPitch, seededUnit } from './guitarBassDuoHarmony';
+import {
+  type DuoVaultMotifSnapReceipt,
+  vaultMotifSnapReceiptsForGuard,
+} from './duoVaultMotifContourSnap';
 
 function voice1SortedNotes(m: MeasureModel): NoteEvent[] {
   return m.events
@@ -27,9 +31,18 @@ export function applyPhraseVariationPass(
   guitar: PartModel,
   context: CompositionContext,
   seed: number,
+  localSnapReceipts?: readonly DuoVaultMotifSnapReceipt[],
 ): void {
   if (context.presetId === 'ecm_chamber') return;
   if (!isGuitarBassDuoFamily(context.presetId)) return;
+  const vaultReceipts = vaultMotifSnapReceiptsForGuard(context, localSnapReceipts);
+  if (
+    isStandardGuitarBassDuo(context.presetId) &&
+    vaultReceipts?.length &&
+    context.generationMetadata?.duoVaultMotifEnabled !== false
+  ) {
+    return;
+  }
 
   const seenSlots = new Map<number, { peakPitch: number; lastBar: number }>();
 

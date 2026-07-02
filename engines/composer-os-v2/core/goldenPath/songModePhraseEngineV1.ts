@@ -19,7 +19,8 @@ import { normalizeMeasureToEighthBeatGrid, snapAttackBeatToGrid } from '../score
 import type { ChordTonesOptions } from '../harmony/chordSymbolAnalysis';
 import type { SongModePhraseIssue } from '../song-mode/songModePhraseBehaviourRules';
 import { isSongwriterSonicYouth } from '../song-mode/sonicYouthSlice';
-import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
+import { isGuitarBassDuoFamily, isStandardGuitarBassDuo } from '../presets/guitarBassDuoPresetIds';
+import { vaultMotifPitchMutationSkipForV1Note, v1SortedNoteIndexForEvent } from './duoVaultMotifContourSnap';
 export type { SongModePhraseIssue } from '../song-mode/songModePhraseBehaviourRules';
 
 const TB = 32;
@@ -497,6 +498,22 @@ function extendLastNoteCadence(m: MeasureModel, minDur: number): void {
   }
 }
 
+function lastV1NoteEventIndexByEndTime(m: MeasureModel): number {
+  let bestEnd = -1;
+  let bestI = -1;
+  for (let i = 0; i < m.events.length; i++) {
+    const e = m.events[i];
+    if (e.kind !== 'note' || ((e as { voice?: number }).voice ?? 1) !== 1) continue;
+    const n = e as { startBeat: number; duration: number };
+    const end = n.startBeat + n.duration;
+    if (end >= bestEnd - 1e-4) {
+      bestEnd = end;
+      bestI = i;
+    }
+  }
+  return bestI;
+}
+
 function snapPhraseLandingToChordTone(m: MeasureModel, context: CompositionContext, bar: number): void {
   if (isProtectedBar(bar, context)) return;
   const opts = chordToneOpts(context);
@@ -506,8 +523,10 @@ function snapPhraseLandingToChordTone(m: MeasureModel, context: CompositionConte
   const priority = [Math.round(gtones.root), Math.round(gtones.third), Math.round(gtones.fifth), Math.round(gtones.seventh)];
   const poolFull = collectPhraseEndLandingMidis(chord, context);
 
-  const lastNoteI = lastNoteEventIndexByEndTime(m);
+  const lastNoteI = lastV1NoteEventIndexByEndTime(m);
   if (lastNoteI < 0) return;
+  const v1Idx = v1SortedNoteIndexForEvent(m, lastNoteI);
+  if (v1Idx >= 0 && vaultMotifPitchMutationSkipForV1Note(bar, v1Idx, context)) return;
   const n = m.events[lastNoteI] as { pitch: number };
   const orig = n.pitch;
   const strongPcs = phraseEndStrongPitchClasses(chord, context);
@@ -551,6 +570,13 @@ export function applySongModePhraseEndLandingRepair(guitar: PartModel, context: 
   if (!isGuitarBassDuoFamily(context.presetId)) return;
   if (context.generationMetadata?.songModeHookFirstIdentity !== true) return;
   if (context.form.totalBars !== TB) return;
+  if (
+    isStandardGuitarBassDuo(context.presetId) &&
+    (context.generationMetadata?.duoVaultMotifSnapReceipts?.length ?? 0) > 0 &&
+    context.generationMetadata?.duoVaultMotifEnabled !== false
+  ) {
+    return;
+  }
   for (const seg of songModePhraseSegments()) {
     const m = guitar.measures.find((x) => x.index === seg.endBar);
     if (m) snapPhraseLandingToChordTone(m, context, seg.endBar);

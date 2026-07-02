@@ -11,6 +11,7 @@ import { BARRY_HARRIS_MODULE_ID } from './moduleTypes';
 import { seededUnit } from '../../goldenPath/guitarBassDuoHarmony';
 import { isProtectedBar } from '../../score-integrity/identityLock';
 import type { ScoreModel, NoteEvent, MeasureModel } from '../../score-model/scoreModelTypes';
+import { isStandardGuitarBassDuo } from '../../presets/guitarBassDuoPresetIds';
 
 /** Chord tone offsets by quality */
 const CHORD_TONES: Record<string, number[]> = {
@@ -83,7 +84,11 @@ function applyBarryHarrisToMeasure(
  * Applies harmonic movement behavior to guitar part in Song Mode.
  */
 export function applyBarryHarris(context: CompositionContext, score?: ScoreModel): CompositionContext {
-  if (score) {
+  const vaultMotifActive =
+    isStandardGuitarBassDuo(context.presetId) &&
+    (context.generationMetadata?.duoVaultMotifSnapReceipts?.length ?? 0) > 0 &&
+    context.generationMetadata?.duoVaultMotifEnabled !== false;
+  if (score && !vaultMotifActive) {
     const guitar = score.parts.find((p) => p.id === 'guitar');
     if (guitar) {
       const seed = context.seed;

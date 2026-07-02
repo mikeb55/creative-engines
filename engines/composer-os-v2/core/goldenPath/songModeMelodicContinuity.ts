@@ -13,7 +13,8 @@ import { guitarChordTonesInRange } from './guitarPhraseAuthority';
 import { clampPitch } from './guitarBassDuoHarmony';
 import { isProtectedBar } from '../score-integrity/identityLock';
 import { normalizeMeasureToEighthBeatGrid, snapAttackBeatToGrid } from '../score-integrity/duoEighthBeatGrid';
-import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
+import { isGuitarBassDuoFamily, isStandardGuitarBassDuo } from '../presets/guitarBassDuoPresetIds';
+import { vaultMotifPitchMutationSkipForV1Note, v1SortedNoteIndexForEvent } from './duoVaultMotifContourSnap';
 
 const LOW = 55;
 const HIGH = 79;
@@ -109,6 +110,8 @@ function smoothMicroZigzagGuitar(guitar: PartModel, context: CompositionContext)
     const e0 = m0.events[r0.eventIndex] as NoteEvent;
     const e1 = m1.events[r1.eventIndex] as NoteEvent;
     const e2 = m2.events[r2.eventIndex] as NoteEvent;
+    const v1Idx = v1SortedNoteIndexForEvent(m1, r1.eventIndex);
+    if (v1Idx >= 0 && vaultMotifPitchMutationSkipForV1Note(r1.bar, v1Idx, context)) continue;
 
     const p0 = e0.pitch;
     const p1 = e1.pitch;
@@ -221,6 +224,12 @@ export function applySongModeMelodicContinuityPass(guitar: PartModel, context: C
   if (!isGuitarBassDuoFamily(context.presetId)) return;
   if (context.generationMetadata?.songModeHookFirstIdentity !== true) return;
   if (context.form.totalBars < 32) return;
+
+  const vaultMotifActive =
+    isStandardGuitarBassDuo(context.presetId) &&
+    (context.generationMetadata?.duoVaultMotifSnapReceipts?.length ?? 0) > 0 &&
+    context.generationMetadata?.duoVaultMotifEnabled !== false;
+  if (vaultMotifActive) return;
 
   smoothMicroZigzagGuitar(guitar, context);
 

@@ -4,8 +4,9 @@
  * `guitar_bass_duo` sets score.duoRhythmSnap = eighth_beats (Sibelius-friendly attacks); ECM keeps quarter grid.
  */
 
+
+import type { DuoVaultReSnapTelemetry } from '../goldenPath/duoVaultMotifContourSnap';
 import type { ChordEvent, MeasureModel, NoteEvent, ScoreEvent, ScoreModel } from '../score-model/scoreModelTypes';
-import { BEATS_PER_MEASURE } from '../score-model/scoreModelTypes';
 import { measureBeatSpanQuartersOf } from '../score-model/measureBeatSpan';
 import { createNote, createRest } from '../score-model/scoreEventBuilder';
 import { validateStrictBarMath, validateSibeliusUndottedBeatAtoms } from './strictBarMath';
@@ -386,7 +387,14 @@ function clampUprightBassNotesToHardRange(score: ScoreModel): void {
  * Authoritative end of rhythm pipeline: finalize → validate once → freeze parts.
  * Call only after all passes that may alter startBeat/duration (performance, expressive, ECM envelopes).
  */
-export function finalizeAndSealDuoScoreBarMath(score: ScoreModel, presetId?: string): void {
+export function finalizeAndSealDuoScoreBarMath(
+  score: ScoreModel,
+  presetId?: string,
+  opts?: {
+    /** Stage 5.2 — vault PC pass after register clamp; last pitch touch before validate + freeze. */
+    vaultFinalResnap?: (score: ScoreModel) => DuoVaultReSnapTelemetry;
+  },
+): DuoVaultReSnapTelemetry | undefined {
   finalizeScoreBarMathPerVoice(score);
   /** Guitar–Bass Duo only: eighth-beat seal + Sibelius-friendly bass notation grouping (ECM / other presets skip). */
   if (score.duoRhythmSnap === 'eighth_beats') {
@@ -413,6 +421,7 @@ export function finalizeAndSealDuoScoreBarMath(score: ScoreModel, presetId?: str
   clampGuitarBar24LastNoteOctaveBeforeBar25(score);
   clampCleanElectricGuitarNotesToHardRange(score);
   clampUprightBassNotesToHardRange(score);
+  const reSnapTelemetry = opts?.vaultFinalResnap?.(score);
   const v = validateStrictBarMath(score);
   if (!v.valid) {
     throw new Error(`Bar math enforcement failed after finalize: ${v.errors.join('; ')}`);
@@ -422,6 +431,7 @@ export function finalizeAndSealDuoScoreBarMath(score: ScoreModel, presetId?: str
     throw new Error(`Notation-safe rhythm failed before export: ${ns.errors.join('; ')}`);
   }
   freezeScoreRhythmAfterFinalize(score);
+  return reSnapTelemetry;
 }
 
 /**
