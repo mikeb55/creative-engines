@@ -332,9 +332,14 @@ export function emitGuitarDuoIdentityBar7(params: {
   staggerG: number;
   seed: number;
   chordToneOpts?: ChordTonesOptions;
+  /** When `guitar_bass_duo`, identity gesture uses Tonality Vault phrase-fill (Stage 5.3). */
+  presetId?: string;
 }): void {
-  const { m, chord, effectiveLow, effectiveHigh, staggerG, seed, chordToneOpts } = params;
-  const tones = guitarChordTonesInRange(chord, effectiveLow, effectiveHigh, chordToneOpts);
+  const { m, chord, effectiveLow, effectiveHigh, staggerG, seed, chordToneOpts, presetId } = params;
+  const tones =
+    presetId !== undefined && isStandardGuitarBassDuo(presetId)
+      ? phraseFillTonesFromVaultResolver(chord, effectiveLow, effectiveHigh, chordToneOpts)
+      : guitarChordTonesInRange(chord, effectiveLow, effectiveHigh, chordToneOpts);
   const endStrong = resolvePhraseEndForDuo(tones, undefined, effectiveLow, effectiveHigh, seed, DUO_IDENTITY_MOMENT_BAR);
   const u = seededUnit(seed, DUO_IDENTITY_MOMENT_BAR, 702);
   const lo = clampPitch(tones.third, effectiveLow, effectiveHigh);

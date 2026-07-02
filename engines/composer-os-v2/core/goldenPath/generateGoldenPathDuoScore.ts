@@ -623,6 +623,7 @@ import {
   liftToneToRange,
   phraseFillTonesFromVaultResolver,
   resolvePhraseEndForDuo,
+  vaultMelodyPitchesInRange,
   type PhraseIntent,
 } from './guitarPhraseAuthority';
 import { momentTagForBar } from './duoNarrativeMoments';
@@ -654,6 +655,7 @@ import {
   snapMotifBarToVaultContour,
   stampPostOrchestrationMidiOnVaultReceipts,
   vaultMotifPitchMutationSkipForV1Note,
+  v1SortedNoteIndexForEvent,
   type DuoVaultMotifSnapReceipt,
 } from './duoVaultMotifContourSnap';
 import { resolveDuoHarmonyForSymbol } from '../harmony/duoVaultHarmony';
@@ -4942,6 +4944,7 @@ function buildGuitarPart(
           staggerG: staggerGuitar,
           seed,
           chordToneOpts,
+          presetId: context.presetId,
         });
       } else {
         // Apply songwriter melody profile
@@ -6883,12 +6886,17 @@ function applyLateClosingGuitarContourNudge(guitar: PartModel, context: Composit
   const seed = context.seed;
   const low = 55;
   const high = 79;
+  const chordToneOpts: ChordTonesOptions | undefined = shouldUseUserChordSemanticsForTones(context)
+    ? { lockedHarmony: true }
+    : undefined;
   for (let bar = 24; bar <= tb; bar++) {
     if (consecutiveChordStreakEndingAtBar(context, bar) < 2) continue;
     const m = guitar.measures.find((x) => x.index === bar);
     if (!m) continue;
     const chord = resolveBarSymbol(context, bar).symbol;
-    const tones = guitarChordTonesInRange(chord, low, high);
+    const tones = isStandardGuitarBassDuo(context.presetId)
+      ? phraseFillTonesFromVaultResolver(chord, low, high, chordToneOpts)
+      : guitarChordTonesInRange(chord, low, high);
     const pool = [tones.root, tones.third, tones.fifth, tones.seventh];
     let bestI = -1;
     let bestEnd = -1;
@@ -6903,6 +6911,8 @@ function applyLateClosingGuitarContourNudge(guitar: PartModel, context: Composit
       }
     }
     if (bestI < 0) continue;
+    const v1Idx = v1SortedNoteIndexForEvent(m, bestI);
+    if (v1Idx >= 0 && vaultMotifPitchMutationSkipForV1Note(bar, v1Idx, context)) continue;
     const cur = (m.events[bestI] as { pitch: number }).pitch;
     const pcEq = (a: number, b: number) => ((a % 12) + 12) % 12 === ((b % 12) + 12) % 12;
     const inPool = (p: number) => pool.some((t) => pcEq(t, p));
@@ -6942,16 +6952,25 @@ function nudgeDuoGuitarPhraseEndsForVariety(guitar: PartModel, context: Composit
   }
   if (new Set(lastPcs).size >= 3) return;
   const chord = resolveBarSymbol(context, 5).symbol;
-  const tones = chordTonesForChordSymbolWithContext(chord, context);
   const low = 55;
   const high = 79;
-  const candidates = [
-    liftToneToRange(tones.third, low, high),
-    liftToneToRange(tones.seventh, low, high),
-    liftToneToRange(tones.fifth, low, high),
-  ];
+  const chordToneOpts: ChordTonesOptions | undefined = shouldUseUserChordSemanticsForTones(context)
+    ? { lockedHarmony: true }
+    : undefined;
+  const tones = isStandardGuitarBassDuo(context.presetId)
+    ? phraseFillTonesFromVaultResolver(chord, low, high, chordToneOpts)
+    : (() => {
+        const t = chordTonesForChordSymbolWithContext(chord, context);
+        return {
+          root: liftToneToRange(t.root, low, high),
+          third: liftToneToRange(t.third, low, high),
+          fifth: liftToneToRange(t.fifth, low, high),
+          seventh: liftToneToRange(t.seventh, low, high),
+        };
+      })();
+  const candidates = [tones.third, tones.seventh, tones.fifth];
   const used = new Set(lastPcs);
-  const alt = candidates.find((c) => !used.has(c % 12)) ?? liftToneToRange(tones.seventh, low, high);
+  const alt = candidates.find((c) => !used.has(c % 12)) ?? tones.seventh;
   const m5 = guitar.measures.find((x) => x.index === 5);
   if (!m5) return;
   let bestI = -1;
@@ -6966,7 +6985,11 @@ function nudgeDuoGuitarPhraseEndsForVariety(guitar: PartModel, context: Composit
       bestI = i;
     }
   }
-  if (bestI >= 0) (m5.events[bestI] as { pitch: number }).pitch = alt;
+  if (bestI >= 0) {
+    const v1Idx = v1SortedNoteIndexForEvent(m5, bestI);
+    if (v1Idx >= 0 && vaultMotifPitchMutationSkipForV1Note(5, v1Idx, context)) return;
+    (m5.events[bestI] as { pitch: number }).pitch = alt;
+  }
 }
 
 function applySongModeLeadSheetAnchorStart(guitar: PartModel, context: CompositionContext): boolean {
@@ -6980,9 +7003,31 @@ function applySongModeLeadSheetAnchorStart(guitar: PartModel, context: Compositi
   if (!firstAnchor) return false;
   const measure = guitar.measures.find((m) => m.index === Math.max(1, firstAnchor.bar));
   if (!measure) return false;
-  const firstNote = measure.events.find((e) => e.kind === 'note') as NoteEvent | undefined;
-  if (!firstNote) return false;
-  firstNote.pitch = clampPitch(firstAnchor.midi, 55, 79);
+  const firstNoteIdx = measure.events.findIndex((e) => e.kind === 'note');
+  if (firstNoteIdx < 0) return false;
+  const firstNote = measure.events[firstNoteIdx] as NoteEvent;
+  const bar = measure.index;
+  const v1Idx = v1SortedNoteIndexForEvent(measure, firstNoteIdx);
+  if (v1Idx >= 0 && vaultMotifPitchMutationSkipForV1Note(bar, v1Idx, context)) return false;
+
+  let targetMidi = firstAnchor.midi;
+  if (isStandardGuitarBassDuo(context.presetId)) {
+    const chord = resolveBarSymbol(context, bar).symbol;
+    const chordToneOpts: ChordTonesOptions | undefined = shouldUseUserChordSemanticsForTones(context)
+      ? { lockedHarmony: true }
+      : undefined;
+    const vaultPool = vaultMelodyPitchesInRange(chord, 55, 79, context, chordToneOpts);
+    if (vaultPool?.length) {
+      const anchorPc = ((targetMidi % 12) + 12) % 12;
+      const candidates = vaultPool.filter((p) => ((p % 12) + 12) % 12 === anchorPc);
+      if (candidates.length > 0) {
+        targetMidi = candidates.reduce((best, p) =>
+          Math.abs(p - targetMidi) < Math.abs(best - targetMidi) ? p : best,
+        );
+      }
+    }
+  }
+  firstNote.pitch = clampPitch(targetMidi, 55, 79);
   return true;
 }
 
@@ -7641,6 +7686,7 @@ export function generateGoldenPathDuoScore(
             nudgeReturnPhraseTowardFingerprint(guitarPart, motifPlan.phraseReturn, phraseAFingerprint, {
               songwriterStyleId: context.songwriterStyleId,
               waynePhraseAFingerprint: context.waynePhraseAFingerprint,
+              context,
             });
             const returnRefinedFingerprint = buildPhraseFingerprint(guitarPart, motifPlan.phraseReturn);
             const returnRefinedScore = computeMotifAuthorityScore(phraseAFingerprint, returnRefinedFingerprint);

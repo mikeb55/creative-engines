@@ -1,6 +1,11 @@
 import type { MeasureModel, NoteEvent, PartModel, ScoreEvent } from '../score-model/scoreModelTypes';
+import type { CompositionContext } from '../compositionContext';
 import { normalizeMeasureToEighthBeatGrid, snapAttackBeatToGrid } from '../score-integrity/duoEighthBeatGrid';
 import { seededUnit } from '../goldenPath/guitarBassDuoHarmony';
+import {
+  vaultMotifPitchMutationSkipForV1Note,
+  v1SortedNoteIndexForEvent,
+} from '../goldenPath/duoVaultMotifContourSnap';
 
 /** Pilot motif policy tier (Motif Authority V1). */
 export type MotifAuthorityLevel = 'off' | 'soft' | 'strong';
@@ -277,9 +282,21 @@ export function nudgeReturnPhraseTowardFingerprint(
   part: PartModel,
   returnRange: MotifPhraseRange,
   target: MotifFingerprint,
-  opts?: { songwriterStyleId?: string; waynePhraseAFingerprint?: string[] }
+  opts?: {
+    songwriterStyleId?: string;
+    waynePhraseAFingerprint?: string[];
+    /** Stage 5.3 — skip vault-receipt / declined v1 notes on standard duo. */
+    context?: CompositionContext;
+  },
 ): void {
   const wayne = opts?.songwriterStyleId === 'wayne_shorter';
+  const ctx = opts?.context;
+
+  const skipVaultV1 = (m: MeasureModel, bar: number, eventIdx: number): boolean => {
+    if (!ctx) return false;
+    const v1Idx = v1SortedNoteIndexForEvent(m, eventIdx);
+    return v1Idx >= 0 && vaultMotifPitchMutationSkipForV1Note(bar, v1Idx, ctx);
+  };
 
   // Anchor nudge: first note in each return bar toward phrase-A anchor pitch class.
   for (let bar = returnRange.startBar; bar <= returnRange.endBar; bar++) {
@@ -288,6 +305,7 @@ export function nudgeReturnPhraseTowardFingerprint(
     const notes = noteEventsInMeasure(m.events);
     if (notes.length === 0) continue;
     const first = notes[0]!;
+    if (skipVaultV1(m, bar, first.idx)) continue;
     const targetPc = target.anchorTonesPerBar[Math.max(0, bar - returnRange.startBar)] ?? -1;
     if (targetPc < 0) continue;
 
@@ -297,6 +315,7 @@ export function nudgeReturnPhraseTowardFingerprint(
 
       if (notes.length >= 2) {
         const second = notes[1]!;
+        if (skipVaultV1(m, bar, second.idx)) continue;
         const cur2 = second.pitch;
         const curPc2 = ((cur2 % 12) + 12) % 12;
         if (curPc2 !== targetPc) {
