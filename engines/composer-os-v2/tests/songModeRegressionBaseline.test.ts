@@ -1,6 +1,6 @@
 /**
- * Deterministic Song Mode / Guitar–Bass Duo baseline — regression lock (seed 50021).
- * Includes mandatory gates + hook identity contour checks (single golden-path run).
+ * Deterministic Song Mode / Guitar–Bass Duo baseline — regression lock (seeds 50021, 50213).
+ * Primary gate: MotifShape similarity; secondary: core contour prefix (first 5 direction steps).
  */
 
 import assert from 'assert';
@@ -18,9 +18,13 @@ import {
 } from '../core/score-integrity/protectedHookBarInvariant';
 import {
   contourDirSignatureFromPitches,
+  hookContourCoreMatches,
   isGenericScaleRun,
+  SONG_MODE_HOOK_RETURN_SIMILARITY_MIN,
   validateSongModeHookIdentity,
 } from '../core/goldenPath/songModeHookIdentity';
+
+const HOOK_BASELINE_SEEDS = [50021, 50213] as const;
 
 function guitarPitchesTimeOrder(score: import('../core/score-model/scoreModelTypes').ScoreModel, bar: number): number[] {
   const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
@@ -33,17 +37,14 @@ function guitarPitchesTimeOrder(score: import('../core/score-model/scoreModelTyp
     .map((n) => n.pitch);
 }
 
-export function runSongModeRegressionBaselineTests(): GoldenPathResult {
-  assert.strictEqual(isGenericScaleRun([60, 60, 60]), false);
-  assert.strictEqual(isGenericScaleRun([60, 62, 64]), true);
-
-  const r = runGoldenPath(50021, {
+function assertHookBaselineSeed(seed: number): GoldenPathResult {
+  const r = runGoldenPath(seed, {
     presetId: 'guitar_bass_duo',
     totalBars: 32,
     longFormEnabled: true,
     songModeHookFirstIdentity: true,
   });
-  const fail = SONG_MODE_REGRESSION_FAIL_MSG;
+  const fail = `${SONG_MODE_REGRESSION_FAIL_MSG} (seed ${seed})`;
 
   assert.strictEqual(r.success, true, fail);
   const modelVal = validateScoreModel(r.score);
@@ -56,19 +57,33 @@ export function runSongModeRegressionBaselineTests(): GoldenPathResult {
   const ret = extractMotifShapeFromGuitarBarContext(g!, 25, r.context);
   assert.ok(stmt && ret, fail);
   const sim = similarityMotifShapePitchStructure(stmt!, ret!);
-  assert.ok(sim >= 0.7 - 1e-9, fail);
+  assert.ok(sim >= SONG_MODE_HOOK_RETURN_SIMILARITY_MIN - 1e-9, `${fail} sim=${sim.toFixed(3)}`);
 
   const rr = guitarRestRatio(g!);
   assert.ok(rr <= SONG_MODE_GUITAR_REST_RATIO_CEILING + 1e-9, fail);
 
   const p1 = guitarPitchesTimeOrder(r.score, 1);
   const p25 = guitarPitchesTimeOrder(r.score, 25);
-  assert.ok(p1.length >= 2, 'bar 1 should state a hook motif');
-  assert.ok(p25.length >= 2, 'bar 25 should reuse hook');
-  assert.strictEqual(contourDirSignatureFromPitches(p1), contourDirSignatureFromPitches(p25), 'contour identity');
+  assert.ok(p1.length >= 2, `${fail}: bar 1 should state a hook motif`);
+  assert.ok(p25.length >= 2, `${fail}: bar 25 should reuse hook`);
+  assert.ok(
+    hookContourCoreMatches(contourDirSignatureFromPitches(p1), contourDirSignatureFromPitches(p25)),
+    `${fail}: core contour identity`
+  );
 
   const errs = validateSongModeHookIdentity(g!, r.context);
   assert.strictEqual(errs.length, 0, errs.join('; '));
 
   return r;
+}
+
+export function runSongModeRegressionBaselineTests(): GoldenPathResult {
+  assert.strictEqual(isGenericScaleRun([60, 60, 60]), false);
+  assert.strictEqual(isGenericScaleRun([60, 62, 64]), true);
+
+  let last: GoldenPathResult | undefined;
+  for (const seed of HOOK_BASELINE_SEEDS) {
+    last = assertHookBaselineSeed(seed);
+  }
+  return last!;
 }

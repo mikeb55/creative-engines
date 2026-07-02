@@ -1808,7 +1808,8 @@ function extractVoiceOneMelodyFromPart(part: PartModel): SlonimskyNote[] {
 function applyEnhancedPitchesByBar(
   guitarPart: PartModel,
   original: SlonimskyNote[],
-  enhanced: SlonimskyNote[]
+  enhanced: SlonimskyNote[],
+  context?: CompositionContext
 ): void {
   const byBar = (notes: SlonimskyNote[]): Map<number, SlonimskyNote[]> => {
     const map = new Map<number, SlonimskyNote[]>();
@@ -1849,6 +1850,7 @@ function applyEnhancedPitchesByBar(
       .sort((a, b) => a.startBeat - b.startBeat);
     const count = Math.min(v1Events.length, enhancedNotes.length);
     for (let i = 0; i < count; i++) {
+      if (context && slonimskySkipForVaultMotifNote(measure.index, i, context)) continue;
       v1Events[i]!.pitch = enhancedNotes[i]!.midi;
     }
   }
@@ -1896,6 +1898,7 @@ function applySectionAwareSongModeSlonimskyPostPass(
     const sounding = enhanced.filter((n) => n.durationBeats > 0).sort((a, b) => a.beat - b.beat);
     const count = Math.min(v1Events.length, sounding.length);
     for (let i = 0; i < count; i++) {
+      if (slonimskySkipForVaultMotifNote(measure.index, i, context)) continue;
       v1Events[i]!.pitch = sounding[i]!.midi;
     }
   }
@@ -2411,6 +2414,21 @@ function sortedV1NoteEventIndicesForCadence(m: MeasureModel): number[] {
   });
   entries.sort((a, b) => a.startBeat - b.startBeat);
   return entries.map(({ eventIdx }) => eventIdx);
+}
+
+/** Stage 4a.1 — skip Slonimsky pitch overwrite on vault-receipt or vault-declined motif notes (4b.3). */
+function slonimskySkipForVaultMotifNote(
+  bar: number,
+  v1SortedNoteIndex: number,
+  context: CompositionContext
+): boolean {
+  if (!isStandardGuitarBassDuo(context.presetId)) return false;
+  const receipts = context.generationMetadata?.duoVaultMotifSnapReceipts;
+  const declined = context.generationMetadata?.duoVaultDeclinedNotes;
+  if (!receipts?.length && !declined?.length) return false;
+  if (receipts?.some((r) => r.bar === bar && r.noteIndex === v1SortedNoteIndex)) return true;
+  if (declined?.some((d) => d.bar === bar && d.noteIndex === v1SortedNoteIndex)) return true;
+  return false;
 }
 
 /** Stage 4d.1 — skip cadence snap when phrase-end note is vault-receipt or vault-declined motif (4b.3). */
@@ -7479,7 +7497,7 @@ export function generateGoldenPathDuoScore(
         const melodyLine = extractVoiceOneMelodyFromPart(guitarPart);
         const chords = context.lockedHarmonyBarsRaw ?? [];
         const enhanced = applySlonimskyToMelodyLine(melodyLine, chords, slonimskyCtx, context.seed);
-        applyEnhancedPitchesByBar(guitarPart, melodyLine, enhanced);
+        applyEnhancedPitchesByBar(guitarPart, melodyLine, enhanced, context);
       }
     } else if (
       !isLineFirstDuoAbstractContext(context) &&

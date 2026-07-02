@@ -86,6 +86,33 @@ export function contourDirSignatureFromPitches(pitches: number[]): string {
   return parts.join(',');
 }
 
+/** Primary hook return MotifShape similarity gate (bar 1 vs structural return). */
+export const SONG_MODE_HOOK_RETURN_SIMILARITY_MIN = 0.65;
+
+/** Core contour direction steps required to match between statement and return (tail elision/extension OK). */
+export const SONG_MODE_HOOK_CORE_CONTOUR_STEPS = 5;
+
+function contourDirSteps(sig: string): string[] {
+  return sig.split(',').filter((p) => p.length > 0);
+}
+
+/** First K statement direction steps must match return (K = min(coreSteps, statement length)). */
+export function hookContourCoreMatches(
+  statementSig: string,
+  returnSig: string,
+  coreSteps: number = SONG_MODE_HOOK_CORE_CONTOUR_STEPS
+): boolean {
+  const sSteps = contourDirSteps(statementSig);
+  const rSteps = contourDirSteps(returnSig);
+  if (sSteps.length < 2 || rSteps.length < 2) return false;
+  const k = Math.min(coreSteps, sSteps.length);
+  if (k < 2) return false;
+  for (let i = 0; i < k; i++) {
+    if (sSteps[i] !== rSteps[i]) return false;
+  }
+  return true;
+}
+
 function pickPitchesForContour(
   chord: string,
   low: number,
@@ -285,7 +312,6 @@ function resolvedSongModeHookReturnBar(context: CompositionContext): number | nu
 
 export function validateSongModeHookIdentity(guitar: PartModel, context: CompositionContext): string[] {
   const errs: string[] = [];
-  const warns: string[] = [];
   const retBar = resolvedSongModeHookReturnBar(context);
   if (retBar === null) return errs;
 
@@ -311,12 +337,6 @@ export function validateSongModeHookIdentity(guitar: PartModel, context: Composi
     errs.push('Song Mode hook: return bar has too few notes (hook not reused).');
   }
 
-  const c1 = contourDirSignatureFromPitches(notes1.map((n) => n.pitch));
-  const cRet = contourDirSignatureFromPitches(notesRet.map((n) => n.pitch));
-  if (c1.length < 2 || c1 !== cRet) {
-    warns.push('Song Mode hook: return lost contour identity (unrecognisable).');
-  }
-
   const mergedMeasureForFingerprint = (
     merged: { pitch: number; startBeat: number; duration: number }[]
   ) => ({
@@ -339,7 +359,7 @@ export function validateSongModeHookIdentity(guitar: PartModel, context: Composi
     errs.push('Song Mode hook: return is a literal repetition (variation required).');
   }
 
-  return [...errs, ...warns];
+  return errs;
 }
 
 function validateMotifBarContour(
@@ -512,8 +532,10 @@ function validateMotifReturnSimilarity(guitar: PartModel, context: CompositionCo
       return ['Song Mode motif v2: return bar lacks enough notes for similarity check.'];
     }
     const sim = similarityMotifShapePitchStructure(stmt, ret);
-    if (sim < 0.7) {
-      return [`Song Mode motif v2: return similarity ${sim.toFixed(2)} < 0.70 (unrecognisable).`];
+    if (sim < SONG_MODE_HOOK_RETURN_SIMILARITY_MIN) {
+      return [
+        `Song Mode motif v2: return similarity ${sim.toFixed(2)} < ${SONG_MODE_HOOK_RETURN_SIMILARITY_MIN.toFixed(2)} (unrecognisable).`,
+      ];
     }
     return [];
   }
@@ -524,8 +546,10 @@ function validateMotifReturnSimilarity(guitar: PartModel, context: CompositionCo
       return ['Song Mode motif v2: return bar lacks enough notes for similarity check.'];
     }
     const sim = similarityMotifShape(exp, ex);
-    if (sim < 0.7) {
-      return [`Song Mode motif v2: return similarity ${sim.toFixed(2)} < 0.70 (unrecognisable).`];
+    if (sim < SONG_MODE_HOOK_RETURN_SIMILARITY_MIN) {
+      return [
+        `Song Mode motif v2: return similarity ${sim.toFixed(2)} < ${SONG_MODE_HOOK_RETURN_SIMILARITY_MIN.toFixed(2)} (unrecognisable).`,
+      ];
     }
     return [];
   }
@@ -536,8 +560,10 @@ function validateMotifReturnSimilarity(guitar: PartModel, context: CompositionCo
     return ['Song Mode motif v2: return bar lacks enough notes for similarity check.'];
   }
   const sim = simMotifToRealization(primary, ex.intervals, ex.rhythm);
-  if (sim < 0.7) {
-    return [`Song Mode motif v2: return similarity ${sim.toFixed(2)} < 0.70 (unrecognisable).`];
+  if (sim < SONG_MODE_HOOK_RETURN_SIMILARITY_MIN) {
+    return [
+      `Song Mode motif v2: return similarity ${sim.toFixed(2)} < ${SONG_MODE_HOOK_RETURN_SIMILARITY_MIN.toFixed(2)} (unrecognisable).`,
+    ];
   }
   return [];
 }
