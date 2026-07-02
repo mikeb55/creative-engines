@@ -7,7 +7,13 @@ import type { CompositionContext } from '../compositionContext';
 import type { MeasureModel, PartModel } from '../score-model/scoreModelTypes';
 import { createNote, createRest, addEvent } from '../score-model/scoreEventBuilder';
 import { getChordForBar } from '../harmony/harmonyResolution';
-import { guitarChordTonesInRange } from '../goldenPath/guitarPhraseAuthority';
+import {
+  hookContourPoolMidi,
+  type HookContourPoolSource,
+} from '../goldenPath/guitarPhraseAuthority';
+import type { DuoVaultMotifSnapReceipt } from '../goldenPath/duoVaultMotifContourSnap';
+import { resolveDuoHarmonyForSymbol } from '../harmony/duoVaultHarmony';
+import { isStandardGuitarBassDuo } from '../presets/guitarBassDuoPresetIds';
 import { clampPitch, seededUnit } from '../goldenPath/guitarBassDuoHarmony';
 import { snapAttackBeatToGrid } from '../score-integrity/duoEighthBeatGrid';
 import type { ChordTonesOptions } from '../harmony/chordSymbolAnalysis';
@@ -135,9 +141,92 @@ function hookFirstReturnPitchesFromShape(
   return base;
 }
 
-function uniquePoolMidi(tones: ReturnType<typeof guitarChordTonesInRange>): number[] {
-  const raw = [tones.root, tones.third, tones.fifth, tones.seventh].map((p) => Math.round(p));
-  return Array.from(new Set(raw)).sort((a, b) => a - b);
+export type Stage4aHookPoolTraceSnapshot = {
+  pickContourVault: number;
+  pickContourLegacy: number;
+  pickFallbackVault: number;
+  pickFallbackLegacy: number;
+  contourStepFailures: number;
+  contourNullReturns: number;
+};
+
+let stage4aHookPoolTrace: Stage4aHookPoolTraceSnapshot | null = null;
+
+export function resetStage4aHookPoolTrace(): void {
+  if (process.env.STAGE4A_HOOK_POOL_TRACE !== '1') return;
+  stage4aHookPoolTrace = {
+    pickContourVault: 0,
+    pickContourLegacy: 0,
+    pickFallbackVault: 0,
+    pickFallbackLegacy: 0,
+    contourStepFailures: 0,
+    contourNullReturns: 0,
+  };
+}
+
+export function getStage4aHookPoolTrace(): Stage4aHookPoolTraceSnapshot | null {
+  return stage4aHookPoolTrace;
+}
+
+function stage4aTracePool(source: HookContourPoolSource, site: 'contour' | 'fallback'): void {
+  if (process.env.STAGE4A_HOOK_POOL_TRACE !== '1') return;
+  if (!stage4aHookPoolTrace) resetStage4aHookPoolTrace();
+  const t = stage4aHookPoolTrace!;
+  if (site === 'contour') {
+    if (source === 'vault') t.pickContourVault++;
+    else t.pickContourLegacy++;
+  } else if (source === 'vault') t.pickFallbackVault++;
+  else t.pickFallbackLegacy++;
+}
+
+function resolveHookContourPool(
+  chord: string,
+  low: number,
+  high: number,
+  presetId: string | undefined,
+  chordToneOpts: ChordTonesOptions | undefined,
+  traceSite: 'contour' | 'fallback'
+): { pool: number[]; source: HookContourPoolSource } {
+  const result = hookContourPoolMidi(chord, low, high, presetId, chordToneOpts);
+  stage4aTracePool(result.source, traceSite);
+  return result;
+}
+
+/** Nearest pool member in contour direction (vault fallback mini-walk). */
+function poolStepInContourDirection(
+  pool: number[],
+  curr: number,
+  dir: number,
+  low: number,
+  high: number,
+  maxAbs: number = 8
+): number {
+  const inBand = (p: number) => {
+    const d = p - curr;
+    if (dir > 0) return d > 0 && d <= maxAbs;
+    if (dir < 0) return d < 0 && d >= -maxAbs;
+    return Math.abs(d) <= 2;
+  };
+  let candidates = pool.filter(inBand);
+  if (candidates.length === 0) {
+    candidates = pool.filter((p) => {
+      const d = p - curr;
+      if (dir > 0) return d > 0;
+      if (dir < 0) return d < 0;
+      return Math.abs(d) <= 2;
+    });
+  }
+  if (candidates.length === 0) return clampPitch(curr, low, high);
+  if (dir > 0) {
+    const best = candidates.reduce((a, b) => (b - curr < a - curr ? b : a));
+    return clampPitch(best, low, high);
+  }
+  if (dir < 0) {
+    const best = candidates.reduce((a, b) => (curr - b < curr - a ? b : a));
+    return clampPitch(best, low, high);
+  }
+  const best = candidates.reduce((a, b) => (Math.abs(b - curr) < Math.abs(a - curr) ? b : a));
+  return clampPitch(best, low, high);
 }
 
 function contourUDSToDirs(c: Motif['contour']): HookContourDirs {
@@ -496,11 +585,17 @@ function pickPitchesForContour(
   seed: number,
   salt: number,
   intervalScale: 1 | 2,
-  chordToneOpts?: ChordTonesOptions
+  chordToneOpts?: ChordTonesOptions,
+  presetId?: string
 ): number[] | null {
-  const tones = guitarChordTonesInRange(chord, low, high, chordToneOpts);
-  const pool = uniquePoolMidi(tones);
-  if (pool.length < 2) return null;
+  const { pool } = resolveHookContourPool(chord, low, high, presetId, chordToneOpts, 'contour');
+  if (pool.length < 2) {
+    if (process.env.STAGE4A_HOOK_POOL_TRACE === '1') {
+      if (!stage4aHookPoolTrace) resetStage4aHookPoolTrace();
+      stage4aHookPoolTrace!.contourNullReturns++;
+    }
+    return null;
+  }
   for (let attempt = 1; attempt <= 64; attempt++) {
     const startPc = pool[Math.floor(seededUnit(seed, salt, attempt * 17) * pool.length)];
     let curr = clampPitch(startPc, low, high);
@@ -517,6 +612,10 @@ function pickPitchesForContour(
       });
       if (candidates.length === 0) {
         failed = true;
+        if (process.env.STAGE4A_HOOK_POOL_TRACE === '1') {
+          if (!stage4aHookPoolTrace) resetStage4aHookPoolTrace();
+          stage4aHookPoolTrace!.contourStepFailures++;
+        }
         break;
       }
       const pick = candidates[Math.floor(seededUnit(seed, salt, attempt * 31 + i * 7) * candidates.length)];
@@ -526,7 +625,71 @@ function pickPitchesForContour(
     if (failed) continue;
     return out;
   }
+  if (process.env.STAGE4A_HOOK_POOL_TRACE === '1') {
+    if (!stage4aHookPoolTrace) resetStage4aHookPoolTrace();
+    stage4aHookPoolTrace!.contourNullReturns++;
+  }
   return null;
+}
+
+function normalizeHookVaultPc(pc: number): number {
+  return ((pc % 12) + 12) % 12;
+}
+
+/** Pick hook bar pitches + pool source (vault vs legacy) for receipt tagging at emit. */
+function pickHookBarPitches(
+  chord: string,
+  low: number,
+  high: number,
+  contourDirs: HookContourDirs,
+  seed: number,
+  salt: number,
+  intervalScale: 1 | 2,
+  chordToneOpts?: ChordTonesOptions,
+  presetId?: string
+): { pitches: number[]; poolSource: HookContourPoolSource } {
+  const { source } = hookContourPoolMidi(chord, low, high, presetId, chordToneOpts);
+  const contour = pickPitchesForContour(
+    chord,
+    low,
+    high,
+    contourDirs,
+    seed,
+    salt,
+    intervalScale,
+    chordToneOpts,
+    presetId
+  );
+  if (contour) return { pitches: contour, poolSource: source };
+  return {
+    pitches: pickPicksFallback(chord, low, high, contourDirs, chordToneOpts, presetId),
+    poolSource: source,
+  };
+}
+
+/** Stage 4a follow-up — hook emit receipts so 4b.3/4d skip-guards protect vault-pool picks. */
+function appendHookVaultEmitSnapReceipts(
+  context: CompositionContext,
+  bar: number,
+  pitches: number[],
+  chord: string,
+  chordToneOpts?: ChordTonesOptions
+): void {
+  if (!isStandardGuitarBassDuo(context.presetId)) return;
+  const md = context.generationMetadata;
+  if (!md) return;
+  const locked = chordToneOpts?.lockedHarmony ?? true;
+  const res = resolveDuoHarmonyForSymbol(chord, { lockedHarmony: locked });
+  if (res.source !== 'vault') return;
+  const newReceipts: DuoVaultMotifSnapReceipt[] = pitches.map((pitch, noteIndex) => ({
+    bar,
+    noteIndex,
+    vaultPcChosen: normalizeHookVaultPc(pitch),
+    vaultSource: res.source,
+    plPitch: pitch,
+    snappedMidi: pitch,
+  }));
+  md.duoVaultMotifSnapReceipts = [...(md.duoVaultMotifSnapReceipts ?? []), ...newReceipts];
 }
 
 function pickPicksFallback(
@@ -534,13 +697,21 @@ function pickPicksFallback(
   low: number,
   high: number,
   contourDirs: HookContourDirs,
-  chordToneOpts?: ChordTonesOptions
+  chordToneOpts?: ChordTonesOptions,
+  presetId?: string
 ): number[] {
-  const tones = guitarChordTonesInRange(chord, low, high, chordToneOpts);
-  const pool = uniquePoolMidi(tones);
-  const a = clampPitch(pool[Math.min(1, pool.length - 1)], low, high);
+  const { pool, source } = resolveHookContourPool(chord, low, high, presetId, chordToneOpts, 'fallback');
+  const a = clampPitch(pool[Math.min(1, pool.length - 1)] ?? pool[0] ?? low, low, high);
   let curr = a;
   const out: number[] = [curr];
+  if (source === 'vault') {
+    for (const dir of contourDirs) {
+      const next = poolStepInContourDirection(pool, curr, dir, low, high);
+      out.push(next);
+      curr = next;
+    }
+    return out;
+  }
   for (const dir of contourDirs) {
     const next =
       dir > 0 ? clampPitch(curr + 4, low, high) : dir < 0 ? clampPitch(curr - 3, low, high) : curr;
@@ -556,9 +727,14 @@ function rhythmToLegacy(r: Motif['rhythm']): { start: number; dur: number }[] {
 
 function emitMeasureFromPitches(
   m: MeasureModel,
+  bar: number,
+  chord: string,
+  context: CompositionContext,
   pitches: number[],
   rhythm: { start: number; dur: number }[],
-  motifRef: string
+  motifRef: string,
+  poolSource: HookContourPoolSource,
+  chordToneOpts?: ChordTonesOptions
 ): void {
   m.events = [];
   const n = Math.min(pitches.length, rhythm.length);
@@ -574,6 +750,9 @@ function emitMeasureFromPitches(
     }
   }
   if (sum < 4 - 1e-4) addEvent(m, createRest(sum, 4 - sum));
+  if (poolSource === 'vault') {
+    appendHookVaultEmitSnapReceipts(context, bar, pitches.slice(0, n), chord, chordToneOpts);
+  }
 }
 
 function pitchesToCoreMotif(
@@ -714,11 +893,20 @@ export function buildSongModeMotifV2Runtime(params: {
   const [stLo, stHi] = registerForBar(1);
   const dirs0 = contourUDSToDirs(primary.contour);
   const stmtRh = rhythmToLegacy(primary.rhythm);
-  const statementPitchesRaw =
-    pickPitchesForContour(chord1, stLo, stHi, dirs0, seed, 91010, 1, chordToneOpts) ??
-    pickPicksFallback(chord1, stLo, stHi, dirs0, chordToneOpts);
-  const nStmt = Math.min(statementPitchesRaw.length, stmtRh.length);
-  const statementPitches = statementPitchesRaw.slice(0, nStmt);
+  const statementPick = pickHookBarPitches(
+    chord1,
+    stLo,
+    stHi,
+    dirs0,
+    seed,
+    91010,
+    1,
+    chordToneOpts,
+    context.presetId
+  );
+  const nStmt = Math.min(statementPick.pitches.length, stmtRh.length);
+  const statementPitches = statementPick.pitches.slice(0, nStmt);
+  const statementPoolSource = statementPick.poolSource;
   const stmtRhAligned = stmtRh.slice(0, nStmt);
 
   const variationKind = seededUnit(seed, 91004, 0) < 0.5 ? 'rhythm' : 'interval';
@@ -756,25 +944,54 @@ export function buildSongModeMotifV2Runtime(params: {
 
   const emitScheduledBar = (bar: number, m: MeasureModel): void => {
     const entry = schedule.find((s) => s.bar === bar);
+    const chDefault = getChordForBar(bar, context);
     if (!entry) {
-      emitMeasureFromPitches(m, statementPitches, stmtRhAligned, MOTIF_REF);
+      emitMeasureFromPitches(
+        m,
+        bar,
+        chDefault,
+        context,
+        statementPitches,
+        stmtRhAligned,
+        MOTIF_REF,
+        statementPoolSource,
+        chordToneOpts
+      );
       return;
     }
-    const ch = getChordForBar(bar, context);
+    const ch = chDefault;
     const [zLow, zHigh] = registerForBar(bar);
 
     if (entry.role === 'statement') {
-      emitMeasureFromPitches(m, statementPitches, stmtRhAligned, MOTIF_REF);
+      emitMeasureFromPitches(
+        m,
+        bar,
+        ch,
+        context,
+        statementPitches,
+        stmtRhAligned,
+        MOTIF_REF,
+        statementPoolSource,
+        chordToneOpts
+      );
       return;
     }
     if (entry.role === 'reinforce') {
       const sl = sliceMotif(primary, 0, entry.variant.transformType === 'transpose' ? 4 : 3);
       const dirs = contourUDSToDirs(intervalsToUDS(sl.intervals));
       const rh = rhythmToLegacy(sl.rhythm);
-      const pitches =
-        pickPitchesForContour(ch, zLow, zHigh, dirs, seed, 92000 + bar, 1, chordToneOpts) ??
-        pickPicksFallback(ch, zLow, zHigh, dirs, chordToneOpts);
-      emitMeasureFromPitches(m, pitches, rh, MOTIF_REF);
+      const { pitches, poolSource } = pickHookBarPitches(
+        ch,
+        zLow,
+        zHigh,
+        dirs,
+        seed,
+        92000 + bar,
+        1,
+        chordToneOpts,
+        context.presetId
+      );
+      emitMeasureFromPitches(m, bar, ch, context, pitches, rh, MOTIF_REF, poolSource, chordToneOpts);
       return;
     }
     if (entry.role === 'return') {
@@ -814,16 +1031,24 @@ export function buildSongModeMotifV2Runtime(params: {
             context.presetId,
           );
       const rhReturn = hookFirst ? stmtRh.slice(0, rp.length) : returnRhythm;
-      emitMeasureFromPitches(m, rp, rhReturn, MOTIF_REF);
+      emitMeasureFromPitches(m, bar, ch, context, rp, rhReturn, MOTIF_REF, 'legacy', chordToneOpts);
       return;
     }
     const dev = applyDevelopTransform(primary, bar, seed, entry.variant.transformType);
     const dirs = contourUDSToDirs(intervalsToUDS(dev.intervals));
     const rh = rhythmToLegacy(dev.rhythm);
-    const pitches =
-      pickPitchesForContour(ch, zLow, zHigh, dirs, seed, 93000 + bar, 1, chordToneOpts) ??
-      pickPicksFallback(ch, zLow, zHigh, dirs, chordToneOpts);
-    emitMeasureFromPitches(m, pitches, rh, MOTIF_REF);
+    const { pitches, poolSource } = pickHookBarPitches(
+      ch,
+      zLow,
+      zHigh,
+      dirs,
+      seed,
+      93000 + bar,
+      1,
+      chordToneOpts,
+      context.presetId
+    );
+    emitMeasureFromPitches(m, bar, ch, context, pitches, rh, MOTIF_REF, poolSource, chordToneOpts);
   };
 
   return {

@@ -136,6 +136,36 @@ export function snapGuitarPitchToChordWindow(
   return bd <= maxDelta ? best : pitch;
 }
 
+export type HookContourPoolSource = 'vault' | 'legacy';
+
+/** Stage 4a — vault or legacy MIDI pool for Song Mode hook contour walk (`pickPitchesForContour`). */
+export function hookContourPoolMidi(
+  chord: string,
+  low: number,
+  high: number,
+  presetId: string | undefined,
+  chordToneOpts?: ChordTonesOptions
+): { pool: number[]; source: HookContourPoolSource } {
+  const locked = chordToneOpts?.lockedHarmony ?? true;
+  if (presetId !== undefined && isStandardGuitarBassDuo(presetId)) {
+    const res = resolveDuoHarmonyForSymbol(chord, { lockedHarmony: locked });
+    if (res.source !== 'fallback' && res.melodyPcs.length > 0) {
+      const midis: number[] = [];
+      for (const vpc of res.melodyPcs) {
+        const pc = normalizePc(vpc);
+        for (let m = low; m <= high; m++) {
+          if (normalizePc(m) === pc) midis.push(m);
+        }
+      }
+      const pool = midis.length > 0 ? [...new Set(midis)].sort((a, b) => a - b) : [];
+      if (pool.length > 0) return { pool, source: 'vault' };
+    }
+  }
+  const legacy = guitarChordTonesInRange(chord, low, high, chordToneOpts);
+  const raw = [legacy.root, legacy.third, legacy.fifth, legacy.seventh].map((p) => Math.round(p));
+  return { pool: Array.from(new Set(raw)).sort((a, b) => a - b), source: 'legacy' };
+}
+
 /** Vault melody PCs as MIDI candidates in [low, high] for leap-repair pools (Stage 4d.3). Returns null → use legacy. */
 export function vaultMelodyPitchesInRange(
   chord: string,
@@ -145,17 +175,8 @@ export function vaultMelodyPitchesInRange(
   chordToneOpts?: ChordTonesOptions
 ): number[] | null {
   if (!isStandardGuitarBassDuo(context.presetId)) return null;
-  const locked = chordToneOpts?.lockedHarmony ?? true;
-  const res = resolveDuoHarmonyForSymbol(chord, { lockedHarmony: locked });
-  if (res.source === 'fallback' || res.melodyPcs.length === 0) return null;
-  const midis: number[] = [];
-  for (const vpc of res.melodyPcs) {
-    const pc = normalizePc(vpc);
-    for (let m = low; m <= high; m++) {
-      if (normalizePc(m) === pc) midis.push(m);
-    }
-  }
-  return midis.length > 0 ? [...new Set(midis)].sort((a, b) => a - b) : null;
+  const { pool, source } = hookContourPoolMidi(chord, low, high, context.presetId, chordToneOpts);
+  return source === 'vault' ? pool : null;
 }
 
 function liftPcToRange(pc: number, refMidi: number, low: number, high: number): number {

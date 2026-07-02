@@ -5472,9 +5472,11 @@ function buildGuitarPart(
     context.generationMetadata &&
     context.generationMetadata.duoVaultMotifEnabled !== false
   ) {
+    /** Hook path pushes receipts at emit into metadata; baseline path uses local array — merge both. */
+    const hookEmitReceipts = context.generationMetadata.duoVaultMotifSnapReceipts ?? [];
     context.generationMetadata = {
       ...context.generationMetadata,
-      duoVaultMotifSnapReceipts,
+      duoVaultMotifSnapReceipts: [...hookEmitReceipts, ...duoVaultMotifSnapReceipts],
       duoVaultSourceFallbackNoteCount,
       duoVaultContourNullReturns,
     };
