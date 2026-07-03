@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { CompositionContext } from '@composer-os/core/compositionContext';
+import { useEffect, useMemo, useState } from 'react';
 import { parseChordProgressionInputWithBarCount } from '../utils/chordProgressionClient';
 import { buildReharmPreviewContextFromBars } from '../utils/buildReharmPreviewContext';
 import { buildReharmPostGenPreviewContext } from '@composer-os/core/harmony/buildReharmPostGenPreviewContext';
@@ -10,25 +9,13 @@ import { emotionalDriftOptionLabel, sliderToTargetReharmDrift } from '../utils/r
 import { barIndexFromPlaybackBeat, clampBarToForm } from '../utils/reharmBarRange';
 import { extractMelodyPcsForBarRange, type ReharmMelodyPcsExtraction } from '../utils/reharmMelodyPcsExtract';
 
-function useApplyReharm(
-  context: CompositionContext | null,
-  range: { startBar: number; endBar: number } | null,
-  onApplyBars?: (bars: string[]) => void
-) {
-  return useCallback(
-    (alt: AlternativeProgression) => {
-      if (!context || !range || !onApplyBars) return;
-      const bars = applyReharmAlternative(
-        alt,
-        Math.min(range.startBar, range.endBar),
-        Math.max(range.startBar, range.endBar),
-        context
-      );
-      onApplyBars(bars);
-    },
-    [context, range, onApplyBars]
-  );
-}
+type ReharmStagingState = {
+  alternative: AlternativeProgression;
+  pendingStrip: string[];
+  startBar: number;
+  endBar: number;
+  seed: number;
+};
 
 const ROOT_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'] as const;
 
@@ -84,7 +71,7 @@ export function ReharmPanel({
   styleTransferWayneHarmonyAuthoritative,
   postGenMusicXml = null,
   postGenTimeSig = '4/4',
-  onApplyBars,
+  onApplyBars: _onApplyBars,
 }: ReharmPanelProps) {
   const [startBar, setStartBar] = useState(1);
   const [endBar, setEndBar] = useState(() => Math.min(8, Math.max(1, songFormBars)));
@@ -93,6 +80,7 @@ export function ReharmPanel({
   const [seedInput, setSeedInput] = useState('');
   const [driftSlider, setDriftSlider] = useState(0.5);
   const [result, setResult] = useState<ReharmResult | null>(null);
+  const [staging, setStaging] = useState<ReharmStagingState | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const usePostGenHarmony = useMemo(
@@ -189,6 +177,7 @@ export function ReharmPanel({
   function runReharm() {
     setError(null);
     setResult(null);
+    setStaging(null);
     if (!previewContext) {
       setError(parsed.ok ? 'Could not build harmony preview context.' : parsed.error);
       return;
@@ -229,8 +218,28 @@ export function ReharmPanel({
 
   const parseIssue = !parsed.ok ? parsed.error : null;
 
-  const applyRange = result ? { startBar: result.startBar, endBar: result.endBar } : null;
-  const handleApplyAlternative = useApplyReharm(previewContext, applyRange, onApplyBars);
+  function stageAlternative(alt: AlternativeProgression) {
+    if (!previewContext || !result) return;
+    const sb = result.startBar;
+    const eb = result.endBar;
+    try {
+      const pendingStrip = applyReharmAlternative(alt, sb, eb, previewContext);
+      setStaging({
+        alternative: alt,
+        pendingStrip,
+        startBar: sb,
+        endBar: eb,
+        seed: result.seed,
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  function discardStaging() {
+    setStaging(null);
+  }
+
   const targetDrift = sliderToTargetReharmDrift(driftSlider);
 
   return (
@@ -433,6 +442,43 @@ export function ReharmPanel({
         <p style={{ margin: '0 0 0.65rem', fontSize: '0.82rem', color: '#dc2626' }}>{error}</p>
       )}
 
+      {staging ? (
+        <div
+          style={{
+            marginBottom: '0.75rem',
+            padding: '0.55rem 0.65rem',
+            borderRadius: 8,
+            border: '1px solid var(--accent, #6366f1)',
+            background: 'rgba(99,102,241,0.08)',
+          }}
+        >
+          <p style={{ margin: '0 0 0.45rem', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text)' }}>
+            Staged preview (not applied)
+          </p>
+          <p style={{ margin: '0 0 0.45rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+            Lens:{' '}
+            <strong style={{ color: 'var(--text)' }}>
+              {buildReharmLensConfig(staging.alternative.lensId).displayName}
+            </strong>
+            {' · '}
+            bars {staging.startBar}–{staging.endBar}
+            {' · '}
+            seed {staging.seed}
+          </p>
+          <p style={{ margin: '0 0 0.5rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+            Pending strip (range only):{' '}
+            <code style={{ fontSize: '0.76rem', color: 'var(--text)' }}>
+              {staging.pendingStrip
+                .slice(staging.startBar - 1, staging.endBar)
+                .join(' | ')}
+            </code>
+          </p>
+          <button type="button" className="secondary" onClick={discardStaging}>
+            Discard staged preview
+          </button>
+        </div>
+      ) : null}
+
       {result && (
         <div style={{ overflowX: 'auto' }}>
           <p style={{ margin: '0 0 0.5rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
@@ -441,16 +487,18 @@ export function ReharmPanel({
             Drift: <strong style={{ color: 'var(--text)' }}>{emotionalDriftOptionLabel(targetDrift)}</strong>
           </p>
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-            {result.alternatives.map((alt) => (
+            {result.alternatives.map((alt) => {
+              const isStaged = staging?.alternative.lensId === alt.lensId;
+              return (
               <div
                 key={alt.lensId}
                 style={{
                   flex: '1 1 220px',
                   minWidth: 200,
-                  border: '1px solid var(--border)',
+                  border: isStaged ? '2px solid var(--accent, #6366f1)' : '1px solid var(--border)',
                   borderRadius: 8,
                   padding: '0.5rem 0.6rem',
-                  background: 'var(--bg)',
+                  background: isStaged ? 'rgba(99,102,241,0.06)' : 'var(--bg)',
                 }}
               >
                 <div style={{ marginBottom: '0.35rem', fontWeight: 600, fontSize: '0.88rem' }}>
@@ -465,10 +513,10 @@ export function ReharmPanel({
                 <div style={{ marginBottom: '0.45rem' }}>
                   <button
                     type="button"
-                    disabled={!result || !previewContext || !onApplyBars}
-                    onClick={() => handleApplyAlternative(alt)}
+                    disabled={!result || !previewContext}
+                    onClick={() => stageAlternative(alt)}
                   >
-                    Apply
+                    {isStaged ? 'Staged' : 'Stage preview'}
                   </button>
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
@@ -506,7 +554,8 @@ export function ReharmPanel({
                   </tbody>
                 </table>
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
       )}
