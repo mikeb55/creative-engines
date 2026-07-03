@@ -126,7 +126,7 @@ export function ReharmPanel({
   styleTransferWayneHarmonyAuthoritative,
   postGenMusicXml = null,
   postGenTimeSig = '4/4',
-  onApplyBars: _onApplyBars,
+  onApplyBars,
 }: ReharmPanelProps) {
   const [startBar, setStartBar] = useState(1);
   const [endBar, setEndBar] = useState(() => Math.min(8, Math.max(1, songFormBars)));
@@ -294,6 +294,12 @@ export function ReharmPanel({
   }
 
   function discardStaging() {
+    setStaging(null);
+  }
+
+  function applyStaging() {
+    if (!staging || !onApplyBars) return;
+    onApplyBars(staging.pendingStrip);
     setStaging(null);
   }
 
@@ -531,7 +537,10 @@ export function ReharmPanel({
             startBar={staging.startBar}
             endBar={staging.endBar}
           />
-          <div style={{ marginTop: '0.5rem' }}>
+          <div style={{ marginTop: '0.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <button type="button" onClick={applyStaging} disabled={!onApplyBars}>
+              Apply staged reharm
+            </button>
             <button type="button" className="secondary" onClick={discardStaging}>
               Discard staged preview
             </button>
