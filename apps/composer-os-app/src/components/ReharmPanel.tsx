@@ -5,6 +5,7 @@ import { buildReharmPreviewContextFromBars } from '../utils/buildReharmPreviewCo
 import { applyReharmAlternative, executeReharm } from '@composer-os/core/harmony/reharmController';
 import { buildReharmLensConfig } from '@composer-os/core/harmony/reharmLensConfig';
 import type { AlternativeProgression, ReharmResult } from '@composer-os/core/harmony/reharmSequenceTypes';
+import { emotionalDriftOptionLabel, sliderToTargetReharmDrift } from '../utils/reharmDriftUi';
 
 function useApplyReharm(
   context: CompositionContext | null,
@@ -68,6 +69,7 @@ export function ReharmPanel({
   const [endBar, setEndBar] = useState(() => Math.min(8, Math.max(1, songFormBars)));
   const [selectedLens, setSelectedLens] = useState<Set<string>>(new Set());
   const [seedInput, setSeedInput] = useState('');
+  const [driftSlider, setDriftSlider] = useState(0.5);
   const [result, setResult] = useState<ReharmResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -125,12 +127,14 @@ export function ReharmPanel({
     }
 
     try {
+      const drift = sliderToTargetReharmDrift(driftSlider);
       const out = executeReharm({
         context: previewContext,
         startBar: sb,
         endBar: eb,
         lensIds,
         seed: seedParsed,
+        drift,
       });
       setResult(out);
     } catch (e) {
@@ -142,6 +146,7 @@ export function ReharmPanel({
 
   const applyRange = result ? { startBar: result.startBar, endBar: result.endBar } : null;
   const handleApplyAlternative = useApplyReharm(previewContext, applyRange, onApplyBars);
+  const targetDrift = sliderToTargetReharmDrift(driftSlider);
 
   return (
     <div style={{ marginTop: '0.85rem' }}>
@@ -235,6 +240,31 @@ export function ReharmPanel({
         </button>
       </div>
 
+      <div style={{ marginBottom: '0.65rem', maxWidth: 360 }}>
+        <label
+          htmlFor="co-reharm-drift-slider"
+          style={{ display: 'block', marginBottom: 6, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+        >
+          Drift proximity (targets {emotionalDriftOptionLabel(targetDrift)})
+        </label>
+        <input
+          id="co-reharm-drift-slider"
+          type="range"
+          min={0}
+          max={1}
+          step={0.1}
+          value={driftSlider}
+          onChange={(e) => {
+            const raw = Number(e.target.value);
+            setDriftSlider(Math.min(1, Math.max(0, Math.round(raw * 10) / 10)));
+          }}
+          style={{ width: '100%' }}
+        />
+        <p style={{ margin: '0.35rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+          {driftSlider.toFixed(1)} · engine drift: <strong style={{ color: 'var(--text)' }}>{targetDrift}</strong>
+        </p>
+      </div>
+
       <fieldset
         style={{
           margin: '0 0 0.75rem',
@@ -280,6 +310,8 @@ export function ReharmPanel({
         <div style={{ overflowX: 'auto' }}>
           <p style={{ margin: '0 0 0.5rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
             Seed used: <strong style={{ color: 'var(--text)' }}>{result.seed}</strong>
+            {' · '}
+            Drift: <strong style={{ color: 'var(--text)' }}>{emotionalDriftOptionLabel(targetDrift)}</strong>
           </p>
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
             {result.alternatives.map((alt) => (

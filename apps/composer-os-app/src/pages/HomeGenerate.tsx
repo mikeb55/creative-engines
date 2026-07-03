@@ -296,6 +296,11 @@ import {
 } from '@composer-os/core/irealpro';
 import { ChorusArcStrip } from '../components/ChorusArcStrip';
 import { ReharmPanel } from '../components/ReharmPanel';
+import {
+  emotionalDriftOptionLabel,
+  sliderToTargetReharmDrift,
+  VAULT_EMOTIONAL_DRIFT_OPTIONS,
+} from '../utils/reharmDriftUi';
 import { WriterRecipeCard } from '../components/WriterRecipeCard';
 import { DEFAULT_BRAZILIAN_RHYTHM_PRESET_ID } from '../slices/brazilianRhythmSlice';
 import { DEFAULT_SECOND_LINE_RHYTHM_PRESET_ID } from '../slices/secondLineRhythmSlice';
@@ -477,15 +482,6 @@ function boolArrayToLength(source: boolean[], n: number): boolean[] {
   return out;
 }
 
-const VAULT_EMOTIONAL_DRIFT_OPTIONS: { value: EmotionalDrift; label: string }[] = [
-  { value: 'neutral', label: 'neutral' },
-  { value: 'darker', label: 'darker' },
-  { value: 'brighter', label: 'brighter' },
-  { value: 'more-suspended', label: 'more-suspended' },
-  { value: 'more-unstable', label: 'more-unstable' },
-  { value: 'more-cinematic', label: 'more-cinematic' },
-];
-
 function nextEmotionalDrift(current: EmotionalDrift): EmotionalDrift {
   const opts = VAULT_EMOTIONAL_DRIFT_OPTIONS;
   const idx = opts.findIndex((o) => o.value === current);
@@ -569,20 +565,6 @@ function reharmDriftAffinityScore(chordTypeId: string, drift: EmotionalDrift): n
   }
 }
 
-function sliderToTargetReharmDrift(slider: number): EmotionalDrift {
-  const order: EmotionalDrift[] = [
-    'neutral',
-    'darker',
-    'brighter',
-    'more-suspended',
-    'more-unstable',
-    'more-cinematic',
-  ];
-  const t = Math.min(1, Math.max(0, slider));
-  const idx = Math.round(t * (order.length - 1));
-  return order[idx]!;
-}
-
 function dominantEmotionalDriftForChordType(chordTypeId: string): EmotionalDrift {
   let best: EmotionalDrift = 'neutral';
   let bestScore = -1;
@@ -614,10 +596,6 @@ const CHORD_INSPECTOR_PC_TO_SHARP_ROOT: readonly string[] = [
 function formatChordInspectorSubstituteSymbol(rootPc: number, vaultChordTypeId: string): string {
   const r = CHORD_INSPECTOR_PC_TO_SHARP_ROOT[((rootPc % 12) + 12) % 12] ?? 'C';
   return `${r}${vaultChordTypeId}`;
-}
-
-function emotionalDriftOptionLabel(drift: EmotionalDrift): string {
-  return VAULT_EMOTIONAL_DRIFT_OPTIONS.find((o) => o.value === drift)?.label ?? drift;
 }
 
 const VAULT_GENERATION_OPTIONS_HINT =
