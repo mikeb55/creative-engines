@@ -96,6 +96,7 @@ import { runMartinoConvertGateTests } from '../../../src/engine/__tests__/martin
 import { runPhase67EnsembleGuitarEtudeTests } from './phase67EnsembleGuitarEtude.test';
 import { runPhase67InstrumentGroupMusicXmlTests } from './phase67InstrumentGroupMusicXml.test';
 import { runPhase8ImprovReharmStochasticCollisionTests } from './phase8ImprovReharmStochasticCollision.test';
+import { runReharmPostGenUiThinV1Tests } from './reharmPostGenUiThinV1.test';
 import { runHarmonicSceneMotifShoutSmokeTests } from './harmonicSceneMotifShoutSmoke.test';
 import { runFollowup4MingusSchneiderThreadgillSmokeTests } from './followup4MingusSchneiderThreadgillSmoke.test';
 import { runFollowup5ShoutBrassInPlaceSmokeTests } from './followup5ShoutBrassInPlaceSmoke.test';
@@ -278,6 +279,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Phase 6+7 — ensemble / guitar / étude helpers', run: runPhase67EnsembleGuitarEtudeTests },
   { label: 'Phase 6+7 — instrumentGroup MusicXML (quartet + guitar TAB)', run: runPhase67InstrumentGroupMusicXmlTests },
   { label: 'Phase 8 — improv + reharm + stochastic + collision', run: runPhase8ImprovReharmStochasticCollisionTests },
+  { label: 'Reharm post-gen UI thin-v1 (preview context + apply regen)', run: runReharmPostGenUiThinV1Tests },
   { label: 'Harmony spine LOCK harness (mismatch throws)', run: runHarmonySpineLockSmokeTests },
   { label: 'HarmonicScene motif filter + shout/outro energy', run: runHarmonicSceneMotifShoutSmokeTests },
   { label: 'Slonimsky Z7 harmonic scene (cell → voicing colour)', run: runSlonimskyHarmonicSceneTests },
