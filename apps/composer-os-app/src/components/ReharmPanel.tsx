@@ -8,6 +8,7 @@ import { buildReharmLensConfig } from '@composer-os/core/harmony/reharmLensConfi
 import type { AlternativeProgression, ReharmResult } from '@composer-os/core/harmony/reharmSequenceTypes';
 import { emotionalDriftOptionLabel, sliderToTargetReharmDrift } from '../utils/reharmDriftUi';
 import { barIndexFromPlaybackBeat, clampBarToForm } from '../utils/reharmBarRange';
+import { extractMelodyPcsForBarRange, type ReharmMelodyPcsExtraction } from '../utils/reharmMelodyPcsExtract';
 
 function useApplyReharm(
   context: CompositionContext | null,
@@ -64,6 +65,9 @@ export type ReharmPanelProps = {
   postGenHarmonyBars?: string[] | null;
   postGenSeed?: number;
   styleTransferWayneHarmonyAuthoritative?: boolean;
+  /** Last generate MusicXML for post-gen melodyPc extraction. */
+  postGenMusicXml?: string | null;
+  postGenTimeSig?: string;
   /** Persists full progression after apply (preview-only context splice). */
   onApplyBars?: (bars: string[]) => void;
 };
@@ -78,6 +82,8 @@ export function ReharmPanel({
   postGenHarmonyBars = null,
   postGenSeed,
   styleTransferWayneHarmonyAuthoritative,
+  postGenMusicXml = null,
+  postGenTimeSig = '4/4',
   onApplyBars,
 }: ReharmPanelProps) {
   const [startBar, setStartBar] = useState(1);
@@ -164,6 +170,13 @@ export function ReharmPanel({
     setEndBar(Math.max(1, Math.min(songFormBars, next)));
   }
 
+  const melodyExtraction: ReharmMelodyPcsExtraction | null = useMemo(() => {
+    if (!usePostGenHarmony || !postGenMusicXml?.trim()) return null;
+    const sb = Math.min(startBar, endBar);
+    const eb = Math.max(startBar, endBar);
+    return extractMelodyPcsForBarRange(postGenMusicXml, sb, eb, postGenTimeSig);
+  }, [usePostGenHarmony, postGenMusicXml, startBar, endBar, postGenTimeSig]);
+
   function toggleLens(id: string) {
     setSelectedLens((prev) => {
       const next = new Set(prev);
@@ -197,6 +210,8 @@ export function ReharmPanel({
 
     try {
       const drift = sliderToTargetReharmDrift(driftSlider);
+      const melodyPcs =
+        usePostGenHarmony && melodyExtraction?.ok ? melodyExtraction.melodyPcs : undefined;
       const out = executeReharm({
         context: previewContext,
         startBar: sb,
@@ -204,6 +219,7 @@ export function ReharmPanel({
         lensIds,
         seed: seedParsed,
         drift,
+        ...(melodyPcs ? { melodyPcs } : {}),
       });
       setResult(out);
     } catch (e) {
@@ -222,6 +238,27 @@ export function ReharmPanel({
       {usePostGenHarmony ? (
         <p style={{ margin: '0 0 0.65rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
           Harmony source: <strong style={{ color: 'var(--text)' }}>last generate</strong> (slice precompute / export truth)
+        </p>
+      ) : null}
+      {usePostGenHarmony && melodyExtraction ? (
+        melodyExtraction.ok ? (
+          <p style={{ margin: '0 0 0.65rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+            Melody PCs: from <strong style={{ color: 'var(--text)' }}>{melodyExtraction.partLabel}</strong>
+            {' · '}
+            {melodyExtraction.barsWithNotes}/{melodyExtraction.melodyPcs.length} bars with notes
+            {melodyExtraction.barsEmpty > 0
+              ? ` (${melodyExtraction.barsEmpty} empty → null in ranker)`
+              : ''}
+          </p>
+        ) : (
+          <p style={{ margin: '0 0 0.65rem', fontSize: '0.78rem', color: '#ca8a04' }}>
+            Melody extraction unavailable: {melodyExtraction.reason} (reharm runs without melodyPcs)
+          </p>
+        )
+      ) : null}
+      {usePostGenHarmony && !postGenMusicXml?.trim() ? (
+        <p style={{ margin: '0 0 0.65rem', fontSize: '0.78rem', color: '#ca8a04' }}>
+          No MusicXML from last generate — melodyPcs omitted (reharm runs without melody bias)
         </p>
       ) : null}
       {!usePostGenHarmony && parseIssue && (

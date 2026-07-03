@@ -3047,6 +3047,7 @@ export function HomeGenerate({
     (presetId === 'string_quartet' && sqTritonicColour !== 'none');
   const [playbackSeq, setPlaybackSeq] = useState<PlaybackSequence | null>(null);
   const [playbackBeat, setPlaybackBeat] = useState<number>(0);
+  const [lastGenerateMusicXml, setLastGenerateMusicXml] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [recentSongModeRuns, setRecentSongModeRuns] = useState<SongModeRecentRun[]>([]);
   const [compareRunAId, setCompareRunAId] = useState('');
@@ -4033,8 +4034,11 @@ export function HomeGenerate({
               },
             }).then((outcome) => {
               if (outcome.loadedXml) {
+                setLastGenerateMusicXml(outcome.loadedXml);
                 if (presetId === 'martino_linear') setMartinoXmlString(outcome.loadedXml);
                 publishGridFromXml(outcome.loadedXml, bpm, timeSig);
+              } else if (typeof r.xml === 'string' && r.xml.trim().length > 0) {
+                setLastGenerateMusicXml(r.xml);
               } else if (outcome.status === 'failed' || outcome.status === 'no_notes') {
                 clearGrid();
               }
@@ -4914,8 +4918,11 @@ export function HomeGenerate({
             },
           }).then((outcome) => {
             if (outcome.loadedXml) {
+              setLastGenerateMusicXml(outcome.loadedXml);
               if (presetId === 'martino_linear') setMartinoXmlString(outcome.loadedXml);
               publishGridFromXml(outcome.loadedXml, bpm, timeSig);
+            } else if (typeof r.xml === 'string' && r.xml.trim().length > 0) {
+              setLastGenerateMusicXml(r.xml);
             } else if (outcome.status === 'failed' || outcome.status === 'no_notes') {
               clearGrid();
             }
@@ -11180,6 +11187,12 @@ export function HomeGenerate({
           styleTransferWayneHarmonyAuthoritative={
             (result as { styleTransferWayneHarmonyAuthoritative?: boolean } | null)
               ?.styleTransferWayneHarmonyAuthoritative
+          }
+          postGenMusicXml={lastGenerateMusicXml ?? result?.xml ?? null}
+          postGenTimeSig={
+            iRealParsedChart?.timeSignature
+              ? `${iRealParsedChart.timeSignature.num}/${iRealParsedChart.timeSignature.den}`
+              : '4/4'
           }
           onApplyBars={(bars) => {
             setChordProgressionText(bars.join(' | '));
