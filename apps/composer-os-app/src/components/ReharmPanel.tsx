@@ -9,13 +9,68 @@ import { emotionalDriftOptionLabel, sliderToTargetReharmDrift } from '../utils/r
 import { barIndexFromPlaybackBeat, clampBarToForm } from '../utils/reharmBarRange';
 import { extractMelodyPcsForBarRange, type ReharmMelodyPcsExtraction } from '../utils/reharmMelodyPcsExtract';
 
+import { buildReharmStagingHarmonyRows } from '../utils/reharmStagingHarmonyRows';
+
 type ReharmStagingState = {
   alternative: AlternativeProgression;
+  /** Harmony strip before splice (export-truth / parsed baseline). */
+  baselineStrip: string[];
   pendingStrip: string[];
   startBar: number;
   endBar: number;
   seed: number;
 };
+
+function ReharmStagingHarmonyTable({
+  baselineStrip,
+  pendingStrip,
+  startBar,
+  endBar,
+}: {
+  baselineStrip: string[];
+  pendingStrip: string[];
+  startBar: number;
+  endBar: number;
+}) {
+  const rows = buildReharmStagingHarmonyRows(baselineStrip, pendingStrip, startBar, endBar);
+
+  return (
+    <div style={{ overflowX: 'auto' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
+        <thead>
+          <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
+            <th style={{ padding: '0.25rem 0.45rem 0.25rem 0' }}>Bar</th>
+            <th style={{ padding: '0.25rem 0.45rem' }}>Original</th>
+            <th style={{ padding: '0.25rem 0.45rem' }}>Staged candidate</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr
+              key={row.barIndex}
+              style={{
+                borderBottom: '1px solid rgba(128,128,128,0.15)',
+                background: row.changed ? 'rgba(99,102,241,0.07)' : undefined,
+              }}
+            >
+              <td style={{ padding: '0.2rem 0.45rem 0.2rem 0', fontWeight: 600 }}>{row.barIndex}</td>
+              <td style={{ padding: '0.2rem 0.45rem', color: 'var(--text-muted)' }}>{row.original}</td>
+              <td
+                style={{
+                  padding: '0.2rem 0.45rem',
+                  color: row.changed ? 'var(--text)' : 'var(--text-muted)',
+                  fontWeight: row.changed ? 600 : 400,
+                }}
+              >
+                {row.candidate}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 const ROOT_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'] as const;
 
@@ -219,13 +274,15 @@ export function ReharmPanel({
   const parseIssue = !parsed.ok ? parsed.error : null;
 
   function stageAlternative(alt: AlternativeProgression) {
-    if (!previewContext || !result) return;
+    if (!previewContext || !result || !parsed.ok) return;
     const sb = result.startBar;
     const eb = result.endBar;
     try {
+      const baselineStrip = [...parsed.bars];
       const pendingStrip = applyReharmAlternative(alt, sb, eb, previewContext);
       setStaging({
         alternative: alt,
+        baselineStrip,
         pendingStrip,
         startBar: sb,
         endBar: eb,
@@ -465,17 +522,20 @@ export function ReharmPanel({
             {' · '}
             seed {staging.seed}
           </p>
-          <p style={{ margin: '0 0 0.5rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-            Pending strip (range only):{' '}
-            <code style={{ fontSize: '0.76rem', color: 'var(--text)' }}>
-              {staging.pendingStrip
-                .slice(staging.startBar - 1, staging.endBar)
-                .join(' | ')}
-            </code>
+          <p style={{ margin: '0 0 0.45rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+            Harmony preview for bars {staging.startBar}–{staging.endBar} — original vs staged candidate (not applied)
           </p>
-          <button type="button" className="secondary" onClick={discardStaging}>
-            Discard staged preview
-          </button>
+          <ReharmStagingHarmonyTable
+            baselineStrip={staging.baselineStrip}
+            pendingStrip={staging.pendingStrip}
+            startBar={staging.startBar}
+            endBar={staging.endBar}
+          />
+          <div style={{ marginTop: '0.5rem' }}>
+            <button type="button" className="secondary" onClick={discardStaging}>
+              Discard staged preview
+            </button>
+          </div>
         </div>
       ) : null}
 
