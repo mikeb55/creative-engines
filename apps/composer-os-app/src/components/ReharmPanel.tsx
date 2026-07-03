@@ -6,6 +6,7 @@ import { applyReharmAlternative, executeReharm } from '@composer-os/core/harmony
 import { buildReharmLensConfig } from '@composer-os/core/harmony/reharmLensConfig';
 import type { AlternativeProgression, ReharmResult } from '@composer-os/core/harmony/reharmSequenceTypes';
 import { emotionalDriftOptionLabel, sliderToTargetReharmDrift } from '../utils/reharmDriftUi';
+import { barIndexFromPlaybackBeat, clampBarToForm } from '../utils/reharmBarRange';
 
 function useApplyReharm(
   context: CompositionContext | null,
@@ -54,6 +55,10 @@ export type ReharmPanelProps = {
   songFormBars: number;
   baseSeed: number;
   songwriterStyleId: string;
+  /** Absolute playback beat from last generate audition (0 = none). */
+  playbackBeat?: number;
+  /** Beats per bar from last playback sequence; required with playbackBeat for prefill. */
+  playbackBeatsPerBar?: number;
   /** Persists full progression after apply (preview-only context splice). */
   onApplyBars?: (bars: string[]) => void;
 };
@@ -63,10 +68,13 @@ export function ReharmPanel({
   songFormBars,
   baseSeed,
   songwriterStyleId,
+  playbackBeat = 0,
+  playbackBeatsPerBar,
   onApplyBars,
 }: ReharmPanelProps) {
   const [startBar, setStartBar] = useState(1);
   const [endBar, setEndBar] = useState(() => Math.min(8, Math.max(1, songFormBars)));
+  const [rangeUserEdited, setRangeUserEdited] = useState(false);
   const [selectedLens, setSelectedLens] = useState<Set<string>>(new Set());
   const [seedInput, setSeedInput] = useState('');
   const [driftSlider, setDriftSlider] = useState(0.5);
@@ -94,6 +102,34 @@ export function ReharmPanel({
     setStartBar((sb) => Math.min(Math.max(sb, 1), songFormBars));
     setEndBar((eb) => Math.min(Math.max(eb, 1), songFormBars));
   }, [songFormBars]);
+
+  const playbackBarHint = useMemo(() => {
+    if (playbackBeat <= 0 || playbackBeatsPerBar == null || playbackBeatsPerBar <= 0) return null;
+    return clampBarToForm(barIndexFromPlaybackBeat(playbackBeat, playbackBeatsPerBar), songFormBars);
+  }, [playbackBeat, playbackBeatsPerBar, songFormBars]);
+
+  useEffect(() => {
+    if (playbackBarHint == null || rangeUserEdited) return;
+    setStartBar(playbackBarHint);
+    setEndBar(playbackBarHint);
+  }, [playbackBarHint, rangeUserEdited]);
+
+  function applyPlaybackBarToRange() {
+    if (playbackBarHint == null) return;
+    setStartBar(playbackBarHint);
+    setEndBar(playbackBarHint);
+    setRangeUserEdited(false);
+  }
+
+  function onStartBarChange(next: number) {
+    setRangeUserEdited(true);
+    setStartBar(Math.max(1, Math.min(songFormBars, next)));
+  }
+
+  function onEndBarChange(next: number) {
+    setRangeUserEdited(true);
+    setEndBar(Math.max(1, Math.min(songFormBars, next)));
+  }
 
   function toggleLens(id: string) {
     setSelectedLens((prev) => {
@@ -178,7 +214,7 @@ export function ReharmPanel({
             min={1}
             max={songFormBars}
             value={startBar}
-            onChange={(e) => setStartBar(Math.max(1, Math.min(songFormBars, Number(e.target.value) || 1)))}
+            onChange={(e) => onStartBarChange(Number(e.target.value) || 1)}
             style={{
               width: 72,
               boxSizing: 'border-box',
@@ -200,7 +236,7 @@ export function ReharmPanel({
             min={1}
             max={songFormBars}
             value={endBar}
-            onChange={(e) => setEndBar(Math.max(1, Math.min(songFormBars, Number(e.target.value) || 1)))}
+            onChange={(e) => onEndBarChange(Number(e.target.value) || 1)}
             style={{
               width: 72,
               boxSizing: 'border-box',
@@ -239,6 +275,22 @@ export function ReharmPanel({
           Reharm
         </button>
       </div>
+
+      {playbackBarHint != null ? (
+        <p style={{ margin: '0 0 0.65rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+          Playback bar: <strong style={{ color: 'var(--text)' }}>{playbackBarHint}</strong>
+          {rangeUserEdited ? (
+            <>
+              {' · '}
+              <button type="button" className="secondary" style={{ fontSize: '0.78rem', padding: '0.15rem 0.4rem' }} onClick={applyPlaybackBarToRange}>
+                Use playback bar
+              </button>
+            </>
+          ) : (
+            ' · range prefilled from playback'
+          )}
+        </p>
+      ) : null}
 
       <div style={{ marginBottom: '0.65rem', maxWidth: 360 }}>
         <label

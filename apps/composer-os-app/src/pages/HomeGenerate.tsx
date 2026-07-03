@@ -11169,6 +11169,8 @@ export function HomeGenerate({
           songFormBars={songFormBars}
           baseSeed={baseSeed}
           songwriterStyleId={songwriterStyle}
+          playbackBeat={playbackBeat}
+          playbackBeatsPerBar={playbackSeq?.beatsPerBar}
           onApplyBars={(bars) => {
             setChordProgressionText(bars.join(' | '));
             reharmApplyHarmonyUnlockRef.current = true;
