@@ -11171,6 +11171,16 @@ export function HomeGenerate({
           songwriterStyleId={songwriterStyle}
           playbackBeat={playbackBeat}
           playbackBeatsPerBar={playbackSeq?.beatsPerBar}
+          postGenHarmonyBars={
+            result?.success && result.parsedCustomProgressionBars?.length === songFormBars
+              ? result.parsedCustomProgressionBars
+              : null
+          }
+          postGenSeed={result?.runManifest?.seed ?? baseSeed}
+          styleTransferWayneHarmonyAuthoritative={
+            (result as { styleTransferWayneHarmonyAuthoritative?: boolean } | null)
+              ?.styleTransferWayneHarmonyAuthoritative
+          }
           onApplyBars={(bars) => {
             setChordProgressionText(bars.join(' | '));
             reharmApplyHarmonyUnlockRef.current = true;

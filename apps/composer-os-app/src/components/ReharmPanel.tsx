@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { CompositionContext } from '@composer-os/core/compositionContext';
 import { parseChordProgressionInputWithBarCount } from '../utils/chordProgressionClient';
 import { buildReharmPreviewContextFromBars } from '../utils/buildReharmPreviewContext';
+import { buildReharmPostGenPreviewContext } from '@composer-os/core/harmony/buildReharmPostGenPreviewContext';
 import { applyReharmAlternative, executeReharm } from '@composer-os/core/harmony/reharmController';
 import { buildReharmLensConfig } from '@composer-os/core/harmony/reharmLensConfig';
 import type { AlternativeProgression, ReharmResult } from '@composer-os/core/harmony/reharmSequenceTypes';
@@ -59,6 +60,10 @@ export type ReharmPanelProps = {
   playbackBeat?: number;
   /** Beats per bar from last playback sequence; required with playbackBeat for prefill. */
   playbackBeatsPerBar?: number;
+  /** Last generate locked progression — enables post-gen export-truth context when length matches form. */
+  postGenHarmonyBars?: string[] | null;
+  postGenSeed?: number;
+  styleTransferWayneHarmonyAuthoritative?: boolean;
   /** Persists full progression after apply (preview-only context splice). */
   onApplyBars?: (bars: string[]) => void;
 };
@@ -70,6 +75,9 @@ export function ReharmPanel({
   songwriterStyleId,
   playbackBeat = 0,
   playbackBeatsPerBar,
+  postGenHarmonyBars = null,
+  postGenSeed,
+  styleTransferWayneHarmonyAuthoritative,
   onApplyBars,
 }: ReharmPanelProps) {
   const [startBar, setStartBar] = useState(1);
@@ -81,22 +89,47 @@ export function ReharmPanel({
   const [result, setResult] = useState<ReharmResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const parsed = useMemo(
-    () => parseChordProgressionInputWithBarCount(chordProgressionText.trim(), songFormBars),
-    [chordProgressionText, songFormBars]
+  const usePostGenHarmony = useMemo(
+    () =>
+      Array.isArray(postGenHarmonyBars) &&
+      postGenHarmonyBars.length > 0 &&
+      postGenHarmonyBars.length === songFormBars,
+    [postGenHarmonyBars, songFormBars]
   );
+
+  const parsed = useMemo(() => {
+    if (usePostGenHarmony && postGenHarmonyBars) {
+      return { ok: true as const, bars: [...postGenHarmonyBars] };
+    }
+    return parseChordProgressionInputWithBarCount(chordProgressionText.trim(), songFormBars);
+  }, [usePostGenHarmony, postGenHarmonyBars, chordProgressionText, songFormBars]);
 
   const previewContext = useMemo(() => {
     if (!parsed.ok) return null;
+    const sid = songwriterStyleId.trim() || undefined;
     try {
+      if (usePostGenHarmony) {
+        return buildReharmPostGenPreviewContext(postGenSeed ?? baseSeed, parsed.bars, {
+          songwriterStyleId: sid,
+          styleTransferWayneHarmonyAuthoritative,
+        });
+      }
       return buildReharmPreviewContextFromBars(baseSeed, parsed.bars, {
-        songwriterStyleId: songwriterStyleId.trim() || undefined,
+        songwriterStyleId: sid,
         chordProgressionInputRaw: chordProgressionText.trim(),
       });
     } catch {
       return null;
     }
-  }, [parsed, baseSeed, songwriterStyleId, chordProgressionText]);
+  }, [
+    parsed,
+    usePostGenHarmony,
+    postGenSeed,
+    baseSeed,
+    songwriterStyleId,
+    styleTransferWayneHarmonyAuthoritative,
+    chordProgressionText,
+  ]);
 
   useEffect(() => {
     setStartBar((sb) => Math.min(Math.max(sb, 1), songFormBars));
@@ -186,10 +219,15 @@ export function ReharmPanel({
 
   return (
     <div style={{ marginTop: '0.85rem' }}>
-      {parseIssue && (
+      {usePostGenHarmony ? (
+        <p style={{ margin: '0 0 0.65rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+          Harmony source: <strong style={{ color: 'var(--text)' }}>last generate</strong> (slice precompute / export truth)
+        </p>
+      ) : null}
+      {!usePostGenHarmony && parseIssue && (
         <p style={{ margin: '0 0 0.65rem', fontSize: '0.82rem', color: '#ca8a04' }}>{parseIssue}</p>
       )}
-      {!parseIssue && !previewContext && (
+      {!usePostGenHarmony && !parseIssue && !previewContext && (
         <p style={{ margin: '0 0 0.65rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
           Enter a progression matching the song form bar count to preview reharm.
         </p>
