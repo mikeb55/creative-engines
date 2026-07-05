@@ -251,11 +251,31 @@ function buildEntry(row: MosaicComposerSliceRow): ComposerDispatchEntry {
   };
 }
 
-export const DUO_COMPOSER_REGISTRY: ComposerDispatchEntry[] = SLICE_ROWS.map(buildEntry);
+// Lazy registry: `buildEntry` calls `getMod` → `require(...)`, which is undefined in the
+// browser/renderer bundle. Building the registry at module-eval time crashed the renderer
+// (require is not defined). Defer construction until first actual dispatch use (Node/engine
+// path only), so importing this module in the renderer is side-effect-free.
+let duoComposerRegistryCache: ComposerDispatchEntry[] | undefined;
+let registryByIdCache: Map<string, ComposerDispatchEntry> | undefined;
 
-const registryById = new Map<string, ComposerDispatchEntry>(
-  DUO_COMPOSER_REGISTRY.map((entry) => [entry.composerId, entry])
-);
+function ensureDuoComposerRegistry(): void {
+  if (duoComposerRegistryCache) return;
+  duoComposerRegistryCache = SLICE_ROWS.map(buildEntry);
+  registryByIdCache = new Map<string, ComposerDispatchEntry>(
+    duoComposerRegistryCache.map((entry) => [entry.composerId, entry])
+  );
+  registerDispatchAliases();
+}
+
+function registryById(): Map<string, ComposerDispatchEntry> {
+  ensureDuoComposerRegistry();
+  return registryByIdCache!;
+}
+
+export function getDuoComposerRegistry(): ComposerDispatchEntry[] {
+  ensureDuoComposerRegistry();
+  return duoComposerRegistryCache!;
+}
 
 /** Walk alias/stub chain to a canonical SLICE_ROWS composerId present in registryById. */
 function resolveCanonicalDispatchId(composerId: string): string | undefined {
@@ -264,7 +284,7 @@ function resolveCanonicalDispatchId(composerId: string): string | undefined {
   const seen = new Set<string>();
   while (id && !seen.has(id)) {
     seen.add(id);
-    if (registryById.has(id)) return id;
+    if (registryById().has(id)) return id;
     const next =
       SLICE_ROW_ALIAS_IDS[id] ?? DISPATCH_STUB_ALIASES[id] ?? COMPOSER_ID_ALIASES[id];
     if (!next || next === id) return undefined;
@@ -274,6 +294,7 @@ function resolveCanonicalDispatchId(composerId: string): string | undefined {
 }
 
 function registerDispatchAliases(): void {
+  const map = registryByIdCache!;
   const aliasKeys = new Set<string>([
     ...Object.keys(SLICE_ROW_ALIAS_IDS),
     ...Object.keys(COMPOSER_ID_ALIASES),
@@ -282,18 +303,16 @@ function registerDispatchAliases(): void {
   for (const alias of aliasKeys) {
     const canonical = resolveCanonicalDispatchId(alias);
     if (!canonical) continue;
-    const entry = registryById.get(canonical);
-    if (entry) registryById.set(alias, entry);
+    const entry = map.get(canonical);
+    if (entry) map.set(alias, entry);
   }
 }
 
-registerDispatchAliases();
-
 export function getDispatchEntry(composerId: string): ComposerDispatchEntry | undefined {
-  const direct = registryById.get(composerId);
+  const direct = registryById().get(composerId);
   if (direct) return direct;
   const canonical = resolveCanonicalDispatchId(composerId);
-  return canonical ? registryById.get(canonical) : undefined;
+  return canonical ? registryById().get(canonical) : undefined;
 }
 
 export function createHarmonyAccumulatorForComposer(composerId: string): unknown | null {

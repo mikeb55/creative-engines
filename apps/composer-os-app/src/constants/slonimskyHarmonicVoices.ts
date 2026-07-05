@@ -29,6 +29,7 @@ const VOICE_LABELS: Record<string, string> = {
   debussy: 'Debussy',
   jobim: 'Antonio Carlos Jobim',
   nile_rodgers: 'Nile Rodgers',
+  jamerson: 'James Jamerson',
   eddie_van_halen: 'Eddie Van Halen',
   hendrix: 'Jimi Hendrix',
   fripp: 'Robert Fripp',
@@ -72,6 +73,7 @@ const SONG_MODE_VOICE_IDS = [
 
 const GBD_VOICE_IDS = [
   'nile_rodgers',
+  'jamerson',
   'eddie_van_halen',
   'larry_carlton',
   'david_gilmour',

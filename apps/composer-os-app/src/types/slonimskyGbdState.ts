@@ -3,6 +3,7 @@ import type { SlonimskyMacroState } from './slonimskyMacroState';
 /** Guitar–Bass Duo Slonimsky writer roster (VRB + planning stubs). */
 export const SLONIMSKY_GBD_WRITERS = [
   'nile_rodgers',
+  'jamerson',
   'eddie_van_halen',
   'larry_carlton',
   'david_gilmour',
@@ -28,6 +29,11 @@ const WRITER_PRESET_DEFS: Record<SlonimskyGbdWriterId, { label: string; macro: S
     { label: 'Riff', macro: { sourcePreset: 'riff', motion: 0.5, tension: 0.35, variation: 0.1 } },
     { label: 'Angular', macro: { sourcePreset: 'angular', motion: 0.35, tension: 0.3, variation: 0 } },
     { label: 'Chromatic', macro: { sourcePreset: 'chromatic', motion: 0.25, tension: 0.45, variation: 0.05 } },
+  ],
+  jamerson: [
+    { label: 'Pocket', macro: { sourcePreset: 'riff', motion: 0.42, tension: 0.32, variation: 0.08 } },
+    { label: 'Syncopated', macro: { sourcePreset: 'angular', motion: 0.38, tension: 0.36, variation: 0.12 } },
+    { label: 'Chromatic', macro: { sourcePreset: 'chromatic', motion: 0.22, tension: 0.4, variation: 0.06 } },
   ],
   eddie_van_halen: [
     { label: 'Riff', macro: { sourcePreset: 'riff', motion: 0.55, tension: 0.4, variation: 0.15 } },

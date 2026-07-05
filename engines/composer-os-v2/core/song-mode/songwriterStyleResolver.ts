@@ -119,10 +119,13 @@ function collectRuleIds(
 ): string[] {
   const ids: string[] = [];
   const reg = SONGWRITER_RULE_REGISTRY;
-  ids.push(...reg.songwriterRules[primary].map((r) => r.id));
-  if (secondary) ids.push(...reg.songwriterRules[secondary].map((r) => r.id));
-  if (author) ids.push(...reg.authorRules[author].map((r) => r.id));
-  if (classical) ids.push(...reg.classicalSongRules[classical].map((r) => r.id));
+  // Guard every registry lookup: an id absent from the map (stale/unknown overlay or
+  // secondary style) yields undefined, and `.map` on undefined throws — surfacing as the
+  // generic "Generation failed / different seed" message. Missing rules contribute no ids.
+  ids.push(...(reg.songwriterRules[primary] ?? []).map((r) => r.id));
+  if (secondary) ids.push(...(reg.songwriterRules[secondary] ?? []).map((r) => r.id));
+  if (author) ids.push(...(reg.authorRules[author] ?? []).map((r) => r.id));
+  if (classical) ids.push(...(reg.classicalSongRules[classical] ?? []).map((r) => r.id));
   for (const cat of Object.values(reg.foundationalRules)) for (const r of cat) ids.push(r.id);
   return [...new Set(ids)].sort();
 }

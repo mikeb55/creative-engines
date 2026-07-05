@@ -29,6 +29,7 @@
     "eval:style-soph-pop": "npm --prefix engines/composer-os-v2 run eval:style-soph-pop --",
     "eval:bacharach": "npm --prefix engines/composer-os-v2 run eval:bacharach --",
     "eval:barry_harris": "npm --prefix engines/composer-os-v2 run eval:barry_harris --",
+    "eval:jamerson": "npm --prefix engines/composer-os-v2 run eval:jamerson --",
     "test:barry-harris-v82-validation": "npm --prefix engines/composer-os-v2 run test:barry-harris-v82-validation --",
     "workflow:bacharach": "npm --prefix engines/composer-os-v2 run workflow:bacharach --",
     "mine:bacharach": "npm --prefix engines/composer-os-v2 run mine:bacharach --",

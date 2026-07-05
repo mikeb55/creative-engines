@@ -1190,7 +1190,14 @@ export function apiGenerate(
     return {
       success: false,
       error: friendlyGenerateError(err),
-      detail: process.env.NODE_ENV === 'development' ? String(err) : undefined,
+      // Dev builds expose the full stack (not just the message) so masked throws like the
+      // collectRuleIds overlay crash are diagnosable from Diagnostics without re-patching.
+      detail:
+        process.env.NODE_ENV === 'development'
+          ? err instanceof Error && err.stack
+            ? err.stack
+            : String(err)
+          : undefined,
     };
   }
 }

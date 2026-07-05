@@ -460,7 +460,7 @@ function patchForReceipt(id: string, body: string): { patch: RiffProfilePatch; m
     const mode: RiffEnsembleInterlockMode = id.includes('callfills') ? 'callResponse' : 'layeredOstinati';
     return { patch: { ensembleInterlockMode: mode }, metadataOnly: false };
   }
-  if (id.startsWith('sly_bass_')) {
+  if (id.startsWith('sly_bass_') || id.startsWith('jamerson_bass_')) {
     return { patch: { bassContourPolicy: bassPolicyForId(id, fields) }, metadataOnly: false };
   }
   if (id.startsWith('sly_variation_')) {

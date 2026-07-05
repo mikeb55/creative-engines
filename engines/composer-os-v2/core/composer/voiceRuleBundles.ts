@@ -105,6 +105,7 @@ import {
   ALLAN_HOLDSWORTH,
   buildFrankZappaRiffProfile,
   EDDIE_VAN_HALEN,
+  JAMERSON,
   JOE_PASS,
   SCOTT_HENDERSON,
   SONIC_YOUTH,
@@ -4200,6 +4201,25 @@ const SLY_STONE_VRF: VoiceRuleBundle = {
   },
 };
 
+/** James Jamerson riff VRB research overlays (additive to JM_* fillReceipts stubs in riffVrbStubs). */
+const JAMERSON_FINGERPRINT_RESEARCH = [
+  'jamerson_bass_aint_no_mountain_pushes — id: jamerson_bass_aint_no_mountain_pushes; topology: 16th anticipations into beats 1 and 3; behavior: octave jumps every 1–2 bars; melodic counterpart to static guitar comp.',
+  'jamerson_bass_bernadette_raking — id: jamerson_bass_bernadette_raking; topology: bass enters on & of 1; behavior: root-5th-octave rakes; chromatic passing tones between chord tones; interlock not unison double.',
+  'jamerson_bass_shotgun_syncopation — id: jamerson_bass_shotgun_syncopation; topology: drum-locked ghost 16ths on weak slots; behavior: string-raking fills into downbeats; pocket locked to kick/snare grid.',
+  'jamerson_bass_i_heard_through_grapevine — id: jamerson_bass_i_heard_through_grapevine; topology: sustained root on 1 with syncopated 5th/octave answers; behavior: melodic bass hook over sparse guitar voicings.',
+] as const;
+
+const JAMERSON_VRF: VoiceRuleBundle = {
+  ...JAMERSON,
+  orchestrationPolicy: {
+    ...JAMERSON.orchestrationPolicy,
+    fingerprintReceipts: [
+      ...(JAMERSON.orchestrationPolicy.fingerprintReceipts ?? []),
+      ...JAMERSON_FINGERPRINT_RESEARCH,
+    ],
+  },
+};
+
 /** Led Zeppelin / Jimmy Page riff VRB research overlays (additive to LZ_* fillReceipts stubs in riffVrbStubs). */
 const LED_ZEPPELIN_FINGERPRINT_RESEARCH = [
   'page_bow_dazed_and_confused — id: page_bow_dazed_and_confused; register: E2–A3; topology: sustained drones plus glissando swells; behavior: section boundary entry at 1:40; cadential reset exit at 4:20; free-time layer.',
@@ -4528,6 +4548,8 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   sly_stone: SLY_STONE_VRF,
   sly: SLY_STONE_VRF,
   family_stone: SLY_STONE_VRF,
+  jamerson: JAMERSON_VRF,
+  james_jamerson: JAMERSON_VRF,
   iommi: IOMMI,
   black_sabbath: IOMMI,
   david_gilmour: DAVID_GILMOUR_VRF,

@@ -31,6 +31,7 @@
     "eval:pat_metheny": "tsx --tsconfig ../../tsconfig.json scripts/runPatMethenySongModeEval.ts",
     "probe:pat-metheny-eligibility": "tsx --tsconfig ../../tsconfig.json scripts/patMethenyEligibilityProbe.ts",
     "eval:james_brown": "tsx --tsconfig ../../tsconfig.json scripts/runJamesBrownSongModeEval.ts",
+    "eval:jamerson": "tsx --tsconfig ../../tsconfig.json scripts/runJamersonBassLensEval.ts --showcase",
     "eval:style-soph-pop": "tsx --tsconfig ../../tsconfig.json scripts/runSophisticatedPopStyleEval.ts",
     "eval:bacharach": "tsx --tsconfig ../../tsconfig.json scripts/runBacharachSongModeEval.ts",
     "eval:barry_harris": "tsx --tsconfig ../../tsconfig.json scripts/runBarryHarrisChordMelodyEval.ts",

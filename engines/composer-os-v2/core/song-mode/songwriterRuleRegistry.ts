@@ -1538,6 +1538,10 @@ function wireRiffVrbSongwriterRules(): void {
     R('riff.sly_stone.sigma', 'Riff VRB σ24 — Sly call-response (reuses james_brown rule family)', 'songwriter', 'rhythm', 8, 'global'),
     ...jb,
   ];
+  rules.jamerson = [
+    R('riff.jamerson.sigma', 'Riff VRB σ24 — Jamerson Motown bass (reuses james_brown rule family)', 'songwriter', 'rhythm', 8, 'global'),
+    ...jb,
+  ];
   rules.iommi = [
     R('riff.iommi.sigma', 'Riff VRB σ26 — rock riff cells (reuses prince rule family)', 'songwriter', 'rhythm', 8, 'global'),
     ...prince,

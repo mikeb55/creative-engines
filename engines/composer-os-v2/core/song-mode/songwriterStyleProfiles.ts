@@ -3113,9 +3113,15 @@ export function resolveDuoSlonimskyWriterId(
   return raw || undefined;
 }
 
-/** Duo lane when a riff VRB is attached via songwriter id or {@link GenerationMetadata.harmonicVoice}. */
+/** Duo lane when a riff VRB is attached via {@link GenerationMetadata.harmonicVoice} or songwriter id. */
 export function resolveDuoRiffVrbLaneId(genMeta: GenerationMetadata | undefined): string | undefined {
-  const raw = resolveDuoSlonimskyWriterId(genMeta);
+  const hv = genMeta?.harmonicVoice?.trim();
+  if (hv && hv !== 'frank_zappa') {
+    if (isRiffVrbSongwriterId(hv)) return hv;
+    const hvBundle = getVoiceRuleBundle(hv);
+    if (hvBundle.voiceId !== 'neutral' && hvBundle.riffProfile) return hv;
+  }
+  const raw = (genMeta?.songwriterStyleId ?? '').trim();
   if (!raw || raw === 'frank_zappa') return undefined;
   if (isRiffVrbSongwriterId(raw)) return raw;
   const bundle = getVoiceRuleBundle(raw);

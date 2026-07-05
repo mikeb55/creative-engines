@@ -34,6 +34,7 @@ const OUTSIDE_LEVEL_OPTIONS: { value: GbdChromaticStrength; label: string }[] = 
 
 const WRITER_LABELS: Record<SlonimskyGbdWriterId, string> = {
   nile_rodgers: 'Nile Rodgers',
+  jamerson: 'James Jamerson',
   eddie_van_halen: 'Eddie Van Halen',
   larry_carlton: 'Larry Carlton',
   david_gilmour: 'David Gilmour',

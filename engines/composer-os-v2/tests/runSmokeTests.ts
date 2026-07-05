@@ -88,6 +88,7 @@ import { runDuoIntentTests } from './duoIntent.test';
 import { runVaultQualitySmokeTests } from '../smoke/vaultQuality.smoke.test';
 import { runVoiceRuleBundleTests } from './voiceRuleBundle.test';
 import { runRiffGeneratorIntegrationTests } from './riffGeneratorIntegration.test';
+import { runJamersonBassLensSmokeTests } from './jamersonBassLensSmoke.test';
 import { runMusicXmlValidatorGateTests } from '../../../src/utils/musicXmlValidator.test';
 import { runRhythmToolboxGateTests } from '../../../src/engine/__tests__/rhythmToolbox.test';
 import { runSdParserGateTests } from '../../../src/engine/__tests__/sdParser.test';
@@ -271,6 +272,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Tonality Vault quality (inspector, riff modes, LSM, reharm, BB routing, rule sets)', run: runVaultQualitySmokeTests },
   { label: 'VoiceRuleBundle compiler + gil_evans wiring', run: runVoiceRuleBundleTests },
   { label: 'Riff Generator wiring (family / profile / odd-meter / blend)', run: runRiffGeneratorIntegrationTests },
+  { label: 'Jamerson bass lens (harmonicVoice + bassContourPolicy)', run: runJamersonBassLensSmokeTests },
   { label: 'MusicXML stringsync gate (order + displayOctave)', run: runMusicXmlValidatorGateTests },
   { label: 'RhythmToolbox drum analysis gate', run: runRhythmToolboxGateTests },
   { label: 'SD parser percussion gate', run: runSdParserGateTests },

@@ -944,6 +944,14 @@ const SS_BASE = [
   'SS_FORM_01 — 2-bar loop identity; bar-to-bar variation budget moderate.',
 ] as const;
 
+const JM_BASE = [
+  'JM_HARM_01 — Motown funk harmonic cycle; root-oriented changes; pocket locked to backbeat.',
+  'JM_RHY_01 — Syncopated 16th bass grid; ghost notes + string-raking fill; drum-locked pocket.',
+  'JM_BASS_01 — Root-5th-octave spine; chromatic approach tones; octave rakes every 1–2 bars.',
+  'JM_MELO_01 — Guitar comp stays sparse; bass carries primary melodic hook.',
+  'JM_FORM_01 — 2–4 bar bass loop identity; bar-to-bar ghost-note variation.',
+] as const;
+
 /** David Gilmour / Pink Floyd rock lead stub (σ26). */
 export const DAVID_GILMOUR: VoiceRuleBundle = {
   voiceId: 'david_gilmour',
@@ -1918,6 +1926,119 @@ export const SLY_STONE: VoiceRuleBundle = {
       pedalBias: 0.42,
       octaveDisplacementTolerance: 0.4,
       ornamentPolicy: { slides: false, ghosts: true, graceAttacks: false, bends: false, deadNotes: false },
+    });
+  })(),
+};
+
+/** James Jamerson / Motown funk bass riff stub (σ24) — bass-biased Sly-family contour. */
+export const JAMERSON: VoiceRuleBundle = {
+  voiceId: 'jamerson',
+  sigma: 24,
+  family: 'funk',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 4,
+    allowMidBarChange: true,
+  },
+  bassPolicy: { role: 'melodic-counterline', allowOctaveDoubling: true },
+  voicingPolicy: {
+    minSpreadSemitones: 3,
+    maxSpreadSemitones: 14,
+    clusterSizeNotes: [2, 5],
+    forbidParallelFifths: true,
+    forbidOctaveDoubling: true,
+  },
+  melodicPolicy: { contour: 'stepwise-arc', maxLeapSemitones: 7 },
+  orchestrationPolicy: {
+    anchorToneCount: 1,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: fillReceipts('JM', 'James Jamerson', JM_BASE),
+  },
+  formPolicy: { narrativeArc: 'blues-backbone', sectionRecallEnforced: true },
+  rhythmPolicy: { antiMetric: false },
+  repairPolicy: { resolveParallels: true, maxVoiceOverlap: 4 },
+  contrapuntalLinePolicy: {
+    enabled: true,
+    dissonanceProfile: DIS_LOW,
+    preferredImitationTypes: ['free'],
+    rhythmicIndependenceRequired: true,
+    lineRoleAssignment: 'dynamic',
+  },
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.72,
+    registerInterlock: true,
+    intervalPreference: 'pentatonic_diatonic',
+    textureTagType: 'funk_grid',
+  },
+  riffProfile: (() => {
+    const slice = riffProfileSliceFromFunkGrid('jamesBrown');
+    const funk = getFunkGridPolicy('jamesBrown');
+    const bassMap = funk.voiceAccentMaps.find((v) => v.voiceId === 'bass');
+    const guitarMap = funk.voiceAccentMaps.find((v) => v.voiceId === 'guitar');
+    const slots = 16;
+    const syncAccent = new Array<number>(slots).fill(0.48);
+    syncAccent[0] = 0.92;
+    syncAccent[4] = 0.78;
+    syncAccent[8] = 0.85;
+    syncAccent[12] = 0.8;
+    for (let i = 2; i < slots; i += 4) syncAccent[i] = 0.74;
+    return riffProfileShell({
+      ...slice,
+      meterPolicy: 'simple',
+      subdivisionGrid: 16,
+      accentTopology: syncAccent,
+      accentTemplatePerVoice: {
+        ...(bassMap ? { bass: [...bassMap.slotWeights] } : {}),
+        ...(guitarMap ? { guitar: [...guitarMap.slotWeights] } : {}),
+      },
+      antiCoincidenceVoices: [['bass', 'guitar']],
+      preferCoincidenceSlots: [0, 8],
+      bassContourPolicy: {
+        anticipateBeats: [0, 2],
+        octaveJumpEveryBars: 1,
+        octaveJumpProbability: 0.68,
+        enterOnBeatFraction: 0.25,
+        melodicCounterpart: true,
+      },
+      chromaticBudget: 0.42,
+      chromaticApproachRules: [{ degrees: [1, 2, 4], chordContext: 'any', probability: 0.62 }],
+      allowPitchStreak: false,
+      homeChordType: 'maj7',
+      intervalCell: { steps: [5, 4, 1], transpositionMode: 'diatonic' },
+      silencePolicy: {
+        ...slice.silencePolicy,
+        styleClass: 'Busy',
+        funkGridPreset: 'jamesBrown',
+      },
+      ghostChainRules: [
+        ...(slice.ghostChainRules ?? []),
+        { voiceId: 'bass', intoSlot: 4, pattern: [-2, -1], probability: 0.58 },
+        { voiceId: 'bass', intoSlot: 12, pattern: [-1], probability: 0.52 },
+      ],
+      registerAnchor: 'mid_register',
+      registerBandPerVoice: {
+        bass: { min: 28, max: 50 },
+        guitar: { min: 50, max: 74 },
+      },
+      riffRegisterFloor: 28,
+      riffRegisterCeiling: 74,
+      repetitionPolicy: {
+        exactLoopAllowed: true,
+        pedalToneAllowed: true,
+        barIdentityPersistence: 0.68,
+        minExactRepetitions: 2,
+      },
+      variationOperators: ['targetToneShift', 'startOffsetShift', 'rhythmicWarp', 'articulationSwap'],
+      modalUsage: 'chord-driven',
+      swingStyle: 'funk16th',
+      pedalBias: 0.38,
+      octaveDisplacementTolerance: 0.55,
+      powerIntervalPolicy: { fifthWeight: 0.72, octaveWeight: 0.65, pedalWeight: 0.32 },
+      ornamentPolicy: { slides: true, ghosts: true, graceAttacks: true, bends: false, deadNotes: false },
+      attackPolicy: 'staccato',
     });
   })(),
 };

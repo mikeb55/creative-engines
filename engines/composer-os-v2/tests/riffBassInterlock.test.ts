@@ -52,5 +52,25 @@ export function runRiffBassInterlockTests(): { ok: boolean; name: string }[] {
     });
   }
 
+  {
+    const profile = resolveRiffGeneratorProfile({
+      vrbId: 'jamerson',
+      style: 'funk',
+      grid: 'sixteenth',
+      density: 'medium',
+    });
+    const notes = bassInterlockForBar('E9', 1, profile, [], BAR_RHYTHM, rng, [], false);
+    const anticipates = notes.some((n) => Math.abs(n.startBeat - 3.75) < 0.02);
+    const hasOctave = notes.some((n) => n.pitch >= 52);
+    out.push({
+      ok:
+        anticipates &&
+        hasOctave &&
+        profile.bassContourPolicy?.melodicCounterpart === true &&
+        (profile.bassContourPolicy?.octaveJumpProbability ?? 0) >= 0.6,
+      name: 'jamerson bass interlock: anticipation + octave jump + melodicCounterpart',
+    });
+  }
+
   return out;
 }
