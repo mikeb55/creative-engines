@@ -4340,10 +4340,14 @@ export function HomeGenerate({
               }).combinedKeys
             : undefined;
 
+        const gbdHarmonicVoiceId = presetId === 'guitar_bass_duo' ? gbdWriterId : null;
+        const harmonicVoiceIdForSlonimskyExtras =
+          gbdHarmonicVoiceId ?? slonimskyHarmonicVoice;
+
         const slonimskyUiExtras = slonimskyUiEnabled
           ? slonimskyUiExtrasFromAdvanced(
               slonimskyAdvanced,
-              slonimskyHarmonicVoice,
+              harmonicVoiceIdForSlonimskyExtras,
               presetId === 'song_mode'
                 ? songModeStyleGenerationKeys
                 : presetId === 'string_quartet'
@@ -5086,6 +5090,7 @@ export function HomeGenerate({
       slonimskySectionOverrides,
       slonimskyAdvanced,
       slonimskyHarmonicVoice,
+      gbdWriterId,
       gbdChromaticStrength,
       slonimskyEtudeCellFamily,
       funkGroove,
