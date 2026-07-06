@@ -16,6 +16,7 @@ import {
   collectMelodyMidiChronological,
   isGuitarMelodyVoiceNote,
 } from './guitarVoiceMelody';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 
 /** Local copy — melody (voice 1) only; avoids circular import with duoLockQuality (GCE imports this module). */
 function maxConsecutiveStepwiseLocal(guitar: PartModel, maxStep: number): number {
@@ -493,20 +494,27 @@ export function validateDuoMelodyIdentityV3(
 
   const melodyPitches = collectMelodyMidiChronological(g);
   const { maxLeap, countOver12 } = largeLeapStats(g);
-  if (maxLeap > 14) {
+  const md = opts?.compositionContext?.generationMetadata;
+  const isSongwriterVerlaine = md?.songwriterStyleId === 'verlaine';
+  const isHarmonicVoiceVerlaine =
+    normalizeHarmonicVoiceId(String(md?.harmonicVoice ?? '')) === 'verlaine';
+  const verlaineMelodicLeapRelax = isSongwriterVerlaine || isHarmonicVoiceVerlaine;
+
+  if (maxLeap > 14 && !verlaineMelodicLeapRelax) {
     issues.push({
       ruleId: 'v3_leap_exceeds_max',
       message: 'Duo V3: interval leap exceeds expressive maximum (14 semitones)',
     });
   }
-  if (countOver12 > 2) {
+  if (countOver12 > 2 && !verlaineMelodicLeapRelax) {
     issues.push({
       ruleId: 'v3_multiple_large_leaps',
       message: 'Duo V3: more than two large leaps (>12 semitones) — line not singable',
     });
   }
   const unresolvedMid = countUnresolvedMelodicLeapsFiveToTwelve(melodyPitches);
-  if (unresolvedMid > 4) {
+
+  if (unresolvedMid > 4 && !verlaineMelodicLeapRelax) {
     issues.push({
       ruleId: 'v3_leaps_unresolved',
       message: 'Duo V3: many melodic leaps lack resolution or span contour (5–12 st)',
