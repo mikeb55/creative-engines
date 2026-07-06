@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+### Added
+
+- **Verlaine GBD Slonimsky Voice — end-to-end working (2026-07-06)** — Tom Verlaine in **Guitar–Bass Duo → Slonimsky → Voice** dropdown generates Verlaine suspended-field harmony with Barry Harris primary stack. Fix chain: **`8f248347`** harmony-wire + **`generateComposition`** forward · **`1b97bce0`** UI roster · **`e2cd13ab`** V3 leap relax · **`6575d778`** Verlaine authority in **`getChordForBar`** · **`54af24c8`** **`apiGenerate`** IPC **`harmonicVoice`** copy · **`50e1d2a5`** payload uses **`gbdWriterId`** (not stale **`slonimskyHarmonicVoice`**). Desktop **v2.10.8**. Verified live UI + musician-facing GCE (readiness **0.9**, shareable). See **`docs/VERLAINE_GBD.md`**.
+
 ### Changed
 
 - **Stage 5.1 — Unified vault-pitch guards + cadence receipt lookup fix (DONE)** — **`generateGoldenPathDuoScore.ts`**: **`vaultMotifSnapReceiptsForGuard`** merges in-loop motif receipts with metadata so empty local **`[]`** no longer blocks hook emit receipts at phrase-end cadence (bars **4,8,12…**); **`vaultMotifPitchMutationSkipForV1Note`** shared by Slonimsky, cadence, and **`nudgeMeasureConsecutiveDuplicateV1Pitches`** (bars **1–8**). v2 Wyble untouched (**5.4**). Proof: **`baselineMotifIntervalIdentity`** **50021** / **50213**, **`songModeRegressionBaseline`**, **`duoIdentityV32`**, **`sectionArchitectureP1Golden`**, **`duoVaultHarmony.smoke`** all **PASS**. See **`docs/DUO_VAULT_ROADMAP.md`** § **5.1**.

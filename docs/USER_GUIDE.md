@@ -366,6 +366,10 @@ This is the **Song Mode primary songwriter** id **`ecm_chamber`** — not the sa
 - **Harmony:** static modal centres, bass displacement, progression avoidance (`tv:*` receipts).
 - **Best BPM:** mid-tempo rock feel; pair with **post-punk** / **art-rock** arranger hints when experimenting.
 
+### Guitar–Bass Duo — Tom Verlaine Slonimsky Voice (`verlaine`)
+
+On preset **Guitar–Bass Duo**, open **Slonimsky presets** → **Voice** → **Tom Verlaine**. This sets **`harmonicVoice: verlaine`** on generate while the style stack primary stays **Barry Harris** (or your chosen stack). Harmony uses Verlaine suspended-field / slash voicings (`tv:*` / **`verlaine_suspended_field`** VRB), not the default Barry Harris duo32 loop. Shipped **2026-07-06** — see **`docs/VERLAINE_GBD.md`**.
+
 ### Song Mode — Debussy primary songwriter (`debussy`)
 
 **Debussy** appears under **Shipped (full slice)**. Full impressionist slice via **`debussySlice.ts`** — parallel planing, whole-tone colour, pentatonic melody bias (`db:*` receipts).

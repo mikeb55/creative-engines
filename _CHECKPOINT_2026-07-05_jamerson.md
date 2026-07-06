@@ -26,4 +26,4 @@
 1. npm run eval:jamerson -- --seed 50021
 2. Verify output/jamerson-eval/showcase/
 3. npm run test:composer-smoke
-4. Verlaine GBD writer (separate task)
+4. Verlaine GBD writer — **DONE (2026-07-06)** — see **`docs/VERLAINE_GBD.md`**
