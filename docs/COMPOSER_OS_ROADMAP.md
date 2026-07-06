@@ -641,6 +641,33 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 
 5. **Parked — full ML/performance modeling** — not recommended near-term; requires training data + separate pipeline, low leverage for MusicXML-only output. Revisit only if rendering/performance layer is added.
 
+## Known Issue: Composer OS Smoke — 8 pre-existing test failures
+(logged 2026-07-06, unrelated to docs commits af46bca / 9c7faaf7)
+
+**Status:** CI red on `main`, confirmed NOT caused by documentation-only commits. Root cause is stale/drifted engine output vs golden fixtures.
+
+**Failing (8):**
+1. bhGoldenMaster — MusicXML byte-exact seed 88109
+2. wayneGoldenMaster — MusicXML byte-exact seed 90217
+3. jhGoldenMaster — MusicXML byte-exact seed 90303
+4. VoiceRuleBundle — riff VRB stubs (nile / iommi / hendrix / evh)
+5. VoiceRuleBundle — Eddie Van Halen riff VRB #15 (registry + stub aliases)
+6. RiffGenerator — Phase E song mode + duo integration (14 VRBs)
+7. Output validation — SQ MIDI pitch ranges (4 tracks)
+8. Output validation — Duo golden path MIDI 2 tracks no overlap
+
+**Likely cause:** bass pitch export change (e.g. F#2 alter vs D2 plain) made golden MusicXML fixtures stale; premium-melody goldens (BH / Wayne / Hendrix) added without a Linux CI-green refresh; riff VRB stubs (nile/iommi/hendrix/evh) never wired into registry.
+
+**Recommended fix (separate PR, not this entry):**
+1. Regenerate/relax premium-melody MusicXML goldens after confirming export is intentional
+2. Wire missing riff VRB stubs or adjust registry test expectations
+3. Fix RiffGenerator Phase E integration test expectations
+4. Refresh MIDI output-validation baselines (SQ pitch ranges, duo overlap)
+
+**Do not** add these to SMOKE_KNOWN_FAIL as a way of silencing — that masks regressions rather than fixing them. Treat as a real backlog item.
+
+**Priority:** Should be picked up before further engine changes stack on top of drifted goldens — recommend inserting as priority 1a (right after the ~80-style harmonic-voice generalisation fix already at #1).
+
 ### Future: Generalize harmonic-voice-vs-primary-style resolution (not urgent)
 
 **Background:** Fixing Verlaine as a harmonic voice paired with a different primary style (e.g. Barry Harris) required patching ~7 separate call sites on **2026-07-06**, because the codebase's ~80 composer/style modules all share one architectural pattern: every runtime check that asks "is style X active" only checks primary style, never **`harmonicVoice`**, as an equivalent condition. This caused a cascade of bugs specific to Verlaine (harmony authority split, voice-leading false positives, missing API field forwarding, rhythm overlay overwrite, UI state split) that were fixed one at a time.
