@@ -40,6 +40,7 @@ const WRITER_LABELS: Record<SlonimskyGbdWriterId, string> = {
   david_gilmour: 'David Gilmour',
   hendrix: 'Jimi Hendrix',
   fripp: 'Robert Fripp',
+  verlaine: 'Tom Verlaine',
   wes_montgomery: 'Wes Montgomery',
   joe_pass: 'Joe Pass',
   allan_holdsworth: 'Allan Holdsworth',

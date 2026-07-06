@@ -67,6 +67,7 @@ export const SLONIMSKY_GBD_WRITER_ONE_LINER: Record<SlonimskyGbdWriterId, string
   david_gilmour: 'Singing rock lead, riff hooks and sustain',
   hendrix: 'Blues-rock fire, wide dynamic expression',
   fripp: 'Oblique, layered, textural outside the groove',
+  verlaine: 'Suspended-field harmony, slash voicings, sparse guitar–bass interlock',
   wes_montgomery: 'Warm octave jazz lines, bebop-blues riff cells, lyrical then riff',
   joe_pass: 'Fingerstyle chord-melody line, chromatic bebop phrasing',
   allan_holdsworth: 'Chromatic legato outside lines, wide leaps, floating rhythm',

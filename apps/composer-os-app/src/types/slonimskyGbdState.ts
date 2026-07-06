@@ -9,6 +9,7 @@ export const SLONIMSKY_GBD_WRITERS = [
   'david_gilmour',
   'hendrix',
   'fripp',
+  'verlaine',
   'wes_montgomery',
   'joe_pass',
   'allan_holdsworth',
@@ -59,6 +60,11 @@ const WRITER_PRESET_DEFS: Record<SlonimskyGbdWriterId, { label: string; macro: S
     { label: 'Angular', macro: { sourcePreset: 'angular', motion: 0.2, tension: 0.35, variation: -0.15 } },
     { label: 'Patterned', macro: { sourcePreset: 'symmetric', motion: 0.1, tension: 0.2, variation: -0.1 } },
     { label: 'Chromatic', macro: { sourcePreset: 'chromatic', motion: 0.25, tension: 0.45, variation: 0 } },
+  ],
+  verlaine: [
+    { label: 'Suspended field', macro: { sourcePreset: 'lyrical', motion: -0.1, tension: -0.25, variation: 0.15 } },
+    { label: 'Angular', macro: { sourcePreset: 'angular', motion: 0.35, tension: 0.3, variation: 0.05 } },
+    { label: 'Chromatic', macro: { sourcePreset: 'chromatic', motion: 0.2, tension: 0.38, variation: 0.08 } },
   ],
   wes_montgomery: [
     { label: 'Lyrical', macro: { sourcePreset: 'lyrical', motion: -0.05, tension: -0.2, variation: 0.2 } },
