@@ -629,6 +629,18 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 
 ## Future / Research Backlog
 
+## Priority Order (as of 2026-07-06)
+
+1. **Generalise harmonic-voice-vs-primary-style fix across ~80 composer styles** — the Verlaine/Barry Harris bug chain (harmony authority conflicts, validation false-positives, UI↔engine state loss) is likely latent in other style pairings. Audit + fix pattern, highest priority as it protects existing shipped catalogue.
+
+2. **Two-guitar interplay module** — rule-based interaction modes (echo, contrary/support, dovetail, unison-to-divergence) for the GBD writer, to move Verlaine/Television output beyond harmonic vocabulary toward actual two-guitar band idiom.
+
+3. **Phrase/motif transformation layer** — phrase-length distributions, contour-type library, melodic cadence-avoidance rules, motif transformation ops (sequence, truncation, interval expansion, rhythmic displacement).
+
+4. **Hand-built Verlaine style fingerprint** — transcribe/annotate 5–15 representative Television passages, extract a compact style sheet (intervals, phrase lengths, motif families, interaction-mode frequency), encode as weighted rules, add as post-generation nudge.
+
+5. **Parked — full ML/performance modeling** — not recommended near-term; requires training data + separate pipeline, low leverage for MusicXML-only output. Revisit only if rendering/performance layer is added.
+
 ### Future: Generalize harmonic-voice-vs-primary-style resolution (not urgent)
 
 **Background:** Fixing Verlaine as a harmonic voice paired with a different primary style (e.g. Barry Harris) required patching ~7 separate call sites on **2026-07-06**, because the codebase's ~80 composer/style modules all share one architectural pattern: every runtime check that asks "is style X active" only checks primary style, never **`harmonicVoice`**, as an equivalent condition. This caused a cascade of bugs specific to Verlaine (harmony authority split, voice-leading false positives, missing API field forwarding, rhythm overlay overwrite, UI state split) that were fixed one at a time.
