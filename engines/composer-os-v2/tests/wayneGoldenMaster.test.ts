@@ -14,6 +14,7 @@ import { musicXmlToImportTimeline } from '../core/import/musicXmlToImportTimelin
 import type { ImportMelodyNote } from '../core/import/mosaicImportTimeline';
 import type { Articulation, NoteEvent, ScoreModel } from '../core/score-model/scoreModelTypes';
 import type { PremiumMelodyDurationAccentKind } from '../core/premium-melody/enrichMelodyExpression';
+import { firstByteDiffIndex, normalizeGoldenFixtureText } from './goldenFixtureCompare';
 
 export const WS_GOLDEN_SEED = 90217;
 export const WS_GOLDEN_FIXTURE_NAME = 'WS_Benchmark_ModalMelody.musicxml';
@@ -55,7 +56,7 @@ function beat4dp(value: number): string {
 }
 
 export function normalizeMusicXmlLf(xml: string): string {
-  return xml.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  return normalizeGoldenFixtureText(xml);
 }
 
 function guitarVoice1ExpressiveFromScore(score: ScoreModel): ImportMelodyNote[] {
@@ -194,15 +195,6 @@ export function diffWsGoldenEvents(
   return lines;
 }
 
-function firstByteDiffIndex(expected: string, actual: string): number | null {
-  const len = Math.min(expected.length, actual.length);
-  for (let i = 0; i < len; i++) {
-    if (expected.charCodeAt(i) !== actual.charCodeAt(i)) return i;
-  }
-  if (expected.length !== actual.length) return len;
-  return null;
-}
-
 export function writeWsGoldenFixtures(): void {
   fs.mkdirSync(GOLDEN_DIR, { recursive: true });
   const { jsonText, xmlText } = buildWsGoldenSnapshot();
@@ -241,7 +233,7 @@ export function runwayneGoldenMasterTests(): { name: string; ok: boolean; detail
   }
 
   const expectedJson = fs.readFileSync(JSON_FIXTURE, 'utf8');
-  const expectedXml = fs.readFileSync(XML_FIXTURE, 'utf8');
+  const expectedXml = normalizeGoldenFixtureText(fs.readFileSync(XML_FIXTURE, 'utf8'));
   const jsonHash = sha256Hex(snapshot.jsonText);
   const xmlHash = sha256Hex(snapshot.xmlText);
 
