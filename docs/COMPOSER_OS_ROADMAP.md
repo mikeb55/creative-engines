@@ -646,6 +646,41 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 
 **Related fixed work (reference):** commits **`8f248347`**, **`e2cd13ab`**, **`6575d778`**, **`54af24c8`**, **`50e1d2a5`** — Verlaine GBD harmony-wire + authority fixes (**2026-07-06**). See **`docs/VERLAINE_GBD.md`**.
 
+### Future: Two-guitar interplay module (move Verlaine/Television closer to authentic band idiom)
+
+**Background:** The Verlaine harmonic-voice module (shipped **2026-07-06**, see **`docs/VERLAINE_GBD.md`**) captures ONE ingredient of Television's sound — suspended/slash-chord harmony that avoids strong cadential resolution. It does not model the interlocking two-guitar interplay that is arguably the more identity-defining element of that band's sound (Verlaine + Richard Lloyd trading, echoing, and diverging lines).
+
+Research consulted (Perplexity, **2026-07-06**) confirms this is realistically achievable with rule-based/deterministic methods — no ML/training data required — consistent with this codebase's existing architecture.
+
+**Recommended approach (design only, not yet implemented), ranked by impact vs effort:**
+
+1. **Two-guitar interplay module (highest leverage)**
+   - Generate guitar 1 phrases as today, but annotate each phrase: contour, density, where it ends, motif ID
+   - Generate guitar 2 from a small library of interaction transforms instead of independent generation:
+     - Echo (repeat motif 1–2 beats later, different register)
+     - Contrary/support (move against lead contour, respecting interval-spacing/collision rules)
+     - Dovetail (fill rests/gaps left by the other guitar)
+     - Unison-to-divergence (start together, split by rule)
+   - Enforce simple constraints: no register collision > N beats, no exact parallel duplication except in allowed windows, answer phrase-endings some target % of the time
+
+2. **Phrase/motif transformation layer (high leverage, medium effort)**
+   - Phrase length distributions (weighted, e.g. 2/3/4/6-bar spans)
+   - Contour type library (plateau→leap→descent, repeated-note launch into angular turn, etc.)
+   - Cadence avoidance rules (melodic, not just harmonic — suppress strong closure patterns, prefer hanging/suspended phrase endings)
+   - Motif transformation ops: sequence, truncation, interval expansion, rhythmic displacement
+
+3. **Hand-built style fingerprint (medium leverage, lower effort, good starting point)**
+   - Transcribe/annotate 5–15 representative Television passages
+   - Extract a compact "style sheet": common dyads/intervals, phrase lengths, motif families, interaction-mode frequency, register ranges, density-over-bar-position
+   - Encode as weighted rule choices + forbidden moves
+   - Add a post-generation style pass that nudges phrases toward the fingerprint
+
+**Not recommended as next step:** full ML/performance modeling (requires training data + separate pipeline; low leverage for MusicXML-only output without a rendering/performance layer).
+
+**Priority:** Future project, not urgent. Best tackled as its own dedicated design/DCR cycle — do **not** bolt onto other Verlaine fixes.
+
+**Related:** **`docs/VERLAINE_GBD.md`** (harmonic voice, shipped **2026-07-06**); this entry (interplay/phrasing, not yet started).
+
 ### Band Mode — multi-block arranger (seed → varied long form)
 
 GOAL: input a short seed (e.g. 8 bars) and build longer forms (16/32/48/64) where each block VARIES, not just repeats.
