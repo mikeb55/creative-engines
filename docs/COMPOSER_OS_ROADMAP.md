@@ -629,6 +629,23 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 
 ## Future / Research Backlog
 
+### Future: Generalize harmonic-voice-vs-primary-style resolution (not urgent)
+
+**Background:** Fixing Verlaine as a harmonic voice paired with a different primary style (e.g. Barry Harris) required patching ~7 separate call sites on **2026-07-06**, because the codebase's ~80 composer/style modules all share one architectural pattern: every runtime check that asks "is style X active" only checks primary style, never **`harmonicVoice`**, as an equivalent condition. This caused a cascade of bugs specific to Verlaine (harmony authority split, voice-leading false positives, missing API field forwarding, rhythm overlay overwrite, UI state split) that were fixed one at a time.
+
+**Risk:** Any other style tested in the same **`harmonicVoice` + different primary** combination (e.g. Fripp, Marr, Morello) will likely hit the same class of bugs, since the underlying pattern is systemic, not Verlaine-specific.
+
+**Recommended approach (per design discussion, not yet implemented):**
+
+1. Build a shared generic module (e.g. **`core/style-activity/styleActivity.ts`**) with helpers: **`normalizeStyleId`**, **`getPrimaryStyleId`**, **`getHarmonicVoiceStyleId`**, **`isStyleActive(metadata, styleId, role)`**, **`getHarmonyAuthorityStyle(metadata)`**
+2. Migrate the known ~7 chokepoints to use these generic helpers instead of hand-written per-style checks (chord resolution, harmony spine, export-truth validation, voice-leading caps, rhythm overlay bypass, structural relax gates, diagnostics/finalization)
+3. Add a lint/CI rule flagging any new raw **`songwriterStyleId === 'x'`** comparison outside an approved allowlist, to prevent this pattern from recurring as new styles are added
+4. Do **not** attempt to migrate all ~80 style modules at once — target the shared chokepoints only; migrate remaining legacy checks opportunistically
+
+**Priority:** Not urgent — do only when another style needs the same **`harmonicVoice` + different-primary** combination, or as planned technical-debt cleanup.
+
+**Related fixed work (reference):** commits **`8f248347`**, **`e2cd13ab`**, **`6575d778`**, **`54af24c8`**, **`50e1d2a5`** — Verlaine GBD harmony-wire + authority fixes (**2026-07-06**). See **`docs/VERLAINE_GBD.md`**.
+
 ### Band Mode — multi-block arranger (seed → varied long form)
 
 GOAL: input a short seed (e.g. 8 bars) and build longer forms (16/32/48/64) where each block VARIES, not just repeats.
