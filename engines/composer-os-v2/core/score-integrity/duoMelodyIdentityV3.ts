@@ -16,7 +16,7 @@ import {
   collectMelodyMidiChronological,
   isGuitarMelodyVoiceNote,
 } from './guitarVoiceMelody';
-import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
+import { isVerlaineHarmonicPath } from '../composer/voiceRuleBundles';
 
 /** Local copy — melody (voice 1) only; avoids circular import with duoLockQuality (GCE imports this module). */
 function maxConsecutiveStepwiseLocal(guitar: PartModel, maxStep: number): number {
@@ -495,10 +495,7 @@ export function validateDuoMelodyIdentityV3(
   const melodyPitches = collectMelodyMidiChronological(g);
   const { maxLeap, countOver12 } = largeLeapStats(g);
   const md = opts?.compositionContext?.generationMetadata;
-  const isSongwriterVerlaine = md?.songwriterStyleId === 'verlaine';
-  const isHarmonicVoiceVerlaine =
-    normalizeHarmonicVoiceId(String(md?.harmonicVoice ?? '')) === 'verlaine';
-  const verlaineMelodicLeapRelax = isSongwriterVerlaine || isHarmonicVoiceVerlaine;
+  const verlaineMelodicLeapRelax = isVerlaineHarmonicPath(md);
 
   if (maxLeap > 14 && !verlaineMelodicLeapRelax) {
     issues.push({

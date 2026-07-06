@@ -10,7 +10,7 @@
 
 import type { CompositionContext } from '../compositionContext';
 import { applyVoiceBundleHarmonicRhythm } from '../composer/voiceBundleHarmonicRhythm';
-import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
+import { getVoiceRuleBundle, isVerlaineHarmonicPath } from '../composer/voiceRuleBundles';
 import {
   hasSectionMarkerVrbAssignment,
   resolveVoiceRuleBundleForBar,
@@ -214,6 +214,23 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
     barIndex <= tb
   ) {
     return wsEff[barIndex - 1]!;
+  }
+
+  /**
+   * Tom Verlaine: `precomputeVerlaineEffectiveHarmonyBars` applies suspended modal field voicing.
+   * After precompute, `verlaineEffectiveHarmonyBars` is full-form and authoritative.
+   * Verlaine harmonicVoice is intentionally treated as Verlaine for harmony authority resolution.
+   * Other styles remain primary-only until explicitly designed similarly.
+   */
+  const verlaineEffEarly = meta?.verlaineEffectiveHarmonyBars;
+  if (
+    isVerlaineHarmonicPath(meta) &&
+    Array.isArray(verlaineEffEarly) &&
+    verlaineEffEarly.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return verlaineEffEarly[barIndex - 1]!;
   }
 
   /**
@@ -816,21 +833,6 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   }
 
   /**
-   * Tom Verlaine: `precomputeVerlaineEffectiveHarmonyBars` applies suspended modal field voicing.
-   * After precompute, `verlaineEffectiveHarmonyBars` is full-form and authoritative.
-   */
-  const verlaineEff = meta?.verlaineEffectiveHarmonyBars;
-  if (
-    meta?.songwriterStyleId === 'verlaine' &&
-    Array.isArray(verlaineEff) &&
-    verlaineEff.length === tb &&
-    barIndex >= 1 &&
-    barIndex <= tb
-  ) {
-    return verlaineEff[barIndex - 1]!;
-  }
-
-  /**
    * Ralph Towner: `precomputeRalphTownerEffectiveHarmonyBars` applies guitar-born polyphonic field voicing.
    * After precompute, `ralphTownerEffectiveHarmonyBars` is full-form and authoritative.
    */
@@ -1184,9 +1186,45 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   );
 }
 
+/**
+ * True when the authoritative symbol for this bar came from Verlaine eff or mosaic-merged spine
+ * (not chordSymbolPlan / builtin fallback while Verlaine path is active).
+ */
+function verlaineAuthoritativeSpineChord(
+  barIndex: number,
+  sym: string,
+  context: CompositionContext,
+): boolean {
+  const meta = context.generationMetadata;
+  if (!isVerlaineHarmonicPath(meta)) return false;
+  const tb = context.form.totalBars;
+  if (barIndex < 1 || barIndex > tb) return false;
+
+  if (
+    !shouldPreferCustomHarmonySpineOverMosaic(context) &&
+    Array.isArray(meta.mosaicMergedHarmonyBars) &&
+    meta.mosaicMergedHarmonyBars.length === tb &&
+    sym === meta.mosaicMergedHarmonyBars[barIndex - 1]
+  ) {
+    return true;
+  }
+
+  const verlaineEff = meta.verlaineEffectiveHarmonyBars;
+  if (Array.isArray(verlaineEff) && verlaineEff.length === tb && sym === verlaineEff[barIndex - 1]) {
+    return true;
+  }
+
+  return false;
+}
+
 /** Authoritative chord symbol per bar — slice/locked/plan resolution plus VoiceRuleBundle harmonic rhythm overlay. */
 export function getChordForBar(barIndex: number, context: CompositionContext): string {
   const sym = resolveChordSymbolAuthoritativeForBar(barIndex, context);
+  /**
+   * Verlaine harmonic-voice chords are pre-resolved and authoritative; the rhythm-hold overlay is
+   * style-blind and was overwriting them with a stale anchor from an earlier bar.
+   */
+  const skipRhythmOverlay = verlaineAuthoritativeSpineChord(barIndex, sym, context);
   let rhythmBundle = context.voiceBundle;
   if (perSectionVrbResolutionEnabled() && hasExplicitPerSectionVrbAssignment(context)) {
     const wire = readSqToBbVrbWire(context);
@@ -1198,7 +1236,9 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
   }
   rhythmBundle =
     resolveVoiceBundleForBarWithSectionArchitecture(barIndex, context, rhythmBundle) ?? rhythmBundle;
-  const afterRhythm = applyVoiceBundleHarmonicRhythm(barIndex, sym, context, rhythmBundle);
+  const afterRhythm = skipRhythmOverlay
+    ? sym
+    : applyVoiceBundleHarmonicRhythm(barIndex, sym, context, rhythmBundle);
   if (context.voiceBundle && context.harmonicScenes?.length) {
     return applyHarmonicSceneChordBias(barIndex, afterRhythm, context);
   }

@@ -4683,6 +4683,18 @@ export function normalizeHarmonicVoiceId(raw: string): string {
   return t.replace(/-/g, '_').replace(/\s+/g, '_');
 }
 
+/** Primary songwriter or harmonicVoice selects Verlaine harmony authority (suspended-field slice). */
+export function isVerlaineHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = (metadata?.songwriterStyleId ?? '').trim().toLowerCase();
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'verlaine' || voice === 'verlaine';
+}
+
 /** Resolve compiled bundle; unknown ids fall back to {@link NEUTRAL_VOICE_RULE_BUNDLE}. */
 export function getVoiceRuleBundle(voiceId: string): VoiceRuleBundle {
   const key = normalizeHarmonicVoiceId(voiceId);

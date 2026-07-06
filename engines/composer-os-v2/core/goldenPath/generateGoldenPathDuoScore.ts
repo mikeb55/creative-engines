@@ -25,7 +25,7 @@ import {
   buildMosaicMotifVariants,
   generateMosaicSourceMotif,
 } from '../mosaic-mode/mosaicMotifEngine';
-import { getVoiceRuleBundle, normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
+import { getVoiceRuleBundle, isVerlaineHarmonicPath, normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import {
   buildTransitionBarNotes,
   isMosaicTransitionBar,
@@ -3262,6 +3262,7 @@ function buildGuitarPart(
   const isHarmonicVoiceVerlaine =
     normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
     'verlaine';
+  const verlaineHarmonicPathActive = isVerlaineHarmonicPath(genMeta);
   const isSongwriterAllanHoldsworth = genMeta?.songwriterStyleId === 'allan_holdsworth';
   const isSongwriterJackWhite = genMeta?.songwriterStyleId === 'jack_white';
   const isSongwriterBeefheart = genMeta?.songwriterStyleId === 'beefheart';
@@ -3591,7 +3592,7 @@ function buildGuitarPart(
   if (isSongwriterRalphTowner && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeRalphTownerEffectiveHarmonyBars(context);
   }
-  if ((isSongwriterVerlaine || isHarmonicVoiceVerlaine) && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (verlaineHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeVerlaineEffectiveHarmonyBars(context);
     if (isHarmonicVoiceVerlaine && !isSongwriterVerlaine) {
       const verlaineEff = genMeta.verlaineEffectiveHarmonyBars;

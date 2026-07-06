@@ -11,6 +11,7 @@ import type { CustomLockedRoutingWire } from '../goldenPath/customLockedHarmonyR
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import { isAllowedSongFormBarCount } from './songFormBarCounts';
 import { lockedHarmonyChordSymbolsEquivalent } from './chordProgressionParser';
+import { isVerlaineHarmonicPath } from '../composer/voiceRuleBundles';
 import { getChordForBar } from './harmonyResolution';
 import { buildSectionAwareHarmonySpine } from './harmonySpineSectionLoop';
 import type { ResolvedPitchField } from './pitchFieldSpineTypes';
@@ -81,6 +82,12 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
     sliceId: 'pat_metheny',
   },
   { match: (m) => m?.songwriterStyleId === 'wayne_shorter', effKey: 'wayneShorterEffectiveHarmonyBars', sliceId: 'wayne_shorter' },
+  /** Verlaine harmonicVoice is intentionally treated as Verlaine for harmony authority resolution. Other styles remain primary-only until explicitly designed similarly. */
+  {
+    match: (m) => isVerlaineHarmonicPath(m),
+    effKey: 'verlaineEffectiveHarmonyBars',
+    sliceId: 'verlaine',
+  },
   { match: (m) => m?.songwriterStyleId === 'barry_harris', effKey: 'barryHarrisEffectiveHarmonyBars', sliceId: 'barry_harris' },
   { match: (m) => m?.songwriterStyleId === 'bill_evans', effKey: 'billEvansEffectiveHarmonyBars', sliceId: 'bill_evans' },
   { match: (m) => m?.songwriterStyleId === 'debussy', effKey: 'debussyEffectiveHarmonyBars', sliceId: 'debussy' },
@@ -122,7 +129,6 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   { match: (m) => m?.songwriterStyleId === 'jan_garbarek', effKey: 'janGarbarekEffectiveHarmonyBars', sliceId: 'jan_garbarek' },
   { match: (m) => m?.songwriterStyleId === 'john_surman', effKey: 'johnSurmanEffectiveHarmonyBars', sliceId: 'john_surman' },
   { match: (m) => m?.songwriterStyleId === 'ralph_towner', effKey: 'ralphTownerEffectiveHarmonyBars', sliceId: 'ralph_towner' },
-  { match: (m) => m?.songwriterStyleId === 'verlaine', effKey: 'verlaineEffectiveHarmonyBars', sliceId: 'verlaine' },
   { match: (m) => m?.songwriterStyleId === 'allan_holdsworth', effKey: 'holdsworthEffectiveHarmonyBars', sliceId: 'allan_holdsworth' },
   { match: (m) => m?.songwriterStyleId === 'jack_white', effKey: 'jackWhiteEffectiveHarmonyBars', sliceId: 'jack_white' },
   { match: (m) => m?.songwriterStyleId === 'beefheart', effKey: 'beefheartEffectiveHarmonyBars', sliceId: 'beefheart' },
