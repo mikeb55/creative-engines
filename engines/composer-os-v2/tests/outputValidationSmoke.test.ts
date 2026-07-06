@@ -95,6 +95,7 @@ function generateFixtures(outRoot: string): FixturePack[] {
       totalBars: 8,
       title: 'Output validation duo',
       skipDrumGuide: true,
+      skipScoreMidiExport: false,
     },
     duoDir
   );
@@ -122,6 +123,7 @@ function generateFixtures(outRoot: string): FixturePack[] {
       title: 'Output validation sq',
       instrumentGroup: 'string_quartet',
       skipDrumGuide: true,
+      skipScoreMidiExport: false,
     } as GenerateRequest,
     sqDir
   );

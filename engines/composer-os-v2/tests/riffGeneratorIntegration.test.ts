@@ -25,6 +25,13 @@ import {
 } from '../core/song-mode/songwriterStyleProfiles';
 import { RIFF_VRB_SIGMA_CEILINGS } from '../core/riff-generator/riffVrbRegistry';
 
+/**
+ * Jamerson bass lens (1503219f) — riff VRB stub on registry only; Song Mode profile +
+ * line-first duo wiring not shipped. Bucket B / priority 1a DCR: exclude from Phase E
+ * until SONGWRITER_STYLE_PROFILES + LINE_FIRST_DUO entry land (see COMPOSER_OS_ROADMAP.md).
+ */
+const RIFF_PHASE_E_WIP_EXCLUDED: readonly string[] = ['jamerson'];
+
 function testRiffGeneratorFamilyTagResolution(): boolean {
   for (const id of RIFF_GENERATOR_VRB_IDS) {
     const expected = RIFF_VRB_EXPECTED_FAMILY[id];
@@ -135,6 +142,7 @@ function testRiffVrbBlendCrossFamilyWarn(): boolean {
 
 function testRiffVrbSongModeIntegration(): boolean {
   for (const id of RIFF_GENERATOR_VRB_IDS) {
+    if ((RIFF_PHASE_E_WIP_EXCLUDED as readonly string[]).includes(id)) continue;
     const pk = normalizeSongwriterStyleKey(id);
     if (pk !== id) return false;
     if (!SONGWRITER_STYLE_PROFILES[pk]) return false;
