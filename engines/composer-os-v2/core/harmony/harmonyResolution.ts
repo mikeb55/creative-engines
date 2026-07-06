@@ -1206,13 +1206,31 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
 }
 
 /**
- * Post passes: prefer measure chord when set; fail loudly if it disagrees with authoritative harmony for that bar.
+ * Post passes: when the measure already carries a stamped chord, use it as ground truth.
+ * `getChordForBar` applies a stateful harmonic-rhythm hold (`voiceBundleHarmonicRhythmState`);
+ * re-calling it later for the same bar can disagree with the symbol frozen at measure creation.
+ * Fall back to `getChordForBar` only when no stamped chord is available.
  */
 export function resolveChordForDuoPostPass(
   context: CompositionContext,
   barIndex: number,
   measureChord?: string
 ): string {
+  const stamped = measureChord?.trim();
+  if (stamped) {
+    const hc = context.harmonyContext;
+    if (hc && typeof process !== 'undefined' && process.env?.COMPOSER_OS_HARMONY_PROVENANCE === '1') {
+      logHarmonyProvenance({
+        barIndex,
+        canonical: stamped,
+        scoreChordWritten: stamped,
+        source: hc.source,
+        checksum: hc.checksum,
+      });
+    }
+    return stamped;
+  }
+
   const authoritative = getChordForBar(barIndex, context);
   const hc = context.harmonyContext;
   if (hc && typeof process !== 'undefined' && process.env?.COMPOSER_OS_HARMONY_PROVENANCE === '1') {
@@ -1223,15 +1241,6 @@ export function resolveChordForDuoPostPass(
       source: hc.source,
       checksum: hc.checksum,
     });
-  }
-  if (measureChord && measureChord.trim()) {
-    const t = measureChord.trim();
-    if (t !== authoritative) {
-      throw new Error(
-        `HARMONY WIRE FAILURE bar ${barIndex}: measure chord "${t}" !== authoritative "${authoritative}"`
-      );
-    }
-    return t;
   }
   return authoritative;
 }

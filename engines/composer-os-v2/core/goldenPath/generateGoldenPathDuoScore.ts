@@ -25,7 +25,7 @@ import {
   buildMosaicMotifVariants,
   generateMosaicSourceMotif,
 } from '../mosaic-mode/mosaicMotifEngine';
-import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
+import { getVoiceRuleBundle, normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import {
   buildTransitionBarNotes,
   isMosaicTransitionBar,
@@ -3259,6 +3259,9 @@ function buildGuitarPart(
   const isSongwriterJohnSurman = genMeta?.songwriterStyleId === 'john_surman';
   const isSongwriterRalphTowner = genMeta?.songwriterStyleId === 'ralph_towner';
   const isSongwriterVerlaine = genMeta?.songwriterStyleId === 'verlaine';
+  const isHarmonicVoiceVerlaine =
+    normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
+    'verlaine';
   const isSongwriterAllanHoldsworth = genMeta?.songwriterStyleId === 'allan_holdsworth';
   const isSongwriterJackWhite = genMeta?.songwriterStyleId === 'jack_white';
   const isSongwriterBeefheart = genMeta?.songwriterStyleId === 'beefheart';
@@ -3588,8 +3591,15 @@ function buildGuitarPart(
   if (isSongwriterRalphTowner && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeRalphTownerEffectiveHarmonyBars(context);
   }
-  if (isSongwriterVerlaine && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if ((isSongwriterVerlaine || isHarmonicVoiceVerlaine) && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeVerlaineEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceVerlaine && !isSongwriterVerlaine) {
+      const verlaineEff = genMeta.verlaineEffectiveHarmonyBars;
+      const verlaineTb = totalBarsFromContext(context);
+      if (Array.isArray(verlaineEff) && verlaineEff.length === verlaineTb) {
+        genMeta.mosaicMergedHarmonyBars = [...verlaineEff];
+      }
+    }
   }
   if (isSongwriterAllanHoldsworth && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeHoldsworthEffectiveHarmonyBars(context);

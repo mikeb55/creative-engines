@@ -417,6 +417,9 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
           ...(req.presetId === 'guitar_bass_duo'
             ? { duoVaultMotifEnabled: req.duoVaultMotifEnabled !== false }
             : {}),
+          ...(typeof req.harmonicVoice === 'string' && req.harmonicVoice.trim() !== ''
+            ? { harmonicVoice: req.harmonicVoice.trim() }
+            : {}),
           songModeLeadSheetMelodyAnchors: importedAnchors,
           leadSheetPerformanceBlend: req.leadSheetPerformanceBlend,
           importHarmonyMode: normalizedImportHarmonyMode,

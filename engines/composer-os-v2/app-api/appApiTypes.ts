@@ -704,6 +704,11 @@ export interface GenerateRequest {
    */
   styleGenerationContextKeys?: string[];
   /**
+   * GBD / Style Panel — harmonic voice VRB id (e.g. `verlaine`, `jamerson`).
+   * Normalized in engine via `normalizeHarmonicVoiceId`; forwarded to `runGoldenPath` as `harmonicVoice`.
+   */
+  harmonicVoice?: string;
+  /**
    * String Quartet — optional SQ rhythm engine from Style Panel (additive diagnostics on `GenerationMetadata`).
    */
   sqRhythmEngineId?:
