@@ -802,6 +802,10 @@ export function apiGenerate(
         body.chromaticStrength === 'prominent'
           ? body.chromaticStrength
           : undefined,
+      harmonicVoice:
+        typeof body.harmonicVoice === 'string' && body.harmonicVoice.trim() !== ''
+          ? body.harmonicVoice.trim()
+          : undefined,
       formId: typeof body.formId === 'string' && body.formId.trim() !== '' ? body.formId.trim() : undefined,
       includeVocalLeadSheet: body.includeVocalLeadSheet === true ? true : undefined,
       __generateCorrelationId:
