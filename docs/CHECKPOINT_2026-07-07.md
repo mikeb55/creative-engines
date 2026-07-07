@@ -1,84 +1,96 @@
-# Checkpoint — 2026-07-07 (priority 1a — golden drift consolidation)
+﻿# Checkpoint — 2026-07-07 (priority 1a — golden drift consolidation)
 
-Follows [CHECKPOINT_2026-07-06.md](./CHECKPOINT_2026-07-06.md). GCE + LOCK side-by-side comparison complete (golden fixture vs current engine). **No fixture regen. No engine edits.**
+Follows [CHECKPOINT_2026-07-06.md](./CHECKPOINT_2026-07-06.md). GCE + LOCK side-by-side comparison complete (golden fixture vs current engine). **Priority 1a substantially complete** — see DONE / REMAINING below.
 
 ## Prior work (unchanged)
 
 - **Bucket B (DCR commit)** — `67ef7fce` — smoke/registry wiring drift fixed.
 - **LF-normalize golden compare (DCR refine)** — `6ada6683` — shared `goldenFixtureCompare.ts`; premium-melody golden tests normalize committed `.musicxml` fixtures before byte-exact compare (cleared Bill Evans MusicXML row).
-
-## Smoke status (post LF-refine, unchanged)
-
-- **Unexpected fail count: 9** (681 PASS rows — `_smoke_lf_refine.log`)
-- Still red: BH / Wayne / Hendrix JSON + MusicXML (content drift); Bartok CLE lineSet + trace JSON.
+- **GCE + LOCK drift analysis (pre-regen)** — side-by-side via `runLeadSheetGceLockEval` on golden fixture vs current engine (`engines/composer-os-v2/scripts/_goldenGceCompare.ts`, scratch runner). Confirmed BH / Wayne / Hendrix GCE-positive drift with LOCK pass and no hard-gate violations; Bartok CLE harness mismatch documented below.
 
 ---
 
-## CONFIRMED FINDINGS — all 4 remaining golden drifts
+## DONE (priority 1a — 2026-07-07)
 
-Side-by-side eval: official `evaluateGce` + `evaluateLock` (`lockGates.ts`) via `runLeadSheetGceLockEval` on **golden fixture** vs **current engine output**. Scratch runner: `engines/composer-os-v2/scripts/_goldenGceCompare.ts` (not committed).
+- **BH / Wayne / Hendrix goldens regenerated and committed** — `f8c17335` on `main`
+  - Seeds: **88109** (BH) · **90217** (Wayne) · **90303** (Hendrix)
+  - Pre-overwrite gates: pipeline-truth `input=pass score=pass export=pass`; `evaluateLock()` clean; no GCE hard-gate violations
+  - Fixtures: 6 files under `engines/composer-os-v2/tests/golden/` (commit diff: 3 MusicXML files; JSON already matched HEAD byte-for-byte)
+  - Smoke: **unexpected fail 9 → 3** (`npm run test:composer-smoke` full tier)
+  - Fixed rows: `bhGoldenMaster` ×2 · `wayneGoldenMaster` ×2 · `jhGoldenMaster` ×2 (all PASS)
 
-| Golden | Seed | Old GCE | New GCE | LOCK (new) | Drift character | Regen? |
-|--------|------|---------|---------|------------|-----------------|--------|
-| **bhGoldenMaster** | 88109 | 5.4 | 7.1 | **pass** | Melody/bass pitch spelling | Candidate — pending musical review |
-| **wayneGoldenMaster** | 90217 | 5.6 | 7.1 | **pass** | Voicing | Candidate — pending musical review |
-| **jhGoldenMaster** | 90303 | 5.2 | 5.7 | **pass** | Inner-voice pitch | Candidate — pending musical review |
-| **bartokCleGoldenMaster** | 61234 | 5.0 | 5.0 | harness "fail" | lineSet + trace JSON byte drift only | **Not** a LOCK regression — see below |
+---
 
-### bhGoldenMaster
+## REMAINING (2 items — out of scope for 1a, tracked separately)
 
-- GCE **5.4 → 7.1** (+1.7); largest move: thematicRecallPotential (+10.0).
-- LOCK **pass** on current engine; no GCE hard-gate flip.
-- Content drift: melody/bass pitch spelling (JSON + MusicXML smoke still red).
-- **Regen candidate** pending musical review.
+1. **`bartokCleGoldenMaster`** — lineSet + trace JSON (seed **61234**) ×2 smoke rows
+   - Known **harness mismatch**: leadsheet `runLeadSheetGceLockEval` does not apply to AbstractLineSet golden path
+   - Needs **correct eval harness assigned** before any regen decision
+   - Do not regen until harness task completes (separate scoped work)
 
-### wayneGoldenMaster
+2. **`beGoldenMaster`** — JSON byte-exact seed **90301** ×1 smoke row
+   - **NEW** — not in the original 9-fail set; not covered by BH/Wayne/Hendrix regen pass
+   - Backlog item pending triage: stale-fixture drift (bucket A) vs other cause
+   - **Do not investigate root cause yet** — log only; separate scoped triage before action
 
-- GCE **5.6 → 7.1** (+1.5); largest move: thematicRecallPotential (+10.0).
-- LOCK **pass**; no hard-gate flip.
-- Content drift: voicing (JSON + MusicXML smoke still red).
-- **Regen candidate** pending musical review.
+---
 
-### jhGoldenMaster
+## CONFIRMED FINDINGS (pre-regen analysis — reference)
 
-- GCE **5.2 → 5.7** (+0.5); largest move: thematicRecallPotential (+5.0).
-- LOCK **pass**; no hard-gate flip.
-- Content drift: inner-voice pitch (JSON + MusicXML smoke still red).
-- **Regen candidate** pending musical review.
+Side-by-side eval on **golden fixture** vs **current engine output** at time of analysis:
 
-### bartokCleGoldenMaster
+| Golden | Seed | Old GCE | New GCE | LOCK (new) | Drift character | Outcome |
+|--------|------|---------|---------|------------|-----------------|---------|
+| **bhGoldenMaster** | 88109 | 5.4 | 7.1 | **pass** | Melody/bass pitch spelling | **Regenerated** `f8c17335` |
+| **wayneGoldenMaster** | 90217 | 5.6 | 7.1 | **pass** | Voicing | **Regenerated** `f8c17335` |
+| **jhGoldenMaster** | 90303 | 5.2 | 5.7 | **pass** | Inner-voice pitch | **Regenerated** `f8c17335` |
+| **bartokCleGoldenMaster** | 61234 | 5.0 | 5.0 | harness "fail" | lineSet + trace JSON byte drift only | **Open** — harness task |
+
+### bartokCleGoldenMaster (still open)
 
 - GCE **5.0 → 5.0** (unchanged); no hard-gate flip.
 - LOCK **"fail"** is **harness / eval-path mismatch**, not engine regression:
   - Bartok CLE golden = **AbstractLineSet JSON** byte-exact test (`bartokClePitchScoringGoldenMaster.test.ts`). **Never used leadsheet LOCK eval at fixture creation.**
   - GCE comparison imports lineSet → synthetic guitar+bass `ScoreModel`; `evaluateLock` fails **`rhythmAntiLoop`** only (`swingGridAlignment = 1.0` — perfect grid from import path).
   - **Old frozen fixture and new engine output fail identically** — not a new break.
-  - Formal L/O/C/K: **L** ok (locked harmony on measures); **O** not exercised (no MusicXML in golden); **C** pass; **K** = JSON determinism drift (lineSet + trace SHA), not LOCK.
-- Real issue: **lineSet + trace JSON byte drift** only (smoke rows still red).
 - **Do not use leadsheet LOCK eval for Bartok CLE regen decisions going forward.**
 
 **Caveat:** Old-side GCE scores on fixture→`ScoreModel` import may be depressed vs native engine path; treat category deltas as directional, not absolute.
 
 ---
 
+## Smoke status (post BH/Wayne/Hendrix regen)
+
+- **Unexpected fail count: 3** (was 9 pre-regen)
+- **Known fail count: 5** (unchanged)
+- Unexpected fails:
+  - `bartokCleGoldenMaster` — lineSet + trace JSON (61234) ×2
+  - `beGoldenMaster` — JSON byte-exact (90301) ×1
+
+---
+
 ## STATUS
 
-**No genuine regressions found across all 4.**
+**Priority 1a substantially complete** — **6/8** confirmed premium-melody fixture rows fixed with GCE/LOCK validation and regen (`f8c17335`).
 
-- BH / Wayne / Hendrix: content drift is GCE-neutral or GCE-positive; LOCK pass on current engine.
-- Bartok CLE: LOCK "fail" = harness mismatch; real signal = JSON byte drift only.
+**2 items remain**, both require **separate scoped work** before closing 1a fully:
 
-Ready for **musical review + regen decision** on BH / Wayne / Hendrix. Bartok CLE needs **correct eval harness identified** before any regen (separate small task).
+- Bartok CLE: correct eval harness, then regen decision
+- Bill Evans (`beGoldenMaster` 90301): triage only — backlog, no investigation yet
+
+No genuine engine regressions found in the 1a golden-drift sweep.
 
 ---
 
 ## NEXT
 
-1. **Mike:** Review 3 GCE-positive drifts (BH / Wayne / Hendrix) — approve or reject golden regen.
-2. **Bartok CLE:** Assign correct LOCK / eval harness (not leadsheet `runLeadSheetGceLockEval` on synthetic lineSet import) before regen consideration.
-3. **Do not regen** any golden fixtures until musical review approves (BH / Wayne / Hendrix) or Bartok harness task completes.
+1. **Bartok CLE:** Assign correct LOCK / eval harness (not leadsheet `runLeadSheetGceLockEval` on synthetic lineSet import) — then decide regen.
+2. **beGoldenMaster (90301):** Schedule triage — bucket A stale fixture vs other; no root-cause dive until scoped.
+3. **Close 1a fully** only after both remaining items have scoped outcomes (harness + triage decision).
 
-## Resume pointer
+---
 
-- Scratch (do not commit): `_goldenGceCompare.ts`, `_bartokLockDiag*.cjs`, `_golden_musical_review.ts`, smoke logs under repo root.
-- Committed smoke fix baseline: `6ada6683` on `main`.
+## Resume pointers
+
+- Scratch (do not commit): `_goldenGceCompare.ts`, `_golden_musical_review.ts`, smoke logs under repo root (`_smoke_*`)
+- Committed smoke baseline: `6ada6683` (LF normalize); golden regen: `f8c17335`
