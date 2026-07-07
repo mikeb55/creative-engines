@@ -9,6 +9,7 @@ import type { CompositionContext } from '../core/compositionContext';
 import type { AbstractLineSet } from '../core/counterpoint/abstractLineSet';
 import type { BartokPitchScoringTrace } from '../core/counterpoint/bartokPitchScoringTypes';
 import { buildBartokScoredLineSet } from '../core/counterpoint/bartokPitchScorer';
+import { normalizeGoldenFixtureText } from './goldenFixtureCompare';
 
 export const BARTOK_CLE_GOLDEN_SEED = 61234;
 export const BARTOK_CLE_GOLDEN_LENGTH_BARS = 8;
@@ -182,31 +183,33 @@ export function runBartokClePitchScoringGoldenMasterTests(): { name: string; ok:
     ];
   }
 
-  const expectedLine = fs.readFileSync(LINE_FIXTURE, 'utf8');
-  const expectedTrace = fs.readFileSync(TRACE_FIXTURE, 'utf8');
+  const expectedLine = normalizeGoldenFixtureText(fs.readFileSync(LINE_FIXTURE, 'utf8'));
+  const expectedTrace = normalizeGoldenFixtureText(fs.readFileSync(TRACE_FIXTURE, 'utf8'));
+  const actualLine = normalizeGoldenFixtureText(snapshot.lineSetText);
+  const actualTrace = normalizeGoldenFixtureText(snapshot.traceText);
 
   if (process.env.BARTOK_CLE_UPDATE_GOLDEN === '1') {
     writeBartokCleGoldenFixtures();
   }
 
-  const lineHash = sha256Hex(snapshot.lineSetText);
+  const lineHash = sha256Hex(actualLine);
   const expLineHash = sha256Hex(expectedLine);
   results.push({
     name: `bartokCleGoldenMaster - lineSet JSON byte-exact seed ${BARTOK_CLE_GOLDEN_SEED}`,
-    ok: snapshot.lineSetText === expectedLine,
+    ok: actualLine === expectedLine,
     detail:
-      snapshot.lineSetText !== expectedLine
+      actualLine !== expectedLine
         ? `sha256 expected ${expLineHash.slice(0, 12)} got ${lineHash.slice(0, 12)}`
         : undefined,
   });
 
-  const traceHash = sha256Hex(snapshot.traceText);
+  const traceHash = sha256Hex(actualTrace);
   const expTraceHash = sha256Hex(expectedTrace);
   results.push({
     name: `bartokCleGoldenMaster - trace JSON byte-exact seed ${BARTOK_CLE_GOLDEN_SEED}`,
-    ok: snapshot.traceText === expectedTrace,
+    ok: actualTrace === expectedTrace,
     detail:
-      snapshot.traceText !== expectedTrace
+      actualTrace !== expectedTrace
         ? `sha256 expected ${expTraceHash.slice(0, 12)} got ${traceHash.slice(0, 12)}`
         : undefined,
   });

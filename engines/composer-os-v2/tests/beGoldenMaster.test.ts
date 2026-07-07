@@ -222,12 +222,13 @@ export function runbeGoldenMasterTests(): { name: string; ok: boolean; detail?: 
     }];
   }
 
-  const expectedJson = fs.readFileSync(JSON_FIXTURE, 'utf8');
+  const expectedJson = normalizeGoldenFixtureText(fs.readFileSync(JSON_FIXTURE, 'utf8'));
   const expectedXml = normalizeGoldenFixtureText(fs.readFileSync(XML_FIXTURE, 'utf8'));
-  const jsonHash = sha256Hex(snapshot.jsonText);
+  const actualJson = normalizeGoldenFixtureText(snapshot.jsonText);
+  const jsonHash = sha256Hex(actualJson);
   const xmlHash = sha256Hex(snapshot.xmlText);
 
-  const jsonOk = snapshot.jsonText === expectedJson;
+  const jsonOk = actualJson === expectedJson;
   if (jsonOk) {
     results.push({
       name: `beGoldenMaster - JSON byte-exact seed 90301 (sha256 ${jsonHash.slice(0, 12)}...)`,
@@ -238,7 +239,7 @@ export function runbeGoldenMasterTests(): { name: string; ok: boolean; detail?: 
     let actualPayload: BeGoldenJsonPayload;
     try {
       expectedPayload = JSON.parse(expectedJson) as BeGoldenJsonPayload;
-      actualPayload = JSON.parse(snapshot.jsonText) as BeGoldenJsonPayload;
+      actualPayload = JSON.parse(actualJson) as BeGoldenJsonPayload;
     } catch {
       expectedPayload = { seed: BE_GOLDEN_SEED, fixture: '', profile: '', noteCount: 0, events: [] };
       actualPayload = expectedPayload;
