@@ -205,7 +205,7 @@
   </measure>
   <measure number="5">
         <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type></note>
-        <note dynamics="53.54"><pitch><step>F</step><alter>1</alter><octave>2</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type><notations><articulations><staccato/></articulations></notations></note>
+        <note dynamics="53.54"><pitch><step>D</step><octave>2</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type><notations><articulations><staccato/></articulations></notations></note>
         <note dynamics="53.54"><pitch><step>D</step><octave>2</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type><notations><articulations><tenuto/></articulations></notations></note>
         <note dynamics="53.54"><pitch><step>D</step><octave>2</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type><notations><articulations><tenuto/></articulations></notations></note>
         <note dynamics="53.54"><pitch><step>B</step><octave>2</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type><notations><articulations><staccato/></articulations></notations></note>
