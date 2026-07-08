@@ -76,3 +76,24 @@ For each fixed path (**Song Mode**, **GBD section regen**, **ECM section regen**
 3. Confirm **Verlaine-specific relaxes** (e.g. `duoMelodyIdentityV3` leap relax via `isVerlaineHarmonicPath`) apply correctly once `harmonicVoice` reaches that path.
 4. Confirm any **existing special routing** (ECM/Zappa preset handling, Big Band mosaic dispatch, SQ ensemble routing) still behaves correctly with `harmonicVoice` now forwarded — i.e. the fix does not silently override intended preset-specific behaviour.
 5. If any **GCE threshold or gate behaviour** is intentionally expected to change as a result of the fix, **state that explicitly in this design doc** (path subsection or changelog note) rather than treating it as a side effect.
+
+---
+
+## Sprint Plan (Perplexity-guided, 2026-07-07)
+
+**Approach:** small shared forwarding helper (transport only, not semantics) + one parameterized regression test + one batch GCE/LOCK verification matrix. Explicitly NOT building the full 80-style "active as primary OR harmonicVoice" abstraction ? that stays deferred.
+
+**Build once (before any path fix):**
+1. Tiny shared helper ? e.g. `forwardHarmonicVoice(req, opts)` ? for plumbing only, used at each path's option-builder call site
+2. One parameterized metadata-continuity test: for each entry point, assert "if caller sets harmonicVoice=X, final engine-bound options still contain harmonicVoice=X" (or explicitly documented as unsupported/mapped-differently) ? not a musical-output test
+3. One batch GCE/LOCK verification matrix runner: rows = fixed paths, columns = baseline vs Verlaine-HV request, checks = HV survived / generation success / LOCK pass-fail / GCE score+gates / delta vs baseline
+
+**Fix order:**
+1. GBD section regen + ECM section regen (mirror already-working full-gen pattern ? lowest risk)
+2. Song Mode full gen + section regen (higher impact, first path needing real LOCK/truth verification ? run matrix immediately after)
+3. Big Band + String Quartet (more moving parts, do after harness exists)
+4. Riff Generator ? DEFERRED, this is a field-mapping/product decision (UI sends harmonicVoice, engine reads unrelated riffVrbId), not a forwarding bug ? treat as separate scoped item, not part of this sprint
+
+**New guardrail:** add a per-entry-point "supportsHarmonicVoice: forward | mapped | unsupported" status so future new paths can't silently reintroduce this ambiguity.
+
+**Phasing per path:** Phase 1 (preserve field to engine entry) before Phase 2 (confirm path's semantics actually use it) before Phase 3 (align authority/registry/validator behavior if needed) ? don't mix plumbing fix with deeper style-system work.
