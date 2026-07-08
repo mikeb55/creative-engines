@@ -132,6 +132,18 @@ export function duoRunGoldenPathOptionsFromGenerateRequest(
   };
 }
 
+/** Fix #2B continuity seam: HV merge on Song Mode section-regen fragment golden-path opts. */
+export function songModeSectionRegenMergeHarmonicVoice(
+  req: GenerateRequest,
+  baseOptions: RunGoldenPathOptions,
+  fragmentOverrides: Partial<RunGoldenPathOptions> = {}
+): RunGoldenPathOptions {
+  return mergeHarmonicVoiceFromRequest(req, {
+    ...baseOptions,
+    ...fragmentOverrides,
+  });
+}
+
 export function runDuoSectionRegeneration(
   req: GenerateRequest,
   effectiveSeed: number,
@@ -238,15 +250,14 @@ export function runSongModeSectionRegeneration(
   const fullMeter = baseOptions.barMeterMap;
   const fragMeterMap = fragmentBarMeterMapFromFull(fullMeter, sb, span);
 
-  const fragmentOpts: RunGoldenPathOptions = {
-    ...baseOptions,
+  const fragmentOpts = songModeSectionRegenMergeHarmonicVoice(req, baseOptions, {
     totalBars: span,
     harmonyMode: 'custom_locked',
     chordProgressionText: sliceBars.join('|'),
     lockedHarmonyBarsRaw: sliceBars,
     parsedChordBars: sliceBars,
     ...(fragMeterMap ? { barMeterMap: fragMeterMap } : {}),
-  };
+  });
 
   const frag = runGoldenPath(effectiveSeed, fragmentOpts);
   if (!frag.success || !frag.xml) {

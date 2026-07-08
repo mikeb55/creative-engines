@@ -6,7 +6,10 @@
 
 import type { GenerateRequest } from '../app-api/appApiTypes';
 import { songModeFullGenMergeHarmonicVoice } from '../app-api/composerOsAppGeneration';
-import { duoRunGoldenPathOptionsFromGenerateRequest } from '../core/regeneration/runDuoSectionRegeneration';
+import {
+  duoRunGoldenPathOptionsFromGenerateRequest,
+  songModeSectionRegenMergeHarmonicVoice,
+} from '../core/regeneration/runDuoSectionRegeneration';
 import {
   HARMONIC_VOICE_FORWARDING_CANONICAL_GUARD,
   harmonicVoiceFieldFromRequest,
@@ -85,9 +88,21 @@ function probeSongModeFullHarmonicVoice(req: GenerateRequest): { harmonicVoice?:
   return { harmonicVoice: opts.harmonicVoice };
 }
 
-/** Mirror runSongModeSectionRegeneration base opts — documents section-regen gap. */
-function probeSongModeSectionRegenHarmonicVoice(_req: GenerateRequest): { harmonicVoice?: string } {
-  return {};
+/** Mirror runSongModeSectionRegeneration fragment opts (songModeSectionRegenMergeHarmonicVoice seam). */
+function probeSongModeSectionRegenHarmonicVoice(req: GenerateRequest): { harmonicVoice?: string } {
+  const primary = req.primarySongwriterStyle ?? "barry_harris";
+  const base = {
+    styleStack: { primary },
+    presetId: "guitar_bass_duo" as const,
+    scoreTitle: req.title ?? "harmonicVoice continuity probe",
+    songModeHookFirstIdentity: true,
+    primarySongwriterStyle: primary,
+    totalBars: req.totalBars ?? 32,
+    longFormEnabled: req.longFormEnabled ?? true,
+    creativeControlLevel: "balanced" as const,
+  };
+  const opts = songModeSectionRegenMergeHarmonicVoice(req, base, SECTION_REGEN_FRAGMENT_OVERRIDES);
+  return { harmonicVoice: opts.harmonicVoice };
 }
 
 /** Mirror mosaicContextFromGenerateRequest / BB planning input — documents BB gap. */
@@ -141,7 +156,7 @@ export const HARMONIC_VOICE_CONTINUITY_MATRIX: readonly ContinuityRow[] = [
     label: 'Song Mode section regen',
     probe: probeSongModeSectionRegenHarmonicVoice,
     expected: 'forward',
-    active: false,
+    active: true,
   },
   {
     id: 'big_band',
