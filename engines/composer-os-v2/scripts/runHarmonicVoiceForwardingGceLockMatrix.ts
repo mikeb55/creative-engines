@@ -41,7 +41,7 @@ type EvalCoreDelegate = 'verlaineGbd' | 'genericGceGate';
 
 type MatrixRowDef = {
   pathId: string;
-  presetId: 'guitar_bass_duo' | 'ecm_chamber' | 'big_band';
+  presetId: 'guitar_bass_duo' | 'ecm_chamber' | 'big_band' | 'string_quartet';
   primarySongwriterStyle: string;
   baseline: { harmonicVoice?: undefined };
   test: { harmonicVoice: 'verlaine' };
@@ -49,7 +49,15 @@ type MatrixRowDef = {
   implemented: boolean;
   /** When true: row stays visible but is not a commit gate. Documented harness gap ? do not silently PASS. */
   knownHarnessIssue?: boolean;
+  /** Phase 1 transport wired; no engine consumer — delta 0 expected, not a clean behavioural pass. */
+  transportOnly?: boolean;
 };
+
+const BIG_BAND_TRANSPORT_ONLY_DETAIL =
+  'TRANSPORT_ONLY — harmonicVoice forwarded to planning metadata (bigBandContextFromGenerateRequest) but no Big Band consumer wired; buildBigBandScoreModel / mosaic dispatch use songwriterStyleId only. Delta 0 expected until Phase 2 consumption (see docs/HARMONIC_VOICE_FORWARDING_DESIGN.md).';
+
+const STRING_QUARTET_TRANSPORT_ONLY_DETAIL =
+  'TRANSPORT_ONLY — harmonicVoice forwarded to generation metadata (buildStringQuartetGenerationMetadata) but no String Quartet consumer wired; runQuartetRealisation / score build use songwriterStyleId only. Delta 0 expected until Phase 2 consumption (see docs/HARMONIC_VOICE_FORWARDING_DESIGN.md).';
 
 type MatrixOutputRow = {
   pathId: string;
@@ -60,7 +68,7 @@ type MatrixOutputRow = {
   gceOverall: number | null;
   hardGateFailures: HardGateId[];
   deltaVsBaseline: number | null;
-  status: 'OK' | 'SKIPPED' | 'FAILED' | 'KNOWN_HARNESS_ISSUE';
+  status: 'OK' | 'SKIPPED' | 'FAILED' | 'KNOWN_HARNESS_ISSUE' | 'TRANSPORT_ONLY';
   detail?: string;
 };
 
@@ -135,15 +143,17 @@ const ALL_ROWS: MatrixRowDef[] = [
     test: { harmonicVoice: 'verlaine' },
     evalCore: 'genericGceGate',
     implemented: true,
+    transportOnly: true,
   },
   {
     pathId: 'string_quartet',
-    presetId: 'guitar_bass_duo',
+    presetId: 'string_quartet',
     primarySongwriterStyle: 'barry_harris',
     baseline: {},
     test: { harmonicVoice: 'verlaine' },
     evalCore: 'genericGceGate',
     implemented: false,
+    transportOnly: true,
   },
   {
     pathId: 'riff_generator',
@@ -770,10 +780,18 @@ function runMatrix(seed: number, rowFilter: string[] | null): MatrixOutputRow[] 
         ? Math.round((test.gceOverall - baseline.gceOverall) * 10) / 10
         : null;
 
+    const transportOnlyDetail =
+      row.pathId === 'big_band'
+        ? BIG_BAND_TRANSPORT_ONLY_DETAIL
+        : row.pathId === 'string_quartet'
+          ? STRING_QUARTET_TRANSPORT_ONLY_DETAIL
+          : undefined;
+
     for (const [variant, metrics] of [
       ['baseline', baseline] as const,
       ['verlaine_hv', test] as const,
     ]) {
+      const transportOnly = row.transportOnly === true;
       output.push({
         pathId: row.pathId,
         variant,
@@ -783,7 +801,12 @@ function runMatrix(seed: number, rowFilter: string[] | null): MatrixOutputRow[] 
         gceOverall: metrics.gceOverall,
         hardGateFailures: metrics.hardGateFailures,
         deltaVsBaseline: variant === 'verlaine_hv' ? delta : null,
-        status: metrics.generationSuccess ? 'OK' : 'FAILED',
+        status: transportOnly
+          ? 'TRANSPORT_ONLY'
+          : metrics.generationSuccess
+            ? 'OK'
+            : 'FAILED',
+        ...(transportOnly ? { detail: transportOnlyDetail } : {}),
       });
     }
   }

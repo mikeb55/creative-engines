@@ -120,3 +120,15 @@ Status: documented during Fix #1 (GBD + ECM section-regen forwarding, 2026-07-08
 - **Observation:** `mergeHarmonicVoiceFromRequest` correctly forwards Verlaine; Verlaine then rewrites locked bars (e.g. `Dm7` ? `Esus4/D`). `lockPass` (exportIntegrity + hard gates) can stay true while `result.success` is false because `errors` still carry pipeline-truth score mismatch.
 - **Open question (not decided):** should `harmonicVoice` ever override locked / custom truth bars? Needs its own DCR design cycle ? not answered by Fix #1.
 - **Matrix handling for Fix #1:** `gbd_section_regen` verlaine row uses a **non-locked** long-form fixture (pinned seed **50022**, 32-bar; 50021 Verlaine fails behaviour gates on this path) so the row tests *forwarding + effect* without conflating the locked-truth authority question.
+
+## Big Band — Phase 2 consumption gap (Fix #3A, 2026-07-08)
+
+`harmonicVoice` reaches `context.generationMetadata` at the Big Band planning seam (`bigBandContextFromGenerateRequest`) but is never read downstream — `buildBigBandScoreModel`, `runBigBandMode`, and mosaic dispatch (`getDispatchEntry`, `resolveMosaicSectionStyles`) all use `songwriterStyleId` only. `isVerlaineHarmonicPath` / Verlaine precompute are never invoked on the Big Band path.
+
+Confirmed via matrix: baseline and `verlaine_hv` produce identical GCE (7.4) and identical hard-gate failure (`finalBarTension`) — delta 0, consistent with "transport without consumption," not a bug in the transport fix itself.
+
+**Additional open design question:** Big Band's per-section mosaic dispatch uses per-section `songwriterStyleId`, not a single top-level `harmonicVoice`. If Phase 2 wiring is done, product must define whether `harmonicVoice` applies globally (all sections) or needs a per-section `harmonicVoice` map — undefined today.
+
+**Status:** Fix #3A (transport) correctly committed and kept. Phase 2 consumption wiring is a **SEPARATE** scoped DCR item, not required before proceeding to Fix #3B (String Quartet).
+
+**Matrix handling:** `big_band` row status is `TRANSPORT_ONLY` (not `OK`) so delta 0 is not mistaken for intentional/final "no effect."
