@@ -94,3 +94,20 @@ No genuine engine regressions found in the 1a golden-drift sweep.
 
 - Scratch (do not commit): `_goldenGceCompare.ts`, `_golden_musical_review.ts`, smoke logs under repo root (`_smoke_*`)
 - Committed smoke baseline: `6ada6683` (LF normalize); golden regen: `f8c17335`
+
+---
+
+## PRIORITY 1a — CLOSED
+
+- **Smoke:** 9 → 0 unexpected fails (all resolved)
+- **BH/Wayne/Hendrix goldens regenerated** (`f8c17335`) — GCE improved, LOCK pass, no hard-gate violations
+- **Bartok CLE + Bill Evans JSON** — LF-normalize fixes only (`3e7bce39`), no regen needed, 0 event diffs on authoritative path
+- **Bill Evans MI 5.5 hard-gate fail confirmed STABLE** (not a regression, not new) — pre-existing weak motif recurrence in this style's native output. Logged as separate future item, not blocking.
+
+### NEW BACKLOG ITEM (from this investigation)
+
+- **Bill Evans style:** melodicIdentity hard-gate fail (5.5, motif recurrence 0.19) on authoritative native ScoreModel path. Needs its own DCR cycle if improving this style's motif recurrence is desired. Not urgent — pre-existing, LOCK passes, GCE overall 6.5 acceptable band.
+
+### STATUS
+
+**Priority 1a fully closed.** Full smoke tier green (0 unexpected fails). Next up: **priority 1a-audit** (generalize harmonic-voice fix pattern across ~80 styles per Perplexity-guided strategy) or **two-guitar interplay module**, per roadmap priority order.
