@@ -629,17 +629,20 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 
 ## Future / Research Backlog
 
-## Priority Order (as of 2026-07-06)
+## Priority Order (revised 2026-07-08)
 
-1. **Generalise harmonic-voice-vs-primary-style fix across ~80 composer styles** — the Verlaine/Barry Harris bug chain (harmony authority conflicts, validation false-positives, UI↔engine state loss) is likely latent in other style pairings. Audit + fix pattern, highest priority as it protects existing shipped catalogue.
+1. **Big Band harmonicVoice forwarding fix** (Fix #3A, in progress) — same pattern as GBD/ECM/Song Mode fixes already landed
+2. **String Quartet harmonicVoice forwarding fix** (Fix #3B) — same pattern, separate commit, different metadata-builder seam
+3. **Riff Generator — design decision only** — resolve whether harmonicVoice and riffVrbId should be unified (one field, mapped) or kept as genuinely separate concepts with their own UI controls. Not a forwarding bug like the others — no mapping exists today between the UI field and the engine field. Perplexity-assisted research recommended for how similar rule-based systems handle "artist style → pattern/riff selection" contracts. Implementation deferred until decision is made. Risk flagged: audit may reveal most composer styles lack riff bundles entirely, which would expand this from a mapping fix into a content-authoring project — confirm scope before committing to implementation.
+4. **Generalise harmonic-voice-vs-primary-style bug pattern across ~80 composer styles** — promoted above Riff Generator implementation. Static-sweep + risk-tier audit strategy already defined (Perplexity, 2026-07-07) and seam code already extracted (`docs/AUDIT_SEAM_EXTRACT_2026-07-07.md`). Protects the full composer catalogue, not one feature — higher systemic value than Riff Generator's feature-scoped fix.
+5. **Riff Generator implementation** — unblocked once item 3's decision is made and item 4's audit findings (if any overlap) are known.
+6. **Bill Evans motif-recurrence fix** — small, separate DCR cycle; MI 5.5 hard-gate weakness, stable/pre-existing, not urgent.
+7. **Two-guitar interplay module** — rule-based interaction modes for the GBD writer.
+8. **Phrase/motif transformation layer** — phrase-length distributions, contour library, cadence-avoidance, motif ops.
+9. **Hand-built Verlaine style fingerprint** — transcribe passages, extract weighted rules, post-generation nudge.
+10. **(Parked)** Full ML/performance modeling.
 
-2. **Two-guitar interplay module** — rule-based interaction modes (echo, contrary/support, dovetail, unison-to-divergence) for the GBD writer, to move Verlaine/Television output beyond harmonic vocabulary toward actual two-guitar band idiom.
-
-3. **Phrase/motif transformation layer** — phrase-length distributions, contour-type library, melodic cadence-avoidance rules, motif transformation ops (sequence, truncation, interval expansion, rhythmic displacement).
-
-4. **Hand-built Verlaine style fingerprint** — transcribe/annotate 5–15 representative Television passages, extract a compact style sheet (intervals, phrase lengths, motif families, interaction-mode frequency), encode as weighted rules, add as post-generation nudge.
-
-5. **Parked — full ML/performance modeling** — not recommended near-term; requires training data + separate pipeline, low leverage for MusicXML-only output. Revisit only if rendering/performance layer is added.
+**Reordering rationale:** Riff Generator's blocker is a design decision (cheap to resolve, no code risk), so resolving it doesn't delay the systemic 80-style audit; but Riff Generator's actual implementation is deferred behind the audit since the audit protects the whole catalogue vs. one feature.
 
 ## Priority 1a-continued: harmonicVoice forwarding gaps (2026-07-07)
 
