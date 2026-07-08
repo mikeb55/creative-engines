@@ -12,9 +12,11 @@ import type { GenerateRequest } from '../app-api/appApiTypes';
 import {
   bigBandContextFromGenerateRequest,
   songModeFullGenMergeHarmonicVoice,
+  stringQuartetGenerationMetadataFromGenerateRequest,
 } from '../app-api/composerOsAppGeneration';
 import { runBigBandRealisation } from '../core/big-band/runBigBandRealisation';
-import type { CompositionContext } from '../core/compositionContext';
+import { runQuartetRealisation } from '../core/string-quartet/runQuartetRealisation';
+import type { CompositionContext, GenerationMetadata } from '../core/compositionContext';
 import type { ScoreModel } from '../core/score-model/scoreModelTypes';
 import {
   duoRunGoldenPathOptionsFromGenerateRequest,
@@ -152,7 +154,7 @@ const ALL_ROWS: MatrixRowDef[] = [
     baseline: {},
     test: { harmonicVoice: 'verlaine' },
     evalCore: 'genericGceGate',
-    implemented: false,
+    implemented: true,
     transportOnly: true,
   },
   {
@@ -345,6 +347,135 @@ function runBigBandVariant(
   }
   const evalCtx = buildBigBandMatrixEvalContext(result.score, result.planning, seed, primary, ctx);
   const strip = chordStripFromBigBandScore(result.score);
+  const hard = evaluateHardGates(result.score, evalCtx, strip);
+  const hardGateFailures = hard.gates.filter((g) => !g.pass).map((g) => g.id);
+  const gce = evaluateGce({
+    output: result.score,
+    features: extractScoreModelFeatures(result.score),
+    weights: defaultGceWeights,
+    metadata: { songwriterStyleId: evalCtx.generationMetadata?.songwriterStyleId ?? primary },
+  });
+  return {
+    generationSuccess,
+    exportIntegrityPassed,
+    lockPass: exportIntegrityPassed && hard.allPass,
+    gceOverall: gce.finalScore,
+    hardGateFailures,
+  };
+}
+
+function chordStripFromQuartetScore(score: ScoreModel): string[] {
+  const piano = score.parts.find((p) => p.id === 'sq_piano');
+  const lead = piano ?? score.parts.find((p) => p.id === 'sq_violin_1') ?? score.parts[0];
+  return (lead?.measures ?? []).map((m) =>
+    typeof m.chord === 'string' && m.chord.trim() ? m.chord.trim() : 'Cmaj7'
+  );
+}
+
+function buildStringQuartetMatrixEvalContext(
+  score: ScoreModel,
+  planning: ReturnType<typeof runQuartetRealisation>['planning'],
+  seed: number,
+  primary: string,
+  meta?: GenerationMetadata
+): CompositionContext {
+  const strip = chordStripFromQuartetScore(score);
+  const tb = planning.formPlan.totalBars;
+  return {
+    systemVersion: '2.0.0',
+    presetId: 'string_quartet',
+    seed,
+    form: {
+      totalBars: tb,
+      sections: planning.formPlan.slices.map((sl) => ({
+        label: String(sl.phase ?? `slice_${sl.index}`),
+        startBar: sl.startBar,
+        length: Math.max(1, sl.endBar - sl.startBar + 1),
+      })),
+    },
+    lockedHarmonyBarsRaw: strip,
+    generationMetadata: {
+      ...(meta ?? {}),
+      songwriterStyleId: primary,
+      parsedCustomProgressionBars: strip,
+    },
+  } as CompositionContext;
+}
+
+/** String Quartet full-gen seam: stringQuartetGenerationMetadataFromGenerateRequest → runQuartetRealisation (seed 50021, no custom_locked). */
+function runStringQuartetVariant(
+  row: MatrixRowDef,
+  seed: number,
+  harmonicVoice?: string
+): {
+  generationSuccess: boolean;
+  exportIntegrityPassed: boolean;
+  lockPass: boolean;
+  gceOverall: number | null;
+  hardGateFailures: HardGateId[];
+  detail?: string;
+} {
+  const primary = row.primarySongwriterStyle;
+  const req: GenerateRequest = {
+    seed,
+    presetId: 'string_quartet',
+    primarySongwriterStyle: primary,
+    styleStack: { primary },
+    totalBars: 32,
+    title: `string quartet matrix ${row.pathId} seed ${seed}`,
+    ...(harmonicVoice ? { harmonicVoice } : {}),
+  };
+  const generationMetadata = stringQuartetGenerationMetadataFromGenerateRequest(req, 32, undefined);
+  if (harmonicVoice && generationMetadata?.harmonicVoice !== harmonicVoice) {
+    return {
+      generationSuccess: false,
+      exportIntegrityPassed: false,
+      lockPass: false,
+      gceOverall: null,
+      hardGateFailures: [],
+      detail: `harmonicVoice not forwarded to SQ metadata (got ${generationMetadata?.harmonicVoice ?? 'undefined'})`,
+    };
+  }
+  let result: ReturnType<typeof runQuartetRealisation>;
+  try {
+    result = runQuartetRealisation({
+      seed,
+      title: req.title!,
+      totalBars: 32,
+      songwriterStyleId: primary,
+      ...(generationMetadata ? { generationMetadata } : {}),
+    });
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    return {
+      generationSuccess: false,
+      exportIntegrityPassed: false,
+      lockPass: false,
+      gceOverall: null,
+      hardGateFailures: [],
+      detail,
+    };
+  }
+  const generationSuccess =
+    result.planning.validation.ok && result.score != null && result.exportPipeline.ok;
+  const exportIntegrityPassed = result.exportPipeline.ok;
+  if (!result.score) {
+    return {
+      generationSuccess: false,
+      exportIntegrityPassed,
+      lockPass: false,
+      gceOverall: null,
+      hardGateFailures: [],
+    };
+  }
+  const evalCtx = buildStringQuartetMatrixEvalContext(
+    result.score,
+    result.planning,
+    seed,
+    primary,
+    generationMetadata
+  );
+  const strip = chordStripFromQuartetScore(result.score);
   const hard = evaluateHardGates(result.score, evalCtx, strip);
   const hardGateFailures = hard.gates.filter((g) => !g.pass).map((g) => g.id);
   const gce = evaluateGce({
@@ -692,6 +823,9 @@ function runRowVariant(
 
   if (row.pathId === 'big_band') {
     return runBigBandVariant(row, seed, harmonicVoice);
+  }
+  if (row.pathId === 'string_quartet') {
+    return runStringQuartetVariant(row, seed, harmonicVoice);
   }
   if (row.pathId === 'song_mode_full') {
     return runSongModeFullVariant(row, seed, harmonicVoice);

@@ -8,6 +8,7 @@ import type { GenerateRequest } from '../app-api/appApiTypes';
 import {
   bigBandContextFromGenerateRequest,
   songModeFullGenMergeHarmonicVoice,
+  stringQuartetGenerationMetadataFromGenerateRequest,
 } from '../app-api/composerOsAppGeneration';
 import {
   duoRunGoldenPathOptionsFromGenerateRequest,
@@ -116,9 +117,10 @@ function probeBigBandHarmonicVoice(req: GenerateRequest): { harmonicVoice?: stri
   return { harmonicVoice: ctx?.generationMetadata?.harmonicVoice };
 }
 
-/** Mirror buildStringQuartetGenerationMetadata — documents SQ gap. */
-function probeStringQuartetHarmonicVoice(_req: GenerateRequest): { harmonicVoice?: string } {
-  return {};
+/** Calls stringQuartetGenerationMetadataFromGenerateRequest (runStringQuartetPlanning seam). */
+function probeStringQuartetHarmonicVoice(req: GenerateRequest): { harmonicVoice?: string } {
+  const meta = stringQuartetGenerationMetadataFromGenerateRequest(req, req.totalBars ?? 32, undefined);
+  return { harmonicVoice: meta?.harmonicVoice };
 }
 
 export const HARMONIC_VOICE_CONTINUITY_MATRIX: readonly ContinuityRow[] = [
@@ -173,10 +175,10 @@ export const HARMONIC_VOICE_CONTINUITY_MATRIX: readonly ContinuityRow[] = [
   },
   {
     id: 'string_quartet',
-    label: 'String Quartet (buildStringQuartetGenerationMetadata)',
+    label: 'String Quartet (stringQuartetGenerationMetadataFromGenerateRequest)',
     probe: probeStringQuartetHarmonicVoice,
     expected: 'forward',
-    active: false,
+    active: true,
   },
 ] as const;
 
@@ -229,7 +231,9 @@ function runContinuityMatrixTests(): { name: string; ok: boolean; skipped?: bool
       ? 'ecm_chamber'
       : row.id === 'big_band'
         ? 'big_band'
-        : 'guitar_bass_duo';
+        : row.id === 'string_quartet'
+          ? 'string_quartet'
+          : 'guitar_bass_duo';
     const req = canonicalProbeRequest(presetId);
     const probed = row.probe(req);
     const ok = probed.harmonicVoice === 'verlaine';

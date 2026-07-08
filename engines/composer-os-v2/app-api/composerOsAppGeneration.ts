@@ -578,7 +578,8 @@ function buildStringQuartetGenerationMetadata(
   const sqR = shippedSqRhythmEngineId(req.sqRhythmEngineId);
   const sqVrb = req.sqArrangerVrb;
   const rockFusion = rockFusionPresetIdFromContextKeys(req.styleGenerationContextKeys);
-  if (!sw && !sqR && !sqVrb && !rockFusion) return undefined;
+  const hasHarmonicVoice = Object.keys(harmonicVoiceFieldFromRequest(req)).length > 0;
+  if (!sw && !sqR && !sqVrb && !rockFusion && !hasHarmonicVoice) return undefined;
 
   const meta: GenerationMetadata = {
     generatedAt: new Date().toISOString(),
@@ -614,7 +615,39 @@ function buildStringQuartetGenerationMetadata(
   } else if (sqR === 'jewish_klezmer') {
     out = mergeJewishKlezmerSqRhythmIntoMetadata(meta);
   }
-  return applyRockFusionRhythmFromContextKeys(out, req.styleGenerationContextKeys);
+  out = applyRockFusionRhythmFromContextKeys(out, req.styleGenerationContextKeys);
+  return mergeHarmonicVoiceFromRequest(req, out);
+}
+
+/** Fix #3B continuity seam: runStringQuartetPlanning + section-regen fragment metadata builder. */
+export function stringQuartetGenerationMetadataFromGenerateRequest(
+  req: GenerateRequest,
+  totalBars: number,
+  chordProgressionText?: string
+): GenerationMetadata | undefined {
+  return buildStringQuartetGenerationMetadata(req, totalBars, chordProgressionText);
+}
+
+/** Mosaic context for SQ planning — merges harmonicVoice when mosaic opt-in or HV-only transport. */
+function stringQuartetMosaicContextFromGenerateRequest(req: GenerateRequest): CompositionContext | undefined {
+  const mosaicCtx = mosaicContextFromGenerateRequest(req);
+  if (mosaicCtx) {
+    return {
+      ...mosaicCtx,
+      generationMetadata: mergeHarmonicVoiceFromRequest(
+        req,
+        mosaicCtx.generationMetadata ?? {}
+      ) as GenerationMetadata & { mosaicOutputFormat?: 'melody-bass-chords' | 'lead-sheet' },
+    };
+  }
+  if (Object.keys(harmonicVoiceFieldFromRequest(req)).length === 0) {
+    return undefined;
+  }
+  return {
+    generationMetadata: mergeHarmonicVoiceFromRequest(req, {}) as GenerationMetadata & {
+      mosaicOutputFormat?: 'melody-bass-chords' | 'lead-sheet';
+    },
+  } as CompositionContext;
 }
 
 function slonimskyEnsembleCellReceiptsFromRealised(realised: {
@@ -3382,7 +3415,7 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     zappaStyleMode: req.zappaStyleMode,
     seed: effectiveSeed,
   });
-  const sqMosaicContext = mosaicContextFromGenerateRequest(req);
+  const sqMosaicContext = stringQuartetMosaicContextFromGenerateRequest(req);
   const quartetRealisationInput: StringQuartetRunInput & {
     formId?: string;
     era?: BigBandEraId;

@@ -132,3 +132,11 @@ Confirmed via matrix: baseline and `verlaine_hv` produce identical GCE (7.4) and
 **Status:** Fix #3A (transport) correctly committed and kept. Phase 2 consumption wiring is a **SEPARATE** scoped DCR item, not required before proceeding to Fix #3B (String Quartet).
 
 **Matrix handling:** `big_band` row status is `TRANSPORT_ONLY` (not `OK`) so delta 0 is not mistaken for intentional/final "no effect."
+
+## String Quartet — Phase 2 consumption gap (Fix #3B, 2026-07-08)
+
+`harmonicVoice` reaches `generationMetadata` at the String Quartet planning seam (`stringQuartetGenerationMetadataFromGenerateRequest` / `buildStringQuartetGenerationMetadata`) but is never read downstream — `runQuartetRealisation`, `buildQuartetScoreModel`, and mosaic dispatch use `songwriterStyleId` only (`getVoiceRuleBundle(swId)`). `isVerlaineHarmonicPath` / Verlaine precompute are not invoked on the default SQ path (Zappa SQ slice is the only songwriter-specific harmony precompute wired today).
+
+Same structural gap as Big Band Fix #3A: **transport without consumption**. Matrix row is `TRANSPORT_ONLY`; delta 0 vs baseline expected until Phase 2.
+
+**Status:** Fix #3B (transport) is separate from Phase 2 consumption wiring (future DCR item).
