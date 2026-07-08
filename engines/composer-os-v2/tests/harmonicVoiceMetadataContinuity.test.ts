@@ -5,6 +5,7 @@
  */
 
 import type { GenerateRequest } from '../app-api/appApiTypes';
+import { duoRunGoldenPathOptionsFromGenerateRequest } from '../core/regeneration/runDuoSectionRegeneration';
 import {
   HARMONIC_VOICE_FORWARDING_CANONICAL_GUARD,
   harmonicVoiceFieldFromRequest,
@@ -44,16 +45,25 @@ function probeGenerateCompositionFullGenHarmonicVoice(req: GenerateRequest): { h
   return {};
 }
 
-/** Mirror duoRunGoldenPathOptionsFromGenerateRequest — documents section-regen gap (no harmonicVoice today). */
+/** Fragment overrides mirroring runDuoSectionRegeneration slice opts. */
+const SECTION_REGEN_FRAGMENT_OVERRIDES = {
+  totalBars: 8,
+  harmonyMode: 'custom_locked' as const,
+  chordProgressionText: 'Cmaj7|Dm7|G7|Cmaj7|Am7|D7|Gmaj7|Cmaj7',
+  lockedHarmonyBarsRaw: ['Cmaj7', 'Dm7', 'G7', 'Cmaj7', 'Am7', 'D7', 'Gmaj7', 'Cmaj7'],
+  parsedChordBars: ['Cmaj7', 'Dm7', 'G7', 'Cmaj7', 'Am7', 'D7', 'Gmaj7', 'Cmaj7'],
+};
+
+/** Calls duoRunGoldenPathOptionsFromGenerateRequest (section-regen seam). */
 function probeDuoSectionRegenHarmonicVoice(req: GenerateRequest): { harmonicVoice?: string } {
-  const base = {
-    styleStack: req.styleStack,
-    presetId: req.presetId,
-    totalBars: req.totalBars,
-  };
-  // Current builder omits harmonicVoice — probe mirrors that omission until fixed.
-  void base;
-  return {};
+  const opts = duoRunGoldenPathOptionsFromGenerateRequest(
+    {
+      ...req,
+      chordProgressionText: req.chordProgressionText ?? SECTION_REGEN_FRAGMENT_OVERRIDES.chordProgressionText,
+    },
+    SECTION_REGEN_FRAGMENT_OVERRIDES
+  );
+  return { harmonicVoice: opts.harmonicVoice };
 }
 
 /** Mirror songModeGoldenPathOptions builder — documents Song Mode full-gen gap. */
@@ -96,14 +106,14 @@ export const HARMONIC_VOICE_CONTINUITY_MATRIX: readonly ContinuityRow[] = [
     label: 'GBD section regen (duoRunGoldenPathOptionsFromGenerateRequest)',
     probe: probeDuoSectionRegenHarmonicVoice,
     expected: 'forward',
-    active: false,
+    active: true,
   },
   {
     id: 'ecm_section_regen',
     label: 'ECM section regen (duoRunGoldenPathOptionsFromGenerateRequest)',
     probe: probeDuoSectionRegenHarmonicVoice,
     expected: 'forward',
-    active: false,
+    active: true,
   },
   {
     id: 'song_mode_full',

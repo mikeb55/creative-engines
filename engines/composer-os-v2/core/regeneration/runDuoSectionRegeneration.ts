@@ -12,6 +12,7 @@ import type { BarMeterMap } from '../rhythm/barMeterTypes';
 import { extractLeadSheetMelodyAnchorsFromMusicXml } from '../song-mode/songModeLeadSheetAdapter';
 import { fragmentBarMeterMapFromFull } from './barMeterMapFragment';
 import { splicePartwiseMusicXmlMeasures } from './musicXmlSectionSplice';
+import { mergeHarmonicVoiceFromRequest } from '../generation/forwardHarmonicVoiceField';
 import { validateSectionRegenerationBarRange } from './sectionRegenerationPlanning';
 
 function patchSectionRegenContextMetadata(
@@ -124,9 +125,11 @@ export function duoRunGoldenPathOptionsFromGenerateRequest(
     ...(req.presetId === 'guitar_bass_duo'
       ? { duoVaultMotifEnabled: req.duoVaultMotifEnabled !== false }
       : {}),
+  };
+  return {
+    ...mergeHarmonicVoiceFromRequest(req, base),
     ...overrides,
   };
-  return base;
 }
 
 export function runDuoSectionRegeneration(

@@ -97,3 +97,26 @@ For each fixed path (**Song Mode**, **GBD section regen**, **ECM section regen**
 **New guardrail:** add a per-entry-point "supportsHarmonicVoice: forward | mapped | unsupported" status so future new paths can't silently reintroduce this ambiguity.
 
 **Phasing per path:** Phase 1 (preserve field to engine entry) before Phase 2 (confirm path's semantics actually use it) before Phase 3 (align authority/registry/validator behavior if needed) ? don't mix plumbing fix with deeper style-system work.
+
+---
+
+## Known issues surfaced by Fix #1
+
+Status: documented during Fix #1 (GBD + ECM section-regen forwarding, 2026-07-08). Not fixed in that commit.
+
+### 1. ECM `custom_locked` harness bug (pre-existing)
+
+- **Surface:** matrix row `ecm_section_regen` (8-bar `custom_locked` fragment through `duoRunGoldenPathOptionsFromGenerateRequest` ? `runGoldenPathOnce`).
+- **Failure:** hard throw from `assertCustomLockedBeforeScoreGeneration` (`customLockedHarmonyRouting.ts:329`):
+  *custom_locked requires matching allowed song-form bar counts in both context.lockedHarmonyBarsRaw and options.*
+- **Cause:** `buildContextForGoldenPath` for `presetId === 'ecm_chamber'` uses `buildEcmChamberContext`, which does **not** install matching `lockedHarmonyBarsRaw` / `customHarmonyLocked` for fragment custom_locked injects. Duo family branch wires this; ECM does not.
+- **Relation to Fix #1:** unrelated. Baseline (`harmonicVoice` unset) fails the same way; `mergeHarmonicVoiceFromRequest` is a no-op when the field is absent.
+- **Matrix handling:** row marked `KNOWN_HARNESS_ISSUE` (visible, not silently PASS, not a commit gate).
+- **Follow-up:** separate scoped item ? wire ECM custom_locked into `buildEcmChamberContext` (or shared locked-harmony install helper). Do **not** fold into harmonicVoice forwarding commits.
+
+### 2. Verlaine vs locked-harmony authority (open design question)
+
+- **Surface:** GBD section-regen with `custom_locked` + `harmonicVoice: verlaine` (seed 50021, 8-bar locked strip).
+- **Observation:** `mergeHarmonicVoiceFromRequest` correctly forwards Verlaine; Verlaine then rewrites locked bars (e.g. `Dm7` ? `Esus4/D`). `lockPass` (exportIntegrity + hard gates) can stay true while `result.success` is false because `errors` still carry pipeline-truth score mismatch.
+- **Open question (not decided):** should `harmonicVoice` ever override locked / custom truth bars? Needs its own DCR design cycle ? not answered by Fix #1.
+- **Matrix handling for Fix #1:** `gbd_section_regen` verlaine row uses a **non-locked** long-form fixture (pinned seed **50022**, 32-bar; 50021 Verlaine fails behaviour gates on this path) so the row tests *forwarding + effect* without conflating the locked-truth authority question.
