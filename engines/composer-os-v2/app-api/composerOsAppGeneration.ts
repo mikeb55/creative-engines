@@ -14,7 +14,10 @@ import {
 import type { CompositionContext, GenerationMetadata } from '../core/compositionContext';
 import { COMPOSER_OS_VERSION } from './composerOsConfig';
 import { generateComposition, type GenerateResult } from './generateComposition';
-import { mergeHarmonicVoiceFromRequest } from '../core/generation/forwardHarmonicVoiceField';
+import {
+  harmonicVoiceFieldFromRequest,
+  mergeHarmonicVoiceFromRequest,
+} from '../core/generation/forwardHarmonicVoiceField';
 import { runSqToBbWorkflowApp } from './sqToBbWorkflowApp';
 import { runRiffGeneratorApp } from './riffGeneratorApp';
 import { runBigBandMode, type BigBandRunInput } from '../core/big-band/runBigBandMode';
@@ -328,6 +331,39 @@ function mosaicContextFromGenerateRequest(
         ? { songwriterStyleId: options.defaultSongwriterStyleId }
         : {}),
     } as GenerationMetadata & { mosaicOutputFormat?: 'melody-bass-chords' | 'lead-sheet' },
+  } as CompositionContext;
+}
+
+/** Fix #3A continuity seam: BB planning/realisation context carries forwarded harmonicVoice. */
+export function bigBandContextFromGenerateRequest(
+  req: GenerateRequest,
+  options?: {
+    bbPlan?: {
+      formPlan: import('../core/big-band/bigBandPlanTypes').BigBandFormPlan;
+      sectionPlan: import('../core/big-band/bigBandPlanTypes').BigBandSectionPlan;
+    };
+    defaultSongwriterStyleId?: string;
+  }
+): CompositionContext | undefined {
+  const mosaicCtx = mosaicContextFromGenerateRequest(req, options);
+  if (mosaicCtx) {
+    return {
+      ...mosaicCtx,
+      generationMetadata: mergeHarmonicVoiceFromRequest(
+        req,
+        mosaicCtx.generationMetadata ?? {}
+      ) as GenerationMetadata & { mosaicOutputFormat?: 'melody-bass-chords' | 'lead-sheet' },
+    };
+  }
+  if (Object.keys(harmonicVoiceFieldFromRequest(req)).length === 0) {
+    return undefined;
+  }
+  return {
+    generationMetadata: mergeHarmonicVoiceFromRequest(req, {
+      ...(options?.defaultSongwriterStyleId
+        ? { songwriterStyleId: options.defaultSongwriterStyleId }
+        : {}),
+    }) as GenerationMetadata & { mosaicOutputFormat?: 'melody-bass-chords' | 'lead-sheet' },
   } as CompositionContext;
 }
 
@@ -2939,7 +2975,7 @@ function runBigBandPlanning(req: GenerateRequest, outputDir: string): GenerateRe
     zappaStyleMode: req.zappaStyleMode,
     seed: runSeed,
   });
-  const bbMosaicContext = mosaicContextFromGenerateRequest(req, {
+  const bbMosaicContext = bigBandContextFromGenerateRequest(req, {
     bbPlan: { formPlan: bb.formPlan, sectionPlan: bb.sectionPlan },
     defaultSongwriterStyleId: ensembleSongwriterStyleId,
   });

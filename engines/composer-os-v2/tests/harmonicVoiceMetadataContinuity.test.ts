@@ -5,7 +5,10 @@
  */
 
 import type { GenerateRequest } from '../app-api/appApiTypes';
-import { songModeFullGenMergeHarmonicVoice } from '../app-api/composerOsAppGeneration';
+import {
+  bigBandContextFromGenerateRequest,
+  songModeFullGenMergeHarmonicVoice,
+} from '../app-api/composerOsAppGeneration';
 import {
   duoRunGoldenPathOptionsFromGenerateRequest,
   songModeSectionRegenMergeHarmonicVoice,
@@ -105,9 +108,12 @@ function probeSongModeSectionRegenHarmonicVoice(req: GenerateRequest): { harmoni
   return { harmonicVoice: opts.harmonicVoice };
 }
 
-/** Mirror mosaicContextFromGenerateRequest / BB planning input — documents BB gap. */
-function probeBigBandHarmonicVoice(_req: GenerateRequest): { harmonicVoice?: string } {
-  return {};
+/** Calls bigBandContextFromGenerateRequest (runBigBandPlanning seam). */
+function probeBigBandHarmonicVoice(req: GenerateRequest): { harmonicVoice?: string } {
+  const ctx = bigBandContextFromGenerateRequest(req, {
+    defaultSongwriterStyleId: req.primarySongwriterStyle ?? 'barry_harris',
+  });
+  return { harmonicVoice: ctx?.generationMetadata?.harmonicVoice };
 }
 
 /** Mirror buildStringQuartetGenerationMetadata — documents SQ gap. */
@@ -160,10 +166,10 @@ export const HARMONIC_VOICE_CONTINUITY_MATRIX: readonly ContinuityRow[] = [
   },
   {
     id: 'big_band',
-    label: 'Big Band (mosaicContextFromGenerateRequest / planning input)',
+    label: 'Big Band (bigBandContextFromGenerateRequest / planning input)',
     probe: probeBigBandHarmonicVoice,
     expected: 'forward',
-    active: false,
+    active: true,
   },
   {
     id: 'string_quartet',
@@ -219,7 +225,11 @@ function runContinuityMatrixTests(): { name: string; ok: boolean; skipped?: bool
       continue;
     }
 
-    const presetId = row.id.startsWith('ecm') ? 'ecm_chamber' : 'guitar_bass_duo';
+    const presetId = row.id.startsWith('ecm')
+      ? 'ecm_chamber'
+      : row.id === 'big_band'
+        ? 'big_band'
+        : 'guitar_bass_duo';
     const req = canonicalProbeRequest(presetId);
     const probed = row.probe(req);
     const ok = probed.harmonicVoice === 'verlaine';

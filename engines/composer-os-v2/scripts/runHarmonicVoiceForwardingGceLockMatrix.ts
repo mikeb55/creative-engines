@@ -9,7 +9,13 @@
 
 import { runGoldenPathOnce } from '../core/goldenPath/runGoldenPath';
 import type { GenerateRequest } from '../app-api/appApiTypes';
-import { songModeFullGenMergeHarmonicVoice } from '../app-api/composerOsAppGeneration';
+import {
+  bigBandContextFromGenerateRequest,
+  songModeFullGenMergeHarmonicVoice,
+} from '../app-api/composerOsAppGeneration';
+import { runBigBandRealisation } from '../core/big-band/runBigBandRealisation';
+import type { CompositionContext } from '../core/compositionContext';
+import type { ScoreModel } from '../core/score-model/scoreModelTypes';
 import {
   duoRunGoldenPathOptionsFromGenerateRequest,
   songModeSectionRegenMergeHarmonicVoice,
@@ -35,7 +41,7 @@ type EvalCoreDelegate = 'verlaineGbd' | 'genericGceGate';
 
 type MatrixRowDef = {
   pathId: string;
-  presetId: 'guitar_bass_duo' | 'ecm_chamber';
+  presetId: 'guitar_bass_duo' | 'ecm_chamber' | 'big_band';
   primarySongwriterStyle: string;
   baseline: { harmonicVoice?: undefined };
   test: { harmonicVoice: 'verlaine' };
@@ -123,12 +129,12 @@ const ALL_ROWS: MatrixRowDef[] = [
   },
   {
     pathId: 'big_band',
-    presetId: 'guitar_bass_duo',
+    presetId: 'big_band',
     primarySongwriterStyle: 'barry_harris',
     baseline: {},
     test: { harmonicVoice: 'verlaine' },
     evalCore: 'genericGceGate',
-    implemented: false,
+    implemented: true,
   },
   {
     pathId: 'string_quartet',
@@ -224,7 +230,129 @@ function scoreSectionRegenResult(
   };
 }
 
-/** GBD section-regen seam without custom_locked ? seed 50021 long-form mirrors full-gen Verlaine fixture. */
+function chordStripFromBigBandScore(score: ScoreModel): string[] {
+  const lead = score.parts.find((p) => p.id === 'bb_alto_sax') ?? score.parts[0];
+  return (lead?.measures ?? []).map((m) =>
+    typeof m.chord === 'string' && m.chord.trim() ? m.chord.trim() : 'Cmaj7'
+  );
+}
+
+function buildBigBandMatrixEvalContext(
+  score: ScoreModel,
+  planning: ReturnType<typeof runBigBandRealisation>['planning'],
+  seed: number,
+  primary: string,
+  ctx?: CompositionContext
+): CompositionContext {
+  const strip = chordStripFromBigBandScore(score);
+  const tb = planning.formPlan.totalBars;
+  return {
+    systemVersion: '2.0.0',
+    presetId: 'big_band',
+    seed,
+    form: {
+      totalBars: tb,
+      sections: planning.formPlan.slices.map((sl) => ({
+        label: String(sl.phase ?? `slice_${sl.index}`),
+        startBar: sl.startBar,
+        length: Math.max(1, sl.endBar - sl.startBar + 1),
+      })),
+    },
+    lockedHarmonyBarsRaw: strip,
+    generationMetadata: {
+      ...(ctx?.generationMetadata ?? {}),
+      songwriterStyleId: primary,
+      parsedCustomProgressionBars: strip,
+    },
+  } as CompositionContext;
+}
+
+/** Big Band full-gen seam: bigBandContextFromGenerateRequest → runBigBandRealisation (seed 50021, no custom_locked). */
+function runBigBandVariant(
+  row: MatrixRowDef,
+  seed: number,
+  harmonicVoice?: string
+): {
+  generationSuccess: boolean;
+  exportIntegrityPassed: boolean;
+  lockPass: boolean;
+  gceOverall: number | null;
+  hardGateFailures: HardGateId[];
+  detail?: string;
+} {
+  const primary = row.primarySongwriterStyle;
+  const req: GenerateRequest = {
+    seed,
+    presetId: 'big_band',
+    primarySongwriterStyle: primary,
+    styleStack: { primary },
+    totalBars: 32,
+    title: `big band matrix ${row.pathId} seed ${seed}`,
+    ...(harmonicVoice ? { harmonicVoice } : {}),
+  };
+  const ctx = bigBandContextFromGenerateRequest(req, { defaultSongwriterStyleId: primary });
+  if (harmonicVoice && ctx?.generationMetadata?.harmonicVoice !== harmonicVoice) {
+    return {
+      generationSuccess: false,
+      exportIntegrityPassed: false,
+      lockPass: false,
+      gceOverall: null,
+      hardGateFailures: [],
+      detail: `harmonicVoice not forwarded to BB context (got ${ctx?.generationMetadata?.harmonicVoice ?? 'undefined'})`,
+    };
+  }
+  let result: ReturnType<typeof runBigBandRealisation>;
+  try {
+    result = runBigBandRealisation({
+      seed,
+      title: req.title!,
+      totalBars: 32,
+      songwriterStyleId: primary,
+      ...(ctx ? { context: ctx } : {}),
+    });
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    return {
+      generationSuccess: false,
+      exportIntegrityPassed: false,
+      lockPass: false,
+      gceOverall: null,
+      hardGateFailures: [],
+      detail,
+    };
+  }
+  const generationSuccess =
+    result.planning.validation.ok && result.score != null && result.exportPipeline.ok;
+  const exportIntegrityPassed = result.exportPipeline.ok;
+  if (!result.score) {
+    return {
+      generationSuccess: false,
+      exportIntegrityPassed,
+      lockPass: false,
+      gceOverall: null,
+      hardGateFailures: [],
+    };
+  }
+  const evalCtx = buildBigBandMatrixEvalContext(result.score, result.planning, seed, primary, ctx);
+  const strip = chordStripFromBigBandScore(result.score);
+  const hard = evaluateHardGates(result.score, evalCtx, strip);
+  const hardGateFailures = hard.gates.filter((g) => !g.pass).map((g) => g.id);
+  const gce = evaluateGce({
+    output: result.score,
+    features: extractScoreModelFeatures(result.score),
+    weights: defaultGceWeights,
+    metadata: { songwriterStyleId: evalCtx.generationMetadata?.songwriterStyleId ?? primary },
+  });
+  return {
+    generationSuccess,
+    exportIntegrityPassed,
+    lockPass: exportIntegrityPassed && hard.allPass,
+    gceOverall: gce.finalScore,
+    hardGateFailures,
+  };
+}
+
+/** GBD section-regen seam without custom_locked — seed 50021 long-form mirrors full-gen Verlaine fixture. */
 function runGbdSectionRegenNonLockedVariant(
   row: MatrixRowDef,
   seed: number,
@@ -552,6 +680,9 @@ function runRowVariant(
   const harmonicVoice = variant === 'verlaine_hv' ? row.test.harmonicVoice : undefined;
   const primary = row.primarySongwriterStyle;
 
+  if (row.pathId === 'big_band') {
+    return runBigBandVariant(row, seed, harmonicVoice);
+  }
   if (row.pathId === 'song_mode_full') {
     return runSongModeFullVariant(row, seed, harmonicVoice);
   }

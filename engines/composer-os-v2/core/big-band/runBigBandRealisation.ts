@@ -121,6 +121,10 @@ function buildBigBandMosaicCompositionContext(args: {
     ...(args.inheritedMetadata?.allowMosaicPostFinalizeInject === true
       ? { allowMosaicPostFinalizeInject: true }
       : {}),
+    ...(typeof args.inheritedMetadata?.harmonicVoice === 'string' &&
+    args.inheritedMetadata.harmonicVoice.trim() !== ''
+      ? { harmonicVoice: args.inheritedMetadata.harmonicVoice.trim() }
+      : {}),
   };
 
   return {
