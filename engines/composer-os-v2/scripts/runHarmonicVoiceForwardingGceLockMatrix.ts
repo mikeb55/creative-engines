@@ -9,6 +9,7 @@
 
 import { runGoldenPathOnce } from '../core/goldenPath/runGoldenPath';
 import type { GenerateRequest } from '../app-api/appApiTypes';
+import { songModeFullGenMergeHarmonicVoice } from '../app-api/composerOsAppGeneration';
 import { duoRunGoldenPathOptionsFromGenerateRequest } from '../core/regeneration/runDuoSectionRegeneration';
 import {
   buildVerlaineGbdGoldenPathRequest,
@@ -99,13 +100,14 @@ const ALL_ROWS: MatrixRowDef[] = [
     knownHarnessIssue: true,
   },
   {
+    // Non-locked Song Mode full-gen via songModeFullGenMergeHarmonicVoice (seed 50022 pinned in runMatrix).
     pathId: 'song_mode_full',
     presetId: 'guitar_bass_duo',
     primarySongwriterStyle: 'barry_harris',
     baseline: {},
     test: { harmonicVoice: 'verlaine' },
     evalCore: 'verlaineGbd',
-    implemented: false,
+    implemented: true,
   },
   {
     pathId: 'song_mode_section_regen',
@@ -249,6 +251,57 @@ function runGbdSectionRegenNonLockedVariant(
     creativeControlLevel: 'balanced',
     styleProfile: defaultStyleProfileForPrimarySongwriter(row.primarySongwriterStyle) ?? 'STYLE_MODERN_JAZZ',
   });
+  let result: ReturnType<typeof runGoldenPathOnce>;
+  try {
+    result = runGoldenPathOnce(seed, opts);
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    return {
+      generationSuccess: false,
+      exportIntegrityPassed: false,
+      lockPass: false,
+      gceOverall: null,
+      hardGateFailures: [],
+      detail,
+    };
+  }
+  return scoreSectionRegenResult(row, result);
+}
+
+
+/** Song Mode full-generate seam: songModeGoldenPathOptions merge via songModeFullGenMergeHarmonicVoice. */
+function runSongModeFullVariant(
+  row: MatrixRowDef,
+  seed: number,
+  harmonicVoice?: string
+): {
+  generationSuccess: boolean;
+  exportIntegrityPassed: boolean;
+  lockPass: boolean;
+  gceOverall: number | null;
+  hardGateFailures: HardGateId[];
+  detail?: string;
+} {
+  const reqBase: GenerateRequest = {
+    seed,
+    presetId: 'guitar_bass_duo',
+    primarySongwriterStyle: row.primarySongwriterStyle,
+    styleStack: { primary: row.primarySongwriterStyle },
+    title: `song mode full matrix ${row.pathId} seed ${seed}`,
+    totalBars: 32,
+    longFormEnabled: true,
+  };
+  const duoBase = duoRunGoldenPathOptionsFromGenerateRequest(reqBase, {
+    totalBars: 32,
+    longFormEnabled: true,
+    songModeHookFirstIdentity: true,
+    creativeControlLevel: 'balanced',
+    styleProfile: defaultStyleProfileForPrimarySongwriter(row.primarySongwriterStyle) ?? 'STYLE_MODERN_JAZZ',
+    primarySongwriterStyle: row.primarySongwriterStyle,
+  });
+  const { harmonicVoice: _duoHv, ...baseWithoutHv } = duoBase;
+  const reqForMerge: GenerateRequest = harmonicVoice ? { ...reqBase, harmonicVoice } : reqBase;
+  const opts = songModeFullGenMergeHarmonicVoice(reqForMerge, baseWithoutHv);
   let result: ReturnType<typeof runGoldenPathOnce>;
   try {
     result = runGoldenPathOnce(seed, opts);
@@ -439,6 +492,9 @@ function runRowVariant(
   const harmonicVoice = variant === 'verlaine_hv' ? row.test.harmonicVoice : undefined;
   const primary = row.primarySongwriterStyle;
 
+  if (row.pathId === 'song_mode_full') {
+    return runSongModeFullVariant(row, seed, harmonicVoice);
+  }
   if (row.pathId === 'gbd_section_regen') {
     return runGbdSectionRegenNonLockedVariant(row, seed, harmonicVoice);
   }
@@ -505,9 +561,10 @@ function runMatrix(seed: number, rowFilter: string[] | null): MatrixOutputRow[] 
       continue;
     }
 
-    // gbd_section_regen: non-locked Verlaine on 50021 fails behaviour gates (bass VL);
+    // gbd_section_regen + song_mode_full: non-locked Verlaine on 50021 fails behaviour gates;
     // seed 50022 greens genSuccess+lockPass for verlaine_hv without custom_locked (see design doc).
-    const rowSeed = row.pathId === 'gbd_section_regen' ? 50022 : seed;
+    const rowSeed =
+      row.pathId === 'gbd_section_regen' || row.pathId === 'song_mode_full' ? 50022 : seed;
     const baseline = runRowVariant(row, rowSeed, 'baseline');
     const test = runRowVariant(row, rowSeed, 'verlaine_hv');
     const delta =

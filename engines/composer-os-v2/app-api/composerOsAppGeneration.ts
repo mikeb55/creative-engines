@@ -14,6 +14,7 @@ import {
 import type { CompositionContext, GenerationMetadata } from '../core/compositionContext';
 import { COMPOSER_OS_VERSION } from './composerOsConfig';
 import { generateComposition, type GenerateResult } from './generateComposition';
+import { mergeHarmonicVoiceFromRequest } from '../core/generation/forwardHarmonicVoiceField';
 import { runSqToBbWorkflowApp } from './sqToBbWorkflowApp';
 import { runRiffGeneratorApp } from './riffGeneratorApp';
 import { runBigBandMode, type BigBandRunInput } from '../core/big-band/runBigBandMode';
@@ -1651,7 +1652,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           songwriterStyleId: req.primarySongwriterStyle,
         })
     : [];
-  const songModeGoldenPathOptions: RunGoldenPathOptions = {
+  const songModeGoldenPathOptions: RunGoldenPathOptions = mergeHarmonicVoiceFromRequest(req, {
     styleStack: mapAppStyleStackToEngine(req.styleStack),
     presetId: 'guitar_bass_duo',
     scoreTitle: title,
@@ -1852,7 +1853,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     ...(isClaveGridOverlayEnvEnabled() && req.claveGridOverlay ? { claveGridOverlay: req.claveGridOverlay } : {}),
     ...v80GoldenPathOptionsFromGenerateRequest(req),
     ...(req.bandModeEnabled === true ? { bandModeEnabled: true as const } : {}),
-  };
+  });
 
   const songModeGoldenPathOptionsForRun = shouldApplyBeMusicianPremiumMelodyBridge(
     req.primarySongwriterStyle,
@@ -3589,4 +3590,11 @@ function runStringQuartetPlanning(req: GenerateRequest, outputDir: string): Gene
     requestEcho: requestEchoFromReq(req),
     ...(ensReceiptSq ? { ensembleSlonimskyReceipt: ensReceiptSq } : {}),
   };
+}
+/** Fix #2A continuity seam: same merge applied to Song Mode full-gen golden-path opts in runSongStructure. */
+export function songModeFullGenMergeHarmonicVoice(
+  req: GenerateRequest,
+  base: RunGoldenPathOptions
+): RunGoldenPathOptions {
+  return mergeHarmonicVoiceFromRequest(req, base);
 }

@@ -1,10 +1,11 @@
-﻿/**
+/**
  * harmonicVoice metadata continuity contract — infrastructure phase.
  * Proves forwarding on 2 working paths; documents 6 pending paths (skipped).
  * Not registered in runSmokeTests until path fixes land.
  */
 
 import type { GenerateRequest } from '../app-api/appApiTypes';
+import { songModeFullGenMergeHarmonicVoice } from '../app-api/composerOsAppGeneration';
 import { duoRunGoldenPathOptionsFromGenerateRequest } from '../core/regeneration/runDuoSectionRegeneration';
 import {
   HARMONIC_VOICE_FORWARDING_CANONICAL_GUARD,
@@ -67,8 +68,21 @@ function probeDuoSectionRegenHarmonicVoice(req: GenerateRequest): { harmonicVoic
 }
 
 /** Mirror songModeGoldenPathOptions builder — documents Song Mode full-gen gap. */
-function probeSongModeFullHarmonicVoice(_req: GenerateRequest): { harmonicVoice?: string } {
-  return {};
+/** Calls songModeFullGenMergeHarmonicVoice (runSongStructure songModeGoldenPathOptions seam). */
+function probeSongModeFullHarmonicVoice(req: GenerateRequest): { harmonicVoice?: string } {
+  const primary = req.primarySongwriterStyle ?? "barry_harris";
+  const base = {
+    styleStack: { primary },
+    presetId: "guitar_bass_duo" as const,
+    scoreTitle: req.title ?? "harmonicVoice continuity probe",
+    songModeHookFirstIdentity: true,
+    primarySongwriterStyle: primary,
+    totalBars: req.totalBars ?? 32,
+    longFormEnabled: req.longFormEnabled ?? true,
+    creativeControlLevel: "balanced" as const,
+  };
+  const opts = songModeFullGenMergeHarmonicVoice(req, base);
+  return { harmonicVoice: opts.harmonicVoice };
 }
 
 /** Mirror runSongModeSectionRegeneration base opts — documents section-regen gap. */
@@ -120,7 +134,7 @@ export const HARMONIC_VOICE_CONTINUITY_MATRIX: readonly ContinuityRow[] = [
     label: 'Song Mode full generate (songModeGoldenPathOptions)',
     probe: probeSongModeFullHarmonicVoice,
     expected: 'forward',
-    active: false,
+    active: true,
   },
   {
     id: 'song_mode_section_regen',
