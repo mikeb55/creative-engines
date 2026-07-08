@@ -641,6 +641,32 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 
 5. **Parked — full ML/performance modeling** — not recommended near-term; requires training data + separate pipeline, low leverage for MusicXML-only output. Revisit only if rendering/performance layer is added.
 
+## Priority 1a-continued: harmonicVoice forwarding gaps (2026-07-07)
+
+**Confirmed:** `harmonicVoice` is silently dropped in most generation paths despite the UI sending it. Only `guitar_bass_duo` full generate and `ecm_chamber` full generate currently forward it correctly end-to-end.
+
+**Broken paths (6):**
+1. **Song Mode** — full generate + section regeneration
+2. **Big Band** — full generate, mosaic dispatch, and section regeneration
+3. **String Quartet** — full generate + section regeneration
+4. **Riff Generator** — different bug shape: UI sends `harmonicVoice`, but the engine reads unrelated `riffVrbId`; no mapping exists
+5. **GBD section regeneration** — drops `harmonicVoice` even though full-generate GBD works
+6. **ECM section regeneration** — same gap as GBD section regeneration
+
+**Working (2):**
+- `guitar_bass_duo` full generate
+- `ecm_chamber` full generate
+
+**Fix approach:** this is a fragmented forwarding problem across multiple entry points and option-builder / metadata-builder seams. Some paths may be fixable via shared forwarding seams, but others clearly require path-specific wiring. Relevant seams identified so far include `songModeGoldenPathOptions`, `duoRunGoldenPathOptionsFromGenerateRequest`, `buildStringQuartetGenerationMetadata`, `mosaicContextFromGenerateRequest`, and `parseRiffVrbId`.
+
+**Priority order:**
+1. **GBD + ECM section regeneration** — smallest, highest-confidence fix; should match already-working full-generate path semantics
+2. **Song Mode** — live user-facing bug, but verify truth-alignment / LOCK safety when forwarding
+3. **Big Band + String Quartet** — larger because they use different planning / metadata-builder paths
+4. **Riff Generator** — last; requires a product/field-mapping decision, not just forwarding
+
+**Related:** `docs/AUDIT_SEAM_EXTRACT_2026-07-07.md` (entry-point forwarding map and seam inventory)
+
 ## Known Issue: Composer OS Smoke — 8 pre-existing test failures
 (logged 2026-07-06, unrelated to docs commits af46bca / 9c7faaf7)
 
