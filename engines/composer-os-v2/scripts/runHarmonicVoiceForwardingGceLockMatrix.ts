@@ -5,6 +5,7 @@
  * Usage:
  *   npx tsx --tsconfig ../../tsconfig.json scripts/runHarmonicVoiceForwardingGceLockMatrix.ts
  *   npx tsx --tsconfig ../../tsconfig.json scripts/runHarmonicVoiceForwardingGceLockMatrix.ts --rows gbd_full_generate,ecm_full_generate --seed 50021
+ *   npx tsx --tsconfig ../../tsconfig.json scripts/runHarmonicVoiceForwardingGceLockMatrix.ts --probe frank_zappa_hv --seed 77777
  */
 
 import { runGoldenPathOnce } from '../core/goldenPath/runGoldenPath';
@@ -34,8 +35,18 @@ import { extractScoreModelFeatures } from '../core/evaluation/featureExtractor';
 import {
   GCE_GATE_HARMONIC_BAR_TARGET,
   scoreEcmChamberResultForGce,
+  scoreFrankZappaResultForGce,
+  scoreGoldenPathResultForGce,
 } from '../core/gce/gceGate';
+import {
+  resolveGceScorerRouting,
+} from '../core/gce/resolveEffectiveGceStyle';
 import { defaultStyleProfileForPrimarySongwriter } from '../core/song-mode/songModeStyleProfileDefaults';
+import { harmonicVoiceFieldFromRequest, mergeHarmonicVoiceFromRequest } from '../core/generation/forwardHarmonicVoiceField';
+import { getChordForBar } from '../core/harmony/harmonyResolution';
+import { classifyAuthoritativeLayerForBar } from '../core/harmony/harmonySpineProvider';
+import { isFrankZappaSongwriterId } from '../core/gce/frankZappaStructuralFingerprint';
+import { resolveDuoRiffVrbLaneId } from '../core/song-mode/songwriterStyleProfiles';
 
 type MatrixVariant = 'baseline' | 'verlaine_hv';
 
@@ -684,9 +695,10 @@ function runSectionRegenVariant(
   }
   return scoreSectionRegenResult(row, result);
 }
-function parseArgs(argv: string[]): { seed: number; rowIds: string[] | null } {
+function parseArgs(argv: string[]): { seed: number; rowIds: string[] | null; probe: string | null } {
   let seed = 50021;
   let rowIds: string[] | null = null;
+  let probe: string | null = null;
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--seed' && argv[i + 1]) {
       seed = Number(argv[i + 1]);
@@ -696,9 +708,188 @@ function parseArgs(argv: string[]): { seed: number; rowIds: string[] | null } {
     if (argv[i] === '--rows' && argv[i + 1]) {
       rowIds = argv[i + 1]!.split(',').map((s) => s.trim()).filter(Boolean);
       i++;
+      continue;
+    }
+    if (argv[i] === '--probe' && argv[i + 1]) {
+      probe = argv[i + 1]!.trim();
+      i++;
     }
   }
-  return { seed, rowIds };
+  return { seed, rowIds, probe };
+}
+
+const ZAPPA_HV_PROBE_PRIMARY = 'barry_harris';
+const ZAPPA_HV_PROBE_TOTAL_BARS = 32;
+
+function buildZappaHvProbeGbdOpts(seed: number, opts: { primary: string; harmonicVoice?: string }) {
+  return {
+    presetId: 'guitar_bass_duo' as const,
+    totalBars: ZAPPA_HV_PROBE_TOTAL_BARS,
+    longFormEnabled: true,
+    songModeHookFirstIdentity: true,
+    primarySongwriterStyle: opts.primary,
+    creativeControlLevel: 'balanced' as const,
+    styleProfile: defaultStyleProfileForPrimarySongwriter(opts.primary) ?? 'STYLE_MODERN_JAZZ',
+    scoreTitle: `zappa hv stage2 probe seed ${seed}`,
+    ...(opts.harmonicVoice ? { harmonicVoice: opts.harmonicVoice } : {}),
+  };
+}
+
+type ZappaHvProbeVariant = {
+  label: string;
+  generationSuccess: boolean;
+  exportIntegrityPassed: boolean;
+  lockPass: boolean;
+  gceOverall: number | null;
+  hardGateFailures: HardGateId[];
+  zappaStructuralRelaxActive: boolean;
+  gceRoute: 'frank_zappa' | 'generic';
+  songwriterStyleId: string | undefined;
+  harmonicVoice: string | undefined;
+  harmonyContextStyleId: string | undefined;
+  harmonicVoiceScorerMismatch: string | undefined;
+};
+
+/** Stage 2 one-off diagnostic — NOT a permanent ALL_ROWS entry. */
+export function runFrankZappaHvStage2Probe(seed = 77777) {
+  const req: GenerateRequest = {
+    seed,
+    presetId: 'guitar_bass_duo',
+    primarySongwriterStyle: ZAPPA_HV_PROBE_PRIMARY,
+    styleStack: { primary: ZAPPA_HV_PROBE_PRIMARY },
+    harmonicVoice: 'frank_zappa',
+    title: 'zappa hv stage2 probe',
+  };
+
+  const transport = harmonicVoiceFieldFromRequest(req);
+  const merged = mergeHarmonicVoiceFromRequest(req, buildZappaHvProbeGbdOpts(seed, { primary: ZAPPA_HV_PROBE_PRIMARY }));
+  const transportProbeOk =
+    transport.harmonicVoice === 'frank_zappa' &&
+    (merged as { harmonicVoice?: string }).harmonicVoice === 'frank_zappa';
+
+  const hvRun = runGoldenPathOnce(
+    seed,
+    buildZappaHvProbeGbdOpts(seed, { primary: ZAPPA_HV_PROBE_PRIMARY, harmonicVoice: 'frank_zappa' })
+  );
+  const md = hvRun.context?.generationMetadata;
+  const ctx = hvRun.context;
+
+  const zappaHarmonyContextAttached = ctx?.harmonyContext?.styleId === 'frank_zappa';
+  const zappaEffBarsPresent =
+    Array.isArray(md?.frankZappaEffectiveHarmonyBars) &&
+    md!.frankZappaEffectiveHarmonyBars!.length === ZAPPA_HV_PROBE_TOTAL_BARS;
+  const spineBar2 = ctx ? classifyAuthoritativeLayerForBar(2, ctx) : undefined;
+  const authorityActivatesOnHv =
+    zappaHarmonyContextAttached || zappaEffBarsPresent || spineBar2?.sliceId === 'frank_zappa';
+
+  const scoreVariant = (label: string, runOpts: ReturnType<typeof buildZappaHvProbeGbdOpts>): ZappaHvProbeVariant => {
+    const result = runGoldenPathOnce(seed, runOpts);
+    const meta = result.context?.generationMetadata;
+    const songwriterStyleId = meta?.songwriterStyleId;
+    const zappaStructuralRelaxActive = isFrankZappaSongwriterId(songwriterStyleId);
+    if (!result.score || !result.context) {
+      return {
+        label,
+        generationSuccess: result.success,
+        exportIntegrityPassed: result.exportIntegrityPassed,
+        lockPass: false,
+        gceOverall: null,
+        hardGateFailures: [],
+        zappaStructuralRelaxActive,
+        gceRoute: 'generic',
+        songwriterStyleId,
+        harmonicVoice: meta?.harmonicVoice,
+        harmonyContextStyleId: result.context?.harmonyContext?.styleId,
+        harmonicVoiceScorerMismatch: undefined,
+      };
+    }
+    const strip = stripFromContext(result.context);
+    const hard = evaluateHardGates(result.score, result.context, strip);
+    const hardGateFailures = hard.gates.filter((g) => !g.pass).map((g) => g.id);
+    const routing = resolveGceScorerRouting(result.context);
+    let gceOverall: number;
+    let gceRoute: 'frank_zappa' | 'generic';
+    if (routing.routeFrankZappaScorer) {
+      gceOverall = scoreFrankZappaResultForGce(
+        result.score,
+        result.context,
+        GCE_GATE_HARMONIC_BAR_TARGET
+      ).overallScore;
+      gceRoute = 'frank_zappa';
+    } else {
+      const gate = scoreGoldenPathResultForGce(result.score, result.context, GCE_GATE_HARMONIC_BAR_TARGET);
+      gceOverall = gate.overallScore;
+      gceRoute = 'generic';
+    }
+    return {
+      label,
+      generationSuccess: result.success,
+      exportIntegrityPassed: result.exportIntegrityPassed,
+      lockPass: result.exportIntegrityPassed && hard.allPass,
+      gceOverall,
+      hardGateFailures,
+      zappaStructuralRelaxActive,
+      gceRoute,
+      songwriterStyleId,
+      harmonicVoice: meta?.harmonicVoice,
+      harmonyContextStyleId: result.context.harmonyContext?.styleId,
+      harmonicVoiceScorerMismatch: meta?.harmonicVoiceScorerMismatch,
+    };
+  };
+
+  const zappaPrimary = scoreVariant('frank_zappa primary', buildZappaHvProbeGbdOpts(seed, { primary: 'frank_zappa' }));
+  const barryPrimaryZappaHv = scoreVariant(
+    'barry_harris primary + frank_zappa HV',
+    buildZappaHvProbeGbdOpts(seed, { primary: ZAPPA_HV_PROBE_PRIMARY, harmonicVoice: 'frank_zappa' })
+  );
+
+  const harmonyConflict =
+    md?.harmonicVoice === 'frank_zappa' &&
+    !authorityActivatesOnHv &&
+    spineBar2?.sliceId === ZAPPA_HV_PROBE_PRIMARY;
+  const validatorMismatch =
+    md?.harmonicVoice === 'frank_zappa' &&
+    !barryPrimaryZappaHv.zappaStructuralRelaxActive &&
+    zappaPrimary.zappaStructuralRelaxActive;
+  const uiEngineLoss = transportProbeOk && md?.harmonicVoice === 'frank_zappa' && !authorityActivatesOnHv;
+  const sameBugClassAsVerlaine = harmonyConflict && (validatorMismatch || uiEngineLoss);
+
+  return {
+    seed,
+    probe: 'frank_zappa_hv',
+    forwarding: {
+      transportProbeOk,
+      metadataHarmonicVoiceAfterRun: md?.harmonicVoice,
+    },
+    authority: {
+      zappaHarmonyContextAttached,
+      zappaEffBarsPresent,
+      primaryEffBarsPresent:
+        Array.isArray(md?.barryHarrisEffectiveHarmonyBars) &&
+        md!.barryHarrisEffectiveHarmonyBars!.length === ZAPPA_HV_PROBE_TOTAL_BARS,
+      spineSliceIdBar2: spineBar2?.sliceId,
+      getChordBar2: ctx ? getChordForBar(2, ctx) : '',
+      riffVrbLaneFromHv: resolveDuoRiffVrbLaneId(md),
+      authorityActivatesOnHv,
+    },
+    symptoms: {
+      harmony_authority_conflict: harmonyConflict,
+      validator_mismatch: validatorMismatch,
+      ui_engine_state_loss: uiEngineLoss,
+    },
+    gceLock: {
+      zappaPrimary,
+      barryPrimaryZappaHv,
+      gceDelta:
+        zappaPrimary.gceOverall != null && barryPrimaryZappaHv.gceOverall != null
+          ? Math.round((barryPrimaryZappaHv.gceOverall - zappaPrimary.gceOverall) * 10) / 10
+          : null,
+    },
+    sameBugClassAsVerlaine,
+    methodologyNote: sameBugClassAsVerlaine
+      ? 'YES — Verlaine-class: HV survives transport but Zappa authority/validators stay on primary barry_harris'
+      : 'NO or partial — see symptom flags',
+  };
 }
 
 function buildEcmGoldenPathOptions(
@@ -949,7 +1140,11 @@ function runMatrix(seed: number, rowFilter: string[] | null): MatrixOutputRow[] 
 }
 
 function main(): void {
-  const { seed, rowIds } = parseArgs(process.argv.slice(2));
+  const { seed, rowIds, probe } = parseArgs(process.argv.slice(2));
+  if (probe === 'frank_zappa_hv') {
+    console.log(JSON.stringify(runFrankZappaHvStage2Probe(seed), null, 2));
+    return;
+  }
   const rows = runMatrix(seed, rowIds);
   console.log(JSON.stringify({ seed, rowCount: rows.length, rows }, null, 2));
 }

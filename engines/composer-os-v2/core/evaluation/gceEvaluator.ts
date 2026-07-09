@@ -10,6 +10,12 @@ import { resolveMelodicPartId } from '../gce/resolveMelodicPartId';
 import { scoreModelToMelodicLine } from '../gce/scoreModelToMelodicLine';
 import { buildFallbackChordsAndSectionsFromScore } from '../gce/gceGate';
 import {
+  applyGceScorerRoutingDiagnostics,
+  GCE_EVAL_COMPOSITION_CONTEXT_KEY,
+  resolveGceScorerRouting,
+} from '../gce/resolveEffectiveGceStyle';
+import type { CompositionContext } from '../compositionContext';
+import {
   scoreCadentialClarity,
   scoreMelodicIdentity,
   scorePhraseGrammar,
@@ -108,7 +114,7 @@ function evaluateGceFromScoreModel(
 
   finalScore = Math.round(finalScore * 10) / 10;
 
-  return {
+  const result: GceEvaluationResult = {
     categories,
     finalScore,
     weakestCategory,
@@ -116,6 +122,7 @@ function evaluateGceFromScoreModel(
     pass: finalScore >= threshold,
     threshold,
   };
+  return result;
 }
 
 export function evaluateGce(input: GceEvaluationInput): GceEvaluationResult {
@@ -127,9 +134,29 @@ export function evaluateGce(input: GceEvaluationInput): GceEvaluationResult {
   const threshold = DEFAULT_GCE_PASS_THRESHOLD;
 
   if (isScoreModelOutput(input.output)) {
-    const songwriterId =
-      typeof input.metadata?.songwriterStyleId === 'string' ? input.metadata.songwriterStyleId : undefined;
-    return evaluateGceFromScoreModel(input.output, weights, songwriterId, threshold);
+    const rawContext = input.metadata?.[GCE_EVAL_COMPOSITION_CONTEXT_KEY];
+    const compositionContext =
+      rawContext != null && typeof rawContext === 'object' && 'form' in (rawContext as object)
+        ? (rawContext as CompositionContext)
+        : undefined;
+
+    let songwriterId: string | undefined;
+    let mismatchNote: string | undefined;
+    if (compositionContext) {
+      const routing = resolveGceScorerRouting(compositionContext);
+      applyGceScorerRoutingDiagnostics(compositionContext, routing);
+      songwriterId = routing.effectiveStyleId;
+      mismatchNote = routing.harmonicVoiceScorerMismatch;
+    } else {
+      songwriterId =
+        typeof input.metadata?.songwriterStyleId === 'string' ? input.metadata.songwriterStyleId : undefined;
+    }
+
+    const result = evaluateGceFromScoreModel(input.output, weights, songwriterId, threshold);
+    if (mismatchNote) {
+      result.notes = [...(result.notes ?? []), mismatchNote];
+    }
+    return result;
   }
 
   const placeholderScore = 5.0;

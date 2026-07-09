@@ -36,11 +36,17 @@ import { getFrankZappaBluesrockFerociousProfile } from '../slonimsky/slonimskyEn
 import { resolveZappaStyleMode } from '../song-mode/frankZappaSlice';
 import type { MelodicNote } from './gce_melody_eval';
 import type { CategoryScore } from './gceAutoScorers';
+import {
+  applyGceScorerRoutingDiagnostics,
+  resolveGceScorerRouting,
+} from './resolveEffectiveGceStyle';
 
 export interface GceGateResult {
   overallScore: number;
   weakestCategory: string;
   passed: boolean;
+  /** Set when harmonicVoice requests a style whose authority did not engage for scoring. */
+  harmonicVoiceScorerMismatch?: string;
 }
 
 /** Ship gate: weighted GCE overall must meet or exceed this (aligned with Song Mode retry in `composerOsAppGeneration`). */
@@ -376,11 +382,16 @@ export function scoreGoldenPathResultForGce(
   if (context.presetId === 'ecm_chamber') {
     return scoreEcmChamberResultForGce(score, context, harmonicBarTarget);
   }
-  const songwriterId = context.generationMetadata?.songwriterStyleId;
-  if (isFrankZappaSongwriterId(songwriterId)) {
-    return scoreFrankZappaResultForGce(score, context, harmonicBarTarget);
+  const routing = resolveGceScorerRouting(context);
+  applyGceScorerRoutingDiagnostics(context, routing);
+  const mismatch = routing.harmonicVoiceScorerMismatch;
+
+  if (routing.routeFrankZappaScorer) {
+    const result = scoreFrankZappaResultForGce(score, context, harmonicBarTarget);
+    return mismatch ? { ...result, harmonicVoiceScorerMismatch: mismatch } : result;
   }
   const chords = buildChordsForGceGate(score, context, harmonicBarTarget);
   const sections = gceSectionsFromFormMap(context.form);
-  return scoreResultForGce(score, chords, sections, songwriterId);
+  const result = scoreResultForGce(score, chords, sections, routing.effectiveStyleId);
+  return mismatch ? { ...result, harmonicVoiceScorerMismatch: mismatch } : result;
 }

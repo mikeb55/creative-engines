@@ -108,6 +108,7 @@ import { runPorterGershwinDistinctionTests } from './porterGershwinDistinction.t
 import { runSqAntimetricRhythmTests } from './sqAntimetricRhythm.test';
 import { runWybleDuoParityTests } from './wybleDuoParity.test';
 import { runEcmGceOrchestrationTests } from './ecmGceOrchestration.test';
+import { runGceScorerRoutingTests } from './gceScorerRouting.test';
 import { runMelodyV2Tests } from './melodyV2.test';
 import { runMidiChordExtractorTests } from './midiChordExtractor.test';
 import { runSlonimskyHarmonicSceneTests } from './slonimskyHarmonicScene.test';
@@ -194,6 +195,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Melody V2 (motif / register / cadenza)', run: runMelodyV2Tests },
   { label: 'MIDI chord extractor (SQ→BB import)', run: runMidiChordExtractorTests },
   { label: 'ECM GCE orchestration', run: runEcmGceOrchestrationTests },
+  { label: 'GCE scorer routing (HV authority)', run: runGceScorerRoutingTests },
   { label: 'Conductor', run: runConductorTests },
   { label: 'SQ swing rhythm engine (sq_swing)', run: runSqSwingRhythmTests },
   { label: 'Porter vs Gershwin swing fine-grain', run: runPorterGershwinDistinctionTests },

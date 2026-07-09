@@ -2845,6 +2845,8 @@ export interface GenerationMetadata {
   };
   /** Phase 2+3a — harmonic voice id (normalized); drives VoiceRuleBundle when set. */
   harmonicVoice?: string;
+  /** GCE scorer routing — harmonicVoice set but style authority did not engage for scoring. */
+  harmonicVoiceScorerMismatch?: string;
   /** Phase 2+3a — bar-hold state for harmonic rhythm overlay (`getChordForBar`). */
   voiceBundleHarmonicRhythmState?: VoiceBundleHarmonicRhythmState;
   /** Phase 2+3a — inspectability echo of active bundle policy (does not replace receipts). */
