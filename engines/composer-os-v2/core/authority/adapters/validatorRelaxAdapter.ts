@@ -14,7 +14,7 @@ export interface ValidatorRelaxDecision {
   relaxKind: ValidatorRelaxKind;
 }
 
-/** Phase 1: replace scattered songwriterStyleId === 'x' relax tests. */
+/** Phase 1 seam 2: HV-aware relax/bypass — same authority/evidence rules as harmony seam. */
 export function validatorRelaxActive(
   context: CompositionContext,
   relaxKind: ValidatorRelaxKind
@@ -27,9 +27,35 @@ export function validatorRelaxActiveFromIdentity(
   identity: EffectiveStyleIdentity,
   relaxKind: ValidatorRelaxKind
 ): ValidatorRelaxDecision {
-  const targetStyleId = identity.harmonyAuthorityStyleId;
+  const { primaryStyleId, harmonicVoiceId, harmonyAuthorityStyleId, engagement } = identity;
+  let active = engagement.validator_relax;
+  let targetStyleId = harmonyAuthorityStyleId;
+
+  switch (relaxKind) {
+    case 'zappa_structural':
+      // Frank Zappa structural relax stays primary-only until harmony authority engages (documented gap).
+      active = active && primaryStyleId === 'frank_zappa';
+      targetStyleId = 'frank_zappa';
+      break;
+    case 'structural':
+      // Verlaine bass/structural bundle relax when HV harmony authority is verlaine.
+      active = active && harmonyAuthorityStyleId === 'verlaine';
+      targetStyleId = 'verlaine';
+      break;
+    case 'verlaine_melody':
+      active =
+        active &&
+        (primaryStyleId === 'verlaine' || harmonicVoiceId === 'verlaine');
+      targetStyleId = 'verlaine';
+      break;
+    case 'melody_leap':
+      break;
+    default:
+      break;
+  }
+
   return {
-    active: identity.engagement.validator_relax,
+    active,
     targetStyleId,
     relaxKind,
   };

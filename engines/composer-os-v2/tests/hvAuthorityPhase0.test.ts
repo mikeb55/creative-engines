@@ -1,5 +1,5 @@
 /**
- * Phase 0 — HV authority abstraction infrastructure verification.
+ * Phase 0 ??? HV authority abstraction infrastructure verification.
  * NOT registered in runSmokeTests until Phase 1 wiring.
  *
  * Run: npx tsx --tsconfig ../../tsconfig.json tests/hvAuthorityPhase0.test.ts
@@ -21,7 +21,9 @@ import {
   resolveEffectiveStyleIdentity,
 } from '../core/authority/resolveEffectiveStyleIdentity';
 import { resolveHarmonyAuthority } from '../core/authority/adapters/harmonyAuthorityAdapter';
+import { validatorRelaxActive } from '../core/authority/adapters/validatorRelaxAdapter';
 import { resolveGceScorerStyle } from '../core/authority/adapters/gceScorerAdapter';
+import { validateBassIdentity } from '../core/score-integrity/bassIdentityValidation';
 import { runFrankZappaHvStage2Probe } from '../scripts/runHarmonicVoiceForwardingGceLockMatrix';
 import { runGceScorerRoutingTests } from './gceScorerRouting.test';
 import type { CompositionContext } from '../core/compositionContext';
@@ -29,6 +31,7 @@ import type { CompositionContext } from '../core/compositionContext';
 const HV_PROBE_PRIMARY = 'barry_harris';
 const TOTAL_BARS = 32;
 const SEED = 77777;
+const SEED_VERLAINE_STRUCTURAL_RELAX = 133;
 
 const TIER1_HV_STYLES = [
   'verlaine',
@@ -184,6 +187,27 @@ function testFrankZappaStage2ProbeBaseline(): boolean {
   return probe.forwarding.transportProbeOk && !probe.authority.authorityActivatesOnHv;
 }
 
+
+/** Seam 2 - verlaine HV structural relax regression (seed 133). */
+function testVerlaineHvStructuralRelaxSeed133(): boolean {
+  const result = runGoldenPathOnce(
+    SEED_VERLAINE_STRUCTURAL_RELAX,
+    buildGbdOpts(HV_PROBE_PRIMARY, 'verlaine')
+  );
+  if (!result.success || !result.score || !result.context) return false;
+  const structural = validatorRelaxActive(result.context, 'structural');
+  if (!structural.active || structural.targetStyleId !== 'verlaine') return false;
+  const strictBass = validateBassIdentity(result.score, {
+    presetId: 'guitar_bass_duo',
+    zappaStructuralRelax: false,
+  });
+  const relaxedBass = validateBassIdentity(result.score, {
+    presetId: 'guitar_bass_duo',
+    zappaStructuralRelax: true,
+  });
+  return !strictBass.valid && relaxedBass.valid && strictBass.errors.length > 0;
+}
+
 function testResolverDiagnosticsIsolatedFromProductionRouting(): boolean {
   const result = runGoldenPathOnce(
     SEED,
@@ -215,6 +239,7 @@ export function runHvAuthorityPhase0Tests(): { name: string; ok: boolean }[] {
     ['Phase0 - deterministic production metrics unchanged (6 Tier1 HV)', testDeterministicProductionMetricsUnchanged],
     ['Phase0 - gceScorerRouting suite unchanged', testGceScorerRoutingSuiteUnchanged],
     ['Phase0 - frank_zappa Stage2 probe baseline intact', testFrankZappaStage2ProbeBaseline],
+    ['Seam2 - verlaine HV structural relax seed 133 (bass identity bypass)', testVerlaineHvStructuralRelaxSeed133],
     ['Phase0 - resolver diagnostics isolated from production GCE routing', testResolverDiagnosticsIsolatedFromProductionRouting],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }

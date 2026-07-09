@@ -46,7 +46,7 @@ import {
   validateDuoSwingRhythm,
 } from './duoLockQuality';
 import { validateDuoMelodyIdentityV3 } from './duoMelodyIdentityV3';
-import { isFrankZappaSongwriterId } from '../gce/frankZappaStructuralFingerprint';
+import { validatorRelaxActive } from '../authority/adapters/validatorRelaxAdapter';
 import {
   isStyleTransferEightBarPinnedMelodyRelax,
   isStyleTransferPreserveMelodyActive,
@@ -240,13 +240,15 @@ export function runBehaviourGates(
   const evansMusicianBridgeRelax = isBeMusicianPremiumMelodyBridgeActive(
     opts?.compositionContext?.generationMetadata
   );
-  const zappaStructuralRelax = isFrankZappaSongwriterId(
-    opts?.compositionContext?.generationMetadata?.songwriterStyleId
-  );
+  const compositionContext = opts?.compositionContext;
+  const zappaStructuralRelax = compositionContext
+    ? validatorRelaxActive(compositionContext, 'zappa_structural').active
+    : false;
   const townerStructuralRelax =
-    opts?.compositionContext?.generationMetadata?.songwriterStyleId === 'ralph_towner';
-  const verlaineStructuralRelax =
-    opts?.compositionContext?.generationMetadata?.songwriterStyleId === 'verlaine';
+    compositionContext?.generationMetadata?.songwriterStyleId === 'ralph_towner';
+  const verlaineStructuralRelax = compositionContext
+    ? validatorRelaxActive(compositionContext, 'structural').active
+    : false;
   const holdsworthStructuralRelax =
     opts?.compositionContext?.generationMetadata?.songwriterStyleId === 'allan_holdsworth';
   const jackWhiteStructuralRelax =
