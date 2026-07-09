@@ -4,6 +4,8 @@
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
+import { resolveEffectiveStyleIdentity } from '../authority/resolveEffectiveStyleIdentity';
+import { resolveTruthRegistryStyleFromIdentity } from '../authority/adapters/truthRegistryAdapter';
 import { lockedHarmonyChordSymbolsEquivalent } from '../harmony/chordProgressionParser';
 import { isAllowedSongFormBarCount } from '../harmony/songFormBarCounts';
 import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
@@ -118,13 +120,41 @@ export const EFFECTIVE_HARMONY_TRUTH_REGISTRY: readonly EffectiveHarmonyTruthReg
   { songwriterStyleIds: ['frank_zappa'], metadataKey: 'frankZappaEffectiveHarmonyBars' },
 ];
 
-function registryEntryMatches(entry: EffectiveHarmonyTruthRegistryEntry, md: GenerationMetadata): boolean {
-  const songwriterStyleId = md.songwriterStyleId;
+function registryEntryMatchesStyle(
+  entry: EffectiveHarmonyTruthRegistryEntry,
+  truthRegistryStyleId: string,
+  md: GenerationMetadata
+): boolean {
   const styleProfile = md.styleProfile;
   return (
-    (songwriterStyleId != null && (entry.songwriterStyleIds?.includes(songwriterStyleId) ?? false)) ||
+    (entry.songwriterStyleIds?.includes(truthRegistryStyleId) ?? false) ||
     (styleProfile != null && (entry.styleProfiles?.includes(styleProfile) ?? false))
   );
+}
+
+function truthRoutingContext(
+  md: GenerationMetadata,
+  opts: {
+    totalBars: number;
+    harmonyContext?: CompositionContext['harmonyContext'];
+  }
+): CompositionContext {
+  return {
+    generationMetadata: md,
+    form: { totalBars: opts.totalBars, sections: [] },
+    harmonyContext: opts.harmonyContext,
+  } as CompositionContext;
+}
+
+function resolveTruthRegistryStyleId(
+  md: GenerationMetadata,
+  opts: {
+    totalBars: number;
+    harmonyContext?: CompositionContext['harmonyContext'];
+  }
+): string {
+  const identity = resolveEffectiveStyleIdentity(truthRoutingContext(md, opts));
+  return resolveTruthRegistryStyleFromIdentity(identity).truthRegistryStyleId;
 }
 
 function resolveHarmonyTruthFromSectionLockRegistry(
@@ -161,8 +191,10 @@ export function resolveEffectiveHarmonyTruth(
   const matchesLength = (bars: readonly string[]) =>
     bars.length === opts.totalBars && (expectedLength == null || bars.length === expectedLength);
 
+  const truthRegistryStyleId = resolveTruthRegistryStyleId(md, opts);
+
   if (
-    md.songwriterStyleId === 'frank_zappa' &&
+    truthRegistryStyleId === 'frank_zappa' &&
     opts.harmonyContext?.styleId === 'frank_zappa' &&
     matchesLength(opts.harmonyContext.bars)
   ) {
@@ -185,7 +217,7 @@ export function resolveEffectiveHarmonyTruth(
   }
 
   for (const entry of EFFECTIVE_HARMONY_TRUTH_REGISTRY) {
-    if (!registryEntryMatches(entry, md)) continue;
+    if (!registryEntryMatchesStyle(entry, truthRegistryStyleId, md)) continue;
     const raw = md[entry.metadataKey];
     const bars = coerceStringBarArray(raw);
     if (bars && matchesLength(bars)) {

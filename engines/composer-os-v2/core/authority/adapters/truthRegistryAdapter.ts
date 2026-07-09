@@ -3,8 +3,9 @@ import type { EffectiveStyleIdentity } from '../types';
 import { resolveEffectiveStyleIdentity } from '../resolveEffectiveStyleIdentity';
 
 export interface TruthRegistryDecision {
-  /** Phase 0: always primary — EFFECTIVE_HARMONY_TRUTH_REGISTRY unchanged. */
+  /** Style id used to select EFFECTIVE_HARMONY_TRUTH_REGISTRY row. */
   truthRegistryStyleId: string;
+  /** True when HV truth routing engaged (harmony evidence + HV differs from primary). */
   harmonicVoiceTruthEngaged: boolean;
 }
 
@@ -17,8 +18,16 @@ export function resolveTruthRegistryStyle(context: CompositionContext): TruthReg
 export function resolveTruthRegistryStyleFromIdentity(
   identity: EffectiveStyleIdentity
 ): TruthRegistryDecision {
+  const harmonicVoiceTruthEngaged = Boolean(
+    identity.engagement.harmony &&
+      identity.harmonicVoiceId &&
+      identity.harmonicVoiceId !== identity.primaryStyleId
+  );
+  const truthRegistryStyleId = harmonicVoiceTruthEngaged
+    ? identity.harmonicVoiceId!
+    : identity.primaryStyleId;
   return {
-    truthRegistryStyleId: identity.primaryStyleId,
-    harmonicVoiceTruthEngaged: identity.engagement.truth_registry,
+    truthRegistryStyleId,
+    harmonicVoiceTruthEngaged,
   };
 }
