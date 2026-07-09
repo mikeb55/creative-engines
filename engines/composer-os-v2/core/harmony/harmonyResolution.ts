@@ -10,7 +10,8 @@
 
 import type { CompositionContext } from '../compositionContext';
 import { applyVoiceBundleHarmonicRhythm } from '../composer/voiceBundleHarmonicRhythm';
-import { getVoiceRuleBundle, isVerlaineHarmonicPath } from '../composer/voiceRuleBundles';
+import { resolveHarmonyAuthority } from '../authority/adapters/harmonyAuthorityAdapter';
+import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
 import {
   hasSectionMarkerVrbAssignment,
   resolveVoiceRuleBundleForBar,
@@ -69,16 +70,18 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   const meta = context.generationMetadata;
   const tb = context.form.totalBars;
   const parsed = meta.parsedCustomProgressionBars;
+  const harmonyAuthorityStyleId = resolveHarmonyAuthority(context).harmonyAuthorityStyleId;
 
   if (locked && locked.length === tb && parsed && parsed.length === tb && meta.harmonySource === 'custom') {
     assertLockedMatchesParsedWhenBothFull(locked, parsed, tb);
   }
 
-  /** Immutable canonical timeline (Frank Zappa primary today): single snapshot for score + validators. */
+  /** Immutable canonical timeline when harmony authority matches HarmonyContext.styleId. */
   const hcCanon = context.harmonyContext;
   if (
     hcCanon &&
     hcCanon.bars.length === tb &&
+    hcCanon.styleId === harmonyAuthorityStyleId &&
     barIndex >= 1 &&
     barIndex <= tb
   ) {
@@ -224,7 +227,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
    */
   const verlaineEffEarly = meta?.verlaineEffectiveHarmonyBars;
   if (
-    isVerlaineHarmonicPath(meta) &&
+    harmonyAuthorityStyleId === 'verlaine' &&
     Array.isArray(verlaineEffEarly) &&
     verlaineEffEarly.length === tb &&
     barIndex >= 1 &&
@@ -1130,7 +1133,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
    */
   const fzEff = meta?.frankZappaEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'frank_zappa' &&
+    harmonyAuthorityStyleId === 'frank_zappa' &&
     Array.isArray(fzEff) &&
     fzEff.length === tb &&
     barIndex >= 1 &&
@@ -1196,7 +1199,7 @@ function verlaineAuthoritativeSpineChord(
   context: CompositionContext,
 ): boolean {
   const meta = context.generationMetadata;
-  if (!isVerlaineHarmonicPath(meta)) return false;
+  if (resolveHarmonyAuthority(context).harmonyAuthorityStyleId !== 'verlaine') return false;
   const tb = context.form.totalBars;
   if (barIndex < 1 || barIndex > tb) return false;
 

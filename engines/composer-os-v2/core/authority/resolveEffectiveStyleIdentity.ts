@@ -130,12 +130,17 @@ export function resolveEffectiveStyleIdentity(context: CompositionContext): Effe
     riff_vrb_lane: layerEngaged(context, target, 'riff_vrb_lane'),
   };
 
+  const harmonyAuthorityStyleId =
+    engagement.harmony && harmonicVoiceId && harmonicVoiceId !== primaryStyleId
+      ? harmonicVoiceId
+      : primaryStyleId;
+
   const receipts: string[] = [
-    `phase0:primary=${primaryStyleId}`,
-    harmonicVoiceId ? `phase0:harmonicVoice=${harmonicVoiceId}` : 'phase0:harmonicVoice=unset',
-    `phase0:harmonyAuthority=${primaryStyleId}`,
-    `phase0:engagementHarmony=${engagement.harmony}`,
-    `phase0:engagementPrecompute=${engagement.precompute}`,
+    `phase1:primary=${primaryStyleId}`,
+    harmonicVoiceId ? `phase1:harmonicVoice=${harmonicVoiceId}` : 'phase1:harmonicVoice=unset',
+    `phase1:harmonyAuthority=${harmonyAuthorityStyleId}`,
+    `phase1:engagementHarmony=${engagement.harmony}`,
+    `phase1:engagementPrecompute=${engagement.precompute}`,
   ];
 
   const harmonicVoiceAuthorityGap =
@@ -144,13 +149,13 @@ export function resolveEffectiveStyleIdentity(context: CompositionContext): Effe
     !layerEngaged(context, harmonicVoiceId, 'harmony');
 
   if (harmonicVoiceAuthorityGap) {
-    receipts.push(`phase0:harmonicVoiceAuthorityGap:${harmonicVoiceId}`);
+    receipts.push(`phase1:harmonicVoiceAuthorityGap:${harmonicVoiceId}`);
   }
 
   return {
     primaryStyleId,
     harmonicVoiceId,
-    harmonyAuthorityStyleId: primaryStyleId,
+    harmonyAuthorityStyleId,
     harmonicVoiceRequested,
     engagement,
     receipts,
