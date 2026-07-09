@@ -172,3 +172,7 @@ Conservative assumptions: inventory from spine (77) + overlay-only (10) + Slonim
 - Slice files not trawled; precompute dispatch assumed to mirror spine.
 - BB/SQ Phase 2 consumption gaps per forwarding design not rescored per-section.
 - GCE interval-target-only styles excluded from validator-relax +3 conservatively.
+
+## Stage 2 follow-up
+
+Runtime validation findings: **[EIGHTY_STYLE_STAGE2_FINDINGS.md](./EIGHTY_STYLE_STAGE2_FINDINGS.md)** (frank_zappa confirmed 2026-07-08).
