@@ -10,8 +10,10 @@ import type {
   GenerationMetadata,
   ZappaStyleMode,
 } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import type { HarmonyContext } from '../harmony/harmonyContext';
 import { computeHarmonyChecksum } from '../harmony/harmonyContext';
+import { normalizeSongwriterStyleKey } from './songwriterStyleProfiles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { isProtectedBar } from '../score-integrity/identityLock';
@@ -1029,13 +1031,25 @@ export function finalizeFrankZappaMetadata(metadata: GenerationMetadata, acc: Fr
   metadata.frankZappaSliceReceipt = receipt;
 }
 
+/** Primary songwriter or harmonicVoice selects Frank Zappa harmony authority (HarmonyContext path). */
+export function isFrankZappaHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeSongwriterStyleKey(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'frank_zappa' || voice === 'frank_zappa';
+}
+
 /**
  * Sole wiring entry for Frank Zappa canonical harmony: runs `precomputeFrankZappaEffectiveHarmonyBars` once,
  * then freezes bars + checksum on `context.harmonyContext`.
  */
 export function attachFrankZappaHarmonyContext(context: CompositionContext): HarmonyContext {
-  if (context.generationMetadata?.songwriterStyleId !== 'frank_zappa') {
-    throw new Error('attachFrankZappaHarmonyContext: songwriterStyleId must be frank_zappa');
+  if (!isFrankZappaHarmonicPath(context.generationMetadata)) {
+    throw new Error('attachFrankZappaHarmonyContext: frank_zappa harmonic path required');
   }
   const tb = context.form.totalBars;
   precomputeFrankZappaEffectiveHarmonyBars(context);

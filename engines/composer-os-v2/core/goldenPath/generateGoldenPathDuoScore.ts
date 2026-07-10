@@ -200,6 +200,7 @@ import {
   buildZappaSectionBehaviorDiagnostics,
   createFrankZappaHarmonyAccumulator,
   finalizeFrankZappaMetadata,
+  isFrankZappaHarmonicPath,
   resolveZappaSectionBehaviorForBar,
 } from './frankZappaSlice';
 import { applyZappaSoloToMetadata, mergeZappaSoloPart } from '../solo/zappasoloEngine';
@@ -3228,6 +3229,10 @@ function buildGuitarPart(
   const isSongwriterWayneShorter = genMeta?.songwriterStyleId === 'wayne_shorter';
   const isSongwriterFrankZappa =
     normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'frank_zappa';
+  const isHarmonicVoiceFrankZappa =
+    normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
+    'frank_zappa';
+  const frankZappaHarmonicPathActive = isFrankZappaHarmonicPath(genMeta);
   const isSongwriterBarryHarris = genMeta?.songwriterStyleId === 'barry_harris';
   const isSongwriterBillEvans = genMeta?.songwriterStyleId === 'bill_evans';
   const isSongwriterDebussy = genMeta?.songwriterStyleId === 'debussy';
@@ -3495,8 +3500,15 @@ function buildGuitarPart(
   ) {
     precomputeWayneShorterEffectiveHarmonyBars(context);
   }
-  if (isSongwriterFrankZappa && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (frankZappaHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     attachFrankZappaHarmonyContext(context);
+    if (isHarmonicVoiceFrankZappa && !isSongwriterFrankZappa) {
+      const fzEff = genMeta.frankZappaEffectiveHarmonyBars;
+      const fzTb = totalBarsFromContext(context);
+      if (Array.isArray(fzEff) && fzEff.length === fzTb) {
+        genMeta.mosaicMergedHarmonyBars = [...fzEff];
+      }
+    }
   }
   const duoRiffLaneId = resolveDuoRiffVrbLaneId(genMeta);
   if (duoRiffLaneId && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
