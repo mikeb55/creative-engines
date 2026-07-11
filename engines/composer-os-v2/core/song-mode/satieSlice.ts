@@ -5,6 +5,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata, SatieContextMode } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -67,6 +68,7 @@ function stripFunctionalDominantSatie(symbol: string): string {
   if (!rtl) return symbol;
   if (
     /^7(\(|$|\/)/.test(rtl) ||
+    /^7b9/.test(rtl) ||
     /^9(\(|$|\/)/.test(rtl) ||
     /^13/.test(rtl) ||
     /alt/.test(rtl) ||
@@ -82,7 +84,7 @@ function stripFunctionalDominantSatie(symbol: string): string {
 function neutralizeResidualFunctionalSatie(symbol: string): string {
   const hp = parseChordSymbol(symbol).harmonyPart;
   const tl = hp.toLowerCase();
-  if (/alt|7\(.*b9|7\(.*#9|ø/.test(tl)) {
+  if (/alt|7b9|7\(.*b9|7\(.*#9|ø/.test(tl)) {
     const rpc = harmonyRootPc(symbol);
     if (rpc === undefined) return symbol;
     const slash = slashTail(symbol);
@@ -222,13 +224,38 @@ export function isSongwriterSatie(
   return genMeta?.songwriterStyleId === 'satie';
 }
 
+/**
+ * Primary songwriter or harmonicVoice selects Satie harmony authority.
+ * Single-gate (no styleProfile) — Wave-C / bill_evans HV pattern.
+ *
+ * Exact id `satie` only — soft aliases (`erik_satie`, …) stay primary-intake via
+ * songwriter normalize; they do **not** engage HV.
+ *
+ * **Primary-only surfaces (do not flip under HV):**
+ * - **`satieContext`** (`gymnopedie` | …) — primary/API stamp only.
+ * - **`applySatieStyleSurface`** — Song Mode bias nudges from primaryId.
+ */
+export function isSatieHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'satie' || voice === 'satie';
+}
+
 /** @deprecated — use resolveBarSymbol */
 export function precomputeSatieEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;
   const seed = context.seed;
   const satCtx: SatieContextMode = genMeta.satieContext ?? 'gymnopedie';
-  genMeta.satieContext = satCtx;
+  // Context stamp stays primary-only — HV must not steal primary surface identity.
+  if (genMeta.songwriterStyleId === 'satie') {
+    genMeta.satieContext = satCtx;
+  }
 
   const tonicPc = inferTonicPitchClassFromBar1(context);
   const receipts: string[] = [];

@@ -19,6 +19,7 @@ import { isGershwinHarmonicPath } from '../song-mode/gershwinSlice';
 import { isRadioheadHarmonicPath } from '../song-mode/radioheadSlice';
 import { isAndrewHillHarmonicPath } from '../song-mode/andrewHillSlice';
 import { isKateBushHarmonicPath } from '../song-mode/kateBushSlice';
+import { isSatieHarmonicPath } from '../song-mode/satieSlice';
 import {
   hasSectionMarkerVrbAssignment,
   resolveVoiceRuleBundleForBar,
@@ -640,10 +641,12 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 
   /**
    * Erik Satie: `precomputeSatieEffectiveHarmonyBars` applies anti-functional parallel / stasis devices — receipts **`es:*`**.
+   * HV path: primary | harmonicVoice (`satie` exact) — see isSatieHarmonicPath.
+   * satieContext + style surface stay primary-only (not this branch).
    */
   const satieEff = meta?.satieEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'satie' &&
+    isSatieHarmonicPath(meta) &&
     Array.isArray(satieEff) &&
     satieEff.length === tb &&
     barIndex >= 1 &&

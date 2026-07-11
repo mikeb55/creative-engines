@@ -295,6 +295,7 @@ import {
   accumulateSatieHarmonyDiagnostics,
   createSatieHarmonyAccumulator,
   finalizeSatieMetadata,
+  isSatieHarmonicPath,
   precomputeSatieEffectiveHarmonyBars,
 } from './satieSlice';
 import {
@@ -3333,6 +3334,10 @@ function buildGuitarPart(
   );
   const arvoPartHarmonicPathActive = isArvoPartHarmonicPath(genMeta);
   const isSongwriterSatie = genMeta?.songwriterStyleId === 'satie';
+  const isHarmonicVoiceSatie =
+    normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
+    'satie';
+  const satieHarmonicPathActive = isSatieHarmonicPath(genMeta);
   const isSongwriterPrince = genMeta?.songwriterStyleId === 'prince';
   const isSongwriterBeatles = genMeta?.songwriterStyleId === 'beatles';
   const isSongwriterFelaKuti = genMeta?.songwriterStyleId === 'fela_kuti';
@@ -3735,8 +3740,15 @@ function buildGuitarPart(
       }
     }
   }
-  if (isSongwriterSatie && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (satieHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeSatieEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceSatie && !isSongwriterSatie) {
+      const satieEff = genMeta.satieEffectiveHarmonyBars;
+      const satieTb = totalBarsFromContext(context);
+      if (Array.isArray(satieEff) && satieEff.length === satieTb) {
+        genMeta.mosaicMergedHarmonyBars = [...satieEff];
+      }
+    }
   }
   if (isSongwriterPrince && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputePrinceEffectiveHarmonyBars(context);

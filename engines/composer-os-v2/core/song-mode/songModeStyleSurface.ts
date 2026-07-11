@@ -296,6 +296,9 @@ export function applyArvoPartStyleSurface(metadata: GenerationMetadata, primaryS
 
 /**
  * Primary **`satie`** — floating modal field: raised space + cadence softness; lower density + sync (`satieSlice.ts` receipts separate).
+ *
+ * `satieContext` + this surface are primary-only (`runGoldenPath` / primaryId).
+ * Satie as `harmonicVoice` does **not** flip them — HV owns harmony authority only.
  */
 export function applySatieStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
   if (metadata.songModeHookFirstIdentity !== true) return;
