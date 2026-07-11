@@ -351,6 +351,7 @@ import {
   accumulateHoldsworthHarmonyDiagnostics,
   createHoldsworthHarmonyAccumulator,
   finalizeHoldsworthMetadata,
+  isHoldsworthHarmonicPath,
   precomputeHoldsworthEffectiveHarmonyBars,
 } from './holdsworthScaleSlice';
 import {
@@ -3269,6 +3270,12 @@ function buildGuitarPart(
     'verlaine';
   const verlaineHarmonicPathActive = isVerlaineHarmonicPath(genMeta);
   const isSongwriterAllanHoldsworth = genMeta?.songwriterStyleId === 'allan_holdsworth';
+  const isHarmonicVoiceHoldsworth =
+    normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
+      'allan_holdsworth' ||
+    normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
+      'holdsworth';
+  const holdsworthHarmonicPathActive = isHoldsworthHarmonicPath(genMeta);
   const isSongwriterJackWhite = genMeta?.songwriterStyleId === 'jack_white';
   const isSongwriterBeefheart = genMeta?.songwriterStyleId === 'beefheart';
   const isSongwriterFripp = genMeta?.songwriterStyleId === 'fripp';
@@ -3614,8 +3621,15 @@ function buildGuitarPart(
       }
     }
   }
-  if (isSongwriterAllanHoldsworth && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (holdsworthHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeHoldsworthEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceHoldsworth && !isSongwriterAllanHoldsworth) {
+      const holdsworthEff = genMeta.holdsworthEffectiveHarmonyBars;
+      const holdsworthTb = totalBarsFromContext(context);
+      if (Array.isArray(holdsworthEff) && holdsworthEff.length === holdsworthTb) {
+        genMeta.mosaicMergedHarmonyBars = [...holdsworthEff];
+      }
+    }
   }
   if (isSongwriterJackWhite && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeJackWhiteEffectiveHarmonyBars(context);

@@ -13,6 +13,7 @@ import { isAllowedSongFormBarCount } from './songFormBarCounts';
 import { lockedHarmonyChordSymbolsEquivalent } from './chordProgressionParser';
 import { isVerlaineHarmonicPath } from '../composer/voiceRuleBundles';
 import { isFrankZappaHarmonicPath } from '../song-mode/frankZappaSlice';
+import { isHoldsworthHarmonicPath } from '../song-mode/holdsworthScaleSlice';
 import { getChordForBar } from './harmonyResolution';
 import { buildSectionAwareHarmonySpine } from './harmonySpineSectionLoop';
 import type { ResolvedPitchField } from './pitchFieldSpineTypes';
@@ -130,7 +131,11 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   { match: (m) => m?.songwriterStyleId === 'jan_garbarek', effKey: 'janGarbarekEffectiveHarmonyBars', sliceId: 'jan_garbarek' },
   { match: (m) => m?.songwriterStyleId === 'john_surman', effKey: 'johnSurmanEffectiveHarmonyBars', sliceId: 'john_surman' },
   { match: (m) => m?.songwriterStyleId === 'ralph_towner', effKey: 'ralphTownerEffectiveHarmonyBars', sliceId: 'ralph_towner' },
-  { match: (m) => m?.songwriterStyleId === 'allan_holdsworth', effKey: 'holdsworthEffectiveHarmonyBars', sliceId: 'allan_holdsworth' },
+  {
+    match: (m) => isHoldsworthHarmonicPath(m),
+    effKey: 'holdsworthEffectiveHarmonyBars',
+    sliceId: 'allan_holdsworth',
+  },
   { match: (m) => m?.songwriterStyleId === 'jack_white', effKey: 'jackWhiteEffectiveHarmonyBars', sliceId: 'jack_white' },
   { match: (m) => m?.songwriterStyleId === 'beefheart', effKey: 'beefheartEffectiveHarmonyBars', sliceId: 'beefheart' },
   { match: (m) => m?.songwriterStyleId === 'fripp', effKey: 'frippEffectiveHarmonyBars', sliceId: 'fripp' },

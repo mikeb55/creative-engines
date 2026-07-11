@@ -5,6 +5,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -495,6 +496,18 @@ export function minHoldsworthSectionSpan(plan: HoldsworthScalePlan | undefined):
   const spans = plan.sections.map((s) => s.endBar - s.startBar + 1).filter((span) => span >= 2);
   if (!spans.length) return Math.min(...plan.sections.map((s) => s.endBar - s.startBar + 1));
   return Math.min(...spans);
+}
+
+/** Primary songwriter or harmonicVoice selects Allan Holdsworth harmony authority (scale-derived slice). */
+export function isHoldsworthHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'allan_holdsworth' || voice === 'allan_holdsworth' || voice === 'holdsworth';
 }
 
 export function precomputeHoldsworthEffectiveHarmonyBars(context: CompositionContext): void {

@@ -65,12 +65,14 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
   {
     styleId: 'allan_holdsworth',
     layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
       validator_relax: 'primary_only',
       truth_registry: 'primary_only',
       riff_vrb_lane: 'hv_partial',
     },
     effectiveHarmonyBarsKey: 'holdsworthEffectiveHarmonyBars',
-    notes: 'riff VRB lane only today — not harmony spine',
+    notes: 'harmony/precompute hv_full via holdsworthEffectiveHarmonyBars + mosaic merge; validator_relax primary-only until behaviourGates adapter',
   },
   {
     styleId: 'fripp',
