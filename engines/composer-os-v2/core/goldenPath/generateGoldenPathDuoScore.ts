@@ -285,6 +285,8 @@ import {
   applyArvoPartTintinnabuliToDuoScore,
   createArvoPartHarmonyAccumulator,
   finalizeArvoPartMetadata,
+  isArvoPartHarmonicPath,
+  isArvoPartHarmonicVoiceId,
   precomputeArvoPartEffectiveHarmonyBars,
 } from './arvoPartSlice';
 import {
@@ -3306,6 +3308,10 @@ function buildGuitarPart(
   const isSongwriterBerg = genMeta?.songwriterStyleId === 'berg';
   const isSongwriterGershwin = genMeta?.songwriterStyleId === 'gershwin';
   const isSongwriterArvoPart = genMeta?.songwriterStyleId === 'arvo_part';
+  const isHarmonicVoiceArvoPart = isArvoPartHarmonicVoiceId(
+    String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')
+  );
+  const arvoPartHarmonicPathActive = isArvoPartHarmonicPath(genMeta);
   const isSongwriterSatie = genMeta?.songwriterStyleId === 'satie';
   const isSongwriterPrince = genMeta?.songwriterStyleId === 'prince';
   const isSongwriterBeatles = genMeta?.songwriterStyleId === 'beatles';
@@ -3685,8 +3691,15 @@ function buildGuitarPart(
   if (isSongwriterGershwin && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeGershwinEffectiveHarmonyBars(context);
   }
-  if (isSongwriterArvoPart && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (arvoPartHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeArvoPartEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceArvoPart && !isSongwriterArvoPart) {
+      const arvoPartEff = genMeta.arvoPartEffectiveHarmonyBars;
+      const arvoPartTb = totalBarsFromContext(context);
+      if (Array.isArray(arvoPartEff) && arvoPartEff.length === arvoPartTb) {
+        genMeta.mosaicMergedHarmonyBars = [...arvoPartEff];
+      }
+    }
   }
   if (isSongwriterSatie && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeSatieEffectiveHarmonyBars(context);
@@ -7958,6 +7971,8 @@ export function generateGoldenPathDuoScore(
   const [walkLow] = profile.preferredWalkingZone;
   const bassCeiling = Math.min(profile.preferredWalkingZone[1], 52);
   tagMomentBarsOnParts([guitarPart, bassPart]);
+  // Tintinnabuli note rewrite + bass-massage skip: primary-only (isSongwriterArvoPart).
+  // HV arvo_part/part owns eff-bar harmony only — do not gate these on isArvoPartHarmonicPath.
   const skipStandardDuoBassMassaging =
     context.generationMetadata?.songwriterStyleId === 'arvo_part';
   if (

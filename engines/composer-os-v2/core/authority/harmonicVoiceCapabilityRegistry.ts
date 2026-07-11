@@ -177,6 +177,28 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
     notes:
       'alias of antonio_carlos_jobim for VRB voiceId harmonicVoice=jobim (normalizeHarmonicVoiceId does not unify)',
   },
+  {
+    styleId: 'arvo_part',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'arvoPartEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via arvoPartEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; path helper also accepts VRB id part; arvoPartContext + tintinnabuli apply + bass-massage skip + style surface stay primary-only',
+  },
+  {
+    styleId: 'part',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'arvoPartEffectiveHarmonyBars',
+    notes:
+      'alias of arvo_part for VRB voiceId harmonicVoice=part (normalizeHarmonicVoiceId does not unify)',
+  },
 ];
 
 const REGISTRY_BY_STYLE = new Map<string, HvCapabilityEntry>(

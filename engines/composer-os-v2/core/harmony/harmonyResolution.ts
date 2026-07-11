@@ -14,6 +14,7 @@ import { resolveHarmonyAuthority } from '../authority/adapters/harmonyAuthorityA
 import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
 import { isSonicYouthHarmonicPath } from '../song-mode/sonicYouthSlice';
 import { isJoniMitchellHarmonicPath } from '../song-mode/joniMitchellSlice';
+import { isArvoPartHarmonicPath } from '../song-mode/arvoPartSlice';
 import {
   hasSectionMarkerVrbAssignment,
   resolveVoiceRuleBundleForBar,
@@ -615,10 +616,12 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 
   /**
    * Arvo Pärt: `precomputeArvoPartEffectiveHarmonyBars` applies triadic tintinnabuli / pedal devices — receipts **`ap:*`**.
+   * HV path: primary | harmonicVoice (arvo_part | part) — see isArvoPartHarmonicPath.
+   * Tintinnabuli duo note rewrite stays primary-only (not this branch).
    */
   const apEff = meta?.arvoPartEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'arvo_part' &&
+    isArvoPartHarmonicPath(meta) &&
     Array.isArray(apEff) &&
     apEff.length === tb &&
     barIndex >= 1 &&

@@ -15,6 +15,7 @@ import type {
   CompositionContext,
   GenerationMetadata,
 } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -266,6 +267,52 @@ function degreeDeltaFromTransform(
   if (tr === 'diminution') return u < 0.55 ? dir : 0;
   if (tr === 'rhythmic_displacement') return u < 0.5 ? dir : 0;
   return u < 0.58 ? dir : 0;
+}
+
+/** Canonical songwriter id + VRB voiceId — normalizeHarmonicVoiceId does not unify these. */
+export const ARVO_PART_HARMONIC_VOICE_IDS = ['arvo_part', 'part'] as const;
+
+export function isArvoPartHarmonicVoiceId(raw: string | null | undefined): boolean {
+  const id = normalizeHarmonicVoiceId(String(raw ?? ''));
+  return id === 'arvo_part' || id === 'part';
+}
+
+export function isSongwriterArvoPart(
+  genMeta: GenerationMetadata | undefined
+): genMeta is GenerationMetadata & { songwriterStyleId: 'arvo_part' } {
+  return genMeta?.songwriterStyleId === 'arvo_part';
+}
+
+/**
+ * Primary songwriter or harmonicVoice selects Arvo Pärt harmony authority.
+ * Single-gate (no styleProfile) — Wave-C / jobim HV pattern.
+ *
+ * Accepts **both** `arvo_part` (songwriter / eff-bar id) and `part`
+ * (VRB voiceId) — `normalizeHarmonicVoiceId` does not unify them.
+ * Soft alias `arvo` and VRB-only work aliases (`tintinnabuli`, `fratres`,
+ * `fur_alina`, …) do **not** engage HV — exact `arvo_part` | `part` only.
+ *
+ * **Primary-only surfaces (do not flip under HV):**
+ * - **`arvoPartContext`** — Fur Alina / Spiegel / Fratres posture; primary/API
+ *   intake only (joniPhase precedent).
+ * - **`applyArvoPartTintinnabuliToDuoScore`** — rewrites duo notes; HV owns
+ *   eff-bar harmony only; firing under HV would steal primary note identity
+ *   (highest-risk dual-surface; jobimMode/joniPhase class, heavier).
+ * - **`skipStandardDuoBassMassaging`** — coupled to tintinnabuli rewrite;
+ *   stays primary-gated with it.
+ * - **`applyArvoPartStyleSurface`** — Song Mode bias nudges from primaryId;
+ *   flipping under HV steals primary surface when primary is another writer.
+ */
+export function isArvoPartHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  return (
+    isArvoPartHarmonicVoiceId(metadata?.songwriterStyleId) ||
+    isArvoPartHarmonicVoiceId(metadata?.harmonicVoice)
+  );
 }
 
 export interface ArvoPartHarmonyAccumulator {
