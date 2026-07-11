@@ -17,6 +17,7 @@ import { isJoniMitchellHarmonicPath } from '../song-mode/joniMitchellSlice';
 import { isArvoPartHarmonicPath } from '../song-mode/arvoPartSlice';
 import { isGershwinHarmonicPath } from '../song-mode/gershwinSlice';
 import { isRadioheadHarmonicPath } from '../song-mode/radioheadSlice';
+import { isAndrewHillHarmonicPath } from '../song-mode/andrewHillSlice';
 import {
   hasSectionMarkerVrbAssignment,
   resolveVoiceRuleBundleForBar,
@@ -1066,10 +1067,11 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   /**
    * Andrew Hill: `precomputeAndrewHillEffectiveHarmonyBars` applies angular non-functional devices — receipts **`ah:*`**.
    * After precompute, `andrewHillEffectiveHarmonyBars` is full-form and authoritative.
+   * HV path: primary | harmonicVoice (`andrew_hill` exact) — see isAndrewHillHarmonicPath.
    */
   const ahEff = meta?.andrewHillEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'andrew_hill' &&
+    isAndrewHillHarmonicPath(meta) &&
     Array.isArray(ahEff) &&
     ahEff.length === tb &&
     barIndex >= 1 &&

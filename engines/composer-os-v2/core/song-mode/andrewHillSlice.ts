@@ -6,6 +6,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata, HillMode } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -69,6 +70,26 @@ export function isSongwriterAndrewHill(
   genMeta: GenerationMetadata | undefined
 ): genMeta is GenerationMetadata & { songwriterStyleId: 'andrew_hill' } {
   return genMeta?.songwriterStyleId === 'andrew_hill';
+}
+
+/**
+ * Primary songwriter or harmonicVoice selects Andrew Hill harmony authority.
+ * Single-gate (no styleProfile) — Wave-C / bill_evans HV pattern.
+ *
+ * Exact id `andrew_hill` only — soft aliases stay primary-intake via songwriter
+ * normalize; they do **not** engage HV.
+ *
+ * No dual-surface holdbacks (no *Context stamp / style surface).
+ */
+export function isAndrewHillHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'andrew_hill' || voice === 'andrew_hill';
 }
 
 export interface AndrewHillHarmonyAccumulator {

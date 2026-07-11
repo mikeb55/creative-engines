@@ -221,6 +221,17 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
     notes:
       'harmony/precompute hv_full via radioheadEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; radioheadMelodicContext + finalize grammar stay primary-only',
   },
+  {
+    styleId: 'andrew_hill',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'andrewHillEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via andrewHillEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; no dual-surface holdbacks',
+  },
 ];
 
 const REGISTRY_BY_STYLE = new Map<string, HvCapabilityEntry>(

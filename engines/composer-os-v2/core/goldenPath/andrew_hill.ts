@@ -9,5 +9,6 @@ export {
   createAndrewHillHarmonyAccumulator,
   accumulateAndrewHillHarmonyDiagnostics,
   isSongwriterAndrewHill,
+  isAndrewHillHarmonicPath,
   type HillMode,
 } from '../song-mode/andrewHillSlice';
