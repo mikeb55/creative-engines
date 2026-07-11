@@ -6,6 +6,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata, HancockPhase } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -61,6 +62,21 @@ export function isSongwriterHerbieHancock(
   genMeta: GenerationMetadata | undefined
 ): genMeta is GenerationMetadata & { songwriterStyleId: 'herbie_hancock' } {
   return genMeta?.songwriterStyleId === 'herbie_hancock';
+}
+
+/**
+ * Primary songwriter or harmonicVoice selects Herbie Hancock harmony authority.
+ * Single-gate (no styleProfile) — bill_evans HV pattern.
+ */
+export function isHerbieHancockHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'herbie_hancock' || voice === 'herbie_hancock';
 }
 
 function resolveHancockPhase(genMeta: GenerationMetadata & Record<string, unknown>, _seed: number): HancockPhase {

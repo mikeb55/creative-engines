@@ -4,6 +4,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -325,6 +326,21 @@ export function isSongwriterDukeEllington(
   genMeta: GenerationMetadata | undefined
 ): genMeta is GenerationMetadata & { songwriterStyleId: 'duke_ellington' } {
   return genMeta?.songwriterStyleId === 'duke_ellington';
+}
+
+/**
+ * Primary songwriter or harmonicVoice selects Duke Ellington harmony authority.
+ * Single-gate (no styleProfile) — bill_evans HV pattern.
+ */
+export function isDukeEllingtonHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'duke_ellington' || voice === 'duke_ellington';
 }
 
 export interface DukeEllingtonHarmonyAccumulator {

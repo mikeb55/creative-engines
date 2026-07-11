@@ -6,6 +6,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -113,6 +114,21 @@ export function isSongwriterTheloniousMonk(
   genMeta: GenerationMetadata | undefined
 ): genMeta is GenerationMetadata & { songwriterStyleId: 'thelonious_monk' } {
   return genMeta?.songwriterStyleId === 'thelonious_monk';
+}
+
+/**
+ * Primary songwriter or harmonicVoice selects Thelonious Monk harmony authority.
+ * Single-gate (no styleProfile) — bill_evans HV pattern.
+ */
+export function isTheloniousMonkHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'thelonious_monk' || voice === 'thelonious_monk';
 }
 
 export interface TheloniousMonkHarmonyAccumulator {

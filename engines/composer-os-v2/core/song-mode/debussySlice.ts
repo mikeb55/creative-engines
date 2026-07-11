@@ -57,6 +57,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -646,6 +647,21 @@ export function isSongwriterDebussy(
   genMeta: GenerationMetadata | undefined
 ): genMeta is GenerationMetadata & { songwriterStyleId: 'debussy' } {
   return genMeta?.songwriterStyleId === 'debussy';
+}
+
+/**
+ * Primary songwriter or harmonicVoice selects Debussy harmony authority.
+ * Single-gate (no styleProfile) — bill_evans HV pattern. Form/orch untouched.
+ */
+export function isDebussyHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'debussy' || voice === 'debussy';
 }
 
 export interface DebussyHarmonyAccumulator {

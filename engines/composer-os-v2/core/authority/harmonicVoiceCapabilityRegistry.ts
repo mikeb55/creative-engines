@@ -102,6 +102,46 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
     effectiveHarmonyBarsKey: 'billEvansEffectiveHarmonyBars',
     notes: 'harmony/precompute hv_full via billEvansEffectiveHarmonyBars + mosaic merge; truth_registry primary-only',
   },
+  {
+    styleId: 'herbie_hancock',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'herbieHancockEffectiveHarmonyBars',
+    notes: 'harmony/precompute hv_full via herbieHancockEffectiveHarmonyBars + mosaic merge; truth_registry primary-only',
+  },
+  {
+    styleId: 'debussy',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'debussyEffectiveHarmonyBars',
+    notes: 'harmony/precompute hv_full via debussyEffectiveHarmonyBars + mosaic merge; truth_registry primary-only',
+  },
+  {
+    styleId: 'duke_ellington',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'dukeEllingtonEffectiveHarmonyBars',
+    notes: 'harmony/precompute hv_full via dukeEllingtonEffectiveHarmonyBars + mosaic merge; truth_registry primary-only',
+  },
+  {
+    styleId: 'thelonious_monk',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'theloniousMonkEffectiveHarmonyBars',
+    notes: 'harmony/precompute hv_full via theloniousMonkEffectiveHarmonyBars + mosaic merge; truth_registry primary-only',
+  },
 ];
 
 const REGISTRY_BY_STYLE = new Map<string, HvCapabilityEntry>(

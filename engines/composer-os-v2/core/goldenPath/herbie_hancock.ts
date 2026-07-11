@@ -9,5 +9,6 @@ export {
   createHerbieHancockHarmonyAccumulator,
   accumulateHerbieHancockHarmonyDiagnostics,
   isSongwriterHerbieHancock,
+  isHerbieHancockHarmonicPath,
   type HancockPhase,
 } from '../song-mode/herbieHancockSlice';
