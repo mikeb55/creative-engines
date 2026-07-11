@@ -278,6 +278,7 @@ import {
   accumulateGershwinHarmonyDiagnostics,
   createGershwinHarmonyAccumulator,
   finalizeGershwinMetadata,
+  isGershwinHarmonicPath,
   precomputeGershwinEffectiveHarmonyBars,
 } from './gershwinSlice';
 import {
@@ -3307,6 +3308,10 @@ function buildGuitarPart(
   const isSongwriterBartok = genMeta?.songwriterStyleId === 'bartok';
   const isSongwriterBerg = genMeta?.songwriterStyleId === 'berg';
   const isSongwriterGershwin = genMeta?.songwriterStyleId === 'gershwin';
+  const isHarmonicVoiceGershwin =
+    normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
+    'gershwin';
+  const gershwinHarmonicPathActive = isGershwinHarmonicPath(genMeta);
   const isSongwriterArvoPart = genMeta?.songwriterStyleId === 'arvo_part';
   const isHarmonicVoiceArvoPart = isArvoPartHarmonicVoiceId(
     String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')
@@ -3688,8 +3693,15 @@ function buildGuitarPart(
   if (isSongwriterBerg && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeBergEffectiveHarmonyBars(context);
   }
-  if (isSongwriterGershwin && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (gershwinHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeGershwinEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceGershwin && !isSongwriterGershwin) {
+      const gershwinEff = genMeta.gershwinEffectiveHarmonyBars;
+      const gershwinTb = totalBarsFromContext(context);
+      if (Array.isArray(gershwinEff) && gershwinEff.length === gershwinTb) {
+        genMeta.mosaicMergedHarmonyBars = [...gershwinEff];
+      }
+    }
   }
   if (arvoPartHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeArvoPartEffectiveHarmonyBars(context);

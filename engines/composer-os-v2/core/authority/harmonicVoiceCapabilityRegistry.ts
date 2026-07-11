@@ -199,6 +199,17 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
     notes:
       'alias of arvo_part for VRB voiceId harmonicVoice=part (normalizeHarmonicVoiceId does not unify)',
   },
+  {
+    styleId: 'gershwin',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'gershwinEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via gershwinEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; gershwinContext + applyGershwinStyleSurface + API intake stay primary-only',
+  },
 ];
 
 const REGISTRY_BY_STYLE = new Map<string, HvCapabilityEntry>(

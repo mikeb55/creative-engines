@@ -26,6 +26,7 @@ import { isJoniMitchellHarmonicPath } from '../song-mode/joniMitchellSlice';
 import { isWayneShorterHarmonicPath } from '../song-mode/wayneShorterSlice';
 import { isJobimHarmonicPath } from '../song-mode/jobimSlice';
 import { isArvoPartHarmonicPath } from '../song-mode/arvoPartSlice';
+import { isGershwinHarmonicPath } from '../song-mode/gershwinSlice';
 import { getChordForBar } from './harmonyResolution';
 import { buildSectionAwareHarmonySpine } from './harmonySpineSectionLoop';
 import type { ResolvedPitchField } from './pitchFieldSpineTypes';
@@ -131,7 +132,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   { match: (m) => m?.songwriterStyleId === 'quincy_jones', effKey: 'quincyJonesEffectiveHarmonyBars', sliceId: 'quincy_jones' },
   { match: (m) => m?.songwriterStyleId === 'don_sebesky', effKey: 'donSebeskyEffectiveHarmonyBars', sliceId: 'don_sebesky' },
   { match: (m) => m?.songwriterStyleId === 'johnny_mandel', effKey: 'johnnyMandelEffectiveHarmonyBars', sliceId: 'johnny_mandel' },
-  { match: (m) => m?.songwriterStyleId === 'gershwin', effKey: 'gershwinEffectiveHarmonyBars', sliceId: 'gershwin' },
+  { match: (m) => isGershwinHarmonicPath(m), effKey: 'gershwinEffectiveHarmonyBars', sliceId: 'gershwin' },
   { match: (m) => isArvoPartHarmonicPath(m), effKey: 'arvoPartEffectiveHarmonyBars', sliceId: 'arvo_part' },
   { match: (m) => m?.songwriterStyleId === 'satie', effKey: 'satieEffectiveHarmonyBars', sliceId: 'satie' },
   { match: (m) => m?.songwriterStyleId === 'prince', effKey: 'princeEffectiveHarmonyBars', sliceId: 'prince' },

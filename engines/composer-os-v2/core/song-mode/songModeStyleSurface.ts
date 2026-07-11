@@ -251,6 +251,9 @@ export function applyBartokStyleSurface(metadata: GenerationMetadata, primarySon
 
 /**
  * Primary **`gershwin`** — theatre-song sync + Songbook density (`gershwinSlice.ts` harmony receipts separate).
+ *
+ * `gershwinContext` + this surface are primary-only (`runGoldenPath` / primaryId).
+ * Gershwin as `harmonicVoice` does **not** flip them — HV owns harmony authority only.
  */
 export function applyGershwinStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
   if (metadata.songModeHookFirstIdentity !== true) return;

@@ -4,6 +4,7 @@
  */
 
 import type { CompositionContext, GershwinContextMode, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -264,6 +265,29 @@ export function isSongwriterGershwin(
   return genMeta?.songwriterStyleId === 'gershwin';
 }
 
+/**
+ * Primary songwriter or harmonicVoice selects Gershwin harmony authority.
+ * Single-gate (no styleProfile) — Wave-C / bill_evans HV pattern.
+ *
+ * Exact id `gershwin` only — soft aliases (`george_gershwin`, `rhapsody_in_blue`, …)
+ * stay primary-intake via songwriter normalize; they do **not** engage HV.
+ *
+ * **Primary-only surfaces (do not flip under HV):**
+ * - **`gershwinContext`** (`song_aaba` | `rhapsody` | `rhythm_changes`) — primary/API stamp only.
+ * - **`applyGershwinStyleSurface`** — Song Mode bias nudges from primaryId.
+ * - API **`gershwinContext`** intake — primary songwriter only.
+ */
+export function isGershwinHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'gershwin' || voice === 'gershwin';
+}
+
 export interface GershwinHarmonyAccumulator {
   barsConsidered: number;
   functionalTouches: number;
@@ -311,7 +335,10 @@ export function precomputeGershwinEffectiveHarmonyBars(context: CompositionConte
   const tb = context.form.totalBars;
   const seed = context.seed;
   const ggCtx: GershwinContextMode = genMeta.gershwinContext ?? 'song_aaba';
-  genMeta.gershwinContext = ggCtx;
+  // Context stamp stays primary-only — HV must not steal primary surface identity.
+  if (genMeta.songwriterStyleId === 'gershwin') {
+    genMeta.gershwinContext = ggCtx;
+  }
 
   const tonicPc = inferTonicPitchClassFromBar1(context);
   const receipts: string[] = [];

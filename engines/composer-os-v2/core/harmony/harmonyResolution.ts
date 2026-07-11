@@ -15,6 +15,7 @@ import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
 import { isSonicYouthHarmonicPath } from '../song-mode/sonicYouthSlice';
 import { isJoniMitchellHarmonicPath } from '../song-mode/joniMitchellSlice';
 import { isArvoPartHarmonicPath } from '../song-mode/arvoPartSlice';
+import { isGershwinHarmonicPath } from '../song-mode/gershwinSlice';
 import {
   hasSectionMarkerVrbAssignment,
   resolveVoiceRuleBundleForBar,
@@ -602,10 +603,12 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 
   /**
    * Gershwin: `precomputeGershwinEffectiveHarmonyBars` applies Songbook / chromatic / rhythm grid devices — receipts **`gg:*`**.
+   * HV path: primary | harmonicVoice (`gershwin` exact) — see isGershwinHarmonicPath.
+   * gershwinContext + style surface stay primary-only (not this branch).
    */
   const ggEff = meta?.gershwinEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'gershwin' &&
+    isGershwinHarmonicPath(meta) &&
     Array.isArray(ggEff) &&
     ggEff.length === tb &&
     barIndex >= 1 &&
