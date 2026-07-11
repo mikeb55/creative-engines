@@ -238,6 +238,73 @@ function applyChromaticPassingPass(
   }
 }
 
+/**
+ * GCE tonic-family check aligned with finalBarTension gate (`isTonicFamilyChord`).
+ * Piece-final force / safety net only — mid-piece devices untouched.
+ */
+function chordLooksTonicFamily(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return true;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return true;
+  if (/^[^/]*min9/i.test(s)) return true;
+  return false;
+}
+
+/** Piece-final tonic: maj7 (Gershwin Songbook vocabulary; passes finalBarTension tonic-family). */
+function spellGershwinTonicCadence(
+  bar: number,
+  tonicPc: number
+): { symbol: string; receipt: string } {
+  const nm = pitchClassToSharpName(tonicPc);
+  return {
+    symbol: `${nm}maj7`,
+    receipt: `gg:final_tonic_cadence@bar${bar}`,
+  };
+}
+
+/**
+ * Primary force: piece-final bar always lands on tonic-family (mirrors Wayne
+ * `forceFinalBarTonicResolution`). Mid-piece Gershwin devices untouched.
+ */
+function forceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const { symbol, receipt } = spellGershwinTonicCadence(totalBars, tonicPc);
+  out[totalBars - 1] = symbol;
+  receipts.push(`${receipt}|final_bar`);
+}
+
+/**
+ * Safety net: if bar N is still non-tonic after primary force, rewrite to tonic maj7
+ * (mirrors Wayne `enforceFinalBarTonicResolution`).
+ */
+function enforceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || chordLooksTonicFamily(sym)) return;
+  const { symbol, receipt } = spellGershwinTonicCadence(totalBars, tonicPc);
+  out[idx] = symbol;
+  receipts.push(`${receipt}|final_bar_guardrail`);
+}
+
 /** d5 — brief minor-third axis shift (three semitone transpose) for a two-bar window. */
 function applyMinorThirdModulationPass(
   out: string[],
@@ -366,6 +433,10 @@ export function precomputeGershwinEffectiveHarmonyBars(context: CompositionConte
   applySyncopatedAnticipationPass(out, seed, receipts, tb, context);
   applyChromaticPassingPass(out, seed, receipts, tb, context);
   applyMinorThirdModulationPass(out, seed, receipts, tb, context);
+
+  /* Piece-final only: force tonic-family + safety net (Wayne fBT pattern; mid-piece unchanged). */
+  forceFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
+  enforceFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
 
   genMeta.gershwinEffectiveHarmonyBars = out;
   genMeta.gershwinDeviceReceipts = receipts;
