@@ -35,12 +35,15 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
   {
     styleId: 'pat_metheny',
     layers: {
-      harmony: 'hv_partial',
-      precompute: 'hv_partial',
+      harmony: 'hv_full',
+      precompute: 'hv_full',
       truth_registry: 'primary_only',
+      gce_scorer: 'hv_partial',
     },
     styleProfiles: ['STYLE_PAT_METHENY'],
     effectiveHarmonyBarsKey: 'patMethenyEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via patMethenyEffectiveHarmonyBars + mosaic merge; gce_scorer hv_partial; truth_registry primary-only',
   },
   {
     styleId: 'joni_mitchell',

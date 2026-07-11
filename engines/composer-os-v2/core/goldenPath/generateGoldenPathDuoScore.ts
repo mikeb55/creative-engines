@@ -184,6 +184,7 @@ import {
   accumulatePatMethenyHarmonyDiagnostics,
   createPatMethenyHarmonyAccumulator,
   finalizePatMethenyMetadata,
+  isPatMethenyHarmonicPath,
   precomputePatMethenyEffectiveHarmonyBars,
 } from './patMethenySlice';
 import {
@@ -3225,6 +3226,10 @@ function buildGuitarPart(
   const isSongwriterJoniMitchell = genMeta?.songwriterStyleId === 'joni_mitchell';
   const isSongwriterSonicYouth = genMeta?.songwriterStyleId === 'sonic_youth';
   const isSongwriterPatMetheny = genMeta?.songwriterStyleId === 'pat_metheny';
+  const isHarmonicVoicePatMetheny =
+    normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
+    'pat_metheny';
+  const patMethenyHarmonicPathActive = isPatMethenyHarmonicPath(genMeta);
   const styleProf = normalizeStyleProfileId(genMeta?.styleProfile);
   const styleSonicYouthSurface = styleProf === 'STYLE_SONIC_YOUTH';
   const styleJoniMitchellSurface = styleProf === 'STYLE_JONI_MITCHELL';
@@ -3506,8 +3511,15 @@ function buildGuitarPart(
   if ((isSongwriterSonicYouth || styleSonicYouthSurface) && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeSonicYouthEffectiveHarmonyBars(context);
   }
-  if ((isSongwriterPatMetheny || stylePatMethenySurface) && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (patMethenyHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputePatMethenyEffectiveHarmonyBars(context);
+    if (isHarmonicVoicePatMetheny && !isSongwriterPatMetheny) {
+      const patMethenyEff = genMeta.patMethenyEffectiveHarmonyBars;
+      const patMethenyTb = totalBarsFromContext(context);
+      if (Array.isArray(patMethenyEff) && patMethenyEff.length === patMethenyTb) {
+        genMeta.mosaicMergedHarmonyBars = [...patMethenyEff];
+      }
+    }
   }
   const wayneStyleTransferAuthoritative =
     isSongwriterWayneShorter && genMeta?.styleTransferWayneHarmonyAuthoritative === true;

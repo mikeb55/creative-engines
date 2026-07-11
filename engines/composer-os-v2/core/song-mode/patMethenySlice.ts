@@ -4,6 +4,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { coarseSectionRoleFromBar, inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -347,6 +348,25 @@ export function isSongwriterPatMetheny(
   genMeta: GenerationMetadata | undefined
 ): genMeta is GenerationMetadata & { songwriterStyleId: 'pat_metheny' } {
   return genMeta?.songwriterStyleId === 'pat_metheny';
+}
+
+/**
+ * Primary songwriter, STYLE_PAT_METHENY surface, or harmonicVoice selects Pat Metheny harmony authority.
+ */
+export function isPatMethenyHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+    styleProfile?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return (
+    primary === 'pat_metheny' ||
+    voice === 'pat_metheny' ||
+    metadata?.styleProfile === 'STYLE_PAT_METHENY'
+  );
 }
 
 export interface PatMethenyHarmonyAccumulator {

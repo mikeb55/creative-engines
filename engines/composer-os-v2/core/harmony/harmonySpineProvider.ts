@@ -16,6 +16,7 @@ import { isFrankZappaHarmonicPath } from '../song-mode/frankZappaSlice';
 import { isHoldsworthHarmonicPath } from '../song-mode/holdsworthScaleSlice';
 import { isFrippHarmonicPath } from '../song-mode/frippSystemsSlice';
 import { isBillEvansHarmonicPath } from '../song-mode/billEvansSlice';
+import { isPatMethenyHarmonicPath } from '../song-mode/patMethenySlice';
 import { getChordForBar } from './harmonyResolution';
 import { buildSectionAwareHarmonySpine } from './harmonySpineSectionLoop';
 import type { ResolvedPitchField } from './pitchFieldSpineTypes';
@@ -81,7 +82,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
     sliceId: 'sonic_youth',
   },
   {
-    match: (m) => m?.songwriterStyleId === 'pat_metheny' || m?.styleProfile === 'STYLE_PAT_METHENY',
+    match: (m) => isPatMethenyHarmonicPath(m),
     effKey: 'patMethenyEffectiveHarmonyBars',
     sliceId: 'pat_metheny',
   },
