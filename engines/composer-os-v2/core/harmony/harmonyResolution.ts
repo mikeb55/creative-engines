@@ -12,6 +12,7 @@ import type { CompositionContext } from '../compositionContext';
 import { applyVoiceBundleHarmonicRhythm } from '../composer/voiceBundleHarmonicRhythm';
 import { resolveHarmonyAuthority } from '../authority/adapters/harmonyAuthorityAdapter';
 import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
+import { isSonicYouthHarmonicPath } from '../song-mode/sonicYouthSlice';
 import {
   hasSectionMarkerVrbAssignment,
   resolveVoiceRuleBundleForBar,
@@ -177,10 +178,11 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   /**
    * Sonic Youth: `precomputeSonicYouthEffectiveHarmonyBars` layers receipts + optional cadence nudges.
    * After precompute, `sonicYouthEffectiveHarmonyBars` is full-form and authoritative.
+   * HV path: primary | harmonicVoice | STYLE_SONIC_YOUTH (see isSonicYouthHarmonicPath).
    */
   const syEff = meta?.sonicYouthEffectiveHarmonyBars;
   if (
-    (meta?.songwriterStyleId === 'sonic_youth' || meta?.styleProfile === 'STYLE_SONIC_YOUTH') &&
+    isSonicYouthHarmonicPath(meta) &&
     Array.isArray(syEff) &&
     syEff.length === tb &&
     barIndex >= 1 &&

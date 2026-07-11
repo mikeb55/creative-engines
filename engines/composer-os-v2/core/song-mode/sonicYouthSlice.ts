@@ -6,6 +6,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import type { ChordEvent, MeasureModel } from '../score-model/scoreModelTypes';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { parseChordSymbol } from '../harmony/chordSymbolAnalysis';
@@ -26,6 +27,26 @@ export function isSongwriterSonicYouth(
   genMeta: GenerationMetadata | undefined
 ): genMeta is GenerationMetadata & { songwriterStyleId: 'sonic_youth' } {
   return genMeta?.songwriterStyleId === 'sonic_youth';
+}
+
+/**
+ * Primary songwriter, STYLE_SONIC_YOUTH surface, or harmonicVoice selects Sonic Youth harmony authority.
+ * Texture / ChordEvent.sonicYouth annotation stays on primary|styleProfile gates only — not this helper.
+ */
+export function isSonicYouthHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+    styleProfile?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return (
+    primary === 'sonic_youth' ||
+    voice === 'sonic_youth' ||
+    metadata?.styleProfile === 'STYLE_SONIC_YOUTH'
+  );
 }
 
 export interface SonicYouthHarmonyAccumulator {

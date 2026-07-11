@@ -17,6 +17,7 @@ import { isHoldsworthHarmonicPath } from '../song-mode/holdsworthScaleSlice';
 import { isFrippHarmonicPath } from '../song-mode/frippSystemsSlice';
 import { isBillEvansHarmonicPath } from '../song-mode/billEvansSlice';
 import { isPatMethenyHarmonicPath } from '../song-mode/patMethenySlice';
+import { isSonicYouthHarmonicPath } from '../song-mode/sonicYouthSlice';
 import { getChordForBar } from './harmonyResolution';
 import { buildSectionAwareHarmonySpine } from './harmonySpineSectionLoop';
 import type { ResolvedPitchField } from './pitchFieldSpineTypes';
@@ -77,7 +78,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
     sliceId: 'joni_mitchell',
   },
   {
-    match: (m) => m?.songwriterStyleId === 'sonic_youth' || m?.styleProfile === 'STYLE_SONIC_YOUTH',
+    match: (m) => isSonicYouthHarmonicPath(m),
     effKey: 'sonicYouthEffectiveHarmonyBars',
     sliceId: 'sonic_youth',
   },

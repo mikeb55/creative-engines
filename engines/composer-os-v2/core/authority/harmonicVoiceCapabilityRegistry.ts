@@ -58,12 +58,15 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
   {
     styleId: 'sonic_youth',
     layers: {
-      harmony: 'hv_partial',
-      precompute: 'hv_partial',
+      harmony: 'hv_full',
+      precompute: 'hv_full',
       truth_registry: 'primary_only',
+      gce_scorer: 'hv_partial',
     },
     styleProfiles: ['STYLE_SONIC_YOUTH'],
     effectiveHarmonyBarsKey: 'sonicYouthEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via sonicYouthEffectiveHarmonyBars + mosaic merge; gce_scorer hv_partial; truth_registry primary-only; texture annotation stays primary|styleProfile',
   },
   {
     styleId: 'allan_holdsworth',
