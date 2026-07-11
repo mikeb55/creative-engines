@@ -16,6 +16,7 @@ import { isSonicYouthHarmonicPath } from '../song-mode/sonicYouthSlice';
 import { isJoniMitchellHarmonicPath } from '../song-mode/joniMitchellSlice';
 import { isArvoPartHarmonicPath } from '../song-mode/arvoPartSlice';
 import { isGershwinHarmonicPath } from '../song-mode/gershwinSlice';
+import { isRadioheadHarmonicPath } from '../song-mode/radioheadSlice';
 import {
   hasSectionMarkerVrbAssignment,
   resolveVoiceRuleBundleForBar,
@@ -136,10 +137,12 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   /**
    * Radiohead (OK Computer–era): `precomputeRadioheadEffectiveHarmonyBars` layers devices on the locked
    * progression. After precompute, `radioheadEffectiveHarmonyBars` is full-form and authoritative.
+   * HV path: primary | harmonicVoice (`radiohead` exact) — see isRadioheadHarmonicPath.
+   * radioheadMelodicContext + finalize grammar stay primary-only (not this branch).
    */
   const rhEff = meta?.radioheadEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'radiohead' &&
+    isRadioheadHarmonicPath(meta) &&
     Array.isArray(rhEff) &&
     rhEff.length === tb &&
     barIndex >= 1 &&

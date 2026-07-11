@@ -10,6 +10,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import {
   collectRadioheadMelodicGrammarReceipts,
   planMelodyBehaviour,
@@ -472,6 +473,28 @@ function looksLikeIvMajorSubdominant(symbol: string, tonicPc: number): boolean {
   return true;
 }
 
+/**
+ * Primary songwriter or harmonicVoice selects Radiohead harmony authority.
+ * Single-gate (no styleProfile) — Wave-C / bill_evans HV pattern.
+ *
+ * Exact id `radiohead` only — soft aliases stay primary-intake via songwriter
+ * normalize; they do **not** engage HV.
+ *
+ * **Primary-only surfaces (do not flip under HV):**
+ * - **`radioheadMelodicContext`** (`acoustic` | `electronic`) — primary/API + finalize stamp.
+ * - Melody / rhythm / orchestration grammar finalize — primary songwriter only.
+ */
+export function isRadioheadHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'radiohead' || voice === 'radiohead';
+}
+
 export interface RadioheadHarmonyAccumulator {
   barsConsidered: number;
   maj7Touches: number;
@@ -741,6 +764,8 @@ export function precomputeRadioheadEffectiveHarmonyBars(context: CompositionCont
   const seed = context.seed;
   const period = radioheadHarmonicPeriodFromSeed(seed);
   const primarySystem = radioheadHarmonicPrimarySystemForPeriod(period);
+  // Period/system are seed-derived harmony metadata (HV path may stamp).
+  // Melodic context + finalize grammar stay primary-only — see isRadioheadHarmonicPath.
   genMeta.radioheadHarmonicPeriod = period;
   genMeta.radioheadHarmonicPrimarySystem = primarySystem;
 

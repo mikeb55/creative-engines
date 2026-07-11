@@ -158,6 +158,7 @@ import {
   accumulateRadioheadHarmonyDiagnostics,
   createRadioheadHarmonyAccumulator,
   finalizeRadioheadMetadata,
+  isRadioheadHarmonicPath,
   precomputeRadioheadEffectiveHarmonyBars,
 } from './radioheadSlice';
 import {
@@ -3246,6 +3247,10 @@ function buildGuitarPart(
   const isSongwriterBrianWilson = genMeta?.songwriterStyleId === 'brian_wilson';
   const isSongwriterStevieWonder = genMeta?.songwriterStyleId === 'stevie_wonder';
   const isSongwriterRadiohead = genMeta?.songwriterStyleId === 'radiohead';
+  const isHarmonicVoiceRadiohead =
+    normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
+    'radiohead';
+  const radioheadHarmonicPathActive = isRadioheadHarmonicPath(genMeta);
   const isSongwriterJamesBrown = genMeta?.songwriterStyleId === 'james_brown';
   const isSongwriterJoniMitchell = genMeta?.songwriterStyleId === 'joni_mitchell';
   const isHarmonicVoiceJoniMitchell =
@@ -3551,8 +3556,15 @@ function buildGuitarPart(
   if (isSongwriterStevieWonder && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeStevieWonderEffectiveHarmonyBars(context);
   }
-  if (isSongwriterRadiohead && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (radioheadHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeRadioheadEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceRadiohead && !isSongwriterRadiohead) {
+      const radioheadEff = genMeta.radioheadEffectiveHarmonyBars;
+      const radioheadTb = totalBarsFromContext(context);
+      if (Array.isArray(radioheadEff) && radioheadEff.length === radioheadTb) {
+        genMeta.mosaicMergedHarmonyBars = [...radioheadEff];
+      }
+    }
   }
   if (isSongwriterJamesBrown && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeJamesBrownEffectiveHarmonyBars(context);

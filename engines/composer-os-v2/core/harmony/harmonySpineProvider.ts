@@ -27,6 +27,7 @@ import { isWayneShorterHarmonicPath } from '../song-mode/wayneShorterSlice';
 import { isJobimHarmonicPath } from '../song-mode/jobimSlice';
 import { isArvoPartHarmonicPath } from '../song-mode/arvoPartSlice';
 import { isGershwinHarmonicPath } from '../song-mode/gershwinSlice';
+import { isRadioheadHarmonicPath } from '../song-mode/radioheadSlice';
 import { getChordForBar } from './harmonyResolution';
 import { buildSectionAwareHarmonySpine } from './harmonySpineSectionLoop';
 import type { ResolvedPitchField } from './pitchFieldSpineTypes';
@@ -79,7 +80,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
 }> = [
   { match: (m) => m?.songwriterStyleId === 'brian_wilson', effKey: 'brianWilsonEffectiveHarmonyBars', sliceId: 'brian_wilson' },
   { match: (m) => m?.songwriterStyleId === 'stevie_wonder', effKey: 'stevieWonderEffectiveHarmonyBars', sliceId: 'stevie_wonder' },
-  { match: (m) => m?.songwriterStyleId === 'radiohead', effKey: 'radioheadEffectiveHarmonyBars', sliceId: 'radiohead' },
+  { match: (m) => isRadioheadHarmonicPath(m), effKey: 'radioheadEffectiveHarmonyBars', sliceId: 'radiohead' },
   { match: (m) => m?.songwriterStyleId === 'james_brown', effKey: 'jamesBrownEffectiveHarmonyBars', sliceId: 'james_brown' },
   {
     match: (m) => isJoniMitchellHarmonicPath(m),

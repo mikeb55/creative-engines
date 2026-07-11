@@ -210,6 +210,17 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
     notes:
       'harmony/precompute hv_full via gershwinEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; gershwinContext + applyGershwinStyleSurface + API intake stay primary-only',
   },
+  {
+    styleId: 'radiohead',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'radioheadEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via radioheadEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; radioheadMelodicContext + finalize grammar stay primary-only',
+  },
 ];
 
 const REGISTRY_BY_STYLE = new Map<string, HvCapabilityEntry>(
