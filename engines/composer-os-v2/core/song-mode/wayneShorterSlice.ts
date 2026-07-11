@@ -626,6 +626,73 @@ function applyPlateauPedal(symbol: string, prevSymbol: string, seed: number, bar
   return `${upper}/${pitchClassToSharpName(pedalPc)}`;
 }
 
+/**
+ * GCE tonic-family check aligned with finalBarTension gate (`isTonicFamilyChord`).
+ * Used only by piece-final force / safety net — does not change mid-piece devices.
+ */
+function chordLooksTonicFamily(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return true;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return true;
+  if (/^[^/]*min9/i.test(s)) return true;
+  return false;
+}
+
+/** Piece-final tonic: Lydian maj7#11 (Wayne vocabulary; passes finalBarTension tonic-family). */
+function spellWayneTonicCadence(
+  bar: number,
+  tonicPc: number
+): { symbol: string; receipt: string } {
+  const nm = pitchClassToSharpName(tonicPc);
+  return {
+    symbol: `${nm}maj7#11`,
+    receipt: `ws:final_tonic_cadence@bar${bar}`,
+  };
+}
+
+/**
+ * Primary force: piece-final bar always lands on tonic-family (mirrors Coltrane
+ * spellChangesBar `bar === totalBars` branch). Mid-piece colour / d1–d5 untouched.
+ */
+function forceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const { symbol, receipt } = spellWayneTonicCadence(totalBars, tonicPc);
+  out[totalBars - 1] = symbol;
+  receipts.push(`${receipt}|final_bar`);
+}
+
+/**
+ * Safety net: if bar N is still non-tonic after primary force, rewrite to tonic maj7#11
+ * (mirrors Coltrane `enforceFinalBarTonicResolution`).
+ */
+function enforceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || chordLooksTonicFamily(sym)) return;
+  const { symbol, receipt } = spellWayneTonicCadence(totalBars, tonicPc);
+  out[idx] = symbol;
+  receipts.push(`${receipt}|final_bar_guardrail`);
+}
+
 /** @deprecated — use resolveBarSymbol */
 export function precomputeWayneShorterEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
@@ -768,6 +835,10 @@ export function precomputeWayneShorterEffectiveHarmonyBars(context: CompositionC
     out[b - 1] = applyShorterTensionColour(out[b - 1]!, seed, b);
   }
   applyChromaticWedgePass(out, receipts, tb, seed, tonicPc);
+
+  /* Piece-final only: force tonic-family + safety net (Coltrane fBT pattern; mid-piece unchanged). */
+  forceFinalBarTonicResolution(out, tonicPc, tb, receipts.deviceReceipts, context);
+  enforceFinalBarTonicResolution(out, tonicPc, tb, receipts.deviceReceipts, context);
 
   genMeta.wayneShorterEffectiveHarmonyBars = out;
   genMeta.wayneShorterDeviceReceipts = receipts.deviceReceipts;
