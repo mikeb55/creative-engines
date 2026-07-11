@@ -20,6 +20,7 @@ import { isRadioheadHarmonicPath } from '../song-mode/radioheadSlice';
 import { isAndrewHillHarmonicPath } from '../song-mode/andrewHillSlice';
 import { isKateBushHarmonicPath } from '../song-mode/kateBushSlice';
 import { isSatieHarmonicPath } from '../song-mode/satieSlice';
+import { isColePorterHarmonicPath } from '../song-mode/colePorterSlice';
 import {
   hasSectionMarkerVrbAssignment,
   resolveVoiceRuleBundleForBar,
@@ -699,10 +700,12 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 
   /**
    * Cole Porter: `precomputeColePorterEffectiveHarmonyBars` applies GAS chromatic / secondary-dominant devices — receipts **`cp:*`**.
+   * HV path: primary | harmonicVoice (`cole_porter` exact) — see isColePorterHarmonicPath.
+   * Style surface + beguine stamps stay primary-only (not this branch).
    */
   const colePorterEff = meta?.colePorterEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'cole_porter' &&
+    isColePorterHarmonicPath(meta) &&
     Array.isArray(colePorterEff) &&
     colePorterEff.length === tb &&
     barIndex >= 1 &&

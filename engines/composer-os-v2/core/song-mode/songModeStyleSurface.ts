@@ -488,6 +488,10 @@ export function applyMilesDavisStyleSurface(metadata: GenerationMetadata, primar
 
 /**
  * Primary **`cole_porter`** — theatre-jazz standard harmony: slightly denser syncopation, cleaner cadential resolution metadata.
+ *
+ * This surface is primary-only (`runGoldenPath` / primaryId).
+ * Cole Porter as `harmonicVoice` does **not** flip it — HV owns harmony authority only.
+ * Beguine stamps in `colePorterSlice` are likewise primary-only.
  */
 export function applyColePorterStyleSurface(metadata: GenerationMetadata, primarySongwriterStyle: string | undefined): void {
   if (metadata.songModeHookFirstIdentity !== true) return;

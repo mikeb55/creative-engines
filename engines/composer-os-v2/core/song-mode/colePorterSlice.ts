@@ -3,8 +3,11 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
+import { buildHarmonyPlanFromBars, buildChordSymbolPlanFromBars } from '../harmony/chordProgressionParser';
+import { buildLockedHarmonyBarContracts, assertLockedHarmonyContractsToneParity } from '../harmony/harmonyBarContract';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
 
@@ -79,7 +82,13 @@ function looksPlainDominantSeventh(symbol: string): boolean {
   const m = hp.match(ROOT_AT_START);
   if (!m?.[1]) return false;
   const rest = hp.slice(m[1].length);
-  return /^7([^a-z]|$)|^7\(/.test(rest) || /^9([^a-z]|$)/.test(rest) || /^13([^a-z]|$)/.test(rest);
+  // Bare `7b9` / `7alt` (no parens) are dominant-family — same enrich path as `7` / `7(b9)`.
+  // (`7#9` already matched via `[^a-z]` after `7`.)
+  return (
+    /^7([^a-z]|$)|^7\(|^7b9|^7alt/.test(rest) ||
+    /^9([^a-z]|$)/.test(rest) ||
+    /^13([^a-z]|$)/.test(rest)
+  );
 }
 
 function phraseRoleAtBar(
@@ -311,6 +320,8 @@ function applyBeguineRhythmFlag(
   tb: number,
   context: CompositionContext
 ): void {
+  // Beguine feel stamps stay primary-only — HV must not steal primary surface identity.
+  if (genMeta.songwriterStyleId !== 'cole_porter') return;
   genMeta.porterBeguineFeelActive = true;
   const bars: number[] = [];
   for (let b = 1; b <= tb; b++) {
@@ -322,10 +333,53 @@ function applyBeguineRhythmFlag(
   if (bars.length) genMeta.porterBeguineBars = bars;
 }
 
+/**
+ * Echo slice-authoritative bars into locked + parsed so eval strip / LOCK
+ * match `getChordForBar` (STYLE_SOPHISTICATED_POP dressing otherwise leaves
+ * raw builtin A7alt in parsedCustomProgressionBars and stripFromContext
+ * prefers that over calmed effective bars).
+ */
+function syncColePorterAuthorityBars(context: CompositionContext, out: string[]): void {
+  const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
+  const tb = context.form.totalBars;
+  if (out.length !== tb) return;
+
+  context.lockedHarmonyBarsRaw = [...out];
+  context.harmony = buildHarmonyPlanFromBars(out);
+  context.chordSymbolPlan = buildChordSymbolPlanFromBars(out);
+  context.lockedHarmonyBarContracts = buildLockedHarmonyBarContracts(out);
+  assertLockedHarmonyContractsToneParity(context.lockedHarmonyBarContracts);
+
+  genMeta.customChordProgressionSummary = out.join(' | ');
+  genMeta.parsedCustomProgressionBars = [...out];
+}
+
 export function isSongwriterColePorter(
   genMeta: GenerationMetadata | undefined
 ): genMeta is GenerationMetadata & { songwriterStyleId: 'cole_porter' } {
   return genMeta?.songwriterStyleId === 'cole_porter';
+}
+
+/**
+ * Primary songwriter or harmonicVoice selects Cole Porter harmony authority.
+ * Single-gate (no styleProfile) — Wave-C / bill_evans HV pattern.
+ *
+ * Exact id `cole_porter` only — soft aliases (`porter`, …) stay primary-intake via
+ * songwriter normalize; they do **not** engage HV.
+ *
+ * **Primary-only surfaces (do not flip under HV):**
+ * - **`applyColePorterStyleSurface`** — Song Mode bias nudges from primaryId.
+ * - Beguine feel stamps (`porterBeguineFeelActive` / `porterBeguineBars`).
+ */
+export function isColePorterHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'cole_porter' || voice === 'cole_porter';
 }
 
 export interface ColePorterHarmonyAccumulator {
@@ -403,6 +457,9 @@ export function precomputeColePorterEffectiveHarmonyBars(context: CompositionCon
   genMeta.colePorterEffectiveHarmonyBars = out;
   genMeta.colePorterDeviceReceipts = receipts;
   genMeta.colePorterAntiElaborationGuards = guards;
+
+  // Keep strip/LOCK in lockstep with slice authority (calms bare 7b9 / 7alt endings).
+  syncColePorterAuthorityBars(context, out);
 
   if (tb === 32) {
     const uniq = new Set(out.map((s) => s.trim()));

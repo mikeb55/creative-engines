@@ -254,6 +254,17 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
     notes:
       'harmony/precompute hv_full via satieEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; satieContext + applySatieStyleSurface stay primary-only',
   },
+  {
+    styleId: 'cole_porter',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'colePorterEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via colePorterEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; applyColePorterStyleSurface + beguine stamps primary-only',
+  },
 ];
 
 const REGISTRY_BY_STYLE = new Map<string, HvCapabilityEntry>(

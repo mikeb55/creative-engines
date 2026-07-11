@@ -321,6 +321,7 @@ import {
   accumulateColePorterHarmonyDiagnostics,
   createColePorterHarmonyAccumulator,
   finalizeColePorterMetadata,
+  isColePorterHarmonicPath,
   precomputeColePorterEffectiveHarmonyBars,
 } from './colePorterSlice';
 import {
@@ -3342,6 +3343,10 @@ function buildGuitarPart(
   const isSongwriterBeatles = genMeta?.songwriterStyleId === 'beatles';
   const isSongwriterFelaKuti = genMeta?.songwriterStyleId === 'fela_kuti';
   const isSongwriterColePorter = genMeta?.songwriterStyleId === 'cole_porter';
+  const isHarmonicVoiceColePorter =
+    normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
+    'cole_porter';
+  const colePorterHarmonicPathActive = isColePorterHarmonicPath(genMeta);
   const isSongwriterMariaSchneider = genMeta?.songwriterStyleId === 'maria_schneider';
   const isSongwriterKennyWheeler = genMeta?.songwriterStyleId === 'kenny_wheeler';
   const isSongwriterJanGarbarek = genMeta?.songwriterStyleId === 'jan_garbarek';
@@ -3759,8 +3764,15 @@ function buildGuitarPart(
   if (isSongwriterFelaKuti && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeFelaKutiEffectiveHarmonyBars(context);
   }
-  if (isSongwriterColePorter && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (colePorterHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeColePorterEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceColePorter && !isSongwriterColePorter) {
+      const colePorterEff = genMeta.colePorterEffectiveHarmonyBars;
+      const colePorterTb = totalBarsFromContext(context);
+      if (Array.isArray(colePorterEff) && colePorterEff.length === colePorterTb) {
+        genMeta.mosaicMergedHarmonyBars = [...colePorterEff];
+      }
+    }
   }
   if (isSongwriterMariaSchneider && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeMariaSchneiderEffectiveHarmonyBars(context);
