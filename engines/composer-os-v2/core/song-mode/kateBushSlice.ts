@@ -7,6 +7,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -48,6 +49,26 @@ export function isSongwriterKateBush(
   genMeta: GenerationMetadata | undefined
 ): genMeta is GenerationMetadata & { songwriterStyleId: 'kate_bush' } {
   return genMeta?.songwriterStyleId === 'kate_bush';
+}
+
+/**
+ * Primary songwriter or harmonicVoice selects Kate Bush harmony authority.
+ * Single-gate (no styleProfile) — Wave-C / bill_evans HV pattern.
+ *
+ * Exact id `kate_bush` only — soft aliases stay primary-intake via songwriter
+ * normalize; they do **not** engage HV.
+ *
+ * No dual-surface holdbacks (no *Context stamp / style surface).
+ */
+export function isKateBushHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'kate_bush' || voice === 'kate_bush';
 }
 
 export interface KateBushHarmonyAccumulator {

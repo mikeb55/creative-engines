@@ -232,6 +232,17 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
     notes:
       'harmony/precompute hv_full via andrewHillEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; no dual-surface holdbacks',
   },
+  {
+    styleId: 'kate_bush',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'kateBushEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via kateBushEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; no dual-surface holdbacks',
+  },
 ];
 
 const REGISTRY_BY_STYLE = new Map<string, HvCapabilityEntry>(

@@ -18,6 +18,7 @@ import { isArvoPartHarmonicPath } from '../song-mode/arvoPartSlice';
 import { isGershwinHarmonicPath } from '../song-mode/gershwinSlice';
 import { isRadioheadHarmonicPath } from '../song-mode/radioheadSlice';
 import { isAndrewHillHarmonicPath } from '../song-mode/andrewHillSlice';
+import { isKateBushHarmonicPath } from '../song-mode/kateBushSlice';
 import {
   hasSectionMarkerVrbAssignment,
   resolveVoiceRuleBundleForBar,
@@ -1015,10 +1016,11 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   /**
    * Kate Bush: `precomputeKateBushEffectiveHarmonyBars` applies modal texture / pedal / anti–dense-stack devices + receipts.
    * After precompute, `kateBushEffectiveHarmonyBars` is full-form and authoritative.
+   * HV path: primary | harmonicVoice (`kate_bush` exact) — see isKateBushHarmonicPath.
    */
   const kbEff = meta?.kateBushEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'kate_bush' &&
+    isKateBushHarmonicPath(meta) &&
     Array.isArray(kbEff) &&
     kbEff.length === tb &&
     barIndex >= 1 &&

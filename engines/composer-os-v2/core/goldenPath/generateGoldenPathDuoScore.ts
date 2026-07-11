@@ -548,6 +548,7 @@ import {
   accumulateKateBushHarmonyDiagnostics,
   createKateBushHarmonyAccumulator,
   finalizeKateBushMetadata,
+  isKateBushHarmonicPath,
   precomputeKateBushEffectiveHarmonyBars,
 } from './kateBushSlice';
 import {
@@ -3216,6 +3217,10 @@ function buildGuitarPart(
   const herbieHancockHarmonicPathActive = isHerbieHancockHarmonicPath(genMeta);
   const isSongwriterSondheim = genMeta?.songwriterStyleId === 'stephen_sondheim';
   const isSongwriterKateBush = genMeta?.songwriterStyleId === 'kate_bush';
+  const isHarmonicVoiceKateBush =
+    normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
+    'kate_bush';
+  const kateBushHarmonicPathActive = isKateBushHarmonicPath(genMeta);
   const isSongwriterTheloniousMonk = genMeta?.songwriterStyleId === 'thelonious_monk';
   const isHarmonicVoiceTheloniousMonk =
     normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
@@ -3885,8 +3890,15 @@ function buildGuitarPart(
   if (isSongwriterSondheim && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeSondheimEffectiveHarmonyBars(context);
   }
-  if (isSongwriterKateBush && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (kateBushHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeKateBushEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceKateBush && !isSongwriterKateBush) {
+      const kateBushEff = genMeta.kateBushEffectiveHarmonyBars;
+      const kateBushTb = totalBarsFromContext(context);
+      if (Array.isArray(kateBushEff) && kateBushEff.length === kateBushTb) {
+        genMeta.mosaicMergedHarmonyBars = [...kateBushEff];
+      }
+    }
   }
   if (theloniousMonkHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeTheloniousMonkEffectiveHarmonyBars(context);
