@@ -62,3 +62,7 @@ smoke-out2.txt
 _ci-smoke-proxy.log
 
 docs/RoadMaps/
+
+# HV authority style verify harness outputs
+engines/composer-os-v2/scripts/_hvVerifyOut/
+
