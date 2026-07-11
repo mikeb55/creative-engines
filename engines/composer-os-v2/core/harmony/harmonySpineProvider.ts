@@ -22,6 +22,7 @@ import { isHerbieHancockHarmonicPath } from '../song-mode/herbieHancockSlice';
 import { isTheloniousMonkHarmonicPath } from '../song-mode/theloniousMonkSlice';
 import { isPatMethenyHarmonicPath } from '../song-mode/patMethenySlice';
 import { isSonicYouthHarmonicPath } from '../song-mode/sonicYouthSlice';
+import { isJoniMitchellHarmonicPath } from '../song-mode/joniMitchellSlice';
 import { isWayneShorterHarmonicPath } from '../song-mode/wayneShorterSlice';
 import { isJobimHarmonicPath } from '../song-mode/jobimSlice';
 import { getChordForBar } from './harmonyResolution';
@@ -79,7 +80,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   { match: (m) => m?.songwriterStyleId === 'radiohead', effKey: 'radioheadEffectiveHarmonyBars', sliceId: 'radiohead' },
   { match: (m) => m?.songwriterStyleId === 'james_brown', effKey: 'jamesBrownEffectiveHarmonyBars', sliceId: 'james_brown' },
   {
-    match: (m) => m?.songwriterStyleId === 'joni_mitchell' || m?.styleProfile === 'STYLE_JONI_MITCHELL',
+    match: (m) => isJoniMitchellHarmonicPath(m),
     effKey: 'joniMitchellEffectiveHarmonyBars',
     sliceId: 'joni_mitchell',
   },

@@ -4,6 +4,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata, JoniMitchellPhaseMode } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { coarseSectionRoleFromBar, inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -57,6 +58,27 @@ export function isSongwriterJoniMitchell(
   genMeta: GenerationMetadata | undefined
 ): genMeta is GenerationMetadata & { songwriterStyleId: 'joni_mitchell' } {
   return genMeta?.songwriterStyleId === 'joni_mitchell';
+}
+
+/**
+ * Primary songwriter, STYLE_JONI_MITCHELL surface, or harmonicVoice selects Joni Mitchell harmony authority.
+ * Soft aliases (`joni` / `mitchell` / `jm`) stay primary-only via songwriter intake — HV requires exact `joni_mitchell`.
+ * `joniPhase` and `joniStyleHarmonyPolicy` stay primary / styleProfile-only — not this helper.
+ */
+export function isJoniMitchellHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+    styleProfile?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return (
+    primary === 'joni_mitchell' ||
+    voice === 'joni_mitchell' ||
+    metadata?.styleProfile === 'STYLE_JONI_MITCHELL'
+  );
 }
 
 export interface JoniMitchellHarmonyAccumulator {

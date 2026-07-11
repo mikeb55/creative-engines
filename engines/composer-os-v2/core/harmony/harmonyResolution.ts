@@ -13,6 +13,7 @@ import { applyVoiceBundleHarmonicRhythm } from '../composer/voiceBundleHarmonicR
 import { resolveHarmonyAuthority } from '../authority/adapters/harmonyAuthorityAdapter';
 import { getVoiceRuleBundle } from '../composer/voiceRuleBundles';
 import { isSonicYouthHarmonicPath } from '../song-mode/sonicYouthSlice';
+import { isJoniMitchellHarmonicPath } from '../song-mode/joniMitchellSlice';
 import {
   hasSectionMarkerVrbAssignment,
   resolveVoiceRuleBundleForBar,
@@ -163,10 +164,11 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   /**
    * Joni Mitchell (modal open-tuning): `precomputeJoniMitchellEffectiveHarmonyBars` applies modal holds + guards.
    * After precompute, `joniMitchellEffectiveHarmonyBars` is full-form and authoritative.
+   * HV path: primary | harmonicVoice | STYLE_JONI_MITCHELL (see isJoniMitchellHarmonicPath).
    */
   const jmEff = meta?.joniMitchellEffectiveHarmonyBars;
   if (
-    (meta?.songwriterStyleId === 'joni_mitchell' || meta?.styleProfile === 'STYLE_JONI_MITCHELL') &&
+    isJoniMitchellHarmonicPath(meta) &&
     Array.isArray(jmEff) &&
     jmEff.length === tb &&
     barIndex >= 1 &&

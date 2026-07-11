@@ -48,12 +48,15 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
   {
     styleId: 'joni_mitchell',
     layers: {
-      harmony: 'hv_partial',
-      precompute: 'hv_partial',
+      harmony: 'hv_full',
+      precompute: 'hv_full',
       truth_registry: 'primary_only',
+      gce_scorer: 'hv_partial',
     },
     styleProfiles: ['STYLE_JONI_MITCHELL'],
     effectiveHarmonyBarsKey: 'joniMitchellEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via joniMitchellEffectiveHarmonyBars + mosaic merge; gce_scorer hv_partial; truth_registry primary-only; joniPhase + joniStyleHarmonyPolicy stay primary|styleProfile',
   },
   {
     styleId: 'sonic_youth',
