@@ -285,6 +285,10 @@ function phraseFinalSoftenHardMaj7(
 
 function maybeReduceRelentlessAlt(symbol: string, guards: JobimAntiElaborationGuards): string {
   const tl = parseChordSymbol(symbol).harmonyPart.toLowerCase();
+  // TODO(latent): `/\balt\b/` fails on compact spellings like `A7alt` / `a7alt`
+  // (no word boundary between digit and `alt`). Mid-piece relentless-alt reduction
+  // is under-fired generally — separate from finalBarTension piece-final tonic lock.
+  // Do not conflate with forceFinalBarTonicResolution / enforceFinalBarTonicResolution.
   if (!/\balt\b|7\(.*alt/.test(tl)) return symbol;
   guards.alteredDominantReduced++;
   const root = parseChordSymbol(symbol).harmonyPart.match(ROOT_AT_START)?.[1];
