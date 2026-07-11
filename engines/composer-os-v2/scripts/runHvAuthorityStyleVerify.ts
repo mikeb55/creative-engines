@@ -9,6 +9,7 @@
  *   npx tsx --tsconfig ../../tsconfig.json scripts/runHvAuthorityStyleVerify.ts bill_evans --seed 133
  *   npx tsx --tsconfig ../../tsconfig.json scripts/runHvAuthorityStyleVerify.ts bill_evans --fail-fast
  *   npx tsx --tsconfig ../../tsconfig.json scripts/runHvAuthorityStyleVerify.ts bill_evans --gce-delta-threshold 0.3
+ *   npx tsx --tsconfig ../../tsconfig.json scripts/runHvAuthorityStyleVerify.ts bill_evans --seeds 133,42069 --verbose
  *
  * Do not confuse with runHvAuthorityPhase0Verify.ts (Phase 0 infra).
  */
@@ -25,11 +26,13 @@ import {
   evaluateHardGates,
   stripFromContext,
   type HardGateId,
+  type HardGateRow,
 } from './eval/verlaineGbdWriterEvalCore';
 import {
   GCE_GATE_HARMONIC_BAR_TARGET,
   scoreFrankZappaResultForGce,
   scoreGoldenPathResultForGce,
+  type GceGateCategoryScore,
 } from '../core/gce/gceGate';
 import { resolveGceScorerRouting } from '../core/gce/resolveEffectiveGceStyle';
 
@@ -63,6 +66,10 @@ type VariantResult = {
   effBarsPresent: boolean;
   timedOut?: boolean;
   error?: string;
+  /** Present only when harness run with --verbose (retained gate detail). */
+  hardGates?: HardGateRow[];
+  /** Present only when harness run with --verbose (retained gate pillars). */
+  gceCategories?: GceGateCategoryScore[];
 };
 
 type SeedRow = {
@@ -115,6 +122,7 @@ type CliArgs = {
   worker: boolean;
   workerOut: string | null;
   gceDeltaThreshold: number;
+  verbose: boolean;
 };
 
 function parseArgs(argv: string[]): CliArgs {
@@ -129,6 +137,7 @@ function parseArgs(argv: string[]): CliArgs {
   let worker = false;
   let workerOut: string | null = null;
   let gceDeltaThreshold = DEFAULT_GCE_DELTA_THRESHOLD;
+  let verbose = false;
 
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;
@@ -142,6 +151,10 @@ function parseArgs(argv: string[]): CliArgs {
     }
     if (a === '--fail-fast') {
       failFast = true;
+      continue;
+    }
+    if (a === '--verbose') {
+      verbose = true;
       continue;
     }
     if (a === '--skip-resolver-hash') {
@@ -187,7 +200,7 @@ function parseArgs(argv: string[]): CliArgs {
 
   if (!styleId) {
     console.error(
-      'Usage: runHvAuthorityStyleVerify.ts <styleId> [--seed N | --seeds a,b,c] [--primary barry_harris] [--fail-fast] [--gce-delta-threshold 0.3]'
+      'Usage: runHvAuthorityStyleVerify.ts <styleId> [--seed N | --seeds a,b,c] [--primary barry_harris] [--fail-fast] [--verbose] [--gce-delta-threshold 0.3]'
     );
     process.exit(1);
   }
@@ -204,6 +217,7 @@ function parseArgs(argv: string[]): CliArgs {
     worker,
     workerOut,
     gceDeltaThreshold,
+    verbose,
   };
 }
 
@@ -242,7 +256,8 @@ function scoreVariant(
   styleId: string,
   totalBars: number,
   label: string,
-  runOpts: ReturnType<typeof buildOpts>
+  runOpts: ReturnType<typeof buildOpts>,
+  verbose: boolean
 ): VariantResult {
   const result = runGoldenPathOnce(seed, runOpts);
   const meta = result.context?.generationMetadata as Record<string, unknown> | undefined;
@@ -287,6 +302,12 @@ function scoreVariant(
     harmonicVoiceScorerMismatch:
       gate.harmonicVoiceScorerMismatch ?? (meta?.harmonicVoiceScorerMismatch as string | undefined),
     effBarsPresent: eff,
+    ...(verbose
+      ? {
+          hardGates: hard.gates,
+          gceCategories: gate.categoryScores,
+        }
+      : {}),
   };
 }
 
@@ -427,7 +448,8 @@ function runWorkerSeed(args: CliArgs): SeedRow {
       buildOpts(seed, args.totalBars, {
         primary: styleId,
         title: `hv-verify ${styleId} primary seed ${seed}`,
-      })
+      }),
+      args.verbose
     );
     const hv = scoreVariant(
       seed,
@@ -438,7 +460,8 @@ function runWorkerSeed(args: CliArgs): SeedRow {
         primary: args.hvPrimary,
         harmonicVoice: styleId,
         title: `hv-verify ${styleId} hv seed ${seed}`,
-      })
+      }),
+      args.verbose
     );
 
     if (primary.error || hv.error) {
@@ -583,6 +606,42 @@ function printTable(result: VerifyResult): void {
   console.log(lines.join('\n'));
 }
 
+function printVerboseDetail(result: VerifyResult): void {
+  const lines: string[] = [];
+  lines.push('');
+  lines.push('=== VERBOSE GCE / LOCK detail ===');
+  for (const r of result.rows) {
+    for (const side of [r.primary, r.hv] as const) {
+      if (!side) continue;
+      lines.push('');
+      lines.push('--- seed ' + r.seed + ' | ' + side.label + ' | verdict=' + r.verdict + ' ---');
+      lines.push(
+        'overallGce=' + (side.gceOverall ?? '?') +
+        ' lockPass=' + side.lockPass +
+        ' exportIntegrityPassed=' + side.exportIntegrityPassed +
+        ' generationSuccess=' + side.generationSuccess
+      );
+      if (side.gceCategories && side.gceCategories.length) {
+        lines.push('GCE categories (gate pillars):');
+        for (const c of side.gceCategories) {
+          lines.push('  ' + c.name.padEnd(34) + ' ' + String(c.score).padStart(5) + '  (w=' + c.weight + ')');
+        }
+      } else {
+        lines.push('GCE categories: (none retained)');
+      }
+      if (side.hardGates && side.hardGates.length) {
+        lines.push('Hard gates:');
+        for (const g of side.hardGates) {
+          lines.push('  ' + g.id.padEnd(28) + ' ' + (g.pass ? 'PASS' : 'FAIL') + '  ' + g.detail);
+        }
+      } else {
+        lines.push('Hard gates: (none retained)');
+      }
+    }
+  }
+  console.log(lines.join('\n'));
+}
+
 function timeoutVariant(label: string): VariantResult {
   return {
     label,
@@ -629,6 +688,7 @@ function runChildSeed(args: CliArgs, seed: number, workerOutPath: string): Promi
       String(args.gceDeltaThreshold),
       '--worker-out',
       workerOutPath,
+      ...(args.verbose ? ['--verbose'] : []),
     ];
 
     const child = spawn(npx, childArgs, {
@@ -775,6 +835,7 @@ async function runParent(args: CliArgs): Promise<void> {
   flushResult(outPath, result);
 
   printTable(result);
+  if (args.verbose) printVerboseDetail(result);
   console.error(`hv-verify: JSON ${outPath}`);
   if (result.summary) {
     console.error(`hv-verify: summary ${JSON.stringify(result.summary)}`);

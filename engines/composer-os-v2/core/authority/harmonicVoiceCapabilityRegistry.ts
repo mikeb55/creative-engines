@@ -142,6 +142,16 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
     effectiveHarmonyBarsKey: 'theloniousMonkEffectiveHarmonyBars',
     notes: 'harmony/precompute hv_full via theloniousMonkEffectiveHarmonyBars + mosaic merge; truth_registry primary-only',
   },
+  {
+    styleId: 'wayne_shorter',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'wayneShorterEffectiveHarmonyBars',
+    notes: 'harmony/precompute hv_full via wayneShorterEffectiveHarmonyBars + mosaic merge; truth_registry primary-only',
+  },
 ];
 
 const REGISTRY_BY_STYLE = new Map<string, HvCapabilityEntry>(

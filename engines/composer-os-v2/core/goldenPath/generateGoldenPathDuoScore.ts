@@ -192,6 +192,7 @@ import {
   accumulateWayneShorterHarmonyDiagnostics,
   createWayneShorterHarmonyAccumulator,
   finalizeWayneShorterMetadata,
+  isWayneShorterHarmonicPath,
   precomputeWayneShorterEffectiveHarmonyBars,
 } from './wayne_shorter';
 import {
@@ -3252,6 +3253,10 @@ function buildGuitarPart(
   const styleJoniMitchellSurface = styleProf === 'STYLE_JONI_MITCHELL';
   const stylePatMethenySurface = styleProf === 'STYLE_PAT_METHENY';
   const isSongwriterWayneShorter = genMeta?.songwriterStyleId === 'wayne_shorter';
+  const isHarmonicVoiceWayneShorter =
+    normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
+    'wayne_shorter';
+  const wayneShorterHarmonicPathActive = isWayneShorterHarmonicPath(genMeta);
   const isSongwriterFrankZappa =
     normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'frank_zappa';
   const isHarmonicVoiceFrankZappa =
@@ -3556,12 +3561,19 @@ function buildGuitarPart(
   const wayneStyleTransferAuthoritative =
     isSongwriterWayneShorter && genMeta?.styleTransferWayneHarmonyAuthoritative === true;
   if (
-    isSongwriterWayneShorter &&
+    wayneShorterHarmonicPathActive &&
     isDuoGoldenPath &&
     !genMeta?.mosaicLockRegistry &&
     !wayneStyleTransferAuthoritative
   ) {
     precomputeWayneShorterEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceWayneShorter && !isSongwriterWayneShorter) {
+      const wayneShorterEff = genMeta.wayneShorterEffectiveHarmonyBars;
+      const wayneShorterTb = totalBarsFromContext(context);
+      if (Array.isArray(wayneShorterEff) && wayneShorterEff.length === wayneShorterTb) {
+        genMeta.mosaicMergedHarmonyBars = [...wayneShorterEff];
+      }
+    }
   }
   if (frankZappaHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     attachFrankZappaHarmonyContext(context);

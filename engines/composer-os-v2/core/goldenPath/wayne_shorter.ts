@@ -9,6 +9,7 @@ export {
   createWayneShorterHarmonyAccumulator,
   accumulateWayneShorterHarmonyDiagnostics,
   isSongwriterWayneShorter,
+  isWayneShorterHarmonicPath,
   applyWayneShorterHarmonicGrammarReceipts,
   applyWayneShorterMelodicGrammarReceipts,
   applyWayneShorterRhythmGrammarReceipts,

@@ -22,6 +22,7 @@ import { isHerbieHancockHarmonicPath } from '../song-mode/herbieHancockSlice';
 import { isTheloniousMonkHarmonicPath } from '../song-mode/theloniousMonkSlice';
 import { isPatMethenyHarmonicPath } from '../song-mode/patMethenySlice';
 import { isSonicYouthHarmonicPath } from '../song-mode/sonicYouthSlice';
+import { isWayneShorterHarmonicPath } from '../song-mode/wayneShorterSlice';
 import { getChordForBar } from './harmonyResolution';
 import { buildSectionAwareHarmonySpine } from './harmonySpineSectionLoop';
 import type { ResolvedPitchField } from './pitchFieldSpineTypes';
@@ -91,7 +92,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
     effKey: 'patMethenyEffectiveHarmonyBars',
     sliceId: 'pat_metheny',
   },
-  { match: (m) => m?.songwriterStyleId === 'wayne_shorter', effKey: 'wayneShorterEffectiveHarmonyBars', sliceId: 'wayne_shorter' },
+  { match: (m) => isWayneShorterHarmonicPath(m), effKey: 'wayneShorterEffectiveHarmonyBars', sliceId: 'wayne_shorter' },
   /** Verlaine harmonicVoice is intentionally treated as Verlaine for harmony authority resolution. Other styles remain primary-only until explicitly designed similarly. */
   {
     match: (m) => isVerlaineHarmonicPath(m),

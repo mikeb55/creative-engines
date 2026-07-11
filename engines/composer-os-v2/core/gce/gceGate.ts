@@ -41,10 +41,19 @@ import {
   resolveGceScorerRouting,
 } from './resolveEffectiveGceStyle';
 
+/** Per-pillar row already scored inside gate functions (retained for verbose harness output). */
+export type GceGateCategoryScore = {
+  name: string;
+  score: number;
+  weight: number;
+};
+
 export interface GceGateResult {
   overallScore: number;
   weakestCategory: string;
   passed: boolean;
+  /** Full pillar list computed before overall fold — omitted only if a path has none. */
+  categoryScores?: GceGateCategoryScore[];
   /** Set when harmonicVoice requests a style whose authority did not engage for scoring. */
   harmonicVoiceScorerMismatch?: string;
 }
@@ -88,6 +97,7 @@ export function scoreResultForGce(
     overallScore,
     weakestCategory: weakest.name,
     passed: overallScore >= GCE_GATE_MIN,
+    categoryScores: scores,
   };
 }
 
@@ -268,6 +278,7 @@ export function scoreEcmChamberResultForGce(
     overallScore,
     weakestCategory: weakest.name,
     passed: overallScore >= GCE_GATE_MIN,
+    categoryScores: scores,
   };
 }
 
@@ -371,6 +382,7 @@ export function scoreFrankZappaResultForGce(
     overallScore,
     weakestCategory: weakest.name,
     passed: overallScore >= GCE_GATE_MIN,
+    categoryScores: scores,
   };
 }
 

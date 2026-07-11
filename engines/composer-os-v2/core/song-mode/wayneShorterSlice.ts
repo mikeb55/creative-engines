@@ -5,6 +5,7 @@
  */
 
 import type { CompositionContext, FormMap, GenerationMetadata, ShorterPhase } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { WAYNE_SHORTER_WS_HARM_FINGERPRINTS } from '../composer/wayneShorterHarmFingerprints';
 import { WAYNE_SHORTER_WS_MEL_FINGERPRINTS } from '../composer/wayneShorterMelFingerprints';
 import { WAYNE_SHORTER_WS_RHYTHM_FINGERPRINTS } from '../composer/wayneShorterRhythmFingerprints';
@@ -410,6 +411,21 @@ export function isSongwriterWayneShorter(
   genMeta: GenerationMetadata | undefined
 ): genMeta is GenerationMetadata & { songwriterStyleId: 'wayne_shorter' } {
   return genMeta?.songwriterStyleId === 'wayne_shorter';
+}
+
+/**
+ * Primary songwriter or harmonicVoice selects Wayne Shorter harmony authority.
+ * Single-gate (no styleProfile) — bill_evans HV pattern.
+ */
+export function isWayneShorterHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'wayne_shorter' || voice === 'wayne_shorter';
 }
 
 export function countWayneShorterDeviceFiresFromReceipts(receipts: readonly string[]): {
