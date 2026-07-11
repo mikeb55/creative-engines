@@ -23,6 +23,7 @@ import { isTheloniousMonkHarmonicPath } from '../song-mode/theloniousMonkSlice';
 import { isPatMethenyHarmonicPath } from '../song-mode/patMethenySlice';
 import { isSonicYouthHarmonicPath } from '../song-mode/sonicYouthSlice';
 import { isWayneShorterHarmonicPath } from '../song-mode/wayneShorterSlice';
+import { isJobimHarmonicPath } from '../song-mode/jobimSlice';
 import { getChordForBar } from './harmonyResolution';
 import { buildSectionAwareHarmonySpine } from './harmonySpineSectionLoop';
 import type { ResolvedPitchField } from './pitchFieldSpineTypes';
@@ -157,7 +158,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   { match: (m) => m?.songwriterStyleId === 'bacharach', effKey: 'bacharachEffectiveHarmonyBars', sliceId: 'bacharach' },
   { match: (m) => m?.songwriterStyleId === 'donald_fagen', effKey: 'donaldFagenEffectiveHarmonyBars', sliceId: 'donald_fagen' },
   { match: (m) => m?.songwriterStyleId === 'ecm_chamber', effKey: 'ecmChamberEffectiveHarmonyBars', sliceId: 'ecm_chamber' },
-  { match: (m) => m?.songwriterStyleId === 'antonio_carlos_jobim', effKey: 'jobimEffectiveHarmonyBars', sliceId: 'antonio_carlos_jobim' },
+  { match: (m) => isJobimHarmonicPath(m), effKey: 'jobimEffectiveHarmonyBars', sliceId: 'antonio_carlos_jobim' },
   { match: (m) => isHerbieHancockHarmonicPath(m), effKey: 'herbieHancockEffectiveHarmonyBars', sliceId: 'herbie_hancock' },
   { match: (m) => m?.songwriterStyleId === 'stephen_sondheim', effKey: 'sondheimEffectiveHarmonyBars', sliceId: 'stephen_sondheim' },
   { match: (m) => m?.songwriterStyleId === 'kate_bush', effKey: 'kateBushEffectiveHarmonyBars', sliceId: 'kate_bush' },

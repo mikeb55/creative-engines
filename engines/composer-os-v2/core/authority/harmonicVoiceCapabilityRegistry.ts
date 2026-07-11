@@ -152,6 +152,28 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
     effectiveHarmonyBarsKey: 'wayneShorterEffectiveHarmonyBars',
     notes: 'harmony/precompute hv_full via wayneShorterEffectiveHarmonyBars + mosaic merge; truth_registry primary-only',
   },
+  {
+    styleId: 'antonio_carlos_jobim',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'jobimEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via jobimEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; path helper also accepts VRB id jobim',
+  },
+  {
+    styleId: 'jobim',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'jobimEffectiveHarmonyBars',
+    notes:
+      'alias of antonio_carlos_jobim for VRB voiceId harmonicVoice=jobim (normalizeHarmonicVoiceId does not unify)',
+  },
 ];
 
 const REGISTRY_BY_STYLE = new Map<string, HvCapabilityEntry>(

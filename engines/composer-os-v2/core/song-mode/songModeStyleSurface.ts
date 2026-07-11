@@ -168,6 +168,9 @@ export function applyBillEvansStyleSurface(metadata: GenerationMetadata, stylePr
 
 /**
  * **STYLE_MODERN_JAZZ** + **`jobimMode`** — bossa-aligned metadata nudges when primary songwriter is Jobim (does not stack with {@link applyBillEvansStyleSurface}).
+ *
+ * `jobimMode` is set from primary songwriter only (`runGoldenPath` / `resolution.primaryId`).
+ * Jobim as `harmonicVoice` does **not** flip it — HV owns harmony authority; surface biases stay with primary.
  */
 export function applyJobimStyleSurface(metadata: GenerationMetadata, styleProfile: StyleProfile | undefined): void {
   if (metadata.songModeHookFirstIdentity !== true) return;

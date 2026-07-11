@@ -9,10 +9,19 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
+
+/** Canonical songwriter id + VRB voiceId — normalizeHarmonicVoiceId does not unify these. */
+export const JOBIM_HARMONIC_VOICE_IDS = ['antonio_carlos_jobim', 'jobim'] as const;
+
+export function isJobimHarmonicVoiceId(raw: string | null | undefined): boolean {
+  const id = normalizeHarmonicVoiceId(String(raw ?? ''));
+  return id === 'antonio_carlos_jobim' || id === 'jobim';
+}
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 
@@ -93,6 +102,31 @@ export function isSongwriterJobim(
   genMeta: GenerationMetadata | undefined
 ): genMeta is GenerationMetadata & { songwriterStyleId: 'antonio_carlos_jobim' } {
   return genMeta?.songwriterStyleId === 'antonio_carlos_jobim';
+}
+
+/**
+ * Primary songwriter or harmonicVoice selects Jobim harmony authority.
+ * Single-gate (no styleProfile) — bill_evans / Wave-C HV pattern.
+ *
+ * Accepts **both** `antonio_carlos_jobim` (songwriter / eff-bar id) and `jobim`
+ * (VRB voiceId) — `normalizeHarmonicVoiceId` does not unify them.
+ *
+ * **`jobimMode` stays primary-only:** that flag drives Song Mode
+ * `STYLE_MODERN_JAZZ` surface nudges (`applyJobimStyleSurface`) from
+ * `resolution.primaryId`, not harmony authority. HV Jobim owns precompute /
+ * spine / eff bars only; flipping `jobimMode` under HV would steal primary
+ * surface identity when primary is another writer (e.g. barry_harris).
+ */
+export function isJobimHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  return (
+    isJobimHarmonicVoiceId(metadata?.songwriterStyleId) ||
+    isJobimHarmonicVoiceId(metadata?.harmonicVoice)
+  );
 }
 
 export interface JobimHarmonyAccumulator {

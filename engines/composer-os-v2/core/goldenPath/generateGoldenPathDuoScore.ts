@@ -522,6 +522,8 @@ import {
   accumulateJobimHarmonyDiagnostics,
   createJobimHarmonyAccumulator,
   finalizeJobimMetadata,
+  isJobimHarmonicPath,
+  isJobimHarmonicVoiceId,
   precomputeJobimEffectiveHarmonyBars,
 } from './jobimSlice';
 import {
@@ -3197,6 +3199,10 @@ function buildGuitarPart(
   const isSongwriterFagen = genMeta?.songwriterStyleId === 'donald_fagen';
   const isSongwriterEcmChamber = genMeta?.songwriterStyleId === 'ecm_chamber';
   const isSongwriterJobim = genMeta?.songwriterStyleId === 'antonio_carlos_jobim';
+  const isHarmonicVoiceJobim = isJobimHarmonicVoiceId(
+    String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')
+  );
+  const jobimHarmonicPathActive = isJobimHarmonicPath(genMeta);
   const isSongwriterHerbieHancock = genMeta?.songwriterStyleId === 'herbie_hancock';
   const isHarmonicVoiceHerbieHancock =
     normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
@@ -3802,8 +3808,15 @@ function buildGuitarPart(
   if (isSongwriterEcmChamber && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeEcmChamberEffectiveHarmonyBars(context);
   }
-  if (isSongwriterJobim && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (jobimHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeJobimEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceJobim && !isSongwriterJobim) {
+      const jobimEff = genMeta.jobimEffectiveHarmonyBars;
+      const jobimTb = totalBarsFromContext(context);
+      if (Array.isArray(jobimEff) && jobimEff.length === jobimTb) {
+        genMeta.mosaicMergedHarmonyBars = [...jobimEff];
+      }
+    }
   }
   if (herbieHancockHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeHerbieHancockEffectiveHarmonyBars(context);
