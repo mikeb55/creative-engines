@@ -370,6 +370,7 @@ import {
   accumulateFrippHarmonyDiagnostics,
   createFrippHarmonyAccumulator,
   finalizeFrippMetadata,
+  isFrippHarmonicPath,
   precomputeFrippEffectiveHarmonyBars,
 } from './frippSystemsSlice';
 import {
@@ -3279,6 +3280,12 @@ function buildGuitarPart(
   const isSongwriterJackWhite = genMeta?.songwriterStyleId === 'jack_white';
   const isSongwriterBeefheart = genMeta?.songwriterStyleId === 'beefheart';
   const isSongwriterFripp = genMeta?.songwriterStyleId === 'fripp';
+  const isHarmonicVoiceFripp =
+    normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
+      'fripp' ||
+    normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
+      'robert_fripp';
+  const frippHarmonicPathActive = isFrippHarmonicPath(genMeta);
   const isSongwriterMarr = genMeta?.songwriterStyleId === 'marr';
   const isSongwriterEberhardWeber = genMeta?.songwriterStyleId === 'eberhard_weber';
   const isSongwriterClausOgerman =
@@ -3637,8 +3644,15 @@ function buildGuitarPart(
   if (isSongwriterBeefheart && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeBeefheartEffectiveHarmonyBars(context);
   }
-  if (isSongwriterFripp && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (frippHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeFrippEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceFripp && !isSongwriterFripp) {
+      const frippEff = genMeta.frippEffectiveHarmonyBars;
+      const frippTb = totalBarsFromContext(context);
+      if (Array.isArray(frippEff) && frippEff.length === frippTb) {
+        genMeta.mosaicMergedHarmonyBars = [...frippEff];
+      }
+    }
   }
   if (isSongwriterMarr && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeMarrEffectiveHarmonyBars(context);

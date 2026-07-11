@@ -7,6 +7,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -612,6 +613,19 @@ export function hasLoopTransparencyReceipts(receipts: readonly string[]): boolea
 export function minFrippSectionSpan(plan: FrippSystemsPlan | undefined): number {
   if (!plan?.sections.length) return 0;
   return Math.min(...plan.sections.map((s) => s.endBar - s.startBar + 1));
+}
+
+/** Primary songwriter or harmonicVoice selects Fripp harmony authority (systems slice). */
+export function isFrippHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  // Canonical id is fripp; robert_fripp is legacy synonym (local only — no registry alias table).
+  return primary === 'fripp' || voice === 'fripp' || voice === 'robert_fripp';
 }
 
 export function precomputeFrippEffectiveHarmonyBars(context: CompositionContext): void {

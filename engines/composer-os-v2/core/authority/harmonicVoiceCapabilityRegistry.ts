@@ -77,12 +77,14 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
   {
     styleId: 'fripp',
     layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
       validator_relax: 'primary_only',
       truth_registry: 'primary_only',
       riff_vrb_lane: 'hv_partial',
     },
     effectiveHarmonyBarsKey: 'frippEffectiveHarmonyBars',
-    notes: 'Metheny bypass primary-only; riff lane partial',
+    notes: 'harmony/precompute hv_full via frippEffectiveHarmonyBars + mosaic merge; validator_relax primary-only; riff lane partial',
   },
   {
     styleId: 'bill_evans',
