@@ -66,3 +66,7 @@ docs/RoadMaps/
 # HV authority style verify harness outputs
 engines/composer-os-v2/scripts/_hvVerifyOut/
 
+# FBT / cadence evidence harness outputs (local regenerable; keep on disk, never commit)
+engines/composer-os-v2/scripts/_*FbtAuditOut/
+engines/composer-os-v2/scripts/_*Evidence/
+
