@@ -15,6 +15,7 @@ import { isVerlaineHarmonicPath } from '../composer/voiceRuleBundles';
 import { isFrankZappaHarmonicPath } from '../song-mode/frankZappaSlice';
 import { isHoldsworthHarmonicPath } from '../song-mode/holdsworthScaleSlice';
 import { isFrippHarmonicPath } from '../song-mode/frippSystemsSlice';
+import { isBillEvansHarmonicPath } from '../song-mode/billEvansSlice';
 import { getChordForBar } from './harmonyResolution';
 import { buildSectionAwareHarmonySpine } from './harmonySpineSectionLoop';
 import type { ResolvedPitchField } from './pitchFieldSpineTypes';
@@ -92,7 +93,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
     sliceId: 'verlaine',
   },
   { match: (m) => m?.songwriterStyleId === 'barry_harris', effKey: 'barryHarrisEffectiveHarmonyBars', sliceId: 'barry_harris' },
-  { match: (m) => m?.songwriterStyleId === 'bill_evans', effKey: 'billEvansEffectiveHarmonyBars', sliceId: 'bill_evans' },
+  { match: (m) => isBillEvansHarmonicPath(m), effKey: 'billEvansEffectiveHarmonyBars', sliceId: 'bill_evans' },
   { match: (m) => m?.songwriterStyleId === 'debussy', effKey: 'debussyEffectiveHarmonyBars', sliceId: 'debussy' },
   { match: (m) => m?.songwriterStyleId === 'bernard_herrmann', effKey: 'bernardHerrmannEffectiveHarmonyBars', sliceId: 'bernard_herrmann' },
   { match: (m) => m?.songwriterStyleId === 'john_williams', effKey: 'johnWilliamsEffectiveHarmonyBars', sliceId: 'john_williams' },

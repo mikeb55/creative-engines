@@ -8,6 +8,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -127,6 +128,21 @@ export function isSongwriterBillEvans(
   genMeta: GenerationMetadata | undefined
 ): genMeta is GenerationMetadata & { songwriterStyleId: 'bill_evans' } {
   return genMeta?.songwriterStyleId === 'bill_evans';
+}
+
+/**
+ * Primary songwriter or harmonicVoice selects Bill Evans harmony authority.
+ * Canonical id is bill_evans only — gil_evans / songwriter alias evans are a distinct style (not accepted here).
+ */
+export function isBillEvansHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'bill_evans' || voice === 'bill_evans';
 }
 
 export interface BillEvansHarmonyAccumulator {

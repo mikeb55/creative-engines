@@ -89,10 +89,12 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
   {
     styleId: 'bill_evans',
     layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
       truth_registry: 'primary_only',
     },
     effectiveHarmonyBarsKey: 'billEvansEffectiveHarmonyBars',
-    notes: 'Tier 1 probe — full HV gap',
+    notes: 'harmony/precompute hv_full via billEvansEffectiveHarmonyBars + mosaic merge; truth_registry primary-only',
   },
 ];
 
