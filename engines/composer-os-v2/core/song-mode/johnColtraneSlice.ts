@@ -147,6 +147,7 @@ function spellCycleTonicCadence(
  * Changes-cycle spelling.
  * Mid-phrase: altered dominants / quartal minors / Lydian maj7#11 as before.
  * Structural cadences: tonic maj7 is an explicit cadential option (not permanent dominant drift).
+ * Piece-final bar: always tonic maj7 — stricter than section-cadence odds (finalBarTension).
  */
 function spellChangesBar(
   bar: number,
@@ -160,6 +161,12 @@ function spellChangesBar(
   const nm = pitchClassToSharpName(rpc);
   const u = seededUnit(seed, bar, 992010);
   const atCadence = isColtraneStructuralCadenceBar(bar, totalBars);
+
+  /* Last chord of the piece — always resolve to cycle-centre tonic maj7. */
+  if (bar === totalBars) {
+    const t = spellCycleTonicCadence(bar, cycle);
+    return { symbol: t.symbol, receipt: `${t.receipt}|final_bar` };
+  }
 
   /* Cadential option: land on the active key-centre tonic maj7 (~42% when otherwise dominant-path). */
   if (atCadence && seededUnit(seed, bar, 992015) < 0.42) {
@@ -226,6 +233,27 @@ function enforceHalfTonicCadenceGuardrail(
     out[bar - 1] = symbol;
     receipts.push(`${receipt}|half_guardrail`);
   }
+}
+
+/**
+ * Piece-final safety net: if bar N is still dominant-family after cadence spelling /
+ * half-guardrail, force cycle-centre tonic maj7. Mid-piece cadence odds do not apply here.
+ */
+function enforceFinalBarTonicResolution(
+  out: string[],
+  cycle: readonly [number, number, number],
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || chordLooksTonicFamily(sym)) return;
+  const { symbol, receipt } = spellCycleTonicCadence(totalBars, cycle);
+  out[idx] = symbol;
+  receipts.push(`${receipt}|final_bar_guardrail`);
 }
 
 function spellModalBar(
@@ -320,6 +348,7 @@ export function precomputeJohnColtraneEffectiveHarmonyBars(context: CompositionC
 
   if (phase === 'changes' && tonicPc !== undefined) {
     enforceHalfTonicCadenceGuardrail(out, cycle, tb, receipts, context);
+    enforceFinalBarTonicResolution(out, cycle, tb, receipts, context);
   }
 
   genMeta.johnColtraneEffectiveHarmonyBars = out;
