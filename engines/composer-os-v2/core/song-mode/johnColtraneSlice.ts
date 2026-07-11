@@ -4,6 +4,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -55,6 +56,24 @@ export function isSongwriterJohnColtrane(
   return genMeta?.songwriterStyleId === 'john_coltrane';
 }
 
+/**
+ * Primary songwriter or harmonicVoice selects John Coltrane harmony authority.
+ * Single-gate (no styleProfile) — Wave-C / bill_evans HV pattern.
+ *
+ * Exact id `john_coltrane` only — soft aliases (`coltrane`, …) stay primary-intake via
+ * songwriter normalize; they do **not** engage HV.
+ */
+export function isJohnColtraneHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'john_coltrane' || voice === 'john_coltrane';
+}
+
 function resolveColtranePhase(genMeta: GenerationMetadata & Record<string, unknown>, seed: number): ColtranePhase {
   const raw = genMeta.coltranePhase;
   if (raw === 'changes' || raw === 'modal') return raw;
@@ -74,16 +93,79 @@ function rawChordLooksMinor(symbol: string): boolean {
   return /\bm(?!aj)|min/.test(hp);
 }
 
+/** GCE tonic-family check (mirrors cadentialClarityCoverage / chordSymbolTonicFamily). */
+function chordLooksTonicFamily(symbol: string): boolean {
+  const c = symbol.trim().split('(')[0]!.trim().split('/')[0]!.trim();
+  if (/maj7|maj9|maj6|maj11|maj13|mmaj7|add9/i.test(c)) return true;
+  if (/[A-G][#b]?m(7|9|11|13)/i.test(c) || /[A-G][#b]?min(7|9|11|13)/i.test(c)) return true;
+  if (/maj6|6\/9|6-9/i.test(c)) return true;
+  if (/^[A-G][#b]?(m|min)?$/i.test(c)) return true;
+  /* Dominant-family (excludes maj7 / minor-7); anything else counts as tonic-family. */
+  if (/maj7|mmaj|maj9|maj11|maj13/i.test(c)) return true;
+  if (/^[A-G][#b]?m(7|9|11|13)/i.test(c) || /^[A-G][#b]?min(7|9|11|13)/i.test(c)) return true;
+  if (/7alt/i.test(c)) return false;
+  if (/7b9|7#9/i.test(c)) return false;
+  if (/b13/i.test(c)) return false;
+  if (/7#11/i.test(c)) return false;
+  if (/13/i.test(c) && !/13sus/i.test(c) && !/maj13/i.test(c) && !/m13/i.test(c)) return false;
+  if (/b9/i.test(c) && !/maj9/i.test(c) && !/add9/i.test(c)) return false;
+  if (/#9/i.test(c) && !/maj9/i.test(c)) return false;
+  if (/^[A-G][#b]?(9|11|13)$/i.test(c)) return false;
+  if (/^[A-G][#b]?7([^m]|$)/i.test(c)) return false;
+  return true;
+}
+
+/**
+ * Structural cadence bars — 8-bar section grid (A / A' / B / A'' on 32-bar charts).
+ * These are the section-ending bars whose lookback windows feed cadentialClarityCoverage.
+ */
+export function coltraneStructuralCadenceBars(totalBars: number): number[] {
+  const out: number[] = [];
+  for (let b = 8; b <= totalBars; b += 8) out.push(b);
+  if (totalBars > 0 && totalBars % 8 !== 0) out.push(totalBars);
+  return out;
+}
+
+function isColtraneStructuralCadenceBar(bar: number, totalBars: number): boolean {
+  return coltraneStructuralCadenceBars(totalBars).includes(bar);
+}
+
+/** Spell a three-tonic-centre maj7 landing (Giant Steps / Countdown key-center cadence). */
+function spellCycleTonicCadence(
+  bar: number,
+  cycle: readonly [number, number, number]
+): { symbol: string; receipt: string } {
+  const step = (bar - 1) % 3;
+  const nm = pitchClassToSharpName(cycle[step]!);
+  return {
+    symbol: `${nm}maj7`,
+    receipt: `jc:third_cycle_tonic_cadence@bar${bar}`,
+  };
+}
+
+/**
+ * Changes-cycle spelling.
+ * Mid-phrase: altered dominants / quartal minors / Lydian maj7#11 as before.
+ * Structural cadences: tonic maj7 is an explicit cadential option (not permanent dominant drift).
+ */
 function spellChangesBar(
   bar: number,
   cycle: readonly [number, number, number],
   rawSym: string,
-  seed: number
+  seed: number,
+  totalBars: number
 ): { symbol: string; receipt?: string } {
   const step = (bar - 1) % 3;
   const rpc = cycle[step]!;
   const nm = pitchClassToSharpName(rpc);
   const u = seededUnit(seed, bar, 992010);
+  const atCadence = isColtraneStructuralCadenceBar(bar, totalBars);
+
+  /* Cadential option: land on the active key-centre tonic maj7 (~42% when otherwise dominant-path). */
+  if (atCadence && seededUnit(seed, bar, 992015) < 0.42) {
+    return spellCycleTonicCadence(bar, cycle);
+  }
+
   if (rawChordLooksDominant(rawSym)) {
     return {
       symbol: u < 0.55 ? `${nm}7alt` : `${nm}7b9#11`,
@@ -100,6 +182,50 @@ function spellChangesBar(
     symbol: `${nm}maj7#11`,
     receipt: `jc:lydian_centre@bar${bar}`,
   };
+}
+
+/**
+ * Guardrail: each 16-bar half of a 32-bar chart must have ≥1 structural cadence
+ * whose lookback contains a tonic-family chord in the three-tonic matrix.
+ * Does not force tonic at every cadence — only eliminates the 0%-tonic failure mode.
+ */
+function enforceHalfTonicCadenceGuardrail(
+  out: string[],
+  cycle: readonly [number, number, number],
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (totalBars !== 32 || out.length < 32) return;
+
+  const halves: Array<{ start: number; end: number }> = [
+    { start: 1, end: 16 },
+    { start: 17, end: 32 },
+  ];
+
+  for (const half of halves) {
+    const cadenceBars = coltraneStructuralCadenceBars(totalBars).filter(
+      (b) => b >= half.start && b <= half.end && !isProtectedBar(b, context)
+    );
+    const hasTonicCadence = coltraneStructuralCadenceBars(totalBars)
+      .filter((b) => b >= half.start && b <= half.end)
+      .some((endBar) => {
+        const lookStart = Math.max(half.start, endBar - 3);
+        for (let b = lookStart; b <= endBar; b++) {
+          const sym = out[b - 1];
+          if (sym && chordLooksTonicFamily(sym)) return true;
+        }
+        return false;
+      });
+    if (hasTonicCadence) continue;
+    if (cadenceBars.length === 0) continue;
+
+    /* Prefer latest cadence in the half (bar 16 / 32). */
+    const bar = cadenceBars[cadenceBars.length - 1]!;
+    const { symbol, receipt } = spellCycleTonicCadence(bar, cycle);
+    out[bar - 1] = symbol;
+    receipts.push(`${receipt}|half_guardrail`);
+  }
 }
 
 function spellModalBar(
@@ -147,13 +273,14 @@ export function accumulateJohnColtraneHarmonyDiagnostics(
   acc.barsConsidered++;
   acc.thirdCycleTouches++;
   const t = parseChordSymbol(c).harmonyPart.toLowerCase();
-  if (/maj7#11|maj9#11|Δ#11/.test(t) || (/maj7/.test(t) && /#11/.test(t))) acc.lydianTonicTouches++;
+  if (/maj7/.test(t)) acc.lydianTonicTouches++;
   if (/7alt|7b9/.test(t)) acc.alteredDominantTouches++;
   if (/m11|sus4/.test(t) || /\bsus/.test(t)) acc.modalPedalTouches++;
 }
 
 /**
- * Precompute effective one chord per bar — primary **`john_coltrane`** only.
+ * Precompute effective one chord per bar — primary or HV **`john_coltrane`**
+ * (see {@link isJohnColtraneHarmonicPath}).
  */
 export function precomputeJohnColtraneEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
@@ -185,10 +312,14 @@ export function precomputeJohnColtraneEffectiveHarmonyBars(context: CompositionC
       out.push(symbol);
       if (receipt) receipts.push(receipt);
     } else {
-      const { symbol, receipt } = spellChangesBar(b, cycle, rawSym, seed);
+      const { symbol, receipt } = spellChangesBar(b, cycle, rawSym, seed, tb);
       out.push(symbol);
       if (receipt) receipts.push(receipt);
     }
+  }
+
+  if (phase === 'changes' && tonicPc !== undefined) {
+    enforceHalfTonicCadenceGuardrail(out, cycle, tb, receipts, context);
   }
 
   genMeta.johnColtraneEffectiveHarmonyBars = out;

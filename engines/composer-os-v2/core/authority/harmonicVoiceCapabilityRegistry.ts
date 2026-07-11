@@ -265,6 +265,17 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
     notes:
       'harmony/precompute hv_full via colePorterEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; applyColePorterStyleSurface + beguine stamps primary-only',
   },
+  {
+    styleId: 'john_coltrane',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'johnColtraneEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via johnColtraneEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; Wave-C three-tonic changes cadence guardrail',
+  },
 ];
 
 const REGISTRY_BY_STYLE = new Map<string, HvCapabilityEntry>(

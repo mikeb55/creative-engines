@@ -21,6 +21,7 @@ import { isAndrewHillHarmonicPath } from '../song-mode/andrewHillSlice';
 import { isKateBushHarmonicPath } from '../song-mode/kateBushSlice';
 import { isSatieHarmonicPath } from '../song-mode/satieSlice';
 import { isColePorterHarmonicPath } from '../song-mode/colePorterSlice';
+import { isJohnColtraneHarmonicPath } from '../song-mode/johnColtraneSlice';
 import {
   hasSectionMarkerVrbAssignment,
   resolveVoiceRuleBundleForBar,
@@ -1050,9 +1051,13 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
     return tmEff[barIndex - 1]!;
   }
 
+  /**
+   * John Coltrane: `precomputeJohnColtraneEffectiveHarmonyBars` — three-tonic cycle — receipts **`jc:*`**.
+   * HV path: primary | harmonicVoice (`john_coltrane` exact) — see isJohnColtraneHarmonicPath.
+   */
   const jcEff = meta?.johnColtraneEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'john_coltrane' &&
+    isJohnColtraneHarmonicPath(meta) &&
     Array.isArray(jcEff) &&
     jcEff.length === tb &&
     barIndex >= 1 &&
