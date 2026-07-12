@@ -444,9 +444,75 @@ export function precomputeEnnioMorriconeEffectiveHarmonyBars(context: Compositio
     }
   }
 
+  /* Piece-final only: bias toward Morricone ostinato/plagal landings that already pass fBT. */
+  biasEnnioMorriconeFinalBarIdiomaticOpen(out, seed, tb, receipts, context, mode);
+
   genMeta.ennioMorriconeEffectiveHarmonyBars = out;
   genMeta.ennioMorriconeDeviceReceipts = receipts;
   ennioMorriconeEffectiveHarmonyBars = out;
+}
+
+/**
+ * Dominant-family proxy for finalBarTension (mirrors verlaineGbdWriterEvalCore
+ * `isDominantFamilyChord`) — mid-piece ostinato / plagal / dorian / lament devices untouched.
+ */
+function chordLooksDominantFamilyForFbtMorricone(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return false;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return false;
+  if (/^[^/]*min9/i.test(s)) return false;
+  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
+}
+
+/**
+ * Bias piece-final bar toward Morricone pool landings that already pass fBT
+ * (tonic-root m / m(add9) / sus2 ostinato; maj7 lyric; preserve lament-bass slash).
+ * Never m7 (digit-`7` trap) — dorian colour via m(add9) instead.
+ * Not a forced jazz tonic cadence — endless-ostinato / plagal idiom preserved.
+ */
+function biasEnnioMorriconeFinalBarIdiomaticOpen(
+  out: string[],
+  seed: number,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext,
+  mode: EnnioMorriconeContextMode
+): void {
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || !chordLooksDominantFamilyForFbtMorricone(sym)) return;
+
+  const tonicPc = inferTonicPitchClassFromBar1(context);
+  if (tonicPc === undefined) return;
+  const root = pitchClassToSharpName(tonicPc);
+  const existingSlash = slashTail(sym);
+  const u = seededFilmUnit(seed, totalBars, 930601);
+
+  let next: string;
+  if (mode === 'em:lyric_mode') {
+    if (u < 0.35) next = `${root}maj7${existingSlash}`;
+    else if (u < 0.6) next = `${root}m(add9)${existingSlash}`;
+    else if (u < 0.82) next = `${root}sus2${existingSlash}`;
+    else next = `${root}m${existingSlash}`;
+  } else if (mode === 'em:serial_tension') {
+    if (u < 0.35) next = `${root}sus2${existingSlash}`;
+    else if (u < 0.65) next = `${root}m(add9)${existingSlash}`;
+    else if (u < 0.85) next = `${root}m${existingSlash}`;
+    else next = `${root}add9${existingSlash}`;
+  } else {
+    // Spaghetti — ostinato / plagal-dorian stasis heavier.
+    if (u < 0.32) next = `${root}m${existingSlash}`;
+    else if (u < 0.62) next = `${root}m(add9)${existingSlash}`;
+    else if (u < 0.85) next = `${root}sus2${existingSlash}`;
+    else next = `${root}add9${existingSlash}`;
+  }
+
+  out[idx] = next;
+  receipts.push(`em:final_open_bias@bar${totalBars}`);
 }
 
 export function finalizeEnnioMorriconeMetadata(metadata: GenerationMetadata, acc: FilmHarmonyAccumulator): void {
