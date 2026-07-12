@@ -434,8 +434,74 @@ export function precomputeClausOgermanEffectiveHarmonyBars(context: CompositionC
   out = breakFrankZappaIiViProgressions(out, seed);
   applyOgermanContinuumLayers(out, plan, seed, receipts, tonicPc, context);
 
+  /* Piece-final only: force tonic maj9 + safety net (Wayne fBT pattern; mid-piece continuum untouched). */
+  forceFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
+  enforceFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
+
   genMeta.clausOgermanEffectiveHarmonyBars = out;
   genMeta.clausOgermanDeviceReceipts = receipts;
+}
+
+/**
+ * GCE tonic-family check aligned with finalBarTension gate (`isTonicFamilyChord`).
+ * Piece-final force / safety net only — mid-piece continuum / suspension devices untouched.
+ */
+function chordLooksTonicFamily(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return true;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return true;
+  if (/^[^/]*min9/i.test(s)) return true;
+  return false;
+}
+
+/**
+ * Piece-final tonic: maj9 (Ogerman cyclic-cell / suspension major colour).
+ * Avoid bare maj13 / 13sus — FBT `13` proxy treats them as dominant-family.
+ */
+function spellClausOgermanTonicCadence(
+  bar: number,
+  tonicPc: number
+): { symbol: string; receipt: string } {
+  const nm = pitchClassToSharpName(tonicPc);
+  return {
+    symbol: `${nm}maj9`,
+    receipt: `co:final_tonic_cadence@bar${bar}`,
+  };
+}
+
+function forceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const { symbol, receipt } = spellClausOgermanTonicCadence(totalBars, tonicPc);
+  out[totalBars - 1] = symbol;
+  receipts.push(`${receipt}|final_bar`);
+}
+
+function enforceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || chordLooksTonicFamily(sym)) return;
+  const { symbol, receipt } = spellClausOgermanTonicCadence(totalBars, tonicPc);
+  out[idx] = symbol;
+  receipts.push(`${receipt}|final_bar_guardrail`);
 }
 
 export function finalizeClausOgermanMetadata(
