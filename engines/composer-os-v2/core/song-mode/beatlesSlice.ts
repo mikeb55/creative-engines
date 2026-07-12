@@ -13,6 +13,8 @@ import type {
 import type { MelodyBehaviourPlan } from './melodyBehaviourPlanner';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
+import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
+import { isProtectedBar } from '../score-integrity/identityLock';
 
 /** Pool keys registered under `SONGWRITER_CHORD_POOLS` for `songwriterId === 'beatles'`. */
 export type BeatlesChordPoolId =
@@ -98,6 +100,12 @@ export const beatlesHarmonicGrammarTags = {
 } as const;
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/i;
+
+const PC_TO_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
+
+function pitchClassToSharpName(pc: number): string {
+  return PC_TO_SHARP[((pc % 12) + 12) % 12]!;
+}
 
 export type BeatlesChordAnalysis = {
   rootPc: number;
@@ -794,8 +802,75 @@ export function precomputeBeatlesEffectiveHarmonyBars(context: CompositionContex
   const fpForm = applyBeatlesFormalFingerprintReceipts(genMeta, context, formHarmony, grammarReceipts);
   genMeta.beatlesFingerprintReceipts = [...(genMeta.beatlesFingerprintReceipts ?? []), ...fpHarm, ...fpForm];
 
+  /* Piece-final only: force tonic-family + safety net (Wayne fBT pattern; mid-piece unchanged). */
+  const tonicPc = inferTonicPitchClassFromBar1(context);
+  forceFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
+  enforceFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
+
   genMeta.beatlesEffectiveHarmonyBars = out;
   genMeta.beatlesDeviceReceipts = receipts;
+}
+
+/**
+ * GCE tonic-family check aligned with finalBarTension gate (`isTonicFamilyChord`).
+ * Piece-final force / safety net only — mid-piece Beatles devices untouched.
+ */
+function chordLooksTonicFamily(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return true;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return true;
+  if (/^[^/]*min9/i.test(s)) return true;
+  return false;
+}
+
+/**
+ * Piece-final tonic: maj7 — Merseybeat/Abbey pools land bare I triads (FBT-unsafe);
+ * maj7 is the lightest tonic-family colour that passes finalBarTension without jazz overreach.
+ */
+function spellBeatlesTonicCadence(
+  bar: number,
+  tonicPc: number
+): { symbol: string; receipt: string } {
+  const nm = pitchClassToSharpName(tonicPc);
+  return {
+    symbol: `${nm}maj7`,
+    receipt: `bt:final_tonic_cadence@bar${bar}`,
+  };
+}
+
+function forceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const { symbol, receipt } = spellBeatlesTonicCadence(totalBars, tonicPc);
+  out[totalBars - 1] = symbol;
+  receipts.push(`${receipt}|final_bar`);
+}
+
+function enforceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || chordLooksTonicFamily(sym)) return;
+  const { symbol, receipt } = spellBeatlesTonicCadence(totalBars, tonicPc);
+  out[idx] = symbol;
+  receipts.push(`${receipt}|final_bar_guardrail`);
 }
 
 export function finalizeBeatlesMetadata(metadata: GenerationMetadata, acc: BeatlesHarmonyAccumulator): void {
