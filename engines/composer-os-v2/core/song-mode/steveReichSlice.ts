@@ -181,8 +181,71 @@ export function precomputeSteveReichEffectiveHarmonyBars(context: CompositionCon
     }
   }
 
+  /* Piece-final only: bias toward Reich drone/phase-hold landings that already pass fBT. */
+  biasSteveReichFinalBarIdiomaticOpen(out, seed, tb, receipts, context);
+
   genMeta.steveReichEffectiveHarmonyBars = out;
   genMeta.steveReichDeviceReceipts = receipts;
+}
+
+/**
+ * Dominant-family proxy for finalBarTension (mirrors verlaineGbdWriterEvalCore
+ * `isDominantFamilyChord`) — mid-piece field/phase/additive devices untouched.
+ * Note: m7 / 7sus4 trip via digit `7` even when idiomatic mid-piece.
+ */
+function chordLooksDominantFamilyForFbtReich(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return false;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return false;
+  if (/^[^/]*min9/i.test(s)) return false;
+  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
+}
+
+/**
+ * Bias piece-final bar toward Reich pool landings that already pass fBT
+ * (Amin9 / Gmin9 drone-field holds; sus2 secondary — never m7 digit trap).
+ * Not a forced jazz tonic cadence — phase-hold / drone-field idiom preserved.
+ */
+function biasSteveReichFinalBarIdiomaticOpen(
+  out: string[],
+  seed: number,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || !chordLooksDominantFamilyForFbtReich(sym)) return;
+
+  const hp = parseChordSymbol(sym).harmonyPart;
+  const m = hp.match(ROOT_AT_START);
+  if (!m?.[1]) return;
+  const root = m[1];
+  const slash = sym.includes('/') ? sym.slice(sym.indexOf('/')) : '';
+  const u = seededUnit(seed, totalBars, 98212);
+  const tl = hp.toLowerCase();
+
+  let next: string;
+  // Prefer min9 spelling (proven FBT pass: Amin9 / Gmin9) over m7 digit trap.
+  if (/m7|min7|^m(?!aj)/.test(tl) || /\bm7\b/.test(tl)) {
+    next = u < 0.78 ? `${root}min9${slash}` : `${root}sus2${slash}`;
+  } else if (/7sus|sus4/.test(tl)) {
+    next = u < 0.55 ? `${root}sus2${slash}` : `${root}min9${slash}`;
+  } else if (/alt|b9|#9/.test(tl)) {
+    next = u < 0.5 ? `${root}min9${slash}` : `${root}sus2${slash}`;
+  } else {
+    // Plain 7 / 9 / 13 leftovers → drone-field min9 / sus2.
+    if (u < 0.55) next = `${root}min9${slash}`;
+    else if (u < 0.82) next = `${root}sus2${slash}`;
+    else next = `${root}add9${slash}`;
+  }
+
+  out[idx] = next;
+  receipts.push(`sr:final_open_bias@bar${totalBars}`);
 }
 
 export function finalizeSteveReichMetadata(metadata: GenerationMetadata, acc: SteveReichHarmonyAccumulator): void {
