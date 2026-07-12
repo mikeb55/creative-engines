@@ -262,9 +262,76 @@ export function precomputeBartokEffectiveHarmonyBars(context: CompositionContext
   applyIntervalCellTransformPass(out, seed, receipts, tb, context, bkCtx);
   applyArchFormMirrorPass(out, seed, receipts, tb, context);
 
+  /* Piece-final only: bias toward Bartók axis/quartal landings that already pass fBT. */
+  biasBartokFinalBarIdiomaticOpen(out, seed, tb, receipts, context, bkCtx);
+
   genMeta.bartokEffectiveHarmonyBars = out;
   genMeta.bartokDeviceReceipts = receipts;
   genMeta.bartokAntiElaborationGuards = guards;
+}
+
+/**
+ * Dominant-family proxy for finalBarTension (mirrors verlaineGbdWriterEvalCore
+ * `isDominantFamilyChord`) — mid-piece axis / quartal / golden-section devices untouched.
+ * Note: 7alt / 7(b9,b13) trip FBT even when mid-piece idiomatic.
+ */
+function chordLooksDominantFamilyForFbtBartok(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return false;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return false;
+  if (/^[^/]*min9/i.test(s)) return false;
+  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
+}
+
+/**
+ * Idiom pre-check (Batch 5): only 2/9 gen-ok baseline; both fail on F7alt.
+ * Bias toward Bartók FBT-safe pool from enrichAxisColour / axis grammar:
+ * quartal · sus4(/tritone) · add9 · maj7#11 · m11 — never 7alt / 7(b9,b13).
+ * Not a forced jazz tonic cadence.
+ */
+function biasBartokFinalBarIdiomaticOpen(
+  out: string[],
+  seed: number,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext,
+  ctx: BartokContextMode
+): void {
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || !chordLooksDominantFamilyForFbtBartok(sym)) return;
+
+  const rpc = harmonyRootPc(sym);
+  if (rpc === undefined) return;
+  const root = pitchClassToSharpName(rpc);
+  const slash = slashTail(sym);
+  const u = seededUnit(seed, totalBars, 884701);
+
+  let next: string;
+  if (ctx === 'mikrokosmos') {
+    if (u < 0.35) {
+      const bassName = pitchClassToSharpName((rpc + 6) % 12);
+      next = `${root}sus4/${bassName}`;
+    } else if (u < 0.7) next = `${root}quartal${slash}`;
+    else next = `${root}add9${slash}`;
+  } else if (ctx === 'string_quartet') {
+    if (u < 0.4) next = `${root}add9${slash}`;
+    else if (u < 0.75) next = `${root}maj7#11${slash}`;
+    else next = `${root}quartal${slash}`;
+  } else {
+    // Concert / folk-modal — m11 / quartal / maj7#11 (never 7alt colour on final).
+    if (u < 0.35) next = `${root}m11${slash}`;
+    else if (u < 0.65) next = `${root}quartal${slash}`;
+    else if (u < 0.85) next = `${root}maj7#11${slash}`;
+    else next = `${root}add9${slash}`;
+  }
+
+  out[idx] = next;
+  receipts.push(`bk:final_open_bias@bar${totalBars}`);
 }
 
 export function finalizeBartokMetadata(metadata: GenerationMetadata, acc: BartokHarmonyAccumulator): void {
