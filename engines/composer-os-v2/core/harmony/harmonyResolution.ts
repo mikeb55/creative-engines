@@ -20,7 +20,11 @@ import { isRadioheadHarmonicPath } from '../song-mode/radioheadSlice';
 import { isAndrewHillHarmonicPath } from '../song-mode/andrewHillSlice';
 import { isKateBushHarmonicPath } from '../song-mode/kateBushSlice';
 import { isEcmChamberHarmonicPath } from '../song-mode/ecmChamberSlice';
-import { isBernardHerrmannHarmonicPath, isJerryGoldsmithHarmonicPath } from '../song-mode/filmSoundtrackHarmonySlices';
+import {
+  isBernardHerrmannHarmonicPath,
+  isJerryGoldsmithHarmonicPath,
+  isJohnWilliamsHarmonicPath,
+} from '../song-mode/filmSoundtrackHarmonySlices';
 import { isClausOgermanHarmonicPath } from '../song-mode/clausOgermanSlice';
 import { isDonSebeskyHarmonicPath } from '../song-mode/donSebeskySlice';
 import { isJackWhiteHarmonicPath } from '../song-mode/jackWhiteDroneSlice';
@@ -312,7 +316,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   }
   const jwEff = meta?.johnWilliamsEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'john_williams' &&
+    isJohnWilliamsHarmonicPath(meta) &&
     Array.isArray(jwEff) &&
     jwEff.length === tb &&
     barIndex >= 1 &&

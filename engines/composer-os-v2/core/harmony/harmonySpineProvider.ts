@@ -31,7 +31,11 @@ import { isRadioheadHarmonicPath } from '../song-mode/radioheadSlice';
 import { isAndrewHillHarmonicPath } from '../song-mode/andrewHillSlice';
 import { isKateBushHarmonicPath } from '../song-mode/kateBushSlice';
 import { isEcmChamberHarmonicPath } from '../song-mode/ecmChamberSlice';
-import { isBernardHerrmannHarmonicPath, isJerryGoldsmithHarmonicPath } from '../song-mode/filmSoundtrackHarmonySlices';
+import {
+  isBernardHerrmannHarmonicPath,
+  isJerryGoldsmithHarmonicPath,
+  isJohnWilliamsHarmonicPath,
+} from '../song-mode/filmSoundtrackHarmonySlices';
 import { isClausOgermanHarmonicPath } from '../song-mode/clausOgermanSlice';
 import { isDonSebeskyHarmonicPath } from '../song-mode/donSebeskySlice';
 import { isJackWhiteHarmonicPath } from '../song-mode/jackWhiteDroneSlice';
@@ -119,7 +123,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   { match: (m) => isBillEvansHarmonicPath(m), effKey: 'billEvansEffectiveHarmonyBars', sliceId: 'bill_evans' },
   { match: (m) => isDebussyHarmonicPath(m), effKey: 'debussyEffectiveHarmonyBars', sliceId: 'debussy' },
   { match: (m) => isBernardHerrmannHarmonicPath(m), effKey: 'bernardHerrmannEffectiveHarmonyBars', sliceId: 'bernard_herrmann' },
-  { match: (m) => m?.songwriterStyleId === 'john_williams', effKey: 'johnWilliamsEffectiveHarmonyBars', sliceId: 'john_williams' },
+  { match: (m) => isJohnWilliamsHarmonicPath(m), effKey: 'johnWilliamsEffectiveHarmonyBars', sliceId: 'john_williams' },
   { match: (m) => m?.songwriterStyleId === 'ennio_morricone', effKey: 'ennioMorriconeEffectiveHarmonyBars', sliceId: 'ennio_morricone' },
   { match: (m) => m?.songwriterStyleId === 'nino_rota', effKey: 'ninoRotaEffectiveHarmonyBars', sliceId: 'nino_rota' },
   { match: (m) => isJerryGoldsmithHarmonicPath(m), effKey: 'jerryGoldsmithEffectiveHarmonyBars', sliceId: 'jerry_goldsmith' },

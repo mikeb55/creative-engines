@@ -408,6 +408,28 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
     notes:
       'alias of john_barry for VRB voiceId harmonicVoice=barry_thematic_monolith',
   },
+  {
+    styleId: 'john_williams',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'johnWilliamsEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via johnWilliamsEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; path helper also accepts VRB id williams; context+surface primary-only',
+  },
+  {
+    styleId: 'williams',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'johnWilliamsEffectiveHarmonyBars',
+    notes:
+      'alias of john_williams for VRB voiceId harmonicVoice=williams',
+  },
 ];
 
 const REGISTRY_BY_STYLE = new Map<string, HvCapabilityEntry>(

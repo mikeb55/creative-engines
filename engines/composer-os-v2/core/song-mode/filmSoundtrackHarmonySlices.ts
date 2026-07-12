@@ -279,6 +279,32 @@ export function finalizeBernardHerrmannMetadata(metadata: GenerationMetadata, ac
 /** --- John Williams --- */
 export let johnWilliamsEffectiveHarmonyBars: string[] = [];
 
+export const JOHN_WILLIAMS_HARMONIC_VOICE_IDS = ['john_williams', 'williams'] as const;
+
+export function isJohnWilliamsHarmonicVoiceId(raw: string | null | undefined): boolean {
+  const id = normalizeHarmonicVoiceId(String(raw ?? ''));
+  return id === 'john_williams' || id === 'williams';
+}
+
+/**
+ * Primary songwriter or harmonicVoice selects John Williams harmony authority.
+ * Single-gate — Wave-D / jerry_goldsmith film pattern.
+ *
+ * Accepts `john_williams` | VRB `williams`. FBT tonic-force lives inside precompute.
+ * `johnWilliamsContext` + style surface stay primary-only (holdbacks).
+ */
+export function isJohnWilliamsHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  return (
+    isJohnWilliamsHarmonicVoiceId(metadata?.songwriterStyleId) ||
+    isJohnWilliamsHarmonicVoiceId(metadata?.harmonicVoice)
+  );
+}
+
 /** @deprecated — use resolveBarSymbol */
 export function precomputeJohnWilliamsEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
