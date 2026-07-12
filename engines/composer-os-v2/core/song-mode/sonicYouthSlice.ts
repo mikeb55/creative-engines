@@ -9,18 +9,95 @@ import type { CompositionContext, GenerationMetadata } from '../compositionConte
 import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import type { ChordEvent, MeasureModel } from '../score-model/scoreModelTypes';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
-import { parseChordSymbol } from '../harmony/chordSymbolAnalysis';
+import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { coarseSectionRoleFromBar } from './brianWilsonPetSoundsSlice';
+import { isProtectedBar } from '../score-integrity/identityLock';
 import type { SonicYouthExtension, SYTextureState } from '../score-model/sonicYouthChordTypes';
 import { getSYDissonancePreset } from '../score-model/sonicYouthChordGuards';
 import { getNextTextureState } from '../score-model/sonicYouthTextureEngine';
 import { getEffectiveTuningProfileForBar } from '../section-architecture/effectiveContextForBar';
 import { getAlternateGuitarTuningPreset } from './alternateGuitarTunings';
 
+const ROOT_AT_START = /^([A-G](?:#|b)?)/;
+const PC_TO_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
+
 function seededUnit(seed: number, bar: number, salt: number): number {
   let s = (seed ^ bar * 1103515245 ^ salt * 12345) >>> 0;
   s = (s * 1664525 + 1013904223) >>> 0;
   return s / 0xffffffff;
+}
+
+function pitchClassToSharpName(pc: number): string {
+  return PC_TO_SHARP[((pc % 12) + 12) % 12]!;
+}
+
+function harmonyRootPc(symbol: string): number | undefined {
+  const h = parseChordSymbol(symbol).harmonyPart;
+  const m = h.match(ROOT_AT_START);
+  if (!m?.[1]) return undefined;
+  return noteNameToPitchClass(m[1]);
+}
+
+function slashTail(symbol: string): string {
+  return symbol.includes('/') ? symbol.slice(symbol.indexOf('/')) : '';
+}
+
+/**
+ * Dominant-family proxy for finalBarTension (mirrors andrew_hill / verlaineGbdWriterEvalCore).
+ * Piece-final bias only — mid-piece devices untouched.
+ */
+function chordLooksDominantFamilyForFbt(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return false;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return false;
+  if (/^[^/]*min9/i.test(s)) return false;
+  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
+}
+
+/**
+ * Bias piece-final bar toward SY pool open landings that already pass fBT
+ * (Asus4 / Asus2 / add9 / maj7#11) — not a forced jazz tonic maj7.
+ * Aligns with existing mid-piece `sy:noisy_cadence_destabilisation` → sus4.
+ */
+function biasSonicYouthFinalBarOpen(
+  out: string[],
+  seed: number,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || !chordLooksDominantFamilyForFbt(sym)) return;
+
+  const slash = slashTail(sym);
+  const r = harmonyRootPc(sym);
+  if (r === undefined) return;
+  const root = pitchClassToSharpName(r);
+  const tl = parseChordSymbol(sym).harmonyPart.toLowerCase();
+  const u = seededUnit(seed, totalBars, 887603);
+
+  let next: string;
+  if (/alt/.test(tl) || (/\b7\b/.test(tl) && !/sus|maj7/.test(tl))) {
+    // A7alt survivors → Asus4 / Asus2 / Aadd9 (pool + noisy-cadence grammar)
+    if (u < 0.4) next = `${root}sus4${slash}`;
+    else if (u < 0.65) next = `${root}sus2${slash}`;
+    else if (u < 0.85) next = `${root}add9${slash}`;
+    else next = `${root}maj7(#11)${slash}`;
+  } else if (/7sus/.test(tl)) {
+    next = `${root}sus4${slash}`;
+  } else {
+    if (u < 0.4) next = `${root}sus4${slash}`;
+    else if (u < 0.7) next = `${root}add9${slash}`;
+    else next = `${root}maj7(#11)${slash}`;
+  }
+
+  out[idx] = next;
+  receipts.push(`sy:final_open_bias@bar${totalBars}`);
 }
 
 export function isSongwriterSonicYouth(
@@ -325,6 +402,9 @@ export function precomputeSonicYouthEffectiveHarmonyBars(context: CompositionCon
       run = 1;
     }
   }
+
+  /* Piece-final only: bias dominant survivors toward SY open landings (Hill/Debussy pattern). */
+  biasSonicYouthFinalBarOpen(out, seed, tb, receipts, context);
 
   genMeta.sonicYouthEffectiveHarmonyBars = out;
   genMeta.sonicYouthDeviceReceipts = receipts;
