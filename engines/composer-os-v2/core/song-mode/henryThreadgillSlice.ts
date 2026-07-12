@@ -17,6 +17,7 @@ import { DEFAULT_HENRY_THREADGILL_SLICE_PARAMS } from './threadgillEpisodeTypes'
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
+import { isProtectedBar } from '../score-integrity/identityLock';
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 
@@ -390,8 +391,59 @@ export function precomputeHenryThreadgillEffectiveHarmonyBars(context: Compositi
   inferTonicPitchClassFromBar1(context);
   applyEpisodePasses(out, plan, seed, receipts, params);
 
+  /* Piece-final only: bias toward Threadgill defunctionalized landings that already pass fBT. */
+  biasHenryThreadgillFinalBarIdiomaticOpen(out, seed, tb, receipts, context);
+
   genMeta.henryThreadgillEffectiveHarmonyBars = out;
   genMeta.henryThreadgillDeviceReceipts = receipts;
+}
+
+/**
+ * Dominant-family proxy for finalBarTension (mirrors verlaineGbdWriterEvalCore
+ * `isDominantFamilyChord`) — mid-piece cell / defunctional / polymodal devices untouched.
+ */
+function chordLooksDominantFamilyForFbtThreadgill(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return false;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return false;
+  if (/^[^/]*min9/i.test(s)) return false;
+  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
+}
+
+/**
+ * Bias piece-final bar toward Threadgill defunctional pool that already passes fBT
+ * (B(add9,no3) from maybeDefunctionalizeBar; optional polymodal slash kept).
+ * Not a forced jazz tonic cadence — interval-cell / non-ii–V idiom preserved.
+ */
+function biasHenryThreadgillFinalBarIdiomaticOpen(
+  out: string[],
+  seed: number,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || !chordLooksDominantFamilyForFbtThreadgill(sym)) return;
+
+  const r = harmonyRootPc(sym);
+  if (r === undefined) return;
+  const slash = slashTail(sym);
+  const u = seededUnit(seed, totalBars, 771902);
+
+  // Proven FBT-pass: (add9,no3); side-step root like maybeDefunctionalizeBar.
+  const sidePc = (r + (u < 0.45 ? 1 : 2) + 12) % 12;
+  let next: string;
+  if (u < 0.72) next = `${pitchClassToSharpName(sidePc)}(add9,no3)${slash}`;
+  else if (u < 0.88) next = `${pitchClassToSharpName(r)}(add9,no3)${slash}`;
+  else next = `${pitchClassToSharpName(sidePc)}add9${slash}`;
+
+  out[idx] = next;
+  receipts.push(`ht:final_open_bias@${totalBars}`);
 }
 
 export function finalizeHenryThreadgillMetadata(
