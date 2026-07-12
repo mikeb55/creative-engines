@@ -320,6 +320,80 @@ function applyBarryLayers(
       receipts.push(`jbr:british_noble_weight@${bar}`);
     }
   }
+
+  /* Piece-final only: Bond tonic lock (mirrors Wayne force/enforce). */
+  forceFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
+  enforceFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
+}
+
+/**
+ * GCE tonic-family check aligned with finalBarTension gate (`isTonicFamilyChord`).
+ * Piece-final force / safety net only — mid-piece Barry devices untouched.
+ */
+function chordLooksTonicFamily(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return true;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return true;
+  if (/^[^/]*min9/i.test(s)) return true;
+  return false;
+}
+
+/** Piece-final tonic: minor-major 7 (Bond / Barry vocabulary; passes finalBarTension). */
+function spellBarryTonicCadence(
+  bar: number,
+  tonicPc: number
+): { symbol: string; receipt: string } {
+  const nm = pitchClassToSharpName(tonicPc);
+  return {
+    symbol: `${nm}m(maj7)`,
+    receipt: `jbr:final_tonic_cadence@bar${bar}`,
+  };
+}
+
+/**
+ * Primary force: piece-final bar always lands on Bond tonic-family (mirrors Wayne
+ * `forceFinalBarTonicResolution`). Mid-piece Barry devices untouched.
+ *
+ * Closes residual FBT fail where phrase slot + chromatic bass leave a transposed
+ * `Bb13` → `C13/A#` (or similar dominant-13 slash) on the final bar.
+ */
+function forceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const { symbol, receipt } = spellBarryTonicCadence(totalBars, tonicPc);
+  out[totalBars - 1] = symbol;
+  receipts.push(`${receipt}|final_bar`);
+}
+
+/**
+ * Safety net: if bar N is still non-tonic after primary force, rewrite to tonic m(maj7)
+ * (mirrors Wayne `enforceFinalBarTonicResolution`).
+ */
+function enforceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || chordLooksTonicFamily(sym)) return;
+  const { symbol, receipt } = spellBarryTonicCadence(totalBars, tonicPc);
+  out[idx] = symbol;
+  receipts.push(`${receipt}|final_bar_guardrail`);
 }
 
 export interface JohnBarryHarmonyAccumulator {
