@@ -249,6 +249,8 @@ import {
   isJohnWilliamsHarmonicVoiceId,
   isNinoRotaHarmonicPath,
   isNinoRotaHarmonicVoiceId,
+  isPhilipGlassHarmonicPath,
+  isPhilipGlassHarmonicVoiceId,
   precomputeAngeloBadalamentiEffectiveHarmonyBars,
   precomputeBernardHerrmannEffectiveHarmonyBars,
   precomputeEnnioMorriconeEffectiveHarmonyBars,
@@ -3358,6 +3360,10 @@ function buildGuitarPart(
   );
   const jerryGoldsmithHarmonicPathActive = isJerryGoldsmithHarmonicPath(genMeta);
   const isSongwriterPhilipGlass = genMeta?.songwriterStyleId === 'philip_glass';
+  const isHarmonicVoicePhilipGlass = isPhilipGlassHarmonicVoiceId(
+    String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')
+  );
+  const philipGlassHarmonicPathActive = isPhilipGlassHarmonicPath(genMeta);
   const isSongwriterSteveReich = genMeta?.songwriterStyleId === 'steve_reich';
   const isSongwriterMessiaen = genMeta?.songwriterStyleId === 'messiaen';
   const isSongwriterHansZimmer = genMeta?.songwriterStyleId === 'hans_zimmer';
@@ -3791,8 +3797,15 @@ function buildGuitarPart(
       }
     }
   }
-  if (isSongwriterPhilipGlass && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (philipGlassHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputePhilipGlassEffectiveHarmonyBars(context);
+    if (isHarmonicVoicePhilipGlass && !isSongwriterPhilipGlass) {
+      const philipGlassEff = genMeta.philipGlassEffectiveHarmonyBars;
+      const philipGlassTb = totalBarsFromContext(context);
+      if (Array.isArray(philipGlassEff) && philipGlassEff.length === philipGlassTb) {
+        genMeta.mosaicMergedHarmonyBars = [...philipGlassEff];
+      }
+    }
   }
   if (isSongwriterSteveReich && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeSteveReichEffectiveHarmonyBars(context);

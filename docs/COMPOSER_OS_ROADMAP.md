@@ -638,7 +638,7 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 
 **Still open (reordered):**
 
-3. **80-style HV rollout — Waves A/B/C done; Wave D leftovers (~13 Tier 1)** — Stage 1 + Stage 2 audit complete; Waves A/B/C wired many Tier 1 styles via the shared abstraction. Remaining Wave D queue: `ecm_chamber`, `bernard_herrmann`, `claus_ogerman`, `don_sebesky`, `jack_white`, `jerry_goldsmith`, `john_barry`, `john_williams`, `johnny_mandel`, `marr`, `nino_rota`, `philip_glass`, `ralph_towner`. Then Tier 2 spot-check. See `docs/EIGHTY_STYLE_AUDIT_SWEEP_2026-07-08.md`, `docs/EIGHTY_STYLE_STAGE2_FINDINGS.md`.
+3. **80-style HV rollout — Waves A/B/C done; Wave D Tier 1 complete (13/13)** — Stage 1 + Stage 2 audit complete; Waves A/B/C + Wave D leftovers wired (`ecm_chamber` … `ralph_towner`, final **`philip_glass`**). Next: Tier 2 spot-check. See `docs/EIGHTY_STYLE_AUDIT_SWEEP_2026-07-08.md`, `docs/EIGHTY_STYLE_STAGE2_FINDINGS.md`.
 4. **Big Band harmonicVoice forwarding** — **Forwarding done (Fix #3A, 2026-07-08). Consumption (Phase 2) — not started, separate DCR item.** Transport reaches `bigBandContextFromGenerateRequest`; engine still reads `songwriterStyleId` only (matrix `TRANSPORT_ONLY`).
 5. **String Quartet harmonicVoice forwarding** — **Forwarding done (Fix #3B, 2026-07-08). Consumption (Phase 2) — not started, separate DCR item.** Transport reaches `stringQuartetGenerationMetadataFromGenerateRequest`; engine still reads `songwriterStyleId` only (matrix `TRANSPORT_ONLY`).
 6. **Riff Generator — design decision made (2026-07-08)** — harmonicVoice and riffVrbId remain separate fields / controls. No unification. Phase A implementation not started. Mapping/fallback behavior to follow the scoped design doc in `docs/RIFF_GENERATOR_HARMONIC_VOICE_DECISION.md`.
@@ -706,7 +706,7 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 
 ### HV-aware authority abstraction — SHIPPED (was “generalize harmonic-voice resolution”)
 
-**Status (2026-07-12):** **SHIPPED.** Shared module lives at **`engines/composer-os-v2/core/authority/`** (`resolveEffectiveStyleIdentity`, `harmonicVoiceCapabilityRegistry`, layer adapters). Phase 0 infra (`1d8bdff5`) + Phase 1 seams 1–4 (`65754282` → `9200267e`). Verlaine + frank_zappa closed the template; Waves A/B/C rolled many Tier 1 styles; **Wave D leftovers** remain (see Priority Order item 3).
+**Status (2026-07-12):** **SHIPPED.** Shared module lives at **`engines/composer-os-v2/core/authority/`** (`resolveEffectiveStyleIdentity`, `harmonicVoiceCapabilityRegistry`, layer adapters). Phase 0 infra (`1d8bdff5`) + Phase 1 seams 1–4 (`65754282` → `9200267e`). Verlaine + frank_zappa closed the template; Waves A/B/C rolled many Tier 1 styles; **Wave D Tier 1 complete** (`philip_glass` final).
 
 **Background (historical):** Fixing Verlaine as a harmonic voice paired with a different primary (e.g. Barry Harris) required patching ~7 call sites on **2026-07-06** because runtime “is style X active?” checks used primary only. That cascade motivated the shared abstraction instead of per-style probes.
 

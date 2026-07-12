@@ -25,6 +25,7 @@ import {
   isJerryGoldsmithHarmonicPath,
   isJohnWilliamsHarmonicPath,
   isNinoRotaHarmonicPath,
+  isPhilipGlassHarmonicPath,
 } from '../song-mode/filmSoundtrackHarmonySlices';
 import { isClausOgermanHarmonicPath } from '../song-mode/clausOgermanSlice';
 import { isDonSebeskyHarmonicPath } from '../song-mode/donSebeskySlice';
@@ -392,7 +393,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 
   const pgEff = meta?.philipGlassEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'philip_glass' &&
+    isPhilipGlassHarmonicPath(meta) &&
     Array.isArray(pgEff) &&
     pgEff.length === tb &&
     barIndex >= 1 &&

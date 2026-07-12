@@ -905,6 +905,45 @@ export function finalizeJerryGoldsmithMetadata(metadata: GenerationMetadata, acc
 /** --- Philip Glass --- */
 export let philipGlassEffectiveHarmonyBars: string[] = [];
 
+/** Song Mode id + film-stub VRB twins (not REICH_GLASS / reich_glass). */
+export const PHILIP_GLASS_HARMONIC_VOICE_IDS = [
+  'philip_glass',
+  'philip_glass_screen',
+  'philip_glass_film',
+  'glass',
+] as const;
+
+export function isPhilipGlassHarmonicVoiceId(raw: string | null | undefined): boolean {
+  const id = normalizeHarmonicVoiceId(String(raw ?? ''));
+  return (
+    id === 'philip_glass' ||
+    id === 'philip_glass_screen' ||
+    id === 'philip_glass_film' ||
+    id === 'glass'
+  );
+}
+
+/**
+ * Primary songwriter or harmonicVoice selects Philip Glass film harmony authority.
+ * Single-gate — Wave-D / bernard_herrmann HV pattern.
+ *
+ * Accepts `philip_glass` | film-stub twins `philip_glass_screen` / `philip_glass_film` /
+ * SQ→BB profile id `glass`. Does **not** accept `reich_glass` (separate SQ VRB).
+ * FBT idiomatic-bias (`biasPhilipGlassFinalBarIdiomaticOpen`) lives inside precompute.
+ * `philipGlassContext` + style surface stay primary-only (holdbacks).
+ */
+export function isPhilipGlassHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  return (
+    isPhilipGlassHarmonicVoiceId(metadata?.songwriterStyleId) ||
+    isPhilipGlassHarmonicVoiceId(metadata?.harmonicVoice)
+  );
+}
+
 /** @deprecated — use resolveBarSymbol */
 export function precomputePhilipGlassEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;

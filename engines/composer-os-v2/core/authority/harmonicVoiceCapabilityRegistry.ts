@@ -535,6 +535,48 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
     effectiveHarmonyBarsKey: 'ralphTownerEffectiveHarmonyBars',
     notes: 'alias of ralph_towner for VRB voiceId harmonicVoice=towner_guitar_polyphony',
   },
+  {
+    styleId: 'philip_glass',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'philipGlassEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via philipGlassEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; path helper also accepts philip_glass_screen|philip_glass_film|glass; never reich_glass; context+surface primary-only; FBT idiomatic-bias inside precompute',
+  },
+  {
+    styleId: 'philip_glass_screen',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'philipGlassEffectiveHarmonyBars',
+    notes: 'alias of philip_glass for film-stub VRB voiceId harmonicVoice=philip_glass_screen',
+  },
+  {
+    styleId: 'philip_glass_film',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'philipGlassEffectiveHarmonyBars',
+    notes: 'alias of philip_glass for film-stub VRB voiceId harmonicVoice=philip_glass_film',
+  },
+  {
+    styleId: 'glass',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'philipGlassEffectiveHarmonyBars',
+    notes:
+      'alias of philip_glass for SQ→BB profile id / film-stub BY_ID key glass (not reich_glass)',
+  },
 ];
 
 const REGISTRY_BY_STYLE = new Map<string, HvCapabilityEntry>(
