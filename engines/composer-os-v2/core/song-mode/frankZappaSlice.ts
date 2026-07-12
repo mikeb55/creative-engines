@@ -19,6 +19,7 @@ import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAn
 import { isProtectedBar } from '../score-integrity/identityLock';
 import { SONG_MODE_MOTIF_BAR_17, SONG_MODE_MOTIF_BAR_9 } from '../motif/motifEngineTypes';
 import { getEffectiveContextForBar } from '../section-architecture/effectiveContextForBar';
+import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 
 /** Stable device ids for receipts + diagnostics (spec labels). */
 export const FRANK_ZAPPA_DEVICE_POLYTONAL_SUPERIMPOSITION = 'polytonal_superimposition' as const;
@@ -555,6 +556,93 @@ function applyBitonalTriadPass(
   }
 }
 
+/**
+ * GCE tonic-family check aligned with finalBarTension gate (`isTonicFamilyChord`).
+ * Piece-final force / safety net only — mid-piece devices untouched.
+ */
+function chordLooksTonicFamily(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return true;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return true;
+  if (/^[^/]*min9/i.test(s)) return true;
+  return false;
+}
+
+/** Bitonal maj+maj already passes fBT (proxy 0.55) — not plain maj7. */
+function looksZappaBitonalFinal(symbol: string): boolean {
+  return /maj\+[A-G](?:#|b)?maj/i.test(symbol.trim());
+}
+
+/**
+ * Piece-final: bitonal maj+maj on final-bar root (same shape as applyBitonalTriadPass
+ * Amaj+C#maj passers). Falls back to inferred tonic root. No slash.
+ */
+function spellZappaBitonalFinalCadence(
+  bar: number,
+  rootPc: number
+): { symbol: string; receipt: string } {
+  const a = pitchClassToSharpName(rootPc);
+  const bName = pitchClassToSharpName((rootPc + 4) % 12);
+  return {
+    symbol: `${a}maj+${bName}maj`,
+    receipt: `fz:final_bitonal_tonic@bar${bar}`,
+  };
+}
+
+function resolveZappaFinalBitonalRootPc(
+  out: string[],
+  totalBars: number,
+  tonicPc: number | undefined
+): number | undefined {
+  if (totalBars < 1 || out.length < totalBars) return tonicPc;
+  return harmonyRootPc(out[totalBars - 1] ?? '') ?? tonicPc;
+}
+
+/**
+ * Primary force: piece-final bar → Zappa bitonal tonic shape (Wayne force site;
+ * spelling matches applyBitonalTriadPass passers, not plain maj7).
+ */
+function forceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  const rootPc = resolveZappaFinalBitonalRootPc(out, totalBars, tonicPc);
+  if (rootPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const { symbol, receipt } = spellZappaBitonalFinalCadence(totalBars, rootPc);
+  out[totalBars - 1] = symbol;
+  receipts.push(`${receipt}|final_bar`);
+}
+
+/**
+ * Safety net: if bar N still dominant-family / non-bitonal-open, rewrite to bitonal maj+maj.
+ */
+function enforceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  const rootPc = resolveZappaFinalBitonalRootPc(out, totalBars, tonicPc);
+  if (rootPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym) return;
+  if (looksZappaBitonalFinal(sym) || chordLooksTonicFamily(sym)) return;
+  const { symbol, receipt } = spellZappaBitonalFinalCadence(totalBars, rootPc);
+  out[idx] = symbol;
+  receipts.push(`${receipt}|final_bar_guardrail`);
+}
+
 export type FrankZappaMotifRecycleTransform =
   | 'transposition'
   | 'rhythmic_displacement'
@@ -982,6 +1070,11 @@ export function precomputeFrankZappaEffectiveHarmonyBars(context: CompositionCon
   genMeta.songwriterDensityBias = Math.max(0, Math.min(1, meanDensity(densityArc)));
   genMeta.frankZappaDiffReceipts = [...FRANK_ZAPPA_DIFF_RECEIPT_IDS_RUNTIME];
   genMeta.zappaSectionBehaviorBySection = buildZappaSectionBehaviorDiagnostics(context, tb);
+
+  /* Piece-final only: bitonal tonic force + safety net (Wayne fBT pattern; Zappa spelling). */
+  const tonicPc = inferTonicPitchClassFromBar1(context);
+  forceFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
+  enforceFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
 
   genMeta.frankZappaEffectiveHarmonyBars = out;
   genMeta.frankZappaDeviceReceipts = receipts;
