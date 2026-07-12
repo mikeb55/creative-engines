@@ -352,9 +352,75 @@ export function precomputePrinceEffectiveHarmonyBars(context: CompositionContext
   applyBridgeTritonePass(out, seed, receipts, tb, context);
   applyStopTimeReceiptPass(seed, receipts, tb, context);
 
+  /* Piece-final only: force Prince gospel tonic maj9 + safety net (mid-piece unchanged). */
+  forceFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
+  enforceFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
+
   genMeta.princeEffectiveHarmonyBars = out;
   genMeta.princeDeviceReceipts = receipts;
   genMeta.princeAntiElaborationGuards = guards;
+}
+
+/**
+ * GCE / FBT landing check for piece-final force.
+ * Prince gospel tonic maj9 (pr:d2) — not bare maj7, not dom9/13 (digit-`7`/`13` FBT traps).
+ */
+function chordLooksTonicFamily(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return true;
+  if (/6\/9|69/.test(q) && !q.includes('min')) return true;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return true;
+  if (/^[^/]*min9/i.test(s)) return true;
+  const hp = parseChordSymbol(s).harmonyPart;
+  if (/^[A-G](?:#|b)?9$/i.test(hp)) return true;
+  return false;
+}
+
+/** Piece-final tonic: maj9 — Prince d2_gospel_cadence / enrichPrinceCore tonic colour. */
+function spellPrinceTonicCadence(
+  bar: number,
+  tonicPc: number
+): { symbol: string; receipt: string } {
+  const nm = pitchClassToSharpName(tonicPc);
+  return {
+    symbol: `${nm}maj9`,
+    receipt: `pr:final_tonic_cadence@bar${bar}`,
+  };
+}
+
+function forceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const { symbol, receipt } = spellPrinceTonicCadence(totalBars, tonicPc);
+  out[totalBars - 1] = symbol;
+  receipts.push(`${receipt}|final_bar`);
+}
+
+function enforceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || chordLooksTonicFamily(sym)) return;
+  const { symbol, receipt } = spellPrinceTonicCadence(totalBars, tonicPc);
+  out[idx] = symbol;
+  receipts.push(`${receipt}|final_bar_guardrail`);
 }
 
 export function finalizePrinceMetadata(metadata: GenerationMetadata, acc: PrinceHarmonyAccumulator): void {
