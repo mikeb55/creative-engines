@@ -32,6 +32,7 @@ import { isJackWhiteHarmonicPath } from '../song-mode/jackWhiteDroneSlice';
 import { isJohnBarryHarmonicPath } from '../song-mode/johnBarrySlice';
 import { isJohnnyMandelHarmonicPath } from '../song-mode/johnnyMandelSlice';
 import { isMarrHarmonicPath } from '../song-mode/marrMelodicSlice';
+import { isRalphTownerHarmonicPath } from '../song-mode/ralphTownerSlice';
 import { isSatieHarmonicPath } from '../song-mode/satieSlice';
 import { isColePorterHarmonicPath } from '../song-mode/colePorterSlice';
 import { isJohnColtraneHarmonicPath } from '../song-mode/johnColtraneSlice';
@@ -878,7 +879,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
    */
   const ralphTownerEff = meta?.ralphTownerEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'ralph_towner' &&
+    isRalphTownerHarmonicPath(meta) &&
     Array.isArray(ralphTownerEff) &&
     ralphTownerEff.length === tb &&
     barIndex >= 1 &&

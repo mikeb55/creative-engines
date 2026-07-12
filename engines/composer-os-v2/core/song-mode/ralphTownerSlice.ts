@@ -5,6 +5,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -467,6 +468,36 @@ export function minTownerSectionSpan(plan: TownerPolyphonicPlan | undefined): nu
 export function maxTownerPhraseArcLength(plan: TownerPolyphonicPlan | undefined): number {
   if (!plan?.sections.length) return 0;
   return Math.max(...plan.sections.map((s) => s.phraseArcBars));
+}
+
+export const RALPH_TOWNER_HARMONIC_VOICE_IDS = [
+  'ralph_towner',
+  'towner',
+  'towner_guitar_polyphony',
+] as const;
+
+export function isRalphTownerHarmonicVoiceId(raw: string | null | undefined): boolean {
+  const id = normalizeHarmonicVoiceId(String(raw ?? ''));
+  return id === 'ralph_towner' || id === 'towner' || id === 'towner_guitar_polyphony';
+}
+
+/**
+ * Primary songwriter or harmonicVoice selects Ralph Towner harmony authority.
+ * Single-gate — Wave-D pattern.
+ *
+ * Accepts `ralph_towner` | `towner` | VRB `towner_guitar_polyphony`.
+ * `townerStructuralRelax` in behaviourGates stays primary-only (holdback).
+ */
+export function isRalphTownerHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  return (
+    isRalphTownerHarmonicVoiceId(metadata?.songwriterStyleId) ||
+    isRalphTownerHarmonicVoiceId(metadata?.harmonicVoice)
+  );
 }
 
 export function precomputeRalphTownerEffectiveHarmonyBars(context: CompositionContext): void {

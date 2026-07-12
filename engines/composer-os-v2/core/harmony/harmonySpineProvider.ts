@@ -43,6 +43,7 @@ import { isJackWhiteHarmonicPath } from '../song-mode/jackWhiteDroneSlice';
 import { isJohnBarryHarmonicPath } from '../song-mode/johnBarrySlice';
 import { isJohnnyMandelHarmonicPath } from '../song-mode/johnnyMandelSlice';
 import { isMarrHarmonicPath } from '../song-mode/marrMelodicSlice';
+import { isRalphTownerHarmonicPath } from '../song-mode/ralphTownerSlice';
 import { isSatieHarmonicPath } from '../song-mode/satieSlice';
 import { isColePorterHarmonicPath } from '../song-mode/colePorterSlice';
 import { isJohnColtraneHarmonicPath } from '../song-mode/johnColtraneSlice';
@@ -162,7 +163,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   { match: (m) => m?.songwriterStyleId === 'kenny_wheeler', effKey: 'kennyWheelerEffectiveHarmonyBars', sliceId: 'kenny_wheeler' },
   { match: (m) => m?.songwriterStyleId === 'jan_garbarek', effKey: 'janGarbarekEffectiveHarmonyBars', sliceId: 'jan_garbarek' },
   { match: (m) => m?.songwriterStyleId === 'john_surman', effKey: 'johnSurmanEffectiveHarmonyBars', sliceId: 'john_surman' },
-  { match: (m) => m?.songwriterStyleId === 'ralph_towner', effKey: 'ralphTownerEffectiveHarmonyBars', sliceId: 'ralph_towner' },
+  { match: (m) => isRalphTownerHarmonicPath(m), effKey: 'ralphTownerEffectiveHarmonyBars', sliceId: 'ralph_towner' },
   {
     match: (m) => isHoldsworthHarmonicPath(m),
     effKey: 'holdsworthEffectiveHarmonyBars',

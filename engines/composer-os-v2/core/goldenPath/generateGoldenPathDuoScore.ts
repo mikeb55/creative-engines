@@ -360,6 +360,8 @@ import {
   accumulateRalphTownerHarmonyDiagnostics,
   createRalphTownerHarmonyAccumulator,
   finalizeRalphTownerMetadata,
+  isRalphTownerHarmonicPath,
+  isRalphTownerHarmonicVoiceId,
   precomputeRalphTownerEffectiveHarmonyBars,
 } from './ralphTownerSlice';
 import {
@@ -3397,6 +3399,10 @@ function buildGuitarPart(
   const isSongwriterJanGarbarek = genMeta?.songwriterStyleId === 'jan_garbarek';
   const isSongwriterJohnSurman = genMeta?.songwriterStyleId === 'john_surman';
   const isSongwriterRalphTowner = genMeta?.songwriterStyleId === 'ralph_towner';
+  const isHarmonicVoiceRalphTowner = isRalphTownerHarmonicVoiceId(
+    String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')
+  );
+  const ralphTownerHarmonicPathActive = isRalphTownerHarmonicPath(genMeta);
   const isSongwriterVerlaine = genMeta?.songwriterStyleId === 'verlaine';
   const isHarmonicVoiceVerlaine =
     normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
@@ -3883,8 +3889,15 @@ function buildGuitarPart(
   if (isSongwriterJohnSurman && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeJohnSurmanEffectiveHarmonyBars(context);
   }
-  if (isSongwriterRalphTowner && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (ralphTownerHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeRalphTownerEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceRalphTowner && !isSongwriterRalphTowner) {
+      const ralphTownerEff = genMeta.ralphTownerEffectiveHarmonyBars;
+      const ralphTownerTb = totalBarsFromContext(context);
+      if (Array.isArray(ralphTownerEff) && ralphTownerEff.length === ralphTownerTb) {
+        genMeta.mosaicMergedHarmonyBars = [...ralphTownerEff];
+      }
+    }
   }
   if (verlaineHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeVerlaineEffectiveHarmonyBars(context);

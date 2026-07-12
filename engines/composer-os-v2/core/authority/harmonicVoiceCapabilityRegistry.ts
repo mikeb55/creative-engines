@@ -504,6 +504,37 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
     effectiveHarmonyBarsKey: 'ninoRotaEffectiveHarmonyBars',
     notes: 'alias of nino_rota for VRB voiceId harmonicVoice=rota',
   },
+  {
+    styleId: 'ralph_towner',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'ralphTownerEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via ralphTownerEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; path helper also accepts towner|towner_guitar_polyphony; townerStructuralRelax primary-only',
+  },
+  {
+    styleId: 'towner',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'ralphTownerEffectiveHarmonyBars',
+    notes: 'alias of ralph_towner for harmonicVoice=towner',
+  },
+  {
+    styleId: 'towner_guitar_polyphony',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'ralphTownerEffectiveHarmonyBars',
+    notes: 'alias of ralph_towner for VRB voiceId harmonicVoice=towner_guitar_polyphony',
+  },
 ];
 
 const REGISTRY_BY_STYLE = new Map<string, HvCapabilityEntry>(
