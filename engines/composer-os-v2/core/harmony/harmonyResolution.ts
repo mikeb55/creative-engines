@@ -29,6 +29,7 @@ import { isClausOgermanHarmonicPath } from '../song-mode/clausOgermanSlice';
 import { isDonSebeskyHarmonicPath } from '../song-mode/donSebeskySlice';
 import { isJackWhiteHarmonicPath } from '../song-mode/jackWhiteDroneSlice';
 import { isJohnBarryHarmonicPath } from '../song-mode/johnBarrySlice';
+import { isJohnnyMandelHarmonicPath } from '../song-mode/johnnyMandelSlice';
 import { isSatieHarmonicPath } from '../song-mode/satieSlice';
 import { isColePorterHarmonicPath } from '../song-mode/colePorterSlice';
 import { isJohnColtraneHarmonicPath } from '../song-mode/johnColtraneSlice';
@@ -611,7 +612,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
    */
   const mandelEff = meta?.johnnyMandelEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'johnny_mandel' &&
+    isJohnnyMandelHarmonicPath(meta) &&
     Array.isArray(mandelEff) &&
     mandelEff.length === tb &&
     barIndex >= 1 &&

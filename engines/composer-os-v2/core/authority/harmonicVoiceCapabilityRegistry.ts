@@ -430,6 +430,28 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
     notes:
       'alias of john_williams for VRB voiceId harmonicVoice=williams',
   },
+  {
+    styleId: 'johnny_mandel',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'johnnyMandelEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via johnnyMandelEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; path helper also accepts VRB id mandel_lyric_warmth; mandelStructuralRelax primary-id',
+  },
+  {
+    styleId: 'mandel_lyric_warmth',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'johnnyMandelEffectiveHarmonyBars',
+    notes:
+      'alias of johnny_mandel for VRB voiceId harmonicVoice=mandel_lyric_warmth',
+  },
 ];
 
 const REGISTRY_BY_STYLE = new Map<string, HvCapabilityEntry>(

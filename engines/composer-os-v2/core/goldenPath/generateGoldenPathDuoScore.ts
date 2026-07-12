@@ -510,6 +510,8 @@ import {
   accumulateJohnnyMandelHarmonyDiagnostics,
   createJohnnyMandelHarmonyAccumulator,
   finalizeJohnnyMandelMetadata,
+  isJohnnyMandelHarmonicPath,
+  isJohnnyMandelHarmonicVoiceId,
   precomputeJohnnyMandelEffectiveHarmonyBars,
 } from './johnnyMandelSlice';
 import {
@@ -3452,6 +3454,10 @@ function buildGuitarPart(
   const donSebeskyHarmonicPathActive = isDonSebeskyHarmonicPath(genMeta);
   const isSongwriterJohnnyMandel =
     normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'johnny_mandel';
+  const isHarmonicVoiceJohnnyMandel = isJohnnyMandelHarmonicVoiceId(
+    String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')
+  );
+  const johnnyMandelHarmonicPathActive = isJohnnyMandelHarmonicPath(genMeta);
   const isSongwriterJohnBarry =
     normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'john_barry';
   const isHarmonicVoiceJohnBarry = isJohnBarryHarmonicVoiceId(
@@ -3969,8 +3975,15 @@ function buildGuitarPart(
       }
     }
   }
-  if (isSongwriterJohnnyMandel && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (johnnyMandelHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeJohnnyMandelEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceJohnnyMandel && !isSongwriterJohnnyMandel) {
+      const johnnyMandelEff = genMeta.johnnyMandelEffectiveHarmonyBars;
+      const johnnyMandelTb = totalBarsFromContext(context);
+      if (Array.isArray(johnnyMandelEff) && johnnyMandelEff.length === johnnyMandelTb) {
+        genMeta.mosaicMergedHarmonyBars = [...johnnyMandelEff];
+      }
+    }
   }
   if (johnBarryHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeJohnBarryEffectiveHarmonyBars(context);

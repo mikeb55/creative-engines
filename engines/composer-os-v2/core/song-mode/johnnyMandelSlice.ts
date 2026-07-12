@@ -7,6 +7,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -397,6 +398,32 @@ export function countPlainTriadArrivals(bars: readonly string[] | undefined, cad
 export function minMandelPhraseSpan(plan: MandelLyricWarmthPlan | undefined): number {
   if (!plan?.phrases.length) return 0;
   return Math.min(...plan.phrases.map((p) => p.endBar - p.startBar + 1));
+}
+
+export const JOHNNY_MANDEL_HARMONIC_VOICE_IDS = ['johnny_mandel', 'mandel_lyric_warmth'] as const;
+
+export function isJohnnyMandelHarmonicVoiceId(raw: string | null | undefined): boolean {
+  const id = normalizeHarmonicVoiceId(String(raw ?? ''));
+  return id === 'johnny_mandel' || id === 'mandel_lyric_warmth';
+}
+
+/**
+ * Primary songwriter or harmonicVoice selects Johnny Mandel harmony authority.
+ * Single-gate — Wave-D pattern.
+ *
+ * Accepts `johnny_mandel` | VRB `mandel_lyric_warmth`. Soft `mandel`/`jmd` do **not** engage HV.
+ * `mandelStructuralRelax` stays primary-id keyed (holdback).
+ */
+export function isJohnnyMandelHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  return (
+    isJohnnyMandelHarmonicVoiceId(metadata?.songwriterStyleId) ||
+    isJohnnyMandelHarmonicVoiceId(metadata?.harmonicVoice)
+  );
 }
 
 export function precomputeJohnnyMandelEffectiveHarmonyBars(context: CompositionContext): void {
