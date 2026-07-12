@@ -269,8 +269,58 @@ export function precomputeMccoyTynerEffectiveHarmonyBars(context: CompositionCon
   applyIvQuartalOverMinor(out, tonicPc, seed, receipts, tb, context);
   applyPentatonicClusterPass(out, seed, receipts, tb, context);
 
+  /* Piece-final only: bias toward Tyner-own quartal/pentatonic landings that already pass fBT. */
+  biasMccoyTynerFinalBarIdiomaticOpen(out, seed, tb, receipts, context, tonicPc);
+
   genMeta.mccoyTynerEffectiveHarmonyBars = out;
   genMeta.mccoyTynerDeviceReceipts = receipts.length ? receipts : undefined;
+}
+
+/**
+ * Dominant-family proxy for finalBarTension (mirrors verlaineGbdWriterEvalCore
+ * `isDominantFamilyChord`) — mid-piece quartal/pedal/IV devices untouched.
+ */
+function chordLooksDominantFamilyForFbtTyner(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return false;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return false;
+  if (/^[^/]*min9/i.test(s)) return false;
+  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
+}
+
+/**
+ * Bias piece-final bar toward Tyner quartal/pentatonic landings that already pass fBT
+ * (tonic-root 6/9 · sus9 primary; sus4 · m11 mid). Never maj7 — header rejects Evans tertian.
+ * Not a forced jazz tonic cadence — quartal/modal-pedal idiom preserved.
+ */
+function biasMccoyTynerFinalBarIdiomaticOpen(
+  out: string[],
+  seed: number,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext,
+  tonicPc: number | undefined
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || !chordLooksDominantFamilyForFbtTyner(sym)) return;
+
+  const root = pitchClassToSharpName(tonicPc);
+  const u = seededUnit(seed, totalBars, 661901);
+
+  let next: string;
+  if (u < 0.38) next = `${root}6/9`;
+  else if (u < 0.72) next = `${root}sus9`;
+  else if (u < 0.88) next = `${root}sus4`;
+  else next = `${root}m11`;
+
+  out[idx] = next;
+  receipts.push(`mt:final_open_bias@bar${totalBars}`);
 }
 
 function scanEffectiveBarsForMcCoyDiagnostics(eff: string[]): {
