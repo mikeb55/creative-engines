@@ -259,7 +259,60 @@ export function precomputeBobBrookmeyerEffectiveHarmonyBars(context: Composition
     }
   }
 
+  /* Piece-final only: bias toward Brookmeyer quartal/pedal landings that already pass fBT. */
+  biasBobBrookmeyerFinalBarIdiomaticOpen(out, seed, tb, receipts, context);
+
   genMeta.brookmeyerEraShort = periodResolved === 'early_brookmeyer' ? 'early' : 'late';
   genMeta.bobBrookmeyerEffectiveHarmonyBars = out;
   genMeta.bobBrookmeyerDeviceReceipts = receipts;
+}
+
+/**
+ * Dominant-family proxy for finalBarTension (mirrors verlaineGbdWriterEvalCore
+ * `isDominantFamilyChord`) — mid-piece pitch-module / pedal_hold / antiFunctional untouched.
+ * Note: 13(#11) / sus13 trip via digit `13` even when mid-piece idiomatic.
+ */
+function chordLooksDominantFamilyForFbtBrookmeyer(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return false;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return false;
+  if (/^[^/]*min9/i.test(s)) return false;
+  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
+}
+
+/**
+ * Bias piece-final bar toward Brookmeyer pool landings that already pass fBT
+ * (Fm9(b5) / Dbm9(b5) cluster-quartal; sus4 pedal secondary).
+ * Never leave 13(#11) / sus13 on the final bar.
+ * Not a forced jazz tonic cadence — line-first / non-functional idiom preserved.
+ */
+function biasBobBrookmeyerFinalBarIdiomaticOpen(
+  out: string[],
+  seed: number,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || !chordLooksDominantFamilyForFbtBrookmeyer(sym)) return;
+
+  const pc = harmonyRootPc(sym);
+  if (pc === undefined) return;
+  const root = PC_NAMES[pc]!;
+  const slash = slashTail(sym);
+  const u = seededUnit(seed, totalBars, 884501);
+
+  // Proven FBT-pass pool is m9(b5); sus4 for quartal/pedal colour (never 13).
+  let next: string;
+  if (u < 0.72) next = `${root}m9(b5)${slash}`;
+  else if (u < 0.88) next = `${root}sus4${slash}`;
+  else next = `${root}m9(b5)${slash}`;
+
+  out[idx] = next;
+  receipts.push(`brk:final_open_bias@bar${totalBars}`);
 }
