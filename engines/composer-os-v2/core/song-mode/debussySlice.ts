@@ -709,6 +709,57 @@ export interface DebussyAntiElaborationGuards {
   resolutionSuppressed: number;
 }
 
+/**
+ * Dominant-family proxy for finalBarTension (mirrors verlaineGbdWriterEvalCore
+ * `isDominantFamilyChord`) — mid-piece devices untouched.
+ */
+function chordLooksDominantFamilyForFbt(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return false;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return false;
+  if (/^[^/]*min9/i.test(s)) return false;
+  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
+}
+
+/**
+ * Bias piece-final bar toward Debussy planing/open landings that already pass fBT
+ * (plain triad / 9 / m / sus4(no5) / add2 / maj9 — e.g. B, B9, Bm, A#sus4(no5)).
+ * Does NOT force a hard tonic cadence (DB_FORM_02: boundary = texture, not cadence).
+ */
+function biasDebussyFinalBarIdiomaticOpen(
+  out: string[],
+  seed: number,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || !chordLooksDominantFamilyForFbt(sym)) return;
+
+  const r = harmonyRootPc(sym);
+  if (r === undefined) return;
+  // Stock A7alt survivors: prefer +2 planing move (A→B) like seeds 12345/42069.
+  // Planing that already landed on B7 keeps root and only softens quality.
+  const rootPc = /alt/i.test(sym) ? (r + 2) % 12 : r;
+  const root = pitchClassToSharpName(rootPc);
+  const u = seededUnit(seed, totalBars, 772001);
+  let next: string;
+  if (u < 0.28) next = `${root}`;
+  else if (u < 0.48) next = `${root}9`;
+  else if (u < 0.62) next = `${root}m`;
+  else if (u < 0.76) next = `${root}sus4(no5)`;
+  else if (u < 0.88) next = `${root}add2`;
+  else next = `${root}maj9`;
+
+  out[idx] = next;
+  receipts.push(`db:final_open_bias@bar${totalBars}`);
+}
+
 /** @deprecated — use resolveBarSymbol */
 export function precomputeDebussyEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
@@ -747,6 +798,9 @@ export function precomputeDebussyEffectiveHarmonyBars(context: CompositionContex
   applyUnresolvedAppoggiaturaPass(out, tonicPc, seed, receipts, tb, context, positions, guards);
 
   applyArabesqueMotifFlag(genMeta, seed, receipts, tb, context);
+
+  /* Piece-final only: bias toward idiomatic open endings that already pass fBT. */
+  biasDebussyFinalBarIdiomaticOpen(out, seed, tb, receipts, context);
 
   applyDebussyFormEncoding(context);
   applyDebussyOrchestrationEncoding(context);
