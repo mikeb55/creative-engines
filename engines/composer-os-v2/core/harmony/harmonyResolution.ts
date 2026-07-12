@@ -22,6 +22,7 @@ import { isKateBushHarmonicPath } from '../song-mode/kateBushSlice';
 import { isEcmChamberHarmonicPath } from '../song-mode/ecmChamberSlice';
 import { isBernardHerrmannHarmonicPath } from '../song-mode/filmSoundtrackHarmonySlices';
 import { isClausOgermanHarmonicPath } from '../song-mode/clausOgermanSlice';
+import { isDonSebeskyHarmonicPath } from '../song-mode/donSebeskySlice';
 import { isSatieHarmonicPath } from '../song-mode/satieSlice';
 import { isColePorterHarmonicPath } from '../song-mode/colePorterSlice';
 import { isJohnColtraneHarmonicPath } from '../song-mode/johnColtraneSlice';
@@ -588,7 +589,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 
   const dsEff = meta?.donSebeskyEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'don_sebesky' &&
+    isDonSebeskyHarmonicPath(meta) &&
     Array.isArray(dsEff) &&
     dsEff.length === tb &&
     barIndex >= 1 &&

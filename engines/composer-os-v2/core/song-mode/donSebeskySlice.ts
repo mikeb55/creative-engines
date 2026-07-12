@@ -5,6 +5,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { isProtectedBar } from '../score-integrity/identityLock';
@@ -126,6 +127,24 @@ export function isSongwriterDonSebesky(
   genMeta: GenerationMetadata | undefined
 ): genMeta is GenerationMetadata & { songwriterStyleId: 'don_sebesky' } {
   return genMeta?.songwriterStyleId === 'don_sebesky';
+}
+
+/**
+ * Primary songwriter or harmonicVoice selects Don Sebesky harmony authority.
+ * Single-gate (no styleProfile) — Wave-D / claus_ogerman HV pattern.
+ *
+ * Exact id `don_sebesky` only — soft alias `sebesky` does **not** engage HV.
+ * Metheny behaviour-gate bypass for don_sebesky stays primary-id keyed (holdback).
+ */
+export function isDonSebeskyHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'don_sebesky' || voice === 'don_sebesky';
 }
 
 export interface DonSebeskyHarmonyAccumulator {
