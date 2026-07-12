@@ -133,6 +133,20 @@ angelo_badalamenti seed **24680** — `generationSuccess=false`, `"missing score
 
 bacharach seeds **24680**, **42069**, **50021**, **75001**, **77777**, **99999** — `generationSuccess=false`, `"missing score/context"`, pre-existing (present in scope-pass ROI baseline `_hardGateRoiReauditOut_bacharach_status/_workers/bacharach.json` before own-rewrite-path dual-surface final-bar fix; unrelated to force+enforce + `syncBacharachFinalBarAuthority`). Same bucket as **`mccoy_tyner` seed 42069** / **`cole_porter` seed 12345** / **`angelo_badalamenti` seed 24680**. Not fixed. Do not conflate with CCC/FBT craft residuals (`genOk` 3/9 → both/ccc/fbt capped at 3/9 even when all generated seeds pass).
 
+### Recurring: `authority/types.ts` UTF-16LE re-save / encoding dirt — logged 2026-07-12
+
+**Tracked — not a one-off. Encoding tooling/editor problem; do not silently patch without logging.**
+
+`engines/composer-os-v2/core/authority/types.ts` has been re-touched as **UTF-16LE** more than once:
+
+1. **Born wrong** — commits **`1d8bdff5`** / **`65754282`** (2026-07-09) stored the file as UTF-16LE (null bytes between ASCII chars; ~2× byte length). Text was valid TypeScript when decoded as UTF-16LE, but esbuild/Node treat it as UTF-8 → `Expected ";" but found "\0"`.
+2. **Housekeeping (same session, earlier)** — working tree dirt was **UTF-16LE + BOM (`FF FE`)** only; semantic content identical to HEAD. Discarded as unrelated encoding noise before Tier D (not committed).
+3. **Desktop rebuild wrap-up (2026-07-12)** — same UTF-16LE blob still on `main` broke `npm run dist` / `build:api`. Re-encoded to UTF-8 no BOM in **`43fc3d45`**.
+
+**Likely cause:** Windows editor / tool chain re-saving this path as Unicode (UTF-16LE), same class as historical **`9cd7ba97`** (ComposerLauncher UTF-16 LE → UTF-8) and other encoding flips in the repo — not a composer/slice bug.
+
+**If it recurs:** do not commit encoding-only dirt into feature commits; convert to UTF-8 no BOM, verify no `\0` bytes (`Buffer.includes(0)`), and prefer a small dedicated encoding fix commit. Consider a pre-commit or CI check for null bytes in `*.ts` under `engines/composer-os-v2/` if this keeps returning.
+
 ## Complete: B-category isGuitarBassDuoFamily guards (2026-04-28)
 
 Replaced remaining B-category literal `guitar_bass_duo` preset guards with `isGuitarBassDuoFamily(context.presetId)` (and consolidated pilot helpers where equivalent) across `generateGoldenPathDuoScore.ts`, `runGoldenPath.ts`, `songMode*.ts` overlays, `ecmShapingPass.ts`, `jamesBrownFunkOverlay.ts`, `duoMusicalQuality.ts`, `duoLockQuality.ts`, `pipelineTruthGates.ts`, `ecmStyleHarmonyPolicy.ts`, `indieArtPopPhaseA.ts`, plus **App API** `generateComposition.ts` / `listOutputs.ts` family-aligned checks. **Intentionally unchanged:** `guitarBassDuoPresetIds.ts` (`isGuitarBassDuoFamily` / `isStandardGuitarBassDuo` definitions), single-line–specific branches (`GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID`), motif target modes, reference-influence target literals, and defaults/comments that are not runtime preset guards.
