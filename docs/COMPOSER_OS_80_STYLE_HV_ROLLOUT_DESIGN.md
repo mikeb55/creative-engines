@@ -1,9 +1,9 @@
 # 80-Style HV Authority Rollout - Design (2026-07-10)
 
-**Status:** design only - no implementation in this session  
+**Status:** **In progress** — prerequisite items 1–2 **SHIPPED**; Waves A/B/C promoted many Tier 1 styles; **Wave D leftovers (~13)** still open (see roadmap Priority Order).  
 **Roadmap item:** 3 (80-style HV authority rollout)  
-**Prerequisite (item 2 - closed):** Verlaine HV authority end-to-end (Phase 0 + Phase 1 seams 1-4); frank_zappa HV write-path fix (`76aec931`)  
-**Parent design:** [HV_AUTHORITY_ABSTRACTION_DESIGN.md](./HV_AUTHORITY_ABSTRACTION_DESIGN.md)  
+**Prerequisite (item 2 - SHIPPED/closed):** Verlaine HV authority end-to-end (Phase 0 + Phase 1 seams 1-4); frank_zappa HV write-path fix (`76aec931`)  
+**Parent design:** [HV_AUTHORITY_ABSTRACTION_DESIGN.md](./HV_AUTHORITY_ABSTRACTION_DESIGN.md) (**SHIPPED**)  
 **Audit inputs:** [EIGHTY_STYLE_AUDIT_SWEEP_2026-07-08.md](./EIGHTY_STYLE_AUDIT_SWEEP_2026-07-08.md), [EIGHTY_STYLE_STAGE2_FINDINGS.md](./EIGHTY_STYLE_STAGE2_FINDINGS.md)
 
 ---
@@ -65,12 +65,12 @@ Per-style bespoke seam rewrites are **out of scope** unless audit proves a layer
 
 | Tier | Count | Notes |
 |---|---:|---|
-| **Tier 1** | **26 remaining** | After **verlaine** + **frank_zappa** shipped (`hv_full` on harmony/precompute/validator/GCE where applicable) |
-| **Tier 2** | **54** | Stage 1 score 4-6; lower seam surface, still need registry rows + evidence audit |
+| **Tier 1 Wave D leftovers** | **~13** | `ecm_chamber`, `bernard_herrmann`, `claus_ogerman`, `don_sebesky`, `jack_white`, `jerry_goldsmith`, `john_barry`, `john_williams`, `johnny_mandel`, `marr`, `nino_rota`, `philip_glass`, `ralph_towner` (after Waves A/B/C) |
+| **Tier 2** | **54** | Stage 1 score 4-6; spot-check / batch after Wave D |
 | **Tier 3** | 11 | Out of rollout scope unless product adds Slonimsky HV for SQ VRB-only ids |
-| **Shipped (reference)** | 2 | verlaine, frank_zappa - regression harnesses, not re-migrated |
+| **Shipped (reference + Waves A/B/C)** | **verlaine**, **frank_zappa**, plus Wave A/B/C promotions in `harmonicVoiceCapabilityRegistry.ts` | Regression harnesses for verlaine/zappa; see registry for full list |
 
-**Total rollout work:** **80 styles** (26 + 54). Tier 3 and transport-only HV ids (e.g. joe_pass, jamerson) stay primary-only until explicitly promoted.
+**Historical note:** At item-2 close the queue said **26 remaining** after verlaine + frank_zappa; Waves A/B/C reduced that to the Wave D leftovers above. Tier 3 and transport-only HV ids (e.g. joe_pass, jamerson) stay primary-only until explicitly promoted.
 
 ### In scope
 

@@ -629,20 +629,27 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 
 ## Future / Research Backlog
 
-## Priority Order (revised 2026-07-08)
+## Priority Order (revised 2026-07-12)
 
-1. **Big Band harmonicVoice forwarding** — **Forwarding done (Fix #3A, 2026-07-08). Consumption (Phase 2) — not started, separate DCR item.** Transport reaches `bigBandContextFromGenerateRequest`; engine still reads `songwriterStyleId` only (matrix `TRANSPORT_ONLY`).
-2. **String Quartet harmonicVoice forwarding** — **Forwarding done (Fix #3B, 2026-07-08). Consumption (Phase 2) — not started, separate DCR item.** Transport reaches `stringQuartetGenerationMetadataFromGenerateRequest`; engine still reads `songwriterStyleId` only (matrix `TRANSPORT_ONLY`).
-3. **Riff Generator — design decision made (2026-07-08)** — harmonicVoice and riffVrbId remain separate fields / controls. No unification. Phase A implementation not started. Mapping/fallback behavior to follow the scoped design doc in `docs/RIFF_GENERATOR_HARMONIC_VOICE_DECISION.md`.
-4. **80-style audit — Stage 1 + Stage 2 complete** — Stage 1 static sweep finished (97 styles scored into Tier 1/2/3). Stage 2 HV probes now confirm 6/6 tested Tier 1 candidates share the same harmony-authority bug pattern. Next step: design and roll out a shared HV-aware authority / effective-style abstraction across affected modes, instead of continuing one-off style probes. See `docs/EIGHTY_STYLE_AUDIT_SWEEP_2026-07-08.md`, `docs/EIGHTY_STYLE_STAGE2_FINDINGS.md`, and `docs/AUDIT_SEAM_EXTRACT_2026-07-07.md`.
-5. **Riff Generator implementation** — unblocked once item 3's decision is made and item 4's audit findings (if any overlap) are known.
-6. **Bill Evans motif-recurrence fix** — small, separate DCR cycle; MI 5.5 hard-gate weakness, stable/pre-existing, not urgent.
-7. **Two-guitar interplay module** — rule-based interaction modes for the GBD writer.
-8. **Phrase/motif transformation layer** — phrase-length distributions, contour library, cadence-avoidance, motif ops.
-9. **Hand-built Verlaine style fingerprint** — transcribe passages, extract weighted rules, post-generation nudge.
-10. **(Parked)** Full ML/performance modeling.
+**HV authority — items 1–2 SHIPPED (doc lag corrected 2026-07-12):**
 
-**Reordering rationale:** Riff Generator's blocker is a design decision (cheap to resolve, no code risk), so resolving it doesn't delay the systemic 80-style audit; but Riff Generator's actual implementation is deferred behind the audit since the audit protects the whole catalogue vs. one feature.
+1. **Shared HV-aware authority abstraction** — **SHIPPED.** Phase 0 infra + Phase 1 seams 1–4 live under `engines/composer-os-v2/core/authority/` (`EffectiveStyleIdentity`, capability registry, adapters). See `docs/HV_AUTHORITY_ABSTRACTION_DESIGN.md`. Commits `1d8bdff5` → `9200267e`.
+2. **Zappa + Verlaine HV rollout** — **SHIPPED.** Verlaine end-to-end (seams 1–4); frank_zappa write-path (`76aec931`). Proven template for later waves. See `docs/COMPOSER_OS_80_STYLE_HV_ROLLOUT_DESIGN.md` §0.
+
+**Still open (reordered):**
+
+3. **80-style HV rollout — Waves A/B/C done; Wave D leftovers (~13 Tier 1)** — Stage 1 + Stage 2 audit complete; Waves A/B/C wired many Tier 1 styles via the shared abstraction. Remaining Wave D queue: `ecm_chamber`, `bernard_herrmann`, `claus_ogerman`, `don_sebesky`, `jack_white`, `jerry_goldsmith`, `john_barry`, `john_williams`, `johnny_mandel`, `marr`, `nino_rota`, `philip_glass`, `ralph_towner`. Then Tier 2 spot-check. See `docs/EIGHTY_STYLE_AUDIT_SWEEP_2026-07-08.md`, `docs/EIGHTY_STYLE_STAGE2_FINDINGS.md`.
+4. **Big Band harmonicVoice forwarding** — **Forwarding done (Fix #3A, 2026-07-08). Consumption (Phase 2) — not started, separate DCR item.** Transport reaches `bigBandContextFromGenerateRequest`; engine still reads `songwriterStyleId` only (matrix `TRANSPORT_ONLY`).
+5. **String Quartet harmonicVoice forwarding** — **Forwarding done (Fix #3B, 2026-07-08). Consumption (Phase 2) — not started, separate DCR item.** Transport reaches `stringQuartetGenerationMetadataFromGenerateRequest`; engine still reads `songwriterStyleId` only (matrix `TRANSPORT_ONLY`).
+6. **Riff Generator — design decision made (2026-07-08)** — harmonicVoice and riffVrbId remain separate fields / controls. No unification. Phase A implementation not started. Mapping/fallback behavior to follow the scoped design doc in `docs/RIFF_GENERATOR_HARMONIC_VOICE_DECISION.md`.
+7. **Riff Generator Phase A implementation** — unblocked (decision made); still not started.
+8. **Bill Evans motif-recurrence fix** — small, separate DCR cycle; MI 5.5 hard-gate weakness, stable/pre-existing, not urgent.
+9. **Two-guitar interplay module** — rule-based interaction modes for the GBD writer.
+10. **Phrase/motif transformation layer** — phrase-length distributions, contour library, cadence-avoidance, motif ops.
+11. **Hand-built Verlaine style fingerprint** — transcribe passages, extract weighted rules, post-generation nudge.
+12. **(Parked)** Full ML/performance modeling.
+
+**Reordering rationale (historical):** Riff Generator's blocker was a design decision (cheap to resolve); HV abstraction + Verlaine/Zappa template shipped next; catalogue rollout (Wave D leftovers) is now the active HV workstream before BB/SQ Phase 2 consumption and Riff Phase A.
 
 ## Priority 1a-continued: harmonicVoice forwarding gaps (2026-07-07)
 
@@ -697,22 +704,15 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 
 **Priority:** Should be picked up before further engine changes stack on top of drifted goldens — recommend inserting as priority 1a (right after the ~80-style harmonic-voice generalisation fix already at #1).
 
-### Future: Generalize harmonic-voice-vs-primary-style resolution (not urgent)
+### HV-aware authority abstraction — SHIPPED (was “generalize harmonic-voice resolution”)
 
-**Background:** Fixing Verlaine as a harmonic voice paired with a different primary style (e.g. Barry Harris) required patching ~7 separate call sites on **2026-07-06**, because the codebase's ~80 composer/style modules all share one architectural pattern: every runtime check that asks "is style X active" only checks primary style, never **`harmonicVoice`**, as an equivalent condition. This caused a cascade of bugs specific to Verlaine (harmony authority split, voice-leading false positives, missing API field forwarding, rhythm overlay overwrite, UI state split) that were fixed one at a time.
+**Status (2026-07-12):** **SHIPPED.** Shared module lives at **`engines/composer-os-v2/core/authority/`** (`resolveEffectiveStyleIdentity`, `harmonicVoiceCapabilityRegistry`, layer adapters). Phase 0 infra (`1d8bdff5`) + Phase 1 seams 1–4 (`65754282` → `9200267e`). Verlaine + frank_zappa closed the template; Waves A/B/C rolled many Tier 1 styles; **Wave D leftovers** remain (see Priority Order item 3).
 
-**Risk:** Any other style tested in the same **`harmonicVoice` + different primary** combination (e.g. Fripp, Marr, Morello) will likely hit the same class of bugs, since the underlying pattern is systemic, not Verlaine-specific.
+**Background (historical):** Fixing Verlaine as a harmonic voice paired with a different primary (e.g. Barry Harris) required patching ~7 call sites on **2026-07-06** because runtime “is style X active?” checks used primary only. That cascade motivated the shared abstraction instead of per-style probes.
 
-**Recommended approach (per design discussion, not yet implemented):**
+**Still open under this workstream:** Wave D Tier 1 promotions + Tier 2 spot-check; optional lint/CI on raw `songwriterStyleId === 'x'` outside allowlist; BB/SQ Phase 2 consumption (separate items).
 
-1. Build a shared generic module (e.g. **`core/style-activity/styleActivity.ts`**) with helpers: **`normalizeStyleId`**, **`getPrimaryStyleId`**, **`getHarmonicVoiceStyleId`**, **`isStyleActive(metadata, styleId, role)`**, **`getHarmonyAuthorityStyle(metadata)`**
-2. Migrate the known ~7 chokepoints to use these generic helpers instead of hand-written per-style checks (chord resolution, harmony spine, export-truth validation, voice-leading caps, rhythm overlay bypass, structural relax gates, diagnostics/finalization)
-3. Add a lint/CI rule flagging any new raw **`songwriterStyleId === 'x'`** comparison outside an approved allowlist, to prevent this pattern from recurring as new styles are added
-4. Do **not** attempt to migrate all ~80 style modules at once — target the shared chokepoints only; migrate remaining legacy checks opportunistically
-
-**Priority:** Not urgent — do only when another style needs the same **`harmonicVoice` + different-primary** combination, or as planned technical-debt cleanup.
-
-**Related fixed work (reference):** commits **`8f248347`**, **`e2cd13ab`**, **`6575d778`**, **`54af24c8`**, **`50e1d2a5`** — Verlaine GBD harmony-wire + authority fixes (**2026-07-06**). See **`docs/VERLAINE_GBD.md`**.
+**Related:** `docs/HV_AUTHORITY_ABSTRACTION_DESIGN.md` · `docs/COMPOSER_OS_80_STYLE_HV_ROLLOUT_DESIGN.md` · early Verlaine fixes `8f248347`, `e2cd13ab`, `6575d778`, `54af24c8`, `50e1d2a5` (`docs/VERLAINE_GBD.md`).
 
 ### Future: Two-guitar interplay module (move Verlaine/Television closer to authentic band idiom)
 

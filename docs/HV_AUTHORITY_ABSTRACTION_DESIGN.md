@@ -1,6 +1,7 @@
 ﻿# HV-Aware Authority / Effective-Style Abstraction — Design (2026-07-09)
 
-**Status:** design only — no implementation  
+**Status:** **SHIPPED** (Phase 0 infra + Phase 1 seams 1–4). Live code: `engines/composer-os-v2/core/authority/`. Item 2 (Verlaine + frank_zappa template) also **SHIPPED**. Remaining work = per-style rollout (Waves A/B/C done; Wave D leftovers + Tier 2) — see [COMPOSER_OS_80_STYLE_HV_ROLLOUT_DESIGN.md](./COMPOSER_OS_80_STYLE_HV_ROLLOUT_DESIGN.md) and roadmap Priority Order.  
+**Doc lag note (2026-07-12):** earlier “design only — no implementation” header was stale and corrected.  
 **Context:** [EIGHTY_STYLE_STAGE2_FINDINGS.md](./EIGHTY_STYLE_STAGE2_FINDINGS.md) · [EIGHTY_STYLE_AUDIT_SWEEP_2026-07-08.md](./EIGHTY_STYLE_AUDIT_SWEEP_2026-07-08.md) · [AUDIT_SEAM_EXTRACT_2026-07-07.md](./AUDIT_SEAM_EXTRACT_2026-07-07.md) · [HARMONIC_VOICE_FORWARDING_DESIGN.md](./HARMONIC_VOICE_FORWARDING_DESIGN.md)
 
 ---
