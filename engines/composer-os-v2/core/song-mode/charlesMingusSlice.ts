@@ -16,6 +16,7 @@ import type {
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
+import { isProtectedBar } from '../score-integrity/identityLock';
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 
@@ -342,8 +343,76 @@ export function precomputeCharlesMingusEffectiveHarmonyBars(context: Composition
   applyRhythmDisplaceSideStep(out, seed, receipts, tb);
   applyEpisodeHarmonicNudges(out, plan, seed, receipts, tb);
 
+  /* Piece-final only: bias toward Mingus FBT-safe blues/pedal-modal landings. */
+  biasCharlesMingusFinalBarIdiomaticOpen(out, plan, seed, receipts, context);
+
   genMeta.charlesMingusEffectiveHarmonyBars = out;
   genMeta.charlesMingusDeviceReceipts = receipts;
+}
+
+/**
+ * Dominant-family proxy for finalBarTension (mirrors verlaineGbdWriterEvalCore
+ * `isDominantFamilyChord`) — mid-piece blues enrich / sidestep / episode nudges untouched.
+ * Note: 13(#9) / 7#9 / 9(b13) / 7alt all trip FBT even when idiomatic mid-piece blues.
+ */
+function chordLooksDominantFamilyForFbtMingus(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return false;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return false;
+  if (/^[^/]*min9/i.test(s)) return false;
+  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
+}
+
+/**
+ * Idiom pre-check (Batch 4): blues-rooted header + enrichBluesDominant is the real FBT
+ * surface; pedal_modal is texture-receipt only (no quality rewrite). Bias bridges both:
+ * blues-safe 6 / 6/9 / 9 / add9 (no 7/13/alt trap) when final episode is blues/riff/shout/dirge;
+ * pedal-modal m / m(add9) / sus2 when texture is pedal_modal or harm family modal.
+ * Not a forced jazz tonic cadence.
+ */
+function biasCharlesMingusFinalBarIdiomaticOpen(
+  out: string[],
+  plan: CharlesMingusEpisodePlan,
+  seed: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  const totalBars = out.length;
+  if (totalBars < 1) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || !chordLooksDominantFamilyForFbtMingus(sym)) return;
+
+  const tonicPc = inferTonicPitchClassFromBar1(context);
+  const rootPc = tonicPc ?? harmonyRootPc(sym);
+  if (rootPc === undefined) return;
+  const root = pitchClassToSharpName(rootPc);
+  const slash = slashTail(sym);
+  const ep = episodeForBar(plan, totalBars);
+  const u = seededUnit(seed, totalBars, 661005);
+
+  const pedalModal =
+    ep?.texture === 'pedal_modal' || ep?.harmonicFamily === 'modal';
+
+  let next: string;
+  if (pedalModal) {
+    if (u < 0.35) next = `${root}m${slash}`;
+    else if (u < 0.65) next = `${root}m(add9)${slash}`;
+    else if (u < 0.85) next = `${root}sus2${slash}`;
+    else next = `${root}add9${slash}`;
+  } else {
+    // Blues-rooted FBT-safe colour (never 7 / 13 / alt).
+    if (u < 0.3) next = `${root}6${slash}`;
+    else if (u < 0.55) next = `${root}6/9${slash}`;
+    else if (u < 0.78) next = `${root}9${slash}`;
+    else next = `${root}add9${slash}`;
+  }
+
+  out[idx] = next;
+  receipts.push(`cm:final_open_bias@${totalBars}`);
 }
 
 export function finalizeCharlesMingusMetadata(metadata: GenerationMetadata, acc: CharlesMingusHarmonyAccumulator): void {
