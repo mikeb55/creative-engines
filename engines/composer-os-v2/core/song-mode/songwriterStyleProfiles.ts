@@ -2711,6 +2711,7 @@ const ALIASES: Record<string, SongwriterRuleId> = {
   bartok: 'bartok',
   bela_bartok: 'bartok',
   bela: 'bartok',
+  berg: 'berg',
   alban_berg: 'berg',
   alban: 'berg',
   gershwin: 'gershwin',

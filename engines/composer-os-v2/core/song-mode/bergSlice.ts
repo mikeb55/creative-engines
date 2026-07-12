@@ -15,6 +15,7 @@ import type { CompositionContext, GenerationMetadata } from '../compositionConte
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { isProtectedBar } from '../score-integrity/identityLock';
+import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { breakFrankZappaIiViProgressions } from './songModeBuilder';
 
 function seededUnit(seed: number, bar: number, salt: number): number {
@@ -37,6 +38,12 @@ function seededPermutation12(seed: number): number[] {
 }
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
+
+const PC_TO_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
+
+function pitchClassToSharpName(pc: number): string {
+  return PC_TO_SHARP[((pc % 12) + 12) % 12]!;
+}
 
 function slashTail(symbol: string): string {
   return symbol.includes('/') ? symbol.slice(symbol.indexOf('/')) : '';
@@ -176,6 +183,52 @@ export function precomputeBergEffectiveHarmonyBars(context: CompositionContext):
   out = breakFrankZappaIiViProgressions(out, seed);
   applySparseMinorThirdColour(out, seed, receipts, tb, context);
 
+  /* Piece-final only: bias toward Berg-own open landings that already pass fBT. */
+  biasBergFinalBarIdiomaticOpen(out, seed, tb, receipts, context);
+
   genMeta.bergEffectiveHarmonyBars = out;
   genMeta.bergDeviceReceipts = receipts;
+}
+
+/**
+ * Dominant-family proxy for finalBarTension (mirrors verlaineGbdWriterEvalCore
+ * `isDominantFamilyChord`) — mid-piece row devices untouched.
+ */
+function chordLooksDominantFamilyForFbt(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return false;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return false;
+  if (/^[^/]*min9/i.test(s)) return false;
+  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
+}
+
+/**
+ * Bias piece-final bar toward Berg vocabulary that already passes fBT
+ * (tonic-root maj7#11 from climax enrich; m11 from ab:minor_eleventh_colour).
+ * Not a forced jazz tonic maj7 — twelve-tone / free-atonal idiom preserved.
+ */
+function biasBergFinalBarIdiomaticOpen(
+  out: string[],
+  seed: number,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || !chordLooksDominantFamilyForFbt(sym)) return;
+
+  const tonicPc = inferTonicPitchClassFromBar1(context);
+  if (tonicPc === undefined) return;
+  const root = pitchClassToSharpName(tonicPc);
+  const u = seededUnit(seed, totalBars, 991201);
+  // Prefer climax-path maj7#11; else sparse m11 colour — both already in slice devices.
+  const next = u < 0.6 ? `${root}maj7#11` : `${root}m11`;
+
+  out[idx] = next;
+  receipts.push(`ab:final_open_bias@bar${totalBars}`);
 }
