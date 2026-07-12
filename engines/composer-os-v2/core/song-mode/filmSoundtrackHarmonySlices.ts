@@ -789,9 +789,77 @@ export function precomputePhilipGlassEffectiveHarmonyBars(context: CompositionCo
     }
   }
 
+  /* Piece-final only: bias toward Glass-own static-pedal / modal-stasis landings that already pass fBT. */
+  biasPhilipGlassFinalBarIdiomaticOpen(out, seed, tb, receipts, context, mode);
+
   genMeta.philipGlassEffectiveHarmonyBars = out;
   genMeta.philipGlassDeviceReceipts = receipts;
   philipGlassEffectiveHarmonyBars = out;
+}
+
+/**
+ * Dominant-family proxy for finalBarTension (mirrors verlaineGbdWriterEvalCore
+ * `isDominantFamilyChord`) — mid-piece additive / arpeggio / pedal / stasis devices untouched.
+ */
+function chordLooksDominantFamilyForFbtGlass(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return false;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return false;
+  if (/^[^/]*min9/i.test(s)) return false;
+  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
+}
+
+/**
+ * Bias piece-final bar toward Glass pool landings that already pass fBT
+ * (Asus2 · Aadd2/D · Am — d2 arpeggio / d1 additive / d5 modal stasis + d3 tonic pedal).
+ * Not a forced jazz tonic cadence — static-pedal / modal-stasis idiom preserved.
+ */
+function biasPhilipGlassFinalBarIdiomaticOpen(
+  out: string[],
+  seed: number,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext,
+  mode: PhilipGlassContextMode
+): void {
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || !chordLooksDominantFamilyForFbtGlass(sym)) return;
+
+  const ex = extractRootAndSlash(sym);
+  if (!ex) return;
+  const tonicPc = inferTonicPitchClassFromBar1(context);
+  const u = seededFilmUnit(seed, totalBars, 960601);
+
+  // Prefer existing root (A7alt survivors → Asus2 / Aadd2 / Am); keep or add tonic pedal (d3).
+  let slash = ex.slash;
+  if (!slash && tonicPc !== undefined && (mode === 'pg:dark_pedal' || u >= 0.55)) {
+    slash = `/${pitchClassToSharpName(tonicPc)}`;
+  }
+
+  let next: string;
+  if (mode === 'pg:dark_pedal') {
+    // Dark pedal — modal stasis + pedal heavier.
+    if (u < 0.4) next = `${ex.root}m${slash}`;
+    else if (u < 0.72) next = `${ex.root}add2${slash}`;
+    else next = `${ex.root}sus2${slash}`;
+  } else if (mode === 'pg:lyrical_minimal') {
+    if (u < 0.4) next = `${ex.root}add2${slash}`;
+    else if (u < 0.72) next = `${ex.root}sus2${slash}`;
+    else next = `${ex.root}m${slash}`;
+  } else {
+    // Minimal pulse — sus2 / add2 primary (proven FBT pass).
+    if (u < 0.42) next = `${ex.root}sus2${slash}`;
+    else if (u < 0.78) next = `${ex.root}add2${slash}`;
+    else next = `${ex.root}m${slash}`;
+  }
+
+  out[idx] = next;
+  receipts.push(`pg:final_open_bias@bar${totalBars}`);
 }
 
 export function finalizePhilipGlassMetadata(metadata: GenerationMetadata, acc: FilmHarmonyAccumulator): void {
