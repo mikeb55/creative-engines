@@ -263,6 +263,69 @@ function applyCadentialTwoFivePrepPass(
 }
 
 /**
+ * GCE tonic-family / FBT-safe check for piece-final enforce.
+ * Accepts maj7/maj9 (gate tonic family) and BH sixth (`D6` / maj6) — bare `6` is
+ * non-dominant under the hard-gate proxy (tension 0.55 PASS; not the `7` FBT trap).
+ */
+function chordLooksTonicFamilyOrSixth(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return true;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return true;
+  if (/^[^/]*min9/i.test(s)) return true;
+  const hp = parseChordSymbol(s).harmonyPart;
+  const compact = hp.replace(/\s/g, '');
+  if (/^[A-G](?:#|b)?6(?:\/|$)/i.test(compact) || /\bmaj6\b/i.test(hp)) return true;
+  return false;
+}
+
+/** Piece-final tonic: major sixth — Barry Harris sixth–diminished vocabulary (not bare maj7). */
+function spellBarryHarrisTonicCadence(
+  bar: number,
+  tonicPc: number
+): { symbol: string; receipt: string } {
+  const nm = pitchClassToSharpName(tonicPc);
+  return {
+    symbol: `${nm}6`,
+    receipt: `bh:final_tonic_cadence@bar${bar}`,
+  };
+}
+
+function forceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const { symbol, receipt } = spellBarryHarrisTonicCadence(totalBars, tonicPc);
+  out[totalBars - 1] = symbol;
+  receipts.push(`${receipt}|final_bar`);
+}
+
+function enforceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || chordLooksTonicFamilyOrSixth(sym)) return;
+  const { symbol, receipt } = spellBarryHarrisTonicCadence(totalBars, tonicPc);
+  out[idx] = symbol;
+  receipts.push(`${receipt}|final_bar_guardrail`);
+}
+
+/**
  * Precompute effective one chord per bar after Barry Harris slice devices (primary `barry_harris` only).
  */
 /** @deprecated — use resolveBarSymbol */
@@ -291,6 +354,10 @@ export function precomputeBarryHarrisEffectiveHarmonyBars(context: CompositionCo
   applyTritoneSubstitutionPass(out, tonicPc, seed, receipts, tb, context);
   applySixthDiminishedColourPass(out, seed, receipts, tb, context);
   applyCadentialTwoFivePrepPass(out, tonicPc, seed, receipts, tb, context);
+
+  /* Piece-final only: force tonic 6 + safety net (Wayne fBT pattern; mid-piece sixth–dim/b9 untouched). */
+  forceFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
+  enforceFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
 
   genMeta.barryHarrisEffectiveHarmonyBars = out;
   genMeta.barryHarrisDeviceReceipts = receipts;
