@@ -699,6 +699,32 @@ export function finalizeNinoRotaMetadata(metadata: GenerationMetadata, acc: Film
 /** --- Jerry Goldsmith --- */
 export let jerryGoldsmithEffectiveHarmonyBars: string[] = [];
 
+export const JERRY_GOLDSMITH_HARMONIC_VOICE_IDS = ['jerry_goldsmith', 'goldsmith'] as const;
+
+export function isJerryGoldsmithHarmonicVoiceId(raw: string | null | undefined): boolean {
+  const id = normalizeHarmonicVoiceId(String(raw ?? ''));
+  return id === 'jerry_goldsmith' || id === 'goldsmith';
+}
+
+/**
+ * Primary songwriter or harmonicVoice selects Jerry Goldsmith harmony authority.
+ * Single-gate — Wave-D / bernard_herrmann HV pattern.
+ *
+ * Accepts `jerry_goldsmith` | VRB `goldsmith`. FBT idiomatic-bias lives inside precompute.
+ * `jerryGoldsmithContext` + style surface stay primary-only (holdbacks).
+ */
+export function isJerryGoldsmithHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  return (
+    isJerryGoldsmithHarmonicVoiceId(metadata?.songwriterStyleId) ||
+    isJerryGoldsmithHarmonicVoiceId(metadata?.harmonicVoice)
+  );
+}
+
 /** @deprecated — use resolveBarSymbol */
 export function precomputeJerryGoldsmithEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;

@@ -20,7 +20,7 @@ import { isRadioheadHarmonicPath } from '../song-mode/radioheadSlice';
 import { isAndrewHillHarmonicPath } from '../song-mode/andrewHillSlice';
 import { isKateBushHarmonicPath } from '../song-mode/kateBushSlice';
 import { isEcmChamberHarmonicPath } from '../song-mode/ecmChamberSlice';
-import { isBernardHerrmannHarmonicPath } from '../song-mode/filmSoundtrackHarmonySlices';
+import { isBernardHerrmannHarmonicPath, isJerryGoldsmithHarmonicPath } from '../song-mode/filmSoundtrackHarmonySlices';
 import { isClausOgermanHarmonicPath } from '../song-mode/clausOgermanSlice';
 import { isDonSebeskyHarmonicPath } from '../song-mode/donSebeskySlice';
 import { isJackWhiteHarmonicPath } from '../song-mode/jackWhiteDroneSlice';
@@ -341,7 +341,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   }
   const jgEff = meta?.jerryGoldsmithEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'jerry_goldsmith' &&
+    isJerryGoldsmithHarmonicPath(meta) &&
     Array.isArray(jgEff) &&
     jgEff.length === tb &&
     barIndex >= 1 &&

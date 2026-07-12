@@ -243,6 +243,8 @@ import {
   finalizePhilipGlassMetadata,
   isBernardHerrmannHarmonicPath,
   isBernardHerrmannHarmonicVoiceId,
+  isJerryGoldsmithHarmonicPath,
+  isJerryGoldsmithHarmonicVoiceId,
   precomputeAngeloBadalamentiEffectiveHarmonyBars,
   precomputeBernardHerrmannEffectiveHarmonyBars,
   precomputeEnnioMorriconeEffectiveHarmonyBars,
@@ -3331,6 +3333,10 @@ function buildGuitarPart(
   const isSongwriterEnnioMorricone = genMeta?.songwriterStyleId === 'ennio_morricone';
   const isSongwriterNinoRota = genMeta?.songwriterStyleId === 'nino_rota';
   const isSongwriterJerryGoldsmith = genMeta?.songwriterStyleId === 'jerry_goldsmith';
+  const isHarmonicVoiceJerryGoldsmith = isJerryGoldsmithHarmonicVoiceId(
+    String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')
+  );
+  const jerryGoldsmithHarmonicPathActive = isJerryGoldsmithHarmonicPath(genMeta);
   const isSongwriterPhilipGlass = genMeta?.songwriterStyleId === 'philip_glass';
   const isSongwriterSteveReich = genMeta?.songwriterStyleId === 'steve_reich';
   const isSongwriterMessiaen = genMeta?.songwriterStyleId === 'messiaen';
@@ -3725,8 +3731,15 @@ function buildGuitarPart(
   if (isSongwriterNinoRota && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeNinoRotaEffectiveHarmonyBars(context);
   }
-  if (isSongwriterJerryGoldsmith && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (jerryGoldsmithHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeJerryGoldsmithEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceJerryGoldsmith && !isSongwriterJerryGoldsmith) {
+      const jerryGoldsmithEff = genMeta.jerryGoldsmithEffectiveHarmonyBars;
+      const jerryGoldsmithTb = totalBarsFromContext(context);
+      if (Array.isArray(jerryGoldsmithEff) && jerryGoldsmithEff.length === jerryGoldsmithTb) {
+        genMeta.mosaicMergedHarmonyBars = [...jerryGoldsmithEff];
+      }
+    }
   }
   if (isSongwriterPhilipGlass && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputePhilipGlassEffectiveHarmonyBars(context);
