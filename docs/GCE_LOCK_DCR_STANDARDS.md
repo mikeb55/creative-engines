@@ -156,6 +156,16 @@ On **short-form** output, if the weakest category is **structurally limited** (�
 
 **Forbidden:** repeated full regenerations or unconstrained tweak loops; if still failing after one Refine, return to **Design**.
 
+### §3.1 Final-bar Tension (`finalBarTension`) slice fixes
+
+Before applying the **standard final-bar tonic-force** pattern (`forceFinalBarTonicResolution` / `enforceFinalBarTonicResolution` → tonic-family spelling) to a new composer slice:
+
+1. Read the slice **header / comments** and chord **pool** for stated idiom intent (open-cadence, non-functional, impressionist/planing, noise / alt-rock, etc.).
+2. If that intent is present, use the **idiomatic-bias** approach instead: bias piece-final selection toward outcomes the style’s **own vocabulary already sometimes produces** (and that already pass FBT), rather than forcing a jazz tonic-family chord.
+3. Leave mid-piece devices untouched; piece-final bias/force only.
+
+**Confirmed mismatches** (tonic-force would be wrong; idiomatic-bias used): **Debussy**, **Andrew Hill**, **Sonic Youth**.
+
 ---
 
 ## 4. Style Profile Layer — per-style scoring requirement

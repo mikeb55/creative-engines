@@ -97,6 +97,12 @@ Roughly grouped by recurring failures / historical buckets in `test:full` (may r
 
 ## Parked / Known Debt
 
+### Latent: `maybeReduceRelentlessAlt` `/\balt\b/` under-match (Jobim) — logged 2026-07-12
+
+**Not yet fixed — logged only.**
+
+`maybeReduceRelentlessAlt` in `engines/composer-os-v2/core/song-mode/jobimSlice.ts` uses `/\balt\b/`, which **fails to match** compact spellings like `A7alt` / `a7alt` (no word boundary between digit and `alt`). Mid-piece alt-dominant reduction therefore **under-fires generally**. Noted in-slice (`TODO(latent)`) and commit **`8f410875`**. Separate from piece-final `finalBarTension` tonic lock — do not conflate when fixing FBT.
+
 ## Complete: B-category isGuitarBassDuoFamily guards (2026-04-28)
 
 Replaced remaining B-category literal `guitar_bass_duo` preset guards with `isGuitarBassDuoFamily(context.presetId)` (and consolidated pilot helpers where equivalent) across `generateGoldenPathDuoScore.ts`, `runGoldenPath.ts`, `songMode*.ts` overlays, `ecmShapingPass.ts`, `jamesBrownFunkOverlay.ts`, `duoMusicalQuality.ts`, `duoLockQuality.ts`, `pipelineTruthGates.ts`, `ecmStyleHarmonyPolicy.ts`, `indieArtPopPhaseA.ts`, plus **App API** `generateComposition.ts` / `listOutputs.ts` family-aligned checks. **Intentionally unchanged:** `guitarBassDuoPresetIds.ts` (`isGuitarBassDuoFamily` / `isStandardGuitarBassDuo` definitions), single-line–specific branches (`GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID`), motif target modes, reference-influence target literals, and defaults/comments that are not runtime preset guards.

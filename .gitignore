@@ -73,5 +73,7 @@ engines/composer-os-v2/scripts/_*FbtMatrixOut*
 engines/composer-os-v2/scripts/_*Evidence*
 engines/composer-os-v2/scripts/_hardGateRoiReauditOut*
 engines/composer-os-v2/scripts/run*FbtAudit.ts
+engines/composer-os-v2/scripts/run*Evidence*.ts
+engines/composer-os-v2/scripts/run*Audit*.ts
 engines/composer-os-v2/scripts/runHardGateRoiReaudit.ts
 
