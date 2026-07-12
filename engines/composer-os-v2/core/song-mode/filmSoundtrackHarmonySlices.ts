@@ -514,9 +514,73 @@ export function precomputeNinoRotaEffectiveHarmonyBars(context: CompositionConte
     }
   }
 
+  /* Piece-final only: force tonic maj7 + safety net (Wayne fBT pattern; mid-piece devices untouched). */
+  const tonicPc = inferTonicPitchClassFromBar1(context);
+  forceNinoRotaFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
+  enforceNinoRotaFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
+
   genMeta.ninoRotaEffectiveHarmonyBars = out;
   genMeta.ninoRotaDeviceReceipts = receipts;
   ninoRotaEffectiveHarmonyBars = out;
+}
+
+/**
+ * GCE tonic-family check aligned with finalBarTension gate (`isTonicFamilyChord`).
+ * Piece-final force / safety net only — mid-piece waltz/carnival devices untouched.
+ */
+function chordLooksTonicFamilyRota(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return true;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return true;
+  if (/^[^/]*min9/i.test(s)) return true;
+  return false;
+}
+
+/** Piece-final tonic: maj7 — Rota phrase-final diatonic colour (d5; already FBT-pass). */
+function spellNinoRotaTonicCadence(
+  bar: number,
+  tonicPc: number
+): { symbol: string; receipt: string } {
+  const nm = pitchClassToSharpName(tonicPc);
+  return {
+    symbol: `${nm}maj7`,
+    receipt: `nr:final_tonic_cadence@bar${bar}`,
+  };
+}
+
+function forceNinoRotaFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const { symbol, receipt } = spellNinoRotaTonicCadence(totalBars, tonicPc);
+  out[totalBars - 1] = symbol;
+  receipts.push(`${receipt}|final_bar`);
+}
+
+function enforceNinoRotaFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || chordLooksTonicFamilyRota(sym)) return;
+  const { symbol, receipt } = spellNinoRotaTonicCadence(totalBars, tonicPc);
+  out[idx] = symbol;
+  receipts.push(`${receipt}|final_bar_guardrail`);
 }
 
 export function finalizeNinoRotaMetadata(metadata: GenerationMetadata, acc: FilmHarmonyAccumulator): void {
