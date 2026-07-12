@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+### Added
+
+- **Generate — “How pieces end” browse tab** — Nested Generate workspace tab (renderer-only) listing Song Mode composers by closing approach: Resolved / Confirmed clean / Open / Special handling / Not tagged yet. Static catalog in **`composerFixCategories.ts`**; no generation, harmony, evaluator, or Electron IPC changes.
+
 ### Fixed
 
 - **68-style ROI hard-gate closeout (2026-07-12)** — Closed **`finalBarTension`** / **`cadentialClarityCoverage`** fails across the Song Mode duo ROI audit: **66** unique composers addressed, **0** open items remaining on the **68**-style set (two flagship names — **`allan_holdsworth`**, **`cole_porter`** — resolved inside batch / own-rewrite work rather than as separate open lanes). Mix: **33** tonic-force / force-final landings, **24** idiomatic-bias landings, **8** already-clear skips (FBT clean on gen-ok; no code change), plus **`bacharach`** dual-surface final-bar sync (**`ca619d8f`**) and **`cole_porter`** own-rewrite-path tonic force before authority sync (**`35202ddd`**). Composers were already UI-selectable; gates were output-quality only (no GATED→hidden filter). **Reusable patterns documented:** idiomatic-bias vs tonic-force decision rule (**`docs/GCE_LOCK_DCR_STANDARDS.md`** §3.1); **`maybeReduceRelentlessAlt`** `/\balt\b/` under-match on compact spellings like **`A7alt`** (**`docs/TEST_DEBT_COMPOSER_OS_V2.md`**); dual-surface final-bar-only sync when dressing + effective-harmony pipelines diverge (§3.1 addendum, **`aa2cde2c`**).

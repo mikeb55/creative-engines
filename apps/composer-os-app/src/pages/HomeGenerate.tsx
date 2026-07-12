@@ -83,6 +83,7 @@ const MosaicBlocksPanel = lazy(() =>
   import('../components/MosaicBlocksPanel').then((m) => ({ default: m.MosaicBlocksPanel })),
 );
 import { ComposerLauncher } from '../components/ComposerLauncher';
+import { FixCategoryBrowser } from '../components/FixCategoryBrowser';
 import { FORM_OPTIONS } from '../constants/formOptions';
 import {
   clampSongFormBarCount,
@@ -712,6 +713,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'angelo_badalamenti', label: 'Angelo Badalamenti' },
   { id: 'barry_harris', label: 'Barry Harris' },
   { id: 'beatles', label: 'Beatles' },
+  { id: 'berg', label: 'Alban Berg' },
   { id: 'beethoven', label: 'Beethoven' },
   { id: 'beethoven_late', label: 'Beethoven (Late Quartets)' },
   { id: 'bartok', label: 'Bartók (String Quartets)' },
@@ -2617,8 +2619,9 @@ export function HomeGenerate({
   const mosaicImportWorkflowRef = useRef(mosaicImportWorkflow);
   mosaicImportWorkflowRef.current = mosaicImportWorkflow;
   const [mosaicImportWarning, setMosaicImportWarning] = useState<string | null>(null);
-  const [homeTab, setHomeTab] = useState<'composers' | 'generate'>('composers');
+  const [homeTab, setHomeTab] = useState<'composers' | 'generate' | 'fix_categories'>('composers');
   const [composerLauncherSelectedId, setComposerLauncherSelectedId] = useState<string | null>(null);
+  const [fixCategorySelectedId, setFixCategorySelectedId] = useState<string | null>(null);
   const pendingComposerGenerateRef = useRef(false);
   const [presetId, setPresetId] = useState('song_mode');
   const [generateProducerId, setGenerateProducerId] = useState<GenerateProducerId>('song_mode');
@@ -5859,6 +5862,17 @@ export function HomeGenerate({
         <button
           type="button"
           role="tab"
+          id="co-home-tab-fix-categories"
+          aria-selected={homeTab === 'fix_categories'}
+          aria-controls="co-home-panel-fix-categories"
+          className={homeTab === 'fix_categories' ? '' : 'secondary'}
+          onClick={() => setHomeTab('fix_categories')}
+        >
+          How pieces end
+        </button>
+        <button
+          type="button"
+          role="tab"
           id="co-home-tab-generate"
           aria-selected={homeTab === 'generate'}
           aria-controls="co-home-panel-generate"
@@ -5879,6 +5893,16 @@ export function HomeGenerate({
             onGenerateNow={handleComposerGenerateNow}
             isActive={homeTab === 'composers'}
             onRecordRecent={() => {}}
+          />
+        </div>
+      ) : homeTab === 'fix_categories' ? (
+        <div role="tabpanel" id="co-home-panel-fix-categories" aria-labelledby="co-home-tab-fix-categories">
+          <FixCategoryBrowser
+            composers={SONGWRITER_OPTIONS}
+            selectedId={fixCategorySelectedId ?? songwriterStyle}
+            onSelect={setFixCategorySelectedId}
+            onOpenGenerate={handleComposerOpenGenerate}
+            isActive={homeTab === 'fix_categories'}
           />
         </div>
       ) : (
