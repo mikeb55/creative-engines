@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+### Fixed
+
+- **68-style ROI hard-gate closeout (2026-07-12)** — Closed **`finalBarTension`** / **`cadentialClarityCoverage`** fails across the Song Mode duo ROI audit: **66** unique composers addressed, **0** open items remaining on the **68**-style set (two flagship names — **`allan_holdsworth`**, **`cole_porter`** — resolved inside batch / own-rewrite work rather than as separate open lanes). Mix: **33** tonic-force / force-final landings, **24** idiomatic-bias landings, **8** already-clear skips (FBT clean on gen-ok; no code change), plus **`bacharach`** dual-surface final-bar sync (**`ca619d8f`**) and **`cole_porter`** own-rewrite-path tonic force before authority sync (**`35202ddd`**). Composers were already UI-selectable; gates were output-quality only (no GATED→hidden filter). **Reusable patterns documented:** idiomatic-bias vs tonic-force decision rule (**`docs/GCE_LOCK_DCR_STANDARDS.md`** §3.1); **`maybeReduceRelentlessAlt`** `/\balt\b/` under-match on compact spellings like **`A7alt`** (**`docs/TEST_DEBT_COMPOSER_OS_V2.md`**); dual-surface final-bar-only sync when dressing + effective-harmony pipelines diverge (§3.1 addendum, **`aa2cde2c`**).
+
 ### Added
 
 - **Verlaine GBD Slonimsky Voice — end-to-end working (2026-07-06)** — Tom Verlaine in **Guitar–Bass Duo → Slonimsky → Voice** dropdown generates Verlaine suspended-field harmony with Barry Harris primary stack. Fix chain: **`8f248347`** harmony-wire + **`generateComposition`** forward · **`1b97bce0`** UI roster · **`e2cd13ab`** V3 leap relax · **`6575d778`** Verlaine authority in **`getChordForBar`** · **`54af24c8`** **`apiGenerate`** IPC **`harmonicVoice`** copy · **`50e1d2a5`** payload uses **`gbdWriterId`** (not stale **`slonimskyHarmonicVoice`**). Desktop **v2.10.8**. Verified live UI + musician-facing GCE (readiness **0.9**, shareable). See **`docs/VERLAINE_GBD.md`**.
