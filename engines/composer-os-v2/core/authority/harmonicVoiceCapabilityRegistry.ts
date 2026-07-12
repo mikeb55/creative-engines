@@ -276,6 +276,17 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
     notes:
       'harmony/precompute hv_full via johnColtraneEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; Wave-C three-tonic changes cadence guardrail',
   },
+  {
+    styleId: 'ecm_chamber',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'ecmChamberEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via ecmChamberEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; preset ecm_chamber orchestration + STYLE_ECM* surfaces + presetId validator skips stay primary/preset-only',
+  },
 ];
 
 const REGISTRY_BY_STYLE = new Map<string, HvCapabilityEntry>(

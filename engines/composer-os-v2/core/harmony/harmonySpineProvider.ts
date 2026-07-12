@@ -30,6 +30,7 @@ import { isGershwinHarmonicPath } from '../song-mode/gershwinSlice';
 import { isRadioheadHarmonicPath } from '../song-mode/radioheadSlice';
 import { isAndrewHillHarmonicPath } from '../song-mode/andrewHillSlice';
 import { isKateBushHarmonicPath } from '../song-mode/kateBushSlice';
+import { isEcmChamberHarmonicPath } from '../song-mode/ecmChamberSlice';
 import { isSatieHarmonicPath } from '../song-mode/satieSlice';
 import { isColePorterHarmonicPath } from '../song-mode/colePorterSlice';
 import { isJohnColtraneHarmonicPath } from '../song-mode/johnColtraneSlice';
@@ -166,7 +167,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   { match: (m) => m?.songwriterStyleId === 'lalo_schifrin', effKey: 'laloSchifrinEffectiveHarmonyBars', sliceId: 'lalo_schifrin' },
   { match: (m) => m?.songwriterStyleId === 'bacharach', effKey: 'bacharachEffectiveHarmonyBars', sliceId: 'bacharach' },
   { match: (m) => m?.songwriterStyleId === 'donald_fagen', effKey: 'donaldFagenEffectiveHarmonyBars', sliceId: 'donald_fagen' },
-  { match: (m) => m?.songwriterStyleId === 'ecm_chamber', effKey: 'ecmChamberEffectiveHarmonyBars', sliceId: 'ecm_chamber' },
+  { match: (m) => isEcmChamberHarmonicPath(m), effKey: 'ecmChamberEffectiveHarmonyBars', sliceId: 'ecm_chamber' },
   { match: (m) => isJobimHarmonicPath(m), effKey: 'jobimEffectiveHarmonyBars', sliceId: 'antonio_carlos_jobim' },
   { match: (m) => isHerbieHancockHarmonicPath(m), effKey: 'herbieHancockEffectiveHarmonyBars', sliceId: 'herbie_hancock' },
   { match: (m) => m?.songwriterStyleId === 'stephen_sondheim', effKey: 'sondheimEffectiveHarmonyBars', sliceId: 'stephen_sondheim' },

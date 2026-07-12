@@ -11,6 +11,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -91,6 +92,29 @@ export function isSongwriterEcmChamber(
   genMeta: GenerationMetadata | undefined
 ): genMeta is GenerationMetadata & { songwriterStyleId: 'ecm_chamber' } {
   return genMeta?.songwriterStyleId === 'ecm_chamber';
+}
+
+/**
+ * Primary songwriter or harmonicVoice selects ECM Chamber harmony authority.
+ * Single-gate (no styleProfile) — Wave-C / kate_bush HV pattern.
+ *
+ * Exact id `ecm_chamber` only — soft aliases stay primary-intake via songwriter
+ * normalize; they do **not** engage HV.
+ *
+ * Dual-surface holdbacks (unchanged by this HV wire):
+ * - preset `ecm_chamber` orchestration / Metheny–Schneider–Wheeler modes
+ * - `STYLE_ECM` / `STYLE_ECM_CHAMBER` style-surface nudges
+ * - behaviourGates / duo identity skips keyed on `presetId === 'ecm_chamber'`
+ */
+export function isEcmChamberHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'ecm_chamber' || voice === 'ecm_chamber';
 }
 
 export interface EcmChamberHarmonyAccumulator {
@@ -499,7 +523,8 @@ function enforceFinalBarTonicResolution(
 }
 
 /**
- * Precompute effective one chord per bar after ECM Chamber slice devices (primary `ecm_chamber` only).
+ * Precompute effective one chord per bar after ECM Chamber slice devices
+ * (primary or harmonicVoice `ecm_chamber` — see {@link isEcmChamberHarmonicPath}).
  */
 /** @deprecated — use resolveBarSymbol */
 export function precomputeEcmChamberEffectiveHarmonyBars(context: CompositionContext): void {

@@ -523,6 +523,7 @@ import {
   accumulateEcmChamberHarmonyDiagnostics,
   createEcmChamberHarmonyAccumulator,
   finalizeEcmChamberMetadata,
+  isEcmChamberHarmonicPath,
   precomputeEcmChamberEffectiveHarmonyBars,
 } from './ecmChamberSlice';
 import {
@@ -3208,6 +3209,10 @@ function buildGuitarPart(
     genMeta?.duoIntent === 'conversational' || genMeta?.duoIntent === 'supportive' ? genMeta.duoIntent : undefined;
   const isSongwriterFagen = genMeta?.songwriterStyleId === 'donald_fagen';
   const isSongwriterEcmChamber = genMeta?.songwriterStyleId === 'ecm_chamber';
+  const isHarmonicVoiceEcmChamber =
+    normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
+    'ecm_chamber';
+  const ecmChamberHarmonicPathActive = isEcmChamberHarmonicPath(genMeta);
   const isSongwriterJobim = genMeta?.songwriterStyleId === 'antonio_carlos_jobim';
   const isHarmonicVoiceJobim = isJobimHarmonicVoiceId(
     String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')
@@ -3893,8 +3898,15 @@ function buildGuitarPart(
   if (isSongwriterFagen && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeDonaldFagenEffectiveHarmonyBars(context);
   }
-  if (isSongwriterEcmChamber && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (ecmChamberHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeEcmChamberEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceEcmChamber && !isSongwriterEcmChamber) {
+      const ecmChamberEff = genMeta.ecmChamberEffectiveHarmonyBars;
+      const ecmChamberTb = totalBarsFromContext(context);
+      if (Array.isArray(ecmChamberEff) && ecmChamberEff.length === ecmChamberTb) {
+        genMeta.mosaicMergedHarmonyBars = [...ecmChamberEff];
+      }
+    }
   }
   if (jobimHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeJobimEffectiveHarmonyBars(context);

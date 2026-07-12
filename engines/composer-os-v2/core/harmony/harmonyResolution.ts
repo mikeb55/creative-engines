@@ -19,6 +19,7 @@ import { isGershwinHarmonicPath } from '../song-mode/gershwinSlice';
 import { isRadioheadHarmonicPath } from '../song-mode/radioheadSlice';
 import { isAndrewHillHarmonicPath } from '../song-mode/andrewHillSlice';
 import { isKateBushHarmonicPath } from '../song-mode/kateBushSlice';
+import { isEcmChamberHarmonicPath } from '../song-mode/ecmChamberSlice';
 import { isSatieHarmonicPath } from '../song-mode/satieSlice';
 import { isColePorterHarmonicPath } from '../song-mode/colePorterSlice';
 import { isJohnColtraneHarmonicPath } from '../song-mode/johnColtraneSlice';
@@ -961,12 +962,13 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   }
 
   /**
-   * ECM Chamber (Song Mode primary): `precomputeEcmChamberEffectiveHarmonyBars` applies sparse modal devices + receipts.
+   * ECM Chamber: `precomputeEcmChamberEffectiveHarmonyBars` applies sparse modal devices + receipts.
    * After precompute, `ecmChamberEffectiveHarmonyBars` is full-form and authoritative.
+   * HV path: primary | harmonicVoice (`ecm_chamber` exact) — see isEcmChamberHarmonicPath.
    */
   const ecEff = meta?.ecmChamberEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'ecm_chamber' &&
+    isEcmChamberHarmonicPath(meta) &&
     Array.isArray(ecEff) &&
     ecEff.length === tb &&
     barIndex >= 1 &&
