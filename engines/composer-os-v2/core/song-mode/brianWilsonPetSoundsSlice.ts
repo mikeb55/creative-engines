@@ -8,6 +8,7 @@ import type { MeasureModel, NoteEvent } from '../score-model/scoreModelTypes';
 import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
+import { isProtectedBar } from '../score-integrity/identityLock';
 import { planMelodyBehaviour } from './melodyBehaviourPlanner';
 
 export interface BrianWilsonHarmonyAccumulator {
@@ -1008,6 +1009,65 @@ export function applyBrianWilsonPetSoundsHarmonicDevicesForBar(params: {
   return chord;
 }
 
+/**
+ * GCE tonic-family check aligned with finalBarTension gate (`isTonicFamilyChord`).
+ * Piece-final force / safety net only — mid-piece Pet Sounds devices untouched.
+ */
+function chordLooksTonicFamily(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return true;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return true;
+  if (/^[^/]*min9/i.test(s)) return true;
+  return false;
+}
+
+/** Piece-final tonic: maj7 (Pet Sounds vocabulary; passes finalBarTension tonic-family). */
+function spellWilsonTonicCadence(
+  bar: number,
+  tonicPc: number
+): { symbol: string; receipt: string } {
+  const nm = pitchClassToSharpName(tonicPc);
+  return {
+    symbol: `${nm}maj7`,
+    receipt: `bw:final_tonic_cadence@bar${bar}`,
+  };
+}
+
+function forceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const { symbol, receipt } = spellWilsonTonicCadence(totalBars, tonicPc);
+  out[totalBars - 1] = symbol;
+  receipts.push(`${receipt}|final_bar`);
+}
+
+function enforceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || chordLooksTonicFamily(sym)) return;
+  const { symbol, receipt } = spellWilsonTonicCadence(totalBars, tonicPc);
+  out[idx] = symbol;
+  receipts.push(`${receipt}|final_bar_guardrail`);
+}
+
 /** Precompute full-form effective harmony when Brian Wilson + duo golden path. */
 /** @deprecated — use resolveBarSymbol */
 export function precomputeBrianWilsonEffectiveHarmonyBars(context: CompositionContext): void {
@@ -1048,6 +1108,11 @@ export function precomputeBrianWilsonEffectiveHarmonyBars(context: CompositionCo
     });
     out.push(effective);
   }
+
+  /* Piece-final only: force tonic-family + safety net (Wayne fBT pattern; mid-piece unchanged). */
+  forceFinalBarTonicResolution(out, tonicPc, tb, receipts.deviceReceipts, context);
+  enforceFinalBarTonicResolution(out, tonicPc, tb, receipts.deviceReceipts, context);
+
   genMeta.brianWilsonEffectiveHarmonyBars = out;
   genMeta.brianWilsonSectionModulationHints = hints;
   genMeta.brianWilsonPetSoundsDeviceReceipts = receipts.deviceReceipts;
