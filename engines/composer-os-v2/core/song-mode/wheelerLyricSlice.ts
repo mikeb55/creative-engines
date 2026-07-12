@@ -528,9 +528,60 @@ export function precomputeKennyWheelerEffectiveHarmonyBars(context: CompositionC
   applyAnacrusisPhrasePass(out, seed, receipts, tb, positions);
   applyTieSpanPass(out, seed, receipts, tb, positions);
 
+  /* Piece-final only: bias toward Wheeler open-cadence landings that already pass fBT. */
+  biasKennyWheelerFinalBarIdiomaticOpen(out, seed, tb, receipts, context, tonicPc);
+
   genMeta.kennyWheelerEffectiveHarmonyBars = out;
   genMeta.kennyWheelerDeviceReceipts = receipts;
   genMeta.kennyWheelerAntiElaborationGuards = guards;
+}
+
+/**
+ * Dominant-family proxy for finalBarTension (mirrors verlaineGbdWriterEvalCore
+ * `isDominantFamilyChord`) — mid-piece open_cadence / polyaxial / tension devices untouched.
+ */
+function chordLooksDominantFamilyForFbtWheeler(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return false;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return false;
+  if (/^[^/]*min9/i.test(s)) return false;
+  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
+}
+
+/**
+ * Bias piece-final bar toward Wheeler open-cadence pool that already passes fBT
+ * (6/9(add9) · sus2(add9) · maj7(add9,#11) from kw:open_cadence).
+ * Not a forced jazz tonic cadence — cadentialOpacity / open ending idiom preserved.
+ */
+function biasKennyWheelerFinalBarIdiomaticOpen(
+  out: string[],
+  seed: number,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext,
+  tonicPc: number | undefined
+): void {
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || !chordLooksDominantFamilyForFbtWheeler(sym)) return;
+
+  const rootPc = tonicPc ?? harmonyRootPc(sym);
+  if (rootPc === undefined) return;
+  const root = pitchClassToSharpName(rootPc);
+  const slash = slashTail(sym);
+  const u = seededUnit(seed, totalBars, 881701);
+
+  let next: string;
+  if (u < 0.35) next = `${root}6/9(add9)${slash}`;
+  else if (u < 0.7) next = `${root}sus2(add9)${slash}`;
+  else next = `${root}maj7(add9,#11)${slash}`;
+
+  out[idx] = next;
+  receipts.push(`kw:final_open_bias@bar${totalBars}`);
 }
 
 export function finalizeKennyWheelerMetadata(
