@@ -357,9 +357,74 @@ export function precomputeDonaldFagenEffectiveHarmonyBars(context: CompositionCo
   applySusBreathPass(out, seed, receipts, tb, context);
   applyPhraseAnticipationBiasPass(out, seed, receipts, tb, context);
 
+  /* Piece-final only: force tonic-family + safety net (Wayne fBT pattern; mid-piece unchanged). */
+  forceFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
+  enforceFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
+
   genMeta.donaldFagenEffectiveHarmonyBars = out;
   genMeta.donaldFagenDeviceReceipts = receipts;
   genMeta.donaldFagenAntiElaborationGuards = guards;
+}
+
+/**
+ * GCE tonic-family check aligned with finalBarTension gate (`isTonicFamilyChord`).
+ * Piece-final force / safety net only — mid-piece Fagen devices untouched.
+ */
+function chordLooksTonicFamily(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return true;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return true;
+  if (/^[^/]*min9/i.test(s)) return true;
+  return false;
+}
+
+/**
+ * Piece-final tonic: maj9 — enrichTonicLydian pool (maj9 · maj7#11; avoid bare 13 FBT trap).
+ */
+function spellFagenTonicCadence(
+  bar: number,
+  tonicPc: number
+): { symbol: string; receipt: string } {
+  const nm = pitchClassToSharpName(tonicPc);
+  return {
+    symbol: `${nm}maj9`,
+    receipt: `df:final_tonic_cadence@bar${bar}`,
+  };
+}
+
+function forceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const { symbol, receipt } = spellFagenTonicCadence(totalBars, tonicPc);
+  out[totalBars - 1] = symbol;
+  receipts.push(`${receipt}|final_bar`);
+}
+
+function enforceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || chordLooksTonicFamily(sym)) return;
+  const { symbol, receipt } = spellFagenTonicCadence(totalBars, tonicPc);
+  out[idx] = symbol;
+  receipts.push(`${receipt}|final_bar_guardrail`);
 }
 
 export function finalizeDonaldFagenMetadata(metadata: GenerationMetadata, acc: DonaldFagenHarmonyAccumulator): void {
