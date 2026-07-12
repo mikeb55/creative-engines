@@ -303,9 +303,73 @@ export function precomputeJohnWilliamsEffectiveHarmonyBars(context: CompositionC
     }
   }
 
+  /* Piece-final only: force tonic maj9 + safety net (Wayne fBT pattern; mid-piece devices untouched). */
+  const tonicPc = inferTonicPitchClassFromBar1(context);
+  forceJohnWilliamsFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
+  enforceJohnWilliamsFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
+
   genMeta.johnWilliamsEffectiveHarmonyBars = out;
   genMeta.johnWilliamsDeviceReceipts = receipts;
   johnWilliamsEffectiveHarmonyBars = out;
+}
+
+/**
+ * GCE tonic-family check aligned with finalBarTension gate (`isTonicFamilyChord`).
+ * Piece-final force / safety net only — mid-piece Lydian/fanfare devices untouched.
+ */
+function chordLooksTonicFamilyWilliams(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return true;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return true;
+  if (/^[^/]*min9/i.test(s)) return true;
+  return false;
+}
+
+/** Piece-final tonic: maj9 — Williams brass-fanfare colour (d4; already FBT-pass). */
+function spellJohnWilliamsTonicCadence(
+  bar: number,
+  tonicPc: number
+): { symbol: string; receipt: string } {
+  const nm = pitchClassToSharpName(tonicPc);
+  return {
+    symbol: `${nm}maj9`,
+    receipt: `jwill:final_tonic_cadence@bar${bar}`,
+  };
+}
+
+function forceJohnWilliamsFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const { symbol, receipt } = spellJohnWilliamsTonicCadence(totalBars, tonicPc);
+  out[totalBars - 1] = symbol;
+  receipts.push(`${receipt}|final_bar`);
+}
+
+function enforceJohnWilliamsFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || chordLooksTonicFamilyWilliams(sym)) return;
+  const { symbol, receipt } = spellJohnWilliamsTonicCadence(totalBars, tonicPc);
+  out[idx] = symbol;
+  receipts.push(`${receipt}|final_bar_guardrail`);
 }
 
 export function finalizeJohnWilliamsMetadata(metadata: GenerationMetadata, acc: FilmHarmonyAccumulator): void {
