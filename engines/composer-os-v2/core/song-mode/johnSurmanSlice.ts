@@ -8,6 +8,7 @@ import type { CompositionContext, GenerationMetadata } from '../compositionConte
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
+import { isProtectedBar } from '../score-integrity/identityLock';
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 const PC_TO_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
@@ -63,6 +64,13 @@ function pitchClassToSharpName(pc: number): string {
 
 function stemOnly(symbol: string): string {
   return symbol.includes('/') ? symbol.slice(0, symbol.indexOf('/')).trim() : symbol.trim();
+}
+
+function harmonyRootPc(symbol: string): number | undefined {
+  const h = parseChordSymbol(stemOnly(symbol)).harmonyPart;
+  const m = h.match(ROOT_AT_START);
+  if (!m?.[1]) return undefined;
+  return noteNameToPitchClass(m[1]);
 }
 
 function seededUnit(seed: number, bar: number, salt: number): number {
@@ -353,8 +361,73 @@ export function precomputeJohnSurmanEffectiveHarmonyBars(context: CompositionCon
   const out = [...raw];
   applyFolkLayers(out, plan, seed, receipts);
 
+  /* Piece-final only: bias toward Surman ostinato landings that already pass fBT. */
+  biasJohnSurmanFinalBarIdiomaticOpen(out, plan, seed, receipts, context);
+
   genMeta.johnSurmanEffectiveHarmonyBars = out;
   genMeta.johnSurmanDeviceReceipts = receipts;
+}
+
+/**
+ * Dominant-family proxy for finalBarTension (mirrors verlaineGbdWriterEvalCore
+ * `isDominantFamilyChord`) — mid-piece folk-modal / ostinato_hold devices untouched.
+ * Note: m7 / 7sus4 trip via digit `7` even when idiomatic mid-piece.
+ */
+function chordLooksDominantFamilyForFbtSurman(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return false;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return false;
+  if (/^[^/]*min9/i.test(s)) return false;
+  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
+}
+
+/**
+ * Bias piece-final bar toward Surman ostinato pool landings that already pass fBT
+ * (Gmaj9 · Cmaj9 · Asus2 · Gadd9 · Am(add9) — never m7 digit trap).
+ * Not a forced jazz tonic cadence — minimalist ostinato / folk-modal idiom preserved.
+ */
+function biasJohnSurmanFinalBarIdiomaticOpen(
+  out: string[],
+  plan: JohnSurmanFolkPlan,
+  seed: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  const totalBars = out.length;
+  if (totalBars < 1) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || !chordLooksDominantFamilyForFbtSurman(sym)) return;
+
+  const sec = sectionForBar(plan, totalBars) ?? plan.sections[plan.sections.length - 1];
+  const rootPc = harmonyRootPc(sym) ?? sec?.centerPc;
+  if (rootPc === undefined) return;
+  const root = pitchClassToSharpName(rootPc);
+  const slashTail = sym.includes('/') ? sym.slice(sym.indexOf('/')) : '';
+  const u = seededUnit(seed, totalBars, 972301);
+  const mode = sec?.modalMode ?? 'dorian';
+
+  let next: string;
+  if (mode === 'mixolydian') {
+    if (u < 0.45) next = `${root}maj9${slashTail}`;
+    else if (u < 0.75) next = `${root}add9${slashTail}`;
+    else next = `${root}sus2${slashTail}`;
+  } else if (mode === 'pentatonic_minor') {
+    if (u < 0.4) next = `${root}sus2${slashTail}`;
+    else if (u < 0.75) next = `${root}m(add9)${slashTail}`;
+    else next = `${root}add9${slashTail}`;
+  } else {
+    // Dorian ostinato — m(add9) / maj9 / sus2 (proven FBT pass; never m7).
+    if (u < 0.4) next = `${root}m(add9)${slashTail}`;
+    else if (u < 0.7) next = `${root}maj9${slashTail}`;
+    else next = `${root}sus2${slashTail}`;
+  }
+
+  out[idx] = next;
+  receipts.push(`js:final_open_bias@bar${totalBars}`);
 }
 
 export function finalizeJohnSurmanMetadata(
