@@ -441,6 +441,76 @@ function applyHoldsworthScaleLayers(
       receipts.push(`AH:defunctional@${iiBar}`);
     }
   }
+
+  /* Piece-final only: bias toward AH non-functional subsets that already pass fBT. */
+  biasHoldsworthFinalBarIdiomaticOpen(out, plan, seed, receipts, tonicPc, context);
+}
+
+/**
+ * Dominant-family proxy for finalBarTension (mirrors verlaineGbdWriterEvalCore
+ * `isDominantFamilyChord`) — mid-piece scale/defunctional devices untouched.
+ * Note: m7 / 7alt / plain 7 trip via digit `7` even when mid-piece idiomatic.
+ */
+function chordLooksDominantFamilyForFbtHoldsworth(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return false;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return false;
+  if (/^[^/]*min9/i.test(s)) return false;
+  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
+}
+
+/** FBT-safe Holdsworth interval-subset spellings (no alt / plain-7 / m7 digit trap). */
+function isHoldsworthFbtSafeSubset(symbol: string): boolean {
+  if (!looksScaleDerivedSurface(symbol)) return false;
+  return !chordLooksDominantFamilyForFbtHoldsworth(symbol);
+}
+
+function fbtSafeSubsetsFromFamily(family: HoldsworthScaleFamily): string[] {
+  return SCALE_FAMILY_PALETTES[family].filter(isHoldsworthFbtSafeSubset);
+}
+
+/**
+ * Bias piece-final bar toward Holdsworth pool landings that already pass fBT
+ * (Cm(maj7) · maj7#11 · maj9 · maj7#5 — scale-derived, not functional root stacks).
+ * Never leave 7alt / plain 7 / m7 on the final bar (digit-`7` FBT trap).
+ */
+function biasHoldsworthFinalBarIdiomaticOpen(
+  out: string[],
+  plan: HoldsworthScalePlan,
+  seed: number,
+  receipts: string[],
+  tonicPc: number | undefined,
+  context: CompositionContext
+): void {
+  const totalBars = out.length;
+  if (totalBars < 1) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || !chordLooksDominantFamilyForFbtHoldsworth(sym)) return;
+
+  const sec = sectionForBar(plan, totalBars) ?? plan.sections[plan.sections.length - 1];
+  if (!sec) return;
+
+  const safe = fbtSafeSubsetsFromFamily(sec.scaleFamily);
+  const u = seededUnit(seed, totalBars, 981801);
+  let next: string;
+  if (safe.length > 0) {
+    next = safe[Math.floor(u * safe.length) % safe.length]!;
+  } else {
+    // Altered family is all dominant-family — fall back to melodic-minor FBT-pass pool.
+    const fallback = fbtSafeSubsetsFromFamily('melodicMinor');
+    next = fallback[Math.floor(u * fallback.length) % fallback.length] ?? 'Cm(maj7)';
+  }
+
+  if (tonicPc !== undefined && seededUnit(seed, totalBars, 981802) < 0.62) {
+    next = transposeSubsetToTonic(next, tonicPc, totalBars);
+  }
+
+  out[idx] = next;
+  receipts.push(`AH:final_open_bias@${totalBars}`);
 }
 
 export interface HoldsworthHarmonyAccumulator {
