@@ -247,6 +247,67 @@ function applyPedalTonicBass(
 }
 
 /**
+ * GCE tonic-family / low-tension check aligned with finalBarTension gate.
+ * Piece-final force / safety net only — mid-piece Kate devices untouched.
+ * Note: add9 is not `isTonicFamilyChord` but scores tension 0.55 (pass); enforce accepts it.
+ */
+function chordLooksTonicFamily(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return true;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return true;
+  if (/^[^/]*min9/i.test(s)) return true;
+  if (/\badd9\b|\bsus2\b/i.test(s) && !/\b7\b|\balt\b|\b13\b/i.test(s)) return true;
+  return false;
+}
+
+/** Piece-final: tonic add9 (Kate modal field; passes finalBarTension via mid/tonic path). */
+function spellKateTonicCadence(
+  bar: number,
+  tonicPc: number
+): { symbol: string; receipt: string } {
+  const nm = pitchClassToSharpName(tonicPc);
+  return {
+    symbol: `${nm}add9`,
+    receipt: `kb:final_tonic_cadence@bar${bar}`,
+  };
+}
+
+function forceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const { symbol, receipt } = spellKateTonicCadence(totalBars, tonicPc);
+  out[totalBars - 1] = symbol;
+  receipts.push(`${receipt}|final_bar`);
+}
+
+function enforceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || chordLooksTonicFamily(sym)) return;
+  const { symbol, receipt } = spellKateTonicCadence(totalBars, tonicPc);
+  out[idx] = symbol;
+  receipts.push(`${receipt}|final_bar_guardrail`);
+}
+
+/**
  * Precompute effective one chord per bar after Kate Bush slice devices (primary `kate_bush` only).
  */
 /** @deprecated — use resolveBarSymbol */
@@ -273,6 +334,10 @@ export function precomputeKateBushEffectiveHarmonyBars(context: CompositionConte
 
   phraseFinalTonicTexture(out, tonicPc, seed, receipts, tb, context);
   applyPedalTonicBass(out, tonicPc, seed, receipts, tb, context);
+
+  /* Piece-final only: force tonic-colour field + safety net (Wayne fBT pattern; mid-piece unchanged). */
+  forceFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
+  enforceFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
 
   genMeta.kateBushEffectiveHarmonyBars = out;
   genMeta.kateBushDeviceReceipts = receipts;
