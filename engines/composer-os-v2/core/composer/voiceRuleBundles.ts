@@ -4574,6 +4574,9 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   nino_rota: applyRotaFilmStubVrbProfile(ROTA_FILM_STUB),
   goldsmith: applyGoldsmithFilmStubVrbProfile(GOLDSMITH_FILM_STUB),
   jerry_goldsmith: applyGoldsmithFilmStubVrbProfile(GOLDSMITH_FILM_STUB),
+  /** Film-Glass VRB twin — must NOT alias into REICH_GLASS (SQ minimalist-process). */
+  philip_glass: applyGlassFilmStubVrbProfile(PHILIP_GLASS_FILM_STUB),
+  glass: applyGlassFilmStubVrbProfile(PHILIP_GLASS_FILM_STUB),
   philip_glass_screen: applyGlassFilmStubVrbProfile(PHILIP_GLASS_FILM_STUB),
   philip_glass_film: applyGlassFilmStubVrbProfile(PHILIP_GLASS_FILM_STUB),
   zimmer: applyZimmerFilmStubVrbProfile(HANS_ZIMMER_FILM_STUB),
@@ -4607,8 +4610,7 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   reich_and_glass: REICH_GLASS,
   reich: REICH_GLASS,
   steve_reich: REICH_GLASS,
-  glass: REICH_GLASS,
-  philip_glass: REICH_GLASS,
+  // philip_glass / glass live with film stubs above — not REICH_GLASS.
   minimalist_sq: REICH_GLASS,
   sq_vrb_reich_glass: REICH_GLASS,
   shostakovich: applyShostakovichSqVrbProfile(SHOSTAKOVICH),

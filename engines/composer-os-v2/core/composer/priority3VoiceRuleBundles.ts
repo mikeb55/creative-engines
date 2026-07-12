@@ -639,7 +639,7 @@ export const WILLIAMS_FILM_STUB = filmStub('williams', WILLIAMS_VRB_FINGERPRINT_
 export const MORRICONE_FILM_STUB = filmStub('morricone', MORRICONE_VRB_FINGERPRINT_RECEIPTS);
 export const ROTA_FILM_STUB = filmStub('nino_rota', ROTA_VRB_FINGERPRINT_RECEIPTS);
 export const GOLDSMITH_FILM_STUB = filmStub('jerry_goldsmith', GOLDSMITH_VRB_FINGERPRINT_RECEIPTS);
-/** Distinct id from minimalist `philip_glass` → Reich/Glass SQ bundle alias. */
+/** Film-screen VRB twin for Song Mode `philip_glass` (not REICH_GLASS SQ VRB). */
 export const PHILIP_GLASS_FILM_STUB = filmStub('philip_glass_screen', GLASS_FILM_VRB_FINGERPRINT_RECEIPTS);
 export const HANS_ZIMMER_FILM_STUB = filmStub('hans_zimmer', ZIMMER_VRB_FINGERPRINT_RECEIPTS);
 export const BADALAMENTI_FILM_STUB = filmStub('angelo_badalamenti', BADALAMENTI_VRB_FINGERPRINT_RECEIPTS, {

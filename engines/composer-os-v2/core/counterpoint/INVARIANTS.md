@@ -104,7 +104,7 @@ ROUTING_ALL_PASS: true
 ## RUN 3+4 — PRIORITY 3 VRB + WIRING
 
 - **VRBs built:** `donald_fagen`, `bacharach`, `frank_zappa`, `ecm_chamber`, `fripp_king_crimson`, `james_brown`, `messiaen` (deepened ≥40 `MM_*` receipts)
-- **Film stubs (empty receipts, BB+orchestral posture):** `herrmann`, `williams`, `morricone`, `nino_rota`, `jerry_goldsmith`, `philip_glass_screen` (distinct from minimalist alias `philip_glass` → Reich/Glass), `hans_zimmer`, `angelo_badalamenti`
+- **Film stubs (empty receipts, BB+orchestral posture):** `herrmann`, `williams`, `morricone`, `nino_rota`, `jerry_goldsmith`, `philip_glass_screen` (film twin; Song Mode `philip_glass` no longer aliases to Reich/Glass SQ VRB), `hans_zimmer`, `angelo_badalamenti`
 - **Line-first wired:** seven Priority 3 ids in `LINE_FIRST_DUO_ENGINE_VRB_IDS` + colour post in `LINE_FIRST_DUO_PRIORITY3_COLOUR_VRB_ID_SET`
 - **Gate B spot (manual / smoke proxy):** `donald_fagen` ✓✓✓ · `fripp_king_crimson` ✓✓✓ · `james_brown` ✓✓✓ · `messiaen` ✓✓✓ (independence via floors + routing via line-first colour set + style via transforms vs P1/P2)
 - **Schema fields used on `AbstractLineSet`:** `asymmetricMeterMap` (Fripp), `textureTag` (James Brown), `extendedTechniquePolicy` (Messiaen) via `ContrapuntalLineEngine` augment
@@ -120,7 +120,7 @@ ROUTING_ALL_PASS: true
 - **Gate B P3 harness:** `scripts/gateBRun5P3Verify.ts` — seed **75001**, 8 bars `custom_locked`, progression `Dm7 | G7 | Cmaj7 | Am7` ×2, key **C**. **Routing** column = duo realised (notes in guitar+bass bars 1–2 + `contrapuntalLineSet` present); script also prints **strictPC** (abstract PC bag parity bars 1–2) — ✗ is expected where colour post mutates PCs (decision **A**).
 - **7×3 matrix (Independence | Routing | Style):** `donald_fagen` ✓✓✓ · `bacharach` ✓✓✓ · `frank_zappa` ✓✓✓ · `ecm_chamber` ✓✓✓ · `fripp_king_crimson` ✓✓✓ · `james_brown` ✓✓✓ · `messiaen` ✓✓✓ (`ANY_FAIL: false`).
 - **Fixes applied:** none.
-- **Film stubs confirmed:** 8 (`herrmann`, `williams`, `morricone`, `nino_rota`, `jerry_goldsmith`, `philip_glass_screen`, `hans_zimmer`, `angelo_badalamenti`); `philip_glass` **still** maps to **`reich_glass`** in `BY_ID` (not the film stub).
+- **Film stubs confirmed:** 8 (`herrmann`, `williams`, `morricone`, `nino_rota`, `jerry_goldsmith`, `philip_glass_screen`, `hans_zimmer`, `angelo_badalamenti`); `philip_glass` / `glass` **BY_ID** now resolve to film stub (`philip_glass_screen`), **not** `reich_glass`.
 - **Total composers wired (line-first duo path):** **32** (`LINE_FIRST_DUO_ENGINE_VRB_IDS` — 25 pre–P3 + 7 Priority 3).
 - **Smoke:** 248/0 (`npm run test:composer-smoke`).
 - **Project status:** COMPLETE (SQ-to-BB counterpoint line-first track); do not reopen without new roadmap item.

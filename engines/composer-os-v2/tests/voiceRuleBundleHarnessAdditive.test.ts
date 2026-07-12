@@ -258,8 +258,12 @@ export function runVoiceRuleBundleHarnessAdditiveTests(): { name: string; ok: bo
 
   const okReichGlassAliases =
     getVoiceRuleBundle('steve_reich').voiceId === 'reich_glass' &&
-    getVoiceRuleBundle('philip_glass').voiceId === 'reich_glass' &&
-    getVoiceRuleBundle('minimalist_sq').voiceId === 'reich_glass';
+    getVoiceRuleBundle('reich_and_glass').voiceId === 'reich_glass' &&
+    getVoiceRuleBundle('minimalist_sq').voiceId === 'reich_glass' &&
+    // Film Song Mode / SQ→BB glass ids resolve to film stub, not REICH_GLASS.
+    getVoiceRuleBundle('philip_glass').voiceId === 'philip_glass_screen' &&
+    getVoiceRuleBundle('glass').voiceId === 'philip_glass_screen' &&
+    getVoiceRuleBundle('philip_glass_screen').voiceId === 'philip_glass_screen';
 
   const shostakovich = getVoiceRuleBundle('shostakovich');
   const okShostakovich =

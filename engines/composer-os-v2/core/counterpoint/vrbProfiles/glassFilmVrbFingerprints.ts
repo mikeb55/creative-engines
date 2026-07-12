@@ -11,7 +11,7 @@ const PG_BASE = [
   'PG_POLICY_01 — voiceId=philip_glass_screen: looping_cell_no_cadence; mid_register_additive_expansion; tight register σ (18 st).',
   'PG_POLICY_02 — harmonicRhythm: 2–4 bar cells; modalEndingsValid; authenticCadenceCredit=0; singleTonalCentre.',
   'PG_POLICY_03 — contrapuntalLinePolicy: low independence; strict_interval_cycle; parallel octaves allowed.',
-  'PG_POLICY_04 — sqVrbProfileId=glass; distinct from philip_glass→reich_glass; bestBbStyle=schneider.',
+  'PG_POLICY_04 — sqVrbProfileId=glass; film twin philip_glass_screen (not reich_glass SQ VRB); bestBbStyle=schneider.',
   'PG_HARM_01 — diatonic modal stasis: aeolian/dorian/phrygian surfaces; triad_skeleton + add9_add6_add11_surface.',
   'PG_HARM_02 — additive pattern shifts; chordTransitionAsBoundary; inconclusiveEndingCredit.',
   'PG_VL_01 — minimal inner voice motion; repetition over resolution.',
