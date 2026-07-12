@@ -522,9 +522,65 @@ export function precomputeJerryGoldsmithEffectiveHarmonyBars(context: Compositio
     }
   }
 
+  /* Piece-final only: bias toward Goldsmith-own open landings that already pass fBT. */
+  biasJerryGoldsmithFinalBarIdiomaticOpen(out, seed, tb, receipts, context, mode);
+
   genMeta.jerryGoldsmithEffectiveHarmonyBars = out;
   genMeta.jerryGoldsmithDeviceReceipts = receipts;
   jerryGoldsmithEffectiveHarmonyBars = out;
+}
+
+/**
+ * Dominant-family proxy for finalBarTension (mirrors verlaineGbdWriterEvalCore
+ * `isDominantFamilyChord`) — mid-piece polytonal / ostinato / octatonic devices untouched.
+ */
+function chordLooksDominantFamilyForFbtGoldsmith(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return false;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return false;
+  if (/^[^/]*min9/i.test(s)) return false;
+  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
+}
+
+/**
+ * Bias piece-final bar toward Goldsmith pool landings that already pass fBT
+ * (tonic-root sus4 from d3_quartal_brass; lyric-branch maj9 lighter secondary).
+ * Not a forced jazz tonic cadence — polytonal / quartal / octatonic idiom preserved.
+ */
+function biasJerryGoldsmithFinalBarIdiomaticOpen(
+  out: string[],
+  seed: number,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext,
+  mode: JerryGoldsmithContextMode
+): void {
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || !chordLooksDominantFamilyForFbtGoldsmith(sym)) return;
+
+  const tonicPc = inferTonicPitchClassFromBar1(context);
+  if (tonicPc === undefined) return;
+  const root = pitchClassToSharpName(tonicPc);
+  const u = seededFilmUnit(seed, totalBars, 950601);
+
+  let next: string;
+  if (mode === 'jg:lyric_mode') {
+    // Lyric branch — maj9 present but still mostly quartal sus4.
+    if (u < 0.35) next = `${root}maj9`;
+    else next = `${root}sus4`;
+  } else {
+    // Action / suspense — sus4 primary (d3 quartal brass, proven FBT pass).
+    if (u < 0.18) next = `${root}maj9`;
+    else next = `${root}sus4`;
+  }
+
+  out[idx] = next;
+  receipts.push(`jg:final_open_bias@bar${totalBars}`);
 }
 
 export function finalizeJerryGoldsmithMetadata(metadata: GenerationMetadata, acc: FilmHarmonyAccumulator): void {
