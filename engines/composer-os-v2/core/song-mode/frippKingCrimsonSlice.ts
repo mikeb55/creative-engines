@@ -122,6 +122,51 @@ function buildFrippHarmonyRow(
   return out;
 }
 
+/**
+ * Dominant-family proxy for finalBarTension (mirrors verlaineGbdWriterEvalCore
+ * `isDominantFamilyChord`) — mid-piece third-cycle / avoid-cadence devices untouched.
+ * Note: m7 and 7sus4 trip via digit `7` even when idiomatic mid-piece.
+ */
+function chordLooksDominantFamilyForFbtFripp(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return false;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return false;
+  if (/^[^/]*min9/i.test(s)) return false;
+  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
+}
+
+/**
+ * Bias piece-final bar toward Fripp landings that already pass fBT
+ * (tonic-root sus4 · maj7(#11) primary; add9 mid). Never m7 / 7sus4 (digit-`7` trap).
+ * Not a forced jazz tonic cadence — third-cycle / non-functional idiom preserved.
+ */
+function biasFrippKingCrimsonFinalBarIdiomaticOpen(
+  out: string[],
+  seed: number,
+  totalBars: number,
+  receipts: string[],
+  tonicPc: number | undefined
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || !chordLooksDominantFamilyForFbtFripp(sym)) return;
+
+  const root = pitchClassToSharpName(tonicPc);
+  const u = seededUnit(seed, totalBars, 882901);
+
+  let next: string;
+  if (u < 0.45) next = `${root}sus4`;
+  else if (u < 0.82) next = `${root}maj7(#11)`;
+  else next = `${root}add9`;
+
+  out[idx] = next;
+  receipts.push(`fk:final_open_bias@bar${totalBars}`);
+}
+
 export function precomputeFrippKingCrimsonEffectiveHarmonyBars(context: CompositionContext): void {
   const md = context.generationMetadata as GenerationMetadata & {
     asymmetricRhythmRequest?: AsymmetricRhythmRequest;
@@ -155,6 +200,10 @@ export function precomputeFrippKingCrimsonEffectiveHarmonyBars(context: Composit
   const tonicPc = inferTonicPitchClassFromBar1(context);
   const effective = buildFrippHarmonyRow(raw, tb, seed, tonicPc);
 
+  /* Piece-final only: bias toward Fripp-own open landings that already pass fBT. */
+  const biasReceipts: string[] = [];
+  biasFrippKingCrimsonFinalBarIdiomaticOpen(effective, seed, tb, biasReceipts, tonicPc);
+
   const loopSixteenths = sixteenthSpanFromCycle(cycle);
   md.frippKingCrimsonMelodyHints = {
     phraseMultipleSixteenths: loopSixteenths,
@@ -173,6 +222,7 @@ export function precomputeFrippKingCrimsonEffectiveHarmonyBars(context: Composit
   };
 
   let sliceReceipt = `fk:preset@${presetLabel}|fk:meter@${sig.numerator}/${sig.denominator}|fk:bars@${tb}|fk:loop${loopSixteenths}q`;
+  if (biasReceipts.length) sliceReceipt += `|${biasReceipts.join('|')}`;
 
   const secondaryId = md.frippPolymeterSecondaryPresetId?.trim();
   if (secondaryId) {
