@@ -166,6 +166,8 @@ Before applying the **standard final-bar tonic-force** pattern (`forceFinalBarTo
 
 **Confirmed mismatches** (tonic-force would be wrong; idiomatic-bias used): **Debussy**, **Andrew Hill**, **Sonic Youth**.
 
+**Addendum — dual-surface convergence (third pattern):** bacharach required a third fix pattern for modules with dual harmony-writing pipelines (an early "dressing" pass writing `lockedHarmonyBarsRaw` / `parsedCustomProgressionBars`, and a later "effective harmony" precompute writing a separate authoritative surface for `getChordForBar` / LOCK). A full-array sync between the two surfaces (Porter-style) risked LOCK semantic divergence when mid-piece values disagreed in voicing detail (e.g. 6/9 vs 6). Resolution: a final-bar-only sync/patch that converges both surfaces on just the final chord, leaving mid-piece values on each surface untouched. Verify convergence explicitly (compare final-bar values across all surfaces) rather than assuming a fix in one surface propagates. See bacharach commit **`ca619d8f`**, cole_porter commit **`35202ddd`** for comparison.
+
 ---
 
 ## 4. Style Profile Layer — per-style scoring requirement
