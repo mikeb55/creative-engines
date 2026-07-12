@@ -416,6 +416,58 @@ export function precomputeCarlaBleyEffectiveHarmonyBars(context: CompositionCont
 
   applyIronyEngine(out, plan, params, seed, receipts);
 
+  /* Piece-final only: bias toward Bley deadpan/deflected landings that already pass fBT. */
+  biasCarlaBleyFinalBarIdiomaticOpen(out, seed, tb, receipts, context);
+
   genMeta.carlaBleyEffectiveHarmonyBars = out;
   genMeta.carlaBleyDeviceReceipts = receipts;
+}
+
+/**
+ * Dominant-family proxy for finalBarTension (mirrors verlaineGbdWriterEvalCore
+ * `isDominantFamilyChord`) — mid-piece irony / deflect / deadpan devices untouched.
+ */
+function chordLooksDominantFamilyForFbtBley(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return false;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return false;
+  if (/^[^/]*min9/i.test(s)) return false;
+  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
+}
+
+/**
+ * Bias piece-final bar toward Bley pool landings that already pass fBT
+ * (Bbmaj7 · Amaj7 · A6/E · B6 · A6/D — deadpan maj7 / 6 · deflected 6/9).
+ * Preserve slash pedal when present. Not a forced jazz tonic cadence.
+ */
+function biasCarlaBleyFinalBarIdiomaticOpen(
+  out: string[],
+  seed: number,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || !chordLooksDominantFamilyForFbtBley(sym)) return;
+
+  const pc = harmonyRootPc(sym);
+  if (pc === undefined) return;
+  const root = PC_NAMES[pc]!;
+  const slash = sym.includes('/') ? sym.slice(sym.indexOf('/')) : '';
+  const u = seededUnit(seed, totalBars, 894201);
+
+  let next: string;
+  // Proven FBT-pass pool from deadpan / deflect / plain-chord grammar.
+  if (u < 0.4) next = `${root}maj7${slash}`;
+  else if (u < 0.7) next = `${root}6${slash}`;
+  else if (u < 0.88) next = `${root}6/9${slash}`;
+  else next = `${root}maj7${slash}`;
+
+  out[idx] = next;
+  receipts.push(`cbl:final_open_bias@bar${totalBars}`);
 }
