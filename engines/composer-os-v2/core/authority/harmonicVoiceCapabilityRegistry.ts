@@ -287,6 +287,28 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
     notes:
       'harmony/precompute hv_full via ecmChamberEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; preset ecm_chamber orchestration + STYLE_ECM* surfaces + presetId validator skips stay primary/preset-only',
   },
+  {
+    styleId: 'bernard_herrmann',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'bernardHerrmannEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via bernardHerrmannEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; path helper also accepts VRB id herrmann; bernardHerrmannContext API + style surface stay primary-only; FBT idiomatic-bias lives inside precompute (not an HV routing concern)',
+  },
+  {
+    styleId: 'herrmann',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'bernardHerrmannEffectiveHarmonyBars',
+    notes:
+      'alias of bernard_herrmann for VRB voiceId harmonicVoice=herrmann (normalizeHarmonicVoiceId does not unify)',
+  },
 ];
 
 const REGISTRY_BY_STYLE = new Map<string, HvCapabilityEntry>(

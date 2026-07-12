@@ -14,6 +14,7 @@ import type {
   NinoRotaContextMode,
   PhilipGlassContextMode,
 } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -97,6 +98,42 @@ export function accumulateFilmHarmonyDiagnostics(
 
 /** --- Bernard Herrmann --- */
 export let bernardHerrmannEffectiveHarmonyBars: string[] = [];
+
+export const BERNARD_HERRMANN_HARMONIC_VOICE_IDS = ['bernard_herrmann', 'herrmann'] as const;
+
+export function isBernardHerrmannHarmonicVoiceId(raw: string | null | undefined): boolean {
+  const id = normalizeHarmonicVoiceId(String(raw ?? ''));
+  return id === 'bernard_herrmann' || id === 'herrmann';
+}
+
+/**
+ * Primary songwriter or harmonicVoice selects Bernard Herrmann harmony authority.
+ * Single-gate (no styleProfile) — Wave-D / ecm_chamber HV pattern.
+ *
+ * Accepts **both** `bernard_herrmann` (songwriter / eff-bar id) and `herrmann`
+ * (VRB voiceId) — `normalizeHarmonicVoiceId` does not unify them.
+ *
+ * **Not an HV-layer conflict:** thriller devices (`polytonal_menace`, etc.) and
+ * piece-final idiomatic-bias (`biasBernardHerrmannFinalBarIdiomaticOpen`) live
+ * *inside* {@link precomputeBernardHerrmannEffectiveHarmonyBars}. Engaging HV
+ * runs that same precompute — FBT idiomatic-bias vs tonic-force is chord-craft,
+ * not authority routing (same class as sonic_youth Wave B).
+ *
+ * Dual-surface holdbacks (unchanged by this HV wire):
+ * - `bernardHerrmannContext` API intake stays primary-songwriter gated
+ * - `applyBernardHerrmannStyleSurface` Song Mode bias stays primary-only
+ */
+export function isBernardHerrmannHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  return (
+    isBernardHerrmannHarmonicVoiceId(metadata?.songwriterStyleId) ||
+    isBernardHerrmannHarmonicVoiceId(metadata?.harmonicVoice)
+  );
+}
 
 /** @deprecated — use resolveBarSymbol */
 export function precomputeBernardHerrmannEffectiveHarmonyBars(context: CompositionContext): void {

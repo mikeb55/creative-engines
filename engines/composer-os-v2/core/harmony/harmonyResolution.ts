@@ -20,6 +20,7 @@ import { isRadioheadHarmonicPath } from '../song-mode/radioheadSlice';
 import { isAndrewHillHarmonicPath } from '../song-mode/andrewHillSlice';
 import { isKateBushHarmonicPath } from '../song-mode/kateBushSlice';
 import { isEcmChamberHarmonicPath } from '../song-mode/ecmChamberSlice';
+import { isBernardHerrmannHarmonicPath } from '../song-mode/filmSoundtrackHarmonySlices';
 import { isSatieHarmonicPath } from '../song-mode/satieSlice';
 import { isColePorterHarmonicPath } from '../song-mode/colePorterSlice';
 import { isJohnColtraneHarmonicPath } from '../song-mode/johnColtraneSlice';
@@ -297,7 +298,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 
   const bhHerrEff = meta?.bernardHerrmannEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'bernard_herrmann' &&
+    isBernardHerrmannHarmonicPath(meta) &&
     Array.isArray(bhHerrEff) &&
     bhHerrEff.length === tb &&
     barIndex >= 1 &&
