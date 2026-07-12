@@ -24,6 +24,7 @@ import { isBernardHerrmannHarmonicPath, isJerryGoldsmithHarmonicPath } from '../
 import { isClausOgermanHarmonicPath } from '../song-mode/clausOgermanSlice';
 import { isDonSebeskyHarmonicPath } from '../song-mode/donSebeskySlice';
 import { isJackWhiteHarmonicPath } from '../song-mode/jackWhiteDroneSlice';
+import { isJohnBarryHarmonicPath } from '../song-mode/johnBarrySlice';
 import { isSatieHarmonicPath } from '../song-mode/satieSlice';
 import { isColePorterHarmonicPath } from '../song-mode/colePorterSlice';
 import { isJohnColtraneHarmonicPath } from '../song-mode/johnColtraneSlice';
@@ -368,10 +369,11 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   /**
    * John Barry: `precomputeJohnBarryEffectiveHarmonyBars` applies thematic monolith Bond voicing.
    * After precompute, `johnBarryEffectiveHarmonyBars` is full-form and authoritative.
+   * HV path: primary | harmonicVoice (`john_barry` | `barry_thematic_monolith`).
    */
   const barryEff = meta?.johnBarryEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'john_barry' &&
+    isJohnBarryHarmonicPath(meta) &&
     Array.isArray(barryEff) &&
     barryEff.length === tb &&
     barIndex >= 1 &&

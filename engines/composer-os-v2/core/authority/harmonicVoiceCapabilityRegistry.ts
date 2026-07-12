@@ -386,6 +386,28 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
     notes:
       'alias of jerry_goldsmith for VRB voiceId harmonicVoice=goldsmith (normalizeHarmonicVoiceId does not unify)',
   },
+  {
+    styleId: 'john_barry',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'johnBarryEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via johnBarryEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; path helper also accepts VRB id barry_thematic_monolith; soft barry/jbr excluded (barry_harris collision); barryStructuralRelax primary-id',
+  },
+  {
+    styleId: 'barry_thematic_monolith',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'johnBarryEffectiveHarmonyBars',
+    notes:
+      'alias of john_barry for VRB voiceId harmonicVoice=barry_thematic_monolith',
+  },
 ];
 
 const REGISTRY_BY_STYLE = new Map<string, HvCapabilityEntry>(

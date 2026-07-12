@@ -7,6 +7,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -439,6 +440,33 @@ export function hasHerrmannBleedReceipts(receipts: readonly string[] | undefined
 export function minBarryPhraseSpan(plan: BarryThematicMonolithPlan | undefined): number {
   if (!plan?.phrases.length) return 0;
   return Math.min(...plan.phrases.map((p) => p.endBar - p.startBar + 1));
+}
+
+export const JOHN_BARRY_HARMONIC_VOICE_IDS = ['john_barry', 'barry_thematic_monolith'] as const;
+
+export function isJohnBarryHarmonicVoiceId(raw: string | null | undefined): boolean {
+  const id = normalizeHarmonicVoiceId(String(raw ?? ''));
+  return id === 'john_barry' || id === 'barry_thematic_monolith';
+}
+
+/**
+ * Primary songwriter or harmonicVoice selects John Barry harmony authority.
+ * Single-gate — Wave-D pattern.
+ *
+ * Accepts `john_barry` | VRB `barry_thematic_monolith`.
+ * Soft `barry` / `jbr` do **not** engage HV (`barry` collides with barry_harris).
+ * `barryStructuralRelax` stays primary-id keyed (holdback).
+ */
+export function isJohnBarryHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  return (
+    isJohnBarryHarmonicVoiceId(metadata?.songwriterStyleId) ||
+    isJohnBarryHarmonicVoiceId(metadata?.harmonicVoice)
+  );
 }
 
 export function precomputeJohnBarryEffectiveHarmonyBars(context: CompositionContext): void {

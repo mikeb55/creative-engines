@@ -35,6 +35,7 @@ import { isBernardHerrmannHarmonicPath, isJerryGoldsmithHarmonicPath } from '../
 import { isClausOgermanHarmonicPath } from '../song-mode/clausOgermanSlice';
 import { isDonSebeskyHarmonicPath } from '../song-mode/donSebeskySlice';
 import { isJackWhiteHarmonicPath } from '../song-mode/jackWhiteDroneSlice';
+import { isJohnBarryHarmonicPath } from '../song-mode/johnBarrySlice';
 import { isSatieHarmonicPath } from '../song-mode/satieSlice';
 import { isColePorterHarmonicPath } from '../song-mode/colePorterSlice';
 import { isJohnColtraneHarmonicPath } from '../song-mode/johnColtraneSlice';
@@ -122,7 +123,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   { match: (m) => m?.songwriterStyleId === 'ennio_morricone', effKey: 'ennioMorriconeEffectiveHarmonyBars', sliceId: 'ennio_morricone' },
   { match: (m) => m?.songwriterStyleId === 'nino_rota', effKey: 'ninoRotaEffectiveHarmonyBars', sliceId: 'nino_rota' },
   { match: (m) => isJerryGoldsmithHarmonicPath(m), effKey: 'jerryGoldsmithEffectiveHarmonyBars', sliceId: 'jerry_goldsmith' },
-  { match: (m) => m?.songwriterStyleId === 'john_barry', effKey: 'johnBarryEffectiveHarmonyBars', sliceId: 'john_barry' },
+  { match: (m) => isJohnBarryHarmonicPath(m), effKey: 'johnBarryEffectiveHarmonyBars', sliceId: 'john_barry' },
   { match: (m) => m?.songwriterStyleId === 'philip_glass', effKey: 'philipGlassEffectiveHarmonyBars', sliceId: 'philip_glass' },
   { match: (m) => m?.songwriterStyleId === 'hans_zimmer', effKey: 'hansZimmerEffectiveHarmonyBars', sliceId: 'hans_zimmer' },
   { match: (m) => m?.songwriterStyleId === 'angelo_badalamenti', effKey: 'angeloBadalamentiEffectiveHarmonyBars', sliceId: 'angelo_badalamenti' },
