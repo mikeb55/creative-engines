@@ -447,11 +447,64 @@ export function precomputeMariaSchneiderEffectiveHarmonyBars(context: Compositio
   const colorStackBars: number[] = [];
   applyColorStackPass(out, seed, receipts, tb, context, positions, colorStackBars);
 
+  /* Piece-final only: bias toward Schneider pedal/planing landings that already pass fBT. */
+  biasMariaSchneiderFinalBarIdiomaticOpen(out, seed, tb, receipts, context, tonicPc);
+
   genMeta.mariaSchneiderEffectiveHarmonyBars = out;
   genMeta.mariaSchneiderDeviceReceipts = receipts;
   genMeta.mariaSchneiderAntiElaborationGuards = guards;
   genMeta.schneiderPedalBars = pedalBars;
   genMeta.schneiderColorStackBars = colorStackBars;
+}
+
+/**
+ * Dominant-family proxy for finalBarTension (mirrors verlaineGbdWriterEvalCore
+ * `isDominantFamilyChord`) — mid-piece pedal / planing / nature_arc devices untouched.
+ */
+function chordLooksDominantFamilyForFbtSchneider(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return false;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return false;
+  if (/^[^/]*min9/i.test(s)) return false;
+  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
+}
+
+/**
+ * Bias piece-final bar toward Schneider pool landings that already pass fBT
+ * (Amaj7(add9) nature_arc / pedal-slash; sus4 planing secondary).
+ * Not a forced jazz tonic cadence — pedal ostinato / non-functional planing idiom preserved.
+ */
+function biasMariaSchneiderFinalBarIdiomaticOpen(
+  out: string[],
+  seed: number,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext,
+  tonicPc: number | undefined
+): void {
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || !chordLooksDominantFamilyForFbtSchneider(sym)) return;
+
+  const rootPc = tonicPc ?? harmonyRootPc(sym);
+  if (rootPc === undefined) return;
+  const root = pitchClassToSharpName(rootPc);
+  const slash = slashTail(sym);
+  const u = seededUnit(seed, totalBars, 991601);
+
+  let next: string;
+  // Proven FBT-pass: maj7(add9); pedal bass optional; sus4 for planing colour.
+  if (u < 0.55) next = `${root}maj7(add9)${slash}`;
+  else if (u < 0.78) next = `${root}maj9${slash}`;
+  else if (u < 0.9) next = `${root}sus4${slash}`;
+  else next = `${root}maj7(add9)/${root}`;
+
+  out[idx] = next;
+  receipts.push(`ms:final_open_bias@bar${totalBars}`);
 }
 
 export function finalizeMariaSchneiderMetadata(metadata: GenerationMetadata, acc: MariaSchneiderHarmonyAccumulator): void {
