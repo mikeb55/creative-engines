@@ -566,10 +566,63 @@ export function precomputeBillyStrayhornEffectiveHarmonyBars(context: Compositio
   const blockBars: number[] = [];
   applyClosedBlockSustainPass(seed, receipts, tb, params, positions, blockBars);
 
+  /* Piece-final only: bias toward Strayhorn parallel-planing landings that already pass fBT. */
+  biasBillyStrayhornFinalBarIdiomaticOpen(out, seed, tb, receipts, context, tonicPc);
+
   genMeta.billyStrayhornEffectiveHarmonyBars = out;
   genMeta.billyStrayhornDeviceReceipts = receipts;
   genMeta.billyStrayhornAntiElaborationGuards = guards;
   genMeta.strayhornClosedBlockBars = blockBars;
+}
+
+/**
+ * Dominant-family proxy for finalBarTension (mirrors verlaineGbdWriterEvalCore
+ * `isDominantFamilyChord`) — mid-piece parallel_color / tonal_obscure / chrom devices untouched.
+ * Note: maj7(9,13) / maj9(#11,13) trip via digit `13` even when mid-piece idiomatic.
+ */
+function chordLooksDominantFamilyForFbtStrayhorn(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return false;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return false;
+  if (/^[^/]*min9/i.test(s)) return false;
+  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
+}
+
+/**
+ * Bias piece-final bar toward Strayhorn parallel-planing pool that already passes fBT
+ * (C#m6(9) proven; maj9(#11) without 13 — never maj7(9,13) / maj9(#11,13) digit trap).
+ * Not a forced jazz tonic cadence — non-functional parallel colour preserved.
+ */
+function biasBillyStrayhornFinalBarIdiomaticOpen(
+  out: string[],
+  seed: number,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext,
+  tonicPc: number | undefined
+): void {
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || !chordLooksDominantFamilyForFbtStrayhorn(sym)) return;
+
+  const rootPc = tonicPc ?? harmonyRootPc(sym);
+  if (rootPc === undefined) return;
+  const root = pitchClassToSharpName(rootPc);
+  const slash = slashTail(sym);
+  const u = seededUnit(seed, totalBars, 892101);
+
+  let next: string;
+  // Proven FBT-pass parallel colour is m6(9); maj9(#11) without 13 as lighter secondary.
+  if (u < 0.55) next = `${root}m6(9)${slash}`;
+  else if (u < 0.82) next = `${root}maj9(#11)${slash}`;
+  else next = `${root}maj9${slash}`;
+
+  out[idx] = next;
+  receipts.push(`bs:final_open_bias@bar${totalBars}`);
 }
 
 export function finalizeBillyStrayhornMetadata(
