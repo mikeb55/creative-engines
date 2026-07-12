@@ -16,12 +16,14 @@ This is a browse-only reference screen. It doesn't change how anything generates
 
 **Special handling** A small number of composers have their own unique, more complex way of ending a piece, built specifically for their style rather than using the standard approach. Functionally, expect these to sound intentional and well-crafted — they just got there by a different route under the hood.
 
+**Confirmed clean** This composer's ending was reviewed and already sounded right — no fix was needed. It's distinct from "Not tagged yet," which means the composer hasn't been reviewed at all.
+
 **Not tagged yet** This composer hasn't been reviewed and categorized in this catalog yet. It doesn't necessarily mean anything is wrong — just that it hasn't been checked and labeled.
 
 ## How to use the tab
 
 1. Open Generate → How pieces end.
-2. Use the filter pills (All, Resolved, Open, Special handling, Not tagged yet) to browse by ending style.
+2. Use the filter pills (All, Resolved, Confirmed clean, Open, Special handling, Not tagged yet) to browse by ending style.
 3. Search by name if you already know who you're looking for.
 4. Once you've found a composer whose ending style fits what you want, switch to the Composers tab to actually select and generate.
 
@@ -30,7 +32,7 @@ This is a browse-only reference screen. It doesn't change how anything generates
 1. **Matching an ending to a mood.** Want a trailer-style cue that doesn't resolve — pull up "Open" and pick from film composers like Bernard Herrmann or Hans Zimmer, knowing the tension will hold to the last bar.
 2. **Closing a set list.** Building a live set and need the final piece to feel conclusive — filter to "Resolved" and pick something like Duke Ellington or Charlie Parker for a definitive last note.
 3. **Teaching cadence styles.** Use the tab as a teaching tool — generate one "Resolved" and one "Open" piece back to back (say, John Williams vs. Debussy) and have a student listen for the difference in how each ends.
-4. **Building a mood playlist that trails off.** For ambient or background use, filter to "Open" and browse Steve Reich, Ralph Towner, or Pat Metheny for pieces that don't demand a tidy conclusion.
+4. **Building a mood playlist that trails off.** For ambient or background use, filter to "Open" and browse Steve Reich, Debussy, or Hans Zimmer for pieces that don't demand a tidy conclusion.
 5. **Scoring a scene that cuts away mid-thought.** Video editors needing music that doesn't "finish" before a hard cut can specifically pick "Open" composers, since the piece won't awkwardly resolve right as the cut happens.
 6. **A/B demoing the engine's range.** Show someone unfamiliar with Composer OS two contrasting composers — one Resolved, one Open — as a fast way to demonstrate the engine understands musical intent, not just notes.
 7. **Curating a "genre bridge" set.** Pick one Resolved and one Open composer from similar eras (e.g. Bill Evans vs. Andrew Hill) to explore how two contemporaries handled endings completely differently.
