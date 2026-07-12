@@ -121,6 +121,12 @@ mccoy_tyner seed **42069** — `generationSuccess=false`, `"missing score/contex
 
 cole_porter seed **12345** — `generationSuccess=false`, `"missing score/context"`, pre-existing (present in scope-pass ROI baseline `_hardGateRoiReauditOut/_workers/cole_porter.json` before own-rewrite-path final-bar fix; unrelated to enrich→devices→sync tonic force). Same bucket as **`mccoy_tyner` seed 42069**. Not fixed. Do not conflate with CCC/FBT craft residuals (`genOk` 8/9 → both/ccc/fbt capped at 8/9 even when all generated seeds pass).
 
+### Gen-reliability: `angelo_badalamenti` seed 24680 missing score/context — logged 2026-07-12
+
+**Not fixed — gen-reliability issue, separate workstream from gate/chord work.**
+
+angelo_badalamenti seed **24680** — `generationSuccess=false`, `"missing score/context"`, pre-existing (present in scope-pass ROI baseline `_hardGateRoiReauditOut/_workers/angelo_badalamenti.json` before idiomatic-bias final-bar fix; unrelated to dark-lounge bias). Same bucket as **`mccoy_tyner` seed 42069** / **`cole_porter` seed 12345**. Not fixed. Do not conflate with CCC/FBT craft residuals (`genOk` 8/9 → both/ccc/fbt capped at 8/9 even when all generated seeds pass).
+
 ## Complete: B-category isGuitarBassDuoFamily guards (2026-04-28)
 
 Replaced remaining B-category literal `guitar_bass_duo` preset guards with `isGuitarBassDuoFamily(context.presetId)` (and consolidated pilot helpers where equivalent) across `generateGoldenPathDuoScore.ts`, `runGoldenPath.ts`, `songMode*.ts` overlays, `ecmShapingPass.ts`, `jamesBrownFunkOverlay.ts`, `duoMusicalQuality.ts`, `duoLockQuality.ts`, `pipelineTruthGates.ts`, `ecmStyleHarmonyPolicy.ts`, `indieArtPopPhaseA.ts`, plus **App API** `generateComposition.ts` / `listOutputs.ts` family-aligned checks. **Intentionally unchanged:** `guitarBassDuoPresetIds.ts` (`isGuitarBassDuoFamily` / `isStandardGuitarBassDuo` definitions), single-line–specific branches (`GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID`), motif target modes, reference-influence target literals, and defaults/comments that are not runtime preset guards.

@@ -997,9 +997,71 @@ export function precomputeAngeloBadalamentiEffectiveHarmonyBars(context: Composi
     }
   }
 
+  /* Piece-final only: bias toward Badalamenti-own open landings that already pass fBT. */
+  biasAngeloBadalamentiFinalBarIdiomaticOpen(out, seed, tb, receipts, context, mode);
+
   genMeta.angeloBadalamentiEffectiveHarmonyBars = out;
   genMeta.angeloBadalamentiDeviceReceipts = receipts;
   angeloBadalamentiEffectiveHarmonyBars = out;
+}
+
+/**
+ * Dominant-family proxy for finalBarTension (mirrors verlaineGbdWriterEvalCore
+ * `isDominantFamilyChord`) — mid-piece dark lounge / dream / pedal devices untouched.
+ * Note: plain Am7 also fails FBT via digit `7` (same trap as Herrmann dim7).
+ */
+function chordLooksDominantFamilyForFbtBadalamenti(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return false;
+  if (/m\(maj7\)|mmaj7|min\(maj7\)/i.test(s)) return false;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return false;
+  if (/^[^/]*min9/i.test(s)) return false;
+  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
+}
+
+/**
+ * Bias piece-final bar toward Badalamenti pool landings that already pass fBT
+ * (tonic-root m(maj7) from d1_dark_lounge; maj7 / soft-pedal slash secondary from d4/d5).
+ * Not a forced jazz tonic cadence — dream-jazz / no-cadence idiom preserved.
+ */
+function biasAngeloBadalamentiFinalBarIdiomaticOpen(
+  out: string[],
+  seed: number,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext,
+  mode: AngeloBadalamentiContextMode
+): void {
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || !chordLooksDominantFamilyForFbtBadalamenti(sym)) return;
+
+  const tonicPc = inferTonicPitchClassFromBar1(context);
+  if (tonicPc === undefined) return;
+  const root = pitchClassToSharpName(tonicPc);
+  const u = seededFilmUnit(seed, totalBars, 980601);
+
+  let next: string;
+  if (mode === 'ab:romantic_dark') {
+    // Romantic-dark — maj7 / soft pedal present; m(maj7) still primary.
+    if (u < 0.45) next = `${root}m(maj7)`;
+    else if (u < 0.7) next = `${root}maj7`;
+    else if (u < 0.85) next = `${root}m(maj7)/${root}`;
+    else next = `${root}maj7/${root}`;
+  } else {
+    // dream_pop / mystery — dark lounge m(maj7) heavier.
+    if (u < 0.62) next = `${root}m(maj7)`;
+    else if (u < 0.8) next = `${root}maj7`;
+    else if (u < 0.92) next = `${root}m(maj7)/${root}`;
+    else next = `${root}maj7/${root}`;
+  }
+
+  out[idx] = next;
+  receipts.push(`ab:final_open_bias@bar${totalBars}`);
 }
 
 export function finalizeAngeloBadalamentiMetadata(metadata: GenerationMetadata, acc: FilmHarmonyAccumulator): void {
