@@ -404,6 +404,8 @@ import {
   accumulateClausOgermanHarmonyDiagnostics,
   createClausOgermanHarmonyAccumulator,
   finalizeClausOgermanMetadata,
+  isClausOgermanHarmonicPath,
+  isClausOgermanHarmonicVoiceId,
   precomputeClausOgermanEffectiveHarmonyBars,
 } from './clausOgermanSlice';
 import {
@@ -3393,6 +3395,10 @@ function buildGuitarPart(
   const isSongwriterEberhardWeber = genMeta?.songwriterStyleId === 'eberhard_weber';
   const isSongwriterClausOgerman =
     normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'claus_ogerman';
+  const isHarmonicVoiceClausOgerman = isClausOgermanHarmonicVoiceId(
+    String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')
+  );
+  const clausOgermanHarmonicPathActive = isClausOgermanHarmonicPath(genMeta);
   const isSongwriterLaloSchifrin =
     normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'lalo_schifrin';
   const isSongwriterBillHolman =
@@ -3854,8 +3860,15 @@ function buildGuitarPart(
   if (isSongwriterEberhardWeber && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeEberhardWeberEffectiveHarmonyBars(context);
   }
-  if (isSongwriterClausOgerman && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (clausOgermanHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeClausOgermanEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceClausOgerman && !isSongwriterClausOgerman) {
+      const clausOgermanEff = genMeta.clausOgermanEffectiveHarmonyBars;
+      const clausOgermanTb = totalBarsFromContext(context);
+      if (Array.isArray(clausOgermanEff) && clausOgermanEff.length === clausOgermanTb) {
+        genMeta.mosaicMergedHarmonyBars = [...clausOgermanEff];
+      }
+    }
   }
   if (isSongwriterLaloSchifrin && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeLaloSchifrinEffectiveHarmonyBars(context);

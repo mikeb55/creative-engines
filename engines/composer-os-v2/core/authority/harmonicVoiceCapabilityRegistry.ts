@@ -309,6 +309,28 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
     notes:
       'alias of bernard_herrmann for VRB voiceId harmonicVoice=herrmann (normalizeHarmonicVoiceId does not unify)',
   },
+  {
+    styleId: 'claus_ogerman',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'clausOgermanEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via clausOgermanEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; path helper also accepts VRB id ogerman',
+  },
+  {
+    styleId: 'ogerman',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'clausOgermanEffectiveHarmonyBars',
+    notes:
+      'alias of claus_ogerman for VRB voiceId harmonicVoice=ogerman (normalizeHarmonicVoiceId does not unify)',
+  },
 ];
 
 const REGISTRY_BY_STYLE = new Map<string, HvCapabilityEntry>(

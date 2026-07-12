@@ -5,6 +5,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -412,6 +413,33 @@ export function hasOrchestralRotation(receipts: readonly string[] | undefined): 
     rs.some((r) => r.startsWith('co:orchestra_veil@')) &&
     rs.some((r) => r.startsWith('co:orchestra_echo@')) &&
     rs.some((r) => r.startsWith('co:orchestra_commentary@'))
+  );
+}
+
+export const CLAUS_OGERMAN_HARMONIC_VOICE_IDS = ['claus_ogerman', 'ogerman'] as const;
+
+export function isClausOgermanHarmonicVoiceId(raw: string | null | undefined): boolean {
+  const id = normalizeHarmonicVoiceId(String(raw ?? ''));
+  return id === 'claus_ogerman' || id === 'ogerman';
+}
+
+/**
+ * Primary songwriter or harmonicVoice selects Claus Ogerman harmony authority.
+ * Single-gate (no styleProfile) — Wave-D / ecm_chamber HV pattern.
+ *
+ * Accepts **both** `claus_ogerman` (songwriter / eff-bar id) and `ogerman`
+ * (VRB / arranger voiceId) — `normalizeHarmonicVoiceId` does not unify them.
+ * Soft alias `co` does **not** engage HV.
+ */
+export function isClausOgermanHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  return (
+    isClausOgermanHarmonicVoiceId(metadata?.songwriterStyleId) ||
+    isClausOgermanHarmonicVoiceId(metadata?.harmonicVoice)
   );
 }
 
