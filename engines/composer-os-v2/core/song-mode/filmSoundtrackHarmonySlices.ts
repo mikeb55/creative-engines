@@ -161,9 +161,72 @@ export function precomputeBernardHerrmannEffectiveHarmonyBars(context: Compositi
     }
   }
 
+  /* Piece-final only: bias toward Herrmann-own open landings that already pass fBT. */
+  biasBernardHerrmannFinalBarIdiomaticOpen(out, seed, tb, receipts, context, mode);
+
   genMeta.bernardHerrmannEffectiveHarmonyBars = out;
   genMeta.bernardHerrmannDeviceReceipts = receipts;
   bernardHerrmannEffectiveHarmonyBars = out;
+}
+
+/**
+ * Dominant-family proxy for finalBarTension (mirrors verlaineGbdWriterEvalCore
+ * `isDominantFamilyChord`) — mid-piece ostinato / pedal / cluster devices untouched.
+ * Note: dim7 also fails FBT via digit `7`.
+ */
+function chordLooksDominantFamilyForFbtHerrmann(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return false;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return false;
+  if (/^[^/]*min9/i.test(s)) return false;
+  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
+}
+
+/**
+ * Bias piece-final bar toward Herrmann pool landings that already pass fBT
+ * (tonic-root m / m(add2) / add2 stasis; maj7 / aug romantic+polytonal colours).
+ * Not a forced jazz tonic cadence — thriller / polytonal idiom preserved.
+ */
+function biasBernardHerrmannFinalBarIdiomaticOpen(
+  out: string[],
+  seed: number,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext,
+  mode: BernardHerrmannContextMode
+): void {
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || !chordLooksDominantFamilyForFbtHerrmann(sym)) return;
+
+  const tonicPc = inferTonicPitchClassFromBar1(context);
+  if (tonicPc === undefined) return;
+  const root = pitchClassToSharpName(tonicPc);
+  const u = seededFilmUnit(seed, totalBars, 910601);
+
+  let next: string;
+  if (mode === 'bh:romantic_mode') {
+    // Romantic branch — maj7 / add2 present; still mix stasis colours.
+    if (u < 0.3) next = `${root}maj7`;
+    else if (u < 0.5) next = `${root}m(add2)`;
+    else if (u < 0.7) next = `${root}add2`;
+    else if (u < 0.85) next = `${root}aug`;
+    else next = `${root}m`;
+  } else {
+    // Thriller / minimal — dread stasis heavier; aug from polytonal_menace.
+    if (u < 0.28) next = `${root}m`;
+    else if (u < 0.52) next = `${root}m(add2)`;
+    else if (u < 0.72) next = `${root}add2`;
+    else if (u < 0.88) next = `${root}aug`;
+    else next = `${root}maj7`;
+  }
+
+  out[idx] = next;
+  receipts.push(`bh:final_open_bias@bar${totalBars}`);
 }
 
 export function finalizeBernardHerrmannMetadata(metadata: GenerationMetadata, acc: FilmHarmonyAccumulator): void {
