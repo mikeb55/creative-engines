@@ -11,6 +11,8 @@ import type { CompositionContext, GenerationMetadata } from '../compositionConte
 import type { BarMeterMap } from '../rhythm/barMeterTypes';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
+import { buildHarmonyPlanFromBars, buildChordSymbolPlanFromBars } from '../harmony/chordProgressionParser';
+import { buildLockedHarmonyBarContracts, assertLockedHarmonyContractsToneParity } from '../harmony/harmonyBarContract';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
 
@@ -888,6 +890,104 @@ function applySoftExtensionLandingPass(
   }
 }
 
+/**
+ * GCE tonic-family check aligned with finalBarTension gate (`isTonicFamilyChord`),
+ * plus Bacharach soft_ext / returnLift 6/9 landings (FBT tension proxy treats non-dom as safe).
+ * Piece-final force / safety net only — mid-piece ba:* devices untouched.
+ */
+function chordLooksTonicFamilyBacharach(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return true;
+  if (/6\/9|69/.test(q) && !q.includes('min')) return true;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return true;
+  if (/^[^/]*min9/i.test(s)) return true;
+  return false;
+}
+
+/**
+ * Piece-final tonic: maj9 — from soft_ext_landing / returnLift pool.
+ * Prefer maj9 over 6/9 when syncing into locked contracts (6/9 → LOCK semantic
+ * divergence on D6/9 vs D6), and over bare dominant 9/13 (FBT trap).
+ */
+function spellBacharachTonicCadence(
+  bar: number,
+  tonicPc: number
+): { symbol: string; receipt: string } {
+  const nm = pitchClassToSharpName(tonicPc);
+  return {
+    symbol: `${nm}maj9`,
+    receipt: `ba:final_tonic_cadence@bar${bar}`,
+  };
+}
+
+function forceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const { symbol, receipt } = spellBacharachTonicCadence(totalBars, tonicPc);
+  out[totalBars - 1] = symbol;
+  receipts.push(`${receipt}|final_bar`);
+}
+
+function enforceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || chordLooksTonicFamilyBacharach(sym)) return;
+  const { symbol, receipt } = spellBacharachTonicCadence(totalBars, tonicPc);
+  out[idx] = symbol;
+  receipts.push(`${receipt}|final_bar_guardrail`);
+}
+
+/**
+ * Patch final bar only into locked + parsed so stripFromContext ≡ getChordForBar
+ * at the cadence without full-array sync (mid-piece soft_ext `6/9` would trip
+ * LOCKED HARMONY SEMANTIC DIVERGENCE if echoed wholesale into contracts).
+ * Dressing mid-piece bridge colour remains; piece-final A7alt is calmed on both surfaces.
+ */
+function syncBacharachFinalBarAuthority(context: CompositionContext, out: string[]): void {
+  const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
+  const tb = context.form.totalBars;
+  if (out.length !== tb || tb < 1) return;
+  const finalSym = out[tb - 1]!;
+
+  const locked =
+    context.lockedHarmonyBarsRaw?.length === tb
+      ? [...context.lockedHarmonyBarsRaw]
+      : [...out];
+  locked[tb - 1] = finalSym;
+  context.lockedHarmonyBarsRaw = locked;
+  context.harmony = buildHarmonyPlanFromBars(locked);
+  context.chordSymbolPlan = buildChordSymbolPlanFromBars(locked);
+  context.lockedHarmonyBarContracts = buildLockedHarmonyBarContracts(locked);
+  assertLockedHarmonyContractsToneParity(context.lockedHarmonyBarContracts);
+
+  const parsed =
+    Array.isArray(genMeta.parsedCustomProgressionBars) &&
+    (genMeta.parsedCustomProgressionBars as string[]).length === tb
+      ? [...(genMeta.parsedCustomProgressionBars as string[])]
+      : [...locked];
+  parsed[tb - 1] = finalSym;
+  genMeta.parsedCustomProgressionBars = parsed;
+  genMeta.customChordProgressionSummary = parsed.join(' | ');
+}
+
 /** Mid-phrase chromatic side-door: neighbour root with tertian spelling. */
 function applyChromaticSideDoorPass(
   out: string[],
@@ -1055,6 +1155,12 @@ export function precomputeBacharachEffectiveHarmonyBars(context: CompositionCont
   applyInnerVoiceSlashPass(out, seed, receipts, tb, context, positions);
   applySoftExtensionLandingPass(out, tonicPc, seed, receipts, tb, context, positions);
 
+  /* Piece-final only: after ba:* devices, before final-bar sync (own rewrite path).
+   * Mid-piece chrom_side / desc_slash / bvii9 / deceptive / mixture / inner_slash / soft_ext
+   * unchanged; final-bar patch so stripFromContext ≡ getChordForBar at cadence. */
+  forceFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
+  enforceFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
+
   const grammarReceipts = applyBacharachHarmonicGrammarReceipts(context, out, tonicPc, positions);
   const vlReceipts = applyBacharachVoiceLeadingGrammarReceipts(context, out, tonicPc);
   const rhythmReceipts = applyBacharachRhythmGrammarReceipts(context, tb, seed);
@@ -1084,6 +1190,9 @@ export function precomputeBacharachEffectiveHarmonyBars(context: CompositionCont
   genMeta.bacharachOrchestrationGrammarReceipts = orchReceipts.length ? orchReceipts : undefined;
   genMeta.bacharachFingerprintReceipts = fpReceipts.length ? fpReceipts : undefined;
   genMeta.bacharachAntiElaborationGuards = guards;
+
+  // Final-bar only: strip/LOCK cadence lockstep without full soft_ext 6/9 contract sync.
+  syncBacharachFinalBarAuthority(context, out);
 }
 
 export function finalizeBacharachMetadata(metadata: GenerationMetadata, acc: BacharachHarmonyAccumulator): void {
