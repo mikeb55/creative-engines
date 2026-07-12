@@ -288,8 +288,57 @@ export function precomputeLaloSchifrinEffectiveHarmonyBars(context: CompositionC
     }
   }
 
+  /* Piece-final only: bias toward Schifrin-own vamp landings that already pass fBT. */
+  biasLaloSchifrinFinalBarIdiomaticOpen(out, seed, tb, receipts, context, tonicPc);
+
   genMeta.laloSchifrinEffectiveHarmonyBars = out;
   genMeta.laloSchifrinDeviceReceipts = receipts;
+}
+
+/**
+ * Dominant-family proxy for finalBarTension (mirrors verlaineGbdWriterEvalCore
+ * `isDominantFamilyChord`) — mid-piece modal vamp / avoid_cadence devices untouched.
+ */
+function chordLooksDominantFamilyForFbtSchifrin(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return false;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return false;
+  if (/^[^/]*min9/i.test(s)) return false;
+  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
+}
+
+/**
+ * Bias piece-final bar toward Schifrin vamp landings that already pass fBT
+ * (tonic-root m9/pedal primary; maj7(#11)/pedal secondary; sus4/pedal mid).
+ * Not a forced jazz tonic cadence — modal-vamp / anti-cadential idiom preserved.
+ */
+function biasLaloSchifrinFinalBarIdiomaticOpen(
+  out: string[],
+  seed: number,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext,
+  tonicPc: number
+): void {
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || !chordLooksDominantFamilyForFbtSchifrin(sym)) return;
+
+  const root = pitchClassToSharpName(tonicPc);
+  const pedal = `/${root}`;
+  const u = seededFilmUnit(seed, totalBars, 940701);
+
+  let next: string;
+  if (u < 0.5) next = `${root}m9${pedal}`;
+  else if (u < 0.78) next = `${root}maj7(#11)${pedal}`;
+  else next = `${root}sus4${pedal}`;
+
+  out[idx] = next;
+  receipts.push(`ls:final_open_bias@bar${totalBars}`);
 }
 
 export function finalizeLaloSchifrinMetadata(
