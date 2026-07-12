@@ -483,6 +483,27 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
     effectiveHarmonyBarsKey: 'marrEffectiveHarmonyBars',
     notes: 'alias of marr for VRB voiceId harmonicVoice=marr_melodic_rhythm',
   },
+  {
+    styleId: 'nino_rota',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'ninoRotaEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via ninoRotaEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; path helper also accepts VRB id rota; context+surface primary-only',
+  },
+  {
+    styleId: 'rota',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'ninoRotaEffectiveHarmonyBars',
+    notes: 'alias of nino_rota for VRB voiceId harmonicVoice=rota',
+  },
 ];
 
 const REGISTRY_BY_STYLE = new Map<string, HvCapabilityEntry>(

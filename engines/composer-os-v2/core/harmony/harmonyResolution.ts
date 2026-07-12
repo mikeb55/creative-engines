@@ -24,6 +24,7 @@ import {
   isBernardHerrmannHarmonicPath,
   isJerryGoldsmithHarmonicPath,
   isJohnWilliamsHarmonicPath,
+  isNinoRotaHarmonicPath,
 } from '../song-mode/filmSoundtrackHarmonySlices';
 import { isClausOgermanHarmonicPath } from '../song-mode/clausOgermanSlice';
 import { isDonSebeskyHarmonicPath } from '../song-mode/donSebeskySlice';
@@ -338,7 +339,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   }
   const nrEff = meta?.ninoRotaEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'nino_rota' &&
+    isNinoRotaHarmonicPath(meta) &&
     Array.isArray(nrEff) &&
     nrEff.length === tb &&
     barIndex >= 1 &&

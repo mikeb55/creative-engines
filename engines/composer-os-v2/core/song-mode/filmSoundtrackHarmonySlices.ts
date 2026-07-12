@@ -591,6 +591,32 @@ export function finalizeEnnioMorriconeMetadata(metadata: GenerationMetadata, acc
 /** --- Nino Rota --- */
 export let ninoRotaEffectiveHarmonyBars: string[] = [];
 
+export const NINO_ROTA_HARMONIC_VOICE_IDS = ['nino_rota', 'rota'] as const;
+
+export function isNinoRotaHarmonicVoiceId(raw: string | null | undefined): boolean {
+  const id = normalizeHarmonicVoiceId(String(raw ?? ''));
+  return id === 'nino_rota' || id === 'rota';
+}
+
+/**
+ * Primary songwriter or harmonicVoice selects Nino Rota harmony authority.
+ * Single-gate — Wave-D film pattern.
+ *
+ * Accepts `nino_rota` | VRB `rota`. FBT tonic-force lives inside precompute.
+ * `ninoRotaContext` + style surface stay primary-only (holdbacks).
+ */
+export function isNinoRotaHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  return (
+    isNinoRotaHarmonicVoiceId(metadata?.songwriterStyleId) ||
+    isNinoRotaHarmonicVoiceId(metadata?.harmonicVoice)
+  );
+}
+
 /** @deprecated — use resolveBarSymbol */
 export function precomputeNinoRotaEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
