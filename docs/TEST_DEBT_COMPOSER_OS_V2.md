@@ -115,6 +115,12 @@ barry_harris FBT fail on A7b9 was caused by a missing final-bar skip condition (
 
 mccoy_tyner seed **42069** — `generationSuccess=false`, `"missing score/context"`, pre-existing (present in pre-fix ROI baseline too, unrelated to final-bar idiomatic-bias fix). Gen-reliability issue, separate workstream from gate/chord work. Not fixed. Same bucket as Tier A “gen-reliability, not chord issue” composers: do not conflate with CCC/FBT craft residuals when scoring hard-gate matrices (`genOk` 8/9 → both/ccc/fbt capped at 8/9 even when all generated seeds pass).
 
+### Gen-reliability: `cole_porter` seed 12345 missing score/context — logged 2026-07-12
+
+**Not fixed — gen-reliability issue, separate workstream from gate/chord work.**
+
+cole_porter seed **12345** — `generationSuccess=false`, `"missing score/context"`, pre-existing (present in scope-pass ROI baseline `_hardGateRoiReauditOut/_workers/cole_porter.json` before own-rewrite-path final-bar fix; unrelated to enrich→devices→sync tonic force). Same bucket as **`mccoy_tyner` seed 42069**. Not fixed. Do not conflate with CCC/FBT craft residuals (`genOk` 8/9 → both/ccc/fbt capped at 8/9 even when all generated seeds pass).
+
 ## Complete: B-category isGuitarBassDuoFamily guards (2026-04-28)
 
 Replaced remaining B-category literal `guitar_bass_duo` preset guards with `isGuitarBassDuoFamily(context.presetId)` (and consolidated pilot helpers where equivalent) across `generateGoldenPathDuoScore.ts`, `runGoldenPath.ts`, `songMode*.ts` overlays, `ecmShapingPass.ts`, `jamesBrownFunkOverlay.ts`, `duoMusicalQuality.ts`, `duoLockQuality.ts`, `pipelineTruthGates.ts`, `ecmStyleHarmonyPolicy.ts`, `indieArtPopPhaseA.ts`, plus **App API** `generateComposition.ts` / `listOutputs.ts` family-aligned checks. **Intentionally unchanged:** `guitarBassDuoPresetIds.ts` (`isGuitarBassDuoFamily` / `isStandardGuitarBassDuo` definitions), single-line–specific branches (`GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID`), motif target modes, reference-influence target literals, and defaults/comments that are not runtime preset guards.

@@ -334,6 +334,69 @@ function applyBeguineRhythmFlag(
 }
 
 /**
+ * GCE tonic-family check aligned with finalBarTension gate (`isTonicFamilyChord`).
+ * Piece-final force / safety net only — mid-piece Porter devices untouched.
+ */
+function chordLooksTonicFamily(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return true;
+  if (/6\/9|69/.test(q) && !q.includes('min')) return true;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return true;
+  if (/^[^/]*min9/i.test(s)) return true;
+  return false;
+}
+
+/**
+ * Piece-final tonic: maj9 — from enrichPorterTonic pool (maj7 · 6/9 · maj9).
+ * Prefer maj9 over bare dominant 9/13 (FBT trap) and over ii m7 chrom_descent landings.
+ */
+function spellPorterTonicCadence(
+  bar: number,
+  tonicPc: number
+): { symbol: string; receipt: string } {
+  const nm = pitchClassToSharpName(tonicPc);
+  return {
+    symbol: `${nm}maj9`,
+    receipt: `cp:final_tonic_cadence@bar${bar}`,
+  };
+}
+
+function forceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const { symbol, receipt } = spellPorterTonicCadence(totalBars, tonicPc);
+  out[totalBars - 1] = symbol;
+  receipts.push(`${receipt}|final_bar`);
+}
+
+function enforceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || chordLooksTonicFamily(sym)) return;
+  const { symbol, receipt } = spellPorterTonicCadence(totalBars, tonicPc);
+  out[idx] = symbol;
+  receipts.push(`${receipt}|final_bar_guardrail`);
+}
+
+/**
  * Echo slice-authoritative bars into locked + parsed so eval strip / LOCK
  * match `getChordForBar` (STYLE_SOPHISTICATED_POP dressing otherwise leaves
  * raw builtin A7alt in parsedCustomProgressionBars and stripFromContext
@@ -453,6 +516,11 @@ export function precomputeColePorterEffectiveHarmonyBars(context: CompositionCon
   applyMinorMajorShiftPass(out, seed, receipts, tb, context, positions, tonicPc, openingSym);
   applyDiatonicDensityPass(out, seed, receipts, tb, context, tonicPc);
   applyBeguineRhythmFlag(genMeta, seed, receipts, tb, context);
+
+  /* Piece-final only: after enrich + cp: devices, before sync (Wayne fBT pattern).
+   * Mid-piece chrom_descent / bvi_color / etc. unchanged; sync must see tonic landing. */
+  forceFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
+  enforceFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
 
   genMeta.colePorterEffectiveHarmonyBars = out;
   genMeta.colePorterDeviceReceipts = receipts;
