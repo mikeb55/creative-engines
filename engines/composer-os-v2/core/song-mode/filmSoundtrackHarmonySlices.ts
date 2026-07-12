@@ -609,9 +609,69 @@ export function precomputeHansZimmerEffectiveHarmonyBars(context: CompositionCon
     }
   }
 
+  /* Piece-final only: bias toward Zimmer-own open landings that already pass fBT. */
+  biasHansZimmerFinalBarIdiomaticOpen(out, seed, tb, receipts, context, mode);
+
   genMeta.hansZimmerEffectiveHarmonyBars = out;
   genMeta.hansZimmerDeviceReceipts = receipts;
   hansZimmerEffectiveHarmonyBars = out;
+}
+
+/**
+ * Dominant-family proxy for finalBarTension (mirrors verlaineGbdWriterEvalCore
+ * `isDominantFamilyChord`) — mid-piece ostinato / static_time devices untouched.
+ */
+function chordLooksDominantFamilyForFbtZimmer(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return false;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return false;
+  if (/^[^/]*min9/i.test(s)) return false;
+  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
+}
+
+/**
+ * Bias piece-final bar toward Zimmer pool landings that already pass fBT
+ * (tonic-root m / m(add9) / add9 stasis; maj7 introspective branch).
+ * Not a forced jazz tonic cadence — ostinato / non-cadential idiom preserved.
+ */
+function biasHansZimmerFinalBarIdiomaticOpen(
+  out: string[],
+  seed: number,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext,
+  mode: HansZimmerContextMode
+): void {
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || !chordLooksDominantFamilyForFbtZimmer(sym)) return;
+
+  const tonicPc = inferTonicPitchClassFromBar1(context);
+  if (tonicPc === undefined) return;
+  const root = pitchClassToSharpName(tonicPc);
+  const u = seededFilmUnit(seed, totalBars, 970601);
+
+  let next: string;
+  if (mode === 'hz:introspective_mode') {
+    // Introspective branch — maj7 lighter but present; still mix stasis colours.
+    if (u < 0.35) next = `${root}maj7`;
+    else if (u < 0.55) next = `${root}m(add9)`;
+    else if (u < 0.78) next = `${root}add9`;
+    else next = `${root}m`;
+  } else {
+    // Epic / tension — ostinato stasis pool heavier.
+    if (u < 0.32) next = `${root}m`;
+    else if (u < 0.62) next = `${root}m(add9)`;
+    else if (u < 0.88) next = `${root}add9`;
+    else next = `${root}maj7`;
+  }
+
+  out[idx] = next;
+  receipts.push(`hz:final_open_bias@bar${totalBars}`);
 }
 
 export function finalizeHansZimmerMetadata(metadata: GenerationMetadata, acc: FilmHarmonyAccumulator): void {
