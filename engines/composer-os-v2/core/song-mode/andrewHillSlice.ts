@@ -400,6 +400,62 @@ function applyNonfunctionalM7M11(
 }
 
 /**
+ * Dominant-family proxy for finalBarTension (mirrors verlaineGbdWriterEvalCore
+ * `isDominantFamilyChord`) — mid-piece devices untouched.
+ */
+function chordLooksDominantFamilyForFbt(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return false;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return false;
+  if (/^[^/]*min9/i.test(s)) return false;
+  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
+}
+
+/**
+ * Bias piece-final bar toward open-cadence / sus outcomes that already pass fBT
+ * (Asus4, D#maj7(#11)) — not a forced plain tonic maj7.
+ * Prefers sus/open over tritone-root m7 / raw alt that read as unresolved dominant-family.
+ */
+function biasAndrewHillFinalBarOpenCadence(
+  out: string[],
+  seed: number,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || !chordLooksDominantFamilyForFbt(sym)) return;
+
+  const slash = slashTail(sym);
+  const r = harmonyRootPc(sym);
+  if (r === undefined) return;
+  const root = pitchClassToSharpName(r);
+  const tl = parseChordSymbol(sym).harmonyPart.toLowerCase();
+  const u = seededUnit(seed, totalBars, 887601);
+
+  let next: string;
+  if (/alt/.test(tl) || isPlainDominantSeventh(sym)) {
+    // A7alt survivors → Asus4 / Asus2 (seed 12345 pattern)
+    next = u < 0.55 ? `${root}sus4${slash}` : `${root}sus2${slash}`;
+  } else if (/\bm7\b|\bm11\b/.test(tl) && !/maj/.test(tl)) {
+    // Tritone-root m7 → maj7(#11) open (seeds 77777 / 88888)
+    next = `${root}maj7(#11)${slash}`;
+  } else if (/7sus4/.test(tl)) {
+    next = `${root}sus4${slash}`;
+  } else {
+    next = u < 0.5 ? `${root}sus4${slash}` : `${root}maj7(#11)${slash}`;
+  }
+
+  out[idx] = next;
+  receipts.push(`ah:final_open_bias@bar${totalBars}`);
+}
+
+/**
  * Precompute effective one chord per bar after Andrew Hill slice devices (primary `andrew_hill` only).
  */
 /** @deprecated — use resolveBarSymbol */
@@ -430,6 +486,9 @@ export function precomputeAndrewHillEffectiveHarmonyBars(context: CompositionCon
   applyTritoneRootMotion(out, seed, receipts, tb, context);
   applyPedalCenter(out, tonicPc, seed, receipts, tb, context);
   applyNonfunctionalM7M11(out, tonicPc, seed, receipts, tb, context);
+
+  /* Piece-final only: bias toward sus/open endings that already pass fBT. */
+  biasAndrewHillFinalBarOpenCadence(out, seed, tb, receipts, context);
 
   genMeta.andrewHillEffectiveHarmonyBars = out;
   genMeta.andrewHillDeviceReceipts = receipts;
