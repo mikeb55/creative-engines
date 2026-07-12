@@ -6,9 +6,16 @@ import type { CompositionContext, GenerationMetadata } from '../compositionConte
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { isProtectedBar } from '../score-integrity/identityLock';
+import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { breakFrankZappaIiViProgressions } from './songModeBuilder';
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
+
+const PC_TO_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
+
+function pitchClassToSharpName(pc: number): string {
+  return PC_TO_SHARP[((pc % 12) + 12) % 12]!;
+}
 
 function seededUnit(seed: number, bar: number, salt: number): number {
   let s = (seed ^ bar * 1103515245 ^ salt * 12345) >>> 0;
@@ -125,6 +132,73 @@ export function precomputeQuincyJonesEffectiveHarmonyBars(context: CompositionCo
     if (seededUnit(seed, b, 887501) < 0.2) receipts.push(`qj:orchestral_lift@bar${b}`);
   }
 
+  /* Piece-final only: force tonic maj9 + safety net (Wayne fBT pattern; mid-piece unchanged). */
+  const tonicPc = inferTonicPitchClassFromBar1(context);
+  forceFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
+  enforceFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
+
   genMeta.quincyJonesEffectiveHarmonyBars = out;
   genMeta.quincyJonesDeviceReceipts = receipts;
+}
+
+/**
+ * GCE tonic-family check aligned with finalBarTension gate (`isTonicFamilyChord`).
+ * Piece-final force / safety net only — mid-piece crossover colour untouched.
+ */
+function chordLooksTonicFamily(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return true;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return true;
+  if (/^[^/]*min9/i.test(s)) return true;
+  return false;
+}
+
+/**
+ * Piece-final tonic: maj9 (Quincy crossover major colour).
+ * Avoid bare maj13 — FBT `13` proxy treats it as dominant-family.
+ */
+function spellQuincyJonesTonicCadence(
+  bar: number,
+  tonicPc: number
+): { symbol: string; receipt: string } {
+  const nm = pitchClassToSharpName(tonicPc);
+  return {
+    symbol: `${nm}maj9`,
+    receipt: `qj:final_tonic_cadence@bar${bar}`,
+  };
+}
+
+function forceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const { symbol, receipt } = spellQuincyJonesTonicCadence(totalBars, tonicPc);
+  out[totalBars - 1] = symbol;
+  receipts.push(`${receipt}|final_bar`);
+}
+
+function enforceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || chordLooksTonicFamily(sym)) return;
+  const { symbol, receipt } = spellQuincyJonesTonicCadence(totalBars, tonicPc);
+  out[idx] = symbol;
+  receipts.push(`${receipt}|final_bar_guardrail`);
 }
