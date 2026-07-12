@@ -452,6 +452,37 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
     notes:
       'alias of johnny_mandel for VRB voiceId harmonicVoice=mandel_lyric_warmth',
   },
+  {
+    styleId: 'marr',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'marrEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via marrEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; path helper also accepts johnny_marr|marr_melodic_rhythm; Art Rock Metheny-bypass primary-id',
+  },
+  {
+    styleId: 'johnny_marr',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'marrEffectiveHarmonyBars',
+    notes: 'alias of marr for harmonicVoice=johnny_marr',
+  },
+  {
+    styleId: 'marr_melodic_rhythm',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'marrEffectiveHarmonyBars',
+    notes: 'alias of marr for VRB voiceId harmonicVoice=marr_melodic_rhythm',
+  },
 ];
 
 const REGISTRY_BY_STYLE = new Map<string, HvCapabilityEntry>(

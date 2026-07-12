@@ -30,6 +30,7 @@ import { isDonSebeskyHarmonicPath } from '../song-mode/donSebeskySlice';
 import { isJackWhiteHarmonicPath } from '../song-mode/jackWhiteDroneSlice';
 import { isJohnBarryHarmonicPath } from '../song-mode/johnBarrySlice';
 import { isJohnnyMandelHarmonicPath } from '../song-mode/johnnyMandelSlice';
+import { isMarrHarmonicPath } from '../song-mode/marrMelodicSlice';
 import { isSatieHarmonicPath } from '../song-mode/satieSlice';
 import { isColePorterHarmonicPath } from '../song-mode/colePorterSlice';
 import { isJohnColtraneHarmonicPath } from '../song-mode/johnColtraneSlice';
@@ -810,7 +811,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
    */
   const marrEff = meta?.marrEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'marr' &&
+    isMarrHarmonicPath(meta) &&
     Array.isArray(marrEff) &&
     marrEff.length === tb &&
     barIndex >= 1 &&

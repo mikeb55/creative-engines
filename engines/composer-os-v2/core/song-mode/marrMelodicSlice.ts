@@ -5,6 +5,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -537,6 +538,29 @@ export function rateFromReceipts(receipts: readonly string[], prefix: string, ba
   if (bars <= 0) return 0;
   const touches = receipts.filter((r) => r.startsWith(prefix)).length;
   return Math.min(1, touches / bars);
+}
+
+export const MARR_HARMONIC_VOICE_IDS = ['marr', 'johnny_marr', 'marr_melodic_rhythm'] as const;
+
+export function isMarrHarmonicVoiceId(raw: string | null | undefined): boolean {
+  const id = normalizeHarmonicVoiceId(String(raw ?? ''));
+  return id === 'marr' || id === 'johnny_marr' || id === 'marr_melodic_rhythm';
+}
+
+/**
+ * Primary songwriter or harmonicVoice selects Johnny Marr harmony authority.
+ * Single-gate — Wave-D pattern.
+ *
+ * Accepts `marr` | `johnny_marr` | VRB `marr_melodic_rhythm`.
+ * Art Rock Metheny-bypass set stays primary-id keyed (holdback).
+ */
+export function isMarrHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  return isMarrHarmonicVoiceId(metadata?.songwriterStyleId) || isMarrHarmonicVoiceId(metadata?.harmonicVoice);
 }
 
 export function precomputeMarrEffectiveHarmonyBars(context: CompositionContext): void {

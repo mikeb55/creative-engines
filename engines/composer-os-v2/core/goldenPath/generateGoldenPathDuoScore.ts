@@ -398,6 +398,8 @@ import {
   accumulateMarrHarmonyDiagnostics,
   createMarrHarmonyAccumulator,
   finalizeMarrMetadata,
+  isMarrHarmonicPath,
+  isMarrHarmonicVoiceId,
   precomputeMarrEffectiveHarmonyBars,
 } from './marrMelodicSlice';
 import {
@@ -3415,6 +3417,10 @@ function buildGuitarPart(
       'robert_fripp';
   const frippHarmonicPathActive = isFrippHarmonicPath(genMeta);
   const isSongwriterMarr = genMeta?.songwriterStyleId === 'marr';
+  const isHarmonicVoiceMarr = isMarrHarmonicVoiceId(
+    String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')
+  );
+  const marrHarmonicPathActive = isMarrHarmonicPath(genMeta);
   const isSongwriterEberhardWeber = genMeta?.songwriterStyleId === 'eberhard_weber';
   const isSongwriterClausOgerman =
     normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'claus_ogerman';
@@ -3910,8 +3916,15 @@ function buildGuitarPart(
       }
     }
   }
-  if (isSongwriterMarr && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (marrHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeMarrEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceMarr && !isSongwriterMarr) {
+      const marrEff = genMeta.marrEffectiveHarmonyBars;
+      const marrTb = totalBarsFromContext(context);
+      if (Array.isArray(marrEff) && marrEff.length === marrTb) {
+        genMeta.mosaicMergedHarmonyBars = [...marrEff];
+      }
+    }
   }
   if (isSongwriterEberhardWeber && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeEberhardWeberEffectiveHarmonyBars(context);
