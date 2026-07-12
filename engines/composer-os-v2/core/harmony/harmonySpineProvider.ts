@@ -34,6 +34,7 @@ import { isEcmChamberHarmonicPath } from '../song-mode/ecmChamberSlice';
 import { isBernardHerrmannHarmonicPath } from '../song-mode/filmSoundtrackHarmonySlices';
 import { isClausOgermanHarmonicPath } from '../song-mode/clausOgermanSlice';
 import { isDonSebeskyHarmonicPath } from '../song-mode/donSebeskySlice';
+import { isJackWhiteHarmonicPath } from '../song-mode/jackWhiteDroneSlice';
 import { isSatieHarmonicPath } from '../song-mode/satieSlice';
 import { isColePorterHarmonicPath } from '../song-mode/colePorterSlice';
 import { isJohnColtraneHarmonicPath } from '../song-mode/johnColtraneSlice';
@@ -159,7 +160,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
     effKey: 'holdsworthEffectiveHarmonyBars',
     sliceId: 'allan_holdsworth',
   },
-  { match: (m) => m?.songwriterStyleId === 'jack_white', effKey: 'jackWhiteEffectiveHarmonyBars', sliceId: 'jack_white' },
+  { match: (m) => isJackWhiteHarmonicPath(m), effKey: 'jackWhiteEffectiveHarmonyBars', sliceId: 'jack_white' },
   { match: (m) => m?.songwriterStyleId === 'beefheart', effKey: 'beefheartEffectiveHarmonyBars', sliceId: 'beefheart' },
   { match: (m) => isFrippHarmonicPath(m), effKey: 'frippEffectiveHarmonyBars', sliceId: 'fripp' },
   { match: (m) => m?.songwriterStyleId === 'marr', effKey: 'marrEffectiveHarmonyBars', sliceId: 'marr' },

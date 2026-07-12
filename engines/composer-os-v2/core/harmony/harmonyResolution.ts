@@ -23,6 +23,7 @@ import { isEcmChamberHarmonicPath } from '../song-mode/ecmChamberSlice';
 import { isBernardHerrmannHarmonicPath } from '../song-mode/filmSoundtrackHarmonySlices';
 import { isClausOgermanHarmonicPath } from '../song-mode/clausOgermanSlice';
 import { isDonSebeskyHarmonicPath } from '../song-mode/donSebeskySlice';
+import { isJackWhiteHarmonicPath } from '../song-mode/jackWhiteDroneSlice';
 import { isSatieHarmonicPath } from '../song-mode/satieSlice';
 import { isColePorterHarmonicPath } from '../song-mode/colePorterSlice';
 import { isJohnColtraneHarmonicPath } from '../song-mode/johnColtraneSlice';
@@ -815,10 +816,11 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
    * Jack White: `precomputeJackWhiteEffectiveHarmonyBars` applies open-tuning drone-riff implied harmony.
    * After precompute, `jackWhiteEffectiveHarmonyBars` is full-form and authoritative.
    * Receipt prefix **`jw:*`** — John Williams film slice uses **`jwill:*`**.
+   * HV path: primary | harmonicVoice (`jack_white` | `jack_white_drone_riff`) — see isJackWhiteHarmonicPath.
    */
   const jackWhiteEff = meta?.jackWhiteEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'jack_white' &&
+    isJackWhiteHarmonicPath(meta) &&
     Array.isArray(jackWhiteEff) &&
     jackWhiteEff.length === tb &&
     barIndex >= 1 &&

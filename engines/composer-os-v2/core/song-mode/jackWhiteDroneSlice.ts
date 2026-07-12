@@ -5,6 +5,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -492,6 +493,33 @@ export function rateFromReceipts(receipts: readonly string[], prefix: string, ba
   if (bars <= 0) return 0;
   const touches = receipts.filter((r) => r.startsWith(prefix)).length;
   return Math.min(1, touches / bars);
+}
+
+export const JACK_WHITE_HARMONIC_VOICE_IDS = ['jack_white', 'jack_white_drone_riff'] as const;
+
+export function isJackWhiteHarmonicVoiceId(raw: string | null | undefined): boolean {
+  const id = normalizeHarmonicVoiceId(String(raw ?? ''));
+  return id === 'jack_white' || id === 'jack_white_drone_riff';
+}
+
+/**
+ * Primary songwriter or harmonicVoice selects Jack White harmony authority.
+ * Single-gate (no styleProfile) — Wave-D / don_sebesky HV pattern.
+ *
+ * Accepts **both** `jack_white` and VRB id `jack_white_drone_riff`.
+ * Soft aliases (`white`, etc.) do **not** engage HV.
+ * `jackWhiteStructuralRelax` stays primary-id keyed (holdback).
+ */
+export function isJackWhiteHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  return (
+    isJackWhiteHarmonicVoiceId(metadata?.songwriterStyleId) ||
+    isJackWhiteHarmonicVoiceId(metadata?.harmonicVoice)
+  );
 }
 
 export function precomputeJackWhiteEffectiveHarmonyBars(context: CompositionContext): void {

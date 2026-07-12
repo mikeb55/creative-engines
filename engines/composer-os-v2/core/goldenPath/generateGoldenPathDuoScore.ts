@@ -373,6 +373,8 @@ import {
   accumulateJackWhiteHarmonyDiagnostics,
   createJackWhiteHarmonyAccumulator,
   finalizeJackWhiteMetadata,
+  isJackWhiteHarmonicPath,
+  isJackWhiteHarmonicVoiceId,
   precomputeJackWhiteEffectiveHarmonyBars,
 } from './jackWhiteDroneSlice';
 import {
@@ -3384,6 +3386,10 @@ function buildGuitarPart(
       'holdsworth';
   const holdsworthHarmonicPathActive = isHoldsworthHarmonicPath(genMeta);
   const isSongwriterJackWhite = genMeta?.songwriterStyleId === 'jack_white';
+  const isHarmonicVoiceJackWhite = isJackWhiteHarmonicVoiceId(
+    String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')
+  );
+  const jackWhiteHarmonicPathActive = isJackWhiteHarmonicPath(genMeta);
   const isSongwriterBeefheart = genMeta?.songwriterStyleId === 'beefheart';
   const isSongwriterFripp = genMeta?.songwriterStyleId === 'fripp';
   const isHarmonicVoiceFripp =
@@ -3843,8 +3849,15 @@ function buildGuitarPart(
       }
     }
   }
-  if (isSongwriterJackWhite && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (jackWhiteHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeJackWhiteEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceJackWhite && !isSongwriterJackWhite) {
+      const jackWhiteEff = genMeta.jackWhiteEffectiveHarmonyBars;
+      const jackWhiteTb = totalBarsFromContext(context);
+      if (Array.isArray(jackWhiteEff) && jackWhiteEff.length === jackWhiteTb) {
+        genMeta.mosaicMergedHarmonyBars = [...jackWhiteEff];
+      }
+    }
   }
   if (isSongwriterBeefheart && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeBeefheartEffectiveHarmonyBars(context);

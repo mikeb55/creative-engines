@@ -342,6 +342,28 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
     notes:
       'harmony/precompute hv_full via donSebeskyEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; Metheny gate bypass stays primary-id',
   },
+  {
+    styleId: 'jack_white',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'jackWhiteEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via jackWhiteEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; path helper also accepts VRB id jack_white_drone_riff; jackWhiteStructuralRelax stays primary-id',
+  },
+  {
+    styleId: 'jack_white_drone_riff',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'jackWhiteEffectiveHarmonyBars',
+    notes:
+      'alias of jack_white for VRB voiceId harmonicVoice=jack_white_drone_riff (normalizeHarmonicVoiceId does not unify)',
+  },
 ];
 
 const REGISTRY_BY_STYLE = new Map<string, HvCapabilityEntry>(
