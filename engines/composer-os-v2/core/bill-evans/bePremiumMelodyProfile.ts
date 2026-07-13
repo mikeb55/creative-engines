@@ -118,6 +118,19 @@ export function buildBillEvansJazzBalladPitchProfile(): PremiumMelodyPitchProfil
       colorToneProximitySemitones: 2,
     },
     approachPattern: { enabled: true },
+    /**
+     * Two-cell interval recall (±2 GCE motif tolerance):
+     * Cell A: bars 1–2 → 5–6; Cell B: distinct bars 2–3 → 7–8.
+     */
+    melodicIntervalCellRecall: {
+      enabled: true,
+      cellSize: 4,
+      intervalTolerance: 2,
+      cells: [
+        { seedBars: [1, 2], targetBars: [5, 6] },
+        { seedBars: [2, 3], targetBars: [7, 8] },
+      ],
+    },
     surfaceRules: {
       enclosureEnabled: true,
       approachSemitones: [1, -1, 2],

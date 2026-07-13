@@ -261,6 +261,11 @@ export interface PremiumMelodyPitchProfile {
   pentatonicAnchor?: PremiumMelodyPentatonicAnchorConfig;
   riffCellRecall?: PremiumMelodyRiffCellRecallConfig;
   callResponsePhraseScore?: PremiumMelodyCallResponsePhraseScoreConfig;
+  /**
+   * Opt-in melodic interval-cell recall (Bill Evans motif recurrence).
+   * Absent => no-op. See `premiumMelodyMotifCellRecall.ts`.
+   */
+  melodicIntervalCellRecall?: import('./premiumMelodyMotifCellRecall').PremiumMelodyMelodicIntervalCellRecallConfig;
 }
 
 export interface PremiumMelodyPitchTraceEvent {

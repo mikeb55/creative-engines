@@ -28,6 +28,10 @@ import {
   runOptionalPitchPrePass,
 } from './premiumMelodyOptionalPitchMechanisms';
 import {
+  applyMelodicIntervalCellRecall,
+  melodicIntervalCellRecallTargetBars,
+} from './premiumMelodyMotifCellRecall';
+import {
   assertValidPremiumMelodyPitchProfile,
   PREMIUM_MELODY_SURFACE_ORNAMENT_ORDER,
   type PremiumMelodyChordFitVector,
@@ -1323,8 +1327,14 @@ function repairGuideToneHitBand(
   const guideCfg = pitchProfile.guideTone;
   if (guideCfg?.enabled !== true) return;
 
+  // Recall post-pass owns pitch on its target bars (GT-preferring there); do not force-overwrite.
+  const recallTargetBars = melodicIntervalCellRecallTargetBars(pitchProfile);
+
   const eligible = slots.filter(
-    (s) => s.guideTonePc != null && s.noteRole !== 'rest_placeholder'
+    (s) =>
+      s.guideTonePc != null &&
+      s.noteRole !== 'rest_placeholder' &&
+      !recallTargetBars.has(s.bar)
   );
   const total = eligible.length;
   if (total === 0) return;
@@ -1651,6 +1661,9 @@ function scoreAndAssignPremiumMelodyPitches(
 
   repairGuideToneHitBand(ordered, slots, picks, pitchProfile, normalizedSeed);
   repairClimaxSlotPicks(ordered, slots, picks, pitchProfile, normalizedSeed);
+  // Evans (opt-in): reinject bars 1–2 interval cell into bars 5–6, then restore GT hit-band.
+  applyMelodicIntervalCellRecall(ordered, slots, picks, pitchProfile);
+  repairGuideToneHitBand(ordered, slots, picks, pitchProfile, normalizedSeed);
 
   const out: ImportMelodyNote[] = [];
   const trace: PremiumMelodyPitchTraceEvent[] = [];

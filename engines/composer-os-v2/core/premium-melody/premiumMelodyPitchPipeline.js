@@ -311,6 +311,217 @@ function isPremiumMelodyStrongBeat(onsetBeat) {
   return Math.abs(beat) < 0.05 || Math.abs(beat - 2) < 0.05;
 }
 
+// engines/composer-os-v2/core/premium-melody/premiumMelodyOptionalPitchMechanisms.ts
+function fnv1a32(input) {
+  let h = 2166136261;
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+function deriveOptionalPitchPrePassSeed(normalizedSeed, pitchSeedSalt) {
+  return (normalizedSeed ^ fnv1a32("premium_melody_optional_pitch_prepass") ^ pitchSeedSalt) >>> 0;
+}
+function barRhythmSignature(ordered, bar) {
+  return ordered.filter((n) => n.bar === bar).sort((a, b) => a.onsetBeat - b.onsetBeat).map((n) => Math.round(n.durationBeats * 100));
+}
+function barIntervalSignature(ordered, bar) {
+  const notes = ordered.filter((n) => n.bar === bar).sort((a, b) => a.onsetBeat - b.onsetBeat);
+  const out = [];
+  for (let i = 1; i < notes.length; i++) {
+    out.push(Math.abs(notes[i].midiPitch - notes[i - 1].midiPitch));
+  }
+  return out;
+}
+function dnaSimilarity(aRhythm, aIntervals, bRhythm, bIntervals) {
+  const rhythmUnion = /* @__PURE__ */ new Set([...aRhythm, ...bRhythm]);
+  const rhythmHits = aRhythm.filter((v) => bRhythm.includes(v)).length;
+  const rhythmScore = rhythmUnion.size > 0 ? rhythmHits / rhythmUnion.size : 0;
+  const intervalUnion = /* @__PURE__ */ new Set([...aIntervals, ...bIntervals]);
+  const intervalHits = aIntervals.filter((v) => bIntervals.includes(v)).length;
+  const intervalScore = intervalUnion.size > 0 ? intervalHits / intervalUnion.size : 0;
+  return (rhythmScore + intervalScore) / 2;
+}
+var MUTATION_ORDER = [
+  "truncate",
+  "extend",
+  "invert",
+  "transpose",
+  "chromatic_swap"
+];
+function runOptionalPitchPrePass(ordered, roles, slots, pitchProfile, normalizedSeed) {
+  const overlays = ordered.map(() => ({}));
+  const cfg = pitchProfile.callResponsePhraseScore;
+  const riffCfg = pitchProfile.riffCellRecall;
+  if (cfg?.enabled !== true && riffCfg?.enabled !== true) return overlays;
+  const rand = mulberry32(deriveOptionalPitchPrePassSeed(normalizedSeed, pitchProfile.pitchSeedSalt));
+  const phraseStarts = [...roles.phraseStarts].sort((a, b) => a - b);
+  for (let pi = 0; pi < phraseStarts.length; pi++) {
+    const startIdx = phraseStarts[pi];
+    const endIdx = pi + 1 < phraseStarts.length ? phraseStarts[pi + 1] - 1 : ordered.length - 1;
+    const startBar = ordered[startIdx]?.bar ?? 1;
+    const endBar = ordered[endIdx]?.bar ?? startBar;
+    const groupIndex = pi;
+    let riffCellIndex = 0;
+    let riffIntervals = [0, 3, 5, 7];
+    if (riffCfg?.enabled === true && riffCfg.cells.length > 0) {
+      const totalWeight = riffCfg.cells.reduce((sum, c) => sum + c.weight, 0);
+      let roll = rand() * totalWeight;
+      for (let ci = 0; ci < riffCfg.cells.length; ci++) {
+        roll -= riffCfg.cells[ci].weight;
+        if (roll <= 0) {
+          riffCellIndex = ci;
+          riffIntervals = riffCfg.cells[ci].intervals;
+          break;
+        }
+      }
+    }
+    for (let bar = startBar; bar <= endBar; bar++) {
+      const rel = bar - startBar;
+      const pairIndex = Math.floor(rel / 2);
+      const isCallBar = rel % 2 === 0;
+      const isResponseBar = rel % 2 === 1;
+      const mutationKind = MUTATION_ORDER[Math.floor(rand() * MUTATION_ORDER.length)];
+      const phraseMode = rel === 3 ? "turnaround" : isResponseBar ? "response" : void 0;
+      let responseSimilarity;
+      if (cfg?.enabled === true && isResponseBar) {
+        const callBar = bar - 1;
+        if (callBar >= startBar) {
+          responseSimilarity = dnaSimilarity(
+            barRhythmSignature(ordered, callBar),
+            barIntervalSignature(ordered, callBar),
+            barRhythmSignature(ordered, bar),
+            barIntervalSignature(ordered, bar)
+          );
+        }
+      }
+      for (const slot of slots) {
+        if (slot.bar !== bar) continue;
+        const overlay = overlays[slot.slotIndex];
+        if (riffCfg?.enabled === true) {
+          overlay.riffCellIndex = riffCellIndex;
+          overlay.riffCellIntervals = riffIntervals;
+        }
+        if (cfg?.enabled === true) {
+          overlay.callResponseGroupIndex = groupIndex;
+          overlay.callResponsePairIndex = pairIndex;
+          overlay.callResponseMutationKind = mutationKind;
+          overlay.callResponseRole = isCallBar ? "call" : isResponseBar ? "response" : "none";
+          if (phraseMode) overlay.phraseModeChordFit = phraseMode;
+          if (rel === 2) overlay.bar3IntensityLift = true;
+          if (roles.phraseEnds.has(slot.slotIndex)) overlay.phraseEndSustainTarget = true;
+          if (slot.durationBeats >= 1.5) overlay.longTargetVibratoEligible = true;
+          if (responseSimilarity != null) overlay.callResponseSimilarity = responseSimilarity;
+        }
+      }
+    }
+  }
+  return overlays;
+}
+function isBluesInflectionPc(pc, rootPc) {
+  const rel = (pc - rootPc + 12) % 12;
+  if (rel === 3 || rel === 6) return "b3b5";
+  if (rel === 10) return "b7";
+  return null;
+}
+function optionalPitchScoreMultiplier(midi, prevMidi, slot, pitchProfile) {
+  let mult = 1;
+  const rootPc = slot.harmonyRootPc % 12;
+  const pc = (midi % 12 + 12) % 12;
+  const bluesCfg = pitchProfile.bluesInflection;
+  if (bluesCfg?.enabled === true) {
+    const kind = isBluesInflectionPc(pc, rootPc);
+    if (kind === "b3b5") mult *= bluesCfg.minorThirdFifthMultiplier;
+    else if (kind === "b7") mult *= bluesCfg.flatSeventhMultiplier;
+    if (slot.metricalStrength === "weak") mult *= bluesCfg.weakBeatMultiplier;
+    mult *= bluesCfg.globalWeight;
+  }
+  const anchorCfg = pitchProfile.pentatonicAnchor;
+  if (anchorCfg?.enabled === true) {
+    const anchorSet = anchorCfg.anchorPitchClasses.length > 0 ? anchorCfg.anchorPitchClasses : [0, 3, 5, 7, 10];
+    const rel = (pc - rootPc + 12) % 12;
+    if (anchorSet.includes(rel)) {
+      mult *= anchorCfg.baseWeight * anchorCfg.anchorHitBonus;
+    } else {
+      mult *= anchorCfg.baseWeight;
+    }
+  }
+  const riffCfg = pitchProfile.riffCellRecall;
+  if (riffCfg?.enabled === true && slot.riffCellIntervals && slot.riffCellIntervals.length > 0) {
+    const rel = (pc - rootPc + 12) % 12;
+    if (slot.riffCellIntervals.includes(rel)) {
+      if (slot.bar3IntensityLift === true || slot.callResponsePairIndex === 1) {
+        mult *= riffCfg.secondRecallMultiplier;
+      } else {
+        mult *= riffCfg.firstRecallMultiplier;
+      }
+    }
+    if (prevMidi != null) {
+      const step = Math.abs(midi - prevMidi);
+      const importStep = Math.abs(midi - slot.importMidiPitch);
+      if (step === importStep && step > 0 && step <= 12) {
+        mult *= riffCfg.exactTranspositionMultiplier;
+      }
+    }
+    if (pc === (slot.importMidiPitch % 12 + 12) % 12 && prevMidi != null) {
+      mult *= riffCfg.exactCopyPenalty;
+    }
+  }
+  const crCfg = pitchProfile.callResponsePhraseScore;
+  if (crCfg?.enabled === true) {
+    if (slot.callResponseRole === "response") {
+      mult *= crCfg.responseMutationBonus;
+      const sim = slot.callResponseSimilarity;
+      if (sim != null && sim >= 0.85) {
+        mult *= crCfg.exactPhraseRepeatPenalty;
+      }
+    }
+    if (slot.bar3IntensityLift) {
+      const mid = (slot.registerBandMinMidi + slot.registerBandMaxMidi) / 2;
+      if (midi >= mid + 2 && midi <= mid + 5) mult *= crCfg.bar3IntensityLift;
+    }
+    if (slot.phraseEndSustainTarget && slot.durationBeats >= 1) {
+      const landingPc = (rootPc + 10) % 12;
+      if (pc === rootPc || pc === landingPc) mult *= crCfg.phraseEndSustainBonus;
+    }
+    if (slot.longTargetVibratoEligible && slot.durationBeats >= 1.5) {
+      mult *= crCfg.longTargetVibratoBonus;
+    }
+  }
+  return mult;
+}
+function mergeOptionalPitchOverlays(slots, overlays) {
+  for (let i = 0; i < slots.length; i++) {
+    const o = overlays[i];
+    if (!o) continue;
+    const slot = slots[i];
+    if (o.callResponseRole != null) slot.callResponseRole = o.callResponseRole;
+    if (o.callResponsePairIndex != null) slot.callResponsePairIndex = o.callResponsePairIndex;
+    if (o.callResponseMutationKind != null) slot.callResponseMutationKind = o.callResponseMutationKind;
+    if (o.callResponseGroupIndex != null) slot.callResponseGroupIndex = o.callResponseGroupIndex;
+    if (o.callResponseSimilarity != null) slot.callResponseSimilarity = o.callResponseSimilarity;
+    if (o.phraseModeChordFit != null) slot.phraseModeChordFit = o.phraseModeChordFit;
+    if (o.bar3IntensityLift != null) slot.bar3IntensityLift = o.bar3IntensityLift;
+    if (o.phraseEndSustainTarget != null) slot.phraseEndSustainTarget = o.phraseEndSustainTarget;
+    if (o.longTargetVibratoEligible != null) slot.longTargetVibratoEligible = o.longTargetVibratoEligible;
+    if (o.riffCellIndex != null) slot.riffCellIndex = o.riffCellIndex;
+    if (o.riffCellIntervals != null) slot.riffCellIntervals = o.riffCellIntervals;
+  }
+}
+function chordFitVectorForSlot(scorer, phraseMode) {
+  const base = scorer.chordFitVector;
+  if (!phraseMode) return base;
+  return {
+    ...base,
+    ninth: phraseMode === "response" || phraseMode === "turnaround" ? 1.12 : base.ninth,
+    extension: phraseMode === "response" || phraseMode === "turnaround" ? 1 : base.extension
+  };
+}
+
+// engines/composer-os-v2/core/premium-melody/premiumMelodyPitchPipeline.ts
+var import_premiumMelodyMotifCellRecall = require("./premiumMelodyMotifCellRecall");
+
 // engines/composer-os-v2/core/premium-melody/premiumMelodyPitchProfile.ts
 var PREMIUM_MELODY_SURFACE_ORNAMENT_ORDER = [
   "approach",
@@ -328,7 +539,7 @@ function assertValidPremiumMelodyPitchProfile(pitchProfile) {
 }
 
 // engines/composer-os-v2/core/premium-melody/premiumMelodyPitchPipeline.ts
-function fnv1a32(input) {
+function fnv1a322(input) {
   let h = 2166136261;
   for (let i = 0; i < input.length; i++) {
     h ^= input.charCodeAt(i);
@@ -337,13 +548,13 @@ function fnv1a32(input) {
   return h >>> 0;
 }
 function derivePremiumMelodyPitchSlotSeed(masterSeed, slotId, pitchSeedSalt) {
-  return (masterSeed ^ fnv1a32(slotId) ^ pitchSeedSalt) >>> 0;
+  return (masterSeed ^ fnv1a322(slotId) ^ pitchSeedSalt) >>> 0;
 }
 function derivePremiumMelodyPhrasePlanSeed(masterSeed, pitchSeedSalt) {
-  return (masterSeed ^ fnv1a32("premium_melody_phrase_plan") ^ pitchSeedSalt) >>> 0;
+  return (masterSeed ^ fnv1a322("premium_melody_phrase_plan") ^ pitchSeedSalt) >>> 0;
 }
 function derivePremiumMelodySurfaceOrnamentSeed(masterSeed, slotId, ornamentIndex, pitchSeedSalt) {
-  return (masterSeed ^ fnv1a32(`${slotId}:${ornamentIndex}`) ^ pitchSeedSalt) >>> 0;
+  return (masterSeed ^ fnv1a322(`${slotId}:${ornamentIndex}`) ^ pitchSeedSalt) >>> 0;
 }
 function canonicalMelodySort(notes) {
   return [...notes].sort(
@@ -546,7 +757,7 @@ function pitchV2AnyEnabled(pitchProfile) {
   return pitchProfile.guideTone?.enabled === true || pitchProfile.climaxArc?.enabled === true || pitchProfile.approachPattern?.enabled === true;
 }
 function derivePitchV2PrePassSeed(normalizedSeed, pitchSeedSalt) {
-  return (normalizedSeed ^ fnv1a32("premium_melody_pitch_v2_prepass") ^ pitchSeedSalt) >>> 0;
+  return (normalizedSeed ^ fnv1a322("premium_melody_pitch_v2_prepass") ^ pitchSeedSalt) >>> 0;
 }
 function primaryGuideCandidates(chordSymbol) {
   const thirdPc = chordThirdPc(chordSymbol);
@@ -656,26 +867,38 @@ function runPitchV2PhrasePrePass(ordered, roles, slots, pitchProfile, normalized
     const N = phraseIndices.length;
     if (N === 0) continue;
     if (pitchProfile.guideTone?.enabled === true) {
-      const chordSymbols = [];
-      const chordStartIdx = [];
-      for (const idx of phraseIndices) {
-        const sym = resolveHarmonySymbol(ordered[idx].bar, options?.harmonyByBar);
-        if (chordSymbols.length === 0 || chordSymbols[chordSymbols.length - 1] !== sym) {
-          chordSymbols.push(sym);
-          chordStartIdx.push(idx);
-        }
-      }
-      const startHint = start > 0 ? ordered[start - 1].midiPitch % 12 : ordered[start].midiPitch % 12;
-      const primaryLine = optimizeGuideTonePrimaryLine(chordSymbols, startHint);
-      for (let ci = 0; ci < chordSymbols.length; ci++) {
-        const sym = chordSymbols[ci];
-        const primaryPc = primaryLine[ci];
-        const secondaryPc = secondaryGuidePc(sym, primaryPc);
-        const from = chordStartIdx[ci];
-        const to = ci + 1 < chordStartIdx.length ? chordStartIdx[ci + 1] - 1 : end;
-        for (let idx = from; idx <= to; idx++) {
+      const frozenByBar = pitchProfile.guideTone.barPrimaryGuideTonePc;
+      if (frozenByBar != null && Object.keys(frozenByBar).length > 0) {
+        for (const idx of phraseIndices) {
+          const bar = ordered[idx].bar;
+          const primaryPc = frozenByBar[bar];
+          if (primaryPc == null) continue;
+          const sym = resolveHarmonySymbol(bar, options?.harmonyByBar);
           overlays[idx].guideTonePc = primaryPc;
-          overlays[idx].secondaryGuideTonePc = secondaryPc;
+          overlays[idx].secondaryGuideTonePc = secondaryGuidePc(sym, primaryPc);
+        }
+      } else {
+        const chordSymbols = [];
+        const chordStartIdx = [];
+        for (const idx of phraseIndices) {
+          const sym = resolveHarmonySymbol(ordered[idx].bar, options?.harmonyByBar);
+          if (chordSymbols.length === 0 || chordSymbols[chordSymbols.length - 1] !== sym) {
+            chordSymbols.push(sym);
+            chordStartIdx.push(idx);
+          }
+        }
+        const startHint = start > 0 ? ordered[start - 1].midiPitch % 12 : ordered[start].midiPitch % 12;
+        const primaryLine = optimizeGuideTonePrimaryLine(chordSymbols, startHint);
+        for (let ci = 0; ci < chordSymbols.length; ci++) {
+          const sym = chordSymbols[ci];
+          const primaryPc = primaryLine[ci];
+          const secondaryPc = secondaryGuidePc(sym, primaryPc);
+          const from = chordStartIdx[ci];
+          const to = ci + 1 < chordStartIdx.length ? chordStartIdx[ci + 1] - 1 : end;
+          for (let idx = from; idx <= to; idx++) {
+            overlays[idx].guideTonePc = primaryPc;
+            overlays[idx].secondaryGuideTonePc = secondaryPc;
+          }
         }
       }
     }
@@ -773,6 +996,12 @@ function contourTargetDeltaForArc(arc, progress) {
       return Math.round(2 * Math.sin(p * Math.PI * 0.75));
     case "angular":
       return p > 0.45 && p < 0.55 ? 7 : Math.round(2 * Math.sin(p * Math.PI));
+    case "call_response_variation": {
+      const segment = Math.min(3, Math.floor(p * 4));
+      if (segment === 3) return 5;
+      if (segment === 2) return 3;
+      return segment % 2 === 0 ? -2 : 3;
+    }
     default: {
       const _exhaustive = arc;
       return 0;
@@ -882,6 +1111,14 @@ function buildPremiumMelodyPitchSlotList(rhythmMelody, pitchProfile, profile, no
     }
     if (overlay.isChordBoundary != null) slot.isChordBoundary = overlay.isChordBoundary;
   }
+  const optionalOverlays = runOptionalPitchPrePass(
+    ordered,
+    roles,
+    slots,
+    pitchProfile,
+    normalizedSeed
+  );
+  mergeOptionalPitchOverlays(slots, optionalOverlays);
   return slots;
 }
 function passesHardFilters(midi, prevMidi, slot, scorer, pitchProfile) {
@@ -952,7 +1189,8 @@ function scoreCandidate(midi, prevMidi, slot, scorer, signatureRules, leapRecove
   let prevIntervalFactor = 1;
   if (prevMidi != null && leapRecoveryActive && interval <= 2) prevIntervalFactor = 1.3;
   const role = chordFitRole(midi, slot.harmonyChordSymbol);
-  const chordFit = chordFitMultiplier(role, resolveActiveChordFitVector(scorer, slot.harmonyChordSymbol));
+  const activeChordFit = slot.phraseModeChordFit != null ? chordFitVectorForSlot(scorer, slot.phraseModeChordFit) : resolveActiveChordFitVector(scorer, slot.harmonyChordSymbol);
+  const chordFit = chordFitMultiplier(role, activeChordFit);
   let metric = 1;
   if (slot.metricalStrength === "strong" && interval <= 2) metric *= 1.2;
   if (slot.metricalStrength === "weak" && (role === "third" || role === "seventh")) metric *= 1.15;
@@ -1034,6 +1272,10 @@ function scoreCandidate(midi, prevMidi, slot, scorer, signatureRules, leapRecove
   }
   if (scorer.weightPhraseArc != null) {
     product *= Math.pow(phraseArc, scorer.weightPhraseArc);
+  }
+  const pitchProfile = options?.pitchProfile;
+  if (pitchProfile != null) {
+    product *= optionalPitchScoreMultiplier(midi, prevMidi, slot, pitchProfile);
   }
   return product;
 }
@@ -1163,39 +1405,72 @@ function isPrimaryGuideToneHit(slot, midi) {
   return (midi % 12 + 12) % 12 === slot.guideTonePc;
 }
 function forceGuideTonePick(ordered, slot, slots, picks, slotIndex, pitchProfile, normalizedSeed, extra) {
-  let prevMidi = null;
+  let chainPrev = null;
   for (let j = slotIndex - 1; j >= 0; j--) {
     if (picks[j] != null) {
-      prevMidi = picks[j].chosenMidi;
+      chainPrev = picks[j].chosenMidi;
       break;
     }
   }
+  const prevForFilter = extra?.ignoreLeap === true ? null : chainPrev;
   const scorer = pitchProfile.slotScorer;
   let candidates = enumerateCandidates(
     slot,
     scorer,
-    prevMidi,
+    prevForFilter,
     pitchProfile.phrasePlanner.registerMinMidi,
     pitchProfile.phrasePlanner.registerMaxMidi,
     pitchProfile
   ).filter((c) => isPrimaryGuideToneHit(slot, c.midi));
   if (extra?.minMidi != null) candidates = candidates.filter((c) => c.midi >= extra.minMidi);
   if (extra?.maxMidi != null) candidates = candidates.filter((c) => c.midi <= extra.maxMidi);
+  const refMidi = chainPrev ?? slot.idealPitchMidi ?? ordered[slotIndex]?.midiPitch ?? Math.round((slot.registerBandMinMidi + slot.registerBandMaxMidi) / 2);
+  if (candidates.length === 0 && slot.guideTonePc != null) {
+    const pc = slot.guideTonePc;
+    const minM = Math.max(
+      slot.registerBandMinMidi,
+      pitchProfile.phrasePlanner.registerMinMidi,
+      extra?.minMidi ?? Number.NEGATIVE_INFINITY
+    );
+    const maxM = Math.min(
+      slot.registerBandMaxMidi,
+      pitchProfile.phrasePlanner.registerMaxMidi,
+      extra?.maxMidi ?? Number.POSITIVE_INFINITY
+    );
+    let fallback = null;
+    let fallbackDist = Number.POSITIVE_INFINITY;
+    for (let midi = minM; midi <= maxM; midi++) {
+      if ((midi % 12 + 12) % 12 !== pc) continue;
+      const dist = Math.abs(midi - refMidi);
+      if (dist < fallbackDist) {
+        fallbackDist = dist;
+        fallback = midi;
+      }
+    }
+    if (fallback != null) {
+      return {
+        chosenMidi: fallback,
+        chosenRank: 0,
+        topScore: 0,
+        candidateCount: 1
+      };
+    }
+    return null;
+  }
   if (candidates.length === 0) return null;
-  const rand = mulberry32(
-    derivePremiumMelodyPitchSlotSeed(normalizedSeed, slot.slotId, pitchProfile.pitchSeedSalt)
-  );
-  const scored = candidates.map((c) => ({
-    midi: c.midi,
-    score: scoreCandidate(c.midi, prevMidi, slot, scorer, pitchProfile.signatureRules, false, {
-      pitchProfile
-    })
-  }));
-  const pick = weightedPickMidi(scored, scorer.temperature, rand);
+  let chosen = candidates[0].midi;
+  let bestDist = Math.abs(chosen - refMidi);
+  for (const c of candidates) {
+    const dist = Math.abs(c.midi - refMidi);
+    if (dist < bestDist) {
+      bestDist = dist;
+      chosen = c.midi;
+    }
+  }
   return {
-    chosenMidi: pick.midi,
-    chosenRank: pick.rank,
-    topScore: pick.topScore,
+    chosenMidi: chosen,
+    chosenRank: 0,
+    topScore: 0,
     candidateCount: candidates.length
   };
 }
@@ -1203,7 +1478,6 @@ function countPrimaryGuideToneHits(slots, picks) {
   let hits = 0;
   for (const slot of slots) {
     if (slot.guideTonePc == null || slot.noteRole === "rest_placeholder") continue;
-    if (slot.approachWindowRole === "intermediate") continue;
     const pick = picks[slot.slotIndex];
     if (pick != null && isPrimaryGuideToneHit(slot, pick.chosenMidi)) hits++;
   }
@@ -1212,8 +1486,9 @@ function countPrimaryGuideToneHits(slots, picks) {
 function repairGuideToneHitBand(ordered, slots, picks, pitchProfile, normalizedSeed) {
   const guideCfg = pitchProfile.guideTone;
   if (guideCfg?.enabled !== true) return;
+  const recallTargetBars = (0, import_premiumMelodyMotifCellRecall.melodicIntervalCellRecallTargetBars)(pitchProfile);
   const eligible = slots.filter(
-    (s) => s.guideTonePc != null && s.noteRole !== "rest_placeholder" && s.approachWindowRole !== "intermediate"
+    (s) => s.guideTonePc != null && s.noteRole !== "rest_placeholder" && !recallTargetBars.has(s.bar)
   );
   const total = eligible.length;
   if (total === 0) return;
@@ -1232,22 +1507,67 @@ function repairGuideToneHitBand(ordered, slots, picks, pitchProfile, normalizedS
       (s) => picks[s.slotIndex] != null && isPrimaryGuideToneHit(s, picks[s.slotIndex].chosenMidi)
     ).length;
     if (barHits > 0) continue;
-    const target = barSlots[barSlots.length - 1];
-    const forced = forceGuideTonePick(ordered, target, slots, picks, target.slotIndex, pitchProfile, normalizedSeed);
-    if (forced != null) picks[target.slotIndex] = forced;
+    for (const target of [...barSlots].reverse().filter((s) => s.climaxSlotIndex !== s.slotIndex)) {
+      const forced = forceGuideTonePick(
+        ordered,
+        target,
+        slots,
+        picks,
+        target.slotIndex,
+        pitchProfile,
+        normalizedSeed,
+        { ignoreLeap: true }
+      );
+      if (forced != null) {
+        picks[target.slotIndex] = forced;
+        break;
+      }
+    }
+    if (barSlots.filter(
+      (s) => picks[s.slotIndex] != null && isPrimaryGuideToneHit(s, picks[s.slotIndex].chosenMidi)
+    ).length === 0) {
+      for (const target of [...barSlots].reverse()) {
+        const forced = forceGuideTonePick(
+          ordered,
+          target,
+          slots,
+          picks,
+          target.slotIndex,
+          pitchProfile,
+          normalizedSeed,
+          { ignoreLeap: true }
+        );
+        if (forced != null) {
+          picks[target.slotIndex] = forced;
+          break;
+        }
+      }
+    }
   }
   const nonClimaxMisses = () => eligible.filter((s) => {
     if (s.climaxSlotIndex === s.slotIndex) return false;
     const pick = picks[s.slotIndex];
     return pick == null || !isPrimaryGuideToneHit(s, pick.chosenMidi);
   });
-  while (countPrimaryGuideToneHits(slots, picks) < minHits) {
+  for (let hits = countPrimaryGuideToneHits(slots, picks); hits < minHits; ) {
     const misses = nonClimaxMisses();
     if (misses.length === 0) break;
     const target = misses[misses.length - 1];
-    const forced = forceGuideTonePick(ordered, target, slots, picks, target.slotIndex, pitchProfile, normalizedSeed);
+    const forced = forceGuideTonePick(
+      ordered,
+      target,
+      slots,
+      picks,
+      target.slotIndex,
+      pitchProfile,
+      normalizedSeed,
+      { ignoreLeap: true }
+    );
     if (forced == null) break;
     picks[target.slotIndex] = forced;
+    const nextHits = countPrimaryGuideToneHits(slots, picks);
+    if (nextHits === hits) break;
+    hits = nextHits;
   }
   const nonClimaxHits = () => eligible.filter((s) => {
     if (s.climaxSlotIndex === s.slotIndex) return false;
@@ -1413,8 +1733,6 @@ function scoreAndAssignPremiumMelodyPitches(ordered, slots, pitchProfile, normal
       prevMidi = pick.chosenMidi;
     }
   }
-  repairGuideToneHitBand(ordered, slots, picks, pitchProfile, normalizedSeed);
-  repairClimaxSlotPicks(ordered, slots, picks, pitchProfile, normalizedSeed);
   for (let i = 0; i < ordered.length; i++) {
     const slot = slots[i];
     if (slot.approachWindowRole !== "intermediate") continue;
@@ -1452,6 +1770,10 @@ function scoreAndAssignPremiumMelodyPitches(ordered, slots, pitchProfile, normal
       approachIdealMidi: idealMidi
     });
   }
+  repairGuideToneHitBand(ordered, slots, picks, pitchProfile, normalizedSeed);
+  repairClimaxSlotPicks(ordered, slots, picks, pitchProfile, normalizedSeed);
+  (0, import_premiumMelodyMotifCellRecall.applyMelodicIntervalCellRecall)(ordered, slots, picks, pitchProfile);
+  repairGuideToneHitBand(ordered, slots, picks, pitchProfile, normalizedSeed);
   const out = [];
   const trace = [];
   for (let i = 0; i < ordered.length; i++) {
