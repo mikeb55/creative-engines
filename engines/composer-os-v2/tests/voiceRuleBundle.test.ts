@@ -666,7 +666,8 @@ function testFusionArtRockRiffVrbStubsRegistry(): boolean {
     getVoiceRuleBundle('ratm').voiceId === 'morello' &&
     fripp.voiceId === 'fripp_systems_process' &&
     getVoiceRuleBundle('fripp_systems_process').voiceId === 'fripp_systems_process' &&
-    getVoiceRuleBundle('king_crimson').voiceId === 'fripp' &&
+    getVoiceRuleBundle('king_crimson').voiceId === 'fripp_king_crimson' &&
+    getVoiceRuleBundle('crimson').voiceId === 'fripp_king_crimson' &&
     mahavishnu.riffProfile.meterPolicy === 'odd_grouped' &&
     mahavishnu.riffProfile.polyGroupingMode === true &&
     Boolean(fripp.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('RF_ERA_'))) &&

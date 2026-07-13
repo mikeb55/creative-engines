@@ -4514,7 +4514,7 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   fripp_king_crimson: FRIPP_KING_CRIMSON,
   fripp: FRIPP_SYSTEMS_PROCESS,
   fripp_systems_process: FRIPP_SYSTEMS_PROCESS,
-  king_crimson: FRIPP,
+  king_crimson: FRIPP_KING_CRIMSON,
   crimson: FRIPP_KING_CRIMSON,
   weather_report: WEATHER_REPORT,
   zawinul: WEATHER_REPORT,
