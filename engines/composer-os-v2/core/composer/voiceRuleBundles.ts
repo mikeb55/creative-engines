@@ -56,6 +56,7 @@ import { applyHerrmannFilmStubVrbProfile } from '../counterpoint/vrbProfiles/her
 import { applyMorriconeFilmStubVrbProfile } from '../counterpoint/vrbProfiles/morriconeFilmStubVrb';
 import { applyRavelSqVrbProfile } from '../counterpoint/vrbProfiles/ravelSqVrb';
 import { applyGlassFilmStubVrbProfile } from '../counterpoint/vrbProfiles/glassFilmStubVrb';
+import { applySteveReichSongStubVrbProfile } from '../counterpoint/vrbProfiles/steveReichSongStubVrb';
 import { applyGoldsmithFilmStubVrbProfile } from '../counterpoint/vrbProfiles/goldsmithFilmStubVrb';
 import { applyRotaFilmStubVrbProfile } from '../counterpoint/vrbProfiles/rotaFilmStubVrb';
 import { applyWilliamsFilmStubVrbProfile } from '../counterpoint/vrbProfiles/williamsFilmStubVrb';
@@ -96,6 +97,7 @@ import {
   WEATHER_REPORT,
   MORRICONE_FILM_STUB,
   PHILIP_GLASS_FILM_STUB,
+  STEVE_REICH_SONG_STUB,
   ROTA_FILM_STUB,
   WEBERN_FILM_STUB,
   JONI_MITCHELL_FILM_STUB,
@@ -4579,6 +4581,9 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   glass: applyGlassFilmStubVrbProfile(PHILIP_GLASS_FILM_STUB),
   philip_glass_screen: applyGlassFilmStubVrbProfile(PHILIP_GLASS_FILM_STUB),
   philip_glass_film: applyGlassFilmStubVrbProfile(PHILIP_GLASS_FILM_STUB),
+  /** Song-Reich VRB twin — must NOT alias into REICH_GLASS (SQ minimalist-process). */
+  steve_reich: applySteveReichSongStubVrbProfile(STEVE_REICH_SONG_STUB),
+  reich: applySteveReichSongStubVrbProfile(STEVE_REICH_SONG_STUB),
   zimmer: applyZimmerFilmStubVrbProfile(HANS_ZIMMER_FILM_STUB),
   hans_zimmer: applyZimmerFilmStubVrbProfile(HANS_ZIMMER_FILM_STUB),
   badalamenti: applyBadalamentiFilmStubVrbProfile(BADALAMENTI_FILM_STUB),
@@ -4608,8 +4613,7 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   reich_glass: REICH_GLASS,
   reichglass: REICH_GLASS,
   reich_and_glass: REICH_GLASS,
-  reich: REICH_GLASS,
-  steve_reich: REICH_GLASS,
+  // steve_reich / reich live with Song Mode stub above — not REICH_GLASS.
   // philip_glass / glass live with film stubs above — not REICH_GLASS.
   minimalist_sq: REICH_GLASS,
   sq_vrb_reich_glass: REICH_GLASS,

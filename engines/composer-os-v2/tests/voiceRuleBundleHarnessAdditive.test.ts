@@ -257,9 +257,12 @@ export function runVoiceRuleBundleHarnessAdditiveTests(): { name: string; ok: bo
     Boolean(reichGlass.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('RG_WORK_GLASS_01')));
 
   const okReichGlassAliases =
-    getVoiceRuleBundle('steve_reich').voiceId === 'reich_glass' &&
     getVoiceRuleBundle('reich_and_glass').voiceId === 'reich_glass' &&
     getVoiceRuleBundle('minimalist_sq').voiceId === 'reich_glass' &&
+    getVoiceRuleBundle('sq_vrb_reich_glass').voiceId === 'reich_glass' &&
+    // Song Mode steve_reich / soft reich resolve to Song-Reich stub, not REICH_GLASS.
+    getVoiceRuleBundle('steve_reich').voiceId === 'steve_reich' &&
+    getVoiceRuleBundle('reich').voiceId === 'steve_reich' &&
     // Film Song Mode / SQ→BB glass ids resolve to film stub, not REICH_GLASS.
     getVoiceRuleBundle('philip_glass').voiceId === 'philip_glass_screen' &&
     getVoiceRuleBundle('glass').voiceId === 'philip_glass_screen' &&

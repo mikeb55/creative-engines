@@ -6,6 +6,7 @@
 import { BADALAMENTI_THREE_TIER_TEXTURE } from '../counterpoint/vrbProfiles/badalamentiFilmStubVrb';
 import { BADALAMENTI_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/badalamentiVrbFingerprints';
 import { GLASS_FILM_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/glassFilmVrbFingerprints';
+import { STEVE_REICH_SONG_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/steveReichSongVrbFingerprints';
 import { GOLDSMITH_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/goldsmithVrbFingerprints';
 import { HERRMANN_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/herrmannVrbFingerprints';
 import { MORRICONE_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/morriconeVrbFingerprints';
@@ -641,6 +642,15 @@ export const ROTA_FILM_STUB = filmStub('nino_rota', ROTA_VRB_FINGERPRINT_RECEIPT
 export const GOLDSMITH_FILM_STUB = filmStub('jerry_goldsmith', GOLDSMITH_VRB_FINGERPRINT_RECEIPTS);
 /** Film-screen VRB twin for Song Mode `philip_glass` (not REICH_GLASS SQ VRB). */
 export const PHILIP_GLASS_FILM_STUB = filmStub('philip_glass_screen', GLASS_FILM_VRB_FINGERPRINT_RECEIPTS);
+/** Song Mode / duo process-field VRB twin for `steve_reich` (not REICH_GLASS SQ VRB). */
+export const STEVE_REICH_SONG_STUB = filmStub('steve_reich', STEVE_REICH_SONG_VRB_FINGERPRINT_RECEIPTS, {
+  harmonicRhythm: { minChordDurationBars: 8, maxChordDurationBars: 32, allowMidBarChange: false },
+  bassPolicy: { role: 'pattern-bass', allowOctaveDoubling: true },
+  melodicPolicy: { contour: 'pattern-loop', maxLeapSemitones: 7, preferredIntervalSets: [2, 3, 4, 5, 7] },
+  formPolicy: { narrativeArc: 'minimalist-process', sectionRecallEnforced: false },
+  rhythmPolicy: { antiMetric: false },
+  repairPolicy: { resolveParallels: false, maxVoiceOverlap: 6 },
+});
 export const HANS_ZIMMER_FILM_STUB = filmStub('hans_zimmer', ZIMMER_VRB_FINGERPRINT_RECEIPTS);
 export const BADALAMENTI_FILM_STUB = filmStub('angelo_badalamenti', BADALAMENTI_VRB_FINGERPRINT_RECEIPTS, {
   badalamentiThreeTierTexture: BADALAMENTI_THREE_TIER_TEXTURE,

@@ -2,6 +2,8 @@
 
 ### Added
 
+- **VRB routing — Song-Reich stub (pre-HV)** — Detach `steve_reich` / soft `reich` from SQ `REICH_GLASS` BY_ID. New Song Mode process-field stub (`STEVE_REICH_SONG_STUB` + `applySteveReichSongStubVrbProfile`, `SR_*` receipts). SQ ids unchanged: `reich_glass` / `reichglass` / `reich_and_glass` / `minimalist_sq` / `sq_vrb_reich_glass`. Same split rule as film Glass vs `reich_glass`. HV wire not included.
+
 - **HV authority — `philip_glass` Wave D (Tier 1 complete)** — Film Glass path helper (`isPhilipGlassHarmonicPath`) accepts `philip_glass` + film-stub twins (`philip_glass_screen` / `philip_glass_film` / `glass`); never `reich_glass`. Registry `hv_full` harmony/precompute; golden-path precompute + mosaic merge; spine + `getChordForBar`. Preceded by VRB routing fix: `philip_glass`/`glass` BY_ID → film stub, not REICH_GLASS.
 
 - **Generate — “How pieces end” browse tab** — Nested Generate workspace tab (renderer-only) listing Song Mode composers by closing approach: Resolved / Confirmed clean / Open / Special handling / Not tagged yet. Static catalog in **`composerFixCategories.ts`**; no generation, harmony, evaluator, or Electron IPC changes.
