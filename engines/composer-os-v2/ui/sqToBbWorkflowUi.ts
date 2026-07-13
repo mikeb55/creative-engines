@@ -28,7 +28,7 @@ export type SqToBbSqComposerId =
   | 'debussy'
   | 'ornette_coleman'
   | 'coltrane'
-  | 'messiaen';
+  | 'sq_vrb_messiaen';
 
 export type SqToBbSqComposer = SqToBbSqComposerId | null;
 
@@ -148,7 +148,7 @@ const COMPOSER_DESCRIPTIONS: Record<SqToBbSqComposerId, { label: string; descrip
     label: 'Coltrane (Late)',
     description: 'Interval-cell fields. Sheets of sound, modal pedal, pivot trichord transitions.',
   },
-  messiaen: {
+  sq_vrb_messiaen: {
     label: 'Messiaen',
     description: 'Modes of limited transposition. Block harmony, pedal bass, symmetric colour fields.',
   },
@@ -168,7 +168,7 @@ function buildComposerOption(vrbId: SqToBbSqComposerId): SqComposerOption {
     family: getVrbFamily(vrbId),
     sigma: sigmaForVrbId(vrbId),
     enabled: true,
-    ...(vrbId === 'messiaen' ? { modeOptions: MESSIAEN_MODE_OPTIONS } : {}),
+    ...(vrbId === 'sq_vrb_messiaen' ? { modeOptions: MESSIAEN_MODE_OPTIONS } : {}),
   };
 }
 

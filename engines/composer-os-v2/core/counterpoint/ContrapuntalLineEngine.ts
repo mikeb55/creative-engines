@@ -103,14 +103,14 @@ function augmentAbstractLineSetSchema(vrbId: string, lines: AbstractLineSet): Ab
       ],
     };
   }
-  if (vrbId === 'messiaen') {
+  if (vrbId === 'messiaen' || vrbId === 'sq_vrb_messiaen') {
     return {
       ...lines,
       extendedTechniquePolicy: {
         limitedTranspositionMode: true,
         colourTag: 'mode_3_resonance',
         suppressFunctionalResolution: true,
-        minBarsPerChord: 2,
+        minBarsPerChord: vrbId === 'sq_vrb_messiaen' ? 1 : 2,
       },
     };
   }

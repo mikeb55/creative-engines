@@ -290,8 +290,8 @@ export function SqToBbWorkflowPanel({
     return Object.keys(map).length > 0 ? map : undefined;
   }, [sectionLabels, sectionVrbAssignments]);
   const messiaenActive = useMemo(() => {
-    if (sqComposer === 'messiaen') return true;
-    return Object.values(sectionVrbAssignments).some((v) => v === 'messiaen');
+    if (sqComposer === 'sq_vrb_messiaen') return true;
+    return Object.values(sectionVrbAssignments).some((v) => v === 'sq_vrb_messiaen');
   }, [sqComposer, sectionVrbAssignments]);
   const bbOutputLocked = sqSourceLocked;
   const eraCompatibility = useMemo(

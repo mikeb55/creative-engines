@@ -9,14 +9,14 @@ const DEFAULT_MAX_REGION_BARS = 8;
 
 function regionBoundsForVrb(vrbId: string): { min: number; max: number } {
   if (vrbId === 'coltrane') return { min: 4, max: 16 };
-  if (vrbId === 'messiaen') return { min: 1, max: 8 };
+  if (vrbId === 'sq_vrb_messiaen') return { min: 1, max: 8 };
   if (vrbId === 'ligeti') return { min: 8, max: 32 };
   return { min: DEFAULT_MIN_REGION_BARS, max: DEFAULT_MAX_REGION_BARS };
 }
 
 function mutationStrengthRangeForVrb(vrbId: string): [number, number] {
   if (vrbId === 'coltrane') return [0.25, 0.55];
-  if (vrbId === 'messiaen') return [0.2, 0.45];
+  if (vrbId === 'sq_vrb_messiaen') return [0.2, 0.45];
   if (vrbId === 'ligeti') return [0.1, 0.35];
   if (vrbId === 'ornette_coleman') return [0.35, 0.7];
   return [0.35, 0.7];

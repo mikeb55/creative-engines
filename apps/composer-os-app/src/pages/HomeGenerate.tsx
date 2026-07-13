@@ -780,6 +780,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'john_barry', label: 'John Barry' },
   { id: 'john_williams', label: 'John Williams' },
   { id: 'messiaen', label: 'Messiaen' },
+  { id: 'sq_vrb_messiaen', label: 'Messiaen (SQ VRB)' },
   { id: 'nino_rota', label: 'Nino Rota' },
   { id: 'norman_whitfield', label: 'Norman Whitfield' },
   { id: 'oliver_nelson', label: 'Oliver Nelson' },
@@ -929,8 +930,8 @@ const HARMONIC_VOICE_FILM_SET = new Set<string>(FILM_HARMONIC_VOICE_IDS);
 
 /**
  * SQ VRB family canonical order (14 ids — full roster). VRB bundles
- * ship for `beethoven_late`, `bartok`, `ravel`, `debussy`, `dutilleux`,
- * `messiaen`, `ligeti`, `arvo_part`, `satie`, `reich_glass`, `shostakovich`, `turtle_island`,
+ * ship for `beethoven_late`, `sq_vrb_bartok`, `ravel`, `debussy`, `dutilleux`,
+ * `sq_vrb_messiaen`, `ligeti`, `arvo_part`, `satie`, `reich_glass`, `shostakovich`, `turtle_island`,
  * `crumb_black_angels`, `lachenmann`. Any reserved slots without an
  * active SONGWRITER_OPTIONS row are filtered out by
  * `buildHarmonicVoiceGroups`, keeping the canonical order intact.
@@ -941,7 +942,7 @@ const SONGWRITER_GROUP_SHIPPED_SQ_VRB_ORDER: readonly string[] = [
   'ravel',
   'debussy',
   'dutilleux',
-  'messiaen',
+  'sq_vrb_messiaen',
   'ligeti',
   'arvo_part',
   'satie',

@@ -30,7 +30,7 @@ export const VRB_FAMILIES: Record<VrbFamily, readonly string[]> = {
   modernist: ['shostakovich', 'sq_vrb_bartok', 'ligeti', 'webern'],
   minimal: ['glass'],
   free_jazz: ['ornette_coleman'],
-  modal_contemporary: ['coltrane', 'messiaen'],
+  modal_contemporary: ['coltrane', 'sq_vrb_messiaen'],
 };
 
 const VRB_ID_TO_FAMILY = new Map<string, VrbFamily>();

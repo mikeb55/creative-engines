@@ -61,7 +61,7 @@ export const MESSIAEN_SQ_GCE_SCORER_ADJUSTMENTS: SqVrbGceScorerAdjustments = {
 
 export const MESSIAEN_SQ_CONTRAPUNTAL_LINE_POLICY: SqContrapuntalLinePolicy = {
   enabled: true,
-  vrbId: 'messiaen',
+  vrbId: 'sq_vrb_messiaen',
   independenceLevel: 'moderate',
   imitationStyle: 'staggered_entry',
   registerPolicy: 'mid_register_chromatic_inner_compression',
@@ -82,7 +82,7 @@ export const MESSIAEN_SQ_CONTRAPUNTAL_LINE_POLICY: SqContrapuntalLinePolicy = {
 };
 
 export const MESSIAEN_SQ_VRB_PROFILE: SqVrbProfile = {
-  vrbId: 'messiaen',
+  vrbId: 'sq_vrb_messiaen',
   harmonicSubstrate: 'pitch-field-spine',
   pitchFieldOptions: {
     defaultOverlapPolicy: 'shared-parent',
@@ -102,6 +102,7 @@ export function applyMessiaenSqVrbProfile(bundle: VoiceRuleBundle): VoiceRuleBun
   const p = MESSIAEN_SQ_VRB_PROFILE;
   return {
     ...bundle,
+    voiceId: 'sq_vrb_messiaen',
     contrapuntalLinePolicy: p.contrapuntalLinePolicy,
     bestBbStyle: p.bestBbStyle,
     secondaryBbStyle: p.secondaryBbStyle,

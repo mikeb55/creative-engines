@@ -646,7 +646,7 @@ function buildSpineForProfile(
 
   const { tension, density } = buildDefaultArcs(totalBars, seed);
 
-  const messiaenModeId = profile.vrbId === 'messiaen' ? resolveMessiaenModeId(context) : undefined;
+  const messiaenModeId = profile.vrbId === 'sq_vrb_messiaen' ? resolveMessiaenModeId(context) : undefined;
 
   const regions = scheduleFieldRegions({
 
@@ -674,7 +674,7 @@ function buildSpineForProfile(
 
       }
 
-      if (profile.vrbId === 'messiaen' && messiaenModeId) {
+      if (profile.vrbId === 'sq_vrb_messiaen' && messiaenModeId) {
 
         return buildMessiaenRegion(idx, messiaenModeId, seed);
 
@@ -904,7 +904,7 @@ export function getOrBuildPitchFieldSpineCache(
 
   const totalBars = context.form.totalBars;
 
-  const modeId = vrbId === 'messiaen' ? resolveMessiaenModeId(context) : 0;
+  const modeId = vrbId === 'sq_vrb_messiaen' ? resolveMessiaenModeId(context) : 0;
 
   const key = `${vrbId}|${totalBars}|${context.seed ?? 0}|m${modeId}`;
 

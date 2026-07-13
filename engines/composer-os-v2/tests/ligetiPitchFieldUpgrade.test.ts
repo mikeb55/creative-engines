@@ -266,7 +266,7 @@ function testColtraneSigma31(): boolean {
 }
 
 function testMessiaenSigma22(): boolean {
-  return getSqVrbGceAdjustments('messiaen')?.registerCohesionStdevCeilingSt === 22;
+  return getSqVrbGceAdjustments('sq_vrb_messiaen')?.registerCohesionStdevCeilingSt === 22;
 }
 
 function testGershwinNoPitchField(): boolean {

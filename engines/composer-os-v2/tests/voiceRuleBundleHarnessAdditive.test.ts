@@ -187,7 +187,11 @@ export function runVoiceRuleBundleHarnessAdditiveTests(): { name: string; ok: bo
   const okMessiaenFp =
     messiaen.voiceId === 'messiaen' &&
     messiaen.harmonicRhythm.minChordDurationBars >= 2 &&
-    (messiaen.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 12;
+    (messiaen.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 12 &&
+    // Song Mode messiaen / olivier_messiaen resolve to Song stub, not MESSIAEN_SQ.
+    getVoiceRuleBundle('olivier_messiaen').voiceId === 'messiaen' &&
+    getVoiceRuleBundle('sq_vrb_messiaen').voiceId === 'sq_vrb_messiaen' &&
+    getVoiceRuleBundle('sq_vrb_messiaen').sqVrbProfileId === 'sq_vrb_messiaen';
 
   const debussy = getVoiceRuleBundle('debussy');
   const okDebussyVl =

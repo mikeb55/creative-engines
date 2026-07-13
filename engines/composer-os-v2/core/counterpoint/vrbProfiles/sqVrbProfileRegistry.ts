@@ -49,7 +49,7 @@ const SQ_VRB_PROFILE_BY_ID: Readonly<Record<string, SqVrbProfile>> = {
   sq_vrb_bartok: BARTOK_SQ_VRB_PROFILE,
   ornette_coleman: ORNETTE_SQ_VRB_PROFILE,
   coltrane: COLTRANE_SQ_VRB_PROFILE,
-  messiaen: MESSIAEN_SQ_VRB_PROFILE,
+  sq_vrb_messiaen: MESSIAEN_SQ_VRB_PROFILE,
 };
 
 export const SQ_VRB_PROFILE_REGISTRY_IDS = Object.freeze(

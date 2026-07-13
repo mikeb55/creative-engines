@@ -128,6 +128,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   mccoy_tyner: 'keys',
   bartok: 'keys',
   sq_vrb_bartok: 'keys',
+  sq_vrb_messiaen: 'keys',
   berg: 'ensemble',
   gershwin: 'keys',
   arvo_part: 'keys',

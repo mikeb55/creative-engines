@@ -108,7 +108,7 @@ function testSongGuardColtraneSong(): boolean {
 }
 
 function testSongGuardMessiaenInstrumental(): boolean {
-  return shouldUsePitchFieldSubstrate(getVoiceRuleBundle('messiaen'), 'instrumental');
+  return shouldUsePitchFieldSubstrate(getVoiceRuleBundle('sq_vrb_messiaen'), 'instrumental');
 }
 
 function testOrnetteNotesFromPitchField(): boolean {
@@ -213,7 +213,7 @@ function testCellGeneratorType(): boolean {
 }
 
 function testMessiaenSigma(): boolean {
-  return getSqVrbProfile('messiaen')?.gceScorerAdjustments.registerCohesionStdevCeilingSt === 22;
+  return getSqVrbProfile('sq_vrb_messiaen')?.gceScorerAdjustments.registerCohesionStdevCeilingSt === 22;
 }
 
 function testMessiaenSubstrate(): boolean {
@@ -221,7 +221,7 @@ function testMessiaenSubstrate(): boolean {
 }
 
 function testMessiaenRegistry(): boolean {
-  return SQ_VRB_PROFILE_REGISTRY_IDS.includes('messiaen');
+  return SQ_VRB_PROFILE_REGISTRY_IDS.includes('sq_vrb_messiaen');
 }
 
 function testMessiaenMode2(): boolean {
@@ -236,21 +236,21 @@ function testMessiaenMode1(): boolean {
 }
 
 function testMessiaenSpineMode2(): boolean {
-  const ctx = minimalContext(8, 'messiaen', { messiaenModeId: 2 });
-  const spine = buildPitchFieldSpine('messiaen', 8, ctx);
+  const ctx = minimalContext(8, 'sq_vrb_messiaen', { messiaenModeId: 2 });
+  const spine = buildPitchFieldSpine('sq_vrb_messiaen', 8, ctx);
   const pcs = spine.regions[0]?.parentPcSet ?? [];
   return pcs.join(',') === MESSIAEN_MODES[2].join(',');
 }
 
 function testMessiaenSpineMode1(): boolean {
-  const ctx = minimalContext(8, 'messiaen', { messiaenModeId: 1 });
-  const spine = buildPitchFieldSpine('messiaen', 8, ctx);
+  const ctx = minimalContext(8, 'sq_vrb_messiaen', { messiaenModeId: 1 });
+  const spine = buildPitchFieldSpine('sq_vrb_messiaen', 8, ctx);
   return spine.regions[0]?.parentPcSet.join(',') === MESSIAEN_MODES[1].join(',');
 }
 
 function testMessiaenMutationRange(): boolean {
-  const ctx = minimalContext(24, 'messiaen');
-  const spine = buildPitchFieldSpine('messiaen', 24, ctx);
+  const ctx = minimalContext(24, 'sq_vrb_messiaen');
+  const spine = buildPitchFieldSpine('sq_vrb_messiaen', 24, ctx);
   const transitions = spine.regions.map((r) => r.transitionOut).filter(Boolean);
   return transitions.every((t) => {
     const m = t!.mutationStrength;
@@ -259,7 +259,7 @@ function testMessiaenMutationRange(): boolean {
 }
 
 function testMessiaenSuppressFunctional(): boolean {
-  return getVoiceRuleBundle('messiaen').suppressFunctionalResolution === true;
+  return getVoiceRuleBundle('sq_vrb_messiaen').suppressFunctionalResolution === true;
 }
 
 function testMessiaenBestBb(): boolean {
@@ -291,7 +291,7 @@ function testMessiaenMode2Label(): boolean {
 }
 
 function testMessiaenInUi(): boolean {
-  return SQ_TO_BB_SQ_COMPOSER_OPTIONS.some((o) => o.id === 'messiaen');
+  return SQ_TO_BB_SQ_COMPOSER_OPTIONS.some((o) => o.id === 'sq_vrb_messiaen');
 }
 
 function testColtraneInUi(): boolean {
@@ -299,7 +299,7 @@ function testColtraneInUi(): boolean {
 }
 
 function testMessiaenFamily(): boolean {
-  return getVrbFamily('messiaen') === 'modal_contemporary';
+  return getVrbFamily('sq_vrb_messiaen') === 'modal_contemporary';
 }
 
 function testApplyColtraneProfile(): boolean {
@@ -309,13 +309,13 @@ function testApplyColtraneProfile(): boolean {
 }
 
 function testApplyMessiaenProfile(): boolean {
-  const stub = getVoiceRuleBundle('messiaen');
+  const stub = getVoiceRuleBundle('sq_vrb_messiaen');
   const applied = applyMessiaenSqVrbProfile({ ...stub, sqVrbProfileId: undefined });
-  return applied.sqVrbProfileId === 'messiaen' && applied.pitchFieldGoverned === true;
+  return applied.sqVrbProfileId === 'sq_vrb_messiaen' && applied.pitchFieldGoverned === true;
 }
 
 function testMessiaenSubstrateFlag(): boolean {
-  return isUsingPitchFieldSubstrate(getVoiceRuleBundle('messiaen'));
+  return isUsingPitchFieldSubstrate(getVoiceRuleBundle('sq_vrb_messiaen'));
 }
 
 export function runColtraneMessiaenPitchFieldTests(): boolean {

@@ -96,6 +96,7 @@ export const COMPOSER_TIERS: Record<Exclude<ComposerTier, never>, readonly strin
     'ornette_coleman',
     'beethoven_sq',
     'bartok_sq',
+    'messiaen_sq',
     'david_gilmour',
     'larry_carlton',
     'hendrix',
@@ -135,6 +136,7 @@ const TIER_ALIAS: Record<string, string> = {
   bela_bartok: 'bartok',
   beethoven_sq: 'beethoven_late',
   bartok_sq: 'sq_vrb_bartok',
+  messiaen_sq: 'sq_vrb_messiaen',
   quincy_jones_bb: 'quincy_jones_film',
 };
 

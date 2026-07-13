@@ -47,6 +47,7 @@ import { applyGershwinSqVrbProfile } from '../counterpoint/vrbProfiles/gershwinS
 import { applyOrnetteVrbProfile } from '../counterpoint/vrbProfiles/ornetteSqVrb';
 import { applyColtraneSqVrbProfile } from '../counterpoint/vrbProfiles/coltraneSqVrb';
 import { applyMessiaenSqVrbProfile } from '../counterpoint/vrbProfiles/messiaenSqVrb';
+import { applyMessiaenSongStubVrbProfile } from '../counterpoint/vrbProfiles/messiaenSongStubVrb';
 import { COLTRANE_SQ_VRF_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/coltraneSqVrbFingerprints';
 import { applyArvoPartSqVrbProfile } from '../counterpoint/vrbProfiles/partSqVrb';
 import { applyDebussySqVrbProfile } from '../counterpoint/vrbProfiles/debussySqVrb';
@@ -100,6 +101,7 @@ import {
   PHILIP_GLASS_FILM_STUB,
   STEVE_REICH_SONG_STUB,
   BARTOK_SONG_STUB,
+  MESSIAEN_SONG_STUB,
   ROTA_FILM_STUB,
   WEBERN_FILM_STUB,
   JONI_MITCHELL_FILM_STUB,
@@ -4494,8 +4496,10 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   jbr: BARRY_THEMATIC_MONOLITH,
   berg: BERG,
   alban_berg: BERG,
-  messiaen: MESSIAEN_SQ,
-  olivier_messiaen: MESSIAEN_SQ,
+  // Song Mode `messiaen` / olivier_* → Song stub; SQ lives only under sq_vrb_messiaen.
+  messiaen: applyMessiaenSongStubVrbProfile(MESSIAEN_SONG_STUB),
+  olivier_messiaen: applyMessiaenSongStubVrbProfile(MESSIAEN_SONG_STUB),
+  sq_vrb_messiaen: MESSIAEN_SQ,
   donald_fagen: DONALD_FAGEN,
   fagen: DONALD_FAGEN,
   steely_dan: DONALD_FAGEN,

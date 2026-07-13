@@ -1464,6 +1464,9 @@ const songwriterRules: Partial<Record<SongwriterRuleId, SongwritingRuleEntry[]>>
   sq_vrb_bartok: [
     R('bk.sq_vrb_bundle', 'Bartók SQ VRB bundle (`BK_*` SQ fingerprints; axis / cluster / folk-modal; distinct from Song Mode `bartok`)', 'songwriter', 'harmony', 9, 'global'),
   ],
+  sq_vrb_messiaen: [
+    R('mm.sq_vrb_bundle', 'Messiaen SQ VRB bundle (`MM_SQ_*` SQ fingerprints; modes / pitch-field; distinct from Song Mode `messiaen`)', 'songwriter', 'harmony', 9, 'global'),
+  ],
   berg: [
     R('ab.row_module', 'Row segment tags triadic-tonal / whole-tone / chromatic-link (`ab:row_module`)', 'songwriter', 'harmony', 9, 'global'),
     R('ab.hexachord_pr', 'Hexachord halves + P/R/I/RI preference (`ab:hexachord`)', 'songwriter', 'harmony', 9, 'global'),
