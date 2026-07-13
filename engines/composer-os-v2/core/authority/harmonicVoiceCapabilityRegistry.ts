@@ -288,6 +288,17 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
       'harmony/precompute hv_full via donaldFagenEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; Fagen guitar/keys colour biases stay primary-only',
   },
   {
+    styleId: 'james_brown',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'jamesBrownEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via jamesBrownEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; guitar passes + C3 funk overlay stay primary-only; soft alias jb does not engage HV',
+  },
+  {
     styleId: 'john_coltrane',
     layers: {
       harmony: 'hv_full',

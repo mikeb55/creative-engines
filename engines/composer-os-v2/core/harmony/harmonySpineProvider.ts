@@ -49,6 +49,7 @@ import { isSatieHarmonicPath } from '../song-mode/satieSlice';
 import { isColePorterHarmonicPath } from '../song-mode/colePorterSlice';
 import { isBacharachHarmonicPath } from '../song-mode/bacharachSlice';
 import { isDonaldFagenHarmonicPath } from '../song-mode/donaldFagenSlice';
+import { isJamesBrownHarmonicPath } from '../song-mode/jamesBrownSlice';
 import { isJohnColtraneHarmonicPath } from '../song-mode/johnColtraneSlice';
 import { getChordForBar } from './harmonyResolution';
 import { buildSectionAwareHarmonySpine } from './harmonySpineSectionLoop';
@@ -103,7 +104,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   { match: (m) => m?.songwriterStyleId === 'brian_wilson', effKey: 'brianWilsonEffectiveHarmonyBars', sliceId: 'brian_wilson' },
   { match: (m) => m?.songwriterStyleId === 'stevie_wonder', effKey: 'stevieWonderEffectiveHarmonyBars', sliceId: 'stevie_wonder' },
   { match: (m) => isRadioheadHarmonicPath(m), effKey: 'radioheadEffectiveHarmonyBars', sliceId: 'radiohead' },
-  { match: (m) => m?.songwriterStyleId === 'james_brown', effKey: 'jamesBrownEffectiveHarmonyBars', sliceId: 'james_brown' },
+  { match: (m) => isJamesBrownHarmonicPath(m), effKey: 'jamesBrownEffectiveHarmonyBars', sliceId: 'james_brown' },
   {
     match: (m) => isJoniMitchellHarmonicPath(m),
     effKey: 'joniMitchellEffectiveHarmonyBars',

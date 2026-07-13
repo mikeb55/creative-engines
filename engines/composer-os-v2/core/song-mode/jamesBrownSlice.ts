@@ -12,6 +12,7 @@
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
 import type { ChordEvent, MeasureModel } from '../score-model/scoreModelTypes';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { isProtectedBar } from '../score-integrity/identityLock';
@@ -48,6 +49,26 @@ export function isSongwriterJamesBrown(
   genMeta: GenerationMetadata | undefined
 ): genMeta is GenerationMetadata & { songwriterStyleId: 'james_brown' } {
   return genMeta?.songwriterStyleId === 'james_brown';
+}
+
+/**
+ * Harmonic-path gate — primary `james_brown` **or** exact `harmonicVoice=james_brown`.
+ * Soft alias `jb` stays primary-intake / VRB BY_ID only; it does **not** engage HV.
+ *
+ * **Primary-only surfaces (do not flip under HV):**
+ * - Guitar bar passes (`applyJamesBrownGuitarBarPasses`)
+ * - C3 funk overlay opt-in / rhythm stamps
+ * - Accumulator finalize stamps
+ */
+export function isJamesBrownHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'james_brown' || voice === 'james_brown';
 }
 
 export interface JamesBrownHarmonyAccumulator {
@@ -294,7 +315,8 @@ function collectHornStabHitRate(args: {
 }
 
 /**
- * Precompute effective one chord per bar after JB devices + guards (James Brown primary only).
+ * Precompute effective one chord per bar after JB devices + guards.
+ * Call when {@link isJamesBrownHarmonicPath} (primary or exact HV).
  */
 /** @deprecated — use resolveBarSymbol */
 export function precomputeJamesBrownEffectiveHarmonyBars(context: CompositionContext): void {

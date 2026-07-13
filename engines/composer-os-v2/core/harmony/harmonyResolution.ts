@@ -38,6 +38,7 @@ import { isSatieHarmonicPath } from '../song-mode/satieSlice';
 import { isColePorterHarmonicPath } from '../song-mode/colePorterSlice';
 import { isBacharachHarmonicPath } from '../song-mode/bacharachSlice';
 import { isDonaldFagenHarmonicPath } from '../song-mode/donaldFagenSlice';
+import { isJamesBrownHarmonicPath } from '../song-mode/jamesBrownSlice';
 import { isJohnColtraneHarmonicPath } from '../song-mode/johnColtraneSlice';
 import {
   hasSectionMarkerVrbAssignment,
@@ -175,11 +176,12 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 
   /**
    * James Brown: `precomputeJamesBrownEffectiveHarmonyBars` enforces dominant-centre vamps + bridge side.
-   * After precompute, `jamesBrownEffectiveHarmonyBars` is full-form and authoritative.
+   * HV path: primary | harmonicVoice (`james_brown` exact) — see isJamesBrownHarmonicPath.
+   * Guitar passes + C3 funk overlay stay primary-only (not this branch).
    */
   const jbEff = meta?.jamesBrownEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'james_brown' &&
+    isJamesBrownHarmonicPath(meta) &&
     Array.isArray(jbEff) &&
     jbEff.length === tb &&
     barIndex >= 1 &&
