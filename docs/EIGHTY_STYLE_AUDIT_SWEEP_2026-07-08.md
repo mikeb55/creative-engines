@@ -69,16 +69,16 @@ Conservative assumptions: inventory from spine (77) + overlay-only (10) + Slonim
 | joni_mitchell | 7 | Tier 1 | chord-branch, multi-truth, ui-api | partial | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts |
 | radiohead | 7 | Tier 1 | chord-branch, multi-truth, ui-api | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts; attachVoiceRuleBundle AUTO_RESOLVE |
 | satie | 7 | Tier 1 | chord-branch, multi-truth, ui-api | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts; attachVoiceRuleBundle AUTO_RESOLVE |
-| bacharach | 6 | Tier 2 | chord-branch, multi-truth, overlay-pass | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts; duoAbstractLineComposerTransforms.ts |
+| bacharach | 6 | Tier 2 | chord-branch, multi-truth, overlay-pass | hv_full (harmony/precompute; verified 2026-07-13) | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts; duoAbstractLineComposerTransforms.ts; harmonicVoiceCapabilityRegistry.ts; isBacharachHarmonicPath |
 | charles_mingus | 6 | Tier 2 | chord-branch, multi-truth, overlay-pass | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts; duoAbstractLineComposerTransforms.ts |
 | count_basie | 6 | Tier 2 | chord-branch, multi-truth, overlay-pass | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts; duoAbstractLineComposerTransforms.ts |
-| donald_fagen | 6 | Tier 2 | chord-branch, multi-truth, overlay-pass | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts; duoAbstractLineComposerTransforms.ts |
+| donald_fagen | 6 | Tier 2 | chord-branch, multi-truth, overlay-pass | hv_full (harmony/precompute; verified 2026-07-13) | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts; duoAbstractLineComposerTransforms.ts; harmonicVoiceCapabilityRegistry.ts; isDonaldFagenHarmonicPath |
 | fripp_king_crimson | 6 | Tier 2 | chord-branch, multi-truth, overlay-pass | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts; duoAbstractLineComposerTransforms.ts |
-| james_brown | 6 | Tier 2 | chord-branch, multi-truth, overlay-pass | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts; duoAbstractLineComposerTransforms.ts |
+| james_brown | 6 | Tier 2 | chord-branch, multi-truth, overlay-pass | hv_full (harmony/precompute; verified 2026-07-13) | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts; duoAbstractLineComposerTransforms.ts; harmonicVoiceCapabilityRegistry.ts; isJamesBrownHarmonicPath |
 | maria_schneider | 6 | Tier 2 | chord-branch, multi-truth, overlay-pass | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts; duoAbstractLineComposerTransforms.ts |
 | messiaen | 6 | Tier 2 | chord-branch, multi-truth, overlay-pass | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts; duoAbstractLineComposerTransforms.ts |
 | thad_jones | 6 | Tier 2 | chord-branch, multi-truth, overlay-pass | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts; duoAbstractLineComposerTransforms.ts |
-| andrew_hill | 5 | Tier 2 | chord-branch, multi-truth | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts |
+| andrew_hill | 5 | Tier 2 | chord-branch, multi-truth | hv_full (harmony/precompute; verified 2026-07-13) | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts; harmonicVoiceCapabilityRegistry.ts; isAndrewHillHarmonicPath |
 | angelo_badalamenti | 5 | Tier 2 | chord-branch, multi-truth | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts |
 | barry_harris | 5 | Tier 2 | chord-branch, multi-truth | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts |
 | bartok | 5 | Tier 2 | chord-branch, multi-truth | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts |
@@ -92,7 +92,7 @@ Conservative assumptions: inventory from spine (77) + overlay-only (10) + Slonim
 | carla_bley | 5 | Tier 2 | chord-branch, multi-truth | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts |
 | charlie_parker | 5 | Tier 2 | chord-branch, multi-truth | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts |
 | clare_fischer | 5 | Tier 2 | chord-branch, multi-truth | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts |
-| cole_porter | 5 | Tier 2 | chord-branch, multi-truth | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts |
+| cole_porter | 5 | Tier 2 | chord-branch, multi-truth | hv_full (harmony/precompute; verified 2026-07-13) | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts; harmonicVoiceCapabilityRegistry.ts; isColePorterHarmonicPath |
 | eberhard_weber | 5 | Tier 2 | chord-branch, multi-truth | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts |
 | ennio_morricone | 5 | Tier 2 | chord-branch, multi-truth | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts |
 | fela_kuti | 5 | Tier 2 | chord-branch, multi-truth | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts |
@@ -102,7 +102,7 @@ Conservative assumptions: inventory from spine (77) + overlay-only (10) + Slonim
 | jan_garbarek | 5 | Tier 2 | chord-branch, multi-truth | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts |
 | jim_hall | 5 | Tier 2 | chord-branch, multi-truth | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts |
 | john_surman | 5 | Tier 2 | chord-branch, multi-truth | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts |
-| kate_bush | 5 | Tier 2 | chord-branch, multi-truth | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts |
+| kate_bush | 5 | Tier 2 | chord-branch, multi-truth | hv_full (harmony/precompute; verified 2026-07-13) | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts; harmonicVoiceCapabilityRegistry.ts; isKateBushHarmonicPath |
 | kenny_wheeler | 5 | Tier 2 | chord-branch, multi-truth | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts |
 | lalo_schifrin | 5 | Tier 2 | chord-branch, multi-truth | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts |
 | mccoy_tyner | 5 | Tier 2 | chord-branch, multi-truth | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts |
@@ -148,7 +148,7 @@ Conservative assumptions: inventory from spine (77) + overlay-only (10) + Slonim
 
 **HarmonicVoice-aware (partial):** verlaine (isVerlaineHarmonicPath on chord authority + duoMelodyIdentityV3; truth registry + behaviourGates structural relax primary-only); joni_mitchell, sonic_youth, pat_metheny (styleProfile OR primary — harmonicVoice field not checked).
 
-**Primary-style-only:** all other 93 styles.
+**Primary-style-only (Stage 1 snapshot):** most other styles at audit time. **Post-rollout correction (2026-07-13 Tier 2 spot-check):** `andrew_hill`, `kate_bush`, `cole_porter` are **hv_full** on harmony/precompute (`runHvAuthorityStyleVerify` OVERALL PASS · `resolverZeroDiff: true` · 0 DIVERGE). **Tier 2 score-6 batch (2026-07-13):** `bacharach`, `donald_fagen`, `james_brown` same — hv_full harmony/precompute verified.
 
 **Mixed cases:** frank_zappa uses harmonyContext canon (not HV-aware); ecm_chamber uses preset-level validator skips; HV-only ids (joe_pass, jamerson, wes_montgomery, etc.) have transport but no eff-bar spine row.
 
