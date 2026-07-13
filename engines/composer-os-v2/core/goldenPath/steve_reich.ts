@@ -7,6 +7,7 @@ export {
   createSteveReichHarmonyAccumulator,
   finalizeSteveReichMetadata,
   isSongwriterSteveReich,
+  isSteveReichHarmonicPath,
   precomputeSteveReichEffectiveHarmonyBars,
   STEVE_REICH_SLICE_PARAMETERS,
 } from '../song-mode/steveReichSlice';

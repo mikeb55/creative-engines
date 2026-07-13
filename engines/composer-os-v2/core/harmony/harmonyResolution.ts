@@ -39,6 +39,7 @@ import { isColePorterHarmonicPath } from '../song-mode/colePorterSlice';
 import { isBacharachHarmonicPath } from '../song-mode/bacharachSlice';
 import { isDonaldFagenHarmonicPath } from '../song-mode/donaldFagenSlice';
 import { isJamesBrownHarmonicPath } from '../song-mode/jamesBrownSlice';
+import { isSteveReichHarmonicPath } from '../song-mode/steveReichSlice';
 import { isJohnColtraneHarmonicPath } from '../song-mode/johnColtraneSlice';
 import {
   hasSectionMarkerVrbAssignment,
@@ -1131,9 +1132,14 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
     return jhEff[barIndex - 1]!;
   }
 
+  /**
+   * Steve Reich: `precomputeSteveReichEffectiveHarmonyBars` — pitch-field process (`sr:*`).
+   * HV path: primary | harmonicVoice (`steve_reich` exact) — see isSteveReichHarmonicPath.
+   * Never `reich_glass` (SQ dual-profile). Soft `reich` does not engage HV.
+   */
   const srEff = meta?.steveReichEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'steve_reich' &&
+    isSteveReichHarmonicPath(meta) &&
     Array.isArray(srEff) &&
     srEff.length === tb &&
     barIndex >= 1 &&

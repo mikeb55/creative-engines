@@ -6,6 +6,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata, SteveReichProcessMode } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { isProtectedBar } from '../score-integrity/identityLock';
@@ -102,6 +103,22 @@ export function isSongwriterSteveReich(
   return genMeta?.songwriterStyleId === 'steve_reich';
 }
 
+/**
+ * Harmonic-path gate — primary `steve_reich` **or** exact `harmonicVoice=steve_reich`.
+ * Soft alias `reich` stays Song-Reich VRB BY_ID only; it does **not** engage HV.
+ * Never `reich_glass` (SQ minimalist-process dual-profile).
+ */
+export function isSteveReichHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'steve_reich' || voice === 'steve_reich';
+}
+
 export interface SteveReichHarmonyAccumulator {
   barsConsidered: number;
   fieldHoldTouches: number;
@@ -132,6 +149,7 @@ export function accumulateSteveReichHarmonyDiagnostics(
 
 /**
  * Precompute effective harmony — long static fields + additive/sus process — **`sr:*`** receipts.
+ * Call when {@link isSteveReichHarmonicPath} (primary or exact HV).
  */
 export function precomputeSteveReichEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;

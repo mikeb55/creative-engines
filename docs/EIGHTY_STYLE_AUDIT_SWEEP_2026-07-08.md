@@ -112,7 +112,7 @@ Conservative assumptions: inventory from spine (77) + overlay-only (10) + Slonim
 | quincy_jones | 5 | Tier 2 | chord-branch, multi-truth | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts |
 | sammy_nestico | 5 | Tier 2 | chord-branch, multi-truth | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts |
 | stephen_sondheim | 5 | Tier 2 | chord-branch, multi-truth | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts |
-| steve_reich | 5 | Tier 2 | chord-branch, multi-truth | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts |
+| steve_reich | 5 | Tier 2 | chord-branch, multi-truth | hv_full (harmony/precompute; verified 2026-07-13) | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts; harmonicVoiceCapabilityRegistry.ts; isSteveReichHarmonicPath; Song-Reich VRB stub (never reich_glass) |
 | stevie_wonder | 5 | Tier 2 | chord-branch, multi-truth | primary-only | harmonyResolution.ts; harmonySpineProvider.ts; customLockedHarmonyRouting.ts |
 | david_gilmour | 4 | Tier 2 | harmonicVoice, ui-api | primary-only | slonimskyHarmonicVoices.ts; attachVoiceRuleBundle.ts |
 | eddie_van_halen | 4 | Tier 2 | harmonicVoice, ui-api | primary-only | slonimskyHarmonicVoices.ts; attachVoiceRuleBundle.ts |
@@ -148,7 +148,7 @@ Conservative assumptions: inventory from spine (77) + overlay-only (10) + Slonim
 
 **HarmonicVoice-aware (partial):** verlaine (isVerlaineHarmonicPath on chord authority + duoMelodyIdentityV3; truth registry + behaviourGates structural relax primary-only); joni_mitchell, sonic_youth, pat_metheny (styleProfile OR primary — harmonicVoice field not checked).
 
-**Primary-style-only (Stage 1 snapshot):** most other styles at audit time. **Post-rollout correction (2026-07-13 Tier 2 spot-check):** `andrew_hill`, `kate_bush`, `cole_porter` are **hv_full** on harmony/precompute (`runHvAuthorityStyleVerify` OVERALL PASS · `resolverZeroDiff: true` · 0 DIVERGE). **Tier 2 score-6 batch (2026-07-13):** `bacharach`, `donald_fagen`, `james_brown` same — hv_full harmony/precompute verified.
+**Primary-style-only (Stage 1 snapshot):** most other styles at audit time. **Post-rollout correction (2026-07-13 Tier 2 spot-check):** `andrew_hill`, `kate_bush`, `cole_porter` are **hv_full** on harmony/precompute (`runHvAuthorityStyleVerify` OVERALL PASS · `resolverZeroDiff: true` · 0 DIVERGE). **Tier 2 score-6 batch (2026-07-13):** `bacharach`, `donald_fagen`, `james_brown` same — hv_full harmony/precompute verified. **Phase 3 solo (2026-07-13):** `steve_reich` hv_full — Song-Reich stub only; never `reich_glass`.
 
 **Mixed cases:** frank_zappa uses harmonyContext canon (not HV-aware); ecm_chamber uses preset-level validator skips; HV-only ids (joe_pass, jamerson, wes_montgomery, etc.) have transport but no eff-bar spine row.
 

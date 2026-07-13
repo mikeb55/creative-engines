@@ -617,6 +617,7 @@ import {
   accumulateSteveReichHarmonyDiagnostics,
   createSteveReichHarmonyAccumulator,
   finalizeSteveReichMetadata,
+  isSteveReichHarmonicPath,
   precomputeSteveReichEffectiveHarmonyBars,
 } from './steve_reich';
 import {
@@ -3380,6 +3381,10 @@ function buildGuitarPart(
   );
   const philipGlassHarmonicPathActive = isPhilipGlassHarmonicPath(genMeta);
   const isSongwriterSteveReich = genMeta?.songwriterStyleId === 'steve_reich';
+  const isHarmonicVoiceSteveReich =
+    normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
+    'steve_reich';
+  const steveReichHarmonicPathActive = isSteveReichHarmonicPath(genMeta);
   const isSongwriterMessiaen = genMeta?.songwriterStyleId === 'messiaen';
   const isSongwriterHansZimmer = genMeta?.songwriterStyleId === 'hans_zimmer';
   const isSongwriterAngeloBadalamenti = genMeta?.songwriterStyleId === 'angelo_badalamenti';
@@ -3829,8 +3834,15 @@ function buildGuitarPart(
       }
     }
   }
-  if (isSongwriterSteveReich && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (steveReichHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeSteveReichEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceSteveReich && !isSongwriterSteveReich) {
+      const steveReichEff = genMeta.steveReichEffectiveHarmonyBars;
+      const steveReichTb = totalBarsFromContext(context);
+      if (Array.isArray(steveReichEff) && steveReichEff.length === steveReichTb) {
+        genMeta.mosaicMergedHarmonyBars = [...steveReichEff];
+      }
+    }
   }
   if (isSongwriterMessiaen && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeMessiaenEffectiveHarmonyBars(context);
