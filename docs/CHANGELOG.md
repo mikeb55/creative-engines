@@ -2,6 +2,8 @@
 
 ### Added
 
+- **HV authority — Batch 3B Song flagships (Tier 2 score-5)** — Exact-id path helpers + registry `hv_full` harmony/precompute for `miles_davis`, `mccoy_tyner`, `prince`, `beatles`, `beefheart` (optional VRB twin `beefheart_fragment_polyphony`). Mosaic merge on HV; spine/`getChordForBar`. Soft aliases songwriter-normalize only. Surfaces/grammar holdbacks untouched. Verify each with `--primary wayne_shorter` OVERALL PASS · `resolverZeroDiff: true` · 0 DIVERGE.
+
 - **HV authority — Batch 3A Song flagships (Tier 2 score-5)** — Exact-id path helpers + registry `hv_full` harmony/precompute for `brian_wilson`, `stevie_wonder`, `charlie_parker`, `stephen_sondheim`, `jim_hall`. Mosaic merge on HV; spine/`getChordForBar`. Soft aliases (`brian`/`wilson`, `stevie`, `bird`/`parker`/`charlie`, `sondheim`, `jim`) songwriter-normalize only — never engage HV. Surfaces/grammar holdbacks untouched. Verify each with `--primary wayne_shorter` OVERALL PASS · `resolverZeroDiff: true` · 0 DIVERGE.
 
 - **HV authority — `barry_harris` Tier 2 Phase 4** — Path helper (`isBarryHarrisHarmonicPath`) accepts `barry_harris` + VRB twins (`barry_harris_chord_melody` / `bh_cm`); soft `harris` songwriter-normalize only; soft `barry` / `jbr` stay John Barry (excluded). Registry `hv_full` harmony/precompute; golden-path precompute + mosaic merge; spine + `getChordForBar`. Style-module + motif hybrid pilot holdbacks untouched. Verify with non-BH primary (`--primary wayne_shorter`) OVERALL PASS · `resolverZeroDiff: true` · 0 DIVERGE.

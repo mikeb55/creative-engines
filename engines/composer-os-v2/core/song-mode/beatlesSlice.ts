@@ -11,10 +11,25 @@ import type {
   GenerationMetadata,
 } from '../compositionContext';
 import type { MelodyBehaviourPlan } from './melodyBehaviourPlanner';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
+
+/**
+ * Exact id `beatles` only — melodic/context/BT grammar surfaces stay primary-only.
+ */
+export function isBeatlesHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'beatles' || voice === 'beatles';
+}
 
 /** Pool keys registered under `SONGWRITER_CHORD_POOLS` for `songwriterId === 'beatles'`. */
 export type BeatlesChordPoolId =

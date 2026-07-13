@@ -409,6 +409,61 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
       'harmony/precompute hv_full via jimHallEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact jim_hall only; soft jim songwriter-normalize only; mode/surface stamps stay primary-only',
   },
   {
+    styleId: 'miles_davis',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'milesDavisEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via milesDavisEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact miles_davis only; soft miles songwriter-normalize only',
+  },
+  {
+    styleId: 'mccoy_tyner',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'mccoyTynerEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via mccoyTynerEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact mccoy_tyner only; soft mccoy/tyner songwriter-normalize only',
+  },
+  {
+    styleId: 'prince',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'princeEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via princeEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact prince only',
+  },
+  {
+    styleId: 'beatles',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'beatlesEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via beatlesEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact beatles only; BT melodic/context/surface grammar stay primary-only',
+  },
+  {
+    styleId: 'beefheart',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'beefheartEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via beefheartEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact beefheart + optional VRB twin beefheart_fragment_polyphony; soft captain_beefheart/don_van_vliet/trout_mask songwriter-normalize only',
+  },
+  {
     styleId: 'john_coltrane',
     layers: {
       harmony: 'hv_full',

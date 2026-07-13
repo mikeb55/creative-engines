@@ -61,6 +61,11 @@ import { isStevieWonderHarmonicPath } from '../song-mode/stevieWonderSlice';
 import { isCharlieParkerHarmonicPath } from '../song-mode/charlieParkerSlice';
 import { isStephenSondheimHarmonicPath } from '../song-mode/sondheimSlice';
 import { isJimHallHarmonicPath } from '../song-mode/jimHallSlice';
+import { isMilesDavisHarmonicPath } from '../song-mode/milesDavisSlice';
+import { isMccoyTynerHarmonicPath } from '../song-mode/mccoyTynerSlice';
+import { isPrinceHarmonicPath } from '../song-mode/princeSlice';
+import { isBeatlesHarmonicPath } from '../song-mode/beatlesSlice';
+import { isBeefheartHarmonicPath } from '../song-mode/beefheartFragmentSlice';
 import { getChordForBar } from './harmonyResolution';
 import { buildSectionAwareHarmonySpine } from './harmonySpineSectionLoop';
 import type { ResolvedPitchField } from './pitchFieldSpineTypes';
@@ -156,7 +161,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   { match: (m) => m?.songwriterStyleId === 'charles_mingus', effKey: 'charlesMingusEffectiveHarmonyBars', sliceId: 'charles_mingus' },
   { match: (m) => m?.songwriterStyleId === 'henry_threadgill', effKey: 'henryThreadgillEffectiveHarmonyBars', sliceId: 'henry_threadgill' },
   { match: (m) => m?.songwriterStyleId === 'count_basie', effKey: 'basieEffectiveHarmonyBars', sliceId: 'count_basie' },
-  { match: (m) => m?.songwriterStyleId === 'miles_davis', effKey: 'milesDavisEffectiveHarmonyBars', sliceId: 'miles_davis' },
+  { match: (m) => isMilesDavisHarmonicPath(m), effKey: 'milesDavisEffectiveHarmonyBars', sliceId: 'miles_davis' },
   { match: (m) => isBartokHarmonicPath(m), effKey: 'bartokEffectiveHarmonyBars', sliceId: 'bartok' },
   { match: (m) => m?.songwriterStyleId === 'berg', effKey: 'bergEffectiveHarmonyBars', sliceId: 'berg' },
   { match: (m) => m?.songwriterStyleId === 'sammy_nestico', effKey: 'sammyNesticoEffectiveHarmonyBars', sliceId: 'sammy_nestico' },
@@ -169,8 +174,8 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   { match: (m) => isGershwinHarmonicPath(m), effKey: 'gershwinEffectiveHarmonyBars', sliceId: 'gershwin' },
   { match: (m) => isArvoPartHarmonicPath(m), effKey: 'arvoPartEffectiveHarmonyBars', sliceId: 'arvo_part' },
   { match: (m) => isSatieHarmonicPath(m), effKey: 'satieEffectiveHarmonyBars', sliceId: 'satie' },
-  { match: (m) => m?.songwriterStyleId === 'prince', effKey: 'princeEffectiveHarmonyBars', sliceId: 'prince' },
-  { match: (m) => m?.songwriterStyleId === 'beatles', effKey: 'beatlesEffectiveHarmonyBars', sliceId: 'beatles' },
+  { match: (m) => isPrinceHarmonicPath(m), effKey: 'princeEffectiveHarmonyBars', sliceId: 'prince' },
+  { match: (m) => isBeatlesHarmonicPath(m), effKey: 'beatlesEffectiveHarmonyBars', sliceId: 'beatles' },
   { match: (m) => m?.songwriterStyleId === 'fela_kuti', effKey: 'felaKutiEffectiveHarmonyBars', sliceId: 'fela_kuti' },
   { match: (m) => isColePorterHarmonicPath(m), effKey: 'colePorterEffectiveHarmonyBars', sliceId: 'cole_porter' },
   { match: (m) => m?.songwriterStyleId === 'maria_schneider', effKey: 'mariaSchneiderEffectiveHarmonyBars', sliceId: 'maria_schneider' },
@@ -184,7 +189,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
     sliceId: 'allan_holdsworth',
   },
   { match: (m) => isJackWhiteHarmonicPath(m), effKey: 'jackWhiteEffectiveHarmonyBars', sliceId: 'jack_white' },
-  { match: (m) => m?.songwriterStyleId === 'beefheart', effKey: 'beefheartEffectiveHarmonyBars', sliceId: 'beefheart' },
+  { match: (m) => isBeefheartHarmonicPath(m), effKey: 'beefheartEffectiveHarmonyBars', sliceId: 'beefheart' },
   { match: (m) => isFrippHarmonicPath(m), effKey: 'frippEffectiveHarmonyBars', sliceId: 'fripp' },
   { match: (m) => isMarrHarmonicPath(m), effKey: 'marrEffectiveHarmonyBars', sliceId: 'marr' },
   { match: (m) => m?.songwriterStyleId === 'bill_holman', effKey: 'billHolmanEffectiveHarmonyBars', sliceId: 'bill_holman' },
@@ -201,7 +206,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   { match: (m) => isKateBushHarmonicPath(m), effKey: 'kateBushEffectiveHarmonyBars', sliceId: 'kate_bush' },
   { match: (m) => isTheloniousMonkHarmonicPath(m), effKey: 'theloniousMonkEffectiveHarmonyBars', sliceId: 'thelonious_monk' },
   { match: (m) => isJohnColtraneHarmonicPath(m), effKey: 'johnColtraneEffectiveHarmonyBars', sliceId: 'john_coltrane' },
-  { match: (m) => m?.songwriterStyleId === 'mccoy_tyner', effKey: 'mccoyTynerEffectiveHarmonyBars', sliceId: 'mccoy_tyner' },
+  { match: (m) => isMccoyTynerHarmonicPath(m), effKey: 'mccoyTynerEffectiveHarmonyBars', sliceId: 'mccoy_tyner' },
   { match: (m) => isAndrewHillHarmonicPath(m), effKey: 'andrewHillEffectiveHarmonyBars', sliceId: 'andrew_hill' },
   { match: (m) => isJimHallHarmonicPath(m), effKey: 'jimHallEffectiveHarmonyBars', sliceId: 'jim_hall' },
   { match: (m) => isSteveReichHarmonicPath(m), effKey: 'steveReichEffectiveHarmonyBars', sliceId: 'steve_reich' },

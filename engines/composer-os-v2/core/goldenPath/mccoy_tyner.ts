@@ -8,4 +8,5 @@ export {
   createMccoyTynerHarmonyAccumulator,
   accumulateMccoyTynerHarmonyDiagnostics,
   isSongwriterMccoyTyner,
+  isMccoyTynerHarmonicPath,
 } from '../song-mode/mccoyTynerSlice';

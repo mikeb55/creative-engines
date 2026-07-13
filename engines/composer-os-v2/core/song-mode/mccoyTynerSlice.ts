@@ -4,10 +4,26 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
+
+/**
+ * Exact id `mccoy_tyner` only — soft `mccoy` / `tyner` stay songwriter-normalize;
+ * do **not** engage HV.
+ */
+export function isMccoyTynerHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'mccoy_tyner' || voice === 'mccoy_tyner';
+}
 
 export const MCCOY_TYNER_SLICE_PARAMETERS = {
   quartalBias: 0.92,

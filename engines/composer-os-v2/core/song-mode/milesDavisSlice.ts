@@ -4,10 +4,26 @@
  */
 
 import type { CompositionContext, GenerationMetadata, MilesDavisContextMode } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
+
+/**
+ * Exact id `miles_davis` only — soft `miles` stays songwriter-normalize;
+ * does **not** engage HV.
+ */
+export function isMilesDavisHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'miles_davis' || voice === 'miles_davis';
+}
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 

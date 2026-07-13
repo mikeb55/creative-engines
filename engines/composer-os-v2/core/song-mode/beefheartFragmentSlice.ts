@@ -9,10 +9,35 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
+
+/** Canonical style id + optional VRB twin — soft captain_beefheart / don_van_vliet / trout_mask never listed. */
+export const BEEFHEART_HARMONIC_VOICE_IDS = ['beefheart', 'beefheart_fragment_polyphony'] as const;
+
+export function isBeefheartHarmonicVoiceId(raw: string | null | undefined): boolean {
+  const id = normalizeHarmonicVoiceId(String(raw ?? ''));
+  return id === 'beefheart' || id === 'beefheart_fragment_polyphony';
+}
+
+/**
+ * Exact `beefheart` or VRB twin `beefheart_fragment_polyphony` only.
+ * Soft aliases (captain_beefheart, don_van_vliet, trout_mask, …) do **not** engage HV.
+ */
+export function isBeefheartHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  return (
+    isBeefheartHarmonicVoiceId(metadata?.songwriterStyleId) ||
+    isBeefheartHarmonicVoiceId(metadata?.harmonicVoice)
+  );
+}
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 const PC_TO_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;

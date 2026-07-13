@@ -50,6 +50,11 @@ import { isStevieWonderHarmonicPath } from '../song-mode/stevieWonderSlice';
 import { isCharlieParkerHarmonicPath } from '../song-mode/charlieParkerSlice';
 import { isStephenSondheimHarmonicPath } from '../song-mode/sondheimSlice';
 import { isJimHallHarmonicPath } from '../song-mode/jimHallSlice';
+import { isMilesDavisHarmonicPath } from '../song-mode/milesDavisSlice';
+import { isMccoyTynerHarmonicPath } from '../song-mode/mccoyTynerSlice';
+import { isPrinceHarmonicPath } from '../song-mode/princeSlice';
+import { isBeatlesHarmonicPath } from '../song-mode/beatlesSlice';
+import { isBeefheartHarmonicPath } from '../song-mode/beefheartFragmentSlice';
 import {
   hasSectionMarkerVrbAssignment,
   resolveVoiceRuleBundleForBar,
@@ -527,10 +532,11 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   /**
    * Miles Davis: `precomputeMilesDavisEffectiveHarmonyBars` applies modal / space / electric vamp devices — receipts **`md:*`**.
    * After precompute, `milesDavisEffectiveHarmonyBars` is full-form and authoritative.
+   * HV path: primary | harmonicVoice (`miles_davis` exact) — see isMilesDavisHarmonicPath.
    */
   const mdEff = meta?.milesDavisEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'miles_davis' &&
+    isMilesDavisHarmonicPath(meta) &&
     Array.isArray(mdEff) &&
     mdEff.length === tb &&
     barIndex >= 1 &&
@@ -697,10 +703,11 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 
   /**
    * Prince: `precomputePrinceEffectiveHarmonyBars` applies Minneapolis-pocket extensions / borrowed colours — receipts **`pr:*`**.
+   * HV path: primary | harmonicVoice (`prince` exact) — see isPrinceHarmonicPath.
    */
   const princeEff = meta?.princeEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'prince' &&
+    isPrinceHarmonicPath(meta) &&
     Array.isArray(princeEff) &&
     princeEff.length === tb &&
     barIndex >= 1 &&
@@ -711,10 +718,12 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 
   /**
    * The Beatles: `precomputeBeatlesEffectiveHarmonyBars` freezes scaffold harmony + device receipts **`bt:*`** (`beatlesSlice.ts`).
+   * HV path: primary | harmonicVoice (`beatles` exact) — see isBeatlesHarmonicPath.
+   * BT melodic/context/surface grammar stay primary-only.
    */
   const beatlesEff = meta?.beatlesEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'beatles' &&
+    isBeatlesHarmonicPath(meta) &&
     Array.isArray(beatlesEff) &&
     beatlesEff.length === tb &&
     barIndex >= 1 &&
@@ -882,12 +891,14 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
    * Captain Beefheart: `precomputeBeefheartEffectiveHarmonyBars` applies blues-fragment polyphony.
    * After precompute, `beefheartEffectiveHarmonyBars` is full-form and authoritative.
    * Receipt prefix **`cbf:*`** — Count Basie owns **`cb:*`**.
+   * HV path: primary | harmonicVoice (`beefheart` | `beefheart_fragment_polyphony`) — see isBeefheartHarmonicPath.
+   * Soft captain_beefheart / don_van_vliet / trout_mask stay songwriter-normalize only.
    * LOCK note: resolution suppression — effective bars hold tension without cadential confirmation;
    * export truth follows precomputed symbols, not tonal reconciliation passes (model: john_surman branch).
    */
   const beefheartEff = meta?.beefheartEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'beefheart' &&
+    isBeefheartHarmonicPath(meta) &&
     Array.isArray(beefheartEff) &&
     beefheartEff.length === tb &&
     barIndex >= 1 &&
@@ -1112,7 +1123,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 
   const mtEff = meta?.mccoyTynerEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'mccoy_tyner' &&
+    isMccoyTynerHarmonicPath(meta) &&
     Array.isArray(mtEff) &&
     mtEff.length === tb &&
     barIndex >= 1 &&
