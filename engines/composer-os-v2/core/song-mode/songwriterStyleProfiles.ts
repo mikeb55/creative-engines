@@ -799,7 +799,7 @@ export const SONGWRITER_STYLE_PROFILES: Record<SongwriterRuleId, SongwriterStyle
   berg: {
     id: 'berg',
     description:
-      'Alban Berg — modular row segments (triadic / whole-tone / chromatic links), derived rows P/R/I/RI with hexachord awareness, dense contrapuntal scaffolding (`ab:*` receipts).',
+      'Alban Berg — modular row segments (triadic / whole-tone / chromatic links), derived rows P/R/I/RI with hexachord awareness, dense contrapuntal scaffolding (`bg:*` receipts).',
     lineVsCellEmphasis: 0.54,
     harmonyColourBias: 0.9,
     formRegularity: 0.38,

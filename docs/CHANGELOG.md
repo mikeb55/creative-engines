@@ -28,6 +28,8 @@
 
 ### Fixed
 
+- **Fixed: berg receipt prefix collision (`ab:`→`bg:`)** — prerequisite to Batch 5 HV wire. Alban Berg Song Mode slice + diagnostics/logging (`bergSlice.ts`, style profile, rule registry) now emit **`bg:*`**; **`angelo_badalamenti`** keeps **`ab:*`** untouched. No HV / `isBergHarmonicPath` in this commit.
+
 - **Soft-alias ownership — remove songwriter `evans` → `gil_evans`** — Deleted ALIASES entry in `songwriterStyleProfiles.ts` that mapped soft `evans` to `gil_evans` while VRB BY_ID `evans` maps to `BILL_EVANS` (`voiceRuleBundles.ts`). Soft `evans` no longer songwriter-normalizes; require exact `gil_evans`. BY_ID `evans`→`BILL_EVANS` untouched. Does not change `bill_evans` exact-id HV path (`isBillEvansHarmonicPath`).
 
 - **`sammy_nestico` primary-path `finalBarTension` (Batch 4B ship `b9d31d7e`)** — Pre-existing hard-gate fail on primary (non-HV) generation; missed 68-style ROI tonic-force sweep; **unrelated to HV wiring**. `forceFinalBarTonicResolution` / `enforceFinalBarTonicResolution` in `precomputeSammyNesticoEffectiveHarmonyBars` force Basie-school tonic maj9 on the piece-final bar (all seeds/keys when tonic known, unprotected). Same pattern as Fischer/Nelson. Discovered during Batch 4B HV verify (primary vs HV DIVERGE); fix lives on shared precompute so primary + HV both land clean.

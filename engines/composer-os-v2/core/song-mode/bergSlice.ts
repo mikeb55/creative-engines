@@ -1,6 +1,6 @@
 /**
  * Alban Berg — twelve-tone row modules, derived-row vocabulary, formal climax hooks (Song Mode / duo golden-path).
- * Lead-sheet symbols only — receipts **`ab:*`**.
+ * Lead-sheet symbols only — receipts **`bg:*`** (not **`ab:*`** — reserved for angelo_badalamenti).
  */
 
 import type { BergStyleMode } from '../style/berg/bergStyleModes';
@@ -85,7 +85,7 @@ function applySparseMinorThirdColour(
     if (!root) continue;
     const slash = slashTail(sym);
     out[b - 1] = `${root}m11${slash}`;
-    receipts.push(`ab:minor_eleventh_colour@bar${b}`);
+    receipts.push(`bg:minor_eleventh_colour@bar${b}`);
   }
 }
 
@@ -170,7 +170,7 @@ export function precomputeBergEffectiveHarmonyBars(context: CompositionContext):
   genMeta.bergStructuralSilences = tagStructuralSilences(tb, seed, 4);
 
   const receipts: string[] = [];
-  receipts.push(`ab:row_${preferred.name.toLowerCase()}@ic16=${genMeta.bergRowIc16Score.toFixed(2)}`);
+  receipts.push(`bg:row_${preferred.name.toLowerCase()}@ic16=${genMeta.bergRowIc16Score.toFixed(2)}`);
 
   const raw: string[] = [];
   for (let b = 1; b <= tb; b++) {
@@ -206,7 +206,7 @@ function chordLooksDominantFamilyForFbt(symbol: string): boolean {
 
 /**
  * Bias piece-final bar toward Berg vocabulary that already passes fBT
- * (tonic-root maj7#11 from climax enrich; m11 from ab:minor_eleventh_colour).
+ * (tonic-root maj7#11 from climax enrich; m11 from bg:minor_eleventh_colour).
  * Not a forced jazz tonic maj7 — twelve-tone / free-atonal idiom preserved.
  */
 function biasBergFinalBarIdiomaticOpen(
@@ -230,5 +230,5 @@ function biasBergFinalBarIdiomaticOpen(
   const next = u < 0.6 ? `${root}maj7#11` : `${root}m11`;
 
   out[idx] = next;
-  receipts.push(`ab:final_open_bias@bar${totalBars}`);
+  receipts.push(`bg:final_open_bias@bar${totalBars}`);
 }

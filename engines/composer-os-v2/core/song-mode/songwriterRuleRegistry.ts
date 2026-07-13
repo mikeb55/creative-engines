@@ -1468,11 +1468,11 @@ const songwriterRules: Partial<Record<SongwriterRuleId, SongwritingRuleEntry[]>>
     R('mm.sq_vrb_bundle', 'Messiaen SQ VRB bundle (`MM_SQ_*` SQ fingerprints; modes / pitch-field; distinct from Song Mode `messiaen`)', 'songwriter', 'harmony', 9, 'global'),
   ],
   berg: [
-    R('ab.row_module', 'Row segment tags triadic-tonal / whole-tone / chromatic-link (`ab:row_module`)', 'songwriter', 'harmony', 9, 'global'),
-    R('ab.hexachord_pr', 'Hexachord halves + P/R/I/RI preference (`ab:hexachord`)', 'songwriter', 'harmony', 9, 'global'),
-    R('ab.trichord_motif', 'Shared trichord index across derived rows (`ab:trichord_motif`)', 'songwriter', 'melody', 8, 'verse'),
-    R('ab.climax_density', 'Climax funnel 0.6–0.7 via density + ic1/ic6 emphasis (`ab:climax`)', 'songwriter', 'form', 8, 'form'),
-    R('ab.structural_silence', 'Silence / fermata punctuation tags (`ab:silence`)', 'songwriter', 'form', 7, 'global'),
+    R('bg.row_module', 'Row segment tags triadic-tonal / whole-tone / chromatic-link (`bg:row_module`)', 'songwriter', 'harmony', 9, 'global'),
+    R('bg.hexachord_pr', 'Hexachord halves + P/R/I/RI preference (`bg:hexachord`)', 'songwriter', 'harmony', 9, 'global'),
+    R('bg.trichord_motif', 'Shared trichord index across derived rows (`bg:trichord_motif`)', 'songwriter', 'melody', 8, 'verse'),
+    R('bg.climax_density', 'Climax funnel 0.6–0.7 via density + ic1/ic6 emphasis (`bg:climax`)', 'songwriter', 'form', 8, 'form'),
+    R('bg.structural_silence', 'Silence / fermata punctuation tags (`bg:silence`)', 'songwriter', 'form', 7, 'global'),
   ],
   gershwin: [
     R('gg.aaba_form', 'AABA / rhapsody section anchors (`gg:d1_aaba_form`)', 'songwriter', 'form', 8, 'form'),
