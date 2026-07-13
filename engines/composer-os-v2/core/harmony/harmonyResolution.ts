@@ -21,12 +21,17 @@ import { isAndrewHillHarmonicPath } from '../song-mode/andrewHillSlice';
 import { isKateBushHarmonicPath } from '../song-mode/kateBushSlice';
 import { isEcmChamberHarmonicPath } from '../song-mode/ecmChamberSlice';
 import {
+  isAngeloBadalamentiHarmonicPath,
   isBernardHerrmannHarmonicPath,
+  isEnnioMorriconeHarmonicPath,
+  isHansZimmerHarmonicPath,
   isJerryGoldsmithHarmonicPath,
   isJohnWilliamsHarmonicPath,
   isNinoRotaHarmonicPath,
   isPhilipGlassHarmonicPath,
 } from '../song-mode/filmSoundtrackHarmonySlices';
+import { isEberhardWeberHarmonicPath } from '../song-mode/weberFieldSlice';
+import { isLaloSchifrinHarmonicPath } from '../song-mode/laloSchifrinSlice';
 import { isClausOgermanHarmonicPath } from '../song-mode/clausOgermanSlice';
 import { isDonSebeskyHarmonicPath } from '../song-mode/donSebeskySlice';
 import { isJackWhiteHarmonicPath } from '../song-mode/jackWhiteDroneSlice';
@@ -366,7 +371,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   }
   const emEff = meta?.ennioMorriconeEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'ennio_morricone' &&
+    isEnnioMorriconeHarmonicPath(meta) &&
     Array.isArray(emEff) &&
     emEff.length === tb &&
     barIndex >= 1 &&
@@ -401,7 +406,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
    */
   const lsEff = meta?.laloSchifrinEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'lalo_schifrin' &&
+    isLaloSchifrinHarmonicPath(meta) &&
     Array.isArray(lsEff) &&
     lsEff.length === tb &&
     barIndex >= 1 &&
@@ -438,7 +443,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   }
   const hzEff = meta?.hansZimmerEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'hans_zimmer' &&
+    isHansZimmerHarmonicPath(meta) &&
     Array.isArray(hzEff) &&
     hzEff.length === tb &&
     barIndex >= 1 &&
@@ -448,7 +453,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   }
   const abEff = meta?.angeloBadalamentiEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'angelo_badalamenti' &&
+    isAngeloBadalamentiHarmonicPath(meta) &&
     Array.isArray(abEff) &&
     abEff.length === tb &&
     barIndex >= 1 &&
@@ -935,7 +940,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 
   const eberhardWeberEff = meta?.eberhardWeberEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'eberhard_weber' &&
+    isEberhardWeberHarmonicPath(meta) &&
     Array.isArray(eberhardWeberEff) &&
     eberhardWeberEff.length === tb &&
     barIndex >= 1 &&

@@ -574,6 +574,111 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
       'harmony/precompute hv_full via gilEvansEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact gil_evans only; soft songwriter evans removed (was ALIASES→gil_evans vs BY_ID evans→BILL_EVANS); BB Gil arranger / style-profile holdbacks untouched',
   },
   {
+    styleId: 'angelo_badalamenti',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'angeloBadalamentiEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via angeloBadalamentiEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; path helper also accepts VRB id badalamenti; soft songwriter aliases never engage HV; context+surface primary-only',
+  },
+  {
+    styleId: 'badalamenti',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'angeloBadalamentiEffectiveHarmonyBars',
+    notes: 'alias of angelo_badalamenti for VRB voiceId harmonicVoice=badalamenti',
+  },
+  {
+    styleId: 'ennio_morricone',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'ennioMorriconeEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via ennioMorriconeEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; path helper also accepts VRB id morricone; soft songwriter aliases never engage HV; context+surface primary-only',
+  },
+  {
+    styleId: 'morricone',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'ennioMorriconeEffectiveHarmonyBars',
+    notes: 'alias of ennio_morricone for VRB voiceId harmonicVoice=morricone',
+  },
+  {
+    styleId: 'hans_zimmer',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'hansZimmerEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via hansZimmerEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; path helper also accepts VRB id zimmer; soft songwriter aliases never engage HV; context+surface primary-only',
+  },
+  {
+    styleId: 'zimmer',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'hansZimmerEffectiveHarmonyBars',
+    notes: 'alias of hans_zimmer for VRB voiceId harmonicVoice=zimmer',
+  },
+  {
+    styleId: 'lalo_schifrin',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'laloSchifrinEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via laloSchifrinEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact lalo_schifrin + VRB twin schifrin_groove; soft schifrin/ls songwriter-normalize only; context/groove-surface holdbacks untouched',
+  },
+  {
+    styleId: 'schifrin_groove',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'laloSchifrinEffectiveHarmonyBars',
+    notes: 'alias of lalo_schifrin for VRB voiceId harmonicVoice=schifrin_groove',
+  },
+  {
+    styleId: 'eberhard_weber',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'eberhardWeberEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via eberhardWeberEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact eberhard_weber + VRB twin weber_field; soft weber/ew songwriter-normalize only; never webern; field-plan/surface holdbacks untouched',
+  },
+  {
+    styleId: 'weber_field',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'eberhardWeberEffectiveHarmonyBars',
+    notes: 'alias of eberhard_weber for VRB voiceId harmonicVoice=weber_field (never webern)',
+  },
+  {
     styleId: 'john_coltrane',
     layers: {
       harmony: 'hv_full',

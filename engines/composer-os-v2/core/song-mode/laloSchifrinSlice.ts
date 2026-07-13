@@ -4,11 +4,36 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
 import { seededFilmUnit } from './filmSoundtrackHarmonySlices';
+
+export const LALO_SCHIFRIN_HARMONIC_VOICE_IDS = ['lalo_schifrin', 'schifrin_groove'] as const;
+
+export function isLaloSchifrinHarmonicVoiceId(raw: string | null | undefined): boolean {
+  const id = normalizeHarmonicVoiceId(String(raw ?? ''));
+  return id === 'lalo_schifrin' || id === 'schifrin_groove';
+}
+
+/**
+ * Exact `lalo_schifrin` or VRB twin `schifrin_groove` only.
+ * Soft `schifrin` / `ls` (ALIASES → lalo_schifrin) do **not** engage HV.
+ * Context / groove-surface holdbacks stay primary-only.
+ */
+export function isLaloSchifrinHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  return (
+    isLaloSchifrinHarmonicVoiceId(metadata?.songwriterStyleId) ||
+    isLaloSchifrinHarmonicVoiceId(metadata?.harmonicVoice)
+  );
+}
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 const PC_TO_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;

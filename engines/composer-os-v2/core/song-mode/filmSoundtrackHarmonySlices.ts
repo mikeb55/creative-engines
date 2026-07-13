@@ -448,6 +448,30 @@ export function finalizeJohnWilliamsMetadata(metadata: GenerationMetadata, acc: 
 /** --- Ennio Morricone --- */
 export let ennioMorriconeEffectiveHarmonyBars: string[] = [];
 
+export const ENNIO_MORRICONE_HARMONIC_VOICE_IDS = ['ennio_morricone', 'morricone'] as const;
+
+export function isEnnioMorriconeHarmonicVoiceId(raw: string | null | undefined): boolean {
+  const id = normalizeHarmonicVoiceId(String(raw ?? ''));
+  return id === 'ennio_morricone' || id === 'morricone';
+}
+
+/**
+ * Primary songwriter or harmonicVoice selects Ennio Morricone harmony authority.
+ * Accepts `ennio_morricone` | VRB `morricone`. Soft songwriter aliases never engage HV
+ * unless already normalized to exact id. `ennioMorriconeContext` + style surface stay primary-only.
+ */
+export function isEnnioMorriconeHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  return (
+    isEnnioMorriconeHarmonicVoiceId(metadata?.songwriterStyleId) ||
+    isEnnioMorriconeHarmonicVoiceId(metadata?.harmonicVoice)
+  );
+}
+
 /** @deprecated — use resolveBarSymbol */
 export function precomputeEnnioMorriconeEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
@@ -1095,6 +1119,30 @@ export function finalizePhilipGlassMetadata(metadata: GenerationMetadata, acc: F
 /** --- Hans Zimmer --- */
 export let hansZimmerEffectiveHarmonyBars: string[] = [];
 
+export const HANS_ZIMMER_HARMONIC_VOICE_IDS = ['hans_zimmer', 'zimmer'] as const;
+
+export function isHansZimmerHarmonicVoiceId(raw: string | null | undefined): boolean {
+  const id = normalizeHarmonicVoiceId(String(raw ?? ''));
+  return id === 'hans_zimmer' || id === 'zimmer';
+}
+
+/**
+ * Primary songwriter or harmonicVoice selects Hans Zimmer harmony authority.
+ * Accepts `hans_zimmer` | VRB `zimmer`. Soft songwriter aliases never engage HV
+ * unless already normalized to exact id. `hansZimmerContext` + style surface stay primary-only.
+ */
+export function isHansZimmerHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  return (
+    isHansZimmerHarmonicVoiceId(metadata?.songwriterStyleId) ||
+    isHansZimmerHarmonicVoiceId(metadata?.harmonicVoice)
+  );
+}
+
 /** @deprecated — use resolveBarSymbol */
 export function precomputeHansZimmerEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
@@ -1221,6 +1269,30 @@ export function finalizeHansZimmerMetadata(metadata: GenerationMetadata, acc: Fi
 
 /** --- Angelo Badalamenti --- */
 export let angeloBadalamentiEffectiveHarmonyBars: string[] = [];
+
+export const ANGELO_BADALAMENTI_HARMONIC_VOICE_IDS = ['angelo_badalamenti', 'badalamenti'] as const;
+
+export function isAngeloBadalamentiHarmonicVoiceId(raw: string | null | undefined): boolean {
+  const id = normalizeHarmonicVoiceId(String(raw ?? ''));
+  return id === 'angelo_badalamenti' || id === 'badalamenti';
+}
+
+/**
+ * Primary songwriter or harmonicVoice selects Angelo Badalamenti harmony authority.
+ * Accepts `angelo_badalamenti` | VRB `badalamenti`. Soft songwriter aliases never engage HV
+ * unless already normalized to exact id. `angeloBadalamentiContext` + style surface stay primary-only.
+ */
+export function isAngeloBadalamentiHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  return (
+    isAngeloBadalamentiHarmonicVoiceId(metadata?.songwriterStyleId) ||
+    isAngeloBadalamentiHarmonicVoiceId(metadata?.harmonicVoice)
+  );
+}
 
 /** @deprecated — use resolveBarSymbol */
 export function precomputeAngeloBadalamentiEffectiveHarmonyBars(context: CompositionContext): void {

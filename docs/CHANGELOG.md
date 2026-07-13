@@ -2,6 +2,8 @@
 
 ### Added
 
+- **HV authority — Batch 5A Film / ECM (Tier 2 score-5)** — Exact-id path helpers + registry `hv_full` harmony/precompute for `angelo_badalamenti` (VRB twin `badalamenti`), `ennio_morricone` (twin `morricone`), `hans_zimmer` (twin `zimmer`), `lalo_schifrin` (twin `schifrin_groove`), `eberhard_weber` (twin `weber_field`; never `webern`). Mosaic merge on HV; spine/`getChordForBar`. Soft aliases songwriter-normalize only — never engage HV. Film context/surface + Weber field-plan holdbacks untouched. Verify each with `--primary wayne_shorter` OVERALL PASS · `resolverZeroDiff: true` · 0 DIVERGE.
+
 - **HV authority — `gil_evans` Jazz orchestra / arranger (Tier 2 score-5)** — Exact-id path helper (`isGilEvansHarmonicPath`) + registry `hv_full` harmony/precompute; mosaic merge on HV; spine/`getChordForBar`. Soft songwriter `evans` is **not** used (see **Fixed**). BY_ID short `evans`→`BILL_EVANS` untouched. BB Gil arranger / style-profile holdbacks untouched. Verify with `--primary wayne_shorter` OVERALL PASS · `resolverZeroDiff: true` · 0 DIVERGE.
 
 - **HV authority — Batch 4B Jazz orchestra / arranger (Tier 2 score-5)** — Exact-id path helpers + registry `hv_full` harmony/precompute for `oliver_nelson`, `quincy_jones` (optional film twin `quincy_jones_film`), `sammy_nestico`, `henry_threadgill`. Mosaic merge on HV; spine/`getChordForBar`. Soft aliases (`nelson`, `quincy`, `nestico`, `threadgill`) songwriter-normalize only — never engage HV. BB arranger / episode / interval-cell holdbacks untouched. (Nestico primary-path `finalBarTension` fix is a separate **Fixed** entry — same ship commit `b9d31d7e`, unrelated to HV wiring.) Verify each with `--primary wayne_shorter` OVERALL PASS · `resolverZeroDiff: true` · 0 DIVERGE.
