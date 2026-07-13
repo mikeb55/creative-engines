@@ -70,6 +70,10 @@ import { isQuincyJonesHarmonicPath } from '../song-mode/quincyJonesSlice';
 import { isSammyNesticoHarmonicPath } from '../song-mode/sammyNesticoSlice';
 import { isHenryThreadgillHarmonicPath } from '../song-mode/henryThreadgillSlice';
 import { isGilEvansHarmonicPath } from '../song-mode/gilEvansSlice';
+import { isThadJonesHarmonicPath } from '../song-mode/thadJonesSlice';
+import { isCharlesMingusHarmonicPath } from '../song-mode/charlesMingusSlice';
+import { isCountBasieHarmonicPath } from '../song-mode/basieSlice';
+import { isMariaSchneiderHarmonicPath } from '../song-mode/mariaSchneiderSlice';
 import { isJanGarbarekHarmonicPath } from '../song-mode/janGarbarekSlice';
 import { isJohnSurmanHarmonicPath } from '../song-mode/johnSurmanSlice';
 import { isKennyWheelerHarmonicPath } from '../song-mode/wheelerLyricSlice';
@@ -499,7 +503,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 
   const tjEff = meta?.thadJonesEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'thad_jones' &&
+    isThadJonesHarmonicPath(meta) &&
     Array.isArray(tjEff) &&
     tjEff.length === tb &&
     barIndex >= 1 &&
@@ -511,10 +515,11 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   /**
    * Charles Mingus: `precomputeCharlesMingusEffectiveHarmonyBars` layers blues chromatic / episode texture receipts — **`cm:*`**.
    * After precompute, `charlesMingusEffectiveHarmonyBars` is full-form and authoritative.
+   * HV path: primary | harmonicVoice (`charles_mingus` exact) — see isCharlesMingusHarmonicPath.
    */
   const cmEff = meta?.charlesMingusEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'charles_mingus' &&
+    isCharlesMingusHarmonicPath(meta) &&
     Array.isArray(cmEff) &&
     cmEff.length === tb &&
     barIndex >= 1 &&
@@ -541,7 +546,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 
   const cbEff = meta?.basieEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'count_basie' &&
+    isCountBasieHarmonicPath(meta) &&
     Array.isArray(cbEff) &&
     cbEff.length === tb &&
     barIndex >= 1 &&
@@ -786,10 +791,11 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   /**
    * Maria Schneider: `precomputeMariaSchneiderEffectiveHarmonyBars` applies Lydian centre / pedal / colour-stack devices.
    * After precompute, `mariaSchneiderEffectiveHarmonyBars` is full-form and authoritative.
+   * HV path: primary | harmonicVoice (`maria_schneider` exact) — see isMariaSchneiderHarmonicPath.
    */
   const msEff = meta?.mariaSchneiderEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'maria_schneider' &&
+    isMariaSchneiderHarmonicPath(meta) &&
     Array.isArray(msEff) &&
     msEff.length === tb &&
     barIndex >= 1 &&

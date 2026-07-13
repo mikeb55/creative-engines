@@ -574,6 +574,50 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
       'harmony/precompute hv_full via gilEvansEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact gil_evans only; soft songwriter evans removed (was ALIASES→gil_evans vs BY_ID evans→BILL_EVANS); BB Gil arranger / style-profile holdbacks untouched',
   },
   {
+    styleId: 'charles_mingus',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'charlesMingusEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via charlesMingusEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact charles_mingus only; soft mingus songwriter-normalize only; BB mingus/charles_mingus dual-id + episode holdbacks untouched',
+  },
+  {
+    styleId: 'count_basie',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'basieEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via basieEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact count_basie only; soft basie / count basie songwriter-normalize only; BB Testament / shout / style-profile holdbacks untouched',
+  },
+  {
+    styleId: 'maria_schneider',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'mariaSchneiderEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via mariaSchneiderEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact maria_schneider only; soft schneider songwriter-normalize only; BB through-composed / texture holdbacks untouched',
+  },
+  {
+    styleId: 'thad_jones',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'thadJonesEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via thadJonesEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact thad_jones only; soft thad songwriter-normalize only; BB thad/thad_jones dual-id + shout/soli holdbacks untouched',
+  },
+  {
     styleId: 'angelo_badalamenti',
     layers: {
       harmony: 'hv_full',

@@ -355,6 +355,7 @@ import {
   accumulateMariaSchneiderHarmonyDiagnostics,
   createMariaSchneiderHarmonyAccumulator,
   finalizeMariaSchneiderMetadata,
+  isMariaSchneiderHarmonicPath,
   precomputeMariaSchneiderEffectiveHarmonyBars,
 } from './mariaSchneiderSlice';
 import {
@@ -488,12 +489,14 @@ import {
   accumulateThadJonesHarmonyDiagnostics,
   createThadJonesHarmonyAccumulator,
   finalizeThadJonesMetadata,
+  isThadJonesHarmonicPath,
   precomputeThadJonesEffectiveHarmonyBars,
 } from './thad_jones';
 import {
   accumulateCharlesMingusHarmonyDiagnostics,
   createCharlesMingusHarmonyAccumulator,
   finalizeCharlesMingusMetadata,
+  isCharlesMingusHarmonicPath,
   precomputeCharlesMingusEffectiveHarmonyBars,
 } from './charlesMingusSlice';
 import {
@@ -507,6 +510,7 @@ import {
   accumulateBasieHarmonyDiagnostics,
   createBasieHarmonyAccumulator,
   finalizeBasieMetadata,
+  isCountBasieHarmonicPath,
   precomputeBasieEffectiveHarmonyBars,
 } from './count_basie';
 import {
@@ -3539,6 +3543,10 @@ function buildGuitarPart(
     'cole_porter';
   const colePorterHarmonicPathActive = isColePorterHarmonicPath(genMeta);
   const isSongwriterMariaSchneider = genMeta?.songwriterStyleId === 'maria_schneider';
+  const isHarmonicVoiceMariaSchneider =
+    normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
+    'maria_schneider';
+  const mariaSchneiderHarmonicPathActive = isMariaSchneiderHarmonicPath(genMeta);
   const isSongwriterKennyWheeler = genMeta?.songwriterStyleId === 'kenny_wheeler';
   const isHarmonicVoiceKennyWheeler = isKennyWheelerHarmonicVoiceId(
     String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')
@@ -3624,16 +3632,26 @@ function buildGuitarPart(
     normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
     'gil_evans';
   const gilEvansHarmonicPathActive = isGilEvansHarmonicPath(genMeta);
-  const isSongwriterThadJones = normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'thad_jones';
-  const isSongwriterCharlesMingus =
-    normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'charles_mingus';
+  const isSongwriterThadJones = genMeta?.songwriterStyleId === 'thad_jones';
+  const isHarmonicVoiceThadJones =
+    normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
+    'thad_jones';
+  const thadJonesHarmonicPathActive = isThadJonesHarmonicPath(genMeta);
+  const isSongwriterCharlesMingus = genMeta?.songwriterStyleId === 'charles_mingus';
+  const isHarmonicVoiceCharlesMingus =
+    normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
+    'charles_mingus';
+  const charlesMingusHarmonicPathActive = isCharlesMingusHarmonicPath(genMeta);
   const isSongwriterHenryThreadgill = genMeta?.songwriterStyleId === 'henry_threadgill';
   const isHarmonicVoiceHenryThreadgill =
     normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
     'henry_threadgill';
   const henryThreadgillHarmonicPathActive = isHenryThreadgillHarmonicPath(genMeta);
-  const isSongwriterCountBasie =
-    normalizeSongwriterStyleKey(String(genMeta?.songwriterStyleId ?? '')) === 'count_basie';
+  const isSongwriterCountBasie = genMeta?.songwriterStyleId === 'count_basie';
+  const isHarmonicVoiceCountBasie =
+    normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
+    'count_basie';
+  const countBasieHarmonicPathActive = isCountBasieHarmonicPath(genMeta);
   const isSongwriterSammyNestico = genMeta?.songwriterStyleId === 'sammy_nestico';
   const isHarmonicVoiceSammyNestico =
     normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
@@ -4195,8 +4213,15 @@ function buildGuitarPart(
       }
     }
   }
-  if (isSongwriterMariaSchneider && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (mariaSchneiderHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeMariaSchneiderEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceMariaSchneider && !isSongwriterMariaSchneider) {
+      const mariaSchneiderEff = genMeta.mariaSchneiderEffectiveHarmonyBars;
+      const mariaSchneiderTb = totalBarsFromContext(context);
+      if (Array.isArray(mariaSchneiderEff) && mariaSchneiderEff.length === mariaSchneiderTb) {
+        genMeta.mosaicMergedHarmonyBars = [...mariaSchneiderEff];
+      }
+    }
   }
   if (kennyWheelerHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeKennyWheelerEffectiveHarmonyBars(context);
@@ -4358,11 +4383,25 @@ function buildGuitarPart(
       }
     }
   }
-  if (isSongwriterThadJones && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (thadJonesHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeThadJonesEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceThadJones && !isSongwriterThadJones) {
+      const thadJonesEff = genMeta.thadJonesEffectiveHarmonyBars;
+      const thadJonesTb = totalBarsFromContext(context);
+      if (Array.isArray(thadJonesEff) && thadJonesEff.length === thadJonesTb) {
+        genMeta.mosaicMergedHarmonyBars = [...thadJonesEff];
+      }
+    }
   }
-  if (isSongwriterCharlesMingus && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (charlesMingusHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeCharlesMingusEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceCharlesMingus && !isSongwriterCharlesMingus) {
+      const charlesMingusEff = genMeta.charlesMingusEffectiveHarmonyBars;
+      const charlesMingusTb = totalBarsFromContext(context);
+      if (Array.isArray(charlesMingusEff) && charlesMingusEff.length === charlesMingusTb) {
+        genMeta.mosaicMergedHarmonyBars = [...charlesMingusEff];
+      }
+    }
   }
   if (henryThreadgillHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeHenryThreadgillEffectiveHarmonyBars(context);
@@ -4374,8 +4413,15 @@ function buildGuitarPart(
       }
     }
   }
-  if (isSongwriterCountBasie && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (countBasieHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeBasieEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceCountBasie && !isSongwriterCountBasie) {
+      const basieEff = genMeta.basieEffectiveHarmonyBars;
+      const basieTb = totalBarsFromContext(context);
+      if (Array.isArray(basieEff) && basieEff.length === basieTb) {
+        genMeta.mosaicMergedHarmonyBars = [...basieEff];
+      }
+    }
   }
   if (sammyNesticoHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeSammyNesticoEffectiveHarmonyBars(context);

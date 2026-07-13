@@ -638,7 +638,7 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 
 **Still open (reordered):**
 
-3. **80-style HV rollout — Waves A/B/C done; Wave D Tier 1 complete (13/13)** — Stage 1 + Stage 2 audit complete; Waves A/B/C + Wave D leftovers wired (`ecm_chamber` … `ralph_towner`, final **`philip_glass`**). Next: Tier 2 spot-check. See `docs/EIGHTY_STYLE_AUDIT_SWEEP_2026-07-08.md`, `docs/EIGHTY_STYLE_STAGE2_FINDINGS.md`.
+3. **80-style HV rollout — Waves A/B/C done; Wave D Tier 1 complete (13/13)** — Stage 1 + Stage 2 audit complete; Waves A/B/C + Wave D leftovers wired (`ecm_chamber` … `ralph_towner`, final **`philip_glass`**). Tier 2 in progress: Batches 3–5 + Score-6 BB (`charles_mingus` / `count_basie` / `maria_schneider` / `thad_jones`) hv_full. See `docs/EIGHTY_STYLE_AUDIT_SWEEP_2026-07-08.md`, `docs/EIGHTY_STYLE_STAGE2_FINDINGS.md`.
 4. **Big Band harmonicVoice forwarding** — **Forwarding done (Fix #3A, 2026-07-08). Consumption (Phase 2) — not started, separate DCR item.** Transport reaches `bigBandContextFromGenerateRequest`; engine still reads `songwriterStyleId` only (matrix `TRANSPORT_ONLY`).
 5. **String Quartet harmonicVoice forwarding** — **Forwarding done (Fix #3B, 2026-07-08). Consumption (Phase 2) — not started, separate DCR item.** Transport reaches `stringQuartetGenerationMetadataFromGenerateRequest`; engine still reads `songwriterStyleId` only (matrix `TRANSPORT_ONLY`).
 6. **Riff Generator — design decision made (2026-07-08)** — harmonicVoice and riffVrbId remain separate fields / controls. No unification. Phase A implementation not started. Mapping/fallback behavior to follow the scoped design doc in `docs/RIFF_GENERATOR_HARMONIC_VOICE_DECISION.md`.

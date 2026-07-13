@@ -4,11 +4,27 @@
  */
 
 import type { CompositionContext, GenerationMetadata, ThadJonesPhaseMode } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { computeEllingtonPhrasePositions } from './dukeEllingtonSlice';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
+
+/**
+ * Exact id `thad_jones` only — soft `thad` stays songwriter-normalize;
+ * does **not** engage HV. BB thad/thad_jones dual-id + shout/soli holdbacks untouched.
+ */
+export function isThadJonesHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'thad_jones' || voice === 'thad_jones';
+}
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 

@@ -4,6 +4,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import type {
   CharlesMingusEpisodePlan,
   MingusEpisodeImprovMode,
@@ -17,6 +18,21 @@ import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
+
+/**
+ * Exact id `charles_mingus` only — soft `mingus` stays songwriter-normalize;
+ * does **not** engage HV. BB mingus/charles_mingus dual-id + episode holdbacks untouched.
+ */
+export function isCharlesMingusHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'charles_mingus' || voice === 'charles_mingus';
+}
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 

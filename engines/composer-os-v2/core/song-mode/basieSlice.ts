@@ -4,11 +4,27 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import type { BasieEpisodePlan, BasieEpisodeSegment, BasieEpisodeType } from './basieEpisodeTypes';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
+
+/**
+ * Exact id `count_basie` only — soft `basie` / `count basie` stay songwriter-normalize;
+ * do **not** engage HV. BB basie Testament / shout / style-profile holdbacks untouched.
+ */
+export function isCountBasieHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'count_basie' || voice === 'count_basie';
+}
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 
