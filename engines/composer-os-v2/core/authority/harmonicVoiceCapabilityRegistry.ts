@@ -310,6 +310,17 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
       'harmony/precompute hv_full via steveReichEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact steve_reich only — never reich_glass; soft alias reich does not engage HV; Song-Reich VRB stub is separate from SQ REICH_GLASS',
   },
   {
+    styleId: 'messiaen',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'messiaenEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via messiaenEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact messiaen only — never sq_vrb_messiaen; soft olivier_messiaen normalizes to Song; Song-Messiaen VRB stub is separate from SQ MESSIAEN_SQ',
+  },
+  {
     styleId: 'john_coltrane',
     layers: {
       harmony: 'hv_full',

@@ -6,6 +6,7 @@ export {
   accumulateMessiaenHarmonyDiagnostics,
   createMessiaenHarmonyAccumulator,
   finalizeMessiaenMetadata,
+  isMessiaenHarmonicPath,
   isSongwriterMessiaen,
   MESSIAEN_MODE_COLOUR_TAG,
   MESSIAEN_SLICE_PARAMETERS,

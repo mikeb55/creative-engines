@@ -4,6 +4,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata, MessiaenPeriodMode } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { isProtectedBar } from '../score-integrity/identityLock';
@@ -119,6 +120,22 @@ export function isSongwriterMessiaen(
   return genMeta?.songwriterStyleId === 'messiaen';
 }
 
+/**
+ * Harmonic-path gate — primary `messiaen` **or** exact `harmonicVoice=messiaen`.
+ * Soft aliases (`olivier_messiaen`) normalize to Song style before this gate.
+ * Never `sq_vrb_messiaen` (SQ pitch-field VRB).
+ */
+export function isMessiaenHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'messiaen' || voice === 'messiaen';
+}
+
 export interface MessiaenHarmonyAccumulator {
   barsConsidered: number;
   slowRhythmReceiptTouches: number;
@@ -145,6 +162,10 @@ export function accumulateMessiaenHarmonyDiagnostics(
   acc.barsConsidered++;
 }
 
+/**
+ * Precompute effective harmony — slow mode colour holds + anti-cadence (`om:*` receipts).
+ * Call when {@link isMessiaenHarmonicPath} (primary or exact HV).
+ */
 export function precomputeMessiaenEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

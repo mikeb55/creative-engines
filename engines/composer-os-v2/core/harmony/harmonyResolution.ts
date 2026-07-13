@@ -40,6 +40,7 @@ import { isBacharachHarmonicPath } from '../song-mode/bacharachSlice';
 import { isDonaldFagenHarmonicPath } from '../song-mode/donaldFagenSlice';
 import { isJamesBrownHarmonicPath } from '../song-mode/jamesBrownSlice';
 import { isSteveReichHarmonicPath } from '../song-mode/steveReichSlice';
+import { isMessiaenHarmonicPath } from '../song-mode/messiaenSlice';
 import { isJohnColtraneHarmonicPath } from '../song-mode/johnColtraneSlice';
 import {
   hasSectionMarkerVrbAssignment,
@@ -1148,9 +1149,14 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
     return srEff[barIndex - 1]!;
   }
 
+  /**
+   * Olivier Messiaen: `precomputeMessiaenEffectiveHarmonyBars` — mode colour / anti-cadence (`om:*`).
+   * HV path: primary | harmonicVoice (`messiaen` exact) — see isMessiaenHarmonicPath.
+   * Never `sq_vrb_messiaen` (SQ pitch-field). Soft `olivier_messiaen` normalizes to Song before gate.
+   */
   const omEff = meta?.messiaenEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'messiaen' &&
+    isMessiaenHarmonicPath(meta) &&
     Array.isArray(omEff) &&
     omEff.length === tb &&
     barIndex >= 1 &&
