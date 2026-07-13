@@ -9,6 +9,7 @@
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
 import type { BarMeterMap } from '../rhythm/barMeterTypes';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { buildHarmonyPlanFromBars, buildChordSymbolPlanFromBars } from '../harmony/chordProgressionParser';
@@ -715,6 +716,25 @@ export function isSongwriterBacharach(
   return genMeta?.songwriterStyleId === 'bacharach';
 }
 
+/**
+ * Harmonic-path gate — primary `bacharach` **or** exact `harmonicVoice=bacharach`.
+ * Soft aliases (`burt_bacharach`) stay primary-intake via songwriter normalize; they do **not** engage HV.
+ *
+ * **Primary-only surfaces (do not flip under HV):**
+ * - Guitar chromatic / cadential-ambiguity nudges (`applyBacharachGuitarBarPasses`)
+ * - Accumulator finalize / style-profile bias stamps
+ */
+export function isBacharachHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'bacharach' || voice === 'bacharach';
+}
+
 export interface BacharachHarmonyAccumulator {
   barsConsidered: number;
   chromaticSideTouches: number;
@@ -1123,7 +1143,8 @@ function applyInnerVoiceSlashPass(
 }
 
 /**
- * Precompute effective one chord per bar after Bacharach slice devices (primary `bacharach` only).
+ * Precompute effective one chord per bar after Bacharach slice devices.
+ * Call when {@link isBacharachHarmonicPath} (primary or exact HV).
  */
 /** @deprecated — use resolveBarSymbol */
 export function precomputeBacharachEffectiveHarmonyBars(context: CompositionContext): void {

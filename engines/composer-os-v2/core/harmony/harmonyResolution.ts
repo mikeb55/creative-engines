@@ -36,6 +36,7 @@ import { isMarrHarmonicPath } from '../song-mode/marrMelodicSlice';
 import { isRalphTownerHarmonicPath } from '../song-mode/ralphTownerSlice';
 import { isSatieHarmonicPath } from '../song-mode/satieSlice';
 import { isColePorterHarmonicPath } from '../song-mode/colePorterSlice';
+import { isBacharachHarmonicPath } from '../song-mode/bacharachSlice';
 import { isJohnColtraneHarmonicPath } from '../song-mode/johnColtraneSlice';
 import {
   hasSectionMarkerVrbAssignment,
@@ -949,11 +950,12 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 
   /**
    * Bacharach: `precomputeBacharachEffectiveHarmonyBars` applies theatre-pop chromatic side-doors + deceptive cadences.
-   * After precompute, `bacharachEffectiveHarmonyBars` is full-form and authoritative.
+   * HV path: primary | harmonicVoice (`bacharach` exact) — see isBacharachHarmonicPath.
+   * Guitar bar passes + style-profile biases stay primary-only (not this branch).
    */
   const baEff = meta?.bacharachEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'bacharach' &&
+    isBacharachHarmonicPath(meta) &&
     Array.isArray(baEff) &&
     baEff.length === tb &&
     barIndex >= 1 &&

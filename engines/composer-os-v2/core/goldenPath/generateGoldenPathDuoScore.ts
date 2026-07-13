@@ -534,6 +534,7 @@ import {
   accumulateBacharachHarmonyDiagnostics,
   createBacharachHarmonyAccumulator,
   finalizeBacharachMetadata,
+  isBacharachHarmonicPath,
   precomputeBacharachEffectiveHarmonyBars,
 } from './bacharachSlice';
 import {
@@ -3280,6 +3281,10 @@ function buildGuitarPart(
     typeof genMeta?.fagenLydianMajorBias === 'number' ? genMeta.fagenLydianMajorBias : 0;
 
   const isSongwriterBacharach = genMeta?.songwriterStyleId === 'bacharach';
+  const isHarmonicVoiceBacharach =
+    normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
+    'bacharach';
+  const bacharachHarmonicPathActive = isBacharachHarmonicPath(genMeta);
   const bacharachDeceptiveCadenceRateR =
     typeof genMeta?.bacharachDeceptiveCadenceRate === 'number' ? genMeta.bacharachDeceptiveCadenceRate : 0;
   const bacharachChromaticVoiceLeadingR =
@@ -4047,8 +4052,15 @@ function buildGuitarPart(
       }
     }
   }
-  if (isSongwriterBacharach && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (bacharachHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeBacharachEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceBacharach && !isSongwriterBacharach) {
+      const bacharachEff = genMeta.bacharachEffectiveHarmonyBars;
+      const bacharachTb = totalBarsFromContext(context);
+      if (Array.isArray(bacharachEff) && bacharachEff.length === bacharachTb) {
+        genMeta.mosaicMergedHarmonyBars = [...bacharachEff];
+      }
+    }
   }
   if (isSongwriterFagen && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeDonaldFagenEffectiveHarmonyBars(context);

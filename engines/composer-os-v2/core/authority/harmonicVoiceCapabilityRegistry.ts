@@ -266,6 +266,17 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
       'harmony/precompute hv_full via colePorterEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; applyColePorterStyleSurface + beguine stamps primary-only',
   },
   {
+    styleId: 'bacharach',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'bacharachEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via bacharachEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; guitar bar passes + style-profile biases stay primary-only',
+  },
+  {
     styleId: 'john_coltrane',
     layers: {
       harmony: 'hv_full',
