@@ -6,10 +6,26 @@
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
 import type { MeasureModel, NoteEvent } from '../score-model/scoreModelTypes';
 import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { isProtectedBar } from '../score-integrity/identityLock';
 import { planMelodyBehaviour } from './melodyBehaviourPlanner';
+
+/**
+ * Exact id `brian_wilson` only — soft `brian` / `wilson` stay songwriter-normalize;
+ * they do **not** engage HV. PetSounds guitar/grammar surfaces stay primary-only.
+ */
+export function isBrianWilsonHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'brian_wilson' || voice === 'brian_wilson';
+}
 
 export interface BrianWilsonHarmonyAccumulator {
   barsConsidered: number;

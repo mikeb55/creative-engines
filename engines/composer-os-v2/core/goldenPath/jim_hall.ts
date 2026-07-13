@@ -9,5 +9,6 @@ export {
   createJimHallHarmonyAccumulator,
   accumulateJimHallHarmonyDiagnostics,
   isSongwriterJimHall,
+  isJimHallHarmonicPath,
   type JimHallMode,
 } from '../song-mode/jimHallSlice';

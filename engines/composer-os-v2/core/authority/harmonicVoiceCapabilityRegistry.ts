@@ -354,6 +354,61 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
       'harmony/precompute hv_full via frippKingCrimsonEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact fripp_king_crimson only — never Systems fripp / fripp_systems_process (rf:*); soft king_crimson/crimson normalize to Song; VRB aliases king_crimson/crimson → FRIPP_KING_CRIMSON',
   },
   {
+    styleId: 'brian_wilson',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'brianWilsonEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via brianWilsonEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact brian_wilson only; soft brian/wilson songwriter-normalize only; PetSounds guitar/grammar surfaces stay primary-only',
+  },
+  {
+    styleId: 'stevie_wonder',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'stevieWonderEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via stevieWonderEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact stevie_wonder only; soft stevie songwriter-normalize only; guitar/pentatonic surfaces stay primary-only',
+  },
+  {
+    styleId: 'charlie_parker',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'charlieParkerEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via charlieParkerEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact charlie_parker only; soft bird/parker/charlie songwriter-normalize only; cp:* receipt prefix cosmetic vs cole_porter',
+  },
+  {
+    styleId: 'stephen_sondheim',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'sondheimEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via sondheimEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact stephen_sondheim only; soft sondheim songwriter-normalize only',
+  },
+  {
+    styleId: 'jim_hall',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'jimHallEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via jimHallEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact jim_hall only; soft jim songwriter-normalize only; mode/surface stamps stay primary-only',
+  },
+  {
     styleId: 'john_coltrane',
     layers: {
       harmony: 'hv_full',

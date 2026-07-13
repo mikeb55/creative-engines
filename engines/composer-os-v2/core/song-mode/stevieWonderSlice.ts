@@ -5,9 +5,25 @@
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
 import type { MeasureModel, NoteEvent } from '../score-model/scoreModelTypes';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { coarseSectionRoleFromBar, inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
+
+/**
+ * Exact id `stevie_wonder` only — soft `stevie` stays songwriter-normalize;
+ * does **not** engage HV. Guitar/pentatonic surfaces stay primary-only.
+ */
+export function isStevieWonderHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'stevie_wonder' || voice === 'stevie_wonder';
+}
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 

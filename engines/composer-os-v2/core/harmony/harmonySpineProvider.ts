@@ -56,6 +56,11 @@ import { isMessiaenHarmonicPath } from '../song-mode/messiaenSlice';
 import { isFrippKingCrimsonHarmonicPath } from '../song-mode/frippKingCrimsonSlice';
 import { isBartokHarmonicPath } from '../song-mode/bartokSlice';
 import { isJohnColtraneHarmonicPath } from '../song-mode/johnColtraneSlice';
+import { isBrianWilsonHarmonicPath } from '../song-mode/brianWilsonPetSoundsSlice';
+import { isStevieWonderHarmonicPath } from '../song-mode/stevieWonderSlice';
+import { isCharlieParkerHarmonicPath } from '../song-mode/charlieParkerSlice';
+import { isStephenSondheimHarmonicPath } from '../song-mode/sondheimSlice';
+import { isJimHallHarmonicPath } from '../song-mode/jimHallSlice';
 import { getChordForBar } from './harmonyResolution';
 import { buildSectionAwareHarmonySpine } from './harmonySpineSectionLoop';
 import type { ResolvedPitchField } from './pitchFieldSpineTypes';
@@ -106,8 +111,8 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   effKey: keyof GenerationMetadata;
   sliceId: string;
 }> = [
-  { match: (m) => m?.songwriterStyleId === 'brian_wilson', effKey: 'brianWilsonEffectiveHarmonyBars', sliceId: 'brian_wilson' },
-  { match: (m) => m?.songwriterStyleId === 'stevie_wonder', effKey: 'stevieWonderEffectiveHarmonyBars', sliceId: 'stevie_wonder' },
+  { match: (m) => isBrianWilsonHarmonicPath(m), effKey: 'brianWilsonEffectiveHarmonyBars', sliceId: 'brian_wilson' },
+  { match: (m) => isStevieWonderHarmonicPath(m), effKey: 'stevieWonderEffectiveHarmonyBars', sliceId: 'stevie_wonder' },
   { match: (m) => isRadioheadHarmonicPath(m), effKey: 'radioheadEffectiveHarmonyBars', sliceId: 'radiohead' },
   { match: (m) => isJamesBrownHarmonicPath(m), effKey: 'jamesBrownEffectiveHarmonyBars', sliceId: 'james_brown' },
   {
@@ -192,16 +197,16 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   { match: (m) => isEcmChamberHarmonicPath(m), effKey: 'ecmChamberEffectiveHarmonyBars', sliceId: 'ecm_chamber' },
   { match: (m) => isJobimHarmonicPath(m), effKey: 'jobimEffectiveHarmonyBars', sliceId: 'antonio_carlos_jobim' },
   { match: (m) => isHerbieHancockHarmonicPath(m), effKey: 'herbieHancockEffectiveHarmonyBars', sliceId: 'herbie_hancock' },
-  { match: (m) => m?.songwriterStyleId === 'stephen_sondheim', effKey: 'sondheimEffectiveHarmonyBars', sliceId: 'stephen_sondheim' },
+  { match: (m) => isStephenSondheimHarmonicPath(m), effKey: 'sondheimEffectiveHarmonyBars', sliceId: 'stephen_sondheim' },
   { match: (m) => isKateBushHarmonicPath(m), effKey: 'kateBushEffectiveHarmonyBars', sliceId: 'kate_bush' },
   { match: (m) => isTheloniousMonkHarmonicPath(m), effKey: 'theloniousMonkEffectiveHarmonyBars', sliceId: 'thelonious_monk' },
   { match: (m) => isJohnColtraneHarmonicPath(m), effKey: 'johnColtraneEffectiveHarmonyBars', sliceId: 'john_coltrane' },
   { match: (m) => m?.songwriterStyleId === 'mccoy_tyner', effKey: 'mccoyTynerEffectiveHarmonyBars', sliceId: 'mccoy_tyner' },
   { match: (m) => isAndrewHillHarmonicPath(m), effKey: 'andrewHillEffectiveHarmonyBars', sliceId: 'andrew_hill' },
-  { match: (m) => m?.songwriterStyleId === 'jim_hall', effKey: 'jimHallEffectiveHarmonyBars', sliceId: 'jim_hall' },
+  { match: (m) => isJimHallHarmonicPath(m), effKey: 'jimHallEffectiveHarmonyBars', sliceId: 'jim_hall' },
   { match: (m) => isSteveReichHarmonicPath(m), effKey: 'steveReichEffectiveHarmonyBars', sliceId: 'steve_reich' },
   { match: (m) => isMessiaenHarmonicPath(m), effKey: 'messiaenEffectiveHarmonyBars', sliceId: 'messiaen' },
-  { match: (m) => m?.songwriterStyleId === 'charlie_parker', effKey: 'charlieParkerEffectiveHarmonyBars', sliceId: 'charlie_parker' },
+  { match: (m) => isCharlieParkerHarmonicPath(m), effKey: 'charlieParkerEffectiveHarmonyBars', sliceId: 'charlie_parker' },
   { match: (m) => isFrippKingCrimsonHarmonicPath(m), effKey: 'frippKingCrimsonEffectiveHarmonyBars', sliceId: 'fripp_king_crimson' },
   /** Frank Zappa harmonicVoice is treated as Frank Zappa for harmony authority when eff bars / HarmonyContext exist. */
   {

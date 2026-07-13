@@ -4,12 +4,28 @@
  */
 
 import type { CompositionContext, GenerationMetadata, JimHallMode } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { coarseSectionRoleFromBar, inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
 
 export type { JimHallMode } from '../compositionContext';
+
+/**
+ * Exact id `jim_hall` only — soft `jim` stays songwriter-normalize;
+ * does **not** engage HV. Mode/surface stamps stay primary-only.
+ */
+export function isJimHallHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'jim_hall' || voice === 'jim_hall';
+}
 
 /** Research defaults — `buildReharmLensConfig('jim_hall')`, vault phrase bias, duo diagnostics. */
 export const JIM_HALL_SLICE_PARAMETERS = {

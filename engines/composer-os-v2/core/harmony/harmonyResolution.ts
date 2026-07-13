@@ -45,6 +45,11 @@ import { isMessiaenHarmonicPath } from '../song-mode/messiaenSlice';
 import { isFrippKingCrimsonHarmonicPath } from '../song-mode/frippKingCrimsonSlice';
 import { isBartokHarmonicPath } from '../song-mode/bartokSlice';
 import { isJohnColtraneHarmonicPath } from '../song-mode/johnColtraneSlice';
+import { isBrianWilsonHarmonicPath } from '../song-mode/brianWilsonPetSoundsSlice';
+import { isStevieWonderHarmonicPath } from '../song-mode/stevieWonderSlice';
+import { isCharlieParkerHarmonicPath } from '../song-mode/charlieParkerSlice';
+import { isStephenSondheimHarmonicPath } from '../song-mode/sondheimSlice';
+import { isJimHallHarmonicPath } from '../song-mode/jimHallSlice';
 import {
   hasSectionMarkerVrbAssignment,
   resolveVoiceRuleBundleForBar,
@@ -134,11 +139,12 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   /**
    * Brian Wilson Pet Sounds: `precomputeBrianWilsonEffectiveHarmonyBars` layers devices on top of the locked
    * progression. After precompute, `brianWilsonEffectiveHarmonyBars` is full-form and authoritative for bar reads.
-   * While precompute runs, this array is unset — `getChordForBar` still returns the locked chain as the device input.
+   * HV path: primary | harmonicVoice (`brian_wilson` exact) — see isBrianWilsonHarmonicPath.
+   * Soft brian/wilson + PetSounds guitar/grammar stay primary-only.
    */
   const bwEff = meta?.brianWilsonEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'brian_wilson' &&
+    isBrianWilsonHarmonicPath(meta) &&
     Array.isArray(bwEff) &&
     bwEff.length === tb &&
     barIndex >= 1 &&
@@ -150,10 +156,12 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   /**
    * Stevie Wonder (1972–76): `precomputeStevieWonderEffectiveHarmonyBars` layers devices on the locked
    * progression. After precompute, `stevieWonderEffectiveHarmonyBars` is full-form and authoritative.
+   * HV path: primary | harmonicVoice (`stevie_wonder` exact) — see isStevieWonderHarmonicPath.
+   * Soft stevie + guitar/pentatonic surfaces stay primary-only.
    */
   const swEff = meta?.stevieWonderEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'stevie_wonder' &&
+    isStevieWonderHarmonicPath(meta) &&
     Array.isArray(swEff) &&
     swEff.length === tb &&
     barIndex >= 1 &&
@@ -1042,10 +1050,12 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   /**
    * Stephen Sondheim: `precomputeSondheimEffectiveHarmonyBars` applies dramatic theatre harmony devices + receipts.
    * After precompute, `sondheimEffectiveHarmonyBars` is full-form and authoritative.
+   * HV path: primary | harmonicVoice (`stephen_sondheim` exact) — see isStephenSondheimHarmonicPath.
+   * Soft sondheim stays songwriter-normalize only.
    */
   const shEff = meta?.sondheimEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'stephen_sondheim' &&
+    isStephenSondheimHarmonicPath(meta) &&
     Array.isArray(shEff) &&
     shEff.length === tb &&
     barIndex >= 1 &&
@@ -1129,10 +1139,12 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 
   /**
    * Jim Hall: `precomputeJimHallEffectiveHarmonyBars` applies shell+one / warm extension grammar — receipts **`jh:*`**.
+   * HV path: primary | harmonicVoice (`jim_hall` exact) — see isJimHallHarmonicPath.
+   * Soft jim + mode/surface stamps stay primary-only.
    */
   const jhEff = meta?.jimHallEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'jim_hall' &&
+    isJimHallHarmonicPath(meta) &&
     Array.isArray(jhEff) &&
     jhEff.length === tb &&
     barIndex >= 1 &&
@@ -1176,10 +1188,12 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   /**
    * Charlie Parker: `precomputeCharlieParkerEffectiveHarmonyBars` applies bebop ii–V / tritone-sub devices — receipts **`cp:*`**.
    * After precompute, `charlieParkerEffectiveHarmonyBars` is full-form and authoritative.
+   * HV path: primary | harmonicVoice (`charlie_parker` exact) — see isCharlieParkerHarmonicPath.
+   * Soft bird/parker/charlie stay songwriter-normalize only. cp:* vs cole_porter is cosmetic only.
    */
   const cpEff = meta?.charlieParkerEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'charlie_parker' &&
+    isCharlieParkerHarmonicPath(meta) &&
     Array.isArray(cpEff) &&
     cpEff.length === tb &&
     barIndex >= 1 &&

@@ -4,10 +4,27 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
+
+/**
+ * Exact id `charlie_parker` only — soft `bird` / `parker` / `charlie` stay
+ * songwriter-normalize; they do **not** engage HV.
+ * Receipt prefix `cp:*` is cosmetic-only vs cole_porter (separate DeviceReceipts keys).
+ */
+export function isCharlieParkerHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'charlie_parker' || voice === 'charlie_parker';
+}
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 
