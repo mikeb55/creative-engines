@@ -12,6 +12,7 @@ import {
 } from '../style/berg/bergRowEngine';
 import { scheduleClimax, tagStructuralSilences } from '../style/berg/bergFormModules';
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { isProtectedBar } from '../score-integrity/identityLock';
@@ -93,6 +94,22 @@ export function isSongwriterBerg(
   genMeta: GenerationMetadata | undefined
 ): genMeta is GenerationMetadata & { songwriterStyleId: 'berg' } {
   return genMeta?.songwriterStyleId === 'berg';
+}
+
+/**
+ * Exact id `berg` only (not `alban_berg`).
+ * Soft `alban_berg` BY_ID / aliases never engage HV.
+ * Diagnostics / receipts remain **`bg:*`** (not **`ab:*`** — angelo_badalamenti).
+ */
+export function isBergHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'berg' || voice === 'berg';
 }
 
 export interface BergHarmonyAccumulator {

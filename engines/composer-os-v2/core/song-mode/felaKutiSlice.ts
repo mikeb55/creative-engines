@@ -6,6 +6,8 @@
 import type { CompositionContext, FelaKutiContextMode, GenerationMetadata } from '../compositionContext';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { parseChordSymbol } from '../harmony/chordSymbolAnalysis';
+import { buildHarmonyPlanFromBars, buildChordSymbolPlanFromBars } from '../harmony/chordProgressionParser';
+import { buildLockedHarmonyBarContracts, assertLockedHarmonyContractsToneParity } from '../harmony/harmonyBarContract';
 import {
   createAfrobeatRhythmEngine,
   type DrumPattern,
@@ -14,6 +16,87 @@ import {
 import { resolveMeasureBeatSpanQuarters } from '../rhythm/oddMeterQuantiser';
 import type { NoteEvent, PartModel, ScoreEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import { createPart } from '../score-model/scoreEventBuilder';
+import { isProtectedBar } from '../score-integrity/identityLock';
+import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
+
+export { isFelaKutiHarmonicPath } from './felaKutiHarmonicPath';
+
+const PC_TO_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
+
+function pitchClassToSharpName(pc: number): string {
+  return PC_TO_SHARP[((pc % 12) + 12) % 12]!;
+}
+
+/**
+ * Dominant-family proxy for finalBarTension (mirrors verlaineGbdWriterEvalCore).
+ * Note: shorthand `Am7` is dominant under that gate (`m7` ≠ `min`); prefer `Amin7`/`Amin9`.
+ */
+function chordLooksDominantFamilyForFbt(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return false;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return false;
+  if (/^[^/]*min9/i.test(s)) return false;
+  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
+}
+
+/**
+ * Bias piece-final toward Im7 vamp landing that already passes fBT (`Amin7`/`Amin9` spelling).
+ * Afrobeat pools often end on G7/D7/Am7 — all trip finalBarTension under Verlaine gate.
+ */
+function biasFelaKutiFinalBarIdiomaticOpen(
+  out: string[],
+  seed: number,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  const sym = out[idx];
+  if (!sym || !chordLooksDominantFamilyForFbt(sym)) return;
+
+  const tonicPc = inferTonicPitchClassFromBar1(context);
+  if (tonicPc === undefined) return;
+  const root = pitchClassToSharpName(tonicPc);
+  const u = seededUnit(seed, totalBars, 771009);
+  const next = u < 0.55 ? `${root}min7` : `${root}min9`;
+  out[idx] = next;
+  receipts.push(`fk:final_vamp_bias@bar${totalBars}`);
+}
+
+/**
+ * Patch final bar only so stripFromContext ≡ getChordForBar at cadence (HV verify FBT).
+ * Bacharach / Surman dual-surface pattern — mid-piece parsed bars untouched.
+ */
+function syncFelaKutiFinalBarAuthority(context: CompositionContext, out: string[]): void {
+  const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
+  const tb = context.form.totalBars;
+  if (out.length !== tb || tb < 1) return;
+  const finalSym = out[tb - 1]!;
+
+  const locked =
+    context.lockedHarmonyBarsRaw?.length === tb
+      ? [...context.lockedHarmonyBarsRaw]
+      : [...out];
+  locked[tb - 1] = finalSym;
+  context.lockedHarmonyBarsRaw = locked;
+  context.harmony = buildHarmonyPlanFromBars(locked);
+  context.chordSymbolPlan = buildChordSymbolPlanFromBars(locked);
+  context.lockedHarmonyBarContracts = buildLockedHarmonyBarContracts(locked);
+  assertLockedHarmonyContractsToneParity(context.lockedHarmonyBarContracts);
+
+  const parsed =
+    Array.isArray(genMeta.parsedCustomProgressionBars) &&
+    (genMeta.parsedCustomProgressionBars as string[]).length === tb
+      ? [...(genMeta.parsedCustomProgressionBars as string[])]
+      : [...locked];
+  parsed[tb - 1] = finalSym;
+  genMeta.parsedCustomProgressionBars = parsed;
+  genMeta.customChordProgressionSummary = parsed.join(' | ');
+}
 
 /** Pool keys registered under `SONGWRITER_CHORD_POOLS` for `songwriterId === 'fela_kuti'`. */
 export type FelaKutiChordPoolId =
@@ -160,6 +243,10 @@ export function precomputeFelaKutiEffectiveHarmonyBars(context: CompositionConte
   }
   applyFelaKutiDeviceReceiptPasses(seed, receipts, tb, context, fkCtx);
 
+  /* Piece-final only: Im7 vamp spelling that already passes fBT (Amin7/Amin9). */
+  biasFelaKutiFinalBarIdiomaticOpen(out, seed, tb, receipts, context);
+  syncFelaKutiFinalBarAuthority(context, out);
+
   genMeta.felaKutiEffectiveHarmonyBars = out;
   genMeta.felaKutiDeviceReceipts = receipts;
   genMeta.felaKutiYorubaPentatonicDegrees = [...FELA_YORUBA_PENTATONIC_DEGREES];
@@ -251,7 +338,8 @@ export function appendFelaPercussionToScore(score: ScoreModel, context: Composit
   const pattern = engine.selectPattern(feel);
   const drumPart = buildFelaAfrobeatPercussionPart(tb, pattern);
   stampFelaDrumMeasureSpans(drumPart, context);
-  score.parts.push(drumPart);
+  // Post-seal score.parts is Object.freeze'd — reassign like Zappa solo merge (never push).
+  score.parts = [...score.parts, drumPart];
 }
 
 export function finalizeFelaKutiMetadata(metadata: GenerationMetadata, acc: FelaKutiHarmonyAccumulator): void {

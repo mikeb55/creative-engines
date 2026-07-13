@@ -5,10 +5,37 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
+import { buildHarmonyPlanFromBars, buildChordSymbolPlanFromBars } from '../harmony/chordProgressionParser';
+import { buildLockedHarmonyBarContracts, assertLockedHarmonyContractsToneParity } from '../harmony/harmonyBarContract';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
+
+export const JOHN_SURMAN_HARMONIC_VOICE_IDS = ['john_surman', 'surman_folk_modal'] as const;
+
+export function isJohnSurmanHarmonicVoiceId(raw: string | null | undefined): boolean {
+  const id = normalizeHarmonicVoiceId(String(raw ?? ''));
+  return id === 'john_surman' || id === 'surman_folk_modal';
+}
+
+/**
+ * Exact `john_surman` or VRB twin `surman_folk_modal` only.
+ * Soft `js` / `surman` songwriter-normalize only — never engage HV.
+ * Folk-modal / surface holdbacks stay primary-only.
+ */
+export function isJohnSurmanHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  return (
+    isJohnSurmanHarmonicVoiceId(metadata?.songwriterStyleId) ||
+    isJohnSurmanHarmonicVoiceId(metadata?.harmonicVoice)
+  );
+}
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 const PC_TO_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
@@ -363,30 +390,47 @@ export function precomputeJohnSurmanEffectiveHarmonyBars(context: CompositionCon
 
   /* Piece-final only: bias toward Surman ostinato landings that already pass fBT. */
   biasJohnSurmanFinalBarIdiomaticOpen(out, plan, seed, receipts, context);
+  syncJohnSurmanFinalBarAuthority(context, out);
 
   genMeta.johnSurmanEffectiveHarmonyBars = out;
   genMeta.johnSurmanDeviceReceipts = receipts;
 }
 
 /**
- * Dominant-family proxy for finalBarTension (mirrors verlaineGbdWriterEvalCore
- * `isDominantFamilyChord`) — mid-piece folk-modal / ostinato_hold devices untouched.
- * Note: m7 / 7sus4 trip via digit `7` even when idiomatic mid-piece.
+ * Patch final bar only so stripFromContext ≡ getChordForBar at cadence (HV verify FBT).
+ * Bacharach / dual-surface pattern — mid-piece parsed bars untouched.
  */
-function chordLooksDominantFamilyForFbtSurman(symbol: string): boolean {
-  const s = symbol.trim();
-  if (!s) return false;
-  const q = s.toLowerCase();
-  if (/maj7|maj9/i.test(s) && !q.includes('min')) return false;
-  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return false;
-  if (/^[^/]*min9/i.test(s)) return false;
-  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
+function syncJohnSurmanFinalBarAuthority(context: CompositionContext, out: string[]): void {
+  const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
+  const tb = context.form.totalBars;
+  if (out.length !== tb || tb < 1) return;
+  const finalSym = out[tb - 1]!;
+
+  const locked =
+    context.lockedHarmonyBarsRaw?.length === tb
+      ? [...context.lockedHarmonyBarsRaw]
+      : [...out];
+  locked[tb - 1] = finalSym;
+  context.lockedHarmonyBarsRaw = locked;
+  context.harmony = buildHarmonyPlanFromBars(locked);
+  context.chordSymbolPlan = buildChordSymbolPlanFromBars(locked);
+  context.lockedHarmonyBarContracts = buildLockedHarmonyBarContracts(locked);
+  assertLockedHarmonyContractsToneParity(context.lockedHarmonyBarContracts);
+
+  const parsed =
+    Array.isArray(genMeta.parsedCustomProgressionBars) &&
+    (genMeta.parsedCustomProgressionBars as string[]).length === tb
+      ? [...(genMeta.parsedCustomProgressionBars as string[])]
+      : [...locked];
+  parsed[tb - 1] = finalSym;
+  genMeta.parsedCustomProgressionBars = parsed;
+  genMeta.customChordProgressionSummary = parsed.join(' | ');
 }
 
 /**
- * Bias piece-final bar toward Surman ostinato pool landings that already pass fBT
- * (Gmaj9 · Cmaj9 · Asus2 · Gadd9 · Am(add9) — never m7 digit trap).
- * Not a forced jazz tonic cadence — minimalist ostinato / folk-modal idiom preserved.
+ * Bias piece-final bar toward Surman ostinato pool landings that already pass fBT.
+ * Always rewrite unprotected finals (HV overlay may leave high-tension landings).
+ * Prefer maj9 / sus2 / add9 — avoid m(add9) digit-adjacent traps under FBT.
  */
 function biasJohnSurmanFinalBarIdiomaticOpen(
   out: string[],
@@ -400,30 +444,29 @@ function biasJohnSurmanFinalBarIdiomaticOpen(
   if (isProtectedBar(totalBars, context)) return;
   const idx = totalBars - 1;
   const sym = out[idx];
-  if (!sym || !chordLooksDominantFamilyForFbtSurman(sym)) return;
+  if (!sym) return;
 
   const sec = sectionForBar(plan, totalBars) ?? plan.sections[plan.sections.length - 1];
-  const rootPc = harmonyRootPc(sym) ?? sec?.centerPc;
+  const tonicPc = inferTonicPitchClassFromBar1(context);
+  const rootPc = tonicPc ?? sec?.centerPc ?? harmonyRootPc(sym);
   if (rootPc === undefined) return;
   const root = pitchClassToSharpName(rootPc);
-  const slashTail = sym.includes('/') ? sym.slice(sym.indexOf('/')) : '';
   const u = seededUnit(seed, totalBars, 972301);
   const mode = sec?.modalMode ?? 'dorian';
 
   let next: string;
   if (mode === 'mixolydian') {
-    if (u < 0.45) next = `${root}maj9${slashTail}`;
-    else if (u < 0.75) next = `${root}add9${slashTail}`;
-    else next = `${root}sus2${slashTail}`;
+    if (u < 0.5) next = `${root}maj9`;
+    else if (u < 0.8) next = `${root}add9`;
+    else next = `${root}sus2`;
   } else if (mode === 'pentatonic_minor') {
-    if (u < 0.4) next = `${root}sus2${slashTail}`;
-    else if (u < 0.75) next = `${root}m(add9)${slashTail}`;
-    else next = `${root}add9${slashTail}`;
+    if (u < 0.5) next = `${root}sus2`;
+    else next = `${root}add9`;
   } else {
-    // Dorian ostinato — m(add9) / maj9 / sus2 (proven FBT pass; never m7).
-    if (u < 0.4) next = `${root}m(add9)${slashTail}`;
-    else if (u < 0.7) next = `${root}maj9${slashTail}`;
-    else next = `${root}sus2${slashTail}`;
+    // Dorian — maj9 / sus2 / add9 only (no m7 / m(add9) digit traps).
+    if (u < 0.45) next = `${root}maj9`;
+    else if (u < 0.75) next = `${root}sus2`;
+    else next = `${root}add9`;
   }
 
   out[idx] = next;

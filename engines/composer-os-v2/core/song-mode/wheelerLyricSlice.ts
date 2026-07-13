@@ -4,10 +4,35 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
+
+export const KENNY_WHEELER_HARMONIC_VOICE_IDS = ['kenny_wheeler', 'wheeler', 'kw'] as const;
+
+export function isKennyWheelerHarmonicVoiceId(raw: string | null | undefined): boolean {
+  const id = normalizeHarmonicVoiceId(String(raw ?? ''));
+  return id === 'kenny_wheeler' || id === 'wheeler' || id === 'kw';
+}
+
+/**
+ * Exact `kenny_wheeler` or VRB twins `wheeler` / `kw`.
+ * Soft songwriter aliases that only normalize via ALIASES never engage HV unless already
+ * exact/twin. BB / ECM / import holdbacks untouched.
+ */
+export function isKennyWheelerHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  return (
+    isKennyWheelerHarmonicVoiceId(metadata?.songwriterStyleId) ||
+    isKennyWheelerHarmonicVoiceId(metadata?.harmonicVoice)
+  );
+}
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 

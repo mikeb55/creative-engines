@@ -679,6 +679,91 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
     notes: 'alias of eberhard_weber for VRB voiceId harmonicVoice=weber_field (never webern)',
   },
   {
+    styleId: 'jan_garbarek',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'janGarbarekEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via janGarbarekEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact jan_garbarek only; soft jg/garbarek songwriter-normalize only (jg:* receipts Garbarek-local; Goldsmith jg:* is separate jerry_goldsmith lane); surface holdbacks untouched',
+  },
+  {
+    styleId: 'john_surman',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'johnSurmanEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via johnSurmanEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact john_surman + VRB twin surman_folk_modal; soft js/surman songwriter-normalize only; surface holdbacks untouched',
+  },
+  {
+    styleId: 'surman_folk_modal',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'johnSurmanEffectiveHarmonyBars',
+    notes: 'alias of john_surman for VRB voiceId harmonicVoice=surman_folk_modal',
+  },
+  {
+    styleId: 'kenny_wheeler',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'kennyWheelerEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via kennyWheelerEffectiveHarmonyBars (wheelerLyricSlice) + mosaic merge; truth_registry primary-only; exact kenny_wheeler + optional twins wheeler/kw; BB/ECM/import holdbacks untouched',
+  },
+  {
+    styleId: 'wheeler',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'kennyWheelerEffectiveHarmonyBars',
+    notes: 'alias of kenny_wheeler for VRB voiceId harmonicVoice=wheeler',
+  },
+  {
+    styleId: 'kw',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'kennyWheelerEffectiveHarmonyBars',
+    notes: 'alias of kenny_wheeler for VRB voiceId harmonicVoice=kw',
+  },
+  {
+    styleId: 'fela_kuti',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'felaKutiEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via felaKutiEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact fela_kuti only; soft fela songwriter-normalize only; percussion/context/surface holdbacks untouched',
+  },
+  {
+    styleId: 'berg',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'bergEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via bergEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact berg only (not alban_berg); receipts bg:* (not ab:); surface holdbacks untouched',
+  },
+  {
     styleId: 'john_coltrane',
     layers: {
       harmony: 'hv_full',

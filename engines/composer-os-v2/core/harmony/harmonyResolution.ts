@@ -70,6 +70,11 @@ import { isQuincyJonesHarmonicPath } from '../song-mode/quincyJonesSlice';
 import { isSammyNesticoHarmonicPath } from '../song-mode/sammyNesticoSlice';
 import { isHenryThreadgillHarmonicPath } from '../song-mode/henryThreadgillSlice';
 import { isGilEvansHarmonicPath } from '../song-mode/gilEvansSlice';
+import { isJanGarbarekHarmonicPath } from '../song-mode/janGarbarekSlice';
+import { isJohnSurmanHarmonicPath } from '../song-mode/johnSurmanSlice';
+import { isKennyWheelerHarmonicPath } from '../song-mode/wheelerLyricSlice';
+import { isFelaKutiHarmonicPath } from '../song-mode/felaKutiHarmonicPath';
+import { isBergHarmonicPath } from '../song-mode/bergSlice';
 import {
   hasSectionMarkerVrbAssignment,
   resolveVoiceRuleBundleForBar,
@@ -579,7 +584,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 
   const bgEff = meta?.bergEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'berg' &&
+    isBergHarmonicPath(meta) &&
     Array.isArray(bgEff) &&
     bgEff.length === tb &&
     barIndex >= 1 &&
@@ -753,7 +758,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
    */
   const felaEff = meta?.felaKutiEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'fela_kuti' &&
+    isFelaKutiHarmonicPath(meta) &&
     Array.isArray(felaEff) &&
     felaEff.length === tb &&
     barIndex >= 1 &&
@@ -799,7 +804,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
    */
   const kwEff = meta?.kennyWheelerEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'kenny_wheeler' &&
+    isKennyWheelerHarmonicPath(meta) &&
     Array.isArray(kwEff) &&
     kwEff.length === tb &&
     barIndex >= 1 &&
@@ -814,7 +819,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
    */
   const janGarbarekEff = meta?.janGarbarekEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'jan_garbarek' &&
+    isJanGarbarekHarmonicPath(meta) &&
     Array.isArray(janGarbarekEff) &&
     janGarbarekEff.length === tb &&
     barIndex >= 1 &&
@@ -829,7 +834,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
    */
   const johnSurmanEff = meta?.johnSurmanEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'john_surman' &&
+    isJohnSurmanHarmonicPath(meta) &&
     Array.isArray(johnSurmanEff) &&
     johnSurmanEff.length === tb &&
     barIndex >= 1 &&

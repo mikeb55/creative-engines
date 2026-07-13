@@ -5,9 +5,27 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
+
+/**
+ * Exact id `jan_garbarek` only.
+ * Soft `jg` / `garbarek` (ALIASES) songwriter-normalize only — never engage HV.
+ * Receipt prefix `jg:*` is Garbarek-slice-local; Goldsmith film `jg:*` is a separate composer lane
+ * (`jerry_goldsmith` / `isJerryGoldsmithHarmonicPath`) — soft alias `jg` does not cross HV.
+ */
+export function isJanGarbarekHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'jan_garbarek' || voice === 'jan_garbarek';
+}
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 const PC_TO_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;

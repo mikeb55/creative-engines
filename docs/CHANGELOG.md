@@ -2,6 +2,8 @@
 
 ### Added
 
+- **HV authority — Batch 5B ECM / world / serial (Tier 2 score-5)** — Exact-id path helpers + registry `hv_full` harmony/precompute for `jan_garbarek` (soft `jg`/`garbarek` normalize-only; `jg:*` receipts Garbarek-local vs Goldsmith film lane), `john_surman` (twin `surman_folk_modal`; soft `js`/`surman` normalize-only), `kenny_wheeler` (twins `wheeler`/`kw`; BB/ECM/import holdbacks untouched), `fela_kuti` (exact only; path helper cycle-safe module), `berg` (exact only; receipts `bg:*`). Mosaic merge on HV; spine/`getChordForBar`. Verify each with `--primary wayne_shorter` OVERALL PASS · `resolverZeroDiff: true` · 0 DIVERGE.
+
 - **HV authority — Batch 5A Film / ECM (Tier 2 score-5)** — Exact-id path helpers + registry `hv_full` harmony/precompute for `angelo_badalamenti` (VRB twin `badalamenti`), `ennio_morricone` (twin `morricone`), `hans_zimmer` (twin `zimmer`), `lalo_schifrin` (twin `schifrin_groove`), `eberhard_weber` (twin `weber_field`; never `webern`). Mosaic merge on HV; spine/`getChordForBar`. Soft aliases songwriter-normalize only — never engage HV. Film context/surface + Weber field-plan holdbacks untouched. Verify each with `--primary wayne_shorter` OVERALL PASS · `resolverZeroDiff: true` · 0 DIVERGE.
 
 - **HV authority — `gil_evans` Jazz orchestra / arranger (Tier 2 score-5)** — Exact-id path helper (`isGilEvansHarmonicPath`) + registry `hv_full` harmony/precompute; mosaic merge on HV; spine/`getChordForBar`. Soft songwriter `evans` is **not** used (see **Fixed**). BY_ID short `evans`→`BILL_EVANS` untouched. BB Gil arranger / style-profile holdbacks untouched. Verify with `--primary wayne_shorter` OVERALL PASS · `resolverZeroDiff: true` · 0 DIVERGE.
@@ -29,6 +31,12 @@
 - **Generate — “How pieces end” browse tab** — Nested Generate workspace tab (renderer-only) listing Song Mode composers by closing approach: Resolved / Confirmed clean / Open / Special handling / Not tagged yet. Static catalog in **`composerFixCategories.ts`**; no generation, harmony, evaluator, or Electron IPC changes.
 
 ### Fixed
+
+- **`fela_kuti` post-seal percussion append** — `appendFelaPercussionToScore` used `score.parts.push` after `finalizeAndSealDuoScoreBarMath` freezes `parts` (duo length 2 → "Cannot add property 2"). Reassign `[...parts, drum]` (Zappa merge pattern). Unblocks Batch 5B HV verify; pre-existing on main.
+
+- **`fela_kuti` HV `finalBarTension` (Batch 5B)** — Afrobeat pools often end on G7/D7/`Am7`; Verlaine fBT treats shorthand `m7` as dominant. Piece-final bias to `Amin7`/`Amin9` + final-bar-only authority sync so primary and wayne+HV gates agree.
+
+- **`john_surman` HV `finalBarTension` strip drift (Batch 5B)** — Surman final-open bias updated `johnSurmanEffectiveHarmonyBars` only; HV verify `stripFromContext` preferred stale Wayne `parsedCustomProgressionBars`. Final-bar-only authority sync (Bacharach dual-surface pattern) so strip ≡ getChordForBar at cadence.
 
 - **Fixed: berg receipt prefix collision (`ab:`→`bg:`)** — prerequisite to Batch 5 HV wire. Alban Berg Song Mode slice + diagnostics/logging (`bergSlice.ts`, style profile, rule registry) now emit **`bg:*`**; **`angelo_badalamenti`** keeps **`ab:*`** untouched. No HV / `isBergHarmonicPath` in this commit.
 
