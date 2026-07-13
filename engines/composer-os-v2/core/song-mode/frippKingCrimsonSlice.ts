@@ -8,6 +8,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import type { BarMeterMap } from '../rhythm/barMeterTypes';
@@ -167,6 +168,32 @@ function biasFrippKingCrimsonFinalBarIdiomaticOpen(
   receipts.push(`fk:final_open_bias@bar${totalBars}`);
 }
 
+export function isSongwriterFrippKingCrimson(
+  genMeta: GenerationMetadata | undefined
+): genMeta is GenerationMetadata & { songwriterStyleId: 'fripp_king_crimson' } {
+  return genMeta?.songwriterStyleId === 'fripp_king_crimson';
+}
+
+/**
+ * Harmonic-path gate — primary `fripp_king_crimson` **or** exact `harmonicVoice=fripp_king_crimson`.
+ * Soft Song aliases (`king_crimson` / `crimson`) normalize to Song primary before this gate.
+ * Never Systems `fripp` / `fripp_systems_process` (`rf:*` — separate identity).
+ */
+export function isFrippKingCrimsonHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'fripp_king_crimson' || voice === 'fripp_king_crimson';
+}
+
+/**
+ * Precompute effective harmony — third-cycle / asymmetric KC surfaces (`fk:*` receipts).
+ * Call when {@link isFrippKingCrimsonHarmonicPath} (primary or exact HV).
+ */
 export function precomputeFrippKingCrimsonEffectiveHarmonyBars(context: CompositionContext): void {
   const md = context.generationMetadata as GenerationMetadata & {
     asymmetricRhythmRequest?: AsymmetricRhythmRequest;

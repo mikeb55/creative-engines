@@ -633,7 +633,10 @@ import {
   finalizeCharlieParkerMetadata,
   precomputeCharlieParkerEffectiveHarmonyBars,
 } from './charlieParkerSlice';
-import { precomputeFrippKingCrimsonEffectiveHarmonyBars } from './frippKingCrimsonSlice';
+import {
+  isFrippKingCrimsonHarmonicPath,
+  precomputeFrippKingCrimsonEffectiveHarmonyBars,
+} from './frippKingCrimsonSlice';
 import { activityScoreForBar, HIGH_ACTIVITY } from './activityScore';
 import {
   emitDuoSwingBassBar,
@@ -3514,6 +3517,10 @@ function buildGuitarPart(
   );
   const johnBarryHarmonicPathActive = isJohnBarryHarmonicPath(genMeta);
   const isSongwriterFrippKingCrimson = genMeta?.songwriterStyleId === 'fripp_king_crimson';
+  const isHarmonicVoiceFrippKingCrimson =
+    normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
+    'fripp_king_crimson';
+  const frippKingCrimsonHarmonicPathActive = isFrippKingCrimsonHarmonicPath(genMeta);
   const bwAccum = createBrianWilsonHarmonyAccumulator();
   const swAccum = createStevieWonderHarmonyAccumulator();
   const rhAccum = createRadioheadHarmonyAccumulator();
@@ -4195,8 +4202,15 @@ function buildGuitarPart(
   if (isSongwriterCharlieParker && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeCharlieParkerEffectiveHarmonyBars(context);
   }
-  if (isSongwriterFrippKingCrimson && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (frippKingCrimsonHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeFrippKingCrimsonEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceFrippKingCrimson && !isSongwriterFrippKingCrimson) {
+      const frippKingCrimsonEff = genMeta.frippKingCrimsonEffectiveHarmonyBars;
+      const frippKingCrimsonTb = totalBarsFromContext(context);
+      if (Array.isArray(frippKingCrimsonEff) && frippKingCrimsonEff.length === frippKingCrimsonTb) {
+        genMeta.mosaicMergedHarmonyBars = [...frippKingCrimsonEff];
+      }
+    }
   }
 
   const seed = context.seed;

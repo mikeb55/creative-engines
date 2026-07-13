@@ -41,6 +41,7 @@ import { isDonaldFagenHarmonicPath } from '../song-mode/donaldFagenSlice';
 import { isJamesBrownHarmonicPath } from '../song-mode/jamesBrownSlice';
 import { isSteveReichHarmonicPath } from '../song-mode/steveReichSlice';
 import { isMessiaenHarmonicPath } from '../song-mode/messiaenSlice';
+import { isFrippKingCrimsonHarmonicPath } from '../song-mode/frippKingCrimsonSlice';
 import { isJohnColtraneHarmonicPath } from '../song-mode/johnColtraneSlice';
 import {
   hasSectionMarkerVrbAssignment,
@@ -1180,9 +1181,14 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
     return cpEff[barIndex - 1]!;
   }
 
+  /**
+   * Fripp / King Crimson: `precomputeFrippKingCrimsonEffectiveHarmonyBars` — third-cycle / asymmetric (`fk:*`).
+   * HV path: primary | harmonicVoice (`fripp_king_crimson` exact) — see isFrippKingCrimsonHarmonicPath.
+   * Never Systems `fripp` (`rf:*`). Soft `king_crimson` / `crimson` normalize to Song before gate.
+   */
   const fkcEff = meta?.frippKingCrimsonEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'fripp_king_crimson' &&
+    isFrippKingCrimsonHarmonicPath(meta) &&
     Array.isArray(fkcEff) &&
     fkcEff.length === tb &&
     barIndex >= 1 &&

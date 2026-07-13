@@ -321,6 +321,17 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
       'harmony/precompute hv_full via messiaenEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact messiaen only — never sq_vrb_messiaen; soft olivier_messiaen normalizes to Song; Song-Messiaen VRB stub is separate from SQ MESSIAEN_SQ',
   },
   {
+    styleId: 'fripp_king_crimson',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'frippKingCrimsonEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via frippKingCrimsonEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact fripp_king_crimson only — never Systems fripp / fripp_systems_process (rf:*); soft king_crimson/crimson normalize to Song; VRB aliases king_crimson/crimson → FRIPP_KING_CRIMSON',
+  },
+  {
     styleId: 'john_coltrane',
     layers: {
       harmony: 'hv_full',

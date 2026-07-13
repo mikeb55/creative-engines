@@ -52,6 +52,7 @@ import { isDonaldFagenHarmonicPath } from '../song-mode/donaldFagenSlice';
 import { isJamesBrownHarmonicPath } from '../song-mode/jamesBrownSlice';
 import { isSteveReichHarmonicPath } from '../song-mode/steveReichSlice';
 import { isMessiaenHarmonicPath } from '../song-mode/messiaenSlice';
+import { isFrippKingCrimsonHarmonicPath } from '../song-mode/frippKingCrimsonSlice';
 import { isJohnColtraneHarmonicPath } from '../song-mode/johnColtraneSlice';
 import { getChordForBar } from './harmonyResolution';
 import { buildSectionAwareHarmonySpine } from './harmonySpineSectionLoop';
@@ -199,7 +200,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   { match: (m) => isSteveReichHarmonicPath(m), effKey: 'steveReichEffectiveHarmonyBars', sliceId: 'steve_reich' },
   { match: (m) => isMessiaenHarmonicPath(m), effKey: 'messiaenEffectiveHarmonyBars', sliceId: 'messiaen' },
   { match: (m) => m?.songwriterStyleId === 'charlie_parker', effKey: 'charlieParkerEffectiveHarmonyBars', sliceId: 'charlie_parker' },
-  { match: (m) => m?.songwriterStyleId === 'fripp_king_crimson', effKey: 'frippKingCrimsonEffectiveHarmonyBars', sliceId: 'fripp_king_crimson' },
+  { match: (m) => isFrippKingCrimsonHarmonicPath(m), effKey: 'frippKingCrimsonEffectiveHarmonyBars', sliceId: 'fripp_king_crimson' },
   /** Frank Zappa harmonicVoice is treated as Frank Zappa for harmony authority when eff bars / HarmonyContext exist. */
   {
     match: (m) => isFrankZappaHarmonicPath(m),
