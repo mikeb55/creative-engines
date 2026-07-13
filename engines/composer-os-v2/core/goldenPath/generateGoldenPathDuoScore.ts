@@ -541,6 +541,7 @@ import {
   accumulateDonaldFagenHarmonyDiagnostics,
   createDonaldFagenHarmonyAccumulator,
   finalizeDonaldFagenMetadata,
+  isDonaldFagenHarmonicPath,
   precomputeDonaldFagenEffectiveHarmonyBars,
 } from './donaldFagenSlice';
 import {
@@ -3232,6 +3233,10 @@ function buildGuitarPart(
   const productDuoIntent: 'conversational' | 'supportive' | undefined =
     genMeta?.duoIntent === 'conversational' || genMeta?.duoIntent === 'supportive' ? genMeta.duoIntent : undefined;
   const isSongwriterFagen = genMeta?.songwriterStyleId === 'donald_fagen';
+  const isHarmonicVoiceDonaldFagen =
+    normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
+    'donald_fagen';
+  const donaldFagenHarmonicPathActive = isDonaldFagenHarmonicPath(genMeta);
   const isSongwriterEcmChamber = genMeta?.songwriterStyleId === 'ecm_chamber';
   const isHarmonicVoiceEcmChamber =
     normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
@@ -4062,8 +4067,15 @@ function buildGuitarPart(
       }
     }
   }
-  if (isSongwriterFagen && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (donaldFagenHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeDonaldFagenEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceDonaldFagen && !isSongwriterFagen) {
+      const donaldFagenEff = genMeta.donaldFagenEffectiveHarmonyBars;
+      const donaldFagenTb = totalBarsFromContext(context);
+      if (Array.isArray(donaldFagenEff) && donaldFagenEff.length === donaldFagenTb) {
+        genMeta.mosaicMergedHarmonyBars = [...donaldFagenEff];
+      }
+    }
   }
   if (ecmChamberHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeEcmChamberEffectiveHarmonyBars(context);

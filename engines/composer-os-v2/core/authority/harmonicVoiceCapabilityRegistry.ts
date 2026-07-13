@@ -277,6 +277,17 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
       'harmony/precompute hv_full via bacharachEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; guitar bar passes + style-profile biases stay primary-only',
   },
   {
+    styleId: 'donald_fagen',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'donaldFagenEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via donaldFagenEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; Fagen guitar/keys colour biases stay primary-only',
+  },
+  {
     styleId: 'john_coltrane',
     layers: {
       harmony: 'hv_full',

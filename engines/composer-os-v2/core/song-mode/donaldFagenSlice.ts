@@ -8,6 +8,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -49,6 +50,25 @@ export function isSongwriterDonaldFagen(
   genMeta: GenerationMetadata | undefined
 ): genMeta is GenerationMetadata & { songwriterStyleId: 'donald_fagen' } {
   return genMeta?.songwriterStyleId === 'donald_fagen';
+}
+
+/**
+ * Harmonic-path gate — primary `donald_fagen` **or** exact `harmonicVoice=donald_fagen`.
+ * Soft aliases (`fagen`, `steely_dan`) stay primary-intake via songwriter normalize; they do **not** engage HV.
+ *
+ * **Primary-only surfaces (do not flip under HV):**
+ * - Guitar / keys-comp colour biases (`applyFagen*` passes)
+ * - Accumulator finalize stamps
+ */
+export function isDonaldFagenHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'donald_fagen' || voice === 'donald_fagen';
 }
 
 export interface DonaldFagenHarmonyAccumulator {
@@ -326,7 +346,8 @@ function applyPhraseAnticipationBiasPass(
 }
 
 /**
- * Precompute effective one chord per bar after Donald Fagen slice devices (primary `donald_fagen` only).
+ * Precompute effective one chord per bar after Donald Fagen slice devices.
+ * Call when {@link isDonaldFagenHarmonicPath} (primary or exact HV).
  */
 /** @deprecated — use resolveBarSymbol */
 export function precomputeDonaldFagenEffectiveHarmonyBars(context: CompositionContext): void {

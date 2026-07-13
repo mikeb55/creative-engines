@@ -37,6 +37,7 @@ import { isRalphTownerHarmonicPath } from '../song-mode/ralphTownerSlice';
 import { isSatieHarmonicPath } from '../song-mode/satieSlice';
 import { isColePorterHarmonicPath } from '../song-mode/colePorterSlice';
 import { isBacharachHarmonicPath } from '../song-mode/bacharachSlice';
+import { isDonaldFagenHarmonicPath } from '../song-mode/donaldFagenSlice';
 import { isJohnColtraneHarmonicPath } from '../song-mode/johnColtraneSlice';
 import {
   hasSectionMarkerVrbAssignment,
@@ -966,11 +967,12 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 
   /**
    * Donald Fagen: `precomputeDonaldFagenEffectiveHarmonyBars` applies jazz-rock precision harmony devices + receipts.
-   * After precompute, `donaldFagenEffectiveHarmonyBars` is full-form and authoritative.
+   * HV path: primary | harmonicVoice (`donald_fagen` exact) — see isDonaldFagenHarmonicPath.
+   * Guitar / keys-comp colour biases stay primary-only (not this branch).
    */
   const dfEff = meta?.donaldFagenEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'donald_fagen' &&
+    isDonaldFagenHarmonicPath(meta) &&
     Array.isArray(dfEff) &&
     dfEff.length === tb &&
     barIndex >= 1 &&
