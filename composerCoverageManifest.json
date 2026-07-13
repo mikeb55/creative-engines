@@ -1,6 +1,6 @@
 {
-  "sourceCommit": "5eec9fad25ea8b8442dcc9301c0d29af88e58930",
-  "generatedAt": "2026-06-22T11:55:34.259Z",
+  "sourceCommit": "43808d74ee10325fa117ce0bc785cffa1b162e1d",
+  "generatedAt": "2026-07-13T07:37:20.780Z",
   "shippedSummary": {
     "primaryOrderCount": 42,
     "singerSongwriterOrderCount": 1,
@@ -35,7 +35,7 @@
       "partial": false,
       "arrangementPath": null,
       "sliceFile": "engines/composer-os-v2/core/goldenPath/andrew_hill.ts",
-      "lastVerified": "2026-05-09T09:21:14+01:00",
+      "lastVerified": "2026-07-11T13:14:55+01:00",
       "quality": null,
       "status": "Ready"
     },
@@ -49,7 +49,7 @@
       "partial": false,
       "arrangementPath": null,
       "sliceFile": "engines/composer-os-v2/core/song-mode/filmSoundtrackHarmonySlices.ts",
-      "lastVerified": "2026-06-05T18:44:27+01:00",
+      "lastVerified": "2026-07-12T23:43:34+01:00",
       "quality": null,
       "status": "Library only"
     },
@@ -125,11 +125,11 @@
     },
     {
       "id": "bartok",
-      "displayName": "Bartók (String Quartets)",
+      "displayName": "Bartók",
       "shipped": false,
       "shippedGroup": null,
       "wired": true,
-      "smoke": true,
+      "smoke": false,
       "partial": false,
       "arrangementPath": null,
       "sliceFile": "engines/composer-os-v2/core/goldenPath/bartokSlice.ts",
@@ -194,6 +194,20 @@
       "status": "Library only"
     },
     {
+      "id": "berg",
+      "displayName": "Alban Berg",
+      "shipped": false,
+      "shippedGroup": null,
+      "wired": true,
+      "smoke": false,
+      "partial": false,
+      "arrangementPath": null,
+      "sliceFile": "engines/composer-os-v2/core/goldenPath/bergSlice.ts",
+      "lastVerified": "2026-05-11T10:07:26+01:00",
+      "quality": null,
+      "status": "Library only"
+    },
+    {
       "id": "bernard_herrmann",
       "displayName": "Bernard Herrmann",
       "shipped": false,
@@ -203,7 +217,7 @@
       "partial": false,
       "arrangementPath": null,
       "sliceFile": "engines/composer-os-v2/core/song-mode/filmSoundtrackHarmonySlices.ts",
-      "lastVerified": "2026-06-05T18:44:27+01:00",
+      "lastVerified": "2026-07-12T23:43:34+01:00",
       "quality": null,
       "status": "Library only"
     },
@@ -346,6 +360,20 @@
       "lastVerified": "2026-05-01T08:08:12+01:00",
       "quality": null,
       "status": "Ready"
+    },
+    {
+      "id": "clare_fischer",
+      "displayName": "Clare Fischer",
+      "shipped": false,
+      "shippedGroup": null,
+      "wired": true,
+      "smoke": false,
+      "partial": false,
+      "arrangementPath": null,
+      "sliceFile": "engines/composer-os-v2/core/goldenPath/clareFischerSlice.ts",
+      "lastVerified": "2026-05-11T10:07:26+01:00",
+      "quality": null,
+      "status": "Library only"
     },
     {
       "id": "claus_ogerman",
@@ -539,7 +567,7 @@
       "partial": false,
       "arrangementPath": null,
       "sliceFile": "engines/composer-os-v2/core/song-mode/filmSoundtrackHarmonySlices.ts",
-      "lastVerified": "2026-06-05T18:44:27+01:00",
+      "lastVerified": "2026-07-12T23:43:34+01:00",
       "quality": null,
       "status": "Library only"
     },
@@ -623,7 +651,7 @@
       "partial": false,
       "arrangementPath": null,
       "sliceFile": "engines/composer-os-v2/core/song-mode/filmSoundtrackHarmonySlices.ts",
-      "lastVerified": "2026-06-05T18:44:27+01:00",
+      "lastVerified": "2026-07-12T23:43:34+01:00",
       "quality": null,
       "status": "Library only"
     },
@@ -651,7 +679,7 @@
       "partial": false,
       "arrangementPath": null,
       "sliceFile": "engines/composer-os-v2/core/goldenPath/herbie_hancock.ts",
-      "lastVerified": "2026-05-09T09:07:20+01:00",
+      "lastVerified": "2026-07-11T09:51:13+01:00",
       "quality": null,
       "status": "Ready"
     },
@@ -749,7 +777,7 @@
       "partial": false,
       "arrangementPath": null,
       "sliceFile": "engines/composer-os-v2/core/song-mode/filmSoundtrackHarmonySlices.ts",
-      "lastVerified": "2026-06-05T18:44:27+01:00",
+      "lastVerified": "2026-07-12T23:43:34+01:00",
       "quality": null,
       "status": "Library only"
     },
@@ -833,7 +861,7 @@
       "partial": false,
       "arrangementPath": null,
       "sliceFile": "engines/composer-os-v2/core/song-mode/filmSoundtrackHarmonySlices.ts",
-      "lastVerified": "2026-06-05T18:44:27+01:00",
+      "lastVerified": "2026-07-12T23:43:34+01:00",
       "quality": null,
       "status": "Library only"
     },
@@ -1071,7 +1099,7 @@
       "partial": false,
       "arrangementPath": null,
       "sliceFile": "engines/composer-os-v2/core/song-mode/filmSoundtrackHarmonySlices.ts",
-      "lastVerified": "2026-06-05T18:44:27+01:00",
+      "lastVerified": "2026-07-12T23:43:34+01:00",
       "quality": null,
       "status": "Library only"
     },
@@ -1090,6 +1118,20 @@
       "status": "Library only"
     },
     {
+      "id": "oliver_nelson",
+      "displayName": "Oliver Nelson",
+      "shipped": false,
+      "shippedGroup": null,
+      "wired": true,
+      "smoke": true,
+      "partial": false,
+      "arrangementPath": null,
+      "sliceFile": "engines/composer-os-v2/core/goldenPath/oliverNelsonSlice.ts",
+      "lastVerified": "2026-05-11T10:07:26+01:00",
+      "quality": null,
+      "status": "Library only"
+    },
+    {
       "id": "ornette_coleman",
       "displayName": "Ornette Coleman (Harmolodics)",
       "shipped": false,
@@ -1099,7 +1141,7 @@
       "partial": false,
       "arrangementPath": null,
       "sliceFile": "engines/composer-os-v2/core/goldenPath/wayne_shorter.ts",
-      "lastVerified": "2026-05-13T06:37:55+01:00",
+      "lastVerified": "2026-07-11T11:27:32+01:00",
       "quality": null,
       "status": "Library only"
     },
@@ -1155,7 +1197,7 @@
       "partial": false,
       "arrangementPath": null,
       "sliceFile": "engines/composer-os-v2/core/song-mode/filmSoundtrackHarmonySlices.ts",
-      "lastVerified": "2026-06-05T18:44:27+01:00",
+      "lastVerified": "2026-07-12T23:43:34+01:00",
       "quality": null,
       "status": "Library only"
     },
@@ -1370,6 +1412,20 @@
       "status": "Ready"
     },
     {
+      "id": "sq_vrb_bartok",
+      "displayName": "Bartók (SQ VRB)",
+      "shipped": false,
+      "shippedGroup": null,
+      "wired": false,
+      "smoke": true,
+      "partial": false,
+      "arrangementPath": null,
+      "sliceFile": null,
+      "lastVerified": null,
+      "quality": null,
+      "status": "Library only"
+    },
+    {
       "id": "stephen_sondheim",
       "displayName": "Stephen Sondheim",
       "shipped": true,
@@ -1393,7 +1449,7 @@
       "partial": false,
       "arrangementPath": "Auditions on Song Mode duo path; no dedicated native ensemble surface.",
       "sliceFile": "engines/composer-os-v2/core/goldenPath/steve_reich.ts",
-      "lastVerified": "2026-05-09T10:13:05+01:00",
+      "lastVerified": "2026-07-13T08:04:30+01:00",
       "quality": null,
       "status": "Ready"
     },
@@ -1491,7 +1547,7 @@
       "partial": false,
       "arrangementPath": null,
       "sliceFile": "engines/composer-os-v2/core/goldenPath/wayne_shorter.ts",
-      "lastVerified": "2026-05-13T06:37:55+01:00",
+      "lastVerified": "2026-07-11T11:27:32+01:00",
       "quality": null,
       "status": "Ready"
     },
