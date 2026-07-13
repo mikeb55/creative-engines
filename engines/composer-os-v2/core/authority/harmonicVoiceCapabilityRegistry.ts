@@ -563,6 +563,17 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
       'harmony/precompute hv_full via henryThreadgillEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact henry_threadgill only; soft threadgill songwriter-normalize only; BB dual-id threadgill/henry_threadgill + interval-cell holdbacks untouched',
   },
   {
+    styleId: 'gil_evans',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'gilEvansEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via gilEvansEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact gil_evans only; soft songwriter evans removed (was ALIASES→gil_evans vs BY_ID evans→BILL_EVANS); BB Gil arranger / style-profile holdbacks untouched',
+  },
+  {
     styleId: 'john_coltrane',
     layers: {
       harmony: 'hv_full',

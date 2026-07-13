@@ -64,6 +64,7 @@ import { isOliverNelsonHarmonicPath } from '../song-mode/oliverNelsonSlice';
 import { isQuincyJonesHarmonicPath } from '../song-mode/quincyJonesSlice';
 import { isSammyNesticoHarmonicPath } from '../song-mode/sammyNesticoSlice';
 import { isHenryThreadgillHarmonicPath } from '../song-mode/henryThreadgillSlice';
+import { isGilEvansHarmonicPath } from '../song-mode/gilEvansSlice';
 import {
   hasSectionMarkerVrbAssignment,
   resolveVoiceRuleBundleForBar,
@@ -477,7 +478,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
    */
   const geEff = meta?.gilEvansEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'gil_evans' &&
+    isGilEvansHarmonicPath(meta) &&
     Array.isArray(geEff) &&
     geEff.length === tb &&
     barIndex >= 1 &&

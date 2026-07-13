@@ -3,10 +3,27 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
+
+/**
+ * Exact id `gil_evans` only — soft `evans` removed from songwriter ALIASES
+ * (was colliding with BY_ID `evans` → BILL_EVANS). Soft never engages HV.
+ * BB Gil arranger / style-profile holdbacks untouched.
+ */
+export function isGilEvansHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'gil_evans' || voice === 'gil_evans';
+}
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 

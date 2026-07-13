@@ -132,7 +132,8 @@ export function isSongwriterBillEvans(
 
 /**
  * Primary songwriter or harmonicVoice selects Bill Evans harmony authority.
- * Canonical id is bill_evans only — gil_evans / songwriter alias evans are a distinct style (not accepted here).
+ * Canonical id is bill_evans only — gil_evans is a distinct style (not accepted here).
+ * Soft songwriter `evans` was removed (ALIASES); BY_ID short `evans` still resolves BILL_EVANS VRB only.
  */
 export function isBillEvansHarmonicPath(
   metadata?: {

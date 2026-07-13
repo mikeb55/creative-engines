@@ -2784,7 +2784,6 @@ const ALIASES: Record<string, SongwriterRuleId> = {
   kendrick_lamar: 'kendrick_lamar',
   kendrick: 'kendrick_lamar',
   gil_evans: 'gil_evans',
-  evans: 'gil_evans',
   thad_jones: 'thad_jones',
   thad: 'thad_jones',
   count_basie: 'count_basie',

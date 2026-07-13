@@ -75,6 +75,7 @@ import { isOliverNelsonHarmonicPath } from '../song-mode/oliverNelsonSlice';
 import { isQuincyJonesHarmonicPath } from '../song-mode/quincyJonesSlice';
 import { isSammyNesticoHarmonicPath } from '../song-mode/sammyNesticoSlice';
 import { isHenryThreadgillHarmonicPath } from '../song-mode/henryThreadgillSlice';
+import { isGilEvansHarmonicPath } from '../song-mode/gilEvansSlice';
 import { getChordForBar } from './harmonyResolution';
 import { buildSectionAwareHarmonySpine } from './harmonySpineSectionLoop';
 import type { ResolvedPitchField } from './pitchFieldSpineTypes';
@@ -165,7 +166,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   { match: (m) => m?.songwriterStyleId === 'angelo_badalamenti', effKey: 'angeloBadalamentiEffectiveHarmonyBars', sliceId: 'angelo_badalamenti' },
   { match: (m) => isDukeEllingtonHarmonicPath(m), effKey: 'dukeEllingtonEffectiveHarmonyBars', sliceId: 'duke_ellington' },
   { match: (m) => isBillyStrayhornHarmonicPath(m), effKey: 'billyStrayhornEffectiveHarmonyBars', sliceId: 'billy_strayhorn' },
-  { match: (m) => m?.songwriterStyleId === 'gil_evans', effKey: 'gilEvansEffectiveHarmonyBars', sliceId: 'gil_evans' },
+  { match: (m) => isGilEvansHarmonicPath(m), effKey: 'gilEvansEffectiveHarmonyBars', sliceId: 'gil_evans' },
   { match: (m) => m?.songwriterStyleId === 'thad_jones', effKey: 'thadJonesEffectiveHarmonyBars', sliceId: 'thad_jones' },
   { match: (m) => m?.songwriterStyleId === 'charles_mingus', effKey: 'charlesMingusEffectiveHarmonyBars', sliceId: 'charles_mingus' },
   { match: (m) => isHenryThreadgillHarmonicPath(m), effKey: 'henryThreadgillEffectiveHarmonyBars', sliceId: 'henry_threadgill' },

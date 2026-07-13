@@ -2,6 +2,8 @@
 
 ### Added
 
+- **HV authority — `gil_evans` Jazz orchestra / arranger (Tier 2 score-5)** — Exact-id path helper (`isGilEvansHarmonicPath`) + registry `hv_full` harmony/precompute; mosaic merge on HV; spine/`getChordForBar`. Soft songwriter `evans` is **not** used (see **Fixed**). BY_ID short `evans`→`BILL_EVANS` untouched. BB Gil arranger / style-profile holdbacks untouched. Verify with `--primary wayne_shorter` OVERALL PASS · `resolverZeroDiff: true` · 0 DIVERGE.
+
 - **HV authority — Batch 4B Jazz orchestra / arranger (Tier 2 score-5)** — Exact-id path helpers + registry `hv_full` harmony/precompute for `oliver_nelson`, `quincy_jones` (optional film twin `quincy_jones_film`), `sammy_nestico`, `henry_threadgill`. Mosaic merge on HV; spine/`getChordForBar`. Soft aliases (`nelson`, `quincy`, `nestico`, `threadgill`) songwriter-normalize only — never engage HV. BB arranger / episode / interval-cell holdbacks untouched. (Nestico primary-path `finalBarTension` fix is a separate **Fixed** entry — same ship commit `b9d31d7e`, unrelated to HV wiring.) Verify each with `--primary wayne_shorter` OVERALL PASS · `resolverZeroDiff: true` · 0 DIVERGE.
 
 - **HV authority — Batch 4A Jazz orchestra / arranger (Tier 2 score-5)** — Exact-id path helpers + registry `hv_full` harmony/precompute for `bill_holman`, `billy_strayhorn`, `bob_brookmeyer`, `carla_bley`, `clare_fischer`. Mosaic merge on HV; spine/`getChordForBar`. Soft aliases (`holman`, `strayhorn`/`bs`, `brookmeyer`, `bley`, `fischer`) songwriter-normalize only — never engage HV. BB arranger / line-first / ContrapuntalLineEngine / style-profile holdbacks untouched. Verify each with `--primary wayne_shorter` OVERALL PASS · `resolverZeroDiff: true` · 0 DIVERGE.
@@ -25,6 +27,8 @@
 - **Generate — “How pieces end” browse tab** — Nested Generate workspace tab (renderer-only) listing Song Mode composers by closing approach: Resolved / Confirmed clean / Open / Special handling / Not tagged yet. Static catalog in **`composerFixCategories.ts`**; no generation, harmony, evaluator, or Electron IPC changes.
 
 ### Fixed
+
+- **Soft-alias ownership — remove songwriter `evans` → `gil_evans`** — Deleted ALIASES entry in `songwriterStyleProfiles.ts` that mapped soft `evans` to `gil_evans` while VRB BY_ID `evans` maps to `BILL_EVANS` (`voiceRuleBundles.ts`). Soft `evans` no longer songwriter-normalizes; require exact `gil_evans`. BY_ID `evans`→`BILL_EVANS` untouched. Does not change `bill_evans` exact-id HV path (`isBillEvansHarmonicPath`).
 
 - **`sammy_nestico` primary-path `finalBarTension` (Batch 4B ship `b9d31d7e`)** — Pre-existing hard-gate fail on primary (non-HV) generation; missed 68-style ROI tonic-force sweep; **unrelated to HV wiring**. `forceFinalBarTonicResolution` / `enforceFinalBarTonicResolution` in `precomputeSammyNesticoEffectiveHarmonyBars` force Basie-school tonic maj9 on the piece-final bar (all seeds/keys when tonic known, unprotected). Same pattern as Fischer/Nelson. Discovered during Batch 4B HV verify (primary vs HV DIVERGE); fix lives on shared precompute so primary + HV both land clean.
 
