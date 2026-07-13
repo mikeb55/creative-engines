@@ -55,6 +55,11 @@ import { isMccoyTynerHarmonicPath } from '../song-mode/mccoyTynerSlice';
 import { isPrinceHarmonicPath } from '../song-mode/princeSlice';
 import { isBeatlesHarmonicPath } from '../song-mode/beatlesSlice';
 import { isBeefheartHarmonicPath } from '../song-mode/beefheartFragmentSlice';
+import { isBillHolmanHarmonicPath } from '../song-mode/billHolmanSlice';
+import { isBillyStrayhornHarmonicPath } from '../song-mode/billyStrayhornSlice';
+import { isBobBrookmeyerHarmonicPath } from '../song-mode/bobBrookmeyerSlice';
+import { isCarlaBleyHarmonicPath } from '../song-mode/carlaBleySlice';
+import { isClareFischerHarmonicPath } from '../song-mode/clareFischerSlice';
 import {
   hasSectionMarkerVrbAssignment,
   resolveVoiceRuleBundleForBar,
@@ -585,7 +590,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 
   const bbEff = meta?.bobBrookmeyerEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'bob_brookmeyer' &&
+    isBobBrookmeyerHarmonicPath(meta) &&
     Array.isArray(bbEff) &&
     bbEff.length === tb &&
     barIndex >= 1 &&
@@ -596,7 +601,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 
   const cfEff = meta?.clareFischerEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'clare_fischer' &&
+    isClareFischerHarmonicPath(meta) &&
     Array.isArray(cfEff) &&
     cfEff.length === tb &&
     barIndex >= 1 &&
@@ -946,7 +951,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 
   const holmanEff = meta?.billHolmanEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'bill_holman' &&
+    isBillHolmanHarmonicPath(meta) &&
     Array.isArray(holmanEff) &&
     holmanEff.length === tb &&
     barIndex >= 1 &&
@@ -957,7 +962,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 
   const bleyEff = meta?.carlaBleyEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'carla_bley' &&
+    isCarlaBleyHarmonicPath(meta) &&
     Array.isArray(bleyEff) &&
     bleyEff.length === tb &&
     barIndex >= 1 &&
@@ -968,10 +973,11 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 
   /**
    * Billy Strayhorn: `precomputeBillyStrayhornEffectiveHarmonyBars` applies chromatic reinterpretation + extended-tone fusion.
+   * HV path: primary | harmonicVoice (`billy_strayhorn` exact) — see isBillyStrayhornHarmonicPath.
    */
   const bsEff = meta?.billyStrayhornEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'billy_strayhorn' &&
+    isBillyStrayhornHarmonicPath(meta) &&
     Array.isArray(bsEff) &&
     bsEff.length === tb &&
     barIndex >= 1 &&

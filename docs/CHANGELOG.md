@@ -2,6 +2,8 @@
 
 ### Added
 
+- **HV authority — Batch 4A Jazz orchestra / arranger (Tier 2 score-5)** — Exact-id path helpers + registry `hv_full` harmony/precompute for `bill_holman`, `billy_strayhorn`, `bob_brookmeyer`, `carla_bley`, `clare_fischer`. Mosaic merge on HV; spine/`getChordForBar`. Soft aliases (`holman`, `strayhorn`/`bs`, `brookmeyer`, `bley`, `fischer`) songwriter-normalize only — never engage HV. BB arranger / line-first / ContrapuntalLineEngine / style-profile holdbacks untouched. Verify each with `--primary wayne_shorter` OVERALL PASS · `resolverZeroDiff: true` · 0 DIVERGE.
+
 - **HV authority — Batch 3B Song flagships (Tier 2 score-5)** — Exact-id path helpers + registry `hv_full` harmony/precompute for `miles_davis`, `mccoy_tyner`, `prince`, `beatles`, `beefheart` (optional VRB twin `beefheart_fragment_polyphony`). Mosaic merge on HV; spine/`getChordForBar`. Soft aliases songwriter-normalize only. Surfaces/grammar holdbacks untouched. Verify each with `--primary wayne_shorter` OVERALL PASS · `resolverZeroDiff: true` · 0 DIVERGE.
 
 - **HV authority — Batch 3A Song flagships (Tier 2 score-5)** — Exact-id path helpers + registry `hv_full` harmony/precompute for `brian_wilson`, `stevie_wonder`, `charlie_parker`, `stephen_sondheim`, `jim_hall`. Mosaic merge on HV; spine/`getChordForBar`. Soft aliases (`brian`/`wilson`, `stevie`, `bird`/`parker`/`charlie`, `sondheim`, `jim`) songwriter-normalize only — never engage HV. Surfaces/grammar holdbacks untouched. Verify each with `--primary wayne_shorter` OVERALL PASS · `resolverZeroDiff: true` · 0 DIVERGE.

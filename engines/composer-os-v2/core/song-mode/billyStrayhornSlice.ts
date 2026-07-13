@@ -5,10 +5,26 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
+
+/**
+ * Exact id `billy_strayhorn` only — soft `strayhorn` / BY_ID `bs` stay songwriter-normalize;
+ * do **not** engage HV. Arranger `strayhorn` / line-first holdbacks untouched.
+ */
+export function isBillyStrayhornHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'billy_strayhorn' || voice === 'billy_strayhorn';
+}
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 

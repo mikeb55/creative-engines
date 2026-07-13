@@ -5,6 +5,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { isProtectedBar } from '../score-integrity/identityLock';
@@ -15,6 +16,21 @@ import {
   episodeForHolmanBar,
   type HolmanEpisodePlan,
 } from './holmanEpisodeTypes';
+
+/**
+ * Exact id `bill_holman` only — soft `holman` stays songwriter-normalize;
+ * does **not** engage HV. Arranger UI `holman` / BB dual-id holdbacks untouched.
+ */
+export function isBillHolmanHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'bill_holman' || voice === 'bill_holman';
+}
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 const PC_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'] as const;

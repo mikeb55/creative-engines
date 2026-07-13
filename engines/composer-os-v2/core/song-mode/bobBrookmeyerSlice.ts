@@ -3,6 +3,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata, BrookmeyerPeriodMode } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { isProtectedBar } from '../score-integrity/identityLock';
@@ -14,6 +15,21 @@ import {
 } from './brookmeyerEpisodeTypes';
 
 export type { BrookmeyerPeriodMode } from '../compositionContext';
+
+/**
+ * Exact id `bob_brookmeyer` only — soft `brookmeyer` stays songwriter-normalize;
+ * does **not** engage HV. Line-first / ContrapuntalLineEngine / SqToBb holdbacks untouched.
+ */
+export function isBobBrookmeyerHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'bob_brookmeyer' || voice === 'bob_brookmeyer';
+}
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 const PC_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'] as const;

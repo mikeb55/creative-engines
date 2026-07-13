@@ -464,6 +464,61 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
       'harmony/precompute hv_full via beefheartEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact beefheart + optional VRB twin beefheart_fragment_polyphony; soft captain_beefheart/don_van_vliet/trout_mask songwriter-normalize only',
   },
   {
+    styleId: 'bill_holman',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'billHolmanEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via billHolmanEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact bill_holman only; soft holman songwriter-normalize only; BB arranger holman / dual-id holdbacks untouched',
+  },
+  {
+    styleId: 'billy_strayhorn',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'billyStrayhornEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via billyStrayhornEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact billy_strayhorn only; soft strayhorn / BY_ID bs songwriter-normalize only; BB arranger + line-first holdbacks untouched',
+  },
+  {
+    styleId: 'bob_brookmeyer',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'bobBrookmeyerEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via bobBrookmeyerEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact bob_brookmeyer only; soft brookmeyer songwriter-normalize only; line-first / ContrapuntalLineEngine / SqToBb holdbacks untouched',
+  },
+  {
+    styleId: 'carla_bley',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'carlaBleyEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via carlaBleyEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact carla_bley only; soft bley songwriter-normalize only; BB arranger bley / dual-id holdbacks untouched',
+  },
+  {
+    styleId: 'clare_fischer',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'clareFischerEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via clareFischerEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact clare_fischer only; soft fischer songwriter-normalize only; BB Fischer / Latin-voicing surfaces stay primary-only',
+  },
+  {
     styleId: 'john_coltrane',
     layers: {
       harmony: 'hv_full',
