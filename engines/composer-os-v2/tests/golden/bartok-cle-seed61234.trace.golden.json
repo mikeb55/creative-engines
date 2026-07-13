@@ -3,7 +3,7 @@
   "trace": {
     "seed": 61234,
     "lengthBars": 8,
-    "styleSourceVrbId": "bartok",
+    "styleSourceVrbId": "sq_vrb_bartok",
     "imitationMode": "free_counterpoint_with_motif_echo",
     "phraseImitationModes": [
       "free_counterpoint_with_motif_echo",
