@@ -51,7 +51,7 @@ export const BARTOK_SQ_GCE_SCORER_ADJUSTMENTS: SqVrbGceScorerAdjustments = {
 /** Bartók SQ — high independence; axis harmony; strict imitation grammar. */
 export const BARTOK_SQ_CONTRAPUNTAL_LINE_POLICY: SqContrapuntalLinePolicy = {
   enabled: true,
-  vrbId: 'bartok',
+  vrbId: 'sq_vrb_bartok',
   independenceLevel: 'high',
   imitationStyle: 'strict_interval_cycle',
   registerPolicy: 'wide_registral_contrast',
@@ -71,7 +71,7 @@ export const BARTOK_SQ_CONTRAPUNTAL_LINE_POLICY: SqContrapuntalLinePolicy = {
 };
 
 export const BARTOK_SQ_VRB_PROFILE: SqVrbProfile = {
-  vrbId: 'bartok',
+  vrbId: 'sq_vrb_bartok',
   contrapuntalLinePolicy: BARTOK_SQ_CONTRAPUNTAL_LINE_POLICY,
   chordVocabulary: BARTOK_SQ_CHORD_VOCABULARY,
   bestBbStyle: 'brookmeyer',
@@ -85,6 +85,7 @@ export function applyBartokSqVrbProfile(bundle: VoiceRuleBundle): VoiceRuleBundl
   const p = BARTOK_SQ_VRB_PROFILE;
   return {
     ...bundle,
+    voiceId: 'sq_vrb_bartok',
     contrapuntalLinePolicy: p.contrapuntalLinePolicy,
     bestBbStyle: p.bestBbStyle,
     secondaryBbStyle: p.secondaryBbStyle,

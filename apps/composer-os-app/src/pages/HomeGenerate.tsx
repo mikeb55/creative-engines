@@ -716,7 +716,8 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'berg', label: 'Alban Berg' },
   { id: 'beethoven', label: 'Beethoven' },
   { id: 'beethoven_late', label: 'Beethoven (Late Quartets)' },
-  { id: 'bartok', label: 'Bartók (String Quartets)' },
+  { id: 'bartok', label: 'Bartók' },
+  { id: 'sq_vrb_bartok', label: 'Bartók (SQ VRB)' },
   { id: 'bill_evans', label: 'Bill Evans' },
   { id: 'bill_holman', label: 'Bill Holman' },
   { id: 'carla_bley', label: 'Carla Bley' },
@@ -936,7 +937,7 @@ const HARMONIC_VOICE_FILM_SET = new Set<string>(FILM_HARMONIC_VOICE_IDS);
  */
 const SONGWRITER_GROUP_SHIPPED_SQ_VRB_ORDER: readonly string[] = [
   'beethoven_late',
-  'bartok',
+  'sq_vrb_bartok',
   'ravel',
   'debussy',
   'dutilleux',
@@ -1496,7 +1497,7 @@ const ARRANGER_OPTIONS: { id: string; label: string }[] = [
   { id: 'scott_henderson', label: 'Scott Henderson' },
   /** SQ VRB arrangers — surfaced only on the String Quartet preset. */
   { id: 'beethoven_late', label: 'Beethoven (Late Quartets)' },
-  { id: 'bartok', label: 'Bartók' },
+  { id: 'sq_vrb_bartok', label: 'Bartók' },
   { id: 'ravel', label: 'Ravel' },
   { id: 'dutilleux', label: 'Dutilleux' },
   { id: 'ligeti', label: 'Ligeti' },
@@ -1535,7 +1536,7 @@ const ARRANGER_GROUP_CORE_ORDER: readonly string[] = [
  */
 const ARRANGER_GROUP_SQ_VRB_ORDER: readonly string[] = [
   'beethoven_late',
-  'bartok',
+  'sq_vrb_bartok',
   'ravel',
   'dutilleux',
   'ligeti',

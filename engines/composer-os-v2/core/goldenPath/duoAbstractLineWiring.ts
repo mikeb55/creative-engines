@@ -42,7 +42,7 @@ export function shouldRunDuoContrapuntalPrecompute(context: CompositionContext, 
 
 /** Co-onset streak before bass downbeat nudge; Brookmeyer + Bartók keep legacy `streak > 2` (need 3). */
 export function coOnsetStreakThresholdForFloor(floor: number, engineVrbId: string): number {
-  if (engineVrbId === 'bob_brookmeyer' || engineVrbId === 'bartok') return 3;
+  if (engineVrbId === 'bob_brookmeyer' || engineVrbId === 'sq_vrb_bartok') return 3;
   if (floor >= 0.75) return 1;
   if (floor >= 0.65) return 2;
   return 3;

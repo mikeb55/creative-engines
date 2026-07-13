@@ -16,11 +16,11 @@ function wavg(a: number, b: number, pw: number): number {
 }
 
 function testBartokRavelWeightedAverage(): boolean {
-  const b = getVoiceRuleBundle('bartok');
+  const b = getVoiceRuleBundle('sq_vrb_bartok');
   const r = getVoiceRuleBundle('ravel');
   const pw = 0.6;
   const out = blendVoiceRuleBundles(b, r, pw);
-  if (out.voiceId !== 'blend:bartok+ravel') return false;
+  if (out.voiceId !== 'blend:sq_vrb_bartok+ravel') return false;
   if (out.harmonicRhythm.minChordDurationBars !== wavg(b.harmonicRhythm.minChordDurationBars, r.harmonicRhythm.minChordDurationBars, pw))
     return false;
   if (out.harmonicRhythm.maxChordDurationBars !== wavg(b.harmonicRhythm.maxChordDurationBars, r.harmonicRhythm.maxChordDurationBars, pw))

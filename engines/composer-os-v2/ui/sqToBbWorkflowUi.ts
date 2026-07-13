@@ -8,7 +8,7 @@ import type { MessiaenModeId } from '../core/harmony/pitchFieldSpineTypes';
 
 export type SqToBbSqComposerId =
   | 'arvo_part'
-  | 'bartok'
+  | 'sq_vrb_bartok'
   | 'ravel'
   | 'herrmann'
   | 'morricone'
@@ -127,7 +127,7 @@ const COMPOSER_DESCRIPTIONS: Record<SqToBbSqComposerId, { label: string; descrip
     label: 'Shostakovich',
     description: 'Soviet modernism. Displaced downbeats, hemiola, dark modal harmony.',
   },
-  bartok: {
+  sq_vrb_bartok: {
     label: 'Bartók',
     description: 'Folk-chromatic. Clusters, tritones, angular melody, high independence.',
   },

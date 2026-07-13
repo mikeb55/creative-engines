@@ -7,6 +7,7 @@ import { BADALAMENTI_THREE_TIER_TEXTURE } from '../counterpoint/vrbProfiles/bada
 import { BADALAMENTI_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/badalamentiVrbFingerprints';
 import { GLASS_FILM_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/glassFilmVrbFingerprints';
 import { STEVE_REICH_SONG_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/steveReichSongVrbFingerprints';
+import { BARTOK_SONG_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/bartokSongVrbFingerprints';
 import { GOLDSMITH_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/goldsmithVrbFingerprints';
 import { HERRMANN_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/herrmannVrbFingerprints';
 import { MORRICONE_VRB_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfiles/morriconeVrbFingerprints';
@@ -649,6 +650,15 @@ export const STEVE_REICH_SONG_STUB = filmStub('steve_reich', STEVE_REICH_SONG_VR
   melodicPolicy: { contour: 'pattern-loop', maxLeapSemitones: 7, preferredIntervalSets: [2, 3, 4, 5, 7] },
   formPolicy: { narrativeArc: 'minimalist-process', sectionRecallEnforced: false },
   rhythmPolicy: { antiMetric: false },
+  repairPolicy: { resolveParallels: false, maxVoiceOverlap: 6 },
+});
+/** Song Mode / duo axis–folk VRB twin for `bartok` (not `sq_vrb_bartok` SQ VRB). */
+export const BARTOK_SONG_STUB = filmStub('bartok', BARTOK_SONG_VRB_FINGERPRINT_RECEIPTS, {
+  harmonicRhythm: { minChordDurationBars: 1, maxChordDurationBars: 8, allowMidBarChange: true },
+  bassPolicy: { role: 'chromatic-first', allowOctaveDoubling: false },
+  melodicPolicy: { contour: 'angular', maxLeapSemitones: 12, preferredIntervalSets: [1, 2, 5, 6, 7] },
+  formPolicy: { narrativeArc: 'suite', sectionRecallEnforced: true },
+  rhythmPolicy: { antiMetric: true },
   repairPolicy: { resolveParallels: false, maxVoiceOverlap: 6 },
 });
 export const HANS_ZIMMER_FILM_STUB = filmStub('hans_zimmer', ZIMMER_VRB_FINGERPRINT_RECEIPTS);

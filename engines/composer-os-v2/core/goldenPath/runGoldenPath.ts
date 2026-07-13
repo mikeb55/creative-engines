@@ -754,7 +754,7 @@ function harmonicVoiceOptionsForGoldenPath(
   const primary = options?.primarySongwriterStyle;
   if (!primary) return options;
   const id = normalizeSongwriterStyleKey(primary);
-  if (id !== 'bob_brookmeyer' && id !== 'bartok') return options;
+  if (id !== 'bob_brookmeyer' && id !== 'sq_vrb_bartok') return options;
   const bundle = getVoiceRuleBundle(id);
   if (!bundle.contrapuntalLinePolicy?.enabled) return options;
   return { harmonicVoice: id };

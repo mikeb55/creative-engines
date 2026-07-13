@@ -16,15 +16,21 @@ export function runVoiceRuleBundleHarnessAdditiveTests(): { name: string; ok: bo
 
   const okNeutral = getVoiceRuleBundle('unknown_writer_phase23a').voiceId === 'neutral';
 
-  const bartok = getVoiceRuleBundle('bartok');
+  const bartokSq = getVoiceRuleBundle('sq_vrb_bartok');
   const okBartok =
-    bartok.voiceId === 'bartok' &&
-    bartok.rhythmPolicy.antiMetric === true &&
-    bartok.harmonicRhythm.minChordDurationBars === 0 &&
-    (bartok.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 30 &&
-    Boolean(bartok.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('BK_PITCH_01'))) &&
-    Boolean(bartok.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('BK_AXIS_01'))) &&
-    Boolean(bartok.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('BK_WORK_04')));
+    bartokSq.voiceId === 'sq_vrb_bartok' &&
+    bartokSq.rhythmPolicy.antiMetric === true &&
+    bartokSq.harmonicRhythm.minChordDurationBars === 0 &&
+    (bartokSq.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 30 &&
+    Boolean(bartokSq.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('BK_PITCH_01'))) &&
+    Boolean(bartokSq.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('BK_AXIS_01'))) &&
+    Boolean(bartokSq.orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('BK_WORK_04'))) &&
+    // Song Mode bartok / bela_* resolve to Song-Bartok stub, not SQ.
+    getVoiceRuleBundle('bartok').voiceId === 'bartok' &&
+    getVoiceRuleBundle('bela_bartok').voiceId === 'bartok' &&
+    getVoiceRuleBundle('bela').voiceId === 'bartok' &&
+    Boolean(getVoiceRuleBundle('bartok').orchestrationPolicy.fingerprintReceipts?.some((r) => r.startsWith('BS_POLICY_01'))) &&
+    getVoiceRuleBundle('bartok').contrapuntalLinePolicy?.enabled !== true;
 
   const ravel = getVoiceRuleBundle('ravel');
   const okRavel =
@@ -599,7 +605,7 @@ export function runVoiceRuleBundleHarnessAdditiveTests(): { name: string; ok: bo
   return [
     { name: 'Phase 2+3a harness additive: HarmonicScene stub barRange', ok: okScene },
     { name: 'Phase 2+3a harness additive: unknown voice → neutral bundle id', ok: okNeutral },
-    { name: 'Phase 2+3a harness additive: bartok >=30 SQ fingerprints', ok: okBartok },
+    { name: 'Phase 2+3a harness additive: sq_vrb_bartok SQ + Song-Bartok stub aliases', ok: okBartok },
     { name: 'Phase 2+3a harness additive: ravel >=30 SQ fingerprints', ok: okRavel },
     { name: 'Phase 2+3a harness additive: dutilleux >=30 SQ fingerprints', ok: okDutilleux },
     { name: 'Phase 2+3a harness additive: gil_evans repairPolicy + >=25 fingerprints', ok: okGil },

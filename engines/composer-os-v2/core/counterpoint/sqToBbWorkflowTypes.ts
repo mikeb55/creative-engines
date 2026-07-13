@@ -248,7 +248,7 @@ export function resolveSqToBbLengthBars(raw: unknown): { ok: true; lengthBars: S
 
 /** SQ harmonic voice picker — `null` = style-profile default line engine. */
 export type SqToBbSqComposerId =
-  | 'bartok'
+  | 'sq_vrb_bartok'
   | 'ravel'
   | 'herrmann'
   | 'morricone'
@@ -266,7 +266,7 @@ export type SqToBbSqComposerId =
 export type SqToBbSqComposer = SqToBbSqComposerId | null;
 
 export const SQ_TO_BB_SQ_COMPOSER_ENABLED: ReadonlySet<SqToBbSqComposerId> = new Set([
-  'bartok',
+  'sq_vrb_bartok',
   'ravel',
   'herrmann',
   'morricone',
@@ -296,7 +296,7 @@ export function sqLineVrbIdForSqToBb(
   styleProfile: SqToBbStyleProfileId,
 ): string {
   const active = normalizeSqToBbSqComposer(sqComposer);
-  if (active === 'bartok') return 'bartok';
+  if (active === 'sq_vrb_bartok') return 'sq_vrb_bartok';
   if (active === 'ravel') return 'ravel';
   if (active === 'herrmann') return 'herrmann';
   if (active === 'morricone') return 'morricone';

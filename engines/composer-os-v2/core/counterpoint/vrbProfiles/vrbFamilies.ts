@@ -27,7 +27,7 @@ export const VRB_FAMILIES: Record<VrbFamily, readonly string[]> = {
     'zimmer',
     'herrmann',
   ],
-  modernist: ['shostakovich', 'bartok', 'ligeti', 'webern'],
+  modernist: ['shostakovich', 'sq_vrb_bartok', 'ligeti', 'webern'],
   minimal: ['glass'],
   free_jazz: ['ornette_coleman'],
   modal_contemporary: ['coltrane', 'messiaen'],

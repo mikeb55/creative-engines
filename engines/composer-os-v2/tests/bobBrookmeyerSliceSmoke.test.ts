@@ -52,7 +52,7 @@ function styleSeparationGate(
 ): boolean {
   const bbls = rBrook.context?.generationMetadata?.contrapuntalLineSet;
   const btls = rBarto.context?.generationMetadata?.contrapuntalLineSet;
-  if (!bbls || bbls.styleSourceVrbId !== 'bob_brookmeyer' || !btls || btls.styleSourceVrbId !== 'bartok') return false;
+  if (!bbls || bbls.styleSourceVrbId !== 'bob_brookmeyer' || !btls || btls.styleSourceVrbId !== 'sq_vrb_bartok') return false;
   const allBrookPartials = bbls.voices.flatMap((v) => v.notes.map((n) => Math.round((n.offsetBars % 1) * 1000)));
   const bartOuterPartials = (['soprano', 'alto', 'bass'] as const).flatMap((role) =>
     btls.voices.find((v) => v.role === role)!.notes.map((n) => Math.round((n.offsetBars % 1) * 1000)),
@@ -108,7 +108,7 @@ function duoVoicePolicyStubsOk(): boolean {
     if (!p.intervalPreference) return false;
   }
   const bb = getVoiceRuleBundle('bob_brookmeyer').duoVoicePolicy;
-  const bt = getVoiceRuleBundle('bartok').duoVoicePolicy;
+  const bt = getVoiceRuleBundle('sq_vrb_bartok').duoVoicePolicy;
   if (!bb || !bt) return false;
   if (bb.intervalPreference !== 'chromatic') return false;
   if (bt.intervalPreference !== 'ic1_tritone' || bt.rhythmicIndependenceFloor !== 0.8) return false;
@@ -221,8 +221,8 @@ function duoAbstractLineGateB4Bar(): boolean {
     totalBars: 8,
     harmonyMode: 'custom_locked',
     lockedHarmonyBarsRaw: [...bt8],
-    primarySongwriterStyle: 'bartok',
-    harmonicVoice: 'bartok',
+    primarySongwriterStyle: 'sq_vrb_bartok',
+    harmonicVoice: 'sq_vrb_bartok',
     songModeHookFirstIdentity: false,
     suppressWybleVoiceLayoutForTest: true,
   });
@@ -246,7 +246,7 @@ function duoAbstractLineGateB4Bar(): boolean {
 
 function bartokContrapuntalGate(r: ReturnType<typeof runGoldenPathOnce>): boolean {
   const ls = r.context?.generationMetadata?.contrapuntalLineSet;
-  if (!ls || ls.styleSourceVrbId !== 'bartok') return false;
+  if (!ls || ls.styleSourceVrbId !== 'sq_vrb_bartok') return false;
   if (!ls.imitationMap?.length) return false;
   const s = ls.voices.find((x) => x.role === 'soprano')?.notes ?? [];
   if (s.length < 8) return false;
@@ -289,8 +289,8 @@ export function runBobBrookmeyerSliceSmokeTests(): { name: string; ok: boolean }
     totalBars: 32,
     longFormEnabled: true,
     songModeHookFirstIdentity: true,
-    primarySongwriterStyle: 'bartok',
-    harmonicVoice: 'bartok',
+    primarySongwriterStyle: 'sq_vrb_bartok',
+    harmonicVoice: 'sq_vrb_bartok',
   });
 
   out.push({

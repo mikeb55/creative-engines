@@ -153,7 +153,7 @@ function indepOk(r: ReturnType<typeof runGoldenPathOnce>): boolean {
   return duoScoreStrongBeatCoOnsetWorst(g, b, 8) <= 2;
 }
 
-const bartokRef = runDuo(SEED_P3, 'bartok', P3_CHORDS, 'C');
+const bartokRef = runDuo(SEED_P3, 'sq_vrb_bartok', P3_CHORDS, 'C');
 const brookRef = runDuo(SEED_P3, 'bob_brookmeyer', P3_CHORDS, 'C');
 const bartokLs = bartokRef.context?.generationMetadata?.contrapuntalLineSet;
 const brookLs = brookRef.context?.generationMetadata?.contrapuntalLineSet;

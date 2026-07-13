@@ -132,6 +132,7 @@ export type SongwriterRuleId =
   | 'fripp'
   | 'fripp_king_crimson'
   | 'beethoven_late'
+  | 'sq_vrb_bartok'
   | 'turtle_island'
   | 'reich_glass'
   | 'lachenmann'

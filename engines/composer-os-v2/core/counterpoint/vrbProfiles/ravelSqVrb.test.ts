@@ -84,8 +84,8 @@ function testRegisterCohesionCeiling20(): boolean {
     ...n,
     midi: 60 + (i % 2 === 0 ? 0 : 22),
   }));
-  const wideOpts: ContrapuntalGceScoringOptions = { ...opts, sqVrbId: 'bartok' };
-  const wideBartok = scoreMelodicIdentity(wideLine, 'bartok', {
+  const wideOpts: ContrapuntalGceScoringOptions = { ...opts, sqVrbId: 'sq_vrb_bartok' };
+  const wideBartok = scoreMelodicIdentity(wideLine, 'sq_vrb_bartok', {
     ...wideOpts,
     contrapuntalLinePolicy: true,
     mesoSpans,
@@ -96,17 +96,17 @@ function testRegisterCohesionCeiling20(): boolean {
 }
 
 function testBartokUnchanged(): boolean {
-  const bartok = getVoiceRuleBundle('bartok');
+  const bartok = getVoiceRuleBundle('sq_vrb_bartok');
   return (
     bartok.contrapuntalLinePolicy?.enabled === true &&
     bartok.contrapuntalLinePolicy?.vrbId !== 'ravel' &&
     bartok.contrapuntalLinePolicy?.preferredImitationTypes?.includes('strict') === true &&
-    getSqVrbGceAdjustments('bartok') === undefined
+    getSqVrbGceAdjustments('sq_vrb_bartok') === undefined
   );
 }
 
 function testRavelPickerEnabled(): boolean {
-  return SQ_TO_BB_SQ_COMPOSER_ENABLED.has('ravel') && SQ_TO_BB_SQ_COMPOSER_ENABLED.has('bartok');
+  return SQ_TO_BB_SQ_COMPOSER_ENABLED.has('ravel') && SQ_TO_BB_SQ_COMPOSER_ENABLED.has('sq_vrb_bartok');
 }
 
 function testUiPickerRavelEnabled(): boolean {
@@ -164,7 +164,7 @@ export function runRavelSqVrbTests(): { name: string; ok: boolean }[] {
     ['Ravel SQ VRB — picker enabled (engine)', testRavelPickerEnabled],
     ['Ravel SQ VRB — picker enabled (UI)', testUiPickerRavelEnabled],
     ['Ravel SQ VRB — Bartók still enabled in SQ composer set', () =>
-      SQ_TO_BB_SQ_COMPOSER_ENABLED.has('bartok')],
+      SQ_TO_BB_SQ_COMPOSER_ENABLED.has('sq_vrb_bartok')],
     ['Ravel SQ VRB — sqLineVrbId routes ravel', testSqLineVrbRouting],
     ['Ravel SQ VRB — Bartók behavior unchanged', testBartokUnchanged],
     ['Ravel SQ VRB — PG ravel cadence path', testPhraseGrammarRavelTag],

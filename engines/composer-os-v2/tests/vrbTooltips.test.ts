@@ -60,8 +60,8 @@ function testSigmaFromRegistrySpotCheck(): boolean {
       getSqVrbGceAdjustments('arvo_part')?.registerCohesionStdevCeilingSt &&
     composerOptions().find((o) => o.id === 'webern')?.sigma ===
       getSqVrbGceAdjustments('webern')?.registerCohesionStdevCeilingSt &&
-    composerOptions().find((o) => o.id === 'bartok')?.sigma ===
-      getSqVrbGceAdjustments('bartok')?.registerCohesionStdevCeilingSt
+    composerOptions().find((o) => o.id === 'sq_vrb_bartok')?.sigma ===
+      getSqVrbGceAdjustments('sq_vrb_bartok')?.registerCohesionStdevCeilingSt
   );
 }
 
@@ -93,7 +93,7 @@ function testVrbTooltipRendersFamilyTag(): boolean {
 }
 
 function testVrbTooltipRendersSigma(): boolean {
-  const o = composerOptions().find((x) => x.id === 'bartok');
+  const o = composerOptions().find((x) => x.id === 'sq_vrb_bartok');
   if (!o) return false;
   const body = vrbTooltipBodyLines(o);
   return body.sigmaLabel === `σ ${o.sigma}`;

@@ -142,7 +142,7 @@ function sqMosaicContext(
     rehearsalMarkPlan: { marks: [] },
     generationMetadata: {
       generatedAt: '2026-06-07T00:00:00.000Z',
-      songwriterStyleId: 'bartok',
+      songwriterStyleId: 'sq_vrb_bartok',
       mosaicSectionPlan: plan,
       ...overrides,
     },
@@ -167,7 +167,7 @@ function sqRealiseInput(
     title: 'SQ mosaic smoke',
     totalBars: TOTAL_BARS,
     chordProgressionText: locked.join(' | '),
-    songwriterStyleId: 'bartok',
+    songwriterStyleId: 'sq_vrb_bartok',
     suppressWybleVoiceLayoutForTest: true,
     ...overrides,
   };
@@ -349,7 +349,7 @@ describe('String Quartet mosaic smoke (V80e)', () => {
         title: 'SQ mosaic off',
         totalBars: TOTAL_BARS,
         chordProgressionText: locked.join(' | '),
-        songwriterStyleId: 'bartok',
+        songwriterStyleId: 'sq_vrb_bartok',
         suppressWybleVoiceLayoutForTest: true,
       })
     );

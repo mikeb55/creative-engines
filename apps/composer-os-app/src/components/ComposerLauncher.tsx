@@ -134,7 +134,7 @@ const TIER_ALIAS: Record<string, string> = {
   crumb: 'crumb_black_angels',
   bela_bartok: 'bartok',
   beethoven_sq: 'beethoven_late',
-  bartok_sq: 'bartok',
+  bartok_sq: 'sq_vrb_bartok',
   quincy_jones_bb: 'quincy_jones_film',
 };
 

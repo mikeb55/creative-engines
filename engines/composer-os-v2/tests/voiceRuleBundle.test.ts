@@ -16,7 +16,7 @@ function assertBundleShape(b: VoiceRuleBundle): boolean {
 }
 
 function testSevenVoicesMinChordDurationBars(): boolean {
-  const bartok = getVoiceRuleBundle('bartok');
+  const bartok = getVoiceRuleBundle('sq_vrb_bartok');
   const ravel = getVoiceRuleBundle('ravel');
   const dutilleux = getVoiceRuleBundle('dutilleux');
   const threadgill = getVoiceRuleBundle('henry_threadgill');
@@ -27,7 +27,7 @@ function testSevenVoicesMinChordDurationBars(): boolean {
   const billEvans = getVoiceRuleBundle('bill_evans');
   const herbie = getVoiceRuleBundle('herbie_hancock');
   return (
-    bartok.voiceId === 'bartok' &&
+    bartok.voiceId === 'sq_vrb_bartok' &&
     bartok.rhythmPolicy.antiMetric === true &&
     bartok.harmonicRhythm.minChordDurationBars === 0 &&
     (bartok.orchestrationPolicy.fingerprintReceipts?.length ?? 0) >= 30 &&
@@ -368,6 +368,7 @@ function testHvPrefixStrips(): boolean {
 
 function testResolvableBundlesSatisfyShape(): boolean {
   for (const id of [
+    'sq_vrb_bartok',
     'bartok',
     'ravel',
     'dutilleux',

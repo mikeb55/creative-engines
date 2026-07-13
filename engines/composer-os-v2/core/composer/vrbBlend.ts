@@ -34,18 +34,18 @@ export class BlendConflictError extends Error {
 
 /** Pairs confirmed compatible for SQ VRB blending (no BlendConflictError from known-incompatible gate or table). */
 export const KNOWN_SAFE_SQ_BLEND_PAIRS = [
-  ['bartok', 'ravel'],
-  ['bartok', 'dutilleux'],
-  ['bartok', 'shostakovich'],
+  ['sq_vrb_bartok', 'ravel'],
+  ['sq_vrb_bartok', 'dutilleux'],
+  ['sq_vrb_bartok', 'shostakovich'],
   ['ravel', 'dutilleux'],
   ['ravel', 'debussy'],
   ['dutilleux', 'ligeti'],
-  ['beethoven_late', 'bartok'],
+  ['beethoven_late', 'sq_vrb_bartok'],
   ['beethoven_late', 'shostakovich'],
   ['beethoven_late', 'ravel'],
   ['reich_glass', 'ligeti'],
   ['reich_glass', 'turtle_island'],
-  ['shostakovich', 'bartok'],
+  ['shostakovich', 'sq_vrb_bartok'],
   ['turtle_island', 'gershwin'],
   ['turtle_island', 'cole_porter'],
   ['gershwin', 'cole_porter'],

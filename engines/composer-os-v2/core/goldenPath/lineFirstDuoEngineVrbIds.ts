@@ -31,7 +31,7 @@ export const LINE_FIRST_DUO_PRIORITY3_COLOUR_VRB_ID_SET = new Set<string>(LINE_F
 
 export const LINE_FIRST_DUO_ENGINE_VRB_IDS = [
   'bob_brookmeyer',
-  'bartok',
+  'sq_vrb_bartok',
   'bill_evans',
   'john_coltrane',
   'pat_metheny',

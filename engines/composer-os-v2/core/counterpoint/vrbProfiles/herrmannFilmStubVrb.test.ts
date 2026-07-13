@@ -133,13 +133,13 @@ function testOstinatoPgValid(): boolean {
 
 function testRavelBartokUnchanged(): boolean {
   const ravel = getVoiceRuleBundle('ravel');
-  const bartok = getVoiceRuleBundle('bartok');
+  const bartok = getVoiceRuleBundle('sq_vrb_bartok');
   return (
     ravel.contrapuntalLinePolicy?.vrbId === 'ravel' &&
     ravel.contrapuntalLinePolicy?.independenceLevel === 'moderate' &&
     bartok.contrapuntalLinePolicy?.enabled === true &&
     getSqVrbGceAdjustments('ravel')?.registerCohesionStdevCeilingSt === 20 &&
-    getSqVrbGceAdjustments('bartok') === undefined
+    getSqVrbGceAdjustments('sq_vrb_bartok') === undefined
   );
 }
 
@@ -147,7 +147,7 @@ function testPickerEnabled(): boolean {
   return (
     SQ_TO_BB_SQ_COMPOSER_ENABLED.has('herrmann') &&
     SQ_TO_BB_SQ_COMPOSER_ENABLED.has('ravel') &&
-    SQ_TO_BB_SQ_COMPOSER_ENABLED.has('bartok')
+    SQ_TO_BB_SQ_COMPOSER_ENABLED.has('sq_vrb_bartok')
   );
 }
 

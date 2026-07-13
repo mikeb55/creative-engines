@@ -51,6 +51,7 @@ import { COLTRANE_SQ_VRF_FINGERPRINT_RECEIPTS } from '../counterpoint/vrbProfile
 import { applyArvoPartSqVrbProfile } from '../counterpoint/vrbProfiles/partSqVrb';
 import { applyDebussySqVrbProfile } from '../counterpoint/vrbProfiles/debussySqVrb';
 import { applyBartokSqVrbProfile } from '../counterpoint/vrbProfiles/bartokSqVrb';
+import { applyBartokSongStubVrbProfile } from '../counterpoint/vrbProfiles/bartokSongStubVrb';
 import { CRUMB_BLACK_ANGELS_SQ_VRB_FINGERPRINT_RECEIPTS } from './crumbBlackAngelsSqVrbFingerprints';
 import { applyHerrmannFilmStubVrbProfile } from '../counterpoint/vrbProfiles/herrmannFilmStubVrb';
 import { applyMorriconeFilmStubVrbProfile } from '../counterpoint/vrbProfiles/morriconeFilmStubVrb';
@@ -98,6 +99,7 @@ import {
   MORRICONE_FILM_STUB,
   PHILIP_GLASS_FILM_STUB,
   STEVE_REICH_SONG_STUB,
+  BARTOK_SONG_STUB,
   ROTA_FILM_STUB,
   WEBERN_FILM_STUB,
   JONI_MITCHELL_FILM_STUB,
@@ -423,8 +425,9 @@ export const NEUTRAL_VOICE_RULE_BUNDLE: VoiceRuleBundle = {
   },
 };
 
+/** SQ Bartók VRB — distinct id from Song Mode `bartok` (Song stub). */
 const BARTOK_STUB: VoiceRuleBundle = {
-  voiceId: 'bartok',
+  voiceId: 'sq_vrb_bartok',
   harmonicRhythm: {
     minChordDurationBars: 0,
     maxChordDurationBars: 8,
@@ -4394,8 +4397,11 @@ const FRANK_ZAPPA_VRF: VoiceRuleBundle = {
 };
 
 const BY_ID: Record<string, VoiceRuleBundle> = {
-  bartok: BARTOK,
-  bela_bartok: BARTOK,
+  // Song Mode `bartok` / bela_* → Song stub; SQ lives only under sq_vrb_bartok.
+  bartok: applyBartokSongStubVrbProfile(BARTOK_SONG_STUB),
+  bela_bartok: applyBartokSongStubVrbProfile(BARTOK_SONG_STUB),
+  bela: applyBartokSongStubVrbProfile(BARTOK_SONG_STUB),
+  sq_vrb_bartok: BARTOK,
   ravel: RAVEL,
   maurice_ravel: RAVEL,
   dutilleux: DUTILLEUX,

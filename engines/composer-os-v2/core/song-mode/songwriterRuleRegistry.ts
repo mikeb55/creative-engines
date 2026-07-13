@@ -1461,6 +1461,9 @@ const songwriterRules: Partial<Record<SongwriterRuleId, SongwritingRuleEntry[]>>
     R('bk.interval_cell', 'Interval-cell transposition (`bk:interval_cell_transform`)', 'songwriter', 'harmony', 8, 'verse'),
     R('bk.arch_mirror', 'Arch-form mirrored swap (`bk:arch_form_mirror`)', 'songwriter', 'form', 7, 'bridge'),
   ],
+  sq_vrb_bartok: [
+    R('bk.sq_vrb_bundle', 'Bartók SQ VRB bundle (`BK_*` SQ fingerprints; axis / cluster / folk-modal; distinct from Song Mode `bartok`)', 'songwriter', 'harmony', 9, 'global'),
+  ],
   berg: [
     R('ab.row_module', 'Row segment tags triadic-tonal / whole-tone / chromatic-link (`ab:row_module`)', 'songwriter', 'harmony', 9, 'global'),
     R('ab.hexachord_pr', 'Hexachord halves + P/R/I/RI preference (`ab:hexachord`)', 'songwriter', 'harmony', 9, 'global'),

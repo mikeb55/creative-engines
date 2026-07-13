@@ -165,7 +165,7 @@ function testBbGate1BlockedSkipsMerge(): boolean {
 function testMergeReceiptOnMetadataAfterExport(): boolean {
   const r = runGoldenPathOnce(88006, {
     presetId: 'guitar_bass_duo',
-    primarySongwriterStyle: 'bartok',
+    primarySongwriterStyle: 'sq_vrb_bartok',
     totalBars: 8,
     chordProgressionText: 'Dm7 | G7 | Cmaj7 | Am7 | Dm7 | G7 | Cmaj7 | Am7',
     harmonyMode: 'custom_locked',

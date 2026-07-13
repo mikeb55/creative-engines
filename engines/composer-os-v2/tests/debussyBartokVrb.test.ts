@@ -38,16 +38,20 @@ const REGISTRY_VRB_IDS = [
   'gershwin',
   'arvo_part',
   'debussy',
-  'bartok',
+  'sq_vrb_bartok',
 ] as const;
 
 const SQ_TO_BB_UI_SOURCE = readFileSync(
-  join(__dirname, '../../../apps/composer-os-app/src/types/sqToBbWorkflowUi.ts'),
+  join(__dirname, '../ui/sqToBbWorkflowUi.ts'),
   'utf8',
 );
 
 function optionsHasId(id: string): boolean {
-  return SQ_TO_BB_UI_SOURCE.includes(`id: '${id}'`);
+  return (
+    SQ_TO_BB_UI_SOURCE.includes(`| '${id}'`) ||
+    SQ_TO_BB_UI_SOURCE.includes(`  ${id}: {`) ||
+    SQ_TO_BB_UI_SOURCE.includes(`id: '${id}'`)
+  );
 }
 
 function testDebussySigma21(): boolean {
@@ -55,7 +59,7 @@ function testDebussySigma21(): boolean {
 }
 
 function testBartokSigma29(): boolean {
-  return getSqVrbGceAdjustments('bartok')?.registerCohesionStdevCeilingSt === 29;
+  return getSqVrbGceAdjustments('sq_vrb_bartok')?.registerCohesionStdevCeilingSt === 29;
 }
 
 function testDebussyProfileDefined(): boolean {
@@ -63,7 +67,7 @@ function testDebussyProfileDefined(): boolean {
 }
 
 function testBartokProfileDefined(): boolean {
-  return getSqVrbProfile('bartok') === BARTOK_SQ_VRB_PROFILE;
+  return getSqVrbProfile('sq_vrb_bartok') === BARTOK_SQ_VRB_PROFILE;
 }
 
 function testRegistryCount19(): boolean {
@@ -75,7 +79,7 @@ function testDebussyVrbId(): boolean {
 }
 
 function testBartokVrbId(): boolean {
-  return getSqVrbProfile('bartok')?.vrbId === 'bartok';
+  return getSqVrbProfile('sq_vrb_bartok')?.vrbId === 'sq_vrb_bartok';
 }
 
 function testDebussySuppressFunctional(): boolean {
@@ -83,7 +87,7 @@ function testDebussySuppressFunctional(): boolean {
 }
 
 function testBartokSuppressFunctional(): boolean {
-  return getVoiceRuleBundle('bartok').suppressFunctionalResolution === true;
+  return getVoiceRuleBundle('sq_vrb_bartok').suppressFunctionalResolution === true;
 }
 
 function testDebussyParallelAllow(): boolean {
@@ -107,7 +111,7 @@ function testDebussyAnticipation08(): boolean {
 }
 
 function testBartokAnticipation04(): boolean {
-  return rhythmExpectationForVrb('bartok')?.anticipationRateMax === 0.04;
+  return rhythmExpectationForVrb('sq_vrb_bartok')?.anticipationRateMax === 0.04;
 }
 
 function testUiArvoPart(): boolean {
@@ -119,14 +123,14 @@ function testUiDebussy(): boolean {
 }
 
 function testUiBartok(): boolean {
-  return optionsHasId('bartok');
+  return optionsHasId('sq_vrb_bartok');
 }
 
 function testSectionMapInstrumental(): boolean {
   try {
     const map = normalizeSectionVrbMap({
       totalBars: 32,
-      sectionVrbMap: { opening: 'debussy', development: 'bartok' },
+      sectionVrbMap: { opening: 'debussy', development: 'sq_vrb_bartok' },
       sectionLabelMode: 'instrumental',
     });
     return map.size === 2 && map.has('opening') && map.has('development');
@@ -139,7 +143,7 @@ function testSectionMapSong(): boolean {
   try {
     const map = normalizeSectionVrbMap({
       totalBars: 32,
-      sectionVrbMap: { verse: 'debussy', chorus: 'bartok' },
+      sectionVrbMap: { verse: 'debussy', chorus: 'sq_vrb_bartok' },
       sectionLabelMode: 'song',
     });
     return map.size === 2 && map.has('verse') && map.has('chorus');

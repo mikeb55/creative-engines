@@ -239,7 +239,7 @@ export function buildTest7SketchRequest(): GenerateRequest {
     lengthBars: 16,
     bpm: 120,
     sqToBbStyleProfile: 'brookmeyer',
-    sqToBbSqComposer: 'bartok',
+    sqToBbSqComposer: 'sq_vrb_bartok',
     sqToBbChordSourceMode: 'use_user_chords',
     userChordInput: chords,
     sqToBbAction: 'sketch',

@@ -46,7 +46,7 @@ const SQ_VRB_PROFILE_BY_ID: Readonly<Record<string, SqVrbProfile>> = {
   gershwin: GERSHWIN_SQ_VRB_PROFILE,
   arvo_part: ARVO_PART_SQ_VRB_PROFILE,
   debussy: DEBUSSY_SQ_VRB_PROFILE,
-  bartok: BARTOK_SQ_VRB_PROFILE,
+  sq_vrb_bartok: BARTOK_SQ_VRB_PROFILE,
   ornette_coleman: ORNETTE_SQ_VRB_PROFILE,
   coltrane: COLTRANE_SQ_VRB_PROFILE,
   messiaen: MESSIAEN_SQ_VRB_PROFILE,

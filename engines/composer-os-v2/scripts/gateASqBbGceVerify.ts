@@ -271,7 +271,7 @@ const SQ_BB_BARTOK_PG_RAW_MIN = 6.0;
 
 function checkBartok50021MiPgRawAndGate2Pass(): boolean {
   const seed = 50021;
-  const vrbId = 'bartok';
+  const vrbId = 'sq_vrb_bartok';
   const { context } = buildDuoLongFormCompositionContext(seed, {
     targetTotalBars: 32,
     presetId: 'guitar_bass_duo',
@@ -326,7 +326,7 @@ function checkBartok50021MiPgRawAndGate2Pass(): boolean {
 
 function checkPhraseQuantizerInvariants(): boolean {
   const seed = 50021;
-  const vrbId = 'bartok';
+  const vrbId = 'sq_vrb_bartok';
   const { context } = buildDuoLongFormCompositionContext(seed, {
     targetTotalBars: 32,
     presetId: 'guitar_bass_duo',

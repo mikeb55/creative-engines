@@ -64,7 +64,7 @@ export function precomputeMosaicSqContrapuntalLines(
   guides: MosaicSqContrapuntalGuideMap,
   primaryVrbId: string
 ): AbstractLineSet | null {
-  const bundleId = (primaryVrbId || context.voiceBundle?.voiceId || 'bartok').trim();
+  const bundleId = (primaryVrbId || context.voiceBundle?.voiceId || 'sq_vrb_bartok').trim();
   const engine = new ContrapuntalLineEngine(bundleId, context);
   const tb = Math.max(1, context.form.totalBars);
   const raw = engine.generateLines(tb, 'melody_plus_chords', { mosaicSqGuides: guides });

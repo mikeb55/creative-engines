@@ -1776,7 +1776,7 @@ export function rhythmExpectationForVrb(vrbId: string): RhythmExpectation | unde
       grooveStabilityTolerance: 0.94,
     };
   }
-  if (id === 'bartok') {
+  if (id === 'bartok' || id === 'sq_vrb_bartok') {
     return {
       placementMode: 'grid',
       targetOffbeatWindow: [0.49, 0.51],

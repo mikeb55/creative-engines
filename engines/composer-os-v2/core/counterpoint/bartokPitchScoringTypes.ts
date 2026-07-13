@@ -91,7 +91,7 @@ export type BartokPitchTupleTrace = {
 export type BartokPitchScoringTrace = {
   seed: number;
   lengthBars: number;
-  styleSourceVrbId: 'bartok';
+  styleSourceVrbId: 'sq_vrb_bartok';
   /** Phrase 0 mode (legacy field); see phraseImitationModes for per-phrase picks. */
   imitationMode: BartokImitationMode;
   phraseImitationModes: readonly BartokImitationMode[];

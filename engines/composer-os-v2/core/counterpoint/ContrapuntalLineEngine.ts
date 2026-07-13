@@ -522,7 +522,7 @@ export class ContrapuntalLineEngine {
     void effectiveSourceMode;
     const seed = this.context.seed ?? 0;
     const bpm = resolveGenerationBpm(this.context);
-    if (this.vrbId === 'bartok' && !mosaicSqGuides) {
+    if (this.vrbId === 'sq_vrb_bartok' && !mosaicSqGuides) {
       return augmentAbstractLineSetSchema(this.vrbId, buildBartokLineSet(this.context, lengthBars, seed));
     }
     const pol = getVoiceRuleBundle(this.vrbId).contrapuntalLinePolicy;
@@ -549,7 +549,7 @@ export class ContrapuntalLineEngine {
       voices: lines.voices.map((v) => ({
         ...v,
         notes: v.notes.map((n) => {
-          if (lines.styleSourceVrbId !== 'bartok' || v.role !== 'soprano') return { ...n };
+          if (lines.styleSourceVrbId !== 'sq_vrb_bartok' || v.role !== 'soprano') return { ...n };
           const lo = 60;
           const hi = 105;
           const pm = Math.min(hi, Math.max(lo, n.pitchMidi));

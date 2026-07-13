@@ -87,7 +87,7 @@ function checkIndependence(): boolean {
 }
 
 function checkRouting(): boolean {
-  for (const id of ['bob_brookmeyer', 'bartok'] as const) {
+  for (const id of ['bob_brookmeyer', 'sq_vrb_bartok'] as const) {
     if (!LINE_FIRST_DUO_ENGINE_VRB_ID_SET.has(id)) return false;
     if (LINE_FIRST_DUO_PRIORITY3_COLOUR_VRB_ID_SET.has(id)) return false;
   }
@@ -104,7 +104,7 @@ function checkRouting(): boolean {
     events: [createNote(60, 0, 2, 1), createNote(64, 2, 2, 1)],
   };
   const snap = JSON.stringify(m.events);
-  for (const id of ['bob_brookmeyer', 'bartok'] as const) {
+  for (const id of ['bob_brookmeyer', 'sq_vrb_bartok'] as const) {
     const m2: MeasureModel = { index: 1, events: JSON.parse(snap) };
     postProcessDuoAbstractGuitar(id, m2, ctx, 1, 40, 90, 4);
     if (JSON.stringify(m2.events) !== snap) return false;

@@ -30,7 +30,7 @@ function testGetVrbFamilyDebussy(): boolean {
 }
 
 function testGetVrbFamilyBartok(): boolean {
-  return getVrbFamily('bartok') === 'modernist';
+  return getVrbFamily('sq_vrb_bartok') === 'modernist';
 }
 
 function testGetVrbFamilyArvoPart(): boolean {
@@ -86,7 +86,7 @@ function testBuildRampBar1BDominant(): boolean {
 }
 
 function testBuildRampDifferentFamilyEmpty(): boolean {
-  return buildBoundaryRamp('gershwin', 'bartok', 2, 17).length === 0;
+  return buildBoundaryRamp('gershwin', 'sq_vrb_bartok', 2, 17).length === 0;
 }
 
 function testBuildRampZeroBarsEmpty(): boolean {
@@ -164,7 +164,7 @@ function testResolverDifferentFamilyHardCut(): boolean {
   return withPerSectionTestEnv(() => {
     const map = normalizeSectionVrbMap({
       totalBars: 32,
-      sectionVrbMap: { opening: 'gershwin', development: 'bartok' },
+      sectionVrbMap: { opening: 'gershwin', development: 'sq_vrb_bartok' },
       sectionLabelMode: 'instrumental',
     });
     const sections = [
@@ -172,7 +172,7 @@ function testResolverDifferentFamilyHardCut(): boolean {
       { label: 'development', startBar: 17, length: 16 },
     ];
     const ctx = resolveVrbForBar(17, map, 'glass', sections);
-    return ctx.vrbId === 'bartok' && !ctx.vrbId.startsWith('blended:');
+    return ctx.vrbId === 'sq_vrb_bartok' && !ctx.vrbId.startsWith('blended:');
   });
 }
 
@@ -199,7 +199,7 @@ export function runBoundarySwingRampTests(): { name: string; ok: boolean }[] {
   return [
     ["getVrbFamily('gershwin') → jazz", testGetVrbFamilyGershwin],
     ["getVrbFamily('debussy') → impressionist", testGetVrbFamilyDebussy],
-    ["getVrbFamily('bartok') → modernist", testGetVrbFamilyBartok],
+    ["getVrbFamily('sq_vrb_bartok') → modernist", testGetVrbFamilyBartok],
     ["getVrbFamily('arvo_part') → tintinnabuli", testGetVrbFamilyArvoPart],
     ["getVrbFamily('glass') → minimal", testGetVrbFamilyGlass],
     ["getVrbFamily('unknown_id') → null", testGetVrbFamilyUnknown],

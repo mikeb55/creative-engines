@@ -515,7 +515,7 @@ export function runQuartetRealisation(
   const primarySongwriterId =
     typeof input.songwriterStyleId === 'string' && input.songwriterStyleId.trim()
       ? input.songwriterStyleId.trim()
-      : mosaicContext?.generationMetadata?.songwriterStyleId ?? 'bartok';
+      : mosaicContext?.generationMetadata?.songwriterStyleId ?? 'sq_vrb_bartok';
 
   if (mosaicContext) {
     const guides = resolveMosaicSqContrapuntalGuides(

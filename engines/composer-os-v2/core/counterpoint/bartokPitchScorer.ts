@@ -927,7 +927,7 @@ export function buildBartokScoredLineSet(
   seed: number,
   cantusFirmusMidiBySlot?: readonly number[],
 ): { lineSet: AbstractLineSet; trace: BartokPitchScoringTrace } {
-  const policy = getVoiceRuleBundle("bartok").contrapuntalLinePolicy!;
+  const policy = getVoiceRuleBundle("sq_vrb_bartok").contrapuntalLinePolicy!;
   const dissonanceProfile = policy.dissonanceProfile;
   const normalizedSeed = Math.abs(seed) | 0;
   const totalSlots = lengthBars * 4;
@@ -1209,13 +1209,13 @@ export function buildBartokScoredLineSet(
     dissonanceProfile: { ...dissonanceProfile },
     sourceMode: "chords_only",
     lengthBars,
-    styleSourceVrbId: "bartok",
+    styleSourceVrbId: "sq_vrb_bartok",
   };
 
   const trace: BartokPitchScoringTrace = {
     seed: normalizedSeed,
     lengthBars,
-    styleSourceVrbId: "bartok",
+    styleSourceVrbId: "sq_vrb_bartok",
     imitationMode: phraseImitationModes[0] ?? pickImitationMode(normalizedSeed, 0),
     phraseImitationModes,
     slots: traceSlots,

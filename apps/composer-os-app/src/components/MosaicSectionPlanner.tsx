@@ -46,11 +46,11 @@ const COMPOSER_OPTIONS: { id: string; label: string }[] = [
   { id: 'sonic_youth', label: 'Sonic Youth' },
   { id: 'verlaine', label: 'Verlaine' },
   { id: 'marr', label: 'Marr' },
-  { id: 'bartok', label: 'Bartok (SQ VRB)' },
+  { id: 'sq_vrb_bartok', label: 'Bartok (SQ VRB)' },
 ];
 
 const BB_COMPOSER_IDS = new Set(['default', 'verlaine', 'marr', 'wayne_shorter', 'ecm_chamber']);
-const SQ_COMPOSER_IDS = new Set(['default', 'bartok', 'verlaine', 'marr', 'wayne_shorter', 'ecm_chamber']);
+const SQ_COMPOSER_IDS = new Set(['default', 'sq_vrb_bartok', 'verlaine', 'marr', 'wayne_shorter', 'ecm_chamber']);
 
 function composersForPresetRole(role: MosaicPresetRoleUi | undefined): typeof COMPOSER_OPTIONS {
   const r = role ?? 'duo';

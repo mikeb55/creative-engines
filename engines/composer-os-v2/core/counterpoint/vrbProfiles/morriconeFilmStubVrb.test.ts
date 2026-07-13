@@ -132,7 +132,7 @@ function testPriorVrbsUnchanged(): boolean {
   return (
     getVoiceRuleBundle('ravel').contrapuntalLinePolicy?.vrbId === 'ravel' &&
     getVoiceRuleBundle('herrmann').contrapuntalLinePolicy?.vrbId === 'herrmann' &&
-    getVoiceRuleBundle('bartok').contrapuntalLinePolicy?.enabled === true &&
+    getVoiceRuleBundle('sq_vrb_bartok').contrapuntalLinePolicy?.enabled === true &&
     getSqVrbGceAdjustments('ravel')?.registerCohesionStdevCeilingSt === 20 &&
     getSqVrbGceAdjustments('herrmann')?.registerCohesionStdevCeilingSt === 36
   );

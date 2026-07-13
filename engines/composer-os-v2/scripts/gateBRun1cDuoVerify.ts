@@ -146,7 +146,7 @@ function indepOk(r: ReturnType<typeof runGoldenPathOnce>): boolean {
 const SEED_SQ = 72001;
 const SEED_BB = 73001;
 
-const bartokRef = runDuo(SEED_SQ, 'bartok', SQ8, 'C');
+const bartokRef = runDuo(SEED_SQ, 'sq_vrb_bartok', SQ8, 'C');
 const brookRef = runDuo(SEED_BB, 'bob_brookmeyer', BB8, 'Bb');
 
 const bartokLs = bartokRef.context?.generationMetadata?.contrapuntalLineSet;
