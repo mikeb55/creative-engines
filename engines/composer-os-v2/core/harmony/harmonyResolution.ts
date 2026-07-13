@@ -37,6 +37,7 @@ import { isRalphTownerHarmonicPath } from '../song-mode/ralphTownerSlice';
 import { isSatieHarmonicPath } from '../song-mode/satieSlice';
 import { isColePorterHarmonicPath } from '../song-mode/colePorterSlice';
 import { isBacharachHarmonicPath } from '../song-mode/bacharachSlice';
+import { isBarryHarrisHarmonicPath } from '../song-mode/barryHarrisSlice';
 import { isDonaldFagenHarmonicPath } from '../song-mode/donaldFagenSlice';
 import { isJamesBrownHarmonicPath } from '../song-mode/jamesBrownSlice';
 import { isSteveReichHarmonicPath } from '../song-mode/steveReichSlice';
@@ -276,10 +277,13 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   /**
    * Barry Harris: `precomputeBarryHarrisEffectiveHarmonyBars` applies bebop / sixth–dim–family devices + guards.
    * After precompute, `barryHarrisEffectiveHarmonyBars` is full-form and authoritative.
+   * HV path: primary | harmonicVoice (`barry_harris` | `barry_harris_chord_melody` | `bh_cm`) — see isBarryHarrisHarmonicPath.
+   * Soft `harris` songwriter-normalize only; soft `barry`/`jbr` = john_barry (excluded).
+   * Style-module apply + motif hybrid pilot stay primary-only (not this branch).
    */
   const bhEff = meta?.barryHarrisEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'barry_harris' &&
+    isBarryHarrisHarmonicPath(meta) &&
     Array.isArray(bhEff) &&
     bhEff.length === tb &&
     barIndex >= 1 &&

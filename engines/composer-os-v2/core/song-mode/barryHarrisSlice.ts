@@ -8,6 +8,7 @@
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
 import { dim7RootPcForSixthRoot, stashBarryHarrisChordMelodyFoundation } from '../barry-harris';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -55,6 +56,43 @@ export function isSongwriterBarryHarris(
   genMeta: GenerationMetadata | undefined
 ): genMeta is GenerationMetadata & { songwriterStyleId: 'barry_harris' } {
   return genMeta?.songwriterStyleId === 'barry_harris';
+}
+
+/** Canonical + VRB chord-melody twins — soft `harris` / `barry` / `jbr` never listed. */
+export const BARRY_HARRIS_HARMONIC_VOICE_IDS = [
+  'barry_harris',
+  'barry_harris_chord_melody',
+  'bh_cm',
+] as const;
+
+export function isBarryHarrisHarmonicVoiceId(raw: string | null | undefined): boolean {
+  const id = normalizeHarmonicVoiceId(String(raw ?? ''));
+  return (
+    id === 'barry_harris' || id === 'barry_harris_chord_melody' || id === 'bh_cm'
+  );
+}
+
+/**
+ * Harmonic-path gate — primary `barry_harris` **or** HV twins
+ * (`barry_harris` | `barry_harris_chord_melody` | `bh_cm`).
+ * Soft `harris` stays songwriter-normalize only (does **not** engage HV).
+ * Soft `barry` / `jbr` belong to John Barry — never engage BH HV.
+ *
+ * **Primary-only surfaces (do not flip under HV):**
+ * - style-module `applyBarryHarris` / moduleValidation
+ * - motif hybrid pilot keys / styleStack primary
+ * - accumulate/finalize diagnostic stamps
+ */
+export function isBarryHarrisHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  return (
+    isBarryHarrisHarmonicVoiceId(metadata?.songwriterStyleId) ||
+    isBarryHarrisHarmonicVoiceId(metadata?.harmonicVoice)
+  );
 }
 
 export interface BarryHarrisHarmonyAccumulator {

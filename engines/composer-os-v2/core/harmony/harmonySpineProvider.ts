@@ -48,6 +48,7 @@ import { isRalphTownerHarmonicPath } from '../song-mode/ralphTownerSlice';
 import { isSatieHarmonicPath } from '../song-mode/satieSlice';
 import { isColePorterHarmonicPath } from '../song-mode/colePorterSlice';
 import { isBacharachHarmonicPath } from '../song-mode/bacharachSlice';
+import { isBarryHarrisHarmonicPath } from '../song-mode/barryHarrisSlice';
 import { isDonaldFagenHarmonicPath } from '../song-mode/donaldFagenSlice';
 import { isJamesBrownHarmonicPath } from '../song-mode/jamesBrownSlice';
 import { isSteveReichHarmonicPath } from '../song-mode/steveReichSlice';
@@ -131,7 +132,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
     effKey: 'verlaineEffectiveHarmonyBars',
     sliceId: 'verlaine',
   },
-  { match: (m) => m?.songwriterStyleId === 'barry_harris', effKey: 'barryHarrisEffectiveHarmonyBars', sliceId: 'barry_harris' },
+  { match: (m) => isBarryHarrisHarmonicPath(m), effKey: 'barryHarrisEffectiveHarmonyBars', sliceId: 'barry_harris' },
   { match: (m) => isBillEvansHarmonicPath(m), effKey: 'billEvansEffectiveHarmonyBars', sliceId: 'bill_evans' },
   { match: (m) => isDebussyHarmonicPath(m), effKey: 'debussyEffectiveHarmonyBars', sliceId: 'debussy' },
   { match: (m) => isBernardHerrmannHarmonicPath(m), effKey: 'bernardHerrmannEffectiveHarmonyBars', sliceId: 'bernard_herrmann' },

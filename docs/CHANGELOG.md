@@ -2,6 +2,8 @@
 
 ### Added
 
+- **HV authority — `barry_harris` Tier 2 Phase 4** — Path helper (`isBarryHarrisHarmonicPath`) accepts `barry_harris` + VRB twins (`barry_harris_chord_melody` / `bh_cm`); soft `harris` songwriter-normalize only; soft `barry` / `jbr` stay John Barry (excluded). Registry `hv_full` harmony/precompute; golden-path precompute + mosaic merge; spine + `getChordForBar`. Style-module + motif hybrid pilot holdbacks untouched. Verify with non-BH primary (`--primary wayne_shorter`) OVERALL PASS · `resolverZeroDiff: true` · 0 DIVERGE.
+
 - **HV authority — `bartok` Tier 2 Phase 3** — Exact-id path helper + registry `hv_full` harmony/precompute; mosaic merge on HV; spine/`getChordForBar`. Targets Song-Bartok stub only — never `sq_vrb_bartok`. Soft `bela_bartok` / `bela` do not engage HV. Verify OVERALL PASS · `resolverZeroDiff: true` · 0 DIVERGE (9/9).
 
 - **VRB routing — Song-Bartok stub (pre-HV)** — Detach Song Mode `bartok` / `bela_bartok` / `bela` from SQ Bartók BY_ID. New Song Mode axis–folk stub (`BARTOK_SONG_STUB` + `applyBartokSongStubVrbProfile`, `BS_*` receipts). SQ identity moves to `sq_vrb_bartok` (profile, CLE, SQ UI / arranger). Same split rule as Song-Reich vs `reich_glass`. HV wire not included.

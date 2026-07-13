@@ -222,6 +222,17 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
       'harmony/precompute hv_full via radioheadEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; radioheadMelodicContext + finalize grammar stay primary-only',
   },
   {
+    styleId: 'barry_harris',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'barryHarrisEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via barryHarrisEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; path helper also accepts VRB twins barry_harris_chord_melody/bh_cm; soft harris songwriter-normalize only; soft barry/jbr excluded (john_barry); style-module + motif hybrid pilot stay primary-only',
+  },
+  {
     styleId: 'andrew_hill',
     layers: {
       harmony: 'hv_full',
