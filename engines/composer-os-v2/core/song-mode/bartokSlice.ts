@@ -4,6 +4,7 @@
  */
 
 import type { CompositionContext, BartokContextMode, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
@@ -189,6 +190,23 @@ export function isSongwriterBartok(
   return genMeta?.songwriterStyleId === 'bartok';
 }
 
+/**
+ * Harmonic-path gate — primary `bartok` **or** exact `harmonicVoice=bartok`.
+ * Soft aliases (`bela_bartok` / `bela`) resolve to Song stub BY_ID but do **not** engage HV
+ * unless primary/HV id is exact `bartok`.
+ * Never `sq_vrb_bartok` (SQ CLE / axis VRB).
+ */
+export function isBartokHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'bartok' || voice === 'bartok';
+}
+
 export interface BartokHarmonyAccumulator {
   barsConsidered: number;
   axisTouches: number;
@@ -230,7 +248,10 @@ export interface BartokAntiElaborationGuards {
   noopAxis: number;
 }
 
-/** @deprecated — use resolveBarSymbol */
+/**
+ * Precompute effective harmony — axis / golden-section / Bulgarian / cell / arch (`bk:*` receipts).
+ * Call when {@link isBartokHarmonicPath} (primary or exact HV).
+ */
 export function precomputeBartokEffectiveHarmonyBars(context: CompositionContext): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;

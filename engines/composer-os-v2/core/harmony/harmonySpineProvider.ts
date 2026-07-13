@@ -53,6 +53,7 @@ import { isJamesBrownHarmonicPath } from '../song-mode/jamesBrownSlice';
 import { isSteveReichHarmonicPath } from '../song-mode/steveReichSlice';
 import { isMessiaenHarmonicPath } from '../song-mode/messiaenSlice';
 import { isFrippKingCrimsonHarmonicPath } from '../song-mode/frippKingCrimsonSlice';
+import { isBartokHarmonicPath } from '../song-mode/bartokSlice';
 import { isJohnColtraneHarmonicPath } from '../song-mode/johnColtraneSlice';
 import { getChordForBar } from './harmonyResolution';
 import { buildSectionAwareHarmonySpine } from './harmonySpineSectionLoop';
@@ -150,7 +151,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   { match: (m) => m?.songwriterStyleId === 'henry_threadgill', effKey: 'henryThreadgillEffectiveHarmonyBars', sliceId: 'henry_threadgill' },
   { match: (m) => m?.songwriterStyleId === 'count_basie', effKey: 'basieEffectiveHarmonyBars', sliceId: 'count_basie' },
   { match: (m) => m?.songwriterStyleId === 'miles_davis', effKey: 'milesDavisEffectiveHarmonyBars', sliceId: 'miles_davis' },
-  { match: (m) => m?.songwriterStyleId === 'bartok', effKey: 'bartokEffectiveHarmonyBars', sliceId: 'bartok' },
+  { match: (m) => isBartokHarmonicPath(m), effKey: 'bartokEffectiveHarmonyBars', sliceId: 'bartok' },
   { match: (m) => m?.songwriterStyleId === 'berg', effKey: 'bergEffectiveHarmonyBars', sliceId: 'berg' },
   { match: (m) => m?.songwriterStyleId === 'sammy_nestico', effKey: 'sammyNesticoEffectiveHarmonyBars', sliceId: 'sammy_nestico' },
   { match: (m) => m?.songwriterStyleId === 'bob_brookmeyer', effKey: 'bobBrookmeyerEffectiveHarmonyBars', sliceId: 'bob_brookmeyer' },

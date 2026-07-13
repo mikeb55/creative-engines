@@ -321,6 +321,17 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
       'harmony/precompute hv_full via messiaenEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact messiaen only — never sq_vrb_messiaen; soft olivier_messiaen normalizes to Song; Song-Messiaen VRB stub is separate from SQ MESSIAEN_SQ',
   },
   {
+    styleId: 'bartok',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'bartokEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via bartokEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact bartok only — never sq_vrb_bartok; soft bela_bartok/bela stay Song stub BY_ID without HV gate; Song-Bartok VRB stub is separate from SQ BARTOK',
+  },
+  {
     styleId: 'fripp_king_crimson',
     layers: {
       harmony: 'hv_full',

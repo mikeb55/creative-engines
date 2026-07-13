@@ -42,6 +42,7 @@ import { isJamesBrownHarmonicPath } from '../song-mode/jamesBrownSlice';
 import { isSteveReichHarmonicPath } from '../song-mode/steveReichSlice';
 import { isMessiaenHarmonicPath } from '../song-mode/messiaenSlice';
 import { isFrippKingCrimsonHarmonicPath } from '../song-mode/frippKingCrimsonSlice';
+import { isBartokHarmonicPath } from '../song-mode/bartokSlice';
 import { isJohnColtraneHarmonicPath } from '../song-mode/johnColtraneSlice';
 import {
   hasSectionMarkerVrbAssignment,
@@ -527,11 +528,13 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   }
 
   /**
-   * Bartók: `precomputeBartokEffectiveHarmonyBars` applies axis / golden-section / Bulgarian / cell / arch devices — receipts **`bk:*`**.
+   * Bartók: `precomputeBartokEffectiveHarmonyBars` — axis / golden-section / Bulgarian / cell / arch (`bk:*`).
+   * HV path: primary | harmonicVoice (`bartok` exact) — see isBartokHarmonicPath.
+   * Never `sq_vrb_bartok` (SQ CLE). Soft `bela_bartok` / `bela` do not engage HV.
    */
   const bkEff = meta?.bartokEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'bartok' &&
+    isBartokHarmonicPath(meta) &&
     Array.isArray(bkEff) &&
     bkEff.length === tb &&
     barIndex >= 1 &&

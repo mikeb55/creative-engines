@@ -2,6 +2,8 @@
 
 ### Added
 
+- **HV authority — `bartok` Tier 2 Phase 3** — Exact-id path helper + registry `hv_full` harmony/precompute; mosaic merge on HV; spine/`getChordForBar`. Targets Song-Bartok stub only — never `sq_vrb_bartok`. Soft `bela_bartok` / `bela` do not engage HV. Verify OVERALL PASS · `resolverZeroDiff: true` · 0 DIVERGE (9/9).
+
 - **VRB routing — Song-Bartok stub (pre-HV)** — Detach Song Mode `bartok` / `bela_bartok` / `bela` from SQ Bartók BY_ID. New Song Mode axis–folk stub (`BARTOK_SONG_STUB` + `applyBartokSongStubVrbProfile`, `BS_*` receipts). SQ identity moves to `sq_vrb_bartok` (profile, CLE, SQ UI / arranger). Same split rule as Song-Reich vs `reich_glass`. HV wire not included.
 
 - **VRB routing — Song-Reich stub (pre-HV)** — Detach `steve_reich` / soft `reich` from SQ `REICH_GLASS` BY_ID. New Song Mode process-field stub (`STEVE_REICH_SONG_STUB` + `applySteveReichSongStubVrbProfile`, `SR_*` receipts). SQ ids unchanged: `reich_glass` / `reichglass` / `reich_and_glass` / `minimalist_sq` / `sq_vrb_reich_glass`. Same split rule as film Glass vs `reich_glass`. HV wire not included.

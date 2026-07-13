@@ -278,6 +278,7 @@ import {
   accumulateBartokHarmonyDiagnostics,
   createBartokHarmonyAccumulator,
   finalizeBartokMetadata,
+  isBartokHarmonicPath,
   precomputeBartokEffectiveHarmonyBars,
 } from './bartokSlice';
 import {
@@ -3404,6 +3405,10 @@ function buildGuitarPart(
   const isSongwriterBillyStrayhorn = genMeta?.songwriterStyleId === 'billy_strayhorn';
   const isSongwriterMilesDavis = genMeta?.songwriterStyleId === 'miles_davis';
   const isSongwriterBartok = genMeta?.songwriterStyleId === 'bartok';
+  const isHarmonicVoiceBartok =
+    normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
+    'bartok';
+  const bartokHarmonicPathActive = isBartokHarmonicPath(genMeta);
   const isSongwriterBerg = genMeta?.songwriterStyleId === 'berg';
   const isSongwriterGershwin = genMeta?.songwriterStyleId === 'gershwin';
   const isHarmonicVoiceGershwin =
@@ -3888,8 +3893,15 @@ function buildGuitarPart(
   if (isSongwriterMilesDavis && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeMilesDavisEffectiveHarmonyBars(context);
   }
-  if (isSongwriterBartok && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+  if (bartokHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeBartokEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceBartok && !isSongwriterBartok) {
+      const bartokEff = genMeta.bartokEffectiveHarmonyBars;
+      const bartokTb = totalBarsFromContext(context);
+      if (Array.isArray(bartokEff) && bartokEff.length === bartokTb) {
+        genMeta.mosaicMergedHarmonyBars = [...bartokEff];
+      }
+    }
   }
   if (isSongwriterBerg && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeBergEffectiveHarmonyBars(context);
