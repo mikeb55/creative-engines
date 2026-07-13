@@ -8,6 +8,7 @@ import type {
   NelsonBluesFormVariant,
   NelsonPeriodMode,
 } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { isProtectedBar } from '../score-integrity/identityLock';
@@ -16,6 +17,21 @@ import { breakFrankZappaIiViProgressions } from './songModeBuilder';
 import { buildNelsonEpisodePlan, episodeForNelsonBar } from './nelsonEpisodeTypes';
 
 export type { NelsonPeriodMode, NelsonBluesFormVariant } from '../compositionContext';
+
+/**
+ * Exact id `oliver_nelson` only — soft `nelson` stays songwriter-normalize;
+ * does **not** engage HV. BB Nelson / episode / line-first holdbacks untouched.
+ */
+export function isOliverNelsonHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'oliver_nelson' || voice === 'oliver_nelson';
+}
 
 const PC_TO_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
 

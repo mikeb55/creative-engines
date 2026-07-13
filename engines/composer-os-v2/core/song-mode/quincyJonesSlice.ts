@@ -3,11 +3,36 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { isProtectedBar } from '../score-integrity/identityLock';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { breakFrankZappaIiViProgressions } from './songModeBuilder';
+
+export const QUINCY_JONES_HARMONIC_VOICE_IDS = ['quincy_jones', 'quincy_jones_film'] as const;
+
+export function isQuincyJonesHarmonicVoiceId(raw: string | null | undefined): boolean {
+  const id = normalizeHarmonicVoiceId(String(raw ?? ''));
+  return id === 'quincy_jones' || id === 'quincy_jones_film';
+}
+
+/**
+ * Exact `quincy_jones` or film twin `quincy_jones_film` only.
+ * Soft `quincy` (ALIASES → quincy_jones) does **not** engage HV.
+ * BB Quincy / film profile surfaces stay primary-only holdbacks.
+ */
+export function isQuincyJonesHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  return (
+    isQuincyJonesHarmonicVoiceId(metadata?.songwriterStyleId) ||
+    isQuincyJonesHarmonicVoiceId(metadata?.harmonicVoice)
+  );
+}
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 

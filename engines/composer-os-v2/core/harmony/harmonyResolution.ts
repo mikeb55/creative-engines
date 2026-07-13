@@ -60,6 +60,10 @@ import { isBillyStrayhornHarmonicPath } from '../song-mode/billyStrayhornSlice';
 import { isBobBrookmeyerHarmonicPath } from '../song-mode/bobBrookmeyerSlice';
 import { isCarlaBleyHarmonicPath } from '../song-mode/carlaBleySlice';
 import { isClareFischerHarmonicPath } from '../song-mode/clareFischerSlice';
+import { isOliverNelsonHarmonicPath } from '../song-mode/oliverNelsonSlice';
+import { isQuincyJonesHarmonicPath } from '../song-mode/quincyJonesSlice';
+import { isSammyNesticoHarmonicPath } from '../song-mode/sammyNesticoSlice';
+import { isHenryThreadgillHarmonicPath } from '../song-mode/henryThreadgillSlice';
 import {
   hasSectionMarkerVrbAssignment,
   resolveVoiceRuleBundleForBar,
@@ -511,10 +515,11 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   /**
    * Henry Threadgill: `precomputeHenryThreadgillEffectiveHarmonyBars` layers interval-cell / episodic pitch-set receipts — **`ht:*`**.
    * After precompute, `henryThreadgillEffectiveHarmonyBars` is full-form and authoritative.
+   * HV path: primary | harmonicVoice (`henry_threadgill` exact) — see isHenryThreadgillHarmonicPath.
    */
   const htEff = meta?.henryThreadgillEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'henry_threadgill' &&
+    isHenryThreadgillHarmonicPath(meta) &&
     Array.isArray(htEff) &&
     htEff.length === tb &&
     barIndex >= 1 &&
@@ -579,7 +584,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 
   const snEff = meta?.sammyNesticoEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'sammy_nestico' &&
+    isSammyNesticoHarmonicPath(meta) &&
     Array.isArray(snEff) &&
     snEff.length === tb &&
     barIndex >= 1 &&
@@ -612,7 +617,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 
   const onEff = meta?.oliverNelsonEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'oliver_nelson' &&
+    isOliverNelsonHarmonicPath(meta) &&
     Array.isArray(onEff) &&
     onEff.length === tb &&
     barIndex >= 1 &&
@@ -623,7 +628,7 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
 
   const qjEff = meta?.quincyJonesEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'quincy_jones' &&
+    isQuincyJonesHarmonicPath(meta) &&
     Array.isArray(qjEff) &&
     qjEff.length === tb &&
     barIndex >= 1 &&

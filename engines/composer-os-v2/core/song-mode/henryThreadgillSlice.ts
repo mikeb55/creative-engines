@@ -14,10 +14,26 @@ import type {
   ThreadgillModalLayer,
 } from './threadgillEpisodeTypes';
 import { DEFAULT_HENRY_THREADGILL_SLICE_PARAMS } from './threadgillEpisodeTypes';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
+
+/**
+ * Exact id `henry_threadgill` only — soft `threadgill` stays songwriter-normalize;
+ * does **not** engage HV. BB dual-id `threadgill` / `henry_threadgill` handling unchanged.
+ */
+export function isHenryThreadgillHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'henry_threadgill' || voice === 'henry_threadgill';
+}
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 

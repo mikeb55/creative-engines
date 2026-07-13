@@ -3,12 +3,35 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { isProtectedBar } from '../score-integrity/identityLock';
+import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { breakFrankZappaIiViProgressions } from './songModeBuilder';
 
+/**
+ * Exact id `sammy_nestico` only — soft `nestico` stays songwriter-normalize;
+ * does **not** engage HV. BB Nestico chart surfaces stay primary-only.
+ */
+export function isSammyNesticoHarmonicPath(
+  metadata?: {
+    songwriterStyleId?: string | null;
+    harmonicVoice?: string | null;
+  } | null
+): boolean {
+  const primary = normalizeHarmonicVoiceId(String(metadata?.songwriterStyleId ?? ''));
+  const voice = normalizeHarmonicVoiceId(String(metadata?.harmonicVoice ?? ''));
+  return primary === 'sammy_nestico' || voice === 'sammy_nestico';
+}
+
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
+
+const PC_TO_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
+
+function pitchClassToSharpName(pc: number): string {
+  return PC_TO_SHARP[((pc % 12) + 12) % 12]!;
+}
 
 function seededUnit(seed: number, bar: number, salt: number): number {
   let s = (seed ^ bar * 1103515245 ^ salt * 12345) >>> 0;
@@ -115,6 +138,69 @@ export function precomputeSammyNesticoEffectiveHarmonyBars(context: CompositionC
     if (seededUnit(seed, b, 881301) < 0.22) receipts.push(`sn:riff_punch@bar${b}`);
   }
 
+  /* Piece-final only: Basie-school tonic maj9 + safety net (standard tonic-force; mid-piece unchanged). */
+  const tonicPc = inferTonicPitchClassFromBar1(context);
+  forceFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
+  enforceFinalBarTonicResolution(out, tonicPc, tb, receipts, context);
+
   genMeta.sammyNesticoEffectiveHarmonyBars = out;
   genMeta.sammyNesticoDeviceReceipts = receipts;
+}
+
+/**
+ * GCE tonic-family check aligned with finalBarTension gate (`isTonicFamilyChord`).
+ * Piece-final force / safety net only — mid-piece Nestico devices untouched.
+ */
+function chordLooksTonicFamily(symbol: string): boolean {
+  const s = symbol.trim();
+  if (!s) return false;
+  const q = s.toLowerCase();
+  if (/maj7|maj9/i.test(s) && !q.includes('min')) return true;
+  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return true;
+  if (/^[^/]*min9/i.test(s)) return true;
+  return false;
+}
+
+/** Piece-final tonic: maj9 — Nestico chart clarity / Basie-school landing. */
+function spellSammyNesticoTonicCadence(
+  bar: number,
+  tonicPc: number
+): { symbol: string; receipt: string } {
+  const nm = pitchClassToSharpName(tonicPc);
+  return {
+    symbol: `${nm}maj9`,
+    receipt: `sn:final_tonic_cadence@bar${bar}`,
+  };
+}
+
+function forceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const { symbol, receipt } = spellSammyNesticoTonicCadence(totalBars, tonicPc);
+  out[totalBars - 1] = symbol;
+  receipts.push(`${receipt}|final_bar`);
+}
+
+function enforceFinalBarTonicResolution(
+  out: string[],
+  tonicPc: number | undefined,
+  totalBars: number,
+  receipts: string[],
+  context: CompositionContext
+): void {
+  if (tonicPc === undefined) return;
+  if (totalBars < 1 || out.length < totalBars) return;
+  if (isProtectedBar(totalBars, context)) return;
+  const idx = totalBars - 1;
+  if (chordLooksTonicFamily(out[idx]!)) return;
+  const { symbol, receipt } = spellSammyNesticoTonicCadence(totalBars, tonicPc);
+  out[idx] = symbol;
+  receipts.push(`${receipt}|enforce`);
 }

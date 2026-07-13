@@ -519,6 +519,50 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
       'harmony/precompute hv_full via clareFischerEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact clare_fischer only; soft fischer songwriter-normalize only; BB Fischer / Latin-voicing surfaces stay primary-only',
   },
   {
+    styleId: 'oliver_nelson',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'oliverNelsonEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via oliverNelsonEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact oliver_nelson only; soft nelson songwriter-normalize only; BB Nelson / episode / line-first holdbacks untouched',
+  },
+  {
+    styleId: 'quincy_jones',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'quincyJonesEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via quincyJonesEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact quincy_jones + optional film twin quincy_jones_film; soft quincy songwriter-normalize only; BB Quincy holdbacks untouched',
+  },
+  {
+    styleId: 'sammy_nestico',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'sammyNesticoEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via sammyNesticoEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact sammy_nestico only; soft nestico songwriter-normalize only; BB Nestico chart surfaces stay primary-only',
+  },
+  {
+    styleId: 'henry_threadgill',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'henryThreadgillEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via henryThreadgillEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact henry_threadgill only; soft threadgill songwriter-normalize only; BB dual-id threadgill/henry_threadgill + interval-cell holdbacks untouched',
+  },
+  {
     styleId: 'john_coltrane',
     layers: {
       harmony: 'hv_full',
