@@ -14,6 +14,7 @@ import {
 import type { SectionComposerRouting } from './resolveMosaicSectionStyles';
 import {
   jackWhiteSliceParamsForComposer,
+  normalizeHarmonicVoiceId,
   postProcessJackWhiteMosaicHarmony,
 } from '../composer/voiceRuleBundles';
 
@@ -312,6 +313,59 @@ function extractEffectiveHarmonyBars(
   return bars;
 }
 
+/**
+ * Global HV overlay (locked product 2026-07-16):
+ * section composer `getDispatchEntry` sets the base; when parent `harmonicVoice` is set and
+ * differs from the section composer, run HV dispatch precompute on the base bars.
+ * Item E: does not change `getDispatchEntry` selection — only adds a second pass.
+ */
+function applyGlobalMosaicHvOverlay(args: {
+  sectionContext: CompositionContext;
+  sectionComposerId: string;
+  sectionLabel: string;
+  baseBars: string[];
+  sectionEntryEffectiveKey: keyof GenerationMetadata;
+}): { bars: string[]; overlayRan: boolean; skippedReason?: string } {
+  const hvRaw = args.sectionContext.generationMetadata.harmonicVoice;
+  const hvId = normalizeHarmonicVoiceId(String(hvRaw ?? ''));
+  if (!hvId) {
+    return { bars: args.baseBars, overlayRan: false };
+  }
+  if (hvId === normalizeHarmonicVoiceId(args.sectionComposerId)) {
+    // Base pass already is HV grammar for this section.
+    return { bars: args.baseBars, overlayRan: false };
+  }
+
+  const hvEntry = getDispatchEntry(hvId);
+  if (!hvEntry) {
+    return {
+      bars: args.baseBars,
+      overlayRan: false,
+      skippedReason: `no_dispatch_entry:${hvId}`,
+    };
+  }
+
+  const meta = args.sectionContext.generationMetadata as GenerationMetadata & Record<string, unknown>;
+  // Feed section-composer base as locked input for the HV colour pass.
+  args.sectionContext.lockedHarmonyBarsRaw = [...args.baseBars];
+  meta.parsedCustomProgressionBars = [...args.baseBars];
+  if (args.sectionContext.harmonyContext) {
+    args.sectionContext.harmonyContext = {
+      ...args.sectionContext.harmonyContext,
+      bars: [...args.baseBars],
+    };
+  }
+  // Clear base effective key so spine resolve reads locked base, not prior section composer bars.
+  delete meta[args.sectionEntryEffectiveKey as string];
+  // HV is harmony authority for this pass; keep HV field explicit.
+  meta.songwriterStyleId = hvId;
+  meta.harmonicVoice = hvId;
+
+  hvEntry.precompute(args.sectionContext);
+  const overlayBars = extractEffectiveHarmonyBars(meta, hvId, args.sectionLabel);
+  return { bars: overlayBars, overlayRan: true };
+}
+
 function assertNoOverlappingSectionRanges(sections: readonly MosaicModeSectionPlanEntry[]): void {
   const barOwner = new Map<number, string>();
   for (const section of sections) {
@@ -376,6 +430,11 @@ export function precomputeMosaicEffectiveHarmonyBars(
 
   const bars: string[] = new Array(totalBars);
   const sectionOwnership: Record<number, string> = {};
+  const globalHvId = normalizeHarmonicVoiceId(
+    String(context.generationMetadata.harmonicVoice ?? '')
+  );
+  const overlaySectionLabels: string[] = [];
+  let overlaySkippedReason: string | undefined;
 
   for (const section of sections) {
     const tonicPc = tonicMap[section.sectionLabel];
@@ -399,11 +458,50 @@ export function precomputeMosaicEffectiveHarmonyBars(
       postProcessJackWhiteMosaicHarmony(sectionContext.generationMetadata);
     }
 
-    const sectionBars = extractEffectiveHarmonyBars(
+    const baseBars = extractEffectiveHarmonyBars(
       sectionContext.generationMetadata,
       section.songwriterStyleId,
       section.sectionLabel
     );
+
+    // Capture section-composer motif/field receipts before HV overlay may rewrite metadata.
+    const baseMeta = sectionContext.generationMetadata as GenerationMetadata & Record<string, unknown>;
+    if (section.songwriterStyleId === 'verlaine') {
+      if (baseMeta.verlaineDeviceReceipts?.length) {
+        context.generationMetadata.verlaineDeviceReceipts = [...baseMeta.verlaineDeviceReceipts];
+      }
+      if (baseMeta.verlaineFieldPlan) {
+        context.generationMetadata.verlaineFieldPlan = baseMeta.verlaineFieldPlan;
+      }
+      if (baseMeta.verlaineSliceParams) {
+        context.generationMetadata.verlaineSliceParams = baseMeta.verlaineSliceParams;
+      }
+    } else if (section.songwriterStyleId === 'marr') {
+      if (baseMeta.marrDeviceReceipts?.length) {
+        context.generationMetadata.marrDeviceReceipts = [...baseMeta.marrDeviceReceipts];
+      }
+      if (baseMeta.marrMelodicPlan) {
+        context.generationMetadata.marrMelodicPlan = baseMeta.marrMelodicPlan;
+      }
+      if (baseMeta.marrSliceParams) {
+        context.generationMetadata.marrSliceParams = baseMeta.marrSliceParams;
+      }
+    }
+
+    const overlay = applyGlobalMosaicHvOverlay({
+      sectionContext,
+      sectionComposerId: section.songwriterStyleId,
+      sectionLabel: section.sectionLabel,
+      baseBars,
+      sectionEntryEffectiveKey: entry.effectiveHarmonyKey,
+    });
+    const sectionBars = overlay.bars;
+    if (overlay.overlayRan) {
+      overlaySectionLabels.push(section.sectionLabel);
+    }
+    if (overlay.skippedReason && !overlaySkippedReason) {
+      overlaySkippedReason = overlay.skippedReason;
+    }
 
     const expectedSpan = section.endBar - section.startBar + 1;
     if (sectionBars.length !== expectedSpan) {
@@ -425,28 +523,13 @@ export function precomputeMosaicEffectiveHarmonyBars(
     }
 
     const parentMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
-    const sectionMeta = sectionContext.generationMetadata as GenerationMetadata & Record<string, unknown>;
-    (parentMeta as Record<string, unknown>)[entry.effectiveHarmonyKey as string] = [...sectionBars];
-
-    if (section.songwriterStyleId === 'verlaine') {
-      if (sectionMeta.verlaineDeviceReceipts?.length) {
-        context.generationMetadata.verlaineDeviceReceipts = [...sectionMeta.verlaineDeviceReceipts];
-      }
-      if (sectionMeta.verlaineFieldPlan) {
-        context.generationMetadata.verlaineFieldPlan = sectionMeta.verlaineFieldPlan;
-      }
-      if (sectionMeta.verlaineSliceParams) {
-        context.generationMetadata.verlaineSliceParams = sectionMeta.verlaineSliceParams;
-      }
-    } else if (section.songwriterStyleId === 'marr') {
-      if (sectionMeta.marrDeviceReceipts?.length) {
-        context.generationMetadata.marrDeviceReceipts = [...sectionMeta.marrDeviceReceipts];
-      }
-      if (sectionMeta.marrMelodicPlan) {
-        context.generationMetadata.marrMelodicPlan = sectionMeta.marrMelodicPlan;
-      }
-      if (sectionMeta.marrSliceParams) {
-        context.generationMetadata.marrSliceParams = sectionMeta.marrSliceParams;
+    (parentMeta as Record<string, unknown>)[entry.effectiveHarmonyKey as string] = [...baseBars];
+    if (overlay.overlayRan && globalHvId) {
+      const hvEntry = getDispatchEntry(globalHvId);
+      if (hvEntry) {
+        (parentMeta as Record<string, unknown>)[hvEntry.effectiveHarmonyKey as string] = [
+          ...sectionBars,
+        ];
       }
     }
   }
@@ -475,6 +558,17 @@ export function precomputeMosaicEffectiveHarmonyBars(
   context.generationMetadata.mosaicMergedHarmonyBars = bars;
   context.generationMetadata.mosaicSectionOwnership = sectionOwnership;
   context.generationMetadata.mosaicLockRegistry = mosaicLockRegistry;
+
+  if (globalHvId) {
+    context.generationMetadata.mosaicGlobalHvId = globalHvId;
+    context.generationMetadata.mosaicGlobalHvOverlayApplied = overlaySectionLabels.length > 0;
+    if (overlaySectionLabels.length > 0) {
+      context.generationMetadata.mosaicGlobalHvOverlaySections = [...overlaySectionLabels];
+    }
+    if (overlaySkippedReason && overlaySectionLabels.length === 0) {
+      context.generationMetadata.mosaicGlobalHvOverlaySkippedReason = overlaySkippedReason;
+    }
+  }
 
   return merged;
 }

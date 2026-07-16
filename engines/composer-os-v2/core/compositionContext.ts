@@ -594,6 +594,17 @@ export interface GenerationMetadata {
   allowMosaicPostFinalizeInject?: boolean;
   /** Mosaic Mode Step 3 — full-form merged effective harmony (one symbol per bar, bar 1 at index 0). */
   mosaicMergedHarmonyBars?: string[];
+  /**
+   * Mosaic Mode — global HV overlay (product 2026-07-16).
+   * When set, `harmonicVoice` coloured each section after per-composer `getDispatchEntry` base.
+   */
+  mosaicGlobalHvOverlayApplied?: boolean;
+  /** Normalized global `harmonicVoice` used for mosaic overlay (absent when HV unset). */
+  mosaicGlobalHvId?: string;
+  /** Section labels where HV overlay precompute ran (HV ≠ section composer + dispatch entry exists). */
+  mosaicGlobalHvOverlaySections?: string[];
+  /** When HV set but no mosaic dispatch entry — overlay skipped; base section harmony kept. */
+  mosaicGlobalHvOverlaySkippedReason?: string;
   /** Mosaic Mode Step 6 — per-section LOCK contracts (order-independent; one entry per section). */
   mosaicLockRegistry?: Array<{
     sectionLabel: string;

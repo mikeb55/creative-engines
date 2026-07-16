@@ -149,9 +149,9 @@ Status: documented during Fix #1 (GBD + ECM section-regen forwarding, 2026-07-08
 
 Still unused on BB: other `is*HarmonicPath` composers on the non-mosaic wall; mosaic per-section HV. Matrix `big_band` row stays `TRANSPORT_ONLY` for Verlaine fixture (no Slonimsky profile map entry → GCE delta often still 0).
 
-**Additional open design question:** Big Band's per-section mosaic dispatch uses per-section `songwriterStyleId`, not a single top-level `harmonicVoice`. Product must define whether `harmonicVoice` applies globally (all sections) or needs a per-section `harmonicVoice` map — undefined today.
+**Mosaic global HV overlay (2026-07-16) — SHIPPED:** Product chose **global** HV (not per-section map). `precomputeMosaicEffectiveHarmonyBars`: per-section `getDispatchEntry(section.songwriterStyleId)` base, then when `harmonicVoice` set and ≠ section composer, HV dispatch precompute overlays base bars on every section. Receipts `mosaicGlobalHvOverlayApplied` / `mosaicGlobalHvId` / `mosaicGlobalHvOverlaySections`. Item E: walls + `getDispatchEntry` selection unchanged. Smoke: `mosaicGlobalHvRoutingSmoke.test.ts`.
 
-**Status:** Fix #3A (transport) + Batch 1 Slonimsky + Batch 4 FZ HV continuity + Batch 6 Berg HV bridge + Phase 2 widen Beefheart + Fela Kuti + Threadgill + Weber **COMPLETE**. Remaining: mosaic HV product decision.
+**Status:** Fix #3A (transport) + Batch 1 Slonimsky + Batch 4 FZ HV continuity + Batch 6 Berg HV bridge + Phase 2 widen Beefheart + Fela Kuti + Threadgill + Weber + **mosaic global HV overlay** **COMPLETE**.
 
 **Matrix handling:** `big_band` row status remains `TRANSPORT_ONLY` until harmony consumption (or matrix HV switched to a Slonimsky-mapped style).
 
@@ -177,4 +177,4 @@ Still unused on BB: other `is*HarmonicPath` composers on the non-mosaic wall; mo
 
 Still unused on SQ: other composers on non-mosaic bridge; mosaic `getDispatchEntry` / CLE HV. Matrix `string_quartet` row stays `TRANSPORT_ONLY` for Verlaine fixture.
 
-**Status:** Fix #3B (transport) + Batch 2–3 + 5 FZ verify + Batch 6 Berg + Phase 2 widen Beefheart + Fela Kuti + Threadgill + Weber **COMPLETE**. Remaining: mosaic CLE HV product decision; optional FZ-via-HV product.
+**Status:** Fix #3B (transport) + Batch 2–3 + 5 FZ verify + Batch 6 Berg + Phase 2 widen Beefheart + Fela Kuti + Threadgill + Weber + **mosaic global HV overlay** **COMPLETE**. Optional remaining: FZ-via-HV product.

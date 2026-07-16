@@ -6,9 +6,9 @@
 
 | Lane | Status |
 |------|--------|
-| **CLOSED this session** | CI smoke **8/8** → **0** unexpected · Score-5 (**30**) + Score-6 BB (**4**) wired · Phase 2 Batches **1–6** + Beefheart + Fela + Threadgill + **Weber** HV widen **COMPLETE** · fBT vs custom_locked bug family fully resolved · Bass-identity rhythm-cell (`bacharach` + `oliver_nelson`) **CLOSED** · jamerson RiffGen Phase E **CLOSED** · **Riff Generator Phase A honesty** **CLOSED** · Full smoke **768**/140, known **5**, unexpected **0** |
+| **CLOSED this session** | CI smoke **8/8** → **0** unexpected · Score-5 (**30**) + Score-6 BB (**4**) wired · Phase 2 Batches **1–6** + Beefheart + Fela + Threadgill + **Weber** HV widen **COMPLETE** · fBT vs custom_locked bug family fully resolved · Bass-identity rhythm-cell (`bacharach` + `oliver_nelson`) **CLOSED** · jamerson RiffGen Phase E **CLOSED** · **Riff Generator Phase A honesty** **CLOSED** · **Mosaic global HV** **CLOSED** · Full smoke **772**/141, known **5**, unexpected **0** |
 | **1. Phase 2 widen** | Berg + Beefheart + Fela + Threadgill + **Weber** HV walls **COMPLETE** — next: **Mosaic HV** product decision |
-| **2. Mosaic HV** | Blocked on product decision: global HV vs per-section HV map |
+| **2. Mosaic HV** | **COMPLETE (2026-07-16)** — **global** HV overlay shipped; per-section map rejected |
 | **3. Riff Generator Phase A** | **COMPLETE (2026-07-15)** — honesty-only: grey HV + receipt; no soft-link; see `docs/RIFF_GENERATOR_HARMONIC_VOICE_DECISION.md` |
 | **4. Score-4 defer** | Parked / low ROI — **9** composers, Slonimsky-transport-only |
 | **5. Tier 3** | Parked / low ROI — **10** composers, score **0–3**, out of HV scope |
@@ -28,7 +28,7 @@
 | **Bacharach / Monk / Joni / SY / Zappa (premium-melody roster)** | **Registry placeholders only** — Song Mode slices **shipped**; premium-melody **not started** |
 | **V88 — Bartók CLE pitch scoring** | **FROZEN** — eval **8.0/10** seed **61234**; **`bartokClePitchScoringGoldenMaster`** in smoke |
 | **Musician shell (desktop v1)** | **SHIPPED** — default **`Composer-OS.exe`** plain HTML UI; **32-bar Song Mode**; registry-driven composer list; **`COMPOSER_OS_FULL_UI=1`** → React Generate |
-| **Smoke tier** | **`npm run test:composer-smoke`** — **768** PASS rows / **140** suites (2026-07-15; Riff Phase A honesty +1). Known fail **5** (tracked). Unexpected fail **0**. |
+| **Smoke tier** | **`npm run test:composer-smoke`** — **772** PASS rows / **141** suites (2026-07-16; Mosaic global HV +4). Known fail **5** (tracked). Unexpected fail **0**. |
 
 **Evans Musician bridge — DONE (2026-06-14):** **`beMusicianPremiumMelodyBridge`** wired behind Evans-only **`musicianPremiumMelody`** + Musician IPC; 32-bar tiling + co-onset seam repair merged (**`2c7bb23d`**); premium-melody fingerprint reaches final **`song_mode`** compiled/export XML on Musician/desktop path; golden oracles **byte-identical**.
 
@@ -643,7 +643,7 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 
 ## Priority Order (revised 2026-07-15)
 
-**CLOSED this session (2026-07-15):** CI smoke **8/8** → **0** unexpected · Score-5 (**30**) + Score-6 BB (**4**) wired · Phase 2 Batches **1–6** + Beefheart + Fela + Threadgill + **Weber** HV widen **COMPLETE** · fBT vs custom_locked bug family fully resolved (mechanism + routing-gap + wire-sync + reporting) · jamerson RiffGen Phase E **CLOSED** · **Riff Generator Phase A honesty** **CLOSED** · Full smoke **768**/140, known **5**, unexpected **0**.
+**CLOSED this session (2026-07-15/16):** CI smoke **8/8** → **0** unexpected · Score-5 (**30**) + Score-6 BB (**4**) wired · Phase 2 Batches **1–6** + Beefheart + Fela + Threadgill + **Weber** HV widen **COMPLETE** · fBT vs custom_locked bug family fully resolved · jamerson RiffGen Phase E **CLOSED** · **Riff Generator Phase A honesty** **CLOSED** · **Mosaic global HV** **CLOSED** · Full smoke **772**/141, known **5**, unexpected **0**.
 
 **HV authority — items 1–2 SHIPPED (doc lag corrected 2026-07-12):**
 
@@ -653,7 +653,7 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 **Still open — higher ROI (all independent, pick any):**
 
 3. **Phase 2 widen** — Berg Batch 6 + **Beefheart** + **Fela Kuti** + **Threadgill** + **Weber** HV-only non-mosaic bridges **COMPLETE**. Next: **Mosaic HV** product decision. BB/SQ Phase 2 Batches **1–6** + five widen composers shipped (Slonimsky, VRB/Pass4, FZ continuity, Berg/Beefheart/Fela/Threadgill/Weber HV walls). See `docs/EIGHTY_STYLE_AUDIT_SWEEP_2026-07-08.md`, `docs/EIGHTY_STYLE_STAGE2_FINDINGS.md`.
-4. **Mosaic HV** — blocked on product decision: **global HV** vs **per-section HV map**. Do not start until decision lands.
+4. **Mosaic HV** — **COMPLETE (2026-07-16)** — global HV overlay after per-section `getDispatchEntry` base (`precomputeMosaicEffectiveHarmonyBars`). Walls / item E untouched. Per-section HV map rejected.
 5. **Riff Generator Phase A** — **COMPLETE (2026-07-15)** honesty-only ship: greyed HV + `harmonicVoiceIgnoredOnRiffPreset` receipt; pattern authority = `riffVrbId`. Soft-link / Phase B chord colour still future. See `docs/RIFF_GENERATOR_HARMONIC_VOICE_DECISION.md`.
 
 **Tracked debt (not red, not blocking):** *(none outstanding from 2026-07-15 remaining list — jamerson Phase E closed.)*

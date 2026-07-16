@@ -92,6 +92,7 @@ import { runBigBandThreadgillHvRoutingSmokeTests } from './bigBandThreadgillHvRo
 import { runSqThreadgillHvRoutingSmokeTests } from './sqThreadgillHvRoutingSmoke.test';
 import { runBigBandWeberHvRoutingSmokeTests } from './bigBandWeberHvRoutingSmoke.test';
 import { runSqWeberHvRoutingSmokeTests } from './sqWeberHvRoutingSmoke.test';
+import { runMosaicGlobalHvRoutingSmokeTests } from './mosaicGlobalHvRoutingSmoke.test';
 import { runUniversalLeadSheetRepeatSmokeTests } from './universalLeadSheetBuilder.test';
 import { runVocalMelodySmokeTests } from './vocalMelodySmoke.test';
 import { runRealBookStressTests } from './realBookStressTest.test';
@@ -301,6 +302,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'SQ Threadgill HV bridge (Phase 2 widen)', run: runSqThreadgillHvRoutingSmokeTests },
   { label: 'BB Weber HV bridge (Phase 2 widen)', run: runBigBandWeberHvRoutingSmokeTests },
   { label: 'SQ Weber HV bridge (Phase 2 widen)', run: runSqWeberHvRoutingSmokeTests },
+  { label: 'Mosaic global HV overlay', run: runMosaicGlobalHvRoutingSmokeTests },
   { label: 'Tonality Vault quality (inspector, riff modes, LSM, reharm, BB routing, rule sets)', run: runVaultQualitySmokeTests },
   { label: 'VoiceRuleBundle compiler + gil_evans wiring', run: runVoiceRuleBundleTests },
   { label: 'Riff Generator wiring (family / profile / odd-meter / blend)', run: runRiffGeneratorIntegrationTests },
