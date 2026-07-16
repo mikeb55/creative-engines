@@ -189,6 +189,7 @@ import {
   type ZappaStyleModeUi,
   type ZappaSymmetryBiasUi,
 } from '../types/riffGeneratorUi';
+import { resolveRiffSoftLinkHv } from '@composer-os/core/riff-generator/riffSoftLinkHv';
 import { riffChordGridWarnings } from '../utils/riffChordGridWarnings';
 import { ComposerEraSelectOptions } from '../components/ComposerEraSelectOptions';
 import {
@@ -2933,6 +2934,11 @@ export function HomeGenerate({
   >('single_line');
   const [riffBass, setRiffBass] = useState(false);
   const [riffSolo, setRiffSolo] = useState(false);
+  /** Phase B Iter 1 — gate HV chord-colour read path; default OFF = Phase A honesty. */
+  const [riffUseHvForPattern, setRiffUseHvForPattern] = useState(false);
+  /** Soft-link: optional HV -> riffVrbId copy; default OFF. Separate from chord-colour toggle. */
+  const [riffSoftLinkHvAsPattern, setRiffSoftLinkHvAsPattern] = useState(false);
+  const [riffSoftLinkHvMismatch, setRiffSoftLinkHvMismatch] = useState<string | null>(null);
   const [riffBarLocks, setRiffBarLocks] = useState<boolean[]>([]);
   const [riffCarryForward, setRiffCarryForward] = useState<RiffCarryForward | null>(null);
   const [riffGateMessages, setRiffGateMessages] = useState<string[]>([]);
@@ -3374,6 +3380,22 @@ export function HomeGenerate({
       return next;
     });
   }, [presetId, totalBars]);
+
+  /** Soft-link: when ON, copy HV into riffVrbId only if HV is a riff-registry id. */
+  useEffect(() => {
+    if (presetId !== 'riff_generator' || !riffSoftLinkHvAsPattern) {
+      setRiffSoftLinkHvMismatch(null);
+      return;
+    }
+    const link = resolveRiffSoftLinkHv(slonimskyHarmonicVoice);
+    if (link.ok) {
+      setRiffVrbId(link.vrbId);
+      setRiffFamily(link.family);
+      setRiffSoftLinkHvMismatch(null);
+    } else {
+      setRiffSoftLinkHvMismatch(link.mismatch);
+    }
+  }, [presetId, riffSoftLinkHvAsPattern, slonimskyHarmonicVoice]);
 
   useEffect(() => {
     if (!isZappaRiffVrbId(riffVrbId)) {
@@ -4476,8 +4498,21 @@ export function HomeGenerate({
           ...(presetId === 'riff_generator' && slonimskyUiExtras.styleGenerationContextKeys
             ? { styleGenerationContextKeys: slonimskyUiExtras.styleGenerationContextKeys }
             : {}),
-          // Phase A honesty — do not forward harmonicVoice on riff_generator (pattern authority = riffVrbId).
-          ...(presetId === 'riff_generator' ? { chromaticStrength: gbdChromaticStrength } : {}),
+          // Phase A honesty (toggle OFF): do not forward harmonicVoice on riff_generator.
+          // Phase B Iter 1 (toggle ON): forward HV for read-only chord-colour wiring only — not pattern.
+          ...(presetId === 'riff_generator'
+            ? {
+                chromaticStrength: gbdChromaticStrength,
+                ...(riffUseHvForPattern
+                  ? {
+                      riffUseHvForPattern: true as const,
+                      ...(slonimskyHarmonicVoice
+                        ? { harmonicVoice: slonimskyHarmonicVoice }
+                        : {}),
+                    }
+                  : {}),
+              }
+            : {}),
           ...(duoHarmonyFields ? duoHarmonyFields : {}),
           ...(presetId === 'song_mode' && songChordLine
             ? {
@@ -5059,6 +5094,7 @@ export function HomeGenerate({
       riffLineMode,
       riffBass,
       riffSolo,
+      riffUseHvForPattern,
       riffBarLocks,
       riffCarryForward,
       songModeStyleProfile,
@@ -8680,17 +8716,80 @@ export function HomeGenerate({
       </div>
 
       {presetId === 'riff_generator' && (
-        <SlonimskyUniversalPanel
-          state={slonimskyMacro}
-          onChange={setSlonimskyMacro}
-          disabled={loading}
-          harmonicOnly
-          harmonicVoiceReadOnly
-          harmonicVoiceReadOnlyNote="Harmonic Voice does not drive riff pattern on this preset — use Riff pattern (riffVrbId). Chord colour via Harmonic Voice is a later phase."
-          harmonicVoiceMode="riff_generator"
-          harmonicVoiceId={slonimskyHarmonicVoice}
-          onHarmonicVoiceChange={setSlonimskyHarmonicVoice}
-        />
+        <>
+          <SlonimskyUniversalPanel
+            state={slonimskyMacro}
+            onChange={setSlonimskyMacro}
+            disabled={loading}
+            harmonicOnly
+            harmonicVoiceReadOnly={!riffUseHvForPattern && !riffSoftLinkHvAsPattern}
+            harmonicVoiceReadOnlyNote={
+              riffSoftLinkHvAsPattern
+                ? 'Soft-link on: if HV id is in the riff registry, it copies into Riff pattern (riffVrbId).'
+                : riffUseHvForPattern
+                  ? 'Chord-colour toggle on: HV forwarded for colour under the riff. Pattern authority remains riffVrbId unless soft-link is also on.'
+                  : 'Harmonic Voice does not drive riff pattern on this preset — use Riff pattern (riffVrbId). Enable soft-link or chord-colour toggle to use HV.'
+            }
+            harmonicVoiceMode="riff_generator"
+            harmonicVoiceId={slonimskyHarmonicVoice}
+            onHarmonicVoiceChange={setSlonimskyHarmonicVoice}
+          />
+          <label
+            htmlFor="co-riff-use-hv-for-pattern"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              fontSize: '0.9rem',
+              marginTop: '-0.35rem',
+              marginBottom: '0.45rem',
+              maxWidth: 620,
+            }}
+          >
+            <input
+              id="co-riff-use-hv-for-pattern"
+              type="checkbox"
+              checked={riffUseHvForPattern}
+              onChange={(e) => setRiffUseHvForPattern(e.target.checked)}
+              disabled={loading}
+            />
+            Use HV for riff pattern too?
+          </label>
+          <label
+            htmlFor="co-riff-soft-link-hv-as-pattern"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              fontSize: '0.9rem',
+              marginBottom: riffSoftLinkHvMismatch ? '0.35rem' : '1rem',
+              maxWidth: 620,
+            }}
+          >
+            <input
+              id="co-riff-soft-link-hv-as-pattern"
+              type="checkbox"
+              checked={riffSoftLinkHvAsPattern}
+              onChange={(e) => setRiffSoftLinkHvAsPattern(e.target.checked)}
+              disabled={loading}
+            />
+            Also use HV as riff pattern?
+          </label>
+          {riffSoftLinkHvMismatch ? (
+            <p
+              style={{
+                margin: '0 0 1rem',
+                fontSize: '0.72rem',
+                color: 'rgb(180, 120, 20)',
+                maxWidth: 620,
+                lineHeight: 1.45,
+              }}
+              data-testid="riff-soft-link-hv-mismatch"
+            >
+              {riffSoftLinkHvMismatch}
+            </p>
+          ) : null}
+        </>
       )}
       {presetId === 'riff_generator' && (
         <SlonimskyGbdPanel

@@ -268,11 +268,26 @@ describe('HomeGenerate mode-driven UI', () => {
     expect(src).toContain('harmonicVoiceReadOnly');
     expect(src).toContain('harmonicVoiceReadOnlyNote');
     expect(src).toContain('does not drive riff pattern');
-    expect(src).toContain('do not forward harmonicVoice on riff_generator');
-    // Must not forward HV extras on riff_generator (pattern = riffVrbId).
-    expect(src).not.toMatch(
-      /presetId === 'riff_generator'[\s\S]{0,220}harmonicVoice:\s*slonimskyUiExtras\.harmonicVoice/
-    );
+    expect(src).toContain('Phase A honesty (toggle OFF)');
+    // Default OFF must not forward HV; gated only when riffUseHvForPattern.
+    expect(src).toContain('riffUseHvForPattern');
+    expect(src).toContain('Use HV for riff pattern too?');
+  });
+
+  it('Riff Phase B Iter 1 — HV toggle default OFF; gated forward when ON', () => {
+    expect(src).toContain('const [riffUseHvForPattern, setRiffUseHvForPattern] = useState(false)');
+    expect(src).toContain('co-riff-use-hv-for-pattern');
+    expect(src).toContain('Use HV for riff pattern too?');
+    expect(src).toContain('riffUseHvForPattern: true');
+    expect(src).toMatch(/riffUseHvForPattern[\s\S]{0,200}harmonicVoice:\s*slonimskyHarmonicVoice/);
+  });
+
+  it('Riff soft-link — Also use HV as riff pattern? default OFF; copies when registry hit', () => {
+    expect(src).toContain('const [riffSoftLinkHvAsPattern, setRiffSoftLinkHvAsPattern] = useState(false)');
+    expect(src).toContain('co-riff-soft-link-hv-as-pattern');
+    expect(src).toContain('Also use HV as riff pattern?');
+    expect(src).toContain('resolveRiffSoftLinkHv');
+    expect(src).toContain('riff-soft-link-hv-mismatch');
   });
 
   it('adds a Song Mode LeadSheet MusicXML input block with explicit Phase 1 route gating', () => {

@@ -388,6 +388,8 @@ export function writeOutputManifest(
     riffInternalGatePassed?: boolean;
     /** Riff Generator Phase A — HV ignored for pattern; `riffVrbId` sole authority. */
     harmonicVoiceIgnoredOnRiffPreset?: boolean;
+    /** Phase B Iter 1 — read-only HV chord-colour id when toggle was on. */
+    riffHvChordColourReadOnly?: string;
     riffQualityRules?: import('../core/riff-generator/riffQualityRules').RiffQualityManifestCompact;
     /** Stage 4: echoed when import-harmony telemetry is present (`core/importHarmonyPolicy.ts`). */
     importHarmonyPolicyVersion?: number;
@@ -722,6 +724,7 @@ export function writeOutputManifest(
     riffCompositeScore: meta.riffCompositeScore,
     riffInternalGatePassed: meta.riffInternalGatePassed,
     harmonicVoiceIgnoredOnRiffPreset: meta.harmonicVoiceIgnoredOnRiffPreset,
+    riffHvChordColourReadOnly: meta.riffHvChordColourReadOnly,
     riffQualityRules: meta.riffQualityRules,
     importHarmonyPolicyVersion: meta.importHarmonyPolicyVersion,
     v80Echo: meta.v80Echo,

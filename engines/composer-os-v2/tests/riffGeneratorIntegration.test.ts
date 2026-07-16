@@ -186,9 +186,96 @@ function testRiffPhaseAHarmonicVoiceHonestyReceipt(): boolean {
     if (!r.success) return false;
     if (r.harmonicVoiceIgnoredOnRiffPreset !== true) return false;
     if (r.runManifest?.harmonicVoiceIgnoredOnRiffPreset !== true) return false;
+    // Toggle OFF (default): read-only HV path stays inert.
+    if (r.riffHvChordColourReadOnly != null) return false;
+    if (r.runManifest?.riffHvChordColourReadOnly != null) return false;
     // Pattern authority = riffVrbId (nile), not jamerson HV.
     if (!r.filename?.includes('nile_rodgers')) return false;
     if (r.filename.includes('jamerson')) return false;
+    const offXml = r.xml;
+
+    // Phase B Iter 1/2 — jamerson has no mosaic dispatch entry → colour identity; pattern still riffVrbId.
+    const on = runRiffGeneratorApp(
+      {
+        presetId: 'riff_generator',
+        styleStack: {
+          primary: 'barry_harris',
+          styleBlend: { primary: 'strong', secondary: 'off', colour: 'off' },
+        },
+        seed: 88042,
+        title: 'PhaseAHonesty',
+        totalBars: 2,
+        riffUseHvForPattern: true,
+        harmonicVoice: 'jamerson',
+        riffVrbId: 'nile_rodgers',
+        riffStyle: 'funk',
+        riffDensity: 'medium',
+        riffGrid: 'eighth',
+        riffLineMode: 'single_line',
+        riffBass: false,
+        bpm: 100,
+      },
+      tmp
+    );
+    if (!on.success) return false;
+    if (on.harmonicVoiceIgnoredOnRiffPreset !== true) return false;
+    if (on.riffHvChordColourReadOnly !== 'jamerson') return false;
+    if (on.runManifest?.riffHvChordColourReadOnly !== 'jamerson') return false;
+    if (!on.filename?.includes('nile_rodgers')) return false;
+    if (on.filename.includes('jamerson')) return false;
+    // No-dispatch HV: MusicXML still matches OFF (colour path identity).
+    if (on.xml !== offXml) return false;
+
+    // Phase B Iter 2 — dispatchable HV (bill_evans) must colour chords (XML differs; pattern still nile).
+    const offEvans = runRiffGeneratorApp(
+      {
+        presetId: 'riff_generator',
+        styleStack: {
+          primary: 'barry_harris',
+          styleBlend: { primary: 'strong', secondary: 'off', colour: 'off' },
+        },
+        seed: 88044,
+        title: 'PhaseBIter2',
+        totalBars: 2,
+        chordProgressionText: 'Cmaj7 | Dm7',
+        riffVrbId: 'nile_rodgers',
+        riffStyle: 'funk',
+        riffDensity: 'medium',
+        riffGrid: 'eighth',
+        riffLineMode: 'single_line',
+        riffBass: false,
+        bpm: 100,
+      },
+      tmp
+    );
+    const onEvans = runRiffGeneratorApp(
+      {
+        presetId: 'riff_generator',
+        styleStack: {
+          primary: 'barry_harris',
+          styleBlend: { primary: 'strong', secondary: 'off', colour: 'off' },
+        },
+        seed: 88044,
+        title: 'PhaseBIter2',
+        totalBars: 2,
+        chordProgressionText: 'Cmaj7 | Dm7',
+        riffUseHvForPattern: true,
+        harmonicVoice: 'bill_evans',
+        riffVrbId: 'nile_rodgers',
+        riffStyle: 'funk',
+        riffDensity: 'medium',
+        riffGrid: 'eighth',
+        riffLineMode: 'single_line',
+        riffBass: false,
+        bpm: 100,
+      },
+      tmp
+    );
+    if (!offEvans.success || !onEvans.success) return false;
+    if (onEvans.riffHvChordColourReadOnly !== 'bill_evans') return false;
+    if (!onEvans.filename?.includes('nile_rodgers')) return false;
+    if (onEvans.filename.includes('bill_evans')) return false;
+    if (onEvans.xml === offEvans.xml) return false;
     return true;
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });

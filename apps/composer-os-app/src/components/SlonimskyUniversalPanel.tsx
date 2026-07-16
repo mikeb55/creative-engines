@@ -99,12 +99,14 @@ export function SlonimskyUniversalPanel({
         }}
       >
         <span style={{ fontWeight: 600, fontSize: '0.92rem' }}>
-          {harmonicVoiceReadOnly ? 'Harmonic Voice' : 'Slonimsky'}
+          {harmonicVoiceReadOnly || harmonicOnly ? 'Harmonic Voice' : 'Slonimsky'}
         </span>
         <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
           {harmonicVoiceReadOnly
             ? 'shown for honesty — does not drive riff pattern'
-            : 'Macro → chromatic / blend / duo intent'}
+            : harmonicOnly
+              ? 'chord colour (read-only wire when toggle on)'
+              : 'Macro → chromatic / blend / duo intent'}
         </span>
       </div>
 
@@ -194,7 +196,7 @@ export function SlonimskyUniversalPanel({
               </option>
             ))}
           </select>
-          {harmonicVoiceReadOnly && harmonicVoiceReadOnlyNote ? (
+          {harmonicVoiceReadOnlyNote ? (
             <p
               style={{
                 margin: '0.35rem 0 0',

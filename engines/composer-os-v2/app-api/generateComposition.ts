@@ -101,6 +101,11 @@ export interface GenerateResult {
    * Always true on `riff_generator` results.
    */
   harmonicVoiceIgnoredOnRiffPreset?: boolean;
+  /**
+   * Riff Generator Phase B Iter 1 — read-only HV chord-colour id when gated on.
+   * Omitted when `riffUseHvForPattern` is off. Not applied to chords yet.
+   */
+  riffHvChordColourReadOnly?: string;
   /** V90a — Shared Brain snapshot from riff_generator (handoff to Wyble / Martino). */
   musicContext?: MusicContext;
   filename?: string;
@@ -211,6 +216,8 @@ export interface GenerateResult {
      * Riff Generator Phase A — HV ignored for riff pattern (`riffVrbId` is sole authority).
      */
     harmonicVoiceIgnoredOnRiffPreset?: boolean;
+    /** Phase B Iter 1 — read-only HV chord-colour echo when toggle was on. */
+    riffHvChordColourReadOnly?: string;
     /** Big Band / String Quartet — `blend_harmony` with 0–1 blend strength (merge gate echo). */
     importHarmonyBlendActive?: boolean;
     /** Present when `importHarmonyBlendActive`; raw blend weight sent by client. */

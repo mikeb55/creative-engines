@@ -18,6 +18,7 @@ import {
   snapshotRiffCarryForward,
 } from './riffCarryForward';
 import { normalizeChordLoop } from './riffChordLoop';
+import { colourRiffChordsWithHv } from './riffHvChordColour';
 import { applyMutation } from './riffVariationApply';
 import type { RiffProfile } from '../composer/riffProfileTypes';
 import type { RiffGenerationMetadata } from './riffMultiVoiceTypes';
@@ -125,7 +126,9 @@ function buildRiffCandidate(
 }
 
 export function runRiffGenerator(baseSeed: number, params: Omit<RiffGeneratorParams, 'seed' | 'chordSymbols'> & { chordSymbols?: string[]; chordProgressionText?: string }): RiffGeneratorResult {
-  const chords = normalizeChordLoop(params.chordProgressionText, params.bars);
+  // Pattern profile resolves from uncoloured loop; HV colour applies to chord symbols only (Iter 2).
+  const baseChords = normalizeChordLoop(params.chordProgressionText, params.bars);
+  const hvChordColourReadOnly = params.hvChordColourReadOnly?.trim() || undefined;
   const bundle = params.vrbId ? getVoiceRuleBundle(params.vrbId) : undefined;
   const engineStyle =
     bundle?.family && typeof bundle.family === 'string'
@@ -137,8 +140,11 @@ export function runRiffGenerator(baseSeed: number, params: Omit<RiffGeneratorPar
     grid: params.grid,
     density: params.density,
     oddMeterPreset: params.oddMeterPreset,
-    chordProgression: chords,
+    chordProgression: baseChords,
   });
+  const chords = hvChordColourReadOnly
+    ? colourRiffChordsWithHv(baseChords, hvChordColourReadOnly, baseSeed)
+    : baseChords;
   const full: RiffGeneratorParams = {
     ...params,
     style: engineStyle,
@@ -284,6 +290,7 @@ export function runRiffGenerator(baseSeed: number, params: Omit<RiffGeneratorPar
         riffCarryForward: snapshotRiffCarryForward(out.score, out.perBarRhythm),
         generationMetadata: genMeta,
         musicContext,
+        ...(hvChordColourReadOnly ? { hvChordColourReadOnly } : {}),
       };
     }
   }

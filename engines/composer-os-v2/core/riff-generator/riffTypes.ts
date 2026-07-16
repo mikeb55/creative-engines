@@ -41,6 +41,11 @@ export interface RiffGeneratorParams {
   soloEnabled?: boolean;
   /** VoiceRuleBundle id when using riff VRB registry (e.g. `nile_rodgers`). */
   vrbId?: string;
+  /**
+   * Phase B Iter 1–2 — HV chord-colour id when UI toggle is on.
+   * Iter 2 applies colour via `colourRiffChordsWithHv` (symbols only; never pattern/`vrbId`).
+   */
+  hvChordColourReadOnly?: string;
   /** Odd-meter overlay when family is fusion / art_rock. */
   oddMeterPreset?: OddMeterPolicyStyle;
   /** Chord symbols cycled across `bars` (e.g. vamp or short loop). */
@@ -85,6 +90,10 @@ export interface RiffGeneratorSuccess {
   generationMetadata?: RiffGenerationMetadata;
   /** Shared Brain snapshot (V90a) — optional for callers that consume MusicContext. */
   musicContext?: MusicContext;
+  /**
+   * Phase B Iter 1 — echo of `hvChordColourReadOnly` when present (read-only; not applied).
+   */
+  hvChordColourReadOnly?: string;
 }
 
 export interface RiffGeneratorFailure {

@@ -1,15 +1,15 @@
-# Composer OS Roadmap [2026-07-15]
+# Composer OS Roadmap [2026-07-16]
 
 ## ✅ Active Now (top priority — everything below is backlog)
 
-**Roadmap remaining (2026-07-15) — pick any open item; all independent:**
+**Roadmap remaining (2026-07-16) — pick any open item; all independent:**
 
 | Lane | Status |
 |------|--------|
-| **CLOSED this session** | CI smoke **8/8** → **0** unexpected · Score-5 (**30**) + Score-6 BB (**4**) wired · Phase 2 Batches **1–6** + Beefheart + Fela + Threadgill + **Weber** HV widen **COMPLETE** · fBT vs custom_locked bug family fully resolved · Bass-identity rhythm-cell (`bacharach` + `oliver_nelson`) **CLOSED** · jamerson RiffGen Phase E **CLOSED** · **Riff Generator Phase A honesty** **CLOSED** · **Mosaic global HV** **CLOSED** · Full smoke **772**/141, known **5**, unexpected **0** |
+| **CLOSED this session** | CI smoke **8/8** → **0** unexpected · Score-5 (**30**) + Score-6 BB (**4**) wired · Phase 2 Batches **1–6** + Beefheart + Fela + Threadgill + **Weber** HV widen **COMPLETE** · fBT vs custom_locked bug family fully resolved · Bass-identity rhythm-cell (`bacharach` + `oliver_nelson`) **CLOSED** · jamerson RiffGen Phase E **CLOSED** · **Riff Generator Phase A + B + soft-link** **CLOSED** (chord colour + pattern soft-link, smoke **772**/141) · **Mosaic global HV** **CLOSED** · Full smoke **772**/141, known **5**, unexpected **0** |
 | **1. Phase 2 widen** | Berg + Beefheart + Fela + Threadgill + **Weber** HV walls **COMPLETE** — next: **Mosaic HV** product decision |
 | **2. Mosaic HV** | **COMPLETE (2026-07-16)** — **global** HV overlay shipped; per-section map rejected |
-| **3. Riff Generator Phase A** | **COMPLETE (2026-07-15)** — honesty-only: grey HV + receipt; no soft-link; see `docs/RIFF_GENERATOR_HARMONIC_VOICE_DECISION.md` |
+| **3. Riff Generator** | **FULLY COMPLETE (2026-07-16)** — Phase A honesty + Phase B HV chord colour + soft-link HV→`riffVrbId`; smoke-validated **772**/141 known **5** unexpected **0**; see `docs/RIFF_GENERATOR_HARMONIC_VOICE_DECISION.md` |
 | **4. Score-4 defer** | Parked / low ROI — **9** composers, Slonimsky-transport-only |
 | **5. Tier 3** | Parked / low ROI — **10** composers, score **0–3**, out of HV scope |
 
@@ -643,7 +643,7 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 
 ## Priority Order (revised 2026-07-15)
 
-**CLOSED this session (2026-07-15/16):** CI smoke **8/8** → **0** unexpected · Score-5 (**30**) + Score-6 BB (**4**) wired · Phase 2 Batches **1–6** + Beefheart + Fela + Threadgill + **Weber** HV widen **COMPLETE** · fBT vs custom_locked bug family fully resolved · jamerson RiffGen Phase E **CLOSED** · **Riff Generator Phase A honesty** **CLOSED** · **Mosaic global HV** **CLOSED** · Full smoke **772**/141, known **5**, unexpected **0**.
+**CLOSED this session (2026-07-15/16):** CI smoke **8/8** → **0** unexpected · Score-5 (**30**) + Score-6 BB (**4**) wired · Phase 2 Batches **1–6** + Beefheart + Fela + Threadgill + **Weber** HV widen **COMPLETE** · fBT vs custom_locked bug family fully resolved · jamerson RiffGen Phase E **CLOSED** · **Riff Generator Phase A + B + soft-link FULLY COMPLETE** (chord colour apply + pattern soft-link, smoke **772**/141) · **Mosaic global HV** **CLOSED** · Full smoke **772**/141, known **5**, unexpected **0**.
 
 **HV authority — items 1–2 SHIPPED (doc lag corrected 2026-07-12):**
 
@@ -654,7 +654,7 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 
 3. **Phase 2 widen** — Berg Batch 6 + **Beefheart** + **Fela Kuti** + **Threadgill** + **Weber** HV-only non-mosaic bridges **COMPLETE**. Next: **Mosaic HV** product decision. BB/SQ Phase 2 Batches **1–6** + five widen composers shipped (Slonimsky, VRB/Pass4, FZ continuity, Berg/Beefheart/Fela/Threadgill/Weber HV walls). See `docs/EIGHTY_STYLE_AUDIT_SWEEP_2026-07-08.md`, `docs/EIGHTY_STYLE_STAGE2_FINDINGS.md`.
 4. **Mosaic HV** — **COMPLETE (2026-07-16)** — global HV overlay after per-section `getDispatchEntry` base (`precomputeMosaicEffectiveHarmonyBars`). Walls / item E untouched. Per-section HV map rejected.
-5. **Riff Generator Phase A** — **COMPLETE (2026-07-15)** honesty-only ship: greyed HV + `harmonicVoiceIgnoredOnRiffPreset` receipt; pattern authority = `riffVrbId`. Soft-link / Phase B chord colour still future. See `docs/RIFF_GENERATOR_HARMONIC_VOICE_DECISION.md`.
+5. **Riff Generator** — **FULLY COMPLETE (2026-07-16)**. Phase A honesty + Phase B Iter 1–3 HV chord colour (`riffUseHvForPattern` / `colourRiffChordsWithHv`) + soft-link HV→`riffVrbId` (`riffSoftLinkHvAsPattern`). Both axes smoke-validated **772**/141 known **5** unexpected **0**. See `docs/RIFF_GENERATOR_HARMONIC_VOICE_DECISION.md`.
 
 **Tracked debt (not red, not blocking):** *(none outstanding from 2026-07-15 remaining list — jamerson Phase E closed.)*
 
@@ -682,7 +682,7 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 1. **Song Mode** — full generate + section regeneration
 2. **Big Band** — full generate, mosaic dispatch, and section regeneration
 3. **String Quartet** — full generate + section regeneration
-4. **Riff Generator** — Phase A honesty **COMPLETE** (not an HV forwarding wall; `riffVrbId` owns pattern)
+4. **Riff Generator** — Phase A + B + soft-link **FULLY COMPLETE** (chord colour + pattern soft-link; `riffVrbId` owns pattern unless soft-link ON)
 5. **GBD section regeneration** — drops `harmonicVoice` even though full-generate GBD works
 6. **ECM section regeneration** — same gap as GBD section regeneration
 
@@ -696,7 +696,7 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 1. **GBD + ECM section regeneration** — smallest, highest-confidence fix; should match already-working full-generate path semantics
 2. **Song Mode** — live user-facing bug, but verify truth-alignment / LOCK safety when forwarding
 3. **Big Band + String Quartet** — larger because they use different planning / metadata-builder paths
-4. **Riff Generator** — Phase A honesty **COMPLETE**; soft-link / Phase B still future.
+4. **Riff Generator** — Phase A + B + soft-link **FULLY COMPLETE (2026-07-16)**.
 
 **Related:** `docs/AUDIT_SEAM_EXTRACT_2026-07-07.md` (entry-point forwarding map and seam inventory)
 

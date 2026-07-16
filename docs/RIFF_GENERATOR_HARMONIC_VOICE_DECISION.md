@@ -4,12 +4,13 @@
 Keep harmonicVoice and riffVrbId as separate fields and separate UI controls. They represent different musical axes: harmonicVoice controls harmonic/chordal color across the broader style catalogue (~80 styles), while riffVrbId controls rhythmic/idiomatic riff pattern selection for the smaller set of styles that actually have riffProfile content (16 styles). Do not unify them into one picker.
 
 ## Contract
-- riffVrbId is the sole authority for riff pattern / idiom on the Riff Generator preset (`parseRiffVrbId -> riffProfile`).
-- harmonicVoice does not drive riff pattern selection on this preset.
-- Optional soft link only, never silent: if harmonicVoice is set to an id that is also present in `RIFF_GENERATOR_VRB_IDS`, the UI may offer an explicit action such as "Use for riff pattern too?" which copies that value into riffVrbId. Default OFF. **Out of Phase A ship** — not implemented.
+- riffVrbId is the sole authority for riff pattern / idiom on the Riff Generator preset (`parseRiffVrbId -> riffProfile`), unless the user explicitly enables the soft-link toggle.
+- harmonicVoice does not drive riff pattern selection on this preset by default.
+- Optional soft link only, never silent: UI toggle **Also use HV as riff pattern?** (`riffSoftLinkHvAsPattern`, default OFF) copies `harmonicVoice` into `riffVrbId` when the id is in `RIFF_GENERATOR_VRB_IDS`. **COMPLETE 2026-07-16.**
 - If no riff bundle exists for a selected harmonic style, the riff control remains whatever the user explicitly chose in the Riff pattern dropdown. Show "No dedicated riff library for [style]" only if the user attempted the explicit link.
 - Never silently fall back to the primary style's riff bundle.
 - Never generate a generic riff while labeling it as a specific artist's riff style.
+- Phase B chord colour (separate axis): toggle **Use HV for riff pattern too?** (`riffUseHvForPattern`) applies HV colour under the riff via `colourRiffChordsWithHv` — does **not** change pattern selection. **COMPLETE 2026-07-16.**
 
 ## Why
 Comparable systems typically separate harmonic content from rhythmic/pattern selection rather than forcing both into a single style control:
@@ -21,39 +22,46 @@ Comparable systems typically separate harmonic content from rhythmic/pattern sel
 
 A unified picker works best only when there is a complete 1:1 catalogue between harmonic styles and riff-pattern libraries. This system is asymmetric: the harmonic catalogue is broad (~80 styles), while riff-pattern coverage is much smaller (16 styles with riffProfile content). Unifying the controls would therefore create a misleading UX: either silent fallbacks, or a large style list with many effectively dead entries for riff generation.
 
-## Phase A honesty ship (2026-07-15) — DONE
+## Phase A honesty ship (2026-07-15) — COMPLETE
 
-Locked choices: **A)** honesty-only (no soft-link toggle) · **B)** this doc is sufficient (no authority-table-in-code) · **C)** grey out HV with short note (not hide).
+Locked choices: **A)** honesty-only (no soft-link toggle at ship time) · **B)** this doc is sufficient (no authority-table-in-code) · **C)** grey out HV with short note (not hide).
 
 Shipped:
 - [x] UI: On `riff_generator`, Harmonic Voice control is **visible but greyed out** with short copy that pattern authority is **riffVrbId** (`SlonimskyUniversalPanel` `harmonicVoiceReadOnly`).
-- [x] Payload: Generate does **not** forward `harmonicVoice` on `riff_generator`.
+- [x] Payload: Generate does **not** forward `harmonicVoice` on `riff_generator` when colour toggle OFF.
 - [x] Engine: `parseRiffVrbId` still reads `riffVrbId` only (unchanged pattern behaviour).
 - [x] Receipt: `harmonicVoiceIgnoredOnRiffPreset: true` on `GenerateResult`, `runManifest`, and output `_meta` manifest.
-- [x] Explicitly OUT: soft-link toggle, Phase B chord colour, new riff artists, nile/iommi/hendrix/evh/jamerson content changes.
 
-## Pre-implementation checklist (remaining / later)
-- [ ] Soft link "Use for riff pattern too?" (optional future; default OFF).
-- [ ] Authority table in code (optional; doc is enough for Phase A).
-- [ ] Resolution order with explicit link helper (only if soft link ships).
-- [ ] Phase B: true harmonic consumption so HV can colour chords under the riff.
-- [ ] GCE / LOCK remain independent of HV on the riff path until Phase B.
-- [x] Receipts: `harmonicVoiceIgnoredOnRiffPreset: true` (Phase A).
-- [x] API honesty: riff preset ignores HV for pattern; fields may still exist on GenerateRequest for other presets.
-- [x] Migration: avoid sending harmonicVoice on riff-generate (UI stopped forwarding).
-- [x] Tests: Phase A UI assert + app receipt assert; `parseRiffVrbId` unchanged — no test expects HV alone to select artist riff pattern.
+## Phase B (Iter 1–3) — COMPLETE (2026-07-16)
 
-## Implementation scope
-### Phase A — COMPLETE (2026-07-15)
-Honesty-only UI + receipt. No soft-link. No chord-colour via HV.
+Chord colour under the riff, gated by `riffUseHvForPattern` (UI label: **Use HV for riff pattern too?**). Pattern authority remains `riffVrbId` unless soft-link is also on.
 
-### Phase B (future)
-Larger, separate roadmap item:
-- add true harmonic consumption on the riff path so harmonicVoice can color the chordal behavior under the riff, if product wants that.
-- This remains separate from riffVrbId and does not imply unified style authority.
+- [x] **Iter 1** — toggle + read-only HV wire (`hvChordColourReadOnly` / `riffHvChordColourReadOnly`); OFF = Phase A identity.
+- [x] **Iter 2** — `colourRiffChordsWithHv` applies mosaic `getDispatchEntry` colour to chord symbols; profile still from uncoloured loop.
+- [x] **Iter 3** — full smoke ×2: **772**/141 · known **5** · unexpected **0**; OFF identity; ON colour (`bill_evans` Dm7→Cmaj9); mosaic non-riff HV 4/4.
 
-Explicitly out of scope:
-- authoring riff bundles for the remaining harmonic styles that do not currently have them.
+## Soft-link HV → riffVrbId — COMPLETE (2026-07-16)
 
-## Status
-Decided **2026-07-08**. Phase A honesty ship **COMPLETE 2026-07-15**.
+Explicit pattern copy, separate from Phase B chord colour.
+
+- [x] UI toggle **Also use HV as riff pattern?** (`riffSoftLinkHvAsPattern`, default OFF).
+- [x] `resolveRiffSoftLinkHv` — copy when HV ∈ `RIFF_GENERATOR_VRB_IDS`; mismatch note otherwise.
+- [x] Full validation smoke ×2: **772**/141 · known **5** · unexpected **0**; ON sample `nile_rodgers`→`jamerson` pattern swap; Phase B colour still PASS.
+
+## Pre-implementation checklist
+- [x] Soft link UI / HV → `riffVrbId` copy when id in `RIFF_GENERATOR_VRB_IDS` (**COMPLETE 2026-07-16**).
+- [ ] Authority table in code (optional; doc is enough).
+- [x] Phase B Iter 1–3 chord colour + smoke (**COMPLETE 2026-07-16**).
+- [x] GCE / LOCK independent: pattern still `riffVrbId` by default; colour gated; main composer HV pipeline untouched.
+- [x] Receipts / API honesty / tests as Phase A + Phase B + soft-link.
+
+## Status (session close-out 2026-07-16)
+
+| Track | Status |
+|-------|--------|
+| Phase A honesty | **COMPLETE 2026-07-15** |
+| Phase B Iter 1–3 (HV chord colour) | **COMPLETE 2026-07-16** — shipped + smoke-validated |
+| Soft-link (HV → riffVrbId) | **COMPLETE 2026-07-16** — shipped + smoke-validated |
+| Riff Generator HV / pattern axes | **FULLY COMPLETE** |
+
+Decided **2026-07-08**. Close-out **2026-07-16**.

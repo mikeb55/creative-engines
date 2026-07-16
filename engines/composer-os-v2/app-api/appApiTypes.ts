@@ -474,6 +474,13 @@ export interface GenerateRequest {
   riffSolo?: boolean;
   /** Riff Generator: VoiceRuleBundle id with `riffProfile` (e.g. `nile_rodgers`, `weather_report`). */
   riffVrbId?: string;
+  /**
+   * Riff Generator Phase B Iter 1 — gate for HV chord-colour read path.
+   * Default omit/false: Phase A honesty (no HV on riff path). When true, `harmonicVoice` may be
+   * forwarded for read-only engine access; does **not** drive `riffVrbId` pattern selection and
+   * does **not** apply chord colour yet (Iter 2).
+   */
+  riffUseHvForPattern?: boolean;
   /** Riff Generator: odd-meter template overlay (fusion / art_rock). */
   riffOddMeterPreset?:
     | 'meter5'
@@ -906,6 +913,12 @@ export interface OutputEntry {
    * Pattern authority = `riffVrbId`. Always `true` on riff_generator manifests.
    */
   harmonicVoiceIgnoredOnRiffPreset?: boolean;
+  /**
+   * Riff Generator Phase B Iter 1 — HV chord-colour id exposed read-only when
+   * `riffUseHvForPattern` was on. Omitted when toggle off (Phase A path).
+   * Not applied to chords until Iter 2.
+   */
+  riffHvChordColourReadOnly?: string;
   /**
    * Riff Generator only: compact structural rule outcomes (`riffQualityRules.ts`).
    * Not general GCE — kept separate from `gceScore` / duo metrics.

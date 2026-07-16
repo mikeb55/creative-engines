@@ -2,6 +2,18 @@
 
 ### Added
 
+- **Riff Generator Phase B + soft-link — session close-out (2026-07-16)** — Phase B Iter 1–3 (HV chord colour) + soft-link HV→`riffVrbId` **FULLY COMPLETE**; smoke-validated **772**/141 known **5** unexpected **0**. Canonical: `docs/RIFF_GENERATOR_HARMONIC_VOICE_DECISION.md`.
+
+- **Riff Generator soft-link — full validation smoke** — Smoke ×2: **772**/141 · known **5** · unexpected **0**. Soft-link OFF identity + ON `nile_rodgers`→`jamerson` pattern swap; Phase B colour (`bill_evans` Dm7→Cmaj9) still PASS; mosaic non-riff HV 4/4. Doc: `docs/RIFF_GENERATOR_HARMONIC_VOICE_DECISION.md`.
+
+- **Riff Generator soft-link — HV → riffVrbId** — UI toggle **Also use HV as riff pattern?** (`riffSoftLinkHvAsPattern`, default OFF). When ON and HV ∈ `RIFF_GENERATOR_VRB_IDS`, copies into `riffVrbId` (+ family). Mismatch note when no riff library. Separate from Phase B chord-colour toggle. Helper: `resolveRiffSoftLinkHv`. Doc: `docs/RIFF_GENERATOR_HARMONIC_VOICE_DECISION.md`.
+
+- **Riff Generator Phase B Iter 3 — full validation smoke** — Smoke ×2: **772**/141 · known **5** · unexpected **0**. OFF identity + ON chord colour (`bill_evans`: Dm7→Cmaj9) + `riffVrbId` pattern authority + mosaic non-riff HV 4/4. Phase B complete. Doc: `docs/RIFF_GENERATOR_HARMONIC_VOICE_DECISION.md`.
+
+- **Riff Generator Phase B Iter 2 — HV chord colour apply** — When `riffUseHvForPattern` is ON, `colourRiffChordsWithHv` (`riffHvChordColour.ts`) runs mosaic `getDispatchEntry` precompute on the normalized chord loop and feeds coloured symbols into score build. Profile/pattern still resolve from uncoloured loop + `riffVrbId`. Toggle OFF / no-dispatch HV = identity. Doc: `docs/RIFF_GENERATOR_HARMONIC_VOICE_DECISION.md`.
+
+- **Riff Generator Phase B Iter 1 — HV toggle + read-only wire** — On `riff_generator`: UI checkbox **Use HV for riff pattern too?** (`riffUseHvForPattern`, default OFF). Toggle ON forwards `harmonicVoice` for engine read-only access (`hvChordColourReadOnly` / `riffHvChordColourReadOnly`); does **not** drive `riffVrbId` / `parseRiffVrbId` and does **not** apply chord colour (Iter 2). Toggle OFF = Phase A path (HV inert). Doc: `docs/RIFF_GENERATOR_HARMONIC_VOICE_DECISION.md`.
+
 - **Mosaic global HV overlay** — Product decision: **global** HV (not per-section map). After per-section `getDispatchEntry(section.songwriterStyleId)` base, when `harmonicVoice` is set and differs from the section composer, run HV dispatch precompute on the base bars (same overlay on every section). Item E: `getDispatchEntry` + Berg/Beefheart/Fela/Threadgill/Weber walls unchanged. Receipts: `mosaicGlobalHvOverlayApplied` / `mosaicGlobalHvId` / `mosaicGlobalHvOverlaySections`. No HV → unchanged. Smoke: `mosaicGlobalHvRoutingSmoke.test.ts` (4).
 
 - **Riff Generator Phase A — honesty-only HV UI + receipt** — On `riff_generator`: Harmonic Voice control **visible but greyed out** with short note that pattern authority is **`riffVrbId`** (not HV). Generate payload **stops forwarding** `harmonicVoice`. Receipt **`harmonicVoiceIgnoredOnRiffPreset: true`** on result / runManifest / `_meta` manifest. Engine pattern path unchanged (`parseRiffVrbId` still riffVrbId-only). Soft-link toggle / Phase B chord colour / new riff artists / nile·iommi·hendrix·evh·jamerson content — **OUT**. Doc: `docs/RIFF_GENERATOR_HARMONIC_VOICE_DECISION.md`. Smoke +1 row (Phase A HV honesty receipt).

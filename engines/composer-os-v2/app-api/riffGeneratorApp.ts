@@ -26,7 +26,7 @@ import {
   type RiffStyleId,
 } from '../core/riff-generator/riffTypes';
 import { riffStyleIdForFamily } from '../core/riff-generator/resolveRiffGeneratorProfile';
-import { getVoiceRuleBundle } from '../core/composer/voiceRuleBundles';
+import { getVoiceRuleBundle, normalizeHarmonicVoiceId } from '../core/composer/voiceRuleBundles';
 import { resolveEffectiveGenerationSeed } from '../core/creative-controls/creativeControlResolver';
 import { compactRiffQualityForManifest } from '../core/riff-generator/riffQualityRules';
 import { zappaRiffSoloControlsFrom } from '../core/riff-generator/zappaRiffSoloParams';
@@ -46,6 +46,19 @@ function parseRiffVrbId(req: GenerateRequest): string | undefined {
   if (!id) return undefined;
   const b = getVoiceRuleBundle(id);
   return b.riffProfile ? b.voiceId : undefined;
+}
+
+/**
+ * Phase B Iter 1 — read-only HV chord-colour value when toggle is on.
+ * Inert when `riffUseHvForPattern` is off (default). Never feeds `parseRiffVrbId`.
+ * Colour application is Iter 2 — this only exposes the normalized id to the engine.
+ */
+export function resolveRiffHvChordColourReadOnly(req: GenerateRequest): string | undefined {
+  if (req.riffUseHvForPattern !== true) return undefined;
+  const raw = req.harmonicVoice?.trim();
+  if (!raw) return undefined;
+  const id = normalizeHarmonicVoiceId(raw);
+  return id || undefined;
 }
 
 function parseRiffOddMeterPreset(req: GenerateRequest): OddMeterPolicyStyle | undefined {
@@ -173,6 +186,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
   });
   const bars = parseRiffBars(req);
   const vrbId = parseRiffVrbId(req);
+  const hvChordColourReadOnly = resolveRiffHvChordColourReadOnly(req);
   const bundle = vrbId ? getVoiceRuleBundle(vrbId) : undefined;
   const style =
     bundle?.family && typeof bundle.family === 'string'
@@ -211,6 +225,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
     title,
     chordProgressionText: chordText,
     vrbId,
+    ...(hvChordColourReadOnly ? { hvChordColourReadOnly } : {}),
     oddMeterPreset,
     riffOp: riffOp ?? 'full',
     barLocks: req.riffBarLocks,
@@ -236,6 +251,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
         errors: [gen.error],
       },
       harmonicVoiceIgnoredOnRiffPreset: true,
+      ...(hvChordColourReadOnly ? { riffHvChordColourReadOnly: hvChordColourReadOnly } : {}),
       runManifest: {
         seed: effectiveSeed,
         presetId: 'riff_generator',
@@ -245,6 +261,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
         variationId: req.variationId,
         creativeControlLevel: req.creativeControlLevel,
         harmonicVoiceIgnoredOnRiffPreset: true,
+        ...(hvChordColourReadOnly ? { riffHvChordColourReadOnly: hvChordColourReadOnly } : {}),
       },
     };
   }
@@ -267,6 +284,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
         errors: ['Riff generation produced no MusicXML'],
       },
       harmonicVoiceIgnoredOnRiffPreset: true,
+      ...(hvChordColourReadOnly ? { riffHvChordColourReadOnly: hvChordColourReadOnly } : {}),
       runManifest: {
         seed: effectiveSeed,
         presetId: 'riff_generator',
@@ -276,6 +294,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
         variationId: req.variationId,
         creativeControlLevel: req.creativeControlLevel,
         harmonicVoiceIgnoredOnRiffPreset: true,
+        ...(hvChordColourReadOnly ? { riffHvChordColourReadOnly: hvChordColourReadOnly } : {}),
       },
     };
   }
@@ -302,6 +321,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
     riffCompositeScore: gen.gce,
     riffInternalGatePassed: true,
     harmonicVoiceIgnoredOnRiffPreset: true,
+    ...(hvChordColourReadOnly ? { riffHvChordColourReadOnly: hvChordColourReadOnly } : {}),
     riffQualityRules: rqCompact,
     validation: manifestValidation,
   };
@@ -324,6 +344,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
     filepath,
     scoreTitle: title,
     harmonicVoiceIgnoredOnRiffPreset: true,
+    ...(hvChordColourReadOnly ? { riffHvChordColourReadOnly: hvChordColourReadOnly } : {}),
     validation: {
       integrityPassed: true,
       behaviourGatesPassed: false,
@@ -346,6 +367,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
       variationId: req.variationId,
       creativeControlLevel: req.creativeControlLevel,
       harmonicVoiceIgnoredOnRiffPreset: true,
+      ...(hvChordColourReadOnly ? { riffHvChordColourReadOnly: hvChordColourReadOnly } : {}),
     },
     requestEcho: {
       tonalCenter: req.tonalCenter,
