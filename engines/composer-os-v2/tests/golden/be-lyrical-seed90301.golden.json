@@ -17,7 +17,7 @@
       "bar": 1,
       "onset": "2.0000",
       "duration": "2.0000",
-      "pitch": 65,
+      "pitch": 62,
       "articulation": "tenuto",
       "velocity": 71,
       "accent": "none"
@@ -89,7 +89,7 @@
       "bar": 5,
       "onset": "2.7500",
       "duration": "1.2500",
-      "pitch": 67,
+      "pitch": 64,
       "articulation": "tenuto",
       "velocity": 77,
       "accent": "none"
@@ -107,7 +107,7 @@
       "bar": 6,
       "onset": "2.0000",
       "duration": "2.0000",
-      "pitch": 67,
+      "pitch": 69,
       "articulation": "tenuto",
       "velocity": 76,
       "accent": "none"
@@ -116,7 +116,7 @@
       "bar": 7,
       "onset": "0.2500",
       "duration": "2.5000",
-      "pitch": 59,
+      "pitch": 58,
       "articulation": "tenuto",
       "velocity": 75,
       "accent": "none"
@@ -125,7 +125,7 @@
       "bar": 7,
       "onset": "2.7500",
       "duration": "1.2500",
-      "pitch": 69,
+      "pitch": 70,
       "articulation": "tenuto",
       "velocity": 77,
       "accent": "none"
@@ -134,7 +134,7 @@
       "bar": 8,
       "onset": "0.0000",
       "duration": "2.0000",
-      "pitch": 64,
+      "pitch": 63,
       "articulation": "tenuto",
       "velocity": 75,
       "accent": "none"
@@ -143,7 +143,7 @@
       "bar": 8,
       "onset": "2.0000",
       "duration": "2.0000",
-      "pitch": 64,
+      "pitch": 63,
       "articulation": "tenuto",
       "velocity": 78,
       "accent": "stress"

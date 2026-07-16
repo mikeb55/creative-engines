@@ -96,6 +96,11 @@ export interface GenerateResult {
   riffCarryForward?: import('../core/riff-generator/riffCarryForward').RiffCarryForward;
   /** Riff Generator: musicality gate result (failedRules for UI labels). */
   riffMusicality?: import('../core/riff-generator/riffMusicalityGate').RiffMusicalityResult;
+  /**
+   * Riff Generator Phase A honesty — pattern authority is `riffVrbId`; HV is ignored for pattern.
+   * Always true on `riff_generator` results.
+   */
+  harmonicVoiceIgnoredOnRiffPreset?: boolean;
   /** V90a — Shared Brain snapshot from riff_generator (handoff to Wyble / Martino). */
   musicContext?: MusicContext;
   filename?: string;
@@ -202,6 +207,10 @@ export interface GenerateResult {
     importHarmonyLockApplied?: GenerationMetadata['importHarmonyLockApplied'];
     importHarmonyLockFallbackReason?: GenerationMetadata['importHarmonyLockFallbackReason'];
     importHarmonyLockedBarsCount?: GenerationMetadata['importHarmonyLockedBarsCount'];
+    /**
+     * Riff Generator Phase A — HV ignored for riff pattern (`riffVrbId` is sole authority).
+     */
+    harmonicVoiceIgnoredOnRiffPreset?: boolean;
     /** Big Band / String Quartet — `blend_harmony` with 0–1 blend strength (merge gate echo). */
     importHarmonyBlendActive?: boolean;
     /** Present when `importHarmonyBlendActive`; raw blend weight sent by client. */

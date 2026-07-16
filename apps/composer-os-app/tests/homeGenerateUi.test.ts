@@ -264,6 +264,17 @@ describe('HomeGenerate mode-driven UI', () => {
     expect(src).toContain('riffVrbId');
   });
 
+  it('Riff Phase A honesty — greys Harmonic Voice and does not forward it on generate', () => {
+    expect(src).toContain('harmonicVoiceReadOnly');
+    expect(src).toContain('harmonicVoiceReadOnlyNote');
+    expect(src).toContain('does not drive riff pattern');
+    expect(src).toContain('do not forward harmonicVoice on riff_generator');
+    // Must not forward HV extras on riff_generator (pattern = riffVrbId).
+    expect(src).not.toMatch(
+      /presetId === 'riff_generator'[\s\S]{0,220}harmonicVoice:\s*slonimskyUiExtras\.harmonicVoice/
+    );
+  });
+
   it('adds a Song Mode LeadSheet MusicXML input block with explicit Phase 1 route gating', () => {
     expect(src).toContain('LeadSheet MusicXML input (Phase 1)');
     expect(src).toContain('LEAD_SHEET_SONG_MODE_WRITERS');

@@ -83,7 +83,8 @@ function layerEngaged(
   }
 
   if (layer === 'truth_registry') {
-    if (play.asPrimary || play.asProfile) return level !== 'none';
+    // `level === 'none'` already returned above — primary/profile always engage when declared.
+    if (play.asPrimary || play.asProfile) return true;
     if (play.asHarmonicVoice) return registryPermitsHarmonicVoiceLayer(styleId, layer);
     return false;
   }
@@ -144,7 +145,7 @@ export function resolveEffectiveStyleIdentity(context: CompositionContext): Effe
   ];
 
   const harmonicVoiceAuthorityGap =
-    Boolean(harmonicVoiceId) &&
+    harmonicVoiceId != null &&
     harmonicVoiceId !== primaryStyleId &&
     !layerEngaged(context, harmonicVoiceId, 'harmony');
 

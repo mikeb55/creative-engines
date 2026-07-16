@@ -902,6 +902,11 @@ export interface OutputEntry {
   riffCompositeScore?: number;
   riffInternalGatePassed?: boolean;
   /**
+   * Riff Generator Phase A honesty — Harmonic Voice does not drive riff pattern.
+   * Pattern authority = `riffVrbId`. Always `true` on riff_generator manifests.
+   */
+  harmonicVoiceIgnoredOnRiffPreset?: boolean;
+  /**
    * Riff Generator only: compact structural rule outcomes (`riffQualityRules.ts`).
    * Not general GCE — kept separate from `gceScore` / duo metrics.
    */

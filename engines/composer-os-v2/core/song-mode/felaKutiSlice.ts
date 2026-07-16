@@ -21,6 +21,57 @@ import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 
 export { isFelaKutiHarmonicPath } from './felaKutiHarmonicPath';
 
+/**
+ * Phase 2 widen — BB/SQ non-mosaic harmony-bridge wall (next after Beefheart).
+ * Activates only when `harmonicVoice` is exact `fela_kuti` (not primary||HV).
+ * Soft `fela` never opens. `frank_zappa` primary excluded (dedicated FZ batches).
+ */
+export function isFelaKutiHvOnlyEnsembleWall(opts: {
+  harmonicVoice?: string | null;
+  songwriterStyleId?: string | null;
+}): boolean {
+  const voice = String(opts.harmonicVoice ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/^hv:/, '')
+    .replace(/-/g, '_')
+    .replace(/\s+/g, '_');
+  if (voice !== 'fela_kuti') return false;
+  const primary = String(opts.songwriterStyleId ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/^hv:/, '')
+    .replace(/-/g, '_')
+    .replace(/\s+/g, '_');
+  return primary !== 'frank_zappa';
+}
+
+/** Minimal context for `precomputeFelaKutiEffectiveHarmonyBars` on BB/SQ chordBars bridge. */
+export function buildFelaKutiEnsemblePrecomputeContext(args: {
+  seed: number;
+  chordBars: string[];
+  sections: Array<{ label: string; startBar: number; length: number }>;
+  presetId: string;
+  songwriterStyleId?: string;
+}): CompositionContext {
+  const tb = args.chordBars.length;
+  const generationMetadata: GenerationMetadata = {
+    generatedAt: new Date().toISOString(),
+    harmonicVoice: 'fela_kuti',
+    ...(args.songwriterStyleId
+      ? { songwriterStyleId: args.songwriterStyleId }
+      : {}),
+  };
+  return {
+    systemVersion: '2.0.0',
+    presetId: args.presetId,
+    seed: args.seed,
+    form: { totalBars: tb, sections: args.sections },
+    lockedHarmonyBarsRaw: [...args.chordBars],
+    generationMetadata,
+  } as unknown as CompositionContext;
+}
+
 const PC_TO_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
 
 function pitchClassToSharpName(pc: number): string {

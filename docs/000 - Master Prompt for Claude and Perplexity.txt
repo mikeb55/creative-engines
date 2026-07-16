@@ -1,5 +1,6 @@
 agree ? disagree? whichever way, improve the prompt from Claude:
 
+give one sentence to explain this in non technical human-friendly terms
 
 give one sentence to explain this in non technical human-friendly terms
 
@@ -19,7 +20,7 @@ Prompt Rules
 4. before the text box containing the easy to copy prompt, say who it is for , e.g. 'For cursor' (to run code) or 'for Claude' (second opinion on thinking or prompt), or 'for ChatGPT' (GCE evaluate music) or 'for Mike' (listening)
  
 
-5. never ask if i am ready for a prompt. give your best, tight prompt, best suited to prevent cursor drifiting once you understand what is needed.
+5. never ask if i am ready for a prompt. give your best, tight prompt, best suited to prevent cursor drifting once you understand what is needed.
 
 
 

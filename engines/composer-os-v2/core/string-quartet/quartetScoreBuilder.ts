@@ -311,6 +311,12 @@ export interface BuildQuartetScoreModelInput {
   wybleVoiceLayout?: EnsembleWybleRoleMap;
   /** When set (from Generate request), biases Slonimsky ensemble catalogue via `SLONIMSKY_STYLE_PROFILE_MAP`. */
   songwriterStyleId?: string;
+  /**
+   * Phase 2 Batch 2 — Slonimsky style bias only (`harmonicVoice` || primary).
+   * When unset, falls back to {@link songwriterStyleId}. Does **not** drive Zappa SQ gate
+   * (`isSongwriterFrankZappaStringQuartet` stays on primary metadata `songwriterStyleId`).
+   */
+  slonimskySongwriterStyleId?: string;
   /** Z11 — mutable sink for Slonimsky cell selection receipts. */
   slonimskyEnsembleCellReceipts?: string[];
   /** User Chromatic Strength cap — `Math.min` with profile allowance in Slonimsky contexts. */
@@ -459,6 +465,7 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
     padSketch,
     wybleVoiceLayout,
     songwriterStyleId,
+    slonimskySongwriterStyleId,
     allowedOutsideOverride,
     blendStrength,
     duoIntent: productDuoIntent,
@@ -468,6 +475,11 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
   const outsideLevel = (allowedOutsideOverride ?? 1) as 0 | 1 | 2;
   const splitStreakThreshold = wholeStreakThresholdForBlend(blendStrength);
   const totalBars = formPlan.totalBars;
+  /** Slonimsky catalogue / outside level — HV when forwarded; else primary. FZ gate stays primary-only. */
+  const slonimskyStyleId =
+    (typeof slonimskySongwriterStyleId === 'string' && slonimskySongwriterStyleId.trim()
+      ? slonimskySongwriterStyleId.trim()
+      : undefined) ?? songwriterStyleId;
 
   const chordForBar = (b: number) => {
     if (chordBars && chordBars.length === totalBars) {
@@ -679,11 +691,11 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
           duoIntent: 'guitar_lead',
           phase: ((bar - 1) % 8) + 1,
           seed: seed + bar * 31,
-          songwriterId: songwriterStyleId,
+          songwriterId: slonimskyStyleId,
           ...(allowedOutsideOverride !== undefined ? { allowedOutsideOverride } : {}),
           ...(slonimskyPhraseIntent ? { phraseIntent: slonimskyPhraseIntent } : {}),
           totalQuarterBeats: span,
-          styleProfile: songwriterStyleId ?? null,
+          styleProfile: slonimskyStyleId ?? null,
           chordSymbol: sym,
           keyPc: rpc,
           effectiveLow: QUARTET_MIDI_BOUNDS[SQ_PART_V1][0]!,
@@ -720,11 +732,11 @@ export function buildQuartetScoreModel(input: BuildQuartetScoreModelInput): Scor
           duoIntent: 'guitar_lead',
           phase: ((bar - 1) % 8) + 1,
           seed: seed + bar * 31,
-          songwriterId: songwriterStyleId,
+          songwriterId: slonimskyStyleId,
           ...(allowedOutsideOverride !== undefined ? { allowedOutsideOverride } : {}),
           ...(slonimskyPhraseIntent ? { phraseIntent: slonimskyPhraseIntent } : {}),
           totalQuarterBeats: span,
-          styleProfile: songwriterStyleId ?? null,
+          styleProfile: slonimskyStyleId ?? null,
           chordSymbol: sym,
           keyPc: rpc,
           effectiveLow: QUARTET_MIDI_BOUNDS[SQ_PART_V2][0]!,

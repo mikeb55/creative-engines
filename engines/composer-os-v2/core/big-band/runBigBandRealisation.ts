@@ -35,6 +35,31 @@ import {
 } from '../mosaic-mode/precomputeMosaicEffectiveHarmonyBars';
 import { resolveMosaicSectionStyles } from '../mosaic-mode/resolveMosaicSectionStyles';
 import { precomputeFrankZappaEffectiveHarmonyBars } from '../song-mode/frankZappaSlice';
+import {
+  buildBergEnsemblePrecomputeContext,
+  isBergHvOnlyEnsembleWall,
+  precomputeBergEffectiveHarmonyBars,
+} from '../song-mode/bergSlice';
+import {
+  buildBeefheartEnsemblePrecomputeContext,
+  isBeefheartHvOnlyEnsembleWall,
+  precomputeBeefheartEffectiveHarmonyBars,
+} from '../song-mode/beefheartFragmentSlice';
+import {
+  buildFelaKutiEnsemblePrecomputeContext,
+  isFelaKutiHvOnlyEnsembleWall,
+  precomputeFelaKutiEffectiveHarmonyBars,
+} from '../song-mode/felaKutiSlice';
+import {
+  buildHenryThreadgillEnsemblePrecomputeContext,
+  isHenryThreadgillHvOnlyEnsembleWall,
+  precomputeHenryThreadgillEffectiveHarmonyBars,
+} from '../song-mode/henryThreadgillSlice';
+import {
+  buildEberhardWeberEnsemblePrecomputeContext,
+  isEberhardWeberHvOnlyEnsembleWall,
+  precomputeEberhardWeberEffectiveHarmonyBars,
+} from '../song-mode/weberFieldSlice';
 import { mapBigBandToMosaicSectionPlan } from './bigBandToMosaicMapper';
 import { applyReferenceInfluence } from '../reference-import/applyReferenceInfluence';
 import { extractReferenceBehaviour } from '../reference-import/extractReferenceBehaviour';
@@ -62,15 +87,27 @@ export interface BigBandRealisationResult {
   referenceInfluence?: ReferenceInfluenceEnvelope;
   /** Populated when `songwriterStyleId === 'frank_zappa'` and harmony precompute ran. */
   frankZappaDeviceReceipts?: string[];
+  /** Phase 2 Batch 6 — Berg HV-only non-mosaic bridge receipts (`bg:*`). */
+  bergDeviceReceipts?: string[];
+  /** Phase 2 widen — Beefheart HV-only non-mosaic bridge receipts (`cbf:*`). */
+  beefheartDeviceReceipts?: string[];
+  /** Phase 2 widen — Fela Kuti HV-only non-mosaic bridge receipts (`fk:*`). */
+  felaKutiDeviceReceipts?: string[];
+  /** Phase 2 widen — Henry Threadgill HV-only non-mosaic bridge receipts (`ht:*`). */
+  henryThreadgillDeviceReceipts?: string[];
+  /** Phase 2 widen — Eberhard Weber HV-only non-mosaic bridge receipts (`ew:*`). */
+  eberhardWeberDeviceReceipts?: string[];
   /** Z10 — Slonimsky cell receipts from BB score build. */
   slonimskyEnsembleCellReceipts?: string[];
 }
 
 /** Minimal `CompositionContext` for `precomputeFrankZappaEffectiveHarmonyBars` (locked bars + form sections). */
-function buildFrankZappaBigBandCompositionContext(args: {
+export function buildFrankZappaBigBandCompositionContext(args: {
   seed: number;
   chordBars: string[];
   formPlan: BigBandFormPlan;
+  /** Phase 2 Batch 4 — copy `harmonicVoice` through; FZ gate stays on primary `songwriterStyleId`. */
+  inheritedMetadata?: GenerationMetadata;
 }): CompositionContext {
   const tb = args.chordBars.length;
   const sections = args.formPlan.slices.map((sl) => ({
@@ -82,6 +119,11 @@ function buildFrankZappaBigBandCompositionContext(args: {
   const generationMetadata: GenerationMetadata = {
     generatedAt: new Date().toISOString(),
     songwriterStyleId: 'frank_zappa',
+    // Phase 2 Batch 4 — preserve HV on FZ precompute ctx (mirror mosaic inherit). Gate stays primary-only.
+    ...(typeof args.inheritedMetadata?.harmonicVoice === 'string' &&
+    args.inheritedMetadata.harmonicVoice.trim() !== ''
+      ? { harmonicVoice: args.inheritedMetadata.harmonicVoice.trim() }
+      : {}),
   };
 
   return {
@@ -438,12 +480,19 @@ export function runBigBandRealisation(
   });
 
   let frankZappaDeviceReceipts: string[] | undefined;
+  let bergDeviceReceipts: string[] | undefined;
+  let beefheartDeviceReceipts: string[] | undefined;
+  let felaKutiDeviceReceipts: string[] | undefined;
+  let henryThreadgillDeviceReceipts: string[] | undefined;
+  let eberhardWeberDeviceReceipts: string[] | undefined;
   const sw = typeof input.songwriterStyleId === 'string' ? input.songwriterStyleId.trim().toLowerCase() : '';
   if (sw === 'frank_zappa' && chordBars && chordBars.length === tb && tb > 0) {
     const fzCtx = buildFrankZappaBigBandCompositionContext({
       seed: input.seed,
       chordBars,
       formPlan: planning.formPlan,
+      // Phase 2 Batch 4 — HV continuity into FZ precompute; gate still primary `sw === 'frank_zappa'`.
+      inheritedMetadata: input.context?.generationMetadata,
     });
     precomputeFrankZappaEffectiveHarmonyBars(fzCtx);
     const meta = fzCtx.generationMetadata as GenerationMetadata & {
@@ -455,6 +504,200 @@ export function runBigBandRealisation(
     }
     if (meta.frankZappaDeviceReceipts?.length) {
       frankZappaDeviceReceipts = [...meta.frankZappaDeviceReceipts];
+    }
+  }
+
+  // Phase 2 Batch 6 — Berg HV-only non-mosaic harmony bridge (exact HV=berg; not primary||HV).
+  // frank_zappa excluded. Mosaic getDispatchEntry untouched (item E).
+  const hvMetaBb = input.context?.generationMetadata;
+  if (
+    chordBars &&
+    chordBars.length === tb &&
+    tb > 0 &&
+    isBergHvOnlyEnsembleWall({
+      harmonicVoice: hvMetaBb?.harmonicVoice,
+      songwriterStyleId: sw || hvMetaBb?.songwriterStyleId,
+    })
+  ) {
+    const sections = planning.formPlan.slices.map((sl) => ({
+      label: String(sl.phase ?? `slice_${sl.index}`),
+      startBar: sl.startBar,
+      length: Math.max(1, sl.endBar - sl.startBar + 1),
+    }));
+    const bergCtx = buildBergEnsemblePrecomputeContext({
+      seed: input.seed,
+      chordBars,
+      sections,
+      presetId: 'big_band',
+      ...(sw ? { songwriterStyleId: sw } : {}),
+    });
+    precomputeBergEffectiveHarmonyBars(bergCtx);
+    const bergMeta = bergCtx.generationMetadata as GenerationMetadata & {
+      bergEffectiveHarmonyBars?: string[];
+      bergDeviceReceipts?: string[];
+    };
+    if (Array.isArray(bergMeta.bergEffectiveHarmonyBars) && bergMeta.bergEffectiveHarmonyBars.length === tb) {
+      chordBars = [...bergMeta.bergEffectiveHarmonyBars];
+    }
+    if (bergMeta.bergDeviceReceipts?.length) {
+      bergDeviceReceipts = [...bergMeta.bergDeviceReceipts];
+    }
+  }
+
+  // Phase 2 widen — Beefheart HV-only non-mosaic harmony bridge (exact HV=beefheart; not primary||HV).
+  // Twin / soft aliases never open. frank_zappa excluded. Mosaic getDispatchEntry untouched (item E).
+  if (
+    chordBars &&
+    chordBars.length === tb &&
+    tb > 0 &&
+    isBeefheartHvOnlyEnsembleWall({
+      harmonicVoice: hvMetaBb?.harmonicVoice,
+      songwriterStyleId: sw || hvMetaBb?.songwriterStyleId,
+    })
+  ) {
+    const sections = planning.formPlan.slices.map((sl) => ({
+      label: String(sl.phase ?? `slice_${sl.index}`),
+      startBar: sl.startBar,
+      length: Math.max(1, sl.endBar - sl.startBar + 1),
+    }));
+    const beefCtx = buildBeefheartEnsemblePrecomputeContext({
+      seed: input.seed,
+      chordBars,
+      sections,
+      presetId: 'big_band',
+      ...(sw ? { songwriterStyleId: sw } : {}),
+    });
+    precomputeBeefheartEffectiveHarmonyBars(beefCtx);
+    const beefMeta = beefCtx.generationMetadata as GenerationMetadata & {
+      beefheartEffectiveHarmonyBars?: string[];
+      beefheartDeviceReceipts?: string[];
+    };
+    if (
+      Array.isArray(beefMeta.beefheartEffectiveHarmonyBars) &&
+      beefMeta.beefheartEffectiveHarmonyBars.length === tb
+    ) {
+      chordBars = [...beefMeta.beefheartEffectiveHarmonyBars];
+    }
+    if (beefMeta.beefheartDeviceReceipts?.length) {
+      beefheartDeviceReceipts = [...beefMeta.beefheartDeviceReceipts];
+    }
+  }
+
+  // Phase 2 widen — Fela Kuti HV-only non-mosaic harmony bridge (exact HV=fela_kuti; not primary||HV).
+  // Soft fela never opens. frank_zappa excluded. Mosaic getDispatchEntry untouched (item E).
+  // Does not call appendFelaPercussionToScore (seal-crash path remains duo-only).
+  if (
+    chordBars &&
+    chordBars.length === tb &&
+    tb > 0 &&
+    isFelaKutiHvOnlyEnsembleWall({
+      harmonicVoice: hvMetaBb?.harmonicVoice,
+      songwriterStyleId: sw || hvMetaBb?.songwriterStyleId,
+    })
+  ) {
+    const sections = planning.formPlan.slices.map((sl) => ({
+      label: String(sl.phase ?? `slice_${sl.index}`),
+      startBar: sl.startBar,
+      length: Math.max(1, sl.endBar - sl.startBar + 1),
+    }));
+    const felaCtx = buildFelaKutiEnsemblePrecomputeContext({
+      seed: input.seed,
+      chordBars,
+      sections,
+      presetId: 'big_band',
+      ...(sw ? { songwriterStyleId: sw } : {}),
+    });
+    precomputeFelaKutiEffectiveHarmonyBars(felaCtx);
+    const felaMeta = felaCtx.generationMetadata as GenerationMetadata & {
+      felaKutiEffectiveHarmonyBars?: string[];
+      felaKutiDeviceReceipts?: string[];
+    };
+    if (
+      Array.isArray(felaMeta.felaKutiEffectiveHarmonyBars) &&
+      felaMeta.felaKutiEffectiveHarmonyBars.length === tb
+    ) {
+      chordBars = [...felaMeta.felaKutiEffectiveHarmonyBars];
+    }
+    if (felaMeta.felaKutiDeviceReceipts?.length) {
+      felaKutiDeviceReceipts = [...felaMeta.felaKutiDeviceReceipts];
+    }
+  }
+
+  // Phase 2 widen — Henry Threadgill HV-only non-mosaic harmony bridge (exact HV=henry_threadgill; not primary||HV).
+  // Soft threadgill / BB dual-id arranger alias never opens. frank_zappa excluded. Mosaic untouched (item E).
+  if (
+    chordBars &&
+    chordBars.length === tb &&
+    tb > 0 &&
+    isHenryThreadgillHvOnlyEnsembleWall({
+      harmonicVoice: hvMetaBb?.harmonicVoice,
+      songwriterStyleId: sw || hvMetaBb?.songwriterStyleId,
+    })
+  ) {
+    const sections = planning.formPlan.slices.map((sl) => ({
+      label: String(sl.phase ?? `slice_${sl.index}`),
+      startBar: sl.startBar,
+      length: Math.max(1, sl.endBar - sl.startBar + 1),
+    }));
+    const thrCtx = buildHenryThreadgillEnsemblePrecomputeContext({
+      seed: input.seed,
+      chordBars,
+      sections,
+      presetId: 'big_band',
+      ...(sw ? { songwriterStyleId: sw } : {}),
+    });
+    precomputeHenryThreadgillEffectiveHarmonyBars(thrCtx);
+    const thrMeta = thrCtx.generationMetadata as GenerationMetadata & {
+      henryThreadgillEffectiveHarmonyBars?: string[];
+      henryThreadgillDeviceReceipts?: string[];
+    };
+    if (
+      Array.isArray(thrMeta.henryThreadgillEffectiveHarmonyBars) &&
+      thrMeta.henryThreadgillEffectiveHarmonyBars.length === tb
+    ) {
+      chordBars = [...thrMeta.henryThreadgillEffectiveHarmonyBars];
+    }
+    if (thrMeta.henryThreadgillDeviceReceipts?.length) {
+      henryThreadgillDeviceReceipts = [...thrMeta.henryThreadgillDeviceReceipts];
+    }
+  }
+
+  // Phase 2 widen — Eberhard Weber HV-only non-mosaic harmony bridge (exact HV=eberhard_weber; not primary||HV).
+  // Twin weber_field / soft weber|ew never open. frank_zappa excluded. Mosaic untouched (item E).
+  if (
+    chordBars &&
+    chordBars.length === tb &&
+    tb > 0 &&
+    isEberhardWeberHvOnlyEnsembleWall({
+      harmonicVoice: hvMetaBb?.harmonicVoice,
+      songwriterStyleId: sw || hvMetaBb?.songwriterStyleId,
+    })
+  ) {
+    const sections = planning.formPlan.slices.map((sl) => ({
+      label: String(sl.phase ?? `slice_${sl.index}`),
+      startBar: sl.startBar,
+      length: Math.max(1, sl.endBar - sl.startBar + 1),
+    }));
+    const weberCtx = buildEberhardWeberEnsemblePrecomputeContext({
+      seed: input.seed,
+      chordBars,
+      sections,
+      presetId: 'big_band',
+      ...(sw ? { songwriterStyleId: sw } : {}),
+    });
+    precomputeEberhardWeberEffectiveHarmonyBars(weberCtx);
+    const weberMeta = weberCtx.generationMetadata as GenerationMetadata & {
+      eberhardWeberEffectiveHarmonyBars?: string[];
+      eberhardWeberDeviceReceipts?: string[];
+    };
+    if (
+      Array.isArray(weberMeta.eberhardWeberEffectiveHarmonyBars) &&
+      weberMeta.eberhardWeberEffectiveHarmonyBars.length === tb
+    ) {
+      chordBars = [...weberMeta.eberhardWeberEffectiveHarmonyBars];
+    }
+    if (weberMeta.eberhardWeberDeviceReceipts?.length) {
+      eberhardWeberDeviceReceipts = [...weberMeta.eberhardWeberDeviceReceipts];
     }
   }
 
@@ -470,6 +713,11 @@ export function runBigBandRealisation(
     input.suppressWybleVoiceLayoutForTest === true ? undefined : planning.orchestrationPlan.wybleVoiceLayout;
 
   const slonimskyEnsembleCellReceipts: string[] = [];
+  const hvRaw =
+    mosaicContext?.generationMetadata?.harmonicVoice ??
+    input.context?.generationMetadata?.harmonicVoice;
+  const hv =
+    typeof hvRaw === 'string' && hvRaw.trim() !== '' ? hvRaw.trim() : undefined;
   const scoreBuildInput: BuildBigBandScoreModelInput = {
       title: planning.title,
       seed: input.seed,
@@ -483,6 +731,8 @@ export function runBigBandRealisation(
       ...(typeof input.songwriterStyleId === 'string' && input.songwriterStyleId.trim()
         ? { songwriterStyleId: input.songwriterStyleId.trim() }
         : {}),
+      // Phase 2 Batch 1 — Slonimsky only; primary songwriterStyleId unchanged for FZ gate.
+      ...(hv ? { slonimskySongwriterStyleId: hv } : {}),
       ...(input.allowedOutsideOverride !== undefined
         ? { allowedOutsideOverride: input.allowedOutsideOverride }
         : {}),
@@ -642,6 +892,11 @@ export function runBigBandRealisation(
     exportPipeline,
     ...(referenceInfluence ? { referenceInfluence } : {}),
     ...(frankZappaDeviceReceipts ? { frankZappaDeviceReceipts } : {}),
+    ...(bergDeviceReceipts ? { bergDeviceReceipts } : {}),
+    ...(beefheartDeviceReceipts ? { beefheartDeviceReceipts } : {}),
+    ...(felaKutiDeviceReceipts ? { felaKutiDeviceReceipts } : {}),
+    ...(henryThreadgillDeviceReceipts ? { henryThreadgillDeviceReceipts } : {}),
+    ...(eberhardWeberDeviceReceipts ? { eberhardWeberDeviceReceipts } : {}),
     ...(slonimskyEnsembleCellReceipts.length > 0 ? { slonimskyEnsembleCellReceipts } : {}),
   };
 }

@@ -6987,6 +6987,24 @@ function buildBassPart(
       const engineVrbId = abstractNow.styleSourceVrbId ?? '';
       fillBassMeasureFromAbstractBassLine(m, abstractNow, b, { effectiveLow, effectiveHigh }, engineVrbId, context);
       normalizeMeasureQuarterGrid(m);
+      /**
+       * Line-first abstract fill early-continues past the shared rhythm-triple break.
+       * bacharach + oliver_nelson + jamerson HV (primary ≠ slice) emit a frozen bass rhythm cell →
+       * `validateBassIdentity` rhythmic-cell fail. Narrow break for those VRB ids only —
+       * adjacent anti-duplicate (2-bar) + triple (3-bar) so both Once and seed-sweep stay clean.
+       */
+      if (engineVrbId === 'bacharach' || engineVrbId === 'oliver_nelson' || engineVrbId === 'jamerson') {
+        applyBassRhythmTripleFingerprintBreak(m, measures, {
+          rootClamped,
+          third,
+          fifth,
+          guide,
+          walkLow,
+          effectiveHigh,
+        });
+        const mPrev = measures[measures.length - 1];
+        if (mPrev) duoBassAntiDuplicateRhythmVsAdjacent(m, mPrev);
+      }
       const lastN = [...m.events].reverse().find((e) => e.kind === 'note') as NoteEvent | undefined;
       if (lastN) prevBassPitch = lastN.pitch;
       measures.push(m);

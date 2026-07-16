@@ -1,6 +1,18 @@
-# Composer OS Roadmap [2026-06-30]
+# Composer OS Roadmap [2026-07-15]
 
 ## ✅ Active Now (top priority — everything below is backlog)
+
+**Roadmap remaining (2026-07-15) — pick any open item; all independent:**
+
+| Lane | Status |
+|------|--------|
+| **CLOSED this session** | CI smoke **8/8** → **0** unexpected · Score-5 (**30**) + Score-6 BB (**4**) wired · Phase 2 Batches **1–6** + Beefheart + Fela + Threadgill + **Weber** HV widen **COMPLETE** · fBT vs custom_locked bug family fully resolved · Bass-identity rhythm-cell (`bacharach` + `oliver_nelson`) **CLOSED** · jamerson RiffGen Phase E **CLOSED** · **Riff Generator Phase A honesty** **CLOSED** · Full smoke **768**/140, known **5**, unexpected **0** |
+| **1. Phase 2 widen** | Berg + Beefheart + Fela + Threadgill + **Weber** HV walls **COMPLETE** — next: **Mosaic HV** product decision |
+| **2. Mosaic HV** | Blocked on product decision: global HV vs per-section HV map |
+| **3. Riff Generator Phase A** | **COMPLETE (2026-07-15)** — honesty-only: grey HV + receipt; no soft-link; see `docs/RIFF_GENERATOR_HARMONIC_VOICE_DECISION.md` |
+| **4. Score-4 defer** | Parked / low ROI — **9** composers, Slonimsky-transport-only |
+| **5. Tier 3** | Parked / low ROI — **10** composers, score **0–3**, out of HV scope |
+
 - **Milestone B — Block cards + manipulation** (desktop Tab 2 “Arrange in Blocks”: scaffold → 8-bar cards, chords + composer chip, duplicate/reorder/delete). **Band Mode engine complete** — progressions, variable length, and section-varying drums shipped (`2414fcbe`).
 
 **Canonical handoff doc for assistants (e.g. Claude).** Detail also lives in [CHANGELOG.md](../CHANGELOG.md), [docs/CHANGELOG.md](CHANGELOG.md), [README.md](../README.md), [USER_GUIDE.md](USER_GUIDE.md), and [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md). **Update this file’s title date** when you refresh the roadmap.
@@ -16,7 +28,7 @@
 | **Bacharach / Monk / Joni / SY / Zappa (premium-melody roster)** | **Registry placeholders only** — Song Mode slices **shipped**; premium-melody **not started** |
 | **V88 — Bartók CLE pitch scoring** | **FROZEN** — eval **8.0/10** seed **61234**; **`bartokClePitchScoringGoldenMaster`** in smoke |
 | **Musician shell (desktop v1)** | **SHIPPED** — default **`Composer-OS.exe`** plain HTML UI; **32-bar Song Mode**; registry-driven composer list; **`COMPOSER_OS_FULL_UI=1`** → React Generate |
-| **Smoke tier** | **`npm run test:composer-smoke`** — **674**/0 rows, **121** suites (includes BH / Wayne / Evans / Hendrix premium-melody golden masters + Bartók CLE) |
+| **Smoke tier** | **`npm run test:composer-smoke`** — **768** PASS rows / **140** suites (2026-07-15; Riff Phase A honesty +1). Known fail **5** (tracked). Unexpected fail **0**. |
 
 **Evans Musician bridge — DONE (2026-06-14):** **`beMusicianPremiumMelodyBridge`** wired behind Evans-only **`musicianPremiumMelody`** + Musician IPC; 32-bar tiling + co-onset seam repair merged (**`2c7bb23d`**); premium-melody fingerprint reaches final **`song_mode`** compiled/export XML on Musician/desktop path; golden oracles **byte-identical**.
 
@@ -474,7 +486,7 @@ Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartók** native bundle (not in
 - **Musician shell:** Default desktop window — composer dropdown from **`premium-melody-composer-registry.json`**, seed, **32-bar Song Mode** generate; frozen composers under **Reference**. See [COMPOSER_HANDBOOK.md](COMPOSER_HANDBOOK.md) § Musician shell.
 - **Leadsheet-input engine — Phases 1–7 + GCE/LOCK proof + full-chart import (2026-06-15):** MusicXML leadsheet file → **`MosaicImportTimeline`** → composer-parameterized harmony (**`debussy`**, **`kenny_wheeler`**, **`bartok`** on Orbit compare) → **guitar + string quartet** quintet → melody hand-off (**N** bars) → **Phase 7 string realization** → MusicXML export. Parallel **`core/import/`** path; **does not** use **`generateGoldenPathDuoScore`**. **GUI:** **`LeadSheetInputDesktopPanel`** when **`COMPOSER_OS_FULL_UI=1`**. **CLI:** **`runDebussyLeadSheetInputProofCli.ts`** · **`runLeadSheetOrbitGceLockProofCli.ts`** (GCE/LOCK eval, no UI). **Gates:** **`debussyLeadSheetInputProof.test.ts`**, **`leadSheetInputPhase5ComposerProof.test.ts`**, **`leadSheetPhase7StringRealizationProof.test.ts`**. **Shipped:** **>8-bar / full-chart support** — processes full input up to **64-bar cap**; **8-bar** regression-safe (Orbit **8/8**); Metaphysics **40/40** for three composers; Phase 7 **17/17 PASS** (**`4b5a791a`**). **Limits (honest):** **64-bar cap** · **MusicXML-only** (MIDI / **`.mxl`** not on this path) · **viola silent** · GCE/LOCK CLI/tests only · composer profiles differ mainly in **harmony** (rhythm/texture largely shared). **Caveat:** sparse-chord leadsheets (~10 symbols / 40 bars) may leave long unlabeled stretches — later bars inherit/default. **Still open:** silent viola · **rhythmAntiLoop** / grid-perfect writing · composer behavioural depth beyond harmony. Docs: [COMPOSER_HANDBOOK.md](COMPOSER_HANDBOOK.md) · [USER_GUIDE.md](USER_GUIDE.md) · [COMPOSER_OS_ARCHITECTURE.md](COMPOSER_OS_ARCHITECTURE.md).
 - **AuditionDock Phase 1 — SHIPPED (2026-06-15):** **`AuditionDock`** on **Composers** tab + shared **`auditionFromGenerateResult`** with **Generate** playback; **`no_notes`** gate; dock demos = **seeded Song Mode generate** only (**not** lead-sheet input). **`debussy`** / **`messiaen`** / **`steve_reich`** audition on **Song Mode duo** (not SQ native ensemble). Docs: [USER_GUIDE.md](USER_GUIDE.md), [COMPOSER_HANDBOOK.md](COMPOSER_HANDBOOK.md). **Future:** lead-sheet / import audition; per-composer native ensemble routing where product warrants.
-- **Harness (project status):** **`npm run test:composer-smoke`** — **674** passed / **0** failed (**121** suites, full tier). Sync **`CLAUDE.md`** when **`runSmokeTests.ts`** changes. Historical snapshots (248/63, 666/117) superseded.
+- **Harness (project status):** **`npm run test:composer-smoke`** — **767** PASS / **140** suites (full tier; 2026-07-15). Known fail **5** (tracked) · unexpected fail **0**. Sync **`CLAUDE.md`** when **`runSmokeTests.ts`** changes. Historical snapshots (248/63, 666/117, 674/121, 678/122, 688/124, 725/132, 727/132, 737/134, 747/136, 757/138) superseded.
 - **V83d Phase 1 — BH duo comp rhythm — COMPLETE (2026-06-10):** Passing dims + inner-voice off-beat stagger on **`guitar_bass_duo`**; melody preserved; **`runV83dPhase1AutoValidation.ts`**; V81 **8/8**. **Next:** **V83d Phase 2** — melody rhythm enrichment.
 - **V81 — Generate UI for V80 engines — COMPLETE (2026-06-08):** Mosaic Import panel · import → generate wiring · variation picker · style-transfer controls · output filename + library folder · section planner visual timeline + suggest-from-import · receipt export-integrity badge fix + mixed-preset badge + Download XML. Jest **631**/0; smoke **657**/0 unexpected (full tier). Tag **`v2.6.0`**.
 - **V80 — Mixed-preset assembly + import — COMPLETE (2026-06-07):** **Track 1** BB + SQ Mosaic dispatch + E2E smoke · **Track 2** MusicXML/MIDI import IR + variation (IMP-4) + style-transfer (IMP-5) · **Track 3** mixed-preset MusicXML merge + export integrity (INS-3–5). Jest **580**/0; smoke **652**/0 unexpected (full tier). Tag **`v2.5.0`**.
@@ -496,7 +508,7 @@ Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartók** native bundle (not in
 - **Population Composer hybrid MusicContext (2026-05-30) — V106p1 shipped:** `buildMusicContextFromPopulation()` — ecology selection across tritonic · monk · wayne_shorter · vault · big_band; dramatic arc phases (`build` · `suspend` · `fracture` · `cadence` · `restart`); receipt `population_composer_realisation_complete`; always-on. Jest node **469**/0 (**59** suites).
 - **String Quartet SQ rhythm engines (2026-05-14) — 6 / 7 shipped:** Native **`sqRhythmEngineId`** engines on **`GenerationMetadata`** (receipts + Style Panel wiring): **`bartok_bulgarian_aksak`** (`BG_RHYTHM_*`) · **`free_proportional`** (`FP_RHYTHM_*`) · **`baroque_dance`** (`BD_RHYTHM_*`) · **`reich_phasing_grid`** (`RP_RHYTHM_*`) · **`viennese_waltz`** (`VW_RHYTHM_*`) · **`jewish_klezmer`** (`KL_RHYTHM_*`). Style context prefixes: **`bg`**, **`fp`**, **`bd`**, **`rp`**, **`vw`**, **`kl`**. Cross-preset rhythm engines (Fela Kuti, Greek Rebetiko, Brazilian, Second Line, Cuban / Afro-Cuban) unchanged. **Remaining (deferred, not abandoned):** **Swing adapted for SQ** (`sq_swing`) — Perplexity research + execution prompt queued for a future sprint (Turtle Island–aligned grammar).
 - **V30 — COMPLETE (2026-05-05):** **Odd meter UI parity** · **MusicXML import Phase 1** · **Duo expansion** (pairing cards, duo intent selector, Duo Health readout, ECM safe sweep badge + Advanced checkbox) — detail under **§ Next best development — V30 complete · V31 sequencing**.
-- **Harness (project status):** **`test:smoke`** + **`test:fast`** are the primary CI/dev gates. **`npm run test:composer-smoke`** prints **`Passed: N`** — aggregate of every **`PASS:`** row in **`runSmokeTests.ts`**. **Snapshot (2026-06-13):** **674** passed / **0** failed (**121** suites); re-run after local changes and refresh this line + **`CLAUDE.md`**. Historical debt in **`docs/TEST_DEBT_COMPOSER_OS_V2.md`**.
+- **Harness (project status):** **`test:smoke`** + **`test:fast`** are the primary CI/dev gates. **`npm run test:composer-smoke`** prints **`Passed: N`** — aggregate of every **`PASS:`** row in **`runSmokeTests.ts`**. **Snapshot (2026-07-15):** **767** PASS (**140** suites); known fail **5**; unexpected fail **0** (Weber HV Phase 2 widen final). Re-run after local changes and refresh this line + **`CLAUDE.md`**. Historical debt in **`docs/TEST_DEBT_COMPOSER_OS_V2.md`**.
 - **Multi-arranger VRB blend — String Quartet preset (2026-05-15) — COMPLETE:** Weighted **two-arranger** **`VoiceRuleBundle`** blend (**`vrbBlend.ts`** / **`blendVoiceRuleBundles`**), **`sqArrangerVrb`** on generate when valid; **Generate** UI dual dropdowns + linked weights + incompatibility gate + preview card; **`StyleProfile.arrangerBlend`**; SQ arranger list **15** VRB ids (includes **Pärt**, **Satie**, **Gershwin**, **Porter**, **Ornette Coleman**). Roadmap **§ Item 4.5** marked **COMPLETE**; **SQ arranger surface parity** (new-territory composers on the SQ arranger rows) **COMPLETE**. Smoke **248**/0 (**63** suites).
 - **Windows desktop packaging (2026-05-14):** If **`electron-builder`** cannot delete **`release/win-unpacked/resources/app.asar`** (“in use by another process”), **`MsMpEng`** / **`SearchProtocolHost`** / **Explorer** / a **stale Electron** instance may hold a read lock on the prior unpack — rebuild with a **fresh output directory**, e.g. **`npx electron-builder --win --config.directories.output=release-jobim`** from **`apps/composer-os-desktop`**, then ship **`Composer-OS.exe`** from that folder. **Canonical workaround + root-cause detail:** **§ What to do next — #10** and **§ Item 10 — Desktop rebuild (EPERM)**.
 - **What to schedule first:** see **§ What to do next — importance order (2026-05-14)** below (replaces stale **Priority stack** ordering for assistants).
@@ -541,7 +553,7 @@ For **current** ordered backlog use **§ What to do next — importance order (2
 
 ### Song Mode — shipped slices vs pools ready to slice (2026-04-29)
 
-- **Shipped slices / smoke-tested writer roster:** **`runSmokeTests.ts`** includes dedicated writer slice suites (see file allowlist). **`npm run test:composer-smoke`** snapshot: **674**/0 (**121** suites). Premium-melody golden masters (BH / Wayne / Evans / Hendrix) + Bartók CLE golden master are smoke-listed alongside songwriter slice suites.
+- **Shipped slices / smoke-tested writer roster:** **`runSmokeTests.ts`** includes dedicated writer slice suites (see file allowlist). **`npm run test:composer-smoke`** snapshot (2026-07-15): **767** PASS (**140** suites). Premium-melody golden masters (BH / Wayne / Evans / Hendrix) + Bartók CLE golden master are smoke-listed alongside songwriter slice suites.
 - **Pools ready to slice:** **None** — chord pools / registry / UI rows that were queued for a dedicated duo golden-path slice are all **shipped** (**2026-04-29**). **Charlie Parker** (`charlie_parker`) **complete** this session — **`charlieParkerSlice.ts`**, **`cp:*`** devices. **Next after this session:** **open** — gap-fill vs roster (bebop lineage extensions, ECM depth, soul/funk, alt-rock, theatre, etc.); see **§ What to do next — importance order (2026-05-14)** and **Future — compositional diversity**.
 
 ### Smoke tier — maintenance checklist (when `runSmokeTests.ts` or smoke suites change)
@@ -629,27 +641,38 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 
 ## Future / Research Backlog
 
-## Priority Order (revised 2026-07-12)
+## Priority Order (revised 2026-07-15)
+
+**CLOSED this session (2026-07-15):** CI smoke **8/8** → **0** unexpected · Score-5 (**30**) + Score-6 BB (**4**) wired · Phase 2 Batches **1–6** + Beefheart + Fela + Threadgill + **Weber** HV widen **COMPLETE** · fBT vs custom_locked bug family fully resolved (mechanism + routing-gap + wire-sync + reporting) · jamerson RiffGen Phase E **CLOSED** · **Riff Generator Phase A honesty** **CLOSED** · Full smoke **768**/140, known **5**, unexpected **0**.
 
 **HV authority — items 1–2 SHIPPED (doc lag corrected 2026-07-12):**
 
 1. **Shared HV-aware authority abstraction** — **SHIPPED.** Phase 0 infra + Phase 1 seams 1–4 live under `engines/composer-os-v2/core/authority/` (`EffectiveStyleIdentity`, capability registry, adapters). See `docs/HV_AUTHORITY_ABSTRACTION_DESIGN.md`. Commits `1d8bdff5` → `9200267e`.
 2. **Zappa + Verlaine HV rollout** — **SHIPPED.** Verlaine end-to-end (seams 1–4); frank_zappa write-path (`76aec931`). Proven template for later waves. See `docs/COMPOSER_OS_80_STYLE_HV_ROLLOUT_DESIGN.md` §0.
 
-**Still open (reordered):**
+**Still open — higher ROI (all independent, pick any):**
 
-3. **80-style HV rollout — Waves A/B/C done; Wave D Tier 1 complete (13/13)** — Stage 1 + Stage 2 audit complete; Waves A/B/C + Wave D leftovers wired (`ecm_chamber` … `ralph_towner`, final **`philip_glass`**). Tier 2 in progress: Batches 3–5 + Score-6 BB (`charles_mingus` / `count_basie` / `maria_schneider` / `thad_jones`) hv_full. See `docs/EIGHTY_STYLE_AUDIT_SWEEP_2026-07-08.md`, `docs/EIGHTY_STYLE_STAGE2_FINDINGS.md`.
-4. **Big Band harmonicVoice forwarding** — **Forwarding done (Fix #3A, 2026-07-08). Consumption (Phase 2) — not started, separate DCR item.** Transport reaches `bigBandContextFromGenerateRequest`; engine still reads `songwriterStyleId` only (matrix `TRANSPORT_ONLY`).
-5. **String Quartet harmonicVoice forwarding** — **Forwarding done (Fix #3B, 2026-07-08). Consumption (Phase 2) — not started, separate DCR item.** Transport reaches `stringQuartetGenerationMetadataFromGenerateRequest`; engine still reads `songwriterStyleId` only (matrix `TRANSPORT_ONLY`).
-6. **Riff Generator — design decision made (2026-07-08)** — harmonicVoice and riffVrbId remain separate fields / controls. No unification. Phase A implementation not started. Mapping/fallback behavior to follow the scoped design doc in `docs/RIFF_GENERATOR_HARMONIC_VOICE_DECISION.md`.
-7. **Riff Generator Phase A implementation** — unblocked (decision made); still not started.
-8. **Bill Evans motif-recurrence fix** — small, separate DCR cycle; MI 5.5 hard-gate weakness, stable/pre-existing, not urgent.
-9. **Two-guitar interplay module** — rule-based interaction modes for the GBD writer.
+3. **Phase 2 widen** — Berg Batch 6 + **Beefheart** + **Fela Kuti** + **Threadgill** + **Weber** HV-only non-mosaic bridges **COMPLETE**. Next: **Mosaic HV** product decision. BB/SQ Phase 2 Batches **1–6** + five widen composers shipped (Slonimsky, VRB/Pass4, FZ continuity, Berg/Beefheart/Fela/Threadgill/Weber HV walls). See `docs/EIGHTY_STYLE_AUDIT_SWEEP_2026-07-08.md`, `docs/EIGHTY_STYLE_STAGE2_FINDINGS.md`.
+4. **Mosaic HV** — blocked on product decision: **global HV** vs **per-section HV map**. Do not start until decision lands.
+5. **Riff Generator Phase A** — **COMPLETE (2026-07-15)** honesty-only ship: greyed HV + `harmonicVoiceIgnoredOnRiffPreset` receipt; pattern authority = `riffVrbId`. Soft-link / Phase B chord colour still future. See `docs/RIFF_GENERATOR_HARMONIC_VOICE_DECISION.md`.
+
+**Tracked debt (not red, not blocking):** *(none outstanding from 2026-07-15 remaining list — jamerson Phase E closed.)*
+
+**Low ROI — parked:**
+
+6. **Score-4 defer group** — **9** composers, Slonimsky-transport-only.
+7. **Tier 3** — **10** composers, score **0–3**, out of HV scope.
+8. **Bill Evans motif-recurrence fix** — small separate DCR; MI 5.5 hard-gate weakness; not urgent.
+9. **Two-guitar interplay module** — rule-based interaction modes for the GBD writer (see entry below).
 10. **Phrase/motif transformation layer** — phrase-length distributions, contour library, cadence-avoidance, motif ops.
 11. **Hand-built Verlaine style fingerprint** — transcribe passages, extract weighted rules, post-generation nudge.
 12. **(Parked)** Full ML/performance modeling.
 
-**Reordering rationale (historical):** Riff Generator's blocker was a design decision (cheap to resolve); HV abstraction + Verlaine/Zappa template shipped next; catalogue rollout (Wave D leftovers) is now the active HV workstream before BB/SQ Phase 2 consumption and Riff Phase A.
+**CLOSED (2026-07-15):** Bass-identity rhythm-cell (`bacharach` + `oliver_nelson`) — line-first abstract early-continue skipped shared rhythm break; narrow HV-path diversify in `buildBassPart`.
+
+**CLOSED (2026-07-15):** jamerson RiffGen Phase E — Song Mode profile + line-first P3 colour + cleared `RIFF_PHASE_E_WIP_EXCLUDED`.
+
+**Historical note:** Wave D Tier 1 complete (**13/13**, `philip_glass` final). Score-5 (**30**) + Score-6 BB (`charles_mingus` / `count_basie` / `maria_schneider` / `thad_jones`) wired **2026-07-15**. BB Fix #3A / SQ Fix #3B forwarding + Phase 2 Batches 1–6 shipped **2026-07-14**.
 
 ## Priority 1a-continued: harmonicVoice forwarding gaps (2026-07-07)
 
@@ -659,7 +682,7 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 1. **Song Mode** — full generate + section regeneration
 2. **Big Band** — full generate, mosaic dispatch, and section regeneration
 3. **String Quartet** — full generate + section regeneration
-4. **Riff Generator** — different bug shape: UI sends `harmonicVoice`, but the engine reads unrelated `riffVrbId`; no mapping exists
+4. **Riff Generator** — Phase A honesty **COMPLETE** (not an HV forwarding wall; `riffVrbId` owns pattern)
 5. **GBD section regeneration** — drops `harmonicVoice` even though full-generate GBD works
 6. **ECM section regeneration** — same gap as GBD section regeneration
 
@@ -673,36 +696,32 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 1. **GBD + ECM section regeneration** — smallest, highest-confidence fix; should match already-working full-generate path semantics
 2. **Song Mode** — live user-facing bug, but verify truth-alignment / LOCK safety when forwarding
 3. **Big Band + String Quartet** — larger because they use different planning / metadata-builder paths
-4. **Riff Generator** — last; requires a product/field-mapping decision, not just forwarding
+4. **Riff Generator** — Phase A honesty **COMPLETE**; soft-link / Phase B still future.
 
 **Related:** `docs/AUDIT_SEAM_EXTRACT_2026-07-07.md` (entry-point forwarding map and seam inventory)
 
-## Known Issue: Composer OS Smoke — 8 pre-existing test failures
-(logged 2026-07-06, unrelated to docs commits af46bca / 9c7faaf7)
+## Known Issue: Composer OS Smoke — 8 pre-existing test failures — **CLOSED (2026-07-14)**
+(logged 2026-07-06; priority 1a / Bucket B closed 2026-07-07; Wayne restamp 2026-07-13; JH root-cause + BE restamp 2026-07-14)
 
-**Status:** CI red on `main`, confirmed NOT caused by documentation-only commits. Root cause is stale/drifted engine output vs golden fixtures.
+**Status (2026-07-14):** **8/8 PASS.** All red CI smoke rows from this backlog closed. Do **not** re-open as red; track non-red debt below only.
 
-**Failing (8):**
-1. bhGoldenMaster — MusicXML byte-exact seed 88109
-2. wayneGoldenMaster — MusicXML byte-exact seed 90217
-3. jhGoldenMaster — MusicXML byte-exact seed 90303
-4. VoiceRuleBundle — riff VRB stubs (nile / iommi / hendrix / evh)
-5. VoiceRuleBundle — Eddie Van Halen riff VRB #15 (registry + stub aliases)
-6. RiffGenerator — Phase E song mode + duo integration (14 VRBs)
-7. Output validation — SQ MIDI pitch ranges (4 tracks)
-8. Output validation — Duo golden path MIDI 2 tracks no overlap
+**Closed (one line each):**
+1. bhGoldenMaster (seed 88109) — stale MusicXML vs engine — regen/`f8c17335` path — **PASS**
+2. wayneGoldenMaster (seed 90217) — re-drift after `f346ee30` fBT tonic `maj7#11` — **restamp** bar **8** only (JSON unchanged) — **PASS**
+3. jhGoldenMaster (seed 90303) — pitch DIVERGE from stale compiled `premiumMelodyPitchPipeline.js` (runtime loaded `.js`, not `.ts`) — **code fix** (JS synced to TS optional-pitch path; **not** a restamp) — **PASS**
+4. VoiceRuleBundle — riff VRB stubs (nile / iommi / hendrix / evh) — registry/stub wiring `67ef7fce` — **PASS**
+5. VoiceRuleBundle — Eddie Van Halen riff VRB #15 — registry + stub aliases `67ef7fce` — **PASS**
+6. RiffGenerator — Phase E song mode + duo integration (14 VRBs) — expectations/`67ef7fce` — **PASS** (jamerson Phase E wired 2026-07-15; `RIFF_PHASE_E_WIP_EXCLUDED` cleared)
+7. Output validation — SQ MIDI pitch ranges (4 tracks) — baseline refresh `67ef7fce` — **PASS**
+8. Output validation — Duo golden path MIDI 2 tracks no overlap — baseline refresh `67ef7fce` — **PASS**
 
-**Likely cause:** bass pitch export change (e.g. F#2 alter vs D2 plain) made golden MusicXML fixtures stale; premium-melody goldens (BH / Wayne / Hendrix) added without a Linux CI-green refresh; riff VRB stubs (nile/iommi/hendrix/evh) never wired into registry.
+**Related (not in original 8; consequence of #3):** `beGoldenMaster` (seed 90301) — expected pitch drift after shared pipeline.js sync — **restamp** — **PASS**
 
-**Recommended fix (separate PR, not this entry):**
-1. Regenerate/relax premium-melody MusicXML goldens after confirming export is intentional
-2. Wire missing riff VRB stubs or adjust registry test expectations
-3. Fix RiffGenerator Phase E integration test expectations
-4. Refresh MIDI output-validation baselines (SQ pitch ranges, duo overlap)
+**Tracked debt (not red):** RiffGen Phase E — `jamerson` Song Mode + line-first wiring **CLOSED (2026-07-15)**; `RIFF_PHASE_E_WIP_EXCLUDED` cleared.
 
-**Do not** add these to SMOKE_KNOWN_FAIL as a way of silencing — that masks regressions rather than fixing them. Treat as a real backlog item.
+**Tracked debt (not red):** Mid-bar HV rewrite vs custom/locked paste (Verlaine question — `docs/HARMONIC_VOICE_FORWARDING_DESIGN.md`). **Final-bar fBT vs duo expected CLOSED (2026-07-15):** `pipelineTruthGates` uses `resolveEffectiveHarmonyTruth`. Fixture mitigation for `gil_evans` / beatles kept (coexist).
 
-**Priority:** Should be picked up before further engine changes stack on top of drifted goldens — recommend inserting as priority 1a (right after the ~80-style harmonic-voice generalisation fix already at #1).
+**Do not** silence future golden drift via SMOKE_KNOWN_FAIL — fix or restamp with an intentional note.
 
 ### HV-aware authority abstraction — SHIPPED (was “generalize harmonic-voice resolution”)
 
@@ -710,7 +729,7 @@ Single ordering for **merge safety → thin debt → user-visible quality → ch
 
 **Background (historical):** Fixing Verlaine as a harmonic voice paired with a different primary (e.g. Barry Harris) required patching ~7 call sites on **2026-07-06** because runtime “is style X active?” checks used primary only. That cascade motivated the shared abstraction instead of per-style probes.
 
-**Still open under this workstream:** Wave D Tier 1 promotions + Tier 2 spot-check; optional lint/CI on raw `songwriterStyleId === 'x'` outside allowlist; BB/SQ Phase 2 consumption (separate items).
+**Still open under this workstream:** Mosaic HV product decision; optional lint/CI on raw `songwriterStyleId === 'x'` outside allowlist. (Phase 2 widen non-mosaic bridge **COMPLETE** — Weber final.)
 
 **Related:** `docs/HV_AUTHORITY_ABSTRACTION_DESIGN.md` · `docs/COMPOSER_OS_80_STYLE_HV_ROLLOUT_DESIGN.md` · early Verlaine fixes `8f248347`, `e2cd13ab`, `6575d778`, `54af24c8`, `50e1d2a5` (`docs/VERLAINE_GBD.md`).
 

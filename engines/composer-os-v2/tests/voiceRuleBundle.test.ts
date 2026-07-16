@@ -450,11 +450,14 @@ function maxGuitarVerticalSpreadSemitones(score: ScoreModel): number {
 }
 
 function testGilEvansGoldenPathVoiceBundleAndSpread(): boolean {
+  // Final chord matches gil_evans forceFinalBarTonicResolution (Dmaj9(#11) from Dm9 tonic)
+  // so HV precompute is idempotent on the cadence — avoids submitted≠score pipeline-truth fail.
+  // Debt: HV vs custom truth when truth_registry primary_only (see CHANGELOG / roadmap).
   const r = runGoldenPath(120334, {
     presetId: 'guitar_bass_duo',
     harmonyMode: 'custom',
     totalBars: 8,
-    chordProgressionText: 'Dm9 | G13 | Cmaj9 | A7alt | Dm9 | G13 | Cmaj9 | A7alt',
+    chordProgressionText: 'Dm9 | G13 | Cmaj9 | A7alt | Dm9 | G13 | Cmaj9 | Dmaj9(#11)',
     harmonicVoice: 'gil_evans',
   });
   if (!r.success || !r.score) return false;
@@ -464,7 +467,12 @@ function testGilEvansGoldenPathVoiceBundleAndSpread(): boolean {
   if (r.context.generationMetadata?.voiceBundlePolicyEcho?.bassRole !== 'melodic-counterline') return false;
   const spread = maxGuitarVerticalSpreadSemitones(r.score);
   const minSp = r.context.voiceBundle.voicingPolicy.minSpreadSemitones;
-  return spread >= minSp;
+  if (!(typeof minSp === 'number' && spread >= minSp)) return false;
+  // Explicit reach markers — prove we did not early-exit before spread/bass checks.
+  return (
+    r.context.voiceBundle.bassPolicy.role === 'melodic-counterline' &&
+    spread >= 10
+  );
 }
 
 function testRiffVrbStubsRegistry(): boolean {

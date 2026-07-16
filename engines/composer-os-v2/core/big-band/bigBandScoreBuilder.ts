@@ -718,6 +718,12 @@ export interface BuildBigBandScoreModelInput {
   enhancedPlanning?: BigBandEnhancedPlanning;
   /** When set (from Generate request), biases Slonimsky ensemble catalogue via `SLONIMSKY_STYLE_PROFILE_MAP`. */
   songwriterStyleId?: string;
+  /**
+   * Phase 2 Batch 1 — Slonimsky style bias only (`harmonicVoice` || primary).
+   * When unset, falls back to {@link songwriterStyleId}. Does **not** drive Zappa BB gate
+   * (`zappaBbActive` stays on primary `songwriterStyleId`).
+   */
+  slonimskySongwriterStyleId?: string;
   /** Z10 — mutable sink for Slonimsky cell selection receipts (merged to generation metadata upstream). */
   slonimskyEnsembleCellReceipts?: string[];
   /** User Chromatic Strength cap — `Math.min` with profile allowance in Slonimsky contexts. */
@@ -941,6 +947,7 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
     wybleVoiceLayout,
     enhancedPlanning,
     songwriterStyleId,
+    slonimskySongwriterStyleId,
     allowedOutsideOverride,
     barMeterMap,
     drumIntensity = 'standard',
@@ -1001,6 +1008,11 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
     bigBandArrangementProfile === 'orbit_steely_v1_5_64' ||
     bigBandArrangementProfile === 'orbit_steely_v1_7_64';
   const zappaBbActive = songwriterStyleId?.trim().toLowerCase() === 'frank_zappa';
+  /** Slonimsky catalogue / outside level — HV when forwarded; else primary. FZ gate stays primary-only. */
+  const slonimskyStyleId =
+    (typeof slonimskySongwriterStyleId === 'string' && slonimskySongwriterStyleId.trim()
+      ? slonimskySongwriterStyleId.trim()
+      : undefined) ?? songwriterStyleId;
 
   const chordForBar = (b: number) => {
     if (chordBars && chordBars.length === totalBars) {
@@ -1174,9 +1186,9 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
           duoIntent: 'guitar_lead',
           phase: ((bar - 1) % 8) + 1,
           seed: seed + bar * 31,
-          songwriterId: songwriterStyleId,
+          songwriterId: slonimskyStyleId,
           ...(allowedOutsideOverride !== undefined ? { allowedOutsideOverride } : {}),
-          styleProfile: songwriterStyleId ?? null,
+          styleProfile: slonimskyStyleId ?? null,
           chordSymbol: sym,
           keyPc: rpc,
           effectiveLow: BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES][0]!,
@@ -1222,10 +1234,10 @@ export function buildBigBandScoreModel(input: BuildBigBandScoreModelInput): Scor
           duoIntent: 'guitar_lead',
           phase: ((bar - 1) % 8) + 1,
           seed: seed + bar * 31,
-          songwriterId: songwriterStyleId,
+          songwriterId: slonimskyStyleId,
           ...(allowedOutsideOverride !== undefined ? { allowedOutsideOverride } : {}),
           totalQuarterBeats: effectiveBeats,
-          styleProfile: songwriterStyleId ?? null,
+          styleProfile: slonimskyStyleId ?? null,
           chordSymbol: sym,
           keyPc: rpc,
           effectiveLow: BIG_BAND_MIDI_BOUNDS[BB_PART_SAXES][0]!,

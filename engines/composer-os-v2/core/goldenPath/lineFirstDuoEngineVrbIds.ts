@@ -15,6 +15,7 @@ export const LINE_FIRST_DUO_PRIORITY3_COLOUR_VRB_IDS = [
   'nile_rodgers',
   'larry_carlton',
   'sly_stone',
+  'jamerson',
   'iommi',
   'david_gilmour',
   'hendrix',

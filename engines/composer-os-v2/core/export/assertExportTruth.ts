@@ -36,16 +36,20 @@ export interface ExportTruthContext {
   spineLayer?: string;
 }
 
-const SKIP_PIPELINE_REPORT: PipelineTruthReport = {
-  submittedChordString: null,
-  parsedBars: null,
-  scoreBars: null,
-  writtenXmlBars: null,
-  inputStage: 'skip',
-  scoreStage: 'skip',
-  exportStage: 'skip',
-  errors: [],
-};
+/**
+ * Thrown when a duo pipeline truth gate fails after `runPipelineTruthGates` produced a report.
+ * Carries that report so callers (e.g. runGoldenPath) can echo real stage results instead of
+ * leaving the default skip/skip/skip placeholder.
+ */
+export class ExportTruthPipelineError extends Error {
+  readonly truthReport: PipelineTruthReport;
+
+  constructor(message: string, truthReport: PipelineTruthReport) {
+    super(message);
+    this.name = 'ExportTruthPipelineError';
+    this.truthReport = truthReport;
+  }
+}
 
 /**
  * Run export-truth validators in order; throw on first hard failure.
@@ -82,7 +86,10 @@ export function assertExportTruth(ctx: ExportTruthContext): PipelineTruthReport 
       xml: ctx.exportedXml,
     });
     if (!pipelineTruthAllPassed(pipelineReport)) {
-      throw new Error(pipelineReport.errors[0] ?? 'PIPELINE_TRUTH: export truth gate failed.');
+      throw new ExportTruthPipelineError(
+        pipelineReport.errors[0] ?? 'PIPELINE_TRUTH: export truth gate failed.',
+        pipelineReport
+      );
     }
   }
 

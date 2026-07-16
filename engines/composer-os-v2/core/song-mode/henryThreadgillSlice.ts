@@ -35,6 +35,48 @@ export function isHenryThreadgillHarmonicPath(
   return primary === 'henry_threadgill' || voice === 'henry_threadgill';
 }
 
+/**
+ * Phase 2 widen — BB/SQ non-mosaic harmony-bridge wall (next after Fela Kuti).
+ * Activates only when `harmonicVoice` is exact `henry_threadgill` (not primary||HV).
+ * Soft `threadgill` / BB dual-id arranger alias never opens.
+ * `frank_zappa` primary excluded (dedicated FZ batches).
+ */
+export function isHenryThreadgillHvOnlyEnsembleWall(opts: {
+  harmonicVoice?: string | null;
+  songwriterStyleId?: string | null;
+}): boolean {
+  const voice = normalizeHarmonicVoiceId(String(opts.harmonicVoice ?? ''));
+  if (voice !== 'henry_threadgill') return false;
+  const primary = normalizeHarmonicVoiceId(String(opts.songwriterStyleId ?? ''));
+  return primary !== 'frank_zappa';
+}
+
+/** Minimal context for `precomputeHenryThreadgillEffectiveHarmonyBars` on BB/SQ chordBars bridge. */
+export function buildHenryThreadgillEnsemblePrecomputeContext(args: {
+  seed: number;
+  chordBars: string[];
+  sections: Array<{ label: string; startBar: number; length: number }>;
+  presetId: string;
+  songwriterStyleId?: string;
+}): CompositionContext {
+  const tb = args.chordBars.length;
+  const generationMetadata: GenerationMetadata = {
+    generatedAt: new Date().toISOString(),
+    harmonicVoice: 'henry_threadgill',
+    ...(args.songwriterStyleId
+      ? { songwriterStyleId: args.songwriterStyleId }
+      : {}),
+  };
+  return {
+    systemVersion: '2.0.0',
+    presetId: args.presetId,
+    seed: args.seed,
+    form: { totalBars: tb, sections: args.sections },
+    lockedHarmonyBarsRaw: [...args.chordBars],
+    generationMetadata,
+  } as unknown as CompositionContext;
+}
+
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 
 const PC_TO_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;

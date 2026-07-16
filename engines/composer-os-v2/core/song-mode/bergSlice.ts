@@ -112,6 +112,47 @@ export function isBergHarmonicPath(
   return primary === 'berg' || voice === 'berg';
 }
 
+/**
+ * Phase 2 Batch 6 — BB/SQ non-mosaic harmony-bridge wall.
+ * Activates only when `harmonicVoice` is exact `berg` (not primary||HV).
+ * `frank_zappa` primary excluded (dedicated FZ batches). Soft `alban_berg` never opens.
+ */
+export function isBergHvOnlyEnsembleWall(opts: {
+  harmonicVoice?: string | null;
+  songwriterStyleId?: string | null;
+}): boolean {
+  const voice = normalizeHarmonicVoiceId(String(opts.harmonicVoice ?? ''));
+  if (voice !== 'berg') return false;
+  const primary = normalizeHarmonicVoiceId(String(opts.songwriterStyleId ?? ''));
+  return primary !== 'frank_zappa';
+}
+
+/** Minimal context for `precomputeBergEffectiveHarmonyBars` on BB/SQ chordBars bridge. */
+export function buildBergEnsemblePrecomputeContext(args: {
+  seed: number;
+  chordBars: string[];
+  sections: Array<{ label: string; startBar: number; length: number }>;
+  presetId: string;
+  songwriterStyleId?: string;
+}): CompositionContext {
+  const tb = args.chordBars.length;
+  const generationMetadata: GenerationMetadata = {
+    generatedAt: new Date().toISOString(),
+    harmonicVoice: 'berg',
+    ...(args.songwriterStyleId
+      ? { songwriterStyleId: args.songwriterStyleId }
+      : {}),
+  };
+  return {
+    systemVersion: '2.0.0',
+    presetId: args.presetId,
+    seed: args.seed,
+    form: { totalBars: tb, sections: args.sections },
+    lockedHarmonyBarsRaw: [...args.chordBars],
+    generationMetadata,
+  } as unknown as CompositionContext;
+}
+
 export interface BergHarmonyAccumulator {
   barsConsidered: number;
   alteredTouches: number;

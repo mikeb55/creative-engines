@@ -2,11 +2,15 @@
  * assertExportTruth — consolidated export-truth entry tests.
  */
 
-import { assertExportTruth, buildSpineSymbolsForExportTruth } from './assertExportTruth';
+import {
+  assertExportTruth,
+  buildSpineSymbolsForExportTruth,
+  ExportTruthPipelineError,
+} from './assertExportTruth';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { runGoldenPathOnce } from '../goldenPath/runGoldenPath';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
-import { pipelineTruthAllPassed } from '../score-integrity/pipelineTruthGates';
+import { expandChordSymbolPlanToBars, pipelineTruthAllPassed } from '../score-integrity/pipelineTruthGates';
 
 const LOCKED_16 = [
   'Am7',
@@ -231,6 +235,56 @@ function testRunModeSqSkipsDuoPipelineGates(): boolean {
   }
 }
 
+/** Duo pipeline fail must throw ExportTruthPipelineError carrying the real stage report (not silent discard). */
+function testDuoPipelineFailCarriesTruthReport(): boolean {
+  try {
+    const progression = 'Bm9 | D13 | Gmaj9 | C#7alt | F#m9 | A13 | Dmaj9 | G#7alt';
+    const bars = progression.split('|').map((s) => s.trim());
+    const r = runGoldenPathOnce(88007, {
+      presetId: 'guitar_bass_duo',
+      totalBars: 8,
+      harmonyMode: 'custom',
+      chordProgressionText: progression,
+      parsedChordBars: bars,
+    });
+    if (!r.score || !r.context || !r.xml) return false;
+    // Force input-stage fail: plan no longer matches wire.
+    const planBars = expandChordSymbolPlanToBars(r.context.chordSymbolPlan);
+    if (planBars.length !== 8) return false;
+    r.context.chordSymbolPlan = {
+      segments: [{ startBar: 1, bars: 8, chord: 'Cmaj9' }],
+    };
+    try {
+      assertExportTruth({
+        scoreModel: r.score,
+        exportedXml: r.xml,
+        effectiveBars: bars,
+        lockedBars: undefined,
+        spineSymbols: buildSpineSymbolsForExportTruth(r.context, 8),
+        runMode: 'duo',
+        context: r.context,
+        routingWire: {
+          harmonyMode: 'custom',
+          chordProgressionText: progression,
+          parsedChordBars: bars,
+        },
+        pipelineOptions: {
+          harmonyMode: 'custom',
+          chordProgressionText: progression,
+          parsedChordBars: bars,
+        },
+      });
+      return false;
+    } catch (e) {
+      if (!(e instanceof ExportTruthPipelineError)) return false;
+      const tr = e.truthReport;
+      return tr.inputStage === 'fail' && tr.errors.length > 0 && !pipelineTruthAllPassed(tr);
+    }
+  } catch {
+    return false;
+  }
+}
+
 export function runAssertExportTruthTests(): { name: string; ok: boolean }[] {
   return [
     { name: 'assertExportTruth: spine mismatch throws HARMONY_SPINE_LOCK', ok: testSpineMismatchThrowsHarmonySpineLock() },
@@ -245,5 +299,9 @@ export function runAssertExportTruthTests(): { name: string; ok: boolean }[] {
       ok: testMissingEffectiveBarsOnLockedRunThrows(),
     },
     { name: 'assertExportTruth: runMode=sq skips duo-only gates', ok: testRunModeSqSkipsDuoPipelineGates() },
+    {
+      name: 'assertExportTruth: duo pipeline fail carries truthReport (not skip discard)',
+      ok: testDuoPipelineFailCarriesTruthReport(),
+    },
   ];
 }

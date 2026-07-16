@@ -24,13 +24,16 @@ import {
   normalizeSongwriterStyleKey,
 } from '../core/song-mode/songwriterStyleProfiles';
 import { RIFF_VRB_SIGMA_CEILINGS } from '../core/riff-generator/riffVrbRegistry';
+import { runRiffGeneratorApp } from '../app-api/riffGeneratorApp';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 
 /**
- * Jamerson bass lens (1503219f) — riff VRB stub on registry only; Song Mode profile +
- * line-first duo wiring not shipped. Bucket B / priority 1a DCR: exclude from Phase E
- * until SONGWRITER_STYLE_PROFILES + LINE_FIRST_DUO entry land (see COMPOSER_OS_ROADMAP.md).
+ * Phase E integration checklist gaps for a VRB (historically Jamerson).
+ * Empty when all RIFF_GENERATOR_VRB_IDS pass Song Mode profile + line-first wiring.
  */
-const RIFF_PHASE_E_WIP_EXCLUDED: readonly string[] = ['jamerson'];
+const RIFF_PHASE_E_WIP_EXCLUDED: readonly string[] = [];
 
 function testRiffGeneratorFamilyTagResolution(): boolean {
   for (const id of RIFF_GENERATOR_VRB_IDS) {
@@ -155,6 +158,43 @@ function testRiffVrbSongModeIntegration(): boolean {
   return riffVrbSigmaCeilingUnchanged();
 }
 
+function testRiffPhaseAHarmonicVoiceHonestyReceipt(): boolean {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cos-riff-phase-a-'));
+  try {
+    const r = runRiffGeneratorApp(
+      {
+        presetId: 'riff_generator',
+        styleStack: {
+          primary: 'barry_harris',
+          styleBlend: { primary: 'strong', secondary: 'off', colour: 'off' },
+        },
+        seed: 88042,
+        title: 'PhaseAHonesty',
+        totalBars: 2,
+        // Deliberate mismatch: HV would mislead if it drove pattern.
+        harmonicVoice: 'jamerson',
+        riffVrbId: 'nile_rodgers',
+        riffStyle: 'funk',
+        riffDensity: 'medium',
+        riffGrid: 'eighth',
+        riffLineMode: 'single_line',
+        riffBass: false,
+        bpm: 100,
+      },
+      tmp
+    );
+    if (!r.success) return false;
+    if (r.harmonicVoiceIgnoredOnRiffPreset !== true) return false;
+    if (r.runManifest?.harmonicVoiceIgnoredOnRiffPreset !== true) return false;
+    // Pattern authority = riffVrbId (nile), not jamerson HV.
+    if (!r.filename?.includes('nile_rodgers')) return false;
+    if (r.filename.includes('jamerson')) return false;
+    return true;
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
 export function runRiffGeneratorIntegrationTests(): { name: string; ok: boolean }[] {
   return [
     ['RiffGenerator — family tag resolution (14 VRBs)', testRiffGeneratorFamilyTagResolution],
@@ -164,5 +204,6 @@ export function runRiffGeneratorIntegrationTests(): { name: string; ok: boolean 
     ['RiffGenerator — VRB blend same family', testRiffVrbBlendSameFamily],
     ['RiffGenerator — VRB blend cross-family warn', testRiffVrbBlendCrossFamilyWarn],
     ['RiffGenerator — Phase E song mode + duo integration (14 VRBs)', testRiffVrbSongModeIntegration],
+    ['RiffGenerator — Phase A HV honesty receipt', testRiffPhaseAHarmonicVoiceHonestyReceipt],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }

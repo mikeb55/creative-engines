@@ -980,11 +980,22 @@ function enforceFinalBarTonicResolution(
  * at the cadence without full-array sync (mid-piece soft_ext `6/9` would trip
  * LOCKED HARMONY SEMANTIC DIVERGENCE if echoed wholesale into contracts).
  * Dressing mid-piece bridge colour remains; piece-final A7alt is calmed on both surfaces.
+ *
+ * **Custom / locked wire:** do **not** rewrite plan / parsed / locked here.
+ * Input-stage truth requires wire ≡ chordSymbolPlan ≡ parsedCustomProgressionBars;
+ * final-bar-only echo used to fail at cadence (e.g. wire `G13` ≠ plan `Cmaj9` after fBT).
+ * Authority on custom already lives on `bacharachEffectiveHarmonyBars` +
+ * `isBacharachHarmonicPath` in `getChordForBar` (score/export already align).
  */
 function syncBacharachFinalBarAuthority(context: CompositionContext, out: string[]): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;
   if (out.length !== tb || tb < 1) return;
+
+  if (genMeta.harmonySource === 'custom' || genMeta.customHarmonyLocked === true) {
+    return;
+  }
+
   const finalSym = out[tb - 1]!;
 
   const locked =

@@ -32,6 +32,8 @@ export function SlonimskyUniversalPanel({
   embedded = false,
   harmonicOnly = false,
   hideHarmonicVoice = false,
+  harmonicVoiceReadOnly = false,
+  harmonicVoiceReadOnlyNote,
   harmonicVoiceMode = 'other',
   harmonicVoiceId = null,
   onHarmonicVoiceChange,
@@ -44,6 +46,13 @@ export function SlonimskyUniversalPanel({
   harmonicOnly?: boolean;
   /** When true, omit harmonic voice dropdown (e.g. voice lives on {@link SlonimskyGbdPanel}). */
   hideHarmonicVoice?: boolean;
+  /**
+   * Phase A riff honesty — show Harmonic Voice greyed out with an explanatory note.
+   * Select stays visible; interaction disabled even when `disabled` is false.
+   */
+  harmonicVoiceReadOnly?: boolean;
+  /** Copy under the greyed-out control (riff pattern authority = riffVrbId). */
+  harmonicVoiceReadOnlyNote?: string;
   harmonicVoiceMode?: SlonimskyHarmonicVoiceMode;
   harmonicVoiceId?: string | null;
   onHarmonicVoiceChange?: (id: string | null) => void;
@@ -51,7 +60,11 @@ export function SlonimskyUniversalPanel({
   const patch = (partial: Partial<SlonimskyMacroState>) => onChange({ ...state, ...partial });
   const voiceOptions = slonimskyHarmonicVoiceOptionsForMode(harmonicVoiceMode);
   const showMacro = !harmonicOnly;
-  const showHarmonicVoice = !hideHarmonicVoice && onHarmonicVoiceChange && voiceOptions.length > 0;
+  const showHarmonicVoice =
+    !hideHarmonicVoice &&
+    voiceOptions.length > 0 &&
+    (harmonicVoiceReadOnly || !!onHarmonicVoiceChange);
+  const harmonicSelectDisabled = disabled || harmonicVoiceReadOnly;
 
   function harmonicVoiceWarningBody(id: string): string {
     const gbd = slonimskyGbdWriterWarningBody(id);
@@ -85,9 +98,13 @@ export function SlonimskyUniversalPanel({
           marginBottom: '0.65rem',
         }}
       >
-        <span style={{ fontWeight: 600, fontSize: '0.92rem' }}>Slonimsky</span>
+        <span style={{ fontWeight: 600, fontSize: '0.92rem' }}>
+          {harmonicVoiceReadOnly ? 'Harmonic Voice' : 'Slonimsky'}
+        </span>
         <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-          Macro → chromatic / blend / duo intent
+          {harmonicVoiceReadOnly
+            ? 'shown for honesty — does not drive riff pattern'
+            : 'Macro → chromatic / blend / duo intent'}
         </span>
       </div>
 
@@ -148,8 +165,15 @@ export function SlonimskyUniversalPanel({
           </label>
           <select
             value={harmonicVoiceId ?? ''}
-            disabled={disabled}
-            onChange={(e) => onHarmonicVoiceChange(e.target.value ? e.target.value : null)}
+            disabled={harmonicSelectDisabled}
+            onChange={(e) => onHarmonicVoiceChange?.(e.target.value ? e.target.value : null)}
+            aria-disabled={harmonicVoiceReadOnly || undefined}
+            data-testid={harmonicVoiceReadOnly ? 'riff-harmonic-voice-select' : undefined}
+            title={
+              harmonicVoiceReadOnly
+                ? 'Harmonic Voice does not drive riff pattern on this preset'
+                : undefined
+            }
             style={{
               width: '100%',
               maxWidth: 320,
@@ -158,6 +182,8 @@ export function SlonimskyUniversalPanel({
               border: '1px solid var(--border)',
               background: 'var(--bg-input, var(--bg))',
               color: 'var(--text)',
+              opacity: harmonicVoiceReadOnly ? 0.55 : 1,
+              cursor: harmonicSelectDisabled ? 'not-allowed' : undefined,
             }}
           >
             <option value="">None (engine auto-resolves)</option>
@@ -168,6 +194,20 @@ export function SlonimskyUniversalPanel({
               </option>
             ))}
           </select>
+          {harmonicVoiceReadOnly && harmonicVoiceReadOnlyNote ? (
+            <p
+              style={{
+                margin: '0.35rem 0 0',
+                fontSize: '0.72rem',
+                color: 'var(--text-muted)',
+                lineHeight: 1.45,
+                maxWidth: 420,
+              }}
+              data-testid="riff-harmonic-voice-ignored-note"
+            >
+              {harmonicVoiceReadOnlyNote}
+            </p>
+          ) : null}
           {harmonicVoiceId != null && isSlonimskyGenericVoiceWarning(harmonicVoiceId) ? (
             <p
               style={{

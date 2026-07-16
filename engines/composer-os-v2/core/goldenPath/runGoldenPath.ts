@@ -84,7 +84,11 @@ import {
   sectionHarmonyBars,
 } from '../score-model/scoreModelAssembler';
 import { exportScoreModelToMusicXml } from '../export/musicxmlExporter';
-import { assertExportTruth, buildSpineSymbolsForExportTruth } from '../export/assertExportTruth';
+import {
+  assertExportTruth,
+  buildSpineSymbolsForExportTruth,
+  ExportTruthPipelineError,
+} from '../export/assertExportTruth';
 import { applyKeySignatureToScoreAndContext } from '../harmony/keyInference';
 import { assertGuitarScoreMatchesHarmonyContext } from '../harmony/harmonyContext';
 import { validateMusicXmlSchema } from '../export/musicxmlValidation';
@@ -3578,6 +3582,8 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       if (pipelineFromTruth) truthReport = pipelineFromTruth;
     } catch (e) {
       errors.push(e instanceof Error ? e.message : String(e));
+      // Preserve real input/score/export stages when duo gates fail (do not leave skip/skip/skip).
+      if (e instanceof ExportTruthPipelineError) truthReport = e.truthReport;
     }
   } else if (!isIndieTuningFixture) {
     truthReport = runPipelineTruthGates({

@@ -5,7 +5,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N rows (M suites)` in the smoke summary, then sync **N** + **M** into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): full **674** PASS rows, **121** suites; fast subset unchanged until refreshed.
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): full **727** PASS rows, **132** suites; fast subset unchanged until refreshed.
  *
  * **Fast subset:** `COMPOSER_OS_SMOKE_TIER=fast` or `npm run test:composer-smoke-fast` — skips `SMOKE_FAST_EXCLUDE` suites (local dev).
  * **Full tier (default / CI):** unset or `COMPOSER_OS_SMOKE_TIER=full` — all suites in `smokeSuites`.
@@ -77,6 +77,21 @@ import { runZappaStringQuartetSmokeTests } from './zappaStringQuartetSmoke.test'
 import { runDrumGuideExportSmokeTests } from './drumGuideExportSmoke.test';
 import { runBandModeSmokeTests } from './bandModeSmoke.test';
 import { runZappaBigBandSmokeTests } from './zappaBigBandSmoke.test';
+import { runBigBandSlonimskyHvRoutingSmokeTests } from './bigBandSlonimskyHvRoutingSmoke.test';
+import { runSqSlonimskyHvRoutingSmokeTests } from './sqSlonimskyHvRoutingSmoke.test';
+import { runSqVrbHvRoutingSmokeTests } from './sqVrbHvRoutingSmoke.test';
+import { runBigBandFzHvRoutingSmokeTests } from './bigBandFzHvRoutingSmoke.test';
+import { runSqFzHvRoutingSmokeTests } from './sqFzHvRoutingSmoke.test';
+import { runBigBandBergHvRoutingSmokeTests } from './bigBandBergHvRoutingSmoke.test';
+import { runSqBergHvRoutingSmokeTests } from './sqBergHvRoutingSmoke.test';
+import { runBigBandBeefheartHvRoutingSmokeTests } from './bigBandBeefheartHvRoutingSmoke.test';
+import { runSqBeefheartHvRoutingSmokeTests } from './sqBeefheartHvRoutingSmoke.test';
+import { runBigBandFelaKutiHvRoutingSmokeTests } from './bigBandFelaKutiHvRoutingSmoke.test';
+import { runSqFelaKutiHvRoutingSmokeTests } from './sqFelaKutiHvRoutingSmoke.test';
+import { runBigBandThreadgillHvRoutingSmokeTests } from './bigBandThreadgillHvRoutingSmoke.test';
+import { runSqThreadgillHvRoutingSmokeTests } from './sqThreadgillHvRoutingSmoke.test';
+import { runBigBandWeberHvRoutingSmokeTests } from './bigBandWeberHvRoutingSmoke.test';
+import { runSqWeberHvRoutingSmokeTests } from './sqWeberHvRoutingSmoke.test';
 import { runUniversalLeadSheetRepeatSmokeTests } from './universalLeadSheetBuilder.test';
 import { runVocalMelodySmokeTests } from './vocalMelodySmoke.test';
 import { runRealBookStressTests } from './realBookStressTest.test';
@@ -271,6 +286,21 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'SD3 drum guide export (MIDI + JSON sidecar)', run: runDrumGuideExportSmokeTests },
   { label: 'Band mode Stage 3 (section-aware drums + Stage 2 regression)', run: runBandModeSmokeTests },
   { label: 'Zappa Big Band (FZ harmony + Zappa Classic meter)', run: runZappaBigBandSmokeTests },
+  { label: 'BB Slonimsky HV routing (Phase 2 Batch 1)', run: runBigBandSlonimskyHvRoutingSmokeTests },
+  { label: 'SQ Slonimsky HV routing (Phase 2 Batch 2)', run: runSqSlonimskyHvRoutingSmokeTests },
+  { label: 'SQ VRB HV routing (Phase 2 Batch 3)', run: runSqVrbHvRoutingSmokeTests },
+  { label: 'BB FZ HV routing (Phase 2 Batch 4)', run: runBigBandFzHvRoutingSmokeTests },
+  { label: 'SQ FZ HV continuity (Phase 2 Batch 5 verify)', run: runSqFzHvRoutingSmokeTests },
+  { label: 'BB Berg HV bridge (Phase 2 Batch 6)', run: runBigBandBergHvRoutingSmokeTests },
+  { label: 'SQ Berg HV bridge (Phase 2 Batch 6)', run: runSqBergHvRoutingSmokeTests },
+  { label: 'BB Beefheart HV bridge (Phase 2 widen)', run: runBigBandBeefheartHvRoutingSmokeTests },
+  { label: 'SQ Beefheart HV bridge (Phase 2 widen)', run: runSqBeefheartHvRoutingSmokeTests },
+  { label: 'BB Fela Kuti HV bridge (Phase 2 widen)', run: runBigBandFelaKutiHvRoutingSmokeTests },
+  { label: 'SQ Fela Kuti HV bridge (Phase 2 widen)', run: runSqFelaKutiHvRoutingSmokeTests },
+  { label: 'BB Threadgill HV bridge (Phase 2 widen)', run: runBigBandThreadgillHvRoutingSmokeTests },
+  { label: 'SQ Threadgill HV bridge (Phase 2 widen)', run: runSqThreadgillHvRoutingSmokeTests },
+  { label: 'BB Weber HV bridge (Phase 2 widen)', run: runBigBandWeberHvRoutingSmokeTests },
+  { label: 'SQ Weber HV bridge (Phase 2 widen)', run: runSqWeberHvRoutingSmokeTests },
   { label: 'Tonality Vault quality (inspector, riff modes, LSM, reharm, BB routing, rule sets)', run: runVaultQualitySmokeTests },
   { label: 'VoiceRuleBundle compiler + gil_evans wiring', run: runVoiceRuleBundleTests },
   { label: 'Riff Generator wiring (family / profile / odd-meter / blend)', run: runRiffGeneratorIntegrationTests },

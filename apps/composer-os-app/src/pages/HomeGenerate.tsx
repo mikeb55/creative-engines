@@ -4476,9 +4476,7 @@ export function HomeGenerate({
           ...(presetId === 'riff_generator' && slonimskyUiExtras.styleGenerationContextKeys
             ? { styleGenerationContextKeys: slonimskyUiExtras.styleGenerationContextKeys }
             : {}),
-          ...(presetId === 'riff_generator' && slonimskyUiExtras.harmonicVoice
-            ? { harmonicVoice: slonimskyUiExtras.harmonicVoice }
-            : {}),
+          // Phase A honesty — do not forward harmonicVoice on riff_generator (pattern authority = riffVrbId).
           ...(presetId === 'riff_generator' ? { chromaticStrength: gbdChromaticStrength } : {}),
           ...(duoHarmonyFields ? duoHarmonyFields : {}),
           ...(presetId === 'song_mode' && songChordLine
@@ -8681,6 +8679,19 @@ export function HomeGenerate({
         />
       </div>
 
+      {presetId === 'riff_generator' && (
+        <SlonimskyUniversalPanel
+          state={slonimskyMacro}
+          onChange={setSlonimskyMacro}
+          disabled={loading}
+          harmonicOnly
+          harmonicVoiceReadOnly
+          harmonicVoiceReadOnlyNote="Harmonic Voice does not drive riff pattern on this preset — use Riff pattern (riffVrbId). Chord colour via Harmonic Voice is a later phase."
+          harmonicVoiceMode="riff_generator"
+          harmonicVoiceId={slonimskyHarmonicVoice}
+          onHarmonicVoiceChange={setSlonimskyHarmonicVoice}
+        />
+      )}
       {presetId === 'riff_generator' && (
         <SlonimskyGbdPanel
           chromaticOnly

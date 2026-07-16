@@ -120,6 +120,7 @@ export type SongwriterRuleId =
   | 'marr'
   | 'scott_henderson'
   | 'sly_stone'
+  | 'jamerson'
   | 'iommi'
   | 'david_gilmour'
   | 'hendrix'

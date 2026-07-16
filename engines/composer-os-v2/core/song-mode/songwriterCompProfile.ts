@@ -155,6 +155,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   marr: 'guitar',
   scott_henderson: 'guitar',
   sly_stone: 'guitar',
+  jamerson: 'other',
   iommi: 'guitar',
   david_gilmour: 'guitar',
   hendrix: 'guitar',

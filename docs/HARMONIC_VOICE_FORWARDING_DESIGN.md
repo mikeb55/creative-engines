@@ -55,11 +55,14 @@ Apply these **per path** when that path's fix lands. They verify the field reach
 
 ### Riff Generator
 
-**Seams:** `parseRiffVrbId` (reads `riffVrbId` only today) ? UI sends `harmonicVoice` without `riffVrbId`.
+**Status (Phase A honesty, 2026-07-15):** COMPLETE — not a BB/SQ-style HV wall. Pattern authority stays **`riffVrbId`** (`parseRiffVrbId`). UI greys Harmonic Voice with explanatory note; generate does not forward `harmonicVoice`; receipt `harmonicVoiceIgnoredOnRiffPreset: true`. Soft-link / Phase B chord colour deferred. See `docs/RIFF_GENERATOR_HARMONIC_VOICE_DECISION.md`.
 
-**Acceptance (forwarding):**
-- Product/field-mapping decision recorded (map `harmonicVoice` ? riff VRB id vs read `harmonicVoice` directly).
-- After decision: UI field reaches the engine path that selects riff VRB bundle ? no silent drop at app boundary.
+**Seams:** `parseRiffVrbId` (reads `riffVrbId` only) — HV is intentionally ignored for pattern.
+
+**Acceptance (Phase A):**
+- UI does not imply HV selects riff pattern.
+- Receipt `harmonicVoiceIgnoredOnRiffPreset: true` on riff_generator results/manifests.
+- `harmonicVoice` alone never selects an artist riff bundle.
 
 ---
 
@@ -92,7 +95,7 @@ For each fixed path (**Song Mode**, **GBD section regen**, **ECM section regen**
 1. GBD section regen + ECM section regen (mirror already-working full-gen pattern ? lowest risk)
 2. Song Mode full gen + section regen (higher impact, first path needing real LOCK/truth verification ? run matrix immediately after)
 3. Big Band + String Quartet (more moving parts, do after harness exists)
-4. Riff Generator ? DEFERRED, this is a field-mapping/product decision (UI sends harmonicVoice, engine reads unrelated riffVrbId), not a forwarding bug ? treat as separate scoped item, not part of this sprint
+4. Riff Generator — Phase A honesty **COMPLETE (2026-07-15)** (`docs/RIFF_GENERATOR_HARMONIC_VOICE_DECISION.md`). Not a forwarding wall; pattern = `riffVrbId`. Soft-link / Phase B chord colour still open.
 
 **New guardrail:** add a per-entry-point "supportsHarmonicVoice: forward | mapped | unsupported" status so future new paths can't silently reintroduce this ambiguity.
 
@@ -119,24 +122,59 @@ Status: documented during Fix #1 (GBD + ECM section-regen forwarding, 2026-07-08
 - **Surface:** GBD section-regen with `custom_locked` + `harmonicVoice: verlaine` (seed 50021, 8-bar locked strip).
 - **Observation:** `mergeHarmonicVoiceFromRequest` correctly forwards Verlaine; Verlaine then rewrites locked bars (e.g. `Dm7` ? `Esus4/D`). `lockPass` (exportIntegrity + hard gates) can stay true while `result.success` is false because `errors` still carry pipeline-truth score mismatch.
 - **Open question (not decided):** should `harmonicVoice` ever override locked / custom truth bars? Needs its own DCR design cycle ? not answered by Fix #1.
+- **Final-bar fBT vs duo expected (CLOSED 2026-07-15):** Duo `pipelineTruthGates` score/XML expected now uses `resolveEffectiveHarmonyTruth` (fall back to locked/parsed only when no full-length effective). Closes HV/8-bar `forceFinal` vs submitted collision. beatles / `gil_evans` fixtures kept.
+- **`bill_evans` HV score≠effective final (CLOSED 2026-07-15):** Dual-surface — expected/mosaic held fBT `Cmaj9`, score stayed locked `G13` because `getChordForBar` was primary-only. Gate now `isBillEvansHarmonicPath`.
+- **`duke_ellington` HV mid score≠effective (CLOSED 2026-07-15):** Same primary-only `getChordForBar` gap; mid `#11` colour on effective/expected while score stayed locked. Gate now `isDukeEllingtonHarmonicPath`.
+- **`cole_porter` HV input≠plan (CLOSED 2026-07-15):** Class C — full `syncColePorterAuthorityBars` rewrote plan/receipt off wire; skip sync on custom (effective authority via getChordForBar).
+- **`bacharach` HV input≠plan + truthReport skip (CLOSED 2026-07-15):** Class C cousin — `syncBacharachFinalBarAuthority` rewrote final plan/receipt off wire (bar 8 `Cmaj9`≠`G13`); skip sync on custom. Plus `ExportTruthPipelineError` so duo gate fail does not leave `truthReport` skip/skip/skip. **Bass-identity rhythm-cell CLOSED (2026-07-15):** shared with `oliver_nelson` — line-first abstract bass early-continue skipped rhythm-triple break; narrow diversify in `buildBassPart` for those two VRB ids only. **Still open:** Verlaine locked-authority question above.
 - **Matrix handling for Fix #1:** `gbd_section_regen` verlaine row uses a **non-locked** long-form fixture (pinned seed **50022**, 32-bar; 50021 Verlaine fails behaviour gates on this path) so the row tests *forwarding + effect* without conflating the locked-truth authority question.
 
-## Big Band — Phase 2 consumption gap (Fix #3A, 2026-07-08)
+## Big Band — Phase 2 consumption (Fix #3A transport + Batch 1 Slonimsky + Batch 4 FZ HV)
 
-`harmonicVoice` reaches `context.generationMetadata` at the Big Band planning seam (`bigBandContextFromGenerateRequest`) but is never read downstream — `buildBigBandScoreModel`, `runBigBandMode`, and mosaic dispatch (`getDispatchEntry`, `resolveMosaicSectionStyles`) all use `songwriterStyleId` only. `isVerlaineHarmonicPath` / Verlaine precompute are never invoked on the Big Band path.
+`harmonicVoice` reaches `context.generationMetadata` at the Big Band planning seam (`bigBandContextFromGenerateRequest`).
 
-Confirmed via matrix: baseline and `verlaine_hv` produce identical GCE (7.4) and identical hard-gate failure (`finalBarTension`) — delta 0, consistent with "transport without consumption," not a bug in the transport fix itself.
+**Batch 1 (2026-07-14) — Slonimsky routing SHIPPED:** `runBigBandRealisation` → `slonimskySongwriterStyleId` from metadata HV; `buildBigBandScoreModel` uses HV \|\| primary for Slonimsky only. Primary `songwriterStyleId` stays for FZ gate / receipts. Mosaic dispatch + harmony precompute still primary-only.
 
-**Additional open design question:** Big Band's per-section mosaic dispatch uses per-section `songwriterStyleId`, not a single top-level `harmonicVoice`. If Phase 2 wiring is done, product must define whether `harmonicVoice` applies globally (all sections) or needs a per-section `harmonicVoice` map — undefined today.
+**Batch 4 (2026-07-14) — FZ precompute HV continuity SHIPPED:** `buildFrankZappaBigBandCompositionContext` preserves `harmonicVoice` via `inheritedMetadata` (was bare-meta drop). Gate still primary-only — HV=`frank_zappa` does **not** open FZ when primary is not FZ. Precompute may not consume HV for chord rewrite yet (metadata continuity).
 
-**Status:** Fix #3A (transport) correctly committed and kept. Phase 2 consumption wiring is a **SEPARATE** scoped DCR item, not required before proceeding to Fix #3B (String Quartet).
+**Batch 6 (2026-07-14) — Berg HV-only non-mosaic harmony bridge SHIPPED:** After FZ block, before mosaic: when exact `harmonicVoice=berg`, `precomputeBergEffectiveHarmonyBars` rewrites `chordBars` (`bg:*`). Gate = **HV-only** (not primary||HV). Soft `alban_berg` no. Primary `frank_zappa` excluded. Mosaic `getDispatchEntry` untouched (item E). Helper: `isBergHvOnlyEnsembleWall` + `buildBergEnsemblePrecomputeContext`.
 
-**Matrix handling:** `big_band` row status is `TRANSPORT_ONLY` (not `OK`) so delta 0 is not mistaken for intentional/final "no effect."
+**Phase 2 widen (2026-07-15) — Beefheart HV-only non-mosaic harmony bridge SHIPPED:** Same slot (after Berg, before mosaic): exact `harmonicVoice=beefheart` → `precomputeBeefheartEffectiveHarmonyBars` (`cbf:*`). Gate = **HV-only** (not primary||HV). Twin `beefheart_fragment_polyphony` / soft `captain_beefheart` no. Primary `frank_zappa` excluded. Mosaic untouched. Helper: `isBeefheartHvOnlyEnsembleWall` + `buildBeefheartEnsemblePrecomputeContext`.
 
-## String Quartet — Phase 2 consumption gap (Fix #3B, 2026-07-08)
+**Phase 2 widen (2026-07-15) — Fela Kuti HV-only non-mosaic harmony bridge SHIPPED:** Same slot (after Beefheart, before mosaic): exact `harmonicVoice=fela_kuti` → `precomputeFelaKutiEffectiveHarmonyBars` (`fk:*`). Gate = **HV-only** (not primary||HV). Soft `fela` no. Primary `frank_zappa` excluded. Mosaic untouched. No percussion append on wall (duo seal path separate). Helper: `isFelaKutiHvOnlyEnsembleWall` + `buildFelaKutiEnsemblePrecomputeContext`.
 
-`harmonicVoice` reaches `generationMetadata` at the String Quartet planning seam (`stringQuartetGenerationMetadataFromGenerateRequest` / `buildStringQuartetGenerationMetadata`) but is never read downstream — `runQuartetRealisation`, `buildQuartetScoreModel`, and mosaic dispatch use `songwriterStyleId` only (`getVoiceRuleBundle(swId)`). `isVerlaineHarmonicPath` / Verlaine precompute are not invoked on the default SQ path (Zappa SQ slice is the only songwriter-specific harmony precompute wired today).
+**Phase 2 widen (2026-07-15) — Henry Threadgill HV-only non-mosaic harmony bridge SHIPPED:** Same slot (after Fela, before mosaic): exact `harmonicVoice=henry_threadgill` → `precomputeHenryThreadgillEffectiveHarmonyBars` (`ht:*`). Gate = **HV-only**. Soft `threadgill` / BB dual-id arranger alias no. Primary `frank_zappa` excluded. Mosaic untouched. Helper: `isHenryThreadgillHvOnlyEnsembleWall` + `buildHenryThreadgillEnsemblePrecomputeContext`.
 
-Same structural gap as Big Band Fix #3A: **transport without consumption**. Matrix row is `TRANSPORT_ONLY`; delta 0 vs baseline expected until Phase 2.
+**Phase 2 widen (2026-07-15) — Eberhard Weber HV-only non-mosaic harmony bridge SHIPPED (final ROI #5):** Same slot (after Threadgill, before mosaic): exact `harmonicVoice=eberhard_weber` → `precomputeEberhardWeberEffectiveHarmonyBars` (`ew:*`). Gate = **HV-only**. Twin `weber_field` / soft `weber`|`ew` no (never `webern`). Primary `frank_zappa` excluded. Mosaic untouched. Helper: `isEberhardWeberHvOnlyEnsembleWall` + `buildEberhardWeberEnsemblePrecomputeContext`.
 
-**Status:** Fix #3B (transport) is separate from Phase 2 consumption wiring (future DCR item).
+Still unused on BB: other `is*HarmonicPath` composers on the non-mosaic wall; mosaic per-section HV. Matrix `big_band` row stays `TRANSPORT_ONLY` for Verlaine fixture (no Slonimsky profile map entry → GCE delta often still 0).
+
+**Additional open design question:** Big Band's per-section mosaic dispatch uses per-section `songwriterStyleId`, not a single top-level `harmonicVoice`. Product must define whether `harmonicVoice` applies globally (all sections) or needs a per-section `harmonicVoice` map — undefined today.
+
+**Status:** Fix #3A (transport) + Batch 1 Slonimsky + Batch 4 FZ HV continuity + Batch 6 Berg HV bridge + Phase 2 widen Beefheart + Fela Kuti + Threadgill + Weber **COMPLETE**. Remaining: mosaic HV product decision.
+
+**Matrix handling:** `big_band` row status remains `TRANSPORT_ONLY` until harmony consumption (or matrix HV switched to a Slonimsky-mapped style).
+
+## String Quartet — Phase 2 consumption (Fix #3B transport + Batches 2–3 + 5)
+
+`harmonicVoice` reaches `generationMetadata` at the String Quartet planning seam (`stringQuartetGenerationMetadataFromGenerateRequest` / `buildStringQuartetGenerationMetadata`).
+
+**Batch 2 (2026-07-14) — Slonimsky routing SHIPPED:** `runQuartetRealisation` → `slonimskySongwriterStyleId` from metadata HV (mosaic ctx \|\| input.context \|\| `input.generationMetadata`); `buildQuartetScoreModel` uses HV \|\| primary for Slonimsky only. Primary `songwriterStyleId` stays for FZ SQ gate / mosaic. Mosaic dispatch + harmony precompute still primary-only.
+
+**Batch 3 (2026-07-14) — VRB / Pass4 routing SHIPPED:** Pass4 `getVoiceRuleBundle` uses HV \|\| primary. Does **not** read `sqArrangerVrb` (item I / arranger pairing out of Phase 2). Mosaic CLE `primarySongwriterId` still primary-only.
+
+**Batch 5 (2026-07-14) — FZ HV continuity VERIFY-ONLY:** SQ FZ already passes full `generationMetadata` into `buildZappaStringQuartetPrecomputeContext` / precompute (no BB-style bare-meta drop). Gate = primary `frank_zappa` + `zappaSQHarmonySlice` — HV does **not** open slice. No production change. Smoke: `sqFzHvRoutingSmoke.test.ts`. Opening FZ via `HV=frank_zappa` = separate product DCR (deferred; Batch 4 discipline).
+
+**Batch 6 (2026-07-14) — Berg HV-only non-mosaic harmony bridge SHIPPED:** After SQ FZ block, before mosaic: when exact `harmonicVoice=berg`, `precomputeBergEffectiveHarmonyBars` rewrites `chordBars` and stamps `bergEffectiveHarmonyBars` / `bergDeviceReceipts` on ensemble meta. Gate = **HV-only** (not primary||HV). Soft `alban_berg` no. Primary `frank_zappa` excluded. Mosaic CLE / `getDispatchEntry` untouched (item E).
+
+**Phase 2 widen (2026-07-15) — Beefheart HV-only non-mosaic harmony bridge SHIPPED:** Same slot (after Berg, before mosaic): exact `harmonicVoice=beefheart` → `precomputeBeefheartEffectiveHarmonyBars`; stamps `beefheartEffectiveHarmonyBars` / `beefheartDeviceReceipts` (`cbf:*`). Gate = **HV-only**. Twin/soft no. Primary `frank_zappa` excluded. Mosaic CLE untouched.
+
+**Phase 2 widen (2026-07-15) — Fela Kuti HV-only non-mosaic harmony bridge SHIPPED:** Same slot (after Beefheart, before mosaic): exact `harmonicVoice=fela_kuti` → `precomputeFelaKutiEffectiveHarmonyBars`; stamps `felaKutiEffectiveHarmonyBars` / `felaKutiDeviceReceipts` (`fk:*`). Gate = **HV-only**. Soft `fela` no. Primary `frank_zappa` excluded. Mosaic CLE untouched. No percussion append on wall.
+
+**Phase 2 widen (2026-07-15) — Henry Threadgill HV-only non-mosaic harmony bridge SHIPPED:** Same slot (after Fela, before mosaic): exact `harmonicVoice=henry_threadgill` → `precomputeHenryThreadgillEffectiveHarmonyBars`; stamps `henryThreadgillEffectiveHarmonyBars` / `henryThreadgillDeviceReceipts` (`ht:*`). Gate = **HV-only**. Soft `threadgill` no. Primary `frank_zappa` excluded. Mosaic CLE untouched.
+
+**Phase 2 widen (2026-07-15) — Eberhard Weber HV-only non-mosaic harmony bridge SHIPPED (final ROI #5):** Same slot (after Threadgill, before mosaic): exact `harmonicVoice=eberhard_weber` → `precomputeEberhardWeberEffectiveHarmonyBars`; stamps `eberhardWeberEffectiveHarmonyBars` / `eberhardWeberDeviceReceipts` (`ew:*`). Gate = **HV-only**. Twin/soft no (never `webern`). Primary `frank_zappa` excluded. Mosaic CLE untouched.
+
+Still unused on SQ: other composers on non-mosaic bridge; mosaic `getDispatchEntry` / CLE HV. Matrix `string_quartet` row stays `TRANSPORT_ONLY` for Verlaine fixture.
+
+**Status:** Fix #3B (transport) + Batch 2–3 + 5 FZ verify + Batch 6 Berg + Phase 2 widen Beefheart + Fela Kuti + Threadgill + Weber **COMPLETE**. Remaining: mosaic CLE HV product decision; optional FZ-via-HV product.

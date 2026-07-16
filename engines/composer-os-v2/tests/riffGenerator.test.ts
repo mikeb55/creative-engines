@@ -352,6 +352,7 @@ export function runRiffGeneratorTests(): { ok: boolean; name: string }[] {
           validation?: { behaviourGates?: boolean; shareable?: boolean };
           riffCompositeScore?: number;
           riffInternalGatePassed?: boolean;
+          harmonicVoiceIgnoredOnRiffPreset?: boolean;
           riffQualityRules?: { aggregatePass?: boolean; rules?: unknown[] };
           seed?: number;
           gceScore?: number;
@@ -362,6 +363,9 @@ export function runRiffGeneratorTests(): { ok: boolean; name: string }[] {
           typeof mj.riffCompositeScore === 'number' &&
           mj.riffCompositeScore !== undefined &&
           mj.riffInternalGatePassed === true &&
+          mj.harmonicVoiceIgnoredOnRiffPreset === true &&
+          r.harmonicVoiceIgnoredOnRiffPreset === true &&
+          r.runManifest?.harmonicVoiceIgnoredOnRiffPreset === true &&
           mj.seed === 101 &&
           mj.gceScore === undefined &&
           typeof mj.riffQualityRules?.aggregatePass === 'boolean' &&

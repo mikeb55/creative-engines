@@ -130,17 +130,17 @@
         <note><pitch><step>F</step><octave>4</octave></pitch><duration>240</duration><voice>2</voice><type>eighth</type><stem>down</stem><staff>1</staff><notations><articulations><tenuto/></articulations></notations></note>
   </measure>
   <measure number="8">
-    <harmony placement="above"><root><root-step>D</root-step></root><kind text="m9">minor-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+    <harmony placement="above"><root><root-step>D</root-step></root><kind text="maj7#11">other</kind><degree print-object="no"><degree-value>11</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree></harmony>
         <note><rest/><duration>1680</duration><voice>1</voice><type>half</type><dot/><dot/><staff>1</staff></note>
         <note><rest/><duration>120</duration><voice>1</voice><type>16th</type><staff>1</staff></note>
         <note dynamics="60.63"><pitch><step>A</step><octave>4</octave></pitch><duration>120</duration><voice>1</voice><type>16th</type><stem>up</stem><staff>1</staff><notations><articulations><tenuto/><stress/></articulations></notations></note>
         <note dynamics="64.57"><chord/><pitch><step>C</step><octave>5</octave></pitch><duration>120</duration><voice>1</voice><type>16th</type><stem>up</stem><staff>1</staff><notations><articulations><tenuto/></articulations></notations></note>
         <note dynamics="60.63"><chord/><pitch><step>D</step><octave>5</octave></pitch><duration>120</duration><voice>1</voice><type>16th</type><stem>up</stem><staff>1</staff><notations><articulations><tenuto/><stress/></articulations></notations></note>
         <backup><duration>1920</duration></backup>
-        <note><pitch><step>C</step><octave>4</octave></pitch><duration>960</duration><voice>2</voice><type>half</type><stem>down</stem><staff>1</staff><notations><articulations><tenuto/></articulations></notations></note>
-        <note><pitch><step>C</step><octave>4</octave></pitch><duration>480</duration><voice>2</voice><type>quarter</type><stem>down</stem><staff>1</staff></note>
-        <note><pitch><step>C</step><octave>4</octave></pitch><duration>240</duration><voice>2</voice><type>eighth</type><stem>down</stem><staff>1</staff></note>
-        <note><pitch><step>C</step><octave>4</octave></pitch><duration>240</duration><voice>2</voice><type>eighth</type><stem>down</stem><staff>1</staff><notations><articulations><tenuto/></articulations></notations></note>
+        <note><pitch><step>D</step><alter>-1</alter><octave>4</octave></pitch><duration>960</duration><voice>2</voice><type>half</type><stem>down</stem><staff>1</staff><notations><articulations><tenuto/></articulations></notations></note>
+        <note><pitch><step>D</step><alter>-1</alter><octave>4</octave></pitch><duration>480</duration><voice>2</voice><type>quarter</type><stem>down</stem><staff>1</staff></note>
+        <note><pitch><step>D</step><alter>-1</alter><octave>4</octave></pitch><duration>240</duration><voice>2</voice><type>eighth</type><stem>down</stem><staff>1</staff></note>
+        <note><pitch><step>D</step><alter>-1</alter><octave>4</octave></pitch><duration>240</duration><voice>2</voice><type>eighth</type><stem>down</stem><staff>1</staff><notations><articulations><tenuto/></articulations></notations></note>
   </measure>
   </part>
   <part id="bass">
@@ -200,7 +200,7 @@
   </measure>
   <measure number="8">
         <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type></note>
-        <note dynamics="53.54"><pitch><step>E</step><octave>2</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type><notations><articulations><staccato/></articulations></notations></note>
+        <note dynamics="53.54"><pitch><step>C</step><octave>2</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type><notations><articulations><staccato/></articulations></notations></note>
         <note dynamics="53.54"><pitch><step>E</step><octave>2</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type><notations><articulations><staccato/></articulations></notations></note>
         <note dynamics="53.54"><pitch><step>B</step><alter>-1</alter><octave>2</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type><notations><articulations><tenuto/></articulations></notations></note>
         <note dynamics="53.54"><pitch><step>B</step><alter>-1</alter><octave>2</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type><notations><articulations><tenuto/></articulations></notations></note>

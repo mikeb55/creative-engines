@@ -78,6 +78,17 @@ const SONG_MODE_32_BAR_REGRESSION =
   'G13 | B7(#9) | Em9 | A13 | Dmaj9/F# | F7(#11) | Bbmaj9 | Eb13 | ' +
   'Abmaj9 | Db13 | Gbmaj9 | B7alt | Em9 | A7 | Dmaj9 | G13';
 
+/**
+ * Indie separate drop_d/dadgad fixture — final bar matches beatles `forceFinalBarTonicResolution`
+ * (Cmaj7 for tonalCenter C) so custom_locked + pipeline-truth stay idempotent. Same lane as
+ * gil_evans golden (`A7alt` → `Dmaj9(#11)`). Shared `SONG_MODE_32_BAR_REGRESSION` untouched.
+ */
+const INDIE_SEPARATE_PRESET_TUNINGS_32_BAR =
+  'Cmaj9 | E7(#11)/G# | Am9 | D7(b9) | G13 | Dbmaj7(#11) | Cmaj9/E | A7alt | ' +
+  'Dm9 | G7(b13) | Em7 | A7(#11) | Dmaj9 | Bb13 | Ebmaj9/G | Ab7(#11) | ' +
+  'G13 | B7(#9) | Em9 | A13 | Dmaj9/F# | F7(#11) | Bbmaj9 | Eb13 | ' +
+  'Abmaj9 | Db13 | Gbmaj9 | B7alt | Em9 | A7 | Dmaj9 | Cmaj7';
+
 const INDIE_G1_CUSTOM: [string, string, string, string, string, string] = ['D2', 'A2', 'D3', 'G3', 'A3', 'D4'];
 const INDIE_G2_CUSTOM: [string, string, string, string, string, string] = ['C2', 'G2', 'D3', 'G3', 'B3', 'D4'];
 const INDIE_FIXTURE_FRETS = [0, 3, 5, 7, 12] as const;
@@ -375,7 +386,8 @@ export function runAppApiBoundaryTests(): { ok: boolean; name: string }[] {
         totalBars: 32,
         longFormEnabled: true,
         harmonyMode: 'custom_locked',
-        chordProgressionText: SONG_MODE_32_BAR_REGRESSION,
+        // Final Cmaj7 = beatles fBT (tonalCenter C); avoids custom_locked submitted≠score (gil_evans lane).
+        chordProgressionText: INDIE_SEPARATE_PRESET_TUNINGS_32_BAR,
         primarySongwriterStyle: 'beatles',
         stylePairing: { songwriterStyle: 'beatles', arrangerStyle: 'gil_evans', era: 'contemporary' },
         styleProfile: 'STYLE_INDIE_ART_POP',
@@ -387,7 +399,7 @@ export function runAppApiBoundaryTests(): { ok: boolean; name: string }[] {
         },
       },
       tmp
-    ) as { success?: boolean; xml?: string; error?: string };
+    ) as { success?: boolean; xml?: string; error?: string; validation?: { errors?: string[] } };
     const ox = indieSeparatePresetTunings.xml ?? '';
     const midi28 = (ox.match(/<midi-program>28<\/midi-program>/g) ?? []).length;
     const g2b = ox.match(/<part id="guitar_2"[\s\S]*?<\/part>/);

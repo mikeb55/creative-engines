@@ -37,6 +37,10 @@ function parseRiffBars(req: GenerateRequest): RiffBarCount {
   return 2;
 }
 
+/**
+ * Sole riff-pattern authority on `riff_generator`.
+ * Reads `riffVrbId` only — `harmonicVoice` is never consulted (Phase A honesty).
+ */
 function parseRiffVrbId(req: GenerateRequest): string | undefined {
   const id = req.riffVrbId?.trim();
   if (!id) return undefined;
@@ -231,6 +235,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
         readiness: { shareable: false, release: 0, mx: 0 },
         errors: [gen.error],
       },
+      harmonicVoiceIgnoredOnRiffPreset: true,
       runManifest: {
         seed: effectiveSeed,
         presetId: 'riff_generator',
@@ -239,6 +244,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
         scoreTitle: title,
         variationId: req.variationId,
         creativeControlLevel: req.creativeControlLevel,
+        harmonicVoiceIgnoredOnRiffPreset: true,
       },
     };
   }
@@ -260,6 +266,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
         readiness: { shareable: false, release: 0, mx: 0 },
         errors: ['Riff generation produced no MusicXML'],
       },
+      harmonicVoiceIgnoredOnRiffPreset: true,
       runManifest: {
         seed: effectiveSeed,
         presetId: 'riff_generator',
@@ -268,6 +275,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
         scoreTitle: title,
         variationId: req.variationId,
         creativeControlLevel: req.creativeControlLevel,
+        harmonicVoiceIgnoredOnRiffPreset: true,
       },
     };
   }
@@ -293,6 +301,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
     scoreTitle: title,
     riffCompositeScore: gen.gce,
     riffInternalGatePassed: true,
+    harmonicVoiceIgnoredOnRiffPreset: true,
     riffQualityRules: rqCompact,
     validation: manifestValidation,
   };
@@ -314,6 +323,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
     filename,
     filepath,
     scoreTitle: title,
+    harmonicVoiceIgnoredOnRiffPreset: true,
     validation: {
       integrityPassed: true,
       behaviourGatesPassed: false,
@@ -335,6 +345,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
       scoreTitle: title,
       variationId: req.variationId,
       creativeControlLevel: req.creativeControlLevel,
+      harmonicVoiceIgnoredOnRiffPreset: true,
     },
     requestEcho: {
       tonalCenter: req.tonalCenter,

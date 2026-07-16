@@ -386,6 +386,8 @@ export function writeOutputManifest(
     gceGatePassed?: boolean;
     riffCompositeScore?: number;
     riffInternalGatePassed?: boolean;
+    /** Riff Generator Phase A — HV ignored for pattern; `riffVrbId` sole authority. */
+    harmonicVoiceIgnoredOnRiffPreset?: boolean;
     riffQualityRules?: import('../core/riff-generator/riffQualityRules').RiffQualityManifestCompact;
     /** Stage 4: echoed when import-harmony telemetry is present (`core/importHarmonyPolicy.ts`). */
     importHarmonyPolicyVersion?: number;
@@ -719,6 +721,7 @@ export function writeOutputManifest(
     gceGatePassed: meta.gceGatePassed,
     riffCompositeScore: meta.riffCompositeScore,
     riffInternalGatePassed: meta.riffInternalGatePassed,
+    harmonicVoiceIgnoredOnRiffPreset: meta.harmonicVoiceIgnoredOnRiffPreset,
     riffQualityRules: meta.riffQualityRules,
     importHarmonyPolicyVersion: meta.importHarmonyPolicyVersion,
     v80Echo: meta.v80Echo,

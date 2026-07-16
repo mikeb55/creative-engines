@@ -43,6 +43,7 @@ import { isSatieHarmonicPath } from '../song-mode/satieSlice';
 import { isColePorterHarmonicPath } from '../song-mode/colePorterSlice';
 import { isBacharachHarmonicPath } from '../song-mode/bacharachSlice';
 import { isBarryHarrisHarmonicPath } from '../song-mode/barryHarrisSlice';
+import { isBillEvansHarmonicPath } from '../song-mode/billEvansSlice';
 import { isDonaldFagenHarmonicPath } from '../song-mode/donaldFagenSlice';
 import { isJamesBrownHarmonicPath } from '../song-mode/jamesBrownSlice';
 import { isSteveReichHarmonicPath } from '../song-mode/steveReichSlice';
@@ -70,6 +71,7 @@ import { isQuincyJonesHarmonicPath } from '../song-mode/quincyJonesSlice';
 import { isSammyNesticoHarmonicPath } from '../song-mode/sammyNesticoSlice';
 import { isHenryThreadgillHarmonicPath } from '../song-mode/henryThreadgillSlice';
 import { isGilEvansHarmonicPath } from '../song-mode/gilEvansSlice';
+import { isDukeEllingtonHarmonicPath } from '../song-mode/dukeEllingtonSlice';
 import { isThadJonesHarmonicPath } from '../song-mode/thadJonesSlice';
 import { isCharlesMingusHarmonicPath } from '../song-mode/charlesMingusSlice';
 import { isCountBasieHarmonicPath } from '../song-mode/basieSlice';
@@ -332,10 +334,12 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   /**
    * Bill Evans: `precomputeBillEvansEffectiveHarmonyBars` applies impressionist extension / sus / delayed cadence devices.
    * After precompute, `billEvansEffectiveHarmonyBars` is full-form and authoritative.
+   * HV path: primary | harmonicVoice (`bill_evans` exact) — see isBillEvansHarmonicPath.
+   * (Was primary-only — left HV score stamped from locked paste while mosaic/expected held fBT Cmaj9.)
    */
   const beEff = meta?.billEvansEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'bill_evans' &&
+    isBillEvansHarmonicPath(meta) &&
     Array.isArray(beEff) &&
     beEff.length === tb &&
     barIndex >= 1 &&
@@ -474,10 +478,12 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
   /**
    * Duke Ellington: `precomputeDukeEllingtonEffectiveHarmonyBars` applies orchestral extension / jungle / shout devices.
    * After precompute, `dukeEllingtonEffectiveHarmonyBars` is full-form and authoritative.
+   * HV path: primary | harmonicVoice (`duke_ellington` exact) — see isDukeEllingtonHarmonicPath.
+   * (Was primary-only — left HV score on locked paste while mosaic/expected held mid #11 colour + fBT.)
    */
   const deEff = meta?.dukeEllingtonEffectiveHarmonyBars;
   if (
-    meta?.songwriterStyleId === 'duke_ellington' &&
+    isDukeEllingtonHarmonicPath(meta) &&
     Array.isArray(deEff) &&
     deEff.length === tb &&
     barIndex >= 1 &&

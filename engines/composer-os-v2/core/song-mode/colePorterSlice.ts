@@ -401,11 +401,21 @@ function enforceFinalBarTonicResolution(
  * match `getChordForBar` (STYLE_SOPHISTICATED_POP dressing otherwise leaves
  * raw builtin A7alt in parsedCustomProgressionBars and stripFromContext
  * prefers that over calmed effective bars).
+ *
+ * **Custom / locked wire:** do **not** rewrite plan / parsed / locked here.
+ * Input-stage truth requires wire ≡ chordSymbolPlan ≡ parsedCustomProgressionBars;
+ * full-array echo used to fail at mid colour (e.g. wire `Dm7` ≠ plan `D7`).
+ * Authority on custom already lives on `colePorterEffectiveHarmonyBars` +
+ * `isColePorterHarmonicPath` in `getChordForBar` (score/export already align).
  */
 function syncColePorterAuthorityBars(context: CompositionContext, out: string[]): void {
   const genMeta = context.generationMetadata as GenerationMetadata & Record<string, unknown>;
   const tb = context.form.totalBars;
   if (out.length !== tb) return;
+
+  if (genMeta.harmonySource === 'custom' || genMeta.customHarmonyLocked === true) {
+    return;
+  }
 
   context.lockedHarmonyBarsRaw = [...out];
   context.harmony = buildHarmonyPlanFromBars(out);

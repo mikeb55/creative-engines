@@ -67,10 +67,10 @@ type MatrixRowDef = {
 };
 
 const BIG_BAND_TRANSPORT_ONLY_DETAIL =
-  'TRANSPORT_ONLY — harmonicVoice forwarded to planning metadata (bigBandContextFromGenerateRequest) but no Big Band consumer wired; buildBigBandScoreModel / mosaic dispatch use songwriterStyleId only. Delta 0 expected until Phase 2 consumption (see docs/HARMONIC_VOICE_FORWARDING_DESIGN.md).';
+  'TRANSPORT_ONLY — Phase 2 Batch 1: BB Slonimsky reads harmonicVoice (slonimskySongwriterStyleId); harmony precompute / mosaic / FZ gate still primary-only. Verlaine fixture often delta 0 (no Slonimsky profile map). See docs/HARMONIC_VOICE_FORWARDING_DESIGN.md.';
 
 const STRING_QUARTET_TRANSPORT_ONLY_DETAIL =
-  'TRANSPORT_ONLY — harmonicVoice forwarded to generation metadata (buildStringQuartetGenerationMetadata) but no String Quartet consumer wired; runQuartetRealisation / score build use songwriterStyleId only. Delta 0 expected until Phase 2 consumption (see docs/HARMONIC_VOICE_FORWARDING_DESIGN.md).';
+  'TRANSPORT_ONLY — Phase 2 Batch 2–3: SQ Slonimsky + Pass4 VRB read harmonicVoice; mosaic CLE / FZ SQ gate / harmony precompute / sqArrangerVrb still primary-or-arranger-separate. Verlaine fixture often delta 0. See docs/HARMONIC_VOICE_FORWARDING_DESIGN.md.';
 
 type MatrixOutputRow = {
   pathId: string;
