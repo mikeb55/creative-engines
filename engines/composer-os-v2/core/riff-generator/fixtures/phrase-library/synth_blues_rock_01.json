@@ -1,0 +1,32 @@
+{
+  "id": "synth_blues_rock_01",
+  "category": "blues_rock",
+  "sourceCourse": "Blues-Rock",
+  "sourceFile": { "name": "synth_blues_rock_01.json", "sha256": "synthetic:blues_rock_01" },
+  "barCount": 1,
+  "meter": { "numerator": 4, "denominator": 4 },
+  "noteEvents": [
+    { "kind": "note", "pitch": 57, "startBeat": 0.0, "duration": 1.0, "voice": 1 },
+    { "kind": "note", "pitch": 60, "startBeat": 1.0, "duration": 0.5, "voice": 1 },
+    { "kind": "note", "pitch": 62, "startBeat": 1.5, "duration": 0.5, "voice": 1 },
+    { "kind": "note", "pitch": 57, "startBeat": 2.0, "duration": 1.0, "voice": 1 },
+    { "kind": "rest", "startBeat": 3.0, "duration": 1.0, "voice": 1 }
+  ],
+  "intervalSequence": [3, 2, -5],
+  "contour": [1, 1, -1],
+  "rhythmicCell": [4, 2, 2, 4],
+  "attackPositions": [0.0, 1.0, 1.5, 2.0],
+  "restMask": [false, false, false, false, false, false, true, true],
+  "strongBeatTargets": [9, 0],
+  "phraseStartType": "downbeat",
+  "phraseEndType": "rest",
+  "cadenceStrength": 0.55,
+  "registerLow": 57,
+  "registerHigh": 62,
+  "registerCenter": 59,
+  "chromaticityScore": 0.12,
+  "leapProfile": { "maxLeap": 5, "leapRate": 0.33, "leapSemitoneHist": { "5": 1 } },
+  "ornamentFlags": { "slides": true, "ghosts": false, "graceAttacks": false, "bends": true, "deadNotes": false },
+  "inferredHarmonyHints": ["I5", "pentatonic"],
+  "tags": ["pentatonic", "call_response", "bend"]
+}

@@ -20,6 +20,7 @@
     "d1:selftest": "tsx --tsconfig ../../tsconfig.json scripts/d1Selftest.ts",
     "test:duo": "tsx --tsconfig ../../tsconfig.json scripts/duo-regression-sweep.ts",
     "test:bass": "tsx --tsconfig ../../tsconfig.json scripts/bass-phrase-sweep.ts",
+    "ingest:riff-phrases": "tsx --tsconfig ../../tsconfig.json scripts/runRiffPhraseIngest.ts",
     "test:vocal": "tsx --tsconfig ../../tsconfig.json scripts/test-vocal-lead-sheet.ts",
     "export:wyble-examples": "tsx --tsconfig ../../tsconfig.json scripts/exportWybleOnOffExamples.ts",
     "eval:fagen": "tsx --tsconfig ../../tsconfig.json scripts/runFagenSongModeEval.ts",

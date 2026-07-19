@@ -1,0 +1,93 @@
+[
+  {
+    "file": "synth_bebop_jazz_blues_01.json",
+    "parseOk": true,
+    "trackCount": 0,
+    "voiceCount": 1,
+    "barsIn": 2,
+    "phrasesOut": 1,
+    "droppedOrnaments": 0,
+    "tieFixups": 0,
+    "meterMismatch": false,
+    "hash": "synthetic:bebop_jazz_blues_01",
+    "notes": "hand-built fixture; no GPX"
+  },
+  {
+    "file": "synth_blues_rock_01.json",
+    "parseOk": true,
+    "trackCount": 0,
+    "voiceCount": 1,
+    "barsIn": 1,
+    "phrasesOut": 1,
+    "droppedOrnaments": 0,
+    "tieFixups": 0,
+    "meterMismatch": false,
+    "hash": "synthetic:blues_rock_01",
+    "notes": "hand-built fixture; no GPX"
+  },
+  {
+    "file": "synth_jazz_rock_01.json",
+    "parseOk": true,
+    "trackCount": 0,
+    "voiceCount": 1,
+    "barsIn": 1,
+    "phrasesOut": 1,
+    "droppedOrnaments": 0,
+    "tieFixups": 0,
+    "meterMismatch": false,
+    "hash": "synthetic:jazz_rock_01",
+    "notes": "hand-built fixture; no GPX"
+  },
+  {
+    "file": "synth_modern_rock_01.json",
+    "parseOk": true,
+    "trackCount": 0,
+    "voiceCount": 1,
+    "barsIn": 1,
+    "phrasesOut": 1,
+    "droppedOrnaments": 0,
+    "tieFixups": 0,
+    "meterMismatch": false,
+    "hash": "synthetic:modern_rock_01",
+    "notes": "hand-built fixture; no GPX"
+  },
+  {
+    "file": "synth_progressive_blues_01.json",
+    "parseOk": true,
+    "trackCount": 0,
+    "voiceCount": 1,
+    "barsIn": 2,
+    "phrasesOut": 1,
+    "droppedOrnaments": 0,
+    "tieFixups": 0,
+    "meterMismatch": false,
+    "hash": "synthetic:progressive_blues_01",
+    "notes": "hand-built fixture; no GPX"
+  },
+  {
+    "file": "synth_sax_inspired_01.json",
+    "parseOk": true,
+    "trackCount": 0,
+    "voiceCount": 1,
+    "barsIn": 2,
+    "phrasesOut": 1,
+    "droppedOrnaments": 0,
+    "tieFixups": 1,
+    "meterMismatch": false,
+    "hash": "synthetic:sax_inspired_01",
+    "notes": "hand-built fixture; tied flag on last note; no GPX"
+  },
+  {
+    "file": "synth_diminished_lines_01.json",
+    "parseOk": true,
+    "trackCount": 0,
+    "voiceCount": 1,
+    "barsIn": 2,
+    "phrasesOut": 1,
+    "droppedOrnaments": 0,
+    "tieFixups": 0,
+    "meterMismatch": false,
+    "hash": "synthetic:diminished_lines_01",
+    "notes": "hand-built fixture; no GPX; diminished m3/tritone heuristic"
+  }
+]

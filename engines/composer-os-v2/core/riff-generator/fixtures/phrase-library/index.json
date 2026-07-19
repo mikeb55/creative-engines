@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "kind": "synthetic_phrase_fixtures",
+  "gpxTouch": false,
+  "licensingGate": "pending_explicit_go_ahead",
+  "parser": {
+    "npmPackage": "guitarpro-parser",
+    "license": "Apache-2.0",
+    "status": "confirmed_deferred_install"
+  },
+  "entries": [
+    "synth_bebop_jazz_blues_01.json",
+    "synth_blues_rock_01.json",
+    "synth_jazz_rock_01.json",
+    "synth_modern_rock_01.json",
+    "synth_progressive_blues_01.json",
+    "synth_sax_inspired_01.json",
+    "synth_diminished_lines_01.json"
+  ],
+  "corpusTargetTotal": 36
+}

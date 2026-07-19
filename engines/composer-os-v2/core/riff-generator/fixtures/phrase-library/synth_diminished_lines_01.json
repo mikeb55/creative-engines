@@ -1,0 +1,160 @@
+{
+  "id": "synth_diminished_lines_01",
+  "category": "diminished_lines",
+  "sourceCourse": "Diminished Lines",
+  "sourceFile": {
+    "name": "synth_diminished_lines_01.json",
+    "sha256": "synthetic:diminished_lines_01"
+  },
+  "barCount": 2,
+  "meter": {
+    "numerator": 4,
+    "denominator": 4
+  },
+  "noteEvents": [
+    {
+      "kind": "note",
+      "pitch": 60,
+      "startBeat": 0,
+      "duration": 0.5,
+      "voice": 1
+    },
+    {
+      "kind": "note",
+      "pitch": 63,
+      "startBeat": 0.5,
+      "duration": 0.5,
+      "voice": 1
+    },
+    {
+      "kind": "note",
+      "pitch": 66,
+      "startBeat": 1,
+      "duration": 0.5,
+      "voice": 1
+    },
+    {
+      "kind": "note",
+      "pitch": 69,
+      "startBeat": 1.5,
+      "duration": 0.5,
+      "voice": 1
+    },
+    {
+      "kind": "note",
+      "pitch": 63,
+      "startBeat": 2,
+      "duration": 0.5,
+      "voice": 1
+    },
+    {
+      "kind": "note",
+      "pitch": 69,
+      "startBeat": 2.5,
+      "duration": 0.5,
+      "voice": 1
+    },
+    {
+      "kind": "note",
+      "pitch": 72,
+      "startBeat": 3,
+      "duration": 0.5,
+      "voice": 1
+    },
+    {
+      "kind": "note",
+      "pitch": 71,
+      "startBeat": 3.5,
+      "duration": 0.5,
+      "voice": 1
+    }
+  ],
+  "intervalSequence": [
+    3,
+    3,
+    3,
+    -6,
+    6,
+    3,
+    -1
+  ],
+  "contour": [
+    1,
+    1,
+    1,
+    -1,
+    1,
+    1,
+    -1
+  ],
+  "rhythmicCell": [
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2
+  ],
+  "attackPositions": [
+    0,
+    0.5,
+    1,
+    1.5,
+    2,
+    2.5,
+    3,
+    3.5
+  ],
+  "restMask": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+  ],
+  "strongBeatTargets": [
+    0,
+    3,
+    6,
+    9
+  ],
+  "phraseStartType": "downbeat",
+  "phraseEndType": "chromatic_resolve",
+  "cadenceStrength": 0.45,
+  "registerLow": 60,
+  "registerHigh": 72,
+  "registerCenter": 66,
+  "chromaticityScore": 0.62,
+  "leapProfile": {
+    "maxLeap": 6,
+    "leapRate": 0.286,
+    "leapSemitoneHist": {
+      "6": 2
+    }
+  },
+  "ornamentFlags": {
+    "slides": false,
+    "ghosts": false,
+    "graceAttacks": false,
+    "bends": false,
+    "deadNotes": false
+  },
+  "inferredHarmonyHints": [
+    "dim7",
+    "octatonic",
+    "chromatic_approach"
+  ],
+  "tags": [
+    "diminished",
+    "octatonic",
+    "m3_chain",
+    "tritone",
+    "chromatic_approach",
+    "symmetrical"
+  ]
+}

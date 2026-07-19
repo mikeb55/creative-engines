@@ -1,0 +1,33 @@
+{
+  "id": "synth_modern_rock_01",
+  "category": "modern_rock",
+  "sourceCourse": "Modern Rock",
+  "sourceFile": { "name": "synth_modern_rock_01.json", "sha256": "synthetic:modern_rock_01" },
+  "barCount": 1,
+  "meter": { "numerator": 4, "denominator": 4 },
+  "noteEvents": [
+    { "kind": "note", "pitch": 52, "startBeat": 0.0, "duration": 0.5, "voice": 1 },
+    { "kind": "note", "pitch": 59, "startBeat": 0.5, "duration": 0.5, "voice": 1 },
+    { "kind": "rest", "startBeat": 1.0, "duration": 0.5, "voice": 1 },
+    { "kind": "note", "pitch": 52, "startBeat": 1.5, "duration": 0.5, "voice": 1 },
+    { "kind": "note", "pitch": 59, "startBeat": 2.0, "duration": 1.0, "voice": 1 },
+    { "kind": "rest", "startBeat": 3.0, "duration": 1.0, "voice": 1 }
+  ],
+  "intervalSequence": [7, -7, 7],
+  "contour": [1, -1, 1],
+  "rhythmicCell": [2, 2, 2, 4],
+  "attackPositions": [0.0, 0.5, 1.5, 2.0],
+  "restMask": [false, false, true, false, false, false, true, true],
+  "strongBeatTargets": [4, 11],
+  "phraseStartType": "downbeat",
+  "phraseEndType": "rest",
+  "cadenceStrength": 0.4,
+  "registerLow": 52,
+  "registerHigh": 59,
+  "registerCenter": 55,
+  "chromaticityScore": 0.05,
+  "leapProfile": { "maxLeap": 7, "leapRate": 1.0, "leapSemitoneHist": { "7": 3 } },
+  "ornamentFlags": { "slides": false, "ghosts": false, "graceAttacks": false, "bends": false, "deadNotes": true },
+  "inferredHarmonyHints": ["power5"],
+  "tags": ["power_fifth", "sparse", "dead_note"]
+}

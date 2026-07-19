@@ -1,0 +1,33 @@
+{
+  "id": "synth_progressive_blues_01",
+  "category": "progressive_blues",
+  "sourceCourse": "Progressive Blues",
+  "sourceFile": { "name": "synth_progressive_blues_01.json", "sha256": "synthetic:progressive_blues_01" },
+  "barCount": 2,
+  "meter": { "numerator": 7, "denominator": 8 },
+  "noteEvents": [
+    { "kind": "note", "pitch": 55, "startBeat": 0.0, "duration": 0.5, "voice": 1 },
+    { "kind": "note", "pitch": 58, "startBeat": 0.5, "duration": 0.5, "voice": 1 },
+    { "kind": "note", "pitch": 60, "startBeat": 1.0, "duration": 0.5, "voice": 1 },
+    { "kind": "note", "pitch": 63, "startBeat": 1.5, "duration": 0.5, "voice": 1 },
+    { "kind": "note", "pitch": 55, "startBeat": 2.0, "duration": 0.75, "voice": 1 },
+    { "kind": "note", "pitch": 67, "startBeat": 2.75, "duration": 0.75, "voice": 1 }
+  ],
+  "intervalSequence": [3, 2, 3, -8, 12],
+  "contour": [1, 1, 1, -1, 1],
+  "rhythmicCell": [2, 2, 2, 2, 3, 3],
+  "attackPositions": [0.0, 0.5, 1.0, 1.5, 2.0, 2.75],
+  "restMask": [false, false, false, false, false, false, false],
+  "strongBeatTargets": [7, 10, 0],
+  "phraseStartType": "downbeat",
+  "phraseEndType": "open",
+  "cadenceStrength": 0.35,
+  "registerLow": 55,
+  "registerHigh": 67,
+  "registerCenter": 60,
+  "chromaticityScore": 0.33,
+  "leapProfile": { "maxLeap": 12, "leapRate": 0.4, "leapSemitoneHist": { "8": 1, "12": 1 } },
+  "ornamentFlags": { "slides": true, "ghosts": false, "graceAttacks": false, "bends": true, "deadNotes": false },
+  "inferredHarmonyHints": ["blues", "odd_meter"],
+  "tags": ["7_8", "wide_register", "open_end"]
+}
