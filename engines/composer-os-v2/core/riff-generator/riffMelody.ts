@@ -63,7 +63,7 @@ function passingPitch(prev: number | undefined, tones: ChordToneSet, rng: () => 
   return p;
 }
 
-function pickWeightedPc(
+export function pickWeightedPc(
   pool: Array<{ pc: number; weight: number }>,
   rng: () => number
 ): number {
@@ -77,6 +77,39 @@ function pickWeightedPc(
   return pool[pool.length - 1]!.pc;
 }
 
+/** Directed pitch-class interval 0–11 from previous MIDI to candidate PC. */
+export function directedIntervalClass(preferPrevMidi: number, candidatePc: number): number {
+  const prevPc = ((preferPrevMidi % 12) + 12) % 12;
+  const cand = ((candidatePc % 12) + 12) % 12;
+  return (cand - prevPc + 12) % 12;
+}
+
+/**
+ * Multiply pool weights by preferredIntervals match (directed IC).
+ * Unmatched intervals → pass-through factor 1.0 (not a hard filter).
+ */
+export function applyPreferredIntervalWeightsToPool(
+  pool: Array<{ pc: number; weight: number }>,
+  preferPrevMidi: number,
+  preferredIntervals: Array<{ semitones: number; weight: number }>
+): Array<{ pc: number; weight: number }> {
+  if (preferredIntervals.length === 0) return pool;
+  const byIc = new Map<number, number>();
+  for (const iv of preferredIntervals) {
+    const ic = ((iv.semitones % 12) + 12) % 12;
+    byIc.set(ic, iv.weight);
+  }
+  return pool.map((e) => {
+    const ic = directedIntervalClass(preferPrevMidi, e.pc);
+    const factor = byIc.get(ic) ?? 1.0;
+    return { pc: e.pc, weight: e.weight * factor };
+  });
+}
+
+/** Near-prev-PC snap probability: reduced when intervalWeights drive preferredIntervals. */
+export const RIFF_NEAR_PREV_SNAP_DEFAULT = 0.65;
+export const RIFF_NEAR_PREV_SNAP_WITH_INTERVALS = 0.12;
+
 function pitchFromField(
   field: ResolvedPitchField,
   rng: () => number,
@@ -86,15 +119,35 @@ function pitchFromField(
 ): number {
   const pool = field.allowedPcs;
   if (pool.length === 0) return midiInRange(0, low, high);
-  let pc = pickWeightedPc(pool, rng);
+
+  const preferred = field.preferredIntervals ?? [];
+  const hasIntervalBias = preferred.length > 0 && preferPrev !== undefined;
+  const weightedPool = hasIntervalBias
+    ? applyPreferredIntervalWeightsToPool(pool, preferPrev!, preferred)
+    : pool;
+
+  let pc = pickWeightedPc(weightedPool, rng);
+
   if (preferPrev !== undefined && pool.length > 1) {
+    const snapProb = preferred.length > 0 ? RIFF_NEAR_PREV_SNAP_WITH_INTERVALS : RIFF_NEAR_PREV_SNAP_DEFAULT;
     const targetPc = ((preferPrev % 12) + 12) % 12;
     const near = pool
       .map((e) => ({ e, d: Math.min(Math.abs(e.pc - targetPc), 12 - Math.abs(e.pc - targetPc)) }))
       .sort((a, b) => a.d - b.d)[0];
-    if (near && rng() < 0.65) pc = near.e.pc;
+    if (near && rng() < snapProb) pc = near.e.pc;
   }
   return midiInRange(pc, low, high);
+}
+
+/** Test seam: run pitchFromField with an explicit field (same path as assignMelodyToBar). */
+export function pitchFromFieldForTest(
+  field: ResolvedPitchField,
+  rng: () => number,
+  low: number,
+  high: number,
+  preferPrev?: number
+): number {
+  return pitchFromField(field, rng, low, high, preferPrev);
 }
 
 /** Snap toward motif interval step from previous pitch (chord-tone pool). */

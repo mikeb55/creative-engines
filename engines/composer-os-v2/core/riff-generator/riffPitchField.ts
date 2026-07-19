@@ -4,12 +4,44 @@
 
 import { USE_PITCH_FIELD_NOTE_SELECTION } from '../counterpoint/engineFeatureFlags';
 import { chordTonesForChordSymbol, noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
-import type { PitchClass, ResolvedPitchField } from '../harmony/pitchFieldSpineTypes';
-import type { LedZeppelinStyleMode, RiffProfile } from '../composer/riffProfileTypes';
+import type { IntervalWeight, PitchClass, ResolvedPitchField } from '../harmony/pitchFieldSpineTypes';
+import type { LedZeppelinStyleMode, RiffIntervalWeightMap, RiffProfile } from '../composer/riffProfileTypes';
 import type { RiffStyleId } from './riffTypes';
 
 function pcFromMidi(midi: number): PitchClass {
   return (((midi % 12) + 12) % 12) as PitchClass;
+}
+
+/**
+ * Directed pitch-class interval semitones for each {@link RiffIntervalWeightMap} key.
+ * Must stay in lockstep with receipt parser keys in `riffReceiptCompiler.parseIntervalWeightsFromBody`.
+ */
+export const RIFF_INTERVAL_WEIGHT_SEMITONES: Record<keyof RiffIntervalWeightMap, number> = {
+  m2: 1,
+  M2: 2,
+  m3: 3,
+  M3: 4,
+  P4: 5,
+  tritone: 6,
+  P5: 7,
+  M6: 9,
+};
+
+/**
+ * Map profile `intervalWeights` → `ResolvedPitchField.preferredIntervals`.
+ * Only defined keys become entries; missing keys are pass-through (factor 1.0) at pick time.
+ */
+export function preferredIntervalsFromIntervalWeights(
+  weights: RiffIntervalWeightMap | undefined
+): IntervalWeight[] {
+  if (!weights) return [];
+  const out: IntervalWeight[] = [];
+  for (const key of Object.keys(RIFF_INTERVAL_WEIGHT_SEMITONES) as Array<keyof RiffIntervalWeightMap>) {
+    const w = weights[key];
+    if (typeof w !== 'number' || !Number.isFinite(w)) continue;
+    out.push({ semitones: RIFF_INTERVAL_WEIGHT_SEMITONES[key], weight: w });
+  }
+  return out;
 }
 
 function styleRegister(style: RiffStyleId): { low: number; high: number } {
@@ -153,7 +185,7 @@ export function bassRiffPitchFieldForBar(
 
   return {
     allowedPcs: allowed,
-    preferredIntervals: [],
+    preferredIntervals: preferredIntervalsFromIntervalWeights(vrbProfile?.intervalWeights),
     registerCenterMidi: 40,
     registerSpread: 10,
     regionId: `riff_bass_${parsed.display}_b${barIndex}`,
@@ -201,7 +233,7 @@ export function guitarRiffPitchFieldForBar(
   const { low, high } = styleRegister(style);
   return {
     allowedPcs: allowed,
-    preferredIntervals: [],
+    preferredIntervals: preferredIntervalsFromIntervalWeights(vrbProfile?.intervalWeights),
     registerCenterMidi: Math.floor((low + high) / 2),
     registerSpread: Math.max(4, Math.floor((high - low) / 2)),
     regionId: `riff_gtr_${voicing}_${parsed.display}`,
