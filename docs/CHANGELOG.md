@@ -1,6 +1,22 @@
 ## [Unreleased]
 
+### Fixed
+
+- **Desktop reload after tab nav (file:// + pushState)** — Path-based `history.pushState('/riffgen')` became `file:///C:/riffgen` on Windows; Ctrl+R / Ctrl+Shift+R → `ERR_FILE_NOT_FOUND` blank window. Fix: **hash routes** (`#/riffgen`) in `appRouter` + Electron `did-fail-load` → `loadFile(index.html)` + hash restore. Soft + hard reload verified on all primary nav tabs.
+
+- **Riff chord-loop trust (Phase 1)** — Unparseable chord-loop tokens still fill `Am7` (parse behaviour unchanged) but are no longer silent: `normalizeChordLoopWithDisclosure` emits `chordLoopDisclosure` (typed → used + bars); `GenerateResult` + post-gen banner on Home / RiffGen (“N reviewed substitutions / M unsupported tokens”). Empty input still uses intentional Am7 vamp with no disclosure. Slash chords and typed harmony pass through to MusicXML as typed when parse succeeds. Phase 2+ (inline badges / ack gating) not started.
+
+- **RiffGen Corpus QA zero-data** — Desktop IPC/`apiGetRiffPhraseCorpus` resolved derived corpus via `__dirname` + four `..` (correct only for unbundled source). Bundled `resources/` path escaped the repo (`C:\Dev\data\...`), so QA showed Files: 0 / Phrases: 0 with “phrases.jsonl and audit.csv missing”. Fix: `resolveRiffPhraseCorpusDerivedRoot` (repo env / resources / walk) + copy `data/riff-phrase-corpus/derived` into desktop `extraResources` via `copy-riff-phrase-corpus.js`.
+
 ### Added
+
+- **RiffGen Phase 1.5 S3 (GenerateIsland)** — `#/riffgen` mounts `RiffGenGenerateIsland` via local `useRiffGenGenerateState` (minimal Home riff state copy; **not** extracted from HomeGenerate). Reuses `RiffGeneratorPanel`; Variation / Open-folder controls; `api.generate({ presetId: 'riff_generator', … })` unchanged. Phrases.jsonl remains read-only. Seed A/B (Home-shaped vs RiffGen payload) MusicXML SHA match. Melody-path grep gate clean.
+
+- **Riff phrase corpus — Diminished Lines category** — Schema/`RIFF_PHRASE_CATEGORIES` + `gpx/diminished_lines/` + synthetic fixture; **7** categories in schema, **3** populated on disk for QA (see Architecture / technical summary). S4 curation debt for 1-bar leftovers / mid-run chops / meter mismatch still backlog.
+
+- **RiffGen Phase 1.5 S0–S2 (inspect UI)** — Top-level route `#/riffgen` (nav **RiffGen**). Read-only corpus API `GET /api/riff-phrase-corpus` + IPC `composer-os-api:get-riff-phrase-corpus` loads `data/riff-phrase-corpus/derived/phrases.jsonl` + `audit.csv`. QA panel (category counts, bar/start/end hists, meter mismatch, ties/ornaments) + phrase browser. **Melody path OFF**; `presetId` stays `riff_generator`. No imports into `riffMelody` / `riffPitchField` / `buildRiffScoreModel` / `runRiffGenerator`. **S4 backlog (noted, not built):** `diminished_lines` 1-bar leftovers + mid-run splits → needs-review flags; `mvoldsu-003.gpx` 6/4→4/4 meter change — phrase `meter` field exists but ingest stamps file-open meter only (see Architecture).
+
+- **Riff pitch PR A — `intervalWeights` → pick path** — `guitarRiffPitchFieldForBar` / `bassRiffPitchFieldForBar` populate `ResolvedPitchField.preferredIntervals` from `RiffProfile.intervalWeights` (keys `m2`/`M2`/`m3`/`M3`/`P4`/`tritone`/`P5`/`M6`; receipt parser accepts `tritone` + `M6`). `pitchFromField` multiplies candidate PC weights by directed interval-class match before `pickWeightedPc` (unmatched = pass-through 1.0); near-prev-PC snap drops from **0.65 → 0.12** when preferredIntervals non-empty. `enforceHook` / motif blend / loop closure untouched (PR B/C). Tests: `riffIntervalWeightsPitch.test.ts`. **Flag note:** when `USE_PITCH_FIELD_NOTE_SELECTION` is false, `riffPitchFieldForBar` returns undefined and melody falls back to `strongPitch`/`passingPitch` — intervalWeights still unused on that path.
 
 - **Riff Generator Phase B + soft-link — session close-out (2026-07-16)** — Phase B Iter 1–3 (HV chord colour) + soft-link HV→`riffVrbId` **FULLY COMPLETE**; smoke-validated **772**/141 known **5** unexpected **0**. Canonical: `docs/RIFF_GENERATOR_HARMONIC_VOICE_DECISION.md`.
 
