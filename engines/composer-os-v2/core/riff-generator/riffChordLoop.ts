@@ -1,38 +1,182 @@
 /**
  * Parse chord loop for riff — full progression length (no 4-chord cap). Falls back to Am7 vamp when empty.
+ *
+ * Phase 1 trust: null / unparseable slots still fill Am7 (parse behaviour unchanged), but callers can
+ * surface `RiffChordLoopDisclosure` so the UI never hides typed→used mismatches.
  */
 
 import {
+  normalizeChordProgressionSeparators,
   parseChordsFromPipeDelimited,
   type ParsedChordProgressionEntry,
 } from '../harmony/chordProgressionParser';
 
 const DEFAULT_VAMP = ['Am7'];
 
-export function normalizeChordLoop(input: string | undefined, barCount: number): string[] {
-  const trimmed = (input ?? '').trim();
-  if (!trimmed) {
-    return Array(barCount).fill(DEFAULT_VAMP[0]);
-  }
+/** Phase 1 coarse kinds — full 5-state token model lands in Phase 2+. */
+export type RiffChordTokenDisclosureKind = 'substitution' | 'unsupported';
 
-  const parsed = parseChordsFromPipeDelimited(trimmed);
-  if (parsed.length === 0) {
-    return Array(barCount).fill(DEFAULT_VAMP[0]);
-  }
+export interface RiffChordTokenDisclosure {
+  originalToken: string;
+  usedSymbol: string;
+  kind: RiffChordTokenDisclosureKind;
+  /** 1-based bar indices after tiling to `barCount`. */
+  bars: number[];
+}
 
-  const loop = parsed.map((entry, i) => {
-    if (entry != null) return entry.symbol;
-    console.warn(
-      `[riff-chord] bar slot ${i + 1}: parse returned null — using default ${DEFAULT_VAMP[0]} for pitch field`
-    );
-    return DEFAULT_VAMP[0]!;
-  });
+export interface RiffChordLoopDisclosure {
+  /** Parsed OK but spelling / canonical form differs from typed token. */
+  substitutions: RiffChordTokenDisclosure[];
+  /** Parse returned null — Phase 1 still fills Am7 (no longer silent). */
+  unsupported: RiffChordTokenDisclosure[];
+}
 
+export function emptyRiffChordLoopDisclosure(): RiffChordLoopDisclosure {
+  return { substitutions: [], unsupported: [] };
+}
+
+export function riffChordLoopDisclosureHasIssues(
+  d: RiffChordLoopDisclosure | null | undefined
+): boolean {
+  return !!d && (d.substitutions.length > 0 || d.unsupported.length > 0);
+}
+
+function displayToken(raw: string): string {
+  return raw.trim().replace(/\s+/g, ' ');
+}
+
+/** Non-empty pipe cells → first whitespace token (same slot order as `parseChordsFromPipeDelimited`). */
+function rawLoopTokens(input: string): string[] {
+  const normalized = normalizeChordProgressionSeparators(input.trim());
+  if (!normalized) return [];
   const out: string[] = [];
-  for (let i = 0; i < barCount; i++) {
-    out.push(loop[i % loop.length]!);
+  for (const cell of normalized.split('|')) {
+    const c = cell.trim();
+    if (!c) continue;
+    const token = c.split(/\s+/).filter(Boolean)[0];
+    if (!token) continue;
+    out.push(displayToken(token));
   }
   return out;
+}
+
+function disclosureKey(d: Omit<RiffChordTokenDisclosure, 'bars'>): string {
+  return `${d.kind}\0${d.originalToken}\0${d.usedSymbol}`;
+}
+
+function collectDisclosure(
+  loopSlots: Array<{ symbol: string; issue?: Omit<RiffChordTokenDisclosure, 'bars'> }>,
+  barCount: number
+): RiffChordLoopDisclosure {
+  const byKey = new Map<string, RiffChordTokenDisclosure>();
+  if (loopSlots.length === 0) return emptyRiffChordLoopDisclosure();
+
+  for (let i = 0; i < barCount; i++) {
+    const slot = loopSlots[i % loopSlots.length]!;
+    if (!slot.issue) continue;
+    const key = disclosureKey(slot.issue);
+    let row = byKey.get(key);
+    if (!row) {
+      row = { ...slot.issue, bars: [] };
+      byKey.set(key, row);
+    }
+    row.bars.push(i + 1);
+  }
+
+  const substitutions: RiffChordTokenDisclosure[] = [];
+  const unsupported: RiffChordTokenDisclosure[] = [];
+  for (const row of byKey.values()) {
+    if (row.kind === 'unsupported') unsupported.push(row);
+    else substitutions.push(row);
+  }
+  return { substitutions, unsupported };
+}
+
+/**
+ * Same chord tiling as `normalizeChordLoop`, plus disclosure of typed→used mismatches.
+ * Empty input → intentional Am7 vamp with empty disclosure (not a trust failure).
+ */
+export function normalizeChordLoopWithDisclosure(
+  input: string | undefined,
+  barCount: number
+): { chords: string[]; disclosure: RiffChordLoopDisclosure } {
+  const trimmed = (input ?? '').trim();
+  if (!trimmed) {
+    return {
+      chords: Array(barCount).fill(DEFAULT_VAMP[0]),
+      disclosure: emptyRiffChordLoopDisclosure(),
+    };
+  }
+
+  const rawTokens = rawLoopTokens(trimmed);
+  const parsed = parseChordsFromPipeDelimited(trimmed);
+  if (parsed.length === 0) {
+    const issue: Omit<RiffChordTokenDisclosure, 'bars'> = {
+      originalToken: displayToken(trimmed),
+      usedSymbol: DEFAULT_VAMP[0]!,
+      kind: 'unsupported',
+    };
+    return {
+      chords: Array(barCount).fill(DEFAULT_VAMP[0]),
+      disclosure: {
+        substitutions: [],
+        unsupported: [
+          {
+            ...issue,
+            bars: Array.from({ length: barCount }, (_, i) => i + 1),
+          },
+        ],
+      },
+    };
+  }
+
+  const loopSlots: Array<{ symbol: string; issue?: Omit<RiffChordTokenDisclosure, 'bars'> }> = [];
+  for (let i = 0; i < parsed.length; i++) {
+    const entry = parsed[i];
+    const originalToken = rawTokens[i] ?? `(slot ${i + 1})`;
+    if (entry == null) {
+      console.warn(
+        `[riff-chord] bar slot ${i + 1}: parse returned null — using default ${DEFAULT_VAMP[0]} for pitch field`
+      );
+      loopSlots.push({
+        symbol: DEFAULT_VAMP[0]!,
+        issue: {
+          originalToken,
+          usedSymbol: DEFAULT_VAMP[0]!,
+          kind: 'unsupported',
+        },
+      });
+      continue;
+    }
+
+    const usedSymbol = entry.symbol;
+    if (originalToken !== usedSymbol) {
+      loopSlots.push({
+        symbol: usedSymbol,
+        issue: {
+          originalToken,
+          usedSymbol,
+          kind: 'substitution',
+        },
+      });
+    } else {
+      loopSlots.push({ symbol: usedSymbol });
+    }
+  }
+
+  const chords: string[] = [];
+  for (let i = 0; i < barCount; i++) {
+    chords.push(loopSlots[i % loopSlots.length]!.symbol);
+  }
+
+  return {
+    chords,
+    disclosure: collectDisclosure(loopSlots, barCount),
+  };
+}
+
+export function normalizeChordLoop(input: string | undefined, barCount: number): string[] {
+  return normalizeChordLoopWithDisclosure(input, barCount).chords;
 }
 
 /** Expose parsed progression entries for tests / diagnostics. */

@@ -333,6 +333,18 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
   }
   writeOutputManifest(filepath, manifestPayload);
 
+  const chordLoopDisclosure = gen.chordLoopDisclosure;
+  const disclosureWarnings: string[] = [];
+  if (chordLoopDisclosure) {
+    const n = chordLoopDisclosure.substitutions.length;
+    const m = chordLoopDisclosure.unsupported.length;
+    if (n > 0 || m > 0) {
+      disclosureWarnings.push(
+        `Riff chord loop: generated with ${n} reviewed substitution(s) / ${m} unsupported token(s) — see chordLoopDisclosure.`
+      );
+    }
+  }
+
   return {
     success: true,
     composerOsVersion: COMPOSER_OS_VERSION,
@@ -340,6 +352,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
     riffCarryForward: gen.riffCarryForward,
     riffMusicality: gen.riffMusicality,
     musicContext: gen.musicContext,
+    ...(chordLoopDisclosure ? { chordLoopDisclosure } : {}),
     filename,
     filepath,
     scoreTitle: title,
@@ -356,7 +369,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
       sibeliusSafe: true,
       readiness: { shareable: false, release: 0, mx: 1 },
       errors: [],
-      warnings: manifestValidation.warnings,
+      warnings: [...(manifestValidation.warnings ?? []), ...disclosureWarnings],
     },
     runManifest: {
       seed: effectiveSeed,

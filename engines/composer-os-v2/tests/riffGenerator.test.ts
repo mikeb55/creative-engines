@@ -6,7 +6,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { runRiffGenerator } from '../core/riff-generator/runRiffGenerator';
-import { normalizeChordLoop } from '../core/riff-generator/riffChordLoop';
+import { normalizeChordLoop, normalizeChordLoopWithDisclosure } from '../core/riff-generator/riffChordLoop';
 import { parseChordsFromPipeDelimited } from '../core/harmony/chordProgressionParser';
 import { runRiffGeneratorApp } from '../app-api/riffGeneratorApp';
 import type { ScoreModel } from '../core/score-model/scoreModelTypes';
@@ -29,6 +29,7 @@ import { runRiffMusicalityGateTests } from './riffMusicalityGate.test';
 import { runRiffCarryForwardTests } from './riffCarryForward.test';
 import { runRiffVariationApplyTests } from './riffVariationApply.test';
 import { runRiffZappaSoloTests } from './riffZappaSolo.test';
+import { runRiffIntervalWeightsPitchTests } from './riffIntervalWeightsPitch.test';
 
 function countMelodicNotes(score: ScoreModel): number {
   let n = 0;
@@ -98,6 +99,82 @@ export function runRiffGeneratorTests(): { ok: boolean; name: string }[] {
     out.push({
       ok: okParse && okLoop,
       name: 'normalizeChordLoop: 8-chord external progression preserves bars 5–8 (no 4-chord cap)',
+    });
+  }
+
+  {
+    const { chords, disclosure } = normalizeChordLoopWithDisclosure('Cmin7 | Dmin7', 2);
+    const ok =
+      chords[0] === 'Cm7' &&
+      chords[1] === 'Dm7' &&
+      disclosure.substitutions.length === 2 &&
+      disclosure.unsupported.length === 0 &&
+      disclosure.substitutions.some((s) => s.originalToken === 'Cmin7' && s.usedSymbol === 'Cm7');
+    out.push({
+      ok,
+      name: 'normalizeChordLoopWithDisclosure: spelling normalize → substitution rows',
+    });
+  }
+
+  {
+    const { chords, disclosure } = normalizeChordLoopWithDisclosure('Cmaj7 | NOTACHORD | Dm7', 6);
+    const unsup = disclosure.unsupported.find((u) => u.originalToken === 'NOTACHORD');
+    const ok =
+      chords.length === 6 &&
+      chords[0] === 'Cmaj7' &&
+      chords[1] === 'Am7' &&
+      chords[2] === 'Dm7' &&
+      chords[4] === 'Am7' &&
+      !!unsup &&
+      unsup.usedSymbol === 'Am7' &&
+      unsup.bars.includes(2) &&
+      unsup.bars.includes(5) &&
+      disclosure.substitutions.length === 0;
+    out.push({
+      ok,
+      name: 'normalizeChordLoopWithDisclosure: null slot → Am7 + unsupported bars (Phase 1 trust)',
+    });
+  }
+
+  {
+    const { disclosure } = normalizeChordLoopWithDisclosure('Am7 | Dm7', 4);
+    out.push({
+      ok: disclosure.unsupported.length === 0 && disclosure.substitutions.length === 0,
+      name: 'normalizeChordLoopWithDisclosure: clean loop has empty disclosure',
+    });
+  }
+
+  {
+    const { disclosure } = normalizeChordLoopWithDisclosure('', 4);
+    out.push({
+      ok: disclosure.unsupported.length === 0 && disclosure.substitutions.length === 0,
+      name: 'normalizeChordLoopWithDisclosure: empty input vamp has no disclosure',
+    });
+  }
+
+  {
+    const prog = 'Cmaj7 | NOTACHORD | Dm7 | G7';
+    const r = runRiffGenerator(91001, {
+      bars: 4,
+      density: 'medium',
+      style: 'neutral',
+      grid: 'eighth',
+      lineMode: 'single_line',
+      bassEnabled: false,
+      bpm: 100,
+      title: 'ChordTrust',
+      chordProgressionText: prog,
+    });
+    const d = r.success ? r.chordLoopDisclosure : undefined;
+    const ok =
+      r.success === true &&
+      !!d &&
+      d.unsupported.some(
+        (u) => u.originalToken === 'NOTACHORD' && u.usedSymbol === 'Am7' && u.bars.includes(2)
+      );
+    out.push({
+      ok,
+      name: 'runRiffGenerator: chordLoopDisclosure surfaces unsupported Am7 fill',
     });
   }
 
@@ -478,5 +555,6 @@ export function runRiffGeneratorTests(): { ok: boolean; name: string }[] {
     ...runRiffCarryForwardTests(),
     ...runRiffVariationApplyTests(),
     ...runRiffZappaSoloTests(),
+    ...runRiffIntervalWeightsPitchTests(),
   ];
 }

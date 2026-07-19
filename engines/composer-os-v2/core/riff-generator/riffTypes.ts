@@ -6,6 +6,7 @@ import type { OddMeterPolicyStyle } from '../rhythm/oddMeterEngine';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 import type { CoreMotif } from '../motif/motifEngineTypes';
 import type { RiffCarryForward } from './riffCarryForward';
+import type { RiffChordLoopDisclosure } from './riffChordLoop';
 import type { RiffProfile } from '../composer/riffProfileTypes';
 import type { RiffGenerationMetadata } from './riffMultiVoiceTypes';
 import type { ZappaRiffSoloControls } from '../compositionContext';
@@ -94,6 +95,11 @@ export interface RiffGeneratorSuccess {
    * Phase B Iter 1 — echo of `hvChordColourReadOnly` when present (read-only; not applied).
    */
   hvChordColourReadOnly?: string;
+  /**
+   * Phase 1 chord-loop trust — typed→used mismatches (null→Am7 still applied; no longer silent).
+   * Omitted / empty when every typed token matched the symbol used (or input was empty vamp).
+   */
+  chordLoopDisclosure?: RiffChordLoopDisclosure;
 }
 
 export interface RiffGeneratorFailure {

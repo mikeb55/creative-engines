@@ -191,6 +191,7 @@ import {
 } from '../types/riffGeneratorUi';
 import { resolveRiffSoftLinkHv } from '@composer-os/core/riff-generator/riffSoftLinkHv';
 import { riffChordGridWarnings } from '../utils/riffChordGridWarnings';
+import { RiffChordLoopDisclosureBanner } from '../components/riffgen/RiffChordLoopDisclosureBanner';
 import { ComposerEraSelectOptions } from '../components/ComposerEraSelectOptions';
 import {
   composerEraForRequest,
@@ -2009,6 +2010,8 @@ type GenResult = {
   xml?: string;
   riffCarryForward?: RiffCarryForward;
   riffMusicality?: { failedRules?: string[]; passed?: boolean; score?: number };
+  /** Phase 1 riff chord-loop trust — typed→used mismatches. */
+  chordLoopDisclosure?: import('@composer-os/core/riff-generator/riffChordLoop').RiffChordLoopDisclosure;
   /** V90a — Shared Brain snapshot from riff_generator. */
   musicContext?: {
     schemaVersion?: string;
@@ -12257,6 +12260,10 @@ export function HomeGenerate({
               Generated (not shareable)
             </p>
           )}
+
+          {summaryPresetId === 'riff_generator' && result?.success ? (
+            <RiffChordLoopDisclosureBanner disclosure={result.chordLoopDisclosure} />
+          ) : null}
 
           {summaryPresetId === 'guitar_bass_duo' && duoVaultEnabledForRun !== null && (
             <div

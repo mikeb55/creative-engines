@@ -108,6 +108,11 @@ export interface GenerateResult {
   riffHvChordColourReadOnly?: string;
   /** V90a — Shared Brain snapshot from riff_generator (handoff to Wyble / Martino). */
   musicContext?: MusicContext;
+  /**
+   * Riff Generator Phase 1 chord-loop trust — typed→used mismatches after normalizeChordLoop.
+   * Present when substitutions and/or unsupported (null→Am7) tokens occurred.
+   */
+  chordLoopDisclosure?: import('../core/riff-generator/riffChordLoop').RiffChordLoopDisclosure;
   filename?: string;
   filepath?: string;
   /** Full-score `.mid` path when written next to the MusicXML export. */
