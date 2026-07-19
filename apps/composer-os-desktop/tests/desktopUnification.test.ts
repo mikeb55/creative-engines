@@ -33,6 +33,7 @@ describe('Composer OS desktop unification', () => {
     const routes = [
       '/api/presets',
       '/api/style-modules',
+      '/api/riff-phrase-corpus',
       '/api/output-directory',
       '/api/diagnostics',
       '/api/generate',

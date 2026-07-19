@@ -15,6 +15,7 @@ import {
   getComposerFilesRoot,
   apiGetPresets,
   apiGetStyleModules,
+  apiGetRiffPhraseCorpus,
   apiGenerate,
   apiListOutputs,
   apiGetOutputDirectory,
@@ -78,6 +79,14 @@ app.get('/api/presets', (_req: Request, res: Response) => {
 app.get('/api/style-modules', (_req: Request, res: Response) => {
   try {
     res.json(apiGetStyleModules());
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+app.get('/api/riff-phrase-corpus', (_req: Request, res: Response) => {
+  try {
+    res.json(apiGetRiffPhraseCorpus());
   } catch (err) {
     res.status(500).json({ error: String(err) });
   }

@@ -61,6 +61,7 @@ async function get<T>(path: string): Promise<T> {
       '/output-directory': 'composer-os-api:get-output-directory',
       '/diagnostics': 'composer-os-api:get-diagnostics',
       '/outputs': 'composer-os-api:get-outputs',
+      '/riff-phrase-corpus': 'composer-os-api:get-riff-phrase-corpus',
     };
     const ch = map[path];
     if (!ch) throw new Error(`Unknown IPC path: ${path}`);
@@ -185,6 +186,51 @@ export interface DiagnosticsResponse {
   styleModules?: AppStyleModuleDto[];
 }
 
+/** Phase 1.5 RiffGen — mirrors engine `RiffPhraseCorpusResponse`. */
+export interface RiffPhraseCorpusDto {
+  version: 1;
+  ok: boolean;
+  error?: string;
+  source: {
+    phrasesPath: string;
+    auditPath: string;
+    derivedRoot: string;
+    loadedAt: string;
+    phrasesExists: boolean;
+    auditExists: boolean;
+  };
+  phrases: Array<Record<string, unknown>>;
+  audit: Array<Record<string, unknown>>;
+  stats: {
+    byCategory: Record<
+      string,
+      {
+        files: number;
+        phrases: number;
+        barsIn: number;
+        parseOk: number;
+        parseFail: number;
+        tieFixups: number;
+        droppedOrnaments: number;
+        meterMismatch: number;
+      }
+    >;
+    barCountHist: Record<string, number>;
+    startTypeHist: Record<string, number>;
+    endTypeHist: Record<string, number>;
+    meterMismatchFiles: string[];
+    totals: {
+      files: number;
+      parseOk: number;
+      phrases: number;
+      phrasesInvalidSkipped: number;
+      tieFixups: number;
+      droppedOrnaments: number;
+      auditPhrasesOutSum: number;
+    };
+  };
+}
+
 export function displayOutputPath(r: OutputDirectoryResponse): string {
   return r.displayPath ?? r.path;
 }
@@ -209,6 +255,7 @@ export const api = {
       '/presets'
     ),
   getStyleModules: () => get<{ modules: AppStyleModuleDto[] }>('/style-modules'),
+  getRiffPhraseCorpus: () => get<RiffPhraseCorpusDto>('/riff-phrase-corpus'),
   getOutputDirectory: () => get<OutputDirectoryResponse>('/output-directory'),
   getDiagnostics: () => get<DiagnosticsResponse>('/diagnostics'),
   generate: (req: Record<string, unknown>) => post<Record<string, unknown>>('/generate', req),

@@ -65,8 +65,13 @@ import { exportMusicXmlToPdf } from '../core/export/pdfExporter';
 import { exportMusicXmlToGuitarPro } from '../core/export/guitarProExporter';
 import { runCompingGenerator, type CompingResult } from '../core/comping/compingGenerator';
 import type { CompingOptions } from '../core/comping/compingTypes';
+import {
+  loadRiffPhraseCorpus,
+  type RiffPhraseCorpusResponse,
+} from '../core/riff-generator/riffPhraseCorpusLoad';
 
 export type { CompingOptions, CompingResult };
+export type { RiffPhraseCorpusResponse };
 
 export { getComposerFilesRoot, PRESET_OUTPUT_SUBFOLDER } from './composerOsOutputPaths';
 
@@ -570,6 +575,11 @@ export function apiGetPresets(): { presets: ReturnType<typeof getPresets> } {
 
 export function apiGetStyleModules(): { modules: ReturnType<typeof getStyleModules> } {
   return { modules: getStyleModules() };
+}
+
+/** Phase 1.5 — read-only phrase corpus for RiffGen QA UI (no melody-path side effects). */
+export function apiGetRiffPhraseCorpus(): RiffPhraseCorpusResponse {
+  return loadRiffPhraseCorpus();
 }
 
 export interface ComposerOsRuntimeBuildInfo {

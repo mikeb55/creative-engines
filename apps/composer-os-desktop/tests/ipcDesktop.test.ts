@@ -49,6 +49,13 @@ describe('Desktop IPC clean-room (static)', () => {
     );
     expect(api).toContain('isDesktopIpc');
     expect(api).toContain('composer-os-api:get-presets');
+    expect(api).toContain('composer-os-api:get-riff-phrase-corpus');
+  });
+
+  it('ipc entry registers riff phrase corpus handler (Phase 1.5)', () => {
+    const ipc = fs.readFileSync(path.join(desktopRoot, 'electron', 'ipcEntry.ts'), 'utf-8');
+    expect(ipc).toContain('composer-os-api:get-riff-phrase-corpus');
+    expect(ipc).toContain('apiGetRiffPhraseCorpus');
   });
 
   it('desktop IPC bundle exists after build', () => {

@@ -8,6 +8,7 @@ import type { GenerateRequest } from '../../../engines/composer-os-v2/app-api/ap
 import {
   apiGetPresets,
   apiGetStyleModules,
+  apiGetRiffPhraseCorpus,
   apiGenerate,
   apiListOutputs,
   apiGetOutputDirectory,
@@ -104,6 +105,7 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
 
   ipcMain.handle('composer-os-api:get-presets', () => apiGetPresets());
   ipcMain.handle('composer-os-api:get-style-modules', () => apiGetStyleModules());
+  ipcMain.handle('composer-os-api:get-riff-phrase-corpus', () => apiGetRiffPhraseCorpus());
   ipcMain.handle('composer-os-api:get-runtime-build-info', () => getComposerOsRuntimeBuildInfo());
   ipcMain.handle('composer-os:pick-audio-file', async () => {
     const { dialog } = await import('electron');

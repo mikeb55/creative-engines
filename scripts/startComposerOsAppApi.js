@@ -73,6 +73,14 @@ app.get('/api/style-modules', (_req, res) => {
         res.status(500).json({ error: String(err) });
     }
 });
+app.get('/api/riff-phrase-corpus', (_req, res) => {
+    try {
+        res.json((0, composerOsApiCore_1.apiGetRiffPhraseCorpus)());
+    }
+    catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
 app.post('/api/generate', (req, res) => {
     try {
         const body = req.body;
