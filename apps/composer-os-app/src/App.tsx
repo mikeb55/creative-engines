@@ -5,11 +5,13 @@ import { Outputs } from './pages/Outputs';
 import { UserGuide } from './pages/UserGuide';
 import { ComposerCredits } from './pages/ComposerCredits';
 import { SlonimskyEtudes } from './pages/SlonimskyEtudes';
+import { RiffGenPage } from './pages/RiffGenPage';
 import { ArrangerTab } from './components/Arranger/ArrangerTab';
 import {
+  ensureHashRoute,
   navigateToRoute,
   PRIMARY_NAV_ROUTES,
-  routeFromPathname,
+  routeFromLocation,
   routeNavLabel,
   type AppRouteId,
 } from './router/appRouter';
@@ -391,7 +393,7 @@ function parseEmbeddedUiStamp(): {
 }
 
 export default function App() {
-  const [tab, setTab] = useState<Tab>(() => routeFromPathname(window.location.pathname));
+  const [tab, setTab] = useState<Tab>(() => ensureHashRoute());
   const [refreshOutputs, setRefreshOutputs] = useState(0);
   const [lastGeneration, setLastGeneration] = useState<LastGenerationSummary>({ status: 'none' });
   const [desktopVersion, setDesktopVersion] = useState<string | null>(null);
@@ -403,9 +405,13 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const onPopState = () => setTab(routeFromPathname(window.location.pathname));
-    window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
+    const syncRoute = () => setTab(routeFromLocation());
+    window.addEventListener('hashchange', syncRoute);
+    window.addEventListener('popstate', syncRoute);
+    return () => {
+      window.removeEventListener('hashchange', syncRoute);
+      window.removeEventListener('popstate', syncRoute);
+    };
   }, []);
 
   useEffect(() => {
@@ -512,6 +518,7 @@ export default function App() {
       {tab === 'grid' && <GridWorkspace />}
       {tab === 'presets' && <Presets />}
       {tab === 'outputs' && <Outputs refreshTrigger={refreshOutputs} />}
+      {tab === 'riffgen' && <RiffGenPage />}
       {tab === 'composer-engines' && (
         <ComposerEngines />
       )}

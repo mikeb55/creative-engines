@@ -6,15 +6,22 @@ import * as path from 'path';
 
 describe('Composer OS app shell', () => {
   const appTs = fs.readFileSync(path.join(__dirname, '../src/App.tsx'), 'utf-8');
+  const routerTs = fs.readFileSync(path.join(__dirname, '../src/router/appRouter.ts'), 'utf-8');
   const outputsTs = fs.readFileSync(path.join(__dirname, '../src/pages/Outputs.tsx'), 'utf-8');
 
-  it('nav includes Generate, Structure, Ensemble, Grid, Presets, Outputs (Style Stack tab removed)', () => {
+  it('nav includes Generate, Structure, Ensemble, Grid, Presets, Outputs, RiffGen (Style Stack tab removed)', () => {
     expect(appTs).toMatch(/Generate/);
     expect(appTs).toMatch(/Structure/);
     expect(appTs).toMatch(/Ensemble/);
-    expect(appTs).toMatch(/\bGrid\b/);
     expect(appTs).toMatch(/Presets/);
     expect(appTs).toMatch(/Outputs/);
+    expect(appTs).toMatch(/RiffGen/);
+    expect(appTs).toMatch(/ensureHashRoute/);
+    expect(appTs).toMatch(/routeFromLocation/);
+    expect(appTs).toMatch(/PRIMARY_NAV_ROUTES/);
+    expect(routerTs).toMatch(/case 'grid':\s*return 'Grid'/);
+    expect(routerTs).toMatch(/riffgen: '\/riffgen'/);
+    expect(routerTs).toMatch(/hashForRoute/);
     expect(appTs).not.toMatch(/Style Stack/);
     expect(appTs).not.toMatch(/\bHybrid\b/i);
     expect(appTs).not.toMatch(/\bProjects\b/);

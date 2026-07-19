@@ -267,11 +267,98 @@ function createWindowShell(): BrowserWindow {
     }
   });
 
+  /**
+   * Safety net: path-based pushState on file:// can yield file:///C:/riffgen (missing).
+   * Fall back to loadFile(index.html) + last known / inferred hash route.
+   */
+  let lastUiHash = '#/';
+  let recoveringBadFileUrl = false;
+  const trackHashFromUrl = (url: string): void => {
+    try {
+      const h = new URL(url).hash;
+      if (h && h !== '#') lastUiHash = h.startsWith('#') ? h : `#${h}`;
+      else if (h === '#' || h === '#/') lastUiHash = '#/';
+    } catch {
+      /* ignore */
+    }
+  };
+  win.webContents.on('did-navigate-in-page', (_e, url) => trackHashFromUrl(url));
+  win.webContents.on('did-finish-load', () => {
+    recoveringBadFileUrl = false;
+    trackHashFromUrl(win.webContents.getURL());
+  });
+  win.webContents.on(
+    'did-fail-load',
+    (_event, errorCode, _errorDescription, validatedURL, isMainFrame) => {
+      if (!isMainFrame || recoveringBadFileUrl) return;
+      // -6 ERR_FILE_NOT_FOUND — typical after file:// + absolute path nav
+      if (errorCode !== -6) return;
+      let protocol = '';
+      try {
+        protocol = new URL(validatedURL).protocol;
+      } catch {
+        return;
+      }
+      if (protocol !== 'file:') return;
+      // Never loop on a failed real UI index load
+      const lower = validatedURL.toLowerCase().replace(/\\/g, '/');
+      if (lower.includes('/resources/ui/index.html') || lower.endsWith('/ui/index.html')) {
+        return;
+      }
+      if (getDevUiUrl()) return;
+
+      const uiPath = resolveUiPath();
+      const indexHtml = path.join(uiPath, 'index.html');
+      if (!fs.existsSync(indexHtml)) return;
+
+      const inferred = hashFromFailedFileUrl(validatedURL);
+      const hash = (inferred !== '#/' ? inferred : lastUiHash).replace(/^#/, '');
+      recoveringBadFileUrl = true;
+      console.warn(
+        '[main] did-fail-load on',
+        validatedURL,
+        '→ loadFile(index.html) hash=',
+        hash || '/'
+      );
+      void win.loadFile(indexHtml, { hash: hash || '/' }).catch((err) => {
+        recoveringBadFileUrl = false;
+        console.error('[main] loadFile recovery failed', err);
+      });
+    }
+  );
+
   win.on('closed', () => {
     mainWindow = null;
   });
 
   return win;
+}
+
+/** Map failed file:///C:/riffgen (etc.) → `#/riffgen`. */
+function hashFromFailedFileUrl(url: string): string {
+  const KNOWN = new Set([
+    'arranger',
+    'structure',
+    'ensemble',
+    'grid',
+    'presets',
+    'outputs',
+    'riffgen',
+    'composer-engines',
+    'slonimsky-etudes',
+    'guide',
+    'credits',
+  ]);
+  try {
+    const { pathname } = new URL(url);
+    const segs = pathname.split('/').filter(Boolean);
+    const last = (segs[segs.length - 1] ?? '').toLowerCase();
+    if (!last || last === 'index.html' || /^[a-z]:$/.test(last)) return '#/';
+    if (KNOWN.has(last)) return `#/${last}`;
+  } catch {
+    /* ignore */
+  }
+  return '#/';
 }
 
 function escapeHtml(s: string): string {

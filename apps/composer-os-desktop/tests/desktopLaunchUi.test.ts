@@ -48,6 +48,12 @@ describe('Desktop packaged launch UI (static)', () => {
     expect(main).toContain("path.join(__dirname, 'preload.js')");
   });
 
+  it('recovers bad file:// route reloads via did-fail-load → loadFile + hash', () => {
+    expect(main).toContain('did-fail-load');
+    expect(main).toContain('hashFromFailedFileUrl');
+    expect(main).toMatch(/loadFile\([\s\S]*hash/);
+  });
+
   it('bundled UI stamp lists Generate/Presets/Outputs (not musician-only shell)', () => {
     expect(fs.existsSync(uiStampPath)).toBe(true);
     const stamp = JSON.parse(fs.readFileSync(uiStampPath, 'utf-8')) as {
