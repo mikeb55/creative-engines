@@ -17,6 +17,8 @@ import {
   RIFF_PHRASE_CATEGORIES,
   RIFF_PHRASE_CATEGORY_LABELS,
   type RiffPhraseCategory,
+  type RiffPhraseCuration,
+  type RiffPhraseCurationReason,
   type RiffPhraseEntry,
   type RiffPhraseEndType,
   type RiffPhraseIngestAuditRow,
@@ -260,10 +262,10 @@ function flattenScore(score: alphaTab.model.Score): {
 function splitPhraseRanges(
   flats: FlatBeat[],
   barsIn: number
-): Array<{ startBar: number; endBar: number }> {
+): Array<{ startBar: number; endBar: number; maxPhraseChop: boolean }> {
   if (barsIn <= 0) return [];
   if (barsIn <= MAX_PHRASE_BARS) {
-    return [{ startBar: 0, endBar: barsIn - 1 }];
+    return [{ startBar: 0, endBar: barsIn - 1, maxPhraseChop: false }];
   }
 
   const pitched = flats.filter((f) => !f.isRest && typeof f.pitch === 'number');
@@ -278,7 +280,7 @@ function splitPhraseRanges(
     }
   }
 
-  const ranges: Array<{ startBar: number; endBar: number }> = [];
+  const ranges: Array<{ startBar: number; endBar: number; maxPhraseChop: boolean }> = [];
   let start = 0;
   for (let b = 0; b < barsIn; b++) {
     const len = b - start + 1;
@@ -286,11 +288,29 @@ function splitPhraseRanges(
     const atMax = len >= MAX_PHRASE_BARS;
     const atEnd = b === barsIn - 1;
     if (atForce || atMax || atEnd) {
-      ranges.push({ startBar: start, endBar: b });
+      // Mid-run MAX_PHRASE_BARS chop: closed at cap with more bars remaining, not rest-gap.
+      ranges.push({
+        startBar: start,
+        endBar: b,
+        maxPhraseChop: atMax && !atForce && !atEnd,
+      });
       start = b + 1;
     }
   }
   return ranges.filter((r) => r.startBar <= r.endBar);
+}
+
+function buildCuration(args: {
+  barCount: number;
+  maxPhraseChop: boolean;
+  meterMismatch: boolean;
+}): RiffPhraseCuration | undefined {
+  const reasons: RiffPhraseCurationReason[] = [];
+  if (args.barCount === 1) reasons.push('one_bar_leftover');
+  if (args.maxPhraseChop) reasons.push('max_phrase_chop');
+  if (args.meterMismatch) reasons.push('meter_mismatch_file');
+  if (reasons.length === 0) return undefined;
+  return { needsReview: true, reasons };
 }
 
 function eventsForRange(
@@ -474,6 +494,8 @@ function buildPhraseEntry(args: {
   events: RiffPhraseScoreEvent[];
   ornaments: RiffPhraseEntry['ornamentFlags'];
   phraseIndex: number;
+  maxPhraseChop?: boolean;
+  meterMismatch?: boolean;
 }): RiffPhraseEntry | null {
   const { category, sourceFileName, hash, startBar, endBar, meter, events, ornaments, phraseIndex } =
     args;
@@ -492,6 +514,11 @@ function buildPhraseEntry(args: {
   const chromaticityScore = deriveChromaticity(intervalSequence);
   const leapProfile = deriveLeapProfile(intervalSequence);
   const barCount = endBar - startBar + 1;
+  const curation = buildCuration({
+    barCount,
+    maxPhraseChop: args.maxPhraseChop === true,
+    meterMismatch: args.meterMismatch === true,
+  });
 
   const draft: RiffPhraseEntry = {
     id: `${category}__${slugBase(sourceFileName)}__p${String(phraseIndex).padStart(2, '0')}__bars${startBar + 1}-${endBar + 1}`,
@@ -518,6 +545,7 @@ function buildPhraseEntry(args: {
     ornamentFlags: ornaments,
     inferredHarmonyHints: [],
     tags: [],
+    ...(curation ? { curation } : {}),
   };
   draft.tags = buildTags(category, draft);
   const check = validateRiffPhraseEntry(draft);
@@ -626,6 +654,8 @@ export function runRiffPhraseIngest(opts: RiffPhraseIngestOptions = {}): RiffPhr
             events,
             ornaments,
             phraseIndex: pi + 1,
+            maxPhraseChop: range.maxPhraseChop,
+            meterMismatch: flat.meterMismatch,
           });
           if (entry) {
             phrases.push(entry);

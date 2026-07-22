@@ -4,11 +4,19 @@
 
 - **Desktop reload after tab nav (file:// + pushState)** — Path-based `history.pushState('/riffgen')` became `file:///C:/riffgen` on Windows; Ctrl+R / Ctrl+Shift+R → `ERR_FILE_NOT_FOUND` blank window. Fix: **hash routes** (`#/riffgen`) in `appRouter` + Electron `did-fail-load` → `loadFile(index.html)` + hash restore. Soft + hard reload verified on all primary nav tabs.
 
-- **Riff chord-loop trust (Phase 1)** — Unparseable chord-loop tokens still fill `Am7` (parse behaviour unchanged) but are no longer silent: `normalizeChordLoopWithDisclosure` emits `chordLoopDisclosure` (typed → used + bars); `GenerateResult` + post-gen banner on Home / RiffGen (“N reviewed substitutions / M unsupported tokens”). Empty input still uses intentional Am7 vamp with no disclosure. Slash chords and typed harmony pass through to MusicXML as typed when parse succeeds. Phase 2+ (inline badges / ack gating) not started.
+- **Riff chord-loop trust (Phase 1)** — Unparseable chord-loop tokens still fill `Am7` (parse behaviour unchanged) but are no longer silent: `normalizeChordLoopWithDisclosure` emits `chordLoopDisclosure` (typed → used + bars); `GenerateResult` + post-gen banner on Home / RiffGen (“N reviewed substitutions / M unsupported tokens”). Empty input still uses intentional Am7 vamp with no disclosure. Slash chords and typed harmony pass through to MusicXML as typed when parse succeeds. Phase 2 inline badges shipped separately (see Added).
 
 - **RiffGen Corpus QA zero-data** — Desktop IPC/`apiGetRiffPhraseCorpus` resolved derived corpus via `__dirname` + four `..` (correct only for unbundled source). Bundled `resources/` path escaped the repo (`C:\Dev\data\...`), so QA showed Files: 0 / Phrases: 0 with “phrases.jsonl and audit.csv missing”. Fix: `resolveRiffPhraseCorpusDerivedRoot` (repo env / resources / walk) + copy `data/riff-phrase-corpus/derived` into desktop `extraResources` via `copy-riff-phrase-corpus.js`.
 
 ### Added
+
+- **Riff phrase corpus ingest — White Rock Funk + Black Soul Funk** — Real GPX/GP5 ingest: `white_rock_funk` **8**/8 parseOk · **8** phrases; `black_soul_funk` **12**/12 parseOk · **54** phrases. Empty stubs skipped (`bebop_jazz_blues`, `blues_rock`, `modern_rock`, `progressive_blues`). Derived totals **58** files / **161** phrases.
+
+- **RiffGen Phase 1.5 S4 curation UX** — Phrase `curation.needsReview` + reasons (`one_bar_leftover`, `max_phrase_chop`, `meter_mismatch_file`) stamped at ingest. Phrase browser: needs-review filter, amber/red badges, detail callout. QA: needs-review + meter-quarantine counts; `mvoldsu-003` highlighted.
+
+- **Riff chord-loop trust Phase 2** — Live per-token badges on Chord loop field (Home riff + RiffGen): valid / normalized / unsupported / invalid + hover “Typed / Interpreted / Status”; preflight summary near Generate. Fallback Am7 behaviour unchanged (Phase 1 disclosure still post-gen).
+
+
 
 - **RiffGen empty category visibility** — Corpus QA no longer hides `files===0 && phrases===0` rows (so scaffolded stubs like `white_rock_funk` / `black_soul_funk` show as 0/0). Phrase browser seeds accordion + Category dropdown from `stats.byCategory` keys, not only ingested phrases.
 

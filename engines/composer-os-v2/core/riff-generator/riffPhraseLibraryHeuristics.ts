@@ -83,4 +83,22 @@ export const RIFF_PHRASE_CATEGORY_TAG_HEURISTICS: Record<
     notes:
       'high m3/tritone density; symmetrical/octatonic contour; frequent chromatic approach; moderate-high chromaticityScore; ends often chromatic_resolve or open',
   },
+  white_rock_funk: {
+    expectedTags: ['16th', 'syncopated', 'rock_accent', 'funk_grid'],
+    highIntervalDensity: ['M2', 'P4', 'P5'],
+    contourHints: ['syncopated_16th_grid', 'rock_leaning_accents'],
+    chromaticityBand: { min: 0.15, max: 0.45 },
+    preferredPhraseEndTypes: ['sustain', 'rest'],
+    notes:
+      'syncopated 16th-grid; rock-leaning accents; moderate chromaticity; source: Chris Buono 30 Funk Rock Riffs You MUST Know',
+  },
+  black_soul_funk: {
+    expectedTags: ['ghost_note', 'muted_strum', 'backbeat', 'call_response', 'downbeat_accent'],
+    highIntervalDensity: ['P4', 'P5', 'm3'],
+    contourHints: ['call_response', 'strong_downbeat_backbeat', 'ghost_mute_texture'],
+    chromaticityBand: { min: 0.05, max: 0.35 },
+    preferredPhraseEndTypes: ['rest', 'sustain'],
+    notes:
+      'ghost notes / muted strums when detectable; strong downbeat + backbeat accents; call-response common; source: Funk Fundamentals / Funk Survival Guide',
+  },
 };

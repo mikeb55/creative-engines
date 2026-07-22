@@ -2,6 +2,7 @@ import { RiffGeneratorPanel } from '@composer-os/ui/components/RiffGeneratorPane
 import { clampRiffBarCount } from '../../types/riffGeneratorUi';
 import { isDesktopIpc } from '../../services/api';
 import { RiffChordLoopDisclosureBanner } from './RiffChordLoopDisclosureBanner';
+import { RiffChordLoopTokenStrip } from './RiffChordLoopTokenStrip';
 import { useRiffGenGenerateState } from './useRiffGenGenerateState';
 
 const inputStyle = {
@@ -165,6 +166,7 @@ export function RiffGenGenerateIsland() {
             placeholder="Am7 | Dm7 | G7 | Cmaj7"
             style={{ ...inputStyle, width: '100%', display: 'block' }}
           />
+          <RiffChordLoopTokenStrip value={s.chordProgressionText} disabled={s.loading} />
         </label>
         <button type="button" style={inputStyle} disabled={s.loading} onClick={s.generate}>
           {s.loading ? 'Generating…' : 'Generate riff'}

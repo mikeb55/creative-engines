@@ -44,9 +44,8 @@ export function RiffGenCorpusQaPanel({ corpus }: { corpus: RiffPhraseCorpusDto }
       ? `audit phrasesOut sum ${t.auditPhrasesOutSum} ≠ phrases.jsonl ${t.phrases}`
       : null;
 
-  const cats = Object.entries(stats.byCategory)
-    .filter(([, s]) => s.files > 0 || s.phrases > 0)
-    .sort((a, b) => a[0].localeCompare(b[0]));
+  // Show all registered categories (incl. 0 files / 0 phrases stubs).
+  const cats = Object.entries(stats.byCategory).sort((a, b) => a[0].localeCompare(b[0]));
 
   return (
     <section
@@ -79,6 +78,8 @@ export function RiffGenCorpusQaPanel({ corpus }: { corpus: RiffPhraseCorpusDto }
         <div>Tie fixups: <strong>{t.tieFixups}</strong></div>
         <div>Ornaments dropped: <strong>{t.droppedOrnaments}</strong></div>
         <div>Invalid skipped: <strong>{t.phrasesInvalidSkipped}</strong></div>
+        <div>Needs review: <strong>{stats.needsReviewCount ?? 0}</strong></div>
+        <div>Meter quarantine phrases: <strong>{stats.meterQuarantinePhraseCount ?? 0}</strong></div>
       </div>
 
       {mismatch ? (
@@ -137,13 +138,20 @@ export function RiffGenCorpusQaPanel({ corpus }: { corpus: RiffPhraseCorpusDto }
         {histTable('End type', stats.endTypeHist)}
       </div>
 
-      <h4 style={{ margin: '0.5rem 0 0.4rem', fontSize: '0.95rem' }}>Meter mismatch warnings</h4>
+      <h4 style={{ margin: '0.5rem 0 0.4rem', fontSize: '0.95rem' }}>Meter mismatch / quarantine</h4>
       {stats.meterMismatchFiles.length === 0 ? (
         <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>None</p>
       ) : (
         <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.85rem' }}>
           {stats.meterMismatchFiles.map((f) => (
-            <li key={f}>{f}</li>
+            <li key={f}>
+              {f}
+              {/mvoldsu-003/i.test(f) ? (
+                <span style={{ color: 'salmon', marginLeft: 6 }}>(quarantine — 6/4→4/4 mid-file)</span>
+              ) : (
+                <span style={{ color: 'var(--text-muted)', marginLeft: 6 }}>(meterMismatch)</span>
+              )}
+            </li>
           ))}
         </ul>
       )}

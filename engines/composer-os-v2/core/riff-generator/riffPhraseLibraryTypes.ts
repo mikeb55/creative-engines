@@ -18,7 +18,7 @@ import type { CoreMotif } from '../motif/motifEngineTypes';
 import type { RiffIntervalWeightMap, RiffOrnamentPolicy } from '../composer/riffProfileTypes';
 import type { NoteEvent, RestEvent } from '../score-model/scoreModelTypes';
 
-/** Fixed corpus course ids (36 files planned; synthetic fixtures first). */
+/** Fixed corpus course ids (56 files planned; synthetic fixtures first). */
 export const RIFF_PHRASE_CATEGORIES = [
   'bebop_jazz_blues',
   'blues_rock',
@@ -27,6 +27,8 @@ export const RIFF_PHRASE_CATEGORIES = [
   'progressive_blues',
   'sax_inspired',
   'diminished_lines',
+  'white_rock_funk',
+  'black_soul_funk',
 ] as const;
 
 export type RiffPhraseCategory = (typeof RIFF_PHRASE_CATEGORIES)[number];
@@ -39,6 +41,8 @@ export const RIFF_PHRASE_CATEGORY_LABELS: Record<RiffPhraseCategory, string> = {
   progressive_blues: 'Progressive Blues',
   sax_inspired: 'Sax-Inspired',
   diminished_lines: 'Diminished Lines',
+  white_rock_funk: 'White Rock Funk',
+  black_soul_funk: 'Black Soul Funk',
 };
 
 /** Planned corpus counts per category (real ingest later). */
@@ -50,10 +54,12 @@ export const RIFF_PHRASE_CATEGORY_TARGET_COUNTS: Record<RiffPhraseCategory, numb
   progressive_blues: 4,
   sax_inspired: 5,
   diminished_lines: 6,
+  white_rock_funk: 8,
+  black_soul_funk: 12,
 };
 
 /** Sum of category target counts. */
-export const RIFF_PHRASE_CORPUS_TARGET_TOTAL = 36 as const;
+export const RIFF_PHRASE_CORPUS_TARGET_TOTAL = 56 as const;
 
 /**
  * Parser notes for GPX/GP5 ingest (Phase 1 scripts only — not app runtime).
@@ -154,6 +160,19 @@ export interface RiffPhraseEntry {
   /** Advisory only — never locks chord symbols. */
   inferredHarmonyHints: string[];
   tags: string[];
+  /** Phase 1.5 S4 — curation / quarantine flags (optional; absent = clean). */
+  curation?: RiffPhraseCuration;
+}
+
+/** S4 needs-review reasons (diminished_lines leftovers, max-bar chops, meter mismatch files). */
+export type RiffPhraseCurationReason =
+  | 'one_bar_leftover'
+  | 'max_phrase_chop'
+  | 'meter_mismatch_file';
+
+export interface RiffPhraseCuration {
+  needsReview: boolean;
+  reasons: RiffPhraseCurationReason[];
 }
 
 /** One row of ingest audit CSV (emitted when real GPX ingest is unlocked). */

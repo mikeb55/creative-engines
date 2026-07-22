@@ -89,5 +89,31 @@
     "meterMismatch": false,
     "hash": "synthetic:diminished_lines_01",
     "notes": "hand-built fixture; no GPX; diminished m3/tritone heuristic"
+  },
+  {
+    "file": "synth_white_rock_funk_01.json",
+    "parseOk": true,
+    "trackCount": 0,
+    "voiceCount": 1,
+    "barsIn": 1,
+    "phrasesOut": 1,
+    "droppedOrnaments": 0,
+    "tieFixups": 0,
+    "meterMismatch": false,
+    "hash": "synthetic:white_rock_funk_01",
+    "notes": "hand-built fixture; no GPX; syncopated 16th / rock-funk heuristic"
+  },
+  {
+    "file": "synth_black_soul_funk_01.json",
+    "parseOk": true,
+    "trackCount": 0,
+    "voiceCount": 1,
+    "barsIn": 2,
+    "phrasesOut": 1,
+    "droppedOrnaments": 0,
+    "tieFixups": 0,
+    "meterMismatch": false,
+    "hash": "synthetic:black_soul_funk_01",
+    "notes": "hand-built fixture; no GPX; ghost/mute + call-response soul-funk heuristic"
   }
 ]

@@ -3,6 +3,8 @@
  *
  * Phase 1 trust: null / unparseable slots still fill Am7 (parse behaviour unchanged), but callers can
  * surface `RiffChordLoopDisclosure` so the UI never hides typed→used mismatches.
+ *
+ * Phase 2: `previewRiffChordLoopTokens` exposes per-token UI state without changing fallback.
  */
 
 import {
@@ -15,6 +17,9 @@ const DEFAULT_VAMP = ['Am7'];
 
 /** Phase 1 coarse kinds — full 5-state token model lands in Phase 2+. */
 export type RiffChordTokenDisclosureKind = 'substitution' | 'unsupported';
+
+/** Phase 2 inline badge states (UI-only; fallback still Am7 for unsupported/invalid). */
+export type RiffChordTokenUiStatus = 'valid' | 'normalized' | 'unsupported' | 'invalid';
 
 export interface RiffChordTokenDisclosure {
   originalToken: string;
@@ -31,6 +36,13 @@ export interface RiffChordLoopDisclosure {
   unsupported: RiffChordTokenDisclosure[];
 }
 
+/** Live per-token preview for Chord loop field (Phase 2). */
+export interface RiffChordTokenPreview {
+  token: string;
+  usedSymbol: string;
+  status: RiffChordTokenUiStatus;
+}
+
 export function emptyRiffChordLoopDisclosure(): RiffChordLoopDisclosure {
   return { substitutions: [], unsupported: [] };
 }
@@ -39,6 +51,10 @@ export function riffChordLoopDisclosureHasIssues(
   d: RiffChordLoopDisclosure | null | undefined
 ): boolean {
   return !!d && (d.substitutions.length > 0 || d.unsupported.length > 0);
+}
+
+function looksLikeChordRoot(token: string): boolean {
+  return /^[A-Ga-g]/.test(token.trim());
 }
 
 function displayToken(raw: string): string {
@@ -177,6 +193,70 @@ export function normalizeChordLoopWithDisclosure(
 
 export function normalizeChordLoop(input: string | undefined, barCount: number): string[] {
   return normalizeChordLoopWithDisclosure(input, barCount).chords;
+}
+
+/**
+ * Phase 2 — live per-token preview for Chord loop UI.
+ * Does not change Am7 fallback; uses same parse path as disclosure.
+ */
+export function previewRiffChordLoopTokens(input: string | undefined): RiffChordTokenPreview[] {
+  const trimmed = (input ?? '').trim();
+  if (!trimmed) return [];
+
+  const rawTokens = rawLoopTokens(trimmed);
+  const parsed = parseChordsFromPipeDelimited(trimmed);
+  if (parsed.length === 0) {
+    return [
+      {
+        token: displayToken(trimmed),
+        usedSymbol: DEFAULT_VAMP[0]!,
+        status: looksLikeChordRoot(trimmed) ? 'unsupported' : 'invalid',
+      },
+    ];
+  }
+
+  const out: RiffChordTokenPreview[] = [];
+  for (let i = 0; i < parsed.length; i++) {
+    const entry = parsed[i];
+    const token = rawTokens[i] ?? `(slot ${i + 1})`;
+    if (entry == null) {
+      out.push({
+        token,
+        usedSymbol: DEFAULT_VAMP[0]!,
+        status: looksLikeChordRoot(token) ? 'unsupported' : 'invalid',
+      });
+      continue;
+    }
+    if (token !== entry.symbol) {
+      out.push({ token, usedSymbol: entry.symbol, status: 'normalized' });
+    } else {
+      out.push({ token, usedSymbol: entry.symbol, status: 'valid' });
+    }
+  }
+  return out;
+}
+
+export function summarizeRiffChordTokenPreviews(tokens: RiffChordTokenPreview[]): {
+  total: number;
+  valid: number;
+  normalized: number;
+  unsupported: number;
+  invalid: number;
+  needReview: number;
+} {
+  const summary = {
+    total: tokens.length,
+    valid: 0,
+    normalized: 0,
+    unsupported: 0,
+    invalid: 0,
+    needReview: 0,
+  };
+  for (const t of tokens) {
+    summary[t.status] += 1;
+    if (t.status !== 'valid') summary.needReview += 1;
+  }
+  return summary;
 }
 
 /** Expose parsed progression entries for tests / diagnostics. */

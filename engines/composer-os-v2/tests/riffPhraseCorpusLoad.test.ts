@@ -46,14 +46,30 @@ export function runRiffPhraseCorpusLoadTests(): Array<{ name: string; ok: boolea
       jazz.phrases === 12,
     detail: JSON.stringify({ sax, dim, jazz }),
   });
-  const empty = ['bebop_jazz_blues', 'blues_rock', 'modern_rock', 'progressive_blues'];
+  const empty = [
+    'bebop_jazz_blues',
+    'blues_rock',
+    'modern_rock',
+    'progressive_blues',
+    'white_rock_funk',
+    'black_soul_funk',
+  ];
   rows.push({
-    name: 'empty categories have zero files/phrases in stats',
+    name: 'empty/scaffolded categories have zero files/phrases in stats',
     ok: empty.every(
       (c) =>
         (corpus.stats.byCategory[c]?.files ?? 0) === 0 &&
         (corpus.stats.byCategory[c]?.phrases ?? 0) === 0
     ),
+    detail: JSON.stringify(
+      Object.fromEntries(empty.map((c) => [c, corpus.stats.byCategory[c] ?? null]))
+    ),
+  });
+  rows.push({
+    name: 'stats.byCategory includes white_rock_funk + black_soul_funk keys',
+    ok:
+      !!corpus.stats.byCategory.white_rock_funk &&
+      !!corpus.stats.byCategory.black_soul_funk,
   });
 
   const melodyFiles = [

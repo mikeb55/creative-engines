@@ -1,0 +1,168 @@
+{
+  "id": "synth_white_rock_funk_01",
+  "category": "white_rock_funk",
+  "sourceCourse": "30 Funk Rock Riffs You MUST Know (Chris Buono)",
+  "sourceFile": {
+    "name": "synth_white_rock_funk_01.json",
+    "sha256": "synthetic:white_rock_funk_01"
+  },
+  "barCount": 1,
+  "meter": {
+    "numerator": 4,
+    "denominator": 4
+  },
+  "noteEvents": [
+    {
+      "kind": "rest",
+      "startBeat": 0,
+      "duration": 0.25,
+      "voice": 1
+    },
+    {
+      "kind": "note",
+      "pitch": 64,
+      "startBeat": 0.25,
+      "duration": 0.25,
+      "voice": 1
+    },
+    {
+      "kind": "note",
+      "pitch": 67,
+      "startBeat": 0.5,
+      "duration": 0.25,
+      "voice": 1
+    },
+    {
+      "kind": "note",
+      "pitch": 69,
+      "startBeat": 0.75,
+      "duration": 0.25,
+      "voice": 1
+    },
+    {
+      "kind": "note",
+      "pitch": 67,
+      "startBeat": 1,
+      "duration": 0.5,
+      "voice": 1
+    },
+    {
+      "kind": "rest",
+      "startBeat": 1.5,
+      "duration": 0.25,
+      "voice": 1
+    },
+    {
+      "kind": "note",
+      "pitch": 64,
+      "startBeat": 1.75,
+      "duration": 0.25,
+      "voice": 1
+    },
+    {
+      "kind": "note",
+      "pitch": 62,
+      "startBeat": 2,
+      "duration": 0.5,
+      "voice": 1
+    },
+    {
+      "kind": "note",
+      "pitch": 67,
+      "startBeat": 2.5,
+      "duration": 0.5,
+      "voice": 1
+    },
+    {
+      "kind": "note",
+      "pitch": 64,
+      "startBeat": 3,
+      "duration": 1,
+      "voice": 1
+    }
+  ],
+  "intervalSequence": [
+    3,
+    2,
+    -2,
+    -3,
+    -2,
+    5,
+    -3
+  ],
+  "contour": [
+    1,
+    1,
+    -1,
+    -1,
+    -1,
+    1,
+    -1
+  ],
+  "rhythmicCell": [
+    1,
+    1,
+    1,
+    2,
+    1,
+    2,
+    2,
+    4
+  ],
+  "attackPositions": [
+    0.25,
+    0.5,
+    0.75,
+    1,
+    1.75,
+    2,
+    2.5,
+    3
+  ],
+  "restMask": [
+    true,
+    false,
+    false,
+    false,
+    false,
+    true,
+    false,
+    false
+  ],
+  "strongBeatTargets": [
+    4,
+    7,
+    9
+  ],
+  "phraseStartType": "syncopated",
+  "phraseEndType": "sustain",
+  "cadenceStrength": 0.55,
+  "registerLow": 62,
+  "registerHigh": 69,
+  "registerCenter": 65,
+  "chromaticityScore": 0.3,
+  "leapProfile": {
+    "maxLeap": 5,
+    "leapRate": 0.143,
+    "leapSemitoneHist": {
+      "5": 1
+    }
+  },
+  "ornamentFlags": {
+    "slides": false,
+    "ghosts": false,
+    "graceAttacks": false,
+    "bends": false,
+    "deadNotes": false
+  },
+  "inferredHarmonyHints": [
+    "Mixolydian",
+    "funk_rock_vamp"
+  ],
+  "tags": [
+    "16th",
+    "syncopated",
+    "rock_accent",
+    "funk_grid"
+  ]
+}

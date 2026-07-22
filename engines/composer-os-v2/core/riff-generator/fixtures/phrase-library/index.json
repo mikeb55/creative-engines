@@ -15,7 +15,9 @@
     "synth_modern_rock_01.json",
     "synth_progressive_blues_01.json",
     "synth_sax_inspired_01.json",
-    "synth_diminished_lines_01.json"
+    "synth_diminished_lines_01.json",
+    "synth_white_rock_funk_01.json",
+    "synth_black_soul_funk_01.json"
   ],
-  "corpusTargetTotal": 36
+  "corpusTargetTotal": 56
 }

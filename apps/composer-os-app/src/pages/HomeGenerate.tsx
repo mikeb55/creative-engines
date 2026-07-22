@@ -192,6 +192,7 @@ import {
 import { resolveRiffSoftLinkHv } from '@composer-os/core/riff-generator/riffSoftLinkHv';
 import { riffChordGridWarnings } from '../utils/riffChordGridWarnings';
 import { RiffChordLoopDisclosureBanner } from '../components/riffgen/RiffChordLoopDisclosureBanner';
+import { RiffChordLoopTokenStrip } from '../components/riffgen/RiffChordLoopTokenStrip';
 import { ComposerEraSelectOptions } from '../components/ComposerEraSelectOptions';
 import {
   composerEraForRequest,
@@ -8120,6 +8121,9 @@ export function HomeGenerate({
               fontSize: '0.9rem',
             }}
           />
+          {presetId === 'riff_generator' ? (
+            <RiffChordLoopTokenStrip value={chordProgressionText} disabled={loading} />
+          ) : null}
           {presetId === 'riff_generator' && riffChordWarnings.length > 0 ? (
             <ul
               role="status"

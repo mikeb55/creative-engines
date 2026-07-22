@@ -100,6 +100,8 @@ export interface RiffPhraseCorpusStats {
   startTypeHist: Record<string, number>;
   endTypeHist: Record<string, number>;
   meterMismatchFiles: string[];
+  needsReviewCount: number;
+  meterQuarantinePhraseCount: number;
   totals: {
     files: number;
     parseOk: number;
@@ -210,6 +212,8 @@ function buildStats(
   const startTypeHist: Record<string, number> = {};
   const endTypeHist: Record<string, number> = {};
   const meterMismatchFiles: string[] = [];
+  let needsReviewCount = 0;
+  let meterQuarantinePhraseCount = 0;
 
   for (const row of audit) {
     const cat = row.file.split(/[/\\]/)[0] || 'unknown';
@@ -234,6 +238,10 @@ function buildStats(
     barCountHist[bk] = (barCountHist[bk] ?? 0) + 1;
     startTypeHist[p.phraseStartType] = (startTypeHist[p.phraseStartType] ?? 0) + 1;
     endTypeHist[p.phraseEndType] = (endTypeHist[p.phraseEndType] ?? 0) + 1;
+    if (p.curation?.needsReview) {
+      needsReviewCount += 1;
+      if (p.curation.reasons.includes('meter_mismatch_file')) meterQuarantinePhraseCount += 1;
+    }
   }
 
   const auditPhrasesOutSum = audit.reduce((n, r) => n + r.phrasesOut, 0);
@@ -244,6 +252,8 @@ function buildStats(
     startTypeHist,
     endTypeHist,
     meterMismatchFiles,
+    needsReviewCount,
+    meterQuarantinePhraseCount,
     totals: {
       files: audit.length,
       parseOk: audit.filter((r) => r.parseOk).length,

@@ -176,6 +176,22 @@ export function validateRiffPhraseEntry(
     errors.push('tags must be string[]');
   }
 
+  if (raw.curation !== undefined) {
+    if (!isRecord(raw.curation)) {
+      errors.push('curation must be object');
+    } else {
+      if (typeof raw.curation.needsReview !== 'boolean') errors.push('curation.needsReview must be boolean');
+      const reasons = raw.curation.reasons;
+      const allowed = new Set(['one_bar_leftover', 'max_phrase_chop', 'meter_mismatch_file']);
+      if (
+        !Array.isArray(reasons) ||
+        !reasons.every((r: unknown) => typeof r === 'string' && allowed.has(r))
+      ) {
+        errors.push('curation.reasons must be known reason strings');
+      }
+    }
+  }
+
   if (errors.length === 0 && Array.isArray(raw.noteEvents) && Array.isArray(raw.intervalSequence)) {
     const derived = deriveIntervalSequence(raw.noteEvents as RiffPhraseScoreEvent[]);
     const stored = raw.intervalSequence as number[];
