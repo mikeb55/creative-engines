@@ -30,6 +30,7 @@ import { runRiffCarryForwardTests } from './riffCarryForward.test';
 import { runRiffVariationApplyTests } from './riffVariationApply.test';
 import { runRiffZappaSoloTests } from './riffZappaSolo.test';
 import { runRiffIntervalWeightsPitchTests } from './riffIntervalWeightsPitch.test';
+import { runRiffEnforceHookIntervalGateTests } from './riffEnforceHookIntervalGate.test';
 
 function countMelodicNotes(score: ScoreModel): number {
   let n = 0;
@@ -556,5 +557,6 @@ export function runRiffGeneratorTests(): { ok: boolean; name: string }[] {
     ...runRiffVariationApplyTests(),
     ...runRiffZappaSoloTests(),
     ...runRiffIntervalWeightsPitchTests(),
+    ...runRiffEnforceHookIntervalGateTests(),
   ];
 }

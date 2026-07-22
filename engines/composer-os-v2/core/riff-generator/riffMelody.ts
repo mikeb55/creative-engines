@@ -2,12 +2,40 @@
  * Assign pitches to riff rhythm: chord tones on strong beats, passing tones weak, hook + loop closure.
  */
 
+import type { RiffIntervalWeightMap } from '../composer/riffProfileTypes';
 import type { ChordToneSet } from '../goldenPath/guitarBassDuoHarmony';
 import { chordTonesForChordSymbol } from '../harmony/chordSymbolAnalysis';
 import type { ResolvedPitchField } from '../harmony/pitchFieldSpineTypes';
 import type { CoreMotif } from '../motif/motifEngineTypes';
+import { RIFF_INTERVAL_WEIGHT_SEMITONES } from './riffPitchField';
 import type { RiffRhythmSegment, RiffStyleId } from './riffTypes';
 import { randInt } from './riffRandom';
+
+/** Peak on these → suppress forced leap inject (step-heavy). */
+const ENFORCE_HOOK_STEP_KEYS: ReadonlyArray<keyof RiffIntervalWeightMap> = ['m2', 'M2', 'm3'];
+/** Peak (or tie) on these → keep forced leap inject (leap-heavy). */
+const ENFORCE_HOOK_LEAP_KEYS: ReadonlyArray<keyof RiffIntervalWeightMap> = ['P4', 'tritone', 'P5'];
+
+/**
+ * PR B — when `intervalWeights` peak on ≤M2/m3, skip forced-leap inject.
+ * Absent / empty / leap-family peak (P4/P5/tritone) / other peaks (M3/M6) → do not suppress.
+ */
+export function shouldSuppressEnforceHookLeap(
+  weights: RiffIntervalWeightMap | undefined
+): boolean {
+  if (!weights) return false;
+  let maxW = -Infinity;
+  let any = false;
+  for (const key of Object.keys(RIFF_INTERVAL_WEIGHT_SEMITONES) as Array<keyof RiffIntervalWeightMap>) {
+    const w = weights[key];
+    if (typeof w !== 'number' || !Number.isFinite(w)) continue;
+    any = true;
+    if (w > maxW) maxW = w;
+  }
+  if (!any) return false;
+  if (ENFORCE_HOOK_LEAP_KEYS.some((k) => weights[k] === maxW)) return false;
+  return ENFORCE_HOOK_STEP_KEYS.some((k) => weights[k] === maxW);
+}
 
 const EPS = 1e-5;
 
@@ -234,7 +262,11 @@ export function assignMelodyToBar(
 }
 
 /** Enforce hook: ≥4 semitone leap somewhere, or chromatic pair. */
-export function enforceHook(notes: MelodyLine[], rng: () => number): void {
+export function enforceHook(
+  notes: MelodyLine[],
+  rng: () => number,
+  intervalWeights?: RiffIntervalWeightMap
+): void {
   if (notes.length < 2) return;
   let hasLeap = false;
   let hasChromatic = false;
@@ -244,6 +276,7 @@ export function enforceHook(notes: MelodyLine[], rng: () => number): void {
     if (d === 1) hasChromatic = true;
   }
   if (hasLeap || hasChromatic) return;
+  if (shouldSuppressEnforceHookLeap(intervalWeights)) return;
   /** Widen second interval */
   const dir = rng() > 0.5 ? 1 : -1;
   notes[1]!.pitch = Math.max(40, Math.min(90, notes[0]!.pitch + dir * 5));

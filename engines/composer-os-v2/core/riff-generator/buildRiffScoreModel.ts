@@ -102,7 +102,7 @@ export function buildRiffScoreModel(params: RiffGeneratorParams): BuiltRiffScore
     prevLast = lastPitch;
   }
 
-  enforceHook(perBarMelody.flat(), rng);
+  enforceHook(perBarMelody.flat(), rng, profile?.intervalWeights);
 
   if (firstPitch !== undefined && params.bars >= 1) {
     applyLoopClosure(perBarMelody[params.bars - 1]!, firstPitch, rng);

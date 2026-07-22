@@ -127,7 +127,7 @@ UI toggle label **"Use HV for riff pattern too?"** maps to `riffUseHvForPattern`
 | Empty stubs | `bebop_jazz_blues`, `blues_rock`, `modern_rock`, `progressive_blues` |
 | Road-test QA totals | **38** files / **99** phrases |
 | Engine wiring | **OFF** — no imports into `riffMelody` / `riffPitchField` / `buildRiffScoreModel` / `runRiffGenerator` |
-| Pitch PR status | **PR A** (`intervalWeights` → pick) shipped · **PR B** (`enforceHook`) + **PR C** (loop-closure) still open |
+| Pitch PR status | **PR A** (`intervalWeights` → pick) + **PR B** (`enforceHook` gate) shipped · **PR C** (loop-closure / motif) still open |
 
 ---
 
