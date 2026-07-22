@@ -15,6 +15,18 @@ import { randInt } from './riffRandom';
 const ENFORCE_HOOK_STEP_KEYS: ReadonlyArray<keyof RiffIntervalWeightMap> = ['m2', 'M2', 'm3'];
 /** Peak (or tie) on these → keep forced leap inject (leap-heavy). */
 const ENFORCE_HOOK_LEAP_KEYS: ReadonlyArray<keyof RiffIntervalWeightMap> = ['P4', 'tritone', 'P5'];
+/** Directed ICs for P4 / tritone / P5 — leap-family peak gate for motif blend (PR C). */
+const LEAP_FAMILY_SEMITONES = new Set(
+  ENFORCE_HOOK_LEAP_KEYS.map((k) => RIFF_INTERVAL_WEIGHT_SEMITONES[k])
+);
+
+/** Default motif blend weight in assignMelodyToBar: `w*motif + (1-w)*pitch`. */
+export const RIFF_MOTIF_BLEND_DEFAULT = 0.55;
+/**
+ * Motif blend when preferredIntervals peak on leap family (P4/P5/tritone).
+ * 0 = skip blend (preserves leap bias from PR A pick path).
+ */
+export const RIFF_MOTIF_BLEND_WHEN_LEAP_PEAK = 0;
 
 /**
  * PR B — when `intervalWeights` peak on ≤M2/m3, skip forced-leap inject.
@@ -35,6 +47,40 @@ export function shouldSuppressEnforceHookLeap(
   if (!any) return false;
   if (ENFORCE_HOOK_LEAP_KEYS.some((k) => weights[k] === maxW)) return false;
   return ENFORCE_HOOK_STEP_KEYS.some((k) => weights[k] === maxW);
+}
+
+/**
+ * True when preferredIntervals non-empty and max weight sits on P4/tritone/P5 (tie counts).
+ */
+export function isLeapFamilyPeakPreferredIntervals(
+  preferred: Array<{ semitones: number; weight: number }> | undefined
+): boolean {
+  if (!preferred || preferred.length === 0) return false;
+  let maxW = -Infinity;
+  for (const e of preferred) {
+    if (typeof e.weight !== 'number' || !Number.isFinite(e.weight)) continue;
+    if (e.weight > maxW) maxW = e.weight;
+  }
+  if (!Number.isFinite(maxW)) return false;
+  return preferred.some((e) => {
+    if (e.weight !== maxW) return false;
+    const ic = ((e.semitones % 12) + 12) % 12;
+    return LEAP_FAMILY_SEMITONES.has(ic);
+  });
+}
+
+/**
+ * PR C — leap-peak preferredIntervals → reduced/skipped motif blend; else default 0.55.
+ * Step-heavy / absent preferredIntervals unchanged.
+ */
+export function motifBlendWeightForPitchField(
+  pitchField: ResolvedPitchField | undefined,
+  leapPeakBlend: number = RIFF_MOTIF_BLEND_WHEN_LEAP_PEAK
+): number {
+  if (isLeapFamilyPeakPreferredIntervals(pitchField?.preferredIntervals)) {
+    return leapPeakBlend;
+  }
+  return RIFF_MOTIF_BLEND_DEFAULT;
 }
 
 const EPS = 1e-5;
@@ -216,6 +262,8 @@ export interface MelodyLine {
 /**
  * Build monophonic melody for one bar; `firstBarPitch` seeds loop when bIndex > 0.
  * Optional `coreMotif` biases successive notes to the abstract interval pattern (motif → riff binding).
+ * PR C: when pitchField.preferredIntervals peak on leap family, motif blend weight is
+ * {@link RIFF_MOTIF_BLEND_WHEN_LEAP_PEAK} (skip); step/absent keep {@link RIFF_MOTIF_BLEND_DEFAULT}.
  */
 export function assignMelodyToBar(
   bar: RiffRhythmSegment[],
@@ -248,8 +296,11 @@ export function assignMelodyToBar(
       pitch = strongPitch(tones, chord, rng, low, high);
     }
     if (coreMotif && last !== undefined && notes.length > 0) {
-      const motifPitch = pitchFromMotifInterval(last, notes.length - 1, coreMotif, tones, low, high);
-      pitch = Math.round(0.55 * motifPitch + 0.45 * pitch);
+      const motifW = motifBlendWeightForPitchField(pitchField);
+      if (motifW > 0) {
+        const motifPitch = pitchFromMotifInterval(last, notes.length - 1, coreMotif, tones, low, high);
+        pitch = Math.round(motifW * motifPitch + (1 - motifW) * pitch);
+      }
     }
     notes.push({ startBeat: s.startBeat, duration: s.duration, pitch });
     last = pitch;
