@@ -27,6 +27,16 @@ export const RIFF_MOTIF_BLEND_DEFAULT = 0.55;
  * 0 = skip blend (preserves leap bias from PR A pick path).
  */
 export const RIFF_MOTIF_BLEND_WHEN_LEAP_PEAK = 0;
+/**
+ * Phase 1.9 — phrase-seeded CoreMotif (`id` starts with `phrase:`): full motif weight.
+ * Separate from PR C leap-skip; does not read preferredIntervals.
+ */
+export const RIFF_MOTIF_BLEND_PHRASE_SEED = 1.0;
+
+/** Phrase-library seeded motif (Phase 2 prep / sax PoC) vs procedural `riff_core`. */
+export function isPhraseSeededCoreMotif(motif: CoreMotif | undefined): boolean {
+  return typeof motif?.id === 'string' && motif.id.startsWith('phrase:');
+}
 
 /**
  * PR B — when `intervalWeights` peak on ≤M2/m3, skip forced-leap inject.
@@ -224,19 +234,27 @@ export function pitchFromFieldForTest(
   return pitchFromField(field, rng, low, high, preferPrev);
 }
 
-/** Snap toward motif interval step from previous pitch (chord-tone pool). */
+/**
+ * Motif interval → pitch from previous note.
+ * Procedural (`riff_core`): chord-tone snap (legacy).
+ * Phrase-seeded (`phrase:*`): last+step + register clamp only (Phase 1.9 — no R/3/5/7 snap).
+ */
 function pitchFromMotifInterval(
   last: number,
   stepIdx: number,
   coreMotif: CoreMotif,
   tones: ChordToneSet,
   low: number,
-  high: number
+  high: number,
+  chordToneSnap: boolean
 ): number {
   const ip = coreMotif.intervalPattern;
   if (ip.length === 0) return last;
-  const step = ip[stepIdx % ip.length];
+  const step = ip[stepIdx % ip.length]!;
   const raw = last + step;
+  if (!chordToneSnap) {
+    return Math.max(low, Math.min(high, raw));
+  }
   const pool = [tones.root, tones.third, tones.fifth, tones.seventh].filter(
     (p) => p >= low - 12 && p <= high + 12
   );
@@ -264,6 +282,8 @@ export interface MelodyLine {
  * Optional `coreMotif` biases successive notes to the abstract interval pattern (motif → riff binding).
  * PR C: when pitchField.preferredIntervals peak on leap family, motif blend weight is
  * {@link RIFF_MOTIF_BLEND_WHEN_LEAP_PEAK} (skip); step/absent keep {@link RIFF_MOTIF_BLEND_DEFAULT}.
+ * Phase 1.9: phrase-seeded motifs use {@link RIFF_MOTIF_BLEND_PHRASE_SEED}, no chord-tone snap,
+ * global `motifStepIdx` across bars, and motif on bar-leading notes when `last` is set.
  */
 export function assignMelodyToBar(
   bar: RiffRhythmSegment[],
@@ -274,12 +294,15 @@ export function assignMelodyToBar(
   firstBarFirstPitch: number | undefined,
   prevLastPitch: number | undefined,
   coreMotif?: CoreMotif,
-  pitchField?: ResolvedPitchField
-): { notes: MelodyLine[]; lastPitch: number } {
+  pitchField?: ResolvedPitchField,
+  motifStepIdx: number = 0
+): { notes: MelodyLine[]; lastPitch: number; nextMotifStepIdx: number } {
   const tones = chordTonesForChordSymbol(chord, { lockedHarmony: true });
   const { low, high } = styleRegister(style);
   const notes: MelodyLine[] = [];
   let last = prevLastPitch ?? firstBarFirstPitch;
+  let stepIdx = motifStepIdx;
+  const seeded = isPhraseSeededCoreMotif(coreMotif);
 
   for (const s of bar) {
     if (s.rest) continue;
@@ -295,11 +318,30 @@ export function assignMelodyToBar(
     if (bIndex === 0 && notes.length === 0) {
       pitch = strongPitch(tones, chord, rng, low, high);
     }
-    if (coreMotif && last !== undefined && notes.length > 0) {
-      const motifW = motifBlendWeightForPitchField(pitchField);
+    /**
+     * Motif bind: procedural keeps prior gate (skip bar-leading note) + local step index
+     * (`notes.length - 1`) so non-seeded goldens stay byte-stable.
+     * Phrase-seeded: global `motifStepIdx`, apply whenever `last` exists (incl. bar leads).
+     */
+    const applyMotif =
+      !!coreMotif && last !== undefined && (seeded || notes.length > 0);
+    if (applyMotif && coreMotif) {
+      const motifW = seeded
+        ? RIFF_MOTIF_BLEND_PHRASE_SEED
+        : motifBlendWeightForPitchField(pitchField);
       if (motifW > 0) {
-        const motifPitch = pitchFromMotifInterval(last, notes.length - 1, coreMotif, tones, low, high);
+        const useStep = seeded ? stepIdx : notes.length - 1;
+        const motifPitch = pitchFromMotifInterval(
+          last,
+          useStep,
+          coreMotif,
+          tones,
+          low,
+          high,
+          !seeded
+        );
         pitch = Math.round(motifW * motifPitch + (1 - motifW) * pitch);
+        if (seeded) stepIdx += 1;
       }
     }
     notes.push({ startBeat: s.startBeat, duration: s.duration, pitch });
@@ -307,9 +349,13 @@ export function assignMelodyToBar(
   }
 
   if (notes.length === 0) {
-    return { notes, lastPitch: last ?? tones.root };
+    return { notes, lastPitch: last ?? tones.root, nextMotifStepIdx: stepIdx };
   }
-  return { notes, lastPitch: notes[notes.length - 1]!.pitch };
+  return {
+    notes,
+    lastPitch: notes[notes.length - 1]!.pitch,
+    nextMotifStepIdx: stepIdx,
+  };
 }
 
 /** Enforce hook: ≥4 semitone leap somewhere, or chromatic pair. */

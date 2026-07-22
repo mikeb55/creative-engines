@@ -4,7 +4,7 @@
 
 import type { PartModel, ScoreModel } from '../score-model/scoreModelTypes';
 import { createMeasure, createNote, createRest, createScore } from '../score-model/scoreEventBuilder';
-import { generateRiffCoreMotif } from '../motif/songModeMotifEngine';
+import { resolveRiffCoreMotif } from './riffSaxMotifSeedPoc';
 import type { BuiltRiffScore } from './buildRiffScoreModel';
 import { buildFxMarkerTrack } from './riffFxMarkerBuilder';
 import { buildHornStabTrack } from './riffHornStabBuilder';
@@ -273,7 +273,7 @@ export function buildRiffScoreFromBarSnapshots(
   return {
     score,
     perBarRhythm,
-    coreMotif: generateRiffCoreMotif(params.seed),
+    coreMotif: resolveRiffCoreMotif(params.seed, params.vrbId),
     generationMetadata,
   };
 }

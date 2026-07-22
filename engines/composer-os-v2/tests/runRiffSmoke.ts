@@ -10,6 +10,8 @@ import { runRiffMusicalityGateTests } from './riffMusicalityGate.test';
 import { runRiffCarryForwardTests } from './riffCarryForward.test';
 import { runRiffVariationApplyTests } from './riffVariationApply.test';
 import { runRiffZappaSoloTests } from './riffZappaSolo.test';
+import { runRiffMotifFidelityPhase19Tests } from './riffMotifFidelityPhase19.test';
+import { runRiffSaxMotifSeedPocTests } from './riffSaxMotifSeedPoc.test';
 
 type Row = { ok: boolean; name: string };
 
@@ -22,6 +24,8 @@ const suites: { label: string; run: () => Row[] }[] = [
   { label: 'Riff carry-forward', run: runRiffCarryForwardTests },
   { label: 'Riff variation apply', run: runRiffVariationApplyTests },
   { label: 'Riff Zappa solo', run: runRiffZappaSoloTests },
+  { label: 'Riff sax motif seed PoC', run: runRiffSaxMotifSeedPocTests },
+  { label: 'Riff Phase 1.9 motif fidelity', run: runRiffMotifFidelityPhase19Tests },
 ];
 
 function main(): void {

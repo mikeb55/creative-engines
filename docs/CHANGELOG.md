@@ -10,6 +10,10 @@
 
 ### Added
 
+- **Riff Phase 1.9 — phrase-seeded motif realization fidelity (Phase 2 prep)** — Prerequisite before full Phase 2 rollout. Gate: `CoreMotif.id` starts with `phrase:` (vs procedural `riff_core`). (1) `pitchFromMotifInterval` skips R/3/5/7 chord-tone snap → `last+step` + style register clamp. (2) Global `motifStepIdx` across bars (seeded only; procedural keeps local `notes.length-1`). (3) `RIFF_MOTIF_BLEND_PHRASE_SEED=1.0` separate from PR C leap-skip; bar-leading notes join motif chain when `last` set; `enforceHook` leap inject skipped for seeded. Register-band widen deferred. PoC ON fidelity (realized vs phrase): cos **~−0.2→0.94** / exact **~0.10→0.93** (seed 424242); hard gates still PASS; OFF `weather_report` MusicXML sha matches original PoC (`2816d9f6…`). Tests: `riffMotifFidelityPhase19.test.ts`.
+
+- **Riff phrase → motif seed POC (Phase 2 slice)** — Feature flag `COMPOSER_OS_RIFF_SAX_MOTIF_SEED` (default OFF). When ON, `weather_report` only draws CoreMotif from `sax_inspired` via `phraseEntryToCoreMotif` (`riffSaxMotifSeedPoc.ts` → `buildRiffScoreModel` / carry-forward). Flag OFF = prior procedural `generateRiffCoreMotif`. No other VRB / category / hook / loop / intervalWeights. Examples: `output/riff-sax-motif-seed-poc/`.
+
 - **Riff phrase corpus ingest — White Rock Funk + Black Soul Funk** — Real GPX/GP5 ingest: `white_rock_funk` **8**/8 parseOk · **8** phrases; `black_soul_funk` **12**/12 parseOk · **54** phrases. Empty stubs skipped (`bebop_jazz_blues`, `blues_rock`, `modern_rock`, `progressive_blues`). Derived totals **58** files / **161** phrases.
 
 - **RiffGen Phase 1.5 S4 curation UX** — Phrase `curation.needsReview` + reasons (`one_bar_leftover`, `max_phrase_chop`, `meter_mismatch_file`) stamped at ingest. Phrase browser: needs-review filter, amber/red badges, detail callout. QA: needs-review + meter-quarantine counts; `mvoldsu-003` highlighted.

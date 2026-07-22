@@ -1,6 +1,7 @@
 /**
- * Phase-1 adapters: phrase corpus → existing engine shapes (no runtime wire).
- * Motif seed / intervalWeights merge stay phase 2–3.
+ * Phrase corpus → engine shapes.
+ * Motif seed: `phraseEntryToCoreMotif` used by Phase-2 POC (`riffSaxMotifSeedPoc`, flag OFF by default).
+ * IntervalWeights merge stays phase 3.
  */
 
 import type { CoreMotif, MotifRegisterTag, MotifRoleTag } from '../motif/motifEngineTypes';
@@ -30,7 +31,7 @@ function registerTagsForPhrase(entry: RiffPhraseEntry): MotifRegisterTag[] {
 }
 
 /**
- * Map phrase → CoreMotif for future motif-seed blend.
+ * Map phrase → CoreMotif for motif-seed (Phase-2 POC / later blend).
  * Does not call generateRiffCoreMotif or touch assignMelodyToBar.
  */
 export function phraseEntryToCoreMotif(entry: RiffPhraseEntry): CoreMotif {

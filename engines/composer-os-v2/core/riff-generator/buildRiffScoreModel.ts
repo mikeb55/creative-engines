@@ -6,11 +6,11 @@ import type { PartModel, ScoreModel } from '../score-model/scoreModelTypes';
 import type { RiffRhythmSegment } from './riffTypes';
 import { createMeasure, createNote, createRest, createScore } from '../score-model/scoreEventBuilder';
 import { assignBassToBar } from './riffBass';
-import { applyLoopClosure, assignMelodyToBar, enforceHook, type MelodyLine } from './riffMelody';
+import { applyLoopClosure, assignMelodyToBar, enforceHook, isPhraseSeededCoreMotif, type MelodyLine } from './riffMelody';
 import type { RiffGeneratorParams } from './riffTypes';
 import { buildMultiBarRhythm } from './riffRhythm';
 import { mulberry32 } from './riffRandom';
-import { generateRiffCoreMotif } from '../motif/songModeMotifEngine';
+import { resolveRiffCoreMotif } from './riffSaxMotifSeedPoc';
 import { riffPitchFieldForBar, voicingClassForChordSymbol } from './riffPitchField';
 import { buildHornStabTrack } from './riffHornStabBuilder';
 import { computeGuitarRestWindows } from './riffCallResponseEngine';
@@ -43,7 +43,7 @@ export interface BuiltRiffScore {
 export function buildRiffScoreModel(params: RiffGeneratorParams): BuiltRiffScore {
   const rng = mulberry32(params.seed);
   const profile = params.riffProfile;
-  const coreMotif = generateRiffCoreMotif(params.seed);
+  const coreMotif = resolveRiffCoreMotif(params.seed, params.vrbId);
   const perBarRhythm = buildMultiBarRhythm(rng, params.grid, params.density, params.bars, params.style);
   const chords = [...params.chordSymbols];
   while (chords.length < params.bars) {
@@ -74,6 +74,8 @@ export function buildRiffScoreModel(params: RiffGeneratorParams): BuiltRiffScore
   const perBarMelody: MelodyLine[][] = [];
   let prevLast: number | undefined;
   let firstPitch: number | undefined;
+  let motifStepIdx = 0;
+  const phraseSeeded = isPhraseSeededCoreMotif(coreMotif);
 
   for (let b = 0; b < params.bars; b++) {
     const chord = chords[b]!;
@@ -85,7 +87,7 @@ export function buildRiffScoreModel(params: RiffGeneratorParams): BuiltRiffScore
       params.vrbId,
       b
     );
-    const { notes, lastPitch } = assignMelodyToBar(
+    const { notes, lastPitch, nextMotifStepIdx } = assignMelodyToBar(
       barRh,
       chord,
       params.style,
@@ -94,15 +96,20 @@ export function buildRiffScoreModel(params: RiffGeneratorParams): BuiltRiffScore
       firstPitch,
       prevLast,
       coreMotif,
-      pitchField
+      pitchField,
+      motifStepIdx
     );
+    motifStepIdx = nextMotifStepIdx;
     const shaped = applyGuitarRestWindowsToBar(notes, barRh, guitarRestWindows, b, chord);
     if (b === 0 && shaped[0]) firstPitch = shaped[0].pitch;
     perBarMelody.push(shaped);
     prevLast = lastPitch;
   }
 
-  enforceHook(perBarMelody.flat(), rng, profile?.intervalWeights);
+  // Phase 1.9: phrase-seeded — skip enforceHook leap inject so seeded intervals stay intact.
+  if (!phraseSeeded) {
+    enforceHook(perBarMelody.flat(), rng, profile?.intervalWeights);
+  }
 
   if (firstPitch !== undefined && params.bars >= 1) {
     applyLoopClosure(perBarMelody[params.bars - 1]!, firstPitch, rng);
