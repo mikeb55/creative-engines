@@ -481,6 +481,11 @@ export interface GenerateRequest {
    * does **not** apply chord colour yet (Iter 2).
    */
   riffUseHvForPattern?: boolean;
+  /**
+   * Riff Generator — opt-in phrase-corpus motif seed for paired VRBs
+   * (weather_report / mahavishnu / fripp / iommi / nile_rodgers). Default omit/false.
+   */
+  riffPhraseMotifSeed?: boolean;
   /** Riff Generator: odd-meter template overlay (fusion / art_rock). */
   riffOddMeterPreset?:
     | 'meter5'

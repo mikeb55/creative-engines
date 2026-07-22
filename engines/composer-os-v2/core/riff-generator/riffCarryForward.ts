@@ -273,7 +273,7 @@ export function buildRiffScoreFromBarSnapshots(
   return {
     score,
     perBarRhythm,
-    coreMotif: resolveRiffCoreMotif(params.seed, params.vrbId),
+    coreMotif: resolveRiffCoreMotif(params.seed, params.vrbId, { phraseMotifSeed: params.phraseMotifSeed === true }),
     generationMetadata,
   };
 }

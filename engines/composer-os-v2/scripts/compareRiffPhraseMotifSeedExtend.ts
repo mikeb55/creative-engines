@@ -17,6 +17,10 @@ import { resolveRiffGeneratorProfile } from '../core/riff-generator/resolveRiffG
 import {
   RIFF_DIM_MOTIF_SEED_ENV,
   RIFF_DIM_MOTIF_SEED_VRB,
+  RIFF_WHITEROCK_MOTIF_SEED_ENV,
+  RIFF_WHITEROCK_MOTIF_SEED_VRB,
+  RIFF_BLACKSOUL_MOTIF_SEED_ENV,
+  RIFF_BLACKSOUL_MOTIF_SEED_VRB,
   RIFF_JAZZROCK_MOTIF_SEED_ENV,
   RIFF_JAZZROCK_MOTIF_SEED_VRB,
   findSeedsWithMinPhraseIntervals,
@@ -70,6 +74,22 @@ const PAIRINGS: PairingCfg[] = [
     // Verified ≥10 iv (skip 0-iv degenerates like 424243)
     seeds: [424242, 777001, 90210],
   },
+  {
+    label: 'white_rock_funk → iommi',
+    env: RIFF_WHITEROCK_MOTIF_SEED_ENV,
+    vrbId: RIFF_WHITEROCK_MOTIF_SEED_VRB,
+    category: 'white_rock_funk',
+    outDirName: 'riff-whiterock-motif-seed-poc',
+    seeds: [1, 2, 5],
+  },
+  {
+    label: 'black_soul_funk → nile_rodgers',
+    env: RIFF_BLACKSOUL_MOTIF_SEED_ENV,
+    vrbId: RIFF_BLACKSOUL_MOTIF_SEED_VRB,
+    category: 'black_soul_funk',
+    outDirName: 'riff-blacksoul-motif-seed-poc',
+    seeds: [8, 9, 10],
+  },
 ];
 
 const REGRESSION_VRBS = [
@@ -91,6 +111,8 @@ function xmlOf(score: ScoreModel): string {
 function clearFlags(): void {
   delete process.env[RIFF_JAZZROCK_MOTIF_SEED_ENV];
   delete process.env[RIFF_DIM_MOTIF_SEED_ENV];
+  delete process.env[RIFF_WHITEROCK_MOTIF_SEED_ENV];
+  delete process.env[RIFF_BLACKSOUL_MOTIF_SEED_ENV];
   resetRiffPhraseMotifSeedCacheForTests();
 }
 function setFlag(env: string, on: boolean): void {
@@ -356,6 +378,30 @@ function regressionCheck(): { ok: boolean; detail: string }[] {
     });
   }
 
+
+  // Whiterock flag ON — only iommi may change
+  setFlag(RIFF_WHITEROCK_MOTIF_SEED_ENV, true);
+  for (const vrbId of REGRESSION_VRBS) {
+    const h = sha(xmlOf(build(seed, vrbId, 'reg').score));
+    const changed = h !== baseline[vrbId];
+    const expectChange = vrbId === 'iommi';
+    out.push({
+      ok: changed === expectChange,
+      detail: `whiterock flag: ${vrbId} ${changed ? 'CHANGED' : 'stable'} (expect ${expectChange ? 'change' : 'stable'})`,
+    });
+  }
+
+  // Blacksoul flag ON — only nile_rodgers may change
+  setFlag(RIFF_BLACKSOUL_MOTIF_SEED_ENV, true);
+  for (const vrbId of REGRESSION_VRBS) {
+    const h = sha(xmlOf(build(seed, vrbId, 'reg').score));
+    const changed = h !== baseline[vrbId];
+    const expectChange = vrbId === 'nile_rodgers';
+    out.push({
+      ok: changed === expectChange,
+      detail: `blacksoul flag: ${vrbId} ${changed ? 'CHANGED' : 'stable'} (expect ${expectChange ? 'change' : 'stable'})`,
+    });
+  }
   clearFlags();
   return out;
 }

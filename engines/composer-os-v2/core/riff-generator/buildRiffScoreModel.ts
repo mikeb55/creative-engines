@@ -43,7 +43,9 @@ export interface BuiltRiffScore {
 export function buildRiffScoreModel(params: RiffGeneratorParams): BuiltRiffScore {
   const rng = mulberry32(params.seed);
   const profile = params.riffProfile;
-  const coreMotif = resolveRiffCoreMotif(params.seed, params.vrbId);
+  const coreMotif = resolveRiffCoreMotif(params.seed, params.vrbId, {
+    phraseMotifSeed: params.phraseMotifSeed === true,
+  });
   const perBarRhythm = buildMultiBarRhythm(rng, params.grid, params.density, params.bars, params.style);
   const chords = [...params.chordSymbols];
   while (chords.length < params.bars) {

@@ -231,6 +231,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
     barLocks: req.riffBarLocks,
     carryForward: req.riffCarryForward,
     ...zappaControls,
+    ...(req.riffPhraseMotifSeed === true ? { phraseMotifSeed: true } : {}),
   });
 
   if (!gen.success) {

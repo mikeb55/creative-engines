@@ -761,6 +761,7 @@ export function apiGenerate(
       riffSolo: body.riffSolo === true ? true : undefined,
       riffVrbId: typeof body.riffVrbId === 'string' && body.riffVrbId.trim() ? body.riffVrbId.trim() : undefined,
       riffUseHvForPattern: body.riffUseHvForPattern === true ? true : undefined,
+      riffPhraseMotifSeed: body.riffPhraseMotifSeed === true ? true : undefined,
       riffOddMeterPreset:
         body.riffOddMeterPreset === 'meter5' ||
         body.riffOddMeterPreset === 'meter7' ||

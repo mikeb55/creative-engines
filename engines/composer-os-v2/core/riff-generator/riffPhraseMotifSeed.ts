@@ -1,10 +1,12 @@
 /**
- * Phase 2 PoC — phrase category → CoreMotif seed for paired VRBs.
+ * Phase 2 — phrase category → CoreMotif seed for paired VRBs.
  *
- * Pairings (each flag default OFF):
+ * Pairings (each env flag default OFF; request `phraseMotifSeed` also opts in per call):
  * - COMPOSER_OS_RIFF_SAX_MOTIF_SEED → weather_report ← sax_inspired
  * - COMPOSER_OS_RIFF_JAZZROCK_MOTIF_SEED → mahavishnu ← jazz_rock
  * - COMPOSER_OS_RIFF_DIM_MOTIF_SEED → fripp ← diminished_lines
+ * - COMPOSER_OS_RIFF_WHITEROCK_MOTIF_SEED → iommi ← white_rock_funk
+ * - COMPOSER_OS_RIFF_BLACKSOUL_MOTIF_SEED → nile_rodgers ← black_soul_funk
  *
  * Motif seed only — no hook / loop / intervalWeights merge.
  */
@@ -13,9 +15,18 @@ import type { CoreMotif } from '../motif/motifEngineTypes';
 import { generateRiffCoreMotif } from '../motif/songModeMotifEngine';
 import { phraseEntryToCoreMotif } from './riffPhraseLibraryAdapters';
 import { loadRiffPhraseCorpus } from './riffPhraseCorpusLoad';
-import type { RiffPhraseCategory, RiffPhraseEntry } from './riffPhraseLibraryTypes';
+import {
+  RIFF_PHRASE_CATEGORY_LABELS,
+  type RiffPhraseCategory,
+  type RiffPhraseEntry,
+} from './riffPhraseLibraryTypes';
 
-export type RiffPhraseMotifSeedPairingId = 'sax' | 'jazz_rock' | 'diminished';
+export type RiffPhraseMotifSeedPairingId =
+  | 'sax'
+  | 'jazz_rock'
+  | 'diminished'
+  | 'white_rock_funk'
+  | 'black_soul_funk';
 
 export type RiffPhraseMotifSeedPairing = {
   id: RiffPhraseMotifSeedPairingId;
@@ -43,6 +54,18 @@ export const RIFF_PHRASE_MOTIF_SEED_PAIRINGS: readonly RiffPhraseMotifSeedPairin
     vrbId: 'fripp',
     category: 'diminished_lines',
   },
+  {
+    id: 'white_rock_funk',
+    env: 'COMPOSER_OS_RIFF_WHITEROCK_MOTIF_SEED',
+    vrbId: 'iommi',
+    category: 'white_rock_funk',
+  },
+  {
+    id: 'black_soul_funk',
+    env: 'COMPOSER_OS_RIFF_BLACKSOUL_MOTIF_SEED',
+    vrbId: 'nile_rodgers',
+    category: 'black_soul_funk',
+  },
 ] as const;
 
 /** @deprecated use pairing env; kept for existing sax PoC imports */
@@ -57,6 +80,23 @@ export const RIFF_JAZZROCK_MOTIF_SEED_CATEGORY = 'jazz_rock' as const;
 export const RIFF_DIM_MOTIF_SEED_ENV = 'COMPOSER_OS_RIFF_DIM_MOTIF_SEED';
 export const RIFF_DIM_MOTIF_SEED_VRB = 'fripp' as const;
 export const RIFF_DIM_MOTIF_SEED_CATEGORY = 'diminished_lines' as const;
+
+export const RIFF_WHITEROCK_MOTIF_SEED_ENV = 'COMPOSER_OS_RIFF_WHITEROCK_MOTIF_SEED';
+export const RIFF_WHITEROCK_MOTIF_SEED_VRB = 'iommi' as const;
+export const RIFF_WHITEROCK_MOTIF_SEED_CATEGORY = 'white_rock_funk' as const;
+
+export const RIFF_BLACKSOUL_MOTIF_SEED_ENV = 'COMPOSER_OS_RIFF_BLACKSOUL_MOTIF_SEED';
+export const RIFF_BLACKSOUL_MOTIF_SEED_VRB = 'nile_rodgers' as const;
+export const RIFF_BLACKSOUL_MOTIF_SEED_CATEGORY = 'black_soul_funk' as const;
+
+/** Short UI labels for checkbox copy (avoid jargon). */
+const CATEGORY_LICK_LABEL: Partial<Record<RiffPhraseCategory, string>> = {
+  sax_inspired: 'sax',
+  jazz_rock: 'jazz-rock',
+  diminished_lines: 'diminished',
+  white_rock_funk: 'white rock funk',
+  black_soul_funk: 'black soul funk',
+};
 
 /** undefined = not loaded; null = force empty (tests). Per category. */
 const poolCache = new Map<RiffPhraseCategory, RiffPhraseEntry[] | null | undefined>();
@@ -150,16 +190,50 @@ export function pairingForVrb(vrbId: string | undefined): RiffPhraseMotifSeedPai
   return RIFF_PHRASE_MOTIF_SEED_PAIRINGS.find((p) => p.vrbId === vrbId);
 }
 
+/** True when VRB has a shipped phrase-seed pairing (UI shows toggle). */
+export function vrbHasPhraseMotifSeedPairing(vrbId: string | undefined): boolean {
+  return pairingForVrb(vrbId) != null;
+}
+
+/**
+ * Musician-facing checkbox label for a paired VRB, or null when no pairing.
+ * e.g. "Seed motif from real sax licks"
+ */
+export function phraseMotifSeedCheckboxLabel(vrbId: string | undefined): string | null {
+  const pairing = pairingForVrb(vrbId);
+  if (!pairing) return null;
+  const short =
+    CATEGORY_LICK_LABEL[pairing.category] ??
+    RIFF_PHRASE_CATEGORY_LABELS[pairing.category]?.toLowerCase() ??
+    pairing.category.replace(/_/g, ' ');
+  return 'Seed motif from real ' + short + ' licks';
+}
+
+export type ResolveRiffCoreMotifOpts = {
+  /**
+   * Per-generate-call opt-in (API `riffPhraseMotifSeed`).
+   * When true and VRB is paired, seeds from phrase corpus (env not required).
+   */
+  phraseMotifSeed?: boolean;
+};
+
 /**
  * Resolve CoreMotif for riff build.
- * Flag OFF or non-paired VRB -> generateRiffCoreMotif (byte-identical path).
- * Flag ON + paired VRB -> phraseEntryToCoreMotif from category (fallback procedural if empty).
+ * OFF unless env flag for that pairing OR request `phraseMotifSeed` — then phraseEntryToCoreMotif.
+ * Non-paired VRB / empty pool → generateRiffCoreMotif (byte-identical procedural path).
  */
-export function resolveRiffCoreMotif(seed: number, vrbId?: string): CoreMotif {
+export function resolveRiffCoreMotif(
+  seed: number,
+  vrbId?: string,
+  opts?: ResolveRiffCoreMotifOpts
+): CoreMotif {
   const pairing = pairingForVrb(vrbId);
-  if (pairing && isRiffPhraseMotifSeedEnabled(pairing)) {
-    const phrase = pickPhraseForSeed(pairing.category, seed);
-    if (phrase) return phraseEntryToCoreMotif(phrase);
+  if (pairing) {
+    const on = opts?.phraseMotifSeed === true || isRiffPhraseMotifSeedEnabled(pairing);
+    if (on) {
+      const phrase = pickPhraseForSeed(pairing.category, seed);
+      if (phrase) return phraseEntryToCoreMotif(phrase);
+    }
   }
   return generateRiffCoreMotif(seed);
 }
@@ -185,7 +259,6 @@ export function findSeedsWithMinPhraseIntervals(
     usedPhrase.add(phrase.id);
     out.push(s);
   }
-  // If distinct phrases exhausted, allow repeats to fill count
   if (out.length < count) {
     for (let s = startSeed; s < startSeed + 200000 && out.length < count; s++) {
       const phrase = pool[(s >>> 0) % pool.length]!;

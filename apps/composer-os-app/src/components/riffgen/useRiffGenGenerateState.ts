@@ -22,6 +22,7 @@ import {
   type ZappaStyleModeUi,
   type ZappaSymmetryBiasUi,
 } from '../../types/riffGeneratorUi';
+import { vrbHasPhraseMotifSeedPairing } from '@composer-os/ui/riffPhraseMotifSeedUi';
 import type { RiffDensity, RiffGridMode, RiffLineMode } from '@composer-os/core/riff-generator/riffTypes';
 import type { RiffChordLoopDisclosure } from '@composer-os/core/riff-generator/riffChordLoop';
 
@@ -70,6 +71,7 @@ export function buildRiffGenGeneratePayload(args: {
   riffLineMode: RiffLineMode;
   riffBass: boolean;
   riffSolo: boolean;
+  riffPhraseMotifSeed: boolean;
   chordProgressionText: string;
   zappaStyleMode: ZappaStyleModeUi;
   zappaEraPreset: ZappaEraPresetUi;
@@ -104,6 +106,7 @@ export function buildRiffGenGeneratePayload(args: {
     riffLineMode: args.riffLineMode,
     riffBass: args.riffBass,
     ...(args.riffSolo ? { riffSolo: true } : {}),
+    ...(args.riffPhraseMotifSeed ? { riffPhraseMotifSeed: true } : {}),
     ...(chordTrim ? { chordProgressionText: chordTrim } : {}),
     ...(isZappaRiffVrbId(args.vrbId)
       ? {
@@ -140,6 +143,7 @@ export function useRiffGenGenerateState() {
   const [riffLineMode, setRiffLineMode] = useState<RiffLineMode>('single_line');
   const [riffBass, setRiffBass] = useState(false);
   const [riffSolo, setRiffSolo] = useState(false);
+  const [riffPhraseMotifSeed, setRiffPhraseMotifSeed] = useState(false);
   const [barLocks, setBarLocks] = useState<boolean[]>([]);
   const [carryForward, setCarryForward] = useState<RiffCarryForward | null>(null);
   const [gateMessages, setGateMessages] = useState<string[]>([]);
@@ -160,7 +164,14 @@ export function useRiffGenGenerateState() {
 
   const onFamilyChange = useCallback((next: RiffFamilyTag) => {
     setFamily(next);
-    setVrbId(defaultRiffVrbIdForFamily(next));
+    const nextVrb = defaultRiffVrbIdForFamily(next);
+    setVrbId(nextVrb);
+    if (!vrbHasPhraseMotifSeedPairing(nextVrb)) setRiffPhraseMotifSeed(false);
+  }, []);
+
+  const onVrbIdChange = useCallback((next: string) => {
+    setVrbId(next);
+    if (!vrbHasPhraseMotifSeedPairing(next)) setRiffPhraseMotifSeed(false);
   }, []);
 
   const onBarsChange = useCallback((n: RiffBarCount) => {
@@ -224,6 +235,7 @@ export function useRiffGenGenerateState() {
           riffLineMode,
           riffBass,
           riffSolo,
+          riffPhraseMotifSeed,
           chordProgressionText,
           zappaStyleMode,
           zappaEraPreset,
@@ -271,6 +283,7 @@ export function useRiffGenGenerateState() {
       riffLineMode,
       riffBass,
       riffSolo,
+      riffPhraseMotifSeed,
       chordProgressionText,
       zappaStyleMode,
       zappaEraPreset,
@@ -292,6 +305,7 @@ export function useRiffGenGenerateState() {
     riffLineMode,
     riffBass,
     riffSolo,
+    riffPhraseMotifSeed,
     barLocks,
     carryForward,
     gateMessages,
@@ -308,13 +322,14 @@ export function useRiffGenGenerateState() {
     loading,
     error,
     result,
-    setVrbId,
+    setVrbId: onVrbIdChange,
     setOddMeterPreset,
     setDensity,
     setRiffGrid,
     setRiffLineMode,
     setRiffBass,
     setRiffSolo,
+    setRiffPhraseMotifSeed,
     setZappaAdvancedOpen,
     setZappaStyleMode,
     setZappaEraPreset,

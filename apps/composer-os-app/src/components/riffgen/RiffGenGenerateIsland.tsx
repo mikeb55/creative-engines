@@ -44,8 +44,9 @@ export function RiffGenGenerateIsland() {
     >
       <h3 style={{ margin: '0 0 0.35rem', fontSize: '1.05rem' }}>Generate island</h3>
       <p style={{ margin: '0 0 0.85rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-        Same engine path as Home → Riff Generator (<code>presetId: riff_generator</code>). Phrase
-        library above stays read-only — not wired into generation.
+        Same engine path as Home → Riff Generator (<code>presetId: riff_generator</code>). Optional
+        phrase-seeded motif toggle appears when the selected voice has a proven pairing
+        (default off).
       </p>
 
       <div style={{ marginBottom: '1rem' }}>
@@ -184,6 +185,8 @@ export function RiffGenGenerateIsland() {
         riffLineMode={s.riffLineMode}
         riffBass={s.riffBass}
         riffSolo={s.riffSolo}
+        riffPhraseMotifSeed={s.riffPhraseMotifSeed}
+        onRiffPhraseMotifSeedChange={s.setRiffPhraseMotifSeed}
         barLocks={s.barLocks}
         gateMessages={s.gateMessages}
         canRegenerateMutate={s.carryForward != null}

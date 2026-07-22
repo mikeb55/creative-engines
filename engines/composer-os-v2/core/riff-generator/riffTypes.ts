@@ -69,6 +69,11 @@ export interface RiffGeneratorParams {
   zappaPhraseCharacter?: ZappaRiffSoloControls['zappaPhraseCharacter'];
   zappaSymmetryBias?: ZappaRiffSoloControls['zappaSymmetryBias'];
   zappaChainDepth?: ZappaRiffSoloControls['zappaChainDepth'];
+  /**
+   * Opt-in phrase-corpus CoreMotif seed for paired VRBs (API `riffPhraseMotifSeed`).
+   * Default omit/false = procedural motif (env flags still work for scripts).
+   */
+  phraseMotifSeed?: boolean;
 }
 
 export interface RiffGeneratorSuccess {

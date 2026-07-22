@@ -1,6 +1,5 @@
 /**
  * Backward-compat re-exports — canonical module: riffPhraseMotifSeed.ts
- * (sax / jazz_rock / diminished pairings).
  */
 export {
   RIFF_SAX_MOTIF_SEED_POC_ENV,
@@ -11,4 +10,7 @@ export {
   setRiffSaxMotifSeedPocPoolForTests,
   pickSaxInspiredPhraseForSeed,
   resolveRiffCoreMotif,
+  pairingForVrb,
+  vrbHasPhraseMotifSeedPairing,
+  phraseMotifSeedCheckboxLabel,
 } from './riffPhraseMotifSeed';

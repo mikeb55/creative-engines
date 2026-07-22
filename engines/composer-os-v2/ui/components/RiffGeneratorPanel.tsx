@@ -34,6 +34,10 @@ import {
   clampRiffBarCount,
   defaultRiffVrbIdForFamily,
 } from '../riffGeneratorUi';
+import {
+  phraseMotifSeedCheckboxLabel,
+  vrbHasPhraseMotifSeedPairing,
+} from '../riffPhraseMotifSeedUi';
 
 const labelMuted: CSSProperties = {
   display: 'block',
@@ -84,6 +88,9 @@ export type RiffGeneratorPanelProps = {
   riffLineMode: RiffLineMode;
   riffBass: boolean;
   riffSolo: boolean;
+  /** Opt-in phrase-corpus motif seed (paired VRBs only). */
+  riffPhraseMotifSeed?: boolean;
+  onRiffPhraseMotifSeedChange?: (enabled: boolean) => void;
   barLocks: boolean[];
   gateMessages: string[];
   gateFailures?: GateFailure[];
@@ -129,6 +136,8 @@ export function RiffGeneratorPanel({
   riffLineMode,
   riffBass,
   riffSolo,
+  riffPhraseMotifSeed = false,
+  onRiffPhraseMotifSeedChange,
   barLocks,
   gateMessages,
   gateFailures,
@@ -399,6 +408,18 @@ export function RiffGeneratorPanel({
             }
           />
           Solo overlay (separate lead part)
+        </label>
+      ) : null}
+
+      {onRiffPhraseMotifSeedChange && vrbHasPhraseMotifSeedPairing(vrbId) ? (
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem', marginTop: '0.45rem' }}>
+          <input
+            type="checkbox"
+            checked={riffPhraseMotifSeed}
+            onChange={(e) => onRiffPhraseMotifSeedChange(e.target.checked)}
+            disabled={loading}
+          />
+          {phraseMotifSeedCheckboxLabel(vrbId) ?? 'Seed motif from real licks'}
         </label>
       ) : null}
 

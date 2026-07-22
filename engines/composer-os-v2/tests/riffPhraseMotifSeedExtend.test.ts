@@ -11,6 +11,10 @@ import { resolveRiffGeneratorProfile } from '../core/riff-generator/resolveRiffG
 import {
   RIFF_DIM_MOTIF_SEED_ENV,
   RIFF_DIM_MOTIF_SEED_VRB,
+  RIFF_WHITEROCK_MOTIF_SEED_ENV,
+  RIFF_WHITEROCK_MOTIF_SEED_VRB,
+  RIFF_BLACKSOUL_MOTIF_SEED_ENV,
+  RIFF_BLACKSOUL_MOTIF_SEED_VRB,
   RIFF_JAZZROCK_MOTIF_SEED_ENV,
   RIFF_JAZZROCK_MOTIF_SEED_VRB,
   RIFF_SAX_MOTIF_SEED_POC_ENV,
@@ -21,6 +25,7 @@ import {
   resetRiffPhraseMotifSeedCacheForTests,
   resolveRiffCoreMotif,
 } from '../core/riff-generator/riffPhraseMotifSeed';
+import { phraseMotifSeedCheckboxLabel, vrbHasPhraseMotifSeedPairing } from '../ui/riffPhraseMotifSeedUi';
 import type { RiffGeneratorParams } from '../core/riff-generator/riffTypes';
 
 function sha(s: string): string {
@@ -61,6 +66,8 @@ function clearAllFlags(): void {
   delete process.env[RIFF_SAX_MOTIF_SEED_POC_ENV];
   delete process.env[RIFF_JAZZROCK_MOTIF_SEED_ENV];
   delete process.env[RIFF_DIM_MOTIF_SEED_ENV];
+  delete process.env[RIFF_WHITEROCK_MOTIF_SEED_ENV];
+  delete process.env[RIFF_BLACKSOUL_MOTIF_SEED_ENV];
   resetRiffPhraseMotifSeedCacheForTests();
 }
 
@@ -249,6 +256,35 @@ export function runRiffPhraseMotifSeedExtendTests(): { ok: boolean; name: string
     });
   }
 
+
+  out.push({
+    ok:
+      vrbHasPhraseMotifSeedPairing('weather_report') &&
+      vrbHasPhraseMotifSeedPairing('mahavishnu') &&
+      vrbHasPhraseMotifSeedPairing('fripp') &&
+      vrbHasPhraseMotifSeedPairing('iommi') &&
+      vrbHasPhraseMotifSeedPairing('nile_rodgers') &&
+      !vrbHasPhraseMotifSeedPairing('hendrix') &&
+      !vrbHasPhraseMotifSeedPairing('james_brown') &&
+      (phraseMotifSeedCheckboxLabel('weather_report') ?? '').includes('sax') &&
+      (phraseMotifSeedCheckboxLabel('iommi') ?? '').includes('white rock funk') &&
+      (phraseMotifSeedCheckboxLabel('nile_rodgers') ?? '').includes('black soul funk') &&
+      phraseMotifSeedCheckboxLabel('hendrix') === null,
+    name: 'UI helpers: pairing visibility + lick labels for 5 VRBs only',
+  });
+
+  // Request-scoped opt-in without env
+  {
+    clearAllFlags();
+    const seed = 424242;
+    const off = resolveRiffCoreMotif(seed, 'weather_report');
+    const on = resolveRiffCoreMotif(seed, 'weather_report', { phraseMotifSeed: true });
+    out.push({
+      ok: off.id === 'riff_core' && on.id.startsWith('phrase:'),
+      name: 'request phraseMotifSeed opts in without env (weather_report)',
+      detail: off.id + " -> " + on.id,
+    });
+  }
   clearAllFlags();
   return out;
 }
