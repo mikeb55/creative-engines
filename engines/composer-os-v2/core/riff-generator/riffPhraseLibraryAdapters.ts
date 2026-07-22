@@ -1,6 +1,6 @@
 /**
  * Phrase corpus → engine shapes.
- * Motif seed: `phraseEntryToCoreMotif` used by Phase-2 POC (`riffSaxMotifSeedPoc`, flag OFF by default).
+ * Motif seed: `phraseEntryToCoreMotif` used by Phase-2 PoCs (`riffPhraseMotifSeed` — sax/jazz_rock/diminished pairings, flags OFF by default).
  * IntervalWeights merge stays phase 3.
  */
 

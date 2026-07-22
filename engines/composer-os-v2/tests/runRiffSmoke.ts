@@ -12,6 +12,7 @@ import { runRiffVariationApplyTests } from './riffVariationApply.test';
 import { runRiffZappaSoloTests } from './riffZappaSolo.test';
 import { runRiffMotifFidelityPhase19Tests } from './riffMotifFidelityPhase19.test';
 import { runRiffSaxMotifSeedPocTests } from './riffSaxMotifSeedPoc.test';
+import { runRiffPhraseMotifSeedExtendTests } from './riffPhraseMotifSeedExtend.test';
 
 type Row = { ok: boolean; name: string };
 
@@ -25,6 +26,7 @@ const suites: { label: string; run: () => Row[] }[] = [
   { label: 'Riff variation apply', run: runRiffVariationApplyTests },
   { label: 'Riff Zappa solo', run: runRiffZappaSoloTests },
   { label: 'Riff sax motif seed PoC', run: runRiffSaxMotifSeedPocTests },
+  { label: 'Riff phrase motif seed extend', run: runRiffPhraseMotifSeedExtendTests },
   { label: 'Riff Phase 1.9 motif fidelity', run: runRiffMotifFidelityPhase19Tests },
 ];
 

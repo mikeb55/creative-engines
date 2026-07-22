@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-07-19]
+# Composer OS Roadmap [2026-07-22]
 
 ## ✅ Active Now (top priority — everything below is backlog)
 
@@ -7,7 +7,7 @@
 | Lane | Status |
 |------|--------|
 | **Riff chord-loop trust** | **Phase 1 SHIPPED** — post-gen `chordLoopDisclosure` + banner (null→Am7 no longer silent) · **Phase 2** inline token badges + preflight · **Phase 3** ack gating + per-token fallback picker (not started; no polychord grammar) |
-| **Riff phrase library** | **Phase 1 ingest** + **Phase 1.5 S0–S3** `#/riffgen` QA + GenerateIsland **SHIPPED** — **9** schema categories / target **56**; populated + funk ingest ongoing; **Phase 1.9** (prep, not Phase 2): phrase-seeded realization fidelity (`phrase:*` → no snap / motifW=1 / global cursor) — flag `COMPOSER_OS_RIFF_SAX_MOTIF_SEED` default OFF, `weather_report` only; **Phase 2** full staged rollout still held · pitch **PR A/B/C** shipped |
+| **Riff phrase library** | **Phase 1 ingest** + **Phase 1.5 S0–S3** `#/riffgen` QA + GenerateIsland **SHIPPED** — **9** schema categories / target **56**; populated + funk ingest ongoing; **Phase 1.9** (prep, not Phase 2): phrase-seeded realization fidelity (`phrase:*` → no snap / motifW=1 / global cursor) — **Phase 2 motif-seed PoC COMPLETE** — three pairings shipped behind flags (default OFF): sax→weather_report / jazz_rock→mahavishnu / dim→fripp; confirm excludes seed 1307 (2-iv degenerate edge case); broader rollout = future decision; **Phase 2** full staged (hook/loop/weights) still held · pitch **PR A/B/C** shipped |
 | **CLOSED prior session** | CI smoke **8/8** → **0** unexpected · Score-5 (**30**) + Score-6 BB (**4**) wired · Phase 2 Batches **1–6** + Beefheart + Fela + Threadgill + **Weber** HV widen **COMPLETE** · fBT vs custom_locked bug family fully resolved · Bass-identity rhythm-cell (`bacharach` + `oliver_nelson`) **CLOSED** · jamerson RiffGen Phase E **CLOSED** · **Riff Generator Phase A + B + soft-link** **CLOSED** (chord colour + pattern soft-link, smoke **772**/141) · **Mosaic global HV** **CLOSED** · Full smoke **772**/141, known **5**, unexpected **0** |
 | **1. Phase 2 widen** | Berg + Beefheart + Fela + Threadgill + **Weber** HV walls **COMPLETE** — next: **Mosaic HV** product decision |
 | **2. Mosaic HV** | **COMPLETE (2026-07-16)** — **global** HV overlay shipped; per-section map rejected |
