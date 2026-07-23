@@ -61,11 +61,11 @@ export const RIFF_PHRASE_CATEGORY_TARGET_COUNTS: Record<RiffPhraseCategory, numb
   diminished_lines: 6,
   white_rock_funk: 8,
   black_soul_funk: 12,
-  virtuoso_technique: 6,
+  virtuoso_technique: 21,
 };
 
 /** Sum of category target counts. */
-export const RIFF_PHRASE_CORPUS_TARGET_TOTAL = 156 as const;
+export const RIFF_PHRASE_CORPUS_TARGET_TOTAL = 171 as const;
 
 /**
  * Parser notes for GPX/GP5 ingest (Phase 1 scripts only — not app runtime).

@@ -17,11 +17,11 @@ export function runRiffPhraseCorpusLoadTests(): Array<{ name: string; ok: boolea
     detail: corpus.error,
   });
   rows.push({
-    name: 'derived totals: 172 files parseOk, 318 phrases',
+    name: 'derived totals: 193 files parseOk, 345 phrases',
     ok:
-      corpus.stats.totals.files === 172 &&
-      corpus.stats.totals.parseOk === 172 &&
-      corpus.stats.totals.phrases === 318,
+      corpus.stats.totals.files === 193 &&
+      corpus.stats.totals.parseOk === 193 &&
+      corpus.stats.totals.phrases === 345,
     detail: JSON.stringify(corpus.stats.totals),
   });
   rows.push({
@@ -39,6 +39,7 @@ export function runRiffPhraseCorpusLoadTests(): Array<{ name: string; ok: boolea
   const southern = corpus.stats.byCategory.southern_rock;
   const modern = corpus.stats.byCategory.modern_rock;
   const progressive = corpus.stats.byCategory.progressive_blues;
+  const virtuoso = corpus.stats.byCategory.virtuoso_technique;
   rows.push({
     name: 'category file/phrase counts match ingested corpus',
     ok:
@@ -71,7 +72,10 @@ export function runRiffPhraseCorpusLoadTests(): Array<{ name: string; ok: boolea
       modern.phrases === 33 &&
       !!progressive &&
       progressive.files === 26 &&
-      progressive.phrases === 34,
+      progressive.phrases === 34 &&
+      !!virtuoso &&
+      virtuoso.files === 21 &&
+      virtuoso.phrases === 27,
     detail: JSON.stringify({
       sax,
       dim,
@@ -83,22 +87,20 @@ export function runRiffPhraseCorpusLoadTests(): Array<{ name: string; ok: boolea
       southern,
       modern,
       progressive,
+      virtuoso,
     }),
   });
-  const empty = ['virtuoso_technique'];
   rows.push({
-    name: 'empty stub categories have zero files/phrases in stats',
-    ok: empty.every(
-      (c) =>
-        (corpus.stats.byCategory[c]?.files ?? 0) === 0 &&
-        (corpus.stats.byCategory[c]?.phrases ?? 0) === 0
-    ),
+    name: 'no empty stub categories remain (all 11 populated)',
+    ok: Object.values(corpus.stats.byCategory).every((c) => (c?.files ?? 0) > 0 && (c?.phrases ?? 0) > 0),
     detail: JSON.stringify(
-      Object.fromEntries(empty.map((c) => [c, corpus.stats.byCategory[c] ?? null]))
+      Object.fromEntries(
+        Object.entries(corpus.stats.byCategory).map(([k, v]) => [k, { files: v?.files, phrases: v?.phrases }])
+      )
     ),
   });
   rows.push({
-    name: 'stats.byCategory includes funk + bebop + blues_rock + southern_rock + modern_rock + progressive_blues keys',
+    name: 'stats.byCategory includes all 11 categories including virtuoso_technique',
     ok:
       !!corpus.stats.byCategory.white_rock_funk &&
       !!corpus.stats.byCategory.black_soul_funk &&
@@ -107,7 +109,8 @@ export function runRiffPhraseCorpusLoadTests(): Array<{ name: string; ok: boolea
       !!corpus.stats.byCategory.southern_rock &&
       !!corpus.stats.byCategory.modern_rock &&
       !!corpus.stats.byCategory.progressive_blues &&
-      corpus.stats.byCategory.virtuoso_technique !== undefined,
+      !!corpus.stats.byCategory.virtuoso_technique &&
+      corpus.stats.byCategory.virtuoso_technique.files === 21,
   });
 
   const melodyFiles = [
@@ -154,8 +157,8 @@ export function runRiffPhraseCorpusLoadTests(): Array<{ name: string; ok: boolea
   if (fs.existsSync(path.join(packaged, 'phrases.jsonl'))) {
     const packed = loadRiffPhraseCorpus({ derivedRoot: packaged });
     rows.push({
-      name: 'packaged resources derived override loads 172/318',
-      ok: packed.ok && packed.stats.totals.files === 172 && packed.stats.totals.phrases === 318,
+      name: 'packaged resources derived override loads 193/345',
+      ok: packed.ok && packed.stats.totals.files === 193 && packed.stats.totals.phrases === 345,
       detail: JSON.stringify(packed.stats.totals),
     });
   }

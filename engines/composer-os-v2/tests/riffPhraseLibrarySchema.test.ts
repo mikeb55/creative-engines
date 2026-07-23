@@ -17,6 +17,7 @@ import {
 } from '../core/riff-generator/riffPhraseLibraryFixtures';
 import {
   RIFF_PHRASE_CATEGORIES,
+  RIFF_PHRASE_CATEGORY_TARGET_COUNTS,
   RIFF_PHRASE_GPX_PARSER,
   RIFF_PHRASE_CORPUS_TARGET_TOTAL,
 } from '../core/riff-generator/riffPhraseLibraryTypes';
@@ -134,7 +135,8 @@ export function runRiffPhraseLibrarySchemaTests(): { ok: boolean; name: string }
   {
     const keys = Object.keys(RIFF_PHRASE_CATEGORY_TAG_HEURISTICS);
     const ok =
-      RIFF_PHRASE_CORPUS_TARGET_TOTAL === 156 &&
+      RIFF_PHRASE_CORPUS_TARGET_TOTAL === 171 &&
+      RIFF_PHRASE_CATEGORY_TARGET_COUNTS.virtuoso_technique === 21 &&
       keys.length === RIFF_PHRASE_CATEGORIES.length &&
       RIFF_PHRASE_CATEGORIES.every((c) => keys.includes(c)) &&
       RIFF_PHRASE_CATEGORY_TAG_HEURISTICS.diminished_lines.highIntervalDensity.includes('m3') &&
@@ -148,7 +150,7 @@ export function runRiffPhraseLibrarySchemaTests(): { ok: boolean; name: string }
       RIFF_PHRASE_CATEGORY_TAG_HEURISTICS.virtuoso_technique.expectedTags.includes('cross_genre');
     out.push({
       ok,
-      name: 'heuristics cover all categories; progressive_blues; corpus total 156',
+      name: 'heuristics cover all categories; virtuoso_technique; corpus total 171',
     });
   }
 
