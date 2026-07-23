@@ -331,31 +331,21 @@ function parseRangePair(text: string | undefined): [number, number] | undefined 
   return [Math.min(a, b), Math.max(a, b)];
 }
 
+/** Keys must match {@link RiffIntervalWeightMap} / preferredIntervals map table exactly. */
 function parseIntervalWeightsFromBody(body: string): Record<string, number> {
   const out: Record<string, number> = {};
   const m = /intervalweights[^:]*:\s*([^;]+)/i.exec(body);
   if (!m) return out;
   for (const part of m[1]!.split(',')) {
     const p = part.trim();
-    const wm = /^([mM]?2|m3|M3|P4|P5|M6)\s+([\d.]+)/.exec(p);
+    const trit = /^tritone\s+([\d.]+)/i.exec(p);
+    if (trit) {
+      out.tritone = Number.parseFloat(trit[1]!);
+      continue;
+    }
+    const wm = /^(m2|M2|m3|M3|P4|P5|M6)\s+([\d.]+)/.exec(p);
     if (!wm) continue;
-    const key =
-      wm[1] === 'M2'
-        ? 'M2'
-        : wm[1] === 'm2'
-          ? 'm2'
-          : wm[1] === 'M3'
-            ? 'M3'
-            : wm[1] === 'm3'
-              ? 'm3'
-              : wm[1] === 'P4'
-                ? 'P4'
-                : wm[1] === 'P5'
-                  ? 'P5'
-                  : wm[1] === 'M6'
-                    ? 'M6'
-                    : wm[1]!;
-    out[key] = Number.parseFloat(wm[2]!);
+    out[wm[1]!] = Number.parseFloat(wm[2]!);
   }
   return out;
 }

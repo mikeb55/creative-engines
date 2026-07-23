@@ -17,11 +17,11 @@ export function runRiffPhraseCorpusLoadTests(): Array<{ name: string; ok: boolea
     detail: corpus.error,
   });
   rows.push({
-    name: 'subset totals: 38 files parseOk, 99 phrases',
+    name: 'derived totals: 89 files parseOk, 194 phrases',
     ok:
-      corpus.stats.totals.files === 38 &&
-      corpus.stats.totals.parseOk === 38 &&
-      corpus.stats.totals.phrases === 99,
+      corpus.stats.totals.files === 89 &&
+      corpus.stats.totals.parseOk === 89 &&
+      corpus.stats.totals.phrases === 194,
     detail: JSON.stringify(corpus.stats.totals),
   });
   rows.push({
@@ -32,8 +32,11 @@ export function runRiffPhraseCorpusLoadTests(): Array<{ name: string; ok: boolea
   const sax = corpus.stats.byCategory.sax_inspired;
   const dim = corpus.stats.byCategory.diminished_lines;
   const jazz = corpus.stats.byCategory.jazz_rock;
+  const bebop = corpus.stats.byCategory.bebop_jazz_blues;
+  const wrf = corpus.stats.byCategory.white_rock_funk;
+  const bsf = corpus.stats.byCategory.black_soul_funk;
   rows.push({
-    name: 'category file/phrase counts match road-test subset',
+    name: 'category file/phrase counts match ingested corpus',
     ok:
       !!sax &&
       sax.files === 17 &&
@@ -43,19 +46,21 @@ export function runRiffPhraseCorpusLoadTests(): Array<{ name: string; ok: boolea
       dim.phrases === 69 &&
       !!jazz &&
       jazz.files === 10 &&
-      jazz.phrases === 12,
-    detail: JSON.stringify({ sax, dim, jazz }),
+      jazz.phrases === 12 &&
+      !!bebop &&
+      bebop.files === 31 &&
+      bebop.phrases === 33 &&
+      !!wrf &&
+      wrf.files === 8 &&
+      wrf.phrases === 8 &&
+      !!bsf &&
+      bsf.files === 12 &&
+      bsf.phrases === 54,
+    detail: JSON.stringify({ sax, dim, jazz, bebop, wrf, bsf }),
   });
-  const empty = [
-    'bebop_jazz_blues',
-    'blues_rock',
-    'modern_rock',
-    'progressive_blues',
-    'white_rock_funk',
-    'black_soul_funk',
-  ];
+  const empty = ['blues_rock', 'modern_rock', 'progressive_blues'];
   rows.push({
-    name: 'empty/scaffolded categories have zero files/phrases in stats',
+    name: 'empty stub categories have zero files/phrases in stats',
     ok: empty.every(
       (c) =>
         (corpus.stats.byCategory[c]?.files ?? 0) === 0 &&
@@ -66,10 +71,11 @@ export function runRiffPhraseCorpusLoadTests(): Array<{ name: string; ok: boolea
     ),
   });
   rows.push({
-    name: 'stats.byCategory includes white_rock_funk + black_soul_funk keys',
+    name: 'stats.byCategory includes white_rock_funk + black_soul_funk + bebop keys',
     ok:
       !!corpus.stats.byCategory.white_rock_funk &&
-      !!corpus.stats.byCategory.black_soul_funk,
+      !!corpus.stats.byCategory.black_soul_funk &&
+      !!corpus.stats.byCategory.bebop_jazz_blues,
   });
 
   const melodyFiles = [
@@ -116,8 +122,8 @@ export function runRiffPhraseCorpusLoadTests(): Array<{ name: string; ok: boolea
   if (fs.existsSync(path.join(packaged, 'phrases.jsonl'))) {
     const packed = loadRiffPhraseCorpus({ derivedRoot: packaged });
     rows.push({
-      name: 'packaged resources derived override loads 38/99',
-      ok: packed.ok && packed.stats.totals.files === 38 && packed.stats.totals.phrases === 99,
+      name: 'packaged resources derived override loads 89/194',
+      ok: packed.ok && packed.stats.totals.files === 89 && packed.stats.totals.phrases === 194,
       detail: JSON.stringify(packed.stats.totals),
     });
   }

@@ -82,6 +82,18 @@ const MV_BASE = [
   'MV_MELO_01 — Chromatic interval cell [1,3,-2]; cross-instrument unison probability high.',
 ] as const;
 
+const BES_BASE = [
+  'BES_BIO_01 — Bill Evans (sax) — tenor/soprano; Miles Davis electric period + Mahavishnu Orchestra; fusion/funk/bluegrass crossover. Distinct from pianist bill_evans.',
+  'BES_INT_01 — Stepwise/chromatic dominant (m2/M2 ~60%+); leaps ~5–10% (P4/tritone/P5/m6) land on chord tones then corrective step or short descent.',
+  'BES_CTR_01 — Descending-arc bias ~60–70% endpoints below start; rise-then-fall / flat-then-fall; phrase 6–12 notes default, short motifs 3–6.',
+  'BES_HARM_01 — Dorian/Mixolydian/altered dominant blended with blues/pentatonic; target 3rd/7th/9th/13th at endpoints + strong beats via chromatic approach; ♭3/♭5/♭7 pivots.',
+  'BES_RHY_01 — Tempo-adaptive density: space-forward 4–8 notes/bar slow; busy 8–12 + double-time bursts medium-fast. Templates: triplets, 5-note groupings, syncopated hiccup accents, long rests after dense runs.',
+  'BES_REG_01 — Guitar realization: mid-neck frets ~5–12, top 4 strings; vertical span mostly 4–7 semitones; wider leaps rare special events.',
+  'BES_ART_01 — Legato default (slides/HOPO); accents for rhythmic punctuation; phrase onsets often off downbeat (pickup).',
+  'BES_KNOB_01 — userKnobDefaults: chromaticIntensity, bluesBopMix, contourBiasStrength, densityMode (space_forward|balanced|busy), intervallicSpice, groovePreset (funk|straight_rock|swung_jazz_rock|soulgrass).',
+  'BES_DIFF_01 — vs bill_evans (piano): no shared voiceId/alias; sax fusion line vocabulary not piano voicing colour. vs Mahavishnu: simpler meter, sax-line contour not odd-meter unison cells.',
+] as const;
+
 const VL_BASE = [
   'VL_HARM_01 — min7/sus/add9 art-rock harmony; Aeolian/Dorian pool; low chromatic budget.',
   'VL_RHY_01 — Staggered counterpart lines; switching harmony role; no exact-loop default.',
@@ -781,6 +793,151 @@ export const MAHAVISHNU = riffVrbStub(
   'Mahavishnu Orchestra',
   MV_BASE
 );
+
+/** Bill Evans (sax) — fusion tenor/soprano line vocabulary (σ29). Distinct from pianist `bill_evans`. */
+export const BILL_EVANS_SAX: VoiceRuleBundle = {
+  ...riffVrbStub(
+  'bill_evans_sax',
+  29,
+  'fusion',
+  (() => {
+    const slots = 8;
+    const accent = new Array<number>(slots).fill(0.28);
+    // Syncopated "hiccup" accents off the downbeat + weak-slot punctuation.
+    accent[0] = 0.55;
+    accent[1] = 0.72;
+    accent[3] = 0.68;
+    accent[5] = 0.7;
+    accent[6] = 0.48;
+    const rest = new Array<number>(slots).fill(0.18);
+    rest[0] = 0.28; // pickup / space before dense run
+    rest[7] = 0.42; // long rest bias after dense run
+    return riffProfileShell({
+      meterPolicy: 'simple',
+      subdivisionGrid: 8,
+      accentTopology: accent,
+      groupingPatterns: [
+        [3, 3, 2],
+        [5, 3],
+        [2, 3, 3],
+        [3, 5],
+      ],
+      densityCurve: 'arch',
+      metricDisplacement: 0.52,
+      allowPitchStreak: false,
+      tritoneStable: false,
+      homeChordType: 'min7',
+      chordQualitySet: ['min7', 'min9', 'dom7', 'dom9', 'dom13', '7alt', 'sus4', '9sus4', 'maj7', 'maj9'],
+      scalePool: {
+        Dorian: 0.55,
+        Mixolydian: 0.45,
+        altered: 0.28,
+        bluesScale: 0.42,
+        minorPentatonic: 0.38,
+        bebopDominant: 0.22,
+      },
+      chromaticBudget: 0.48,
+      intervalCell: { steps: [1, 2, -1, 2, -2, 1], transpositionMode: 'chromatic' },
+      shorterCellLibrary: [
+        [1, 1, 2],
+        [2, -1, 1],
+        [5, -2, -1],
+        [6, -1],
+        [7, -2],
+        [3, -1, -2],
+        [1, 2, 1, 2, 1],
+      ],
+      intervalWeights: {
+        m2: 0.32,
+        M2: 0.26,
+        m3: 0.14,
+        M3: 0.08,
+        P4: 0.07,
+        tritone: 0.05,
+        P5: 0.05,
+      },
+      chromaticApproachRules: [
+        { degrees: [3, 7], chordContext: 'any', probability: 0.72 },
+        { degrees: [9, 13], chordContext: 'any', probability: 0.55 },
+        { degrees: [3, 5, 7], chordContext: 'blues', probability: 0.68 },
+      ],
+      registerAnchor: 'mid_register',
+      riffRegisterFloor: 55,
+      riffRegisterCeiling: 79,
+      registerBandPerVoice: {
+        guitar: { min: 55, max: 79 },
+        sax: { min: RB.G3, max: RB.F6 },
+        lead: { min: 55, max: 79 },
+      },
+      pedalBias: 0.22,
+      octaveDisplacementTolerance: 0.35,
+      powerIntervalPolicy: { fifthWeight: 0.25, octaveWeight: 0.2, pedalWeight: 0.15 },
+      riffContourPolicy: {
+        rangeCeiling: 7,
+        apexTiming: 0.38,
+        returnTendency: 0.68,
+      },
+      contourPreferences: {
+        heavyRiffs: { descending: 0.65, ascending: 0.15, arched: 0.2 },
+      },
+      phraseLengthBeats: [2, 3, 4],
+      spacePolicy: {
+        internalRestProb: 0.28,
+        phraseEndRestBeats: [0.5, 1, 1.5, 2],
+        callResponsePattern: 'dense_run_then_space',
+      },
+      silencePolicy: {
+        restProbabilityBySlot: rest,
+        styleClass: 'BillEvansSaxSpaceForward',
+      },
+      attackPolicy: 'sustain',
+      repetitionPolicy: {
+        exactLoopAllowed: true,
+        pedalToneAllowed: false,
+        barIdentityPersistence: 0.45,
+        minExactRepetitions: 2,
+      },
+      variationOperators: [
+        'chromaticTag',
+        'chromaticAdd',
+        'targetToneShift',
+        'startOffsetShift',
+        'ornamentAdd',
+        'rhythmicWarp',
+        'truncateOrExtend',
+      ],
+      modalUsage: 'linear-melodic',
+      swingStyle: 'jazz',
+      rhythmFeel: {
+        primarySubdivision: '8th',
+        feelProfiles: ['swung_jazz_rock', 'funk16th', 'straight_rock', 'soulgrass'],
+        swingRatio: { swung_jazz_rock: 0.62, funk16th: 0.52, straight_rock: 0.5, soulgrass: 0.58 },
+        beatPlacement: 'slightly_behind',
+      },
+      ensembleInterlockMode: 'callResponse',
+      ornamentPolicy: {
+        slides: true,
+        ghosts: false,
+        graceAttacks: true,
+        bends: false,
+        deadNotes: false,
+      },
+      userKnobDefaults: {
+        chromaticIntensity: 0.48,
+        bluesBopMix: 0.45,
+        contourBiasStrength: 0.68,
+        densityMode: 'space_forward',
+        intervallicSpice: 0.08,
+        groovePreset: 'swung_jazz_rock',
+      },
+    });
+  })(),
+  'BES',
+  'Bill Evans (sax)',
+  BES_BASE
+  ),
+  melodicPolicy: { contour: 'stepwise-arc', maxLeapSemitones: 9 },
+};
 
 export const VERLAINE = riffVrbStub(
   'verlaine',

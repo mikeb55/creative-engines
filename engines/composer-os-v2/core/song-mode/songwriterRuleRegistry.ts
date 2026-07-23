@@ -1785,6 +1785,17 @@ function wireRiffVrbSongwriterRules(): void {
     R('riff.mahavishnu.sigma', 'Riff VRB σ32 — odd-meter fusion (reuses pat_metheny rule family)', 'songwriter', 'harmony', 9, 'global'),
     ...metheny,
   ];
+  rules.bill_evans_sax = [
+    R(
+      'riff.bill_evans_sax.sigma',
+      'Riff VRB σ29 — Bill Evans sax fusion line (reuses pat_metheny rule family); distinct from pianist bill_evans',
+      'songwriter',
+      'harmony',
+      8,
+      'global'
+    ),
+    ...metheny,
+  ];
   rules.morello = [
     R('riff.morello.sigma', 'Riff VRB σ25 — kill-switch cells (reuses fripp_king_crimson rule family)', 'songwriter', 'rhythm', 8, 'global'),
     ...fripp,

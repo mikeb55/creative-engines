@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-07-22]
+# Composer OS Roadmap [2026-07-23]
 
 ## ✅ Active Now (top priority — everything below is backlog)
 
@@ -7,7 +7,7 @@
 | Lane | Status |
 |------|--------|
 | **Riff chord-loop trust** | **Phase 1 SHIPPED** — post-gen `chordLoopDisclosure` + banner (null→Am7 no longer silent) · **Phase 2** inline token badges + preflight · **Phase 3** ack gating + per-token fallback picker (not started; no polychord grammar) |
-| **Riff phrase library** | **Phase 1 ingest** + **Phase 1.5 S0–S3** `#/riffgen` QA + GenerateIsland **SHIPPED** — **9** schema categories / target **56**; **Phase 1.9** fidelity SHIPPED; **Phase 2 motif-seed + UI COMPLETE for all 5 populated categories** (flags + RiffGen toggle default OFF): sax→weather_report / jazz_rock→mahavishnu / dim→fripp / white_rock_funk→iommi / black_soul_funk→nile_rodgers — **100% populated coverage**; remaining **4** (`bebop_jazz_blues`, `blues_rock`, `modern_rock`, `progressive_blues`) await user GPX before pairing; confirm excludes seed 1307 (2-iv degenerate); broader default-ON = future; **Phase 2** full staged (hook/loop/weights) still held · pitch **PR A/B/C** shipped |
+| **Riff phrase library** | **Phase 1 ingest** + **Phase 1.5 S0–S3** `#/riffgen` QA + GenerateIsland **SHIPPED** — **9** schema categories / target **81**; derived **89** files / **194** phrases; **bebop** ingest + motif-seed **SHIPPED**; **Phase 1.9** fidelity SHIPPED; **six pairings** (flags + RiffGen toggle default OFF): sax→weather_report / jazz_rock→mahavishnu / dim→fripp / white_rock_funk→iommi / black_soul_funk→nile_rodgers / bebop→bill_evans_sax — **bebop seed 2:** OFF hard-gate FAIL → ON PASS (positive integrity win); empty stubs await GPX: `blues_rock`, `modern_rock`, `progressive_blues`; confirm excludes seed 1307 (2-iv degenerate); broader default-ON = future; **Phase 2** full staged (hook/loop/weights) still held · pitch **PR A/B/C** shipped |
 | **CLOSED prior session** | CI smoke **8/8** → **0** unexpected · Score-5 (**30**) + Score-6 BB (**4**) wired · Phase 2 Batches **1–6** + Beefheart + Fela + Threadgill + **Weber** HV widen **COMPLETE** · fBT vs custom_locked bug family fully resolved · Bass-identity rhythm-cell (`bacharach` + `oliver_nelson`) **CLOSED** · jamerson RiffGen Phase E **CLOSED** · **Riff Generator Phase A + B + soft-link** **CLOSED** (chord colour + pattern soft-link, smoke **772**/141) · **Mosaic global HV** **CLOSED** · Full smoke **772**/141, known **5**, unexpected **0** |
 | **1. Phase 2 widen** | Berg + Beefheart + Fela + Threadgill + **Weber** HV walls **COMPLETE** — next: **Mosaic HV** product decision |
 | **2. Mosaic HV** | **COMPLETE (2026-07-16)** — **global** HV overlay shipped; per-section map rejected |

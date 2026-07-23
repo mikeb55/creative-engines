@@ -109,6 +109,7 @@ import {
 } from './priority3VoiceRuleBundles';
 import {
   ALLAN_HOLDSWORTH,
+  BILL_EVANS_SAX,
   buildFrankZappaRiffProfile,
   EDDIE_VAN_HALEN,
   JAMERSON,
@@ -4468,6 +4469,8 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   wayne_shorter: WAYNE_SHORTER,
   bill_evans: BILL_EVANS,
   evans: BILL_EVANS,
+  /** Saxophonist Bill Evans (fusion) — distinct from pianist `bill_evans` / `evans`. */
+  bill_evans_sax: BILL_EVANS_SAX,
   barry_harris: BARRY_HARRIS,
   barry_harris_chord_melody: BARRY_HARRIS,
   bh_cm: BARRY_HARRIS,

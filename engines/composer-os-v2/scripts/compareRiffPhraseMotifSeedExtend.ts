@@ -21,6 +21,8 @@ import {
   RIFF_WHITEROCK_MOTIF_SEED_VRB,
   RIFF_BLACKSOUL_MOTIF_SEED_ENV,
   RIFF_BLACKSOUL_MOTIF_SEED_VRB,
+  RIFF_BEBOP_MOTIF_SEED_ENV,
+  RIFF_BEBOP_MOTIF_SEED_VRB,
   RIFF_JAZZROCK_MOTIF_SEED_ENV,
   RIFF_JAZZROCK_MOTIF_SEED_VRB,
   findSeedsWithMinPhraseIntervals,
@@ -90,6 +92,14 @@ const PAIRINGS: PairingCfg[] = [
     outDirName: 'riff-blacksoul-motif-seed-poc',
     seeds: [8, 9, 10],
   },
+  {
+    label: 'bebop_jazz_blues → bill_evans_sax',
+    env: RIFF_BEBOP_MOTIF_SEED_ENV,
+    vrbId: RIFF_BEBOP_MOTIF_SEED_VRB,
+    category: 'bebop_jazz_blues',
+    outDirName: 'riff-bebop-motif-seed-poc',
+    seeds: [1, 2, 3],
+  },
 ];
 
 const REGRESSION_VRBS = [
@@ -98,6 +108,7 @@ const REGRESSION_VRBS = [
   'iommi',
   'mahavishnu',
   'fripp',
+  'bill_evans_sax',
 ] as const;
 
 function sha(s: string): string {
@@ -113,6 +124,7 @@ function clearFlags(): void {
   delete process.env[RIFF_DIM_MOTIF_SEED_ENV];
   delete process.env[RIFF_WHITEROCK_MOTIF_SEED_ENV];
   delete process.env[RIFF_BLACKSOUL_MOTIF_SEED_ENV];
+  delete process.env[RIFF_BEBOP_MOTIF_SEED_ENV];
   resetRiffPhraseMotifSeedCacheForTests();
 }
 function setFlag(env: string, on: boolean): void {
@@ -400,6 +412,18 @@ function regressionCheck(): { ok: boolean; detail: string }[] {
     out.push({
       ok: changed === expectChange,
       detail: `blacksoul flag: ${vrbId} ${changed ? 'CHANGED' : 'stable'} (expect ${expectChange ? 'change' : 'stable'})`,
+    });
+  }
+
+  // Bebop flag ON — only bill_evans_sax may change
+  setFlag(RIFF_BEBOP_MOTIF_SEED_ENV, true);
+  for (const vrbId of REGRESSION_VRBS) {
+    const h = sha(xmlOf(build(seed, vrbId, 'reg').score));
+    const changed = h !== baseline[vrbId];
+    const expectChange = vrbId === 'bill_evans_sax';
+    out.push({
+      ok: changed === expectChange,
+      detail: `bebop flag: ${vrbId} ${changed ? 'CHANGED' : 'stable'} (expect ${expectChange ? 'change' : 'stable'})`,
     });
   }
   clearFlags();

@@ -19,6 +19,7 @@ export type SlonimskyHarmonicVoiceOption = {
 const VOICE_LABELS: Record<string, string> = {
   wayne_shorter: 'Wayne Shorter',
   bill_evans: 'Bill Evans',
+  bill_evans_sax: 'Bill Evans (sax)',
   herbie_hancock: 'Herbie Hancock',
   larry_carlton: 'Larry Carlton',
   david_gilmour: 'David Gilmour',
@@ -146,7 +147,7 @@ export function slonimskyHarmonicVoiceOptionsForMode(
       : mode === 'song_mode' || mode === 'big_band' || mode === 'string_quartet' || mode === 'sq_to_bb'
         ? SONG_MODE_VOICE_IDS
         : mode === 'riff_generator'
-          ? ([...GBD_VOICE_IDS, 'frank_zappa'] as const)
+          ? ([...GBD_VOICE_IDS, 'frank_zappa', 'bill_evans_sax'] as const)
           : [];
   const out: SlonimskyHarmonicVoiceOption[] = [];
   for (const id of ids) {

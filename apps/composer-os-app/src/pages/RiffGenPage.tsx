@@ -72,7 +72,10 @@ export function RiffGenPage() {
       {corpus ? (
         <>
           <RiffGenCorpusQaPanel corpus={corpus} />
-          <RiffGenPhraseBrowser phrases={corpus.phrases} />
+          <RiffGenPhraseBrowser
+            phrases={corpus.phrases}
+            registeredCategories={Object.keys(corpus.stats.byCategory)}
+          />
         </>
       ) : null}
 

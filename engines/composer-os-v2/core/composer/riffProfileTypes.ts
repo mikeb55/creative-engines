@@ -265,13 +265,16 @@ export interface RiffRhythmFeelPolicy {
 }
 
 export interface RiffIntervalWeightMap {
+  m2?: number;
+  M2?: number;
   m3?: number;
   M3?: number;
   P4?: number;
-  P5?: number;
-  M2?: number;
-  m2?: number;
+  /** Directed pitch-class interval 6 (augmented 4th / diminished 5th). */
   tritone?: number;
+  P5?: number;
+  /** Directed pitch-class interval 9 — matches receipt parser `M6`. */
+  M6?: number;
 }
 
 export interface RiffTextureMixWeights {
@@ -296,6 +299,28 @@ export interface RiffCadenceTypeWeights {
   tail_fill: number;
   sustained_sus_chord: number;
   hard_stop_rest: number;
+}
+
+/** Declarative user-facing knob defaults (engine may ignore until UI/engine wire). */
+export type RiffDensityModeKnob = 'space_forward' | 'balanced' | 'busy';
+
+export type RiffGroovePresetKnob =
+  | 'funk'
+  | 'straight_rock'
+  | 'swung_jazz_rock'
+  | 'soulgrass';
+
+export interface RiffUserKnobDefaults {
+  /** 0–1 → chromaticBudget / chromaticApproachRules intensity. */
+  chromaticIntensity: number;
+  /** 0 = modal/bop-weighted; 1 = blues/pentatonic-weighted. */
+  bluesBopMix: number;
+  /** 0–1 → riffContourPolicy.returnTendency strength. */
+  contourBiasStrength: number;
+  densityMode: RiffDensityModeKnob;
+  /** 0–1 leap frequency (intervallic spice). */
+  intervallicSpice: number;
+  groovePreset: RiffGroovePresetKnob;
 }
 
 /** Frank Zappa `bluesrockFerocious` riff styleMode (Slonimsky map parity). */
@@ -477,6 +502,8 @@ export interface RiffProfile {
   pedalRigid?: boolean;
   /** Riff-path Zappa-style solo overlay (separate MIDI part; not duo {@link ../song-mode/zappasoloEngine}). */
   soloGeneratorProfile?: RiffSoloGeneratorProfile;
+  /** Optional UI/engine knob defaults (Bill Evans sax fusion path, etc.). */
+  userKnobDefaults?: RiffUserKnobDefaults;
 }
 
 export type ZappaRiffSoloStyleMode = 'compositional' | 'bluesrockFerocious';

@@ -128,6 +128,7 @@ export type SongwriterRuleId =
   | 'led_zeppelin'
   | 'weather_report'
   | 'mahavishnu'
+  | 'bill_evans_sax'
   | 'verlaine'
   | 'morello'
   | 'fripp'

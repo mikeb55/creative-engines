@@ -23,6 +23,7 @@ export const LINE_FIRST_DUO_PRIORITY3_COLOUR_VRB_IDS = [
   'led_zeppelin',
   'weather_report',
   'mahavishnu',
+  'bill_evans_sax',
   'verlaine',
   'morello',
   'fripp',

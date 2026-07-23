@@ -163,6 +163,7 @@ export const SONGWRITER_PRIMARY_INSTRUMENT: Record<SongwriterRuleId, SongwriterP
   led_zeppelin: 'guitar',
   weather_report: 'guitar',
   mahavishnu: 'guitar',
+  bill_evans_sax: 'guitar',
   verlaine: 'guitar',
   morello: 'guitar',
   fripp: 'guitar',

@@ -566,10 +566,11 @@ function testLarryCarltonRiffVrbStubRegistry(): boolean {
 
 function testEddieVanHalenRiffGeneratorRegistry(): boolean {
   return (
-    RIFF_GENERATOR_VRB_IDS.length === 16 &&
+    RIFF_GENERATOR_VRB_IDS.length === 17 &&
     RIFF_GENERATOR_VRB_IDS[4] === 'jamerson' &&
     RIFF_GENERATOR_VRB_IDS[9] === 'eddie_van_halen' &&
-    (RIFF_GENERATOR_VRB_IDS as readonly string[]).includes('eddie_van_halen')
+    (RIFF_GENERATOR_VRB_IDS as readonly string[]).includes('eddie_van_halen') &&
+    (RIFF_GENERATOR_VRB_IDS as readonly string[]).includes('bill_evans_sax')
   );
 }
 

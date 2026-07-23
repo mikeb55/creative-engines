@@ -11,7 +11,15 @@
 
 ### Added
 
-- **Riff phrase motif-seed — five pairings + RiffGen UI COMPLETE** — All **5** populated categories now have proven, flag-gated pairings (default OFF) + RiffGen GenerateIsland checkbox “Seed motif from real … licks” (default unchecked; per-call `riffPhraseMotifSeed`, not silent env flip): `sax_inspired`→`weather_report` (`COMPOSER_OS_RIFF_SAX_MOTIF_SEED`); `jazz_rock`→`mahavishnu` (`COMPOSER_OS_RIFF_JAZZROCK_MOTIF_SEED`); `diminished_lines`→`fripp` (`COMPOSER_OS_RIFF_DIM_MOTIF_SEED`); `white_rock_funk`→`iommi` (`COMPOSER_OS_RIFF_WHITEROCK_MOTIF_SEED`); `black_soul_funk`→`nile_rodgers` (`COMPOSER_OS_RIFF_BLACKSOUL_MOTIF_SEED`). **100% of currently-populated categories**; remaining **4** empty stubs (`bebop_jazz_blues`, `blues_rock`, `modern_rock`, `progressive_blues`) await user-provided GPX before pairing. Canonical resolver `riffPhraseMotifSeed.ts` (+ browser-safe `riffPhraseMotifSeedUi.ts`). Eval prefers ≥10-interval phrases. Sax confirm **424242 / 777001 / 90210**; seed **1307** = known 2-iv degenerate edge case. Broader default-ON rollout = future. Examples: `output/riff-*-motif-seed-poc/`. Tests: `riffPhraseMotifSeedExtend.test.ts` + compare script.
+- **Riff phrase motif-seed — six pairings COMPLETE** — Flag-gated (default OFF) + RiffGen checkbox (default unchecked; per-call `riffPhraseMotifSeed`):
+  1. `sax_inspired`→`weather_report` (`COMPOSER_OS_RIFF_SAX_MOTIF_SEED`)
+  2. `jazz_rock`→`mahavishnu` (`COMPOSER_OS_RIFF_JAZZROCK_MOTIF_SEED`)
+  3. `diminished_lines`→`fripp` (`COMPOSER_OS_RIFF_DIM_MOTIF_SEED`)
+  4. `white_rock_funk`→`iommi` (`COMPOSER_OS_RIFF_WHITEROCK_MOTIF_SEED`)
+  5. `black_soul_funk`→`nile_rodgers` (`COMPOSER_OS_RIFF_BLACKSOUL_MOTIF_SEED`)
+  6. `bebop_jazz_blues`→`bill_evans_sax` (`COMPOSER_OS_RIFF_BEBOP_MOTIF_SEED`) — ships with `bill_evans_sax` RiffGen VRB (σ29 fusion; distinct from pianist `bill_evans`). Confirm seeds **1 / 2 / 3** (≥10 iv). **Positive hard-gate result (seed 2):** procedural OFF **fails** GCE hard gates; phrase-seed ON **passes** (cos **0.01→0.90**, exact **0.93**) — seed improves integrity, not just fidelity parity. Seeds **1** and **3**: hard PASS both sides; ON cos **≥0.90**. Remaining empty stubs await user GPX: `blues_rock`, `modern_rock`, `progressive_blues`. Examples: `output/riff-*-motif-seed-poc/`. Tests: `riffPhraseMotifSeedExtend.test.ts` + compare script.
+
+- **Riff phrase corpus ingest — Bebop-Jazz Blues** — Real GP5 ingest for `bebop_jazz_blues`: **31**/31 parseOk · **33** phrases (29×1 + 2×2); droppedOrnaments **0**; meterMismatch **0**; tieFixups on a few files (max **10** on `sb50ebl-024`). `RIFF_PHRASE_CATEGORY_TARGET_COUNTS.bebop_jazz_blues` **6→31**; `RIFF_PHRASE_CORPUS_TARGET_TOTAL` **56→81**. Derived corpus **89** files / **194** phrases. Empty stubs still: `blues_rock`, `modern_rock`, `progressive_blues`.
 
 - **Riff Phase 1.9 confirm-set note** — Valid confirm seeds for sax/weather_report fidelity: **424242**, **777001**, **90210** (substantial cosine gain + hard-gate PASS + OFF-hash stable). Seed **1307** / `be30slfg_020` bars5-5 **excluded**: source phrase has only **2** intervals — known degenerate-length edge case (cannot demonstrate fidelity gain); not a Phase 1.9 fix failure.
 

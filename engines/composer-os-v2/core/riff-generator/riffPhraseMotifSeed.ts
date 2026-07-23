@@ -7,6 +7,7 @@
  * - COMPOSER_OS_RIFF_DIM_MOTIF_SEED → fripp ← diminished_lines
  * - COMPOSER_OS_RIFF_WHITEROCK_MOTIF_SEED → iommi ← white_rock_funk
  * - COMPOSER_OS_RIFF_BLACKSOUL_MOTIF_SEED → nile_rodgers ← black_soul_funk
+ * - COMPOSER_OS_RIFF_BEBOP_MOTIF_SEED → bill_evans_sax ← bebop_jazz_blues
  *
  * Motif seed only — no hook / loop / intervalWeights merge.
  */
@@ -26,7 +27,8 @@ export type RiffPhraseMotifSeedPairingId =
   | 'jazz_rock'
   | 'diminished'
   | 'white_rock_funk'
-  | 'black_soul_funk';
+  | 'black_soul_funk'
+  | 'bebop_jazz_blues';
 
 export type RiffPhraseMotifSeedPairing = {
   id: RiffPhraseMotifSeedPairingId;
@@ -66,6 +68,12 @@ export const RIFF_PHRASE_MOTIF_SEED_PAIRINGS: readonly RiffPhraseMotifSeedPairin
     vrbId: 'nile_rodgers',
     category: 'black_soul_funk',
   },
+  {
+    id: 'bebop_jazz_blues',
+    env: 'COMPOSER_OS_RIFF_BEBOP_MOTIF_SEED',
+    vrbId: 'bill_evans_sax',
+    category: 'bebop_jazz_blues',
+  },
 ] as const;
 
 /** @deprecated use pairing env; kept for existing sax PoC imports */
@@ -89,6 +97,10 @@ export const RIFF_BLACKSOUL_MOTIF_SEED_ENV = 'COMPOSER_OS_RIFF_BLACKSOUL_MOTIF_S
 export const RIFF_BLACKSOUL_MOTIF_SEED_VRB = 'nile_rodgers' as const;
 export const RIFF_BLACKSOUL_MOTIF_SEED_CATEGORY = 'black_soul_funk' as const;
 
+export const RIFF_BEBOP_MOTIF_SEED_ENV = 'COMPOSER_OS_RIFF_BEBOP_MOTIF_SEED';
+export const RIFF_BEBOP_MOTIF_SEED_VRB = 'bill_evans_sax' as const;
+export const RIFF_BEBOP_MOTIF_SEED_CATEGORY = 'bebop_jazz_blues' as const;
+
 /** Short UI labels for checkbox copy (avoid jargon). */
 const CATEGORY_LICK_LABEL: Partial<Record<RiffPhraseCategory, string>> = {
   sax_inspired: 'sax',
@@ -96,6 +108,7 @@ const CATEGORY_LICK_LABEL: Partial<Record<RiffPhraseCategory, string>> = {
   diminished_lines: 'diminished',
   white_rock_funk: 'white rock funk',
   black_soul_funk: 'black soul funk',
+  bebop_jazz_blues: 'bebop jazz blues',
 };
 
 /** undefined = not loaded; null = force empty (tests). Per category. */
@@ -120,6 +133,10 @@ export function isRiffJazzRockMotifSeedEnabled(): boolean {
 
 export function isRiffDimMotifSeedEnabled(): boolean {
   return envEnabled(RIFF_DIM_MOTIF_SEED_ENV);
+}
+
+export function isRiffBebopMotifSeedEnabled(): boolean {
+  return envEnabled(RIFF_BEBOP_MOTIF_SEED_ENV);
 }
 
 export function resetRiffPhraseMotifSeedCacheForTests(): void {
@@ -183,6 +200,10 @@ export function pickJazzRockPhraseForSeed(seed: number): RiffPhraseEntry | undef
 
 export function pickDiminishedPhraseForSeed(seed: number): RiffPhraseEntry | undefined {
   return pickPhraseForSeed(RIFF_DIM_MOTIF_SEED_CATEGORY, seed);
+}
+
+export function pickBebopPhraseForSeed(seed: number): RiffPhraseEntry | undefined {
+  return pickPhraseForSeed(RIFF_BEBOP_MOTIF_SEED_CATEGORY, seed);
 }
 
 export function pairingForVrb(vrbId: string | undefined): RiffPhraseMotifSeedPairing | undefined {

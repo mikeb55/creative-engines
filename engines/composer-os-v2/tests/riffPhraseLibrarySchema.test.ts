@@ -134,7 +134,7 @@ export function runRiffPhraseLibrarySchemaTests(): { ok: boolean; name: string }
   {
     const keys = Object.keys(RIFF_PHRASE_CATEGORY_TAG_HEURISTICS);
     const ok =
-      RIFF_PHRASE_CORPUS_TARGET_TOTAL === 56 &&
+      RIFF_PHRASE_CORPUS_TARGET_TOTAL === 81 &&
       keys.length === RIFF_PHRASE_CATEGORIES.length &&
       RIFF_PHRASE_CATEGORIES.every((c) => keys.includes(c)) &&
       RIFF_PHRASE_CATEGORY_TAG_HEURISTICS.diminished_lines.highIntervalDensity.includes('m3') &&
@@ -144,7 +144,7 @@ export function runRiffPhraseLibrarySchemaTests(): { ok: boolean; name: string }
       RIFF_PHRASE_CATEGORY_TAG_HEURISTICS.black_soul_funk.expectedTags.includes('call_response');
     out.push({
       ok,
-      name: 'heuristics cover all categories; funk scaffolds; corpus total 56',
+      name: 'heuristics cover all categories; funk scaffolds; corpus total 81',
     });
   }
 
