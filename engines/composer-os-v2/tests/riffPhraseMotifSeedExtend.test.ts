@@ -21,17 +21,21 @@ import {
   RIFF_BLUESROCK_MOTIF_SEED_VRB,
   RIFF_SOUTHERNROCK_MOTIF_SEED_ENV,
   RIFF_SOUTHERNROCK_MOTIF_SEED_VRB,
+  RIFF_MODERNROCK_MOTIF_SEED_ENV,
+  RIFF_MODERNROCK_MOTIF_SEED_VRB,
   RIFF_JAZZROCK_MOTIF_SEED_ENV,
   RIFF_JAZZROCK_MOTIF_SEED_VRB,
   RIFF_SAX_MOTIF_SEED_POC_ENV,
   isRiffBebopMotifSeedEnabled,
   isRiffBluesRockMotifSeedEnabled,
   isRiffSouthernRockMotifSeedEnabled,
+  isRiffModernRockMotifSeedEnabled,
   isRiffDimMotifSeedEnabled,
   isRiffJazzRockMotifSeedEnabled,
   pickBebopPhraseForSeed,
   pickBluesRockPhraseForSeed,
   pickSouthernRockPhraseForSeed,
+  pickModernRockPhraseForSeed,
   pickDiminishedPhraseForSeed,
   pickJazzRockPhraseForSeed,
   resetRiffPhraseMotifSeedCacheForTests,
@@ -83,6 +87,7 @@ function clearAllFlags(): void {
   delete process.env[RIFF_BEBOP_MOTIF_SEED_ENV];
   delete process.env[RIFF_BLUESROCK_MOTIF_SEED_ENV];
   delete process.env[RIFF_SOUTHERNROCK_MOTIF_SEED_ENV];
+  delete process.env[RIFF_MODERNROCK_MOTIF_SEED_ENV];
   resetRiffPhraseMotifSeedCacheForTests();
 }
 
@@ -282,6 +287,7 @@ export function runRiffPhraseMotifSeedExtendTests(): { ok: boolean; name: string
       vrbHasPhraseMotifSeedPairing('bill_evans_sax') &&
       vrbHasPhraseMotifSeedPairing('hendrix') &&
       vrbHasPhraseMotifSeedPairing('led_zeppelin') &&
+      vrbHasPhraseMotifSeedPairing('morello') &&
       !vrbHasPhraseMotifSeedPairing('james_brown') &&
       !vrbHasPhraseMotifSeedPairing('david_gilmour') &&
       (phraseMotifSeedCheckboxLabel('weather_report') ?? '').includes('sax') &&
@@ -290,8 +296,9 @@ export function runRiffPhraseMotifSeedExtendTests(): { ok: boolean; name: string
       (phraseMotifSeedCheckboxLabel('bill_evans_sax') ?? '').includes('bebop jazz blues') &&
       (phraseMotifSeedCheckboxLabel('hendrix') ?? '').includes('blues-rock') &&
       (phraseMotifSeedCheckboxLabel('led_zeppelin') ?? '').includes('southern rock') &&
+      (phraseMotifSeedCheckboxLabel('morello') ?? '').includes('modern rock') &&
       phraseMotifSeedCheckboxLabel('david_gilmour') === null,
-    name: 'UI helpers: pairing visibility + lick labels for 8 VRBs only',
+    name: 'UI helpers: pairing visibility + lick labels for 9 VRBs only',
   });
 
   withEnv(RIFF_BEBOP_MOTIF_SEED_ENV, '1', () => {
@@ -492,6 +499,74 @@ export function runRiffPhraseMotifSeedExtendTests(): { ok: boolean; name: string
     out.push({
       ok,
       name: 'southernrock flag ON: non-led_zeppelin VRBs byte-identical',
+      detail: details.join(',') || 'ok',
+    });
+  }
+
+  clearAllFlags();
+  withEnv(RIFF_MODERNROCK_MOTIF_SEED_ENV, '1', () => {
+    out.push({
+      ok: isRiffModernRockMotifSeedEnabled() === true,
+      name: 'modernrock flag ON when env=1',
+    });
+    const phrase = pickModernRockPhraseForSeed(1);
+    const motif = resolveRiffCoreMotif(1, RIFF_MODERNROCK_MOTIF_SEED_VRB);
+    out.push({
+      ok: !!phrase && motif.id === 'phrase:' + phrase.id,
+      name: 'modernrock ON + morello: motif from modern_rock phrase',
+      detail: motif.id,
+    });
+    const wr = resolveRiffCoreMotif(1, 'weather_report');
+    const zep = resolveRiffCoreMotif(1, 'led_zeppelin');
+    const proc = generateRiffCoreMotif(1);
+    out.push({
+      ok: wr.id === proc.id && zep.id === proc.id,
+      name: 'modernrock ON: weather_report + led_zeppelin still procedural',
+    });
+  });
+
+  clearAllFlags();
+  process.env[RIFF_MODERNROCK_MOTIF_SEED_ENV] = '1';
+  resetRiffPhraseMotifSeedCacheForTests();
+  {
+    const phrase = pickModernRockPhraseForSeed(1);
+    const onMotif = resolveRiffCoreMotif(1, RIFF_MODERNROCK_MOTIF_SEED_VRB);
+    delete process.env[RIFF_MODERNROCK_MOTIF_SEED_ENV];
+    resetRiffPhraseMotifSeedCacheForTests();
+    const offXml = xmlOf(buildRiffScoreModel(baseParams(1, RIFF_MODERNROCK_MOTIF_SEED_VRB)).score);
+    process.env[RIFF_MODERNROCK_MOTIF_SEED_ENV] = '1';
+    resetRiffPhraseMotifSeedCacheForTests();
+    const onXml = xmlOf(buildRiffScoreModel(baseParams(1, RIFF_MODERNROCK_MOTIF_SEED_VRB)).score);
+    out.push({
+      ok:
+        !!phrase &&
+        phrase.intervalSequence.length >= 10 &&
+        onMotif.id.startsWith('phrase:') &&
+        sha(offXml) !== sha(onXml),
+      name: 'modernrock live: ON seeds phrase (≥10 iv) + XML differs',
+      detail: phrase ? phrase.intervalSequence.length + ' ' + onMotif.id : 'no phrase',
+    });
+  }
+  clearAllFlags();
+  {
+    const vrbs = ['mahavishnu', 'weather_report', 'nile_rodgers', 'iommi', 'fripp', 'bill_evans_sax', 'hendrix', 'led_zeppelin'] as const;
+    let ok = true;
+    const details: string[] = [];
+    for (const vrbId of vrbs) {
+      delete process.env[RIFF_MODERNROCK_MOTIF_SEED_ENV];
+      resetRiffPhraseMotifSeedCacheForTests();
+      const off = sha(xmlOf(buildRiffScoreModel(baseParams(1, vrbId)).score));
+      process.env[RIFF_MODERNROCK_MOTIF_SEED_ENV] = '1';
+      resetRiffPhraseMotifSeedCacheForTests();
+      const on = sha(xmlOf(buildRiffScoreModel(baseParams(1, vrbId)).score));
+      if (off !== on) {
+        ok = false;
+        details.push(vrbId);
+      }
+    }
+    out.push({
+      ok,
+      name: 'modernrock flag ON: non-morello VRBs byte-identical',
       detail: details.join(',') || 'ok',
     });
   }

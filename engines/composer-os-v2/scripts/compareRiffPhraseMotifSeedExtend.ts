@@ -27,6 +27,8 @@ import {
   RIFF_BLUESROCK_MOTIF_SEED_VRB,
   RIFF_SOUTHERNROCK_MOTIF_SEED_ENV,
   RIFF_SOUTHERNROCK_MOTIF_SEED_VRB,
+  RIFF_MODERNROCK_MOTIF_SEED_ENV,
+  RIFF_MODERNROCK_MOTIF_SEED_VRB,
   RIFF_JAZZROCK_MOTIF_SEED_ENV,
   RIFF_JAZZROCK_MOTIF_SEED_VRB,
   findSeedsWithMinPhraseIntervals,
@@ -121,6 +123,14 @@ const PAIRINGS: PairingCfg[] = [
     outDirName: 'riff-southernrock-motif-seed-poc',
     seeds: [1, 2, 3],
   },
+  {
+    label: 'modern_rock → morello',
+    env: RIFF_MODERNROCK_MOTIF_SEED_ENV,
+    vrbId: RIFF_MODERNROCK_MOTIF_SEED_VRB,
+    category: 'modern_rock',
+    outDirName: 'riff-modernrock-motif-seed-poc',
+    seeds: [1, 2, 3],
+  },
 ];
 
 const REGRESSION_VRBS = [
@@ -132,6 +142,7 @@ const REGRESSION_VRBS = [
   'bill_evans_sax',
   'hendrix',
   'led_zeppelin',
+  'morello',
 ] as const;
 
 function sha(s: string): string {
@@ -150,6 +161,7 @@ function clearFlags(): void {
   delete process.env[RIFF_BEBOP_MOTIF_SEED_ENV];
   delete process.env[RIFF_BLUESROCK_MOTIF_SEED_ENV];
   delete process.env[RIFF_SOUTHERNROCK_MOTIF_SEED_ENV];
+  delete process.env[RIFF_MODERNROCK_MOTIF_SEED_ENV];
   resetRiffPhraseMotifSeedCacheForTests();
 }
 function setFlag(env: string, on: boolean): void {
@@ -473,6 +485,18 @@ function regressionCheck(): { ok: boolean; detail: string }[] {
     out.push({
       ok: changed === expectChange,
       detail: `southernrock flag: ${vrbId} ${changed ? 'CHANGED' : 'stable'} (expect ${expectChange ? 'change' : 'stable'})`,
+    });
+  }
+
+  // Modernrock flag ON — only morello may change
+  setFlag(RIFF_MODERNROCK_MOTIF_SEED_ENV, true);
+  for (const vrbId of REGRESSION_VRBS) {
+    const h = sha(xmlOf(build(seed, vrbId, 'reg').score));
+    const changed = h !== baseline[vrbId];
+    const expectChange = vrbId === 'morello';
+    out.push({
+      ok: changed === expectChange,
+      detail: `modernrock flag: ${vrbId} ${changed ? 'CHANGED' : 'stable'} (expect ${expectChange ? 'change' : 'stable'})`,
     });
   }
   clearFlags();

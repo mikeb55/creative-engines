@@ -11,6 +11,8 @@
 
 ### Added
 
+- **Riff phrase motif-seed — modern_rock→morello** — Ninth pairing: `COMPOSER_OS_RIFF_MODERNROCK_MOTIF_SEED` (default OFF) + RiffGen checkbox. Best-fit among UI rock/art-rock roster (Tom Morello contemporary edge; `eddie_van_halen` not in RiffGen catalog — deferred). Confirm seeds **1 / 2 / 3** (≥10 iv). Fidelity ON cos **1.00 / 1.00 / 0.77**; seed **3** hard FAIL→PASS. Regression: only `morello` changes. Examples: `output/riff-modernrock-motif-seed-poc/`.
+
 - **Riff phrase motif-seed — southern_rock→led_zeppelin** — Eighth pairing: `COMPOSER_OS_RIFF_SOUTHERNROCK_MOTIF_SEED` (default OFF) + RiffGen checkbox. Best-fit major/Mixolydian twin-guitar swagger (`led_zeppelin` Page multi-mode; distinct from `hendrix` blues_rock). Confirm seeds **1 / 2 / 3** (≥10 iv). Fidelity ON cos **0.78 / 0.95 / 0.97**; seed **3** hard FAIL→PASS (integrity flip). Regression: only `led_zeppelin` changes. Examples: `output/riff-southernrock-motif-seed-poc/`.
 
 - **Riff phrase corpus ingest — Virtuoso Technique** — Real GP5 ingest for `virtuoso_technique` (Scott Allen *50 Rock Virtuoso Licks You MUST Know* — sa50rvl-01–10, 31–36, 45–49): **21**/21 parseOk · **27** phrases. Magic bytes confirmed `FICHIER GUITAR PRO v5.00` on all files (not PTB). meterMismatch **0**; droppedOrnaments **0**; tieFixups on `04`/`09` (**2**), `32` (**4**), `45` (**8**). `TARGET_COUNTS.virtuoso_technique` **6→21**; `RIFF_PHRASE_CORPUS_TARGET_TOTAL` **156→171**. Derived **193** files / **345** phrases. **All 11 planned categories populated** — no empty stubs remain. Motif-seed pairing deferred (technique showcase, not genre-authentic).
