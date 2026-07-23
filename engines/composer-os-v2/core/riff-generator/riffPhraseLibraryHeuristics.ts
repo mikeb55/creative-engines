@@ -59,7 +59,8 @@ export const RIFF_PHRASE_CATEGORY_TAG_HEURISTICS: Record<
     contourHints: ['sparse_rest_mask'],
     chromaticityBand: { min: 0.0, max: 0.2 },
     preferredPhraseEndTypes: ['rest', 'leap_off'],
-    notes: 'power/fifth leaps; sparse; low chromaticity',
+    notes:
+      'Chris Buono 50 Rock Guitar Licks You MUST Know — power/fifth leaps; sparse; low chromaticity',
   },
   progressive_blues: {
     expectedTags: ['odd_meter', 'wide_register', 'open_end'],

@@ -122,11 +122,11 @@ UI toggle label **"Use HV for riff pattern too?"** maps to `riffUseHvForPattern`
 
 | Fact | Value (2026-07-19) |
 |------|---------------------|
-| Schema categories | **11** (`RIFF_PHRASE_CATEGORIES`); target total **112** |
-| Populated on disk (QA ingest) | **8** — `sax_inspired`, `diminished_lines`, `jazz_rock`, `white_rock_funk`, `black_soul_funk`, `bebop_jazz_blues`, `blues_rock`, `southern_rock` |
-| Empty stubs | `modern_rock`, `progressive_blues`, `virtuoso_technique` |
+| Schema categories | **11** (`RIFF_PHRASE_CATEGORIES`); target total **134** |
+| Populated on disk (QA ingest) | **9** — `sax_inspired`, `diminished_lines`, `jazz_rock`, `white_rock_funk`, `black_soul_funk`, `bebop_jazz_blues`, `blues_rock`, `southern_rock`, `modern_rock` |
+| Empty stubs | `progressive_blues`, `virtuoso_technique` |
 | Kind note | `virtuoso_technique` = cross-genre technique showcase (Scott Allen *50 Rock Virtuoso Licks*), not genre-authentic style |
-| Road-test QA totals | **120** files / **251** phrases |
+| Road-test QA totals | **146** files / **284** phrases |
 | Engine wiring | **OFF** — no imports into `riffMelody` / `riffPitchField` / `buildRiffScoreModel` / `runRiffGenerator` |
 | Pitch PR status | **PR A/B/C** shipped — pick path · `enforceHook` gate · leap-peak motif-blend skip |
 
