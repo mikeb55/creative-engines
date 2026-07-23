@@ -23,6 +23,8 @@ import {
   RIFF_BLACKSOUL_MOTIF_SEED_VRB,
   RIFF_BEBOP_MOTIF_SEED_ENV,
   RIFF_BEBOP_MOTIF_SEED_VRB,
+  RIFF_BLUESROCK_MOTIF_SEED_ENV,
+  RIFF_BLUESROCK_MOTIF_SEED_VRB,
   RIFF_JAZZROCK_MOTIF_SEED_ENV,
   RIFF_JAZZROCK_MOTIF_SEED_VRB,
   findSeedsWithMinPhraseIntervals,
@@ -100,6 +102,15 @@ const PAIRINGS: PairingCfg[] = [
     outDirName: 'riff-bebop-motif-seed-poc',
     seeds: [1, 2, 3],
   },
+  {
+    label: 'blues_rock → hendrix',
+    env: RIFF_BLUESROCK_MOTIF_SEED_ENV,
+    vrbId: RIFF_BLUESROCK_MOTIF_SEED_VRB,
+    category: 'blues_rock',
+    outDirName: 'riff-bluesrock-motif-seed-poc',
+    // Distinct ≥10-iv phrases (seed 1 = 0-iv leftover — skip)
+    seeds: [2, 3, 4],
+  },
 ];
 
 const REGRESSION_VRBS = [
@@ -109,6 +120,7 @@ const REGRESSION_VRBS = [
   'mahavishnu',
   'fripp',
   'bill_evans_sax',
+  'hendrix',
 ] as const;
 
 function sha(s: string): string {
@@ -125,6 +137,7 @@ function clearFlags(): void {
   delete process.env[RIFF_WHITEROCK_MOTIF_SEED_ENV];
   delete process.env[RIFF_BLACKSOUL_MOTIF_SEED_ENV];
   delete process.env[RIFF_BEBOP_MOTIF_SEED_ENV];
+  delete process.env[RIFF_BLUESROCK_MOTIF_SEED_ENV];
   resetRiffPhraseMotifSeedCacheForTests();
 }
 function setFlag(env: string, on: boolean): void {
@@ -424,6 +437,18 @@ function regressionCheck(): { ok: boolean; detail: string }[] {
     out.push({
       ok: changed === expectChange,
       detail: `bebop flag: ${vrbId} ${changed ? 'CHANGED' : 'stable'} (expect ${expectChange ? 'change' : 'stable'})`,
+    });
+  }
+
+  // Bluesrock flag ON — only hendrix may change
+  setFlag(RIFF_BLUESROCK_MOTIF_SEED_ENV, true);
+  for (const vrbId of REGRESSION_VRBS) {
+    const h = sha(xmlOf(build(seed, vrbId, 'reg').score));
+    const changed = h !== baseline[vrbId];
+    const expectChange = vrbId === 'hendrix';
+    out.push({
+      ok: changed === expectChange,
+      detail: `bluesrock flag: ${vrbId} ${changed ? 'CHANGED' : 'stable'} (expect ${expectChange ? 'change' : 'stable'})`,
     });
   }
   clearFlags();
