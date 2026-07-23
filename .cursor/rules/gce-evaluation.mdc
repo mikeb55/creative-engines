@@ -24,7 +24,7 @@ GCE has **two agent modes**. Pick the right one before scoring or advising.
 
 Every time Composer OS **generates MusicXML output** or you **run the official evaluator**, use formal GCE only.
 
-- Hard gates remain hard gates; formulas, weights, and thresholds are authoritative and **unchanged**
+- Hard gates remain hard gates; formulas, weights, and **numeric** thresholds are authoritative and **unchanged** (`finalBarTension` still `> 0.7` when it applies). Auto-fail for final-bar tension is gated by `endingContext` (`terminal` / `loop` / `open_idiom`) — see Hard gates list below.
 - **9.0** = aspirational north star · **7.9–8.4** = current empirical release-quality band
 - Short-form caveats below still apply
 - Do **not** weaken or reinterpret formal GCE / LOCK semantics in this mode
@@ -44,7 +44,11 @@ Quick reference:
   - Melodic Identity <= 6
   - No section contrast
   - Cadential Clarity coverage < 0.4
-  - Final bar tension > 0.7 (accidental / unresolved ending)
+  - Final bar tension > 0.7 — **context-aware** via `endingContext` (threshold unchanged):
+    - `terminal` (Song Mode / leadsheets / final charts): auto-fail — unresolved ending is a genuine flaw
+    - `loop` (`riff_generator` default): do **not** auto-fail; do **not** flag an unresolved final bar as a flaw on riff/loop output
+    - `open_idiom` (explicit ack): no auto-fail; disclosure required
+    - Detail: `docs/GCE_LOCK_DCR_STANDARDS.md` §3.1a · `docs/GCE_CANONICAL.md`
 
 ### Short-form / fragment outputs (< ~16 bars, especially 8-bar leadsheet)
 

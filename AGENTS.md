@@ -9,7 +9,7 @@ Full Composer OS guidance: **`CLAUDE.md`**. Cursor rules: **`.cursor/rules/`**. 
 
 **Default:** musician-facing for chat evaluation unless the prompt asks for **formal Composer OS validation** or mentions **LOCK**, **DCR**, or **CI**. Formal mode for code, evaluator runs, and release decisions.
 
-Formulas, weights, thresholds, and hard gates are **unchanged**; only agent application differs.
+Formulas, weights, and **numeric** hard-gate thresholds are **unchanged**; only agent application differs between formal vs musician-facing modes. Exception to naive "always fail" reading: `finalBarTension` (> 0.7) is **context-aware** via `endingContext` — `terminal` auto-fails; `loop` (`riff_generator` default) does not; `open_idiom` needs explicit ack/disclosure. See `docs/GCE_CANONICAL.md` and `docs/GCE_LOCK_DCR_STANDARDS.md` §3.1a.
 
 ## Ship discipline
 

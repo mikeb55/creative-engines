@@ -108,7 +108,7 @@ Align with **`docs/GCE_FRAMEWORK_V2.md` Â§ Hard Gates**, including:
 - Melodic identity **â‰¤ 6**
 - No section contrast
 - Cadential clarity coverage **&lt; 0.4**
-- Accidental / unresolved ending â€” final bar tension **&gt; 0.7**
+- Accidental / unresolved ending — final bar tension **> 0.7** when `endingContext` is `terminal` (default). `riff_generator` → `loop` (no auto-fail). `open_idiom` (ack) also exempt. See §3.1a.
 
 ---
 

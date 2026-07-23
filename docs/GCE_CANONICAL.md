@@ -47,6 +47,20 @@ These files are **historical reference only**. They must **not** override the li
 
 ---
 
+
+## Hard gates — finalBarTension is context-aware
+
+Numeric threshold **unchanged** (`> 0.7`). Auto-fail depends on `endingContext`:
+
+| `endingContext` | Default | Auto-fail when tension > 0.7? |
+|-----------------|---------|-------------------------------|
+| `terminal` | Song Mode, leadsheets, standalone final charts | **Yes** — unresolved ending is a genuine flaw |
+| `loop` | `riff_generator` (riffs cycle to bar 1) | **No** — tense/unresolved loop closes are expected; do **not** flag as a flaw |
+| `open_idiom` | Explicit `acknowledgeOpenIdiomEnding` | **No** — intentional open terminal ending; requires disclosure, not a silent pass/fail |
+
+Detail: `docs/GCE_FRAMEWORK_V2.md` Hard Gates · `docs/GCE_LOCK_DCR_STANDARDS.md` §3.1a · modules `endingContext.ts` / `finalBarTensionGate.ts`.
+
+---
 ## Short-form / fragments
 
 On **under ~16 bars** (especially 8-bar leadsheets): mark thematic recall, large-scale structure and form, and global phrase grammar as **N/A / structurally limited**. Still evaluate rhythm, harmony, voice-leading, melodic interest, register, spacing, and loopiness. See `docs/GCE_LOCK_DCR_STANDARDS.md` section 1.1.

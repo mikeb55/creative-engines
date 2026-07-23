@@ -33,7 +33,7 @@ Must pass before committing output-affecting changes unless the commit message d
    - Melodic Identity **<= 6**
    - No section contrast
    - Cadential Clarity coverage **< 0.4**
-   - Final bar tension **> 0.7**
+   - Final bar tension **> 0.7** when `endingContext` is `terminal` (default for Song Mode / leadsheets / charts). `riff_generator` defaults to `loop` — unresolved loop closes do **not** auto-fail. `open_idiom` (explicit ack) also exempts auto-fail. Numeric threshold unchanged. See `docs/GCE_LOCK_DCR_STANDARDS.md` §3.1a.
 4. **Key verification** — follow **`CLAUDE.md`**: smoke tier when engine/smoke lists change; otherwise minimal GCE + LOCK checklist on representative output.
 
 ## DCR workflow

@@ -28,6 +28,9 @@ Prompt Rules
 
 
 GCE CRITERIA
+ 
+
+GCE CRITERIA
   
 
 Composer OS — How AI agents access scoring criteria (GCE · LOCK · DCR · Style Profile Layer)
@@ -68,7 +71,11 @@ GCE HARD GATES (auto-fail regardless of overall score):
 - Melodic identity ≤ 6
 - No section contrast
 - Cadential clarity coverage < 0.4
-- Final bar tension > 0.7 (accidental / unresolved ending)
+- Final bar tension > 0.7 — CONTEXT-AWARE as of endingContext fix (2026-07-23):
+    - endingContext = 'terminal' (Song Mode, leadsheets, standalone final charts): gate unchanged, still fails at >0.7 (unresolved ending = genuine flaw)
+    - endingContext = 'loop' (riff_generator default — riffs are built to cycle back to bar 1): gate does NOT auto-fail on tension >0.7; unresolved/tense endings are expected and often correct for a loop
+    - endingContext = 'open_idiom' (intentional unresolved terminal ending): requires explicit user acknowledgment/disclosure (chord-loop-trust-style), not a silent pass or fail
+    - Threshold itself (0.7) is unchanged — only which contexts trigger the hard-fail changed
 
 Short-form caveat (< ~16 bars, especially 8-bar leadsheets):
 Some categories are structurally limited (thematic recall, structure & form, parts of phrase grammar). Still meaningful: rhythm anti-loop, harmony/chord fidelity, range/idiomaticity, hard gates.
@@ -121,6 +128,7 @@ Automated GCE implementation lives under engines/composer-os-v2/core/gce/ and co
 - gceEvaluator.ts, gceAutoScorers.ts, lockGates.ts, featureExtractor.ts
 - behaviourGates.ts — pipeline behaviour + LOCK suite at generation time
 - leadSheetGceLockEvalRunner.ts — leadsheet quintet path: evaluateGce + evaluateLock
+- endingContext.ts + finalBarTensionGate.ts — context-aware final bar tension gate (terminal/loop/open_idiom)
 
 CLI / npm entry points:
 - npm run eval:gce-styles — cross-preset style sweep (engines/composer-os-v2/scripts/gceStyleEval.ts)
@@ -132,16 +140,17 @@ Typical agent workflow for formal validation:
 1. Read docs/GCE_CANONICAL.md + docs/GCE_LOCK_DCR_STANDARDS.md
 2. Generate or load representative MusicXML/score for the touched path
 3. Run official evaluator script or smoke test for that slice
-4. Report: overall GCE, weakest category, hard gate PASS/FAIL, LOCK receipts
+4. Report: overall GCE, weakest category, hard gate PASS/FAIL, LOCK receipts (including endingContext for finalBarTension)
 5. If below band: one DCR refine on weakest craft category only
 
 Typical agent workflow for chat critique:
 1. Default musician-facing mode unless user says LOCK/DCR/CI/formal validation
 2. Apply GCE vocabulary musically; mark short-form structural limits
 3. Do not auto-fail sub-9 scores or recommend architecture rewrites from one low score
+4. For riff/loop-oriented output, do not flag an unresolved final bar as a flaw — that's expected loop-closure behavior, not a weakness
 
 ────────────────────────────────────────
 QUICK PROMPT FOR ANOTHER ASSISTANT
 ────────────────────────────────────────
-"You are evaluating Composer OS output. Start at docs/GCE_CANONICAL.md. Use formal mode only if I ask for LOCK/DCR/CI/release validation. Otherwise musician-facing critique. Hard gates and formulas are in docs/GCE_FRAMEWORK_V2.md. Pre-commit rules in docs/GCE_LOCK_DCR_STANDARDS.md. Do not use docs/GCE_FRAMEWORK.md or rules/gce_evaluation_framework.md (legacy). Prefer running npm run eval:<slice> or smoke tests over subjective invention."
-grantturnerstudio@gmail.com. Press tab to insert.
+"You are evaluating Composer OS output. Start at docs/GCE_CANONICAL.md. Use formal mode only if I ask for LOCK/DCR/CI/release validation. Otherwise musician-facing critique. Hard gates and formulas are in docs/GCE_FRAMEWORK_V2.md. Pre-commit rules in docs/GCE_LOCK_DCR_STANDARDS.md. Do not use docs/GCE_FRAMEWORK.md or rules/gce_evaluation_framework.md (legacy). Prefer running npm run eval:<slice> or smoke tests over subjective invention. Note: finalBarTension is context-aware — riff/loop output should not be penalized for an intentionally unresolved final bar."
+ 

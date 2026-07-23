@@ -105,7 +105,11 @@ Full chat behaviour: **`.cursor/rules/gce-evaluation.mdc` Â§2** Â· **`docs/G
 - Melodic Identity <= 6
 - No section contrast
 - Cadential Clarity coverage < 0.4
-- Final bar tension > 0.7 (accidental ending) — applies when `endingContext` is `terminal` (default for Song Mode / leadsheets / final charts). `riff_generator` defaults to `loop` (loop-setup tension does not auto-fail; threshold numeric value unchanged). `open_idiom` (user acknowledgment) also exempts auto-fail and emits disclosure. See `docs/GCE_LOCK_DCR_STANDARDS.md` §3.1a.
+- Final bar tension > 0.7 — CONTEXT-AWARE via `endingContext` (threshold numeric value unchanged; only which contexts auto-fail):
+  - `terminal` (Song Mode, leadsheets, standalone final charts): gate unchanged — still fails at >0.7 (unresolved ending = genuine flaw)
+  - `loop` (`riff_generator` default — riffs cycle back to bar 1): does NOT auto-fail on tension >0.7; unresolved/tense endings are expected and often correct for a loop
+  - `open_idiom` (intentional unresolved terminal ending): requires explicit user acknowledgment/disclosure; does not auto-fail
+  - See `docs/GCE_LOCK_DCR_STANDARDS.md` §3.1a
 
 ## Engine Rules
 - Generate -> evaluate -> revise weakest only -> output once
