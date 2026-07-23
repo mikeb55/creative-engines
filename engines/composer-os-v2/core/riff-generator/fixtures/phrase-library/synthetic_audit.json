@@ -128,5 +128,18 @@
     "meterMismatch": false,
     "hash": "synthetic:black_soul_funk_01",
     "notes": "hand-built fixture; no GPX; ghost/mute + call-response soul-funk heuristic"
+  },
+  {
+    "file": "synth_virtuoso_technique_01.json",
+    "parseOk": true,
+    "trackCount": 0,
+    "voiceCount": 1,
+    "barsIn": 1,
+    "phrasesOut": 1,
+    "droppedOrnaments": 0,
+    "tieFixups": 0,
+    "meterMismatch": false,
+    "hash": "synthetic:virtuoso_technique_01",
+    "notes": "hand-built fixture; no GPX; cross-genre technique showcase (not genre-authentic)"
   }
 ]

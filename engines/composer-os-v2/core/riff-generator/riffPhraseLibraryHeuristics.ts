@@ -111,4 +111,13 @@ export const RIFF_PHRASE_CATEGORY_TAG_HEURISTICS: Record<
     notes:
       'ghost notes / muted strums when detectable; strong downbeat + backbeat accents; call-response common; source: Funk Fundamentals / Funk Survival Guide',
   },
+  virtuoso_technique: {
+    expectedTags: ['tapping', 'sweep', 'alternate_picking', 'legato_run', 'wide_leap', 'cross_genre'],
+    highIntervalDensity: ['P4', 'P5', 'M6', 'tritone'],
+    contourHints: ['wide_register_arc', 'legato_density', 'technique_showcase'],
+    chromaticityBand: { min: 0.15, max: 0.55 },
+    preferredPhraseEndTypes: ['leap_off', 'sustain', 'open'],
+    notes:
+      'KIND DIFFERS from genre-authentic categories: cross-genre technique showcase (tapping / sweep / alternate picking / advanced scales+legato spanning metal/jazz/fusion/pop) — not tied to one harmonic language. Source: Scott Allen 50 Rock Virtuoso Licks You MUST Know. Tag on high technical density + wide leap/legato range.',
+  },
 };

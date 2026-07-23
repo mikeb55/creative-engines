@@ -134,7 +134,7 @@ export function runRiffPhraseLibrarySchemaTests(): { ok: boolean; name: string }
   {
     const keys = Object.keys(RIFF_PHRASE_CATEGORY_TAG_HEURISTICS);
     const ok =
-      RIFF_PHRASE_CORPUS_TARGET_TOTAL === 106 &&
+      RIFF_PHRASE_CORPUS_TARGET_TOTAL === 112 &&
       keys.length === RIFF_PHRASE_CATEGORIES.length &&
       RIFF_PHRASE_CATEGORIES.every((c) => keys.includes(c)) &&
       RIFF_PHRASE_CATEGORY_TAG_HEURISTICS.diminished_lines.highIntervalDensity.includes('m3') &&
@@ -143,10 +143,12 @@ export function runRiffPhraseLibrarySchemaTests(): { ok: boolean; name: string }
       RIFF_PHRASE_CATEGORY_TAG_HEURISTICS.white_rock_funk.expectedTags.includes('syncopated') &&
       RIFF_PHRASE_CATEGORY_TAG_HEURISTICS.black_soul_funk.expectedTags.includes('call_response') &&
       RIFF_PHRASE_CATEGORY_TAG_HEURISTICS.southern_rock.expectedTags.includes('mixolydian') &&
-      RIFF_PHRASE_CATEGORY_TAG_HEURISTICS.southern_rock.expectedTags.includes('twin_guitar');
+      RIFF_PHRASE_CATEGORY_TAG_HEURISTICS.southern_rock.expectedTags.includes('twin_guitar') &&
+      RIFF_PHRASE_CATEGORY_TAG_HEURISTICS.virtuoso_technique.expectedTags.includes('tapping') &&
+      RIFF_PHRASE_CATEGORY_TAG_HEURISTICS.virtuoso_technique.expectedTags.includes('cross_genre');
     out.push({
       ok,
-      name: 'heuristics cover all categories; southern_rock; corpus total 106',
+      name: 'heuristics cover all categories; virtuoso_technique scaffold; corpus total 112',
     });
   }
 

@@ -66,7 +66,7 @@ export function runRiffPhraseCorpusLoadTests(): Array<{ name: string; ok: boolea
       southern.phrases === 27,
     detail: JSON.stringify({ sax, dim, jazz, bebop, wrf, bsf, blues, southern }),
   });
-  const empty = ['modern_rock', 'progressive_blues'];
+  const empty = ['modern_rock', 'progressive_blues', 'virtuoso_technique'];
   rows.push({
     name: 'empty stub categories have zero files/phrases in stats',
     ok: empty.every(
@@ -85,7 +85,8 @@ export function runRiffPhraseCorpusLoadTests(): Array<{ name: string; ok: boolea
       !!corpus.stats.byCategory.black_soul_funk &&
       !!corpus.stats.byCategory.bebop_jazz_blues &&
       !!corpus.stats.byCategory.blues_rock &&
-      !!corpus.stats.byCategory.southern_rock,
+      !!corpus.stats.byCategory.southern_rock &&
+      corpus.stats.byCategory.virtuoso_technique !== undefined,
   });
 
   const melodyFiles = [

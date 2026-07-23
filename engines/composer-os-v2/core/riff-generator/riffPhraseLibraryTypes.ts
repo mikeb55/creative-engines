@@ -30,6 +30,7 @@ export const RIFF_PHRASE_CATEGORIES = [
   'diminished_lines',
   'white_rock_funk',
   'black_soul_funk',
+  'virtuoso_technique',
 ] as const;
 
 export type RiffPhraseCategory = (typeof RIFF_PHRASE_CATEGORIES)[number];
@@ -45,6 +46,7 @@ export const RIFF_PHRASE_CATEGORY_LABELS: Record<RiffPhraseCategory, string> = {
   diminished_lines: 'Diminished Lines',
   white_rock_funk: 'White Rock Funk',
   black_soul_funk: 'Black Soul Funk',
+  virtuoso_technique: 'Virtuoso Technique',
 };
 
 /** Planned corpus counts per category (real ingest later). */
@@ -59,10 +61,11 @@ export const RIFF_PHRASE_CATEGORY_TARGET_COUNTS: Record<RiffPhraseCategory, numb
   diminished_lines: 6,
   white_rock_funk: 8,
   black_soul_funk: 12,
+  virtuoso_technique: 6,
 };
 
 /** Sum of category target counts. */
-export const RIFF_PHRASE_CORPUS_TARGET_TOTAL = 106 as const;
+export const RIFF_PHRASE_CORPUS_TARGET_TOTAL = 112 as const;
 
 /**
  * Parser notes for GPX/GP5 ingest (Phase 1 scripts only — not app runtime).
