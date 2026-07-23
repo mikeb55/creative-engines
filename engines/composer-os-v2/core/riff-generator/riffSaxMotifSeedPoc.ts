@@ -10,7 +10,8 @@ export {
   setRiffSaxMotifSeedPocPoolForTests,
   pickSaxInspiredPhraseForSeed,
   resolveRiffCoreMotif,
-  pairingForVrb,
+  getPairingsForProfile,
+  profileHasPhraseMotifSeedPairing,
   vrbHasPhraseMotifSeedPairing,
   phraseMotifSeedCheckboxLabel,
 } from './riffPhraseMotifSeed';

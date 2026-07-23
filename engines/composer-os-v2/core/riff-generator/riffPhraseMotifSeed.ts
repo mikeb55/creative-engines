@@ -1,19 +1,10 @@
 /**
- * Phase 2 — phrase category → CoreMotif seed for paired VRBs.
+ * Phrase category → CoreMotif seed via many-to-many STYLE_PAIRINGS registry.
  *
- * Pairings (each env flag default OFF; request `phraseMotifSeed` also opts in per call):
- * - COMPOSER_OS_RIFF_SAX_MOTIF_SEED → weather_report ← sax_inspired
- * - COMPOSER_OS_RIFF_JAZZROCK_MOTIF_SEED → mahavishnu ← jazz_rock
- * - COMPOSER_OS_RIFF_DIM_MOTIF_SEED → fripp ← diminished_lines
- * - COMPOSER_OS_RIFF_WHITEROCK_MOTIF_SEED → iommi ← white_rock_funk
- * - COMPOSER_OS_RIFF_BLACKSOUL_MOTIF_SEED → nile_rodgers ← black_soul_funk
- * - COMPOSER_OS_RIFF_BEBOP_MOTIF_SEED → bill_evans_sax ← bebop_jazz_blues
- * - COMPOSER_OS_RIFF_BLUESROCK_MOTIF_SEED → hendrix ← blues_rock
- * - COMPOSER_OS_RIFF_SOUTHERNROCK_MOTIF_SEED → led_zeppelin ← southern_rock
- * - COMPOSER_OS_RIFF_MODERNROCK_MOTIF_SEED → morello ← modern_rock
- * - COMPOSER_OS_RIFF_PROGBLUES_MOTIF_SEED → david_gilmour ← progressive_blues
+ * Resolution: selected profile → exactly one enabled StylePairing edge → phrase pool.
+ * No multi-VRB blend. Flags default OFF (env + PairingFlags + request phraseMotifSeed).
  *
- * Motif seed only — no hook / loop / intervalWeights merge.
+ * @see riffStylePairings.ts
  */
 
 import type { CoreMotif } from '../motif/motifEngineTypes';
@@ -25,88 +16,56 @@ import {
   type RiffPhraseCategory,
   type RiffPhraseEntry,
 } from './riffPhraseLibraryTypes';
+import {
+  STYLE_PAIRINGS,
+  getPairing,
+  getPairingsForProfile,
+  isPairingEnabled,
+  pairingEnvKey,
+  resolvePairingForProfile,
+  type PairingFlags,
+  type StylePairing,
+} from './riffStylePairings';
 
-export type RiffPhraseMotifSeedPairingId =
-  | 'sax'
-  | 'jazz_rock'
-  | 'diminished'
-  | 'white_rock_funk'
-  | 'black_soul_funk'
-  | 'bebop_jazz_blues'
-  | 'blues_rock'
-  | 'southern_rock'
-  | 'modern_rock'
-  | 'progressive_blues';
+export {
+  STYLE_PAIRINGS,
+  LEGACY_PAIRING_ENV_ALIASES,
+  makePairingId,
+  pairingFlagKey,
+  pairingEnvKey,
+  pairingById,
+  pairingsByCategory,
+  pairingsByProfile,
+  getPairingsForProfile,
+  getPairingsForCategory,
+  getPairing,
+  getEnabledPairings,
+  isPairingEnabled,
+  isPairingEnvEnabled,
+  resolvePairingForProfile,
+  type PairingId,
+  type PairingFlags,
+  type StylePairing,
+  type StyleProfileId,
+} from './riffStylePairings';
 
-export type RiffPhraseMotifSeedPairing = {
-  id: RiffPhraseMotifSeedPairingId;
-  env: string;
-  vrbId: string;
+/** @deprecated use StylePairing — kept for gradual migration of external scripts */
+export type RiffPhraseMotifSeedPairing = StylePairing & {
+  /** @deprecated use categoryId */
   category: RiffPhraseCategory;
+  /** @deprecated use profileId */
+  vrbId: string;
+  /** @deprecated use pairingEnvKey(pairing) */
+  env: string;
 };
 
-export const RIFF_PHRASE_MOTIF_SEED_PAIRINGS: readonly RiffPhraseMotifSeedPairing[] = [
-  {
-    id: 'sax',
-    env: 'COMPOSER_OS_RIFF_SAX_MOTIF_SEED',
-    vrbId: 'weather_report',
-    category: 'sax_inspired',
-  },
-  {
-    id: 'jazz_rock',
-    env: 'COMPOSER_OS_RIFF_JAZZROCK_MOTIF_SEED',
-    vrbId: 'mahavishnu',
-    category: 'jazz_rock',
-  },
-  {
-    id: 'diminished',
-    env: 'COMPOSER_OS_RIFF_DIM_MOTIF_SEED',
-    vrbId: 'fripp',
-    category: 'diminished_lines',
-  },
-  {
-    id: 'white_rock_funk',
-    env: 'COMPOSER_OS_RIFF_WHITEROCK_MOTIF_SEED',
-    vrbId: 'iommi',
-    category: 'white_rock_funk',
-  },
-  {
-    id: 'black_soul_funk',
-    env: 'COMPOSER_OS_RIFF_BLACKSOUL_MOTIF_SEED',
-    vrbId: 'nile_rodgers',
-    category: 'black_soul_funk',
-  },
-  {
-    id: 'bebop_jazz_blues',
-    env: 'COMPOSER_OS_RIFF_BEBOP_MOTIF_SEED',
-    vrbId: 'bill_evans_sax',
-    category: 'bebop_jazz_blues',
-  },
-  {
-    id: 'blues_rock',
-    env: 'COMPOSER_OS_RIFF_BLUESROCK_MOTIF_SEED',
-    vrbId: 'hendrix',
-    category: 'blues_rock',
-  },
-  {
-    id: 'southern_rock',
-    env: 'COMPOSER_OS_RIFF_SOUTHERNROCK_MOTIF_SEED',
-    vrbId: 'led_zeppelin',
-    category: 'southern_rock',
-  },
-  {
-    id: 'modern_rock',
-    env: 'COMPOSER_OS_RIFF_MODERNROCK_MOTIF_SEED',
-    vrbId: 'morello',
-    category: 'modern_rock',
-  },
-  {
-    id: 'progressive_blues',
-    env: 'COMPOSER_OS_RIFF_PROGBLUES_MOTIF_SEED',
-    vrbId: 'david_gilmour',
-    category: 'progressive_blues',
-  },
-] as const;
+function asLegacy(p: StylePairing): RiffPhraseMotifSeedPairing {
+  return { ...p, category: p.categoryId, vrbId: p.profileId, env: pairingEnvKey(p) };
+}
+
+/** @deprecated use STYLE_PAIRINGS — shim with legacy field aliases */
+export const RIFF_PHRASE_MOTIF_SEED_PAIRINGS: readonly RiffPhraseMotifSeedPairing[] =
+  STYLE_PAIRINGS.map(asLegacy);
 
 /** @deprecated use pairing env; kept for existing sax PoC imports */
 export const RIFF_SAX_MOTIF_SEED_POC_ENV = 'COMPOSER_OS_RIFF_SAX_MOTIF_SEED';
@@ -137,13 +96,11 @@ export const RIFF_BLUESROCK_MOTIF_SEED_ENV = 'COMPOSER_OS_RIFF_BLUESROCK_MOTIF_S
 export const RIFF_BLUESROCK_MOTIF_SEED_VRB = 'hendrix' as const;
 export const RIFF_BLUESROCK_MOTIF_SEED_CATEGORY = 'blues_rock' as const;
 
-export const RIFF_SOUTHERNROCK_MOTIF_SEED_ENV = 'COMPOSER_OS_RIFF_SOUTHERNROCK_MOTIF_SEED';
-export const RIFF_SOUTHERNROCK_MOTIF_SEED_VRB = 'led_zeppelin' as const;
-export const RIFF_SOUTHERNROCK_MOTIF_SEED_CATEGORY = 'southern_rock' as const;
-
-export const RIFF_MODERNROCK_MOTIF_SEED_ENV = 'COMPOSER_OS_RIFF_MODERNROCK_MOTIF_SEED';
-export const RIFF_MODERNROCK_MOTIF_SEED_VRB = 'morello' as const;
-export const RIFF_MODERNROCK_MOTIF_SEED_CATEGORY = 'modern_rock' as const;
+/** Derived env for blues_rock::led_zeppelin (no legacy alias). */
+export const RIFF_BLUESROCK_ZEP_MOTIF_SEED_ENV = pairingEnvKey(
+  getPairing('blues_rock', 'led_zeppelin')!
+);
+export const RIFF_BLUESROCK_ZEP_MOTIF_SEED_VRB = 'led_zeppelin' as const;
 
 export const RIFF_PROGBLUES_MOTIF_SEED_ENV = 'COMPOSER_OS_RIFF_PROGBLUES_MOTIF_SEED';
 export const RIFF_PROGBLUES_MOTIF_SEED_VRB = 'david_gilmour' as const;
@@ -161,62 +118,59 @@ const CATEGORY_LICK_LABEL: Partial<Record<RiffPhraseCategory, string>> = {
   southern_rock: 'southern rock',
   modern_rock: 'modern rock',
   progressive_blues: 'progressive blues',
+  virtuoso_technique: 'virtuoso technique',
 };
 
 /** undefined = not loaded; null = force empty (tests). Per category. */
 const poolCache = new Map<RiffPhraseCategory, RiffPhraseEntry[] | null | undefined>();
 
-function envEnabled(env: string): boolean {
-  const v = process.env[env]?.trim().toLowerCase();
-  return v === '1' || v === 'true' || v === 'on';
-}
-
-export function isRiffPhraseMotifSeedEnabled(pairing: RiffPhraseMotifSeedPairing): boolean {
-  return envEnabled(pairing.env);
+export function isRiffPhraseMotifSeedEnabled(pairing: StylePairing, flags?: PairingFlags): boolean {
+  return isPairingEnabled(pairing, flags);
 }
 
 export function isRiffSaxMotifSeedPocEnabled(): boolean {
-  return envEnabled(RIFF_SAX_MOTIF_SEED_POC_ENV);
+  const p = getPairing('sax_inspired', 'weather_report');
+  return !!p && isPairingEnabled(p);
 }
 
 export function isRiffJazzRockMotifSeedEnabled(): boolean {
-  return envEnabled(RIFF_JAZZROCK_MOTIF_SEED_ENV);
+  const p = getPairing('jazz_rock', 'mahavishnu');
+  return !!p && isPairingEnabled(p);
 }
 
 export function isRiffDimMotifSeedEnabled(): boolean {
-  return envEnabled(RIFF_DIM_MOTIF_SEED_ENV);
+  const p = getPairing('diminished_lines', 'fripp');
+  return !!p && isPairingEnabled(p);
 }
 
 export function isRiffBebopMotifSeedEnabled(): boolean {
-  return envEnabled(RIFF_BEBOP_MOTIF_SEED_ENV);
+  const p = getPairing('bebop_jazz_blues', 'bill_evans_sax');
+  return !!p && isPairingEnabled(p);
 }
 
 export function isRiffBluesRockMotifSeedEnabled(): boolean {
-  return envEnabled(RIFF_BLUESROCK_MOTIF_SEED_ENV);
+  const p = getPairing('blues_rock', 'hendrix');
+  return !!p && isPairingEnabled(p);
 }
 
-export function isRiffSouthernRockMotifSeedEnabled(): boolean {
-  return envEnabled(RIFF_SOUTHERNROCK_MOTIF_SEED_ENV);
-}
-
-export function isRiffModernRockMotifSeedEnabled(): boolean {
-  return envEnabled(RIFF_MODERNROCK_MOTIF_SEED_ENV);
+export function isRiffBluesRockZepMotifSeedEnabled(): boolean {
+  const p = getPairing('blues_rock', 'led_zeppelin');
+  return !!p && isPairingEnabled(p);
 }
 
 export function isRiffProgBluesMotifSeedEnabled(): boolean {
-  return envEnabled(RIFF_PROGBLUES_MOTIF_SEED_ENV);
+  const p = getPairing('progressive_blues', 'david_gilmour');
+  return !!p && isPairingEnabled(p);
 }
 
 export function resetRiffPhraseMotifSeedCacheForTests(): void {
   poolCache.clear();
 }
 
-/** Alias for sax PoC tests. */
 export function resetRiffSaxMotifSeedPocCacheForTests(): void {
   resetRiffPhraseMotifSeedCacheForTests();
 }
 
-/** Inject pool for unit tests (null = empty; skips disk). Category-scoped. */
 export function setRiffPhraseMotifSeedPoolForTests(
   category: RiffPhraseCategory,
   pool: RiffPhraseEntry[] | null
@@ -224,7 +178,6 @@ export function setRiffPhraseMotifSeedPoolForTests(
   poolCache.set(category, pool);
 }
 
-/** Sax PoC test helper — injects into sax_inspired pool. */
 export function setRiffSaxMotifSeedPocPoolForTests(pool: RiffPhraseEntry[] | null): void {
   setRiffPhraseMotifSeedPoolForTests(RIFF_SAX_MOTIF_SEED_POC_CATEGORY, pool);
 }
@@ -244,10 +197,6 @@ function loadCategoryPool(category: RiffPhraseCategory): RiffPhraseEntry[] {
   return pool;
 }
 
-/**
- * Deterministic pick from category pool (seed -> index).
- * Returns undefined when pool empty.
- */
 export function pickPhraseForSeed(
   category: RiffPhraseCategory,
   seed: number
@@ -278,67 +227,68 @@ export function pickBluesRockPhraseForSeed(seed: number): RiffPhraseEntry | unde
   return pickPhraseForSeed(RIFF_BLUESROCK_MOTIF_SEED_CATEGORY, seed);
 }
 
-export function pickSouthernRockPhraseForSeed(seed: number): RiffPhraseEntry | undefined {
-  return pickPhraseForSeed(RIFF_SOUTHERNROCK_MOTIF_SEED_CATEGORY, seed);
-}
-
-export function pickModernRockPhraseForSeed(seed: number): RiffPhraseEntry | undefined {
-  return pickPhraseForSeed(RIFF_MODERNROCK_MOTIF_SEED_CATEGORY, seed);
-}
-
 export function pickProgBluesPhraseForSeed(seed: number): RiffPhraseEntry | undefined {
   return pickPhraseForSeed(RIFF_PROGBLUES_MOTIF_SEED_CATEGORY, seed);
 }
 
-export function pairingForVrb(vrbId: string | undefined): RiffPhraseMotifSeedPairing | undefined {
-  if (!vrbId) return undefined;
-  return RIFF_PHRASE_MOTIF_SEED_PAIRINGS.find((p) => p.vrbId === vrbId);
+/** True when profile has ≥1 shipped phrase-seed pairing (UI shows toggle). */
+export function profileHasPhraseMotifSeedPairing(profileId: string | undefined): boolean {
+  return getPairingsForProfile(profileId).length > 0;
 }
 
-/** True when VRB has a shipped phrase-seed pairing (UI shows toggle). */
+/** @deprecated use profileHasPhraseMotifSeedPairing */
 export function vrbHasPhraseMotifSeedPairing(vrbId: string | undefined): boolean {
-  return pairingForVrb(vrbId) != null;
+  return profileHasPhraseMotifSeedPairing(vrbId);
 }
 
 /**
- * Musician-facing checkbox label for a paired VRB, or null when no pairing.
- * e.g. "Seed motif from real sax licks"
+ * Musician-facing checkbox label for a paired profile, or null when unpaired.
+ * Uses the profile's sole pairing category (or lex-first if multiple).
  */
-export function phraseMotifSeedCheckboxLabel(vrbId: string | undefined): string | null {
-  const pairing = pairingForVrb(vrbId);
-  if (!pairing) return null;
+export function phraseMotifSeedCheckboxLabel(profileId: string | undefined): string | null {
+  const pairings = getPairingsForProfile(profileId);
+  if (pairings.length === 0) return null;
+  const pairing =
+    pairings.length === 1
+      ? pairings[0]!
+      : pairings.slice().sort((a, b) => a.id.localeCompare(b.id))[0]!;
   const short =
-    CATEGORY_LICK_LABEL[pairing.category] ??
-    RIFF_PHRASE_CATEGORY_LABELS[pairing.category]?.toLowerCase() ??
-    pairing.category.replace(/_/g, ' ');
+    CATEGORY_LICK_LABEL[pairing.categoryId] ??
+    RIFF_PHRASE_CATEGORY_LABELS[pairing.categoryId]?.toLowerCase() ??
+    pairing.categoryId.replace(/_/g, ' ');
   return 'Seed motif from real ' + short + ' licks';
 }
 
 export type ResolveRiffCoreMotifOpts = {
   /**
    * Per-generate-call opt-in (API `riffPhraseMotifSeed`).
-   * When true and VRB is paired, seeds from phrase corpus (env not required).
+   * When true and profile is paired, seeds from phrase corpus (env not required).
    */
   phraseMotifSeed?: boolean;
+  /** Optional in-process PairingFlags map (tests / future API). */
+  pairingFlags?: PairingFlags;
+  /** Disambiguate when a profile has multiple category edges. */
+  categoryId?: RiffPhraseCategory;
 };
 
 /**
  * Resolve CoreMotif for riff build.
- * OFF unless env flag for that pairing OR request `phraseMotifSeed` — then phraseEntryToCoreMotif.
- * Non-paired VRB / empty pool → generateRiffCoreMotif (byte-identical procedural path).
+ * Selects exactly one StylePairing for the profile (no blend).
+ * OFF unless edge enabled / request phraseMotifSeed — then phraseEntryToCoreMotif.
  */
 export function resolveRiffCoreMotif(
   seed: number,
-  vrbId?: string,
+  profileId?: string,
   opts?: ResolveRiffCoreMotifOpts
 ): CoreMotif {
-  const pairing = pairingForVrb(vrbId);
+  const pairing = resolvePairingForProfile(profileId, {
+    phraseMotifSeed: opts?.phraseMotifSeed,
+    pairingFlags: opts?.pairingFlags,
+    categoryId: opts?.categoryId,
+  });
   if (pairing) {
-    const on = opts?.phraseMotifSeed === true || isRiffPhraseMotifSeedEnabled(pairing);
-    if (on) {
-      const phrase = pickPhraseForSeed(pairing.category, seed);
-      if (phrase) return phraseEntryToCoreMotif(phrase);
-    }
+    const phrase = pickPhraseForSeed(pairing.categoryId, seed);
+    if (phrase) return phraseEntryToCoreMotif(phrase);
   }
   return generateRiffCoreMotif(seed);
 }
