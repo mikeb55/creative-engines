@@ -1,0 +1,19 @@
+{
+  "vrbId": "jimmy_herring",
+  "seed": 42,
+  "bars": 8,
+  "rhythmFingerprint": [
+    0.25,
+    0,
+    0.125,
+    0,
+    0,
+    0.125,
+    0.25,
+    0.25
+  ],
+  "noteCount": 20,
+  "offbeatRatio": 0.375,
+  "registerMean": 58.5,
+  "bassRegisterMean": 43.78125
+}

@@ -2422,6 +2422,208 @@ export const EDDIE_VAN_HALEN_RIFF_STUB_REGISTRY = {
   evh: EDDIE_VAN_HALEN,
 } as const satisfies Record<string, VoiceRuleBundle>;
 
+const JH_BASE = [
+  'JH_BIO_01 — Jimmy Herring — Allman Brothers / Aquarium Rescue Unit lineage; southern blues-rock lead with jazz-fusion colour. Distinct from hendrix / led_zeppelin / david_gilmour.',
+  'JH_HARM_01 — Dorian + Mixolydian centre over I/IV; blues + minor-pentatonic backbone; occasional diminished / altered passing between changes; bebop-ish chromatics resolve to strong chord tones (3/7/root).',
+  'JH_MELO_01 — Allman-style blues-rock foundation; stepwise + blues-cell motion; twin-guitar-friendly 3rds/6ths; mid-neck guitar register.',
+  'JH_TRUCKS_01 — Secondary: longer sustained / vocal-like phrasing; slide-inspired wide bends + slides where ornamentPolicy allows (not microtonal Indian grammar).',
+  'JH_PEARSON_01 — Secondary: understated chromatic approaches to 3rds/7ths; occasional 9th/6th colour; low density of jazzy enclosures.',
+  'JH_MORSE_01 — Secondary: rare odd-meter / metric-displacement moments only (sparing); default stays simple 4/4 southern swagger.',
+  'JH_DIFF_01 — vs hendrix: major/Mixolydian swagger + twin-guitar 3rds/6ths, not #9 blues-rock. vs gilmour: busier bebop-passing + Dorian colour, not sparse arena sustain. vs led_zeppelin: southern twin-lead Americana, not Page folk-modal heaviness. Dickinson open-tuning grit deferred (v1 skip).',
+] as const;
+
+/** Jimmy Herring southern-rock lead research profile (σ27). */
+export function buildJimmyHerringRiffProfile(): RiffProfile {
+  const rockSlice = riffProfileSliceFromRockRiff('generic');
+  const slots = 8;
+  const accent = straightAccentTopology(slots);
+  accent[0] = 0.78;
+  accent[2] = 0.42;
+  accent[4] = 0.62;
+  accent[6] = 0.48;
+  const rest = new Array<number>(slots).fill(0.14);
+  rest[0] = 0.22;
+  rest[7] = 0.38; // Trucks-flavoured space after sustained phrase
+  return riffProfileShell({
+    ...rockSlice,
+    meterPolicy: 'simple',
+    subdivisionGrid: 8,
+    accentTopology: accent,
+    allowPitchStreak: false,
+    tritoneStable: false,
+    homeChordType: 'dom7',
+    chordQualitySet: ['dom7', 'maj', 'maj7', 'min7', 'add9', '6', '9', 'sus2', 'sus4', 'power5'],
+    scalePool: {
+      Dorian: 0.72,
+      Mixolydian: 0.68,
+      minorPentatonic: 0.55,
+      bluesScale: 0.48,
+      majorPentatonic: 0.35,
+      bebopDominant: 0.22,
+      diminished: 0.18,
+      altered: 0.12,
+    },
+    chromaticBudget: 0.38,
+    intervalCell: { steps: [2, 3, -1, 2, -2], transpositionMode: 'diatonic' },
+    shorterCellLibrary: [
+      [3, 2, -1],
+      [2, -1, 1],
+      [4, -2],
+      [1, 2, 1],
+      [5, -1, -2],
+      [3, 4],
+    ],
+      intervalWeights: {
+        M2: 0.22,
+        m2: 0.16,
+        m3: 0.18,
+        M3: 0.12,
+        P4: 0.1,
+        M6: 0.1,
+        P5: 0.07,
+        tritone: 0.05,
+      },
+    chromaticApproachRules: [
+      { degrees: [3, 7], chordContext: 'any', probability: 0.55 },
+      { degrees: [9, 6], chordContext: 'I_or_IV', probability: 0.32 },
+      { degrees: [3, 5, 7], chordContext: 'dominant', probability: 0.4 },
+      { degrees: [1, 5], chordContext: 'diminished_pass', probability: 0.22 },
+    ],
+    registerAnchor: 'mid_register',
+    riffRegisterFloor: 52,
+    riffRegisterCeiling: 81,
+    registerBandPerVoice: {
+      guitar: { min: 52, max: 81 },
+      lead: { min: 55, max: 81 },
+      comp: { min: 45, max: 64 },
+    },
+    doubleStopPolicy: {
+      intervalsAllowed: [3, 4, 8, 9],
+      stringPairs: [
+        [3, 2],
+        [2, 1],
+        [4, 3],
+      ],
+    },
+    silencePolicy: {
+      ...rockSlice.silencePolicy,
+      restProbabilityBySlot: rest,
+      styleClass: 'SouthernRockSustain',
+      rockRiffPreset: 'generic',
+    },
+    spacePolicy: {
+      internalRestProb: 0.32,
+      phraseEndRestBeats: [0.5, 1.0, 1.5, 2.0],
+      callResponsePattern: 'twin_guitar_call_then_sustain_answer',
+    },
+    phraseLengthBeats: [3, 4, 6, 8],
+    metricDisplacement: 0.18,
+    oddMeterUsage: {
+      meters: [{ label: '7/8_morse_sparse', groups: [2, 2, 3] }],
+      isSuperimposed: false,
+    },
+    cadenceTypes: {
+      tail_fill: 0.35,
+      sustained_sus_chord: 0.4,
+      hard_stop_rest: 0.25,
+    },
+    variationOperators: [
+      'targetToneShift',
+      'ornamentAdd',
+      'chromaticAdd',
+      'chromaticTag',
+      'startOffsetShift',
+      'registerShift',
+      'tailFill',
+      'rhythmicWarp',
+    ],
+    repetitionPolicy: {
+      exactLoopAllowed: true,
+      pedalToneAllowed: false,
+      barIdentityPersistence: 0.48,
+      minExactRepetitions: 2,
+    },
+    modalUsage: 'chord-driven',
+    swingStyle: 'shuffle',
+    rhythmFeel: {
+      primarySubdivision: '8th',
+      feelProfiles: ['straight_rock', 'shuffle_blues', 'swung_jazz_rock'],
+      swingRatio: { straight_rock: 0.5, shuffle_blues: 0.62, swung_jazz_rock: 0.58 },
+      beatPlacement: 'slightly_behind',
+    },
+    ornamentPolicy: {
+      slides: true,
+      ghosts: false,
+      graceAttacks: true,
+      bends: true,
+      deadNotes: false,
+    },
+    attackPolicy: 'sustain',
+    pedalBias: 0.28,
+    octaveDisplacementTolerance: 0.4,
+    powerIntervalPolicy: { fifthWeight: 0.35, octaveWeight: 0.3, pedalWeight: 0.2 },
+    riffContourPolicy: { rangeCeiling: 14, apexTiming: 0.58, returnTendency: 0.55 },
+    contourPreferences: {
+      heavyRiffs: { descending: 0.35, ascending: 0.25, arched: 0.4 },
+    },
+    ensembleInterlockMode: 'callResponse',
+    styleModes: {
+      blues_rock: { scales: ['Dorian', 'Mixolydian', 'bluesScale', 'minorPentatonic'] },
+    },
+  });
+}
+
+/** Jimmy Herring riff VRB stub (σ27) — southern rock / Allman-lineage lead; motif-seed pair for southern_rock. */
+export const JIMMY_HERRING: VoiceRuleBundle = {
+  voiceId: 'jimmy_herring',
+  sigma: 27,
+  family: 'rock',
+  harmonicRhythm: {
+    minChordDurationBars: 1,
+    maxChordDurationBars: 8,
+    allowMidBarChange: true,
+  },
+  bassPolicy: { role: 'root', allowOctaveDoubling: true },
+  voicingPolicy: {
+    minSpreadSemitones: 4,
+    maxSpreadSemitones: 20,
+    clusterSizeNotes: [2, 5],
+    forbidParallelFifths: false,
+    forbidOctaveDoubling: false,
+  },
+  melodicPolicy: { contour: 'stepwise-arc', maxLeapSemitones: 12 },
+  orchestrationPolicy: {
+    anchorToneCount: 1,
+    mutateSingleVoiceAtTime: false,
+    allowCollectiveImprov: false,
+    fingerprintReceipts: fillReceipts('JH', 'Jimmy Herring', JH_BASE),
+  },
+  formPolicy: { narrativeArc: 'blues-backbone', sectionRecallEnforced: true },
+  rhythmPolicy: { antiMetric: false },
+  repairPolicy: { resolveParallels: true, maxVoiceOverlap: 5 },
+  contrapuntalLinePolicy: {
+    enabled: true,
+    dissonanceProfile: DIS_ROCK_MOD,
+    preferredImitationTypes: ['free'],
+    rhythmicIndependenceRequired: true,
+    lineRoleAssignment: 'dynamic',
+  },
+  duoVoicePolicy: {
+    guitarSource: 'soprano_line',
+    bassSource: 'bass_line',
+    rhythmicIndependenceFloor: 0.65,
+    registerInterlock: true,
+    intervalPreference: 'pentatonic_diatonic',
+  },
+  riffProfile: buildJimmyHerringRiffProfile(),
+};
+
+export const JIMMY_HERRING_RIFF_STUB_REGISTRY = {
+  jimmy_herring: JIMMY_HERRING,
+  herring: JIMMY_HERRING,
+  jh: JIMMY_HERRING,
+} as const satisfies Record<string, VoiceRuleBundle>;
+
 const FZ_RIFF_BASE = [
   'FZ_RIFF_HARM_01 — Modal / chromatic pool; Lydian + Mixolydian + blues inflection; high chromatic budget.',
   'FZ_RIFF_RHY_01 — 7/8 feel via 3+3+2 eighth groups over 4/4; polyrhythm against straight grid.',

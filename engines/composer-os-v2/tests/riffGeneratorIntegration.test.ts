@@ -284,13 +284,13 @@ function testRiffPhaseAHarmonicVoiceHonestyReceipt(): boolean {
 
 export function runRiffGeneratorIntegrationTests(): { name: string; ok: boolean }[] {
   return [
-    ['RiffGenerator — family tag resolution (17 VRBs)', testRiffGeneratorFamilyTagResolution],
+    ['RiffGenerator — family tag resolution (18 VRBs)', testRiffGeneratorFamilyTagResolution],
     ['RiffGenerator — profile completeness (no neutral fallback)', testRiffGeneratorProfileCompleteness],
     ['RiffGenerator — odd-meter overlay gating by family', testOddMeterOverlayGating],
     ['RiffGenerator — boundary swing ramp by family', testRiffBoundarySwingRampByFamily],
     ['RiffGenerator — VRB blend same family', testRiffVrbBlendSameFamily],
     ['RiffGenerator — VRB blend cross-family warn', testRiffVrbBlendCrossFamilyWarn],
-    ['RiffGenerator — Phase E song mode + duo integration (17 VRBs)', testRiffVrbSongModeIntegration],
+    ['RiffGenerator — Phase E song mode + duo integration (18 VRBs)', testRiffVrbSongModeIntegration],
     ['RiffGenerator — Phase A HV honesty receipt', testRiffPhaseAHarmonicVoiceHonestyReceipt],
   ].map(([name, fn]) => ({ name: name as string, ok: (fn as () => boolean)() }));
 }

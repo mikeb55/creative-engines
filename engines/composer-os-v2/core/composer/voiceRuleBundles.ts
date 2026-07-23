@@ -113,6 +113,7 @@ import {
   buildFrankZappaRiffProfile,
   EDDIE_VAN_HALEN,
   JAMERSON,
+  JIMMY_HERRING,
   JOE_PASS,
   SCOTT_HENDERSON,
   SONIC_YOUTH,
@@ -4338,6 +4339,26 @@ const EDDIE_VAN_HALEN_VRF: VoiceRuleBundle = {
   },
 };
 
+/** Jimmy Herring southern-rock research overlays (additive to JH_* fillReceipts). */
+const JIMMY_HERRING_FINGERPRINT_RESEARCH = [
+  'JH_REG_001 — registerPolicy: midiFloor 52; midiCeiling 81; mid-neck frets 5-12; twin-lead call/response register',
+  'JH_HARM_001 — scalePool: Dorian 0.72 Mixolydian 0.68 blues/pentatonic backbone; dim/alt passing low; bebopDominant resolve to chord tones',
+  'JH_ORN_001 — ornamentPolicy: slides+bends on; Trucks-flavoured sustain space; Pearson chromatic approach to 3/7 + 9/6 colour',
+  'JH_RHY_001 — meter simple 4/4 default; metricDisplacement 0.18; Morse odd 7/8 catalog rare only',
+  'JH_DIFF_001 — vs hendrix/gilmour/zep: southern Mixolydian swagger + twin 3rds/6ths; Dickinson open-tuning deferred v1',
+] as const;
+
+const JIMMY_HERRING_VRF: VoiceRuleBundle = {
+  ...JIMMY_HERRING,
+  orchestrationPolicy: {
+    ...JIMMY_HERRING.orchestrationPolicy,
+    fingerprintReceipts: [
+      ...(JIMMY_HERRING.orchestrationPolicy.fingerprintReceipts ?? []),
+      ...JIMMY_HERRING_FINGERPRINT_RESEARCH,
+    ],
+  },
+};
+
 /** Frank Zappa riff-path research (Z1) — solo lane + modal/polyrhythm receipts. */
 const FRANK_ZAPPA_FZBLUES_FINGERPRINT_RECEIPTS = [
   'FZBLUES-MODAL — modalBase: Dorian, Mixolydian; pentatonicAnchorRatio 0.38; scaleMinglingEnabled true',
@@ -4575,6 +4596,9 @@ const BY_ID: Record<string, VoiceRuleBundle> = {
   eddie_van_halen: EDDIE_VAN_HALEN_VRF,
   van_halen: EDDIE_VAN_HALEN_VRF,
   evh: EDDIE_VAN_HALEN_VRF,
+  jimmy_herring: JIMMY_HERRING_VRF,
+  herring: JIMMY_HERRING_VRF,
+  jh: JIMMY_HERRING_VRF,
   led_zeppelin: LED_ZEPPELIN_VRF,
   jimmy_page: LED_ZEPPELIN_VRF,
   page: LED_ZEPPELIN_VRF,

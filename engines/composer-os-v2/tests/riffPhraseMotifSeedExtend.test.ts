@@ -27,6 +27,8 @@ import {
   RIFF_MODERNROCK_MOTIF_SEED_VRB,
   RIFF_VIRTUOSO_MOTIF_SEED_ENV,
   RIFF_VIRTUOSO_MOTIF_SEED_VRB,
+  RIFF_SOUTHERNROCK_MOTIF_SEED_ENV,
+  RIFF_SOUTHERNROCK_MOTIF_SEED_VRB,
   RIFF_SAX_MOTIF_SEED_POC_ENV,
   STYLE_PAIRINGS,
   getPairing,
@@ -36,10 +38,12 @@ import {
   isRiffBluesRockZepMotifSeedEnabled,
   isRiffDimMotifSeedEnabled,
   isRiffJazzRockMotifSeedEnabled,
+  isRiffSouthernRockMotifSeedEnabled,
   makePairingId,
   pickBluesRockPhraseForSeed,
   pickDiminishedPhraseForSeed,
   pickJazzRockPhraseForSeed,
+  pickSouthernRockPhraseForSeed,
   resetRiffPhraseMotifSeedCacheForTests,
   resolveRiffCoreMotif,
   resolvePairingForProfile,
@@ -98,8 +102,7 @@ const ALL_LEGACY_ENVS = [
   RIFF_PROGBLUES_MOTIF_SEED_ENV,
   RIFF_MODERNROCK_MOTIF_SEED_ENV,
   RIFF_VIRTUOSO_MOTIF_SEED_ENV,
-  // stale removed-edge env — ensure clearing does not resurrect
-  'COMPOSER_OS_RIFF_SOUTHERNROCK_MOTIF_SEED',
+  RIFF_SOUTHERNROCK_MOTIF_SEED_ENV,
 ] as const;
 
 function clearAllFlags(): void {
@@ -127,8 +130,8 @@ export function runRiffPhraseMotifSeedExtendTests(): { ok: boolean; name: string
 
   // --- Registry ---
   out.push({
-    ok: STYLE_PAIRINGS.length === 11,
-    name: 'STYLE_PAIRINGS has 11 edges',
+    ok: STYLE_PAIRINGS.length === 12,
+    name: 'STYLE_PAIRINGS has 12 edges',
     detail: String(STYLE_PAIRINGS.length),
   });
   out.push({
@@ -140,12 +143,13 @@ export function runRiffPhraseMotifSeedExtendTests(): { ok: boolean; name: string
   });
   out.push({
     ok:
-      getPairingsForCategory('southern_rock').length === 0 &&
+      getPairingsForCategory('southern_rock').length === 1 &&
       getPairingsForCategory('modern_rock').length === 1 &&
       getPairingsForCategory('virtuoso_technique').length === 1 &&
+      !!getPairing('southern_rock', 'jimmy_herring') &&
       !!getPairing('modern_rock', 'morello') &&
       !!getPairing('virtuoso_technique', 'eddie_van_halen'),
-    name: 'southern unpaired; modern_rock→morello; virtuoso→eddie_van_halen',
+    name: 'southern→jimmy_herring; modern_rock→morello; virtuoso→eddie_van_halen',
   });
   out.push({
     ok:
@@ -313,7 +317,7 @@ export function runRiffPhraseMotifSeedExtendTests(): { ok: boolean; name: string
     });
   }
 
-  // UI: 11 edges, blues_rock shared, morello + EVH paired
+  // UI: 12 edges, blues_rock shared, morello + EVH + herring paired
   out.push({
     ok:
       profileHasPhraseMotifSeedPairing('weather_report') &&
@@ -322,13 +326,16 @@ export function runRiffPhraseMotifSeedExtendTests(): { ok: boolean; name: string
       profileHasPhraseMotifSeedPairing('david_gilmour') &&
       profileHasPhraseMotifSeedPairing('morello') &&
       profileHasPhraseMotifSeedPairing('eddie_van_halen') &&
+      profileHasPhraseMotifSeedPairing('jimmy_herring') &&
       !profileHasPhraseMotifSeedPairing('james_brown') &&
       getUiPairingsForCategory('blues_rock').length === 2 &&
+      getUiPairingsForCategory('southern_rock').length === 1 &&
       (phraseMotifSeedCheckboxLabel('hendrix') ?? '').includes('blues-rock') &&
       (phraseMotifSeedCheckboxLabel('led_zeppelin') ?? '').includes('blues-rock') &&
       (phraseMotifSeedCheckboxLabel('morello') ?? '').includes('modern rock') &&
-      (phraseMotifSeedCheckboxLabel('eddie_van_halen') ?? '').includes('virtuoso'),
-    name: 'UI helpers: 11 edges; blues_rock shared; morello + EVH paired',
+      (phraseMotifSeedCheckboxLabel('eddie_van_halen') ?? '').includes('virtuoso') &&
+      (phraseMotifSeedCheckboxLabel('jimmy_herring') ?? '').includes('southern rock'),
+    name: 'UI helpers: 12 edges; blues_rock shared; morello + EVH + herring paired',
   });
 
   // Blues hendrix legacy env
@@ -465,6 +472,20 @@ export function runRiffPhraseMotifSeedExtendTests(): { ok: boolean; name: string
     out.push({
       ok: motif.id.startsWith('phrase:'),
       name: 'virtuoso ON + eddie_van_halen seeds phrase',
+      detail: motif.id,
+    });
+  });
+  clearAllFlags();
+  withEnv(RIFF_SOUTHERNROCK_MOTIF_SEED_ENV, '1', () => {
+    out.push({
+      ok: isRiffSouthernRockMotifSeedEnabled() === true,
+      name: 'southernrock legacy env ON',
+    });
+    const phrase = pickSouthernRockPhraseForSeed(1);
+    const motif = resolveRiffCoreMotif(1, RIFF_SOUTHERNROCK_MOTIF_SEED_VRB);
+    out.push({
+      ok: !!phrase && motif.id.startsWith('phrase:'),
+      name: 'southernrock ON + jimmy_herring seeds phrase',
       detail: motif.id,
     });
   });

@@ -110,6 +110,9 @@ export const COMPOSER_ID_ALIASES: Readonly<Record<string, string>> = {
   evh: 'eddie_van_halen',
   van_halen: 'eddie_van_halen',
   eddie_van_halen: 'eddie_van_halen',
+  jimmy_herring: 'jimmy_herring',
+  herring: 'jimmy_herring',
+  jh: 'jimmy_herring',
   holdsworth: 'allan_holdsworth',
   allan_holdsworth: 'allan_holdsworth',
   jack_white: 'jack_white',
@@ -366,6 +369,7 @@ export const COMPOSER_GROUP_DEFINITIONS: readonly ComposerGroupDefinition[] = [
     defaults: ROCK_FUSION_DEFAULTS,
     members: [
       { composerId: 'eddie_van_halen', status: 'stub_exposed' },
+      { composerId: 'jimmy_herring', status: 'stub_exposed' },
       { composerId: 'allan_holdsworth', status: 'fully_implemented' },
       { composerId: 'jack_white', status: 'fully_implemented' },
       { composerId: 'scott_henderson', status: 'stub_exposed' },

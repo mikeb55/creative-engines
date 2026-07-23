@@ -85,6 +85,7 @@ const RIFF_VRB_CATALOG: readonly Omit<RiffVrbOption, 'sigma'>[] = [
   { vrbId: 'hendrix', label: 'Jimi Hendrix', family: 'rock' },
   { vrbId: 'led_zeppelin', label: 'Led Zeppelin', family: 'rock' },
   { vrbId: 'eddie_van_halen', label: 'Eddie Van Halen', family: 'rock' },
+  { vrbId: 'jimmy_herring', label: 'Jimmy Herring', family: 'rock' },
   { vrbId: 'weather_report', label: 'Weather Report', family: 'fusion' },
   { vrbId: 'mahavishnu', label: 'Mahavishnu', family: 'fusion' },
   { vrbId: 'bill_evans_sax', label: 'Bill Evans (sax)', family: 'fusion' },

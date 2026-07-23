@@ -733,6 +733,7 @@ const SONGWRITER_OPTIONS: { id: string; label: string }[] = [
   { id: 'debussy', label: 'Debussy' },
   { id: 'donald_fagen', label: 'Donald Fagen' },
   { id: 'eddie_van_halen', label: 'Eddie Van Halen' },
+  { id: 'jimmy_herring', label: 'Jimmy Herring' },
   { id: 'duke_ellington', label: 'Duke Ellington' },
   { id: 'frank_zappa', label: 'Frank Zappa' },
   { id: 'fripp_king_crimson', label: 'Fripp / King Crimson' },

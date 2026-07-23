@@ -111,6 +111,7 @@ const DISPATCH_STUB_ALIASES: Readonly<Record<string, string>> = {
   /** Guitar ids with VRB/stub only — nearest ROCK_FUSION / ART_ROCK / JAZZ_GUITAR dispatch fit. */
   morello: 'fripp',
   eddie_van_halen: 'allan_holdsworth',
+  jimmy_herring: 'allan_holdsworth',
   wes_montgomery: 'jim_hall',
   joe_pass: 'jim_hall',
   scott_henderson: 'allan_holdsworth',

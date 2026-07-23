@@ -1773,6 +1773,10 @@ function wireRiffVrbSongwriterRules(): void {
     R('riff.eddie_van_halen.sigma', 'Riff VRB σ26 — EVH rock lead (reuses prince rule family)', 'songwriter', 'melody', 8, 'global'),
     ...prince,
   ];
+  rules.jimmy_herring = [
+    R('riff.jimmy_herring.sigma', 'Riff VRB σ27 — Jimmy Herring southern rock (reuses prince rule family)', 'songwriter', 'melody', 8, 'global'),
+    ...prince,
+  ];
   rules.led_zeppelin = [
     R('riff.led_zeppelin.sigma', 'Riff VRB σ27 — Zeppelin modes (reuses prince rule family)', 'songwriter', 'harmony', 8, 'global'),
     ...prince,

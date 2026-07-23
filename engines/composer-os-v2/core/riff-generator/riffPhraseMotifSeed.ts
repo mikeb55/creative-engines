@@ -114,6 +114,10 @@ export const RIFF_VIRTUOSO_MOTIF_SEED_ENV = 'COMPOSER_OS_RIFF_VIRTUOSO_MOTIF_SEE
 export const RIFF_VIRTUOSO_MOTIF_SEED_VRB = 'eddie_van_halen' as const;
 export const RIFF_VIRTUOSO_MOTIF_SEED_CATEGORY = 'virtuoso_technique' as const;
 
+export const RIFF_SOUTHERNROCK_MOTIF_SEED_ENV = 'COMPOSER_OS_RIFF_SOUTHERNROCK_MOTIF_SEED';
+export const RIFF_SOUTHERNROCK_MOTIF_SEED_VRB = 'jimmy_herring' as const;
+export const RIFF_SOUTHERNROCK_MOTIF_SEED_CATEGORY = 'southern_rock' as const;
+
 /** Short UI labels for checkbox copy (avoid jargon). */
 const CATEGORY_LICK_LABEL: Partial<Record<RiffPhraseCategory, string>> = {
   sax_inspired: 'sax',
@@ -178,6 +182,11 @@ export function isRiffModernRockMotifSeedEnabled(): boolean {
 
 export function isRiffVirtuosoMotifSeedEnabled(): boolean {
   const p = getPairing('virtuoso_technique', 'eddie_van_halen');
+  return !!p && isPairingEnabled(p);
+}
+
+export function isRiffSouthernRockMotifSeedEnabled(): boolean {
+  const p = getPairing('southern_rock', 'jimmy_herring');
   return !!p && isPairingEnabled(p);
 }
 
@@ -255,6 +264,10 @@ export function pickModernRockPhraseForSeed(seed: number): RiffPhraseEntry | und
 
 export function pickVirtuosoPhraseForSeed(seed: number): RiffPhraseEntry | undefined {
   return pickPhraseForSeed(RIFF_VIRTUOSO_MOTIF_SEED_CATEGORY, seed);
+}
+
+export function pickSouthernRockPhraseForSeed(seed: number): RiffPhraseEntry | undefined {
+  return pickPhraseForSeed(RIFF_SOUTHERNROCK_MOTIF_SEED_CATEGORY, seed);
 }
 
 /** True when profile has ≥1 shipped phrase-seed pairing (UI shows toggle). */

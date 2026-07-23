@@ -26,9 +26,10 @@ function testCatalogFamilies(): boolean {
     funk.includes('sly_stone') &&
     rock.includes('led_zeppelin') &&
     rock.includes('eddie_van_halen') &&
+    rock.includes('jimmy_herring') &&
     !funk.includes('jamerson') &&
     !rock.includes('jamerson') &&
-    RIFF_VRB_OPTIONS.length >= 16 &&
+    RIFF_VRB_OPTIONS.length >= 17 &&
     defaultRiffVrbIdForFamily('rock') === 'iommi'
   );
 }
