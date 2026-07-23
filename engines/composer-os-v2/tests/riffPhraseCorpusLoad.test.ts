@@ -17,11 +17,11 @@ export function runRiffPhraseCorpusLoadTests(): Array<{ name: string; ok: boolea
     detail: corpus.error,
   });
   rows.push({
-    name: 'derived totals: 146 files parseOk, 284 phrases',
+    name: 'derived totals: 172 files parseOk, 318 phrases',
     ok:
-      corpus.stats.totals.files === 146 &&
-      corpus.stats.totals.parseOk === 146 &&
-      corpus.stats.totals.phrases === 284,
+      corpus.stats.totals.files === 172 &&
+      corpus.stats.totals.parseOk === 172 &&
+      corpus.stats.totals.phrases === 318,
     detail: JSON.stringify(corpus.stats.totals),
   });
   rows.push({
@@ -38,6 +38,7 @@ export function runRiffPhraseCorpusLoadTests(): Array<{ name: string; ok: boolea
   const blues = corpus.stats.byCategory.blues_rock;
   const southern = corpus.stats.byCategory.southern_rock;
   const modern = corpus.stats.byCategory.modern_rock;
+  const progressive = corpus.stats.byCategory.progressive_blues;
   rows.push({
     name: 'category file/phrase counts match ingested corpus',
     ok:
@@ -67,10 +68,24 @@ export function runRiffPhraseCorpusLoadTests(): Array<{ name: string; ok: boolea
       southern.phrases === 27 &&
       !!modern &&
       modern.files === 26 &&
-      modern.phrases === 33,
-    detail: JSON.stringify({ sax, dim, jazz, bebop, wrf, bsf, blues, southern, modern }),
+      modern.phrases === 33 &&
+      !!progressive &&
+      progressive.files === 26 &&
+      progressive.phrases === 34,
+    detail: JSON.stringify({
+      sax,
+      dim,
+      jazz,
+      bebop,
+      wrf,
+      bsf,
+      blues,
+      southern,
+      modern,
+      progressive,
+    }),
   });
-  const empty = ['progressive_blues', 'virtuoso_technique'];
+  const empty = ['virtuoso_technique'];
   rows.push({
     name: 'empty stub categories have zero files/phrases in stats',
     ok: empty.every(
@@ -83,7 +98,7 @@ export function runRiffPhraseCorpusLoadTests(): Array<{ name: string; ok: boolea
     ),
   });
   rows.push({
-    name: 'stats.byCategory includes funk + bebop + blues_rock + southern_rock + modern_rock keys',
+    name: 'stats.byCategory includes funk + bebop + blues_rock + southern_rock + modern_rock + progressive_blues keys',
     ok:
       !!corpus.stats.byCategory.white_rock_funk &&
       !!corpus.stats.byCategory.black_soul_funk &&
@@ -91,6 +106,7 @@ export function runRiffPhraseCorpusLoadTests(): Array<{ name: string; ok: boolea
       !!corpus.stats.byCategory.blues_rock &&
       !!corpus.stats.byCategory.southern_rock &&
       !!corpus.stats.byCategory.modern_rock &&
+      !!corpus.stats.byCategory.progressive_blues &&
       corpus.stats.byCategory.virtuoso_technique !== undefined,
   });
 
@@ -138,8 +154,8 @@ export function runRiffPhraseCorpusLoadTests(): Array<{ name: string; ok: boolea
   if (fs.existsSync(path.join(packaged, 'phrases.jsonl'))) {
     const packed = loadRiffPhraseCorpus({ derivedRoot: packaged });
     rows.push({
-      name: 'packaged resources derived override loads 146/284',
-      ok: packed.ok && packed.stats.totals.files === 146 && packed.stats.totals.phrases === 284,
+      name: 'packaged resources derived override loads 172/318',
+      ok: packed.ok && packed.stats.totals.files === 172 && packed.stats.totals.phrases === 318,
       detail: JSON.stringify(packed.stats.totals),
     });
   }

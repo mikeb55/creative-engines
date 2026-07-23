@@ -11,6 +11,8 @@
 
 ### Added
 
+- **Riff phrase corpus ingest — Progressive Blues** — Real GP5 ingest for `progressive_blues` (PTB→GP5 re-export): **26**/26 parseOk · **34** phrases (CC50PBL-01–13, 38–50). meterMismatch **0**; droppedOrnaments on several files (max **3** on `02`); tieFixups common (max **16** on `02`). `TARGET_COUNTS.progressive_blues` **4→26**; `RIFF_PHRASE_CORPUS_TARGET_TOTAL` **134→156**. Derived **172** files / **318** phrases. Empty stub: `virtuoso_technique`. Motif-seed pairing deferred.
+
 - **Riff phrase corpus ingest — Modern Rock** — Real GP5 ingest for `modern_rock`: **26**/26 parseOk · **33** phrases (Chris Buono *50 Rock Guitar Licks You MUST Know* — 50rocklick01–04/08–21/23–26/46/48–50). meterMismatch **0**; droppedOrnaments on several files (max **2**); tieFixups common (max **17** on `26`, **15** on `01`, **12** on `48`). `TARGET_COUNTS.modern_rock` **4→26**; `RIFF_PHRASE_CORPUS_TARGET_TOTAL` **112→134**. Derived **146** files / **284** phrases. Empty stubs: `progressive_blues`, `virtuoso_technique`. Motif-seed pairing deferred.
 
 - **Riff phrase corpus — Virtuoso Technique scaffold** — Schema `RIFF_PHRASE_CATEGORIES` → **11**; `RIFF_PHRASE_CORPUS_TARGET_TOTAL` **106→112** (`virtuoso_technique` placeholder target **6**). Source: Scott Allen *50 Rock Virtuoso Licks You MUST Know*. **Kind differs** from genre-authentic categories: cross-genre technique showcase (tapping / sweep / alternate picking / advanced scales+legato spanning metal/jazz/fusion/pop) — not one harmonic language. Folder `gpx/virtuoso_technique/` empty (+ `.gitkeep`); synthetic fixture + tag heuristic (high technical density, wide leap/legato). **No ingest** until user files. Empty stubs: `modern_rock`, `progressive_blues`, `virtuoso_technique`.

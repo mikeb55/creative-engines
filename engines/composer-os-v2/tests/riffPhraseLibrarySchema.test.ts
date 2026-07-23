@@ -134,7 +134,7 @@ export function runRiffPhraseLibrarySchemaTests(): { ok: boolean; name: string }
   {
     const keys = Object.keys(RIFF_PHRASE_CATEGORY_TAG_HEURISTICS);
     const ok =
-      RIFF_PHRASE_CORPUS_TARGET_TOTAL === 134 &&
+      RIFF_PHRASE_CORPUS_TARGET_TOTAL === 156 &&
       keys.length === RIFF_PHRASE_CATEGORIES.length &&
       RIFF_PHRASE_CATEGORIES.every((c) => keys.includes(c)) &&
       RIFF_PHRASE_CATEGORY_TAG_HEURISTICS.diminished_lines.highIntervalDensity.includes('m3') &&
@@ -148,7 +148,7 @@ export function runRiffPhraseLibrarySchemaTests(): { ok: boolean; name: string }
       RIFF_PHRASE_CATEGORY_TAG_HEURISTICS.virtuoso_technique.expectedTags.includes('cross_genre');
     out.push({
       ok,
-      name: 'heuristics cover all categories; modern_rock; corpus total 134',
+      name: 'heuristics cover all categories; progressive_blues; corpus total 156',
     });
   }
 

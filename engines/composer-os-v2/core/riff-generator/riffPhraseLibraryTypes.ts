@@ -56,7 +56,7 @@ export const RIFF_PHRASE_CATEGORY_TARGET_COUNTS: Record<RiffPhraseCategory, numb
   southern_rock: 13,
   jazz_rock: 5,
   modern_rock: 26,
-  progressive_blues: 4,
+  progressive_blues: 26,
   sax_inspired: 5,
   diminished_lines: 6,
   white_rock_funk: 8,
@@ -65,7 +65,7 @@ export const RIFF_PHRASE_CATEGORY_TARGET_COUNTS: Record<RiffPhraseCategory, numb
 };
 
 /** Sum of category target counts. */
-export const RIFF_PHRASE_CORPUS_TARGET_TOTAL = 134 as const;
+export const RIFF_PHRASE_CORPUS_TARGET_TOTAL = 156 as const;
 
 /**
  * Parser notes for GPX/GP5 ingest (Phase 1 scripts only — not app runtime).
