@@ -18,10 +18,11 @@ import type { CoreMotif } from '../motif/motifEngineTypes';
 import type { RiffIntervalWeightMap, RiffOrnamentPolicy } from '../composer/riffProfileTypes';
 import type { NoteEvent, RestEvent } from '../score-model/scoreModelTypes';
 
-/** Fixed corpus course ids (56 files planned; synthetic fixtures first). */
+/** Fixed corpus course ids (synthetic fixtures first; targets updated on real ingest). */
 export const RIFF_PHRASE_CATEGORIES = [
   'bebop_jazz_blues',
   'blues_rock',
+  'southern_rock',
   'jazz_rock',
   'modern_rock',
   'progressive_blues',
@@ -36,6 +37,7 @@ export type RiffPhraseCategory = (typeof RIFF_PHRASE_CATEGORIES)[number];
 export const RIFF_PHRASE_CATEGORY_LABELS: Record<RiffPhraseCategory, string> = {
   bebop_jazz_blues: 'Bebop-Jazz Blues',
   blues_rock: 'Blues-Rock',
+  southern_rock: 'Southern Rock',
   jazz_rock: 'Jazz-Rock',
   modern_rock: 'Modern Rock',
   progressive_blues: 'Progressive Blues',
@@ -49,6 +51,7 @@ export const RIFF_PHRASE_CATEGORY_LABELS: Record<RiffPhraseCategory, string> = {
 export const RIFF_PHRASE_CATEGORY_TARGET_COUNTS: Record<RiffPhraseCategory, number> = {
   bebop_jazz_blues: 31,
   blues_rock: 6,
+  southern_rock: 6,
   jazz_rock: 5,
   modern_rock: 4,
   progressive_blues: 4,
@@ -59,7 +62,7 @@ export const RIFF_PHRASE_CATEGORY_TARGET_COUNTS: Record<RiffPhraseCategory, numb
 };
 
 /** Sum of category target counts. */
-export const RIFF_PHRASE_CORPUS_TARGET_TOTAL = 81 as const;
+export const RIFF_PHRASE_CORPUS_TARGET_TOTAL = 87 as const;
 
 /**
  * Parser notes for GPX/GP5 ingest (Phase 1 scripts only — not app runtime).

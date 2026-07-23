@@ -1,7 +1,7 @@
 {
   "id": "synth_blues_rock_01",
   "category": "blues_rock",
-  "sourceCourse": "Blues-Rock",
+  "sourceCourse": "50 Blues-Rock Guitar Licks You MUST Know (Jeff McErlain)",
   "sourceFile": { "name": "synth_blues_rock_01.json", "sha256": "synthetic:blues_rock_01" },
   "barCount": 1,
   "meter": { "numerator": 4, "denominator": 4 },

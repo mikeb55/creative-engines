@@ -33,7 +33,17 @@ export const RIFF_PHRASE_CATEGORY_TAG_HEURISTICS: Record<
     contourHints: ['call_response_holes'],
     chromaticityBand: { min: 0.05, max: 0.35 },
     preferredPhraseEndTypes: ['rest', 'sustain'],
-    notes: 'pentatonic bias; bends/slides; lower chromaticity',
+    notes:
+      'Jeff McErlain 50 Blues-Rock Guitar Licks You MUST Know — pentatonic bias; bends/slides; lower chromaticity; distinct from southern_rock major/mixolydian swagger',
+  },
+  southern_rock: {
+    expectedTags: ['mixolydian', 'major_center', 'twin_guitar', 'country_rock_swagger'],
+    highIntervalDensity: ['M3', 'P4', 'P5', 'M2'],
+    contourHints: ['harmony_3rd_6th', 'swagger_pickup', 'open_string_ring'],
+    chromaticityBand: { min: 0.05, max: 0.3 },
+    preferredPhraseEndTypes: ['sustain', 'open'],
+    notes:
+      'TrueFire 50 Southern Rock Licks You MUST Know — major/Mixolydian center; twin-guitar harmony 3rds/6ths when detectable; country-rock swagger feel; distinct from blues_rock minor-pentatonic/blues-bend',
   },
   jazz_rock: {
     expectedTags: ['16th', 'syncopated', 'mixolydian_hint'],

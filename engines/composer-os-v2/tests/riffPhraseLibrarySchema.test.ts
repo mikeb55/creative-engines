@@ -134,17 +134,19 @@ export function runRiffPhraseLibrarySchemaTests(): { ok: boolean; name: string }
   {
     const keys = Object.keys(RIFF_PHRASE_CATEGORY_TAG_HEURISTICS);
     const ok =
-      RIFF_PHRASE_CORPUS_TARGET_TOTAL === 81 &&
+      RIFF_PHRASE_CORPUS_TARGET_TOTAL === 87 &&
       keys.length === RIFF_PHRASE_CATEGORIES.length &&
       RIFF_PHRASE_CATEGORIES.every((c) => keys.includes(c)) &&
       RIFF_PHRASE_CATEGORY_TAG_HEURISTICS.diminished_lines.highIntervalDensity.includes('m3') &&
       RIFF_PHRASE_CATEGORY_TAG_HEURISTICS.diminished_lines.highIntervalDensity.includes('tritone') &&
       RIFF_PHRASE_CATEGORY_TAG_HEURISTICS.diminished_lines.preferredPhraseEndTypes.includes('chromatic_resolve') &&
       RIFF_PHRASE_CATEGORY_TAG_HEURISTICS.white_rock_funk.expectedTags.includes('syncopated') &&
-      RIFF_PHRASE_CATEGORY_TAG_HEURISTICS.black_soul_funk.expectedTags.includes('call_response');
+      RIFF_PHRASE_CATEGORY_TAG_HEURISTICS.black_soul_funk.expectedTags.includes('call_response') &&
+      RIFF_PHRASE_CATEGORY_TAG_HEURISTICS.southern_rock.expectedTags.includes('mixolydian') &&
+      RIFF_PHRASE_CATEGORY_TAG_HEURISTICS.southern_rock.expectedTags.includes('twin_guitar');
     out.push({
       ok,
-      name: 'heuristics cover all categories; funk scaffolds; corpus total 81',
+      name: 'heuristics cover all categories; southern_rock scaffold; corpus total 87',
     });
   }
 

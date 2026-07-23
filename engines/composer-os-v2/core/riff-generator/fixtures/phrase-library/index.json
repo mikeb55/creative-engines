@@ -11,6 +11,7 @@
   "entries": [
     "synth_bebop_jazz_blues_01.json",
     "synth_blues_rock_01.json",
+    "synth_southern_rock_01.json",
     "synth_jazz_rock_01.json",
     "synth_modern_rock_01.json",
     "synth_progressive_blues_01.json",
@@ -19,5 +20,5 @@
     "synth_white_rock_funk_01.json",
     "synth_black_soul_funk_01.json"
   ],
-  "corpusTargetTotal": 56
+  "corpusTargetTotal": 87
 }

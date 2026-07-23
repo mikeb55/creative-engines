@@ -26,6 +26,19 @@
     "notes": "hand-built fixture; no GPX"
   },
   {
+    "file": "synth_southern_rock_01.json",
+    "parseOk": true,
+    "trackCount": 0,
+    "voiceCount": 1,
+    "barsIn": 1,
+    "phrasesOut": 1,
+    "droppedOrnaments": 0,
+    "tieFixups": 0,
+    "meterMismatch": false,
+    "hash": "synthetic:southern_rock_01",
+    "notes": "hand-built fixture; no GPX; major/Mixolydian + twin-guitar swagger heuristic"
+  },
+  {
     "file": "synth_jazz_rock_01.json",
     "parseOk": true,
     "trackCount": 0,

@@ -1,0 +1,43 @@
+{
+  "id": "synth_southern_rock_01",
+  "category": "southern_rock",
+  "sourceCourse": "50 Southern Rock Licks You MUST Know (TrueFire)",
+  "sourceFile": {
+    "name": "synth_southern_rock_01.json",
+    "sha256": "synthetic:southern_rock_01"
+  },
+  "barCount": 1,
+  "meter": { "numerator": 4, "denominator": 4 },
+  "noteEvents": [
+    { "kind": "rest", "startBeat": 0.0, "duration": 0.5, "voice": 1 },
+    { "kind": "note", "pitch": 64, "startBeat": 0.5, "duration": 0.5, "voice": 1 },
+    { "kind": "note", "pitch": 67, "startBeat": 1.0, "duration": 0.5, "voice": 1 },
+    { "kind": "note", "pitch": 69, "startBeat": 1.5, "duration": 0.5, "voice": 1 },
+    { "kind": "note", "pitch": 71, "startBeat": 2.0, "duration": 0.5, "voice": 1 },
+    { "kind": "note", "pitch": 69, "startBeat": 2.5, "duration": 0.5, "voice": 1 },
+    { "kind": "note", "pitch": 67, "startBeat": 3.0, "duration": 1.0, "voice": 1 }
+  ],
+  "intervalSequence": [3, 2, 2, -2, -2],
+  "contour": [1, 1, 1, -1, -1],
+  "rhythmicCell": [2, 2, 2, 2, 2, 4],
+  "attackPositions": [0.5, 1.0, 1.5, 2.0, 2.5, 3.0],
+  "restMask": [true, false, false, false, false, false, false, false],
+  "strongBeatTargets": [4, 7, 9],
+  "phraseStartType": "pickup",
+  "phraseEndType": "sustain",
+  "cadenceStrength": 0.58,
+  "registerLow": 64,
+  "registerHigh": 71,
+  "registerCenter": 67,
+  "chromaticityScore": 0.15,
+  "leapProfile": { "maxLeap": 3, "leapRate": 0.2, "leapSemitoneHist": { "3": 1 } },
+  "ornamentFlags": {
+    "slides": false,
+    "ghosts": false,
+    "graceAttacks": false,
+    "bends": false,
+    "deadNotes": false
+  },
+  "inferredHarmonyHints": ["Mixolydian", "I_major", "twin_guitar_3rd"],
+  "tags": ["mixolydian", "major_center", "twin_guitar", "country_rock_swagger"]
+}
