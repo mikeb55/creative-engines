@@ -29,6 +29,8 @@ import {
   RIFF_SOUTHERNROCK_MOTIF_SEED_VRB,
   RIFF_MODERNROCK_MOTIF_SEED_ENV,
   RIFF_MODERNROCK_MOTIF_SEED_VRB,
+  RIFF_PROGBLUES_MOTIF_SEED_ENV,
+  RIFF_PROGBLUES_MOTIF_SEED_VRB,
   RIFF_JAZZROCK_MOTIF_SEED_ENV,
   RIFF_JAZZROCK_MOTIF_SEED_VRB,
   findSeedsWithMinPhraseIntervals,
@@ -131,6 +133,15 @@ const PAIRINGS: PairingCfg[] = [
     outDirName: 'riff-modernrock-motif-seed-poc',
     seeds: [1, 2, 3],
   },
+  {
+    label: 'progressive_blues → david_gilmour',
+    env: RIFF_PROGBLUES_MOTIF_SEED_ENV,
+    vrbId: RIFF_PROGBLUES_MOTIF_SEED_VRB,
+    category: 'progressive_blues',
+    outDirName: 'riff-progblues-motif-seed-poc',
+    // seed 4 = NEG hard flip OFF P→ON F; use 1/2/5 (seed 2 = POS flip)
+    seeds: [1, 2, 5],
+  },
 ];
 
 const REGRESSION_VRBS = [
@@ -143,6 +154,7 @@ const REGRESSION_VRBS = [
   'hendrix',
   'led_zeppelin',
   'morello',
+  'david_gilmour',
 ] as const;
 
 function sha(s: string): string {
@@ -162,6 +174,7 @@ function clearFlags(): void {
   delete process.env[RIFF_BLUESROCK_MOTIF_SEED_ENV];
   delete process.env[RIFF_SOUTHERNROCK_MOTIF_SEED_ENV];
   delete process.env[RIFF_MODERNROCK_MOTIF_SEED_ENV];
+  delete process.env[RIFF_PROGBLUES_MOTIF_SEED_ENV];
   resetRiffPhraseMotifSeedCacheForTests();
 }
 function setFlag(env: string, on: boolean): void {
@@ -497,6 +510,18 @@ function regressionCheck(): { ok: boolean; detail: string }[] {
     out.push({
       ok: changed === expectChange,
       detail: `modernrock flag: ${vrbId} ${changed ? 'CHANGED' : 'stable'} (expect ${expectChange ? 'change' : 'stable'})`,
+    });
+  }
+
+  // Progblues flag ON — only david_gilmour may change
+  setFlag(RIFF_PROGBLUES_MOTIF_SEED_ENV, true);
+  for (const vrbId of REGRESSION_VRBS) {
+    const h = sha(xmlOf(build(seed, vrbId, 'reg').score));
+    const changed = h !== baseline[vrbId];
+    const expectChange = vrbId === 'david_gilmour';
+    out.push({
+      ok: changed === expectChange,
+      detail: `progblues flag: ${vrbId} ${changed ? 'CHANGED' : 'stable'} (expect ${expectChange ? 'change' : 'stable'})`,
     });
   }
   clearFlags();

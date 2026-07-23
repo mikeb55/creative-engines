@@ -20,6 +20,7 @@ export const RIFF_PHRASE_MOTIF_SEED_UI_PAIRINGS: readonly RiffPhraseMotifSeedUiP
   { vrbId: 'hendrix', category: 'blues_rock', lickLabel: 'blues-rock' },
   { vrbId: 'led_zeppelin', category: 'southern_rock', lickLabel: 'southern rock' },
   { vrbId: 'morello', category: 'modern_rock', lickLabel: 'modern rock' },
+  { vrbId: 'david_gilmour', category: 'progressive_blues', lickLabel: 'progressive blues' },
 ] as const;
 
 export function vrbHasPhraseMotifSeedPairing(vrbId: string | undefined): boolean {

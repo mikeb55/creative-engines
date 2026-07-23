@@ -11,6 +11,8 @@
 
 ### Added
 
+- **Riff phrase motif-seed — progressive_blues→david_gilmour** — Tenth pairing: `COMPOSER_OS_RIFF_PROGBLUES_MOTIF_SEED` (default OFF) + RiffGen checkbox. Best unused blues-leaning rock VRB (`hendrix` already owns `blues_rock`; gilmour blues-backbone + progressive lead). Confirm seeds **1 / 2 / 5** (≥10 iv; seed **4** excluded — OFF hard PASS→ON FAIL). Fidelity ON cos **0.90 / 0.85 / 0.93**; seed **2** hard FAIL→PASS. Regression: only `david_gilmour` changes. Examples: `output/riff-progblues-motif-seed-poc/`.
+
 - **Riff phrase motif-seed — modern_rock→morello** — Ninth pairing: `COMPOSER_OS_RIFF_MODERNROCK_MOTIF_SEED` (default OFF) + RiffGen checkbox. Best-fit among UI rock/art-rock roster (Tom Morello contemporary edge; `eddie_van_halen` not in RiffGen catalog — deferred). Confirm seeds **1 / 2 / 3** (≥10 iv). Fidelity ON cos **1.00 / 1.00 / 0.77**; seed **3** hard FAIL→PASS. Regression: only `morello` changes. Examples: `output/riff-modernrock-motif-seed-poc/`.
 
 - **Riff phrase motif-seed — southern_rock→led_zeppelin** — Eighth pairing: `COMPOSER_OS_RIFF_SOUTHERNROCK_MOTIF_SEED` (default OFF) + RiffGen checkbox. Best-fit major/Mixolydian twin-guitar swagger (`led_zeppelin` Page multi-mode; distinct from `hendrix` blues_rock). Confirm seeds **1 / 2 / 3** (≥10 iv). Fidelity ON cos **0.78 / 0.95 / 0.97**; seed **3** hard FAIL→PASS (integrity flip). Regression: only `led_zeppelin` changes. Examples: `output/riff-southernrock-motif-seed-poc/`.
