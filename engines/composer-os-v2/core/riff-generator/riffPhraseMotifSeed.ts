@@ -106,6 +106,14 @@ export const RIFF_PROGBLUES_MOTIF_SEED_ENV = 'COMPOSER_OS_RIFF_PROGBLUES_MOTIF_S
 export const RIFF_PROGBLUES_MOTIF_SEED_VRB = 'david_gilmour' as const;
 export const RIFF_PROGBLUES_MOTIF_SEED_CATEGORY = 'progressive_blues' as const;
 
+export const RIFF_MODERNROCK_MOTIF_SEED_ENV = 'COMPOSER_OS_RIFF_MODERNROCK_MOTIF_SEED';
+export const RIFF_MODERNROCK_MOTIF_SEED_VRB = 'morello' as const;
+export const RIFF_MODERNROCK_MOTIF_SEED_CATEGORY = 'modern_rock' as const;
+
+export const RIFF_VIRTUOSO_MOTIF_SEED_ENV = 'COMPOSER_OS_RIFF_VIRTUOSO_MOTIF_SEED';
+export const RIFF_VIRTUOSO_MOTIF_SEED_VRB = 'eddie_van_halen' as const;
+export const RIFF_VIRTUOSO_MOTIF_SEED_CATEGORY = 'virtuoso_technique' as const;
+
 /** Short UI labels for checkbox copy (avoid jargon). */
 const CATEGORY_LICK_LABEL: Partial<Record<RiffPhraseCategory, string>> = {
   sax_inspired: 'sax',
@@ -160,6 +168,16 @@ export function isRiffBluesRockZepMotifSeedEnabled(): boolean {
 
 export function isRiffProgBluesMotifSeedEnabled(): boolean {
   const p = getPairing('progressive_blues', 'david_gilmour');
+  return !!p && isPairingEnabled(p);
+}
+
+export function isRiffModernRockMotifSeedEnabled(): boolean {
+  const p = getPairing('modern_rock', 'morello');
+  return !!p && isPairingEnabled(p);
+}
+
+export function isRiffVirtuosoMotifSeedEnabled(): boolean {
+  const p = getPairing('virtuoso_technique', 'eddie_van_halen');
   return !!p && isPairingEnabled(p);
 }
 
@@ -229,6 +247,14 @@ export function pickBluesRockPhraseForSeed(seed: number): RiffPhraseEntry | unde
 
 export function pickProgBluesPhraseForSeed(seed: number): RiffPhraseEntry | undefined {
   return pickPhraseForSeed(RIFF_PROGBLUES_MOTIF_SEED_CATEGORY, seed);
+}
+
+export function pickModernRockPhraseForSeed(seed: number): RiffPhraseEntry | undefined {
+  return pickPhraseForSeed(RIFF_MODERNROCK_MOTIF_SEED_CATEGORY, seed);
+}
+
+export function pickVirtuosoPhraseForSeed(seed: number): RiffPhraseEntry | undefined {
+  return pickPhraseForSeed(RIFF_VIRTUOSO_MOTIF_SEED_CATEGORY, seed);
 }
 
 /** True when profile has ≥1 shipped phrase-seed pairing (UI shows toggle). */

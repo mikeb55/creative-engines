@@ -23,6 +23,10 @@ import {
   RIFF_JAZZROCK_MOTIF_SEED_VRB,
   RIFF_PROGBLUES_MOTIF_SEED_ENV,
   RIFF_PROGBLUES_MOTIF_SEED_VRB,
+  RIFF_MODERNROCK_MOTIF_SEED_ENV,
+  RIFF_MODERNROCK_MOTIF_SEED_VRB,
+  RIFF_VIRTUOSO_MOTIF_SEED_ENV,
+  RIFF_VIRTUOSO_MOTIF_SEED_VRB,
   RIFF_SAX_MOTIF_SEED_POC_ENV,
   STYLE_PAIRINGS,
   getPairing,
@@ -92,9 +96,10 @@ const ALL_LEGACY_ENVS = [
   RIFF_BLUESROCK_MOTIF_SEED_ENV,
   RIFF_BLUESROCK_ZEP_MOTIF_SEED_ENV,
   RIFF_PROGBLUES_MOTIF_SEED_ENV,
-  // stale removed-edge envs — ensure clearing does not resurrect
+  RIFF_MODERNROCK_MOTIF_SEED_ENV,
+  RIFF_VIRTUOSO_MOTIF_SEED_ENV,
+  // stale removed-edge env — ensure clearing does not resurrect
   'COMPOSER_OS_RIFF_SOUTHERNROCK_MOTIF_SEED',
-  'COMPOSER_OS_RIFF_MODERNROCK_MOTIF_SEED',
 ] as const;
 
 function clearAllFlags(): void {
@@ -122,8 +127,8 @@ export function runRiffPhraseMotifSeedExtendTests(): { ok: boolean; name: string
 
   // --- Registry ---
   out.push({
-    ok: STYLE_PAIRINGS.length === 9,
-    name: 'STYLE_PAIRINGS has 9 edges',
+    ok: STYLE_PAIRINGS.length === 11,
+    name: 'STYLE_PAIRINGS has 11 edges',
     detail: String(STYLE_PAIRINGS.length),
   });
   out.push({
@@ -136,9 +141,11 @@ export function runRiffPhraseMotifSeedExtendTests(): { ok: boolean; name: string
   out.push({
     ok:
       getPairingsForCategory('southern_rock').length === 0 &&
-      getPairingsForCategory('modern_rock').length === 0 &&
-      getPairingsForCategory('virtuoso_technique').length === 0,
-    name: 'southern_rock / modern_rock / virtuoso unpaired',
+      getPairingsForCategory('modern_rock').length === 1 &&
+      getPairingsForCategory('virtuoso_technique').length === 1 &&
+      !!getPairing('modern_rock', 'morello') &&
+      !!getPairing('virtuoso_technique', 'eddie_van_halen'),
+    name: 'southern unpaired; modern_rock→morello; virtuoso→eddie_van_halen',
   });
   out.push({
     ok:
@@ -306,20 +313,22 @@ export function runRiffPhraseMotifSeedExtendTests(): { ok: boolean; name: string
     });
   }
 
-  // UI: 9 edges, blues_rock shared, southern/morello unpaired
+  // UI: 11 edges, blues_rock shared, morello + EVH paired
   out.push({
     ok:
       profileHasPhraseMotifSeedPairing('weather_report') &&
       profileHasPhraseMotifSeedPairing('hendrix') &&
       profileHasPhraseMotifSeedPairing('led_zeppelin') &&
       profileHasPhraseMotifSeedPairing('david_gilmour') &&
-      !profileHasPhraseMotifSeedPairing('morello') &&
+      profileHasPhraseMotifSeedPairing('morello') &&
+      profileHasPhraseMotifSeedPairing('eddie_van_halen') &&
       !profileHasPhraseMotifSeedPairing('james_brown') &&
       getUiPairingsForCategory('blues_rock').length === 2 &&
       (phraseMotifSeedCheckboxLabel('hendrix') ?? '').includes('blues-rock') &&
       (phraseMotifSeedCheckboxLabel('led_zeppelin') ?? '').includes('blues-rock') &&
-      phraseMotifSeedCheckboxLabel('morello') === null,
-    name: 'UI helpers: 9 edges; blues_rock shared; morello unpaired',
+      (phraseMotifSeedCheckboxLabel('morello') ?? '').includes('modern rock') &&
+      (phraseMotifSeedCheckboxLabel('eddie_van_halen') ?? '').includes('virtuoso'),
+    name: 'UI helpers: 11 edges; blues_rock shared; morello + EVH paired',
   });
 
   // Blues hendrix legacy env
@@ -438,6 +447,24 @@ export function runRiffPhraseMotifSeedExtendTests(): { ok: boolean; name: string
     out.push({
       ok: motif.id.startsWith('phrase:'),
       name: 'progblues ON + david_gilmour seeds phrase',
+      detail: motif.id,
+    });
+  });
+  clearAllFlags();
+  withEnv(RIFF_MODERNROCK_MOTIF_SEED_ENV, '1', () => {
+    const motif = resolveRiffCoreMotif(1, RIFF_MODERNROCK_MOTIF_SEED_VRB);
+    out.push({
+      ok: motif.id.startsWith('phrase:'),
+      name: 'modernrock ON + morello seeds phrase',
+      detail: motif.id,
+    });
+  });
+  clearAllFlags();
+  withEnv(RIFF_VIRTUOSO_MOTIF_SEED_ENV, '1', () => {
+    const motif = resolveRiffCoreMotif(1, RIFF_VIRTUOSO_MOTIF_SEED_VRB);
+    out.push({
+      ok: motif.id.startsWith('phrase:'),
+      name: 'virtuoso ON + eddie_van_halen seeds phrase',
       detail: motif.id,
     });
   });

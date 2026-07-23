@@ -22,6 +22,8 @@ export const RIFF_PHRASE_MOTIF_SEED_UI_PAIRINGS: readonly RiffPhraseMotifSeedUiP
   { id: 'blues_rock::hendrix', profileId: 'hendrix', categoryId: 'blues_rock', lickLabel: 'blues-rock' },
   { id: 'blues_rock::led_zeppelin', profileId: 'led_zeppelin', categoryId: 'blues_rock', lickLabel: 'blues-rock' },
   { id: 'progressive_blues::david_gilmour', profileId: 'david_gilmour', categoryId: 'progressive_blues', lickLabel: 'progressive blues' },
+  { id: 'modern_rock::morello', profileId: 'morello', categoryId: 'modern_rock', lickLabel: 'modern rock' },
+  { id: 'virtuoso_technique::eddie_van_halen', profileId: 'eddie_van_halen', categoryId: 'virtuoso_technique', lickLabel: 'virtuoso technique' },
 ] as const;
 
 export function getUiPairingsForProfile(profileId: string | undefined): readonly RiffPhraseMotifSeedUiPairing[] {

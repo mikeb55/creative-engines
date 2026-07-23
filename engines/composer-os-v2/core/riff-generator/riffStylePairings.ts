@@ -58,6 +58,8 @@ export const LEGACY_PAIRING_ENV_ALIASES: Readonly<Record<string, PairingId>> = {
   COMPOSER_OS_RIFF_BEBOP_MOTIF_SEED: 'bebop_jazz_blues::bill_evans_sax',
   COMPOSER_OS_RIFF_BLUESROCK_MOTIF_SEED: 'blues_rock::hendrix',
   COMPOSER_OS_RIFF_PROGBLUES_MOTIF_SEED: 'progressive_blues::david_gilmour',
+  COMPOSER_OS_RIFF_MODERNROCK_MOTIF_SEED: 'modern_rock::morello',
+  COMPOSER_OS_RIFF_VIRTUOSO_MOTIF_SEED: 'virtuoso_technique::eddie_van_halen',
 };
 
 function edge(
@@ -75,7 +77,7 @@ function edge(
 
 /**
  * Central many-to-many registry.
- * blues_rock has two profiles (hendrix + led_zeppelin). southern_rock / modern_rock / virtuoso unpaired.
+ * blues_rock has two profiles (hendrix + led_zeppelin). southern_rock unpaired — content gap (no Allman/Betts/Rossington-style VRB).
  */
 export const STYLE_PAIRINGS: readonly StylePairing[] = [
   edge('sax_inspired', 'weather_report'),
@@ -87,6 +89,8 @@ export const STYLE_PAIRINGS: readonly StylePairing[] = [
   edge('blues_rock', 'hendrix'),
   edge('blues_rock', 'led_zeppelin'),
   edge('progressive_blues', 'david_gilmour'),
+  edge('modern_rock', 'morello'),
+  edge('virtuoso_technique', 'eddie_van_halen'),
 ];
 
 const KNOWN_CATEGORIES = new Set<string>(RIFF_PHRASE_CATEGORIES);

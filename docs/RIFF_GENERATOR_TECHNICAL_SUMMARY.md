@@ -182,7 +182,7 @@ From `RIFF_GENERATOR_VRB_IDS` / `RIFF_VRB_EXPECTED_FAMILY`:
 
 Odd-meter overlay UI is intended for **fusion** and **art_rock** families.
 
-**UI catalog note:** `riffGeneratorUi.ts` `RIFF_VRB_CATALOG` currently lists **14** rows for the family dropdown — it omits **`jamerson`** and **`eddie_van_halen`**. Those two still exist in the engine registry and can be selected via soft-link / API if the id is supplied.
+**UI catalog note:** `riffGeneratorUi.ts` `RIFF_VRB_CATALOG` lists **16** rows for the family dropdown — includes **`eddie_van_halen`** (rock); still omits **`jamerson`**. Default rock VRB remains **`iommi`**. `jamerson` still selectable via soft-link / API.
 
 ### 5.2 Harmonic Voice catalogue (broader, ~80 styles)
 
@@ -221,7 +221,7 @@ Default for both: **OFF**.
 
 1. **MusicXML-only** export on this preset — no riff MIDI sidecar today.  
 2. **16** authored riff profiles vs **~80** HV styles — most HV ids cannot soft-link to a riff library.  
-3. UI VRB picker lists **14** of **16** registry ids (`jamerson`, `eddie_van_halen` absent from catalog).  
+3. UI VRB picker lists **16** of **17** registry ids (`jamerson` absent from catalog; `eddie_van_halen` included).  
 4. Pattern is **procedural profile + seed**; phrase corpus exists for QA but is **not** yet a generation bank.  
 5. Soft-link and chord colour are **orthogonal**; either can be on without the other.  
 6. Chord-loop trust **Phase 2/3** (inline badges / ack gating) and phrase→engine **Phase 2/3** still gated; **S4** curation (dim-line leftovers, meter-mismatch quarantine) backlog.

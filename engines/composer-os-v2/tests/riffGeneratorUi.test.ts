@@ -17,14 +17,19 @@ import { resolveRiffGeneratorProfile } from '../core/riff-generator/resolveRiffG
 function testCatalogFamilies(): boolean {
   const funk = riffVrbOptionsForFamily('funk').map((o) => o.vrbId);
   const fusion = riffVrbOptionsForFamily('fusion').map((o) => o.vrbId);
+  const rock = riffVrbOptionsForFamily('rock').map((o) => o.vrbId);
   return (
     funk.includes('nile_rodgers') &&
     funk.includes('james_brown') &&
     fusion.includes('weather_report') &&
     fusion.includes('mahavishnu') &&
     funk.includes('sly_stone') &&
-    riffVrbOptionsForFamily('rock').map((o) => o.vrbId).includes('led_zeppelin') &&
-    RIFF_VRB_OPTIONS.length >= 11
+    rock.includes('led_zeppelin') &&
+    rock.includes('eddie_van_halen') &&
+    !funk.includes('jamerson') &&
+    !rock.includes('jamerson') &&
+    RIFF_VRB_OPTIONS.length >= 16 &&
+    defaultRiffVrbIdForFamily('rock') === 'iommi'
   );
 }
 
