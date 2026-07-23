@@ -17,11 +17,11 @@ export function runRiffPhraseCorpusLoadTests(): Array<{ name: string; ok: boolea
     detail: corpus.error,
   });
   rows.push({
-    name: 'derived totals: 107 files parseOk, 224 phrases',
+    name: 'derived totals: 120 files parseOk, 251 phrases',
     ok:
-      corpus.stats.totals.files === 107 &&
-      corpus.stats.totals.parseOk === 107 &&
-      corpus.stats.totals.phrases === 224,
+      corpus.stats.totals.files === 120 &&
+      corpus.stats.totals.parseOk === 120 &&
+      corpus.stats.totals.phrases === 251,
     detail: JSON.stringify(corpus.stats.totals),
   });
   rows.push({
@@ -36,6 +36,7 @@ export function runRiffPhraseCorpusLoadTests(): Array<{ name: string; ok: boolea
   const wrf = corpus.stats.byCategory.white_rock_funk;
   const bsf = corpus.stats.byCategory.black_soul_funk;
   const blues = corpus.stats.byCategory.blues_rock;
+  const southern = corpus.stats.byCategory.southern_rock;
   rows.push({
     name: 'category file/phrase counts match ingested corpus',
     ok:
@@ -59,10 +60,13 @@ export function runRiffPhraseCorpusLoadTests(): Array<{ name: string; ok: boolea
       bsf.phrases === 54 &&
       !!blues &&
       blues.files === 18 &&
-      blues.phrases === 30,
-    detail: JSON.stringify({ sax, dim, jazz, bebop, wrf, bsf, blues }),
+      blues.phrases === 30 &&
+      !!southern &&
+      southern.files === 13 &&
+      southern.phrases === 27,
+    detail: JSON.stringify({ sax, dim, jazz, bebop, wrf, bsf, blues, southern }),
   });
-  const empty = ['southern_rock', 'modern_rock', 'progressive_blues'];
+  const empty = ['modern_rock', 'progressive_blues'];
   rows.push({
     name: 'empty stub categories have zero files/phrases in stats',
     ok: empty.every(
@@ -128,8 +132,8 @@ export function runRiffPhraseCorpusLoadTests(): Array<{ name: string; ok: boolea
   if (fs.existsSync(path.join(packaged, 'phrases.jsonl'))) {
     const packed = loadRiffPhraseCorpus({ derivedRoot: packaged });
     rows.push({
-      name: 'packaged resources derived override loads 107/224',
-      ok: packed.ok && packed.stats.totals.files === 107 && packed.stats.totals.phrases === 224,
+      name: 'packaged resources derived override loads 120/251',
+      ok: packed.ok && packed.stats.totals.files === 120 && packed.stats.totals.phrases === 251,
       detail: JSON.stringify(packed.stats.totals),
     });
   }

@@ -11,6 +11,8 @@
 
 ### Added
 
+- **Riff phrase corpus ingest — Southern Rock** — Real GP5 ingest for `southern_rock`: **13**/13 parseOk · **27** phrases (ws50srl-001/006/011/012/013/021/024/031/032/033/034/042/045). meterMismatch **0**; droppedOrnaments on `024`/`031` (2 each); tieFixups common (max **54** on `045`, **32** on `042`, **25** on `024`). `TARGET_COUNTS.southern_rock` **6→13**; `RIFF_PHRASE_CORPUS_TARGET_TOTAL` **99→106**. Derived **120** files / **251** phrases. Empty stubs: `modern_rock`, `progressive_blues`. Motif-seed pairing deferred.
+
 - **Riff phrase motif-seed — blues_rock→hendrix** — Seventh pairing: `COMPOSER_OS_RIFF_BLUESROCK_MOTIF_SEED` (default OFF) + RiffGen checkbox. Best-fit among rock roster (`jh_blues_lead` pentatonic/bend/call-response grammar; no clapton/srv VRB; `led_zeppelin` broader Page multi-mode). Confirm seeds **2 / 3 / 4** (≥10 iv; seed **1** = 0-iv leftover excluded). Fidelity ON cos **0.98 / 0.86 / 1.00**; seed **2** hard PASS both sides; seeds **3–4** hard FAIL both (no integrity flip). Regression: only `hendrix` changes. Examples: `output/riff-bluesrock-motif-seed-poc/`.
 
 - **Known quality (not pairing blocker) — hendrix procedural melodicIdentity hard-gate** — Confirm seeds **3** / **4** fail GCE melodicIdentity hard gate (**≤6**) on **procedural** `hendrix` (all motif-seed flags OFF) with the standard 8-bar Am7–D7–Gmaj7–Cmaj7 dense sixteenth compare harness: seed **3** score **5.8** (motif recurrence **3.8**); seed **4** score **4.3** (motif recurrence **0.0**). Seed **2** PASS. Same FAIL OFF and ON under blues_rock pairing — phrase seed does not cause or fix it. Track as separate `hendrix` generation-quality follow-up; pairing ships with flag-off parity + regression clean.
