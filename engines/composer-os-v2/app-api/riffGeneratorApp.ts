@@ -353,6 +353,7 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
     riffCarryForward: gen.riffCarryForward,
     riffMusicality: gen.riffMusicality,
     musicContext: gen.musicContext,
+    endingContext: gen.endingContext ?? 'loop',
     ...(chordLoopDisclosure ? { chordLoopDisclosure } : {}),
     filename,
     filepath,

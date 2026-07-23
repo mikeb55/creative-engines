@@ -18,6 +18,10 @@ import {
 } from '../../core/gce/gceAutoScorers';
 import { scoreModelToMelodicLine } from '../../core/gce/scoreModelToMelodicLine';
 import { resolveMelodicPartId } from '../../core/gce/resolveMelodicPartId';
+import {
+  evaluateFinalBarTensionGate,
+  isTonicFamilyChordForFbt,
+} from '../../core/gce/finalBarTensionGate';
 import { getChordForBar } from '../../core/harmony/harmonyResolution';
 import type { CompositionContext } from '../../core/compositionContext';
 import type { ScoreModel } from '../../core/score-model/scoreModelTypes';
@@ -61,41 +65,9 @@ export function stripFromContext(context: CompositionContext): string[] {
   return out;
 }
 
-function melodyNotesInBar(score: ScoreModel, bar: number): number {
-  const partId = resolveMelodicPartId(score);
-  const part = score.parts.find((p) => p.id === partId) ?? score.parts[0];
-  const m = part?.measures.find((x) => x.index === bar);
-  if (!m) return 0;
-  return m.events.filter((e) => e.kind === 'note').length;
-}
-
+/** @deprecated Prefer {@link isTonicFamilyChordForFbt} — kept for slice/eval callers. */
 export function isTonicFamilyChord(symbol: string): boolean {
-  const s = symbol.trim();
-  if (!s) return false;
-  const q = s.toLowerCase();
-  if (/maj7|maj9/i.test(s) && !q.includes('min')) return true;
-  if (/^[^/]*min(?!maj)/i.test(s) && !q.includes('13') && !q.includes('alt')) return true;
-  if (/^[^/]*min9/i.test(s)) return true;
-  return false;
-}
-
-function isDominantFamilyChord(symbol: string): boolean {
-  const s = symbol.trim();
-  if (!s) return false;
-  if (isTonicFamilyChord(s)) return false;
-  const q = s.toLowerCase();
-  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
-}
-
-function computeFinalBarTensionProxy(score: ScoreModel, strip: string[]): number {
-  const finalBar = VERLAINE_GBD_EVAL_TOTAL_BARS;
-  const chord = (strip[finalBar - 1] ?? '').trim();
-  const shortMelodicEnding = melodyNotesInBar(score, finalBar) <= 2;
-  let tension: number;
-  if (isDominantFamilyChord(chord)) tension = 0.95 + (shortMelodicEnding ? 0.15 : 0);
-  else if (isTonicFamilyChord(chord)) tension = 0.15;
-  else tension = 0.55;
-  return Math.min(1, tension);
+  return isTonicFamilyChordForFbt(symbol);
 }
 
 export function evaluateHardGates(
@@ -118,8 +90,14 @@ export function evaluateHardGates(
   const coverage = cadence.score / 10;
   const cadenceFail = coverage < 0.4;
 
-  const finalTension = computeFinalBarTensionProxy(score, strip);
-  const finalFail = finalTension > 0.7;
+  const fbt = evaluateFinalBarTensionGate({
+    score,
+    chords: strip,
+    presetId: context.presetId,
+    endingContext: context.generationMetadata?.endingContext,
+    acknowledgeOpenIdiomEnding: context.generationMetadata?.acknowledgeOpenIdiomEnding,
+    finalBar: VERLAINE_GBD_EVAL_TOTAL_BARS,
+  });
 
   const gates: HardGateRow[] = [
     { id: 'melodicIdentity', pass: !melodicFail, detail: `score=${melodic.score}; ${melodic.justification}` },
@@ -131,8 +109,8 @@ export function evaluateHardGates(
     },
     {
       id: 'finalBarTension',
-      pass: !finalFail,
-      detail: `proxy=${finalTension.toFixed(3)} finalChord=${strip[VERLAINE_GBD_EVAL_TOTAL_BARS - 1] ?? ''}`,
+      pass: fbt.pass,
+      detail: fbt.detail,
     },
   ];
 

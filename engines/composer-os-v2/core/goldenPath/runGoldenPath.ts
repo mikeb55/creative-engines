@@ -271,6 +271,7 @@ import { sanitizeBarMeterMap, type BarMeterMap } from '../rhythm/barMeterTypes';
 import { attachVoiceRuleBundleAndHarmonicScenes } from '../composer/attachVoiceRuleBundle';
 import { applyZappaGceStructuralFingerprintToContext, shouldApplyZappaGceStructuralGeneration } from '../gce/applyZappaGceStructuralGeneration';
 import { isFrankZappaSongwriterId, type ZappaGceMeterMode } from '../gce/frankZappaStructuralFingerprint';
+import { endingContextMetadataStamp } from '../gce/endingContext';
 import type { Song } from '../section-architecture/sectionArchitectureTypes';
 import { resolveGenerationBarMeterMap } from '../section-architecture/resolveGenerationBarMeterMap';
 import {
@@ -1472,6 +1473,13 @@ export interface RunGoldenPathOptions {
   beMusicianPremiumMelodyBridge?: boolean;
   /** Band mode Stage 2 — append scored Art Rock drums staff after mosaic melody-bass format. */
   bandModeEnabled?: boolean;
+  /**
+   * GCE finalBarTension ending model override.
+   * Default resolved from presetId (`riff_generator` → `loop`, else `terminal`).
+   */
+  endingContext?: import('../gce/endingContext').EndingContext;
+  /** Conscious accept of unresolved terminal ending → effective `open_idiom`. */
+  acknowledgeOpenIdiomEnding?: boolean;
 }
 
 export type { MosaicPresetRole, SectionRealizationResult, AssembledScoreModel };
@@ -2235,6 +2243,17 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     }
   }
   const context = buildContextForGoldenPath(seed, effectiveOptions);
+  {
+    const stamp = endingContextMetadataStamp({
+      presetId: context.presetId,
+      endingContext: effectiveOptions?.endingContext,
+      acknowledgeOpenIdiomEnding: effectiveOptions?.acknowledgeOpenIdiomEnding,
+    });
+    context.generationMetadata = {
+      ...context.generationMetadata,
+      ...stamp,
+    };
+  }
   if (options?.mosaicSectionPlan) {
     context.generationMetadata = {
       ...context.generationMetadata,

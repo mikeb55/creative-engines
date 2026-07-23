@@ -28,6 +28,7 @@ import {
   scoreStructureAndForm,
 } from '../core/gce/gceAutoScorers';
 import { buildFallbackChordsAndSectionsFromScore } from '../core/gce/gceGate';
+import { evaluateFinalBarTensionGate } from '../core/gce/finalBarTensionGate';
 import { scoreModelToMelodicLine } from '../core/gce/scoreModelToMelodicLine';
 import { resolveMelodicPartId } from '../core/gce/resolveMelodicPartId';
 import { isTonicFamilyChord } from './eval/jamersonBassLensEvalCore';
@@ -108,7 +109,7 @@ function hardGates(score: ScoreModel) {
   const cadenceFail = coverage < 0.4;
 
   const tension = finalBarTension(score, chords);
-  const finalFail = tension > 0.7;
+  const finalFail = !evaluateFinalBarTensionGate({ score, chords, presetId: 'riff_generator' }).pass;
 
   const gates = [
     { id: 'melodicIdentity', pass: !melodicFail, detail: `score=${melodic.score}; ${melodic.justification}` },

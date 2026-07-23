@@ -46,7 +46,7 @@ import {
 import { buildFallbackChordsAndSectionsFromScore } from '../core/gce/gceGate';
 import { scoreModelToMelodicLine } from '../core/gce/scoreModelToMelodicLine';
 import { resolveMelodicPartId } from '../core/gce/resolveMelodicPartId';
-import { isTonicFamilyChord } from '../scripts/eval/jamersonBassLensEvalCore';
+import { evaluateFinalBarTensionGate } from '../core/gce/finalBarTensionGate';
 import type { ScoreModel } from '../core/score-model/scoreModelTypes';
 import type { GceCategory } from '../core/evaluation/evaluationTypes';
 import type { RiffPhraseCategory } from '../core/riff-generator/riffPhraseLibraryTypes';
@@ -221,11 +221,6 @@ function exactRate(a: number[], b: number[]): number {
   for (let i = 0; i < n; i++) if (a[i] === b[i]) h++;
   return h / n;
 }
-function isDom(s: string): boolean {
-  if (!s.trim() || isTonicFamilyChord(s)) return false;
-  const q = s.toLowerCase();
-  return q.includes('13') || q.includes('alt') || (q.includes('7') && !q.includes('maj7'));
-}
 function hard(score: ScoreModel, styleId: string) {
   const { chords, sections } = buildFallbackChordsAndSectionsFromScore(score);
   const melody = scoreModelToMelodicLine(score, resolveMelodicPartId(score));
@@ -233,21 +228,18 @@ function hard(score: ScoreModel, styleId: string) {
   const structure = scoreStructureAndForm(score, chords, sections);
   const cadence = scoreCadentialClarity(melody, chords, sections);
   const coverage = cadence.score / 10;
-  const finalBar = chords.length;
-  const chord = (chords[finalBar - 1] ?? '').trim();
-  const partId = resolveMelodicPartId(score);
-  const part = score.parts.find((p) => p.id === partId) ?? score.parts[0];
-  const m = part?.measures.find((x) => x.index === finalBar);
-  const short = (m?.events.filter((e) => e.kind === 'note').length ?? 0) <= 2;
-  let tension = isDom(chord) ? 0.95 + (short ? 0.15 : 0) : isTonicFamilyChord(chord) ? 0.15 : 0.55;
-  tension = Math.min(1, tension);
+  const fbt = evaluateFinalBarTensionGate({
+    score,
+    chords,
+    presetId: 'riff_generator',
+  });
   const gates = [
     { id: 'melodicIdentity', pass: !(melodic.score <= 6 || melodic.justification.includes('[HARD FAIL]')) },
     { id: 'sectionContrast', pass: !structure.justification.includes('[HARD FAIL') },
     { id: 'cadentialClarityCoverage', pass: !(coverage < 0.4) },
-    { id: 'finalBarTension', pass: !(tension > 0.7) },
+    { id: 'finalBarTension', pass: fbt.pass },
   ];
-  return { gates, allPass: gates.every((g) => g.pass), coverage, tension };
+  return { gates, allPass: gates.every((g) => g.pass), coverage, tension: fbt.tension };
 }
 function gce(score: ScoreModel, styleId: string) {
   const features = extractScoreModelFeatures(score);

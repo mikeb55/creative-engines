@@ -105,6 +105,8 @@ export interface RiffGeneratorSuccess {
    * Omitted / empty when every typed token matched the symbol used (or input was empty vamp).
    */
   chordLoopDisclosure?: RiffChordLoopDisclosure;
+  /** Always `loop` for riff_generator — finalBarTension does not auto-fail. */
+  endingContext?: import('../gce/endingContext').EndingContext;
 }
 
 export interface RiffGeneratorFailure {

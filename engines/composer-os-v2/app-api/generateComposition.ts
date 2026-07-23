@@ -67,6 +67,9 @@ import type { GuitarVoicing } from '../core/composer/guitarVoicingEngine';
 import { importMusicXmlToImportedSong } from '../core/musicXmlDeepImport';
 import type { MusicContext } from '../core/music-context/musicContextTypes';
 import { buildDuoMusicContextFromScore } from '../core/duo/duoLock';
+import { resolveEndingContext } from '../core/gce/endingContext';
+import { evaluateFinalBarTensionGate } from '../core/gce/finalBarTensionGate';
+import { getChordForBar } from '../core/harmony/harmonyResolution';
 
 function isImportExpressionPilotPreset(presetId: string): boolean {
   return isGuitarBassDuoFamily(presetId) || presetId === 'ecm_chamber';
@@ -113,6 +116,15 @@ export interface GenerateResult {
    * Present when substitutions and/or unsupported (null→Am7) tokens occurred.
    */
   chordLoopDisclosure?: import('../core/riff-generator/riffChordLoop').RiffChordLoopDisclosure;
+  /**
+   * Resolved GCE ending context for this generate (`riff_generator` → `loop` by default).
+   */
+  endingContext?: import('../core/gce/endingContext').EndingContext;
+  /**
+   * Open-idiom ending disclosure (terminal charts only) — chord-loop-trust style acknowledgment surface.
+   * Omitted for ordinary riff loops and when final-bar tension would not fail under terminal rules.
+   */
+  openIdiomEndingDisclosure?: import('../core/gce/finalBarTensionGate').OpenIdiomEndingDisclosure;
   filename?: string;
   filepath?: string;
   /** Full-score `.mid` path when written next to the MusicXML export. */
@@ -811,6 +823,27 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
   }
   const successWithDuoLock = successFinal && !(duo && !duoMusicContext && successFinal);
 
+  const endingContextResolved = resolveEndingContext({
+    presetId: req.presetId,
+    endingContext: result.context.generationMetadata.endingContext ?? req.endingContext,
+    acknowledgeOpenIdiomEnding:
+      result.context.generationMetadata.acknowledgeOpenIdiomEnding === true ||
+      req.acknowledgeOpenIdiomEnding === true,
+  });
+  let openIdiomEndingDisclosure: import('../core/gce/finalBarTensionGate').OpenIdiomEndingDisclosure | undefined;
+  if (endingContextResolved === 'open_idiom' && result.score) {
+    const strip: string[] = [];
+    const tb = result.context.form?.totalBars ?? 0;
+    for (let b = 1; b <= tb; b++) strip.push(getChordForBar(b, result.context).trim());
+    const fbt = evaluateFinalBarTensionGate({
+      score: result.score,
+      chords: strip,
+      endingContext: 'open_idiom',
+      presetId: req.presetId,
+    });
+    if (fbt.disclosure) openIdiomEndingDisclosure = fbt.disclosure;
+  }
+
   return {
     success: successWithDuoLock,
     error: successWithDuoLock ? undefined : allErrors[0] ?? 'Generation failed',
@@ -818,6 +851,8 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     productKind: 'musicxml',
     composerOsVersion: COMPOSER_OS_VERSION,
     xml: outputXml,
+    endingContext: endingContextResolved,
+    ...(openIdiomEndingDisclosure ? { openIdiomEndingDisclosure } : {}),
     guitarVoicings: guitarVoicingsOut,
     filename,
     filepath,

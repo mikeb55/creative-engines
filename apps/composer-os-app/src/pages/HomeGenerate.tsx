@@ -192,6 +192,7 @@ import {
 import { resolveRiffSoftLinkHv } from '@composer-os/core/riff-generator/riffSoftLinkHv';
 import { riffChordGridWarnings } from '../utils/riffChordGridWarnings';
 import { RiffChordLoopDisclosureBanner } from '../components/riffgen/RiffChordLoopDisclosureBanner';
+import { OpenIdiomEndingDisclosureBanner } from '../components/OpenIdiomEndingDisclosureBanner';
 import { RiffChordLoopTokenStrip } from '../components/riffgen/RiffChordLoopTokenStrip';
 import { ComposerEraSelectOptions } from '../components/ComposerEraSelectOptions';
 import {
@@ -2014,6 +2015,10 @@ type GenResult = {
   riffMusicality?: { failedRules?: string[]; passed?: boolean; score?: number };
   /** Phase 1 riff chord-loop trust — typed→used mismatches. */
   chordLoopDisclosure?: import('@composer-os/core/riff-generator/riffChordLoop').RiffChordLoopDisclosure;
+  /** Resolved GCE ending context (`riff_generator` → loop). */
+  endingContext?: 'terminal' | 'loop' | 'open_idiom';
+  /** Open-idiom terminal ending disclosure (not used for ordinary riff loops). */
+  openIdiomEndingDisclosure?: import('@composer-os/core/gce/finalBarTensionGate').OpenIdiomEndingDisclosure;
   /** V90a — Shared Brain snapshot from riff_generator. */
   musicContext?: {
     schemaVersion?: string;
@@ -2926,6 +2931,8 @@ export function HomeGenerate({
   const [improvModeUi, setImprovModeUi] = useState(false);
   const [stochasticVarianceUi, setStochasticVarianceUi] = useState(0);
   const [funkGroove, setFunkGroove] = useState(false);
+  /** Terminal charts only — conscious accept of unresolved final bar (open_idiom). Not for riff loops. */
+  const [acknowledgeOpenIdiomEnding, setAcknowledgeOpenIdiomEnding] = useState(false);
   const [generateDrumGuide, setGenerateDrumGuide] = useState(true);
   const [exportScoreMidi, setExportScoreMidi] = useState(false);
   const [bandModeEnabled, setBandModeEnabled] = useState(false);
@@ -4450,6 +4457,9 @@ export function HomeGenerate({
           ...(isGuitarBassDuoFamily(presetId) || presetId === 'song_mode'
             ? { c4Strength: c4Strength, blendStrength: blendStrength, songModeJamesBrownFunkOverlay: funkGroove }
             : {}),
+          ...(presetId !== 'riff_generator' && acknowledgeOpenIdiomEnding
+            ? { acknowledgeOpenIdiomEnding: true as const }
+            : {}),
           ...(presetId === 'song_mode'
             ? {
                 ...mapSongModeSlonimskyToGenerateRequest(
@@ -5140,6 +5150,7 @@ export function HomeGenerate({
       gbdChromaticStrength,
       slonimskyEtudeCellFamily,
       funkGroove,
+      acknowledgeOpenIdiomEnding,
       generateDrumGuide,
       exportScoreMidi,
       bandModeEnabled,
@@ -8641,6 +8652,30 @@ export function HomeGenerate({
               />
               Enable James Brown funk overlay
             </label>
+            {presetId !== 'riff_generator' ? (
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '0.5rem',
+                  cursor: 'pointer',
+                  marginTop: '0.65rem',
+                  fontSize: '0.9rem',
+                  lineHeight: 1.35,
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={acknowledgeOpenIdiomEnding}
+                  onChange={(e) => setAcknowledgeOpenIdiomEnding(e.target.checked)}
+                  style={{ marginTop: 3 }}
+                />
+                <span>
+                  Acknowledge open/unresolved ending (finalBarTension) — intentional terminal close; not
+                  needed for riff loops
+                </span>
+              </label>
+            ) : null}
           </div>
         </>
       )}
@@ -12268,6 +12303,10 @@ export function HomeGenerate({
 
           {summaryPresetId === 'riff_generator' && result?.success ? (
             <RiffChordLoopDisclosureBanner disclosure={result.chordLoopDisclosure} />
+          ) : null}
+
+          {summaryPresetId !== 'riff_generator' && result?.success ? (
+            <OpenIdiomEndingDisclosureBanner disclosure={result.openIdiomEndingDisclosure} />
           ) : null}
 
           {summaryPresetId === 'guitar_bass_duo' && duoVaultEnabledForRun !== null && (

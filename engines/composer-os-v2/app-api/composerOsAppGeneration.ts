@@ -1726,6 +1726,8 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     presetId: 'guitar_bass_duo',
     scoreTitle: title,
     songModeHookFirstIdentity: true,
+    ...(req.endingContext ? { endingContext: req.endingContext } : {}),
+    ...(req.acknowledgeOpenIdiomEnding === true ? { acknowledgeOpenIdiomEnding: true } : {}),
     ...(mosaicPlan.length >= 2 ? { mosaicSectionPlan: mosaicPlan } : {}),
     ...(req.mosaicOutputFormat ? { mosaicOutputFormat: req.mosaicOutputFormat } : {}),
     /** Explicit default matches UI default when `styleProfile` omitted (legacy clients). */
@@ -3665,5 +3667,9 @@ export function songModeFullGenMergeHarmonicVoice(
   req: GenerateRequest,
   base: RunGoldenPathOptions
 ): RunGoldenPathOptions {
-  return mergeHarmonicVoiceFromRequest(req, base);
+  return mergeHarmonicVoiceFromRequest(req, {
+    ...base,
+    ...(req.endingContext ? { endingContext: req.endingContext } : {}),
+    ...(req.acknowledgeOpenIdiomEnding === true ? { acknowledgeOpenIdiomEnding: true } : {}),
+  });
 }

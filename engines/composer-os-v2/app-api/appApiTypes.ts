@@ -486,6 +486,17 @@ export interface GenerateRequest {
    * (weather_report / mahavishnu / fripp / iommi / nile_rodgers). Default omit/false.
    */
   riffPhraseMotifSeed?: boolean;
+  /**
+   * GCE finalBarTension ending model override.
+   * Default: `riff_generator` → `loop`; all other presets → `terminal`.
+   * `open_idiom` (or {@link acknowledgeOpenIdiomEnding}) skips FBT auto-fail with disclosure.
+   */
+  endingContext?: import('../core/gce/endingContext').EndingContext;
+  /**
+   * Conscious accept of an unresolved terminal ending → effective `endingContext: 'open_idiom'`.
+   * Not needed for ordinary riff loops (`loop` default). Chord-loop-trust style disclosure only.
+   */
+  acknowledgeOpenIdiomEnding?: boolean;
   /** Riff Generator: odd-meter template overlay (fusion / art_rock). */
   riffOddMeterPreset?:
     | 'meter5'

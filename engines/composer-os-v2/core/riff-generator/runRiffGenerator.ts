@@ -300,6 +300,7 @@ export function runRiffGenerator(baseSeed: number, params: Omit<RiffGeneratorPar
         ...(riffChordLoopDisclosureHasIssues(chordLoopDisclosure)
           ? { chordLoopDisclosure }
           : {}),
+        endingContext: 'loop',
       };
     }
   }

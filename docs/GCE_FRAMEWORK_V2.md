@@ -1,41 +1,41 @@
 ---
-# GCE v2.0 — UNIVERSAL MUSIC EVALUATION FRAMEWORK
-# For Composer OS — applies to all musical output
+# GCE v2.0 â€” UNIVERSAL MUSIC EVALUATION FRAMEWORK
+# For Composer OS â€” applies to all musical output
 
 ## See also
 
 **Development workflow bundle (LOCK hard gates, DCR, Style Profile Layer):** `docs/GCE_LOCK_DCR_STANDARDS.md`
 
 ## Scope
-Applies to: songs, sketches, études, arrangements,
+Applies to: songs, sketches, Ã©tudes, arrangements,
 works in progress, instrumental pieces, ensemble output.
 NOT limited to: bebop, songs with lyrics, or any single style.
 
-## Agent interpretation — two modes (formulas unchanged)
+## Agent interpretation â€” two modes (formulas unchanged)
 
 This document is the **authoritative formal specification** for automated evaluation and repo quality gates. The categories and hard gates below are **not** relaxed in any mode.
 
 | Mode | Use when |
 |------|----------|
 | **Formal / technical** | Composer OS code, official evaluator runs, LOCK / DCR, release readiness, automated scores |
-| **Musician-facing / conversational** | Chat critique (“GCE this”, “is this good?”, etc.) unless formal validation is explicitly requested |
+| **Musician-facing / conversational** | Chat critique (â€œGCE thisâ€, â€œis this good?â€, etc.) unless formal validation is explicitly requested |
 
-**Default for chat:** musician-facing — unless the user asks for **formal Composer OS validation** or mentions **LOCK**, **DCR**, or **CI**. Pipeline and evaluator work default to formal / technical.
+**Default for chat:** musician-facing â€” unless the user asks for **formal Composer OS validation** or mentions **LOCK**, **DCR**, or **CI**. Pipeline and evaluator work default to formal / technical.
 
-In **musician-facing** mode, agents score musical quality on the same 0–10 scale and GCE category vocabulary, but:
+In **musician-facing** mode, agents score musical quality on the same 0â€“10 scale and GCE category vocabulary, but:
 - Do **not** treat the score as repo PASS/FAIL or apply hard gates unless formal validation is requested
 - Do **not** treat sub-9 as automatic failure or jump to architecture changes from one low score
 - Distinguish musical issues from notation / export limitations
-- On short fragments, mark thematic recall, large-scale structure & form, and global phrase grammar as **N/A / structurally limited** (see `docs/GCE_LOCK_DCR_STANDARDS.md` §1.1)
+- On short fragments, mark thematic recall, large-scale structure & form, and global phrase grammar as **N/A / structurally limited** (see `docs/GCE_LOCK_DCR_STANDARDS.md` Â§1.1)
 - Prefer: overall score, strengths, weaknesses, one highest-leverage improvement (musical / technical / architectural tag)
 
-Full chat behaviour: **`.cursor/rules/gce-evaluation.mdc` §2** · **`docs/GCE_LOCK_DCR_STANDARDS.md` §1.0**.
+Full chat behaviour: **`.cursor/rules/gce-evaluation.mdc` Â§2** Â· **`docs/GCE_LOCK_DCR_STANDARDS.md` Â§1.0**.
 
 ## Scoring
 - Score each category 0-10
 - **9.0** = aspirational north star (long-term benchmark; formulas unchanged)
-- **7.9–8.4** = current empirical release-quality / system-ceiling band under the present system
-- **Operational release band (guidance):** >= 7.9 PASS · 6.5–7.8 acceptable / one weakest-category pass · < 6.5 materially weak
+- **7.9â€“8.4** = current empirical release-quality / system-ceiling band under the present system
+- **Operational release band (guidance):** >= 7.9 PASS Â· 6.5â€“7.8 acceptable / one weakest-category pass Â· < 6.5 materially weak
 - If below operational band: revise weakest category only, one pass (DCR)
 - Never full rewrite. Preserve asymmetry.
 - **Hard gates** (below) remain auto-fail blockers regardless of calibrated overall band
@@ -105,7 +105,7 @@ Full chat behaviour: **`.cursor/rules/gce-evaluation.mdc` §2** · **`docs/GCE_L
 - Melodic Identity <= 6
 - No section contrast
 - Cadential Clarity coverage < 0.4
-- Final bar tension > 0.7 (accidental ending)
+- Final bar tension > 0.7 (accidental ending) — applies when `endingContext` is `terminal` (default for Song Mode / leadsheets / final charts). `riff_generator` defaults to `loop` (loop-setup tension does not auto-fail; threshold numeric value unchanged). `open_idiom` (user acknowledgment) also exempts auto-fail and emits disclosure. See `docs/GCE_LOCK_DCR_STANDARDS.md` §3.1a.
 
 ## Engine Rules
 - Generate -> evaluate -> revise weakest only -> output once
@@ -120,25 +120,25 @@ Full chat behaviour: **`.cursor/rules/gce-evaluation.mdc` §2** · **`docs/GCE_L
 4. Score all 10 from shared intermediate features
 
 ## Output Format
-- Category name: score/10 — one-line justification
+- Category name: score/10 â€” one-line justification
 - Overall: X.X/10
 - Status: PASS / FAIL
 - If revised: what changed and why
 ---
 
-## Reference — `grand-criteria-of-excellence-jazz` (GitHub)
+## Reference â€” `grand-criteria-of-excellence-jazz` (GitHub)
 
 Repository: `https://github.com/mikeb55/grand-criteria-of-excellence-jazz` (local clone under *Cursor AI Projects*).
 
-Useful legacy material (jazz / workflow — **not** a substitute for this universal v2.0 spec, but worth cross-reading):
+Useful legacy material (jazz / workflow â€” **not** a substitute for this universal v2.0 spec, but worth cross-reading):
 
 | Asset | Notes |
 |-------|--------|
 | `Composition Rules/GCE_Jazz_v1_0.md` | Original **GCE Jazz v1.0** title and scope (jazz composition, arranging, harmony). |
-| `Composition Rules/GCE_Melodic_Development_Rules.md` | Melodic development techniques, counterpoint “actionable logic,” orchestration layering — qualitative companion to **Melodic Identity** / **Arrangement** categories above. |
+| `Composition Rules/GCE_Melodic_Development_Rules.md` | Melodic development techniques, counterpoint â€œactionable logic,â€ orchestration layering â€” qualitative companion to **Melodic Identity** / **Arrangement** categories above. |
 | `Composition Rules/CLEF_ASSIGNMENT_RULES.md` | Notation layout rules (instrumentation export quality). |
 | `Project Logs/GCE_Jazz_Transformation_Log.md`, `GCE_Transformation_Log_Orbit.md` | Project history tied to GCE-aligned tune work. |
-| `BarryEngine/` (e.g. `gce_scoring.py`) | Phrase/section-level scoring hooks in Python — different data model than Composer OS `ScoreModel`; useful for **tension–release** and **form** intuition only. |
+| `BarryEngine/` (e.g. `gce_scoring.py`) | Phrase/section-level scoring hooks in Python â€” different data model than Composer OS `ScoreModel`; useful for **tensionâ€“release** and **form** intuition only. |
 
 **Relationship:** **`docs/GCE_CANONICAL.md`** is the agent entry point. **`docs/GCE_FRAMEWORK.md`** and **`rules/gce_evaluation_framework.md`** are **parked** (historical only). **This file (v2.0)** is the **master engineering standard** for measurable, automatable evaluation across **all** Composer OS outputs.
 
@@ -206,7 +206,7 @@ Next: Motif Authority Layer.
 
 ### Benchmark interpretation (2026-06-15)
 
-- Ceilings around **7.9–8.4** define the **current practical system ceiling** under tuned presets (not a formula change).
-- **9.0** remains the **long-term benchmark**; the documented **0.6–1.2** point gap is real.
-- **Short-form outputs** (< ~16 bars, especially 8-bar leadsheet fragments) must **not** be scored like full charts — see **`docs/GCE_LOCK_DCR_STANDARDS.md` §1.1**.
-- **Roadmap:** fix **>8-bar / full-chart** measurement first, re-score, then decide rhythm vs harmony vs deeper composer grammar — do not treat a low 8-bar score as automatic proof that deep composer-grammar work is next.
+- Ceilings around **7.9â€“8.4** define the **current practical system ceiling** under tuned presets (not a formula change).
+- **9.0** remains the **long-term benchmark**; the documented **0.6â€“1.2** point gap is real.
+- **Short-form outputs** (< ~16 bars, especially 8-bar leadsheet fragments) must **not** be scored like full charts â€” see **`docs/GCE_LOCK_DCR_STANDARDS.md` Â§1.1**.
+- **Roadmap:** fix **>8-bar / full-chart** measurement first, re-score, then decide rhythm vs harmony vs deeper composer grammar â€” do not treat a low 8-bar score as automatic proof that deep composer-grammar work is next.

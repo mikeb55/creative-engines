@@ -5,7 +5,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N rows (M suites)` in the smoke summary, then sync **N** + **M** into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): full **727** PASS rows, **132** suites; fast subset unchanged until refreshed.
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): full **791** PASS rows, **143** suites; fast subset unchanged until refreshed.
  *
  * **Fast subset:** `COMPOSER_OS_SMOKE_TIER=fast` or `npm run test:composer-smoke-fast` — skips `SMOKE_FAST_EXCLUDE` suites (local dev).
  * **Full tier (default / CI):** unset or `COMPOSER_OS_SMOKE_TIER=full` — all suites in `smokeSuites`.
@@ -125,6 +125,8 @@ import { runSqAntimetricRhythmTests } from './sqAntimetricRhythm.test';
 import { runWybleDuoParityTests } from './wybleDuoParity.test';
 import { runEcmGceOrchestrationTests } from './ecmGceOrchestration.test';
 import { runGceScorerRoutingTests } from './gceScorerRouting.test';
+import { runEndingContextFbtTests } from './endingContextFbtGate.test';
+import { runEndingContextTerminalRegressionTests } from './endingContextTerminalRegression.test';
 import { runMelodyV2Tests } from './melodyV2.test';
 import { runMidiChordExtractorTests } from './midiChordExtractor.test';
 import { runSlonimskyHarmonicSceneTests } from './slonimskyHarmonicScene.test';
@@ -212,6 +214,8 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'MIDI chord extractor (SQ→BB import)', run: runMidiChordExtractorTests },
   { label: 'ECM GCE orchestration', run: runEcmGceOrchestrationTests },
   { label: 'GCE scorer routing (HV authority)', run: runGceScorerRoutingTests },
+  { label: 'GCE endingContext FBT gate', run: runEndingContextFbtTests },
+  { label: 'GCE endingContext terminal regression', run: runEndingContextTerminalRegressionTests },
   { label: 'Conductor', run: runConductorTests },
   { label: 'SQ swing rhythm engine (sq_swing)', run: runSqSwingRhythmTests },
   { label: 'Porter vs Gershwin swing fine-grain', run: runPorterGershwinDistinctionTests },

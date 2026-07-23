@@ -762,6 +762,13 @@ export function apiGenerate(
       riffVrbId: typeof body.riffVrbId === 'string' && body.riffVrbId.trim() ? body.riffVrbId.trim() : undefined,
       riffUseHvForPattern: body.riffUseHvForPattern === true ? true : undefined,
       riffPhraseMotifSeed: body.riffPhraseMotifSeed === true ? true : undefined,
+      endingContext:
+        body.endingContext === 'terminal' ||
+        body.endingContext === 'loop' ||
+        body.endingContext === 'open_idiom'
+          ? body.endingContext
+          : undefined,
+      acknowledgeOpenIdiomEnding: body.acknowledgeOpenIdiomEnding === true ? true : undefined,
       riffOddMeterPreset:
         body.riffOddMeterPreset === 'meter5' ||
         body.riffOddMeterPreset === 'meter7' ||

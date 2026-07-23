@@ -567,6 +567,13 @@ export interface GenerationMetadata {
   motifReuseSuggestions?: Array<{ assetId: string; targetMode: string; role: string; note: string }>;
   /** Active songwriter style id — used to gate style-specific harmonic behaviour. */
   songwriterStyleId?: string;
+  /**
+   * GCE finalBarTension ending model: `terminal` (default charts) | `loop` (riff_generator) | `open_idiom` (acked open close).
+   * Resolved via {@link resolveEndingContext}; does not change the 0.7 numeric threshold.
+   */
+  endingContext?: import('./gce/endingContext').EndingContext;
+  /** When true, promotes endingContext to `open_idiom` (conscious accept of unresolved terminal ending). */
+  acknowledgeOpenIdiomEnding?: boolean;
   /** Mosaic Mode — per-section songwriter routing (Step 1); 2+ entries enables duo mode in {@link resolveMosaicSectionStyles}. */
   mosaicSectionPlan?: Array<{
     sectionLabel: string;

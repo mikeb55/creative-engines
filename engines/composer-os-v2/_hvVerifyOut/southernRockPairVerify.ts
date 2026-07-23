@@ -22,6 +22,7 @@ import {
   scoreStructureAndForm,
 } from '../core/gce/gceAutoScorers';
 import { buildFallbackChordsAndSectionsFromScore } from '../core/gce/gceGate';
+import { evaluateFinalBarTensionGate } from '../core/gce/finalBarTensionGate';
 import { scoreModelToMelodicLine } from '../core/gce/scoreModelToMelodicLine';
 import { resolveMelodicPartId } from '../core/gce/resolveMelodicPartId';
 import { isTonicFamilyChord } from '../scripts/eval/jamersonBassLensEvalCore';
@@ -141,7 +142,7 @@ function hard(score: ScoreModel, styleId: string) {
     { id: 'melodicIdentity', pass: !(melodic.score <= 6 || melodic.justification.includes('[HARD FAIL]')) },
     { id: 'sectionContrast', pass: !structure.justification.includes('[HARD FAIL') },
     { id: 'cadentialClarityCoverage', pass: !(coverage < 0.4) },
-    { id: 'finalBarTension', pass: !(tension > 0.7) },
+    { id: 'finalBarTension', pass: evaluateFinalBarTensionGate({ score, chords, presetId: 'riff_generator' }).pass },
   ];
   return { gates, allPass: gates.every((g) => g.pass), coverage, tension };
 }
