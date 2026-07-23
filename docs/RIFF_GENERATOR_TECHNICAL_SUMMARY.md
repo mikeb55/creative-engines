@@ -122,9 +122,9 @@ UI toggle label **"Use HV for riff pattern too?"** maps to `riffUseHvForPattern`
 
 | Fact | Value (2026-07-19) |
 |------|---------------------|
-| Schema categories | **10** (`RIFF_PHRASE_CATEGORIES`) — includes **`southern_rock`** scaffold (split from blues_rock scope); target total **87** |
-| Populated on disk (QA ingest) | **6** — `sax_inspired`, `diminished_lines`, `jazz_rock`, `white_rock_funk`, `black_soul_funk`, `bebop_jazz_blues` |
-| Empty stubs | `blues_rock`, `southern_rock`, `modern_rock`, `progressive_blues` |
+| Schema categories | **10** (`RIFF_PHRASE_CATEGORIES`) — includes **`southern_rock`** scaffold; target total **99** |
+| Populated on disk (QA ingest) | **7** — `sax_inspired`, `diminished_lines`, `jazz_rock`, `white_rock_funk`, `black_soul_funk`, `bebop_jazz_blues`, `blues_rock` |
+| Empty stubs | `southern_rock`, `modern_rock`, `progressive_blues` |
 | Road-test QA totals | **38** files / **99** phrases |
 | Engine wiring | **OFF** — no imports into `riffMelody` / `riffPitchField` / `buildRiffScoreModel` / `runRiffGenerator` |
 | Pitch PR status | **PR A/B/C** shipped — pick path · `enforceHook` gate · leap-peak motif-blend skip |

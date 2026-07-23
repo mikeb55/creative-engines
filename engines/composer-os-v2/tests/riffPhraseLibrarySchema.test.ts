@@ -134,7 +134,7 @@ export function runRiffPhraseLibrarySchemaTests(): { ok: boolean; name: string }
   {
     const keys = Object.keys(RIFF_PHRASE_CATEGORY_TAG_HEURISTICS);
     const ok =
-      RIFF_PHRASE_CORPUS_TARGET_TOTAL === 87 &&
+      RIFF_PHRASE_CORPUS_TARGET_TOTAL === 99 &&
       keys.length === RIFF_PHRASE_CATEGORIES.length &&
       RIFF_PHRASE_CATEGORIES.every((c) => keys.includes(c)) &&
       RIFF_PHRASE_CATEGORY_TAG_HEURISTICS.diminished_lines.highIntervalDensity.includes('m3') &&
@@ -146,7 +146,7 @@ export function runRiffPhraseLibrarySchemaTests(): { ok: boolean; name: string }
       RIFF_PHRASE_CATEGORY_TAG_HEURISTICS.southern_rock.expectedTags.includes('twin_guitar');
     out.push({
       ok,
-      name: 'heuristics cover all categories; southern_rock scaffold; corpus total 87',
+      name: 'heuristics cover all categories; southern_rock scaffold; corpus total 99',
     });
   }
 

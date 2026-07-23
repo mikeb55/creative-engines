@@ -11,6 +11,8 @@
 
 ### Added
 
+- **Riff phrase corpus ingest — Blues-Rock** — Real GP5 ingest for `blues_rock`: **18**/18 parseOk · **30** phrases (Jeff McErlain *50 Blues-Rock* + jm30sbrl-029/030). meterMismatch **0**; droppedOrnaments on several bend-heavy files; tieFixups common (max **30** on `50bluesrocklicks_46`). `TARGET_COUNTS.blues_rock` **6→18**; `RIFF_PHRASE_CORPUS_TARGET_TOTAL` **87→99**. Derived **107** files / **224** phrases. Empty stubs: `southern_rock`, `modern_rock`, `progressive_blues`. Motif-seed pairing deferred.
+
 - **Riff phrase corpus — Southern Rock scaffold (split from blues_rock scope)** — Schema `RIFF_PHRASE_CATEGORIES` → **10**; `RIFF_PHRASE_CORPUS_TARGET_TOTAL` **81→87** (`southern_rock` placeholder target **6**). `blues_rock` stays Jeff McErlain *50 Blues-Rock Guitar Licks You MUST Know*; new `southern_rock` = TrueFire *50 Southern Rock Licks You MUST Know*. Folder `gpx/southern_rock/` empty (+ `.gitkeep`); synthetic fixture + tag heuristic (major/Mixolydian, twin-guitar, country-rock swagger — distinct from blues_rock pentatonic/bend). **No ingest** on either until user files. Empty stubs now: `blues_rock`, `southern_rock`, `modern_rock`, `progressive_blues`.
 
 - **Riff phrase motif-seed — six pairings COMPLETE** — Flag-gated (default OFF) + RiffGen checkbox (default unchecked; per-call `riffPhraseMotifSeed`):
@@ -19,7 +21,7 @@
   3. `diminished_lines`→`fripp` (`COMPOSER_OS_RIFF_DIM_MOTIF_SEED`)
   4. `white_rock_funk`→`iommi` (`COMPOSER_OS_RIFF_WHITEROCK_MOTIF_SEED`)
   5. `black_soul_funk`→`nile_rodgers` (`COMPOSER_OS_RIFF_BLACKSOUL_MOTIF_SEED`)
-  6. `bebop_jazz_blues`→`bill_evans_sax` (`COMPOSER_OS_RIFF_BEBOP_MOTIF_SEED`) — ships with `bill_evans_sax` RiffGen VRB (σ29 fusion; distinct from pianist `bill_evans`). Confirm seeds **1 / 2 / 3** (≥10 iv). **Positive hard-gate result (seed 2):** procedural OFF **fails** GCE hard gates; phrase-seed ON **passes** (cos **0.01→0.90**, exact **0.93**) — seed improves integrity, not just fidelity parity. Seeds **1** and **3**: hard PASS both sides; ON cos **≥0.90**. Remaining empty stubs await user GPX: `blues_rock`, `southern_rock`, `modern_rock`, `progressive_blues`. Examples: `output/riff-*-motif-seed-poc/`. Tests: `riffPhraseMotifSeedExtend.test.ts` + compare script.
+  6. `bebop_jazz_blues`→`bill_evans_sax` (`COMPOSER_OS_RIFF_BEBOP_MOTIF_SEED`) — ships with `bill_evans_sax` RiffGen VRB (σ29 fusion; distinct from pianist `bill_evans`). Confirm seeds **1 / 2 / 3** (≥10 iv). **Positive hard-gate result (seed 2):** procedural OFF **fails** GCE hard gates; phrase-seed ON **passes** (cos **0.01→0.90**, exact **0.93**) — seed improves integrity, not just fidelity parity. Seeds **1** and **3**: hard PASS both sides; ON cos **≥0.90**. Remaining empty stubs await user GPX: `southern_rock`, `modern_rock`, `progressive_blues`. Examples: `output/riff-*-motif-seed-poc/`. Tests: `riffPhraseMotifSeedExtend.test.ts` + compare script.
 
 - **Riff phrase corpus ingest — Bebop-Jazz Blues** — Real GP5 ingest for `bebop_jazz_blues`: **31**/31 parseOk · **33** phrases (29×1 + 2×2); droppedOrnaments **0**; meterMismatch **0**; tieFixups on a few files (max **10** on `sb50ebl-024`). `RIFF_PHRASE_CATEGORY_TARGET_COUNTS.bebop_jazz_blues` **6→31**; `RIFF_PHRASE_CORPUS_TARGET_TOTAL` **56→81**. Derived corpus **89** files / **194** phrases. Empty stubs still: `blues_rock`, `modern_rock`, `progressive_blues`.
 
