@@ -19,15 +19,19 @@ import {
   RIFF_BEBOP_MOTIF_SEED_VRB,
   RIFF_BLUESROCK_MOTIF_SEED_ENV,
   RIFF_BLUESROCK_MOTIF_SEED_VRB,
+  RIFF_SOUTHERNROCK_MOTIF_SEED_ENV,
+  RIFF_SOUTHERNROCK_MOTIF_SEED_VRB,
   RIFF_JAZZROCK_MOTIF_SEED_ENV,
   RIFF_JAZZROCK_MOTIF_SEED_VRB,
   RIFF_SAX_MOTIF_SEED_POC_ENV,
   isRiffBebopMotifSeedEnabled,
   isRiffBluesRockMotifSeedEnabled,
+  isRiffSouthernRockMotifSeedEnabled,
   isRiffDimMotifSeedEnabled,
   isRiffJazzRockMotifSeedEnabled,
   pickBebopPhraseForSeed,
   pickBluesRockPhraseForSeed,
+  pickSouthernRockPhraseForSeed,
   pickDiminishedPhraseForSeed,
   pickJazzRockPhraseForSeed,
   resetRiffPhraseMotifSeedCacheForTests,
@@ -78,6 +82,7 @@ function clearAllFlags(): void {
   delete process.env[RIFF_BLACKSOUL_MOTIF_SEED_ENV];
   delete process.env[RIFF_BEBOP_MOTIF_SEED_ENV];
   delete process.env[RIFF_BLUESROCK_MOTIF_SEED_ENV];
+  delete process.env[RIFF_SOUTHERNROCK_MOTIF_SEED_ENV];
   resetRiffPhraseMotifSeedCacheForTests();
 }
 
@@ -276,15 +281,17 @@ export function runRiffPhraseMotifSeedExtendTests(): { ok: boolean; name: string
       vrbHasPhraseMotifSeedPairing('nile_rodgers') &&
       vrbHasPhraseMotifSeedPairing('bill_evans_sax') &&
       vrbHasPhraseMotifSeedPairing('hendrix') &&
+      vrbHasPhraseMotifSeedPairing('led_zeppelin') &&
       !vrbHasPhraseMotifSeedPairing('james_brown') &&
-      !vrbHasPhraseMotifSeedPairing('led_zeppelin') &&
+      !vrbHasPhraseMotifSeedPairing('david_gilmour') &&
       (phraseMotifSeedCheckboxLabel('weather_report') ?? '').includes('sax') &&
       (phraseMotifSeedCheckboxLabel('iommi') ?? '').includes('white rock funk') &&
       (phraseMotifSeedCheckboxLabel('nile_rodgers') ?? '').includes('black soul funk') &&
       (phraseMotifSeedCheckboxLabel('bill_evans_sax') ?? '').includes('bebop jazz blues') &&
       (phraseMotifSeedCheckboxLabel('hendrix') ?? '').includes('blues-rock') &&
-      phraseMotifSeedCheckboxLabel('led_zeppelin') === null,
-    name: 'UI helpers: pairing visibility + lick labels for 7 VRBs only',
+      (phraseMotifSeedCheckboxLabel('led_zeppelin') ?? '').includes('southern rock') &&
+      phraseMotifSeedCheckboxLabel('david_gilmour') === null,
+    name: 'UI helpers: pairing visibility + lick labels for 8 VRBs only',
   });
 
   withEnv(RIFF_BEBOP_MOTIF_SEED_ENV, '1', () => {
@@ -417,6 +424,74 @@ export function runRiffPhraseMotifSeedExtendTests(): { ok: boolean; name: string
     out.push({
       ok,
       name: 'bluesrock flag ON: non-hendrix VRBs byte-identical',
+      detail: details.join(',') || 'ok',
+    });
+  }
+
+  clearAllFlags();
+  withEnv(RIFF_SOUTHERNROCK_MOTIF_SEED_ENV, '1', () => {
+    out.push({
+      ok: isRiffSouthernRockMotifSeedEnabled() === true,
+      name: 'southernrock flag ON when env=1',
+    });
+    const phrase = pickSouthernRockPhraseForSeed(1);
+    const motif = resolveRiffCoreMotif(1, RIFF_SOUTHERNROCK_MOTIF_SEED_VRB);
+    out.push({
+      ok: !!phrase && motif.id === 'phrase:' + phrase.id,
+      name: 'southernrock ON + led_zeppelin: motif from southern_rock phrase',
+      detail: motif.id,
+    });
+    const wr = resolveRiffCoreMotif(1, 'weather_report');
+    const hx = resolveRiffCoreMotif(1, 'hendrix');
+    const proc = generateRiffCoreMotif(1);
+    out.push({
+      ok: wr.id === proc.id && hx.id === proc.id,
+      name: 'southernrock ON: weather_report + hendrix still procedural',
+    });
+  });
+
+  clearAllFlags();
+  process.env[RIFF_SOUTHERNROCK_MOTIF_SEED_ENV] = '1';
+  resetRiffPhraseMotifSeedCacheForTests();
+  {
+    const phrase = pickSouthernRockPhraseForSeed(1);
+    const onMotif = resolveRiffCoreMotif(1, RIFF_SOUTHERNROCK_MOTIF_SEED_VRB);
+    delete process.env[RIFF_SOUTHERNROCK_MOTIF_SEED_ENV];
+    resetRiffPhraseMotifSeedCacheForTests();
+    const offXml = xmlOf(buildRiffScoreModel(baseParams(1, RIFF_SOUTHERNROCK_MOTIF_SEED_VRB)).score);
+    process.env[RIFF_SOUTHERNROCK_MOTIF_SEED_ENV] = '1';
+    resetRiffPhraseMotifSeedCacheForTests();
+    const onXml = xmlOf(buildRiffScoreModel(baseParams(1, RIFF_SOUTHERNROCK_MOTIF_SEED_VRB)).score);
+    out.push({
+      ok:
+        !!phrase &&
+        phrase.intervalSequence.length >= 10 &&
+        onMotif.id.startsWith('phrase:') &&
+        sha(offXml) !== sha(onXml),
+      name: 'southernrock live: ON seeds phrase (≥10 iv) + XML differs',
+      detail: phrase ? phrase.intervalSequence.length + ' ' + onMotif.id : 'no phrase',
+    });
+  }
+  clearAllFlags();
+  {
+    const vrbs = ['mahavishnu', 'weather_report', 'nile_rodgers', 'iommi', 'fripp', 'bill_evans_sax', 'hendrix'] as const;
+    let ok = true;
+    const details: string[] = [];
+    for (const vrbId of vrbs) {
+      delete process.env[RIFF_SOUTHERNROCK_MOTIF_SEED_ENV];
+      resetRiffPhraseMotifSeedCacheForTests();
+      const off = sha(xmlOf(buildRiffScoreModel(baseParams(1, vrbId)).score));
+      process.env[RIFF_SOUTHERNROCK_MOTIF_SEED_ENV] = '1';
+      resetRiffPhraseMotifSeedCacheForTests();
+      const on = sha(xmlOf(buildRiffScoreModel(baseParams(1, vrbId)).score));
+      if (off !== on) {
+        ok = false;
+        details.push(vrbId);
+      }
+    }
+    out.push({
+      ok,
+      name: 'southernrock flag ON: non-led_zeppelin VRBs byte-identical',
       detail: details.join(',') || 'ok',
     });
   }

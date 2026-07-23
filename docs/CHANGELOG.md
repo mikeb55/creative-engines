@@ -11,6 +11,8 @@
 
 ### Added
 
+- **Riff phrase motif-seed — southern_rock→led_zeppelin** — Eighth pairing: `COMPOSER_OS_RIFF_SOUTHERNROCK_MOTIF_SEED` (default OFF) + RiffGen checkbox. Best-fit major/Mixolydian twin-guitar swagger (`led_zeppelin` Page multi-mode; distinct from `hendrix` blues_rock). Confirm seeds **1 / 2 / 3** (≥10 iv). Fidelity ON cos **0.78 / 0.95 / 0.97**; seed **3** hard FAIL→PASS (integrity flip). Regression: only `led_zeppelin` changes. Examples: `output/riff-southernrock-motif-seed-poc/`.
+
 - **Riff phrase corpus ingest — Virtuoso Technique** — Real GP5 ingest for `virtuoso_technique` (Scott Allen *50 Rock Virtuoso Licks You MUST Know* — sa50rvl-01–10, 31–36, 45–49): **21**/21 parseOk · **27** phrases. Magic bytes confirmed `FICHIER GUITAR PRO v5.00` on all files (not PTB). meterMismatch **0**; droppedOrnaments **0**; tieFixups on `04`/`09` (**2**), `32` (**4**), `45` (**8**). `TARGET_COUNTS.virtuoso_technique` **6→21**; `RIFF_PHRASE_CORPUS_TARGET_TOTAL` **156→171**. Derived **193** files / **345** phrases. **All 11 planned categories populated** — no empty stubs remain. Motif-seed pairing deferred (technique showcase, not genre-authentic).
 
 - **Riff phrase corpus ingest — Progressive Blues** — Real GP5 ingest for `progressive_blues` (PTB→GP5 re-export): **26**/26 parseOk · **34** phrases (CC50PBL-01–13, 38–50). meterMismatch **0**; droppedOrnaments on several files (max **3** on `02`); tieFixups common (max **16** on `02`). `TARGET_COUNTS.progressive_blues` **4→26**; `RIFF_PHRASE_CORPUS_TARGET_TOTAL` **134→156**. Derived **172** files / **318** phrases. Empty stub: `virtuoso_technique`. Motif-seed pairing deferred.

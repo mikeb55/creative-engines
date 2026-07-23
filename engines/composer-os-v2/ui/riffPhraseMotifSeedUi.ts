@@ -18,6 +18,7 @@ export const RIFF_PHRASE_MOTIF_SEED_UI_PAIRINGS: readonly RiffPhraseMotifSeedUiP
   { vrbId: 'nile_rodgers', category: 'black_soul_funk', lickLabel: 'black soul funk' },
   { vrbId: 'bill_evans_sax', category: 'bebop_jazz_blues', lickLabel: 'bebop jazz blues' },
   { vrbId: 'hendrix', category: 'blues_rock', lickLabel: 'blues-rock' },
+  { vrbId: 'led_zeppelin', category: 'southern_rock', lickLabel: 'southern rock' },
 ] as const;
 
 export function vrbHasPhraseMotifSeedPairing(vrbId: string | undefined): boolean {
