@@ -560,6 +560,13 @@ function getIntervalTarget(songwriterId?: string): {
     case 'joni_mitchell':
       // Mitchell SQ — quartal steps + fourths/fifths; lyrical skips; no tritone obsession
       return { steps: 0.52, skips: 0.28, leaps: 0.14, wideLeaps: 0.06, min: 1, max: 10 };
+    case 'hendrix':
+      // Blues-rock lead — pentatonic skips (m3) + P4 cells; fewer jazz steps; occasional wide
+      return { steps: 0.32, skips: 0.38, leaps: 0.22, wideLeaps: 0.08, min: 1, max: 10 };
+    case 'led_zeppelin':
+    case 'iommi':
+      // Hard / modal rock riff — P4–P5 leaps + wide power motion; steps secondary
+      return { steps: 0.22, skips: 0.22, leaps: 0.36, wideLeaps: 0.20, min: 1, max: 12 };
     default:
       // Universal jazz target
       return { steps: 0.55, skips: 0.25, leaps: 0.15, wideLeaps: 0.05, min: 1, max: 8 };

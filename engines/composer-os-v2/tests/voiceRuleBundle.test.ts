@@ -490,6 +490,9 @@ function testRiffVrbStubsRegistry(): boolean {
     sabbath.voiceId === 'iommi' &&
     iommi.riffProfile.allowPitchStreak === true &&
     hendrix.riffProfile.allowPitchStreak === false &&
+    hendrix.riffProfile.intervalWeights?.m3 === 0.28 &&
+    hendrix.riffProfile.intervalWeights?.M2 === 0.2 &&
+    hendrix.riffProfile.intervalWeights?.P4 === 0.18 &&
     nile.riffProfile.subdivisionGrid === 16 &&
     iommi.riffProfile.tritoneStable === true &&
     testLedZeppelinRiffVrbStubRegistry() &&

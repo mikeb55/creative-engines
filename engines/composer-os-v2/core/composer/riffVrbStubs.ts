@@ -488,6 +488,16 @@ export const HENDRIX: VoiceRuleBundle = {
     tritoneStable: false,
     homeChordType: 'dom7#9',
     chordQualitySet: ['dom7#9', 'min7', 'maj', '6/9', 'sus2', 'sus4', 'add9'],
+    /** Blues-rock interval economy — aligns pick bias with getIntervalTarget('hendrix'). */
+    intervalWeights: {
+      m3: 0.28,
+      M2: 0.2,
+      P4: 0.18,
+      m2: 0.12,
+      P5: 0.1,
+      M3: 0.07,
+      tritone: 0.05,
+    },
     intervalCell: { steps: [0, 3, 5, 10], transpositionMode: 'diatonic' },
     scalePool: { minorPentatonic: 0.9, bluesScale: 0.8, Mixolydian: 0.6, Dorian: 0.4 },
     registerAnchor: 'mid_register',
