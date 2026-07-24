@@ -1,6 +1,6 @@
 {
-  "sourceCommit": "43808d74ee10325fa117ce0bc785cffa1b162e1d",
-  "generatedAt": "2026-07-13T07:37:20.780Z",
+  "sourceCommit": "eab9fccbd8d2b00c9425738112609fd58a2cacf6",
+  "generatedAt": "2026-07-24T11:25:05.284Z",
   "shippedSummary": {
     "primaryOrderCount": 42,
     "singerSongwriterOrderCount": 1,
@@ -49,7 +49,7 @@
       "partial": false,
       "arrangementPath": null,
       "sliceFile": "engines/composer-os-v2/core/song-mode/filmSoundtrackHarmonySlices.ts",
-      "lastVerified": "2026-07-12T23:43:34+01:00",
+      "lastVerified": "2026-07-13T16:09:48+01:00",
       "quality": null,
       "status": "Library only"
     },
@@ -217,7 +217,7 @@
       "partial": false,
       "arrangementPath": null,
       "sliceFile": "engines/composer-os-v2/core/song-mode/filmSoundtrackHarmonySlices.ts",
-      "lastVerified": "2026-07-12T23:43:34+01:00",
+      "lastVerified": "2026-07-13T16:09:48+01:00",
       "quality": null,
       "status": "Library only"
     },
@@ -567,7 +567,7 @@
       "partial": false,
       "arrangementPath": null,
       "sliceFile": "engines/composer-os-v2/core/song-mode/filmSoundtrackHarmonySlices.ts",
-      "lastVerified": "2026-07-12T23:43:34+01:00",
+      "lastVerified": "2026-07-13T16:09:48+01:00",
       "quality": null,
       "status": "Library only"
     },
@@ -651,7 +651,7 @@
       "partial": false,
       "arrangementPath": null,
       "sliceFile": "engines/composer-os-v2/core/song-mode/filmSoundtrackHarmonySlices.ts",
-      "lastVerified": "2026-07-12T23:43:34+01:00",
+      "lastVerified": "2026-07-13T16:09:48+01:00",
       "quality": null,
       "status": "Library only"
     },
@@ -777,7 +777,7 @@
       "partial": false,
       "arrangementPath": null,
       "sliceFile": "engines/composer-os-v2/core/song-mode/filmSoundtrackHarmonySlices.ts",
-      "lastVerified": "2026-07-12T23:43:34+01:00",
+      "lastVerified": "2026-07-13T16:09:48+01:00",
       "quality": null,
       "status": "Library only"
     },
@@ -791,9 +791,23 @@
       "partial": false,
       "arrangementPath": null,
       "sliceFile": "engines/composer-os-v2/core/goldenPath/jim_hall.ts",
-      "lastVerified": "2026-05-09T09:38:46+01:00",
+      "lastVerified": "2026-07-13T12:06:49+01:00",
       "quality": null,
       "status": "Ready"
+    },
+    {
+      "id": "jimmy_herring",
+      "displayName": "Jimmy Herring",
+      "shipped": false,
+      "shippedGroup": null,
+      "wired": true,
+      "smoke": false,
+      "partial": false,
+      "arrangementPath": null,
+      "sliceFile": "engines/composer-os-v2/core/goldenPath/holdsworthScaleSlice.ts",
+      "lastVerified": "2026-06-05T18:34:57+01:00",
+      "quality": null,
+      "status": "Library only"
     },
     {
       "id": "joe_pass",
@@ -805,7 +819,7 @@
       "partial": false,
       "arrangementPath": null,
       "sliceFile": "engines/composer-os-v2/core/goldenPath/jim_hall.ts",
-      "lastVerified": "2026-05-09T09:38:46+01:00",
+      "lastVerified": "2026-07-13T12:06:49+01:00",
       "quality": null,
       "status": "Library only"
     },
@@ -861,7 +875,7 @@
       "partial": false,
       "arrangementPath": null,
       "sliceFile": "engines/composer-os-v2/core/song-mode/filmSoundtrackHarmonySlices.ts",
-      "lastVerified": "2026-07-12T23:43:34+01:00",
+      "lastVerified": "2026-07-13T16:09:48+01:00",
       "quality": null,
       "status": "Library only"
     },
@@ -973,7 +987,7 @@
       "partial": false,
       "arrangementPath": null,
       "sliceFile": "engines/composer-os-v2/core/goldenPath/laloSchifrinSlice.ts",
-      "lastVerified": "2026-06-05T14:00:34+01:00",
+      "lastVerified": "2026-07-13T16:09:48+01:00",
       "quality": null,
       "status": "Library only"
     },
@@ -1057,7 +1071,7 @@
       "partial": false,
       "arrangementPath": null,
       "sliceFile": "engines/composer-os-v2/core/goldenPath/mccoy_tyner.ts",
-      "lastVerified": "2026-05-24T07:16:49-04:00",
+      "lastVerified": "2026-07-13T12:35:07+01:00",
       "quality": null,
       "status": "Ready, smoke gap"
     },
@@ -1071,7 +1085,7 @@
       "partial": false,
       "arrangementPath": "Auditions on Song Mode duo path; no dedicated native ensemble surface.",
       "sliceFile": "engines/composer-os-v2/core/goldenPath/messiaen.ts",
-      "lastVerified": "2026-05-11T12:19:09+01:00",
+      "lastVerified": "2026-07-13T10:54:08+01:00",
       "quality": null,
       "status": "Ready"
     },
@@ -1099,7 +1113,7 @@
       "partial": false,
       "arrangementPath": null,
       "sliceFile": "engines/composer-os-v2/core/song-mode/filmSoundtrackHarmonySlices.ts",
-      "lastVerified": "2026-07-12T23:43:34+01:00",
+      "lastVerified": "2026-07-13T16:09:48+01:00",
       "quality": null,
       "status": "Library only"
     },
@@ -1197,7 +1211,7 @@
       "partial": false,
       "arrangementPath": null,
       "sliceFile": "engines/composer-os-v2/core/song-mode/filmSoundtrackHarmonySlices.ts",
-      "lastVerified": "2026-07-12T23:43:34+01:00",
+      "lastVerified": "2026-07-13T16:09:48+01:00",
       "quality": null,
       "status": "Library only"
     },
@@ -1426,6 +1440,20 @@
       "status": "Library only"
     },
     {
+      "id": "sq_vrb_messiaen",
+      "displayName": "Messiaen (SQ VRB)",
+      "shipped": false,
+      "shippedGroup": null,
+      "wired": false,
+      "smoke": false,
+      "partial": false,
+      "arrangementPath": null,
+      "sliceFile": null,
+      "lastVerified": null,
+      "quality": null,
+      "status": "Library only"
+    },
+    {
       "id": "stephen_sondheim",
       "displayName": "Stephen Sondheim",
       "shipped": true,
@@ -1561,7 +1589,7 @@
       "partial": false,
       "arrangementPath": null,
       "sliceFile": "engines/composer-os-v2/core/goldenPath/jim_hall.ts",
-      "lastVerified": "2026-05-09T09:38:46+01:00",
+      "lastVerified": "2026-07-13T12:06:49+01:00",
       "quality": null,
       "status": "Library only"
     },
