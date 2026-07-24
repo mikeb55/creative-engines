@@ -96,6 +96,7 @@ export function evaluateHardGates(
     presetId: context.presetId,
     endingContext: context.generationMetadata?.endingContext,
     acknowledgeOpenIdiomEnding: context.generationMetadata?.acknowledgeOpenIdiomEnding,
+    openIdiomDefault: context.generationMetadata?.openIdiomDefault,
     finalBar: VERLAINE_GBD_EVAL_TOTAL_BARS,
   });
 

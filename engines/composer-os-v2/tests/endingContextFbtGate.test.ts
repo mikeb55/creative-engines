@@ -64,6 +64,14 @@ export function runEndingContextFbtTests(): Array<{ name: string; ok: boolean; d
       'open_idiom'
   );
   push(
+    'openIdiomDefault promotes open_idiom',
+    resolveEndingContext({ presetId: 'song_mode', openIdiomDefault: true }) === 'open_idiom'
+  );
+  push(
+    'openIdiomDefault OFF leaves terminal',
+    resolveEndingContext({ presetId: 'song_mode', openIdiomDefault: false }) === 'terminal'
+  );
+  push(
     'explicit loop wins over non-riff preset',
     resolveEndingContext({ presetId: 'song_mode', endingContext: 'loop' }) === 'loop'
   );
@@ -117,6 +125,32 @@ export function runEndingContextFbtTests(): Array<{ name: string; ok: boolean; d
     'open_idiom passes with disclosure',
     open.pass === true && open.endingContext === 'open_idiom' && !!open.disclosure,
     open.disclosure?.summary
+  );
+
+  const viaPref = evaluateFinalBarTensionGate({
+    score,
+    chords,
+    presetId: 'song_mode',
+    openIdiomDefault: true,
+  });
+  push(
+    'openIdiomDefault passes with disclosure (not silent)',
+    viaPref.pass === true &&
+      viaPref.endingContext === 'open_idiom' &&
+      !!viaPref.disclosure &&
+      viaPref.disclosure.viaOpenIdiomDefault === true,
+    viaPref.disclosure?.summary
+  );
+
+  const prefOff = evaluateFinalBarTensionGate({
+    score,
+    chords,
+    presetId: 'song_mode',
+    openIdiomDefault: false,
+  });
+  push(
+    'openIdiomDefault OFF still terminal-fails G7alt',
+    prefOff.pass === false && prefOff.endingContext === 'terminal' && !prefOff.disclosure
   );
 
   const tonicChords = [...chords.slice(0, 11), 'Bbmaj9'];

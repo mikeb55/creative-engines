@@ -177,11 +177,13 @@ Numeric threshold is **unchanged**: tension **> 0.7** still fails when the gate 
 |---------|---------|-------------------------------|-------|
 | `terminal` | Song Mode, leadsheets, charts, non-riff presets | **Yes** | Classic accidental / unresolved ending hard gate |
 | `loop` | `riff_generator` | **No** | Loop-setup unresolved endings are idiomatic; do not auto-fail |
-| `open_idiom` | Via `acknowledgeOpenIdiomEnding: true` | **No** | Conscious open terminal ending; emit disclosure (UI banner), not an ordinary riff loop |
+| `open_idiom` | Via `acknowledgeOpenIdiomEnding: true` **or** user pref `openIdiomDefault: true` (default OFF) | **No** | Conscious open terminal ending; emit disclosure (UI banner), not an ordinary riff loop |
 
-Resolution order: explicit `acknowledgeOpenIdiomEnding` → `open_idiom`; else explicit `endingContext`; else `riff_generator` → `loop`; else `terminal`.
+Resolution order: `acknowledgeOpenIdiomEnding` **or** `openIdiomDefault` → `open_idiom`; else explicit `endingContext`; else `riff_generator` → `loop`; else `terminal`.
 
-Modules: `engines/composer-os-v2/core/gce/endingContext.ts`, `finalBarTensionGate.ts`. Golden-path stamps metadata after context build. Cross-ref: `docs/GCE_FRAMEWORK_V2.md` hard-gate note.
+`openIdiomDefault` is UX calibration only (persisted preference; default OFF). It does **not** change the numeric threshold. Opted-in unresolved terminal endings surface the same disclosure UX as per-generate ack.
+
+Modules: `engines/composer-os-v2/core/gce/endingContext.ts`, `finalBarTensionGate.ts`. UI: `apps/composer-os-app/src/preferences/openIdiomDefault.ts`. Golden-path stamps metadata after context build. Cross-ref: `docs/GCE_FRAMEWORK_V2.md` hard-gate note.
 
 ---
 

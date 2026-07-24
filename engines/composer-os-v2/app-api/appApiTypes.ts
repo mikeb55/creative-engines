@@ -489,7 +489,7 @@ export interface GenerateRequest {
   /**
    * GCE finalBarTension ending model override.
    * Default: `riff_generator` → `loop`; all other presets → `terminal`.
-   * `open_idiom` (or {@link acknowledgeOpenIdiomEnding}) skips FBT auto-fail with disclosure.
+   * `open_idiom` (or {@link acknowledgeOpenIdiomEnding} / {@link openIdiomDefault}) skips FBT auto-fail with disclosure.
    */
   endingContext?: import('../core/gce/endingContext').EndingContext;
   /**
@@ -497,6 +497,12 @@ export interface GenerateRequest {
    * Not needed for ordinary riff loops (`loop` default). Chord-loop-trust style disclosure only.
    */
   acknowledgeOpenIdiomEnding?: boolean;
+  /**
+   * User-level preference (default OFF): when true, same as acknowledgeOpenIdiomEnding —
+   * unresolved terminal endings pass with disclosure instead of hard-fail.
+   * Does not change the numeric >0.7 threshold; UX calibration only.
+   */
+  openIdiomDefault?: boolean;
   /** Riff Generator: odd-meter template overlay (fusion / art_rock). */
   riffOddMeterPreset?:
     | 'meter5'

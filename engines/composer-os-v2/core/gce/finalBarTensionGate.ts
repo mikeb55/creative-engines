@@ -4,6 +4,7 @@
  * Numeric threshold unchanged: tension > FINAL_BAR_TENSION_HARD_GATE fails in `terminal` context only.
  * `loop` (riff_generator default): never auto-fails (loop-setup tension expected).
  * `open_idiom`: never auto-fails; emits disclosure (chord-loop-trust style acknowledgment surface).
+ * User preference `openIdiomDefault` (default OFF) promotes terminal → open_idiom when set.
  */
 
 import type { ScoreModel } from '../score-model/scoreModelTypes';
@@ -22,6 +23,8 @@ export interface OpenIdiomEndingDisclosure {
   finalBar: number;
   /** Short musician-facing note for UI banner. */
   summary: string;
+  /** True when open_idiom came from user-level `openIdiomDefault` preference. */
+  viaOpenIdiomDefault?: true;
 }
 
 export interface FinalBarTensionGateInput {
@@ -31,6 +34,8 @@ export interface FinalBarTensionGateInput {
   endingContext?: EndingContext | null;
   presetId?: string | null;
   acknowledgeOpenIdiomEnding?: boolean | null;
+  /** User preference (default OFF): same gate treatment as acknowledgeOpenIdiomEnding. */
+  openIdiomDefault?: boolean | null;
   /** Override final bar index (1-based). Default: chords.length. */
   finalBar?: number;
 }
@@ -102,6 +107,7 @@ export function evaluateFinalBarTensionGate(input: FinalBarTensionGateInput): Fi
     presetId: input.presetId,
     endingContext: input.endingContext,
     acknowledgeOpenIdiomEnding: input.acknowledgeOpenIdiomEnding,
+    openIdiomDefault: input.openIdiomDefault,
   });
   const { tension, finalChord, finalBar } = computeFinalBarTensionProxy(
     input.score,
@@ -114,14 +120,17 @@ export function evaluateFinalBarTensionGate(input: FinalBarTensionGateInput): Fi
 
   let disclosure: OpenIdiomEndingDisclosure | null = null;
   if (endingContext === 'open_idiom' && wouldFailTerminal) {
+    const viaDefault = input.openIdiomDefault === true;
     disclosure = {
       acknowledged: true,
       endingContext: 'open_idiom',
       finalChord,
       tension,
       finalBar,
-      summary:
-        'Open ending acknowledged — final bar stays unresolved on purpose (finalBarTension would fail under terminal rules).',
+      summary: viaDefault
+        ? 'Open ending via preference (openIdiomDefault) — final bar stays unresolved on purpose (finalBarTension would fail under terminal rules).'
+        : 'Open ending acknowledged — final bar stays unresolved on purpose (finalBarTension would fail under terminal rules).',
+      ...(viaDefault ? { viaOpenIdiomDefault: true as const } : {}),
     };
   }
 
@@ -153,6 +162,7 @@ export function finalBarTensionHardGatePass(
     endingContext?: EndingContext | null;
     presetId?: string | null;
     acknowledgeOpenIdiomEnding?: boolean | null;
+    openIdiomDefault?: boolean | null;
     finalBar?: number;
   }
 ): boolean {
@@ -162,6 +172,7 @@ export function finalBarTensionHardGatePass(
     endingContext: opts?.endingContext,
     presetId: opts?.presetId,
     acknowledgeOpenIdiomEnding: opts?.acknowledgeOpenIdiomEnding,
+    openIdiomDefault: opts?.openIdiomDefault,
     finalBar: opts?.finalBar,
   }).pass;
 }

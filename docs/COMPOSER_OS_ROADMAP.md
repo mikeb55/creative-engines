@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-07-23]
+# Composer OS Roadmap [2026-07-24]
 
 ## âœ… Active Now (top priority â€” everything below is backlog)
 
@@ -7,7 +7,7 @@
 | Lane | Status |
 |------|--------|
 | **Riff chord-loop trust** | **Phase 1 SHIPPED** — post-gen `chordLoopDisclosure` + banner (null→Am7 no longer silent) · **Phase 2** inline token badges + preflight · **Phase 3** ack gating + per-token fallback picker (not started; no polychord grammar) |
-| **GCE endingContext** | **SHIPPED** — `terminal` / `loop` / `open_idiom` for `finalBarTension` (threshold unchanged; `riff_generator` defaults `loop`) |
+| **GCE endingContext** | **SHIPPED** — `terminal` / `loop` / `open_idiom` for `finalBarTension` (threshold unchanged; `riff_generator` defaults `loop`); **`openIdiomDefault`** user pref (default OFF) → same disclosure UX as ack |
 | **Riff phrase library** | **Phase 1 ingest** + **Phase 1.5 S0–S3** `#/riffgen` QA + GenerateIsland **SHIPPED** — **11** schema categories / target **171**; derived **193** files / **345** phrases; **all 11 categories populated**; **many-to-many STYLE_PAIRINGS** — **11 of 11** categories paired (**12** edges; `blues_rock`→hendrix **+** led_zeppelin; `modern_rock`→morello; `virtuoso_technique`→eddie_van_halen; `southern_rock`→jimmy_herring); **Phase 1.9** fidelity SHIPPED; flags default OFF; confirm excludes seed 1307; broader default-ON = future; **Phase 2** full staged still held · pitch **PR A/B/C** shipped · **S4-adjacent backlog:** per-phrase meter (see below) |
 | **CLOSED prior session** | CI smoke **8/8** → **0** unexpected · Score-5 (**30**) + Score-6 BB (**4**) wired · Phase 2 Batches **1–6** + Beefheart + Fela + Threadgill + **Weber** HV widen **COMPLETE** · fBT vs custom_locked bug family fully resolved · Bass-identity rhythm-cell (`bacharach` + `oliver_nelson`) **CLOSED** · jamerson RiffGen Phase E **CLOSED** · **Riff Generator Phase A + B + soft-link** **CLOSED** (chord colour + pattern soft-link, smoke **772**/141) · **Mosaic global HV** **CLOSED** · Full smoke **791**/143, known **5**, unexpected **0** |
 | **1. Phase 2 widen** | Berg + Beefheart + Fela + Threadgill + **Weber** HV walls **COMPLETE** — next: **Mosaic HV** product decision |
@@ -33,7 +33,7 @@
 | **Bacharach / Monk / Joni / SY / Zappa (premium-melody roster)** | **Registry placeholders only** â€” Song Mode slices **shipped**; premium-melody **not started** |
 | **V88 â€” BartÃ³k CLE pitch scoring** | **FROZEN** â€” eval **8.0/10** seed **61234**; **`bartokClePitchScoringGoldenMaster`** in smoke |
 | **Musician shell (desktop v1)** | **SHIPPED** â€” default **`Composer-OS.exe`** plain HTML UI; **32-bar Song Mode**; registry-driven composer list; **`COMPOSER_OS_FULL_UI=1`** â†’ React Generate |
-| **Smoke tier** | **`npm run test:composer-smoke`** — **791** PASS rows / **143** suites (2026-07-23; endingContext FBT +19 rows / +2 suites). Known fail **5** (tracked). Unexpected fail **0**. |
+| **Smoke tier** | **`npm run test:composer-smoke`** — **795** PASS rows / **143** suites (2026-07-24; `openIdiomDefault` +4 FBT rows). Known fail **5** (tracked). Unexpected fail **0**. |
 
 **Evans Musician bridge â€” DONE (2026-06-14):** **`beMusicianPremiumMelodyBridge`** wired behind Evans-only **`musicianPremiumMelody`** + Musician IPC; 32-bar tiling + co-onset seam repair merged (**`2c7bb23d`**); premium-melody fingerprint reaches final **`song_mode`** compiled/export XML on Musician/desktop path; golden oracles **byte-identical**.
 

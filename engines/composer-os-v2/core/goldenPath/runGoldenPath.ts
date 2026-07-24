@@ -1480,6 +1480,8 @@ export interface RunGoldenPathOptions {
   endingContext?: import('../gce/endingContext').EndingContext;
   /** Conscious accept of unresolved terminal ending → effective `open_idiom`. */
   acknowledgeOpenIdiomEnding?: boolean;
+  /** User preference (default OFF): same as acknowledgeOpenIdiomEnding for FBT / disclosure. */
+  openIdiomDefault?: boolean;
 }
 
 export type { MosaicPresetRole, SectionRealizationResult, AssembledScoreModel };
@@ -2248,6 +2250,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       presetId: context.presetId,
       endingContext: effectiveOptions?.endingContext,
       acknowledgeOpenIdiomEnding: effectiveOptions?.acknowledgeOpenIdiomEnding,
+      openIdiomDefault: effectiveOptions?.openIdiomDefault,
     });
     context.generationMetadata = {
       ...context.generationMetadata,

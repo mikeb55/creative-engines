@@ -193,6 +193,10 @@ import { resolveRiffSoftLinkHv } from '@composer-os/core/riff-generator/riffSoft
 import { riffChordGridWarnings } from '../utils/riffChordGridWarnings';
 import { RiffChordLoopDisclosureBanner } from '../components/riffgen/RiffChordLoopDisclosureBanner';
 import { OpenIdiomEndingDisclosureBanner } from '../components/OpenIdiomEndingDisclosureBanner';
+import {
+  readOpenIdiomDefault,
+  writeOpenIdiomDefault,
+} from '../preferences/openIdiomDefault';
 import { RiffChordLoopTokenStrip } from '../components/riffgen/RiffChordLoopTokenStrip';
 import { ComposerEraSelectOptions } from '../components/ComposerEraSelectOptions';
 import {
@@ -2931,8 +2935,8 @@ export function HomeGenerate({
   const [improvModeUi, setImprovModeUi] = useState(false);
   const [stochasticVarianceUi, setStochasticVarianceUi] = useState(0);
   const [funkGroove, setFunkGroove] = useState(false);
-  /** Terminal charts only — conscious accept of unresolved final bar (open_idiom). Not for riff loops. */
-  const [acknowledgeOpenIdiomEnding, setAcknowledgeOpenIdiomEnding] = useState(false);
+  /** User preference openIdiomDefault (localStorage; default OFF) — open_idiom FBT treatment. */
+  const [openIdiomDefault, setOpenIdiomDefault] = useState(() => readOpenIdiomDefault());
   const [generateDrumGuide, setGenerateDrumGuide] = useState(true);
   const [exportScoreMidi, setExportScoreMidi] = useState(false);
   const [bandModeEnabled, setBandModeEnabled] = useState(false);
@@ -4457,8 +4461,8 @@ export function HomeGenerate({
           ...(isGuitarBassDuoFamily(presetId) || presetId === 'song_mode'
             ? { c4Strength: c4Strength, blendStrength: blendStrength, songModeJamesBrownFunkOverlay: funkGroove }
             : {}),
-          ...(presetId !== 'riff_generator' && acknowledgeOpenIdiomEnding
-            ? { acknowledgeOpenIdiomEnding: true as const }
+          ...(presetId !== 'riff_generator' && openIdiomDefault
+            ? { openIdiomDefault: true as const, acknowledgeOpenIdiomEnding: true as const }
             : {}),
           ...(presetId === 'song_mode'
             ? {
@@ -5150,7 +5154,7 @@ export function HomeGenerate({
       gbdChromaticStrength,
       slonimskyEtudeCellFamily,
       funkGroove,
-      acknowledgeOpenIdiomEnding,
+      openIdiomDefault,
       generateDrumGuide,
       exportScoreMidi,
       bandModeEnabled,
@@ -8666,13 +8670,18 @@ export function HomeGenerate({
               >
                 <input
                   type="checkbox"
-                  checked={acknowledgeOpenIdiomEnding}
-                  onChange={(e) => setAcknowledgeOpenIdiomEnding(e.target.checked)}
+                  checked={openIdiomDefault}
+                  onChange={(e) => {
+                    const next = e.target.checked;
+                    setOpenIdiomDefault(next);
+                    writeOpenIdiomDefault(next);
+                  }}
                   style={{ marginTop: 3 }}
                 />
                 <span>
-                  Acknowledge open/unresolved ending (finalBarTension) — intentional terminal close; not
-                  needed for riff loops
+                  Allow open/unresolved endings by default (<code>openIdiomDefault</code>) — saves
+                  preference; unresolved terminal closes use open_idiom disclosure (not hard-fail).
+                  Default off. Not needed for riff loops.
                 </span>
               </label>
             ) : null}

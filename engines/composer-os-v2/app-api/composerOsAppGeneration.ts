@@ -1728,6 +1728,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     songModeHookFirstIdentity: true,
     ...(req.endingContext ? { endingContext: req.endingContext } : {}),
     ...(req.acknowledgeOpenIdiomEnding === true ? { acknowledgeOpenIdiomEnding: true } : {}),
+    ...(req.openIdiomDefault === true ? { openIdiomDefault: true } : {}),
     ...(mosaicPlan.length >= 2 ? { mosaicSectionPlan: mosaicPlan } : {}),
     ...(req.mosaicOutputFormat ? { mosaicOutputFormat: req.mosaicOutputFormat } : {}),
     /** Explicit default matches UI default when `styleProfile` omitted (legacy clients). */
@@ -3671,5 +3672,6 @@ export function songModeFullGenMergeHarmonicVoice(
     ...base,
     ...(req.endingContext ? { endingContext: req.endingContext } : {}),
     ...(req.acknowledgeOpenIdiomEnding === true ? { acknowledgeOpenIdiomEnding: true } : {}),
+    ...(req.openIdiomDefault === true ? { openIdiomDefault: true } : {}),
   });
 }

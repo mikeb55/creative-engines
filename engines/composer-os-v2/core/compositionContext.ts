@@ -574,6 +574,11 @@ export interface GenerationMetadata {
   endingContext?: import('./gce/endingContext').EndingContext;
   /** When true, promotes endingContext to `open_idiom` (conscious accept of unresolved terminal ending). */
   acknowledgeOpenIdiomEnding?: boolean;
+  /**
+   * User preference (default OFF): same promotion as acknowledgeOpenIdiomEnding.
+   * UX calibration — opted-in unresolved terminal endings get open_idiom disclosure, not hard-fail.
+   */
+  openIdiomDefault?: boolean;
   /** Mosaic Mode — per-section songwriter routing (Step 1); 2+ entries enables duo mode in {@link resolveMosaicSectionStyles}. */
   mosaicSectionPlan?: Array<{
     sectionLabel: string;

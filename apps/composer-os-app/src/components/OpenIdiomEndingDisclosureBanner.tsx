@@ -32,7 +32,8 @@ export function OpenIdiomEndingDisclosureBanner({
       </p>
       <p style={{ margin: 0, color: 'var(--text-muted)' }}>
         {disclosure.summary} Final chord <code>{disclosure.finalChord || '(empty)'}</code> (bar{' '}
-        {disclosure.finalBar}, tension {disclosure.tension.toFixed(2)}).
+        {disclosure.finalBar}, tension {disclosure.tension.toFixed(2)}
+        {disclosure.viaOpenIdiomDefault ? '; preference openIdiomDefault' : ''}).
       </p>
     </div>
   );

@@ -56,9 +56,10 @@ Numeric threshold **unchanged** (`> 0.7`). Auto-fail depends on `endingContext`:
 |-----------------|---------|-------------------------------|
 | `terminal` | Song Mode, leadsheets, standalone final charts | **Yes** — unresolved ending is a genuine flaw |
 | `loop` | `riff_generator` (riffs cycle to bar 1) | **No** — tense/unresolved loop closes are expected; do **not** flag as a flaw |
-| `open_idiom` | Explicit `acknowledgeOpenIdiomEnding` | **No** — intentional open terminal ending; requires disclosure, not a silent pass/fail |
+| `open_idiom` | Explicit `acknowledgeOpenIdiomEnding` **or** user pref `openIdiomDefault` (default OFF) | **No** — intentional open terminal ending; requires disclosure, not a silent pass/fail |
 
 Detail: `docs/GCE_FRAMEWORK_V2.md` Hard Gates · `docs/GCE_LOCK_DCR_STANDARDS.md` §3.1a · modules `endingContext.ts` / `finalBarTensionGate.ts`.
+UI pref: `apps/composer-os-app/src/preferences/openIdiomDefault.ts` (`composerOs.openIdiomDefault` localStorage).
 
 ---
 ## Short-form / fragments

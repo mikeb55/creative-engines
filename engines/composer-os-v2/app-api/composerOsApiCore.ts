@@ -769,6 +769,7 @@ export function apiGenerate(
           ? body.endingContext
           : undefined,
       acknowledgeOpenIdiomEnding: body.acknowledgeOpenIdiomEnding === true ? true : undefined,
+      openIdiomDefault: body.openIdiomDefault === true ? true : undefined,
       riffOddMeterPreset:
         body.riffOddMeterPreset === 'meter5' ||
         body.riffOddMeterPreset === 'meter7' ||

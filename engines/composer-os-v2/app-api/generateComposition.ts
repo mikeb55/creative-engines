@@ -829,6 +829,8 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
     acknowledgeOpenIdiomEnding:
       result.context.generationMetadata.acknowledgeOpenIdiomEnding === true ||
       req.acknowledgeOpenIdiomEnding === true,
+    openIdiomDefault:
+      result.context.generationMetadata.openIdiomDefault === true || req.openIdiomDefault === true,
   });
   let openIdiomEndingDisclosure: import('../core/gce/finalBarTensionGate').OpenIdiomEndingDisclosure | undefined;
   if (endingContextResolved === 'open_idiom' && result.score) {
@@ -840,6 +842,8 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       chords: strip,
       endingContext: 'open_idiom',
       presetId: req.presetId,
+      openIdiomDefault:
+        result.context.generationMetadata.openIdiomDefault === true || req.openIdiomDefault === true,
     });
     if (fbt.disclosure) openIdiomEndingDisclosure = fbt.disclosure;
   }

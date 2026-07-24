@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+### Added
+
+- **`openIdiomDefault` UX calibration** — User preference (default **OFF**; `composerOs.openIdiomDefault` localStorage) treats unresolved terminal endings like `open_idiom`: FBT auto-fail exempt + chord-loop-trust style disclosure banner (not silent pass, not hard-fail). Numeric threshold unchanged (`> 0.7`). Opt-in only — default preserves terminal hard-fail. Modules: `endingContext.ts` (`wantsOpenIdiomEnding`), `finalBarTensionGate.ts`, `apps/composer-os-app/src/preferences/openIdiomDefault.ts`, Generate checkbox.
+
 ### Fixed
 
 - **Desktop reload after tab nav (file:// + pushState)** â€” Path-based `history.pushState('/riffgen')` became `file:///C:/riffgen` on Windows; Ctrl+R / Ctrl+Shift+R â†’ `ERR_FILE_NOT_FOUND` blank window. Fix: **hash routes** (`#/riffgen`) in `appRouter` + Electron `did-fail-load` â†’ `loadFile(index.html)` + hash restore. Soft + hard reload verified on all primary nav tabs.
