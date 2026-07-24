@@ -2,7 +2,7 @@
  * Phase 1.5 S3 — local riff generate state for RiffGen tab.
  * Copies minimal HomeGenerate riff wiring; does NOT share HomeGenerate code.
  */
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { api } from '../../services/api';
 import { mapCoreUiToGenerationFields } from '../../utils/buildGenerateRequestBody';
 import {
@@ -24,7 +24,11 @@ import {
 } from '../../types/riffGeneratorUi';
 import { vrbHasPhraseMotifSeedPairing } from '@composer-os/ui/riffPhraseMotifSeedUi';
 import type { RiffDensity, RiffGridMode, RiffLineMode } from '@composer-os/core/riff-generator/riffTypes';
-import type { RiffChordLoopDisclosure } from '@composer-os/core/riff-generator/riffChordLoop';
+import {
+  previewRiffChordLoopTokens,
+  riffChordLoopGenerateBlocked,
+  type RiffChordLoopDisclosure,
+} from '@composer-os/core/riff-generator/riffChordLoop';
 
 const STYLE_STACK = {
   primary: 'barry_harris' as const,
@@ -153,7 +157,10 @@ export function useRiffGenGenerateState() {
   const [zappaPhraseCharacter, setZappaPhraseCharacter] = useState<ZappaPhraseCharacterUi>('angular');
   const [zappaSymmetryBias, setZappaSymmetryBias] = useState<ZappaSymmetryBiasUi>('balanced');
   const [zappaChainDepth, setZappaChainDepth] = useState<ZappaChainDepthUi>(2);
-  const [chordProgressionText, setChordProgressionText] = useState('Am7 | Dm7 | G7 | Cmaj7');
+  const [chordProgressionText, setChordProgressionTextState] = useState('Am7 | Dm7 | G7 | Cmaj7');
+  /** Phase 3 soft Accept — cleared on chord text edit. */
+  const [riffChordSoftAcks, setRiffChordSoftAcks] = useState(() => new Set<string>());
+  const chordLoopInputRef = useRef<HTMLInputElement | null>(null);
   const [bpm, setBpm] = useState(120);
   const [baseSeed, setBaseSeed] = useState(() => Math.floor(Math.random() * 1e9));
   const [variationId, setVariationId] = useState('v-1');
@@ -161,6 +168,17 @@ export function useRiffGenGenerateState() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<RiffGenGenerateResult | null>(null);
   const opRef = useRef<RiffGenOp>('full');
+
+  const setChordProgressionText = useCallback((next: string) => {
+    setRiffChordSoftAcks(new Set());
+    setChordProgressionTextState(next);
+  }, []);
+
+  const riffChordLoopBlocked = useMemo(
+    () =>
+      riffChordLoopGenerateBlocked(previewRiffChordLoopTokens(chordProgressionText), riffChordSoftAcks),
+    [chordProgressionText, riffChordSoftAcks]
+  );
 
   const onFamilyChange = useCallback((next: RiffFamilyTag) => {
     setFamily(next);
@@ -216,6 +234,10 @@ export function useRiffGenGenerateState() {
 
   const runGenerate = useCallback(
     async (op: RiffGenOp) => {
+      if (riffChordLoopBlocked) {
+        setError('Resolve flagged chord-loop tokens (Accept / Pick / Edit) before generating.');
+        return;
+      }
       opRef.current = op;
       setLoading(true);
       setError(null);
@@ -271,6 +293,7 @@ export function useRiffGenGenerateState() {
       }
     },
     [
+      riffChordLoopBlocked,
       baseSeed,
       variationId,
       bpm,
@@ -316,6 +339,9 @@ export function useRiffGenGenerateState() {
     zappaSymmetryBias,
     zappaChainDepth,
     chordProgressionText,
+    riffChordSoftAcks,
+    riffChordLoopBlocked,
+    chordLoopInputRef,
     bpm,
     baseSeed,
     variationId,
@@ -337,6 +363,7 @@ export function useRiffGenGenerateState() {
     setZappaSymmetryBias,
     setZappaChainDepth,
     setChordProgressionText,
+    setRiffChordSoftAcks,
     setBpm,
     setBaseSeed,
     onFamilyChange,

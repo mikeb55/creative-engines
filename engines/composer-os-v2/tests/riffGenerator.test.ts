@@ -7,6 +7,13 @@ import * as os from 'os';
 import * as path from 'path';
 import { runRiffGenerator } from '../core/riff-generator/runRiffGenerator';
 import { normalizeChordLoop, normalizeChordLoopWithDisclosure } from '../core/riff-generator/riffChordLoop';
+import {
+  previewRiffChordLoopTokens,
+  replaceRiffChordLoopTokenAt,
+  riffChordLoopGenerateBlocked,
+  riffChordTokenAckKey,
+  riffChordTokenGateKind,
+} from '../core/riff-generator/riffChordLoop';
 import { parseChordsFromPipeDelimited } from '../core/harmony/chordProgressionParser';
 import { runRiffGeneratorApp } from '../app-api/riffGeneratorApp';
 import type { ScoreModel } from '../core/score-model/scoreModelTypes';
@@ -177,6 +184,42 @@ export function runRiffGeneratorTests(): { ok: boolean; name: string }[] {
     out.push({
       ok,
       name: 'runRiffGenerator: chordLoopDisclosure surfaces unsupported Am7 fill',
+    });
+  }
+
+  {
+    const empty = previewRiffChordLoopTokens('');
+    const valid = previewRiffChordLoopTokens('Am7 | Dm7');
+    const norm = previewRiffChordLoopTokens('Cmin7 | Dm7');
+    const bad = previewRiffChordLoopTokens('Cmaj7 | NOTACHORD | Dm7');
+    const softAcks = new Set<string>();
+    const softKey = riffChordTokenAckKey({
+      index: 0,
+      token: 'Cmin7',
+      usedSymbol: 'Cm7',
+    });
+    const okEmpty = empty.length === 0 && !riffChordLoopGenerateBlocked(empty, softAcks);
+    const okValid =
+      valid.every((t) => riffChordTokenGateKind(t.status) === 'none') &&
+      !riffChordLoopGenerateBlocked(valid, softAcks);
+    const okNormBlocked =
+      norm[0]?.status === 'normalized' &&
+      riffChordTokenGateKind(norm[0]!.status) === 'soft' &&
+      riffChordLoopGenerateBlocked(norm, softAcks);
+    softAcks.add(softKey);
+    const okNormAcked = !riffChordLoopGenerateBlocked(norm, softAcks);
+    const okHard =
+      bad.some((t) => t.status === 'unsupported') &&
+      riffChordLoopGenerateBlocked(bad, new Set());
+    const replaced = replaceRiffChordLoopTokenAt('Cmaj7 | NOTACHORD | Dm7', 1, 'Am7');
+    const afterPick = previewRiffChordLoopTokens(replaced);
+    const okPick =
+      replaced.includes('Am7') &&
+      afterPick[1]?.status === 'valid' &&
+      !riffChordLoopGenerateBlocked(afterPick, new Set());
+    out.push({
+      ok: okEmpty && okValid && okNormBlocked && okNormAcked && okHard && okPick,
+      name: 'Phase 3 chord-loop gate: empty ungated / valid free / soft ack / hard pick',
     });
   }
 

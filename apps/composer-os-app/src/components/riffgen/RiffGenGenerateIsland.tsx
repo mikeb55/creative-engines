@@ -166,6 +166,7 @@ export function RiffGenGenerateIsland() {
         <label style={{ fontSize: '0.85rem', flex: '1 1 280px' }}>
           Chord loop (optional){' '}
           <input
+            ref={s.chordLoopInputRef}
             type="text"
             value={s.chordProgressionText}
             onChange={(e) => s.setChordProgressionText(e.target.value)}
@@ -173,9 +174,29 @@ export function RiffGenGenerateIsland() {
             placeholder="Am7 | Dm7 | G7 | Cmaj7"
             style={{ ...inputStyle, width: '100%', display: 'block' }}
           />
-          <RiffChordLoopTokenStrip value={s.chordProgressionText} disabled={s.loading} />
+          <RiffChordLoopTokenStrip
+            value={s.chordProgressionText}
+            disabled={s.loading}
+            softAcks={s.riffChordSoftAcks}
+            onSoftAcksChange={s.setRiffChordSoftAcks}
+            onChange={s.setChordProgressionText}
+            onRequestEdit={() => {
+              s.chordLoopInputRef.current?.focus();
+              s.chordLoopInputRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }}
+          />
         </label>
-        <button type="button" style={inputStyle} disabled={s.loading} onClick={s.generate}>
+        <button
+          type="button"
+          style={inputStyle}
+          disabled={s.loading || s.riffChordLoopBlocked}
+          title={
+            s.riffChordLoopBlocked
+              ? 'Resolve flagged chord-loop tokens before generating'
+              : undefined
+          }
+          onClick={s.generate}
+        >
           {s.loading ? 'Generating…' : 'Generate riff'}
         </button>
       </div>
@@ -195,7 +216,7 @@ export function RiffGenGenerateIsland() {
         onRiffPhraseMotifSeedChange={s.setRiffPhraseMotifSeed}
         barLocks={s.barLocks}
         gateMessages={s.gateMessages}
-        canRegenerateMutate={s.carryForward != null}
+        canRegenerateMutate={s.carryForward != null && !s.riffChordLoopBlocked}
         zappaAdvancedOpen={s.zappaAdvancedOpen}
         zappaStyleMode={s.zappaStyleMode}
         zappaEraPreset={s.zappaEraPreset}

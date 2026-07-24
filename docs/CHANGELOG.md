@@ -2,6 +2,8 @@
 
 ### Added
 
+- **Riff chord-loop trust Phase 3** — Ack gating on Chord loop (Home riff + RiffGen): `valid` free; `normalized` soft-gated (Accept rewrite ack); `unsupported`/`invalid` hard-gated (Pick fallback rewrite or Edit). Generate / Try Another / Demo / Regenerate / Mutate disabled while unresolved. Empty loop stays ungated. TokenStrip clickable Accept / Pick / Edit. Soft acks clear on text edit. Phase 1 post-gen disclosure banner unchanged. No confidence scores / polychord. Core: `riffChordLoop.ts` gate helpers; UI: `RiffChordLoopTokenStrip`, `HomeGenerate`, `useRiffGenGenerateState`. Smoke **796**/143 (+1 gate row).
+
 - **RiffGen — Export Guitar Pro** — Generate-island result reuses existing MuseScore CLI path (`api.exportGuitarPro`) on the written MusicXML `filepath` (sibling `.gp`). Same soft-fail when MuseScore missing as vault tools.
 
 - **RiffGen — Corpus details collapse** — `RiffGenCorpusQaPanel` (histograms / ingest QA) sits behind a default-closed **Corpus details** `<details>` on `RiffGenPage`; data unchanged.

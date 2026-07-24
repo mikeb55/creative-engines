@@ -198,6 +198,10 @@ import {
   writeOpenIdiomDefault,
 } from '../preferences/openIdiomDefault';
 import { RiffChordLoopTokenStrip } from '../components/riffgen/RiffChordLoopTokenStrip';
+import {
+  previewRiffChordLoopTokens,
+  riffChordLoopGenerateBlocked,
+} from '@composer-os/core/riff-generator/riffChordLoop';
 import { ComposerEraSelectOptions } from '../components/ComposerEraSelectOptions';
 import {
   composerEraForRequest,
@@ -2873,6 +2877,9 @@ export function HomeGenerate({
   const [outputLabel, setOutputLabel] = useState('');
   /** Guitar–Bass Duo: optional chord line — 8 bars (tiled to 32 in long-form) or 32 bars (locked). When non-empty, engine uses custom harmony. */
   const [chordProgressionText, setChordProgressionText] = useState('');
+  /** Phase 3 soft Accept acks — cleared on any chord-loop text edit. */
+  const [riffChordSoftAcks, setRiffChordSoftAcks] = useState(() => new Set<string>());
+  const chordLoopInputRef = useRef<HTMLTextAreaElement | null>(null);
   /** Reharm Apply: next request uses `harmonyMode: custom` once so the engine reparses wire before LOCK assert (vs stale `custom_locked`). */
   const reharmApplyHarmonyUnlockRef = useRef(false);
   /** Song Mode: harmony-from-file path (`GenerateRequest.musicXmlSource`); overrides pasted chord line when set. */
@@ -2998,6 +3005,13 @@ export function HomeGenerate({
     () => (presetId === 'riff_generator' ? riffChordGridWarnings(chordProgressionText) : []),
     [presetId, chordProgressionText]
   );
+  const riffChordLoopBlocked = useMemo(() => {
+    if (presetId !== 'riff_generator') return false;
+    return riffChordLoopGenerateBlocked(
+      previewRiffChordLoopTokens(chordProgressionText),
+      riffChordSoftAcks
+    );
+  }, [presetId, chordProgressionText, riffChordSoftAcks]);
 
   const [loading, setLoading] = useState(false);
   const [iRealPaste, setIRealPaste] = useState('');
@@ -3894,6 +3908,15 @@ export function HomeGenerate({
       const vid = opts?.variationOverride ?? variationId;
       if (presetId === 'string_quartet' && sqArrangerGenerateBlocked) {
         setError(sqArrangerBlendUiMessage ?? 'Invalid arranger selection.');
+        notifyGenPhase('failed');
+        onResult({
+          record: {},
+          summary: { status: 'failed', at: new Date().toISOString() },
+        });
+        return;
+      }
+      if (presetId === 'riff_generator' && riffChordLoopBlocked) {
+        setError('Resolve flagged chord-loop tokens (Accept / Pick / Edit) before generating.');
         notifyGenPhase('failed');
         onResult({
           record: {},
@@ -5092,6 +5115,8 @@ export function HomeGenerate({
       sqArrangerPrimaryWeightPct,
       sqArrangerGenerateBlocked,
       sqArrangerBlendUiMessage,
+      riffChordLoopBlocked,
+      riffChordSoftAcks,
       sqBlendPreview,
       sqTextureArchetype,
       sqTritonicColour,
@@ -8105,9 +8130,11 @@ export function HomeGenerate({
             </p>
           )}
           <textarea
+            ref={chordLoopInputRef}
             value={chordProgressionText}
             onChange={(e) => {
               const v = e.target.value;
+              setRiffChordSoftAcks(new Set());
               setChordProgressionText(v);
               if (presetId === 'song_mode' && v.trim().length > 0) {
                 setMusicXmlSource('');
@@ -8138,7 +8165,20 @@ export function HomeGenerate({
             }}
           />
           {presetId === 'riff_generator' ? (
-            <RiffChordLoopTokenStrip value={chordProgressionText} disabled={loading} />
+            <RiffChordLoopTokenStrip
+              value={chordProgressionText}
+              disabled={loading}
+              softAcks={riffChordSoftAcks}
+              onSoftAcksChange={setRiffChordSoftAcks}
+              onChange={(next) => {
+                setRiffChordSoftAcks(new Set());
+                setChordProgressionText(next);
+              }}
+              onRequestEdit={() => {
+                chordLoopInputRef.current?.focus();
+                chordLoopInputRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+              }}
+            />
           ) : null}
           {presetId === 'riff_generator' && riffChordWarnings.length > 0 ? (
             <ul
@@ -9115,7 +9155,7 @@ export function HomeGenerate({
           riffSolo={riffSolo}
           barLocks={riffBarLocks}
           gateMessages={riffGateMessages}
-          canRegenerateMutate={riffCarryForward != null}
+          canRegenerateMutate={riffCarryForward != null && !riffChordLoopBlocked}
           zappaAdvancedOpen={riffZappaAdvancedOpen}
           zappaStyleMode={zappaStyleMode}
           zappaEraPreset={zappaEraPreset}
@@ -10754,13 +10794,21 @@ export function HomeGenerate({
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
         {!isSqToBbWorkflow && (
           <>
-            <button onClick={() => void generate()} disabled={loading || sqArrangerGenerateBlocked}>
+            <button
+              onClick={() => void generate()}
+              disabled={loading || sqArrangerGenerateBlocked || riffChordLoopBlocked}
+              title={
+                riffChordLoopBlocked
+                  ? 'Resolve flagged chord-loop tokens before generating'
+                  : undefined
+              }
+            >
               {loading ? 'Generating…' : 'Generate'}
             </button>
             <button
               className="secondary"
               type="button"
-              disabled={loading || sqArrangerGenerateBlocked}
+              disabled={loading || sqArrangerGenerateBlocked || riffChordLoopBlocked}
               onClick={() => {
                 const next = newVariationIdToken();
                 setVariationId(next);
@@ -10773,7 +10821,7 @@ export function HomeGenerate({
             <button
               className="secondary"
               type="button"
-              disabled={loading || sqArrangerGenerateBlocked}
+              disabled={loading || sqArrangerGenerateBlocked || riffChordLoopBlocked}
               onClick={() => {
                 setBaseSeed(42);
                 setVariationId('demo-42');

@@ -25,6 +25,12 @@ import {
 } from '../core/song-mode/songwriterStyleProfiles';
 import { RIFF_VRB_SIGMA_CEILINGS } from '../core/riff-generator/riffVrbRegistry';
 import { runRiffGeneratorApp } from '../app-api/riffGeneratorApp';
+import {
+  previewRiffChordLoopTokens,
+  replaceRiffChordLoopTokenAt,
+  riffChordLoopGenerateBlocked,
+  riffChordTokenAckKey,
+} from '../core/riff-generator/riffChordLoop';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -282,11 +288,34 @@ function testRiffPhaseAHarmonicVoiceHonestyReceipt(): boolean {
   }
 }
 
+function testRiffChordLoopPhase3Gating(): boolean {
+  const empty = previewRiffChordLoopTokens('');
+  if (empty.length !== 0 || riffChordLoopGenerateBlocked(empty, new Set())) return false;
+
+  const valid = previewRiffChordLoopTokens('Am7 | Dm7 | G7 | Cmaj7');
+  if (riffChordLoopGenerateBlocked(valid, new Set())) return false;
+
+  const soft = previewRiffChordLoopTokens('Cmin7 | Dm7');
+  if (!riffChordLoopGenerateBlocked(soft, new Set())) return false;
+  const acks = new Set([
+    riffChordTokenAckKey({ index: 0, token: 'Cmin7', usedSymbol: soft[0]!.usedSymbol }),
+  ]);
+  if (riffChordLoopGenerateBlocked(soft, acks)) return false;
+
+  const hard = previewRiffChordLoopTokens('Cmaj7 | NOTACHORD | Dm7');
+  if (!riffChordLoopGenerateBlocked(hard, new Set())) return false;
+  const picked = replaceRiffChordLoopTokenAt('Cmaj7 | NOTACHORD | Dm7', 1, 'Am7');
+  const after = previewRiffChordLoopTokens(picked);
+  if (riffChordLoopGenerateBlocked(after, new Set())) return false;
+  return true;
+}
+
 export function runRiffGeneratorIntegrationTests(): { name: string; ok: boolean }[] {
   return [
     ['RiffGenerator — family tag resolution (18 VRBs)', testRiffGeneratorFamilyTagResolution],
     ['RiffGenerator — profile completeness (no neutral fallback)', testRiffGeneratorProfileCompleteness],
     ['RiffGenerator — odd-meter overlay gating by family', testOddMeterOverlayGating],
+    ['RiffGenerator — Phase 3 chord-loop ack gating', testRiffChordLoopPhase3Gating],
     ['RiffGenerator — boundary swing ramp by family', testRiffBoundarySwingRampByFamily],
     ['RiffGenerator — VRB blend same family', testRiffVrbBlendSameFamily],
     ['RiffGenerator — VRB blend cross-family warn', testRiffVrbBlendCrossFamilyWarn],

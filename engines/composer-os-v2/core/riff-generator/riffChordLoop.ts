@@ -5,6 +5,9 @@
  * surface `RiffChordLoopDisclosure` so the UI never hides typed→used mismatches.
  *
  * Phase 2: `previewRiffChordLoopTokens` exposes per-token UI state without changing fallback.
+ *
+ * Phase 3: ack gating — soft (`normalized`) / hard (`unsupported`|`invalid`); empty input ungated.
+ * No confidence scores; no polychord grammar.
  */
 
 import {
@@ -15,11 +18,36 @@ import {
 
 const DEFAULT_VAMP = ['Am7'];
 
+/** Default Am7 fill / hard-gate picker first option. */
+export const RIFF_CHORD_DEFAULT_FALLBACK = DEFAULT_VAMP[0]!;
+
+/** Common hard-gate fallback picker options (Am7 first). */
+export const RIFF_CHORD_FALLBACK_OPTIONS: readonly string[] = [
+  'Am7',
+  'Dm7',
+  'G7',
+  'Cmaj7',
+  'Em7',
+  'A7',
+  'Cm7',
+  'Fmaj7',
+];
+
 /** Phase 1 coarse kinds — full 5-state token model lands in Phase 2+. */
 export type RiffChordTokenDisclosureKind = 'substitution' | 'unsupported';
 
 /** Phase 2 inline badge states (UI-only; fallback still Am7 for unsupported/invalid). */
 export type RiffChordTokenUiStatus = 'valid' | 'normalized' | 'unsupported' | 'invalid';
+
+/** Phase 3 gate kind — `valid` = none; `normalized` = soft; null-parse = hard. */
+export type RiffChordTokenGateKind = 'none' | 'soft' | 'hard';
+
+/** Soft Accept ack — keyed by index + typed token + interpreted symbol. */
+export interface RiffChordTokenAckEntry {
+  index: number;
+  token: string;
+  usedSymbol: string;
+}
 
 export interface RiffChordTokenDisclosure {
   originalToken: string;
@@ -257,6 +285,97 @@ export function summarizeRiffChordTokenPreviews(tokens: RiffChordTokenPreview[])
     if (t.status !== 'valid') summary.needReview += 1;
   }
   return summary;
+}
+
+/** Phase 3 — map UI status → gate kind. */
+export function riffChordTokenGateKind(status: RiffChordTokenUiStatus): RiffChordTokenGateKind {
+  if (status === 'valid') return 'none';
+  if (status === 'normalized') return 'soft';
+  return 'hard';
+}
+
+export function riffChordTokenAckKey(entry: RiffChordTokenAckEntry): string {
+  return `${entry.index}\0${entry.token}\0${entry.usedSymbol}`;
+}
+
+/** Soft-gate resolved when ack matches index + typed + interpreted. */
+export function isRiffChordTokenSoftAcknowledged(
+  token: RiffChordTokenPreview,
+  index: number,
+  acks: ReadonlySet<string>
+): boolean {
+  if (riffChordTokenGateKind(token.status) !== 'soft') return true;
+  return acks.has(
+    riffChordTokenAckKey({ index, token: token.token, usedSymbol: token.usedSymbol })
+  );
+}
+
+/**
+ * True when Generate must stay disabled.
+ * Empty preview (empty / whitespace loop) → not blocked.
+ * Soft: needs Accept ack. Hard: always blocks until text fixed/Pick rewrite (no soft ack).
+ */
+export function riffChordLoopGenerateBlocked(
+  tokens: readonly RiffChordTokenPreview[],
+  softAcks: ReadonlySet<string>
+): boolean {
+  if (tokens.length === 0) return false;
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i]!;
+    const gate = riffChordTokenGateKind(t.status);
+    if (gate === 'none') continue;
+    if (gate === 'hard') return true;
+    if (!isRiffChordTokenSoftAcknowledged(t, i, softAcks)) return true;
+  }
+  return false;
+}
+
+export function countRiffChordLoopUnresolved(
+  tokens: readonly RiffChordTokenPreview[],
+  softAcks: ReadonlySet<string>
+): { soft: number; hard: number; total: number } {
+  let soft = 0;
+  let hard = 0;
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i]!;
+    const gate = riffChordTokenGateKind(t.status);
+    if (gate === 'hard') hard += 1;
+    else if (gate === 'soft' && !isRiffChordTokenSoftAcknowledged(t, i, softAcks)) soft += 1;
+  }
+  return { soft, hard, total: soft + hard };
+}
+
+/**
+ * Replace the first chord token of pipe-cell `index` with `newToken`.
+ * Preserves cell separators; empty / missing index → returns input unchanged.
+ */
+export function replaceRiffChordLoopTokenAt(
+  input: string,
+  index: number,
+  newToken: string
+): string {
+  const trimmed = (input ?? '').trim();
+  if (!trimmed || index < 0) return input;
+  const replacement = displayToken(newToken);
+  if (!replacement) return input;
+
+  const normalized = normalizeChordProgressionSeparators(trimmed);
+  const cells = normalized.split('|');
+  let slot = 0;
+  for (let c = 0; c < cells.length; c++) {
+    const cell = cells[c]!;
+    const parts = cell.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) continue;
+    if (slot === index) {
+      parts[0] = replacement;
+      const lead = cell.match(/^\s*/)?.[0] ?? '';
+      const trail = cell.match(/\s*$/)?.[0] ?? '';
+      cells[c] = lead + parts.join(' ') + trail;
+      return cells.join('|');
+    }
+    slot += 1;
+  }
+  return input;
 }
 
 /** Expose parsed progression entries for tests / diagnostics. */

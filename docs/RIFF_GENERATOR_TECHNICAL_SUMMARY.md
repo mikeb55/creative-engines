@@ -56,7 +56,7 @@ Paths under `engines/composer-os-v2/` unless noted.
 
 | File | What it does | Inputs | Outputs |
 |------|--------------|--------|---------|
-| `core/riff-generator/riffChordLoop.ts` | Parses pipe-delimited progression; tiles to bar count; **Phase 1** `normalizeChordLoopWithDisclosure` | Chord text, bar count | One chord symbol per bar (default vamp `Am7`); optional `chordLoopDisclosure` (typed→used + bars) when null→Am7 or spelling rewrite |
+| `core/riff-generator/riffChordLoop.ts` | Parses pipe-delimited progression; tiles to bar count; **Phase 1** `normalizeChordLoopWithDisclosure`; **Phase 2** `previewRiffChordLoopTokens`; **Phase 3** soft/hard ack gate helpers | Chord text, bar count / soft-ack set | Per-bar symbols + disclosure; UI preview statuses; Generate-blocked when soft/hard unresolved (empty = ungated) |
 | `core/riff-generator/riffHvChordColour.ts` | Phase B: colour locked symbols via mosaic HV dispatch | Chord bars, HV id, seed | Coloured symbols, or **identity** if no `getDispatchEntry` / failure |
 | `app-api/riffGeneratorApp.ts` → `resolveRiffHvChordColourReadOnly` | Gates HV id when `riffUseHvForPattern === true` | `GenerateRequest` | Normalized HV id or `undefined` |
 
@@ -224,7 +224,7 @@ Default for both: **OFF**.
 3. UI VRB picker lists **16** of **17** registry ids (`jamerson` absent from catalog; `eddie_van_halen` included).  
 4. Pattern is **procedural profile + seed**; phrase corpus exists for QA but is **not** yet a generation bank.  
 5. Soft-link and chord colour are **orthogonal**; either can be on without the other.  
-6. Chord-loop trust **Phase 2/3** (inline badges / ack gating) and phrase→engine **Phase 2/3** still gated; **S4** curation (dim-line leftovers, meter-mismatch quarantine) backlog.
+6. Chord-loop trust **Phase 1–3 SHIPPED** (disclosure / inline badges / ack gating); phrase→engine **Phase 2/3** still gated; **S4** curation (dim-line leftovers, meter-mismatch quarantine) backlog.
 
 ---
 
