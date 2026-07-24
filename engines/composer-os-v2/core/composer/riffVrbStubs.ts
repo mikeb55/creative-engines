@@ -2429,7 +2429,7 @@ const JH_BASE = [
   'JH_TRUCKS_01 — Secondary: longer sustained / vocal-like phrasing; slide-inspired wide bends + slides where ornamentPolicy allows (not microtonal Indian grammar).',
   'JH_PEARSON_01 — Secondary: understated chromatic approaches to 3rds/7ths; occasional 9th/6th colour; low density of jazzy enclosures.',
   'JH_MORSE_01 — Secondary: rare odd-meter / metric-displacement moments only (sparing); default stays simple 4/4 southern swagger.',
-  'JH_DIFF_01 — vs hendrix: major/Mixolydian swagger + twin-guitar 3rds/6ths, not #9 blues-rock. vs gilmour: busier bebop-passing + Dorian colour, not sparse arena sustain. vs led_zeppelin: southern twin-lead Americana, not Page folk-modal heaviness. Dickinson open-tuning grit deferred (v1 skip).',
+  'JH_DIFF_01 — vs hendrix: major/Mixolydian swagger + twin-guitar 3rds/6ths, not #9 blues-rock. vs gilmour: busier bebop-passing + Dorian colour, not sparse arena sustain. vs led_zeppelin: southern twin-lead Americana, not Page folk-modal heaviness. Dickinson southern flavor = opt-in post-process (riffDickinsonFlavor / COMPOSER_OS_RIFF_DICKINSON_FLAVOR; default OFF).',
 ] as const;
 
 /** Jimmy Herring southern-rock lead research profile (σ27). */

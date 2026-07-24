@@ -38,6 +38,7 @@ import {
   phraseMotifSeedCheckboxLabel,
   vrbHasPhraseMotifSeedPairing,
 } from '../riffPhraseMotifSeedUi';
+import { isJimmyHerringVrb } from '../../core/riff-generator/jimmyHerringDickinsonFlavor';
 
 const labelMuted: CSSProperties = {
   display: 'block',
@@ -91,6 +92,9 @@ export type RiffGeneratorPanelProps = {
   /** Opt-in phrase-corpus motif seed (paired VRBs only). */
   riffPhraseMotifSeed?: boolean;
   onRiffPhraseMotifSeedChange?: (enabled: boolean) => void;
+  /** JH-only Dickinson southern flavor (default OFF). */
+  riffDickinsonFlavor?: boolean;
+  onRiffDickinsonFlavorChange?: (enabled: boolean) => void;
   barLocks: boolean[];
   gateMessages: string[];
   gateFailures?: GateFailure[];
@@ -138,6 +142,8 @@ export function RiffGeneratorPanel({
   riffSolo,
   riffPhraseMotifSeed = false,
   onRiffPhraseMotifSeedChange,
+  riffDickinsonFlavor = false,
+  onRiffDickinsonFlavorChange,
   barLocks,
   gateMessages,
   gateFailures,
@@ -420,6 +426,18 @@ export function RiffGeneratorPanel({
             disabled={loading}
           />
           {phraseMotifSeedCheckboxLabel(vrbId) ?? 'Seed motif from real licks'}
+        </label>
+      ) : null}
+
+      {onRiffDickinsonFlavorChange && isJimmyHerringVrb(vrbId) ? (
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem', marginTop: '0.45rem' }}>
+          <input
+            type="checkbox"
+            checked={riffDickinsonFlavor}
+            onChange={(e) => onRiffDickinsonFlavorChange(e.target.checked)}
+            disabled={loading}
+          />
+          Dickinson southern flavor (keys/slide fills — opt-in)
         </label>
       ) : null}
 

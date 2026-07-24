@@ -2957,6 +2957,21 @@ export function HomeGenerate({
   >('single_line');
   const [riffBass, setRiffBass] = useState(false);
   const [riffSolo, setRiffSolo] = useState(false);
+  const [riffDickinsonFlavor, setRiffDickinsonFlavorState] = useState(() => {
+    try {
+      return localStorage.getItem('composerOs.riffDickinsonFlavor') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const setRiffDickinsonFlavor = (enabled: boolean) => {
+    setRiffDickinsonFlavorState(enabled);
+    try {
+      localStorage.setItem('composerOs.riffDickinsonFlavor', enabled ? 'true' : 'false');
+    } catch {
+      /* ignore */
+    }
+  };
   /** Phase B Iter 1 — gate HV chord-colour read path; default OFF = Phase A honesty. */
   const [riffUseHvForPattern, setRiffUseHvForPattern] = useState(false);
   /** Soft-link: optional HV -> riffVrbId copy; default OFF. Separate from chord-colour toggle. */
@@ -4634,6 +4649,7 @@ export function HomeGenerate({
                 riffLineMode,
                 riffBass,
                 ...(riffSolo ? { riffSolo: true } : {}),
+                ...(riffDickinsonFlavor ? { riffDickinsonFlavor: true } : {}),
                 ...(chordTrim ? { chordProgressionText: chordTrim } : {}),
                 ...(isZappaRiffVrbId(riffVrbId)
                   ? {
@@ -5138,6 +5154,7 @@ export function HomeGenerate({
       riffLineMode,
       riffBass,
       riffSolo,
+      riffDickinsonFlavor,
       riffUseHvForPattern,
       riffBarLocks,
       riffCarryForward,
@@ -9153,6 +9170,8 @@ export function HomeGenerate({
           riffLineMode={riffLineMode}
           riffBass={riffBass}
           riffSolo={riffSolo}
+          riffDickinsonFlavor={riffDickinsonFlavor}
+          onRiffDickinsonFlavorChange={setRiffDickinsonFlavor}
           barLocks={riffBarLocks}
           gateMessages={riffGateMessages}
           canRegenerateMutate={riffCarryForward != null && !riffChordLoopBlocked}

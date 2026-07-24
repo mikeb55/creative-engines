@@ -214,6 +214,8 @@ export function RiffGenGenerateIsland() {
         riffSolo={s.riffSolo}
         riffPhraseMotifSeed={s.riffPhraseMotifSeed}
         onRiffPhraseMotifSeedChange={s.setRiffPhraseMotifSeed}
+        riffDickinsonFlavor={s.riffDickinsonFlavor}
+        onRiffDickinsonFlavorChange={s.setRiffDickinsonFlavor}
         barLocks={s.barLocks}
         gateMessages={s.gateMessages}
         canRegenerateMutate={s.carryForward != null && !s.riffChordLoopBlocked}

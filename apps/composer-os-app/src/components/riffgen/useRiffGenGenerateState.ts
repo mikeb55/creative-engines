@@ -23,6 +23,10 @@ import {
   type ZappaSymmetryBiasUi,
 } from '../../types/riffGeneratorUi';
 import { vrbHasPhraseMotifSeedPairing } from '@composer-os/ui/riffPhraseMotifSeedUi';
+import {
+  readRiffDickinsonFlavorDefault,
+  writeRiffDickinsonFlavorDefault,
+} from '../../preferences/riffDickinsonFlavorDefault';
 import type { RiffDensity, RiffGridMode, RiffLineMode } from '@composer-os/core/riff-generator/riffTypes';
 import {
   previewRiffChordLoopTokens,
@@ -76,6 +80,7 @@ export function buildRiffGenGeneratePayload(args: {
   riffBass: boolean;
   riffSolo: boolean;
   riffPhraseMotifSeed: boolean;
+  riffDickinsonFlavor: boolean;
   chordProgressionText: string;
   zappaStyleMode: ZappaStyleModeUi;
   zappaEraPreset: ZappaEraPresetUi;
@@ -111,6 +116,7 @@ export function buildRiffGenGeneratePayload(args: {
     riffBass: args.riffBass,
     ...(args.riffSolo ? { riffSolo: true } : {}),
     ...(args.riffPhraseMotifSeed ? { riffPhraseMotifSeed: true } : {}),
+    ...(args.riffDickinsonFlavor ? { riffDickinsonFlavor: true } : {}),
     ...(chordTrim ? { chordProgressionText: chordTrim } : {}),
     ...(isZappaRiffVrbId(args.vrbId)
       ? {
@@ -148,6 +154,13 @@ export function useRiffGenGenerateState() {
   const [riffBass, setRiffBass] = useState(false);
   const [riffSolo, setRiffSolo] = useState(false);
   const [riffPhraseMotifSeed, setRiffPhraseMotifSeed] = useState(false);
+  const [riffDickinsonFlavor, setRiffDickinsonFlavorState] = useState(() =>
+    readRiffDickinsonFlavorDefault()
+  );
+  const setRiffDickinsonFlavor = useCallback((enabled: boolean) => {
+    setRiffDickinsonFlavorState(enabled);
+    writeRiffDickinsonFlavorDefault(enabled);
+  }, []);
   const [barLocks, setBarLocks] = useState<boolean[]>([]);
   const [carryForward, setCarryForward] = useState<RiffCarryForward | null>(null);
   const [gateMessages, setGateMessages] = useState<string[]>([]);
@@ -258,6 +271,7 @@ export function useRiffGenGenerateState() {
           riffBass,
           riffSolo,
           riffPhraseMotifSeed,
+          riffDickinsonFlavor,
           chordProgressionText,
           zappaStyleMode,
           zappaEraPreset,
@@ -307,6 +321,7 @@ export function useRiffGenGenerateState() {
       riffBass,
       riffSolo,
       riffPhraseMotifSeed,
+      riffDickinsonFlavor,
       chordProgressionText,
       zappaStyleMode,
       zappaEraPreset,
@@ -329,6 +344,7 @@ export function useRiffGenGenerateState() {
     riffBass,
     riffSolo,
     riffPhraseMotifSeed,
+    riffDickinsonFlavor,
     barLocks,
     carryForward,
     gateMessages,
@@ -356,6 +372,7 @@ export function useRiffGenGenerateState() {
     setRiffBass,
     setRiffSolo,
     setRiffPhraseMotifSeed,
+    setRiffDickinsonFlavor,
     setZappaAdvancedOpen,
     setZappaStyleMode,
     setZappaEraPreset,

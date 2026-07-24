@@ -10,6 +10,7 @@ import { expandNotationSafeDurationsInScore } from '../score-integrity/notationS
 import { validateStrictBarMath } from '../score-integrity/strictBarMath';
 import { validateNotationSafeRhythm } from '../score-integrity/notationSafeRhythm';
 import { buildRiffScoreModel } from './buildRiffScoreModel';
+import { applyJimmyHerringDickinsonFlavor } from './jimmyHerringDickinsonFlavor';
 import {
   applyRiffBarLocksToBuilt,
   buildRiffScoreFromBarSnapshots,
@@ -118,13 +119,25 @@ function buildRiffCandidate(
         chord: p.chordSymbols[i],
       });
     }
-    return buildRiffScoreFromBarSnapshots(p, snaps.slice(0, p.bars), p.chordSymbols);
+    const fromSnaps = buildRiffScoreFromBarSnapshots(p, snaps.slice(0, p.bars), p.chordSymbols);
+    applyJimmyHerringDickinsonFlavor(fromSnaps.score, {
+      seed: p.seed,
+      vrbId: p.vrbId,
+      dickinsonFlavor: p.dickinsonFlavor,
+    });
+    return fromSnaps;
   }
 
   let built = buildRiffScoreModel(p);
   if ((op === 'regenerate' || op === 'mutate') && carry && barLocks.some(Boolean)) {
     built = applyRiffBarLocksToBuilt(built, carry, barLocks);
   }
+  // JH Dickinson flavor — post-process only; never inside buildRiffScoreModel / melody / rhythm.
+  applyJimmyHerringDickinsonFlavor(built.score, {
+    seed: p.seed,
+    vrbId: p.vrbId,
+    dickinsonFlavor: p.dickinsonFlavor,
+  });
   return built;
 }
 

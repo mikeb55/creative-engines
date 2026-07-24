@@ -74,6 +74,11 @@ export interface RiffGeneratorParams {
    * Default omit/false = procedural motif (env flags still work for scripts).
    */
   phraseMotifSeed?: boolean;
+  /**
+   * JH-only Dickinson southern flavor post-process (API `riffDickinsonFlavor`).
+   * Default omit/false — existing jimmy_herring output unchanged (env still works for scripts).
+   */
+  dickinsonFlavor?: boolean;
 }
 
 export interface RiffGeneratorSuccess {

@@ -487,6 +487,11 @@ export interface GenerateRequest {
    */
   riffPhraseMotifSeed?: boolean;
   /**
+   * Riff Generator — JH-only Dickinson southern keys-and-slide flavor post-process.
+   * Default omit/false (openIdiomDefault-style opt-in). No effect on other VRBs.
+   */
+  riffDickinsonFlavor?: boolean;
+  /**
    * GCE finalBarTension ending model override.
    * Default: `riff_generator` → `loop`; all other presets → `terminal`.
    * `open_idiom` (or {@link acknowledgeOpenIdiomEnding} / {@link openIdiomDefault}) skips FBT auto-fail with disclosure.

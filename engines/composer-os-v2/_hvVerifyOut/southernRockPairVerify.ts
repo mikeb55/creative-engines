@@ -29,6 +29,7 @@ import { isTonicFamilyChord } from '../scripts/eval/jamersonBassLensEvalCore';
 import type { ScoreModel } from '../core/score-model/scoreModelTypes';
 import type { GceCategory } from '../core/evaluation/evaluationTypes';
 import { runRiffPhraseMotifSeedExtendTests } from '../tests/riffPhraseMotifSeedExtend.test';
+import { applyJimmyHerringDickinsonFlavor, RIFF_DICKINSON_FLAVOR_ENV } from '../core/riff-generator/jimmyHerringDickinsonFlavor';
 
 const SEEDS = (process.argv.slice(2).map((s) => Number(s)).filter((n) => Number.isFinite(n)) as number[]).length
   ? (process.argv.slice(2).map((s) => Number(s)).filter((n) => Number.isFinite(n)) as number[])
@@ -223,11 +224,62 @@ const unit = runRiffPhraseMotifSeedExtendTests();
 const unitFails = unit.filter((r) => !r.ok).length;
 console.log('unit fails:', unitFails);
 
-const report = { pairing: 'southern_rock -> jimmy_herring', rows, regressionOk: regOk, unitFails };
+
+console.log('\n======== Dickinson flavor (JH post-process) ========');
+delete process.env[RIFF_DICKINSON_FLAVOR_ENV];
+const flavorOffHashes: Record<number, string> = {};
+let flavorOffStable = true;
+for (const seed of SEEDS) {
+  const built = build(seed, VRB, VRB + ' OFF ' + seed);
+  const h = sha(xmlOf(built.score));
+  flavorOffHashes[seed] = h;
+  const baselineXml = path.join(outDir, VRB + '_OFF_seed' + seed + '.musicxml');
+  if (fs.existsSync(baselineXml)) {
+    const baseH = sha(fs.readFileSync(baselineXml, 'utf8'));
+    const ok = baseH === h;
+    if (!ok) flavorOffStable = false;
+    console.log(ok ? 'PASS' : 'FAIL', 'flavor OFF seed', seed, 'matches motif-OFF xml (default)');
+  } else {
+    console.log('SKIP', 'no baseline OFF xml for seed', seed);
+  }
+}
+let flavorOnChanges = true;
+let flavorOnHard = true;
+const flavorRows: any[] = [];
+for (const seed of SEEDS) {
+  const built = build(seed, VRB, VRB + ' OFF ' + seed);
+  const applied = applyJimmyHerringDickinsonFlavor(built.score, {
+    seed,
+    vrbId: VRB,
+    dickinsonFlavor: true,
+  });
+  const xml = xmlOf(built.score);
+  const h = sha(xml);
+  const changed = h !== flavorOffHashes[seed];
+  if (!changed) flavorOnChanges = false;
+  const hg = hard(built.score, VRB);
+  if (!hg.allPass) flavorOnHard = false;
+  const g = gce(built.score, VRB);
+  fs.writeFileSync(path.join(outDir, VRB + '_DICKINSON_ON_seed' + seed + '.musicxml'), xml);
+  console.log(
+    applied && changed ? 'PASS' : 'FAIL',
+    'flavor ON seed',
+    seed,
+    'applied=' + applied,
+    'xmlChanged=' + changed,
+    'gce=' + g.finalScore,
+    'hard=' + (hg.allPass ? 'P' : 'F')
+  );
+  flavorRows.push({ seed, applied, changed, gce: g.finalScore, hard: hg.allPass });
+}
+const flavorOk = flavorOffStable && flavorOnChanges && flavorOnHard;
+console.log('Dickinson OFF stable:', flavorOffStable, '| ON changes:', flavorOnChanges, '| ON hard:', flavorOnHard);
+
+const report = { pairing: 'southern_rock -> jimmy_herring', rows, regressionOk: regOk, unitFails, dickinsonFlavor: { flavorOffStable, flavorOnChanges, flavorOnHard, flavorOk, flavorRows } };
 fs.writeFileSync(path.join(outDir, 'gce-fidelity-report.json'), JSON.stringify(report, null, 2));
 console.log('\nWrote', path.join(outDir, 'gce-fidelity-report.json'));
 clearFlags();
-if (!regOk || unitFails > 0) process.exit(1);
+if (!regOk || unitFails > 0 || !flavorOk) process.exit(1);
 const lowCos = rows.filter((r) => r.onCos < 0.5);
 if (lowCos.length) {
   console.log('STOP: fidelity below 0.5');

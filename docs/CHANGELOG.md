@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+### Added
+
+- **RiffGen — Jimmy Herring Dickinson southern flavor (opt-in)** — JH-only post-process (`jimmyHerringDickinsonFlavor.ts`): call-response blues fills, blues-scale ornaments, triplet pickups, duration-driven held notes. Default **OFF** (`riffDickinsonFlavor` / `COMPOSER_OS_RIFF_DICKINSON_FLAVOR` / localStorage `composerOs.riffDickinsonFlavor`). Does not modify `buildRiffScoreModel` / `riffMelody` / `riffRhythm`. Wired via `runRiffGenerator` + RiffGen / Home checkbox when VRB is `jimmy_herring`.
+
 ### Fixed
 
 - **RiffGen UI — `jamerson` VRB catalog** — `jamerson` was in `RIFF_GENERATOR_VRB_IDS` (complete funk/`bassContourPolicy` Motown bass profile) but omitted from `RIFF_VRB_CATALOG`. Added beside other funk rows (same pattern as `eddie_van_halen` rock add). Catalog now **18**/18 registry parity.
