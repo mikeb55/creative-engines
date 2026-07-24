@@ -109,7 +109,11 @@ export function buildRiffScoreModel(params: RiffGeneratorParams): BuiltRiffScore
       motifStepIdx
     );
     motifStepIdx = nextMotifStepIdx;
-    const shaped = applyGuitarRestWindowsToBar(notes, barRh, guitarRestWindows, b, chord);
+    // P5 / Phase 1.9: phrase-seeded — skip call-response rest windows so seeded contour stays intact
+    // (EVH_SIL_* / twin_guitar_call_then_sustain_answer otherwise drop notes + inject ghosts).
+    const shaped = phraseSeeded
+      ? notes.map((n) => ({ ...n }))
+      : applyGuitarRestWindowsToBar(notes, barRh, guitarRestWindows, b, chord);
     if (b === 0 && shaped[0]) firstPitch = shaped[0].pitch;
     perBarMelody.push(shaped);
     prevLast = lastPitch;
