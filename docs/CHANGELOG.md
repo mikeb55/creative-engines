@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+### Fixed
+
+- **RiffGen UI — `jamerson` VRB catalog** — `jamerson` was in `RIFF_GENERATOR_VRB_IDS` (complete funk/`bassContourPolicy` Motown bass profile) but omitted from `RIFF_VRB_CATALOG`. Added beside other funk rows (same pattern as `eddie_van_halen` rock add). Catalog now **18**/18 registry parity.
+
 ### Added
 
 - **Riff chord-loop trust Phase 3** — Ack gating on Chord loop (Home riff + RiffGen): `valid` free; `normalized` soft-gated (Accept rewrite ack); `unsupported`/`invalid` hard-gated (Pick fallback rewrite or Edit). Generate / Try Another / Demo / Regenerate / Mutate disabled while unresolved. Empty loop stays ungated. TokenStrip clickable Accept / Pick / Edit. Soft acks clear on text edit. Phase 1 post-gen disclosure banner unchanged. No confidence scores / polychord. Core: `riffChordLoop.ts` gate helpers; UI: `RiffChordLoopTokenStrip`, `HomeGenerate`, `useRiffGenGenerateState`. Smoke **796**/143 (+1 gate row).
@@ -33,7 +37,7 @@
 
 - **Riff phrase motif-seed â€” modern_rockâ†’morello** â€” Proper genre-fit pairing (Tom Morello / art_rock: alt-rock + unconventional technique â€” not the prior stopgap). Env `COMPOSER_OS_RIFF_MODERNROCK_MOTIF_SEED` (default OFF) + RiffGen checkbox. Confirm seeds **1 / 2 / 3** ON cos **1.00 / 1.00 / 0.77**; seed **3** hard FAILâ†’PASS. Regression: only `morello` changes. Examples: `output/riff-MODERNROCK-motif-seed-poc/`.
 
-- **Riff phrase motif-seed â€” virtuoso_techniqueâ†’eddie_van_halen** â€” Musically correct technique pairing (tapping/legato pioneer; course EVH-style content). `eddie_van_halen` added to RiffGen `RIFF_VRB_CATALOG` (rock family; default rock VRB still `iommi`; `jamerson` still omitted). Env `COMPOSER_OS_RIFF_VIRTUOSO_MOTIF_SEED` (default OFF) + checkbox. Confirm seeds **15 / 31 / 36** (â‰¥10 iv; seeds **1â€“3** below 0.5 cos excluded â€” same class as failed `frank_zappa` attempt). Fidelity ON cos **0.54 / 0.56 / 0.65**; hard PASS both sides all three. Regression: only `eddie_van_halen` changes. Examples: `output/riff-VIRTUOSO-motif-seed-poc/`.
+- **Riff phrase motif-seed — virtuoso_technique→eddie_van_halen** — Musically correct technique pairing (tapping/legato pioneer; course EVH-style content). `eddie_van_halen` added to RiffGen `RIFF_VRB_CATALOG` (rock family; default rock VRB still `iommi`). Env `COMPOSER_OS_RIFF_VIRTUOSO_MOTIF_SEED` (default OFF) + checkbox. Confirm seeds **15 / 31 / 36** (≥10 iv; seeds **1–3** below 0.5 cos excluded — same class as failed `frank_zappa` attempt). Fidelity ON cos **0.54 / 0.56 / 0.65**; hard PASS both sides all three. Regression: only `eddie_van_halen` changes. Examples: `output/riff-VIRTUOSO-motif-seed-poc/`. (`jamerson` UI catalog gap closed later — see Fixed above.)
 
 - **Riff phrase motif-seed â€” final pairing tally (many-to-many)** â€” **11 of 11** categories paired via `STYLE_PAIRINGS` (**12** edges; `blues_rock` has two profiles; `southern_rock`â†’`jimmy_herring`). Corpus unchanged: **11** categories Â· target **171** Â· derived **193** files / **345** phrases.
 

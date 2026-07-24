@@ -24,12 +24,12 @@ function testCatalogFamilies(): boolean {
     fusion.includes('weather_report') &&
     fusion.includes('mahavishnu') &&
     funk.includes('sly_stone') &&
+    funk.includes('jamerson') &&
     rock.includes('led_zeppelin') &&
     rock.includes('eddie_van_halen') &&
     rock.includes('jimmy_herring') &&
-    !funk.includes('jamerson') &&
     !rock.includes('jamerson') &&
-    RIFF_VRB_OPTIONS.length >= 17 &&
+    RIFF_VRB_OPTIONS.length >= 18 &&
     defaultRiffVrbIdForFamily('rock') === 'iommi'
   );
 }
