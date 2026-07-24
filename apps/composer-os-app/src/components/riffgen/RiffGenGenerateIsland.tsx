@@ -1,6 +1,7 @@
+import { useEffect, useState } from 'react';
 import { RiffGeneratorPanel } from '@composer-os/ui/components/RiffGeneratorPanel';
 import { clampRiffBarCount } from '../../types/riffGeneratorUi';
-import { isDesktopIpc } from '../../services/api';
+import { api, isDesktopIpc } from '../../services/api';
 import { RiffChordLoopDisclosureBanner } from './RiffChordLoopDisclosureBanner';
 import { RiffChordLoopTokenStrip } from './RiffChordLoopTokenStrip';
 import { useRiffGenGenerateState } from './useRiffGenGenerateState';
@@ -25,12 +26,17 @@ function dirnameOnly(fp: string): string {
  */
 export function RiffGenGenerateIsland() {
   const s = useRiffGenGenerateState();
+  const [gpExportMsg, setGpExportMsg] = useState<string | null>(null);
   /** Match Home GenerateSharedContextStrip: numeric seed hidden on desktop IPC. */
   const hideSeed = isDesktopIpc();
   const outputPath =
     typeof s.result?.filepath === 'string' && s.result.filepath.trim()
       ? s.result.filepath.trim()
       : undefined;
+
+  useEffect(() => {
+    setGpExportMsg(null);
+  }, [outputPath]);
 
   return (
     <section
@@ -251,6 +257,43 @@ export function RiffGenGenerateIsland() {
               >
                 Open folder
               </button>
+              <button
+                type="button"
+                className="secondary"
+                disabled={s.loading}
+                onClick={() => {
+                  void (async () => {
+                    setGpExportMsg(null);
+                    const outputGp = outputPath
+                      .replace(/\.musicxml$/i, '.gp')
+                      .replace(/\.xml$/i, '.gp');
+                    const r = await api.exportGuitarPro({
+                      musicXmlPath: outputPath,
+                      outputPath: outputGp,
+                    });
+                    setGpExportMsg(
+                      r.success
+                        ? `Guitar Pro exported: ${r.path}`
+                        : (r.error ?? 'Guitar Pro export failed.')
+                    );
+                  })();
+                }}
+              >
+                Export Guitar Pro
+              </button>
+            </p>
+          ) : null}
+          {gpExportMsg ? (
+            <p
+              style={{
+                marginTop: '0.5rem',
+                fontSize: '0.82rem',
+                color: gpExportMsg.includes('exported:')
+                  ? 'var(--text-muted)'
+                  : 'var(--error, #ef4444)',
+              }}
+            >
+              {gpExportMsg}
             </p>
           ) : null}
         </div>

@@ -183,8 +183,60 @@ function varyBar(motif: RiffRhythmSegment[], rng: () => number): RiffRhythmSegme
   return v;
 }
 
+/** Played (non-rest) onsets across a multi-bar rhythm grid. */
+export function countPlayedOnsets(perBar: RiffRhythmSegment[][]): number {
+  let n = 0;
+  for (const bar of perBar) {
+    for (const s of bar) {
+      if (!s.rest) n++;
+    }
+  }
+  return n;
+}
+
+/**
+ * Dense onset floor target: ≥2 played attacks per bar (capped by segment count).
+ * Guards seed4-class sparse dense-sixteenth grids that starve GCE motif windows.
+ */
+export function minDenseOnsets(bars: number, segmentBudget: number): number {
+  const target = Math.max(bars * 2, 8);
+  return Math.min(target, Math.max(0, segmentBudget));
+}
+
+/**
+ * Flip rests → played until dense floor met (strong beats first, then any rest).
+ * No-op when density !== dense or already at floor.
+ */
+export function enforceDenseOnsetFloor(
+  perBar: RiffRhythmSegment[][],
+  density: RiffDensity
+): void {
+  if (density !== 'dense' || perBar.length === 0) return;
+  let segmentBudget = 0;
+  for (const bar of perBar) segmentBudget += bar.length;
+  const min = minDenseOnsets(perBar.length, segmentBudget);
+  let onsets = countPlayedOnsets(perBar);
+  if (onsets >= min) return;
+
+  const flipPass = (strongOnly: boolean) => {
+    for (const bar of perBar) {
+      if (onsets >= min) return;
+      for (const s of bar) {
+        if (onsets >= min) return;
+        if (!s.rest) continue;
+        if (strongOnly && !isStrong(s.startBeat)) continue;
+        s.rest = false;
+        onsets++;
+      }
+    }
+  };
+  flipPass(true);
+  flipPass(false);
+}
+
 /**
  * Multi-bar: repeat rhythmic cell ≥2×; last bar may vary for loop; avoid full-bar symmetry when possible.
+ * Dense grids enforce a minimum onset floor so motif-recurrence scoring is not starved.
  */
 export function buildMultiBarRhythm(
   rng: () => number,
@@ -207,6 +259,7 @@ export function buildMultiBarRhythm(
       perBar.push(copyBar(base));
     }
   }
+  enforceDenseOnsetFloor(perBar, density);
   return perBar;
 }
 

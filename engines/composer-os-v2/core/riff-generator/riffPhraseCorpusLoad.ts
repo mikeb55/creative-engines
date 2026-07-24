@@ -240,7 +240,12 @@ function buildStats(
     endTypeHist[p.phraseEndType] = (endTypeHist[p.phraseEndType] ?? 0) + 1;
     if (p.curation?.needsReview) {
       needsReviewCount += 1;
-      if (p.curation.reasons.includes('meter_mismatch_file')) meterQuarantinePhraseCount += 1;
+      if (
+        p.curation.reasons.includes('meter_mismatch_file') ||
+        p.curation.reasons.includes('meter_mismatch_phrase')
+      ) {
+        meterQuarantinePhraseCount += 1;
+      }
     }
   }
 

@@ -22,6 +22,7 @@ import {
   type RiffPhraseEntry,
   type RiffPhraseEndType,
   type RiffPhraseIngestAuditRow,
+  type RiffPhraseMeter,
   type RiffPhraseScoreEvent,
   type RiffPhraseStartType,
 } from './riffPhraseLibraryTypes';
@@ -123,12 +124,38 @@ function pickMelodyVoice(
   return { voiceIndex: bestIdx, beats: bar.voices[bestIdx]!.beats };
 }
 
+function metersEqual(a: RiffPhraseMeter, b: RiffPhraseMeter): boolean {
+  return a.numerator === b.numerator && a.denominator === b.denominator;
+}
+
+/** Phrase meter = first bar in range; mixed=true if any later bar differs (should be rare after meter-boundary splits). */
+export function phraseMeterForRange(
+  meterByBar: RiffPhraseMeter[],
+  startBar: number,
+  endBar: number
+): { meter: RiffPhraseMeter; mixed: boolean } {
+  const first = meterByBar[startBar] ?? { numerator: 4, denominator: 4 };
+  let mixed = false;
+  for (let b = startBar + 1; b <= endBar; b++) {
+    const m = meterByBar[b];
+    if (m && !metersEqual(m, first)) {
+      mixed = true;
+      break;
+    }
+  }
+  return { meter: first, mixed };
+}
+
 function flattenScore(score: alphaTab.model.Score): {
   flats: FlatBeat[];
   trackCount: number;
   voiceCount: number;
   barsIn: number;
-  meter: { numerator: number; denominator: number };
+  /** File-open meter (masterBars[0]) — audit / legacy. */
+  meter: RiffPhraseMeter;
+  /** Per-bar time signature from each master bar (length = barsIn). */
+  meterByBar: RiffPhraseMeter[];
+  /** True when any later bar differs from bar 0 (file has mid-chart meter change). */
   meterMismatch: boolean;
   droppedOrnaments: number;
   tieFixups: number;
@@ -141,6 +168,7 @@ function flattenScore(score: alphaTab.model.Score): {
       voiceCount: 0,
       barsIn: 0,
       meter: { numerator: 4, denominator: 4 },
+      meterByBar: [],
       meterMismatch: false,
       droppedOrnaments: 0,
       tieFixups: 0,
@@ -155,20 +183,22 @@ function flattenScore(score: alphaTab.model.Score): {
   const flats: FlatBeat[] = [];
 
   const firstMb = masterBars[0];
-  const meter = {
+  const meter: RiffPhraseMeter = {
     numerator: firstMb?.timeSignatureNumerator ?? 4,
     denominator: firstMb?.timeSignatureDenominator ?? 4,
   };
+  const meterByBar: RiffPhraseMeter[] = [];
   let meterMismatch = false;
 
   for (let bi = 0; bi < barsIn; bi++) {
     const bar = staff.bars[bi]!;
     const mb = masterBars[bi];
-    if (
-      mb &&
-      (mb.timeSignatureNumerator !== meter.numerator ||
-        mb.timeSignatureDenominator !== meter.denominator)
-    ) {
+    const barMeter: RiffPhraseMeter = {
+      numerator: mb?.timeSignatureNumerator ?? meter.numerator,
+      denominator: mb?.timeSignatureDenominator ?? meter.denominator,
+    };
+    meterByBar.push(barMeter);
+    if (!metersEqual(barMeter, meter)) {
       meterMismatch = true;
     }
     voiceCount = Math.max(voiceCount, bar.voices.length);
@@ -253,6 +283,7 @@ function flattenScore(score: alphaTab.model.Score): {
     voiceCount,
     barsIn,
     meter,
+    meterByBar,
     meterMismatch,
     droppedOrnaments,
     tieFixups,
@@ -261,10 +292,16 @@ function flattenScore(score: alphaTab.model.Score): {
 
 function splitPhraseRanges(
   flats: FlatBeat[],
-  barsIn: number
+  barsIn: number,
+  meterByBar?: RiffPhraseMeter[]
 ): Array<{ startBar: number; endBar: number; maxPhraseChop: boolean }> {
   if (barsIn <= 0) return [];
-  if (barsIn <= MAX_PHRASE_BARS) {
+  const hasMixedMeter =
+    !!meterByBar &&
+    meterByBar.length >= 2 &&
+    meterByBar.some((m) => !metersEqual(m, meterByBar[0]!));
+  // Fast path: short single-meter files stay one window (backward compatible).
+  if (barsIn <= MAX_PHRASE_BARS && !hasMixedMeter) {
     return [{ startBar: 0, endBar: barsIn - 1, maxPhraseChop: false }];
   }
 
@@ -280,6 +317,17 @@ function splitPhraseRanges(
     }
   }
 
+  // Force split at mid-file meter changes so phrases never span mixed meters.
+  if (meterByBar && meterByBar.length >= 2) {
+    for (let b = 0; b < barsIn - 1; b++) {
+      const curM = meterByBar[b];
+      const nextM = meterByBar[b + 1];
+      if (curM && nextM && !metersEqual(curM, nextM)) {
+        forceSplitAfterBar.add(b);
+      }
+    }
+  }
+
   const ranges: Array<{ startBar: number; endBar: number; maxPhraseChop: boolean }> = [];
   let start = 0;
   for (let b = 0; b < barsIn; b++) {
@@ -288,7 +336,7 @@ function splitPhraseRanges(
     const atMax = len >= MAX_PHRASE_BARS;
     const atEnd = b === barsIn - 1;
     if (atForce || atMax || atEnd) {
-      // Mid-run MAX_PHRASE_BARS chop: closed at cap with more bars remaining, not rest-gap.
+      // Mid-run MAX_PHRASE_BARS chop: closed at cap with more bars remaining, not rest-gap / meter.
       ranges.push({
         startBar: start,
         endBar: b,
@@ -303,12 +351,13 @@ function splitPhraseRanges(
 function buildCuration(args: {
   barCount: number;
   maxPhraseChop: boolean;
-  meterMismatch: boolean;
+  /** Phrase window itself spans unequal meters (defensive; splits should prevent). */
+  phraseMeterMixed?: boolean;
 }): RiffPhraseCuration | undefined {
   const reasons: RiffPhraseCurationReason[] = [];
   if (args.barCount === 1) reasons.push('one_bar_leftover');
   if (args.maxPhraseChop) reasons.push('max_phrase_chop');
-  if (args.meterMismatch) reasons.push('meter_mismatch_file');
+  if (args.phraseMeterMixed) reasons.push('meter_mismatch_phrase');
   if (reasons.length === 0) return undefined;
   return { needsReview: true, reasons };
 }
@@ -490,12 +539,13 @@ function buildPhraseEntry(args: {
   hash: string;
   startBar: number;
   endBar: number;
-  meter: { numerator: number; denominator: number };
+  meter: RiffPhraseMeter;
   events: RiffPhraseScoreEvent[];
   ornaments: RiffPhraseEntry['ornamentFlags'];
   phraseIndex: number;
   maxPhraseChop?: boolean;
-  meterMismatch?: boolean;
+  /** Defensive: phrase window still spans unequal meters after split. */
+  phraseMeterMixed?: boolean;
 }): RiffPhraseEntry | null {
   const { category, sourceFileName, hash, startBar, endBar, meter, events, ornaments, phraseIndex } =
     args;
@@ -517,7 +567,7 @@ function buildPhraseEntry(args: {
   const curation = buildCuration({
     barCount,
     maxPhraseChop: args.maxPhraseChop === true,
-    meterMismatch: args.meterMismatch === true,
+    phraseMeterMixed: args.phraseMeterMixed === true,
   });
 
   const draft: RiffPhraseEntry = {
@@ -638,24 +688,29 @@ export function runRiffPhraseIngest(opts: RiffPhraseIngestOptions = {}): RiffPhr
         hash = sha256File(filePath);
         const score = loadScore(filePath);
         const flat = flattenScore(score);
-        const ranges = splitPhraseRanges(flat.flats, flat.barsIn);
+        const ranges = splitPhraseRanges(flat.flats, flat.barsIn, flat.meterByBar);
         let phrasesOut = 0;
         let localInvalid = 0;
         for (let pi = 0; pi < ranges.length; pi++) {
           const range = ranges[pi]!;
           const { events, ornaments } = eventsForRange(flat.flats, range.startBar, range.endBar);
+          const { meter: phraseMeter, mixed: phraseMeterMixed } = phraseMeterForRange(
+            flat.meterByBar,
+            range.startBar,
+            range.endBar
+          );
           const entry = buildPhraseEntry({
             category,
             sourceFileName: path.basename(filePath),
             hash,
             startBar: range.startBar,
             endBar: range.endBar,
-            meter: flat.meter,
+            meter: phraseMeter,
             events,
             ornaments,
             phraseIndex: pi + 1,
             maxPhraseChop: range.maxPhraseChop,
-            meterMismatch: flat.meterMismatch,
+            phraseMeterMixed,
           });
           if (entry) {
             phrases.push(entry);

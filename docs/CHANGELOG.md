@@ -2,9 +2,17 @@
 
 ### Added
 
+- **RiffGen — Export Guitar Pro** — Generate-island result reuses existing MuseScore CLI path (`api.exportGuitarPro`) on the written MusicXML `filepath` (sibling `.gp`). Same soft-fail when MuseScore missing as vault tools.
+
+- **RiffGen — Corpus details collapse** — `RiffGenCorpusQaPanel` (histograms / ingest QA) sits behind a default-closed **Corpus details** `<details>` on `RiffGenPage`; data unchanged.
+
 - **`openIdiomDefault` UX calibration** — User preference (default **OFF**; `composerOs.openIdiomDefault` localStorage) treats unresolved terminal endings like `open_idiom`: FBT auto-fail exempt + chord-loop-trust style disclosure banner (not silent pass, not hard-fail). Numeric threshold unchanged (`> 0.7`). Opt-in only — default preserves terminal hard-fail. Modules: `endingContext.ts` (`wantsOpenIdiomEnding`), `finalBarTensionGate.ts`, `apps/composer-os-app/src/preferences/openIdiomDefault.ts`, Generate checkbox.
 
 ### Fixed
+
+- **Riff phrase corpus — per-phrase meter** — Ingest no longer stamps file-open time signature onto every phrase / applies `meter_mismatch_file` quarantine to all phrases from mixed-meter files. `flattenScore` builds `meterByBar`; `splitPhraseRanges` splits at meter changes; each `RiffPhraseEntry.meter` is the window’s meter. Un-quarantines `diminished_lines/mvoldsu-003.gpx` (6/4→4/4). Audit `meterMismatch` still marks the file. Backward compatible for single-meter files. Defensive reason `meter_mismatch_phrase` if a window still spans unequal meters.
+
+- **Riff melodicIdentity hard-gate (P0+P1 DCR)** — Procedural `hendrix` / `led_zeppelin` (and rock/fusion peers) no longer fail GCE melodicIdentity (score ≤6) on confirm seeds **3** / **4** under the standard 8-bar dense sixteenth Am7–D7–Gmaj7–Cmaj7 harness (motif-seed OFF). **P0:** `enforceDenseOnsetFloor` in `riffRhythm.ts` — dense multi-bar grids guarantee ≥2 played onsets/bar (capped by segment budget); seed **4** class sparsity (7 notes → R=0) closed. **P1:** `applyRockStructuralCellRecall` on rock/fusion procedural path — opening 4-note interval cell cycles across the line (raises motifRecurrence R). Confirm matrix seeds **2/3/4/5/7/11**: hendrix + led_zeppelin **0/6 FAIL**; controls iommi / weather_report / david_gilmour **0/6 FAIL**. P2 (`getIntervalTarget` / hendrix `intervalWeights`) deferred. Supersedes prior “known quality — hendrix procedural melodicIdentity” note.
 
 - **Desktop reload after tab nav (file:// + pushState)** â€” Path-based `history.pushState('/riffgen')` became `file:///C:/riffgen` on Windows; Ctrl+R / Ctrl+Shift+R â†’ `ERR_FILE_NOT_FOUND` blank window. Fix: **hash routes** (`#/riffgen`) in `appRouter` + Electron `did-fail-load` â†’ `loadFile(index.html)` + hash restore. Soft + hard reload verified on all primary nav tabs.
 
@@ -49,7 +57,7 @@
 
 - **Riff phrase motif-seed â€” blues_rockâ†’hendrix** â€” Seventh pairing: `COMPOSER_OS_RIFF_BLUESROCK_MOTIF_SEED` (default OFF) + RiffGen checkbox. Best-fit among rock roster (`jh_blues_lead` pentatonic/bend/call-response grammar; no clapton/srv VRB; `led_zeppelin` broader Page multi-mode). Confirm seeds **2 / 3 / 4** (â‰¥10 iv; seed **1** = 0-iv leftover excluded). Fidelity ON cos **0.98 / 0.86 / 1.00**; seed **2** hard PASS both sides; seeds **3â€“4** hard FAIL both (no integrity flip). Regression: only `hendrix` changes. Examples: `output/riff-bluesrock-motif-seed-poc/`.
 
-- **Known quality (not pairing blocker) â€” hendrix procedural melodicIdentity hard-gate** â€” Confirm seeds **3** / **4** fail GCE melodicIdentity hard gate (**â‰¤6**) on **procedural** `hendrix` (all motif-seed flags OFF) with the standard 8-bar Am7â€“D7â€“Gmaj7â€“Cmaj7 dense sixteenth compare harness: seed **3** score **5.8** (motif recurrence **3.8**); seed **4** score **4.3** (motif recurrence **0.0**). Seed **2** PASS. Same FAIL OFF and ON under blues_rock pairing â€” phrase seed does not cause or fix it. Track as separate `hendrix` generation-quality follow-up; pairing ships with flag-off parity + regression clean.
+- **Known quality (RESOLVED 2026-07-23 — P0+P1)** â€” Was: confirm seeds **3** / **4** fail GCE melodicIdentity on procedural `hendrix`. **Fixed** via dense onset floor + rock/fusion cell recall (see Unreleased Fixed). P2 interval-target polish still deferred.
 
 - **Riff phrase corpus ingest â€” Blues-Rock** â€” Real GP5 ingest for `blues_rock`: **18**/18 parseOk Â· **30** phrases (Jeff McErlain *50 Blues-Rock* + jm30sbrl-029/030). meterMismatch **0**; droppedOrnaments on several bend-heavy files; tieFixups common (max **30** on `50bluesrocklicks_46`). `TARGET_COUNTS.blues_rock` **6â†’18**; `RIFF_PHRASE_CORPUS_TARGET_TOTAL` **87â†’99**. Derived **107** files / **224** phrases. Empty stubs: `southern_rock`, `modern_rock`, `progressive_blues`. Motif-seed pairing â†’ `hendrix` (see above).
 

@@ -182,7 +182,12 @@ export function validateRiffPhraseEntry(
     } else {
       if (typeof raw.curation.needsReview !== 'boolean') errors.push('curation.needsReview must be boolean');
       const reasons = raw.curation.reasons;
-      const allowed = new Set(['one_bar_leftover', 'max_phrase_chop', 'meter_mismatch_file']);
+      const allowed = new Set([
+        'one_bar_leftover',
+        'max_phrase_chop',
+        'meter_mismatch_file',
+        'meter_mismatch_phrase',
+      ]);
       if (
         !Array.isArray(reasons) ||
         !reasons.every((r: unknown) => typeof r === 'string' && allowed.has(r))

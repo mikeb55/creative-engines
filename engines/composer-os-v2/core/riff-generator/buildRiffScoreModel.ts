@@ -6,7 +6,14 @@ import type { PartModel, ScoreModel } from '../score-model/scoreModelTypes';
 import type { RiffRhythmSegment } from './riffTypes';
 import { createMeasure, createNote, createRest, createScore } from '../score-model/scoreEventBuilder';
 import { assignBassToBar } from './riffBass';
-import { applyLoopClosure, assignMelodyToBar, enforceHook, isPhraseSeededCoreMotif, type MelodyLine } from './riffMelody';
+import {
+  applyLoopClosure,
+  applyRockStructuralCellRecall,
+  assignMelodyToBar,
+  enforceHook,
+  isPhraseSeededCoreMotif,
+  type MelodyLine,
+} from './riffMelody';
 import type { RiffGeneratorParams } from './riffTypes';
 import { buildMultiBarRhythm } from './riffRhythm';
 import { mulberry32 } from './riffRandom';
@@ -111,6 +118,8 @@ export function buildRiffScoreModel(params: RiffGeneratorParams): BuiltRiffScore
   // Phase 1.9: phrase-seeded — skip enforceHook leap inject so seeded intervals stay intact.
   if (!phraseSeeded) {
     enforceHook(perBarMelody.flat(), rng, profile?.intervalWeights);
+    // P1 — rock/fusion structural 4-note cell recall (raises GCE motifRecurrence).
+    applyRockStructuralCellRecall(perBarMelody, params.vrbId);
   }
 
   if (firstPitch !== undefined && params.bars >= 1) {

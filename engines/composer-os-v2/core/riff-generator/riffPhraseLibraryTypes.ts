@@ -170,11 +170,16 @@ export interface RiffPhraseEntry {
   curation?: RiffPhraseCuration;
 }
 
-/** S4 needs-review reasons (diminished_lines leftovers, max-bar chops, meter mismatch files). */
+/**
+ * S4 needs-review reasons.
+ * - `meter_mismatch_file` — legacy (pre per-phrase meter ingest); file-open stamp quarantined all phrases.
+ * - `meter_mismatch_phrase` — defensive: a phrase window still spans unequal meters after boundary splits.
+ */
 export type RiffPhraseCurationReason =
   | 'one_bar_leftover'
   | 'max_phrase_chop'
-  | 'meter_mismatch_file';
+  | 'meter_mismatch_file'
+  | 'meter_mismatch_phrase';
 
 export interface RiffPhraseCuration {
   needsReview: boolean;

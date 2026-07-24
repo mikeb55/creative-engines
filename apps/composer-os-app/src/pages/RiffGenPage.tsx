@@ -1,5 +1,5 @@
 /**
- * Phase 1.5 RiffGen — corpus QA + phrase browser + GenerateIsland (S3).
+ * Phase 1.5 RiffGen — phrase browser + GenerateIsland; corpus QA behind Corpus details.
  * Phrase library stays read-only; generate uses presetId riff_generator only.
  */
 import { useEffect, useMemo, useState } from 'react';
@@ -71,7 +71,20 @@ export function RiffGenPage() {
 
       {corpus ? (
         <>
-          <RiffGenCorpusQaPanel corpus={corpus} />
+          <details style={{ marginBottom: '1.5rem' }}>
+            <summary
+              style={{
+                cursor: 'pointer',
+                fontSize: '1.05rem',
+                fontWeight: 600,
+                marginBottom: '0.75rem',
+                userSelect: 'none',
+              }}
+            >
+              Corpus details
+            </summary>
+            <RiffGenCorpusQaPanel corpus={corpus} />
+          </details>
           <RiffGenPhraseBrowser
             phrases={corpus.phrases}
             registeredCategories={Object.keys(corpus.stats.byCategory)}

@@ -218,7 +218,9 @@ export function RiffGenPhraseBrowser({
                           | { needsReview?: boolean; reasons?: string[] }
                           | undefined;
                         const needsReview = curation?.needsReview === true;
-                        const meterQ = curation?.reasons?.includes('meter_mismatch_file') === true;
+                        const meterQ =
+                          curation?.reasons?.includes('meter_mismatch_file') === true ||
+                          curation?.reasons?.includes('meter_mismatch_phrase') === true;
                         return (
                           <li key={id}>
                             <button
@@ -297,7 +299,9 @@ export function RiffGenPhraseBrowser({
                   | { needsReview?: boolean; reasons?: string[] }
                   | undefined;
                 if (!curation?.needsReview) return null;
-                const meterQ = curation.reasons?.includes('meter_mismatch_file');
+                const meterQ =
+                  curation.reasons?.includes('meter_mismatch_file') ||
+                  curation.reasons?.includes('meter_mismatch_phrase');
                 return (
                   <p
                     role="status"

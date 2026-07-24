@@ -10,6 +10,7 @@ import type { CoreMotif } from '../motif/motifEngineTypes';
 import { RIFF_INTERVAL_WEIGHT_SEMITONES } from './riffPitchField';
 import type { RiffRhythmSegment, RiffStyleId } from './riffTypes';
 import { randInt } from './riffRandom';
+import { resolveRiffFamilyTag } from './riffVrbRegistry';
 
 /** Peak on these → suppress forced leap inject (step-heavy). */
 const ENFORCE_HOOK_STEP_KEYS: ReadonlyArray<keyof RiffIntervalWeightMap> = ['m2', 'M2', 'm3'];
@@ -377,6 +378,52 @@ export function enforceHook(
   /** Widen second interval */
   const dir = rng() > 0.5 ? 1 : -1;
   notes[1]!.pitch = Math.max(40, Math.min(90, notes[0]!.pitch + dir * 5));
+}
+
+/**
+ * Rock / fusion procedural path — structural 4-note cell recall.
+ * Raises GCE motifRecurrence (R) by reinjecting the opening interval cell at
+ * bars 2 / 4 / 6 (0-based) without fighting phrase-seeded motifs.
+ * Covers hendrix · led_zeppelin · iommi · david_gilmour · weather_report (+ other rock/fusion).
+ */
+export function vrbEligibleForRockCellRecall(vrbId: string | undefined): boolean {
+  if (!vrbId) return false;
+  const fam = resolveRiffFamilyTag(vrbId);
+  return fam === 'rock' || fam === 'fusion';
+}
+
+/**
+ * Reinject opening 4-note interval cell as a repeating interval cycle across the line.
+ * Keeps note 0; each following note walks cell intervals mod 3 with octave wrap into range.
+ * Ensures sliding 4-note windows share residue-class shapes → high GCE motifRecurrence (R).
+ */
+export function applyRockStructuralCellRecall(
+  perBarMelody: MelodyLine[][],
+  vrbId: string | undefined
+): void {
+  if (!vrbEligibleForRockCellRecall(vrbId) || perBarMelody.length < 4) return;
+
+  const flat: MelodyLine[] = [];
+  for (const bar of perBarMelody) {
+    for (const n of bar) flat.push(n);
+  }
+  if (flat.length < 4) return;
+
+  const cell = flat.slice(0, 4);
+  const intervals = [
+    cell[1]!.pitch - cell[0]!.pitch,
+    cell[2]!.pitch - cell[1]!.pitch,
+    cell[3]!.pitch - cell[2]!.pitch,
+  ];
+  if (intervals.every((d) => d === 0)) return;
+
+  let p = flat[0]!.pitch;
+  for (let i = 1; i < flat.length; i++) {
+    p = p + intervals[(i - 1) % 3]!;
+    while (p > 90) p -= 12;
+    while (p < 40) p += 12;
+    flat[i]!.pitch = Math.max(40, Math.min(90, p));
+  }
 }
 
 /** Last bar last note leads toward first pitch (loop closure). */
