@@ -224,14 +224,38 @@ function loadCategoryPool(category: RiffPhraseCategory): RiffPhraseEntry[] {
   return pool;
 }
 
+/**
+ * Empty or all-zero interval sequences produce flat/unison lines (cos=0 / MI fail).
+ * P4: selection-time guard — do not bind these as phrase motifs.
+ */
+export function isDegeneratePhraseIntervalSequence(
+  intervalSequence: readonly number[] | undefined
+): boolean {
+  const iv = intervalSequence ?? [];
+  if (iv.length === 0) return true;
+  return iv.every((x) => x === 0);
+}
+
+/**
+ * Deterministic category pick for seed.
+ * Starts at `seed % pool.length`, then walks forward (wrapping) past phrases with
+ * empty / all-zero `intervalSequence` (P4). Non-degenerate native landings unchanged.
+ * Returns undefined only if the pool is empty or every phrase is degenerate.
+ */
 export function pickPhraseForSeed(
   category: RiffPhraseCategory,
   seed: number
 ): RiffPhraseEntry | undefined {
   const pool = loadCategoryPool(category);
   if (pool.length === 0) return undefined;
-  const idx = (seed >>> 0) % pool.length;
-  return pool[idx];
+  const start = (seed >>> 0) % pool.length;
+  for (let i = 0; i < pool.length; i++) {
+    const phrase = pool[(start + i) % pool.length]!;
+    if (!isDegeneratePhraseIntervalSequence(phrase.intervalSequence)) {
+      return phrase;
+    }
+  }
+  return undefined;
 }
 
 export function pickSaxInspiredPhraseForSeed(seed: number): RiffPhraseEntry | undefined {
@@ -333,8 +357,9 @@ export function resolveRiffCoreMotif(
 }
 
 /**
- * Find seeds whose category pick has intervalSequence.length >= minIntervals.
- * Prefers distinct phrases. Used by export/compare (avoid 1–2 iv degenerate phrases).
+ * Find seeds whose category pick has intervalSequence.length >= minIntervals
+ * and is not empty/all-zero (P4). Prefers distinct phrases. Used by export/compare.
+ * Uses {@link pickPhraseForSeed} so live pick + scan share the same guard.
  */
 export function findSeedsWithMinPhraseIntervals(
   category: RiffPhraseCategory,
@@ -347,7 +372,8 @@ export function findSeedsWithMinPhraseIntervals(
   const out: number[] = [];
   const usedPhrase = new Set<string>();
   for (let s = startSeed; s < startSeed + 200000 && out.length < count; s++) {
-    const phrase = pool[(s >>> 0) % pool.length]!;
+    const phrase = pickPhraseForSeed(category, s);
+    if (!phrase) continue;
     if (phrase.intervalSequence.length < minIntervals) continue;
     if (usedPhrase.has(phrase.id)) continue;
     usedPhrase.add(phrase.id);
@@ -355,7 +381,8 @@ export function findSeedsWithMinPhraseIntervals(
   }
   if (out.length < count) {
     for (let s = startSeed; s < startSeed + 200000 && out.length < count; s++) {
-      const phrase = pool[(s >>> 0) % pool.length]!;
+      const phrase = pickPhraseForSeed(category, s);
+      if (!phrase) continue;
       if (phrase.intervalSequence.length < minIntervals) continue;
       if (out.includes(s)) continue;
       out.push(s);
