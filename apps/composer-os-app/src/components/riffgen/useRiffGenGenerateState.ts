@@ -2,7 +2,7 @@
  * Phase 1.5 S3 — local riff generate state for RiffGen tab.
  * Copies minimal HomeGenerate riff wiring; does NOT share HomeGenerate code.
  */
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../../services/api';
 import { mapCoreUiToGenerationFields } from '../../utils/buildGenerateRequestBody';
 import {
@@ -28,6 +28,7 @@ import {
   writeRiffDickinsonFlavorDefault,
 } from '../../preferences/riffDickinsonFlavorDefault';
 import {
+  PAIRING_ENABLEMENT_CHANGED_EVENT,
   readPhraseMotifSeedCheckboxForProfile,
   writePhraseMotifSeedCheckboxForProfile,
   primaryUiPairingForProfile,
@@ -174,6 +175,17 @@ export function useRiffGenGenerateState() {
     },
     [vrbId]
   );
+
+  useEffect(() => {
+    const syncFromOverride = () => {
+      setRiffPhraseMotifSeedState(
+        vrbHasPhraseMotifSeedPairing(vrbId) ? readPhraseMotifSeedCheckboxForProfile(vrbId) : false
+      );
+    };
+    window.addEventListener(PAIRING_ENABLEMENT_CHANGED_EVENT, syncFromOverride);
+    return () => window.removeEventListener(PAIRING_ENABLEMENT_CHANGED_EVENT, syncFromOverride);
+  }, [vrbId]);
+
   const [riffDickinsonFlavor, setRiffDickinsonFlavorState] = useState(() =>
     readRiffDickinsonFlavorDefault()
   );

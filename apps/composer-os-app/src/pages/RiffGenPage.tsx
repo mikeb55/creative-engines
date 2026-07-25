@@ -7,6 +7,7 @@ import { api, type RiffPhraseCorpusDto } from '../services/api';
 import { RiffGenCorpusQaPanel } from '../components/riffgen/RiffGenCorpusQaPanel';
 import { RiffGenPhraseBrowser } from '../components/riffgen/RiffGenPhraseBrowser';
 import { RiffGenGenerateIsland } from '../components/riffgen/RiffGenGenerateIsland';
+import { RiffGenStylePairingsPanel } from '../components/riffgen/RiffGenStylePairingsPanel';
 
 export function RiffGenPage() {
   const [corpus, setCorpus] = useState<RiffPhraseCorpusDto | null>(null);
@@ -92,6 +93,7 @@ export function RiffGenPage() {
         </>
       ) : null}
 
+      <RiffGenStylePairingsPanel />
       <RiffGenGenerateIsland />
     </div>
   );

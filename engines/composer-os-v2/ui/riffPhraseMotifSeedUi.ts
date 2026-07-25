@@ -4,27 +4,149 @@
  */
 
 export type RiffPhraseMotifSeedUiPairing = {
-  profileId: string;
-  categoryId: string;
-  lickLabel: string;
   /** Composite PairingId */
   id: string;
+  /** Human-readable label (settings / checkbox). */
+  label: string;
+  /** Profile / VRB id. */
+  vrbId: string;
+  /** Phrase motif category. */
+  motifCategory: string;
+  /** Manifest default; UI resolves override ?? defaultEnabled. */
+  defaultEnabled: boolean;
+  /** @deprecated alias of vrbId */
+  profileId: string;
+  /** @deprecated alias of motifCategory */
+  categoryId: string;
+  /** Short lick label for checkbox copy. */
+  lickLabel: string;
 };
 
-/** Proven pairings shown in RiffGen checkbox (default unchecked). */
+/**
+ * Proven pairings shown in RiffGen checkbox + Style Pairings settings.
+ * defaultEnabled mirrors STYLE_PAIRINGS (all false until Phase 2 default-ON).
+ */
 export const RIFF_PHRASE_MOTIF_SEED_UI_PAIRINGS: readonly RiffPhraseMotifSeedUiPairing[] = [
-  { id: 'sax_inspired::weather_report', profileId: 'weather_report', categoryId: 'sax_inspired', lickLabel: 'sax' },
-  { id: 'jazz_rock::mahavishnu', profileId: 'mahavishnu', categoryId: 'jazz_rock', lickLabel: 'jazz-rock' },
-  { id: 'diminished_lines::fripp', profileId: 'fripp', categoryId: 'diminished_lines', lickLabel: 'diminished' },
-  { id: 'white_rock_funk::iommi', profileId: 'iommi', categoryId: 'white_rock_funk', lickLabel: 'white rock funk' },
-  { id: 'black_soul_funk::nile_rodgers', profileId: 'nile_rodgers', categoryId: 'black_soul_funk', lickLabel: 'black soul funk' },
-  { id: 'bebop_jazz_blues::bill_evans_sax', profileId: 'bill_evans_sax', categoryId: 'bebop_jazz_blues', lickLabel: 'bebop jazz blues' },
-  { id: 'blues_rock::hendrix', profileId: 'hendrix', categoryId: 'blues_rock', lickLabel: 'blues-rock' },
-  { id: 'blues_rock::led_zeppelin', profileId: 'led_zeppelin', categoryId: 'blues_rock', lickLabel: 'blues-rock' },
-  { id: 'progressive_blues::david_gilmour', profileId: 'david_gilmour', categoryId: 'progressive_blues', lickLabel: 'progressive blues' },
-  { id: 'modern_rock::morello', profileId: 'morello', categoryId: 'modern_rock', lickLabel: 'modern rock' },
-  { id: 'virtuoso_technique::eddie_van_halen', profileId: 'eddie_van_halen', categoryId: 'virtuoso_technique', lickLabel: 'virtuoso technique' },
-  { id: 'southern_rock::jimmy_herring', profileId: 'jimmy_herring', categoryId: 'southern_rock', lickLabel: 'southern rock' },
+  {
+    id: 'sax_inspired::weather_report',
+    label: 'Weather Report / sax-inspired',
+    vrbId: 'weather_report',
+    motifCategory: 'sax_inspired',
+    defaultEnabled: false,
+    profileId: 'weather_report',
+    categoryId: 'sax_inspired',
+    lickLabel: 'sax',
+  },
+  {
+    id: 'jazz_rock::mahavishnu',
+    label: 'Mahavishnu / jazz-rock',
+    vrbId: 'mahavishnu',
+    motifCategory: 'jazz_rock',
+    defaultEnabled: false,
+    profileId: 'mahavishnu',
+    categoryId: 'jazz_rock',
+    lickLabel: 'jazz-rock',
+  },
+  {
+    id: 'diminished_lines::fripp',
+    label: 'Fripp / diminished lines',
+    vrbId: 'fripp',
+    motifCategory: 'diminished_lines',
+    defaultEnabled: false,
+    profileId: 'fripp',
+    categoryId: 'diminished_lines',
+    lickLabel: 'diminished',
+  },
+  {
+    id: 'white_rock_funk::iommi',
+    label: 'Iommi / white rock funk',
+    vrbId: 'iommi',
+    motifCategory: 'white_rock_funk',
+    defaultEnabled: false,
+    profileId: 'iommi',
+    categoryId: 'white_rock_funk',
+    lickLabel: 'white rock funk',
+  },
+  {
+    id: 'black_soul_funk::nile_rodgers',
+    label: 'Nile Rodgers / black soul funk',
+    vrbId: 'nile_rodgers',
+    motifCategory: 'black_soul_funk',
+    defaultEnabled: false,
+    profileId: 'nile_rodgers',
+    categoryId: 'black_soul_funk',
+    lickLabel: 'black soul funk',
+  },
+  {
+    id: 'bebop_jazz_blues::bill_evans_sax',
+    label: 'Bill Evans sax / bebop jazz blues',
+    vrbId: 'bill_evans_sax',
+    motifCategory: 'bebop_jazz_blues',
+    defaultEnabled: false,
+    profileId: 'bill_evans_sax',
+    categoryId: 'bebop_jazz_blues',
+    lickLabel: 'bebop jazz blues',
+  },
+  {
+    id: 'blues_rock::hendrix',
+    label: 'Hendrix / blues-rock',
+    vrbId: 'hendrix',
+    motifCategory: 'blues_rock',
+    defaultEnabled: false,
+    profileId: 'hendrix',
+    categoryId: 'blues_rock',
+    lickLabel: 'blues-rock',
+  },
+  {
+    id: 'blues_rock::led_zeppelin',
+    label: 'Led Zeppelin / blues-rock',
+    vrbId: 'led_zeppelin',
+    motifCategory: 'blues_rock',
+    defaultEnabled: false,
+    profileId: 'led_zeppelin',
+    categoryId: 'blues_rock',
+    lickLabel: 'blues-rock',
+  },
+  {
+    id: 'progressive_blues::david_gilmour',
+    label: 'Gilmour / progressive blues',
+    vrbId: 'david_gilmour',
+    motifCategory: 'progressive_blues',
+    defaultEnabled: false,
+    profileId: 'david_gilmour',
+    categoryId: 'progressive_blues',
+    lickLabel: 'progressive blues',
+  },
+  {
+    id: 'modern_rock::morello',
+    label: 'Morello / modern rock',
+    vrbId: 'morello',
+    motifCategory: 'modern_rock',
+    defaultEnabled: false,
+    profileId: 'morello',
+    categoryId: 'modern_rock',
+    lickLabel: 'modern rock',
+  },
+  {
+    id: 'virtuoso_technique::eddie_van_halen',
+    label: 'EVH / virtuoso technique',
+    vrbId: 'eddie_van_halen',
+    motifCategory: 'virtuoso_technique',
+    defaultEnabled: false,
+    profileId: 'eddie_van_halen',
+    categoryId: 'virtuoso_technique',
+    lickLabel: 'virtuoso technique',
+  },
+  {
+    id: 'southern_rock::jimmy_herring',
+    label: 'Jimmy Herring / southern rock',
+    vrbId: 'jimmy_herring',
+    motifCategory: 'southern_rock',
+    defaultEnabled: false,
+    profileId: 'jimmy_herring',
+    categoryId: 'southern_rock',
+    lickLabel: 'southern rock',
+  },
 ] as const;
 
 export function getUiPairingsForProfile(profileId: string | undefined): readonly RiffPhraseMotifSeedUiPairing[] {

@@ -1,5 +1,5 @@
 /**
- * RiffGen pairing enablement — routes checkbox through resolver + persistent override.
+ * RiffGen pairing enablement — routes checkbox / settings through resolver + persistent override.
  *
  * Browser: localStorage mirror (same JSON shape as Electron userData file).
  * Desktop: also writes Electron userData via IPC so generate (main) sees override.
@@ -7,11 +7,15 @@
  */
 
 import {
+  RIFF_PHRASE_MOTIF_SEED_UI_PAIRINGS,
   getUiPairingsForProfile,
   type RiffPhraseMotifSeedUiPairing,
 } from '@composer-os/ui/riffPhraseMotifSeedUi';
 
 export const PAIRING_ENABLEMENT_OVERRIDES_STORAGE_KEY = 'composerOs.pairingEnablementOverrides';
+
+/** Fired after setPairingOverride / reset so generate checkbox can resync. */
+export const PAIRING_ENABLEMENT_CHANGED_EVENT = 'composerOs:pairingEnablementChanged';
 
 type OverrideMap = Record<string, boolean>;
 
@@ -39,6 +43,17 @@ function writeLocalMap(map: OverrideMap): void {
   }
 }
 
+function emitChanged(ids: string[]): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.dispatchEvent(
+      new CustomEvent(PAIRING_ENABLEMENT_CHANGED_EVENT, { detail: { ids } })
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
 /** undefined = no override. */
 export function getPairingOverride(id: string): boolean | undefined {
   const map = readLocalMap();
@@ -55,36 +70,44 @@ export function setPairingOverride(id: string, value: boolean | undefined): void
   if (bridge?.setPairingOverride) {
     void bridge.setPairingOverride(id, value);
   }
+  emitChanged([id]);
+}
+
+/** Clear one override → manifest defaultEnabled. */
+export function resetPairingOverride(id: string): void {
+  setPairingOverride(id, undefined);
+}
+
+/** Clear all overrides. */
+export function resetAllPairingOverrides(): void {
+  const prev = Object.keys(readLocalMap());
+  writeLocalMap({});
+  const bridge = typeof window !== 'undefined' ? window.composerOsDesktop : undefined;
+  if (bridge?.setPairingOverride) {
+    for (const id of prev) {
+      void bridge.setPairingOverride(id, undefined);
+    }
+  }
+  emitChanged(prev.length > 0 ? prev : RIFF_PHRASE_MOTIF_SEED_UI_PAIRINGS.map((p) => p.id));
 }
 
 /**
- * Manifest defaultEnabled for UI pairings (all false today).
+ * Manifest defaultEnabled for UI pairings (mirrored from STYLE_PAIRINGS; all false today).
  * Kept local so browser bundle does not pull fs-backed engine store.
  */
 const UI_DEFAULT_ENABLED: Record<string, boolean> = Object.fromEntries(
-  (
-    [
-      'sax_inspired::weather_report',
-      'jazz_rock::mahavishnu',
-      'diminished_lines::fripp',
-      'white_rock_funk::iommi',
-      'black_soul_funk::nile_rodgers',
-      'bebop_jazz_blues::bill_evans_sax',
-      'blues_rock::hendrix',
-      'blues_rock::led_zeppelin',
-      'progressive_blues::david_gilmour',
-      'modern_rock::morello',
-      'virtuoso_technique::eddie_van_halen',
-      'southern_rock::jimmy_herring',
-    ] as const
-  ).map((id) => [id, false])
+  RIFF_PHRASE_MOTIF_SEED_UI_PAIRINGS.map((p) => [p.id, p.defaultEnabled === true])
 );
+
+export function getManifestDefaultEnabled(id: string): boolean {
+  return UI_DEFAULT_ENABLED[id] === true;
+}
 
 /** Resolver: override ?? manifest.defaultEnabled. */
 export function isPairingEnabled(id: string): boolean {
   const override = getPairingOverride(id);
   if (override !== undefined) return override === true;
-  return UI_DEFAULT_ENABLED[id] === true;
+  return getManifestDefaultEnabled(id);
 }
 
 /** Primary UI pairing for a VRB (lexicographically first when multiple). */
@@ -112,4 +135,28 @@ export function writePhraseMotifSeedCheckboxForProfile(
   const pairing = primaryUiPairingForProfile(profileId);
   if (!pairing) return;
   setPairingOverride(pairing.id, enabled);
+}
+
+/** Snapshot rows for Style Pairings settings panel. */
+export function listStylePairingEnablementRows(): Array<{
+  id: string;
+  label: string;
+  vrbId: string;
+  motifCategory: string;
+  defaultEnabled: boolean;
+  override: boolean | undefined;
+  enabled: boolean;
+}> {
+  return RIFF_PHRASE_MOTIF_SEED_UI_PAIRINGS.map((p) => {
+    const override = getPairingOverride(p.id);
+    return {
+      id: p.id,
+      label: p.label,
+      vrbId: p.vrbId,
+      motifCategory: p.motifCategory,
+      defaultEnabled: p.defaultEnabled === true,
+      override,
+      enabled: override !== undefined ? override === true : p.defaultEnabled === true,
+    };
+  });
 }
