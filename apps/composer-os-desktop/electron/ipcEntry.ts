@@ -37,6 +37,12 @@ import {
   type LeadSheetFileInputComposerId,
   type LeadSheetFileInputRequest,
 } from '../../../engines/composer-os-v2/app-api/runLeadSheetFileInputApi';
+import {
+  PAIRING_ENABLEMENT_OVERRIDES_FILENAME,
+  configurePairingOverrideStorePath,
+  getPairingOverride,
+  setPairingOverride,
+} from '../../../engines/composer-os-v2/core/riff-generator/pairingEnablementOverrides';
 
 function resolveEnginesRoot(): string {
   return app.isPackaged
@@ -45,6 +51,41 @@ function resolveEnginesRoot(): string {
 }
 
 export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void {
+  // User-override layer for riff style-pairing enablement (Phase 2 prerequisite).
+  configurePairingOverrideStorePath(
+    path.join(app.getPath('userData'), PAIRING_ENABLEMENT_OVERRIDES_FILENAME)
+  );
+
+  ipcMain.handle(
+    'composer-os:get-pairing-override',
+    (_e, body: unknown): { id: string; value: boolean | undefined } => {
+      const id =
+        body && typeof body === 'object' && typeof (body as { id?: unknown }).id === 'string'
+          ? (body as { id: string }).id.trim()
+          : '';
+      if (!id) return { id: '', value: undefined };
+      return { id, value: getPairingOverride(id) };
+    }
+  );
+
+  ipcMain.handle(
+    'composer-os:set-pairing-override',
+    (
+      _e,
+      body: unknown
+    ): { ok: boolean; id: string; value: boolean | undefined; error?: string } => {
+      const b = body && typeof body === 'object' ? (body as { id?: unknown; value?: unknown }) : {};
+      const id = typeof b.id === 'string' ? b.id.trim() : '';
+      if (!id) return { ok: false, id: '', value: undefined, error: 'missing id' };
+      let value: boolean | undefined;
+      if (b.value === undefined || b.value === null) value = undefined;
+      else if (typeof b.value === 'boolean') value = b.value;
+      else return { ok: false, id, value: undefined, error: 'value must be boolean | undefined' };
+      setPairingOverride(id, value);
+      return { ok: true, id, value: getPairingOverride(id) };
+    }
+  );
+
   ipcMain.handle(
     'composer-os:save-export-file',
     async (_e, body: unknown): Promise<{ ok: boolean; fullPath?: string; error?: string }> => {

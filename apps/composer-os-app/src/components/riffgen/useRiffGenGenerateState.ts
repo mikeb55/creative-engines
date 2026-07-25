@@ -27,6 +27,11 @@ import {
   readRiffDickinsonFlavorDefault,
   writeRiffDickinsonFlavorDefault,
 } from '../../preferences/riffDickinsonFlavorDefault';
+import {
+  readPhraseMotifSeedCheckboxForProfile,
+  writePhraseMotifSeedCheckboxForProfile,
+  primaryUiPairingForProfile,
+} from '../../preferences/pairingEnablementOverride';
 import type { RiffDensity, RiffGridMode, RiffLineMode } from '@composer-os/core/riff-generator/riffTypes';
 import {
   previewRiffChordLoopTokens,
@@ -116,6 +121,12 @@ export function buildRiffGenGeneratePayload(args: {
     riffBass: args.riffBass,
     ...(args.riffSolo ? { riffSolo: true } : {}),
     ...(args.riffPhraseMotifSeed ? { riffPhraseMotifSeed: true } : {}),
+    ...(() => {
+      const pairing = primaryUiPairingForProfile(args.vrbId);
+      return pairing
+        ? { riffPairingFlags: { [pairing.id]: args.riffPhraseMotifSeed === true } }
+        : {};
+    })(),
     ...(args.riffDickinsonFlavor ? { riffDickinsonFlavor: true } : {}),
     ...(chordTrim ? { chordProgressionText: chordTrim } : {}),
     ...(isZappaRiffVrbId(args.vrbId)
@@ -153,7 +164,16 @@ export function useRiffGenGenerateState() {
   const [riffLineMode, setRiffLineMode] = useState<RiffLineMode>('single_line');
   const [riffBass, setRiffBass] = useState(false);
   const [riffSolo, setRiffSolo] = useState(false);
-  const [riffPhraseMotifSeed, setRiffPhraseMotifSeed] = useState(false);
+  const [riffPhraseMotifSeed, setRiffPhraseMotifSeedState] = useState(() =>
+    readPhraseMotifSeedCheckboxForProfile(defaultRiffVrbIdForFamily('rock'))
+  );
+  const setRiffPhraseMotifSeed = useCallback(
+    (enabled: boolean) => {
+      setRiffPhraseMotifSeedState(enabled);
+      writePhraseMotifSeedCheckboxForProfile(vrbId, enabled);
+    },
+    [vrbId]
+  );
   const [riffDickinsonFlavor, setRiffDickinsonFlavorState] = useState(() =>
     readRiffDickinsonFlavorDefault()
   );
@@ -197,12 +217,16 @@ export function useRiffGenGenerateState() {
     setFamily(next);
     const nextVrb = defaultRiffVrbIdForFamily(next);
     setVrbId(nextVrb);
-    if (!vrbHasPhraseMotifSeedPairing(nextVrb)) setRiffPhraseMotifSeed(false);
+    setRiffPhraseMotifSeedState(
+      vrbHasPhraseMotifSeedPairing(nextVrb) ? readPhraseMotifSeedCheckboxForProfile(nextVrb) : false
+    );
   }, []);
 
   const onVrbIdChange = useCallback((next: string) => {
     setVrbId(next);
-    if (!vrbHasPhraseMotifSeedPairing(next)) setRiffPhraseMotifSeed(false);
+    setRiffPhraseMotifSeedState(
+      vrbHasPhraseMotifSeedPairing(next) ? readPhraseMotifSeedCheckboxForProfile(next) : false
+    );
   }, []);
 
   const onBarsChange = useCallback((n: RiffBarCount) => {

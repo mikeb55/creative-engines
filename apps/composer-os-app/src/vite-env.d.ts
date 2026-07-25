@@ -50,6 +50,12 @@ declare global {
       pickAudioFile?: () => Promise<{ path: string | null }>;
       onStartupState: (cb: (s: ComposerOsStartupState) => void) => void;
       notifyGenerationPhase: (phase: 'running' | 'succeeded' | 'failed' | 'idle') => void;
+      /** Persistent pairing enablement override (userData JSON via main). */
+      getPairingOverride?: (id: string) => Promise<{ id: string; value: boolean | undefined }>;
+      setPairingOverride?: (
+        id: string,
+        value: boolean | undefined
+      ) => Promise<{ ok: boolean; id: string; value: boolean | undefined; error?: string }>;
     };
   }
 }

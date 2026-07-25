@@ -487,6 +487,12 @@ export interface GenerateRequest {
    */
   riffPhraseMotifSeed?: boolean;
   /**
+   * Riff Generator — per-pairing enablement map (PairingId → boolean).
+   * When a key is present it wins over userData override / env / defaultEnabled.
+   * Used by RiffGen checkbox so force-OFF works once Phase 2 flips defaults.
+   */
+  riffPairingFlags?: Partial<Record<string, boolean>>;
+  /**
    * Riff Generator — JH-only Dickinson southern keys-and-slide flavor post-process.
    * Default omit/false (openIdiomDefault-style opt-in). No effect on other VRBs.
    */

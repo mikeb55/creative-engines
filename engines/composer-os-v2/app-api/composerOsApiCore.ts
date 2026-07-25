@@ -762,6 +762,16 @@ export function apiGenerate(
       riffVrbId: typeof body.riffVrbId === 'string' && body.riffVrbId.trim() ? body.riffVrbId.trim() : undefined,
       riffUseHvForPattern: body.riffUseHvForPattern === true ? true : undefined,
       riffPhraseMotifSeed: body.riffPhraseMotifSeed === true ? true : undefined,
+      riffPairingFlags:
+        body.riffPairingFlags &&
+        typeof body.riffPairingFlags === 'object' &&
+        !Array.isArray(body.riffPairingFlags)
+          ? Object.fromEntries(
+              Object.entries(body.riffPairingFlags as Record<string, unknown>).filter(
+                ([, v]) => typeof v === 'boolean'
+              )
+            )
+          : undefined,
       endingContext:
         body.endingContext === 'terminal' ||
         body.endingContext === 'loop' ||

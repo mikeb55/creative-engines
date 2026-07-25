@@ -62,6 +62,21 @@ contextBridge.exposeInMainWorld('composerOsDesktop', {
   notifyGenerationPhase: (phase: 'running' | 'succeeded' | 'failed' | 'idle'): void => {
     ipcRenderer.send('composer-os:generation-phase', phase);
   },
+  getPairingOverride: (id: string): Promise<{ id: string; value: boolean | undefined }> =>
+    ipcRenderer.invoke('composer-os:get-pairing-override', { id }) as Promise<{
+      id: string;
+      value: boolean | undefined;
+    }>,
+  setPairingOverride: (
+    id: string,
+    value: boolean | undefined
+  ): Promise<{ ok: boolean; id: string; value: boolean | undefined; error?: string }> =>
+    ipcRenderer.invoke('composer-os:set-pairing-override', { id, value }) as Promise<{
+      ok: boolean;
+      id: string;
+      value: boolean | undefined;
+      error?: string;
+    }>,
   martino: {
     generate: (tuneConfig: Record<string, unknown>) =>
       ipcRenderer.invoke('martino:generate', tuneConfig) as Promise<Record<string, unknown>>,

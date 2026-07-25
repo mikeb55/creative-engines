@@ -49,6 +49,16 @@ export {
   type StyleProfileId,
 } from './riffStylePairings';
 
+export {
+  PAIRING_ENABLEMENT_OVERRIDES_FILENAME,
+  configurePairingOverrideStorePath,
+  getPairingOverrideStorePath,
+  getPairingOverride,
+  setPairingOverride,
+  getAllPairingOverrides,
+  resetPairingOverridesForTests,
+} from './pairingEnablementOverrides';
+
 /** @deprecated use StylePairing — kept for gradual migration of external scripts */
 export type RiffPhraseMotifSeedPairing = StylePairing & {
   /** @deprecated use categoryId */

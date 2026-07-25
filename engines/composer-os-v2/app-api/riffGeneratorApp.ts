@@ -232,6 +232,9 @@ export function runRiffGeneratorApp(req: GenerateRequest, presetOutputDir: strin
     carryForward: req.riffCarryForward,
     ...zappaControls,
     ...(req.riffPhraseMotifSeed === true ? { phraseMotifSeed: true } : {}),
+    ...(req.riffPairingFlags && Object.keys(req.riffPairingFlags).length > 0
+      ? { pairingFlags: req.riffPairingFlags as import('../core/riff-generator/riffStylePairings').PairingFlags }
+      : {}),
     ...(req.riffDickinsonFlavor === true ? { dickinsonFlavor: true } : {}),
   });
 

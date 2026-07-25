@@ -9,17 +9,31 @@
 
 import { RIFF_PHRASE_CATEGORIES, type RiffPhraseCategory } from './riffPhraseLibraryTypes';
 import { RIFF_GENERATOR_VRB_IDS } from './riffVrbRegistry';
+import { getPairingOverride } from './pairingEnablementOverrides';
 
 export type StyleProfileId = string;
 
 /** Composite edge id — e.g. "blues_rock::hendrix" */
 export type PairingId = `${RiffPhraseCategory}::${string}`;
 
+/**
+ * Pairing manifest entry.
+ * Canonical fields: id, label, vrbId, motifCategory, defaultEnabled.
+ * categoryId / profileId are aliases kept for existing call sites.
+ */
 export type StylePairing = {
   id: PairingId;
+  /** Human-readable label (checkbox / future settings). */
+  label: string;
+  /** Profile / VRB id (manifest). */
+  vrbId: StyleProfileId;
+  /** Phrase motif category (manifest). */
+  motifCategory: RiffPhraseCategory;
+  /** @deprecated alias of motifCategory */
   categoryId: RiffPhraseCategory;
+  /** @deprecated alias of vrbId */
   profileId: StyleProfileId;
-  /** Registry default; runtime flags / env may override. Always false for shipped edges. */
+  /** Registry default; user override / flags / env may override. Always false until Phase 2. */
   defaultEnabled: boolean;
 };
 
@@ -64,35 +78,40 @@ export const LEGACY_PAIRING_ENV_ALIASES: Readonly<Record<string, PairingId>> = {
 };
 
 function edge(
-  categoryId: RiffPhraseCategory,
-  profileId: StyleProfileId,
+  motifCategory: RiffPhraseCategory,
+  vrbId: StyleProfileId,
+  label: string,
   defaultEnabled = false
 ): StylePairing {
   return {
-    id: makePairingId(categoryId, profileId),
-    categoryId,
-    profileId,
+    id: makePairingId(motifCategory, vrbId),
+    label,
+    vrbId,
+    motifCategory,
+    categoryId: motifCategory,
+    profileId: vrbId,
     defaultEnabled,
   };
 }
 
 /**
- * Central many-to-many registry.
+ * Central many-to-many registry (pairing manifest).
  * blues_rock has two profiles (hendrix + led_zeppelin). southern_rock -> jimmy_herring (Allman-lineage southern lead).
+ * defaultEnabled stays false until Phase 2 rollout (user-override layer must land first).
  */
 export const STYLE_PAIRINGS: readonly StylePairing[] = [
-  edge('sax_inspired', 'weather_report'),
-  edge('jazz_rock', 'mahavishnu'),
-  edge('diminished_lines', 'fripp'),
-  edge('white_rock_funk', 'iommi'),
-  edge('black_soul_funk', 'nile_rodgers'),
-  edge('bebop_jazz_blues', 'bill_evans_sax'),
-  edge('blues_rock', 'hendrix'),
-  edge('blues_rock', 'led_zeppelin'),
-  edge('progressive_blues', 'david_gilmour'),
-  edge('modern_rock', 'morello'),
-  edge('virtuoso_technique', 'eddie_van_halen'),
-  edge('southern_rock', 'jimmy_herring'),
+  edge('sax_inspired', 'weather_report', 'Weather Report / sax-inspired'),
+  edge('jazz_rock', 'mahavishnu', 'Mahavishnu / jazz-rock'),
+  edge('diminished_lines', 'fripp', 'Fripp / diminished lines'),
+  edge('white_rock_funk', 'iommi', 'Iommi / white rock funk'),
+  edge('black_soul_funk', 'nile_rodgers', 'Nile Rodgers / black soul funk'),
+  edge('bebop_jazz_blues', 'bill_evans_sax', 'Bill Evans sax / bebop jazz blues'),
+  edge('blues_rock', 'hendrix', 'Hendrix / blues-rock'),
+  edge('blues_rock', 'led_zeppelin', 'Led Zeppelin / blues-rock'),
+  edge('progressive_blues', 'david_gilmour', 'Gilmour / progressive blues'),
+  edge('modern_rock', 'morello', 'Morello / modern rock'),
+  edge('virtuoso_technique', 'eddie_van_halen', 'EVH / virtuoso technique'),
+  edge('southern_rock', 'jimmy_herring', 'Jimmy Herring / southern rock'),
 ];
 
 const KNOWN_CATEGORIES = new Set<string>(RIFF_PHRASE_CATEGORIES);
@@ -120,8 +139,14 @@ function validateStylePairings(pairings: readonly StylePairing[]): void {
     if (!KNOWN_PROFILES.has(p.profileId)) {
       throw new Error('STYLE_PAIRINGS: unknown profile ' + p.profileId);
     }
-    if (makePairingId(p.categoryId, p.profileId) !== p.id) {
+    if (p.categoryId !== p.motifCategory || p.profileId !== p.vrbId) {
+      throw new Error('STYLE_PAIRINGS: alias mismatch for ' + p.id);
+    }
+    if (makePairingId(p.motifCategory, p.vrbId) !== p.id) {
       throw new Error('STYLE_PAIRINGS: PairingId mismatch for ' + p.id);
+    }
+    if (!p.label || !p.label.trim()) {
+      throw new Error('STYLE_PAIRINGS: missing label for ' + p.id);
     }
   }
   for (const [env, id] of Object.entries(LEGACY_PAIRING_ENV_ALIASES)) {
@@ -191,12 +216,25 @@ export function isPairingEnvEnabled(pairing: StylePairing): boolean {
 }
 
 /**
- * Resolve enablement: explicit flags map -> env (derived + legacy) -> registry default.
+ * Resolve enablement:
+ *   PairingFlags (if key present) -> user override (if set) -> env -> registry defaultEnabled.
+ * Core user formula when flags/env absent: override ?? manifest.defaultEnabled.
  */
-export function isPairingEnabled(pairing: StylePairing, flags?: PairingFlags): boolean {
+export function isPairingEnabled(pairing: StylePairing, flags?: PairingFlags): boolean;
+export function isPairingEnabled(id: PairingId | string, flags?: PairingFlags): boolean;
+export function isPairingEnabled(
+  pairingOrId: StylePairing | PairingId | string,
+  flags?: PairingFlags
+): boolean {
+  const pairing =
+    typeof pairingOrId === 'string' ? pairingById.get(pairingOrId as PairingId) : pairingOrId;
+  if (!pairing) return false;
+
   if (flags && Object.prototype.hasOwnProperty.call(flags, pairing.id)) {
     return flags[pairing.id] === true;
   }
+  const override = getPairingOverride(pairing.id);
+  if (override !== undefined) return override === true;
   if (isPairingEnvEnabled(pairing)) return true;
   return pairing.defaultEnabled === true;
 }

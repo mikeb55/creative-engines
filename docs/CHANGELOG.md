@@ -2,6 +2,8 @@
 
 ### Added
 
+- **Pairing enablement user-override layer (Phase 2 prerequisite)** — Manifest fields confirmed on `STYLE_PAIRINGS` (`id`, `label`, `vrbId`, `motifCategory`, `defaultEnabled`). Persistent overrides: JSON under Electron `userData` (`pairing-enablement-overrides.json`) via `getPairingOverride` / `setPairingOverride`. Resolver: `isPairingEnabled` = flags → override → env → `defaultEnabled`. RiffGen checkbox reads/writes through resolver (localStorage + IPC). `riffPairingFlags` on generate so force-OFF works when defaults flip. **No settings panel yet. `defaultEnabled` still all false — Phase 2 rollout still blocked until this layer confirmed.**
+
 - **RiffGen — Jimmy Herring Dickinson southern flavor (opt-in)** — JH-only post-process (`jimmyHerringDickinsonFlavor.ts`): call-response blues fills, blues-scale ornaments, triplet pickups, duration-driven held notes. Default **OFF** (`riffDickinsonFlavor` / `COMPOSER_OS_RIFF_DICKINSON_FLAVOR` / localStorage `composerOs.riffDickinsonFlavor`). Does not modify `buildRiffScoreModel` / `riffMelody` / `riffRhythm`. Wired via `runRiffGenerator` + RiffGen / Home checkbox when VRB is `jimmy_herring`.
 
 ### Fixed

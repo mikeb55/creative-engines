@@ -52,6 +52,7 @@ export function buildRiffScoreModel(params: RiffGeneratorParams): BuiltRiffScore
   const profile = params.riffProfile;
   const coreMotif = resolveRiffCoreMotif(params.seed, params.vrbId, {
     phraseMotifSeed: params.phraseMotifSeed === true,
+    pairingFlags: params.pairingFlags,
   });
   const phraseSeeded = isPhraseSeededCoreMotif(coreMotif);
   const perBarRhythm = buildMultiBarRhythm(rng, params.grid, params.density, params.bars, params.style);

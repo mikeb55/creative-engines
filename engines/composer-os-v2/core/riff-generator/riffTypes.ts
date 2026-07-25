@@ -75,6 +75,11 @@ export interface RiffGeneratorParams {
    */
   phraseMotifSeed?: boolean;
   /**
+   * Per-pairing enablement map (API `riffPairingFlags`). When a key is present it
+   * wins over userData override / env / defaultEnabled.
+   */
+  pairingFlags?: import('./riffStylePairings').PairingFlags;
+  /**
    * JH-only Dickinson southern flavor post-process (API `riffDickinsonFlavor`).
    * Default omit/false — existing jimmy_herring output unchanged (env still works for scripts).
    */
