@@ -97,19 +97,20 @@ function edge(
 /**
  * Central many-to-many registry (pairing manifest).
  * blues_rock has two profiles (hendrix + led_zeppelin). southern_rock -> jimmy_herring (Allman-lineage southern lead).
- * defaultEnabled stays false until Phase 2 rollout (user-override layer must land first).
+ * Phase 2 Batch 1 default-ON: weather_report, bill_evans_sax, morello, nile_rodgers, iommi.
+ * Remaining seven stay defaultEnabled false until later batches.
  */
 export const STYLE_PAIRINGS: readonly StylePairing[] = [
-  edge('sax_inspired', 'weather_report', 'Weather Report / sax-inspired'),
+  edge('sax_inspired', 'weather_report', 'Weather Report / sax-inspired', true),
   edge('jazz_rock', 'mahavishnu', 'Mahavishnu / jazz-rock'),
   edge('diminished_lines', 'fripp', 'Fripp / diminished lines'),
-  edge('white_rock_funk', 'iommi', 'Iommi / white rock funk'),
-  edge('black_soul_funk', 'nile_rodgers', 'Nile Rodgers / black soul funk'),
-  edge('bebop_jazz_blues', 'bill_evans_sax', 'Bill Evans sax / bebop jazz blues'),
+  edge('white_rock_funk', 'iommi', 'Iommi / white rock funk', true),
+  edge('black_soul_funk', 'nile_rodgers', 'Nile Rodgers / black soul funk', true),
+  edge('bebop_jazz_blues', 'bill_evans_sax', 'Bill Evans sax / bebop jazz blues', true),
   edge('blues_rock', 'hendrix', 'Hendrix / blues-rock'),
   edge('blues_rock', 'led_zeppelin', 'Led Zeppelin / blues-rock'),
   edge('progressive_blues', 'david_gilmour', 'Gilmour / progressive blues'),
-  edge('modern_rock', 'morello', 'Morello / modern rock'),
+  edge('modern_rock', 'morello', 'Morello / modern rock', true),
   edge('virtuoso_technique', 'eddie_van_halen', 'EVH / virtuoso technique'),
   edge('southern_rock', 'jimmy_herring', 'Jimmy Herring / southern rock'),
 ];
