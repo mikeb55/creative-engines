@@ -69,7 +69,7 @@ export function RiffGenStylePairingsPanel() {
           <h3 style={{ margin: '0 0 0.25rem', fontSize: '1.05rem' }}>Style Pairings</h3>
           <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
             Enable phrase-motif seed per pairing. Toggle = user override; Reset restores manifest
-            default (Batch 1 five ON; others OFF).
+            default (all 12 ON; override can force off).
           </p>
         </div>
         <button type="button" onClick={onResetAll} data-testid="pairing-reset-all">

@@ -24,7 +24,7 @@ export type RiffPhraseMotifSeedUiPairing = {
 
 /**
  * Proven pairings shown in RiffGen checkbox + Style Pairings settings.
- * defaultEnabled mirrors STYLE_PAIRINGS (all false until Phase 2 default-ON).
+ * defaultEnabled mirrors STYLE_PAIRINGS (Phase 2 full rollout: all 12 true).
  */
 export const RIFF_PHRASE_MOTIF_SEED_UI_PAIRINGS: readonly RiffPhraseMotifSeedUiPairing[] = [
   {
@@ -42,7 +42,7 @@ export const RIFF_PHRASE_MOTIF_SEED_UI_PAIRINGS: readonly RiffPhraseMotifSeedUiP
     label: 'Mahavishnu / jazz-rock',
     vrbId: 'mahavishnu',
     motifCategory: 'jazz_rock',
-    defaultEnabled: false,
+    defaultEnabled: true,
     profileId: 'mahavishnu',
     categoryId: 'jazz_rock',
     lickLabel: 'jazz-rock',
@@ -52,7 +52,7 @@ export const RIFF_PHRASE_MOTIF_SEED_UI_PAIRINGS: readonly RiffPhraseMotifSeedUiP
     label: 'Fripp / diminished lines',
     vrbId: 'fripp',
     motifCategory: 'diminished_lines',
-    defaultEnabled: false,
+    defaultEnabled: true,
     profileId: 'fripp',
     categoryId: 'diminished_lines',
     lickLabel: 'diminished',
@@ -92,7 +92,7 @@ export const RIFF_PHRASE_MOTIF_SEED_UI_PAIRINGS: readonly RiffPhraseMotifSeedUiP
     label: 'Hendrix / blues-rock',
     vrbId: 'hendrix',
     motifCategory: 'blues_rock',
-    defaultEnabled: false,
+    defaultEnabled: true,
     profileId: 'hendrix',
     categoryId: 'blues_rock',
     lickLabel: 'blues-rock',
@@ -102,7 +102,7 @@ export const RIFF_PHRASE_MOTIF_SEED_UI_PAIRINGS: readonly RiffPhraseMotifSeedUiP
     label: 'Led Zeppelin / blues-rock',
     vrbId: 'led_zeppelin',
     motifCategory: 'blues_rock',
-    defaultEnabled: false,
+    defaultEnabled: true,
     profileId: 'led_zeppelin',
     categoryId: 'blues_rock',
     lickLabel: 'blues-rock',
@@ -112,7 +112,7 @@ export const RIFF_PHRASE_MOTIF_SEED_UI_PAIRINGS: readonly RiffPhraseMotifSeedUiP
     label: 'Gilmour / progressive blues',
     vrbId: 'david_gilmour',
     motifCategory: 'progressive_blues',
-    defaultEnabled: false,
+    defaultEnabled: true,
     profileId: 'david_gilmour',
     categoryId: 'progressive_blues',
     lickLabel: 'progressive blues',
@@ -132,7 +132,7 @@ export const RIFF_PHRASE_MOTIF_SEED_UI_PAIRINGS: readonly RiffPhraseMotifSeedUiP
     label: 'EVH / virtuoso technique',
     vrbId: 'eddie_van_halen',
     motifCategory: 'virtuoso_technique',
-    defaultEnabled: false,
+    defaultEnabled: true,
     profileId: 'eddie_van_halen',
     categoryId: 'virtuoso_technique',
     lickLabel: 'virtuoso technique',
@@ -142,7 +142,7 @@ export const RIFF_PHRASE_MOTIF_SEED_UI_PAIRINGS: readonly RiffPhraseMotifSeedUiP
     label: 'Jimmy Herring / southern rock',
     vrbId: 'jimmy_herring',
     motifCategory: 'southern_rock',
-    defaultEnabled: false,
+    defaultEnabled: true,
     profileId: 'jimmy_herring',
     categoryId: 'southern_rock',
     lickLabel: 'southern rock',

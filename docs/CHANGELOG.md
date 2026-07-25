@@ -2,6 +2,8 @@
 
 ### Added
 
+- **Phase 2 full default-ON** — All **12** `STYLE_PAIRINGS` now `defaultEnabled: true` (Batch 1 five already on; remaining seven: `hendrix`, `led_zeppelin`, `mahavishnu`, `fripp`, `david_gilmour`, `eddie_van_halen`, `jimmy_herring`). Override / settings-panel force-off unchanged. UI mirror synced.
+
 - **Phase 2 Batch 1 default-ON** — Manifest `defaultEnabled: true` for five pairings only: `sax_inspired::weather_report`, `bebop_jazz_blues::bill_evans_sax`, `modern_rock::morello`, `black_soul_funk::nile_rodgers`, `white_rock_funk::iommi`. Remaining seven stay false. Override layer unchanged (force off / reset still works). UI mirror in `riffPhraseMotifSeedUi.ts` kept in sync. Roadmap: multi-VRB composite / Mosaic investigation note (no simultaneous blend; Mosaic is sequential Song Mode sections).
 
 - **Style Pairings settings panel (Phase 2 UI)** — RiffGen `#/riffgen` lists all **12** `STYLE_PAIRINGS` rows (label / VRB / motif category) with toggles = `override ?? defaultEnabled`, per-row **Reset to default**, and **Reset all to defaults**. Writes only through `setPairingOverride` (localStorage + Electron IPC). Generate-island checkbox resyncs on override change.
