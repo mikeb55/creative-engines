@@ -2,11 +2,11 @@
  * Persistent per-pairing enablement overrides (user preference layer).
  *
  * value boolean = force on/off; undefined / missing key = no override -> manifest defaultEnabled.
- * Default store: in-memory. Electron main configures JSON under app.getPath('userData').
+ * Single-select: setting true clears any previously force-on pairing (at most one active).
+ * Default store: in-memory. Electron main configures JSON under app.getPath("userData").
  */
-
-import * as fs from 'node:fs';
-import * as path from 'node:path';
+import * as fs from 'fs';
+import * as path from 'path';
 import type { PairingId } from './riffStylePairings';
 
 /** Relative filename under Electron userData. */
@@ -65,16 +65,45 @@ export function getPairingOverride(id: PairingId | string): boolean | undefined 
 
 /**
  * Set override. undefined clears key -> back to manifest default.
- * true / false force enablement.
+ * true = force on (exclusive: clears any other force-on keys first).
+ * false = force off.
  */
 export function setPairingOverride(id: PairingId | string, value: boolean | undefined): void {
   const m = load();
-  if (value === undefined) {
+  if (value === true) {
+    for (const k of Object.keys(m)) {
+      if (k !== id && m[k] === true) delete m[k];
+    }
+    m[id] = true;
+  } else if (value === undefined) {
     delete m[id];
   } else {
-    m[id] = value;
+    m[id] = false;
   }
   persist();
+}
+
+/**
+ * Single-select: null = None (clear all overrides).
+ * Non-null = only that id force-on; wipe other overrides.
+ */
+export function selectExclusiveStylePairing(id: PairingId | string | null): void {
+  load();
+  if (id === null || id === '') {
+    memory = {};
+  } else {
+    memory = { [id]: true };
+  }
+  persist();
+}
+
+/** Currently force-on pairing id, if any (single-select). */
+export function getExclusiveSelectedPairingId(): string | null {
+  const m = load();
+  for (const [k, v] of Object.entries(m)) {
+    if (v === true) return k;
+  }
+  return null;
 }
 
 /** Snapshot of explicit overrides only (no unset keys). */
@@ -82,7 +111,7 @@ export function getAllPairingOverrides(): Readonly<Record<string, boolean>> {
   return { ...load() };
 }
 
-/** Tests: clear memory (+ wipe file when path configured). */
+/** Tests: clear memory + wipe file when path configured. */
 export function resetPairingOverridesForTests(): void {
   memory = {};
   loaded = true;

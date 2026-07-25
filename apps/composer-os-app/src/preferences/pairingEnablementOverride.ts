@@ -1,9 +1,10 @@
 /**
- * RiffGen pairing enablement — routes checkbox / settings through resolver + persistent override.
+ * RiffGen pairing enablement — single-select (radio) override layer.
  *
  * Browser: localStorage mirror (same JSON shape as Electron userData file).
  * Desktop: also writes Electron userData via IPC so generate (main) sees override.
  * Resolution: isPairingEnabled = override ?? manifest.defaultEnabled (via STYLE_PAIRINGS).
+ * Enabling one pairing clears any previously force-on pairing.
  */
 
 import {
@@ -54,23 +55,84 @@ function emitChanged(ids: string[]): void {
   }
 }
 
+function syncIpcClear(ids: string[]): void {
+  const bridge = typeof window !== 'undefined' ? window.composerOsDesktop : undefined;
+  if (!bridge?.setPairingOverride) return;
+  for (const id of ids) {
+    void bridge.setPairingOverride(id, undefined);
+  }
+}
+
 /** undefined = no override. */
 export function getPairingOverride(id: string): boolean | undefined {
   const map = readLocalMap();
   return Object.prototype.hasOwnProperty.call(map, id) ? map[id] : undefined;
 }
 
-/** undefined clears back to manifest default. */
+/**
+ * Set override. true is exclusive (clears other force-on keys).
+ * undefined clears back to manifest default.
+ */
 export function setPairingOverride(id: string, value: boolean | undefined): void {
-  const map = readLocalMap();
-  if (value === undefined) delete map[id];
-  else map[id] = value;
+  const prev = readLocalMap();
+  const cleared: string[] = [];
+  const map: OverrideMap = { ...prev };
+
+  if (value === true) {
+    for (const [k, v] of Object.entries(map)) {
+      if (k !== id && v === true) {
+        delete map[k];
+        cleared.push(k);
+      }
+    }
+    map[id] = true;
+  } else if (value === undefined) {
+    delete map[id];
+  } else {
+    map[id] = false;
+  }
+
   writeLocalMap(map);
   const bridge = typeof window !== 'undefined' ? window.composerOsDesktop : undefined;
   if (bridge?.setPairingOverride) {
+    for (const cid of cleared) {
+      void bridge.setPairingOverride(cid, undefined);
+    }
     void bridge.setPairingOverride(id, value);
   }
-  emitChanged([id]);
+  emitChanged([...cleared, id]);
+}
+
+/**
+ * Single-select: null = None (clear all). Non-null = only that id force-on.
+ */
+export function selectExclusiveStylePairing(id: string | null): void {
+  const prev = Object.keys(readLocalMap());
+  if (id === null || id === '') {
+    writeLocalMap({});
+    syncIpcClear(prev);
+    emitChanged(prev.length > 0 ? prev : RIFF_PHRASE_MOTIF_SEED_UI_PAIRINGS.map((p) => p.id));
+    return;
+  }
+  writeLocalMap({ [id]: true });
+  const bridge = typeof window !== 'undefined' ? window.composerOsDesktop : undefined;
+  if (bridge?.setPairingOverride) {
+    for (const old of prev) {
+      if (old !== id) void bridge.setPairingOverride(old, undefined);
+    }
+    void bridge.setPairingOverride(id, true);
+  }
+  const touched = Array.from(new Set([...prev, id]));
+  emitChanged(touched);
+}
+
+/** Force-on pairing id if any. */
+export function getExclusiveSelectedPairingId(): string | null {
+  const map = readLocalMap();
+  for (const [k, v] of Object.entries(map)) {
+    if (v === true) return k;
+  }
+  return null;
 }
 
 /** Clear one override → manifest defaultEnabled. */
@@ -78,21 +140,13 @@ export function resetPairingOverride(id: string): void {
   setPairingOverride(id, undefined);
 }
 
-/** Clear all overrides. */
+/** Clear all overrides (= None). */
 export function resetAllPairingOverrides(): void {
-  const prev = Object.keys(readLocalMap());
-  writeLocalMap({});
-  const bridge = typeof window !== 'undefined' ? window.composerOsDesktop : undefined;
-  if (bridge?.setPairingOverride) {
-    for (const id of prev) {
-      void bridge.setPairingOverride(id, undefined);
-    }
-  }
-  emitChanged(prev.length > 0 ? prev : RIFF_PHRASE_MOTIF_SEED_UI_PAIRINGS.map((p) => p.id));
+  selectExclusiveStylePairing(null);
 }
 
 /**
- * Manifest defaultEnabled for UI pairings (mirrored from STYLE_PAIRINGS; all false today).
+ * Manifest defaultEnabled for UI pairings (mirrored from STYLE_PAIRINGS).
  * Kept local so browser bundle does not pull fs-backed engine store.
  */
 const UI_DEFAULT_ENABLED: Record<string, boolean> = Object.fromEntries(
@@ -127,14 +181,16 @@ export function readPhraseMotifSeedCheckboxForProfile(profileId: string | undefi
   return isPairingEnabled(pairing.id);
 }
 
-/** Persist checkbox toggle as pairing override (true/false). */
+/** Persist checkbox toggle as exclusive select / clear. */
 export function writePhraseMotifSeedCheckboxForProfile(
   profileId: string | undefined,
   enabled: boolean
 ): void {
   const pairing = primaryUiPairingForProfile(profileId);
   if (!pairing) return;
-  setPairingOverride(pairing.id, enabled);
+  if (enabled) selectExclusiveStylePairing(pairing.id);
+  else if (getExclusiveSelectedPairingId() === pairing.id) selectExclusiveStylePairing(null);
+  else setPairingOverride(pairing.id, undefined);
 }
 
 /** Snapshot rows for Style Pairings settings panel. */

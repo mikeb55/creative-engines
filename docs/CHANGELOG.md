@@ -2,6 +2,8 @@
 
 ### Added
 
+- **Style Pairings single-select (default None)** — Panel radios: at most one pairing force-on; explicit **None** row is first-load default. All **12** `defaultEnabled: false` again. Enabling pairing X clears prior force-on via `selectExclusiveStylePairing`. VRB dropdown unchanged (independent of panel).
+
 - **Phase 2 full default-ON** — All **12** `STYLE_PAIRINGS` now `defaultEnabled: true` (Batch 1 five already on; remaining seven: `hendrix`, `led_zeppelin`, `mahavishnu`, `fripp`, `david_gilmour`, `eddie_van_halen`, `jimmy_herring`). Override / settings-panel force-off unchanged. UI mirror synced.
 
 - **Phase 2 Batch 1 default-ON** — Manifest `defaultEnabled: true` for five pairings only: `sax_inspired::weather_report`, `bebop_jazz_blues::bill_evans_sax`, `modern_rock::morello`, `black_soul_funk::nile_rodgers`, `white_rock_funk::iommi`. Remaining seven stay false. Override layer unchanged (force off / reset still works). UI mirror in `riffPhraseMotifSeedUi.ts` kept in sync. Roadmap: multi-VRB composite / Mosaic investigation note (no simultaneous blend; Mosaic is sequential Song Mode sections).

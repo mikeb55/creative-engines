@@ -97,21 +97,21 @@ function edge(
 /**
  * Central many-to-many registry (pairing manifest).
  * blues_rock has two profiles (hendrix + led_zeppelin). southern_rock -> jimmy_herring (Allman-lineage southern lead).
- * Phase 2 full rollout: all 12 edges defaultEnabled true (user override still force-off).
+ * Single-select panel: all 12 edges defaultEnabled false (None until user picks one).
  */
 export const STYLE_PAIRINGS: readonly StylePairing[] = [
-  edge('sax_inspired', 'weather_report', 'Weather Report / sax-inspired', true),
-  edge('jazz_rock', 'mahavishnu', 'Mahavishnu / jazz-rock', true),
-  edge('diminished_lines', 'fripp', 'Fripp / diminished lines', true),
-  edge('white_rock_funk', 'iommi', 'Iommi / white rock funk', true),
-  edge('black_soul_funk', 'nile_rodgers', 'Nile Rodgers / black soul funk', true),
-  edge('bebop_jazz_blues', 'bill_evans_sax', 'Bill Evans sax / bebop jazz blues', true),
-  edge('blues_rock', 'hendrix', 'Hendrix / blues-rock', true),
-  edge('blues_rock', 'led_zeppelin', 'Led Zeppelin / blues-rock', true),
-  edge('progressive_blues', 'david_gilmour', 'Gilmour / progressive blues', true),
-  edge('modern_rock', 'morello', 'Morello / modern rock', true),
-  edge('virtuoso_technique', 'eddie_van_halen', 'EVH / virtuoso technique', true),
-  edge('southern_rock', 'jimmy_herring', 'Jimmy Herring / southern rock', true),
+  edge('sax_inspired', 'weather_report', 'Weather Report / sax-inspired', false),
+  edge('jazz_rock', 'mahavishnu', 'Mahavishnu / jazz-rock', false),
+  edge('diminished_lines', 'fripp', 'Fripp / diminished lines', false),
+  edge('white_rock_funk', 'iommi', 'Iommi / white rock funk', false),
+  edge('black_soul_funk', 'nile_rodgers', 'Nile Rodgers / black soul funk', false),
+  edge('bebop_jazz_blues', 'bill_evans_sax', 'Bill Evans sax / bebop jazz blues', false),
+  edge('blues_rock', 'hendrix', 'Hendrix / blues-rock', false),
+  edge('blues_rock', 'led_zeppelin', 'Led Zeppelin / blues-rock', false),
+  edge('progressive_blues', 'david_gilmour', 'Gilmour / progressive blues', false),
+  edge('modern_rock', 'morello', 'Morello / modern rock', false),
+  edge('virtuoso_technique', 'eddie_van_halen', 'EVH / virtuoso technique', false),
+  edge('southern_rock', 'jimmy_herring', 'Jimmy Herring / southern rock', false),
 ];
 
 const KNOWN_CATEGORIES = new Set<string>(RIFF_PHRASE_CATEGORIES);

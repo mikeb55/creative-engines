@@ -1,23 +1,24 @@
 /**
- * Phase 2 — Style Pairings enablement settings (override layer only).
- * Does not change STYLE_PAIRINGS.defaultEnabled; toggles write setPairingOverride.
+ * Style Pairings — single-select (radio). Default: None.
+ * Selecting one pairing force-on clears any previous selection.
  */
 import { useCallback, useEffect, useState } from 'react';
 import {
   PAIRING_ENABLEMENT_CHANGED_EVENT,
+  getExclusiveSelectedPairingId,
   listStylePairingEnablementRows,
-  resetAllPairingOverrides,
-  resetPairingOverride,
-  setPairingOverride,
+  selectExclusiveStylePairing,
 } from '../../preferences/pairingEnablementOverride';
 
 type Row = ReturnType<typeof listStylePairingEnablementRows>[number];
 
 export function RiffGenStylePairingsPanel() {
   const [rows, setRows] = useState<Row[]>(() => listStylePairingEnablementRows());
+  const [selectedId, setSelectedId] = useState<string | null>(() => getExclusiveSelectedPairingId());
 
   const refresh = useCallback(() => {
     setRows(listStylePairingEnablementRows());
+    setSelectedId(getExclusiveSelectedPairingId());
   }, []);
 
   useEffect(() => {
@@ -30,18 +31,8 @@ export function RiffGenStylePairingsPanel() {
     };
   }, [refresh]);
 
-  const onToggle = (id: string, enabled: boolean) => {
-    setPairingOverride(id, enabled);
-    refresh();
-  };
-
-  const onResetRow = (id: string) => {
-    resetPairingOverride(id);
-    refresh();
-  };
-
-  const onResetAll = () => {
-    resetAllPairingOverrides();
+  const onSelect = (id: string | null) => {
+    selectExclusiveStylePairing(id);
     refresh();
   };
 
@@ -68,57 +59,67 @@ export function RiffGenStylePairingsPanel() {
         <div>
           <h3 style={{ margin: '0 0 0.25rem', fontSize: '1.05rem' }}>Style Pairings</h3>
           <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            Enable phrase-motif seed per pairing. Toggle = user override; Reset restores manifest
-            default (all 12 ON; override can force off).
+            Pick at most one phrase-motif pairing (single-select). Default is None — VRB dropdown
+            stays independent; motif seed applies only when a pairing is selected here (or via the
+            generate checkbox for that VRB).
           </p>
         </div>
-        <button type="button" onClick={onResetAll} data-testid="pairing-reset-all">
-          Reset all to defaults
+        <button type="button" onClick={() => onSelect(null)} data-testid="pairing-reset-all">
+          Clear to None
         </button>
       </div>
 
       <table
         style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}
         data-testid="pairing-enablement-table"
+        role="radiogroup"
+        aria-label="Style pairing selection"
       >
         <thead>
           <tr>
-            <th scope="col" style={{ textAlign: 'left', padding: '0.35rem 0.4rem', borderBottom: '1px solid var(--border)' }}>Enabled</th>
+            <th scope="col" style={{ textAlign: 'left', padding: '0.35rem 0.4rem', borderBottom: '1px solid var(--border)' }}>Active</th>
             <th scope="col" style={{ textAlign: 'left', padding: '0.35rem 0.4rem', borderBottom: '1px solid var(--border)' }}>Label</th>
             <th scope="col" style={{ textAlign: 'left', padding: '0.35rem 0.4rem', borderBottom: '1px solid var(--border)' }}>VRB</th>
             <th scope="col" style={{ textAlign: 'left', padding: '0.35rem 0.4rem', borderBottom: '1px solid var(--border)' }}>Motif category</th>
-            <th scope="col" style={{ textAlign: 'left', padding: '0.35rem 0.4rem', borderBottom: '1px solid var(--border)' }}>Override</th>
-            <th scope="col" style={{ textAlign: 'right', padding: '0.35rem 0.4rem', borderBottom: '1px solid var(--border)' }}>Reset</th>
+            <th scope="col" style={{ textAlign: 'left', padding: '0.35rem 0.4rem', borderBottom: '1px solid var(--border)' }}>State</th>
           </tr>
         </thead>
         <tbody>
+          <tr data-pairing-id="__none__" data-testid="pairing-row-none">
+            <td style={{ padding: '0.35rem 0.4rem', borderBottom: '1px solid var(--border)' }}>
+              <input
+                type="radio"
+                name="riffgen-style-pairing"
+                aria-label="None — no style pairing"
+                checked={selectedId === null}
+                data-testid="pairing-toggle-none"
+                onChange={() => onSelect(null)}
+              />
+            </td>
+            <td style={{ padding: '0.35rem 0.4rem', borderBottom: '1px solid var(--border)' }}>None</td>
+            <td style={{ padding: '0.35rem 0.4rem', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>—</td>
+            <td style={{ padding: '0.35rem 0.4rem', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>—</td>
+            <td style={{ padding: '0.35rem 0.4rem', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+              {selectedId === null ? 'default' : ''}
+            </td>
+          </tr>
           {rows.map((row) => (
             <tr key={row.id} data-pairing-id={row.id}>
               <td style={{ padding: '0.35rem 0.4rem', borderBottom: '1px solid var(--border)' }}>
                 <input
-                  type="checkbox"
-                  role="switch"
-                  aria-label={'Enable ' + row.label}
-                  checked={row.enabled}
+                  type="radio"
+                  name="riffgen-style-pairing"
+                  aria-label={'Select ' + row.label}
+                  checked={selectedId === row.id}
                   data-testid={'pairing-toggle-' + row.id}
-                  onChange={(e) => onToggle(row.id, e.target.checked)}
+                  onChange={() => onSelect(row.id)}
                 />
               </td>
               <td style={{ padding: '0.35rem 0.4rem', borderBottom: '1px solid var(--border)' }}>{row.label}</td>
               <td style={{ padding: '0.35rem 0.4rem', borderBottom: '1px solid var(--border)' }}><code>{row.vrbId}</code></td>
               <td style={{ padding: '0.35rem 0.4rem', borderBottom: '1px solid var(--border)' }}><code>{row.motifCategory}</code></td>
               <td style={{ padding: '0.35rem 0.4rem', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-                {row.override === undefined ? 'default' : row.override ? 'force on' : 'force off'}
-              </td>
-              <td style={{ padding: '0.35rem 0.4rem', borderBottom: '1px solid var(--border)', textAlign: 'right' }}>
-                <button
-                  type="button"
-                  disabled={row.override === undefined}
-                  data-testid={'pairing-reset-' + row.id}
-                  onClick={() => onResetRow(row.id)}
-                >
-                  Reset to default
-                </button>
+                {selectedId === row.id ? 'selected' : 'off'}
               </td>
             </tr>
           ))}
