@@ -235,6 +235,73 @@ export function enforceDenseOnsetFloor(
 }
 
 /**
+ * P3 — phrase-seeded ON path only: raise played onset count so enough of the
+ * CoreMotif intervalPattern can realize (native motifRecurrence / MI).
+ * Flips rests first; if still short, peels grid-unit attacks off long segments
+ * (creates slots — dense floors alone cannot when every segment is already played).
+ * Caps at physical grid max. No-op when already at/above target.
+ */
+export function enforcePhraseSeedOnsetCoverage(
+  perBar: RiffRhythmSegment[][],
+  targetOnsets: number,
+  grid: RiffGridMode
+): void {
+  if (targetOnsets <= 0 || perBar.length === 0) return;
+  const unit = grid === 'sixteenth' ? 0.25 : 0.5;
+  const maxOnsets = Math.floor((perBar.length * 4) / unit + EPS);
+  const target = Math.min(Math.floor(targetOnsets), maxOnsets);
+  if (target <= 0) return;
+
+  let onsets = countPlayedOnsets(perBar);
+  if (onsets >= target) return;
+
+  for (const bar of perBar) {
+    for (const s of bar) {
+      if (onsets >= target) return;
+      if (!s.rest) continue;
+      s.rest = false;
+      onsets++;
+    }
+  }
+  if (onsets >= target) return;
+
+  // Peel unit-sized played attacks from longest subdivisible segments.
+  while (onsets < target) {
+    let bestBar = -1;
+    let bestIdx = -1;
+    let bestDur = unit * 2 - EPS;
+    for (let b = 0; b < perBar.length; b++) {
+      const bar = perBar[b]!;
+      for (let i = 0; i < bar.length; i++) {
+        const s = bar[i]!;
+        if (s.duration > bestDur) {
+          bestDur = s.duration;
+          bestBar = b;
+          bestIdx = i;
+        }
+      }
+    }
+    if (bestBar < 0) break;
+    const bar = perBar[bestBar]!;
+    const s = bar[bestIdx]!;
+    if (s.duration < unit * 2 - EPS) break;
+    const head: RiffRhythmSegment = {
+      startBeat: s.startBeat,
+      duration: unit,
+      rest: false,
+    };
+    const tail: RiffRhythmSegment = {
+      startBeat: s.startBeat + unit,
+      duration: s.duration - unit,
+      rest: false,
+    };
+    bar.splice(bestIdx, 1, head, tail);
+    // Net +1 played if original was played; +2 if it was rest (already flipped above).
+    onsets = countPlayedOnsets(perBar);
+  }
+}
+
+/**
  * Multi-bar: repeat rhythmic cell ≥2×; last bar may vary for loop; avoid full-bar symmetry when possible.
  * Dense grids enforce a minimum onset floor so motif-recurrence scoring is not starved.
  */

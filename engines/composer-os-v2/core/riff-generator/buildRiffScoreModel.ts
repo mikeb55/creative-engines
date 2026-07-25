@@ -15,7 +15,7 @@ import {
   type MelodyLine,
 } from './riffMelody';
 import type { RiffGeneratorParams } from './riffTypes';
-import { buildMultiBarRhythm } from './riffRhythm';
+import { buildMultiBarRhythm, enforcePhraseSeedOnsetCoverage } from './riffRhythm';
 import { mulberry32 } from './riffRandom';
 import { resolveRiffCoreMotif } from './riffSaxMotifSeedPoc';
 import { riffPitchFieldForBar, voicingClassForChordSymbol } from './riffPitchField';
@@ -53,7 +53,22 @@ export function buildRiffScoreModel(params: RiffGeneratorParams): BuiltRiffScore
   const coreMotif = resolveRiffCoreMotif(params.seed, params.vrbId, {
     phraseMotifSeed: params.phraseMotifSeed === true,
   });
+  const phraseSeeded = isPhraseSeededCoreMotif(coreMotif);
   const perBarRhythm = buildMultiBarRhythm(rng, params.grid, params.density, params.bars, params.style);
+  // P3: phrase-seeded rock/fusion MI victims — raise onset budget so full phrase + wrap
+  // cushion lands (native R/MI). Scoped to hendrix / led_zeppelin / mahavishnu so other
+  // ready pairings keep prior onset geometry (cadential coverage). Procedural unchanged.
+  if (
+    phraseSeeded &&
+    (params.vrbId === 'hendrix' ||
+      params.vrbId === 'led_zeppelin' ||
+      params.vrbId === 'mahavishnu')
+  ) {
+    const ivLen = coreMotif.intervalPattern.length;
+    const phraseNotes = ivLen + 1;
+    const wrapCushion = Math.min(ivLen, Math.max(8, Math.ceil(ivLen * 0.35)));
+    enforcePhraseSeedOnsetCoverage(perBarRhythm, phraseNotes + wrapCushion, params.grid);
+  }
   const chords = [...params.chordSymbols];
   while (chords.length < params.bars) {
     chords.push(chords[chords.length - 1] ?? 'Am7');
@@ -84,7 +99,6 @@ export function buildRiffScoreModel(params: RiffGeneratorParams): BuiltRiffScore
   let prevLast: number | undefined;
   let firstPitch: number | undefined;
   let motifStepIdx = 0;
-  const phraseSeeded = isPhraseSeededCoreMotif(coreMotif);
 
   for (let b = 0; b < params.bars; b++) {
     const chord = chords[b]!;
