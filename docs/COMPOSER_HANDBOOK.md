@@ -1076,6 +1076,8 @@ Strayhorn composes from **inside the chord colour and phrase line simultaneously
 
 **Song Mode slice** — **`billyStrayhornSlice.ts`** (`bs:*` receipts): chromatic reinterpretation passes + extended-tone enrichment + parallel color planing + tonal obscuring cadences.
 
+**Chord pools** (`seed % 4`): untagged **`strayhorn_chromatic_ballad`**, **`strayhorn_lush_life`**, **`strayhorn_chelsea_bridge`** (unchanged) plus tagged **`strayhorn_isfahan_drift`** (`noIiVi: true`, 21 research rows — parallel colour, chromatic mediant, tritone reinterpretation, non-functional dominant chains). Isfahan tier is **not** on the `breakFrankZappaIiViProgressions` allowlist (clean by construction).
+
 **Six parameters** (0–1, defaults in parentheses):
 
 | Parameter | Default | Musical role | Sweet spot |

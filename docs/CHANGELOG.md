@@ -2,6 +2,8 @@
 
 ### Added
 
+- **Billy Strayhorn `strayhorn_isfahan_drift` chord-pool tier** — Additional tagged `noIiVi: true` pool (21 rows: 5 verse parallel-color, 4 pre-chorus chromatic-mediant, 4 chorus tritone-reinterpretation, 8 bridge dominant-chain / connective). Research-grounded from Chelsea Bridge / Lush Life / Isfahan / Blood Count / Lotus Blossom. Resolver is now `seed % 4` (tier 3 = isfahan). Existing untagged `strayhorn_chromatic_ballad` / `strayhorn_lush_life` / `strayhorn_chelsea_bridge` rows unchanged. Not added to `breakFrankZappaIiViProgressions` allowlist.
+
 - **Style Pairings single-select (default None)** — Panel radios: at most one pairing force-on; explicit **None** row is first-load default. All **12** `defaultEnabled: false` again. Enabling pairing X clears prior force-on via `selectExclusiveStylePairing`. VRB dropdown unchanged (independent of panel).
 
 - **Phase 2 full default-ON** — All **12** `STYLE_PAIRINGS` now `defaultEnabled: true` (Batch 1 five already on; remaining seven: `hendrix`, `led_zeppelin`, `mahavishnu`, `fripp`, `david_gilmour`, `eddie_van_halen`, `jimmy_herring`). Override / settings-panel force-off unchanged. UI mirror synced.
