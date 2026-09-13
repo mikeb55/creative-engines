@@ -2715,6 +2715,46 @@ export interface GenerationMetadata {
   jimHallSliceReceipt?: string;
   jimHallEffectiveHarmonyBars?: string[];
   jimHallDeviceReceipts?: string[];
+  /** Nile Rodgers (Chic funk-guitar colour) — slice diagnostics + effective harmony. Receipts **`nr:*`**. */
+  nileRodgersDiagnostics?: {
+    songwriterId: 'nile_rodgers';
+    barsConsidered: number;
+    chicColourTouches: number;
+    deviceReceipts?: string[];
+  };
+  nileRodgersSliceReceipt?: string;
+  nileRodgersEffectiveHarmonyBars?: string[];
+  nileRodgersDeviceReceipts?: string[];
+  /** Larry Carlton (fusion-funk guitar colour) — slice diagnostics + effective harmony. Receipts **`lc:*`**. */
+  larryCarltonDiagnostics?: {
+    songwriterId: 'larry_carlton';
+    barsConsidered: number;
+    fusionColourTouches: number;
+    deviceReceipts?: string[];
+  };
+  larryCarltonSliceReceipt?: string;
+  larryCarltonEffectiveHarmonyBars?: string[];
+  larryCarltonDeviceReceipts?: string[];
+  /** Wes Montgomery (jazz-guitar colour) — slice diagnostics + effective harmony. Receipts **`wm:*`**. */
+  wesMontgomeryDiagnostics?: {
+    songwriterId: 'wes_montgomery';
+    barsConsidered: number;
+    octaveColourTouches: number;
+    deviceReceipts?: string[];
+  };
+  wesMontgomerySliceReceipt?: string;
+  wesMontgomeryEffectiveHarmonyBars?: string[];
+  wesMontgomeryDeviceReceipts?: string[];
+  /** Joe Pass (chord-melody colour) — slice diagnostics + effective harmony. Receipts **`jp:*`**. */
+  joePassDiagnostics?: {
+    songwriterId: 'joe_pass';
+    barsConsidered: number;
+    chordMelodyTouches: number;
+    deviceReceipts?: string[];
+  };
+  joePassSliceReceipt?: string;
+  joePassEffectiveHarmonyBars?: string[];
+  joePassDeviceReceipts?: string[];
   /** Steve Reich (pitch-field process / static diatonic field) — slice posture + receipts **`sr:*`**. */
   reichProcess?: SteveReichProcessMode;
   /** Effective process mode after resolve (`steveReichSlice.ts`). */

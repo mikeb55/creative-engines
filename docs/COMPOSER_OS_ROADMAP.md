@@ -1,4 +1,4 @@
-# Composer OS Roadmap [2026-07-25]
+# Composer OS Roadmap [2026-09-13]
 
 ## âœ… Active Now (top priority â€” everything below is backlog)
 
@@ -16,7 +16,7 @@
 | **1. Phase 2 widen** | **COMPLETE** — Berg + Beefheart + Fela + Threadgill + **Weber** HV walls shipped |
 | **2. Mosaic HV** | **COMPLETE (2026-07-16)** — **global** HV overlay shipped; per-section map rejected |
 | **3. Riff Generator** | **COMPLETE** — **HV Phase A+B + soft-link (2026-07-16)** — see `docs/RIFF_GENERATOR_HARMONIC_VOICE_DECISION.md` · **Phase 1.5 RiffGen** S0–S3 on `#/riffgen` **SHIPPED** · **chord-loop trust Phase 1** **SHIPPED** · desktop hash-route reload fix **SHIPPED** · pitch PR A/B/C shipped; phrase-engine Phase 2/3 **gated** · **per-phrase meter SHIPPED** · **Export Guitar Pro** (`api.exportGuitarPro` on generate result) **SHIPPED** · **Corpus details** default-closed collapse **SHIPPED** · **Session item 5 — `jamerson` UI catalog COMPLETE (2026-07-24)** (**18**/18 registry↔UI parity; funk Motown bass) · **S4** curation UX still backlog |
-| **4. Score-4 defer** | Parked / low ROI — **9** composers, Slonimsky-transport-only |
+| **4. Score-4 defer** | **In progress** — `nile_rodgers` + `larry_carlton` + `wes_montgomery` + `joe_pass` HV-wired 2026-09-13; **5** remain |
 | **5. Tier 3** | Parked / low ROI — **10** composers, score **0–3**, out of HV scope |
 
 - **Per-phrase meter (SHIPPED 2026-07-24):** Ingest stamps meter from each phrase window (`meterByBar`), splits at mid-file meter changes, clears file-level `meter_mismatch_file` quarantine on `diminished_lines/mvoldsu-003.gpx`. Audit still records file `meterMismatch`. Remaining S4: `diminished_lines` 1-bar leftovers / max-bar chops curation UX.
@@ -672,7 +672,7 @@ Single ordering for **merge safety â†’ thin debt â†’ user-visible qual
 
 **Low ROI â€” parked:**
 
-6. **Score-4 defer group** â€” **9** composers, Slonimsky-transport-only.
+6. **Score-4 defer group** — **5** remaining after `nile_rodgers` + `larry_carlton` + `wes_montgomery` + `joe_pass` HV (2026-09-13). Remaining: `eddie_van_halen`, `hendrix`, `jamerson`, `david_gilmour`, `scott_henderson`.
 7. **Tier 3** â€” **10** composers, score **0â€“3**, out of HV scope.
 8. **Bill Evans motif-recurrence fix** â€” small separate DCR; MI 5.5 hard-gate weakness; not urgent.
 9. **Two-guitar interplay module** â€” rule-based interaction modes for the GBD writer (see entry below).

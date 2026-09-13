@@ -2,6 +2,14 @@
 
 ### Added
 
+- **HV authority — `joe_pass` Score-4** — New chord-melody colour slice (`joePassSlice.ts`, receipts `jp:*`) + exact-id path helper (`isJoePassHarmonicPath`) + registry `hv_full` harmony/precompute. Mosaic merge on HV; spine/`getChordForBar`. Soft `joe` / `pass` songwriter-normalize only. Riff VRB holdbacks + mosaic stub `joe_pass→jim_hall` untouched. Verify with `--primary wayne_shorter` OVERALL PASS · 0 DIVERGE (9/9; 1 SOFT_DIFF GCE-only, seed 50021).
+
+- **HV authority — `wes_montgomery` Score-4** — New jazz-guitar colour slice (`wesMontgomerySlice.ts`, receipts `wm:*`) + exact-id path helper (`isWesMontgomeryHarmonicPath`) + registry `hv_full` harmony/precompute. Mosaic merge on HV; spine/`getChordForBar`. Soft `wes` / `montgomery` songwriter-normalize only. Riff VRB holdbacks + mosaic stub `wes_montgomery→jim_hall` untouched. Verify with `--primary wayne_shorter` OVERALL PASS · 0 DIVERGE (9/9; 1 SOFT_DIFF GCE-only, seed 50021).
+
+- **HV authority — `larry_carlton` Score-4** — New fusion-funk colour slice (`larryCarltonSlice.ts`, receipts `lc:*`) + exact-id path helper (`isLarryCarltonHarmonicPath`) + registry `hv_full` harmony/precompute. Mosaic merge on HV; spine/`getChordForBar`. Soft `carlton` / `mr_335` songwriter-normalize only. Riff VRB holdbacks untouched. Verify with `--primary wayne_shorter` OVERALL PASS · 0 DIVERGE (9/9; 3 SOFT_DIFF GCE-only).
+
+- **HV authority — `nile_rodgers` Score-4 (Tier 2 transport-only → slice)** — New Song Mode Chic-funk colour slice (`nileRodgersSlice.ts`, receipts `nr:*`) + exact-id path helper (`isNileRodgersHarmonicPath`) + registry `hv_full` harmony/precompute. Mosaic merge on HV; spine/`getChordForBar`. Soft `nile` songwriter-normalize only — never engage HV. Riff VRB / funk-grid holdbacks untouched. Mosaic stub roster unchanged. Verify with `--primary wayne_shorter` OVERALL PASS · 0 DIVERGE (9/9; 3 SOFT_DIFF GCE-only).
+
 - **Style Pairings single-select (default None)** — Panel radios: at most one pairing force-on; explicit **None** row is first-load default. All **12** `defaultEnabled: false` again. Enabling pairing X clears prior force-on via `selectExclusiveStylePairing`. VRB dropdown unchanged (independent of panel).
 
 - **Phase 2 full default-ON** — All **12** `STYLE_PAIRINGS` now `defaultEnabled: true` (Batch 1 five already on; remaining seven: `hendrix`, `led_zeppelin`, `mahavishnu`, `fripp`, `david_gilmour`, `eddie_van_halen`, `jimmy_herring`). Override / settings-panel force-off unchanged. UI mirror synced.

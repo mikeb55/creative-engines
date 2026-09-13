@@ -56,6 +56,10 @@ import { isStevieWonderHarmonicPath } from '../song-mode/stevieWonderSlice';
 import { isCharlieParkerHarmonicPath } from '../song-mode/charlieParkerSlice';
 import { isStephenSondheimHarmonicPath } from '../song-mode/sondheimSlice';
 import { isJimHallHarmonicPath } from '../song-mode/jimHallSlice';
+import { isNileRodgersHarmonicPath } from '../song-mode/nileRodgersSlice';
+import { isLarryCarltonHarmonicPath } from '../song-mode/larryCarltonSlice';
+import { isWesMontgomeryHarmonicPath } from '../song-mode/wesMontgomerySlice';
+import { isJoePassHarmonicPath } from '../song-mode/joePassSlice';
 import { isMilesDavisHarmonicPath } from '../song-mode/milesDavisSlice';
 import { isMccoyTynerHarmonicPath } from '../song-mode/mccoyTynerSlice';
 import { isPrinceHarmonicPath } from '../song-mode/princeSlice';
@@ -1196,6 +1200,70 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
     barIndex <= tb
   ) {
     return jhEff[barIndex - 1]!;
+  }
+
+  /**
+   * Nile Rodgers: `precomputeNileRodgersEffectiveHarmonyBars` applies Chic funk colour — receipts **`nr:*`**.
+   * HV path: primary | harmonicVoice (`nile_rodgers` exact) — see isNileRodgersHarmonicPath.
+   * Soft nile + riff VRB / funk-grid stay primary-only.
+   */
+  const nileEff = meta?.nileRodgersEffectiveHarmonyBars;
+  if (
+    isNileRodgersHarmonicPath(meta) &&
+    Array.isArray(nileEff) &&
+    nileEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return nileEff[barIndex - 1]!;
+  }
+
+  /**
+   * Larry Carlton: `precomputeLarryCarltonEffectiveHarmonyBars` applies fusion-funk colour — receipts **`lc:*`**.
+   * HV path: primary | harmonicVoice (`larry_carlton` exact) — see isLarryCarltonHarmonicPath.
+   * Soft carlton/mr_335 + riff VRB stay primary-only.
+   */
+  const lcarEff = meta?.larryCarltonEffectiveHarmonyBars;
+  if (
+    isLarryCarltonHarmonicPath(meta) &&
+    Array.isArray(lcarEff) &&
+    lcarEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return lcarEff[barIndex - 1]!;
+  }
+
+  /**
+   * Wes Montgomery: `precomputeWesMontgomeryEffectiveHarmonyBars` applies jazz-guitar colour — receipts **`wm:*`**.
+   * HV path: primary | harmonicVoice (`wes_montgomery` exact) — see isWesMontgomeryHarmonicPath.
+   * Soft wes/montgomery + riff VRB stay primary-only. Mosaic stub wes_montgomery→jim_hall holdback.
+   */
+  const wesMontEff = meta?.wesMontgomeryEffectiveHarmonyBars;
+  if (
+    isWesMontgomeryHarmonicPath(meta) &&
+    Array.isArray(wesMontEff) &&
+    wesMontEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return wesMontEff[barIndex - 1]!;
+  }
+
+  /**
+   * Joe Pass: `precomputeJoePassEffectiveHarmonyBars` applies chord-melody colour — receipts **`jp:*`**.
+   * HV path: primary | harmonicVoice (`joe_pass` exact) — see isJoePassHarmonicPath.
+   * Soft joe/pass + riff VRB stay primary-only. Mosaic stub joe_pass→jim_hall holdback.
+   */
+  const jpassEff = meta?.joePassEffectiveHarmonyBars;
+  if (
+    isJoePassHarmonicPath(meta) &&
+    Array.isArray(jpassEff) &&
+    jpassEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return jpassEff[barIndex - 1]!;
   }
 
   /**
