@@ -4,7 +4,7 @@
 
 **Composer OS** (`engines/composer-os-v2/`) is a single generative pipeline for jazz/chamber-style outputs: preset â†’ planning â†’ score build â†’ integrity â†’ MusicXML export â†’ validation â†’ readiness. **Apps** (`apps/composer-os-app`, `apps/composer-os-desktop`) call the shared **app API** (`engines/composer-os-v2/app-api/`), not the engine core directly.
 
-**HV authority (Score-4):** `nile_rodgers` and `larry_carlton` now have GBD Song Mode colour slices (`nr:*` / `lc:*`) with exact-id `is*HarmonicPath` (primary **or** exact `harmonicVoice`). Riff VRB surfaces stay primary-only. Mosaic dispatch roster unchanged.
+**HV authority (Score-4):** `nile_rodgers`, `larry_carlton`, and `wes_montgomery` now have GBD Song Mode colour slices (`nr:*` / `lc:*` / `wm:*`) with exact-id `is*HarmonicPath` (primary **or** exact `harmonicVoice`). Riff VRB surfaces stay primary-only. Mosaic dispatch roster unchanged (`wes_montgomery` still stubs to `jim_hall`).
 
 ### RiffGen Phase 1.5 (inspect + GenerateIsland â€” 2026-07-18)
 

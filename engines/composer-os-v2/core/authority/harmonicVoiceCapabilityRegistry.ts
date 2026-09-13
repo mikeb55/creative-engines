@@ -431,6 +431,17 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
       'harmony/precompute hv_full via larryCarltonEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact larry_carlton only; soft carlton/mr_335 songwriter-normalize only; riff VRB holdbacks untouched',
   },
   {
+    styleId: 'wes_montgomery',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'wesMontgomeryEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via wesMontgomeryEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact wes_montgomery only; soft wes/montgomery songwriter-normalize only; riff VRB holdbacks untouched; mosaic DISPATCH_STUB_ALIASES wes_montgomery→jim_hall unchanged',
+  },
+  {
     styleId: 'miles_davis',
     layers: {
       harmony: 'hv_full',

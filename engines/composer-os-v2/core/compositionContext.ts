@@ -2735,6 +2735,16 @@ export interface GenerationMetadata {
   larryCarltonSliceReceipt?: string;
   larryCarltonEffectiveHarmonyBars?: string[];
   larryCarltonDeviceReceipts?: string[];
+  /** Wes Montgomery (jazz-guitar colour) — slice diagnostics + effective harmony. Receipts **`wm:*`**. */
+  wesMontgomeryDiagnostics?: {
+    songwriterId: 'wes_montgomery';
+    barsConsidered: number;
+    octaveColourTouches: number;
+    deviceReceipts?: string[];
+  };
+  wesMontgomerySliceReceipt?: string;
+  wesMontgomeryEffectiveHarmonyBars?: string[];
+  wesMontgomeryDeviceReceipts?: string[];
   /** Steve Reich (pitch-field process / static diatonic field) — slice posture + receipts **`sr:*`**. */
   reichProcess?: SteveReichProcessMode;
   /** Effective process mode after resolve (`steveReichSlice.ts`). */

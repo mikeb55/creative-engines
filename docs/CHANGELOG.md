@@ -2,6 +2,8 @@
 
 ### Added
 
+- **HV authority — `wes_montgomery` Score-4** — New jazz-guitar colour slice (`wesMontgomerySlice.ts`, receipts `wm:*`) + exact-id path helper (`isWesMontgomeryHarmonicPath`) + registry `hv_full` harmony/precompute. Mosaic merge on HV; spine/`getChordForBar`. Soft `wes` / `montgomery` songwriter-normalize only. Riff VRB holdbacks + mosaic stub `wes_montgomery→jim_hall` untouched. Verify with `--primary wayne_shorter` OVERALL PASS · 0 DIVERGE (9/9; 1 SOFT_DIFF GCE-only, seed 50021).
+
 - **HV authority — `larry_carlton` Score-4** — New fusion-funk colour slice (`larryCarltonSlice.ts`, receipts `lc:*`) + exact-id path helper (`isLarryCarltonHarmonicPath`) + registry `hv_full` harmony/precompute. Mosaic merge on HV; spine/`getChordForBar`. Soft `carlton` / `mr_335` songwriter-normalize only. Riff VRB holdbacks untouched. Verify with `--primary wayne_shorter` OVERALL PASS · 0 DIVERGE (9/9; 3 SOFT_DIFF GCE-only).
 
 - **HV authority — `nile_rodgers` Score-4 (Tier 2 transport-only → slice)** — New Song Mode Chic-funk colour slice (`nileRodgersSlice.ts`, receipts `nr:*`) + exact-id path helper (`isNileRodgersHarmonicPath`) + registry `hv_full` harmony/precompute. Mosaic merge on HV; spine/`getChordForBar`. Soft `nile` songwriter-normalize only — never engage HV. Riff VRB / funk-grid holdbacks untouched. Mosaic stub roster unchanged. Verify with `--primary wayne_shorter` OVERALL PASS · 0 DIVERGE (9/9; 3 SOFT_DIFF GCE-only).
