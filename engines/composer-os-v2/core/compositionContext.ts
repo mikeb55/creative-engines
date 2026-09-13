@@ -2725,6 +2725,16 @@ export interface GenerationMetadata {
   nileRodgersSliceReceipt?: string;
   nileRodgersEffectiveHarmonyBars?: string[];
   nileRodgersDeviceReceipts?: string[];
+  /** Larry Carlton (fusion-funk guitar colour) — slice diagnostics + effective harmony. Receipts **`lc:*`**. */
+  larryCarltonDiagnostics?: {
+    songwriterId: 'larry_carlton';
+    barsConsidered: number;
+    fusionColourTouches: number;
+    deviceReceipts?: string[];
+  };
+  larryCarltonSliceReceipt?: string;
+  larryCarltonEffectiveHarmonyBars?: string[];
+  larryCarltonDeviceReceipts?: string[];
   /** Steve Reich (pitch-field process / static diatonic field) — slice posture + receipts **`sr:*`**. */
   reichProcess?: SteveReichProcessMode;
   /** Effective process mode after resolve (`steveReichSlice.ts`). */

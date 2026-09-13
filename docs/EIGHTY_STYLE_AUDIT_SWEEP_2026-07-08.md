@@ -119,7 +119,7 @@ Conservative assumptions: inventory from spine (77) + overlay-only (10) + Slonim
 | hendrix | 4 | Tier 2 | harmonicVoice, ui-api | primary-only | slonimskyHarmonicVoices.ts; attachVoiceRuleBundle.ts |
 | jamerson | 4 | Tier 2 | harmonicVoice, ui-api | primary-only | slonimskyHarmonicVoices.ts; attachVoiceRuleBundle.ts |
 | joe_pass | 4 | Tier 2 | harmonicVoice, ui-api | primary-only | slonimskyHarmonicVoices.ts; attachVoiceRuleBundle.ts |
-| larry_carlton | 4 | Tier 2 | harmonicVoice, ui-api | primary-only | slonimskyHarmonicVoices.ts; attachVoiceRuleBundle.ts |
+| larry_carlton | 4 | Tier 2 | harmonicVoice, ui-api | hv_full (harmony/precompute; verified 2026-09-13) | larryCarltonSlice.ts; harmonyResolution.ts; harmonySpineProvider.ts; harmonicVoiceCapabilityRegistry.ts; isLarryCarltonHarmonicPath; exact larry_carlton only; soft carlton/mr_335 songwriter-normalize only; riff VRB holdbacks untouched |
 | nile_rodgers | 4 | Tier 2 | harmonicVoice, ui-api | hv_full (harmony/precompute; verified 2026-09-13) | nileRodgersSlice.ts; harmonyResolution.ts; harmonySpineProvider.ts; harmonicVoiceCapabilityRegistry.ts; isNileRodgersHarmonicPath; exact nile_rodgers only; soft nile songwriter-normalize only; riff VRB / funk-grid holdbacks untouched |
 | scott_henderson | 4 | Tier 2 | harmonicVoice, ui-api | primary-only | slonimskyHarmonicVoices.ts; attachVoiceRuleBundle.ts |
 | wes_montgomery | 4 | Tier 2 | harmonicVoice, ui-api | primary-only | slonimskyHarmonicVoices.ts; attachVoiceRuleBundle.ts |

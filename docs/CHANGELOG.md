@@ -2,6 +2,8 @@
 
 ### Added
 
+- **HV authority — `larry_carlton` Score-4** — New fusion-funk colour slice (`larryCarltonSlice.ts`, receipts `lc:*`) + exact-id path helper (`isLarryCarltonHarmonicPath`) + registry `hv_full` harmony/precompute. Mosaic merge on HV; spine/`getChordForBar`. Soft `carlton` / `mr_335` songwriter-normalize only. Riff VRB holdbacks untouched. Verify with `--primary wayne_shorter` OVERALL PASS · 0 DIVERGE (9/9; 3 SOFT_DIFF GCE-only).
+
 - **HV authority — `nile_rodgers` Score-4 (Tier 2 transport-only → slice)** — New Song Mode Chic-funk colour slice (`nileRodgersSlice.ts`, receipts `nr:*`) + exact-id path helper (`isNileRodgersHarmonicPath`) + registry `hv_full` harmony/precompute. Mosaic merge on HV; spine/`getChordForBar`. Soft `nile` songwriter-normalize only — never engage HV. Riff VRB / funk-grid holdbacks untouched. Mosaic stub roster unchanged. Verify with `--primary wayne_shorter` OVERALL PASS · 0 DIVERGE (9/9; 3 SOFT_DIFF GCE-only).
 
 - **Style Pairings single-select (default None)** — Panel radios: at most one pairing force-on; explicit **None** row is first-load default. All **12** `defaultEnabled: false` again. Enabling pairing X clears prior force-on via `selectExclusiveStylePairing`. VRB dropdown unchanged (independent of panel).

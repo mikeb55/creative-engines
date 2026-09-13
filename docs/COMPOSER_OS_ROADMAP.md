@@ -16,7 +16,7 @@
 | **1. Phase 2 widen** | **COMPLETE** — Berg + Beefheart + Fela + Threadgill + **Weber** HV walls shipped |
 | **2. Mosaic HV** | **COMPLETE (2026-07-16)** — **global** HV overlay shipped; per-section map rejected |
 | **3. Riff Generator** | **COMPLETE** — **HV Phase A+B + soft-link (2026-07-16)** — see `docs/RIFF_GENERATOR_HARMONIC_VOICE_DECISION.md` · **Phase 1.5 RiffGen** S0–S3 on `#/riffgen` **SHIPPED** · **chord-loop trust Phase 1** **SHIPPED** · desktop hash-route reload fix **SHIPPED** · pitch PR A/B/C shipped; phrase-engine Phase 2/3 **gated** · **per-phrase meter SHIPPED** · **Export Guitar Pro** (`api.exportGuitarPro` on generate result) **SHIPPED** · **Corpus details** default-closed collapse **SHIPPED** · **Session item 5 — `jamerson` UI catalog COMPLETE (2026-07-24)** (**18**/18 registry↔UI parity; funk Motown bass) · **S4** curation UX still backlog |
-| **4. Score-4 defer** | **In progress** — `nile_rodgers` HV-wired 2026-09-13; **8** remain (Slonimsky-transport-only / no slice) |
+| **4. Score-4 defer** | **In progress** — `nile_rodgers` + `larry_carlton` HV-wired 2026-09-13; **7** remain |
 | **5. Tier 3** | Parked / low ROI — **10** composers, score **0–3**, out of HV scope |
 
 - **Per-phrase meter (SHIPPED 2026-07-24):** Ingest stamps meter from each phrase window (`meterByBar`), splits at mid-file meter changes, clears file-level `meter_mismatch_file` quarantine on `diminished_lines/mvoldsu-003.gpx`. Audit still records file `meterMismatch`. Remaining S4: `diminished_lines` 1-bar leftovers / max-bar chops curation UX.

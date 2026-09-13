@@ -57,6 +57,7 @@ import { isCharlieParkerHarmonicPath } from '../song-mode/charlieParkerSlice';
 import { isStephenSondheimHarmonicPath } from '../song-mode/sondheimSlice';
 import { isJimHallHarmonicPath } from '../song-mode/jimHallSlice';
 import { isNileRodgersHarmonicPath } from '../song-mode/nileRodgersSlice';
+import { isLarryCarltonHarmonicPath } from '../song-mode/larryCarltonSlice';
 import { isMilesDavisHarmonicPath } from '../song-mode/milesDavisSlice';
 import { isMccoyTynerHarmonicPath } from '../song-mode/mccoyTynerSlice';
 import { isPrinceHarmonicPath } from '../song-mode/princeSlice';
@@ -1213,6 +1214,22 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
     barIndex <= tb
   ) {
     return nileEff[barIndex - 1]!;
+  }
+
+  /**
+   * Larry Carlton: `precomputeLarryCarltonEffectiveHarmonyBars` applies fusion-funk colour — receipts **`lc:*`**.
+   * HV path: primary | harmonicVoice (`larry_carlton` exact) — see isLarryCarltonHarmonicPath.
+   * Soft carlton/mr_335 + riff VRB stay primary-only.
+   */
+  const lcarEff = meta?.larryCarltonEffectiveHarmonyBars;
+  if (
+    isLarryCarltonHarmonicPath(meta) &&
+    Array.isArray(lcarEff) &&
+    lcarEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return lcarEff[barIndex - 1]!;
   }
 
   /**
