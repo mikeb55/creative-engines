@@ -25,6 +25,10 @@ import {
 } from './beatlesSlice';
 import { resolveFelaKutiChordPoolId } from './felaKutiSlice';
 import { STUB_BB_COMPOSER_CHORD_POOLS } from './stubBbComposerChordPools';
+import {
+  STRAYHORN_ISFAHAN_DRIFT_POOL,
+  type BillyStrayhornChordPoolRow,
+} from './strayhornIsfahanDriftChordPool';
 import { planProsodyPlaceholders } from './prosodyPlanner';
 import type { CompiledSong, SectionChordPlan } from './songCompilationTypes';
 import type { LeadSheetContract, LeadSheetChordSymbol, LeadSheetLyricPlaceholder } from './leadSheetContract';
@@ -113,13 +117,14 @@ export interface JoniMitchellChordPoolRow {
   tags: JoniMitchellRowTags;
 }
 
-/** Plain chord row or tagged row (Wayne Shorter / Donald Fagen / Frank Zappa / Joni Mitchell). */
+/** Plain chord row or tagged row (Wayne Shorter / Donald Fagen / Frank Zappa / Joni Mitchell / Strayhorn isfahan). */
 export type ChordPoolRow =
   | string[]
   | WayneShorterChordPoolRow
   | DonaldFagenChordPoolRow
   | FrankZappaChordPoolRow
-  | JoniMitchellChordPoolRow;
+  | JoniMitchellChordPoolRow
+  | BillyStrayhornChordPoolRow;
 
 function chordSymbolsFromPoolRow(row: ChordPoolRow): string[] {
   return Array.isArray(row) ? row : row.chords;
@@ -331,7 +336,8 @@ function chosenRowTagsFromPoolRow(row: ChordPoolRow | undefined): string[] {
     | WayneShorterRowTags
     | DonaldFagenRowTags
     | FrankZappaRowTags
-    | JoniMitchellRowTags;
+    | JoniMitchellRowTags
+    | BillyStrayhornChordPoolRow['tags'];
   const out: string[] = [];
   if ('tension' in t && (t as WayneShorterRowTags).tension) {
     out.push(`tension:${(t as WayneShorterRowTags).tension}`);
@@ -456,7 +462,7 @@ function isIMajorTonicLike(sym: string): boolean {
   );
 }
 
-function isMajorKeyIiViTriple(a: string, b: string, c: string): boolean {
+export function isMajorKeyIiViTriple(a: string, b: string, c: string): boolean {
   const ra = harmonyRootPcPool(a);
   const rb = harmonyRootPcPool(b);
   const rc = harmonyRootPcPool(c);
@@ -2180,6 +2186,12 @@ const SONGWRITER_CHORD_POOLS: Record<
       ['Ebmaj9(#11)', 'Abdim7', 'Dbmaj7(9,13)', 'Gb13(b9)'],
     ],
   },
+  /**
+   * Billy Strayhorn — `strayhorn_isfahan_drift`: research-grounded tagged no-ii–V–I rows
+   * (Chelsea Bridge / Lush Life / Isfahan / Blood Count / Lotus Blossom). Untagged
+   * `strayhorn_chromatic_ballad` / `strayhorn_lush_life` / `strayhorn_chelsea_bridge` unchanged.
+   */
+  strayhorn_isfahan_drift: STRAYHORN_ISFAHAN_DRIFT_POOL,
   /** Maria Schneider — `schneider_through_composed`: wide orchestral stacks, slow harmonic rhythm (`mariaSchneiderSlice.ts`). */
   schneider_through_composed: {
     verse: [
@@ -3523,13 +3535,15 @@ function chordSymbolsForSection(
       tier === 0 ? 'bley_hymn_topic' : tier === 1 ? 'bley_march_topic' : 'bley_ballad_topic';
   }
   if (songwriterId === 'billy_strayhorn') {
-    const tier = Math.abs(seed) % 3;
+    const tier = Math.abs(seed) % 4;
     resolvedPoolId =
       tier === 0
         ? 'strayhorn_chromatic_ballad'
         : tier === 1
           ? 'strayhorn_lush_life'
-          : 'strayhorn_chelsea_bridge';
+          : tier === 2
+            ? 'strayhorn_chelsea_bridge'
+            : 'strayhorn_isfahan_drift';
   }
   if (songwriterId === 'gil_evans') {
     const tier = Math.abs(seed) % 3;
