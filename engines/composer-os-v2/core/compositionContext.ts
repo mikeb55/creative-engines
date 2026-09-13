@@ -2715,6 +2715,16 @@ export interface GenerationMetadata {
   jimHallSliceReceipt?: string;
   jimHallEffectiveHarmonyBars?: string[];
   jimHallDeviceReceipts?: string[];
+  /** Nile Rodgers (Chic funk-guitar colour) — slice diagnostics + effective harmony. Receipts **`nr:*`**. */
+  nileRodgersDiagnostics?: {
+    songwriterId: 'nile_rodgers';
+    barsConsidered: number;
+    chicColourTouches: number;
+    deviceReceipts?: string[];
+  };
+  nileRodgersSliceReceipt?: string;
+  nileRodgersEffectiveHarmonyBars?: string[];
+  nileRodgersDeviceReceipts?: string[];
   /** Steve Reich (pitch-field process / static diatonic field) — slice posture + receipts **`sr:*`**. */
   reichProcess?: SteveReichProcessMode;
   /** Effective process mode after resolve (`steveReichSlice.ts`). */

@@ -409,6 +409,17 @@ export const HARMONIC_VOICE_CAPABILITY_REGISTRY: readonly HvCapabilityEntry[] = 
       'harmony/precompute hv_full via jimHallEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact jim_hall only; soft jim songwriter-normalize only; mode/surface stamps stay primary-only',
   },
   {
+    styleId: 'nile_rodgers',
+    layers: {
+      harmony: 'hv_full',
+      precompute: 'hv_full',
+      truth_registry: 'primary_only',
+    },
+    effectiveHarmonyBarsKey: 'nileRodgersEffectiveHarmonyBars',
+    notes:
+      'harmony/precompute hv_full via nileRodgersEffectiveHarmonyBars + mosaic merge; truth_registry primary-only; exact nile_rodgers only; soft nile songwriter-normalize only; riff VRB / funk-grid holdbacks untouched',
+  },
+  {
     styleId: 'miles_davis',
     layers: {
       harmony: 'hv_full',

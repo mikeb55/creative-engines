@@ -66,6 +66,7 @@ import { isStevieWonderHarmonicPath } from '../song-mode/stevieWonderSlice';
 import { isCharlieParkerHarmonicPath } from '../song-mode/charlieParkerSlice';
 import { isStephenSondheimHarmonicPath } from '../song-mode/sondheimSlice';
 import { isJimHallHarmonicPath } from '../song-mode/jimHallSlice';
+import { isNileRodgersHarmonicPath } from '../song-mode/nileRodgersSlice';
 import { isMilesDavisHarmonicPath } from '../song-mode/milesDavisSlice';
 import { isMccoyTynerHarmonicPath } from '../song-mode/mccoyTynerSlice';
 import { isPrinceHarmonicPath } from '../song-mode/princeSlice';
@@ -233,6 +234,7 @@ const SLICE_AUTHORITY_ROWS: ReadonlyArray<{
   { match: (m) => isMccoyTynerHarmonicPath(m), effKey: 'mccoyTynerEffectiveHarmonyBars', sliceId: 'mccoy_tyner' },
   { match: (m) => isAndrewHillHarmonicPath(m), effKey: 'andrewHillEffectiveHarmonyBars', sliceId: 'andrew_hill' },
   { match: (m) => isJimHallHarmonicPath(m), effKey: 'jimHallEffectiveHarmonyBars', sliceId: 'jim_hall' },
+  { match: (m) => isNileRodgersHarmonicPath(m), effKey: 'nileRodgersEffectiveHarmonyBars', sliceId: 'nile_rodgers' },
   { match: (m) => isSteveReichHarmonicPath(m), effKey: 'steveReichEffectiveHarmonyBars', sliceId: 'steve_reich' },
   { match: (m) => isMessiaenHarmonicPath(m), effKey: 'messiaenEffectiveHarmonyBars', sliceId: 'messiaen' },
   { match: (m) => isCharlieParkerHarmonicPath(m), effKey: 'charlieParkerEffectiveHarmonyBars', sliceId: 'charlie_parker' },

@@ -659,6 +659,13 @@ import {
   precomputeJimHallEffectiveHarmonyBars,
 } from './jim_hall';
 import {
+  accumulateNileRodgersHarmonyDiagnostics,
+  createNileRodgersHarmonyAccumulator,
+  finalizeNileRodgersMetadata,
+  isNileRodgersHarmonicPath,
+  precomputeNileRodgersEffectiveHarmonyBars,
+} from './nile_rodgers';
+import {
   accumulateSteveReichHarmonyDiagnostics,
   createSteveReichHarmonyAccumulator,
   finalizeSteveReichMetadata,
@@ -3339,6 +3346,11 @@ function buildGuitarPart(
     normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
     'jim_hall';
   const jimHallHarmonicPathActive = isJimHallHarmonicPath(genMeta);
+  const isSongwriterNileRodgers = genMeta?.songwriterStyleId === 'nile_rodgers';
+  const isHarmonicVoiceNileRodgers =
+    normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
+    'nile_rodgers';
+  const nileRodgersHarmonicPathActive = isNileRodgersHarmonicPath(genMeta);
   const isSongwriterCharlieParker = genMeta?.songwriterStyleId === 'charlie_parker';
   const isHarmonicVoiceCharlieParker =
     normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
@@ -3766,6 +3778,7 @@ function buildGuitarPart(
   const mtAccum = createMccoyTynerHarmonyAccumulator();
   const ahAccum = createAndrewHillHarmonyAccumulator();
   const jhHallAccum = createJimHallHarmonyAccumulator();
+  const nrAccum = createNileRodgersHarmonyAccumulator();
   const srReichAccum = createSteveReichHarmonyAccumulator();
   const omMessiaenAccum = createMessiaenHarmonyAccumulator();
   const cpAccum = createCharlieParkerHarmonyAccumulator();
@@ -4623,6 +4636,16 @@ function buildGuitarPart(
       }
     }
   }
+  if (nileRodgersHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+    precomputeNileRodgersEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceNileRodgers && !isSongwriterNileRodgers) {
+      const nileRodgersEff = genMeta.nileRodgersEffectiveHarmonyBars;
+      const nileRodgersTb = totalBarsFromContext(context);
+      if (Array.isArray(nileRodgersEff) && nileRodgersEff.length === nileRodgersTb) {
+        genMeta.mosaicMergedHarmonyBars = [...nileRodgersEff];
+      }
+    }
+  }
   if (charlieParkerHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeCharlieParkerEffectiveHarmonyBars(context);
     if (isHarmonicVoiceCharlieParker && !isSongwriterCharlieParker) {
@@ -5322,6 +5345,13 @@ function buildGuitarPart(
         b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
         resolveBarSymbol(context, b).symbol,
         jhHallAccum
+      );
+    }
+    if (isSongwriterNileRodgers) {
+      accumulateNileRodgersHarmonyDiagnostics(
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
+        nrAccum
       );
     }
     if (isSongwriterSteveReich) {
@@ -6399,6 +6429,10 @@ function buildGuitarPart(
 
   if (isSongwriterJimHall && context.generationMetadata) {
     finalizeJimHallMetadata(context.generationMetadata, jhHallAccum);
+  }
+
+  if (isSongwriterNileRodgers && context.generationMetadata) {
+    finalizeNileRodgersMetadata(context.generationMetadata, nrAccum);
   }
 
   if (isSongwriterSteveReich && context.generationMetadata) {

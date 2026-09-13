@@ -56,6 +56,7 @@ import { isStevieWonderHarmonicPath } from '../song-mode/stevieWonderSlice';
 import { isCharlieParkerHarmonicPath } from '../song-mode/charlieParkerSlice';
 import { isStephenSondheimHarmonicPath } from '../song-mode/sondheimSlice';
 import { isJimHallHarmonicPath } from '../song-mode/jimHallSlice';
+import { isNileRodgersHarmonicPath } from '../song-mode/nileRodgersSlice';
 import { isMilesDavisHarmonicPath } from '../song-mode/milesDavisSlice';
 import { isMccoyTynerHarmonicPath } from '../song-mode/mccoyTynerSlice';
 import { isPrinceHarmonicPath } from '../song-mode/princeSlice';
@@ -1196,6 +1197,22 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
     barIndex <= tb
   ) {
     return jhEff[barIndex - 1]!;
+  }
+
+  /**
+   * Nile Rodgers: `precomputeNileRodgersEffectiveHarmonyBars` applies Chic funk colour — receipts **`nr:*`**.
+   * HV path: primary | harmonicVoice (`nile_rodgers` exact) — see isNileRodgersHarmonicPath.
+   * Soft nile + riff VRB / funk-grid stay primary-only.
+   */
+  const nileEff = meta?.nileRodgersEffectiveHarmonyBars;
+  if (
+    isNileRodgersHarmonicPath(meta) &&
+    Array.isArray(nileEff) &&
+    nileEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return nileEff[barIndex - 1]!;
   }
 
   /**
