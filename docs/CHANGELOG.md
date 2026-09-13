@@ -2,6 +2,8 @@
 
 ### Added
 
+- **HV authority — `joe_pass` Score-4** — New chord-melody colour slice (`joePassSlice.ts`, receipts `jp:*`) + exact-id path helper (`isJoePassHarmonicPath`) + registry `hv_full` harmony/precompute. Mosaic merge on HV; spine/`getChordForBar`. Soft `joe` / `pass` songwriter-normalize only. Riff VRB holdbacks + mosaic stub `joe_pass→jim_hall` untouched. Verify with `--primary wayne_shorter` OVERALL PASS · 0 DIVERGE (9/9; 1 SOFT_DIFF GCE-only, seed 50021).
+
 - **HV authority — `wes_montgomery` Score-4** — New jazz-guitar colour slice (`wesMontgomerySlice.ts`, receipts `wm:*`) + exact-id path helper (`isWesMontgomeryHarmonicPath`) + registry `hv_full` harmony/precompute. Mosaic merge on HV; spine/`getChordForBar`. Soft `wes` / `montgomery` songwriter-normalize only. Riff VRB holdbacks + mosaic stub `wes_montgomery→jim_hall` untouched. Verify with `--primary wayne_shorter` OVERALL PASS · 0 DIVERGE (9/9; 1 SOFT_DIFF GCE-only, seed 50021).
 
 - **HV authority — `larry_carlton` Score-4** — New fusion-funk colour slice (`larryCarltonSlice.ts`, receipts `lc:*`) + exact-id path helper (`isLarryCarltonHarmonicPath`) + registry `hv_full` harmony/precompute. Mosaic merge on HV; spine/`getChordForBar`. Soft `carlton` / `mr_335` songwriter-normalize only. Riff VRB holdbacks untouched. Verify with `--primary wayne_shorter` OVERALL PASS · 0 DIVERGE (9/9; 3 SOFT_DIFF GCE-only).

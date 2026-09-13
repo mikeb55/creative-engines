@@ -2745,6 +2745,16 @@ export interface GenerationMetadata {
   wesMontgomerySliceReceipt?: string;
   wesMontgomeryEffectiveHarmonyBars?: string[];
   wesMontgomeryDeviceReceipts?: string[];
+  /** Joe Pass (chord-melody colour) — slice diagnostics + effective harmony. Receipts **`jp:*`**. */
+  joePassDiagnostics?: {
+    songwriterId: 'joe_pass';
+    barsConsidered: number;
+    chordMelodyTouches: number;
+    deviceReceipts?: string[];
+  };
+  joePassSliceReceipt?: string;
+  joePassEffectiveHarmonyBars?: string[];
+  joePassDeviceReceipts?: string[];
   /** Steve Reich (pitch-field process / static diatonic field) — slice posture + receipts **`sr:*`**. */
   reichProcess?: SteveReichProcessMode;
   /** Effective process mode after resolve (`steveReichSlice.ts`). */

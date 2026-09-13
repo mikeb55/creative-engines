@@ -59,6 +59,7 @@ import { isJimHallHarmonicPath } from '../song-mode/jimHallSlice';
 import { isNileRodgersHarmonicPath } from '../song-mode/nileRodgersSlice';
 import { isLarryCarltonHarmonicPath } from '../song-mode/larryCarltonSlice';
 import { isWesMontgomeryHarmonicPath } from '../song-mode/wesMontgomerySlice';
+import { isJoePassHarmonicPath } from '../song-mode/joePassSlice';
 import { isMilesDavisHarmonicPath } from '../song-mode/milesDavisSlice';
 import { isMccoyTynerHarmonicPath } from '../song-mode/mccoyTynerSlice';
 import { isPrinceHarmonicPath } from '../song-mode/princeSlice';
@@ -1247,6 +1248,22 @@ function resolveChordSymbolAuthoritativeForBar(barIndex: number, context: Compos
     barIndex <= tb
   ) {
     return wesMontEff[barIndex - 1]!;
+  }
+
+  /**
+   * Joe Pass: `precomputeJoePassEffectiveHarmonyBars` applies chord-melody colour — receipts **`jp:*`**.
+   * HV path: primary | harmonicVoice (`joe_pass` exact) — see isJoePassHarmonicPath.
+   * Soft joe/pass + riff VRB stay primary-only. Mosaic stub joe_pass→jim_hall holdback.
+   */
+  const jpassEff = meta?.joePassEffectiveHarmonyBars;
+  if (
+    isJoePassHarmonicPath(meta) &&
+    Array.isArray(jpassEff) &&
+    jpassEff.length === tb &&
+    barIndex >= 1 &&
+    barIndex <= tb
+  ) {
+    return jpassEff[barIndex - 1]!;
   }
 
   /**

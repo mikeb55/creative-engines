@@ -680,6 +680,13 @@ import {
   precomputeWesMontgomeryEffectiveHarmonyBars,
 } from './wes_montgomery';
 import {
+  accumulateJoePassHarmonyDiagnostics,
+  createJoePassHarmonyAccumulator,
+  finalizeJoePassMetadata,
+  isJoePassHarmonicPath,
+  precomputeJoePassEffectiveHarmonyBars,
+} from './joe_pass';
+import {
   accumulateSteveReichHarmonyDiagnostics,
   createSteveReichHarmonyAccumulator,
   finalizeSteveReichMetadata,
@@ -3375,6 +3382,11 @@ function buildGuitarPart(
     normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
     'wes_montgomery';
   const wesMontgomeryHarmonicPathActive = isWesMontgomeryHarmonicPath(genMeta);
+  const isSongwriterJoePass = genMeta?.songwriterStyleId === 'joe_pass';
+  const isHarmonicVoiceJoePass =
+    normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
+    'joe_pass';
+  const joePassHarmonicPathActive = isJoePassHarmonicPath(genMeta);
   const isSongwriterCharlieParker = genMeta?.songwriterStyleId === 'charlie_parker';
   const isHarmonicVoiceCharlieParker =
     normalizeHarmonicVoiceId(String(genMeta?.harmonicVoice ?? context.voiceBundle?.voiceId ?? '')) ===
@@ -3805,6 +3817,7 @@ function buildGuitarPart(
   const nrAccum = createNileRodgersHarmonyAccumulator();
   const lcarAccum = createLarryCarltonHarmonyAccumulator();
   const wmAccum = createWesMontgomeryHarmonyAccumulator();
+  const jpassAccum = createJoePassHarmonyAccumulator();
   const srReichAccum = createSteveReichHarmonyAccumulator();
   const omMessiaenAccum = createMessiaenHarmonyAccumulator();
   const cpAccum = createCharlieParkerHarmonyAccumulator();
@@ -4692,6 +4705,16 @@ function buildGuitarPart(
       }
     }
   }
+  if (joePassHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
+    precomputeJoePassEffectiveHarmonyBars(context);
+    if (isHarmonicVoiceJoePass && !isSongwriterJoePass) {
+      const joePassEff = genMeta.joePassEffectiveHarmonyBars;
+      const joePassTb = totalBarsFromContext(context);
+      if (Array.isArray(joePassEff) && joePassEff.length === joePassTb) {
+        genMeta.mosaicMergedHarmonyBars = [...joePassEff];
+      }
+    }
+  }
   if (charlieParkerHarmonicPathActive && isDuoGoldenPath && !genMeta?.mosaicLockRegistry) {
     precomputeCharlieParkerEffectiveHarmonyBars(context);
     if (isHarmonicVoiceCharlieParker && !isSongwriterCharlieParker) {
@@ -5412,6 +5435,13 @@ function buildGuitarPart(
         b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
         resolveBarSymbol(context, b).symbol,
         wmAccum
+      );
+    }
+    if (isSongwriterJoePass) {
+      accumulateJoePassHarmonyDiagnostics(
+        b > 1 ? resolveBarSymbol(context, b - 1).symbol : undefined,
+        resolveBarSymbol(context, b).symbol,
+        jpassAccum
       );
     }
     if (isSongwriterSteveReich) {
@@ -6501,6 +6531,10 @@ function buildGuitarPart(
 
   if (isSongwriterWesMontgomery && context.generationMetadata) {
     finalizeWesMontgomeryMetadata(context.generationMetadata, wmAccum);
+  }
+
+  if (isSongwriterJoePass && context.generationMetadata) {
+    finalizeJoePassMetadata(context.generationMetadata, jpassAccum);
   }
 
   if (isSongwriterSteveReich && context.generationMetadata) {
