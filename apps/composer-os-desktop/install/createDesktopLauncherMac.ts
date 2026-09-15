@@ -132,8 +132,9 @@ if dev_electron_running; then
   exec "$ELECTRON" .
 fi
 
-FP="$("$NODE" "$FINGERPRINT_JS" "$REPO")" || {
-  /usr/bin/osascript -e 'display dialog "Composer OS could not fingerprint the working tree. Is git available at /usr/bin/git?" buttons {"OK"} default button "OK" with title "Composer OS"' >/dev/null
+FP_ERR="$TMP/fingerprint.err"
+FP="$("$NODE" "$FINGERPRINT_JS" "$REPO" 2>"$FP_ERR")" || {
+  show_build_failed "$FP_ERR"
   exit 1
 }
 

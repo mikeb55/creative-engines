@@ -22,7 +22,7 @@ describe('launcherFingerprint', () => {
     const src = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'launcherFingerprint.js'), 'utf-8');
     expect(src).toContain("rev-parse', 'HEAD'");
     expect(src).toContain("status', '--porcelain'");
-    expect(src).toContain('apps/composer-os-app/src');
+    expect(src).toContain('composer-os-app');
     expect(src).not.toMatch(/\['pull'/);
     expect(src).not.toMatch(/\['fetch'/);
     expect(src).not.toMatch(/\['reset'/);

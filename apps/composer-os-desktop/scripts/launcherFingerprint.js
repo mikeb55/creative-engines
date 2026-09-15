@@ -1,10 +1,9 @@
 /**
  * Cheap working-tree fingerprint for the macOS Desktop launcher.
- * Hash of: git HEAD + porcelain status (scoped to the three source trees) +
- * per-tree file count + max mtime. Porcelain is path-limited so a dirty
- * untracked folder elsewhere does not stall `git status`.
- * of apps/composer-os-app/src, apps/composer-os-desktop/electron, engines/composer-os-v2.
- * No network and no history-changing git commands.
+ * Hash of: git HEAD + porcelain (scoped to the three source trees) +
+ * per-tree file count + max mtime.
+ * Git is optional — Finder-launched apps often cannot talk to git in
+ * Documents; we then hash mtimes only so launch still proceeds.
  */
 const crypto = require('crypto');
 const fs = require('fs');
@@ -67,28 +66,41 @@ function walkTree(dir) {
   return { maxMtimeMs, fileCount };
 }
 
+function gitSnapshot(root) {
+  const git = gitBin();
+  const gitDir = path.join(root, '.git');
+  const env = { ...process.env, GIT_OPTIONAL_LOCKS: '0' };
+  const paths = SOURCE_TREES.map(([, parts]) => parts.join('/'));
+  try {
+    const head = execFileSync(
+      git,
+      ['--git-dir', gitDir, '--work-tree', root, 'rev-parse', 'HEAD'],
+      { encoding: 'utf8', env, timeout: 8000 }
+    ).trim();
+    const porcelain = execFileSync(
+      git,
+      ['--git-dir', gitDir, '--work-tree', root, 'status', '--porcelain', '--', ...paths],
+      { encoding: 'utf8', env, timeout: 8000 }
+    );
+    return { head, porcelain };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[fingerprint] git skipped:', msg.split('\n')[0]);
+    return { head: 'no-git', porcelain: '' };
+  }
+}
+
 function computeLauncherFingerprint(repoRoot) {
   const root = path.resolve(repoRoot);
-  const git = gitBin();
-  const head = execFileSync(git, ['rev-parse', 'HEAD'], {
-    cwd: root,
-    encoding: 'utf8',
-  }).trim();
-  const porcelain = execFileSync(
-    git,
-    [
-      'status',
-      '--porcelain',
-      '--',
-      'apps/composer-os-app/src',
-      'apps/composer-os-desktop/electron',
-      'engines/composer-os-v2',
-    ],
-    {
-      cwd: root,
-      encoding: 'utf8',
-    }
-  );
+  try {
+    fs.readFileSync(path.join(root, 'package.json'));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `Cannot read ${root}. Grant Composer OS access to Documents (System Settings → Privacy & Security → Files and Folders). ${msg}`
+    );
+  }
+  const { head, porcelain } = gitSnapshot(root);
   const lines = [head, porcelain];
   for (const [label, parts] of SOURCE_TREES) {
     const dir = path.join(root, ...parts);
