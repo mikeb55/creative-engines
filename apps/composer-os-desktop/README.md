@@ -34,6 +34,15 @@ npm run desktop:install:mac
 
 From the repo root: `npm run dev:mac` (runs the full `desktop:dev` pipeline).
 
+## Desktop launcher (macOS)
+
+```bash
+cd apps/composer-os-desktop
+npm run desktop:create-launcher:mac
+```
+
+Writes `~/Desktop/Composer OS.app`. Double-click rebuilds when the working tree changed, otherwise launches Electron immediately. Node/npm/repo paths are baked in at create time (Finder has no nvm PATH). Re-run the command after changing Node versions.
+
 ## Package (Windows)
 
 Real artifacts are produced by **electron-builder** (not the TypeScript `dist/` folder alone).

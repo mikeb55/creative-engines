@@ -13,6 +13,7 @@
     "desktop:package-no-bump": "npm run desktop:build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --config.directories.output=release-build && node -e \"const fs=require('fs');fs.mkdirSync('release',{recursive:true});fs.copyFileSync('release-build/Composer-OS.exe','release/Composer-OS.exe');try{fs.copyFileSync('release-build/Composer-OS-Setup.exe','release/Composer-OS-Setup.exe')}catch(e){}\" && tsx install/logReleaseArtifactsCli.ts",
     "desktop:package:mac": "npm run desktop:build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac",
     "desktop:install:mac": "tsx install/installComposerOsDesktopMac.ts",
+    "desktop:create-launcher:mac": "tsx install/createDesktopLauncherMacCli.ts",
     "predist": "node scripts/kill-running-desktop.js",
     "dist": "npm run desktop:package-no-bump",
     "refresh:desktop": "tsx install/refreshDesktopCli.ts",

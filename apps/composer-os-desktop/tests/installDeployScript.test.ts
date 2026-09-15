@@ -26,6 +26,7 @@ describe('desktop deploy / install wiring', () => {
     expect(pkg.scripts['refresh:desktop']).toContain('refreshDesktopCli');
     expect(pkg.scripts['desktop:package-no-bump']).toContain('desktop:build');
     expect(pkg.scripts['desktop:package-no-bump']).toContain('electron-builder --win');
+    expect(pkg.scripts['desktop:create-launcher:mac']).toContain('createDesktopLauncherMacCli');
   });
 
   it('full install script delegates to installComposerOsDesktopIcon', () => {
@@ -38,6 +39,8 @@ describe('desktop deploy / install wiring', () => {
     const installDir = path.join(desktopRoot, 'install');
     expect(fs.existsSync(path.join(installDir, 'installComposerOsDesktop.ts'))).toBe(true);
     expect(fs.existsSync(path.join(installDir, 'installComposerOsDesktopMac.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(installDir, 'createDesktopLauncherMac.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(installDir, 'createDesktopLauncherMacCli.ts'))).toBe(true);
     expect(fs.existsSync(path.join(installDir, 'cleanupLegacyShortcuts.ts'))).toBe(true);
     expect(fs.existsSync(path.join(installDir, 'shortcutUtils.ts'))).toBe(true);
     expect(fs.existsSync(path.join(installDir, 'installRules.ts'))).toBe(true);
