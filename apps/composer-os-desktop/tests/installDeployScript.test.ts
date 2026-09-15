@@ -37,6 +37,7 @@ describe('desktop deploy / install wiring', () => {
   it('install sources exist and avoid .bat / launchers / composer-studio in active flow', () => {
     const installDir = path.join(desktopRoot, 'install');
     expect(fs.existsSync(path.join(installDir, 'installComposerOsDesktop.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(installDir, 'installComposerOsDesktopMac.ts'))).toBe(true);
     expect(fs.existsSync(path.join(installDir, 'cleanupLegacyShortcuts.ts'))).toBe(true);
     expect(fs.existsSync(path.join(installDir, 'shortcutUtils.ts'))).toBe(true);
     expect(fs.existsSync(path.join(installDir, 'installRules.ts'))).toBe(true);

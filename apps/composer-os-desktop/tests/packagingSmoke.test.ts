@@ -45,6 +45,38 @@ describe('Packaging smoke (desktop)', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(desktopRoot, 'package.json'), 'utf-8'));
     expect(pkg.scripts['desktop:package']).toContain('CSC_IDENTITY_AUTO_DISCOVERY=false');
     expect(pkg.scripts['desktop:package']).toContain('electron-builder');
+    expect(pkg.scripts['desktop:package']).toContain('electron-builder --win');
+    expect(pkg.scripts['predist']).toBe('node scripts/kill-running-desktop.js');
+  });
+
+  it('electron-builder mac config is unsigned local build', () => {
+    const pkg = JSON.parse(fs.readFileSync(path.join(desktopRoot, 'package.json'), 'utf-8')) as {
+      scripts: Record<string, string>;
+      build?: {
+        extraResources?: Array<{ from?: string; to?: string }>;
+        mac?: {
+          icon?: string;
+          category?: string;
+          identity?: string | null;
+          hardenedRuntime?: boolean;
+          target?: Array<{ target?: string; arch?: string[] }>;
+        };
+      };
+    };
+    expect(pkg.build?.mac?.icon).toBe('resources/icon.icns');
+    expect(pkg.build?.mac?.category).toBe('public.app-category.music');
+    expect(pkg.build?.mac?.identity).toBeNull();
+    expect(pkg.build?.mac?.hardenedRuntime).toBe(false);
+    const targets = (pkg.build?.mac?.target ?? []).map((t) => t.target);
+    expect(targets).toEqual(expect.arrayContaining(['dmg', 'zip']));
+    expect(pkg.scripts['desktop:package:mac']).toContain('electron-builder --mac');
+    expect(pkg.scripts['desktop:package:mac']).toContain('CSC_IDENTITY_AUTO_DISCOVERY=false');
+    expect(pkg.scripts['desktop:package:mac']).not.toContain('bumpDesktopVersionCli');
+    expect(pkg.scripts['desktop:package:mac']).not.toContain('pruneOldPortableExesCli');
+    expect(pkg.scripts['desktop:package:mac']).not.toContain('verifyStableBuildOutputCli');
+    expect(pkg.scripts['desktop:install:mac']).toContain('installComposerOsDesktopMac');
+    const extras = pkg.build?.extraResources ?? [];
+    expect(extras.some((e) => (e.from ?? '').includes('skia.win32-x64-msvc.node'))).toBe(false);
   });
 
   it('API bundle, IPC bundle, open-folder helpers, and UI bundle exist after build', () => {

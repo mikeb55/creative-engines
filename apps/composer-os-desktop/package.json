@@ -1,7 +1,7 @@
 {
   "name": "composer-os-desktop",
   "version": "2.10.10",
-  "description": "Composer OS Windows Desktop Application",
+  "description": "Composer OS Desktop Application",
   "main": "dist/main.js",
   "author": "Creative Engines",
   "scripts": {
@@ -11,7 +11,9 @@
     "desktop:build": "npm run build:icon && node scripts/copy-pdfjs-desktop-assets.js && node scripts/copy-riff-phrase-corpus.js && npm run build:api && npm run build:desktop-ipc && npm run build:stamp && npm run build:open-folder-helpers && npm run build:electron && npm run build:ui && npm run verify:ui-resources",
     "desktop:package": "tsx install/bumpDesktopVersionCli.ts && npm run desktop:build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win && tsx install/logReleaseArtifactsCli.ts && tsx install/pruneOldPortableExesCli.ts && tsx install/verifyStableBuildOutputCli.ts",
     "desktop:package-no-bump": "npm run desktop:build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --config.directories.output=release-build && node -e \"const fs=require('fs');fs.mkdirSync('release',{recursive:true});fs.copyFileSync('release-build/Composer-OS.exe','release/Composer-OS.exe');try{fs.copyFileSync('release-build/Composer-OS-Setup.exe','release/Composer-OS-Setup.exe')}catch(e){}\" && tsx install/logReleaseArtifactsCli.ts",
-    "predist": "cmd /c \"taskkill /F /IM \\\"Composer OS.exe\\\" /T 2>nul & taskkill /F /IM Composer-OS.exe /T 2>nul & taskkill /F /IM electron.exe /T 2>nul & ping 127.0.0.1 -n 2 >nul\"",
+    "desktop:package:mac": "npm run desktop:build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac",
+    "desktop:install:mac": "tsx install/installComposerOsDesktopMac.ts",
+    "predist": "node scripts/kill-running-desktop.js",
     "dist": "npm run desktop:package-no-bump",
     "refresh:desktop": "tsx install/refreshDesktopCli.ts",
     "desktop:install-icon": "tsx install/installDesktopIconCli.ts",
@@ -68,6 +70,7 @@
       "resources/test-fixtures/BE_Benchmark_LyricalBallad.musicxml",
       "resources/ui/**/*"
     ],
+    "beforePack": "./scripts/ensure-root-env.js",
     "extraResources": [
       {
         "from": "resources/riff-phrase-corpus",
@@ -116,10 +119,6 @@
         ]
       },
       {
-        "from": "../../node_modules/@napi-rs/canvas-win32-x64-msvc/skia.win32-x64-msvc.node",
-        "to": "skia.win32-x64-msvc.node"
-      },
-      {
         "from": "../../engines/songwriting_bridge",
         "to": "songwriting_bridge",
         "filter": [
@@ -147,6 +146,26 @@
         "to": "test-fixtures/BE_Benchmark_LyricalBallad.musicxml"
       }
     ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "resources/icon.icns",
+      "category": "public.app-category.music",
+      "identity": null,
+      "hardenedRuntime": false
+    },
     "win": {
       "target": [
         "portable",

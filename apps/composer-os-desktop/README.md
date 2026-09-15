@@ -20,6 +20,20 @@ Do **not** run `electron .` alone — run the full `desktop:dev` pipeline so UI,
 
 **Web dev (`npm run dev` in composer-os-app):** If the API runs on a non-default port, set `PORT` or `VITE_API_PORT` when starting Vite so the proxy matches.
 
+## Package (macOS, Apple Silicon)
+
+```bash
+cd apps/composer-os-desktop
+npm run desktop:package:mac
+npm run desktop:install:mac
+```
+
+`desktop:package:mac` runs `desktop:build` then unsigned `electron-builder --mac` (`identity: null`, `CSC_IDENTITY_AUTO_DISCOVERY=false`). Artifacts: `release/*.dmg`, `release/*.zip`, and `Composer OS Desktop.app` under `release/mac-arm64/` (or `release/mac/`).
+
+`desktop:install:mac` copies the `.app` to `/Applications`, ad-hoc signs it, clears quarantine, and launches it.
+
+From the repo root: `npm run dev:mac` (runs the full `desktop:dev` pipeline).
+
 ## Package (Windows)
 
 Real artifacts are produced by **electron-builder** (not the TypeScript `dist/` folder alone).
