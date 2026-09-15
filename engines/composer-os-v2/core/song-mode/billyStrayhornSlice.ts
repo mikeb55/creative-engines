@@ -10,6 +10,7 @@ import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
+import { applyStrayhornRootMotionGuard } from './strayhornRootMotionGuard';
 
 /**
  * Exact id `billy_strayhorn` only — soft `strayhorn` / BY_ID `bs` stay songwriter-normalize;
@@ -584,6 +585,23 @@ export function precomputeBillyStrayhornEffectiveHarmonyBars(context: Compositio
 
   /* Piece-final only: bias toward Strayhorn parallel-planing landings that already pass fBT. */
   biasBillyStrayhornFinalBarIdiomaticOpen(out, seed, tb, receipts, context, tonicPc);
+
+  /*
+   * Last pass, after every device and the final-bar bias: no pass above inspects
+   * root motion across three bars, so a functional minor7 -> dominant7 -> major
+   * ascending-fourth cycle inherited from the spine survives fully enriched.
+   * Strayhorn's distinctive writing avoids that chain; the guard reinterprets
+   * the middle dominant (BS_HARM_04) or replants the minor chord as parallel
+   * colour (BS_HARM_01). Protected bars are never rewritten.
+   */
+  const guard = applyStrayhornRootMotionGuard(out, {
+    isProtectedBar: (bar) => isProtectedBar(bar, context),
+  });
+  receipts.push(...guard.receipts);
+  genMeta.billyStrayhornRootMotionGuard = {
+    defused: guard.defused,
+    unresolved: guard.unresolved.length,
+  };
 
   genMeta.billyStrayhornEffectiveHarmonyBars = out;
   genMeta.billyStrayhornDeviceReceipts = receipts;

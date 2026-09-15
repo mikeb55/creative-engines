@@ -1,5 +1,5 @@
 /**
- * Billy Strayhorn — VRB fingerprint receipts (12 targets).
+ * Billy Strayhorn — VRB fingerprint receipts (13 targets).
  * Extended-tone melody/harmony fusion; chromatic song architecture distinct from Ellington.
  */
 
@@ -16,4 +16,5 @@ export const BILLY_STRAYHORN_VRF_FINGERPRINT_RECEIPTS = [
   'BS_ORCH_01 — Sax unison countermelody: target 0.45 — reed line as thin independent contrapuntal layer.',
   'BS_ORCH_02 — Sustained closed-block writing: target 0.50 — within-octave block voicing persists phrase span.',
   'BS_ORCH_03 — Polyphonic background support: target 0.55 — horizontal counterpoint, not static pads.',
+  'BS_HARM_07 — Functional fourth-cycle avoidance: target 1.00 — no minor7 -> dominant7 -> major with both roots ascending a perfect fourth in distinctive passages; enforced by strayhornRootMotionGuard.',
 ] as const;

@@ -1415,6 +1415,13 @@ export interface GenerationMetadata {
     bareMajorRaised: number;
   };
   billyStrayhornSliceParams?: BillyStrayhornSliceParams;
+  /** BS_HARM_07 — functional fourth-cycle rewrites made by `strayhornRootMotionGuard`. */
+  billyStrayhornRootMotionGuard?: {
+    /** ii-V-I root chains rewritten. */
+    defused: number;
+    /** Chains left intact because every candidate bar was identity-protected. */
+    unresolved: number;
+  };
   /** Bars with sustained closed-block texture (1-based). */
   strayhornClosedBlockBars?: number[];
   /** Thad Jones Song Mode slice posture (`thadJonesSlice.ts`). Default **`swing`** when omitted. */

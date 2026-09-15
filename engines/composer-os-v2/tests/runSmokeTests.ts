@@ -69,6 +69,7 @@ import { runOgermanSliceSmokeTests } from './ogermanSliceSmoke.test';
 import { runBillHolmanSliceSmokeTests } from './billHolmanSliceSmoke.test';
 import { runCarlaBleySliceSmokeTests } from './carlaBleySliceSmoke.test';
 import { runBillyStrayhornSliceSmokeTests } from './billyStrayhornSliceSmoke.test';
+import { runStrayhornRootMotionGuardTests } from './strayhornRootMotionGuard.test';
 import { runDonSebeskySliceSmokeTests } from './donSebeskySliceSmoke.test';
 import { runEcmChamberVariantSweepTests } from './ecmChamberVariantSweep.test';
 import { runAlternateGuitarTuningsTests } from './alternateGuitarTunings.test';
@@ -283,6 +284,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Bill Holman songwriter slice', run: runBillHolmanSliceSmokeTests },
   { label: 'Carla Bley songwriter slice', run: runCarlaBleySliceSmokeTests },
   { label: 'Billy Strayhorn songwriter slice', run: runBillyStrayhornSliceSmokeTests },
+  { label: 'Billy Strayhorn root-motion guard + corpus', run: runStrayhornRootMotionGuardTests },
   { label: 'Don Sebesky songwriter slice', run: runDonSebeskySliceSmokeTests },
   { label: 'Oliver Nelson songwriter slice', run: runOliverNelsonSliceSmokeTests },
   { label: 'ECM chamber variant sweep (OOM guard)', run: runEcmChamberVariantSweepTests },
