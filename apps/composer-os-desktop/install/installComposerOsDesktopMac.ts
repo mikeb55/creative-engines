@@ -54,6 +54,33 @@ function sleepMs(ms: number): void {
   }
 }
 
+function codesignAdhoc(target: string): void {
+  execFileSync('codesign', ['--force', '--sign', '-', target], { stdio: 'inherit' });
+}
+
+/**
+ * Electron 28 rejects `codesign --deep` on Mantle / Electron Framework
+ * ("unsealed contents present in the root directory of an embedded framework").
+ * Sign versioned frameworks + helpers first, then the .app bundle.
+ */
+function adhocSignMacApp(appPath: string): void {
+  const frameworksDir = path.join(appPath, 'Contents', 'Frameworks');
+  if (fs.existsSync(frameworksDir)) {
+    for (const name of fs.readdirSync(frameworksDir)) {
+      const full = path.join(frameworksDir, name);
+      if (name.endsWith('.framework')) {
+        const versionA = path.join(full, 'Versions', 'A');
+        if (fs.existsSync(versionA)) {
+          codesignAdhoc(versionA);
+        }
+      } else if (name.endsWith('.app')) {
+        codesignAdhoc(full);
+      }
+    }
+  }
+  codesignAdhoc(appPath);
+}
+
 function main(): void {
   if (process.platform !== 'darwin') {
     console.error('installComposerOsDesktopMac: macOS only.');
@@ -83,10 +110,8 @@ function main(): void {
   console.log('Copying to /Applications...');
   fs.cpSync(packagedApp, APPLICATIONS_DEST, { recursive: true });
 
-  console.log('Ad-hoc signing...');
-  execFileSync('codesign', ['--force', '--deep', '--sign', '-', APPLICATIONS_DEST], {
-    stdio: 'inherit',
-  });
+  console.log('Ad-hoc signing (inside-out; --deep fails on Electron 28 frameworks)...');
+  adhocSignMacApp(APPLICATIONS_DEST);
 
   console.log('Clearing quarantine...');
   try {
