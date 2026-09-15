@@ -83,6 +83,12 @@ STAMP="$TMP/launcher-fingerprint.txt"
 FINGERPRINT_JS="$DESKTOP/scripts/launcherFingerprint.js"
 VERIFY_JS="$DESKTOP/scripts/verify-ui-after-copy.js"
 
+# Script-only .app bundles often start under Rosetta. Universal node then
+# follows as x86_64 and esbuild looks for darwin-x64.
+if [ "$(/usr/bin/uname -m)" != "arm64" ]; then
+  exec /usr/bin/arch -arm64 /bin/bash "$0" "$@"
+fi
+
 export PATH="$(dirname "$NODE"):$(dirname "$NPM"):/usr/bin:/bin:/usr/sbin:/sbin"
 unset npm_config_devdir
 
@@ -93,12 +99,13 @@ show_missing_node() {
 
 show_build_failed() {
   local log="$1"
-  local excerpt
-  excerpt="$(/usr/bin/tail -n 15 "$log" | /usr/bin/tr -d '\\r')"
-  /usr/bin/osascript - "$log" "$excerpt" <<'APPLESCRIPT'
+  local excerpt_file="$TMP/dialog-excerpt.txt"
+  /usr/bin/tail -n 15 "$log" | /usr/bin/tr -d '\\r' >"$excerpt_file"
+  /usr/bin/osascript - "$log" "$excerpt_file" <<'APPLESCRIPT'
 on run argv
   set logPath to item 1 of argv
-  set excerpt to item 2 of argv
+  set excerptFile to item 2 of argv
+  set excerpt to read POSIX file excerptFile
   set theBtn to button returned of (display dialog excerpt buttons {"Open Log", "OK"} default button "Open Log" with title "Composer OS build failed")
   if theBtn is "Open Log" then
     do shell script "open -a TextEdit " & quoted form of logPath
@@ -225,6 +232,12 @@ function writeInfoPlist(plistPath: string): void {
   <string>1.0</string>
   <key>LSMinimumSystemVersion</key>
   <string>12.0</string>
+  <key>LSArchitecturePriority</key>
+  <array>
+    <string>arm64</string>
+  </array>
+  <key>LSRequiresNativeExecution</key>
+  <true/>
   <key>LSUIElement</key>
   <false/>
 </dict>

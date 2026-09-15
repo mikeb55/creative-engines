@@ -18,6 +18,9 @@ describe('createDesktopLauncherMac', () => {
     expect(pkg.build.appId).toBe('com.mikeb55.composeros.desktop');
     expect(LAUNCHER_BUNDLE_ID).not.toBe(pkg.build.appId);
     expect(LAUNCHER_DISPLAY_NAME).toBe('Composer OS');
+    const src = fs.readFileSync(path.join(desktopRoot, 'install', 'createDesktopLauncherMac.ts'), 'utf-8');
+    expect(src).toContain('LSRequiresNativeExecution');
+    expect(src).toContain('LSArchitecturePriority');
   });
 
   it('bakes absolute node/npm/repo paths and never sources zshrc', () => {
@@ -40,6 +43,7 @@ describe('createDesktopLauncherMac', () => {
     expect(script).toContain('rebuilding latest changes');
     expect(script).toContain('Open Log');
     expect(script).toContain('dev_electron_running');
+    expect(script).toContain('arch -arm64');
     expect(script).toContain('printf');
   });
 
