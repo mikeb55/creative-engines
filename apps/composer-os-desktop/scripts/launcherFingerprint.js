@@ -1,6 +1,8 @@
 /**
  * Cheap working-tree fingerprint for the macOS Desktop launcher.
- * Hash of: git HEAD + porcelain status + per-tree file count + max mtime
+ * Hash of: git HEAD + porcelain status (scoped to the three source trees) +
+ * per-tree file count + max mtime. Porcelain is path-limited so a dirty
+ * untracked folder elsewhere does not stall `git status`.
  * of apps/composer-os-app/src, apps/composer-os-desktop/electron, engines/composer-os-v2.
  * No network and no history-changing git commands.
  */
@@ -72,10 +74,21 @@ function computeLauncherFingerprint(repoRoot) {
     cwd: root,
     encoding: 'utf8',
   }).trim();
-  const porcelain = execFileSync(git, ['status', '--porcelain'], {
-    cwd: root,
-    encoding: 'utf8',
-  });
+  const porcelain = execFileSync(
+    git,
+    [
+      'status',
+      '--porcelain',
+      '--',
+      'apps/composer-os-app/src',
+      'apps/composer-os-desktop/electron',
+      'engines/composer-os-v2',
+    ],
+    {
+      cwd: root,
+      encoding: 'utf8',
+    }
+  );
   const lines = [head, porcelain];
   for (const [label, parts] of SOURCE_TREES) {
     const dir = path.join(root, ...parts);
