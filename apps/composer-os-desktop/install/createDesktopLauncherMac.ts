@@ -30,7 +30,8 @@ export function resolveNpmPath(): string {
   if (!fromWhich || !fs.existsSync(fromWhich)) {
     throw new Error('Could not resolve npm (which npm).');
   }
-  return fs.realpathSync(fromWhich);
+  // Keep the shim (`/usr/local/bin/npm`), not the resolved npm-cli.js path.
+  return fromWhich;
 }
 
 export function resolveElectronPath(desktopAppRoot: string): string {
