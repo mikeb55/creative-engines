@@ -117,7 +117,17 @@ fi
 
 /bin/mkdir -p "$TMP"
 
-if /usr/bin/pgrep -f "/apps/composer-os-desktop/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron" >/dev/null 2>&1; then
+dev_electron_running() {
+  local cmd
+  while IFS= read -r cmd; do
+    case "$cmd" in
+      "$ELECTRON"|"$ELECTRON "*) return 0 ;;
+    esac
+  done < <(/bin/ps -ax -o command=)
+  return 1
+}
+
+if dev_electron_running; then
   cd "$DESKTOP" || exit 1
   exec "$ELECTRON" .
 fi

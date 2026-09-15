@@ -39,7 +39,7 @@ describe('createDesktopLauncherMac', () => {
     expect(script).toContain('verify:ui-resources');
     expect(script).toContain('rebuilding latest changes');
     expect(script).toContain('Open Log');
-    expect(script).toContain('pgrep');
+    expect(script).toContain('dev_electron_running');
     expect(script).toContain('printf');
   });
 
