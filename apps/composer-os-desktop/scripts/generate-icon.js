@@ -3,7 +3,9 @@
  * Creates:
  * - resources/icon.png for BrowserWindow/taskbar runtime hints
  * - resources/icon.ico for electron-builder Windows executable resources
+ * - resources/icon.icns on darwin (sips + iconutil; skip sizes larger than source PNG)
  */
+const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
@@ -11,6 +13,7 @@ const zlib = require('zlib');
 const outDir = path.join(__dirname, '..', 'resources');
 const outPngFile = path.join(outDir, 'icon.png');
 const outIcoFile = path.join(outDir, 'icon.ico');
+const outIcnsFile = path.join(outDir, 'icon.icns');
 
 fs.mkdirSync(outDir, { recursive: true });
 
@@ -113,7 +116,77 @@ function icoBuffer(sizes) {
   return Buffer.concat([header, dir, ...images.map((image) => image.data)]);
 }
 
+function pngPixelSize(file) {
+  const buf = fs.readFileSync(file);
+  if (buf.length < 24 || buf.toString('ascii', 1, 4) !== 'PNG') {
+    throw new Error(`Not a PNG: ${file}`);
+  }
+  return buf.readUInt32BE(16);
+}
+
+/** Apple iconset names → pixel size. iconutil rejects incomplete sets — upsample if source is small. */
+const ICNS_ICONSET_ENTRIES = [
+  ['icon_16x16.png', 16],
+  ['icon_16x16@2x.png', 32],
+  ['icon_32x32.png', 32],
+  ['icon_32x32@2x.png', 64],
+  ['icon_128x128.png', 128],
+  ['icon_128x128@2x.png', 256],
+  ['icon_256x256.png', 256],
+  ['icon_256x256@2x.png', 512],
+  ['icon_512x512.png', 512],
+  ['icon_512x512@2x.png', 1024],
+];
+
+function writeIcnsFromPng(pngFile, icnsFile) {
+  const srcSize = pngPixelSize(pngFile);
+  const iconsetDir = path.join(outDir, 'icon.iconset');
+  if (fs.existsSync(iconsetDir)) {
+    fs.rmSync(iconsetDir, { recursive: true, force: true });
+  }
+  fs.mkdirSync(iconsetDir, { recursive: true });
+
+  // iconutil rejects incomplete iconsets. If icon.png is smaller than 1024,
+  // rasterize the same artwork at 1024 and sips down (do not fail the build).
+  let sipsSrc = pngFile;
+  const hiResPng = path.join(outDir, '.icon-icns-src.png');
+  if (srcSize < 1024) {
+    fs.writeFileSync(hiResPng, pngBuffer(1024));
+    sipsSrc = hiResPng;
+    console.log(`Source PNG is ${srcSize}px; using 1024px raster for full iconset`);
+  }
+
+  let written = 0;
+  for (const [name, size] of ICNS_ICONSET_ENTRIES) {
+    const dest = path.join(iconsetDir, name);
+    execFileSync('sips', ['-z', String(size), String(size), sipsSrc, '--out', dest], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    written += 1;
+  }
+
+  if (fs.existsSync(hiResPng)) {
+    fs.rmSync(hiResPng, { force: true });
+  }
+
+  if (written === 0) {
+    fs.rmSync(iconsetDir, { recursive: true, force: true });
+    console.warn('No iconset sizes generated; skipping icon.icns');
+    return;
+  }
+
+  execFileSync('iconutil', ['-c', 'icns', iconsetDir, '-o', icnsFile], {
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  fs.rmSync(iconsetDir, { recursive: true, force: true });
+  console.log('Generated:', icnsFile);
+}
+
 fs.writeFileSync(outPngFile, pngBuffer(256));
 fs.writeFileSync(outIcoFile, icoBuffer([16, 32, 48, 64, 128, 256]));
 console.log('Generated:', outPngFile);
 console.log('Generated:', outIcoFile);
+
+if (process.platform === 'darwin') {
+  writeIcnsFromPng(outPngFile, outIcnsFile);
+}
