@@ -486,6 +486,7 @@ Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartÃ³k** native bundle (not 
 
 ## Current (as of 2026-07-01 snapshot)
 
+- **Pentatonic Engine Dev 3.2 (2026-10-06):** HOME from a printed major/minor key, an opening root confirmed by the first bass pitch class, or a stable closing bass. No title. No 24-centre search. `INSUFFICIENT_CONTEXT` when none of those sources exist.
 - **Pentatonic Dev 2.2 (2026-10-06):** change-cost floor `0.175` on genuine collection changes. Chromatic friction scored (default weight `0.8`, `wwh-duo-1.1` weight `1.4`). NONE cost unchanged. Suitability floor `0.62` unchanged. Fingerprint `27bf91d1cb5995f4246d06609dbe1d54dc1f5b27cc99676f5512cf5b423c398c`.
 - **Pentatonic Engine Dev 3.1 (2026-10-06):** motif labels are not boundaries. Generic HOME inference (no title). One-hypothesis path solver. Report-only chromatic friction. Dev 2 costs unchanged (no change-cost floor). Pilots re-run: Impossible Metaphysics, The Mirror, Orbit V2.1. Remaining six WWH scores not run.
 - **Pentatonic Engine Dev 3 (2026-10-06):** whole-score MusicXML analysis. Written-order adapter into the frozen Dev 2 path. `#/pentatonic` Whole score mode. Path constants unchanged. Pilots: Impossible Metaphysics, The Mirror, Orbit V2.1. Remaining six WWH scores not run.

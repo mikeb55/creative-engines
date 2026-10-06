@@ -6,7 +6,7 @@
 import { chromaticFriction, type ChromaticFrictionRegion } from './chromaticFriction';
 import { DEFAULT_PENTATONIC_SCORING } from './evaluate';
 import { importPentatonicScoreFromMusicXml, PENTATONIC_SCORE_ORDER_POLICY, type PentatonicScoreEvent, type PentatonicScoreImport } from './musicXmlScore';
-import { inferPentatonicHome, type InferredHome } from './inferHome';
+import { inferPentatonicHome, type HomeCandidate, type InferredHome } from './inferHome';
 import { parseNoteToken, spellingForPc, type ParsedNote } from './pitch';
 import { recommendPentatonicPath } from './recommendPath';
 import type { PentatonicPassage, PentatonicPassageEvent, PentatonicPathEventDecision, PentatonicPathResult } from './pathTypes';
@@ -73,6 +73,7 @@ export interface PentatonicScoreAnalysis {
   path: PentatonicPathResult;
   score: PentatonicScoreImport;
   homeEvidence: readonly string[];
+  homeCandidates: readonly HomeCandidate[];
   friction: readonly ChromaticFrictionRegion[];
   lowFitRegions: readonly { measureRangeLabel: string; meanLocalFit: number; lowestLocalFit: number; lowestSourceLabel: string }[];
   nearIdenticalSwitches: readonly { measureRangeLabel: string; sharedCount: number; previous: string; next: string }[];
@@ -308,6 +309,7 @@ export function analyzePentatonicScore(xml: string, options?: AnalyzePentatonicS
       path,
       score,
       homeEvidence: inferred.evidence,
+      homeCandidates: inferred.candidates,
       friction: [],
       lowFitRegions: [],
       nearIdenticalSwitches: [],
@@ -337,6 +339,7 @@ export function analyzePentatonicScore(xml: string, options?: AnalyzePentatonicS
     regions,
     inferredBoundaries: inferredBounds,
     homeEvidence: inferred.evidence,
+    homeCandidates: inferred.candidates,
     friction: chromaticFriction(score, path),
     lowFitRegions: lowFit(regions, path),
     nearIdenticalSwitches: nearSwitches(regions),

@@ -89,7 +89,8 @@ export function runPentatonicDev31Tests(): { ok: boolean; name: string }[] {
     const home = inferPentatonicHome(score('Pedal', attacks), 'wwh-duo-1.1');
     assert.equal(home.home?.referenceNote, 'A');
     assert.equal(home.home?.archetypeId, 'major_pentatonic');
-    assert.ok(home.evidence.some((line) => line.includes('tie-break only')));
+    assert.equal(home.winnerSource, 'CLOSING');
+    assert.ok(home.evidence.some((line) => line.includes('passing')));
   });
 
   return rows;

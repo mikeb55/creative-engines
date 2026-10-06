@@ -118,6 +118,15 @@ function ScoreMap(props: { analysis: PentatonicScoreAnalysis }) {
       <p style={{ margin: 0 }} data-testid="pentatonic-home">
         {analysis.homeReading}
       </p>
+      {analysis.homeCandidates.length > 0 ? (
+        <div data-testid="pentatonic-home-candidates">
+          {analysis.homeCandidates.map((candidate) => (
+            <p key={`${candidate.source}-${candidate.centre}-${candidate.mode}`} style={{ margin: 0 }}>
+              {candidate.source} {candidate.centre} {candidate.mode} membership {candidate.membership}
+            </p>
+          ))}
+        </div>
+      ) : null}
       {analysis.homeEvidence.map((line) => (
         <p key={line} style={{ margin: 0 }}>
           {line}
