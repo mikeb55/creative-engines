@@ -486,8 +486,9 @@ Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartÃ³k** native bundle (not 
 
 ## Current (as of 2026-07-01 snapshot)
 
-- **Pentatonic Engine Dev 2 (2026-10-06):** `recommendPentatonicPath`. Config `pentatonic-path-config-1.0`. While We're Here profile `wwh-duo-1.0` (melody and bass above chord symbols). Passage mode on `#/pentatonic`. Validation fixtures: Orbit (track 5, anti-churn), Impossible Metaphysics (colour), The Mirror (continuity). Manual fixtures only. Dev 3 whole-song MusicXML analysis not started.
-- **Pentatonic Dev 2 Orbit V2.1 (2026-10-06):** Orbit fixtures re-derived from duo leadsheet V2.1. Path constants unchanged. Dev 3 not started.
+- **Pentatonic Engine Dev 3 (2026-10-06):** whole-score MusicXML analysis. Written-order adapter into the frozen Dev 2 path. `#/pentatonic` Whole score mode. Path constants unchanged. Pilots: Impossible Metaphysics, The Mirror, Orbit V2.1. Remaining six WWH scores not run.
+- **Pentatonic Engine Dev 2 (2026-10-06):** `recommendPentatonicPath`. Config `pentatonic-path-config-1.0`. While We're Here profile `wwh-duo-1.0` (melody and bass above chord symbols). Passage mode on `#/pentatonic`. Validation fixtures: Orbit (track 5, anti-churn), Impossible Metaphysics (colour), The Mirror (continuity). Manual fixtures stay frozen.
+- **Pentatonic Dev 2 Orbit V2.1 (2026-10-06):** Orbit fixtures re-derived from duo leadsheet V2.1. Path constants unchanged. Manual rows stay frozen.
 - **Pentatonic Engine Dev 1 (2026-10-06):** headless `recommendPentatonics` in `engines/composer-os-v2/core/pentatonic/`. Major and minor pentatonic registry. HOME offsets 0 / −3 / +2 / +4 / +7. Relationship scoring `pentatonic-relationship-scoring-1.0`. Retention requires minimum suitability. Custom non-registry currents stay labelled. GUI `#/pentatonic`.
 
 - **Riff pitch PR A â€” `intervalWeights` live on pick path (2026-07-18):** Field builders populate `preferredIntervals` from profile weights; `pitchFromField` multiplies by directed IC before pick; snap reduced when intervals active. PR B (`enforceHook` gate) + PR C (leap-peak motif-blend skip) shipped. See `docs/CHANGELOG.md` [Unreleased] + `docs/RIFF_GENERATOR_TECHNICAL_SUMMARY.md`.

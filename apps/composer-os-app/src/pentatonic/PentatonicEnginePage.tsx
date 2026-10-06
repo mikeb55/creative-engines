@@ -9,6 +9,7 @@ import {
   type PentatonicRegionInput,
 } from '@composer-os/core/pentatonic';
 import { PentatonicPassagePanel } from './PentatonicPassagePanel';
+import { PentatonicScorePanel } from './PentatonicScorePanel';
 import {
   emptyPassageRow,
   emptyPentatonicForm,
@@ -197,7 +198,7 @@ export function PentatonicEnginePage(props: {
         Pentatonic Engine
       </h2>
       <p style={{ color: 'var(--text-muted)', marginTop: 0 }}>
-        Region asks which five-note resource fits one area. Passage asks how resources move through an ordered passage.
+        Region asks which five-note resource fits one area. Passage asks how resources move through an ordered passage. Whole score reads a MusicXML file.
       </p>
       <label htmlFor="pentatonic-analysis-mode">
         Mode
@@ -208,6 +209,7 @@ export function PentatonicEnginePage(props: {
         >
           <option value="region">Region</option>
           <option value="passage">Passage</option>
+          <option value="score">Whole score</option>
         </select>
       </label>
       {inherited?.tonalCentreRoot || inherited?.harmonyBars?.length || inherited?.melodyNotes?.length ? (
@@ -219,6 +221,9 @@ export function PentatonicEnginePage(props: {
         </p>
       ) : null}
 
+      {form.analysisMode === 'score' ? (
+        <PentatonicScorePanel />
+      ) : (
       <div style={{ display: 'grid', gap: '0.75rem' }}>
         <label htmlFor="pentatonic-tonal-root">
           Tonal centre
@@ -469,6 +474,7 @@ export function PentatonicEnginePage(props: {
           />
         )}
       </div>
+      )}
 
       {error ? (
         <p role="alert" data-testid="pentatonic-error">

@@ -370,3 +370,40 @@ describe('PentatonicEnginePage', () => {
     expect(textOf(tree)).not.toContain('Fmaj7#11');
   });
 });
+
+describe('pentatonic whole score', () => {
+  it('loads MusicXML and shows a region map without hiding passage mode', async () => {
+    const { PentatonicEnginePage } = await import('../src/pentatonic/PentatonicEnginePage');
+    const xml = `<?xml version="1.0"?><score-partwise><work><work-title>Orbit</work-title></work><part-list><score-part id="P1"><part-name>Electric Guitar</part-name><score-instrument id="a"><instrument-name>Electric Guitar</instrument-name></score-instrument></score-part><score-part id="P2"><part-name>Upright Bass</part-name><score-instrument id="b"><instrument-name>Upright Bass</instrument-name></score-instrument></score-part></part-list><part id="P1"><measure number="1"><note><pitch><step>C</step><octave>5</octave></pitch><duration>1</duration><voice>1</voice></note></measure></part><part id="P2"><measure number="1"><note><rest/><duration>1</duration><voice>1</voice></note></measure></part></score-partwise>`;
+    let tree!: ReturnType<typeof create>;
+    await act(async () => {
+      tree = create(React.createElement(PentatonicEnginePage));
+    });
+    const mode = tree.root.findByProps({ id: 'pentatonic-analysis-mode' });
+    await act(async () => {
+      mode.props.onChange({ target: { value: 'score' } });
+    });
+    expect(textOf(tree)).toContain('Whole score');
+    expect(tree.root.findAll((node) => node.props?.['data-testid'] === 'pentatonic-recommend').length).toBe(0);
+    const input = tree.root.findByProps({ id: 'pentatonic-score-file' });
+    await act(async () => {
+      input.props.onChange({ target: { files: [{ name: 'orbit-tiny.musicxml', text: async () => xml }] } });
+      await Promise.resolve();
+    });
+    expect(textOf(tree)).toContain('orbit-tiny.musicxml');
+    await act(async () => {
+      findButton(tree, 'pentatonic-analyse-score').props.onClick();
+    });
+    for (let attempt = 0; attempt < 40 && !textOf(tree).includes('pentatonic-score-map'); attempt += 1) {
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      });
+    }
+    expect(textOf(tree)).toContain('pentatonic-score-map');
+    expect(textOf(tree)).toContain('Electric Guitar');
+    await act(async () => {
+      mode.props.onChange({ target: { value: 'passage' } });
+    });
+    expect(textOf(tree)).toContain('pentatonic-passage');
+  });
+});

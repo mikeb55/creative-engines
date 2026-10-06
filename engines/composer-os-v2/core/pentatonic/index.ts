@@ -27,6 +27,7 @@ export {
   PENTATONIC_PATH_NONE,
 } from './pathConfig';
 export { formatPathComparison, passageFromMusicContext, recommendPentatonicPath } from './recommendPath';
+export { analyzePentatonicScore, formatPentatonicScoreMap, PENTATONIC_SCORE_ORDER_POLICY, importPentatonicScoreFromMusicXml } from './musicxml';
 export {
   CURRENT_NON_REGISTRY_POLICY,
   PENTATONIC_TEMPORAL_LIMIT,
@@ -37,6 +38,15 @@ export {
   recommendPentatonicsFromRegion,
 } from './recommend';
 export type { PentatonicPassage, PentatonicPassageEvent, PentatonicPathResult } from './pathTypes';
+export type {
+  PentatonicHarmonyEvidence,
+  PentatonicPitchPolicy,
+  PentatonicScoreAnalysis,
+  PentatonicScoreEvent,
+  PentatonicScoreImport,
+  PentatonicScorePart,
+  PentatonicScoreRegion,
+} from './musicxml';
 export type {
   PentatonicColourTension,
   PentatonicDepth,
