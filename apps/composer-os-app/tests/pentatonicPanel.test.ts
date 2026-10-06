@@ -304,4 +304,66 @@ describe('PentatonicEnginePage', () => {
     expect(tree.root.findByProps({ id: 'pentatonic-harmony' }).props.value).toBe('Dm7');
     vi.unstubAllGlobals();
   });
+
+  it('loads Orbit A, finds a path, and marks the path stale after an edit', async () => {
+    const { PentatonicEnginePage } = await import('../src/pentatonic/PentatonicEnginePage');
+    const pathRecommendFn = vi.fn(() => ({
+      kind: 'analysis' as const,
+      validationErrors: [],
+      disposition: 'PATH' as const,
+      pathEngineVersion: 'pentatonic-path-1.0',
+      configVersion: 'pentatonic-path-config-1.0',
+      evaluatorVersion: 'pentatonic-evaluator-1.0',
+      registryVersion: 'pentatonic-registry-1.0',
+      relationshipScoringVersion: 'pentatonic-relationship-scoring-1.0',
+      sourceEventCount: 9,
+      events: [],
+      segments: [],
+      switchCount: 1,
+      distinctResources: 2,
+      noneEventCount: 0,
+      noneSegmentCount: 0,
+      totalPathCost: 2.79,
+      costBreakdown: null,
+      bestStaticPathCost: 3.15,
+      bestStaticStateId: '0,3,5,7,10',
+      bestStaticStateName: 'C Minor Pentatonic',
+      alternatives: [],
+      diagnostics: [],
+      limitations: [],
+      explanation: '1–8  C Minor Pentatonic SUSPENDED',
+    }));
+    let tree!: ReturnType<typeof create>;
+    await act(async () => {
+      tree = create(React.createElement(PentatonicEnginePage, { pathRecommendFn }));
+    });
+    const mode = tree.root.findByProps({ id: 'pentatonic-analysis-mode' });
+    await act(async () => {
+      mode.props.onChange({ target: { value: 'passage' } });
+    });
+    expect(tree.root.findAll((node) => node.props?.['data-testid'] === 'pentatonic-recommend').length).toBe(0);
+    await act(async () => {
+      findButton(tree, 'pentatonic-orbit-a').props.onClick();
+    });
+    expect(textOf(tree)).toContain('Fmaj7#11');
+    expect(textOf(tree)).toContain('wwh-duo-1.0');
+    await act(async () => {
+      findButton(tree, 'pentatonic-find-path').props.onClick();
+      await Promise.resolve();
+    });
+    expect(pathRecommendFn).toHaveBeenCalled();
+    expect(pathRecommendFn.mock.calls[0]?.[0].events[0]?.sourceLabel).toBe('1');
+    expect(pathRecommendFn.mock.calls[0]?.[0].evidenceProfile).toBe('wwh-duo-1.0');
+    expect(textOf(tree)).toContain('1–8  C Minor Pentatonic SUSPENDED');
+    expect(textOf(tree)).toContain('Heuristic path cost');
+    const label = tree.root.findAll((node) => node.props?.['aria-label'] === 'Source label 1')[0];
+    await act(async () => {
+      label.props.onChange({ target: { value: 'pickup' } });
+    });
+    expect(textOf(tree)).toContain('This path is stale');
+    await act(async () => {
+      findButton(tree, 'pentatonic-reset-passage').props.onClick();
+    });
+    expect(textOf(tree)).not.toContain('Fmaj7#11');
+  });
 });

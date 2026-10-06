@@ -1,7 +1,8 @@
 /**
  * Small chord-tone reader for pentatonic evidence.
- * One symbol, one region. This is not the Composer OS harmony engine and it does
- * not apply golden-path chord substitution.
+ * One symbol at a time. This is not the Composer OS harmony engine.
+ * Unknown qualities fail this call. Callers decide whether that is a validation
+ * error (Dev 1 region) or a per-event diagnostic (Dev 2 path).
  */
 
 import { canonicalPitchSet, parseNoteToken } from './pitch';
@@ -10,6 +11,60 @@ export interface ChordEvidence {
   symbol: string;
   harmonyPitchClasses: number[];
   slashBassPitchClass: number | null;
+}
+
+/**
+ * Dominant 13 includes 9 and 13. Jazz shorthand, not a voice-leading claim.
+ * maj7#11 keeps the perfect fifth and adds #11.
+ * maj7#5 replaces the fifth with #5.
+ * dim7 is a diminished seventh (bb7), not a minor seventh.
+ */
+const QUALITY_INTERVALS: Readonly<Record<string, readonly number[]>> = {
+  '': [0, 4, 7],
+  maj7: [0, 4, 7, 11],
+  ma7: [0, 4, 7, 11],
+  major7: [0, 4, 7, 11],
+  'maj7#11': [0, 4, 6, 7, 11],
+  'ma7#11': [0, 4, 6, 7, 11],
+  'major7#11': [0, 4, 6, 7, 11],
+  'maj7#5': [0, 4, 8, 11],
+  'ma7#5': [0, 4, 8, 11],
+  'major7#5': [0, 4, 8, 11],
+  m7: [0, 3, 7, 10],
+  min7: [0, 3, 7, 10],
+  '-7': [0, 3, 7, 10],
+  m9: [0, 2, 3, 7, 10],
+  min9: [0, 2, 3, 7, 10],
+  '-9': [0, 2, 3, 7, 10],
+  '7': [0, 4, 7, 10],
+  '9': [0, 2, 4, 7, 10],
+  '13': [0, 2, 4, 7, 9, 10],
+  m7b5: [0, 3, 6, 10],
+  min7b5: [0, 3, 6, 10],
+  '-7b5': [0, 3, 6, 10],
+  dim7: [0, 3, 6, 9],
+  dim: [0, 3, 6],
+  sus2: [0, 2, 7],
+  sus4: [0, 5, 7],
+  sus: [0, 5, 7],
+  add9: [0, 2, 4, 7],
+  madd9: [0, 2, 3, 7],
+  minadd9: [0, 2, 3, 7],
+  '6': [0, 4, 7, 9],
+  m6: [0, 3, 7, 9],
+  min6: [0, 3, 7, 9],
+  '69': [0, 2, 4, 7, 9],
+  '6/9': [0, 2, 4, 7, 9],
+  aug: [0, 4, 8],
+  '+': [0, 4, 8],
+  m: [0, 3, 7],
+  min: [0, 3, 7],
+  '-': [0, 3, 7],
+};
+
+function qualityIntervals(rest: string): readonly number[] | null {
+  const quality = rest.replace(/[()]/g, '').toLowerCase();
+  return QUALITY_INTERVALS[quality] ?? null;
 }
 
 export function readChordEvidence(symbol: string): { ok: true; chord: ChordEvidence } | { ok: false; error: string } {
@@ -25,36 +80,18 @@ export function readChordEvidence(symbol: string): { ok: true; chord: ChordEvide
   if (slashAt >= 0) {
     const bassToken = rest.slice(slashAt + 1);
     const bass = parseNoteToken(bassToken);
-    if (bass) {
-      slashBassPitchClass = bass.pc;
-      rest = rest.slice(0, slashAt);
-    }
+    if (!bass) return { ok: false, error: `Unknown chord symbol "${symbol}".` };
+    slashBassPitchClass = bass.pc;
+    rest = rest.slice(0, slashAt);
   }
-  const quality = rest.replace(/[()]/g, '').toLowerCase();
-  const minor = /^(m|min|-)(?!aj)/.test(quality);
-  const sus2 = quality.includes('sus2');
-  const sus4 = quality.includes('sus4') || (quality.includes('sus') && !sus2);
-  const diminished = quality.includes('dim') || quality.includes('°') || quality.includes('m7b5') || quality.includes('ø');
-  const augmented = quality.includes('aug') || quality.includes('+');
-  const flatFive = quality.includes('b5') || diminished;
-  const pcs = new Set<number>();
-  const add = (interval: number) => pcs.add((root.pc + interval) % 12);
-  add(0);
-  if (sus2) add(2);
-  else if (sus4) add(5);
-  else add(minor || diminished ? 3 : 4);
-  if (augmented) add(8);
-  else if (flatFive) add(6);
-  else add(7);
-  if (quality.includes('maj7') || quality.includes('ma7') || quality.includes('δ')) add(11);
-  else if (quality.includes('7')) add(10);
-  if (quality.includes('add9') || quality.includes('69') || quality.includes('6/9') || /(?:^|[^a-z])9/.test(quality)) add(2);
-  if (quality.includes('6')) add(9);
+  const intervals = qualityIntervals(rest);
+  if (!intervals) return { ok: false, error: `Unknown chord symbol "${symbol}".` };
+  const pcs = intervals.map((interval) => (root.pc + interval) % 12);
   return {
     ok: true,
     chord: {
       symbol: symbol.trim(),
-      harmonyPitchClasses: canonicalPitchSet([...pcs]),
+      harmonyPitchClasses: canonicalPitchSet(pcs),
       slashBassPitchClass,
     },
   };

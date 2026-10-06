@@ -2,6 +2,7 @@ import {
   lyricalAnswerExampleRegion,
   type PentatonicColourTension,
   type PentatonicDepth,
+  type PentatonicPassage,
   type PentatonicPurpose,
   type PentatonicRegionInput,
 } from '@composer-os/core/pentatonic';
@@ -13,7 +14,32 @@ export interface PentatonicInheritedContext {
   melodyNotes?: readonly string[];
 }
 
+export interface PentatonicPassageRow {
+  id: string;
+  sourceLabel: string;
+  chord: string;
+  melodyText: string;
+  bassText: string;
+  melodyRest: boolean;
+  bassRest: boolean;
+  phraseBoundary: boolean;
+}
+
+export function emptyPassageRow(id = 'row-1'): PentatonicPassageRow {
+  return { id, sourceLabel: '', chord: '', melodyText: '', bassText: '', melodyRest: false, bassRest: false, phraseBoundary: false };
+}
+
+export function splitPentatonicNoteText(value: string): string[] {
+  return value
+    .split(/[\s,]+/)
+    .map((note) => note.trim())
+    .filter((note) => note.length > 0);
+}
+
 export interface PentatonicFormState {
+  analysisMode: 'region' | 'passage';
+  evidenceProfile: 'default' | 'wwh-duo-1.0';
+  passageRows: PentatonicPassageRow[];
   tonalCentreRoot: string;
   tonalCentreMode: 'major' | 'minor';
   useInheritedTonalCentre: boolean;
@@ -40,6 +66,9 @@ export interface PentatonicFormState {
 
 export function emptyPentatonicForm(inherited?: PentatonicInheritedContext | null): PentatonicFormState {
   return {
+    analysisMode: 'region',
+    evidenceProfile: 'default',
+    passageRows: [emptyPassageRow()],
     tonalCentreRoot: 'C',
     tonalCentreMode: 'major',
     useInheritedTonalCentre: Boolean(inherited?.tonalCentreRoot),
@@ -87,6 +116,9 @@ export function examplePentatonicForm(): PentatonicFormState {
 export function pentatonicFormIsDirty(form: PentatonicFormState): boolean {
   const empty = emptyPentatonicForm();
   const musical = (value: PentatonicFormState) => ({
+    analysisMode: value.analysisMode,
+    evidenceProfile: value.evidenceProfile,
+    passageRows: value.passageRows,
     tonalCentreRoot: value.tonalCentreRoot,
     tonalCentreMode: value.tonalCentreMode,
     homeArchetypeId: value.homeArchetypeId,
@@ -152,6 +184,35 @@ export function resolvePentatonicRegion(
   return region;
 }
 
+export function resolvePentatonicPassage(form: PentatonicFormState): PentatonicPassage {
+  const passage: PentatonicPassage = {
+    tonalCentre: { root: form.tonalCentreRoot, mode: form.tonalCentreMode },
+    depth: form.depth,
+    strictMelodyMembership: form.strictMelody,
+    evidenceProfile: form.evidenceProfile,
+    events: form.passageRows.map((row) => ({
+      id: row.id,
+      sourceLabel: row.sourceLabel,
+      chordSymbol: row.chord,
+      melodyNotes: row.melodyRest ? [] : splitPentatonicNoteText(row.melodyText),
+      bassNotes: row.bassRest ? [] : splitPentatonicNoteText(row.bassText),
+      melodyRest: row.melodyRest,
+      bassRest: row.bassRest,
+      phraseBoundaryAfter: row.phraseBoundary,
+    })),
+  };
+  if (form.homeArchetypeId) passage.home = { archetypeId: form.homeArchetypeId, referenceNote: form.homeReference };
+  if (form.purpose) passage.purpose = form.purpose;
+  if (form.colourTension) passage.colourTension = form.colourTension;
+  if (form.currentMode === 'registry') passage.current = { archetypeId: form.currentArchetypeId, referenceNote: form.currentReference };
+  else if (form.currentMode === 'notes') passage.current = { notes: [...form.currentNotes] };
+  return passage;
+}
+
 export function pentatonicFormSnapshot(form: PentatonicFormState, inherited?: PentatonicInheritedContext | null): string {
-  return JSON.stringify(resolvePentatonicRegion(form, inherited));
+  return JSON.stringify({
+    region: resolvePentatonicRegion(form, inherited),
+    passage: resolvePentatonicPassage(form),
+    analysisMode: form.analysisMode,
+  });
 }

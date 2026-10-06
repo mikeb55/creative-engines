@@ -11,6 +11,15 @@ export {
   PENTATONIC_RELATIONSHIP_SCORING_VERSION,
   PURPOSE_HOME_RELATIONSHIP_SCORES,
 } from './relationshipScoring';
+export { WWH_DUO_EVIDENCE_WEIGHTS, WWH_DUO_PROFILE_ID, scoringForEvidenceProfile } from './evidenceProfiles';
+export { ORBIT_FIXTURE_NOTE, orbitAPassage, orbitBPassage } from './orbitPassages';
+export {
+  DEFAULT_PENTATONIC_PATH_CONFIG,
+  PENTATONIC_PATH_CONFIG_VERSION,
+  PENTATONIC_PATH_ENGINE_VERSION,
+  PENTATONIC_PATH_NONE,
+} from './pathConfig';
+export { formatPathComparison, passageFromMusicContext, recommendPentatonicPath } from './recommendPath';
 export {
   CURRENT_NON_REGISTRY_POLICY,
   PENTATONIC_TEMPORAL_LIMIT,
@@ -20,6 +29,7 @@ export {
   recommendPentatonics,
   recommendPentatonicsFromRegion,
 } from './recommend';
+export type { PentatonicPassage, PentatonicPassageEvent, PentatonicPathResult } from './pathTypes';
 export type {
   PentatonicColourTension,
   PentatonicDepth,

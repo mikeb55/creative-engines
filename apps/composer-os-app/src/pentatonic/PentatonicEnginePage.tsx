@@ -2,15 +2,20 @@ import { useRef, useState } from 'react';
 import {
   PENTATONIC_NOTE_CHOICES,
   recommendPentatonicsFromRegion,
+  recommendPentatonicPath,
   type PentatonicEngineResult,
+  type PentatonicPathResult,
   type PentatonicRecommendation,
   type PentatonicRegionInput,
 } from '@composer-os/core/pentatonic';
+import { PentatonicPassagePanel } from './PentatonicPassagePanel';
 import {
+  emptyPassageRow,
   emptyPentatonicForm,
   examplePentatonicForm,
   pentatonicFormIsDirty,
   pentatonicFormSnapshot,
+  resolvePentatonicPassage,
   resolvePentatonicRegion,
   type PentatonicFormState,
   type PentatonicInheritedContext,
@@ -106,11 +111,14 @@ function RecommendationCard(props: { item: PentatonicRecommendation; heading: st
 export function PentatonicEnginePage(props: {
   inherited?: PentatonicInheritedContext | null;
   recommendFn?: (region: PentatonicRegionInput) => PentatonicEngineResult | Promise<PentatonicEngineResult>;
+  pathRecommendFn?: typeof recommendPentatonicPath;
 }) {
   const inherited = props.inherited ?? null;
   const recommendFn = props.recommendFn ?? recommendPentatonicsFromRegion;
+  const pathRecommendFn = props.pathRecommendFn ?? recommendPentatonicPath;
   const [form, setForm] = useState<PentatonicFormState>(() => emptyPentatonicForm(inherited));
   const [analysis, setAnalysis] = useState<{ result: PentatonicEngineResult; snapshot: string } | null>(null);
+  const [pathAnalysis, setPathAnalysis] = useState<{ result: PentatonicPathResult; snapshot: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const requestRef = useRef(0);
@@ -118,11 +126,12 @@ export function PentatonicEnginePage(props: {
   const patch = (partial: Partial<PentatonicFormState>) => setForm((current) => ({ ...current, ...partial }));
   const snapshot = pentatonicFormSnapshot(form, inherited);
   const stale = Boolean(analysis && analysis.snapshot !== snapshot);
+  const pathStale = Boolean(pathAnalysis && pathAnalysis.snapshot !== snapshot);
 
   const onRecommend = () => {
     const id = ++requestRef.current;
     const requested = resolvePentatonicRegion(form, inherited);
-    const requestedSnapshot = JSON.stringify(requested);
+    const requestedSnapshot = pentatonicFormSnapshot(form, inherited);
     setLoading(true);
     setError(null);
     Promise.resolve()
@@ -148,10 +157,36 @@ export function PentatonicEnginePage(props: {
     setForm(examplePentatonicForm());
   };
 
+  const onFindPath = () => {
+    const id = ++requestRef.current;
+    const requestedSnapshot = pentatonicFormSnapshot(form, inherited);
+    setLoading(true);
+    setError(null);
+    Promise.resolve()
+      .then(() => pathRecommendFn(resolvePentatonicPassage(form)))
+      .then((result) => {
+        if (id !== requestRef.current) return;
+        setPathAnalysis({ result, snapshot: requestedSnapshot });
+      })
+      .catch((caught: unknown) => {
+        if (id !== requestRef.current) return;
+        setError(caught instanceof Error ? caught.message : String(caught));
+      })
+      .finally(() => {
+        if (id === requestRef.current) setLoading(false);
+      });
+  };
+
   const onReset = () => {
     setForm(emptyPentatonicForm(inherited));
     setAnalysis(null);
+    setPathAnalysis(null);
     setError(null);
+  };
+
+  const onResetPassage = () => {
+    patch({ analysisMode: 'passage', evidenceProfile: 'default', passageRows: [emptyPassageRow()] });
+    setPathAnalysis(null);
   };
 
   const result = analysis?.result ?? null;
@@ -162,8 +197,19 @@ export function PentatonicEnginePage(props: {
         Pentatonic Engine
       </h2>
       <p style={{ color: 'var(--text-muted)', marginTop: 0 }}>
-        Asks which five-note resource, if any, is useful for this one region.
+        Region asks which five-note resource fits one area. Passage asks how resources move through an ordered passage.
       </p>
+      <label htmlFor="pentatonic-analysis-mode">
+        Mode
+        <select
+          id="pentatonic-analysis-mode"
+          value={form.analysisMode}
+          onChange={(event) => patch({ analysisMode: event.target.value as PentatonicFormState['analysisMode'] })}
+        >
+          <option value="region">Region</option>
+          <option value="passage">Passage</option>
+        </select>
+      </label>
       {inherited?.tonalCentreRoot || inherited?.harmonyBars?.length || inherited?.melodyNotes?.length ? (
         <p data-testid="pentatonic-inherited" style={{ fontSize: '0.85rem' }}>
           Inherited Composer OS context:{' '}
@@ -399,17 +445,29 @@ export function PentatonicEnginePage(props: {
           </div>
         </details>
 
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <button type="button" data-testid="pentatonic-recommend" onClick={onRecommend} disabled={loading}>
-            {loading ? 'Recommending…' : 'Recommend'}
-          </button>
-          <button type="button" className="secondary" data-testid="pentatonic-example" onClick={onExample}>
-            Load Example
-          </button>
-          <button type="button" className="secondary" data-testid="pentatonic-reset" onClick={onReset}>
-            Reset Pentatonic Inputs
-          </button>
-        </div>
+        {form.analysisMode === 'region' ? (
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <button type="button" data-testid="pentatonic-recommend" onClick={onRecommend} disabled={loading}>
+              {loading ? 'Recommending…' : 'Recommend'}
+            </button>
+            <button type="button" className="secondary" data-testid="pentatonic-example" onClick={onExample}>
+              Load Example
+            </button>
+            <button type="button" className="secondary" data-testid="pentatonic-reset" onClick={onReset}>
+              Reset Pentatonic Inputs
+            </button>
+          </div>
+        ) : (
+          <PentatonicPassagePanel
+            form={form}
+            patch={patch}
+            result={pathAnalysis?.result ?? null}
+            stale={pathStale}
+            loading={loading}
+            onFind={onFindPath}
+            onReset={onResetPassage}
+          />
+        )}
       </div>
 
       {error ? (

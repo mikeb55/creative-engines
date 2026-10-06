@@ -4,6 +4,8 @@
 
 **Composer OS** (`engines/composer-os-v2/`) is a single generative pipeline for jazz/chamber-style outputs: preset â†’ planning â†’ score build â†’ integrity â†’ MusicXML export â†’ validation â†’ readiness. **Apps** (`apps/composer-os-app`, `apps/composer-os-desktop`) call the shared **app API** (`engines/composer-os-v2/app-api/`), not the engine core directly.
 
+**Pentatonic Engine (Dev 1–2):** headless module `engines/composer-os-v2/core/pentatonic/`. Dev 1 `recommendPentatonics` scores one region against the major/minor pentatonic registry. Dev 2 `recommendPentatonicPath` runs that evaluator per event, then a deterministic path cost (`pentatonic-path-config-1.0`) compresses an ordered passage. Evidence profile `wwh-duo-1.0` is While We're Here only; Dev 1 scoring defaults stay. GUI `#/pentatonic` (Region and Passage). No phrase engine, note generation, or MusicXML write on this path.
+
 ### RiffGen Phase 1.5 (inspect + GenerateIsland â€” 2026-07-18)
 
 - **Route:** app shell `#/riffgen` (nav label **RiffGen**) â€” sibling page, not a HomeGenerate branch. Hash routing required for desktop `file://` reload safety.

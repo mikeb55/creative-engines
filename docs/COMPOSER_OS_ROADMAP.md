@@ -486,7 +486,8 @@ Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartÃ³k** native bundle (not 
 
 ## Current (as of 2026-07-01 snapshot)
 
-- **Pentatonic Engine Dev 1 (2026-10-06):** headless `recommendPentatonics` in `engines/composer-os-v2/core/pentatonic/`. Major and minor pentatonic registry. HOME offsets 0 / −3 / +2 / +4 / +7. Relationship scoring `pentatonic-relationship-scoring-1.0`. Retention requires minimum suitability. Custom non-registry currents stay labelled. GUI `#/pentatonic`. Dev 2 (path across regions) not started.
+- **Pentatonic Engine Dev 2 (2026-10-06):** `recommendPentatonicPath`. Config `pentatonic-path-config-1.0`. While We're Here profile `wwh-duo-1.0` (melody and bass above chord symbols). Passage mode on `#/pentatonic`. Orbit A / Orbit B are track 5 fixtures only. Dev 3 not started.
+- **Pentatonic Engine Dev 1 (2026-10-06):** headless `recommendPentatonics` in `engines/composer-os-v2/core/pentatonic/`. Major and minor pentatonic registry. HOME offsets 0 / −3 / +2 / +4 / +7. Relationship scoring `pentatonic-relationship-scoring-1.0`. Retention requires minimum suitability. Custom non-registry currents stay labelled. GUI `#/pentatonic`.
 
 - **Riff pitch PR A â€” `intervalWeights` live on pick path (2026-07-18):** Field builders populate `preferredIntervals` from profile weights; `pitchFromField` multiplies by directed IC before pick; snap reduced when intervals active. PR B (`enforceHook` gate) + PR C (leap-peak motif-blend skip) shipped. See `docs/CHANGELOG.md` [Unreleased] + `docs/RIFF_GENERATOR_TECHNICAL_SUMMARY.md`.
 
