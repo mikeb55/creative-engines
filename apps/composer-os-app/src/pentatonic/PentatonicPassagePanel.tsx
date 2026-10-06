@@ -9,7 +9,7 @@ function applyPassage(form: PentatonicFormState, passage: PentatonicPassage): Pe
   return {
     ...form,
     analysisMode: 'passage',
-    evidenceProfile: passage.evidenceProfile ?? 'wwh-duo-1.0',
+    evidenceProfile: passage.evidenceProfile === 'wwh-duo-1.0' ? 'wwh-duo-1.1' : passage.evidenceProfile ?? 'wwh-duo-1.1',
     tonalCentreRoot: passage.tonalCentre?.root ?? form.tonalCentreRoot,
     tonalCentreMode: passage.tonalCentre?.mode ?? form.tonalCentreMode,
     useInheritedTonalCentre: false,
@@ -70,7 +70,7 @@ export function PentatonicPassagePanel(props: {
           onChange={(event) => props.patch({ evidenceProfile: event.target.value as PentatonicFormState['evidenceProfile'] })}
         >
           <option value="default">Dev 1 defaults</option>
-          <option value="wwh-duo-1.0">wwh-duo-1.0</option>
+          <option value="wwh-duo-1.1">wwh-duo-1.1</option>
         </select>
       </label>
       <div style={{ overflowX: 'auto' }}>

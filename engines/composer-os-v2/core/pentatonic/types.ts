@@ -34,6 +34,11 @@ export interface PentatonicScoringConfig {
     continuity: number;
     purpose: number;
     colour: number;
+    /**
+     * Chromatic friction. Colour/tension cost, not an avoid-note rule.
+     * Score is 1 − (friction duration / eligible melody+bass duration).
+     */
+    friction: number;
   };
 }
 

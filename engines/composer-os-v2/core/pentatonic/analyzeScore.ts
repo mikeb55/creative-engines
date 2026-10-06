@@ -51,7 +51,7 @@ export interface PentatonicScoreAnalysis {
   song: string;
   sourceFile: string;
   sourceSha256: string;
-  profile: 'default' | 'wwh-duo-1.0';
+  profile: 'default' | 'wwh-duo-1.1';
   orderPolicy: typeof PENTATONIC_SCORE_ORDER_POLICY;
   homeReading: string;
   regions: readonly PentatonicScoreRegion[];
@@ -79,7 +79,7 @@ export interface PentatonicScoreAnalysis {
 }
 
 export interface AnalyzePentatonicScoreOptions {
-  profile?: 'default' | 'wwh-duo-1.0';
+  profile?: 'default' | 'wwh-duo-1.1' | 'wwh-duo-1.0';
   sourceFile?: string;
   sourceSha256?: string;
 }
@@ -89,7 +89,7 @@ function openingFromInference(inferred: InferredHome): InferredHome | null {
   return inferred;
 }
 
-function toPassage(score: PentatonicScoreImport, opening: InferredHome, profile: 'default' | 'wwh-duo-1.0'): PentatonicPassage {
+function toPassage(score: PentatonicScoreImport, opening: InferredHome, profile: 'default' | 'wwh-duo-1.1' | 'wwh-duo-1.0'): PentatonicPassage {
   const events: PentatonicPassageEvent[] = score.events.map((event, index) => {
     const next = score.events[index + 1];
     const row: PentatonicPassageEvent = {
@@ -102,6 +102,7 @@ function toPassage(score: PentatonicScoreImport, opening: InferredHome, profile:
       ...(event.melodyRest ? { melodyRest: true } : {}),
       ...(event.bassRest ? { bassRest: true } : {}),
       ...(event.durationBeats !== undefined ? { durationBeats: event.durationBeats } : {}),
+      ...(event.soundingAttacks.length > 0 ? { soundingAttacks: event.soundingAttacks } : {}),
       ...(next?.sourceBoundary ? { phraseBoundaryAfter: true } : {}),
     };
     return row;
@@ -267,7 +268,7 @@ function nearSwitches(regions: readonly PentatonicScoreRegion[]): PentatonicScor
 
 export function analyzePentatonicScore(xml: string, options?: AnalyzePentatonicScoreOptions): PentatonicScoreAnalysis {
   const totalStart = performance.now();
-  const profile = options?.profile ?? 'wwh-duo-1.0';
+  const profile = options?.profile === 'wwh-duo-1.0' ? 'wwh-duo-1.1' : options?.profile ?? 'wwh-duo-1.1';
   const score = importPentatonicScoreFromMusicXml(xml);
   const inferred = inferPentatonicHome(score, profile);
   const opening = openingFromInference(inferred);
@@ -314,7 +315,7 @@ export function analyzePentatonicScore(xml: string, options?: AnalyzePentatonicS
   }
   diagnostics.push(opening.reading);
   for (const line of inferred.evidence) diagnostics.push(line);
-  diagnostics.push('Path constants, WWH weights, and NONE cost are the frozen Dev 2 values. Chromatic friction is report-only.');
+  diagnostics.push('Dev 2.2: genuine collection changes cost at least half the base change cost. NONE cost is unchanged. Chromatic friction is scored with the same measure as this report.');
   const passage = toPassage(score, opening, profile);
   const boundaryStart = performance.now();
   const inferredBounds = inferredBoundaries(score.events);
@@ -416,7 +417,7 @@ export function formatPentatonicScoreMap(analysis: PentatonicScoreAnalysis): str
     }
   }
   if (analysis.friction.length > 0) {
-    lines.push('CHROMATIC FRICTION (report only)');
+    lines.push('CHROMATIC FRICTION (scored colour/tension cost, same measure as the evaluator)');
     for (const region of analysis.friction) {
       if (region.hits.length === 0) continue;
       lines.push(`- ${region.measureRangeLabel} ${region.collectionName} friction beats ${region.totalDurationBeats}`);

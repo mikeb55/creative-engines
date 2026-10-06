@@ -7,7 +7,7 @@ import { inferPentatonicHome } from '../core/pentatonic/inferHome';
 import { pentatonicFrozenConfigFingerprint } from '../core/pentatonic/frozenConfigFingerprint';
 import type { PentatonicScoreEvent, PentatonicScoreImport, PentatonicSoundingAttack } from '../core/pentatonic/musicXmlScore';
 
-const FROZEN_FINGERPRINT = '2bbe6c712401a30d41a00554b17f9d4840941003b4feb95f469b20f56de06f9f';
+const FROZEN_FINGERPRINT = '27bf91d1cb5995f4246d06609dbe1d54dc1f5b27cc99676f5512cf5b423c398c';
 
 function event(attacks: PentatonicSoundingAttack[]): PentatonicScoreEvent {
   return {
@@ -65,20 +65,20 @@ export function runPentatonicDev31Tests(): { ok: boolean; name: string }[] {
     }
   };
 
-  check('Dev 2 fingerprint stays frozen', () => {
+  check('Dev 2.2 fingerprint stays frozen', () => {
     assert.equal(pentatonicFrozenConfigFingerprint(), FROZEN_FINGERPRINT);
   });
 
   check('short score with no key returns INSUFFICIENT_CONTEXT', () => {
-    const home = inferPentatonicHome(score('Untitled', notes('melody', ['C'], 1)), 'wwh-duo-1.0');
+    const home = inferPentatonicHome(score('Untitled', notes('melody', ['C'], 1)), 'wwh-duo-1.1');
     assert.equal(home.status, 'INSUFFICIENT_CONTEXT');
     assert.equal(home.home, null);
   });
 
   check('title does not change the inferred field', () => {
     const attacks = [...notes('melody', ['A', 'B', 'C#', 'E', 'F#']), ...notes('bass', ['A'])];
-    const left = inferPentatonicHome(score('Impossible Metaphysics', attacks), 'wwh-duo-1.0');
-    const right = inferPentatonicHome(score('Something Else', attacks), 'wwh-duo-1.0');
+    const left = inferPentatonicHome(score('Impossible Metaphysics', attacks), 'wwh-duo-1.1');
+    const right = inferPentatonicHome(score('Something Else', attacks), 'wwh-duo-1.1');
     assert.deepEqual(left.home, right.home);
     assert.equal(left.home?.referenceNote, 'A');
     assert.equal(left.home?.archetypeId, 'major_pentatonic');
@@ -86,7 +86,7 @@ export function runPentatonicDev31Tests(): { ok: boolean; name: string }[] {
 
   check('a bass pedal does not replace a clearer pitch field', () => {
     const attacks = [...notes('melody', ['A', 'B', 'C#', 'E', 'F#'], 4), ...notes('bass', ['A'], 6), ...notes('bass', ['E'], 2)];
-    const home = inferPentatonicHome(score('Pedal', attacks), 'wwh-duo-1.0');
+    const home = inferPentatonicHome(score('Pedal', attacks), 'wwh-duo-1.1');
     assert.equal(home.home?.referenceNote, 'A');
     assert.equal(home.home?.archetypeId, 'major_pentatonic');
     assert.ok(home.evidence.some((line) => line.includes('tie-break only')));

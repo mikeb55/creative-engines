@@ -369,7 +369,7 @@ export function runPentatonicEngineTests(): { ok: boolean; name: string }[] {
     });
     assert.deepEqual(fromRegion, fromContext);
     assert.equal(fromRegion.registryVersion, PENTATONIC_REGISTRY_VERSION);
-    assert.equal(fromRegion.evaluatorVersion, 'pentatonic-evaluator-1.0');
+    assert.equal(fromRegion.evaluatorVersion, 'pentatonic-evaluator-1.1');
   });
 
   check('pinned candidates do not win automatically', () => {

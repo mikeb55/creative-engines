@@ -1,5 +1,5 @@
 /**
- * Pentatonic evaluator 1.0.
+ * Pentatonic evaluator 1.1.
  * Scores are heuristics in the range 0–1. They are not probabilities or confidence.
  *
  * A component is omitted when its evidence is absent. Omitted components do not
@@ -8,7 +8,12 @@
  *
  * Weights (default):
  *   melody 1.8, bass 1.2, harmony 1.8, held 1.0, target 1.0,
- *   caution 0.8, continuity 1.0, purpose 0.8, colour 0.7
+ *   caution 0.8, continuity 1.0, purpose 0.8, colour 0.7, friction 0.8
+ *
+ * Friction is a colour/tension cost, not an avoid-note rule.
+ * frictionComponent = 1 − (friction duration / eligible melody+bass duration).
+ * A candidate with friction can still win on continuity or other evidence.
+ * The component is omitted when melody and bass have no duration.
  *
  * Melody / bass / harmony / held / target = shared pitch classes / evidence pitch classes.
  * Caution = 1 − (caution pitch classes inside the candidate / caution pitch classes).
@@ -25,6 +30,7 @@
  * margin retains the current collection.
  */
 
+import { chromaticFrictionMeasure, type FrictionWeightedAttack } from './chromaticFriction';
 import type { HomeRelationship } from './homeRelationships';
 import { spellingForPc, type ParsedNote } from './pitch';
 import {
@@ -42,8 +48,8 @@ import type {
 import type { GeneratedCandidate } from './candidates';
 import type { PentatonicInterpretation } from './types';
 
-export const PENTATONIC_EVALUATOR_VERSION = 'pentatonic-evaluator-1.0';
-export const PENTATONIC_CONFIGURATION_ID = 'pentatonic-config-1.0';
+export const PENTATONIC_EVALUATOR_VERSION = 'pentatonic-evaluator-1.1';
+export const PENTATONIC_CONFIGURATION_ID = 'pentatonic-config-1.1';
 
 export const DEFAULT_PENTATONIC_SCORING: PentatonicScoringConfig = {
   minimumSuitability: 0.62,
@@ -58,6 +64,7 @@ export const DEFAULT_PENTATONIC_SCORING: PentatonicScoringConfig = {
     continuity: 1,
     purpose: 0.8,
     colour: 0.7,
+    friction: 0.8,
   },
 };
 
@@ -75,6 +82,11 @@ export interface EvaluationEvidence {
   purpose: PentatonicPurpose | null;
   colourTension: PentatonicColourTension | null;
   currentPitchSet: readonly number[] | null;
+  /**
+   * Duration/salience-weighted melody and bass attacks.
+   * When omitted, each listed melody and bass pitch class has salience 1.
+   */
+  melodyBassAttacks?: readonly FrictionWeightedAttack[];
 }
 
 export interface EvaluatedCandidate {
@@ -287,6 +299,23 @@ export function evaluateCandidate(
       `Colour preference ${evidence.colourTension.replace(/_/g, ' ')} read from ${primary.homeRelationshipLabel ?? 'no HOME relationship'}.`
     );
   }
+
+  const frictionAttacks =
+    evidence.melodyBassAttacks ??
+    [
+      ...evidence.melody.map((pc) => ({ role: 'melody' as const, pitchClass: pc, duration: 1 })),
+      ...evidence.bass.map((pc) => ({ role: 'bass' as const, pitchClass: pc, duration: 1 })),
+    ];
+  const friction = chromaticFrictionMeasure(have, frictionAttacks);
+  push(
+    'friction',
+    'Chromatic friction',
+    scoring.weights.friction,
+    friction.component,
+    friction.component === null
+      ? ''
+      : `Colour/tension cost, not an avoid-note rule. Friction duration ${friction.frictionDuration} of ${friction.eligibleDuration} eligible melody and bass. Share ${friction.frictionShare}.`
+  );
 
   const weightSum = components.reduce((sum, component) => sum + component.weight, 0);
   const totalScore =

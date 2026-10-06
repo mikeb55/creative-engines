@@ -7,7 +7,7 @@
  * HOME and tonal centre: F minor, F minor pentatonic.
  * Bar 1 melody C and bar 2 melody F Eb G# Bb sit in F Ab Bb C Eb.
  * G# is the score spelling of Ab. Chromatic depth keeps remote collections available.
- * Evidence profile `wwh-duo-1.0` weights melody and bass above chord symbols.
+ * Evidence profile `wwh-duo-1.1` weights melody and bass above chord symbols.
  * The HOME choice is this reading of the opening. It is not a search over centres.
  *
  * Phrase boundaries follow the score: A′ starts at 10, B′ at 22, C at 26.
@@ -23,7 +23,7 @@ const orbitFrame = {
   tonalCentre: { root: 'F', mode: 'minor' as const },
   home: { archetypeId: 'minor_pentatonic', referenceNote: 'F' },
   depth: 'chromatic' as const,
-  evidenceProfile: 'wwh-duo-1.0' as const,
+  evidenceProfile: 'wwh-duo-1.1' as const,
   purpose: 'colour' as const,
 };
 
@@ -57,4 +57,4 @@ export function orbitBPassage(): PentatonicPassage {
 }
 
 export const ORBIT_FIXTURE_NOTE =
-  "While We're Here, track 5 Orbit, leadsheet V2.1. Tonal centre F minor. HOME F minor pentatonic. Profile wwh-duo-1.0.";
+  "While We're Here, track 5 Orbit, leadsheet V2.1. Tonal centre F minor. HOME F minor pentatonic. Profile wwh-duo-1.1.";

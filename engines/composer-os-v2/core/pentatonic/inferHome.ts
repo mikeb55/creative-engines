@@ -150,8 +150,8 @@ function quantize(value: number): number {
   return Math.round(value * 1_000_000) / 1_000_000;
 }
 
-export function inferPentatonicHome(score: PentatonicScoreImport, profile: 'default' | 'wwh-duo-1.0'): InferredHome {
-  const depth = profile === 'wwh-duo-1.0' ? 'chromatic' : 'near';
+export function inferPentatonicHome(score: PentatonicScoreImport, profile: 'default' | 'wwh-duo-1.1' | 'wwh-duo-1.0'): InferredHome {
+  const depth = profile === 'wwh-duo-1.1' || profile === 'wwh-duo-1.0' ? 'chromatic' : 'near';
   const evidence: string[] = [];
   const printed = meaningfulKey(score);
   if (score.keySignatures.length === 0) evidence.push('No key signature in the guitar part.');

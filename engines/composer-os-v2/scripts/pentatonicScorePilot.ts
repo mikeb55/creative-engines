@@ -17,7 +17,7 @@ for (const file of files) {
   const full = `${album}/${file}`;
   const before = createHash('sha256').update(fs.readFileSync(full)).digest('hex');
   const xml = fs.readFileSync(full, 'utf8');
-  const analysis = analyzePentatonicScore(xml, { profile: 'wwh-duo-1.0', sourceFile: file, sourceSha256: before });
+  const analysis = analyzePentatonicScore(xml, { profile: 'wwh-duo-1.1', sourceFile: file, sourceSha256: before });
   const after = createHash('sha256').update(fs.readFileSync(full)).digest('hex');
   console.log(`SHA BEFORE ${before}`);
   console.log(`SHA AFTER ${after}`);

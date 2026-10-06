@@ -346,7 +346,7 @@ describe('PentatonicEnginePage', () => {
       findButton(tree, 'pentatonic-orbit-a').props.onClick();
     });
     expect(textOf(tree)).toContain('Fmaj7#11');
-    expect(textOf(tree)).toContain('wwh-duo-1.0');
+    expect(textOf(tree)).toContain('wwh-duo-1.1');
     await act(async () => {
       findButton(tree, 'pentatonic-find-path').props.onClick();
       await Promise.resolve();
@@ -356,7 +356,7 @@ describe('PentatonicEnginePage', () => {
     expect(pathRecommendFn.mock.calls[0]?.[0].events[0]?.bassRest).toBe(true);
     expect(pathRecommendFn.mock.calls[0]?.[0].events[6]?.chordSymbol).toBe('Abmaj7');
     expect(pathRecommendFn.mock.calls[0]?.[0].events[7]?.chordSymbol).toBe('Gbmaj7');
-    expect(pathRecommendFn.mock.calls[0]?.[0].evidenceProfile).toBe('wwh-duo-1.0');
+    expect(pathRecommendFn.mock.calls[0]?.[0].evidenceProfile).toBe('wwh-duo-1.1');
     expect(textOf(tree)).toContain('1–8  C Minor Pentatonic SUSPENDED');
     expect(textOf(tree)).toContain('Heuristic path cost');
     const label = tree.root.findAll((node) => node.props?.['aria-label'] === 'Source label 1')[0];

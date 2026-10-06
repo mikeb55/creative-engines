@@ -17,8 +17,10 @@ export interface PentatonicPassageEvent {
   melodyRest?: boolean;
   /** Explicit rest. Intentional. Not missing evidence and not a penalty. */
   bassRest?: boolean;
-  /** Optional duration in beats. Recorded. Not used as a path weight in Dev 2. */
+  /** Optional duration in beats. Recorded. Not used as a path weight. */
   durationBeats?: number;
+  /** Duration-weighted melody and bass attacks. Harmony and held notes stay out. */
+  soundingAttacks?: readonly { role: 'melody' | 'bass'; spelling: string; durationBeats: number }[];
 }
 
 export interface PentatonicPassage {
@@ -32,10 +34,10 @@ export interface PentatonicPassage {
   depth?: PentatonicDepth;
   pinned?: readonly PentatonicCollectionSpec[];
   /**
-   * `default` keeps Dev 1 evaluator weights.
-   * `wwh-duo-1.0` raises melody and bass above mutable chord-symbol evidence.
+   * `default` keeps Dev 1 evaluator weights plus the friction component.
+   * `wwh-duo-1.1` raises melody and bass above mutable chord-symbol evidence.
    */
-  evidenceProfile?: 'default' | 'wwh-duo-1.0';
+  evidenceProfile?: 'default' | 'wwh-duo-1.1' | 'wwh-duo-1.0';
 }
 
 export interface PentatonicPathOptions {
@@ -159,7 +161,9 @@ export const PENTATONIC_PATH_LIMITATIONS = [
   'Silence (melody rest and bass rest) continues the previous state and does not start a new resource.',
   'Short regions use a penalty. There is no hard minimum length of 2.',
   'Path states are pitch-class sets of any size. Pentatonics are the resource supplied today.',
-  'wwh-duo-1.0 is an initial While We\'re Here evidence profile. It does not change Dev 1 defaults.',
+  'wwh-duo-1.1 is the While We\'re Here evidence profile. It does not change the other Dev 1 component weights.',
+  'Chromatic friction is a colour/tension cost inside the evaluator. It is not an avoid-note rule.',
+  'A genuine collection change costs at least half the base change cost. Discounts cannot make that change nearly free. NONE does not use that floor.',
   'Nearest pitch-class displacements are candidates only. Register and voice data are not present.',
   'Phrase-boundary discounts apply only where the caller set phraseBoundaryAfter.',
   'Dev 2 does not parse MusicXML, generate notes, transform motifs, or call Phrase Engine or GCE.',

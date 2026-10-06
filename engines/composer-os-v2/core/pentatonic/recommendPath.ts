@@ -17,6 +17,7 @@ import {
   type OptimizerState,
 } from './optimizePath';
 import { parseNoteList, parseNoteToken, spellingForPc, uniquePitchClasses, type ParsedNote } from './pitch';
+import type { FrictionWeightedAttack } from './chromaticFriction';
 import { PENTATONIC_PATH_ENGINE_VERSION, PENTATONIC_PATH_NONE, liquidChangeParts, pathConfigurationId, resolvePathConfig } from './pathConfig';
 import {
   PENTATONIC_PATH_LIMITATIONS,
@@ -171,6 +172,18 @@ export function recommendPentatonicPath(passage: PentatonicPassage, options?: Pe
     const silence = event.melodyRest === true && event.bassRest === true;
     if (silence) diagnostics.push(`Event "${event.sourceLabel}": silence. Previous state continues.`);
     else if (event.bassRest) diagnostics.push(`Event "${event.sourceLabel}": bass rest. Not a penalty.`);
+    const melodyBassAttacks: FrictionWeightedAttack[] = event.soundingAttacks
+      ? event.soundingAttacks.flatMap((attack) => {
+          const parsed = parseNoteToken(attack.spelling);
+          if (!parsed || !(attack.durationBeats > 0)) return [];
+          if (attack.role === 'melody' && event.melodyRest) return [];
+          if (attack.role === 'bass' && event.bassRest) return [];
+          return [{ role: attack.role, pitchClass: parsed.pc, duration: attack.durationBeats, spelling: attack.spelling, sourceLabel: event.sourceLabel }];
+        })
+      : [
+          ...melody.notes.map((note) => ({ role: 'melody' as const, pitchClass: note.pc, duration: 1, spelling: note.spelling, sourceLabel: event.sourceLabel })),
+          ...bass.notes.map((note) => ({ role: 'bass' as const, pitchClass: note.pc, duration: 1, spelling: note.spelling, sourceLabel: event.sourceLabel })),
+        ];
     const evidence: EvaluationEvidence = {
       melody: melody.pcs,
       melodySpellings: spellings,
@@ -185,6 +198,7 @@ export function recommendPentatonicPath(passage: PentatonicPassage, options?: Pe
       purpose: passage.purpose ?? null,
       colourTension: passage.colourTension ?? null,
       currentPitchSet: null,
+      melodyBassAttacks,
     };
     const hasEvidence =
       silence ||

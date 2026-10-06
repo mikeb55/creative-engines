@@ -136,8 +136,10 @@ function run(): { ok: boolean; name: string }[] {
     assert.equal(score.pitchPolicy, 'written-equals-concert');
     compareSlice(score.events, orbitAPassage());
     compareSlice(score.events, orbitBPassage());
-    assertPath(score.events, orbitAPassage(), '1–7  C Minor Pentatonic SUSPENDED\n8–9  E Major Pentatonic', 2.539533, 1, 2);
-    assertPath(score.events, orbitBPassage(), '18–25  G Minor Pentatonic 6/9 SUSPENDED', 1.0808, 0, 1);
+    // Orbit A path unchanged. Cost 2.539533 → 2.571633. FRICTION. Floor-only cost stays 2.539533.
+    assertPath(score.events, orbitAPassage(), '1–7  C Minor Pentatonic SUSPENDED\n8–9  E Major Pentatonic', 2.571633, 1, 2, 0);
+    // Orbit B path unchanged. Cost 1.0808 → 1.0866. FRICTION. No collection change, so the floor does not apply.
+    assertPath(score.events, orbitBPassage(), '18–25  G Minor Pentatonic 6/9 SUSPENDED', 1.0866, 0, 1, 0);
   });
 
   check('Impossible Metaphysics extraction matches frozen Dev 2 fixtures', () => {
@@ -152,17 +154,21 @@ function run(): { ok: boolean; name: string }[] {
       score.events,
       impossibleMetaphysicsObjectPassage(),
       '1–12  A Major Pentatonic HOME\n13–16  Bb Major Pentatonic',
-      2.573333,
+      2.347433,
       1,
-      2
+      2,
+      0
     );
+    // OLD 46–47 E Major Pentatonic SUSPENDED / 48–51 A Major HOME / 52–54 C Major, cost 2.072766.
+    // Floor alone becomes 46–51 D Major / 52–54 C Major. Friction then chooses NONE on 46–47 and A Major on 48–51. BOTH.
     assertPath(
       score.events,
       impossibleMetaphysicsThemePassage(),
-      '46–47  E Major Pentatonic SUSPENDED\n48–51  A Major Pentatonic HOME\n52–54  C Major Pentatonic',
-      2.072766,
+      '46–47  NONE\n48–51  A Major Pentatonic HOME\n52–54  C Major Pentatonic',
+      2.055633,
       2,
-      3
+      2,
+      2
     );
   });
 
@@ -177,18 +183,22 @@ function run(): { ok: boolean; name: string }[] {
     assertPath(
       score.events,
       mirrorFramePassage(),
-      '1–4  D Minor Pentatonic 6/9 SUSPENDED\n5–8  C Minor Pentatonic HOME\n9–12  D Minor Pentatonic 6/9 SUSPENDED\n13–16  C Minor Pentatonic HOME',
-      3.003599,
-      3,
-      2
+      '1–4  D Minor Pentatonic 6/9 SUSPENDED\n5–16  C Minor Pentatonic HOME',
+      2.883933,
+      1,
+      2,
+      0
     );
+    // OLD 46–50 G Minor SUSPENDED / 51–54 D Minor 6/9, cost 3.046933.
+    // Floor alone keeps that path at cost 3.2086. Friction changes the fields. BOTH.
     assertPath(
       score.events,
       mirrorDiminishedPassage(),
-      '46–50  G Minor Pentatonic SUSPENDED\n51–54  D Minor Pentatonic 6/9 SUSPENDED',
-      3.046933,
-      1,
-      2
+      '46  A Minor Pentatonic MAJOR\n47–50  C# Major Pentatonic\n51–54  A Minor Pentatonic MAJOR',
+      3.311233,
+      2,
+      2,
+      0
     );
   });
 
@@ -209,10 +219,10 @@ function run(): { ok: boolean; name: string }[] {
           <measure number="2"><note><pitch><step>F</step><octave>2</octave></pitch><duration>1</duration><voice>1</voice></note></measure>
         </part>
       </score-partwise>`;
-    const a = analyzePentatonicScore(xml, { sourceFile: 'tiny.musicxml', sourceSha256: 'abc', profile: 'wwh-duo-1.0' });
-    const b = analyzePentatonicScore(xml, { sourceFile: 'tiny.musicxml', sourceSha256: 'abc', profile: 'wwh-duo-1.0' });
+    const a = analyzePentatonicScore(xml, { sourceFile: 'tiny.musicxml', sourceSha256: 'abc', profile: 'wwh-duo-1.1' });
+    const b = analyzePentatonicScore(xml, { sourceFile: 'tiny.musicxml', sourceSha256: 'abc', profile: 'wwh-duo-1.1' });
     assert.equal(a.orderPolicy, 'written-score-order');
-    assert.equal(a.profile, 'wwh-duo-1.0');
+    assert.equal(a.profile, 'wwh-duo-1.1');
     assert.ok(a.homeReading.includes('F minor'));
     assert.deepEqual(
       a.regions.map((region) => [region.measureRangeLabel, region.collectionName]),
@@ -253,7 +263,7 @@ function run(): { ok: boolean; name: string }[] {
   });
 
   check('frozen Dev 1/2 config fingerprint is stable', () => {
-    assert.equal(pentatonicFrozenConfigFingerprint(), '2bbe6c712401a30d41a00554b17f9d4840941003b4feb95f469b20f56de06f9f');
+    assert.equal(pentatonicFrozenConfigFingerprint(), '27bf91d1cb5995f4246d06609dbe1d54dc1f5b27cc99676f5512cf5b423c398c');
   });
 
   return rows;
@@ -285,14 +295,15 @@ function assertPath(
   explanation: string,
   cost: number,
   changes: number,
-  resources: number
+  resources: number,
+  noneEvents: number
 ): void {
   const result = recommendPentatonicPath(passageFromExtraction(events, fixture));
   assert.equal(result.explanation, explanation);
   assert.equal(result.totalPathCost, cost);
   assert.equal(result.switchCount, changes);
   assert.equal(result.distinctResources, resources);
-  assert.equal(result.noneEventCount, 0);
+  assert.equal(result.noneEventCount, noneEvents);
 }
 
 function sameNotes(actual: readonly string[] | undefined, expected: readonly string[] | undefined): boolean {

@@ -14,7 +14,7 @@ export function PentatonicScorePanel(props: {
   analyzeFn?: typeof analyzePentatonicScore;
 }) {
   const analyzeFn = props.analyzeFn ?? analyzePentatonicScore;
-  const [profile, setProfile] = useState<'wwh-duo-1.0' | 'default'>('wwh-duo-1.0');
+  const [profile, setProfile] = useState<'wwh-duo-1.1' | 'default'>('wwh-duo-1.1');
   const [fileName, setFileName] = useState('');
   const [xml, setXml] = useState('');
   const [analysis, setAnalysis] = useState<PentatonicScoreAnalysis | null>(null);
@@ -86,9 +86,9 @@ export function PentatonicScorePanel(props: {
         <select
           id="pentatonic-score-profile"
           value={profile}
-          onChange={(event) => setProfile(event.target.value === 'default' ? 'default' : 'wwh-duo-1.0')}
+          onChange={(event) => setProfile(event.target.value === 'default' ? 'default' : 'wwh-duo-1.1')}
         >
-          <option value="wwh-duo-1.0">wwh-duo-1.0</option>
+          <option value="wwh-duo-1.1">wwh-duo-1.1</option>
           <option value="default">Dev 1 defaults</option>
         </select>
       </label>
@@ -115,7 +115,9 @@ function ScoreMap(props: { analysis: PentatonicScoreAnalysis }) {
       <p style={{ margin: 0 }}>
         {analysis.sourceFile} · {analysis.profile} · {analysis.orderPolicy}
       </p>
-      <p style={{ margin: 0 }}>{analysis.homeReading}</p>
+      <p style={{ margin: 0 }} data-testid="pentatonic-home">
+        {analysis.homeReading}
+      </p>
       {analysis.homeEvidence.map((line) => (
         <p key={line} style={{ margin: 0 }}>
           {line}
@@ -179,7 +181,7 @@ function ScoreMap(props: { analysis: PentatonicScoreAnalysis }) {
       ))}
       <div data-testid="pentatonic-friction">
         <h4 style={{ marginBottom: '0.25rem' }}>Chromatic friction</h4>
-        <p style={{ margin: 0 }}>Report only. A melody or bass pitch one semitone from the chosen collection. Not an avoid note.</p>
+        <p style={{ margin: 0 }}>Scored colour/tension cost. Same measure as the evaluator. Not an avoid-note rule.</p>
         {analysis.friction.length === 0 ? <p style={{ margin: 0 }}>None.</p> : null}
         {analysis.friction.map((region) => (
           <p key={`${region.measureRangeLabel}-${region.collectionName}`} style={{ margin: '0.2rem 0' }}>

@@ -58,8 +58,8 @@ function run(): { ok: boolean; name: string }[] {
 
   check('fixtures keep source measure labels and the WWH profile', () => {
     assert.match(WWH_VALIDATION_NOTE, /While We're Here/);
-    assert.equal(imObjectPassage.evidenceProfile, 'wwh-duo-1.0');
-    assert.equal(mirrorFrame.evidenceProfile, 'wwh-duo-1.0');
+    assert.equal(imObjectPassage.evidenceProfile, 'wwh-duo-1.1');
+    assert.equal(mirrorFrame.evidenceProfile, 'wwh-duo-1.1');
     assert.deepEqual(imObjectPassage.events.map((event) => event.sourceLabel), ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16']);
     assert.deepEqual(imThemePassage.events.map((event) => event.sourceLabel), ['46', '47', '48', '49', '50', '51', '52', '53', '54']);
     assert.equal(imThemePassage.events[1]?.melodyRest, true);
@@ -88,31 +88,29 @@ function run(): { ok: boolean; name: string }[] {
     assert.ok(imTheme.switchCount <= 3, `switches ${imTheme.switchCount}`);
     assert.ok(imTheme.distinctResources <= 4, `resources ${imTheme.distinctResources}`);
     assert.ok(imTheme.switchCount >= 1);
-    const changes = imTheme.events.filter((event) => event.changeFlag === 'changed');
+    const changes = imTheme.events.filter((event) => event.changeFlag === 'changed' && event.pitchClassTransition);
     assert.ok(changes.every((event) => (event.pitchClassTransition?.retainedPitchClasses.length ?? 0) >= 1));
+    assert.equal(imTheme.events[0]?.chosenName, 'NONE');
   });
 
-  check('The Mirror repeats its two phrase fields and keeps common tones when it moves', () => {
+  check('The Mirror keeps the opening colour, then one home field. The old D-minor return is gone', () => {
     assert.equal(mirrorA.disposition, 'PATH');
     assert.equal(sameCollection(mirrorA, '1', '4'), true);
-    assert.equal(sameCollection(mirrorA, '5', '8'), true);
-    assert.equal(sameCollection(mirrorA, '9', '12'), true);
-    assert.equal(sameCollection(mirrorA, '13', '16'), true);
-    assert.equal(mirrorA.events[0]?.chosenId, mirrorA.events[8]?.chosenId);
-    assert.equal(mirrorA.events[4]?.chosenId, mirrorA.events[12]?.chosenId);
+    assert.equal(sameCollection(mirrorA, '5', '16'), true);
+    assert.notEqual(mirrorA.events[0]?.chosenId, mirrorA.events[4]?.chosenId);
     assert.ok(mirrorA.distinctResources <= 3, `resources ${mirrorA.distinctResources}`);
     assert.ok(mirrorA.switchCount <= 4, `switches ${mirrorA.switchCount}`);
     const changes = mirrorA.events.filter((event) => event.changeFlag === 'changed');
     assert.ok(changes.every((event) => (event.pitchClassTransition?.retainedPitchClasses.length ?? 0) >= 2));
   });
 
-  check('The Mirror diminished colour is one field, then the dissolved return holds', () => {
+  check('The Mirror diminished colour changes field under scored friction, then the return holds', () => {
     assert.equal(mirrorB.disposition, 'PATH');
-    assert.equal(sameCollection(mirrorB, '46', '50'), true);
+    assert.equal(sameCollection(mirrorB, '47', '50'), true);
     assert.equal(sameCollection(mirrorB, '51', '54'), true);
     assert.ok(mirrorB.switchCount <= 2, `switches ${mirrorB.switchCount}`);
     assert.ok(mirrorB.distinctResources <= 3, `resources ${mirrorB.distinctResources}`);
-    assert.ok(mirrorB.switchCount < chordSymbolChanges(mirrorDim));
+    assert.ok(mirrorB.switchCount <= chordSymbolChanges(mirrorDim), `switches ${mirrorB.switchCount}`);
   });
 
   check('the four WWH passages are deterministic', () => {

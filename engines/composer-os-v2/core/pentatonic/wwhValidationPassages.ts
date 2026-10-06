@@ -19,7 +19,7 @@ const imFrame = {
   tonalCentre: { root: 'A', mode: 'major' as const },
   home: { archetypeId: 'major_pentatonic', referenceNote: 'A' },
   depth: 'chromatic' as const,
-  evidenceProfile: 'wwh-duo-1.0' as const,
+  evidenceProfile: 'wwh-duo-1.1' as const,
   purpose: 'colour' as const,
 };
 
@@ -27,7 +27,7 @@ const mirrorFrame = {
   tonalCentre: { root: 'C', mode: 'minor' as const },
   home: { archetypeId: 'minor_pentatonic', referenceNote: 'C' },
   depth: 'chromatic' as const,
-  evidenceProfile: 'wwh-duo-1.0' as const,
+  evidenceProfile: 'wwh-duo-1.1' as const,
   purpose: 'colour' as const,
 };
 
@@ -142,4 +142,4 @@ export function mirrorDiminishedPassage(): PentatonicPassage {
 }
 
 export const WWH_VALIDATION_NOTE =
-  "While We're Here. Impossible Metaphysics and The Mirror are tracks. Orbit is only track 5. Profile wwh-duo-1.0.";
+  "While We're Here. Impossible Metaphysics and The Mirror are tracks. Orbit is only track 5. Profile wwh-duo-1.1.";

@@ -3,13 +3,20 @@
  * Starting numbers, not musical laws. Do not retune them to force a fixture.
  */
 
-export const PENTATONIC_PATH_ENGINE_VERSION = 'pentatonic-path-1.0';
-export const PENTATONIC_PATH_CONFIG_VERSION = 'pentatonic-path-config-1.0';
+export const PENTATONIC_PATH_ENGINE_VERSION = 'pentatonic-path-1.1';
+export const PENTATONIC_PATH_CONFIG_VERSION = 'pentatonic-path-config-1.1';
 
 export const PENTATONIC_PATH_NONE = 'NONE';
 
 export interface PentatonicPathConfig {
-  /** Cost of leaving one state for a different state. Same state continued is 0. */
+  /**
+   * Cost of leaving one collection for a different collection. Same state continued is 0.
+   * Discounts shape the character and relative desirability of a collection change;
+   * they must not make a genuine collection change nearly free.
+   * Effective genuine-change cost is max(0.5 × changeCost, discounted change cost).
+   * The floor is on the transition itself. The distinct-resource penalty stays separate.
+   * NONE transitions do not use this floor.
+   */
   changeCost: number;
   /**
    * Upper bound on the shared-tone discount.
@@ -67,6 +74,11 @@ export function liquidChangeParts(args: {
   phraseBoundaryDiscount: number;
   net: number;
   continuity: number;
+  /** Discounted change cost before the genuine-change floor. */
+  discounted: number;
+  /** Half of base change cost. Zero when this transition is not a genuine collection change. */
+  changeFloor: number;
+  floorApplied: boolean;
 } {
   const continuity = sharedToneContinuity(args.previous, args.next);
   if (!args.changed) {
@@ -77,6 +89,9 @@ export function liquidChangeParts(args: {
       phraseBoundaryDiscount: 0,
       net: 0,
       continuity,
+      discounted: 0,
+      changeFloor: 0,
+      floorApplied: false,
     };
   }
   const commonToneDiscount = Math.min(args.config.maxCommonToneDiscount, continuity * args.config.maxCommonToneDiscount);
@@ -85,13 +100,20 @@ export function liquidChangeParts(args: {
     displacementEconomy(args.previous, args.next) * args.config.maxDisplacementDiscount
   );
   const phraseBoundaryDiscount = args.phraseBoundary ? args.config.phraseBoundaryChangeDiscount : 0;
+  const discounted = Math.max(0, args.config.changeCost - commonToneDiscount - displacementDiscount - phraseBoundaryDiscount);
+  const genuineCollectionChange = Boolean(args.previous && args.previous.length > 0 && args.next && args.next.length > 0);
+  const changeFloor = genuineCollectionChange ? 0.5 * args.config.changeCost : 0;
+  const net = genuineCollectionChange ? Math.max(changeFloor, discounted) : discounted;
   return {
     gross: args.config.changeCost,
     commonToneDiscount,
     displacementDiscount,
     phraseBoundaryDiscount,
-    net: Math.max(0, args.config.changeCost - commonToneDiscount - displacementDiscount - phraseBoundaryDiscount),
+    net,
     continuity,
+    discounted,
+    changeFloor,
+    floorApplied: genuineCollectionChange && net > discounted,
   };
 }
 

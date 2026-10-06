@@ -38,7 +38,7 @@ export function splitPentatonicNoteText(value: string): string[] {
 
 export interface PentatonicFormState {
   analysisMode: 'region' | 'passage' | 'score';
-  evidenceProfile: 'default' | 'wwh-duo-1.0';
+  evidenceProfile: 'default' | 'wwh-duo-1.1';
   passageRows: PentatonicPassageRow[];
   tonalCentreRoot: string;
   tonalCentreMode: 'major' | 'minor';
