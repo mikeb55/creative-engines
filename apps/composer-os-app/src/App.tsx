@@ -5,6 +5,7 @@ import { Outputs } from './pages/Outputs';
 import { UserGuide } from './pages/UserGuide';
 import { ComposerCredits } from './pages/ComposerCredits';
 import { SlonimskyEtudes } from './pages/SlonimskyEtudes';
+import { PentatonicEnginePage } from './pentatonic/PentatonicEnginePage';
 import { RiffGenPage } from './pages/RiffGenPage';
 import { ArrangerTab } from './components/Arranger/ArrangerTab';
 import {
@@ -483,6 +484,13 @@ export default function App() {
             Composer Engines
           </button>
           <button
+            className={tab === 'pentatonic' ? '' : 'secondary'}
+            onClick={() => goToTab('pentatonic')}
+            type="button"
+          >
+            Pentatonic
+          </button>
+          <button
             className={tab === 'slonimsky-etudes' ? '' : 'secondary'}
             onClick={() => goToTab('slonimsky-etudes')}
             type="button"
@@ -522,6 +530,7 @@ export default function App() {
       {tab === 'composer-engines' && (
         <ComposerEngines />
       )}
+      {tab === 'pentatonic' && <PentatonicEnginePage />}
       {tab === 'slonimsky-etudes' && <SlonimskyEtudes />}
       {tab === 'guide' && <UserGuide />}
       {tab === 'credits' && <ComposerCredits />}

@@ -9,6 +9,7 @@ export type AppRouteId =
   | 'riffgen'
   | 'composer-engines'
   | 'slonimsky-etudes'
+  | 'pentatonic'
   | 'guide'
   | 'credits';
 
@@ -24,6 +25,7 @@ const ROUTE_PATHS: Record<AppRouteId, string> = {
   riffgen: '/riffgen',
   'composer-engines': '/composer-engines',
   'slonimsky-etudes': '/slonimsky-etudes',
+  pentatonic: '/pentatonic',
   guide: '/guide',
   credits: '/credits',
 };
@@ -132,6 +134,8 @@ export function routeNavLabel(route: AppRouteId): string {
       return 'Composer Engines';
     case 'slonimsky-etudes':
       return 'Slonimsky Etudes';
+    case 'pentatonic':
+      return 'Pentatonic';
     case 'guide':
       return 'Help';
     case 'credits':
@@ -157,4 +161,4 @@ export const ROUTE_HASH_SEGMENTS: readonly string[] = PRIMARY_NAV_ROUTES.filter(
   (id) => id !== 'home'
 )
   .map((id) => pathForRoute(id).replace(/^\//, ''))
-  .concat(['composer-engines', 'slonimsky-etudes', 'guide', 'credits']);
+  .concat(['composer-engines', 'slonimsky-etudes', 'pentatonic', 'guide', 'credits']);

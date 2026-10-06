@@ -486,6 +486,8 @@ Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartÃ³k** native bundle (not 
 
 ## Current (as of 2026-07-01 snapshot)
 
+- **Pentatonic Engine Dev 1 (2026-10-06):** headless `recommendPentatonics` in `engines/composer-os-v2/core/pentatonic/`. Major and minor pentatonic registry. HOME offsets 0 / −3 / +2 / +4 / +7. Relationship scoring `pentatonic-relationship-scoring-1.0`. Retention requires minimum suitability. Custom non-registry currents stay labelled. GUI `#/pentatonic`. Dev 2 (path across regions) not started.
+
 - **Riff pitch PR A â€” `intervalWeights` live on pick path (2026-07-18):** Field builders populate `preferredIntervals` from profile weights; `pitchFromField` multiplies by directed IC before pick; snap reduced when intervals active. PR B (`enforceHook` gate) + PR C (leap-peak motif-blend skip) shipped. See `docs/CHANGELOG.md` [Unreleased] + `docs/RIFF_GENERATOR_TECHNICAL_SUMMARY.md`.
 
 - **Duo vault Stage 4b.4 â€” SHIPPED:** Role-contrast fix on **`guitar_bass_duo`** baseline confidence seeds â€” bass macro B-half routing (bars **5â€“7**, **`forceGuitarEcho`**) + post-orchestration duplicate-pitch nudge on guitar bars **1â€“8** (**`generateGoldenPathDuoScore.ts`**, **`bassMelodicLines.ts`**). Seed **50213** proof: **`roleContrast` 0.1174**, gp success, interval test PASS, **`KNOWN_VAULT_LIFT_BREAKS`** empty, **`KNOWN_ROLE_CONTRAST_GP_DEBT`** cleared. Seed **50021** unchanged clean (**`roleContrast` 0.1125**). Detail: **[DUO_VAULT_ROADMAP.md](DUO_VAULT_ROADMAP.md)** Â§ **4b.4**.

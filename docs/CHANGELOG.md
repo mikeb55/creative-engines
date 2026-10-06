@@ -2,6 +2,8 @@
 
 ### Added
 
+- **Pentatonic Engine Dev 1** — native `recommendPentatonics(context, options)` in `engines/composer-os-v2/core/pentatonic/`. Registry `pentatonic-registry-1.0` (major and minor pentatonic). HOME relationship offsets 0 / −3 / +2 / +4 / +7. Evaluator `pentatonic-evaluator-1.0`. Purpose and colour HOME-relationship scores live in `pentatonic-relationship-scoring-1.0`. A current collection below minimum suitability cannot be retained. A non-registry current set is labelled `custom_non_registry` and is not treated as a registry archetype. GUI route `#/pentatonic` in the existing Composer OS app. No phrase generation, path optimisation, or MusicXML writing.
+
 - **Style Pairings single-select (default None)** — Panel radios: at most one pairing force-on; explicit **None** row is first-load default. All **12** `defaultEnabled: false` again. Enabling pairing X clears prior force-on via `selectExclusiveStylePairing`. VRB dropdown unchanged (independent of panel).
 
 - **Phase 2 full default-ON** — All **12** `STYLE_PAIRINGS` now `defaultEnabled: true` (Batch 1 five already on; remaining seven: `hendrix`, `led_zeppelin`, `mahavishnu`, `fripp`, `david_gilmour`, `eddie_van_halen`, `jimmy_herring`). Override / settings-panel force-off unchanged. UI mirror synced.
