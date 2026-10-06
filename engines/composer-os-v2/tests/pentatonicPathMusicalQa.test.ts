@@ -46,7 +46,7 @@ function run(): { ok: boolean; name: string }[] {
     assert.ok(changesAtConsecutiveBoundaries(orbitA) <= 2);
   });
 
-  check('Orbit B does not track every G/F Eb/F flip', () => {
+  check('Orbit B does not track every Gmaj7/F Ebmaj7/F flip', () => {
     assert.equal(orbitB.disposition, 'PATH');
     assert.ok(orbitB.switchCount <= 1, `switches ${orbitB.switchCount}`);
     const chords = orbitBPassage().events.map((event) => event.chordSymbol);

@@ -353,6 +353,9 @@ describe('PentatonicEnginePage', () => {
     });
     expect(pathRecommendFn).toHaveBeenCalled();
     expect(pathRecommendFn.mock.calls[0]?.[0].events[0]?.sourceLabel).toBe('1');
+    expect(pathRecommendFn.mock.calls[0]?.[0].events[0]?.bassRest).toBe(true);
+    expect(pathRecommendFn.mock.calls[0]?.[0].events[6]?.chordSymbol).toBe('Abmaj7');
+    expect(pathRecommendFn.mock.calls[0]?.[0].events[7]?.chordSymbol).toBe('Gbmaj7');
     expect(pathRecommendFn.mock.calls[0]?.[0].evidenceProfile).toBe('wwh-duo-1.0');
     expect(textOf(tree)).toContain('1–8  C Minor Pentatonic SUSPENDED');
     expect(textOf(tree)).toContain('Heuristic path cost');
