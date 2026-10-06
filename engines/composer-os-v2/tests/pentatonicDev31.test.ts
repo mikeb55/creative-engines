@@ -4,10 +4,10 @@
  */
 import assert from 'node:assert/strict';
 import { inferPentatonicHome } from '../core/pentatonic/inferHome';
-import { pentatonicFrozenConfigFingerprint } from '../core/pentatonic/frozenConfigFingerprint';
+import { PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_4, pentatonicFrozenConfigFingerprint } from '../core/pentatonic/frozenConfigFingerprint';
 import type { PentatonicScoreEvent, PentatonicScoreImport, PentatonicSoundingAttack } from '../core/pentatonic/musicXmlScore';
 
-const FROZEN_FINGERPRINT = '27bf91d1cb5995f4246d06609dbe1d54dc1f5b27cc99676f5512cf5b423c398c';
+const FROZEN_FINGERPRINT = 'acd91358d754dbabf6132ebdb6b0f1b28cead13c28daeb35f9ff0e1bc231dc8f';
 
 function event(attacks: PentatonicSoundingAttack[]): PentatonicScoreEvent {
   return {
@@ -66,6 +66,7 @@ export function runPentatonicDev31Tests(): { ok: boolean; name: string }[] {
   };
 
   check('Dev 2.2 fingerprint stays frozen', () => {
+    assert.equal(PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_4, '27bf91d1cb5995f4246d06609dbe1d54dc1f5b27cc99676f5512cf5b423c398c');
     assert.equal(pentatonicFrozenConfigFingerprint(), FROZEN_FINGERPRINT);
   });
 

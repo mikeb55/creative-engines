@@ -265,7 +265,9 @@ export function optimizePentatonicPath(input: OptimizePathInput): {
           continue;
         }
         const liquid = liquidBetween(changed, previousPcs, state?.pitchSet ?? null, phraseBoundary);
-        const shortSegmentPenalty = changed && hyp.pathLength > 0 && hyp.run === 1 ? input.config.shortSegmentPenalty : 0;
+        const leavingNone = hyp.stateIndex === none;
+        const shortSegmentPenalty =
+          changed && hyp.pathLength > 0 && hyp.run === 1 && !leavingNone ? input.config.shortSegmentPenalty : 0;
         let mask = hyp.mask;
         let distinct = hyp.distinct;
         let distinctPenalty = 0;

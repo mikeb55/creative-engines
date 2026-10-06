@@ -6,12 +6,13 @@ import assert from 'node:assert/strict';
 import { chromaticFrictionMeasure } from '../core/pentatonic/chromaticFriction';
 import { DEFAULT_PENTATONIC_SCORING, PENTATONIC_EVALUATOR_VERSION } from '../core/pentatonic/evaluate';
 import { WWH_DUO_EVIDENCE_WEIGHTS, WWH_DUO_PROFILE_ID } from '../core/pentatonic/evidenceProfiles';
-import { pentatonicFrozenConfigFingerprint } from '../core/pentatonic/frozenConfigFingerprint';
+import { PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_4, pentatonicFrozenConfigFingerprint } from '../core/pentatonic/frozenConfigFingerprint';
 import { getPentatonicArchetype } from '../core/pentatonic/registry';
 import { parseNoteToken } from '../core/pentatonic/pitch';
 import {
   DEFAULT_PENTATONIC_PATH_CONFIG,
   PENTATONIC_PATH_CONFIG_VERSION,
+  PENTATONIC_PATH_CONFIG_VERSION_DEV_3_4,
   liquidChangeParts,
   resolvePathConfig,
 } from '../core/pentatonic/pathConfig';
@@ -126,7 +127,7 @@ export function runPentatonicDev22Tests(): { ok: boolean; name: string }[] {
     assert.equal(forward.gross, DEFAULT_PENTATONIC_PATH_CONFIG.changeCost);
   });
 
-  check('NONE transitions stay on the old discount formula', () => {
+  check('NONE boundary is half the base change and ignores discounts', () => {
     const config = resolvePathConfig({ phraseBoundaryChangeDiscount: 0.3 });
     const intoNone = liquidChangeParts({
       changed: true,
@@ -135,8 +136,20 @@ export function runPentatonicDev22Tests(): { ok: boolean; name: string }[] {
       phraseBoundary: true,
       config,
     });
+    const outOfNone = liquidChangeParts({
+      changed: true,
+      previous: null,
+      next: collection('major_pentatonic', 'A'),
+      phraseBoundary: true,
+      config,
+    });
     assert.equal(intoNone.floorApplied, false);
-    assert.ok(Math.abs(intoNone.net - 0.05) < 1e-12);
+    assert.equal(intoNone.commonToneDiscount, 0);
+    assert.equal(intoNone.displacementDiscount, 0);
+    assert.equal(intoNone.phraseBoundaryDiscount, 0);
+    assert.equal(intoNone.net, 0.5 * config.changeCost);
+    assert.equal(intoNone.gross, intoNone.net);
+    assert.equal(outOfNone.net, intoNone.net);
     assert.equal(DEFAULT_PENTATONIC_PATH_CONFIG.noneBaselineCost, 0.4);
   });
 
@@ -177,11 +190,15 @@ export function runPentatonicDev22Tests(): { ok: boolean; name: string }[] {
     assert.equal(DEFAULT_PENTATONIC_SCORING.minimumSuitability, 0.62);
     assert.equal(PENTATONIC_EVALUATOR_VERSION, 'pentatonic-evaluator-1.1');
     assert.equal(WWH_DUO_PROFILE_ID, 'wwh-duo-1.1');
-    assert.equal(PENTATONIC_PATH_CONFIG_VERSION, 'pentatonic-path-config-1.1');
+    assert.equal(PENTATONIC_PATH_CONFIG_VERSION_DEV_3_4, 'pentatonic-path-config-1.1');
+    assert.equal(PENTATONIC_PATH_CONFIG_VERSION, 'pentatonic-path-config-1.2');
   });
 
-  check('Dev 2.2 fingerprint is frozen', () => {
-    assert.equal(pentatonicFrozenConfigFingerprint(), '27bf91d1cb5995f4246d06609dbe1d54dc1f5b27cc99676f5512cf5b423c398c');
+  check('Dev 2.2 fingerprint stays documented and the live fingerprint moved', () => {
+    assert.equal(PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_4, '27bf91d1cb5995f4246d06609dbe1d54dc1f5b27cc99676f5512cf5b423c398c');
+    const live = pentatonicFrozenConfigFingerprint();
+    assert.notEqual(live, PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_4);
+    assert.equal(live, 'acd91358d754dbabf6132ebdb6b0f1b28cead13c28daeb35f9ff0e1bc231dc8f');
   });
 
   return rows;

@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import { analyzePentatonicScore } from '../core/pentatonic/analyzeScore';
-import { pentatonicFrozenConfigFingerprint } from '../core/pentatonic/frozenConfigFingerprint';
+import { PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_4, pentatonicFrozenConfigFingerprint } from '../core/pentatonic/frozenConfigFingerprint';
 import { recommendPentatonicPath } from '../core/pentatonic/recommendPath';
 import { WWH_DUO_EVIDENCE_WEIGHTS } from '../core/pentatonic/evidenceProfiles';
 import { importPentatonicScoreFromMusicXml, type PentatonicScoreEvent } from '../core/pentatonic/musicXmlScore';
@@ -161,11 +161,14 @@ function run(): { ok: boolean; name: string }[] {
     );
     // OLD 46–47 E Major Pentatonic SUSPENDED / 48–51 A Major HOME / 52–54 C Major, cost 2.072766.
     // Floor alone becomes 46–51 D Major / 52–54 C Major. Friction then chooses NONE on 46–47 and A Major on 48–51. BOTH.
+    // Dev 3.4 cost 2.055633. The passage opens on NONE, so the only NONE boundary is NONE→A.
+    // Dev 3.4 charged that boundary 0.20 (changeCost 0.35 minus the phrase discount 0.15).
+    // Dev 3.5 charges 0.175. Same states. Delta 0.025.
     assertPath(
       score.events,
       impossibleMetaphysicsThemePassage(),
       '46–47  NONE\n48–51  A Major Pentatonic HOME\n52–54  C Major Pentatonic',
-      2.055633,
+      2.030633,
       2,
       2,
       2
@@ -263,7 +266,8 @@ function run(): { ok: boolean; name: string }[] {
   });
 
   check('frozen Dev 1/2 config fingerprint is stable', () => {
-    assert.equal(pentatonicFrozenConfigFingerprint(), '27bf91d1cb5995f4246d06609dbe1d54dc1f5b27cc99676f5512cf5b423c398c');
+    assert.equal(PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_4, '27bf91d1cb5995f4246d06609dbe1d54dc1f5b27cc99676f5512cf5b423c398c');
+    assert.equal(pentatonicFrozenConfigFingerprint(), 'acd91358d754dbabf6132ebdb6b0f1b28cead13c28daeb35f9ff0e1bc231dc8f');
   });
 
   return rows;

@@ -7,7 +7,7 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import { analyzePentatonicScore } from '../core/pentatonic/analyzeScore';
 import { inferCentreAndHome } from '../core/pentatonic/centreIdentity';
-import { pentatonicFrozenConfigFingerprint } from '../core/pentatonic/frozenConfigFingerprint';
+import { PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_4, pentatonicFrozenConfigFingerprint } from '../core/pentatonic/frozenConfigFingerprint';
 import { importPentatonicScoreFromMusicXml, type PentatonicScoreEvent, type PentatonicScoreImport, type PentatonicSoundingAttack } from '../core/pentatonic/musicXmlScore';
 import { mod12, parseNoteToken, PENTATONIC_NOTE_CHOICES } from '../core/pentatonic/pitch';
 
@@ -125,7 +125,8 @@ export function runPentatonicDev33Tests(): { ok: boolean; name: string }[] {
   };
 
   check('frozen fingerprint and source hashes stay put', () => {
-    assert.equal(pentatonicFrozenConfigFingerprint(), '27bf91d1cb5995f4246d06609dbe1d54dc1f5b27cc99676f5512cf5b423c398c');
+    assert.equal(PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_4, '27bf91d1cb5995f4246d06609dbe1d54dc1f5b27cc99676f5512cf5b423c398c');
+    assert.equal(pentatonicFrozenConfigFingerprint(), 'acd91358d754dbabf6132ebdb6b0f1b28cead13c28daeb35f9ff0e1bc231dc8f');
     for (const [file, sha] of SOURCES) {
       const full = `${ALBUM}/${file}`;
       const before = createHash('sha256').update(fs.readFileSync(full)).digest('hex');

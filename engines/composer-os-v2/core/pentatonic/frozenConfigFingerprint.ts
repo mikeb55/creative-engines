@@ -7,6 +7,9 @@ import { DEFAULT_PENTATONIC_SCORING, PENTATONIC_CONFIGURATION_ID, PENTATONIC_EVA
 import { WWH_DUO_EVIDENCE_WEIGHTS, WWH_DUO_PROFILE_ID } from './evidenceProfiles';
 import { HOME_RELATIONSHIPS } from './homeRelationships';
 import { DEFAULT_PENTATONIC_PATH_CONFIG, PENTATONIC_PATH_CONFIG_VERSION, PENTATONIC_PATH_ENGINE_VERSION, PENTATONIC_PATH_NONE } from './pathConfig';
+
+/** Dev 2.2 through Dev 3.4 frozen fingerprint. Historical evidence. Not the live fingerprint. */
+export const PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_4 = '27bf91d1cb5995f4246d06609dbe1d54dc1f5b27cc99676f5512cf5b423c398c';
 import { COLOUR_HOME_RELATIONSHIP_SCORES, PENTATONIC_RELATIONSHIP_SCORING_VERSION, PURPOSE_HOME_RELATIONSHIP_SCORES } from './relationshipScoring';
 
 export function pentatonicFrozenConfigFingerprint(): string {

@@ -115,6 +115,9 @@ function ScoreMap(props: { analysis: PentatonicScoreAnalysis }) {
       <p style={{ margin: 0 }}>
         {analysis.sourceFile} · {analysis.profile} · {analysis.orderPolicy}
       </p>
+      <p style={{ margin: 0 }} data-testid="pentatonic-path-config">
+        {analysis.path.configVersion}
+      </p>
       <p style={{ margin: 0 }} data-testid="pentatonic-home">
         {analysis.homeReading}
       </p>

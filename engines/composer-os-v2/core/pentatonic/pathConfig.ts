@@ -4,7 +4,9 @@
  */
 
 export const PENTATONIC_PATH_ENGINE_VERSION = 'pentatonic-path-1.1';
-export const PENTATONIC_PATH_CONFIG_VERSION = 'pentatonic-path-config-1.1';
+/** Dev 2.2 through Dev 3.4. Historical path-config identity. Not the live version. */
+export const PENTATONIC_PATH_CONFIG_VERSION_DEV_3_4 = 'pentatonic-path-config-1.1';
+export const PENTATONIC_PATH_CONFIG_VERSION = 'pentatonic-path-config-1.2';
 
 export const PENTATONIC_PATH_NONE = 'NONE';
 
@@ -15,7 +17,8 @@ export interface PentatonicPathConfig {
    * they must not make a genuine collection change nearly free.
    * Effective genuine-change cost is max(0.5 × changeCost, discounted change cost).
    * The floor is on the transition itself. The distinct-resource penalty stays separate.
-   * NONE transitions do not use this floor.
+   * A boundary with exactly one NONE side costs 0.5 × changeCost directly.
+   * That boundary does not take common-tone, displacement, or phrase-boundary discounts, and it does not take this floor.
    */
   changeCost: number;
   /**
@@ -40,7 +43,7 @@ export interface PentatonicPathConfig {
   noneBaselineCost: number;
   /** Alternative paths must sit inside bestCost + this window and differ in segmentation. */
   alternativePathWindow: number;
-  /** Added when a state is left after exactly one event. */
+  /** Added when a collection is left after exactly one event. Leaving NONE does not take this penalty. */
   shortSegmentPenalty: number;
   /**
    * Subtracted on the final event when the chosen HOME relationship is HOME
@@ -90,6 +93,22 @@ export function liquidChangeParts(args: {
       net: 0,
       continuity,
       discounted: 0,
+      changeFloor: 0,
+      floorApplied: false,
+    };
+  }
+  const leftCollection = Boolean(args.previous && args.previous.length > 0);
+  const rightCollection = Boolean(args.next && args.next.length > 0);
+  if (leftCollection !== rightCollection) {
+    const noneBoundaryCost = 0.5 * args.config.changeCost;
+    return {
+      gross: noneBoundaryCost,
+      commonToneDiscount: 0,
+      displacementDiscount: 0,
+      phraseBoundaryDiscount: 0,
+      net: noneBoundaryCost,
+      continuity: 0,
+      discounted: noneBoundaryCost,
       changeFloor: 0,
       floorApplied: false,
     };

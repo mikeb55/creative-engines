@@ -303,7 +303,8 @@ export function analyzePentatonicScore(xml: string, options?: AnalyzePentatonicS
   if (!absentCentre && identity.colourScoring === 'omitted') {
     diagnostics.push('Path tonal-centre mode is not a HOME mode. Colour scoring is omitted.');
   }
-  diagnostics.push('Dev 2.2: genuine collection changes cost at least half the base change cost. NONE cost is unchanged. Chromatic friction is scored with the same measure as this report.');
+  diagnostics.push('Dev 2.2: genuine collection changes cost at least half the base change cost. Chromatic friction is scored with the same measure as this report.');
+  diagnostics.push('Dev 3.5: a collection/NONE boundary costs exactly half the base change cost. Discounts and the genuine-change floor do not apply. Leaving NONE does not take the short-segment penalty.');
   diagnostics.push('Neutral bars continue the current collection when they sound none of the pitch classes that distinguish it from the alternative.');
   const boundaryStart = performance.now();
   const inferredBounds = inferredBoundaries(score.events);
