@@ -40,6 +40,10 @@ function run(): { ok: boolean; name: string }[] {
       const chord = readChordEvidence(symbol.startsWith('m7') ? 'Cm7' : symbol);
       assert.equal(chord.ok, true, symbol);
     }
+    for (const symbol of ['A5/E', 'A/E', 'C#m(b6)', 'D5/Bb', 'E°', 'E°7', 'C°7']) {
+      const chord = readChordEvidence(symbol);
+      assert.equal(chord.ok, true, symbol);
+    }
     const unknown = readChordEvidence('Cxyz');
     assert.equal(unknown.ok, false);
   });

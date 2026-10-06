@@ -14,6 +14,13 @@ export {
 export { WWH_DUO_EVIDENCE_WEIGHTS, WWH_DUO_PROFILE_ID, scoringForEvidenceProfile } from './evidenceProfiles';
 export { ORBIT_FIXTURE_NOTE, orbitAPassage, orbitBPassage } from './orbitPassages';
 export {
+  WWH_VALIDATION_NOTE,
+  impossibleMetaphysicsObjectPassage,
+  impossibleMetaphysicsThemePassage,
+  mirrorDiminishedPassage,
+  mirrorFramePassage,
+} from './wwhValidationPassages';
+export {
   DEFAULT_PENTATONIC_PATH_CONFIG,
   PENTATONIC_PATH_CONFIG_VERSION,
   PENTATONIC_PATH_ENGINE_VERSION,
