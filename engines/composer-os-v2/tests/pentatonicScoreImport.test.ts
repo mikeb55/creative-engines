@@ -134,8 +134,8 @@ function run(): { ok: boolean; name: string }[] {
     assert.equal(score.parts.find((part) => part.role === 'melody')?.name, 'Electric Guitar');
     assert.equal(score.parts.find((part) => part.role === 'bass')?.name, 'Upright Bass');
     assert.equal(score.pitchPolicy, 'written-equals-concert');
-    compareSlice(score.events, orbitAPassage(), []);
-    compareSlice(score.events, orbitBPassage(), []);
+    compareSlice(score.events, orbitAPassage());
+    compareSlice(score.events, orbitBPassage());
     assertPath(score.events, orbitAPassage(), '1–7  C Minor Pentatonic SUSPENDED\n8–9  E Major Pentatonic', 2.539533, 1, 2);
     assertPath(score.events, orbitBPassage(), '18–25  G Minor Pentatonic 6/9 SUSPENDED', 1.0808, 0, 1);
   });
@@ -144,8 +144,10 @@ function run(): { ok: boolean; name: string }[] {
     const score = importPentatonicScoreFromMusicXml(
       fs.readFileSync(`${ALBUM}/07-Impossible-Metaphysics-Duo-Leadsheet-V1.1.musicxml`, 'utf8')
     );
-    compareSlice(score.events, impossibleMetaphysicsObjectPassage(), ['2', '16']);
-    compareSlice(score.events, impossibleMetaphysicsThemePassage(), []);
+    compareSlice(score.events, impossibleMetaphysicsObjectPassage());
+    assert.equal(score.events.find((event) => event.sourceLabel === '3')?.sourceBoundary, false);
+    assert.ok(score.motifs.some((motif) => motif.label === 'M2' && motif.sourceLabel === '3'));
+    compareSlice(score.events, impossibleMetaphysicsThemePassage());
     assertPath(
       score.events,
       impossibleMetaphysicsObjectPassage(),
@@ -168,8 +170,10 @@ function run(): { ok: boolean; name: string }[] {
     const score = importPentatonicScoreFromMusicXml(
       fs.readFileSync(`${ALBUM}/03-The-Mirror-Duo-Leadsheet-V1.0.musicxml`, 'utf8')
     );
-    compareSlice(score.events, mirrorFramePassage(), []);
-    compareSlice(score.events, mirrorDiminishedPassage(), []);
+    compareSlice(score.events, mirrorFramePassage());
+    compareSlice(score.events, mirrorDiminishedPassage());
+    assert.ok(score.motifs.some((motif) => motif.label === 'M1 colour'));
+    assert.ok(!score.events.some((event) => event.sourceBoundaryReasons.some((reason) => reason.includes('M1'))));
     assertPath(
       score.events,
       mirrorFramePassage(),
@@ -260,7 +264,6 @@ function passageFromExtraction(events: readonly PentatonicScoreEvent[], fixture:
   const rows: PentatonicPassageEvent[] = fixture.events.map((expected) => {
     const actual = byLabel.get(expected.sourceLabel);
     if (!actual) throw new Error(`missing ${expected.sourceLabel}`);
-    const following = events.find((event) => event.orderIndex === actual.orderIndex + 1);
     return {
       id: expected.id,
       sourceLabel: actual.sourceLabel,
@@ -270,7 +273,7 @@ function passageFromExtraction(events: readonly PentatonicScoreEvent[], fixture:
       ...(actual.heldNotes ? { heldNotes: [...actual.heldNotes] } : {}),
       ...(actual.melodyRest ? { melodyRest: true } : {}),
       ...(actual.bassRest ? { bassRest: true } : {}),
-      ...(following?.sourceBoundary ? { phraseBoundaryAfter: true } : {}),
+      ...(expected.phraseBoundaryAfter ? { phraseBoundaryAfter: true } : {}),
     };
   });
   return { ...fixture, events: rows };
@@ -296,9 +299,8 @@ function sameNotes(actual: readonly string[] | undefined, expected: readonly str
   return JSON.stringify(actual ?? []) === JSON.stringify(expected ?? []);
 }
 
-function compareSlice(events: readonly PentatonicScoreEvent[], passage: PentatonicPassage, allowedBoundaryDiffs: readonly string[]): void {
+function compareSlice(events: readonly PentatonicScoreEvent[], passage: PentatonicPassage): void {
   const byLabel = new Map(events.map((event) => [event.sourceLabel, event]));
-  const boundaryDiffs: string[] = [];
   for (let index = 0; index < passage.events.length; index++) {
     const expected = passage.events[index]!;
     const actual = byLabel.get(expected.sourceLabel);
@@ -310,12 +312,8 @@ function compareSlice(events: readonly PentatonicScoreEvent[], passage: Pentaton
     assert.ok(sameNotes(actual?.heldNotes, expected.heldNotes), `${expected.sourceLabel} held ${actual?.heldNotes} vs ${expected.heldNotes}`);
     assert.equal(Boolean(actual?.melodyRest), Boolean(expected.melodyRest), `${expected.sourceLabel} melody rest`);
     assert.equal(Boolean(actual?.bassRest), Boolean(expected.bassRest), `${expected.sourceLabel} bass rest`);
-    const following = events.find((event) => event.orderIndex === actual!.orderIndex + 1);
-    const autoAfter = Boolean(following?.sourceBoundary);
-    const fixtureAfter = Boolean(expected.phraseBoundaryAfter);
-    if (autoAfter !== fixtureAfter) boundaryDiffs.push(expected.sourceLabel);
+    assert.ok(!actual?.sourceBoundaryReasons.some((reason) => /M\d+/.test(reason)), `${expected.sourceLabel} motif used as boundary`);
   }
-  assert.deepEqual(boundaryDiffs, [...allowedBoundaryDiffs]);
 }
 
 const rows = run();

@@ -116,6 +116,11 @@ function ScoreMap(props: { analysis: PentatonicScoreAnalysis }) {
         {analysis.sourceFile} · {analysis.profile} · {analysis.orderPolicy}
       </p>
       <p style={{ margin: 0 }}>{analysis.homeReading}</p>
+      {analysis.homeEvidence.map((line) => (
+        <p key={line} style={{ margin: 0 }}>
+          {line}
+        </p>
+      ))}
       <p style={{ margin: 0 }}>
         Parts:{' '}
         {analysis.score.parts.map((part) => `${part.name} (${part.role})`).join(', ') || 'none identified'}
@@ -172,6 +177,20 @@ function ScoreMap(props: { analysis: PentatonicScoreAnalysis }) {
           </details>
         </article>
       ))}
+      <div data-testid="pentatonic-friction">
+        <h4 style={{ marginBottom: '0.25rem' }}>Chromatic friction</h4>
+        <p style={{ margin: 0 }}>Report only. A melody or bass pitch one semitone from the chosen collection. Not an avoid note.</p>
+        {analysis.friction.length === 0 ? <p style={{ margin: 0 }}>None.</p> : null}
+        {analysis.friction.map((region) => (
+          <p key={`${region.measureRangeLabel}-${region.collectionName}`} style={{ margin: '0.2rem 0' }}>
+            {region.measureRangeLabel} {region.collectionName}: {region.totalDurationBeats} beats.{' '}
+            {region.hits
+              .slice(0, 8)
+              .map((hit) => `m.${hit.sourceLabel} ${hit.role} ${hit.spelling} near ${hit.nearest.join('/')}`)
+              .join('; ')}
+          </p>
+        ))}
+      </div>
       <details>
         <summary>Diagnostics</summary>
         <ul>

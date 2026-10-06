@@ -400,6 +400,8 @@ describe('pentatonic whole score', () => {
       });
     }
     expect(textOf(tree)).toContain('pentatonic-score-map');
+    expect(textOf(tree)).toContain('pentatonic-friction');
+    expect(textOf(tree)).toContain('Chromatic friction');
     expect(textOf(tree)).toContain('Electric Guitar');
     await act(async () => {
       mode.props.onChange({ target: { value: 'passage' } });

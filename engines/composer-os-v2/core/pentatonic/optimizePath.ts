@@ -123,6 +123,49 @@ function compressedKey(path: readonly number[]): string {
   return parts.join('>');
 }
 
+interface PathCell {
+  stateIndex: number;
+  prev: PathCell | null;
+}
+
+interface LiveHypothesis {
+  cost: number;
+  switches: number;
+  distinct: number;
+  homeHits: number;
+  mask: number;
+  run: 1 | 2;
+  stateIndex: number;
+  pathLength: number;
+  cell: PathCell | null;
+  breakdown: PentatonicPathCostBreakdown;
+}
+
+function pathFromCell(cell: PathCell | null): number[] {
+  const out: number[] = [];
+  let cursor = cell;
+  while (cursor) {
+    out.push(cursor.stateIndex);
+    cursor = cursor.prev;
+  }
+  out.reverse();
+  return out;
+}
+
+function hypothesisFromLive(hyp: LiveHypothesis): PathHypothesis {
+  return {
+    cost: hyp.cost,
+    switches: hyp.switches,
+    distinct: hyp.distinct,
+    homeHits: hyp.homeHits,
+    mask: hyp.mask,
+    run: hyp.run,
+    stateIndex: hyp.stateIndex,
+    path: pathFromCell(hyp.cell),
+    breakdown: hyp.breakdown,
+  };
+}
+
 export function optimizePentatonicPath(input: OptimizePathInput): {
   best: PathHypothesis | null;
   alternatives: PathHypothesis[];
@@ -132,24 +175,44 @@ export function optimizePentatonicPath(input: OptimizePathInput): {
   const none = noneIndex(stateCount);
   const indexById = new Map(input.states.map((state, index) => [state.id, index]));
   const previousIndex = input.previousStateId != null ? indexById.get(input.previousStateId) ?? -1 : -1;
+  const start: LiveHypothesis = {
+    cost: 0,
+    switches: 0,
+    distinct: 0,
+    homeHits: 0,
+    mask: 0,
+    run: 2,
+    stateIndex: previousIndex,
+    pathLength: 0,
+    cell: null,
+    breakdown: emptyBreakdown(),
+  };
+  const liquidCache = new Map<string, ReturnType<typeof liquidChangeParts>>();
+  const liquidBetween = (changed: boolean, previous: readonly number[] | null, next: readonly number[] | null, phraseBoundary: boolean) => {
+    if (!changed) {
+      return liquidChangeParts({ changed: false, previous, next, phraseBoundary, config: input.config });
+    }
+    const key = `${previous?.join(',') ?? 'x'}>${next?.join(',') ?? 'x'}>${phraseBoundary ? 1 : 0}`;
+    const cached = liquidCache.get(key);
+    if (cached) return cached;
+    const built = liquidChangeParts({ changed: true, previous, next, phraseBoundary, config: input.config });
+    liquidCache.set(key, built);
+    return built;
+  };
 
-  let frontier: PathHypothesis[] = [
-    {
-      cost: 0,
-      switches: 0,
-      distinct: 0,
-      homeHits: 0,
-      mask: 0,
-      run: 2,
-      stateIndex: previousIndex,
-      path: [],
-      breakdown: emptyBreakdown(),
-    },
-  ];
+  const compareLive = (left: LiveHypothesis, right: LiveHypothesis): number => {
+    if (left.cost !== right.cost) return left.cost - right.cost;
+    if (left.switches !== right.switches) return left.switches - right.switches;
+    if (left.distinct !== right.distinct) return left.distinct - right.distinct;
+    if (input.homeExplicit && left.homeHits !== right.homeHits) return right.homeHits - left.homeHits;
+    return comparePathHypotheses(hypothesisFromLive(left), hypothesisFromLive(right), input.states, input.homeExplicit);
+  };
+
+  let frontier: LiveHypothesis[] = [start];
 
   for (let eventIndex = 0; eventIndex < input.events.length; eventIndex++) {
     const event = input.events[eventIndex]!;
-    const next = new Map<string, PathHypothesis[]>();
+    const next = new Map<string, LiveHypothesis[]>();
     const baseLegal: number[] = [];
     if (!event.silence) {
       for (const id of event.feasibleStateIds) {
@@ -158,6 +221,7 @@ export function optimizePentatonicPath(input: OptimizePathInput): {
       }
       if (input.allowNone) baseLegal.push(none);
     }
+    const phraseBoundary = eventIndex > 0 && input.events[eventIndex - 1]!.phraseBoundaryAfter;
 
     for (const hyp of frontier) {
       const previousState = stateAt(input.states, hyp.stateIndex);
@@ -166,22 +230,11 @@ export function optimizePentatonicPath(input: OptimizePathInput): {
         const state = stateAt(input.states, stateIndex);
         const localScore = state ? event.localScoreById[state.id] ?? 0 : null;
         const localMisfit = event.silence ? 0 : state ? 1 - (localScore ?? 0) : input.config.noneBaselineCost;
-        const hasPrevious = hyp.path.length > 0 || (hyp.path.length === 0 && input.previousStateId != null && hyp.stateIndex >= 0);
+        const hasPrevious = hyp.pathLength > 0 || (hyp.pathLength === 0 && input.previousStateId != null && hyp.stateIndex >= 0);
         const changed = !event.silence && hasPrevious && hyp.stateIndex !== stateIndex;
-        const previousPcs = previousState?.pitchSet ?? (hyp.path.length === 0 ? input.previousPitchSet : null);
-        const liquid = liquidChangeParts({
-          changed,
-          previous: previousPcs,
-          next: state?.pitchSet ?? null,
-          phraseBoundary: eventIndex > 0 && input.events[eventIndex - 1]!.phraseBoundaryAfter,
-          config: input.config,
-        });
-        const commonToneDiscount = liquid.commonToneDiscount;
-        const displacementDiscount = liquid.displacementDiscount;
-        const phraseBoundaryDiscount = liquid.phraseBoundaryDiscount;
-        const netChange = liquid.net;
-        const grossChange = liquid.gross;
-        const shortSegmentPenalty = changed && hyp.path.length > 0 && hyp.run === 1 ? input.config.shortSegmentPenalty : 0;
+        const previousPcs = previousState?.pitchSet ?? (hyp.pathLength === 0 ? input.previousPitchSet : null);
+        const liquid = liquidBetween(changed, previousPcs, state?.pitchSet ?? null, phraseBoundary);
+        const shortSegmentPenalty = changed && hyp.pathLength > 0 && hyp.run === 1 ? input.config.shortSegmentPenalty : 0;
         let mask = hyp.mask;
         let distinct = hyp.distinct;
         let distinctPenalty = 0;
@@ -197,44 +250,45 @@ export function optimizePentatonicPath(input: OptimizePathInput): {
           input.finalHomeBonusEnabled && eventIndex === input.events.length - 1 && state?.homeRelationshipId === 'home'
             ? input.config.finalHomeBonus
             : 0;
-        const step = localMisfit + netChange + shortSegmentPenalty + distinctPenalty - homeBonus;
+        const step = localMisfit + liquid.net + shortSegmentPenalty + distinctPenalty - homeBonus;
         const cost = quantizePathCost(hyp.cost + step);
-        const breakdown: PentatonicPathCostBreakdown = {
-          localMisfit: quantizePathCost(hyp.breakdown.localMisfit + localMisfit),
-          changeCost: quantizePathCost(hyp.breakdown.changeCost + grossChange),
-          commonToneDiscount: quantizePathCost(hyp.breakdown.commonToneDiscount + commonToneDiscount),
-          displacementDiscount: quantizePathCost(hyp.breakdown.displacementDiscount + displacementDiscount),
-          phraseBoundaryDiscount: quantizePathCost(hyp.breakdown.phraseBoundaryDiscount + phraseBoundaryDiscount),
-          distinctResourcePenalty: quantizePathCost(hyp.breakdown.distinctResourcePenalty + distinctPenalty),
-          shortSegmentPenalty: quantizePathCost(hyp.breakdown.shortSegmentPenalty + shortSegmentPenalty),
-          finalHomeBonus: quantizePathCost(hyp.breakdown.finalHomeBonus + homeBonus),
-          total: cost,
-        };
-        const candidate: PathHypothesis = {
+        let run: 1 | 2 = changed || hyp.pathLength === 0 ? 1 : 2;
+        if (!changed && hyp.pathLength > 0) run = 2;
+        if (!changed && hyp.pathLength === 0 && hasPrevious) run = 2;
+        const candidate: LiveHypothesis = {
           cost,
           switches: hyp.switches + (changed ? 1 : 0),
           distinct,
           homeHits: hyp.homeHits + (state?.homeRelationshipId === 'home' ? 1 : 0),
           mask,
-          run: changed || hyp.path.length === 0 ? 1 : 2,
+          run,
           stateIndex,
-          path: [...hyp.path, stateIndex],
-          breakdown,
+          pathLength: hyp.pathLength + 1,
+          cell: { stateIndex, prev: hyp.cell },
+          breakdown: {
+            localMisfit: quantizePathCost(hyp.breakdown.localMisfit + localMisfit),
+            changeCost: quantizePathCost(hyp.breakdown.changeCost + liquid.gross),
+            commonToneDiscount: quantizePathCost(hyp.breakdown.commonToneDiscount + liquid.commonToneDiscount),
+            displacementDiscount: quantizePathCost(hyp.breakdown.displacementDiscount + liquid.displacementDiscount),
+            phraseBoundaryDiscount: quantizePathCost(hyp.breakdown.phraseBoundaryDiscount + liquid.phraseBoundaryDiscount),
+            distinctResourcePenalty: quantizePathCost(hyp.breakdown.distinctResourcePenalty + distinctPenalty),
+            shortSegmentPenalty: quantizePathCost(hyp.breakdown.shortSegmentPenalty + shortSegmentPenalty),
+            finalHomeBonus: quantizePathCost(hyp.breakdown.finalHomeBonus + homeBonus),
+            total: cost,
+          },
         };
-        if (!changed && hyp.path.length > 0) candidate.run = 2;
-        if (!changed && hyp.path.length === 0 && hasPrevious) candidate.run = 2;
-        const key = `${stateIndex}|${mask}|${candidate.run}`;
+        const key = `${stateIndex}|${mask}|${run}`;
         const bucket = next.get(key) ?? [];
         bucket.push(candidate);
-        bucket.sort((a, b) => comparePathHypotheses(a, b, input.states, input.homeExplicit));
-        next.set(key, bucket.slice(0, 4));
+        bucket.sort(compareLive);
+        next.set(key, bucket.slice(0, 1));
       }
     }
     frontier = [...next.values()].flat();
   }
 
   if (frontier.length === 0) return { best: null, alternatives: [], staticBest: null };
-  const ranked = [...frontier].sort((a, b) => comparePathHypotheses(a, b, input.states, input.homeExplicit));
+  const ranked = [...frontier].sort(compareLive).map(hypothesisFromLive);
   const best = ranked[0]!;
   const seen = new Set<string>([compressedKey(best.path)]);
   const alternatives: PathHypothesis[] = [];

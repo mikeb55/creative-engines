@@ -31,6 +31,25 @@ export type PentatonicPitchPolicy = 'written-equals-concert' | 'concert-from-wri
 const NC_MARK = /^(n\.?\s*c\.?|nc)$/i;
 const NAV_MARK = /\b(d\.s\.|d\.c\.|da capo|dal segno|to coda|coda|segno)\b/i;
 
+export interface PentatonicSoundingAttack {
+  role: 'melody' | 'bass';
+  spelling: string;
+  durationBeats: number;
+}
+
+export interface PentatonicMotifMark {
+  type: 'motif';
+  label: string;
+  sourceLabel: string;
+  offsetDivisions: number | null;
+}
+
+export interface PentatonicKeySignature {
+  sourceLabel: string;
+  fifths: number;
+  mode: string | null;
+}
+
 export interface PentatonicScoreEvent {
   id: string;
   orderIndex: number;
@@ -41,6 +60,7 @@ export interface PentatonicScoreEvent {
   melodyNotes?: string[];
   bassNotes?: string[];
   heldNotes?: string[];
+  soundingAttacks: readonly PentatonicSoundingAttack[];
   melodyRest?: boolean;
   bassRest?: boolean;
   durationBeats?: number;
@@ -59,6 +79,8 @@ export interface PentatonicScoreImport {
   melodyPartId: string | null;
   bassPartId: string | null;
   events: PentatonicScoreEvent[];
+  motifs: PentatonicMotifMark[];
+  keySignatures: PentatonicKeySignature[];
   diagnostics: string[];
   warnings: string[];
   repeatDetected: boolean;
@@ -88,7 +110,7 @@ const KIND_SUFFIX: Record<string, string> = {
 };
 
 const LETTER_MARK = /^[A-Z][′'’]?$/;
-const MOVEMENT_MARK = /^M\d+$/;
+const MOTIF_MARK = /^M\d+(?:\s+.+)?$/;
 
 function localName(el: Element): string {
   return el.localName || el.tagName;
@@ -171,8 +193,14 @@ function titleText(doc: Document, tag: string): string {
   return '';
 }
 
+interface NoteAttack {
+  spelling: string;
+  durationBeats: number;
+}
+
 interface NoteScan {
   spellings: string[];
+  attacks: NoteAttack[];
   pitched: number;
   rests: number;
   grace: number;
@@ -181,8 +209,13 @@ interface NoteScan {
   voices: string[];
 }
 
+function emptyScan(): NoteScan {
+  return { spellings: [], attacks: [], pitched: 0, rests: 0, grace: 0, cue: 0, durationBeats: 0, voices: [] };
+}
+
 function scanNotes(measure: Element, mode: 'melody' | 'held' | 'all', divisions: number): NoteScan {
   const spellings: string[] = [];
+  const attacks: NoteAttack[] = [];
   const voices = new Set<string>();
   let pitched = 0;
   let rests = 0;
@@ -214,12 +247,20 @@ function scanNotes(measure: Element, mode: 'melody' | 'held' | 'all', divisions:
     const spelling = formatSpelling(step, firstText(pitch, 'alter'));
     const ties = childElements(note, 'tie').map((tie) => tie.getAttribute('type') ?? '');
     const continuation = ties.includes('stop') && !ties.includes('start');
-    if (continuation && spellings.includes(spelling)) continue;
+    if (continuation && spellings.includes(spelling)) {
+      const existing = attacks.find((attack) => attack.spelling === spelling);
+      if (existing) existing.durationBeats += beats;
+      durationBeats += beats;
+      continue;
+    }
     if (!spellings.includes(spelling)) spellings.push(spelling);
+    const existing = attacks.find((attack) => attack.spelling === spelling);
+    if (existing) existing.durationBeats += beats;
+    else attacks.push({ spelling, durationBeats: beats });
     pitched += 1;
     durationBeats += beats;
   }
-  return { spellings, pitched, rests, grace, cue, durationBeats, voices: [...voices] };
+  return { spellings, attacks, pitched, rests, grace, cue, durationBeats, voices: [...voices] };
 }
 
 function degreeTokens(harmony: Element): string[] {
@@ -303,26 +344,51 @@ function shiftList(notes: string[] | undefined, semitones: number): string[] | u
   return shifted;
 }
 
-function sourceBoundary(measure: Element): { boundary: boolean; reasons: string[]; marks: string[] } {
+function directionOffset(direction: Element): number | null {
+  const raw = firstText(direction, 'offset');
+  if (!raw) return null;
+  const value = parseInt(raw, 10);
+  return Number.isFinite(value) ? value : null;
+}
+
+function sourceBoundary(measure: Element): {
+  boundary: boolean;
+  reasons: string[];
+  marks: string[];
+  motifs: { label: string; offsetDivisions: number | null }[];
+} {
   const reasons: string[] = [];
   const marks: string[] = [];
+  const motifs: { label: string; offsetDivisions: number | null }[] = [];
   for (const direction of childElements(measure, 'direction')) {
+    const offsetDivisions = directionOffset(direction);
     for (const node of direction.getElementsByTagName('*')) {
       const name = localName(node);
       if (name !== 'rehearsal' && name !== 'words') continue;
       const text = (node.textContent ?? '').trim();
       if (!text) continue;
-      marks.push(text);
-      if (name === 'rehearsal') {
-        reasons.push(`rehearsal "${text}"`);
-      } else if (LETTER_MARK.test(text)) {
-        reasons.push(`section letter "${text}"`);
-      } else if (MOVEMENT_MARK.test(text)) {
-        reasons.push(`section token "${text}"`);
+      if (name === 'words' && MOTIF_MARK.test(text)) {
+        motifs.push({ label: text, offsetDivisions });
+        continue;
       }
+      marks.push(text);
+      if (name === 'rehearsal') reasons.push(`rehearsal "${text}"`);
+      else if (LETTER_MARK.test(text)) reasons.push(`section letter "${text}"`);
     }
   }
-  return { boundary: reasons.length > 0, reasons, marks };
+  return { boundary: reasons.length > 0, reasons, marks, motifs };
+}
+
+function keySignaturesIn(measure: Element, sourceLabel: string): PentatonicKeySignature[] {
+  const found: PentatonicKeySignature[] = [];
+  for (const attributes of childElements(measure, 'attributes')) {
+    for (const key of childElements(attributes, 'key')) {
+      const fifths = parseInt(firstText(key, 'fifths') ?? '', 10);
+      if (!Number.isFinite(fifths)) continue;
+      found.push({ sourceLabel, fifths, mode: firstText(key, 'mode') ?? null });
+    }
+  }
+  return found;
 }
 
 interface RunningState {
@@ -482,6 +548,8 @@ export function importPentatonicScoreFromMusicXml(xml: string): PentatonicScoreI
   let firstMode: string | null = null;
   const pickupLabels: string[] = [];
   const events: PentatonicScoreEvent[] = [];
+  const motifs: PentatonicMotifMark[] = [];
+  const keySignatures: PentatonicKeySignature[] = [];
   const seenLabels = new Map<string, number>();
 
   for (let index = 0; index < count; index++) {
@@ -508,7 +576,13 @@ export function importPentatonicScoreFromMusicXml(xml: string): PentatonicScoreI
       firstMode = guitarState.mode;
     }
 
-    const boundary = guitar ? sourceBoundary(guitar) : { boundary: false, reasons: [] as string[], marks: [] as string[] };
+    const boundary = guitar
+      ? sourceBoundary(guitar)
+      : { boundary: false, reasons: [] as string[], marks: [] as string[], motifs: [] as { label: string; offsetDivisions: number | null }[] };
+    if (guitar) keySignatures.push(...keySignaturesIn(guitar, sourceLabel || String(index)));
+    for (const motif of boundary.motifs) {
+      motifs.push({ type: 'motif', label: motif.label, sourceLabel: sourceLabel || String(index), offsetDivisions: motif.offsetDivisions });
+    }
     for (const mark of boundary.marks) {
       if (NAV_MARK.test(mark)) navigationLabels.push(`${sourceLabel || index}:${mark}`);
     }
@@ -548,15 +622,9 @@ export function importPentatonicScoreFromMusicXml(xml: string): PentatonicScoreI
       chordCarried = true;
     }
 
-    const melodyScan = guitar
-      ? scanNotes(guitar, 'melody', guitarState.divisions)
-      : { spellings: [], pitched: 0, rests: 0, grace: 0, cue: 0, durationBeats: 0, voices: [] };
-    const heldScan = guitar
-      ? scanNotes(guitar, 'held', guitarState.divisions)
-      : { spellings: [], pitched: 0, rests: 0, grace: 0, cue: 0, durationBeats: 0, voices: [] };
-    const bassScan = bass
-      ? scanNotes(bass, 'all', bassState.divisions || guitarState.divisions)
-      : { spellings: [], pitched: 0, rests: 0, grace: 0, cue: 0, durationBeats: 0, voices: [] };
+    const melodyScan = guitar ? scanNotes(guitar, 'melody', guitarState.divisions) : emptyScan();
+    const heldScan = guitar ? scanNotes(guitar, 'held', guitarState.divisions) : emptyScan();
+    const bassScan = bass ? scanNotes(bass, 'all', bassState.divisions || guitarState.divisions) : emptyScan();
 
     if (guitar && melodyScan.grace > 0) diagnostics.push(`Measure ${sourceLabel || index}: ${melodyScan.grace} grace notes omitted from melody evidence.`);
     if (guitar && melodyScan.cue > 0) diagnostics.push(`Measure ${sourceLabel || index}: ${melodyScan.cue} cue notes omitted.`);
@@ -574,6 +642,18 @@ export function importPentatonicScoreFromMusicXml(xml: string): PentatonicScoreI
     const melodyNotes = shiftList(melodyScan.spellings, guitarShift);
     const heldNotes = shiftList(heldScan.spellings, guitarShift);
     const bassNotes = shiftList(bassScan.spellings, bassShift);
+    const soundingAttacks: PentatonicSoundingAttack[] = [
+      ...melodyScan.attacks.map((attack) => ({
+        role: 'melody' as const,
+        spelling: shiftSpelling(attack.spelling, guitarShift),
+        durationBeats: Math.round(attack.durationBeats * 1000) / 1000,
+      })),
+      ...bassScan.attacks.map((attack) => ({
+        role: 'bass' as const,
+        spelling: shiftSpelling(attack.spelling, bassShift),
+        durationBeats: Math.round(attack.durationBeats * 1000) / 1000,
+      })),
+    ];
     const melodyRest =
       Boolean(guitar) && (melodyNotes?.length ?? 0) === 0 && (melodyScan.rests > 0 || heldScan.pitched > 0);
     const bassRest = Boolean(bass) && bassScan.pitched === 0 && bassScan.rests > 0;
@@ -591,6 +671,7 @@ export function importPentatonicScoreFromMusicXml(xml: string): PentatonicScoreI
       ...(chordSymbol ? { chordSymbol } : {}),
       chordCarried,
       harmonyEvidence,
+      soundingAttacks,
       ...(melodyNotes && melodyNotes.length > 0 ? { melodyNotes } : {}),
       ...(bassNotes && bassNotes.length > 0 ? { bassNotes } : {}),
       ...(heldNotes && heldNotes.length > 0 ? { heldNotes } : {}),
@@ -618,6 +699,7 @@ export function importPentatonicScoreFromMusicXml(xml: string): PentatonicScoreI
   if (hiddenHarmony > 0) {
     diagnostics.push(`${hiddenHarmony} harmony elements have print-object="no" and were still read.`);
   }
+  diagnostics.push('Motif labels such as M1 and M1 colour are annotations. They are not phrase boundaries.');
   diagnostics.push('Chord symbols carry forward until the next printed symbol or N.C. A chord change is not a phrase boundary.');
   diagnostics.push('Order policy: written score order. Repeats, endings, segno, coda, D.S., and D.C. are reported and not unfolded.');
   diagnostics.push('Guitar melody is voice 1, including chord stacks on that voice. Other guitar voices stay texture/held evidence. This matched the frozen Dev 2 fixtures.');
@@ -656,6 +738,8 @@ export function importPentatonicScoreFromMusicXml(xml: string): PentatonicScoreI
     melodyPartId: melodyParts[0]?.id ?? null,
     bassPartId: bassParts[0]?.id ?? null,
     events,
+    motifs,
+    keySignatures,
     diagnostics: uniqueDiagnostics,
     warnings,
     repeatDetected,
