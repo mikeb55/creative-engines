@@ -486,6 +486,7 @@ Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartÃ³k** native bundle (not 
 
 ## Current (as of 2026-07-01 snapshot)
 
+- **Pentatonic Engine Dev 3.4 (2026-10-06):** HOME floor is membership, not fit. No-third is not a mode. N.C. (`kind="none"`) is rootless and ends inherited harmony. Final root stays inside the last structural section. Path still runs when the centre fails, without inventing HOME. NONE and Dev 2.2 fingerprint unchanged. All nine WWH duo leadsheets analysed once.
 - **Pentatonic Engine Dev 3.3 (2026-10-06):** Centre from explicit harmony roots. HOME from anchor-window fit. Ambiguous or insufficient HOME omits colour scoring. Neutral bars continue the current collection. Field report, max two collections. Dev 2.2 fingerprint unchanged. Pilots: Impossible Metaphysics, Orbit V2.1, The Mirror. Remaining six WWH scores not run.
 - **Pentatonic Engine Dev 3.2 (2026-10-06):** HOME from a printed major/minor key, an opening root confirmed by the first bass pitch class, or a stable closing bass. No title. No 24-centre search. `INSUFFICIENT_CONTEXT` when none of those sources exist.
 - **Pentatonic Dev 2.2 (2026-10-06):** change-cost floor `0.175` on genuine collection changes. Chromatic friction scored (default weight `0.8`, `wwh-duo-1.1` weight `1.4`). NONE cost unchanged. Suitability floor `0.62` unchanged. Fingerprint `27bf91d1cb5995f4246d06609dbe1d54dc1f5b27cc99676f5512cf5b423c398c`.

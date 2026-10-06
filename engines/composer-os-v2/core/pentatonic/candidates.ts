@@ -181,6 +181,8 @@ export function generatePentatonicCandidates(args: {
   home: PentatonicCollectionSpec | null;
   current: PentatonicCollectionSpec | null;
   pinned: readonly PentatonicCollectionSpec[];
+  /** Whole-score path with no centre. Full registry, absolute names, no HOME relationships. */
+  absoluteRegistry?: boolean;
 }): CandidateBuildResult {
   const errors: string[] = [];
   const bucket = new Map<string, MutableCandidate>();
@@ -202,10 +204,11 @@ export function generatePentatonicCandidates(args: {
     });
   };
 
-  if (args.depth === 'chromatic') {
+  if (args.absoluteRegistry || args.depth === 'chromatic') {
+    const bias = args.absoluteRegistry ? 'C' : args.tonalCentreSpelling;
     for (const archetype of listPentatonicArchetypes()) {
       for (let pc = 0; pc < 12; pc++) {
-        addArchetype(archetype, pc, spellingForPitchClass(pc, args.tonalCentreSpelling), 'registry', true);
+        addArchetype(archetype, pc, spellingForPitchClass(pc, bias), 'registry', true);
       }
     }
   } else if (args.depth === 'near') {
@@ -214,7 +217,7 @@ export function generatePentatonicCandidates(args: {
     }
   }
 
-  if (args.home) {
+  if (!args.absoluteRegistry && args.home) {
     const home = resolveSpec(args.home, 'HOME collection');
     if (!home.ok) errors.push(home.error);
     else if (!home.archetype) errors.push('HOME collection must use a registry archetype and a reference note.');

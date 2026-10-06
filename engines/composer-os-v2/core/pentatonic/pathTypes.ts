@@ -52,6 +52,12 @@ export interface PentatonicPathOptions {
    * Does not change path-cost constants.
    */
   continueWithoutDistinctPcs?: boolean;
+  /**
+   * Dev 3.4. Whole-score path may run with no tonal centre.
+   * Uses the absolute registry. Does not invent a centre or a HOME.
+   * Does not change NONE.
+   */
+  allowAbsentTonalCentre?: boolean;
 }
 
 export type PentatonicPathDisposition = 'INSUFFICIENT_CONTEXT' | 'NO_FEASIBLE_PATH' | 'PATH';

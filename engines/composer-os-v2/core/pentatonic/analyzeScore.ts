@@ -9,7 +9,7 @@ import { DEFAULT_PENTATONIC_SCORING } from './evaluate';
 import { reportPentatonicFields, intervalLabelFor, type PentatonicField } from './fieldFamily';
 import { inferPentatonicHome, type HomeCandidate } from './inferHome';
 import { importPentatonicScoreFromMusicXml, PENTATONIC_SCORE_ORDER_POLICY, type PentatonicScoreEvent, type PentatonicScoreImport } from './musicXmlScore';
-import { parseNoteToken, spellingForPc, type ParsedNote } from './pitch';
+import { mod12, parseNoteToken, spellingForPc, type ParsedNote } from './pitch';
 import { recommendPentatonicPath } from './recommendPath';
 import type { PentatonicPassage, PentatonicPassageEvent, PentatonicPathEventDecision, PentatonicPathResult } from './pathTypes';
 
@@ -32,6 +32,8 @@ export interface PentatonicScoreRegion {
   boundaryKind: 'opening' | 'source' | 'path';
   boundaryReason: string;
   explanation: string;
+  /** Report only. Signed semitone count from the centre to this collection's root. */
+  geometricRelation: string | null;
 }
 
 export interface PentatonicNoneObservation {
@@ -89,8 +91,7 @@ export interface AnalyzePentatonicScoreOptions {
   sourceSha256?: string;
 }
 
-function openingPassage(score: PentatonicScoreImport, identity: CentreHomeIdentity, profile: 'default' | 'wwh-duo-1.1' | 'wwh-duo-1.0'): PentatonicPassage | null {
-  if (identity.centreStatus !== 'CENTRE' || !identity.centre) return null;
+function openingPassage(score: PentatonicScoreImport, identity: CentreHomeIdentity, profile: 'default' | 'wwh-duo-1.1' | 'wwh-duo-1.0'): PentatonicPassage {
   const events: PentatonicPassageEvent[] = score.events.map((event, index) => {
     const next = score.events[index + 1];
     const row: PentatonicPassageEvent = {
@@ -108,6 +109,13 @@ function openingPassage(score: PentatonicScoreImport, identity: CentreHomeIdenti
     };
     return row;
   });
+  if (identity.centreStatus !== 'CENTRE' || !identity.centre) {
+    return {
+      events,
+      depth: 'chromatic',
+      evidenceProfile: profile,
+    };
+  }
   const mode = identity.home?.archetypeId === 'minor_pentatonic' ? 'minor' : 'major';
   return {
     events,
@@ -193,6 +201,7 @@ function regionsFrom(score: PentatonicScoreImport, path: PentatonicPathResult): 
       boundaryKind,
       boundaryReason,
       explanation,
+      geometricRelation: null,
     };
   });
 }
@@ -283,50 +292,15 @@ export function analyzePentatonicScore(xml: string, options?: AnalyzePentatonicS
   }
   const warnings = [...score.warnings];
   const passage = openingPassage(score, identity, profile);
-  if (!passage) {
-    const path = recommendPentatonicPath({ events: [] });
-    return {
-      song: score.title,
-      sourceFile: options?.sourceFile ?? '',
-      sourceSha256: options?.sourceSha256 ?? '',
-      profile,
-      orderPolicy: PENTATONIC_SCORE_ORDER_POLICY,
-      homeReading: identity.reading,
-      regions: [],
-      inferredBoundaries: [],
-      noneObservations: [],
-      summary: {
-        totalRegions: 0,
-        pentatonicRegions: 0,
-        noneRegions: 0,
-        collectionChanges: 0,
-        distinctCollections: 0,
-        noneEventCount: 0,
-        eventCount: score.events.length,
-        noneEventProportion: 0,
-      },
-      timingsMs: {
-        parse: score.timingsMs.parse,
-        extract: score.timingsMs.extract,
-        boundary: 0,
-        path: 0,
-        total: performance.now() - totalStart,
-      },
-      diagnostics,
-      warnings: [...warnings, 'Analysis stopped before the path engine. Tonal centre was not invented.'],
-      path,
-      score,
-      homeEvidence: identity.evidence,
-      homeCandidates: previous.candidates,
-      identity,
-      fields: [],
-      friction: [],
-      lowFitRegions: [],
-      nearIdenticalSwitches: [],
-    };
+  const absentCentre = identity.centreStatus !== 'CENTRE' || !identity.centre;
+  if (absentCentre) {
+    diagnostics.push('Path runs without a centre. No HOME was invented. Relationship labels and colour scoring stay off. This is not NONE.');
+  }
+  if (!score.events.some((event) => event.chordSymbol)) {
+    diagnostics.push('Harmony evidence absent. Harmony component omitted. Missing harmony is not scored as zero.');
   }
   diagnostics.push(identity.reading);
-  if (identity.colourScoring === 'omitted') {
+  if (!absentCentre && identity.colourScoring === 'omitted') {
     diagnostics.push('Path tonal-centre mode is not a HOME mode. Colour scoring is omitted.');
   }
   diagnostics.push('Dev 2.2: genuine collection changes cost at least half the base change cost. NONE cost is unchanged. Chromatic friction is scored with the same measure as this report.');
@@ -335,18 +309,33 @@ export function analyzePentatonicScore(xml: string, options?: AnalyzePentatonicS
   const inferredBounds = inferredBoundaries(score.events);
   const boundaryMs = performance.now() - boundaryStart;
   const pathStart = performance.now();
-  const path = recommendPentatonicPath(passage, { continueWithoutDistinctPcs: true });
+  const path = recommendPentatonicPath(passage, {
+    continueWithoutDistinctPcs: true,
+    ...(absentCentre ? { allowAbsentTonalCentre: true } : {}),
+  });
   const pathMs = performance.now() - pathStart;
   const regions = (path.kind === 'analysis' ? regionsFrom(score, path) : []).map((region) => {
-    if (identity.colourScoring !== 'omitted' || !identity.centre) return region;
     const decision = path.events.find((event) => event.sourceLabel === region.firstSourceLabel);
     const referencePc = decision?.referenceNote ? parseNoteToken(decision.referenceNote)?.pc ?? null : null;
+    const geometricRelation =
+      identity.centreStatus === 'CENTRE' && identity.centre && referencePc !== null && region.collectionName !== 'NONE'
+        ? `centre ${identity.centre.spelling} · field ${region.collectionName} · root interval +${mod12(referencePc - identity.centre.pc)}`
+        : null;
+    if (absentCentre) {
+      return { ...region, homeRelationshipLabel: null, geometricRelation };
+    }
+    if (identity.colourScoring !== 'omitted' || !identity.centre) return { ...region, geometricRelation };
     return {
       ...region,
       homeRelationshipLabel: intervalLabelFor(identity.centre.pc, referencePc, decision?.archetypeId ?? null),
+      geometricRelation,
     };
   });
-  const fields = reportPentatonicFields(regions, score.events, identity.centre?.pc ?? null);
+  const fields = reportPentatonicFields(
+    regions,
+    score.events,
+    identity.centreStatus === 'CENTRE' ? identity.centre?.pc ?? null : null
+  );
   const pentatonicRegions = regions.filter((region) => region.collectionName !== 'NONE').length;
   const noneRegions = regions.filter((region) => region.collectionName === 'NONE').length;
   const distinct = new Set(regions.filter((region) => region.collectionName !== 'NONE').map((region) => region.collectionName));
@@ -423,6 +412,7 @@ export function formatPentatonicScoreMap(analysis: PentatonicScoreAnalysis): str
     }
     lines.push(region.boundaryReason);
     lines.push(region.explanation);
+    if (region.geometricRelation) lines.push(region.geometricRelation);
     lines.push('');
   }
   const summary = analysis.summary;

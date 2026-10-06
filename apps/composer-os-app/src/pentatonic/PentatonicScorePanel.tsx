@@ -178,6 +178,7 @@ function ScoreMap(props: { analysis: PentatonicScoreAnalysis }) {
           </h4>
           <p style={{ margin: '0.2rem 0' }}>{region.notes.join(' ') || 'No pitch classes'}</p>
           <p style={{ margin: '0.2rem 0' }}>Mean local fit {region.meanLocalFit ?? 'none'}.</p>
+          {region.geometricRelation ? <p style={{ margin: '0.2rem 0' }}>{region.geometricRelation}</p> : null}
           <p style={{ margin: '0.2rem 0' }}>{region.boundaryReason}</p>
           <p style={{ margin: '0.2rem 0' }}>{region.explanation}</p>
           <details>

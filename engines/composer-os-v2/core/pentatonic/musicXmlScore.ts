@@ -287,15 +287,26 @@ function harmonySymbol(
   diagnostics: string[],
   label: string
 ): { symbol: string; displayText: string | null; richerThanEncoded: boolean; offsetDivisions: number | null } | null {
+  const kind = childElements(harmony, 'kind')[0];
+  const kindBody = (kind?.textContent ?? '').trim().toLowerCase();
+  const kindText = kind?.getAttribute('text')?.trim() || null;
+  const offsetRawEarly = firstText(harmony, 'offset');
+  const offsetEarly = offsetRawEarly ? parseInt(offsetRawEarly, 10) : NaN;
+  if (kindBody === 'none') {
+    diagnostics.push(`Measure ${label}: harmony kind none is N.C. Any residual root is ignored.`);
+    return {
+      symbol: 'N.C.',
+      displayText: kindText,
+      richerThanEncoded: false,
+      offsetDivisions: Number.isFinite(offsetEarly) ? offsetEarly : null,
+    };
+  }
   const root = childElements(harmony, 'root')[0];
   const step = root ? firstText(root, 'root-step') : undefined;
   if (!step || !/^[A-Ga-g]$/.test(step)) {
     diagnostics.push(`Measure ${label}: harmony element has no readable root. Symbol omitted.`);
     return null;
   }
-  const kind = childElements(harmony, 'kind')[0];
-  const kindBody = (kind?.textContent ?? '').trim().toLowerCase();
-  const kindText = kind?.getAttribute('text')?.trim() || null;
   const encodedParts = [...(KIND_SUFFIX[kindBody] ? [KIND_SUFFIX[kindBody]] : []), ...degreeTokens(harmony)].filter((part) => part.length > 0);
   const encodedNorm = normalizeHarmonyText(encodedParts.join(''));
   const displayNorm = kindText ? normalizeHarmonyText(kindText) : '';
@@ -609,15 +620,24 @@ export function importPentatonicScoreFromMusicXml(xml: string): PentatonicScoreI
         diagnostics.push(`Measure ${sourceLabel || index}: chord_text_richer_than_encoded_harmony ${parsed.displayText ?? ''}`);
       }
     }
-    const printed = harmonyEvidence.find((item) => !NC_MARK.test(item.symbol));
-    if (harmonyEvidence.some((item) => NC_MARK.test(item.symbol))) {
-      carried = undefined;
-      diagnostics.push(`Measure ${sourceLabel || index}: N.C. ends inherited harmony.`);
+    let endedOnNoChord = noChordMark;
+    let printedSymbol: string | undefined;
+    for (const item of harmonyEvidence) {
+      if (NC_MARK.test(item.symbol)) {
+        printedSymbol = undefined;
+        carried = undefined;
+        endedOnNoChord = true;
+        diagnostics.push(`Measure ${sourceLabel || index}: N.C. ends inherited harmony.`);
+      } else {
+        printedSymbol = item.symbol;
+        carried = item.symbol;
+        endedOnNoChord = false;
+      }
     }
-    if (printed && !noChordMark) {
-      chordSymbol = printed.symbol;
-      carried = printed.symbol;
-    } else if (carried && !noChordMark) {
+    if (printedSymbol && !endedOnNoChord) {
+      chordSymbol = printedSymbol;
+      chordCarried = false;
+    } else if (carried && !endedOnNoChord) {
       chordSymbol = carried;
       chordCarried = true;
     }

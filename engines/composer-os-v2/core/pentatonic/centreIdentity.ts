@@ -1,7 +1,8 @@
 /**
- * Dev 3.3 centre and HOME collection.
- * Centre is a count of explicit harmony roots. HOME is an anchor-window fit
- * against registry collections that contain that centre.
+ * Dev 3.4 centre and HOME collection.
+ * Centre is a count of explicit harmony roots. HOME candidates still rank by
+ * fit (membership minus friction). Sufficiency uses membership alone.
+ * A missing third is not an opposing mode. N.C. has no harmonic root.
  * Title, filename, and part order are not inputs.
  */
 
@@ -192,6 +193,30 @@ function preferredThirds(rows: readonly { third: HomeFitRow['third']; fit: numbe
   return [...new Set(rows.filter((row) => row.fit === best).map((row) => row.third))];
 }
 
+/** Major third against minor third. No-third is not a mode. */
+export function thirdsOppose(left: HomeFitRow['third'], right: HomeFitRow['third']): boolean {
+  return (left === 'major-third' && right === 'minor-third') || (left === 'minor-third' && right === 'major-third');
+}
+
+/**
+ * Ranking stays fit = membership − friction.
+ * HOME_INSUFFICIENT is membership below 0.62. Fit is not the sufficiency unit.
+ */
+export function homeStatusFromEvidence(input: {
+  membership: number | null;
+  fitGap: number;
+  topThird: HomeFitRow['third'] | null;
+  secondThird: HomeFitRow['third'] | null;
+  windowModeConflict: boolean;
+}): HomeIdentityStatus {
+  if (input.membership === null || input.membership < HOME_FIT_MIN) return 'HOME_INSUFFICIENT';
+  const closeMode = Boolean(
+    input.topThird && input.secondThird && input.fitGap <= HOME_GAP && thirdsOppose(input.topThird, input.secondThird)
+  );
+  if (closeMode || input.windowModeConflict) return 'HOME_AMBIGUOUS';
+  return 'HOME';
+}
+
 export function inferCentreAndHome(score: PentatonicScoreImport): CentreHomeIdentity {
   const evidence: string[] = ['Title, filename, and part order were not used.'];
   const tally = new Map<number, { score: number; spelling: string; reasons: string[] }>();
@@ -210,10 +235,14 @@ export function inferCentreAndHome(score: PentatonicScoreImport): CentreHomeIden
   if (opening) add(opening.pc, opening.spelling, 2, `opening harmony ${openingHit!.item.symbol} +2`);
   else evidence.push('Opening harmony root missing.');
 
+  let finalSectionStart = 0;
+  for (let index = 0; index < score.events.length; index += 1) {
+    if (score.events[index]!.sourceBoundary) finalSectionStart = index;
+  }
   let finalRoot: { pc: number; spelling: string } | null = null;
   let finalLabel = '';
   let finalSymbol = '';
-  for (let index = score.events.length - 1; index >= 0; index -= 1) {
+  for (let index = score.events.length - 1; index >= finalSectionStart; index -= 1) {
     const event = score.events[index]!;
     const root = rootOf(event.chordSymbol);
     if (!root) continue;
@@ -223,7 +252,7 @@ export function inferCentreAndHome(score: PentatonicScoreImport): CentreHomeIden
     add(root.pc, root.spelling, 2, `final harmony ${finalSymbol} bar ${finalLabel} +2`);
     break;
   }
-  if (!finalRoot) evidence.push('Final harmony root missing.');
+  if (!finalRoot) evidence.push('Final harmony root missing inside the final structural section. Earlier sections were not searched.');
 
   const openingMotif = score.motifs[0]?.label ?? null;
   const openingToken = openingMotif ? motifToken(openingMotif) : null;
@@ -351,18 +380,22 @@ export function inferCentreAndHome(score: PentatonicScoreImport): CentreHomeIden
   if (openingPref.length === 1) {
     for (const window of perWindow.slice(1)) {
       const prefs = preferredThirds(window.rows);
-      if (prefs.length === 1 && prefs[0] !== openingPref[0]) windowModeConflict = true;
+      if (prefs.length === 1 && thirdsOppose(prefs[0]!, openingPref[0]!)) windowModeConflict = true;
     }
   }
-  if (windowModeConflict) evidence.push('Opening and a return or ending window prefer different modes.');
+  if (windowModeConflict) evidence.push('Opening and a return or ending window prefer major third against minor third.');
 
   const top = fits[0];
   const second = fits[1];
   const gap = top && second ? quantize(top.fit - second.fit) : top ? top.fit : 0;
-  const closeThird = Boolean(top && second && gap <= HOME_GAP && top.third !== second.third);
-  let homeStatus: HomeIdentityStatus = 'HOME';
-  if (!top || top.fit < HOME_FIT_MIN) homeStatus = 'HOME_INSUFFICIENT';
-  else if (closeThird || windowModeConflict) homeStatus = 'HOME_AMBIGUOUS';
+  const homeStatus = homeStatusFromEvidence({
+    membership: top?.membership ?? null,
+    fitGap: gap,
+    topThird: top?.third ?? null,
+    secondThird: second?.third ?? null,
+    windowModeConflict,
+  });
+  if (top) evidence.push(`HOME sufficiency membership ${top.membership}. Friction ${top.friction}. Fit ${top.fit} ranks only.`);
   const colourScoring = homeStatus === 'HOME' ? 'on' : 'omitted';
   const home = homeStatus === 'HOME' && top
     ? { archetypeId: top.archetypeId, referenceNote: top.referenceNote, pitchClasses: [...top.pitchClasses] }

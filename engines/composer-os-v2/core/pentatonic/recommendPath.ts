@@ -136,26 +136,30 @@ export function recommendPentatonicPath(passage: PentatonicPassage, options?: Pe
     else ids.add(event.id);
     if (!event.sourceLabel) errors.push(`Event "${event.id || '(missing id)'}" needs a source label.`);
   }
+  const absentCentre = options?.allowAbsentTonalCentre === true && !passage.tonalCentre;
   const tonal = passage.tonalCentre ? parseNoteToken(passage.tonalCentre.root) : null;
-  if (!passage.tonalCentre || !tonal) errors.push('Tonal centre is missing or malformed.');
-  if (passage.tonalCentre && passage.tonalCentre.mode !== 'major' && passage.tonalCentre.mode !== 'minor') {
-    errors.push('Tonal centre mode must be major or minor.');
+  if (!absentCentre) {
+    if (!passage.tonalCentre || !tonal) errors.push('Tonal centre is missing or malformed.');
+    if (passage.tonalCentre && passage.tonalCentre.mode !== 'major' && passage.tonalCentre.mode !== 'minor') {
+      errors.push('Tonal centre mode must be major or minor.');
+    }
   }
-  if (errors.length > 0 || !tonal || !passage.tonalCentre) {
+  if (errors.length > 0 || (!absentCentre && (!tonal || !passage.tonalCentre))) {
     return emptyPath({ kind: 'validation', validationErrors: errors, configVersion, sourceEventCount: passage.events?.length ?? 0 });
   }
 
   const built = generatePentatonicCandidates({
-    depth: passage.depth ?? 'near',
-    tonalCentrePc: tonal.pc,
-    tonalCentreSpelling: tonal.spelling,
-    home: passage.home ?? null,
-    current: passage.current ?? null,
+    depth: absentCentre ? 'chromatic' : passage.depth ?? 'near',
+    tonalCentrePc: tonal?.pc ?? 0,
+    tonalCentreSpelling: tonal?.spelling ?? 'C',
+    home: absentCentre ? null : passage.home ?? null,
+    current: absentCentre ? null : passage.current ?? null,
     pinned: passage.pinned ?? [],
+    absoluteRegistry: absentCentre,
   });
   if (!built.ok) return emptyPath({ kind: 'validation', validationErrors: built.errors, configVersion, sourceEventCount: passage.events.length });
 
-  const spellings: ParsedNote[] = [tonal];
+  const spellings: ParsedNote[] = tonal ? [tonal] : [];
   const prepared = passage.events.map((event) => {
     const melody = readNotes(event.melodyNotes, event.melodyRest, 'melody', event.sourceLabel, errors);
     const bass = readNotes(event.bassNotes, event.bassRest, 'bass', event.sourceLabel, errors);
@@ -208,8 +212,8 @@ export function recommendPentatonicPath(passage: PentatonicPassage, options?: Pe
       caution: caution.pcs,
       protected: protectedNotes.pcs,
       strictMelody: passage.strictMelodyMembership === true,
-      purpose: passage.purpose ?? null,
-      colourTension: passage.colourTension ?? null,
+      purpose: absentCentre ? null : passage.purpose ?? null,
+      colourTension: absentCentre ? null : passage.colourTension ?? null,
       currentPitchSet: null,
       melodyBassAttacks,
     };
@@ -361,8 +365,8 @@ export function recommendPentatonicPath(passage: PentatonicPassage, options?: Pe
       canonicalPitchSet: state?.pitchSet ?? null,
       canonicalId: state?.id ?? null,
       displaySpelling: state?.displaySpelling ?? [],
-      homeRelationshipId: state?.homeRelationshipId ?? null,
-      homeRelationshipLabel: state?.homeRelationshipLabel ?? null,
+      homeRelationshipId: absentCentre ? null : state?.homeRelationshipId ?? null,
+      homeRelationshipLabel: absentCentre ? null : state?.homeRelationshipLabel ?? null,
       localScore,
       localMisfit: silence ? 0 : state ? quantizePathCost(1 - (localScore ?? 0)) : config.noneBaselineCost,
       transitionCost: liquid.net,
