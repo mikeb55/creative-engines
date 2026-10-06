@@ -38,6 +38,11 @@ export interface OptimizerEvent {
   phraseBoundaryAfter: boolean;
   /** Melody and bass both rest. Continue the previous state. Not a penalty. */
   silence?: boolean;
+  /**
+   * Sounding melody, bass, and held pitch classes.
+   * Used only when `continueWithoutDistinctPcs` is set. Dev 2 leaves this empty.
+   */
+  soundingPitchClasses?: readonly number[];
 }
 
 export interface OptimizePathInput {
@@ -49,6 +54,12 @@ export interface OptimizePathInput {
   previousPitchSet: readonly number[] | null;
   homeExplicit: boolean;
   finalHomeBonusEnabled: boolean;
+  /**
+   * Dev 3 adapter rule. Default off, so Dev 2 paths are unchanged.
+   * A bar that sounds none of the pitch classes distinguishing the current
+   * collection from the alternative continues the current collection.
+   */
+  continueWithoutDistinctPcs?: boolean;
   sourceLabels: readonly string[];
   eventIds: readonly string[];
 }
@@ -83,6 +94,15 @@ function emptyBreakdown(): PentatonicPathCostBreakdown {
     finalHomeBonus: 0,
     total: 0,
   };
+}
+
+function distinguishingPcsSound(previous: readonly number[], next: readonly number[], sounding: readonly number[]): boolean {
+  const nextSet = new Set(next);
+  const previousSet = new Set(previous);
+  const heard = new Set(sounding);
+  for (const pc of previous) if (!nextSet.has(pc) && heard.has(pc)) return true;
+  for (const pc of next) if (!previousSet.has(pc) && heard.has(pc)) return true;
+  return false;
 }
 
 function noneIndex(stateCount: number): number {
@@ -233,6 +253,17 @@ export function optimizePentatonicPath(input: OptimizePathInput): {
         const hasPrevious = hyp.pathLength > 0 || (hyp.pathLength === 0 && input.previousStateId != null && hyp.stateIndex >= 0);
         const changed = !event.silence && hasPrevious && hyp.stateIndex !== stateIndex;
         const previousPcs = previousState?.pitchSet ?? (hyp.pathLength === 0 ? input.previousPitchSet : null);
+        if (
+          input.continueWithoutDistinctPcs &&
+          changed &&
+          previousPcs &&
+          previousPcs.length > 0 &&
+          state?.pitchSet &&
+          state.pitchSet.length > 0 &&
+          !distinguishingPcsSound(previousPcs, state.pitchSet, event.soundingPitchClasses ?? [])
+        ) {
+          continue;
+        }
         const liquid = liquidBetween(changed, previousPcs, state?.pitchSet ?? null, phraseBoundary);
         const shortSegmentPenalty = changed && hyp.pathLength > 0 && hyp.run === 1 ? input.config.shortSegmentPenalty : 0;
         let mask = hyp.mask;

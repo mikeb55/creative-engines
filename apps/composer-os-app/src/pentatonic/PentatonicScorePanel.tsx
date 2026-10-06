@@ -118,6 +118,14 @@ function ScoreMap(props: { analysis: PentatonicScoreAnalysis }) {
       <p style={{ margin: 0 }} data-testid="pentatonic-home">
         {analysis.homeReading}
       </p>
+      <p style={{ margin: 0 }} data-testid="pentatonic-fields">
+        Fields {analysis.fields.length}. Raw switches {summary.collectionChanges}.
+      </p>
+      {analysis.fields.map((field) => (
+        <p key={field.measureRangeLabel} style={{ margin: 0 }} data-testid="pentatonic-field">
+          {field.measureRangeLabel} — {field.name}. Inflections {field.inflectionLabels.join(', ')}.
+        </p>
+      ))}
       {analysis.homeCandidates.length > 0 ? (
         <div data-testid="pentatonic-home-candidates">
           {analysis.homeCandidates.map((candidate) => (

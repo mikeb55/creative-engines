@@ -223,7 +223,7 @@ function run(): { ok: boolean; name: string }[] {
     const b = analyzePentatonicScore(xml, { sourceFile: 'tiny.musicxml', sourceSha256: 'abc', profile: 'wwh-duo-1.1' });
     assert.equal(a.orderPolicy, 'written-score-order');
     assert.equal(a.profile, 'wwh-duo-1.1');
-    assert.ok(a.homeReading.includes('F minor'));
+    assert.ok(a.homeReading.includes('CENTRE_INSUFFICIENT'));
     assert.deepEqual(
       a.regions.map((region) => [region.measureRangeLabel, region.collectionName]),
       b.regions.map((region) => [region.measureRangeLabel, region.collectionName])

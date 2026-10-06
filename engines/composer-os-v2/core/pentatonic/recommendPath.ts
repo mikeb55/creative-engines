@@ -109,6 +109,19 @@ function transitionDetail(previous: readonly number[] | null, next: readonly num
   };
 }
 
+function soundingPitchClasses(event: PentatonicPassageEvent): number[] {
+  const found = new Set<number>();
+  for (const note of [...(event.melodyNotes ?? []), ...(event.bassNotes ?? []), ...(event.heldNotes ?? [])]) {
+    const parsed = parseNoteToken(note);
+    if (parsed) found.add(parsed.pc);
+  }
+  for (const attack of event.soundingAttacks ?? []) {
+    const parsed = parseNoteToken(attack.spelling);
+    if (parsed && attack.durationBeats > 0) found.add(parsed.pc);
+  }
+  return [...found];
+}
+
 export function recommendPentatonicPath(passage: PentatonicPassage, options?: PentatonicPathOptions): PentatonicPathResult {
   const config = resolvePathConfig(options?.path);
   const configVersion = pathConfigurationId(config);
@@ -259,6 +272,11 @@ export function recommendPentatonicPath(passage: PentatonicPassage, options?: Pe
       localScoreById,
       phraseBoundaryAfter: item.event.phraseBoundaryAfter === true,
       silence: item.silence,
+      ...(options?.continueWithoutDistinctPcs
+        ? {
+            soundingPitchClasses: soundingPitchClasses(item.event),
+          }
+        : {}),
     });
     return evaluated;
   });
@@ -286,6 +304,7 @@ export function recommendPentatonicPath(passage: PentatonicPassage, options?: Pe
     previousPitchSet: currentCandidate?.canonicalPitchSet ?? null,
     homeExplicit,
     finalHomeBonusEnabled,
+    continueWithoutDistinctPcs: options?.continueWithoutDistinctPcs === true,
     sourceLabels: passage.events.map((event) => event.sourceLabel),
     eventIds: passage.events.map((event) => event.id),
   });

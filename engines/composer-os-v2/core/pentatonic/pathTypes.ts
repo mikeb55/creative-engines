@@ -47,6 +47,11 @@ export interface PentatonicPathOptions {
   path?: Partial<PentatonicPathConfig>;
   /** When false, NONE is not a legal state. Default true. */
   allowNone?: boolean;
+  /**
+   * Dev 3 whole-score adapter. Off unless the adapter sets it.
+   * Does not change path-cost constants.
+   */
+  continueWithoutDistinctPcs?: boolean;
 }
 
 export type PentatonicPathDisposition = 'INSUFFICIENT_CONTEXT' | 'NO_FEASIBLE_PATH' | 'PATH';

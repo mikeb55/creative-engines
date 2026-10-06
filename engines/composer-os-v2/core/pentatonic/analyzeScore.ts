@@ -4,9 +4,11 @@
  */
 
 import { chromaticFriction, type ChromaticFrictionRegion } from './chromaticFriction';
+import { inferCentreAndHome, type CentreHomeIdentity } from './centreIdentity';
 import { DEFAULT_PENTATONIC_SCORING } from './evaluate';
+import { reportPentatonicFields, intervalLabelFor, type PentatonicField } from './fieldFamily';
+import { inferPentatonicHome, type HomeCandidate } from './inferHome';
 import { importPentatonicScoreFromMusicXml, PENTATONIC_SCORE_ORDER_POLICY, type PentatonicScoreEvent, type PentatonicScoreImport } from './musicXmlScore';
-import { inferPentatonicHome, type HomeCandidate, type InferredHome } from './inferHome';
 import { parseNoteToken, spellingForPc, type ParsedNote } from './pitch';
 import { recommendPentatonicPath } from './recommendPath';
 import type { PentatonicPassage, PentatonicPassageEvent, PentatonicPathEventDecision, PentatonicPathResult } from './pathTypes';
@@ -74,6 +76,8 @@ export interface PentatonicScoreAnalysis {
   score: PentatonicScoreImport;
   homeEvidence: readonly string[];
   homeCandidates: readonly HomeCandidate[];
+  identity: CentreHomeIdentity;
+  fields: readonly PentatonicField[];
   friction: readonly ChromaticFrictionRegion[];
   lowFitRegions: readonly { measureRangeLabel: string; meanLocalFit: number; lowestLocalFit: number; lowestSourceLabel: string }[];
   nearIdenticalSwitches: readonly { measureRangeLabel: string; sharedCount: number; previous: string; next: string }[];
@@ -85,12 +89,8 @@ export interface AnalyzePentatonicScoreOptions {
   sourceSha256?: string;
 }
 
-function openingFromInference(inferred: InferredHome): InferredHome | null {
-  if (inferred.status !== 'inferred' || !inferred.tonalCentre || !inferred.home) return null;
-  return inferred;
-}
-
-function toPassage(score: PentatonicScoreImport, opening: InferredHome, profile: 'default' | 'wwh-duo-1.1' | 'wwh-duo-1.0'): PentatonicPassage {
+function openingPassage(score: PentatonicScoreImport, identity: CentreHomeIdentity, profile: 'default' | 'wwh-duo-1.1' | 'wwh-duo-1.0'): PentatonicPassage | null {
+  if (identity.centreStatus !== 'CENTRE' || !identity.centre) return null;
   const events: PentatonicPassageEvent[] = score.events.map((event, index) => {
     const next = score.events[index + 1];
     const row: PentatonicPassageEvent = {
@@ -108,12 +108,15 @@ function toPassage(score: PentatonicScoreImport, opening: InferredHome, profile:
     };
     return row;
   });
+  const mode = identity.home?.archetypeId === 'minor_pentatonic' ? 'minor' : 'major';
   return {
     events,
-    tonalCentre: opening.tonalCentre!,
-    home: opening.home!,
-    depth: opening.depth,
-    purpose: opening.purpose,
+    tonalCentre: { root: identity.centre.spelling, mode },
+    ...(identity.home
+      ? { home: { archetypeId: identity.home.archetypeId, referenceNote: identity.home.referenceNote } }
+      : {}),
+    ...(identity.colourScoring === 'on' ? { purpose: 'colour' as const } : {}),
+    depth: profile === 'default' ? 'near' : 'chromatic',
     evidenceProfile: profile,
   };
 }
@@ -271,11 +274,16 @@ export function analyzePentatonicScore(xml: string, options?: AnalyzePentatonicS
   const totalStart = performance.now();
   const profile = options?.profile === 'wwh-duo-1.0' ? 'wwh-duo-1.1' : options?.profile ?? 'wwh-duo-1.1';
   const score = importPentatonicScoreFromMusicXml(xml);
-  const inferred = inferPentatonicHome(score, profile);
-  const opening = openingFromInference(inferred);
-  const diagnostics = [...score.diagnostics];
+  const identity = inferCentreAndHome(score);
+  const previous = inferPentatonicHome(score, profile);
+  const diagnostics = [...score.diagnostics, ...identity.evidence];
+  diagnostics.push(`Dev 3.2 reading kept for comparison: ${previous.reading}`);
+  for (const candidate of previous.candidates) {
+    diagnostics.push(`Dev 3.2 ${candidate.source} ${candidate.centre} ${candidate.mode} membership ${candidate.membership}.`);
+  }
   const warnings = [...score.warnings];
-  if (!opening) {
+  const passage = openingPassage(score, identity, profile);
+  if (!passage) {
     const path = recommendPentatonicPath({ events: [] });
     return {
       song: score.title,
@@ -283,7 +291,7 @@ export function analyzePentatonicScore(xml: string, options?: AnalyzePentatonicS
       sourceSha256: options?.sourceSha256 ?? '',
       profile,
       orderPolicy: PENTATONIC_SCORE_ORDER_POLICY,
-      homeReading: inferred.reading,
+      homeReading: identity.reading,
       regions: [],
       inferredBoundaries: [],
       noneObservations: [],
@@ -308,24 +316,37 @@ export function analyzePentatonicScore(xml: string, options?: AnalyzePentatonicS
       warnings: [...warnings, 'Analysis stopped before the path engine. Tonal centre was not invented.'],
       path,
       score,
-      homeEvidence: inferred.evidence,
-      homeCandidates: inferred.candidates,
+      homeEvidence: identity.evidence,
+      homeCandidates: previous.candidates,
+      identity,
+      fields: [],
       friction: [],
       lowFitRegions: [],
       nearIdenticalSwitches: [],
     };
   }
-  diagnostics.push(opening.reading);
-  for (const line of inferred.evidence) diagnostics.push(line);
+  diagnostics.push(identity.reading);
+  if (identity.colourScoring === 'omitted') {
+    diagnostics.push('Path tonal-centre mode is not a HOME mode. Colour scoring is omitted.');
+  }
   diagnostics.push('Dev 2.2: genuine collection changes cost at least half the base change cost. NONE cost is unchanged. Chromatic friction is scored with the same measure as this report.');
-  const passage = toPassage(score, opening, profile);
+  diagnostics.push('Neutral bars continue the current collection when they sound none of the pitch classes that distinguish it from the alternative.');
   const boundaryStart = performance.now();
   const inferredBounds = inferredBoundaries(score.events);
   const boundaryMs = performance.now() - boundaryStart;
   const pathStart = performance.now();
-  const path = recommendPentatonicPath(passage);
+  const path = recommendPentatonicPath(passage, { continueWithoutDistinctPcs: true });
   const pathMs = performance.now() - pathStart;
-  const regions = path.kind === 'analysis' ? regionsFrom(score, path) : [];
+  const regions = (path.kind === 'analysis' ? regionsFrom(score, path) : []).map((region) => {
+    if (identity.colourScoring !== 'omitted' || !identity.centre) return region;
+    const decision = path.events.find((event) => event.sourceLabel === region.firstSourceLabel);
+    const referencePc = decision?.referenceNote ? parseNoteToken(decision.referenceNote)?.pc ?? null : null;
+    return {
+      ...region,
+      homeRelationshipLabel: intervalLabelFor(identity.centre.pc, referencePc, decision?.archetypeId ?? null),
+    };
+  });
+  const fields = reportPentatonicFields(regions, score.events, identity.centre?.pc ?? null);
   const pentatonicRegions = regions.filter((region) => region.collectionName !== 'NONE').length;
   const noneRegions = regions.filter((region) => region.collectionName === 'NONE').length;
   const distinct = new Set(regions.filter((region) => region.collectionName !== 'NONE').map((region) => region.collectionName));
@@ -335,11 +356,13 @@ export function analyzePentatonicScore(xml: string, options?: AnalyzePentatonicS
     sourceSha256: options?.sourceSha256 ?? '',
     profile,
     orderPolicy: PENTATONIC_SCORE_ORDER_POLICY,
-    homeReading: opening.reading,
+    homeReading: identity.reading,
     regions,
     inferredBoundaries: inferredBounds,
-    homeEvidence: inferred.evidence,
-    homeCandidates: inferred.candidates,
+    homeEvidence: identity.evidence,
+    homeCandidates: previous.candidates,
+    identity,
+    fields,
     friction: chromaticFriction(score, path),
     lowFitRegions: lowFit(regions, path),
     nearIdenticalSwitches: nearSwitches(regions),
@@ -351,8 +374,8 @@ export function analyzePentatonicScore(xml: string, options?: AnalyzePentatonicS
       collectionChanges: path.switchCount,
       distinctCollections: distinct.size,
       noneEventCount: path.noneEventCount,
-      eventCount: score.events.length,
-      noneEventProportion: score.events.length === 0 ? 0 : path.noneEventCount / score.events.length,
+      eventCount: path.events.length,
+      noneEventProportion: path.events.length === 0 ? 0 : path.noneEventCount / path.events.length,
     },
     timingsMs: {
       parse: score.timingsMs.parse,
@@ -376,6 +399,8 @@ export function formatPentatonicScoreMap(analysis: PentatonicScoreAnalysis): str
     `PROFILE ${analysis.profile}`,
     `ORDER POLICY ${analysis.orderPolicy}`,
     `HOME ${analysis.homeReading}`,
+    `FIELDS ${analysis.fields.length}; raw switches ${analysis.summary.collectionChanges}`,
+    ...analysis.fields.map((field) => `${field.measureRangeLabel} — ${field.name}; inflections ${field.inflectionLabels.join(', ')}`),
     'DIAGNOSTICS',
     ...analysis.diagnostics.map((line) => `- ${line}`),
     ...analysis.warnings.map((line) => `- warning: ${line}`),
