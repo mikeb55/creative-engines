@@ -75,7 +75,7 @@ Built `apps/pentatonic-options-v2/dist/Pentatonic Options V2.app`, then installe
 
 Subject: `Pentatonic Options V2.1.1: fix Open MusicXML`
 
-Hash: filled after commit in the push step.
+Hash: `75ad8072fd256ee14f2ced944758ed0e2e3f54e8`
 
 ## PUSH RESULT
 
