@@ -64,6 +64,11 @@ export interface PentatonicFormState {
   cautionNotes: string[];
 }
 
+/** Pentatonic inputs only. Inherited Composer OS context stays untouched and is not copied back in. */
+export function cleanPentatonicForm(): PentatonicFormState {
+  return emptyPentatonicForm(null);
+}
+
 export function emptyPentatonicForm(inherited?: PentatonicInheritedContext | null): PentatonicFormState {
   return {
     analysisMode: 'region',

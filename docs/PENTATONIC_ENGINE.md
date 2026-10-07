@@ -54,6 +54,14 @@ A path region is one decision. The usual shapes are home, home then colour then 
 
 Outside motion wants a ground: a bass pedal, a bass ostinato, a held tone, the motif itself, or an anchor you name. The outside budget is low, moderate, or high. Low is the usual setting. Silence is still a result. None on the path is still a different result.
 
+**Hold-field** keeps the current five-note colour when the chords change and a common tone still belongs to that colour. A new chord is not a new pentatonic. If a chord shares nothing with the colour, the hold stops.
+
+**Quartal comp** is two or three notes from the colour, with a fourth when the colour has one. It does not use all five notes and it does not fill the bar.
+
+**Quartal line** is one fourth from the colour, then a different interval. It is not a chain of fourths. The cell should still be recognisable.
+
+Reset Pentatonic Inputs clears the pentatonic form and the results on this page. It does not rewrite the score you loaded, and it does not clear the rest of Composer OS.
+
 ## Colour, not a cage
 
 The selected pentatonic is a colour field. Notes in the phrase may sit outside those five pitches when the line needs them.

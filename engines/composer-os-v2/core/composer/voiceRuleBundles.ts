@@ -4404,11 +4404,24 @@ function buildFrankZappaVrbRiffProfile(): RiffProfile {
   ) as RiffProfile;
 }
 
+/**
+ * `riffReceiptCompiler` imports this module, and this module imports that compiler.
+ * Building the profile at module scope calls `compileResearchReceiptLines` before the
+ * compiler export exists. The first read happens after both modules have finished.
+ */
+let frankZappaVrbRiffProfileCache: RiffProfile | undefined;
+function frankZappaVrbRiffProfile(): RiffProfile {
+  if (!frankZappaVrbRiffProfileCache) frankZappaVrbRiffProfileCache = buildFrankZappaVrbRiffProfile();
+  return frankZappaVrbRiffProfileCache;
+}
+
 const FRANK_ZAPPA_VRF: VoiceRuleBundle = {
   ...FRANK_ZAPPA,
   family: 'rock',
   sigma: 29,
-  riffProfile: buildFrankZappaVrbRiffProfile(),
+  get riffProfile() {
+    return frankZappaVrbRiffProfile();
+  },
   orchestrationPolicy: {
     ...FRANK_ZAPPA.orchestrationPolicy,
     fingerprintReceipts: [

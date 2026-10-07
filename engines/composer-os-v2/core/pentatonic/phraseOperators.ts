@@ -12,6 +12,7 @@ import type { BaseMotif } from '../motif/motifTypes';
 import { buildPhrase } from '../phrase/phraseBuilder';
 import type { Phrase } from '../phrase/phraseTypes';
 import { createNote } from '../score-model/scoreEventBuilder';
+import { assessHoldField, harmonyEventsFromSymbols, type HoldFieldReport } from './holdField';
 import { assessGrounding, DEFAULT_OUTSIDE_BUDGET, type GroundingAssessment, type OutsideBudget, type PathTrajectory } from './pathIntelligence';
 import {
   collectionPitchClasses,
@@ -23,8 +24,9 @@ import {
   type PentatonicCollectionView,
 } from './motifTransform';
 import { mod12 } from './pitch';
+import { quartalLineFaults, quartalSubsets, realiseQuartalComp, realiseQuartalLine, type QuartalComp, type QuartalLine } from './quartalField';
 
-export const PENTATONIC_PHRASE_OPERATORS_VERSION = 'pentatonic-phrase-operators-5b.1';
+export const PENTATONIC_PHRASE_OPERATORS_VERSION = 'pentatonic-phrase-operators-5c';
 
 export const DEV5B_DEFAULT_METHOD: MotifMapMethod = 'M-DEG';
 
@@ -44,7 +46,16 @@ export const DEV5B_REJECTED_BEHAVIOURS = [
 
 export type Dev5bPurpose = 'MOTIF' | 'LYRICAL_ANSWER' | 'COUNTERLINE' | 'COMPING_FRAGMENT' | 'DEVELOPMENT' | 'NO_PHRASE';
 
-export type PentatonicOperator = 'CELL_LINEAGE' | 'RESEAT' | 'SLIP' | 'TRITONE_PAIR' | 'RETAIN' | 'NONE';
+export type PentatonicOperator =
+  | 'CELL_LINEAGE'
+  | 'RESEAT'
+  | 'SLIP'
+  | 'TRITONE_PAIR'
+  | 'RETAIN'
+  | 'HOLD_FIELD'
+  | 'QUARTAL_COMP'
+  | 'QUARTAL_LINE'
+  | 'NONE';
 
 export type CellTransform = 'original' | 'rotation' | 'transposition' | 'M-DEG' | 'M-NEAR';
 
@@ -105,6 +116,9 @@ export interface PhraseAdvisory {
   weakGrounding: boolean;
   excessivePermutation: boolean;
   scaleRun: boolean;
+  mechanicalInterval: boolean;
+  overDensity: boolean;
+  registerJump: boolean;
   notes: readonly string[];
 }
 
@@ -135,6 +149,8 @@ export interface PentatonicPhraseRealisation {
   pitches: readonly number[];
   slipLanding: SlipLanding | null;
   slipDirection: SlipDirectionReport | null;
+  holdField: HoldFieldReport | null;
+  quartal: QuartalComp | QuartalLine | null;
   advisory: PhraseAdvisory;
 }
 
@@ -172,6 +188,7 @@ export function planPentatonicOperator(args: {
   outsideDevicesAlreadyUsed?: number;
   explicitOutside?: boolean;
   explicitReseat?: boolean;
+  quartalAvailable?: boolean;
 }): OperatorPlan {
   const budget = args.budget ?? DEFAULT_OUTSIDE_BUDGET;
   const method = DEV5B_DEFAULT_METHOD;
@@ -227,13 +244,16 @@ export function planPentatonicOperator(args: {
   }
 
   if (args.purpose === 'COMPING_FRAGMENT') {
+    const quartal = args.quartalAvailable === true && !args.explicitReseat;
     return {
       ...base,
-      operator: args.explicitReseat ? 'RESEAT' : 'RETAIN',
+      operator: args.explicitReseat ? 'RESEAT' : quartal ? 'QUARTAL_COMP' : 'RETAIN',
       trajectory: 'RETAIN_CURRENT_FIELD',
       phraseResult: 'PHRASE',
       friction: args.explicitOutside ? 'Comping stays a short subset.' : null,
-      reason: 'Two or three notes, or silence. Not a five-note run.',
+      reason: quartal
+        ? 'Two or three notes from the field, with a fourth when the field has one. Not a five-note run.'
+        : 'Two or three notes, or silence. Not a five-note run.',
     };
   }
 
@@ -506,15 +526,24 @@ export function advisePentatonicPhrase(args: {
   const slipWithoutReturn = args.operator === 'SLIP' && !args.returned;
   const weakGrounding = (args.operator === 'SLIP' || args.operator === 'TRITONE_PAIR') && !args.grounding.present;
   const unnecessarySwitching = args.distinctCollections > 2;
+  const quartalFaults = home ? quartalLineFaults(args.pitches, collectionPitchClasses(home)) : null;
+  const mechanicalInterval =
+    args.operator !== 'QUARTAL_COMP' && (Boolean(quartalFaults?.mechanical) || Boolean(lick?.chromaticSequence));
+  const overDensity = Boolean(quartalFaults?.overDensity) || (args.operator === 'QUARTAL_COMP' && args.pitches.length > 3);
+  const registerJump = Boolean(quartalFaults?.registerJump);
   const notes: string[] = [];
   if (lick?.scaleRun) notes.push('Adjacent collection motion runs like a scale.');
   if (lick?.permutationDump || lick?.exhaustiveRotation) notes.push('The cell is permuted instead of stated.');
   if (lick?.chromaticSequence) notes.push('The cell is sequenced by semitone more than once.');
+  if (mechanicalInterval && !lick?.chromaticSequence) notes.push('The same interval repeats in one direction.');
+  if (overDensity) notes.push('The phrase is too dense for this field.');
+  if (registerJump) notes.push('A leap leaves the cell’s register.');
   if (lick?.allFiveForced) notes.push('All five notes were forced.');
   if (excessiveOutside) notes.push('Outside notes outlast the home statement.');
   if (slipWithoutReturn) notes.push('Slip has no return.');
   if (weakGrounding) notes.push('Outside motion has no bass, hold, motif, or anchor.');
   if (unnecessarySwitching) notes.push('More than two collections in one phrase.');
+  if (args.lineage && !args.lineage.identityPreserved) notes.push('The cell lost its lineage.');
   if (lineageIdentity === 'clear') notes.push('The cell is still recognisable.');
   return {
     lineageIdentity,
@@ -525,13 +554,23 @@ export function advisePentatonicPhrase(args: {
     weakGrounding,
     excessivePermutation: Boolean(lick?.permutationDump || lick?.exhaustiveRotation),
     scaleRun: Boolean(lick?.scaleRun),
+    mechanicalInterval,
+    overDensity,
+    registerJump,
     notes,
   };
 }
 
 export function selectPhraseByAdvice<T extends { advisory: PhraseAdvisory; gceScore: number | null }>(rows: readonly T[]): T | null {
   if (rows.length === 0) return null;
-  const viable = rows.filter((row) => !row.advisory.scaleRun && !row.advisory.excessivePermutation && !row.advisory.slipWithoutReturn);
+  const viable = rows.filter(
+    (row) =>
+      !row.advisory.scaleRun &&
+      !row.advisory.excessivePermutation &&
+      !row.advisory.slipWithoutReturn &&
+      !row.advisory.mechanicalInterval &&
+      !row.advisory.overDensity
+  );
   const pool = viable.length > 0 ? viable : [...rows];
   return [...pool].sort((left, right) => {
     const leftWarnings = left.advisory.notes.filter((note) => note !== 'The cell is still recognisable.').length;
@@ -587,6 +626,8 @@ function silence(plan: OperatorPlan, home: PentatonicCollectionView | null, grou
     pitches: [],
     slipLanding: null,
     slipDirection: null,
+    holdField: null,
+    quartal: null,
     advisory: advisePentatonicPhrase({
       lineage: null,
       pitches: [],
@@ -612,6 +653,8 @@ function finish(args: {
   harmonyBars?: readonly string[];
   slipLanding?: SlipLanding | null;
   slipDirection?: SlipDirectionReport | null;
+  holdField?: HoldFieldReport | null;
+  quartal?: QuartalComp | QuartalLine | null;
 }): PentatonicPhraseRealisation {
   const lick = antiLickFindings(args.pitches, args.home);
   if (lick.rejected) {
@@ -645,6 +688,8 @@ function finish(args: {
     pitches: args.pitches,
     slipLanding: args.slipLanding ?? null,
     slipDirection: args.slipDirection ?? null,
+    holdField: args.holdField ?? null,
+    quartal: args.quartal ?? null,
     advisory: advisePentatonicPhrase({
       lineage: { ...args.lineage, resultPitches: args.pitches },
       pitches: args.pitches,
@@ -811,12 +856,15 @@ export function realisePentatonicPhrase(args: {
   targetNotePc?: number | null;
   harmonyBars?: readonly string[];
   operator?: PentatonicOperator;
+  considerHold?: boolean;
+  quartalLine?: boolean;
 }): PentatonicPhraseRealisation {
   const grounding =
     args.grounding ??
     assessGrounding({
       motifIdentityRetained: Boolean(args.motif && args.motif.notes.length >= 3),
     });
+  const quartalReady = args.home ? quartalSubsets(collectionPitchClasses(args.home)).length > 0 : false;
   const planned = planPentatonicOperator({
     purpose: args.purpose,
     hasMotif: Boolean(extractCell(args.motif)) || args.purpose === 'COMPING_FRAGMENT',
@@ -826,8 +874,51 @@ export function realisePentatonicPhrase(args: {
     outsideDevicesAlreadyUsed: args.outsideDevicesAlreadyUsed,
     explicitOutside: args.explicitOutside,
     explicitReseat: args.explicitReseat,
+    quartalAvailable: args.purpose === 'COMPING_FRAGMENT' && quartalReady,
   });
-  const plan = args.operator ? { ...planned, operator: args.operator, phraseResult: args.operator === 'NONE' ? 'NO_PHRASE' as const : 'PHRASE' as const } : planned;
+  let plan = args.operator ? { ...planned, operator: args.operator, phraseResult: args.operator === 'NONE' ? 'NO_PHRASE' as const : 'PHRASE' as const } : planned;
+  let holdField: HoldFieldReport | null = null;
+  if (
+    args.home &&
+    args.considerHold !== false &&
+    !args.operator &&
+    (plan.operator === 'CELL_LINEAGE' || plan.operator === 'RETAIN') &&
+    args.harmonyBars &&
+    args.harmonyBars.length > 1
+  ) {
+    holdField = assessHoldField({
+      resourceName: args.home.name,
+      resourcePitchClasses: collectionPitchClasses(args.home),
+      events: harmonyEventsFromSymbols(args.harmonyBars.map((chord, index) => ({ sourceLabel: String(index + 1), chordSymbol: chord }))),
+      homePitchClasses: collectionPitchClasses(args.home),
+    });
+    if (holdField.held) {
+      plan = {
+        ...plan,
+        operator: 'HOLD_FIELD',
+        trajectory: 'RETAIN_CURRENT_FIELD',
+        phraseResult: 'PHRASE',
+        reason: holdField.reason,
+      };
+    }
+  }
+  if (
+    args.quartalLine === true &&
+    !args.operator &&
+    !args.explicitOutside &&
+    (args.purpose === 'MOTIF' || args.purpose === 'COUNTERLINE' || args.purpose === 'DEVELOPMENT') &&
+    plan.operator !== 'SLIP' &&
+    plan.operator !== 'TRITONE_PAIR' &&
+    plan.operator !== 'HOLD_FIELD'
+  ) {
+    plan = {
+      ...plan,
+      operator: 'QUARTAL_LINE',
+      trajectory: plan.trajectory === 'NONE' ? 'RETAIN_CURRENT_FIELD' : plan.trajectory,
+      phraseResult: 'PHRASE',
+      reason: 'One fourth-led cell from the governing field. Not a fourth sequence.',
+    };
+  }
   if (!args.home || plan.phraseResult === 'NO_PHRASE' || plan.operator === 'NONE') {
     const pathTrajectory: PathTrajectory = args.purpose === 'NO_PHRASE' ? 'RETAIN_CURRENT_FIELD' : plan.trajectory;
     return silence({ ...plan, trajectory: args.purpose === 'NO_PHRASE' ? pathTrajectory : plan.trajectory, phraseResult: 'NO_PHRASE' }, args.home, grounding);
@@ -845,7 +936,68 @@ export function realisePentatonicPhrase(args: {
     chain = [...chain, args.lineageTransform];
   }
 
-  if (plan.operator === 'RETAIN' || plan.operator === 'CELL_LINEAGE') {
+  if (plan.operator === 'QUARTAL_COMP') {
+    const comp = realiseQuartalComp(collectionPitchClasses(args.home));
+    if (!comp) {
+      plan = { ...plan, operator: 'RETAIN', reason: 'The field has no fourth. Comping stays a short subset.' };
+    } else {
+      const lineage: CellLineage = {
+        parentCell: parent,
+        soundedCell: comp.pitches,
+        chain,
+        resultPitches: [...comp.pitches],
+        identityPreserved: inCollection(comp.pitches, args.home),
+        fourNoteSubset: false,
+      };
+      return finish({
+        plan,
+        home: args.home,
+        grounding,
+        pitches: [...comp.pitches],
+        lineage,
+        method: null,
+        returnKind: null,
+        returned: true,
+        distinctCollections: 1,
+        harmonyBars: args.harmonyBars,
+        quartal: comp,
+      });
+    }
+  }
+
+  if (plan.operator === 'QUARTAL_LINE') {
+    const line = realiseQuartalLine({
+      fieldPitchClasses: collectionPitchClasses(args.home),
+      parentPitches: sounded,
+    });
+    if (line.declined || line.pitches.length < 3) {
+      plan = { ...plan, operator: 'CELL_LINEAGE', reason: 'A fourth-led cell would lose the lineage. The source cell stays.' };
+    } else {
+      const lineage: CellLineage = {
+        parentCell: parent,
+        soundedCell: [...line.pitches],
+        chain: [...chain, 'original'],
+        resultPitches: [...line.pitches],
+        identityPreserved: line.lineagePreserved,
+        fourNoteSubset: false,
+      };
+      return finish({
+        plan,
+        home: args.home,
+        grounding,
+        pitches: [...line.pitches],
+        lineage,
+        method: null,
+        returnKind: null,
+        returned: true,
+        distinctCollections: 1,
+        harmonyBars: args.harmonyBars,
+        quartal: line,
+      });
+    }
+  }
+
+  if (plan.operator === 'RETAIN' || plan.operator === 'CELL_LINEAGE' || plan.operator === 'HOLD_FIELD') {
     const pitches = plan.purpose === 'COMPING_FRAGMENT' ? subsetForComping(sounded, args.home) : sounded;
     const lineage: CellLineage = {
       parentCell: parent,
@@ -866,6 +1018,7 @@ export function realisePentatonicPhrase(args: {
       returned: true,
       distinctCollections: 1,
       harmonyBars: args.harmonyBars,
+      holdField: plan.operator === 'HOLD_FIELD' ? holdField : null,
     });
   }
 

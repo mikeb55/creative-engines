@@ -13,6 +13,7 @@ import { PentatonicScorePanel } from './PentatonicScorePanel';
 import { PentatonicWorkflowPanel } from './PentatonicWorkflowPanel';
 import {
   emptyPassageRow,
+  cleanPentatonicForm,
   emptyPentatonicForm,
   examplePentatonicForm,
   pentatonicFormIsDirty,
@@ -119,6 +120,7 @@ export function PentatonicEnginePage(props: {
   const recommendFn = props.recommendFn ?? recommendPentatonicsFromRegion;
   const pathRecommendFn = props.pathRecommendFn ?? recommendPentatonicPath;
   const [form, setForm] = useState<PentatonicFormState>(() => emptyPentatonicForm(inherited));
+  const [pageEpoch, setPageEpoch] = useState(0);
   const [analysis, setAnalysis] = useState<{ result: PentatonicEngineResult; snapshot: string } | null>(null);
   const [pathAnalysis, setPathAnalysis] = useState<{ result: PentatonicPathResult; snapshot: string } | null>(null);
   const [loading, setLoading] = useState(false);
@@ -180,10 +182,13 @@ export function PentatonicEnginePage(props: {
   };
 
   const onReset = () => {
-    setForm(emptyPentatonicForm(inherited));
+    requestRef.current += 1;
+    setForm(cleanPentatonicForm());
     setAnalysis(null);
     setPathAnalysis(null);
     setError(null);
+    setLoading(false);
+    setPageEpoch((epoch) => epoch + 1);
   };
 
   const onResetPassage = () => {
@@ -201,7 +206,7 @@ export function PentatonicEnginePage(props: {
       <p style={{ color: 'var(--text-muted)', marginTop: 0 }}>
         Analyse a score, move a motif into another pentatonic colour, or ask for a sparse phrase. Silence is a real result. A pentatonic resource is a colour, not a claim that every note belongs to it.
       </p>
-      <PentatonicWorkflowPanel />
+      <PentatonicWorkflowPanel key={pageEpoch} />
       <details>
         <summary>Region and passage tools</summary>
         <div style={{ display: 'grid', gap: '0.75rem', marginTop: '0.75rem' }}>
@@ -226,8 +231,12 @@ export function PentatonicEnginePage(props: {
         </p>
       ) : null}
 
+      <button type="button" className="secondary" data-testid="pentatonic-reset" onClick={onReset}>
+        Reset Pentatonic Inputs
+      </button>
+
       {form.analysisMode === 'score' ? (
-        <PentatonicScorePanel />
+        <PentatonicScorePanel key={pageEpoch} />
       ) : (
       <div style={{ display: 'grid', gap: '0.75rem' }}>
         <label htmlFor="pentatonic-tonal-root">
@@ -462,9 +471,6 @@ export function PentatonicEnginePage(props: {
             </button>
             <button type="button" className="secondary" data-testid="pentatonic-example" onClick={onExample}>
               Load Example
-            </button>
-            <button type="button" className="secondary" data-testid="pentatonic-reset" onClick={onReset}>
-              Reset Pentatonic Inputs
             </button>
           </div>
         ) : (

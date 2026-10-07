@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { lyricalAnswerExampleRegion, recommendPentatonicsFromRegion } from '@composer-os/core/pentatonic';
 import { hashForRoute, routeFromLocation, routeNavLabel } from '../src/router/appRouter';
 import {
+  cleanPentatonicForm,
   emptyPentatonicForm,
   examplePentatonicForm,
   resolvePentatonicRegion,
@@ -285,6 +286,86 @@ describe('PentatonicEnginePage', () => {
     });
     expect(JSON.stringify(inherited)).toBe(frozen);
     expect(textOf(tree)).toContain('D');
+    expect(tree.root.findByProps({ id: 'pentatonic-tonal-root' }).props.value).toBe('C');
+    expect(tree.root.findByProps({ id: 'pentatonic-harmony' }).props.value).toBe('');
+  });
+
+  it('clears every pentatonic input and every displayed result', async () => {
+    const inherited: PentatonicInheritedContext = {
+      tonalCentreRoot: 'D',
+      tonalCentreMode: 'major',
+      harmonyBars: ['Dmaj7'],
+      melodyNotes: ['D', 'F#', 'A'],
+    };
+    const frozen = JSON.stringify(inherited);
+    const { PentatonicEnginePage } = await import('../src/pentatonic/PentatonicEnginePage');
+    const payload: PentatonicEngineResult = {
+      kind: 'analysis',
+      validationErrors: [],
+      disposition: 'RECOMMEND',
+      explanation: 'Keep this sentence out of the reset page.',
+      recommendations: [],
+      alternatives: [],
+      retained: null,
+      retention: null,
+      limitations: [],
+      constraintFailures: [],
+      diagnostics: null,
+      registryVersion: 'pentatonic-registry-1.0',
+      evaluatorVersion: 'pentatonic-evaluator-1.0',
+      configurationId: 'pentatonic-config-1.0',
+    };
+    let tree!: ReturnType<typeof create>;
+    await act(async () => {
+      tree = create(React.createElement(PentatonicEnginePage, { inherited, recommendFn: () => payload }));
+    });
+    await act(async () => {
+      tree.root.findByProps({ id: 'pentatonic-home-archetype' }).props.onChange({ target: { value: 'minor_pentatonic' } });
+      tree.root.findByProps({ id: 'pentatonic-home-ref' }).props.onChange({ target: { value: 'Eb' } });
+      tree.root.findByProps({ id: 'pentatonic-current-mode' }).props.onChange({ target: { value: 'registry' } });
+      tree.root.findByProps({ id: 'pentatonic-harmony' }).props.onChange({ target: { value: 'Am7 | Dm7' } });
+      tree.root.findByProps({ id: 'pentatonic-purpose' }).props.onChange({ target: { value: 'colour' } });
+      tree.root.findByProps({ id: 'pentatonic-colour' }).props.onChange({ target: { value: 'brighter' } });
+      tree.root.findByProps({ id: 'pentatonic-depth' }).props.onChange({ target: { value: 'chromatic' } });
+      tree.root.findByProps({ id: 'pentatonic-strict' }).props.onChange({ target: { checked: true } });
+      tree.root.findByProps({ id: 'pentatonic-workflow-mode' }).props.onChange({ target: { value: 'generate' } });
+    });
+    const melody = tree.root.findAll((node) => node.type === 'button' && node.props.children === 'C' && node.props['aria-pressed'] === false)[0];
+    await act(async () => {
+      melody?.props.onClick();
+    });
+    await act(async () => {
+      findButton(tree, 'pentatonic-recommend').props.onClick();
+      await Promise.resolve();
+    });
+    expect(textOf(tree)).toContain('Keep this sentence out of the reset page.');
+    expect(tree.root.findByProps({ id: 'pentatonic-workflow-mode' }).props.value).toBe('generate');
+    await act(async () => {
+      findButton(tree, 'pentatonic-reset').props.onClick();
+    });
+    expect(JSON.stringify(inherited)).toBe(frozen);
+    expect(textOf(tree)).toContain('Inherited Composer OS context');
+    expect(textOf(tree)).not.toContain('Keep this sentence out of the reset page.');
+    expect(tree.root.findByProps({ id: 'pentatonic-home-archetype' }).props.value).toBe('');
+    expect(tree.root.findByProps({ id: 'pentatonic-home-ref' }).props.value).toBe('A');
+    expect(tree.root.findByProps({ id: 'pentatonic-current-mode' }).props.value).toBe('none');
+    expect(tree.root.findByProps({ id: 'pentatonic-harmony' }).props.value).toBe('');
+    expect(tree.root.findByProps({ id: 'pentatonic-purpose' }).props.value).toBe('');
+    expect(tree.root.findByProps({ id: 'pentatonic-colour' }).props.value).toBe('');
+    expect(tree.root.findByProps({ id: 'pentatonic-depth' }).props.value).toBe('near');
+    expect(tree.root.findByProps({ id: 'pentatonic-strict' }).props.checked).toBe(false);
+    expect(tree.root.findByProps({ id: 'pentatonic-workflow-mode' }).props.value).toBe('analyse');
+    expect(textOf(tree)).not.toContain('SELECTED RESOURCE');
+    expect(textOf(tree)).not.toContain('RESULT: SILENCE');
+    const pressed = tree.root.findAll((node) => node.props?.['aria-pressed'] === true);
+    expect(pressed.length).toBe(0);
+    expect(cleanPentatonicForm().melodyNotes).toEqual([]);
+    expect(cleanPentatonicForm().bassNotes).toEqual([]);
+    expect(cleanPentatonicForm().heldNotes).toEqual([]);
+    expect(cleanPentatonicForm().protectedNotes).toEqual([]);
+    expect(cleanPentatonicForm().targetNotes).toEqual([]);
+    expect(cleanPentatonicForm().cautionNotes).toEqual([]);
+    expect(cleanPentatonicForm().strictMelody).toBe(false);
   });
 
   it('does not load an example over dirty inputs when confirmation is declined', async () => {

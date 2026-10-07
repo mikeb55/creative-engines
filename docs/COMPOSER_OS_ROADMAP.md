@@ -486,6 +486,7 @@ Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartÃ³k** native bundle (not 
 
 ## Current (as of 2026-07-01 snapshot)
 
+- **Pentatonic Engine Dev 5C (2026-10-07):** HOLD-FIELD across credible harmony changes, quartal comp and quartal line on the existing phrase engine, and a full Pentatonic page reset. Nine WWH leadsheets benchmarked read-only. Path registry stays major and minor pentatonic. Colour registry stays 20 resources, none promoted. `changeCost` `0.35`. Fingerprint `cca0456e61a2a14e06f4aa14af0ae4bff902a46baa18ced000aec9ab146c91e6`. Tag `pentatonic-dev5-baseline`.
 - **Pentatonic Engine Dev 5B.1 (2026-10-07):** advisory slip landing (STRONG / ACCEPTABLE / WEAK) and a static-field preference for a downward semitone slip. The grade does not reject a phrase. Upward slip remains when context or an explicit request favours it. Path costs, registries, and the Dev 3.7 fingerprint stay. Dev 5 is not tagged.
 - **Pentatonic Engine Dev 5B (2026-10-07):** path and phrase operators on the existing phrase engine. Cell lineage, reseat, bounded slip, tritone-pair field, grounding, and a LOW / MODERATE / HIGH outside budget. Path registry and the 20-resource colour registry stay as in Dev 5A. Dev 3.7 fingerprint unchanged. Dev 5 is not tagged.
 - **Pentatonic Engine Dev 5A (2026-10-06):** colour vocabulary, twenty five-note resources, contextual colour evaluation. Path registry stays major and minor pentatonic. Dev 3.7 fingerprint unchanged. Dev 5 is not frozen.

@@ -65,6 +65,20 @@ export {
   selectPhraseByAdvice,
   transformCell,
 } from './phraseOperators';
+export {
+  PENTATONIC_HOLD_FIELD_VERSION,
+  assessHoldField,
+  harmonyEventsFromSymbols,
+  holdFieldDisposition,
+} from './holdField';
+export {
+  PENTATONIC_QUARTAL_VERSION,
+  isPerfectFourth,
+  quartalLineFaults,
+  quartalSubsets,
+  realiseQuartalComp,
+  realiseQuartalLine,
+} from './quartalField';
 export { analyzePentatonicScore, formatPentatonicScoreMap, PENTATONIC_SCORE_ORDER_POLICY, importPentatonicScoreFromMusicXml } from './musicxml';
 export {
   CURRENT_NON_REGISTRY_POLICY,
