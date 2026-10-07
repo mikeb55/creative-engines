@@ -1,0 +1,27 @@
+{
+  "name": "pentatonic-options-v2",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Pentatonic Options V2 practice app. Thin front end to the Composer OS pentatonic engine.",
+  "author": "Third Sun",
+  "main": "main.js",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "npm run build && ../composer-os-desktop/node_modules/.bin/electron .",
+    "package:mac": "npm run build && node scripts/package-mac.mjs",
+    "test": "npx tsx --tsconfig ../../tsconfig.json ../../engines/composer-os-v2/tests/pentatonicOptionsV2.test.ts"
+  },
+  "build": {
+    "appId": "com.thirdsun.pentatonicoptions.v2",
+    "productName": "Pentatonic Options V2",
+    "asar": true,
+    "mac": {
+      "category": "public.app-category.music",
+      "target": ["dir"],
+      "identity": null
+    },
+    "files": ["main.js", "preload.js", "ui/**/*", "package.json"],
+    "directories": { "output": "dist" },
+    "electronVersion": "28.3.3"
+  }
+}

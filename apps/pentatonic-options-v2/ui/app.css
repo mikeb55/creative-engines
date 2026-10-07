@@ -1,0 +1,26 @@
+:root {
+  color-scheme: dark;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  background: #121418;
+  color: #f2f4f8;
+}
+body { margin: 0; min-height: 100vh; display: grid; grid-template-rows: auto 1fr auto; }
+header, footer { display: flex; gap: 8px; align-items: center; padding: 10px 14px; background: #1b1f27; flex-wrap: wrap; }
+header { justify-content: space-between; }
+main { display: grid; grid-template-columns: 260px 1fr 280px; gap: 12px; padding: 12px; }
+section { background: #1c212b; border-radius: 12px; padding: 12px; overflow: auto; }
+label { display: grid; gap: 4px; font-size: 12px; margin-bottom: 8px; color: #c5cad3; }
+input, select, button { font: inherit; }
+input, select { background: #0f1218; color: inherit; border: 1px solid #343b48; border-radius: 8px; padding: 6px 8px; }
+button { background: #2a3140; color: inherit; border: 0; border-radius: 8px; padding: 8px 10px; cursor: pointer; }
+button.primary, button.active { background: #d7a15f; color: #1a1208; }
+.muted { color: #9aa3b2; font-size: 13px; }
+.eyebrow { letter-spacing: 0.08em; font-size: 12px; color: #d7a15f; }
+.notes { font-size: 28px; line-height: 1.3; min-height: 72px; }
+dl { display: grid; grid-template-columns: 120px 1fr; gap: 4px 8px; font-size: 14px; }
+nav { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { display: block; width: 100%; text-align: left; margin-bottom: 4px; }
+h1, h2 { margin: 0 0 8px; }
+h2 { font-size: 14px; }
+#side-list { font-size: 13px; max-height: 280px; }
+.card { border-top: 1px solid #343b48; padding: 6px 0; }

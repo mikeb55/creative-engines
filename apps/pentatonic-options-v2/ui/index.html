@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Pentatonic Options V2</title>
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <header>
+    <div>
+      <strong>Pentatonic Options V2</strong>
+      <span class="muted">Practice · Composer OS pentatonic engine</span>
+    </div>
+    <nav id="modes"></nav>
+  </header>
+  <main>
+    <section id="context">
+      <h2>Context</h2>
+      <label>Centre <input id="centre" value="C" /></label>
+      <label>Chord / sonority <input id="chord" placeholder="Fm11, N.C." /></label>
+      <label>Target notes <input id="targets" placeholder="Eb G Bb" /></label>
+      <label>Bass notes <input id="bass" placeholder="F C D" /></label>
+      <label>Held notes <input id="held" placeholder="Ab C" /></label>
+      <label>Landing note <input id="landing" placeholder="Eb" /></label>
+      <label>Motif <input id="motif" placeholder="F Ab Bb C" /></label>
+      <label>Guitar role
+        <select id="role">
+          <option value="">None</option>
+          <option>GUITAR_LEADS</option>
+          <option>GUITAR_RESPONDS</option>
+          <option>GUITAR_SUPPORTS</option>
+          <option>COUNTERPOINT</option>
+          <option>SHARED_FIELD</option>
+          <option>SPACE</option>
+        </select>
+      </label>
+      <label>Custom five notes <input id="custom" placeholder="C Eb F G Bb" /></label>
+      <button id="open-score" type="button">Open MusicXML</button>
+      <p id="score-path" class="muted">No score. Source stays read-only.</p>
+    </section>
+    <section id="stage">
+      <p id="mode-label" class="eyebrow">PRACTICE</p>
+      <h1 id="headline">Ready</h1>
+      <p id="notes" class="notes">Set a centre and generate.</p>
+      <dl id="facts"></dl>
+      <p id="reason" class="muted"></p>
+      <div id="extra"></div>
+    </section>
+    <section id="purpose">
+      <h2>Practice</h2>
+      <label>Difficulty
+        <select id="difficulty">
+          <option selected>SPARSE</option>
+          <option>INTERMEDIATE</option>
+          <option>EXPANDED</option>
+        </select>
+      </label>
+      <div id="categories"></div>
+      <h2>Field</h2>
+      <select id="field"></select>
+      <button id="show-fields" type="button">Field browser</button>
+      <button id="show-wheel" type="button">Colour wheel view</button>
+      <div id="side-list"></div>
+    </section>
+  </main>
+  <footer>
+    <button id="analyse" type="button">ANALYSE</button>
+    <button id="auto" type="button">AUTO COLOR</button>
+    <button id="generate" type="button">GENERATE</button>
+    <button id="compare" type="button">COMPARE</button>
+    <button id="next" class="primary" type="button">NEXT EXAMPLE</button>
+    <button id="export" type="button">EXPORT</button>
+    <button id="open-mscore" type="button">OPEN IN MUSESCORE</button>
+    <button id="reveal" type="button">REVEAL IN FINDER</button>
+    <button id="back" type="button">BACK</button>
+    <button id="favourite" type="button">FAVOURITE</button>
+    <button id="sheet" type="button">EXPORT PRACTICE SHEET</button>
+    <button id="reset" type="button">RESET</button>
+  </footer>
+  <script src="app.js"></script>
+</body>
+</html>
