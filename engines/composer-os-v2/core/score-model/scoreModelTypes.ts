@@ -51,6 +51,12 @@ export interface NoteEvent {
   durationAccent?: 'none' | 'stress';
   /** Optional motif/riff identity tag (symbolic layer; not exported to MusicXML). */
   motifRef?: string;
+  /**
+   * Optional written spelling for this sounding pitch.
+   * When set, MusicXML export uses this step and alter.
+   * When absent, the existing key-signature enharmonic rule is unchanged.
+   */
+  spelling?: { step: string; alter: number };
 }
 
 /** Rest event. */
@@ -228,5 +234,11 @@ export interface ScoreModel {
    * When present for a part, exporter writes `<words>` on that staff.
    */
   partMeasureWordsMarkings?: Record<string, Record<number, string>>;
+  /**
+   * Context spelling for export. Keys are pitch classes 0–11. Values are note tokens (`Eb`, `F#`).
+   * Applied only when set. Other notes keep the existing enharmonic rule.
+   * Does not change MIDI pitch.
+   */
+  pitchClassSpelling?: Readonly<Record<number, string>>;
   parts: PartModel[];
 }

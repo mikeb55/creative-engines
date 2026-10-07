@@ -22,6 +22,7 @@ import {
   transposeCollection,
   type MotifMapMethod,
   type PentatonicCollectionView,
+  type RhythmSlot,
 } from './motifTransform';
 import { mod12 } from './pitch';
 import { quartalLineFaults, quartalSubsets, realiseQuartalComp, realiseQuartalLine, type QuartalComp, type QuartalLine } from './quartalField';
@@ -147,6 +148,9 @@ export interface PentatonicPhraseRealisation {
   collectionName: string | null;
   returnKind: ReturnKind | null;
   pitches: readonly number[];
+  /** `source` when a motif/cell rhythm was supplied. `generated` keeps the even grid. */
+  rhythm: 'source' | 'generated';
+  rhythmEvents: readonly { kind: 'note' | 'rest'; startBeat: number; duration: number; pitch?: number }[];
   slipLanding: SlipLanding | null;
   slipDirection: SlipDirectionReport | null;
   holdField: HoldFieldReport | null;
@@ -365,6 +369,35 @@ function mapCell(
     meter: METER,
   });
   return mapped.notes.map((note) => note.pitch);
+}
+
+export function sourceRhythmAfterTransform(rhythm: readonly RhythmSlot[]): RhythmSlot[] {
+  return rhythm.map((slot) => ({ kind: slot.kind, startBeat: slot.startBeat, duration: slot.duration }));
+}
+
+function evenRhythm(pitches: readonly number[], beats = 4): { kind: 'note'; startBeat: number; duration: number; pitch: number }[] {
+  if (pitches.length === 0) return [];
+  const duration = Math.min(1, beats / pitches.length);
+  return pitches.map((pitch, index) => ({ kind: 'note', startBeat: index * duration, duration, pitch }));
+}
+
+function zipSourceRhythm(
+  pitches: readonly number[],
+  rhythm: readonly RhythmSlot[]
+): { kind: 'note' | 'rest'; startBeat: number; duration: number; pitch?: number }[] {
+  let index = 0;
+  const events: { kind: 'note' | 'rest'; startBeat: number; duration: number; pitch?: number }[] = [];
+  for (const slot of rhythm) {
+    if (slot.kind === 'rest') {
+      events.push({ kind: 'rest', startBeat: slot.startBeat, duration: slot.duration });
+      continue;
+    }
+    const pitch = pitches[index];
+    index += 1;
+    if (pitch === undefined) continue;
+    events.push({ kind: 'note', startBeat: slot.startBeat, duration: slot.duration, pitch });
+  }
+  return events;
 }
 
 function rotate(pitches: readonly number[]): number[] {
@@ -626,6 +659,8 @@ function silence(plan: OperatorPlan, home: PentatonicCollectionView | null, grou
     collectionName: home?.name ?? null,
     returnKind: null,
     pitches: [],
+    rhythm: 'generated',
+    rhythmEvents: [],
     slipLanding: null,
     slipDirection: null,
     holdField: null,
@@ -653,6 +688,7 @@ function finish(args: {
   returned: boolean;
   distinctCollections: number;
   harmonyBars?: readonly string[];
+  sourceRhythm?: readonly RhythmSlot[] | null;
   slipLanding?: SlipLanding | null;
   slipDirection?: SlipDirectionReport | null;
   holdField?: HoldFieldReport | null;
@@ -688,6 +724,11 @@ function finish(args: {
     collectionName: args.home.name,
     returnKind: args.returnKind,
     pitches: args.pitches,
+    rhythm: args.sourceRhythm && args.sourceRhythm.length > 0 ? 'source' : 'generated',
+    rhythmEvents:
+      args.sourceRhythm && args.sourceRhythm.length > 0
+        ? zipSourceRhythm(args.pitches, args.sourceRhythm)
+        : evenRhythm(args.pitches),
     slipLanding: args.slipLanding ?? null,
     slipDirection: args.slipDirection ?? null,
     holdField: args.holdField ?? null,
@@ -857,6 +898,8 @@ export function realisePentatonicPhrase(args: {
   returnKind?: ReturnKind;
   targetNotePc?: number | null;
   harmonyBars?: readonly string[];
+  /** Source motif timing. Pitch mapping stays on the existing grid. Rhythm is carried beside it. */
+  sourceRhythm?: readonly RhythmSlot[] | null;
   operator?: PentatonicOperator;
   considerHold?: boolean;
   quartalLine?: boolean;
@@ -1039,6 +1082,7 @@ export function realisePentatonicPhrase(args: {
       returned: true,
       distinctCollections: 1,
       harmonyBars: args.harmonyBars,
+      sourceRhythm: args.sourceRhythm,
       holdField: plan.operator === 'HOLD_FIELD' ? holdField : null,
     });
   }
@@ -1071,6 +1115,7 @@ export function realisePentatonicPhrase(args: {
       returned: true,
       distinctCollections: 1,
       harmonyBars: args.harmonyBars,
+      sourceRhythm: args.sourceRhythm,
     });
   }
 

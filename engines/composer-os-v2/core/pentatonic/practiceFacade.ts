@@ -5,7 +5,6 @@
  * This file does not add path resources, operators, or a second registry.
  */
 
-import { createHash } from 'node:crypto';
 import { evaluateGce, defaultGceWeights } from '../evaluation/gceEvaluator';
 import { exportScoreModelToMusicXml } from '../export/musicxmlExporter';
 import { CLEAN_ELECTRIC_GUITAR } from '../instrument-profiles/guitarProfile';
@@ -16,7 +15,7 @@ import { analyzePentatonicScore, formatPentatonicScoreMap } from './analyzeScore
 import { planAutoColor, MUSICAL_INTENTIONS, type MusicalIntention } from './autoColor';
 import { getPentatonicColourResource, listPentatonicColourResources } from './colourRegistry';
 import { evaluatePentatonicColour } from './colourEvaluate';
-import { midiNoteName, manualCollection } from './dev4cWorkflow';
+import { manualCollection } from './dev4cWorkflow';
 import type { DuoRole } from './formDuoIntelligence';
 import { assessGrounding, DEFAULT_OUTSIDE_BUDGET, type OutsideBudget } from './pathIntelligence';
 import {
@@ -24,7 +23,9 @@ import {
   mod12,
   parseNoteList,
   parseNoteToken,
+  pitchClassSpellingMap,
   spellFromReference,
+  spellingForPc,
   type ParsedNote,
 } from './pitch';
 import {
@@ -37,7 +38,8 @@ import {
 import { COMPARE_CANDIDATE_CAP, comparePentatonicCandidates, orderCompareCandidates } from './productionCompare';
 import { realiseQuartalComp, realiseQuartalLine } from './quartalField';
 import { buildPentatonicMusicContext, recommendPentatonicsFromRegion } from './recommend';
-import { collectionPitchClasses, transposeCollection, type PentatonicCollectionView } from './motifTransform';
+import { collectionPitchClasses, transposeCollection, type PentatonicCollectionView, type RhythmSlot } from './motifTransform';
+import type { ExplicitPitchSpelling } from '../export/musicXmlNoteFragment';
 
 export const PENTATONIC_OPTIONS_V2_FACADE_VERSION = 'pentatonic-options-v2-facade-1';
 
@@ -173,6 +175,10 @@ export interface PracticeRequest {
   guitarRole?: PracticeGuitarRole | '';
   variation?: number;
   intentions?: readonly MusicalIntention[];
+  /** Written source timing, including rests. Absent: even generated rhythm. */
+  sourceRhythm?: readonly RhythmSlot[];
+  /** Spelling of each source note, in sounding-note order. */
+  sourceSpellings?: readonly (ExplicitPitchSpelling | null)[];
 }
 
 export interface PracticeExample {
@@ -200,6 +206,7 @@ export interface PracticeExample {
   musicXml: string;
   variation: number;
   barCount: number;
+  rhythm: 'source' | 'generated';
 }
 
 export interface FieldBrowserRow {
@@ -278,7 +285,57 @@ export function defaultPracticeRequest(): PracticeRequest {
 }
 
 export function sha256Text(text: string): string {
-  return createHash('sha256').update(text).digest('hex');
+  return sha256Hex(text);
+}
+
+function sha256Hex(text: string): string {
+  const bytes = new TextEncoder().encode(text);
+  const bitLength = bytes.length * 8;
+  const withOne = new Uint8Array(((bytes.length + 9 + 63) >> 6) << 6);
+  withOne.set(bytes);
+  withOne[bytes.length] = 0x80;
+  const view = new DataView(withOne.buffer);
+  view.setUint32(withOne.length - 4, bitLength, false);
+  const k = new Uint32Array(64);
+  const primes = [
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+  ];
+  k.set(primes);
+  let h0 = 0x6a09e667, h1 = 0xbb67ae85, h2 = 0x3c6ef372, h3 = 0xa54ff53a;
+  let h4 = 0x510e527f, h5 = 0x9b05688c, h6 = 0x1f83d9ab, h7 = 0x5be0cd19;
+  const w = new Uint32Array(64);
+  for (let offset = 0; offset < withOne.length; offset += 64) {
+    for (let i = 0; i < 16; i += 1) w[i] = view.getUint32(offset + i * 4, false);
+    for (let i = 16; i < 64; i += 1) {
+      const s0 = rotr(w[i - 15]!, 7) ^ rotr(w[i - 15]!, 18) ^ (w[i - 15]! >>> 3);
+      const s1 = rotr(w[i - 2]!, 17) ^ rotr(w[i - 2]!, 19) ^ (w[i - 2]! >>> 10);
+      w[i] = (w[i - 16]! + s0 + w[i - 7]! + s1) >>> 0;
+    }
+    let a = h0, b = h1, c = h2, d = h3, e = h4, f = h5, g = h6, h = h7;
+    for (let i = 0; i < 64; i += 1) {
+      const s1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+      const ch = (e & f) ^ (~e & g);
+      const temp1 = (h + s1 + ch + k[i]! + w[i]!) >>> 0;
+      const s0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+      const maj = (a & b) ^ (a & c) ^ (b & c);
+      const temp2 = (s0 + maj) >>> 0;
+      h = g; g = f; f = e; e = (d + temp1) >>> 0; d = c; c = b; b = a; a = (temp1 + temp2) >>> 0;
+    }
+    h0 = (h0 + a) >>> 0; h1 = (h1 + b) >>> 0; h2 = (h2 + c) >>> 0; h3 = (h3 + d) >>> 0;
+    h4 = (h4 + e) >>> 0; h5 = (h5 + f) >>> 0; h6 = (h6 + g) >>> 0; h7 = (h7 + h) >>> 0;
+  }
+  return [h0, h1, h2, h3, h4, h5, h6, h7].map((word) => word.toString(16).padStart(8, '0')).join('');
+}
+
+function rotr(value: number, bits: number): number {
+  return ((value >>> bits) | (value << (32 - bits))) >>> 0;
 }
 
 function tokens(raw: string | undefined): string[] {
@@ -379,13 +436,28 @@ function silenceKindOf(category: PracticeCategory, texture: string | undefined):
   return 'SOUNDING';
 }
 
+type TimedPracticeEvent = {
+  kind: 'note' | 'rest';
+  startBeat: number;
+  duration: number;
+  pitch?: number;
+  spelling?: ExplicitPitchSpelling;
+};
+
 export function exportGuitarMusicXml(args: {
   title: string;
   chord: string;
   bars: readonly (readonly number[])[];
   bpm?: number;
+  /** Field spellings. Applied per generated note. Does not rewrite notes that already carry spelling. */
+  pitchClassSpelling?: Readonly<Record<number, string>>;
+  timed?: readonly (readonly TimedPracticeEvent[])[];
+  beats?: number;
+  beatType?: number;
 }): string {
-  const barCount = Math.max(1, args.bars.length);
+  const barCount = Math.max(1, args.timed?.length ?? args.bars.length);
+  const beats = args.beats ?? 4;
+  const beatType = args.beatType ?? 4;
   const chord = args.chord.trim() || 'N.C.';
   const part = createPart(
     'guitar',
@@ -398,24 +470,69 @@ export function exportGuitarMusicXml(args: {
     () => undefined
   );
   part.measures.forEach((measure, index) => {
-    measure.measureBeatSpanQuarters = 4;
-    const pitches = args.bars[index] ?? [];
-    if (pitches.length === 0) {
-      measure.events = [createRest(0, 4, 1)];
+    measure.measureBeatSpanQuarters = beats * (4 / beatType);
+    const timed = args.timed?.[index];
+    if (timed) {
+      measure.events = timed.map((event) => {
+        if (event.kind === 'rest' || event.pitch === undefined) return createRest(event.startBeat, event.duration, 1);
+        const note = createNote(event.pitch, event.startBeat, event.duration, 1);
+        const spelling = event.spelling ?? spellingFromMap(event.pitch, args.pitchClassSpelling);
+        if (spelling) note.spelling = spelling;
+        return note;
+      });
       return;
     }
-    const duration = Math.min(1, 4 / pitches.length);
-    const events: ScoreEvent[] = pitches.map((pitch, noteIndex) => createNote(pitch, noteIndex * duration, duration, 1));
+    const pitches = args.bars[index] ?? [];
+    if (pitches.length === 0) {
+      measure.events = [createRest(0, beats * (4 / beatType), 1)];
+      return;
+    }
+    const duration = Math.min(1, (beats * (4 / beatType)) / pitches.length);
+    const events: ScoreEvent[] = pitches.map((pitch, noteIndex) => {
+      const note = createNote(pitch, noteIndex * duration, duration, 1);
+      const spelling = spellingFromMap(pitch, args.pitchClassSpelling);
+      if (spelling) note.spelling = spelling;
+      return note;
+    });
     const used = duration * pitches.length;
-    if (used < 4 - 1e-6) events.push(createRest(used, 4 - used, 1));
+    const span = beats * (4 / beatType);
+    if (used < span - 1e-6) events.push(createRest(used, span - used, 1));
     measure.events = events;
   });
   const score = createScore(args.title, [part], { tempo: args.bpm ?? 92 });
-  score.timeSignature = { beats: 4, beatType: 4 };
+  score.timeSignature = { beats, beatType };
   score.barMeterMap = {};
-  for (let bar = 1; bar <= barCount; bar += 1) score.barMeterMap[bar] = { numerator: 4, denominator: 4 };
+  for (let bar = 1; bar <= barCount; bar += 1) score.barMeterMap[bar] = { numerator: beats, denominator: beatType };
   score.keySignature = { fifths: 0, mode: 'major', hideKeySignature: false };
   return xmlOf(score);
+}
+
+function spellingFromMap(midi: number, map: Readonly<Record<number, string>> | undefined): ExplicitPitchSpelling | undefined {
+  if (!map) return undefined;
+  const token = map[mod12(Math.round(midi))];
+  if (!token) return undefined;
+  return explicitSpelling(token);
+}
+
+export function explicitSpelling(token: string): ExplicitPitchSpelling | null {
+  const parsed = parseNoteToken(token);
+  if (!parsed) return null;
+  let alter = 0;
+  if (parsed.spelling.endsWith('bb')) alter = -2;
+  else if (parsed.spelling.endsWith('b')) alter = -1;
+  else if (parsed.spelling.endsWith('##')) alter = 2;
+  else if (parsed.spelling.endsWith('#')) alter = 1;
+  return { step: parsed.letter, alter };
+}
+
+function spellingMapFromText(notes: string): Record<number, string> {
+  return pitchClassSpellingMap(notes.split(/\s+/).filter(Boolean));
+}
+
+function namedMidi(midi: number, preferred: readonly ParsedNote[]): string {
+  const rounded = Math.round(midi);
+  const octave = Math.floor(rounded / 12) - 1;
+  return `${spellingForPc(mod12(rounded), preferred)}${octave}`;
 }
 
 function xmlOf(score: ScoreModel): string {
@@ -689,6 +806,12 @@ export function generatePracticeExample(request: PracticeRequest = {}): Practice
     returnKind: category === 'OUTSIDE_RETURN' ? 'HOME' : undefined,
     targetNotePc: landing?.pc ?? null,
     harmonyBars,
+    sourceRhythm:
+      merged.sourceRhythm &&
+      merged.sourceRhythm.length > 0 &&
+      (category === 'CELL_LINEAGE' || category === 'RESEAT' || category === 'HOME_CONTINUITY')
+        ? merged.sourceRhythm
+        : undefined,
     considerHold: category === 'HOLD_FIELD',
     quartalLine: category === 'QUARTAL_LINE',
   });
@@ -704,13 +827,21 @@ export function generatePracticeExample(request: PracticeRequest = {}): Practice
   const sounding = silenceKind === 'SOUNDING' && pitches.length > 0;
   const barCount = trajectoryBars(category, difficulty);
   const bars = sounding ? [pitches, ...Array.from({ length: barCount - 1 }, () => [] as number[])] : Array.from({ length: barCount }, () => [] as number[]);
+  const pitchClassSpelling = spellingMapFromText(fieldNotes);
+  const preferredSpellings = parseNoteList(fieldNotes.split(/\s+/).filter(Boolean));
+  const rhythm = sounding && realisation.rhythm === 'source' ? 'source' : 'generated';
+  const timed = sounding ? timedEventsForExample({ realisation, pitches, pitchClassSpelling, sourceSpellings: merged.sourceSpellings, home, fieldId, rhythm }) : undefined;
   const musicXml = exportGuitarMusicXml({
     title: `Pentatonic Options V2 ${PRACTICE_CATEGORY_LABELS[category]}`,
     chord,
     bars,
+    pitchClassSpelling,
+    timed,
   });
   const gce = gceFor(sounding ? pitches : [], !sounding);
-  const noteText = sounding ? pitches.map((pitch) => midiNoteName(pitch)).join(' ') : 'rest';
+  const noteText = sounding
+    ? pitches.map((pitch) => namedMidi(pitch, preferredSpellings.ok ? preferredSpellings.notes : [])).join(' ')
+    : 'rest';
   return {
     version: PENTATONIC_OPTIONS_V2_FACADE_VERSION,
     category,
@@ -736,7 +867,67 @@ export function generatePracticeExample(request: PracticeRequest = {}): Practice
     musicXml,
     variation,
     barCount,
+    rhythm: sounding ? rhythm : 'generated',
   };
+}
+
+function spellingMatches(spelling: ExplicitPitchSpelling, midi: number): boolean {
+  const parsed = explicitSpelling(`${spelling.step}${spelling.alter === 1 ? '#' : spelling.alter === -1 ? 'b' : spelling.alter === 2 ? '##' : spelling.alter === -2 ? 'bb' : ''}`);
+  if (!parsed) return false;
+  const token = `${spelling.step}${spelling.alter === 1 ? '#' : spelling.alter === -1 ? 'b' : spelling.alter === 2 ? '##' : spelling.alter === -2 ? 'bb' : ''}`;
+  return parseNoteToken(token)?.pc === mod12(Math.round(midi));
+}
+
+function timedEventsForExample(args: {
+  realisation: ReturnType<typeof realisePentatonicPhrase>;
+  pitches: readonly number[];
+  pitchClassSpelling: Record<number, string>;
+  sourceSpellings?: readonly (ExplicitPitchSpelling | null)[];
+  home: PentatonicCollectionView;
+  fieldId: string;
+  rhythm: 'source' | 'generated';
+}): TimedPracticeEvent[][] | undefined {
+  const slipMap =
+    args.realisation.plan.operator === 'SLIP' && args.realisation.slipDirection
+      ? slippedSpellingMap(args.home, args.fieldId, args.realisation.slipDirection.semitones)
+      : null;
+  if (args.rhythm === 'source') {
+    let noteIndex = 0;
+    const events: TimedPracticeEvent[] = args.realisation.rhythmEvents.map((event) => {
+      if (event.kind === 'rest' || event.pitch === undefined) {
+        return { kind: 'rest', startBeat: event.startBeat, duration: event.duration };
+      }
+      const source = args.sourceSpellings?.[noteIndex] ?? null;
+      noteIndex += 1;
+      const spelling =
+        source && spellingMatches(source, event.pitch) ? source : spellingFromMap(event.pitch, args.pitchClassSpelling);
+      return { kind: 'note', startBeat: event.startBeat, duration: event.duration, pitch: event.pitch, spelling };
+    });
+    return [events];
+  }
+  if (!slipMap) return undefined;
+  const duration = Math.min(1, 4 / args.pitches.length);
+  const soundedCount = args.realisation.lineage?.soundedCell.length ?? args.pitches.length;
+  const returnCount = args.realisation.returnKind ? 1 : 0;
+  return [
+    args.pitches.map((pitch, index) => {
+      const inSlip = index >= soundedCount && index < args.pitches.length - returnCount;
+      return {
+        kind: 'note' as const,
+        startBeat: index * duration,
+        duration,
+        pitch,
+        spelling: spellingFromMap(pitch, inSlip ? slipMap : args.pitchClassSpelling),
+      };
+    }),
+  ];
+}
+
+function slippedSpellingMap(home: PentatonicCollectionView, fieldId: string, semitones: number): Record<number, string> {
+  const resource = getPentatonicColourResource(fieldId);
+  if (!resource) return {};
+  const transposed = transposeCollection(home, semitones);
+  return pitchClassSpellingMap(spellFromReference(transposed.referenceNote, resource.intervals, resource.letterSteps));
 }
 
 function operatorFor(category: PracticeCategory): PentatonicOperator | undefined {
@@ -826,7 +1017,19 @@ export function comparePracticeExample(example: PracticeExample, intentions?: re
 export function exportPracticeSheet(examples: readonly PracticeExample[]): string {
   if (examples.length < 2 || examples.length > 8) throw new Error('Practice sheet needs 2 to 8 examples.');
   const bars = examples.map((example) => (example.silenceKind === 'SOUNDING' ? [...example.pitches] : []));
-  return exportGuitarMusicXml({ title: 'Pentatonic Options V2 Practice Sheet', chord: examples[0]?.chord || 'N.C.', bars });
+  const pitchClassSpelling: Record<number, string> = {};
+  for (const example of examples) {
+    for (const [pc, spelling] of Object.entries(spellingMapFromText(example.fieldNotes))) {
+      const key = Number(pc);
+      if (pitchClassSpelling[key] === undefined) pitchClassSpelling[key] = spelling;
+    }
+  }
+  return exportGuitarMusicXml({
+    title: 'Pentatonic Options V2 Practice Sheet',
+    chord: examples[0]?.chord || 'N.C.',
+    bars,
+    pitchClassSpelling,
+  });
 }
 
 export function museScoreOpenCommand(filePath: string): readonly string[] {

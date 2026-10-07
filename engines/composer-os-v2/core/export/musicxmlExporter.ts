@@ -38,7 +38,7 @@ import {
   typeAndDotsXml,
   tickSpecForLength,
 } from './musicXmlTickEncoding';
-import { midiToPitch, noteXmlPitchedFragment, noteXmlRestFragment } from './musicXmlNoteFragment';
+import { applyContextPitchSpellings, midiToPitch, noteXmlPitchedFragment, noteXmlRestFragment, pitchPartsForExport } from './musicXmlNoteFragment';
 import { logGuitarVoice2CheckpointFromScore } from '../goldenPath/phaseAGuitarPolyphonyProbe';
 import { assertNoteXmlCanonicalChildOrder, assertSibeliusExportMeasureStructure } from './exportMeasureStructureAssert';
 import { validateMusicXml } from '../../../../src/utils/musicXmlValidator';
@@ -1390,7 +1390,9 @@ function eventsToXml(
         for (let gi = 0; gi < grouped.length; gi++) {
           const note = grouped[gi]!;
           const exportMidi = note.pitch;
-          const { step, alter, octave } = midiToPitch(exportMidi, preferFlats);
+          const { step, alter, octave } = note.spelling
+            ? pitchPartsForExport(exportMidi, preferFlats, note.spelling)
+            : midiToPitch(exportMidi, preferFlats);
           const alterEl = alter !== 0 ? `<alter>${alter}</alter>` : '';
           const pitchXml = `<pitch><step>${step}</step>${alterEl}<octave>${octave}</octave></pitch>`;
           const art = (note as { articulation?: string }).articulation;
@@ -1807,6 +1809,7 @@ ${feelDirectionTypeXml}      <sound tempo="${bpm}"/>
 
     xml += `</score-partwise>
 `;
+    xml = applyContextPitchSpellings(xml, score.pitchClassSpelling);
     assertSibeliusExportMeasureStructure(xml);
     assertNoteXmlCanonicalChildOrder(xml);
     if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'production') {

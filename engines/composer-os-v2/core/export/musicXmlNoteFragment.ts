@@ -26,7 +26,64 @@ const ENHARM_SHARP_TO_FLAT: Record<string, { step: string; alter: number }> = {
   A: { step: 'B', alter: -1 },
 };
 
-export function midiToPitch(midi: number, preferFlats = false): MidiPitchParts {
+const NATURAL_PC: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+
+function accidentalDelta(accidental: string): number {
+  if (accidental === '#') return 1;
+  if (accidental === '##' || accidental === 'x') return 2;
+  if (accidental === 'b') return -1;
+  if (accidental === 'bb') return -2;
+  return 0;
+}
+
+/**
+ * Write `spelling` at the sounding pitch of `midi`.
+ * Octave follows the written letter, so Cb above B and B# below C stay the same MIDI note.
+ */
+export type ExplicitPitchSpelling = { step: string; alter: number };
+
+function accidentalSuffix(alter: number): string {
+  if (alter === 1) return '#';
+  if (alter === -1) return 'b';
+  if (alter === 2) return '##';
+  if (alter === -2) return 'bb';
+  return '';
+}
+
+/**
+ * Written spelling for one note. Absent spelling keeps `midiToPitch` unchanged.
+ */
+export function pitchPartsForExport(
+  midi: number,
+  preferFlats: boolean,
+  spelling?: ExplicitPitchSpelling | null
+): MidiPitchParts {
+  if (!spelling?.step) return midiToPitch(midi, preferFlats);
+  const spelled = spelledPitch(midi, `${spelling.step}${accidentalSuffix(spelling.alter)}`);
+  return spelled ?? midiToPitch(midi, preferFlats);
+}
+
+export function spelledPitch(midi: number, spelling: string): MidiPitchParts | null {
+  const match = spelling.trim().match(/^([A-Ga-g])(bb|##|b|#|x)?$/);
+  if (!match || !Number.isFinite(midi)) return null;
+  const step = match[1]!.toUpperCase();
+  const alter = accidentalDelta(match[2] ?? '');
+  const rounded = Math.round(midi);
+  const letterPc = NATURAL_PC[step];
+  if (letterPc === undefined) return null;
+  const sounding = ((letterPc + alter) % 12 + 12) % 12;
+  if (sounding !== ((rounded % 12) + 12) % 12) return null;
+  let octave = Math.floor(rounded / 12) - 1;
+  let written = (octave + 1) * 12 + letterPc + alter;
+  if (written !== rounded) octave += Math.round((rounded - written) / 12);
+  return { step, alter, octave };
+}
+
+export function midiToPitch(
+  midi: number,
+  preferFlats = false,
+  spellingByPc?: Readonly<Record<number, string>> | null
+): MidiPitchParts {
   const stepMap: Record<number, { step: string; alter: number }> = {
     0: { step: 'C', alter: 0 },
     1: { step: 'C', alter: 1 },
@@ -46,6 +103,11 @@ export function midiToPitch(midi: number, preferFlats = false): MidiPitchParts {
   }
   const rounded = Math.round(midi);
   const semitones = ((rounded % 12) + 12) % 12;
+  const hinted = spellingByPc?.[semitones];
+  if (hinted) {
+    const spelled = spelledPitch(rounded, hinted);
+    if (spelled) return spelled;
+  }
   const octave = Math.floor(rounded / 12) - 1;
   const entry = stepMap[semitones];
   if (!entry) {
@@ -60,6 +122,31 @@ export function midiToPitch(midi: number, preferFlats = false): MidiPitchParts {
     }
   }
   return { step, alter, octave };
+}
+
+/** Rewrite `<pitch>` spellings for pitch classes present in `spellingByPc`. Other pitches stay as exported. */
+export function applyContextPitchSpellings(
+  xml: string,
+  spellingByPc: Readonly<Record<number, string>> | null | undefined
+): string {
+  if (!spellingByPc || Object.keys(spellingByPc).length === 0) return xml;
+  return xml.replace(
+    /<pitch>\s*<step>([A-G])<\/step>\s*(?:<alter>(-?\d+)<\/alter>\s*)?<octave>(-?\d+)<\/octave>\s*<\/pitch>/g,
+    (full, step: string, alterText: string | undefined, octaveText: string) => {
+      const alter = alterText === undefined ? 0 : parseInt(alterText, 10);
+      const octave = parseInt(octaveText, 10);
+      const letterPc = NATURAL_PC[step];
+      if (letterPc === undefined || !Number.isFinite(alter) || !Number.isFinite(octave)) return full;
+      const midi = (octave + 1) * 12 + letterPc + alter;
+      const hinted = spellingByPc[((midi % 12) + 12) % 12];
+      if (!hinted) return full;
+      const spelled = spelledPitch(midi, hinted);
+      if (!spelled) return full;
+      if (spelled.step === step && spelled.alter === alter && spelled.octave === octave) return full;
+      const alterEl = spelled.alter !== 0 ? `<alter>${spelled.alter}</alter>` : '';
+      return `<pitch><step>${spelled.step}</step>${alterEl}<octave>${spelled.octave}</octave></pitch>`;
+    }
+  );
 }
 
 /** Rest note: rest → duration → voice → type (+ dots) → staff? (must match pitched-note discipline). */

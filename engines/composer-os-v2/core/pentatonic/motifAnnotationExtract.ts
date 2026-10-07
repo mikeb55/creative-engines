@@ -37,6 +37,16 @@ function children(parent: Element, name?: string): Element[] {
   return out;
 }
 
+function descendantText(parent: Element | null, name: string): string | undefined {
+  if (!parent) return undefined;
+  const all = parent.getElementsByTagName('*');
+  for (let index = 0; index < all.length; index += 1) {
+    const node = all[index]!;
+    if (localName(node) === name && node.textContent?.trim()) return node.textContent.trim();
+  }
+  return textOf(parent, name);
+}
+
 function textOf(parent: Element | null, name: string): string | undefined {
   if (!parent) return undefined;
   for (const child of children(parent, name)) {
@@ -146,15 +156,80 @@ function applyAttributes(measure: Element, state: { divisions: number; beats: nu
   }
 }
 
+export interface WrittenStaffEvent {
+  kind: 'note' | 'rest';
+  startBeat: number;
+  duration: number;
+  pitch?: number;
+  step?: string;
+  alter?: number;
+}
+
+export function readWrittenStaffMeasure(xml: string, role: 'guitar' | 'bass', sourceLabel: string): {
+  events: WrittenStaffEvent[];
+  meter: { beats: number; beatType: number };
+  tempo: number | null;
+  fifths: number | null;
+  mode: string | null;
+  chord: string | null;
+  octaveChange: number;
+} {
+  ensureMusicXmlDomParserPolyfill();
+  const Parser = (globalThis as unknown as { DOMParser?: typeof DOMParser }).DOMParser;
+  if (!Parser) throw new Error('DOMParser is unavailable.');
+  const doc = new Parser().parseFromString(xml, 'application/xml');
+  const part = role === 'bass' ? bassPart(doc) : guitarPart(doc);
+  if (!part) throw new Error(`No ${role} part.`);
+  const read = readGuitarMeasure(part, sourceLabel, null);
+  return {
+    events: read.events,
+    meter: read.meter,
+    tempo: read.tempo,
+    fifths: read.fifths,
+    mode: read.mode,
+    chord: read.chord,
+    octaveChange: read.octaveChange,
+  };
+}
+
+function bassPart(doc: Document): Element | null {
+  const root = doc.documentElement;
+  if (!root) return null;
+  let bassId: string | null = null;
+  for (const list of children(root, 'part-list')) {
+    for (const scorePart of children(list, 'score-part')) {
+      const name = `${textOf(scorePart, 'part-name') ?? ''} ${textOf(scorePart, 'instrument-name') ?? ''}`.toLowerCase();
+      if (name.includes('bass') && !bassId) bassId = scorePart.getAttribute('id');
+    }
+  }
+  if (!bassId) return null;
+  return children(root, 'part').find((part) => part.getAttribute('id') === bassId) ?? null;
+}
+
 function readGuitarMeasure(part: Element, sourceLabel: string, offsetDivisions: number | null): {
   notes: MotifNote[];
   rhythm: RhythmSlot[];
+  events: WrittenStaffEvent[];
   meter: { beats: number; beatType: number };
+  tempo: number | null;
+  fifths: number | null;
+  mode: string | null;
+  chord: string | null;
+  octaveChange: number;
 } {
-  const state = { divisions: 1, beats: 4, beatType: 4, chromatic: 0, octaveChange: 0 };
+  const state = { divisions: 1, beats: 4, beatType: 4, chromatic: 0, octaveChange: 0, fifths: null as number | null, mode: null as string | null, tempo: null as number | null };
   let measure: Element | null = null;
   for (const candidate of children(part, 'measure')) {
     applyAttributes(candidate, state);
+    const attributes = children(candidate, 'attributes')[0] ?? null;
+    const fifthsText = descendantText(attributes, 'fifths');
+    const modeText = descendantText(attributes, 'mode');
+    if (fifthsText) state.fifths = parseInt(fifthsText, 10);
+    if (modeText) state.mode = modeText;
+    for (const direction of children(candidate, 'direction')) {
+      const tempoText = descendantText(direction, 'per-minute');
+      if (tempoText) state.tempo = Number(tempoText);
+    }
     if (candidate.getAttribute('number') === sourceLabel) {
       measure = candidate;
       break;
@@ -162,7 +237,7 @@ function readGuitarMeasure(part: Element, sourceLabel: string, offsetDivisions: 
   }
   if (!measure) throw new Error(`Measure ${sourceLabel} is missing.`);
   const { divisions, beats, beatType, chromatic, octaveChange } = state;
-  const raw: { kind: 'note' | 'rest'; duration: number; pitch?: number }[] = [];
+  const raw: { kind: 'note' | 'rest'; duration: number; pitch?: number; step?: string; alter?: number }[] = [];
   let cursor = 0;
   for (const note of children(measure, 'note')) {
     const voice = textOf(note, 'voice') ?? '1';
@@ -189,7 +264,7 @@ function readGuitarMeasure(part: Element, sourceLabel: string, offsetDivisions: 
       raw[raw.length - 1]!.duration += duration;
       continue;
     }
-    raw.push({ kind: 'note', duration, pitch: midi });
+    raw.push({ kind: 'note', duration, pitch: midi, step, alter });
   }
   const expected = beats * (4 / beatType);
   const actual = raw.reduce((sum, item) => sum + item.duration / Math.max(1, divisions), 0);
@@ -197,14 +272,42 @@ function readGuitarMeasure(part: Element, sourceLabel: string, offsetDivisions: 
   const quarter = (duration: number) => (duration / Math.max(1, divisions)) * scale;
   const notes: MotifNote[] = [];
   const rhythm: RhythmSlot[] = [];
+  const events: WrittenStaffEvent[] = [];
   let start = 0;
   for (const item of raw) {
     const duration = quarter(item.duration);
     rhythm.push({ kind: item.kind, startBeat: start, duration });
     if (item.kind === 'note' && item.pitch !== undefined) {
       notes.push({ pitch: item.pitch, startBeat: start, duration });
+      events.push({ kind: 'note', startBeat: start, duration, pitch: item.pitch, step: item.step, alter: item.alter ?? 0 });
+    } else {
+      events.push({ kind: 'rest', startBeat: start, duration });
     }
     start += duration;
   }
-  return { notes, rhythm, meter: { beats, beatType } };
+  const chord = chordSymbolOf(measure);
+  return {
+    notes,
+    rhythm,
+    events,
+    meter: { beats, beatType },
+    tempo: state.tempo,
+    fifths: state.fifths,
+    mode: state.mode,
+    chord,
+    octaveChange: state.octaveChange,
+  };
+}
+
+function chordSymbolOf(measure: Element): string | null {
+  const harmony = children(measure, 'harmony')[0];
+  if (!harmony) return null;
+  const root = children(harmony, 'root')[0];
+  const step = root ? textOf(root, 'root-step') : undefined;
+  if (!step) return null;
+  const alter = parseInt(textOf(root ?? null, 'root-alter') ?? '0', 10);
+  const accidental = alter === 1 ? '#' : alter === -1 ? 'b' : alter === 2 ? '##' : alter === -2 ? 'bb' : '';
+  const kind = children(harmony, 'kind')[0];
+  const text = kind?.getAttribute('text') || kind?.textContent || '';
+  return `${step}${accidental}${text}`;
 }

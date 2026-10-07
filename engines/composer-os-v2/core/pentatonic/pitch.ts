@@ -99,3 +99,14 @@ export function spellingForPc(pc: number, preferred: readonly ParsedNote[]): str
   const found = preferred.find((note) => note.pc === mod12(pc));
   return found ? found.spelling : sharpName(pc);
 }
+
+/** Pitch-class → spelling. First spelling wins. Later tokens do not replace it. */
+export function pitchClassSpellingMap(spellings: readonly string[]): Record<number, string> {
+  const map: Record<number, string> = {};
+  for (const token of spellings) {
+    const parsed = parseNoteToken(token);
+    if (!parsed || map[parsed.pc] !== undefined) continue;
+    map[parsed.pc] = parsed.spelling;
+  }
+  return map;
+}

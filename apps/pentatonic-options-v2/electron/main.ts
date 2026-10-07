@@ -104,7 +104,7 @@ function createWindow(): void {
     height: 780,
     minWidth: 980,
     minHeight: 640,
-    title: 'Pentatonic Options V2',
+    title: 'Pentatonic Options',
     backgroundColor: '#16181d',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
