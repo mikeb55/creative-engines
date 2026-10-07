@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PENTATONIC_NOTE_CHOICES } from '@composer-os/core/pentatonic';
+import { AUTO_COLOR_GUI_INTENTIONS, autoColorContextFromAnalysis, planAutoColor, type AutoColorPlan, type DuoRole, type FormFunction, type MusicalIntention, PENTATONIC_NOTE_CHOICES } from '@composer-os/core/pentatonic';
 import {
   DEV4C_ACTIVITIES,
   DEV4C_DEFAULT_METHOD,
@@ -70,7 +70,7 @@ function GceBlock(props: { candidate: PentatonicCandidateView }) {
 }
 
 export function PentatonicWorkflowPanel() {
-  const [mode, setMode] = useState<'analyse' | 'transform' | 'generate'>('analyse');
+  const [mode, setMode] = useState<'analyse' | 'transform' | 'generate' | 'auto-color'>('analyse');
   const [fileName, setFileName] = useState('');
   const [xml, setXml] = useState('');
   const [reading, setReading] = useState<MusicianAnalysis | null>(null);
@@ -86,6 +86,12 @@ export function PentatonicWorkflowPanel() {
   const [chosen, setChosen] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [autoIntentions, setAutoIntentions] = useState<MusicalIntention[]>([]);
+  const [autoForm, setAutoForm] = useState<FormFunction>('unknown');
+  const [autoRole, setAutoRole] = useState<DuoRole>('UNKNOWN');
+  const [autoResource, setAutoResource] = useState<'major_pentatonic' | 'minor_pentatonic' | 'none'>('major_pentatonic');
+  const [autoGrounded, setAutoGrounded] = useState(false);
+  const [autoPlan, setAutoPlan] = useState<AutoColorPlan | null>(null);
 
   const region = reading?.analysis.regions[regionIndex] ?? null;
 
@@ -96,6 +102,7 @@ export function PentatonicWorkflowPanel() {
     setTransform(null);
     setGenerated(null);
     setChosen(null);
+    setAutoPlan(null);
     Promise.resolve(file.text())
       .then((text) => {
         setFileName(file.name);
@@ -120,6 +127,12 @@ export function PentatonicWorkflowPanel() {
         setTransform(null);
         setGenerated(null);
         setChosen(null);
+        const context = autoColorContextFromAnalysis(result.analysis);
+        setAutoForm(context.formFunction ?? 'unknown');
+        setAutoRole(context.duoRole ?? 'UNKNOWN');
+        setAutoResource(context.pathIsNone ? 'none' : context.currentResourceId === 'minor_pentatonic' ? 'minor_pentatonic' : 'major_pentatonic');
+        setAutoGrounded(context.grounding?.present === true);
+        setAutoPlan(null);
       })
       .catch((caught: unknown) => setError(caught instanceof Error ? caught.message : String(caught)))
       .finally(() => setBusy(false));
@@ -201,6 +214,52 @@ export function PentatonicWorkflowPanel() {
     downloadXml(`${safe}-${label}.musicxml`, musicXml);
   };
 
+  const toggleIntention = (intention: MusicalIntention) => {
+    setAutoPlan(null);
+    setAutoIntentions((current) => {
+      if (current.includes(intention)) return current.filter((item) => item !== intention);
+      if (current.length >= 3) return current;
+      return [...current, intention];
+    });
+  };
+
+  const onAutoColor = () => {
+    setAutoPlan(
+      planAutoColor({
+        intentions: autoIntentions,
+        formFunction: autoForm,
+        duoRole: autoRole,
+        pathIsNone: autoResource === 'none',
+        currentResourceId: autoResource === 'none' ? null : autoResource,
+        homeResourceId: autoResource === 'none' ? null : autoResource,
+        homeKnown: autoResource !== 'none',
+        fieldIsHome: autoResource !== 'none',
+        hasMotif: autoResource !== 'none',
+        lineageIdentity: autoResource === 'none' ? 'absent' : 'clear',
+        holdCredible: true,
+        quartalAvailable: autoResource !== 'none',
+        density: 'sparse',
+        grounding: autoGrounded
+          ? { present: true, bassPedal: true, bassOstinato: false, sustainedTone: true, motifIdentity: true, explicitAnchor: false }
+          : { present: false, bassPedal: false, bassOstinato: false, sustainedTone: false, motifIdentity: false, explicitAnchor: false },
+      })
+    );
+  };
+
+  const FORM_CHOICES: FormFunction[] = ['opening', 'continuation', 'development', 'climax', 'release', 'ending', 'unknown'];
+  const ROLE_CHOICES: DuoRole[] = [
+    'GUITAR_LEADS',
+    'BASS_LEADS',
+    'GUITAR_RESPONDS',
+    'BASS_RESPONDS',
+    'COUNTERPOINT',
+    'SHARED_FIELD',
+    'GUITAR_SUPPORTS',
+    'BASS_SUPPORTS',
+    'SPACE',
+    'UNKNOWN',
+  ];
+
   return (
     <div data-testid="pentatonic-workflow" style={{ display: 'grid', gap: '0.75rem', marginBottom: '1rem' }}>
       <label htmlFor="pentatonic-workflow-mode">
@@ -208,11 +267,12 @@ export function PentatonicWorkflowPanel() {
         <select
           id="pentatonic-workflow-mode"
           value={mode}
-          onChange={(event) => setMode(event.target.value as 'analyse' | 'transform' | 'generate')}
+          onChange={(event) => setMode(event.target.value as 'analyse' | 'transform' | 'generate' | 'auto-color')}
         >
           <option value="analyse">Analyse</option>
           <option value="transform">Transform Motif</option>
           <option value="generate">Generate Phrase</option>
+          <option value="auto-color">AUTO COLOR</option>
         </select>
       </label>
       <label htmlFor="pentatonic-workflow-file">
@@ -238,6 +298,11 @@ export function PentatonicWorkflowPanel() {
         {mode === 'generate' ? (
           <button type="button" data-testid="pentatonic-workflow-generate" onClick={onGenerate} disabled={busy || !reading}>
             Generate
+          </button>
+        ) : null}
+        {mode === 'auto-color' ? (
+          <button type="button" data-testid="pentatonic-auto-color-plan" onClick={onAutoColor} disabled={autoIntentions.length === 0}>
+            Plan
           </button>
         ) : null}
       </div>
@@ -277,7 +342,7 @@ export function PentatonicWorkflowPanel() {
         </div>
       ) : null}
 
-      {mode !== 'analyse' ? (
+      {mode === 'transform' || mode === 'generate' ? (
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           <label htmlFor="pentatonic-workflow-resource">
             Pentatonic resource
@@ -455,6 +520,105 @@ export function PentatonicWorkflowPanel() {
               >
                 Export MusicXML
               </button>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {mode === 'auto-color' ? (
+        <div data-testid="pentatonic-auto-color" style={{ display: 'grid', gap: '0.45rem' }}>
+          <div role="group" aria-label="Intentions" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+            {AUTO_COLOR_GUI_INTENTIONS.map(([intention, label]) => {
+              const on = autoIntentions.includes(intention);
+              return (
+                <button
+                  key={intention}
+                  type="button"
+                  className={on ? '' : 'secondary'}
+                  aria-pressed={on}
+                  data-testid={`pentatonic-auto-intention-${intention}`}
+                  onClick={() => toggleIntention(intention)}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <label htmlFor="pentatonic-auto-form">
+              Form
+              <select
+                id="pentatonic-auto-form"
+                value={autoForm}
+                onChange={(event) => {
+                  setAutoPlan(null);
+                  setAutoForm(event.target.value as FormFunction);
+                }}
+              >
+                {FORM_CHOICES.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label htmlFor="pentatonic-auto-role">
+              Duo
+              <select
+                id="pentatonic-auto-role"
+                value={autoRole}
+                onChange={(event) => {
+                  setAutoPlan(null);
+                  setAutoRole(event.target.value as DuoRole);
+                }}
+              >
+                {ROLE_CHOICES.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label htmlFor="pentatonic-auto-resource">
+              Current field
+              <select
+                id="pentatonic-auto-resource"
+                value={autoResource}
+                onChange={(event) => {
+                  setAutoPlan(null);
+                  const value = event.target.value;
+                  setAutoResource(value === 'minor_pentatonic' || value === 'none' ? value : 'major_pentatonic');
+                }}
+              >
+                <option value="major_pentatonic">Major Pentatonic</option>
+                <option value="minor_pentatonic">Minor Pentatonic</option>
+                <option value="none">NONE</option>
+              </select>
+            </label>
+            <label htmlFor="pentatonic-auto-ground">
+              <input
+                id="pentatonic-auto-ground"
+                type="checkbox"
+                checked={autoGrounded}
+                onChange={(event) => {
+                  setAutoPlan(null);
+                  setAutoGrounded(event.target.checked);
+                }}
+              />{' '}
+              Grounding
+            </label>
+          </div>
+          {autoPlan ? (
+            <div data-testid="pentatonic-auto-color-plan-result" style={{ display: 'grid', gap: '0.2rem' }}>
+              <p style={{ margin: 0 }}>INTENTION: {autoPlan.intentions.join(' + ') || 'none'}</p>
+              <p style={{ margin: 0 }}>FORM CONTEXT: {autoPlan.formFunction}</p>
+              <p style={{ margin: 0 }}>DUO CONTEXT: {autoPlan.duoRole}</p>
+              <p style={{ margin: 0 }}>PLAN: {autoPlan.outcome}</p>
+              <p style={{ margin: 0 }}>SELECTED RESOURCE: {autoPlan.selectedResource}</p>
+              <p style={{ margin: 0 }}>OPERATOR: {autoPlan.operator}</p>
+              <p style={{ margin: 0 }}>RETURN / RESOLUTION: {autoPlan.returnBehaviour}</p>
+              <p style={{ margin: 0 }}>SILENCE DECISION: {autoPlan.silencePreference}</p>
+              <p style={{ margin: 0 }}>RATIONALE: {autoPlan.rationale}</p>
             </div>
           ) : null}
         </div>

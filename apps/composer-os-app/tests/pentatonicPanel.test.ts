@@ -516,3 +516,44 @@ describe('pentatonic whole score', () => {
     expect(textOf(tree)).toContain('pentatonic-passage');
   });
 });
+
+describe('AUTO COLOR', () => {
+  it('resets with the pentatonic page and leaves the source score untouched', async () => {
+    const source = '<?xml version="1.0"?><score-partwise><work><work-title>Locked</work-title></work></score-partwise>';
+    const frozen = source;
+    const inherited = { tonalCentreRoot: 'D', tonalCentreMode: 'major' as const, harmonyBars: ['Dmaj7'] };
+    const inheritedFrozen = JSON.stringify(inherited);
+    const { PentatonicEnginePage } = await import('../src/pentatonic/PentatonicEnginePage');
+    let tree!: ReturnType<typeof create>;
+    await act(async () => {
+      tree = create(React.createElement(PentatonicEnginePage, { inherited }));
+    });
+    await act(async () => {
+      tree.root.findByProps({ id: 'pentatonic-workflow-mode' }).props.onChange({ target: { value: 'auto-color' } });
+    });
+    await act(async () => {
+      findButton(tree, 'pentatonic-auto-intention-RETAIN_MOTIF').props.onClick();
+    });
+    await act(async () => {
+      tree.root.findByProps({ id: 'pentatonic-auto-form' }).props.onChange({ target: { value: 'continuation' } });
+    });
+    await act(async () => {
+      findButton(tree, 'pentatonic-auto-color-plan').props.onClick();
+    });
+    const planned = textOf(tree);
+    expect(planned).toContain('INTENTION:');
+    expect(planned).toContain('RETAIN_MOTIF');
+    expect(planned).toContain('FORM CONTEXT:');
+    expect(planned).toContain('OPERATOR:');
+    expect(planned).toContain('CELL_LINEAGE');
+    expect(planned).not.toContain('Heuristic score');
+    expect(source).toBe(frozen);
+    await act(async () => {
+      findButton(tree, 'pentatonic-reset').props.onClick();
+    });
+    expect(textOf(tree)).not.toContain('CELL_LINEAGE');
+    expect(tree.root.findByProps({ id: 'pentatonic-workflow-mode' }).props.value).toBe('analyse');
+    expect(source).toBe(frozen);
+    expect(JSON.stringify(inherited)).toBe(inheritedFrozen);
+  });
+});

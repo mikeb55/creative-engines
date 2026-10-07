@@ -81,6 +81,16 @@ export {
 } from './quartalField';
 export { analyzePentatonicScore, formatPentatonicScoreMap, PENTATONIC_SCORE_ORDER_POLICY, importPentatonicScoreFromMusicXml } from './musicxml';
 export {
+  AUTO_COLOR_GUI_INTENTIONS,
+  DEV6B_REJECTED_BEHAVIOURS,
+  MUSICAL_INTENTIONS,
+  PENTATONIC_AUTO_COLOR_VERSION,
+  autoColorContextFromAnalysis,
+  benchmarkAutoColor,
+  parseMusicalIntentions,
+  planAutoColor,
+} from './autoColor';
+export {
   DEV6A_REJECTED_BEHAVIOURS,
   GUITAR_ADJACENT_STRING_INTERVALS,
   GUITAR_ADJACENT_STRING_PAIRS,
@@ -96,6 +106,7 @@ export {
   registerCapFaults,
   reportPentatonicFormDuo,
 } from './formDuoIntelligence';
+export type { DuoRole, FormFunction, RegisterClass } from './formDuoIntelligence';
 export {
   CURRENT_NON_REGISTRY_POLICY,
   PENTATONIC_TEMPORAL_LIMIT,
@@ -115,6 +126,14 @@ export type {
   PentatonicScorePart,
   PentatonicScoreRegion,
 } from './musicxml';
+export type {
+  AutoColorBenchmarkRow,
+  AutoColorContext,
+  AutoColorOutcome,
+  AutoColorPlan,
+  MusicalIntention,
+  StructuralStrategy,
+} from './autoColor';
 export type {
   ColourContextEvidence,
   ColourFieldAssessment,

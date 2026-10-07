@@ -74,6 +74,16 @@ A counterline wants its own rhythm and its own register. Sharing a pitch class i
 
 A slip can keep the same shape one fret higher or lower when that stays in range. A fourth can sit on adjacent strings. The G–B pair is a major third, so it is not that shape. There is still no tablature.
 
+## AUTO COLOR
+
+AUTO COLOR turns a small set of intentions into one restrained plan. It uses the score’s form, the duo roles, the current colour, and the phrase tools that are already there. It does not pick a scale from a sentence, and it does not imitate a player.
+
+You can combine intentions when they do not contradict. Darker and brighter together stay on the current field and say why.
+
+The plan prefers keeping the field, reseating it, or holding it. A new colour is the later choice. Silence, no phrase, and a path that declines a pentatonic stay three different results.
+
+The page shows the intention, the form, the duo, the plan, the resource, the operator, the return, the silence decision, and a short reason.
+
 ## Colour, not a cage
 
 The selected pentatonic is a colour field. Notes in the phrase may sit outside those five pitches when the line needs them.
