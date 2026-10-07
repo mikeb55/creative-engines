@@ -10,6 +10,7 @@ import {
 } from '@composer-os/core/pentatonic';
 import { PentatonicPassagePanel } from './PentatonicPassagePanel';
 import { PentatonicScorePanel } from './PentatonicScorePanel';
+import { PentatonicWorkflowPanel } from './PentatonicWorkflowPanel';
 import {
   emptyPassageRow,
   emptyPentatonicForm,
@@ -198,8 +199,12 @@ export function PentatonicEnginePage(props: {
         Pentatonic Engine
       </h2>
       <p style={{ color: 'var(--text-muted)', marginTop: 0 }}>
-        Region asks which five-note resource fits one area. Passage asks how resources move through an ordered passage. Whole score reads a MusicXML file.
+        Analyse a score, move a motif into another pentatonic colour, or ask for a sparse phrase. Silence is a real result. A pentatonic resource is a colour, not a claim that every note belongs to it.
       </p>
+      <PentatonicWorkflowPanel />
+      <details>
+        <summary>Region and passage tools</summary>
+        <div style={{ display: 'grid', gap: '0.75rem', marginTop: '0.75rem' }}>
       <label htmlFor="pentatonic-analysis-mode">
         Mode
         <select
@@ -534,6 +539,8 @@ export function PentatonicEnginePage(props: {
           </details>
         </div>
       ) : null}
+        </div>
+      </details>
     </section>
   );
 }

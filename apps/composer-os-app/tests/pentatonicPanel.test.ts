@@ -371,6 +371,31 @@ describe('PentatonicEnginePage', () => {
   });
 });
 
+describe('pentatonic workflow', () => {
+  it('offers analyse, transform, and generate with M-DEG and sparse defaults', async () => {
+    const { PentatonicEnginePage } = await import('../src/pentatonic/PentatonicEnginePage');
+    let tree!: ReturnType<typeof create>;
+    await act(async () => {
+      tree = create(React.createElement(PentatonicEnginePage));
+    });
+    const workflow = tree.root.findByProps({ id: 'pentatonic-workflow-mode' });
+    expect(workflow.props.value).toBe('analyse');
+    expect(textOf(tree)).toContain('Transform Motif');
+    expect(textOf(tree)).toContain('Generate Phrase');
+    await act(async () => {
+      workflow.props.onChange({ target: { value: 'transform' } });
+    });
+    expect(tree.root.findByProps({ id: 'pentatonic-workflow-method' }).props.value).toBe('M-DEG');
+    expect(textOf(tree)).toContain('pentatonic-degree pattern');
+    await act(async () => {
+      workflow.props.onChange({ target: { value: 'generate' } });
+    });
+    expect(tree.root.findByProps({ id: 'pentatonic-workflow-activity' }).props.value).toBe('SPARSE');
+    expect(textOf(tree)).toContain('No phrase / silence');
+    expect(tree.root.findByProps({ id: 'pentatonic-analysis-mode' })).toBeTruthy();
+  });
+});
+
 describe('pentatonic whole score', () => {
   it('loads MusicXML and shows a region map without hiding passage mode', async () => {
     const { PentatonicEnginePage } = await import('../src/pentatonic/PentatonicEnginePage');
