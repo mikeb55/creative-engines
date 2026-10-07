@@ -13,6 +13,11 @@ import { createNote, createPart, createRest, createScore } from '../score-model/
 import type { ScoreEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import { analyzePentatonicScore, formatPentatonicScoreMap } from './analyzeScore';
 import { planAutoColor, MUSICAL_INTENTIONS, type MusicalIntention } from './autoColor';
+import { fieldFromResource } from './fieldDistance';
+import { planGradedOut, type OutnessLevel } from './gradedOut';
+import { planLayeredField, type LayerRole } from './layeredField';
+import { extractParentField } from './parentExtraction';
+import { planPivotLink } from './pivotLink';
 import { getPentatonicColourResource, listPentatonicColourResources } from './colourRegistry';
 import { evaluatePentatonicColour } from './colourEvaluate';
 import { manualCollection } from './dev4cWorkflow';
@@ -65,14 +70,11 @@ export const PENTATONIC_OPTIONS_V2_SEAMS = [
   'exportScoreModelToMusicXml',
 ] as const;
 
-/** Named here so a later release can attach them. Not implemented. */
-export const DEV7_EXTENSION_SEAMS_NOT_IMPLEMENTED = [
-  'GRADED_OUT',
-  'PIVOT_LINK',
-  'FIELD_WALK',
-  'PARENT_EXTRACTION',
-  'BIMODAL_DUO',
-] as const;
+/** Dev 7 capabilities the practice app may call. Decisions stay in the engine. */
+export const DEV7_EXTENSION_SEAMS = ['planGradedOut', 'planPivotLink', 'extractParentField', 'planLayeredField'] as const;
+
+/** Discussed earlier and left out of Dev 7. */
+export const DEV7_DEFERRED_SEAMS = ['FIELD_WALK', 'BIMODAL_DUO', 'RHYTHMIC_GROUPING'] as const;
 
 export const PRACTICE_CATEGORIES = [
   'HOME_CONTINUITY',
@@ -1038,4 +1040,119 @@ export function museScoreOpenCommand(filePath: string): readonly string[] {
 
 export function revealInFinderCommand(filePath: string): readonly string[] {
   return ['open', '-R', filePath];
+}
+
+export const OUTNESS_LABELS: ReadonlyArray<readonly [OutnessLevel, string]> = [
+  ['SUBTLE', 'Subtle'],
+  ['MODERATE', 'Moderate'],
+  ['STRONG', 'Strong'],
+  ['REMOTE', 'Remote'],
+];
+
+const DISTANCE_WORDS: Record<string, string> = {
+  IDENTICAL: 'Same colour',
+  NEAR: 'Near',
+  RELATED: 'Related',
+  OUTSIDE: 'Outside',
+  REMOTE: 'Remote',
+};
+
+export interface ColourNavigationView {
+  title: string;
+  text: string;
+  candidates: readonly { slot: string; text: string }[];
+}
+
+function practiceField(request: PracticeRequest) {
+  return fieldFromResource(request.fieldId || 'minor_pentatonic', request.centre || 'C');
+}
+
+function notePcs(raw: string | undefined): number[] {
+  if (!raw?.trim()) return [];
+  const parsed = parseNoteList(raw.split(/[\s,]+/).filter(Boolean));
+  return parsed.ok ? parsed.notes.map((note) => note.pc) : [];
+}
+
+export function moveOut(request: PracticeRequest, outness: OutnessLevel = 'MODERATE'): ColourNavigationView {
+  const source = practiceField(request);
+  if (!source) return { title: 'Move out', text: 'That field is not in the vocabulary.', candidates: [] };
+  const home = fieldFromResource(source.resourceId ?? 'minor_pentatonic', request.centre || 'C');
+  const plan = planGradedOut({ source, outness, home });
+  const distance = DISTANCE_WORDS[plan.distance.distanceClass] ?? plan.distance.distanceClass;
+  const bridge = plan.returnPath.intermediate ? `Return can pass through ${plan.returnPath.intermediate.displayName}.` : 'Return stays on shared tones.';
+  const text = plan.disposition === 'STAY'
+    ? 'Current field already sits at the right distance.'
+    : `${plan.destination.displayName}. ${distance}. ${bridge}`;
+  return {
+    title: 'Move out',
+    text,
+    candidates: [
+      { slot: 'Current', text: source.displayName },
+      { slot: 'Graded', text },
+      { slot: 'Silence', text: 'Silence remains available. No lick was written.' },
+    ],
+  };
+}
+
+export function connectFields(request: PracticeRequest): ColourNavigationView {
+  const source = practiceField(request);
+  if (!source) return { title: 'Pivot link', text: 'That field is not in the vocabulary.', candidates: [] };
+  const graded = planGradedOut({ source, outness: 'MODERATE', home: source });
+  const destination = graded.disposition === 'MOVE' ? graded.destination : source;
+  const motif = notePcs(request.motif);
+  const pivot = planPivotLink({ source, destination, home: source, motifPitchClasses: motif });
+  const text = pivot.linkPhraseNeeded
+    ? `${pivot.explanation} Landing ${pivot.landingNote === null ? 'open' : 'tone held'}.`
+    : 'No link phrase. Hold the field.';
+  return {
+    title: 'Pivot link',
+    text,
+    candidates: [
+      { slot: 'Current', text: source.displayName },
+      { slot: 'Pivot', text },
+      { slot: 'Silence', text: 'Silence remains available.' },
+    ],
+  };
+}
+
+export function deriveField(request: PracticeRequest): ColourNavigationView {
+  const parent = [...notePcs(request.targetNotes), ...notePcs(request.bassNotes), ...notePcs(request.heldNotes), ...notePcs(request.motif)];
+  const current = practiceField(request);
+  const extracted = extractParentField({
+    parentPitchClasses: parent,
+    melodyPitchClasses: notePcs(request.targetNotes),
+    bassPitchClasses: notePcs(request.bassNotes),
+    motifPitchClasses: notePcs(request.motif),
+    current,
+    centreSpelling: request.centre || 'C',
+  });
+  if (extracted.disposition !== 'FIELDS') {
+    return {
+      title: 'Extract',
+      text: extracted.explanation,
+      candidates: [
+        { slot: 'Extracted', text: 'None' },
+        { slot: 'Contrast', text: 'None' },
+        { slot: 'NONE', text: extracted.explanation },
+      ],
+    };
+  }
+  const slots = ['Strongest', 'Contrast', 'Sparse'];
+  const candidates = extracted.candidates.slice(0, 3).map((row, index) => ({
+    slot: slots[index] ?? row.rank,
+    text: `${row.field.displayName}. ${row.field.noteNames.join(' ')}`,
+  }));
+  while (candidates.length < 3) candidates.push({ slot: 'NONE', text: 'No further subset.' });
+  return { title: 'Extract', text: extracted.explanation, candidates };
+}
+
+export function layerField(request: PracticeRequest, role: LayerRole = 'GUITAR_ACTIVE_BASS_SLOW'): ColourNavigationView {
+  const field = practiceField(request);
+  if (!field) return { title: 'Layered field', text: 'That field is not in the vocabulary.', candidates: [] };
+  const bassLeads = request.guitarRole === 'GUITAR_RESPONDS' || request.guitarRole === 'GUITAR_SUPPORTS';
+  const plan = planLayeredField({ field, role: request.guitarRole === 'SPACE' ? 'SHARED_SPACE' : bassLeads ? 'GUITAR_SLOW_BASS_ACTIVE' : role });
+  const text = plan.roleRelation === 'SHARED_SPACE'
+    ? `${field.displayName} stays. Both layers rest.`
+    : `${field.displayName}. Bass ${plan.bassSubset.length} notes, guitar ${plan.guitarSubset.length}. ${plan.densityRelation}`;
+  return { title: 'Layered field', text, candidates: [{ slot: 'Field', text }] };
 }

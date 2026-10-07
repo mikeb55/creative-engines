@@ -133,3 +133,21 @@ Choose a candidate and audition it. Export writes a separate MusicXML file: the 
 Dev 6 freezes this workflow. Path registry stays major pentatonic and minor pentatonic. Colour registry stays 20 resources. `changeCost` stays `0.35`. Dev 3.7 fingerprint stays `cca0456e61a2a14e06f4aa14af0ae4bff902a46baa18ced000aec9ab146c91e6`. Tag `pentatonic-dev5-baseline` stays on Dev 5. The release tag is `pentatonic-dev6-release`.
 
 Operators kept: cell lineage, retain, reseat, hold-field, path none, no-phrase, structural silence. Slip, tritone pair, quartal comp, and quartal line stay, with the limits already in force. No operator was removed. Through, generic sequence, generic intensify, and a Woody Shaw semitone pair were not added.
+
+## Dev 7 colour navigation
+
+Dev 7 does not add a second engine. Dev 6 still plans. The new calls describe how one colour field sits against another.
+
+Distance uses shared notes, how far the other notes move, the centre, and whether a return is audible. The classes are identical, near, related, outside, and remote. Shared count alone does not decide.
+
+Move out asks for subtle, moderate, strong, or remote. It chooses a field relationship. It does not write a lick. A strong or remote move keeps a return: shared tones, a landing note, and an intermediate field when the two fields share nothing.
+
+Pivot link is the smallest motion between two fields: a common tone, one or two nearby notes, a held landing, or the same motif sat on the new field. If the fields are already the same, no link phrase is needed. A scale is not used as a bridge.
+
+Extract from context looks for up to three five-note subsets in a larger collection. If none is convincing, the result is NONE. If there are not enough notes, the result is insufficient context. A set that already has a name keeps that name. A new set stays an extracted field and is not added to the permanent list.
+
+Layered field keeps one colour for guitar and bass and gives them different note counts. It is not both instruments playing the same line.
+
+The shipped minor sixth pentatonic is still `0 3 5 8 10`. That is a flat sixth in place of the fifth. The collection `0 3 5 7 9` is a rotation of lydian pentatonic, so it was not added. Dorian and aeolian each contain a semitone while their chromatic edge stays low. That mismatch is reported and left alone, because changing it would move Dev 6's darker and brighter step.
+
+Colour registry stays 20. `changeCost` stays `0.35`. Fingerprint stays `cca0456e61a2a14e06f4aa14af0ae4bff902a46baa18ced000aec9ab146c91e6`. Tag `pentatonic-dev7-release`. Tags `pentatonic-dev6-release` and `pentatonic-options-v2.1-release` stay where they are.

@@ -10,6 +10,10 @@ V2 calls the Composer OS pentatonic engine. It does not own a second engine.
 | Colour reading | `evaluatePentatonicColour` |
 | Path home collection | `manualCollection` |
 | AUTO COLOR | `planAutoColor` |
+| Move out | `planGradedOut` via `moveOut` |
+| Pivot link | `planPivotLink` via `connectFields` |
+| Extract from context | `extractParentField` via `deriveField` |
+| Layered field | `planLayeredField` via `layerField` |
 | Motif transformation | `transformCell`, `realisePentatonicPhrase` |
 | Phrase generation | `realisePentatonicPhrase`, `planPentatonicOperator` |
 | Quartal cells | `realiseQuartalComp`, `realiseQuartalLine` |
@@ -22,4 +26,4 @@ Adapter: `engines/composer-os-v2/core/pentatonic/practiceFacade.ts`.
 
 App: `apps/pentatonic-options-v2/`. UI state, session history, and MuseScore `open` live there.
 
-Not implemented: `GRADED_OUT`, `PIVOT_LINK`, `FIELD_WALK`, `PARENT_EXTRACTION`, `BIMODAL_DUO`.
+Deferred: `FIELD_WALK` (strategy note only), `BIMODAL_DUO`, `RHYTHMIC_GROUPING`.

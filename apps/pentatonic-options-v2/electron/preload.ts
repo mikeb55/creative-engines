@@ -16,6 +16,10 @@ const api = {
   openMuseScore: (filePath: string) => ipcRenderer.invoke('practice:open', filePath),
   reveal: (filePath: string) => ipcRenderer.invoke('practice:reveal', filePath),
   intentions: () => ipcRenderer.invoke('practice:intentions'),
+  moveOut: (request: unknown, outness: string) => ipcRenderer.invoke('practice:moveOut', request, outness),
+  pivot: (request: unknown) => ipcRenderer.invoke('practice:pivot', request),
+  extract: (request: unknown) => ipcRenderer.invoke('practice:extract', request),
+  layered: (request: unknown) => ipcRenderer.invoke('practice:layered', request),
 };
 
 contextBridge.exposeInMainWorld('practice', api);

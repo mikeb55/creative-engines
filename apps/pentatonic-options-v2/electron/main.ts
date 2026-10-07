@@ -2,6 +2,8 @@ import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fieldFromResource } from '../../../engines/composer-os-v2/core/pentatonic/fieldDistance';
+import { planGradedOut } from '../../../engines/composer-os-v2/core/pentatonic/gradedOut';
 import {
   AUTO_COLOR_LABELS,
   analyseManualContext,
@@ -14,6 +16,10 @@ import {
   listPracticeFields,
   museScoreOpenCommand,
   nextPracticeExample,
+  connectFields,
+  deriveField,
+  layerField,
+  moveOut,
   planPracticeAutoColor,
   revealInFinderCommand,
   sha256Text,
@@ -96,6 +102,10 @@ function registerIpc(): void {
     return true;
   });
   ipcMain.handle('practice:intentions', () => AUTO_COLOR_LABELS);
+  ipcMain.handle('practice:moveOut', (_event, request: PracticeRequest, outness: 'SUBTLE' | 'MODERATE' | 'STRONG' | 'REMOTE') => moveOut(request ?? {}, outness || 'MODERATE'));
+  ipcMain.handle('practice:pivot', (_event, request: PracticeRequest) => connectFields(request ?? {}));
+  ipcMain.handle('practice:extract', (_event, request: PracticeRequest) => deriveField(request ?? {}));
+  ipcMain.handle('practice:layered', (_event, request: PracticeRequest) => layerField(request ?? {}));
 }
 
 function createWindow(): void {
@@ -122,7 +132,9 @@ app.whenReady().then(() => {
   registerIpc();
   if (selfTest) {
     const example = generatePracticeExample({});
-    if (!example.musicXml.includes('<score-partwise')) {
+    const source = fieldFromResource('minor_pentatonic', 'C');
+    const graded = source ? planGradedOut({ source, outness: 'SUBTLE' }) : null;
+    if (!example.musicXml.includes('<score-partwise') || !graded) {
       console.error('SELF_TEST_FAIL export');
       app.exit(1);
       return;

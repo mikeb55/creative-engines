@@ -224,6 +224,18 @@ document.body.addEventListener('click', async (event) => {
     state.lastExport = await practice.exportSheet(chosen.slice(0, 8));
     $('extra').textContent = state.lastExport;
   }
+  if (id === 'move-out' || id === 'pivot' || id === 'extract' || id === 'layered') {
+    const view = id === 'move-out'
+      ? await practice.moveOut(request(), $('outness').value)
+      : id === 'pivot'
+        ? await practice.pivot(request())
+        : id === 'extract'
+          ? await practice.extract(request())
+          : await practice.layered(request());
+    $('headline').textContent = view.title;
+    $('notes').textContent = view.text;
+    $('extra').innerHTML = (view.candidates || []).map((row) => `<div class="card"><strong>${row.slot}</strong><br>${row.text}</div>`).join('');
+  }
   if (id === 'reset') reset();
 });
 

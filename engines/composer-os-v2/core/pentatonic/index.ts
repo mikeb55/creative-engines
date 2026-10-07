@@ -163,8 +163,21 @@ export type {
   PentatonicColourResource,
 } from './colourTypes';
 export {
+  assessFieldWalkStrategy,
+  planGradedOut,
+  PENTATONIC_GRADED_OUT_VERSION,
+} from './gradedOut';
+export { planPivotLink, PENTATONIC_PIVOT_LINK_VERSION } from './pivotLink';
+export { extractParentField, PENTATONIC_PARENT_EXTRACTION_VERSION } from './parentExtraction';
+export { DEV7_DEFERRED, planLayeredField, PENTATONIC_LAYERED_FIELD_VERSION } from './layeredField';
+export { measureFieldDistance, fieldFromResource, fieldFromPitchClasses, PENTATONIC_FIELD_DISTANCE_VERSION } from './fieldDistance';
+export { auditEdgeMetadata, auditMinorSixth } from './colourAudit';
+export { reportColourDegrees } from './colourDegrees';
+export { planColourNavigation } from './dev7Integration';
+export {
   AUTO_COLOR_LABELS,
-  DEV7_EXTENSION_SEAMS_NOT_IMPLEMENTED,
+  DEV7_DEFERRED_SEAMS,
+  DEV7_EXTENSION_SEAMS,
   PENTATONIC_OPTIONS_V2_FACADE_VERSION,
   PENTATONIC_OPTIONS_V2_SEAMS,
   PRACTICE_CATEGORIES,
@@ -184,6 +197,11 @@ export {
   nextPracticeExample,
   planPracticeAutoColor,
   revealInFinderCommand,
+  moveOut,
+  connectFields,
+  deriveField,
+  layerField,
+  OUTNESS_LABELS,
   sha256Text,
   transformPracticeCell,
 } from './practiceFacade';
