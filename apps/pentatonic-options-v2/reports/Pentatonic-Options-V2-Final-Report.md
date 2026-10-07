@@ -2,9 +2,11 @@
 
 REPO: `/Users/user/Documents/DEVS/creative-engines`
 BRANCH: `macos-launcher-verification`
-FINAL COMMIT: `c0a53945c360d6ee4ed730b1f1dd247a607f7653`
+FINAL COMMIT: `cf940f7b75fb647cdac520ddd52e67a72bff67e7`
 DEV 6 RELEASE COMMIT: `5eae25f83707118b9a4b3fb88b3fc45361c884ee`
-DEV 6 TAG: `pentatonic-dev6-release` (unchanged, still points at the Dev 6 release commit)
+DEV 6 TAG: `pentatonic-dev6-release` (unchanged, still `5eae25f83707118b9a4b3fb88b3fc45361c884ee`)
+V2 TAG: `pentatonic-options-v2-release` at `cf940f7b75fb647cdac520ddd52e67a72bff67e7`
+REMOTE MAIN TIP: `cf940f7b75fb647cdac520ddd52e67a72bff67e7`
 
 V1 ARCHIVE PATH: `/Users/user/Documents/DEVS/Pentatonic-Options/ARCHIVE/Pentatonic-Options-V1-FROZEN-2026-10-07/`
 
@@ -91,7 +93,13 @@ V1 source and `/Users/user/Desktop/Pentatonic Options.app` were not deleted or r
 
 ## TESTS
 
-`engines/composer-os-v2/tests/pentatonicOptionsV2.test.ts`: 29/29 PASS.
+Re-run 2026-10-07, exit 0:
+
+- `pentatonicOptionsV2.test.ts`: 29/29 PASS
+- Dev 3.7 fingerprint (`pentatonicDev37.test.ts`): 10/10 PASS
+- Dev 4 (`pentatonicDev4.test.ts`): 12/12 PASS
+- Dev 5a (`pentatonicDev5a.test.ts`): 9/9 PASS
+- Dev 6c (`pentatonicDev6c.test.ts`): 4/4 PASS
 
 Covers authoritative imports, no local engine, all practice categories including SLIP, silence kinds, custom collection, read-only score, compare cap, GCE advisory order, MusicXML, MuseScore command, reset, next example, field browser, legacy wheel, session history, Dev 3.7 fingerprint, and desktop `--self-test`.
 
@@ -108,9 +116,10 @@ Covers authoritative imports, no local engine, all practice categories including
 - Self-test printed `SELF_TEST_OK HOME_CONTINUITY CELL_LINEAGE C4 F4 G4`: PASS
 - Sparse example C4 F4 G4: PASS
 - Field browser, silence categories, compare, next example, custom collection, read-only MusicXML: PASS in the automated suite
-- MusicXML written to `/tmp/Pentatonic-Options-V2-practice.musicxml`: PASS
-- `open -a "MuseScore 4"` returned 0 and MuseScore 4 process started: PASS
-- MuseScore page was not visually inspected
+- WWH Orbit V2.1 analysed read-only (SHA-256 `911f07a6aa9deab3ddd5b7a97eff9bd9dc987a8f8cce5038201553a8b978b3db`). Practice cell from centre F, F minor pentatonic, motif `F Eb G# Bb`, chord `Fmaj7#11`, bass F. Notes `F4 D#4 G#4 A#4`. Not the C4 F4 G4 self-test.
+- MusicXML: `apps/pentatonic-options-v2/reports/wwh-orbit-practice.musicxml`
+- MuseScore 4 page 1 screenshot: `apps/pentatonic-options-v2/reports/musescore-page1.png`
+- Page 1: four quarter notes present (F, D#, G#, A#). Treble clef. 4/4. Tempo 92. Chord `Fmaj7#11`. One full bar, no empty bar, no collisions. Key signature is the export default (no sharps or flats), which matches the file.
 - Bundle id `com.thirdsun.pentatonicoptions.v2`
 
 ## FINAL STATUS
@@ -120,9 +129,10 @@ NO DUPLICATE ENGINE: PASS
 DESKTOP LAUNCH: PASS
 PRACTICE WORKFLOW: PASS
 MUSICXML EXPORT: PASS
-MUSESCORE OPEN: PASS
+MUSESCORE VISUAL: PASS
+SCREENSHOT: `apps/pentatonic-options-v2/reports/musescore-page1.png`
 DEV 6 REGRESSION: PASS
-V2 READY TO REPLACE V1: YES
+V2 READY FOR GUITAR AUDITION
 
 ## FINAL VERDICT
 
