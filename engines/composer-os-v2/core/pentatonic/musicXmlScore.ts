@@ -37,6 +37,13 @@ export interface PentatonicSoundingAttack {
   durationBeats: number;
 }
 
+/** Written MIDI for register checks. Path scoring still uses pitch class. */
+export interface PentatonicRegisterAttack {
+  role: 'melody' | 'bass';
+  midi: number;
+  durationBeats: number;
+}
+
 export interface PentatonicMotifMark {
   type: 'motif';
   label: string;
@@ -61,6 +68,7 @@ export interface PentatonicScoreEvent {
   bassNotes?: string[];
   heldNotes?: string[];
   soundingAttacks: readonly PentatonicSoundingAttack[];
+  registerAttacks?: readonly PentatonicRegisterAttack[];
   melodyRest?: boolean;
   bassRest?: boolean;
   durationBeats?: number;
@@ -198,9 +206,15 @@ interface NoteAttack {
   durationBeats: number;
 }
 
+interface NoteMidi {
+  midi: number;
+  durationBeats: number;
+}
+
 interface NoteScan {
   spellings: string[];
   attacks: NoteAttack[];
+  midis: NoteMidi[];
   pitched: number;
   rests: number;
   grace: number;
@@ -210,12 +224,21 @@ interface NoteScan {
 }
 
 function emptyScan(): NoteScan {
-  return { spellings: [], attacks: [], pitched: 0, rests: 0, grace: 0, cue: 0, durationBeats: 0, voices: [] };
+  return { spellings: [], attacks: [], midis: [], pitched: 0, rests: 0, grace: 0, cue: 0, durationBeats: 0, voices: [] };
+}
+
+function attackMidi(step: string, alter: string | undefined, octaveText: string | undefined): number | null {
+  const octave = parseInt(octaveText ?? '', 10);
+  if (!Number.isFinite(octave)) return null;
+  const parsed = parseNoteToken(formatSpelling(step, alter));
+  if (!parsed) return null;
+  return (octave + 1) * 12 + parsed.pc;
 }
 
 function scanNotes(measure: Element, mode: 'melody' | 'held' | 'all', divisions: number): NoteScan {
   const spellings: string[] = [];
   const attacks: NoteAttack[] = [];
+  const midis: NoteMidi[] = [];
   const voices = new Set<string>();
   let pitched = 0;
   let rests = 0;
@@ -245,11 +268,17 @@ function scanNotes(measure: Element, mode: 'melody' | 'held' | 'all', divisions:
     const step = pitch ? firstText(pitch, 'step') : undefined;
     if (!pitch || !step) continue;
     const spelling = formatSpelling(step, firstText(pitch, 'alter'));
+    const midi = attackMidi(step, firstText(pitch, 'alter'), firstText(pitch, 'octave'));
     const ties = childElements(note, 'tie').map((tie) => tie.getAttribute('type') ?? '');
     const continuation = ties.includes('stop') && !ties.includes('start');
     if (continuation && spellings.includes(spelling)) {
       const existing = attacks.find((attack) => attack.spelling === spelling);
       if (existing) existing.durationBeats += beats;
+      if (midi !== null) {
+        const held = midis.find((attack) => attack.midi === midi);
+        if (held) held.durationBeats += beats;
+        else midis.push({ midi, durationBeats: beats });
+      }
       durationBeats += beats;
       continue;
     }
@@ -257,10 +286,15 @@ function scanNotes(measure: Element, mode: 'melody' | 'held' | 'all', divisions:
     const existing = attacks.find((attack) => attack.spelling === spelling);
     if (existing) existing.durationBeats += beats;
     else attacks.push({ spelling, durationBeats: beats });
+    if (midi !== null) {
+      const held = midis.find((attack) => attack.midi === midi);
+      if (held) held.durationBeats += beats;
+      else midis.push({ midi, durationBeats: beats });
+    }
     pitched += 1;
     durationBeats += beats;
   }
-  return { spellings, attacks, pitched, rests, grace, cue, durationBeats, voices: [...voices] };
+  return { spellings, attacks, midis, pitched, rests, grace, cue, durationBeats, voices: [...voices] };
 }
 
 function degreeTokens(harmony: Element): string[] {
@@ -674,6 +708,18 @@ export function importPentatonicScoreFromMusicXml(xml: string): PentatonicScoreI
         durationBeats: Math.round(attack.durationBeats * 1000) / 1000,
       })),
     ];
+    const registerAttacks: PentatonicRegisterAttack[] = [
+      ...melodyScan.midis.map((attack) => ({
+        role: 'melody' as const,
+        midi: attack.midi + guitarShift,
+        durationBeats: Math.round(attack.durationBeats * 1000) / 1000,
+      })),
+      ...bassScan.midis.map((attack) => ({
+        role: 'bass' as const,
+        midi: attack.midi + bassShift,
+        durationBeats: Math.round(attack.durationBeats * 1000) / 1000,
+      })),
+    ];
     const melodyRest =
       Boolean(guitar) && (melodyNotes?.length ?? 0) === 0 && (melodyScan.rests > 0 || heldScan.pitched > 0);
     const bassRest = Boolean(bass) && bassScan.pitched === 0 && bassScan.rests > 0;
@@ -692,6 +738,7 @@ export function importPentatonicScoreFromMusicXml(xml: string): PentatonicScoreI
       chordCarried,
       harmonyEvidence,
       soundingAttacks,
+      ...(registerAttacks.length > 0 ? { registerAttacks } : {}),
       ...(melodyNotes && melodyNotes.length > 0 ? { melodyNotes } : {}),
       ...(bassNotes && bassNotes.length > 0 ? { bassNotes } : {}),
       ...(heldNotes && heldNotes.length > 0 ? { heldNotes } : {}),

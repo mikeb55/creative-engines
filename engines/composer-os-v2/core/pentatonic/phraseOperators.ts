@@ -152,6 +152,8 @@ export interface PentatonicPhraseRealisation {
   holdField: HoldFieldReport | null;
   quartal: QuartalComp | QuartalLine | null;
   advisory: PhraseAdvisory;
+  /** Set only when Dev 6A asks for structural silence. Absent on Dev 5 phrases. */
+  textureChoice?: 'STRUCTURAL_SILENCE';
 }
 
 export function fourNoteSubset(collection: PentatonicCollectionView, omitIndex: number, register = 60): number[] {
@@ -858,12 +860,31 @@ export function realisePentatonicPhrase(args: {
   operator?: PentatonicOperator;
   considerHold?: boolean;
   quartalLine?: boolean;
+  /** Dev 6A. Writes no notes and does not set the path to NONE. */
+  structuralSilence?: boolean;
 }): PentatonicPhraseRealisation {
   const grounding =
     args.grounding ??
     assessGrounding({
       motifIdentityRetained: Boolean(args.motif && args.motif.notes.length >= 3),
     });
+  if (args.structuralSilence === true) {
+    const silent = silence(
+      {
+        purpose: args.purpose === 'NO_PHRASE' ? 'MOTIF' : args.purpose,
+        operator: 'NONE',
+        trajectory: 'RETAIN_CURRENT_FIELD',
+        phraseResult: 'NO_PHRASE',
+        method: DEV5B_DEFAULT_METHOD,
+        budget: args.budget ?? DEFAULT_OUTSIDE_BUDGET,
+        friction: null,
+        reason: 'STRUCTURAL_SILENCE. The path field stays. This is not NO_PHRASE and not PATH NONE.',
+      },
+      args.home,
+      grounding
+    );
+    return { ...silent, textureChoice: 'STRUCTURAL_SILENCE' };
+  }
   const quartalReady = args.home ? quartalSubsets(collectionPitchClasses(args.home)).length > 0 : false;
   const planned = planPentatonicOperator({
     purpose: args.purpose,

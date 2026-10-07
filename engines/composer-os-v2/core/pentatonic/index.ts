@@ -81,6 +81,22 @@ export {
 } from './quartalField';
 export { analyzePentatonicScore, formatPentatonicScoreMap, PENTATONIC_SCORE_ORDER_POLICY, importPentatonicScoreFromMusicXml } from './musicxml';
 export {
+  DEV6A_REJECTED_BEHAVIOURS,
+  GUITAR_ADJACENT_STRING_INTERVALS,
+  GUITAR_ADJACENT_STRING_PAIRS,
+  PENTATONIC_FORM_DUO_VERSION,
+  assessCommonTone,
+  assessPentatonicFormDuo,
+  assessQuartalStringSet,
+  classifyRegister,
+  formDuoEventsFromAnalysis,
+  placeOperatorInForm,
+  preferSlipFretShift,
+  quartalMasksMelody,
+  registerCapFaults,
+  reportPentatonicFormDuo,
+} from './formDuoIntelligence';
+export {
   CURRENT_NON_REGISTRY_POLICY,
   PENTATONIC_TEMPORAL_LIMIT,
   RETENTION_COMPARISON_RULE,

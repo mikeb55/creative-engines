@@ -62,6 +62,18 @@ Outside motion wants a ground: a bass pedal, a bass ostinato, a held tone, the m
 
 Reset Pentatonic Inputs clears the pentatonic form and the results on this page. It does not rewrite the score you loaded, and it does not clear the rest of Composer OS.
 
+## Form and the duo
+
+The engine can see whether a bar sits in a phrase or a section, and whether that stretch is an opening, a continuation, a development, a climax, a release, an ending, or simply unknown.
+
+It would rather keep one colour through a phrase than change it every bar. A change fits better at a phrase boundary. HOME is not pasted onto every boundary.
+
+Guitar and bass each have a role. Either one can lead. The other can answer, support, share the field, or stay silent. Silence here is a musical choice. It is not the same as a path that declines a pentatonic, and it is not the same as choosing no phrase at all.
+
+A counterline wants its own rhythm and its own register. Sharing a pitch class is not voice-leading.
+
+A slip can keep the same shape one fret higher or lower when that stays in range. A fourth can sit on adjacent strings. The G–B pair is a major third, so it is not that shape. There is still no tablature.
+
 ## Colour, not a cage
 
 The selected pentatonic is a colour field. Notes in the phrase may sit outside those five pitches when the line needs them.
