@@ -20,7 +20,9 @@ import {
   type RhythmSlot,
 } from './motifTransform';
 
-export const DEV4_AUDITION_DIR = '/Users/user/Documents/Pentatonic-Dev4-Auditions';
+/** User-facing Pentatonic Engine output. Engine source stays in creative-engines. */
+export const PENTATONIC_OUTPUT_ROOT = '/Users/user/Documents/DEVS/Pentatonic-Options';
+export const DEV4_AUDITION_DIR = `${PENTATONIC_OUTPUT_ROOT}/Dev4-Auditions`;
 
 export interface Dev4PilotSpec {
   file: string;

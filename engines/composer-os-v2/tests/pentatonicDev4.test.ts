@@ -338,6 +338,8 @@ export function runPentatonicDev4Tests(): { ok: boolean; name: string }[] {
         audition.colour.notes.map((note) => [note.startBeat, note.duration]),
         audition.extracted.motif.notes.map((note) => [note.startBeat, note.duration])
       );
+      assert.ok(audition.filePath.startsWith(`${DEV4_AUDITION_DIR}/`));
+      assert.equal(audition.filePath.includes('/Pentatonic-Dev4-Auditions/'), false);
       assert.ok(fs.existsSync(audition.filePath));
       const again = createHash('sha256').update(fs.readFileSync(`${ALBUM}/${audition.spec.file}`)).digest('hex');
       const expected = SOURCES.find((row) => row[0] === audition.spec.file)?.[1];
