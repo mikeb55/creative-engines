@@ -1729,6 +1729,15 @@ ${feelDirectionTypeXml}      <sound tempo="${bpm}"/>
           }
         }
 
+        const sectionWords = partIndex === 0 ? score.measureWordsMarkings?.[measureNumber] : undefined;
+        const partWords = score.partMeasureWordsMarkings?.[part.id]?.[measureNumber];
+        for (const wordsMark of [sectionWords, partWords]) {
+          if (!wordsMark) continue;
+          xml += `    <direction placement="above"><direction-type><words font-style="italic">${escapeXml(
+            wordsMark
+          )}</words></direction-type></direction>\n`;
+        }
+
         const dynTok = score.measureDynamicsMarkings?.[measureNumber];
         if (dynTok && partIndex === 0) {
           const allowed = new Set([

@@ -18,6 +18,7 @@
     "test:musicxml": "tsx scripts/testMusicXMLGeneration.ts",
     "orbit-v16": "tsx --tsconfig tsconfig.json scripts/createOrbitV16.ts",
     "desktop:rebuild-and-smoke": "npm run desktop:rebuild-and-smoke --prefix apps/composer-os-desktop",
+    "pentatonic:dev4-auditions": "tsx --tsconfig tsconfig.json engines/composer-os-v2/scripts/pentatonicDev4Auditions.ts",
     "refresh:desktop": "npm --prefix apps/composer-os-desktop run refresh:desktop --",
     "sweep": "tsx --tsconfig tsconfig.json engines/composer-os-v2/scripts/sweep.ts",
     "eval:fagen": "npm --prefix engines/composer-os-v2 run eval:fagen --",

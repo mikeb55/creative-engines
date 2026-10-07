@@ -219,5 +219,14 @@ export interface ScoreModel {
    * Exporter maps to MusicXML &lt;direction&gt;&lt;dynamics&gt;.
    */
   measureDynamicsMarkings?: Record<number, string>;
+  /**
+   * 1-based measure number → italic performance/section words on part 0.
+   */
+  measureWordsMarkings?: Record<number, string>;
+  /**
+   * Per-part italic technique / performance words (part id → 1-based measure → text).
+   * When present for a part, exporter writes `<words>` on that staff.
+   */
+  partMeasureWordsMarkings?: Record<string, Record<number, string>>;
   parts: PartModel[];
 }
