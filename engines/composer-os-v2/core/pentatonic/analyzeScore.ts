@@ -89,6 +89,8 @@ export interface AnalyzePentatonicScoreOptions {
   profile?: 'default' | 'wwh-duo-1.1' | 'wwh-duo-1.0';
   sourceFile?: string;
   sourceSha256?: string;
+  /** Default true. False keeps the Dev 3.5 DP for comparison. */
+  noneEligibility?: boolean;
 }
 
 function openingPassage(score: PentatonicScoreImport, identity: CentreHomeIdentity, profile: 'default' | 'wwh-duo-1.1' | 'wwh-duo-1.0'): PentatonicPassage {
@@ -305,6 +307,7 @@ export function analyzePentatonicScore(xml: string, options?: AnalyzePentatonicS
   }
   diagnostics.push('Dev 2.2: genuine collection changes cost at least half the base change cost. Chromatic friction is scored with the same measure as this report.');
   diagnostics.push('Dev 3.5: a collection/NONE boundary costs exactly half the base change cost. Discounts and the genuine-change floor do not apply. Leaving NONE does not take the short-segment penalty.');
+  diagnostics.push('Dev 3.6: NONE is eligible on a contiguous region only when every registry collection has mean local suitability below the existing 0.62 floor on that exact region.');
   diagnostics.push('Neutral bars continue the current collection when they sound none of the pitch classes that distinguish it from the alternative.');
   const boundaryStart = performance.now();
   const inferredBounds = inferredBoundaries(score.events);
@@ -313,6 +316,7 @@ export function analyzePentatonicScore(xml: string, options?: AnalyzePentatonicS
   const path = recommendPentatonicPath(passage, {
     continueWithoutDistinctPcs: true,
     ...(absentCentre ? { allowAbsentTonalCentre: true } : {}),
+    ...(options?.noneEligibility === false ? { noneEligibility: false } : {}),
   });
   const pathMs = performance.now() - pathStart;
   const regions = (path.kind === 'analysis' ? regionsFrom(score, path) : []).map((region) => {

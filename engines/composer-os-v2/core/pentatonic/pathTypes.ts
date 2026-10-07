@@ -58,6 +58,12 @@ export interface PentatonicPathOptions {
    * Does not change NONE.
    */
   allowAbsentTonalCentre?: boolean;
+  /**
+   * Dev 3.6 eligibility pass. Default true.
+   * False runs the same DP and the same costs with no NONE exclusions.
+   * Comparison only. It does not change a score.
+   */
+  noneEligibility?: boolean;
 }
 
 export type PentatonicPathDisposition = 'INSUFFICIENT_CONTEXT' | 'NO_FEASIBLE_PATH' | 'PATH';
@@ -137,6 +143,32 @@ export interface PentatonicPathSummary {
   homeContinuity: number;
 }
 
+export interface PentatonicNoneEligibilityRejection {
+  firstSourceLabel: string;
+  lastSourceLabel: string;
+  eventIds: readonly string[];
+  collectionId: string;
+  collectionName: string;
+  meanSuitability: number;
+  iteration: number;
+}
+
+export interface PentatonicNoneEligibilitySurvival {
+  firstSourceLabel: string;
+  lastSourceLabel: string;
+  eventIds: readonly string[];
+  bestCollectionId: string | null;
+  bestCollectionName: string | null;
+  meanSuitability: number | null;
+}
+
+export interface PentatonicNoneEligibility {
+  iterations: number;
+  floor: number;
+  rejected: readonly PentatonicNoneEligibilityRejection[];
+  surviving: readonly PentatonicNoneEligibilitySurvival[];
+}
+
 export interface PentatonicPathResult {
   kind: 'validation' | 'analysis';
   validationErrors: readonly string[];
@@ -162,6 +194,7 @@ export interface PentatonicPathResult {
   diagnostics: readonly string[];
   limitations: readonly string[];
   explanation: string;
+  noneEligibility: PentatonicNoneEligibility;
 }
 
 export const PENTATONIC_PATH_LIMITATIONS = [
@@ -175,6 +208,7 @@ export const PENTATONIC_PATH_LIMITATIONS = [
   'wwh-duo-1.1 is the While We\'re Here evidence profile. It does not change the other Dev 1 component weights.',
   'Chromatic friction is a colour/tension cost inside the evaluator. It is not an avoid-note rule.',
   'A genuine collection change costs at least half the base change cost. Discounts cannot make that change nearly free. NONE does not use that floor.',
+  'NONE may govern a contiguous region only when no single registry collection has mean local suitability at or above the existing suitability floor on that exact region. Per-bar winners are not stitched together. Path costs are unchanged.',
   'Nearest pitch-class displacements are candidates only. Register and voice data are not present.',
   'Phrase-boundary discounts apply only where the caller set phraseBoundaryAfter.',
   'Dev 2 does not parse MusicXML, generate notes, transform motifs, or call Phrase Engine or GCE.',

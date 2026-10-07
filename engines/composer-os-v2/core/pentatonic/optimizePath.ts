@@ -62,6 +62,11 @@ export interface OptimizePathInput {
   continueWithoutDistinctPcs?: boolean;
   sourceLabels: readonly string[];
   eventIds: readonly string[];
+  /**
+   * Dev 3.6. Event indices where NONE is not a legal choice.
+   * Empty or omitted keeps Dev 3.5 legal states. Does not change costs.
+   */
+  noneExcludedEventIndices?: ReadonlySet<number>;
 }
 
 export interface PathHypothesis {
@@ -239,7 +244,7 @@ export function optimizePentatonicPath(input: OptimizePathInput): {
         const index = indexById.get(id);
         if (index !== undefined) baseLegal.push(index);
       }
-      if (input.allowNone) baseLegal.push(none);
+      if (input.allowNone && !input.noneExcludedEventIndices?.has(eventIndex)) baseLegal.push(none);
     }
     const phraseBoundary = eventIndex > 0 && input.events[eventIndex - 1]!.phraseBoundaryAfter;
 
@@ -339,9 +344,14 @@ export function optimizePentatonicPath(input: OptimizePathInput): {
   for (const stateIndex of staticCandidates) {
     let cost = 0;
     let legal = true;
-    for (const event of input.events) {
+    for (let eventIndex = 0; eventIndex < input.events.length; eventIndex++) {
+      const event = input.events[eventIndex]!;
       if (event.silence) continue;
       if (stateIndex === none) {
+        if (input.noneExcludedEventIndices?.has(eventIndex)) {
+          legal = false;
+          break;
+        }
         cost += input.config.noneBaselineCost;
         continue;
       }

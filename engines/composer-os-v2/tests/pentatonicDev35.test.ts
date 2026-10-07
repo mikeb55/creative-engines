@@ -5,12 +5,13 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
-import { PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_4, pentatonicFrozenConfigFingerprint } from '../core/pentatonic/frozenConfigFingerprint';
+import { PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_4, PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_5, pentatonicFrozenConfigFingerprint } from '../core/pentatonic/frozenConfigFingerprint';
 import { optimizePentatonicPath, type OptimizerEvent, type OptimizerState } from '../core/pentatonic/optimizePath';
 import {
   DEFAULT_PENTATONIC_PATH_CONFIG,
   PENTATONIC_PATH_CONFIG_VERSION,
   PENTATONIC_PATH_CONFIG_VERSION_DEV_3_4,
+  PENTATONIC_PATH_CONFIG_VERSION_DEV_3_5,
   liquidChangeParts,
 } from '../core/pentatonic/pathConfig';
 import { parseNoteToken } from '../core/pentatonic/pitch';
@@ -29,7 +30,7 @@ const SOURCES = [
   ['09-After-Everything-Duo-Leadsheet-V1.0.musicxml', '6eb57378767e55a2537e1a4cff2c8999c643d27d929172d4e8a7a2bdc201afe0'],
 ] as const;
 
-const LIVE_FINGERPRINT = 'acd91358d754dbabf6132ebdb6b0f1b28cead13c28daeb35f9ff0e1bc231dc8f';
+const LIVE_FINGERPRINT = 'ef43cf14487dfdc85c93075ae4eda977e4bd984396a8052646a4d1593b849b97';
 
 function collection(root: string): number[] {
   const note = parseNoteToken(root);
@@ -98,8 +99,10 @@ export function runPentatonicDev35Tests(): { ok: boolean; name: string }[] {
 
   check('config version moved and Dev 3.4 fingerprint stays historical', () => {
     assert.equal(PENTATONIC_PATH_CONFIG_VERSION_DEV_3_4, 'pentatonic-path-config-1.1');
-    assert.equal(PENTATONIC_PATH_CONFIG_VERSION, 'pentatonic-path-config-1.2');
+    assert.equal(PENTATONIC_PATH_CONFIG_VERSION_DEV_3_5, 'pentatonic-path-config-1.2');
+    assert.equal(PENTATONIC_PATH_CONFIG_VERSION, 'pentatonic-path-config-1.3');
     assert.equal(PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_4, '27bf91d1cb5995f4246d06609dbe1d54dc1f5b27cc99676f5512cf5b423c398c');
+    assert.equal(PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_5, 'acd91358d754dbabf6132ebdb6b0f1b28cead13c28daeb35f9ff0e1bc231dc8f');
     assert.equal(pentatonicFrozenConfigFingerprint(), LIVE_FINGERPRINT);
     assert.equal(DEFAULT_PENTATONIC_PATH_CONFIG.changeCost, 0.35);
     assert.equal(DEFAULT_PENTATONIC_PATH_CONFIG.noneBaselineCost, 0.4);

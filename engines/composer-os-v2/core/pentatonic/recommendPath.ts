@@ -8,13 +8,15 @@ import type { MusicContext } from '../music-context/musicContextTypes';
 import { generatePentatonicCandidates } from './candidates';
 import { readChordEvidence } from './chordEvidence';
 import { scoringForEvidenceProfile } from './evidenceProfiles';
-import { compareEvaluated, evaluateCandidate, PENTATONIC_EVALUATOR_VERSION, type EvaluationEvidence } from './evaluate';
+import { compareEvaluated, DEFAULT_PENTATONIC_SCORING, evaluateCandidate, PENTATONIC_EVALUATOR_VERSION, type EvaluationEvidence } from './evaluate';
+import { optimizePentatonicPathWithNoneEligibility, type NoneEligibilityReport } from './noneEligibility';
 import {
   optimizePentatonicPath,
   quantizePathCost,
   summarizeOptimizedPath,
   type OptimizerEvent,
   type OptimizerState,
+  type PathHypothesis,
 } from './optimizePath';
 import { parseNoteList, parseNoteToken, spellingForPc, uniquePitchClasses, type ParsedNote } from './pitch';
 import type { FrictionWeightedAttack } from './chromaticFriction';
@@ -25,6 +27,7 @@ import {
   type PentatonicPassageEvent,
   type PentatonicPathEventDecision,
   type PentatonicPathOptions,
+  type PentatonicNoneEligibility,
   type PentatonicPathResult,
   type PitchClassTransitionDetail,
 } from './pathTypes';
@@ -57,6 +60,12 @@ function emptyPath(partial: Partial<PentatonicPathResult> & Pick<PentatonicPathR
     diagnostics: partial.diagnostics ?? [],
     limitations: partial.limitations ?? [...PENTATONIC_PATH_LIMITATIONS],
     explanation: partial.explanation ?? '',
+    noneEligibility: partial.noneEligibility ?? {
+      iterations: 0,
+      floor: DEFAULT_PENTATONIC_SCORING.minimumSuitability,
+      rejected: [],
+      surviving: [],
+    },
   };
 }
 
@@ -299,7 +308,7 @@ export function recommendPentatonicPath(passage: PentatonicPassage, options?: Pe
     });
   }
 
-  const optimized = optimizePentatonicPath({
+  const optimizerInput = {
     states,
     events: optimizerEvents,
     config,
@@ -311,7 +320,40 @@ export function recommendPentatonicPath(passage: PentatonicPassage, options?: Pe
     continueWithoutDistinctPcs: options?.continueWithoutDistinctPcs === true,
     sourceLabels: passage.events.map((event) => event.sourceLabel),
     eventIds: passage.events.map((event) => event.id),
-  });
+  };
+  const eligibilityOn = options?.noneEligibility !== false;
+  const optimized: {
+    best: PathHypothesis | null;
+    alternatives: PathHypothesis[];
+    staticBest: { cost: number; stateIndex: number } | null;
+    eligibility: NoneEligibilityReport;
+  } = eligibilityOn
+    ? optimizePentatonicPathWithNoneEligibility(optimizerInput, scoring.minimumSuitability)
+    : {
+        ...optimizePentatonicPath(optimizerInput),
+        eligibility: { iterations: 1, floor: scoring.minimumSuitability, rejected: [], surviving: [] },
+      };
+  const noneEligibility: PentatonicNoneEligibility = {
+    iterations: optimized.eligibility.iterations,
+    floor: optimized.eligibility.floor,
+    rejected: optimized.eligibility.rejected.map((region) => ({
+      firstSourceLabel: passage.events[region.start]?.sourceLabel ?? '',
+      lastSourceLabel: passage.events[region.end]?.sourceLabel ?? '',
+      eventIds: passage.events.slice(region.start, region.end + 1).map((event) => event.id),
+      collectionId: region.collectionId,
+      collectionName: region.collectionName,
+      meanSuitability: region.meanSuitability,
+      iteration: region.iteration,
+    })),
+    surviving: optimized.eligibility.surviving.map((region) => ({
+      firstSourceLabel: passage.events[region.start]?.sourceLabel ?? '',
+      lastSourceLabel: passage.events[region.end]?.sourceLabel ?? '',
+      eventIds: passage.events.slice(region.start, region.end + 1).map((event) => event.id),
+      bestCollectionId: region.bestCollectionId,
+      bestCollectionName: region.bestCollectionName,
+      meanSuitability: region.meanSuitability,
+    })),
+  };
   if (!optimized.best) {
     return emptyPath({
       kind: 'analysis',
@@ -424,6 +466,7 @@ export function recommendPentatonicPath(passage: PentatonicPassage, options?: Pe
     bestStaticStateName: staticState?.name ?? (optimized.staticBest ? 'NONE' : null),
     alternatives,
     diagnostics,
+    noneEligibility,
     explanation: summary.segments
       .map((segment) => {
         const span = segment.firstSourceLabel === segment.lastSourceLabel ? segment.firstSourceLabel : `${segment.firstSourceLabel}–${segment.lastSourceLabel}`;

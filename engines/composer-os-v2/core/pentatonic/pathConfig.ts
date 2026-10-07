@@ -6,7 +6,11 @@
 export const PENTATONIC_PATH_ENGINE_VERSION = 'pentatonic-path-1.1';
 /** Dev 2.2 through Dev 3.4. Historical path-config identity. Not the live version. */
 export const PENTATONIC_PATH_CONFIG_VERSION_DEV_3_4 = 'pentatonic-path-config-1.1';
-export const PENTATONIC_PATH_CONFIG_VERSION = 'pentatonic-path-config-1.2';
+/** Dev 3.5. Historical path-config identity. Not the live version. */
+export const PENTATONIC_PATH_CONFIG_VERSION_DEV_3_5 = 'pentatonic-path-config-1.2';
+export const PENTATONIC_PATH_CONFIG_VERSION = 'pentatonic-path-config-1.3';
+/** Live Dev 3.6 fingerprint. Must match `pentatonicFrozenConfigFingerprint()`. */
+export const PENTATONIC_PATH_CONFIG_FINGERPRINT = 'ef43cf14487dfdc85c93075ae4eda977e4bd984396a8052646a4d1593b849b97';
 
 export const PENTATONIC_PATH_NONE = 'NONE';
 
