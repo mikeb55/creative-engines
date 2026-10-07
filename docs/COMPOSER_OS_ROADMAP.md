@@ -486,6 +486,7 @@ Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartÃ³k** native bundle (not 
 
 ## Current (as of 2026-07-01 snapshot)
 
+- **Pentatonic Engine Dev 5B (2026-10-07):** path and phrase operators on the existing phrase engine. Cell lineage, reseat, bounded slip, tritone-pair field, grounding, and a LOW / MODERATE / HIGH outside budget. Path registry and the 20-resource colour registry stay as in Dev 5A. Dev 3.7 fingerprint unchanged. Dev 5 is not tagged.
 - **Pentatonic Engine Dev 5A (2026-10-06):** colour vocabulary, twenty five-note resources, contextual colour evaluation. Path registry stays major and minor pentatonic. Dev 3.7 fingerprint unchanged. Dev 5 is not frozen.
 - **Pentatonic Engine Dev 4C (2026-10-06):** Analyse, Transform Motif, and Generate Phrase on the existing `#/pentatonic` page. Same MusicContext, phrase tools, GCE, and MusicXML export. `M-DEG` default. Silence is a result. Colour field is not a hard pitch cage. Musician notes in `docs/PENTATONIC_ENGINE.md`.
 - **Pentatonic Engine Dev 4 (2026-10-06):** motif transform pilot. Stored `M` annotations only. `M-DEG` and `M-NEAR` on Palace Gates M2 and Hobo's M1, using each path's own colour, then the same method back to HOME. Guitar auditions via `npm run pentatonic:dev4-auditions` into `/Users/user/Documents/DEVS/Pentatonic-Options/Dev4-Auditions/`. Dev 3.7 fingerprint unchanged.

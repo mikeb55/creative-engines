@@ -40,6 +40,20 @@ The phrase is written by Composer OS’s existing phrase tools, then looked at b
 
 **Result: Silence / No phrase** means the choice is to add nothing. That is a musical result. It is not an error, and it is not the same as a None region in the analysis.
 
+## Path and phrase
+
+A path region is one decision. The usual shapes are home, home then colour then home, home then outside then home, a held field, or none.
+
+**Reseat** keeps the same five notes and moves the landing. That is home, then colour, then home, without a new collection.
+
+**Slip** states the cell, moves that colour up or down a semitone, and comes back. **M-DEG** is the usual map. **M-NEAR** is still there when you ask for it.
+
+**Cell lineage** starts from a motif, or from three or four notes of a five-note colour. A straight scale run is refused.
+
+**Tritone pair** is two pentatonics with no notes in common, heard as one field when they keep trading. Black Aura’s opening is that field. One switch is not a pair.
+
+Outside motion wants a ground: a bass pedal, a bass ostinato, a held tone, the motif itself, or an anchor you name. The outside budget is low, moderate, or high. Low is the usual setting. Silence is still a result. None on the path is still a different result.
+
 ## Colour, not a cage
 
 The selected pentatonic is a colour field. Notes in the phrase may sit outside those five pitches when the line needs them.

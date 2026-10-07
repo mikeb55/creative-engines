@@ -39,6 +39,29 @@ export {
   PENTATONIC_PATH_NONE,
 } from './pathConfig';
 export { formatPathComparison, passageFromMusicContext, recommendPentatonicPath } from './recommendPath';
+export {
+  DEFAULT_OUTSIDE_BUDGET,
+  EXPERIMENTAL_COLOUR_PATH_GATE,
+  PENTATONIC_PATH_INTELLIGENCE_VERSION,
+  assessGrounding,
+  experimentalColourResourceAllowed,
+  interpretPentatonicPath,
+  preferCoherentPath,
+  slicesFromPathEvents,
+} from './pathIntelligence';
+export {
+  DEV5B_DEFAULT_METHOD,
+  DEV5B_REJECTED_BEHAVIOURS,
+  PENTATONIC_PHRASE_OPERATORS_VERSION,
+  advisePentatonicPhrase,
+  antiLickFindings,
+  fourNoteSubset,
+  planPentatonicOperator,
+  realisePentatonicPhrase,
+  reseatLanding,
+  selectPhraseByAdvice,
+  transformCell,
+} from './phraseOperators';
 export { analyzePentatonicScore, formatPentatonicScoreMap, PENTATONIC_SCORE_ORDER_POLICY, importPentatonicScoreFromMusicXml } from './musicxml';
 export {
   CURRENT_NON_REGISTRY_POLICY,
