@@ -1,7 +1,8 @@
 /**
- * Pentatonic registry v1.
- * Major and minor pentatonic only. Further archetypes stay out until interval
- * definitions are verified inside Composer OS. Relationship labels are not archetypes.
+ * Pentatonic path registry v1.
+ * Major and minor pentatonic only. Path search, HOME relationships, and Dev 1–4
+ * candidate pools read this list. Colour vocabulary lives in `colourRegistry.ts`
+ * and does not enter `generatePentatonicCandidates`. Relationship labels are not archetypes.
  */
 
 export const PENTATONIC_REGISTRY_VERSION = 'pentatonic-registry-1.0';

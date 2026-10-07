@@ -10,7 +10,7 @@ Load a MusicXML score. The score itself is not rewritten. Anything you export is
 
 **Home** is the pentatonic colour relationships are heard against. It is a five-note collection, such as A Major Pentatonic. Centre and Home are not the same thing. A score can have a centre and still have no settled home.
 
-**Colour** is the pentatonic in use for a stretch of the piece. The registry is Major Pentatonic and Minor Pentatonic only.
+**Colour** is the pentatonic in use for a stretch of the piece. The path registry is still Major Pentatonic and Minor Pentatonic. A separate colour vocabulary describes other five-note fields. It does not change the path, and it does not force every note inside those five pitches.
 
 **None** means that stretch is not being read as a pentatonic. None is a real path result. It is not a missing file and it is not the same as choosing not to write a phrase.
 

@@ -1,4 +1,16 @@
 export { PENTATONIC_ARCHETYPES, PENTATONIC_REGISTRY_VERSION, getPentatonicArchetype, listPentatonicArchetypes } from './registry';
+export {
+  PENTATONIC_COLOUR_RESOURCES,
+  PENTATONIC_COLOUR_REGISTRY_VERSION,
+  getPentatonicColourResource,
+  listPentatonicColourResources,
+} from './colourRegistry';
+export {
+  COLOUR_VOCABULARY_ENTERS_PATH,
+  PENTATONIC_COLOUR_EVALUATOR_VERSION,
+  evaluatePentatonicColour,
+  evaluatePentatonicColourFromContext,
+} from './colourEvaluate';
 export { HOME_RELATIONSHIPS } from './homeRelationships';
 export { PENTATONIC_NOTE_CHOICES, canonicalPitchSet, canonicalPitchSetId, mod12, parseNoteToken, spellFromReference } from './pitch';
 export {
@@ -47,6 +59,15 @@ export type {
   PentatonicScorePart,
   PentatonicScoreRegion,
 } from './musicxml';
+export type {
+  ColourContextEvidence,
+  ColourFieldAssessment,
+  ColourFieldDisposition,
+  ColourFieldResult,
+  PentatonicColourFunction,
+  PentatonicColourMetadata,
+  PentatonicColourResource,
+} from './colourTypes';
 export type {
   PentatonicColourTension,
   PentatonicDepth,
