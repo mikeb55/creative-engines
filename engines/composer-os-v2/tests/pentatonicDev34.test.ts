@@ -231,7 +231,7 @@ export function runPentatonicDev34Tests(): { ok: boolean; name: string }[] {
   check('fingerprint and nine source hashes stay put', () => {
     assert.equal(PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_4, '27bf91d1cb5995f4246d06609dbe1d54dc1f5b27cc99676f5512cf5b423c398c');
     assert.equal(PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_5, 'acd91358d754dbabf6132ebdb6b0f1b28cead13c28daeb35f9ff0e1bc231dc8f');
-    assert.equal(pentatonicFrozenConfigFingerprint(), 'ef43cf14487dfdc85c93075ae4eda977e4bd984396a8052646a4d1593b849b97');
+    assert.equal(pentatonicFrozenConfigFingerprint(), 'cca0456e61a2a14e06f4aa14af0ae4bff902a46baa18ced000aec9ab146c91e6');
     for (const [file, sha] of SOURCES) {
       const full = `${ALBUM}/${file}`;
       assert.equal(createHash('sha256').update(fs.readFileSync(full)).digest('hex'), sha);

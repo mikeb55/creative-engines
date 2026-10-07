@@ -8,9 +8,11 @@ export const PENTATONIC_PATH_ENGINE_VERSION = 'pentatonic-path-1.1';
 export const PENTATONIC_PATH_CONFIG_VERSION_DEV_3_4 = 'pentatonic-path-config-1.1';
 /** Dev 3.5. Historical path-config identity. Not the live version. */
 export const PENTATONIC_PATH_CONFIG_VERSION_DEV_3_5 = 'pentatonic-path-config-1.2';
-export const PENTATONIC_PATH_CONFIG_VERSION = 'pentatonic-path-config-1.3';
-/** Live Dev 3.6 fingerprint. Must match `pentatonicFrozenConfigFingerprint()`. */
-export const PENTATONIC_PATH_CONFIG_FINGERPRINT = 'ef43cf14487dfdc85c93075ae4eda977e4bd984396a8052646a4d1593b849b97';
+/** Dev 3.6. Historical path-config identity. Not the live version. */
+export const PENTATONIC_PATH_CONFIG_VERSION_DEV_3_6 = 'pentatonic-path-config-1.3';
+export const PENTATONIC_PATH_CONFIG_VERSION = 'pentatonic-path-config-1.4';
+/** Live Dev 3.7 fingerprint. Must match `pentatonicFrozenConfigFingerprint()`. */
+export const PENTATONIC_PATH_CONFIG_FINGERPRINT = 'cca0456e61a2a14e06f4aa14af0ae4bff902a46baa18ced000aec9ab146c91e6';
 
 export const PENTATONIC_PATH_NONE = 'NONE';
 

@@ -136,8 +136,10 @@ function run(): { ok: boolean; name: string }[] {
     assert.equal(score.pitchPolicy, 'written-equals-concert');
     compareSlice(score.events, orbitAPassage());
     compareSlice(score.events, orbitBPassage());
-    // Orbit A path unchanged. Cost 2.539533 → 2.571633. FRICTION. Floor-only cost stays 2.539533.
-    assertPath(score.events, orbitAPassage(), '1–7  C Minor Pentatonic SUSPENDED\n8–9  E Major Pentatonic', 2.571633, 1, 2, 0);
+    // Dev 3.6 held C Minor on 1–7 at cost 2.571633.
+    // Dev 3.7 forbids C Minor on mm.4–5 (mean 0.5578) because C# Major mean 0.66855.
+    // The re-solve chooses F Minor across 1–7. Cost 2.614833. One switch, two resources.
+    assertPath(score.events, orbitAPassage(), '1–7  F Minor Pentatonic HOME\n8–9  E Major Pentatonic', 2.614833, 1, 2, 0);
     // Orbit B path unchanged. Cost 1.0808 → 1.0866. FRICTION. No collection change, so the floor does not apply.
     assertPath(score.events, orbitBPassage(), '18–25  G Minor Pentatonic 6/9 SUSPENDED', 1.0866, 0, 1, 0);
   });
@@ -268,7 +270,7 @@ function run(): { ok: boolean; name: string }[] {
   check('frozen Dev 1/2 config fingerprint is stable', () => {
     assert.equal(PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_4, '27bf91d1cb5995f4246d06609dbe1d54dc1f5b27cc99676f5512cf5b423c398c');
     assert.equal(PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_5, 'acd91358d754dbabf6132ebdb6b0f1b28cead13c28daeb35f9ff0e1bc231dc8f');
-    assert.equal(pentatonicFrozenConfigFingerprint(), 'ef43cf14487dfdc85c93075ae4eda977e4bd984396a8052646a4d1593b849b97');
+    assert.equal(pentatonicFrozenConfigFingerprint(), 'cca0456e61a2a14e06f4aa14af0ae4bff902a46baa18ced000aec9ab146c91e6');
   });
 
   return rows;

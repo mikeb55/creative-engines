@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { chromaticFrictionMeasure } from '../core/pentatonic/chromaticFriction';
 import { DEFAULT_PENTATONIC_SCORING, PENTATONIC_EVALUATOR_VERSION } from '../core/pentatonic/evaluate';
 import { WWH_DUO_EVIDENCE_WEIGHTS, WWH_DUO_PROFILE_ID } from '../core/pentatonic/evidenceProfiles';
-import { PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_4, PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_5, pentatonicFrozenConfigFingerprint } from '../core/pentatonic/frozenConfigFingerprint';
+import { PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_4, PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_5, PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_6, pentatonicFrozenConfigFingerprint } from '../core/pentatonic/frozenConfigFingerprint';
 import { getPentatonicArchetype } from '../core/pentatonic/registry';
 import { parseNoteToken } from '../core/pentatonic/pitch';
 import {
@@ -193,16 +193,18 @@ export function runPentatonicDev22Tests(): { ok: boolean; name: string }[] {
     assert.equal(WWH_DUO_PROFILE_ID, 'wwh-duo-1.1');
     assert.equal(PENTATONIC_PATH_CONFIG_VERSION_DEV_3_4, 'pentatonic-path-config-1.1');
     assert.equal(PENTATONIC_PATH_CONFIG_VERSION_DEV_3_5, 'pentatonic-path-config-1.2');
-    assert.equal(PENTATONIC_PATH_CONFIG_VERSION, 'pentatonic-path-config-1.3');
+    assert.equal(PENTATONIC_PATH_CONFIG_VERSION, 'pentatonic-path-config-1.4');
   });
 
   check('Dev 2.2 fingerprint stays documented and the live fingerprint moved', () => {
     assert.equal(PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_4, '27bf91d1cb5995f4246d06609dbe1d54dc1f5b27cc99676f5512cf5b423c398c');
     assert.equal(PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_5, 'acd91358d754dbabf6132ebdb6b0f1b28cead13c28daeb35f9ff0e1bc231dc8f');
+    assert.equal(PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_6, 'ef43cf14487dfdc85c93075ae4eda977e4bd984396a8052646a4d1593b849b97');
     const live = pentatonicFrozenConfigFingerprint();
     assert.notEqual(live, PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_4);
     assert.notEqual(live, PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_5);
-    assert.equal(live, 'ef43cf14487dfdc85c93075ae4eda977e4bd984396a8052646a4d1593b849b97');
+    assert.notEqual(live, PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_6);
+    assert.equal(live, 'cca0456e61a2a14e06f4aa14af0ae4bff902a46baa18ced000aec9ab146c91e6');
   });
 
   return rows;

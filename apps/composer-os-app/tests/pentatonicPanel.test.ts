@@ -400,7 +400,7 @@ describe('pentatonic whole score', () => {
       });
     }
     expect(textOf(tree)).toContain('pentatonic-score-map');
-    expect(textOf(tree)).toContain('pentatonic-path-config-1.3');
+    expect(textOf(tree)).toContain('pentatonic-path-config-1.4');
     expect(textOf(tree)).toContain('pentatonic-friction');
     expect(textOf(tree)).toContain('Chromatic friction');
     expect(textOf(tree)).toContain('Electric Guitar');

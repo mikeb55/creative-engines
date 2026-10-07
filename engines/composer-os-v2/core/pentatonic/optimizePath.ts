@@ -67,6 +67,11 @@ export interface OptimizePathInput {
    * Empty or omitted keeps Dev 3.5 legal states. Does not change costs.
    */
   noneExcludedEventIndices?: ReadonlySet<number>;
+  /**
+   * Dev 3.7. Keys `${stateIndex}:${eventIndex}` where that registry state
+   * is not a legal choice. Does not change costs.
+   */
+  excludedStateEvents?: ReadonlySet<string>;
 }
 
 export interface PathHypothesis {
@@ -242,7 +247,9 @@ export function optimizePentatonicPath(input: OptimizePathInput): {
     if (!event.silence) {
       for (const id of event.feasibleStateIds) {
         const index = indexById.get(id);
-        if (index !== undefined) baseLegal.push(index);
+        if (index === undefined) continue;
+        if (input.excludedStateEvents?.has(`${index}:${eventIndex}`)) continue;
+        baseLegal.push(index);
       }
       if (input.allowNone && !input.noneExcludedEventIndices?.has(eventIndex)) baseLegal.push(none);
     }
@@ -356,6 +363,10 @@ export function optimizePentatonicPath(input: OptimizePathInput): {
         continue;
       }
       const state = input.states[stateIndex]!;
+      if (input.excludedStateEvents?.has(`${stateIndex}:${eventIndex}`)) {
+        legal = false;
+        break;
+      }
       if (!event.feasibleStateIds.includes(state.id)) {
         legal = false;
         break;

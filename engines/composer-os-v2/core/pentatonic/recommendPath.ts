@@ -65,6 +65,8 @@ function emptyPath(partial: Partial<PentatonicPathResult> & Pick<PentatonicPathR
       floor: DEFAULT_PENTATONIC_SCORING.minimumSuitability,
       rejected: [],
       surviving: [],
+      heldExclusions: [],
+      survivingBelowFloor: [],
     },
   };
 }
@@ -322,16 +324,24 @@ export function recommendPentatonicPath(passage: PentatonicPassage, options?: Pe
     eventIds: passage.events.map((event) => event.id),
   };
   const eligibilityOn = options?.noneEligibility !== false;
+  const heldCollectionFloor = options?.heldCollectionFloor !== false;
   const optimized: {
     best: PathHypothesis | null;
     alternatives: PathHypothesis[];
     staticBest: { cost: number; stateIndex: number } | null;
     eligibility: NoneEligibilityReport;
   } = eligibilityOn
-    ? optimizePentatonicPathWithNoneEligibility(optimizerInput, scoring.minimumSuitability)
+    ? optimizePentatonicPathWithNoneEligibility(optimizerInput, scoring.minimumSuitability, { heldCollectionFloor })
     : {
         ...optimizePentatonicPath(optimizerInput),
-        eligibility: { iterations: 1, floor: scoring.minimumSuitability, rejected: [], surviving: [] },
+        eligibility: {
+          iterations: 1,
+          floor: scoring.minimumSuitability,
+          rejected: [],
+          surviving: [],
+          heldExclusions: [],
+          survivingBelowFloor: [],
+        },
       };
   const noneEligibility: PentatonicNoneEligibility = {
     iterations: optimized.eligibility.iterations,
@@ -352,6 +362,31 @@ export function recommendPentatonicPath(passage: PentatonicPassage, options?: Pe
       bestCollectionId: region.bestCollectionId,
       bestCollectionName: region.bestCollectionName,
       meanSuitability: region.meanSuitability,
+    })),
+    heldExclusions: optimized.eligibility.heldExclusions.map((region) => ({
+      firstSourceLabel: passage.events[region.start]?.sourceLabel ?? '',
+      lastSourceLabel: passage.events[region.end]?.sourceLabel ?? '',
+      eventIds: region.eventIndices.map((index) => passage.events[index]?.id ?? ''),
+      heldCollectionId: region.heldCollectionId,
+      heldCollectionName: region.heldCollectionName,
+      heldMean: region.heldMean,
+      alternativeId: region.alternativeId,
+      alternativeName: region.alternativeName,
+      alternativeMean: region.alternativeMean,
+      iteration: region.iteration,
+      finalStateId: region.finalStateId,
+      finalStateName: region.finalStateName,
+    })),
+    survivingBelowFloor: optimized.eligibility.survivingBelowFloor.map((region) => ({
+      firstSourceLabel: passage.events[region.start]?.sourceLabel ?? '',
+      lastSourceLabel: passage.events[region.end]?.sourceLabel ?? '',
+      eventIds: region.eventIndices.map((index) => passage.events[index]?.id ?? ''),
+      heldCollectionId: region.heldCollectionId,
+      heldCollectionName: region.heldCollectionName,
+      heldMean: region.heldMean,
+      bestAlternativeId: region.bestAlternativeId,
+      bestAlternativeName: region.bestAlternativeName,
+      bestAlternativeMean: region.bestAlternativeMean,
     })),
   };
   if (!optimized.best) {

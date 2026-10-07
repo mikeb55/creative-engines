@@ -12,6 +12,8 @@ import { DEFAULT_PENTATONIC_PATH_CONFIG, PENTATONIC_PATH_CONFIG_VERSION, PENTATO
 export const PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_4 = '27bf91d1cb5995f4246d06609dbe1d54dc1f5b27cc99676f5512cf5b423c398c';
 /** Dev 3.5 frozen fingerprint. Historical evidence. Not the live fingerprint. */
 export const PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_5 = 'acd91358d754dbabf6132ebdb6b0f1b28cead13c28daeb35f9ff0e1bc231dc8f';
+/** Dev 3.6 frozen fingerprint. Historical evidence. Not the live fingerprint. */
+export const PENTATONIC_FROZEN_CONFIG_FINGERPRINT_DEV_3_6 = 'ef43cf14487dfdc85c93075ae4eda977e4bd984396a8052646a4d1593b849b97';
 import { COLOUR_HOME_RELATIONSHIP_SCORES, PENTATONIC_RELATIONSHIP_SCORING_VERSION, PURPOSE_HOME_RELATIONSHIP_SCORES } from './relationshipScoring';
 
 export function pentatonicFrozenConfigFingerprint(): string {

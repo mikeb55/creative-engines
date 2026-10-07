@@ -91,6 +91,8 @@ export interface AnalyzePentatonicScoreOptions {
   sourceSha256?: string;
   /** Default true. False keeps the Dev 3.5 DP for comparison. */
   noneEligibility?: boolean;
+  /** Default true. False keeps Dev 3.6 NONE eligibility for comparison. */
+  heldCollectionFloor?: boolean;
 }
 
 function openingPassage(score: PentatonicScoreImport, identity: CentreHomeIdentity, profile: 'default' | 'wwh-duo-1.1' | 'wwh-duo-1.0'): PentatonicPassage {
@@ -308,6 +310,7 @@ export function analyzePentatonicScore(xml: string, options?: AnalyzePentatonicS
   diagnostics.push('Dev 2.2: genuine collection changes cost at least half the base change cost. Chromatic friction is scored with the same measure as this report.');
   diagnostics.push('Dev 3.5: a collection/NONE boundary costs exactly half the base change cost. Discounts and the genuine-change floor do not apply. Leaving NONE does not take the short-segment penalty.');
   diagnostics.push('Dev 3.6: NONE is eligible on a contiguous region only when every registry collection has mean local suitability below the existing 0.62 floor on that exact region.');
+  diagnostics.push('Dev 3.7: a below-floor stretch of two or more sounding events loses its held collection when one other registry collection reaches mean 0.62 on that stretch. Events at or above 0.62 break the stretch.');
   diagnostics.push('Neutral bars continue the current collection when they sound none of the pitch classes that distinguish it from the alternative.');
   const boundaryStart = performance.now();
   const inferredBounds = inferredBoundaries(score.events);
@@ -317,6 +320,7 @@ export function analyzePentatonicScore(xml: string, options?: AnalyzePentatonicS
     continueWithoutDistinctPcs: true,
     ...(absentCentre ? { allowAbsentTonalCentre: true } : {}),
     ...(options?.noneEligibility === false ? { noneEligibility: false } : {}),
+    ...(options?.heldCollectionFloor === false ? { heldCollectionFloor: false } : {}),
   });
   const pathMs = performance.now() - pathStart;
   const regions = (path.kind === 'analysis' ? regionsFrom(score, path) : []).map((region) => {
