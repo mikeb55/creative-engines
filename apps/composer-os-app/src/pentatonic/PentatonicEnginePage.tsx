@@ -204,7 +204,7 @@ export function PentatonicEnginePage(props: {
         Pentatonic Engine
       </h2>
       <p style={{ color: 'var(--text-muted)', marginTop: 0 }}>
-        Analyse a score, move a motif into another pentatonic colour, or ask for a sparse phrase. Silence is a real result. A pentatonic resource is a colour, not a claim that every note belongs to it.
+        Analyse, plan, transform, generate, compare, then export. Silence is a real result. A pentatonic resource is a colour, not a claim that every note belongs to it.
       </p>
       <PentatonicWorkflowPanel key={pageEpoch} />
       <details>

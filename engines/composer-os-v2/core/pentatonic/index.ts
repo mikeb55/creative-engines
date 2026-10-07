@@ -91,6 +91,24 @@ export {
   planAutoColor,
 } from './autoColor';
 export {
+  COMPARE_CANDIDATE_CAP,
+  DEV6C_OPERATOR_REVIEW,
+  DEV6C_OUTPUT_DIR,
+  DEV6C_PATH_PROMOTIONS,
+  DEV6C_REJECTED_BEHAVIOURS,
+  PENTATONIC_COMPARE_VERSION,
+  PENTATONIC_PRODUCTION_MODES,
+  assertExportPathIsSeparate,
+  comparePentatonicCandidates,
+  compareRegion,
+  intentionsForProbe,
+  orderCompareCandidates,
+  productionSnapshot,
+  reviewColourRegistry,
+  structuralProbes,
+  validateProductionMusicXml,
+} from './productionCompare';
+export {
   DEV6A_REJECTED_BEHAVIOURS,
   GUITAR_ADJACENT_STRING_INTERVALS,
   GUITAR_ADJACENT_STRING_PAIRS,
@@ -134,6 +152,7 @@ export type {
   MusicalIntention,
   StructuralStrategy,
 } from './autoColor';
+export type { CompareCandidate, CompareKind, CompareSet, ProductionSnapshot } from './productionCompare';
 export type {
   ColourContextEvidence,
   ColourFieldAssessment,

@@ -39,13 +39,14 @@ import {
 
 /** Same intent map as Dev 4B. Copied here so the GUI bundle does not load the filesystem runner. */
 export type Dev4cActivity = 'VERY_SPARSE' | 'SPARSE' | 'MODERATE';
-export type Dev4cPurpose = 'MOTIF' | 'LYRICAL_ANSWER' | 'COUNTERLINE' | 'COMPING_FRAGMENT' | 'NO_PHRASE';
+export type Dev4cPurpose = 'MOTIF' | 'LYRICAL_ANSWER' | 'COUNTERLINE' | 'COMPING_FRAGMENT' | 'DEVELOPMENT' | 'NO_PHRASE';
 
 const PHRASE_INTENT: Record<Exclude<Dev4cPurpose, 'NO_PHRASE'>, PhraseIntent> = {
   MOTIF: 'guitar_lead',
   LYRICAL_ANSWER: 'answer_guitar',
   COUNTERLINE: 'development',
   COMPING_FRAGMENT: 'bass_lead',
+  DEVELOPMENT: 'development',
 };
 
 function collectionFromPathName(name: string, homeRelationshipLabel: string | null): PentatonicCollectionView | null {
@@ -79,16 +80,18 @@ export const DEV4C_PURPOSES: readonly Dev4cPurpose[] = [
   'LYRICAL_ANSWER',
   'COUNTERLINE',
   'COMPING_FRAGMENT',
+  'DEVELOPMENT',
   'NO_PHRASE',
 ];
 
-const PITCHED_PURPOSES = ['MOTIF', 'LYRICAL_ANSWER', 'COUNTERLINE', 'COMPING_FRAGMENT'] as const;
+const PITCHED_PURPOSES = ['MOTIF', 'LYRICAL_ANSWER', 'COUNTERLINE', 'COMPING_FRAGMENT', 'DEVELOPMENT'] as const;
 
 export function purposeLabel(purpose: Dev4cPurpose): string {
   if (purpose === 'MOTIF') return 'Motif';
   if (purpose === 'LYRICAL_ANSWER') return 'Lyrical answer';
   if (purpose === 'COUNTERLINE') return 'Counterline';
   if (purpose === 'COMPING_FRAGMENT') return 'Comping fragment';
+  if (purpose === 'DEVELOPMENT') return 'Development';
   return 'No phrase / silence';
 }
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AUTO_COLOR_GUI_INTENTIONS, autoColorContextFromAnalysis, planAutoColor, type AutoColorPlan, type DuoRole, type FormFunction, type MusicalIntention, PENTATONIC_NOTE_CHOICES } from '@composer-os/core/pentatonic';
+import { AUTO_COLOR_GUI_INTENTIONS, autoColorContextFromAnalysis, comparePentatonicCandidates, planAutoColor, productionSnapshot, type AutoColorPlan, type CompareSet, type DuoRole, type FormFunction, type MusicalIntention, type ProductionSnapshot, PENTATONIC_NOTE_CHOICES } from '@composer-os/core/pentatonic';
 import {
   DEV4C_ACTIVITIES,
   DEV4C_DEFAULT_METHOD,
@@ -70,7 +70,7 @@ function GceBlock(props: { candidate: PentatonicCandidateView }) {
 }
 
 export function PentatonicWorkflowPanel() {
-  const [mode, setMode] = useState<'analyse' | 'transform' | 'generate' | 'auto-color'>('analyse');
+  const [mode, setMode] = useState<'analyse' | 'transform' | 'generate' | 'auto-color' | 'compare' | 'export'>('analyse');
   const [fileName, setFileName] = useState('');
   const [xml, setXml] = useState('');
   const [reading, setReading] = useState<MusicianAnalysis | null>(null);
@@ -92,6 +92,9 @@ export function PentatonicWorkflowPanel() {
   const [autoResource, setAutoResource] = useState<'major_pentatonic' | 'minor_pentatonic' | 'none'>('major_pentatonic');
   const [autoGrounded, setAutoGrounded] = useState(false);
   const [autoPlan, setAutoPlan] = useState<AutoColorPlan | null>(null);
+  const [snapshot, setSnapshot] = useState<ProductionSnapshot | null>(null);
+  const [compared, setCompared] = useState<CompareSet | null>(null);
+  const [compareIndex, setCompareIndex] = useState(0);
 
   const region = reading?.analysis.regions[regionIndex] ?? null;
 
@@ -103,6 +106,9 @@ export function PentatonicWorkflowPanel() {
     setGenerated(null);
     setChosen(null);
     setAutoPlan(null);
+    setSnapshot(null);
+    setCompared(null);
+    setCompareIndex(0);
     Promise.resolve(file.text())
       .then((text) => {
         setFileName(file.name);
@@ -133,6 +139,9 @@ export function PentatonicWorkflowPanel() {
         setAutoResource(context.pathIsNone ? 'none' : context.currentResourceId === 'minor_pentatonic' ? 'minor_pentatonic' : 'major_pentatonic');
         setAutoGrounded(context.grounding?.present === true);
         setAutoPlan(null);
+        setSnapshot(productionSnapshot(result.analysis));
+        setCompared(null);
+        setCompareIndex(0);
       })
       .catch((caught: unknown) => setError(caught instanceof Error ? caught.message : String(caught)))
       .finally(() => setBusy(false));
@@ -223,6 +232,39 @@ export function PentatonicWorkflowPanel() {
     });
   };
 
+  const onCompare = () => {
+    if (!reading || !region) {
+      setError('Analyse a score first.');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    const intentions = autoIntentions.length ? autoIntentions : (['RETAIN_MOTIF'] as MusicalIntention[]);
+    Promise.resolve()
+      .then(() => comparePentatonicCandidates({ xml, analysis: reading.analysis, region, intentions }))
+      .then((result) => {
+        setCompared(result);
+        setCompareIndex(0);
+        setChosen(null);
+      })
+      .catch((caught: unknown) => setError(caught instanceof Error ? caught.message : String(caught)))
+      .finally(() => setBusy(false));
+  };
+
+  const exportable = (): { xml: string; label: string; silence: boolean } | null => {
+    if (compared) {
+      const candidate = compared.candidates[compareIndex] ?? compared.candidates[0];
+      if (!candidate) return null;
+      return { xml: candidate.musicXml, label: candidate.kind, silence: candidate.silence };
+    }
+    if (generated && chosen) {
+      const candidate = generated.candidates.find((item) => item.letter === chosen);
+      if (candidate) return { xml: candidate.musicXml, label: candidate.letter, silence: candidate.silence };
+    }
+    if (transform) return { xml: transform.musicXml, label: transform.method, silence: false };
+    return null;
+  };
+
   const onAutoColor = () => {
     setAutoPlan(
       planAutoColor({
@@ -267,12 +309,16 @@ export function PentatonicWorkflowPanel() {
         <select
           id="pentatonic-workflow-mode"
           value={mode}
-          onChange={(event) => setMode(event.target.value as 'analyse' | 'transform' | 'generate' | 'auto-color')}
+          onChange={(event) =>
+            setMode(event.target.value as 'analyse' | 'transform' | 'generate' | 'auto-color' | 'compare' | 'export')
+          }
         >
           <option value="analyse">Analyse</option>
+          <option value="auto-color">Plan / AUTO COLOR</option>
           <option value="transform">Transform Motif</option>
           <option value="generate">Generate Phrase</option>
-          <option value="auto-color">AUTO COLOR</option>
+          <option value="compare">Compare</option>
+          <option value="export">Export</option>
         </select>
       </label>
       <label htmlFor="pentatonic-workflow-file">
@@ -305,6 +351,11 @@ export function PentatonicWorkflowPanel() {
             Plan
           </button>
         ) : null}
+        {mode === 'compare' ? (
+          <button type="button" data-testid="pentatonic-workflow-compare" onClick={onCompare} disabled={busy || !reading}>
+            Compare
+          </button>
+        ) : null}
       </div>
 
       {reading ? (
@@ -317,6 +368,18 @@ export function PentatonicWorkflowPanel() {
             {reading.home === 'not established' ? ` (${reading.homeStatus})` : ''}
           </p>
           <p style={{ margin: 0 }}>NONE regions: {reading.noneCount}</p>
+          {snapshot ? (
+            <div data-testid="pentatonic-workflow-snapshot" style={{ display: 'grid', gap: '0.2rem' }}>
+              <p style={{ margin: 0 }}>CURRENT FIELD: {snapshot.currentField}</p>
+              <p style={{ margin: 0 }}>FORM CONTEXT: {snapshot.formContext}</p>
+              <p style={{ margin: 0 }}>DUO CONTEXT: {snapshot.duoContext}</p>
+              <p style={{ margin: 0 }}>HOLD_FIELD: {snapshot.holdField}</p>
+              <p style={{ margin: 0 }}>TRITONE_PAIR_FIELD: {snapshot.tritonePairField}</p>
+              <p style={{ margin: 0 }}>PATH NONE: {snapshot.pathNone}</p>
+              <p style={{ margin: 0 }}>NO_PHRASE: {snapshot.noPhrase}</p>
+              <p style={{ margin: 0 }}>STRUCTURAL_SILENCE: {snapshot.structuralSilence}</p>
+            </div>
+          ) : null}
           <div data-testid="pentatonic-workflow-regions" style={{ display: 'grid', gap: '0.25rem' }}>
             {reading.regions.map((row) => (
               <p key={`${row.measureRangeLabel}-${row.collectionName}`} style={{ margin: 0 }} data-testid="pentatonic-workflow-region-row">
@@ -613,6 +676,9 @@ export function PentatonicWorkflowPanel() {
               <p style={{ margin: 0 }}>INTENTION: {autoPlan.intentions.join(' + ') || 'none'}</p>
               <p style={{ margin: 0 }}>FORM CONTEXT: {autoPlan.formFunction}</p>
               <p style={{ margin: 0 }}>DUO CONTEXT: {autoPlan.duoRole}</p>
+              <p style={{ margin: 0 }}>CURRENT FIELD: {autoResource}</p>
+              <p style={{ margin: 0 }}>SELECTED ACTION: {autoPlan.action}</p>
+              <p style={{ margin: 0 }}>TARGET COLOUR: {autoPlan.targetColour}</p>
               <p style={{ margin: 0 }}>PLAN: {autoPlan.outcome}</p>
               <p style={{ margin: 0 }}>SELECTED RESOURCE: {autoPlan.selectedResource}</p>
               <p style={{ margin: 0 }}>OPERATOR: {autoPlan.operator}</p>
@@ -621,6 +687,63 @@ export function PentatonicWorkflowPanel() {
               <p style={{ margin: 0 }}>RATIONALE: {autoPlan.rationale}</p>
             </div>
           ) : null}
+        </div>
+      ) : null}
+
+      {mode === 'compare' && compared ? (
+        <div data-testid="pentatonic-compare" style={{ display: 'grid', gap: '0.5rem' }}>
+          <p style={{ margin: 0 }}>
+            {compared.candidates.length} candidate{compared.candidates.length === 1 ? '' : 's'}. Ordered by the plan, then an alternative, then silence.
+          </p>
+          {compared.candidates.map((candidate, index) => (
+            <article
+              key={`${candidate.kind}-${candidate.slot}`}
+              data-testid="pentatonic-compare-candidate"
+              style={{
+                border: compareIndex === index ? '2px solid var(--text)' : '1px solid var(--border)',
+                borderRadius: 8,
+                padding: '0.6rem',
+              }}
+            >
+              <h3 style={{ margin: '0 0 0.35rem', fontSize: '1rem' }}>{candidate.kind}</h3>
+              <p style={{ margin: '0.2rem 0' }}>OPERATOR: {candidate.operator}</p>
+              <ColourBlock
+                selectedResource={candidate.resource}
+                resourceNotes={candidate.kind === 'SILENCE' ? 'NONE' : candidate.resource}
+                actualNotes={candidate.generatedNotes}
+                outsideResourceNotes={candidate.outsideResourceNotes}
+              />
+              <p style={{ margin: '0.2rem 0' }}>LINEAGE: {candidate.lineage}</p>
+              <p style={{ margin: '0.2rem 0' }}>RETURN: {candidate.returnQuality}</p>
+              <p style={{ margin: '0.2rem 0' }}>FORM FIT: {candidate.formFit}</p>
+              <p style={{ margin: '0.2rem 0' }}>DUO FIT: {candidate.duoFit}</p>
+              <p style={{ margin: '0.2rem 0' }}>GCE: {candidate.gceAdvisory}</p>
+              {candidate.accepted ? null : <p style={{ margin: '0.2rem 0' }}>Rejected: {candidate.rejectionReasons.join(', ')}</p>}
+              <button type="button" onClick={() => setCompareIndex(index)}>
+                {compareIndex === index ? 'Chosen' : `Choose ${candidate.kind}`}
+              </button>
+            </article>
+          ))}
+        </div>
+      ) : null}
+
+      {mode === 'export' ? (
+        <div data-testid="pentatonic-export" style={{ display: 'grid', gap: '0.35rem' }}>
+          <p style={{ margin: 0 }}>Export writes a new MusicXML file. The loaded score stays where it is. No tablature.</p>
+          {exportable() ? (
+            <button
+              type="button"
+              data-testid="pentatonic-workflow-export-mode"
+              onClick={() => {
+                const row = exportable();
+                if (row) exportXml(row.xml, row.label);
+              }}
+            >
+              Export MusicXML
+            </button>
+          ) : (
+            <p style={{ margin: 0 }}>Compare, generate, or transform first.</p>
+          )}
         </div>
       ) : null}
 

@@ -463,6 +463,9 @@ describe('pentatonic workflow', () => {
     expect(workflow.props.value).toBe('analyse');
     expect(textOf(tree)).toContain('Transform Motif');
     expect(textOf(tree)).toContain('Generate Phrase');
+    expect(textOf(tree)).toContain('Plan / AUTO COLOR');
+    expect(textOf(tree)).toContain('Compare');
+    expect(textOf(tree)).toContain('Export');
     await act(async () => {
       workflow.props.onChange({ target: { value: 'transform' } });
     });
@@ -473,6 +476,7 @@ describe('pentatonic workflow', () => {
     });
     expect(tree.root.findByProps({ id: 'pentatonic-workflow-activity' }).props.value).toBe('SPARSE');
     expect(textOf(tree)).toContain('No phrase / silence');
+    expect(textOf(tree)).toContain('Development');
     expect(tree.root.findByProps({ id: 'pentatonic-analysis-mode' })).toBeTruthy();
   });
 });

@@ -97,6 +97,39 @@ The page shows:
 
 Outside-resource notes are not marked wrong. If every note sits inside the colour, that line reads None.
 
+## Workflow
+
+The page runs in this order:
+
+1. Analyse
+2. Plan / AUTO COLOR
+3. Transform Motif
+4. Generate Phrase
+5. Compare
+6. Export
+
+Each step uses the engines already in Composer OS. Compare does not add a second phrase engine.
+
+## Compare
+
+Compare shows at most three candidates. The order is the plan, then one alternative, then silence. A higher evaluation number does not move a candidate up the list.
+
+A candidate can be retain, reseat, a transformed phrase, outside-then-return, or silence. Each card shows the resource, the operator, the notes that were written, any notes outside the resource, the lineage, the return, the form fit, the duo fit, and a short evaluation note.
+
+Silence can sit in that list. On Wrong Turning, silence was the line that stayed.
+
+## Export
+
+Export uses the existing MusicXML writer. The file is new. Meter, tempo, and bar length come from the region you analysed. Rests stand for silence. Notes outside the colour stay outside it. There is no tablature.
+
+Release copies for the nine While We're Here checks sit in `/Users/user/Documents/DEVS/Pentatonic-Options/Dev6C-Release/`. The duo leadsheets were not overwritten.
+
 ## Audition and export
 
 Choose a candidate and audition it. Export writes a separate MusicXML file: the new line, with the region’s meter, tempo, and chord. No tablature. The source score stays where it was.
+
+## Dev 6 release
+
+Dev 6 freezes this workflow. Path registry stays major pentatonic and minor pentatonic. Colour registry stays 20 resources. `changeCost` stays `0.35`. Dev 3.7 fingerprint stays `cca0456e61a2a14e06f4aa14af0ae4bff902a46baa18ced000aec9ab146c91e6`. Tag `pentatonic-dev5-baseline` stays on Dev 5. The release tag is `pentatonic-dev6-release`.
+
+Operators kept: cell lineage, retain, reseat, hold-field, path none, no-phrase, structural silence. Slip, tritone pair, quartal comp, and quartal line stay, with the limits already in force. No operator was removed. Through, generic sequence, generic intensify, and a Woody Shaw semitone pair were not added.
