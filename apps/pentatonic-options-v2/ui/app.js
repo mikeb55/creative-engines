@@ -1,4 +1,5 @@
-const practice = window.practice;
+// contextBridge already binds `practice` in the page. A second `const practice` prevents this script from loading.
+const practiceApi = window.practice;
 const modes = ['PRACTICE', 'ANALYSE', 'AUTO COLOR', 'MOTIF', 'PHRASE', 'COMPARE', 'EXPORT'];
 const categories = [
   ['HOME_CONTINUITY', 'HOME / CONTINUITY'],
@@ -86,7 +87,7 @@ function renderCategories() {
 }
 
 async function loadFields() {
-  const rows = await practice.fields($('centre').value || 'C');
+  const rows = await practiceApi.fields($('centre').value || 'C');
   $('field').innerHTML = rows.map((row) => `<option value="${row.id}">${row.name}</option>`).join('');
   $('field').value = 'minor_pentatonic';
 }
@@ -94,7 +95,7 @@ async function loadFields() {
 async function generate() {
   state.mode = 'PRACTICE';
   renderModes();
-  const example = await practice.generate(request());
+  const example = await practiceApi.generate(request());
   showExample(example);
   remember(example);
 }
@@ -150,7 +151,7 @@ document.body.addEventListener('click', async (event) => {
   if (id === 'generate') await generate();
   if (id === 'next') {
     state.variation += 1;
-    const example = await practice.next({ ...request(), variation: state.variation - 1 });
+    const example = await practiceApi.next({ ...request(), variation: state.variation - 1 });
     state.variation = example.variation;
     showExample(example);
     remember(example);
@@ -158,7 +159,7 @@ document.body.addEventListener('click', async (event) => {
   if (id === 'analyse') {
     state.mode = 'ANALYSE';
     renderModes();
-    const result = await practice.analyse(request());
+    const result = await practiceApi.analyse(request());
     $('headline').textContent = 'Analysis';
     $('notes').textContent = result.recommendation || result.song || 'Score map';
     $('extra').textContent = result.map || result.colour || '';
@@ -166,7 +167,7 @@ document.body.addEventListener('click', async (event) => {
   if (id === 'auto') {
     state.mode = 'AUTO COLOR';
     renderModes();
-    const plan = await practice.autoColor(request());
+    const plan = await practiceApi.autoColor(request());
     $('headline').textContent = plan.outcome;
     $('notes').textContent = `${plan.operator} · ${plan.silence}`;
     $('reason').textContent = plan.rationale;
@@ -176,34 +177,43 @@ document.body.addEventListener('click', async (event) => {
     if (!state.example) await generate();
     state.mode = 'COMPARE';
     renderModes();
-    const compared = await practice.compare(state.example);
+    const compared = await practiceApi.compare(state.example);
     $('extra').innerHTML = compared.candidates.map((row) => `<div class="card"><strong>${row.slot}</strong> ${row.operator}<br>${row.notes}<br>${row.lineage}<br>${row.gceAdvisory}</div>`).join('') || 'No candidates.';
     $('headline').textContent = 'Compare';
     $('notes').textContent = 'Plan, one alternative, silence. GCE stays advisory.';
   }
   if (id === 'export') {
     if (!state.example) await generate();
-    state.lastExport = await practice.exportXml(state.example);
+    state.lastExport = await practiceApi.exportXml(state.example);
     if (state.history[state.cursor]) state.history[state.cursor].exported = true;
     state.mode = 'EXPORT';
     renderModes();
     $('extra').textContent = state.lastExport;
   }
-  if (id === 'open-mscore' && state.lastExport) await practice.openMuseScore(state.lastExport);
-  if (id === 'reveal' && state.lastExport) await practice.reveal(state.lastExport);
+  if (id === 'open-mscore' && state.lastExport) await practiceApi.openMuseScore(state.lastExport);
+  if (id === 'reveal' && state.lastExport) await practiceApi.reveal(state.lastExport);
   if (id === 'open-score') {
-    const score = await practice.analyseScore();
-    if (!score) return;
-    $('score-path').textContent = `${score.path} · read-only`;
-    $('headline').textContent = score.song || 'Score';
-    $('extra').textContent = score.map;
+    try {
+      const score = await practiceApi.analyseScore();
+      if (!score) return;
+      if (score.ok === false) {
+        $('reason').textContent = score.error || 'Could not open MusicXML.';
+        return;
+      }
+      $('score-path').textContent = `${score.fileName} · ${score.path} · read-only`;
+      $('headline').textContent = score.song || 'Score';
+      $('extra').textContent = score.map;
+      $('reason').textContent = '';
+    } catch (error) {
+      $('reason').textContent = error && error.message ? error.message : 'Could not open MusicXML.';
+    }
   }
   if (id === 'show-fields') {
-    const rows = await practice.fields($('centre').value || 'C');
+    const rows = await practiceApi.fields($('centre').value || 'C');
     $('side-list').innerHTML = rows.map((row) => `<div class="card"><strong>${row.name}</strong><br>${row.notes}<br>${row.brightness} bright · ${row.darkness} dark · ${row.tension} tension<br>${row.relationship}</div>`).join('');
   }
   if (id === 'show-wheel') {
-    const rows = await practice.wheel($('centre').value || 'C');
+    const rows = await practiceApi.wheel($('centre').value || 'C');
     $('side-list').innerHTML = rows.map((row) => `<div class="card"><strong>${row.label}</strong> ${row.practiceView ? 'PRACTICE VIEW' : row.mappedResourceName}<br>${row.notes}<br>${row.mappedResourceName || 'No registry match'} ${row.mappedReference || ''}</div>`).join('');
   }
   if (id === 'back' && state.cursor > 0) {
@@ -221,17 +231,17 @@ document.body.addEventListener('click', async (event) => {
       $('reason').textContent = 'Generate at least two examples, or favourite two.';
       return;
     }
-    state.lastExport = await practice.exportSheet(chosen.slice(0, 8));
+    state.lastExport = await practiceApi.exportSheet(chosen.slice(0, 8));
     $('extra').textContent = state.lastExport;
   }
   if (id === 'move-out' || id === 'pivot' || id === 'extract' || id === 'layered') {
     const view = id === 'move-out'
-      ? await practice.moveOut(request(), $('outness').value)
+      ? await practiceApi.moveOut(request(), $('outness').value)
       : id === 'pivot'
-        ? await practice.pivot(request())
+        ? await practiceApi.pivot(request())
         : id === 'extract'
-          ? await practice.extract(request())
-          : await practice.layered(request());
+          ? await practiceApi.extract(request())
+          : await practiceApi.layered(request());
     $('headline').textContent = view.title;
     $('notes').textContent = view.text;
     $('extra').innerHTML = (view.candidates || []).map((row) => `<div class="card"><strong>${row.slot}</strong><br>${row.text}</div>`).join('');
@@ -241,12 +251,12 @@ document.body.addEventListener('click', async (event) => {
 
 $('custom').addEventListener('change', async () => {
   if (!$('custom').value.trim()) return;
-  const inspected = await practice.custom($('custom').value, $('centre').value || 'C');
+  const inspected = await practiceApi.custom($('custom').value, $('centre').value || 'C');
   $('reason').textContent = inspected.ok ? `${inspected.label}: ${inspected.notes}` : inspected.error;
 });
 
 async function showIntentions() {
-  if (state.intentions.length === 0) state.intentions = await practice.intentions();
+  if (state.intentions.length === 0) state.intentions = await practiceApi.intentions();
   $('extra').innerHTML = state.intentions.map(([id, label]) => `<button type="button" data-intention="${id}" class="${id === state.intention ? 'active' : ''}">${label}</button>`).join(' ');
 }
 

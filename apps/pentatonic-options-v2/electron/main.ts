@@ -1,4 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain } from 'electron';
+import { openMusicXmlFromDialog } from '../src/openMusicXml';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -64,18 +65,15 @@ function registerIpc(): void {
     return { source: 'manual', ...analyseManualContext(request ?? {}) };
   });
   ipcMain.handle('practice:analyseScore', async () => {
-    const picked = await dialog.showOpenDialog({
-      title: 'Open MusicXML',
-      filters: [{ name: 'MusicXML', extensions: ['musicxml', 'xml'] }],
-      properties: ['openFile'],
+    const parent = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
+    const opened = await openMusicXmlFromDialog({
+      showOpenDialog: (options) => (parent ? dialog.showOpenDialog(parent, options) : dialog.showOpenDialog(options)),
     });
-    if (picked.canceled || !picked.filePaths[0]) return null;
-    loadedScorePath = picked.filePaths[0];
-    loadedScoreXml = fs.readFileSync(loadedScorePath, 'utf8');
-    const sha = sha256Text(loadedScoreXml);
-    const analysed = analyseScoreXml(loadedScoreXml);
-    if (sha256Text(fs.readFileSync(loadedScorePath, 'utf8')) !== sha) throw new Error('Source MusicXML changed.');
-    return { path: loadedScorePath, ...analysed };
+    if (!opened || opened.ok === false) return opened;
+    loadedScorePath = opened.path;
+    loadedScoreXml = opened.xml;
+    const { xml: _xml, ...view } = opened;
+    return view;
   });
   ipcMain.handle('practice:autoColor', (_event, request: PracticeRequest) => planPracticeAutoColor(request ?? {}));
   ipcMain.handle('practice:compare', (_event, example: PracticeExample) => comparePracticeExample(example));

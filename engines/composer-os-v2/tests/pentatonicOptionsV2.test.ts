@@ -3,10 +3,13 @@
  * Run: npx tsx --tsconfig tsconfig.json engines/composer-os-v2/tests/pentatonicOptionsV2.test.ts
  */
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { strToU8, zipSync } from 'fflate';
 import { listPentatonicColourResources } from '../core/pentatonic/colourRegistry';
 import { pentatonicFrozenConfigFingerprint } from '../core/pentatonic/frozenConfigFingerprint';
 import { COMPARE_CANDIDATE_CAP } from '../core/pentatonic/productionCompare';
@@ -26,21 +29,25 @@ import {
   type PracticeCategory,
 } from '../core/pentatonic/practiceFacade';
 import { emptySession, favouriteRows, rememberExample, stepSession, toggleFavourite } from '../../../apps/pentatonic-options-v2/src/session';
+import { loadMusicXmlFile, musicXmlOpenDialogOptions, openMusicXmlFromDialog } from '../../../apps/pentatonic-options-v2/src/openMusicXml';
 
 const FINGERPRINT = 'cca0456e61a2a14e06f4aa14af0ae4bff902a46baa18ced000aec9ab146c91e6';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const APP = path.join(ROOT, 'apps/pentatonic-options-v2');
 const FACADE = path.join(ROOT, 'engines/composer-os-v2/core/pentatonic/practiceFacade.ts');
 
-function run(): { ok: boolean; name: string }[] {
+async function run(): Promise<{ ok: boolean; name: string }[]> {
   const rows: { ok: boolean; name: string }[] = [];
-  const check = (name: string, fn: () => void) => {
-    try {
-      fn();
-      rows.push({ ok: true, name });
-    } catch (error) {
-      rows.push({ ok: false, name: `${name} — ${error instanceof Error ? error.message : String(error)}` });
-    }
+  let chain = Promise.resolve();
+  const check = (name: string, fn: () => void | Promise<void>) => {
+    chain = chain.then(async () => {
+      try {
+        await fn();
+        rows.push({ ok: true, name });
+      } catch (error) {
+        rows.push({ ok: false, name: `${name} — ${error instanceof Error ? error.message : String(error)}` });
+      }
+    });
   };
 
   check('V2 imports authoritative pentatonic seams', () => {
@@ -245,6 +252,90 @@ function run(): { ok: boolean; name: string }[] {
     assert.equal(favouriteRows(session).length, 1);
   });
 
+  check('Open MusicXML control exists and does not redeclare the bridge name', () => {
+    const html = fs.readFileSync(path.join(APP, 'ui/index.html'), 'utf8');
+    const app = fs.readFileSync(path.join(APP, 'ui/app.js'), 'utf8');
+    const main = fs.readFileSync(path.join(APP, 'electron/main.ts'), 'utf8');
+    assert.match(html, /<button id="open-score" type="button">Open MusicXML<\/button>/);
+    assert.equal(app.includes('const practice ='), false);
+    assert.match(app, /const practiceApi = window\.practice/);
+    assert.match(app, /practiceApi\.analyseScore\(\)/);
+    assert.match(app, /score\.ok === false/);
+    assert.match(app, /if \(!score\) return/);
+    assert.match(main, /openMusicXmlFromDialog/);
+    assert.equal(main.includes("extensions: ['musicxml', 'xml']"), false);
+  });
+
+  check('Open MusicXML dialog accepts musicxml, xml, and mxl', () => {
+    const options = musicXmlOpenDialogOptions();
+    assert.deepEqual(options.filters[0]?.extensions, ['musicxml', 'xml', 'mxl']);
+    assert.deepEqual(options.properties, ['openFile']);
+  });
+
+  check('Open MusicXML loads through the existing score reader and leaves the file unchanged', async () => {
+    const xml = generatePracticeExample({}).musicXml;
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'po-open-'));
+    const filePath = path.join(dir, 'practice.musicxml');
+    fs.writeFileSync(filePath, xml);
+    const before = createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
+    let passedExtensions: string[] = [];
+    const opened = await openMusicXmlFromDialog({
+      showOpenDialog: async (options) => {
+        passedExtensions = options.filters[0]?.extensions ?? [];
+        return { canceled: false, filePaths: [filePath] };
+      },
+    });
+    assert.deepEqual(passedExtensions, ['musicxml', 'xml', 'mxl']);
+    assert.equal(opened?.ok, true);
+    if (!opened || opened.ok === false) throw new Error(opened?.error || 'load failed');
+    assert.equal(opened.fileName, 'practice.musicxml');
+    assert.equal(opened.path, filePath);
+    assert.equal(opened.sha256, before);
+    assert.ok(opened.song.length > 0);
+    assert.ok(opened.map.length > 0);
+    assert.ok(opened.regionCount >= 0);
+    assert.match(opened.xml, /<score-partwise/);
+    assert.equal(createHash('sha256').update(fs.readFileSync(filePath)).digest('hex'), before);
+    assert.equal(fs.readFileSync(filePath, 'utf8'), xml);
+  });
+
+  check('Open MusicXML reads a compressed mxl through the existing intake', () => {
+    const xml = generatePracticeExample({ centre: 'F' }).musicXml;
+    const zipped = zipSync({
+      'META-INF/container.xml': strToU8('<?xml version="1.0"?><container><rootfiles><rootfile full-path="score.musicxml" media-type="application/vnd.recordare.musicxml+xml"/></rootfiles></container>'),
+      'score.musicxml': strToU8(xml),
+    });
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'po-mxl-'));
+    const filePath = path.join(dir, 'practice.mxl');
+    fs.writeFileSync(filePath, zipped);
+    const before = createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
+    const loaded = loadMusicXmlFile(filePath);
+    assert.equal(loaded.ok, true);
+    if (!loaded.ok) throw new Error(loaded.error);
+    assert.equal(loaded.fileName, 'practice.mxl');
+    assert.match(loaded.xml, /<score-partwise/);
+    assert.equal(createHash('sha256').update(fs.readFileSync(filePath)).digest('hex'), before);
+  });
+
+  check('Open MusicXML cancel leaves state alone', async () => {
+    const opened = await openMusicXmlFromDialog({
+      showOpenDialog: async () => ({ canceled: true, filePaths: [] }),
+    });
+    assert.equal(opened, null);
+  });
+
+  check('Open MusicXML invalid file returns a controlled error', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'po-bad-'));
+    const filePath = path.join(dir, 'notes.txt');
+    fs.writeFileSync(filePath, 'this is not musicxml');
+    const before = fs.readFileSync(filePath);
+    const loaded = loadMusicXmlFile(filePath);
+    assert.equal(loaded.ok, false);
+    if (loaded.ok) throw new Error('invalid file was accepted');
+    assert.match(loaded.error, /MusicXML|score|XML/);
+    assert.equal(fs.readFileSync(filePath).equals(before), true);
+  });
+
   check('Dev 3.7 fingerprint unchanged', () => {
     assert.equal(pentatonicFrozenConfigFingerprint(), FINGERPRINT);
   });
@@ -263,11 +354,16 @@ function run(): { ok: boolean; name: string }[] {
     assert.equal(launched.status, 0);
   });
 
+  await chain;
   return rows;
 }
 
-const rows = run();
-const failed = rows.filter((row) => !row.ok);
-for (const row of rows) console.log(`${row.ok ? 'PASS' : 'FAIL'} ${row.name}`);
-console.log(`${rows.length - failed.length}/${rows.length}`);
-if (failed.length > 0) process.exit(1);
+run().then((rows) => {
+  const failed = rows.filter((row) => !row.ok);
+  for (const row of rows) console.log(`${row.ok ? 'PASS' : 'FAIL'} ${row.name}`);
+  console.log(`${rows.length - failed.length}/${rows.length}`);
+  if (failed.length > 0) process.exit(1);
+}).catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

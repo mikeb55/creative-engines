@@ -44,6 +44,6 @@ const sourceApp = matches.find((item) => item.endsWith('Pentatonic Options V2.ap
 if (!sourceApp) throw new Error(`Packaged app not found under ${out}`);
 const finalApp = path.join(out, 'Pentatonic Options V2.app');
 fs.rmSync(finalApp, { recursive: true, force: true });
-fs.cpSync(sourceApp, finalApp, { recursive: true });
+fs.cpSync(sourceApp, finalApp, { recursive: true, verbatimSymlinks: true });
 spawnSync('codesign', ['--force', '--deep', '--sign', '-', finalApp], { stdio: 'inherit' });
 console.log(finalApp);

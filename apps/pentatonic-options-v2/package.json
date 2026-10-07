@@ -1,6 +1,6 @@
 {
   "name": "pentatonic-options-v2",
-  "version": "2.0.0",
+  "version": "2.1.1",
   "private": true,
   "description": "Pentatonic Options V2 practice app. Thin front end to the Composer OS pentatonic engine.",
   "author": "Third Sun",
