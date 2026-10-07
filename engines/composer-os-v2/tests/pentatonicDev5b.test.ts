@@ -196,6 +196,7 @@ function run(): { ok: boolean; name: string }[] {
       explicitOutside: true,
       grounding: grounded,
       method: 'M-DEG',
+      slipDirection: 1,
     });
     const near = realisePentatonicPhrase({
       purpose: 'DEVELOPMENT',
@@ -204,6 +205,7 @@ function run(): { ok: boolean; name: string }[] {
       explicitOutside: true,
       grounding: grounded,
       method: 'M-NEAR',
+      slipDirection: 1,
     });
     assert.equal(degree.method, 'M-DEG');
     assert.equal(near.method, 'M-NEAR');

@@ -24,7 +24,7 @@ import {
 } from './motifTransform';
 import { mod12 } from './pitch';
 
-export const PENTATONIC_PHRASE_OPERATORS_VERSION = 'pentatonic-phrase-operators-5b';
+export const PENTATONIC_PHRASE_OPERATORS_VERSION = 'pentatonic-phrase-operators-5b.1';
 
 export const DEV5B_DEFAULT_METHOD: MotifMapMethod = 'M-DEG';
 
@@ -49,6 +49,31 @@ export type PentatonicOperator = 'CELL_LINEAGE' | 'RESEAT' | 'SLIP' | 'TRITONE_P
 export type CellTransform = 'original' | 'rotation' | 'transposition' | 'M-DEG' | 'M-NEAR';
 
 export type ReturnKind = 'HOME' | 'COMMON_TONE' | 'TARGET_NOTE' | 'STABILISED_FIELD' | 'NONE';
+
+export type SlipLandingClass = 'STRONG' | 'ACCEPTABLE' | 'WEAK';
+
+export type SlipDirectionLabel = 'DOWN' | 'UP';
+
+export type SlipDirectionBasis = 'DEFAULT' | 'CONTEXT OVERRIDE';
+
+/**
+ * Advisory only. A WEAK landing does not reject the phrase.
+ * Semitone (and a unison already on the target) is STRONG.
+ * A whole tone is ACCEPTABLE. Anything larger is WEAK.
+ */
+export interface SlipLanding {
+  finalOutsideNote: number;
+  returnTarget: number | null;
+  approachInterval: number | null;
+  classification: SlipLandingClass | null;
+}
+
+export interface SlipDirectionReport {
+  label: SlipDirectionLabel;
+  basis: SlipDirectionBasis;
+  staticField: boolean;
+  semitones: 1 | -1;
+}
 
 export type ReseatLanding = 'common-tone' | 'held' | 'bass' | 'declared-tension';
 
@@ -108,6 +133,8 @@ export interface PentatonicPhraseRealisation {
   collectionName: string | null;
   returnKind: ReturnKind | null;
   pitches: readonly number[];
+  slipLanding: SlipLanding | null;
+  slipDirection: SlipDirectionReport | null;
   advisory: PhraseAdvisory;
 }
 
@@ -558,6 +585,8 @@ function silence(plan: OperatorPlan, home: PentatonicCollectionView | null, grou
     collectionName: home?.name ?? null,
     returnKind: null,
     pitches: [],
+    slipLanding: null,
+    slipDirection: null,
     advisory: advisePentatonicPhrase({
       lineage: null,
       pitches: [],
@@ -581,6 +610,8 @@ function finish(args: {
   returned: boolean;
   distinctCollections: number;
   harmonyBars?: readonly string[];
+  slipLanding?: SlipLanding | null;
+  slipDirection?: SlipDirectionReport | null;
 }): PentatonicPhraseRealisation {
   const lick = antiLickFindings(args.pitches, args.home);
   if (lick.rejected) {
@@ -612,6 +643,8 @@ function finish(args: {
     collectionName: args.home.name,
     returnKind: args.returnKind,
     pitches: args.pitches,
+    slipLanding: args.slipLanding ?? null,
+    slipDirection: args.slipDirection ?? null,
     advisory: advisePentatonicPhrase({
       lineage: { ...args.lineage, resultPitches: args.pitches },
       pitches: args.pitches,
@@ -621,6 +654,139 @@ function finish(args: {
       returned: args.returned,
       distinctCollections: args.distinctCollections,
     }),
+  };
+}
+
+function landingRank(classification: SlipLandingClass | null): number {
+  if (classification === 'STRONG') return 3;
+  if (classification === 'ACCEPTABLE') return 2;
+  if (classification === 'WEAK') return 1;
+  return 0;
+}
+
+/** Advisory approach from the last outside note into an explicit return target. */
+export function evaluateSlipLanding(finalOutsideNote: number, returnTarget: number | null): SlipLanding {
+  if (returnTarget === null) {
+    return { finalOutsideNote, returnTarget: null, approachInterval: null, classification: null };
+  }
+  const approachInterval = Math.abs(returnTarget - finalOutsideNote);
+  const classification: SlipLandingClass = approachInterval <= 1 ? 'STRONG' : approachInterval === 2 ? 'ACCEPTABLE' : 'WEAK';
+  return { finalOutsideNote, returnTarget, approachInterval, classification };
+}
+
+/**
+ * A static field is a pedal, a held tone, or an unchanging vamp.
+ * Motif identity grounds a slip. It does not make the field static.
+ * Moving harmony is not a static vamp.
+ */
+export function isStaticSlipField(args: {
+  grounding: GroundingAssessment;
+  harmonyBars?: readonly string[];
+  staticField?: boolean;
+}): boolean {
+  if (args.staticField === true) return true;
+  if (args.staticField === false) return false;
+  const labels = (args.harmonyBars ?? []).map((bar) => bar.trim()).filter((bar) => bar.length > 0 && bar !== 'N.C.');
+  if (new Set(labels).size > 1) return false;
+  return args.grounding.bassPedal || args.grounding.bassOstinato || args.grounding.sustainedTone;
+}
+
+export function chooseSlipDirection(args: {
+  staticField: boolean;
+  explicitDirection?: 1 | -1;
+  favourDirection?: 1 | -1;
+  upResolvesBetter: boolean;
+  registerFavoursUp: boolean;
+  degreeLineageFavoursUp: boolean;
+}): SlipDirectionReport {
+  const report = (semitones: 1 | -1, basis: SlipDirectionBasis): SlipDirectionReport => ({
+    label: semitones === -1 ? 'DOWN' : 'UP',
+    basis,
+    staticField: args.staticField,
+    semitones,
+  });
+  if (args.explicitDirection === 1 || args.explicitDirection === -1) {
+    const matchesDefault = args.staticField ? args.explicitDirection === -1 : args.explicitDirection === 1;
+    return report(args.explicitDirection, matchesDefault ? 'DEFAULT' : 'CONTEXT OVERRIDE');
+  }
+  if (!args.staticField) {
+    if (args.favourDirection === -1) return report(-1, 'CONTEXT OVERRIDE');
+    return report(1, 'DEFAULT');
+  }
+  if (args.upResolvesBetter || args.registerFavoursUp || args.degreeLineageFavoursUp || args.favourDirection === 1) {
+    return report(1, 'CONTEXT OVERRIDE');
+  }
+  return report(-1, 'DEFAULT');
+}
+
+function slipDrift(source: readonly number[], slipped: readonly number[], direction: 1 | -1): number {
+  const count = Math.min(source.length, slipped.length);
+  let worst = 0;
+  for (let index = 0; index < count; index += 1) {
+    const drift = Math.abs(slipped[index]! - (source[index]! + direction));
+    if (drift > worst) worst = drift;
+  }
+  return worst;
+}
+
+function resolveSlipReturn(args: {
+  sounded: readonly number[];
+  slipped: readonly number[];
+  slippedCollection: PentatonicCollectionView;
+  home: PentatonicCollectionView;
+  returnKind: ReturnKind;
+  targetNotePc?: number | null;
+  anchorPc?: number | null;
+}): number | null {
+  if (args.returnKind === 'NONE') return null;
+  const returned = mapCell(args.slipped, args.slippedCollection, args.home, 'M-DEG');
+  const anchorMidi = returned[returned.length - 1] ?? args.sounded[args.sounded.length - 1] ?? 60;
+  if (args.returnKind === 'STABILISED_FIELD') {
+    return nearestMidi(anchorMidi, collectionPitchClasses(args.home)[0]!);
+  }
+  if (args.returnKind === 'TARGET_NOTE' && args.targetNotePc !== null && args.targetNotePc !== undefined) {
+    return nearestMidi(anchorMidi, args.targetNotePc);
+  }
+  if (args.returnKind === 'COMMON_TONE') {
+    const anchor = args.anchorPc ?? mod12(args.sounded[0] ?? 60);
+    return nearestMidi(anchorMidi, anchor);
+  }
+  return returned[returned.length - 1] ?? args.sounded[args.sounded.length - 1] ?? null;
+}
+
+function slipCandidate(args: {
+  sounded: readonly number[];
+  home: PentatonicCollectionView;
+  direction: 1 | -1;
+  method: MotifMapMethod;
+  returnKind: ReturnKind;
+  targetNotePc?: number | null;
+  anchorPc?: number | null;
+}): {
+  direction: 1 | -1;
+  slipped: number[];
+  returnPitch: number | null;
+  landing: SlipLanding;
+  identity: boolean;
+} {
+  const slippedCollection = transposeCollection(args.home, args.direction);
+  const slipped = mapCell(args.sounded, args.home, slippedCollection, args.method);
+  const returnPitch = resolveSlipReturn({
+    sounded: args.sounded,
+    slipped,
+    slippedCollection,
+    home: args.home,
+    returnKind: args.returnKind,
+    targetNotePc: args.targetNotePc,
+    anchorPc: args.anchorPc,
+  });
+  const finalOutside = slipped[slipped.length - 1] ?? args.sounded[args.sounded.length - 1] ?? 60;
+  return {
+    direction: args.direction,
+    slipped,
+    returnPitch,
+    landing: evaluateSlipLanding(finalOutside, returnPitch),
+    identity: identityHolds(args.sounded, slipped, args.home, slippedCollection),
   };
 }
 
@@ -639,6 +805,8 @@ export function realisePentatonicPhrase(args: {
   lineageTransform?: CellTransform;
   reseat?: { preference: ReseatLanding; bassPc?: number | null; heldPc?: number | null; tensionPc?: number | null };
   slipDirection?: 1 | -1;
+  favourSlipDirection?: 1 | -1;
+  staticField?: boolean;
   returnKind?: ReturnKind;
   targetNotePc?: number | null;
   harmonyBars?: readonly string[];
@@ -733,32 +901,44 @@ export function realisePentatonicPhrase(args: {
   }
 
   if (plan.operator === 'SLIP') {
-    const direction = args.slipDirection === -1 ? -1 : 1;
-    const slippedCollection = transposeCollection(args.home, direction);
-    const slipped = mapCell(sounded, args.home, slippedCollection, method);
-    chain = [...chain, method];
     const returnKind = args.returnKind ?? 'HOME';
-    let returnPitch: number | null = null;
-    if (returnKind !== 'NONE') {
-      const returned = mapCell(slipped, slippedCollection, args.home, 'M-DEG');
-      if (returnKind === 'STABILISED_FIELD') {
-        returnPitch = nearestMidi(returned[returned.length - 1] ?? sounded[0] ?? 60, collectionPitchClasses(args.home)[0]!);
-      } else if (returnKind === 'TARGET_NOTE' && args.targetNotePc !== null && args.targetNotePc !== undefined) {
-        returnPitch = nearestMidi(returned[returned.length - 1] ?? 60, args.targetNotePc);
-      } else if (returnKind === 'COMMON_TONE') {
-        const anchor = args.reseat?.bassPc ?? args.reseat?.heldPc ?? mod12(sounded[0] ?? 60);
-        returnPitch = nearestMidi(returned[returned.length - 1] ?? 60, anchor);
-      } else {
-        returnPitch = returned[returned.length - 1] ?? sounded[sounded.length - 1] ?? null;
-      }
-    }
-    const pitches = returnPitch === null ? [...sounded, ...slipped] : [...sounded, ...slipped, returnPitch];
+    const anchorPc = args.reseat?.bassPc ?? args.reseat?.heldPc ?? null;
+    const candidateArgs = {
+      sounded,
+      home: args.home,
+      method,
+      returnKind,
+      targetNotePc: args.targetNotePc,
+      anchorPc,
+    };
+    const down = slipCandidate({ ...candidateArgs, direction: -1 });
+    const up = slipCandidate({ ...candidateArgs, direction: 1 });
+    const staticField = isStaticSlipField({
+      grounding,
+      harmonyBars: args.harmonyBars,
+      staticField: args.staticField,
+    });
+    const heldPc = args.reseat?.heldPc;
+    const lastPc = mod12(sounded[sounded.length - 1] ?? 60);
+    const heldFavoursUp = heldPc !== null && heldPc !== undefined && mod12(heldPc) === mod12(lastPc + 1);
+    const favourDirection = args.favourSlipDirection ?? (heldFavoursUp ? 1 : undefined);
+    const slipDirection = chooseSlipDirection({
+      staticField,
+      explicitDirection: args.slipDirection,
+      favourDirection,
+      upResolvesBetter: landingRank(up.landing.classification) > landingRank(down.landing.classification),
+      registerFavoursUp: slipDrift(sounded, down.slipped, -1) >= 6 && slipDrift(sounded, up.slipped, 1) < 6,
+      degreeLineageFavoursUp: method === 'M-DEG' && up.identity && !down.identity,
+    });
+    const chosen = slipDirection.semitones === -1 ? down : up;
+    chain = [...chain, method];
+    const pitches = chosen.returnPitch === null ? [...sounded, ...chosen.slipped] : [...sounded, ...chosen.slipped, chosen.returnPitch];
     const lineage: CellLineage = {
       parentCell: parent,
       soundedCell: sounded,
       chain,
       resultPitches: pitches,
-      identityPreserved: identityHolds(sounded, slipped, args.home, slippedCollection),
+      identityPreserved: chosen.identity,
       fourNoteSubset: sounded.length === 4,
     };
     return finish({
@@ -769,9 +949,11 @@ export function realisePentatonicPhrase(args: {
       lineage,
       method,
       returnKind,
-      returned: returnKind === 'NONE' || returnPitch !== null,
+      returned: returnKind === 'NONE' || chosen.returnPitch !== null,
       distinctCollections: 2,
       harmonyBars: args.harmonyBars,
+      slipLanding: chosen.landing,
+      slipDirection,
     });
   }
 
