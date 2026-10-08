@@ -1,5 +1,7 @@
 # Composer OS — Generative Music System
 
+**Windows:** [READ ME BEFORE INSTALLING COMPOSER OS ON WINDOWS](docs/windows/README-BEFORE-INSTALLING.md). A GitHub Release installer is not published yet.
+
 ## Overview
 
 Composer OS is a **deterministic**, **seeded** compositional pipeline: **style engines**, **harmonic palettes**, **songwriter slices**, and **export templates** for generative lead-sheet and ensemble music. The primary TypeScript engine lives under **`engines/composer-os-v2/`**; apps include the **Composer OS** web UI and **Electron** desktop wrapper sharing the same **`app-api/`** contract.
