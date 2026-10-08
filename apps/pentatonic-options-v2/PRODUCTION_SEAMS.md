@@ -10,10 +10,11 @@ V2 calls the Composer OS pentatonic engine. It does not own a second engine.
 | Colour reading | `evaluatePentatonicColour` |
 | Path home collection | `manualCollection` |
 | AUTO COLOR | `planAutoColor` |
-| Distance (advisory) | `planGradedOut` via `moveOut` |
-| Pivot link (check only) | `planPivotLink` via `connectFields` |
-| Extract (advisory) | `extractParentField` via `deriveField` |
-| Layered field (metadata) | `planLayeredField` via `layerField` |
+| Field distance (measure) | `measureFieldDistance` via `describeFieldDistance` |
+| Outness / graded band (check) | `planGradedOut` via `describeOutness` |
+| Pivot link (check only) | `planPivotLink` via `describePivot` |
+| Derive field (advisory) | `extractParentField` via `describeExtraction` |
+| Duo analysis (metadata) | `planLayeredField` via `describeDuo` |
 | Motif transformation | `transformCell`, `realisePentatonicPhrase` |
 | Phrase generation | `realisePentatonicPhrase`, `planPentatonicOperator` |
 | Quartal cells | `realiseQuartalComp`, `realiseQuartalLine` |

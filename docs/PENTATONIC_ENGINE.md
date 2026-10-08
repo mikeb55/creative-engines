@@ -140,7 +140,7 @@ Dev 7 does not add a second engine. Dev 6 still plans. The new calls describe ho
 
 Distance uses shared notes, how far the other notes move, the centre, and whether a return is audible. The classes are identical, near, related, outside, and remote. Shared count alone does not decide.
 
-Move out is now labelled Distance. It reports which registered field sits in subtle, moderate, strong, or remote. It does not choose that field and it does not write a lick. A strong or remote report can list shared tones, a landing note, and an intermediate field when the two fields share nothing.
+Pentatonic Options V2.2 shows field distance on the practice screen: current field, target field, distance class, and shared notes. Outness checks a subtle, moderate, strong, or remote band and lists candidates. It does not choose a field and it does not write a phrase. Pivot link stays disabled until a target field exists. Derive field reports possible colours, or NONE / insufficient context. Duo analysis is metadata for guitar and bass. Generate still runs the Dev 6 plan.
 
 Pivot link is the smallest motion between two fields: a common tone, one or two nearby notes, a held landing, or the same motif sat on the new field. If the fields are already the same, no link phrase is needed. A scale is not used as a bridge.
 

@@ -3,6 +3,7 @@ import { openMusicXmlFromDialog } from '../src/openMusicXml';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { describeDuo, describeExtraction, describeFieldDistance, describeOutness, describePivot } from '../src/advisoryPresentation';
 import { fieldFromResource } from '../../../engines/composer-os-v2/core/pentatonic/fieldDistance';
 import { planGradedOut } from '../../../engines/composer-os-v2/core/pentatonic/gradedOut';
 import {
@@ -104,6 +105,11 @@ function registerIpc(): void {
   ipcMain.handle('practice:pivot', (_event, request: PracticeRequest) => connectFields(request ?? {}));
   ipcMain.handle('practice:extract', (_event, request: PracticeRequest) => deriveField(request ?? {}));
   ipcMain.handle('practice:layered', (_event, request: PracticeRequest) => layerField(request ?? {}));
+  ipcMain.handle('practice:fieldDistance', (_event, payload: { centre?: string; fieldId?: string; targetCentre?: string; targetFieldId?: string }) => describeFieldDistance(payload ?? {}));
+  ipcMain.handle('practice:outness', (_event, request: PracticeRequest, outness: 'SUBTLE' | 'MODERATE' | 'STRONG' | 'REMOTE') => describeOutness(request ?? {}, outness || 'MODERATE'));
+  ipcMain.handle('practice:pivotCheck', (_event, payload: { centre?: string; fieldId?: string; targetCentre?: string; targetFieldId?: string; motif?: string }) => describePivot(payload ?? {}));
+  ipcMain.handle('practice:deriveCheck', (_event, request: PracticeRequest) => describeExtraction(request ?? {}));
+  ipcMain.handle('practice:duoCheck', (_event, request: PracticeRequest) => describeDuo(request ?? {}));
 }
 
 function createWindow(): void {

@@ -9,7 +9,7 @@
   <header>
     <div>
       <strong>Pentatonic Options</strong>
-      <span class="muted">V2.1.1 · Practice · Composer OS pentatonic engine</span>
+      <span class="muted">V2.2 · Practice · Composer OS pentatonic engine</span>
     </div>
     <nav id="modes"></nav>
   </header>
@@ -44,6 +44,7 @@
       <p id="notes" class="notes">Set a centre and generate.</p>
       <dl id="facts"></dl>
       <p id="reason" class="muted"></p>
+      <p id="auto-distance" class="muted"></p>
       <div id="extra"></div>
     </section>
     <section id="purpose">
@@ -55,20 +56,43 @@
           <option>EXPANDED</option>
         </select>
       </label>
+      <h2 id="field-distance">Field distance</h2>
+      <label>Target centre <input id="target-centre" placeholder="same" /></label>
+      <label>Target field <select id="target-field"></select></label>
+      <button id="measure" class="advisory" type="button">Measure</button>
+      <pre id="distance-readout" class="readout">Choose a target field.</pre>
+      <details>
+        <summary>More</summary>
+        <p id="distance-detail" class="muted"></p>
+      </details>
       <div id="categories"></div>
-      <h2>Colour navigation</h2>
-      <label>Outness
-        <select id="outness">
-          <option value="SUBTLE">Subtle</option>
-          <option value="MODERATE" selected>Moderate</option>
-          <option value="STRONG">Strong</option>
-          <option value="REMOTE">Remote</option>
-        </select>
-      </label>
-      <button id="move-out" type="button">Distance</button>
-      <button id="pivot" type="button">Pivot link</button>
-      <button id="extract" type="button">Extract (advisory)</button>
-      <button id="layered" type="button">Layered field</button>
+      <details id="colour-analysis">
+        <summary>Colour analysis</summary>
+        <label>Outness
+          <select id="outness">
+            <option value="SUBTLE">Subtle</option>
+            <option value="MODERATE" selected>Moderate</option>
+            <option value="STRONG">Strong</option>
+            <option value="REMOTE">Remote</option>
+          </select>
+        </label>
+        <p id="outness-hint" class="muted">Check reports this band. It does not write a phrase.</p>
+        <button id="check-outness" class="advisory" type="button">Check</button>
+        <pre id="outness-readout" class="readout"></pre>
+        <h2>Pivot link</h2>
+        <button id="pivot" class="advisory" type="button" disabled>Pivot link</button>
+        <p id="pivot-hint" class="muted">Choose a target field first</p>
+        <pre id="pivot-readout" class="readout"></pre>
+        <h2>Derive field</h2>
+        <button id="extract" class="advisory" type="button">Derive</button>
+        <pre id="extract-readout" class="readout"></pre>
+        <div id="duo-block" hidden>
+          <h2>Duo analysis</h2>
+          <button id="layered" class="advisory" type="button">Check</button>
+          <pre id="duo-readout" class="readout"></pre>
+          <p id="duo-detail" class="muted"></p>
+        </div>
+      </details>
       <h2>Field</h2>
       <select id="field"></select>
       <button id="show-fields" type="button">Field browser</button>
@@ -79,7 +103,7 @@
   <footer>
     <button id="analyse" type="button">ANALYSE</button>
     <button id="auto" type="button">AUTO COLOR</button>
-    <button id="generate" type="button">GENERATE</button>
+    <button id="generate" class="generate" type="button">GENERATE</button>
     <button id="compare" type="button">COMPARE</button>
     <button id="next" class="primary" type="button">NEXT EXAMPLE</button>
     <button id="export" type="button">EXPORT</button>

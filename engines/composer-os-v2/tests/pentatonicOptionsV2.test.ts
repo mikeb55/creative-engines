@@ -30,6 +30,13 @@ import {
 } from '../core/pentatonic/practiceFacade';
 import { emptySession, favouriteRows, rememberExample, stepSession, toggleFavourite } from '../../../apps/pentatonic-options-v2/src/session';
 import { loadMusicXmlFile, musicXmlOpenDialogOptions, openMusicXmlFromDialog } from '../../../apps/pentatonic-options-v2/src/openMusicXml';
+import {
+  describeDuo,
+  describeExtraction,
+  describeFieldDistance,
+  describeOutness,
+  describePivot,
+} from '../../../apps/pentatonic-options-v2/src/advisoryPresentation';
 
 const FINGERPRINT = 'cca0456e61a2a14e06f4aa14af0ae4bff902a46baa18ced000aec9ab146c91e6';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -334,6 +341,161 @@ async function run(): Promise<{ ok: boolean; name: string }[]> {
     if (loaded.ok) throw new Error('invalid file was accepted');
     assert.match(loaded.error, /MusicXML|score|XML/);
     assert.equal(fs.readFileSync(filePath).equals(before), true);
+  });
+
+  check('A field distance is visible and measures two fields', () => {
+    const html = fs.readFileSync(path.join(APP, 'ui/index.html'), 'utf8');
+    const app = fs.readFileSync(path.join(APP, 'ui/app.js'), 'utf8');
+    assert.match(html, /id="field-distance"/);
+    assert.match(html, /Field distance/);
+    assert.match(app, /practiceApi\.fieldDistance/);
+    const card = describeFieldDistance({
+      centre: 'F',
+      fieldId: 'minor_pentatonic',
+      targetCentre: 'B',
+      targetFieldId: 'minor_pentatonic',
+    });
+    assert.equal(card.writesPhrase, false);
+    assert.match(card.text, /CURRENT FIELD:\nF minor pentatonic/);
+    assert.match(card.text, /TARGET:\nB minor pentatonic/);
+    assert.match(card.text, /DISTANCE:\nREMOTE/);
+    assert.match(card.text, /SHARED NOTES:\n0/);
+    assert.equal(describeFieldDistance({ centre: 'F', fieldId: 'minor_pentatonic' }).text, 'Choose a target field.');
+  });
+
+  check('B outness is labelled as analysis', () => {
+    const html = fs.readFileSync(path.join(APP, 'ui/index.html'), 'utf8');
+    const app = fs.readFileSync(path.join(APP, 'ui/app.js'), 'utf8');
+    assert.match(html, /Outness/);
+    assert.match(html, /id="check-outness"[^>]*>Check</);
+    assert.equal(html.toLowerCase().includes('move out'), false);
+    assert.equal(app.includes('practiceApi.moveOut'), false);
+    assert.equal(app.includes("id === 'move-out'"), false);
+    const report = describeOutness({ centre: 'F', fieldId: 'minor_pentatonic' }, 'REMOTE');
+    assert.match(report.text, /REMOTE candidates/);
+    assert.equal(report.text.toLowerCase().includes('move to'), false);
+    assert.equal(report.writesPhrase, false);
+  });
+
+  check('C selecting outness does not generate a phrase', () => {
+    const app = fs.readFileSync(path.join(APP, 'ui/app.js'), 'utf8');
+    const body = app.slice(app.indexOf('function onOutnessChange'), app.indexOf('function refreshPivot'));
+    assert.match(body, /function onOutnessChange/);
+    assert.equal(body.includes('generate'), false);
+    assert.equal(body.includes('practiceApi'), false);
+    const check = app.slice(app.indexOf("id === 'check-outness'"), app.indexOf("id === 'pivot'"));
+    assert.match(check, /practiceApi\.outness/);
+    assert.equal(check.includes('generate('), false);
+    assert.equal(check.includes('remember('), false);
+    assert.equal(check.includes('showExample'), false);
+  });
+
+  check('D pivot link requires a source and a target', () => {
+    const html = fs.readFileSync(path.join(APP, 'ui/index.html'), 'utf8');
+    const app = fs.readFileSync(path.join(APP, 'ui/app.js'), 'utf8');
+    assert.match(html, /id="pivot"[^>]*disabled/);
+    assert.match(html, /Choose a target field first/);
+    assert.match(app, /\$\('pivot'\)\.disabled = !ready/);
+    const closed = describePivot({ centre: 'C', fieldId: 'minor_pentatonic' });
+    assert.equal(closed.ready, false);
+    assert.equal(closed.text, 'Choose a target field first');
+    assert.equal(closed.writesPhrase, false);
+    const open = describePivot({
+      centre: 'F',
+      fieldId: 'minor_pentatonic',
+      targetCentre: 'B',
+      targetFieldId: 'minor_pentatonic',
+    });
+    assert.match(open.text, /NO CREDIBLE PIVOT/);
+    assert.match(open.text, /COMMON TONES:/);
+    assert.match(open.text, /PIVOT NOTE:/);
+    assert.match(open.text, /MOVING NOTES:/);
+    assert.match(open.text, /LANDING:/);
+    const linked = describePivot({ centre: 'C', fieldId: 'minor_pentatonic', targetFieldId: 'major_pentatonic' });
+    assert.equal(linked.text.includes('NO CREDIBLE PIVOT'), false);
+    assert.match(linked.text, /COMMON TONES:/);
+  });
+
+  check('E parent extraction stays advisory', () => {
+    const html = fs.readFileSync(path.join(APP, 'ui/index.html'), 'utf8');
+    assert.match(html, /Derive field/);
+    assert.match(html, /id="extract"[^>]*>Derive</);
+    const thin = describeExtraction({ centre: 'C', targetNotes: 'C D' });
+    assert.match(thin.text, /POSSIBLE FIELDS/);
+    assert.match(thin.text, /INSUFFICIENT_CONTEXT/);
+    assert.equal(thin.writesPhrase, false);
+    const none = describeExtraction({ centre: 'C', targetNotes: 'C C# D D# E F' });
+    assert.match(none.text, /POSSIBLE FIELDS/);
+    assert.match(none.text, /NONE|INSUFFICIENT_CONTEXT|Advisory/);
+    assert.equal(/use this/i.test(none.text), false);
+    assert.equal(/selected plan/i.test(none.text), false);
+    const wide = describeExtraction({ centre: 'C', targetNotes: 'C D E F G A B' });
+    assert.match(wide.text, /POSSIBLE FIELDS/);
+    assert.equal(/use this/i.test(wide.text), false);
+    assert.equal(/selected plan/i.test(wide.text), false);
+    assert.equal(wide.writesPhrase, false);
+  });
+
+  check('F layered field is metadata only', () => {
+    const html = fs.readFileSync(path.join(APP, 'ui/index.html'), 'utf8');
+    const app = fs.readFileSync(path.join(APP, 'ui/app.js'), 'utf8');
+    assert.match(html, /Duo analysis/);
+    assert.match(html, /id="duo-block" hidden/);
+    const hidden = describeDuo({ centre: 'G', fieldId: 'minor_pentatonic' });
+    assert.equal(hidden.ready, false);
+    assert.equal(hidden.writesPhrase, false);
+    const shown = describeDuo({ centre: 'G', fieldId: 'minor_pentatonic', bassNotes: 'G', guitarRole: 'GUITAR_RESPONDS' });
+    assert.match(shown.text, /DUO ANALYSIS/);
+    assert.match(shown.text, /FIELD:\nG minor pentatonic/);
+    assert.match(shown.text, /GUITAR:\nsparse upper subset/);
+    assert.match(shown.text, /BASS:\nactive lower subset/);
+    assert.match(shown.text, /ROLE:\nbass leads \/ guitar responds/);
+    assert.equal(shown.writesPhrase, false);
+    assert.equal('musicXml' in shown, false);
+    const layered = app.slice(app.indexOf("id === 'layered'"), app.indexOf("id === 'reset'"));
+    assert.match(layered, /practiceApi\.duoCheck/);
+    assert.equal(layered.includes('generate('), false);
+    assert.equal(layered.includes('remember('), false);
+  });
+
+  check('G generate still calls the Dev 6 practice path', () => {
+    const app = fs.readFileSync(path.join(APP, 'ui/app.js'), 'utf8');
+    const body = app.slice(app.indexOf('async function generate'), app.indexOf('function reset'));
+    assert.match(body, /practiceApi\.generate\(request\(\)\)/);
+    assert.equal(body.includes('outness'), false);
+    assert.equal(body.includes('duoCheck'), false);
+    assert.equal(body.includes('deriveCheck'), false);
+    assert.match(app, /if \(id === 'generate'\) await generate\(\)/);
+    const example = generatePracticeExample({ centre: 'F', fieldId: 'minor_pentatonic' });
+    assert.equal(example.operator.length > 0, true);
+    assert.match(example.musicXml, /<score-partwise/);
+  });
+
+  check('H compare does not take hypothetical Dev 7 fields', () => {
+    const app = fs.readFileSync(path.join(APP, 'ui/app.js'), 'utf8');
+    const compare = app.slice(app.indexOf("id === 'compare'"), app.indexOf("id === 'export'"));
+    assert.match(compare, /practiceApi\.compare\(state\.example\)/);
+    assert.equal(compare.includes('outness'), false);
+    assert.equal(compare.includes('fieldDistance'), false);
+    assert.equal(compare.includes('deriveCheck'), false);
+    const example = generatePracticeExample({ centre: 'F', fieldId: 'minor_pentatonic', category: 'HOME_CONTINUITY' });
+    const compared = comparePracticeExample(example);
+    assert.ok(compared.candidates.length <= 3);
+    assert.equal(compared.ranking, 'plan-alternative-silence');
+    assert.deepEqual(compared.candidates.map((row) => row.slot).filter((slot) => !['plan', 'alternative', 'silence'].includes(slot)), []);
+    const remote = describeOutness({ centre: 'F', fieldId: 'minor_pentatonic' }, 'REMOTE');
+    assert.equal(compared.candidates.some((row) => row.notes === remote.text), false);
+  });
+
+  check('J export and K next example stay on the practice path', () => {
+    const app = fs.readFileSync(path.join(APP, 'ui/app.js'), 'utf8');
+    assert.match(app, /practiceApi\.exportXml\(state\.example\)/);
+    assert.match(app, /practiceApi\.next\(/);
+    const first = generatePracticeExample({ category: 'HOME_CONTINUITY', centre: 'C', variation: 0 });
+    const next = nextPracticeExample({ category: 'HOME_CONTINUITY', centre: 'C', variation: 0 });
+    assert.equal(next.category, first.category);
+    assert.equal(next.variation, first.variation + 1);
+    assert.match(first.musicXml, /<score-partwise/);
   });
 
   check('Dev 3.7 fingerprint unchanged', () => {

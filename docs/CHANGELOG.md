@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+### Changed
+
+- **Pentatonic Options V2.2** — practice UI now reads Dev 7 as advice. Field distance is on the practice screen. Outness checks a distance band and does not write a phrase. Pivot link waits for a target field. Derive field and duo analysis stay reports. Generate remains the Dev 6 control. Compare stays plan, one alternative, and silence. Open MusicXML is unchanged. Tag `pentatonic-options-v2.2-release`. Tags `pentatonic-options-v2.1.1-release` and `pentatonic-dev7.1-release` were not moved.
+
 ### Fixed
 
 - **Pentatonic Engine Dev 7.1** — Dev 7 no longer approves or starts a field change Dev 6 did not choose. GRADED_OUT reports a distance band. PIVOT_LINK checks an existing source and destination, and a zero-share pair can say no credible pivot. PARENT_EXTRACTION is a report. LAYERED_FIELD is metadata. `BASS_RESPONDS` and `BASS_SUPPORTS` are not treated as bass leads. Field distance is unchanged. Tag `pentatonic-dev7.1-release`. Tags `pentatonic-dev7-release`, `pentatonic-dev6-release`, and `pentatonic-options-v2.1.1-release` were not moved.

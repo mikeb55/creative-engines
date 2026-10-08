@@ -88,8 +88,12 @@ function renderCategories() {
 
 async function loadFields() {
   const rows = await practiceApi.fields($('centre').value || 'C');
-  $('field').innerHTML = rows.map((row) => `<option value="${row.id}">${row.name}</option>`).join('');
+  const options = rows.map((row) => `<option value="${row.id}">${row.name}</option>`).join('');
+  const target = $('target-field').value;
+  $('field').innerHTML = options;
   $('field').value = 'minor_pentatonic';
+  $('target-field').innerHTML = `<option value="">Choose a target</option>${options}`;
+  if (target && [...$('target-field').options].some((option) => option.value === target)) $('target-field').value = target;
 }
 
 async function generate() {
@@ -117,13 +121,80 @@ function reset() {
   $('role').value = '';
   $('difficulty').value = 'SPARSE';
   $('field').value = 'minor_pentatonic';
+  $('target-centre').value = '';
+  $('target-field').value = '';
   $('headline').textContent = 'Ready';
   $('notes').textContent = 'Centre C. Sparse continuity. No score, motif, or bass.';
   $('facts').innerHTML = '';
   $('reason').textContent = '';
+  $('auto-distance').textContent = '';
   $('extra').innerHTML = '';
+  clearAnalysis();
   renderModes();
   renderCategories();
+  refreshPivot();
+  refreshDuo();
+}
+
+function clearAnalysis() {
+  $('distance-readout').textContent = 'Choose a target field.';
+  $('distance-detail').textContent = '';
+  $('outness-readout').textContent = '';
+  $('pivot-readout').textContent = '';
+  $('extract-readout').textContent = '';
+  $('duo-readout').textContent = '';
+  $('duo-detail').textContent = '';
+}
+
+function distancePayload() {
+  return {
+    centre: $('centre').value,
+    fieldId: $('field').value,
+    targetCentre: $('target-centre').value,
+    targetFieldId: $('target-field').value,
+    motif: $('motif').value,
+  };
+}
+
+function showCard(readoutId, detailId, view) {
+  $(readoutId).textContent = view.text;
+  if (detailId) $(detailId).textContent = view.detail || '';
+}
+
+async function measureDistance() {
+  const view = await practiceApi.fieldDistance(distancePayload());
+  showCard('distance-readout', 'distance-detail', view);
+  return view;
+}
+
+function onOutnessChange() {
+  const band = $('outness').value;
+  $('outness-hint').textContent = `${band} candidates. Check measures the band. It does not write a phrase.`;
+}
+
+function refreshPivot() {
+  const ready = Boolean($('target-field').value);
+  $('pivot').disabled = !ready;
+  $('pivot-hint').textContent = ready ? '' : 'Choose a target field first';
+  if (!ready) $('pivot-readout').textContent = '';
+}
+
+function duoContext() {
+  return Boolean($('bass').value.trim() || $('role').value || state.category === 'ANSWER_BASS' || state.category === 'SUPPORT_BASS');
+}
+
+function refreshDuo() {
+  $('duo-block').hidden = !duoContext();
+}
+
+async function showAutoDistance() {
+  const view = await practiceApi.fieldDistance(distancePayload());
+  if (view.ready && view.text.includes('DISTANCE:\n') && !view.text.includes('DISTANCE:\nIDENTICAL')) {
+    const line = view.text.split('DISTANCE:\n')[1].split('\n')[0];
+    $('auto-distance').textContent = `FIELD DISTANCE TO ALTERNATIVE:\n${line}`;
+    return;
+  }
+  $('auto-distance').textContent = '';
 }
 
 document.body.addEventListener('click', async (event) => {
@@ -140,6 +211,7 @@ document.body.addEventListener('click', async (event) => {
     state.category = target.dataset.category;
     state.variation = 0;
     renderCategories();
+    refreshDuo();
     return;
   }
   if (target.dataset.intention) {
@@ -168,9 +240,10 @@ document.body.addEventListener('click', async (event) => {
     state.mode = 'AUTO COLOR';
     renderModes();
     const plan = await practiceApi.autoColor(request());
-    $('headline').textContent = plan.outcome;
+    $('headline').textContent = `AUTO COLOR: ${String(plan.outcome).replaceAll('_', ' ')}`;
     $('notes').textContent = `${plan.operator} · ${plan.silence}`;
     $('reason').textContent = plan.rationale;
+    await showAutoDistance();
     await showIntentions();
   }
   if (id === 'compare') {
@@ -234,20 +307,43 @@ document.body.addEventListener('click', async (event) => {
     state.lastExport = await practiceApi.exportSheet(chosen.slice(0, 8));
     $('extra').textContent = state.lastExport;
   }
-  if (id === 'move-out' || id === 'pivot' || id === 'extract' || id === 'layered') {
-    const view = id === 'move-out'
-      ? await practiceApi.moveOut(request(), $('outness').value)
-      : id === 'pivot'
-        ? await practiceApi.pivot(request())
-        : id === 'extract'
-          ? await practiceApi.extract(request())
-          : await practiceApi.layered(request());
-    $('headline').textContent = view.title;
-    $('notes').textContent = view.text;
-    $('extra').innerHTML = (view.candidates || []).map((row) => `<div class="card"><strong>${row.slot}</strong><br>${row.text}</div>`).join('');
+  if (id === 'measure') await measureDistance();
+  if (id === 'check-outness') {
+    const view = await practiceApi.outness(request(), $('outness').value);
+    showCard('outness-readout', null, view);
+  }
+  if (id === 'pivot') {
+    const view = await practiceApi.pivotCheck(distancePayload());
+    showCard('pivot-readout', null, view);
+  }
+  if (id === 'extract') {
+    const view = await practiceApi.deriveCheck(request());
+    showCard('extract-readout', null, view);
+  }
+  if (id === 'layered') {
+    const view = await practiceApi.duoCheck(request());
+    showCard('duo-readout', 'duo-detail', view);
   }
   if (id === 'reset') reset();
 });
+
+$('outness').addEventListener('change', onOutnessChange);
+
+$('target-field').addEventListener('change', async () => {
+  refreshPivot();
+  if ($('target-field').value) await measureDistance();
+});
+
+$('target-centre').addEventListener('change', async () => {
+  if ($('target-field').value) await measureDistance();
+});
+
+$('field').addEventListener('change', async () => {
+  if ($('target-field').value) await measureDistance();
+});
+
+$('bass').addEventListener('input', refreshDuo);
+$('role').addEventListener('change', refreshDuo);
 
 $('custom').addEventListener('change', async () => {
   if (!$('custom').value.trim()) return;

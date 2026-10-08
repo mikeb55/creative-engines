@@ -20,6 +20,11 @@ const api = {
   pivot: (request: unknown) => ipcRenderer.invoke('practice:pivot', request),
   extract: (request: unknown) => ipcRenderer.invoke('practice:extract', request),
   layered: (request: unknown) => ipcRenderer.invoke('practice:layered', request),
+  fieldDistance: (payload: unknown) => ipcRenderer.invoke('practice:fieldDistance', payload),
+  outness: (request: unknown, outness: string) => ipcRenderer.invoke('practice:outness', request, outness),
+  pivotCheck: (payload: unknown) => ipcRenderer.invoke('practice:pivotCheck', payload),
+  deriveCheck: (request: unknown) => ipcRenderer.invoke('practice:deriveCheck', request),
+  duoCheck: (request: unknown) => ipcRenderer.invoke('practice:duoCheck', request),
 };
 
 contextBridge.exposeInMainWorld('practice', api);
