@@ -2,6 +2,7 @@
  * Bundled separately (esbuild) — registers Composer OS API IPC; no HTTP server.
  */
 import { app, shell, type IpcMain } from 'electron';
+import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import path from 'path';
 import type { GenerateRequest } from '../../../engines/composer-os-v2/app-api/appApiTypes';
@@ -48,6 +49,23 @@ function resolveEnginesRoot(): string {
   return app.isPackaged
     ? path.join(process.resourcesPath, 'engines')
     : path.join(__dirname, '..', '..', 'engines');
+}
+
+import { V8_SESSION_DIR } from '../../../engines/composer-os-v2/core/wwh/wwhV8Session';
+
+function sessionMusicXmlPath(body: unknown): { path: string } | { error: string } {
+  const raw =
+    body && typeof body === 'object' && typeof (body as { path?: unknown }).path === 'string'
+      ? (body as { path: string }).path.trim()
+      : '';
+  if (!raw || raw.includes('\0')) return { error: 'Missing MusicXML path.' };
+  const resolved = path.resolve(raw);
+  const root = path.resolve(V8_SESSION_DIR);
+  const relative = path.relative(root, resolved);
+  if (relative.startsWith('..') || path.isAbsolute(relative) || !resolved.endsWith('.musicxml') || !existsSync(resolved)) {
+    return { error: 'That file is not a V8 session MusicXML.' };
+  }
+  return { path: resolved };
 }
 
 export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void {
@@ -630,6 +648,74 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
         ? (tuneConfig as Record<string, unknown>)
         : {};
     return callMartinoEngine(cfg);
+  });
+
+  ipcMain.handle('composer-os-api:wwh-v8-advise', async (_event, body: unknown) => {
+    try {
+      const { adviseBlackAuraPair } = await import('../../../engines/composer-os-v2/core/wwh/wwhV8Session');
+      const record = body && typeof body === 'object' ? (body as { resolution?: { rootSpelling?: unknown; quality?: unknown }; tension?: { rootSpelling?: unknown; quality?: unknown } }) : {};
+      const resolution = record.resolution;
+      const tension = record.tension;
+      if (!resolution || !tension || typeof resolution.rootSpelling !== 'string' || typeof tension.rootSpelling !== 'string') {
+        return { ok: false as const, error: 'Enter a root spelling and a quality for both parents.' };
+      }
+      const advice = adviseBlackAuraPair(
+        { rootSpelling: resolution.rootSpelling, quality: resolution.quality as 'major' },
+        { rootSpelling: tension.rootSpelling, quality: tension.quality as 'major' }
+      );
+      return { ok: true as const, advice };
+    } catch (error) {
+      return { ok: false as const, error: error instanceof Error ? error.message : String(error) };
+    }
+  });
+
+  ipcMain.handle('composer-os-api:wwh-v8-generate', async (_event, body: unknown) => {
+    try {
+      const { generateWwhV8Session } = await import('../../../engines/composer-os-v2/core/wwh/wwhV8Session');
+      const record = body && typeof body === 'object' ? (body as Record<string, unknown>) : {};
+      const pairRaw = record.pair;
+      const pair =
+        pairRaw && typeof pairRaw === 'object'
+          ? (pairRaw as { resolution?: { rootSpelling?: unknown; quality?: unknown }; tension?: { rootSpelling?: unknown; quality?: unknown } })
+          : undefined;
+      const result = generateWwhV8Session({
+        piece: String(record.piece ?? ''),
+        approach: record.approach as 'lyrical',
+        seed: typeof record.seed === 'number' ? record.seed : Number.NaN,
+        pair:
+          pair && pair.resolution && pair.tension && typeof pair.resolution.rootSpelling === 'string' && typeof pair.tension.rootSpelling === 'string'
+            ? {
+                resolution: { rootSpelling: pair.resolution.rootSpelling, quality: pair.resolution.quality as 'major' },
+                tension: { rootSpelling: pair.tension.rootSpelling, quality: pair.tension.quality as 'major' },
+              }
+            : undefined,
+      });
+      return result;
+    } catch (error) {
+      return { ok: false as const, error: error instanceof Error ? error.message : String(error) };
+    }
+  });
+
+  ipcMain.handle('composer-os-api:wwh-v8-open-musescore', async (_event, body: unknown) => {
+    const filePath = sessionMusicXmlPath(body);
+    if ('error' in filePath) return { ok: false as const, error: filePath.error };
+    const appPath = '/Applications/MuseScore 4.app';
+    if (!existsSync(appPath)) return { ok: false as const, error: 'MuseScore 4 is not installed at /Applications/MuseScore 4.app. Use Open Folder.' };
+    const { spawn } = await import('node:child_process');
+    const code = await new Promise<number>((resolve, reject) => {
+      const child = spawn('open', ['-a', 'MuseScore 4', filePath.path], { shell: false });
+      child.on('error', reject);
+      child.on('close', (exitCode) => resolve(exitCode ?? 1));
+    });
+    if (code !== 0) return { ok: false as const, error: `MuseScore 4 did not open (exit ${code}).` };
+    return { ok: true as const };
+  });
+
+  ipcMain.handle('composer-os-api:wwh-v8-reveal', async (_event, body: unknown) => {
+    const filePath = sessionMusicXmlPath(body);
+    if ('error' in filePath) return { ok: false as const, error: filePath.error };
+    shell.showItemInFolder(filePath.path);
+    return { ok: true as const };
   });
 
   ipcMain.handle('show-item-in-folder', async (_event, filePath: string) => {

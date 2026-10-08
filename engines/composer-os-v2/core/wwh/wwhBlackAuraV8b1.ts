@@ -267,6 +267,48 @@ function duoBars(index: SourceIndex, atoms: WwhAtom[][], templateBass: WwhWritte
   return [...source.slice(0, V8A_WINDOW.returnOrder), ...writtenWindow(atoms, templateBass, label), ...source.slice(V8A_WINDOW.returnOrder)];
 }
 
+function sameApprovedParent(
+  input: ParentTriadInput,
+  approved: (typeof V8B1_DM_AB)['resolution'] | (typeof V8B1_DM_AB)['tension']
+): boolean {
+  return (
+    input.rootSpelling === approved.rootSpelling &&
+    input.quality === approved.quality &&
+    input.notes.join('|') === approved.notes.join('|') &&
+    input.pitchClasses.join('|') === approved.pitchClasses.join('|')
+  );
+}
+
+/** Full Black Aura duo for one spelled pair. Does not write the approved V8B or V8B.1 files. */
+export function scoreBlackAuraLiquidPair(
+  resolution: ParentTriadInput,
+  tension: ParentTriadInput,
+  seed: number
+): {
+  duo: string;
+  writtenFrom: 'approved-v8b-baseline' | 'triad-pair-search';
+  realization: TriadPairRealization;
+  sourceSha256: string;
+} {
+  if (!Number.isInteger(seed)) throw new Error('seed must be an integer');
+  const loaded = loadBlackAuraPairContext();
+  const approved =
+    sameApprovedParent(resolution, V8B1_DM_AB.resolution) && sameApprovedParent(tension, V8B1_DM_AB.tension);
+  if (approved && seed !== V8B1_SEED) {
+    throw new Error(`D minor / Ab major keeps the approved V8B notes, fixed at seed ${V8B1_SEED}. This seed was ${seed}.`);
+  }
+  const realization = realizeTriadPair(resolution, tension, seed, V8B1_SLOTS, loaded.context);
+  if (approved) {
+    const baseline = buildV8bBundle(V8B_SEED);
+    const scores = renderPair(loaded.index, baseline.guitarAtoms, 'V8B.1 D minor / Ab major', 'LIQUID Dm/Ab');
+    return { duo: scores.duo, writtenFrom: 'approved-v8b-baseline', realization, sourceSha256: loaded.sha256 };
+  }
+  const atoms = atomsFromRealization(realization);
+  const label = `${resolution.rootSpelling} ${resolution.quality} / ${tension.rootSpelling} ${tension.quality}`;
+  const scores = renderPair(loaded.index, atoms, `V8 liquid ${label}`, 'LIQUID');
+  return { duo: scores.duo, writtenFrom: 'triad-pair-search', realization, sourceSha256: loaded.sha256 };
+}
+
 function renderPair(index: SourceIndex, atoms: WwhAtom[][], title: string, label: string): { extract: string; duo: string } {
   const template = index.measures[V8A_WINDOW.cutAfterOrder];
   if (!template) throw new Error('bass template missing');
