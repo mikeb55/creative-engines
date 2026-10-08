@@ -3,8 +3,10 @@
  *
  * npm run wwh:performance-v7 -- --edition 7.2 --input <musicxml> --output-dir <dir> --seed 7 --outputs all
  * --outputs: performance | leadsheet | guitar_study | bass_partner | all
- * --edition: 7.0 | 7.1 | 7.2. Default 7.2. 7.0 and 7.1 stay curated Black Aura baselines.
- * --plan <json> reads seed and outputType when those flags are omitted.
+ * --edition: 7.0 | 7.1 | 7.2 | 7.3. Default 7.2. 7.0 and 7.1 stay curated Black Aura baselines.
+ * --edition 7.3 reads a Performance Plan JSON (--plan) or writes the Black Aura pilot (--pilot black-aura).
+ * --validate-plan checks a V7.3 plan and does not write MusicXML.
+ * --plan <json> on 7.0–7.2 reads seed and outputType when those flags are omitted.
  */
 
 import { createHash } from 'node:crypto';
@@ -14,6 +16,7 @@ import { composeWwhPerformance } from '../core/wwh/wwhPerformanceComposerV7';
 import type { WwhEdition, WwhOutputKind } from '../core/wwh/wwhPerformanceTypes';
 import { auditWwhMusicXml } from '../core/wwh/wwhValidate';
 import { runWwhV72Album } from './wwhPerformanceV72Album';
+import { runWwhV73a } from './wwhPerformanceV73a';
 
 const DEFAULT_INPUT =
   '/Users/user/Documents/DEVS/ECM-Album-Nov-2027/00 - WWH DUO LEADSHEETS/01-Black-Aura-Duo-Leadsheet-V1.1.musicxml';
@@ -43,6 +46,17 @@ function main(): void {
       outputDir: path.resolve(flag('output-dir') ?? DEFAULT_OUTPUT),
       seed: flag('seed') ? Number(flag('seed')) : 7,
       render: !process.argv.includes('--no-render'),
+    });
+    process.exitCode = code;
+    return;
+  }
+  if (flag('edition') === '7.3' || flag('pilot') === 'black-aura') {
+    const code = runWwhV73a({
+      input: path.resolve(flag('input') ?? DEFAULT_INPUT),
+      outputDir: path.resolve(flag('output-dir') ?? '/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PERFORMANCE-MOCKUPS/V7.3A'),
+      planPath: flag('plan') ? path.resolve(flag('plan')!) : undefined,
+      validateOnly: process.argv.includes('--validate-plan'),
+      pilot: flag('pilot') === 'black-aura' || (!flag('plan') && !process.argv.includes('--validate-plan')),
     });
     process.exitCode = code;
     return;

@@ -17,6 +17,7 @@ export interface WwhWrittenBar {
   beatType?: number;
   rehearsal?: string;
   words?: string[];
+  bassWords?: string[];
   harmony?: WwhHarmonySpec;
   /** Full source measure clones. When set, atoms are ignored for that part. */
   guitarClone?: Element;
@@ -28,6 +29,8 @@ export interface WwhWrittenBar {
   guitarTranspose?: number;
   bassTranspose?: number;
   tempoMark?: WwhTempoMark | null;
+  guitarNotation?: 'open' | 'tacet';
+  bassNotation?: 'open' | 'tacet';
 }
 
 export interface WwhScoreHeader {
@@ -261,6 +264,33 @@ function contextBlock(state: WrittenState, clef: 'G' | 'F', xml: string, prev: W
   return `<attributes><time><beats>${state.beats}</beats><beat-type>${state.beatType}</beat-type></time></attributes>`;
 }
 
+function beatUnitName(beatType: number): string {
+  if (beatType === 1) return 'whole';
+  if (beatType === 2) return 'half';
+  if (beatType === 8) return 'eighth';
+  if (beatType === 16) return '16th';
+  return 'quarter';
+}
+
+function barRestXml(beats: number, beatType: number, divisions: number): string {
+  const duration = Math.round((beats * divisions * 4) / beatType);
+  if (beatType === 8 && beats === 6) return `<note><rest/><duration>${duration}</duration><voice>1</voice><type>half</type><dot/></note>`;
+  if (beatType === 8 && beats === 12) return `<note><rest/><duration>${duration}</duration><voice>1</voice><type>whole</type><dot/></note>`;
+  if (beatType === 8 && beats === 7) return `<note><rest/><duration>${duration}</duration><voice>1</voice><type>half</type><dot/><dot/></note>`;
+  if (beatType === 4 && beats === 2) return `<note><rest/><duration>${duration}</duration><voice>1</voice><type>half</type></note>`;
+  if (beatType === 4 && beats === 3) return `<note><rest/><duration>${duration}</duration><voice>1</voice><type>half</type><dot/></note>`;
+  return `<note><rest/><duration>${duration}</duration><voice>1</voice><type>whole</type></note>`;
+}
+
+function unrealizedBody(notation: 'open' | 'tacet', beats: number, beatType: number, divisions: number): { prefix: string; notes: string } {
+  if (notation === 'tacet') return { prefix: '', notes: barRestXml(beats, beatType, divisions) };
+  const unit = Math.round((divisions * 4) / beatType);
+  const name = beatUnitName(beatType);
+  const prefix = `<attributes><measure-style><slash type="start"><slash-type>${name}</slash-type></slash></measure-style></attributes>`;
+  const notes = Array.from({ length: beats }, () => `<note><rest/><duration>${unit}</duration><voice>1</voice><type>${name}</type></note>`).join('');
+  return { prefix, notes };
+}
+
 function freshMeasure(
   clef: 'G' | 'F',
   number: number,
@@ -274,9 +304,18 @@ function freshMeasure(
   const attrBlock = contextBlock(state, clef, '', prev);
   const print = bar.newSystem && clef === 'G' ? '<print new-system="yes"/>' : '';
   const headerTempo = !prev && !bar.tempoMark && header.tempo !== undefined;
-  const dirs = clef === 'G' ? directions(bar, header.tempo, headerTempo, writeTempo && Boolean(bar.tempoMark)) : '';
+  const dirs =
+    clef === 'G'
+      ? directions(bar, header.tempo, headerTempo, writeTempo && Boolean(bar.tempoMark))
+      : (bar.bassWords ?? [])
+          .map((line) => `<direction placement="above"><direction-type><words>${esc(line)}</words></direction-type></direction>`)
+          .join('');
   const harmony = clef === 'G' && bar.harmony ? harmonyXml(bar.harmony) : '';
-  return `<measure number="${number}">${print}${attrBlock}${dirs}${harmony}${atoms.map(atomXml).join('')}</measure>`;
+  const notation = clef === 'G' ? bar.guitarNotation : bar.bassNotation;
+  const unrealized = !atoms.length && notation ? unrealizedBody(notation, state.beats, state.beatType, state.divisions) : null;
+  const notes = unrealized ? unrealized.notes : atoms.map(atomXml).join('');
+  const slash = unrealized?.prefix ?? '';
+  return `<measure number="${number}">${print}${attrBlock}${slash}${dirs}${harmony}${notes}</measure>`;
 }
 
 function partXml(id: string, clef: 'G' | 'F', bars: readonly WwhWrittenBar[], header: WwhScoreHeader): string {
@@ -288,7 +327,8 @@ function partXml(id: string, clef: 'G' | 'F', bars: readonly WwhWrittenBar[], he
     let xml: string;
     if (clone) {
       xml = cleanSourceMeasure(clone, index + 1, Boolean(bar.newSystem) && clef === 'G');
-      if (clef === 'G' && bar.words?.length) xml = addWordsToMeasureXml(xml, bar.words);
+      const staffWords = clef === 'G' ? bar.words : bar.bassWords;
+      if (staffWords?.length) xml = addWordsToMeasureXml(xml, staffWords);
       if (clef === 'G' && bar.rehearsal && !xml.includes(`>${esc(bar.rehearsal)}</rehearsal>`)) {
         xml = insertBeforeNote(
           xml,

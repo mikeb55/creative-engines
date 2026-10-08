@@ -28,6 +28,8 @@ export interface WwhAtom {
   chord?: boolean;
   fermata?: boolean;
   timeModification?: { actualNotes: number; normalNotes: number; normalType: string };
+  /** Printed syllable only. Does not add a pitch. */
+  lyric?: string;
 }
 
 export interface WwhDurSpec {
