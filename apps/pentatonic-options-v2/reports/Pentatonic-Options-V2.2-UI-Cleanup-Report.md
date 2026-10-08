@@ -130,11 +130,11 @@ Launched the installed app. Practice screen shows V2.2, context, difficulty, fie
 
 Subject: `Pentatonic Options V2.2: clarify Dev 7 advisory UI`
 
-Hash: `PENDING`
+Hash: `2eae3f0b4dce819b37ce4e68da7dc4b03096d138`
 
 ## TAG RESULT
 
-`pentatonic-options-v2.2-release` — see the hash-record commit if this line is still pending in an earlier revision.
+`pentatonic-options-v2.2-release` records this report and points at the commit after `2eae3f0b`.
 
 Not moved:
 
