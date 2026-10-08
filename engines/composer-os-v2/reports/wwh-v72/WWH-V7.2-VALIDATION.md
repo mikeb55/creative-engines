@@ -24,14 +24,14 @@ Output: `/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PERFORMANCE-MOCKUPS/V
 | 07-Impossible-Metaphysics-Duo-Leadsheet-V1.1.musicxml | RECORDING-LEADSHEET | PASS | source span preserved | 07-Impossible-Metaphysics-V7.2-RECORDING-LEADSHEET.musicxml |
 | 07-Impossible-Metaphysics-Duo-Leadsheet-V1.1.musicxml | GUITAR-STUDY | PASS | timing audit passed | 07-Impossible-Metaphysics-V7.2-GUITAR-STUDY.musicxml |
 | 07-Impossible-Metaphysics-Duo-Leadsheet-V1.1.musicxml | BASS-PARTNER | PASS | timing audit passed | 07-Impossible-Metaphysics-V7.2-BASS-PARTNER.musicxml |
-| 03-The-Mirror-Duo-Leadsheet-V1.0.musicxml | PERFORMANCE | INCOMPLETE | source timing grid does not agree | 03-The-Mirror-V7.2-PERFORMANCE.musicxml |
-| 03-The-Mirror-Duo-Leadsheet-V1.0.musicxml | RECORDING-LEADSHEET | INCOMPLETE | source timing grid does not agree | 03-The-Mirror-V7.2-RECORDING-LEADSHEET.musicxml |
-| 03-The-Mirror-Duo-Leadsheet-V1.0.musicxml | GUITAR-STUDY | INCOMPLETE | source timing grid does not agree | 03-The-Mirror-V7.2-GUITAR-STUDY.musicxml |
-| 03-The-Mirror-Duo-Leadsheet-V1.0.musicxml | BASS-PARTNER | INCOMPLETE | source timing grid does not agree | 03-The-Mirror-V7.2-BASS-PARTNER.musicxml |
-| 04-Meet-Me-at-Hobos-Duo-Leadsheet-V1.0.musicxml | PERFORMANCE | INCOMPLETE | source timing grid does not agree | 04-Meet-Me-at-Hobos-V7.2-PERFORMANCE.musicxml |
-| 04-Meet-Me-at-Hobos-Duo-Leadsheet-V1.0.musicxml | RECORDING-LEADSHEET | INCOMPLETE | source timing grid does not agree | 04-Meet-Me-at-Hobos-V7.2-RECORDING-LEADSHEET.musicxml |
-| 04-Meet-Me-at-Hobos-Duo-Leadsheet-V1.0.musicxml | GUITAR-STUDY | INCOMPLETE | not written |  |
-| 04-Meet-Me-at-Hobos-Duo-Leadsheet-V1.0.musicxml | BASS-PARTNER | INCOMPLETE | not written |  |
+| 03-The-Mirror-Duo-Leadsheet-V1.0.musicxml | PERFORMANCE | PASS | timing audit passed | 03-The-Mirror-V7.2-PERFORMANCE.musicxml |
+| 03-The-Mirror-Duo-Leadsheet-V1.0.musicxml | RECORDING-LEADSHEET | PASS | source span preserved | 03-The-Mirror-V7.2-RECORDING-LEADSHEET.musicxml |
+| 03-The-Mirror-Duo-Leadsheet-V1.0.musicxml | GUITAR-STUDY | PASS | timing audit passed | 03-The-Mirror-V7.2-GUITAR-STUDY.musicxml |
+| 03-The-Mirror-Duo-Leadsheet-V1.0.musicxml | BASS-PARTNER | PASS | timing audit passed | 03-The-Mirror-V7.2-BASS-PARTNER.musicxml |
+| 04-Meet-Me-at-Hobos-Duo-Leadsheet-V1.0.musicxml | PERFORMANCE | PASS | timing audit passed | 04-Meet-Me-at-Hobos-V7.2-PERFORMANCE.musicxml |
+| 04-Meet-Me-at-Hobos-Duo-Leadsheet-V1.0.musicxml | RECORDING-LEADSHEET | PASS | source span preserved | 04-Meet-Me-at-Hobos-V7.2-RECORDING-LEADSHEET.musicxml |
+| 04-Meet-Me-at-Hobos-Duo-Leadsheet-V1.0.musicxml | GUITAR-STUDY | PASS | timing audit passed | 04-Meet-Me-at-Hobos-V7.2-GUITAR-STUDY.musicxml |
+| 04-Meet-Me-at-Hobos-Duo-Leadsheet-V1.0.musicxml | BASS-PARTNER | PASS | timing audit passed | 04-Meet-Me-at-Hobos-V7.2-BASS-PARTNER.musicxml |
 | 05-Orbit-Duo-Leadsheet-V2.1.musicxml | PERFORMANCE | PASS | timing audit passed | 05-Orbit-V7.2-PERFORMANCE.musicxml |
 | 05-Orbit-Duo-Leadsheet-V2.1.musicxml | RECORDING-LEADSHEET | PASS | source span preserved | 05-Orbit-V7.2-RECORDING-LEADSHEET.musicxml |
 | 05-Orbit-Duo-Leadsheet-V2.1.musicxml | GUITAR-STUDY | PASS | timing audit passed | 05-Orbit-V7.2-GUITAR-STUDY.musicxml |
@@ -51,6 +51,8 @@ Output: `/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PERFORMANCE-MOCKUPS/V
 - 09-After-Everything-Duo-Leadsheet-V1.0.musicxml
 - 02-Palace-Gates-Duo-Leadsheet-V1.1.musicxml
 - 07-Impossible-Metaphysics-Duo-Leadsheet-V1.1.musicxml
+- 03-The-Mirror-Duo-Leadsheet-V1.0.musicxml
+- 04-Meet-Me-at-Hobos-Duo-Leadsheet-V1.0.musicxml
 - 05-Orbit-Duo-Leadsheet-V2.1.musicxml
 - 06-Wrong-Turning-Duo-Leadsheet-V1.2.musicxml
 - 08-Small-Testimony-Duo-Leadsheet-V1.0.musicxml
@@ -61,18 +63,20 @@ Output: `/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PERFORMANCE-MOCKUPS/V
 - 09-After-Everything-Duo-Leadsheet-V1.0.musicxml: support pass — A: development skipped — bars 1-8 end on an unresolved tie
 - 02-Palace-Gates-Duo-Leadsheet-V1.1.musicxml: support pass
 - 07-Impossible-Metaphysics-Duo-Leadsheet-V1.1.musicxml: support pass — E: development skipped — bars 55-64 end on an unresolved tie
-- 03-The-Mirror-Duo-Leadsheet-V1.0.musicxml: support incomplete — source duration, note type, dots, or divisions do not agree; G: development skipped — bars 37-43 duration, note type, dots, or divisions do not agree
-- 04-Meet-Me-at-Hobos-Duo-Leadsheet-V1.0.musicxml: support incomplete — source duration, note type, dots, or divisions do not agree; A: development skipped — bars 1-8 duration, note type, dots, or divisions do not agree; B: development skipped — bars 9-16 duration, note type, dots, or divisions do not agree; C: development skipped — bars 17-24 duration, note type, dots, or divisions do not agree; studies skipped — bars 1-8 duration, note type, dots, or divisions do not agree
+- 03-The-Mirror-Duo-Leadsheet-V1.0.musicxml: support pass
+- 04-Meet-Me-at-Hobos-Duo-Leadsheet-V1.0.musicxml: support pass
 - 05-Orbit-Duo-Leadsheet-V2.1.musicxml: support pass — source tuplets rounded to the nearest division were copied, not rewritten
 - 06-Wrong-Turning-Duo-Leadsheet-V1.2.musicxml: support pass
 - 08-Small-Testimony-Duo-Leadsheet-V1.0.musicxml: support pass
 
 ## MuseScore 4
 
-- 01-Black-Aura-V7.2-RECORDING-LEADSHEET.musicxml | exit 0 | signal none | error none | pdf 80373 bytes | 1128 ms
-- 02-Palace-Gates-V7.2-PERFORMANCE.musicxml | exit 0 | signal none | error none | pdf 67170 bytes | 961 ms
-- 09-After-Everything-V7.2-RECORDING-LEADSHEET.musicxml | exit 134 | signal SIGABRT | error none | pdf 61717 bytes | 2162 ms
-- 07-Impossible-Metaphysics-V7.2-PERFORMANCE.musicxml | exit 0 | signal none | error none | pdf 84465 bytes | 973 ms
+- 01-Black-Aura-V7.2-RECORDING-LEADSHEET.musicxml | exit 0 | signal none | error none | pdf 80373 bytes | 1378 ms
+- 02-Palace-Gates-V7.2-PERFORMANCE.musicxml | exit 134 | signal SIGABRT | error none | pdf 67170 bytes | 2565 ms
+- 09-After-Everything-V7.2-RECORDING-LEADSHEET.musicxml | exit 134 | signal SIGABRT | error none | pdf 61717 bytes | 2305 ms
+- 07-Impossible-Metaphysics-V7.2-PERFORMANCE.musicxml | exit 0 | signal none | error none | pdf 84465 bytes | 1028 ms
+- 03-The-Mirror-V7.2-RECORDING-LEADSHEET.musicxml | exit 0 | signal none | error none | pdf 79831 bytes | 833 ms
+- 04-Meet-Me-at-Hobos-V7.2-PERFORMANCE.musicxml | exit 0 | signal none | error none | pdf 71845 bytes | 930 ms
 
-MuseScore 4 on this Mac is running under Rosetta. The CLI aborts with signal SIGABRT, which the shell reports as exit 134. The message is `mutex lock failed: Invalid argument`. Forcing `QT_QPA_PLATFORM=offscreen` aborts earlier, because the only installed platform plugin is cocoa, and no PDF is written. A later cocoa run can leave a PDF on disk and still exit 134. That PDF is not an import proof and not a playback result.
+MuseScore 4 on this Mac runs under Rosetta. Some conversions abort with SIGABRT, which the shell reports as exit 134, with `mutex lock failed: Invalid argument`. The abort is intermittent and is a host-process failure, not a MusicXML timing result. In the 2026-10-08 seed-7 run, Palace Gates PERFORMANCE and After Everything RECORDING-LEADSHEET exited 134. Black Aura RECORDING-LEADSHEET, Impossible Metaphysics PERFORMANCE, The Mirror RECORDING-LEADSHEET, and Meet Me at Hobo's PERFORMANCE exited 0. All six wrote a PDF. `QT_QPA_PLATFORM=offscreen` aborts immediately because the only installed Qt platform plugin is cocoa, and that run writes no PDF. A PDF is not an import proof and not a playback result.
 No GCE score and no listening result is claimed.

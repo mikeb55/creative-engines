@@ -18,7 +18,7 @@ function voiceSums(measure: WwhImportedMeasure): Map<string, number> {
   const sums = new Map<string, number>();
   for (const note of measure.notes) {
     if (note.chord) continue;
-    sums.set(note.voice, (sums.get(note.voice) ?? 0) + note.duration);
+    sums.set(note.voice, (sums.get(note.voice) ?? 0) + note.storedDuration);
   }
   return sums;
 }
@@ -51,7 +51,7 @@ export function auditWwhMusicXml(xml: string, label: string): WwhAudit {
   let pickupBars = 0;
   for (const part of [score.guitar, score.bass]) {
     for (const measure of part.measures) {
-      const expected = wwhBarTicksExact(measure.beats, measure.beatType, measure.divisions);
+      const expected = wwhBarTicksExact(measure.beats, measure.beatType, measure.statedDivisions);
       const sums = voiceSums(measure);
       if (measure.implicit) pickupBars += 1;
       if (expected === null || !sums.size) {
@@ -66,7 +66,13 @@ export function auditWwhMusicXml(xml: string, label: string): WwhAudit {
         }
       }
       for (const note of measure.notes) {
-        const agreement = durationAgreement(measure.divisions, note.type, note.dots, note.duration, note.timeModification);
+        const agreement = durationAgreement(
+          measure.statedDivisions,
+          note.type,
+          note.dots,
+          note.storedDuration,
+          note.timeModification
+        );
         if (agreement === 'mismatch') agreementFails += 1;
         if (agreement === 'rounded-tuplet') roundedTuplets += 1;
       }
@@ -78,7 +84,7 @@ export function auditWwhMusicXml(xml: string, label: string): WwhAudit {
   lines.push(`${label}: pickup bars ${pickupBars}`);
   const marks = score.guitar.measures.flatMap((measure) => measure.rehearsal);
   lines.push(`${label}: rehearsal marks ${marks.length ? marks.join(' ') : 'NONE'}`);
-  const divisions = [...new Set([...score.guitar.measures, ...score.bass.measures].map((measure) => measure.divisions))];
+  const divisions = [...new Set([...score.guitar.measures, ...score.bass.measures].map((measure) => measure.statedDivisions))];
   lines.push(`${label}: divisions ${divisions.join(',')}`);
   const ok = durationFails === 0 && agreementFails === 0 && !lines.some((line) => line.includes('FAIL'));
   return { ok, barCount: score.guitar.measures.length, lines, roundedTuplets, agreementFails, pickupBars };

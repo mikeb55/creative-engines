@@ -5,6 +5,7 @@
 
 import type { Element as XmlElement } from '@xmldom/xmldom';
 import { XMLSerializer } from '@xmldom/xmldom';
+import { timingRepairFor } from './wwhDuoImport';
 import type { WwhAtom, WwhHarmonySpec } from './wwhPerformanceTypes';
 import { WWH_DIVISIONS } from './wwhPerformanceTypes';
 import { tempoDirectionXml, tempoKey, type WwhTempoMark } from './wwhTiming';
@@ -155,8 +156,42 @@ function localName(el: Element): string {
   return el.localName || el.tagName || '';
 }
 
+function applyTimingRepair(clone: XmlElement, source: Element): void {
+  const repair = timingRepairFor(source);
+  if (!repair) return;
+  if (repair.divisions !== null) {
+    const walk = (el: Element): Element | null => {
+      if (localName(el) === 'divisions') return el;
+      for (const child of Array.from(el.childNodes)) {
+        if (!child || child.nodeType !== 1) continue;
+        const found = walk(child as Element);
+        if (found) return found;
+      }
+      return null;
+    };
+    const divisions = walk(clone);
+    if (divisions) divisions.textContent = String(repair.divisions);
+  }
+  const notes: Element[] = [];
+  for (const child of Array.from(clone.childNodes)) {
+    if (child && child.nodeType === 1 && localName(child as Element) === 'note') notes.push(child as Element);
+  }
+  repair.noteDurations.forEach((duration, index) => {
+    if (duration === null) return;
+    const note = notes[index];
+    if (!note) return;
+    for (const child of Array.from(note.childNodes)) {
+      if (!child || child.nodeType !== 1) continue;
+      if (localName(child as Element) !== 'duration') continue;
+      (child as Element).textContent = String(duration);
+      break;
+    }
+  });
+}
+
 export function cleanSourceMeasure(source: Element, number: number, newSystem: boolean): string {
   const clone = source.cloneNode(true) as XmlElement;
+  applyTimingRepair(clone, source);
   clone.setAttribute('number', String(number));
   if (clone.hasAttribute('width')) clone.removeAttribute('width');
   const drop: Element[] = [];

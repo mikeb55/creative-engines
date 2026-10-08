@@ -234,6 +234,65 @@ function run(): { ok: boolean; name: string }[] {
     assert.equal(audit.ok, true, audit.lines.join('; '));
   });
 
+  check('dotted-half chord tones follow the attack duration in the copy', () => {
+    const chord = (dur: number) =>
+      `<note><chord/><pitch><step>D</step><octave>5</octave></pitch><duration>${dur}</duration><voice>1</voice><type>half</type><dot/></note>`;
+    const xml = duo('Chord dot', 4, (index, clef) => {
+      const head = index === 0 ? attrs(clef, 256, 4, 4) : '';
+      const mark = clef === 'G' && index === 0 ? '<direction><direction-type><rehearsal>A</rehearsal></direction-type></direction>' : '';
+      const body =
+        clef === 'G' && index === 2
+          ? `${note('G', 4, 768, 'half', 1)}${chord(512)}${rest(256, 'quarter')}`
+          : `${note('C', clef === 'G' ? 4 : 3, 1024, 'whole')}`;
+      return `${head}${mark}${body}`;
+    });
+    const source = importWwhDuoMusicXml(xml);
+    const bar = source.guitar.measures[2]!;
+    assert.equal(bar.gridAgrees, true);
+    assert.equal(bar.notes[1]?.storedDuration, 512);
+    assert.equal(bar.notes[1]?.duration, 768);
+    assert.equal(xml.includes('<duration>512</duration>'), true);
+    const result = composeWwhPerformance({ xml, sourcePath: '/tmp/chord-dot.musicxml', seed: 1, output: 'leadsheet', edition: '7.2' });
+    const lead = result.files[0]!.contents;
+    assert.equal(lead.includes('<duration>512</duration>'), false);
+    assert.match(lead, /<chord\/><pitch><step>D<\/step><octave>5<\/octave><\/pitch><duration>768<\/duration>/);
+    const audit = auditWwhMusicXml(lead, 'chord-dot');
+    assert.equal(audit.ok, true, audit.lines.join('; '));
+    const copy = importWwhDuoMusicXml(lead);
+    assert.deepEqual(compareLockedSpan(source.guitar.measures, copy.guitar.measures, 'guitar'), []);
+  });
+
+  check('divisions 1 with eighth duration 1 is read as divisions 2', () => {
+    const eighths = (step: string, octave: number) => Array.from({ length: 12 }, () => note(step, octave, 1, 'eighth')).join('');
+    const xml = duo('Hobos grid', 4, (index, clef) => {
+      const head =
+        index === 0
+          ? `${attrs(clef, 1, 12, 8)}<direction placement="above"><direction-type><metronome><beat-unit>quarter</beat-unit><beat-unit-dot/><per-minute>108</per-minute></metronome></direction-type><sound tempo="162"/></direction>`
+          : '';
+      const mark = clef === 'G' && index === 0 ? '<direction><direction-type><rehearsal>A</rehearsal></direction-type></direction>' : '';
+      return `${head}${mark}${eighths(clef === 'G' ? 'E' : 'A', clef === 'G' ? 4 : 2)}`;
+    });
+    const source = importWwhDuoMusicXml(xml);
+    assert.equal(source.guitar.measures[0]?.statedDivisions, 1);
+    assert.equal(source.guitar.measures[0]?.divisions, 2);
+    assert.equal(source.guitar.measures.every((measure) => measure.gridAgrees), true);
+    assert.equal(source.guitar.measures[0]?.notes[0]?.storedDuration, 1);
+    assert.equal(xml.includes('<divisions>1</divisions>'), true);
+    const result = composeWwhPerformance({ xml, sourcePath: '/tmp/hobos-grid.musicxml', seed: 2, output: 'all', edition: '7.2' });
+    for (const file of result.files.filter((item) => item.name.endsWith('.musicxml'))) {
+      assert.equal(file.contents.includes('<divisions>1</divisions>'), false, file.name);
+      assert.match(file.contents, /<divisions>2<\/divisions>/);
+      assert.match(file.contents, /<sound tempo="162"\/>/);
+      assert.match(file.contents, /<per-minute>108<\/per-minute>/);
+      const audit = auditWwhMusicXml(file.contents, file.name);
+      assert.equal(audit.ok, true, audit.lines.join('; '));
+    }
+    const lead = importWwhDuoMusicXml(result.files.find((file) => file.name.endsWith('-RECORDING-LEADSHEET.musicxml'))!.contents);
+    assert.deepEqual(compareLockedSpan(source.guitar.measures, lead.guitar.measures, 'guitar'), []);
+    assert.deepEqual(compareLockedSpan(source.bass.measures, lead.bass.measures, 'bass'), []);
+    assert.equal(xml.includes('<divisions>1</divisions>'), true);
+  });
+
   return rows;
 }
 

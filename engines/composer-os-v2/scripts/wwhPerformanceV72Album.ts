@@ -72,13 +72,19 @@ function inventoryOf(filePath: string, xml: string, score: WwhDuoScore) {
   if (measures.some((measure) => measure.hasEnding)) unsupported.push('ending');
   if (measures.some((measure) => measure.implicit)) unsupported.push('pickup');
   if (measures.some((measure) => measure.openTieOut)) unsupported.push('tie leaves a bar');
+  const repairs = unique(measures.flatMap((measure) => measure.timingRepairs));
+  if (repairs.length) unsupported.push(`output timing read: ${repairs.join('; ')}`);
   return {
     file: path.basename(filePath),
     path: filePath,
     sha256: createHash('sha256').update(xml).digest('hex'),
     bars: score.guitar.measures.length,
     instruments: `${score.guitar.name} + ${score.bass.name}`,
-    divisions: unique(score.guitar.measures.map((measure) => String(measure.divisions))).join(', '),
+    divisions: unique(
+      measures.map((measure) =>
+        measure.statedDivisions === measure.divisions ? String(measure.divisions) : `${measure.statedDivisions}→${measure.divisions}`
+      )
+    ).join(', '),
     metres: unique(score.guitar.measures.map((measure) => `${measure.beats}/${measure.beatType}`)).join(', '),
     tempos: unique(score.guitar.measures.map((measure) => formatTempo(measure.tempo)).filter(Boolean)).join(' → '),
     unsupported: unsupported.length ? unsupported.join('; ') : 'none',
@@ -194,6 +200,8 @@ export function runWwhV72Album(options: {
     ['02-Palace-Gates-Duo-Leadsheet-V1.1.musicxml', 'PERFORMANCE'],
     ['09-After-Everything-Duo-Leadsheet-V1.0.musicxml', 'RECORDING-LEADSHEET'],
     ['07-Impossible-Metaphysics-Duo-Leadsheet-V1.1.musicxml', 'PERFORMANCE'],
+    ['03-The-Mirror-Duo-Leadsheet-V1.0.musicxml', 'RECORDING-LEADSHEET'],
+    ['04-Meet-Me-at-Hobos-Duo-Leadsheet-V1.0.musicxml', 'PERFORMANCE'],
   ];
   for (const [name, output] of renderPlan) {
     if (!passNames.has(name)) continue;
@@ -279,7 +287,7 @@ ${notes.map((line) => `- ${line}`).join('\n')}
 
 ${renders.length ? renders.map((line) => `- ${line}`).join('\n') : '- render not requested'}
 
-MuseScore 4 on this Mac is running under Rosetta. The CLI aborts with signal SIGABRT, which the shell reports as exit 134. The message is \`mutex lock failed: Invalid argument\`. Forcing \`QT_QPA_PLATFORM=offscreen\` aborts earlier, because the only installed platform plugin is cocoa, and no PDF is written. A later cocoa run can leave a PDF on disk and still exit 134. That PDF is not an import proof and not a playback result.
+MuseScore 4 on this Mac runs under Rosetta. Some conversions abort with SIGABRT, which the shell reports as exit 134, with \`mutex lock failed: Invalid argument\`. The abort is intermittent and is a host-process failure, not a MusicXML timing result. In the 2026-10-08 seed-7 run, Palace Gates PERFORMANCE and After Everything RECORDING-LEADSHEET exited 134. Black Aura RECORDING-LEADSHEET, Impossible Metaphysics PERFORMANCE, The Mirror RECORDING-LEADSHEET, and Meet Me at Hobo's PERFORMANCE exited 0. All six wrote a PDF. \`QT_QPA_PLATFORM=offscreen\` aborts immediately because the only installed Qt platform plugin is cocoa, and that run writes no PDF. A PDF is not an import proof and not a playback result.
 No GCE score and no listening result is claimed.
 `;
 
@@ -294,6 +302,8 @@ V7.2 does not choose musical material from the composition title.
 - Generated durations are fractions of a quarter, scaled to the source divisions.
 - Metre, key, clef, transpose, divisions, and tempo are restated when a generated bar follows a copied bar that differs.
 - A dotted-quarter metronome mark stays on the dotted quarter. Sound tempo is quarter notes per minute.
+- A chord tone with the same type and dots as its attack is written with the attack duration. The Mirror bar 39 stores 512 on two dotted-half chord tones; the copies write 768. The original file is not edited.
+- When every typed note implies one divisions value, generated copies use that value. Meet Me at Hobo's states divisions 1 and stores eighths as duration 1; the copies write divisions 2. Durations, types, and dotted-quarter 108 / sound 162 stay. The original file is not edited.
 - Development is not inserted after an unresolved tie, a repeat, or an ending.
 - Performance and study files are labelled EXPERIMENTAL TECHNICAL SKETCHES.
 - Missing album files are INCOMPLETE.

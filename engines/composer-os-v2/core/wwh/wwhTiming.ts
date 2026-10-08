@@ -125,6 +125,48 @@ export function expectedDuration(
   return quartersToDivisions(quarters, divisions);
 }
 
+/** Divisions implied by a typed duration. Null when the duration is not an integer number of those quarters. */
+export function impliedDivisions(
+  type: string | undefined,
+  dots: number,
+  duration: number,
+  timeModification?: WwhTimeModification | null
+): number | null {
+  if (!type || !Number.isInteger(duration) || duration <= 0) return null;
+  const quarters = typeQuarters(type, dots, timeModification);
+  if (!quarters || quarters.n === 0) return null;
+  const num = duration * quarters.d;
+  if (num % quarters.n !== 0) return null;
+  const value = num / quarters.n;
+  return Number.isInteger(value) && value > 0 ? value : null;
+}
+
+/**
+ * Use the stated divisions when every typed note agrees with them, or when a tuplet
+ * does not land on an integer. When every typed note implies one other integer, that
+ * integer is the grid the note types already describe.
+ */
+export function resolveDivisions(
+  stated: number,
+  notes: readonly { type?: string; dots: number; duration: number; timeModification?: WwhTimeModification | null }[]
+): { divisions: number; normalized: boolean } {
+  const found = new Set<number>();
+  let blocked = false;
+  for (const note of notes) {
+    if (!note.type) continue;
+    const implied = impliedDivisions(note.type, note.dots, note.duration, note.timeModification);
+    if (implied === null) {
+      blocked = true;
+      continue;
+    }
+    found.add(implied);
+  }
+  if (blocked || found.size !== 1) return { divisions: stated, normalized: false };
+  const only = [...found][0]!;
+  if (only === stated) return { divisions: stated, normalized: false };
+  return { divisions: only, normalized: true };
+}
+
 export type WwhDurationAgreement = 'ok' | 'rounded-tuplet' | 'mismatch' | 'untyped';
 
 export function durationAgreement(

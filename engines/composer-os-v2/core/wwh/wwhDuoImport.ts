@@ -7,15 +7,32 @@ import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
 import { WWH_DIVISIONS } from './wwhPerformanceTypes';
 import {
   durationAgreement,
+  resolveDivisions,
   wwhBarTicksExact,
   type WwhTempoMark,
   type WwhTimeModification,
 } from './wwhTiming';
 
+export interface WwhTimingRepair {
+  /** Replacement for this measure's divisions element. Null when the element already matches. */
+  divisions: number | null;
+  /** Musical duration for that note index. Null leaves the stored duration. */
+  noteDurations: Array<number | null>;
+}
+
+const timingRepairs = new WeakMap<Element, WwhTimingRepair>();
+
+export function timingRepairFor(element: Element): WwhTimingRepair | undefined {
+  return timingRepairs.get(element);
+}
+
 export interface WwhImportedNote {
   rest: boolean;
   chord: boolean;
+  /** Duration used for grid, compare, and generated context. */
   duration: number;
+  /** Duration text in the file before a chord-tone alignment. */
+  storedDuration: number;
   step?: string;
   alter?: number;
   octave?: number;
@@ -32,7 +49,11 @@ export interface WwhImportedMeasure {
   number: string;
   beats: number;
   beatType: number;
+  /** Grid used for agreement and for generated bars. */
   divisions: number;
+  /** Divisions element inherited from the file, before a unanimous type-implied correction. */
+  statedDivisions: number;
+  timingRepairs: string[];
   fifths: number;
   mode: string;
   clefSign: string;
@@ -141,15 +162,23 @@ function timeModificationOf(note: Element): WwhTimeModification | undefined {
   return { actualNotes, normalNotes, normalType };
 }
 
+function sameModification(left?: WwhTimeModification, right?: WwhTimeModification): boolean {
+  if (!left && !right) return true;
+  if (!left || !right) return false;
+  return left.actualNotes === right.actualNotes && left.normalNotes === right.normalNotes && left.normalType === right.normalType;
+}
+
 function parseNotes(measure: Element): WwhImportedNote[] {
   return children(measure, 'note').map((note) => {
     const pitch = children(note, 'pitch')[0];
     const alterRaw = textOf(pitch ?? null, 'alter');
     const type = textOf(note, 'type');
+    const duration = Number(textOf(note, 'duration') || '0');
     return {
       rest: children(note, 'rest').length > 0 || !pitch,
       chord: children(note, 'chord').length > 0,
-      duration: Number(textOf(note, 'duration') || '0'),
+      duration,
+      storedDuration: duration,
       step: textOf(pitch ?? null, 'step') || undefined,
       alter: alterRaw === '' ? 0 : Number(alterRaw),
       octave: textOf(pitch ?? null, 'octave') ? Number(textOf(pitch ?? null, 'octave')) : undefined,
@@ -176,6 +205,33 @@ function soundTempoOf(measure: Element): string | null {
     if (tempo) return tempo;
   }
   return null;
+}
+
+/**
+ * A chord tone with the same type, dots, and tuplet as its attack sounds for the
+ * attack's duration. Sibelius sometimes stores the undotted duration on the chord
+ * tones while copying the dot. The file element is not changed here.
+ */
+function alignChordDurations(notes: WwhImportedNote[], barNumber: string): { overlay: Array<number | null>; repairs: string[] } {
+  const overlay: Array<number | null> = notes.map(() => null);
+  const repairs: string[] = [];
+  let attack: WwhImportedNote | null = null;
+  for (let index = 0; index < notes.length; index++) {
+    const note = notes[index]!;
+    if (!note.chord) {
+      attack = note;
+      continue;
+    }
+    if (!attack?.type || !note.type) continue;
+    if (note.type !== attack.type || note.dots !== attack.dots) continue;
+    if (!sameModification(note.timeModification, attack.timeModification)) continue;
+    if (note.storedDuration === attack.duration) continue;
+    note.duration = attack.duration;
+    overlay[index] = attack.duration;
+    const name = note.step ? `${note.step}${note.octave ?? ''}` : 'chord';
+    repairs.push(`bar ${barNumber} chord ${name} duration ${note.storedDuration} aligned to ${attack.duration}`);
+  }
+  return { overlay, repairs };
 }
 
 function openTieOut(notes: readonly WwhImportedNote[]): boolean {
@@ -291,14 +347,29 @@ export function importWwhDuoMusicXml(xml: string): WwhDuoScore {
         };
       }
       const notes = parseNotes(measure);
+      const barNumber = measure.getAttribute('number') || String(order + 1);
+      const aligned = alignChordDurations(notes, barNumber);
+      const statedDivisions = divisions;
+      const resolved = resolveDivisions(statedDivisions, notes);
+      if (resolved.normalized) divisions = resolved.divisions;
+      const elementDivisions = attributes ? Number(textOf(attributes, 'divisions')) : NaN;
+      const repairDivisions =
+        Number.isFinite(elementDivisions) && elementDivisions > 0 && elementDivisions !== divisions ? divisions : null;
+      const repairs = [...aligned.repairs];
+      if (repairDivisions !== null) repairs.push(`divisions ${elementDivisions} read as ${repairDivisions}`);
+      if (repairDivisions !== null || aligned.overlay.some((value) => value !== null)) {
+        timingRepairs.set(measure, { divisions: repairDivisions, noteDurations: aligned.overlay });
+      }
       const implicit = measure.getAttribute('implicit') === 'yes';
       const grid = gridOf(divisions, beats, beatType, notes, implicit);
       return {
         order,
-        number: measure.getAttribute('number') || String(order + 1),
+        number: barNumber,
         beats,
         beatType,
         divisions,
+        statedDivisions,
+        timingRepairs: repairs,
         fifths,
         mode,
         clefSign,
