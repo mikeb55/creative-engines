@@ -1,8 +1,9 @@
 /**
  * WWH Performance Composer V7.0 CLI.
  *
- * npm run wwh:performance-v7 -- --input <musicxml> --output-dir <dir> --seed 7 --outputs all
+ * npm run wwh:performance-v7 -- --edition 7.2 --input <musicxml> --output-dir <dir> --seed 7 --outputs all
  * --outputs: performance | leadsheet | guitar_study | bass_partner | all
+ * --edition: 7.0 | 7.1 | 7.2. Default 7.2. 7.0 and 7.1 stay curated Black Aura baselines.
  * --plan <json> reads seed and outputType when those flags are omitted.
  */
 
@@ -10,12 +11,22 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { composeWwhPerformance } from '../core/wwh/wwhPerformanceComposerV7';
-import type { WwhOutputKind } from '../core/wwh/wwhPerformanceTypes';
+import type { WwhEdition, WwhOutputKind } from '../core/wwh/wwhPerformanceTypes';
 import { auditWwhMusicXml } from '../core/wwh/wwhValidate';
+import { runWwhV72Album } from './wwhPerformanceV72Album';
 
 const DEFAULT_INPUT =
   '/Users/user/Documents/DEVS/ECM-Album-Nov-2027/00 - WWH DUO LEADSHEETS/01-Black-Aura-Duo-Leadsheet-V1.1.musicxml';
-const DEFAULT_OUTPUT = '/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PERFORMANCE-MOCKUPS/V7';
+const DEFAULT_OUTPUT = '/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PERFORMANCE-MOCKUPS/V7.2';
+
+function isProtectedBaseline(target: string): boolean {
+  const normalized = target.replace(/\\/g, '/');
+  if (/\/V7\//.test(normalized) && !/\/V7\.2\//.test(normalized)) return true;
+  const base = path.basename(normalized);
+  if (/V7\.1/.test(base)) return true;
+  if (/V7(?!\.\d)/.test(base)) return true;
+  return false;
+}
 
 function flag(name: string): string | undefined {
   const index = process.argv.indexOf(`--${name}`);
@@ -26,6 +37,16 @@ function flag(name: string): string | undefined {
 const OUTPUTS = new Set<WwhOutputKind>(['performance', 'leadsheet', 'guitar_study', 'bass_partner', 'all']);
 
 function main(): void {
+  if (process.argv.includes('--batch')) {
+    const code = runWwhV72Album({
+      albumDir: path.resolve(flag('album-dir') ?? '/Users/user/Documents/DEVS/ECM-Album-Nov-2027'),
+      outputDir: path.resolve(flag('output-dir') ?? DEFAULT_OUTPUT),
+      seed: flag('seed') ? Number(flag('seed')) : 7,
+      render: !process.argv.includes('--no-render'),
+    });
+    process.exitCode = code;
+    return;
+  }
   const input = path.resolve(flag('input') ?? DEFAULT_INPUT);
   const outputDir = path.resolve(flag('output-dir') ?? DEFAULT_OUTPUT);
   const planPath = flag('plan');
@@ -45,19 +66,15 @@ function main(): void {
   const before = fs.readFileSync(input);
   const beforeSha = createHash('sha256').update(before).digest('hex');
   const xml = before.toString('utf8');
-  const edition = flag('edition') === '7.1' ? '7.1' : '7.0';
+  const editionFlag = flag('edition');
+  const edition: WwhEdition = editionFlag === '7.0' || editionFlag === '7.1' || editionFlag === '7.2' ? editionFlag : '7.2';
   const result = composeWwhPerformance({ xml, sourcePath: input, seed, output: outputs, edition });
   fs.mkdirSync(outputDir, { recursive: true });
   const written: string[] = [];
   for (const file of result.files) {
     const target = path.join(outputDir, file.name);
     if (path.resolve(target) === input) throw new Error('refusing to overwrite the source MusicXML');
-    const baseline =
-      edition === '7.0' &&
-      /01-Black-Aura-V7-(?!1)/.test(path.basename(target)) &&
-      fs.existsSync(target) &&
-      flag('replace-baseline') !== 'yes';
-    if (baseline) throw new Error(`refusing to overwrite V7.0 baseline ${target}`);
+    if (isProtectedBaseline(target)) throw new Error(`refusing to overwrite V7.0 or V7.1 baseline ${target}`);
     fs.writeFileSync(target, file.contents);
     written.push(target);
   }
@@ -101,14 +118,19 @@ ${written.map((file) => `- \`${file}\``).join('\n')}
 
 ${result.plan.limitations.map((line) => `- ${line}`).join('\n')}
 
-Sibelius was not opened by this command. Open the MusicXML files in Sibelius before calling the import proven.
+Support: ${result.plan.support}
+${result.plan.supportReasons.map((line) => `- ${line}`).join('\n')}
+
+MuseScore 4 was not opened by this command. A PDF from a later render is not playback and is not an import proof.
 `;
   const validationPath = path.join(outputDir, `${stem}-VALIDATION.md`);
   fs.writeFileSync(validationPath, validation);
   written.push(validationPath);
-  console.log(auditOk ? 'PASS' : 'FAIL');
+  const status = !auditOk && result.plan.support === 'pass' ? 'FAIL' : !auditOk || result.plan.support === 'incomplete' ? 'INCOMPLETE' : 'PASS';
+  console.log(status);
   for (const file of written) console.log(file);
-  if (!auditOk) process.exitCode = 1;
+  if (status === 'FAIL') process.exitCode = 1;
+  if (status === 'INCOMPLETE') process.exitCode = 2;
   void validationName;
 }
 

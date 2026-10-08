@@ -21,20 +21,25 @@ import {
 import { BLACK_AURA_V71_CUES, BLACK_AURA_V71_GUITAR_STUDY, BLACK_AURA_V71_PERFORMANCE } from './wwhBlackAuraV71';
 import { renderWwhDuoScore, type WwhScoreHeader, type WwhWrittenBar } from './wwhMusicXmlWrite';
 import {
-  wwhBarTicks,
-  type WwhAtom,
+  type WwhEdition,
   type WwhOutputKind,
   type WwhPerformancePlan,
   type WwhPlanSection,
+  type WwhSupport,
 } from './wwhPerformanceTypes';
+import {
+  beatOrSmallerLine,
+  quarterPerMinute,
+  type WwhTempoMark,
+} from './wwhTiming';
 
 export interface WwhComposeRequest {
   xml: string;
   sourcePath: string;
   seed: number;
   output?: WwhOutputKind;
-  /** 7.0 is the frozen baseline. 7.1 writes a separate stem and does not replace those files. */
-  edition?: '7.0' | '7.1';
+  /** 7.0 and 7.1 stay the curated Black Aura baselines. 7.2 is the portable pipeline. */
+  edition?: WwhEdition;
 }
 
 export interface WwhComposeFile {
@@ -62,13 +67,28 @@ function isBlackAura(score: WwhDuoScore, sourcePath: string): boolean {
   return /black aura/i.test(`${score.title} ${score.movementTitle} ${sourcePath}`);
 }
 
-function stemFor(score: WwhDuoScore, edition: '7.0' | '7.1'): string {
-  if (/black aura/i.test(score.title)) return edition === '7.1' ? '01-Black-Aura-V7.1' : '01-Black-Aura-V7';
-  const slug = score.title.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'Duo';
-  return `${slug}-V7`;
+export function wwhOutputStem(sourcePath: string, title: string, edition: WwhEdition): string {
+  if ((edition === '7.0' || edition === '7.1') && /black aura/i.test(title)) {
+    return edition === '7.1' ? '01-Black-Aura-V7.1' : '01-Black-Aura-V7';
+  }
+  if (edition === '7.0' || edition === '7.1') {
+    const slug = title.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'Duo';
+    return `${slug}-V${edition === '7.1' ? '7.1' : '7'}`;
+  }
+  const base = sourcePath.split(/[/\\]/).pop() ?? title;
+  const stripped = base
+    .replace(/\.musicxml$/i, '')
+    .replace(/-Duo-Leadsheet-V[\d.]+$/i, '')
+    .replace(/-Leadsheet-V[\d.]+$/i, '');
+  const slug = stripped.replace(/[^A-Za-z0-9.]+/g, '-').replace(/^-|-$/g, '') || 'Duo';
+  return `${slug}-V7.2`;
 }
 
-function header(score: WwhDuoScore, movement: string, edition: '7.0' | '7.1', tempo?: number): WwhScoreHeader {
+function stemFor(score: WwhDuoScore, sourcePath: string, edition: WwhEdition): string {
+  return wwhOutputStem(sourcePath, score.title, edition);
+}
+
+function header(score: WwhDuoScore, movement: string, edition: WwhEdition, tempo?: number): WwhScoreHeader {
   return {
     title: score.title,
     movementTitle: movement,
@@ -85,6 +105,27 @@ function measureAt(part: WwhDuoScore['guitar'], barNumber: number): WwhImportedM
   return measure;
 }
 
+function tempoOrNull(mark: WwhTempoMark): WwhTempoMark | null {
+  if (!mark.beatUnit && !mark.perMinute && !mark.soundTempo) return null;
+  return mark;
+}
+
+function contextOf(guitar: WwhImportedMeasure, bass: WwhImportedMeasure): Pick<
+  WwhWrittenBar,
+  'beats' | 'beatType' | 'divisions' | 'fifths' | 'mode' | 'guitarTranspose' | 'bassTranspose' | 'tempoMark'
+> {
+  return {
+    beats: guitar.beats,
+    beatType: guitar.beatType,
+    divisions: guitar.divisions,
+    fifths: guitar.fifths,
+    mode: guitar.mode,
+    guitarTranspose: guitar.transposeOctave,
+    bassTranspose: bass.transposeOctave,
+    tempoMark: tempoOrNull(guitar.tempo) ?? tempoOrNull(bass.tempo),
+  };
+}
+
 function sourceBars(score: WwhDuoScore, from: number, to: number, newSystem: boolean): WwhWrittenBar[] {
   const bars: WwhWrittenBar[] = [];
   for (let bar = from; bar <= to; bar++) {
@@ -93,14 +134,36 @@ function sourceBars(score: WwhDuoScore, from: number, to: number, newSystem: boo
     bars.push({
       guitar: [],
       bass: [],
-      beats: guitar.beats,
-      beatType: guitar.beatType,
+      ...contextOf(guitar, bass),
       guitarClone: guitar.element,
       bassClone: bass.element,
       newSystem: newSystem && bar === from,
     });
   }
   return bars;
+}
+
+const SKETCH_LABEL = 'EXPERIMENTAL TECHNICAL SKETCH';
+
+function gridBlock(score: WwhDuoScore, from: number, to: number): string | null {
+  const measures = [...score.guitar.measures.slice(from - 1, to), ...score.bass.measures.slice(from - 1, to)];
+  if (measures.some((measure) => !measure.gridAgrees)) {
+    return `bars ${from}-${to} duration, note type, dots, or divisions do not agree`;
+  }
+  return null;
+}
+
+function spanBlock(score: WwhDuoScore, from: number, to: number): string | null {
+  const guitar = score.guitar.measures.slice(from - 1, to);
+  const bass = score.bass.measures.slice(from - 1, to);
+  const measures = [...guitar, ...bass];
+  if (measures.some((measure) => measure.hasRepeat || measure.hasEnding)) {
+    return `bars ${from}-${to} contain a repeat or ending`;
+  }
+  if (guitar[guitar.length - 1]?.openTieOut || bass[bass.length - 1]?.openTieOut) {
+    return `bars ${from}-${to} end on an unresolved tie`;
+  }
+  return gridBlock(score, from, to);
 }
 
 function pushSection(
@@ -160,11 +223,11 @@ function guitarOverBass(score: WwhDuoScore, slice: WwhGuitarOverBass, seed: numb
   const guitar = applySeedToGuitarAtoms(slice.guitar, seed);
   return slice.bassMeasures.map((barNumber, index) => {
     const bass = measureAt(score.bass, barNumber);
+    const guitarMeasure = measureAt(score.guitar, barNumber);
     return {
       guitar: guitar[index] ?? [],
       bass: [],
-      beats: bass.beats,
-      beatType: bass.beatType,
+      ...contextOf(guitarMeasure, bass),
       bassClone: bass.element,
       rehearsal: index === 0 ? slice.rehearsal : undefined,
       words: index === 0 ? slice.words : undefined,
@@ -182,6 +245,9 @@ function composedSlice(slice: WwhComposedSlice, seed: number): WwhWrittenBar[] {
     bass: bar.bass,
     beats: 4,
     beatType: 4,
+    divisions: 256,
+    fifths: 0,
+    mode: 'major',
     harmony: bar.harmony,
     rehearsal: index === 0 ? slice.rehearsal : undefined,
     words: index === 0 ? [...slice.words, ...(bar.words ?? [])] : bar.words,
@@ -198,11 +264,18 @@ function assembleStudy(score: WwhDuoScore, blocks: WwhStudyBlock[], outputType: 
       const guitarMeasure = guitarSource > 0 ? measureAt(score.guitar, guitarSource) : null;
       const bassMeasure = bassSource > 0 ? measureAt(score.bass, bassSource) : null;
       const meter = guitarMeasure ?? bassMeasure;
+      const partner = guitarMeasure && bassMeasure ? contextOf(guitarMeasure, bassMeasure) : null;
       return {
         guitar: guitarMeasure ? [] : block.guitar[index] ?? [],
         bass: bassMeasure ? [] : block.bass?.[index] ?? [],
         beats: meter?.beats ?? 4,
         beatType: meter?.beatType ?? 4,
+        divisions: meter?.divisions ?? 256,
+        fifths: meter?.fifths ?? 0,
+        mode: meter?.mode ?? 'major',
+        guitarTranspose: partner?.guitarTranspose ?? guitarMeasure?.transposeOctave ?? bassMeasure?.transposeOctave,
+        bassTranspose: partner?.bassTranspose ?? bassMeasure?.transposeOctave ?? guitarMeasure?.transposeOctave,
+        tempoMark: partner?.tempoMark ?? (meter ? tempoOrNull(meter.tempo) : null),
         guitarClone: guitarMeasure?.element,
         bassClone: bassMeasure?.element,
         rehearsal: index === 0 ? block.rehearsal : undefined,
@@ -279,45 +352,6 @@ function clamp(midi: number, low: number, high: number): number {
   return next;
 }
 
-function restsFor(ticks: number): WwhAtom[] {
-  const pieces: Array<[number, string, number]> = [
-    [1024, 'whole', 0],
-    [768, 'half', 1],
-    [512, 'half', 0],
-    [384, 'quarter', 1],
-    [256, 'quarter', 0],
-    [128, 'eighth', 0],
-    [64, '16th', 0],
-  ];
-  const out: WwhAtom[] = [];
-  let left = ticks;
-  for (const [divisions, type, dots] of pieces) {
-    while (left >= divisions) {
-      out.push({ rest: true, divisions, type, dots });
-      left -= divisions;
-    }
-  }
-  if (left !== 0) throw new Error(`cannot fill ${ticks} divisions`);
-  return out;
-}
-
-function pitchedQuarter(midi: number, ticks: number): WwhAtom[] {
-  const spelled = spell(clamp(midi, 60, 81));
-  const note: WwhAtom = {
-    rest: false,
-    step: spelled.step,
-    alter: spelled.alter,
-    octave: spelled.octave,
-    divisions: 256,
-    type: 'quarter',
-    dots: 0,
-  };
-  if (ticks < 256) {
-    return restsFor(ticks);
-  }
-  return [note, ...restsFor(ticks - 256)];
-}
-
 function sectionBounds(score: WwhDuoScore): Array<{ from: number; to: number; rehearsal: string | null }> {
   const marks: number[] = [];
   score.guitar.measures.forEach((measure, index) => {
@@ -332,8 +366,18 @@ function sectionBounds(score: WwhDuoScore): Array<{ from: number; to: number; re
   }));
 }
 
-function genericPerformance(score: WwhDuoScore, seed: number, sections: WwhPlanSection[]): WwhWrittenBar[] {
+function lineOnGrid(measure: WwhImportedMeasure, midi: number | null, low: number, high: number): WwhAtom[] | null {
+  const pitch = midi === null ? null : spell(clamp(midi, low, high));
+  return beatOrSmallerLine(measure.beats, measure.beatType, measure.divisions, pitch);
+}
+
+function genericPerformance(
+  score: WwhDuoScore,
+  seed: number,
+  sections: WwhPlanSection[]
+): { bars: WwhWrittenBar[]; skipped: string[] } {
   const bars: WwhWrittenBar[] = [];
+  const skipped: string[] = [];
   const bounds = sectionBounds(score);
   bounds.forEach((bound, index) => {
     const locked = sourceBars(score, bound.from, bound.to, bars.length > 0);
@@ -350,6 +394,12 @@ function genericPerformance(score: WwhDuoScore, seed: number, sections: WwhPlanS
       freedomLevel: 'locked',
       rehearsal: bound.rehearsal,
     });
+    const block = spanBlock(score, bound.from, bound.to);
+    const mark = bound.rehearsal ?? String(index + 1);
+    if (block) {
+      skipped.push(`${mark}: development skipped — ${block}`);
+      return;
+    }
     const length = developedInsertLength(bound.to - bound.from + 1);
     const guitarPitches = score.guitar.measures
       .slice(bound.from - 1, bound.to)
@@ -359,38 +409,28 @@ function genericPerformance(score: WwhDuoScore, seed: number, sections: WwhPlanS
       .slice(bound.from - 1, bound.to)
       .flatMap((measure) => measure.notes.map(midiOf))
       .filter((midi): midi is number => midi !== null);
-    const interval = guitarPitches.length >= 2 ? (guitarPitches[1]! - guitarPitches[0]!) : 0;
+    const interval = guitarPitches.length >= 2 ? guitarPitches[1]! - guitarPitches[0]! : 0;
     const inverted = (guitarPitches[0] ?? 72) - interval + (seed % 2);
     const bassMidi = bassPitches[0] ?? 48;
     const last = score.guitar.measures[bound.to - 1]!;
-    const ticks = wwhBarTicks(last.beats, last.beatType, last.divisions);
+    const lastBass = score.bass.measures[bound.to - 1]!;
     const insert: WwhWrittenBar[] = [];
     for (let i = 0; i < length; i++) {
       const guitarMidi = i === length - 1 ? inverted - 2 : inverted + (i % 2 === 0 ? 0 : 2);
-      const bassSpell = spell(clamp(i % 2 === 0 ? bassMidi : bassMidi + 7, 40, 60));
+      const guitarLine = lineOnGrid(last, i === 1 ? null : guitarMidi, 60, 81);
+      const bassLine = lineOnGrid(lastBass, i === length - 1 ? null : i % 2 === 0 ? bassMidi : bassMidi + 7, 40, 62);
+      if (!guitarLine || !bassLine) {
+        skipped.push(`${mark}: development skipped — beat does not fit divisions ${last.divisions}`);
+        return;
+      }
       insert.push({
-        guitar: i === 1 ? restsFor(ticks) : pitchedQuarter(guitarMidi, ticks),
-        bass:
-          i === length - 1
-            ? restsFor(ticks)
-            : [
-                {
-                  rest: false,
-                  step: bassSpell.step,
-                  alter: bassSpell.alter,
-                  octave: bassSpell.octave,
-                  divisions: Math.min(512, ticks),
-                  type: ticks >= 512 ? 'half' : 'quarter',
-                  dots: 0,
-                },
-                ...restsFor(ticks - Math.min(512, ticks)),
-              ],
-        beats: last.beats,
-        beatType: last.beatType,
+        guitar: guitarLine,
+        bass: bassLine,
+        ...contextOf(last, lastBass),
         rehearsal: i === 0 ? `X${index + 1}` : undefined,
         words:
           i === 0
-            ? ['Guitar improvisation; bass maintains motif', 'Listen on the empty bar']
+            ? [SKETCH_LABEL, 'Guitar improvisation; bass maintains motif', 'Listen on the empty bar']
             : undefined,
         newSystem: i === 0,
       });
@@ -409,11 +449,21 @@ function genericPerformance(score: WwhDuoScore, seed: number, sections: WwhPlanS
       rehearsal: `X${index + 1}`,
     });
   });
-  return bars;
+  return { bars, skipped };
 }
 
-function genericAlternatives(score: WwhDuoScore, seed: number, sections: WwhPlanSection[]): { guitar: WwhWrittenBar[]; bass: WwhWrittenBar[] } {
+function genericAlternatives(
+  score: WwhDuoScore,
+  seed: number,
+  sections: WwhPlanSection[]
+): { guitar: WwhWrittenBar[]; bass: WwhWrittenBar[]; skipped: string[] } {
   const bound = sectionBounds(score)[0] ?? { from: 1, to: Math.min(4, score.guitar.measures.length), rehearsal: null };
+  const skipped: string[] = [];
+  const block = gridBlock(score, bound.from, bound.to);
+  if (block) {
+    skipped.push(`studies skipped — ${block}`);
+    return { guitar: [], bass: [], skipped };
+  }
   const freedoms = ['minimal', 'lyrical', 'adventurous'] as const;
   const lengths = [2, 3, 3];
   const guitar: WwhWrittenBar[] = [];
@@ -422,36 +472,46 @@ function genericAlternatives(score: WwhDuoScore, seed: number, sections: WwhPlan
     const length = lengths[index] ?? 2;
     const gStart = guitar.length + 1;
     const bStart = bass.length + 1;
+    const gBars: WwhWrittenBar[] = [];
+    const bBars: WwhWrittenBar[] = [];
     for (let i = 0; i < length; i++) {
       const sourceIndex = bound.from + (i % (bound.to - bound.from + 1));
       const gMeasure = measureAt(score.guitar, sourceIndex);
       const bMeasure = measureAt(score.bass, sourceIndex);
-      const ticks = wwhBarTicks(gMeasure.beats, gMeasure.beatType, gMeasure.divisions);
       const midi = 67 + index * 2 + (seed % 2);
-      guitar.push({
-        guitar: i === 0 && freedom === 'minimal' ? restsFor(ticks) : pitchedQuarter(midi - (freedom === 'adventurous' ? -5 : 0), ticks),
-        bass: [],
-        bassClone: bMeasure.element,
-        beats: bMeasure.beats,
-        beatType: bMeasure.beatType,
+      const guitarLine = lineOnGrid(
+        gMeasure,
+        i === 0 && freedom === 'minimal' ? null : midi + (freedom === 'adventurous' ? 5 : 0),
+        60,
+        81
+      );
+      const bassLine = lineOnGrid(bMeasure, freedom === 'minimal' ? 48 : 48 + index * 3, 40, 62);
+      if (!guitarLine || !bassLine) {
+        skipped.push(`${freedom} skipped — beat does not fit divisions ${gMeasure.divisions}`);
+        return;
+      }
+      const dangling = gMeasure.openTieOut || bMeasure.openTieOut;
+      gBars.push({
+        guitar: guitarLine,
+        bass: dangling ? bassLine : [],
+        bassClone: dangling ? undefined : bMeasure.element,
+        ...contextOf(gMeasure, bMeasure),
         rehearsal: i === 0 ? `G-${freedom}` : undefined,
-        words: i === 0 ? [`${freedom} — listen to the bass`] : undefined,
-        newSystem: i === 0 && guitar.length > 0,
+        words: i === 0 ? [SKETCH_LABEL, `${freedom} — listen to the bass`] : undefined,
+        newSystem: i === 0 && guitar.length + gBars.length > 0,
       });
-      bass.push({
-        guitar: [],
-        guitarClone: gMeasure.element,
-        bass: freedom === 'minimal' ? [{ rest: false, ...spell(clamp(48, 40, 60)), divisions: Math.min(512, ticks), type: 'half', dots: 0 }, ...restsFor(ticks - Math.min(512, ticks))] : pitchedQuarter(48 + index * 3, ticks).map((atom) => {
-          if (!atom.rest && atom.octave !== undefined && atom.octave > 4) return { ...atom, octave: atom.octave - 1 };
-          return atom;
-        }),
-        beats: gMeasure.beats,
-        beatType: gMeasure.beatType,
+      bBars.push({
+        guitar: dangling ? guitarLine : [],
+        guitarClone: dangling ? undefined : gMeasure.element,
+        bass: bassLine,
+        ...contextOf(gMeasure, bMeasure),
         rehearsal: i === 0 ? `B-${freedom}` : undefined,
-        words: i === 0 ? [`Bass partner ${freedom}`] : undefined,
-        newSystem: i === 0 && bass.length > 0,
+        words: i === 0 ? [SKETCH_LABEL, `Bass partner ${freedom}`] : undefined,
+        newSystem: i === 0 && bass.length + bBars.length > 0,
       });
     }
+    guitar.push(...gBars);
+    bass.push(...bBars);
     pushSection(sections, 'guitar_study', gStart, length, {
       id: `generic-guitar-${freedom}`,
       sourceBarStart: bound.from,
@@ -475,7 +535,7 @@ function genericAlternatives(score: WwhDuoScore, seed: number, sections: WwhPlan
       rehearsal: `B-${freedom}`,
     });
   });
-  return { guitar, bass };
+  return { guitar, bass, skipped };
 }
 
 function scenarioNote(score: WwhDuoScore): string {
@@ -506,7 +566,7 @@ ${checks.map((line) => `- ${line}`).join('\n')}
 
 ${plan.limitations.map((line) => `- ${line}`).join('\n')}
 
-Sibelius import was not treated as proven unless a later line says a file was opened.
+MuseScore 4 is the notation check. A written PDF is not playback and is not an import proof.
 `;
 }
 
@@ -516,34 +576,67 @@ export function composeWwhPerformance(request: WwhComposeRequest): WwhComposeRes
   const score = importWwhDuoMusicXml(request.xml);
   const sha = createHash('sha256').update(request.xml).digest('hex');
   const sections: WwhPlanSection[] = [];
-  const blackAura = isBlackAura(score, request.sourcePath) && !request.sourcePath.includes('__generic__');
-  const stem = stemFor(score, edition);
-  const cues = blackAura
+  const curated =
+    (edition === '7.0' || edition === '7.1') &&
+    isBlackAura(score, request.sourcePath) &&
+    !request.sourcePath.includes('__generic__');
+  const stem = stemFor(score, request.sourcePath, edition);
+  const skipped: string[] = [];
+  const performanceSlices = edition === '7.1' ? BLACK_AURA_V71_PERFORMANCE : BLACK_AURA_PERFORMANCE;
+  const guitarStudy = edition === '7.1' ? BLACK_AURA_V71_GUITAR_STUDY : BLACK_AURA_GUITAR_STUDY;
+  let performanceBars: WwhWrittenBar[];
+  if (curated) {
+    performanceBars = assemblePerformance(score, performanceSlices, request.seed, sections);
+  } else {
+    const generic = genericPerformance(score, request.seed, sections);
+    performanceBars = generic.bars;
+    skipped.push(...generic.skipped);
+  }
+  const cues = curated
     ? edition === '7.1'
       ? BLACK_AURA_V71_CUES
       : BLACK_AURA_LEADSHEET_CUES
-    : sectionBounds(score).map((bound, index) => ({
-        sourceBar: bound.to,
-        performanceSectionId: `dev-${bound.rehearsal ?? index + 1}`,
-        text: `After this bar: guitar improvisation; bass maintains motif (${developedInsertLength(bound.to - bound.from + 1)} bars)`,
-      }));
-
-  const performanceSlices = edition === '7.1' ? BLACK_AURA_V71_PERFORMANCE : BLACK_AURA_PERFORMANCE;
-  const guitarStudy = edition === '7.1' ? BLACK_AURA_V71_GUITAR_STUDY : BLACK_AURA_GUITAR_STUDY;
-  const performanceBars = blackAura
-    ? assemblePerformance(score, performanceSlices, request.seed, sections)
-    : genericPerformance(score, request.seed, sections);
+    : sectionBounds(score).map((bound, index) => {
+        const mark = bound.rehearsal ?? String(index + 1);
+        const held = skipped.some((line) => line.startsWith(`${mark}:`));
+        return {
+          sourceBar: bound.to,
+          performanceSectionId: `dev-${bound.rehearsal ?? index + 1}`,
+          text: held
+            ? 'Development not written. Locked span kept. See support reasons.'
+            : `After this bar: guitar improvisation; bass maintains motif (${developedInsertLength(bound.to - bound.from + 1)} bars)`,
+        };
+      });
   const leadsheetBars = leadsheet(score, cues, sections);
   let guitarBars: WwhWrittenBar[];
   let bassBars: WwhWrittenBar[];
-  if (blackAura) {
+  if (curated) {
     guitarBars = assembleStudy(score, guitarStudy, 'guitar_study', sections);
     bassBars = assembleStudy(score, BLACK_AURA_BASS_PARTNER, 'bass_partner', sections);
   } else {
     const generic = genericAlternatives(score, request.seed, sections);
     guitarBars = generic.guitar;
     bassBars = generic.bass;
+    skipped.push(...generic.skipped);
   }
+
+  const gridFail =
+    !curated &&
+    (score.guitar.measures.some((measure) => !measure.gridAgrees) ||
+      score.bass.measures.some((measure) => !measure.gridAgrees));
+  const rounded =
+    score.guitar.measures.some((measure) => measure.roundedTuplet) ||
+    score.bass.measures.some((measure) => measure.roundedTuplet);
+  const supportReasons = [...skipped];
+  if (gridFail) supportReasons.unshift('source duration, note type, dots, or divisions do not agree');
+  if (rounded) supportReasons.push('source tuplets rounded to the nearest division were copied, not rewritten');
+  const support: WwhSupport =
+    curated ? 'pass' : gridFail || guitarBars.length === 0 || bassBars.length === 0 ? 'incomplete' : 'pass';
+  const openingTempo = score.guitar.measures[0]?.tempo;
+  const quarterTempo = openingTempo ? Number(quarterPerMinute(openingTempo)) : 92;
+  const experimental = edition === '7.2';
+  const sketch = experimental ? ` — ${SKETCH_LABEL}` : '';
+  const headerTempo = curated ? 92 : undefined;
 
   const plan: WwhPerformancePlan = {
     version: edition,
@@ -551,48 +644,60 @@ export function composeWwhPerformance(request: WwhComposeRequest): WwhComposeRes
     source: request.sourcePath,
     sourceSha256: sha,
     seed: request.seed,
-    tempo: 92,
+    tempo: Number.isFinite(quarterTempo) ? quarterTempo : 92,
     outputType: output,
     naturalLanguageParsing: false,
     sections,
     leadsheetCues: cues,
-    limitations: [
-      'Flight edition writes structured plans only. It does not parse free-text cues.',
-      'Black Aura development is a composed sketch from the duo cells, not a claim about improvisational quality.',
-      'Seed changes when the new performance guitar enters or thins out. Locked source bars, the leadsheet notes, and the three labelled studies stay put.',
-      'No tablature. No MIDI in this edition.',
-      'H OPEN ×8 is the source cue made audible. Other new sections are odd lengths so the sketch is not forced into 8/16/32-bar form.',
-      edition === '7.1'
-        ? 'V7.1 Liquid Harmony moves one voice at a time across Fm, C over F#, Edim, and Ab. It is not a ii–V–I and it is not the Vault planner.'
-        : 'V7.0 Liquid Harmony holds a common tone against a moving bass. V7.1 replaces that passage in a separate file.',
-      'V7.0 filenames stay the baseline. V7.1 uses the 01-Black-Aura-V7.1 stem.',
-    ],
+    support,
+    supportReasons,
+    experimentalSketch: experimental,
+    limitations: experimental
+      ? [
+          'V7.2 performance and study files are EXPERIMENTAL TECHNICAL SKETCHES. The generic insert is not a finished musical development.',
+          'Recording leadsheets copy the source. Measure numbers and layout may change. Notes, pitches, onsets, durations, rests, ties, harmony, and navigation are the preservation check.',
+          'Development is not inserted through an unresolved tie, a repeat, or an ending.',
+          'Dotted-quarter metronome marks stay on that beat unit. Sound tempo is quarter notes per minute.',
+          'No tablature. No MIDI. No GUI. No GCE score is claimed.',
+          'V7.0 and V7.1 Black Aura files stay the curated baselines. V7.2 does not select them by title.',
+        ]
+      : [
+          'Flight edition writes structured plans only. It does not parse free-text cues.',
+          'Black Aura development is a composed sketch from the duo cells, not a claim about improvisational quality.',
+          'Seed changes when the new performance guitar enters or thins out. Locked source bars, the leadsheet notes, and the three labelled studies stay put.',
+          'No tablature. No MIDI in this edition.',
+          'H OPEN ×8 is the source cue made audible. Other new sections are odd lengths so the sketch is not forced into 8/16/32-bar form.',
+          edition === '7.1'
+            ? 'V7.1 Liquid Harmony moves one voice at a time across Fm, C over F#, Edim, and Ab. It is not a ii–V–I and it is not the Vault planner.'
+            : 'V7.0 Liquid Harmony holds a common tone against a moving bass. V7.1 replaces that passage in a separate file.',
+          'V7.0 filenames stay the baseline. V7.1 uses the 01-Black-Aura-V7.1 stem.',
+        ],
   };
 
   const want = (kind: WwhPlanSection['outputType']) => output === 'all' || output === kind;
   const files: WwhComposeFile[] = [];
-  if (want('performance')) {
+  if (want('performance') && performanceBars.length) {
     files.push({
       name: `${stem}-PERFORMANCE.musicxml`,
-      contents: renderWwhDuoScore(performanceBars, header(score, `${edition} duo performance`, edition, 92)),
+      contents: renderWwhDuoScore(performanceBars, header(score, `${edition} duo performance${sketch}`, edition, headerTempo)),
     });
   }
   if (want('leadsheet')) {
     files.push({
       name: `${stem}-RECORDING-LEADSHEET.musicxml`,
-      contents: renderWwhDuoScore(leadsheetBars, header(score, `${edition} leadsheet`, edition)),
+      contents: renderWwhDuoScore(leadsheetBars, header(score, `${edition} recording leadsheet`, edition)),
     });
   }
-  if (want('guitar_study')) {
+  if (want('guitar_study') && guitarBars.length) {
     files.push({
       name: `${stem}-GUITAR-STUDY.musicxml`,
-      contents: renderWwhDuoScore(guitarBars, header(score, `${edition} guitar study`, edition, 92)),
+      contents: renderWwhDuoScore(guitarBars, header(score, `${edition} guitar study${sketch}`, edition, headerTempo)),
     });
   }
-  if (want('bass_partner')) {
+  if (want('bass_partner') && bassBars.length) {
     files.push({
       name: `${stem}-BASS-PARTNER.musicxml`,
-      contents: renderWwhDuoScore(bassBars, header(score, `${edition} bass partner`, edition, 92)),
+      contents: renderWwhDuoScore(bassBars, header(score, `${edition} bass partner${sketch}`, edition, headerTempo)),
     });
   }
   files.push({

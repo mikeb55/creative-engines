@@ -30,7 +30,9 @@ function syntheticOddForm(): string {
     const time = i === 1 || i === 8 ? `<attributes><divisions>256</divisions><key><fifths>0</fifths></key><time><beats>${three ? 3 : 4}</beats><beat-type>4</beat-type></time><clef><sign>${'G'}</sign><line>2</line></clef></attributes>` : '';
     const timeB = i === 1 || i === 8 ? time.replace('<sign>G</sign><line>2</line>', '<sign>F</sign><line>4</line>') : '';
     const mark = i === 1 ? '<direction><direction-type><rehearsal>A</rehearsal></direction-type></direction>' : i === 8 ? '<direction><direction-type><rehearsal>B</rehearsal></direction-type></direction>' : '';
-    const gRest = three ? rest(512, 'half') : rest(768, 'half');
+    const gRest = three
+      ? rest(512, 'half')
+      : `${rest(512, 'half')}${rest(256, 'quarter')}`;
     const bDur = three ? 768 : 1024;
     gBars.push(
       `<measure number="${i}">${time}${mark}${note(i % 2 === 0 ? 'E' : 'C', 5, 256, 'quarter')}${gRest}</measure>`

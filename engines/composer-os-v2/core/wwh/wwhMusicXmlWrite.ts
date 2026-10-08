@@ -7,6 +7,7 @@ import type { Element as XmlElement } from '@xmldom/xmldom';
 import { XMLSerializer } from '@xmldom/xmldom';
 import type { WwhAtom, WwhHarmonySpec } from './wwhPerformanceTypes';
 import { WWH_DIVISIONS } from './wwhPerformanceTypes';
+import { tempoDirectionXml, tempoKey, type WwhTempoMark } from './wwhTiming';
 
 export interface WwhWrittenBar {
   guitar: WwhAtom[];
@@ -20,6 +21,12 @@ export interface WwhWrittenBar {
   guitarClone?: Element;
   bassClone?: Element;
   newSystem?: boolean;
+  divisions?: number;
+  fifths?: number;
+  mode?: string;
+  guitarTranspose?: number;
+  bassTranspose?: number;
+  tempoMark?: WwhTempoMark | null;
 }
 
 export interface WwhScoreHeader {
@@ -54,7 +61,12 @@ function atomXml(atom: WwhAtom): string {
         atom.alter ? `<alter>${atom.alter}</alter>` : ''
       }<octave>${atom.octave ?? 4}</octave></pitch>`;
   const fermata = atom.fermata ? '<notations><fermata>normal</fermata></notations>' : '';
-  return `<note>${atom.chord ? '<chord/>' : ''}${head}<duration>${atom.divisions}</duration><voice>1</voice><type>${atom.type}</type>${dots}${
+  const timeMod = atom.timeModification
+    ? `<time-modification><actual-notes>${atom.timeModification.actualNotes}</actual-notes><normal-notes>${atom.timeModification.normalNotes}</normal-notes><normal-type>${esc(
+        atom.timeModification.normalType
+      )}</normal-type></time-modification>`
+    : '';
+  return `<note>${atom.chord ? '<chord/>' : ''}${head}<duration>${atom.divisions}</duration><voice>1</voice><type>${atom.type}</type>${dots}${timeMod}${
     atom.rest ? '' : accidental(atom.alter)
   }${fermata}</note>`;
 }
@@ -73,9 +85,10 @@ function harmonyXml(harmony: WwhHarmonySpec): string {
   )}</kind>${bass}</harmony>`;
 }
 
-function directions(bar: WwhWrittenBar, tempo: number | undefined, isFirst: boolean): string {
+function directions(bar: WwhWrittenBar, tempo: number | undefined, writeHeaderTempo: boolean, writeMark: boolean): string {
   const chunks: string[] = [];
-  if (isFirst && tempo) {
+  if (writeMark && bar.tempoMark) chunks.push(tempoDirectionXml(bar.tempoMark));
+  else if (writeHeaderTempo && tempo) {
     chunks.push(
       `<direction placement="above"><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>${tempo}</per-minute></metronome></direction-type><sound tempo="${tempo}"/></direction>`
     );
@@ -93,13 +106,49 @@ function directions(bar: WwhWrittenBar, tempo: number | undefined, isFirst: bool
   return chunks.join('');
 }
 
-function attributes(clef: 'G' | 'F', beats: number, beatType: number, transposeOctave: number): string {
-  const line = clef === 'G' ? 2 : 4;
+interface WrittenState {
+  divisions: number;
+  beats: number;
+  beatType: number;
+  fifths: number;
+  mode: string;
+  transpose: number;
+  tempo: string;
+}
+
+function barState(bar: WwhWrittenBar, clef: 'G' | 'F', header: WwhScoreHeader): WrittenState {
+  const transposeFallback = header.transposeOctave ?? -1;
+  const transpose = clef === 'G' ? (bar.guitarTranspose ?? transposeFallback) : (bar.bassTranspose ?? transposeFallback);
+  return {
+    divisions: bar.divisions ?? WWH_DIVISIONS,
+    beats: bar.beats ?? 4,
+    beatType: bar.beatType ?? 4,
+    fifths: bar.fifths ?? 0,
+    mode: bar.mode ?? 'major',
+    transpose,
+    tempo: bar.tempoMark ? tempoKey(bar.tempoMark) : '',
+  };
+}
+
+function attributes(options: {
+  clef: 'G' | 'F';
+  beats: number;
+  beatType: number;
+  divisions: number;
+  fifths: number;
+  mode: string;
+  transposeOctave: number;
+  clefLine?: number;
+  forceTranspose?: boolean;
+}): string {
+  const line = options.clefLine ?? (options.clef === 'G' ? 2 : 4);
   const transpose =
-    transposeOctave === 0
+    options.transposeOctave === 0 && !options.forceTranspose
       ? ''
-      : `<transpose><diatonic>0</diatonic><chromatic>0</chromatic><octave-change>${transposeOctave}</octave-change></transpose>`;
-  return `<attributes><divisions>${WWH_DIVISIONS}</divisions><key><fifths>0</fifths><mode>major</mode></key><time><beats>${beats}</beats><beat-type>${beatType}</beat-type></time><staves>1</staves><clef><sign>${clef}</sign><line>${line}</line></clef>${transpose}</attributes>`;
+      : `<transpose><diatonic>0</diatonic><chromatic>0</chromatic><octave-change>${options.transposeOctave}</octave-change></transpose>`;
+  return `<attributes><divisions>${options.divisions}</divisions><key><fifths>${options.fifths}</fifths><mode>${esc(
+    options.mode
+  )}</mode></key><time><beats>${options.beats}</beats><beat-type>${options.beatType}</beat-type></time><staves>1</staves><clef><sign>${options.clef}</sign><line>${line}</line></clef>${transpose}</attributes>`;
 }
 
 function localName(el: Element): string {
@@ -146,66 +195,79 @@ export function addWordsToMeasureXml(measureXml: string, words: string[]): strin
   return measureXml.replace(/<\/measure>\s*$/, `${direction}</measure>`);
 }
 
+function insertBeforeNote(xml: string, block: string): string {
+  if (!block) return xml;
+  if (xml.includes('<note')) return xml.replace('<note', `${block}<note`);
+  return xml.replace(/<\/measure>\s*$/, `${block}</measure>`);
+}
+
+function contextBlock(state: WrittenState, clef: 'G' | 'F', xml: string, prev: WrittenState | null): string {
+  const full = (forceTranspose: boolean) =>
+    attributes({
+      clef,
+      beats: state.beats,
+      beatType: state.beatType,
+      divisions: state.divisions,
+      fifths: state.fifths,
+      mode: state.mode,
+      transposeOctave: state.transpose,
+      forceTranspose,
+    });
+  if (!prev) {
+    if (xml.includes('<divisions')) return '';
+    return full(state.transpose !== 0);
+  }
+  const needDivisions = prev.divisions !== state.divisions && !xml.includes('<divisions');
+  const needKey = (prev.fifths !== state.fifths || prev.mode !== state.mode) && !xml.includes('<fifths');
+  const needTime = (prev.beats !== state.beats || prev.beatType !== state.beatType) && !xml.includes('<beat-type');
+  const needTranspose = prev.transpose !== state.transpose && !xml.includes('<transpose');
+  if (!needDivisions && !needKey && !needTime && !needTranspose) return '';
+  if (needDivisions || needKey || needTranspose) return full(needTranspose);
+  return `<attributes><time><beats>${state.beats}</beats><beat-type>${state.beatType}</beat-type></time></attributes>`;
+}
+
 function freshMeasure(
   clef: 'G' | 'F',
   number: number,
   bar: WwhWrittenBar,
   header: WwhScoreHeader,
-  attributeMode: 'full' | 'time' | 'none'
+  state: WrittenState,
+  prev: WrittenState | null,
+  writeTempo: boolean
 ): string {
-  const beats = bar.beats ?? 4;
-  const beatType = bar.beatType ?? 4;
   const atoms = clef === 'G' ? bar.guitar : bar.bass;
-  const attrBlock =
-    attributeMode === 'full'
-      ? attributes(clef, beats, beatType, header.transposeOctave ?? -1)
-      : attributeMode === 'time'
-        ? `<attributes><time><beats>${beats}</beats><beat-type>${beatType}</beat-type></time></attributes>`
-        : '';
+  const attrBlock = contextBlock(state, clef, '', prev);
   const print = bar.newSystem && clef === 'G' ? '<print new-system="yes"/>' : '';
-  const dirs = clef === 'G' ? directions(bar, header.tempo, attributeMode === 'full') : '';
+  const headerTempo = !prev && !bar.tempoMark && header.tempo !== undefined;
+  const dirs = clef === 'G' ? directions(bar, header.tempo, headerTempo, writeTempo && Boolean(bar.tempoMark)) : '';
   const harmony = clef === 'G' && bar.harmony ? harmonyXml(bar.harmony) : '';
   return `<measure number="${number}">${print}${attrBlock}${dirs}${harmony}${atoms.map(atomXml).join('')}</measure>`;
 }
 
-function ensureOpening(xml: string, clef: 'G' | 'F', beats: number, beatType: number, transposeOctave: number): string {
-  if (xml.includes('<divisions')) return xml;
-  const block = attributes(clef, beats, beatType, transposeOctave);
-  if (xml.includes('<note')) return xml.replace('<note', `${block}<note`);
-  return xml.replace(/<\/measure>\s*$/, `${block}</measure>`);
-}
-
 function partXml(id: string, clef: 'G' | 'F', bars: readonly WwhWrittenBar[], header: WwhScoreHeader): string {
-  let prevBeats: number | null = null;
-  let prevType: number | null = null;
+  let prev: WrittenState | null = null;
   const measures = bars.map((bar, index) => {
-    const beats = bar.beats ?? 4;
-    const beatType = bar.beatType ?? 4;
-    const meterChanged = prevBeats !== null && (beats !== prevBeats || beatType !== prevType);
+    const state = barState(bar, clef, header);
     const clone = clef === 'G' ? bar.guitarClone : bar.bassClone;
+    const writeTempo = Boolean(state.tempo) && state.tempo !== prev?.tempo;
     let xml: string;
     if (clone) {
       xml = cleanSourceMeasure(clone, index + 1, Boolean(bar.newSystem) && clef === 'G');
       if (clef === 'G' && bar.words?.length) xml = addWordsToMeasureXml(xml, bar.words);
       if (clef === 'G' && bar.rehearsal && !xml.includes(`>${esc(bar.rehearsal)}</rehearsal>`)) {
-        xml = xml.replace(
-          '<note',
-          `<direction placement="above"><direction-type><rehearsal>${esc(bar.rehearsal)}</rehearsal></direction-type></direction><note`
+        xml = insertBeforeNote(
+          xml,
+          `<direction placement="above"><direction-type><rehearsal>${esc(bar.rehearsal)}</rehearsal></direction-type></direction>`
         );
       }
-      if (index === 0) xml = ensureOpening(xml, clef, beats, beatType, header.transposeOctave ?? -1);
-      if (meterChanged && !xml.includes('<beat-type')) {
-        xml = xml.replace(
-          '<note',
-          `<attributes><time><beats>${beats}</beats><beat-type>${beatType}</beat-type></time></attributes><note`
-        );
+      xml = insertBeforeNote(xml, contextBlock(state, clef, xml, prev));
+      if (clef === 'G' && writeTempo && bar.tempoMark && !xml.includes('<metronome') && !xml.includes('<sound ')) {
+        xml = insertBeforeNote(xml, tempoDirectionXml(bar.tempoMark));
       }
     } else {
-      const mode = index === 0 ? 'full' : meterChanged ? 'time' : 'none';
-      xml = freshMeasure(clef, index + 1, bar, header, mode);
+      xml = freshMeasure(clef, index + 1, bar, header, state, prev, writeTempo);
     }
-    prevBeats = beats;
-    prevType = beatType;
+    prev = state;
     if (index === bars.length - 1 && !xml.includes('light-heavy')) {
       xml = xml.replace(/<\/measure>\s*$/, '<barline location="right"><bar-style>light-heavy</bar-style></barline></measure>');
     }

@@ -220,6 +220,17 @@ The golden path proves the core system works; future modules plug in cleanly wit
 
 ---
 
+## WWH Performance Composer V7.2
+
+CLI, not a second app. `npm run wwh:performance-v7` reads guitar and bass MusicXML and writes four scores plus a Performance Plan. Default edition is 7.2. Editions 7.0 and 7.1 remain the curated Black Aura baselines and are not overwritten. Generated durations follow the source divisions. It does not send WWH bar counts through `longFormRouteResolver`.
+
+```bash
+npm run wwh:performance-v7 -- --edition 7.2 --input "/path/score.musicxml" --output-dir "/path/out" --seed 7 --outputs all
+npm run wwh:performance-v7 -- --batch --album-dir "/path/ECM-Album-Nov-2027" --output-dir "/path/V7.2" --seed 7
+```
+
+`--outputs` is `performance`, `leadsheet`, `guitar_study`, `bass_partner`, or `all`.
+
 ## Running Tests
 
 ```bash

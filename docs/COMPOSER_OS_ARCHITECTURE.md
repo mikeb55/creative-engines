@@ -2,7 +2,7 @@
 
 ## Overview
 
-**WWH Performance Composer V7.0** lives in `engines/composer-os-v2/core/wwh/`. It imports an existing guitar/bass MusicXML score, builds a typed Performance Plan, and exports performance, leadsheet, guitar-study, and bass-partner MusicXML. It does not start a second application and it does not route odd WWH lengths through the long-form 8/16/32 resolver. CLI: `scripts/wwhPerformanceV7.ts`.
+**WWH Performance Composer V7.2** lives in `engines/composer-os-v2/core/wwh/`. It imports an existing guitar/bass MusicXML score, builds a typed Performance Plan, and exports performance, leadsheet, guitar-study, and bass-partner MusicXML. Generated note values are rational fractions of a quarter scaled to the source divisions. V7.0 and V7.1 remain the curated Black Aura baselines. V7.2 does not route odd WWH lengths through the long-form 8/16/32 resolver and does not select curated material by title. CLI: `scripts/wwhPerformanceV7.ts`. Notation check is MuseScore 4.
 
 **Composer OS** (`engines/composer-os-v2/`) is a single generative pipeline for jazz/chamber-style outputs: preset â†’ planning â†’ score build â†’ integrity â†’ MusicXML export â†’ validation â†’ readiness. **Apps** (`apps/composer-os-app`, `apps/composer-os-desktop`) call the shared **app API** (`engines/composer-os-v2/app-api/`), not the engine core directly.
 

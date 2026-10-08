@@ -3,12 +3,15 @@
  */
 
 import { importWwhDuoMusicXml, type WwhDuoScore, type WwhImportedMeasure } from './wwhDuoImport';
-import { wwhBarTicks } from './wwhPerformanceTypes';
+import { durationAgreement, wwhBarTicksExact } from './wwhTiming';
 
 export interface WwhAudit {
   ok: boolean;
   barCount: number;
   lines: string[];
+  roundedTuplets: number;
+  agreementFails: number;
+  pickupBars: number;
 }
 
 function voiceSums(measure: WwhImportedMeasure): Map<string, number> {
@@ -26,7 +29,14 @@ export function auditWwhMusicXml(xml: string, label: string): WwhAudit {
   try {
     score = importWwhDuoMusicXml(xml);
   } catch (error) {
-    return { ok: false, barCount: 0, lines: [`${label}: parse failed — ${error instanceof Error ? error.message : String(error)}`] };
+    return {
+      ok: false,
+      barCount: 0,
+      lines: [`${label}: parse failed — ${error instanceof Error ? error.message : String(error)}`],
+      roundedTuplets: 0,
+      agreementFails: 0,
+      pickupBars: 0,
+    };
   }
   lines.push(`${label}: parts ${score.guitar.name} + ${score.bass.name}, ${score.guitar.measures.length} bars`);
   if (!/guitar/i.test(score.guitar.name) || !/bass/i.test(score.bass.name)) {
@@ -36,22 +46,40 @@ export function auditWwhMusicXml(xml: string, label: string): WwhAudit {
     lines.push(`${label}: FAIL tablature present`);
   }
   let durationFails = 0;
+  let agreementFails = 0;
+  let roundedTuplets = 0;
+  let pickupBars = 0;
   for (const part of [score.guitar, score.bass]) {
     for (const measure of part.measures) {
-      const expected = wwhBarTicks(measure.beats, measure.beatType, measure.divisions);
+      const expected = wwhBarTicksExact(measure.beats, measure.beatType, measure.divisions);
       const sums = voiceSums(measure);
-      if (!sums.size) {
+      if (measure.implicit) pickupBars += 1;
+      if (expected === null || !sums.size) {
         durationFails += 1;
-        continue;
+      } else if (measure.implicit) {
+        for (const sum of sums.values()) {
+          if (sum <= 0 || sum >= expected) durationFails += 1;
+        }
+      } else {
+        for (const sum of sums.values()) {
+          if (sum !== expected) durationFails += 1;
+        }
       }
-      for (const sum of sums.values()) {
-        if (sum !== expected) durationFails += 1;
+      for (const note of measure.notes) {
+        const agreement = durationAgreement(measure.divisions, note.type, note.dots, note.duration, note.timeModification);
+        if (agreement === 'mismatch') agreementFails += 1;
+        if (agreement === 'rounded-tuplet') roundedTuplets += 1;
       }
     }
   }
   lines.push(`${label}: duration mismatches ${durationFails}`);
+  lines.push(`${label}: duration/type mismatches ${agreementFails}`);
+  lines.push(`${label}: rounded tuplets ${roundedTuplets}`);
+  lines.push(`${label}: pickup bars ${pickupBars}`);
   const marks = score.guitar.measures.flatMap((measure) => measure.rehearsal);
   lines.push(`${label}: rehearsal marks ${marks.length ? marks.join(' ') : 'NONE'}`);
-  const ok = durationFails === 0 && !lines.some((line) => line.includes('FAIL'));
-  return { ok, barCount: score.guitar.measures.length, lines };
+  const divisions = [...new Set([...score.guitar.measures, ...score.bass.measures].map((measure) => measure.divisions))];
+  lines.push(`${label}: divisions ${divisions.join(',')}`);
+  const ok = durationFails === 0 && agreementFails === 0 && !lines.some((line) => line.includes('FAIL'));
+  return { ok, barCount: score.guitar.measures.length, lines, roundedTuplets, agreementFails, pickupBars };
 }

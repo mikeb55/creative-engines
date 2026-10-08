@@ -27,6 +27,7 @@ export interface WwhAtom {
   dots?: number;
   chord?: boolean;
   fermata?: boolean;
+  timeModification?: { actualNotes: number; normalNotes: number; normalType: string };
 }
 
 export interface WwhDurSpec {
@@ -130,8 +131,12 @@ export interface WwhPlanSection {
   rehearsal: string | null;
 }
 
+export type WwhEdition = '7.0' | '7.1' | '7.2';
+
+export type WwhSupport = 'pass' | 'incomplete' | 'fail';
+
 export interface WwhPerformancePlan {
-  version: '7.0' | '7.1';
+  version: WwhEdition;
   title: string;
   source: string;
   sourceSha256: string;
@@ -142,4 +147,8 @@ export interface WwhPerformancePlan {
   sections: WwhPlanSection[];
   leadsheetCues: Array<{ sourceBar: number; performanceSectionId: string; text: string }>;
   limitations: string[];
+  /** V7.2 portable pipeline. Curated Black Aura stays on 7.0 and 7.1. */
+  support: WwhSupport;
+  supportReasons: string[];
+  experimentalSketch: boolean;
 }

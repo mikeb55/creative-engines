@@ -5,6 +5,12 @@
 
 import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
 import { WWH_DIVISIONS } from './wwhPerformanceTypes';
+import {
+  durationAgreement,
+  wwhBarTicksExact,
+  type WwhTempoMark,
+  type WwhTimeModification,
+} from './wwhTiming';
 
 export interface WwhImportedNote {
   rest: boolean;
@@ -14,6 +20,11 @@ export interface WwhImportedNote {
   alter?: number;
   octave?: number;
   voice: string;
+  type?: string;
+  dots: number;
+  tieStart: boolean;
+  tieStop: boolean;
+  timeModification?: WwhTimeModification;
 }
 
 export interface WwhImportedMeasure {
@@ -22,11 +33,26 @@ export interface WwhImportedMeasure {
   beats: number;
   beatType: number;
   divisions: number;
+  fifths: number;
+  mode: string;
+  clefSign: string;
+  clefLine: number;
+  transposeOctave: number;
+  tempo: WwhTempoMark;
   rehearsal: string[];
   words: string[];
   harmony: string[];
   notes: WwhImportedNote[];
   element: Element;
+  implicit: boolean;
+  hasRepeat: boolean;
+  hasEnding: boolean;
+  hasTuplet: boolean;
+  hasBackup: boolean;
+  openTieOut: boolean;
+  gridAgrees: boolean;
+  roundedTuplet: boolean;
+  specTicks: number | null;
 }
 
 export interface WwhImportedPart {
@@ -94,10 +120,32 @@ function harmonyLabel(harmony: Element): string {
   return `${step}${alt}${kindText}${bassBit}`.trim();
 }
 
+function tieFlags(note: Element): { tieStart: boolean; tieStop: boolean } {
+  let tieStart = false;
+  let tieStop = false;
+  for (const tie of [...allByName(note, 'tie'), ...allByName(note, 'tied')]) {
+    const type = tie.getAttribute('type');
+    if (type === 'start') tieStart = true;
+    if (type === 'stop') tieStop = true;
+  }
+  return { tieStart, tieStop };
+}
+
+function timeModificationOf(note: Element): WwhTimeModification | undefined {
+  const mod = children(note, 'time-modification')[0];
+  if (!mod) return undefined;
+  const actualNotes = Number(textOf(mod, 'actual-notes') || '0');
+  const normalNotes = Number(textOf(mod, 'normal-notes') || '0');
+  const normalType = textOf(mod, 'normal-type') || 'eighth';
+  if (!actualNotes || !normalNotes) return undefined;
+  return { actualNotes, normalNotes, normalType };
+}
+
 function parseNotes(measure: Element): WwhImportedNote[] {
   return children(measure, 'note').map((note) => {
     const pitch = children(note, 'pitch')[0];
     const alterRaw = textOf(pitch ?? null, 'alter');
+    const type = textOf(note, 'type');
     return {
       rest: children(note, 'rest').length > 0 || !pitch,
       chord: children(note, 'chord').length > 0,
@@ -106,8 +154,65 @@ function parseNotes(measure: Element): WwhImportedNote[] {
       alter: alterRaw === '' ? 0 : Number(alterRaw),
       octave: textOf(pitch ?? null, 'octave') ? Number(textOf(pitch ?? null, 'octave')) : undefined,
       voice: textOf(note, 'voice') || '1',
+      type: type || undefined,
+      dots: children(note, 'dot').length,
+      ...tieFlags(note),
+      timeModification: timeModificationOf(note),
     };
   });
+}
+
+function metronomeOf(measure: Element): WwhTempoMark | null {
+  const metro = allByName(measure, 'metronome')[0];
+  if (!metro) return null;
+  const beatUnit = textOf(metro, 'beat-unit') || null;
+  const perMinute = textOf(metro, 'per-minute') || null;
+  return { beatUnit, dots: children(metro, 'beat-unit-dot').length, perMinute, soundTempo: null };
+}
+
+function soundTempoOf(measure: Element): string | null {
+  for (const sound of allByName(measure, 'sound')) {
+    const tempo = sound.getAttribute('tempo');
+    if (tempo) return tempo;
+  }
+  return null;
+}
+
+function openTieOut(notes: readonly WwhImportedNote[]): boolean {
+  const open = new Map<string, number>();
+  for (const note of notes) {
+    if (note.rest) continue;
+    const key = `${note.voice}|${note.step}|${note.alter ?? 0}|${note.octave}`;
+    if (note.tieStop) open.set(key, (open.get(key) ?? 0) - 1);
+    if (note.tieStart) open.set(key, (open.get(key) ?? 0) + 1);
+  }
+  for (const count of open.values()) {
+    if (count > 0) return true;
+  }
+  return false;
+}
+
+function gridOf(divisions: number, beats: number, beatType: number, notes: readonly WwhImportedNote[], implicit: boolean): {
+  gridAgrees: boolean;
+  roundedTuplet: boolean;
+  specTicks: number | null;
+} {
+  const specTicks = wwhBarTicksExact(beats, beatType, divisions);
+  let roundedTuplet = false;
+  let mismatch = false;
+  const sums = new Map<string, number>();
+  for (const note of notes) {
+    const agreement = durationAgreement(divisions, note.type, note.dots, note.duration, note.timeModification);
+    if (agreement === 'rounded-tuplet') roundedTuplet = true;
+    if (agreement === 'mismatch') mismatch = true;
+    if (!note.chord) sums.set(note.voice, (sums.get(note.voice) ?? 0) + note.duration);
+  }
+  const fillOk =
+    specTicks !== null &&
+    (implicit
+      ? [...sums.values()].every((sum) => sum > 0 && sum < specTicks)
+      : sums.size > 0 && [...sums.values()].every((sum) => sum === specTicks));
+  return { gridAgrees: fillOk && !mismatch, roundedTuplet, specTicks };
 }
 
 function partRole(name: string, id: string, index: number, count: number): 'guitar' | 'bass' | 'other' {
@@ -137,6 +242,12 @@ export function importWwhDuoMusicXml(xml: string): WwhDuoScore {
     let divisions = WWH_DIVISIONS;
     let beats = 4;
     let beatType = 4;
+    let fifths = 0;
+    let mode = 'major';
+    let clefSign = 'G';
+    let clefLine = 2;
+    let transposeOctave = 0;
+    let tempo: WwhTempoMark = { beatUnit: null, dots: 0, perMinute: null, soundTempo: null };
     const measures = children(part, 'measure').map((measure, order) => {
       const attributes = children(measure, 'attributes')[0];
       if (attributes) {
@@ -149,13 +260,51 @@ export function importWwhDuoMusicXml(xml: string): WwhDuoScore {
           if (nextBeats > 0) beats = nextBeats;
           if (nextType > 0) beatType = nextType;
         }
+        const key = children(attributes, 'key')[0];
+        if (key) {
+          const nextFifths = textOf(key, 'fifths');
+          if (nextFifths !== '') fifths = Number(nextFifths);
+          const nextMode = textOf(key, 'mode');
+          if (nextMode) mode = nextMode;
+        }
+        const clef = children(attributes, 'clef')[0];
+        if (clef) {
+          const sign = textOf(clef, 'sign');
+          const line = textOf(clef, 'line');
+          if (sign) clefSign = sign;
+          if (line) clefLine = Number(line);
+        }
+        const transpose = children(attributes, 'transpose')[0];
+        if (transpose) {
+          const octave = textOf(transpose, 'octave-change');
+          if (octave !== '') transposeOctave = Number(octave);
+        }
       }
+      const metro = metronomeOf(measure);
+      const sound = soundTempoOf(measure);
+      if (metro || sound) {
+        tempo = {
+          beatUnit: metro?.beatUnit ?? tempo.beatUnit,
+          dots: metro ? metro.dots : tempo.dots,
+          perMinute: metro?.perMinute ?? tempo.perMinute,
+          soundTempo: sound ?? tempo.soundTempo,
+        };
+      }
+      const notes = parseNotes(measure);
+      const implicit = measure.getAttribute('implicit') === 'yes';
+      const grid = gridOf(divisions, beats, beatType, notes, implicit);
       return {
         order,
         number: measure.getAttribute('number') || String(order + 1),
         beats,
         beatType,
         divisions,
+        fifths,
+        mode,
+        clefSign,
+        clefLine,
+        transposeOctave,
+        tempo: { ...tempo },
         rehearsal: allByName(measure, 'rehearsal')
           .map((el) => el.textContent?.trim() || '')
           .filter(Boolean),
@@ -163,8 +312,17 @@ export function importWwhDuoMusicXml(xml: string): WwhDuoScore {
           .map((el) => (el.textContent || '').replace(/\s+/g, ' ').trim())
           .filter(Boolean),
         harmony: allByName(measure, 'harmony').map(harmonyLabel),
-        notes: parseNotes(measure),
+        notes,
         element: measure,
+        implicit,
+        hasRepeat: allByName(measure, 'repeat').length > 0,
+        hasEnding: allByName(measure, 'ending').length > 0,
+        hasTuplet: allByName(measure, 'tuplet').length > 0 || allByName(measure, 'time-modification').length > 0,
+        hasBackup: children(measure, 'backup').length > 0,
+        openTieOut: openTieOut(notes),
+        gridAgrees: grid.gridAgrees,
+        roundedTuplet: grid.roundedTuplet,
+        specTicks: grid.specTicks,
       };
     });
     const id = part.getAttribute('id') || '';
