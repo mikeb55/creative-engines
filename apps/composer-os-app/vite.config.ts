@@ -30,4 +30,7 @@ export default defineConfig({
       '/api': { target: `http://localhost:${apiPort}`, changeOrigin: true },
     },
   },
+  optimizeDeps: {
+    exclude: ['@napi-rs/canvas', '@napi-rs/canvas-darwin-arm64'],
+  },
 });

@@ -718,6 +718,72 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
     return { ok: true as const };
   });
 
+  function pentatonicExportPath(body: unknown): { path: string } | { error: string } {
+    const raw =
+      body && typeof body === 'object' && typeof (body as { path?: unknown }).path === 'string'
+        ? (body as { path: string }).path.trim()
+        : '';
+    if (!raw || raw.includes('\0')) return { error: 'Missing MusicXML path.' };
+    const resolved = path.resolve(raw);
+    const root = path.resolve(app.getPath('documents'), 'Composer OS Exports', 'Pentatonic Engine');
+    const relative = path.relative(root, resolved);
+    if (relative.startsWith('..') || path.isAbsolute(relative) || !resolved.endsWith('.musicxml') || !existsSync(resolved)) {
+      return { error: 'That file is not a Pentatonic Engine MusicXML.' };
+    }
+    return { path: resolved };
+  }
+
+  ipcMain.handle('composer-os-api:pentatonic-write-musicxml', async (_event, body: unknown) => {
+    const record = body && typeof body === 'object' ? (body as { xml?: unknown; label?: unknown }) : {};
+    const xml = typeof record.xml === 'string' ? record.xml : '';
+    if (!xml.includes('<score-partwise') || !xml.includes('<pitch>')) {
+      return { ok: false as const, error: 'Refusing to write MusicXML without pitched notes.' };
+    }
+    const label = String(record.label ?? 'collection')
+      .replace(/[^A-Za-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 48) || 'collection';
+    const dir = path.join(app.getPath('documents'), 'Composer OS Exports', 'Pentatonic Engine');
+    const { mkdir, writeFile } = await import('node:fs/promises');
+    await mkdir(dir, { recursive: true });
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    for (let attempt = 0; attempt < 100; attempt += 1) {
+      const name = `Pentatonic-${label}-${stamp}${attempt === 0 ? '' : `-${attempt}`}.musicxml`;
+      const full = path.join(dir, name);
+      try {
+        await writeFile(full, xml, { encoding: 'utf8', flag: 'wx' });
+        return { ok: true as const, fullPath: full };
+      } catch (error) {
+        const code = error && typeof error === 'object' && 'code' in error ? String((error as { code?: string }).code) : '';
+        if (code === 'EEXIST') continue;
+        return { ok: false as const, error: error instanceof Error ? error.message : String(error) };
+      }
+    }
+    return { ok: false as const, error: 'Could not find a free MusicXML name.' };
+  });
+
+  ipcMain.handle('composer-os-api:pentatonic-open-musescore', async (_event, body: unknown) => {
+    const filePath = pentatonicExportPath(body);
+    if ('error' in filePath) return { ok: false as const, error: filePath.error };
+    const appPath = '/Applications/MuseScore 4.app';
+    if (!existsSync(appPath)) return { ok: false as const, error: 'MuseScore 4 is not installed at /Applications/MuseScore 4.app. Use Open Folder.' };
+    const { spawn } = await import('node:child_process');
+    const code = await new Promise<number>((resolve, reject) => {
+      const child = spawn('open', ['-a', 'MuseScore 4', filePath.path], { shell: false });
+      child.on('error', reject);
+      child.on('close', (exitCode) => resolve(exitCode ?? 1));
+    });
+    if (code !== 0) return { ok: false as const, error: `MuseScore 4 did not open (exit ${code}).` };
+    return { ok: true as const };
+  });
+
+  ipcMain.handle('composer-os-api:pentatonic-reveal', async (_event, body: unknown) => {
+    const filePath = pentatonicExportPath(body);
+    if ('error' in filePath) return { ok: false as const, error: filePath.error };
+    shell.showItemInFolder(filePath.path);
+    return { ok: true as const };
+  });
+
   ipcMain.handle('show-item-in-folder', async (_event, filePath: string) => {
     if (!filePath) return { ok: false, error: 'no path' };
     const normalized = require('path').normalize(filePath);

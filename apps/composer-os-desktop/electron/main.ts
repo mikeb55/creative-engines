@@ -346,6 +346,7 @@ function hashFromFailedFileUrl(url: string): string {
     'riffgen',
     'composer-engines',
     'slonimsky-etudes',
+    'pentatonic',
     'guide',
     'credits',
   ]);

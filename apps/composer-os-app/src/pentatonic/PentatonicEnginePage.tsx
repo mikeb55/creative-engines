@@ -8,6 +8,7 @@ import {
   type PentatonicRecommendation,
   type PentatonicRegionInput,
 } from '@composer-os/core/pentatonic';
+import { generateMusicFromPentatonicSelection } from './generatePentatonicMusic';
 import { PentatonicPassagePanel } from './PentatonicPassagePanel';
 import { PentatonicScorePanel } from './PentatonicScorePanel';
 import { PentatonicWorkflowPanel } from './PentatonicWorkflowPanel';
@@ -66,12 +67,26 @@ function NoteChips(props: {
   );
 }
 
-function RecommendationCard(props: { item: PentatonicRecommendation; heading: string }) {
+function collectionKey(heading: string, item: PentatonicRecommendation): string {
+  return `${heading}:${item.canonicalId}:${item.transposedName}`;
+}
+
+function RecommendationCard(props: {
+  item: PentatonicRecommendation;
+  heading: string;
+  selected: boolean;
+  onSelect: () => void;
+}) {
   const item = props.item;
   return (
     <article
       data-testid="pentatonic-card"
-      style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '0.75rem', background: 'var(--bg-panel)' }}
+      style={{
+        border: props.selected ? '2px solid var(--text)' : '1px solid var(--border)',
+        borderRadius: 8,
+        padding: '0.75rem',
+        background: 'var(--bg-panel)',
+      }}
     >
       <h3 style={{ margin: '0 0 0.35rem', fontSize: '1rem' }}>
         {props.heading}: {item.transposedName}
@@ -107,6 +122,9 @@ function RecommendationCard(props: { item: PentatonicRecommendation; heading: st
           </p>
         ) : null}
       </details>
+      <button type="button" data-testid="pentatonic-select-collection" aria-pressed={props.selected} onClick={props.onSelect}>
+        {props.selected ? 'Selected' : 'Select'}
+      </button>
     </article>
   );
 }
@@ -125,6 +143,9 @@ export function PentatonicEnginePage(props: {
   const [pathAnalysis, setPathAnalysis] = useState<{ result: PentatonicPathResult; snapshot: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [musicFile, setMusicFile] = useState<{ path: string; notes: string; limitations: readonly string[] } | null>(null);
   const requestRef = useRef(0);
 
   const patch = (partial: Partial<PentatonicFormState>) => setForm((current) => ({ ...current, ...partial }));
@@ -143,6 +164,8 @@ export function PentatonicEnginePage(props: {
       .then((result) => {
         if (id !== requestRef.current) return;
         setAnalysis({ result, snapshot: requestedSnapshot });
+        setSelectedKey(null);
+        setMusicFile(null);
       })
       .catch((caught: unknown) => {
         if (id !== requestRef.current) return;
@@ -186,6 +209,8 @@ export function PentatonicEnginePage(props: {
     setForm(cleanPentatonicForm());
     setAnalysis(null);
     setPathAnalysis(null);
+    setSelectedKey(null);
+    setMusicFile(null);
     setError(null);
     setLoading(false);
     setPageEpoch((epoch) => epoch + 1);
@@ -197,6 +222,67 @@ export function PentatonicEnginePage(props: {
   };
 
   const result = analysis?.result ?? null;
+  const choices: Array<{ heading: string; item: PentatonicRecommendation }> = result?.kind === 'analysis'
+    ? [
+        ...(result.retained ? [{ heading: 'Retained', item: result.retained }] : []),
+        ...result.recommendations.map((item) => ({ heading: 'Recommendation', item })),
+        ...result.alternatives.map((item) => ({ heading: 'Alternative', item })),
+      ]
+    : [];
+  const selected = choices.find((choice) => collectionKey(choice.heading, choice.item) === selectedKey)?.item ?? null;
+
+  const onSelectCollection = (key: string) => {
+    setSelectedKey(key);
+    setMusicFile(null);
+    setError(null);
+  };
+
+  const onGenerateMusic = () => {
+    if (!selected || stale) return;
+    const region = resolvePentatonicRegion(form, inherited);
+    setGenerating(true);
+    setError(null);
+    Promise.resolve()
+      .then(() =>
+        generateMusicFromPentatonicSelection({
+          collection: selected,
+          harmonyBars: region.harmonyBars ?? [],
+          melodyNotes: region.melodyNotes ?? [],
+          bassNotes: region.bassNotes ?? [],
+          heldNotes: region.heldNotes ?? [],
+          purpose: region.purpose,
+        })
+      )
+      .then(async (generated) => {
+        const bridge = window.composerOsDesktop;
+        if (!bridge?.invokeApi) {
+          throw new Error('Generate Music writes a file from the Composer OS desktop app.');
+        }
+        const saved = (await bridge.invokeApi('composer-os-api:pentatonic-write-musicxml', {
+          xml: generated.musicXml,
+          label: generated.collectionName,
+        })) as { ok?: boolean; fullPath?: string; error?: string };
+        if (!saved.ok || !saved.fullPath) throw new Error(saved.error || 'Could not write MusicXML.');
+        setMusicFile({ path: saved.fullPath, notes: generated.notes, limitations: generated.limitations });
+      })
+      .catch((caught: unknown) => setError(caught instanceof Error ? caught.message : String(caught)))
+      .finally(() => setGenerating(false));
+  };
+
+  const onOpenScore = (channel: 'composer-os-api:pentatonic-open-musescore' | 'composer-os-api:pentatonic-reveal') => {
+    if (!musicFile) return;
+    const bridge = window.composerOsDesktop;
+    if (!bridge?.invokeApi) {
+      setError('Open MusicXML runs in the Composer OS desktop app.');
+      return;
+    }
+    Promise.resolve()
+      .then(async () => {
+        const opened = (await bridge.invokeApi(channel, { path: musicFile.path })) as { ok?: boolean; error?: string };
+        if (!opened.ok) throw new Error(opened.error || 'Could not open the MusicXML.');
+      })
+      .catch((caught: unknown) => setError(caught instanceof Error ? caught.message : String(caught)));
+  };
 
   return (
     <section aria-labelledby="pentatonic-heading">
@@ -207,7 +293,7 @@ export function PentatonicEnginePage(props: {
         Analyse, plan, transform, generate, compare, then export. Silence is a real result. A pentatonic resource is a colour, not a claim that every note belongs to it.
       </p>
       <PentatonicWorkflowPanel key={pageEpoch} />
-      <details>
+      <details open>
         <summary>Region and passage tools</summary>
         <div style={{ display: 'grid', gap: '0.75rem', marginTop: '0.75rem' }}>
       <label htmlFor="pentatonic-analysis-mode">
@@ -515,14 +601,48 @@ export function PentatonicEnginePage(props: {
             {DISPOSITION_LABEL[result.disposition]}
           </h3>
           <p>{result.explanation}</p>
-          {result.retained ? <RecommendationCard heading="Retained" item={result.retained} /> : null}
-          {result.recommendations.map((item) => (
-            <RecommendationCard key={item.canonicalId} heading="Recommendation" item={item} />
+          {choices.map((choice) => (
+            <RecommendationCard
+              key={collectionKey(choice.heading, choice.item)}
+              heading={choice.heading}
+              item={choice.item}
+              selected={collectionKey(choice.heading, choice.item) === selectedKey}
+              onSelect={() => onSelectCollection(collectionKey(choice.heading, choice.item))}
+            />
           ))}
-          {result.alternatives.length > 0 ? <h3 style={{ marginBottom: 0 }}>Alternatives</h3> : null}
-          {result.alternatives.map((item) => (
-            <RecommendationCard key={item.canonicalId} heading="Alternative" item={item} />
-          ))}
+          {choices.length > 0 ? (
+            <div data-testid="pentatonic-generate-panel" style={{ display: 'grid', gap: '0.5rem' }}>
+              <p style={{ margin: 0 }}>
+                Selected pentatonic collection: {selected ? `${selected.transposedName} (${selected.displaySpelling.join(' ')})` : 'none'}
+              </p>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <button type="button" data-testid="pentatonic-generate-music" onClick={onGenerateMusic} disabled={!selected || stale || generating}>
+                  {generating ? 'Generating…' : 'Generate Music'}
+                </button>
+                {musicFile ? (
+                  <>
+                    <button type="button" data-testid="pentatonic-open-musicxml" onClick={() => onOpenScore('composer-os-api:pentatonic-open-musescore')}>
+                      Open MusicXML
+                    </button>
+                    <button type="button" className="secondary" data-testid="pentatonic-open-folder" onClick={() => onOpenScore('composer-os-api:pentatonic-reveal')}>
+                      Open Folder
+                    </button>
+                  </>
+                ) : null}
+              </div>
+              {musicFile ? (
+                <div>
+                  <p style={{ margin: '0.2rem 0' }}>Pitches: {musicFile.notes}</p>
+                  <p style={{ margin: '0.2rem 0', fontSize: '0.82rem' }}>{musicFile.path}</p>
+                  {musicFile.limitations.map((line) => (
+                    <p key={line} style={{ margin: '0.2rem 0', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
           {result.constraintFailures.length > 0 ? (
             <details>
               <summary>Collections blocked by hard constraints</summary>
