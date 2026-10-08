@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+### Added
+
+- **WWH Performance Composer V7.0** — CLI inside Composer OS (`npm run wwh:performance-v7`). Reads a two-part MusicXML score and writes a full duo performance sketch, a recording leadsheet, a guitar study (minimal / lyrical / adventurous), and bass partner exercises. Black Aura uses duo leadsheet V1.1 (39 bars). New sections keep odd lengths. Source files stay read-only. No tablature. No new app and no long-form 8/16/32 resolver.
+- **WWH Performance Composer V7.1** — `--edition 7.1` writes `01-Black-Aura-V7.1-*` and refuses to replace the V7.0 MusicXML baseline. Guitar study and the new performance sections use dyads, triads, and short chord-melody. Liquid Harmony in section P moves one voice at a time across Fm, C/F#, Edim, and Ab. The 39-bar leadsheet notes stay locked.
+
 ### Changed
 
 - **Pentatonic Options V2.2** — practice UI now reads Dev 7 as advice. Field distance is on the practice screen. Outness checks a distance band and does not write a phrase. Pivot link waits for a target field. Derive field and duo analysis stay reports. Generate remains the Dev 6 control. Compare stays plan, one alternative, and silence. Open MusicXML is unchanged. Tag `pentatonic-options-v2.2-release`. Tags `pentatonic-options-v2.1.1-release` and `pentatonic-dev7.1-release` were not moved.
