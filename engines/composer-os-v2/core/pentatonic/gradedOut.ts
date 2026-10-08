@@ -1,7 +1,7 @@
 /**
  * Dev 7A GRADED_OUT.
- * Selects a field relationship at a requested distance.
- * Does not write a lick. Phrase realisation stays with the phrase engine.
+ * Reports which registered fields sit in a requested distance band.
+ * Does not choose a field and does not write a lick. Phrase realisation stays with the phrase engine.
  * Graded outness follows how much a moved pentatonic still shares with the start.
  * This is not an implementation of any one teacher's full system.
  */
@@ -34,7 +34,9 @@ export interface ReturnPath {
 
 export interface GradedOutPlan {
   version: typeof PENTATONIC_GRADED_OUT_VERSION;
-  disposition: 'MOVE' | 'STAY';
+  disposition: 'DISTANCE' | 'STAY';
+  /** Dev 7.1: a band report never chooses a field. */
+  initiatesMove: false;
   outness: OutnessLevel;
   source: PentatonicField;
   destination: PentatonicField;
@@ -87,13 +89,14 @@ export function planGradedOut(request: {
     if ((request.outness === 'SUBTLE' || request.outness === 'MODERATE') && row.distance.changedPitchClasses.source.length > 2) continue;
     return {
       version: PENTATONIC_GRADED_OUT_VERSION,
-      disposition: 'MOVE',
+      disposition: 'DISTANCE',
+      initiatesMove: false,
       outness: request.outness,
       source: request.source,
       destination: row.destination,
       distance: row.distance,
       returnPath,
-      explanation: moveExplanation(request.outness, row.destination, row.distance, returnPath),
+      explanation: distanceExplanation(request.outness, row.destination, row.distance, returnPath),
     };
   }
 
@@ -101,6 +104,7 @@ export function planGradedOut(request: {
   return {
     version: PENTATONIC_GRADED_OUT_VERSION,
     disposition: 'STAY',
+    initiatesMove: false,
     outness: request.outness,
     source: request.source,
     destination: request.source,
@@ -189,9 +193,11 @@ function bestPerSet<T extends { destination: PentatonicField; score: number }>(r
   return [...kept.values()];
 }
 
-function moveExplanation(outness: OutnessLevel, destination: PentatonicField, distance: FieldDistance, returnPath: ReturnPath): string {
-  const bridge = returnPath.intermediate ? ` Return can pass through ${returnPath.intermediate.displayName}.` : ' Return uses the shared tones.';
-  return `${outness.toLowerCase()} move to ${destination.displayName}. ${distance.sharedCount} shared notes, ${distance.distanceClass.toLowerCase()} distance.${bridge}`;
+function distanceExplanation(outness: OutnessLevel, destination: PentatonicField, distance: FieldDistance, returnPath: ReturnPath): string {
+  const bridge = returnPath.intermediate
+    ? ` A shared-tone path could pass through ${returnPath.intermediate.displayName}.`
+    : ' Shared tones are listed only.';
+  return `${outness.toLowerCase()} band. ${destination.displayName} sits ${distance.distanceClass.toLowerCase()}, ${distance.sharedCount} notes in common. Distance only. This does not choose a field.${bridge}`;
 }
 
 export function assessFieldWalkStrategy(source: PentatonicField): { emerges: boolean; status: 'STRATEGY'; operatorAdded: false; steps: readonly string[]; note: string } {
@@ -201,7 +207,7 @@ export function assessFieldWalkStrategy(source: PentatonicField): { emerges: boo
   let oneNoteSteps = 0;
   for (let index = 0; index < 3; index += 1) {
     const plan = planGradedOut({ source: current, outness: 'SUBTLE', home: source, avoidPitchSets: [...seen] });
-    if (plan.disposition !== 'MOVE') break;
+    if (plan.disposition !== 'DISTANCE') break;
     const oneNote = plan.distance.sharedCount === 4 && plan.distance.changedPitchClasses.source.length === 1;
     if (!oneNote) break;
     oneNoteSteps += 1;

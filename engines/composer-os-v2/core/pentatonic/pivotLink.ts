@@ -1,6 +1,6 @@
 /**
  * Dev 7B PIVOT_LINK.
- * Connects two colour fields by common tones or the smallest note motion.
+ * Checks a source and a destination that already exist. Does not choose the destination.
  * Pitch-class overlap is not voice-leading. A chromatic run is never the link.
  */
 
@@ -10,7 +10,13 @@ import { mod12 } from './pitch';
 
 export const PENTATONIC_PIVOT_LINK_VERSION = 'pentatonic-pivot-link-7b';
 
-export type PivotMechanism = 'COMMON_TONE' | 'NEAREST_NOTE' | 'HELD_LANDING' | 'MOTIF_PRESERVING' | 'NONE';
+export type PivotMechanism =
+  | 'COMMON_TONE'
+  | 'NEAREST_NOTE'
+  | 'HELD_LANDING'
+  | 'MOTIF_PRESERVING'
+  | 'NO_CREDIBLE_PIVOT'
+  | 'NONE';
 
 export type MotifPreservation = 'YES' | 'PARTIAL' | 'NO';
 
@@ -54,9 +60,10 @@ export function planPivotLink(request: {
   const same = distance.distanceClass === 'IDENTICAL';
   const mechanism = chooseMechanism(commonTones.length, moving, compact, motifPreservation, same);
   const returnPath = buildReturnPath(request.destination, request.source, request.home ?? null);
-  const linkPhraseNeeded = !same && commonTones.length < 4 && mechanism !== 'NONE';
-  const pivotNotes = commonTones.length > 0 ? commonTones.slice(0, 2) : moving.slice(0, 1).map((pair) => pair.to);
-  const landingNote = commonTones[0] ?? moving[0]?.to ?? request.destination.referencePc;
+  const noPivot = mechanism === 'NO_CREDIBLE_PIVOT';
+  const linkPhraseNeeded = !same && !noPivot && commonTones.length < 4 && mechanism !== 'NONE';
+  const pivotNotes = noPivot ? [] : commonTones.length > 0 ? commonTones.slice(0, 2) : moving.slice(0, 1).map((pair) => pair.to);
+  const landingNote = noPivot ? null : (commonTones[0] ?? moving[0]?.to ?? request.destination.referencePc);
   return {
     version: PENTATONIC_PIVOT_LINK_VERSION,
     source: request.source,
@@ -86,12 +93,12 @@ function chooseMechanism(
   same: boolean
 ): PivotMechanism {
   if (same) return 'NONE';
+  if (sharedCount === 0) return 'NO_CREDIBLE_PIVOT';
   if (motif === 'YES' || motif === 'PARTIAL') return 'MOTIF_PRESERVING';
   if (sharedCount === 1 && compact) return 'HELD_LANDING';
   if (sharedCount >= 1 && moving.length > 0 && moving.every((pair) => pair.semitones <= 2)) return 'NEAREST_NOTE';
   if (sharedCount >= 1) return 'COMMON_TONE';
-  if (moving.length > 0 && moving.every((pair) => pair.semitones <= 2)) return 'NEAREST_NOTE';
-  return 'COMMON_TONE';
+  return 'NO_CREDIBLE_PIVOT';
 }
 
 function preserveMotif(motif: readonly number[], destination: readonly number[]): MotifPreservation {
@@ -120,6 +127,7 @@ function nearest(pc: number, pitchClasses: readonly number[]): number {
 }
 
 function explain(mechanism: PivotMechanism, voiceLeading: 'REGISTER' | 'PITCH_CLASS_PROXIMITY', same: boolean, compact: boolean, sharedCount: number): string {
+  if (mechanism === 'NO_CREDIBLE_PIVOT') return 'No credible pivot. These fields share no pitch class.';
   if (same || mechanism === 'NONE') return 'No link phrase. The field already holds.';
   const leading = voiceLeading === 'REGISTER'
     ? 'Motion is measured in register.'

@@ -101,10 +101,12 @@ function run(): { ok: boolean; name: string }[] {
     const moderate = planGradedOut({ source: cMinor, outness: 'MODERATE', home: cMinor });
     const strong = planGradedOut({ source: cMinor, outness: 'STRONG', home: cMinor });
     const remote = planGradedOut({ source: fMinor, outness: 'REMOTE', home: fMinor });
-    if (subtle.disposition === 'MOVE') assert.equal(subtle.distance.distanceClass, 'NEAR');
-    if (moderate.disposition === 'MOVE') assert.equal(moderate.distance.distanceClass, 'RELATED');
-    if (strong.disposition === 'MOVE') assert.equal(strong.distance.distanceClass, 'OUTSIDE');
-    assert.equal(remote.disposition, 'MOVE');
+    if (subtle.disposition === 'DISTANCE') assert.equal(subtle.distance.distanceClass, 'NEAR');
+    if (moderate.disposition === 'DISTANCE') assert.equal(moderate.distance.distanceClass, 'RELATED');
+    if (strong.disposition === 'DISTANCE') assert.equal(strong.distance.distanceClass, 'OUTSIDE');
+    assert.equal(remote.disposition, 'DISTANCE');
+    assert.equal(remote.initiatesMove, false);
+    assert.equal(subtle.initiatesMove, false);
     assert.equal(remote.distance.distanceClass, 'REMOTE');
     assert.equal(remote.distance.sharedCount <= 1, true);
     assert.equal(remote.returnPath.credible, true);

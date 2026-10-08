@@ -5,6 +5,7 @@
  */
 
 import type { PentatonicField } from './fieldDistance';
+import type { DuoRole } from './formDuoIntelligence';
 
 export const PENTATONIC_LAYERED_FIELD_VERSION = 'pentatonic-layered-field-7d';
 
@@ -18,6 +19,20 @@ export const LAYER_ROLES = [
 
 export type LayerRole = (typeof LAYER_ROLES)[number];
 
+/** Bass agency is BASS_LEADS only. A role that merely starts with BASS is not a bass lead. */
+export function layerRoleForDuo(role: DuoRole | undefined): LayerRole {
+  switch (role) {
+    case 'BASS_LEADS':
+      return 'GUITAR_SLOW_BASS_ACTIVE';
+    case 'COUNTERPOINT':
+      return 'COUNTERPOINT';
+    case 'SPACE':
+      return 'SHARED_SPACE';
+    default:
+      return 'GUITAR_ACTIVE_BASS_SLOW';
+  }
+}
+
 export interface LayeredFieldPlan {
   version: typeof PENTATONIC_LAYERED_FIELD_VERSION;
   governingField: PentatonicField;
@@ -28,6 +43,7 @@ export interface LayeredFieldPlan {
   roleRelation: LayerRole;
   sameGoverningField: true;
   tempoIgnored: true;
+  initiatesMove: false;
 }
 
 export function planLayeredField(request: {
@@ -51,6 +67,7 @@ export function planLayeredField(request: {
       roleRelation: role,
       sameGoverningField: true,
       tempoIgnored: true,
+      initiatesMove: false,
     };
   }
   const bassCount = role === 'GUITAR_SLOW_BASS_ACTIVE' || role === 'COUNTERPOINT' ? 3 : 2;
@@ -68,6 +85,7 @@ export function planLayeredField(request: {
     roleRelation: role,
     sameGoverningField: true,
     tempoIgnored: true,
+    initiatesMove: false,
   };
 }
 

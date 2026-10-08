@@ -2,6 +2,8 @@
 
 ### Fixed
 
+- **Pentatonic Engine Dev 7.1** — Dev 7 no longer approves or starts a field change Dev 6 did not choose. GRADED_OUT reports a distance band. PIVOT_LINK checks an existing source and destination, and a zero-share pair can say no credible pivot. PARENT_EXTRACTION is a report. LAYERED_FIELD is metadata. `BASS_RESPONDS` and `BASS_SUPPORTS` are not treated as bass leads. Field distance is unchanged. Tag `pentatonic-dev7.1-release`. Tags `pentatonic-dev7-release`, `pentatonic-dev6-release`, and `pentatonic-options-v2.1.1-release` were not moved.
+
 - **Pentatonic Options V2.1.1** — Open MusicXML click handler loads again. The page script no longer redeclares the `practice` name that the Electron bridge already binds, which had stopped the whole practice script before the button could run. The chooser accepts `.musicxml`, `.xml`, and `.mxl`, reads the file through the existing MusicXML intake, then `analyseScoreXml`. Cancel leaves the session alone. A bad file shows an error and does not replace the current score. The source file stays read-only. Tag `pentatonic-options-v2.1.1-release`. Tags `pentatonic-options-v2.1-release` and `pentatonic-dev7-release` were not moved.
 
 ### Added

@@ -173,6 +173,8 @@ export interface PracticeRequest {
   landingNote?: string;
   motif?: string;
   fieldId?: string;
+  /** Destination already chosen by Dev 6. Pivot link will not invent one. */
+  destinationFieldId?: string;
   customNotes?: string;
   guitarRole?: PracticeGuitarRole | '';
   variation?: number;
@@ -1073,22 +1075,29 @@ function notePcs(raw: string | undefined): number[] {
   return parsed.ok ? parsed.notes.map((note) => note.pc) : [];
 }
 
+function practiceLayerRole(role: PracticeRequest['guitarRole'], fallback: LayerRole): LayerRole {
+  if (role === 'SPACE') return 'SHARED_SPACE';
+  if (role === 'COUNTERPOINT') return 'COUNTERPOINT';
+  if (role === 'GUITAR_RESPONDS' || role === 'GUITAR_SUPPORTS') return 'GUITAR_SLOW_BASS_ACTIVE';
+  if (role === 'GUITAR_LEADS' || role === 'SHARED_FIELD') return 'GUITAR_ACTIVE_BASS_SLOW';
+  return fallback;
+}
+
 export function moveOut(request: PracticeRequest, outness: OutnessLevel = 'MODERATE'): ColourNavigationView {
   const source = practiceField(request);
-  if (!source) return { title: 'Move out', text: 'That field is not in the vocabulary.', candidates: [] };
+  if (!source) return { title: 'Distance', text: 'That field is not in the vocabulary.', candidates: [] };
   const home = fieldFromResource(source.resourceId ?? 'minor_pentatonic', request.centre || 'C');
   const plan = planGradedOut({ source, outness, home });
   const distance = DISTANCE_WORDS[plan.distance.distanceClass] ?? plan.distance.distanceClass;
-  const bridge = plan.returnPath.intermediate ? `Return can pass through ${plan.returnPath.intermediate.displayName}.` : 'Return stays on shared tones.';
   const text = plan.disposition === 'STAY'
-    ? 'Current field already sits at the right distance.'
-    : `${plan.destination.displayName}. ${distance}. ${bridge}`;
+    ? 'Current field already sits in that band. Nothing was chosen.'
+    : `${plan.explanation} ${distance}.`;
   return {
-    title: 'Move out',
+    title: 'Distance',
     text,
     candidates: [
       { slot: 'Current', text: source.displayName },
-      { slot: 'Graded', text },
+      { slot: 'Band', text },
       { slot: 'Silence', text: 'Silence remains available. No lick was written.' },
     ],
   };
@@ -1097,20 +1106,29 @@ export function moveOut(request: PracticeRequest, outness: OutnessLevel = 'MODER
 export function connectFields(request: PracticeRequest): ColourNavigationView {
   const source = practiceField(request);
   if (!source) return { title: 'Pivot link', text: 'That field is not in the vocabulary.', candidates: [] };
-  const graded = planGradedOut({ source, outness: 'MODERATE', home: source });
-  const destination = graded.disposition === 'MOVE' ? graded.destination : source;
+  if (!request.destinationFieldId) {
+    return {
+      title: 'Pivot link',
+      text: 'Pivot link checks a source and a destination Dev 6 already chose. No destination was supplied.',
+      candidates: [
+        { slot: 'Source', text: source.displayName },
+        { slot: 'Destination', text: 'None' },
+        { slot: 'Pivot', text: 'No check yet.' },
+      ],
+    };
+  }
+  const destination = fieldFromResource(request.destinationFieldId, request.centre || 'C');
+  if (!destination) return { title: 'Pivot link', text: 'That destination is not in the vocabulary.', candidates: [] };
   const motif = notePcs(request.motif);
   const pivot = planPivotLink({ source, destination, home: source, motifPitchClasses: motif });
-  const text = pivot.linkPhraseNeeded
-    ? `${pivot.explanation} Landing ${pivot.landingNote === null ? 'open' : 'tone held'}.`
-    : 'No link phrase. Hold the field.';
+  const text = pivot.mechanism === 'NO_CREDIBLE_PIVOT' ? 'No credible pivot.' : pivot.explanation;
   return {
     title: 'Pivot link',
     text,
     candidates: [
-      { slot: 'Current', text: source.displayName },
+      { slot: 'Source', text: source.displayName },
+      { slot: 'Destination', text: destination.displayName },
       { slot: 'Pivot', text },
-      { slot: 'Silence', text: 'Silence remains available.' },
     ],
   };
 }
@@ -1129,7 +1147,7 @@ export function deriveField(request: PracticeRequest): ColourNavigationView {
   if (extracted.disposition !== 'FIELDS') {
     return {
       title: 'Extract',
-      text: extracted.explanation,
+      text: `Advisory. ${extracted.explanation}`,
       candidates: [
         { slot: 'Extracted', text: 'None' },
         { slot: 'Contrast', text: 'None' },
@@ -1143,16 +1161,15 @@ export function deriveField(request: PracticeRequest): ColourNavigationView {
     text: `${row.field.displayName}. ${row.field.noteNames.join(' ')}`,
   }));
   while (candidates.length < 3) candidates.push({ slot: 'NONE', text: 'No further subset.' });
-  return { title: 'Extract', text: extracted.explanation, candidates };
+  return { title: 'Extract', text: `Advisory. ${extracted.explanation}`, candidates };
 }
 
 export function layerField(request: PracticeRequest, role: LayerRole = 'GUITAR_ACTIVE_BASS_SLOW'): ColourNavigationView {
   const field = practiceField(request);
   if (!field) return { title: 'Layered field', text: 'That field is not in the vocabulary.', candidates: [] };
-  const bassLeads = request.guitarRole === 'GUITAR_RESPONDS' || request.guitarRole === 'GUITAR_SUPPORTS';
-  const plan = planLayeredField({ field, role: request.guitarRole === 'SPACE' ? 'SHARED_SPACE' : bassLeads ? 'GUITAR_SLOW_BASS_ACTIVE' : role });
+  const plan = planLayeredField({ field, role: practiceLayerRole(request.guitarRole, role) });
   const text = plan.roleRelation === 'SHARED_SPACE'
-    ? `${field.displayName} stays. Both layers rest.`
-    : `${field.displayName}. Bass ${plan.bassSubset.length} notes, guitar ${plan.guitarSubset.length}. ${plan.densityRelation}`;
+    ? `Analysis. ${field.displayName} stays. Both layers rest.`
+    : `Analysis. ${field.displayName}. Bass ${plan.bassSubset.length} notes, guitar ${plan.guitarSubset.length}. ${plan.densityRelation}`;
   return { title: 'Layered field', text, candidates: [{ slot: 'Field', text }] };
 }

@@ -169,7 +169,7 @@ export {
 } from './gradedOut';
 export { planPivotLink, PENTATONIC_PIVOT_LINK_VERSION } from './pivotLink';
 export { extractParentField, PENTATONIC_PARENT_EXTRACTION_VERSION } from './parentExtraction';
-export { DEV7_DEFERRED, planLayeredField, PENTATONIC_LAYERED_FIELD_VERSION } from './layeredField';
+export { DEV7_DEFERRED, layerRoleForDuo, planLayeredField, PENTATONIC_LAYERED_FIELD_VERSION } from './layeredField';
 export { measureFieldDistance, fieldFromResource, fieldFromPitchClasses, PENTATONIC_FIELD_DISTANCE_VERSION } from './fieldDistance';
 export { auditEdgeMetadata, auditMinorSixth } from './colourAudit';
 export { reportColourDegrees } from './colourDegrees';

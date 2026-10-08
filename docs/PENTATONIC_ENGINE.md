@@ -140,7 +140,7 @@ Dev 7 does not add a second engine. Dev 6 still plans. The new calls describe ho
 
 Distance uses shared notes, how far the other notes move, the centre, and whether a return is audible. The classes are identical, near, related, outside, and remote. Shared count alone does not decide.
 
-Move out asks for subtle, moderate, strong, or remote. It chooses a field relationship. It does not write a lick. A strong or remote move keeps a return: shared tones, a landing note, and an intermediate field when the two fields share nothing.
+Move out is now labelled Distance. It reports which registered field sits in subtle, moderate, strong, or remote. It does not choose that field and it does not write a lick. A strong or remote report can list shared tones, a landing note, and an intermediate field when the two fields share nothing.
 
 Pivot link is the smallest motion between two fields: a common tone, one or two nearby notes, a held landing, or the same motif sat on the new field. If the fields are already the same, no link phrase is needed. A scale is not used as a bridge.
 
