@@ -729,11 +729,26 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
       });
       if (picked.canceled || !picked.filePaths?.[0]) return { ok: false as const, canceled: true as const };
       const { runRespondSession } = await import('../../../engines/composer-os-v2/core/performance-composer/pcRespondSession');
-      return runRespondSession({
+      const result = runRespondSession({
         sourcePath: picked.filePaths[0],
         outRoot: performanceComposerRespondRoot(),
         build: runningBuildForProvenance(),
       });
+      // Plain-named copies of this run on the Desktop (replaces the previous run's copies only).
+      const { copyFileSync, mkdirSync, readdirSync, unlinkSync } = await import('node:fs');
+      const latest = path.join(app.getPath('desktop'), 'RESPOND LATEST');
+      mkdirSync(latest, { recursive: true });
+      for (const f of readdirSync(latest)) if (f.endsWith('.musicxml')) unlinkSync(path.join(latest, f));
+      const piece = result.sourceFile
+        .replace(/\.(musicxml|xml)$/i, '')
+        .replace(/^\d+[-_ ]*/, '')
+        .replace(/[-_ ]*Duo[-_ ]*Leadsheet.*$/i, '')
+        .replace(/[-_]+/g, ' ')
+        .trim();
+      for (const alt of result.alternatives) {
+        copyFileSync(alt.musicXmlPath, path.join(latest, `${piece} ${alt.label.replace(' · ', ' ')}.musicxml`));
+      }
+      return { ...result, latestFolder: latest };
     } catch (error) {
       return { ok: false as const, error: error instanceof Error ? error.message : String(error) };
     }

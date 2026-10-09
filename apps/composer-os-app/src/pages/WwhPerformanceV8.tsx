@@ -77,6 +77,7 @@ interface RespondRun {
   folder: string;
   alternatives: RespondAlternative[];
   musicalAcceptance: string;
+  latestFolder?: string;
 }
 
 const fieldStyle = { display: 'flex', flexDirection: 'column' as const, gap: '0.25rem', fontSize: 13 };
@@ -253,6 +254,7 @@ export function WwhPerformanceV8() {
           <div>Build commit: {run.build.buildCommit || 'not available'} · running code {run.build.ipcBundleSha256.slice(0, 12) || 'not available'} · stamp matches running code: {run.build.stampMatchesLiveIpc === '1' ? 'yes' : run.build.stampMatchesLiveIpc === '0' ? 'NO' : 'unknown'}</div>
           <div>Source SHA-256: {run.sourceSha256.slice(0, 16)}…</div>
           <div style={{ color: 'var(--text-muted)' }}>Musical acceptance: {run.musicalAcceptance}</div>
+          {run.latestFolder ? <div>Plain-named copies: {run.latestFolder}</div> : null}
           {run.alternatives.map((alt) => (
             <div key={alt.musicXmlPath} style={{ borderTop: '1px solid var(--border)', marginTop: '0.5rem', paddingTop: '0.5rem' }}>
               <div><strong>{alt.label}</strong> · answers {alt.answers} of {alt.windows} gaps · {alt.notes} notes · {alt.devices.join(', ')}</div>

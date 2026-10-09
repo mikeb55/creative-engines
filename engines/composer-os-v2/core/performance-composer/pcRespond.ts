@@ -27,17 +27,17 @@ export const RESPOND_CHARACTERS: ReadonlyArray<{ id: RespondCharacter; label: st
 export const RESPOND_ENGINE = 'pc-respond-1b.2';
 
 const GRID = 0.25;
-const LOW = 45; // A2 sounding
-const HIGH = 76; // E5 sounding
+export const LOW = 45; // A2 sounding
+export const HIGH = 76; // E5 sounding
 const BREATH = 0.5; // quarters of silence before the melody re-enters
 
-interface Tone {
+export interface Tone {
   start: number;
   dur: number;
   midi: number | null;
 }
 
-interface Cell {
+export interface Cell {
   pitches: number[];
   durs: number[];
 }
@@ -76,20 +76,22 @@ export interface RespondPlan {
   blockedBars: number[];
 }
 
-interface Timeline {
+export interface Timeline {
   barStart: number[];
   barLen: number[];
   melody: Tone[];
   others: Array<{ start: number; end: number; midi: number }>;
   bass: Array<{ start: number; end: number; midi: number }>;
+  /** Every note of the melody voice (chords included), for guitar grips under the melody. */
+  melodyAll: Array<{ start: number; end: number; midi: number }>;
   chordViews: PcMeasureView[];
   laneViews: PcMeasureView[];
   fifths: number[];
 }
 
-const snap = (q: number) => Math.round(q / GRID) * GRID;
+export const snap = (q: number) => Math.round(q / GRID) * GRID;
 
-function absTimeline(doc: Document, partId: string, melodyVoice: string): Timeline {
+export function absTimeline(doc: Document, partId: string, melodyVoice: string): Timeline {
   const parts = partElements(doc);
   const names = partNames(doc);
   const laneViews = measureViews(partById(doc, partId));
@@ -124,6 +126,7 @@ function absTimeline(doc: Document, partId: string, melodyVoice: string): Timeli
   const bassId =
     parts.map((p) => p.getAttribute('id') ?? '').find((id) => id !== partId && /bass|cello|contrabass/i.test(names.get(id) ?? '')) ?? null;
   const bass: Timeline['bass'] = [];
+  const melodyAll: Timeline['melodyAll'] = [];
   for (const part of parts) {
     const id = part.getAttribute('id') ?? '';
     const views = id === partId ? laneViews : measureViews(part);
@@ -136,6 +139,7 @@ function absTimeline(doc: Document, partId: string, melodyVoice: string): Timeli
         for (const midi of n.midis) {
           others.push({ start, end, midi });
           if (id === bassId) bass.push({ start, end, midi });
+          if (id === partId && n.voice === melodyVoice) melodyAll.push({ start, end, midi });
         }
       }
     });
@@ -146,16 +150,16 @@ function absTimeline(doc: Document, partId: string, melodyVoice: string): Timeli
     const withHarmony = parts.map((p) => measureViews(p)).find((vs) => vs.some((v) => v.harmony.length));
     if (withHarmony) chordViews = withHarmony;
   }
-  return { barStart, barLen, melody, others, bass, chordViews, laneViews, fifths: laneViews.map((v) => v.fifths) };
+  return { barStart, barLen, melody, others, bass, melodyAll, chordViews, laneViews, fifths: laneViews.map((v) => v.fifths) };
 }
 
-function barAt(tl: Timeline, time: number): number {
+export function barAt(tl: Timeline, time: number): number {
   let bar = 0;
   for (let i = 0; i < tl.barStart.length; i++) if (tl.barStart[i]! <= time + 1e-9) bar = i;
   return bar;
 }
 
-function chordAtTime(tl: Timeline, time: number): PcChord | null {
+export function chordAtTime(tl: Timeline, time: number): PcChord | null {
   const bi = barAt(tl, time);
   const v = tl.chordViews[bi];
   if (!v) return null;
@@ -168,17 +172,17 @@ const MAJOR_FROM_FIFTHS = (fifths: number) => {
 };
 
 /** Pitch-class field at a time: the chord's tones and colours, else the key's scale. */
-function fieldAt(tl: Timeline, time: number): { field: number[]; chord: PcChord | null } {
+export function fieldAt(tl: Timeline, time: number): { field: number[]; chord: PcChord | null } {
   const chord = chordAtTime(tl, time);
   if (chord) return { field: chord.fieldPcs, chord };
   return { field: MAJOR_FROM_FIFTHS(tl.fifths[barAt(tl, time)] ?? 0), chord: null };
 }
 
-function soundingBetween(list: Timeline['others'], start: number, end: number): number[] {
+export function soundingBetween(list: Timeline['others'], start: number, end: number): number[] {
   return list.filter((o) => o.start < end - 1e-9 && o.end > start + 1e-9).map((o) => o.midi);
 }
 
-function melodyBetween(tl: Timeline, start: number, end: number): number[] {
+export function melodyBetween(tl: Timeline, start: number, end: number): number[] {
   return tl.melody.filter((m) => m.midi !== null && m.start < end - 1e-9 && m.start + m.dur > start + 1e-9).map((m) => m.midi!);
 }
 
@@ -300,7 +304,7 @@ function nearestInField(midi: number, field: readonly number[], dir: number): nu
   return midi;
 }
 
-function clashes(midi: number, melody: readonly number[], others: readonly number[]): boolean {
+export function clashes(midi: number, melody: readonly number[], others: readonly number[]): boolean {
   for (const m of melody) {
     const iv = Math.abs(midi - m) % 12;
     if (midi === m || iv === 1 || iv === 11) return true;
@@ -313,7 +317,7 @@ function clashes(midi: number, melody: readonly number[], others: readonly numbe
 }
 
 /** Place a pitch: in the field, under the ceiling, above the bass, clear of clashes. Null = leave silence. */
-function fitsAt(tl: Timeline, p: number, start: number, end: number, ceiling: number, held: number | null): boolean {
+export function fitsAt(tl: Timeline, p: number, start: number, end: number, ceiling: number, held: number | null): boolean {
   const melody = melodyBetween(tl, start, end);
   const others = soundingBetween(tl.others, start, end);
   const bassTop = Math.max(LOW - 3, ...soundingBetween(tl.bass, start, end));
@@ -422,7 +426,7 @@ function fitRhythm(durs: readonly number[], length: number, offset = 0): Array<{
   return out;
 }
 
-function buildAnswer(
+export function buildAnswer(
   tl: Timeline,
   w: RespondWindow,
   character: RespondCharacter,
@@ -524,7 +528,7 @@ function buildAnswer(
 }
 
 /** Split answers into per-bar lane events (no ties across barlines; long tones are clipped at the bar). */
-function toEvents(tl: Timeline, answers: readonly RespondAnswer[]): PcLaneEvent[] {
+export function toEvents(tl: Timeline, answers: readonly RespondAnswer[]): PcLaneEvent[] {
   const out: PcLaneEvent[] = [];
   for (const a of answers) {
     for (const n of a.notes) {
@@ -538,25 +542,17 @@ function toEvents(tl: Timeline, answers: readonly RespondAnswer[]): PcLaneEvent[
   return out;
 }
 
-export interface RespondRequest {
-  sourceXml: string;
-  from?: number;
-  to?: number;
-  character: RespondCharacter;
-  seed: number;
-}
-
-/** Compose one RESPOND alternative. Returns lane events for writeLane; never touches the source. */
-export function composeRespond(request: RespondRequest): RespondPlan {
-  const doc = parseScoreDocument(request.sourceXml);
+/** Shared setup: lane part (guitar), lane voice (2–4, least used), blocked bars, timeline. */
+export function laneSetup(sourceXml: string, fromIn?: number, toIn?: number) {
+  const doc = parseScoreDocument(sourceXml);
   const names = partNames(doc);
   const parts = partElements(doc);
   const lanePart =
     parts.find((p) => /guitar|gtr/i.test(`${names.get(p.getAttribute('id') ?? '')} ${p.getAttribute('id')}`)) ?? parts[0]!;
   const partId = lanePart.getAttribute('id') ?? '';
   const views = measureViews(lanePart);
-  const from = request.from ?? 1;
-  const to = request.to ?? views.length;
+  const from = fromIn ?? 1;
+  const to = toIn ?? views.length;
   // Lane voice: 2–4, the one used in the fewest bars. Bars with any second source voice stay silent.
   let voice = '2';
   let fewest = Infinity;
@@ -574,6 +570,20 @@ export function composeRespond(request: RespondRequest): RespondPlan {
     if (elementChildren(m.element, 'note').length === 0) blocked.add(i + 1);
   });
   const tl = absTimeline(doc, partId, melodyVoice);
+  return { doc, partId, views, voice, melodyVoice, blocked, tl, from, to };
+}
+
+export interface RespondRequest {
+  sourceXml: string;
+  from?: number;
+  to?: number;
+  character: RespondCharacter;
+  seed: number;
+}
+
+/** Compose one RESPOND alternative. Returns lane events for writeLane; never touches the source. */
+export function composeRespond(request: RespondRequest): RespondPlan {
+  const { partId, voice, blocked, tl, from, to } = laneSetup(request.sourceXml, request.from, request.to);
   const windows = findWindows(tl, from, to, blocked);
   const rand = seededRandom(request.seed * 31 + RESPOND_CHARACTERS.findIndex((c) => c.id === request.character) * 7919);
   const total = tl.barStart[to - 1]! + tl.barLen[to - 1]!;

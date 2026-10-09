@@ -12,7 +12,8 @@ import path from 'node:path';
 import { assessGuitarFeasibility } from '../core/barry-harris/guitarVoicingFeasibility';
 import { verifyLockedCopy } from '../core/performance-composer/pcLane';
 import { readProvenance, stripProvenance } from '../core/performance-composer/pcProvenance';
-import { composeRespond, RESPOND_CHARACTERS, type RespondPlan } from '../core/performance-composer/pcRespond';
+import { composeRespond, laneSetup } from '../core/performance-composer/pcRespond';
+import { composeMixture, composeReduce, composeWyble, verifyReduce } from '../core/performance-composer/pcPhase2';
 import { runRespondSession } from '../core/performance-composer/pcRespondSession';
 import { measureViews, parseScoreDocument, partElements } from '../core/performance-composer/pcScore';
 
@@ -49,7 +50,6 @@ function check(name: string, fn: () => void): void {
 
 const sha = (s: string | Buffer) => createHash('sha256').update(s).digest('hex');
 const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'pc-respond-'));
-const key = (p: RespondPlan) => new Set(p.events.map((e) => `${e.bar}:${e.onsetQuarters}:${e.midis.join('+')}`));
 
 for (const item of [...REQUIRED, ...EXTRA]) {
   if (!fs.existsSync(item.file)) {
@@ -63,8 +63,8 @@ for (const item of [...REQUIRED, ...EXTRA]) {
   const now = new Date('2026-10-09T12:00:00Z');
   const run = runRespondSession({ sourcePath: item.file, outRoot: tmpRoot, build: BUILD, seed: 4242, now: new Date(now.getTime() + Math.random() * 1e9) });
 
-  check(`${item.piece}: two files (B Counterline, C Space), every check PASS`, () => {
-    assert.equal(run.alternatives.length, 2);
+  check(`${item.piece}: four files (C Space, W Wyble, M Space + Wyble, R Reduce), every check PASS`, () => {
+    assert.equal(run.alternatives.length, 4);
     for (const a of run.alternatives) {
       assert.ok(fs.existsSync(a.musicXmlPath), a.musicXmlPath);
       assert.deepEqual(a.checks, { locks: 'PASS', barFill: 'PASS', playable: 'PASS', stampReadBack: 'PASS' }, a.label);
@@ -74,7 +74,10 @@ for (const item of [...REQUIRED, ...EXTRA]) {
   check(`${item.piece}: files on disk re-verify (locks, span, bar fill) after the stamp is removed`, () => {
     for (const a of run.alternatives) {
       const xml = fs.readFileSync(a.musicXmlPath, 'utf8');
-      const r = verifyLockedCopy(sourceXml, stripProvenance(xml), { from: 1, to: bars }, a.lane);
+      const r =
+        a.character === 'reduce'
+          ? verifyReduce(sourceXml, stripProvenance(xml), a.lane.partId)
+          : verifyLockedCopy(sourceXml, stripProvenance(xml), { from: 1, to: bars }, a.lane);
       assert.ok(r.ok, `${a.label}: ${r.errors.slice(0, 3).join('; ')}`);
     }
   });
@@ -97,69 +100,59 @@ for (const item of [...REQUIRED, ...EXTRA]) {
   });
 
   if (!required) continue;
-  const plans = RESPOND_CHARACTERS.map((c) => composeRespond({ sourceXml, character: c.id, seed: run.seed }));
-  const [counter, space] = plans as [RespondPlan, RespondPlan];
+  const space = composeRespond({ sourceXml, character: 'space', seed: run.seed });
+  const wyble = composeWyble(sourceXml, run.seed);
+  const mix = composeMixture(sourceXml, run.seed);
+  const red = composeReduce(sourceXml, run.seed);
+  const { tl } = laneSetup(sourceXml);
+  const melodyAt = (a: number, b: number) => tl.melodyAll.filter((m) => m.start < b - 1e-9 && m.end > a + 1e-9).map((m) => m.midi);
+  const absOf = (e: { bar: number; onsetQuarters: number }) => tl.barStart[e.bar - 1]! + e.onsetQuarters;
 
-  check(`${item.piece}: deliberate silence (most gaps unanswered; Space plays fewest notes)`, () => {
-    for (const p of plans) {
-      assert.ok(p.answers.length >= 2, `${p.label}: ${p.answers.length} answers`);
-      assert.ok(p.answers.length <= Math.ceil(p.windows.length * 0.6), `${p.label}: ${p.answers.length}/${p.windows.length}`);
-    }
-    assert.ok(space.events.length < counter.events.length, `Space plays fewest notes (${space.events.length} vs ${counter.events.length})`);
+  check(`${item.piece}: Space keeps deliberate silence`, () => {
+    assert.ok(space.answers.length >= 2 && space.answers.length <= Math.ceil(space.windows.length * 0.4), `${space.answers.length}/${space.windows.length}`);
   });
 
-  check(`${item.piece}: clearly different alternatives (shared notes < 40%)`, () => {
-    for (let i = 0; i < plans.length; i++)
-      for (let j = i + 1; j < plans.length; j++) {
-        const a = key(plans[i]!);
-        const b = key(plans[j]!);
-        const shared = [...a].filter((x) => b.has(x)).length;
-        assert.ok(shared / Math.min(a.size, b.size) < 0.4, `${plans[i]!.label} vs ${plans[j]!.label}: ${shared} shared`);
+  check(`${item.piece}: Wyble sits under the melody and is playable with it`, () => {
+    assert.ok(wyble.wybleKept >= Math.max(4, wyble.wybleProposed * 0.3), `kept ${wyble.wybleKept}/${wyble.wybleProposed}`);
+    for (const e of wyble.events) {
+      const t = absOf(e);
+      assert.ok(melodyAt(t, t + e.quarters).length > 0, `bar ${e.bar}: Wyble note outside a phrase`);
+      // A held note is fingered with one melody beat at a time.
+      for (let b = t; b < t + e.quarters - 1e-9; b += 1) {
+        const mel = melodyAt(b, Math.min(b + 1, t + e.quarters));
+        if (!mel.length) continue;
+        assert.ok(e.midis[0]! <= Math.min(...mel) - 3, `bar ${e.bar}: not under the melody`);
+        assert.ok(assessGuitarFeasibility([...e.midis, ...mel]).feasible, `bar ${e.bar}: grip with melody`);
       }
-    const mean = (p: RespondPlan) => p.events.reduce((s, e) => s + e.quarters, 0) / p.events.length;
-    assert.ok(mean(space) > mean(counter), 'Space uses longer values');
-    // Revised Counterline: eighth notes or longer, only in gaps of 1½ beats or more.
-    for (const a of counter.answers) {
-      const w = counter.windows[a.window]!;
-      assert.ok(w.end - w.start >= 1.5 - 1e-9, `Counterline bar ${a.bar}: gap ${w.end - w.start}`);
-      for (const n of a.notes) assert.ok(n.dur >= 0.5 - 1e-9, `Counterline bar ${a.bar}: ${n.dur}`);
     }
   });
 
-  check(`${item.piece}: Counterline inverts the cell's contour`, () => {
-    const dirs = (xs: readonly number[]) => xs.slice(1).map((x, k) => Math.sign(x - xs[k]!));
-    let inv = 0;
-    let invN = 0;
-    for (const a of counter.answers) {
-      if (a.device !== 'inversion' || counter.windows[a.window]!.held !== null) continue;
-      const w = counter.windows[a.window]!;
-      const line = a.notes.map((n) => n.midis[n.midis.length - 1]!);
-      const want = dirs(w.cell.pitches).slice(0, line.length - 1).map((d) => -d);
-      invN++;
-      if (dirs(line).every((d, k) => want[k] === 0 || d === want[k])) inv++;
-    }
-    assert.ok(invN === 0 || inv === invN, `Counterline inversion ${inv}/${invN}`);
+  check(`${item.piece}: Mixture is one line (both resources, gap chords voice-led from Wyble)`, () => {
+    assert.ok(mix.notes.some((n) => n.source === 'wyble') && mix.notes.some((n) => n.source === 'space'), 'both resources');
+    assert.ok(mix.joins === 0 || mix.voiceLedJoins / mix.joins >= 0.6, `voice-led ${mix.voiceLedJoins}/${mix.joins}`);
+    assert.ok(mix.events.length < wyble.events.length + space.events.length, 'thinner than W and C stacked');
+    for (let i = 1; i < mix.notes.length; i++) assert.ok(mix.notes[i - 1]!.start + mix.notes[i - 1]!.dur <= mix.notes[i]!.start + 1e-9, 'one voice, no overlaps');
   });
 
-  check(`${item.piece}: answers sit in gaps only and breathe before the melody returns`, () => {
-    for (const p of plans)
-      for (const a of p.answers) {
-        const w = p.windows[a.window]!;
-        for (const n of a.notes) {
-          assert.ok(n.start >= w.start - 1e-9 && n.start + n.dur <= w.end + 1e-9, `${p.label} bar ${a.bar} outside its gap`);
-          assert.ok(assessGuitarFeasibility(w.held === null ? n.midis : [...n.midis, w.held]).feasible, `${p.label} bar ${a.bar} grip`);
-        }
-      }
+  check(`${item.piece}: Reduce removes 15–60% of melody notes and nothing else`, () => {
+    const share = red.plan.removed / red.plan.melodyNotes;
+    assert.ok(share >= 0.15 && share <= 0.6, `removed ${red.plan.removed}/${red.plan.melodyNotes}`);
+    const v = verifyReduce(sourceXml, red.xml, red.plan.partId);
+    assert.ok(v.ok, v.errors.slice(0, 3).join('; '));
+  });
+
+  check(`${item.piece}: Space and Wyble are different resources (shared lane notes < 40%)`, () => {
+    const k = (evs: readonly { bar: number; onsetQuarters: number; midis: number[] }[]) => new Set(evs.map((e) => `${e.bar}:${e.onsetQuarters}:${e.midis.join('+')}`));
+    const a = k(space.events);
+    const b = k(wyble.events);
+    const shared = [...a].filter((x) => b.has(x)).length;
+    assert.ok(shared / Math.max(1, Math.min(a.size, b.size)) < 0.4, `shared ${shared}`);
   });
 
   check(`${item.piece}: same seed repeats; a new seed changes the music`, () => {
-    for (const c of RESPOND_CHARACTERS) {
-      const a = composeRespond({ sourceXml, character: c.id, seed: run.seed });
-      const b = composeRespond({ sourceXml, character: c.id, seed: run.seed });
-      assert.deepEqual(a.events, b.events);
-    }
-    const other = composeRespond({ sourceXml, character: 'counterline', seed: run.seed + 1 });
-    assert.notDeepEqual(other.events, counter.events);
+    assert.deepEqual(composeWyble(sourceXml, run.seed).events, wyble.events);
+    assert.deepEqual(composeMixture(sourceXml, run.seed).events, mix.events);
+    assert.notDeepEqual(composeWyble(sourceXml, run.seed + 1).events, wyble.events);
   });
 }
 
@@ -185,7 +178,7 @@ check("Meet Me at Hobo's: refused (note lengths disagree with note values throug
 
 fs.rmSync(tmpRoot, { recursive: true, force: true });
 if (failed) {
-  console.log(`${failed} PERFORMANCE COMPOSER 1B CHECK(S) FAILED`);
+  console.log(`${failed} PERFORMANCE COMPOSER PHASE 2 CHECK(S) FAILED`);
   process.exit(1);
 }
-console.log('ALL PERFORMANCE COMPOSER 1B CHECKS PASS');
+console.log('ALL PERFORMANCE COMPOSER PHASE 2 CHECKS PASS');

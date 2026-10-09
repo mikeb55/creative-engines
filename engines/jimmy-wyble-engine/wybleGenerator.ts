@@ -1130,7 +1130,7 @@ function upperLocalMotionWindow(upperPitches: number[], b: number): number {
 /**
  * Lower line: conversational counterpoint — phrase-aware response, contrary bias, space trading vs upper motion.
  */
-function generateLowerVoice(
+export function generateLowerVoice(
   totalBeats: number,
   harmonicContext: HarmonicContext,
   upperPitches: number[],

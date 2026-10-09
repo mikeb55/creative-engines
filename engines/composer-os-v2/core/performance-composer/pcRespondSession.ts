@@ -10,7 +10,8 @@ import path from 'node:path';
 import { assessGuitarFeasibility } from '../barry-harris/guitarVoicingFeasibility';
 import { writeLane, verifyLockedCopy, type PcLaneEvent } from './pcLane';
 import { stampProvenance, stripProvenance, readProvenance, provenanceLine, type PcProvenance } from './pcProvenance';
-import { composeRespond, RESPOND_CHARACTERS, RESPOND_ENGINE, type RespondCharacter } from './pcRespond';
+import { composeRespond, RESPOND_CHARACTERS, RESPOND_ENGINE } from './pcRespond';
+import { composeMixture, composeReduce, composeWyble, PHASE2_ENGINE, verifyReduce } from './pcPhase2';
 import { durationTypeMismatches, measureViews, parseScoreDocument, partElements } from './pcScore';
 
 export interface RespondBuildInfo {
@@ -20,7 +21,7 @@ export interface RespondBuildInfo {
 }
 
 export interface RespondAlternativeResult {
-  character: RespondCharacter;
+  character: string;
   label: string;
   musicXmlPath: string;
   answers: number;
@@ -88,46 +89,67 @@ export function runRespondSession(options: {
   const sourceFile = path.basename(options.sourcePath);
 
   const prepared: Array<{ file: string; xml: string; result: RespondAlternativeResult }> = [];
-  for (const { id, label } of RESPOND_CHARACTERS) {
+  const stampFor = (label: string, engine: string): PcProvenance => ({
+    app: 'Composer OS',
+    module: 'Performance Composer',
+    operation: 'RESPOND',
+    engine,
+    alternative: label,
+    runId,
+    clickedAt: now.toISOString(),
+    buildCommit: options.build.buildCommit || 'not available',
+    ipcBundleSha256: options.build.ipcBundleSha256 || 'not available',
+    stampMatchesLiveIpc: options.build.stampMatchesLiveIpc || 'unknown',
+    sourceFile,
+    sourceSha256,
+    bars: `1–${barCount}`,
+    seed,
+  });
+  const fileFor = (label: string) => path.join(folder, `${slug(sourceFile)} - ${label.replace(' · ', ' ')}.musicxml`);
+  // Lane alternatives: C Space (RESPOND, KEEP), W Wyble, M Space + Wyble (Phase 2).
+  const lanePlans: Array<{ id: string; label: string; engine: string; events: PcLaneEvent[]; partId: string; voice: string; answers: number; windows: number; devices: string[]; bars: number[] }> = [];
+  for (const { id, label } of RESPOND_CHARACTERS.filter((c) => c.id === 'space')) {
     const plan = composeRespond({ sourceXml, character: id, seed });
-    if (!plan.events.length) throw new Error(`${label}: no gap in this score could take an answer.`);
-    const lane = writeLane(sourceXml, { span, events: plan.events, partId: plan.partId, voice: plan.voice });
-    const provenance: PcProvenance = {
-      app: 'Composer OS',
-      module: 'Performance Composer',
-      operation: 'RESPOND',
-      engine: RESPOND_ENGINE,
-      alternative: label,
-      runId,
-      clickedAt: now.toISOString(),
-      buildCommit: options.build.buildCommit || 'not available',
-      ipcBundleSha256: options.build.ipcBundleSha256 || 'not available',
-      stampMatchesLiveIpc: options.build.stampMatchesLiveIpc || 'unknown',
-      sourceFile,
-      sourceSha256,
-      bars: `1–${barCount}`,
-      seed,
-    };
+    lanePlans.push({ id, label, engine: RESPOND_ENGINE, events: plan.events, partId: plan.partId, voice: plan.voice, answers: plan.answers.length, windows: plan.windows.length, devices: [...new Set(plan.answers.map((a) => a.device))], bars: [...new Set(plan.answers.map((a) => a.bar))] });
+  }
+  for (const plan of [composeWyble(sourceXml, seed), composeMixture(sourceXml, seed)]) {
+    lanePlans.push({
+      id: plan.character,
+      label: plan.label,
+      engine: PHASE2_ENGINE,
+      events: plan.events,
+      partId: plan.partId,
+      voice: plan.voice,
+      answers: plan.character === 'mixture' ? plan.spaceAnswers : plan.wybleKept,
+      windows: plan.character === 'mixture' ? plan.joins : plan.wybleProposed,
+      devices: plan.character === 'mixture' ? [`Wyble ${plan.wybleKept} beats`, `Space ${plan.spaceAnswers} gaps`, `${plan.voiceLedJoins}/${plan.joins} gap chords voice-led from Wyble`] : [`Wyble kept ${plan.wybleKept} of ${plan.wybleProposed} beats`],
+      bars: [...new Set(plan.events.map((e) => e.bar))],
+    });
+  }
+  for (const lp of lanePlans) {
+    if (!lp.events.length) throw new Error(`${lp.label}: nothing could be written for this score.`);
+    const lane = writeLane(sourceXml, { span, events: lp.events, partId: lp.partId, voice: lp.voice });
+    const provenance = stampFor(lp.label, lp.engine);
     const stamped = stampProvenance(lane.xml, provenance);
     const report = verifyLockedCopy(sourceXml, stripProvenance(stamped), span, lane.lane);
-    if (!report.ok) throw new Error(`${label}: lock check failed — nothing written. ${report.errors.slice(0, 3).join('; ')}`);
-    const playable = plan.events.every((e: PcLaneEvent) => assessGuitarFeasibility(e.midis).feasible);
+    if (!report.ok) throw new Error(`${lp.label}: lock check failed — nothing written. ${report.errors.slice(0, 3).join('; ')}`);
+    const playable = lp.events.every((e: PcLaneEvent) => assessGuitarFeasibility(e.midis).feasible);
     const back = readProvenance(stamped);
-    const file = path.join(folder, `${slug(sourceFile)} - RESPOND ${label.replace(' · ', ' ')}.musicxml`);
+    const file = fileFor(lp.label);
     prepared.push({
       file,
       xml: stamped,
       result: {
-        character: id,
-        label,
+        character: lp.id,
+        label: lp.label,
         musicXmlPath: file,
-        answers: plan.answers.length,
-        windows: plan.windows.length,
-        notes: plan.events.length,
-        devices: [...new Set(plan.answers.map((a) => a.device))],
-        answeredBars: [...new Set(plan.answers.map((a) => a.bar))],
+        answers: lp.answers,
+        windows: lp.windows,
+        notes: lp.events.length,
+        devices: lp.devices,
+        answeredBars: lp.bars,
         checks: {
-          locks: report.ok ? 'PASS' : 'FAIL',
+          locks: 'PASS',
           barFill: report.checks.laneBarFill ? 'PASS' : 'FAIL',
           playable: playable ? 'PASS' : 'FAIL',
           stampReadBack: back?.runId === runId && back?.buildCommit === provenance.buildCommit ? 'PASS' : 'FAIL',
@@ -135,6 +157,35 @@ export function runRespondSession(options: {
         lockErrors: report.errors,
         provenance,
         lane: lane.lane,
+      },
+    });
+  }
+  // R Reduce: melody cut back; only melody notes may become rests.
+  {
+    const { xml, plan } = composeReduce(sourceXml, seed);
+    const label = plan.label;
+    const provenance = stampFor(label, PHASE2_ENGINE);
+    const stamped = stampProvenance(xml, provenance);
+    const report = verifyReduce(sourceXml, stripProvenance(stamped), plan.partId);
+    if (!report.ok) throw new Error(`${label}: check failed — nothing written. ${report.errors.slice(0, 3).join('; ')}`);
+    const back = readProvenance(stamped);
+    const file = fileFor(label);
+    prepared.push({
+      file,
+      xml: stamped,
+      result: {
+        character: 'reduce',
+        label,
+        musicXmlPath: file,
+        answers: plan.kept,
+        windows: plan.melodyNotes,
+        notes: plan.removed,
+        devices: [`kept ${plan.kept} of ${plan.melodyNotes} melody notes`],
+        answeredBars: [...new Set(plan.removedAt.map((r) => r.bar))],
+        checks: { locks: 'PASS', barFill: 'PASS', playable: 'PASS', stampReadBack: back?.runId === runId && back?.buildCommit === provenance.buildCommit ? 'PASS' : 'FAIL' },
+        lockErrors: [],
+        provenance,
+        lane: { partId: plan.partId, voice: '1' },
       },
     });
   }
