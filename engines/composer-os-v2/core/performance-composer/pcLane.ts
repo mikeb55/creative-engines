@@ -33,6 +33,9 @@ export interface PcLaneEvent {
   midis: number[];
 }
 
+/** Every note Composer OS writes is red, so new material is visible at a glance. */
+export const NEW_NOTE_COLOR = '#E0201B';
+
 export interface PcLaneRequest {
   span: PcSpan;
   events: readonly PcLaneEvent[];
@@ -197,6 +200,7 @@ export function writeLane(sourceXml: string, request: PcLaneRequest): PcLaneResu
             if (sp.alter) pitch.appendChild(el(doc, 'alter', String(sp.alter)));
             pitch.appendChild(el(doc, 'octave', String(sp.octave)));
             note.appendChild(pitch);
+            note.setAttribute('color', NEW_NOTE_COLOR);
           }
           note.appendChild(el(doc, 'duration', String(piece.ticks)));
           const tieStop = midi !== null && pi > 0;

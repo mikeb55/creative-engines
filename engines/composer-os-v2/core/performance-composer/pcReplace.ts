@@ -17,6 +17,7 @@
  */
 
 import { seededRandom } from './pcChord';
+import { NEW_NOTE_COLOR } from './pcLane';
 import { melodyGroups, type MelodyGroup } from './pcPhase2';
 import { chordAtTime, fieldAt, laneSetup, soundingBetween, type Timeline } from './pcRespond';
 import { spellForChord } from './pcChord';
@@ -146,6 +147,7 @@ export function composeReplace(sourceXml: string, seed: number, variant: Replace
       void sp;
       const acc = elementChildren(primary, 'accidental')[0];
       if (acc) primary.removeChild(acc);
+      if (Q[i] !== P[i]) primary.setAttribute('color', NEW_NOTE_COLOR);
       notes.push({ bar: g.bar, onset: g.onset, was: g.top, now: Q[i]! });
     }
   });

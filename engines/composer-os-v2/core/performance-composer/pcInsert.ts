@@ -18,6 +18,7 @@
  */
 
 import { seededRandom, spellForChord } from './pcChord';
+import { NEW_NOTE_COLOR } from './pcLane';
 import { chordAtTime, fieldAt, laneSetup, soundingBetween, type Timeline } from './pcRespond';
 import { findReplaceSpan } from './pcReplace';
 import { elementChildren, measureViews, parseScoreDocument, partElements, serializeNode } from './pcScore';
@@ -228,6 +229,7 @@ export function composeInsert(sourceXml: string, seed: number, variant: InsertVa
               if (w.alter) add('alter', String(w.alter));
               add('octave', String(w.octave));
               note.appendChild(pitch);
+              note.setAttribute('color', NEW_NOTE_COLOR);
             }
             const d = doc.createElement('duration');
             d.textContent = String(Math.round(pq * div));
