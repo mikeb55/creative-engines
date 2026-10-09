@@ -1,0 +1,396 @@
+{
+  "source": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/00 - WWH DUO LEADSHEETS/01-Black-Aura-Duo-Leadsheet-V1.1.musicxml",
+  "insertAfterBar": 16,
+  "label": "WYBLE",
+  "bars": [
+    [
+      {
+        "dur": "eighth",
+        "rest": true
+      },
+      {
+        "dur": "eighth",
+        "tones": [
+          {
+            "step": "F",
+            "alter": 0,
+            "octave": 5,
+            "string": 2,
+            "fret": 6
+          }
+        ]
+      },
+      {
+        "dur": "quarter",
+        "tones": [
+          {
+            "step": "A",
+            "alter": -1,
+            "octave": 5,
+            "string": 1,
+            "fret": 4
+          }
+        ]
+      },
+      {
+        "dur": "eighth",
+        "tones": [
+          {
+            "step": "F",
+            "alter": 0,
+            "octave": 5,
+            "string": 1,
+            "fret": 1
+          }
+        ]
+      },
+      {
+        "dur": "eighth",
+        "rest": true
+      },
+      {
+        "dur": "quarter",
+        "tones": [
+          {
+            "step": "E",
+            "alter": -1,
+            "octave": 5,
+            "string": 2,
+            "fret": 4
+          }
+        ]
+      },
+      {
+        "dur": "quarter",
+        "rest": true,
+        "voice": 2
+      },
+      {
+        "dur": "eighth",
+        "tones": [
+          {
+            "step": "C",
+            "alter": 0,
+            "octave": 5,
+            "string": 3,
+            "fret": 5
+          }
+        ],
+        "voice": 2
+      },
+      {
+        "dur": "eighth",
+        "tones": [
+          {
+            "step": "B",
+            "alter": -1,
+            "octave": 4,
+            "string": 3,
+            "fret": 3
+          }
+        ],
+        "voice": 2
+      },
+      {
+        "dur": "half",
+        "tones": [
+          {
+            "step": "A",
+            "alter": 0,
+            "octave": 4,
+            "string": 3,
+            "fret": 2
+          }
+        ],
+        "tie": "start",
+        "voice": 2
+      }
+    ],
+    [
+      {
+        "dur": "quarter",
+        "tones": [
+          {
+            "step": "D",
+            "alter": 0,
+            "octave": 5,
+            "string": 2,
+            "fret": 3
+          }
+        ]
+      },
+      {
+        "dur": "eighth",
+        "rest": true
+      },
+      {
+        "dur": "eighth",
+        "tones": [
+          {
+            "step": "F",
+            "alter": 0,
+            "octave": 5,
+            "string": 2,
+            "fret": 6
+          }
+        ]
+      },
+      {
+        "dur": "quarter",
+        "tones": [
+          {
+            "step": "A",
+            "alter": -1,
+            "octave": 5,
+            "string": 1,
+            "fret": 4
+          }
+        ]
+      },
+      {
+        "dur": "quarter",
+        "tones": [
+          {
+            "step": "G",
+            "alter": 0,
+            "octave": 5,
+            "string": 1,
+            "fret": 3
+          }
+        ]
+      },
+      {
+        "dur": "quarter",
+        "tones": [
+          {
+            "step": "A",
+            "alter": 0,
+            "octave": 4,
+            "string": 3,
+            "fret": 2
+          }
+        ],
+        "tie": "stop",
+        "voice": 2
+      },
+      {
+        "dur": "quarter",
+        "tones": [
+          {
+            "step": "C",
+            "alter": 0,
+            "octave": 5,
+            "string": 3,
+            "fret": 5
+          }
+        ],
+        "voice": 2
+      },
+      {
+        "dur": "eighth",
+        "tones": [
+          {
+            "step": "F",
+            "alter": 0,
+            "octave": 4,
+            "string": 4,
+            "fret": 3
+          }
+        ],
+        "voice": 2
+      },
+      {
+        "dur": "eighth",
+        "tones": [
+          {
+            "step": "G",
+            "alter": 0,
+            "octave": 4,
+            "string": 3,
+            "fret": 0
+          }
+        ],
+        "voice": 2
+      },
+      {
+        "dur": "quarter",
+        "tones": [
+          {
+            "step": "B",
+            "alter": -1,
+            "octave": 4,
+            "string": 3,
+            "fret": 3
+          }
+        ],
+        "voice": 2
+      }
+    ],
+    [
+      {
+        "dur": "half",
+        "tones": [
+          {
+            "step": "A",
+            "alter": -1,
+            "octave": 5,
+            "string": 1,
+            "fret": 4
+          }
+        ]
+      },
+      {
+        "dur": "quarter",
+        "tones": [
+          {
+            "step": "F",
+            "alter": 0,
+            "octave": 5,
+            "string": 2,
+            "fret": 6
+          }
+        ]
+      },
+      {
+        "dur": "quarter",
+        "rest": true
+      },
+      {
+        "dur": "eighth",
+        "rest": true,
+        "voice": 2
+      },
+      {
+        "dur": "eighth",
+        "tones": [
+          {
+            "step": "F",
+            "alter": 0,
+            "octave": 4,
+            "string": 4,
+            "fret": 3
+          }
+        ],
+        "voice": 2
+      },
+      {
+        "dur": "quarter",
+        "tones": [
+          {
+            "step": "E",
+            "alter": -1,
+            "octave": 4,
+            "string": 4,
+            "fret": 1
+          }
+        ],
+        "voice": 2
+      },
+      {
+        "dur": "quarter",
+        "tones": [
+          {
+            "step": "D",
+            "alter": 0,
+            "octave": 4,
+            "string": 4,
+            "fret": 0
+          }
+        ],
+        "voice": 2
+      },
+      {
+        "dur": "quarter",
+        "tones": [
+          {
+            "step": "A",
+            "alter": 0,
+            "octave": 4,
+            "string": 4,
+            "fret": 7
+          }
+        ],
+        "voice": 2
+      }
+    ],
+    [
+      {
+        "dur": "quarter",
+        "tones": [
+          {
+            "step": "E",
+            "alter": -1,
+            "octave": 5,
+            "string": 2,
+            "fret": 4
+          }
+        ]
+      },
+      {
+        "dur": "quarter",
+        "tones": [
+          {
+            "step": "D",
+            "alter": 0,
+            "octave": 5,
+            "string": 3,
+            "fret": 7
+          }
+        ]
+      },
+      {
+        "dur": "half",
+        "rest": true
+      },
+      {
+        "dur": "eighth",
+        "rest": true,
+        "voice": 2
+      },
+      {
+        "dur": "eighth",
+        "tones": [
+          {
+            "step": "G",
+            "alter": 0,
+            "octave": 4,
+            "string": 3,
+            "fret": 0
+          }
+        ],
+        "voice": 2
+      },
+      {
+        "dur": "quarter",
+        "tones": [
+          {
+            "step": "A",
+            "alter": 0,
+            "octave": 4,
+            "string": 4,
+            "fret": 7
+          }
+        ],
+        "voice": 2
+      },
+      {
+        "dur": "quarter",
+        "tones": [
+          {
+            "step": "F",
+            "alter": 0,
+            "octave": 4,
+            "string": 4,
+            "fret": 3
+          }
+        ],
+        "voice": 2
+      },
+      {
+        "dur": "quarter",
+        "rest": true,
+        "voice": 2
+      }
+    ]
+  ]
+}

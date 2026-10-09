@@ -1,7 +1,6 @@
 /**
- * Black Aura V9 — one new sustained-space guitar insert.
- * Four composed bars after printed bar 16. Single voice. Open dyads, long tones, silence.
- * Does not copy Liquid V1 or Wyble V1.
+ * Black Aura V9 — Space. Hand-authored sketch.
+ * Four bars after printed bar 16, written by hand. Single voice. V9_SPACE_SEED is printed only. It does not choose notes.
  */
 
 import { createHash } from 'node:crypto';
@@ -19,6 +18,7 @@ export const V9_LIQUID_FILE =
   '/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PERFORMANCE-MOCKUPS/V9-PILOT/V9-BLACK-AURA-CREATIVE-LIQUID-V1.musicxml';
 export const V9_WYBLE_FILE =
   '/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PERFORMANCE-MOCKUPS/V9-PILOT/V9-BLACK-AURA-CREATIVE-WYBLE-V1.musicxml';
+/** Printed only. Not used to choose notes. */
 export const V9_SPACE_SEED = 90023;
 const SOURCE_SHA = 'b46ad5eddf329f4975a1be1e868099c3c7cefa005226e936e313e7583b2eedcb';
 const LIQUID_SHA = '97d22ad213f3387a65247b807ffb8fb7273f6e0d9227f191d3c764e8033813b3';
@@ -48,7 +48,7 @@ interface Slot {
  * F–Ab–F–Eb–D unfolds as long tones. Open strings ring beside them.
  * Bass D–A–D is left alone on purpose, then answered late.
  */
-const SPACE_BARS: Slot[][] = [
+export const SPACE_BARS: Slot[][] = [
   [
     { dur: 'quarter', tones: [] },
     { dur: 'quarter', tones: [] },

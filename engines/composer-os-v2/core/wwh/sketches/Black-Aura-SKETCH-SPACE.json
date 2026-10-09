@@ -1,0 +1,141 @@
+{
+  "source": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/00 - WWH DUO LEADSHEETS/01-Black-Aura-Duo-Leadsheet-V1.1.musicxml",
+  "insertAfterBar": 16,
+  "label": "SPACE",
+  "bars": [
+    [
+      {
+        "dur": "quarter",
+        "rest": true
+      },
+      {
+        "dur": "quarter",
+        "rest": true
+      },
+      {
+        "dur": "half",
+        "tones": [
+          {
+            "step": "A",
+            "alter": 0,
+            "octave": 3,
+            "string": 5,
+            "fret": 0
+          },
+          {
+            "step": "F",
+            "alter": 0,
+            "octave": 4,
+            "string": 4,
+            "fret": 3
+          }
+        ],
+        "tie": "start"
+      }
+    ],
+    [
+      {
+        "dur": "quarter",
+        "tones": [
+          {
+            "step": "A",
+            "alter": 0,
+            "octave": 3,
+            "string": 5,
+            "fret": 0
+          },
+          {
+            "step": "F",
+            "alter": 0,
+            "octave": 4,
+            "string": 4,
+            "fret": 3
+          }
+        ],
+        "tie": "stop"
+      },
+      {
+        "dur": "quarter",
+        "rest": true
+      },
+      {
+        "dur": "half",
+        "tones": [
+          {
+            "step": "D",
+            "alter": 0,
+            "octave": 4,
+            "string": 4,
+            "fret": 0
+          },
+          {
+            "step": "A",
+            "alter": -1,
+            "octave": 4,
+            "string": 3,
+            "fret": 1
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "dur": "half",
+        "rest": true
+      },
+      {
+        "dur": "half",
+        "tones": [
+          {
+            "step": "F",
+            "alter": 0,
+            "octave": 4,
+            "string": 4,
+            "fret": 3
+          },
+          {
+            "step": "B",
+            "alter": 0,
+            "octave": 4,
+            "string": 2,
+            "fret": 0
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "dur": "quarter",
+        "rest": true
+      },
+      {
+        "dur": "quarter",
+        "rest": true
+      },
+      {
+        "dur": "quarter",
+        "tones": [
+          {
+            "step": "E",
+            "alter": -1,
+            "octave": 4,
+            "string": 4,
+            "fret": 1
+          }
+        ]
+      },
+      {
+        "dur": "quarter",
+        "tones": [
+          {
+            "step": "D",
+            "alter": 0,
+            "octave": 4,
+            "string": 4,
+            "fret": 0
+          }
+        ]
+      }
+    ]
+  ]
+}

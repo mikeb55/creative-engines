@@ -1,6 +1,6 @@
 /**
- * Black Aura V9 — one new liquid-harmony guitar insert.
- * Four composed bars. Does not copy V8 note lists.
+ * Black Aura V9 — Liquid. Hand-authored sketch.
+ * Four bars written by hand. V9_LIQUID_SEED is printed only. It does not choose notes.
  */
 
 import { createHash } from 'node:crypto';
@@ -14,6 +14,7 @@ import { assertWwhBar, wwhDyad, wwhNote, wwhRest, wwhTriad, WWH_DIVISIONS, type 
 
 export const V9_LIQUID_FILE =
   '/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PERFORMANCE-MOCKUPS/V9-PILOT/V9-BLACK-AURA-CREATIVE-LIQUID-V1.musicxml';
+/** Printed only. Not used to choose notes. */
 export const V9_LIQUID_SEED = 90021;
 const SOURCE_SHA = 'b46ad5eddf329f4975a1be1e868099c3c7cefa005226e936e313e7583b2eedcb';
 const BAR_TICKS = 1024;
@@ -34,7 +35,7 @@ interface Slot {
 }
 
 /** Written pitches. Octave-change -1 sounds them one octave lower. */
-const LIQUID_BARS: Slot[][] = [
+export const LIQUID_BARS: Slot[][] = [
   [
     { dur: 'quarter', tones: [] },
     {

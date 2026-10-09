@@ -1,0 +1,243 @@
+{
+  "source": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/00 - WWH DUO LEADSHEETS/01-Black-Aura-Duo-Leadsheet-V1.1.musicxml",
+  "insertAfterBar": 16,
+  "label": "ANGULAR V2",
+  "bars": [
+    [
+      {
+        "dur": "eighth",
+        "rest": true
+      },
+      {
+        "dur": "eighth",
+        "tones": [
+          {
+            "step": "F",
+            "alter": 0,
+            "octave": 5,
+            "string": 2,
+            "fret": 6
+          }
+        ]
+      },
+      {
+        "dur": "eighth",
+        "tones": [
+          {
+            "step": "F",
+            "alter": 1,
+            "octave": 5,
+            "string": 2,
+            "fret": 7
+          }
+        ]
+      },
+      {
+        "dur": "quarter",
+        "tones": [
+          {
+            "step": "A",
+            "alter": -1,
+            "octave": 5,
+            "string": 1,
+            "fret": 4
+          }
+        ]
+      },
+      {
+        "dur": "eighth",
+        "rest": true
+      },
+      {
+        "dur": "quarter",
+        "tones": [
+          {
+            "step": "F",
+            "alter": 0,
+            "octave": 5,
+            "string": 2,
+            "fret": 6
+          },
+          {
+            "step": "B",
+            "alter": 0,
+            "octave": 5,
+            "string": 1,
+            "fret": 7
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "dur": "quarter",
+        "rest": true
+      },
+      {
+        "dur": "eighth",
+        "tones": [
+          {
+            "step": "B",
+            "alter": 0,
+            "octave": 5,
+            "string": 1,
+            "fret": 7
+          }
+        ]
+      },
+      {
+        "dur": "eighth",
+        "tones": [
+          {
+            "step": "B",
+            "alter": -1,
+            "octave": 5,
+            "string": 1,
+            "fret": 6
+          }
+        ]
+      },
+      {
+        "dur": "eighth",
+        "tones": [
+          {
+            "step": "A",
+            "alter": -1,
+            "octave": 5,
+            "string": 1,
+            "fret": 4
+          }
+        ]
+      },
+      {
+        "dur": "quarter",
+        "tones": [
+          {
+            "step": "C",
+            "alter": 0,
+            "octave": 5,
+            "string": 2,
+            "fret": 1
+          },
+          {
+            "step": "F",
+            "alter": 0,
+            "octave": 5,
+            "string": 1,
+            "fret": 1
+          }
+        ]
+      },
+      {
+        "dur": "eighth",
+        "rest": true
+      }
+    ],
+    [
+      {
+        "dur": "eighth",
+        "tones": [
+          {
+            "step": "F",
+            "alter": 0,
+            "octave": 5,
+            "string": 2,
+            "fret": 6
+          }
+        ]
+      },
+      {
+        "dur": "eighth",
+        "tones": [
+          {
+            "step": "F",
+            "alter": 1,
+            "octave": 5,
+            "string": 2,
+            "fret": 7
+          }
+        ]
+      },
+      {
+        "dur": "eighth",
+        "tones": [
+          {
+            "step": "A",
+            "alter": -1,
+            "octave": 5,
+            "string": 1,
+            "fret": 4
+          }
+        ]
+      },
+      {
+        "dur": "eighth",
+        "rest": true
+      },
+      {
+        "dur": "half",
+        "tones": [
+          {
+            "step": "C",
+            "alter": 0,
+            "octave": 5,
+            "string": 3,
+            "fret": 5
+          },
+          {
+            "step": "F",
+            "alter": 0,
+            "octave": 5,
+            "string": 2,
+            "fret": 6
+          },
+          {
+            "step": "B",
+            "alter": 0,
+            "octave": 5,
+            "string": 1,
+            "fret": 7
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "dur": "eighth",
+        "rest": true
+      },
+      {
+        "dur": "eighth",
+        "tones": [
+          {
+            "step": "G",
+            "alter": 0,
+            "octave": 4,
+            "string": 3,
+            "fret": 0
+          }
+        ]
+      },
+      {
+        "dur": "quarter",
+        "rest": true
+      },
+      {
+        "dur": "quarter",
+        "tones": [
+          {
+            "step": "F",
+            "alter": 1,
+            "octave": 4,
+            "string": 4,
+            "fret": 4
+          }
+        ]
+      },
+      {
+        "dur": "quarter",
+        "rest": true
+      }
+    ]
+  ]
+}

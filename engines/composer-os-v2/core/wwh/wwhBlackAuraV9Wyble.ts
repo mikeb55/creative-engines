@@ -1,6 +1,6 @@
 /**
- * Black Aura V9 — one new Wyble two-voice guitar insert.
- * Four composed bars. Independent voices. Does not copy Liquid V1 or V8 note lists.
+ * Black Aura V9 — Wyble. Hand-authored sketch.
+ * Four bars, two independent voices, written by hand. V9_WYBLE_SEED is printed only. It does not choose notes.
  */
 
 import { createHash } from 'node:crypto';
@@ -16,6 +16,7 @@ export const V9_WYBLE_FILE =
   '/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PERFORMANCE-MOCKUPS/V9-PILOT/V9-BLACK-AURA-CREATIVE-WYBLE-V1.musicxml';
 export const V9_LIQUID_FILE =
   '/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PERFORMANCE-MOCKUPS/V9-PILOT/V9-BLACK-AURA-CREATIVE-LIQUID-V1.musicxml';
+/** Printed only. Not used to choose notes. */
 export const V9_WYBLE_SEED = 90022;
 const SOURCE_SHA = 'b46ad5eddf329f4975a1be1e868099c3c7cefa005226e936e313e7583b2eedcb';
 const BAR_TICKS = 1024;
@@ -45,7 +46,7 @@ interface Slot {
  * Sounding pitches. Upper voice sings the motif. Lower voice answers.
  * Fingers are standard tuning. Written octave is sounding octave + 1.
  */
-const UPPER: Slot[][] = [
+export const UPPER: Slot[][] = [
   [
     { dur: 'eighth', tone: null },
     { dur: 'eighth', tone: { step: 'F', alter: 0, octave: 4, stringNumber: 2, fret: 6 } },
@@ -73,7 +74,7 @@ const UPPER: Slot[][] = [
   ],
 ];
 
-const LOWER: Slot[][] = [
+export const LOWER: Slot[][] = [
   [
     { dur: 'quarter', tone: null },
     { dur: 'eighth', tone: { step: 'C', alter: 0, octave: 4, stringNumber: 3, fret: 5 } },

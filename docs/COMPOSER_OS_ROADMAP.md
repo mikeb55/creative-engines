@@ -486,6 +486,7 @@ Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartÃ³k** native bundle (not 
 
 ## Current (as of 2026-07-01 snapshot)
 
+- **WWH V9 sketch mode (2026-10-09):** `npm run wwh:sketch -- <sketch.json>` checks a hand-authored guitar sketch and writes one duo MusicXML next to the V9 outputs. Liquid, Wyble, Space, and Angular V2 are hand-authored sketches. Their seeds are printed only. A failed bar, fret, span, or string/fret check writes nothing. MuseScore 4 opens the file.
 - **WWH Performance Director V7.3C (2026-10-08):** nine album plans under `WWH-PERFORMANCE-MOCKUPS/V7.3C`. Source order stays locked. After Everything adds no bars. Chord melody stays Black Aura V1.1 and The Mirror alternate V1.0. Open bars are still unrealised. V8.0 is not started.
 - **WWH Performance Director V7.3A (2026-10-08):** Black Aura pilot. One JSON plan controls the duo score, leadsheet, guitar study, and bass partner file. Plan A is the 39-bar source. Plan B adds five bass-led bars after a verified cut at bar 8. Cue windows, Palace Gates, After Everything, and the other seven leadsheets remain V7.3B.
 - **WWH V7.3 chord melody (2026-10-08):** Black Aura V1.1 and The Mirror alternate V1.0 can be selected as guitar performance mode. Guitar-only, duo, and mixed scores are written under `WWH-PERFORMANCE-MOCKUPS/V7.3-CHORD-MELODY`. Other compositions are not assumed to have a finished chord melody.

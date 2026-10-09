@@ -1,8 +1,7 @@
 /**
- * Black Aura V9 — Angular V2.
- * Musical revision of the four-bar Angular V1 insert.
- * Prime cell F–F#–Ab–B, inversion, then the tritone stacked as C–F–B.
- * Does not overwrite Angular V1, Liquid, Wyble, Space, or the locked source.
+ * Black Aura V9 — Angular V2. Hand-authored sketch.
+ * Four bars written by hand: prime cell F–F#–Ab–B, inversion, then C–F–B.
+ * V9_ANGULAR_V2_SEED is printed only. It does not choose notes.
  */
 
 import { createHash } from 'node:crypto';
@@ -24,6 +23,7 @@ export const V9_LIQUID_FILE =
   '/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PERFORMANCE-MOCKUPS/V9-PILOT/V9-BLACK-AURA-CREATIVE-LIQUID-V1.musicxml';
 export const V9_WYBLE_FILE =
   '/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PERFORMANCE-MOCKUPS/V9-PILOT/V9-BLACK-AURA-CREATIVE-WYBLE-V1.musicxml';
+/** Printed only. Not used to choose notes. */
 export const V9_ANGULAR_V2_SEED = 90025;
 const SOURCE_SHA = 'b46ad5eddf329f4975a1be1e868099c3c7cefa005226e936e313e7583b2eedcb';
 const LIQUID_SHA = '97d22ad213f3387a65247b807ffb8fb7273f6e0d9227f191d3c764e8033813b3';
@@ -58,7 +58,7 @@ interface Slot {
  * Bar 3 recalls the cell in eighths, then holds C–F–B.
  * Bar 4 keeps G–F# so the original F can answer it.
  */
-const ANGULAR_BARS: Slot[][] = [
+export const ANGULAR_BARS: Slot[][] = [
   [
     { dur: 'eighth', tones: [] },
     { dur: 'eighth', tones: [{ step: 'F', alter: 0, octave: 5, stringNumber: 2, fret: 6 }] },
