@@ -332,7 +332,7 @@ export interface ReducePlan {
   removedAt: Array<{ bar: number; onset: number }>;
 }
 
-interface MelodyGroup {
+export interface MelodyGroup {
   bar: number;
   onset: number;
   dur: number;
@@ -342,7 +342,7 @@ interface MelodyGroup {
   tieStop: boolean;
 }
 
-function melodyGroups(part: Element, melodyVoice: string): MelodyGroup[] {
+export function melodyGroups(part: Element, melodyVoice: string): MelodyGroup[] {
   const views = measureViews(part);
   const out: MelodyGroup[] = [];
   views.forEach((v, bi) => {

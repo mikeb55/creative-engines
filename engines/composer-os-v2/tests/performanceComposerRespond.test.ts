@@ -12,7 +12,8 @@ import path from 'node:path';
 import { assessGuitarFeasibility } from '../core/barry-harris/guitarVoicingFeasibility';
 import { verifyLockedCopy } from '../core/performance-composer/pcLane';
 import { readProvenance, stripProvenance } from '../core/performance-composer/pcProvenance';
-import { composeRespond, laneSetup } from '../core/performance-composer/pcRespond';
+import { composeRespond, fieldAt, laneSetup } from '../core/performance-composer/pcRespond';
+import { composeReplace, REPLACE_VARIANTS, verifyReplace, type ReplaceVariant } from '../core/performance-composer/pcReplace';
 import { composeMixture, composeReduce, composeWyble, verifyReduce } from '../core/performance-composer/pcPhase2';
 import { runRespondSession } from '../core/performance-composer/pcRespondSession';
 import { measureViews, parseScoreDocument, partElements } from '../core/performance-composer/pcScore';
@@ -63,8 +64,8 @@ for (const item of [...REQUIRED, ...EXTRA]) {
   const now = new Date('2026-10-09T12:00:00Z');
   const run = runRespondSession({ sourcePath: item.file, outRoot: tmpRoot, build: BUILD, seed: 4242, now: new Date(now.getTime() + Math.random() * 1e9) });
 
-  check(`${item.piece}: four files (C Space, W Wyble, M Space + Wyble, R Reduce), every check PASS`, () => {
-    assert.equal(run.alternatives.length, 4);
+  check(`${item.piece}: five files (C Space, M Space + Wyble, P1–P3 Replace), every check PASS`, () => {
+    assert.equal(run.alternatives.length, 5);
     for (const a of run.alternatives) {
       assert.ok(fs.existsSync(a.musicXmlPath), a.musicXmlPath);
       assert.deepEqual(a.checks, { locks: 'PASS', barFill: 'PASS', playable: 'PASS', stampReadBack: 'PASS' }, a.label);
@@ -75,8 +76,8 @@ for (const item of [...REQUIRED, ...EXTRA]) {
     for (const a of run.alternatives) {
       const xml = fs.readFileSync(a.musicXmlPath, 'utf8');
       const r =
-        a.character === 'reduce'
-          ? verifyReduce(sourceXml, stripProvenance(xml), a.lane.partId)
+        a.character.startsWith('replace-')
+          ? verifyReplace(sourceXml, stripProvenance(xml), composeReplace(sourceXml, run.seed, a.character.slice(8) as ReplaceVariant).plan)
           : verifyLockedCopy(sourceXml, stripProvenance(xml), { from: 1, to: bars }, a.lane);
       assert.ok(r.ok, `${a.label}: ${r.errors.slice(0, 3).join('; ')}`);
     }
@@ -141,6 +142,29 @@ for (const item of [...REQUIRED, ...EXTRA]) {
     assert.ok(v.ok, v.errors.slice(0, 3).join('; '));
   });
 
+  check(`${item.piece}: Replace — three real variations of one span, in the chord, no clashes`, () => {
+    const outs = REPLACE_VARIANTS.map((v) => composeReplace(sourceXml, run.seed, v.id));
+    const span = outs[0]!.plan;
+    if (item.piece.startsWith('01-')) assert.deepEqual([span.from, span.to], [32, 37], 'Black Aura: the head\'s return');
+    const lines = outs.map((o) => o.plan.notes.map((n) => n.now).join());
+    assert.equal(new Set(lines).size, 3, 'variants differ');
+    for (const o of outs) {
+      const tones = new Set(o.plan.notes.map((n) => `${n.bar}:${n.onset}`)).size;
+      assert.ok(o.plan.changed >= Math.ceil(tones * 0.4), `${o.plan.label}: changed ${o.plan.changed}/${tones}`);
+      assert.ok(verifyReplace(sourceXml, o.xml, o.plan).ok, o.plan.label);
+      for (const n of o.plan.notes) {
+        const t = tl.barStart[n.bar - 1]! + n.onset;
+        const { field } = fieldAt(tl, t);
+        if (n.now !== n.was) assert.ok(field.includes(n.now % 12), `${o.plan.label} bar ${n.bar}: outside the chord`);
+        const nonMel = tl.others.filter((x) => !tl.melodyAll.some((m) => m.start === x.start && m.end === x.end && m.midi === x.midi));
+        for (const x of nonMel) if (x.start < t + 0.01 && x.end > t + 1e-9 && n.now !== n.was) {
+          const d = Math.abs(n.now - x.midi) % 12;
+          assert.ok(n.now !== x.midi && d !== 1 && d !== 11, `${o.plan.label} bar ${n.bar}: clash`);
+        }
+      }
+    }
+  });
+
   check(`${item.piece}: Space and Wyble are different resources (shared lane notes < 40%)`, () => {
     const k = (evs: readonly { bar: number; onsetQuarters: number; midis: number[] }[]) => new Set(evs.map((e) => `${e.bar}:${e.onsetQuarters}:${e.midis.join('+')}`));
     const a = k(space.events);
@@ -178,7 +202,7 @@ check("Meet Me at Hobo's: refused (note lengths disagree with note values throug
 
 fs.rmSync(tmpRoot, { recursive: true, force: true });
 if (failed) {
-  console.log(`${failed} PERFORMANCE COMPOSER PHASE 2 CHECK(S) FAILED`);
+  console.log(`${failed} PERFORMANCE COMPOSER PHASE 3 CHECK(S) FAILED`);
   process.exit(1);
 }
-console.log('ALL PERFORMANCE COMPOSER PHASE 2 CHECKS PASS');
+console.log('ALL PERFORMANCE COMPOSER PHASE 3 CHECKS PASS');

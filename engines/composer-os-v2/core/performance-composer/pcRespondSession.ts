@@ -11,7 +11,8 @@ import { assessGuitarFeasibility } from '../barry-harris/guitarVoicingFeasibilit
 import { writeLane, verifyLockedCopy, type PcLaneEvent } from './pcLane';
 import { stampProvenance, stripProvenance, readProvenance, provenanceLine, type PcProvenance } from './pcProvenance';
 import { composeRespond, RESPOND_CHARACTERS, RESPOND_ENGINE } from './pcRespond';
-import { composeMixture, composeReduce, composeWyble, PHASE2_ENGINE, verifyReduce } from './pcPhase2';
+import { composeMixture, PHASE2_ENGINE } from './pcPhase2';
+import { composeReplace, REPLACE_ENGINE, REPLACE_VARIANTS, verifyReplace } from './pcReplace';
 import { durationTypeMismatches, measureViews, parseScoreDocument, partElements } from './pcScore';
 
 export interface RespondBuildInfo {
@@ -106,13 +107,13 @@ export function runRespondSession(options: {
     seed,
   });
   const fileFor = (label: string) => path.join(folder, `${slug(sourceFile)} - ${label.replace(' · ', ' ')}.musicxml`);
-  // Lane alternatives: C Space (RESPOND, KEEP), W Wyble, M Space + Wyble (Phase 2).
+  // Lane alternatives: C Space (RESPOND, KEEP) and M Space + Wyble (Phase 2, KEEP).
   const lanePlans: Array<{ id: string; label: string; engine: string; events: PcLaneEvent[]; partId: string; voice: string; answers: number; windows: number; devices: string[]; bars: number[] }> = [];
   for (const { id, label } of RESPOND_CHARACTERS.filter((c) => c.id === 'space')) {
     const plan = composeRespond({ sourceXml, character: id, seed });
     lanePlans.push({ id, label, engine: RESPOND_ENGINE, events: plan.events, partId: plan.partId, voice: plan.voice, answers: plan.answers.length, windows: plan.windows.length, devices: [...new Set(plan.answers.map((a) => a.device))], bars: [...new Set(plan.answers.map((a) => a.bar))] });
   }
-  for (const plan of [composeWyble(sourceXml, seed), composeMixture(sourceXml, seed)]) {
+  for (const plan of [composeMixture(sourceXml, seed)]) {
     lanePlans.push({
       id: plan.character,
       label: plan.label,
@@ -160,13 +161,13 @@ export function runRespondSession(options: {
       },
     });
   }
-  // R Reduce: melody cut back; only melody notes may become rests.
-  {
-    const { xml, plan } = composeReduce(sourceXml, seed);
+  // P1–P3 REPLACE (Phase 3): new melody pitches over the locked rhythm in the default span.
+  for (const { id } of REPLACE_VARIANTS) {
+    const { xml, plan } = composeReplace(sourceXml, seed, id);
     const label = plan.label;
-    const provenance = stampFor(label, PHASE2_ENGINE);
+    const provenance = { ...stampFor(label, REPLACE_ENGINE), bars: `${plan.from}–${plan.to}` };
     const stamped = stampProvenance(xml, provenance);
-    const report = verifyReduce(sourceXml, stripProvenance(stamped), plan.partId);
+    const report = verifyReplace(sourceXml, stripProvenance(stamped), plan);
     if (!report.ok) throw new Error(`${label}: check failed — nothing written. ${report.errors.slice(0, 3).join('; ')}`);
     const back = readProvenance(stamped);
     const file = fileFor(label);
@@ -174,14 +175,14 @@ export function runRespondSession(options: {
       file,
       xml: stamped,
       result: {
-        character: 'reduce',
+        character: `replace-${id}`,
         label,
         musicXmlPath: file,
-        answers: plan.kept,
-        windows: plan.melodyNotes,
-        notes: plan.removed,
-        devices: [`kept ${plan.kept} of ${plan.melodyNotes} melody notes`],
-        answeredBars: [...new Set(plan.removedAt.map((r) => r.bar))],
+        answers: plan.changed,
+        windows: plan.notes.length,
+        notes: plan.changed,
+        devices: [`bars ${plan.from}–${plan.to}: ${plan.changed} melody notes replaced, rhythm locked`],
+        answeredBars: [...new Set(plan.notes.map((n) => n.bar))],
         checks: { locks: 'PASS', barFill: 'PASS', playable: 'PASS', stampReadBack: back?.runId === runId && back?.buildCommit === provenance.buildCommit ? 'PASS' : 'FAIL' },
         lockErrors: [],
         provenance,
@@ -189,6 +190,7 @@ export function runRespondSession(options: {
       },
     });
   }
+
   mkdirSync(folder, { recursive: true });
   for (const p of prepared) writeFileSync(p.file, p.xml, 'utf8');
   const result: RespondRunResult = {
