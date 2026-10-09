@@ -31,6 +31,8 @@ export interface WwhWrittenBar {
   tempoMark?: WwhTempoMark | null;
   guitarNotation?: 'open' | 'tacet';
   bassNotation?: 'open' | 'tacet';
+  /** Second guitar voice. Rewound with backup so the two lines stay independent. */
+  guitarVoice2?: WwhAtom[];
 }
 
 export interface WwhScoreHeader {
@@ -57,22 +59,38 @@ function accidental(alter: number | undefined): string {
   return '';
 }
 
-function atomXml(atom: WwhAtom): string {
+function tieElements(atom: WwhAtom): string {
+  const tags: string[] = [];
+  if (atom.tieStop) tags.push('<tie type="stop"/>');
+  if (atom.tieStart) tags.push('<tie type="start"/>');
+  return tags.join('');
+}
+
+function notations(atom: WwhAtom): string {
+  const tied: string[] = [];
+  if (atom.tieStop) tied.push('<tied type="stop"/>');
+  if (atom.tieStart) tied.push('<tied type="start"/>');
+  const fermata = atom.fermata ? '<fermata>normal</fermata>' : '';
+  if (!tied.length && !fermata) return '';
+  return `<notations>${tied.join('')}${fermata}</notations>`;
+}
+
+function atomXml(atom: WwhAtom, voice = '1', stem?: 'up' | 'down'): string {
   const dots = atom.dots ? '<dot/>'.repeat(atom.dots) : '';
   const head = atom.rest
     ? '<rest/>'
     : `<pitch><step>${esc(atom.step || 'C')}</step>${
         atom.alter ? `<alter>${atom.alter}</alter>` : ''
       }<octave>${atom.octave ?? 4}</octave></pitch>`;
-  const fermata = atom.fermata ? '<notations><fermata>normal</fermata></notations>' : '';
   const timeMod = atom.timeModification
     ? `<time-modification><actual-notes>${atom.timeModification.actualNotes}</actual-notes><normal-notes>${atom.timeModification.normalNotes}</normal-notes><normal-type>${esc(
         atom.timeModification.normalType
       )}</normal-type></time-modification>`
     : '';
-  return `<note>${atom.chord ? '<chord/>' : ''}${head}<duration>${atom.divisions}</duration><voice>1</voice><type>${atom.type}</type>${dots}${timeMod}${
+  const stemXml = stem ? `<stem>${stem}</stem>` : '';
+  return `<note>${atom.chord ? '<chord/>' : ''}${head}<duration>${atom.divisions}</duration>${tieElements(atom)}<voice>${voice}</voice><type>${atom.type}</type>${dots}${timeMod}${stemXml}${
     atom.rest ? '' : accidental(atom.alter)
-  }${fermata}</note>`;
+  }${notations(atom)}</note>`;
 }
 
 function harmonyXml(harmony: WwhHarmonySpec): string {
@@ -313,9 +331,15 @@ function freshMeasure(
   const harmony = clef === 'G' && bar.harmony ? harmonyXml(bar.harmony) : '';
   const notation = clef === 'G' ? bar.guitarNotation : bar.bassNotation;
   const unrealized = !atoms.length && notation ? unrealizedBody(notation, state.beats, state.beatType, state.divisions) : null;
-  const notes = unrealized ? unrealized.notes : atoms.map(atomXml).join('');
+  const voice2 = clef === 'G' ? (bar.guitarVoice2 ?? []) : [];
+  const notes = unrealized ? unrealized.notes : atoms.map((atom) => atomXml(atom, '1', voice2.length ? 'up' : undefined)).join('');
+  const lower = voice2.length
+    ? `<backup><duration>${voice2.reduce((sum, atom) => (atom.chord ? sum : sum + atom.divisions), 0)}</duration></backup>${voice2
+        .map((atom) => atomXml(atom, '2', 'down'))
+        .join('')}`
+    : '';
   const slash = unrealized?.prefix ?? '';
-  return `<measure number="${number}">${print}${attrBlock}${slash}${dirs}${harmony}${notes}</measure>`;
+  return `<measure number="${number}">${print}${attrBlock}${slash}${dirs}${harmony}${notes}${lower}</measure>`;
 }
 
 function partXml(id: string, clef: 'G' | 'F', bars: readonly WwhWrittenBar[], header: WwhScoreHeader): string {

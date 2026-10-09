@@ -27,6 +27,8 @@ export interface WwhAtom {
   dots?: number;
   chord?: boolean;
   fermata?: boolean;
+  tieStart?: boolean;
+  tieStop?: boolean;
   timeModification?: { actualNotes: number; normalNotes: number; normalType: string };
   /** Printed syllable only. Does not add a pitch. */
   lyric?: string;
