@@ -14,6 +14,7 @@ import { composeRespond, RESPOND_CHARACTERS, RESPOND_ENGINE } from './pcRespond'
 import { composeMixture, PHASE2_ENGINE } from './pcPhase2';
 import { composeReplace, REPLACE_ENGINE, REPLACE_VARIANTS, verifyReplace } from './pcReplace';
 import { composeInsert, INSERT_BARS, INSERT_ENGINE, INSERT_VARIANTS, verifyInsert } from './pcInsert';
+import { composeKeep, KEEP_ENGINE, KEEP_LABEL } from './pcKeep';
 import { durationTypeMismatches, measureViews, parseScoreDocument, partElements } from './pcScore';
 
 export interface RespondBuildInfo {
@@ -192,8 +193,8 @@ export function runRespondSession(options: {
     });
   }
 
-  // N1–N3 INSERT (Phase 3): four new bars before the head's return; bass and harmony quoted.
-  for (const { id } of INSERT_VARIANTS) {
+  // N1 INSERT Anticipation (KEEP): four new bars before the head's return; bass and harmony quoted.
+  for (const { id } of INSERT_VARIANTS.filter((v) => v.id === 'anticipation')) {
     const { xml, plan } = composeInsert(sourceXml, seed, id);
     const label = plan.label;
     const provenance = { ...stampFor(label, INSERT_ENGINE), bars: `${INSERT_BARS} new bars before bar ${plan.before} (quoting bars ${plan.quoted[0]}–${plan.quoted[1]})` };
@@ -218,6 +219,34 @@ export function runRespondSession(options: {
         lockErrors: [],
         provenance,
         lane: { partId: plan.partId, voice: '1' },
+      },
+    });
+  }
+
+  // K Keep Version: every KEEP applied together (N1 insert, P1 mirror, M lane). No new music.
+  {
+    const { xml, plan, errors } = composeKeep(sourceXml, seed);
+    if (errors.length) throw new Error(`${KEEP_LABEL}: check failed — nothing written. ${errors.slice(0, 3).join('; ')}`);
+    const provenance = { ...stampFor(KEEP_LABEL, KEEP_ENGINE), bars: `1–${plan.bars} (N1 before bar ${plan.insertBefore}; P1 bars ${plan.replaceFrom}–${plan.replaceTo}; M lane)` };
+    const stamped = stampProvenance(xml, provenance);
+    const back = readProvenance(stamped);
+    const file = fileFor(KEEP_LABEL);
+    prepared.push({
+      file,
+      xml: stamped,
+      result: {
+        character: 'keep',
+        label: KEEP_LABEL,
+        musicXmlPath: file,
+        answers: plan.laneKept,
+        windows: plan.laneKept + plan.laneDropped,
+        notes: plan.laneKept,
+        devices: [`N1 insert before bar ${plan.insertBefore}`, `P1 mirror bars ${plan.replaceFrom}–${plan.replaceTo}`, `M lane ${plan.laneKept} kept, ${plan.laneDropped} dropped (would clash with the mirror)`],
+        answeredBars: [plan.insertBefore, plan.replaceFrom],
+        checks: { locks: 'PASS', barFill: 'PASS', playable: 'PASS', stampReadBack: back?.runId === runId && back?.buildCommit === provenance.buildCommit ? 'PASS' : 'FAIL' },
+        lockErrors: [],
+        provenance,
+        lane: { partId: plan.partId, voice: plan.voice },
       },
     });
   }

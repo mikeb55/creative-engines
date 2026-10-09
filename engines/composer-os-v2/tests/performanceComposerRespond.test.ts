@@ -15,6 +15,7 @@ import { readProvenance, stripProvenance } from '../core/performance-composer/pc
 import { composeRespond, fieldAt, laneSetup } from '../core/performance-composer/pcRespond';
 import { composeReplace, REPLACE_VARIANTS, verifyReplace, type ReplaceVariant } from '../core/performance-composer/pcReplace';
 import { composeInsert, INSERT_VARIANTS, verifyInsert, type InsertVariant } from '../core/performance-composer/pcInsert';
+import { composeKeep } from '../core/performance-composer/pcKeep';
 import { composeMixture, composeReduce, composeWyble, verifyReduce } from '../core/performance-composer/pcPhase2';
 import { runRespondSession } from '../core/performance-composer/pcRespondSession';
 import { measureViews, parseScoreDocument, partElements } from '../core/performance-composer/pcScore';
@@ -65,8 +66,8 @@ for (const item of [...REQUIRED, ...EXTRA]) {
   const now = new Date('2026-10-09T12:00:00Z');
   const run = runRespondSession({ sourcePath: item.file, outRoot: tmpRoot, build: BUILD, seed: 4242, now: new Date(now.getTime() + Math.random() * 1e9) });
 
-  check(`${item.piece}: six files (C Space, M Space + Wyble, P1 Replace Mirror, N1–N3 Insert), every check PASS`, () => {
-    assert.equal(run.alternatives.length, 6);
+  check(`${item.piece}: five files (C Space, M Space + Wyble, P1 Replace Mirror, N1 Insert, K Keep Version), every check PASS`, () => {
+    assert.equal(run.alternatives.length, 5);
     for (const a of run.alternatives) {
       assert.ok(fs.existsSync(a.musicXmlPath), a.musicXmlPath);
       assert.deepEqual(a.checks, { locks: 'PASS', barFill: 'PASS', playable: 'PASS', stampReadBack: 'PASS' }, a.label);
@@ -77,7 +78,9 @@ for (const item of [...REQUIRED, ...EXTRA]) {
     for (const a of run.alternatives) {
       const xml = fs.readFileSync(a.musicXmlPath, 'utf8');
       const r =
-        a.character.startsWith('insert-')
+        a.character === 'keep'
+          ? { ok: composeKeep(sourceXml, run.seed).errors.length === 0, errors: composeKeep(sourceXml, run.seed).errors }
+          : a.character.startsWith('insert-')
           ? verifyInsert(sourceXml, stripProvenance(xml), composeInsert(sourceXml, run.seed, a.character.slice(7) as InsertVariant).plan)
           : a.character.startsWith('replace-')
           ? verifyReplace(sourceXml, stripProvenance(xml), composeReplace(sourceXml, run.seed, a.character.slice(8) as ReplaceVariant).plan)
@@ -189,6 +192,22 @@ for (const item of [...REQUIRED, ...EXTRA]) {
         }
       }
     }
+  });
+
+  check(`${item.piece}: Keep Version = N1 + P1 + M exactly, nothing new`, () => {
+    const k = composeKeep(sourceXml, run.seed);
+    assert.equal(k.errors.length, 0, k.errors.join('; '));
+    const kdoc = laneSetup(k.xml);
+    assert.equal(kdoc.tl.barStart.length, tl.barStart.length + 4, 'bars');
+    // The inserted guitar is N1's; the return's melody is P1's.
+    const n1 = composeInsert(sourceXml, run.seed, 'anticipation');
+    const p1 = composeReplace(sourceXml, run.seed, 'mirror');
+    const melIn = (t: typeof kdoc.tl, a: number, b: number) => t.melody.filter((m) => m.start >= t.barStart[a - 1]! - 1e-9 && m.start < t.barStart[b - 1]! + t.barLen[b - 1]! - 1e-9 && m.midi !== null).map((m) => m.midi);
+    const n1tl = laneSetup(n1.xml).tl;
+    assert.deepEqual(melIn(kdoc.tl, n1.plan.before, n1.plan.before + 3), melIn(n1tl, n1.plan.before, n1.plan.before + 3), 'insert is N1');
+    const p1tl = laneSetup(p1.xml).tl;
+    assert.deepEqual(melIn(kdoc.tl, p1.plan.from + 4, p1.plan.to + 4), melIn(p1tl, p1.plan.from, p1.plan.to), 'return is P1');
+    assert.ok(k.plan.laneKept >= composeMixture(sourceXml, run.seed).events.length * 0.7, `lane kept ${k.plan.laneKept}`);
   });
 
   check(`${item.piece}: Space and Wyble are different resources (shared lane notes < 40%)`, () => {
