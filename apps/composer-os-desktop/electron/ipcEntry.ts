@@ -53,6 +53,27 @@ function resolveEnginesRoot(): string {
 
 import { V8_SESSION_DIR } from '../../../engines/composer-os-v2/core/wwh/wwhV8Session';
 
+/** Performance Composer RESPOND runs: Documents/Composer OS Exports/Performance Composer/RESPOND/<run>/ */
+function performanceComposerRespondRoot(): string {
+  return path.resolve(app.getPath('documents'), 'Composer OS Exports', 'Performance Composer', 'RESPOND');
+}
+
+/** Build identity of the running app, from its build stamp. Never invented. */
+function runningBuildForProvenance(): { buildCommit: string; ipcBundleSha256: string; stampMatchesLiveIpc: string } {
+  let buildCommit = '';
+  try {
+    const stamp = JSON.parse(process.env.COMPOSER_OS_BUILD_STAMP_JSON ?? '{}') as { gitCommit?: string | null };
+    buildCommit = typeof stamp.gitCommit === 'string' ? stamp.gitCommit : '';
+  } catch {
+    buildCommit = '';
+  }
+  return {
+    buildCommit,
+    ipcBundleSha256: process.env.COMPOSER_OS_IPC_BUNDLE_SHA256 ?? '',
+    stampMatchesLiveIpc: process.env.COMPOSER_OS_STAMP_IPC_MATCH ?? 'unknown',
+  };
+}
+
 function sessionMusicXmlPath(body: unknown): { path: string } | { error: string } {
   const raw =
     body && typeof body === 'object' && typeof (body as { path?: unknown }).path === 'string'
@@ -60,10 +81,12 @@ function sessionMusicXmlPath(body: unknown): { path: string } | { error: string 
       : '';
   if (!raw || raw.includes('\0')) return { error: 'Missing MusicXML path.' };
   const resolved = path.resolve(raw);
-  const root = path.resolve(V8_SESSION_DIR);
-  const relative = path.relative(root, resolved);
-  if (relative.startsWith('..') || path.isAbsolute(relative) || !resolved.endsWith('.musicxml') || !existsSync(resolved)) {
-    return { error: 'That file is not a V8 session MusicXML.' };
+  const inside = (root: string) => {
+    const relative = path.relative(path.resolve(root), resolved);
+    return !relative.startsWith('..') && !path.isAbsolute(relative);
+  };
+  if (!(inside(V8_SESSION_DIR) || inside(performanceComposerRespondRoot())) || !resolved.endsWith('.musicxml') || !existsSync(resolved)) {
+    return { error: 'That file is not a Performance Composer session MusicXML.' };
   }
   return { path: resolved };
 }
@@ -691,6 +714,26 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
             : undefined,
       });
       return result;
+    } catch (error) {
+      return { ok: false as const, error: error instanceof Error ? error.message : String(error) };
+    }
+  });
+
+  ipcMain.handle('composer-os-api:pc-respond', async () => {
+    try {
+      const { dialog } = await import('electron');
+      const picked = await dialog.showOpenDialog({
+        title: 'Respond — choose a MusicXML score',
+        properties: ['openFile'],
+        filters: [{ name: 'MusicXML', extensions: ['musicxml', 'xml'] }],
+      });
+      if (picked.canceled || !picked.filePaths?.[0]) return { ok: false as const, canceled: true as const };
+      const { runRespondSession } = await import('../../../engines/composer-os-v2/core/performance-composer/pcRespondSession');
+      return runRespondSession({
+        sourcePath: picked.filePaths[0],
+        outRoot: performanceComposerRespondRoot(),
+        build: runningBuildForProvenance(),
+      });
     } catch (error) {
       return { ok: false as const, error: error instanceof Error ? error.message : String(error) };
     }

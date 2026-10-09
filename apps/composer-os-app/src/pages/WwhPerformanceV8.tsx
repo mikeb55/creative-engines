@@ -54,6 +54,31 @@ interface AdviceLine {
   bass: string[];
 }
 
+interface RespondAlternative {
+  character: string;
+  label: string;
+  musicXmlPath: string;
+  answers: number;
+  windows: number;
+  notes: number;
+  devices: string[];
+  checks: { locks: string; barFill: string; playable: string; stampReadBack: string };
+}
+
+interface RespondRun {
+  ok: true;
+  runId: string;
+  clickedAt: string;
+  sourceFile: string;
+  sourceSha256: string;
+  bars: string;
+  seed: number;
+  build: { buildCommit: string; ipcBundleSha256: string; stampMatchesLiveIpc: string };
+  folder: string;
+  alternatives: RespondAlternative[];
+  musicalAcceptance: string;
+}
+
 const fieldStyle = { display: 'flex', flexDirection: 'column' as const, gap: '0.25rem', fontSize: 13 };
 const inputStyle = { padding: '0.3rem' };
 
@@ -75,6 +100,8 @@ export function WwhPerformanceV8() {
   const [error, setError] = useState('');
   const [openError, setOpenError] = useState('');
   const [runs, setRuns] = useState<SessionRun[]>([]);
+  const [respondRuns, setRespondRuns] = useState<RespondRun[]>([]);
+  const [respondError, setRespondError] = useState('');
 
   const pairEnabled = approach === 'liquid' && piece === 'Black Aura';
 
@@ -123,6 +150,25 @@ export function WwhPerformanceV8() {
       setRuns((current) => [result, ...current]);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : String(caught));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function respond() {
+    if (busy) return;
+    setBusy(true);
+    setRespondError('');
+    setOpenError('');
+    try {
+      const result = await invoke<RespondRun | { ok: false; canceled?: true; error?: string }>('composer-os-api:pc-respond');
+      if (!result || result.ok !== true) {
+        if (!('canceled' in result && result.canceled)) setRespondError(('error' in result && result.error) || 'Respond failed.');
+        return;
+      }
+      setRespondRuns((current) => [result, ...current]);
+    } catch (caught) {
+      setRespondError(caught instanceof Error ? caught.message : String(caught));
     } finally {
       setBusy(false);
     }
@@ -195,6 +241,31 @@ export function WwhPerformanceV8() {
       </button>
       {error ? <p role="alert" style={{ color: 'var(--danger, #a33)', margin: 0 }}>{error}</p> : null}
       {openError ? <p role="alert" style={{ color: 'var(--danger, #a33)', margin: 0 }}>{openError}</p> : null}
+
+      <button type="button" disabled={busy} onClick={() => void respond()}>
+        {busy ? 'Working…' : 'Respond…'}
+      </button>
+      {respondError ? <p role="alert" style={{ color: 'var(--danger, #a33)', margin: 0 }}>{respondError}</p> : null}
+      {respondRuns.map((run) => (
+        <article key={run.runId} style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '0.75rem', fontSize: 13 }}>
+          <div><strong>RESPOND</strong> · {run.sourceFile} · bars {run.bars}</div>
+          <div>Composer OS provenance: run {run.runId} · clicked {run.clickedAt} · seed {run.seed}</div>
+          <div>Build commit: {run.build.buildCommit || 'not available'} · running code {run.build.ipcBundleSha256.slice(0, 12) || 'not available'} · stamp matches running code: {run.build.stampMatchesLiveIpc === '1' ? 'yes' : run.build.stampMatchesLiveIpc === '0' ? 'NO' : 'unknown'}</div>
+          <div>Source SHA-256: {run.sourceSha256.slice(0, 16)}…</div>
+          <div style={{ color: 'var(--text-muted)' }}>Musical acceptance: {run.musicalAcceptance}</div>
+          {run.alternatives.map((alt) => (
+            <div key={alt.musicXmlPath} style={{ borderTop: '1px solid var(--border)', marginTop: '0.5rem', paddingTop: '0.5rem' }}>
+              <div><strong>{alt.label}</strong> · answers {alt.answers} of {alt.windows} gaps · {alt.notes} notes · {alt.devices.join(', ')}</div>
+              <div>Locks {alt.checks.locks} · Bar fill {alt.checks.barFill} · Playable {alt.checks.playable} · Stamp {alt.checks.stampReadBack}</div>
+              <div>MusicXML: {alt.musicXmlPath}</div>
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.4rem' }}>
+                <button type="button" onClick={() => void openScore(alt.musicXmlPath, 'composer-os-api:wwh-v8-open-musescore')}>Open MusicXML</button>
+                <button type="button" className="secondary" onClick={() => void openScore(alt.musicXmlPath, 'composer-os-api:wwh-v8-reveal')}>Open Folder</button>
+              </div>
+            </div>
+          ))}
+        </article>
+      ))}
 
       <h3 style={{ marginBottom: 0 }}>Session results</h3>
       {runs.length === 0 ? <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>No generation in this session yet.</p> : null}

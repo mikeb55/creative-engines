@@ -47,6 +47,8 @@ export interface PcTimedNote {
   rest: boolean;
   /** Sounding MIDI (written pitch adjusted by the part's octave-change). */
   midis: number[];
+  tieStart: boolean;
+  tieStop: boolean;
 }
 
 export interface PcMeasureView {
@@ -177,6 +179,8 @@ export function measureViews(part: Element): PcMeasureView[] {
           ticks: dur,
           rest: elementChildren(node, 'rest').length > 0,
           midis: midi === null ? [] : [midi],
+          tieStart: elementChildren(node, 'tie').some((t) => t.getAttribute('type') === 'start'),
+          tieStop: elementChildren(node, 'tie').some((t) => t.getAttribute('type') === 'stop'),
         });
         cursor += dur;
       } else if (name === 'backup') {
@@ -314,4 +318,69 @@ export function ensureExplicitVoice(measure: Element): number {
     added += 1;
   }
   return added;
+}
+
+/** Lane part and staff only (no voice check); used when the caller picks the voice. */
+export function chooseLaneLoose(doc: Document, partId?: string): Omit<PcLane, 'voice'> {
+  const parts = partElements(doc);
+  const names = new Map<string, string>();
+  for (const sp of doc.getElementsByTagName('score-part')) {
+    names.set(sp.getAttribute('id') ?? '', sp.getElementsByTagName('part-name')[0]?.textContent ?? '');
+  }
+  const part = partId
+    ? parts.find((p) => p.getAttribute('id') === partId)
+    : parts.find((p) => /guitar|gtr/i.test(`${names.get(p.getAttribute('id') ?? '')} ${p.getAttribute('id')}`)) ?? parts[0];
+  if (!part) throw new Error(`part ${partId} not found`);
+  const staff = [...part.getElementsByTagName('staff')].map((s) => s.textContent?.trim()).find(Boolean) ?? undefined;
+  return { partId: part.getAttribute('id') ?? '', staff };
+}
+
+export function partNames(doc: Document): Map<string, string> {
+  const names = new Map<string, string>();
+  for (const sp of doc.getElementsByTagName('score-part')) {
+    names.set(sp.getAttribute('id') ?? '', sp.getElementsByTagName('part-name')[0]?.textContent?.trim() ?? '');
+  }
+  return names;
+}
+
+const TYPE_QUARTERS: Record<string, number> = { breve: 8, whole: 4, half: 2, quarter: 1, eighth: 0.5, '16th': 0.25, '32nd': 0.125, '64th': 0.0625 };
+
+/**
+ * Find notes whose written length (<duration>) disagrees with their note value (<type>, dots).
+ * Tuplets, grace notes and cue notes are skipped. Returns the first few offending bars.
+ */
+export function durationTypeMismatches(doc: Document): {
+  checked: number;
+  mismatched: number;
+  examples: Array<{ part: string; bar: string; duration: number; type: string }>;
+} {
+  const out: Array<{ part: string; bar: string; duration: number; type: string }> = [];
+  let checked = 0;
+  let mismatched = 0;
+  for (const part of partElements(doc)) {
+    let divisions = 1;
+    for (const m of elementChildren(part, 'measure')) {
+      for (const k of elementChildren(m)) {
+        if (k.nodeName === 'attributes') {
+          const d = elementChildren(k, 'divisions')[0]?.textContent;
+          if (d) divisions = Number(d);
+        }
+        if (k.nodeName !== 'note') continue;
+        if (elementChildren(k, 'grace').length || elementChildren(k, 'cue').length || elementChildren(k, 'time-modification').length) continue;
+        const type = elementChildren(k, 'type')[0]?.textContent?.trim();
+        const dur = Number(elementChildren(k, 'duration')[0]?.textContent ?? NaN);
+        if (!type || !(type in TYPE_QUARTERS) || !Number.isFinite(dur)) continue;
+        const rest = elementChildren(k, 'rest')[0];
+        if (rest?.getAttribute('measure') === 'yes') continue;
+        const dots = elementChildren(k, 'dot').length;
+        const q = TYPE_QUARTERS[type]! * (2 - 1 / 2 ** dots);
+        checked++;
+        if (Math.abs(q * divisions - dur) > 1e-6) {
+          mismatched++;
+          if (out.length < 3) out.push({ part: part.getAttribute('id') ?? '', bar: m.getAttribute('number') ?? '', duration: dur, type: `${type}${'.'.repeat(dots)}` });
+        }
+      }
+    }
+  }
+  return { checked, mismatched, examples: out };
 }

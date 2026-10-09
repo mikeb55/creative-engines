@@ -6,6 +6,7 @@
 import { spellForChord } from './pcChord';
 import {
   chooseLane,
+  chooseLaneLoose,
   chordAt,
   elementChildren,
   ensureExplicitVoice,
@@ -37,6 +38,8 @@ export interface PcLaneRequest {
   events: readonly PcLaneEvent[];
   /** Part to write into; default first guitar part, else the first part. */
   partId?: string;
+  /** Voice to write; default the first free voice in the span. Bars already using it must get no events. */
+  voice?: string;
 }
 
 export interface PcLaneResult {
@@ -109,7 +112,10 @@ export function regridFactor(views: ReturnType<typeof measureViews>, events: rea
 export function writeLane(sourceXml: string, request: PcLaneRequest): PcLaneResult {
   const doc = parseScoreDocument(sourceXml);
   const bars = resolveSpan(doc, request.span);
-  const lane: PcLane = { ...chooseLane(doc, request.partId, request.span), regrid: 1 };
+  const chosen = request.voice
+    ? { ...chooseLaneLoose(doc, request.partId), voice: request.voice }
+    : chooseLane(doc, request.partId, request.span);
+  const lane: PcLane = { ...chosen, regrid: 1 };
   const part = partById(doc, lane.partId);
   const k = regridFactor(measureViews(part), request.events);
   scalePartDivisions(part, k);
@@ -128,6 +134,9 @@ export function writeLane(sourceXml: string, request: PcLaneRequest): PcLaneResu
     const events = request.events.filter((e) => e.bar === ref.order).sort((a, b) => a.onsetQuarters - b.onsetQuarters);
     if (!events.length) continue;
     const view = views[ref.order - 1]!;
+    if (view.notes.some((n) => n.voice === lane.voice)) {
+      throw new Error(`bar ${ref.order} already uses voice ${lane.voice}`);
+    }
     const q = view.divisions;
     const segments: Array<{ start: number; ticks: number; midis: number[] }> = [];
     let at = 0;
@@ -306,6 +315,7 @@ export function verifyLockedCopy(sourceXml: string, outXml: string, span: PcSpan
         }
         continue;
       }
+      if (serializeNode(om[m]!) === serializeNode(sm[m]!)) continue;
       const srcNormal = sm[m]!.cloneNode(true) as Element;
       const outHasLane = elementChildren(om[m]!, 'note').some((n) => elementChildren(n, 'voice')[0]?.textContent?.trim() === lane.voice);
       if (outHasLane) ensureExplicitVoice(srcNormal);
