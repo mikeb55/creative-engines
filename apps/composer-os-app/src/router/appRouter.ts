@@ -139,7 +139,7 @@ export function routeNavLabel(route: AppRouteId): string {
     case 'pentatonic':
       return 'Pentatonic';
     case 'wwh-v8':
-      return 'WWH V8';
+      return 'Performance Composer';
     case 'guide':
       return 'Help';
     case 'credits':

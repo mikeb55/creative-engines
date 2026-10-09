@@ -1,5 +1,5 @@
 /**
- * WWH Performance Composer — V8.
+ * Performance Composer (engine version V8). Project: While We're Here.
  * Desktop IPC only. The renderer does not touch the filesystem.
  */
 import { useEffect, useState } from 'react';
@@ -136,7 +136,8 @@ export function WwhPerformanceV8() {
 
   return (
     <section aria-busy={busy} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
-      <h2 style={{ margin: 0 }}>WWH Performance Composer — V8</h2>
+      <h2 style={{ margin: 0 }}>Performance Composer</h2>
+      <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: 12 }}>Version V8 · Project: While We&apos;re Here</p>
       <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: 13 }}>
         Black Aura inserts four bars after printed bar 16 and returns at bar 17. Bass in the insert stays the printed bar 16 part.
       </p>

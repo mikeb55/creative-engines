@@ -502,9 +502,9 @@ export default function App() {
             className={tab === 'wwh-v8' ? '' : 'secondary'}
             onClick={() => goToTab('wwh-v8')}
             type="button"
-            title="WWH Performance Composer — V8"
+            title="Performance Composer"
           >
-            WWH V8
+            Performance Composer
           </button>
           <button
             className={tab === 'guide' ? '' : 'secondary'}
