@@ -58,6 +58,11 @@ function performanceComposerRespondRoot(): string {
   return path.resolve(app.getPath('documents'), 'Composer OS Exports', 'Performance Composer', 'RESPOND');
 }
 
+/** Performance Composer TRITONE PAIR runs: Documents/Composer OS Exports/Performance Composer/TRITONE PAIR/<run>/ */
+function performanceComposerTritonePairRoot(): string {
+  return path.resolve(app.getPath('documents'), 'Composer OS Exports', 'Performance Composer', 'TRITONE PAIR');
+}
+
 /** Build identity of the running app, from its build stamp. Never invented. */
 function runningBuildForProvenance(): { buildCommit: string; ipcBundleSha256: string; stampMatchesLiveIpc: string } {
   let buildCommit = '';
@@ -85,7 +90,7 @@ function sessionMusicXmlPath(body: unknown): { path: string } | { error: string 
     const relative = path.relative(path.resolve(root), resolved);
     return !relative.startsWith('..') && !path.isAbsolute(relative);
   };
-  if (!(inside(V8_SESSION_DIR) || inside(performanceComposerRespondRoot())) || !resolved.endsWith('.musicxml') || !existsSync(resolved)) {
+  if (!(inside(V8_SESSION_DIR) || inside(performanceComposerRespondRoot()) || inside(performanceComposerTritonePairRoot())) || !resolved.endsWith('.musicxml') || !existsSync(resolved)) {
     return { error: 'That file is not a Performance Composer session MusicXML.' };
   }
   return { path: resolved };
@@ -748,6 +753,37 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
       for (const alt of result.alternatives) {
         copyFileSync(alt.musicXmlPath, path.join(latest, `${piece} ${alt.label.replace(' · ', ' ')}.musicxml`));
       }
+      return { ...result, latestFolder: latest };
+    } catch (error) {
+      return { ok: false as const, error: error instanceof Error ? error.message : String(error) };
+    }
+  });
+
+  ipcMain.handle('composer-os-api:pc-tritone-pair', async (_event, body: unknown) => {
+    try {
+      const { dialog } = await import('electron');
+      const picked = await dialog.showOpenDialog({
+        title: 'Tritone Pair — choose a guitar + bass MusicXML score',
+        properties: ['openFile'],
+        filters: [{ name: 'MusicXML', extensions: ['musicxml', 'xml'] }],
+      });
+      if (picked.canceled || !picked.filePaths?.[0]) return { ok: false as const, canceled: true as const };
+      const rawSeed = body && typeof body === 'object' ? (body as { seed?: unknown }).seed : undefined;
+      const seed = typeof rawSeed === 'number' && Number.isFinite(rawSeed) ? rawSeed : undefined;
+      const { runTritonePairSession } = await import('../../../engines/composer-os-v2/core/performance-composer/pcTritonePairSession');
+      const result = runTritonePairSession({
+        sourcePath: picked.filePaths[0],
+        outRoot: performanceComposerTritonePairRoot(),
+        build: runningBuildForProvenance(),
+        seed,
+      });
+      // Plain-named copies on the Desktop (replaces the previous Tritone Pair copies only).
+      const { copyFileSync, mkdirSync, readdirSync, unlinkSync } = await import('node:fs');
+      const latest = path.join(app.getPath('desktop'), 'TRITONE PAIR LATEST');
+      mkdirSync(latest, { recursive: true });
+      for (const f of readdirSync(latest)) if (f.endsWith('.musicxml') || f.endsWith('.md')) unlinkSync(path.join(latest, f));
+      copyFileSync(result.musicXmlPath, path.join(latest, path.basename(result.musicXmlPath)));
+      copyFileSync(result.fieldMapPath, path.join(latest, path.basename(result.fieldMapPath)));
       return { ...result, latestFolder: latest };
     } catch (error) {
       return { ok: false as const, error: error instanceof Error ? error.message : String(error) };

@@ -9,7 +9,7 @@ import { elementChildren, parseScoreDocument, serializeNode } from './pcScore';
 export interface PcProvenance {
   app: 'Composer OS';
   module: 'Performance Composer';
-  operation: 'RESPOND';
+  operation: 'RESPOND' | 'TRITONE PAIR';
   engine: string;
   alternative: string;
   runId: string;

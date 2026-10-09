@@ -80,6 +80,25 @@ interface RespondRun {
   latestFolder?: string;
 }
 
+interface TritonePairRun {
+  ok: true;
+  runId: string;
+  clickedAt: string;
+  piece: string;
+  sourceFile: string;
+  sourceSha256: string;
+  seed: number;
+  build: { buildCommit: string; ipcBundleSha256: string; stampMatchesLiveIpc: string };
+  folder: string;
+  musicXmlPath: string;
+  fieldMapPath: string;
+  fields: { home: string; mirror: string };
+  checks: { bassLocked: string; guitarFrameLocked: string; barFill: string; playable: string; stampReadBack: string };
+  stats: { attacks: number; maxFret: number; maxSpan: number; hardShifts: number; quartalGrips: number; distinctRhythms: number; bars: number };
+  musicalAcceptance: string;
+  latestFolder?: string;
+}
+
 const fieldStyle = { display: 'flex', flexDirection: 'column' as const, gap: '0.25rem', fontSize: 13 };
 const inputStyle = { padding: '0.3rem' };
 
@@ -103,6 +122,8 @@ export function WwhPerformanceV8() {
   const [runs, setRuns] = useState<SessionRun[]>([]);
   const [respondRuns, setRespondRuns] = useState<RespondRun[]>([]);
   const [respondError, setRespondError] = useState('');
+  const [tpRuns, setTpRuns] = useState<TritonePairRun[]>([]);
+  const [tpError, setTpError] = useState('');
 
   const pairEnabled = approach === 'liquid' && piece === 'Black Aura';
 
@@ -175,6 +196,28 @@ export function WwhPerformanceV8() {
     }
   }
 
+  async function tritonePair() {
+    if (busy) return;
+    setBusy(true);
+    setTpError('');
+    setOpenError('');
+    try {
+      const n = Number(seed);
+      const result = await invoke<TritonePairRun | { ok: false; canceled?: true; error?: string }>('composer-os-api:pc-tritone-pair', {
+        seed: Number.isFinite(n) && seed.trim() !== '' ? n : undefined,
+      });
+      if (!result || result.ok !== true) {
+        if (!('canceled' in result && result.canceled)) setTpError(('error' in result && result.error) || 'Tritone Pair failed.');
+        return;
+      }
+      setTpRuns((current) => [result, ...current]);
+    } catch (caught) {
+      setTpError(caught instanceof Error ? caught.message : String(caught));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function openScore(filePath: string, channel: 'composer-os-api:wwh-v8-open-musescore' | 'composer-os-api:wwh-v8-reveal') {
     setOpenError('');
     const result = await invoke<{ ok: boolean; error?: string }>(channel, { path: filePath });
@@ -242,6 +285,32 @@ export function WwhPerformanceV8() {
       </button>
       {error ? <p role="alert" style={{ color: 'var(--danger, #a33)', margin: 0 }}>{error}</p> : null}
       {openError ? <p role="alert" style={{ color: 'var(--danger, #a33)', margin: 0 }}>{openError}</p> : null}
+
+      <h3 style={{ marginBottom: 0 }}>Radical versions</h3>
+      <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: 13 }}>
+        Tritone Pair: new guitar part in two pentatonic fields a tritone apart. Bass, form, metre and tempo stay. Uses the Seed box.
+      </p>
+      <button type="button" disabled={busy} onClick={() => void tritonePair()}>
+        {busy ? 'Working…' : 'Tritone Pair…'}
+      </button>
+      {tpError ? <p role="alert" style={{ color: 'var(--danger, #a33)', margin: 0 }}>{tpError}</p> : null}
+      {tpRuns.map((run) => (
+        <article key={run.runId} style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '0.75rem', fontSize: 13 }}>
+          <div><strong>{run.piece} Tritone Pair</strong> · seed {run.seed} · {run.clickedAt}</div>
+          <div>Fields: {run.fields.home} and {run.fields.mirror}</div>
+          <div>Build commit: {run.build.buildCommit || 'not available'} · stamp matches running code: {run.build.stampMatchesLiveIpc === '1' ? 'yes' : run.build.stampMatchesLiveIpc === '0' ? 'NO' : 'unknown'}</div>
+          <div>Bass locked {run.checks.bassLocked} · Chords/metre/tempo kept {run.checks.guitarFrameLocked} · Bar fill {run.checks.barFill} · Playable {run.checks.playable} · Stamp {run.checks.stampReadBack}</div>
+          <div>{run.stats.attacks} attacks · highest fret {run.stats.maxFret} · widest span {run.stats.maxSpan} · hard jumps {run.stats.hardShifts} · quartal grips {run.stats.quartalGrips} · {run.stats.distinctRhythms}/{run.stats.bars} different bar rhythms</div>
+          <div style={{ color: 'var(--text-muted)' }}>Musical acceptance: {run.musicalAcceptance}</div>
+          <div>MusicXML: {run.musicXmlPath}</div>
+          <div>Field map: {run.fieldMapPath}</div>
+          {run.latestFolder ? <div>Plain-named copies: {run.latestFolder}</div> : null}
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.4rem' }}>
+            <button type="button" onClick={() => void openScore(run.musicXmlPath, 'composer-os-api:wwh-v8-open-musescore')}>Open MusicXML</button>
+            <button type="button" className="secondary" onClick={() => void openScore(run.musicXmlPath, 'composer-os-api:wwh-v8-reveal')}>Open Folder</button>
+          </div>
+        </article>
+      ))}
 
       <button type="button" disabled={busy} onClick={() => void respond()}>
         {busy ? 'Working…' : 'Respond…'}
