@@ -20,7 +20,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { importWwhDuoMusicXml, type WwhDuoScore, type WwhImportedMeasure, type WwhImportedNote } from './wwhDuoImport';
 import { midiOf, stoppedSpan, V8B_MAX_FRET, V8B_MAX_STOPPED_SPAN, V8B_OPEN_STRING_MIDI } from './wwhBlackAuraV8bRecipe';
-import { renderWwhDuoScore, type WwhScoreHeader, type WwhWrittenBar } from './wwhMusicXmlWrite';
+import { XMLSerializer } from '@xmldom/xmldom';
 import { wwhBarTicks } from './wwhPerformanceTypes';
 
 export const RESPOND_OUT_DIR = '/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PERFORMANCE-MOCKUPS/RESPOND';
@@ -762,52 +762,109 @@ function restXml(ticks: number, quarter: number): string {
   return out;
 }
 
-function voice2Xml(bar: BarInfo, placed: readonly Placed[]): { xml: string; words: string[] } {
-  const items = [...placed].sort((a, b) => a.onset - b.onset);
+function voice2Xml(bar: BarInfo, placed: readonly Placed[]): string {
+  const items = [...placed].sort((x, y) => x.onset - y.onset);
   let xml = '';
   let cursor = 0;
-  const words: string[] = [];
   const writtenShift = -bar.measure.transposeOctave;
   for (const item of items) {
     if (item.onset < cursor) continue;
-    if (item.onset > cursor) xml += restXml(item.onset - cursor, bar.quarter);
+    if (item.onset > cursor) xml += `<forward><duration>${item.onset - cursor}</duration><voice>2</voice></forward>`;
     const order = item.fingered.midis.map((m, k) => ({ m, s: item.fingered.strings[k]!, f: item.fingered.frets[k]! }));
+    const label = order.map((n) => `${n.s}/${n.f}`).join(' ');
+    xml += `<direction placement="below"><direction-type><words font-size="7">${label}</words></direction-type><voice>2</voice></direction>`;
     order.forEach((n, k) => {
       xml += noteXml(n.m, k === 0, item.ticks, item.ticks / bar.quarter, item.chord, bar.measure.fifths, writtenShift, n.s, n.f);
     });
-    words.push(order.map((n) => `${n.s}/${n.f}`).join(' '));
     cursor = item.onset + item.ticks;
   }
-  if (cursor < bar.ticks) xml += restXml(bar.ticks - cursor, bar.quarter);
-  return { xml: `<backup><duration>${bar.ticks}</duration></backup>${xml}`, words };
+  if (cursor < bar.ticks) xml += `<forward><duration>${bar.ticks - cursor}</duration><voice>2</voice></forward>`;
+  return `<backup><duration>${bar.ticks}</duration></backup>${xml}`;
 }
 
-function injectVoice2(score: string, measureIndex: number, xml: string): string {
-  const partStart = score.indexOf('<part id="P1">');
-  const partEnd = score.indexOf('</part>', partStart);
-  const part = score.slice(partStart, partEnd);
-  const marker = `<measure number="${measureIndex}"`;
-  const at = part.indexOf(marker);
-  if (at < 0) throw new Error(`audition measure ${measureIndex} missing`);
-  const close = part.indexOf('</measure>', at);
-  const body = part.slice(at, close);
-  const barline = body.lastIndexOf('<barline');
-  const insertAt = at + (barline >= 0 && !body.slice(barline).includes('<note') ? barline : body.length);
-  const updated = part.slice(0, insertAt) + xml + part.slice(insertAt);
-  return score.slice(0, partStart) + updated + score.slice(partEnd);
+/** Source measure content without layout, colour, text, rehearsal marks, attributes or barlines. */
+export function cleanMeasureBody(element: Element, stemsUp: boolean): string {
+  let xml = new XMLSerializer().serializeToString(element);
+  xml = xml.replace(/^<measure\b[^>]*>/, '').replace(/<\/measure>\s*$/, '');
+  xml = xml
+    .replace(/<print\b[^>]*\/>|<print\b[\s\S]*?<\/print>/g, '')
+    .replace(/<attributes\b[\s\S]*?<\/attributes>|<attributes\s*\/>/g, '')
+    .replace(/<direction\b[\s\S]*?<\/direction>/g, '')
+    .replace(/<sound\b[^>]*\/>|<sound\b[\s\S]*?<\/sound>/g, '')
+    .replace(/<barline\b[\s\S]*?<\/barline>/g, '')
+    .replace(/<lyric\b[\s\S]*?<\/lyric>/g, '')
+    .replace(/<instrument\b[^>]*\/>/g, '')
+    .replace(/\s(?:default-x|default-y|relative-x|relative-y|color|font-family|font-style|font-size|font-weight|justify|valign|halign|width|print-object|print-spacing|xmlns(?::\w+)?)="[^"]*"/g, '')
+    .replace(/>\s+</g, '><');
+  if (stemsUp) xml = xml.replace(/<stem>down<\/stem>/g, '<stem>up</stem>');
+  return xml;
 }
 
-/** MusicXML order: <print>/<attributes> before harmony and directions (the shared writer can insert them later). */
-export function attributesFirst(score: string): string {
-  return score.replace(/(<measure number="\d+">)((?:\s*<print[^>]*\/>)?)([\s\S]*?)(<\/measure>)/g, (whole, open: string, print: string, body: string, close: string) => {
-    const firstNote = body.search(/<note\b/);
-    const head = firstNote >= 0 ? body.slice(0, firstNote) : body;
-    const attrs = head.match(/<attributes>[\s\S]*?<\/attributes>/g);
-    if (!attrs || head.trimStart().startsWith('<attributes>')) return whole;
-    let rest = head;
-    for (const a of attrs) rest = rest.replace(a, '');
-    return `${open}${print}${attrs.join('')}${rest}${firstNote >= 0 ? body.slice(firstNote) : ''}${close}`;
+function attributesXml(m: WwhImportedMeasure): string {
+  const transpose = m.transposeOctave ? `<transpose><diatonic>0</diatonic><chromatic>0</chromatic><octave-change>${m.transposeOctave}</octave-change></transpose>` : '';
+  return `<attributes><divisions>${m.divisions}</divisions><key><fifths>${m.fifths}</fifths><mode>${m.mode || 'major'}</mode></key><time><beats>${m.beats}</beats><beat-type>${m.beatType}</beat-type></time><clef><sign>${m.clefSign}</sign><line>${m.clefLine}</line></clef>${transpose}</attributes>`;
+}
+
+interface AuditionSection {
+  heading: string;
+  answers: Map<number, Placed[]>;
+}
+
+const BARS_PER_SYSTEM = 4;
+
+function partMeasures(clef: 'G' | 'F', bars: readonly BarInfo[], sections: readonly AuditionSection[], tempo: string | null): string {
+  let number = 0;
+  let out = '';
+  let prev: WwhImportedMeasure | null = null;
+  sections.forEach((section, si) => {
+    bars.forEach((bar, k) => {
+      number += 1;
+      const m = clef === 'G' ? bar.measure : bar.bass;
+      const answers = clef === 'G' ? section.answers.get(bar.number) ?? [] : [];
+      let head = '';
+      if (k === 0 && si > 0) head += '<print new-page="yes"/>';
+      else if (k > 0 && k % BARS_PER_SYSTEM === 0) head += '<print new-system="yes"/>';
+      const changed = !prev || prev.fifths !== m.fifths || prev.beats !== m.beats || prev.beatType !== m.beatType || prev.divisions !== m.divisions;
+      if (changed) head += attributesXml(m);
+      if (k === 0 && clef === 'G') {
+        head += `<direction placement="above"><direction-type><words font-size="12" font-weight="bold">${section.heading.replace(/&/g, '&amp;')}</words></direction-type></direction>`;
+        if (tempo) head += `<direction placement="above"><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>${tempo}</per-minute></metronome></direction-type><sound tempo="${tempo}"/></direction>`;
+      }
+      const body = cleanMeasureBody(m.element, answers.length > 0);
+      const v2 = answers.length ? voice2Xml(bar, answers) : '';
+      const last = k === bars.length - 1;
+      const barline = last ? `<barline location="right"><bar-style>${si === sections.length - 1 ? 'light-heavy' : 'light-light'}</bar-style></barline>` : '';
+      out += `<measure number="${number}">${head}${body}${v2}${barline}</measure>`;
+      prev = m;
+    });
   });
+  return out;
+}
+
+function renderAudition(sourceXml: string, duo: WwhDuoScore, bars: readonly BarInfo[], sections: readonly AuditionSection[], title: string, subtitle: string): string {
+  const defaults = /<defaults>[\s\S]*?<\/defaults>/.exec(sourceXml)?.[0] ?? '';
+  const pageWidth = Number(/<page-width>([\d.]+)/.exec(defaults)?.[1] ?? '1197');
+  const pageHeight = Number(/<page-height>([\d.]+)/.exec(defaults)?.[1] ?? '1691');
+  const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const tempoRaw = bars[0]?.measure.tempo.perMinute ?? null;
+  const tempo = tempoRaw && /^\d+(\.\d+)?$/.test(String(tempoRaw)) ? String(tempoRaw) : null;
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="3.1">
+<work><work-title>${esc(title)}</work-title></work>
+<identification><creator type="composer">${esc(duo.composer)}</creator><encoding><software>Composer OS ${RESPOND_VERSION}</software></encoding></identification>
+${defaults}
+<credit page="1"><credit-type>title</credit-type><credit-words default-x="${pageWidth / 2}" default-y="${pageHeight - 90}" justify="center" valign="top" font-size="20">${esc(title)}</credit-words></credit>
+<credit page="1"><credit-type>subtitle</credit-type><credit-words default-x="${pageWidth / 2}" default-y="${pageHeight - 130}" justify="center" valign="top" font-size="11">${esc(subtitle)}</credit-words></credit>
+<credit page="1"><credit-type>composer</credit-type><credit-words default-x="${pageWidth - 85}" default-y="${pageHeight - 160}" justify="right" valign="top" font-size="10">${esc(duo.composer)}</credit-words></credit>
+<part-list>
+<score-part id="P1"><part-name>Electric Guitar</part-name><part-abbreviation>E. Gtr.</part-abbreviation><score-instrument id="P1-I1"><instrument-name>Electric Guitar</instrument-name></score-instrument><midi-instrument id="P1-I1"><midi-channel>1</midi-channel><midi-program>27</midi-program></midi-instrument></score-part>
+<score-part id="P2"><part-name>Upright Bass</part-name><part-abbreviation>Bass</part-abbreviation><score-instrument id="P2-I1"><instrument-name>Upright Bass</instrument-name></score-instrument><midi-instrument id="P2-I1"><midi-channel>2</midi-channel><midi-program>33</midi-program></midi-instrument></score-part>
+</part-list>
+<part id="P1">${partMeasures('G', bars, sections, tempo)}</part>
+<part id="P2">${partMeasures('F', bars, sections, tempo)}</part>
+</score-partwise>
+`;
 }
 
 function sha256(file: string): string {
@@ -839,7 +896,8 @@ export function buildRespondAudition(request: RespondRequest): RespondResult {
   }
   if (!Number.isInteger(request.seed)) throw new Error('seed must be an integer');
   const sourceShaBefore = sha256(request.source);
-  const duo: WwhDuoScore = importWwhDuoMusicXml(fs.readFileSync(request.source, 'utf8'));
+  const sourceXml = fs.readFileSync(request.source, 'utf8');
+  const duo: WwhDuoScore = importWwhDuoMusicXml(sourceXml);
   const book = request.compingMap ? readGripBook(request.compingMap) : null;
   const alternatives = request.alternatives ?? DEFAULT_ALTERNATIVES;
   if (!book && alternatives.some((a) => a.families.includes('grips'))) {
@@ -870,33 +928,7 @@ export function buildRespondAudition(request: RespondRequest): RespondResult {
   const density = request.density ?? 0.4;
 
   const sections: RespondSection[] = [];
-  const written: WwhWrittenBar[] = [];
-  const injections: Array<{ index: number; xml: string }> = [];
-  const pushSection = (label: string, placedByBar: Map<number, Placed[]> | null) => {
-    bars.forEach((bar, k) => {
-      const placed = placedByBar?.get(bar.number) ?? [];
-      const v2 = placed.length ? voice2Xml(bar, placed) : null;
-      written.push({
-        guitar: [],
-        bass: [],
-        guitarClone: bar.measure.element,
-        bassClone: bar.bass.element,
-        beats: bar.measure.beats,
-        beatType: bar.measure.beatType,
-        divisions: bar.measure.divisions,
-        fifths: bar.measure.fifths,
-        mode: bar.measure.mode,
-        guitarTranspose: bar.measure.transposeOctave,
-        bassTranspose: bar.bass.transposeOctave,
-        rehearsal: k === 0 ? label : undefined,
-        words: v2?.words.length ? [`${v2.words.join('  ·  ')}`] : undefined,
-        newSystem: k === 0 && written.length > 0,
-        tempoMark: bar.measure.tempo.perMinute || bar.measure.tempo.soundTempo ? bar.measure.tempo : null,
-      });
-      if (v2) injections.push({ index: written.length, xml: v2.xml });
-    });
-  };
-  pushSection(`ORIGINAL · bars ${request.startBar}–${request.endBar}`, null);
+  const audition: AuditionSection[] = [{ heading: `ORIGINAL · bars ${request.startBar}–${request.endBar}`, answers: new Map() }];
   alternatives.forEach((alt, k) => {
     const seed = request.seed * 1000 + k;
     const notes: string[] = [];
@@ -909,7 +941,7 @@ export function buildRespondAudition(request: RespondRequest): RespondResult {
       windows: gaps.length,
       answered: new Set(placed.map((p) => `${p.bar}:${gaps.find((g) => g.bar === p.bar && p.onset >= g.onset && p.onset < g.onset + g.ticks)?.onset}`)).size,
       events: placed.map((p) => {
-        const bar = bars.find((b) => b.number === p.bar)!;
+        const bar = bars.find((x) => x.number === p.bar)!;
         return {
           bar: p.bar,
           onsetQuarters: p.onset / bar.quarter,
@@ -919,23 +951,17 @@ export function buildRespondAudition(request: RespondRequest): RespondResult {
           chord: p.chord?.label ?? 'N.C.',
           midis: p.fingered.midis,
           sounding: p.fingered.midis.map((m) => pitchLabel(m, p.chord, bar.measure.fifths)),
-          fingering: p.fingered.strings.map((s, i) => `${s}/${p.fingered.frets[i]}`).join(' '),
+          fingering: p.fingered.strings.map((st, i) => `${st}/${p.fingered.frets[i]}`).join(' '),
         };
       }),
       notes,
     });
-    pushSection(`${alt.label} · seed ${seed}`, byBar);
+    audition.push({ heading: `${alt.label} · bars ${request.startBar}–${request.endBar}`, answers: byBar });
   });
 
-  const header: WwhScoreHeader = {
-    title: duo.title,
-    movementTitle: `${duo.movementTitle || duo.title} — RESPOND audition, bars ${request.startBar}–${request.endBar}, seed ${request.seed}`,
-    composer: duo.composer,
-    software: `Composer OS ${RESPOND_VERSION}`,
-  };
-  let score = renderWwhDuoScore(written, header);
-  for (const inj of injections) score = injectVoice2(score, inj.index, inj.xml);
-  score = attributesFirst(score);
+  const title = duo.title || 'WWH';
+  const subtitle = `RESPOND audition · bars ${request.startBar}–${request.endBar} · seed ${request.seed}`;
+  const score = renderAudition(sourceXml, duo, bars, audition, title, subtitle);
 
   const outDir = request.outDir ?? RESPOND_OUT_DIR;
   fs.mkdirSync(outDir, { recursive: true });
@@ -963,8 +989,8 @@ export function buildRespondAudition(request: RespondRequest): RespondResult {
       if (lane(b.notes) !== lane(src.bass.notes)) bassLocked = false;
       const ticks = g.specTicks ?? wwhBarTicks(g.beats, g.beatType, g.divisions);
       const v2 = g.notes.filter((x) => x.voice === '2' && !x.chord).reduce((a, x) => a + x.duration, 0);
-      if (v2 && v2 !== ticks) barMath = false;
-      if (!g.gridAgrees || !b.gridAgrees) grid = false;
+      if (v2 > ticks) barMath = false;
+      if ((!g.gridAgrees && !v2) || !b.gridAgrees) grid = false;
     }
   }
   const frets = sections.every((sec) =>
