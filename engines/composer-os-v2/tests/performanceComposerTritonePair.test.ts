@@ -80,9 +80,22 @@ if (!fs.existsSync(BLACK_AURA)) {
     assert.ok(plan.fret.maxSpan <= 4);
     assert.equal(plan.fret.hardShifts, 0);
   });
-  check('Black Aura: not mechanical — few quartal grips, varied bar rhythms, inner voice moves', () => {
+  check('Black Aura: grip bursts, not grip comping — 4 to 16 grips, never two bars running, placement varies', () => {
     const s = tritonePairStats(plan);
-    assert.ok(s.quartalGrips <= 8, `${s.quartalGrips} grips`);
+    assert.ok(s.quartalGrips >= 4 && s.quartalGrips <= 16, `${s.quartalGrips} grips`);
+    const bursts = plan.events.filter((e) => e.kind === 'grip' || e.kind === 'clash-grip').sort((a, b) => a.bar - b.bar);
+    for (let i = 1; i < bursts.length; i++) {
+      assert.ok(bursts[i]!.bar - bursts[i - 1]!.bar >= 2, `bursts in bars ${bursts[i - 1]!.bar} and ${bursts[i]!.bar}`);
+    }
+    assert.ok(new Set(bursts.map((e) => e.onset)).size >= Math.min(3, bursts.length), 'burst placements vary');
+    assert.ok(s.gripsOnBeats1and3 <= Math.ceil(s.quartalGrips / 2), `${s.gripsOnBeats1and3} grips on beats 1 or 3`);
+  });
+  check('Black Aura: the score\'s PEAK bar carries the highest guitar note', () => {
+    const top = Math.max(...plan.events.flatMap((e) => e.midis));
+    assert.ok(plan.events.some((e) => e.bar === 36 && e.midis.includes(top)), `top ${top} not in bar 36`);
+  });
+  check('Black Aura: not mechanical — varied bar rhythms, inner voice moves', () => {
+    const s = tritonePairStats(plan);
     assert.ok(s.distinctRhythms >= 25, `${s.distinctRhythms} rhythms`);
     assert.ok(s.innerVoiceDistinctPitches >= 3, `${s.innerVoiceDistinctPitches} inner pitches`);
   });

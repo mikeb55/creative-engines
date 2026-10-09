@@ -33,7 +33,7 @@ import {
   type PcMeasureView,
 } from './pcScore';
 
-export const TRITONE_PAIR_ENGINE = 'pc-tritone-pair-1.0';
+export const TRITONE_PAIR_ENGINE = 'pc-tritone-pair-1.1';
 export const TRITONE_PAIR_LABEL = 'Tritone Pair';
 
 /* ------------------------------------------------------------------ types */
@@ -76,7 +76,8 @@ export interface TpBarPlan {
   lengthQ: number;
 }
 
-export type TpKind = 'line' | 'quartal-dyad' | 'mirror-dyad' | 'stack' | 'inner';
+/** grip: three-note quartal grip in one field. clash-grip: a top note in one field over a fourth from the other field. */
+export type TpKind = 'line' | 'quartal-dyad' | 'mirror-dyad' | 'stack' | 'grip' | 'clash-grip' | 'inner';
 
 export interface TpEvent {
   bar: number;
@@ -388,8 +389,8 @@ function normalise(slots: Slot[], len: number): Slot[] {
   return s;
 }
 
-function patternKey(s: readonly Slot[]): string {
-  return s.map((x) => `${x.onset}:${x.quarters}`).join(',');
+function onsetKey(s: readonly Slot[]): string {
+  return s.map((x) => x.onset).join(',');
 }
 
 const RHYTHM_OPS = {
@@ -444,6 +445,10 @@ interface GenState {
   lastKeys: Map<string, string>;
   lastLowerTemplate: number;
   stacks: number;
+  /** Bar of the last grip burst (bursts never fall in consecutive bars). */
+  lastBurstBar: number;
+  /** Onset of the last grip burst (the next burst lands somewhere else in the bar). */
+  lastBurstOnset: number;
 }
 
 const field = (st: GenState, id: FieldId) => (id === 'HOME' ? st.home : st.mirror);
@@ -532,6 +537,28 @@ function pickPitch(st: GenState, ref: number, f: TpField, o: TpField, reg: Regis
   return m;
 }
 
+/**
+ * A three-note grip with m on top. Same field: two quartal steps down inside the field.
+ * Clash: under m, a fourth (or tritone) from the other field, its top note at least a tone below m,
+ * so the two worlds sound at once under one hand.
+ */
+function gripUnder(m: number, f: TpField, o: TpField, clash: boolean): { midis: number[]; kind: TpKind } | null {
+  if (!clash) {
+    const a = quartalPartner(m, f);
+    const b = a !== null ? quartalPartner(a, f) : null;
+    if (a === null || b === null || b < 45) return null;
+    return { midis: [b, a, m], kind: 'grip' };
+  }
+  for (let top = m - 2; top >= m - 7; top--) {
+    if (!o.pcs.includes(mod12(top))) continue;
+    for (const d of [5, 6]) {
+      const low = top - d;
+      if (low >= 45 && o.pcs.includes(mod12(low))) return { midis: [low, top, m], kind: 'clash-grip' };
+    }
+  }
+  return null;
+}
+
 /** A fourth below inside the same field (a fifth or third if no fourth exists). */
 function quartalPartner(m: number, f: TpField): number | null {
   for (const d of [5, 7, 3, 4]) if (f.pcs.includes(mod12(m - d))) return m - d;
@@ -603,12 +630,18 @@ function rhythmFor(st: GenState, plan: TpBarPlan, info: BarInfo, infos: BarInfo[
     if (next.length) slots = next;
   }
   // Never the same placement two bars running (except where the tune's own rhythm is the point).
-  const key = patternKey(slots);
+  // Compared on attack placement only: a change of note length alone is not a new rhythm.
+  const key = onsetKey(slots);
   if (key === st.lastKeys.get(voiceKey) && plan.role !== 'HOME') {
-    const alt = r() < 0.5 ? RHYTHM_OPS.displace(slots, len) : RHYTHM_OPS.fill(slots, len, r, info.bassOnsets);
-    if (alt.length && patternKey(alt) !== key) slots = alt;
+    for (const op of ['displace', 'fill', 'anticipate', 'erode']) {
+      const alt = apply(op, slots);
+      if (alt.length && onsetKey(alt) !== key) {
+        slots = alt;
+        break;
+      }
+    }
   }
-  st.lastKeys.set(voiceKey, patternKey(slots));
+  st.lastKeys.set(voiceKey, onsetKey(slots));
   return slots;
 }
 
@@ -707,8 +740,11 @@ export function composeTritonePair(sourceXml: string, seed: number): TpPlan {
     lastKeys: new Map(),
     lastLowerTemplate: -1,
     stacks: 0,
+    lastBurstBar: -9,
+    lastBurstOnset: -1,
   };
   const ending = endingStacks(home, mirror, rng);
+  const peaks = peakBars(doc);
   let events: TpEvent[] = [];
 
   for (const plan of bars) {
@@ -749,7 +785,9 @@ export function composeTritonePair(sourceXml: string, seed: number): TpPlan {
       continue;
     }
 
-    const reg = registerFor(plan.role, progress);
+    const isPeak = peaks.has(plan.bar) && (plan.role === 'HOME' || plan.role === 'ALIGN' || plan.role === 'SWAP');
+    // The score's own PEAK: top of the range, and its longest note becomes a grip.
+    const reg = isPeak ? { lo: 70, hi: 77, centre: 74, angular: 0, dyad: 0 } : registerFor(plan.role, progress);
     const twoVoice = plan.lower !== null;
     let lowerNotes: TpEvent[] = [];
     if (twoVoice) {
@@ -776,7 +814,24 @@ export function composeTritonePair(sourceXml: string, seed: number): TpPlan {
       }
     }
 
-    const slots = rhythmFor(st, plan, info, infos, twoVoice ? 'upper2' : 'upper');
+    let slots = rhythmFor(st, plan, info, infos, twoVoice ? 'upper2' : 'upper');
+    // Grip burst (1.1): in SWAP and single-voice COLLIDE bars, one long note becomes a three-note grip,
+    // then silence for a beat. Never two bars running, never the same place in the bar twice running.
+    let burstAt: Slot | null = null;
+    if (isPeak) burstAt = [...slots].sort((a, b) => b.quarters - a.quarters)[0] ?? null;
+    const burstRole = plan.role === 'SWAP' || plan.role === 'COLLIDE';
+    if (!isPeak && burstRole && plan.bar - st.lastBurstBar >= 2 && rng() < 0.85) {
+      const cands = slots.filter((x) => x.quarters >= 0.5 && x.onset !== st.lastBurstOnset);
+      cands.sort((a, b) => b.quarters - a.quarters || rng() - 0.5);
+      burstAt = cands[0] ?? null;
+      if (burstAt) {
+        const b = burstAt;
+        const quiet = b.onset + Math.max(b.quarters, 1);
+        slots = slots.filter((x) => x === b || x.onset < b.onset || x.onset >= quiet + 1);
+        st.lastBurstBar = plan.bar;
+        st.lastBurstOnset = b.onset;
+      }
+    }
     const lastSlot = slots[slots.length - 1];
     for (const s of slots) {
       const below = lowerNotes.find((l) => l.onset <= s.onset && l.onset + l.quarters > s.onset)?.midis[0] ?? 0;
@@ -795,10 +850,25 @@ export function composeTritonePair(sourceXml: string, seed: number): TpPlan {
         const mirrorMode = plan.role === 'SWAP' || plan.role === 'COLLIDE' || plan.role === 'ALONE';
         m = pickPitch(st, s.ref, fieldHere, fieldHere === home ? mirror : home, reg, below ? below + 5 : 0, mirrorMode);
       }
-      const midis = [m];
+      let midis = [m];
       let kind: TpKind = 'line';
       const long = s.quarters >= 1 || s === lastSlot;
-      if (!twoVoice && long && rng() < reg.dyad) {
+      if (s === burstAt && twoVoice) {
+        // Over the inner voice (other field): add its fourth above, so one hand holds both worlds.
+        const lf = field(st, plan.lower!);
+        const add = [5, 6].map((d) => below + d).find((x) => below > 0 && lf.pcs.includes(mod12(x)) && x <= m - 2);
+        if (add !== undefined) {
+          midis = [add, m];
+          kind = 'clash-grip';
+        }
+      } else if (s === burstAt) {
+        const o2 = fieldHere === home ? mirror : home;
+        const g = gripUnder(m, fieldHere, o2, plan.role === 'COLLIDE') ?? gripUnder(m, fieldHere, o2, plan.role !== 'COLLIDE');
+        if (g) {
+          midis = g.midis;
+          kind = g.kind;
+        }
+      } else if (!twoVoice && long && rng() < reg.dyad) {
         const mirrorDyad = (plan.role === 'SWAP' || plan.role === 'ALONE') && rng() < 0.6;
         const partner = mirrorDyad ? m - 6 : quartalPartner(m, fieldHere);
         if (partner !== null && partner >= 47) {
@@ -835,7 +905,8 @@ export function composeTritonePair(sourceXml: string, seed: number): TpPlan {
     for (const ei of culprits) {
       const e = events[ei]!;
       if (e.midis.length > 1 && e.kind !== 'stack') {
-        events[ei] = { ...e, midis: e.midis.slice(1), kind: 'line' };
+        const rest = e.midis.slice(1);
+        events[ei] = { ...e, midis: rest, kind: rest.length > 1 ? (e.kind === 'clash-grip' ? 'mirror-dyad' : 'quartal-dyad') : 'line' };
         fixed = true;
         break;
       }
@@ -909,6 +980,17 @@ export function composeTritonePair(sourceXml: string, seed: number): TpPlan {
   return { engine: TRITONE_PAIR_ENGINE, seed, guitarPartId: guitarId, home, mirror, sections, bars, events, fret, positionMarks, repairs };
 }
 
+/** Bars whose score text marks the peak ("PEAK", "climax" is a section name, not a moment). */
+function peakBars(doc: Document): Set<number> {
+  const out = new Set<number>();
+  for (const part of partElements(doc)) {
+    Array.from(part.getElementsByTagName('measure')).forEach((m, i) => {
+      for (const w of Array.from(m.getElementsByTagName('words'))) if (/\bpeak\b/i.test(w.textContent ?? '')) out.add(i + 1);
+    });
+  }
+  return out;
+}
+
 /* ------------------------------------------------------------------ describe */
 
 export const ROLE_WORDS: Record<TpRole, string> = {
@@ -939,7 +1021,7 @@ export function barLabel(plan: TpPlan, b: TpBarPlan): string {
     case 'SILENCE':
       return 'Silence';
     case 'SLIDE':
-      return `${plan.mirror.rootName} stack, then slide up 1 fret to ${plan.home.rootName}`;
+      return `${plan.mirror.rootName} stack, up 1 fret`;
     case 'END':
       return `${plan.home.rootName} stack`;
     case 'RETURN':

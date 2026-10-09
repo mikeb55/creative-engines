@@ -276,6 +276,8 @@ export interface TpStats {
   twoVoiceBars: number;
   quartalGrips: number;
   gripsOnBeats1and3: number;
+  /** Grips with the top note in one field over a fourth from the other. */
+  clashGrips: number;
   mirrorDyads: number;
   quartalDyads: number;
   distinctRhythms: number;
@@ -291,14 +293,11 @@ export interface TpStats {
 
 export function tritonePairStats(plan: TpPlan): TpStats {
   const ev = plan.events;
-  const grips = ev.filter((e) => e.kind === 'stack');
+  // Counted the way a player hears it: one attack per moment, whatever the voices; a grip is three notes or more.
+  const grips = ev.filter((e) => e.midis.length >= 3 || e.kind === 'clash-grip');
+  const moments = new Set(ev.map((e) => `${e.bar}:${e.onset}`));
   const rhythm = new Set(
-    plan.bars.map((b) =>
-      ev
-        .filter((e) => e.bar === b.bar && e.voice === '1')
-        .map((e) => `${e.onset}:${e.quarters}`)
-        .join(',')
-    )
+    plan.bars.map((b) => [...new Set(ev.filter((e) => e.bar === b.bar).map((e) => e.onset))].sort((x, y) => x - y).join(','))
   );
   const inner = ev.filter((e) => e.voice === '2');
   const all = ev.flatMap((e) => e.midis);
@@ -310,12 +309,13 @@ export function tritonePairStats(plan: TpPlan): TpStats {
   }
   return {
     bars: plan.bars.length,
-    attacks: ev.length,
+    attacks: moments.size,
     barsWithGuitar: new Set(ev.map((e) => e.bar)).size,
     silentBars: plan.bars.length - new Set(ev.map((e) => e.bar)).size,
     twoVoiceBars: new Set(inner.map((e) => e.bar)).size,
     quartalGrips: grips.length,
     gripsOnBeats1and3: grips.filter((e) => e.onset === 0 || e.onset === 2).length,
+    clashGrips: ev.filter((e) => e.kind === 'clash-grip').length,
     mirrorDyads: ev.filter((e) => e.kind === 'mirror-dyad').length,
     quartalDyads: ev.filter((e) => e.kind === 'quartal-dyad').length,
     distinctRhythms: rhythm.size,
@@ -373,6 +373,8 @@ export function fieldMapMarkdown(plan: TpPlan, opts: { piece: string; stampLine:
     '',
     `One idea for the whole form: the guitar lives in two pentatonic fields a tritone apart, ${plan.home.rootName} minor pentatonic (home) and ${plan.mirror.rootName} minor pentatonic (mirror). They share no notes. Every home note has a partner exactly a tritone away (${pairs.join(', ')}), and every mirror note sits a semitone from a home note, so there is always a one-fret way home.`,
     '',
+    'Where the worlds swap or collide, the line breaks into short three-note grips, then a beat of silence. Some grips put one field on top of a fourth from the other, both under one hand. They never fall two bars running or on the same beat twice running. The score\'s PEAK bar carries the highest note of the piece.',
+    '',
     `Locked: bass, form, ${plan.bars.length} bars, metre, tempo, chord symbols. Only the guitar notes are new (red).`,
     '',
     '## Fields',
@@ -401,7 +403,7 @@ export function fieldMapMarkdown(plan: TpPlan, opts: { piece: string; stampLine:
     '## Numbers',
     '',
     `- ${s.attacks} attacks over ${s.barsWithGuitar} bars; guitar silent in ${s.silentBars} bar${s.silentBars === 1 ? '' : 's'}; ${s.twoVoiceBars} two-voice bars.`,
-    `- Quartal grips: ${s.quartalGrips} (on beats 1 or 3: ${s.gripsOnBeats1and3}). Tritone dyads: ${s.mirrorDyads}. Fourth dyads: ${s.quartalDyads}.`,
+    `- Three-note grips: ${s.quartalGrips}, of which ${s.clashGrips} clash the two fields under one hand (on beats 1 or 3: ${s.gripsOnBeats1and3}). Tritone dyads: ${s.mirrorDyads}. Fourth dyads: ${s.quartalDyads}.`,
     `- Different bar rhythms: ${s.distinctRhythms} of ${s.bars}. Inner voice: ${s.innerVoiceNotes} notes on ${s.innerVoiceDistinctPitches} different pitches.`,
     '',
     '## Checks',
