@@ -63,8 +63,8 @@ for (const item of [...REQUIRED, ...EXTRA]) {
   const now = new Date('2026-10-09T12:00:00Z');
   const run = runRespondSession({ sourcePath: item.file, outRoot: tmpRoot, build: BUILD, seed: 4242, now: new Date(now.getTime() + Math.random() * 1e9) });
 
-  check(`${item.piece}: three files, every check PASS`, () => {
-    assert.equal(run.alternatives.length, 3);
+  check(`${item.piece}: two files (B Counterline, C Space), every check PASS`, () => {
+    assert.equal(run.alternatives.length, 2);
     for (const a of run.alternatives) {
       assert.ok(fs.existsSync(a.musicXmlPath), a.musicXmlPath);
       assert.deepEqual(a.checks, { locks: 'PASS', barFill: 'PASS', playable: 'PASS', stampReadBack: 'PASS' }, a.label);
@@ -98,41 +98,36 @@ for (const item of [...REQUIRED, ...EXTRA]) {
 
   if (!required) continue;
   const plans = RESPOND_CHARACTERS.map((c) => composeRespond({ sourceXml, character: c.id, seed: run.seed }));
-  const [echo, counter, space] = plans as [RespondPlan, RespondPlan, RespondPlan];
+  const [counter, space] = plans as [RespondPlan, RespondPlan];
 
-  check(`${item.piece}: deliberate silence (most gaps unanswered; Space sparsest)`, () => {
+  check(`${item.piece}: deliberate silence (most gaps unanswered; Space plays fewest notes)`, () => {
     for (const p of plans) {
       assert.ok(p.answers.length >= 2, `${p.label}: ${p.answers.length} answers`);
       assert.ok(p.answers.length <= Math.ceil(p.windows.length * 0.6), `${p.label}: ${p.answers.length}/${p.windows.length}`);
     }
-    assert.ok(space.answers.length < echo.answers.length && space.answers.length < counter.answers.length, 'Space answers least');
+    assert.ok(space.events.length < counter.events.length, `Space plays fewest notes (${space.events.length} vs ${counter.events.length})`);
   });
 
-  check(`${item.piece}: three clearly different alternatives (shared notes < 40%)`, () => {
-    for (let i = 0; i < 3; i++)
-      for (let j = i + 1; j < 3; j++) {
+  check(`${item.piece}: clearly different alternatives (shared notes < 40%)`, () => {
+    for (let i = 0; i < plans.length; i++)
+      for (let j = i + 1; j < plans.length; j++) {
         const a = key(plans[i]!);
         const b = key(plans[j]!);
         const shared = [...a].filter((x) => b.has(x)).length;
         assert.ok(shared / Math.min(a.size, b.size) < 0.4, `${plans[i]!.label} vs ${plans[j]!.label}: ${shared} shared`);
       }
     const mean = (p: RespondPlan) => p.events.reduce((s, e) => s + e.quarters, 0) / p.events.length;
-    assert.ok(mean(space) > mean(echo) && mean(space) > mean(counter), 'Space uses longer values');
+    assert.ok(mean(space) > mean(counter), 'Space uses longer values');
+    // Revised Counterline: eighth notes or longer, only in gaps of 1½ beats or more.
+    for (const a of counter.answers) {
+      const w = counter.windows[a.window]!;
+      assert.ok(w.end - w.start >= 1.5 - 1e-9, `Counterline bar ${a.bar}: gap ${w.end - w.start}`);
+      for (const n of a.notes) assert.ok(n.dur >= 0.5 - 1e-9, `Counterline bar ${a.bar}: ${n.dur}`);
+    }
   });
 
-  check(`${item.piece}: Echo keeps the cell's contour; Counterline inverts it`, () => {
+  check(`${item.piece}: Counterline inverts the cell's contour`, () => {
     const dirs = (xs: readonly number[]) => xs.slice(1).map((x, k) => Math.sign(x - xs[k]!));
-    let echoKept = 0;
-    let echoN = 0;
-    for (const a of echo.answers) {
-      if (a.device.startsWith('return') || a.device === 'fragment') continue;
-      const w = echo.windows[a.window]!;
-      const line = a.notes.map((n) => n.midis[n.midis.length - 1]!);
-      const want = dirs(w.cell.pitches).slice(0, line.length - 1);
-      echoN++;
-      if (dirs(line).every((d, k) => want[k] === 0 || d === want[k])) echoKept++;
-    }
-    assert.ok(echoN >= 1 && echoKept === echoN, `Echo contour kept ${echoKept}/${echoN}`);
     let inv = 0;
     let invN = 0;
     for (const a of counter.answers) {
@@ -163,8 +158,8 @@ for (const item of [...REQUIRED, ...EXTRA]) {
       const b = composeRespond({ sourceXml, character: c.id, seed: run.seed });
       assert.deepEqual(a.events, b.events);
     }
-    const other = composeRespond({ sourceXml, character: 'echo', seed: run.seed + 1 });
-    assert.notDeepEqual(other.events, echo.events);
+    const other = composeRespond({ sourceXml, character: 'counterline', seed: run.seed + 1 });
+    assert.notDeepEqual(other.events, counter.events);
   });
 }
 

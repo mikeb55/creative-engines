@@ -6,10 +6,10 @@
  * score's chord symbols. Playability: the Barry Harris guitar-feasibility check (existing resource).
  * Most gaps stay silent. Melody, bass and every other source element are locked.
  *
- * Three characters (one resource, three different musical decisions):
- *   A · ECHO         imitation of the cell, developed across the piece; the last answer recalls the first.
+ * Two characters (one resource, two different musical decisions). Echo was CUT after Mike's Black Aura audition.
  *   B · COUNTERLINE  the cell inverted, starting on a guide tone, moving against the melody; dyad landings.
- *   C · SPACE        few answers; long tones and open dyads built from the cell's own interval.
+ *                    Revised: eighth notes or longer, only in gaps of 1½ beats or more.
+ *   C · SPACE        few answers; long tones and open dyads built from the cell's own interval (KEEP).
  */
 
 import { assessGuitarFeasibility } from '../barry-harris/guitarVoicingFeasibility';
@@ -17,15 +17,14 @@ import { seededRandom, type PcChord } from './pcChord';
 import { chordAt, elementChildren, measureViews, parseScoreDocument, partById, partElements, partNames, type PcMeasureView } from './pcScore';
 import { type PcLaneEvent } from './pcLane';
 
-export type RespondCharacter = 'echo' | 'counterline' | 'space';
+export type RespondCharacter = 'counterline' | 'space';
 
 export const RESPOND_CHARACTERS: ReadonlyArray<{ id: RespondCharacter; label: string }> = [
-  { id: 'echo', label: 'A · Echo' },
   { id: 'counterline', label: 'B · Counterline' },
   { id: 'space', label: 'C · Space' },
 ];
 
-export const RESPOND_ENGINE = 'pc-respond-1b.1';
+export const RESPOND_ENGINE = 'pc-respond-1b.2';
 
 const GRID = 0.25;
 const LOW = 45; // A2 sounding
@@ -261,8 +260,8 @@ export function findWindows(tl: Timeline, from: number, to: number, blocked: Set
   return out;
 }
 
-const DENSITY: Record<RespondCharacter, number> = { echo: 0.42, counterline: 0.5, space: 0.25 };
-const MAX_RUN: Record<RespondCharacter, number> = { echo: 2, counterline: 2, space: 1 };
+const DENSITY: Record<RespondCharacter, number> = { counterline: 0.5, space: 0.25 };
+const MAX_RUN: Record<RespondCharacter, number> = { counterline: 2, space: 1 };
 
 /** Rank gaps for one character (best first). Most will stay silent. */
 export function rankWindows(windows: readonly RespondWindow[], character: RespondCharacter, rand: () => number, total: number): number[] {
@@ -270,7 +269,7 @@ export function rankWindows(windows: readonly RespondWindow[], character: Respon
   const t0 = windows[0]!.start;
   const span = Math.max(1, total - t0);
   const scored = windows.map((w, i) => {
-    let score = w.kind === 'after-phrase' ? 3 : character === 'counterline' ? 2.2 : character === 'space' ? 1 : 1.5;
+    let score = w.kind === 'after-phrase' ? 3 : character === 'counterline' ? 2.2 : 1;
     if (w.end - w.start >= 2) score += character === 'space' ? 1.5 : 0.8;
     const t = (w.start - t0) / span;
     score *= 0.6 + 0.4 * Math.sin(Math.PI * Math.min(1, Math.max(0, t)));
@@ -281,7 +280,7 @@ export function rankWindows(windows: readonly RespondWindow[], character: Respon
   return scored.sort((a, b) => b.score - a.score).map((x) => x.i);
 }
 
-/** How many gaps a character answers: Counterline most, Echo fewer, Space fewest. */
+/** How many gaps a character answers: Counterline more, Space fewest. */
 export function answerTarget(windowCount: number, character: RespondCharacter): number {
   return Math.max(character === 'space' ? 1 : 2, Math.round(windowCount * DENSITY[character]));
 }
@@ -336,7 +335,8 @@ function realiseShape(
   w: RespondWindow,
   intervals: readonly number[],
   slots: ReadonlyArray<{ at: number; dur: number }>,
-  starts: readonly number[]
+  starts: readonly number[],
+  target: number = starts[0] ?? 60
 ): { pitches: number[]; exact: number } | null {
   let best: { pitches: number[]; exact: number; score: number } | null = null;
   for (const start of starts) {
@@ -366,20 +366,10 @@ function realiseShape(
       pitches.push(found);
     }
     if (!ok) continue;
-    const score = exact * 2 - Math.abs(start - starts[0]!) / 12;
+    const score = exact * 2 - Math.abs(start - target) / 4;
     if (!best || score > best.score) best = { pitches, exact, score };
   }
   return best ? { pitches: best.pitches, exact: best.exact } : null;
-}
-
-/** Fit a rhythm into a window: keep it, or halve it (diminution), so at least minNotes fit. */
-function fitShapeRhythm(durs: readonly number[], length: number, minNotes: number, offset = 0): Array<{ at: number; dur: number }> | null {
-  for (const scale of [1, 0.5]) {
-    const scaled = durs.map((d, i) => Math.max(GRID, snap(Math.min(i === durs.length - 1 ? 2 : 1, d) * scale)));
-    const slots = fitRhythm(scaled, length, offset);
-    if (slots.length >= Math.min(minNotes, durs.length) && slots.length >= 2) return slots;
-  }
-  return null;
 }
 
 function placePitch(tl: Timeline, want: number, start: number, end: number, ceiling: number, dir: number): number | null {
@@ -450,39 +440,8 @@ function buildAnswer(
     if (midis.length) notes.push({ start: w.start + at, dur, midis });
   };
 
-  if (character === 'echo') {
-    const isReturn = first !== null && index === count - 1 && count >= 3;
-    const devices = ['imitation', 'displaced imitation', 'fragment', 'augmentation'];
-    device = isReturn ? 'return of the first answer' : devices[index % devices.length]!;
-    let intervals = iv;
-    let durs = cell.durs;
-    let offset = 0;
-    let minNotes = 3;
-    if (isReturn && first) {
-      const fp = first.notes.map((n) => n.midis[n.midis.length - 1]!);
-      intervals = fp.slice(1).map((p, k) => p - fp[k]!);
-      durs = first.notes.map((n) => n.dur);
-    } else if (device === 'displaced imitation') offset = length >= 2 ? 0.5 : 0;
-    else if (device === 'fragment') {
-      intervals = iv.slice(-2);
-      durs = cell.durs.slice(-3);
-      minNotes = 2;
-    } else if (device === 'augmentation') {
-      const aug = cell.durs.map((d) => Math.min(2, d * 2));
-      if (aug.reduce((x, y) => x + y, 0) <= length) durs = aug;
-      else device = 'imitation';
-    }
-    const slots = fitShapeRhythm(durs, length, minNotes, offset);
-    if (!slots) return null;
-    // Imitation at the octave, fifth or fourth (below or above), then nearer levels.
-    const head = isReturn && first ? first.notes[0]!.midis[first.notes[0]!.midis.length - 1]! : cell.pitches[0]!;
-    const levels = [-12, -7, -5, 5, 7, -3, -4, -8, -9, 3, 4, 12];
-    const r = Math.floor(rand() * 3);
-    const order = [...levels.slice(r), ...levels.slice(0, r)];
-    const line = realiseShape(tl, w, intervals.slice(0, slots.length - 1), slots, order.map((l) => head + l));
-    if (!line) return null;
-    slots.forEach((slot, k) => push(slot.at, slot.dur, [line.pitches[k]!]));
-  } else if (character === 'counterline') {
+  if (character === 'counterline') {
+    if (length < 1.5 - 1e-9) return null; // revised: no answers squeezed into short gaps
     const retro = index % 2 === 1;
     device = retro ? 'retrograde inversion' : 'inversion';
     // Inversion: the cell's intervals negated. Retrograde inversion: the cell reversed, then inverted.
@@ -493,8 +452,11 @@ function buildAnswer(
       if (Math.sign(total) === w.nextMove) intervals = intervals.map((x) => -x);
     }
     const durs = (retro ? [...cell.durs].reverse() : cell.durs).map((d) => Math.max(0.5, d));
-    const slots = fitShapeRhythm(durs, length, length < 1.5 ? 2 : 3);
-    if (!slots) return null;
+    // Revised: eighth notes or longer — no diminution.
+    const ok = (xs: Array<{ at: number; dur: number }>) => xs.length >= 2 && xs.every((x) => x.dur >= 0.5 - 1e-9);
+    let slots = fitRhythm(durs, length);
+    if (!ok(slots)) slots = fitRhythm(durs.map((d) => Math.max(0.5, snap(d / 2))), length); // halve, never below an eighth
+    if (!ok(slots)) return null;
     const { chord, field } = fieldAt(tl, w.start);
     const guidePcs = chord ? chord.chordPcs.filter((pc) => [3, 4, 10, 11].includes((pc - chord.rootPc + 12) % 12)) : [];
     const chordPcs = chord ? chord.chordPcs : field;
@@ -507,10 +469,11 @@ function buildAnswer(
       if (guidePcs.includes(pc)) guideStarts.push(p);
       else if (chordPcs.includes(pc)) chordStarts.push(p);
     }
-    if (rand() < 0.5) guideStarts.reverse();
+    // The seed chooses the register the line aims for, so each press gives a different line.
+    const target = Math.max(LOW + 2, below - Math.floor(rand() * 12));
     const line =
-      realiseShape(tl, w, intervals.slice(0, slots.length - 1), slots, guideStarts) ??
-      realiseShape(tl, w, intervals.slice(0, slots.length - 1), slots, chordStarts);
+      realiseShape(tl, w, intervals.slice(0, slots.length - 1), slots, guideStarts, target) ??
+      realiseShape(tl, w, intervals.slice(0, slots.length - 1), slots, chordStarts, target);
     if (!line) return null;
     slots.forEach((slot, k) => {
       const p = line.pitches[k]!;
