@@ -1,5 +1,6 @@
 /**
- * npx tsx engines/composer-os-v2/scripts/wwhLiquidResponse.ts <source> <startBar> <endBar> <seed> [--pair <vaultId> | --res <triad> --ten <triad>]
+ * npx tsx engines/composer-os-v2/scripts/wwhLiquidResponse.ts <source> <startBar> <endBar> <seed> [--pair <vaultId> | --res <triad> --ten <triad>] [--open]
+ * Does not open MuseScore unless --open is given (one window per run is too many).
  */
 import { buildLiquidResponse } from '../core/wwh/wwhOperatorLiquidResponse';
 
@@ -13,6 +14,7 @@ function positional(): string[] {
   const out: string[] = [];
   for (let index = 2; index < process.argv.length; index += 1) {
     const item = process.argv[index]!;
+    if (item === '--open') continue;
     if (item.startsWith('--')) {
       index += 1;
       continue;
@@ -38,7 +40,7 @@ const result = buildLiquidResponse({
   pairId: arg('--pair'),
   resolution: arg('--res'),
   tension: arg('--ten'),
-  open: true,
+  open: process.argv.includes('--open'),
 });
 
 if (result.status === 'no-space') {
