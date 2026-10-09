@@ -14,6 +14,7 @@ import { verifyLockedCopy } from '../core/performance-composer/pcLane';
 import { readProvenance, stripProvenance } from '../core/performance-composer/pcProvenance';
 import { composeRespond, fieldAt, laneSetup } from '../core/performance-composer/pcRespond';
 import { composeReplace, REPLACE_VARIANTS, verifyReplace, type ReplaceVariant } from '../core/performance-composer/pcReplace';
+import { composeInsert, INSERT_VARIANTS, verifyInsert, type InsertVariant } from '../core/performance-composer/pcInsert';
 import { composeMixture, composeReduce, composeWyble, verifyReduce } from '../core/performance-composer/pcPhase2';
 import { runRespondSession } from '../core/performance-composer/pcRespondSession';
 import { measureViews, parseScoreDocument, partElements } from '../core/performance-composer/pcScore';
@@ -64,8 +65,8 @@ for (const item of [...REQUIRED, ...EXTRA]) {
   const now = new Date('2026-10-09T12:00:00Z');
   const run = runRespondSession({ sourcePath: item.file, outRoot: tmpRoot, build: BUILD, seed: 4242, now: new Date(now.getTime() + Math.random() * 1e9) });
 
-  check(`${item.piece}: five files (C Space, M Space + Wyble, P1–P3 Replace), every check PASS`, () => {
-    assert.equal(run.alternatives.length, 5);
+  check(`${item.piece}: six files (C Space, M Space + Wyble, P1 Replace Mirror, N1–N3 Insert), every check PASS`, () => {
+    assert.equal(run.alternatives.length, 6);
     for (const a of run.alternatives) {
       assert.ok(fs.existsSync(a.musicXmlPath), a.musicXmlPath);
       assert.deepEqual(a.checks, { locks: 'PASS', barFill: 'PASS', playable: 'PASS', stampReadBack: 'PASS' }, a.label);
@@ -76,7 +77,9 @@ for (const item of [...REQUIRED, ...EXTRA]) {
     for (const a of run.alternatives) {
       const xml = fs.readFileSync(a.musicXmlPath, 'utf8');
       const r =
-        a.character.startsWith('replace-')
+        a.character.startsWith('insert-')
+          ? verifyInsert(sourceXml, stripProvenance(xml), composeInsert(sourceXml, run.seed, a.character.slice(7) as InsertVariant).plan)
+          : a.character.startsWith('replace-')
           ? verifyReplace(sourceXml, stripProvenance(xml), composeReplace(sourceXml, run.seed, a.character.slice(8) as ReplaceVariant).plan)
           : verifyLockedCopy(sourceXml, stripProvenance(xml), { from: 1, to: bars }, a.lane);
       assert.ok(r.ok, `${a.label}: ${r.errors.slice(0, 3).join('; ')}`);
@@ -160,6 +163,29 @@ for (const item of [...REQUIRED, ...EXTRA]) {
         for (const x of nonMel) if (x.start < t + 0.01 && x.end > t + 1e-9 && n.now !== n.was) {
           const d = Math.abs(n.now - x.midi) % 12;
           assert.ok(n.now !== x.midi && d !== 1 && d !== 11, `${o.plan.label} bar ${n.bar}: clash`);
+        }
+      }
+    }
+  });
+
+  check(`${item.piece}: Insert — four new bars, bass and chords quoted, guitar in the chord, no clashes, three versions`, () => {
+    const outs = INSERT_VARIANTS.map((v) => composeInsert(sourceXml, run.seed, v.id));
+    const p0 = outs[0]!.plan;
+    if (item.piece.startsWith('01-')) assert.deepEqual([p0.before, ...p0.quoted], [32, 30, 31, 30, 31], 'Black Aura: before the head returns');
+    assert.equal(new Set(outs.map((o) => JSON.stringify(o.plan.guitar))).size, 3, 'versions differ');
+    const nonMel = tl.others.filter((x) => !tl.melodyAll.some((m) => m.start === x.start && m.end === x.end && m.midi === x.midi));
+    for (const o of outs) {
+      assert.ok(verifyInsert(sourceXml, o.xml, o.plan).ok, o.plan.label);
+      const silent = o.plan.guitar.filter((g) => g.midi === null).reduce((s, g) => s + g.quarters, 0);
+      const total = o.plan.guitar.reduce((s, g) => s + g.quarters, 0);
+      assert.ok(silent / total >= 0.3, `${o.plan.label}: deliberate silence ${silent}/${total}`);
+      for (const g of o.plan.guitar) {
+        if (g.midi === null) continue;
+        const t = tl.barStart[o.plan.quoted[g.bar - 1]! - 1]! + g.onset;
+        assert.ok(fieldAt(tl, t).field.includes(g.midi % 12), `${o.plan.label} bar ${g.bar}: outside the chord`);
+        for (const x of nonMel) if (x.start < t + g.quarters - 1e-9 && x.end > t + 1e-9) {
+          const d = Math.abs(g.midi - x.midi) % 12;
+          assert.ok(g.midi !== x.midi && d !== 1 && d !== 11, `${o.plan.label} bar ${g.bar}: clash`);
         }
       }
     }

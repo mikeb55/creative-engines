@@ -13,6 +13,7 @@ import { stampProvenance, stripProvenance, readProvenance, provenanceLine, type 
 import { composeRespond, RESPOND_CHARACTERS, RESPOND_ENGINE } from './pcRespond';
 import { composeMixture, PHASE2_ENGINE } from './pcPhase2';
 import { composeReplace, REPLACE_ENGINE, REPLACE_VARIANTS, verifyReplace } from './pcReplace';
+import { composeInsert, INSERT_BARS, INSERT_ENGINE, INSERT_VARIANTS, verifyInsert } from './pcInsert';
 import { durationTypeMismatches, measureViews, parseScoreDocument, partElements } from './pcScore';
 
 export interface RespondBuildInfo {
@@ -161,8 +162,8 @@ export function runRespondSession(options: {
       },
     });
   }
-  // P1–P3 REPLACE (Phase 3): new melody pitches over the locked rhythm in the default span.
-  for (const { id } of REPLACE_VARIANTS) {
+  // P1 REPLACE Mirror (KEEP): new melody pitches over the locked rhythm in the default span.
+  for (const { id } of REPLACE_VARIANTS.filter((v) => v.id === 'mirror')) {
     const { xml, plan } = composeReplace(sourceXml, seed, id);
     const label = plan.label;
     const provenance = { ...stampFor(label, REPLACE_ENGINE), bars: `${plan.from}–${plan.to}` };
@@ -183,6 +184,36 @@ export function runRespondSession(options: {
         notes: plan.changed,
         devices: [`bars ${plan.from}–${plan.to}: ${plan.changed} melody notes replaced, rhythm locked`],
         answeredBars: [...new Set(plan.notes.map((n) => n.bar))],
+        checks: { locks: 'PASS', barFill: 'PASS', playable: 'PASS', stampReadBack: back?.runId === runId && back?.buildCommit === provenance.buildCommit ? 'PASS' : 'FAIL' },
+        lockErrors: [],
+        provenance,
+        lane: { partId: plan.partId, voice: '1' },
+      },
+    });
+  }
+
+  // N1–N3 INSERT (Phase 3): four new bars before the head's return; bass and harmony quoted.
+  for (const { id } of INSERT_VARIANTS) {
+    const { xml, plan } = composeInsert(sourceXml, seed, id);
+    const label = plan.label;
+    const provenance = { ...stampFor(label, INSERT_ENGINE), bars: `${INSERT_BARS} new bars before bar ${plan.before} (quoting bars ${plan.quoted[0]}–${plan.quoted[1]})` };
+    const stamped = stampProvenance(xml, provenance);
+    const report = verifyInsert(sourceXml, stripProvenance(stamped), plan);
+    if (!report.ok) throw new Error(`${label}: check failed — nothing written. ${report.errors.slice(0, 3).join('; ')}`);
+    const back = readProvenance(stamped);
+    const file = fileFor(label);
+    prepared.push({
+      file,
+      xml: stamped,
+      result: {
+        character: `insert-${id}`,
+        label,
+        musicXmlPath: file,
+        answers: plan.guitar.filter((g) => g.midi !== null).length,
+        windows: INSERT_BARS,
+        notes: plan.guitar.filter((g) => g.midi !== null).length,
+        devices: [`${INSERT_BARS} bars before bar ${plan.before}; bass and chords quote bars ${plan.quoted[0]}–${plan.quoted[1]}`],
+        answeredBars: [plan.before],
         checks: { locks: 'PASS', barFill: 'PASS', playable: 'PASS', stampReadBack: back?.runId === runId && back?.buildCommit === provenance.buildCommit ? 'PASS' : 'FAIL' },
         lockErrors: [],
         provenance,
