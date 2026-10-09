@@ -280,7 +280,15 @@ function partRole(name: string, id: string, index: number, count: number): 'guit
   return 'other';
 }
 
-export function importWwhDuoMusicXml(xml: string): WwhDuoScore {
+export interface WwhPartwiseScore {
+  title: string;
+  movementTitle: string;
+  composer: string;
+  parts: WwhImportedPart[];
+}
+
+/** Read every part of a partwise MusicXML score. Any instrumentation; does not assign roles. */
+export function importPartwiseMusicXml(xml: string): WwhPartwiseScore {
   const doc = new DOMParser().parseFromString(xml, 'text/xml');
   const root = doc.documentElement;
   if (!root || localName(root) !== 'score-partwise') {
@@ -400,6 +408,20 @@ export function importWwhDuoMusicXml(xml: string): WwhDuoScore {
     return { id, name: names.get(id) || id, measures };
   });
 
+  if (!parts.length) throw new Error('MusicXML score has no parts');
+  return {
+    title: textOf(children(root, 'work')[0] ?? null, 'work-title') || 'Untitled',
+    movementTitle: textOf(root, 'movement-title'),
+    composer: (() => {
+      const creators = allByName(root, 'creator');
+      return creators.map((el) => el.textContent?.trim() || '').find(Boolean) || '';
+    })(),
+    parts,
+  };
+}
+
+export function importWwhDuoMusicXml(xml: string): WwhDuoScore {
+  const { title, movementTitle, composer, parts } = importPartwiseMusicXml(xml);
   if (parts.length < 2) throw new Error(`WWH duo import needs two parts, found ${parts.length}`);
   const guitar = parts.find((part, index) => partRole(part.name, part.id, index, parts.length) === 'guitar');
   const bass = parts.find((part, index) => partRole(part.name, part.id, index, parts.length) === 'bass');
@@ -409,16 +431,7 @@ export function importWwhDuoMusicXml(xml: string): WwhDuoScore {
       `guitar/bass bar count mismatch ${guitar.measures.length} vs ${bass.measures.length}`
     );
   }
-  return {
-    title: textOf(children(root, 'work')[0] ?? null, 'work-title') || 'Untitled',
-    movementTitle: textOf(root, 'movement-title'),
-    composer: (() => {
-      const creators = allByName(root, 'creator');
-      return creators.map((el) => el.textContent?.trim() || '').find(Boolean) || '';
-    })(),
-    guitar,
-    bass,
-  };
+  return { title, movementTitle, composer, guitar, bass };
 }
 
 export function serializeMeasure(measure: Element): string {
