@@ -101,3 +101,13 @@ Then provide:
 5. Brief tag for that improvement: **musical refinement** (rewrite / reorchestrate) · **technical fix** (notation, engraving, timing) · **architectural concern** (only if clearly warranted **and** explicitly requested)
 
 **Short-form / fragments in chat** — same as formal § below: mark thematic recall, large-scale structure & form, and global phrase grammar as **N/A / structurally limited** on 8-bar ideas and snippets; still give honest feedback on rhythm, harmony, voice-leading, melodic interest, register, spacing, and loopiness.
+
+---
+
+## 3. GCE V3.0 — additive musical excellence (not a numerical evaluator)
+
+**Spec:** `docs/GCE_FRAMEWORK_V3.md`.
+
+V3.0 supplements V2.0 for qualitative evidence: source identity, radical transformation, phrase development, anti-mechanical writing, guitar/duo idiom, and what was actually verified (XML, notation analysis, playback, physical play, user acceptance).
+
+It does **not** replace, renumber, or relax the ten categories, formulas, weights, the 7.9–8.4 operational band, the four LOCK hard gates, or DCR. Do not report a V3 “score.” Do not call output excellent, auditioned, or release-approved without the matching evidence. WWH labels — **TECHNICAL FAIL**, **MUSICAL REVISE**, **CANDIDATE FOR AUDITION**, **MUSICALLY APPROVED** — are defined only in that document.
