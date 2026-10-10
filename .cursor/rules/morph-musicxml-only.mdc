@@ -1,0 +1,16 @@
+---
+description: MORPH delivers MusicXML and Markdown only. No audio unless the user asks.
+alwaysApply: true
+---
+
+# MORPH — MusicXML only
+
+Applies to MORPH work on WWH and any later pass that uses `docs/MORPH_FRAMEWORK_V0.2.md` or `docs/MORPH_FRAMEWORK_V0.3.md`.
+
+MORPH produces MusicXML scores and Markdown documentation only.
+
+Do not generate WAV, MP3, MIDI, audio-rendering packages, or ZIP archives unless the user explicitly asks for that file.
+
+Do not propose audio rendering as a prerequisite to musical assessment. MusicXML is the authoritative musical deliverable. Sibelius is the intended environment for user review.
+
+Do not claim that a score has been heard, physically played, or musically approved without evidence. Do not invent a numerical GCE score. The official evaluator runs only on a representation it was built to score.
