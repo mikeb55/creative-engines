@@ -66,11 +66,13 @@ export function auditWwhMusicXml(xml: string, label: string): WwhAudit {
         }
       }
       for (const note of measure.notes) {
+        // Chord tones keep the file's stored duration. Agreement uses the
+        // importer's aligned duration when type, dots, and tuplet match the attack.
         const agreement = durationAgreement(
           measure.statedDivisions,
           note.type,
           note.dots,
-          note.storedDuration,
+          note.duration,
           note.timeModification
         );
         if (agreement === 'mismatch') agreementFails += 1;
@@ -78,6 +80,10 @@ export function auditWwhMusicXml(xml: string, label: string): WwhAudit {
       }
     }
   }
+  const repairs = [score.guitar, score.bass].flatMap((part) =>
+    part.measures.flatMap((measure) => measure.timingRepairs)
+  );
+  if (repairs.length) lines.push(`${label}: timing read ${repairs.join('; ')}`);
   lines.push(`${label}: duration mismatches ${durationFails}`);
   lines.push(`${label}: duration/type mismatches ${agreementFails}`);
   lines.push(`${label}: rounded tuplets ${roundedTuplets}`);

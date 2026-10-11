@@ -1,10 +1,18 @@
 /**
- * Song-specific brief for WWH Performance Synthesis V1.1.
+ * Song-specific brief for WWH Performance Synthesis V1.2.
  * One JSON file per song. The checker does not branch on the title.
  * Narrative length is whatever the song needs. Nothing here assumes seven stages or eight-bar blocks.
+ *
+ * V1.1 remains the frozen snapshot in `baseline/v1.1/`. This module is V1.2.
  */
 
-export const WPS_VERSION = '1.1' as const;
+export const WPS_VERSION = '1.2' as const;
+
+/** One automatic compositional refinement. Further passes need a named defect or an audition note. */
+export const WPS_MAX_DCR_REFINEMENTS = 1;
+
+/** Controlled bass proposals may cover at most this share of source measures. */
+export const WPS_CBV_MAX_MEASURE_SHARE = 0.1;
 
 export interface WpsArrangementRef {
   /** A–H label, or another short source id. */
@@ -53,7 +61,26 @@ export interface WpsRadicalProfile {
   note: string;
 }
 
-/** Evidence record. WPS does not run the official evaluator. */
+/**
+ * Musical blueprint. Written before a performance score.
+ * Song-specific observations from the leadsheet and the A–H inventory.
+ * Not a licence to reuse another song's form.
+ */
+export interface WpsBlueprint {
+  authoritativeLeadsheet: string;
+  melodicFingerprints: string[];
+  protectedLandmarks: string[];
+  originalBassIdentity: string;
+  /** Observable passages. A listening rank is stated only when someone has listened. */
+  strongestPassages: string[];
+  harmonicJourney: string;
+  contrapuntalOpportunities: string;
+  dramaticClimax: string;
+  thematicReturn: string;
+  expectedPerformanceDuration: string;
+}
+
+/** Evidence record. WPS does not run the official evaluator and does not run runDcrProtocol. */
 export interface WpsGceRecord {
   officialNumeric: false;
   /** Performance checks require exactly one recorded refinement. Planning runs use 0. */
@@ -78,6 +105,7 @@ export interface WpsSongSpec {
   /** Token that must appear in the performance filename, e.g. V1.3. */
   performanceEditionId?: string;
   outputDir: string;
+  blueprint: WpsBlueprint;
   motif: {
     name: string;
     /** Written or sounding names, as the spec author uses them. The script does not generate from this list. */

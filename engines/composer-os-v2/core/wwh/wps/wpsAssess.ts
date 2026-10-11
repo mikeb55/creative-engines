@@ -15,7 +15,7 @@ import {
   type WwhImportedNote,
   type WwhImportedPart,
 } from '../wwhDuoImport';
-import { WPS_VERSION, type WpsSongSpec } from './wpsTypes';
+import { WPS_CBV_MAX_MEASURE_SHARE, WPS_MAX_DCR_REFINEMENTS, WPS_VERSION, type WpsSongSpec } from './wpsTypes';
 
 const FIVE_MINUTES_SECONDS = 300;
 
@@ -104,18 +104,56 @@ function quartersIn(measure: WwhImportedMeasure): number {
   return (measure.beats * 4) / measure.beatType;
 }
 
-function durationFromSound(part: WwhImportedPart): { seconds: number; tempoByBar: string[] } {
+function positiveTempo(value: string | null | undefined): number | null {
+  const next = Number(value ?? '');
+  return Number.isFinite(next) && next > 0 ? next : null;
+}
+
+/**
+ * Playback tempo for one bar.
+ * `<sound tempo>` wins. A leadsheet that prints only a metronome uses that per-minute value.
+ */
+function measureTempo(measure: WwhImportedMeasure, previous: number): { tempo: number; source: 'sound' | 'metronome' | 'carried' } {
+  const sound = positiveTempo(measure.tempo.soundTempo);
+  if (sound != null) return { tempo: sound, source: 'sound' };
+  const printed = positiveTempo(measure.tempo.perMinute);
+  if (printed != null && previous <= 0) return { tempo: printed, source: 'metronome' };
+  return { tempo: previous, source: 'carried' };
+}
+
+function durationFromSound(part: WwhImportedPart): { seconds: number; tempoByBar: string[]; usedMetronomeFallback: boolean } {
   let seconds = 0;
-  let tempo = Number(part.measures[0]?.tempo.soundTempo ?? part.measures[0]?.tempo.perMinute ?? 0);
+  let tempo = 0;
+  let usedMetronomeFallback = false;
   const tempoByBar: string[] = [];
   for (const measure of part.measures) {
-    const next = Number(measure.tempo.soundTempo ?? '');
-    if (Number.isFinite(next) && next > 0) tempo = next;
+    const next = measureTempo(measure, tempo);
+    tempo = next.tempo;
+    if (next.source === 'metronome') usedMetronomeFallback = true;
     const q = quartersIn(measure);
-    seconds += (q * 60) / tempo;
+    seconds += tempo > 0 ? (q * 60) / tempo : Number.POSITIVE_INFINITY;
     tempoByBar.push(`${measure.number}:${tempo}`);
   }
-  return { seconds, tempoByBar };
+  return { seconds, tempoByBar, usedMetronomeFallback };
+}
+
+/** Unique measures named by a CBV proposal. Null when the text is not a bar or a bar span. */
+export function cbvMeasures(bars: string): number[] | null {
+  const found = new Set<number>();
+  for (const piece of bars.split(/[,;]/).map((item) => item.trim()).filter(Boolean)) {
+    const range = piece.match(/^(\d+)\s*[–-]\s*(\d+)$/);
+    if (range) {
+      const from = Number(range[1]);
+      const to = Number(range[2]);
+      if (to < from) return null;
+      for (let bar = from; bar <= to; bar++) found.add(bar);
+      continue;
+    }
+    const single = piece.match(/^(\d+)$/);
+    if (!single) return null;
+    found.add(Number(single[1]));
+  }
+  return [...found].sort((a, b) => a - b);
 }
 
 function durationFromPlan(part: WwhImportedPart, plan: WpsSongSpec['tempoPlan']): number {
@@ -248,7 +286,10 @@ export function runWps(spec: WpsSongSpec): WpsRunReport {
 
   lines.push(`WPS V${WPS_VERSION} ${spec.id} — ${spec.title}`);
   lines.push(
-    'WPS does not generate musical notes. A compositional agent writes the score. This run checks that score and does not write MusicXML.'
+    'WPS does not generate musical notes. The compositional agent writes the guitar music. This pipeline checks the leadsheet, the blueprint, the A–H inventory, LOCK, guitar validation, duration, and evidence. It does not write MusicXML.'
+  );
+  lines.push(
+    'evaluateGce was not run. runDcrProtocol was not executed. NO OFFICIAL NUMERIC GCE. A hand-authored WWH MusicXML file is not a Composer OS ScoreModel.'
   );
   if (spec.wpsVersion !== WPS_VERSION) fail(`spec version ${spec.wpsVersion ?? '(missing)'}, expected ${WPS_VERSION}`);
   if (spec.selectiveSynthesis !== true) fail('selective synthesis is required; whole-passage splicing is outside WPS');
@@ -272,12 +313,54 @@ export function runWps(spec: WpsSongSpec): WpsRunReport {
   else if (!cbv.proposals.every((proposal) => proposal.reversible === true)) {
     fail('every CBV proposal must be reversible');
   } else {
+    const covered = new Set<number>();
+    let coverageOk = true;
+    for (const proposal of cbv.proposals) {
+      const bars = cbvMeasures(proposal.bars);
+      if (!bars) {
+        coverageOk = false;
+        fail(`CBV proposal bars are not readable: ${proposal.bars}`);
+        continue;
+      }
+      for (const bar of bars) covered.add(bar);
+    }
+    const share = spec.expectedBars > 0 ? covered.size / spec.expectedBars : 1;
+    if (coverageOk && share > WPS_CBV_MAX_MEASURE_SHARE + 1e-9) {
+      fail(
+        `CBV covers ${covered.size} of ${spec.expectedBars} measures (${(share * 100).toFixed(1)}%), above 10%`
+      );
+    }
     lines.push(
-      `CBV ${cbv.decision}: ${cbv.proposals.length} proposal(s), incorporated=false. ${cbv.note} Principal bass LOCK is strict.`
+      `CBV ${cbv.decision}: ${cbv.proposals.length} proposal(s), incorporated=false, measures ${covered.size}/${spec.expectedBars}. ${cbv.note} Principal bass LOCK is strict. Proposals are not written into the score.`
     );
     for (const proposal of cbv.proposals) {
       lines.push(`CBV proposal ${proposal.bars}: ${proposal.change} (reversible, not written)`);
     }
+  }
+  const blueprint = spec.blueprint;
+  const blueprintBits = blueprint
+    ? [
+        blueprint.authoritativeLeadsheet,
+        blueprint.originalBassIdentity,
+        blueprint.harmonicJourney,
+        blueprint.contrapuntalOpportunities,
+        blueprint.dramaticClimax,
+        blueprint.thematicReturn,
+        blueprint.expectedPerformanceDuration,
+        ...blueprint.melodicFingerprints,
+        ...blueprint.protectedLandmarks,
+        ...blueprint.strongestPassages,
+      ]
+    : [];
+  if (!blueprint || blueprintBits.some((item) => !item || !String(item).trim())) {
+    fail('musical blueprint is missing a song-specific field');
+  } else if (blueprint.authoritativeLeadsheet !== spec.leadsheet) {
+    fail('blueprint leadsheet does not match the spec leadsheet');
+  } else {
+    lines.push('Musical blueprint present.');
+    lines.push(`Blueprint fingerprints: ${blueprint.melodicFingerprints.join(' | ')}`);
+    lines.push(`Blueprint bass: ${blueprint.originalBassIdentity}`);
+    lines.push(`Blueprint duration: ${blueprint.expectedPerformanceDuration}`);
   }
   const gce = spec.gce;
   if (!gce || gce.officialNumeric !== false) fail('official numeric GCE cannot be claimed by WPS');
@@ -346,7 +429,15 @@ export function runWps(spec: WpsSongSpec): WpsRunReport {
     }
   } else {
     lines.push('no performance edition — LOCK of a result score was not run');
-    if (gce && gce.dcrRefinements > 1) fail('planning run records more than one DCR refinement');
+    lines.push('composition label not assigned — no performance score in this run');
+    if (gce && gce.dcrRefinements > WPS_MAX_DCR_REFINEMENTS) {
+      fail(`planning run records more than ${WPS_MAX_DCR_REFINEMENTS} DCR refinement`);
+    }
+  }
+  if (gce && gce.dcrRefinements > WPS_MAX_DCR_REFINEMENTS) {
+    fail(`DCR refinements ${gce.dcrRefinements} exceed the maximum of ${WPS_MAX_DCR_REFINEMENTS}`);
+  } else if (gce) {
+    lines.push(`DCR refinements recorded ${gce.dcrRefinements}; maximum automatic refinements ${WPS_MAX_DCR_REFINEMENTS}`);
   }
 
   lines.push('Step 2 — A–H phrase discovery');
@@ -416,9 +507,10 @@ export function runWps(spec: WpsSongSpec): WpsRunReport {
     lines.push('Step 6 — GCE evidence and one DCR refinement');
     if (gce && gce.dcrRefinements !== 1) fail(`performance check requires one DCR refinement, found ${gce.dcrRefinements}`);
     lines.push(
-      'NO OFFICIAL NUMERIC GCE. evaluateGce scores a Composer OS ScoreModel. This file is hand-authored MusicXML. MORPH v0.3 forbids treating that mismatch as a musical result. runDcrProtocol was not executed; it generates engine candidates and does not edit this score.'
+      'NO OFFICIAL NUMERIC GCE. evaluateGce scores a Composer OS ScoreModel. This file is hand-authored MusicXML. runDcrProtocol was not executed; it generates engine candidates and does not edit this score.'
     );
     if (gce) lines.push(`DCR record: ${gce.dcrRefinements} refinement. Weakest: ${gce.weakest}`);
+    lines.push('Audition label is not assigned by this checker.');
 
     lines.push('Step 7 — Duration and export check');
     const sounded = durationFromSound(performance.score.guitar);
@@ -438,6 +530,22 @@ export function runWps(spec: WpsSongSpec): WpsRunReport {
     }
     lines.push(`performance file ${spec.performanceEdition}`);
     lines.push('No new MusicXML was written by this run.');
+  } else if (lead) {
+    lines.push('Duration check on the leadsheet (no performance file)');
+    const sounded = durationFromSound(lead.score.guitar);
+    const planned = durationFromPlan(lead.score.guitar, spec.tempoPlan);
+    const octave = lead.score.guitar.measures[0]?.transposeOctave;
+    lines.push(`guitar octave-change ${octave}`);
+    lines.push(
+      `leadsheet tempo source: ${sounded.usedMetronomeFallback ? 'printed metronome; no <sound tempo>' : '<sound tempo>'}`
+    );
+    lines.push(`leadsheet duration: ${formatClock(sounded.seconds)} (${sounded.seconds.toFixed(2)}s)`);
+    lines.push(`printed tempo plan: ${formatClock(planned)} (${planned.toFixed(2)}s)`);
+    if (!Number.isFinite(sounded.seconds)) fail('leadsheet has no usable tempo');
+    if (Math.abs(sounded.seconds - planned) > 0.05) fail('printed tempo plan and leadsheet tempo disagree');
+    const limit = spec.targetDurationSeconds;
+    if (limit.max >= FIVE_MINUTES_SECONDS) fail('target maximum is not under five minutes');
+    if (sounded.seconds >= FIVE_MINUTES_SECONDS) fail('leadsheet duration is not under five minutes');
   }
 
   lines.push(ok ? 'WPS RESULT: PASS' : 'WPS RESULT: FAIL');

@@ -1,49 +1,114 @@
 {
-  "wpsVersion": "1.1",
+  "wpsVersion": "1.2",
   "id": "05-orbit",
   "title": "Orbit V2.1",
   "leadsheet": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/00 - WWH DUO LEADSHEETS/05-Orbit-Duo-Leadsheet-V2.1.musicxml",
   "outputDir": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/PERFORMANCE-EDITIONS",
-  "arrangements": [],
-  "motif": {
-    "name": "unfrozen",
-    "pitches": [],
-    "note": "Motif is not part of the V1.1 baseline. Name it in this file before a performance check. Leadsheet edition is V2.1."
-  },
-  "landmarks": [],
-  "narrative": [
+  "arrangementIds": ["A", "B", "C", "D", "E-V3.0", "F", "G", "H"],
+  "arrangements": [
     {
-      "name": "Unfrozen",
-      "bars": "1-29",
-      "job": "Song narrative is not frozen. The leadsheet is V2.1, 29 bars of 3/4, printed quarter = 129. Section words A, A′, B, B′, C are not rehearsal marks. Fill the narrative before naming a performance edition."
+      "id": "A",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-36-RADICAL-COMPOSER-OS/05-Orbit/05-Orbit-A-Lyrical-Polyphony.musicxml"
+    },
+    {
+      "id": "B",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-36-RADICAL-COMPOSER-OS/05-Orbit/05-Orbit-B-Motivic-Reconstruction.musicxml"
+    },
+    {
+      "id": "C",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-36-RADICAL-COMPOSER-OS/05-Orbit/05-Orbit-C-Harmonic-Wrong-Worlds.musicxml"
+    },
+    {
+      "id": "D",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-36-RADICAL-COMPOSER-OS/05-Orbit/05-Orbit-D-Rhythmic-Textural.musicxml"
+    },
+    {
+      "id": "E-V3.0",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/V2.0-WWH-PLAY/WWH-Liquid-Harmony-E-V3.0/05-Orbit-E-Liquid-Harmony-V3.0.musicxml"
+    },
+    {
+      "id": "F",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-COMPOSER-OS-E-H/05-Orbit/05-Orbit-F-Melodic-Metamorphosis.musicxml"
+    },
+    {
+      "id": "G",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-COMPOSER-OS-E-H/05-Orbit/05-Orbit-G-Chamber-Polyphony.musicxml"
+    },
+    {
+      "id": "H",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-COMPOSER-OS-E-H/05-Orbit/05-Orbit-H-Pentatonic-Collision.musicxml"
     }
   ],
-  "seams": [],
+  "blueprint": {
+    "authoritativeLeadsheet": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/00 - WWH DUO LEADSHEETS/05-Orbit-Duo-Leadsheet-V2.1.musicxml",
+    "melodicFingerprints": [
+      "Bar 1 written C5, C5. Guitar octave-change is -1.",
+      "Bars 2–9 and 10–17 share the descending chord chain and a related contour. They are not identical: bar 10 starts F–Eb–Bb, bar 2 starts F–Eb–Ab–Bb."
+    ],
+    "protectedLandmarks": [
+      "29 bars, all 3/4. No rehearsal marks.",
+      "Printed section words, not rehearsal letters: A@1, A′@10, B@18, B′@22, C@26.",
+      "Bass bars 18–25 sit on F under the B and B′ guitar."
+    ],
+    "originalBassIdentity": "Upright bass, octave-change -1. Bar 1 rests. From bar 2 the bass takes the chord roots, then holds F through bars 18–25 except the rests inside that span. Bar 26 is Ab, 27–28 F. CBV is no-change.",
+    "strongestPassages": [
+      "No listening rank. The leadsheet’s own recurrence is A against A′ (bars 1–9 and 10–17) and B against B′ (18–21 and 22–25). Section C, bars 26–29, is the only close: Dbmaj7, Bb7, Fmaj7, Fmaj7, ending on written C5.",
+      "A–H are inventoried, including E-V3.0. E V2.0 is not the E source."
+    ],
+    "harmonicJourney": "Fmaj7#11, Ebmaj7#5, Dbmaj7, Bmaj7, Bbm9, Abmaj7, Gbmaj7, Emaj7, then that chain again from bar 10. Bars 18–25 alternate Gmaj7/F and Ebmaj7/F. Bars 26–29: Dbmaj7, Bb7, Fmaj7, Fmaj7.",
+    "contrapuntalOpportunities": "The leadsheet guitar is a single line. A second voice is not written. The F pedal under B and B′ is the clearest place a guitar inner voice could answer the bass without leaving the printed harmony.",
+    "dramaticClimax": "Not auditioned. No dynamic peak is identified here. Section C is the printed closing area, not a claimed climax.",
+    "thematicReturn": "Bar 29 returns to written C5, the pitch that opens bar 1, over Fmaj7.",
+    "expectedPerformanceDuration": "Printed quarter = 129. No sound-tempo element. 29 bars of 3/4 = 0:40.47."
+  },
+  "motif": {
+    "name": "opening C",
+    "pitches": ["C", "C"],
+    "note": "Bar 1 only. The tune’s identity is the 3/4 chain and the A/A′ recurrence, not a five-note cell from another song."
+  },
+  "landmarks": [
+    { "bars": "1", "role": "section word A, opening C" },
+    { "bars": "10", "role": "section word A′" },
+    { "bars": "18-25", "role": "B and B′ over an F bass" },
+    { "bars": "26-29", "role": "section word C, close on C" }
+  ],
+  "narrative": [
+    { "name": "A", "bars": "1-9", "job": "Printed word A. 3/4 chain from Fmaj7#11 down to Emaj7." },
+    { "name": "A′", "bars": "10-17", "job": "Printed word A′. Same chord chain, different guitar detail." },
+    { "name": "B", "bars": "18-21", "job": "Printed word B. Gmaj7/F and Ebmaj7/F." },
+    { "name": "B′", "bars": "22-25", "job": "Printed word B′. Same two chords again." },
+    { "name": "C", "bars": "26-29", "job": "Printed word C. Dbmaj7, Bb7, Fmaj7, and the closing C." }
+  ],
+  "seams": [
+    { "bars": "9-10", "job": "A into A′" },
+    { "bars": "17-18", "job": "A′ into the F pedal" },
+    { "bars": "25-26", "job": "B′ into section C" }
+  ],
   "mci": {
-    "continuity": "Not frozen. When a performance edition is named, bass LOCK, metre, and protected silences apply.",
-    "innovation": "Not frozen. Selective synthesis from this song's own A–H list. Do not reuse another song's narrative."
+    "continuity": "The 29-bar 3/4 cycle, the A/A′ chord chain, and the final C over Fmaj7 stay recognisable. The bass event stream stays.",
+    "innovation": "A performance score may transform the harmony inside A′ or over the F pedal, and may make bar 29 a real return of bar 1. It stays 29 bars. It does not import The Mirror’s rehearsal letters."
   },
   "cbv": {
     "decision": "no-change",
     "incorporated": false,
     "proposals": [],
-    "note": "No bass proposal until a performance score exists. Principal bass stays locked."
+    "note": "No bass proposal. Principal bass stays the leadsheet stream."
   },
   "radicalProfile": {
     "melodyPercent": 65,
     "harmonyPercent": 20,
     "rhythmPercent": 40,
-    "note": "WWH starting profile. Change the three numbers in this file if the song needs a different listening mix."
+    "note": "WWH starting profile. Listening guide, not a note count."
   },
   "selectiveSynthesis": true,
   "gce": {
     "officialNumeric": false,
     "dcrRefinements": 0,
-    "weakest": "Not named. One refinement is recorded when a performance edition is checked."
+    "weakest": "Not named. No performance score exists, so no refinement has been made."
   },
   "protectedGuitarSilences": [],
   "rehearsal": [],
   "expectedBars": 29,
-  "targetDurationSeconds": { "min": 1, "max": 299 },
+  "targetDurationSeconds": { "min": 38, "max": 44 },
   "tempoPlan": [{ "fromBar": 1, "quartersPerMinute": 129 }]
 }

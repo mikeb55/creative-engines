@@ -1,5 +1,7 @@
 /**
- * WPS V1.1 baseline. Does not write scores.
+ * WPS checks carried forward from the V1.1 baseline.
+ * The frozen V1.1 sources are in core/wwh/wps/baseline/v1.1/.
+ * This file runs against V1.2. The Mirror case now expects the chord-tone read to pass.
  *
  * Run from the repo root:
  *   npx tsx --tsconfig tsconfig.json engines/composer-os-v2/tests/wpsBaseline.test.ts
@@ -44,7 +46,7 @@ function run(): { ok: boolean; name: string }[] {
   const before = new Map(watched.map((file) => [file, fs.statSync(file).mtimeMs]));
 
   check('Impossible Metaphysics spec resolves performance edition V1.3', () => {
-    assert.equal(spec.wpsVersion, '1.1');
+    assert.equal(spec.wpsVersion, '1.2');
     assert.equal(spec.performanceEditionId, 'V1.3');
     const base = path.basename(spec.performanceEdition!);
     assert.equal(base, '07-Impossible-Metaphysics-Performance-Edition-V1.3.musicxml');
@@ -57,7 +59,7 @@ function run(): { ok: boolean; name: string }[] {
   check('Impossible Metaphysics V1.3 baseline passes', () => {
     assert.equal(report.ok, true, report.lines.filter((line) => line.startsWith('FAIL')).join('; '));
     const text = report.lines.join('\n');
-    assert.match(text, /WPS V1\.1/);
+    assert.match(text, /WPS V1\.2/);
     assert.match(text, /does not generate musical notes/);
     assert.match(text, /bass event stream matches the leadsheet/);
     assert.match(text, /metre map matches the leadsheet/);
@@ -135,22 +137,25 @@ function run(): { ok: boolean; name: string }[] {
     assert.match(result.lines.join('\n'), /missing performance edition/);
   });
 
-  check('03-the-mirror.json uses the same checker; V1.0 leadsheet audit fails on stored durations', () => {
+  check('03-the-mirror.json planning import passes; bar 39 chord tones stay stored as 512', () => {
     const song = loadSpec('03-the-mirror.json');
-    assert.equal(song.wpsVersion, '1.1');
+    assert.equal(song.wpsVersion, '1.2');
     assert.equal(song.performanceEdition, undefined);
+    const before = fs.readFileSync(song.leadsheet);
     const result = runWps(song);
-    assert.equal(result.ok, false);
+    assert.equal(result.ok, true, result.lines.filter((line) => line.startsWith('FAIL')).join('; '));
     const text = result.lines.join('\n');
     assert.match(text, /does not generate musical notes/);
-    assert.match(text, /duration\/type mismatches 2/);
-    assert.match(text, /FAIL leadsheet audit/);
+    assert.match(text, /bar 39 chord D5 duration 512 aligned to 768/);
+    assert.match(text, /bar 39 chord B5 duration 512 aligned to 768/);
+    assert.match(text, /duration\/type mismatches 0/);
+    assert.equal(fs.readFileSync(song.leadsheet).equals(before), true);
   });
 
   for (const name of ['05-orbit-v2.1.json', '06-wrong-turning.json']) {
     check(`${name} uses the same checker without a performance edition`, () => {
       const song = loadSpec(name);
-      assert.equal(song.wpsVersion, '1.1');
+      assert.equal(song.wpsVersion, '1.2');
       assert.equal(song.performanceEdition, undefined);
       assert.equal(song.selectiveSynthesis, true);
       assert.equal(song.cbv.incorporated, false);

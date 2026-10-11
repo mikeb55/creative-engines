@@ -213,7 +213,7 @@ User / API
 - **Guitar–Bass Duo** and **ECM Chamber**: full MusicXML golden path; optional **32-bar** long-form for duo.
 - **Song Mode**: compile + planning + duo MusicXML generation path via app API; rhythm intent applies on the **Song Mode duo MusicXML** path when `intent` is sent.
 - **Big Band / String Quartet**: planning and/or realisation paths per preset (see engine README for module ids).
-- **WPS V1.1** (`docs/WPS_WORKFLOW.md`): checks an existing WWH duo MusicXML file. It does not generate notes. Song specs live in `engines/composer-os-v2/core/wwh/wps/specs/`. The checker is `runWps` in `engines/composer-os-v2/core/wwh/wps/wpsAssess.ts`.
+- **WPS V1.2** (`docs/WPS_WORKFLOW.md`): checks an existing WWH duo MusicXML file and requires a song-specific blueprint. It does not generate notes. A compositional agent writes the score. Song specs live in `engines/composer-os-v2/core/wwh/wps/specs/`. The checker is `runWps` in `engines/composer-os-v2/core/wwh/wps/wpsAssess.ts`. V1.1 is frozen at `engines/composer-os-v2/core/wwh/wps/baseline/v1.1/`. ChatGPT instructions: `docs/WPS_CHATGPT_MASTER_INSTRUCTIONS.md`.
 
 ## SQ Harmonic Voice — VRB Registry
 

@@ -1,8 +1,10 @@
-# WWH Performance Synthesis V1.1
+# WWH Performance Synthesis V1.2
 
-WPS is a repeatable composition-support and verification workflow. It checks a duo performance score against its leadsheet and a song-specific plan.
+WPS is the reusable performance-composition workflow for While We're Here duo pieces. It standardises how a piece is planned, checked, and refined. It does not standardise the music.
 
-**WPS does not generate musical notes.** It does not compose, it does not splice arrangements into a score, and it does not write MusicXML. Musical synthesis is done by a compositional agent. After that agent writes a file, WPS verifies it.
+**WPS V1.1** is frozen. Snapshot: `engines/composer-os-v2/core/wwh/wps/baseline/v1.1/`. That snapshot passed 12/12 on Impossible Metaphysics Performance Edition V1.3 before V1.2 was written. Do not call the live checker V1.1.
+
+**WPS does not generate musical notes.** A compositional agent writes the guitar music. The WPS pipeline reads the leadsheet, checks the musical blueprint, inventories A–H, checks source LOCK, checks guitar feasibility on a finished score, checks duration, and reports evidence. It does not splice arrangements into a score and it does not write MusicXML.
 
 Command, from the repo root:
 
@@ -10,75 +12,126 @@ Command, from the repo root:
 npm run wps --prefix engines/composer-os-v2 -- --spec core/wwh/wps/specs/07-impossible-metaphysics.json
 ```
 
-The Impossible Metaphysics spec resolves **Performance Edition V1.3** (`performanceEditionId`: `V1.3`). An older performance filename fails the run.
+Song specs live in `engines/composer-os-v2/core/wwh/wps/specs/`. Copy one file per song. Change the paths, the blueprint, the motif, the landmarks, the narrative, the seams, the silences, the bar count, and the tempo plan. Leave the narrative as long or as short as that song is.
 
-Copy a spec in `engines/composer-os-v2/core/wwh/wps/specs/` for the next song. The checker is the same for every song. Change the paths, the motif, the landmarks, the narrative, the seams, the silences, the rehearsal bars, the bar count, and the tempo plan. Leave the narrative as long or as short as that song is.
+Planning specs, no performance score yet:
 
-Configured, performance check not yet named:
+- `03-the-mirror.json` — The Mirror, leadsheet V1.0, 68 bars of 4/4. Focus: reflection, evolving melodic identity, contrapuntal development, long form.
+- `06-wrong-turning.json` — Wrong Turning, leadsheet V1.2, 32 bars, bar 8 in 3/4. Focus: asymmetrical phrasing, unexpected direction, interrupted expectations.
+- `05-orbit-v2.1.json` — Orbit, leadsheet V2.1, 29 bars of 3/4. Focus: compact cyclical development, harmonic transformation, thematic return.
 
-- `03-the-mirror.json` — The Mirror, leadsheet V1.0. The file is 68 bars. A planning run fails the shared duration/type audit: guitar bar 39 has two dotted halves whose stored duration is 512, while divisions 256 expects 768. The leadsheet was not edited. Orbit and Wrong Turning do not have that audit failure.
-- `05-orbit-v2.1.json` — Orbit, leadsheet V2.1, 29 bars of 3/4. Planning run resolves the leadsheet.
-- `06-wrong-turning.json` — Wrong Turning, leadsheet V1.2, 32 bars. Planning run resolves the leadsheet.
+E is **E-V3.0** (`WWH-Liquid-Harmony-E-V3.0`). E V2.0 is not the E source.
 
-Their musical narratives are not frozen. A planning pass is not a finished performance.
+Authority for musical judgement, not restated here as a second scoring system:
 
-Authority for the checks, not restated here as a second scoring system:
+- `docs/GCE_CANONICAL.md`
+- `docs/GCE_FRAMEWORK_V2.md` — ten categories and hard gates
+- `docs/GCE_FRAMEWORK_V3.md` — qualitative evidence, including the WWH 65/20/40 listening heuristic
+- `docs/GCE_LOCK_DCR_STANDARDS.md` — LOCK and one DCR pass
+- `docs/MORPH_FRAMEWORK_V0.3.md` — method and the guitar-solver contract
+- `.cursor/rules/gce-evaluation.mdc`
+- `.cursor/rules/composer-os-quality-gates.mdc`
 
-- GCE math and hard gates: `docs/GCE_FRAMEWORK_V2.md`
-- LOCK and one DCR pass: `docs/GCE_LOCK_DCR_STANDARDS.md`
-- Qualitative evidence, including the WWH 65/20/40 listening heuristic: `docs/GCE_FRAMEWORK_V3.md`
-- MORPH method and the guitar-solver contract: `docs/MORPH_FRAMEWORK_V0.3.md`
+## Two responsibilities
+
+**Compositional agent.** Reads the blueprint and the A–H inventory. Writes one complete performance MusicXML. Applies source LOCK and guitar feasibility while writing. Uses real pitches and rhythms from A–H where they help. Writes original connecting music where the sources do not join. Does not concatenate source bars. Does not lay down an eight-bar template and repeat it.
+
+**WPS pipeline.** Source management, blueprint check, A–H inventory, LOCK, guitar validation, duration, evidence. Validation is not composition. `evaluateGce` is not run on these files. `runDcrProtocol` is not executed. No official numeric GCE is invented.
+
+## Minimum-iteration sequence
+
+### Stage 1 — Discover
+
+Read the authoritative leadsheet and the A–H files. Choose material from what is in the music. Write the song’s blueprint before the complete score. Name likely weaknesses before writing.
+
+The blueprint records:
+
+- Authoritative original leadsheet
+- Song-specific melodic fingerprints
+- Protected structural landmarks
+- Original bass identity
+- Strongest passages from the leadsheet and from A–H (a listening rank only after someone has listened)
+- The proposed harmonic journey
+- Contrapuntal opportunities
+- Dramatic climax
+- Meaningful thematic return
+- Expected performance duration
+
+Do not reuse another song’s narrative. Impossible Metaphysics keeps its own seven stages. The Mirror, Wrong Turning, and Orbit do not.
+
+### Stage 2 — Compose
+
+One complete performance score. Source LOCK and guitar feasibility apply throughout. The upright-bass event stream of the leadsheet is copied exactly.
+
+### Stage 3 — Refine
+
+Judge the score against the ten GCE categories and the V3 evidence requirements. Name the weakest meaningful dimension. Make **one** focused refinement. Check again.
+
+Do not automatically produce V1.2, V1.3, V1.4, and V1.5 of the same piece.
+
+If the score still needs a human ear, label it **CANDIDATE FOR AUDITION**. If a material flaw remains, label it **MUSICAL REVISE**. Do not manufacture a PASS. WPS itself does not assign these labels.
+
+A standard song run delivers:
+
+- One complete initial performance MusicXML
+- At most one refined MusicXML
+- One short performance map
+- One short evidence summary
+
+Another revision needs a named defect or a note from audition.
 
 ## 1. Source ingestion and LOCK
 
-The spec names the authoritative leadsheet. WPS reads it with `importWwhDuoMusicXml` and audits durations with `auditWwhMusicXml`. A missing or unreadable file fails the run. It does not create a substitute.
+The spec names the authoritative leadsheet. WPS reads it with `importWwhDuoMusicXml` and audits it with `auditWwhMusicXml`. A missing or unreadable file fails the run. The original file is not edited.
 
-When a performance edition is named, the filename must contain `performanceEditionId`. The bass event stream, the metre map, the rehearsal marks, the bar count, and the protected guitar silences are compared with the leadsheet and the spec. A bass difference fails the run. That is strict bass LOCK for the principal score.
+A chord tone that carries the attack’s type, dots, and tuplet is read at the attack’s duration. Sibelius sometimes stores the undotted duration on those chord tones. The Mirror, bar 39, stores 512 on D5 and Bb5 where divisions 256 and a dotted half expect 768. The attack is already 768. The read uses 768. The file stays 512. Melodic onsets are not moved.
 
-## 2. MCI — Musical Continuity & Innovation
+When a performance edition is named, the filename must contain `performanceEditionId`. The bass event stream, the metre map, the rehearsal marks, the bar count, and the protected guitar silences are compared with the leadsheet and the spec. A bass difference fails the run. That is strict bass LOCK.
 
-`mci.continuity` says what a listener must still be able to follow. `mci.innovation` says what is new, and where. Both are song-specific sentences in the spec. WPS prints them. It does not turn them into a numeric score, and it does not force every song into the same sections.
+A performance score with a changed bass is not strict source LOCK PASS.
+
+## 2. Musical blueprint and MCI
+
+`blueprint` is required. `mci.continuity` says what a listener must still be able to follow. `mci.innovation` says what is new, and where. Both are song-specific. WPS prints them. It does not turn them into a number.
 
 ## 3. CBV — Controlled Bass Variation
 
-`cbv` may list reversible bass-change proposals. `incorporated` stays `false`. WPS prints the proposals and does not write them.
+`cbv` may list reversible proposals. Together they may name at most 10% of the source measures. `incorporated` stays `false`. WPS prints the proposals and does not write them.
 
-A decision of `no-change` carries an empty list. Impossible Metaphysics V1.3 is `no-change`: no bass alternative is recommended.
-
-The principal performance score still has to match the leadsheet bass event stream. A proposal never relaxes that lock.
+`no-change` carries an empty list. Impossible Metaphysics V1.3, The Mirror, Wrong Turning, and Orbit V2.1 are `no-change`.
 
 ## 4. Radical WWH 65/20/40
 
-The starting listening heuristic is about 65% recognisable melodic identity, 20% harmonic identity, and 40% rhythmic identity. It is not a note-count quota and not a hard gate. Do not transform melody, harmony, and rhythm at the same moment.
+The starting listening heuristic is about 65% recognisable melodic identity, 20% harmonic identity, and 40% rhythmic identity. It is not a note-count quota and not a hard gate. Do not transform melody, harmony, and rhythm at the same moment without a recognisable anchor.
 
-`radicalProfile` records the mix for that song. Another song may change the three numbers in its own spec.
+`radicalProfile` records the mix for that song.
 
 ## 5. Selective synthesis from A–H
 
-Up to eight arrangement files are read. The report gives bar count, guitar attack count, and the first and last guitar attack. `arrangementIds` must match the list when the spec sets it. Impossible Metaphysics expects A, B, C, D, E-V3.0, F, G, H.
+Up to eight arrangement files are read. The report gives bar count, guitar attack count, and the first and last guitar attack. `arrangementIds` must match the list when the spec sets it. The notes are inventoried. They are not copied into the performance file. A missing or unreadable arrangement fails the run.
 
-`selectiveSynthesis` stays `true`. The notes are inventoried. They are not copied into the performance file. A missing or unreadable arrangement fails the run.
+## 6. Guitar idiom and feasibility
 
-## 6. Song-specific musical narrative
+On a performance score, sounding guitar pitches, after `octave-change`, go through `solveFretPath` and `assessGuitarFeasibility` at fret span 4. The bass is not part of that calculation. A solver pass is not a player’s approval.
 
-The narrative, motif, landmarks, and seams come from the spec. They are printed so the compositional agent has a plan. A song with four sections stays four sections.
+The Mirror and Orbit V2.1 print guitar `octave-change` -1. Wrong Turning prints 0. Written pitch is not sounding pitch when the change is -1.
 
-## 7. Guitar idiom and feasibility
+## 7. Canonical GCE evidence and one DCR refinement
 
-Sounding guitar pitches, after `octave-change`, go through `solveFretPath` and `assessGuitarFeasibility` at fret span 4. The bass is not part of that calculation. A solver pass is not a player’s approval.
+`evaluateGce` scores a Composer OS `ScoreModel`. A hand-authored WWH MusicXML file is not that object. WPS reports **NO OFFICIAL NUMERIC GCE** on every run.
 
-## 8. Canonical GCE evidence and one DCR refinement
+The ten categories and the hard gates in `docs/GCE_FRAMEWORK_V2.md` still govern a compositional judgement. WPS does not calculate them.
 
-`evaluateGce` scores a Composer OS `ScoreModel`. A hand-authored WWH MusicXML file is not that object. WPS reports **NO OFFICIAL NUMERIC GCE** and does not run `runDcrProtocol`.
+`gce.dcrRefinements` is `1` when a performance edition already contains its one refinement, and `0` on a planning spec. A second refinement fails the run. `runDcrProtocol` was not executed.
 
-The spec records the one refinement the compositional agent already made (`gce.dcrRefinements`: `1` when a performance edition is checked). A second refinement fails the performance check. Planning specs use `0` until that pass exists. Record the weakest musical dimension in the song’s own spec. Do not invent a GCE number.
+## 8. Duration and export
 
-## 9. Duration and export
+WPS does not write a score. The performance path in the spec is the export. Playback `<sound tempo>` must match the tempo plan, sit inside the target window, and finish in under five minutes.
 
-WPS does not write a score. The performance path in the spec is the export. Playback `<sound tempo>` must match the spec’s tempo plan, sit inside the target window, and finish in under five minutes.
+A leadsheet with a metronome and no `<sound tempo>` is timed from the printed per-minute mark. The report says so. The Mirror and Orbit V2.1 are in that group. Wrong Turning has both, at 120.
 
 No audio, MIDI, TAB, or PDF is part of this procedure.
 
 ## Failure
 
-Missing leadsheet, missing performance file, missing arrangement, unreadable MusicXML, a bass stream that differs from the leadsheet, or a performance filename that is not the named edition: the run prints `FAIL` and exits `1`. Source files are not repaired and not replaced.
+Missing leadsheet, missing performance file, missing arrangement, unreadable MusicXML, a bass stream that differs from the leadsheet, a performance filename that is not the named edition, a blueprint field left empty, a CBV list that is incorporated or covers more than 10% of the bars, or more than one DCR refinement: the run prints `FAIL` and exits `1`. Source files are not repaired and not replaced.

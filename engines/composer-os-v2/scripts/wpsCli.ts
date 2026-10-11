@@ -4,7 +4,7 @@
  *
  *   npm run wps --prefix engines/composer-os-v2 -- --spec core/wwh/wps/specs/07-impossible-metaphysics.json
  *
- * WPS V1.1 does not generate musical notes and does not write a score.
+ * WPS V1.2 does not generate musical notes and does not write a score.
  */
 
 import fs from 'node:fs';

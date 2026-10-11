@@ -1,49 +1,115 @@
 {
-  "wpsVersion": "1.1",
+  "wpsVersion": "1.2",
   "id": "06-wrong-turning",
   "title": "Wrong Turning",
   "leadsheet": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/00 - WWH DUO LEADSHEETS/06-Wrong-Turning-Duo-Leadsheet-V1.2.musicxml",
   "outputDir": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/PERFORMANCE-EDITIONS",
-  "arrangements": [],
-  "motif": {
-    "name": "unfrozen",
-    "pitches": [],
-    "note": "Motif is not part of the V1.1 baseline. Name it in this file before a performance check. Leadsheet edition is V1.2."
-  },
-  "landmarks": [],
-  "narrative": [
+  "arrangementIds": ["A", "B", "C", "D", "E-V3.0", "F", "G", "H"],
+  "arrangements": [
     {
-      "name": "Unfrozen",
-      "bars": "1-32",
-      "job": "Song narrative is not frozen. The leadsheet is V1.2, 32 bars, 4/4 with bar 8 in 3/4, quarter = 120. Fill the narrative before naming a performance edition."
+      "id": "A",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-36-RADICAL-COMPOSER-OS/06-Wrong-Turning/06-Wrong-Turning-A-Lyrical-Polyphony.musicxml"
+    },
+    {
+      "id": "B",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-36-RADICAL-COMPOSER-OS/06-Wrong-Turning/06-Wrong-Turning-B-Motivic-Reconstruction.musicxml"
+    },
+    {
+      "id": "C",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-36-RADICAL-COMPOSER-OS/06-Wrong-Turning/06-Wrong-Turning-C-Harmonic-Wrong-Worlds.musicxml"
+    },
+    {
+      "id": "D",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-36-RADICAL-COMPOSER-OS/06-Wrong-Turning/06-Wrong-Turning-D-Rhythmic-Textural.musicxml"
+    },
+    {
+      "id": "E-V3.0",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/V2.0-WWH-PLAY/WWH-Liquid-Harmony-E-V3.0/06-Wrong-Turning-E-Liquid-Harmony-V3.0.musicxml"
+    },
+    {
+      "id": "F",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-COMPOSER-OS-E-H/06-Wrong-Turning/06-Wrong-Turning-F-Melodic-Metamorphosis.musicxml"
+    },
+    {
+      "id": "G",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-COMPOSER-OS-E-H/06-Wrong-Turning/06-Wrong-Turning-G-Chamber-Polyphony.musicxml"
+    },
+    {
+      "id": "H",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-COMPOSER-OS-E-H/06-Wrong-Turning/06-Wrong-Turning-H-Pentatonic-Collision.musicxml"
     }
   ],
-  "seams": [],
+  "blueprint": {
+    "authoritativeLeadsheet": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/00 - WWH DUO LEADSHEETS/06-Wrong-Turning-Duo-Leadsheet-V1.2.musicxml",
+    "melodicFingerprints": [
+      "Hook E–G–A–Bb, bars 1–2 and 5–6, then the descent A–G–E–D at bars 3 and 7.",
+      "Bars 21–24 hold E against Bb. Bars 25–28 repeat A–G–E–D."
+    ],
+    "protectedLandmarks": [
+      "Bar 8 is 3/4. Every other bar is 4/4.",
+      "Printed words: Crooked, dry, physical; Bass leads — guitar follows; OPEN DUO; wrong turn — let it stand.",
+      "Guitar rest at bar 30. No rehearsal marks. No chord symbols."
+    ],
+    "originalBassIdentity": "Bass moves from bar 1 (E–A–G) and does not wait for the guitar. Guitar octave-change is 0, so written guitar pitch is sounding pitch. CBV is no-change.",
+    "strongestPassages": [
+      "No listening rank. The leadsheet’s own interruptions are the short bar 8, the four-bar E/Bb hold at 21–24, and the guitar rest at 30 before Bb–E–A.",
+      "A–H are inventoried, including E-V3.0. E V2.0 is not the E source."
+    ],
+    "harmonicJourney": "No chord symbols are printed. The bass line is the harmonic evidence: E/A/Bb motion, an F centre around bars 8–12 and 21–24, and F at the end.",
+    "contrapuntalOpportunities": "The score already says the bass leads and the guitar follows. Bars 4 and 20 put a lower guitar dyad under the hook. A second independent line is not written through the tune.",
+    "dramaticClimax": "Not auditioned. The printed instruction at the close is to let the wrong turn stand, not to build a peak.",
+    "thematicReturn": "Bars 25–28 bring back A–G–E–D. Bar 32 ends on E against Bb.",
+    "expectedPerformanceDuration": "Quarter = 120, and sound tempo 120. 31 bars of 4/4 plus bar 8 in 3/4 = 1:03.50."
+  },
+  "motif": {
+    "name": "hook",
+    "pitches": ["E", "G", "A", "Bb"],
+    "note": "Opening guitar hook. The 3/4 bar and the E/Bb hold are separate events, not extra statements of this hook."
+  },
+  "landmarks": [
+    { "bars": "1-7", "role": "hook and the A–G–E–D answer, twice" },
+    { "bars": "8", "role": "3/4 bar" },
+    { "bars": "21-24", "role": "E against Bb" },
+    { "bars": "30", "role": "guitar rest" },
+    { "bars": "32", "role": "final E/Bb" }
+  ],
+  "narrative": [
+    { "name": "Hook", "bars": "1-7", "job": "Printed instruction: crooked, dry, physical. Hook twice, with the descending answer." },
+    { "name": "Short bar", "bars": "8-12", "job": "Bar 8 is 3/4. Bass keeps moving. Guitar sits on A and A/Bb." },
+    { "name": "Hook again", "bars": "13-20", "job": "Hook returns in shorter pieces. Bar 16 is the bass’s longest bar." },
+    { "name": "Hold", "bars": "21-24", "job": "E against Bb, four bars." },
+    { "name": "Descent and stop", "bars": "25-32", "job": "A–G–E–D four times, guitar rest at 30, then the last E/Bb. Printed words: let the wrong turn stand." }
+  ],
+  "seams": [
+    { "bars": "7-9", "job": "4/4 into the 3/4 bar and back" },
+    { "bars": "20-21", "job": "Into the E/Bb hold" },
+    { "bars": "29-32", "job": "Rest, then the last two bars" }
+  ],
   "mci": {
-    "continuity": "Not frozen. When a performance edition is named, bass LOCK, metre, and protected silences apply.",
-    "innovation": "Not frozen. Selective synthesis from this song's own A–H list. Do not reuse another song's narrative."
+    "continuity": "The E–G–A–Bb hook and the A–G–E–D descent stay recognisable. Bar 8 stays in 3/4. The bass event stream stays.",
+    "innovation": "A performance score may cut an expectation after the hook or across the E/Bb hold. It does not smooth the short bar into 4/4, and it does not borrow The Mirror’s section letters."
   },
   "cbv": {
     "decision": "no-change",
     "incorporated": false,
     "proposals": [],
-    "note": "No bass proposal until a performance score exists. Principal bass stays locked."
+    "note": "No bass proposal. Principal bass stays the leadsheet stream."
   },
   "radicalProfile": {
     "melodyPercent": 65,
     "harmonyPercent": 20,
     "rhythmPercent": 40,
-    "note": "WWH starting profile. Change the three numbers in this file if the song needs a different listening mix."
+    "note": "WWH starting profile. Listening guide, not a note count."
   },
   "selectiveSynthesis": true,
   "gce": {
     "officialNumeric": false,
     "dcrRefinements": 0,
-    "weakest": "Not named. One refinement is recorded when a performance edition is checked."
+    "weakest": "Not named. No performance score exists, so no refinement has been made."
   },
-  "protectedGuitarSilences": [],
+  "protectedGuitarSilences": [30],
   "rehearsal": [],
   "expectedBars": 32,
-  "targetDurationSeconds": { "min": 1, "max": 299 },
+  "targetDurationSeconds": { "min": 60, "max": 70 },
   "tempoPlan": [{ "fromBar": 1, "quartersPerMinute": 120 }]
 }

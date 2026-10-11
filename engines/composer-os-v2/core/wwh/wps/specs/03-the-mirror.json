@@ -1,47 +1,125 @@
 {
-  "wpsVersion": "1.1",
+  "wpsVersion": "1.2",
   "id": "03-the-mirror",
   "title": "The Mirror",
   "leadsheet": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/00 - WWH DUO LEADSHEETS/03-The-Mirror-Duo-Leadsheet-V1.0.musicxml",
   "outputDir": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/PERFORMANCE-EDITIONS",
-  "arrangements": [],
-  "motif": {
-    "name": "unfrozen",
-    "pitches": [],
-    "note": "Motif is not part of the V1.1 baseline. Name it in this file before a performance check."
-  },
-  "landmarks": [],
-  "narrative": [
+  "arrangementIds": ["A", "B", "C", "D", "E-V3.0", "F", "G", "H"],
+  "arrangements": [
     {
-      "name": "Unfrozen",
-      "bars": "1-68",
-      "job": "Song narrative is not frozen. The leadsheet is V1.0, 68 bars of 4/4, rehearsal A–L as printed. Fill the narrative before naming a performance edition."
+      "id": "A",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-36-RADICAL-COMPOSER-OS/03-The-Mirror/03-The-Mirror-A-Lyrical-Polyphony.musicxml"
+    },
+    {
+      "id": "B",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-36-RADICAL-COMPOSER-OS/03-The-Mirror/03-The-Mirror-B-Motivic-Reconstruction.musicxml"
+    },
+    {
+      "id": "C",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-36-RADICAL-COMPOSER-OS/03-The-Mirror/03-The-Mirror-C-Harmonic-Wrong-Worlds.musicxml"
+    },
+    {
+      "id": "D",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-36-RADICAL-COMPOSER-OS/03-The-Mirror/03-The-Mirror-D-Rhythmic-Textural.musicxml"
+    },
+    {
+      "id": "E-V3.0",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/V2.0-WWH-PLAY/WWH-Liquid-Harmony-E-V3.0/03-The-Mirror-E-Liquid-Harmony-V3.0.musicxml"
+    },
+    {
+      "id": "F",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-COMPOSER-OS-E-H/03-The-Mirror/03-The-Mirror-F-Melodic-Metamorphosis.musicxml"
+    },
+    {
+      "id": "G",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-COMPOSER-OS-E-H/03-The-Mirror/03-The-Mirror-G-Chamber-Polyphony.musicxml"
+    },
+    {
+      "id": "H",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-COMPOSER-OS-E-H/03-The-Mirror/03-The-Mirror-H-Pentatonic-Collision.musicxml"
     }
   ],
-  "seams": [],
+  "blueprint": {
+    "authoritativeLeadsheet": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/00 - WWH DUO LEADSHEETS/03-The-Mirror-Duo-Leadsheet-V1.0.musicxml",
+    "melodicFingerprints": [
+      "M1, bars 1–8: written C5, Eb5–D5, C5, A4, G4, F4–Eb4, C4–Eb4, Eb4.",
+      "M1 colour, bars 9–11: G4 under moving upper dyads Eb/A, E/A, Eb/Bb.",
+      "M2, bars 17–20: F4, Eb4–F4, G4, F4. M2 colour stacks G4 under Eb/B and F4 under B/Eb."
+    ],
+    "protectedLandmarks": [
+      "Rehearsal A@1 B@9 C@17 D@21 E@25 F@29 G@37 H@44 I@46 J@51 K@59 L@60",
+      "Printed words M1, M1 colour, M2, M2 colour, M3, M4, M5, Eb arrival, M6, M1 dissolved, Cdim7, Afterglow",
+      "Guitar whole-bar rests at 12, 15, 40, 62",
+      "Bar 39: attack G4 dotted half duration 768; chord tones D5 and Bb5 stored as 512 with the same dotted-half type. Onsets stay."
+    ],
+    "originalBassIdentity": "Upright bass, octave-change -1. Bar 1 rests. Bar 2 enters on C. Bars 10–16 restate bars 2–8. Bars 66–68 hold A. CBV is no-change.",
+    "strongestPassages": [
+      "No listening rank. Printed peaks on the leadsheet: bar 34 written G6 at f; bars 37–39 Ebmaj7 held across the tie into the dotted-half release; J at bar 51 restates the bar-9 colour under the word M1 dissolved; L at bar 60 is marked Afterglow.",
+      "A–H are inventoried, including E-V3.0. Titles are not a ranking. E V2.0 and the undated E file are not the E source."
+    ],
+    "harmonicJourney": "Printed symbols: Cm6, Abmaj7, Cm6, Abmaj7, Abm6, Abm6, Amaj7, Gmaj7, G, Ebmaj7, Edim, Eb, Edim, Edim7, Cm6, C, Cdim7, Cm6, Dm6, F.",
+    "contrapuntalOpportunities": "Colour bars already place a lower voice under chord tones (9–11, 13–14, 21–24, 29–32, 51–53, 55–58). A second composed line is not in the leadsheet. Guitar octave-change is -1.",
+    "dramaticClimax": "Not auditioned. The loudest printed guitar dynamic is f at bar 34. That mark is not a composed climax.",
+    "thematicReturn": "J, bar 51, word M1 dissolved, restates the M1 colour dyads. L, bar 60, word Afterglow, then bar 68 ends on written C5/A5 over F.",
+    "expectedPerformanceDuration": "Printed quarter = 90. No sound-tempo element. 68 bars of 4/4 = 3:01.33."
+  },
+  "motif": {
+    "name": "M1",
+    "pitches": ["C", "Eb", "D", "C", "A"],
+    "note": "Opening written line of M1, bars 1–4. Later sections are labelled M2–M6 on the leadsheet. Do not treat this cell as the Impossible Metaphysics cell."
+  },
+  "landmarks": [
+    { "bars": "1-8", "role": "M1 single line" },
+    { "bars": "9-16", "role": "M1 colour and the eighth-note lift into M2" },
+    { "bars": "34", "role": "printed f, written G6" },
+    { "bars": "37-39", "role": "Ebmaj7 tie released at bar 39" },
+    { "bars": "44", "role": "Eb arrival" },
+    { "bars": "51", "role": "M1 dissolved" },
+    { "bars": "60-68", "role": "Afterglow through the final F chord" }
+  ],
+  "narrative": [
+    { "name": "M1", "bars": "1-8", "job": "Printed word M1. Single line over Cm6 then Abmaj7." },
+    { "name": "M1 colour", "bars": "9-16", "job": "Printed word M1 colour. Dyads, then the eighth-note ascent at bar 16. Guitar rests at 12 and 15." },
+    { "name": "M2", "bars": "17-20", "job": "Printed word M2. Abm6. New four-note line." },
+    { "name": "M2 colour", "bars": "21-24", "job": "Printed word M2 colour. Stacked voices on Abm6." },
+    { "name": "M3", "bars": "25-28", "job": "Printed word M3. Amaj7." },
+    { "name": "M4", "bars": "29-36", "job": "Printed word M4. Gmaj7 then G. Bar 34 is the printed f." },
+    { "name": "M5", "bars": "37-43", "job": "Printed word M5. Ebmaj7 held through bar 39, guitar rest at 40, then Edim." },
+    { "name": "Eb arrival", "bars": "44-45", "job": "Printed word Eb arrival. Eb major." },
+    { "name": "M6", "bars": "46-50", "job": "Printed word M6. Edim then Edim7." },
+    { "name": "M1 dissolved", "bars": "51-58", "job": "Printed word M1 dissolved. Cm6 then C." },
+    { "name": "Cdim7", "bars": "59", "job": "Printed word Cdim7." },
+    { "name": "Afterglow", "bars": "60-68", "job": "Printed word Afterglow. Cm6, guitar rest at 62, Dm6, final F." }
+  ],
+  "seams": [
+    { "bars": "16-17", "job": "Eighth-note lift into M2" },
+    { "bars": "36-37", "job": "G6 bar into the Ebmaj7 hold" },
+    { "bars": "39-41", "job": "Dotted-half release, empty bar, Edim" },
+    { "bars": "50-51", "job": "Into M1 dissolved" }
+  ],
   "mci": {
-    "continuity": "Not frozen. When a performance edition is named, bass LOCK, metre, rehearsal marks, and protected silences apply.",
-    "innovation": "Not frozen. Selective synthesis from this song's own A–H list. Do not reuse the Impossible Metaphysics narrative."
+    "continuity": "M1’s opening shape and the M1-colour dyads have to stay recognisable at J. Bass, metre, rehearsal letters, and the guitar rests at 12, 15, 40, and 62 stay.",
+    "innovation": "A performance score may develop the inner voices already stacked in the colour bars, and may connect M5’s hold to the Eb arrival. It does not reuse the Impossible Metaphysics seven-stage plan."
   },
   "cbv": {
     "decision": "no-change",
     "incorporated": false,
     "proposals": [],
-    "note": "No bass proposal until a performance score exists. Principal bass stays locked."
+    "note": "No bass proposal. Principal bass stays the leadsheet stream."
   },
   "radicalProfile": {
     "melodyPercent": 65,
     "harmonyPercent": 20,
     "rhythmPercent": 40,
-    "note": "WWH starting profile. Change the three numbers in this file if the song needs a different listening mix."
+    "note": "WWH starting profile. Listening guide, not a note count."
   },
   "selectiveSynthesis": true,
   "gce": {
     "officialNumeric": false,
     "dcrRefinements": 0,
-    "weakest": "Not named. One refinement is recorded when a performance edition is checked."
+    "weakest": "Not named. No performance score exists, so no refinement has been made."
   },
-  "protectedGuitarSilences": [],
+  "protectedGuitarSilences": [12, 15, 40, 62],
   "rehearsal": [
     { "mark": "A", "bar": 1 },
     { "mark": "B", "bar": 9 },
@@ -57,6 +135,6 @@
     { "mark": "L", "bar": 60 }
   ],
   "expectedBars": 68,
-  "targetDurationSeconds": { "min": 1, "max": 299 },
+  "targetDurationSeconds": { "min": 170, "max": 200 },
   "tempoPlan": [{ "fromBar": 1, "quartersPerMinute": 90 }]
 }
