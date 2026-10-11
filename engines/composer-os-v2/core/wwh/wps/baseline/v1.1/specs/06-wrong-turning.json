@@ -1,0 +1,49 @@
+{
+  "wpsVersion": "1.1",
+  "id": "06-wrong-turning",
+  "title": "Wrong Turning",
+  "leadsheet": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/00 - WWH DUO LEADSHEETS/06-Wrong-Turning-Duo-Leadsheet-V1.2.musicxml",
+  "outputDir": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/PERFORMANCE-EDITIONS",
+  "arrangements": [],
+  "motif": {
+    "name": "unfrozen",
+    "pitches": [],
+    "note": "Motif is not part of the V1.1 baseline. Name it in this file before a performance check. Leadsheet edition is V1.2."
+  },
+  "landmarks": [],
+  "narrative": [
+    {
+      "name": "Unfrozen",
+      "bars": "1-32",
+      "job": "Song narrative is not frozen. The leadsheet is V1.2, 32 bars, 4/4 with bar 8 in 3/4, quarter = 120. Fill the narrative before naming a performance edition."
+    }
+  ],
+  "seams": [],
+  "mci": {
+    "continuity": "Not frozen. When a performance edition is named, bass LOCK, metre, and protected silences apply.",
+    "innovation": "Not frozen. Selective synthesis from this song's own A–H list. Do not reuse another song's narrative."
+  },
+  "cbv": {
+    "decision": "no-change",
+    "incorporated": false,
+    "proposals": [],
+    "note": "No bass proposal until a performance score exists. Principal bass stays locked."
+  },
+  "radicalProfile": {
+    "melodyPercent": 65,
+    "harmonyPercent": 20,
+    "rhythmPercent": 40,
+    "note": "WWH starting profile. Change the three numbers in this file if the song needs a different listening mix."
+  },
+  "selectiveSynthesis": true,
+  "gce": {
+    "officialNumeric": false,
+    "dcrRefinements": 0,
+    "weakest": "Not named. One refinement is recorded when a performance edition is checked."
+  },
+  "protectedGuitarSilences": [],
+  "rehearsal": [],
+  "expectedBars": 32,
+  "targetDurationSeconds": { "min": 1, "max": 299 },
+  "tempoPlan": [{ "fromBar": 1, "quartersPerMinute": 120 }]
+}

@@ -1,0 +1,112 @@
+{
+  "id": "07-impossible-metaphysics",
+  "title": "Impossible Metaphysics",
+  "wpsVersion": "1.1",
+  "performanceEditionId": "V1.3",
+  "arrangementIds": ["A", "B", "C", "D", "E-V3.0", "F", "G", "H"],
+  "leadsheet": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/00 - WWH DUO LEADSHEETS/07-Impossible-Metaphysics-Duo-Leadsheet-V1.1.musicxml",
+  "performanceEdition": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/PERFORMANCE-EDITIONS/07-Impossible-Metaphysics-Performance-Edition-V1.3.musicxml",
+  "outputDir": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/PERFORMANCE-EDITIONS",
+  "arrangements": [
+    {
+      "id": "A",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-36-RADICAL-COMPOSER-OS/07-Impossible-Metaphysics/07-Impossible-Metaphysics-A-Lyrical-Polyphony.musicxml"
+    },
+    {
+      "id": "B",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-36-RADICAL-COMPOSER-OS/07-Impossible-Metaphysics/07-Impossible-Metaphysics-B-Motivic-Reconstruction.musicxml"
+    },
+    {
+      "id": "C",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-36-RADICAL-COMPOSER-OS/07-Impossible-Metaphysics/07-Impossible-Metaphysics-C-Harmonic-Wrong-Worlds.musicxml"
+    },
+    {
+      "id": "D",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-36-RADICAL-COMPOSER-OS/07-Impossible-Metaphysics/07-Impossible-Metaphysics-D-Rhythmic-Textural.musicxml"
+    },
+    {
+      "id": "E-V3.0",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/V2.0-WWH-PLAY/WWH-Liquid-Harmony-E-V3.0/07-Impossible-Metaphysics-E-Liquid-Harmony-V3.0.musicxml"
+    },
+    {
+      "id": "F",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-COMPOSER-OS-E-H/07-Impossible-Metaphysics/07-Impossible-Metaphysics-F-Melodic-Metamorphosis.musicxml"
+    },
+    {
+      "id": "G",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-COMPOSER-OS-E-H/07-Impossible-Metaphysics/07-Impossible-Metaphysics-G-Chamber-Polyphony.musicxml"
+    },
+    {
+      "id": "H",
+      "path": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/MORPH-COMPOSER-OS-E-H/07-Impossible-Metaphysics/07-Impossible-Metaphysics-H-Pentatonic-Collision.musicxml"
+    }
+  ],
+  "motif": {
+    "name": "cell",
+    "pitches": ["A", "C#", "B", "E", "F#"],
+    "note": "Keep the cell recognisable by interval and placement. Do not quote it in every bar."
+  },
+  "landmarks": [
+    { "bars": "1-2", "role": "opening cell" },
+    { "bars": "22-26", "role": "new tune" },
+    { "bars": "33", "role": "cell at the tempo change" },
+    { "bars": "44", "role": "cell inside the fast section" },
+    { "bars": "48", "role": "cell as chords" },
+    { "bars": "52-54", "role": "frozen E/A, then the floor C" },
+    { "bars": "65-66", "role": "return, F# cut short" },
+    { "bars": "72", "role": "final F#" }
+  ],
+  "narrative": [
+    { "name": "Opening identity", "bars": "1-8", "job": "State the cell and the open fifth." },
+    { "name": "Counterpoint", "bars": "9-18", "job": "Second voice enters late and leaves." },
+    { "name": "Harmonic destabilisation", "bars": "19-21", "job": "Tritone and pentatonic collision, then hand the next tune its first note." },
+    { "name": "New melodic narrative", "bars": "22-32", "job": "The line made from the cell, then the hinge that aims at the machine." },
+    { "name": "Liquid Harmony", "bars": "33-45", "job": "Common-tone dyads. Do not paste the E arrangement over this." },
+    { "name": "Dramatic climax", "bars": "46-64", "job": "Splinter, empty bar, chordal cell, failed reassembly, freeze, bass lead." },
+    { "name": "Transformed return", "bars": "65-72", "job": "The cell again, F# refused as a long note, B chord after silence, D into the final F#." }
+  ],
+  "seams": [
+    { "bars": "19-22", "job": "Wrong universe into the new tune" },
+    { "bars": "27-33", "job": "Hinge into the tempo change" },
+    { "bars": "45-52", "job": "Low cell, splinter, climax, freeze" },
+    { "bars": "64-72", "job": "Bass lead into the return and the last F#" }
+  ],
+  "mci": {
+    "continuity": "The cell A–C#–B–E–F# stays recognisable at the opening, the tempo change, the fast section, and the return. The bass event stream, metre, rehearsal marks, protected guitar silences, and the final F# stay.",
+    "innovation": "Guitar writing changes only where this song needs a join: the wrong universe into the new tune, the hinge, the splinter, and the B chord after silence. A–H are read for ideas. Whole passages are not pasted."
+  },
+  "cbv": {
+    "decision": "no-change",
+    "incorporated": false,
+    "proposals": [],
+    "note": "No bass alternative is recommended. Proposals, when a later song lists any, stay reversible and are not written into the principal score."
+  },
+  "radicalProfile": {
+    "melodyPercent": 65,
+    "harmonyPercent": 20,
+    "rhythmPercent": 40,
+    "note": "WWH starting profile for this song. Not a note-count quota."
+  },
+  "selectiveSynthesis": true,
+  "gce": {
+    "officialNumeric": false,
+    "dcrRefinements": 1,
+    "weakest": "Bar 67 restated C#–B immediately after the cell in bars 65–66. One refinement: a rest, then the B chord. No second pass."
+  },
+  "protectedGuitarSilences": [29, 47, 58, 60, 64, 70],
+  "rehearsal": [
+    { "mark": "A", "bar": 1 },
+    { "mark": "B", "bar": 9 },
+    { "mark": "C", "bar": 22 },
+    { "mark": "D", "bar": 33 },
+    { "mark": "E", "bar": 55 },
+    { "mark": "F", "bar": 65 }
+  ],
+  "expectedBars": 72,
+  "targetDurationSeconds": { "min": 255, "max": 280 },
+  "tempoPlan": [
+    { "fromBar": 1, "quartersPerMinute": 58 },
+    { "fromBar": 33, "quartersPerMinute": 84 },
+    { "fromBar": 65, "quartersPerMinute": 58 }
+  ]
+}

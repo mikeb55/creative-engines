@@ -1,0 +1,62 @@
+{
+  "wpsVersion": "1.1",
+  "id": "03-the-mirror",
+  "title": "The Mirror",
+  "leadsheet": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/00 - WWH DUO LEADSHEETS/03-The-Mirror-Duo-Leadsheet-V1.0.musicxml",
+  "outputDir": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/PERFORMANCE-EDITIONS",
+  "arrangements": [],
+  "motif": {
+    "name": "unfrozen",
+    "pitches": [],
+    "note": "Motif is not part of the V1.1 baseline. Name it in this file before a performance check."
+  },
+  "landmarks": [],
+  "narrative": [
+    {
+      "name": "Unfrozen",
+      "bars": "1-68",
+      "job": "Song narrative is not frozen. The leadsheet is V1.0, 68 bars of 4/4, rehearsal A–L as printed. Fill the narrative before naming a performance edition."
+    }
+  ],
+  "seams": [],
+  "mci": {
+    "continuity": "Not frozen. When a performance edition is named, bass LOCK, metre, rehearsal marks, and protected silences apply.",
+    "innovation": "Not frozen. Selective synthesis from this song's own A–H list. Do not reuse the Impossible Metaphysics narrative."
+  },
+  "cbv": {
+    "decision": "no-change",
+    "incorporated": false,
+    "proposals": [],
+    "note": "No bass proposal until a performance score exists. Principal bass stays locked."
+  },
+  "radicalProfile": {
+    "melodyPercent": 65,
+    "harmonyPercent": 20,
+    "rhythmPercent": 40,
+    "note": "WWH starting profile. Change the three numbers in this file if the song needs a different listening mix."
+  },
+  "selectiveSynthesis": true,
+  "gce": {
+    "officialNumeric": false,
+    "dcrRefinements": 0,
+    "weakest": "Not named. One refinement is recorded when a performance edition is checked."
+  },
+  "protectedGuitarSilences": [],
+  "rehearsal": [
+    { "mark": "A", "bar": 1 },
+    { "mark": "B", "bar": 9 },
+    { "mark": "C", "bar": 17 },
+    { "mark": "D", "bar": 21 },
+    { "mark": "E", "bar": 25 },
+    { "mark": "F", "bar": 29 },
+    { "mark": "G", "bar": 37 },
+    { "mark": "H", "bar": 44 },
+    { "mark": "I", "bar": 46 },
+    { "mark": "J", "bar": 51 },
+    { "mark": "K", "bar": 59 },
+    { "mark": "L", "bar": 60 }
+  ],
+  "expectedBars": 68,
+  "targetDurationSeconds": { "min": 1, "max": 299 },
+  "tempoPlan": [{ "fromBar": 1, "quartersPerMinute": 90 }]
+}

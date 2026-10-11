@@ -210,11 +210,12 @@ User / API
 
 ## Current system status
 
-- **Guitarâ€“Bass Duo** and **ECM Chamber**: full MusicXML golden path; optional **32-bar** long-form for duo.
+- **Guitar–Bass Duo** and **ECM Chamber**: full MusicXML golden path; optional **32-bar** long-form for duo.
 - **Song Mode**: compile + planning + duo MusicXML generation path via app API; rhythm intent applies on the **Song Mode duo MusicXML** path when `intent` is sent.
 - **Big Band / String Quartet**: planning and/or realisation paths per preset (see engine README for module ids).
+- **WPS V1.1** (`docs/WPS_WORKFLOW.md`): checks an existing WWH duo MusicXML file. It does not generate notes. Song specs live in `engines/composer-os-v2/core/wwh/wps/specs/`. The checker is `runWps` in `engines/composer-os-v2/core/wwh/wps/wpsAssess.ts`.
 
-## SQ Harmonic Voice â€” VRB Registry
+## SQ Harmonic Voice — VRB Registry
 
 A **Voice Rule Bundle (VRB)** is a per-composer parameter set that governs how the GCE scores string-quartet output on the SQâ†’BB path. It controls the Ïƒ register ceiling, independence level, register policy, phrase articulation, cadence credit, and harmony-interval credits. When the user picks a name in the **SQ Harmonic Voice** picker, the engine loads that profileâ€™s adjustments into Gate 2 scoring (via `getSqVrbGceAdjustments` and isolated branches in `gceAutoScorers.ts`).
 

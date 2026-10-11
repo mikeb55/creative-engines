@@ -58,7 +58,8 @@
     "eval:big-band-chart": "tsx scripts/bigBandChartEval.ts",
     "test:output-validate": "node --max-old-space-size=4096 ../../node_modules/tsx/dist/cli.mjs --tsconfig ../../tsconfig.json tests/outputValidationSmoke.test.ts",
     "riff:smoke": "bash scripts/riff-smoke.sh",
-    "wwh:performance-v7": "tsx --tsconfig ../../tsconfig.json scripts/wwhPerformanceV7.ts"
+    "wwh:performance-v7": "tsx --tsconfig ../../tsconfig.json scripts/wwhPerformanceV7.ts",
+    "wps": "tsx --tsconfig ../../tsconfig.json scripts/wpsCli.ts"
   },
   "types": "./core/conductor/conductorTypes.ts",
   "dependencies": {
