@@ -48,7 +48,7 @@
       },
       {
         "id": "SCALE_RUN",
-        "rule": "A stepwise scale run of more than 6 notes."
+        "rule": "A stepwise scale run of more than 6 notes fails only when that run has fewer than 2 leaps of a 3rd or wider and no field change. An exempted run is reported with its bar numbers."
       },
       {
         "id": "MAJ7_SHARP11",
@@ -91,7 +91,41 @@
       "minFieldCollisions": 2,
       "minSilentBars": 4
     },
-    "mustDifferIn": ["intervalProfile", "density", "register"]
+    "mustDifferIn": ["intervalProfile", "density", "register"],
+    "report": ["notesPerBar", "bursts", "longestStreamBars", "intervalProfile"]
+  },
+  "density": {
+    "SOLO_1": {
+      "name": "INSIDE",
+      "eighthStreams": 1,
+      "eighthStreamBars": [6, 8],
+      "shortRestQuartersMax": 0.5,
+      "displacedAccents": 2,
+      "enclosures": 2,
+      "leapsOfFourth": 3,
+      "leapSemitones": 5,
+      "arrivalQuartersMin": 1,
+      "spaceAfterArrivalQuarters": 2,
+      "maxSixteenthBursts": 1
+    },
+    "SOLO_2": {
+      "name": "OUTSIDE",
+      "sixteenthBursts": [3, 5],
+      "burstNotes": [4, 12],
+      "burstMaxBars": 1,
+      "minWideIntervalShare": 0.5,
+      "wideIntervalSemitones": 3,
+      "phrasing": ["string-skipping", "legato"],
+      "plainScaleRuns": false,
+      "isolation": "Each burst is preceded or followed by a half note or longer, or by silence.",
+      "burstsStartingInBassGap": 2,
+      "maxEighthStreamBars": 2
+    },
+    "headsAndComping": {
+      "roles": ["HEAD_IN", "HEAD_OUT", "BASS_SOLO"],
+      "sixteenthBursts": 0
+    },
+    "playability": "HUMAN PLAYABILITY: NOT VERIFIED. Each 16th-note burst is a technique étude. solveFretPath runs on the burst alone: max span 4, hard shifts 0."
   },
   "anchor": {
     "rule": "Every radical chorus keeps at least one source anchor: a hook interval, a rhythmic fingerprint, or an arrival. Name it per chorus."

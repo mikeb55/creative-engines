@@ -204,6 +204,29 @@ function run(): { ok: boolean; name: string }[] {
     assert.match(lines, /Bryant ban PARALLEL_GRIP: FAIL bars 3/);
   });
 
+  check('a stepwise run with two leaps is exempt and a head bans sixteenths', () => {
+    const guitar = part(
+      [
+        [note('C', 4, 2), note('D', 4, 2), note('E', 4, 2), note('G', 4, 2), note('A', 4, 2), note('B', 4, 2), note('D', 5, 2)],
+        [note('C', 4, 1), note('E', 4, 1), note('G', 4, 1), note('C', 5, 1), rest(12)],
+      ],
+      [[], ['head in']]
+    );
+    const bass = part([[note('C', 2, 16)], [rest(16)]]);
+    const report = assessBryantEdition({
+      guitar,
+      bass,
+      hookPitches: ['E', 'G', 'A', 'Bb'],
+      chorusLength: 2,
+    });
+    const scale = report.bans.find((ban) => ban.id === 'SCALE_RUN')!;
+    assert.equal(scale.ok, true);
+    assert.match(scale.detail, /exempt bars 1/);
+    assert.match(report.densityFailures.join('\n'), /HEAD_IN: FAIL 16th bursts at bars 2/);
+    assert.match(formatBryantReport(report).join('\n'), /HUMAN PLAYABILITY: NOT VERIFIED/);
+    assert.match(formatBryantReport(report).join('\n'), /technique étude bars 2/);
+  });
+
   check('Wrong Turning V3.0 is read only and the named choruses fail', () => {
     const before = fs.readFileSync(v3);
     const hash = crypto.createHash('sha256').update(before).digest('hex');
@@ -229,6 +252,9 @@ function run(): { ok: boolean; name: string }[] {
     const text = formatBryantReport(report).join('\n');
     assert.match(text, /65\/20\/40 listening guide/);
     assert.match(text, /Bryant device-by-bar/);
+    assert.match(text, /Bryant density SOLO 1: FAIL/);
+    assert.match(text, /Bryant density SOLO 2: FAIL/);
+    assert.match(text, /notes\/bar/);
     console.log('\n' + text + '\n');
   });
 

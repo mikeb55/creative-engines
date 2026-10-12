@@ -8,6 +8,15 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { V8B_OPEN_STRING_MIDI } from '../wwhBlackAuraV8bRecipe';
 import type { WwhImportedMeasure, WwhImportedNote, WwhImportedPart } from '../wwhDuoImport';
+import {
+  classifyScaleRuns,
+  findEighthStreams,
+  findSixteenthBursts,
+  type DensityBurst,
+  type EighthStream,
+  type RhythmEvent,
+  type ScaleRunFinding,
+} from './wpsBryantDensity';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -100,6 +109,8 @@ export interface BryantSoloNumbers {
   linear: boolean;
   motivic: boolean;
   nonFunctional: boolean;
+  bursts: number;
+  longestStreamBars: number;
 }
 
 export interface BryantAssessment {
@@ -117,6 +128,9 @@ export interface BryantAssessment {
   choruses: BryantChorusReport[];
   failures: string[];
   listeningGuide: string;
+  scaleExemptions: ScaleRunFinding[];
+  bursts: DensityBurst[];
+  densityFailures: string[];
 }
 
 export interface BryantAssessInput {
@@ -130,14 +144,8 @@ export interface BryantAssessInput {
   maj7Sharp11Justification?: string;
 }
 
-interface Attack {
-  bar: number;
-  onset: number;
-  end: number;
-  midis: number[];
-  pcs: number[];
+interface Attack extends RhythmEvent {
   duration: number;
-  rest: boolean;
 }
 
 interface Melodic {
@@ -239,13 +247,30 @@ function barTicks(measure: WwhImportedMeasure): number {
   return Math.round((measure.divisions * measure.beats * 4) / measure.beatType);
 }
 
+function rhythmValue(note: WwhImportedNote, quarters: number): RhythmEvent['value'] {
+  if (note.dots) {
+    if (quarters >= 2 - 1e-6) return 'half';
+    if (quarters >= 1 - 1e-6) return 'quarter';
+    return 'other';
+  }
+  if (note.type === '16th' || Math.abs(quarters - 0.25) < 0.02) return '16th';
+  if (note.type === 'eighth' || Math.abs(quarters - 0.5) < 0.02) return 'eighth';
+  if (note.type === 'half' || note.type === 'whole' || quarters >= 2 - 1e-6) return 'half';
+  if (note.type === 'quarter' || quarters >= 1 - 1e-6) return 'quarter';
+  return 'other';
+}
+
 function attacksOf(part: WwhImportedPart): Attack[] {
   const attacks: Attack[] = [];
   let cursor = 0;
+  let quarterCursor = 0;
   part.measures.forEach((measure, index) => {
     const bar = index + 1;
     const transpose = measure.transposeOctave ?? 0;
+    const divisions = measure.divisions || 1;
+    const barQuarters = (measure.beats * 4) / measure.beatType;
     let onset = cursor;
+    let barQuarter = 0;
     let current: Attack | null = null;
     const close = () => {
       if (current) attacks.push(current);
@@ -262,19 +287,29 @@ function attacksOf(part: WwhImportedPart): Attack[] {
       }
       close();
       const midi = midiOf(note, transpose);
+      const quarters = note.duration / divisions;
       current = {
         bar,
         onset,
         end: onset + note.duration,
+        time: quarterCursor + barQuarter,
+        quarters,
+        barQuarter,
         midis: midi == null ? [] : [midi],
         pcs: midi == null ? [] : [((midi % 12) + 12) % 12],
         duration: note.duration,
         rest: note.rest || midi == null,
+        tieStart: note.tieStart,
+        tieStop: note.tieStop,
+        value: rhythmValue(note, quarters),
+        barQuarters,
       };
       onset += note.duration;
+      barQuarter += quarters;
     }
     close();
     cursor += barTicks(measure);
+    quarterCursor += barQuarters;
   });
   return attacks;
 }
@@ -484,6 +519,8 @@ function emptySolo(): BryantSoloNumbers {
     linear: false,
     motivic: false,
     nonFunctional: false,
+    bursts: 0,
+    longestStreamBars: 0,
   };
 }
 
@@ -528,6 +565,8 @@ function soloNumbers(
     linear,
     motivic,
     nonFunctional: !bars.some((bar) => functionalBars.has(bar)),
+    bursts: 0,
+    longestStreamBars: 0,
   };
 }
 
@@ -635,29 +674,11 @@ export function assessBryantEdition(input: BryantAssessInput): BryantAssessment 
     functionalBars.add(grips[i + 1]!.bar);
   }
 
-  let run: Attack[] = [];
-  const pushRun = () => {
-    if (run.length > 6) banBars.SCALE_RUN.push(...run.map((attack) => attack.bar));
-    run = [];
-  };
-  for (const attack of guitar) {
-    if (attack.rest || attack.midis.length !== 1) {
-      pushRun();
-      continue;
-    }
-    const previous = run[run.length - 1];
-    if (!previous) {
-      run = [attack];
-      continue;
-    }
-    const gap = Math.abs(attack.midis[0]! - previous.midis[0]!);
-    if (gap === 1 || gap === 2) run.push(attack);
-    else {
-      pushRun();
-      run = [attack];
-    }
+  const scaleRuns = classifyScaleRuns(guitar);
+  for (const finding of scaleRuns) {
+    if (!finding.exempt) banBars.SCALE_RUN.push(...finding.bars);
   }
-  pushRun();
+  banBars.SCALE_RUN = uniqueSorted(banBars.SCALE_RUN);
 
   const justified = (input.maj7Sharp11Justification ?? '').trim().length > 0;
   for (const attack of grips) {
@@ -779,6 +800,19 @@ export function assessBryantEdition(input: BryantAssessInput): BryantAssessment 
     ? soloNumbers(guitar, soloSpan('SOLO_2'), solo2Rule.wideIntervalSemitones, collisions, functionalBars)
     : emptySolo();
 
+  const densityBursts = findSixteenthBursts(guitar, bass);
+  const densityStreams = findEighthStreams(guitar);
+  const paintSolo = (solo: BryantSoloNumbers, bars: number[]) => {
+    if (!bars.length) return;
+    const localBursts = inSet(densityBursts, bars);
+    const localStreams = inSet(densityStreams, bars);
+    solo.bursts = localBursts.length;
+    solo.longestStreamBars = localStreams.reduce((max, stream) => Math.max(max, stream.barCount), 0);
+  };
+  paintSolo(solo1, soloSpan('SOLO_1'));
+  paintSolo(solo2, soloSpan('SOLO_2'));
+  const densityFailures = densityFindings(spans.map((span) => span.id), spans, densityStreams, densityBursts);
+
   if (solo1.present) {
     const row = choruses.find((chorus) => chorus.id === 'SOLO_1');
     if (row) {
@@ -831,10 +865,14 @@ export function assessBryantEdition(input: BryantAssessInput): BryantAssessment 
   const bans: BryantGate[] = BRYANT_BANS.map((id) => {
     const bars = banBars[id];
     const ok = id === 'MAJ7_SHARP11' ? bars.length === 0 : bars.length === 0;
+    const exempt = id === 'SCALE_RUN' ? scaleRuns.filter((finding) => finding.exempt) : [];
+    const exemptText = exempt.length
+      ? `; exempt ${exempt.map((finding) => `bars ${formatBars(finding.bars)} (${finding.reason})`).join('; ')}`
+      : '';
     const detail =
       id === 'MAJ7_SHARP11' && justified && bars.length === 0
         ? 'no maj7#11 voicing'
-        : `bars ${formatBars(bars)}`;
+        : `bars ${formatBars(bars)}${exemptText}`;
     return { id, ok, bars, detail };
   });
 
@@ -855,9 +893,15 @@ export function assessBryantEdition(input: BryantAssessInput): BryantAssessment 
   for (const ban of bans) if (!ban.ok) failures.push(`${ban.id} bars ${formatBars(ban.bars)}`);
   for (const chorus of choruses) if (!chorus.ok) failures.push(`${chorus.id}: ${chorus.reasons.join('; ')}`);
   if (!contrast.ok) failures.push(contrast.detail);
+  for (const failure of densityFailures) failures.push(failure);
 
   const listeningGuide = `65/20/40 listening guide (${spec.listeningGuide.melodyPercent}/${spec.listeningGuide.harmonyPercent}/${spec.listeningGuide.rhythmPercent}). Not a gate.`;
-  const editionOk = signatureOk && bans.every((ban) => ban.ok) && choruses.every((chorus) => chorus.ok) && contrast.ok;
+  const editionOk =
+    signatureOk &&
+    bans.every((ban) => ban.ok) &&
+    choruses.every((chorus) => chorus.ok) &&
+    contrast.ok &&
+    densityFailures.length === 0;
   return {
     ok: editionOk,
     devices,
@@ -873,6 +917,9 @@ export function assessBryantEdition(input: BryantAssessInput): BryantAssessment 
     choruses,
     failures,
     listeningGuide,
+    scaleExemptions: scaleRuns.filter((finding) => finding.exempt),
+    bursts: densityBursts,
+    densityFailures,
   };
 }
 
@@ -892,9 +939,99 @@ function gripTypesIn(grips: Attack[], bars: number[], liquidIndexes: Set<number>
   return BRYANT_GRIP_TYPES.filter((type) => found.has(type));
 }
 
+function inSet<T extends { bars: number[] }>(items: readonly T[], bars: readonly number[]): T[] {
+  const wanted = new Set(bars);
+  return items.filter((item) => item.bars.some((bar) => wanted.has(bar)));
+}
+
+function densityFindings(
+  presentIds: readonly string[],
+  spans: readonly { id: string; bars: number[] }[],
+  streams: readonly EighthStream[],
+  bursts: readonly DensityBurst[]
+): string[] {
+  const failures: string[] = [];
+  const wholeBars = spans.flatMap((span) => span.bars);
+  const wholeStreams = inSet(streams, wholeBars);
+  const wholeBursts = inSet(bursts, wholeBars);
+  const fitted = wholeStreams.filter((stream) => stream.barCount >= 6 && stream.barCount <= 8);
+  const longest = wholeStreams.reduce((max, stream) => Math.max(max, stream.barCount), 0);
+  const measured = `measured eighth streams of 6–8 bars ${fitted.length}, longest stream ${longest} bars, 16th bursts ${wholeBursts.length}${wholeBursts.length ? ` at bars ${formatBars(wholeBursts.flatMap((burst) => burst.bars))}` : ''}`;
+
+  const solo1 = spans.find((span) => span.id === 'SOLO_1');
+  if (!solo1) failures.push(`SOLO 1: FAIL chorus absent; ${measured}`);
+  else failures.push(...solo1Density(inSet(streams, solo1.bars), inSet(bursts, solo1.bars)));
+
+  const solo2 = spans.find((span) => span.id === 'SOLO_2');
+  if (!solo2) failures.push(`SOLO 2: FAIL chorus absent; ${measured}`);
+  else failures.push(...solo2Density(inSet(streams, solo2.bars), inSet(bursts, solo2.bars)));
+
+  for (const id of ['HEAD_IN', 'HEAD_OUT', 'BASS_SOLO'] as const) {
+    const span = spans.find((item) => item.id === id);
+    if (!span) {
+      failures.push(`${id}: FAIL chorus absent; 16th bursts are banned in heads and comping`);
+      continue;
+    }
+    const local = inSet(bursts, span.bars);
+    if (local.length) failures.push(`${id}: FAIL 16th bursts at bars ${formatBars(local.flatMap((burst) => burst.bars))}`);
+  }
+  for (const burst of wholeBursts) {
+    if (!burst.fretOk) {
+      failures.push(`burst bars ${formatBars(burst.bars)}: FAIL ${burst.fretDetail}`);
+    }
+  }
+  void presentIds;
+  return failures;
+}
+
+function solo1Density(streams: readonly EighthStream[], bursts: readonly DensityBurst[]): string[] {
+  const reasons: string[] = [];
+  const fitted = streams.filter((stream) => stream.barCount >= 6 && stream.barCount <= 8);
+  if (fitted.length !== 1) reasons.push(`SOLO 1: FAIL eighth streams of 6–8 bars ${fitted.length}, need 1`);
+  else {
+    const stream = fitted[0]!;
+    if (stream.displacedAccents < 2) reasons.push(`SOLO 1: FAIL displaced accents ${stream.displacedAccents}, need 2, bars ${formatBars(stream.bars)}`);
+    if (stream.enclosures < 2) reasons.push(`SOLO 1: FAIL enclosures ${stream.enclosures}, need 2, bars ${formatBars(stream.bars)}`);
+    if (stream.fourthLeaps < 3) reasons.push(`SOLO 1: FAIL leaps of a 4th ${stream.fourthLeaps}, need 3, bars ${formatBars(stream.bars)}`);
+    if (!stream.arrival) reasons.push(`SOLO 1: FAIL stream does not end on a quarter-or-longer arrival, bars ${formatBars(stream.bars)}`);
+    if (stream.spaceAfterQuarters < 2) {
+      reasons.push(`SOLO 1: FAIL space after arrival ${stream.spaceAfterQuarters.toFixed(1)} quarters, need 2, bars ${formatBars(stream.bars)}`);
+    }
+  }
+  if (bursts.length > 1) reasons.push(`SOLO 1: FAIL 16th bursts ${bursts.length}, at most 1, bars ${formatBars(bursts.flatMap((burst) => burst.bars))}`);
+  return reasons;
+}
+
+function solo2Density(streams: readonly EighthStream[], bursts: readonly DensityBurst[]): string[] {
+  const reasons: string[] = [];
+  if (bursts.length < 3 || bursts.length > 5) {
+    reasons.push(`SOLO 2: FAIL 16th bursts ${bursts.length}, need 3–5, bars ${formatBars(bursts.flatMap((burst) => burst.bars))}`);
+  }
+  bursts.forEach((burst, index) => {
+    const where = `bars ${formatBars(burst.bars)}`;
+    if (burst.wideShare < 0.5 && !burst.fieldSwitch) {
+      reasons.push(`SOLO 2: FAIL burst ${index + 1} ${where} wide ${(burst.wideShare * 100).toFixed(0)}% and no field switch`);
+    }
+    if (!burst.stringSkip && !burst.legato) reasons.push(`SOLO 2: FAIL burst ${index + 1} ${where} has neither string-skipping nor legato`);
+    if (burst.plainScale) reasons.push(`SOLO 2: FAIL burst ${index + 1} ${where} is a plain scale run`);
+    if (!burst.isolated) reasons.push(`SOLO 2: FAIL burst ${index + 1} ${where} is not beside a half note or silence`);
+  });
+  if (bursts.filter((burst) => burst.bassGap).length < 2) {
+    reasons.push(`SOLO 2: FAIL bursts starting in a bass gap ${bursts.filter((burst) => burst.bassGap).length}, need 2`);
+  }
+  const long = streams.filter((stream) => stream.barCount > 2);
+  if (long.length) reasons.push(`SOLO 2: FAIL eighth stream longer than 2 bars at ${formatBars(long.flatMap((stream) => stream.bars))}`);
+  return reasons;
+}
+
 function contrastGate(solo1: BryantSoloNumbers, solo2: BryantSoloNumbers, axes: string[]): BryantGate {
+  const side = (solo: BryantSoloNumbers) =>
+    solo.present
+      ? `${solo.density.toFixed(2)} notes/bar, ${solo.bursts} bursts, longest stream ${solo.longestStreamBars} bars, wide ${(solo.wideShare * 100).toFixed(0)}% mean ${solo.meanInterval.toFixed(1)}`
+      : 'absent';
+  const compared = `SOLO 1 vs SOLO 2 notes/bar ${solo1.present ? solo1.density.toFixed(2) : 'absent'} / ${solo2.present ? solo2.density.toFixed(2) : 'absent'}; bursts ${solo1.present ? solo1.bursts : 'absent'} / ${solo2.present ? solo2.bursts : 'absent'}; longest stream ${solo1.present ? solo1.longestStreamBars : 'absent'} / ${solo2.present ? solo2.longestStreamBars : 'absent'} bars; interval profile ${side(solo1)} / ${side(solo2)}`;
   if (!solo1.present || !solo2.present) {
-    return { id: 'SOLO_CONTRAST', ok: false, bars: [], detail: 'SOLO 1 and SOLO 2 are not both in the score' };
+    return { id: 'SOLO_CONTRAST', ok: false, bars: [], detail: `SOLO 1 and SOLO 2 are not both in the score. ${compared}` };
   }
   const profile = Math.abs(solo1.wideShare - solo2.wideShare) >= 0.15 || Math.abs(solo1.meanInterval - solo2.meanInterval) >= 2;
   const density = Math.abs(solo1.density - solo2.density) >= 1.5;
@@ -902,8 +1039,7 @@ function contrastGate(solo1: BryantSoloNumbers, solo2: BryantSoloNumbers, axes: 
     solo1.meanRegister != null && solo2.meanRegister != null && Math.abs(solo1.meanRegister - solo2.meanRegister) >= 5;
   const ok = profile && density && register;
   const detail = [
-    `interval profile wide ${(solo1.wideShare * 100).toFixed(0)}% / ${(solo2.wideShare * 100).toFixed(0)}%, mean ${solo1.meanInterval.toFixed(1)} / ${solo2.meanInterval.toFixed(1)}`,
-    `density ${solo1.density.toFixed(2)} / ${solo2.density.toFixed(2)}`,
+    compared,
     `register ${solo1.meanRegister?.toFixed(1) ?? 'none'} / ${solo2.meanRegister?.toFixed(1) ?? 'none'}`,
     `SOLO 2 wide ${(solo2.wideShare * 100).toFixed(0)}% range ${solo2.range} collisions ${solo2.fieldCollisions} silent ${solo2.silentBars}`,
     `axes ${axes.join(', ')} ${ok ? 'differ' : 'do not all differ'}`,
@@ -924,6 +1060,13 @@ export function formatBryantReport(report: BryantAssessment): string[] {
   lines.push(`Bryant solo contrast: ${report.contrast.ok ? 'PASS' : 'FAIL'} ${report.contrast.detail}`);
   lines.push(formatSoloLine('SOLO 1', report.solo1));
   lines.push(formatSoloLine('SOLO 2', report.solo2));
+  for (const failure of report.densityFailures) lines.push(`Bryant density ${failure}`);
+  if (!report.bursts.length) lines.push('Bryant technique études: none. HUMAN PLAYABILITY: NOT VERIFIED');
+  for (const burst of report.bursts) {
+    lines.push(
+      `Bryant technique étude bars ${formatBars(burst.bars)}: ${burst.notes} sixteenths, ${burst.fretDetail}, HUMAN PLAYABILITY: NOT VERIFIED`
+    );
+  }
   lines.push('Bryant device-by-bar');
   if (!report.deviceByBar.length) lines.push('bar none');
   for (const row of report.deviceByBar) lines.push(`bar ${row.bar}: ${row.devices.join(', ')}`);
