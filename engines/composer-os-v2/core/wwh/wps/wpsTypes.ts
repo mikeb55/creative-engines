@@ -169,4 +169,10 @@ export interface WpsSongSpec {
   guitarRoles?: WpsGuitarRoleSpan[];
   /** Optional record that candidates were considered. The checker does not sound them. */
   vaultCandidates?: WpsVaultCandidateRef[];
+  /**
+   * Optional catalogue roles this song requires: HEAD_IN, SOLO_1, SOLO_2, BASS_SOLO, HEAD_OUT.
+   * Omitted means none of those choruses are required. A MusicXML word or rehearsal mark can still declare one.
+   * Do not add this field just to reach spec version 1.4.
+   */
+  requiredChoruses?: Array<'HEAD_IN' | 'SOLO_1' | 'SOLO_2' | 'BASS_SOLO' | 'HEAD_OUT'>;
 }

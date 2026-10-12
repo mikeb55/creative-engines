@@ -227,7 +227,106 @@ function run(): { ok: boolean; name: string }[] {
     assert.match(formatBryantReport(report).join('\n'), /technique étude bars 2/);
   });
 
-  check('Wrong Turning V3.0 is read only and the named choruses fail', () => {
+  const catalogue = ['HEAD_IN', 'SOLO_1', 'SOLO_2', 'BASS_SOLO', 'HEAD_OUT'] as const;
+
+  check('a required chorus that is absent is MISSING REQUIRED SECTION', () => {
+    const guitar = part([[note('C', 4, 16)], [rest()]]);
+    const bass = part([[note('C', 2, 16)], [note('C', 2, 16)]]);
+    const report = assessBryantEdition({
+      guitar,
+      bass,
+      hookPitches: ['E', 'G', 'A', 'Bb'],
+      chorusLength: 2,
+      requiredChoruses: ['SOLO_1', 'HEAD_OUT'],
+    });
+    for (const id of ['SOLO_1', 'HEAD_OUT'] as const) {
+      const chorus = report.choruses.find((item) => item.id === id)!;
+      assert.equal(chorus.applicability, 'in_force', id);
+      assert.equal(chorus.present, false, id);
+      assert.equal(chorus.ok, false, id);
+      assert.deepEqual(chorus.reasons, ['MISSING REQUIRED SECTION']);
+    }
+    assert.match(report.failures.join('\n'), /SOLO_1: MISSING REQUIRED SECTION/);
+    assert.match(report.failures.join('\n'), /HEAD_OUT: MISSING REQUIRED SECTION/);
+    assert.equal(report.densityFailures.some((line) => /SOLO 1:|HEAD_OUT:/.test(line)), false);
+    assert.equal(report.ok, false);
+    for (const id of ['HEAD_IN', 'SOLO_2', 'BASS_SOLO'] as const) {
+      const chorus = report.choruses.find((item) => item.id === id)!;
+      assert.equal(chorus.applicability, 'not_applicable', id);
+      assert.equal(report.failures.some((line) => line.startsWith(`${id}:`)), false, id);
+    }
+  });
+
+  check('a declared SOLO 1 that misses the eighth stream still fails that density rule', () => {
+    const guitar = part([[note('C', 4, 16)], [rest()]], [['solo 1'], []]);
+    const bass = part([[note('C', 2, 16)], [note('C', 2, 16)]]);
+    const report = assessBryantEdition({
+      guitar,
+      bass,
+      hookPitches: ['E', 'G', 'A', 'Bb'],
+      chorusLength: 2,
+      requiredChoruses: ['SOLO_1'],
+    });
+    const solo = report.choruses.find((item) => item.id === 'SOLO_1')!;
+    assert.equal(solo.present, true);
+    assert.equal(solo.applicability, 'in_force');
+    assert.equal(solo.ok, false);
+    assert.equal(solo.reasons.includes('MISSING REQUIRED SECTION'), false);
+    assert.match(report.densityFailures.join('\n'), /SOLO 1: FAIL eighth streams of 6–8 bars 0, need 1/);
+    assert.match(report.failures.join('\n'), /SOLO 1: FAIL eighth streams of 6–8 bars 0, need 1/);
+  });
+
+  check('a named HEAD IN with no sixteenths does not fail the sixteenth ban', () => {
+    const guitar = part([[note('C', 4, 16)]], [['head in']]);
+    const bass = part([[note('C', 2, 16)]]);
+    const report = assessBryantEdition({
+      guitar,
+      bass,
+      hookPitches: ['E', 'G', 'A', 'Bb'],
+      chorusLength: 1,
+    });
+    const head = report.choruses.find((item) => item.id === 'HEAD_IN')!;
+    assert.equal(head.present, true);
+    assert.equal(head.applicability, 'in_force');
+    assert.equal(report.densityFailures.some((line) => line.startsWith('HEAD_IN:')), false);
+    const bans = report.bans.map((ban) => ban.id);
+    assert.deepEqual(bans, ['FUNCTIONAL_CADENCE', 'SCALE_RUN', 'MAJ7_SHARP11', 'PARALLEL_GRIP', 'VOICING_CYCLE']);
+  });
+
+  check('undeclared choruses are NOT APPLICABLE and stay out of editionOk', () => {
+    const guitar = part([[note('C', 4, 16)]]);
+    const bass = part([[note('E', 2, 16)]]);
+    const report = assessBryantEdition({
+      guitar,
+      bass,
+      hookPitches: ['E', 'G', 'A', 'Bb'],
+      chorusLength: 1,
+    });
+    for (const id of catalogue) {
+      const chorus = report.choruses.find((item) => item.id === id)!;
+      assert.equal(chorus.applicability, 'not_applicable', id);
+      assert.equal(chorus.present, false, id);
+      assert.equal(report.failures.some((line) => line.startsWith(`${id}:`)), false, id);
+    }
+    assert.equal(report.contrast.applicability, 'not_applicable');
+    assert.equal(report.densityFailures.some((line) => /SOLO 1:|SOLO 2:|HEAD_IN:|HEAD_OUT:|BASS_SOLO:/.test(line)), false);
+    const text = formatBryantReport(report).join('\n');
+    for (const id of catalogue) assert.match(text, new RegExp(`Bryant chorus ${id} absent: NOT APPLICABLE`));
+    assert.match(text, /Bryant solo contrast: NOT APPLICABLE/);
+    assert.match(text, /Bryant ban SCALE_RUN:/);
+    const counted = report.choruses.filter((chorus) => chorus.applicability !== 'not_applicable');
+    const editionWithoutCatalogue = counted.every((chorus) => chorus.ok) && report.densityFailures.length === 0;
+    if (editionWithoutCatalogue && report.bans.every((ban) => ban.ok) && report.signatureCount >= report.signatureMinimum) {
+      assert.equal(report.ok, true);
+    } else {
+      assert.equal(
+        report.failures.some((line) => catalogue.some((id) => line.startsWith(`${id}:`))),
+        false
+      );
+    }
+  });
+
+  check('Wrong Turning V3.0 is read only and the five choruses are not applicable', () => {
     const before = fs.readFileSync(v3);
     const hash = crypto.createHash('sha256').update(before).digest('hex');
     const score = importWwhDuoMusicXml(before.toString('utf8'));
@@ -241,20 +340,25 @@ function run(): { ok: boolean; name: string }[] {
       chorusLength: 32,
     });
     assert.equal(score.guitar.measures.length, 32);
-    for (const id of ['HEAD_IN', 'SOLO_1', 'SOLO_2', 'BASS_SOLO', 'HEAD_OUT']) {
+    for (const id of catalogue) {
       const chorus = report.choruses.find((item) => item.id === id)!;
       assert.equal(chorus.present, false, id);
-      assert.equal(chorus.ok, false, id);
+      assert.equal(chorus.applicability, 'not_applicable', id);
+      assert.equal(report.failures.some((line) => line.startsWith(`${id}:`)), false, id);
     }
-    assert.equal(report.contrast.ok, false);
+    assert.equal(report.contrast.applicability, 'not_applicable');
+    assert.equal(report.densityFailures.some((line) => /SOLO 1:|SOLO 2:|HEAD_IN:|HEAD_OUT:|BASS_SOLO:/.test(line)), false);
     assert.equal(fs.readFileSync(v3).equals(before), true);
     assert.equal(crypto.createHash('sha256').update(fs.readFileSync(v3)).digest('hex'), hash);
     const text = formatBryantReport(report).join('\n');
     assert.match(text, /65\/20\/40 listening guide/);
     assert.match(text, /Bryant device-by-bar/);
-    assert.match(text, /Bryant density SOLO 1: FAIL/);
-    assert.match(text, /Bryant density SOLO 2: FAIL/);
-    assert.match(text, /notes\/bar/);
+    assert.match(text, /Bryant signature /);
+    assert.match(text, /Bryant ban /);
+    for (const id of catalogue) assert.match(text, new RegExp(`Bryant chorus ${id} absent: NOT APPLICABLE`));
+    assert.doesNotMatch(text, /Bryant density SOLO 1: FAIL/);
+    assert.doesNotMatch(text, /Bryant density SOLO 2: FAIL/);
+    assert.doesNotMatch(text, /MISSING REQUIRED SECTION/);
     console.log('\n' + text + '\n');
   });
 

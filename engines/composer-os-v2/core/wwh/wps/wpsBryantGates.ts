@@ -55,6 +55,7 @@ export const BRYANT_GRIP_TYPES = [
   'drop-2',
 ] as const;
 
+/** Catalogue of roles the checker knows. Not an implicit form for every score. */
 export const BRYANT_FORM_CHORUSES = ['HEAD_IN', 'SOLO_1', 'SOLO_2', 'BASS_SOLO', 'HEAD_OUT'] as const;
 
 export const BRYANT_CANDIDATE_ROLES = ['SOLO_1', 'SOLO_2', 'BASS_SOLO'] as const;
@@ -82,6 +83,8 @@ export interface BryantGate {
   ok: boolean;
   bars: number[];
   detail: string;
+  /** Omitted means the gate is in force. `not_applicable` is left out of editionOk. */
+  applicability?: 'in_force' | 'not_applicable';
 }
 
 export interface BryantChorusReport {
@@ -89,6 +92,8 @@ export interface BryantChorusReport {
   bars: number[];
   present: boolean;
   ok: boolean;
+  /** `not_applicable` is left out of editionOk and out of failures. */
+  applicability: 'in_force' | 'not_applicable';
   reasons: string[];
   anchor: string;
 }
@@ -140,6 +145,11 @@ export interface BryantAssessInput {
   protectedGuitarSilences?: number[];
   hookPitches?: string[];
   chorusLength?: number;
+  /**
+   * Catalogue roles this song requires. Absent or empty means none are required.
+   * A MusicXML word or rehearsal mark can still declare a role.
+   */
+  requiredChoruses?: readonly BryantFormChorus[];
   /** Non-empty text keeps a maj7#11 voicing from failing the ban. */
   maj7Sharp11Justification?: string;
 }
@@ -780,7 +790,6 @@ export function assessBryantEdition(input: BryantAssessInput): BryantAssessment 
       if (signatureCount < spec.signatureDevices.minimumPerEdition) {
         reasons.push(`signature devices ${signatureCount} of ${spec.signatureDevices.poolSize}, need ${spec.signatureDevices.minimumPerEdition}`);
       }
-      reasons.push('form chorus label is absent');
     }
     if (span.id === 'HEAD_IN' || span.id === 'HEAD_OUT' || span.id === 'BASS_SOLO') {
       const localTypes = gripTypesIn(grips, span.bars, liquidIndexes, bass);
@@ -788,7 +797,15 @@ export function assessBryantEdition(input: BryantAssessInput): BryantAssessment 
         reasons.push(`grip types ${localTypes.length} (${localTypes.join(', ') || 'none'}), need ${spec.chordalVariety.minimumGripTypes}`);
       }
     }
-    choruses.push({ id: span.id, bars: span.bars, present: true, ok: reasons.length === 0, reasons, anchor });
+    choruses.push({
+      id: span.id,
+      bars: span.bars,
+      present: true,
+      ok: reasons.length === 0,
+      applicability: 'in_force',
+      reasons,
+      anchor,
+    });
   }
 
   const solo2Rule = spec.soloContrast.SOLO_2;
@@ -811,7 +828,7 @@ export function assessBryantEdition(input: BryantAssessInput): BryantAssessment 
   };
   paintSolo(solo1, soloSpan('SOLO_1'));
   paintSolo(solo2, soloSpan('SOLO_2'));
-  const densityFailures = densityFindings(spans.map((span) => span.id), spans, densityStreams, densityBursts);
+  const densityFailures = densityFindings(spans, densityStreams, densityBursts);
 
   if (solo1.present) {
     const row = choruses.find((chorus) => chorus.id === 'SOLO_1');
@@ -835,8 +852,17 @@ export function assessBryantEdition(input: BryantAssessInput): BryantAssessment 
     }
   }
 
-  const contrast = contrastGate(solo1, solo2, spec.soloContrast.mustDifferIn);
-  if (!contrast.ok) {
+  const contrast =
+    solo1.present && solo2.present
+      ? contrastGate(solo1, solo2, spec.soloContrast.mustDifferIn)
+      : ({
+          id: 'SOLO_CONTRAST',
+          ok: false,
+          bars: [],
+          detail: 'SOLO 1 and SOLO 2 are not both declared',
+          applicability: 'not_applicable',
+        } satisfies BryantGate);
+  if (contrast.applicability !== 'not_applicable' && !contrast.ok) {
     for (const id of ['SOLO_1', 'SOLO_2'] as const) {
       const row = choruses.find((chorus) => chorus.id === id);
       if (row && !row.reasons.includes(contrast.detail)) row.reasons.push(contrast.detail);
@@ -844,13 +870,30 @@ export function assessBryantEdition(input: BryantAssessInput): BryantAssessment 
     }
   }
 
+  const required = new Set(input.requiredChoruses ?? []);
   for (const id of BRYANT_FORM_CHORUSES) {
     if (choruses.some((chorus) => chorus.id === id)) continue;
-    const reasons = [`${id} is not in the score`];
-    if (id === 'HEAD_IN' || id === 'HEAD_OUT' || id === 'BASS_SOLO') reasons.push('chordal variety has no chorus to count');
-    if (id === 'SOLO_1' || id === 'SOLO_2') reasons.push('solo contrast has no chorus to measure');
-    reasons.push('no source anchor');
-    choruses.push({ id, bars: [], present: false, ok: false, reasons, anchor: 'none' });
+    if (required.has(id)) {
+      choruses.push({
+        id,
+        bars: [],
+        present: false,
+        ok: false,
+        applicability: 'in_force',
+        reasons: ['MISSING REQUIRED SECTION'],
+        anchor: 'none',
+      });
+      continue;
+    }
+    choruses.push({
+      id,
+      bars: [],
+      present: false,
+      ok: false,
+      applicability: 'not_applicable',
+      reasons: [],
+      anchor: 'none',
+    });
   }
 
   const devices: BryantGate[] = BRYANT_DEVICES.map((id) => {
@@ -888,19 +931,24 @@ export function assessBryantEdition(input: BryantAssessInput): BryantAssessment 
     .sort((a, b) => a[0] - b[0])
     .map(([bar, names]) => ({ bar, devices: names }));
 
+  const sectionCounts = (chorus: BryantChorusReport) => chorus.applicability !== 'not_applicable';
+  const contrastCounts = contrast.applicability !== 'not_applicable';
   const failures: string[] = [];
   if (!signatureOk) failures.push(`signature ${used} of ${BRYANT_DEVICES.length}, need ${spec.signatureDevices.minimumPerEdition}`);
   for (const ban of bans) if (!ban.ok) failures.push(`${ban.id} bars ${formatBars(ban.bars)}`);
-  for (const chorus of choruses) if (!chorus.ok) failures.push(`${chorus.id}: ${chorus.reasons.join('; ')}`);
-  if (!contrast.ok) failures.push(contrast.detail);
+  for (const chorus of choruses) {
+    if (!sectionCounts(chorus) || chorus.ok) continue;
+    failures.push(`${chorus.id}: ${chorus.reasons.join('; ')}`);
+  }
+  if (contrastCounts && !contrast.ok) failures.push(contrast.detail);
   for (const failure of densityFailures) failures.push(failure);
 
   const listeningGuide = `65/20/40 listening guide (${spec.listeningGuide.melodyPercent}/${spec.listeningGuide.harmonyPercent}/${spec.listeningGuide.rhythmPercent}). Not a gate.`;
   const editionOk =
     signatureOk &&
     bans.every((ban) => ban.ok) &&
-    choruses.every((chorus) => chorus.ok) &&
-    contrast.ok &&
+    choruses.filter(sectionCounts).every((chorus) => chorus.ok) &&
+    (contrastCounts ? contrast.ok : true) &&
     densityFailures.length === 0;
   return {
     ok: editionOk,
@@ -945,33 +993,23 @@ function inSet<T extends { bars: number[] }>(items: readonly T[], bars: readonly
 }
 
 function densityFindings(
-  presentIds: readonly string[],
   spans: readonly { id: string; bars: number[] }[],
   streams: readonly EighthStream[],
   bursts: readonly DensityBurst[]
 ): string[] {
   const failures: string[] = [];
   const wholeBars = spans.flatMap((span) => span.bars);
-  const wholeStreams = inSet(streams, wholeBars);
   const wholeBursts = inSet(bursts, wholeBars);
-  const fitted = wholeStreams.filter((stream) => stream.barCount >= 6 && stream.barCount <= 8);
-  const longest = wholeStreams.reduce((max, stream) => Math.max(max, stream.barCount), 0);
-  const measured = `measured eighth streams of 6–8 bars ${fitted.length}, longest stream ${longest} bars, 16th bursts ${wholeBursts.length}${wholeBursts.length ? ` at bars ${formatBars(wholeBursts.flatMap((burst) => burst.bars))}` : ''}`;
 
   const solo1 = spans.find((span) => span.id === 'SOLO_1');
-  if (!solo1) failures.push(`SOLO 1: FAIL chorus absent; ${measured}`);
-  else failures.push(...solo1Density(inSet(streams, solo1.bars), inSet(bursts, solo1.bars)));
+  if (solo1) failures.push(...solo1Density(inSet(streams, solo1.bars), inSet(bursts, solo1.bars)));
 
   const solo2 = spans.find((span) => span.id === 'SOLO_2');
-  if (!solo2) failures.push(`SOLO 2: FAIL chorus absent; ${measured}`);
-  else failures.push(...solo2Density(inSet(streams, solo2.bars), inSet(bursts, solo2.bars)));
+  if (solo2) failures.push(...solo2Density(inSet(streams, solo2.bars), inSet(bursts, solo2.bars)));
 
   for (const id of ['HEAD_IN', 'HEAD_OUT', 'BASS_SOLO'] as const) {
     const span = spans.find((item) => item.id === id);
-    if (!span) {
-      failures.push(`${id}: FAIL chorus absent; 16th bursts are banned in heads and comping`);
-      continue;
-    }
+    if (!span) continue;
     const local = inSet(bursts, span.bars);
     if (local.length) failures.push(`${id}: FAIL 16th bursts at bars ${formatBars(local.flatMap((burst) => burst.bars))}`);
   }
@@ -980,7 +1018,6 @@ function densityFindings(
       failures.push(`burst bars ${formatBars(burst.bars)}: FAIL ${burst.fretDetail}`);
     }
   }
-  void presentIds;
   return failures;
 }
 
@@ -1057,7 +1094,7 @@ export function formatBryantReport(report: BryantAssessment): string[] {
   for (const gate of report.devices) lines.push(`Bryant gate ${gate.id}: ${gate.ok ? 'PASS' : 'FAIL'} bars ${formatBars(gate.bars)}`);
   for (const ban of report.bans) lines.push(`Bryant ban ${ban.id}: ${ban.ok ? 'PASS' : 'FAIL'} bars ${formatBars(ban.bars)}`);
   lines.push(`Bryant grip types ${report.gripTypeCount}: ${report.gripTypes.join(', ') || 'none'}`);
-  lines.push(`Bryant solo contrast: ${report.contrast.ok ? 'PASS' : 'FAIL'} ${report.contrast.detail}`);
+  lines.push(`Bryant solo contrast: ${gateVerdict(report.contrast)} ${report.contrast.detail}`.trimEnd());
   lines.push(formatSoloLine('SOLO 1', report.solo1));
   lines.push(formatSoloLine('SOLO 2', report.solo2));
   for (const failure of report.densityFailures) lines.push(`Bryant density ${failure}`);
@@ -1073,10 +1110,20 @@ export function formatBryantReport(report: BryantAssessment): string[] {
   for (const chorus of report.choruses) {
     const where = chorus.bars.length ? `bars ${chorus.bars[0]}–${chorus.bars[chorus.bars.length - 1]}` : 'absent';
     lines.push(
-      `Bryant chorus ${chorus.id} ${where}: ${chorus.ok ? 'PASS' : 'FAIL'} anchor ${chorus.anchor}${chorus.reasons.length ? `; ${chorus.reasons.join('; ')}` : ''}`
+      `Bryant chorus ${chorus.id} ${where}: ${chorusVerdict(chorus)} anchor ${chorus.anchor}${chorus.reasons.length ? `; ${chorus.reasons.join('; ')}` : ''}`
     );
   }
   return lines;
+}
+
+function gateVerdict(gate: BryantGate): string {
+  if (gate.applicability === 'not_applicable') return 'NOT APPLICABLE';
+  return gate.ok ? 'PASS' : 'FAIL';
+}
+
+function chorusVerdict(chorus: BryantChorusReport): string {
+  if (chorus.applicability === 'not_applicable') return 'NOT APPLICABLE';
+  return chorus.ok ? 'PASS' : 'FAIL';
 }
 
 function formatSoloLine(label: string, solo: BryantSoloNumbers): string {

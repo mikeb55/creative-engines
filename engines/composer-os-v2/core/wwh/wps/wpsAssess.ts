@@ -573,6 +573,7 @@ export function runWps(spec: WpsSongSpec): WpsRunReport {
       protectedGuitarSilences: spec.protectedGuitarSilences,
       hookPitches: spec.motif?.pitches ?? [],
       chorusLength: spec.expectedBars,
+      requiredChoruses: spec.requiredChoruses,
     });
     lines.push(...formatBryantReport(bryant));
     if (spec.wpsVersion === '1.4' && !bryant.ok) fail(`Bryant gates: ${bryant.failures.length} failure(s)`);
