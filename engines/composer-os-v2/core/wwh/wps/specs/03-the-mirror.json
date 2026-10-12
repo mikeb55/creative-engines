@@ -2,8 +2,10 @@
   "wpsVersion": "1.2",
   "id": "03-the-mirror",
   "title": "The Mirror",
+  "performanceEditionId": "V1.1",
   "leadsheet": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/00 - WWH DUO LEADSHEETS/03-The-Mirror-Duo-Leadsheet-V1.0.musicxml",
-  "outputDir": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/PERFORMANCE-EDITIONS",
+  "performanceEdition": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/PERFORMANCE-EDITIONS/03-The-Mirror/03-The-Mirror-Performance-Edition-V1.1.musicxml",
+  "outputDir": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/PERFORMANCE-EDITIONS/03-The-Mirror",
   "arrangementIds": ["A", "B", "C", "D", "E-V3.0", "F", "G", "H"],
   "arrangements": [
     {
@@ -54,14 +56,14 @@
     ],
     "originalBassIdentity": "Upright bass, octave-change -1. Bar 1 rests. Bar 2 enters on C. Bars 10–16 restate bars 2–8. Bars 66–68 hold A. CBV is no-change.",
     "strongestPassages": [
-      "No listening rank. Printed peaks on the leadsheet: bar 34 written G6 at f; bars 37–39 Ebmaj7 held across the tie into the dotted-half release; J at bar 51 restates the bar-9 colour under the word M1 dissolved; L at bar 60 is marked Afterglow.",
-      "A–H are inventoried, including E-V3.0. Titles are not a ranking. E V2.0 and the undated E file are not the E source."
+      "No listening rank. Note-level choices, not titles: leadsheet bars 1–4 and the Eb/A/G colour at 9 and 51; C’s wrong-world dyads suggested the Eb/A answer under bars 6–8; G’s delayed echo suggested bars 52–53; H’s Eb/A suggested the A that disturbs bar 45. A’s octave doubling, B’s cell cycle, D’s notes above fret 15, E’s constant motion, and F’s rotating pool were not copied.",
+      "Performance Edition V1.1 is the checked score. The composed peak is the prepared G6 at bar 34. E-V3.0 is the E source. Its internal movement title still says V2.0. That file was not edited."
     ],
-    "harmonicJourney": "Printed symbols: Cm6, Abmaj7, Cm6, Abmaj7, Abm6, Abm6, Amaj7, Gmaj7, G, Ebmaj7, Edim, Eb, Edim, Edim7, Cm6, C, Cdim7, Cm6, Dm6, F.",
-    "contrapuntalOpportunities": "Colour bars already place a lower voice under chord tones (9–11, 13–14, 21–24, 29–32, 51–53, 55–58). A second composed line is not in the leadsheet. Guitar octave-change is -1.",
-    "dramaticClimax": "Not auditioned. The loudest printed guitar dynamic is f at bar 34. That mark is not a composed climax.",
-    "thematicReturn": "J, bar 51, word M1 dissolved, restates the M1 colour dyads. L, bar 60, word Afterglow, then bar 68 ends on written C5/A5 over F.",
-    "expectedPerformanceDuration": "Printed quarter = 90. No sound-tempo element. 68 bars of 4/4 = 3:01.33."
+    "harmonicJourney": "The line stays near C, Eb, and A. Harmony leaves the printed Cm6/Abmaj7 chain. Eb/A is the mirror axis under G. Bar 25 is a brief A major opposite. G is the common tone into the bar 34 peak and the Eb hold. The final bar is C and A; F is implied, not played.",
+    "contrapuntalOpportunities": "A second voice answers at bars 6–8, 19, 23, and 52–53. Elsewhere the guitar is one line or a dyad. Guitar octave-change is -1. Written pitch is not sounding pitch.",
+    "dramaticClimax": "Bars 29–36. The opening cell returns, the intervals widen, and written G6 is the tall note at f. Nobody has heard it. The printed f on the leadsheet was not itself a climax.",
+    "thematicReturn": "Bar 51 restates the colour. Bars 46–50 rebuild the opening cell out of order. Bars 64–65, the one refinement, compress M2 (F–Eb, then G–F) before the low A and the final C/A.",
+    "expectedPerformanceDuration": "Quarter = 90, with sound tempo 90. 68 bars of 4/4 = 3:01.33. No tempo change."
   },
   "motif": {
     "name": "M1",
@@ -99,7 +101,7 @@
   ],
   "mci": {
     "continuity": "M1’s opening shape and the M1-colour dyads have to stay recognisable at J. Bass, metre, rehearsal letters, and the guitar rests at 12, 15, 40, and 62 stay.",
-    "innovation": "A performance score may develop the inner voices already stacked in the colour bars, and may connect M5’s hold to the Eb arrival. It does not reuse the Impossible Metaphysics seven-stage plan."
+    "innovation": "Eb/A answers the descent. The climb to G6 is new. The eighth-note lift falls at bar 36. The Eb hold keeps G and drops D. M2 returns only as two short bars in the afterglow. This is not the Impossible Metaphysics seven-stage plan."
   },
   "cbv": {
     "decision": "no-change",
@@ -116,8 +118,8 @@
   "selectiveSynthesis": true,
   "gce": {
     "officialNumeric": false,
-    "dcrRefinements": 0,
-    "weakest": "Not named. No performance score exists, so no refinement has been made."
+    "dcrRefinements": 1,
+    "weakest": "Thematic recall in the afterglow. V1.0 bars 64–65 were F–E then D, and the D doubled the bass. V1.1 bars 64–65 compress M2. runDcrProtocol was not executed."
   },
   "protectedGuitarSilences": [12, 15, 40, 62],
   "rehearsal": [

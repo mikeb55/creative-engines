@@ -1,10 +1,12 @@
-# WWH Performance Synthesis V1.2
+# WWH Performance Synthesis V1.3
 
 WPS is the reusable performance-composition workflow for While We're Here duo pieces. It standardises how a piece is planned, checked, and refined. It does not standardise the music.
 
 **WPS V1.1** is frozen. Snapshot: `engines/composer-os-v2/core/wwh/wps/baseline/v1.1/`. That snapshot passed 12/12 on Impossible Metaphysics Performance Edition V1.3 before V1.2 was written. Do not call the live checker V1.1.
 
-**WPS does not generate musical notes.** A compositional agent writes the guitar music. The WPS pipeline reads the leadsheet, checks the musical blueprint, inventories A–H, checks source LOCK, checks guitar feasibility on a finished score, checks duration, and reports evidence. It does not splice arrangements into a score and it does not write MusicXML.
+**WPS does not generate musical notes.** A compositional agent writes the guitar music. The WPS command reads the leadsheet, checks the musical blueprint, inventories A–H, checks source LOCK, checks guitar feasibility on a finished score, checks duration, and reports evidence. It does not splice arrangements into a score and it does not write MusicXML.
+
+**V1.3** adds a separate candidate interface. `shellAndTriadCandidates`, `resolutionTensionCandidates`, `liquidHarmonyCandidates`, `reduceShellVersusTriad`, and `proposeWpsVaultPassage` return note-level guitar events from the 16-volume record in `wpsTonalityVaultRecord.ts`. The checker does not call them. A blueprint may record optional guitar-role spans and candidate provenance. There is no chordal quota. Human playability stays `NOT VERIFIED`. The integration note is `docs/WPS_V1.3_TONALITY_VAULT_INTEGRATION.md`. Specs written as `1.2` still pass. The V1.1 snapshot stays frozen.
 
 Command, from the repo root:
 
@@ -14,10 +16,10 @@ npm run wps --prefix engines/composer-os-v2 -- --spec core/wwh/wps/specs/07-impo
 
 Song specs live in `engines/composer-os-v2/core/wwh/wps/specs/`. Copy one file per song. Change the paths, the blueprint, the motif, the landmarks, the narrative, the seams, the silences, the bar count, and the tempo plan. Leave the narrative as long or as short as that song is.
 
-Planning specs, no performance score yet:
+Planning spec, no performance score yet: Orbit V2.1, mapped to `PERFORMANCE-EDITIONS/05-Orbit/`. The Mirror spec resolves Performance Edition V1.1 from `PERFORMANCE-EDITIONS/03-The-Mirror/`. Wrong Turning resolves Performance Edition V1.1 from `PERFORMANCE-EDITIONS/06-Wrong-Turning/`. Impossible Metaphysics V1.3 resolves from `PERFORMANCE-EDITIONS/07-Impossible-Metaphysics/`. The `07-` on that filename is the original leadsheet number. The folder is album track 7.
 
-- `03-the-mirror.json` — The Mirror, leadsheet V1.0, 68 bars of 4/4. Focus: reflection, evolving melodic identity, contrapuntal development, long form.
-- `06-wrong-turning.json` — Wrong Turning, leadsheet V1.2, 32 bars, bar 8 in 3/4. Focus: asymmetrical phrasing, unexpected direction, interrupted expectations.
+- `03-the-mirror.json` — The Mirror, leadsheet V1.0, 68 bars of 4/4. Focus: reflection, evolving melodic identity, contrapuntal development, long form. Checked score: Performance Edition V1.1.
+- `06-wrong-turning.json` — Wrong Turning, leadsheet V1.2, 32 bars, bar 8 in 3/4. Focus: asymmetrical phrasing, unexpected direction, interrupted expectations. Checked score: Performance Edition V1.1.
 - `05-orbit-v2.1.json` — Orbit, leadsheet V2.1, 29 bars of 3/4. Focus: compact cyclical development, harmonic transformation, thematic return.
 
 E is **E-V3.0** (`WWH-Liquid-Harmony-E-V3.0`). E V2.0 is not the E source.
@@ -127,6 +129,10 @@ The ten categories and the hard gates in `docs/GCE_FRAMEWORK_V2.md` still govern
 ## 8. Duration and export
 
 WPS does not write a score. The performance path in the spec is the export. Playback `<sound tempo>` must match the tempo plan, sit inside the target window, and finish in under five minutes.
+
+`outputDir` is the album-track folder for that song. `wpsPerformanceOutputDir` in `engines/composer-os-v2/core/wwh/wps/wpsAlbumTracks.ts` chooses it from the spec id and title. A future performance edition is written inside that folder. The two-digit prefix on a MusicXML filename is left as it is and is not the folder name.
+
+Album track order: `01-Black-Aura`, `02-Palace-Gates`, `03-The-Mirror`, `04-Meet-Me-at-Hobos`, `05-Orbit`, `06-Wrong-Turning`, `07-Impossible-Metaphysics`, `08-Small-Testimony`, `09-After-Everything`. There is no Palace Gates reprise. Original leadsheet paths and A–H paths stay on their own numbers.
 
 A leadsheet with a metronome and no `<sound tempo>` is timed from the printed per-minute mark. The report says so. The Mirror and Orbit V2.1 are in that group. Wrong Turning has both, at 120.
 

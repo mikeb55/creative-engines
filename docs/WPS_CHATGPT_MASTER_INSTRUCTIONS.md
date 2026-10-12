@@ -1,10 +1,10 @@
-# WPS V1.2 — ChatGPT project instructions
+# WPS V1.3 — ChatGPT project instructions
 
 Attach this file by hand to Vol 2 — Pentatonic Engine Design, the Composer OS development project, and WWH Duo Leadsheets. Cursor does not change ChatGPT project settings.
 
 ## What WPS is
 
-WWH Performance Synthesis V1.2 is the performance-composition workflow for While We're Here guitar and upright bass. It standardises planning, LOCK, and one refinement. It does not standardise the music.
+WWH Performance Synthesis V1.3 is the performance-composition workflow for While We're Here guitar and upright bass. It standardises planning, LOCK, and one refinement. It does not standardise the music. V1.2 song specs still pass. V1.1 stays frozen.
 
 Repository: `https://github.com/mikehickley-debug/creative-engines`  
 Local: `/Users/user/Documents/DEVS/creative-engines`  
@@ -17,6 +17,8 @@ V1.1 is frozen at `engines/composer-os-v2/core/wwh/wps/baseline/v1.1/` (Impossib
 ## Who writes the notes
 
 The compositional agent writes the MusicXML guitar part. The WPS command inventories and checks. It does not generate notes, does not run `evaluateGce`, and does not run `runDcrProtocol`. Do not call a validation report a composition.
+
+V1.3 candidate functions can propose shell-plus-triad grips, resolution/tension pairs, one liquid voice move, and a string-group reduction. They return pitches, onsets, and durations. The checker does not call them and does not write a song. Optional guitar roles are melody, comping, chord-melody, counterpoint, bass-led, and silence. No percentage is required. Record: `docs/WPS_V1.3_TONALITY_VAULT_INTEGRATION.md`. Study: `docs/WPS_TONALITY_VAULT_16_VOLUME_STUDY.md`. The copyrighted manual stays local and untracked.
 
 ## Sequence
 
@@ -39,6 +41,7 @@ If a person still needs to hear it: **CANDIDATE FOR AUDITION**. If a real flaw r
 - The Mirror bar 39 stores 512 on two dotted-half chord tones. The attack is 768. Read them as 768. Do not edit the original leadsheet.
 - MusicXML only. No audio, MIDI, TAB, or PDF unless the user asks.
 - Do not overwrite original leadsheets, A–H files, or the V1.1 snapshot.
+- Write performance editions into the album-track folder named by the song spec `outputDir`. The Mirror is `03-The-Mirror/`. Wrong Turning is `06-Wrong-Turning/`. Impossible Metaphysics is `07-Impossible-Metaphysics/`. Orbit is `05-Orbit/`. Do not invent a folder from the number at the start of a filename. Palace Gates is track 2. There is no Palace Gates reprise.
 
 ## What the tools cannot do
 
@@ -46,8 +49,8 @@ Composer OS does not yet write a WPS performance score by itself. Cursor can aut
 
 ## Songs ready to compose
 
-1. The Mirror — reflection, melodic identity, counterpoint, long form.  
-2. Wrong Turning — asymmetrical phrases, unexpected direction, interrupted expectations.  
-3. Orbit V2.1 — 29 bars, harmonic transformation, thematic return.
+1. The Mirror — Performance Edition V1.1 is the checked score. Do not compose another pass unless a named defect or an audition note asks for one.
+2. Wrong Turning — Performance Edition V1.1 is the checked score (32 bars, quarter = 120, about 1:03.50). Do not compose another pass unless a named defect or an audition note asks for one.
+3. Orbit V2.1 — 29 bars, harmonic transformation, thematic return. Not composed.
 
-Do not compose them until asked.
+Do not compose Orbit until asked.

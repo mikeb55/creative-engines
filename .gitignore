@@ -78,3 +78,8 @@ engines/composer-os-v2/scripts/run*Evidence*.ts
 engines/composer-os-v2/scripts/run*Audit*.ts
 engines/composer-os-v2/scripts/runHardGateRoiReaudit.ts
 
+# Jordan Klemons, Tonality Vault (copyrighted local reference; do not commit)
+reference-materials/tonality-vault/*.docx
+reference-materials/tonality-vault/*.pdf
+reference-materials/tonality-vault/~$*
+

@@ -59,7 +59,7 @@ function run(): { ok: boolean; name: string }[] {
   check('Impossible Metaphysics V1.3 baseline passes', () => {
     assert.equal(report.ok, true, report.lines.filter((line) => line.startsWith('FAIL')).join('; '));
     const text = report.lines.join('\n');
-    assert.match(text, /WPS V1\.2/);
+    assert.match(text, /WPS V1\.3/);
     assert.match(text, /does not generate musical notes/);
     assert.match(text, /bass event stream matches the leadsheet/);
     assert.match(text, /metre map matches the leadsheet/);
@@ -140,7 +140,8 @@ function run(): { ok: boolean; name: string }[] {
   check('03-the-mirror.json planning import passes; bar 39 chord tones stay stored as 512', () => {
     const song = loadSpec('03-the-mirror.json');
     assert.equal(song.wpsVersion, '1.2');
-    assert.equal(song.performanceEdition, undefined);
+    assert.equal(song.performanceEditionId, 'V1.1');
+    assert.match(song.performanceEdition ?? '', /03-The-Mirror-Performance-Edition-V1\.1\.musicxml$/);
     const before = fs.readFileSync(song.leadsheet);
     const result = runWps(song);
     assert.equal(result.ok, true, result.lines.filter((line) => line.startsWith('FAIL')).join('; '));
@@ -152,7 +153,7 @@ function run(): { ok: boolean; name: string }[] {
     assert.equal(fs.readFileSync(song.leadsheet).equals(before), true);
   });
 
-  for (const name of ['05-orbit-v2.1.json', '06-wrong-turning.json']) {
+  for (const name of ['05-orbit-v2.1.json']) {
     check(`${name} uses the same checker without a performance edition`, () => {
       const song = loadSpec(name);
       assert.equal(song.wpsVersion, '1.2');
@@ -165,6 +166,26 @@ function run(): { ok: boolean; name: string }[] {
       assert.match(result.lines.join('\n'), /does not generate musical notes/);
     });
   }
+
+  check('06-wrong-turning.json resolves Performance Edition V1.1', () => {
+    const song = loadSpec('06-wrong-turning.json');
+    assert.equal(song.wpsVersion, '1.2');
+    assert.equal(song.performanceEditionId, 'V1.1');
+    assert.equal(song.gce.dcrRefinements, 1);
+    assert.equal(song.gce.officialNumeric, false);
+    assert.match(
+      song.performanceEdition ?? '',
+      /06-Wrong-Turning\/06-Wrong-Turning-Performance-Edition-V1\.1\.musicxml$/
+    );
+    const result = runWps(song);
+    assert.equal(result.ok, true, result.lines.filter((line) => line.startsWith('FAIL')).join('; '));
+    const text = result.lines.join('\n');
+    assert.match(text, /bass event stream matches the leadsheet/);
+    assert.match(text, /guitar octave-change 0/);
+    assert.match(text, /1:03\.50/);
+    assert.match(text, /NO OFFICIAL NUMERIC GCE/);
+    assert.match(text, /does not generate musical notes/);
+  });
 
   return rows;
 }

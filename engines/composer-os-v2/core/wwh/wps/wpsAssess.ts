@@ -15,7 +15,17 @@ import {
   type WwhImportedNote,
   type WwhImportedPart,
 } from '../wwhDuoImport';
-import { WPS_CBV_MAX_MEASURE_SHARE, WPS_MAX_DCR_REFINEMENTS, WPS_VERSION, type WpsSongSpec } from './wpsTypes';
+import { wpsPerformanceOutputDir } from './wpsAlbumTracks';
+import { wpsVaultTonality } from './wpsTonalityVaultRecord';
+import {
+  WPS_ACCEPTED_SPEC_VERSIONS,
+  WPS_CBV_MAX_MEASURE_SHARE,
+  WPS_MAX_DCR_REFINEMENTS,
+  WPS_VERSION,
+  type WpsGuitarRole,
+  type WpsSongSpec,
+  type WpsVaultTechnique,
+} from './wpsTypes';
 
 const FIVE_MINUTES_SECONDS = 300;
 
@@ -276,6 +286,35 @@ function seamWindow(part: WwhImportedPart, bars: string): string {
   return bits.join(' | ');
 }
 
+const GUITAR_ROLES: readonly WpsGuitarRole[] = ['melody', 'comping', 'chord-melody', 'counterpoint', 'bass-led', 'silence'];
+const VAULT_TECHNIQUES: readonly WpsVaultTechnique[] = ['shell-triad', 'triad-pair', 'liquid', 'reduction', 'line', 'rest'];
+
+function reportGuitarRoles(spec: WpsSongSpec, lines: string[], fail: (line: string) => void): void {
+  const roles = spec.guitarRoles;
+  if (!roles || roles.length === 0) {
+    lines.push('guitar roles: none recorded. No chordal quota.');
+    return;
+  }
+  lines.push(`guitar roles: ${roles.length} span(s). No chordal quota.`);
+  for (const span of roles) {
+    if (!GUITAR_ROLES.includes(span.role)) fail(`guitar role ${span.role} is not a WPS role`);
+    if (span.technique && !VAULT_TECHNIQUES.includes(span.technique)) fail(`guitar technique ${span.technique} is not a WPS technique`);
+    if (!cbvMeasures(span.bars)) fail(`guitar role bars are not readable: ${span.bars}`);
+    if (span.role === 'silence' && span.technique && span.technique !== 'rest') {
+      fail(`silence span ${span.bars} cannot carry technique ${span.technique}`);
+    }
+    if (span.tonalityId && !wpsVaultTonality(span.tonalityId)) fail(`unknown vault tonality ${span.tonalityId}`);
+    lines.push(
+      `guitar role ${span.bars}: ${span.role}${span.technique ? ` / ${span.technique}` : ''}${span.tonalityId ? ` / ${span.tonalityId}` : ''}`
+    );
+  }
+  for (const candidate of spec.vaultCandidates ?? []) {
+    if (!wpsVaultTonality(candidate.tonalityId)) fail(`unknown vault candidate ${candidate.tonalityId}`);
+    if (!VAULT_TECHNIQUES.includes(candidate.technique)) fail(`vault candidate technique ${candidate.technique}`);
+    lines.push(`vault candidate ${candidate.bars}: ${candidate.tonalityId} ${candidate.technique}. ${candidate.provenance}`);
+  }
+}
+
 export function runWps(spec: WpsSongSpec): WpsRunReport {
   const lines: string[] = [];
   let ok = true;
@@ -286,12 +325,23 @@ export function runWps(spec: WpsSongSpec): WpsRunReport {
 
   lines.push(`WPS V${WPS_VERSION} ${spec.id} — ${spec.title}`);
   lines.push(
-    'WPS does not generate musical notes. The compositional agent writes the guitar music. This pipeline checks the leadsheet, the blueprint, the A–H inventory, LOCK, guitar validation, duration, and evidence. It does not write MusicXML.'
+    'WPS does not generate musical notes. The compositional agent writes the guitar music. V1.3 candidate functions can propose guitar events. This command does not call them and does not write MusicXML. This pipeline checks the leadsheet, the blueprint, the A–H inventory, LOCK, guitar validation, duration, and evidence.'
   );
   lines.push(
     'evaluateGce was not run. runDcrProtocol was not executed. NO OFFICIAL NUMERIC GCE. A hand-authored WWH MusicXML file is not a Composer OS ScoreModel.'
   );
-  if (spec.wpsVersion !== WPS_VERSION) fail(`spec version ${spec.wpsVersion ?? '(missing)'}, expected ${WPS_VERSION}`);
+  if (!WPS_ACCEPTED_SPEC_VERSIONS.includes(spec.wpsVersion)) {
+    fail(`spec version ${spec.wpsVersion ?? '(missing)'}, expected ${WPS_ACCEPTED_SPEC_VERSIONS.join(' or ')}`);
+  }
+  reportGuitarRoles(spec, lines, fail);
+  const albumDir = wpsPerformanceOutputDir(spec);
+  if (!albumDir) {
+    fail('album-track folder is unresolved for this song identity');
+  } else if (path.resolve(spec.outputDir) !== path.resolve(albumDir)) {
+    fail(`outputDir must be the album-track folder ${albumDir}`);
+  } else {
+    lines.push(`performance output folder ${path.basename(albumDir)}`);
+  }
   if (spec.selectiveSynthesis !== true) fail('selective synthesis is required; whole-passage splicing is outside WPS');
   lines.push(`MCI continuity: ${spec.mci?.continuity ?? '(missing)'}`);
   lines.push(`MCI innovation: ${spec.mci?.innovation ?? '(missing)'}`);
@@ -384,6 +434,13 @@ export function runWps(spec: WpsSongSpec): WpsRunReport {
   let performance: { xml: string; score: WwhDuoScore } | null = null;
   if (spec.performanceEdition) {
     const editionName = path.basename(spec.performanceEdition);
+    if (
+      albumDir &&
+      fs.existsSync(spec.performanceEdition) &&
+      path.resolve(path.dirname(spec.performanceEdition)) !== path.resolve(albumDir)
+    ) {
+      fail(`performance edition is outside album-track folder ${path.basename(albumDir)}`);
+    }
     if (!spec.performanceEditionId) fail('performance edition is set without performanceEditionId');
     else if (!editionName.includes(spec.performanceEditionId)) {
       fail(`performance file ${editionName} is not edition ${spec.performanceEditionId}`);

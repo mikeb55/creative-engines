@@ -9,6 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { importWwhDuoMusicXml } from '../core/wwh/wwhDuoImport';
 import { cbvMeasures, runWps } from '../core/wwh/wps/wpsAssess';
+import { resolveWpsAlbumTrack, WPS_ALBUM_TRACKS, wpsPerformanceOutputDir } from '../core/wwh/wps/wpsAlbumTracks';
 import { WPS_VERSION, type WpsSongSpec } from '../core/wwh/wps/wpsTypes';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -30,8 +31,8 @@ function run(): { ok: boolean; name: string }[] {
     }
   };
 
-  check('live checker is V1.2 and the snapshot is still V1.1', () => {
-    assert.equal(WPS_VERSION, '1.2');
+  check('live checker is V1.3 and the snapshot is still V1.1', () => {
+    assert.equal(WPS_VERSION, '1.3');
     const frozen = fs.readFileSync(snapshotTypes, 'utf8');
     assert.match(frozen, /WPS_VERSION = '1\.1'/);
     assert.equal(frozen.includes("WPS_VERSION = '1.2'"), false);
@@ -98,13 +99,15 @@ function run(): { ok: boolean; name: string }[] {
     const result = runWps(mirror);
     assert.equal(result.ok, true, result.lines.filter((line) => line.startsWith('FAIL')).join('; '));
     const text = result.lines.join('\n');
+    assert.match(text, /performance edition resolved V1\.1/);
+    assert.match(text, /bass event stream matches the leadsheet/);
     assert.match(text, /guitar octave-change -1/);
-    assert.match(text, /printed metronome; no <sound tempo>/);
     assert.match(text, /3:01\.33/);
     assert.match(text, /arrangement inventory A, B, C, D, E-V3\.0, F, G, H/);
+    assert.match(text, /NO OFFICIAL NUMERIC GCE/);
     assert.match(text, /evaluateGce was not run/);
     assert.match(text, /runDcrProtocol was not executed/);
-    assert.match(text, /composition label not assigned/);
+    assert.match(text, /DCR record: 1 refinement/);
     assert.equal(fs.readFileSync(mirror.leadsheet).equals(before), true);
   });
 
@@ -170,6 +173,60 @@ function run(): { ok: boolean; name: string }[] {
     assert.equal(result.ok, true, result.lines.filter((line) => line.startsWith('FAIL')).join('; '));
     assert.match(result.lines.join('\n'), /not written/);
     assert.equal(fs.readFileSync(mirror.leadsheet).equals(before), true);
+  });
+
+  check('album-track folders follow song identity, not the MusicXML prefix', () => {
+    const albumFolders = [
+      '01-Black-Aura',
+      '02-Palace-Gates',
+      '03-The-Mirror',
+      '04-Meet-Me-at-Hobos',
+      '05-Orbit',
+      '06-Wrong-Turning',
+      '07-Impossible-Metaphysics',
+      '08-Small-Testimony',
+      '09-After-Everything',
+    ];
+    assert.deepEqual(
+      WPS_ALBUM_TRACKS.filter((track) => track.position > 0).map((track) => track.folder),
+      albumFolders
+    );
+    const root = path.dirname(mirror.outputDir);
+    for (const folder of albumFolders) assert.equal(fs.existsSync(path.join(root, folder)), true, folder);
+
+    assert.equal(path.basename(mirror.outputDir), '03-The-Mirror');
+    assert.equal(path.basename(wpsPerformanceOutputDir(mirror)!), '03-The-Mirror');
+    assert.match(mirror.performanceEdition ?? '', /\/03-The-Mirror\/03-The-Mirror-Performance-Edition-V1\.1\.musicxml$/);
+    assert.equal(fs.existsSync(mirror.performanceEdition!), true);
+
+    const metaphysics = loadSpec('07-impossible-metaphysics.json');
+    assert.equal(path.basename(metaphysics.outputDir), '07-Impossible-Metaphysics');
+    assert.equal(path.basename(wpsPerformanceOutputDir(metaphysics)!), '07-Impossible-Metaphysics');
+    assert.match(
+      metaphysics.performanceEdition ?? '',
+      /\/07-Impossible-Metaphysics\/07-Impossible-Metaphysics-Performance-Edition-V1\.3\.musicxml$/
+    );
+    assert.equal(fs.existsSync(metaphysics.performanceEdition!), true);
+    assert.equal(path.basename(metaphysics.performanceEdition!), '07-Impossible-Metaphysics-Performance-Edition-V1.3.musicxml');
+
+    assert.equal(path.basename(orbit.outputDir), '05-Orbit');
+    assert.equal(path.basename(wrong.outputDir), '06-Wrong-Turning');
+    assert.equal(resolveWpsAlbumTrack({ id: '08-small-testimony', title: 'Small Testimony' })?.folder, '08-Small-Testimony');
+    assert.equal(resolveWpsAlbumTrack({ id: '04-small-testimony', title: 'Small Testimony' })?.folder, '08-Small-Testimony');
+    assert.equal(resolveWpsAlbumTrack({ id: '04-meet-me-at-hobos', title: "Meet Me at Hobo's" })?.folder, '04-Meet-Me-at-Hobos');
+    assert.equal(resolveWpsAlbumTrack({ id: 'palace-gates', title: 'Palace Gates' })?.folder, '02-Palace-Gates');
+    assert.equal(resolveWpsAlbumTrack({ id: 'palace-gates-solo', title: 'Palace Gates Solo' })?.folder, '02-Palace-Gates');
+    assert.equal(resolveWpsAlbumTrack({ id: 'palace-gates-reprise', title: 'Palace Gates Reprise' }), null);
+    assert.equal(WPS_ALBUM_TRACKS.length, 9);
+    assert.equal(fs.existsSync(path.join(root, '08-Palace-Gates-Reprise')), false);
+    assert.equal(fs.existsSync(path.join(root, '00-NON-ALBUM-Wrong-Turning')), false);
+
+    const parent = runWps({ ...mirror, outputDir: root });
+    assert.equal(parent.ok, false);
+    assert.match(parent.lines.join('\n'), /outputDir must be the album-track folder/);
+    assert.match(runWps(mirror).lines.join('\n'), /performance output folder 03-The-Mirror/);
+    assert.match(runWps(wrong).lines.join('\n'), /performance output folder 06-Wrong-Turning/);
+    assert.match(runWps(metaphysics).lines.join('\n'), /performance output folder 07-Impossible-Metaphysics/);
   });
 
   check('claiming an official GCE number fails', () => {

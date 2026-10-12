@@ -5,8 +5,8 @@
   "performanceEditionId": "V1.3",
   "arrangementIds": ["A", "B", "C", "D", "E-V3.0", "F", "G", "H"],
   "leadsheet": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/00 - WWH DUO LEADSHEETS/07-Impossible-Metaphysics-Duo-Leadsheet-V1.1.musicxml",
-  "performanceEdition": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/PERFORMANCE-EDITIONS/07-Impossible-Metaphysics-Performance-Edition-V1.3.musicxml",
-  "outputDir": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/PERFORMANCE-EDITIONS",
+  "performanceEdition": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/PERFORMANCE-EDITIONS/07-Impossible-Metaphysics/07-Impossible-Metaphysics-Performance-Edition-V1.3.musicxml",
+  "outputDir": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/PERFORMANCE-EDITIONS/07-Impossible-Metaphysics",
   "arrangements": [
     {
       "id": "A",

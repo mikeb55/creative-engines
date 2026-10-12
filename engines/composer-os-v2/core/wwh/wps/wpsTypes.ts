@@ -3,10 +3,16 @@
  * One JSON file per song. The checker does not branch on the title.
  * Narrative length is whatever the song needs. Nothing here assumes seven stages or eight-bar blocks.
  *
- * V1.1 remains the frozen snapshot in `baseline/v1.1/`. This module is V1.2.
+ * V1.1 remains the frozen snapshot in `baseline/v1.1/`. This module is V1.3.
+ * Song specs written for V1.2 stay valid. Optional guitar-role fields are V1.3.
  */
 
-export const WPS_VERSION = '1.2' as const;
+export const WPS_VERSION = '1.3' as const;
+
+/** Live checker accepts a V1.2 spec. It does not require the optional V1.3 fields. */
+export const WPS_ACCEPTED_SPEC_VERSIONS = ['1.2', '1.3'] as const;
+
+export type WpsSpecVersion = (typeof WPS_ACCEPTED_SPEC_VERSIONS)[number];
 
 /** One automatic compositional refinement. Further passes need a named defect or an audition note. */
 export const WPS_MAX_DCR_REFINEMENTS = 1;
@@ -88,8 +94,30 @@ export interface WpsGceRecord {
   weakest: string;
 }
 
+/** One span, one job. No percentage and no required comping chorus. */
+export type WpsGuitarRole = 'melody' | 'comping' | 'chord-melody' | 'counterpoint' | 'bass-led' | 'silence';
+
+export type WpsVaultTechnique = 'shell-triad' | 'triad-pair' | 'liquid' | 'reduction' | 'line' | 'rest';
+
+export interface WpsGuitarRoleSpan {
+  bars: string;
+  role: WpsGuitarRole;
+  technique?: WpsVaultTechnique;
+  /** Id from the 16-volume WPS record. Absent when the span is a line or a rest. */
+  tonalityId?: string;
+  note?: string;
+}
+
+/** Pointer to a candidate a person may copy. The checker does not play it. */
+export interface WpsVaultCandidateRef {
+  bars: string;
+  tonalityId: string;
+  technique: WpsVaultTechnique;
+  provenance: string;
+}
+
 export interface WpsSongSpec {
-  wpsVersion: typeof WPS_VERSION;
+  wpsVersion: WpsSpecVersion;
   id: string;
   title: string;
   leadsheet: string;
@@ -104,6 +132,10 @@ export interface WpsSongSpec {
   performanceEdition?: string;
   /** Token that must appear in the performance filename, e.g. V1.3. */
   performanceEditionId?: string;
+  /**
+   * Album-track folder for this song. `wpsPerformanceOutputDir` resolves it from
+   * the spec id and title. The two-digit prefix on a MusicXML name is not the folder.
+   */
   outputDir: string;
   blueprint: WpsBlueprint;
   motif: {
@@ -129,4 +161,11 @@ export interface WpsSongSpec {
   targetDurationSeconds: { min: number; max: number };
   /** Intended slow–fast–slow (or other) printed law. Used for the duration check. */
   tempoPlan: WpsTempoSpan[];
+  /**
+   * Optional V1.3 spans. Empty or absent is valid, including on a V1.2 spec.
+   * A span keeps one role. It is not a quota.
+   */
+  guitarRoles?: WpsGuitarRoleSpan[];
+  /** Optional record that candidates were considered. The checker does not sound them. */
+  vaultCandidates?: WpsVaultCandidateRef[];
 }

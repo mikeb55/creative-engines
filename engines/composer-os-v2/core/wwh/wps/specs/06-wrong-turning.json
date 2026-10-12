@@ -2,8 +2,10 @@
   "wpsVersion": "1.2",
   "id": "06-wrong-turning",
   "title": "Wrong Turning",
+  "performanceEditionId": "V1.1",
   "leadsheet": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/00 - WWH DUO LEADSHEETS/06-Wrong-Turning-Duo-Leadsheet-V1.2.musicxml",
-  "outputDir": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/PERFORMANCE-EDITIONS",
+  "performanceEdition": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/PERFORMANCE-EDITIONS/06-Wrong-Turning/06-Wrong-Turning-Performance-Edition-V1.1.musicxml",
+  "outputDir": "/Users/user/Documents/DEVS/ECM-Album-Nov-2027/WWH-PRACTICE/WWH-PLAY/PERFORMANCE-EDITIONS/06-Wrong-Turning",
   "arrangementIds": ["A", "B", "C", "D", "E-V3.0", "F", "G", "H"],
   "arrangements": [
     {
@@ -52,13 +54,13 @@
     ],
     "originalBassIdentity": "Bass moves from bar 1 (E–A–G) and does not wait for the guitar. Guitar octave-change is 0, so written guitar pitch is sounding pitch. CBV is no-change.",
     "strongestPassages": [
-      "No listening rank. The leadsheet’s own interruptions are the short bar 8, the four-bar E/Bb hold at 21–24, and the guitar rest at 30 before Bb–E–A.",
-      "A–H are inventoried, including E-V3.0. E V2.0 is not the E source."
+      "No listening rank. Notation only. The leadsheet interruptions that the performance keeps are bar 8 in 3/4, the E/Bb argument at 21–24, and the guitar rest at 30 before Bb–E–A.",
+      "A–H were read and not spliced. C suggested a foreign dyad. H suggested a pentatonic field against the bass. G suggested long guitar silence. Those ideas were rewritten."
     ],
-    "harmonicJourney": "No chord symbols are printed. The bass line is the harmonic evidence: E/A/Bb motion, an F centre around bars 8–12 and 21–24, and F at the end.",
-    "contrapuntalOpportunities": "The score already says the bass leads and the guitar follows. Bars 4 and 20 put a lower guitar dyad under the hook. A second independent line is not written through the tune.",
-    "dramaticClimax": "Not auditioned. The printed instruction at the close is to let the wrong turn stand, not to build a peak.",
-    "thematicReturn": "Bars 25–28 bring back A–G–E–D. Bar 32 ends on E against Bb.",
+    "harmonicJourney": "Locked bass stays the floor: E/A/G/Bb, then F/Ab around bars 8–12, F under the E/Bb hold, F at the end. Guitar adds three turns: Bb/D in bar 4, C/Eb against bass A in bar 9 (the Ab triad arrives late and misses), Db/F/Ab in bar 18 moving by one common-tone step to D/F/Ab in bar 28. No ii–V–I.",
+    "contrapuntalOpportunities": "Bass leads. Guitar withholds through the F of bar 8, through most of bars 9–12, and through the bass scale in bar 16, then answers late. No second line runs under the whole tune.",
+    "dramaticClimax": "Not auditioned. The densest guitar moment is the Db triad in bar 18. The close does not peak. Bar 32 lets E/Bb stand on low F.",
+    "thematicReturn": "Bars 3 and 7 state A–G–E–D. Bar 25 states it again. Bar 26 turns the last note to Bb. Bar 28 keeps the rhythm and changes the last chord. Bar 29 states the hook and withholds its closing E. Bar 32 gives that E back, with Bb.",
     "expectedPerformanceDuration": "Quarter = 120, and sound tempo 120. 31 bars of 4/4 plus bar 8 in 3/4 = 1:03.50."
   },
   "motif": {
@@ -75,10 +77,10 @@
   ],
   "narrative": [
     { "name": "Hook", "bars": "1-7", "job": "Printed instruction: crooked, dry, physical. Hook twice, with the descending answer." },
-    { "name": "Short bar", "bars": "8-12", "job": "Bar 8 is 3/4. Bass keeps moving. Guitar sits on A and A/Bb." },
-    { "name": "Hook again", "bars": "13-20", "job": "Hook returns in shorter pieces. Bar 16 is the bass’s longest bar." },
-    { "name": "Hold", "bars": "21-24", "job": "E against Bb, four bars." },
-    { "name": "Descent and stop", "bars": "25-32", "job": "A–G–E–D four times, guitar rest at 30, then the last E/Bb. Printed words: let the wrong turn stand." }
+    { "name": "Short bar", "bars": "8-12", "job": "Bar 8 cuts the hook. Bass F is heard alone. Bars 9–11 answer late. Bar 12 names Ab on the last beat, against bass A." },
+    { "name": "Hook again", "bars": "13-20", "job": "Two rough hooks exit to F, then to Bb. Bar 16 leaves the bass scale alone until a late Bb. Bar 17 ends on Ab. Bar 18 is the Db triad." },
+    { "name": "Hold", "bars": "21-24", "job": "E then Bb, then E alone, then Bb before E, then the E/Bb dyad falling to D." },
+    { "name": "Descent and stop", "bars": "25-32", "job": "Descent, a Bb ending, a late E–D, then D/F/Ab. Hook stops early in bar 29. Guitar rest at 30. Bb–E–A, then E/Bb. Let the wrong turn stand." }
   ],
   "seams": [
     { "bars": "7-9", "job": "4/4 into the 3/4 bar and back" },
@@ -87,7 +89,7 @@
   ],
   "mci": {
     "continuity": "The E–G–A–Bb hook and the A–G–E–D descent stay recognisable. Bar 8 stays in 3/4. The bass event stream stays.",
-    "innovation": "A performance score may cut an expectation after the hook or across the E/Bb hold. It does not smooth the short bar into 4/4, and it does not borrow The Mirror’s section letters."
+    "innovation": "Familiar phrases change direction: early D in bar 6, cut hook in bar 8, F inside the rough hook, Ab instead of the closing E in bar 17, reversed E/Bb in bar 23. The short bar stays in 3/4. No section letters."
   },
   "cbv": {
     "decision": "no-change",
@@ -104,8 +106,8 @@
   "selectiveSynthesis": true,
   "gce": {
     "officialNumeric": false,
-    "dcrRefinements": 0,
-    "weakest": "Not named. No performance score exists, so no refinement has been made."
+    "dcrRefinements": 1,
+    "weakest": "Cadential clarity of bars 9–12. V1.0 left that F-world phrase without a guitar arrival. V1.1 bar 12 beat 4 is Ab4 against bass A."
   },
   "protectedGuitarSilences": [30],
   "rehearsal": [],
