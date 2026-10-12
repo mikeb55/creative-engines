@@ -218,7 +218,7 @@ function run(): { ok: boolean; name: string }[] {
     assert.equal(mirror.wpsVersion, '1.2');
     const result = runWps(mirror);
     assert.equal(result.ok, true, result.lines.filter((line) => line.startsWith('FAIL')).join('; '));
-    assert.match(result.lines.join('\n'), /WPS V1\.4/);
+    assert.match(result.lines.join('\n'), /WPS V1\.5/);
     assert.match(result.lines.join('\n'), /does not generate musical notes/);
     assert.match(result.lines.join('\n'), /guitar roles: none recorded/);
     assert.match(result.lines.join('\n'), /No chordal quota/);

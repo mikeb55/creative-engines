@@ -3,15 +3,16 @@
  * One JSON file per song. The checker does not branch on the title.
  * Narrative length is whatever the song needs. Nothing here assumes seven stages or eight-bar blocks.
  *
- * V1.1 remains the frozen snapshot in `baseline/v1.1/`. This module is V1.4.
+ * V1.1 remains the frozen snapshot in `baseline/v1.1/`. This module is V1.5.
  * Song specs written for V1.2 and V1.3 stay valid. Optional guitar-role fields are V1.3.
- * Bryant signature gates are V1.4. They fail the run when the spec version is 1.4.
+ * Bryant signature gates are V1.4. They fail the run when the spec version is 1.4 or 1.5.
+ * Harmonic notation safeguards are V1.5. They fail the run only when the spec version is 1.5.
  */
 
-export const WPS_VERSION = '1.4' as const;
+export const WPS_VERSION = '1.5' as const;
 
-/** Live checker accepts a V1.2 or V1.3 spec. V1.4 adds Bryant gates as run failures. */
-export const WPS_ACCEPTED_SPEC_VERSIONS = ['1.2', '1.3', '1.4'] as const;
+/** Live checker accepts a V1.2, V1.3, or V1.4 spec. V1.5 adds harmonic notation as a run failure. */
+export const WPS_ACCEPTED_SPEC_VERSIONS = ['1.2', '1.3', '1.4', '1.5'] as const;
 
 export type WpsSpecVersion = (typeof WPS_ACCEPTED_SPEC_VERSIONS)[number];
 

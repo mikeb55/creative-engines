@@ -17,6 +17,7 @@ import {
 } from '../wwhDuoImport';
 import { wpsPerformanceOutputDir } from './wpsAlbumTracks';
 import { assessBryantEdition, formatBryantReport } from './wpsBryantGates';
+import { assessHarmonicNotation, formatHarmonicNotationReport } from './wpsHarmonicNotation';
 import { wpsVaultTonality } from './wpsTonalityVaultRecord';
 import {
   WPS_ACCEPTED_SPEC_VERSIONS,
@@ -326,7 +327,7 @@ export function runWps(spec: WpsSongSpec): WpsRunReport {
 
   lines.push(`WPS V${WPS_VERSION} ${spec.id} — ${spec.title}`);
   lines.push(
-    'WPS does not generate musical notes. The compositional agent writes the guitar music. V1.3 candidate functions can propose guitar events. This command does not call them and does not write MusicXML. V1.4 Bryant gates read a finished score and do not pick a candidate. This pipeline checks the leadsheet, the blueprint, the A–H inventory, LOCK, guitar validation, duration, and evidence.'
+    'WPS does not generate musical notes. The compositional agent writes the guitar music. V1.3 candidate functions can propose guitar events. This command does not call them and does not write MusicXML. V1.4 Bryant gates read a finished score and do not pick a candidate. V1.5 harmonic notation reads a finished integrated study and does not write MusicXML. This pipeline checks the leadsheet, the blueprint, the A–H inventory, LOCK, guitar validation, duration, and evidence.'
   );
   lines.push(
     'evaluateGce was not run. runDcrProtocol was not executed. NO OFFICIAL NUMERIC GCE. A hand-authored WWH MusicXML file is not a Composer OS ScoreModel.'
@@ -576,7 +577,18 @@ export function runWps(spec: WpsSongSpec): WpsRunReport {
       requiredChoruses: spec.requiredChoruses,
     });
     lines.push(...formatBryantReport(bryant));
-    if (spec.wpsVersion === '1.4' && !bryant.ok) fail(`Bryant gates: ${bryant.failures.length} failure(s)`);
+    if ((spec.wpsVersion === '1.4' || spec.wpsVersion === '1.5') && !bryant.ok) {
+      fail(`Bryant gates: ${bryant.failures.length} failure(s)`);
+    }
+    if (spec.wpsVersion === '1.5') {
+      const harmonic = assessHarmonicNotation({
+        guitar: performance.score.guitar,
+        bass: performance.score.bass,
+        leadsheetGuitar: lead.score.guitar,
+      });
+      lines.push(...formatHarmonicNotationReport(harmonic));
+      if (!harmonic.ok) fail(`harmonic notation: ${harmonic.failures.length} failure(s)`);
+    }
 
     lines.push('Step 6 — GCE evidence and one DCR refinement');
     if (gce && gce.dcrRefinements !== 1) fail(`performance check requires one DCR refinement, found ${gce.dcrRefinements}`);

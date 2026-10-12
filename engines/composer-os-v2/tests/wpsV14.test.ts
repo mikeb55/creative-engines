@@ -102,7 +102,10 @@ function run(): { ok: boolean; name: string }[] {
 
   check('signature file is shared and 65/20/40 stays a guide', () => {
     const spec = loadBryantSignature();
-    assert.equal(WPS_VERSION, '1.4');
+    assert.equal(WPS_VERSION, '1.5');
+    const raw = fs.readFileSync(BRYANT_SIGNATURE_PATH, 'utf8');
+    const signatureVersion = JSON.parse(raw) as { wpsVersion: string };
+    assert.equal(signatureVersion.wpsVersion, '1.4');
     assert.equal(spec.signatureDevices.minimumPerEdition, 4);
     assert.equal(spec.signatureDevices.poolSize, 6);
     assert.equal(spec.antiClicheBans.anyHitFailsWps, true);
@@ -117,7 +120,6 @@ function run(): { ok: boolean; name: string }[] {
     assert.equal(spec.listeningGuide.melodyPercent, 65);
     assert.equal(spec.listeningGuide.harmonyPercent, 20);
     assert.equal(spec.listeningGuide.rhythmPercent, 40);
-    const raw = fs.readFileSync(BRYANT_SIGNATURE_PATH, 'utf8');
     for (const id of ['LIQUID', 'TRITONE_FIELDS', 'FOREIGN_BASS_GRIP', 'HOOK_EROSION', 'ACTIVE_SILENCE', 'OPEN_STRING_CLUSTER']) {
       assert.match(raw, new RegExp(id));
     }
