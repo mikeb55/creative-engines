@@ -1,6 +1,12 @@
-# WWH Performance Synthesis V1.3
+# WWH Performance Synthesis V1.4
 
 WPS is the reusable performance-composition workflow for While We're Here duo pieces. It standardises how a piece is planned, checked, and refined. It does not standardise the music.
+
+**WPS V1.4** adds Bryant style gates. The shared definition is `engines/composer-os-v2/core/wwh/wps/wps-bryant-signature.json`. The checker prints PASS or FAIL and the bar numbers. It does not write the notes. An edition uses at least 4 of the 6 signature devices. An anti-cliché hit fails the gate. HEAD IN, HEAD OUT, and BASS SOLO comping use at least 4 grip types from quartal, cluster-with-2nd, open-string, liquid, triad-over-foreign-bass, and drop-2. SOLO 1 is linear, motivic, and non-functional. SOLO 2 keeps at least 40% of its intervals a 4th or wider, a range of 2 octaves, 2 field collisions, and 4 silent bars. The two solos differ in interval profile, density, and register. Every radical chorus names one source anchor. 65/20/40 stays a listening guide.
+
+For SOLO 1, SOLO 2, and BASS SOLO comping, generate 4 contrasting candidates per chorus. Use different seeds and different lead devices. Rank them by signature use, anti-cliché result, and solo contrast. Present the top 2. Do not auto-select. Read `engines/composer-os-v2/core/wwh/wps/wps-bryant-preferences.md` before creating candidates for the next tune.
+
+Specs at `wpsVersion` 1.2 and 1.3 still pass the older checks. A spec at 1.4 fails the run when a Bryant gate fails.
 
 **WPS V1.1** is frozen. Snapshot: `engines/composer-os-v2/core/wwh/wps/baseline/v1.1/`. That snapshot passed 12/12 on Impossible Metaphysics Performance Edition V1.3 before V1.2 was written. Do not call the live checker V1.1.
 

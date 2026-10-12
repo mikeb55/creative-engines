@@ -31,8 +31,8 @@ function run(): { ok: boolean; name: string }[] {
     }
   };
 
-  check('live checker is V1.3 and the snapshot is still V1.1', () => {
-    assert.equal(WPS_VERSION, '1.3');
+  check('live checker is V1.4 and the snapshot is still V1.1', () => {
+    assert.equal(WPS_VERSION, '1.4');
     const frozen = fs.readFileSync(snapshotTypes, 'utf8');
     assert.match(frozen, /WPS_VERSION = '1\.1'/);
     assert.equal(frozen.includes("WPS_VERSION = '1.2'"), false);

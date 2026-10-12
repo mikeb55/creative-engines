@@ -16,6 +16,7 @@ import {
   type WwhImportedPart,
 } from '../wwhDuoImport';
 import { wpsPerformanceOutputDir } from './wpsAlbumTracks';
+import { assessBryantEdition, formatBryantReport } from './wpsBryantGates';
 import { wpsVaultTonality } from './wpsTonalityVaultRecord';
 import {
   WPS_ACCEPTED_SPEC_VERSIONS,
@@ -325,7 +326,7 @@ export function runWps(spec: WpsSongSpec): WpsRunReport {
 
   lines.push(`WPS V${WPS_VERSION} ${spec.id} — ${spec.title}`);
   lines.push(
-    'WPS does not generate musical notes. The compositional agent writes the guitar music. V1.3 candidate functions can propose guitar events. This command does not call them and does not write MusicXML. This pipeline checks the leadsheet, the blueprint, the A–H inventory, LOCK, guitar validation, duration, and evidence.'
+    'WPS does not generate musical notes. The compositional agent writes the guitar music. V1.3 candidate functions can propose guitar events. This command does not call them and does not write MusicXML. V1.4 Bryant gates read a finished score and do not pick a candidate. This pipeline checks the leadsheet, the blueprint, the A–H inventory, LOCK, guitar validation, duration, and evidence.'
   );
   lines.push(
     'evaluateGce was not run. runDcrProtocol was not executed. NO OFFICIAL NUMERIC GCE. A hand-authored WWH MusicXML file is not a Composer OS ScoreModel.'
@@ -560,6 +561,21 @@ export function runWps(spec: WpsSongSpec): WpsRunReport {
     if (infeasible) fail('guitar slice outside span 4');
     const octave = performance.score.guitar.measures[0]?.transposeOctave;
     lines.push(`guitar octave-change ${octave}`);
+
+    lines.push('Step 5b — Bryant signature, anti-cliché, and candidate gates');
+    lines.push(
+      'SOLO 1, SOLO 2, and BASS SOLO comping: 4 candidates per chorus, different seeds and different lead devices. Rank by signature use, anti-cliché, and solo contrast. Present the top 2. Do not auto-select. Read wps-bryant-preferences.md before the next tune.'
+    );
+    const bryant = assessBryantEdition({
+      guitar: performance.score.guitar,
+      bass: performance.score.bass,
+      leadsheetGuitar: lead.score.guitar,
+      protectedGuitarSilences: spec.protectedGuitarSilences,
+      hookPitches: spec.motif?.pitches ?? [],
+      chorusLength: spec.expectedBars,
+    });
+    lines.push(...formatBryantReport(bryant));
+    if (spec.wpsVersion === '1.4' && !bryant.ok) fail(`Bryant gates: ${bryant.failures.length} failure(s)`);
 
     lines.push('Step 6 — GCE evidence and one DCR refinement');
     if (gce && gce.dcrRefinements !== 1) fail(`performance check requires one DCR refinement, found ${gce.dcrRefinements}`);

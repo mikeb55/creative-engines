@@ -1,4 +1,8 @@
-# WPS V1.3 — ChatGPT project instructions
+# WPS V1.4 — ChatGPT project instructions
+
+V1.4 adds Bryant style gates. Read `engines/composer-os-v2/core/wwh/wps/wps-bryant-signature.json` and `wps-bryant-preferences.md` before offering candidates. An edition needs 4 of 6 signature devices. An anti-cliché hit fails. Present 2 of 4 candidates for SOLO 1, SOLO 2, and BASS SOLO. Do not auto-select. 65/20/40 stays a listening guide. The checker reports bars. It does not write the score.
+
+# WPS V1.3 — still accepted
 
 Attach this file by hand to Vol 2 — Pentatonic Engine Design, the Composer OS development project, and WWH Duo Leadsheets. Cursor does not change ChatGPT project settings.
 

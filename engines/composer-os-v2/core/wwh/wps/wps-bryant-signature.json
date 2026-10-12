@@ -1,0 +1,111 @@
+{
+  "id": "wps-bryant-signature",
+  "wpsVersion": "1.4",
+  "appliesTo": "all-nine-album-tracks",
+  "listeningGuide": {
+    "melodyPercent": 65,
+    "harmonyPercent": 20,
+    "rhythmPercent": 40,
+    "status": "listening-guide",
+    "note": "65/20/40 stays a listening guide. These gates are style gates, not recognition quotas."
+  },
+  "signatureDevices": {
+    "minimumPerEdition": 4,
+    "poolSize": 6,
+    "devices": [
+      {
+        "id": "LIQUID",
+        "rule": "Held tones plus one moving voice over 2 or more chords."
+      },
+      {
+        "id": "TRITONE_FIELDS",
+        "rule": "Two pentatonic fields a tritone apart, traded or collided."
+      },
+      {
+        "id": "FOREIGN_BASS_GRIP",
+        "rule": "A triad or grip whose root is not the bass note, reinterpreted by the bass."
+      },
+      {
+        "id": "HOOK_EROSION",
+        "rule": "The hook fragmented, displaced, or moved to another register, still traceable."
+      },
+      {
+        "id": "ACTIVE_SILENCE",
+        "rule": "At least 1 whole bar of guitar silence per chorus besides the protected rests."
+      },
+      {
+        "id": "OPEN_STRING_CLUSTER",
+        "rule": "An open string ringing against fretted notes, with a 2nd inside the voicing."
+      }
+    ]
+  },
+  "antiClicheBans": {
+    "anyHitFailsWps": true,
+    "bans": [
+      {
+        "id": "FUNCTIONAL_CADENCE",
+        "rule": "ii–V–I or V–I patterns in the guitar against the bass."
+      },
+      {
+        "id": "SCALE_RUN",
+        "rule": "A stepwise scale run of more than 6 notes."
+      },
+      {
+        "id": "MAJ7_SHARP11",
+        "rule": "maj7#11 fails unless the report justifies it as a result of the melody or the pair."
+      },
+      {
+        "id": "PARALLEL_GRIP",
+        "rule": "The same grip shape moved in parallel more than twice in a row."
+      },
+      {
+        "id": "VOICING_CYCLE",
+        "rule": "A voicing cycle repeated across choruses."
+      }
+    ]
+  },
+  "chordalVariety": {
+    "appliesTo": ["HEAD_IN", "HEAD_OUT", "BASS_SOLO"],
+    "minimumGripTypes": 4,
+    "gripTypes": [
+      "quartal",
+      "cluster-with-2nd",
+      "open-string",
+      "liquid",
+      "triad-over-foreign-bass",
+      "drop-2"
+    ]
+  },
+  "soloContrast": {
+    "SOLO_1": {
+      "id": "SOLO_1",
+      "name": "INSIDE",
+      "rule": "Linear and motivic, and non-functional."
+    },
+    "SOLO_2": {
+      "id": "SOLO_2",
+      "name": "OUTSIDE",
+      "minWideIntervalShare": 0.4,
+      "wideIntervalSemitones": 5,
+      "minRangeSemitones": 24,
+      "minFieldCollisions": 2,
+      "minSilentBars": 4
+    },
+    "mustDifferIn": ["intervalProfile", "density", "register"]
+  },
+  "anchor": {
+    "rule": "Every radical chorus keeps at least one source anchor: a hook interval, a rhythmic fingerprint, or an arrival. Name it per chorus."
+  },
+  "formChoruses": ["HEAD_IN", "SOLO_1", "SOLO_2", "BASS_SOLO", "HEAD_OUT"],
+  "candidateRule": {
+    "roles": ["SOLO_1", "SOLO_2", "BASS_SOLO"],
+    "candidatesPerChorus": 4,
+    "distinctSeeds": true,
+    "distinctLeadDevices": true,
+    "rankBy": ["signatureUse", "antiCliche", "soloContrast"],
+    "presentToMike": 2,
+    "autoSelect": false,
+    "preferencesFile": "wps-bryant-preferences.md",
+    "readPreferencesBeforeNextTune": true
+  }
+}

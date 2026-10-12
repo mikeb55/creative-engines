@@ -59,7 +59,7 @@ function run(): { ok: boolean; name: string }[] {
   check('Impossible Metaphysics V1.3 baseline passes', () => {
     assert.equal(report.ok, true, report.lines.filter((line) => line.startsWith('FAIL')).join('; '));
     const text = report.lines.join('\n');
-    assert.match(text, /WPS V1\.3/);
+    assert.match(text, /WPS V1\.4/);
     assert.match(text, /does not generate musical notes/);
     assert.match(text, /bass event stream matches the leadsheet/);
     assert.match(text, /metre map matches the leadsheet/);
