@@ -20,6 +20,12 @@ describe('appRouter hash routes (Phase 1.5 S1 + file:// reload fix)', () => {
     expect(hashForRoute('riffgen')).toBe('#/riffgen');
     expect(hashForRoute('home')).toBe('#/');
     expect(routeNavLabel('riffgen')).toBe('RiffGen');
+    expect(pathForRoute('bhl')).toBe('/bhl');
+    expect(hashForRoute('bhl')).toBe('#/bhl');
+    expect(routeNavLabel('bhl')).toBe('BHL');
+    expect(routeFromLocation({ hash: '#/bhl', pathname: '/index.html' })).toBe('bhl');
+    expect(routeFromLocation({ hash: '#/pentatonic', pathname: '/bhl' })).toBe('pentatonic');
+    expect(routeFromLocation({ hash: '#/', pathname: '/bhl' })).toBe('home');
   });
 
   it('routeFromPathname resolves legacy path URLs', () => {

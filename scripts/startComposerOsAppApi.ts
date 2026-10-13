@@ -28,6 +28,13 @@ import {
   apiExportGuitarPro,
   apiGenerateComping,
 } from '../engines/composer-os-v2/app-api/composerOsApiCore';
+import {
+  apiBhlCompose,
+  apiBhlDefaults,
+  apiBhlExport,
+  apiBhlInspect,
+  apiBhlOpen,
+} from '../engines/composer-os-v2/app-api/bhlApp';
 import { openOutputFolderRoute } from './openOutputFolderRoute';
 import { resolveDownloadFileTarget, sendDownloadFile } from './downloadFileRoute';
 import type { GenerateRequest } from '../engines/composer-os-v2/app-api/appApiTypes';
@@ -235,6 +242,54 @@ app.post('/api/export-guitar-pro', async (req: Request, res: Response) => {
     res.json(r);
   } catch (err) {
     res.status(500).json({ success: false, error: String(err) });
+  }
+});
+
+function sendBhl(res: Response, result: { ok: boolean }): void {
+  if (!result.ok) {
+    res.status(400).json(result);
+    return;
+  }
+  res.json(result);
+}
+
+app.post('/api/bhl/defaults', (_req: Request, res: Response) => {
+  try {
+    sendBhl(res, apiBhlDefaults());
+  } catch (err) {
+    res.status(500).json({ ok: false, error: String(err) });
+  }
+});
+
+app.post('/api/bhl/inspect', (req: Request, res: Response) => {
+  try {
+    sendBhl(res, apiBhlInspect(req.body));
+  } catch (err) {
+    res.status(500).json({ ok: false, error: String(err) });
+  }
+});
+
+app.post('/api/bhl/compose', (req: Request, res: Response) => {
+  try {
+    sendBhl(res, apiBhlCompose(req.body));
+  } catch (err) {
+    res.status(500).json({ ok: false, error: String(err) });
+  }
+});
+
+app.post('/api/bhl/export', (req: Request, res: Response) => {
+  try {
+    sendBhl(res, apiBhlExport(req.body));
+  } catch (err) {
+    res.status(500).json({ ok: false, error: String(err) });
+  }
+});
+
+app.post('/api/bhl/open', (req: Request, res: Response) => {
+  try {
+    sendBhl(res, apiBhlOpen(req.body));
+  } catch (err) {
+    res.status(500).json({ ok: false, error: String(err) });
   }
 });
 

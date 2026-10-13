@@ -24,6 +24,13 @@ import {
   type PdfGenerateFromPdfRequest,
   getComposerOsRuntimeBuildInfo,
 } from '../../../engines/composer-os-v2/app-api/composerOsApiCore';
+import {
+  apiBhlCompose,
+  apiBhlDefaults,
+  apiBhlExport,
+  apiBhlInspect,
+  apiBhlOpen,
+} from '../../../engines/composer-os-v2/app-api/bhlApp';
 import { openOutputFolderRoute } from '../../../scripts/openOutputFolderRoute';
 import {
   hydrateAnthropicKeyFromAllSources,
@@ -386,6 +393,11 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
   ipcMain.handle('composer-os-api:export-guitar-pro', (_e, body: unknown) =>
     apiExportGuitarPro(body as Parameters<typeof apiExportGuitarPro>[0])
   );
+  ipcMain.handle('composer-os-api:bhl-defaults', () => apiBhlDefaults());
+  ipcMain.handle('composer-os-api:bhl-inspect', (_e, body: unknown) => apiBhlInspect(body));
+  ipcMain.handle('composer-os-api:bhl-compose', (_e, body: unknown) => apiBhlCompose(body));
+  ipcMain.handle('composer-os-api:bhl-export', (_e, body: unknown) => apiBhlExport(body));
+  ipcMain.handle('composer-os-api:bhl-open', (_e, body: unknown) => apiBhlOpen(body));
   ipcMain.handle('composer-os-api:generate-comping', (_e, body: unknown) =>
     Promise.resolve(apiGenerateComping(body as Parameters<typeof apiGenerateComping>[0]))
   );

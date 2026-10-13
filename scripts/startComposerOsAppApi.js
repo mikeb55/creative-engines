@@ -49,6 +49,7 @@ const cors_1 = __importDefault(require("cors"));
 const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
 const composerOsApiCore_1 = require("../engines/composer-os-v2/app-api/composerOsApiCore.ts");
+const bhlApp_1 = require("../engines/composer-os-v2/app-api/bhlApp.ts");
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
@@ -117,6 +118,53 @@ app.get('/api/diagnostics', (_req, res) => {
     }
     catch (err) {
         res.status(500).json({ error: String(err) });
+    }
+});
+function sendBhl(res, result) {
+    if (!result.ok) {
+        res.status(400).json(result);
+        return;
+    }
+    res.json(result);
+}
+app.post('/api/bhl/defaults', (_req, res) => {
+    try {
+        sendBhl(res, (0, bhlApp_1.apiBhlDefaults)());
+    }
+    catch (err) {
+        res.status(500).json({ ok: false, error: String(err) });
+    }
+});
+app.post('/api/bhl/inspect', (req, res) => {
+    try {
+        sendBhl(res, (0, bhlApp_1.apiBhlInspect)(req.body));
+    }
+    catch (err) {
+        res.status(500).json({ ok: false, error: String(err) });
+    }
+});
+app.post('/api/bhl/compose', (req, res) => {
+    try {
+        sendBhl(res, (0, bhlApp_1.apiBhlCompose)(req.body));
+    }
+    catch (err) {
+        res.status(500).json({ ok: false, error: String(err) });
+    }
+});
+app.post('/api/bhl/export', (req, res) => {
+    try {
+        sendBhl(res, (0, bhlApp_1.apiBhlExport)(req.body));
+    }
+    catch (err) {
+        res.status(500).json({ ok: false, error: String(err) });
+    }
+});
+app.post('/api/bhl/open', (req, res) => {
+    try {
+        sendBhl(res, (0, bhlApp_1.apiBhlOpen)(req.body));
+    }
+    catch (err) {
+        res.status(500).json({ ok: false, error: String(err) });
     }
 });
 app.post('/api/open-output-folder', (req, res) => {

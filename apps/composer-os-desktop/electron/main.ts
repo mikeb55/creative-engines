@@ -347,6 +347,7 @@ function hashFromFailedFileUrl(url: string): string {
     'composer-engines',
     'slonimsky-etudes',
     'pentatonic',
+    'bhl',
     'guide',
     'credits',
   ]);

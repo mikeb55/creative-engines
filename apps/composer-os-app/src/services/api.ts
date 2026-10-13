@@ -119,6 +119,11 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     if (path === '/generate-comping') {
       return ipcInvoke<T>('composer-os-api:generate-comping', body ?? {});
     }
+    if (path === '/bhl/defaults') return ipcInvoke<T>('composer-os-api:bhl-defaults', body ?? {});
+    if (path === '/bhl/inspect') return ipcInvoke<T>('composer-os-api:bhl-inspect', body ?? {});
+    if (path === '/bhl/compose') return ipcInvoke<T>('composer-os-api:bhl-compose', body ?? {});
+    if (path === '/bhl/export') return ipcInvoke<T>('composer-os-api:bhl-export', body ?? {});
+    if (path === '/bhl/open') return ipcInvoke<T>('composer-os-api:bhl-open', body ?? {});
     throw new Error(`Unknown IPC POST path: ${path}`);
   }
   let r: Response;
@@ -360,6 +365,11 @@ export const api = {
         }
       | { success: false; error: string }
     >('/generate-comping', body),
+  bhlDefaults: () => post<Record<string, unknown>>('/bhl/defaults', {}),
+  bhlInspect: (body: Record<string, unknown>) => post<Record<string, unknown>>('/bhl/inspect', body),
+  bhlCompose: (body: Record<string, unknown>) => post<Record<string, unknown>>('/bhl/compose', body),
+  bhlExport: (body: Record<string, unknown>) => post<Record<string, unknown>>('/bhl/export', body),
+  bhlOpen: (body: Record<string, unknown>) => post<Record<string, unknown>>('/bhl/open', body),
 };
 
 /** Shape checks for generation receipts (tests). */
