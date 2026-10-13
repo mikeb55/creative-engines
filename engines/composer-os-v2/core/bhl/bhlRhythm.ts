@@ -21,7 +21,7 @@ export interface BhlRhythmContract {
   displacementQuarters: number;
   ostinatoOnsets: readonly number[] | null;
   ostinatoJustified: boolean;
-  density: 'dyad' | 'single' | 'alternate';
+  density: 'dyad' | 'single' | 'alternate' | 'triad' | 'counterline';
   dialogue: 'answer-after-bass' | 'counter-motion' | 'leave-space' | 'handoff-before-bass';
 }
 

@@ -23,9 +23,18 @@ import {
   type BhlPitchTransform,
   type BhlPredicateResult,
 } from '../core/bhl/bhlPhrase';
+import type { BhlPhraseArc, BhlPhraseBinderReport, BhlRhythmMode } from '../core/bhl/bhlPhraseShape';
+import { BHL_WORLDS, isBhlWorldId, type BhlWorldId } from '../core/bhl/bhlWorlds';
 import type { BhlLockReport, BhlSpan } from '../core/bhl/bhlTypes';
 import type { BhlHarmonyChange } from '../core/bhl/bhlWrite';
 import { verifyBhlLocks } from '../core/bhl/bhlVerify';
+import { auditBhlIntentions, type BhlIntentCheck } from '../core/bhl/bhlIntentAudit';
+import {
+  compareBhlEvidence,
+  readBhlEvidence,
+  type BhlEvidenceComparison,
+  type BhlEvidenceReport,
+} from '../core/bhl/bhlEvidence';
 import { parseScoreDocument, partElements, partNames } from '../core/performance-composer/pcScore';
 
 const DIALOGUES: readonly BhlDialogue[] = [
@@ -34,7 +43,9 @@ const DIALOGUES: readonly BhlDialogue[] = [
   'leave-space',
   'handoff-before-bass',
 ];
-const DENSITIES: readonly BhlDensity[] = ['dyad', 'single', 'alternate'];
+const DENSITIES: readonly BhlDensity[] = ['dyad', 'single', 'alternate', 'triad', 'counterline'];
+const ARCS: readonly BhlPhraseArc[] = ['derived', 'invert', 'recall'];
+const RHYTHMS: readonly BhlRhythmMode[] = ['derived', 'displace', 'syncopate', 'sparse'];
 const PITCHES: readonly BhlPitchTransform[] = [
   'neighbor-statement',
   'invert-into-field',
@@ -94,8 +105,10 @@ export interface BhlInspectResponse {
   protectedGuitarBars: number[];
   plan: BhlPhrasePlan;
   fieldChoices: Record<string, BhlFieldChoice[]>;
-  /** Stored on the plan. This planner repeats one guitar for one locked passage and these controls. */
-  seedStoredOnly: true;
+  worlds: typeof BHL_WORLDS;
+  /** Stored on the plan. A harmonic world makes the seed change the guitar. */
+  seedStoredOnly: boolean;
+  evidence: BhlEvidenceReport;
 }
 
 export interface BhlComposeResponse {
@@ -118,6 +131,20 @@ export interface BhlComposeResponse {
   guitarChanged: boolean;
   xml: string;
   gce: BhlGceEvidence;
+  world: BhlWorldId | null;
+  worldName: string | null;
+  resource: string | null;
+  worldPitchClasses: number[];
+  commonToneRetentions: number;
+  contrastingMoves: number;
+  binder: BhlPhraseBinderReport | null;
+  musicalEvidence: {
+    original: BhlEvidenceReport;
+    candidate: BhlEvidenceReport;
+    comparison: BhlEvidenceComparison;
+    intentions: BhlIntentCheck[];
+    provisional: true;
+  };
 }
 
 export interface BhlGceEvidence {
@@ -248,6 +275,7 @@ function gceEvidence(input: {
   predicatesOk: boolean;
   feasibilityOk: boolean;
   guitarChanged: boolean;
+  world: boolean;
 }): BhlGceEvidence {
   const notes = [
     'GCE V3.0 is an evidence record. This panel does not give a numerical GCE score.',
@@ -282,6 +310,16 @@ function gceEvidence(input: {
       musicallyApproved: false,
       candidateForAudition: false,
       notes: ['Generated guitar matches the source guitar in the writable bars.', ...notes],
+    };
+  }
+  if (input.world) {
+    return {
+      framework: 'GCE V3.0',
+      technicalLabel: 'technical checks passed',
+      musicalLabel: 'CANDIDATE FOR AUDITION',
+      musicallyApproved: false,
+      candidateForAudition: true,
+      notes: ['Locks, phrase checks, and guitar feasibility passed. Listening is still required.', ...notes],
     };
   }
   return {
@@ -346,11 +384,25 @@ export function apiBhlInspect(body: unknown): BhlInspectResponse | BhlApiFailure
       protectedGuitarBars,
       plan,
       fieldChoices: fieldMap(plan),
-      seedStoredOnly: true,
+      worlds: BHL_WORLDS,
+      seedStoredOnly: false,
+      evidence: readBhlEvidence(xml, span),
     };
   } catch (error) {
     return fail(error instanceof Error ? error.message : String(error));
   }
+}
+
+function musicalEvidenceOf(sourceXml: string, writtenXml: string, span: BhlSpan, plan: BhlPhrasePlan): BhlComposeResponse['musicalEvidence'] {
+  const original = readBhlEvidence(sourceXml, span);
+  const candidate = readBhlEvidence(writtenXml, span);
+  return {
+    original,
+    candidate,
+    comparison: compareBhlEvidence(original, candidate),
+    intentions: auditBhlIntentions(writtenXml, plan),
+    provisional: true,
+  };
 }
 
 function composePlan(lock: ReturnType<typeof ingestBhlSource>, seedRaw: unknown): BhlPhrasePlan {
@@ -376,12 +428,21 @@ export function apiBhlCompose(body: unknown): BhlComposeResponse | BhlApiFailure
     const plan = applyControls(derived, o.regions);
     if ('ok' in plan) return plan;
     plan.seed = seed;
+    const world = o.world === undefined || o.world === null || o.world === '' ? undefined : o.world;
+    if (world !== undefined && !isBhlWorldId(world)) return fail(`harmonic world ${String(world)} is not one of A–F`);
+    const phraseArc = o.phraseArc === undefined || o.phraseArc === null || o.phraseArc === '' ? 'derived' : o.phraseArc;
+    if (!ARCS.includes(phraseArc as BhlPhraseArc)) return fail(`phrase arc ${String(phraseArc)} is not available`);
+    const rhythm = o.rhythm === undefined || o.rhythm === null || o.rhythm === '' ? 'derived' : o.rhythm;
+    if (!RHYTHMS.includes(rhythm as BhlRhythmMode)) return fail(`rhythm ${String(rhythm)} is not available`);
     const written = composeBhlGuitar({
       sourcePath: source,
       span,
       seed,
       protectedGuitarBars,
       plan,
+      world: world as BhlWorldId | undefined,
+      phraseArc: phraseArc as BhlPhraseArc,
+      rhythm: rhythm as BhlRhythmMode,
     });
     const after = sha256File(source);
     const writable: number[] = [];
@@ -423,7 +484,16 @@ export function apiBhlCompose(body: unknown): BhlComposeResponse | BhlApiFailure
         predicatesOk,
         feasibilityOk,
         guitarChanged,
+        world: Boolean(written.world),
       }),
+      world: written.world?.worldId ?? null,
+      worldName: written.world?.worldName ?? null,
+      resource: written.world?.resource ?? null,
+      worldPitchClasses: written.world?.pitchClasses ?? [],
+      commonToneRetentions: written.world?.commonToneRetentions ?? 0,
+      contrastingMoves: written.world?.contrastingMoves ?? 0,
+      binder: written.binder,
+      musicalEvidence: musicalEvidenceOf(xml, written.xml, span, written.plan),
     };
   } catch (error) {
     return fail(error instanceof Error ? error.message : String(error));

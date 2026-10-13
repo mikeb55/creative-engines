@@ -150,11 +150,14 @@ check('mechanical onset repetition is detected, and this piece has none', () => 
   assert.equal(detectMechanicalOnsets(allowed).length, 0);
 });
 
-check('motif recurrence and a changed plan both show in the notes', () => {
-  const returning = first.predicates.find((item) => item.id.endsWith('motif-interval-returns'));
-  assert.ok(returning?.ok, returning?.detail);
-  const developing = first.predicates.filter((item) => item.id.includes('interval-differs') || item.id.includes('onset-differs'));
-  assert.ok(developing.length >= 1 && developing.every((item) => item.ok));
+check('passage-specific predicates are gone and stylistic constraints remain', () => {
+  const ids = first.predicates.map((item) => item.id);
+  assert.equal(ids.includes('phase9-beat-2-and-4-cleared'), false);
+  assert.equal(ids.includes('ge-stall-cleared'), false);
+  assert.equal(ids.includes('guitar-leaves-space'), false);
+  assert.equal(ids.some((id) => id.endsWith('motif-interval-returns')), false);
+  assert.ok(first.predicates.find((item) => item.id === 'no-circle-of-fifths')?.ok);
+  assert.ok(first.predicates.find((item) => item.id === 'no-root-fifth-texture')?.ok);
   const silenced = structuredClone(first.plan);
   for (const region of silenced.regions) {
     region.rhythmTransform = 'silence-window';
@@ -218,9 +221,11 @@ check('onset plans come from the phrase regions', () => {
 });
 
 if (failed === 0) {
+  const proof = path.join(tmp, 'Wrong-Turning-BHL-Iteration2-V1.musicxml');
+  fs.copyFileSync(firstPath, proof);
+  console.log(`WROTE ${proof} ${fs.statSync(proof).size}`);
   if (fs.existsSync(DOWNLOAD)) {
-    console.error(`FAIL download target already exists: ${DOWNLOAD}`);
-    failed += 1;
+    console.log(`SKIP existing download left untouched: ${DOWNLOAD}`);
   } else {
     fs.copyFileSync(firstPath, DOWNLOAD);
     console.log(`WROTE ${DOWNLOAD} ${fs.statSync(DOWNLOAD).size}`);

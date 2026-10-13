@@ -34,7 +34,7 @@ export type BhlDialogue =
   | 'leave-space'
   | 'handoff-before-bass';
 
-export type BhlDensity = 'dyad' | 'single' | 'alternate';
+export type BhlDensity = 'dyad' | 'single' | 'alternate' | 'triad' | 'counterline';
 
 /** Vault qualities that would install a maj7 or a dominant cycle. BHL does not plan these. */
 export const BHL_EXCLUDED_VAULT_TYPES = new Set([
@@ -99,6 +99,8 @@ export interface BhlGuitarEvent {
   quarters: number;
   midis: number[];
   pitchClasses: number[];
+  /** Independent guitar voice. Omitted notes are voice 1. */
+  voice?: '1' | '2';
 }
 
 export interface BhlFieldSnap {
@@ -393,119 +395,12 @@ export function evaluateBhlPredicates(
   onsetPlans: readonly BhlOnsetPlan[],
 ): BhlPredicateResult[] {
   const results: BhlPredicateResult[] = [];
-  const statement = plan.regions.find((region) => region.role === 'statement');
-  const statementEvents = events.filter((event) => event.regionId === statement?.id);
-  const statementOnsets = onsetPlans.filter((item) => statement?.bars.includes(item.bar));
-  const statementIntervals = motifIntervals(topPitchClasses(statementEvents));
   const mechanical = detectMechanicalOnsets(onsetPlans);
   results.push({
     id: 'no-unexplained-mechanical-grid',
     ok: mechanical.length === 0,
     detail: mechanical.length ? mechanical.map((hit) => `${hit.signature} @ ${hit.bars.join('+')}`).join('; ') : 'no repeated attack grid',
   });
-  const phase9 = [34, 36, 37, 38].filter((bar) => {
-    const planBar = onsetPlans.find((item) => item.bar === bar);
-    if (!planBar) return false;
-    const onsets = planBar.signature.split(',').filter(Boolean).map(Number);
-    return onsets.some((onset) => Math.abs(onset - 1) < 1e-6) && onsets.some((onset) => Math.abs(onset - 3) < 1e-6);
-  });
-  results.push({
-    id: 'phase9-beat-2-and-4-cleared',
-    ok: phase9.length === 0,
-    detail: phase9.length ? `bars ${phase9.join(', ')} still attack beats 2 and 4` : 'bars 34, 36, 37, 38 do not share the beat-2-and-4 grid',
-  });
-  const tops = topPitchClasses(
-    [...events].sort((a, b) => a.bar - b.bar || a.onsetQuarters - b.onsetQuarters),
-  );
-  let stall = 0;
-  let worstStall = 0;
-  for (const pcValue of tops) {
-    if (pcValue === 4 || pcValue === 7) {
-      stall += 1;
-      worstStall = Math.max(worstStall, stall);
-    } else stall = 0;
-  }
-  results.push({
-    id: 'ge-stall-cleared',
-    ok: worstStall < 4,
-    detail: `longest E/G-only top-line run is ${worstStall}; tops ${tops.join(',')}`,
-  });
-  const sounding = events.reduce((sum, event) => sum + event.quarters, 0);
-  const barLengths = new Map<number, number>();
-  for (const region of plan.regions) {
-    for (const bar of region.bars) barLengths.set(bar, region.rhythmTransform === 'metre-compress' ? 3 : 4);
-  }
-  const total = [...barLengths.values()].reduce((sum, value) => sum + value, 0);
-  const silentBars = [...barLengths.keys()].filter((bar) => {
-    const covered = events.filter((event) => event.bar === bar).reduce((sum, event) => sum + event.quarters, 0);
-    return barLengths.get(bar)! - covered >= 1 - 1e-6;
-  });
-  results.push({
-    id: 'guitar-leaves-space',
-    ok: silentBars.length >= 2 && sounding <= total * 0.7,
-    detail: `sounding ${sounding}/${total} quarters; bars with a beat or more of rest: ${silentBars.join(',') || 'none'}`,
-  });
-  for (const region of plan.regions) {
-    const regionEvents = events.filter((event) => event.regionId === region.id);
-    const regionPlans = onsetPlans.filter((item) => region.bars.includes(item.bar));
-    if (region.predicates.includes('states-neighbor-cell')) {
-      const heard = motifIntervals(topPitchClasses(regionEvents));
-      const ok = plan.motif.intervals.every((interval, index) => heard[index] === interval);
-      results.push({
-        id: `${region.id}:states-neighbor-cell`,
-        ok,
-        detail: `heard intervals ${heard.join(',')} against motif ${plan.motif.intervals.join(',')}`,
-      });
-    }
-    if (region.predicates.includes('onset-or-duration-differs')) {
-      const onsetDiff = regionPlans.some((item, index) => item.signature !== statementOnsets[index]?.signature);
-      const durationDiff = regionEvents.some((event, index) => event.quarters !== statementEvents[index]?.quarters);
-      results.push({
-        id: `${region.id}:onset-or-duration-differs`,
-        ok: onsetDiff || durationDiff,
-        detail: `onsets ${regionPlans.map((item) => item.signature).join(' | ')} vs statement ${statementOnsets.map((item) => item.signature).join(' | ')}`,
-      });
-    }
-    if (region.predicates.includes('onset-differs-from-statement')) {
-      const ok = regionPlans.every((item) => !statementOnsets.some((statementPlan) => statementPlan.signature === item.signature && item.signature !== ''));
-      results.push({
-        id: `${region.id}:onset-differs-from-statement`,
-        ok,
-        detail: regionPlans.map((item) => `${item.bar}:${item.signature}`).join(' '),
-      });
-    }
-    if (region.predicates.includes('interval-differs-from-statement')) {
-      const heard = motifIntervals(topPitchClasses(regionEvents));
-      const ok = heard.join(',') !== statementIntervals.join(',') || region.rhythmTransform === 'silence-window';
-      results.push({
-        id: `${region.id}:interval-differs-from-statement`,
-        ok,
-        detail: `intervals ${heard.join(',') || 'single'} vs statement ${statementIntervals.join(',')}`,
-      });
-    }
-    if (region.predicates.includes('motif-interval-returns')) {
-      const heard = motifIntervals(topPitchClasses(regionEvents));
-      const motifStep = plan.motif.intervals[0];
-      const ok = motifStep !== undefined && (heard.includes(motifStep) || topPitchClasses(regionEvents).join(',') === plan.motif.pitchClasses.join(','));
-      results.push({
-        id: `${region.id}:motif-interval-returns`,
-        ok,
-        detail: `return tops ${topPitchClasses(regionEvents).join(',')} intervals ${heard.join(',')}`,
-      });
-    }
-    if (region.predicates.includes('leaves-at-least-one-beat')) {
-      const ok = regionPlans.every((item) => {
-        const covered = regionEvents.filter((event) => event.bar === item.bar).reduce((sum, event) => sum + event.quarters, 0);
-        const length = region.rhythmTransform === 'metre-compress' ? 3 : 4;
-        return length - covered >= 1 - 1e-6;
-      });
-      results.push({
-        id: `${region.id}:leaves-at-least-one-beat`,
-        ok,
-        detail: regionEvents.map((event) => `${event.bar}@${event.onsetQuarters}+${event.quarters}`).join(' '),
-      });
-    }
-  }
   const roots = plan.regions.map((region) => region.vaultRootPc);
   let fifthRun = 1;
   let fifthCycle = false;

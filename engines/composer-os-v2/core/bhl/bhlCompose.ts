@@ -6,6 +6,14 @@
 import fs from 'node:fs';
 import { assertBhlExportPath } from './bhlCopy';
 import { generateBhlGuitar, type BhlFeasibilityNote, type BhlGeneratedGuitar, type BhlLiquidTrace } from './bhlGenerate';
+import {
+  generateBhlWorldGuitar,
+  type BhlPhraseArc,
+  type BhlPhraseBinderReport,
+  type BhlRhythmMode,
+  type BhlWorldGuitar,
+} from './bhlPhraseShape';
+import type { BhlWorldId } from './bhlWorlds';
 import { ingestBhlSource, lockSpecOf, sha256File } from './bhlIngest';
 import {
   deriveBhlPhrasePlan,
@@ -27,6 +35,10 @@ export interface BhlComposeRequest {
   protectedGuitarBars?: readonly number[];
   /** When set, the generator follows this plan instead of deriving one. */
   plan?: BhlPhrasePlan;
+  /** Six BHL worlds. Omitted keeps the iteration-2 guitar generator. */
+  world?: BhlWorldId;
+  phraseArc?: BhlPhraseArc;
+  rhythm?: BhlRhythmMode;
   outputPath?: string;
   permittedOutputDir?: string;
 }
@@ -46,6 +58,8 @@ export interface BhlComposeResult {
   sourceSha256: string;
   outputPath: string | null;
   outputBytes: number | null;
+  world: BhlWorldGuitar | null;
+  binder: BhlPhraseBinderReport | null;
 }
 
 export function composeBhlGuitar(request: BhlComposeRequest): BhlComposeResult {
@@ -61,7 +75,16 @@ export function composeBhlGuitar(request: BhlComposeRequest): BhlComposeResult {
     request.plan ??
     deriveBhlPhrasePlan(lock.bass, lock.metres, lock.bassPartId, request.span, request.seed);
   const bars = readBassBars(lock.bass, lock.metres, lock.bassPartId);
-  const generated: BhlGeneratedGuitar = generateBhlGuitar(plan, bars);
+  const worldGuitar = request.world
+    ? generateBhlWorldGuitar(plan, bars, {
+        world: request.world,
+        seed: request.seed,
+        phraseArc: request.phraseArc ?? 'derived',
+        rhythm: request.rhythm ?? 'derived',
+      })
+    : null;
+  const generated: BhlGeneratedGuitar = worldGuitar ?? generateBhlGuitar(plan, bars);
+  const effectivePlan = worldGuitar?.plan ?? plan;
   const writable: number[] = [];
   for (let bar = request.span.from; bar <= request.span.to; bar++) {
     if (!protectedGuitarBars.includes(bar)) writable.push(bar);
@@ -79,7 +102,7 @@ export function composeBhlGuitar(request: BhlComposeRequest): BhlComposeResult {
   const verification = verifyBhlLocks(sourceXml, written.xml, lockSpecOf(lock));
   verifyRecordedSourceSha(request.sourcePath, lock.sourceSha256);
   if (sha256File(request.sourcePath) !== lock.sourceSha256) throw new Error('source SHA-256 changed during compose');
-  const predicates = evaluateBhlPredicates(plan, events, onsetPlans);
+  const predicates = evaluateBhlPredicates(effectivePlan, events, onsetPlans);
   let outputPath: string | null = null;
   let outputBytes: number | null = null;
   if (request.outputPath) {
@@ -94,7 +117,7 @@ export function composeBhlGuitar(request: BhlComposeRequest): BhlComposeResult {
     outputBytes = fs.statSync(request.outputPath).size;
   }
   return {
-    plan,
+    plan: effectivePlan,
     events,
     snaps,
     onsetPlans,
@@ -108,5 +131,7 @@ export function composeBhlGuitar(request: BhlComposeRequest): BhlComposeResult {
     sourceSha256: lock.sourceSha256,
     outputPath,
     outputBytes,
+    world: worldGuitar,
+    binder: worldGuitar?.binder ?? null,
   };
 }

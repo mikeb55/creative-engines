@@ -85,6 +85,12 @@ check('generate uses the BHL composer, keeps the source, and changes the guitar'
   assert.ok(composed.events.length > 0);
   assert.ok(composed.predicates.every((item) => item.ok), composed.predicates.filter((item) => !item.ok).map((item) => item.detail).join('; '));
   assert.ok(composed.feasibility.every((note) => note.feasible));
+  assert.equal(composed.musicalEvidence.provisional, true);
+  assert.equal(composed.musicalEvidence.candidate.musicalQualityScore, null);
+  assert.equal(composed.musicalEvidence.original.awaitingComposerVerification, true);
+  assert.equal(composed.musicalEvidence.original.barMetres.find((metre) => metre.bar === 40)?.beats, 3);
+  assert.ok(composed.musicalEvidence.intentions.length > 0);
+  assert.equal(inspected.evidence.barMetres.find((metre) => metre.bar === 40)?.beats, 3);
   assert.equal(composed.gce.musicallyApproved, false);
   assert.equal(composed.gce.candidateForAudition, false);
   assert.equal(composed.gce.technicalLabel, 'technical checks passed');

@@ -33,6 +33,7 @@ function noteXml(
   piece: { ticks: number; type: string; dots: number },
   fifths: number,
   chord: boolean,
+  voice: '1' | '2' | null,
 ): string {
   const lines = ['<note>'];
   if (chord) lines.push('<chord/>');
@@ -49,6 +50,7 @@ function noteXml(
     accidental = ACCIDENTAL[spelling.alter] ?? '';
   }
   lines.push(`<duration>${piece.ticks}</duration>`);
+  if (voice) lines.push(`<voice>${voice}</voice>`);
   lines.push(`<type>${piece.type}</type>`);
   if (piece.dots) lines.push('<dot/>');
   if (accidental) lines.push(`<accidental>${accidental}</accidental>`);
@@ -56,17 +58,23 @@ function noteXml(
   return lines.join('');
 }
 
-function eventsToNotes(events: readonly BhlGuitarEvent[], bar: number, quarters: number, divisions: number, fifths: number): string {
-  const mine = events.filter((event) => event.bar === bar).slice().sort((a, b) => a.onsetQuarters - b.onsetQuarters);
+function layVoice(
+  mine: readonly BhlGuitarEvent[],
+  bar: number,
+  quarters: number,
+  divisions: number,
+  fifths: number,
+  voice: '1' | '2' | null,
+): string {
   const length = quarters * divisions;
-  if (!Number.isInteger(length)) throw new Error(`bar ${bar} length is not an integer tick count`);
   let cursor = 0;
   const chunks: string[] = [];
   const pushRest = (ticks: number) => {
     if (ticks <= 0) return;
-    for (const piece of notateTicks(ticks, divisions)) chunks.push(noteXml(null, piece, fifths, false));
+    for (const piece of notateTicks(ticks, divisions)) chunks.push(noteXml(null, piece, fifths, false, voice));
   };
-  for (const event of mine) {
+  const ordered = mine.slice().sort((a, b) => a.onsetQuarters - b.onsetQuarters);
+  for (const event of ordered) {
     const start = event.onsetQuarters * divisions;
     const ticks = event.quarters * divisions;
     if (!Number.isInteger(start) || !Number.isInteger(ticks)) {
@@ -76,13 +84,31 @@ function eventsToNotes(events: readonly BhlGuitarEvent[], bar: number, quarters:
     if (start > cursor) pushRest(start - cursor);
     const midis = [...event.midis].sort((a, b) => a - b);
     for (const piece of notateTicks(ticks, divisions)) {
-      midis.forEach((midi, index) => chunks.push(noteXml(midi, piece, fifths, index > 0)));
+      midis.forEach((midi, index) => chunks.push(noteXml(midi, piece, fifths, index > 0, voice)));
     }
     cursor = start + ticks;
   }
   if (cursor < length) pushRest(length - cursor);
   if (cursor > length) throw new Error(`bar ${bar} guitar runs past the bar`);
   return chunks.join('');
+}
+
+function eventsToNotes(events: readonly BhlGuitarEvent[], bar: number, quarters: number, divisions: number, fifths: number): string {
+  const mine = events.filter((event) => event.bar === bar);
+  const length = quarters * divisions;
+  if (!Number.isInteger(length)) throw new Error(`bar ${bar} length is not an integer tick count`);
+  const counter = mine.filter((event) => event.voice === '2');
+  if (!counter.length) return layVoice(mine, bar, quarters, divisions, fifths, null);
+  const lead = layVoice(
+    mine.filter((event) => event.voice !== '2'),
+    bar,
+    quarters,
+    divisions,
+    fifths,
+    '1',
+  );
+  const answer = layVoice(counter, bar, quarters, divisions, fifths, '2');
+  return `${lead}<backup><duration>${length}</duration></backup>${answer}`;
 }
 
 function harmonyLabels(measureXml: string): string[] {

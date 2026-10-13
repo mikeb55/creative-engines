@@ -1,5 +1,6 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { api, isDesktopIpc } from '../services/api';
+import { BhlEvidencePanel, type BhlComparisonView, type BhlEvidenceView, type BhlIntentView } from './BhlEvidencePanel';
 
 type Span = { from: number; to: number };
 
@@ -38,6 +39,7 @@ type Inspect = {
   protectedGuitarBars: number[];
   plan: Plan;
   fieldChoices: Record<string, FieldChoice[]>;
+  evidence: BhlEvidenceView;
 };
 
 type Compose = Inspect & {
@@ -59,6 +61,13 @@ type Compose = Inspect & {
     candidateForAudition: false;
     notes: string[];
   };
+  musicalEvidence: {
+    original: BhlEvidenceView;
+    candidate: BhlEvidenceView;
+    comparison: BhlComparisonView;
+    intentions: BhlIntentView[];
+    provisional: true;
+  };
 };
 
 type RegionEdit = {
@@ -67,6 +76,15 @@ type RegionEdit = {
   dialogue: string;
   pitchTransform: string;
 };
+
+const WORLDS = [
+  { id: 'A', name: 'Triad Pairs' },
+  { id: 'B', name: 'Harmonic Quadratonics' },
+  { id: 'C', name: 'Major + Augmented' },
+  { id: 'D', name: 'Major + Diminished' },
+  { id: 'E', name: 'Pentatonic Harmony' },
+  { id: 'F', name: 'Unrelated Major Triads' },
+];
 
 const PITCHES = [
   'neighbor-statement',
@@ -103,6 +121,9 @@ export function BhlComposerPage() {
   const [spanFrom, setSpanFrom] = useState(33);
   const [spanTo, setSpanTo] = useState(40);
   const [seed, setSeed] = useState(3340);
+  const [world, setWorld] = useState('A');
+  const [phraseArc, setPhraseArc] = useState('derived');
+  const [rhythm, setRhythm] = useState('derived');
   const [protectedText, setProtectedText] = useState('');
   const [exportDir, setExportDir] = useState('');
   const [status, setStatus] = useState('Ready. Wrong Turning is the regression example.');
@@ -198,6 +219,9 @@ export function BhlComposerPage() {
         sourcePath: locked.sourcePath,
         span: { from: spanFrom, to: spanTo },
         seed,
+        world,
+        phraseArc,
+        rhythm,
         protectedGuitarBars: protectedText,
         regions,
       });
@@ -356,7 +380,7 @@ export function BhlComposerPage() {
           </label>
         </div>
         <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-          The seed is stored with the plan. This planner repeats one guitar for the same locked passage and the same controls.
+          Same seed and same controls repeat the same guitar. A different seed moves the world line.
         </p>
         <label htmlFor="bhl-protected">
           Protected guitar bars
@@ -401,7 +425,61 @@ export function BhlComposerPage() {
 
       {locked ? (
         <section style={panel} data-testid="bhl-configure">
-          <h3 style={{ margin: 0 }}>Phrase and field</h3>
+          <h3 style={{ margin: 0 }}>Phrase and harmonic world</h3>
+          <label htmlFor="bhl-world">
+            Harmonic world
+            <select
+              id="bhl-world"
+              data-testid="bhl-world"
+              value={world}
+              onChange={(event) => {
+                setWorld(event.target.value);
+                markDirty();
+              }}
+              style={{ width: '100%', marginTop: '0.25rem' }}
+            >
+              {WORLDS.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.id} · {item.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label htmlFor="bhl-arc">
+            Phrase development
+            <select
+              id="bhl-arc"
+              data-testid="bhl-phrase-arc"
+              value={phraseArc}
+              onChange={(event) => {
+                setPhraseArc(event.target.value);
+                markDirty();
+              }}
+              style={{ marginLeft: '0.35rem' }}
+            >
+              <option value="derived">follow the bass phrase</option>
+              <option value="invert">invert the development</option>
+              <option value="recall">recall the cell on the return</option>
+            </select>
+          </label>
+          <label htmlFor="bhl-rhythm">
+            Rhythm
+            <select
+              id="bhl-rhythm"
+              data-testid="bhl-rhythm"
+              value={rhythm}
+              onChange={(event) => {
+                setRhythm(event.target.value);
+                markDirty();
+              }}
+              style={{ marginLeft: '0.35rem' }}
+            >
+              <option value="derived">from the bass</option>
+              <option value="displace">displace</option>
+              <option value="syncopate">syncopate</option>
+              <option value="sparse">sparse</option>
+            </select>
+          </label>
           {locked.plan.regions.map((region) => {
             const edit = edits[region.id];
             const choices = locked.fieldChoices[region.id] ?? [];
@@ -453,8 +531,10 @@ export function BhlComposerPage() {
                     style={{ marginLeft: '0.35rem' }}
                   >
                     <option value="dyad">dyad</option>
-                    <option value="single">single</option>
+                    <option value="triad">triad</option>
+                    <option value="single">single line</option>
                     <option value="alternate">alternate</option>
+                    <option value="counterline">counterline</option>
                   </select>
                 </label>
                 <label htmlFor={`bhl-dialogue-${region.id}`}>
@@ -467,18 +547,17 @@ export function BhlComposerPage() {
                     style={{ marginLeft: '0.35rem' }}
                   >
                     <option value="answer-after-bass">answer after bass</option>
+                    <option value="counter-motion">counter-motion</option>
+                    <option value="handoff-before-bass">handoff before bass</option>
                     <option value="leave-space">leave space</option>
-                    {region.dialogue !== 'answer-after-bass' && region.dialogue !== 'leave-space' ? (
-                      <option value={region.dialogue}>{region.dialogue} (from the bass)</option>
-                    ) : null}
                   </select>
                 </label>
               </div>
             );
           })}
           <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-            Leave space holds the last beat. Answer after bass is the other duration the rhythm planner changes. A derived
-            counter-motion or handoff label stays available when the bass plan already chose it.
+            The world changes the pitch field. Counter-motion writes a second guitar voice against the bass. A triad or
+            dyad is one grip. A counterline is a second voice. Leave space keeps the last beat empty.
           </p>
           {lockInputsDiffer ? (
             <p data-testid="bhl-relock">Bar span, path, or protected bars changed. Import and lock again before generating.</p>
@@ -487,6 +566,10 @@ export function BhlComposerPage() {
             Generate guitar
           </button>
         </section>
+      ) : null}
+
+      {locked && !result ? (
+        <BhlEvidencePanel original={locked.evidence} candidate={null} intentions={[]} comparison={null} provisional={false} />
       ) : null}
 
       {result ? (
@@ -509,6 +592,13 @@ export function BhlComposerPage() {
               Harmony {result.harmony.map((item) => `${item.bar}:${item.label ?? ''} ${item.action ?? ''}`).join(' · ')}
             </p>
           ) : null}
+          <BhlEvidencePanel
+            original={locked?.evidence ?? result.musicalEvidence?.original ?? null}
+            candidate={result.musicalEvidence?.candidate ?? null}
+            intentions={result.musicalEvidence?.intentions ?? []}
+            comparison={result.musicalEvidence?.comparison ?? null}
+            provisional={Boolean(result.musicalEvidence?.provisional)}
+          />
           <h3 style={{ margin: '0.5rem 0 0' }}>Technical validation</h3>
           <p style={{ margin: 0 }} data-testid="bhl-locks">
             Locks {result.verification.ok ? 'passed' : 'failed'}. Reimport {result.verification.reimports ? 'passed' : 'failed'}.
@@ -522,7 +612,7 @@ export function BhlComposerPage() {
             </ul>
           ) : null}
           <p style={{ margin: 0 }} data-testid="bhl-predicates">
-            Phrase and rhythm {failedPredicates.length ? `${failedPredicates.length} failed` : 'passed'}.
+            Stylistic constraints {failedPredicates.length ? `${failedPredicates.length} failed` : 'passed'}.
           </p>
           {failedPredicates.map((item) => (
             <p key={item.id} style={{ margin: 0 }}>
@@ -567,11 +657,9 @@ export function BhlComposerPage() {
       ) : null}
 
       <section style={panel} data-testid="bhl-later">
-        <h3 style={{ margin: 0 }}>Later</h3>
+        <h3 style={{ margin: 0 }}>Not on this page</h3>
         <p style={{ margin: 0, color: 'var(--text-muted)' }}>
-          These stay off this screen until the engine can do them: all six BHL harmonic worlds, artist and style profiles,
-          riff and motif generators, several candidates side by side, session save and load, a piece from scratch, more
-          instruments.
+          Artist profiles, a piece from scratch, several candidates side by side, and session save stay off this screen.
         </p>
       </section>
     </div>

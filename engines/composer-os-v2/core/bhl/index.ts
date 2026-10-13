@@ -55,3 +55,19 @@ export {
 export { generateBhlGuitar, type BhlGeneratedGuitar, type BhlLiquidTrace } from './bhlGenerate';
 export { outsideSpanIdentical, replaceBhlGuitar, type BhlHarmonyChange } from './bhlWrite';
 export { composeBhlGuitar, type BhlComposeRequest, type BhlComposeResult } from './bhlCompose';
+export {
+  compareBhlEvidence,
+  formatBhlEvidenceReport,
+  readBhlEvidence,
+  type BhlEvidenceComparison,
+  type BhlEvidenceReport,
+} from './bhlEvidence';
+export { auditBhlIntentions, type BhlIntentCheck, type BhlIntentStatus } from './bhlIntentAudit';
+export { BHL_WORLDS, buildBhlWorldField, isBhlWorldId, type BhlWorldId, type BhlWorldField } from './bhlWorlds';
+export {
+  generateBhlWorldGuitar,
+  worldPitchSignature,
+  type BhlPhraseArc,
+  type BhlRhythmMode,
+  type BhlWorldGuitar,
+} from './bhlPhraseShape';
