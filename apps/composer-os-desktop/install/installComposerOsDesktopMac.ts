@@ -108,7 +108,10 @@ function main(): void {
   }
 
   console.log('Copying to /Applications...');
-  fs.cpSync(packagedApp, APPLICATIONS_DEST, { recursive: true });
+  // Node fs.cp rewrites framework symlinks as absolute paths back into the
+  // repo. macOS then cannot load icudtl.dat and the helpers die with SIGTRAP.
+  // ditto keeps Versions/Current -> A inside the bundle.
+  execFileSync('ditto', [packagedApp, APPLICATIONS_DEST], { stdio: 'inherit' });
 
   console.log('Ad-hoc signing (inside-out; --deep fails on Electron 28 frameworks)...');
   adhocSignMacApp(APPLICATIONS_DEST);
