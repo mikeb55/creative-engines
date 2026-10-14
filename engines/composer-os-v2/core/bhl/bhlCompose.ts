@@ -7,7 +7,8 @@ import fs from 'node:fs';
 import { assertBhlExportPath } from './bhlCopy';
 import { generateBhlGuitar, type BhlFeasibilityNote, type BhlGeneratedGuitar, type BhlLiquidTrace } from './bhlGenerate';
 import { collectFieldNotes, guitarFeasibility, type BhlFieldNote, type BhlIntentionLimit } from './bhlRealise';
-import { applyQuartalColour, preferPentatonicOnEvents } from './bhlResources';
+import { applyQuartalColour, describeBhlColourConstraint, preferPentatonicOnEvents } from './bhlResources';
+import type { BhlRiffRequest } from './bhlRiffRhythm';
 import {
   generateBhlWorldGuitar,
   type BhlPhraseArc,
@@ -43,6 +44,10 @@ export interface BhlComposeRequest {
   rhythm?: BhlRhythmMode;
   /** Pitch classes from the pentatonic adapter. Omitted leaves the world line unchanged. */
   pentatonicPcs?: readonly number[] | null;
+  pentatonicLabel?: string | null;
+  contrastPcs?: readonly number[] | null;
+  /** Imported riff rhythm. `bhl` leaves the onset planner in charge. */
+  riffRhythm?: BhlRiffRequest | null;
   /** Moves dyads by a fourth when quartalSubsets allows it. */
   quartal?: boolean;
   outputPath?: string;
@@ -70,6 +75,8 @@ export interface BhlComposeResult {
   fieldNotes: BhlFieldNote[];
   quartalApplied: number;
   quartalNote: string | null;
+  colourConstraint: string | null;
+  rhythmNotes: string[];
 }
 
 export function composeBhlGuitar(request: BhlComposeRequest): BhlComposeResult {
@@ -85,20 +92,44 @@ export function composeBhlGuitar(request: BhlComposeRequest): BhlComposeResult {
     request.plan ??
     deriveBhlPhrasePlan(lock.bass, lock.metres, lock.bassPartId, request.span, request.seed);
   const bars = readBassBars(lock.bass, lock.metres, lock.bassPartId);
+  const divisionsByBar = new Map<number, number>();
+  for (const event of [...lock.guitar, ...lock.bass]) {
+    if (!divisionsByBar.has(event.bar) && event.divisions > 0) divisionsByBar.set(event.bar, event.divisions);
+  }
   const worldGuitar = request.world
     ? generateBhlWorldGuitar(plan, bars, {
         world: request.world,
         seed: request.seed,
         phraseArc: request.phraseArc ?? 'derived',
         rhythm: request.rhythm ?? 'derived',
+        riffRhythm: request.riffRhythm,
+        divisionsByBar,
+        protectedBars: protectedGuitarBars,
+        pitchCollection: request.world === 'E' ? request.pentatonicPcs ?? null : null,
       })
     : null;
   const generated: BhlGeneratedGuitar = worldGuitar ?? generateBhlGuitar(plan, bars);
   const effectivePlan = worldGuitar?.plan ?? plan;
   let quartalApplied = 0;
   let quartalNote: string | null = null;
+  let colourConstraint: string | null = null;
   if (request.world && request.pentatonicPcs && request.pentatonicPcs.length) {
-    const preference = preferPentatonicOnEvents(generated.events, effectivePlan, bars, request.world, request.pentatonicPcs);
+    colourConstraint = describeBhlColourConstraint(
+      request.world,
+      request.pentatonicLabel || 'the selected collection',
+      request.pentatonicPcs,
+      bars,
+      effectivePlan,
+    );
+    const preference = preferPentatonicOnEvents(
+      generated.events,
+      effectivePlan,
+      bars,
+      request.world,
+      request.pentatonicPcs,
+      request.contrastPcs ?? null,
+    );
+    if (preference.transferNote) colourConstraint = `${colourConstraint} ${preference.transferNote}`;
     if (worldGuitar) {
       worldGuitar.commonToneRetentions += preference.commonTones;
       worldGuitar.contrastingMoves += preference.contrasts;
@@ -172,5 +203,7 @@ export function composeBhlGuitar(request: BhlComposeRequest): BhlComposeResult {
     fieldNotes: generated.fieldNotes,
     quartalApplied,
     quartalNote,
+    colourConstraint,
+    rhythmNotes: worldGuitar?.rhythmNotes ?? [],
   };
 }

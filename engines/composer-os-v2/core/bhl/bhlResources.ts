@@ -10,12 +10,15 @@ import type { TensionState } from '../harmony/layerStateMachine';
 import { generateRiffCoreMotif } from '../motif/songModeMotifEngine';
 import { invertMotifLite, transposeMotif } from '../motif/motifTracker';
 import type { BaseMotif, MotifNote } from '../motif/motifTypes';
+import { fieldFromResource } from '../pentatonic/fieldDistance';
 import { extractParentField, type ExtractionResult } from '../pentatonic/parentExtraction';
 import { HOME_RELATIONSHIPS, homeRelationshipById } from '../pentatonic/homeRelationships';
+import { listPentatonicColourResources, getPentatonicColourResource } from '../pentatonic/colourRegistry';
 import { collectionPitchClasses, mapMotifPitches, type PentatonicCollectionView } from '../pentatonic/motifTransform';
 import { listPentatonicArchetypes, getPentatonicArchetype } from '../pentatonic/registry';
 import { mod12, parseNoteToken } from '../pentatonic/pitch';
 import { quartalSubsets } from '../pentatonic/quartalField';
+import type { BhlRiffRequest } from './bhlRiffRhythm';
 import { chooseVaultChord, listBhlFieldChoices, motifIntervals, type BhlFieldChoice, type BhlGuitarEvent, type BhlPhrasePlan } from './bhlPhrase';
 import type { BhlBassBar } from './bhlRhythm';
 import { buildBhlWorldField, type BhlWorldId } from './bhlWorlds';
@@ -41,10 +44,13 @@ export interface BhlPentatonicRequest {
   archetypeId: string;
   referenceNote: string;
   relationshipId: string;
+  /** Second colour registry id. Empty means no contrast. */
+  contrastId?: string | null;
 }
 
 export interface BhlMusicalRequest {
   profileId?: string | null;
+  riff?: BhlRiffRequest | null;
   pentatonic?: BhlPentatonicRequest | null;
   /** Use parent extraction instead of the archetype when the parent yields a field. */
   parentPitchClasses?: readonly number[] | null;
@@ -70,6 +76,9 @@ export interface BhlPreparedMusic {
   continuation: BhlContinuationStrategy | null;
   pentatonicPcs: number[] | null;
   pentatonicLabel: string | null;
+  contrastPcs: number[] | null;
+  contrastLabel: string | null;
+  colourConstraint: string | null;
   parentExtraction: ExtractionResult | null;
   motif: BhlMotifResolution | null;
   quartal: boolean;
@@ -79,12 +88,21 @@ export interface BhlPreparedMusic {
 export interface BhlResourceCatalog {
   profiles: readonly BhlStyleProfile[];
   pentatonic: Array<{ id: string; name: string; intervals: readonly number[] }>;
+  colours: Array<{
+    id: string;
+    name: string;
+    intervals: readonly number[];
+    family: string;
+    role: string;
+    pathArchetypeId: string | null;
+  }>;
   relationships: Array<{ id: string; label: string; offset: number }>;
   referenceNotes: readonly string[];
   engines: {
     riff: 'generateRiffCoreMotif';
+    riffRhythm: 'buildMultiBarRhythm | hasSyncopation | generateRiffCoreMotif.rhythmPattern';
     motif: 'transposeMotif | invertMotifLite | mapMotifPitches';
-    pentatonic: 'listPentatonicArchetypes | HOME_RELATIONSHIPS | extractParentField';
+    pentatonic: 'listPentatonicColourResources | listPentatonicArchetypes | HOME_RELATIONSHIPS | extractParentField | fieldFromResource';
     vault: 'chooseVaultChord | listBhlFieldChoices';
     liquid: 'planLiquidHarmony';
     quartal: 'quartalSubsets';
@@ -126,38 +144,111 @@ export function bhlResourceCatalog(): BhlResourceCatalog {
       name: row.displayName,
       intervals: row.intervals,
     })),
+    colours: listPentatonicColourResources().map((row) => ({
+      id: row.id,
+      name: row.displayName,
+      intervals: row.intervals,
+      family: row.family,
+      role: row.role,
+      pathArchetypeId: row.pathArchetypeId,
+    })),
     relationships: HOME_RELATIONSHIPS.map((row) => ({ id: row.id, label: row.label, offset: row.offset })),
     referenceNotes: NOTE_NAMES,
     engines: {
       riff: 'generateRiffCoreMotif',
+      riffRhythm: 'buildMultiBarRhythm | hasSyncopation | generateRiffCoreMotif.rhythmPattern',
       motif: 'transposeMotif | invertMotifLite | mapMotifPitches',
-      pentatonic: 'listPentatonicArchetypes | HOME_RELATIONSHIPS | extractParentField',
+      pentatonic: 'listPentatonicColourResources | listPentatonicArchetypes | HOME_RELATIONSHIPS | extractParentField | fieldFromResource',
       vault: 'chooseVaultChord | listBhlFieldChoices',
       liquid: 'planLiquidHarmony',
       quartal: 'quartalSubsets',
     },
     notWired: [
       'Audio playback is not a BHL service. Export MusicXML and audition in Sibelius.',
-      'Colour-registry resources beyond major and minor pentatonic are not a BHL pitch source in this batch.',
+      'Pentatonic path search still accepts only major and minor pentatonic. Other colour-registry collections stay inside BHL.',
+      'Performance Composer does not take a BHL object. Hand it the exported MusicXML through Respond.',
+      'The Riff Engine does not import BHL MusicXML. Pitch and rhythm move from the riff into BHL.',
       'Artist-named style profiles are not provided.',
     ],
   };
 }
 
-export function bhlPentatonicPitchClasses(request: BhlPentatonicRequest): { pitchClasses: number[]; label: string } {
+export function bhlPentatonicPitchClasses(request: BhlPentatonicRequest): { pitchClasses: number[]; label: string; pathArchetype: boolean } {
+  const colour = getPentatonicColourResource(request.archetypeId);
   const archetype = getPentatonicArchetype(request.archetypeId);
-  if (!archetype) throw new Error(`pentatonic collection ${request.archetypeId} is not in the registry`);
+  if (!colour && !archetype) {
+    throw new Error(`pentatonic collection ${request.archetypeId} is not in the colour registry or the path registry`);
+  }
   const reference = parseNoteToken(request.referenceNote);
   if (!reference) throw new Error(`reference note ${request.referenceNote} is not a pitch name`);
   const relationship = homeRelationshipById(request.relationshipId) ?? HOME_RELATIONSHIPS[0]!;
-  const shifted = mod12(reference.pc + relationship.offset);
-  const view: PentatonicCollectionView = {
-    name: `${archetype.displayName} ${NOTE_NAMES[shifted]} ${relationship.label}`,
-    archetypeId: archetype.id,
-    referenceNote: NOTE_NAMES[shifted]!,
-    homeRelationshipLabel: relationship.label,
+  const shifted = NOTE_NAMES[mod12(reference.pc + relationship.offset)]!;
+  if (!colour) {
+    const view: PentatonicCollectionView = {
+      name: `${archetype!.displayName} ${shifted} ${relationship.label}`,
+      archetypeId: archetype!.id,
+      referenceNote: shifted,
+      homeRelationshipLabel: relationship.label,
+    };
+    return { pitchClasses: collectionPitchClasses(view).map(mod12), label: view.name, pathArchetype: true };
+  }
+  const field = fieldFromResource(colour.id, shifted);
+  if (!field) throw new Error(`colour ${colour.id} did not build a field on ${shifted}`);
+  return {
+    pitchClasses: [...field.pitchClasses],
+    label: `${field.displayName} · ${relationship.label}`,
+    pathArchetype: colour.pathArchetypeId != null,
   };
-  return { pitchClasses: collectionPitchClasses(view).map(mod12), label: view.name };
+}
+
+export function bhlColourRelations(archetypeId: string, referenceNote: string, relationshipId: string): {
+  pitchClasses: number[];
+  label: string;
+  compatible: Array<{ id: string; name: string; shared: number[] }>;
+  contrasting: Array<{ id: string; name: string; shared: number[] }>;
+} {
+  const mine = bhlPentatonicPitchClasses({ archetypeId, referenceNote, relationshipId });
+  const mineSet = new Set(mine.pitchClasses);
+  const shifted = mine.label.split(' ')[0] || referenceNote;
+  const compatible: Array<{ id: string; name: string; shared: number[] }> = [];
+  const contrasting: Array<{ id: string; name: string; shared: number[] }> = [];
+  for (const row of listPentatonicColourResources()) {
+    if (row.id === archetypeId) continue;
+    const field = fieldFromResource(row.id, shifted);
+    if (!field) continue;
+    const shared = field.pitchClasses.filter((pitchClass) => mineSet.has(pitchClass));
+    const item = { id: row.id, name: row.displayName, shared: [...shared] };
+    if (shared.length >= 3) compatible.push(item);
+    else if (shared.length <= 1) contrasting.push(item);
+  }
+  return { pitchClasses: mine.pitchClasses, label: mine.label, compatible, contrasting };
+}
+
+export function describeBhlColourConstraint(
+  world: BhlWorldId,
+  label: string,
+  collection: readonly number[],
+  bars: readonly BhlBassBar[],
+  plan: BhlPhrasePlan,
+): string {
+  const names = collection.map((pitchClass) => NOTE_NAMES[mod12(pitchClass)]).join(' ');
+  if (world === 'E') {
+    return `World E uses ${label} as its pitch source (${names}).`;
+  }
+  const worldPcs = new Set<number>();
+  for (const bar of bars) {
+    const region = plan.regions.find((item) => item.bars.includes(bar.bar));
+    const field = buildBhlWorldField(world, bar, region?.tensionState ?? 'primary');
+    for (const pitchClass of field.pitchClasses) worldPcs.add(pitchClass);
+  }
+  const shared = collection.filter((pitchClass) => worldPcs.has(mod12(pitchClass)));
+  const leftOut = collection.filter((pitchClass) => !worldPcs.has(mod12(pitchClass)));
+  if (!shared.length) {
+    return `World ${world} shares no pitch with ${label}. The guitar stays on the world field. This colour was not rewritten as major or minor pentatonic.`;
+  }
+  const sharedNames = shared.map((pitchClass) => NOTE_NAMES[mod12(pitchClass)]).join(' ');
+  const leftNames = leftOut.map((pitchClass) => NOTE_NAMES[mod12(pitchClass)]).join(' ');
+  return `World ${world} keeps its harmonic field. ${label} can sound ${sharedNames}. ${leftNames || 'No pitch'} stays outside that field.`;
 }
 
 export function bhlParentFields(parentPitchClasses: readonly number[]): ExtractionResult {
@@ -206,7 +297,9 @@ export function resolveBhlMotif(request: BhlMotifRequest, pentatonic: BhlPentato
     limitations.push(
       'The riff generator builds a contour from its own Cmaj7 cell. BHL keeps that contour and does not keep the Cmaj7 chord.',
     );
-    limitations.push('Riff rhythm is reported. BHL onsets still come from the rhythm control, not from the riff grid.');
+    limitations.push(
+      'Riff rhythm is recorded on this motif. BHL places those attacks only when the rhythm source is a riff. A BHL rhythm source leaves this grid unused.',
+    );
   } else if (request.kind === 'constraints') {
     const intervals = (request.intervals ?? []).filter((interval) => Number.isInteger(interval));
     if (!intervals.length) throw new Error('constraint motif needs at least one integer interval');
@@ -231,8 +324,8 @@ export function resolveBhlMotif(request: BhlMotifRequest, pentatonic: BhlPentato
     notes = transposeMotif(notes, 12);
   }
   if (pentatonic) {
-    try {
-      const target = bhlPentatonicPitchClasses(pentatonic);
+    const target = bhlPentatonicPitchClasses(pentatonic);
+    if (getPentatonicArchetype(pentatonic.archetypeId)) {
       const sourceView: PentatonicCollectionView = {
         name: 'Major Pentatonic C',
         archetypeId: 'major_pentatonic',
@@ -254,10 +347,23 @@ export function resolveBhlMotif(request: BhlMotifRequest, pentatonic: BhlPentato
         method: 'M-NEAR',
         meter: { beats: 4, beatType: 4 },
       });
+      const kept = mapped.notes.filter((note) => note.retainedCommonTone).length;
       notes = mapped.notes.map((note) => ({ pitch: note.pitch, startBeat: note.startBeat, duration: note.duration }));
+      limitations.push(`${kept} motif tone(s) stayed as common tones on ${target.label}.`);
       source = `${source}→${target.label}`;
-    } catch (error) {
-      limitations.push(error instanceof Error ? error.message : String(error));
+    } else {
+      let kept = 0;
+      notes = notes.map((note) => {
+        const pc = mod12(note.pitch);
+        if (target.pitchClasses.includes(pc)) {
+          kept += 1;
+          return note;
+        }
+        const snapped = nearest(pc, target.pitchClasses);
+        return { ...note, pitch: midiNear(snapped, 52, 84, note.pitch) };
+      });
+      limitations.push(`${kept} common tone(s) stayed. The other motif notes moved onto ${target.label}. They were not rewritten as major or minor pentatonic.`);
+      source = `${source}→${target.label}`;
     }
   }
   const pitchClasses = notes.map((note) => mod12(note.pitch));
@@ -283,6 +389,8 @@ export function prepareBhlMusic(plan: BhlPhrasePlan, request: BhlMusicalRequest 
   }
   let pentatonicPcs: number[] | null = null;
   let pentatonicLabel: string | null = null;
+  let contrastPcs: number[] | null = null;
+  let contrastLabel: string | null = null;
   let parentExtraction: ExtractionResult | null = null;
   if (request?.parentPitchClasses && request.parentPitchClasses.length) {
     parentExtraction = bhlParentFields(request.parentPitchClasses);
@@ -298,10 +406,35 @@ export function prepareBhlMusic(plan: BhlPhrasePlan, request: BhlMusicalRequest 
     const built = bhlPentatonicPitchClasses(request.pentatonic);
     pentatonicPcs = built.pitchClasses;
     pentatonicLabel = built.label;
+    if (request.pentatonic.contrastId) {
+      const contrast = getPentatonicColourResource(request.pentatonic.contrastId);
+      if (!contrast) {
+        throw new Error(`contrast collection ${request.pentatonic.contrastId} is not in the colour registry`);
+      }
+      const builtContrast = bhlPentatonicPitchClasses({
+        archetypeId: contrast.id,
+        referenceNote: request.pentatonic.referenceNote,
+        relationshipId: request.pentatonic.relationshipId,
+      });
+      contrastPcs = builtContrast.pitchClasses;
+      contrastLabel = builtContrast.label;
+      const shared = contrastPcs.filter((pitchClass) => pentatonicPcs!.includes(pitchClass));
+      limitations.push(`Common tones between ${built.label} and ${builtContrast.label}: ${shared.map((pitchClass) => NOTE_NAMES[pitchClass]).join(' ') || 'none'}.`);
+    }
   }
   let motif: BhlMotifResolution | null = null;
-  if (request?.motif) {
-    motif = resolveBhlMotif(request.motif, request.pentatonic ?? null);
+  const motifRequest: BhlMotifRequest | null = request?.riff?.pitchSource === 'riff'
+    ? {
+        kind: 'riff',
+        riffSeed: request.riff.pitchSeed ?? request.motif?.riffSeed ?? 1,
+        pitchTransform: request.motif?.pitchTransform ?? 'none',
+        semitones: request.motif?.semitones,
+        pitches: request.motif?.pitches,
+        intervals: request.motif?.intervals,
+      }
+    : request?.motif ?? null;
+  if (motifRequest) {
+    motif = resolveBhlMotif(motifRequest, request?.pentatonic ?? null);
     limitations.push(...motif.limitations);
     next = structuredClone(next);
     next.motif = {
@@ -315,12 +448,12 @@ export function prepareBhlMusic(plan: BhlPhrasePlan, request: BhlMusicalRequest 
         region.registerHigh = Math.min(88, region.registerHigh + motif.registerShift);
       }
     }
-    if (request.motif.pitchTransform === 'fragment') {
+    if (motifRequest.pitchTransform === 'fragment') {
       for (const region of next.regions) {
         if (region.role === 'continuation') region.continuation = 'fragment';
       }
     }
-    if (request.motif.pitchTransform === 'invert') {
+    if (motifRequest.pitchTransform === 'invert') {
       for (const region of next.regions) {
         if (region.role === 'development' || region.role === 'transformation') region.pitchTransform = 'invert-into-field';
       }
@@ -335,6 +468,9 @@ export function prepareBhlMusic(plan: BhlPhrasePlan, request: BhlMusicalRequest 
     continuation: profile?.continuation ?? null,
     pentatonicPcs,
     pentatonicLabel,
+    contrastPcs,
+    contrastLabel,
+    colourConstraint: null,
     parentExtraction,
     motif,
     quartal,
@@ -348,39 +484,49 @@ export function preferPentatonicOnEvents(
   bars: readonly BhlBassBar[],
   world: BhlWorldId,
   collection: readonly number[],
-): { commonTones: number; contrasts: number } {
+  contrast: readonly number[] | null = null,
+): { commonTones: number; contrasts: number; transferNote: string | null } {
   const allowed = new Set(collection.map(mod12));
+  const contrastSet = contrast ? new Set(contrast.map(mod12)) : null;
   let commonTones = 0;
   let contrasts = 0;
-  let contrastBudget = 1;
+  let transferMiss = 0;
+  const develop = plan.regions.some((region) => region.role === 'development' || region.role === 'transformation');
   for (const event of events) {
     if (event.voice === '2') continue;
     const region = plan.regions.find((item) => item.id === event.regionId);
-    if (!region || region.role === 'statement' || region.role === 'return') continue;
+    if (!region) continue;
+    const contrastingRole = region.role === 'development' || region.role === 'transformation';
+    if (world !== 'E' && (region.role === 'statement' || region.role === 'return')) continue;
     const bar = bars.find((candidate) => candidate.bar === event.bar);
     if (!bar) continue;
     const field = buildBhlWorldField(world, bar, region.tensionState);
-    const intersection = field.pitchClasses.filter((pitchClass) => allowed.has(pitchClass));
-    const pool = world === 'E' ? [...allowed] : intersection.length ? intersection : field.pitchClasses;
-    const top = mod12(Math.max(...event.midis));
-    const inWorld = field.pitchClasses.includes(top);
-    const inCollection = allowed.has(top);
-    if (inWorld && inCollection) {
-      commonTones += 1;
+    const target = contrastSet && contrastingRole ? contrastSet : allowed;
+    const intersection = field.pitchClasses.filter((pitchClass) => target.has(pitchClass));
+    if (world !== 'E' && !intersection.length) {
+      transferMiss += 1;
       continue;
     }
-    if (inWorld && !inCollection && contrastBudget > 0 && region.role === 'development') {
-      contrastBudget -= 1;
-      contrasts += 1;
+    const pool = world === 'E' ? [...target] : intersection;
+    const top = mod12(Math.max(...event.midis));
+    if (pool.includes(top) && (world === 'E' || field.pitchClasses.includes(top))) {
+      if (allowed.has(top) && target === contrastSet) commonTones += 1;
+      else if (allowed.has(top)) commonTones += 1;
       continue;
     }
     const snapped = nearest(top, pool);
     const midi = midiNear(snapped, region.registerLow, region.registerHigh, Math.max(...event.midis));
     event.midis = [midi];
     event.pitchClasses = [mod12(midi)];
-    if (allowed.has(mod12(midi)) && field.pitchClasses.includes(mod12(midi))) commonTones += 1;
+    if (allowed.has(mod12(midi)) && target === contrastSet) commonTones += 1;
+    if (contrastSet && contrastingRole && contrastSet.has(mod12(midi))) contrasts += 1;
   }
-  return { commonTones, contrasts };
+  let transferNote: string | null = null;
+  if (contrastSet && !develop) transferNote = 'This phrase has no development region, so the contrasting collection was not applied.';
+  else if (transferMiss && world !== 'E') {
+    transferNote = `On ${transferMiss} attack(s) the selected colour shares nothing with the world field, so those notes stayed put.`;
+  }
+  return { commonTones, contrasts, transferNote };
 }
 
 export function applyQuartalColour(

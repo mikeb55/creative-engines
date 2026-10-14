@@ -112,6 +112,9 @@ export function generateBhlCandidateSet(input: {
   rhythm?: BhlRhythmMode;
   phraseArc?: BhlPhraseArc;
   pentatonicPcs?: readonly number[] | null;
+  pentatonicLabel?: string | null;
+  contrastPcs?: readonly number[] | null;
+  riffRhythm?: import('./bhlRiffRhythm').BhlRiffRequest | null;
   quartal?: boolean;
   protectedGuitarBars?: readonly number[];
 }): BhlCandidateSet {
@@ -139,6 +142,9 @@ export function generateBhlCandidateSet(input: {
         rhythm: spec.rhythm,
         phraseArc: spec.phraseArc,
         pentatonicPcs: input.pentatonicPcs,
+        pentatonicLabel: input.pentatonicLabel,
+        contrastPcs: input.contrastPcs,
+        riffRhythm: input.riffRhythm,
         quartal: input.quartal,
         protectedGuitarBars: input.protectedGuitarBars,
         label: spec.label,
@@ -181,6 +187,9 @@ export function refineBhlCandidate(input: {
   rhythm?: BhlRhythmMode;
   phraseArc?: BhlPhraseArc;
   pentatonicPcs?: readonly number[] | null;
+  pentatonicLabel?: string | null;
+  contrastPcs?: readonly number[] | null;
+  riffRhythm?: import('./bhlRiffRhythm').BhlRiffRequest | null;
   quartal?: boolean;
   protectedGuitarBars?: readonly number[];
   seed?: number;
@@ -196,6 +205,9 @@ export function refineBhlCandidate(input: {
     rhythm: input.rhythm,
     phraseArc: input.phraseArc,
     pentatonicPcs: input.pentatonicPcs,
+    pentatonicLabel: input.pentatonicLabel,
+    contrastPcs: input.contrastPcs,
+    riffRhythm: input.riffRhythm,
     quartal: input.quartal,
     protectedGuitarBars: input.protectedGuitarBars,
     label: `${input.original.label} refined`,

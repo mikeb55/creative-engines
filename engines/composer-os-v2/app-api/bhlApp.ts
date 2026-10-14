@@ -16,7 +16,8 @@ import {
 } from '../core/bhl/bhlCandidates';
 import { loadBhlProject, saveBhlProject, type BhlProjectV1 } from '../core/bhl/bhlProject';
 import { bhlProfileById } from '../core/bhl/bhlProfiles';
-import { bhlResourceCatalog, prepareBhlMusic, type BhlMusicalRequest } from '../core/bhl/bhlResources';
+import { bhlColourRelations, bhlResourceCatalog, prepareBhlMusic, type BhlMusicalRequest } from '../core/bhl/bhlResources';
+import type { BhlRiffRequest, BhlRiffTransform } from '../core/bhl/bhlRiffRhythm';
 import { presentBhlScore } from '../core/bhl/bhlPresent';
 import { buildBhlScratchScore, writeBhlScratchScore } from '../core/bhl/bhlScratch';
 import { extractBhlSnapshot, ingestBhlSource, lockSpecOf, sha256File } from '../core/bhl/bhlIngest';
@@ -47,7 +48,9 @@ import {
   type BhlEvidenceComparison,
   type BhlEvidenceReport,
 } from '../core/bhl/bhlEvidence';
-import { parseScoreDocument, partElements, partNames } from '../core/performance-composer/pcScore';
+import { loadScore, parseScoreDocument, partElements, partNames } from '../core/performance-composer/pcScore';
+
+const RIFF_TRANSFORMS: readonly BhlRiffTransform[] = ['original', 'displace', 'augment', 'diminish', 'fragment', 'rest', 'continue'];
 
 const DIALOGUES: readonly BhlDialogue[] = [
   'answer-after-bass',
@@ -160,6 +163,16 @@ export interface BhlComposeResponse {
     fieldNotes: BhlFieldNote[];
     provisional: true;
   };
+  profileId?: string | null;
+  pentatonicLabel?: string | null;
+  motifSource?: string | null;
+  quartalApplied?: number;
+  quartalNote?: string | null;
+  resourceLimitations?: string[];
+  colourConstraint?: string | null;
+  rhythmNotes?: string[];
+  contrastLabel?: string | null;
+  transfers?: Record<string, unknown>;
 }
 
 export interface BhlGceEvidence {
@@ -205,11 +218,32 @@ function readMusical(raw: unknown): BhlMusicalRequest | null | BhlApiFailure {
     if (typeof pent.archetypeId !== 'string' || typeof pent.referenceNote !== 'string' || typeof pent.relationshipId !== 'string') {
       return fail('pentatonic needs archetypeId, referenceNote, and relationshipId');
     }
+    const contrastId = typeof pent.contrastId === 'string' && pent.contrastId.trim() ? pent.contrastId.trim() : null;
     musical.pentatonic = {
       archetypeId: pent.archetypeId,
       referenceNote: pent.referenceNote,
       relationshipId: pent.relationshipId,
+      contrastId,
     };
+  }
+  if (row.riff != null) {
+    if (typeof row.riff !== 'object' || Array.isArray(row.riff)) return fail('riff must be an object');
+    const riff = row.riff as Record<string, unknown>;
+    if (riff.pitchSource !== 'world' && riff.pitchSource !== 'riff') return fail('riff pitch source must be world or riff');
+    if (riff.rhythmSource !== 'bhl' && riff.rhythmSource !== 'riff' && riff.rhythmSource !== 'other-riff') {
+      return fail('riff rhythm source must be bhl, riff, or other-riff');
+    }
+    const transform = riff.transform ?? 'original';
+    if (!RIFF_TRANSFORMS.includes(transform as BhlRiffTransform)) return fail(`riff transform ${String(transform)} is not available`);
+    const parsed: BhlRiffRequest = {
+      pitchSource: riff.pitchSource,
+      rhythmSource: riff.rhythmSource,
+      pitchSeed: intField(riff.pitchSeed) ?? undefined,
+      rhythmSeed: intField(riff.rhythmSeed) ?? undefined,
+      transform: transform as BhlRiffTransform,
+      displacementQuarters: typeof riff.displacementQuarters === 'number' ? riff.displacementQuarters : 0.5,
+    };
+    musical.riff = parsed;
   }
   if (Array.isArray(row.parentPitchClasses)) {
     const pcs = row.parentPitchClasses.filter((value) => Number.isInteger(value));
@@ -504,6 +538,76 @@ function musicalEvidenceOf(
   };
 }
 
+function bhlTransfers(
+  xml: string,
+  musical: BhlMusicalRequest | null,
+  prepared: ReturnType<typeof prepareBhlMusic>,
+  rhythmNotes: readonly string[],
+  liquidCalls: number,
+): Record<string, unknown> {
+  let reimport = false;
+  let bars = 0;
+  try {
+    const loaded = loadScore(xml);
+    reimport = Boolean(loaded.doc);
+    bars = loaded.doc.getElementsByTagName('measure').length;
+  } catch {
+    reimport = false;
+  }
+  const riff = musical?.riff;
+  const colour = musical?.pentatonic;
+  let relations: ReturnType<typeof bhlColourRelations> | null = null;
+  if (colour) {
+    try {
+      relations = bhlColourRelations(colour.archetypeId, colour.referenceNote, colour.relationshipId);
+    } catch (error) {
+      relations = null;
+      rhythmNotes = rhythmNotes;
+      void error;
+    }
+  }
+  return {
+    riff: riff
+      ? {
+          mode: 'direct',
+          pitch: riff.pitchSource,
+          rhythm: riff.rhythmSource,
+          transform: riff.transform ?? 'original',
+          pitchSeed: riff.pitchSeed ?? null,
+          rhythmSeed: riff.rhythmSeed ?? null,
+          notes: rhythmNotes,
+          cmaj7: 'The riff engine builds pitch from a Cmaj7 cell. BHL keeps the contour only.',
+        }
+      : { mode: 'unused', note: 'No riff source was selected.' },
+    pentatonic: colour
+      ? {
+          mode: 'direct',
+          collection: prepared.pentatonicLabel,
+          pitchClasses: prepared.pentatonicPcs,
+          contrast: prepared.contrastLabel,
+          contrastPitchClasses: prepared.contrastPcs,
+          compatible: relations?.compatible.slice(0, 6).map((row) => `${row.name} (${row.shared.length} shared)`) ?? [],
+          contrasting: relations?.contrasting.slice(0, 6).map((row) => `${row.name} (${row.shared.length} shared)`) ?? [],
+          pathPage: getPathNote(colour.archetypeId),
+        }
+      : { mode: 'unused', note: 'No pentatonic collection was selected.' },
+    vault: { mode: 'direct', note: 'Harmonic field choices on each phrase region call chooseVaultChord.' },
+    liquid: { mode: 'direct', note: 'World B calls planLiquidHarmony. Other worlds do not.', calls: liquidCalls },
+    performanceComposer: {
+      mode: 'musicxml-file',
+      reimport,
+      bars,
+      instruction: 'Performance Composer has no BHL object import. Export this MusicXML, open Performance Composer, and choose the file with Respond.',
+    },
+  };
+}
+
+function getPathNote(id: string): string {
+  return id === 'major_pentatonic' || id === 'minor_pentatonic'
+    ? 'The Pentatonic page can use this major or minor collection.'
+    : 'The Pentatonic path page does not accept this colour. BHL uses it directly from the colour registry.';
+}
+
 function composePlan(lock: ReturnType<typeof ingestBhlSource>, seedRaw: unknown): BhlPhrasePlan {
   const seed = intField(seedRaw) ?? 3340;
   return deriveBhlPhrasePlan(lock.bass, lock.metres, lock.bassPartId, lock.span, seed);
@@ -556,6 +660,9 @@ export function apiBhlCompose(body: unknown): BhlComposeResponse | BhlApiFailure
       phraseArc: phraseArc as BhlPhraseArc,
       rhythm: rhythm as BhlRhythmMode,
       pentatonicPcs: prepared.pentatonicPcs,
+      pentatonicLabel: prepared.pentatonicLabel,
+      contrastPcs: prepared.contrastPcs,
+      riffRhythm: musical?.riff ?? null,
       quartal,
     });
     const after = sha256File(source);
@@ -613,7 +720,11 @@ export function apiBhlCompose(body: unknown): BhlComposeResponse | BhlApiFailure
       motifSource: prepared.motif?.source ?? null,
       quartalApplied: written.quartalApplied,
       quartalNote: written.quartalNote,
-      resourceLimitations: prepared.limitations,
+      resourceLimitations: [...prepared.limitations, ...written.rhythmNotes, ...(written.colourConstraint ? [written.colourConstraint] : [])],
+      colourConstraint: written.colourConstraint,
+      rhythmNotes: written.rhythmNotes,
+      contrastLabel: prepared.contrastLabel,
+      transfers: bhlTransfers(written.xml, musical, prepared, written.rhythmNotes, written.liquid.length),
     };
   } catch (error) {
     return fail(error instanceof Error ? error.message : String(error));
@@ -727,6 +838,9 @@ function prepareLocked(body: Record<string, unknown>) {
     phraseArc: phraseArc as BhlPhraseArc,
     rhythm: rhythm as BhlRhythmMode,
     pentatonicPcs: prepared.pentatonicPcs,
+    pentatonicLabel: prepared.pentatonicLabel,
+    contrastPcs: prepared.contrastPcs,
+    riffRhythm: musical?.riff ?? null,
     quartal,
     prepared,
   };
@@ -746,6 +860,9 @@ export function apiBhlCandidates(body: unknown): { ok: true; candidates: BhlProj
       rhythm: locked.rhythm,
       phraseArc: locked.phraseArc,
       pentatonicPcs: locked.pentatonicPcs,
+      pentatonicLabel: locked.pentatonicLabel,
+      contrastPcs: locked.contrastPcs,
+      riffRhythm: locked.riffRhythm,
       quartal: locked.quartal,
       protectedGuitarBars: locked.protectedGuitarBars,
     });
@@ -774,6 +891,9 @@ export function apiBhlRefine(body: unknown): { ok: true; original: BhlProjectV1[
       rhythm: locked.rhythm,
       phraseArc: locked.phraseArc,
       pentatonicPcs: locked.pentatonicPcs,
+      pentatonicLabel: locked.pentatonicLabel,
+      contrastPcs: locked.contrastPcs,
+      riffRhythm: locked.riffRhythm,
       quartal: locked.quartal,
       protectedGuitarBars: locked.protectedGuitarBars,
       seed: intField(o.seed) ?? undefined,

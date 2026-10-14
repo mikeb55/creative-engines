@@ -1,4 +1,13 @@
 import { useEffect, useState, type CSSProperties } from 'react';
+
+const PITCH_NAMES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+
+function spellCollection(intervals: readonly number[] | undefined, reference: string, offset: number): string {
+  if (!intervals?.length) return '';
+  const root = PITCH_NAMES.indexOf(reference);
+  if (root < 0) return intervals.join(' ');
+  return intervals.map((interval) => PITCH_NAMES[(root + offset + interval + 120) % 12]).join(' ');
+}
 import { api, isDesktopIpc } from '../services/api';
 import { BhlEvidencePanel, type BhlComparisonView, type BhlEvidenceView, type BhlIntentView } from './BhlEvidencePanel';
 
@@ -149,8 +158,14 @@ export function BhlComposerPage() {
   const [archetypeId, setArchetypeId] = useState('major_pentatonic');
   const [referenceNote, setReferenceNote] = useState('C');
   const [relationshipId, setRelationshipId] = useState('home');
-  const [archetypes, setArchetypes] = useState<Array<{ id: string; name: string }>>([]);
-  const [relationships, setRelationships] = useState<Array<{ id: string; label: string }>>([]);
+  const [archetypes, setArchetypes] = useState<Array<{ id: string; name: string; intervals?: number[]; role?: string; family?: string; pathArchetypeId?: string | null }>>([]);
+  const [pitchSource, setPitchSource] = useState<'world' | 'riff'>('world');
+  const [rhythmSource, setRhythmSource] = useState<'bhl' | 'riff' | 'other-riff'>('bhl');
+  const [rhythmSeed, setRhythmSeed] = useState(29);
+  const [riffTransform, setRiffTransform] = useState('original');
+  const [displacement, setDisplacement] = useState(0.5);
+  const [contrastId, setContrastId] = useState('');
+  const [relationships, setRelationships] = useState<Array<{ id: string; label: string; offset?: number }>>([]);
   const [referenceNotes, setReferenceNotes] = useState<string[]>(['C']);
   const [parentOn, setParentOn] = useState(false);
   const [parentText, setParentText] = useState('0 2 4 7 9');
@@ -178,14 +193,15 @@ export function BhlComposerPage() {
         catalog?: {
           profiles: Array<{ id: string; name: string; description: string; density: string; dialogue: string; rhythm: string; phraseArc: string; continuation: string; quartal: boolean }>;
           pentatonic: Array<{ id: string; name: string }>;
-          relationships: Array<{ id: string; label: string }>;
+          colours?: Array<{ id: string; name: string; intervals: number[]; role: string; family: string; pathArchetypeId: string | null }>;
+          relationships: Array<{ id: string; label: string; offset?: number }>;
           referenceNotes: string[];
           notWired: string[];
         };
       };
       if (!row.ok || !row.catalog) return;
       setProfiles(row.catalog.profiles);
-      setArchetypes(row.catalog.pentatonic);
+      setArchetypes(row.catalog.colours?.length ? row.catalog.colours : row.catalog.pentatonic);
       setRelationships(row.catalog.relationships);
       setReferenceNotes(row.catalog.referenceNotes);
       setCatalogNote(row.catalog.notWired.join(' '));
@@ -231,7 +247,15 @@ export function BhlComposerPage() {
       .filter((value) => Number.isInteger(value));
     return {
       ...(profileId ? { profileId } : {}),
-      ...(pentatonicOn ? { pentatonic: { archetypeId, referenceNote, relationshipId } } : {}),
+      riff: {
+        pitchSource,
+        rhythmSource,
+        pitchSeed: riffSeed,
+        rhythmSeed,
+        transform: riffTransform,
+        displacementQuarters: displacement,
+      },
+      ...(pentatonicOn ? { pentatonic: { archetypeId, referenceNote, relationshipId, contrastId } } : {}),
       ...(parentOn ? { parentPitchClasses } : {}),
       ...(motifOn
         ? {
@@ -563,6 +587,30 @@ export function BhlComposerPage() {
         setSpanTo(span.to);
       }
       if (typeof project.world === 'string') setWorld(project.world);
+      const settings = project.settings as { seed?: number; phraseArc?: string; continuation?: string; rhythm?: string; outsideColour?: boolean; musical?: Record<string, unknown> } | undefined;
+      if (settings) {
+        if (typeof settings.seed === 'number') setSeed(settings.seed);
+        if (typeof settings.phraseArc === 'string') setPhraseArc(settings.phraseArc);
+        if (typeof settings.continuation === 'string') setContinuation(settings.continuation);
+        if (typeof settings.rhythm === 'string') setRhythm(settings.rhythm);
+        if (typeof settings.outsideColour === 'boolean') setOutsideColour(settings.outsideColour);
+        const musical = settings.musical ?? {};
+        const riff = musical.riff as { pitchSource?: string; rhythmSource?: string; pitchSeed?: number; rhythmSeed?: number; transform?: string; displacementQuarters?: number } | undefined;
+        if (riff?.pitchSource === 'riff' || riff?.pitchSource === 'world') setPitchSource(riff.pitchSource);
+        if (riff?.rhythmSource === 'bhl' || riff?.rhythmSource === 'riff' || riff?.rhythmSource === 'other-riff') setRhythmSource(riff.rhythmSource);
+        if (typeof riff?.pitchSeed === 'number') setRiffSeed(riff.pitchSeed);
+        if (typeof riff?.rhythmSeed === 'number') setRhythmSeed(riff.rhythmSeed);
+        if (typeof riff?.transform === 'string') setRiffTransform(riff.transform);
+        if (typeof riff?.displacementQuarters === 'number') setDisplacement(riff.displacementQuarters);
+        const pent = musical.pentatonic as { archetypeId?: string; referenceNote?: string; relationshipId?: string; contrastId?: string } | undefined;
+        setPentatonicOn(Boolean(pent));
+        if (pent?.archetypeId) setArchetypeId(pent.archetypeId);
+        if (pent?.referenceNote) setReferenceNote(pent.referenceNote);
+        if (pent?.relationshipId) setRelationshipId(pent.relationshipId);
+        setContrastId(pent?.contrastId ?? '');
+        if (typeof musical.profileId === 'string') setProfileId(musical.profileId);
+        setQuartal(musical.quartal === true);
+      }
       if (typeof project.notes === 'string') setProjectNotes(project.notes);
       if (typeof project.mode === 'string') setMode(project.mode === 'scratch' ? 'scratch' : 'import');
       const stored = Array.isArray(project.candidates) ? (project.candidates as Array<Record<string, unknown>>) : [];
@@ -957,6 +1005,54 @@ export function BhlComposerPage() {
               </div>
             );
           })}
+          <details data-testid="bhl-riff-rhythm" open>
+            <summary>Riff pitch, riff rhythm, and transformation</summary>
+            <p style={{ margin: '0.35rem 0', color: 'var(--text-muted)' }}>
+              Pitch and rhythm are chosen separately. The riff engine&apos;s Cmaj7 chord is not copied. Accents and articulations are not in the riff data, so they are not invented.
+            </p>
+            <label htmlFor="bhl-pitch-source">
+              Riff pitch
+              <select id="bhl-pitch-source" data-testid="bhl-pitch-source" value={pitchSource} onChange={(event) => { setPitchSource(event.target.value === 'riff' ? 'riff' : 'world'); markDirty(); }}>
+                <option value="world">BHL world pitches</option>
+                <option value="riff">Riff contour</option>
+              </select>
+            </label>
+            <label htmlFor="bhl-rhythm-source">
+              Riff rhythm
+              <select id="bhl-rhythm-source" data-testid="bhl-rhythm-source" value={rhythmSource} onChange={(event) => { setRhythmSource(event.target.value === 'riff' || event.target.value === 'other-riff' ? event.target.value : 'bhl'); markDirty(); }}>
+                <option value="bhl">BHL rhythm</option>
+                <option value="riff">Same riff&apos;s rhythm</option>
+                <option value="other-riff">Another riff&apos;s rhythm</option>
+              </select>
+            </label>
+            <label htmlFor="bhl-rhythm-seed">
+              Rhythm seed
+              <input id="bhl-rhythm-seed" data-testid="bhl-rhythm-seed" type="number" value={rhythmSeed} onChange={(event) => { setRhythmSeed(Number(event.target.value)); markDirty(); }} />
+            </label>
+            <label htmlFor="bhl-riff-transform">
+              Rhythmic transformation
+              <select id="bhl-riff-transform" data-testid="bhl-riff-transform" value={riffTransform} onChange={(event) => { setRiffTransform(event.target.value); markDirty(); }}>
+                <option value="original">Original — state the cell once</option>
+                <option value="continue">Continue — repeat the cell</option>
+                <option value="displace">Displace</option>
+                <option value="augment">Augment — twice as long</option>
+                <option value="diminish">Diminish — twice as fast</option>
+                <option value="fragment">Fragment — keep the opening</option>
+                <option value="rest">Insert a rest</option>
+              </select>
+            </label>
+            {riffTransform === 'displace' ? (
+              <label htmlFor="bhl-displacement">
+                Displacement in quarter-lengths
+                <input id="bhl-displacement" data-testid="bhl-displacement" type="number" step="0.25" value={displacement} onChange={(event) => { setDisplacement(Number(event.target.value)); markDirty(); }} />
+              </label>
+            ) : null}
+            <p style={{ margin: 0, color: 'var(--text-muted)' }}>
+              {rhythmSource === 'bhl'
+                ? 'The Rhythm menu above still writes the guitar attacks.'
+                : 'Imported rhythm replaces the Rhythm menu. Leave-space, handoff, and protected guitar bars still win. A note that cannot fit the bar or the division grid is named and left out. It is not quantised.'}
+            </p>
+          </details>
           <details data-testid="bhl-resources">
             <summary>Pentatonic, motif, and quartal colour</summary>
             <label htmlFor="bhl-pentatonic-on">
@@ -988,7 +1084,22 @@ export function BhlComposerPage() {
                     ))}
                   </select>
                 </label>
+                <label htmlFor="bhl-contrast">
+                  Contrasting collection
+                  <select id="bhl-contrast" data-testid="bhl-contrast" value={contrastId} onChange={(event) => { setContrastId(event.target.value); markDirty(); }}>
+                    <option value="">None</option>
+                    {archetypes.filter((item) => item.id !== archetypeId).map((item) => (
+                      <option key={item.id} value={item.id}>{item.name}</option>
+                    ))}
+                  </select>
+                </label>
               </div>
+            ) : null}
+            {pentatonicOn ? (
+              <p data-testid="bhl-colour-pcs" style={{ margin: 0 }}>
+                Pitch classes: {spellCollection(archetypes.find((item) => item.id === archetypeId)?.intervals, referenceNote, relationships.find((item) => item.id === relationshipId)?.offset ?? 0) || 'not loaded'}
+                {archetypes.find((item) => item.id === archetypeId)?.role ? ` — ${archetypes.find((item) => item.id === archetypeId)?.role}` : ''}
+              </p>
             ) : null}
             <label htmlFor="bhl-parent-on">
               <input id="bhl-parent-on" data-testid="bhl-parent-on" type="checkbox" checked={parentOn} onChange={(event) => { setParentOn(event.target.checked); markDirty(); }} /> Derive a field from these pitch classes when no collection is selected
@@ -1038,11 +1149,28 @@ export function BhlComposerPage() {
             ) : null}
             {catalogNote ? <p style={{ margin: 0, color: 'var(--text-muted)' }}>{catalogNote}</p> : null}
           </details>
+          <details data-testid="bhl-handoff">
+            <summary>Cross-engine transfer</summary>
+            <p style={{ margin: '0.35rem 0' }}>Riff and pentatonic move straight into this page. Tonality Vault is the harmonic-field menu on each region. Liquid harmony is World B. Performance Composer only accepts a MusicXML file: export, then use Respond and choose that file.</p>
+            {result && 'transfers' in result ? (
+              <pre data-testid="bhl-transfers" style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{JSON.stringify((result as { transfers?: unknown }).transfers, null, 2)}</pre>
+            ) : (
+              <p style={{ margin: 0, color: 'var(--text-muted)' }}>Generate to see what this setting will transfer.</p>
+            )}
+          </details>
           <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
             The world changes the pitch field. Continuation develops a continuation region unless that region is silence,
             a handoff, or leave-space. Counter-motion writes a second guitar voice against the bass. A triad or dyad is
-            one grip. Leave space keeps the last beat empty. Rhythm does not rewrite the motif pitches.
+            one grip. Leave space keeps the last beat empty. On worlds A–D and F a pentatonic colour only sounds where it
+            already belongs to the world. World E can take the colour as its pitch source.
           </p>
+          {result && 'resourceLimitations' in result && Array.isArray((result as { resourceLimitations?: unknown }).resourceLimitations) ? (
+            <ul data-testid="bhl-resource-limits">
+              {((result as { resourceLimitations: string[] }).resourceLimitations).map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          ) : null}
           {lockInputsDiffer ? (
             <p data-testid="bhl-relock">Bar span, path, or protected bars changed. Import and lock again before generating.</p>
           ) : null}

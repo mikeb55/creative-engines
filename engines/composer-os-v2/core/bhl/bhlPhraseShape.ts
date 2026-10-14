@@ -18,6 +18,7 @@ import {
   type BhlPitchTransform,
 } from './bhlPhrase';
 import { collectFieldNotes, guitarFeasibility, realiseBhlIntentions, type BhlFieldNote, type BhlIntentionLimit } from './bhlRealise';
+import { placeBhlRiffRhythm, readBhlRiffCell, type BhlRiffPlacement, type BhlRiffRequest } from './bhlRiffRhythm';
 import { planPhraseOnsets, type BhlBassBar, type BhlOnsetPlan, type BhlRhythmTransform } from './bhlRhythm';
 import type { BhlLiquidTrace } from './bhlGenerate';
 import {
@@ -37,6 +38,12 @@ export interface BhlWorldGenerateRequest {
   seed: number;
   phraseArc: BhlPhraseArc;
   rhythm: BhlRhythmMode;
+  /** Placed riff rhythm. Omitted keeps the BHL onset planner. */
+  riffRhythm?: BhlRiffRequest | null;
+  divisionsByBar?: ReadonlyMap<number, number>;
+  protectedBars?: readonly number[];
+  /** World E uses this collection as its pitch source. */
+  pitchCollection?: readonly number[] | null;
 }
 
 export interface BhlPhraseBinderReport {
@@ -69,6 +76,8 @@ export interface BhlWorldGuitar {
   binder: BhlPhraseBinderReport;
   limitations: BhlIntentionLimit[];
   fieldNotes: BhlFieldNote[];
+  rhythmNotes: string[];
+  riffReport: BhlRiffPlacement | null;
 }
 
 const mod12 = (value: number) => ((value % 12) + 12) % 12;
@@ -308,7 +317,23 @@ export function generateBhlWorldGuitar(
   request: BhlWorldGenerateRequest,
 ): BhlWorldGuitar {
   const plan = applyArc(sourcePlan, request.phraseArc, request.rhythm);
-  const onsetPlans = planPhraseOnsets(bars, plan.regions);
+  const collection = request.pitchCollection?.map(mod12) ?? null;
+  let riffReport: BhlRiffPlacement | null = null;
+  let onsetPlans = planPhraseOnsets(bars, plan.regions);
+  if (request.riffRhythm && request.riffRhythm.rhythmSource !== 'bhl') {
+    const source = request.riffRhythm.rhythmSource === 'other-riff' ? 'engine' : 'core';
+    const seed = request.riffRhythm.rhythmSeed ?? request.riffRhythm.pitchSeed ?? request.seed;
+    riffReport = placeBhlRiffRhythm({
+      cell: readBhlRiffCell(source, seed),
+      transform: request.riffRhythm.transform ?? 'original',
+      displacementQuarters: request.riffRhythm.displacementQuarters ?? 0.5,
+      bars,
+      regions: plan.regions,
+      divisionsByBar: request.divisionsByBar ?? new Map(),
+      protectedBars: request.protectedBars ?? [],
+    });
+    onsetPlans = riffReport.plans;
+  }
   const events: BhlGuitarEvent[] = [];
   const snaps: BhlFieldSnap[] = [];
   const liquid: BhlLiquidTrace[] = [];
@@ -327,7 +352,11 @@ export function generateBhlWorldGuitar(
     for (const onset of onsetPlans.filter((item) => region.bars.includes(item.bar))) {
       const bar = bars.find((candidate) => candidate.bar === onset.bar);
       if (!bar) throw new Error(`missing bass bar ${onset.bar}`);
-      const field = buildBhlWorldField(request.world, bar, region.tensionState);
+      const built = buildBhlWorldField(request.world, bar, region.tensionState);
+      const field =
+        request.world === 'E' && collection && collection.length
+          ? { ...built, pitchClasses: [...new Set(collection)].sort((a, b) => a - b), groups: [[...new Set(collection)].sort((a, b) => a - b)] }
+          : built;
       for (const pitchClass of field.pitchClasses) usedPcs.add(pitchClass);
       if (field.chordType) {
         liquid.push({
@@ -355,7 +384,7 @@ export function generateBhlWorldGuitar(
         }
         const melody = midiNear(pitchClass, region.registerLow, region.registerHigh, previousMidi);
         let duration = onset.durations[index] ?? 0.5;
-        if (region.dialogue === 'handoff-before-bass') {
+        if (region.dialogue === 'handoff-before-bass' && !riffReport) {
           const nextBass = bar.attacks.find((attack) => attack > start + 1e-6);
           if (nextBass !== undefined) {
             const capped = Math.floor((nextBass - start) * 2) / 2;
@@ -417,7 +446,7 @@ export function generateBhlWorldGuitar(
           /* reattack of one pitch stays a separate event */
         }
       });
-      if (region.role === 'continuation' && region.density !== 'counterline') {
+      if (!riffReport && region.role === 'continuation' && region.density !== 'counterline') {
         const mine = events.filter((event) => event.bar === bar.bar && event.regionId === region.id && event.voice !== '2');
         if (mine.length >= 2 && mine.every((event) => event.quarters <= 0.5)) {
           const first = mine[0]!;
@@ -451,7 +480,11 @@ export function generateBhlWorldGuitar(
 
   restoreReturnInterval(events, plan);
   clearPitchStalls(events, plan, bars, request.world);
-  const fieldOf = (region: BhlPhraseRegion, bar: BhlBassBar) => buildBhlWorldField(request.world, bar, region.tensionState).pitchClasses;
+  const fieldOf = (region: BhlPhraseRegion, bar: BhlBassBar) => {
+    const built = buildBhlWorldField(request.world, bar, region.tensionState).pitchClasses;
+    if (request.world === 'E' && collection && collection.length) return [...new Set(collection)].sort((a, b) => a - b);
+    return built;
+  };
   const limitations = realiseBhlIntentions(plan, bars, events, fieldOf);
   const fieldNotes = collectFieldNotes(plan, bars, events, fieldOf);
   feasibility.splice(0, feasibility.length, ...guitarFeasibility(events));
@@ -473,6 +506,8 @@ export function generateBhlWorldGuitar(
     binder,
     limitations,
     fieldNotes,
+    rhythmNotes: riffReport?.limitations ?? [],
+    riffReport,
   };
 }
 
