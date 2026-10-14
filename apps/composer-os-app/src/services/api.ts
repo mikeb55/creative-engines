@@ -124,6 +124,13 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     if (path === '/bhl/compose') return ipcInvoke<T>('composer-os-api:bhl-compose', body ?? {});
     if (path === '/bhl/export') return ipcInvoke<T>('composer-os-api:bhl-export', body ?? {});
     if (path === '/bhl/open') return ipcInvoke<T>('composer-os-api:bhl-open', body ?? {});
+    if (path === '/bhl/catalog') return ipcInvoke<T>('composer-os-api:bhl-catalog', body ?? {});
+    if (path === '/bhl/candidates') return ipcInvoke<T>('composer-os-api:bhl-candidates', body ?? {});
+    if (path === '/bhl/refine') return ipcInvoke<T>('composer-os-api:bhl-refine', body ?? {});
+    if (path === '/bhl/compare') return ipcInvoke<T>('composer-os-api:bhl-compare', body ?? {});
+    if (path === '/bhl/project/save') return ipcInvoke<T>('composer-os-api:bhl-project-save', body ?? {});
+    if (path === '/bhl/project/open') return ipcInvoke<T>('composer-os-api:bhl-project-open', body ?? {});
+    if (path === '/bhl/scratch') return ipcInvoke<T>('composer-os-api:bhl-scratch', body ?? {});
     throw new Error(`Unknown IPC POST path: ${path}`);
   }
   let r: Response;
@@ -370,6 +377,13 @@ export const api = {
   bhlCompose: (body: Record<string, unknown>) => post<Record<string, unknown>>('/bhl/compose', body),
   bhlExport: (body: Record<string, unknown>) => post<Record<string, unknown>>('/bhl/export', body),
   bhlOpen: (body: Record<string, unknown>) => post<Record<string, unknown>>('/bhl/open', body),
+  bhlCatalog: () => post<Record<string, unknown>>('/bhl/catalog', {}),
+  bhlCandidates: (body: Record<string, unknown>) => post<Record<string, unknown>>('/bhl/candidates', body),
+  bhlRefine: (body: Record<string, unknown>) => post<Record<string, unknown>>('/bhl/refine', body),
+  bhlCompare: (body: Record<string, unknown>) => post<Record<string, unknown>>('/bhl/compare', body),
+  bhlSaveProject: (body: Record<string, unknown>) => post<Record<string, unknown>>('/bhl/project/save', body),
+  bhlOpenProject: (body: Record<string, unknown>) => post<Record<string, unknown>>('/bhl/project/open', body),
+  bhlScratch: (body: Record<string, unknown>) => post<Record<string, unknown>>('/bhl/scratch', body),
 };
 
 /** Shape checks for generation receipts (tests). */

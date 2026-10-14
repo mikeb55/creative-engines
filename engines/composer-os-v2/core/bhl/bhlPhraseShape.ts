@@ -17,6 +17,7 @@ import {
   type BhlPhraseRegion,
   type BhlPitchTransform,
 } from './bhlPhrase';
+import { collectFieldNotes, guitarFeasibility, realiseBhlIntentions, type BhlFieldNote, type BhlIntentionLimit } from './bhlRealise';
 import { planPhraseOnsets, type BhlBassBar, type BhlOnsetPlan, type BhlRhythmTransform } from './bhlRhythm';
 import type { BhlLiquidTrace } from './bhlGenerate';
 import {
@@ -66,6 +67,8 @@ export interface BhlWorldGuitar {
   contrastingMoves: number;
   fifthSteps: number;
   binder: BhlPhraseBinderReport;
+  limitations: BhlIntentionLimit[];
+  fieldNotes: BhlFieldNote[];
 }
 
 const mod12 = (value: number) => ((value % 12) + 12) % 12;
@@ -359,12 +362,7 @@ export function generateBhlWorldGuitar(
             if (capped >= 0.5) duration = Math.min(duration, capped);
           }
         }
-        const texture: BhlDensity =
-          region.density === 'single'
-            ? 'single'
-            : region.density === 'counterline' || region.dialogue === 'counter-motion'
-              ? 'counterline'
-              : region.density;
+        const texture: BhlDensity = region.density;
         const grip = stack(melody, texture, index, field, region.registerLow);
         const fitted = fitGrip(grip, melody);
         if (fitted.dropped && grip.length > 1) {
@@ -453,6 +451,10 @@ export function generateBhlWorldGuitar(
 
   restoreReturnInterval(events, plan);
   clearPitchStalls(events, plan, bars, request.world);
+  const fieldOf = (region: BhlPhraseRegion, bar: BhlBassBar) => buildBhlWorldField(request.world, bar, region.tensionState).pitchClasses;
+  const limitations = realiseBhlIntentions(plan, bars, events, fieldOf);
+  const fieldNotes = collectFieldNotes(plan, bars, events, fieldOf);
+  feasibility.splice(0, feasibility.length, ...guitarFeasibility(events));
   const binder = bindGenerated(events, bars, plan);
   return {
     plan,
@@ -469,6 +471,8 @@ export function generateBhlWorldGuitar(
     contrastingMoves,
     fifthSteps,
     binder,
+    limitations,
+    fieldNotes,
   };
 }
 

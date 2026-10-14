@@ -9,6 +9,16 @@ import os from 'node:os';
 import path from 'node:path';
 import { BHL_ALBUM_ROOT, BhlExportRejected, assertBhlExportPath } from '../core/bhl/bhlCopy';
 import { composeBhlGuitar } from '../core/bhl/bhlCompose';
+import {
+  compareBhlCandidateXml,
+  generateBhlCandidateSet,
+  refineBhlCandidate,
+} from '../core/bhl/bhlCandidates';
+import { loadBhlProject, saveBhlProject, type BhlProjectV1 } from '../core/bhl/bhlProject';
+import { bhlProfileById } from '../core/bhl/bhlProfiles';
+import { bhlResourceCatalog, prepareBhlMusic, type BhlMusicalRequest } from '../core/bhl/bhlResources';
+import { presentBhlScore } from '../core/bhl/bhlPresent';
+import { buildBhlScratchScore, writeBhlScratchScore } from '../core/bhl/bhlScratch';
 import { extractBhlSnapshot, ingestBhlSource, lockSpecOf, sha256File } from '../core/bhl/bhlIngest';
 import type { BhlFeasibilityNote } from '../core/bhl/bhlGenerate';
 import {
@@ -20,9 +30,11 @@ import {
   type BhlFieldSnap,
   type BhlGuitarEvent,
   type BhlPhrasePlan,
+  type BhlContinuationStrategy,
   type BhlPitchTransform,
   type BhlPredicateResult,
 } from '../core/bhl/bhlPhrase';
+import type { BhlFieldNote } from '../core/bhl/bhlRealise';
 import type { BhlPhraseArc, BhlPhraseBinderReport, BhlRhythmMode } from '../core/bhl/bhlPhraseShape';
 import { BHL_WORLDS, isBhlWorldId, type BhlWorldId } from '../core/bhl/bhlWorlds';
 import type { BhlLockReport, BhlSpan } from '../core/bhl/bhlTypes';
@@ -53,6 +65,7 @@ const PITCHES: readonly BhlPitchTransform[] = [
   'recall-cell',
   'retain-and-admit-bass',
 ];
+const CONTINUATIONS: readonly BhlContinuationStrategy[] = ['extend', 'fragment', 'sequence', 'rhythm', 'converse'];
 
 export const BHL_WRONG_TURNING_RELATIVE =
   'WWH-PRACTICE/WWH-PLAY/PERFORMANCE-EDITIONS/06-Wrong-Turning/06-Wrong-Turning-Integrated-Guitar-Study-V2.4.musicxml';
@@ -143,6 +156,8 @@ export interface BhlComposeResponse {
     candidate: BhlEvidenceReport;
     comparison: BhlEvidenceComparison;
     intentions: BhlIntentCheck[];
+    limitations: Array<{ regionId: string; intention: string; reason: string }>;
+    fieldNotes: BhlFieldNote[];
     provisional: true;
   };
 }
@@ -173,6 +188,70 @@ export interface BhlOpenResponse {
 
 function fail(error: string): BhlApiFailure {
   return { ok: false, error };
+}
+
+function readMusical(raw: unknown): BhlMusicalRequest | null | BhlApiFailure {
+  if (raw === undefined || raw === null) return null;
+  if (typeof raw !== 'object' || Array.isArray(raw)) return fail('musical must be an object');
+  const row = raw as Record<string, unknown>;
+  const musical: BhlMusicalRequest = {};
+  if (row.profileId != null && row.profileId !== '') {
+    if (typeof row.profileId !== 'string' || !bhlProfileById(row.profileId)) return fail(`style profile ${String(row.profileId)} is not available`);
+    musical.profileId = row.profileId;
+  }
+  if (row.pentatonic != null) {
+    if (typeof row.pentatonic !== 'object' || Array.isArray(row.pentatonic)) return fail('pentatonic must be an object');
+    const pent = row.pentatonic as Record<string, unknown>;
+    if (typeof pent.archetypeId !== 'string' || typeof pent.referenceNote !== 'string' || typeof pent.relationshipId !== 'string') {
+      return fail('pentatonic needs archetypeId, referenceNote, and relationshipId');
+    }
+    musical.pentatonic = {
+      archetypeId: pent.archetypeId,
+      referenceNote: pent.referenceNote,
+      relationshipId: pent.relationshipId,
+    };
+  }
+  if (Array.isArray(row.parentPitchClasses)) {
+    const pcs = row.parentPitchClasses.filter((value) => Number.isInteger(value));
+    if (pcs.length !== row.parentPitchClasses.length) return fail('parentPitchClasses must be integers');
+    musical.parentPitchClasses = pcs as number[];
+  }
+  if (row.motif != null) {
+    if (typeof row.motif !== 'object' || Array.isArray(row.motif)) return fail('motif must be an object');
+    const motif = row.motif as Record<string, unknown>;
+    if (motif.kind !== 'import' && motif.kind !== 'riff' && motif.kind !== 'constraints') {
+      return fail('motif.kind must be import, riff, or constraints');
+    }
+    const pitchTransform = motif.pitchTransform ?? 'none';
+    if (
+      pitchTransform !== 'none' &&
+      pitchTransform !== 'transpose' &&
+      pitchTransform !== 'invert' &&
+      pitchTransform !== 'fragment' &&
+      pitchTransform !== 'register'
+    ) {
+      return fail(`motif transform ${String(pitchTransform)} is not available`);
+    }
+    musical.motif = {
+      kind: motif.kind,
+      pitches: Array.isArray(motif.pitches) ? (motif.pitches.filter((value) => Number.isInteger(value)) as number[]) : undefined,
+      intervals: Array.isArray(motif.intervals) ? (motif.intervals.filter((value) => Number.isInteger(value)) as number[]) : undefined,
+      riffSeed: intField(motif.riffSeed) ?? undefined,
+      pitchTransform,
+      semitones: intField(motif.semitones) ?? undefined,
+    };
+  }
+  if (row.quartal === true || row.quartal === false) musical.quartal = row.quartal;
+  return musical;
+}
+
+function underExport(filePath: string): string | BhlApiFailure {
+  const resolved = path.resolve(filePath);
+  const dir = path.resolve(bhlExportDir());
+  const relative = path.relative(dir, resolved);
+  if (relative.startsWith('..') || path.isAbsolute(relative)) return fail('path must stay inside the BHL export directory');
+  if (BHL_ALBUM_ROOT && resolved.startsWith(path.resolve(BHL_ALBUM_ROOT))) return fail('refusing to write inside the album tree');
+  return resolved;
 }
 
 function asRecord(body: unknown): Record<string, unknown> {
@@ -262,6 +341,17 @@ function applyControls(plan: BhlPhrasePlan, raw: unknown): BhlPhrasePlan | BhlAp
     region.vaultRootPc = choice.vaultRootPc;
   }
   return next;
+}
+
+function applyContinuation(plan: BhlPhrasePlan, raw: unknown, outsideColour: boolean): BhlPhrasePlan | BhlApiFailure {
+  if (raw === undefined || raw === null || raw === '' || raw === 'hold') return plan;
+  if (!CONTINUATIONS.includes(raw as BhlContinuationStrategy)) return fail(`continuation ${String(raw)} is not available`);
+  for (const region of plan.regions) {
+    if (region.role !== 'continuation') continue;
+    region.continuation = raw as BhlContinuationStrategy;
+    region.outsideColour = outsideColour;
+  }
+  return plan;
 }
 
 function fieldMap(plan: BhlPhrasePlan): Record<string, BhlFieldChoice[]> {
@@ -393,7 +483,14 @@ export function apiBhlInspect(body: unknown): BhlInspectResponse | BhlApiFailure
   }
 }
 
-function musicalEvidenceOf(sourceXml: string, writtenXml: string, span: BhlSpan, plan: BhlPhrasePlan): BhlComposeResponse['musicalEvidence'] {
+function musicalEvidenceOf(
+  sourceXml: string,
+  writtenXml: string,
+  span: BhlSpan,
+  plan: BhlPhrasePlan,
+  limitations: BhlComposeResponse['musicalEvidence']['limitations'],
+  fieldNotes: BhlFieldNote[],
+): BhlComposeResponse['musicalEvidence'] {
   const original = readBhlEvidence(sourceXml, span);
   const candidate = readBhlEvidence(writtenXml, span);
   return {
@@ -401,6 +498,8 @@ function musicalEvidenceOf(sourceXml: string, writtenXml: string, span: BhlSpan,
     candidate,
     comparison: compareBhlEvidence(original, candidate),
     intentions: auditBhlIntentions(writtenXml, plan),
+    limitations,
+    fieldNotes,
     provisional: true,
   };
 }
@@ -425,24 +524,39 @@ export function apiBhlCompose(body: unknown): BhlComposeResponse | BhlApiFailure
     const seed = intField(o.seed) ?? 3340;
     const lock = ingestBhlSource({ sourcePath: source, span, protectedGuitarBars });
     const derived = composePlan(lock, seed);
-    const plan = applyControls(derived, o.regions);
-    if ('ok' in plan) return plan;
-    plan.seed = seed;
+    const musical = readMusical(o.musical);
+    if (musical && 'ok' in musical) return musical;
+    const prepared = prepareBhlMusic(derived, musical);
+    const controlled = applyControls(prepared.plan, o.regions);
+    if ('ok' in controlled) return controlled;
     const world = o.world === undefined || o.world === null || o.world === '' ? undefined : o.world;
     if (world !== undefined && !isBhlWorldId(world)) return fail(`harmonic world ${String(world)} is not one of A–F`);
-    const phraseArc = o.phraseArc === undefined || o.phraseArc === null || o.phraseArc === '' ? 'derived' : o.phraseArc;
+    const phraseArc =
+      o.phraseArc === undefined || o.phraseArc === null || o.phraseArc === ''
+        ? prepared.phraseArc ?? 'derived'
+        : o.phraseArc;
     if (!ARCS.includes(phraseArc as BhlPhraseArc)) return fail(`phrase arc ${String(phraseArc)} is not available`);
-    const rhythm = o.rhythm === undefined || o.rhythm === null || o.rhythm === '' ? 'derived' : o.rhythm;
+    const rhythm = o.rhythm === undefined || o.rhythm === null || o.rhythm === '' ? prepared.rhythm ?? 'derived' : o.rhythm;
     if (!RHYTHMS.includes(rhythm as BhlRhythmMode)) return fail(`rhythm ${String(rhythm)} is not available`);
+    const continuationRaw =
+      o.continuation === undefined || o.continuation === null || o.continuation === ''
+        ? prepared.continuation ?? 'hold'
+        : o.continuation;
+    const continued = applyContinuation(controlled, continuationRaw, o.outsideColour === true);
+    if ('ok' in continued) return continued;
+    continued.seed = seed;
+    const quartal = o.quartal === true || (o.quartal == null && prepared.quartal);
     const written = composeBhlGuitar({
       sourcePath: source,
       span,
       seed,
       protectedGuitarBars,
-      plan,
+      plan: continued,
       world: world as BhlWorldId | undefined,
       phraseArc: phraseArc as BhlPhraseArc,
       rhythm: rhythm as BhlRhythmMode,
+      pentatonicPcs: prepared.pentatonicPcs,
+      quartal,
     });
     const after = sha256File(source);
     const writable: number[] = [];
@@ -493,7 +607,13 @@ export function apiBhlCompose(body: unknown): BhlComposeResponse | BhlApiFailure
       commonToneRetentions: written.world?.commonToneRetentions ?? 0,
       contrastingMoves: written.world?.contrastingMoves ?? 0,
       binder: written.binder,
-      musicalEvidence: musicalEvidenceOf(xml, written.xml, span, written.plan),
+      musicalEvidence: musicalEvidenceOf(xml, written.xml, span, written.plan, written.limitations, written.fieldNotes),
+      profileId: prepared.profile?.id ?? null,
+      pentatonicLabel: prepared.pentatonicLabel,
+      motifSource: prepared.motif?.source ?? null,
+      quartalApplied: written.quartalApplied,
+      quartalNote: written.quartalNote,
+      resourceLimitations: prepared.limitations,
     };
   } catch (error) {
     return fail(error instanceof Error ? error.message : String(error));
@@ -524,7 +644,7 @@ export function apiBhlExport(body: unknown): BhlExportResponse | BhlApiFailure {
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
     const outputPath = path.join(dir, `${base}-BHL-GUI-seed${seed}-${stamp}.musicxml`);
     assertBhlExportPath({ sourcePath: source, outputPath, permittedOutputDir: dir });
-    fs.writeFileSync(outputPath, xml, { flag: 'wx' });
+    fs.writeFileSync(outputPath, presentBhlScore(xml), { flag: 'wx' });
     if (sha256File(source) !== live) return fail('source SHA-256 changed during export');
     return {
       ok: true,
@@ -565,6 +685,181 @@ export function apiBhlOpen(body: unknown): BhlOpenResponse | BhlApiFailure {
     const child = spawn(command, finalArgs, { detached: true, stdio: 'ignore' });
     child.unref();
     return { ok: true, outputPath, openedWith: sib ? 'Sibelius' : command };
+  } catch (error) {
+    return fail(error instanceof Error ? error.message : String(error));
+  }
+}
+
+export function apiBhlCatalog(): { ok: true; catalog: ReturnType<typeof bhlResourceCatalog> } {
+  return { ok: true, catalog: bhlResourceCatalog() };
+}
+
+function prepareLocked(body: Record<string, unknown>) {
+  const source = sourceOrDefault(body.sourcePath);
+  if (typeof source !== 'string') return source;
+  const xml = fs.readFileSync(source, 'utf8');
+  const span = readSpan(body.span, defaultBhlSpan(source, barCountOf(xml)));
+  if ('ok' in span) return span;
+  const protectedGuitarBars = readProtected(body.protectedGuitarBars);
+  if (!Array.isArray(protectedGuitarBars)) return protectedGuitarBars;
+  const seed = intField(body.seed) ?? 3340;
+  const world = body.world;
+  if (!isBhlWorldId(world)) return fail(`harmonic world ${String(world)} is not one of A–F`);
+  const musical = readMusical(body.musical);
+  if (musical && 'ok' in musical) return musical;
+  const lock = ingestBhlSource({ sourcePath: source, span, protectedGuitarBars });
+  const prepared = prepareBhlMusic(composePlan(lock, seed), musical);
+  const controlled = applyControls(prepared.plan, body.regions);
+  if ('ok' in controlled) return controlled;
+  const phraseArc = body.phraseArc === undefined || body.phraseArc === null || body.phraseArc === '' ? prepared.phraseArc ?? 'derived' : body.phraseArc;
+  if (!ARCS.includes(phraseArc as BhlPhraseArc)) return fail(`phrase arc ${String(phraseArc)} is not available`);
+  const rhythm = body.rhythm === undefined || body.rhythm === null || body.rhythm === '' ? prepared.rhythm ?? 'derived' : body.rhythm;
+  if (!RHYTHMS.includes(rhythm as BhlRhythmMode)) return fail(`rhythm ${String(rhythm)} is not available`);
+  const quartal = body.quartal === true || (body.quartal == null && prepared.quartal);
+  return {
+    source,
+    span,
+    seed,
+    world,
+    protectedGuitarBars,
+    plan: controlled,
+    musical,
+    phraseArc: phraseArc as BhlPhraseArc,
+    rhythm: rhythm as BhlRhythmMode,
+    pentatonicPcs: prepared.pentatonicPcs,
+    quartal,
+    prepared,
+  };
+}
+
+export function apiBhlCandidates(body: unknown): { ok: true; candidates: BhlProjectV1['candidates'] } | BhlApiFailure {
+  try {
+    const locked = prepareLocked(asRecord(body));
+    if ('ok' in locked) return locked;
+    const set = generateBhlCandidateSet({
+      sourcePath: locked.source,
+      span: locked.span,
+      seed: locked.seed,
+      world: locked.world,
+      plan: locked.plan,
+      musical: locked.musical,
+      rhythm: locked.rhythm,
+      phraseArc: locked.phraseArc,
+      pentatonicPcs: locked.pentatonicPcs,
+      quartal: locked.quartal,
+      protectedGuitarBars: locked.protectedGuitarBars,
+    });
+    return { ok: true, candidates: set.candidates };
+  } catch (error) {
+    return fail(error instanceof Error ? error.message : String(error));
+  }
+}
+
+export function apiBhlRefine(body: unknown): { ok: true; original: BhlProjectV1['candidates'][number]; refined: BhlProjectV1['candidates'][number] } | BhlApiFailure {
+  try {
+    const o = asRecord(body);
+    const locked = prepareLocked(o);
+    if ('ok' in locked) return locked;
+    const original = o.original;
+    if (!original || typeof original !== 'object') return fail('original candidate is required');
+    const row = original as BhlProjectV1['candidates'][number];
+    if (typeof row.xml !== 'string' || typeof row.id !== 'string') return fail('original candidate needs id and xml');
+    const refined = refineBhlCandidate({
+      sourcePath: locked.source,
+      span: locked.span,
+      world: locked.world,
+      plan: locked.plan,
+      original: row,
+      musical: locked.musical,
+      rhythm: locked.rhythm,
+      phraseArc: locked.phraseArc,
+      pentatonicPcs: locked.pentatonicPcs,
+      quartal: locked.quartal,
+      protectedGuitarBars: locked.protectedGuitarBars,
+      seed: intField(o.seed) ?? undefined,
+    });
+    return { ok: true, original: row, refined };
+  } catch (error) {
+    return fail(error instanceof Error ? error.message : String(error));
+  }
+}
+
+export function apiBhlCompare(body: unknown): { ok: true; left: Record<string, unknown>; right: Record<string, unknown>; comparison: ReturnType<typeof compareBhlCandidateXml>['comparison'] } | BhlApiFailure {
+  try {
+    const o = asRecord(body);
+    const leftXml = typeof o.leftXml === 'string' ? o.leftXml : '';
+    const rightXml = typeof o.rightXml === 'string' ? o.rightXml : '';
+    if (!leftXml.includes('<score-partwise') || !rightXml.includes('<score-partwise')) {
+      return fail('compare needs the stored MusicXML for both candidates');
+    }
+    const span = readSpan(o.span, { from: 1, to: 1 });
+    if ('ok' in span) return span;
+    const compared = compareBhlCandidateXml(leftXml, rightXml, span);
+    return { ok: true, ...compared };
+  } catch (error) {
+    return fail(error instanceof Error ? error.message : String(error));
+  }
+}
+
+export function apiBhlSaveProject(body: unknown): { ok: true; path: string; bytes: number } | BhlApiFailure {
+  try {
+    const o = asRecord(body);
+    const project = o.project;
+    if (!project || typeof project !== 'object') return fail('project is required');
+    const row = project as BhlProjectV1;
+    const id = typeof row.id === 'string' && row.id.trim() ? row.id.trim() : '';
+    if (!id) return fail('project.id is required');
+    const requested = typeof o.path === 'string' && o.path.trim() ? o.path.trim() : path.join(bhlExportDir(), 'projects', `${id}.bhl.json`);
+    const filePath = underExport(requested);
+    if (typeof filePath !== 'string') return filePath;
+    const overwrite = o.overwrite === true;
+    const saved = saveBhlProject(filePath, { ...row, savedAt: row.savedAt || new Date().toISOString() }, overwrite);
+    return { ok: true, path: saved.path, bytes: saved.bytes };
+  } catch (error) {
+    return fail(error instanceof Error ? error.message : String(error));
+  }
+}
+
+export function apiBhlOpenProject(body: unknown): { ok: true; path: string; project: BhlProjectV1 } | BhlApiFailure {
+  try {
+    const o = asRecord(body);
+    const requested = typeof o.path === 'string' ? o.path.trim() : '';
+    if (!requested) return fail('path is required');
+    const filePath = underExport(requested);
+    if (typeof filePath !== 'string') return filePath;
+    const loaded = loadBhlProject(filePath);
+    if (!loaded.ok || !loaded.project) return fail(loaded.errors.join('; ') || 'invalid project');
+    return { ok: true, path: filePath, project: loaded.project };
+  } catch (error) {
+    return fail(error instanceof Error ? error.message : String(error));
+  }
+}
+
+export function apiBhlScratch(body: unknown): { ok: true; sourcePath: string; sha256: string; bars: number; span: { from: number; to: number }; sections: ReturnType<typeof buildBhlScratchScore>['sections']; xml: string } | BhlApiFailure {
+  try {
+    const o = asRecord(body);
+    const bars = intField(o.bars) ?? 16;
+    const beats = intField(o.beats) ?? 4;
+    const beatType = intField(o.beatType) ?? 4;
+    const tempo = intField(o.tempo) ?? 92;
+    const seed = intField(o.seed) ?? 4400;
+    const title = typeof o.title === 'string' ? o.title : 'BHL from scratch';
+    const score = buildBhlScratchScore({ bars, beats, beatType, tempo, seed, title });
+    const safe = title.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'bhl-scratch';
+    const filePath = path.join(bhlExportDir(), 'scratch', `${safe}-seed${seed}-${bars}bars.musicxml`);
+    const checked = underExport(filePath);
+    if (typeof checked !== 'string') return checked;
+    if (fs.existsSync(checked) && o.overwrite !== true) return fail(`scratch score already exists: ${checked}`);
+    writeBhlScratchScore(checked, { bars, beats, beatType, tempo, seed, title }, o.overwrite === true);
+    return {
+      ok: true,
+      sourcePath: checked,
+      sha256: score.sha256,
+      bars: score.bars,
+      span: { from: 1, to: score.bars },
+      sections: score.sections,
+      xml: score.xml,
+    };
   } catch (error) {
     return fail(error instanceof Error ? error.message : String(error));
   }

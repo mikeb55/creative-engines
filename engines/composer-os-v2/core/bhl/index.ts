@@ -41,6 +41,7 @@ export {
   type BhlPhraseRole,
   type BhlPitchTransform,
   type BhlPredicateResult,
+  type BhlContinuationStrategy,
 } from './bhlPhrase';
 export type { BhlRhythmTransform } from './bhlRhythm';
 export {
@@ -63,6 +64,11 @@ export {
   type BhlEvidenceReport,
 } from './bhlEvidence';
 export { auditBhlIntentions, type BhlIntentCheck, type BhlIntentStatus } from './bhlIntentAudit';
+export {
+  realiseBhlIntentions,
+  type BhlFieldNote,
+  type BhlIntentionLimit,
+} from './bhlRealise';
 export { BHL_WORLDS, buildBhlWorldField, isBhlWorldId, type BhlWorldId, type BhlWorldField } from './bhlWorlds';
 export {
   generateBhlWorldGuitar,
@@ -71,3 +77,32 @@ export {
   type BhlRhythmMode,
   type BhlWorldGuitar,
 } from './bhlPhraseShape';
+export { BHL_STYLE_PROFILES, applyBhlProfile, bhlProfileById, type BhlStyleProfile } from './bhlProfiles';
+export {
+  applyQuartalColour,
+  bhlLiquidPreview,
+  bhlParentFields,
+  bhlPentatonicPitchClasses,
+  bhlResourceCatalog,
+  bhlVaultChoice,
+  prepareBhlMusic,
+  preferPentatonicOnEvents,
+  resolveBhlMotif,
+  type BhlMusicalRequest,
+  type BhlPreparedMusic,
+} from './bhlResources';
+export { presentBhlScore } from './bhlPresent';
+export { buildBhlScratchScore, bhlScratchSections, writeBhlScratchScore, type BhlScratchScore } from './bhlScratch';
+export {
+  loadBhlProject,
+  saveBhlProject,
+  validateBhlProject,
+  BHL_PROJECT_VERSION,
+  type BhlProjectV1,
+} from './bhlProject';
+export {
+  compareBhlCandidateXml,
+  composeBhlCandidate,
+  generateBhlCandidateSet,
+  refineBhlCandidate,
+} from './bhlCandidates';

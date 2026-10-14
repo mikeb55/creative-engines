@@ -15,6 +15,7 @@ import {
   bhlWrongTurningPath,
 } from '../../app-api/bhlApp';
 import { sha256File } from '../../core/bhl/bhlIngest';
+import { presentBhlScore } from '../../core/bhl/bhlPresent';
 
 const SOURCE = bhlWrongTurningPath();
 const SPAN = { from: 33, to: 40 };
@@ -138,7 +139,7 @@ check('export writes a new MusicXML and leaves the source hash', () => {
   assert.equal(exported.sourceUnchanged, true);
   assert.equal(exported.verification.ok, true, exported.verification.errors.join('; '));
   const disk = fs.readFileSync(exported.outputPath, 'utf8');
-  assert.equal(disk, composed.xml);
+  assert.equal(disk, presentBhlScore(composed.xml));
   loadScore(disk);
   assert.ok(exported.outputPath.includes('BHL-Composer'));
   assert.notEqual(pathResolve(exported.outputPath), pathResolve(SOURCE));

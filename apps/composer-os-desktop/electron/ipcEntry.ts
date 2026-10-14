@@ -25,11 +25,18 @@ import {
   getComposerOsRuntimeBuildInfo,
 } from '../../../engines/composer-os-v2/app-api/composerOsApiCore';
 import {
+  apiBhlCandidates,
+  apiBhlCatalog,
+  apiBhlCompare,
   apiBhlCompose,
   apiBhlDefaults,
   apiBhlExport,
   apiBhlInspect,
   apiBhlOpen,
+  apiBhlOpenProject,
+  apiBhlRefine,
+  apiBhlSaveProject,
+  apiBhlScratch,
 } from '../../../engines/composer-os-v2/app-api/bhlApp';
 import { openOutputFolderRoute } from '../../../scripts/openOutputFolderRoute';
 import {
@@ -398,6 +405,13 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
   ipcMain.handle('composer-os-api:bhl-compose', (_e, body: unknown) => apiBhlCompose(body));
   ipcMain.handle('composer-os-api:bhl-export', (_e, body: unknown) => apiBhlExport(body));
   ipcMain.handle('composer-os-api:bhl-open', (_e, body: unknown) => apiBhlOpen(body));
+  ipcMain.handle('composer-os-api:bhl-catalog', () => apiBhlCatalog());
+  ipcMain.handle('composer-os-api:bhl-candidates', (_e, body: unknown) => apiBhlCandidates(body));
+  ipcMain.handle('composer-os-api:bhl-refine', (_e, body: unknown) => apiBhlRefine(body));
+  ipcMain.handle('composer-os-api:bhl-compare', (_e, body: unknown) => apiBhlCompare(body));
+  ipcMain.handle('composer-os-api:bhl-project-save', (_e, body: unknown) => apiBhlSaveProject(body));
+  ipcMain.handle('composer-os-api:bhl-project-open', (_e, body: unknown) => apiBhlOpenProject(body));
+  ipcMain.handle('composer-os-api:bhl-scratch', (_e, body: unknown) => apiBhlScratch(body));
   ipcMain.handle('composer-os-api:generate-comping', (_e, body: unknown) =>
     Promise.resolve(apiGenerateComping(body as Parameters<typeof apiGenerateComping>[0]))
   );

@@ -29,11 +29,18 @@ import {
   apiGenerateComping,
 } from '../engines/composer-os-v2/app-api/composerOsApiCore';
 import {
+  apiBhlCandidates,
+  apiBhlCatalog,
+  apiBhlCompare,
   apiBhlCompose,
   apiBhlDefaults,
   apiBhlExport,
   apiBhlInspect,
   apiBhlOpen,
+  apiBhlOpenProject,
+  apiBhlRefine,
+  apiBhlSaveProject,
+  apiBhlScratch,
 } from '../engines/composer-os-v2/app-api/bhlApp';
 import { openOutputFolderRoute } from './openOutputFolderRoute';
 import { resolveDownloadFileTarget, sendDownloadFile } from './downloadFileRoute';
@@ -288,6 +295,62 @@ app.post('/api/bhl/export', (req: Request, res: Response) => {
 app.post('/api/bhl/open', (req: Request, res: Response) => {
   try {
     sendBhl(res, apiBhlOpen(req.body));
+  } catch (err) {
+    res.status(500).json({ ok: false, error: String(err) });
+  }
+});
+
+app.post('/api/bhl/catalog', (_req: Request, res: Response) => {
+  try {
+    sendBhl(res, apiBhlCatalog());
+  } catch (err) {
+    res.status(500).json({ ok: false, error: String(err) });
+  }
+});
+
+app.post('/api/bhl/candidates', (req: Request, res: Response) => {
+  try {
+    sendBhl(res, apiBhlCandidates(req.body));
+  } catch (err) {
+    res.status(500).json({ ok: false, error: String(err) });
+  }
+});
+
+app.post('/api/bhl/refine', (req: Request, res: Response) => {
+  try {
+    sendBhl(res, apiBhlRefine(req.body));
+  } catch (err) {
+    res.status(500).json({ ok: false, error: String(err) });
+  }
+});
+
+app.post('/api/bhl/compare', (req: Request, res: Response) => {
+  try {
+    sendBhl(res, apiBhlCompare(req.body));
+  } catch (err) {
+    res.status(500).json({ ok: false, error: String(err) });
+  }
+});
+
+app.post('/api/bhl/project/save', (req: Request, res: Response) => {
+  try {
+    sendBhl(res, apiBhlSaveProject(req.body));
+  } catch (err) {
+    res.status(500).json({ ok: false, error: String(err) });
+  }
+});
+
+app.post('/api/bhl/project/open', (req: Request, res: Response) => {
+  try {
+    sendBhl(res, apiBhlOpenProject(req.body));
+  } catch (err) {
+    res.status(500).json({ ok: false, error: String(err) });
+  }
+});
+
+app.post('/api/bhl/scratch', (req: Request, res: Response) => {
+  try {
+    sendBhl(res, apiBhlScratch(req.body));
   } catch (err) {
     res.status(500).json({ ok: false, error: String(err) });
   }

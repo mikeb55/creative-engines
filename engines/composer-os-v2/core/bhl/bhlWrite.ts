@@ -203,6 +203,8 @@ export function replaceBhlGuitar(
       }
     }
     let body = measure.replace(/<note\b[\s\S]*?<\/note>/g, '');
+    body = body.replace(/<backup\b[\s\S]*?<\/backup>/g, '');
+    body = body.replace(/<forward\b[\s\S]*?<\/forward>/g, '');
     if (dropHarmony) body = body.replace(/<harmony\b[\s\S]*?<\/harmony>/g, '');
     const notes = eventsToNotes(events, order, quarters, view.divisions, view.fifths);
     if (!body.includes('</measure>')) throw new Error(`bar ${order} lost its close tag`);

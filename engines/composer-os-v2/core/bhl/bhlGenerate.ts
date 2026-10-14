@@ -10,6 +10,7 @@ import { varyMotif } from '../motif/motifTracker';
 import type { BaseMotif } from '../motif/motifTypes';
 import { assessGuitarFeasibility } from '../barry-harris/guitarVoicingFeasibility';
 import type { BhlBassBar, BhlOnsetPlan } from './bhlRhythm';
+import { collectFieldNotes, guitarFeasibility, realiseBhlIntentions, type BhlFieldNote, type BhlIntentionLimit } from './bhlRealise';
 import { planPhraseOnsets } from './bhlRhythm';
 import {
   neighborCell,
@@ -42,6 +43,8 @@ export interface BhlGeneratedGuitar {
   onsetPlans: BhlOnsetPlan[];
   liquid: BhlLiquidTrace[];
   feasibility: BhlFeasibilityNote[];
+  limitations: BhlIntentionLimit[];
+  fieldNotes: BhlFieldNote[];
 }
 
 function mod12(value: number): number {
@@ -207,5 +210,8 @@ export function generateBhlGuitar(plan: BhlPhrasePlan, bars: readonly BhlBassBar
       });
     }
   }
-  return { events, snaps, onsetPlans, liquid, feasibility };
+  const fieldOf = (region: { pitchClasses: readonly number[] }) => region.pitchClasses;
+  const limitations = realiseBhlIntentions(plan, bars, events, fieldOf);
+  const fieldNotes = collectFieldNotes(plan, bars, events, fieldOf);
+  return { events, snaps, onsetPlans, liquid, feasibility: guitarFeasibility(events), limitations, fieldNotes };
 }

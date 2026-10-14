@@ -81,6 +81,39 @@ function hasFragment(heard: readonly number[], motif: readonly number[]): boolea
   return false;
 }
 
+function pitchClassesOf(line: readonly LineNote[]): number[] {
+  return line.map((note) => ((note.midi % 12) + 12) % 12);
+}
+
+function durationsOf(line: readonly LineNote[]): string[] {
+  return line.map((note) => `${note.durationN}/${note.durationD}`);
+}
+
+function continuationBlocked(region: BhlPhraseRegion): boolean {
+  return region.rhythmTransform === 'silence-window' || region.dialogue === 'leave-space' || region.dialogue === 'handoff-before-bass';
+}
+
+function fifthOnly(steps: readonly number[]): boolean {
+  return steps.length >= 2 && steps.every((step) => Math.abs(step) === 5 || Math.abs(step) === 7);
+}
+
+function mechanicalScale(steps: readonly number[], motif: readonly number[]): boolean {
+  if (steps.length < 3) return false;
+  const signs = new Set(steps.map((step) => Math.sign(step)));
+  const scalar = steps.every((step) => Math.abs(step) === 1 || Math.abs(step) === 2) && signs.size === 1;
+  return scalar && !hasFragment(steps, motif);
+}
+
+function rhythmMatches(heard: readonly LineNote[], statement: readonly LineNote[]): boolean {
+  if (heard.length < 2 || statement.length < 2) return false;
+  const left = durationsOf(heard);
+  const right = durationsOf(statement);
+  const length = Math.min(left.length, right.length);
+  let same = 0;
+  for (let index = 0; index < length; index++) if (left[index] === right[index]) same += 1;
+  return same >= 2 && same >= Math.min(2, length);
+}
+
 function registerSpan(line: readonly LineNote[]): string {
   if (!line.length) return 'empty';
   const midis = line.map((note) => note.midi);
@@ -150,7 +183,96 @@ export function auditBhlIntentions(xml: string, plan: BhlPhrasePlan): BhlIntentC
       }
     }
     if (region.role === 'continuation') {
-      results.push(check(region, `Continue from the previous region (${region.pitchTransform}).`, 'INDETERMINATE', 'Continuation has no sharper musical test. The composer decides whether it continues.'));
+      const intention = region.continuation
+        ? `Continue by ${region.continuation} without exact repetition, a scale run, or a fifth cycle.`
+        : 'Continue from the previous region only when a strategy is declared.';
+      if (!region.continuation || continuationBlocked(region)) {
+        const reason = !region.continuation
+          ? 'No continuation strategy is declared. Silence is not treated as a failed continuation.'
+          : region.rhythmTransform === 'silence-window'
+            ? 'The region is a silence window. Continuation was not required, and the rest was not scored as a failure.'
+            : region.dialogue === 'leave-space'
+              ? 'The region is assigned to leave space. Continuation was not required.'
+              : 'The region is a bass handoff. Continuation was not required.';
+        results.push(check(region, intention, 'INDETERMINATE', reason));
+      } else if (plan.motif.intervals.length < 1 || statementLine.length < 2 || line.length < 2) {
+        results.push(check(region, intention, 'INDETERMINATE', 'The source or this region does not have enough notes to recognise a continuation. No motif was inferred.'));
+      } else if (region.continuation === 'fragment' && plan.motif.intervals.length < 2) {
+        results.push(check(region, intention, 'INDETERMINATE', 'The motif has fewer than two intervals, so a smaller fragment cannot be judged.'));
+      } else if (fifthOnly(heard)) {
+        results.push(check(region, intention, 'NOT OBSERVED', `Heard steps ${heard.join(', ')} are fifth motion. That is not a BHL continuation.`));
+      } else if (
+        pitchClassesOf(line).join(',') === pitchClassesOf(statementLine).join(',')
+        && (sameSteps(heard, statementSteps) || sameSteps(heard, plan.motif.intervals))
+      ) {
+        results.push(check(region, intention, 'NOT OBSERVED', `Heard pitches ${pitchClassesOf(line).join(', ')} repeat the earlier line exactly.`));
+      } else if (mechanicalScale(heard, plan.motif.intervals)) {
+        results.push(check(region, intention, 'NOT OBSERVED', `Heard steps ${heard.join(', ')} are a straight scale with no motif fragment.`));
+      } else if (region.continuation === 'rhythm') {
+        const matched = rhythmMatches(line, statementLine) && !sameSteps(heard, plan.motif.intervals);
+        results.push(check(
+          region,
+          intention,
+          matched ? 'VERIFIED' : line.length >= 2 ? 'NOT OBSERVED' : 'INDETERMINATE',
+          matched
+            ? `Durations follow the earlier line while the pitches move ${heard.join(', ')}.`
+            : `Durations or pitches do not continue the earlier rhythm. Heard steps ${heard.join(', ') || 'none'}.`,
+        ));
+      } else if (region.continuation === 'converse') {
+        const bassOnsets = report.events.filter((event) => event.attack && basses.includes(voiceKey(event)) && region.bars.includes(event.bar));
+        const guitarOnsets = report.events.filter((event) => event.attack && guitars.includes(voiceKey(event)) && region.bars.includes(event.bar));
+        const answered = bassOnsets.some((bass) => guitarOnsets.some((guitar) => guitar.bar === bass.bar && qCmp(guitar.onset, bass.onset) > 0));
+        const related = hasFragment(heard, plan.motif.intervals) || pitchClassesOf(line).some((pc) => pitchClassesOf(statementLine).includes(pc));
+        results.push(check(
+          region,
+          intention,
+          !bassOnsets.length ? 'INDETERMINATE' : answered && related ? 'VERIFIED' : 'NOT OBSERVED',
+          !bassOnsets.length
+            ? 'The bass has no attack in this region, so a reply was not judged.'
+            : answered && related
+              ? 'A guitar attack answers a bass attack, and the line keeps a pitch or interval from the motif.'
+              : 'The guitar does not answer the bass, or the pitches are unrelated to the motif.',
+        ));
+      } else if (region.continuation === 'sequence') {
+        if (line.length < plan.motif.intervals.length + 1) {
+          results.push(check(region, intention, 'INDETERMINATE', 'Not enough attacks to hear the motif shape in a new place.'));
+        } else {
+          const shape = sameSteps(heard.slice(0, plan.motif.intervals.length), plan.motif.intervals);
+          const moved = pitchClassesOf(line)[0] !== pitchClassesOf(statementLine)[0];
+          results.push(check(
+            region,
+            intention,
+            shape && moved ? 'VERIFIED' : 'NOT OBSERVED',
+            shape && moved
+              ? `The interval shape ${plan.motif.intervals.join(', ')} starts on a different pitch class.`
+              : `Heard steps ${heard.join(', ')} do not transfer the motif shape.`,
+          ));
+        }
+      } else if (region.continuation === 'fragment') {
+        const cell = plan.motif.intervals[0]!;
+        const repeats = heard.filter((step) => step === cell).length >= 2;
+        const notTheWholeCell = !sameSteps(heard, plan.motif.intervals);
+        results.push(check(
+          region,
+          intention,
+          repeats && notTheWholeCell ? 'VERIFIED' : 'NOT OBSERVED',
+          repeats && notTheWholeCell
+            ? `Heard steps ${heard.join(', ')} repeat the smaller interval ${cell} and do not restate the whole cell.`
+            : `Heard steps ${heard.join(', ')} do not develop a smaller fragment.`,
+        ));
+      } else if (line.length <= plan.motif.intervals.length + 1) {
+        results.push(check(region, intention, 'INDETERMINATE', 'Not enough attacks to hear the motif continue past its original cell.'));
+      } else {
+        const extended = hasFragment(heard, plan.motif.intervals) && heard.length > plan.motif.intervals.length;
+        results.push(check(
+          region,
+          intention,
+          extended ? 'VERIFIED' : 'NOT OBSERVED',
+          extended
+            ? `Heard steps ${heard.join(', ')} carry the motif intervals past the original cell.`
+            : `Heard steps ${heard.join(', ')} do not extend the motif.`,
+        ));
+      }
     }
 
     if (region.dialogue === 'counter-motion') {

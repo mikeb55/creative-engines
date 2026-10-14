@@ -19,6 +19,9 @@ import type { BhlSourceEvent, BhlMetreLock } from './bhlTypes';
 
 export type BhlPhraseRole = 'statement' | 'transformation' | 'development' | 'return' | 'continuation';
 
+/** How a continuation region develops. Absent means the region keeps its dialogue and is not rewritten. */
+export type BhlContinuationStrategy = 'extend' | 'fragment' | 'sequence' | 'rhythm' | 'converse';
+
 export type BhlPitchTransform =
   | 'neighbor-statement'
   | 'invert-into-field'
@@ -75,6 +78,10 @@ export interface BhlPhraseRegion {
   ostinatoJustified: boolean;
   retainPitchClass: number | null;
   predicates: string[];
+  /** Declared only when this continuation region should develop. Silence, handoff, and leave-space still block it. */
+  continuation?: BhlContinuationStrategy;
+  /** One explicit pitch outside the selected field. Accidental leakage stays snapped. */
+  outsideColour?: boolean;
 }
 
 export interface BhlMotifSource {

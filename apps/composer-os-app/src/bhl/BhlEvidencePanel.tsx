@@ -121,15 +121,21 @@ export function BhlEvidencePanel({
   original,
   candidate,
   intentions,
+  limitations,
+  fieldNotes,
   comparison,
   provisional,
 }: {
   original: BhlEvidenceView | null;
   candidate: BhlEvidenceView | null;
   intentions: BhlIntentView[];
+  limitations?: Array<{ regionId: string; intention: string; reason: string }>;
+  fieldNotes?: Array<{ bar: number; onsetQuarters: number; pitchClass: number; status: 'in-field' | 'outside-permitted' }>;
   comparison: BhlComparisonView | null;
   provisional: boolean;
 }) {
+  const outside = (fieldNotes ?? []).filter((note) => note.status === 'outside-permitted');
+  const inField = (fieldNotes ?? []).filter((note) => note.status === 'in-field').length;
   const [marks, setMarks] = useState<Record<string, string>>({});
   const questions = [...(original?.questions ?? []), ...(provisional ? candidate?.questions ?? [] : [])];
   return (
@@ -173,6 +179,30 @@ export function BhlEvidencePanel({
       ) : (
         <p style={{ margin: 0 }}>Generate a candidate to audit its declared intentions. This is separate from source-lock validation.</p>
       )}
+      <h4 style={{ margin: 0 }}>Harmonic field</h4>
+      <p style={{ margin: 0 }} data-testid="bhl-field-compliance">
+        {fieldNotes?.length ? `${inField} generated pitch classes sit in the selected field.` : 'Generate a candidate to read field compliance.'}
+      </p>
+      {outside.length ? (
+        <ul style={{ margin: 0, paddingLeft: '1.1rem' }} data-testid="bhl-outside-notes">
+          {outside.map((note) => (
+            <li key={`${note.bar}-${note.onsetQuarters}-${note.pitchClass}`}>
+              Bar {note.bar} at {note.onsetQuarters}: pitch class {note.pitchClass} is an intentional outside colour.
+            </li>
+          ))}
+        </ul>
+      ) : fieldNotes?.length ? (
+        <p style={{ margin: 0 }}>No intentional outside-field notes.</p>
+      ) : null}
+      {limitations?.length ? (
+        <ul style={{ margin: 0, paddingLeft: '1.1rem' }} data-testid="bhl-intention-limits">
+          {limitations.map((item) => (
+            <li key={`${item.regionId}-${item.intention}`}>
+              {item.regionId}: {item.reason}
+            </li>
+          ))}
+        </ul>
+      ) : null}
       <h4 style={{ margin: 0 }}>Questions for the Composer</h4>
       {questions.map((question) => (
         <div key={question}>

@@ -66,6 +66,8 @@ type Compose = Inspect & {
     candidate: BhlEvidenceView;
     comparison: BhlComparisonView;
     intentions: BhlIntentView[];
+    limitations?: Array<{ regionId: string; intention: string; reason: string }>;
+    fieldNotes?: Array<{ bar: number; onsetQuarters: number; pitchClass: number; status: 'in-field' | 'outside-permitted' }>;
     provisional: true;
   };
 };
@@ -123,6 +125,8 @@ export function BhlComposerPage() {
   const [seed, setSeed] = useState(3340);
   const [world, setWorld] = useState('A');
   const [phraseArc, setPhraseArc] = useState('derived');
+  const [continuation, setContinuation] = useState('hold');
+  const [outsideColour, setOutsideColour] = useState(false);
   const [rhythm, setRhythm] = useState('derived');
   const [protectedText, setProtectedText] = useState('');
   const [exportDir, setExportDir] = useState('');
@@ -134,8 +138,60 @@ export function BhlComposerPage() {
   const [result, setResult] = useState<Compose | null>(null);
   const [stale, setStale] = useState(false);
   const [outputPath, setOutputPath] = useState('');
+  const [mode, setMode] = useState<'import' | 'scratch'>('import');
+  const [scratchBars, setScratchBars] = useState(16);
+  const [scratchBeats, setScratchBeats] = useState(4);
+  const [scratchBeatType, setScratchBeatType] = useState(4);
+  const [scratchTempo, setScratchTempo] = useState(92);
+  const [profileId, setProfileId] = useState('');
+  const [profiles, setProfiles] = useState<Array<{ id: string; name: string; description: string; density: string; dialogue: string; rhythm: string; phraseArc: string; continuation: string; quartal: boolean }>>([]);
+  const [pentatonicOn, setPentatonicOn] = useState(false);
+  const [archetypeId, setArchetypeId] = useState('major_pentatonic');
+  const [referenceNote, setReferenceNote] = useState('C');
+  const [relationshipId, setRelationshipId] = useState('home');
+  const [archetypes, setArchetypes] = useState<Array<{ id: string; name: string }>>([]);
+  const [relationships, setRelationships] = useState<Array<{ id: string; label: string }>>([]);
+  const [referenceNotes, setReferenceNotes] = useState<string[]>(['C']);
+  const [parentOn, setParentOn] = useState(false);
+  const [parentText, setParentText] = useState('0 2 4 7 9');
+  const [quartal, setQuartal] = useState(false);
+  const [motifOn, setMotifOn] = useState(false);
+  const [motifKind, setMotifKind] = useState('import');
+  const [motifPitches, setMotifPitches] = useState('64 67 71');
+  const [motifIntervals, setMotifIntervals] = useState('2 1 -2');
+  const [riffSeed, setRiffSeed] = useState(17);
+  const [motifTransform, setMotifTransform] = useState('none');
+  const [motifSemitones, setMotifSemitones] = useState(2);
+  const [catalogNote, setCatalogNote] = useState('');
+  const [candidates, setCandidates] = useState<Array<Record<string, unknown>>>([]);
+  const [selectedCandidate, setSelectedCandidate] = useState('');
+  const [compareText, setCompareText] = useState('');
+  const [projectNotes, setProjectNotes] = useState('');
+  const [projectPath, setProjectPath] = useState('');
+  const [projectId, setProjectId] = useState('bhl-project');
+  const [scratchXml, setScratchXml] = useState('');
 
   useEffect(() => {
+    void api.bhlCatalog().then((raw) => {
+      const row = raw as {
+        ok?: boolean;
+        catalog?: {
+          profiles: Array<{ id: string; name: string; description: string; density: string; dialogue: string; rhythm: string; phraseArc: string; continuation: string; quartal: boolean }>;
+          pentatonic: Array<{ id: string; name: string }>;
+          relationships: Array<{ id: string; label: string }>;
+          referenceNotes: string[];
+          notWired: string[];
+        };
+      };
+      if (!row.ok || !row.catalog) return;
+      setProfiles(row.catalog.profiles);
+      setArchetypes(row.catalog.pentatonic);
+      setRelationships(row.catalog.relationships);
+      setReferenceNotes(row.catalog.referenceNotes);
+      setCatalogNote(row.catalog.notWired.join(' '));
+    }).catch(() => {
+      setCatalogNote('Resource catalog failed to load.');
+    });
     void api.bhlDefaults().then((raw) => {
       const row = raw as { ok?: boolean; sourcePath?: string; exportDir?: string; span?: Span; error?: string };
       if (!row.ok || !row.sourcePath) {
@@ -155,6 +211,60 @@ export function BhlComposerPage() {
 
   function markDirty() {
     setStale(true);
+  }
+
+  function musicalBody(): Record<string, unknown> {
+    const parentPitchClasses = parentText
+      .split(/[^0-9-]+/)
+      .filter(Boolean)
+      .map((value) => Number(value))
+      .filter((value) => Number.isInteger(value));
+    const pitches = motifPitches
+      .split(/[^0-9-]+/)
+      .filter(Boolean)
+      .map((value) => Number(value))
+      .filter((value) => Number.isInteger(value));
+    const intervals = motifIntervals
+      .split(/[^0-9-]+/)
+      .filter(Boolean)
+      .map((value) => Number(value))
+      .filter((value) => Number.isInteger(value));
+    return {
+      ...(profileId ? { profileId } : {}),
+      ...(pentatonicOn ? { pentatonic: { archetypeId, referenceNote, relationshipId } } : {}),
+      ...(parentOn ? { parentPitchClasses } : {}),
+      ...(motifOn
+        ? {
+            motif: {
+              kind: motifKind,
+              pitches,
+              intervals,
+              riffSeed,
+              pitchTransform: motifTransform,
+              semitones: motifSemitones,
+            },
+          }
+        : {}),
+      quartal,
+    };
+  }
+
+  function applyProfile(id: string) {
+    setProfileId(id);
+    const profile = profiles.find((item) => item.id === id);
+    if (!profile) return;
+    setPhraseArc(profile.phraseArc);
+    setContinuation(profile.continuation);
+    setRhythm(profile.rhythm);
+    setQuartal(profile.quartal);
+    setEdits((prev) => {
+      const next = { ...prev };
+      for (const key of Object.keys(next)) {
+        next[key] = { ...next[key]!, density: profile.density, dialogue: profile.dialogue };
+      }
+      return next;
+    });
+    markDirty();
   }
 
   function patchRegion(id: string, patch: Partial<RegionEdit>) {
@@ -221,9 +331,13 @@ export function BhlComposerPage() {
         seed,
         world,
         phraseArc,
+        continuation,
+        outsideColour,
         rhythm,
         protectedGuitarBars: protectedText,
         regions,
+        musical: musicalBody(),
+        quartal,
       });
       const row = raw as Compose | { ok: false; error: string };
       if (!row.ok) throw new Error(row.error);
@@ -272,6 +386,198 @@ export function BhlComposerPage() {
     }
   }
 
+  async function onScratch() {
+    setBusy(true);
+    setError('');
+    setStatus('Writing a new guitar and bass score…');
+    try {
+      const raw = await api.bhlScratch({
+        bars: scratchBars,
+        beats: scratchBeats,
+        beatType: scratchBeatType,
+        tempo: scratchTempo,
+        seed,
+        title: 'BHL from scratch',
+        overwrite: false,
+      });
+      const row = raw as { ok: true; sourcePath: string; xml: string; span: Span; sections: Array<{ mark: string; role: string; from: number; to: number }> } | { ok: false; error: string };
+      if (!row.ok) throw new Error(row.error);
+      setScratchXml(row.xml);
+      setSourcePath(row.sourcePath);
+      setSpanFrom(row.span.from);
+      setSpanTo(row.span.to);
+      setLocked(null);
+      setResult(null);
+      setCandidates([]);
+      setStatus(`New score ${row.sections.map((section) => `${section.mark} ${section.role} ${section.from}–${section.to}`).join(' · ')}. Import and lock it.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setStatus('New score failed.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function generationBody(extra: Record<string, unknown> = {}) {
+    const regions = locked?.plan.regions.map((region) => ({
+      id: region.id,
+      ...(edits[region.id] ?? {}),
+    }));
+    return {
+      sourcePath,
+      span: { from: spanFrom, to: spanTo },
+      seed,
+      world,
+      phraseArc,
+      continuation,
+      outsideColour,
+      rhythm,
+      protectedGuitarBars: protectedText,
+      regions,
+      musical: musicalBody(),
+      quartal,
+      ...extra,
+    };
+  }
+
+  async function onCandidates() {
+    if (!locked) return;
+    setBusy(true);
+    setError('');
+    setStatus('Generating three candidates…');
+    try {
+      const raw = await api.bhlCandidates(generationBody());
+      const row = raw as { ok: true; candidates: Array<Record<string, unknown>> } | { ok: false; error: string };
+      if (!row.ok) throw new Error(row.error);
+      setCandidates(row.candidates);
+      setSelectedCandidate(String(row.candidates[0]?.id ?? ''));
+      setCompareText('');
+      setStatus('Three candidates stored. Comparison uses those files and does not generate again.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setStatus('Candidate generation failed.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onCompare() {
+    const left = candidates.find((item) => item.id === selectedCandidate) ?? candidates[0];
+    const right = candidates.find((item) => item.id !== left?.id);
+    if (!left || !right) return;
+    setBusy(true);
+    setError('');
+    try {
+      const raw = await api.bhlCompare({
+        leftXml: left.xml,
+        rightXml: right.xml,
+        span: { from: spanFrom, to: spanTo },
+      });
+      const row = raw as { ok: true; left: Record<string, unknown>; right: Record<string, unknown>; comparison: { notice: string } } | { ok: false; error: string };
+      if (!row.ok) throw new Error(row.error);
+      setCompareText(
+        `${left.label} attacks ${String(row.left.guitarAttacks)}, rests ${String(row.left.guitarRests)}, voices ${JSON.stringify(row.left.voices)}, silences ${String(row.left.silences)}.\n${right.label} attacks ${String(row.right.guitarAttacks)}, rests ${String(row.right.guitarRests)}, voices ${JSON.stringify(row.right.voices)}, silences ${String(row.right.silences)}.\n${row.comparison.notice}`,
+      );
+      setStatus('Compared the stored MusicXML.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onRefine() {
+    const original = candidates.find((item) => item.id === selectedCandidate);
+    if (!original || !locked) return;
+    setBusy(true);
+    setError('');
+    setStatus('Refining a copy. The selected candidate stays in the list.');
+    try {
+      const raw = await api.bhlRefine(generationBody({ original, seed: seed + 1 }));
+      const row = raw as { ok: true; refined: Record<string, unknown> } | { ok: false; error: string };
+      if (!row.ok) throw new Error(row.error);
+      setCandidates((prev) => [...prev, row.refined]);
+      setSelectedCandidate(String(row.refined.id));
+      setStatus('Refined candidate added. The original is still in the list.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onSaveProject() {
+    setBusy(true);
+    setError('');
+    try {
+      if (!locked) throw new Error('Import and lock before saving.');
+      const project = {
+        format: 'bhl-project',
+        version: 1,
+        id: projectId,
+        title: projectId,
+        savedAt: new Date().toISOString(),
+        notes: projectNotes,
+        mode,
+        source: {
+          path: locked.sourcePath,
+          sha256: locked.sourceSha256,
+          ...(mode === 'scratch' && scratchXml ? { xml: scratchXml } : {}),
+        },
+        span: { from: spanFrom, to: spanTo },
+        world,
+        settings: { seed, phraseArc, continuation, rhythm, outsideColour, musical: musicalBody() },
+        candidates: candidates.map((item) => ({
+          ...item,
+          notes: typeof item.notes === 'string' ? item.notes : projectNotes,
+          decision: typeof item.decision === 'string' ? item.decision : '',
+        })),
+        selectedCandidateId: selectedCandidate || null,
+      };
+      const raw = await api.bhlSaveProject({ project, overwrite: false });
+      const row = raw as { ok: true; path: string } | { ok: false; error: string };
+      if (!row.ok) throw new Error(row.error);
+      setProjectPath(row.path);
+      setStatus(`Saved ${row.path}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onOpenProject() {
+    if (!projectPath) return;
+    setBusy(true);
+    setError('');
+    try {
+      const raw = await api.bhlOpenProject({ path: projectPath });
+      const row = raw as { ok: true; project: Record<string, unknown> } | { ok: false; error: string };
+      if (!row.ok) throw new Error(row.error);
+      const project = row.project;
+      const source = project.source as { path?: string };
+      if (source?.path) setSourcePath(source.path);
+      const span = project.span as Span;
+      if (span) {
+        setSpanFrom(span.from);
+        setSpanTo(span.to);
+      }
+      if (typeof project.world === 'string') setWorld(project.world);
+      if (typeof project.notes === 'string') setProjectNotes(project.notes);
+      if (typeof project.mode === 'string') setMode(project.mode === 'scratch' ? 'scratch' : 'import');
+      const stored = Array.isArray(project.candidates) ? (project.candidates as Array<Record<string, unknown>>) : [];
+      setCandidates(stored);
+      setSelectedCandidate(typeof project.selectedCandidateId === 'string' ? project.selectedCandidateId : String(stored[0]?.id ?? ''));
+      setLocked(null);
+      setResult(null);
+      setStatus('Project reopened from disk. Import and lock again before a new generation. Stored candidates are still here.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function onOpen() {
     if (!outputPath) return;
     setError('');
@@ -311,6 +617,46 @@ export function BhlComposerPage() {
           {error}
         </p>
       ) : null}
+
+      <section style={panel} data-testid="bhl-source-mode">
+        <h3 style={{ margin: 0 }}>1. Source or new composition</h3>
+        <label htmlFor="bhl-mode">
+          Mode
+          <select
+            id="bhl-mode"
+            data-testid="bhl-mode"
+            value={mode}
+            onChange={(event) => setMode(event.target.value === 'scratch' ? 'scratch' : 'import')}
+            style={{ marginLeft: '0.35rem' }}
+          >
+            <option value="import">Import MusicXML</option>
+            <option value="scratch">New composition</option>
+          </select>
+        </label>
+        {mode === 'scratch' ? (
+          <div data-testid="bhl-scratch" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'end' }}>
+            <label htmlFor="bhl-scratch-bars">
+              Bars
+              <input id="bhl-scratch-bars" data-testid="bhl-scratch-bars" type="number" min={6} max={64} value={scratchBars} onChange={(event) => setScratchBars(Number(event.target.value))} style={{ width: '4rem', marginLeft: '0.35rem' }} />
+            </label>
+            <label htmlFor="bhl-scratch-beats">
+              Beats
+              <input id="bhl-scratch-beats" data-testid="bhl-scratch-beats" type="number" min={2} max={7} value={scratchBeats} onChange={(event) => setScratchBeats(Number(event.target.value))} style={{ width: '4rem', marginLeft: '0.35rem' }} />
+            </label>
+            <label htmlFor="bhl-scratch-type">
+              Beat type
+              <input id="bhl-scratch-type" data-testid="bhl-scratch-type" type="number" value={scratchBeatType} onChange={(event) => setScratchBeatType(Number(event.target.value))} style={{ width: '4rem', marginLeft: '0.35rem' }} />
+            </label>
+            <label htmlFor="bhl-scratch-tempo">
+              Tempo
+              <input id="bhl-scratch-tempo" data-testid="bhl-scratch-tempo" type="number" min={40} max={240} value={scratchTempo} onChange={(event) => setScratchTempo(Number(event.target.value))} style={{ width: '5rem', marginLeft: '0.35rem' }} />
+            </label>
+            <button type="button" data-testid="bhl-scratch-create" onClick={() => void onScratch()} disabled={busy}>
+              Create guitar and bass score
+            </button>
+          </div>
+        ) : null}
+      </section>
 
       <section style={panel} data-testid="bhl-import">
         <h3 style={{ margin: 0 }}>Import and lock</h3>
@@ -426,6 +772,29 @@ export function BhlComposerPage() {
       {locked ? (
         <section style={panel} data-testid="bhl-configure">
           <h3 style={{ margin: 0 }}>Phrase and harmonic world</h3>
+          <h3 style={{ margin: 0 }}>2. Musical language</h3>
+          <label htmlFor="bhl-profile">
+            Approach
+            <select
+              id="bhl-profile"
+              data-testid="bhl-profile"
+              value={profileId}
+              onChange={(event) => applyProfile(event.target.value)}
+              style={{ width: '100%', marginTop: '0.25rem' }}
+            >
+              <option value="">No profile — use the controls below</option>
+              {profiles.map((profile) => (
+                <option key={profile.id} value={profile.id}>
+                  {profile.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          {profileId ? (
+            <p style={{ margin: 0 }} data-testid="bhl-profile-copy">
+              {profiles.find((profile) => profile.id === profileId)?.description} Changing density, dialogue, rhythm, or continuation overrides the profile.
+            </p>
+          ) : null}
           <label htmlFor="bhl-world">
             Harmonic world
             <select
@@ -461,6 +830,39 @@ export function BhlComposerPage() {
               <option value="invert">invert the development</option>
               <option value="recall">recall the cell on the return</option>
             </select>
+          </label>
+          <label htmlFor="bhl-continuation">
+            Phrase continuation
+            <select
+              id="bhl-continuation"
+              data-testid="bhl-continuation"
+              value={continuation}
+              onChange={(event) => {
+                setContinuation(event.target.value);
+                markDirty();
+              }}
+              style={{ marginLeft: '0.35rem' }}
+            >
+              <option value="hold">keep the region's assigned dialogue</option>
+              <option value="extend">extend the motif</option>
+              <option value="fragment">fragment the motif</option>
+              <option value="sequence">sequence the shape inside the field</option>
+              <option value="rhythm">keep the rhythm, change the pitches</option>
+              <option value="converse">answer the bass</option>
+            </select>
+          </label>
+          <label htmlFor="bhl-outside">
+            <input
+              id="bhl-outside"
+              data-testid="bhl-outside-colour"
+              type="checkbox"
+              checked={outsideColour}
+              onChange={(event) => {
+                setOutsideColour(event.target.checked);
+                markDirty();
+              }}
+            />{' '}
+            Permit one outside-field colour
           </label>
           <label htmlFor="bhl-rhythm">
             Rhythm
@@ -555,9 +957,91 @@ export function BhlComposerPage() {
               </div>
             );
           })}
+          <details data-testid="bhl-resources">
+            <summary>Pentatonic, motif, and quartal colour</summary>
+            <label htmlFor="bhl-pentatonic-on">
+              <input id="bhl-pentatonic-on" data-testid="bhl-pentatonic-on" type="checkbox" checked={pentatonicOn} onChange={(event) => { setPentatonicOn(event.target.checked); markDirty(); }} /> Use a pentatonic collection on the development
+            </label>
+            {pentatonicOn ? (
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <label htmlFor="bhl-archetype">
+                  Collection
+                  <select id="bhl-archetype" data-testid="bhl-archetype" value={archetypeId} onChange={(event) => { setArchetypeId(event.target.value); markDirty(); }}>
+                    {archetypes.map((item) => (
+                      <option key={item.id} value={item.id}>{item.name}</option>
+                    ))}
+                  </select>
+                </label>
+                <label htmlFor="bhl-reference">
+                  Reference
+                  <select id="bhl-reference" data-testid="bhl-reference" value={referenceNote} onChange={(event) => { setReferenceNote(event.target.value); markDirty(); }}>
+                    {referenceNotes.map((note) => (
+                      <option key={note} value={note}>{note}</option>
+                    ))}
+                  </select>
+                </label>
+                <label htmlFor="bhl-relationship">
+                  Relationship
+                  <select id="bhl-relationship" data-testid="bhl-relationship" value={relationshipId} onChange={(event) => { setRelationshipId(event.target.value); markDirty(); }}>
+                    {relationships.map((item) => (
+                      <option key={item.id} value={item.id}>{item.label}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            ) : null}
+            <label htmlFor="bhl-parent-on">
+              <input id="bhl-parent-on" data-testid="bhl-parent-on" type="checkbox" checked={parentOn} onChange={(event) => { setParentOn(event.target.checked); markDirty(); }} /> Derive a field from these pitch classes when no collection is selected
+            </label>
+            {parentOn ? (
+              <input id="bhl-parent" data-testid="bhl-parent" value={parentText} onChange={(event) => { setParentText(event.target.value); markDirty(); }} />
+            ) : null}
+            <label htmlFor="bhl-quartal">
+              <input id="bhl-quartal" data-testid="bhl-quartal" type="checkbox" checked={quartal} onChange={(event) => { setQuartal(event.target.checked); markDirty(); }} /> Quartal colour on dyads when the collection has a fourth
+            </label>
+            <label htmlFor="bhl-motif-on">
+              <input id="bhl-motif-on" data-testid="bhl-motif-on" type="checkbox" checked={motifOn} onChange={(event) => { setMotifOn(event.target.checked); markDirty(); }} /> Replace the opening cell
+            </label>
+            {motifOn ? (
+              <div style={{ display: 'grid', gap: '0.35rem' }}>
+                <label htmlFor="bhl-motif-kind">
+                  Motif source
+                  <select id="bhl-motif-kind" data-testid="bhl-motif-kind" value={motifKind} onChange={(event) => { setMotifKind(event.target.value); markDirty(); }}>
+                    <option value="import">Imported pitches</option>
+                    <option value="constraints">Intervals</option>
+                    <option value="riff">Existing riff generator</option>
+                  </select>
+                </label>
+                {motifKind === 'import' ? (
+                  <input data-testid="bhl-motif-pitches" value={motifPitches} onChange={(event) => { setMotifPitches(event.target.value); markDirty(); }} />
+                ) : null}
+                {motifKind === 'constraints' ? (
+                  <input data-testid="bhl-motif-intervals" value={motifIntervals} onChange={(event) => { setMotifIntervals(event.target.value); markDirty(); }} />
+                ) : null}
+                {motifKind === 'riff' ? (
+                  <input data-testid="bhl-riff-seed" type="number" value={riffSeed} onChange={(event) => { setRiffSeed(Number(event.target.value)); markDirty(); }} />
+                ) : null}
+                <label htmlFor="bhl-motif-transform">
+                  Transform
+                  <select id="bhl-motif-transform" data-testid="bhl-motif-transform" value={motifTransform} onChange={(event) => { setMotifTransform(event.target.value); markDirty(); }}>
+                    <option value="none">None</option>
+                    <option value="transpose">Transpose</option>
+                    <option value="invert">Invert</option>
+                    <option value="fragment">Fragment</option>
+                    <option value="register">Register transfer</option>
+                  </select>
+                </label>
+                {motifTransform === 'transpose' ? (
+                  <input data-testid="bhl-motif-semitones" type="number" value={motifSemitones} onChange={(event) => { setMotifSemitones(Number(event.target.value)); markDirty(); }} />
+                ) : null}
+              </div>
+            ) : null}
+            {catalogNote ? <p style={{ margin: 0, color: 'var(--text-muted)' }}>{catalogNote}</p> : null}
+          </details>
           <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-            The world changes the pitch field. Counter-motion writes a second guitar voice against the bass. A triad or
-            dyad is one grip. A counterline is a second voice. Leave space keeps the last beat empty.
+            The world changes the pitch field. Continuation develops a continuation region unless that region is silence,
+            a handoff, or leave-space. Counter-motion writes a second guitar voice against the bass. A triad or dyad is
+            one grip. Leave space keeps the last beat empty. Rhythm does not rewrite the motif pitches.
           </p>
           {lockInputsDiffer ? (
             <p data-testid="bhl-relock">Bar span, path, or protected bars changed. Import and lock again before generating.</p>
@@ -569,7 +1053,7 @@ export function BhlComposerPage() {
       ) : null}
 
       {locked && !result ? (
-        <BhlEvidencePanel original={locked.evidence} candidate={null} intentions={[]} comparison={null} provisional={false} />
+        <BhlEvidencePanel original={locked.evidence} candidate={null} intentions={[]} limitations={[]} comparison={null} provisional={false} />
       ) : null}
 
       {result ? (
@@ -596,6 +1080,8 @@ export function BhlComposerPage() {
             original={locked?.evidence ?? result.musicalEvidence?.original ?? null}
             candidate={result.musicalEvidence?.candidate ?? null}
             intentions={result.musicalEvidence?.intentions ?? []}
+            limitations={result.musicalEvidence?.limitations ?? []}
+            fieldNotes={result.musicalEvidence?.fieldNotes ?? []}
             comparison={result.musicalEvidence?.comparison ?? null}
             provisional={Boolean(result.musicalEvidence?.provisional)}
           />
@@ -656,11 +1142,58 @@ export function BhlComposerPage() {
         </section>
       ) : null}
 
-      <section style={panel} data-testid="bhl-later">
-        <h3 style={{ margin: 0 }}>Not on this page</h3>
-        <p style={{ margin: 0, color: 'var(--text-muted)' }}>
-          Artist profiles, a piece from scratch, several candidates side by side, and session save stay off this screen.
-        </p>
+      <section style={panel} data-testid="bhl-candidates">
+        <h3 style={{ margin: 0 }}>5. Candidates</h3>
+        <button type="button" data-testid="bhl-candidates-generate" onClick={() => void onCandidates()} disabled={busy || !locked || lockInputsDiffer}>
+          Generate three candidates
+        </button>
+        {candidates.map((item) => (
+          <label key={String(item.id)} style={{ display: 'block' }}>
+            <input
+              type="radio"
+              name="bhl-candidate"
+              data-testid="bhl-candidate"
+              checked={selectedCandidate === item.id}
+              onChange={() => setSelectedCandidate(String(item.id))}
+            />{' '}
+            {String(item.label)} · seed {String(item.seed)}
+            {item.parentId ? ` · refined from ${String(item.parentId)}` : ''}
+          </label>
+        ))}
+        <button type="button" data-testid="bhl-compare" onClick={() => void onCompare()} disabled={busy || candidates.length < 2}>
+          Compare stored candidates
+        </button>
+        <button type="button" data-testid="bhl-refine" onClick={() => void onRefine()} disabled={busy || !selectedCandidate}>
+          Refine a copy
+        </button>
+        {compareText ? (
+          <pre data-testid="bhl-compare-text" style={{ whiteSpace: 'pre-wrap', margin: 0 }}>
+            {compareText}
+          </pre>
+        ) : null}
+        <p style={{ margin: 0, color: 'var(--text-muted)' }}>No numerical score and no automatic winner. CANDIDATE FOR AUDITION — NOT MUSICALLY APPROVED.</p>
+      </section>
+
+      <section style={panel} data-testid="bhl-save">
+        <h3 style={{ margin: 0 }}>7. Save</h3>
+        <label htmlFor="bhl-project-id">
+          Project id
+          <input id="bhl-project-id" data-testid="bhl-project-id" value={projectId} onChange={(event) => setProjectId(event.target.value)} style={{ marginLeft: '0.35rem' }} />
+        </label>
+        <label htmlFor="bhl-notes">
+          Notes
+          <textarea id="bhl-notes" data-testid="bhl-notes" value={projectNotes} onChange={(event) => setProjectNotes(event.target.value)} rows={3} style={{ width: '100%' }} />
+        </label>
+        <button type="button" data-testid="bhl-save-project" onClick={() => void onSaveProject()} disabled={busy || candidates.length === 0}>
+          Save project
+        </button>
+        <label htmlFor="bhl-project-path">
+          Project path
+          <input id="bhl-project-path" data-testid="bhl-project-path" value={projectPath} onChange={(event) => setProjectPath(event.target.value)} style={{ width: '100%' }} />
+        </label>
+        <button type="button" data-testid="bhl-open-project" onClick={() => void onOpenProject()} disabled={busy || !projectPath}>
+          Reopen project
+        </button>
       </section>
     </div>
   );
