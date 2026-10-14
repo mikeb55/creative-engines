@@ -100,7 +100,7 @@ export interface BhlResourceCatalog {
   referenceNotes: readonly string[];
   engines: {
     riff: 'generateRiffCoreMotif';
-    riffRhythm: 'buildMultiBarRhythm | hasSyncopation | generateRiffCoreMotif.rhythmPattern';
+    riffRhythm: 'generateRiffCoreMotif.rhythmPattern | buildMultiBarRhythm | hasSyncopation';
     motif: 'transposeMotif | invertMotifLite | mapMotifPitches';
     pentatonic: 'listPentatonicColourResources | listPentatonicArchetypes | HOME_RELATIONSHIPS | extractParentField | fieldFromResource';
     vault: 'chooseVaultChord | listBhlFieldChoices';
@@ -156,7 +156,7 @@ export function bhlResourceCatalog(): BhlResourceCatalog {
     referenceNotes: NOTE_NAMES,
     engines: {
       riff: 'generateRiffCoreMotif',
-      riffRhythm: 'buildMultiBarRhythm | hasSyncopation | generateRiffCoreMotif.rhythmPattern',
+      riffRhythm: 'generateRiffCoreMotif.rhythmPattern | buildMultiBarRhythm | hasSyncopation',
       motif: 'transposeMotif | invertMotifLite | mapMotifPitches',
       pentatonic: 'listPentatonicColourResources | listPentatonicArchetypes | HOME_RELATIONSHIPS | extractParentField | fieldFromResource',
       vault: 'chooseVaultChord | listBhlFieldChoices',
@@ -509,6 +509,8 @@ export function preferPentatonicOnEvents(
     }
     const pool = world === 'E' ? [...target] : intersection;
     const top = mod12(Math.max(...event.midis));
+    const outsiders = [...new Set(event.pitchClasses.map(mod12))].filter((pitchClass) => !pool.includes(pitchClass));
+    if (world === 'E' && region.outsideColour === true && outsiders.length === 1) continue;
     if (pool.includes(top) && (world === 'E' || field.pitchClasses.includes(top))) {
       if (allowed.has(top) && target === contrastSet) commonTones += 1;
       else if (allowed.has(top)) commonTones += 1;

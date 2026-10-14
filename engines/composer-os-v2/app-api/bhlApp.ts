@@ -230,8 +230,8 @@ function readMusical(raw: unknown): BhlMusicalRequest | null | BhlApiFailure {
     if (typeof row.riff !== 'object' || Array.isArray(row.riff)) return fail('riff must be an object');
     const riff = row.riff as Record<string, unknown>;
     if (riff.pitchSource !== 'world' && riff.pitchSource !== 'riff') return fail('riff pitch source must be world or riff');
-    if (riff.rhythmSource !== 'bhl' && riff.rhythmSource !== 'riff' && riff.rhythmSource !== 'other-riff') {
-      return fail('riff rhythm source must be bhl, riff, or other-riff');
+    if (riff.rhythmSource !== 'bhl' && riff.rhythmSource !== 'riff' && riff.rhythmSource !== 'core-b' && riff.rhythmSource !== 'other-riff') {
+      return fail('riff rhythm source must be bhl, riff, core-b, or other-riff');
     }
     const transform = riff.transform ?? 'original';
     if (!RIFF_TRANSFORMS.includes(transform as BhlRiffTransform)) return fail(`riff transform ${String(transform)} is not available`);

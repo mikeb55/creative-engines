@@ -18,7 +18,7 @@ export type BhlRiffTransform =
   | 'rest'
   | 'continue';
 
-export type BhlRiffRhythmSource = 'bhl' | 'riff' | 'other-riff';
+export type BhlRiffRhythmSource = 'bhl' | 'riff' | 'core-b' | 'other-riff';
 
 export interface BhlRiffRequest {
   pitchSource: 'world' | 'riff';
@@ -118,6 +118,24 @@ function groupsOf(bar: BhlRiffBar, index: number): string {
   }
   if (run) sizes.push(run);
   return `bar ${index + 1}: ${sizes.join('+') || 'rest'}`;
+}
+
+/**
+ * Same-riff rhythm uses the pitch cell.
+ * core-b is a second generateRiffCoreMotif cell.
+ * other-riff is buildMultiBarRhythm. The riff engine has no stored second corpus riff.
+ */
+export function bhlRiffCellChoice(
+  request: BhlRiffRequest,
+  fallbackSeed: number,
+): { source: 'core' | 'engine'; seed: number } {
+  if (request.rhythmSource === 'other-riff') {
+    return { source: 'engine', seed: request.rhythmSeed ?? request.pitchSeed ?? fallbackSeed };
+  }
+  if (request.rhythmSource === 'core-b') {
+    return { source: 'core', seed: request.rhythmSeed ?? fallbackSeed };
+  }
+  return { source: 'core', seed: request.pitchSeed ?? request.rhythmSeed ?? fallbackSeed };
 }
 
 export function readBhlRiffCell(source: 'core' | 'engine', seed: number): BhlRiffCell {

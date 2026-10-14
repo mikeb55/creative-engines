@@ -18,7 +18,7 @@ import {
   type BhlPitchTransform,
 } from './bhlPhrase';
 import { collectFieldNotes, guitarFeasibility, realiseBhlIntentions, type BhlFieldNote, type BhlIntentionLimit } from './bhlRealise';
-import { placeBhlRiffRhythm, readBhlRiffCell, type BhlRiffPlacement, type BhlRiffRequest } from './bhlRiffRhythm';
+import { bhlRiffCellChoice, placeBhlRiffRhythm, readBhlRiffCell, type BhlRiffPlacement, type BhlRiffRequest } from './bhlRiffRhythm';
 import { planPhraseOnsets, type BhlBassBar, type BhlOnsetPlan, type BhlRhythmTransform } from './bhlRhythm';
 import type { BhlLiquidTrace } from './bhlGenerate';
 import {
@@ -147,6 +147,90 @@ function nearest(pitchClass: number, field: readonly number[]): number {
   return best;
 }
 
+function growLine(line: number[], count: number): number[] {
+  const next = [...line];
+  while (next.length < count) next.push(next[next.length % Math.max(next.length, 1)]!);
+  return next.slice(0, count);
+}
+
+/**
+ * World E only. A returning motif keeps its intervals when a transposition
+ * sits inside the selected collection. Otherwise outside notes move onto
+ * that collection, except one note when outside colour is explicitly on.
+ * Worlds A–D and F keep the unsnapped return transposition.
+ */
+function placeReturnLine(
+  motif: readonly number[],
+  count: number,
+  field: BhlWorldField,
+  previousPc: number | null,
+  contain: boolean,
+  allowOutside: boolean,
+): { line: number[]; retained: boolean; contrasted: boolean; conflict: string | null } {
+  const preferred = mod12(field.contrastInterval);
+  const base = motif.map(mod12);
+  if (!contain || !field.pitchClasses.length || !base.length) {
+    const line = growLine(base.map((pitchClass) => mod12(pitchClass + preferred)), count);
+    return {
+      line,
+      retained: previousPc !== null && line.includes(mod12(previousPc)),
+      contrasted: !isFifthStep(preferred),
+      conflict: null,
+    };
+  }
+  const allowed = new Set(field.pitchClasses.map(mod12));
+  const distance = (shift: number) => {
+    const raw = Math.abs(mod12(shift) - preferred);
+    return Math.min(raw, 12 - raw);
+  };
+  let bestShift = 0;
+  let bestInside = -1;
+  let bestIdentity = -1;
+  let bestDistance = 99;
+  for (let shift = 0; shift < 12; shift++) {
+    const landed = base.map((pitchClass) => mod12(pitchClass + shift));
+    const inside = landed.filter((pitchClass) => allowed.has(pitchClass)).length;
+    const identity = landed.filter((pitchClass, index) => allowed.has(pitchClass) && pitchClass === base[index]).length;
+    const step = distance(shift);
+    const better =
+      inside > bestInside ||
+      (inside === bestInside && identity > bestIdentity) ||
+      (inside === bestInside && identity === bestIdentity && step < bestDistance) ||
+      (inside === bestInside && identity === bestIdentity && step === bestDistance && shift < bestShift);
+    if (better) {
+      bestShift = shift;
+      bestInside = inside;
+      bestIdentity = identity;
+      bestDistance = step;
+    }
+  }
+  let usedOutside = false;
+  let moved = false;
+  const placed = base.map((pitchClass) => {
+    const landed = mod12(pitchClass + bestShift);
+    if (allowed.has(landed)) return landed;
+    if (allowOutside && !usedOutside) {
+      usedOutside = true;
+      return landed;
+    }
+    moved = true;
+    return nearest(landed, field.pitchClasses);
+  });
+  const line = growLine(placed, count);
+  const conflict =
+    bestInside === base.length
+      ? null
+      : usedOutside
+        ? 'Returning motif intervals do not fit the selected collection. One authorised outside-field colour stayed. Further outside notes moved onto the collection.'
+        : 'Returning motif intervals do not fit the selected collection. Outside notes moved onto the nearest collection pitch. The interval was not kept by leaving the field.';
+  return {
+    line,
+    retained: previousPc !== null && line.includes(mod12(previousPc)),
+    contrasted: bestShift !== 0 && !isFifthStep(bestShift),
+    conflict: moved || usedOutside ? conflict : null,
+  };
+}
+
 function melodyLine(
   region: BhlPhraseRegion,
   field: BhlWorldField,
@@ -157,18 +241,16 @@ function melodyLine(
   bar: BhlBassBar,
   previousPc: number | null,
   bassFell: boolean | null,
-): { line: number[]; retained: boolean; contrasted: boolean } {
+  containReturn: boolean,
+): { line: number[]; retained: boolean; contrasted: boolean; conflict: string | null } {
   const invert = region.pitchTransform === 'invert-into-field';
   if (region.role === 'statement' || region.pitchTransform === 'neighbor-statement') {
     const line = motif.map(mod12);
     while (line.length < count) line.push(line[line.length % Math.max(motif.length, 1)] ?? field.rootPc);
-    return { line: line.slice(0, count), retained: false, contrasted: false };
+    return { line: line.slice(0, count), retained: false, contrasted: false, conflict: null };
   }
   if (region.role === 'return' || region.pitchTransform === 'recall-cell') {
-    const transposed = motif.map((pitchClass) => mod12(pitchClass + field.contrastInterval));
-    while (transposed.length < count) transposed.push(transposed[transposed.length % Math.max(motif.length, 1)]!);
-    const retained = previousPc !== null && transposed.includes(mod12(previousPc));
-    return { line: transposed.slice(0, count), retained, contrasted: !isFifthStep(field.contrastInterval) };
+    return placeReturnLine(motif, count, field, previousPc, containReturn, region.outsideColour === true);
   }
   const pool = groupFor(field, bar.bar, seed);
   const spin = (seed + bar.bar + hash(seed, bar.bar, region.role === 'development' ? 3 : 1)) % Math.max(pool.length, 1);
@@ -193,7 +275,7 @@ function melodyLine(
     }
   }
   const contrasted = line.some((pitchClass, index) => index > 0 && !pool.includes(line[index - 1]!) || (index === 0 && previousPc !== null && !pool.includes(mod12(previousPc))));
-  return { line, retained, contrasted: contrasted || region.role === 'development' || region.role === 'transformation' };
+  return { line, retained, contrasted: contrasted || region.role === 'development' || region.role === 'transformation', conflict: null };
 }
 
 function stack(
@@ -266,7 +348,11 @@ function eventOf(
   };
 }
 
-function restoreReturnInterval(events: BhlGuitarEvent[], plan: BhlPhrasePlan): void {
+function restoreReturnInterval(
+  events: BhlGuitarEvent[],
+  plan: BhlPhrasePlan,
+  fieldAt: ((bar: number) => readonly number[]) | null,
+): void {
   const returning = plan.regions.find((region) => region.role === 'return');
   const step = plan.motif.intervals[0];
   if (!returning || step === undefined) return;
@@ -275,9 +361,45 @@ function restoreReturnInterval(events: BhlGuitarEvent[], plan: BhlPhrasePlan): v
   if (motifIntervals(tops(lead)).includes(step)) return;
   const first = mod12(Math.max(...lead[0]!.midis));
   const target = mod12(first + step);
+  const field = fieldAt ? fieldAt(lead[1]!.bar) : null;
+  if (field && field.length && !field.includes(target)) return;
   const midi = midiNear(target, returning.registerLow, returning.registerHigh, Math.max(...lead[0]!.midis));
   lead[1]!.midis = [midi];
   lead[1]!.pitchClasses = [mod12(midi)];
+}
+
+/** World E return chords may not keep a transposed melody tone outside the collection. */
+function containWorldEReturn(
+  events: BhlGuitarEvent[],
+  plan: BhlPhrasePlan,
+  fieldAt: (bar: number) => readonly number[],
+): void {
+  for (const region of plan.regions) {
+    if (region.role !== 'return' && region.pitchTransform !== 'recall-cell') continue;
+    let usedOutside = false;
+    for (const event of events.filter((item) => item.regionId === region.id)) {
+      const field = fieldAt(event.bar);
+      if (!field.length) continue;
+      const kept: number[] = [];
+      for (const midi of event.midis) {
+        const pitchClass = mod12(midi);
+        if (field.includes(pitchClass)) {
+          kept.push(midi);
+          continue;
+        }
+        if (region.outsideColour === true && !usedOutside) {
+          usedOutside = true;
+          kept.push(midi);
+          continue;
+        }
+        const snapped = midiNear(nearest(pitchClass, field), region.registerLow, region.registerHigh, midi);
+        if (!kept.some((have) => mod12(have) === mod12(snapped))) kept.push(snapped);
+      }
+      const midis = [...new Set(kept)].sort((a, b) => a - b);
+      event.midis = midis.length ? midis : [midiNear(field[0]!, region.registerLow, region.registerHigh, 67)];
+      event.pitchClasses = [...new Set(event.midis.map(mod12))].sort((a, b) => a - b);
+    }
+  }
 }
 
 function clearPitchStalls(
@@ -321,10 +443,9 @@ export function generateBhlWorldGuitar(
   let riffReport: BhlRiffPlacement | null = null;
   let onsetPlans = planPhraseOnsets(bars, plan.regions);
   if (request.riffRhythm && request.riffRhythm.rhythmSource !== 'bhl') {
-    const source = request.riffRhythm.rhythmSource === 'other-riff' ? 'engine' : 'core';
-    const seed = request.riffRhythm.rhythmSeed ?? request.riffRhythm.pitchSeed ?? request.seed;
+    const choice = bhlRiffCellChoice(request.riffRhythm, request.seed);
     riffReport = placeBhlRiffRhythm({
-      cell: readBhlRiffCell(source, seed),
+      cell: readBhlRiffCell(choice.source, choice.seed),
       transform: request.riffRhythm.transform ?? 'original',
       displacementQuarters: request.riffRhythm.displacementQuarters ?? 0.5,
       bars,
@@ -347,6 +468,15 @@ export function generateBhlWorldGuitar(
   let previousMidi: number | null = null;
   const motif = plan.motif.pitchClasses.map(mod12);
   const intervals = plan.motif.intervals;
+  const returnConflicts: BhlIntentionLimit[] = [];
+  const fieldAt = (barNumber: number): number[] => {
+    const region = plan.regions.find((item) => item.bars.includes(barNumber));
+    const bar = bars.find((item) => item.bar === barNumber);
+    if (!bar) return collection ? [...new Set(collection)].sort((a, b) => a - b) : [];
+    const built = buildBhlWorldField(request.world, bar, region?.tensionState ?? 'primary');
+    if (request.world === 'E' && collection && collection.length) return [...new Set(collection)].sort((a, b) => a - b);
+    return built.pitchClasses;
+  };
 
   for (const region of plan.regions) {
     for (const onset of onsetPlans.filter((item) => region.bars.includes(item.bar))) {
@@ -370,13 +500,42 @@ export function generateBhlWorldGuitar(
       }
       if (isFifthStep(field.contrastInterval) && request.world !== 'B') fifthSteps += 1;
       const count = Math.max(onset.onsets.length, region.role === 'statement' ? motif.length : 1);
-      const shaped = melodyLine(region, field, motif, intervals, count, request.seed, bar, previousPc, bassDirection(bars, bar.bar));
+      const shaped = melodyLine(
+        region,
+        field,
+        motif,
+        intervals,
+        count,
+        request.seed,
+        bar,
+        previousPc,
+        bassDirection(bars, bar.bar),
+        request.world === 'E',
+      );
+      if (shaped.conflict && !returnConflicts.some((item) => item.regionId === region.id)) {
+        returnConflicts.push({
+          regionId: region.id,
+          intention: 'Return the motif inside the selected collection.',
+          reason: shaped.conflict,
+        });
+      }
       if (shaped.retained) commonToneRetentions += 1;
       if (shaped.contrasted) contrastingMoves += 1;
       const useOnsets = onset.onsets.slice(0, shaped.line.length);
       while (useOnsets.length < shaped.line.length && region.role === 'statement') break;
       useOnsets.forEach((start, index) => {
         let pitchClass = shaped.line[index] ?? shaped.line[shaped.line.length - 1] ?? field.rootPc;
+        const returning = region.role === 'return' || region.pitchTransform === 'recall-cell';
+        if (request.world === 'E' && returning && field.pitchClasses.length && !field.pitchClasses.includes(pitchClass)) {
+          const alreadyOutside = events.some(
+            (event) => event.regionId === region.id && event.pitchClasses.some((pc) => !field.pitchClasses.includes(mod12(pc))),
+          );
+          if (!(region.outsideColour === true && !alreadyOutside)) {
+            const snapped = nearest(pitchClass, field.pitchClasses);
+            snaps.push({ bar: bar.bar, onsetQuarters: start, fromPc: pitchClass, toPc: snapped, reason: 'invert-or-transpose' });
+            pitchClass = snapped;
+          }
+        }
         if (region.role !== 'statement' && region.role !== 'return' && !field.pitchClasses.includes(pitchClass)) {
           const snapped = nearest(pitchClass, field.pitchClasses);
           snaps.push({ bar: bar.bar, onsetQuarters: start, fromPc: pitchClass, toPc: snapped, reason: 'invert-or-transpose' });
@@ -478,14 +637,15 @@ export function generateBhlWorldGuitar(
     });
   }
 
-  restoreReturnInterval(events, plan);
+  restoreReturnInterval(events, plan, request.world === 'E' ? fieldAt : null);
+  if (request.world === 'E') containWorldEReturn(events, plan, fieldAt);
   clearPitchStalls(events, plan, bars, request.world);
   const fieldOf = (region: BhlPhraseRegion, bar: BhlBassBar) => {
     const built = buildBhlWorldField(request.world, bar, region.tensionState).pitchClasses;
     if (request.world === 'E' && collection && collection.length) return [...new Set(collection)].sort((a, b) => a - b);
     return built;
   };
-  const limitations = realiseBhlIntentions(plan, bars, events, fieldOf);
+  const limitations = [...returnConflicts, ...realiseBhlIntentions(plan, bars, events, fieldOf)];
   const fieldNotes = collectFieldNotes(plan, bars, events, fieldOf);
   feasibility.splice(0, feasibility.length, ...guitarFeasibility(events));
   const binder = bindGenerated(events, bars, plan);

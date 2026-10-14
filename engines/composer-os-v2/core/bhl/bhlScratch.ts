@@ -94,6 +94,21 @@ function pairFor(role: string, seed: number, bar: number): [number, number] {
   return [mod12(root + 2), mod12(root + 5)];
 }
 
+function lineXml(baseMidi: number, pair: [number, number], quarters: number): string {
+  if (pair[0] === pair[1]) {
+    return durationType(quarters)
+      .map((piece, index) => noteXml(index === 0 ? baseMidi + pair[0]! : null, piece.ticks, piece.type, '1'))
+      .join('');
+  }
+  const half = quarters / 2;
+  if (!Number.isInteger(half * 2)) {
+    return noteXml(baseMidi + pair[0]!, quarters * 2, durationType(quarters)[0]!.type, '1');
+  }
+  const first = durationType(half).map((piece) => noteXml(baseMidi + pair[0]!, piece.ticks, piece.type, '1'));
+  const second = durationType(half).map((piece) => noteXml(baseMidi + pair[1]!, piece.ticks, piece.type, '1'));
+  return [...first, ...second].join('');
+}
+
 function durationType(quarters: number): { ticks: number; type: string }[] {
   const pieces: { ticks: number; type: string }[] = [];
   let left = quarters * 2;
@@ -152,25 +167,10 @@ export function buildBhlScratchScore(request: BhlScratchRequest): BhlScratchScor
       bar === 1
         ? '<direction placement="above"><direction-type><words>CANDIDATE FOR AUDITION — NOT MUSICALLY APPROVED</words></direction-type></direction>'
         : '';
-    const rest = durationType(quarters)
-      .map((piece) => noteXml(null, piece.ticks, piece.type, '1'))
-      .join('');
-    guitar.push(`<measure number="${bar}">${attributes}${guitarClef}${tempo}${rehearsal}${banner}${rest}</measure>`);
     const pair = pairFor(section.role, request.seed, bar);
-    const bassNotes =
-      pair[0] === pair[1]
-        ? durationType(quarters)
-            .map((piece, index) => noteXml(index === 0 ? 36 + pair[0]! : null, piece.ticks, piece.type, '1'))
-            .join('')
-        : (() => {
-            const half = quarters / 2;
-            if (!Number.isInteger(half * 2)) {
-              return noteXml(36 + pair[0]!, quarters * 2, durationType(quarters)[0]!.type, '1');
-            }
-            const first = durationType(half).map((piece) => noteXml(36 + pair[0]!, piece.ticks, piece.type, '1'));
-            const second = durationType(half).map((piece) => noteXml(36 + pair[1]!, piece.ticks, piece.type, '1'));
-            return [...first, ...second].join('');
-          })();
+    const guitarNotes = lineXml(60, pair, quarters);
+    guitar.push(`<measure number="${bar}">${attributes}${guitarClef}${tempo}${rehearsal}${banner}${guitarNotes}</measure>`);
+    const bassNotes = lineXml(36, pair, quarters);
     bass.push(`<measure number="${bar}">${attributes}${bassClef}${bassNotes}</measure>`);
   }
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
