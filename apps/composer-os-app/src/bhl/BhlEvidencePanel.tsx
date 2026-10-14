@@ -61,6 +61,31 @@ function pitch(midi: number): string {
   return `${NAMES[pc]}${Math.floor(midi / 12) - 1}`;
 }
 
+type ComposerQuestion = {
+  id: string;
+  source: 'original' | 'candidate';
+  index: number;
+  text: string;
+};
+
+/** One row per question occurrence. The same wording can appear on the original and the candidate. */
+export function composerQuestions(
+  original: BhlEvidenceView | null,
+  candidate: BhlEvidenceView | null,
+  provisional: boolean,
+): ComposerQuestion[] {
+  const rows: ComposerQuestion[] = [];
+  (original?.questions ?? []).forEach((text, index) => {
+    rows.push({ id: `original:${index}`, source: 'original', index, text });
+  });
+  if (provisional) {
+    (candidate?.questions ?? []).forEach((text, index) => {
+      rows.push({ id: `candidate:${index}`, source: 'candidate', index, text });
+    });
+  }
+  return rows;
+}
+
 function Lanes({ evidence }: { evidence: BhlEvidenceView }) {
   const voices = [...new Set(evidence.events.map((event) => `${event.partId}:${event.voice}`))];
   return (
@@ -137,7 +162,8 @@ export function BhlEvidencePanel({
   const outside = (fieldNotes ?? []).filter((note) => note.status === 'outside-permitted');
   const inField = (fieldNotes ?? []).filter((note) => note.status === 'in-field').length;
   const [marks, setMarks] = useState<Record<string, string>>({});
-  const questions = [...(original?.questions ?? []), ...(provisional ? candidate?.questions ?? [] : [])];
+  const questions = composerQuestions(original, candidate, provisional);
+  const showQuestionSource = Boolean(original?.questions.length && provisional && candidate?.questions.length);
   return (
     <section
       data-testid="bhl-evidence"
@@ -205,12 +231,19 @@ export function BhlEvidencePanel({
       ) : null}
       <h4 style={{ margin: 0 }}>Questions for the Composer</h4>
       {questions.map((question) => (
-        <div key={question}>
-          <p style={{ margin: 0 }}>{question}</p>
+        <div key={question.id}>
+          {showQuestionSource ? (
+            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+              {question.source === 'original' ? 'Original score' : 'Generated candidate'}
+            </p>
+          ) : null}
+          <p style={{ margin: 0 }}>{question.text}</p>
           <select
-            aria-label={question}
-            value={marks[question] ?? ''}
-            onChange={(event) => setMarks((current) => ({ ...current, [question]: event.target.value }))}
+            data-testid="bhl-composer-question"
+            data-question-id={question.id}
+            aria-label={`${question.source} ${question.index + 1}: ${question.text}`}
+            value={marks[question.id] ?? ''}
+            onChange={(event) => setMarks((current) => ({ ...current, [question.id]: event.target.value }))}
           >
             <option value="">Mark…</option>
             {MARKS.map((mark) => (

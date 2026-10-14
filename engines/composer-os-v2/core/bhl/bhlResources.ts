@@ -165,7 +165,7 @@ export function bhlResourceCatalog(): BhlResourceCatalog {
     },
     notWired: [
       'Audio playback is not a BHL service. Export MusicXML and audition in Sibelius.',
-      'Pentatonic path search still accepts only major and minor pentatonic. Other colour-registry collections stay inside BHL.',
+      'Pentatonic path transform and phrase generation still accept only major and minor pentatonic. The other colour-registry collections are listed on the Pentatonic page as reference. BHL can apply a selected colour collection to a development region.',
       'Performance Composer does not take a BHL object. Hand it the exported MusicXML through Respond.',
       'The Riff Engine does not import BHL MusicXML. Pitch and rhythm move from the riff into BHL.',
       'Artist-named style profiles are not provided.',

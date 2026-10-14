@@ -4,7 +4,8 @@
 import React from 'react';
 import { act, create } from 'react-test-renderer';
 import { describe, expect, it, vi } from 'vitest';
-import { lyricalAnswerExampleRegion, recommendPentatonicsFromRegion } from '@composer-os/core/pentatonic';
+import { listPentatonicColourResources, lyricalAnswerExampleRegion, recommendPentatonicsFromRegion } from '@composer-os/core/pentatonic';
+import { colourPitchClasses, colourSpelling, PENTATONIC_COLOUR_PATH_LIMIT } from '../src/pentatonic/PentatonicColourRegistry';
 import { hashForRoute, routeFromLocation, routeNavLabel } from '../src/router/appRouter';
 import {
   cleanPentatonicForm,
@@ -559,5 +560,78 @@ describe('AUTO COLOR', () => {
     expect(tree.root.findByProps({ id: 'pentatonic-workflow-mode' }).props.value).toBe('analyse');
     expect(source).toBe(frozen);
     expect(JSON.stringify(inherited)).toBe(inheritedFrozen);
+  });
+});
+
+describe('pentatonic colour registry on the path page', () => {
+  it('shows all 20 collections and runs path operations only for major and minor', async () => {
+    const resources = listPentatonicColourResources();
+    expect(resources.map((item) => item.id)).toHaveLength(20);
+    const { PentatonicEnginePage } = await import('../src/pentatonic/PentatonicEnginePage');
+    let tree!: ReturnType<typeof create>;
+    await act(async () => {
+      tree = create(React.createElement(PentatonicEnginePage));
+    });
+    const rendered = textOf(tree);
+    const row = (id: string) =>
+      tree.root.findAll((node) => node.props?.['data-testid'] === 'pentatonic-colour-row' && node.props?.['data-colour-id'] === id)[0];
+    for (const resource of resources) {
+      expect(rendered).toContain(resource.displayName);
+      expect(JSON.stringify(row(resource.id)?.findByProps({ 'data-testid': 'pentatonic-colour-intervals' }).children)).toContain(
+        resource.intervals.join(' '),
+      );
+    }
+    const spellingOf = (id: string) => JSON.stringify(row(id)?.findByProps({ 'data-testid': 'pentatonic-colour-spelling' }).children);
+    const classesOf = (id: string) => JSON.stringify(row(id)?.findByProps({ 'data-testid': 'pentatonic-colour-pitch-classes' }).children);
+    for (const id of ['suspended_pentatonic', 'hirajoshi', 'kumoi', 'remote_altered', 'whole_tone_pentachord']) {
+      const resource = resources.find((item) => item.id === id);
+      expect(resource?.pathArchetypeId).toBeNull();
+      expect(spellingOf(id)).toContain(colourSpelling('C', resource!));
+      expect(classesOf(id)).toContain(colourPitchClasses('C', resource!.intervals).join(' '));
+      expect(JSON.stringify(row(id)?.findByProps({ 'data-testid': 'pentatonic-colour-limitation' }).children)).toContain(
+        PENTATONIC_COLOUR_PATH_LIMIT,
+      );
+      expect(row(id)?.findAll((node) => node.props?.['data-testid'] === 'pentatonic-colour-use-path')).toHaveLength(0);
+    }
+    expect(tree.root.findAll((node) => node.props?.['data-testid'] === 'pentatonic-colour-use-path')).toHaveLength(2);
+    expect(tree.root.findAll((node) => node.props?.['data-testid'] === 'pentatonic-colour-limitation')).toHaveLength(18);
+    expect(tree.root.findByProps({ id: 'pentatonic-home-archetype' }).props.value).toBe('');
+    expect(tree.root.findAll((node) => node.props?.id === 'pentatonic-current-archetype')).toHaveLength(0);
+
+    await act(async () => {
+      tree.root.findByProps({ id: 'pentatonic-colour-reference' }).props.onChange({ target: { value: 'D' } });
+    });
+    const suspended = resources.find((item) => item.id === 'suspended_pentatonic')!;
+    expect(spellingOf('suspended_pentatonic')).toContain(colourSpelling('D', suspended));
+    expect(classesOf('suspended_pentatonic')).toContain(colourPitchClasses('D', suspended.intervals).join(' '));
+    expect(classesOf('suspended_pentatonic')).toContain('"D"');
+    expect(tree.root.findByProps({ id: 'pentatonic-home-archetype' }).props.value).toBe('');
+
+    const useMajor = tree.root.findAll(
+      (node) => node.props?.['data-testid'] === 'pentatonic-colour-use-path' && node.props?.['data-colour-id'] === 'major_pentatonic',
+    )[0];
+    await act(async () => {
+      useMajor?.props.onClick();
+    });
+    const selection = tree.root.findByProps({ 'data-testid': 'pentatonic-colour-path-selection' });
+    expect(selection.children).toEqual([
+      'Manual path collection: ',
+      'D',
+      ' ',
+      'Major Pentatonic',
+      '. Transform and Generate use it when Manual resource is selected.',
+    ]);
+    await act(async () => {
+      tree.root.findByProps({ id: 'pentatonic-workflow-mode' }).props.onChange({ target: { value: 'transform' } });
+    });
+    expect(tree.root.findByProps({ id: 'pentatonic-workflow-resource' }).props.value).toBe('manual');
+    expect(tree.root.findByProps({ id: 'pentatonic-workflow-archetype' }).props.value).toBe('major_pentatonic');
+    expect(tree.root.findByProps({ id: 'pentatonic-workflow-reference' }).props.value).toBe('D');
+    expect(tree.root.findByProps({ id: 'pentatonic-home-archetype' }).props.value).toBe('');
+    const options = tree.root
+      .findByProps({ id: 'pentatonic-workflow-archetype' })
+      .findAllByType('option')
+      .map((node) => node.props.value);
+    expect(options).toEqual(['major_pentatonic', 'minor_pentatonic']);
   });
 });

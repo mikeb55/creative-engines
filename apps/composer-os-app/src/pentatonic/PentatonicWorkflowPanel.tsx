@@ -22,6 +22,7 @@ import {
 } from '@composer-os/core/pentatonic/dev4cWorkflow';
 import { initPlayback, play, stop } from '../playback/playbackEngine';
 import { parseXmlToPlaybackSequence } from '../playback/musicXmlToPlaybackSequence';
+import { PentatonicColourRegistry } from './PentatonicColourRegistry';
 
 function downloadXml(filename: string, xml: string): void {
   const blob = new Blob([xml], { type: 'application/vnd.recordare.musicxml+xml;charset=utf-8' });
@@ -78,6 +79,7 @@ export function PentatonicWorkflowPanel() {
   const [resourceMode, setResourceMode] = useState<'auto' | 'manual'>('auto');
   const [manualArchetype, setManualArchetype] = useState<'major_pentatonic' | 'minor_pentatonic'>('major_pentatonic');
   const [manualRef, setManualRef] = useState<string>(PENTATONIC_NOTE_CHOICES[0]);
+  const [colourReference, setColourReference] = useState<string>(PENTATONIC_NOTE_CHOICES[0]);
   const [method, setMethod] = useState<'M-DEG' | 'M-NEAR'>(DEV4C_DEFAULT_METHOD);
   const [purpose, setPurpose] = useState<Dev4cPurpose>('MOTIF');
   const [activity, setActivity] = useState<Dev4cActivity>('SPARSE');
@@ -304,6 +306,24 @@ export function PentatonicWorkflowPanel() {
 
   return (
     <div data-testid="pentatonic-workflow" style={{ display: 'grid', gap: '0.75rem', marginBottom: '1rem' }}>
+      <PentatonicColourRegistry
+        referenceNote={colourReference}
+        onReferenceNote={setColourReference}
+        onUsePathCollection={(archetypeId, referenceNote) => {
+          setResourceMode('manual');
+          setManualArchetype(archetypeId);
+          setManualRef(referenceNote);
+          setTransform(null);
+          setGenerated(null);
+          setError(null);
+        }}
+      />
+      {resourceMode === 'manual' ? (
+        <p data-testid="pentatonic-colour-path-selection" style={{ margin: 0 }}>
+          Manual path collection: {manualRef} {manualArchetype === 'minor_pentatonic' ? 'Minor Pentatonic' : 'Major Pentatonic'}. Transform
+          and Generate use it when Manual resource is selected.
+        </p>
+      ) : null}
       <label htmlFor="pentatonic-workflow-mode">
         Mode
         <select
