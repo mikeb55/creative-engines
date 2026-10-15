@@ -24,6 +24,7 @@ import { initPlayback, play, stop } from '../playback/playbackEngine';
 import { parseXmlToPlaybackSequence } from '../playback/musicXmlToPlaybackSequence';
 import { api } from '../services/api';
 import { PentatonicColourRegistry } from './PentatonicColourRegistry';
+import { exportPentatonicMusicXml } from './exportPentatonicMusicXml';
 
 function restoredProjectProof(project: PentatonicProjectV1): string {
   const music = project.phrase?.music[0];
@@ -114,6 +115,7 @@ export function PentatonicWorkflowPanel() {
   const [generated, setGenerated] = useState<PentatonicGenerateResult | null>(null);
   const [chosen, setChosen] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [savedExportPath, setSavedExportPath] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [autoIntentions, setAutoIntentions] = useState<MusicalIntention[]>([]);
   const [autoForm, setAutoForm] = useState<FormFunction>('unknown');
@@ -267,8 +269,27 @@ export function PentatonicWorkflowPanel() {
   };
 
   const exportXml = (musicXml: string, label: string) => {
-    const safe = (fileName || 'pentatonic').replace(/\.musicxml$/i, '');
-    downloadXml(`${safe}-${label}.musicxml`, musicXml);
+    const bridge = typeof window !== 'undefined' ? window.composerOsDesktop : undefined;
+    setError(null);
+    setBusy(true);
+    Promise.resolve()
+      .then(() =>
+        exportPentatonicMusicXml({
+          xml: musicXml,
+          label,
+          fileName,
+          invokeApi: bridge?.invokeApi,
+          download: downloadXml,
+        })
+      )
+      .then((saved) => {
+        setSavedExportPath(saved.mode === 'desktop' ? saved.fullPath : saved.filename);
+      })
+      .catch((caught: unknown) => {
+        setSavedExportPath(null);
+        setError(caught instanceof Error ? caught.message : String(caught));
+      })
+      .finally(() => setBusy(false));
   };
 
   const toggleIntention = (intention: MusicalIntention) => {
@@ -1170,6 +1191,11 @@ export function PentatonicWorkflowPanel() {
         </div>
       ) : null}
 
+      {savedExportPath ? (
+        <p data-testid="pentatonic-export-path" style={{ margin: 0 }}>
+          Saved {savedExportPath}
+        </p>
+      ) : null}
       {error ? (
         <p role="alert" data-testid="pentatonic-workflow-error">
           {error}

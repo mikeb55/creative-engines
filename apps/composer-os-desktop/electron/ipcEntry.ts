@@ -39,6 +39,7 @@ import {
   apiBhlScratch,
 } from '../../../engines/composer-os-v2/app-api/bhlApp';
 import { apiPentatonicOpenProject, apiPentatonicSaveProject } from '../../../engines/composer-os-v2/app-api/pentatonicProjectApp';
+import { writePentatonicDesktopMusicXml } from './pentatonicDesktopExport';
 import { openOutputFolderRoute } from '../../../scripts/openOutputFolderRoute';
 import {
   hydrateAnthropicKeyFromAllSources,
@@ -859,30 +860,17 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
   ipcMain.handle('composer-os-api:pentatonic-write-musicxml', async (_event, body: unknown) => {
     const record = body && typeof body === 'object' ? (body as { xml?: unknown; label?: unknown }) : {};
     const xml = typeof record.xml === 'string' ? record.xml : '';
-    if (!xml.includes('<score-partwise') || !xml.includes('<pitch>')) {
-      return { ok: false as const, error: 'Refusing to write MusicXML without pitched notes.' };
+    const label = typeof record.label === 'string' ? record.label : 'collection';
+    try {
+      const written = await writePentatonicDesktopMusicXml({
+        documentsDir: app.getPath('documents'),
+        xml,
+        label,
+      });
+      return { ok: true as const, fullPath: written.fullPath, bytes: written.bytes };
+    } catch (error) {
+      return { ok: false as const, error: error instanceof Error ? error.message : String(error) };
     }
-    const label = String(record.label ?? 'collection')
-      .replace(/[^A-Za-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 48) || 'collection';
-    const dir = path.join(app.getPath('documents'), 'Composer OS Exports', 'Pentatonic Engine');
-    const { mkdir, writeFile } = await import('node:fs/promises');
-    await mkdir(dir, { recursive: true });
-    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-    for (let attempt = 0; attempt < 100; attempt += 1) {
-      const name = `Pentatonic-${label}-${stamp}${attempt === 0 ? '' : `-${attempt}`}.musicxml`;
-      const full = path.join(dir, name);
-      try {
-        await writeFile(full, xml, { encoding: 'utf8', flag: 'wx' });
-        return { ok: true as const, fullPath: full };
-      } catch (error) {
-        const code = error && typeof error === 'object' && 'code' in error ? String((error as { code?: string }).code) : '';
-        if (code === 'EEXIST') continue;
-        return { ok: false as const, error: error instanceof Error ? error.message : String(error) };
-      }
-    }
-    return { ok: false as const, error: 'Could not find a free MusicXML name.' };
   });
 
   ipcMain.handle('composer-os-api:pentatonic-open-musescore', async (_event, body: unknown) => {
