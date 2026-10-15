@@ -98,7 +98,7 @@ def build() -> Manual:
     m.figure(str(SHOT / "bhl-06-pentatonic.png"), "Figure 6. Suspended Pentatonic on D, relationship HOME, contrast Hirajoshi.")
     m.p("On worlds A to D and F the colour only sounds on pitches the world already contains. If nothing is shared, the guitar stays on the world field. The colour is not rewritten as major or minor pentatonic. On world E the collection is the pitch source, including suspended, Hirajoshi, and the other eighteen colours.")
     m.p("**Quartal colour on dyads when the collection has a fourth** is a separate tick. It does not invent a fourth the collection lacks.")
-    m.p("The **Pentatonic** button in the top row opens a different page. There, only Major Pentatonic and Minor Pentatonic can be sent into path transform and phrase generation. The other eighteen collections are reference on that page. They remain real development colours inside BHL. See [[pathlimit|the path-page limit]].")
+    m.p("The **Pentatonic** button in the top row opens a different page. Every registered colour there can be sent into path transform and phrase generation. An unknown colour is refused. The page does not substitute minor pentatonic. The same twenty colours remain development colours inside BHL. See [[pathlimit|the Pentatonic path page]].")
 
     m.h1("9. Riff pitch and riff rhythm", "riff")
     m.p("Open **Riff pitch, riff rhythm, and transformation**. Pitch and rhythm are separate.")
@@ -166,7 +166,7 @@ def build() -> Manual:
         "Insert a rest needs a note of at least half a crotchet to split. Otherwise the transform is reported unavailable.",
         "A contrast collection does nothing if the span has no development or transformation region.",
         "An empty shared set between a colour and worlds A–D or F leaves the guitar on the world. It does not snap to major or minor.",
-        "Path transform on the Pentatonic page accepts only major and minor pentatonic.",
+        "An unregistered pentatonic id is refused. The Pentatonic page does not substitute minor pentatonic.",
         "Performance Composer does not take a BHL project. It takes an exported MusicXML file, opened with Respond.",
         "The Riff page does not import a BHL file. Rhythm and contour travel into BHL, not back out.",
         "Section numbers on the BHL page skip 3, 4, and 6.",
@@ -240,9 +240,9 @@ def build() -> Manual:
         ],
     )
     m.p("Further scenarios, including mixed metre, each colour, and the limits of Performance Composer, are in the Creative Scenarios & Integration Handbook, version 1.0, dated 15 October 2026.")
-    m.h2("Path-page limit", "pathlimit")
-    m.p("On the Pentatonic page, **Use for path transform and phrase generation** appears only on Major Pentatonic and Minor Pentatonic. Suspended Pentatonic and the other seventeen colours show this sentence: path transform, phrase generation, M-DEG, and M-NEAR support major and minor only. The collection is reference material. Its pitches are not sent to those operations. Inside BHL, the same collection can still colour a development.")
-    m.figure(str(SHOT / "bhl-12-pentatonic-limit.png"), "Figure 12. Pentatonic page. Major and minor can feed the path. Suspended and Open are reference only.")
+    m.h2("Pentatonic path page", "pathlimit")
+    m.p("On the Pentatonic page, **Use for path transform and phrase generation** is on every registered collection, including Suspended Pentatonic and Hirajoshi. Minimum and maximum collection steps run from 2 to 8. A path that must return home needs at least 3 steps. Length counts collection steps, including the start. A repeated collection counts as a step. **Save project** stores the collection, the route, the selected candidate, the motif, the phrase, and the musical events. **Reopen project** loads that file. It does not generate a new path. A Pentatonic export that names a collection writes `collection id@centre` into the MusicXML. Removing that direction leaves the pitches and drops the declared name. Inside BHL, the same collection can still colour a development.")
+    m.figure(str(SHOT / "bhl-12-pentatonic-limit.png"), "Figure 12. Earlier Pentatonic page. The picture shows a path button on Major only. The current page puts that button on every registered collection.")
     m.h2("Where integration stops", "integrate")
     m.p("Open **Cross-engine transfer** on the BHL page after a lock. The paragraph there is the contract. Riff pitch, this riff’s rhythm, another core cell, and the multi-bar rhythm move straight into BHL. Pentatonic colours move straight in. Tonality Vault is the harmonic-field menu on each region. Liquid harmony is world B. Performance Composer accepts a MusicXML file only: export, then on that page use **Respond** and choose the file. The Riff Engine does not import BHL.")
     return m

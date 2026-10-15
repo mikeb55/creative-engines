@@ -42,7 +42,7 @@ def build() -> Manual:
     m.bullets([
         "All twenty colour collections are available as BHL development colours. On worlds A to D and F they only sound where the world already contains those pitches.",
         "World E uses the selected collection as its pitch source.",
-        "The separate Pentatonic page can run path transform and phrase generation for Major Pentatonic and Minor Pentatonic only. The other eighteen collections are reference on that page.",
+        "The separate Pentatonic page can run path transform and phrase generation for all twenty colours. An unknown colour is refused. It does not substitute minor pentatonic.",
         "Performance Composer accepts an exported MusicXML file through **Respond**. It does not accept a BHL project object.",
         "The Riff Engine does not import a BHL project. Contour and rhythm travel into BHL only.",
     ])
@@ -277,7 +277,7 @@ def build() -> Manual:
         ],
     )
     m.figure(str(SHOT / "bhl-06-pentatonic.png"), "Figure 3. BHL development colour. Suspended Pentatonic, reference D, HOME, contrast Hirajoshi.")
-    m.figure(str(SHOT / "bhl-11-pentatonic-registry.png"), "Figure 4. The Pentatonic page registry. Major and Minor have a path button. The other rows do not.")
+    m.figure(str(SHOT / "bhl-11-pentatonic-registry.png"), "Figure 4. Earlier Pentatonic registry. The picture shows a path button on Major and Minor only. The current page puts Use for path transform and phrase generation on every registered collection.")
 
     add_scenario(
         m, 19, "Major pentatonic as a bright home",
@@ -296,7 +296,7 @@ def build() -> Manual:
         ["World E.", "Collection: Minor Pentatonic.", "Reference: match the bass.", "Relationship: HOME.", "Approach: Chamber lyricism.", "Density: single line."],
         ["Set the collection.", "Generate.", "Compare with a saved major-pentatonic project of the same bass, if you made Scenario 19."],
         "A dark single line inside C Eb F G Bb, or the same intervals from your reference. The set-class matches major pentatonic. The centre does not. Lyricism keeps it melodic.",
-        ["Minor pentatonic is the other collection the Pentatonic page can send into phrase generation.", "Contrast Major Pentatonic when you want the bright set in the development only."],
+        ["Minor pentatonic can be sent to the Pentatonic page, as can the other eighteen colours.", "Contrast Major Pentatonic when you want the bright set in the development only."],
         "Do not treat the flat seventh as a dominant seventh that must fall. World E does not write that cadence.",
     )
     add_scenario(
@@ -307,7 +307,7 @@ def build() -> Manual:
         ["Set D and Suspended.", "Read the pitch classes. At D they are D E G A C.", "Generate.", "Read the constraint under Harmonic-field interaction."],
         "A pentatonic field with no third. Dyads can use the fourth. The harmony stays unresolved. This is a colour, not a sus chord on every beat waiting for a major triad.",
         ["Add Hirajoshi as contrast. Scenario 23.", "On world A, the same collection only contributes pitches the two triads already own."],
-        "On the Pentatonic page this row is reference only. There is no path button. That limit does not remove it from BHL.",
+        "On the Pentatonic page this row has the same path button as the other colours. That does not remove it from BHL.",
     )
     add_scenario(
         m, 22, "Open pentatonic, no third and no seventh",
@@ -317,7 +317,7 @@ def build() -> Manual:
         ["Select Open Pentatonic.", "Read C D F G A if the reference is C.", "Generate a single guitar before you store three candidates."],
         "Dyads and single notes from a set that will not declare mode. Leave-space keeps the last beat empty so the openness is not filled in by rhythm.",
         ["Suspended Pentatonic puts the flat seventh back, which is a darker open sound.", "Major Pentatonic puts the third back and ends the ambiguity."],
-        "Same path-page limit as the other non-major, non-minor colours.",
+        "On the Pentatonic page, Open Pentatonic can be the manual path collection. Inside BHL it remains a development colour.",
     )
     add_scenario(
         m, 23, "Kumoi, then Hirajoshi",
@@ -410,16 +410,16 @@ def build() -> Manual:
         "The pair counts on the page are about collections against each other, not automatically about the world field. The world test is the constraint after Generate.",
     )
     add_scenario(
-        m, 32, "Quartal dyads, and the path-page boundary",
-        "Use a fourth when the collection has one, and see which colours are forbidden on the other page.",
+        m, 32, "Quartal dyads, and the path page",
+        "Use a fourth when the collection has one, then send that colour to the Pentatonic page.",
         "World E. A collection with a fourth, such as Suspended or In Sen.",
         ["World E.", "Collection: Suspended Pentatonic or In Sen.", "Quartal colour on dyads when the collection has a fourth: on.", "Density: dyad.", "Then, separately, open the Pentatonic page."],
-        ["Generate the dyads in BHL.", "On the Pentatonic page, set Spelling reference to D.", "Find Suspended Pentatonic.", "Read the limitation. Do not look for a path button on that row.", "On Major Pentatonic, the button Use for path transform and phrase generation is present."],
-        "In BHL, a dyad may take the fourth. On the Pentatonic page, major and minor can become the manual path collection. The other eighteen collections stay on the page as spelling, intervals, and a refusal. Their pitches are not sent to path transform, phrase generation, M-DEG, or M-NEAR.",
+        ["Generate the dyads in BHL.", "On the Pentatonic page, set Spelling reference to D.", "Find Suspended Pentatonic.", "Click Use for path transform and phrase generation.", "Set the collection-step bounds and click Generate path. A return home needs at least 3 steps."],
+        "In BHL, a dyad may take the fourth. On the Pentatonic page, Suspended Pentatonic can be the manual path collection. M-DEG and M-NEAR use that collection. An unknown id is refused and is not rewritten as minor pentatonic.",
         ["Turn quartal colour off when the fourth is making every dyad sound like the same grip.", "Minor Sixth Pentatonic has no perfect fourth as its identity. Quartal colour will not invent one."],
-        "Clicking nothing on a reference row is the correct procedure. Calling the path generator for those eighteen colours would be false: with no archetype set, that generator falls back to minor pentatonic. The page does not call it.",
+        "Length counts collection steps, including the start. A repeated collection counts as a step. Save project keeps the route. Reopen project loads it and does not write a new path.",
     )
-    m.figure(str(SHOT / "bhl-12-pentatonic-limit.png"), "Figure 5. Suspended and Open pentatonic on the Pentatonic page, marked as reference. Major, above them, still has the path button.")
+    m.figure(str(SHOT / "bhl-12-pentatonic-limit.png"), "Figure 5. Earlier Pentatonic page. The picture marks Suspended and Open as reference. The current page gives those rows the path button.")
 
     m.h1("D. Motif and riff development", "motif")
     m.p("Pitch and rhythm are chosen apart. **Riff contour** takes intervals from the riff cell. **BHL world pitches** takes pitches from the world. The rhythm menu then decides whether the attacks are BHL’s, the same cell’s, another cell’s, or a multi-bar engine cell. Transformations stretch, cut, shift, or rest that rhythm. Leave-space, handoff, silence, and protected bars win.")
@@ -699,8 +699,7 @@ def build() -> Manual:
             ["Second core cell", "BHL rhythm only", "Another core cell, plus rhythm seed", "Working, direct"],
             ["Multi-bar rhythm", "BHL rhythm", "Multi-bar engine rhythm", "Working, direct"],
             ["Twenty colours", "BHL development", "Collection menu", "Working, direct"],
-            ["Major or minor pentatonic", "Pentatonic path and phrase", "Use for path transform…", "Working on that page only"],
-            ["Other eighteen colours", "Pentatonic path", "No button", "Not supported"],
+            ["All twenty colours", "Pentatonic path and phrase", "Use for path transform…", "Working on that page"],
             ["Vault field", "A BHL region", "Harmonic field menu", "Partial. Not the vault screen"],
             ["Liquid harmony", "World B", "The world itself", "Working, direct"],
             ["BHL", "Performance Composer", "Export MusicXML, then Respond", "File only"],
@@ -736,7 +735,7 @@ def build() -> Manual:
         ["Set Another core cell.", "Set a rhythm seed.", "Generate.", "If the rhythm matches the pitch cell, change the rhythm seed and generate again."],
         "Two cells. Pitch from one, attacks from the other. A verified file used pitch seed 17 and rhythm seed 1 so the attacks would differ. Seed 29 happened to share the seed-17 rhythm, so it was a bad contrast. Your numbers will differ. The test is whether the attacks differ.",
         ["This riff’s rhythm is the control that refuses a second seed.", "Multi-bar engine rhythm is a longer grid, not a second core cell."],
-        "Known limit: candidate distinctness when the rhythm source is another core cell has been unreliable in some checks. The passing interface tests used BHL rhythm. If three candidates come back too alike, switch riff rhythm to BHL rhythm or change the rhythm seed. Do not assume the three seeds guarantee three rhythms on this setting.",
+        "Generate three candidates keeps the rhythm seed. Candidate 1 keeps the transform you chose. The next two change that transform on the same cell, so the three lead rhythms are meant to differ. A checked run used Another core cell, pitch seed 17, rhythm seed 1, and Original, and the three lead rhythms differed. The source file was unchanged. Changing the page seed does not move that onset plan. If the second cell’s attacks match the pitch cell, change the rhythm seed. Seed 29 once shared the seed-17 rhythm.",
     )
     add_scenario(
         m, 61, "A multi-bar rhythm inside the phrase",
@@ -762,10 +761,10 @@ def build() -> Manual:
         m, 63, "What you should not try to connect",
         "A clear stop, so a later session does not invent a wire that is not there.",
         "Any BHL project.",
-        ["Do not import a BHL MusicXML into the Riff Engine and expect a round trip. The engine does not import BHL.", "Do not send Hirajoshi, Iwato, or the other reference colours into Pentatonic path transform.", "Do not look for an artist-named approach.", "Do not look for audio inside BHL.", "Do not treat the 13 October desktop app as this page."],
+        ["Do not import a BHL MusicXML into the Riff Engine and expect a round trip. The engine does not import BHL.", "Do not expect an unknown pentatonic id to become minor pentatonic. The page refuses it.", "Do not look for an artist-named approach.", "Do not look for audio inside BHL.", "Do not treat the 13 October desktop app as this page."],
         ["Read Cross-engine transfer once.", "Read the catalogue sentence in the pentatonic panel.", "Stop at the refusals."],
-        "The working directions are riff into BHL, colour into BHL, vault field as a menu, liquid harmony as world B, and MusicXML out. The reverse riff import, the eighteen path colours, artist profiles, and in-app audio are not supported.",
-        ["Major and minor pentatonic remain legal on the path page.", "All twenty remain legal as BHL development colours, subject to the world filter."],
+        "The working directions are riff into BHL, colour into BHL, all twenty colours into the Pentatonic path page, vault field as a menu, liquid harmony as world B, and MusicXML out. The reverse riff import, artist profiles, and in-app audio are not supported.",
+        ["Hirajoshi and Iwato can be the manual path collection.", "All twenty remain legal as BHL development colours, subject to the world filter."],
         "The catalogue line that mentions Sibelius is stale for this project. Use MuseScore 4. Do not follow that sentence.",
     )
 
@@ -801,7 +800,7 @@ def build() -> Manual:
         ["Create and lock.", "Read the metre.", "Generate three candidates with BHL rhythm.", "Save.", "Only then try Another core cell, and change the rhythm seed if the attacks do not differ."],
         "An uneven bar. World D supplies root, minor third, and tritone. Angular settings fragment and invert. Syncopation shifts the guitar inside the seven. The bass remains whatever the new score or the import locked.",
         ["5/8 is a tighter version of the same idea.", "Rhythmic counterpoint adds voice 2 if the groove needs an argument rather than a fragment."],
-        "Do not quantise 7/8 into 4/4 in MuseScore after export and still call it this scenario. Another-core-cell distinctness is the known weak spot. Prefer BHL rhythm when the three candidates collapse.",
+        "Do not quantise 7/8 into 4/4 in MuseScore after export and still call it this scenario. Another core cell keeps one rhythm seed across the three candidates and changes the transform. If the second cell matches the pitch cell, change the rhythm seed.",
     )
     add_scenario(
         m, 67, "Two sections, one contrast",
@@ -830,12 +829,12 @@ def build() -> Manual:
         "No audio in BHL. Read MusicXML in MuseScore 4. Ignore the button labelled Open in Sibelius, and ignore the catalogue sentence that mentions Sibelius.",
         "No artist-named approaches.",
         "No guitar tablature, and no Tonality Vault fretboard inside BHL.",
-        "No path generation for the eighteen colours that are not major or minor pentatonic.",
+        "No substitution of minor pentatonic when a colour id is unknown.",
         "No BHL object passed to Performance Composer. MusicXML only, then Respond.",
         "No BHL import into the Riff Engine.",
         "No quantise. Illegal notes are named and omitted.",
         "No automatic winner among candidates. Comparison is a pair.",
-        "Another core cell may not make three clearly different rhythms. Change the seed or use BHL rhythm.",
+        "Another core cell does not make three rhythms by changing the page seed. The three candidates change the transform and keep the rhythm seed.",
         "Empty intersection between a colour and worlds A to D or F leaves the guitar on the world.",
         "A missing development region leaves a contrast unused.",
         "Protected bars and the bass win over riffs, counter-lines, and transformations.",

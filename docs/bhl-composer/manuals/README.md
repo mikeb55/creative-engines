@@ -36,6 +36,6 @@ python3 build_all.py
 
 That rewrites the Markdown, Word, and PDF files in this folder. Dependencies: `python-docx`, `fpdf2`, `Pillow`. The PDF builder uses Georgia from `/System/Library/Fonts/Supplemental/` on macOS.
 
-A rebuild is not byte-for-byte identical to the archived PDF and Word files. Page counts and internal links matched on 15 October 2026 (Quick Start 15 pages, 54 links; handbook 56 pages, 167 links). Keep the archived PDF and Word files unless you mean to replace them.
+A rebuild is not byte-for-byte identical to an earlier PDF. The 15 October 2026 correction replaces the published copies. The Pentatonic page accepts all twenty colours for path and phrase work, with a variable collection-step length, a MusicXML collection mark, and project save/reopen. BHL Another core cell keeps the rhythm seed and changes the transform so the three candidates differ. Figure captions that still use the earlier screenshots say the picture is earlier.
 
 Markdown image links are relative to `source/` (`../assets/...`).

@@ -123,7 +123,7 @@ On worlds A to D and F the colour only sounds on pitches the world already conta
 
 **Quartal colour on dyads when the collection has a fourth** is a separate tick. It does not invent a fourth the collection lacks.
 
-The **Pentatonic** button in the top row opens a different page. There, only Major Pentatonic and Minor Pentatonic can be sent into path transform and phrase generation. The other eighteen collections are reference on that page. They remain real development colours inside BHL. See [the path-page limit](#pathlimit).
+The **Pentatonic** button in the top row opens a different page. Every registered colour there can be sent into path transform and phrase generation. An unknown colour is refused. The page does not substitute minor pentatonic. The same twenty colours remain development colours inside BHL. See [the Pentatonic path page](#pathlimit).
 
 
 ## 9. Riff pitch and riff rhythm {#riff}
@@ -225,7 +225,7 @@ Read the first system at the size you would use at a stand. Check that the guita
 - Insert a rest needs a note of at least half a crotchet to split. Otherwise the transform is reported unavailable.
 - A contrast collection does nothing if the span has no development or transformation region.
 - An empty shared set between a colour and worlds A–D or F leaves the guitar on the world. It does not snap to major or minor.
-- Path transform on the Pentatonic page accepts only major and minor pentatonic.
+- An unregistered pentatonic id is refused. The Pentatonic page does not substitute minor pentatonic.
 - Performance Composer does not take a BHL project. It takes an exported MusicXML file, opened with Respond.
 - The Riff page does not import a BHL file. Rhythm and contour travel into BHL, not back out.
 - Section numbers on the BHL page skip 3, 4, and 6.
@@ -308,11 +308,11 @@ World E takes the collection as its pitch source. Worlds A to D and F keep their
 Further scenarios, including mixed metre, each colour, and the limits of Performance Composer, are in the Creative Scenarios & Integration Handbook, version 1.0, dated 15 October 2026.
 
 
-### Path-page limit {#pathlimit}
+### Pentatonic path page {#pathlimit}
 
-On the Pentatonic page, **Use for path transform and phrase generation** appears only on Major Pentatonic and Minor Pentatonic. Suspended Pentatonic and the other seventeen colours show this sentence: path transform, phrase generation, M-DEG, and M-NEAR support major and minor only. The collection is reference material. Its pitches are not sent to those operations. Inside BHL, the same collection can still colour a development.
+On the Pentatonic page, **Use for path transform and phrase generation** is on every registered collection, including Suspended Pentatonic and Hirajoshi. Minimum and maximum collection steps run from 2 to 8. A path that must return home needs at least 3 steps. Length counts collection steps, including the start. A repeated collection counts as a step. **Save project** stores the collection, the route, the selected candidate, the motif, the phrase, and the musical events. **Reopen project** loads that file. It does not generate a new path. A Pentatonic export that names a collection writes `collection id@centre` into the MusicXML. Removing that direction leaves the pitches and drops the declared name. Inside BHL, the same collection can still colour a development.
 
-![Figure 12. Pentatonic page. Major and minor can feed the path. Suspended and Open are reference only.](../assets/screenshots/bhl-12-pentatonic-limit.png)
+![Figure 12. Earlier Pentatonic page. The picture shows a path button on Major only. The current page puts that button on every registered collection.](../assets/screenshots/bhl-12-pentatonic-limit.png)
 
 
 ### Where integration stops {#integrate}

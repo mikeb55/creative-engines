@@ -10,7 +10,7 @@ Load a MusicXML score. The score itself is not rewritten. Anything you export is
 
 **Home** is the pentatonic colour relationships are heard against. It is a five-note collection, such as A Major Pentatonic. Centre and Home are not the same thing. A score can have a centre and still have no settled home.
 
-**Colour** is the pentatonic in use for a stretch of the piece. The path registry is still Major Pentatonic and Minor Pentatonic. A separate colour vocabulary describes other five-note fields. It does not change the path, and it does not force every note inside those five pitches.
+**Colour** is the pentatonic in use for a stretch of the piece. The current page can use any of the twenty registered colours as the manual path collection. The older path registry still lists only Major Pentatonic and Minor Pentatonic. Colour-path search reads the twenty colour intervals directly. An unknown id is refused. Minor pentatonic is not substituted. A colour field does not force every note inside those five pitches.
 
 **None** means that stretch is not being read as a pentatonic. None is a real path result. It is not a missing file and it is not the same as choosing not to write a phrase.
 
@@ -151,3 +151,17 @@ Layered field keeps one colour for guitar and bass and gives them different note
 The shipped minor sixth pentatonic is still `0 3 5 8 10`. That is a flat sixth in place of the fifth. The collection `0 3 5 7 9` is a rotation of lydian pentatonic, so it was not added. Dorian and aeolian each contain a semitone while their chromatic edge stays low. That mismatch is reported and left alone, because changing it would move Dev 6's darker and brighter step.
 
 Colour registry stays 20. `changeCost` stays `0.35`. Fingerprint stays `cca0456e61a2a14e06f4aa14af0ae4bff902a46baa18ced000aec9ab146c91e6`. Tag `pentatonic-dev7-release`. Tags `pentatonic-dev6-release` and `pentatonic-options-v2.1-release` stay where they are.
+
+## Current page
+
+Dev 6 and Dev 7 above are the frozen tags. The Composer OS Pentatonic page now does the following as well.
+
+**Twenty colours.** Each registered row has **Use for path transform and phrase generation**. Motif mapping and phrase generation accept all twenty, at all twelve centres. M-DEG keeps the degree pattern inside the target colour. M-NEAR moves an outside note onto the colour and leaves a note that is already inside it. A straight request for an unknown id fails. Iwato mapped by M-DEG does not become C minor pentatonic.
+
+**Variable-length colour paths.** **Generate path** takes a minimum and a maximum number of collection steps, from 2 to 8. A required return that must leave home needs at least 3 steps: home, another collection, home. An open ending may be 2 steps. Length counts steps, including the start and including a repeated collection. It is not the count of changes. The same seed repeats the same route.
+
+**MusicXML collection identity.** A practice export that names a collection writes the words `collection id@centre`, for example `collection blue_pentatonic@A`. Analysis then treats that region as an explicit collection when the notes sit inside it. Removing the direction leaves the pitches. The region is no longer that declared name. More than one collection mark on a region chooses none. An unregistered mark is not invented into a colour.
+
+**Save and reopen.** **Save project** stores the collection, the route bounds, the selected candidate, the motif, the phrase, and the musical events. **Reopen project** loads that file. It does not generate a new path. A stored collection whose canonical identity does not match the registered colour is rejected.
+
+None of this is an artistic score. A generated phrase, a legal route, and a reopened file are structural results. They are not musical approval.
