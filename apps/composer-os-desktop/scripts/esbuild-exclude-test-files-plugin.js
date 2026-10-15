@@ -1,16 +1,32 @@
 /**
- * esbuild: stub co-located *.test.ts swept by mosaic dynamic require() graph.
- * Desktop bundles only — avoids vitest resolution during bundle without moving tests.
+ * esbuild: stub files swept by mosaic dynamic require() that are not runtime modules.
+ * Desktop bundles only — avoids vitest resolution and frozen snapshot import paths
+ * without moving those sources.
+ *
+ * WPS V1.1 under core/wwh/wps/baseline/ keeps imports written for core/wwh/wps/.
+ * Nested copies do not resolve. Live WPS modules stay in the bundle.
  */
+function normalizePath(filePath) {
+  return filePath.replace(/\\/g, '/');
+}
+
 function pathEndsWithTestTs(filePath) {
-  return filePath.replace(/\\/g, '/').endsWith('.test.ts');
+  return normalizePath(filePath).endsWith('.test.ts');
+}
+
+function pathIsFrozenWpsBaseline(filePath) {
+  return normalizePath(filePath).includes('/wps/baseline/');
+}
+
+function shouldStubFromBundle(filePath) {
+  return pathEndsWithTestTs(filePath) || pathIsFrozenWpsBaseline(filePath);
 }
 
 const composerOsExcludeTestFilesPlugin = {
   name: 'composer-os-exclude-test-files',
   setup(build) {
-    build.onResolve({ filter: /\.test\.ts$/ }, (args) => {
-      if (!pathEndsWithTestTs(args.path)) {
+    build.onResolve({ filter: /(?:\.test\.ts$|\/wps\/baseline\/)/ }, (args) => {
+      if (!shouldStubFromBundle(args.path)) {
         return null;
       }
       return { path: args.path, namespace: 'composer-os-excluded-test-ts' };
@@ -19,8 +35,8 @@ const composerOsExcludeTestFilesPlugin = {
       contents: 'module.exports = {};',
       loader: 'js',
     }));
-    build.onLoad({ filter: /\.test\.ts$/ }, (args) => {
-      if (!pathEndsWithTestTs(args.path)) {
+    build.onLoad({ filter: /(?:\.test\.ts$|\/wps\/baseline\/)/ }, (args) => {
+      if (!shouldStubFromBundle(args.path)) {
         return null;
       }
       return {
@@ -31,4 +47,8 @@ const composerOsExcludeTestFilesPlugin = {
   },
 };
 
-module.exports = { composerOsExcludeTestFilesPlugin };
+module.exports = {
+  composerOsExcludeTestFilesPlugin,
+  pathIsFrozenWpsBaseline,
+  shouldStubFromBundle,
+};
