@@ -8,6 +8,7 @@ import { SlonimskyEtudes } from './pages/SlonimskyEtudes';
 import { PentatonicEnginePage } from './pentatonic/PentatonicEnginePage';
 import { HexatonicEnginePage } from './hexatonic/HexatonicEnginePage';
 import { BhlComposerPage } from './bhl/BhlComposerPage';
+import { EvaluationDashboardPage } from './evaluation/EvaluationDashboardPage';
 import { WwhPerformanceV8 } from './pages/WwhPerformanceV8';
 import { RiffGenPage } from './pages/RiffGenPage';
 import { ArrangerTab } from './components/Arranger/ArrangerTab';
@@ -508,6 +509,13 @@ export default function App() {
             BHL
           </button>
           <button
+            className={tab === 'evaluation' ? '' : 'secondary'}
+            onClick={() => goToTab('evaluation')}
+            type="button"
+          >
+            Evaluation
+          </button>
+          <button
             className={tab === 'slonimsky-etudes' ? '' : 'secondary'}
             onClick={() => goToTab('slonimsky-etudes')}
             type="button"
@@ -558,6 +566,7 @@ export default function App() {
       {tab === 'pentatonic' && <PentatonicEnginePage />}
       {tab === 'hexatonic' && <HexatonicEnginePage />}
       {tab === 'bhl' && <BhlComposerPage />}
+      {tab === 'evaluation' && <EvaluationDashboardPage />}
       {tab === 'wwh-v8' && <WwhPerformanceV8 />}
       {tab === 'slonimsky-etudes' && <SlonimskyEtudes />}
       {tab === 'guide' && <UserGuide />}

@@ -12,6 +12,7 @@ export type AppRouteId =
   | 'pentatonic'
   | 'hexatonic'
   | 'bhl'
+  | 'evaluation'
   | 'wwh-v8'
   | 'guide'
   | 'credits';
@@ -31,6 +32,7 @@ const ROUTE_PATHS: Record<AppRouteId, string> = {
   pentatonic: '/pentatonic',
   hexatonic: '/hexatonic',
   bhl: '/bhl',
+  evaluation: '/evaluation',
   'wwh-v8': '/wwh-v8',
   guide: '/guide',
   credits: '/credits',
@@ -146,6 +148,8 @@ export function routeNavLabel(route: AppRouteId): string {
       return 'Hexatonic';
     case 'bhl':
       return 'BHL';
+    case 'evaluation':
+      return 'Evaluation';
     case 'wwh-v8':
       return 'Performance Composer';
     case 'guide':
@@ -173,4 +177,4 @@ export const ROUTE_HASH_SEGMENTS: readonly string[] = PRIMARY_NAV_ROUTES.filter(
   (id) => id !== 'home'
 )
   .map((id) => pathForRoute(id).replace(/^\//, ''))
-  .concat(['composer-engines', 'slonimsky-etudes', 'pentatonic', 'hexatonic', 'bhl', 'wwh-v8', 'guide', 'credits']);
+  .concat(['composer-engines', 'slonimsky-etudes', 'pentatonic', 'hexatonic', 'bhl', 'evaluation', 'wwh-v8', 'guide', 'credits']);

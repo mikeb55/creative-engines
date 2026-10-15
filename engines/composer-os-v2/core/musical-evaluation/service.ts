@@ -258,3 +258,46 @@ export function verifyReceipt(receipt: EvidenceReceipt): boolean {
   const live = sha256Text(canonicalJson(body));
   return live === receiptSha256 && createHash('sha256').update(receiptBytes(receipt), 'utf8').digest('hex').length === 64;
 }
+
+export interface ScoreIdentityEvent {
+  id: string;
+  bar: number;
+  partId: string;
+  instrument: string;
+  voice: string;
+  onset: string;
+  rest: boolean;
+}
+
+export interface ScoreIdentity {
+  sha256: string;
+  parseError: string | null;
+  rootName: string | null;
+  parts: Array<{ id: string; name: string; role: string }>;
+  bars: number[];
+  eventCount: number;
+  events: ScoreIdentityEvent[];
+}
+
+/** Identity of a loaded score. Reads the canonical ingest. Does not analyse or write. */
+export function describeScoreIdentity(xml: string): ScoreIdentity {
+  const ingest = ingestCanonicalScore(xml);
+  const score = ingest.score;
+  return {
+    sha256: ingest.sha256,
+    parseError: ingest.parseError,
+    rootName: ingest.rootName,
+    parts: (score?.parts ?? []).map((part) => ({ id: part.id, name: part.name, role: part.role })),
+    bars: [...new Set((score?.measures ?? []).map((measure) => measure.bar))].sort((a, b) => a - b),
+    eventCount: score?.sourceEvents.length ?? 0,
+    events: (score?.sourceEvents ?? []).map((event) => ({
+      id: event.id,
+      bar: event.bar,
+      partId: event.partId,
+      instrument: event.instrument,
+      voice: event.voice,
+      onset: `${event.onsetInBar.n}/${event.onsetInBar.d}`,
+      rest: event.rest,
+    })),
+  };
+}

@@ -42,6 +42,7 @@ import {
   apiBhlSaveProject,
   apiBhlScratch,
 } from '../engines/composer-os-v2/app-api/bhlApp';
+import { apiEvaluateMusicalScore } from '../engines/composer-os-v2/app-api/evaluationApp';
 import { apiPentatonicOpenProject, apiPentatonicSaveProject } from '../engines/composer-os-v2/app-api/pentatonicProjectApp';
 import { apiHexatonicOpenProject, apiHexatonicSaveProject } from '../engines/composer-os-v2/app-api/hexatonicProjectApp';
 import { openOutputFolderRoute } from './openOutputFolderRoute';
@@ -355,6 +356,15 @@ app.post('/api/bhl/scratch', (req: Request, res: Response) => {
     sendBhl(res, apiBhlScratch(req.body));
   } catch (err) {
     res.status(500).json({ ok: false, error: String(err) });
+  }
+});
+
+app.post('/api/evaluation/score', (req: Request, res: Response) => {
+  try {
+    const result = apiEvaluateMusicalScore(req.body);
+    res.status(result.ok ? 200 : 400).json(result);
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err instanceof Error ? err.message : String(err) });
   }
 });
 
