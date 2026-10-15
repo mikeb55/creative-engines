@@ -8,6 +8,8 @@
 
 ### Added
 
+- **V3.1-B3 rhythm, silence, and duo interaction** — per-instrument density and rest share first, then joint silence, guitar-during-bass-rest, bass-during-guitar-rest, shared and unshared attacks, BHL motion and crossings, experimental role hints, and candidate event differences. Syncopation, onset entropy, and LBDM stay unsupported. No musical-quality score.
+
 - **V3.1-B2 harmonic and motivic evidence** — descriptive pitch-class collections, declared-field membership, pentatonic and hexatonic distance kept on their own classifiers, registered voice-leading, contour, tessitura, common-tone retention, BHL motif windows, and `M-DEG` / `M-NEAR` as map methods. An outside note is not an error. No musical-quality score.
 
 - **V3.1-B1 canonical evaluation score** — `engines/composer-os-v2/core/musical-evaluation/`. MusicXML becomes a rational-time score with parts, voices, written and sounding pitch, transposition, tempo, expression, rehearsal text, ties, tuplets, and unexpanded repeats. Grace, cue, timewise, additive metre, and uninterpreted notations are reported. Technical checks cover parse, bar duration, parts, range, BHL locks, guitar feasibility, and reimport. No musical-quality score.
