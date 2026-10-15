@@ -6,6 +6,7 @@ import { UserGuide } from './pages/UserGuide';
 import { ComposerCredits } from './pages/ComposerCredits';
 import { SlonimskyEtudes } from './pages/SlonimskyEtudes';
 import { PentatonicEnginePage } from './pentatonic/PentatonicEnginePage';
+import { HexatonicEnginePage } from './hexatonic/HexatonicEnginePage';
 import { BhlComposerPage } from './bhl/BhlComposerPage';
 import { WwhPerformanceV8 } from './pages/WwhPerformanceV8';
 import { RiffGenPage } from './pages/RiffGenPage';
@@ -493,6 +494,13 @@ export default function App() {
             Pentatonic
           </button>
           <button
+            className={tab === 'hexatonic' ? '' : 'secondary'}
+            onClick={() => goToTab('hexatonic')}
+            type="button"
+          >
+            Hexatonic
+          </button>
+          <button
             className={tab === 'bhl' ? '' : 'secondary'}
             onClick={() => goToTab('bhl')}
             type="button"
@@ -548,6 +556,7 @@ export default function App() {
         <ComposerEngines />
       )}
       {tab === 'pentatonic' && <PentatonicEnginePage />}
+      {tab === 'hexatonic' && <HexatonicEnginePage />}
       {tab === 'bhl' && <BhlComposerPage />}
       {tab === 'wwh-v8' && <WwhPerformanceV8 />}
       {tab === 'slonimsky-etudes' && <SlonimskyEtudes />}
