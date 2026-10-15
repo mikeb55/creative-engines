@@ -8,6 +8,8 @@
 
 ### Added
 
+- **V3.1-B2 harmonic and motivic evidence** — descriptive pitch-class collections, declared-field membership, pentatonic and hexatonic distance kept on their own classifiers, registered voice-leading, contour, tessitura, common-tone retention, BHL motif windows, and `M-DEG` / `M-NEAR` as map methods. An outside note is not an error. No musical-quality score.
+
 - **V3.1-B1 canonical evaluation score** — `engines/composer-os-v2/core/musical-evaluation/`. MusicXML becomes a rational-time score with parts, voices, written and sounding pitch, transposition, tempo, expression, rehearsal text, ties, tuplets, and unexpanded repeats. Grace, cue, timewise, additive metre, and uninterpreted notations are reported. Technical checks cover parse, bar duration, parts, range, BHL locks, guitar feasibility, and reimport. No musical-quality score.
 
 - **Hexatonic Phase H5A** — release check of the H1–H4 engine. Guide: `docs/HEXATONIC_GUIDE.md`. Eleven scalar collections, 16 WPS pairs, inside / outside / return, `M-DEG` / `M-NEAR`, `#/hexatonic`, `hexatonic-project` version 1, and desktop MusicXML export stay as shipped. Structural tests are separate from artistic approval. `artisticApproval` stays false. The music was not claimed as heard, played, or approved. No new generator.
