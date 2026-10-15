@@ -16,6 +16,8 @@ function collectionPcs(intervals: readonly number[] | undefined, reference: stri
   return [...new Set(intervals.map((interval) => (root + offset + interval + 120) % 12))].sort((a, b) => a - b);
 }
 import { api, isDesktopIpc } from '../services/api';
+import { ScoreAudition } from '../score/ScoreAudition';
+import { ScorePreview } from '../score/ScorePreview';
 import { BhlEvidencePanel, type BhlComparisonView, type BhlEvidenceView, type BhlIntentView } from './BhlEvidencePanel';
 
 type Span = { from: number; to: number };
@@ -676,6 +678,11 @@ export function BhlComposerPage() {
     .split(/[^0-9]+/)
     .filter(Boolean)
     .join(',');
+  const selectedCandidateRow = candidates.find((item) => item.id === selectedCandidate) ?? null;
+  const selectedCandidateXml = typeof selectedCandidateRow?.xml === 'string' ? selectedCandidateRow.xml : '';
+  const selectedCandidateLabel = selectedCandidateRow
+    ? String(selectedCandidateRow.label ?? selectedCandidateRow.id ?? 'Candidate')
+    : '';
   const lockInputsDiffer = Boolean(
     locked &&
       (locked.sourcePath !== sourcePath ||
@@ -1372,6 +1379,15 @@ export function BhlComposerPage() {
           <pre data-testid="bhl-compare-text" style={{ whiteSpace: 'pre-wrap', margin: 0 }}>
             {compareText}
           </pre>
+        ) : null}
+        {selectedCandidateXml ? (
+          <>
+            <ScoreAudition
+              musicXml={selectedCandidateXml}
+              label={`${selectedCandidateLabel} · CANDIDATE FOR AUDITION — NOT MUSICALLY APPROVED`}
+            />
+            <ScorePreview musicXml={selectedCandidateXml} />
+          </>
         ) : null}
         <p style={{ margin: 0, color: 'var(--text-muted)' }}>No numerical score and no automatic winner. CANDIDATE FOR AUDITION — NOT MUSICALLY APPROVED.</p>
       </section>

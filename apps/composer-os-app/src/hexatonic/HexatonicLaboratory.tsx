@@ -11,6 +11,8 @@ import {
   type LaboratoryDecision,
 } from '@composer-os/core/hexatonic';
 import { api } from '../services/api';
+import { ScoreAudition } from '../score/ScoreAudition';
+import { ScorePreview } from '../score/ScorePreview';
 
 const ANSWERS: LaboratoryAnswer[] = ['UNDECIDED', 'YES', 'NO'];
 const DECISIONS: LaboratoryDecision[] = ['UNDECIDED', 'KEEP', 'REFINE', 'REJECT'];
@@ -144,7 +146,11 @@ export function HexatonicLaboratory() {
           </select>
         </label>
       </fieldset>
-      <p style={{ margin: 0 }}>Audition MusicXML is notation only. Export does not approve the candidate.</p>
+      <p style={{ margin: 0 }}>
+        In-app playback and preview do not approve the candidate. Status stays {CORE_LABORATORY_STATUS}.
+      </p>
+      <ScoreAudition musicXml={xml} label={`${analysis.candidate.label} · ${CORE_LABORATORY_STATUS}`} />
+      <ScorePreview musicXml={xml} />
       <textarea data-testid="hexatonic-laboratory-xml" readOnly rows={4} value={xml} />
       <label htmlFor="hex-lab-path">
         Review file

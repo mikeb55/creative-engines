@@ -39,6 +39,8 @@ function globalQuarterStart(
 
 export type PlayOptions = {
   loop?: boolean;
+  /** Fires once when a non-looping sequence reaches its last note. */
+  onEnded?: () => void;
 };
 
 /**
@@ -105,11 +107,13 @@ export async function play(
     transport.loop = true;
     transport.loopEnd = endSec;
   } else {
+    const onEnded = options?.onEnded;
     endStopId = transport.scheduleOnce(() => {
       transport.stop();
       transport.cancel();
       clearScheduledIds(transport);
       disposeSynth();
+      onEnded?.();
     }, endSec);
   }
 
