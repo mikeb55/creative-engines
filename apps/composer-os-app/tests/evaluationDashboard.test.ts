@@ -44,6 +44,8 @@ describe('evaluation route', () => {
   it('registers the desktop evaluation channel without replacing project routes', () => {
     const ipc = fs.readFileSync(path.resolve(__dirname, '../../composer-os-desktop/electron/ipcEntry.ts'), 'utf8');
     expect(ipc).toContain("ipcMain.handle('composer-os-api:evaluation-score'");
+    expect(ipc).toContain("ipcMain.handle('composer-os-api:evaluation-compare'");
+    expect(ipc).toContain("ipcMain.handle('composer-os-api:evaluation-review-save'");
     expect(ipc).toContain("ipcMain.handle('composer-os-api:bhl-inspect'");
     expect(ipc).toContain("ipcMain.handle('composer-os-api:pentatonic-project-save'");
     expect(ipc).toContain("ipcMain.handle('composer-os-api:hexatonic-project-open'");

@@ -46,10 +46,12 @@ export function ComparisonPanel({
   loadedXml,
   loadedLabel,
   compare,
+  onCompared,
 }: {
   loadedXml: string;
   loadedLabel: string;
   compare: (body: Record<string, unknown>) => Promise<Record<string, unknown>>;
+  onCompared?: (result: Compared) => void;
 }) {
   const [slots, setSlots] = useState<Slot[]>(EMPTY);
   const [busy, setBusy] = useState(false);
@@ -72,7 +74,9 @@ export function ComparisonPanel({
         setError(typeof response.error === 'string' ? response.error : 'Comparison failed.');
         return;
       }
-      setResult(response as unknown as Compared);
+      const compared = response as unknown as Compared;
+      setResult(compared);
+      onCompared?.(compared);
     } catch (err) {
       setResult(null);
       setError(err instanceof Error ? err.message : 'Comparison failed.');

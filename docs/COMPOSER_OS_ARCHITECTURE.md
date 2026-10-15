@@ -222,7 +222,7 @@ User / API
 
 ## Current system status
 
-- **Musical evaluation V3.1-C1** (`#/evaluation`, `app-api/evaluationApp.ts`): the dashboard calls `evaluateScore` and `describeScoreIdentity`. It shows the receipt. It does not reimplement the checks and it does not write the MusicXML.
+- **Musical evaluation V3.1-C** (`#/evaluation`, `app-api/evaluationApp.ts`): the dashboard calls `evaluateScore`, `compareScores`, and `describeScoreIdentity`. Human BMEF-100 V2.0 reviews are separate `.evaluation.json` records. The dashboard does not reimplement the checks, does not write the MusicXML, and does not total an artistic score.
 - **Musical evaluation V3.1-B** (`engines/composer-os-v2/core/musical-evaluation/`): reads partwise MusicXML into a canonical rational-time score and writes a JSON evidence receipt. Technical checks can pass or fail. Harmonic, motivic, rhythmic, and duo findings describe events. BMEF-100 V2.0 gates and criteria are stored for a later human scorecard. The service does not total them, does not rank candidates, and does not write notes.
 - **Guitar–Bass Duo** and **ECM Chamber**: full MusicXML golden path; optional **32-bar** long-form for duo.
 - **Song Mode**: compile + planning + duo MusicXML generation path via app API; rhythm intent applies on the **Song Mode duo MusicXML** path when `intent` is sent.

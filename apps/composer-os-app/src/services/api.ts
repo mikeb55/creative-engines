@@ -137,6 +137,9 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     if (path === '/hexatonic/project/open') return ipcInvoke<T>('composer-os-api:hexatonic-project-open', body ?? {});
     if (path === '/evaluation/score') return ipcInvoke<T>('composer-os-api:evaluation-score', body ?? {});
     if (path === '/evaluation/compare') return ipcInvoke<T>('composer-os-api:evaluation-compare', body ?? {});
+    if (path === '/evaluation/review/create') return ipcInvoke<T>('composer-os-api:evaluation-review-create', body ?? {});
+    if (path === '/evaluation/review/save') return ipcInvoke<T>('composer-os-api:evaluation-review-save', body ?? {});
+    if (path === '/evaluation/review/open') return ipcInvoke<T>('composer-os-api:evaluation-review-open', body ?? {});
     throw new Error(`Unknown IPC POST path: ${path}`);
   }
   let r: Response;
@@ -396,6 +399,9 @@ export const api = {
   hexatonicOpenProject: (body: Record<string, unknown>) => post<Record<string, unknown>>('/hexatonic/project/open', body),
   evaluateMusicalScore: (body: Record<string, unknown>) => post<Record<string, unknown>>('/evaluation/score', body),
   compareMusicalScores: (body: Record<string, unknown>) => post<Record<string, unknown>>('/evaluation/compare', body),
+  createHumanReview: (body: Record<string, unknown>) => post<Record<string, unknown>>('/evaluation/review/create', body),
+  saveHumanReview: (body: Record<string, unknown>) => post<Record<string, unknown>>('/evaluation/review/save', body),
+  openHumanReview: (body: Record<string, unknown>) => post<Record<string, unknown>>('/evaluation/review/open', body),
 };
 
 /** Shape checks for generation receipts (tests). */

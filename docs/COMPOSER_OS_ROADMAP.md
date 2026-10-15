@@ -486,6 +486,7 @@ Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartÃ³k** native bundle (not 
 
 ## Current (as of 2026-07-01 snapshot)
 
+- **Musical evaluation V3.1-C4 (2026-10-15):** `#/evaluation` saves a human BMEF-100 V2.0 review beside the score. Ratings and the decision start empty. No artistic-quality total.
 - **Musical evaluation V3.1-C3 (2026-10-15):** `#/evaluation` compares two or three scores by event and does not rank them.
 - **Musical evaluation V3.1-C2 (2026-10-15):** `#/evaluation` shows technical, harmonic, and rhythm findings from the V3.1-B receipt. Event location is a table. No artistic-quality total.
 - **Musical evaluation V3.1-C1 (2026-10-15):** `#/evaluation` loads a score through the V3.1-B service and shows identity plus technical findings. Harmonic, rhythm, comparison, and human-review views are labelled. No artistic-quality total.

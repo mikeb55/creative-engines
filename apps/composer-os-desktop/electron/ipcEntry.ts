@@ -38,7 +38,7 @@ import {
   apiBhlSaveProject,
   apiBhlScratch,
 } from '../../../engines/composer-os-v2/app-api/bhlApp';
-import { apiCompareMusicalScores, apiEvaluateMusicalScore } from '../../../engines/composer-os-v2/app-api/evaluationApp';
+import { apiCompareMusicalScores, apiCreateHumanReview, apiEvaluateMusicalScore, apiOpenHumanReview, apiSaveHumanReview } from '../../../engines/composer-os-v2/app-api/evaluationApp';
 import { apiPentatonicOpenProject, apiPentatonicSaveProject } from '../../../engines/composer-os-v2/app-api/pentatonicProjectApp';
 import { apiHexatonicOpenProject, apiHexatonicSaveProject } from '../../../engines/composer-os-v2/app-api/hexatonicProjectApp';
 import { writePentatonicDesktopMusicXml } from './pentatonicDesktopExport';
@@ -423,6 +423,9 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
   ipcMain.handle('composer-os-api:bhl-scratch', (_e, body: unknown) => apiBhlScratch(body));
   ipcMain.handle('composer-os-api:evaluation-score', (_e, body: unknown) => apiEvaluateMusicalScore(body));
   ipcMain.handle('composer-os-api:evaluation-compare', (_e, body: unknown) => apiCompareMusicalScores(body));
+  ipcMain.handle('composer-os-api:evaluation-review-create', (_e, body: unknown) => apiCreateHumanReview(body));
+  ipcMain.handle('composer-os-api:evaluation-review-save', (_e, body: unknown) => apiSaveHumanReview(body));
+  ipcMain.handle('composer-os-api:evaluation-review-open', (_e, body: unknown) => apiOpenHumanReview(body));
   ipcMain.handle('composer-os-api:generate-comping', (_e, body: unknown) =>
     Promise.resolve(apiGenerateComping(body as Parameters<typeof apiGenerateComping>[0]))
   );

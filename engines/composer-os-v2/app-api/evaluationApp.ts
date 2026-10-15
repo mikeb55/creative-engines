@@ -1,8 +1,9 @@
 /**
- * Read-only dashboard API for the V3.1-B evaluation service.
- * Loads MusicXML text. Does not write the source score.
+ * Dashboard API for the V3.1-B evaluation service.
+ * Score loading is read-only. Human review records are a separate JSON file.
  */
 
+import path from 'node:path';
 import type { BhlLockSpec } from '../core/bhl/bhlTypes';
 import { ingestCanonicalScore } from '../core/musical-evaluation/canonicalScore';
 import {
@@ -14,6 +15,15 @@ import {
   type ScoreIdentity,
 } from '../core/musical-evaluation/service';
 import type { DeclaredField } from '../core/musical-evaluation/harmonicEvidence';
+import {
+  applyHumanReview,
+  createHumanReview,
+  evaluationRecordDir,
+  loadHumanReviewFile,
+  saveHumanReviewFile,
+  type HumanReviewPatch,
+  type HumanReviewRecord,
+} from '../core/musical-evaluation/humanReviewRecord';
 
 export interface EvaluationApiFailure {
   ok: false;
@@ -145,4 +155,52 @@ export function apiCompareMusicalScores(body: unknown): ComparisonApiSuccess | E
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : 'comparison failed' };
   }
+}
+
+function libraryRootOf(row: Record<string, unknown>): string | undefined {
+  return typeof row.libraryRoot === 'string' && row.libraryRoot.trim() ? row.libraryRoot.trim() : undefined;
+}
+
+export function apiCreateHumanReview(body: unknown): { ok: true; record: HumanReviewRecord } | EvaluationApiFailure {
+  const row = asRecord(body);
+  const receipt = row.receipt as EvidenceReceipt | undefined;
+  if (!receipt || typeof receipt !== 'object' || !receipt.receiptSha256) return { ok: false, error: 'a score receipt is required before a human review' };
+  const comparison = asRecord(row.comparison);
+  const labels = Array.isArray(comparison.labels) ? comparison.labels.filter((item): item is string => typeof item === 'string') : [];
+  try {
+    const record = createHumanReview({
+      label: typeof row.label === 'string' ? row.label : undefined,
+      receipt,
+      comparison: labels.length ? { labels, differenceCount: typeof comparison.differenceCount === 'number' ? comparison.differenceCount : 0, differences: Array.isArray(comparison.differences) ? comparison.differences : [] } : null,
+    });
+    return { ok: true, record };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : 'human review could not be started' };
+  }
+}
+
+export function apiSaveHumanReview(body: unknown): { ok: true; path: string; bytes: number; record: HumanReviewRecord } | EvaluationApiFailure {
+  const row = asRecord(body);
+  const current = row.record as HumanReviewRecord | undefined;
+  if (!current || typeof current !== 'object') return { ok: false, error: 'record is required' };
+  const patch = row.patch && typeof row.patch === 'object' ? row.patch as HumanReviewPatch : null;
+  const reviewed = patch ? applyHumanReview(current, patch) : current;
+  if ('error' in reviewed) return { ok: false, error: reviewed.error };
+  const libraryRoot = libraryRootOf(row);
+  const requested = typeof row.path === 'string' && row.path.trim() ? row.path.trim() : '';
+  const rawName = typeof row.fileName === 'string' && row.fileName.trim() ? row.fileName.trim() : `${reviewed.source.label}-${reviewed.source.sha256.slice(0, 12)}`;
+  const safeName = path.basename(rawName).replace(/[^A-Za-z0-9._-]+/g, '-');
+  const target = requested || path.join(evaluationRecordDir(libraryRoot), safeName.endsWith('.evaluation.json') ? safeName : `${safeName}.evaluation.json`);
+  const saved = saveHumanReviewFile(target, reviewed, libraryRoot, row.overwrite === true);
+  if ('error' in saved) return { ok: false, error: saved.error };
+  return { ok: true, path: saved.path, bytes: saved.bytes, record: reviewed };
+}
+
+export function apiOpenHumanReview(body: unknown): { ok: true; path: string; record: HumanReviewRecord } | EvaluationApiFailure {
+  const row = asRecord(body);
+  const requested = typeof row.path === 'string' ? row.path.trim() : '';
+  if (!requested) return { ok: false, error: 'path is required' };
+  const loaded = loadHumanReviewFile(requested, libraryRootOf(row));
+  if ('error' in loaded) return { ok: false, error: loaded.error };
+  return { ok: true, path: loaded.path, record: loaded.record };
 }

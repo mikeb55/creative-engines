@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import { api, isDesktopIpc } from '../services/api';
 import { ComparisonPanel } from './ComparisonPanel';
 import { EvidencePanel } from './EvidencePanel';
+import { ReviewPanel } from './ReviewPanel';
 import { HARMONIC_SECTIONS, RHYTHM_SECTIONS, type DashboardFinding } from './evaluationEvidence';
 
 export const EVALUATION_VIEWS = [
@@ -21,6 +22,9 @@ export type EvaluationViewId = (typeof EVALUATION_VIEWS)[number]['id'];
 export interface EvaluationTransport {
   evaluate(body: Record<string, unknown>): Promise<Record<string, unknown>>;
   compare?(body: Record<string, unknown>): Promise<Record<string, unknown>>;
+  createReview?(body: Record<string, unknown>): Promise<Record<string, unknown>>;
+  saveReview?(body: Record<string, unknown>): Promise<Record<string, unknown>>;
+  openReview?(body: Record<string, unknown>): Promise<Record<string, unknown>>;
 }
 
 type IdentityEvent = {
@@ -88,9 +92,25 @@ async function defaultTransportCompare(body: Record<string, unknown>): Promise<R
   return api.compareMusicalScores(body);
 }
 
+async function defaultCreateReview(body: Record<string, unknown>): Promise<Record<string, unknown>> {
+  return api.createHumanReview(body);
+}
+
+async function defaultSaveReview(body: Record<string, unknown>): Promise<Record<string, unknown>> {
+  return api.saveHumanReview(body);
+}
+
+async function defaultOpenReview(body: Record<string, unknown>): Promise<Record<string, unknown>> {
+  return api.openHumanReview(body);
+}
+
 export function EvaluationDashboardPage({ transport }: { transport?: EvaluationTransport }) {
   const evaluate = transport?.evaluate ?? defaultTransportEvaluate;
   const compare = transport?.compare ?? defaultTransportCompare;
+  const createReview = transport?.createReview ?? defaultCreateReview;
+  const saveReview = transport?.saveReview ?? defaultSaveReview;
+  const openReview = transport?.openReview ?? defaultOpenReview;
+  const [comparison, setComparison] = useState<{ labels: string[]; differenceCount: number; differences: unknown[] } | null>(null);
   const [label, setLabel] = useState('score');
   const [xml, setXml] = useState('');
   const [baselineXml, setBaselineXml] = useState('');
@@ -346,13 +366,29 @@ export function EvaluationDashboardPage({ transport }: { transport?: EvaluationT
       {view === 'comparison' && (
         <div data-testid="evaluation-view-panel-comparison">
           <h3>Candidate Comparison</h3>
-          <ComparisonPanel loadedXml={xml} loadedLabel={label} compare={compare} />
+          <ComparisonPanel
+            loadedXml={xml}
+            loadedLabel={label}
+            compare={compare}
+            onCompared={(result) => setComparison({
+              labels: result.receipt.scores.map((score) => score.label),
+              differenceCount: result.receipt.comparison?.differences.length ?? 0,
+              differences: result.receipt.comparison?.differences ?? [],
+            })}
+          />
         </div>
       )}
       {view === 'review' && (
         <div data-testid="evaluation-view-panel-review">
           <h3>BMEF Human Review</h3>
-          <p>Only a person can enter artistic ratings or an approval decision. The evaluation engine does not supply them.</p>
+          <ReviewPanel
+            label={label}
+            receipt={loaded ? loaded.receipt as unknown as Record<string, unknown> : null}
+            comparison={comparison}
+            createReview={createReview}
+            saveReview={saveReview}
+            openReview={openReview}
+          />
         </div>
       )}
     </section>
