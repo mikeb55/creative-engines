@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="3.1">
+  <work><work-title>C minor / F# minor provisional</work-title></work>
+  <part-list>
+    <score-part id="guitar">
+      <part-name>Electric Guitar</part-name>
+      <part-abbreviation>Gtr.</part-abbreviation>
+      <score-instrument id="guitar-I1"><instrument-name>Electric Guitar</instrument-name></score-instrument>
+      <midi-instrument id="guitar-I1">
+        <midi-program>28</midi-program>
+      </midi-instrument>
+    </score-part>
+    <score-part id="bass">
+      <part-name>Upright Bass</part-name>
+      <part-abbreviation>Bas.</part-abbreviation>
+      <score-instrument id="bass-I1"><instrument-name>Upright Bass</instrument-name>
+        <instrument-sound>strings.bass</instrument-sound></score-instrument>
+      <midi-instrument id="bass-I1">
+        <midi-program>33</midi-program>
+      </midi-instrument>
+    </score-part>
+  </part-list>
+  <part id="guitar">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>G</sign><line>2</line></clef>
+    </attributes>
+    <direction placement="above">
+      <direction-type>
+        <metronome>
+          <beat-unit>quarter</beat-unit>
+          <per-minute>72</per-minute>
+        </metronome>
+      </direction-type>
+      <sound tempo="72"/>
+    </direction>
+    <direction placement="above"><direction-type><words font-style="italic">PROVISIONAL — NOT MUSICALLY APPROVED</words></direction-type></direction>
+        <note><pitch><step>C</step><octave>4</octave></pitch><duration>1920</duration><voice>1</voice><type>whole</type></note>
+        <note><chord/><pitch><step>E</step><alter>-1</alter><octave>4</octave></pitch><duration>1920</duration><voice>1</voice><type>whole</type></note>
+        <note><chord/><pitch><step>G</step><octave>4</octave></pitch><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="2">
+        <note><pitch><step>F</step><alter>1</alter><octave>4</octave></pitch><duration>1920</duration><voice>1</voice><type>whole</type></note>
+        <note><chord/><pitch><step>A</step><octave>4</octave></pitch><duration>1920</duration><voice>1</voice><type>whole</type></note>
+        <note><chord/><pitch><step>C</step><alter>1</alter><octave>5</octave></pitch><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="3">
+        <note><pitch><step>C</step><octave>4</octave></pitch><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><chord/><pitch><step>E</step><alter>-1</alter><octave>4</octave></pitch><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><chord/><pitch><step>G</step><octave>4</octave></pitch><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><pitch><step>F</step><alter>1</alter><octave>4</octave></pitch><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><chord/><pitch><step>A</step><octave>4</octave></pitch><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><chord/><pitch><step>C</step><alter>1</alter><octave>5</octave></pitch><duration>960</duration><voice>1</voice><type>half</type></note>
+  </measure>
+  <measure number="4">
+    <direction placement="above"><direction-type><words font-style="italic">CONTRAST hex_lydian_triad_pair</words></direction-type></direction>
+        <note><pitch><step>C</step><octave>4</octave></pitch><duration>1920</duration><voice>1</voice><type>whole</type></note>
+        <note><chord/><pitch><step>E</step><octave>4</octave></pitch><duration>1920</duration><voice>1</voice><type>whole</type></note>
+        <note><chord/><pitch><step>G</step><octave>4</octave></pitch><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  </part>
+  <part id="bass">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>F</sign><line>4</line></clef>
+    </attributes>
+        <note><pitch><step>C</step><octave>2</octave></pitch><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="2">
+        <note><pitch><step>C</step><octave>2</octave></pitch><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="3">
+        <note><pitch><step>C</step><octave>2</octave></pitch><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="4">
+        <note><pitch><step>C</step><octave>2</octave></pitch><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  </part>
+</score-partwise>

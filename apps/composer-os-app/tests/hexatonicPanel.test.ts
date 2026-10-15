@@ -118,7 +118,8 @@ describe('HexatonicEnginePage', () => {
     expect(rendered).toContain(headless.provenance);
     expect(rendered).toContain('Not artistically approved');
     expect(rendered).not.toContain('artisticApproval: true');
-    expect(rendered).not.toContain('MUSICALLY APPROVED');
+    expect(rendered).toContain('PROVISIONAL — NOT MUSICALLY APPROVED');
+    expect(rendered.replaceAll('NOT MUSICALLY APPROVED', '')).not.toContain('MUSICALLY APPROVED');
   });
 
   it('exports the generated MusicXML through the desktop channel when the bridge is present', async () => {

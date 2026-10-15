@@ -135,6 +135,8 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     if (path === '/pentatonic/project/open') return ipcInvoke<T>('composer-os-api:pentatonic-project-open', body ?? {});
     if (path === '/hexatonic/project/save') return ipcInvoke<T>('composer-os-api:hexatonic-project-save', body ?? {});
     if (path === '/hexatonic/project/open') return ipcInvoke<T>('composer-os-api:hexatonic-project-open', body ?? {});
+    if (path === '/hexatonic/laboratory/save') return ipcInvoke<T>('composer-os-api:hexatonic-laboratory-save', body ?? {});
+    if (path === '/hexatonic/laboratory/open') return ipcInvoke<T>('composer-os-api:hexatonic-laboratory-open', body ?? {});
     if (path === '/evaluation/score') return ipcInvoke<T>('composer-os-api:evaluation-score', body ?? {});
     if (path === '/evaluation/compare') return ipcInvoke<T>('composer-os-api:evaluation-compare', body ?? {});
     if (path === '/evaluation/review/create') return ipcInvoke<T>('composer-os-api:evaluation-review-create', body ?? {});
@@ -397,6 +399,8 @@ export const api = {
   pentatonicOpenProject: (body: Record<string, unknown>) => post<Record<string, unknown>>('/pentatonic/project/open', body),
   hexatonicSaveProject: (body: Record<string, unknown>) => post<Record<string, unknown>>('/hexatonic/project/save', body),
   hexatonicOpenProject: (body: Record<string, unknown>) => post<Record<string, unknown>>('/hexatonic/project/open', body),
+  hexatonicSaveLaboratory: (body: Record<string, unknown>) => post<Record<string, unknown>>('/hexatonic/laboratory/save', body),
+  hexatonicOpenLaboratory: (body: Record<string, unknown>) => post<Record<string, unknown>>('/hexatonic/laboratory/open', body),
   evaluateMusicalScore: (body: Record<string, unknown>) => post<Record<string, unknown>>('/evaluation/score', body),
   compareMusicalScores: (body: Record<string, unknown>) => post<Record<string, unknown>>('/evaluation/compare', body),
   createHumanReview: (body: Record<string, unknown>) => post<Record<string, unknown>>('/evaluation/review/create', body),

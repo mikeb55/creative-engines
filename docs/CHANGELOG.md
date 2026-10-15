@@ -8,6 +8,8 @@
 
 ### Added
 
+- **Hexatonic H6-A3 Core laboratory** — twelve provisional triad pairs on `#/hexatonic`. Each stays `PROVISIONAL — NOT MUSICALLY APPROVED`. Reviews save as `.hexatonic-lab.json` beside hexatonic projects. Audition MusicXML is notation only. No candidate is admitted. Detail: `docs/H6-A3-CORE-TRIAD-PAIR-LABORATORY-REPORT.md`.
+
 - **Hexatonic H6-A2 catalogue mathematics** — six-note Tn / TnI classes, Forte primes, interval vectors, tertian triad-pair classes, and identity views over the frozen H2 registry. No new phrase generator. `hex_western_claim_not_ritsu` stays 6-32. The name Ritsu stays a disputed alias. Detail: `docs/H6-A2-MATHEMATICAL-CATALOGUE-REPORT.md`.
 
 - **V3.1-C4 human BMEF review** — `#/evaluation` stores a separate BMEF-100 V2.0 record. Gates, ratings, notes, and ACCEPT / REFINE / REJECT / FORK start empty. Weights stay marked proposed. E2 and E3 are reported missing. The engine still does not total or approve.

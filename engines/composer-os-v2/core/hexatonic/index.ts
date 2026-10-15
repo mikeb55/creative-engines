@@ -58,6 +58,24 @@ export type {
   HexatonicContextView,
   SpellingReading,
 } from './catalogueIdentity';
+export {
+  CORE_CANDIDATES,
+  CORE_LABORATORY_STATUS,
+  analyzeCoreCandidate,
+  blankCoreLaboratoryReview,
+  getCoreCandidate,
+  listCoreCandidateAnalyses,
+  validateCoreLaboratoryReview,
+} from './coreLaboratory';
+export type {
+  CoreCandidate,
+  CoreCandidateAnalysis,
+  CoreLaboratoryReview,
+  LaboratoryAnswer,
+  LaboratoryDecision,
+  LaboratoryReviewEntry,
+} from './coreLaboratory';
+export { coreCandidateAuditionMusicXml } from './coreLaboratoryAudition';
 export { getHexatonicCatalogueEntry, listHexatonicCatalogue } from './catalogue';
 export type { HexatonicCatalogueEntry } from './catalogue';
 export {

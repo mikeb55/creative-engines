@@ -44,6 +44,40 @@ export function saveHexatonicProject(filePath: string, project: HexatonicProject
   return { path: resolved, bytes: Buffer.byteLength(saved.text) };
 }
 
+export function hexatonicLaboratoryPath(id: string): string {
+  const safe = id.trim().replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'core-laboratory';
+  return path.join(hexatonicProjectDir(), `${safe}.hexatonic-lab.json`);
+}
+
+export function resolveHexatonicLaboratoryPath(filePath: string): string | { error: string } {
+  if (!filePath || filePath.includes('\0')) return { error: 'unsafe path' };
+  const resolved = path.resolve(filePath);
+  const dir = path.resolve(hexatonicProjectDir());
+  const relative = path.relative(dir, resolved);
+  if (relative.startsWith('..') || path.isAbsolute(relative)) return { error: 'path must stay inside Hexatonic Projects' };
+  if (!resolved.endsWith('.hexatonic-lab.json')) return { error: 'path must be a .hexatonic-lab.json review file' };
+  return resolved;
+}
+
+export function saveHexatonicLaboratoryReview(filePath: string, text: string, overwrite = false): { path: string; bytes: number } | { error: string } {
+  const resolved = resolveHexatonicLaboratoryPath(filePath);
+  if (typeof resolved !== 'string') return resolved;
+  fs.mkdirSync(path.dirname(resolved), { recursive: true });
+  if (fs.existsSync(resolved) && !overwrite) return { error: `review already exists: ${resolved}` };
+  fs.writeFileSync(resolved, text, { flag: overwrite ? 'w' : 'wx' });
+  return { path: resolved, bytes: Buffer.byteLength(text) };
+}
+
+export function loadHexatonicLaboratoryText(filePath: string): { text: string } | { error: string } {
+  const resolved = resolveHexatonicLaboratoryPath(filePath);
+  if (typeof resolved !== 'string') return resolved;
+  try {
+    return { text: fs.readFileSync(resolved, 'utf8') };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
 export function loadHexatonicProject(filePath: string): HexatonicProjectValidation {
   const resolved = resolveHexatonicProjectPath(filePath);
   if (typeof resolved !== 'string') return { ok: false, errors: [resolved.error] };

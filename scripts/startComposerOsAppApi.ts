@@ -44,7 +44,12 @@ import {
 } from '../engines/composer-os-v2/app-api/bhlApp';
 import { apiCompareMusicalScores, apiCreateHumanReview, apiEvaluateMusicalScore, apiOpenHumanReview, apiSaveHumanReview } from '../engines/composer-os-v2/app-api/evaluationApp';
 import { apiPentatonicOpenProject, apiPentatonicSaveProject } from '../engines/composer-os-v2/app-api/pentatonicProjectApp';
-import { apiHexatonicOpenProject, apiHexatonicSaveProject } from '../engines/composer-os-v2/app-api/hexatonicProjectApp';
+import {
+  apiHexatonicOpenLaboratoryReview,
+  apiHexatonicOpenProject,
+  apiHexatonicSaveLaboratoryReview,
+  apiHexatonicSaveProject,
+} from '../engines/composer-os-v2/app-api/hexatonicProjectApp';
 import { openOutputFolderRoute } from './openOutputFolderRoute';
 import { resolveDownloadFileTarget, sendDownloadFile } from './downloadFileRoute';
 import type { GenerateRequest } from '../engines/composer-os-v2/app-api/appApiTypes';
@@ -425,6 +430,24 @@ app.post('/api/hexatonic/project/save', (req: Request, res: Response) => {
 app.post('/api/hexatonic/project/open', (req: Request, res: Response) => {
   try {
     const result = apiHexatonicOpenProject(req.body);
+    res.status(result.ok ? 200 : 400).json(result);
+  } catch (err) {
+    res.status(500).json({ ok: false, error: String(err) });
+  }
+});
+
+app.post('/api/hexatonic/laboratory/save', (req: Request, res: Response) => {
+  try {
+    const result = apiHexatonicSaveLaboratoryReview(req.body);
+    res.status(result.ok ? 200 : 400).json(result);
+  } catch (err) {
+    res.status(500).json({ ok: false, error: String(err) });
+  }
+});
+
+app.post('/api/hexatonic/laboratory/open', (req: Request, res: Response) => {
+  try {
+    const result = apiHexatonicOpenLaboratoryReview(req.body);
     res.status(result.ok ? 200 : 400).json(result);
   } catch (err) {
     res.status(500).json({ ok: false, error: String(err) });

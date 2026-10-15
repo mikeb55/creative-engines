@@ -9,6 +9,7 @@ import {
 import type { MotifMapMethod } from '@composer-os/core/pentatonic/motifTransform';
 import { api } from '../services/api';
 import { exportHexatonicMusicXml } from './exportHexatonicMusicXml';
+import { HexatonicLaboratory } from './HexatonicLaboratory';
 import {
   describeHexatonicPhrase,
   describeHexatonicSelection,
@@ -186,6 +187,7 @@ export function HexatonicEnginePage() {
       <p style={{ color: 'var(--text-muted)', margin: 0 }}>
         Six-note collections and WPS resolution/tension pairs. Generated notes are a phrase preview. They are not an artistic approval.
       </p>
+      <HexatonicLaboratory />
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', alignItems: 'end' }}>
         <label htmlFor="hexatonic-family">
           Family
