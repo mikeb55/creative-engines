@@ -6,6 +6,7 @@
 import type { BhlLockSpec } from '../core/bhl/bhlTypes';
 import { ingestCanonicalScore } from '../core/musical-evaluation/canonicalScore';
 import {
+  compareScores,
   describeScoreIdentity,
   evaluateScore,
   type EvaluationRequest,
@@ -102,5 +103,46 @@ export function apiEvaluateMusicalScore(body: unknown): EvaluationApiSuccess | E
     };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : 'evaluation failed' };
+  }
+}
+
+export interface ComparisonApiSuccess {
+  ok: true;
+  identities: ScoreIdentity[];
+  intentions: Array<{ label: string; note: string }>;
+  receipt: EvidenceReceipt;
+  sourceWritten: false;
+}
+
+export function apiCompareMusicalScores(body: unknown): ComparisonApiSuccess | EvaluationApiFailure {
+  const row = asRecord(body);
+  const scores = Array.isArray(row.scores) ? row.scores : null;
+  if (!scores) return { ok: false, error: 'comparison needs two or three scores' };
+  const packed = scores.map((item, index) => {
+    const score = asRecord(item);
+    const xml = typeof score.xml === 'string' ? score.xml : '';
+    const label = typeof score.label === 'string' && score.label.trim() ? score.label.trim() : `score-${index + 1}`;
+    const note = typeof score.intention === 'string' ? score.intention.trim() : '';
+    return { label, xml, note };
+  });
+  if (packed.length < 2 || packed.length > 3) return { ok: false, error: 'comparison accepts two or three scores' };
+  if (packed.some((score) => !score.xml.trim())) return { ok: false, error: 'each compared score needs MusicXML. No score is written.' };
+  const declared = declaredField(row.declared);
+  if (declared && 'ok' in declared) return declared;
+  try {
+    const receipt = compareScores({
+      scores: packed.map((score) => ({ label: score.label, xml: score.xml })),
+      declared,
+      intentionId: packed.map((score) => score.note).find((note) => note) ?? null,
+    });
+    return {
+      ok: true,
+      identities: packed.map((score) => describeScoreIdentity(score.xml)),
+      intentions: packed.map((score) => ({ label: score.label, note: score.note })),
+      receipt,
+      sourceWritten: false,
+    };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : 'comparison failed' };
   }
 }

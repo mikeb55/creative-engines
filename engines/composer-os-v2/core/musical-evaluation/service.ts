@@ -267,6 +267,7 @@ export interface ScoreIdentityEvent {
   voice: string;
   onset: string;
   rest: boolean;
+  signature: string;
 }
 
 export interface ScoreIdentity {
@@ -298,6 +299,7 @@ export function describeScoreIdentity(xml: string): ScoreIdentity {
       voice: event.voice,
       onset: `${event.onsetInBar.n}/${event.onsetInBar.d}`,
       rest: event.rest,
+      signature: eventSignature(event),
     })),
   };
 }

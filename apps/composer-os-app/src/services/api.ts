@@ -136,6 +136,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     if (path === '/hexatonic/project/save') return ipcInvoke<T>('composer-os-api:hexatonic-project-save', body ?? {});
     if (path === '/hexatonic/project/open') return ipcInvoke<T>('composer-os-api:hexatonic-project-open', body ?? {});
     if (path === '/evaluation/score') return ipcInvoke<T>('composer-os-api:evaluation-score', body ?? {});
+    if (path === '/evaluation/compare') return ipcInvoke<T>('composer-os-api:evaluation-compare', body ?? {});
     throw new Error(`Unknown IPC POST path: ${path}`);
   }
   let r: Response;
@@ -394,6 +395,7 @@ export const api = {
   hexatonicSaveProject: (body: Record<string, unknown>) => post<Record<string, unknown>>('/hexatonic/project/save', body),
   hexatonicOpenProject: (body: Record<string, unknown>) => post<Record<string, unknown>>('/hexatonic/project/open', body),
   evaluateMusicalScore: (body: Record<string, unknown>) => post<Record<string, unknown>>('/evaluation/score', body),
+  compareMusicalScores: (body: Record<string, unknown>) => post<Record<string, unknown>>('/evaluation/compare', body),
 };
 
 /** Shape checks for generation receipts (tests). */

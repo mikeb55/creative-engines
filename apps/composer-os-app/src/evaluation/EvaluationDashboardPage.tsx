@@ -4,6 +4,7 @@
  */
 import React, { useState } from 'react';
 import { api, isDesktopIpc } from '../services/api';
+import { ComparisonPanel } from './ComparisonPanel';
 import { EvidencePanel } from './EvidencePanel';
 import { HARMONIC_SECTIONS, RHYTHM_SECTIONS, type DashboardFinding } from './evaluationEvidence';
 
@@ -19,6 +20,7 @@ export type EvaluationViewId = (typeof EVALUATION_VIEWS)[number]['id'];
 
 export interface EvaluationTransport {
   evaluate(body: Record<string, unknown>): Promise<Record<string, unknown>>;
+  compare?(body: Record<string, unknown>): Promise<Record<string, unknown>>;
 }
 
 type IdentityEvent = {
@@ -82,8 +84,13 @@ async function defaultTransportEvaluate(body: Record<string, unknown>): Promise<
   return api.evaluateMusicalScore(body);
 }
 
+async function defaultTransportCompare(body: Record<string, unknown>): Promise<Record<string, unknown>> {
+  return api.compareMusicalScores(body);
+}
+
 export function EvaluationDashboardPage({ transport }: { transport?: EvaluationTransport }) {
   const evaluate = transport?.evaluate ?? defaultTransportEvaluate;
+  const compare = transport?.compare ?? defaultTransportCompare;
   const [label, setLabel] = useState('score');
   const [xml, setXml] = useState('');
   const [baselineXml, setBaselineXml] = useState('');
@@ -339,7 +346,7 @@ export function EvaluationDashboardPage({ transport }: { transport?: EvaluationT
       {view === 'comparison' && (
         <div data-testid="evaluation-view-panel-comparison">
           <h3>Candidate Comparison</h3>
-          <p>This view compares loaded scores by event. It does not declare a candidate superior.</p>
+          <ComparisonPanel loadedXml={xml} loadedLabel={label} compare={compare} />
         </div>
       )}
       {view === 'review' && (

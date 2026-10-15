@@ -8,6 +8,8 @@
 
 ### Added
 
+- **V3.1-C3 candidate comparison** — two or three MusicXML scores compare by event. Added, removed, and retained notes stay bar-level. Intentions are labels. Rank stays null. Source files are not written.
+
 - **V3.1-C2 evidence views** — technical, harmonic, and rhythm panels list receipt findings with bar, instrument, onset, and event ids. Outside-field notes stay descriptive. Unsupported rhythm metrics are named. No notation highlighter and no artistic-quality score.
 
 - **V3.1-C1 evaluation dashboard shell** — `#/evaluation` loads MusicXML through `evaluateScore`, shows SHA-256, parts, bars, event ids, and technical findings. Five views are labelled. The source file is not written. No artistic-quality score.

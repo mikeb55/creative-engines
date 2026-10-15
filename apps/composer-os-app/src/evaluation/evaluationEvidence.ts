@@ -56,3 +56,61 @@ export function onsetText(onset: { n: number; d: number } | null): string {
   if (!onset) return '';
   return `${onset.n}/${onset.d}`;
 }
+
+export interface ComparisonDifference {
+  left: string;
+  right: string;
+  bar: number;
+  onset: string;
+  instrument: string | null;
+  voice: string | null;
+  eventId: string;
+  change: 'only-in-left' | 'only-in-right';
+  signature: string;
+}
+
+export interface SignedEvent {
+  id: string;
+  bar: number;
+  instrument: string;
+  onset: string;
+  signature: string;
+  rest: boolean;
+}
+
+export function pairChanges(differences: readonly ComparisonDifference[], left: string, right: string) {
+  return differences.filter((difference) => difference.left === left && difference.right === right);
+}
+
+export function retainedSignatures(events: readonly SignedEvent[], removedSignatures: readonly string[]): SignedEvent[] {
+  const gone = new Set(removedSignatures);
+  return events.filter((event) => !event.rest && !gone.has(event.signature));
+}
+
+export function descriptiveMetricChanges(
+  columns: readonly { label: string; findings: readonly DashboardFinding[] }[],
+): Array<{ metricId: string; bar: string; instrument: string; values: Array<{ label: string; text: string }> }> {
+  const keys = new Map<string, Map<string, string>>();
+  for (const column of columns) {
+    for (const finding of column.findings) {
+      if (finding.metricId !== 'note-density' && finding.metricId !== 'melodic-contour' && finding.metricId !== 'interval-distribution' && finding.metricId !== 'pitch-class-collection') continue;
+      const key = `${finding.metricId}|${finding.bars.join(',')}|${finding.instrument ?? ''}|${finding.partId ?? ''}`;
+      const row = keys.get(key) ?? new Map<string, string>();
+      row.set(column.label, observationText(finding.observations));
+      keys.set(key, row);
+    }
+  }
+  const changes: Array<{ metricId: string; bar: string; instrument: string; values: Array<{ label: string; text: string }> }> = [];
+  for (const [key, row] of keys) {
+    const texts = [...row.values()];
+    if (new Set(texts).size < 2) continue;
+    const [metricId, bar, instrument] = key.split('|');
+    changes.push({
+      metricId: metricId ?? '',
+      bar: bar ?? '',
+      instrument: instrument ?? '',
+      values: columns.map((column) => ({ label: column.label, text: row.get(column.label) ?? '' })),
+    });
+  }
+  return changes;
+}
