@@ -49,3 +49,17 @@ export {
   transposeHexatonicWpsPair,
 } from './triadPairs';
 export type { HexatonicWpsPair } from './triadPairs';
+export { hexatonicPhraseToMusicXml, hexatonicScoreMatchesPhrase, readHexatonicScore } from './phraseExport';
+export type { HexatonicScoreAttack, HexatonicScoreReading } from './phraseExport';
+export { generateHexatonicPhrase, guitarFretSpan, outsideScalarId, transposedScalarOrder } from './phraseGeneration';
+export { HEXATONIC_PHRASE_VERSION } from './phraseTypes';
+export type {
+  HexatonicAttack,
+  HexatonicBmef,
+  HexatonicPhrase,
+  HexatonicPhraseBar,
+  HexatonicPhraseFamily,
+  HexatonicPhraseRequest,
+  HexatonicPhraseRole,
+  HexatonicSurface,
+} from './phraseTypes';

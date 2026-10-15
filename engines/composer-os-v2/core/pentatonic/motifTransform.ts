@@ -20,6 +20,12 @@ export interface PentatonicCollectionView {
   archetypeId: string;
   referenceNote: string;
   homeRelationshipLabel: string | null;
+  /**
+   * Scale-order pitch classes.
+   * Present for a collection that is not in the pentatonic registries.
+   * M-DEG indexes this row. Five-note callers leave it unset.
+   */
+  orderedPitchClasses?: readonly number[];
 }
 
 export interface RhythmSlot {
@@ -98,6 +104,9 @@ export function strongBeatOnsets(beats: number, beatType: number): number[] {
 }
 
 export function collectionPitchClasses(collection: PentatonicCollectionView): number[] {
+  if (collection.orderedPitchClasses && collection.orderedPitchClasses.length > 0) {
+    return collection.orderedPitchClasses.map((pitchClass) => mod12(pitchClass));
+  }
   const reference = parseNoteToken(collection.referenceNote);
   if (!reference) {
     throw new Error(`Collection ${collection.name} has no reference pitch. Refusing to substitute another collection.`);
