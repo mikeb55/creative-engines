@@ -9,6 +9,7 @@ import { compareBhlEvidence, readBhlEvidence, type BhlEvidenceComparison, type B
 import type { BhlPhraseArc, BhlRhythmMode } from './bhlPhraseShape';
 import type { BhlProjectCandidate } from './bhlProject';
 import type { BhlMusicalRequest } from './bhlResources';
+import type { BhlRiffRequest, BhlRiffTransform } from './bhlRiffRhythm';
 import type { BhlSpan } from './bhlTypes';
 import type { BhlWorldId } from './bhlWorlds';
 
@@ -96,10 +97,34 @@ export function composeBhlCandidate(request: BhlCandidateRequest): { result: Bhl
 
 const RHYTHM_CYCLE: readonly BhlRhythmMode[] = ['derived', 'displace', 'syncopate', 'sparse'];
 const ARC_CYCLE: readonly BhlPhraseArc[] = ['derived', 'invert', 'recall'];
+/** Existing cell transforms. Same rhythm seed, so the selected core-b cell stays the source. */
+const CORE_B_VARIANTS: readonly BhlRiffTransform[] = ['displace', 'fragment', 'rest', 'continue'];
 
 function nextOf<T>(list: readonly T[], value: T): T {
   const index = list.indexOf(value);
   return list[(index + 1) % list.length]!;
+}
+
+function coreBPool(base: BhlRiffTransform): BhlRiffTransform[] {
+  return CORE_B_VARIANTS.filter((item) => item !== base);
+}
+
+/**
+ * Candidate 1 keeps the selected cell and transform.
+ * Later candidates vary that same cell. Seed and phrase-arc changes do not
+ * move a core-b onset plan, so they are not used as the difference.
+ */
+function coreBVariant(request: BhlRiffRequest | null | undefined, label: string, attempt: number): BhlRiffRequest | null | undefined {
+  if (!request || request.rhythmSource !== 'core-b' || label === 'Candidate 1') return request;
+  const pool = coreBPool(request.transform ?? 'original');
+  const start = label === 'Candidate 3' ? 1 : 0;
+  return { ...request, transform: pool[(start + attempt) % pool.length]! };
+}
+
+function musicalWithRiff(musical: BhlMusicalRequest | null | undefined, riff: BhlRiffRequest | null | undefined): BhlMusicalRequest | null {
+  if (!musical) return musical ?? null;
+  if (!riff) return musical;
+  return { ...musical, riff };
 }
 
 export function generateBhlCandidateSet(input: {
@@ -131,20 +156,22 @@ export function generateBhlCandidateSet(input: {
   for (const spec of specs) {
     let seed = spec.seed;
     let produced: BhlProjectCandidate | null = null;
+    const varyCell = input.riffRhythm?.rhythmSource === 'core-b' && spec.label !== 'Candidate 1';
     for (let attempt = 0; attempt < 6; attempt++) {
+      const riffRhythm = coreBVariant(input.riffRhythm, spec.label, attempt);
       const { candidate } = composeBhlCandidate({
         sourcePath: input.sourcePath,
         span: input.span,
         seed,
         world: input.world,
         plan: input.plan,
-        musical: input.musical,
+        musical: musicalWithRiff(input.musical, riffRhythm),
         rhythm: spec.rhythm,
         phraseArc: spec.phraseArc,
         pentatonicPcs: input.pentatonicPcs,
         pentatonicLabel: input.pentatonicLabel,
         contrastPcs: input.contrastPcs,
-        riffRhythm: input.riffRhythm,
+        riffRhythm,
         quartal: input.quartal,
         protectedGuitarBars: input.protectedGuitarBars,
         label: spec.label,
@@ -155,7 +182,7 @@ export function generateBhlCandidateSet(input: {
         produced = { ...candidate, seed, settings: { ...candidate.settings, seed, variedFromRequest: spec.label !== 'Candidate 1' } };
         break;
       }
-      seed += 100;
+      if (!varyCell) seed += 100;
     }
     if (!produced) throw new Error(`${spec.label} did not produce a distinct guitar line`);
     candidates.push(produced);
@@ -195,19 +222,22 @@ export function refineBhlCandidate(input: {
   seed?: number;
 }): BhlProjectCandidate {
   const seed = input.seed ?? input.original.seed + 1;
+  const storedRiff = (input.original.settings.musical as { riff?: BhlRiffRequest } | undefined)?.riff;
+  const parentRiff = storedRiff?.rhythmSource === 'core-b' ? storedRiff : input.riffRhythm;
+  const riffRhythm = parentRiff?.rhythmSource === 'core-b' ? coreBVariant(parentRiff, 'Candidate 2', 0) : input.riffRhythm;
   const { candidate } = composeBhlCandidate({
     sourcePath: input.sourcePath,
     span: input.span,
     seed,
     world: input.world,
     plan: input.plan,
-    musical: input.musical,
+    musical: musicalWithRiff(input.musical, riffRhythm),
     rhythm: input.rhythm,
     phraseArc: input.phraseArc,
     pentatonicPcs: input.pentatonicPcs,
     pentatonicLabel: input.pentatonicLabel,
     contrastPcs: input.contrastPcs,
-    riffRhythm: input.riffRhythm,
+    riffRhythm,
     quartal: input.quartal,
     protectedGuitarBars: input.protectedGuitarBars,
     label: `${input.original.label} refined`,
