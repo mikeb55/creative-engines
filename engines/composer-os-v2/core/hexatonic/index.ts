@@ -10,6 +10,54 @@ export {
   transposeScalar,
 } from './collections';
 export type { HexatonicScalarCollection, HexatonicSymmetry, HexatonicTriadReading } from './collections';
+export {
+  FORTE_HEXACHORD_PRIMES,
+  censusHexachords,
+  classifyPitchClassSet,
+  combinationsOf,
+  complementPitchClassSet,
+  forteOfPrime,
+  intervalVector,
+  inversionSymmetry,
+  invertPitchClassSet,
+  normalForm,
+  primeForm,
+  rootedModes,
+  transpositionSymmetry,
+  transposePitchClassSet,
+} from './setClass';
+export type { HexachordCensus, PitchClassSetClass } from './setClass';
+export {
+  censusTertianUniverse,
+  commonToneCount,
+  disjointTertianSplits,
+  listTertianRelationClasses,
+  listTertianTriads,
+  minVoiceLeading,
+  relationClassId,
+  triadAt,
+  triadsInterleave,
+} from './tertianTriadUniverse';
+export type { TertianRelationClass, TertianTriad, TertianUniverseCensus } from './tertianTriadUniverse';
+export {
+  HEXATONIC_ALIASES,
+  WESTERN_SIX_NOTE_PITCH_CLASSES,
+  aliasesForNormalForm,
+  alternateSharpSpelling,
+  listCatalogueCollections,
+  listCatalogueConstructions,
+  listCatalogueContexts,
+  readSpelling,
+  westernSixNoteClaim,
+} from './catalogueIdentity';
+export type {
+  AliasStatus,
+  HexatonicAlias,
+  HexatonicCollectionView,
+  HexatonicConstructionView,
+  HexatonicContextView,
+  SpellingReading,
+} from './catalogueIdentity';
 export { getHexatonicCatalogueEntry, listHexatonicCatalogue } from './catalogue';
 export type { HexatonicCatalogueEntry } from './catalogue';
 export {

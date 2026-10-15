@@ -8,6 +8,8 @@
 
 ### Added
 
+- **Hexatonic H6-A2 catalogue mathematics** — six-note Tn / TnI classes, Forte primes, interval vectors, tertian triad-pair classes, and identity views over the frozen H2 registry. No new phrase generator. `hex_western_claim_not_ritsu` stays 6-32. The name Ritsu stays a disputed alias. Detail: `docs/H6-A2-MATHEMATICAL-CATALOGUE-REPORT.md`.
+
 - **V3.1-C4 human BMEF review** — `#/evaluation` stores a separate BMEF-100 V2.0 record. Gates, ratings, notes, and ACCEPT / REFINE / REJECT / FORK start empty. Weights stay marked proposed. E2 and E3 are reported missing. The engine still does not total or approve.
 
 - **V3.1-C3 candidate comparison** — two or three MusicXML scores compare by event. Added, removed, and retained notes stay bar-level. Intentions are labels. Rank stays null. Source files are not written.
