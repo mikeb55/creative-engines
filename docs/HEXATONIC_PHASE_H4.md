@@ -21,4 +21,6 @@ Format `hexatonic-project`, version 1. Files end in `.hexatonic.json` under `Hex
 
 ## H4C — desktop IPC
 
-Not in the H4A commit.
+Channels `composer-os-api:hexatonic-write-musicxml`, `composer-os-api:hexatonic-open-musescore`, `composer-os-api:hexatonic-reveal`, `composer-os-api:hexatonic-project-save`, and `composer-os-api:hexatonic-project-open`. MusicXML is written under `Documents/Composer OS Exports/Hexatonic Engine` with `wx`, so an existing file is not replaced. The saved path is the path returned to the page.
+
+Collection identification is stacked above bar 1. Bars 1, 3, and 5 still carry INSIDE, OUTSIDE, and RETURN. Bar 6 no longer carries the long attribution line. Pitches and rhythms stay the H3 phrase.

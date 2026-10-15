@@ -39,7 +39,9 @@ import {
   apiBhlScratch,
 } from '../../../engines/composer-os-v2/app-api/bhlApp';
 import { apiPentatonicOpenProject, apiPentatonicSaveProject } from '../../../engines/composer-os-v2/app-api/pentatonicProjectApp';
+import { apiHexatonicOpenProject, apiHexatonicSaveProject } from '../../../engines/composer-os-v2/app-api/hexatonicProjectApp';
 import { writePentatonicDesktopMusicXml } from './pentatonicDesktopExport';
+import { writeHexatonicDesktopMusicXml } from './hexatonicDesktopExport';
 import { openOutputFolderRoute } from '../../../scripts/openOutputFolderRoute';
 import {
   hydrateAnthropicKeyFromAllSources,
@@ -415,6 +417,8 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
   ipcMain.handle('composer-os-api:bhl-project-open', (_e, body: unknown) => apiBhlOpenProject(body));
   ipcMain.handle('composer-os-api:pentatonic-project-save', (_e, body: unknown) => apiPentatonicSaveProject(body));
   ipcMain.handle('composer-os-api:pentatonic-project-open', (_e, body: unknown) => apiPentatonicOpenProject(body));
+  ipcMain.handle('composer-os-api:hexatonic-project-save', (_e, body: unknown) => apiHexatonicSaveProject(body));
+  ipcMain.handle('composer-os-api:hexatonic-project-open', (_e, body: unknown) => apiHexatonicOpenProject(body));
   ipcMain.handle('composer-os-api:bhl-scratch', (_e, body: unknown) => apiBhlScratch(body));
   ipcMain.handle('composer-os-api:generate-comping', (_e, body: unknown) =>
     Promise.resolve(apiGenerateComping(body as Parameters<typeof apiGenerateComping>[0]))
@@ -890,6 +894,59 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
 
   ipcMain.handle('composer-os-api:pentatonic-reveal', async (_event, body: unknown) => {
     const filePath = pentatonicExportPath(body);
+    if ('error' in filePath) return { ok: false as const, error: filePath.error };
+    shell.showItemInFolder(filePath.path);
+    return { ok: true as const };
+  });
+
+  function hexatonicExportPath(body: unknown): { path: string } | { error: string } {
+    const raw =
+      body && typeof body === 'object' && typeof (body as { path?: unknown }).path === 'string'
+        ? (body as { path: string }).path.trim()
+        : '';
+    if (!raw || raw.includes('\0')) return { error: 'Missing MusicXML path.' };
+    const resolved = path.resolve(raw);
+    const root = path.resolve(app.getPath('documents'), 'Composer OS Exports', 'Hexatonic Engine');
+    const relative = path.relative(root, resolved);
+    if (relative.startsWith('..') || path.isAbsolute(relative) || !resolved.endsWith('.musicxml') || !existsSync(resolved)) {
+      return { error: 'That file is not a Hexatonic Engine MusicXML.' };
+    }
+    return { path: resolved };
+  }
+
+  ipcMain.handle('composer-os-api:hexatonic-write-musicxml', async (_event, body: unknown) => {
+    const record = body && typeof body === 'object' ? (body as { xml?: unknown; label?: unknown }) : {};
+    const xml = typeof record.xml === 'string' ? record.xml : '';
+    const label = typeof record.label === 'string' ? record.label : 'collection';
+    try {
+      const written = await writeHexatonicDesktopMusicXml({
+        documentsDir: app.getPath('documents'),
+        xml,
+        label,
+      });
+      return { ok: true as const, fullPath: written.fullPath, bytes: written.bytes };
+    } catch (error) {
+      return { ok: false as const, error: error instanceof Error ? error.message : String(error) };
+    }
+  });
+
+  ipcMain.handle('composer-os-api:hexatonic-open-musescore', async (_event, body: unknown) => {
+    const filePath = hexatonicExportPath(body);
+    if ('error' in filePath) return { ok: false as const, error: filePath.error };
+    const appPath = '/Applications/MuseScore 4.app';
+    if (!existsSync(appPath)) return { ok: false as const, error: 'MuseScore 4 is not installed at /Applications/MuseScore 4.app. Use Open Folder.' };
+    const { spawn } = await import('node:child_process');
+    const code = await new Promise<number>((resolve, reject) => {
+      const child = spawn('open', ['-a', 'MuseScore 4', filePath.path], { shell: false });
+      child.on('error', reject);
+      child.on('close', (exitCode) => resolve(exitCode ?? 1));
+    });
+    if (code !== 0) return { ok: false as const, error: `MuseScore 4 did not open (exit ${code}).` };
+    return { ok: true as const };
+  });
+
+  ipcMain.handle('composer-os-api:hexatonic-reveal', async (_event, body: unknown) => {
+    const filePath = hexatonicExportPath(body);
     if ('error' in filePath) return { ok: false as const, error: filePath.error };
     shell.showItemInFolder(filePath.path);
     return { ok: true as const };

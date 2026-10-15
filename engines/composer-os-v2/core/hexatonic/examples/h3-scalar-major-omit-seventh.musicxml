@@ -30,6 +30,10 @@
       <staves>1</staves>
       <clef><sign>G</sign><line>2</line></clef>
     </attributes>
+    <direction placement="above"><direction-type><words default-y="78" justify="left">hex_major_omit_seventh</words></direction-type></direction>
+    <direction placement="above"><direction-type><words default-y="64" justify="left">hex_western_claim_not_ritsu</words></direction-type></direction>
+    <direction placement="above"><direction-type><words default-y="50" justify="left">centre C</words></direction-type></direction>
+    <direction placement="above"><direction-type><words default-y="36" justify="left">scalar hex_major_omit_seventh</words></direction-type></direction>
     <direction placement="above">
       <direction-type>
         <metronome>
@@ -72,7 +76,6 @@
         <note><pitch><step>E</step><octave>5</octave></pitch><duration>960</duration><voice>1</voice><type>half</type></note>
   </measure>
   <measure number="6">
-    <direction placement="above"><direction-type><words font-style="italic">hex_major_omit_seventh · hex_western_claim_not_ritsu · centre C · scalar hex_major_omit_seventh</words></direction-type></direction>
         <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
         <note><pitch><step>F</step><octave>4</octave></pitch><duration>960</duration><voice>1</voice><type>half</type></note>
         <note><chord/><pitch><step>A</step><octave>4</octave></pitch><duration>960</duration><voice>1</voice><type>half</type></note>

@@ -42,6 +42,7 @@ export function HexatonicEnginePage() {
   const [phrase, setPhrase] = useState<HexatonicPhrase | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [exportStatus, setExportStatus] = useState<string | null>(null);
+  const [exportPath, setExportPath] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [projectId, setProjectId] = useState('hexatonic-project');
   const [projectNotes, setProjectNotes] = useState('');
@@ -149,10 +150,32 @@ export function HexatonicEnginePage() {
         })
       )
       .then((saved) => {
-        setExportStatus(saved.mode === 'desktop' ? saved.fullPath : `Browser download: ${saved.filename}`);
+        if (saved.mode === 'desktop') {
+          setExportPath(saved.fullPath);
+          setExportStatus(saved.fullPath);
+        } else {
+          setExportPath(null);
+          setExportStatus(`Browser download: ${saved.filename}`);
+        }
       })
       .catch((caught: unknown) => setError(caught instanceof Error ? caught.message : String(caught)))
       .finally(() => setBusy(false));
+  };
+
+  const onOpenScore = (channel: 'composer-os-api:hexatonic-open-musescore' | 'composer-os-api:hexatonic-reveal') => {
+    if (!exportPath) return;
+    const bridge = typeof window !== 'undefined' ? window.composerOsDesktop : undefined;
+    if (!bridge?.invokeApi) {
+      setError('Open MusicXML runs in the Composer OS desktop app.');
+      return;
+    }
+    void bridge
+      .invokeApi(channel, { path: exportPath })
+      .then((raw) => {
+        const opened = raw as { ok?: boolean; error?: string };
+        if (!opened.ok) throw new Error(opened.error || 'Could not open the MusicXML.');
+      })
+      .catch((caught: unknown) => setError(caught instanceof Error ? caught.message : String(caught)));
   };
 
   return (
@@ -251,6 +274,9 @@ export function HexatonicEnginePage() {
         </button>
         <button type="button" data-testid="hexatonic-export" onClick={onExport} disabled={!phrase || busy}>
           Export MusicXML
+        </button>
+        <button type="button" data-testid="hexatonic-open-musescore" onClick={() => onOpenScore('composer-os-api:hexatonic-open-musescore')} disabled={!exportPath}>
+          Open in MuseScore 4
         </button>
       </div>
       <section data-testid="hexatonic-selection" style={{ display: 'grid', gap: '0.25rem' }}>

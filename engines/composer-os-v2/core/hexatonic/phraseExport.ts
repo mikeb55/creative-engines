@@ -60,9 +60,11 @@ export function hexatonicPhraseToMusicXml(phrase: Pick<HexatonicPhrase, 'centreN
     () => undefined
   );
   const words: Record<number, string> = {};
+  let identity = '';
   phrase.bars.forEach((bar, index) => {
     const measureNumber = index + 1;
-    words[measureNumber] = bar.direction;
+    if (index === phrase.bars.length - 1 && bar.direction.length > 24) identity = bar.direction;
+    else if (bar.direction) words[measureNumber] = bar.direction;
     for (const part of [guitar, bass]) {
       const measure = part.measures[index]!;
       measure.measureBeatSpanQuarters = 4;
@@ -81,9 +83,30 @@ export function hexatonicPhraseToMusicXml(phrase: Pick<HexatonicPhrase, 'centreN
   if (!exported.success || !exported.xml) {
     throw new Error(exported.errors.join(' ') || 'hexatonic MusicXML export failed');
   }
-  if (/<harmony[\s>]/i.test(exported.xml)) throw new Error('hexatonic MusicXML wrote a chord symbol');
-  if (/<staff-type>\s*tab\s*<\/staff-type>/i.test(exported.xml)) throw new Error('hexatonic MusicXML wrote a TAB staff');
-  return exported.xml;
+  const xml = identity ? placeIdentityAtStart(exported.xml, identity) : exported.xml;
+  if (/<harmony[\s>]/i.test(xml)) throw new Error('hexatonic MusicXML wrote a chord symbol');
+  if (/<staff-type>\s*tab\s*<\/staff-type>/i.test(xml)) throw new Error('hexatonic MusicXML wrote a TAB staff');
+  return xml;
+}
+
+function escapeXml(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/** Long collection text sits above bar 1, where the system has width. Bar 6 stays clear of the right margin. */
+function placeIdentityAtStart(xml: string, identity: string): string {
+  const lines = identity.split(' · ').map((line) => line.trim()).filter(Boolean);
+  const block = lines
+    .map((line, index) => {
+      const y = 78 - index * 14;
+      return `    <direction placement="above"><direction-type><words default-y="${y}" justify="left">${escapeXml(line)}</words></direction-type></direction>`;
+    })
+    .join('\n');
+  const marker = '</attributes>';
+  const at = xml.indexOf(marker);
+  if (at < 0 || !block) return xml;
+  const close = at + marker.length;
+  return `${xml.slice(0, close)}\n${block}${xml.slice(close)}`;
 }
 
 function eventsOf(attack: HexatonicAttack) {

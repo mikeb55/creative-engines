@@ -30,6 +30,12 @@
       <staves>1</staves>
       <clef><sign>G</sign><line>2</line></clef>
     </attributes>
+    <direction placement="above"><direction-type><words default-y="78" justify="left">maj9:resolution</words></direction-type></direction>
+    <direction placement="above"><direction-type><words default-y="64" justify="left">maj9:tension</words></direction-type></direction>
+    <direction placement="above"><direction-type><words default-y="50" justify="left">centre C</words></direction-type></direction>
+    <direction placement="above"><direction-type><words default-y="36" justify="left">WPS_VAULT_TONALITIES:maj9</words></direction-type></direction>
+    <direction placement="above"><direction-type><words default-y="22" justify="left">parent Cmaj9</words></direction-type></direction>
+    <direction placement="above"><direction-type><words default-y="8" justify="left">major / minor</words></direction-type></direction>
     <direction placement="above">
       <direction-type>
         <metronome>
@@ -72,7 +78,6 @@
         <note><pitch><step>G</step><octave>4</octave></pitch><duration>960</duration><voice>1</voice><type>half</type></note>
   </measure>
   <measure number="6">
-    <direction placement="above"><direction-type><words font-style="italic">maj9:resolution · maj9:tension · centre C · WPS_VAULT_TONALITIES:maj9 · parent Cmaj9 · major / minor</words></direction-type></direction>
         <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
         <note><pitch><step>D</step><octave>3</octave></pitch><duration>960</duration><voice>1</voice><type>half</type></note>
         <note><chord/><pitch><step>G</step><octave>3</octave></pitch><duration>960</duration><voice>1</voice><type>half</type></note>

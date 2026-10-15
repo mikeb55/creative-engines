@@ -20,6 +20,8 @@
 
 **Hexatonic projects (H4B, 2026-10-15):** format `hexatonic-project` version 1 in `Hexatonic Projects/*.hexatonic.json`. `validateHexatonicProject` checks the stored MusicXML against the stored events. Open returns that phrase. Detail: `docs/HEXATONIC_PHASE_H4.md`.
 
+**Hexatonic desktop (H4C, 2026-10-15):** IPC `composer-os-api:hexatonic-write-musicxml` writes under `Documents/Composer OS Exports/Hexatonic Engine`. Project save and open use `composer-os-api:hexatonic-project-save` and `composer-os-api:hexatonic-project-open`. The long collection line is placed above bar 1. Detail: `docs/HEXATONIC_PHASE_H4.md`.
+
 ### RiffGen Phase 1.5 (inspect + GenerateIsland â€” 2026-07-18)
 
 - **Route:** app shell `#/riffgen` (nav label **RiffGen**) â€” sibling page, not a HomeGenerate branch. Hash routing required for desktop `file://` reload safety.

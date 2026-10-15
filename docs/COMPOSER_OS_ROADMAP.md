@@ -486,7 +486,8 @@ Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartÃ³k** native bundle (not 
 
 ## Current (as of 2026-07-01 snapshot)
 
-- **Hexatonic Phase H4B (2026-10-15):** `hexatonic-project` version 1. Save and reopen keep the phrase, the original collection, and the WPS provenance. Desktop IPC is the next step. Spec: `docs/HEXATONIC_PHASE_H4.md`.
+- **Hexatonic Phase H4C (2026-10-15):** desktop write, MuseScore open, and project save/open IPC. Collection text sits above bar 1. Spec: `docs/HEXATONIC_PHASE_H4.md`.
+- **Hexatonic Phase H4B (2026-10-15):** `hexatonic-project` version 1. Save and reopen keep the phrase, the original collection, and the WPS provenance. Spec: `docs/HEXATONIC_PHASE_H4.md`.
 - **Hexatonic Phase H4A (2026-10-15):** workspace `#/hexatonic`. Eleven scalar collections, 16 WPS pairs, centre, seed, `M-DEG` / `M-NEAR`, phrase preview, and MusicXML export. Generation stays `generateHexatonicPhrase`. Pentatonic colour registry stays 20. Spec: `docs/HEXATONIC_PHASE_H4.md`.
 - **Hexatonic Phase H3 (2026-10-15):** phrase generation on the H2 registry, version `hexatonic-phrase-h3.0`. Eleven scalar collections, 16 WPS pairs, centres 0–11, inside / outside / return, MusicXML. Pentatonic colour registry stays 20. Spec: `docs/HEXATONIC_PHASE_H3.md`.
 - **Hexatonic Phase H2 (2026-10-15):** sibling six-note registry `core/hexatonic/`, version `hexatonic-registry-h2.0`. Eleven locked scalar collections and the 16 WPS resolution/tension pairs. Pentatonic colour registry stays 20. Spec: `docs/HEXATONIC_PHASE_H1.md`. Module note: `docs/HEXATONIC_PHASE_H2.md`.
