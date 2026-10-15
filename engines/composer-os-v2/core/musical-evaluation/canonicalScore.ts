@@ -436,7 +436,21 @@ function walkPart(
         const step = pitch ? textOf(pitch, 'step') : '';
         const alter = pitch ? Number(textOf(pitch, 'alter') || 0) : 0;
         const octave = pitch ? Number(textOf(pitch, 'octave')) : 0;
-        const writtenMidi = pitch && step ? midiOfPitch(step, alter, octave) : null;
+        let writtenMidi: number | null = null;
+        if (pitch && step) {
+          try {
+            writtenMidi = midiOfPitch(step, alter, octave);
+          } catch (error) {
+            score.unsupported.push({
+              kind: 'pitch',
+              bar,
+              partId,
+              instrument: partName,
+              onsetInBar,
+              detail: error instanceof Error ? error.message : String(error),
+            });
+          }
+        }
         const soundingMidi = writtenMidi === null ? null : writtenMidi + 12 * octaveChange + chromatic;
         const timeMod = elementChildren(node, 'time-modification')[0];
         const tuplet = timeMod

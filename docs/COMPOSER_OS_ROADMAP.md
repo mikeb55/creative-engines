@@ -486,6 +486,7 @@ Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartÃ³k** native bundle (not 
 
 ## Current (as of 2026-07-01 snapshot)
 
+- **Musical evaluation V3.1-B (2026-10-15):** canonical MusicXML score, technical checks, harmonic and motivic evidence, rhythm and duo interaction, and reproducible JSON receipts. No GUI. No artistic-quality total. BMEF-100 V2.0 ratings stay human.
 - **Hexatonic Phase H5A (2026-10-15):** release check of H1–H4. Guide: `docs/HEXATONIC_GUIDE.md`. Catalogue, naming limits, triad pairs, phrase roles, projects, and desktop export stay the H4 surface. Structural tests are not artistic approval. H5B is not started.
 - **Hexatonic Phase H4C (2026-10-15):** desktop write, MuseScore open, and project save/open IPC. Collection text sits above bar 1. Spec: `docs/HEXATONIC_PHASE_H4.md`.
 - **Hexatonic Phase H4B (2026-10-15):** `hexatonic-project` version 1. Save and reopen keep the phrase, the original collection, and the WPS provenance. Spec: `docs/HEXATONIC_PHASE_H4.md`.

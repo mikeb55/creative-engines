@@ -222,6 +222,7 @@ User / API
 
 ## Current system status
 
+- **Musical evaluation V3.1-B** (`engines/composer-os-v2/core/musical-evaluation/`): reads partwise MusicXML into a canonical rational-time score and writes a JSON evidence receipt. Technical checks can pass or fail. Harmonic, motivic, rhythmic, and duo findings describe events. BMEF-100 V2.0 gates and criteria are stored for a later human scorecard. The service does not total them, does not rank candidates, and does not write notes.
 - **Guitar–Bass Duo** and **ECM Chamber**: full MusicXML golden path; optional **32-bar** long-form for duo.
 - **Song Mode**: compile + planning + duo MusicXML generation path via app API; rhythm intent applies on the **Song Mode duo MusicXML** path when `intent` is sent.
 - **Big Band / String Quartet**: planning and/or realisation paths per preset (see engine README for module ids).

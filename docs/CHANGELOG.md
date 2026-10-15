@@ -8,6 +8,8 @@
 
 ### Added
 
+- **V3.1-B4 evidence receipts** — read-only `evaluateScore` and `compareScores`. JSON receipts hash the input and themselves. Technical pass/fail stays separate from structural findings and from the blank BMEF-100 V2.0 human scorecard. Comparison lists event differences for two or three scores and does not rank them. No 70/30 total and no artistic score.
+
 - **V3.1-B3 rhythm, silence, and duo interaction** — per-instrument density and rest share first, then joint silence, guitar-during-bass-rest, bass-during-guitar-rest, shared and unshared attacks, BHL motion and crossings, experimental role hints, and candidate event differences. Syncopation, onset entropy, and LBDM stay unsupported. No musical-quality score.
 
 - **V3.1-B2 harmonic and motivic evidence** — descriptive pitch-class collections, declared-field membership, pentatonic and hexatonic distance kept on their own classifiers, registered voice-leading, contour, tessitura, common-tone retention, BHL motif windows, and `M-DEG` / `M-NEAR` as map methods. An outside note is not an error. No musical-quality score.
