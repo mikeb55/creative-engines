@@ -53,6 +53,14 @@ export { hexatonicPhraseToMusicXml, hexatonicScoreMatchesPhrase, readHexatonicSc
 export type { HexatonicScoreAttack, HexatonicScoreReading } from './phraseExport';
 export { generateHexatonicPhrase, guitarFretSpan, outsideScalarId, transposedScalarOrder } from './phraseGeneration';
 export { HEXATONIC_PHRASE_VERSION } from './phraseTypes';
+export {
+  HEXATONIC_PROJECT_FORMAT,
+  HEXATONIC_PROJECT_VERSION,
+  captureHexatonicProject,
+  hexatonicEventIdentity,
+  validateHexatonicProject,
+} from './hexatonicProject';
+export type { HexatonicProjectCapture, HexatonicProjectV1, HexatonicProjectValidation } from './hexatonicProject';
 export type {
   HexatonicAttack,
   HexatonicBmef,

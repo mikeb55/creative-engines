@@ -21,6 +21,7 @@ export const PRESET_OUTPUT_SUBFOLDER: Record<string, string> = {
   sq_to_bb: 'SQ to BB Compositions',
   martino_linear: 'Martino Linear',
   pentatonic: 'Pentatonic Projects',
+  hexatonic: 'Hexatonic Projects',
 };
 
 export function getUserDocumentsPath(): string {

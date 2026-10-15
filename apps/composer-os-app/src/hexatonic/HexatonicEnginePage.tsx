@@ -1,6 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { generateHexatonicPhrase, type HexatonicPhrase } from '@composer-os/core/hexatonic';
+import {
+  captureHexatonicProject,
+  generateHexatonicPhrase,
+  hexatonicEventIdentity,
+  type HexatonicPhrase,
+  type HexatonicProjectV1,
+} from '@composer-os/core/hexatonic';
 import type { MotifMapMethod } from '@composer-os/core/pentatonic/motifTransform';
+import { api } from '../services/api';
 import { exportHexatonicMusicXml } from './exportHexatonicMusicXml';
 import {
   describeHexatonicPhrase,
@@ -36,6 +43,11 @@ export function HexatonicEnginePage() {
   const [error, setError] = useState<string | null>(null);
   const [exportStatus, setExportStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [projectId, setProjectId] = useState('hexatonic-project');
+  const [projectNotes, setProjectNotes] = useState('');
+  const [projectPath, setProjectPath] = useState('');
+  const [projectStatus, setProjectStatus] = useState<string | null>(null);
+  const [overwrite, setOverwrite] = useState(false);
 
   const selection = describeHexatonicSelection({ family, scalarId, wpsId, centre });
   const preview = phrase ? describeHexatonicPhrase(phrase) : null;
@@ -55,6 +67,70 @@ export function HexatonicEnginePage() {
       setPhrase(null);
       setError(caught instanceof Error ? caught.message : String(caught));
     }
+  };
+
+  const applyProject = (project: HexatonicProjectV1) => {
+    setFamily(project.selection.family);
+    setScalarId(project.selection.scalarId ?? scalarId);
+    setWpsId(project.selection.wpsId ?? wpsId);
+    setCentre(project.selection.centre);
+    setSeed(project.selection.seed);
+    setMethod(project.selection.method);
+    setPhrase(project.phrase);
+    setProjectId(project.id);
+    setProjectNotes(project.notes);
+    setProjectStatus(`Restored ${project.id}`);
+  };
+
+  const onSaveProject = () => {
+    if (!phrase) return;
+    const captured = captureHexatonicProject({
+      id: projectId,
+      notes: projectNotes,
+      family,
+      scalarId,
+      wpsId,
+      centre,
+      seed,
+      method,
+      phrase,
+    });
+    if (!captured.ok || !captured.project) {
+      setError(captured.errors.join('; ') || 'Could not save this project.');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    void api
+      .hexatonicSaveProject({
+        project: captured.project,
+        path: projectPath || undefined,
+        overwrite,
+      })
+      .then((raw) => {
+        const row = raw as { ok: true; path: string } | { ok: false; error: string };
+        if (!row.ok) throw new Error(row.error);
+        setProjectPath(row.path);
+        setProjectStatus(`Saved ${row.path}`);
+      })
+      .catch((caught: unknown) => setError(caught instanceof Error ? caught.message : String(caught)))
+      .finally(() => setBusy(false));
+  };
+
+  const onOpenProject = () => {
+    if (!projectPath.trim()) return;
+    setBusy(true);
+    setError(null);
+    void api
+      .hexatonicOpenProject({ path: projectPath })
+      .then((raw) => {
+        const row = raw as { ok: true; path: string; project: HexatonicProjectV1 } | { ok: false; error: string };
+        if (!row.ok) throw new Error(row.error);
+        applyProject(row.project);
+        setProjectPath(row.path);
+      })
+      .catch((caught: unknown) => setError(caught instanceof Error ? caught.message : String(caught)))
+      .finally(() => setBusy(false));
   };
 
   const onExport = () => {
@@ -210,6 +286,12 @@ export function HexatonicEnginePage() {
             <p data-testid="hexatonic-sequence" style={{ margin: 0 }}>
               Sequence: {preview.sequence}
             </p>
+            <p data-testid="hexatonic-event-identity" style={{ margin: 0 }}>
+              Events: {hexatonicEventIdentity(phrase)}
+            </p>
+            <p data-testid="hexatonic-stored-note" style={{ margin: 0 }}>
+              Stored diagnostic note: {phrase.bmef.note}
+            </p>
             <p data-testid="hexatonic-provenance" style={{ margin: 0 }}>
               Provenance: {preview.provenance}
             </p>
@@ -247,6 +329,37 @@ export function HexatonicEnginePage() {
           {exportStatus}
         </p>
       )}
+      <section data-testid="hexatonic-project" style={{ display: 'grid', gap: '0.35rem' }}>
+        <h3 style={{ margin: 0 }}>Project</h3>
+        <p style={{ margin: 0 }}>Save keeps this phrase. Open restores it. Open does not generate a new phrase.</p>
+        <label htmlFor="hexatonic-project-id">
+          Project id
+          <input id="hexatonic-project-id" data-testid="hexatonic-project-id" value={projectId} onChange={(event) => setProjectId(event.target.value)} />
+        </label>
+        <label htmlFor="hexatonic-project-notes">
+          Notes
+          <textarea id="hexatonic-project-notes" data-testid="hexatonic-project-notes" value={projectNotes} rows={2} onChange={(event) => setProjectNotes(event.target.value)} />
+        </label>
+        <label htmlFor="hexatonic-project-path">
+          Project path
+          <input id="hexatonic-project-path" data-testid="hexatonic-project-path" value={projectPath} onChange={(event) => setProjectPath(event.target.value)} />
+        </label>
+        <label htmlFor="hexatonic-overwrite">
+          <input id="hexatonic-overwrite" data-testid="hexatonic-overwrite" type="checkbox" checked={overwrite} onChange={(event) => setOverwrite(event.target.checked)} />
+          Replace an existing project file
+        </label>
+        <button type="button" data-testid="hexatonic-save-project" onClick={onSaveProject} disabled={!phrase || busy}>
+          Save project
+        </button>
+        <button type="button" data-testid="hexatonic-open-project" onClick={onOpenProject} disabled={!projectPath.trim() || busy}>
+          Open project
+        </button>
+        {projectStatus && (
+          <p data-testid="hexatonic-project-status" style={{ margin: 0 }}>
+            {projectStatus}
+          </p>
+        )}
+      </section>
     </section>
   );
 }

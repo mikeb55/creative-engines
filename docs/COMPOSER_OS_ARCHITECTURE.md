@@ -16,7 +16,9 @@
 
 **Hexatonic phrases (H3, 2026-10-15):** `generateHexatonicPhrase` in the same module, version `hexatonic-phrase-h3.0`. It writes a six-bar guitar and upright-bass phrase for every adopted scalar collection and every WPS pair. Pitch mapping calls `mapMotifPitches`. A six-note or triad row is `orderedPitchClasses` on the collection view. Callers that omit that field still resolve the pentatonic registries. Export is `exportScoreModelToMusicXml` with no TAB and no chord symbols. `phrase.bmef` is a descriptive report. `artisticApproval` stays false. Detail: `docs/HEXATONIC_PHASE_H3.md`.
 
-**Hexatonic workspace (H4A, 2026-10-15):** route `#/hexatonic` in `apps/composer-os-app`. It calls `generateHexatonicPhrase` and shows the collection, the pair provenance, the phrase, and the BMEF report as separate sections. MusicXML export calls `composer-os-api:hexatonic-write-musicxml` when the desktop bridge is present. A browser session downloads the file. Project persistence and the desktop writer are later H4 steps. Detail: `docs/HEXATONIC_PHASE_H4.md`.
+**Hexatonic workspace (H4A, 2026-10-15):** route `#/hexatonic` in `apps/composer-os-app`. It calls `generateHexatonicPhrase` and shows the collection, the pair provenance, the phrase, and the BMEF report as separate sections. MusicXML export calls `composer-os-api:hexatonic-write-musicxml` when the desktop bridge is present. A browser session downloads the file. Detail: `docs/HEXATONIC_PHASE_H4.md`.
+
+**Hexatonic projects (H4B, 2026-10-15):** format `hexatonic-project` version 1 in `Hexatonic Projects/*.hexatonic.json`. `validateHexatonicProject` checks the stored MusicXML against the stored events. Open returns that phrase. Detail: `docs/HEXATONIC_PHASE_H4.md`.
 
 ### RiffGen Phase 1.5 (inspect + GenerateIsland â€” 2026-07-18)
 

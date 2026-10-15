@@ -17,7 +17,7 @@ The pentatonic page and its 20-colour vocabulary are unchanged.
 
 ## H4B — project file
 
-Not in the H4A commit.
+Format `hexatonic-project`, version 1. Files end in `.hexatonic.json` under `Hexatonic Projects` in the Composer OS files root. A project stores the selection, the original registry identity, the seed, the transformation, the six-bar inside/outside/return structure, the guitar and bass events, the MusicXML, and the technical diagnostics. Open returns that phrase. It does not build a new one. An existing file is left in place unless replace is requested. A path outside Hexatonic Projects is refused. Pentatonic and BHL project validators still refuse this format.
 
 ## H4C — desktop IPC
 

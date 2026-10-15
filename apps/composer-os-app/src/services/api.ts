@@ -133,6 +133,8 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     if (path === '/bhl/scratch') return ipcInvoke<T>('composer-os-api:bhl-scratch', body ?? {});
     if (path === '/pentatonic/project/save') return ipcInvoke<T>('composer-os-api:pentatonic-project-save', body ?? {});
     if (path === '/pentatonic/project/open') return ipcInvoke<T>('composer-os-api:pentatonic-project-open', body ?? {});
+    if (path === '/hexatonic/project/save') return ipcInvoke<T>('composer-os-api:hexatonic-project-save', body ?? {});
+    if (path === '/hexatonic/project/open') return ipcInvoke<T>('composer-os-api:hexatonic-project-open', body ?? {});
     throw new Error(`Unknown IPC POST path: ${path}`);
   }
   let r: Response;
@@ -388,6 +390,8 @@ export const api = {
   bhlScratch: (body: Record<string, unknown>) => post<Record<string, unknown>>('/bhl/scratch', body),
   pentatonicSaveProject: (body: Record<string, unknown>) => post<Record<string, unknown>>('/pentatonic/project/save', body),
   pentatonicOpenProject: (body: Record<string, unknown>) => post<Record<string, unknown>>('/pentatonic/project/open', body),
+  hexatonicSaveProject: (body: Record<string, unknown>) => post<Record<string, unknown>>('/hexatonic/project/save', body),
+  hexatonicOpenProject: (body: Record<string, unknown>) => post<Record<string, unknown>>('/hexatonic/project/open', body),
 };
 
 /** Shape checks for generation receipts (tests). */
