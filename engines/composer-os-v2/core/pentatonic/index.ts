@@ -40,6 +40,28 @@ export {
 } from './pathConfig';
 export { formatPathComparison, passageFromMusicContext, recommendPentatonicPath } from './recommendPath';
 export {
+  PENTATONIC_COLOUR_PATH_VERSION,
+  COLOUR_ROUTE_BEAM_WIDTH,
+  COLOUR_ROUTE_MAX_CONSECUTIVE_RETENTIONS,
+  COLOUR_ROUTE_PLATEAU_NOTE,
+  COLOUR_ROUTE_STEP_BOUND,
+  colourInstance,
+  colourMoveAllowed,
+  colourPathCatalog,
+  colourRoutePhraseTarget,
+  planColourRoute,
+  recommendRegisteredColour,
+  recommendRegisteredColourPassage,
+} from './colourPath';
+export type {
+  ColourPathInstance,
+  ColourRoute,
+  ColourRoutePlanArgs,
+  ColourRouteResult,
+  ColourRouteSearchTrace,
+  ColourRouteStep,
+} from './colourPath';
+export {
   DEFAULT_OUTSIDE_BUDGET,
   EXPERIMENTAL_COLOUR_PATH_GATE,
   PENTATONIC_PATH_INTELLIGENCE_VERSION,
@@ -216,6 +238,23 @@ export type {
   PracticeGuitarRole,
   PracticeRequest,
 } from './practiceFacade';
+export {
+  PENTATONIC_PROJECT_FORMAT,
+  PENTATONIC_PROJECT_NONE,
+  PENTATONIC_PROJECT_VERSION,
+  capturePentatonicProject,
+  collectionState,
+  extractPentatonicProjectMusic,
+  validatePentatonicProject,
+} from './pentatonicProject';
+export type {
+  PentatonicProjectCapture,
+  PentatonicProjectCollection,
+  PentatonicProjectEvent,
+  PentatonicProjectMusic,
+  PentatonicProjectV1,
+  PentatonicProjectValidation,
+} from './pentatonicProject';
 export type {
   PentatonicColourTension,
   PentatonicDepth,

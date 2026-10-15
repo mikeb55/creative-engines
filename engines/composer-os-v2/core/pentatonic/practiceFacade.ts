@@ -12,6 +12,7 @@ import type { BaseMotif } from '../motif/motifTypes';
 import { createNote, createPart, createRest, createScore } from '../score-model/scoreEventBuilder';
 import type { ScoreEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import { analyzePentatonicScore, formatPentatonicScoreMap } from './analyzeScore';
+import { formatCollectionIdentityMark } from './musicXmlScore';
 import { planAutoColor, MUSICAL_INTENTIONS, type MusicalIntention } from './autoColor';
 import { fieldFromResource } from './fieldDistance';
 import { planGradedOut, type OutnessLevel } from './gradedOut';
@@ -402,11 +403,20 @@ function matchResource(pcs: readonly number[], preferredCentre: ParsedNote): { i
   return fallback;
 }
 
-function registryCollection(fieldId: string, centre: ParsedNote): PentatonicCollectionView | null {
+function registryCollection(fieldId: string, centre: ParsedNote): PentatonicCollectionView {
   const resource = getPentatonicColourResource(fieldId);
-  const archetype = resource?.pathArchetypeId;
-  if (archetype !== 'major_pentatonic' && archetype !== 'minor_pentatonic') return null;
-  return manualCollection(archetype, centre.spelling);
+  if (!resource) {
+    throw new Error(`Pentatonic colour "${fieldId}" is not registered. Refusing to substitute minor pentatonic.`);
+  }
+  if (resource.pathArchetypeId === 'major_pentatonic' || resource.pathArchetypeId === 'minor_pentatonic') {
+    return manualCollection(resource.pathArchetypeId, centre.spelling);
+  }
+  return {
+    name: `${resource.displayName} ${centre.spelling}`,
+    archetypeId: resource.id,
+    referenceNote: centre.spelling,
+    homeRelationshipLabel: null,
+  };
 }
 
 function fieldSpelling(fieldId: string, centre: ParsedNote): { name: string; notes: string } {
@@ -458,6 +468,8 @@ export function exportGuitarMusicXml(args: {
   timed?: readonly (readonly TimedPracticeEvent[])[];
   beats?: number;
   beatType?: number;
+  /** Written as direction words. Does not change the notes. */
+  collection?: { resourceId: string; centre: string };
 }): string {
   const barCount = Math.max(1, args.timed?.length ?? args.bars.length);
   const beats = args.beats ?? 4;
@@ -504,6 +516,7 @@ export function exportGuitarMusicXml(args: {
     measure.events = events;
   });
   const score = createScore(args.title, [part], { tempo: args.bpm ?? 92 });
+  if (args.collection) score.measureWordsMarkings = { 1: formatCollectionIdentityMark(args.collection.resourceId, args.collection.centre) };
   score.timeSignature = { beats, beatType };
   score.barMeterMap = {};
   for (let bar = 1; bar <= barCount; bar += 1) score.barMeterMap[bar] = { numerator: beats, denominator: beatType };
@@ -578,7 +591,7 @@ function gceFor(pitches: readonly number[], silence: boolean): { overall: number
 
 export function transformPracticeCell(args: { pitches: readonly number[]; fieldId?: string; centre?: string; transform?: CellTransform }): number[] {
   const centre = centreOf(args.centre);
-  const home = registryCollection(args.fieldId || 'minor_pentatonic', centre) ?? manualCollection('minor_pentatonic', centre.spelling);
+  const home = registryCollection(args.fieldId || 'minor_pentatonic', centre);
   return transformCell({
     pitches: [...args.pitches],
     collection: home,
@@ -760,7 +773,7 @@ export function generatePracticeExample(request: PracticeRequest = {}): Practice
     practiceView = inspected.label === 'CUSTOM';
     if (inspected.matchedResourceId) fieldId = inspected.matchedResourceId;
   }
-  const home = registryCollection(fieldId, centre) ?? manualCollection('minor_pentatonic', centre.spelling);
+  const home = registryCollection(fieldId, centre);
   if (!getPentatonicColourResource(fieldId)?.pathArchetypeId) {
     const spelled = fieldSpelling(fieldId, centre);
     if (!custom) {
@@ -841,6 +854,9 @@ export function generatePracticeExample(request: PracticeRequest = {}): Practice
     bars,
     pitchClassSpelling,
     timed,
+    ...(getPentatonicColourResource(fieldId) || fieldId === 'major_pentatonic' || fieldId === 'minor_pentatonic'
+      ? { collection: { resourceId: fieldId, centre: centre.spelling } }
+      : {}),
   });
   const gce = gceFor(sounding ? pitches : [], !sounding);
   const noteText = sounding

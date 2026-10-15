@@ -7,11 +7,6 @@ import {
   type PentatonicColourResource,
 } from '@composer-os/core/pentatonic';
 
-const PATH_ARCHETYPES = new Set(['major_pentatonic', 'minor_pentatonic']);
-
-export const PENTATONIC_COLOUR_PATH_LIMIT =
-  'Path transform, phrase generation, M-DEG, and M-NEAR support Major Pentatonic and Minor Pentatonic only. This collection is reference material. Its pitches are not sent to those operations.';
-
 export function colourPitchClasses(reference: string, intervals: readonly number[]): number[] {
   const root = parseNoteToken(reference)?.pc ?? 0;
   return intervals.map((interval) => mod12(root + interval));
@@ -24,7 +19,7 @@ export function colourSpelling(reference: string, resource: PentatonicColourReso
 export function PentatonicColourRegistry(props: {
   referenceNote: string;
   onReferenceNote: (note: string) => void;
-  onUsePathCollection: (archetypeId: 'major_pentatonic' | 'minor_pentatonic', referenceNote: string) => void;
+  onUsePathCollection: (archetypeId: string, referenceNote: string) => void;
 }) {
   const resources = listPentatonicColourResources();
   return (
@@ -33,8 +28,8 @@ export function PentatonicColourRegistry(props: {
         Colour collections
       </h3>
       <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-        {resources.length} collections from the pentatonic colour registry. Major Pentatonic and Minor Pentatonic can be used as the manual
-        path collection. The other collections show their pitch content here. The path engine does not transform them.
+        {resources.length} registered collections. Each one can be the manual path collection at the spelling reference. Unknown ids are
+        rejected.
       </p>
       <label htmlFor="pentatonic-colour-reference">
         Spelling reference
@@ -53,7 +48,6 @@ export function PentatonicColourRegistry(props: {
       </label>
       <div style={{ display: 'grid', gap: '0.5rem' }}>
         {resources.map((resource) => {
-          const pathReady = resource.pathArchetypeId !== null && PATH_ARCHETYPES.has(resource.pathArchetypeId);
           const spelling = colourSpelling(props.referenceNote, resource);
           const pitchClasses = colourPitchClasses(props.referenceNote, resource.intervals);
           return (
@@ -74,22 +68,14 @@ export function PentatonicColourRegistry(props: {
                 Spelling: {spelling}
               </p>
               <p style={{ margin: '0.15rem 0', color: 'var(--text-muted)', fontSize: '0.82rem' }}>{resource.role}</p>
-              {pathReady ? (
-                <button
-                  type="button"
-                  data-testid="pentatonic-colour-use-path"
-                  data-colour-id={resource.id}
-                  onClick={() =>
-                    props.onUsePathCollection(resource.id as 'major_pentatonic' | 'minor_pentatonic', props.referenceNote)
-                  }
-                >
-                  Use for path transform and phrase generation
-                </button>
-              ) : (
-                <p data-testid="pentatonic-colour-limitation" style={{ margin: '0.35rem 0 0' }}>
-                  {PENTATONIC_COLOUR_PATH_LIMIT}
-                </p>
-              )}
+              <button
+                type="button"
+                data-testid="pentatonic-colour-use-path"
+                data-colour-id={resource.id}
+                onClick={() => props.onUsePathCollection(resource.id, props.referenceNote)}
+              >
+                Use for path transform and phrase generation
+              </button>
             </article>
           );
         })}

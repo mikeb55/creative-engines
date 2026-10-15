@@ -138,8 +138,8 @@ function ScoreMap(props: { analysis: PentatonicScoreAnalysis }) {
           ))}
         </div>
       ) : null}
-      {analysis.homeEvidence.map((line) => (
-        <p key={line} style={{ margin: 0 }}>
+      {analysis.homeEvidence.map((line, index) => (
+        <p key={`${index}:${line}`} style={{ margin: 0 }}>
           {line}
         </p>
       ))}
@@ -217,11 +217,11 @@ function ScoreMap(props: { analysis: PentatonicScoreAnalysis }) {
       <details>
         <summary>Diagnostics</summary>
         <ul>
-          {analysis.diagnostics.map((line) => (
-            <li key={line}>{line}</li>
+          {analysis.diagnostics.map((line, index) => (
+            <li key={`diagnostic-${index}`}>{line}</li>
           ))}
-          {analysis.warnings.map((line) => (
-            <li key={line}>Warning: {line}</li>
+          {analysis.warnings.map((line, index) => (
+            <li key={`warning-${index}`}>Warning: {line}</li>
           ))}
           {analysis.inferredBoundaries.map((item) => (
             <li key={`${item.sourceLabel}-${item.reason}`}>

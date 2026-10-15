@@ -206,6 +206,7 @@ function textFromHarmonyWrapper(harmonyEl: Element, wrapperLocal: string, fieldL
 
 /** Best-effort jazz-style chord string from a `<harmony>` element (aligned with lead-sheet importer). */
 function parseHarmonySymbolFromElement(harmonyEl: Element): string | null {
+  if (kindBodyText(harmonyEl).trim().toLowerCase() === 'none') return 'N.C.';
   const rootStep = textFromHarmonyWrapper(harmonyEl, 'root', 'root-step');
   if (!rootStep) return null;
   const rootAlterRaw = textFromHarmonyWrapper(harmonyEl, 'root', 'root-alter');

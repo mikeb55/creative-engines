@@ -42,6 +42,21 @@ describe('Desktop IPC clean-room (static)', () => {
     expect(ipc).toContain('apiRunLeadSheetFileInput');
   });
 
+  it('ipc entry registers pentatonic project save and open', () => {
+    const ipc = fs.readFileSync(path.join(desktopRoot, 'electron', 'ipcEntry.ts'), 'utf-8');
+    const api = fs.readFileSync(
+      path.join(desktopRoot, '..', 'composer-os-app', 'src', 'services', 'api.ts'),
+      'utf-8'
+    );
+    expect(ipc).toContain('composer-os-api:pentatonic-project-save');
+    expect(ipc).toContain('composer-os-api:pentatonic-project-open');
+    expect(ipc).toContain('apiPentatonicSaveProject');
+    expect(ipc).toContain('apiPentatonicOpenProject');
+    expect(api).toContain("'/pentatonic/project/save'");
+    expect(api).toContain('composer-os-api:pentatonic-project-save');
+    expect(api).toContain('composer-os-api:pentatonic-project-open');
+  });
+
   it('renderer api uses IPC when integration is ipc', () => {
     const api = fs.readFileSync(
       path.join(desktopRoot, '..', 'composer-os-app', 'src', 'services', 'api.ts'),

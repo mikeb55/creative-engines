@@ -1,6 +1,6 @@
 /**
  * Pentatonic pitch-class helpers.
- * Spelling is a deterministic letter-step fallback. It is not contextual enharmonic analysis.
+ * Spelling is a deterministic letter-step spelling. Accidentals stay within a double sharp or double flat.
  * Canonical identity is the sorted pitch-class list and does not depend on spelling.
  */
 
@@ -68,9 +68,21 @@ function accidentalSuffix(delta: number): string {
 }
 
 /**
+ * Signed accidental from a target pitch class to a letter's natural.
+ * Range is -5..+6. JavaScript `%` keeps a negative remainder, so
+ * `((delta + 6) % 12) - 6` turned B# (delta -11) into eleven flats.
+ */
+export function accidentalDelta(targetPc: number, letterNatural: number): number {
+  let delta = mod12(targetPc - letterNatural);
+  if (delta > 6) delta -= 12;
+  return delta;
+}
+
+/**
  * Spell a transposed archetype from its reference note using fixed scale-degree letters.
- * Limitation: this follows the archetype's letter steps from the reference spelling.
- * It does not choose enharmonics from a key signature or from surrounding chords.
+ * Letter steps stay when the accidental is at most a double sharp or double flat.
+ * A larger accidental is replaced by the readable sharp/flat name for that pitch class.
+ * This does not choose enharmonics from a key signature or from surrounding chords.
  */
 export function spellFromReference(
   referenceSpelling: string,
@@ -85,8 +97,8 @@ export function spellFromReference(
   return intervals.map((interval, index) => {
     const letter = LETTERS[(letterIndex + letterSteps[index]!) % 7]!;
     const target = mod12(reference.pc + interval);
-    let delta = target - NATURAL_PC[letter]!;
-    delta = ((delta + 6) % 12) - 6;
+    const delta = accidentalDelta(target, NATURAL_PC[letter]!);
+    if (Math.abs(delta) > 2) return sharpName(target);
     return `${letter}${accidentalSuffix(delta)}`;
   });
 }

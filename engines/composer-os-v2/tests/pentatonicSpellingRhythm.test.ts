@@ -54,6 +54,8 @@ function run(): { ok: boolean; name: string }[] {
       bars: [[65, 68, 70, 72, 75]],
       pitchClassSpelling: { 5: 'F', 8: 'Ab', 10: 'Bb', 0: 'C', 3: 'Eb' },
     });
+    assert.match(xml, /<kind text="N\.C\.">none<\/kind>/);
+    assert.doesNotMatch(xml, /<kind[^>]*>major<\/kind>/);
     assert.match(xml, /<step>A<\/step><alter>-1<\/alter>/);
     assert.match(xml, /<step>B<\/step><alter>-1<\/alter>/);
     assert.match(xml, /<step>E<\/step><alter>-1<\/alter>/);

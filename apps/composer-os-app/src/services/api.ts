@@ -131,6 +131,8 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     if (path === '/bhl/project/save') return ipcInvoke<T>('composer-os-api:bhl-project-save', body ?? {});
     if (path === '/bhl/project/open') return ipcInvoke<T>('composer-os-api:bhl-project-open', body ?? {});
     if (path === '/bhl/scratch') return ipcInvoke<T>('composer-os-api:bhl-scratch', body ?? {});
+    if (path === '/pentatonic/project/save') return ipcInvoke<T>('composer-os-api:pentatonic-project-save', body ?? {});
+    if (path === '/pentatonic/project/open') return ipcInvoke<T>('composer-os-api:pentatonic-project-open', body ?? {});
     throw new Error(`Unknown IPC POST path: ${path}`);
   }
   let r: Response;
@@ -384,6 +386,8 @@ export const api = {
   bhlSaveProject: (body: Record<string, unknown>) => post<Record<string, unknown>>('/bhl/project/save', body),
   bhlOpenProject: (body: Record<string, unknown>) => post<Record<string, unknown>>('/bhl/project/open', body),
   bhlScratch: (body: Record<string, unknown>) => post<Record<string, unknown>>('/bhl/scratch', body),
+  pentatonicSaveProject: (body: Record<string, unknown>) => post<Record<string, unknown>>('/pentatonic/project/save', body),
+  pentatonicOpenProject: (body: Record<string, unknown>) => post<Record<string, unknown>>('/pentatonic/project/open', body),
 };
 
 /** Shape checks for generation receipts (tests). */

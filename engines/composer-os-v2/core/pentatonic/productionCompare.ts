@@ -154,12 +154,15 @@ export function productionSnapshot(analysis: PentatonicScoreAnalysis): Productio
   const centre =
     analysis.identity.centreStatus === 'CENTRE' && analysis.identity.centre ? analysis.identity.centre.spelling : 'not established';
   const home = homeCollection(analysis)?.name ?? 'not established';
-  const current = analysis.regions.find((region) => region.collectionName !== 'NONE');
-  const none = analysis.regions.filter((region) => region.collectionName === 'NONE');
+  const current =
+    analysis.regions.find((region) => region.explicitCollection) ??
+    analysis.regions.find((region) => region.collectionName !== 'NONE');
+  const none = analysis.regions.filter((region) => region.collectionName === 'NONE' && !region.explicitCollection);
+  const fieldName = current?.explicitCollection?.name ?? current?.collectionName ?? 'NONE';
   return {
     centre,
     home,
-    currentField: current ? `${current.measureRangeLabel} ${current.collectionName}` : 'NONE',
+    currentField: current ? `${current.measureRangeLabel} ${fieldName}` : 'NONE',
     formContext: form.phrases.length
       ? form.phrases.map((phrase) => `${phrase.function} ${phrase.firstSourceLabel}–${phrase.lastSourceLabel}`).join('; ')
       : 'unknown',
@@ -182,14 +185,16 @@ function contextForRegion(analysis: PentatonicScoreAnalysis, region: PentatonicS
   const phrase = form.phrases.find((span) => bar >= Number(span.firstSourceLabel) && bar <= Number(span.lastSourceLabel));
   const decision = form.decisions.find((row) => row.sourceLabel === region.firstSourceLabel);
   const role = phrase ? form.roles.find((row) => row.phraseId === phrase.id) : undefined;
-  const none = region.collectionName === 'NONE';
+  const explicit = region.identityStatus === 'explicit' ? region.explicitCollection : null;
+  const none = region.collectionName === 'NONE' && !explicit;
   return {
     ...base,
     intentions,
     formFunction: decision?.function ?? phrase?.function ?? base.formFunction,
     duoRole: role?.role ?? base.duoRole,
     pathIsNone: none,
-    currentResourceId: none ? null : base.currentResourceId,
+    currentResourceId: none ? null : explicit?.archetypeId ?? base.currentResourceId,
+    centreNote: explicit?.referenceNote ?? base.centreNote,
     hasMotif: base.hasMotif,
     holdCredible: form.holdFieldSpans.length > 0 || base.holdCredible,
     pairIsRegion: form.tritonePairSpans.length > 0,
@@ -342,7 +347,10 @@ export function comparePentatonicCandidates(args: {
   const intentions = args.intentions?.length ? args.intentions : (['RETAIN_MOTIF'] as const);
   const context = contextForRegion(args.analysis, args.region, intentions);
   const plan = planAutoColor(context);
-  const collection = args.region.collectionName === 'NONE' ? null : collectionForRegion(args.region) ?? homeCollection(args.analysis);
+  const collection =
+    args.region.collectionName === 'NONE' && !args.region.explicitCollection
+      ? null
+      : collectionForRegion(args.region) ?? homeCollection(args.analysis);
   const rows: CompareCandidate[] = [];
   const silencePlan = plan.silencePreference !== 'NONE' || plan.outcome === 'STRUCTURAL_SILENCE' || plan.outcome === 'NO_PHRASE' || plan.outcome === 'NONE';
 

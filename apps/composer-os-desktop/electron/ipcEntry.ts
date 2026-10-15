@@ -38,6 +38,7 @@ import {
   apiBhlSaveProject,
   apiBhlScratch,
 } from '../../../engines/composer-os-v2/app-api/bhlApp';
+import { apiPentatonicOpenProject, apiPentatonicSaveProject } from '../../../engines/composer-os-v2/app-api/pentatonicProjectApp';
 import { openOutputFolderRoute } from '../../../scripts/openOutputFolderRoute';
 import {
   hydrateAnthropicKeyFromAllSources,
@@ -411,6 +412,8 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
   ipcMain.handle('composer-os-api:bhl-compare', (_e, body: unknown) => apiBhlCompare(body));
   ipcMain.handle('composer-os-api:bhl-project-save', (_e, body: unknown) => apiBhlSaveProject(body));
   ipcMain.handle('composer-os-api:bhl-project-open', (_e, body: unknown) => apiBhlOpenProject(body));
+  ipcMain.handle('composer-os-api:pentatonic-project-save', (_e, body: unknown) => apiPentatonicSaveProject(body));
+  ipcMain.handle('composer-os-api:pentatonic-project-open', (_e, body: unknown) => apiPentatonicOpenProject(body));
   ipcMain.handle('composer-os-api:bhl-scratch', (_e, body: unknown) => apiBhlScratch(body));
   ipcMain.handle('composer-os-api:generate-comping', (_e, body: unknown) =>
     Promise.resolve(apiGenerateComping(body as Parameters<typeof apiGenerateComping>[0]))

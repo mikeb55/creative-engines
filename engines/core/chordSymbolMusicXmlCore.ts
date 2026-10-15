@@ -14,6 +14,12 @@ export interface ChordRootAndKindText {
 
 const DEFAULT_MUSICXML_KIND_CONTENT = 'major';
 
+/** Lead-sheet tokens that mean no chord. A letter C inside "N.C." is not a root. */
+export function isNoChordHarmonySymbol(symbol: string): boolean {
+  const key = symbol.trim().toLowerCase().replace(/[\s._\-/]+/g, '');
+  return key === 'nc' || key === 'nochord';
+}
+
 const VALID_SLASH_BASS = /^[A-G][#b]?$/i;
 
 /**

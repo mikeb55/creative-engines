@@ -29,6 +29,19 @@ export interface PentatonicHarmonyEvidence {
 export type PentatonicPitchPolicy = 'written-equals-concert' | 'concert-from-written-transpose' | 'written-only';
 
 const NC_MARK = /^(n\.?\s*c\.?|nc)$/i;
+
+/** Existing MusicXML direction words. Not a section letter and not a motif mark. */
+export const COLLECTION_IDENTITY_MARK = /^collection ([a-z0-9_]+)@([A-G](?:#|b)?)$/;
+
+export function formatCollectionIdentityMark(resourceId: string, centre: string): string {
+  return `collection ${resourceId}@${centre}`;
+}
+
+export function parseCollectionIdentityMark(text: string): { resourceId: string; centre: string } | null {
+  const match = text.trim().match(COLLECTION_IDENTITY_MARK);
+  if (!match) return null;
+  return { resourceId: match[1]!, centre: match[2]! };
+}
 const NAV_MARK = /\b(d\.s\.|d\.c\.|da capo|dal segno|to coda|coda|segno)\b/i;
 
 export interface PentatonicSoundingAttack {

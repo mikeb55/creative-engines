@@ -5,6 +5,7 @@
 
 import type { BaseMotif, MotifNote } from '../motif/motifTypes';
 import { CLEAN_ELECTRIC_GUITAR } from '../instrument-profiles/guitarProfile';
+import { getPentatonicColourResource } from './colourRegistry';
 import { getPentatonicArchetype } from './registry';
 import { mod12, parseNoteToken } from './pitch';
 
@@ -97,12 +98,21 @@ export function strongBeatOnsets(beats: number, beatType: number): number[] {
 }
 
 export function collectionPitchClasses(collection: PentatonicCollectionView): number[] {
-  const archetype = getPentatonicArchetype(collection.archetypeId);
   const reference = parseNoteToken(collection.referenceNote);
-  if (!archetype || !reference) {
-    throw new Error(`Collection ${collection.name} is not a registry archetype with a reference pitch.`);
+  if (!reference) {
+    throw new Error(`Collection ${collection.name} has no reference pitch. Refusing to substitute another collection.`);
   }
-  return archetype.intervals.map((interval) => mod12(reference.pc + interval));
+  const archetype = getPentatonicArchetype(collection.archetypeId);
+  if (archetype) {
+    return archetype.intervals.map((interval) => mod12(reference.pc + interval));
+  }
+  const colour = getPentatonicColourResource(collection.archetypeId);
+  if (!colour) {
+    throw new Error(
+      `Pentatonic colour "${collection.archetypeId}" is not registered. Refusing to substitute another collection.`
+    );
+  }
+  return colour.intervals.map((interval) => mod12(reference.pc + interval));
 }
 
 export function degreeOf(pitch: number, collection: PentatonicCollectionView): number | null {
@@ -257,18 +267,20 @@ function preserveOrnament(
   return midi;
 }
 
-function circularDegreeDistance(left: number, right: number): number {
+function circularDegreeDistance(left: number, right: number, size: number): number {
+  const span = size > 1 ? size : 2;
   const gap = Math.abs(left - right);
-  return Math.min(gap, 5 - gap);
+  return Math.min(gap, span - gap);
 }
 
 export function maxAdjacentCollectionRun(pitches: readonly number[], collection: PentatonicCollectionView): number {
+  const size = collectionPitchClasses(collection).length;
   let max = 0;
   let run = 0;
   for (let index = 1; index < pitches.length; index += 1) {
     const left = degreeOf(pitches[index - 1]!, collection);
     const right = degreeOf(pitches[index]!, collection);
-    if (left !== null && right !== null && circularDegreeDistance(left, right) === 1) {
+    if (left !== null && right !== null && circularDegreeDistance(left, right, size) === 1) {
       run += 1;
       if (run > max) max = run;
     } else {
@@ -373,10 +385,12 @@ export function mapMotifPitches(args: {
       rows[index]!.sourceDegree = sourceDegree;
       return;
     }
-    const allowed =
-      args.method === 'M-DEG' && sourceDegree !== null
-        ? midisForPc(collectionPitchClasses(args.target)[sourceDegree]!)
-        : targetMemberMidis(args.target);
+    const targetClasses = collectionPitchClasses(args.target);
+    const degreePc = sourceDegree !== null ? targetClasses[sourceDegree] : undefined;
+    if (args.method === 'M-DEG' && sourceDegree !== null && degreePc === undefined) {
+      throw new Error(`M-DEG degree ${sourceDegree} is outside ${args.target.archetypeId}. Refusing to substitute another collection.`);
+    }
+    const allowed = args.method === 'M-DEG' && degreePc !== undefined ? midisForPc(degreePc) : targetMemberMidis(args.target);
     const choice = chooseMidi({
       allowed,
       sourceMidi: note.pitch,

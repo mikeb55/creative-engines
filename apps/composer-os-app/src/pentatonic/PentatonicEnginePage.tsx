@@ -1,8 +1,13 @@
 import { useRef, useState } from 'react';
 import {
+  getPentatonicArchetype,
+  getPentatonicColourResource,
+  listPentatonicColourResources,
   PENTATONIC_NOTE_CHOICES,
   recommendPentatonicsFromRegion,
   recommendPentatonicPath,
+  recommendRegisteredColour,
+  recommendRegisteredColourPassage,
   type PentatonicEngineResult,
   type PentatonicPathResult,
   type PentatonicRecommendation,
@@ -67,6 +72,23 @@ function NoteChips(props: {
   );
 }
 
+function colourOnly(id: string | undefined): boolean {
+  if (!id) return false;
+  return !getPentatonicArchetype(id) && Boolean(getPentatonicColourResource(id));
+}
+
+function ColourOptions(props: { includeNone?: boolean }) {
+  return (
+    <>
+      {props.includeNone ? <option value="">None</option> : null}
+      {listPentatonicColourResources().map((resource) => (
+        <option key={resource.id} value={resource.id}>
+          {resource.displayName}
+        </option>
+      ))}
+    </>
+  );
+}
 function collectionKey(heading: string, item: PentatonicRecommendation): string {
   return `${heading}:${item.canonicalId}:${item.transposedName}`;
 }
@@ -160,7 +182,13 @@ export function PentatonicEnginePage(props: {
     setLoading(true);
     setError(null);
     Promise.resolve()
-      .then(() => recommendFn(requested))
+      .then(() => {
+        const homeId = requested.home?.archetypeId;
+        if (colourOnly(homeId) || (homeId && !getPentatonicArchetype(homeId) && !getPentatonicColourResource(homeId))) {
+          return recommendRegisteredColour(requested);
+        }
+        return recommendFn(requested);
+      })
       .then((result) => {
         if (id !== requestRef.current) return;
         setAnalysis({ result, snapshot: requestedSnapshot });
@@ -190,7 +218,15 @@ export function PentatonicEnginePage(props: {
     setLoading(true);
     setError(null);
     Promise.resolve()
-      .then(() => pathRecommendFn(resolvePentatonicPassage(form)))
+      .then(() => {
+        const passage = resolvePentatonicPassage(form);
+        const homeId = passage.home?.archetypeId;
+        const currentId = passage.current?.archetypeId;
+        const colourPath = colourOnly(homeId) || colourOnly(currentId);
+        const unknown = [homeId, currentId].some((id) => id && !getPentatonicArchetype(id) && !getPentatonicColourResource(id));
+        if (colourPath || unknown) return recommendRegisteredColourPassage(passage);
+        return pathRecommendFn(passage);
+      })
       .then((result) => {
         if (id !== requestRef.current) return;
         setPathAnalysis({ result, snapshot: requestedSnapshot });
@@ -378,8 +414,7 @@ export function PentatonicEnginePage(props: {
             onChange={(event) => patch({ homeArchetypeId: event.target.value })}
           >
             <option value="">None</option>
-            <option value="major_pentatonic">Major Pentatonic</option>
-            <option value="minor_pentatonic">Minor Pentatonic</option>
+            <ColourOptions />
           </select>
         </label>
         <label htmlFor="pentatonic-home-ref">
@@ -423,8 +458,7 @@ export function PentatonicEnginePage(props: {
                 value={form.currentArchetypeId}
                 onChange={(event) => patch({ currentArchetypeId: event.target.value })}
               >
-                <option value="minor_pentatonic">Minor Pentatonic</option>
-                <option value="major_pentatonic">Major Pentatonic</option>
+                <ColourOptions />
               </select>
             </label>
             <label htmlFor="pentatonic-current-ref">

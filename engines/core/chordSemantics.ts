@@ -9,6 +9,7 @@
 import {
   escapeXmlForHarmony,
   harmonyDegreeXmlFromKindText,
+  isNoChordHarmonySymbol,
   musicXmlKindBodyForHarmonyExport,
   musicXmlKindContentFromKindText,
   parseChordForMusicXmlHarmony,
@@ -287,6 +288,10 @@ export function buildHarmonyXmlLine(
     exactChordTextElement?: boolean;
   }
 ): string {
+  const staffEl = opts?.staffNumber !== undefined ? `<staff>${opts.staffNumber}</staff>` : '';
+  if (isNoChordHarmonySymbol(chordSymbol)) {
+    return `    <harmony placement="above">${staffEl}<root><root-step text="" print-object="no">C</root-step></root><kind text="N.C.">none</kind></harmony>\n`;
+  }
   const sem = buildChordSemantics(chordSymbol);
   const semantic = parseChordForMusicXmlHarmony(chordSymbol, { literalKind: true });
   const display = parseChordForMusicXmlHarmonyDisplay(chordSymbol);
@@ -303,7 +308,6 @@ export function buildHarmonyXmlLine(
           return `<bass><bass-step>${b.rootStep}</bass-step>${bassAlterEl}</bass>`;
         })()
       : '';
-  const staffEl = opts?.staffNumber !== undefined ? `<staff>${opts.staffNumber}</staff>` : '';
   return `    <harmony placement="above">${staffEl}<root><root-step>${r.rootStep}</root-step>${alterEl}</root><kind text="${escapeXmlForHarmony(
     kindAttrText
   )}">${escapeXmlForHarmony(kindContent)}</kind>${bassEl}${degreeXml}</harmony>\n`;

@@ -176,6 +176,12 @@ export function PentatonicPassagePanel(props: {
             {props.result.totalPathCost}. No-change comparison {props.result.bestStaticPathCost}{' '}
             {props.result.bestStaticStateName ?? ''}.
           </p>
+            {props.result.alternatives.length > 0 ? (
+              <p data-testid="pentatonic-path-alternatives">
+                Alternatives:{' '}
+                {props.result.alternatives.map((item) => `${item.totalCost} ${item.chosenIds.join(' > ')}`).join(' | ')}
+              </p>
+            ) : null}
           <details>
             <summary>Per-event local scores and transitions</summary>
             <ul>

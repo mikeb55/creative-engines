@@ -20,6 +20,7 @@ export const PRESET_OUTPUT_SUBFOLDER: Record<string, string> = {
   riff_generator: 'Riffs',
   sq_to_bb: 'SQ to BB Compositions',
   martino_linear: 'Martino Linear',
+  pentatonic: 'Pentatonic Projects',
 };
 
 export function getUserDocumentsPath(): string {

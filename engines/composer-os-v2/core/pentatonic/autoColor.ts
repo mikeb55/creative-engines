@@ -1034,7 +1034,14 @@ export function autoColorContextFromAnalysis(analysis: PentatonicScoreAnalysis):
   const bars = Math.max(1, slice.length);
   const density = attacks / bars >= 6 ? 'dense' : attacks / bars >= 3 ? 'moderate' : attacks > 0 ? 'sparse' : 'unknown';
   const register = form.register[0]?.classification ?? 'UNKNOWN';
-  const resourceId = pathEvent?.archetypeId && pathEvent.chosenId !== 'NONE' ? pathEvent.archetypeId : null;
+  const declaredRegion = pathEvent
+    ? analysis.regions.find((region) => {
+        const bar = Number(pathEvent.sourceLabel);
+        return bar >= Number(region.firstSourceLabel) && bar <= Number(region.lastSourceLabel);
+      })
+    : analysis.regions[0];
+  const explicit = declaredRegion?.identityStatus === 'explicit' ? declaredRegion.explicitCollection : null;
+  const resourceId = explicit?.archetypeId ?? (pathEvent?.archetypeId && pathEvent.chosenId !== 'NONE' ? pathEvent.archetypeId : null);
   const fieldIsHome = Boolean(homePcs && pathEvent?.canonicalPitchSet && pathEvent.canonicalPitchSet.length === homePcs.length && pathEvent.canonicalPitchSet.every((pc) => homePcs.includes(pc)));
   const grounding = assessGrounding({
     bassPitchClasses: bassPitchClasses.filter((row) => row.length > 0),
@@ -1043,12 +1050,12 @@ export function autoColorContextFromAnalysis(analysis: PentatonicScoreAnalysis):
   return {
     formFunction: decision?.function ?? phrase?.function ?? 'unknown',
     duoRole: role?.role ?? 'UNKNOWN',
-    pathIsNone: pathEvent?.chosenId === 'NONE',
+    pathIsNone: explicit ? false : pathEvent?.chosenId === 'NONE',
     currentResourceId: resourceId,
     homeResourceId: analysis.identity.home?.archetypeId ?? null,
     homeKnown: analysis.identity.homeStatus === 'HOME' && Boolean(analysis.identity.home),
     fieldIsHome,
-    centreNote: analysis.identity.centre?.spelling ?? null,
+    centreNote: explicit?.referenceNote ?? analysis.identity.centre?.spelling ?? null,
     hasMotif: melodyCount >= 3,
     lineageIdentity: melodyCount >= 3 ? 'clear' : 'absent',
     density,

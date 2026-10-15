@@ -1,5 +1,6 @@
 import {
   generatePracticeExample,
+  getPentatonicColourResource,
   type PentatonicPurpose,
   type PentatonicRecommendation,
 } from '@composer-os/core/pentatonic';
@@ -25,8 +26,8 @@ export function generateMusicFromPentatonicSelection(args: {
   purpose?: PentatonicPurpose | '';
 }): PentatonicGeneratedMusic {
   const archetype = args.collection.archetypeId;
-  if (archetype !== 'major_pentatonic' && archetype !== 'minor_pentatonic') {
-    throw new Error('The phrase engine only realises major and minor pentatonic collections.');
+  if (archetype !== 'major_pentatonic' && archetype !== 'minor_pentatonic' && !getPentatonicColourResource(archetype)) {
+    throw new Error(`Pentatonic colour "${archetype}" is not registered. Refusing to substitute minor pentatonic.`);
   }
   const reference = args.collection.displaySpelling[0];
   if (!reference) throw new Error('Selected collection has no spelling.');

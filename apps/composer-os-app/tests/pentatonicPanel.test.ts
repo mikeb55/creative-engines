@@ -5,7 +5,7 @@ import React from 'react';
 import { act, create } from 'react-test-renderer';
 import { describe, expect, it, vi } from 'vitest';
 import { listPentatonicColourResources, lyricalAnswerExampleRegion, recommendPentatonicsFromRegion } from '@composer-os/core/pentatonic';
-import { colourPitchClasses, colourSpelling, PENTATONIC_COLOUR_PATH_LIMIT } from '../src/pentatonic/PentatonicColourRegistry';
+import { colourPitchClasses, colourSpelling } from '../src/pentatonic/PentatonicColourRegistry';
 import { hashForRoute, routeFromLocation, routeNavLabel } from '../src/router/appRouter';
 import {
   cleanPentatonicForm,
@@ -564,7 +564,7 @@ describe('AUTO COLOR', () => {
 });
 
 describe('pentatonic colour registry on the path page', () => {
-  it('shows all 20 collections and runs path operations only for major and minor', async () => {
+  it('shows all 20 collections and sends each one to path operations', async () => {
     const resources = listPentatonicColourResources();
     expect(resources.map((item) => item.id)).toHaveLength(20);
     const { PentatonicEnginePage } = await import('../src/pentatonic/PentatonicEnginePage');
@@ -588,13 +588,10 @@ describe('pentatonic colour registry on the path page', () => {
       expect(resource?.pathArchetypeId).toBeNull();
       expect(spellingOf(id)).toContain(colourSpelling('C', resource!));
       expect(classesOf(id)).toContain(colourPitchClasses('C', resource!.intervals).join(' '));
-      expect(JSON.stringify(row(id)?.findByProps({ 'data-testid': 'pentatonic-colour-limitation' }).children)).toContain(
-        PENTATONIC_COLOUR_PATH_LIMIT,
-      );
-      expect(row(id)?.findAll((node) => node.props?.['data-testid'] === 'pentatonic-colour-use-path')).toHaveLength(0);
+      expect(row(id)?.findAll((node) => node.props?.['data-testid'] === 'pentatonic-colour-use-path')).toHaveLength(1);
     }
-    expect(tree.root.findAll((node) => node.props?.['data-testid'] === 'pentatonic-colour-use-path')).toHaveLength(2);
-    expect(tree.root.findAll((node) => node.props?.['data-testid'] === 'pentatonic-colour-limitation')).toHaveLength(18);
+    expect(tree.root.findAll((node) => node.props?.['data-testid'] === 'pentatonic-colour-use-path')).toHaveLength(20);
+    expect(tree.root.findAll((node) => node.props?.['data-testid'] === 'pentatonic-colour-limitation')).toHaveLength(0);
     expect(tree.root.findByProps({ id: 'pentatonic-home-archetype' }).props.value).toBe('');
     expect(tree.root.findAll((node) => node.props?.id === 'pentatonic-current-archetype')).toHaveLength(0);
 
@@ -632,6 +629,29 @@ describe('pentatonic colour registry on the path page', () => {
       .findByProps({ id: 'pentatonic-workflow-archetype' })
       .findAllByType('option')
       .map((node) => node.props.value);
-    expect(options).toEqual(['major_pentatonic', 'minor_pentatonic']);
+    expect(options).toEqual(resources.map((item) => item.id));
+    await act(async () => {
+      findButton(tree, 'pentatonic-colour-generate-path').props.onClick();
+    });
+    expect(textOf(tree)).toContain('"major_pentatonic"," @ ","D"');
+    const hirajoshi = tree.root.findAll(
+      (node) => node.props?.['data-testid'] === 'pentatonic-colour-use-path' && node.props?.['data-colour-id'] === 'hirajoshi',
+    )[0];
+    await act(async () => {
+      hirajoshi?.props.onClick();
+    });
+    expect(tree.root.findByProps({ id: 'pentatonic-workflow-archetype' }).props.value).toBe('hirajoshi');
+    await act(async () => {
+      findButton(tree, 'pentatonic-colour-generate-path').props.onClick();
+    });
+    expect(textOf(tree)).toContain('"hirajoshi"," @ "');
+    const candidates = tree.root.findAll((node) => node.props?.['data-testid'] === 'pentatonic-colour-route-candidate');
+    expect(candidates.length).toBeGreaterThan(1);
+    await act(async () => {
+      candidates[1]?.props.onClick();
+    });
+    expect(tree.root.findByProps({ 'data-testid': 'pentatonic-colour-path-selection' }).children?.join('')).toContain(
+      tree.root.findByProps({ id: 'pentatonic-workflow-reference' }).props.value,
+    );
   });
 });

@@ -1,7 +1,8 @@
 /**
  * Dev 5A colour vocabulary.
  * Five-note colour fields. Not a chord-scale catalogue.
- * The path registry stays major and minor pentatonic. This list does not feed it.
+ * The path registry stays major and minor pentatonic. This list does not enter
+ * `PENTATONIC_ARCHETYPES`. Colour path search reads these intervals directly.
  */
 
 import type { ColourBand, HomeDistanceBand, PentatonicColourMetadata, PentatonicColourResource } from './colourTypes';

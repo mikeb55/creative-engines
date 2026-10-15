@@ -42,7 +42,9 @@ export function chordStringFromMusicXmlHarmonyBlock(block: string): string | nul
     const raw = textEl[1].trim();
     if (raw.length > 0) return unescapeXmlAttr(raw);
   }
-  const rootStep = block.match(/<root-step>([A-G])<\/root-step>/)?.[1];
+  const kindBody = block.match(/<kind\b[^>]*>([^<]*)<\/kind>/i)?.[1]?.trim().toLowerCase();
+  if (kindBody === 'none') return 'N.C.';
+  const rootStep = block.match(/<root-step[^>]*>([A-G])<\/root-step>/)?.[1];
   if (!rootStep) return null;
   const rootAlter = parseInt(block.match(/<root-alter>(-?\d+)<\/root-alter>/)?.[1] ?? '0', 10);
   const kindMatch = block.match(/<kind text="([^"]*)"/);

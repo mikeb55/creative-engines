@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AUTO_COLOR_GUI_INTENTIONS, autoColorContextFromAnalysis, comparePentatonicCandidates, planAutoColor, productionSnapshot, type AutoColorPlan, type CompareSet, type DuoRole, type FormFunction, type MusicalIntention, type ProductionSnapshot, PENTATONIC_NOTE_CHOICES } from '@composer-os/core/pentatonic';
+import { AUTO_COLOR_GUI_INTENTIONS, autoColorContextFromAnalysis, capturePentatonicProject, comparePentatonicCandidates, generatePracticeExample, getPentatonicColourResource, colourRoutePhraseTarget, listPentatonicColourResources, planAutoColor, planColourRoute, productionSnapshot, COLOUR_ROUTE_MAX_CONSECUTIVE_RETENTIONS, type AutoColorPlan, type ColourRouteResult, type CompareSet, type DuoRole, type FormFunction, type MusicalIntention, type PentatonicProjectV1, type ProductionSnapshot, PENTATONIC_NOTE_CHOICES } from '@composer-os/core/pentatonic';
 import {
   DEV4C_ACTIVITIES,
   DEV4C_DEFAULT_METHOD,
@@ -22,7 +22,34 @@ import {
 } from '@composer-os/core/pentatonic/dev4cWorkflow';
 import { initPlayback, play, stop } from '../playback/playbackEngine';
 import { parseXmlToPlaybackSequence } from '../playback/musicXmlToPlaybackSequence';
+import { api } from '../services/api';
 import { PentatonicColourRegistry } from './PentatonicColourRegistry';
+
+function restoredProjectProof(project: PentatonicProjectV1): string {
+  const music = project.phrase?.music[0];
+  const notes = music?.events.filter((event) => event.kind === 'note').map((event) => event.midi ?? 'rest') ?? [];
+  const rests = music?.events.filter((event) => event.kind === 'rest').length ?? 0;
+  const metre = music?.events[0] ? `${music.events[0].beats}/${music.events[0].beatType}` : 'none';
+  return [
+    `collection ${project.collection.resourceId}`,
+    `centre ${project.collection.centre ?? 'NONE'}`,
+    `spelling ${project.collection.spelling.join(' ') || 'NONE'}`,
+    `identity ${project.collection.canonicalId}`,
+    `route ${project.route.selectedCandidateId ?? 'none'}`,
+    `seed ${project.route.seed}`,
+    `phrase-seed ${project.phrase?.seed ?? 'none'}`,
+    `ending ${project.route.ending}`,
+    `steps ${project.route.minSteps}-${project.route.maxSteps}`,
+    `retention ${project.route.retention.maxConsecutiveRetentions}`,
+    `notes ${notes.join(' ') || 'NONE'}`,
+    `rests ${rests}`,
+    `metre ${metre}`,
+    `silence ${project.phrase?.silence === true}`,
+    `NONE ${project.collection.resourceId === 'NONE'}`,
+    `NO_PHRASE ${project.phrase?.noPhrase === true}`,
+    `motif ${project.phrase?.motif ?? 'none'}`,
+  ].join(' | ');
+}
 
 function downloadXml(filename: string, xml: string): void {
   const blob = new Blob([xml], { type: 'application/vnd.recordare.musicxml+xml;charset=utf-8' });
@@ -77,7 +104,7 @@ export function PentatonicWorkflowPanel() {
   const [reading, setReading] = useState<MusicianAnalysis | null>(null);
   const [regionIndex, setRegionIndex] = useState(0);
   const [resourceMode, setResourceMode] = useState<'auto' | 'manual'>('auto');
-  const [manualArchetype, setManualArchetype] = useState<'major_pentatonic' | 'minor_pentatonic'>('major_pentatonic');
+  const [manualArchetype, setManualArchetype] = useState('major_pentatonic');
   const [manualRef, setManualRef] = useState<string>(PENTATONIC_NOTE_CHOICES[0]);
   const [colourReference, setColourReference] = useState<string>(PENTATONIC_NOTE_CHOICES[0]);
   const [method, setMethod] = useState<'M-DEG' | 'M-NEAR'>(DEV4C_DEFAULT_METHOD);
@@ -91,12 +118,25 @@ export function PentatonicWorkflowPanel() {
   const [autoIntentions, setAutoIntentions] = useState<MusicalIntention[]>([]);
   const [autoForm, setAutoForm] = useState<FormFunction>('unknown');
   const [autoRole, setAutoRole] = useState<DuoRole>('UNKNOWN');
-  const [autoResource, setAutoResource] = useState<'major_pentatonic' | 'minor_pentatonic' | 'none'>('major_pentatonic');
+  const [autoResource, setAutoResource] = useState('major_pentatonic');
   const [autoGrounded, setAutoGrounded] = useState(false);
   const [autoPlan, setAutoPlan] = useState<AutoColorPlan | null>(null);
   const [snapshot, setSnapshot] = useState<ProductionSnapshot | null>(null);
   const [compared, setCompared] = useState<CompareSet | null>(null);
   const [compareIndex, setCompareIndex] = useState(0);
+  const [colourRoute, setColourRoute] = useState<ColourRouteResult | null>(null);
+  const [routePick, setRoutePick] = useState(0);
+  const [routeMinSteps, setRouteMinSteps] = useState(3);
+  const [routeMaxSteps, setRouteMaxSteps] = useState(5);
+  const [routeEnding, setRouteEnding] = useState<'return' | 'open'>('return');
+  const [routeSeed, setRouteSeed] = useState(1);
+  const [phraseMotif, setPhraseMotif] = useState<string | null>(null);
+  const [explicitNone, setExplicitNone] = useState(false);
+  const [projectId, setProjectId] = useState('pentatonic-project');
+  const [projectNotes, setProjectNotes] = useState('');
+  const [projectPath, setProjectPath] = useState('');
+  const [projectStatus, setProjectStatus] = useState('');
+  const [restoredProof, setRestoredProof] = useState('');
 
   const region = reading?.analysis.regions[regionIndex] ?? null;
 
@@ -138,7 +178,13 @@ export function PentatonicWorkflowPanel() {
         const context = autoColorContextFromAnalysis(result.analysis);
         setAutoForm(context.formFunction ?? 'unknown');
         setAutoRole(context.duoRole ?? 'UNKNOWN');
-        setAutoResource(context.pathIsNone ? 'none' : context.currentResourceId === 'minor_pentatonic' ? 'minor_pentatonic' : 'major_pentatonic');
+        setAutoResource(
+          context.pathIsNone
+            ? 'none'
+            : getPentatonicColourResource(context.currentResourceId ?? '')
+              ? context.currentResourceId!
+              : 'major_pentatonic'
+        );
         setAutoGrounded(context.grounding?.present === true);
         setAutoPlan(null);
         setSnapshot(productionSnapshot(result.analysis));
@@ -304,15 +350,128 @@ export function PentatonicWorkflowPanel() {
     'UNKNOWN',
   ];
 
+  const applyProject = (project: PentatonicProjectV1) => {
+    const none = project.collection.resourceId === 'NONE';
+    setExplicitNone(none);
+    setResourceMode(project.workflow.resourceMode);
+    if (!none) setManualArchetype(project.collection.resourceId);
+    if (project.collection.centre) {
+      setManualRef(project.collection.centre);
+      setColourReference(project.workflow.colourReference || project.collection.centre);
+    }
+    setRouteMinSteps(project.route.minSteps);
+    setRouteMaxSteps(project.route.maxSteps);
+    setRouteEnding(project.route.ending);
+    setRouteSeed(project.route.seed);
+    setRoutePick(project.route.selectedCandidateIndex);
+    setColourRoute(project.route.generated);
+    setPhraseMotif(project.phrase?.motif ?? null);
+    setGenerated(project.phrase?.generated ?? null);
+    setTransform(project.phrase?.transform ?? null);
+    setChosen(project.workflow.chosen);
+    setMethod(project.workflow.method);
+    if (project.workflow.purpose === 'MOTIF' || project.workflow.purpose === 'LYRICAL_ANSWER' || project.workflow.purpose === 'COUNTERLINE' || project.workflow.purpose === 'COMPING_FRAGMENT' || project.workflow.purpose === 'DEVELOPMENT' || project.workflow.purpose === 'NO_PHRASE') {
+      setPurpose(project.workflow.purpose);
+    }
+    if (project.workflow.activity === 'VERY_SPARSE' || project.workflow.activity === 'SPARSE' || project.workflow.activity === 'MODERATE') {
+      setActivity(project.workflow.activity);
+    }
+    setMode(project.workflow.mode);
+    setRegionIndex(project.source.regionIndex);
+    setFileName(project.source.fileName ?? '');
+    setXml(project.source.xml ?? project.phrase?.generated?.candidates[0]?.musicXml ?? '');
+    setProjectId(project.id);
+    setProjectNotes(project.notes);
+    setRestoredProof(restoredProjectProof(project));
+    setError(null);
+  };
+
+  const onSaveProject = () => {
+    const storedRoute = colourRoute?.ok ? colourRoute : null;
+    const captured = capturePentatonicProject({
+      id: projectId,
+      title: projectId,
+      notes: projectNotes,
+      resourceId: explicitNone ? 'NONE' : manualArchetype,
+      centre: explicitNone ? manualRef : manualRef,
+      routeMinSteps: storedRoute ? storedRoute.minSteps : routeMinSteps,
+      routeMaxSteps: storedRoute ? storedRoute.maxSteps : routeMaxSteps,
+      routeEnding: storedRoute ? storedRoute.ending : routeEnding,
+      routeSeed: storedRoute ? storedRoute.seed : routeSeed,
+      routePick,
+      colourRoute,
+      phraseSeed: generated?.musicContext.seed ?? routeSeed,
+      motif: phraseMotif,
+      purpose,
+      activity,
+      method,
+      silence: Boolean(generated?.candidates.some((candidate) => candidate.silence) || purpose === 'NO_PHRASE'),
+      noPhrase: purpose === 'NO_PHRASE' || Boolean(generated?.candidates.some((candidate) => candidate.purpose === 'NO_PHRASE')),
+      generated,
+      transform,
+      chosen,
+      importFileName: fileName || null,
+      importXml: xml || null,
+      regionIndex,
+      mode,
+      resourceMode,
+      colourReference,
+    });
+    if (!captured.ok || !captured.project) {
+      setError(captured.errors.join('; ') || 'Could not save this project.');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    void api
+      .pentatonicSaveProject({ project: captured.project, path: projectPath || undefined, overwrite: Boolean(projectPath) })
+      .then((raw) => {
+        const row = raw as { ok: true; path: string } | { ok: false; error: string };
+        if (!row.ok) throw new Error(row.error);
+        setProjectPath(row.path);
+        setProjectStatus(`Saved ${row.path}`);
+        setRestoredProof(restoredProjectProof(captured.project!));
+      })
+      .catch((caught: unknown) => setError(caught instanceof Error ? caught.message : String(caught)))
+      .finally(() => setBusy(false));
+  };
+
+  const onOpenProject = () => {
+    if (!projectPath.trim()) {
+      setError('Enter a project path.');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    void api
+      .pentatonicOpenProject({ path: projectPath })
+      .then((raw) => {
+        const row = raw as { ok: true; path: string; project: PentatonicProjectV1 } | { ok: false; error: string };
+        if (!row.ok) throw new Error(row.error);
+        applyProject(row.project);
+        setProjectPath(row.path);
+        setProjectStatus(`Reopened ${row.path}`);
+      })
+      .catch((caught: unknown) => setError(caught instanceof Error ? caught.message : String(caught)))
+      .finally(() => setBusy(false));
+  };
+
   return (
     <div data-testid="pentatonic-workflow" style={{ display: 'grid', gap: '0.75rem', marginBottom: '1rem' }}>
       <PentatonicColourRegistry
         referenceNote={colourReference}
         onReferenceNote={setColourReference}
         onUsePathCollection={(archetypeId, referenceNote) => {
+          if (!getPentatonicColourResource(archetypeId)) {
+            setError(`Pentatonic colour "${archetypeId}" is not registered. Refusing to substitute minor pentatonic.`);
+            return;
+          }
           setResourceMode('manual');
           setManualArchetype(archetypeId);
           setManualRef(referenceNote);
+          setExplicitNone(false);
+          setColourRoute(null);
+          setRoutePick(0);
           setTransform(null);
           setGenerated(null);
           setError(null);
@@ -320,9 +479,234 @@ export function PentatonicWorkflowPanel() {
       />
       {resourceMode === 'manual' ? (
         <p data-testid="pentatonic-colour-path-selection" style={{ margin: 0 }}>
-          Manual path collection: {manualRef} {manualArchetype === 'minor_pentatonic' ? 'Minor Pentatonic' : 'Major Pentatonic'}. Transform
+          Manual path collection: {manualRef} {getPentatonicColourResource(manualArchetype)?.displayName ?? manualArchetype}. Transform
           and Generate use it when Manual resource is selected.
         </p>
+      ) : null}
+      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'end' }}>
+        <label htmlFor="pentatonic-colour-route-min">
+          Minimum collection steps
+          <input
+            id="pentatonic-colour-route-min"
+            data-testid="pentatonic-colour-route-min"
+            type="number"
+            min={2}
+            max={8}
+            step={1}
+            value={routeMinSteps}
+            onChange={(event) => setRouteMinSteps(Number(event.target.value))}
+          />
+        </label>
+        <label htmlFor="pentatonic-colour-route-max">
+          Maximum collection steps
+          <input
+            id="pentatonic-colour-route-max"
+            data-testid="pentatonic-colour-route-max"
+            type="number"
+            min={2}
+            max={8}
+            step={1}
+            value={routeMaxSteps}
+            onChange={(event) => setRouteMaxSteps(Number(event.target.value))}
+          />
+        </label>
+        <label htmlFor="pentatonic-project-seed">
+          Seed
+          <input
+            id="pentatonic-project-seed"
+            data-testid="pentatonic-project-seed"
+            type="number"
+            step={1}
+            value={routeSeed}
+            onChange={(event) => setRouteSeed(Number(event.target.value))}
+          />
+        </label>
+        <label htmlFor="pentatonic-colour-route-ending">
+          Ending
+          <select
+            id="pentatonic-colour-route-ending"
+            data-testid="pentatonic-colour-route-ending"
+            value={routeEnding}
+            onChange={(event) => setRouteEnding(event.target.value === 'open' ? 'open' : 'return')}
+          >
+            <option value="return">Required return home</option>
+            <option value="open">Open ending</option>
+          </select>
+        </label>
+        <button
+          type="button"
+          data-testid="pentatonic-colour-generate-path"
+          onClick={() => {
+            const planned = planColourRoute({
+              resourceId: manualArchetype,
+              centre: manualRef,
+              seed: routeSeed,
+              minSteps: routeMinSteps,
+              maxSteps: routeMaxSteps,
+              ending: routeEnding,
+            });
+            if (!planned.ok) {
+              setColourRoute(planned);
+              setError(planned.error);
+              return;
+            }
+            setError(null);
+            setColourRoute(planned);
+            setRoutePick(0);
+            setResourceMode('manual');
+          }}
+        >
+          Generate path
+        </button>
+      </div>
+      <p data-testid="pentatonic-retention-setting" style={{ margin: 0 }}>
+        Max consecutive retentions {COLOUR_ROUTE_MAX_CONSECUTIVE_RETENTIONS}. A second hold in a row stays illegal.
+        {explicitNone ? ' Collection decision: NONE.' : ''}
+      </p>
+      <section data-testid="pentatonic-project" style={{ display: 'grid', gap: '0.45rem' }}>
+        <h3 style={{ margin: 0, fontSize: '1rem' }}>Project</h3>
+        <p style={{ margin: 0 }}>
+          Save stores this collection, route, selected candidate, motif, phrase and musical events. Reopen loads that file. It does not
+          generate a new path.
+        </p>
+        <label htmlFor="pentatonic-project-id">
+          Project id
+          <input id="pentatonic-project-id" data-testid="pentatonic-project-id" value={projectId} onChange={(event) => setProjectId(event.target.value)} />
+        </label>
+        <label htmlFor="pentatonic-project-notes">
+          Notes
+          <textarea id="pentatonic-project-notes" data-testid="pentatonic-project-notes" value={projectNotes} onChange={(event) => setProjectNotes(event.target.value)} rows={2} />
+        </label>
+        <button type="button" data-testid="pentatonic-mark-none" onClick={() => { setExplicitNone(true); setColourRoute(null); }}>
+          Mark collection NONE
+        </button>
+        <button type="button" data-testid="pentatonic-save-project" onClick={onSaveProject} disabled={busy}>
+          Save project
+        </button>
+        <label htmlFor="pentatonic-project-path">
+          Project path
+          <input id="pentatonic-project-path" data-testid="pentatonic-project-path" value={projectPath} onChange={(event) => setProjectPath(event.target.value)} />
+        </label>
+        <button type="button" data-testid="pentatonic-open-project" onClick={onOpenProject} disabled={busy || !projectPath.trim()}>
+          Reopen project
+        </button>
+        {projectStatus ? (
+          <p data-testid="pentatonic-project-status" style={{ margin: 0 }}>
+            {projectStatus}
+          </p>
+        ) : null}
+        {restoredProof ? (
+          <p data-testid="pentatonic-project-restored" style={{ margin: 0 }}>
+            {restoredProof}
+          </p>
+        ) : null}
+      </section>
+      <p data-testid="pentatonic-colour-route-length-note" style={{ margin: 0 }}>
+        Length counts collection steps, including the start. A repeated collection counts as a step. Length is not the number of changes.
+      </p>
+      {colourRoute?.ok ? (
+        <div data-testid="pentatonic-colour-route" style={{ display: 'grid', gap: '0.35rem' }}>
+          {(() => {
+            const shown = [colourRoute.route, ...colourRoute.alternatives][routePick] ?? colourRoute.route;
+            const target = colourRoutePhraseTarget(shown);
+            return (
+              <>
+                <p style={{ margin: 0 }}>
+                  Mean change score {shown.totalCost}. Collection steps {shown.steps.length}. Changes {shown.switchCount}. Collections{' '}
+                  {shown.distinctCollections}. Pitch sets {shown.distinctPitchSets}. Ending {colourRoute.ending}.
+                </p>
+                <p data-testid="pentatonic-colour-route-target" data-target-id={target.id} style={{ margin: 0 }}>
+                  Phrase target {target.resourceId} @ {target.centre}. Spelling {target.spelling.join(' ')}.
+                </p>
+                <ol data-testid="pentatonic-colour-route-steps" style={{ margin: 0 }}>
+                  {shown.steps.map((step) => (
+                    <li key={`${shown.id}-${step.index}-${step.instance.id}`}>
+                      {step.role}: {step.instance.resourceId} @ {step.instance.centre} ({step.instance.orderedPitchClasses.join(' ')}).{' '}
+                      Set {step.instance.canonicalPitchClasses.join(' ')}. {step.changeFlag}. Retained{' '}
+                      {step.retainedPitchClasses.join(' ') || 'none'}. Change score {step.transitionCost}.
+                    </li>
+                  ))}
+                </ol>
+              </>
+            );
+          })()}
+          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+            {[colourRoute.route, ...colourRoute.alternatives].map((route, index) => (
+              <button
+                key={route.id}
+                type="button"
+                data-testid="pentatonic-colour-route-candidate"
+                data-route-id={route.id}
+                data-route-sets={route.steps.map((step) => step.instance.canonicalId).join('|')}
+                aria-pressed={routePick === index}
+                onClick={() => {
+                  const target = colourRoutePhraseTarget(route);
+                  setRoutePick(index);
+                  setResourceMode('manual');
+                  setManualArchetype(target.resourceId);
+                  setManualRef(target.centre);
+                }}
+              >
+                {index === 0 ? 'Best' : `Candidate ${index}`} {route.totalCost}{' '}
+                {route.steps.map((step) => `${step.instance.resourceId}@${step.instance.centre}`).join(' > ')}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            data-testid="pentatonic-colour-route-phrase"
+            onClick={() => {
+              const chosen = [colourRoute.route, ...colourRoute.alternatives][routePick] ?? colourRoute.route;
+              const target = colourRoutePhraseTarget(chosen);
+              const home = chosen.steps[0]!.instance;
+              const motif = home.spelling.slice(0, 3).join(' ');
+              setPhraseMotif(motif);
+              const example = generatePracticeExample({
+                fieldId: target.resourceId,
+                centre: target.centre,
+                motif,
+                category: 'HOME_CONTINUITY',
+                difficulty: 'SPARSE',
+                variation: 0,
+              });
+              setGenerated({
+                notice: `${target.resourceId} @ ${target.centre}. Motif ${motif}.`,
+                musicContext: {
+                  presetId: 'colour-path',
+                  seed: routeSeed,
+                  meter: '4/4',
+                  harmonyChecksum: '',
+                  barCount: 1,
+                },
+                candidates: [
+                  {
+                    letter: 'A',
+                    purpose: 'MOTIF',
+                    purposeLabel: 'Motif',
+                    activityLabel: 'Sparse',
+                    silence: example.pitches.length === 0,
+                    resultLabel: example.notes || 'NONE',
+                    selectedResource: `${target.centre} ${target.displayName}`,
+                    resourceNotes: target.spelling.join(' '),
+                    actualNotes: example.notes,
+                    outsideResourceNotes: 'NONE',
+                    scaleLike: null,
+                    gceOverall: null,
+                    gceCategories: [],
+                    gceWarnings: [],
+                    musicXml: example.musicXml,
+                    method: 'M-DEG',
+                    pitchChange: null,
+                  },
+                ],
+              });
+              setMode('generate');
+              setError(null);
+            }}
+          >
+            Phrase from path
+          </button>
+        </div>
       ) : null}
       <label htmlFor="pentatonic-workflow-mode">
         Mode
@@ -405,6 +789,7 @@ export function PentatonicWorkflowPanel() {
               <p key={`${row.measureRangeLabel}-${row.collectionName}`} style={{ margin: 0 }} data-testid="pentatonic-workflow-region-row">
                 {row.measureRangeLabel} — {row.collectionName}
                 {row.none ? '' : ` — ${row.colour}`}
+                {row.identityNote ? ` — ${row.identityNote}` : ''}
               </p>
             ))}
           </div>
@@ -445,12 +830,21 @@ export function PentatonicWorkflowPanel() {
                 <select
                   id="pentatonic-workflow-archetype"
                   value={manualArchetype}
-                  onChange={(event) =>
-                    setManualArchetype(event.target.value === 'minor_pentatonic' ? 'minor_pentatonic' : 'major_pentatonic')
-                  }
+                  onChange={(event) => {
+                    const next = event.target.value;
+                    if (!getPentatonicColourResource(next)) {
+                      setError(`Pentatonic colour "${next}" is not registered. Refusing to substitute minor pentatonic.`);
+                      return;
+                    }
+                    setManualArchetype(next);
+                    setColourRoute(null);
+                  }}
                 >
-                  <option value="major_pentatonic">Major Pentatonic</option>
-                  <option value="minor_pentatonic">Minor Pentatonic</option>
+                  {listPentatonicColourResources().map((resource) => (
+                    <option key={resource.id} value={resource.id}>
+                      {resource.displayName}
+                    </option>
+                  ))}
                 </select>
               </label>
               <label htmlFor="pentatonic-workflow-reference">
@@ -670,11 +1064,18 @@ export function PentatonicWorkflowPanel() {
                 onChange={(event) => {
                   setAutoPlan(null);
                   const value = event.target.value;
-                  setAutoResource(value === 'minor_pentatonic' || value === 'none' ? value : 'major_pentatonic');
+                  if (value !== 'none' && !getPentatonicColourResource(value)) {
+                    setError(`Pentatonic colour "${value}" is not registered. Refusing to substitute minor pentatonic.`);
+                    return;
+                  }
+                  setAutoResource(value);
                 }}
               >
-                <option value="major_pentatonic">Major Pentatonic</option>
-                <option value="minor_pentatonic">Minor Pentatonic</option>
+                {listPentatonicColourResources().map((resource) => (
+                  <option key={resource.id} value={resource.id}>
+                    {resource.displayName}
+                  </option>
+                ))}
                 <option value="none">NONE</option>
               </select>
             </label>
@@ -696,7 +1097,9 @@ export function PentatonicWorkflowPanel() {
               <p style={{ margin: 0 }}>INTENTION: {autoPlan.intentions.join(' + ') || 'none'}</p>
               <p style={{ margin: 0 }}>FORM CONTEXT: {autoPlan.formFunction}</p>
               <p style={{ margin: 0 }}>DUO CONTEXT: {autoPlan.duoRole}</p>
-              <p style={{ margin: 0 }}>CURRENT FIELD: {autoResource}</p>
+              <p style={{ margin: 0 }}>
+                CURRENT FIELD: {getPentatonicColourResource(autoResource)?.displayName ?? autoResource}
+              </p>
               <p style={{ margin: 0 }}>SELECTED ACTION: {autoPlan.action}</p>
               <p style={{ margin: 0 }}>TARGET COLOUR: {autoPlan.targetColour}</p>
               <p style={{ margin: 0 }}>PLAN: {autoPlan.outcome}</p>

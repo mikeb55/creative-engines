@@ -88,6 +88,23 @@ export function runChordSymbolMusicXmlHarmonyTests(): { name: string; ok: boolea
   });
 
   tests.push({
+    name: 'N.C. is kind none, not a C major chord',
+    ok: (() => {
+      for (const symbol of ['N.C.', 'NC', 'n.c', 'no chord']) {
+        const x = buildHarmonyXmlLine(symbol);
+        assert(x.includes('<kind text="N.C.">none</kind>'), `${symbol} kind`);
+        assert(x.includes('print-object="no"'), `${symbol} hidden root`);
+        assert(!/>major</.test(x), `${symbol} must not encode major`);
+      }
+      const major = buildHarmonyXmlLine('C');
+      assert(major.includes('<root-step>C</root-step>'), 'C root');
+      assert(major.includes('>major</kind>') || major.includes('>major<'), 'C major');
+      assert(!major.includes('>none<'), 'C is not N.C.');
+      return true;
+    })(),
+  });
+
+  tests.push({
     name: 'musicXmlKindContentFromKindText: maj9 -> major-ninth',
     ok: musicXmlKindContentFromKindText('maj9') === 'major-ninth',
   });

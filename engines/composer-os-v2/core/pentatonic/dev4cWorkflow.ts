@@ -25,8 +25,9 @@ import { createMeasure, createNote, createPart, createRest, createScore } from '
 import type { NoteEvent, ScoreEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import type { PhraseIntent } from '../goldenPath/phraseIntentTypes';
 import { analyzePentatonicScore, type PentatonicScoreAnalysis, type PentatonicScoreRegion } from './analyzeScore';
+import { getPentatonicColourResource } from './colourRegistry';
 import { getPentatonicArchetype } from './registry';
-import { parseNoteToken, sharpName, spellFromReference } from './pitch';
+import { mod12, parseNoteToken, sharpName, spellFromReference } from './pitch';
 import {
   collectionPitchClasses,
   degreeOf,
@@ -123,6 +124,7 @@ export interface MusicianRegion {
   none: boolean;
   firstBar: number;
   lastBar: number;
+  identityNote: string;
 }
 
 export interface MusicianAnalysis {
@@ -182,8 +184,10 @@ export interface PentatonicTransformResult {
 export function resourceNoteNames(collection: PentatonicCollectionView | null): string {
   if (!collection) return 'NONE';
   const archetype = getPentatonicArchetype(collection.archetypeId);
-  if (!archetype) return 'NONE';
-  return spellFromReference(collection.referenceNote, archetype.intervals, archetype.letterSteps).join(' ');
+  if (archetype) return spellFromReference(collection.referenceNote, archetype.intervals, archetype.letterSteps).join(' ');
+  const colour = getPentatonicColourResource(collection.archetypeId);
+  if (!colour) return 'NONE';
+  return spellFromReference(collection.referenceNote, colour.intervals, colour.letterSteps).join(' ');
 }
 
 export function midiNoteName(midi: number): string {
@@ -191,12 +195,37 @@ export function midiNoteName(midi: number): string {
   return `${sharpName(midi)}${octave}`;
 }
 
+function resourceSpelling(collection: PentatonicCollectionView, midi: number): string | null {
+  const names = resourceNoteNames(collection).split(' ').filter(Boolean);
+  const match = names.map((name) => parseNoteToken(name)).find((parsed) => parsed?.pc === mod12(midi));
+  return match ? match.spelling : null;
+}
+
+function spelledMidi(midi: number, collection: PentatonicCollectionView | null): string {
+  const octave = Math.floor(midi / 12) - 1;
+  const spelling = collection ? resourceSpelling(collection, midi) : null;
+  return `${spelling ?? sharpName(midi)}${octave}`;
+}
+
+function noteSpelling(collection: PentatonicCollectionView, midi: number): { step: string; alter: number } | null {
+  const token = resourceSpelling(collection, midi);
+  if (!token) return null;
+  const parsed = parseNoteToken(token);
+  if (!parsed) return null;
+  let alter = 0;
+  if (parsed.spelling.endsWith('bb')) alter = -2;
+  else if (parsed.spelling.endsWith('b')) alter = -1;
+  else if (parsed.spelling.endsWith('##')) alter = 2;
+  else if (parsed.spelling.endsWith('#')) alter = 1;
+  return { step: parsed.letter, alter };
+}
+
 export function colourField(collection: PentatonicCollectionView | null, pitches: readonly number[]): ColourFieldView {
   if (!collection) {
     return {
       selectedResource: 'NONE',
       resourceNotes: 'NONE',
-      actualNotes: pitches.length ? pitches.map(midiNoteName).join(' ') : 'NONE',
+      actualNotes: pitches.length ? pitches.map((pitch) => spelledMidi(pitch, null)).join(' ') : 'NONE',
       outsideResourceNotes: 'NONE',
     };
   }
@@ -204,35 +233,54 @@ export function colourField(collection: PentatonicCollectionView | null, pitches
   return {
     selectedResource: collection.name,
     resourceNotes: resourceNoteNames(collection),
-    actualNotes: pitches.length ? pitches.map(midiNoteName).join(' ') : 'NONE',
-    outsideResourceNotes: outside.length ? [...new Set(outside.map(midiNoteName))].join(' ') : 'NONE',
+    actualNotes: pitches.length ? pitches.map((pitch) => spelledMidi(pitch, collection)).join(' ') : 'NONE',
+    outsideResourceNotes: outside.length ? [...new Set(outside.map((pitch) => spelledMidi(pitch, null)))].join(' ') : 'NONE',
   };
 }
 
-export function manualCollection(archetypeId: 'major_pentatonic' | 'minor_pentatonic', referenceNote: string): PentatonicCollectionView {
-  const archetype = getPentatonicArchetype(archetypeId);
-  if (!archetype) throw new Error('Only major and minor pentatonic are registered.');
+export function manualCollection(archetypeId: string, referenceNote: string): PentatonicCollectionView {
   const parsed = parseNoteToken(referenceNote);
   if (!parsed) throw new Error(`Reference ${referenceNote} is not a pitch.`);
-  const kind = archetypeId === 'minor_pentatonic' ? 'Minor' : 'Major';
+  if (archetypeId === 'major_pentatonic' || archetypeId === 'minor_pentatonic') {
+    const archetype = getPentatonicArchetype(archetypeId);
+    if (!archetype) throw new Error(`Pentatonic colour "${archetypeId}" is not registered. Refusing to substitute minor pentatonic.`);
+    const kind = archetypeId === 'minor_pentatonic' ? 'Minor' : 'Major';
+    return {
+      name: `${parsed.spelling} ${kind} Pentatonic`,
+      archetypeId,
+      referenceNote: parsed.spelling,
+      homeRelationshipLabel: null,
+    };
+  }
+  const colour = getPentatonicColourResource(archetypeId);
+  if (!colour) throw new Error(`Pentatonic colour "${archetypeId}" is not registered. Refusing to substitute minor pentatonic.`);
   return {
-    name: `${parsed.spelling} ${kind} Pentatonic`,
-    archetypeId,
+    name: `${parsed.spelling} ${colour.displayName}`,
+    archetypeId: colour.id,
     referenceNote: parsed.spelling,
     homeRelationshipLabel: null,
   };
 }
 
 export function collectionForRegion(region: PentatonicScoreRegion): PentatonicCollectionView | null {
+  if (region.explicitCollection) {
+    return {
+      name: region.explicitCollection.name,
+      archetypeId: region.explicitCollection.archetypeId,
+      referenceNote: region.explicitCollection.referenceNote,
+      homeRelationshipLabel: region.homeRelationshipLabel,
+    };
+  }
   return collectionFromPathName(region.collectionName, region.homeRelationshipLabel);
 }
 
 export function homeCollection(analysis: PentatonicScoreAnalysis): PentatonicCollectionView | null {
   const home = analysis.identity.home;
   if (!home) return null;
-  const kind = home.archetypeId === 'minor_pentatonic' ? 'Minor' : 'Major';
+  const colour = getPentatonicColourResource(home.archetypeId);
+  const kind = colour?.displayName ?? (home.archetypeId === 'minor_pentatonic' ? 'Minor Pentatonic' : 'Major Pentatonic');
   return {
-    name: `${home.referenceNote} ${kind} Pentatonic`,
+    name: `${home.referenceNote} ${kind}`,
     archetypeId: home.archetypeId,
     referenceNote: home.referenceNote,
     homeRelationshipLabel: 'HOME',
@@ -248,11 +296,17 @@ export function formatMusicianAnalysis(analysis: PentatonicScoreAnalysis): Music
   const home = homeCollectionView ? homeCollectionView.name : 'not established';
   const regions = analysis.regions.map((region) => ({
     measureRangeLabel: region.measureRangeLabel,
-    collectionName: region.collectionName,
+    collectionName: region.explicitCollection?.name ?? region.collectionName,
     colour: region.homeRelationshipLabel ?? region.boundaryKind,
-    none: region.collectionName === 'NONE',
+    none: region.collectionName === 'NONE' && !region.explicitCollection,
     firstBar: Number(region.firstSourceLabel),
     lastBar: Number(region.lastSourceLabel),
+    identityNote:
+      region.identityStatus === 'explicit'
+        ? 'Declared collection. The notes are members.'
+        : region.identityStatus === 'ambiguous-subset'
+          ? 'Ambiguous subset. The inferred label does not contain every note. No collection was established.'
+          : '',
   }));
   return {
     song: analysis.song || 'Score',
@@ -810,7 +864,12 @@ export function transformPentatonicMotif(args: {
   const resultPitches = mapped.notes.map((note) => note.pitch);
   const changed = mapped.notes.some((note) => note.pitch !== note.sourcePitch);
   const field = colourField(args.target, resultPitches);
-  const events = mapped.notes.map((note) => createNote(note.pitch, note.startBeat, note.duration, 1));
+  const events = mapped.notes.map((note) => {
+    const written = createNote(note.pitch, note.startBeat, note.duration, 1);
+    const spelling = noteSpelling(args.target, note.pitch);
+    if (spelling) written.spelling = spelling;
+    return written;
+  });
   const chord = chordOf(args.analysis, args.region);
   const fifths = args.analysis.score.keySignatures[0]?.fifths ?? 0;
   const mode = args.analysis.score.keySignatures[0]?.mode === 'minor' ? 'minor' : 'major';

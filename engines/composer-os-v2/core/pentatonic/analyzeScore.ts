@@ -8,9 +8,11 @@ import { inferCentreAndHome, type CentreHomeIdentity } from './centreIdentity';
 import { DEFAULT_PENTATONIC_SCORING } from './evaluate';
 import { reportPentatonicFields, intervalLabelFor, type PentatonicField } from './fieldFamily';
 import { inferPentatonicHome, type HomeCandidate } from './inferHome';
-import { importPentatonicScoreFromMusicXml, PENTATONIC_SCORE_ORDER_POLICY, type PentatonicScoreEvent, type PentatonicScoreImport } from './musicXmlScore';
+import { getPentatonicColourResource } from './colourRegistry';
+import { importPentatonicScoreFromMusicXml, parseCollectionIdentityMark, PENTATONIC_SCORE_ORDER_POLICY, type PentatonicScoreEvent, type PentatonicScoreImport } from './musicXmlScore';
 import { mod12, parseNoteToken, spellingForPc, type ParsedNote } from './pitch';
 import { recommendPentatonicPath } from './recommendPath';
+import { getPentatonicArchetype } from './registry';
 import type { PentatonicPassage, PentatonicPassageEvent, PentatonicPathEventDecision, PentatonicPathResult } from './pathTypes';
 
 const BORDERLINE_WINDOW = 0.08;
@@ -34,6 +36,13 @@ export interface PentatonicScoreRegion {
   explanation: string;
   /** Report only. Signed semitone count from the centre to this collection's root. */
   geometricRelation: string | null;
+  /**
+   * `explicit` is a MusicXML collection mark whose pitch classes contain the notes.
+   * `ambiguous-subset` means the path label does not contain every sounding pitch class.
+   * `inferred` is the major/minor path label, including a short subset that does sit inside it.
+   */
+  identityStatus: 'explicit' | 'ambiguous-subset' | 'inferred';
+  explicitCollection: { archetypeId: string; referenceNote: string; name: string } | null;
 }
 
 export interface PentatonicNoneObservation {
@@ -206,8 +215,88 @@ function regionsFrom(score: PentatonicScoreImport, path: PentatonicPathResult): 
       boundaryReason,
       explanation,
       geometricRelation: null,
+      identityStatus: 'inferred',
+      explicitCollection: null,
     };
   });
+}
+
+function declaredCollection(resourceId: string, centre: string): { archetypeId: string; referenceNote: string; name: string; pitchClasses: number[] } | null {
+  const parsed = parseNoteToken(centre);
+  if (!parsed) return null;
+  const colour = getPentatonicColourResource(resourceId);
+  if (colour) {
+    return {
+      archetypeId: colour.id,
+      referenceNote: parsed.spelling,
+      name: `${parsed.spelling} ${colour.displayName}`,
+      pitchClasses: colour.intervals.map((interval) => mod12(parsed.pc + interval)),
+    };
+  }
+  const archetype = getPentatonicArchetype(resourceId);
+  if (!archetype || (resourceId !== 'major_pentatonic' && resourceId !== 'minor_pentatonic')) return null;
+  const kind = resourceId === 'minor_pentatonic' ? 'Minor' : 'Major';
+  return {
+    archetypeId: resourceId,
+    referenceNote: parsed.spelling,
+    name: `${parsed.spelling} ${kind} Pentatonic`,
+    pitchClasses: archetype.intervals.map((interval) => mod12(parsed.pc + interval)),
+  };
+}
+
+function soundingPitchClasses(score: PentatonicScoreImport, region: PentatonicScoreRegion): number[] {
+  const first = Number(region.firstSourceLabel);
+  const last = Number(region.lastSourceLabel);
+  const found = new Set<number>();
+  for (const event of score.events) {
+    const bar = Number(event.sourceLabel);
+    if (bar < first || bar > last) continue;
+    for (const token of [...(event.melodyNotes ?? []), ...(event.bassNotes ?? [])]) {
+      const parsed = parseNoteToken(token.replace(/[0-9]+$/, ''));
+      if (parsed) found.add(parsed.pc);
+    }
+  }
+  return [...found];
+}
+
+function applyCollectionIdentity(score: PentatonicScoreImport, regions: PentatonicScoreRegion[], diagnostics: string[]): void {
+  for (const region of regions) {
+    const marks = score.events
+      .filter((event) => {
+        const bar = Number(event.sourceLabel);
+        return bar >= Number(region.firstSourceLabel) && bar <= Number(region.lastSourceLabel);
+      })
+      .flatMap((event) => event.sectionMarks);
+    const declarations = marks.map((mark) => parseCollectionIdentityMark(mark)).filter((mark): mark is { resourceId: string; centre: string } => mark !== null);
+    const unique = [...new Map(declarations.map((mark) => [`${mark.resourceId}@${mark.centre}`, mark])).values()];
+    const sounding = soundingPitchClasses(score, region);
+    if (unique.length > 1) {
+      diagnostics.push(`${region.measureRangeLabel}: more than one collection mark. None was chosen.`);
+      continue;
+    }
+    if (unique.length === 1) {
+      const declared = declaredCollection(unique[0]!.resourceId, unique[0]!.centre);
+      if (!declared) {
+        diagnostics.push(`${region.measureRangeLabel}: collection mark ${unique[0]!.resourceId}@${unique[0]!.centre} is not registered.`);
+        continue;
+      }
+      const outside = sounding.filter((pc) => !declared.pitchClasses.includes(pc));
+      if (sounding.length === 0 || outside.length > 0) {
+        diagnostics.push(`${region.measureRangeLabel}: declared ${declared.name} does not contain every note. The path label stays.`);
+        continue;
+      }
+      region.identityStatus = 'explicit';
+      region.explicitCollection = { archetypeId: declared.archetypeId, referenceNote: declared.referenceNote, name: declared.name };
+      diagnostics.push(`${region.measureRangeLabel}: declared ${declared.name}. Sounding pitch classes are members.`);
+      continue;
+    }
+    const inferred = region.pitchClasses ?? [];
+    const outside = sounding.filter((pc) => !inferred.includes(pc));
+    if (sounding.length > 0 && outside.length > 0) {
+      region.identityStatus = 'ambiguous-subset';
+      diagnostics.push(`${region.measureRangeLabel}: inferred ${region.collectionName} does not contain every note. No collection identity was invented.`);
+    }
+  }
 }
 
 function noneObservations(events: readonly PentatonicPathEventDecision[]): PentatonicNoneObservation[] {
@@ -303,7 +392,7 @@ export function analyzePentatonicScore(xml: string, options?: AnalyzePentatonicS
   if (!score.events.some((event) => event.chordSymbol)) {
     diagnostics.push('Harmony evidence absent. Harmony component omitted. Missing harmony is not scored as zero.');
   }
-  diagnostics.push(identity.reading);
+  if (!diagnostics.includes(identity.reading)) diagnostics.push(identity.reading);
   if (!absentCentre && identity.colourScoring === 'omitted') {
     diagnostics.push('Path tonal-centre mode is not a HOME mode. Colour scoring is omitted.');
   }
@@ -340,6 +429,7 @@ export function analyzePentatonicScore(xml: string, options?: AnalyzePentatonicS
       geometricRelation,
     };
   });
+  applyCollectionIdentity(score, regions, diagnostics);
   const fields = reportPentatonicFields(
     regions,
     score.events,

@@ -42,6 +42,7 @@ import {
   apiBhlSaveProject,
   apiBhlScratch,
 } from '../engines/composer-os-v2/app-api/bhlApp';
+import { apiPentatonicOpenProject, apiPentatonicSaveProject } from '../engines/composer-os-v2/app-api/pentatonicProjectApp';
 import { openOutputFolderRoute } from './openOutputFolderRoute';
 import { resolveDownloadFileTarget, sendDownloadFile } from './downloadFileRoute';
 import type { GenerateRequest } from '../engines/composer-os-v2/app-api/appApiTypes';
@@ -351,6 +352,24 @@ app.post('/api/bhl/project/open', (req: Request, res: Response) => {
 app.post('/api/bhl/scratch', (req: Request, res: Response) => {
   try {
     sendBhl(res, apiBhlScratch(req.body));
+  } catch (err) {
+    res.status(500).json({ ok: false, error: String(err) });
+  }
+});
+
+app.post('/api/pentatonic/project/save', (req: Request, res: Response) => {
+  try {
+    const result = apiPentatonicSaveProject(req.body);
+    res.status(result.ok ? 200 : 400).json(result);
+  } catch (err) {
+    res.status(500).json({ ok: false, error: String(err) });
+  }
+});
+
+app.post('/api/pentatonic/project/open', (req: Request, res: Response) => {
+  try {
+    const result = apiPentatonicOpenProject(req.body);
+    res.status(result.ok ? 200 : 400).json(result);
   } catch (err) {
     res.status(500).json({ ok: false, error: String(err) });
   }
