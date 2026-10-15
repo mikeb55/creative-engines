@@ -8,6 +8,8 @@
 
 ### Added
 
+- **Hexatonic Phase H5A** — release check of the H1–H4 engine. Guide: `docs/HEXATONIC_GUIDE.md`. Eleven scalar collections, 16 WPS pairs, inside / outside / return, `M-DEG` / `M-NEAR`, `#/hexatonic`, `hexatonic-project` version 1, and desktop MusicXML export stay as shipped. Structural tests are separate from artistic approval. `artisticApproval` stays false. The music was not claimed as heard, played, or approved. No new generator.
+
 - **Hexatonic Phase H4C** — desktop IPC writes Hexatonic MusicXML under `Composer OS Exports/Hexatonic Engine`, opens it in MuseScore 4, and saves or reopens `hexatonic-project` files. Existing files are not replaced. The long collection line sits above bar 1 so bar 6 stays inside the margin. Detail: `docs/HEXATONIC_PHASE_H4.md`.
 - **Hexatonic Phase H4B** — project format `hexatonic-project` version 1. Save and open keep the generated phrase, the WPS provenance, and the guitar and bass events. Open does not generate a replacement. Files live in `Hexatonic Projects` as `.hexatonic.json`. Existing files are not replaced unless requested. Detail: `docs/HEXATONIC_PHASE_H4.md`.
 - **Hexatonic Phase H4A** — workspace `#/hexatonic` in Composer OS. Selects the 11 scalar collections or the 16 WPS resolution/tension pairs, a tonal centre, a seed, and `M-DEG` or `M-NEAR`. Generate calls `generateHexatonicPhrase`. The page shows the pitch inventory, triad reading, source, inside/outside/return sequence, guitar and bass events, and technical diagnostics. MusicXML export uses the desktop channel when the app bridge is present and a browser download otherwise. The phrase is not artistically approved. The pentatonic page and its 20 colours stay. Detail: `docs/HEXATONIC_PHASE_H4.md`.

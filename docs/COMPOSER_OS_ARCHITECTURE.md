@@ -22,6 +22,8 @@
 
 **Hexatonic desktop (H4C, 2026-10-15):** IPC `composer-os-api:hexatonic-write-musicxml` writes under `Documents/Composer OS Exports/Hexatonic Engine`. Project save and open use `composer-os-api:hexatonic-project-save` and `composer-os-api:hexatonic-project-open`. The long collection line is placed above bar 1. Detail: `docs/HEXATONIC_PHASE_H4.md`.
 
+**Hexatonic release check (H5A, 2026-10-15):** user guide `docs/HEXATONIC_GUIDE.md`. It records the eleven scalar collections, the five-note Ritsu relationship, the H1 names that stay refused, the WPS triad-pair workflow, inside / outside / return, project save and open, and desktop MusicXML export. H5A does not add a module. Pentatonic colour count stays 20. BHL worlds stay on their own builder. A passing structural test is not artistic approval.
+
 ### RiffGen Phase 1.5 (inspect + GenerateIsland â€” 2026-07-18)
 
 - **Route:** app shell `#/riffgen` (nav label **RiffGen**) â€” sibling page, not a HomeGenerate branch. Hash routing required for desktop `file://` reload safety.

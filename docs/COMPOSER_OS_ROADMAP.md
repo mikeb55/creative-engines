@@ -486,6 +486,7 @@ Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartÃ³k** native bundle (not 
 
 ## Current (as of 2026-07-01 snapshot)
 
+- **Hexatonic Phase H5A (2026-10-15):** release check of H1–H4. Guide: `docs/HEXATONIC_GUIDE.md`. Catalogue, naming limits, triad pairs, phrase roles, projects, and desktop export stay the H4 surface. Structural tests are not artistic approval. H5B is not started.
 - **Hexatonic Phase H4C (2026-10-15):** desktop write, MuseScore open, and project save/open IPC. Collection text sits above bar 1. Spec: `docs/HEXATONIC_PHASE_H4.md`.
 - **Hexatonic Phase H4B (2026-10-15):** `hexatonic-project` version 1. Save and reopen keep the phrase, the original collection, and the WPS provenance. Spec: `docs/HEXATONIC_PHASE_H4.md`.
 - **Hexatonic Phase H4A (2026-10-15):** workspace `#/hexatonic`. Eleven scalar collections, 16 WPS pairs, centre, seed, `M-DEG` / `M-NEAR`, phrase preview, and MusicXML export. Generation stays `generateHexatonicPhrase`. Pentatonic colour registry stays 20. Spec: `docs/HEXATONIC_PHASE_H4.md`.
