@@ -8,6 +8,8 @@
 
 ### Added
 
+- **V3.1-C2 evidence views** — technical, harmonic, and rhythm panels list receipt findings with bar, instrument, onset, and event ids. Outside-field notes stay descriptive. Unsupported rhythm metrics are named. No notation highlighter and no artistic-quality score.
+
 - **V3.1-C1 evaluation dashboard shell** — `#/evaluation` loads MusicXML through `evaluateScore`, shows SHA-256, parts, bars, event ids, and technical findings. Five views are labelled. The source file is not written. No artistic-quality score.
 
 - **V3.1-B4 evidence receipts** — read-only `evaluateScore` and `compareScores`. JSON receipts hash the input and themselves. Technical pass/fail stays separate from structural findings and from the blank BMEF-100 V2.0 human scorecard. Comparison lists event differences for two or three scores and does not rank them. No 70/30 total and no artistic score.

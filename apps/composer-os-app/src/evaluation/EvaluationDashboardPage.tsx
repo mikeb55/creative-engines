@@ -4,6 +4,8 @@
  */
 import React, { useState } from 'react';
 import { api, isDesktopIpc } from '../services/api';
+import { EvidencePanel } from './EvidencePanel';
+import { HARMONIC_SECTIONS, RHYTHM_SECTIONS, type DashboardFinding } from './evaluationEvidence';
 
 export const EVALUATION_VIEWS = [
   { id: 'technical', label: '1 Technical Integrity' },
@@ -54,6 +56,8 @@ type Loaded = {
   receipt: {
     receiptSha256: string;
     technical: Array<{ summary: Record<string, string>; findings: TechnicalFinding[] }>;
+    structural: Array<{ findings: DashboardFinding[] }>;
+    unsupportedMetrics: string[];
     humanJudgement: null;
     bmef: { machineRatings: null; machineDecision: null };
   };
@@ -83,6 +87,9 @@ export function EvaluationDashboardPage({ transport }: { transport?: EvaluationT
   const [label, setLabel] = useState('score');
   const [xml, setXml] = useState('');
   const [baselineXml, setBaselineXml] = useState('');
+  const [fieldLabel, setFieldLabel] = useState('');
+  const [fieldFamily, setFieldFamily] = useState('pentatonic');
+  const [fieldPcs, setFieldPcs] = useState('');
   const [view, setView] = useState<EvaluationViewId>('technical');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -128,10 +135,15 @@ export function EvaluationDashboardPage({ transport }: { transport?: EvaluationT
     setError('');
     setSelectedFinding('');
     try {
+      const pitchClasses = fieldPcs.split(/[^0-9-]+/).filter(Boolean).map((item) => Number(item));
+      const declared = fieldLabel.trim() && pitchClasses.length
+        ? { label: fieldLabel.trim(), family: fieldFamily, pitchClasses }
+        : undefined;
       const result = await evaluate({
         label,
         xml,
         baselineXml: baselineXml.trim() ? baselineXml : undefined,
+        declared,
       });
       if (result.ok !== true) {
         setLoaded(null);
@@ -148,6 +160,7 @@ export function EvaluationDashboardPage({ transport }: { transport?: EvaluationT
   }
 
   const technical = loaded?.receipt.technical[0];
+  const structural = loaded?.receipt.structural[0]?.findings ?? [];
   const selected = technical?.findings.find((finding) => finding.id === selectedFinding) ?? null;
 
   return (
@@ -177,6 +190,24 @@ export function EvaluationDashboardPage({ transport }: { transport?: EvaluationT
         <label htmlFor="evaluation-xml">
           MusicXML
           <textarea id="evaluation-xml" data-testid="evaluation-xml" value={xml} rows={6} onChange={(event) => setXml(event.target.value)} />
+        </label>
+        <label htmlFor="evaluation-field-label">
+          Declared field label
+          <input id="evaluation-field-label" data-testid="evaluation-field-label" value={fieldLabel} onChange={(event) => setFieldLabel(event.target.value)} />
+        </label>
+        <label htmlFor="evaluation-field-family">
+          Declared field family
+          <select id="evaluation-field-family" data-testid="evaluation-field-family" value={fieldFamily} onChange={(event) => setFieldFamily(event.target.value)}>
+            <option value="pentatonic">pentatonic</option>
+            <option value="hexatonic">hexatonic</option>
+            <option value="bhl">bhl</option>
+            <option value="wps">wps</option>
+            <option value="other">other</option>
+          </select>
+        </label>
+        <label htmlFor="evaluation-field-pcs">
+          Declared pitch classes
+          <input id="evaluation-field-pcs" data-testid="evaluation-field-pcs" value={fieldPcs} onChange={(event) => setFieldPcs(event.target.value)} />
         </label>
         <label htmlFor="evaluation-baseline">
           Lock baseline MusicXML (optional)
@@ -281,13 +312,28 @@ export function EvaluationDashboardPage({ transport }: { transport?: EvaluationT
       {view === 'harmonic' && (
         <div data-testid="evaluation-view-panel-harmonic">
           <h3>Harmonic and Melodic Analysis</h3>
-          <p>This view will show pitch-class collections, field membership, voice-leading, contour, intervals, tessitura, motif recurrence, and inside/outside/return evidence from the evaluation receipt.</p>
+          <EvidencePanel
+            testId="evaluation-harmonic-evidence"
+            intro="Collections, membership, motion, contour, intervals, tessitura, and motifs are descriptions. Outside a declared field is not an error. Conventional major and minor labels are not applied."
+            sections={HARMONIC_SECTIONS}
+            findings={structural}
+            selectedId={selectedFinding}
+            onSelect={setSelectedFinding}
+          />
         </div>
       )}
       {view === 'rhythm' && (
         <div data-testid="evaluation-view-panel-rhythm">
           <h3>Rhythm, Form and Interaction</h3>
-          <p>This view will show attack density, sounding time, silence, alternation, motion, phrase boundaries, and role observations from the evaluation receipt.</p>
+          <EvidencePanel
+            testId="evaluation-rhythm-evidence"
+            intro="Density and silence are counted per instrument before any duo relationship. Limited rows are experimental hints, not musical roles."
+            sections={RHYTHM_SECTIONS}
+            findings={structural}
+            unsupported={loaded?.receipt.unsupportedMetrics}
+            selectedId={selectedFinding}
+            onSelect={setSelectedFinding}
+          />
         </div>
       )}
       {view === 'comparison' && (
