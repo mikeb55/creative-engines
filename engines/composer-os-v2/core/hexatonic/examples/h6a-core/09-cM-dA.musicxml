@@ -39,7 +39,6 @@
       </direction-type>
       <sound tempo="72"/>
     </direction>
-    <direction placement="above"><direction-type><words font-style="italic">PROVISIONAL — NOT MUSICALLY APPROVED</words></direction-type></direction>
         <note><pitch><step>C</step><octave>4</octave></pitch><duration>1920</duration><voice>1</voice><type>whole</type></note>
         <note><chord/><pitch><step>E</step><octave>4</octave></pitch><duration>1920</duration><voice>1</voice><type>whole</type></note>
         <note><chord/><pitch><step>G</step><octave>4</octave></pitch><duration>1920</duration><voice>1</voice><type>whole</type></note>
@@ -58,7 +57,7 @@
         <note><chord/><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>960</duration><voice>1</voice><type>half</type></note>
   </measure>
   <measure number="4">
-    <direction placement="above"><direction-type><words font-style="italic">CONTRAST hex_lydian_triad_pair</words></direction-type></direction>
+    <direction placement="above"><direction-type><words default-y="48" font-style="italic">CONTRAST</words></direction-type></direction>
         <note><pitch><step>C</step><octave>4</octave></pitch><duration>1920</duration><voice>1</voice><type>whole</type></note>
         <note><chord/><pitch><step>E</step><octave>4</octave></pitch><duration>1920</duration><voice>1</voice><type>whole</type></note>
         <note><chord/><pitch><step>G</step><octave>4</octave></pitch><duration>1920</duration><voice>1</voice><type>whole</type></note>

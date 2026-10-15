@@ -35,7 +35,7 @@ export interface CoreCandidate {
 }
 
 export const CORE_CANDIDATES: readonly CoreCandidate[] = [
-  { id: 'cm-dbm', label: 'C minor / Db minor', leftSpelling: ['C', 'Eb', 'G'], rightSpelling: ['Db', 'Fb', 'Ab'], leftQuality: 'minor', rightQuality: 'minor', provenance: 'computed', vaultNote: 'vault-implicit: Vol 15 chaos layer (Cm/C#m), unnamed, notation unverified' },
+  { id: 'cm-dbm', label: 'C minor / Db minor', leftSpelling: ['C', 'Eb', 'G'], rightSpelling: ['Db', 'Fb', 'Ab'], leftQuality: 'minor', rightQuality: 'minor', provenance: 'computed', vaultNote: 'notation-checked 2026-10-15: Vol 15 pp. 523-524 names chaos pitches B C# E F# G# and triads E major and C# minor. C minor / Db minor is not printed. Provenance stays computed.' },
   { id: 'cm-bd', label: 'C minor / B diminished', leftSpelling: ['C', 'Eb', 'G'], rightSpelling: ['B', 'D', 'F'], leftQuality: 'minor', rightQuality: 'diminished', provenance: 'computed', vaultNote: null },
   { id: 'cM-bd', label: 'C major / B diminished', leftSpelling: ['C', 'E', 'G'], rightSpelling: ['B', 'D', 'F'], leftQuality: 'major', rightQuality: 'diminished', provenance: 'computed', vaultNote: null },
   { id: 'cM-ebd', label: 'C major / Eb diminished', leftSpelling: ['C', 'E', 'G'], rightSpelling: ['Eb', 'Gb', 'Bbb'], leftQuality: 'major', rightQuality: 'diminished', provenance: 'computed', vaultNote: null },
@@ -45,7 +45,7 @@ export const CORE_CANDIDATES: readonly CoreCandidate[] = [
   { id: 'cm-dA', label: 'C minor / D augmented', leftSpelling: ['C', 'Eb', 'G'], rightSpelling: ['D', 'F#', 'A#'], leftQuality: 'minor', rightQuality: 'augmented', provenance: 'computed', vaultNote: null },
   { id: 'cM-dA', label: 'C major / D augmented', leftSpelling: ['C', 'E', 'G'], rightSpelling: ['D', 'F#', 'A#'], leftQuality: 'major', rightQuality: 'augmented', provenance: 'computed', vaultNote: null },
   { id: 'cm-dbA', label: 'C minor / Db augmented', leftSpelling: ['C', 'Eb', 'G'], rightSpelling: ['Db', 'F', 'A'], leftQuality: 'minor', rightQuality: 'augmented', provenance: 'computed', vaultNote: null },
-  { id: 'cM-ebm', label: 'C major / Eb minor', leftSpelling: ['C', 'E', 'G'], rightSpelling: ['Eb', 'Gb', 'Bb'], leftQuality: 'major', rightQuality: 'minor', provenance: 'computed', vaultNote: 'vault-implicit: Vol 15 chaos layer (Bb/C#m), unnamed, notation unverified' },
+  { id: 'cM-ebm', label: 'C major / Eb minor', leftSpelling: ['C', 'E', 'G'], rightSpelling: ['Eb', 'Gb', 'Bb'], leftQuality: 'major', rightQuality: 'minor', provenance: 'computed', vaultNote: 'notation-checked 2026-10-15: Vol 15 pp. 523-524 names E major and C# minor, not C major / Eb minor. Provenance stays computed.' },
   { id: 'cM-fsm', label: 'C major / F# minor', leftSpelling: ['C', 'E', 'G'], rightSpelling: ['F#', 'A', 'C#'], leftQuality: 'major', rightQuality: 'minor', provenance: 'computed', vaultNote: null },
 ];
 

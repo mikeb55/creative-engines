@@ -5,6 +5,7 @@ import {
   CORE_CANDIDATES,
   CORE_LABORATORY_STATUS,
   coreCandidateAuditionMusicXml,
+  nearestCatalogueReading,
   type CoreLaboratoryReview,
   type LaboratoryAnswer,
   type LaboratoryDecision,
@@ -13,6 +14,12 @@ import { api } from '../services/api';
 
 const ANSWERS: LaboratoryAnswer[] = ['UNDECIDED', 'YES', 'NO'];
 const DECISIONS: LaboratoryDecision[] = ['UNDECIDED', 'KEEP', 'REFINE', 'REJECT'];
+
+function nearestLine(id: string, ids: readonly string[], shared: number, candidateForte: string): string {
+  const nearest = nearestCatalogueReading(id);
+  const tie = nearest.tiedIds.length > 1 ? ` Tied: ${nearest.tiedIds.join(', ')}.` : '';
+  return `${ids.join(', ')} · shared ${shared} · ${nearest.kind} Forte ${nearest.forte} (candidate ${candidateForte}) · ${nearest.spelling.join(' ')} · ${nearest.leftRole} ${nearest.left.join(' ')} / ${nearest.rightRole} ${nearest.right.join(' ')}.${tie} Pitch-class difference only. No audible difference is claimed.`;
+}
 
 export function HexatonicLaboratory() {
   const analyses = useMemo(() => CORE_CANDIDATES.map((row) => analyzeCoreCandidate(row.id)), []);
@@ -96,7 +103,7 @@ export function HexatonicLaboratory() {
         <dt>Voice-leading</dt>
         <dd style={{ margin: 0 }}>{analysis.minVoiceLeading} semitones</dd>
         <dt>Nearest catalogue</dt>
-        <dd style={{ margin: 0 }}>{analysis.nearestCatalogueIds.join(', ')} · shared {analysis.sharedWithNearest}</dd>
+        <dd style={{ margin: 0 }} data-testid="hexatonic-laboratory-nearest">{nearestLine(analysis.candidate.id, analysis.nearestCatalogueIds, analysis.sharedWithNearest, analysis.forte)}</dd>
         <dt>WPS on that colour</dt>
         <dd style={{ margin: 0 }}>{analysis.wpsIdsOnNearest.join(', ') || 'none'}</dd>
         <dt>BHL</dt>
@@ -125,7 +132,7 @@ export function HexatonicLaboratory() {
           </label>
         ))}
         <label htmlFor="hex-lab-colour">
-          Colour
+          Colour and comments
           <input id="hex-lab-colour" data-testid="hex-lab-colour" value={entry.colour} onChange={(event) => patch({ colour: event.target.value })} />
         </label>
         <label htmlFor="hex-lab-decision">

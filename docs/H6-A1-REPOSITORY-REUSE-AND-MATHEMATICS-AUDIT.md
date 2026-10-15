@@ -160,6 +160,8 @@ Overlap audit, accepted as text-layer only:
 
 Do not label either implicit case as a Vault pair.
 
+H6-A4 read the notation. Those two implicit transpositions are not what pages 481–483 and 523–524 print. See `docs/h6-a4/H6-A4-TONALITY-VAULT-NOTATION-AUDIT.md`. Provenance stays `computed`.
+
 ## 7. Architecture for A2 and A3
 
 ### A2 — catalogue mathematics
@@ -215,6 +217,8 @@ Design constraints A2 and A3 must keep:
 - Forte primes come from the normal-form algorithm, not from the CSV representative column.
 - Core candidates stay provisional.
 - `computed` outranks the Vol 15 implicit note.
-- Vol 14–15 notation graphics are still unread.
+- Vol 14–15 notation was unread at A1. H6-A4 read pages 481–483 and 523–524; see the addendum below.
 - Project v1 cannot gain a required field.
 - New phrase algorithms are out of scope.
+
+**Addendum 2026-10-15 (H6-A4):** PDF pages 481–483 and 523–524 were read. The implicit transposition notes for C major / E♭ minor and C minor / D♭ minor are not what those pages print. Provenance of all 12 stays `computed`. Audit: `docs/h6-a4/H6-A4-TONALITY-VAULT-NOTATION-AUDIT.md`.

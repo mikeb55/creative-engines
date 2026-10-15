@@ -42,17 +42,25 @@ function putChord(
 
 function contrastTokens(nearestId: string): { tokens: string[]; label: string } {
   const pair = getHexatonicWpsPair(nearestId);
-  if (pair) {
-    return {
-      tokens: [...pair.resolution.spelling],
-      label: `CONTRAST ${pair.id} resolution`,
-    };
-  }
+  if (pair) return { tokens: [...pair.resolution.spelling], label: 'CONTRAST' };
   const scalar = getHexatonicScalar(nearestId);
   const reading = scalar?.triadReading?.[0];
-  if (reading) return { tokens: [...reading.spelling], label: `CONTRAST ${nearestId}` };
+  if (reading) return { tokens: [...reading.spelling], label: 'CONTRAST' };
   const spelling = scalar?.referenceSpelling.slice(0, 3) ?? ['C', 'D', 'E'];
-  return { tokens: [...spelling], label: `CONTRAST ${nearestId}` };
+  return { tokens: [...spelling], label: 'CONTRAST' };
+}
+
+/** Keep the status in the title. A staff direction collided with the tempo, and a long contrast id clipped the margin. */
+export function placeAuditionEngraving(xml: string): string {
+  const withoutDirection = xml.replace(
+    /\s*<direction placement="above"><direction-type><words font-style="italic">PROVISIONAL — NOT MUSICALLY APPROVED<\/words><\/direction-type><\/direction>/,
+    '',
+  );
+  if (withoutDirection === xml) throw new Error('provisional direction was not in the audition score');
+  return withoutDirection.replace(
+    /<words font-style="italic">/g,
+    '<words default-y="48" font-style="italic">',
+  );
 }
 
 export function coreCandidateAuditionMusicXml(id: string): string {
@@ -102,5 +110,5 @@ export function coreCandidateAuditionMusicXml(id: string): string {
   const exported = exportScoreModelToMusicXml(score);
   if (!exported.success || !exported.xml) throw new Error(exported.errors.join(' ') || 'audition export failed');
   if (/<staff-type>\s*tab\s*<\/staff-type>/i.test(exported.xml)) throw new Error('audition wrote TAB');
-  return exported.xml;
+  return placeAuditionEngraving(exported.xml);
 }

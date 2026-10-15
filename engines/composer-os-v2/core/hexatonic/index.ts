@@ -76,6 +76,8 @@ export type {
   LaboratoryReviewEntry,
 } from './coreLaboratory';
 export { coreCandidateAuditionMusicXml } from './coreLaboratoryAudition';
+export { coreAuditionBookMusicXml, listCoreAuditionBookEntries, nearestCatalogueReading } from './coreAuditionBook';
+export type { CoreAuditionBookEntry, NearestCatalogueReading } from './coreAuditionBook';
 export { getHexatonicCatalogueEntry, listHexatonicCatalogue } from './catalogue';
 export type { HexatonicCatalogueEntry } from './catalogue';
 export {

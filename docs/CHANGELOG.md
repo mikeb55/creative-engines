@@ -8,7 +8,7 @@
 
 ### Added
 
-- **Hexatonic H6-A3 Core laboratory** — twelve provisional triad pairs on `#/hexatonic`. Each stays `PROVISIONAL — NOT MUSICALLY APPROVED`. Reviews save as `.hexatonic-lab.json` beside hexatonic projects. Audition MusicXML is notation only. No candidate is admitted. Detail: `docs/H6-A3-CORE-TRIAD-PAIR-LABORATORY-REPORT.md`.
+- **Hexatonic H6-A4 Core audition** — printable audition book for the 12 provisional pairs, MuseScore 4 renders, and a Tonality Vault notation check of PDF pages 481–483 and 523–524. Reviews stay human. None is admitted. Detail: `docs/h6-a4/H6-A4-VALIDATION-REPORT.md`.
 
 - **Hexatonic H6-A2 catalogue mathematics** — six-note Tn / TnI classes, Forte primes, interval vectors, tertian triad-pair classes, and identity views over the frozen H2 registry. No new phrase generator. `hex_western_claim_not_ritsu` stays 6-32. The name Ritsu stays a disputed alias. Detail: `docs/H6-A2-MATHEMATICAL-CATALOGUE-REPORT.md`.
 
