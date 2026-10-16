@@ -486,6 +486,7 @@ Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartÃ³k** native bundle (not 
 
 ## Current (as of 2026-07-01 snapshot)
 
+- **Practice & Scales Studio V3.2-B (2026-10-16):** `#/practice` lists all 4,096 pitch-class masks and the 2,048 tonic-fixed masks. Names come from the existing pentatonic and hexatonic registries. The standard-tuning fretboard is read-only. Generator, metronome, and sessions wait. Detail: `docs/V3.2-B-SCALE-EXPLORER-IMPLEMENTATION.md`.
 - **Musical evaluation V3.1-C4 (2026-10-15):** `#/evaluation` saves a human BMEF-100 V2.0 review beside the score. Ratings and the decision start empty. No artistic-quality total.
 - **Musical evaluation V3.1-C3 (2026-10-15):** `#/evaluation` compares two or three scores by event and does not rank them.
 - **Musical evaluation V3.1-C2 (2026-10-15):** `#/evaluation` shows technical, harmonic, and rhythm findings from the V3.1-B receipt. Event location is a table. No artistic-quality total.

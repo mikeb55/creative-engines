@@ -24,6 +24,9 @@ describe('appRouter hash routes (Phase 1.5 S1 + file:// reload fix)', () => {
     expect(hashForRoute('bhl')).toBe('#/bhl');
     expect(routeNavLabel('bhl')).toBe('BHL');
     expect(routeFromLocation({ hash: '#/bhl', pathname: '/index.html' })).toBe('bhl');
+    expect(routeFromLocation({ hash: '#/practice', pathname: '/index.html' })).toBe('practice');
+    expect(hashForRoute('practice')).toBe('#/practice');
+    expect(routeNavLabel('practice')).toBe('Practice & Scales Studio');
     expect(routeFromLocation({ hash: '#/pentatonic', pathname: '/bhl' })).toBe('pentatonic');
     expect(routeFromLocation({ hash: '#/', pathname: '/bhl' })).toBe('home');
   });
