@@ -8,6 +8,8 @@
 
 ### Added
 
+- **Hexatonic H6-B2 strategies** — a selected hexatonic colour produces Dialogue, Liquid, and Sparse candidates in the existing BHL set. Liquid uses `realizeTriadPair` and does not call `planLiquidHarmony`. A pitch is not held as a common tone unless both triads contain it. Guitar position shifts are warnings. The bass lock stays. Seeds repeat.
+
 - **Hexatonic H6-B1 colour** — the BHL Composer can take an optional scalar, WPS pair, or provisional Core candidate, plus a reference note. Worlds A–F stay the same list. Provisional pairs keep `PROVISIONAL — NOT MUSICALLY APPROVED` on the project candidate, the MusicXML comment, and the evidence summary. `#/hexatonic` has Compose with this pair. Pentatonic candidate labels stay Candidate 1–3 when no hexatonic colour is set.
 
 - **Hexatonic playback gate** — `ScoreAudition` resumes the audio context before it parses MusicXML, shows Playing as soon as notes are loaded, and reports a hung audio context instead of leaving the status on Ready. H6-A4b clips, including the silent-bass context, parse to guitar notes.

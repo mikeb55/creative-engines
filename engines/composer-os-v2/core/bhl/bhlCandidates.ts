@@ -87,7 +87,7 @@ export function composeBhlCandidate(request: BhlCandidateRequest): { result: Bhl
       ...summariseBhlEvidence(evidence),
       signature: eventSignature(written),
       worldPitchClasses: written.world?.pitchClasses ?? [],
-      commonToneRetentions: written.commonToneRetentions || (written.world?.commonToneRetentions ?? 0),
+      commonToneRetentions: written.hexatonic ? written.commonToneRetentions : (written.world?.commonToneRetentions ?? 0),
       hexatonicStatus: written.hexatonic?.status ?? null,
       hexatonicProvisional: written.hexatonic?.provisional ?? false,
       artisticApproval: false,
@@ -156,11 +156,17 @@ export function generateBhlCandidateSet(input: {
   if (!input.plan) throw new Error('candidate set needs the locked phrase plan');
   const baseRhythm = input.rhythm ?? 'derived';
   const baseArc = input.phraseArc ?? 'derived';
-  const specs: Array<{ seed: number; rhythm: BhlRhythmMode; phraseArc: BhlPhraseArc; label: string; strategy: BhlHexatonicStrategy | null }> = [
-    { seed: input.seed, rhythm: baseRhythm, phraseArc: baseArc, label: 'Candidate 1', strategy: null },
-    { seed: input.seed + 17, rhythm: nextOf(RHYTHM_CYCLE, baseRhythm), phraseArc: baseArc, label: 'Candidate 2', strategy: null },
-    { seed: input.seed + 29, rhythm: baseRhythm, phraseArc: nextOf(ARC_CYCLE, baseArc), label: 'Candidate 3', strategy: null },
-  ];
+  const specs: Array<{ seed: number; rhythm: BhlRhythmMode; phraseArc: BhlPhraseArc; label: string; strategy: BhlHexatonicStrategy | null }> = input.hexatonic
+    ? [
+        { seed: input.seed, rhythm: baseRhythm, phraseArc: baseArc, label: 'Dialogue', strategy: 'dialogue' },
+        { seed: input.seed, rhythm: baseRhythm, phraseArc: baseArc, label: 'Liquid', strategy: 'liquid' },
+        { seed: input.seed, rhythm: 'sparse', phraseArc: baseArc, label: 'Sparse', strategy: 'sparse' },
+      ]
+    : [
+        { seed: input.seed, rhythm: baseRhythm, phraseArc: baseArc, label: 'Candidate 1', strategy: null },
+        { seed: input.seed + 17, rhythm: nextOf(RHYTHM_CYCLE, baseRhythm), phraseArc: baseArc, label: 'Candidate 2', strategy: null },
+        { seed: input.seed + 29, rhythm: baseRhythm, phraseArc: nextOf(ARC_CYCLE, baseArc), label: 'Candidate 3', strategy: null },
+      ];
   const seen = new Set<string>();
   const candidates: BhlProjectCandidate[] = [];
   for (const spec of specs) {

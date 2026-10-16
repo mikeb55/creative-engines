@@ -54,6 +54,7 @@ const coloured = apiBhlCandidates({
 });
 assert.equal(coloured.ok, true);
 if (!coloured.ok) throw new Error('colour candidates failed');
+assert.deepEqual(coloured.candidates.map((candidate) => candidate.label), ['Dialogue', 'Liquid', 'Sparse']);
 for (const candidate of coloured.candidates) {
   const stamp = readHexatonicStamp(candidate.xml);
   assert.ok(stamp);
