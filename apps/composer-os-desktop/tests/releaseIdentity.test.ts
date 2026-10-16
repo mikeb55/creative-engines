@@ -13,14 +13,14 @@ describe('Composer OS release identity', () => {
     dev: { releaseLabel: string; windowTitle: string };
   };
 
-  it('keeps STABLE on V3.1 and DEV on V3.2', () => {
+  it('keeps STABLE on V3.1 and DEV on V3.3', () => {
     expect(identity.stable).toEqual({
       releaseLabel: 'V3.1',
       windowTitle: 'Composer OS — V3.1',
     });
     expect(identity.dev).toEqual({
-      releaseLabel: 'V3.2',
-      windowTitle: 'Composer OS DEV — V3.2',
+      releaseLabel: 'V3.3',
+      windowTitle: 'Composer OS DEV — V3.3',
     });
   });
 

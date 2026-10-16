@@ -8,6 +8,8 @@
 
 ### Changed
 
+- **DEV desktop label** — packaged DEV window title and heading read **Composer OS DEV — V3.3**. STABLE stays **Composer OS — V3.1**. Package semver stays 2.10.10.
+
 - **Hexatonic and evaluation handoff** — `storeHexatonicHandoff`, `takeHexatonicHandoff`, `storeEvaluationHandoff`, and `takeEvaluationHandoff` skip `sessionStorage` when the host has none. Browser and jsdom still persist the payload. BHL Composer and the Evaluation Dashboard no longer throw on mount in the Node vitest environment.
 
 - **WPS V1.4 density** — SOLO 1 takes one 6–8 bar eighth-note stream. SOLO 2 takes 3–5 sixteenth-note bursts. Heads and comping take none. A stepwise run longer than 6 notes fails only when it has fewer than 2 leaps of a 3rd and no field change; exempted runs are reported with bar numbers. Each burst is fingered on its own and marked HUMAN PLAYABILITY: NOT VERIFIED. No MusicXML was written.
