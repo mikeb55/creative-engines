@@ -14,6 +14,8 @@
 
 ### Added
 
+- **Practice & Scales Studio V3.2-D** — `#/practice` generates exercises from the selected Scale Explorer set and root. Families: scale pathways, melodic cells, pentatonic studies (the 20 colours), triad/dyad grips, BHL colour studies on established scalar or WPS identities, and BHL rhythm studies. Difficulty maps to `SPARSE` / `INTERMEDIATE` / `EXPANDED`. Bars are 4, 8, or 16. Metres are the ones `beatUnitQuarters` already accepts. A seed repeats. Generate another advances the seed. Unsupported selections stay unavailable. No playback, save, or MusicXML export. Detail: `docs/V3.2-D-PRACTICE-GENERATOR-IMPLEMENTATION.md`.
+
 - **Practice & Scales Studio V3.2-C** — `#/practice` fretboard follows the selected Scale Explorer set. Root, tuning, pitch or interval labels, fret window, and a standard-tuning position window are on the page. Open-string MIDI comes from `openStringMidisForTuning`. `pcFretboard` checks one clicked pitch in standard tuning and is not called for any other tuning. Note playback stays deferred. Detail: `docs/V3.2-C-FRETBOARD-IMPLEMENTATION.md`.
 
 - **Practice & Scales Studio V3.2-B** — `#/practice` opens a read-only Scale Explorer. It lists 4,096 pitch-class masks, with a tonic-fixed view of the 2,048 masks that contain pitch class 0. Registered names, families, and statuses are read from the pentatonic path registry, the 20-colour vocabulary, the hexatonic scalars, the WPS pairs, the 12 provisional Core candidates, and the 3 advanced colours. A six-note set can show its existing Forte class. The guitar panel marks those pitch classes on standard tuning. Practice Generator and Practice Session stay unavailable. Detail: `docs/V3.2-B-SCALE-EXPLORER-IMPLEMENTATION.md`.

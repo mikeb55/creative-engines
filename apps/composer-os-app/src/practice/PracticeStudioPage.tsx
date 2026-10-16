@@ -27,6 +27,19 @@ import {
   practiceTuningChoices,
   romanPosition,
 } from './practiceFretboard';
+import {
+  PRACTICE_EXERCISE_BAR_COUNTS,
+  PRACTICE_EXERCISE_FAMILIES,
+  PRACTICE_EXERCISE_METRES,
+  PRACTICE_STUDIO_DIFFICULTIES,
+  generatePracticeExercise,
+  nextPracticeSeed,
+  type PracticeExercise,
+  type PracticeExerciseBarCount,
+  type PracticeExerciseFamily,
+  type PracticeExerciseMetreId,
+  type PracticeStudioDifficulty,
+} from './practiceExerciseGenerator';
 
 const TUNING_CHOICES = practiceTuningChoices();
 const ZONE_LABELS: Record<string, string> = {
@@ -54,6 +67,13 @@ export function PracticeStudioPage() {
   const [fretTo, setFretTo] = useState<number>(SCALE_FRET_WINDOW.to);
   const [position, setPosition] = useState<number | null>(null);
   const [selectedCell, setSelectedCell] = useState<FretboardCell | null>(null);
+  const [exerciseFamily, setExerciseFamily] = useState<PracticeExerciseFamily>('scale-pathways');
+  const [exerciseDifficulty, setExerciseDifficulty] = useState<PracticeStudioDifficulty>('beginner');
+  const [exerciseBars, setExerciseBars] = useState<PracticeExerciseBarCount>(4);
+  const [exerciseMetre, setExerciseMetre] = useState<PracticeExerciseMetreId>('4/4');
+  const [exerciseTempo, setExerciseTempo] = useState(96);
+  const [exerciseSeed, setExerciseSeed] = useState(1);
+  const [exercise, setExercise] = useState<PracticeExercise | null>(null);
 
   const families = useMemo(() => scaleExplorerFamilies(), []);
   const statuses = useMemo(() => scaleExplorerStatuses(), []);
@@ -100,6 +120,32 @@ export function PracticeStudioPage() {
   const onFretClick = useCallback((cell: FretboardCell) => {
     setSelectedCell(cell);
   }, []);
+  const runExercise = useCallback(
+    (seed: number) => {
+      setExerciseSeed(seed);
+      setExercise(
+        generatePracticeExercise({
+          entry: selected,
+          rootPc,
+          family: exerciseFamily,
+          difficulty: exerciseDifficulty,
+          bars: exerciseBars,
+          metreId: exerciseMetre,
+          tempoBpm: exerciseTempo,
+          seed,
+          tuning: {
+            requestedId: board.tuning.requestedId,
+            tuningId: board.tuning.tuningId,
+            standardSolver: board.tuning.standardSolver,
+            openMidi: board.tuning.openMidi,
+            limitation: board.tuning.limitation,
+          },
+          position,
+        })
+      );
+    },
+    [selected, rootPc, exerciseFamily, exerciseDifficulty, exerciseBars, exerciseMetre, exerciseTempo, board.tuning, position]
+  );
   const pages = ['#/pentatonic', '#/hexatonic'] as const;
   const tuningZones = ['jazz_sophisticated', 'sonic_youth_noise', 'joni_mitchell', 'hybrid_harmonic', 'other'] as const;
 
@@ -457,7 +503,123 @@ export function PracticeStudioPage() {
 
       <section aria-labelledby="practice-generator-heading" data-testid="practice-generator" style={{ marginTop: '1.25rem' }}>
         <h3 id="practice-generator-heading">Practice Generator</h3>
-        <p>Unavailable. Exercise generation is not part of this checkpoint.</p>
+        <p style={{ fontSize: '0.9rem' }}>
+          Exercises use the selected explorer scale and root. Playback, saving, and MusicXML export stay in V3.2-E.
+        </p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', margin: '0.75rem 0' }}>
+          <label style={FIELD_STYLE}>
+            Exercise family
+            <select
+              aria-label="Exercise family"
+              value={exerciseFamily}
+              onChange={(event) => setExerciseFamily(event.target.value as PracticeExerciseFamily)}
+            >
+              {PRACTICE_EXERCISE_FAMILIES.map((family) => (
+                <option key={family.id} value={family.id}>{family.label}</option>
+              ))}
+            </select>
+          </label>
+          <label style={FIELD_STYLE}>
+            Difficulty
+            <select
+              aria-label="Exercise difficulty"
+              value={exerciseDifficulty}
+              onChange={(event) => setExerciseDifficulty(event.target.value as PracticeStudioDifficulty)}
+            >
+              {PRACTICE_STUDIO_DIFFICULTIES.map((difficulty) => (
+                <option key={difficulty.id} value={difficulty.id}>{difficulty.label}</option>
+              ))}
+            </select>
+          </label>
+          <label style={FIELD_STYLE}>
+            Bars
+            <select
+              aria-label="Exercise bars"
+              value={String(exerciseBars)}
+              onChange={(event) => setExerciseBars(Number(event.target.value) as PracticeExerciseBarCount)}
+            >
+              {PRACTICE_EXERCISE_BAR_COUNTS.map((count) => (
+                <option key={count} value={String(count)}>{count}</option>
+              ))}
+            </select>
+          </label>
+          <label style={FIELD_STYLE}>
+            Metre
+            <select
+              aria-label="Exercise metre"
+              value={exerciseMetre}
+              onChange={(event) => setExerciseMetre(event.target.value as PracticeExerciseMetreId)}
+            >
+              {PRACTICE_EXERCISE_METRES.map((metre) => (
+                <option key={metre.id} value={metre.id}>{metre.id}</option>
+              ))}
+            </select>
+          </label>
+          <label style={FIELD_STYLE}>
+            Tempo
+            <input
+              aria-label="Exercise tempo"
+              type="number"
+              min={40}
+              max={240}
+              step={1}
+              value={exerciseTempo}
+              onChange={(event) => setExerciseTempo(Number(event.target.value))}
+            />
+          </label>
+          <label style={FIELD_STYLE}>
+            Seed
+            <input
+              aria-label="Exercise seed"
+              type="number"
+              step={1}
+              value={exerciseSeed}
+              onChange={(event) => setExerciseSeed(Number(event.target.value))}
+            />
+          </label>
+        </div>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <button type="button" data-testid="generate-exercise" onClick={() => runExercise(exerciseSeed)}>
+            Generate
+          </button>
+          <button type="button" data-testid="generate-another" onClick={() => runExercise(nextPracticeSeed(exerciseSeed))}>
+            Generate another
+          </button>
+        </div>
+        <div data-testid="exercise-result" style={{ marginTop: '0.75rem', fontSize: '0.9rem' }}>
+          {!exercise && <p>Generate an exercise from the current scale, root, and controls.</p>}
+          {exercise && (
+            <dl style={{ display: 'grid', gridTemplateColumns: '11rem 1fr', gap: '0.35rem 0.75rem' }}>
+              <dt>Title</dt>
+              <dd style={{ margin: 0 }}>{exercise.title}</dd>
+              <dt>Type</dt>
+              <dd style={{ margin: 0 }}>{exercise.familyLabel}{exercise.detail ? ` · ${exercise.detail}` : ''}</dd>
+              <dt>Scale</dt>
+              <dd style={{ margin: 0 }}>
+                {exercise.scale.name} · mask {exercise.scale.mask} · sounding {exercise.scale.soundingPitchClassId || 'empty'} · root {exercise.scale.rootSpelling}
+              </dd>
+              <dt>Status</dt>
+              <dd style={{ margin: 0 }}>{exercise.scale.status}</dd>
+              <dt>Parameters</dt>
+              <dd style={{ margin: 0 }}>
+                {exercise.difficulty} · {exercise.practiceDifficulty} · {exercise.bars} bars · {exercise.metreId} · {exercise.tempoBpm} bpm · seed {exercise.seed}
+              </dd>
+              <dt>Pitch sequence</dt>
+              <dd style={{ margin: 0 }}>{exercise.pitchSequence || '—'}</dd>
+              <dt>Rhythm</dt>
+              <dd style={{ margin: 0 }}>{exercise.rhythmSummary || '—'}</dd>
+              <dt>Guitar</dt>
+              <dd style={{ margin: 0 }}>{exercise.guitarNotes.join(' ') || '—'}</dd>
+              <dt>Validation</dt>
+              <dd style={{ margin: 0 }}>
+                {exercise.available && exercise.validationErrors.length === 0
+                  ? 'No validation errors.'
+                  : exercise.validationErrors.join(' ')}
+                {exercise.unavailableReason ? ` ${exercise.unavailableReason}` : ''}
+              </dd>
+            </dl>
+          )}
+        </div>
       </section>
 
       <section aria-labelledby="practice-session-heading" data-testid="practice-session" style={{ marginTop: '1.25rem' }}>

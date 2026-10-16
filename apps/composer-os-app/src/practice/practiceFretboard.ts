@@ -254,7 +254,7 @@ function fretWindow(fretFrom: number, fretTo: number): { from: number; to: numbe
   return { from: fretFrom, to: fretTo };
 }
 
-function positionWindow(position: number): { from: number; to: number } | null {
+export function practicePositionWindow(position: number): { from: number; to: number } | null {
   if (!Number.isInteger(position) || position < 0 || position > FRET_MAX) return null;
   if (position === 0) return { from: 0, to: 0 };
   return { from: position, to: Math.min(position + SPAN_MAX, FRET_MAX) };
@@ -365,7 +365,7 @@ export function buildPracticeFretboard(query: PracticeFretboardQuery): PracticeF
       positionStatus = 'Position filter is not applied. pcFretboard is standard tuning only. Dots stay pitch-class locations.';
       limitations.push(positionStatus);
     } else {
-      const span = positionWindow(query.position);
+      const span = practicePositionWindow(query.position);
       if (!span) {
         positionStatus = `Position ${query.position} is outside pcFretboard frets 0–${FRET_MAX}. The filter is not applied.`;
         limitations.push(positionStatus);

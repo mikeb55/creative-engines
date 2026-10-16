@@ -486,6 +486,7 @@ Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartÃ³k** native bundle (not 
 
 ## Current (as of 2026-07-01 snapshot)
 
+- **Practice & Scales Studio V3.2-D (2026-10-16):** `#/practice` generates pathways, cells, pentatonic studies, vault dyads/triads, established BHL colour studies, and BHL rhythm studies from the selected scale. Seeds repeat. Playback, sessions, and MusicXML wait for V3.2-E. Detail: `docs/V3.2-D-PRACTICE-GENERATOR-IMPLEMENTATION.md`.
 - **Practice & Scales Studio V3.2-C (2026-10-16):** `#/practice` fretboard follows the selected pitch-class set. Root, catalogued tunings, pitch or interval labels, fret window, and a standard-tuning position window are live. Alternate tunings are not fingered. Audition, generator, metronome, and sessions wait. Detail: `docs/V3.2-C-FRETBOARD-IMPLEMENTATION.md`.
 - **Practice & Scales Studio V3.2-B (2026-10-16):** `#/practice` lists all 4,096 pitch-class masks and the 2,048 tonic-fixed masks. Names come from the existing pentatonic and hexatonic registries. Generator, metronome, and sessions wait. Detail: `docs/V3.2-B-SCALE-EXPLORER-IMPLEMENTATION.md`.
 - **Musical evaluation V3.1-C4 (2026-10-15):** `#/evaluation` saves a human BMEF-100 V2.0 review beside the score. Ratings and the decision start empty. No artistic-quality total.
