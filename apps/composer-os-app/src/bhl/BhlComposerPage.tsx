@@ -185,6 +185,8 @@ export function BhlComposerPage() {
   const [result, setResult] = useState<Compose | null>(null);
   const [stale, setStale] = useState(false);
   const [outputPath, setOutputPath] = useState('');
+  const [scratchFilePath, setScratchFilePath] = useState('');
+  const scratchFilePathRef = useRef('');
   const [mode, setMode] = useState<'import' | 'scratch'>('import');
   const [scratchBars, setScratchBars] = useState(16);
   const [scratchBeats, setScratchBeats] = useState(4);
@@ -263,8 +265,9 @@ export function BhlComposerPage() {
         return;
       }
       if (projectRestored.current) return;
-      setSourcePath(row.sourcePath);
       setExportDir(row.exportDir || '');
+      if (scratchFilePathRef.current) return;
+      setSourcePath(row.sourcePath);
       if (row.span) {
         setSpanFrom(row.span.from);
         setSpanTo(row.span.to);
@@ -477,6 +480,8 @@ export function BhlComposerPage() {
       });
       const row = raw as { ok: true; sourcePath: string; xml: string; span: Span; sections: Array<{ mark: string; role: string; from: number; to: number }> } | { ok: false; error: string };
       if (!row.ok) throw new Error(row.error);
+      scratchFilePathRef.current = row.sourcePath;
+      setScratchFilePath(row.sourcePath);
       setScratchXml(row.xml);
       setSourcePath(row.sourcePath);
       setSpanFrom(row.span.from);
@@ -722,6 +727,55 @@ export function BhlComposerPage() {
     }
   }
 
+  async function onOpenScratchFile() {
+    const filePath = scratchFilePathRef.current;
+    if (!filePath) return;
+    setError('');
+    if (!isDesktopIpc() || !window.composerOsDesktop?.openFileDefaultApp) {
+      setError('Open File runs in the Composer OS desktop app.');
+      return;
+    }
+    try {
+      const opened = await window.composerOsDesktop.openFileDefaultApp(filePath);
+      if (!opened.ok) {
+        const detail = opened.error?.trim();
+        setError(detail ? `Could not open ${filePath}. ${detail}` : `Could not open ${filePath}.`);
+        return;
+      }
+      setStatus(`Opened ${filePath}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  async function onRevealScratchFile() {
+    const filePath = scratchFilePathRef.current;
+    if (!filePath) return;
+    setError('');
+    const reveal = window.composerOsDesktop?.showItemInFolder;
+    if (!isDesktopIpc() || !reveal) {
+      setError('Open in Finder runs in the Composer OS desktop app.');
+      return;
+    }
+    try {
+      const revealed = await reveal(filePath);
+      if (!revealed?.ok) {
+        const detail = revealed?.error?.trim();
+        setError(
+          detail === 'path not found' || /not found/i.test(detail ?? '')
+            ? `File not found: ${filePath}`
+            : detail
+              ? `Could not reveal ${filePath}. ${detail}`
+              : `Could not reveal ${filePath}.`,
+        );
+        return;
+      }
+      setStatus(`Revealed ${filePath} in Finder.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
   async function onOpen() {
     if (!outputPath) return;
     setError('');
@@ -803,6 +857,17 @@ export function BhlComposerPage() {
             <button type="button" data-testid="bhl-scratch-create" onClick={() => void onScratch()} disabled={busy}>
               Create guitar and bass score
             </button>
+            {scratchFilePath ? (
+              <div data-testid="bhl-scratch-output" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', width: '100%' }}>
+                <span data-testid="bhl-scratch-path" style={{ wordBreak: 'break-all' }}>{scratchFilePath}</span>
+                <button type="button" data-testid="bhl-scratch-open-file" onClick={() => void onOpenScratchFile()} disabled={busy}>
+                  Open File
+                </button>
+                <button type="button" className="secondary" data-testid="bhl-scratch-reveal" onClick={() => void onRevealScratchFile()} disabled={busy}>
+                  Open in Finder
+                </button>
+              </div>
+            ) : null}
           </div>
         ) : null}
       </section>

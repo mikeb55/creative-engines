@@ -32,7 +32,8 @@ contextBridge.exposeInMainWorld('composerOsDesktop', {
   }> => ipcRenderer.invoke('composer-os:get-ui-provenance'),
   invokeApi: (channel: string, payload?: unknown): Promise<unknown> =>
     ipcRenderer.invoke(channel, payload),
-  showItemInFolder: (filePath: string) => ipcRenderer.invoke('show-item-in-folder', filePath),
+  showItemInFolder: (filePath: string) =>
+    ipcRenderer.invoke('show-item-in-folder', filePath) as Promise<{ ok: boolean; error?: string }>,
   openFileDefaultApp: (path: string) =>
     ipcRenderer.invoke('composer-os-api:open-file-default-app', path) as Promise<{
       ok: boolean;
