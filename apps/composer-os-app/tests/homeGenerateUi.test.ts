@@ -1,6 +1,8 @@
 /**
  * Generate page — mode-driven UI (no Style Stack / blend controls on main form).
+ * jsdom: HomeGenerate mounts inside the app shell and calls window timers and listeners.
  */
+// @vitest-environment jsdom
 import * as fs from 'fs';
 import * as path from 'path';
 import React from 'react';
@@ -18,8 +20,28 @@ vi.mock('../src/services/api', () => {
     openOutputFolder: vi.fn().mockResolvedValue({ success: true }),
     generate: vi.fn(),
   };
-  return { api, displayOutputPath: (r: { displayPath?: string; path: string }) => r.displayPath ?? r.path };
+  return {
+    api,
+    displayOutputPath: (r: { displayPath?: string; path: string }) => r.displayPath ?? r.path,
+    isDesktopIpc: () => false,
+  };
 });
+
+// HomeGenerate statically imports MartinoResultPanel → MartinoScorePanel, which
+// loads @stringsync/vexml's CJS build. That package.json sets "type": "module",
+// so Node throws `exports is not defined` before any assertion. Same mock the
+// score-audition tests use. Vite's production build follows the ESM entry.
+vi.mock('@stringsync/vexml', () => ({
+  DEFAULT_CONFIG: { WIDTH: 520, SHOW_TABS: true, SHOW_STANDARD_NOTATION: true },
+  renderMusicXML: vi.fn(),
+}));
+
+vi.mock('vexflow', () => ({
+  VexFlow: {
+    loadFonts: vi.fn(async () => undefined),
+    setFonts: vi.fn(),
+  },
+}));
 
 vi.spyOn(scoreXmlInput, 'extractScoreMusicXmlFromUint8Array').mockImplementation((input: Uint8Array) => {
   if (!input || input.length === 0) {
@@ -42,11 +64,62 @@ describe('HomeGenerate mode-driven UI', () => {
   });
 
   async function renderHomeGenerate() {
-    (globalThis as { window?: unknown }).window = { composerOsDesktop: undefined };
+    Object.assign(window, { composerOsDesktop: undefined });
     const { HomeGenerate } = await import('../src/pages/HomeGenerate');
+    const { CompositionSongProvider } = await import('@renderer/context/CompositionSongContext');
+    const { LastGenerateProvider } = await import('@renderer/context/LastGenerateContext');
+    const { DrumSelectionProvider } = await import('@renderer/context/DrumSelectionContext');
+    const { FillSchedulerProvider } = await import('@renderer/context/FillSchedulerContext');
+    const { BigBandProvider } = await import('@renderer/context/BigBandContext');
+    const { StringQuartetProvider } = await import('@renderer/context/StringQuartetContext');
+    const { ContrapuntalProvider } = await import('@renderer/context/ContrapuntalContext');
+    const { FzFingerprintProvider } = await import('@renderer/context/FzFingerprintContext');
+    const { VrbProfileProvider } = await import('@renderer/context/VrbProfileContext');
+    const element = React.createElement(
+      CompositionSongProvider,
+      null,
+      React.createElement(
+        LastGenerateProvider,
+        null,
+        React.createElement(
+          DrumSelectionProvider,
+          null,
+          React.createElement(
+            FillSchedulerProvider,
+            null,
+            React.createElement(
+              BigBandProvider,
+              null,
+              React.createElement(
+                StringQuartetProvider,
+                null,
+                React.createElement(
+                  ContrapuntalProvider,
+                  null,
+                  React.createElement(
+                    FzFingerprintProvider,
+                    null,
+                    React.createElement(
+                      VrbProfileProvider,
+                      null,
+                      React.createElement(HomeGenerate, { onResult: () => undefined })
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    );
     let tree: ReturnType<typeof create>;
     await act(async () => {
-      tree = create(React.createElement(HomeGenerate, { onResult: () => undefined }));
+      tree = create(element);
+    });
+    const generateTab = tree!.root.findAllByType('button').find((b) => b.props.id === 'co-home-tab-generate');
+    expect(generateTab).toBeDefined();
+    await act(async () => {
+      generateTab!.props.onClick();
     });
     return tree!;
   }
@@ -77,10 +150,11 @@ describe('HomeGenerate mode-driven UI', () => {
 
   function getGenerateButton(tree: ReturnType<typeof create>) {
     const generateButton = tree.root.findAllByType('button').find((b) => {
+      if (b.props.role === 'tab' || b.props.id === 'co-home-tab-generate') return false;
       const c = b.props.children;
       return (
-        (typeof c === 'string' && c.includes('Generate')) ||
-        (Array.isArray(c) && c.join('').includes('Generate'))
+        (typeof c === 'string' && (c === 'Generate' || c === 'Generating…')) ||
+        (Array.isArray(c) && c.join('') === 'Generate')
       );
     });
     expect(generateButton).toBeDefined();
@@ -141,7 +215,9 @@ describe('HomeGenerate mode-driven UI', () => {
   it('Try Another rolls variation and calls generate with override', () => {
     expect(src).toContain('setVariationId(next)');
     expect(src).toContain('void generate({ variationOverride: next })');
-    expect(src).toMatch(/async \(opts\?: \{ seedOverride\?: number; variationOverride\?: string \}\)/);
+    expect(src).toMatch(
+      /async \(opts\?: \{[\s\S]*?seedOverride\?: number;[\s\S]*?variationOverride\?: string;[\s\S]*?\}\) =>/
+    );
     expect(src).toContain('opts?.variationOverride ?? variationId');
   });
 
@@ -387,10 +463,13 @@ describe('HomeGenerate mode-driven UI', () => {
     const tree = await renderHomeGenerate();
     const songwriterSelect = getSongwriterSelect(tree);
     await act(async () => {
-      songwriterSelect.props.onChange({ target: { value: 'wayne_shorter' } });
+      songwriterSelect.props.onChange({ target: { value: 'frank_zappa' } });
     });
     await settleUi();
-    await waitForTreeSubstring(tree, 'LeadSheet MusicXML input is available only for Song Mode with Bill Evans');
+    await waitForTreeSubstring(
+      tree,
+      'LeadSheet MusicXML input is available only for Song Mode with a supported LeadSheet writer'
+    );
     const text = JSON.stringify(tree.toJSON());
     expect(text).toContain('Herbie Hancock');
     expect(getLeadSheetTextarea(tree).props.disabled).toBe(true);
@@ -660,7 +739,7 @@ describe('HomeGenerate mode-driven UI', () => {
       success: true,
       filename: 'composer_os_song_mode_unsupported_writer.musicxml',
       filepath: 'C:/tmp/composer_os_song_mode_unsupported_writer.musicxml',
-      requestEcho: { primarySongwriterStyle: 'wayne_shorter' },
+      requestEcho: { primarySongwriterStyle: 'brian_wilson' },
       runManifest: {
         presetId: 'song_mode',
         songModeLeadSheetInputApplied: true,
@@ -681,7 +760,7 @@ describe('HomeGenerate mode-driven UI', () => {
     const tree = await renderHomeGenerate();
     const songwriterSelect = getSongwriterSelect(tree);
     await act(async () => {
-      songwriterSelect.props.onChange({ target: { value: 'wayne_shorter' } });
+      songwriterSelect.props.onChange({ target: { value: 'brian_wilson' } });
     });
     await settleUi();
     const leadSheetTextarea = getLeadSheetTextarea(tree);
@@ -746,7 +825,13 @@ describe('HomeGenerate mode-driven UI', () => {
   });
 
   it('maps Big Band and String Quartet pairing from the Songwriter dropdown (same state as Song Mode)', () => {
-    expect(src).toMatch(/songwriterStyle:\s*songwriterStyle/);
+    expect(src).toMatch(
+      /presetId === 'big_band'[\s\S]*?buildStylePairingPayload\(songwriterStyle, arrangerStyle, eraForPairing\)/
+    );
+    expect(src).toMatch(
+      /presetId === 'string_quartet'[\s\S]*?buildStylePairingPayload\(songwriterStyle, sqArrangerSlot1, eraForPairing\)/
+    );
+    expect(src).toMatch(/const block: \{ songwriterStyle: string;[\s\S]*?songwriterStyle,/);
     expect(src).toContain("presetId === 'big_band'");
     expect(src).toContain("presetId === 'string_quartet'");
     expect(src).toContain('Big band pairing');
@@ -754,8 +839,6 @@ describe('HomeGenerate mode-driven UI', () => {
   });
 
   it('renders both Song Mode dev diagnostics blocks from one result payload', async () => {
-    (globalThis as { window?: unknown }).window = { composerOsDesktop: undefined };
-    const { HomeGenerate } = await import('../src/pages/HomeGenerate');
     const { api } = await import('../src/services/api');
 
     vi.mocked(api.generate)
@@ -857,15 +940,8 @@ describe('HomeGenerate mode-driven UI', () => {
       },
     } as Record<string, unknown>);
 
-    let tree: ReturnType<typeof create>;
-    await act(async () => {
-      tree = create(React.createElement(HomeGenerate, { onResult: () => undefined }));
-    });
-    const generateButton = tree!.root.findAllByType('button').find((b) => {
-      const c = b.props.children;
-      return (typeof c === 'string' && c.includes('Generate')) || (Array.isArray(c) && c.join('').includes('Generate'));
-    });
-    expect(generateButton).toBeDefined();
+    const tree = await renderHomeGenerate();
+    const generateButton = getGenerateButton(tree);
     await act(async () => {
       generateButton!.props.onClick();
       await Promise.resolve();
