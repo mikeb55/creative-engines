@@ -25,8 +25,9 @@ import { eventSignature, ingestCanonicalScore, sha256Text } from './canonicalSco
 import { analyseHarmony, type DeclaredField, type MusicalFinding } from './harmonicEvidence';
 import { analyseRhythm, EXPERIMENTAL_RHYTHM_METRICS } from './rhythmEvidence';
 import { runTechnicalChecks, type TechnicalCheckRequest, type TechnicalReport } from './technicalChecks';
+import { buildCoherenceReport, type CoherenceReport } from './coherenceReport';
 
-export const RECEIPT_VERSION = 'musical-evaluation-receipt-1';
+export const RECEIPT_VERSION = 'musical-evaluation-receipt-2';
 
 export interface ScoreInput {
   label: string;
@@ -72,6 +73,7 @@ export interface EvidenceReceipt {
     musicalQualityScore: null;
   } | null;
   humanJudgement: null;
+  coherence: CoherenceReport | null;
   unsupportedMetrics: string[];
   preserved: {
     pentatonicColours: number;
@@ -128,6 +130,15 @@ function structuralFindings(xml: string, declared: DeclaredField | undefined, in
   return [...harmonic.findings, ...rhythm.findings];
 }
 
+function coherenceFor(xml: string): CoherenceReport | null {
+  try {
+    const report = buildCoherenceReport({ xml });
+    return report;
+  } catch {
+    return null;
+  }
+}
+
 function seal(body: Omit<EvidenceReceipt, 'receiptSha256'>): EvidenceReceipt {
   const receiptSha256 = sha256Text(canonicalJson(body));
   return { ...body, receiptSha256 };
@@ -150,6 +161,7 @@ export function evaluateScore(request: EvaluationRequest): EvidenceReceipt {
     structural: [{ label: request.score.label, sha256, findings }],
     comparison: null,
     humanJudgement: null,
+    coherence: coherenceFor(request.score.xml),
     unsupportedMetrics: [...rhythm.unsupportedMetrics],
     preserved: preserved(),
     bmef: {
@@ -234,6 +246,7 @@ export function compareScores(request: ComparisonRequest): EvidenceReceipt {
       musicalQualityScore: null,
     },
     humanJudgement: null,
+    coherence: coherenceFor(request.scores[0]!.xml),
     unsupportedMetrics: [...new Set([...rhythm.unsupportedMetrics, ...EXPERIMENTAL_RHYTHM_METRICS])],
     preserved: preserved(),
     bmef: {

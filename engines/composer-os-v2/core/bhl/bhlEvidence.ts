@@ -13,6 +13,7 @@ import {
   partNames,
 } from '../performance-composer/pcScore';
 import type { BhlSpan } from './bhlTypes';
+import { motionKind } from '../musical-evaluation/voiceRelations';
 
 export interface Rational {
   n: number;
@@ -664,12 +665,7 @@ export function readBhlEvidence(xml: string, span?: BhlSpan): BhlEvidenceReport 
           if (bothHeld) {
             const da = pitchA - prevA;
             const db = pitchB - prevB;
-            let kind: BhlMotionKind | null = null;
-            if (da === 0 && db !== 0) kind = 'oblique';
-            else if (db === 0 && da !== 0) kind = 'oblique';
-            else if (da !== 0 && db !== 0 && Math.sign(da) !== Math.sign(db)) kind = 'contrary';
-            else if (da !== 0 && da === db) kind = 'parallel';
-            else if (da !== 0 && Math.sign(da) === Math.sign(db)) kind = 'similar';
+            const kind: BhlMotionKind | null = motionKind(da, db);
             if (kind) {
               motions.push({
                 bar: sample.bar,
