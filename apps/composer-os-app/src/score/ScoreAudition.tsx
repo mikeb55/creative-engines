@@ -17,6 +17,25 @@ function haltEngine(): void {
   }
 }
 
+/** Resume the audio context inside the click, before MusicXML parsing or Transport setup. */
+function unlockAudio(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error('Audio context did not start. Playback needs a browser that can resume audio.'));
+    }, 2500);
+    initPlayback().then(
+      () => {
+        clearTimeout(timer);
+        resolve();
+      },
+      (error: unknown) => {
+        clearTimeout(timer);
+        reject(error instanceof Error ? error : new Error(String(error)));
+      },
+    );
+  });
+}
+
 /**
  * One MusicXML audition on the shared Tone.js transport.
  * A second play, a new score, or unmount stops the previous run.
@@ -40,17 +59,20 @@ export function ScoreAudition({ musicXml, label }: ScoreAuditionProps) {
   const start = useCallback(async () => {
     const token = generation.current + 1;
     generation.current = token;
-    haltEngine();
-    const loaded = playbackSequenceFromMusicXml(musicXml);
-    if (token !== generation.current) return;
-    if (!loaded.ok || !loaded.sequence) {
-      setPhase('failed');
-      setDetail(loaded.error);
-      return;
-    }
+    setDetail(null);
     try {
-      await initPlayback();
+      await unlockAudio();
       if (token !== generation.current) return;
+      haltEngine();
+      const loaded = playbackSequenceFromMusicXml(musicXml);
+      if (token !== generation.current) return;
+      if (!loaded.ok || !loaded.sequence) {
+        setPhase('failed');
+        setDetail(loaded.error);
+        return;
+      }
+      setPhase('playing');
+      setDetail(null);
       await play(loaded.sequence, () => undefined, {
         onEnded: () => {
           if (token !== generation.current) return;
@@ -58,12 +80,7 @@ export function ScoreAudition({ musicXml, label }: ScoreAuditionProps) {
           setDetail(null);
         },
       });
-      if (token !== generation.current) {
-        haltEngine();
-        return;
-      }
-      setPhase('playing');
-      setDetail(null);
+      if (token !== generation.current) haltEngine();
     } catch (error) {
       if (token !== generation.current) return;
       haltEngine();

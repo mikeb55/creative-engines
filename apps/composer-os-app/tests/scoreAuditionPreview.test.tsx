@@ -60,10 +60,12 @@ const DUO_XML = `<?xml version="1.0"?>
 
 describe('ScoreAudition', () => {
   beforeEach(() => {
-    play.mockClear();
-    stop.mockClear();
-    pause.mockClear();
-    initPlayback.mockClear();
+    play.mockReset();
+    play.mockImplementation(async () => undefined);
+    stop.mockReset();
+    pause.mockReset();
+    initPlayback.mockReset();
+    initPlayback.mockImplementation(async () => undefined);
   });
 
   it('plays, stops, and replays through the shared engine', async () => {
@@ -73,8 +75,11 @@ describe('ScoreAudition', () => {
     const sequence = play.mock.calls[0]?.[0] as { notes: unknown[] };
     expect(sequence.notes.length).toBeGreaterThan(0);
     expect(initPlayback).toHaveBeenCalled();
+    await waitFor(() => expect(screen.getByTestId('score-audition-status').textContent).toBe('Playing'));
+    expect((screen.getByTestId('score-audition-stop') as HTMLButtonElement).disabled).toBe(false);
     fireEvent.click(screen.getByTestId('score-audition-stop'));
     expect(stop).toHaveBeenCalled();
+    expect(screen.getByTestId('score-audition-status').textContent).toBe('Ready');
     fireEvent.click(screen.getByTestId('score-audition-replay'));
     await waitFor(() => expect(play).toHaveBeenCalledTimes(2));
   });
@@ -89,6 +94,15 @@ describe('ScoreAudition', () => {
     stop.mockClear();
     view.unmount();
     expect(stop).toHaveBeenCalled();
+  });
+
+  it('reports a hung audio context instead of staying Ready', async () => {
+    initPlayback.mockImplementation(() => new Promise(() => undefined));
+    render(<ScoreAudition musicXml={NOTE_XML} label="Probe" />);
+    fireEvent.click(screen.getByTestId('score-audition-play'));
+    await waitFor(() => expect(screen.getByTestId('score-audition-status').textContent).toMatch(/did not start/i), { timeout: 4000 });
+    expect((screen.getByTestId('score-audition-stop') as HTMLButtonElement).disabled).toBe(true);
+    expect(play).not.toHaveBeenCalled();
   });
 
   it('shows a parse error and does not start playback', async () => {

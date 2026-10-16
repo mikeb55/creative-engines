@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { CORE_CANDIDATES, coreCandidateAuditionMusicXml } from '@composer-os/core/hexatonic';
+import { CORE_CANDIDATES, CORE_CONTEXT_IDS, coreCandidateAuditionMusicXml, coreContextExampleMusicXml } from '@composer-os/core/hexatonic';
 import { apiBhlCandidates, bhlWrongTurningPath } from '@composer-os/app-api/bhlApp';
 import { playbackSequenceFromMusicXml, tempoFromMusicXml } from '../src/score/playbackSequenceFromMusicXml';
 
@@ -78,6 +78,24 @@ describe('playbackSequenceFromMusicXml', () => {
     const pitches = loaded.sequence.notes.map((note) => note.pitch).sort((a, b) => a - b);
     expect(pitches).toEqual([40, 64, 67, 71]);
     expect(loaded.sequence.bpm).toBe(92);
+  });
+
+  it('plays H6-A4b clips, including a silent bass, as guitar notes', () => {
+    for (const candidate of CORE_CANDIDATES) {
+      for (const context of CORE_CONTEXT_IDS) {
+        const xml = coreContextExampleMusicXml(candidate.id, context);
+        const loaded = playbackSequenceFromMusicXml(xml);
+        expect(loaded.ok, `${candidate.id} ${context}`).toBe(true);
+        if (!loaded.ok) continue;
+        expect(loaded.sequence.bpm).toBe(80);
+        expect(loaded.sequence.notes.length, `${candidate.id} ${context}`).toBeGreaterThan(0);
+        const guitar = loaded.sequence.notes.filter((note) => note.pitch >= 48);
+        expect(guitar.length, `${candidate.id} ${context}`).toBeGreaterThan(0);
+        if (context === 'ambiguous') {
+          expect(loaded.sequence.notes.some((note) => note.pitch < 48), candidate.id).toBe(false);
+        }
+      }
+    }
   });
 
   it('reports invalid MusicXML instead of throwing', () => {
