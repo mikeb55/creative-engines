@@ -14,6 +14,8 @@
 
 ### Added
 
+- **Composer OS V3.3 Advanced Composition** — shared motivic operators, development chains, N-voice evidence, radical chord melody, and `#/develop`. New behaviour is analysis-only or behind `motifOps.enabled`, which defaults off. Reports keep `musicalQualityScore: null` and `musicallyApproved: false`. Detail: `docs/V3.3-ADVANCED-COMPOSITION-SPEC.md` and `docs/V3.3-RELEASE-REPORT.md`.
+
 - **Practice & Scales Studio V3.2 GUI** — `#/practice` opens on A Dorian. One root and one scale drive the fretboard, Play Scale, exercises, export, save, and the BHL handoff. Browsing is Essentials, Composer OS Collections, More Named Scales, All Scales, and Advanced Set Theory. Names and interval formulas come before Forte, Rahn, and Ian Ring, which sit in About this scale. Root notes stay filled circles and scale tones are squares, with a text legend. Play Scale uses the existing Tone.js line and adds no drone. Develop in BHL appears only when the composer resolves the same sounding set. Use in Generate is absent: Generate has no scale handoff. Detail: `docs/V3.2-PRACTICE-STUDIO-GUI-REFINEMENT.md`.
 
 - **Practice & Scales Studio V3.2-F** — Generate, BHL Composer, Hexatonic Laboratory, and Pentatonic Engine send a copied handoff to `#/practice`. Collection masks are the registered set transposed by the reference pitch class. A mismatched mask or status is rejected. A handed-off score can be saved and exported without generating a new exercise. Detail: `docs/V3.2-F-PRACTICE-INTEGRATION-IMPLEMENTATION.md`. Audit: `docs/V3.2-PRACTICE-STUDIO-FINAL-TECHNICAL-REPORT.md`.

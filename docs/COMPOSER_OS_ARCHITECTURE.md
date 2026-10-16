@@ -1,5 +1,9 @@
 # Composer OS â€” Architecture
 
+## V3.3 Advanced Composition
+
+V3.3 does not add a theory engine. `core/motif-ops/` is the shared operator library and the development-chain record. `core/chord-melody/radicalChordMelody.ts` voices under a melody that it does not change, and it reuses Barry Harris only when that source is requested. `musical-evaluation/voiceRelations.ts`, `independenceReport.ts`, `hookEvidence.ts`, and `coherenceReport.ts` describe a score. The Evaluation dashboard reads the coherence section. `#/develop` calls those modules and the existing Practice, BHL, and Evaluation hand-offs. `GenerateRequest.motifOps` defaults off, so Song Mode cells stay on the previous path.
+
 ## Overview
 
 **WWH Performance Director V7.3A** lives in `engines/composer-os-v2/core/wwh/director/`. A saved Performance Plan JSON is the authority for section order, source copies, tacet, and open windows. The V7.2 importer and writer still read and clone the score. Open improvisation is beat-slash notation with no pitches. V7.3A does not call the pentatonic engine. Chord-melody mode copies an existing arrangement’s guitar part onto verified duo bars. It does not generate voicings. V7.3C (`proposeV73cAlbum.ts`) writes one plan per While We're Here duo. After Everything stays source-close. The other eight add a window only after a safe cut.
