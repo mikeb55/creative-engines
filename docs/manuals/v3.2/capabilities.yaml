@@ -1,0 +1,227 @@
+# Capability register for the V3.2 manuals. Status: ok, verify, manual.
+items:
+  - id: nav.generate
+    label: 'Generate'
+    source: apps/composer-os-app/src/router/appRouter.ts:128
+    status: ok
+    evidence: 'Route label. Seen on the running UI bundle v2.10.10.'
+  - id: nav.arranger
+    label: 'Arranger'
+    source: apps/composer-os-app/src/router/appRouter.ts:130
+    status: verify
+    evidence: 'Route exists. Exact arranging behaviour was not exercised for this edition.'
+  - id: nav.structure
+    label: 'Structure'
+    source: apps/composer-os-app/src/router/appRouter.ts:132
+    status: verify
+    evidence: 'Route exists. Behaviour not exercised.'
+  - id: nav.ensemble
+    label: 'Ensemble'
+    source: apps/composer-os-app/src/router/appRouter.ts:134
+    status: verify
+    evidence: 'Route exists. Behaviour not exercised.'
+  - id: nav.grid
+    label: 'Grid'
+    source: apps/composer-os-app/src/router/appRouter.ts:136
+    status: verify
+    evidence: 'Route exists. Behaviour not exercised.'
+  - id: nav.presets
+    label: 'Presets'
+    source: apps/composer-os-app/src/router/appRouter.ts:138
+    status: ok
+    evidence: 'Route label seen in the running UI.'
+  - id: nav.outputs
+    label: 'Outputs'
+    source: apps/composer-os-app/src/router/appRouter.ts:140
+    status: verify
+    evidence: 'Route exists. Export location not re-checked this run.'
+  - id: nav.riffgen
+    label: 'RiffGen'
+    source: apps/composer-os-app/src/router/appRouter.ts:142
+    status: ok
+    evidence: 'Route label seen.'
+  - id: nav.engines
+    label: 'Composer Engines'
+    source: apps/composer-os-app/src/router/appRouter.ts:144
+    status: ok
+    evidence: 'Route label seen.'
+  - id: nav.slonimsky
+    label: 'Slonimsky Etudes'
+    source: apps/composer-os-app/src/router/appRouter.ts:146
+    status: ok
+    evidence: 'Route label seen.'
+  - id: nav.pentatonic
+    label: 'Pentatonic'
+    source: apps/composer-os-app/src/router/appRouter.ts:148
+    status: ok
+    evidence: 'Page opened. Heading Pentatonic Engine.'
+  - id: nav.hexatonic
+    label: 'Hexatonic'
+    source: apps/composer-os-app/src/router/appRouter.ts:150
+    status: ok
+    evidence: 'Route exists. Controls read from HexatonicEnginePage.tsx.'
+  - id: nav.bhl
+    label: 'BHL'
+    source: apps/composer-os-app/src/router/appRouter.ts:152
+    status: ok
+    evidence: 'Route label seen. Procedure lives in the BHL V1.0 manuals.'
+  - id: nav.practice
+    label: 'Practice & Scales Studio'
+    source: apps/composer-os-app/src/router/appRouter.ts:154
+    status: ok
+    evidence: 'Page opened on A Dorian.'
+  - id: nav.evaluation
+    label: 'Evaluation'
+    source: apps/composer-os-app/src/router/appRouter.ts:156
+    status: verify
+    evidence: 'Route exists. Listening-log behaviour not re-run.'
+  - id: nav.performance
+    label: 'Performance Composer'
+    source: apps/composer-os-app/src/router/appRouter.ts:158
+    status: verify
+    evidence: 'Route exists. Respond flow not re-run.'
+  - id: nav.help
+    label: 'Help'
+    source: apps/composer-os-app/src/router/appRouter.ts:160
+    status: ok
+    evidence: 'Route label seen.'
+  - id: nav.credits
+    label: 'Credits'
+    source: apps/composer-os-app/src/router/appRouter.ts:162
+    status: ok
+    evidence: 'Route label seen.'
+  - id: preset.duo
+    label: 'Guitar/Bass Duo'
+    source: apps/composer-os-app/src/constants/composerOsPresetUi.ts:22
+    status: ok
+    evidence: 'Preset name in APP_PRESET_REGISTRY, supported true.'
+  - id: preset.single
+    label: 'Guitar–Bass Duo (Single-Line)'
+    source: apps/composer-os-app/src/constants/composerOsPresetUi.ts:29
+    status: ok
+    evidence: 'Preset name in the registry.'
+  - id: preset.wyble
+    label: 'Wyble Etude'
+    source: apps/composer-os-app/src/constants/composerOsPresetUi.ts:36
+    status: ok
+    evidence: 'Preset name in the registry.'
+  - id: preset.slonimsky
+    label: 'Slonimsky Etude'
+    source: apps/composer-os-app/src/constants/composerOsPresetUi.ts:42
+    status: ok
+    evidence: 'Preset name in the registry.'
+  - id: preset.martino
+    label: 'Martino Linear'
+    source: apps/composer-os-app/src/constants/composerOsPresetUi.ts:48
+    status: ok
+    evidence: 'Preset name in the registry.'
+  - id: preset.ecm
+    label: 'ECM Chamber'
+    source: apps/composer-os-app/src/constants/composerOsPresetUi.ts:54
+    status: ok
+    evidence: 'Preset name in the registry.'
+  - id: preset.song
+    label: 'Song Mode'
+    source: apps/composer-os-app/src/constants/composerOsPresetUi.ts:61
+    status: ok
+    evidence: 'Preset name in the registry.'
+  - id: preset.bigband
+    label: 'Big Band'
+    source: apps/composer-os-app/src/constants/composerOsPresetUi.ts:68
+    status: ok
+    evidence: 'Seven-part ensemble MusicXML when export passes.'
+  - id: preset.sq
+    label: 'String Quartet'
+    source: apps/composer-os-app/src/constants/composerOsPresetUi.ts:75
+    status: ok
+    evidence: 'Four strings plus piano harmony staff.'
+  - id: preset.riff
+    label: 'Riff Generator'
+    source: apps/composer-os-app/src/constants/composerOsPresetUi.ts:82
+    status: ok
+    evidence: '1–4 bar loopable riffs.'
+  - id: preset.sqbb
+    label: 'SQ → BB'
+    source: apps/composer-os-app/src/constants/composerOsPresetUi.ts:89
+    status: ok
+    evidence: 'Line-first SATB sketch then big-band section plan.'
+  - id: practice.play
+    label: 'Play Scale'
+    source: apps/composer-os-app/src/practice/PracticeStudioPage.tsx:321
+    status: ok
+    evidence: 'Clicked presence confirmed on the open page. No drone.'
+  - id: practice.generate
+    label: 'Generate'
+    source: apps/composer-os-app/src/practice/PracticeStudioPage.tsx:774
+    status: ok
+    evidence: 'Exercise button. GUI report 16 Oct 2026 wrote a pathway.'
+  - id: practice.another
+    label: 'Generate another'
+    source: apps/composer-os-app/src/practice/PracticeStudioPage.tsx:777
+    status: ok
+    evidence: 'Button present in source.'
+  - id: practice.export
+    label: 'Export MusicXML'
+    source: apps/composer-os-app/src/practice/PracticeStudioPage.tsx:942
+    status: ok
+    evidence: 'Button present. GUI report downloaded a MusicXML file.'
+  - id: practice.save
+    label: 'Save session'
+    source: apps/composer-os-app/src/practice/PracticeStudioPage.tsx:918
+    status: ok
+    evidence: 'Button present. Browser downloads JSON.'
+  - id: practice.bhl
+    label: 'Develop in BHL Composer'
+    source: apps/composer-os-app/src/practice/PracticeStudioPage.tsx:333
+    status: verify
+    evidence: 'Shown only when the sounding set matches a BHL colour. Absent on default A Dorian.'
+  - id: practice.open
+    label: 'Open File'
+    source: apps/composer-os-app/src/practice/PracticeStudioPage.tsx:945
+    status: verify
+    evidence: 'Desktop-only after a file is written. Not clicked in Electron.'
+  - id: pent.path
+    label: 'Generate path'
+    source: apps/composer-os-app/src/pentatonic/PentatonicEnginePage.tsx
+    status: ok
+    evidence: 'Button visible on the open Pentatonic page.'
+  - id: pent.practice
+    label: 'Practice this collection'
+    source: apps/composer-os-app/src/pentatonic/PentatonicEnginePage.tsx
+    status: ok
+    evidence: 'Button visible. Inbound handoff described in the 16 Oct GUI report.'
+  - id: pent.use
+    label: 'Use for path transform and phrase generation'
+    source: apps/composer-os-app/src/pentatonic/PentatonicEnginePage.tsx
+    status: ok
+    evidence: 'Button under each colour card, including Kumoi.'
+  - id: hex.generate
+    label: 'Generate INSIDE / OUTSIDE / RETURN'
+    source: apps/composer-os-app/src/hexatonic/HexatonicEnginePage.tsx:275
+    status: ok
+    evidence: 'Exact button string in source.'
+  - id: hex.export
+    label: 'Export MusicXML'
+    source: apps/composer-os-app/src/hexatonic/HexatonicEnginePage.tsx:278
+    status: ok
+    evidence: 'Exact button string in source.'
+  - id: hex.augmented
+    label: 'Augmented t0'
+    source: apps/composer-os-app/src/hexatonic/hexatonicWorkspaceModel.ts:27
+    status: ok
+    evidence: 'Scalar collection menu label. Pitches C Eb E G Ab B.'
+  - id: limit.orchestra
+    label: 'No orchestral engine'
+    source: docs/FILM_COMPOSER_GUIDE.md
+    status: manual
+    evidence: 'Orchestra and film-cue sync are done by hand.'
+  - id: limit.electronic
+    label: 'No electronic engine'
+    source: docs/manuals/v3.2/capabilities.yaml
+    status: manual
+    evidence: 'DAW processing is outside Composer OS.'
+  - id: limit.nodrone
+    label: 'No drone'
+    source: docs/V3.2-PRACTICE-STUDIO-GUI-REFINEMENT.md
+    status: ok
+    evidence: 'Play Scale has no drone.'
