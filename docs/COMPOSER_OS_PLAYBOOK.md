@@ -18,6 +18,8 @@ Named scales in the glossary come from the existing pentatonic and hexatonic reg
 
 Notices: `docs/THIRD_PARTY_NOTICES.md`.
 
+Generate an exercise on the same page to preview it and play it. Play, loop, repeat, and the metronome use the shared Tone.js transport. Save writes a `practice-session` file. Export writes MusicXML. Neither file replaces a composition.
+
 ## Playback (Generate — Play / Pause / Stop)
 
 **What it does:** After a successful **Generate**, the app can **preview the written score in the browser** using a lightweight software synth — not a full DAW, but enough to sanity-check **pitch + timing** before opening Sibelius or another host.

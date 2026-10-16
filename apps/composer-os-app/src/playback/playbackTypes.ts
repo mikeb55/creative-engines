@@ -10,4 +10,6 @@ export type PlaybackSequence = {
   bpm: number;
   beatsPerBar: number;
   totalBars: number;
+  /** Quarter-note length of one bar. 4/4 is 4. 6/8 is 3. Falls back to beatsPerBar when omitted. */
+  barQuarters?: number;
 };

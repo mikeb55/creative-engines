@@ -5,6 +5,10 @@ import { playbackSequenceFromMusicXml } from './playbackSequenceFromMusicXml';
 export type ScoreAuditionProps = {
   musicXml: string | null | undefined;
   label: string;
+  loop?: boolean;
+  repeat?: number;
+  metronome?: boolean;
+  onSound?: (midi: number, barIndex: number, startBeat: number) => void;
 };
 
 type Phase = 'idle' | 'playing' | 'failed';
@@ -40,7 +44,7 @@ function unlockAudio(): Promise<void> {
  * One MusicXML audition on the shared Tone.js transport.
  * A second play, a new score, or unmount stops the previous run.
  */
-export function ScoreAudition({ musicXml, label }: ScoreAuditionProps) {
+export function ScoreAudition({ musicXml, label, loop = false, repeat = 1, metronome = false, onSound }: ScoreAuditionProps) {
   const [phase, setPhase] = useState<Phase>('idle');
   const [detail, setDetail] = useState<string | null>(null);
   const generation = useRef(0);
@@ -74,6 +78,10 @@ export function ScoreAudition({ musicXml, label }: ScoreAuditionProps) {
       setPhase('playing');
       setDetail(null);
       await play(loaded.sequence, () => undefined, {
+        loop,
+        repeat,
+        metronome,
+        onSound,
         onEnded: () => {
           if (token !== generation.current) return;
           setPhase('idle');
@@ -87,7 +95,7 @@ export function ScoreAudition({ musicXml, label }: ScoreAuditionProps) {
       setPhase('failed');
       setDetail(error instanceof Error ? error.message : String(error));
     }
-  }, [musicXml]);
+  }, [musicXml, loop, repeat, metronome, onSound]);
 
   const halt = useCallback(() => {
     generation.current += 1;

@@ -2,12 +2,15 @@ import * as Tone from 'tone';
 import type { PlaybackSequence } from './playbackTypes';
 
 let synth: Tone.PolySynth<Tone.Synth> | null = null;
+let click: Tone.Synth | null = null;
 let beatRepeatId: number | undefined;
 let endStopId: number | undefined;
 
 function disposeSynth(): void {
   synth?.dispose();
   synth = null;
+  click?.dispose();
+  click = null;
 }
 
 function clearScheduledIds(transport: ReturnType<typeof Tone.getTransport>): void {
@@ -29,19 +32,72 @@ export async function initPlayback(): Promise<void> {
   await Tone.start();
 }
 
-function globalQuarterStart(
-  barIndex: number,
-  startBeat: number,
-  beatsPerBar: number
-): number {
-  return (barIndex - 1) * beatsPerBar + startBeat;
-}
-
 export type PlayOptions = {
   loop?: boolean;
+  /** Finite passes on the same Transport. Ignored while loop is on. */
+  repeat?: number;
+  /** Beat clicks on the same Transport. They are not written into MusicXML. */
+  metronome?: boolean;
   /** Fires once when a non-looping sequence reaches its last note. */
   onEnded?: () => void;
+  onSound?: (midi: number, barIndex: number, startBeat: number) => void;
 };
+
+export interface PlannedPlayback {
+  notes: { startSec: number; durationSec: number; midi: number; barIndex: number; startBeat: number }[];
+  clicks: { startSec: number }[];
+  endSec: number;
+  passes: number;
+  barQuarters: number;
+}
+
+export function barQuarterSpan(seq: PlaybackSequence): number {
+  return seq.barQuarters ?? seq.beatsPerBar;
+}
+
+/** Quarter-grid schedule for one shared Transport. No audio objects. */
+export function planPlayback(seq: PlaybackSequence, options?: Pick<PlayOptions, 'repeat' | 'metronome'>): PlannedPlayback {
+  const secondsPerQuarter = 60 / seq.bpm;
+  const barQuarters = barQuarterSpan(seq);
+  const passes = Math.max(1, Math.floor(options?.repeat ?? 1));
+  const notes: PlannedPlayback['notes'] = [];
+  let maxEndQuarter = 0;
+  for (let pass = 0; pass < passes; pass += 1) {
+    const origin = pass * seq.totalBars * barQuarters;
+    for (const note of seq.notes) {
+      if (typeof note.pitch !== 'number' || note.pitch <= 0) continue;
+      const startQuarter = origin + (note.barIndex - 1) * barQuarters + note.startBeat;
+      const endQuarter = startQuarter + note.duration;
+      maxEndQuarter = Math.max(maxEndQuarter, endQuarter);
+      notes.push({
+        startSec: startQuarter * secondsPerQuarter,
+        durationSec: Math.max(0.04, note.duration * secondsPerQuarter),
+        midi: note.pitch,
+        barIndex: note.barIndex,
+        startBeat: note.startBeat,
+      });
+    }
+  }
+  const clicks: { startSec: number }[] = [];
+  if (options?.metronome) {
+    const clickQuarter = barQuarters / Math.max(1, seq.beatsPerBar);
+    for (let pass = 0; pass < passes; pass += 1) {
+      for (let bar = 0; bar < seq.totalBars; bar += 1) {
+        for (let beat = 0; beat < seq.beatsPerBar; beat += 1) {
+          const startQuarter = pass * seq.totalBars * barQuarters + bar * barQuarters + beat * clickQuarter;
+          clicks.push({ startSec: startQuarter * secondsPerQuarter });
+        }
+      }
+    }
+  }
+  return {
+    notes,
+    clicks,
+    endSec: maxEndQuarter * secondsPerQuarter + 0.05,
+    passes,
+    barQuarters,
+  };
+}
 
 /**
  * VaultMicroscope-style PolySynth + Transport scheduling; singleton transport, fresh synth each run.
@@ -71,21 +127,33 @@ export async function play(
   }).toDestination();
   synth.volume.value = -14;
 
-  const secondsPerQuarter = 60 / transport.bpm.value;
+  const planned = planPlayback(seq, {
+    repeat: options?.loop ? 1 : options?.repeat,
+    metronome: options?.metronome,
+  });
 
-  for (const n of seq.notes) {
-    if (typeof n.pitch !== 'number' || n.pitch <= 0) continue;
-    const startSec =
-      globalQuarterStart(n.barIndex, n.startBeat, seq.beatsPerBar) * secondsPerQuarter;
-    const durSec = Math.max(0.04, n.duration * secondsPerQuarter);
-    const noteName = new Tone.Midi(n.pitch).toNote();
-
+  for (const note of planned.notes) {
+    const noteName = new Tone.Midi(note.midi).toNote();
     transport.schedule((time) => {
-      synth!.triggerAttackRelease(noteName, durSec, time);
-    }, startSec);
+      synth!.triggerAttackRelease(noteName, note.durationSec, time);
+      options?.onSound?.(note.midi, note.barIndex, note.startBeat);
+    }, note.startSec);
   }
 
-  const beatInterval = Tone.Time('1n').toSeconds() / seq.beatsPerBar;
+  if (options?.metronome) {
+    click = new Tone.Synth({
+      oscillator: { type: 'square' },
+      envelope: { attack: 0.001, decay: 0.03, sustain: 0, release: 0.02 },
+    }).toDestination();
+    click.volume.value = -24;
+    for (const tick of planned.clicks) {
+      transport.schedule((time) => {
+        click?.triggerAttackRelease('G5', 0.03, time);
+      }, tick.startSec);
+    }
+  }
+
+  const beatInterval = (60 / transport.bpm.value) * (planned.barQuarters / Math.max(1, seq.beatsPerBar));
   let beatCount = 0;
   beatRepeatId = transport.scheduleRepeat(
     () => {
@@ -96,13 +164,7 @@ export async function play(
     0
   );
 
-  let maxEndQuarter = 0;
-  for (const n of seq.notes) {
-    const end =
-      globalQuarterStart(n.barIndex, n.startBeat, seq.beatsPerBar) + n.duration;
-    maxEndQuarter = Math.max(maxEndQuarter, end);
-  }
-  const endSec = maxEndQuarter * secondsPerQuarter + 0.05;
+  const endSec = planned.endSec;
   if (options?.loop) {
     transport.loop = true;
     transport.loopEnd = endSec;

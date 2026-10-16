@@ -213,8 +213,8 @@ describe('practice generator controls', () => {
   it('generates from the page and leaves the fretboard and session panels in place', () => {
     const tree = create(React.createElement(PracticeStudioPage));
     expect(textOf(tree)).toContain('Practice Session');
-    expect(textOf(tree)).toContain('Unavailable');
-    expect(textOf(tree)).toContain('Deferred to V3.2-E');
+    expect(textOf(tree)).toContain('Save session');
+    expect(textOf(tree)).toContain('Export MusicXML');
     act(() => {
       tree.root.findByProps({ 'aria-label': 'Search pitch classes, identifier, or name' }).props.onChange({
         target: { value: 'hirajoshi' },
@@ -230,8 +230,8 @@ describe('practice generator controls', () => {
     expect(result).toContain('Hirajoshi · descending pathway');
     expect(result).toContain('4/4');
     expect(result).toContain('No validation errors.');
-    expect(result).not.toContain('"Play"');
-    expect(result).not.toContain('"Export"');
+    expect(result).toContain('Play');
+    expect(result).toContain('Export MusicXML');
     const markers = Number(tree.root.findByProps({ 'data-testid': 'fret-marker-count' }).children?.[0]);
     expect(markers).toBeGreaterThan(0);
     act(() => {

@@ -55,6 +55,7 @@ function pitchElementToMidi(pitchEl: Element): number | null {
 function parseAttributes(attributesEl: Element, state: {
   divisions: number;
   beatsPerBar: number;
+  beatType: number;
 }): void {
   const divs = parseIntMaybe(firstChildText(attributesEl, 'divisions'));
   if (divs !== undefined && divs > 0) state.divisions = divs;
@@ -63,7 +64,10 @@ function parseAttributes(attributesEl: Element, state: {
   if (timeEl) {
     const beatsT = firstChildText(timeEl, 'beats');
     const beats = beatsT !== undefined ? parseInt(beatsT, 10) : NaN;
+    const beatTypeT = firstChildText(timeEl, 'beat-type');
+    const beatType = beatTypeT !== undefined ? parseInt(beatTypeT, 10) : NaN;
     if (Number.isFinite(beats) && beats > 0) state.beatsPerBar = beats;
+    if (Number.isFinite(beatType) && beatType > 0) state.beatType = beatType;
   }
 }
 
@@ -90,10 +94,12 @@ function measureChildrenSorted(partEl: Element): Element[] {
 function inferScoreMeterSeed(firstPartEl: Element | null, timeSig: string): {
   divisions: number;
   beatsPerBar: number;
+  beatType: number;
 } {
   const seed = {
     divisions: 1,
     beatsPerBar: beatsPerBarFromTimeSig(timeSig),
+    beatType: 4,
   };
   if (!firstPartEl) return seed;
   let measureIdx = 0;
@@ -113,15 +119,17 @@ function inferScoreMeterSeed(firstPartEl: Element | null, timeSig: string): {
 function collectNotesFromPart(
   partEl: Element,
   timeSig: string,
-  meterSeed: { divisions: number; beatsPerBar: number }
+  meterSeed: { divisions: number; beatsPerBar: number; beatType: number }
 ): {
   notes: PlaybackNote[];
   maxBar: number;
   beatsPerBar: number;
+  beatType: number;
 } {
   const state = {
     divisions: meterSeed.divisions,
     beatsPerBar: meterSeed.beatsPerBar,
+    beatType: meterSeed.beatType,
   };
 
   const notes: PlaybackNote[] = [];
@@ -210,7 +218,7 @@ function collectNotesFromPart(
     }
   }
 
-  return { notes, maxBar, beatsPerBar: state.beatsPerBar };
+  return { notes, maxBar, beatsPerBar: state.beatsPerBar, beatType: state.beatType };
 }
 
 /**
@@ -248,13 +256,17 @@ export function parseXmlToPlaybackSequence(
   const flat: PlaybackNote[] = [];
   let maxBar = 0;
   let beatsPerBarOut = meterSeed.beatsPerBar;
+  let beatTypeOut = meterSeed.beatType;
 
   for (let pi = 0; pi < parts.length; pi++) {
     const partEl = parts[pi]!;
-    const { notes, maxBar: mb, beatsPerBar } = collectNotesFromPart(partEl, timeSig, meterSeed);
+    const { notes, maxBar: mb, beatsPerBar, beatType } = collectNotesFromPart(partEl, timeSig, meterSeed);
     flat.push(...notes);
     maxBar = Math.max(maxBar, mb);
-    if (pi === 0) beatsPerBarOut = beatsPerBar;
+    if (pi === 0) {
+      beatsPerBarOut = beatsPerBar;
+      beatTypeOut = beatType;
+    }
   }
 
   const seen = new Set<string>();
@@ -277,5 +289,6 @@ export function parseXmlToPlaybackSequence(
     bpm,
     beatsPerBar: beatsPerBarOut,
     totalBars: maxBar,
+    barQuarters: (beatsPerBarOut * 4) / beatTypeOut,
   };
 }

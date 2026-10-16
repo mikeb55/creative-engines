@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
-import { FretboardPanel, type FretboardCell } from '../components/music/FretboardPanel';
+import { FretboardPanel, type FretboardCell, type FretboardNote } from '../components/music/FretboardPanel';
+import { ScoreAudition } from '../score/ScoreAudition';
+import { ScorePreview } from '../score/ScorePreview';
 import { PENTATONIC_NOTE_CHOICES } from '@composer-os/core/pentatonic/pitch';
 import { navigateToRoute } from '../router/appRouter';
 import {
@@ -41,6 +43,9 @@ import {
   type PracticeExerciseMetreId,
   type PracticeStudioDifficulty,
 } from './practiceExerciseGenerator';
+import { practiceExerciseToMusicXml, withPracticeTempo } from './practiceExerciseMusicXml';
+import { openPracticeFile, revealPracticeFile, writePracticeFile } from './practiceExport';
+import { readPracticeSession, sealPracticeSession } from './practiceSession';
 
 const TUNING_CHOICES = practiceTuningChoices();
 const ZONE_LABELS: Record<string, string> = {
@@ -75,6 +80,15 @@ export function PracticeStudioPage() {
   const [exerciseTempo, setExerciseTempo] = useState(96);
   const [exerciseSeed, setExerciseSeed] = useState(1);
   const [exercise, setExercise] = useState<PracticeExercise | null>(null);
+  const [scoreXml, setScoreXml] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [loop, setLoop] = useState(false);
+  const [repeatCount, setRepeatCount] = useState(1);
+  const [metronome, setMetronome] = useState(false);
+  const [sessionNotes, setSessionNotes] = useState('');
+  const [sessionStatus, setSessionStatus] = useState('');
+  const [writtenPath, setWrittenPath] = useState<string | null>(null);
+  const [playbackNotes, setPlaybackNotes] = useState<FretboardNote[]>([]);
 
   const families = useMemo(() => scaleExplorerFamilies(), []);
   const statuses = useMemo(() => scaleExplorerStatuses(), []);
@@ -125,8 +139,7 @@ export function PracticeStudioPage() {
   const runExercise = useCallback(
     (seed: number) => {
       setExerciseSeed(seed);
-      setExercise(
-        generatePracticeExercise({
+      const next = generatePracticeExercise({
           entry: selected,
           rootPc,
           family: exerciseFamily,
@@ -143,8 +156,20 @@ export function PracticeStudioPage() {
             limitation: board.tuning.limitation,
           },
           position,
-        })
-      );
+        });
+      setExercise(next);
+      setPlaybackNotes([]);
+      setExportError(null);
+      if (!next.available) {
+        setScoreXml(null);
+        return;
+      }
+      try {
+        setScoreXml(practiceExerciseToMusicXml(next));
+      } catch (error) {
+        setScoreXml(null);
+        setExportError(error instanceof Error ? error.message : String(error));
+      }
     },
     [selected, rootPc, exerciseFamily, exerciseDifficulty, exerciseBars, exerciseMetre, exerciseTempo, board.tuning, position]
   );
@@ -506,6 +531,7 @@ export function PracticeStudioPage() {
             positionLock
             darkMode
             onFretClick={onFretClick}
+            playbackNotes={playbackNotes}
           />
         </div>
         <p data-testid="fret-marker-count" style={{ fontSize: '0.85rem' }}>{board.notes.length} fret markers.</p>
@@ -541,18 +567,10 @@ export function PracticeStudioPage() {
         </div>
       </section>
 
-      <section aria-labelledby="fretboard-audition-heading" data-testid="fretboard-audition" style={{ marginTop: '1.25rem' }}>
-        <h3 id="fretboard-audition-heading">Audition</h3>
-        <p>
-          Deferred to V3.2-E. ScoreAudition plays a MusicXML score on the shared Tone.js transport.
-          This page has no exercise score, so no note is sent to that transport and no second synth is started.
-        </p>
-      </section>
-
       <section aria-labelledby="practice-generator-heading" data-testid="practice-generator" style={{ marginTop: '1.25rem' }}>
         <h3 id="practice-generator-heading">Practice Generator</h3>
         <p style={{ fontSize: '0.9rem' }}>
-          Exercises use the selected explorer scale and root. Playback, saving, and MusicXML export stay in V3.2-E.
+          Exercises use the selected explorer scale and root. Generate writes the score used for playback and export.
         </p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', margin: '0.75rem 0' }}>
           <label style={FIELD_STYLE}>
@@ -612,7 +630,12 @@ export function PracticeStudioPage() {
               max={240}
               step={1}
               value={exerciseTempo}
-              onChange={(event) => setExerciseTempo(Number(event.target.value))}
+              onChange={(event) => {
+              const bpm = Number(event.target.value);
+              setExerciseTempo(bpm);
+              setExercise((current) => (current ? { ...current, tempoBpm: bpm } : current));
+              setScoreXml((current) => (current ? withPracticeTempo(current, bpm) : current));
+            }}
             />
           </label>
           <label style={FIELD_STYLE}>
@@ -672,7 +695,168 @@ export function PracticeStudioPage() {
 
       <section aria-labelledby="practice-session-heading" data-testid="practice-session" style={{ marginTop: '1.25rem' }}>
         <h3 id="practice-session-heading">Practice Session</h3>
-        <p>Unavailable. Sessions, metronome, and saved practice history are not part of this checkpoint.</p>
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+          Playback uses the shared Tone.js transport. The metronome clicks on that transport and is not written into the score.
+        </p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', margin: '0.75rem 0' }}>
+          <label style={FIELD_STYLE}>
+            Loop
+            <input aria-label="Loop exercise" type="checkbox" checked={loop} onChange={(event) => setLoop(event.target.checked)} />
+          </label>
+          <label style={FIELD_STYLE}>
+            Repeat
+            <input
+              aria-label="Repeat count"
+              type="number"
+              min={1}
+              max={16}
+              step={1}
+              value={repeatCount}
+              disabled={loop}
+              onChange={(event) => setRepeatCount(Math.max(1, Number(event.target.value) || 1))}
+              style={{ width: '4.5rem' }}
+            />
+          </label>
+          <label style={FIELD_STYLE}>
+            Metronome
+            <input aria-label="Metronome" type="checkbox" checked={metronome} onChange={(event) => setMetronome(event.target.checked)} />
+          </label>
+        </div>
+        <ScorePreview musicXml={scoreXml} />
+        <ScoreAudition
+          musicXml={scoreXml}
+          label={exercise?.title ?? 'Exercise'}
+          loop={loop}
+          repeat={repeatCount}
+          metronome={metronome}
+          onSound={(midi) => {
+            const hit = board.locations.find((location) => location.midi === midi)
+              ?? board.locations.find((location) => location.midi % 12 === ((midi % 12) + 12) % 12);
+            setPlaybackNotes(hit ? [{ stringIndex: hit.stringIndex, fret: hit.fret, role: 'triadRoot' }] : []);
+          }}
+        />
+        {exportError && (
+          <p data-testid="practice-export-error" style={{ color: '#e88' }}>{exportError}</p>
+        )}
+        <label style={{ ...FIELD_STYLE, marginTop: '0.75rem' }}>
+          Notes
+          <textarea aria-label="Session notes" value={sessionNotes} onChange={(event) => setSessionNotes(event.target.value)} rows={2} />
+        </label>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+          <button
+            type="button"
+            data-testid="save-practice-session"
+            onClick={() => {
+              if (!exercise || !scoreXml) {
+                setSessionStatus('Generate an exercise before saving a session.');
+                return;
+              }
+              void (async () => {
+                const sealed = await sealPracticeSession({
+                  id: `practice-${exercise.seed}`,
+                  title: exercise.title,
+                  savedAt: new Date().toISOString(),
+                  notes: sessionNotes,
+                  sourceSha256: null,
+                  scale: {
+                    mask: exercise.scale.mask,
+                    rootPc: exercise.scale.rootPc,
+                    status: exercise.scale.status,
+                    name: exercise.scale.name,
+                  },
+                  guitar: {
+                    tuningId: exercise.tuningId,
+                    openMidi: [...board.tuning.openMidi],
+                    fretFrom,
+                    fretTo,
+                  },
+                  exercise: {
+                    family: exercise.family,
+                    difficulty: exercise.difficulty,
+                    seed: exercise.seed,
+                    bars: exercise.bars,
+                    metreId: exercise.metreId,
+                    tempoBpm: exercise.tempoBpm,
+                    loop,
+                    repeat: repeatCount,
+                    metronome,
+                  },
+                  musicXml: scoreXml,
+                });
+                const written = await writePracticeFile(sealed.id, 'json', JSON.stringify(sealed, null, 2));
+                if (!written.ok) {
+                  setSessionStatus(written.error);
+                  return;
+                }
+                if (written.mode === 'desktop') setWrittenPath(written.fullPath);
+                setSessionStatus(written.mode === 'desktop' ? `Saved ${written.fullPath}` : `Downloaded ${written.filename}`);
+              })();
+            }}
+          >
+            Save session
+          </button>
+          <button
+            type="button"
+            data-testid="export-practice-musicxml"
+            onClick={() => {
+              if (!scoreXml || !exercise) {
+                setExportError('Generate an exercise before exporting MusicXML.');
+                return;
+              }
+              void (async () => {
+                const written = await writePracticeFile(exercise.title, 'musicxml', scoreXml);
+                if (!written.ok) {
+                  setExportError(written.error);
+                  return;
+                }
+                setExportError(null);
+                if (written.mode === 'desktop') setWrittenPath(written.fullPath);
+                setSessionStatus(written.mode === 'desktop' ? `Exported ${written.fullPath}` : `Downloaded ${written.filename}`);
+              })();
+            }}
+          >
+            Export MusicXML
+          </button>
+          <button type="button" onClick={() => { void openPracticeFile(writtenPath).then((result) => setSessionStatus(result.ok ? `Opened ${writtenPath}` : result.error)); }}>
+            Open File
+          </button>
+          <button type="button" onClick={() => { void revealPracticeFile(writtenPath).then((result) => setSessionStatus(result.ok ? `Revealed ${writtenPath}` : result.error)); }}>
+            Open in Finder
+          </button>
+          <label style={FIELD_STYLE}>
+            Reopen session
+            <input
+              aria-label="Reopen practice session"
+              type="file"
+              accept="application/json,.json"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (!file) return;
+                void file.text().then(async (text) => {
+                  try {
+                    const session = await readPracticeSession(text);
+                    setSelectedMask(session.scale.mask);
+                    setRootPc(session.scale.rootPc);
+                    setTuningId(session.guitar.tuningId);
+                    setFretFrom(session.guitar.fretFrom);
+                    setFretTo(session.guitar.fretTo);
+                    setExerciseTempo(session.exercise.tempoBpm);
+                    setLoop(session.exercise.loop);
+                    setRepeatCount(session.exercise.repeat);
+                    setMetronome(session.exercise.metronome);
+                    setSessionNotes(session.notes);
+                    setScoreXml(session.musicXml);
+                    setExercise(null);
+                    setSessionStatus(`Reopened ${session.title}. The exercise was not regenerated.`);
+                  } catch (error) {
+                    setSessionStatus(error instanceof Error ? error.message : String(error));
+                  }
+                });
+              }}
+            />
+          </label>
+        </div>
+        <p data-testid="practice-session-status" style={{ fontSize: '0.85rem' }}>{sessionStatus}</p>
       </section>
     </div>
   );
