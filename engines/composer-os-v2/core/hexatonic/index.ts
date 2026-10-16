@@ -106,6 +106,27 @@ export {
 export type { BlindItemDisclosure, BlindListeningEvidence } from './blindAudition';
 export { coreCandidateAuditionMusicXml, triadMotionAuditionMusicXml } from './coreLaboratoryAudition';
 export {
+  ADVANCED_COLOURS,
+  ADVANCED_STATUS,
+  EXPLORER_STATUS,
+  constructionsForPitchClasses,
+  getAdvancedColour,
+  listAdvancedColours,
+  listAlternativeConstructions,
+  listExplorerCatalogue,
+  openGuitarVoicings,
+  suspendedQuartalOnlyFortes,
+} from './advancedCollections';
+export type {
+  AdvancedColour,
+  AlternativeConstruction,
+  CollectionTier,
+  ConstructionKind,
+  ConstructionLink,
+  ExplorerRow,
+  GuitarVoicing,
+} from './advancedCollections';
+export {
   PLR_OPERATIONS,
   TRIADIC_OPERATIONS,
   applyTriadicTransformation,

@@ -2,7 +2,7 @@ export const BHL_HEXATONIC_HANDOFF_KEY = 'bhl-hexatonic-handoff';
 export const EVALUATION_HANDOFF_KEY = 'evaluation-score-handoff';
 
 export interface BhlHexatonicHandoff {
-  family: 'scalar' | 'wps' | 'provisional';
+  family: 'scalar' | 'wps' | 'provisional' | 'advanced';
   id: string;
   referencePc: number;
 }
@@ -46,7 +46,7 @@ export function takeHexatonicHandoff(): BhlHexatonicHandoff | null {
   sessionStorage.removeItem(BHL_HEXATONIC_HANDOFF_KEY);
   if (!raw) return heldHexatonic;
   const parsed = JSON.parse(raw) as BhlHexatonicHandoff;
-  if (parsed.family !== 'scalar' && parsed.family !== 'wps' && parsed.family !== 'provisional') return null;
+  if (parsed.family !== 'scalar' && parsed.family !== 'wps' && parsed.family !== 'provisional' && parsed.family !== 'advanced') return null;
   if (typeof parsed.id !== 'string' || !Number.isInteger(parsed.referencePc)) return null;
   return rememberHexatonic(parsed);
 }

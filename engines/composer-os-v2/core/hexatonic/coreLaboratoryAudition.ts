@@ -51,12 +51,12 @@ function contrastTokens(nearestId: string): { tokens: string[]; label: string } 
 }
 
 /** Keep the status in the title. A staff direction collided with the tempo, and a long contrast id clipped the margin. */
-export function placeAuditionEngraving(xml: string): string {
+export function placeAuditionEngraving(xml: string, status = 'PROVISIONAL — NOT MUSICALLY APPROVED'): string {
   const withoutDirection = xml.replace(
-    /\s*<direction placement="above"><direction-type><words font-style="italic">PROVISIONAL — NOT MUSICALLY APPROVED<\/words><\/direction-type><\/direction>/,
+    new RegExp(`\\s*<direction placement="above"><direction-type><words font-style="italic">${status.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}<\\/words><\\/direction-type><\\/direction>`),
     '',
   );
-  if (withoutDirection === xml) throw new Error('provisional direction was not in the audition score');
+  if (withoutDirection === xml) throw new Error('status direction was not in the audition score');
   return withoutDirection.replace(
     /<words font-style="italic">/g,
     '<words default-y="48" font-style="italic">',
@@ -114,7 +114,12 @@ export function coreCandidateAuditionMusicXml(id: string): string {
 }
 
 /** Two-bar standard-notation preview of one consonant move. Not musical approval. */
-export function triadMotionAuditionMusicXml(sourceNotes: readonly string[], targetNotes: readonly string[], label: string): string {
+export function triadMotionAuditionMusicXml(
+  sourceNotes: readonly string[],
+  targetNotes: readonly string[],
+  label: string,
+  status = 'PROVISIONAL — NOT MUSICALLY APPROVED',
+): string {
   const noChord = () => undefined;
   const guitar = createPart('guitar', 'Electric Guitar', CLEAN_ELECTRIC_GUITAR.instrumentIdentity, CLEAN_ELECTRIC_GUITAR.midiProgram, 'treble', 2, noChord, noChord);
   const bass = createPart('bass', 'Upright Bass', ACOUSTIC_UPRIGHT_BASS.instrumentIdentity, ACOUSTIC_UPRIGHT_BASS.midiProgram, 'bass', 2, noChord, noChord);
@@ -137,13 +142,13 @@ export function triadMotionAuditionMusicXml(sourceNotes: readonly string[], targ
     bassEvent.spelling = { step: bassSpelling.step, alter: bassSpelling.alter };
     bass.measures[bar]!.events = [bassEvent];
   }
-  const score = createScore(`${label} provisional`, [guitar, bass], { tempo: 72 });
+  const score = createScore(`${label} ${status}`, [guitar, bass], { tempo: 72 });
   score.timeSignature = { beats: 4, beatType: 4 };
   score.barMeterMap = { 1: { numerator: 4, denominator: 4 }, 2: { numerator: 4, denominator: 4 } };
   score.keySignature = { fifths: 0, mode: 'major', hideKeySignature: false };
-  score.measureWordsMarkings = { 1: 'PROVISIONAL — NOT MUSICALLY APPROVED' };
+  score.measureWordsMarkings = { 1: status };
   const exported = exportScoreModelToMusicXml(score);
   if (!exported.success || !exported.xml) throw new Error(exported.errors.join(' ') || 'transformation audition failed');
   if (/<staff-type>\s*tab\s*<\/staff-type>/i.test(exported.xml)) throw new Error('transformation audition wrote TAB');
-  return placeAuditionEngraving(exported.xml);
+  return placeAuditionEngraving(exported.xml, status);
 }

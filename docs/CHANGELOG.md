@@ -8,6 +8,8 @@
 
 ### Added
 
+- **Hexatonic H6-C2 advanced collections** — Forte 6-13, 6-23, and 6-28 are admitted as `ADVANCED — NOT MUSICALLY APPROVED` and stay out of the Core. Sus2, sus4, and quartal trichord pairs link to an existing colour when the pitch-class union matches. They do not create a second collection id. The complete 50-hexachord Explorer stays a laboratory filter. Forte 6-7 and 6-38 are the suspended/quartal-only classes. A single BHL Generate stamps `strategy: null` and `hexatonicWriting: colour-remap` because that path remaps pitches and does not run Dialogue, Liquid, or Sparse. Candidate sets still stamp the strategy they ran.
+
 - **Hexatonic H6-C1 triadic transformations** — shared P, L, R, H, N, and S on major and minor triads. The service reuses pitch-class identity, common-tone counts, and minimum voice-leading. Words stay unreduced: PLP and LPL both reach the hexatonic pole, and that does not make every P/L/R word interchangeable. Diminished and augmented triads are refused. The Hexatonic Laboratory Neighbours panel auditions a move and can hand a registered pair to the existing BHL Composer. Status stays provisional.
 
 - **Hexatonic H6-B4 evidence** — generated candidates can be sent to the existing Evaluation Dashboard. The receipt names provisional status, attacks, rests, empty bars, pitch changes, and motif return, and the dashboard shows those two findings under Hexatonic colour. Compose and Send survive React StrictMode. Mechanical repetition is not an artistic score, and a repeated cell with a rest is not rejected by itself. `machineDecision` stays null.

@@ -152,7 +152,7 @@ describe('HexatonicLaboratory audition', () => {
     expect(screen.getByTestId('hexatonic-laboratory-status').textContent).toContain('PROVISIONAL — NOT MUSICALLY APPROVED');
     expect(screen.getByTestId('hexatonic-laboratory-candidate').querySelectorAll('option')).toHaveLength(12);
     expect((screen.getByTestId('hex-lab-decision') as HTMLSelectElement).value).toBe('UNDECIDED');
-    expect(screen.getByTestId('score-audition')).toBeTruthy();
+    expect(screen.getAllByTestId('score-audition').length).toBeGreaterThan(0);
     fireEvent.click(screen.getByTestId('hex-lab-compose'));
     const stored = JSON.parse(sessionStorage.getItem('bhl-hexatonic-handoff') ?? '{}') as { family?: string; id?: string };
     expect(stored.family).toBe('provisional');
@@ -163,6 +163,19 @@ describe('HexatonicLaboratory audition', () => {
     expect(xml).toContain('Upright Bass');
     fireEvent.change(screen.getByTestId('hex-lab-decision'), { target: { value: 'REFINE' } });
     expect((screen.getByTestId('hex-lab-decision') as HTMLSelectElement).value).toBe('REFINE');
+  });
+
+  it('filters advanced colours and keeps Explorer out of the composer menu', () => {
+    render(<HexatonicLaboratory />);
+    expect(screen.getByTestId('hex-collection-status').textContent).toContain('ADVANCED — NOT MUSICALLY APPROVED');
+    expect(screen.getByTestId('hex-collection-compose').textContent).toContain('Compose with this colour');
+    fireEvent.change(screen.getByTestId('hex-collection-filter'), { target: { value: 'explorer' } });
+    expect(screen.getByTestId('hex-collection-entry').querySelectorAll('option')).toHaveLength(50);
+    expect(screen.getByTestId('hex-collection-compose').textContent).toContain('Explorer stays out of the composer');
+    fireEvent.change(screen.getByTestId('hex-collection-filter'), { target: { value: 'established' } });
+    expect(screen.getByTestId('hex-collection-entry').querySelectorAll('option')).toHaveLength(27);
+    fireEvent.change(screen.getByTestId('hex-collection-filter'), { target: { value: 'provisional' } });
+    expect(screen.getByTestId('hex-collection-entry').querySelectorAll('option')).toHaveLength(12);
   });
 
   it('shows consonant neighbours and keeps diminished triads out of P/L/R', async () => {

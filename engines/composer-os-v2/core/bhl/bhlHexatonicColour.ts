@@ -4,6 +4,7 @@
  */
 
 import { assessGuitarFeasibility } from '../barry-harris/guitarVoicingFeasibility';
+import { getAdvancedColour, listAdvancedColours } from '../hexatonic/advancedCollections';
 import {
   CORE_CANDIDATES,
   CORE_LABORATORY_STATUS,
@@ -23,7 +24,7 @@ import type { BhlGuitarEvent, BhlPhrasePlan } from './bhlPhrase';
 import { parseSpelledPitch, realizeTriadPair, type LiquidDuration, type LiquidSlot, type ParentTriadInput } from '../wwh/wwhTriadPair';
 import { spellName, transposeSpelled, type Spelled } from '../wwh/wps/wpsTonalityVaultRecord';
 
-export const BHL_HEXATONIC_FAMILIES = ['scalar', 'wps', 'provisional'] as const;
+export const BHL_HEXATONIC_FAMILIES = ['scalar', 'wps', 'provisional', 'advanced'] as const;
 export type BhlHexatonicFamily = (typeof BHL_HEXATONIC_FAMILIES)[number];
 export const BHL_HEXATONIC_STRATEGIES = ['dialogue', 'liquid', 'sparse'] as const;
 export type BhlHexatonicStrategy = (typeof BHL_HEXATONIC_STRATEGIES)[number];
@@ -51,7 +52,10 @@ export interface BhlHexatonicColour {
 }
 
 export interface BhlHexatonicStamp extends BhlHexatonicColour {
+  /** Null on a single Generate: pitches were remapped and Dialogue, Liquid, or Sparse did not run. */
   strategy: BhlHexatonicStrategy | null;
+  /** Explicit writing label. colour-remap is the single-Generate case that keeps strategy null. */
+  hexatonicWriting: BhlHexatonicStrategy | 'colour-remap';
 }
 
 function mod12(value: number): number {
@@ -130,6 +134,25 @@ export function resolveBhlHexatonicColour(selection: BhlHexatonicSelection): Bhl
     if (!candidate) throw new Error(`unknown provisional pair ${selection.id}`);
     return provisionalColour(candidate, selection);
   }
+  if (selection.family === 'advanced') {
+    const colour = getAdvancedColour(selection.id);
+    if (!colour) throw new Error(`unknown advanced colour ${selection.id}`);
+    const leftNotes = transposeNotes(colour.leftSpelling, selection.referencePc);
+    const rightNotes = transposeNotes(colour.rightSpelling, selection.referencePc);
+    const left = triadInput(`${colour.id}-left`, colour.leftQuality, leftNotes, 'suggested');
+    const right = triadInput(`${colour.id}-right`, colour.rightQuality, rightNotes, 'suggested');
+    const pitchClasses = [...new Set([...left.pitchClasses, ...right.pitchClasses])].sort((a, b) => a - b);
+    return colourBase(selection, {
+      label: colour.label,
+      pitchClasses,
+      left,
+      right,
+      sharedPitchClasses: sharedOf(left, right),
+      provenance: colour.provenance,
+      provisional: false,
+      status: colour.status,
+    });
+  }
   if (selection.family === 'scalar') {
     const scalar = getHexatonicScalar(selection.id);
     if (!scalar) throw new Error(`unknown hexatonic scalar ${selection.id}`);
@@ -168,6 +191,7 @@ export function listBhlHexatonicChoices(): Array<{ family: BhlHexatonicFamily; i
     ...listHexatonicScalars().map((row) => ({ family: 'scalar' as const, id: row.id, label: row.id, provisional: false })),
     ...listHexatonicWpsPairs().map((row) => ({ family: 'wps' as const, id: row.id, label: `${row.parentSymbol} · ${row.harrisLabel}`, provisional: false })),
     ...CORE_CANDIDATES.map((row) => ({ family: 'provisional' as const, id: row.id, label: row.label, provisional: true })),
+    ...listAdvancedColours().map((row) => ({ family: 'advanced' as const, id: row.id, label: `${row.label} — ${row.status}`, provisional: false })),
   ];
 }
 
@@ -213,7 +237,12 @@ export function remapGuitarToHexatonic(events: readonly BhlGuitarEvent[], pitchC
 }
 
 export function stampHexatonicColour(xml: string, colour: BhlHexatonicColour, strategy: BhlHexatonicStrategy | null = null): string {
-  const payload: BhlHexatonicStamp = { ...colour, strategy, artisticApproval: false };
+  const payload: BhlHexatonicStamp = {
+    ...colour,
+    strategy,
+    hexatonicWriting: strategy ?? 'colour-remap',
+    artisticApproval: false,
+  };
   const comment = `<!-- bhl-hexatonic ${JSON.stringify(payload).replace(/--/g, '- -')} -->`;
   const stripped = xml.replace(/\n?<!-- bhl-hexatonic [\s\S]*?-->\n?/, '\n');
   const declaration = stripped.match(/^<\?xml[^?]*\?>\s*/);
@@ -226,6 +255,7 @@ export function readHexatonicStamp(xml: string): BhlHexatonicStamp | null {
   if (!match?.[1]) return null;
   const parsed = JSON.parse(match[1]) as BhlHexatonicStamp;
   if (parsed.artisticApproval !== false) throw new Error('hexatonic stamp claimed artistic approval');
+  if (!parsed.hexatonicWriting) parsed.hexatonicWriting = parsed.strategy ?? 'colour-remap';
   return parsed;
 }
 

@@ -231,7 +231,7 @@ export function BhlComposerPage() {
     setHexFamily(handoff.family);
     setHexId(handoff.id);
     setHexReference(handoff.referencePc);
-    setStatus(`Hexatonic colour ${handoff.id} is provisional until a person accepts it.`);
+    setStatus(`Hexatonic colour ${handoff.id} is not musically approved.`);
   }, []);
 
   useEffect(() => {
@@ -915,6 +915,7 @@ export function BhlComposerPage() {
             <option value="scalar">Scalar collection</option>
             <option value="wps">WPS pair</option>
             <option value="provisional">Provisional H6 candidate</option>
+            <option value="advanced">Advanced — not approved</option>
           </select>
         </label>
         {hexFamily ? (

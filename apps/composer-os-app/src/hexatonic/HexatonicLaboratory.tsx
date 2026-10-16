@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
+  ADVANCED_STATUS,
+  EXPLORER_STATUS,
   analyzeCoreCandidate,
   blankBlindAnswer,
   blankCoreLaboratoryReview,
@@ -10,16 +12,23 @@ import {
   CORE_CANDIDATES,
   CORE_CONTEXT_IDS,
   CORE_LABORATORY_STATUS,
+  constructionsForPitchClasses,
   commonToneNeighbours,
   coreCandidateAuditionMusicXml,
   discloseBlindItem,
+  listAdvancedColours,
+  listExplorerCatalogue,
+  listHexatonicScalars,
+  listHexatonicWpsPairs,
   matchCataloguePair,
   namedNeighbours,
+  openGuitarVoicings,
   moveBlindCursor,
   nearestCatalogueReading,
   type BlindComposeAnswer,
   type BlindDisposition,
   type BlindDistinctAnswer,
+  type CollectionTier,
   type CoreLaboratoryReview,
   type LaboratoryAnswer,
   triadMotionAuditionMusicXml,
@@ -189,6 +198,9 @@ export function HexatonicLaboratory() {
   const analyses = useMemo(() => CORE_CANDIDATES.map((row) => analyzeCoreCandidate(row.id)), []);
   const [mode, setMode] = useState<'detail' | 'blind'>('detail');
   const [selected, setSelected] = useState(CORE_CANDIDATES[0]!.id);
+  const [tier, setTier] = useState<CollectionTier>('advanced');
+  const [browserId, setBrowserId] = useState(listAdvancedColours()[0]!.id);
+  const [constructionId, setConstructionId] = useState('');
   const [triadSide, setTriadSide] = useState<'left' | 'right'>('left');
   const [neighbourKey, setNeighbourKey] = useState<string | null>(null);
   const [review, setReview] = useState<CoreLaboratoryReview>(() => blankCoreLaboratoryReview());
@@ -257,6 +269,83 @@ export function HexatonicLaboratory() {
     () => (neighbour ? triadMotionAuditionMusicXml(sideNotes, neighbour.target.notes, `${neighbour.operation ?? 'common-tone'} ${neighbour.target.notes.join(' ')}`) : ''),
     [neighbour, sideNotes],
   );
+  const browser = useMemo(() => {
+    if (mode !== 'detail') return null;
+    const names = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+    const spell = (pitchClass: number) => names[((pitchClass % 12) + 12) % 12] ?? String(pitchClass);
+    const options = tier === 'established'
+      ? [
+          ...listHexatonicScalars().map((row) => ({
+            id: row.id,
+            label: row.id,
+            pcs: row.pitchClasses,
+            family: 'scalar' as const,
+            status: 'catalogue',
+            left: row.triadReading?.[0]?.spelling,
+            right: row.triadReading?.[1]?.spelling,
+            compose: true,
+          })),
+          ...listHexatonicWpsPairs().map((row) => ({
+            id: row.id,
+            label: `${row.parentSymbol} · ${row.harrisLabel}`,
+            pcs: row.pitchClasses,
+            family: 'wps' as const,
+            status: 'catalogue',
+            left: row.resolution.spelling,
+            right: row.tension.spelling,
+            compose: true,
+          })),
+        ]
+      : tier === 'provisional'
+        ? analyses.map((row) => ({
+            id: row.candidate.id,
+            label: row.candidate.label,
+            pcs: row.union,
+            family: 'provisional' as const,
+            status: CORE_LABORATORY_STATUS,
+            left: row.candidate.leftSpelling,
+            right: row.candidate.rightSpelling,
+            compose: true,
+          }))
+        : tier === 'advanced'
+          ? listAdvancedColours().map((row) => ({
+              id: row.id,
+              label: row.label,
+              pcs: row.pitchClasses,
+              family: 'advanced' as const,
+              status: ADVANCED_STATUS,
+              left: row.leftSpelling,
+              right: row.rightSpelling,
+              compose: true,
+            }))
+          : listExplorerCatalogue().map((row) => ({
+              id: row.forte,
+              label: `${row.forte}${row.suspendedQuartalOnly ? ' · sus/quartal only' : ''} · ${row.tier}`,
+              pcs: row.prime,
+              family: 'explorer' as const,
+              status: row.status,
+              left: undefined,
+              right: undefined,
+              compose: row.tier !== 'explorer',
+              catalogueIds: row.catalogueIds,
+              rowTier: row.tier,
+            }));
+    const current = options.find((row) => row.id === browserId) ?? options[0];
+    if (!current) return null;
+    const linked = constructionsForPitchClasses(current.pcs);
+    const builds = [
+      ...(current.left && current.right ? [{ id: 'tertian', label: 'tertian reading', left: current.left, right: current.right, links: [] as { family: string; id: string }[] }] : []),
+      ...linked.slice(0, 8).map((row) => ({ id: row.id, label: `${row.leftKind}+${row.rightKind}`, left: row.leftSpelling, right: row.rightSpelling, links: row.links })),
+    ];
+    const build = builds.find((row) => row.id === constructionId) ?? builds[0];
+    const previewLeft = build?.left ?? current.pcs.slice(0, 3).map(spell);
+    const previewRight = build?.right ?? current.pcs.slice(3).map(spell);
+    const guitar = openGuitarVoicings(previewLeft.map((token) => names.indexOf(token)).filter((pitchClass) => pitchClass >= 0));
+    return { options, current, builds, build, previewLeft, previewRight, guitar, linkedCount: linked.length };
+  }, [analyses, browserId, constructionId, mode, tier]);
+  const browserXml = browser
+    ? triadMotionAuditionMusicXml(browser.previewLeft, browser.previewRight, browser.current.label, browser.current.status)
+    : '';
   const xml = mode === 'detail' ? coreCandidateAuditionMusicXml(analysis.candidate.id) : '';
 
   return (
@@ -373,6 +462,83 @@ export function HexatonicLaboratory() {
               </div>
             ) : null}
           </section>
+          {browser ? (
+            <section data-testid="hex-collection-browser" style={{ display: 'grid', gap: '0.4rem' }}>
+              <h4 style={{ margin: 0 }}>Collections</h4>
+              <label htmlFor="hex-collection-filter">
+                Filter
+                <select
+                  id="hex-collection-filter"
+                  data-testid="hex-collection-filter"
+                  value={tier}
+                  onChange={(event) => {
+                    const next = event.target.value as CollectionTier;
+                    setTier(next);
+                    setBrowserId('');
+                    setConstructionId('');
+                  }}
+                >
+                  <option value="established">Established collections</option>
+                  <option value="provisional">Provisional Core candidates</option>
+                  <option value="advanced">Advanced unauditioned</option>
+                  <option value="explorer">Complete computed Explorer</option>
+                </select>
+              </label>
+              <label htmlFor="hex-collection-entry">
+                Entry
+                <select
+                  id="hex-collection-entry"
+                  data-testid="hex-collection-entry"
+                  value={browser.current.id}
+                  onChange={(event) => {
+                    setBrowserId(event.target.value);
+                    setConstructionId('');
+                    if (tier === 'provisional') setSelected(event.target.value);
+                  }}
+                >
+                  {browser.options.map((row) => (
+                    <option key={row.id} value={row.id}>{row.label}</option>
+                  ))}
+                </select>
+              </label>
+              <p data-testid="hex-collection-status" style={{ margin: 0 }}>{browser.current.status}. Human approval: no. {EXPLORER_STATUS === browser.current.status ? 'Mathematical entry only.' : ''}</p>
+              <label htmlFor="hex-construction">
+                Construction
+                <select
+                  id="hex-construction"
+                  data-testid="hex-construction"
+                  value={browser.build?.id ?? ''}
+                  onChange={(event) => setConstructionId(event.target.value)}
+                >
+                  {browser.builds.map((row) => (
+                    <option key={row.id} value={row.id}>{row.label} · {row.left.join(' ')} / {row.right.join(' ')}</option>
+                  ))}
+                </select>
+              </label>
+              <p style={{ margin: 0 }}>
+                {browser.linkedCount
+                  ? `Alternate sus/quartal constructions link to an existing colour. ${browser.build?.links.map((link) => `${link.family} ${link.id}`).join(', ') || 'Shown construction is the tertian reading.'}`
+                  : 'No sus/quartal pair reproduces this exact pitch-class set.'}
+              </p>
+              <p data-testid="hex-guitar-voicings" style={{ margin: 0 }}>
+                Guitar voicings, playability not verified: {browser.guitar.map((row) => `frets ${row.frets.map((fret) => (fret === null ? '-' : fret)).join(' ')} (${row.openStrings} open)`).join(' · ') || 'none in a four-fret span'}
+              </p>
+              <button
+                type="button"
+                data-testid="hex-collection-compose"
+                disabled={!browser.current.compose || browser.current.family === 'explorer'}
+                onClick={() => {
+                  if (!browser.current.compose || browser.current.family === 'explorer') return;
+                  storeHexatonicHandoff({ family: browser.current.family, id: browser.current.id, referencePc: 0 });
+                  window.location.hash = '#/bhl';
+                }}
+              >
+                {browser.current.compose && browser.current.family !== 'explorer' ? 'Compose with this colour' : 'Explorer stays out of the composer'}
+              </button>
+              <ScoreAudition musicXml={browserXml} label={`${browser.current.label} · ${browser.current.status}`} />
+              <ScorePreview musicXml={browserXml} />
+            </section>
+          ) : null}
           <fieldset style={{ display: 'grid', gap: '0.35rem' }}>
             <legend>Human review</legend>
             {(['distinct', 'useful', 'guitarPlayable'] as const).map((field) => (
