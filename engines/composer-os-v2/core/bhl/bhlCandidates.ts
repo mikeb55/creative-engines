@@ -11,6 +11,8 @@ import type { BhlProjectCandidate } from './bhlProject';
 import type { BhlMusicalRequest } from './bhlResources';
 import type { BhlRiffRequest, BhlRiffTransform } from './bhlRiffRhythm';
 import type { BhlSpan } from './bhlTypes';
+import type { BhlHexatonicColour, BhlHexatonicStrategy } from './bhlHexatonicColour';
+import { demonstrablyMechanical } from './bhlHexatonicColour';
 import type { BhlWorldId } from './bhlWorlds';
 
 export interface BhlCandidateRequest extends BhlComposeRequest {
@@ -76,6 +78,8 @@ export function composeBhlCandidate(request: BhlCandidateRequest): { result: Bhl
       sourcePath: request.sourcePath,
       pentatonicPcs: request.pentatonicPcs ?? null,
       quartal: request.quartal === true,
+      hexatonic: request.hexatonic ?? null,
+      hexatonicStrategy: request.hexatonicStrategy ?? null,
     },
     xml: written.xml,
     xmlSha256: sha(written.xml),
@@ -83,7 +87,12 @@ export function composeBhlCandidate(request: BhlCandidateRequest): { result: Bhl
       ...summariseBhlEvidence(evidence),
       signature: eventSignature(written),
       worldPitchClasses: written.world?.pitchClasses ?? [],
-      commonToneRetentions: written.world?.commonToneRetentions ?? 0,
+      commonToneRetentions: written.commonToneRetentions || (written.world?.commonToneRetentions ?? 0),
+      hexatonicStatus: written.hexatonic?.status ?? null,
+      hexatonicProvisional: written.hexatonic?.provisional ?? false,
+      artisticApproval: false,
+      positionWarnings: written.positionWarnings,
+      hexatonicNotes: written.hexatonicNotes,
       contrastingMoves: written.world?.contrastingMoves ?? 0,
       outsideFieldNotes: written.fieldNotes.filter((note) => note.status === 'outside-permitted').length,
       binderVoices: written.binder?.independentVoiceAttacks ?? 0,
@@ -142,14 +151,15 @@ export function generateBhlCandidateSet(input: {
   riffRhythm?: import('./bhlRiffRhythm').BhlRiffRequest | null;
   quartal?: boolean;
   protectedGuitarBars?: readonly number[];
+  hexatonic?: BhlHexatonicColour | null;
 }): BhlCandidateSet {
   if (!input.plan) throw new Error('candidate set needs the locked phrase plan');
   const baseRhythm = input.rhythm ?? 'derived';
   const baseArc = input.phraseArc ?? 'derived';
-  const specs: Array<{ seed: number; rhythm: BhlRhythmMode; phraseArc: BhlPhraseArc; label: string }> = [
-    { seed: input.seed, rhythm: baseRhythm, phraseArc: baseArc, label: 'Candidate 1' },
-    { seed: input.seed + 17, rhythm: nextOf(RHYTHM_CYCLE, baseRhythm), phraseArc: baseArc, label: 'Candidate 2' },
-    { seed: input.seed + 29, rhythm: baseRhythm, phraseArc: nextOf(ARC_CYCLE, baseArc), label: 'Candidate 3' },
+  const specs: Array<{ seed: number; rhythm: BhlRhythmMode; phraseArc: BhlPhraseArc; label: string; strategy: BhlHexatonicStrategy | null }> = [
+    { seed: input.seed, rhythm: baseRhythm, phraseArc: baseArc, label: 'Candidate 1', strategy: null },
+    { seed: input.seed + 17, rhythm: nextOf(RHYTHM_CYCLE, baseRhythm), phraseArc: baseArc, label: 'Candidate 2', strategy: null },
+    { seed: input.seed + 29, rhythm: baseRhythm, phraseArc: nextOf(ARC_CYCLE, baseArc), label: 'Candidate 3', strategy: null },
   ];
   const seen = new Set<string>();
   const candidates: BhlProjectCandidate[] = [];
@@ -159,7 +169,7 @@ export function generateBhlCandidateSet(input: {
     const varyCell = input.riffRhythm?.rhythmSource === 'core-b' && spec.label !== 'Candidate 1';
     for (let attempt = 0; attempt < 6; attempt++) {
       const riffRhythm = coreBVariant(input.riffRhythm, spec.label, attempt);
-      const { candidate } = composeBhlCandidate({
+      const { result, candidate } = composeBhlCandidate({
         sourcePath: input.sourcePath,
         span: input.span,
         seed,
@@ -174,8 +184,14 @@ export function generateBhlCandidateSet(input: {
         riffRhythm,
         quartal: input.quartal,
         protectedGuitarBars: input.protectedGuitarBars,
+        hexatonic: input.hexatonic,
+        hexatonicStrategy: spec.strategy,
         label: spec.label,
       });
+      if (spec.strategy && (demonstrablyMechanical(result.events) || !result.verification.ok)) {
+        seed += 100;
+        continue;
+      }
       const signature = String(candidate.evidenceSummary.signature ?? '');
       if (!seen.has(signature)) {
         seen.add(signature);
@@ -220,11 +236,14 @@ export function refineBhlCandidate(input: {
   quartal?: boolean;
   protectedGuitarBars?: readonly number[];
   seed?: number;
+  hexatonic?: BhlHexatonicColour | null;
 }): BhlProjectCandidate {
   const seed = input.seed ?? input.original.seed + 1;
   const storedRiff = (input.original.settings.musical as { riff?: BhlRiffRequest } | undefined)?.riff;
   const parentRiff = storedRiff?.rhythmSource === 'core-b' ? storedRiff : input.riffRhythm;
-  const riffRhythm = parentRiff?.rhythmSource === 'core-b' ? coreBVariant(parentRiff, 'Candidate 2', 0) : input.riffRhythm;
+  const storedStrategy = input.original.settings.hexatonicStrategy;
+  const strategy = storedStrategy === 'dialogue' || storedStrategy === 'liquid' || storedStrategy === 'sparse' ? storedStrategy : null;
+  const riffRhythm = strategy ? input.riffRhythm : parentRiff?.rhythmSource === 'core-b' ? coreBVariant(parentRiff, 'Candidate 2', 0) : input.riffRhythm;
   const { candidate } = composeBhlCandidate({
     sourcePath: input.sourcePath,
     span: input.span,
@@ -240,6 +259,8 @@ export function refineBhlCandidate(input: {
     riffRhythm,
     quartal: input.quartal,
     protectedGuitarBars: input.protectedGuitarBars,
+    hexatonic: input.hexatonic ?? (input.original.settings.hexatonic as BhlHexatonicColour | null | undefined) ?? null,
+    hexatonicStrategy: strategy,
     label: `${input.original.label} refined`,
   });
   return {

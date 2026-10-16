@@ -24,6 +24,7 @@ import {
 import { api } from '../services/api';
 import { ScoreAudition } from '../score/ScoreAudition';
 import { ScorePreview } from '../score/ScorePreview';
+import { storeHexatonicHandoff } from '../bhl/bhlHexatonicHandoff';
 
 const ANSWERS: LaboratoryAnswer[] = ['UNDECIDED', 'YES', 'NO'];
 const DECISIONS: LaboratoryDecision[] = ['UNDECIDED', 'KEEP', 'REFINE', 'REJECT'];
@@ -318,6 +319,16 @@ export function HexatonicLaboratory() {
           <p style={{ margin: 0 }}>
             In-app playback and preview do not approve the candidate. Status stays {CORE_LABORATORY_STATUS}.
           </p>
+          <button
+            type="button"
+            data-testid="hex-lab-compose"
+            onClick={() => {
+              storeHexatonicHandoff({ family: 'provisional', id: analysis.candidate.id, referencePc: 0 });
+              window.location.hash = '#/bhl';
+            }}
+          >
+            Compose with this pair
+          </button>
           <ScoreAudition musicXml={xml} label={`${analysis.candidate.label} · ${CORE_LABORATORY_STATUS}`} />
           <ScorePreview musicXml={xml} />
           <textarea data-testid="hexatonic-laboratory-xml" readOnly rows={4} value={xml} />

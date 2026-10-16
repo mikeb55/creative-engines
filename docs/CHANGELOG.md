@@ -8,6 +8,8 @@
 
 ### Added
 
+- **Hexatonic H6-B1 colour** — the BHL Composer can take an optional scalar, WPS pair, or provisional Core candidate, plus a reference note. Worlds A–F stay the same list. Provisional pairs keep `PROVISIONAL — NOT MUSICALLY APPROVED` on the project candidate, the MusicXML comment, and the evidence summary. `#/hexatonic` has Compose with this pair. Pentatonic candidate labels stay Candidate 1–3 when no hexatonic colour is set.
+
 - **Hexatonic playback gate** — `ScoreAudition` resumes the audio context before it parses MusicXML, shows Playing as soon as notes are loaded, and reports a hung audio context instead of leaving the status on Ready. H6-A4b clips, including the silent-bass context, parse to guitar notes.
 
 - **Hexatonic H6-A4b blind audition** — `#/hexatonic` can hide the 12 provisional pairs behind seeded codes. Each pair has four 12-second guitar and bass clips. Four sessions add concealed catalogue references and two repeats. ACCEPT writes KEEP only when the human saves it on a primary hearing. `artisticApproval` stays false. Detail: `docs/H6-A4B-BLIND-AUDITION.md`.

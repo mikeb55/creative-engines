@@ -9,6 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { BHL_ALBUM_ROOT, BhlExportRejected, assertBhlExportPath } from '../core/bhl/bhlCopy';
 import { composeBhlGuitar } from '../core/bhl/bhlCompose';
+import { readBhlHexatonicSelection } from '../core/bhl/bhlHexatonicColour';
 import {
   compareBhlCandidateXml,
   generateBhlCandidateSet,
@@ -650,6 +651,7 @@ export function apiBhlCompose(body: unknown): BhlComposeResponse | BhlApiFailure
     if ('ok' in continued) return continued;
     continued.seed = seed;
     const quartal = o.quartal === true || (o.quartal == null && prepared.quartal);
+    const hexatonic = readBhlHexatonicSelection(o.hexatonic);
     const written = composeBhlGuitar({
       sourcePath: source,
       span,
@@ -664,6 +666,7 @@ export function apiBhlCompose(body: unknown): BhlComposeResponse | BhlApiFailure
       contrastPcs: prepared.contrastPcs,
       riffRhythm: musical?.riff ?? null,
       quartal,
+      hexatonic,
     });
     const after = sha256File(source);
     const writable: number[] = [];
@@ -827,6 +830,12 @@ function prepareLocked(body: Record<string, unknown>) {
   const rhythm = body.rhythm === undefined || body.rhythm === null || body.rhythm === '' ? prepared.rhythm ?? 'derived' : body.rhythm;
   if (!RHYTHMS.includes(rhythm as BhlRhythmMode)) return fail(`rhythm ${String(rhythm)} is not available`);
   const quartal = body.quartal === true || (body.quartal == null && prepared.quartal);
+  let hexatonic = null;
+  try {
+    hexatonic = readBhlHexatonicSelection(body.hexatonic);
+  } catch (error) {
+    return fail(error instanceof Error ? error.message : String(error));
+  }
   return {
     source,
     span,
@@ -842,6 +851,7 @@ function prepareLocked(body: Record<string, unknown>) {
     contrastPcs: prepared.contrastPcs,
     riffRhythm: musical?.riff ?? null,
     quartal,
+    hexatonic,
     prepared,
   };
 }
@@ -865,6 +875,7 @@ export function apiBhlCandidates(body: unknown): { ok: true; candidates: BhlProj
       riffRhythm: locked.riffRhythm,
       quartal: locked.quartal,
       protectedGuitarBars: locked.protectedGuitarBars,
+      hexatonic: locked.hexatonic,
     });
     return { ok: true, candidates: set.candidates };
   } catch (error) {
@@ -896,6 +907,7 @@ export function apiBhlRefine(body: unknown): { ok: true; original: BhlProjectV1[
       riffRhythm: locked.riffRhythm,
       quartal: locked.quartal,
       protectedGuitarBars: locked.protectedGuitarBars,
+      hexatonic: locked.hexatonic,
       seed: intField(o.seed) ?? undefined,
     });
     return { ok: true, original: row, refined };

@@ -17,6 +17,14 @@ import {
   type BhlWorldGuitar,
 } from './bhlPhraseShape';
 import { buildBhlWorldField, type BhlWorldId } from './bhlWorlds';
+import {
+  applyHexatonicStrategy,
+  positionShiftWarnings,
+  remapGuitarToHexatonic,
+  stampHexatonicColour,
+  type BhlHexatonicColour,
+  type BhlHexatonicStrategy,
+} from './bhlHexatonicColour';
 import { ingestBhlSource, lockSpecOf, sha256File } from './bhlIngest';
 import {
   deriveBhlPhrasePlan,
@@ -50,6 +58,10 @@ export interface BhlComposeRequest {
   riffRhythm?: BhlRiffRequest | null;
   /** Moves dyads by a fourth when quartalSubsets allows it. */
   quartal?: boolean;
+  /** Optional hexatonic colour. Omitted leaves world pitches unchanged. */
+  hexatonic?: BhlHexatonicColour | null;
+  /** Set only for the three hexatonic candidate strategies. */
+  hexatonicStrategy?: BhlHexatonicStrategy | null;
   outputPath?: string;
   permittedOutputDir?: string;
 }
@@ -77,6 +89,10 @@ export interface BhlComposeResult {
   quartalNote: string | null;
   colourConstraint: string | null;
   rhythmNotes: string[];
+  hexatonic: BhlHexatonicColour | null;
+  hexatonicNotes: string[];
+  positionWarnings: string[];
+  commonToneRetentions: number;
 }
 
 export function composeBhlGuitar(request: BhlComposeRequest): BhlComposeResult {
@@ -139,6 +155,20 @@ export function composeBhlGuitar(request: BhlComposeRequest): BhlComposeResult {
     generated.fieldNotes = collectFieldNotes(effectivePlan, bars, generated.events, fieldOf);
     generated.feasibility = guitarFeasibility(generated.events);
   }
+  let hexatonicNotes: string[] = [];
+  let positionWarnings: string[] = [];
+  let commonToneRetentions = 0;
+  if (request.hexatonic) {
+    generated.events = remapGuitarToHexatonic(generated.events, request.hexatonic.pitchClasses);
+    if (request.hexatonicStrategy) {
+      const shaped = applyHexatonicStrategy(generated.events, request.hexatonic, request.hexatonicStrategy, request.seed);
+      generated.events = shaped.events;
+      hexatonicNotes = shaped.notes;
+      commonToneRetentions = shaped.commonToneRetentions;
+    }
+    positionWarnings = positionShiftWarnings(generated.events);
+    generated.feasibility = guitarFeasibility(generated.events);
+  }
   if (request.quartal && request.world) {
     const pool = [
       ...new Set([
@@ -164,7 +194,11 @@ export function composeBhlGuitar(request: BhlComposeRequest): BhlComposeResult {
   const onsetPlans = generated.onsetPlans.filter((plan) => writable.includes(plan.bar));
   const snaps = generated.snaps.filter((snap) => writable.includes(snap.bar));
   const feasibility = generated.feasibility.filter((note) => writable.includes(note.bar));
-  const written = replaceBhlGuitar(sourceXml, lock.guitarPartId, writable, events, quarters);
+  const replaced = replaceBhlGuitar(sourceXml, lock.guitarPartId, writable, events, quarters);
+  const written = {
+    ...replaced,
+    xml: request.hexatonic ? stampHexatonicColour(replaced.xml, request.hexatonic, request.hexatonicStrategy ?? null) : replaced.xml,
+  };
   const verification = verifyBhlLocks(sourceXml, written.xml, lockSpecOf(lock));
   verifyRecordedSourceSha(request.sourcePath, lock.sourceSha256);
   if (sha256File(request.sourcePath) !== lock.sourceSha256) throw new Error('source SHA-256 changed during compose');
@@ -205,5 +239,9 @@ export function composeBhlGuitar(request: BhlComposeRequest): BhlComposeResult {
     quartalNote,
     colourConstraint,
     rhythmNotes: worldGuitar?.rhythmNotes ?? [],
+    hexatonic: request.hexatonic ?? null,
+    hexatonicNotes,
+    positionWarnings,
+    commonToneRetentions,
   };
 }

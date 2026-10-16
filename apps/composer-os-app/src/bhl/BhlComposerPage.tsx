@@ -9,13 +9,28 @@ function spellCollection(intervals: readonly number[] | undefined, reference: st
   return intervals.map((interval) => PITCH_NAMES[(root + offset + interval + 120) % 12]).join(' ');
 }
 
+function hexatonicIdentity(family: '' | BhlHexatonicFamily, id: string, referencePc: number): { text: string; provisional: boolean } | { error: string } | null {
+  if (!family || !id) return null;
+  try {
+    const colour = resolveBhlHexatonicColour({ family, id, referencePc });
+    return {
+      provisional: colour.provisional,
+      text: `${colour.label}. ${colour.status}. Provenance: ${colour.provenance}. Pitches ${colour.pitchClasses.join(' ')}. Artistic approval: no.`,
+    };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
 function collectionPcs(intervals: readonly number[] | undefined, reference: string, offset: number): number[] {
   if (!intervals?.length) return [];
   const root = PITCH_NAMES.indexOf(reference);
   if (root < 0) return [];
   return [...new Set(intervals.map((interval) => (root + offset + interval + 120) % 12))].sort((a, b) => a - b);
 }
+import { listBhlHexatonicChoices, resolveBhlHexatonicColour, type BhlHexatonicFamily } from '@composer-os/core/bhl/bhlHexatonicColour';
 import { api, isDesktopIpc } from '../services/api';
+import { takeHexatonicHandoff } from './bhlHexatonicHandoff';
 import { ScoreAudition } from '../score/ScoreAudition';
 import { ScorePreview } from '../score/ScorePreview';
 import { BhlEvidencePanel, type BhlComparisonView, type BhlEvidenceView, type BhlIntentView } from './BhlEvidencePanel';
@@ -146,6 +161,10 @@ export function BhlComposerPage() {
   const [spanTo, setSpanTo] = useState(40);
   const [seed, setSeed] = useState(3340);
   const [world, setWorld] = useState('A');
+  const [hexFamily, setHexFamily] = useState<'' | BhlHexatonicFamily>('');
+  const [hexId, setHexId] = useState('');
+  const [hexReference, setHexReference] = useState(0);
+  const hexChoices = listBhlHexatonicChoices();
   const [phraseArc, setPhraseArc] = useState('derived');
   const [continuation, setContinuation] = useState('hold');
   const [outsideColour, setOutsideColour] = useState(false);
@@ -199,6 +218,15 @@ export function BhlComposerPage() {
   const [projectId, setProjectId] = useState('bhl-project');
   const [scratchXml, setScratchXml] = useState('');
   const projectRestored = useRef(false);
+
+  useEffect(() => {
+    const handoff = takeHexatonicHandoff();
+    if (!handoff) return;
+    setHexFamily(handoff.family);
+    setHexId(handoff.id);
+    setHexReference(handoff.referencePc);
+    setStatus(`Hexatonic colour ${handoff.id} is provisional until a person accepts it.`);
+  }, []);
 
   useEffect(() => {
     void api.bhlCatalog().then((raw) => {
@@ -377,6 +405,7 @@ export function BhlComposerPage() {
         regions,
         musical: musicalBody(),
         quartal,
+        hexatonic: hexatonicBody(),
       });
       const row = raw as Compose | { ok: false; error: string };
       if (!row.ok) throw new Error(row.error);
@@ -457,6 +486,11 @@ export function BhlComposerPage() {
     }
   }
 
+  function hexatonicBody(): { family: BhlHexatonicFamily; id: string; referencePc: number } | null {
+    if (!hexFamily || !hexId) return null;
+    return { family: hexFamily, id: hexId, referencePc: hexReference };
+  }
+
   function generationBody(extra: Record<string, unknown> = {}) {
     const regions = locked?.plan.regions.map((region) => ({
       id: region.id,
@@ -475,6 +509,7 @@ export function BhlComposerPage() {
       regions,
       musical: musicalBody(),
       quartal,
+      hexatonic: hexatonicBody(),
       ...extra,
     };
   }
@@ -565,7 +600,7 @@ export function BhlComposerPage() {
         },
         span: { from: spanFrom, to: spanTo },
         world,
-        settings: { seed, phraseArc, continuation, rhythm, outsideColour, musical: musicalBody() },
+        settings: { seed, phraseArc, continuation, rhythm, outsideColour, musical: musicalBody(), hexatonic: hexatonicBody() },
         candidates: candidates.map((item) => ({
           ...item,
           notes: typeof item.notes === 'string' ? item.notes : projectNotes,
@@ -604,13 +639,18 @@ export function BhlComposerPage() {
         setSpanTo(span.to);
       }
       if (typeof project.world === 'string') setWorld(project.world);
-      const settings = project.settings as { seed?: number; phraseArc?: string; continuation?: string; rhythm?: string; outsideColour?: boolean; musical?: Record<string, unknown> } | undefined;
+      const settings = project.settings as { seed?: number; phraseArc?: string; continuation?: string; rhythm?: string; outsideColour?: boolean; musical?: Record<string, unknown>; hexatonic?: { family?: BhlHexatonicFamily; id?: string; referencePc?: number } | null } | undefined;
       if (settings) {
         if (typeof settings.seed === 'number') setSeed(settings.seed);
         if (typeof settings.phraseArc === 'string') setPhraseArc(settings.phraseArc);
         if (typeof settings.continuation === 'string') setContinuation(settings.continuation);
         if (typeof settings.rhythm === 'string') setRhythm(settings.rhythm);
         if (typeof settings.outsideColour === 'boolean') setOutsideColour(settings.outsideColour);
+        if (settings.hexatonic?.family && settings.hexatonic.id) {
+          setHexFamily(settings.hexatonic.family);
+          setHexId(settings.hexatonic.id);
+          setHexReference(settings.hexatonic.referencePc ?? 0);
+        }
         const musical = settings.musical ?? {};
         const riff = musical.riff as { pitchSource?: string; rhythmSource?: string; pitchSeed?: number; rhythmSeed?: number; transform?: string; displacementQuarters?: number } | undefined;
         if (riff?.pitchSource === 'riff' || riff?.pitchSource === 'world') setPitchSource(riff.pitchSource);
@@ -835,6 +875,73 @@ export function BhlComposerPage() {
             ))}
           </select>
         </label>
+        <label htmlFor="bhl-hex-family">
+          Hexatonic colour
+          <select
+            id="bhl-hex-family"
+            data-testid="bhl-hex-family"
+            value={hexFamily}
+            onChange={(event) => {
+              const family = event.target.value as '' | BhlHexatonicFamily;
+              setHexFamily(family);
+              const first = hexChoices.find((choice) => choice.family === family);
+              setHexId(first?.id ?? '');
+              markDirty();
+            }}
+            style={{ width: '100%', marginTop: '0.25rem' }}
+          >
+            <option value="">None — world pitches stay</option>
+            <option value="scalar">Scalar collection</option>
+            <option value="wps">WPS pair</option>
+            <option value="provisional">Provisional H6 candidate</option>
+          </select>
+        </label>
+        {hexFamily ? (
+          <>
+            <label htmlFor="bhl-hex-id">
+              Construction
+              <select
+                id="bhl-hex-id"
+                data-testid="bhl-hex-id"
+                value={hexId}
+                onChange={(event) => {
+                  setHexId(event.target.value);
+                  markDirty();
+                }}
+                style={{ width: '100%', marginTop: '0.25rem' }}
+              >
+                {hexChoices.filter((choice) => choice.family === hexFamily).map((choice) => (
+                  <option key={choice.id} value={choice.id}>
+                    {choice.label}{choice.provisional ? ' — provisional' : ''}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label htmlFor="bhl-hex-reference">
+              Reference note
+              <select
+                id="bhl-hex-reference"
+                data-testid="bhl-hex-reference"
+                value={hexReference}
+                onChange={(event) => {
+                  setHexReference(Number(event.target.value));
+                  markDirty();
+                }}
+                style={{ marginLeft: '0.35rem' }}
+              >
+                {PITCH_NAMES.map((name, index) => (
+                  <option key={name} value={index}>{name}</option>
+                ))}
+              </select>
+            </label>
+          </>
+        ) : null}
+        {(() => {
+          const identity = hexatonicIdentity(hexFamily, hexId, hexReference);
+          if (!identity) return null;
+          if ('error' in identity) return <p data-testid="bhl-hex-identity">{identity.error}</p>;
+          return <p data-testid="bhl-hex-identity">{identity.text}</p>;
+        })()}
         <label htmlFor="bhl-protected">
           Protected guitar bars
           <input

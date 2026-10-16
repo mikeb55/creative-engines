@@ -24,6 +24,8 @@
 
 **Hexatonic Core laboratory (H6-A3, 2026-10-15):** `#/hexatonic` keeps the H4 workspace and adds a provisional section for 12 computed triad pairs. Reviews use `hexatonic-laboratory-review` version 1, stored as `.hexatonic-lab.json` in the hexatonic project directory. `hexatonic-project` version 1 is unchanged. Audition scores use `exportScoreModelToMusicXml`. `artisticApproval` stays false. The nearest catalogue spelling is shown beside the candidate. Detail: `docs/H6-A3-CORE-TRIAD-PAIR-LABORATORY-REPORT.md`. H6-A4 adds the audition book at `docs/h6-a4/` and does not admit a candidate.
 
+**Hexatonic colour in BHL (H6-B1, 2026-10-16):** `#/bhl` can send a resolved hexatonic construction through the existing candidate composer. The MusicXML comment `bhl-hexatonic` carries provenance and provisional status. `artisticApproval` stays false. Worlds A–F are not extended.
+
 **Hexatonic shared audition (H6-B0, 2026-10-16):** `#/hexatonic` and `#/bhl` share `ScoreAudition` and `ScorePreview`. Playback stays on the existing Tone.js `playbackEngine`. Notation stays on `@stringsync/vexml` with standard staves only. Core candidates stay provisional. Detail: `docs/H6-B0-SHARED-AUDITION-AND-SCORE-PREVIEW.md`.
 
 **Hexatonic blind audition (H6-A4b, 2026-10-16):** the same laboratory review, version 1, may carry an optional `blind` block. Older reviews without that block still open. Seeded sessions hide pair names until the listening answer is saved. Concealed references come from `generateHexatonicPhrase`. ACCEPT on a primary hearing writes the existing decision `KEEP`. KEEP PROVISIONAL does not. `artisticApproval` stays false, and the catalogue is not extended. Detail: `docs/H6-A4B-BLIND-AUDITION.md`.

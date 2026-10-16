@@ -153,6 +153,10 @@ describe('HexatonicLaboratory audition', () => {
     expect(screen.getByTestId('hexatonic-laboratory-candidate').querySelectorAll('option')).toHaveLength(12);
     expect((screen.getByTestId('hex-lab-decision') as HTMLSelectElement).value).toBe('UNDECIDED');
     expect(screen.getByTestId('score-audition')).toBeTruthy();
+    fireEvent.click(screen.getByTestId('hex-lab-compose'));
+    const stored = JSON.parse(sessionStorage.getItem('bhl-hexatonic-handoff') ?? '{}') as { family?: string; id?: string };
+    expect(stored.family).toBe('provisional');
+    expect(stored.id).toBe('cm-dbm');
     await waitFor(() => expect(renderMusicXML).toHaveBeenCalled());
     const xml = String(renderMusicXML.mock.calls[0]?.[0]);
     expect(xml).toContain('Electric Guitar');
