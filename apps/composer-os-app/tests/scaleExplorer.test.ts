@@ -61,7 +61,8 @@ describe('scale explorer masks', () => {
     expect(empty.tonicFixed).toBe(false);
     expect(chromatic.cardinality).toBe(12);
     expect(chromatic.pitchClasses).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
-    expect(chromatic.registrations).toEqual([]);
+    expect(chromatic.registrations.map((row) => row.registry)).toEqual(['glossary-named']);
+    expect(chromatic.registrations[0]?.status).toBeNull();
     expect(chromatic.tonicFixed).toBe(true);
     expect(chromatic.forte).toBeNull();
   });

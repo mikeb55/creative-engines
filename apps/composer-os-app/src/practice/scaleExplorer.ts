@@ -22,6 +22,15 @@ import {
 } from '@composer-os/core/pentatonic/pitch';
 import { PENTATONIC_REGISTRY_VERSION, listPentatonicArchetypes } from '@composer-os/core/pentatonic/registry';
 import { parseSpelledPitch } from '@composer-os/core/wwh/wwhTriadPair';
+import {
+  assertGlossaryLicence,
+  computePitchClassSetMath,
+  glossaryNameMatches,
+  glossaryNameRecords,
+  normaliseScaleName,
+  parseScaleSearch,
+  type PitchClassSetMath,
+} from './scaleGlossary';
 
 export const CHROMATIC_MASK_COUNT = 4096;
 export const TONIC_FIXED_MASK_COUNT = 2048;
@@ -39,7 +48,8 @@ export type ScaleRegistryId =
   | 'hexatonic-scalar'
   | 'hexatonic-wps'
   | 'hexatonic-provisional'
-  | 'hexatonic-advanced';
+  | 'hexatonic-advanced'
+  | 'glossary-named';
 
 export interface ScaleRegistration {
   registry: ScaleRegistryId;
@@ -49,8 +59,8 @@ export interface ScaleRegistration {
   /** Copied from the registry row. Null when that row has no status field. */
   status: string | null;
   provenance: string;
-  /** Existing page that implements this registry. The page does not open this id. */
-  pageHash: '#/pentatonic' | '#/hexatonic';
+  /** Existing page that implements this registry. Null for a glossary name, which has no page of its own. */
+  pageHash: '#/pentatonic' | '#/hexatonic' | null;
 }
 
 export interface ForteClassLabel {
@@ -74,6 +84,8 @@ export interface ScaleExplorerEntry {
   /** Set only for a six-note set, via the existing hexachord table. */
   forte: ForteClassLabel | null;
   intervalsFromC: readonly IntervalFromC[];
+  /** Computed for every cardinality. Separate from the hexachord catalogue label above. */
+  math: PitchClassSetMath;
 }
 
 export interface ScaleExplorerQuery {
@@ -218,6 +230,19 @@ function buildIndex(): void {
     });
   }
 
+  assertGlossaryLicence();
+  for (const record of glossaryNameRecords()) {
+    addRegistration(record.pitchClasses, {
+      registry: 'glossary-named',
+      id: normaliseScaleName(record.primaryName).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+      displayName: record.primaryName,
+      family: 'glossary',
+      status: null,
+      provenance: `${record.sourceId} ${record.licenceBasis}. ${record.sourceUrl} Retrieved ${record.retrievedOn}. Kind ${record.kind}. Not a musical approval.`,
+      pageHash: null,
+    });
+  }
+
   for (let mask = 0; mask < CHROMATIC_MASK_COUNT; mask += 1) {
     const pitchClasses = pitchClassesFromMask(mask);
     ENTRIES.push({
@@ -229,6 +254,7 @@ function buildIndex(): void {
       registrations: REGISTRATIONS_BY_MASK.get(mask) ?? [],
       forte: forteClassForExplorer(pitchClasses),
       intervalsFromC: intervalsFromC(pitchClasses),
+      math: computePitchClassSetMath(mask),
     });
   }
 
@@ -304,7 +330,15 @@ function pitchClassQuery(raw: string): number[] | null {
 }
 
 function textMatches(entry: ScaleExplorerEntry, query: string): boolean {
-  const needle = query.trim().toLowerCase();
+  const parsed = parseScaleSearch(query);
+  if (parsed.kind === 'none') return false;
+  if (parsed.kind === 'mask') return entry.mask === parsed.mask;
+  if (parsed.kind === 'exact') {
+    const pitchClasses = pitchClassQuery(parsed.body);
+    if (!pitchClasses) return false;
+    return entry.pitchClassId === canonicalPitchSetId(pitchClasses);
+  }
+  const needle = parsed.needle;
   if (!needle) return true;
   const pitchClasses = pitchClassQuery(query);
   if (pitchClasses) {
@@ -313,10 +347,12 @@ function textMatches(entry: ScaleExplorerEntry, query: string): boolean {
   if (/^\d+$/.test(needle)) return entry.mask === Number(needle);
   if (entry.pitchClassId.toLowerCase() === needle) return true;
   if (entry.forte?.forte.toLowerCase() === needle) return true;
+  if (entry.math.computedForte.number.toLowerCase() === needle) return true;
+  if (glossaryNameMatches(entry.mask, needle)) return true;
   return entry.registrations.some((registration) => {
     return (
-      registration.id.toLowerCase().includes(needle) ||
-      registration.displayName.toLowerCase().includes(needle)
+      normaliseScaleName(registration.id).includes(needle) ||
+      normaliseScaleName(registration.displayName).includes(needle)
     );
   });
 }

@@ -14,6 +14,8 @@
 
 ### Added
 
+- **Practice & Scales Studio master scale glossary** — each of the 4,096 masks now carries a computed identity: interval vector, tonic-fixed steps, modes, transposition class, Rahn prime, Forte prime, and a Forte number for every cardinality. The Ian Ring id is the mask. Page links appear only for the 2,048 tonic-fixed masks. A separate glossary names 85 Tonal.js scales (MIT) without importing Ian Ring, Zeitler, or Pecot names. Hexachord catalogue status is unchanged. Detail: `docs/V3.2-SCALE-GLOSSARY-IMPLEMENTATION.md`.
+
 - **Practice & Scales Studio V3.2-D** — `#/practice` generates exercises from the selected Scale Explorer set and root. Families: scale pathways, melodic cells, pentatonic studies (the 20 colours), triad/dyad grips, BHL colour studies on established scalar or WPS identities, and BHL rhythm studies. Difficulty maps to `SPARSE` / `INTERMEDIATE` / `EXPANDED`. Bars are 4, 8, or 16. Metres are the ones `beatUnitQuarters` already accepts. A seed repeats. Generate another advances the seed. Unsupported selections stay unavailable. No playback, save, or MusicXML export. Detail: `docs/V3.2-D-PRACTICE-GENERATOR-IMPLEMENTATION.md`.
 
 - **Practice & Scales Studio V3.2-C** — `#/practice` fretboard follows the selected Scale Explorer set. Root, tuning, pitch or interval labels, fret window, and a standard-tuning position window are on the page. Open-string MIDI comes from `openStringMidisForTuning`. `pcFretboard` checks one clicked pitch in standard tuning and is not called for any other tuning. Note playback stays deferred. Detail: `docs/V3.2-C-FRETBOARD-IMPLEMENTATION.md`.

@@ -6,6 +6,18 @@
 
 ---
 
+## Practice & Scales Studio — scale glossary
+
+**Where:** `#/practice`.
+
+The explorer lists all 4,096 pitch-class masks. Bit 0 is C. That integer is the Ian Ring id. A link to Ian Ring’s page appears only when the set contains C.
+
+Search accepts a name, an alias, a mask (`2741`), `ir:2741`, `hex:0xAB5`, and `zeitler:2773`. The Zeitler prefix reverses the 12 bits before lookup. Zeitler 2773 is major. Ian Ring 2773 is Lydian.
+
+Named scales in the glossary come from the existing pentatonic and hexatonic registries and from Tonal.js (MIT). Ian Ring names, Zeitler coined names, and Dozenal names are not in the app. A glossary name is not a musical approval. Provisional and advanced hexatonic statuses stay on those rows.
+
+Notices: `docs/THIRD_PARTY_NOTICES.md`.
+
 ## Playback (Generate — Play / Pause / Stop)
 
 **What it does:** After a successful **Generate**, the app can **preview the written score in the browser** using a lightweight software synth — not a full DAW, but enough to sanity-check **pitch + timing** before opening Sibelius or another host.

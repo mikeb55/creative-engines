@@ -27,6 +27,7 @@ import {
   practiceTuningChoices,
   romanPosition,
 } from './practiceFretboard';
+import { glossaryNamesForMask, transposeMask } from './scaleGlossary';
 import {
   PRACTICE_EXERCISE_BAR_COUNTS,
   PRACTICE_EXERCISE_FAMILIES,
@@ -90,6 +91,7 @@ export function PracticeStudioPage() {
   );
   const paged = pageScaleExplorer(filtered, page);
   const selected = getScaleExplorerEntry(selectedMask);
+  const glossaryNames = glossaryNamesForMask(selected.mask);
   const selectedVisible = filtered.some((entry) => entry.mask === selectedMask);
   const board = useMemo(
     () =>
@@ -310,10 +312,41 @@ export function PracticeStudioPage() {
           <dt>Forte class</dt>
           <dd style={{ margin: 0 }}>
             {selected.forte
-              ? `${selected.forte.forte} · ${selected.forte.status}. Class label for this six-note set. Not a scale name.`
-              : 'None. Forte labels are limited to the existing six-note table.'}
+              ? `${selected.forte.forte} · ${selected.forte.status}. Hexachord catalogue label. Not a scale name.`
+              : 'No hexachord catalogue label on this cardinality.'}
+          </dd>
+          <dt>Computed Forte</dt>
+          <dd style={{ margin: 0 }} data-testid="computed-forte">
+            {`${selected.math.computedForte.number}${selected.math.computedForte.inversion ? ` ${selected.math.computedForte.inversion}` : ''}${selected.math.computedForte.z ? ' · Z-related' : ''}. Interval vector ${selected.math.intervalVector.join('')}.`}
+          </dd>
+          <dt>Steps</dt>
+          <dd style={{ margin: 0 }}>{selected.math.stepPattern ? selected.math.stepPattern.join('-') : 'No tonic-fixed step pattern.'}</dd>
+          <dt>Rahn prime mask</dt>
+          <dd style={{ margin: 0 }}>{selected.math.primeMaskRahn}</dd>
+          <dt>Forte prime mask</dt>
+          <dd style={{ margin: 0 }}>{selected.math.primeMaskForte}</dd>
+          <dt>Transposition class</dt>
+          <dd style={{ margin: 0 }}>{selected.math.tnClassMask}</dd>
+          <dt>Zeitler / Tonal number</dt>
+          <dd style={{ margin: 0 }} data-testid="root-msb-number">
+            {`${selected.math.rootMsbNumber}. Root is the high bit. This is not the Ian Ring id.`}
+          </dd>
+          <dt>Ian Ring</dt>
+          <dd style={{ margin: 0 }}>
+            {selected.math.ianRing ? (
+              <a data-testid="ian-ring-link" href={selected.math.ianRing.url} target="_blank" rel="noreferrer">
+                {selected.math.ianRing.url}
+              </a>
+            ) : (
+              'No page. Ian Ring publishes links for tonic-fixed sets only.'
+            )}
           </dd>
         </dl>
+        {selected.math.modeMasks.length > 0 && (
+          <p style={{ fontSize: '0.85rem' }} data-testid="mode-masks">
+            {`Modes, each member moved to pitch class 0: ${selected.math.modeMasks.join(', ')}. Transposition is separate. T1 is mask ${transposeMask(selected.mask, 1)}.`}
+          </p>
+        )}
         <h4 style={{ marginBottom: '0.35rem' }}>Registered collections</h4>
         {selected.registrations.length === 0 ? (
           <p data-testid="mathematical-set-note">{MATHEMATICAL_SET_STATUS}. Computed pitch-class subset. No musical name.</p>
@@ -340,8 +373,23 @@ export function PracticeStudioPage() {
             );
           })}
         </div>
+        {glossaryNames.length > 0 && (
+          <div data-testid="glossary-names">
+            <h4 style={{ marginBottom: '0.35rem' }}>Glossary names</h4>
+            <ul style={{ paddingLeft: '1.1rem' }}>
+              {glossaryNames.map((record) => (
+                <li key={record.primaryName}>
+                  <strong>{record.primaryName}</strong>
+                  {record.aliases.length > 0 ? ` · also ${record.aliases.join(', ')}` : ''}
+                  {` · ${record.kind} · ${record.licenceBasis} · ${record.sourceUrl}`}
+                  {record.conflicts ? <div style={{ fontSize: '0.82rem' }}>{record.conflicts}</div> : null}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         {selected.mask === CHROMATIC_SET_MASK && (
-          <p style={{ fontSize: '0.85rem' }}>Chromatic set. Mask 4095. No registered name on this set.</p>
+          <p style={{ fontSize: '0.85rem' }}>Chromatic set. Mask 4095. A glossary name is a dictionary label, not an approval.</p>
         )}
       </section>
 

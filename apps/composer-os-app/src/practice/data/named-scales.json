@@ -1,0 +1,2613 @@
+{
+  "source": "Tonal.js @tonaljs/scale-type 4.9.4 data.ts. MIT licence. Intervals converted to Ian Ring bit order (bit 0 = pitch class 0). Chroma integers from Tonal were not used.",
+  "package": "@tonaljs/scale-type",
+  "version": "4.9.4",
+  "retrievedOn": "2026-10-16",
+  "licence": "MIT",
+  "countNote": "The 16 October 2026 research report estimated about 92 entries. The fetched file contains 85 scale rows.",
+  "records": [
+    {
+      "mask": 661,
+      "intervals": [
+        "1P",
+        "2M",
+        "3M",
+        "5P",
+        "6M"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        4,
+        7,
+        9
+      ],
+      "primaryName": "major pentatonic",
+      "aliases": [
+        "pentatonic"
+      ],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2741,
+      "intervals": [
+        "1P",
+        "2M",
+        "3M",
+        "4P",
+        "5P",
+        "6M",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11
+      ],
+      "primaryName": "major",
+      "aliases": [
+        "ionian"
+      ],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1453,
+      "intervals": [
+        "1P",
+        "2M",
+        "3m",
+        "4P",
+        "5P",
+        "6m",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        3,
+        5,
+        7,
+        8,
+        10
+      ],
+      "primaryName": "minor",
+      "aliases": [
+        "aeolian"
+      ],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 669,
+      "intervals": [
+        "1P",
+        "2M",
+        "3m",
+        "3M",
+        "5P",
+        "6M"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        3,
+        4,
+        7,
+        9
+      ],
+      "primaryName": "major blues",
+      "aliases": [],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1257,
+      "intervals": [
+        "1P",
+        "3m",
+        "4P",
+        "5d",
+        "5P",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        3,
+        5,
+        6,
+        7,
+        10
+      ],
+      "primaryName": "minor blues",
+      "aliases": [
+        "blues"
+      ],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2733,
+      "intervals": [
+        "1P",
+        "2M",
+        "3m",
+        "4P",
+        "5P",
+        "6M",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        3,
+        5,
+        7,
+        9,
+        11
+      ],
+      "primaryName": "melodic minor",
+      "aliases": [],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2477,
+      "intervals": [
+        "1P",
+        "2M",
+        "3m",
+        "4P",
+        "5P",
+        "6m",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        3,
+        5,
+        7,
+        8,
+        11
+      ],
+      "primaryName": "harmonic minor",
+      "aliases": [],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 3765,
+      "intervals": [
+        "1P",
+        "2M",
+        "3M",
+        "4P",
+        "5P",
+        "6M",
+        "7m",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11
+      ],
+      "primaryName": "bebop",
+      "aliases": [],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2925,
+      "intervals": [
+        "1P",
+        "2M",
+        "3m",
+        "4P",
+        "5d",
+        "6m",
+        "6M",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        3,
+        5,
+        6,
+        8,
+        9,
+        11
+      ],
+      "primaryName": "diminished",
+      "aliases": [
+        "whole-half diminished"
+      ],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": "Tonal maps diminished to the whole-half octatonic. Jazz often means the half-whole mode over dominant chords. Both stay separate when both are attested."
+    },
+    {
+      "mask": 1709,
+      "intervals": [
+        "1P",
+        "2M",
+        "3m",
+        "4P",
+        "5P",
+        "6M",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        3,
+        5,
+        7,
+        9,
+        10
+      ],
+      "primaryName": "dorian",
+      "aliases": [],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2773,
+      "intervals": [
+        "1P",
+        "2M",
+        "3M",
+        "4A",
+        "5P",
+        "6M",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        4,
+        6,
+        7,
+        9,
+        11
+      ],
+      "primaryName": "lydian",
+      "aliases": [],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1717,
+      "intervals": [
+        "1P",
+        "2M",
+        "3M",
+        "4P",
+        "5P",
+        "6M",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        4,
+        5,
+        7,
+        9,
+        10
+      ],
+      "primaryName": "mixolydian",
+      "aliases": [
+        "dominant"
+      ],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1451,
+      "intervals": [
+        "1P",
+        "2m",
+        "3m",
+        "4P",
+        "5P",
+        "6m",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        10
+      ],
+      "primaryName": "phrygian",
+      "aliases": [],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1387,
+      "intervals": [
+        "1P",
+        "2m",
+        "3m",
+        "4P",
+        "5d",
+        "6m",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        3,
+        5,
+        6,
+        8,
+        10
+      ],
+      "primaryName": "locrian",
+      "aliases": [],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2225,
+      "intervals": [
+        "1P",
+        "3M",
+        "4P",
+        "5P",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        4,
+        5,
+        7,
+        11
+      ],
+      "primaryName": "ionian pentatonic",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1201,
+      "intervals": [
+        "1P",
+        "3M",
+        "4P",
+        "5P",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        4,
+        5,
+        7,
+        10
+      ],
+      "primaryName": "mixolydian pentatonic",
+      "aliases": [
+        "indian"
+      ],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 677,
+      "intervals": [
+        "1P",
+        "2M",
+        "4P",
+        "5P",
+        "6M"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        5,
+        7,
+        9
+      ],
+      "primaryName": "ritusen",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1189,
+      "intervals": [
+        "1P",
+        "2M",
+        "4P",
+        "5P",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        5,
+        7,
+        10
+      ],
+      "primaryName": "egyptian",
+      "aliases": [],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1137,
+      "intervals": [
+        "1P",
+        "3M",
+        "4P",
+        "5d",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        4,
+        5,
+        6,
+        10
+      ],
+      "primaryName": "neapolitan major pentatonic",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 425,
+      "intervals": [
+        "1P",
+        "3m",
+        "4P",
+        "5P",
+        "6m"
+      ],
+      "pitchClasses": [
+        0,
+        3,
+        5,
+        7,
+        8
+      ],
+      "primaryName": "vietnamese 1",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 395,
+      "intervals": [
+        "1P",
+        "2m",
+        "3m",
+        "5P",
+        "6m"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        3,
+        7,
+        8
+      ],
+      "primaryName": "pelog",
+      "aliases": [],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 419,
+      "intervals": [
+        "1P",
+        "2m",
+        "4P",
+        "5P",
+        "6m"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        5,
+        7,
+        8
+      ],
+      "primaryName": "kumoijoshi",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 397,
+      "intervals": [
+        "1P",
+        "2M",
+        "3m",
+        "5P",
+        "6m"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        3,
+        7,
+        8
+      ],
+      "primaryName": "hirajoshi",
+      "aliases": [],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1123,
+      "intervals": [
+        "1P",
+        "2m",
+        "4P",
+        "5d",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        5,
+        6,
+        10
+      ],
+      "primaryName": "iwato",
+      "aliases": [],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1187,
+      "intervals": [
+        "1P",
+        "2m",
+        "4P",
+        "5P",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        5,
+        7,
+        10
+      ],
+      "primaryName": "in-sen",
+      "aliases": [],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2257,
+      "intervals": [
+        "1P",
+        "3M",
+        "4A",
+        "5P",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        4,
+        6,
+        7,
+        11
+      ],
+      "primaryName": "lydian pentatonic",
+      "aliases": [
+        "chinese"
+      ],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1321,
+      "intervals": [
+        "1P",
+        "3m",
+        "4P",
+        "6m",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        3,
+        5,
+        8,
+        10
+      ],
+      "primaryName": "malkos raga",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1129,
+      "intervals": [
+        "1P",
+        "3m",
+        "4P",
+        "5d",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        3,
+        5,
+        6,
+        10
+      ],
+      "primaryName": "locrian pentatonic",
+      "aliases": [
+        "minor seven flat five pentatonic"
+      ],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1193,
+      "intervals": [
+        "1P",
+        "3m",
+        "4P",
+        "5P",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        3,
+        5,
+        7,
+        10
+      ],
+      "primaryName": "minor pentatonic",
+      "aliases": [
+        "vietnamese 2"
+      ],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 681,
+      "intervals": [
+        "1P",
+        "3m",
+        "4P",
+        "5P",
+        "6M"
+      ],
+      "pitchClasses": [
+        0,
+        3,
+        5,
+        7,
+        9
+      ],
+      "primaryName": "minor six pentatonic",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 653,
+      "intervals": [
+        "1P",
+        "2M",
+        "3m",
+        "5P",
+        "6M"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        3,
+        7,
+        9
+      ],
+      "primaryName": "flat three pentatonic",
+      "aliases": [
+        "kumoi"
+      ],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 405,
+      "intervals": [
+        "1P",
+        "2M",
+        "3M",
+        "5P",
+        "6m"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        4,
+        7,
+        8
+      ],
+      "primaryName": "flat six pentatonic",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 659,
+      "intervals": [
+        "1P",
+        "2m",
+        "3M",
+        "5P",
+        "6M"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        4,
+        7,
+        9
+      ],
+      "primaryName": "scriabin",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1361,
+      "intervals": [
+        "1P",
+        "3M",
+        "5d",
+        "6m",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        4,
+        6,
+        8,
+        10
+      ],
+      "primaryName": "whole tone pentatonic",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2385,
+      "intervals": [
+        "1P",
+        "3M",
+        "4A",
+        "5A",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        4,
+        6,
+        8,
+        11
+      ],
+      "primaryName": "lydian #5p pentatonic",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1233,
+      "intervals": [
+        "1P",
+        "3M",
+        "4A",
+        "5P",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        4,
+        6,
+        7,
+        10
+      ],
+      "primaryName": "lydian dominant pentatonic",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2217,
+      "intervals": [
+        "1P",
+        "3m",
+        "4P",
+        "5P",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        3,
+        5,
+        7,
+        11
+      ],
+      "primaryName": "minor #7m pentatonic",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1113,
+      "intervals": [
+        "1P",
+        "3m",
+        "4d",
+        "5d",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        3,
+        4,
+        6,
+        10
+      ],
+      "primaryName": "super locrian pentatonic",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2221,
+      "intervals": [
+        "1P",
+        "2M",
+        "3m",
+        "4P",
+        "5P",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        3,
+        5,
+        7,
+        11
+      ],
+      "primaryName": "minor hexatonic",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2457,
+      "intervals": [
+        "1P",
+        "2A",
+        "3M",
+        "5P",
+        "5A",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        3,
+        4,
+        7,
+        8,
+        11
+      ],
+      "primaryName": "augmented",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1701,
+      "intervals": [
+        "1P",
+        "2M",
+        "4P",
+        "5P",
+        "6M",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        5,
+        7,
+        9,
+        10
+      ],
+      "primaryName": "piongio",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1619,
+      "intervals": [
+        "1P",
+        "2m",
+        "3M",
+        "4A",
+        "6M",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        4,
+        6,
+        9,
+        10
+      ],
+      "primaryName": "prometheus neapolitan",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1621,
+      "intervals": [
+        "1P",
+        "2M",
+        "3M",
+        "4A",
+        "6M",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        4,
+        6,
+        9,
+        10
+      ],
+      "primaryName": "prometheus",
+      "aliases": [],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1363,
+      "intervals": [
+        "1P",
+        "2m",
+        "3M",
+        "5d",
+        "6m",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        4,
+        6,
+        8,
+        10
+      ],
+      "primaryName": "mystery #1",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 819,
+      "intervals": [
+        "1P",
+        "2m",
+        "3M",
+        "4P",
+        "5A",
+        "6M"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        4,
+        5,
+        8,
+        9
+      ],
+      "primaryName": "six tone symmetric",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1365,
+      "intervals": [
+        "1P",
+        "2M",
+        "3M",
+        "4A",
+        "5A",
+        "6A"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        4,
+        6,
+        8,
+        10
+      ],
+      "primaryName": "whole tone",
+      "aliases": [
+        "messiaen's mode #1"
+      ],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2275,
+      "intervals": [
+        "1P",
+        "2m",
+        "4P",
+        "4A",
+        "5P",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        5,
+        6,
+        7,
+        11
+      ],
+      "primaryName": "messiaen's mode #5",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1397,
+      "intervals": [
+        "1P",
+        "2M",
+        "3M",
+        "4P",
+        "5d",
+        "6m",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        4,
+        5,
+        6,
+        8,
+        10
+      ],
+      "primaryName": "locrian major",
+      "aliases": [
+        "arabian"
+      ],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2515,
+      "intervals": [
+        "1P",
+        "2m",
+        "3M",
+        "4A",
+        "5P",
+        "6m",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        4,
+        6,
+        7,
+        8,
+        11
+      ],
+      "primaryName": "double harmonic lydian",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1389,
+      "intervals": [
+        "1P",
+        "2M",
+        "3m",
+        "4P",
+        "5d",
+        "6m",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        3,
+        5,
+        6,
+        8,
+        10
+      ],
+      "primaryName": "locrian #2",
+      "aliases": [
+        "half-diminished",
+        "aeolian b5"
+      ],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1749,
+      "intervals": [
+        "1P",
+        "2M",
+        "3M",
+        "4A",
+        "5P",
+        "6M",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        4,
+        6,
+        7,
+        9,
+        10
+      ],
+      "primaryName": "lydian dominant",
+      "aliases": [
+        "lydian b7",
+        "overtone"
+      ],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2901,
+      "intervals": [
+        "1P",
+        "2M",
+        "3M",
+        "4A",
+        "5A",
+        "6M",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        4,
+        6,
+        8,
+        9,
+        11
+      ],
+      "primaryName": "lydian augmented",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1643,
+      "intervals": [
+        "1P",
+        "2m",
+        "3m",
+        "4P",
+        "5d",
+        "6M",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        3,
+        5,
+        6,
+        9,
+        10
+      ],
+      "primaryName": "locrian 6",
+      "aliases": [
+        "locrian natural 6",
+        "locrian sharp 6"
+      ],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2489,
+      "intervals": [
+        "1P",
+        "2A",
+        "3M",
+        "4P",
+        "5P",
+        "5A",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        3,
+        4,
+        5,
+        7,
+        8,
+        11
+      ],
+      "primaryName": "augmented heptatonic",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2765,
+      "intervals": [
+        "1P",
+        "2M",
+        "3m",
+        "4A",
+        "5P",
+        "6M",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        3,
+        6,
+        7,
+        9,
+        11
+      ],
+      "primaryName": "lydian diminished",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 3413,
+      "intervals": [
+        "1P",
+        "2M",
+        "3M",
+        "4A",
+        "5A",
+        "7m",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        4,
+        6,
+        8,
+        10,
+        11
+      ],
+      "primaryName": "leading whole tone",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1493,
+      "intervals": [
+        "1P",
+        "2M",
+        "3M",
+        "4A",
+        "5P",
+        "6m",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        4,
+        6,
+        7,
+        8,
+        10
+      ],
+      "primaryName": "lydian minor",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1459,
+      "intervals": [
+        "1P",
+        "2m",
+        "3M",
+        "4P",
+        "5P",
+        "6m",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        4,
+        5,
+        7,
+        8,
+        10
+      ],
+      "primaryName": "phrygian dominant",
+      "aliases": [
+        "spanish",
+        "phrygian major"
+      ],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2475,
+      "intervals": [
+        "1P",
+        "2m",
+        "3m",
+        "4P",
+        "5P",
+        "6m",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        11
+      ],
+      "primaryName": "balinese",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2731,
+      "intervals": [
+        "1P",
+        "2m",
+        "3m",
+        "4P",
+        "5P",
+        "6M",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        9,
+        11
+      ],
+      "primaryName": "neapolitan major",
+      "aliases": [],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2485,
+      "intervals": [
+        "1P",
+        "2M",
+        "3M",
+        "4P",
+        "5P",
+        "6m",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        4,
+        5,
+        7,
+        8,
+        11
+      ],
+      "primaryName": "harmonic major",
+      "aliases": [],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2483,
+      "intervals": [
+        "1P",
+        "2m",
+        "3M",
+        "4P",
+        "5P",
+        "6m",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        4,
+        5,
+        7,
+        8,
+        11
+      ],
+      "primaryName": "double harmonic major",
+      "aliases": [
+        "gypsy"
+      ],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2509,
+      "intervals": [
+        "1P",
+        "2M",
+        "3m",
+        "4A",
+        "5P",
+        "6m",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        3,
+        6,
+        7,
+        8,
+        11
+      ],
+      "primaryName": "hungarian minor",
+      "aliases": [],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1753,
+      "intervals": [
+        "1P",
+        "2A",
+        "3M",
+        "4A",
+        "5P",
+        "6M",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        3,
+        4,
+        6,
+        7,
+        9,
+        10
+      ],
+      "primaryName": "hungarian major",
+      "aliases": [],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1651,
+      "intervals": [
+        "1P",
+        "2m",
+        "3M",
+        "4P",
+        "5d",
+        "6M",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        4,
+        5,
+        6,
+        9,
+        10
+      ],
+      "primaryName": "oriental",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1243,
+      "intervals": [
+        "1P",
+        "2m",
+        "3m",
+        "3M",
+        "4A",
+        "5P",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        3,
+        4,
+        6,
+        7,
+        10
+      ],
+      "primaryName": "flamenco",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2507,
+      "intervals": [
+        "1P",
+        "2m",
+        "3m",
+        "4A",
+        "5P",
+        "6m",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        3,
+        6,
+        7,
+        8,
+        11
+      ],
+      "primaryName": "todi raga",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2419,
+      "intervals": [
+        "1P",
+        "2m",
+        "3M",
+        "4P",
+        "5d",
+        "6m",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        4,
+        5,
+        6,
+        8,
+        11
+      ],
+      "primaryName": "persian",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 3411,
+      "intervals": [
+        "1P",
+        "2m",
+        "3M",
+        "5d",
+        "6m",
+        "7m",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        4,
+        6,
+        8,
+        10,
+        11
+      ],
+      "primaryName": "enigmatic",
+      "aliases": [],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2777,
+      "intervals": [
+        "1P",
+        "2A",
+        "3M",
+        "4A",
+        "5P",
+        "6M",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        3,
+        4,
+        6,
+        7,
+        9,
+        11
+      ],
+      "primaryName": "lydian #9",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2535,
+      "intervals": [
+        "1P",
+        "2m",
+        "2M",
+        "4P",
+        "4A",
+        "5P",
+        "6m",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        2,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "primaryName": "messiaen's mode #4",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2547,
+      "intervals": [
+        "1P",
+        "2m",
+        "3M",
+        "4P",
+        "4A",
+        "5P",
+        "6m",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        4,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "primaryName": "purvi raga",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1467,
+      "intervals": [
+        "1P",
+        "2m",
+        "3m",
+        "3M",
+        "4P",
+        "5P",
+        "6m",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        3,
+        4,
+        5,
+        7,
+        8,
+        10
+      ],
+      "primaryName": "spanish heptatonic",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1725,
+      "intervals": [
+        "1P",
+        "2M",
+        "3m",
+        "3M",
+        "4P",
+        "5P",
+        "6M",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10
+      ],
+      "primaryName": "bebop minor",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2997,
+      "intervals": [
+        "1P",
+        "2M",
+        "3M",
+        "4P",
+        "5P",
+        "5A",
+        "6M",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        4,
+        5,
+        7,
+        8,
+        9,
+        11
+      ],
+      "primaryName": "bebop major",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1515,
+      "intervals": [
+        "1P",
+        "2m",
+        "3m",
+        "4P",
+        "5d",
+        "5P",
+        "6m",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        3,
+        5,
+        6,
+        7,
+        8,
+        10
+      ],
+      "primaryName": "bebop locrian",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 3501,
+      "intervals": [
+        "1P",
+        "2M",
+        "3m",
+        "4P",
+        "5P",
+        "6m",
+        "7m",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        3,
+        5,
+        7,
+        8,
+        10,
+        11
+      ],
+      "primaryName": "minor bebop",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2805,
+      "intervals": [
+        "1P",
+        "2M",
+        "3M",
+        "4P",
+        "5d",
+        "5P",
+        "6M",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11
+      ],
+      "primaryName": "ichikosucho",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 2989,
+      "intervals": [
+        "1P",
+        "2M",
+        "3m",
+        "4P",
+        "5P",
+        "6m",
+        "6M",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        3,
+        5,
+        7,
+        8,
+        9,
+        11
+      ],
+      "primaryName": "minor six diminished",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 3769,
+      "intervals": [
+        "1P",
+        "3m",
+        "3M",
+        "4P",
+        "5P",
+        "6M",
+        "7m",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11
+      ],
+      "primaryName": "kafi raga",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 3445,
+      "intervals": [
+        "1P",
+        "2M",
+        "3M",
+        "4P",
+        "4A",
+        "5A",
+        "6A",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        4,
+        5,
+        6,
+        8,
+        10,
+        11
+      ],
+      "primaryName": "messiaen's mode #6",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 1789,
+      "intervals": [
+        "1P",
+        "2M",
+        "3m",
+        "3M",
+        "4P",
+        "5d",
+        "5P",
+        "6M",
+        "7m"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10
+      ],
+      "primaryName": "composite blues",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 3549,
+      "intervals": [
+        "1P",
+        "2M",
+        "3m",
+        "3M",
+        "4A",
+        "5P",
+        "6m",
+        "7m",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        2,
+        3,
+        4,
+        6,
+        7,
+        8,
+        10,
+        11
+      ],
+      "primaryName": "messiaen's mode #3",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 3055,
+      "intervals": [
+        "1P",
+        "2m",
+        "2M",
+        "3m",
+        "4P",
+        "4A",
+        "5P",
+        "6m",
+        "6M",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        11
+      ],
+      "primaryName": "messiaen's mode #7",
+      "aliases": [],
+      "kind": "theoretical",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    },
+    {
+      "mask": 4095,
+      "intervals": [
+        "1P",
+        "2m",
+        "2M",
+        "3m",
+        "3M",
+        "4P",
+        "5d",
+        "5P",
+        "6m",
+        "6M",
+        "7m",
+        "7M"
+      ],
+      "pitchClasses": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "primaryName": "chromatic",
+      "aliases": [],
+      "kind": "traditional",
+      "tradition": "tonal.js scale dictionary",
+      "sourceId": "tonal-mit",
+      "sourceUrl": "https://github.com/tonaljs/tonal/blob/main/packages/scale-type/data.ts",
+      "retrievedOn": "2026-10-16",
+      "licenceBasis": "MIT",
+      "corroboratedBy": [],
+      "conflicts": null
+    }
+  ]
+}
