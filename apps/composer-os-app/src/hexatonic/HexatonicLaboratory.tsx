@@ -10,8 +10,11 @@ import {
   CORE_CANDIDATES,
   CORE_CONTEXT_IDS,
   CORE_LABORATORY_STATUS,
+  commonToneNeighbours,
   coreCandidateAuditionMusicXml,
   discloseBlindItem,
+  matchCataloguePair,
+  namedNeighbours,
   moveBlindCursor,
   nearestCatalogueReading,
   type BlindComposeAnswer,
@@ -19,7 +22,9 @@ import {
   type BlindDistinctAnswer,
   type CoreLaboratoryReview,
   type LaboratoryAnswer,
+  triadMotionAuditionMusicXml,
   type LaboratoryDecision,
+  type NeighbourRow,
 } from '@composer-os/core/hexatonic';
 import { api } from '../services/api';
 import { ScoreAudition } from '../score/ScoreAudition';
@@ -184,6 +189,8 @@ export function HexatonicLaboratory() {
   const analyses = useMemo(() => CORE_CANDIDATES.map((row) => analyzeCoreCandidate(row.id)), []);
   const [mode, setMode] = useState<'detail' | 'blind'>('detail');
   const [selected, setSelected] = useState(CORE_CANDIDATES[0]!.id);
+  const [triadSide, setTriadSide] = useState<'left' | 'right'>('left');
+  const [neighbourKey, setNeighbourKey] = useState<string | null>(null);
   const [review, setReview] = useState<CoreLaboratoryReview>(() => blankCoreLaboratoryReview());
   const [status, setStatus] = useState<string | null>(null);
   const [path, setPath] = useState('');
@@ -232,6 +239,24 @@ export function HexatonicLaboratory() {
     setReview((current) => (current.blind ? { ...current, artisticApproval: false } : { ...current, artisticApproval: false, blind: buildBlindAudition(440) }));
   };
 
+  const sideNotes = triadSide === 'left' ? analysis.candidate.leftSpelling : analysis.candidate.rightSpelling;
+  const sideQuality = triadSide === 'left' ? analysis.candidate.leftQuality : analysis.candidate.rightQuality;
+  const otherPcs = triadSide === 'left' ? analysis.rightPitchClasses : analysis.leftPitchClasses;
+  const named = useMemo(
+    () => namedNeighbours({ quality: sideQuality, notes: [sideNotes[0], sideNotes[1], sideNotes[2]] }),
+    [sideQuality, sideNotes],
+  );
+  const extraTones = useMemo(
+    () => (Array.isArray(named) ? commonToneNeighbours({ quality: sideQuality, notes: [sideNotes[0], sideNotes[1], sideNotes[2]] }) : []),
+    [named, sideQuality, sideNotes],
+  );
+  const neighbourRows: NeighbourRow[] = Array.isArray(named) ? [...named, ...(Array.isArray(extraTones) ? extraTones : [])] : [];
+  const neighbour = neighbourRows.find((row) => `${row.operation ?? 'common'}:${row.target.quality}:${row.target.rootPc}` === neighbourKey) ?? null;
+  const neighbourMatch = neighbour ? matchCataloguePair(neighbour.target.pitchClasses, otherPcs) : null;
+  const neighbourXml = useMemo(
+    () => (neighbour ? triadMotionAuditionMusicXml(sideNotes, neighbour.target.notes, `${neighbour.operation ?? 'common-tone'} ${neighbour.target.notes.join(' ')}`) : ''),
+    [neighbour, sideNotes],
+  );
   const xml = mode === 'detail' ? coreCandidateAuditionMusicXml(analysis.candidate.id) : '';
 
   return (
@@ -291,6 +316,63 @@ export function HexatonicLaboratory() {
             <dt>Bass pedals</dt>
             <dd style={{ margin: 0 }}>{analysis.bassPedals.join(' · ')}</dd>
           </dl>
+          <section data-testid="hex-neighbours" style={{ display: 'grid', gap: '0.4rem' }}>
+            <h4 style={{ margin: 0 }}>Neighbours</h4>
+            <p style={{ margin: 0 }}>P, L, and R are the consonant neo-Riemannian group. H, N, and S are named consonant operations. Diminished and augmented triads are not given those names.</p>
+            <label htmlFor="hex-neighbour-side">
+              Triad
+              <select
+                id="hex-neighbour-side"
+                data-testid="hex-neighbour-side"
+                value={triadSide}
+                onChange={(event) => {
+                  setTriadSide(event.target.value as 'left' | 'right');
+                  setNeighbourKey(null);
+                }}
+              >
+                <option value="left">{analysis.candidate.leftSpelling.join(' ')} {analysis.candidate.leftQuality}</option>
+                <option value="right">{analysis.candidate.rightSpelling.join(' ')} {analysis.candidate.rightQuality}</option>
+              </select>
+            </label>
+            {Array.isArray(named) ? (
+              <ul data-testid="hex-neighbour-list" style={{ margin: 0, paddingLeft: '1.1rem' }}>
+                {neighbourRows.map((row) => {
+                  const key = `${row.operation ?? 'common'}:${row.target.quality}:${row.target.rootPc}`;
+                  const moving = row.motions.filter((motion) => !motion.retained).map((motion) => `${motion.fromSpelling} ${motion.direction} ${Math.abs(motion.semitones)} → ${motion.toSpelling}`).join(', ');
+                  return (
+                    <li key={key}>
+                      <button type="button" data-testid={`hex-neighbour-${key}`} onClick={() => setNeighbourKey(key)}>
+                        {row.operation ?? 'common-tone'} · {row.target.notes.join(' ')} {row.target.quality}
+                      </button>
+                      <span> shared {row.sharedPitchClasses.length}; {moving || 'held'}; {row.voiceLeading} semitones; {row.inversions.map((inversion) => inversion.figure).join(' ')}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p data-testid="hex-neighbour-unsupported" style={{ margin: 0 }}>{named.reason}</p>
+            )}
+            {neighbour ? (
+              <div data-testid="hex-neighbour-detail" style={{ display: 'grid', gap: '0.35rem' }}>
+                <p style={{ margin: 0 }}>{neighbour.explanation} Status stays {CORE_LABORATORY_STATUS}.</p>
+                <p style={{ margin: 0 }}>Inversions {neighbour.inversions.map((inversion) => `${inversion.figure} bass ${inversion.bass}`).join(' · ')}</p>
+                <button
+                  type="button"
+                  data-testid="hex-neighbour-compose"
+                  disabled={!neighbourMatch}
+                  onClick={() => {
+                    if (!neighbourMatch) return;
+                    storeHexatonicHandoff(neighbourMatch);
+                    window.location.hash = '#/bhl';
+                  }}
+                >
+                  {neighbourMatch ? `Use in BHL Composer · ${neighbourMatch.family} ${neighbourMatch.id}` : 'Not a registered BHL colour'}
+                </button>
+                <ScoreAudition musicXml={neighbourXml} label={`${neighbour.operation ?? 'common-tone'} · ${CORE_LABORATORY_STATUS}`} />
+                <ScorePreview musicXml={neighbourXml} />
+              </div>
+            ) : null}
+          </section>
           <fieldset style={{ display: 'grid', gap: '0.35rem' }}>
             <legend>Human review</legend>
             {(['distinct', 'useful', 'guitarPlayable'] as const).map((field) => (

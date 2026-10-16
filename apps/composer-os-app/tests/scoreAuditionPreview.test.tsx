@@ -165,6 +165,19 @@ describe('HexatonicLaboratory audition', () => {
     expect((screen.getByTestId('hex-lab-decision') as HTMLSelectElement).value).toBe('REFINE');
   });
 
+  it('shows consonant neighbours and keeps diminished triads out of P/L/R', async () => {
+    render(<HexatonicLaboratory />);
+    expect(screen.getByTestId('hex-neighbours')).toBeTruthy();
+    fireEvent.change(screen.getByTestId('hexatonic-laboratory-candidate'), { target: { value: 'cM-ebm' } });
+    fireEvent.click(screen.getByTestId('hex-neighbour-P:minor:0'));
+    expect(screen.getByTestId('hex-neighbour-detail').textContent).toMatch(/shared/);
+    expect(screen.getByTestId('hex-neighbour-detail').textContent).toContain('PROVISIONAL — NOT MUSICALLY APPROVED');
+    expect(screen.getAllByTestId('score-audition').length).toBeGreaterThan(1);
+    fireEvent.change(screen.getByTestId('hex-neighbour-side'), { target: { value: 'right' } });
+    fireEvent.change(screen.getByTestId('hexatonic-laboratory-candidate'), { target: { value: 'cm-bd' } });
+    expect(screen.getByTestId('hex-neighbour-unsupported').textContent).toMatch(/Diminished and augmented/);
+  });
+
   it('hides pair identity until the blind answer is saved', () => {
     render(<HexatonicLaboratory />);
     fireEvent.click(screen.getByTestId('hex-lab-mode-blind'));

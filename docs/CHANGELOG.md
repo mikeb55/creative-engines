@@ -8,6 +8,8 @@
 
 ### Added
 
+- **Hexatonic H6-C1 triadic transformations** — shared P, L, R, H, N, and S on major and minor triads. The service reuses pitch-class identity, common-tone counts, and minimum voice-leading. Words stay unreduced: PLP and LPL both reach the hexatonic pole, and that does not make every P/L/R word interchangeable. Diminished and augmented triads are refused. The Hexatonic Laboratory Neighbours panel auditions a move and can hand a registered pair to the existing BHL Composer. Status stays provisional.
+
 - **Hexatonic H6-B4 evidence** — generated candidates can be sent to the existing Evaluation Dashboard. The receipt names provisional status, attacks, rests, empty bars, pitch changes, and motif return, and the dashboard shows those two findings under Hexatonic colour. Compose and Send survive React StrictMode. Mechanical repetition is not an artistic score, and a repeated cell with a rest is not rejected by itself. `machineDecision` stays null.
 
 - **Hexatonic H6-B3 shape** — the BHL Composer shape controls set tension, space, density, texture, motif, and bass dialogue on the existing phrase regions. They do not add a state machine. Home, Near, Outside, and Return use the existing tension states.

@@ -112,3 +112,38 @@ export function coreCandidateAuditionMusicXml(id: string): string {
   if (/<staff-type>\s*tab\s*<\/staff-type>/i.test(exported.xml)) throw new Error('audition wrote TAB');
   return placeAuditionEngraving(exported.xml);
 }
+
+/** Two-bar standard-notation preview of one consonant move. Not musical approval. */
+export function triadMotionAuditionMusicXml(sourceNotes: readonly string[], targetNotes: readonly string[], label: string): string {
+  const noChord = () => undefined;
+  const guitar = createPart('guitar', 'Electric Guitar', CLEAN_ELECTRIC_GUITAR.instrumentIdentity, CLEAN_ELECTRIC_GUITAR.midiProgram, 'treble', 2, noChord, noChord);
+  const bass = createPart('bass', 'Upright Bass', ACOUSTIC_UPRIGHT_BASS.instrumentIdentity, ACOUSTIC_UPRIGHT_BASS.midiProgram, 'bass', 2, noChord, noChord);
+  const guitarEvents: { pitch: number; startBeat: number; duration: number; spelling: { step: string; alter: number } }[] = [];
+  putChord(guitarEvents, sourceNotes, 0, 4, 4);
+  putChord(guitarEvents, targetNotes, 0, 4, 4);
+  const bassToken = sourceNotes[0] ?? 'C';
+  const bassMidi = midiOf(bassToken, 2);
+  const bassSpelling = parseSpelledPitch(bassToken);
+  for (let bar = 0; bar < 2; bar += 1) {
+    const slice = guitarEvents.slice(bar * sourceNotes.length, bar * sourceNotes.length + (bar === 0 ? sourceNotes.length : targetNotes.length));
+    guitar.measures[bar]!.measureBeatSpanQuarters = 4;
+    guitar.measures[bar]!.events = slice.map((note) => {
+      const event = createNote(note.pitch, note.startBeat, note.duration, 1);
+      event.spelling = note.spelling;
+      return event;
+    });
+    bass.measures[bar]!.measureBeatSpanQuarters = 4;
+    const bassEvent = createNote(bassMidi, 0, 4, 1);
+    bassEvent.spelling = { step: bassSpelling.step, alter: bassSpelling.alter };
+    bass.measures[bar]!.events = [bassEvent];
+  }
+  const score = createScore(`${label} provisional`, [guitar, bass], { tempo: 72 });
+  score.timeSignature = { beats: 4, beatType: 4 };
+  score.barMeterMap = { 1: { numerator: 4, denominator: 4 }, 2: { numerator: 4, denominator: 4 } };
+  score.keySignature = { fifths: 0, mode: 'major', hideKeySignature: false };
+  score.measureWordsMarkings = { 1: 'PROVISIONAL — NOT MUSICALLY APPROVED' };
+  const exported = exportScoreModelToMusicXml(score);
+  if (!exported.success || !exported.xml) throw new Error(exported.errors.join(' ') || 'transformation audition failed');
+  if (/<staff-type>\s*tab\s*<\/staff-type>/i.test(exported.xml)) throw new Error('transformation audition wrote TAB');
+  return placeAuditionEngraving(exported.xml);
+}

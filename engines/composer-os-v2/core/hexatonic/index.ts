@@ -104,7 +104,35 @@ export {
   moveBlindCursor,
 } from './blindAudition';
 export type { BlindItemDisclosure, BlindListeningEvidence } from './blindAudition';
-export { coreCandidateAuditionMusicXml } from './coreLaboratoryAudition';
+export { coreCandidateAuditionMusicXml, triadMotionAuditionMusicXml } from './coreLaboratoryAudition';
+export {
+  PLR_OPERATIONS,
+  TRIADIC_OPERATIONS,
+  applyTriadicTransformation,
+  applyTriadicWord,
+  commonToneNeighbours,
+  consonantTriad,
+  explainTriadicRelation,
+  matchCataloguePair,
+  minimumMotionPath,
+  namedNeighbours,
+  shortPlrPath,
+  signedSemitones,
+  triadInversions,
+  voiceMotions,
+} from './triadicTransformation';
+export type {
+  CataloguePairMatch,
+  NeighbourRow,
+  SpelledConsonantTriad,
+  TransformationPath,
+  TriadInversion,
+  TriadRequest,
+  TriadicApplication,
+  TriadicOperation,
+  TriadicResult,
+  VoiceMotion,
+} from './triadicTransformation';
 export { coreAuditionBookMusicXml, listCoreAuditionBookEntries, nearestCatalogueReading } from './coreAuditionBook';
 export type { CoreAuditionBookEntry, NearestCatalogueReading } from './coreAuditionBook';
 export { getHexatonicCatalogueEntry, listHexatonicCatalogue } from './catalogue';
