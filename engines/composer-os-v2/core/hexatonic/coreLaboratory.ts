@@ -5,7 +5,9 @@
 
 import { placeTriad, parseSpelledPitch, type FretPlacement } from '../wwh/wwhTriadPair';
 import { listCatalogueContexts } from './catalogueIdentity';
+import { listHexatonicScalars } from './collections';
 import { classifyPitchClassSet, transposePitchClassSet } from './setClass';
+import { listHexatonicWpsPairs } from './triadPairs';
 import {
   commonToneCount,
   disjointTertianSplits,
@@ -57,6 +59,41 @@ export interface LaboratoryReviewEntry {
   decision: LaboratoryDecision;
 }
 
+export type BlindItemKind = 'primary' | 'reference' | 'repeat';
+export type BlindDistinctAnswer = 'YES' | 'NO' | 'UNSURE' | 'UNDECIDED';
+export type BlindComposeAnswer = 'YES' | 'MAYBE' | 'NO' | 'UNDECIDED';
+export type BlindDisposition = 'ACCEPT' | 'REFINE' | 'REJECT' | 'KEEP_PROVISIONAL' | 'UNDECIDED';
+
+export interface BlindAuditionItem {
+  code: string;
+  kind: BlindItemKind;
+  candidateId?: string;
+  catalogueId?: string;
+  sourceCode?: string;
+}
+
+export interface BlindAuditionSession {
+  index: number;
+  items: BlindAuditionItem[];
+}
+
+export interface BlindListeningAnswer {
+  distinct: BlindDistinctAnswer;
+  compose: BlindComposeAnswer;
+  colour: string;
+  saved: boolean;
+  guitarPlaythrough: string;
+  disposition: BlindDisposition;
+}
+
+/** Optional block on laboratory review version 1. Absent on older files. */
+export interface BlindAuditionRecord {
+  seed: number;
+  cursor: { session: number; item: number };
+  sessions: readonly BlindAuditionSession[];
+  answers: Record<string, BlindListeningAnswer>;
+}
+
 export interface CoreLaboratoryReview {
   format: 'hexatonic-laboratory-review';
   version: 1;
@@ -64,6 +101,7 @@ export interface CoreLaboratoryReview {
   savedAt: string;
   artisticApproval: false;
   candidates: Record<string, LaboratoryReviewEntry>;
+  blind?: BlindAuditionRecord;
 }
 
 export interface CoreCandidateAnalysis {
@@ -256,6 +294,116 @@ export function blankCoreLaboratoryReview(id = 'core-laboratory', savedAt = new 
 
 const ANSWERS = new Set(['YES', 'NO', 'UNDECIDED']);
 const DECISIONS = new Set(['KEEP', 'REFINE', 'REJECT', 'UNDECIDED']);
+const BLIND_DISTINCT = new Set(['YES', 'NO', 'UNSURE', 'UNDECIDED']);
+const BLIND_COMPOSE = new Set(['YES', 'MAYBE', 'NO', 'UNDECIDED']);
+const BLIND_DISPOSITION = new Set(['ACCEPT', 'REFINE', 'REJECT', 'KEEP_PROVISIONAL', 'UNDECIDED']);
+const BLIND_CODE = /^mark-\d{2}$/;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function catalogueIdSet(): Set<string> {
+  return new Set([...listHexatonicScalars().map((row) => row.id), ...listHexatonicWpsPairs().map((row) => row.id)]);
+}
+
+function blindRecordErrors(raw: unknown): string[] {
+  const errors: string[] = [];
+  if (!isRecord(raw)) return ['blind must be an object'];
+  if (!Number.isInteger(raw.seed) || Number(raw.seed) < 0 || Number(raw.seed) > 2147483647) errors.push('blind seed');
+  if (!isRecord(raw.cursor) || !Number.isInteger(raw.cursor.session) || !Number.isInteger(raw.cursor.item)) errors.push('blind cursor');
+  if (!Array.isArray(raw.sessions) || raw.sessions.length !== 4) {
+    errors.push('blind sessions');
+    return errors;
+  }
+  const catalogue = catalogueIdSet();
+  const candidateIds = new Set(CORE_CANDIDATES.map((row) => row.id));
+  const codes = new Set<string>();
+  const primaries: string[] = [];
+  const items: BlindAuditionItem[] = [];
+  raw.sessions.forEach((sessionRaw, sessionIndex) => {
+    if (!isRecord(sessionRaw) || sessionRaw.index !== sessionIndex || !Array.isArray(sessionRaw.items)) {
+      errors.push(`blind session ${sessionIndex}`);
+      return;
+    }
+    let primaryCount = 0;
+    let referenceCount = 0;
+    let repeatCount = 0;
+    for (const itemRaw of sessionRaw.items) {
+      if (!isRecord(itemRaw) || typeof itemRaw.code !== 'string' || !BLIND_CODE.test(itemRaw.code)) {
+        errors.push(`blind code ${sessionIndex}`);
+        continue;
+      }
+      if (codes.has(itemRaw.code)) errors.push(`blind duplicate ${itemRaw.code}`);
+      codes.add(itemRaw.code);
+      const kind = itemRaw.kind;
+      const candidateId = typeof itemRaw.candidateId === 'string' ? itemRaw.candidateId : undefined;
+      const catalogueId = typeof itemRaw.catalogueId === 'string' ? itemRaw.catalogueId : undefined;
+      const sourceCode = typeof itemRaw.sourceCode === 'string' ? itemRaw.sourceCode : undefined;
+      if (kind === 'primary') {
+        primaryCount += 1;
+        if (!candidateId || !candidateIds.has(candidateId) || catalogueId || sourceCode) errors.push(`blind primary ${itemRaw.code}`);
+        else primaries.push(candidateId);
+      } else if (kind === 'reference') {
+        referenceCount += 1;
+        if (!catalogueId || !catalogue.has(catalogueId) || candidateIds.has(catalogueId) || candidateId || sourceCode) {
+          errors.push(`blind reference ${itemRaw.code}`);
+        }
+      } else if (kind === 'repeat') {
+        repeatCount += 1;
+        if (!candidateId || !candidateIds.has(candidateId) || !sourceCode || !BLIND_CODE.test(sourceCode) || catalogueId) {
+          errors.push(`blind repeat ${itemRaw.code}`);
+        }
+      } else errors.push(`blind kind ${itemRaw.code}`);
+      items.push({
+        code: itemRaw.code,
+        kind: kind as BlindItemKind,
+        ...(candidateId ? { candidateId } : {}),
+        ...(catalogueId ? { catalogueId } : {}),
+        ...(sourceCode ? { sourceCode } : {}),
+      });
+    }
+    if (primaryCount !== 3 || referenceCount !== 1) errors.push(`blind session shape ${sessionIndex}`);
+    if ((sessionIndex < 2 && repeatCount !== 0) || (sessionIndex >= 2 && repeatCount !== 1)) errors.push(`blind repeats ${sessionIndex}`);
+  });
+  if (new Set(primaries).size !== 12 || primaries.length !== 12) errors.push('blind primaries');
+  const byCode = new Map(items.map((item) => [item.code, item]));
+  const sessionItems = raw.sessions.map((sessionRaw) => (isRecord(sessionRaw) && Array.isArray(sessionRaw.items) ? sessionRaw.items : []));
+  items.forEach((item) => {
+    if (item.kind !== 'repeat' || !item.sourceCode) return;
+    const source = byCode.get(item.sourceCode);
+    const sessionIndex = raw.sessions.findIndex((sessionRaw) => Array.isArray((sessionRaw as { items?: unknown }).items) && ((sessionRaw as { items: { code?: string }[] }).items).some((row) => row.code === item.code));
+    const expectedSession = sessionIndex === 2 ? 0 : sessionIndex === 3 ? 1 : -1;
+    const sourceSession = sessionItems.findIndex((rows) => rows.some((row) => isRecord(row) && row.code === item.sourceCode));
+    if (!source || source.kind !== 'primary' || source.candidateId !== item.candidateId || sourceSession !== expectedSession) {
+      errors.push(`blind repeat source ${item.code}`);
+    }
+  });
+  if (isRecord(raw.cursor)) {
+    const session = Number(raw.cursor.session);
+    const item = Number(raw.cursor.item);
+    const length = Array.isArray((raw.sessions[session] as { items?: unknown } | undefined)?.items)
+      ? (raw.sessions[session] as { items: unknown[] }).items.length
+      : 0;
+    if (session < 0 || session > 3 || item < 0 || item >= length) errors.push('blind cursor range');
+  }
+  if (!isRecord(raw.answers)) errors.push('blind answers');
+  else {
+    for (const [code, answerRaw] of Object.entries(raw.answers)) {
+      if (!codes.has(code) || !isRecord(answerRaw)) {
+        errors.push(`blind answer ${code}`);
+        continue;
+      }
+      if (!BLIND_DISTINCT.has(String(answerRaw.distinct))) errors.push(`${code} distinct`);
+      if (!BLIND_COMPOSE.has(String(answerRaw.compose))) errors.push(`${code} compose`);
+      if (typeof answerRaw.colour !== 'string' || answerRaw.colour.length > 240) errors.push(`${code} colour`);
+      if (typeof answerRaw.saved !== 'boolean') errors.push(`${code} saved`);
+      if (typeof answerRaw.guitarPlaythrough !== 'string' || answerRaw.guitarPlaythrough.length > 240) errors.push(`${code} guitar`);
+      if (!BLIND_DISPOSITION.has(String(answerRaw.disposition))) errors.push(`${code} disposition`);
+    }
+  }
+  return errors;
+}
 
 export function validateCoreLaboratoryReview(raw: unknown): { ok: true; review: CoreLaboratoryReview } | { ok: false; errors: string[] } {
   const errors: string[] = [];
@@ -283,6 +431,7 @@ export function validateCoreLaboratoryReview(raw: unknown): { ok: true; review: 
       if (!DECISIONS.has(String(fields.decision))) errors.push(`${candidate.id} decision`);
     }
   }
+  if ('blind' in row && row.blind !== undefined) errors.push(...blindRecordErrors(row.blind));
   if (errors.length) return { ok: false, errors };
   return { ok: true, review: row as unknown as CoreLaboratoryReview };
 }

@@ -28,6 +28,7 @@ vi.mock('vexflow', () => ({
   },
 }));
 
+import { CORE_CANDIDATES, listBlindCatalogueIds } from '@composer-os/core/hexatonic';
 import { ScoreAudition } from '../src/score/ScoreAudition';
 import { ScorePreview } from '../src/score/ScorePreview';
 import { HexatonicLaboratory } from '../src/hexatonic/HexatonicLaboratory';
@@ -144,5 +145,32 @@ describe('HexatonicLaboratory audition', () => {
     expect(xml).toContain('Upright Bass');
     fireEvent.change(screen.getByTestId('hex-lab-decision'), { target: { value: 'REFINE' } });
     expect((screen.getByTestId('hex-lab-decision') as HTMLSelectElement).value).toBe('REFINE');
+  });
+
+  it('hides pair identity until the blind answer is saved', () => {
+    render(<HexatonicLaboratory />);
+    fireEvent.click(screen.getByTestId('hex-lab-mode-blind'));
+    const panel = screen.getByTestId('hex-blind-panel');
+    expect(screen.queryByTestId('hexatonic-laboratory-candidate')).toBeNull();
+    expect(screen.queryByTestId('score-preview')).toBeNull();
+    expect(screen.getAllByTestId('score-audition')).toHaveLength(1);
+    expect(screen.getByTestId('hex-blind-hidden')).toBeTruthy();
+    const hidden = panel.textContent ?? '';
+    for (const candidate of CORE_CANDIDATES) {
+      expect(hidden.includes(candidate.label)).toBe(false);
+      expect(hidden.includes(candidate.id)).toBe(false);
+    }
+    for (const id of listBlindCatalogueIds()) {
+      expect(hidden.includes(id)).toBe(false);
+    }
+    fireEvent.change(screen.getByTestId('hex-blind-distinct'), { target: { value: 'YES' } });
+    fireEvent.change(screen.getByTestId('hex-blind-compose'), { target: { value: 'MAYBE' } });
+    fireEvent.click(screen.getByTestId('hex-blind-save-answer'));
+    expect(screen.getByTestId('hex-blind-identity').textContent?.length).toBeGreaterThan(0);
+    expect(screen.getByTestId('score-preview')).toBeTruthy();
+    expect(screen.getAllByTestId('score-audition')).toHaveLength(1);
+    fireEvent.click(screen.getByTestId('hex-lab-mode-detail'));
+    expect(screen.getByTestId('hexatonic-laboratory-candidate')).toBeTruthy();
+    expect(screen.queryByTestId('hex-blind-panel')).toBeNull();
   });
 });

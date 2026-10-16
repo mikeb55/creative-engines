@@ -8,6 +8,8 @@
 
 ### Added
 
+- **Hexatonic H6-A4b blind audition** — `#/hexatonic` can hide the 12 provisional pairs behind seeded codes. Each pair has four 12-second guitar and bass clips. Four sessions add concealed catalogue references and two repeats. ACCEPT writes KEEP only when the human saves it on a primary hearing. `artisticApproval` stays false. Detail: `docs/H6-A4B-BLIND-AUDITION.md`.
+
 - **Hexatonic H6-B0 shared audition and score preview** — `#/hexatonic` and `#/bhl` play and display MusicXML through one `ScoreAudition` and one `ScorePreview`. Playback uses the existing Tone.js transport. Notation uses the installed vexml renderer, standard staves only. The 12 Core candidates stay provisional. Detail: `docs/H6-B0-SHARED-AUDITION-AND-SCORE-PREVIEW.md`.
 
 - **Hexatonic H6-A4 Core audition** — printable audition book for the 12 provisional pairs, MuseScore 4 renders, and a Tonality Vault notation check of PDF pages 481–483 and 523–524. Reviews stay human. None is admitted. Detail: `docs/h6-a4/H6-A4-VALIDATION-REPORT.md`.

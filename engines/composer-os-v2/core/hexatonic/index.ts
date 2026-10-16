@@ -68,6 +68,14 @@ export {
   validateCoreLaboratoryReview,
 } from './coreLaboratory';
 export type {
+  BlindAuditionItem,
+  BlindAuditionRecord,
+  BlindAuditionSession,
+  BlindComposeAnswer,
+  BlindDisposition,
+  BlindDistinctAnswer,
+  BlindItemKind,
+  BlindListeningAnswer,
   CoreCandidate,
   CoreCandidateAnalysis,
   CoreLaboratoryReview,
@@ -75,6 +83,27 @@ export type {
   LaboratoryDecision,
   LaboratoryReviewEntry,
 } from './coreLaboratory';
+export {
+  CORE_CONTEXT_BARS,
+  CORE_CONTEXT_IDS,
+  CORE_CONTEXT_SECONDS,
+  CORE_CONTEXT_TEMPO,
+  coreContextExampleMusicXml,
+  listCoreContextExamples,
+} from './coreContextExamples';
+export type { CoreContextId } from './coreContextExamples';
+export {
+  blankBlindAnswer,
+  blindExcerptMusicXml,
+  blindListeningEvidence,
+  buildBlindAudition,
+  commitBlindAnswer,
+  discloseBlindItem,
+  findBlindItem,
+  listBlindCatalogueIds,
+  moveBlindCursor,
+} from './blindAudition';
+export type { BlindItemDisclosure, BlindListeningEvidence } from './blindAudition';
 export { coreCandidateAuditionMusicXml } from './coreLaboratoryAudition';
 export { coreAuditionBookMusicXml, listCoreAuditionBookEntries, nearestCatalogueReading } from './coreAuditionBook';
 export type { CoreAuditionBookEntry, NearestCatalogueReading } from './coreAuditionBook';
