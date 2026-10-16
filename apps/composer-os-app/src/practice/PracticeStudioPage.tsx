@@ -45,7 +45,7 @@ import {
 } from './practiceExerciseGenerator';
 import { practiceExerciseToMusicXml, withPracticeTempo } from './practiceExerciseMusicXml';
 import { openPracticeFile, revealPracticeFile, writePracticeFile } from './practiceExport';
-import { readPracticeSession, sealPracticeSession } from './practiceSession';
+import { readPracticeSession, sealPracticeSession, sha256Hex } from './practiceSession';
 import { takePracticeHandoff, type PracticeHandoff } from './practiceHandoff';
 
 const TUNING_CHOICES = practiceTuningChoices();
@@ -783,41 +783,42 @@ export function PracticeStudioPage() {
             type="button"
             data-testid="save-practice-session"
             onClick={() => {
-              if (!exercise || !scoreXml) {
-                setSessionStatus('Generate an exercise before saving a session.');
+              if (!scoreXml) {
+                setSessionStatus('Generate an exercise or import a score before saving a session.');
                 return;
               }
+              const xml = scoreXml;
               void (async () => {
                 const sealed = await sealPracticeSession({
-                  id: `practice-${exercise.seed}`,
-                  title: exercise.title,
+                  id: `practice-${exercise?.seed ?? handoff?.seed ?? 'score'}`,
+                  title: exercise?.title ?? handoff?.label ?? 'Practice score',
                   savedAt: new Date().toISOString(),
                   notes: sessionNotes,
-                  sourceSha256: null,
+                  sourceSha256: handoff?.musicXml === xml ? await sha256Hex(xml) : null,
                   scale: {
-                    mask: exercise.scale.mask,
-                    rootPc: exercise.scale.rootPc,
-                    status: exercise.scale.status,
-                    name: exercise.scale.name,
+                    mask: exercise?.scale.mask ?? handoff?.mask ?? selectedMask,
+                    rootPc: exercise?.scale.rootPc ?? handoff?.referencePc ?? rootPc,
+                    status: exercise?.scale.status ?? handoff?.status ?? selected.registrations[0]?.status ?? 'MATHEMATICAL SET',
+                    name: exercise?.scale.name ?? handoff?.label ?? 'Practice score',
                   },
                   guitar: {
-                    tuningId: exercise.tuningId,
+                    tuningId: exercise?.tuningId ?? tuningId,
                     openMidi: [...board.tuning.openMidi],
                     fretFrom,
                     fretTo,
                   },
                   exercise: {
-                    family: exercise.family,
-                    difficulty: exercise.difficulty,
-                    seed: exercise.seed,
-                    bars: exercise.bars,
-                    metreId: exercise.metreId,
-                    tempoBpm: exercise.tempoBpm,
+                    family: exercise?.family ?? 'handoff',
+                    difficulty: exercise?.difficulty ?? 'beginner',
+                    seed: exercise?.seed ?? handoff?.seed ?? 0,
+                    bars: exercise?.bars ?? 0,
+                    metreId: exercise?.metreId ?? '4/4',
+                    tempoBpm: exercise?.tempoBpm ?? exerciseTempo,
                     loop,
                     repeat: repeatCount,
                     metronome,
                   },
-                  musicXml: scoreXml,
+                  musicXml: xml,
                 });
                 const written = await writePracticeFile(sealed.id, 'json', JSON.stringify(sealed, null, 2));
                 if (!written.ok) {
@@ -835,12 +836,14 @@ export function PracticeStudioPage() {
             type="button"
             data-testid="export-practice-musicxml"
             onClick={() => {
-              if (!scoreXml || !exercise) {
-                setExportError('Generate an exercise before exporting MusicXML.');
+              if (!scoreXml) {
+                setExportError('Generate an exercise or import a score before exporting MusicXML.');
                 return;
               }
+              const xml = scoreXml;
+              const title = exercise?.title ?? handoff?.label ?? 'Practice score';
               void (async () => {
-                const written = await writePracticeFile(exercise.title, 'musicxml', scoreXml);
+                const written = await writePracticeFile(title, 'musicxml', xml);
                 if (!written.ok) {
                   setExportError(written.error);
                   return;

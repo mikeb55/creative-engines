@@ -14,7 +14,7 @@
 
 ### Added
 
-- **Practice & Scales Studio V3.2-F** — Generate, BHL Composer, Hexatonic Laboratory, and Pentatonic Engine send a copied handoff to `#/practice`. Collection masks are the registered set transposed by the reference pitch class. A mismatched mask or status is rejected. Detail: `docs/V3.2-F-PRACTICE-INTEGRATION-IMPLEMENTATION.md`.
+- **Practice & Scales Studio V3.2-F** — Generate, BHL Composer, Hexatonic Laboratory, and Pentatonic Engine send a copied handoff to `#/practice`. Collection masks are the registered set transposed by the reference pitch class. A mismatched mask or status is rejected. A handed-off score can be saved and exported without generating a new exercise. Detail: `docs/V3.2-F-PRACTICE-INTEGRATION-IMPLEMENTATION.md`. Audit: `docs/V3.2-PRACTICE-STUDIO-FINAL-TECHNICAL-REPORT.md`.
 
 - **Practice & Scales Studio V3.2-E** — generated exercises play on the existing Tone.js transport, with tempo, loop, repeat, and a metronome click that stays off the MusicXML. `ScorePreview` shows the exercise. Save writes `practice-session` version 1. Reopen checks the score hash and does not regenerate. MusicXML export and Open File / Open in Finder use the existing desktop save and reveal calls. Detail: `docs/V3.2-E-PRACTICE-SESSION-IMPLEMENTATION.md`.
 

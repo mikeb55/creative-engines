@@ -24,6 +24,8 @@
 
 **Hexatonic Core laboratory (H6-A3, 2026-10-15):** `#/hexatonic` keeps the H4 workspace and adds a provisional section for 12 computed triad pairs. Reviews use `hexatonic-laboratory-review` version 1, stored as `.hexatonic-lab.json` in the hexatonic project directory. `hexatonic-project` version 1 is unchanged. Audition scores use `exportScoreModelToMusicXml`. `artisticApproval` stays false. The nearest catalogue spelling is shown beside the candidate. Detail: `docs/H6-A3-CORE-TRIAD-PAIR-LABORATORY-REPORT.md`. H6-A4 adds the audition book at `docs/h6-a4/` and does not admit a candidate.
 
+**Practice & Scales Studio audit (2026-10-16):** `docs/V3.2-PRACTICE-STUDIO-FINAL-TECHNICAL-REPORT.md`. A handed-off score can be saved as `practice-session` version 1. The source file is not rewritten.
+
 **Practice & Scales Studio handoff (V3.2-F, 2026-10-16):** `practiceHandoff.ts` stores one copied payload from Generate, BHL, Hexatonic, or Pentatonic. `#/practice` reads it once. Collection identity is the Scale Explorer mask plus the reference pitch class. Detail: `docs/V3.2-F-PRACTICE-INTEGRATION-IMPLEMENTATION.md`.
 
 **Practice & Scales Studio sessions (V3.2-E, 2026-10-16):** `practiceExerciseMusicXml.ts` writes the exercise through `exportScoreModelToMusicXml`. `ScoreAudition` and `ScorePreview` mount on `#/practice`. Repeat and the metronome share `playbackEngine`. `practice-session` version 1 stores the MusicXML and its SHA-256. It does not rewrite a composition. Detail: `docs/V3.2-E-PRACTICE-SESSION-IMPLEMENTATION.md`.

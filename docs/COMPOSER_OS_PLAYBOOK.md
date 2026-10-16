@@ -20,7 +20,7 @@ Notices: `docs/THIRD_PARTY_NOTICES.md`.
 
 Generate an exercise on the same page to preview it and play it. Play, loop, repeat, and the metronome use the shared Tone.js transport. Save writes a `practice-session` file. Export writes MusicXML. Neither file replaces a composition.
 
-Generate, BHL Composer, the Hexatonic Laboratory, and the Pentatonic Engine each have a practice button. It copies the score or the selected collection into the studio. The source file stays where it was.
+Generate, BHL Composer, the Hexatonic Laboratory, and the Pentatonic Engine each have a practice button. It copies the score or the selected collection into the studio. The source file stays where it was. A copied score can be saved and exported from the studio.
 
 ## Playback (Generate — Play / Pause / Stop)
 

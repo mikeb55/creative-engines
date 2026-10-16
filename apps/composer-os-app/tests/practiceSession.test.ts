@@ -6,7 +6,7 @@ import { planPlayback } from '../src/playback/playbackEngine';
 import { playbackSequenceFromMusicXml, tempoFromMusicXml } from '../src/score/playbackSequenceFromMusicXml';
 import { generatePracticeExercise } from '../src/practice/practiceExerciseGenerator';
 import { practiceExerciseToMusicXml, withPracticeTempo } from '../src/practice/practiceExerciseMusicXml';
-import { readPracticeSession, sealPracticeSession } from '../src/practice/practiceSession';
+import { readPracticeSession, sealPracticeSession, sha256Hex } from '../src/practice/practiceSession';
 import { getScaleExplorerEntry } from '../src/practice/scaleExplorer';
 
 const HIRAJOSHI = 397;
@@ -114,5 +114,36 @@ describe('practice session playback and MusicXML', () => {
     expect(JSON.stringify(opened)).not.toMatch(/WWH|\.sib/i);
     const tampered = { ...sealed, musicXml: xml.replace('96', '80') };
     await expect(readPracticeSession(JSON.stringify(tampered))).rejects.toThrow(/hash/i);
+  });
+
+  it('seals a handed-off score without a generated exercise', async () => {
+    const xml = '<score-partwise version="4.0"></score-partwise>';
+    const sourceSha256 = await sha256Hex(xml);
+    const sealed = await sealPracticeSession({
+      id: 'practice-score',
+      title: 'Generate',
+      savedAt: '2026-10-16T00:00:00.000Z',
+      notes: '',
+      sourceSha256,
+      scale: { mask: 0, rootPc: 0, status: 'MATHEMATICAL SET', name: 'Generate' },
+      guitar: { tuningId: 'standard', openMidi: [], fretFrom: 0, fretTo: 12 },
+      exercise: {
+        family: 'handoff',
+        difficulty: 'beginner',
+        seed: 0,
+        bars: 0,
+        metreId: '4/4',
+        tempoBpm: 96,
+        loop: false,
+        repeat: 1,
+        metronome: false,
+      },
+      musicXml: xml,
+    });
+    const opened = await readPracticeSession(JSON.stringify(sealed));
+    expect(opened.exercise.family).toBe('handoff');
+    expect(opened.musicXml).toBe(xml);
+    expect(opened.sourceSha256).toBe(sourceSha256);
+    expect(JSON.stringify(opened)).not.toMatch(/\.wwh|\.sib/i);
   });
 });

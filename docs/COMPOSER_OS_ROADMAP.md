@@ -486,6 +486,7 @@ Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartÃ³k** native bundle (not 
 
 ## Current (as of 2026-07-01 snapshot)
 
+- **Practice & Scales Studio V3.2 audit (2026-10-16):** glossary, playback, and handoffs checked. Verdict PASS. Detail: `docs/V3.2-PRACTICE-STUDIO-FINAL-TECHNICAL-REPORT.md`.
 - **Practice & Scales Studio V3.2-F (2026-10-16):** Generate, BHL, Hexatonic, and Pentatonic handoffs into `#/practice`. Detail: `docs/V3.2-F-PRACTICE-INTEGRATION-IMPLEMENTATION.md`.
 - **Practice & Scales Studio V3.2-E (2026-10-16):** playback, metronome, loop, repeat, notation preview, `practice-session` version 1, and MusicXML export. Detail: `docs/V3.2-E-PRACTICE-SESSION-IMPLEMENTATION.md`.
 - **Practice & Scales Studio glossary (2026-10-16):** 4,096 computed pitch-class identities, Forte numbers for all cardinalities, and 85 MIT-licensed Tonal.js names. Ian Ring links only for odd masks. No Zeitler or Ian Ring name import. Playback and sessions still wait for V3.2-E. Detail: `docs/V3.2-SCALE-GLOSSARY-IMPLEMENTATION.md`.
