@@ -17,7 +17,17 @@ import {
 
 export const CANONICAL_SCORE_VERSION = 'canonical-evaluation-score-1';
 
-export type InstrumentRole = 'guitar' | 'bass' | 'other';
+export type InstrumentRole =
+  | 'guitar'
+  | 'bass'
+  | 'violin'
+  | 'viola'
+  | 'cello'
+  | 'piano'
+  | 'voice'
+  | 'wind'
+  | 'brass'
+  | 'other';
 
 export interface WrittenPitch {
   step: string;
@@ -151,8 +161,16 @@ export function sha256Text(text: string): string {
 }
 
 export function roleOf(name: string): InstrumentRole {
-  if (/bass|cello|contrabass/i.test(name)) return 'bass';
-  if (/guitar/i.test(name)) return 'guitar';
+  const text = name.trim();
+  if (/sax|flute|clarinet|oboe|bassoon|piccolo|english\s*horn|recorder/i.test(text)) return 'wind';
+  if (/trumpet|trombone|tuba|cornet|flugel|brass|\bhorn\b/i.test(text)) return 'brass';
+  if (/contrabass|double\s*bass|upright\s*bass|bass\s*guitar|\bbass\b/i.test(text)) return 'bass';
+  if (/guitar/i.test(text)) return 'guitar';
+  if (/violin/i.test(text)) return 'violin';
+  if (/viola/i.test(text)) return 'viola';
+  if (/cello/i.test(text)) return 'cello';
+  if (/piano|keyboard/i.test(text)) return 'piano';
+  if (/voice|vocal|singer|soprano|alto|tenor|baritone/i.test(text)) return 'voice';
   return 'other';
 }
 
