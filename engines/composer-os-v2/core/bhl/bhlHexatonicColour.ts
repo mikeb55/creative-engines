@@ -19,7 +19,7 @@ import {
   type HexatonicTriadReading,
 } from '../hexatonic/collections';
 import { getHexatonicWpsPair, listHexatonicWpsPairs, transposeHexatonicWpsPair } from '../hexatonic/triadPairs';
-import type { BhlGuitarEvent } from './bhlPhrase';
+import type { BhlGuitarEvent, BhlPhrasePlan } from './bhlPhrase';
 import { parseSpelledPitch, realizeTriadPair, type LiquidDuration, type LiquidSlot, type ParentTriadInput } from '../wwh/wwhTriadPair';
 import { spellName, transposeSpelled, type Spelled } from '../wwh/wps/wpsTonalityVaultRecord';
 
@@ -342,6 +342,70 @@ export function positionShiftWarnings(events: readonly BhlGuitarEvent[]): string
     previous = check.lowestFret;
   }
   return warnings;
+}
+
+export const BHL_HEXATONIC_TENSIONS = ['home', 'near', 'outside', 'return'] as const;
+export const BHL_HEXATONIC_SPACES = ['played', 'rests', 'empty-bars'] as const;
+export const BHL_HEXATONIC_DENSITIES = ['sparse', 'fuller'] as const;
+export const BHL_HEXATONIC_TEXTURES = ['melody', 'dyads', 'triads', 'melody-inner'] as const;
+export const BHL_HEXATONIC_MOTIFS = ['statement', 'transform'] as const;
+export const BHL_HEXATONIC_INTERACTIONS = ['with-bass', 'independent'] as const;
+
+export interface BhlHexatonicShape {
+  tension: (typeof BHL_HEXATONIC_TENSIONS)[number];
+  space: (typeof BHL_HEXATONIC_SPACES)[number];
+  density: (typeof BHL_HEXATONIC_DENSITIES)[number];
+  texture: (typeof BHL_HEXATONIC_TEXTURES)[number];
+  motif: (typeof BHL_HEXATONIC_MOTIFS)[number];
+  interaction: (typeof BHL_HEXATONIC_INTERACTIONS)[number];
+}
+
+function oneOf<T extends string>(value: unknown, allowed: readonly T[], label: string): T {
+  if (typeof value === 'string' && (allowed as readonly string[]).includes(value)) return value as T;
+  throw new Error(`${label} ${String(value)} is not available`);
+}
+
+export function readBhlHexatonicShape(raw: unknown): BhlHexatonicShape | null {
+  if (raw === undefined || raw === null || raw === '') return null;
+  if (!raw || typeof raw !== 'object') throw new Error('shape must be an object');
+  const row = raw as Record<string, unknown>;
+  return {
+    tension: oneOf(row.tension, BHL_HEXATONIC_TENSIONS, 'tension'),
+    space: oneOf(row.space, BHL_HEXATONIC_SPACES, 'space'),
+    density: oneOf(row.density, BHL_HEXATONIC_DENSITIES, 'density'),
+    texture: oneOf(row.texture, BHL_HEXATONIC_TEXTURES, 'texture'),
+    motif: oneOf(row.motif, BHL_HEXATONIC_MOTIFS, 'motif'),
+    interaction: oneOf(row.interaction, BHL_HEXATONIC_INTERACTIONS, 'interaction'),
+  };
+}
+
+/** Musician-facing shape written onto the existing phrase regions. */
+export function applyHexatonicShape(plan: BhlPhrasePlan, shape: BhlHexatonicShape): BhlPhrasePlan {
+  const next = structuredClone(plan);
+  next.regions.forEach((region, index) => {
+    const last = index === next.regions.length - 1;
+    if (shape.tension === 'home') region.tensionState = last ? 'recover' : 'resolve';
+    if (shape.tension === 'near') region.tensionState = 'primary';
+    if (shape.tension === 'outside') region.tensionState = last ? 'recover' : index === 0 ? 'primary' : 'tension';
+    if (shape.tension === 'return') {
+      region.tensionState = last ? 'recover' : 'primary';
+      if (last) region.pitchTransform = 'recall-cell';
+    }
+    if (shape.space === 'rests' || shape.space === 'empty-bars') region.dialogue = 'leave-space';
+    if (shape.space === 'empty-bars' && region.bars.length > 1) region.rhythmTransform = 'silence-window';
+    if (shape.density === 'sparse' || shape.texture === 'melody') region.density = 'single';
+    if (shape.density === 'fuller' && shape.texture === 'dyads') region.density = 'dyad';
+    if (shape.texture === 'dyads' && shape.density !== 'sparse') region.density = 'dyad';
+    if (shape.texture === 'triads') region.density = shape.density === 'sparse' ? 'dyad' : 'triad';
+    if (shape.texture === 'melody-inner') region.density = 'counterline';
+    if (shape.motif === 'transform' && (region.role === 'development' || region.role === 'transformation')) {
+      region.pitchTransform = 'invert-into-field';
+    }
+    if (shape.motif === 'statement' && region.role === 'statement') region.pitchTransform = 'neighbor-statement';
+    if (shape.interaction === 'with-bass' && shape.space === 'played') region.dialogue = 'answer-after-bass';
+    if (shape.interaction === 'independent' && shape.space === 'played') region.dialogue = 'counter-motion';
+  });
+  return next;
 }
 
 /** Reject only when rhythm, triad alternation, and an exact cell all repeat with no rest. */

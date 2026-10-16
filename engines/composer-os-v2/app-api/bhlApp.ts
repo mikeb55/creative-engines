@@ -9,7 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { BHL_ALBUM_ROOT, BhlExportRejected, assertBhlExportPath } from '../core/bhl/bhlCopy';
 import { composeBhlGuitar } from '../core/bhl/bhlCompose';
-import { readBhlHexatonicSelection } from '../core/bhl/bhlHexatonicColour';
+import { applyHexatonicShape, readBhlHexatonicSelection, readBhlHexatonicShape } from '../core/bhl/bhlHexatonicColour';
 import {
   compareBhlCandidateXml,
   generateBhlCandidateSet,
@@ -649,7 +649,9 @@ export function apiBhlCompose(body: unknown): BhlComposeResponse | BhlApiFailure
         : o.continuation;
     const continued = applyContinuation(controlled, continuationRaw, o.outsideColour === true);
     if ('ok' in continued) return continued;
-    continued.seed = seed;
+    const shape = readBhlHexatonicShape(o.hexatonicShape);
+    const shapedPlan = shape ? applyHexatonicShape(continued, shape) : continued;
+    shapedPlan.seed = seed;
     const quartal = o.quartal === true || (o.quartal == null && prepared.quartal);
     const hexatonic = readBhlHexatonicSelection(o.hexatonic);
     const written = composeBhlGuitar({
@@ -657,7 +659,7 @@ export function apiBhlCompose(body: unknown): BhlComposeResponse | BhlApiFailure
       span,
       seed,
       protectedGuitarBars,
-      plan: continued,
+      plan: shapedPlan,
       world: world as BhlWorldId | undefined,
       phraseArc: phraseArc as BhlPhraseArc,
       rhythm: rhythm as BhlRhythmMode,
@@ -825,6 +827,13 @@ function prepareLocked(body: Record<string, unknown>) {
   const prepared = prepareBhlMusic(composePlan(lock, seed), musical);
   const controlled = applyControls(prepared.plan, body.regions);
   if ('ok' in controlled) return controlled;
+  let shape = null;
+  try {
+    shape = readBhlHexatonicShape(body.hexatonicShape);
+  } catch (error) {
+    return fail(error instanceof Error ? error.message : String(error));
+  }
+  const shaped = shape ? applyHexatonicShape(controlled, shape) : controlled;
   const phraseArc = body.phraseArc === undefined || body.phraseArc === null || body.phraseArc === '' ? prepared.phraseArc ?? 'derived' : body.phraseArc;
   if (!ARCS.includes(phraseArc as BhlPhraseArc)) return fail(`phrase arc ${String(phraseArc)} is not available`);
   const rhythm = body.rhythm === undefined || body.rhythm === null || body.rhythm === '' ? prepared.rhythm ?? 'derived' : body.rhythm;
@@ -842,7 +851,7 @@ function prepareLocked(body: Record<string, unknown>) {
     seed,
     world,
     protectedGuitarBars,
-    plan: controlled,
+    plan: shaped,
     musical,
     phraseArc: phraseArc as BhlPhraseArc,
     rhythm: rhythm as BhlRhythmMode,

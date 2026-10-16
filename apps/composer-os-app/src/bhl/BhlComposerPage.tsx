@@ -30,7 +30,7 @@ function collectionPcs(intervals: readonly number[] | undefined, reference: stri
 }
 import { listBhlHexatonicChoices, resolveBhlHexatonicColour, type BhlHexatonicFamily } from '@composer-os/core/bhl/bhlHexatonicColour';
 import { api, isDesktopIpc } from '../services/api';
-import { takeHexatonicHandoff } from './bhlHexatonicHandoff';
+import { storeEvaluationHandoff, takeHexatonicHandoff } from './bhlHexatonicHandoff';
 import { ScoreAudition } from '../score/ScoreAudition';
 import { ScorePreview } from '../score/ScorePreview';
 import { BhlEvidencePanel, type BhlComparisonView, type BhlEvidenceView, type BhlIntentView } from './BhlEvidencePanel';
@@ -164,6 +164,12 @@ export function BhlComposerPage() {
   const [hexFamily, setHexFamily] = useState<'' | BhlHexatonicFamily>('');
   const [hexId, setHexId] = useState('');
   const [hexReference, setHexReference] = useState(0);
+  const [tension, setTension] = useState<'home' | 'near' | 'outside' | 'return'>('home');
+  const [space, setSpace] = useState<'played' | 'rests' | 'empty-bars'>('played');
+  const [shapeDensity, setShapeDensity] = useState<'sparse' | 'fuller'>('sparse');
+  const [texture, setTexture] = useState<'melody' | 'dyads' | 'triads' | 'melody-inner'>('melody');
+  const [motifShape, setMotifShape] = useState<'statement' | 'transform'>('statement');
+  const [interaction, setInteraction] = useState<'with-bass' | 'independent'>('with-bass');
   const hexChoices = listBhlHexatonicChoices();
   const [phraseArc, setPhraseArc] = useState('derived');
   const [continuation, setContinuation] = useState('hold');
@@ -406,6 +412,7 @@ export function BhlComposerPage() {
         musical: musicalBody(),
         quartal,
         hexatonic: hexatonicBody(),
+        hexatonicShape: shapeBody(),
       });
       const row = raw as Compose | { ok: false; error: string };
       if (!row.ok) throw new Error(row.error);
@@ -486,6 +493,10 @@ export function BhlComposerPage() {
     }
   }
 
+  function shapeBody() {
+    return { tension, space, density: shapeDensity, texture, motif: motifShape, interaction };
+  }
+
   function hexatonicBody(): { family: BhlHexatonicFamily; id: string; referencePc: number } | null {
     if (!hexFamily || !hexId) return null;
     return { family: hexFamily, id: hexId, referencePc: hexReference };
@@ -510,6 +521,7 @@ export function BhlComposerPage() {
       musical: musicalBody(),
       quartal,
       hexatonic: hexatonicBody(),
+      hexatonicShape: shapeBody(),
       ...extra,
     };
   }
@@ -600,7 +612,7 @@ export function BhlComposerPage() {
         },
         span: { from: spanFrom, to: spanTo },
         world,
-        settings: { seed, phraseArc, continuation, rhythm, outsideColour, musical: musicalBody(), hexatonic: hexatonicBody() },
+        settings: { seed, phraseArc, continuation, rhythm, outsideColour, musical: musicalBody(), hexatonic: hexatonicBody(), hexatonicShape: shapeBody() },
         candidates: candidates.map((item) => ({
           ...item,
           notes: typeof item.notes === 'string' ? item.notes : projectNotes,
@@ -639,7 +651,9 @@ export function BhlComposerPage() {
         setSpanTo(span.to);
       }
       if (typeof project.world === 'string') setWorld(project.world);
-      const settings = project.settings as { seed?: number; phraseArc?: string; continuation?: string; rhythm?: string; outsideColour?: boolean; musical?: Record<string, unknown>; hexatonic?: { family?: BhlHexatonicFamily; id?: string; referencePc?: number } | null } | undefined;
+      const settings = project.settings as { seed?: number; phraseArc?: string; continuation?: string; rhythm?: string; outsideColour?: boolean; musical?: Record<string, unknown>; hexatonic?: { family?: BhlHexatonicFamily; id?: string; referencePc?: number } | null;
+          hexatonicShape?: { tension?: 'home' | 'near' | 'outside' | 'return'; space?: 'played' | 'rests' | 'empty-bars'; density?: 'sparse' | 'fuller'; texture?: 'melody' | 'dyads' | 'triads' | 'melody-inner'; motif?: 'statement' | 'transform'; interaction?: 'with-bass' | 'independent' };
+        } | undefined;
       if (settings) {
         if (typeof settings.seed === 'number') setSeed(settings.seed);
         if (typeof settings.phraseArc === 'string') setPhraseArc(settings.phraseArc);
@@ -651,6 +665,13 @@ export function BhlComposerPage() {
           setHexId(settings.hexatonic.id);
           setHexReference(settings.hexatonic.referencePc ?? 0);
         }
+        const shape = settings.hexatonicShape;
+        if (shape?.tension) setTension(shape.tension);
+        if (shape?.space) setSpace(shape.space);
+        if (shape?.density) setShapeDensity(shape.density);
+        if (shape?.texture) setTexture(shape.texture);
+        if (shape?.motif) setMotifShape(shape.motif);
+        if (shape?.interaction) setInteraction(shape.interaction);
         const musical = settings.musical ?? {};
         const riff = musical.riff as { pitchSource?: string; rhythmSource?: string; pitchSeed?: number; rhythmSeed?: number; transform?: string; displacementQuarters?: number } | undefined;
         if (riff?.pitchSource === 'riff' || riff?.pitchSource === 'world') setPitchSource(riff.pitchSource);
@@ -942,6 +963,50 @@ export function BhlComposerPage() {
           if ('error' in identity) return <p data-testid="bhl-hex-identity">{identity.error}</p>;
           return <p data-testid="bhl-hex-identity">{identity.text}</p>;
         })()}
+        <fieldset data-testid="bhl-shape" style={{ display: 'grid', gap: '0.35rem' }}>
+          <legend>Shape</legend>
+          <label htmlFor="bhl-tension">Tension
+            <select id="bhl-tension" data-testid="bhl-tension" value={tension} onChange={(event) => { setTension(event.target.value as typeof tension); markDirty(); }}>
+              <option value="home">Home</option>
+              <option value="near">Near</option>
+              <option value="outside">Outside</option>
+              <option value="return">Return</option>
+            </select>
+          </label>
+          <label htmlFor="bhl-space">Space
+            <select id="bhl-space" data-testid="bhl-space" value={space} onChange={(event) => { setSpace(event.target.value as typeof space); markDirty(); }}>
+              <option value="played">Played</option>
+              <option value="rests">Rests</option>
+              <option value="empty-bars">Empty bars</option>
+            </select>
+          </label>
+          <label htmlFor="bhl-shape-density">Density
+            <select id="bhl-shape-density" data-testid="bhl-shape-density" value={shapeDensity} onChange={(event) => { setShapeDensity(event.target.value as typeof shapeDensity); markDirty(); }}>
+              <option value="sparse">Sparse</option>
+              <option value="fuller">Fuller</option>
+            </select>
+          </label>
+          <label htmlFor="bhl-texture">Texture
+            <select id="bhl-texture" data-testid="bhl-texture" value={texture} onChange={(event) => { setTexture(event.target.value as typeof texture); markDirty(); }}>
+              <option value="melody">Melody</option>
+              <option value="dyads">Dyads</option>
+              <option value="triads">Triads</option>
+              <option value="melody-inner">Melody with an inner voice</option>
+            </select>
+          </label>
+          <label htmlFor="bhl-motif-shape">Motif
+            <select id="bhl-motif-shape" data-testid="bhl-motif-shape" value={motifShape} onChange={(event) => { setMotifShape(event.target.value as typeof motifShape); markDirty(); }}>
+              <option value="statement">Statement</option>
+              <option value="transform">Transformation</option>
+            </select>
+          </label>
+          <label htmlFor="bhl-interaction">Guitar and bass
+            <select id="bhl-interaction" data-testid="bhl-interaction" value={interaction} onChange={(event) => { setInteraction(event.target.value as typeof interaction); markDirty(); }}>
+              <option value="with-bass">Dialogue with the bass</option>
+              <option value="independent">Independent line</option>
+            </select>
+          </label>
+        </fieldset>
         <label htmlFor="bhl-protected">
           Protected guitar bars
           <input
@@ -1481,6 +1546,31 @@ export function BhlComposerPage() {
         </button>
         <button type="button" data-testid="bhl-refine" onClick={() => void onRefine()} disabled={busy || !selectedCandidate}>
           Refine a copy
+        </button>
+        <button
+          type="button"
+          data-testid="bhl-send-evaluation"
+          disabled={!selectedCandidateXml}
+          onClick={() => {
+            let colour = null;
+            try {
+              colour = hexFamily && hexId ? resolveBhlHexatonicColour({ family: hexFamily, id: hexId, referencePc: hexReference }) : null;
+            } catch {
+              colour = null;
+            }
+            storeEvaluationHandoff({
+              label: selectedCandidateLabel || 'BHL candidate',
+              xml: selectedCandidateXml,
+              fieldLabel: colour?.label || hexId || world,
+              fieldFamily: colour ? 'hexatonic' : 'bhl',
+              fieldPcs: colour ? colour.pitchClasses.join(' ') : '',
+              provisional: colour?.provisional === true,
+              status: colour?.status ?? '',
+            });
+            window.location.hash = '#/evaluation';
+          }}
+        >
+          Send to Evaluation Dashboard
         </button>
         {compareText ? (
           <pre data-testid="bhl-compare-text" style={{ whiteSpace: 'pre-wrap', margin: 0 }}>
