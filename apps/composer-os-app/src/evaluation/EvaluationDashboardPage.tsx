@@ -2,11 +2,12 @@
  * Musical Evaluation Dashboard.
  * Displays V3.1-B receipts. Does not analyse MusicXML itself and does not score artistic quality.
  */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { api, isDesktopIpc } from '../services/api';
 import { ComparisonPanel } from './ComparisonPanel';
 import { EvidencePanel } from './EvidencePanel';
 import { ReviewPanel } from './ReviewPanel';
+import { takeEvaluationHandoff } from '../bhl/bhlHexatonicHandoff';
 import { HARMONIC_SECTIONS, RHYTHM_SECTIONS, type DashboardFinding } from './evaluationEvidence';
 
 export const EVALUATION_VIEWS = [
@@ -122,6 +123,18 @@ export function EvaluationDashboardPage({ transport }: { transport?: EvaluationT
   const [error, setError] = useState('');
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [selectedFinding, setSelectedFinding] = useState<string>('');
+  const [handoffNote, setHandoffNote] = useState('');
+
+  useEffect(() => {
+    const handoff = takeEvaluationHandoff();
+    if (!handoff) return;
+    setXml(handoff.xml);
+    setLabel(handoff.label);
+    setFieldLabel(handoff.fieldLabel);
+    setFieldFamily(handoff.fieldFamily || 'hexatonic');
+    setFieldPcs(handoff.fieldPcs);
+    setHandoffNote(handoff.provisional ? `${handoff.status}. This hand-off does not accept the music.` : 'Technical evidence only. No artistic score.');
+  }, []);
 
   async function readDesktopFile(): Promise<void> {
     if (!isDesktopIpc() || !window.composerOsDesktop?.invokeApi) {
@@ -193,6 +206,7 @@ export function EvaluationDashboardPage({ transport }: { transport?: EvaluationT
   return (
     <section data-testid="evaluation-dashboard">
       <h2 style={{ marginTop: 0 }}>Musical Evaluation</h2>
+      {handoffNote ? <p data-testid="evaluation-handoff">{handoffNote}</p> : null}
       <p data-testid="evaluation-notice" style={{ marginTop: 0 }}>
         Technical pass and fail describe the file. They are not a musical judgement. This page does not write the score and does not assign an artistic-quality score.
       </p>

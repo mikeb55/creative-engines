@@ -24,6 +24,8 @@
 
 **Hexatonic Core laboratory (H6-A3, 2026-10-15):** `#/hexatonic` keeps the H4 workspace and adds a provisional section for 12 computed triad pairs. Reviews use `hexatonic-laboratory-review` version 1, stored as `.hexatonic-lab.json` in the hexatonic project directory. `hexatonic-project` version 1 is unchanged. Audition scores use `exportScoreModelToMusicXml`. `artisticApproval` stays false. The nearest catalogue spelling is shown beside the candidate. Detail: `docs/H6-A3-CORE-TRIAD-PAIR-LABORATORY-REPORT.md`. H6-A4 adds the audition book at `docs/h6-a4/` and does not admit a candidate.
 
+**Hexatonic evidence (H6-B4, 2026-10-16):** a `bhl-hexatonic` comment becomes descriptive findings on the existing V3.1 receipt. The dashboard does not approve the pair.
+
 **Hexatonic shape (H6-B3, 2026-10-16):** `#/bhl` shape controls call `applyHexatonicShape` on the existing `BhlPhrasePlan`. Tension states stay `resolve`, `primary`, `tension`, and `recover`.
 
 **Hexatonic guitar strategies (H6-B2, 2026-10-16):** Dialogue, Liquid, and Sparse are three candidates inside `generateBhlCandidateSet`. Liquid calls `realizeTriadPair`. It does not call `planLiquidHarmony`.

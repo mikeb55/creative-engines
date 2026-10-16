@@ -8,6 +8,8 @@
 
 ### Added
 
+- **Hexatonic H6-B4 evidence** — generated candidates can be sent to the existing Evaluation Dashboard. The receipt names provisional status, attacks, rests, empty bars, pitch changes, and motif return, and the dashboard shows those two findings under Hexatonic colour. Compose and Send survive React StrictMode. Mechanical repetition is not an artistic score, and a repeated cell with a rest is not rejected by itself. `machineDecision` stays null.
+
 - **Hexatonic H6-B3 shape** — the BHL Composer shape controls set tension, space, density, texture, motif, and bass dialogue on the existing phrase regions. They do not add a state machine. Home, Near, Outside, and Return use the existing tension states.
 
 - **Hexatonic H6-B2 strategies** — a selected hexatonic colour produces Dialogue, Liquid, and Sparse candidates in the existing BHL set. Liquid uses `realizeTriadPair` and does not call `planLiquidHarmony`. A pitch is not held as a common tone unless both triads contain it. Guitar position shifts are warnings. The bass lock stays. Seeds repeat.

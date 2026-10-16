@@ -29,6 +29,7 @@ export const HARMONIC_SECTIONS: readonly EvidenceSection[] = [
   { title: 'Interval distribution', metricIds: ['interval-distribution'] },
   { title: 'Register and tessitura', metricIds: ['tessitura'] },
   { title: 'Motif recurrence', metricIds: ['motif-recurrence', 'motif-map'] },
+  { title: 'Hexatonic colour', metricIds: ['hexatonic-status', 'hexatonic-writing'] },
 ];
 
 export const RHYTHM_SECTIONS: readonly EvidenceSection[] = [

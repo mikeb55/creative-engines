@@ -5,6 +5,7 @@
  */
 
 import { formatRational, readBhlEvidence, type Rational } from '../bhl/bhlEvidence';
+import { readHexatonicStamp } from '../bhl/bhlHexatonicColour';
 import { placementAgainstHome, measureHexatonicDistance } from '../hexatonic/relations';
 import {
   fieldFromPitchClasses,
@@ -493,6 +494,67 @@ export function analyseHarmony(request: HarmonicEvidenceRequest): HarmonicEviden
         bmefCriterion: 'U1',
       });
     }
+  }
+
+  const stamp = readHexatonicStamp(request.xml);
+  if (stamp) {
+    const guitar = score.soundingEvents.filter((event) => event.role === 'guitar');
+    const attacks = guitar.filter((event) => !event.rest && event.soundingMidi !== null);
+    const rests = guitar.filter((event) => event.rest);
+    const emptyBars = bars.filter((bar) => !attacks.some((event) => event.bar === bar));
+    const sets = attacks.map((event) => mod12(event.soundingMidi!));
+    let alternations = 0;
+    for (let index = 1; index < sets.length; index += 1) if (sets[index] !== sets[index - 1]) alternations += 1;
+    const opening = attacks.slice(0, 3).map((event) => event.soundingMidi).join('.');
+    let motifReturns = 0;
+    if (opening) {
+      const tail = attacks.slice(-3).map((event) => event.soundingMidi).join('.');
+      if (tail === opening) motifReturns += 1;
+    }
+    add({
+      metricId: 'hexatonic-status',
+      metricVersion: 'hexatonic-status-1',
+      bars: [],
+      onsetInBar: null,
+      instrument: null,
+      partId: null,
+      voice: null,
+      eventIds: [],
+      observations: {
+        family: stamp.family,
+        id: stamp.id,
+        status: stamp.status,
+        provisional: stamp.provisional,
+        provenance: stamp.provenance,
+        strategy: stamp.strategy,
+        artisticApproval: false,
+      },
+      confidence: 'descriptive',
+      limitation: 'provisional status is not musical acceptance',
+      bmefCriterion: 'J1',
+    });
+    add({
+      metricId: 'hexatonic-writing',
+      metricVersion: 'hexatonic-writing-1',
+      bars: emptyBars,
+      onsetInBar: null,
+      instrument: 'Electric Guitar',
+      partId: guitar[0]?.partId ?? null,
+      voice: null,
+      eventIds: attacks.flatMap((event) => event.sourceEventIds).slice(0, 12),
+      observations: {
+        attacks: attacks.length,
+        rests: rests.length,
+        emptyBars: emptyBars.length,
+        pitchChanges: alternations,
+        motifReturn: motifReturns > 0,
+        commonTones: stamp.sharedPitchClasses.length,
+        positionWarnings: 'see candidate evidence',
+      },
+      confidence: 'descriptive',
+      limitation: 'a repeated cell or a dense bar is evidence, not an automatic rejection',
+      bmefCriterion: 'J3',
+    });
   }
 
   return { version: HARMONIC_EVIDENCE_VERSION, sha256: score.sha256, findings };
