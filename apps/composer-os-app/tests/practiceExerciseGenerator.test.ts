@@ -6,6 +6,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { PracticeStudioPage } from '../src/practice/PracticeStudioPage';
 import { getScaleExplorerEntry, listScaleExplorerEntries } from '../src/practice/scaleExplorer';
 import {
+  buildPracticeScaleAudition,
   generatePracticeExercise,
   nextPracticeSeed,
   type PracticeExerciseRequest,
@@ -216,6 +217,11 @@ describe('practice generator controls', () => {
     expect(textOf(tree)).toContain('Save session');
     expect(textOf(tree)).toContain('Export MusicXML');
     act(() => {
+      tree.root.findByProps({ 'aria-label': 'Scale catalogue' }).props.onChange({
+        target: { value: 'named' },
+      });
+    });
+    act(() => {
       tree.root.findByProps({ 'aria-label': 'Search pitch classes, identifier, or name' }).props.onChange({
         target: { value: 'hirajoshi' },
       });
@@ -238,6 +244,22 @@ describe('practice generator controls', () => {
       tree.root.findByProps({ 'data-testid': 'generate-another' }).props.onClick();
     });
     expect(textOf(tree)).toContain('seed ","2');
+  });
+});
+
+describe('scale audition', () => {
+  it('plays A Dorian up and back inside the collection and adds no drone', () => {
+    const entry = getScaleExplorerEntry(1709);
+    const audition = buildPracticeScaleAudition({ entry, rootPc: 9, title: 'A Dorian', tempoBpm: 96 });
+    expect(audition.available).toBe(true);
+    expect(audition.title).toBe('A Dorian');
+    const notes = audition.events.filter((event) => event.kind === 'note').map((event) => mod12(event.pitches[0]!));
+    expect(notes[0]).toBe(9);
+    expect(notes[notes.length - 1]).toBe(9);
+    const sounding = new Set(transposeCollection(entry.pitchClasses, 9));
+    expect(notes.every((pitchClass) => sounding.has(pitchClass))).toBe(true);
+    expect(audition.guitarNotes.join(' ')).toContain('No drone');
+    expect(audition.events.some((event) => event.pitches.length > 1)).toBe(false);
   });
 });
 

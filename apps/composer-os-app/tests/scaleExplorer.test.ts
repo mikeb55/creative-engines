@@ -20,6 +20,7 @@ import {
   MATHEMATICAL_SET_STATUS,
   SCALE_EXPLORER_PAGE_SIZE,
   TONIC_FIXED_MASK_COUNT,
+  filterScaleBrowse,
   filterScaleExplorer,
   forteClassForExplorer,
   getScaleExplorerEntry,
@@ -222,12 +223,22 @@ describe('practice studio route', () => {
   it('renders the explorer, detail, fretboard, and unavailable panels', () => {
     const tree = create(React.createElement(PracticeStudioPage));
     const text = textOf(tree);
-    expect(text).toContain('4096 pitch-class sets');
+    expect(text).toContain('A Dorian');
+    expect(text).toContain('1 2 b3 4 5 6 b7');
+    expect(text).toContain('Play Scale');
     expect(text).toContain('Practice Generator');
     expect(text).toContain('Save session');
     expect(text).toContain('Practice Session');
-    expect(text).toContain('MATHEMATICAL SET');
-    expect(tree.root.findByProps({ 'data-testid': 'fret-marker-count' }).children).toEqual(['0', ' fret markers.']);
+    expect(text).toContain('About this scale');
+    expect(text).toContain('https://ianring.com/musictheory/scales/1709');
+    expect(text).not.toContain('Use in Generate');
+    const markerCount = Number(tree.root.findByProps({ 'data-testid': 'fret-marker-count' }).children?.[0]);
+    expect(markerCount).toBeGreaterThan(0);
+    act(() => {
+      tree.root.findByProps({ 'aria-label': 'Scale catalogue' }).props.onChange({
+        target: { value: 'named' },
+      });
+    });
     act(() => {
       tree.root.findByProps({ 'aria-label': 'Search pitch classes, identifier, or name' }).props.onChange({
         target: { value: 'hirajoshi' },
@@ -241,7 +252,40 @@ describe('practice studio route', () => {
     expect(selected).toContain('0,2,3,7,8');
     expect(selected).toContain('Open Pentatonic page');
     expect(selected).not.toContain('Open Hexatonic page');
-    const markerCount = Number(tree.root.findByProps({ 'data-testid': 'fret-marker-count' }).children?.[0]);
-    expect(markerCount).toBeGreaterThan(0);
+    const hirajoshiMarkers = Number(tree.root.findByProps({ 'data-testid': 'fret-marker-count' }).children?.[0]);
+    expect(hirajoshiMarkers).toBeGreaterThan(0);
+  });
+});
+
+describe('scale catalogue groups', () => {
+  it('keeps essentials musical and leaves hirajoshi in the named list', () => {
+    const essentials = filterScaleBrowse({
+      group: 'essentials',
+      view: 'all',
+      cardinality: null,
+      family: null,
+      status: null,
+      search: '',
+    });
+    expect(essentials.map((entry) => entry.registrations.find((row) => row.registry === 'glossary-named')?.displayName)).toContain('dorian');
+    expect(essentials.some((entry) => entry.mask === 397)).toBe(false);
+    const named = filterScaleBrowse({
+      group: 'named',
+      view: 'all',
+      cardinality: null,
+      family: null,
+      status: null,
+      search: 'hirajoshi',
+    });
+    expect(named.map((entry) => entry.mask)).toEqual([397]);
+    const theory = filterScaleBrowse({
+      group: 'set-theory',
+      view: 'all',
+      cardinality: 0,
+      family: null,
+      status: null,
+      search: '',
+    });
+    expect(theory.map((entry) => entry.mask)).toEqual([0]);
   });
 });

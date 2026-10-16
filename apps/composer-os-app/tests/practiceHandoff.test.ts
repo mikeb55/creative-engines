@@ -3,12 +3,15 @@ import { act, create } from 'react-test-renderer';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ADVANCED_STATUS, CORE_CANDIDATES, CORE_LABORATORY_STATUS, listAdvancedColours } from '@composer-os/core/hexatonic';
 import { PracticeStudioPage } from '../src/practice/PracticeStudioPage';
+import { storeHexatonicHandoff, takeHexatonicHandoff } from '../src/bhl/bhlHexatonicHandoff';
 import {
   findPracticeRegistration,
+  practiceBhlHandoff,
   storePracticeHandoff,
   takePracticeHandoff,
   type PracticeHandoff,
 } from '../src/practice/practiceHandoff';
+import { getScaleExplorerEntry, listScaleExplorerEntries } from '../src/practice/scaleExplorer';
 import { pitchClassesOfMask, transposeMask } from '../src/practice/scaleGlossary';
 
 const memory = new Map<string, string>();
@@ -100,6 +103,31 @@ describe('practice handoff', () => {
     expect(sent.handoff.status).toBe(found.registration.status);
   });
 
+  it('keeps the named scale and applies the inbound root', () => {
+    const sent = storePracticeHandoff(
+      base({
+        source: 'pentatonic',
+        label: 'Major pentatonic',
+        musicXml: null,
+        collectionId: 'major_pentatonic',
+        registry: 'pentatonic-colour',
+        referencePc: 2,
+        status: null,
+        mask: null,
+      }),
+    );
+    expect(sent.ok).toBe(true);
+    globalThis.cancelAnimationFrame = () => {};
+    let renderer: ReturnType<typeof create> | null = null;
+    act(() => {
+      renderer = create(React.createElement(PracticeStudioPage));
+    });
+    const text = JSON.stringify(renderer?.toJSON());
+    expect(text).toContain('Major Pentatonic');
+    expect(text).toContain('2,4,6,9,11');
+    expect(text).not.toContain('D D ');
+  });
+
   it('keeps provisional and advanced statuses', () => {
     const provisional = CORE_CANDIDATES[0];
     expect(provisional).toBeTruthy();
@@ -166,5 +194,17 @@ describe('practice handoff', () => {
     expect(text).toContain('Restored score');
     expect(text).toContain('tuning standard');
     expect(text).toContain('source file unchanged');
+  });
+
+  it('offers BHL only when the composer resolves the same sounding set', () => {
+    expect(practiceBhlHandoff(getScaleExplorerEntry(1709), 9)).toBeNull();
+    const match = listScaleExplorerEntries().find((entry) => practiceBhlHandoff(entry, 0));
+    expect(match).toBeTruthy();
+    const payload = practiceBhlHandoff(match!, 0);
+    expect(payload?.referencePc).toBe(0);
+    storeHexatonicHandoff(payload!);
+    expect(takeHexatonicHandoff()).toEqual(payload);
+    const tree = create(React.createElement(PracticeStudioPage));
+    expect(JSON.stringify(tree.toJSON())).not.toContain('develop-in-bhl');
   });
 });

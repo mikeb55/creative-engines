@@ -253,13 +253,20 @@ describe('practice fretboard pitch mapping', () => {
     expect(binding).not.toContain('(octave + 1) * 12');
     expect(page).not.toContain('fingeringOptions');
     expect(page).not.toContain('GUITAR_OPEN_STRING_MIDIS');
-    expect(page).toContain('Deferred to V3.2-E');
+    expect(page).toContain('Inside the playable guitar range.');
+    expect(page).not.toContain('Inside guitarRange()');
+    expect(page).toContain('Play Scale');
   });
 });
 
 describe('practice studio fretboard controls', () => {
   it('updates the board from the explorer, the root, the tuning, and a clicked fret', () => {
     const tree = create(React.createElement(PracticeStudioPage));
+    act(() => {
+      tree.root.findByProps({ 'aria-label': 'Scale catalogue' }).props.onChange({
+        target: { value: 'named' },
+      });
+    });
     act(() => {
       tree.root.findByProps({ 'aria-label': 'Search pitch classes, identifier, or name' }).props.onChange({
         target: { value: 'hirajoshi' },
@@ -269,7 +276,7 @@ describe('practice studio fretboard controls', () => {
       tree.root.findByProps({ 'data-testid': 'explorer-mask-397' }).props.onClick();
     });
     const sounding = () => tree.root.findByProps({ 'data-testid': 'sounding-pitch-classes' }).children?.join('');
-    expect(sounding()).toContain('0,2,3,7,8');
+    expect(sounding()).toContain('0,4,5,9,11');
     act(() => {
       tree.root.findByProps({ 'aria-label': 'Fretboard root' }).props.onChange({ target: { value: '7' } });
     });

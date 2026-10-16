@@ -388,3 +388,120 @@ export function explorerRowLabel(entry: ScaleExplorerEntry): string {
   }
   return entry.registrations.map((registration) => registration.displayName).join(' · ');
 }
+
+/** A Dorian: glossary mask 1709, sounding root A (pitch class 9). */
+export const DEFAULT_PRACTICE_MASK = 1709;
+export const DEFAULT_PRACTICE_ROOT_PC = 9;
+
+export const SCALE_BROWSE_GROUPS = [
+  { id: 'essentials', label: 'Essentials' },
+  { id: 'composer-os', label: 'Composer OS Collections' },
+  { id: 'named', label: 'More Named Scales' },
+  { id: 'all', label: 'All Scales' },
+  { id: 'set-theory', label: 'Advanced Set Theory' },
+] as const;
+
+export type ScaleBrowseGroup = (typeof SCALE_BROWSE_GROUPS)[number]['id'];
+
+export const ESSENTIAL_SCALE_NAMES = [
+  'major',
+  'minor',
+  'dorian',
+  'phrygian',
+  'lydian',
+  'mixolydian',
+  'locrian',
+  'major pentatonic',
+  'minor pentatonic',
+  'major blues',
+  'minor blues',
+  'harmonic minor',
+  'melodic minor',
+  'whole tone',
+  'diminished',
+  'chromatic',
+] as const;
+
+const DEGREE_SPELLING: Record<string, string> = {
+  '1P': '1',
+  '2m': 'b2',
+  '2M': '2',
+  '3m': 'b3',
+  '3M': '3',
+  '4d': 'b4',
+  '4P': '4',
+  '4A': '#4',
+  '5d': 'b5',
+  '5P': '5',
+  '5A': '#5',
+  '6m': 'b6',
+  '6M': '6',
+  '6A': '#6',
+  '7d': 'bb7',
+  '7m': 'b7',
+  '7M': '7',
+};
+
+function titleCaseScale(name: string): string {
+  return name.replace(/(^|\s|-)([a-z])/g, (match) => match.toUpperCase());
+}
+
+export function musicianScaleName(entry: ScaleExplorerEntry): string {
+  const glossary = entry.registrations.find((row) => row.registry === 'glossary-named');
+  if (glossary) return titleCaseScale(glossary.displayName);
+  const collection = entry.registrations.find((row) => row.registry !== 'glossary-named');
+  if (collection) return collection.displayName;
+  if (entry.cardinality === 0) return 'Empty set';
+  const spelling = entry.intervalsFromC.map((interval) => interval.spelling).join(' ');
+  return spelling || 'Empty set';
+}
+
+export function musicianIntervalFormula(entry: ScaleExplorerEntry): string {
+  const named = glossaryNameRecords().find((record) => record.mask === entry.mask);
+  if (named && named.intervals.length > 0) {
+    return named.intervals.map((token) => DEGREE_SPELLING[token] ?? token).join(' ');
+  }
+  if (entry.math.stepPattern && entry.math.stepPattern.length > 0) return entry.math.stepPattern.join('-');
+  return '';
+}
+
+function glossaryPrimary(entry: ScaleExplorerEntry): string | null {
+  const glossary = entry.registrations.find((row) => row.registry === 'glossary-named');
+  return glossary ? glossary.displayName.toLowerCase() : null;
+}
+
+function inBrowseGroup(entry: ScaleExplorerEntry, group: ScaleBrowseGroup): boolean {
+  if (group === 'all' || group === 'set-theory') return true;
+  if (group === 'essentials') {
+    const name = glossaryPrimary(entry);
+    return name !== null && (ESSENTIAL_SCALE_NAMES as readonly string[]).includes(name);
+  }
+  if (group === 'composer-os') return entry.registrations.some((row) => row.registry !== 'glossary-named');
+  const name = glossaryPrimary(entry);
+  return name !== null && !(ESSENTIAL_SCALE_NAMES as readonly string[]).includes(name);
+}
+
+export interface ScaleBrowseQuery extends ScaleExplorerQuery {
+  group: ScaleBrowseGroup;
+}
+
+export function filterScaleBrowse(query: ScaleBrowseQuery): ScaleExplorerEntry[] {
+  const grouped = listScaleExplorerEntries().filter((entry) => inBrowseGroup(entry, query.group));
+  const ordered =
+    query.group === 'essentials'
+      ? [...grouped].sort((left, right) => {
+          const leftName = glossaryPrimary(left) ?? '';
+          const rightName = glossaryPrimary(right) ?? '';
+          return ESSENTIAL_SCALE_NAMES.indexOf(leftName as (typeof ESSENTIAL_SCALE_NAMES)[number])
+            - ESSENTIAL_SCALE_NAMES.indexOf(rightName as (typeof ESSENTIAL_SCALE_NAMES)[number]);
+        })
+      : grouped;
+  return ordered.filter((entry) => {
+    if (query.group === 'set-theory') {
+      if (query.cardinality !== null && entry.cardinality !== query.cardinality) return false;
+      if (query.family && !registrationMatchesFamily(entry, query.family)) return false;
+      if (query.status && !entryMatchesStatus(entry, query.status)) return false;
+    }
+    return textMatches(entry, query.search);
+  });
+}

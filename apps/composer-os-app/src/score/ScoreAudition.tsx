@@ -8,6 +8,8 @@ export type ScoreAuditionProps = {
   loop?: boolean;
   repeat?: number;
   metronome?: boolean;
+  /** Increment to start the current score on the shared Tone.js transport. */
+  playRequest?: number;
   onSound?: (midi: number, barIndex: number, startBeat: number) => void;
 };
 
@@ -44,10 +46,11 @@ function unlockAudio(): Promise<void> {
  * One MusicXML audition on the shared Tone.js transport.
  * A second play, a new score, or unmount stops the previous run.
  */
-export function ScoreAudition({ musicXml, label, loop = false, repeat = 1, metronome = false, onSound }: ScoreAuditionProps) {
+export function ScoreAudition({ musicXml, label, loop = false, repeat = 1, metronome = false, playRequest = 0, onSound }: ScoreAuditionProps) {
   const [phase, setPhase] = useState<Phase>('idle');
   const [detail, setDetail] = useState<string | null>(null);
   const generation = useRef(0);
+  const startRef = useRef<() => Promise<void>>(async () => undefined);
 
   useEffect(() => {
     generation.current += 1;
@@ -96,6 +99,16 @@ export function ScoreAudition({ musicXml, label, loop = false, repeat = 1, metro
       setDetail(error instanceof Error ? error.message : String(error));
     }
   }, [musicXml, loop, repeat, metronome, onSound]);
+
+  startRef.current = start;
+
+  useEffect(() => {
+    if (!playRequest) return;
+    const timer = window.setTimeout(() => {
+      void startRef.current();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [playRequest]);
 
   const halt = useCallback(() => {
     generation.current += 1;

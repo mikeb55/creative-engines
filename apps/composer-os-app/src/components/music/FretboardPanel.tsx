@@ -62,6 +62,8 @@ export type FretboardPanelProps = {
   exportRef?: RefObject<HTMLDivElement>;
   /** Dark fretboard chrome (#1a1a2e background; string/fret lines #8888aa). Role dot colours unchanged. */
   darkMode?: boolean;
+  /** Root stays a filled circle. Other scale tones become squares. */
+  scaleMarkerShapes?: boolean;
 };
 
 const DEFAULT_TUNING: string[] = ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'];
@@ -169,6 +171,7 @@ export function FretboardPanel({
   positionLock = false,
   exportRef,
   darkMode = false,
+  scaleMarkerShapes = false,
 }: FretboardPanelProps) {
   const boardMountRef = useRef<HTMLDivElement | null>(null);
   const boardRef = useRef<{ removeEventListeners: () => unknown } | null>(null);
@@ -323,6 +326,30 @@ export function FretboardPanel({
         });
       }
 
+      if (scaleMarkerShapes && boardMountRef.current) {
+        const ns = 'http://www.w3.org/2000/svg';
+        boardMountRef.current.querySelectorAll('.dot-role-primaryTension').forEach((node) => {
+          const circle = node.querySelector('circle');
+          if (!(circle instanceof SVGCircleElement)) return;
+          const radius = Number(circle.getAttribute('r')) || 8;
+          const rect = document.createElementNS(ns, 'rect');
+          rect.setAttribute('class', 'dot-square');
+          rect.setAttribute('x', circle.getAttribute('cx') ?? '0');
+          rect.setAttribute('y', circle.getAttribute('cy') ?? '0');
+          rect.setAttribute('width', String(radius * 2));
+          rect.setAttribute('height', String(radius * 2));
+          rect.setAttribute('transform', `translate(${-radius}, ${-radius})`);
+          rect.setAttribute('fill', circle.getAttribute('fill') || ROLE_COLORS.primaryTension);
+          rect.setAttribute('stroke', circle.getAttribute('stroke') || '#111');
+          rect.setAttribute('stroke-width', circle.getAttribute('stroke-width') || '1');
+          circle.replaceWith(rect);
+          if (node instanceof SVGElement) node.setAttribute('aria-label', 'Scale tone');
+        });
+        boardMountRef.current.querySelectorAll('.dot-role-triadRoot').forEach((node) => {
+          if (node instanceof SVGElement) node.setAttribute('aria-label', 'Root');
+        });
+      }
+
       if (onNoteClick || onFretClick) {
         const svgWrap = boardMountRef.current.querySelector('.fretboard-html-wrapper');
         if (svgWrap instanceof HTMLElement) {
@@ -376,6 +403,7 @@ export function FretboardPanel({
     visibleNotes,
     positionLock,
     darkMode,
+    scaleMarkerShapes,
   ]);
 
   useEffect(() => {

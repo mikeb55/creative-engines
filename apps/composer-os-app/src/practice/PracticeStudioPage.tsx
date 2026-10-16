@@ -2,21 +2,24 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FretboardPanel, type FretboardCell, type FretboardNote } from '../components/music/FretboardPanel';
 import { ScoreAudition } from '../score/ScoreAudition';
 import { ScorePreview } from '../score/ScorePreview';
-import { PENTATONIC_NOTE_CHOICES } from '@composer-os/core/pentatonic/pitch';
+import { PENTATONIC_NOTE_CHOICES, mod12 } from '@composer-os/core/pentatonic/pitch';
 import { navigateToRoute } from '../router/appRouter';
+import { storeHexatonicHandoff } from '../bhl/bhlHexatonicHandoff';
 import {
   CHROMATIC_MASK_COUNT,
   CHROMATIC_SET_MASK,
-  EMPTY_SET_MASK,
+  DEFAULT_PRACTICE_MASK,
+  DEFAULT_PRACTICE_ROOT_PC,
   MATHEMATICAL_SET_STATUS,
-  TONIC_FIXED_MASK_COUNT,
-  explorerRowLabel,
-  filterScaleExplorer,
+  SCALE_BROWSE_GROUPS,
+  filterScaleBrowse,
   getScaleExplorerEntry,
+  musicianIntervalFormula,
+  musicianScaleName,
   pageScaleExplorer,
   scaleExplorerFamilies,
   scaleExplorerStatuses,
-  type ScaleExplorerView,
+  type ScaleBrowseGroup,
 } from './scaleExplorer';
 import {
   FRET_MAX,
@@ -27,6 +30,7 @@ import {
   buildPracticeFretboard,
   inspectFretCell,
   practiceTuningChoices,
+  intervalsFromRoot,
   romanPosition,
 } from './practiceFretboard';
 import { glossaryNamesForMask, transposeMask } from './scaleGlossary';
@@ -35,6 +39,7 @@ import {
   PRACTICE_EXERCISE_FAMILIES,
   PRACTICE_EXERCISE_METRES,
   PRACTICE_STUDIO_DIFFICULTIES,
+  buildPracticeScaleAudition,
   generatePracticeExercise,
   nextPracticeSeed,
   type PracticeExercise,
@@ -46,7 +51,7 @@ import {
 import { practiceExerciseToMusicXml, withPracticeTempo } from './practiceExerciseMusicXml';
 import { openPracticeFile, revealPracticeFile, writePracticeFile } from './practiceExport';
 import { readPracticeSession, sealPracticeSession, sha256Hex } from './practiceSession';
-import { takePracticeHandoff, type PracticeHandoff } from './practiceHandoff';
+import { findPracticeRegistration, practiceBhlHandoff, takePracticeHandoff, type PracticeHandoff } from './practiceHandoff';
 
 const TUNING_CHOICES = practiceTuningChoices();
 const ZONE_LABELS: Record<string, string> = {
@@ -59,15 +64,19 @@ const ZONE_LABELS: Record<string, string> = {
 
 const FIELD_STYLE = { display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '13px' } as const;
 
+function plainLimitation(text: string): string {
+  return text.replaceAll('guitarRange()', 'the guitar’s playable range');
+}
+
 export function PracticeStudioPage() {
-  const [view, setView] = useState<ScaleExplorerView>('all');
+  const [browse, setBrowse] = useState<ScaleBrowseGroup>('essentials');
   const [cardinality, setCardinality] = useState<string>('');
   const [family, setFamily] = useState('');
   const [status, setStatus] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
-  const [selectedMask, setSelectedMask] = useState(EMPTY_SET_MASK);
-  const [rootPc, setRootPc] = useState(0);
+  const [selectedMask, setSelectedMask] = useState(DEFAULT_PRACTICE_MASK);
+  const [rootPc, setRootPc] = useState(DEFAULT_PRACTICE_ROOT_PC);
   const [tuningId, setTuningId] = useState(STANDARD_TUNING_ID);
   const [labelMode, setLabelMode] = useState<'pitch' | 'interval'>('pitch');
   const [fretFrom, setFretFrom] = useState<number>(SCALE_FRET_WINDOW.from);
@@ -91,6 +100,7 @@ export function PracticeStudioPage() {
   const [writtenPath, setWrittenPath] = useState<string | null>(null);
   const [playbackNotes, setPlaybackNotes] = useState<FretboardNote[]>([]);
   const [handoff, setHandoff] = useState<PracticeHandoff | null>(null);
+  const [playRequest, setPlayRequest] = useState(0);
 
   useEffect(() => {
     const taken = takePracticeHandoff();
@@ -101,7 +111,11 @@ export function PracticeStudioPage() {
     }
     const next = taken.handoff;
     setHandoff(next);
-    if (next.mask !== null) setSelectedMask(next.mask);
+    const registered = next.registry && next.collectionId
+      ? findPracticeRegistration(next.registry, next.collectionId)
+      : null;
+    if (registered) setSelectedMask(registered.mask);
+    else if (next.mask !== null) setSelectedMask(next.mask);
     if (next.referencePc !== null) setRootPc(next.referencePc);
     if (next.tuningId) setTuningId(next.tuningId);
     if (next.seed !== null) setExerciseSeed(next.seed);
@@ -120,14 +134,15 @@ export function PracticeStudioPage() {
   const statuses = useMemo(() => scaleExplorerStatuses(), []);
   const filtered = useMemo(
     () =>
-      filterScaleExplorer({
-        view,
+      filterScaleBrowse({
+        group: browse,
+        view: 'all',
         cardinality: cardinality === '' ? null : Number(cardinality),
         family: family || null,
         status: status || null,
         search,
       }),
-    [view, cardinality, family, status, search]
+    [browse, cardinality, family, status, search]
   );
   const paged = pageScaleExplorer(filtered, page);
   const selected = getScaleExplorerEntry(selectedMask);
@@ -201,12 +216,41 @@ export function PracticeStudioPage() {
   );
   const pages = ['#/pentatonic', '#/hexatonic'] as const;
   const tuningZones = ['jazz_sophisticated', 'sonic_youth_noise', 'joni_mitchell', 'hybrid_harmonic', 'other'] as const;
+  const scaleTitle = musicianScaleName(selected);
+  const formula = musicianIntervalFormula(selected);
+  const rootName = PENTATONIC_NOTE_CHOICES[rootPc] ?? 'C';
+  const soundingNames = intervalsFromRoot(board.soundingPitchClasses, rootPc).map(
+    (interval) => PENTATONIC_NOTE_CHOICES[mod12(rootPc + interval)] ?? String(interval)
+  );
+  const bhlHandoff = practiceBhlHandoff(selected, rootPc);
+  const playScale = useCallback(() => {
+    const audition = buildPracticeScaleAudition({
+      entry: selected,
+      rootPc,
+      title: `${rootName} ${scaleTitle}`,
+      tempoBpm: exerciseTempo,
+    });
+    if (!audition.available) {
+      setSessionStatus(audition.unavailableReason || 'This scale cannot be played.');
+      return;
+    }
+    try {
+      setExercise(null);
+      setExportError(null);
+      setScoreXml(practiceExerciseToMusicXml(audition));
+      setPlayRequest((current) => current + 1);
+      setSessionStatus(`Playing ${rootName} ${scaleTitle}. No drone.`);
+    } catch (error) {
+      setScoreXml(null);
+      setSessionStatus(error instanceof Error ? error.message : String(error));
+    }
+  }, [selected, rootPc, rootName, scaleTitle, exerciseTempo]);
 
   return (
     <div data-testid="practice-studio">
       <h2 style={{ marginTop: 0 }}>Practice &amp; Scales Studio</h2>
       <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-        Scale inspection on the guitar fretboard. Mathematical pitch-class sets stay unnamed unless a registry already names them.
+        One root and one scale drive the fretboard, the scale player, the exercises, and the export.
       </p>
       {handoff ? (
         <p data-testid="practice-handoff" style={{ fontSize: '0.85rem' }}>
@@ -220,75 +264,44 @@ export function PracticeStudioPage() {
       ) : null}
 
       <section aria-labelledby="scale-explorer-heading" style={{ marginTop: '1rem' }}>
-        <h3 id="scale-explorer-heading" style={{ marginBottom: '0.35rem' }}>Scale Explorer</h3>
+        <h3 id="scale-explorer-heading" style={{ marginBottom: '0.35rem' }}>Scale</h3>
+        <p data-testid="scale-name" style={{ fontSize: '1.15rem', margin: '0.2rem 0' }}>
+          <strong>{rootName} {scaleTitle}</strong>
+        </p>
+        <p data-testid="scale-formula" style={{ fontSize: '0.95rem', marginTop: 0 }}>
+          {formula || 'No interval formula.'}
+          {selected.math.stepPattern ? ` · steps ${selected.math.stepPattern.join('-')}` : ''}
+        </p>
         <p data-testid="explorer-count" style={{ fontSize: '0.85rem' }}>
-          {view === 'all'
-            ? `${CHROMATIC_MASK_COUNT} pitch-class sets, including the empty set and the chromatic set.`
-            : `${TONIC_FIXED_MASK_COUNT} tonic-fixed sets. Pitch class 0 is included. The empty set is excluded. The chromatic set is included.`}
-          {` ${filtered.length} match the filters.`}
+          {browse === 'all' || browse === 'set-theory'
+            ? `${CHROMATIC_MASK_COUNT} pitch-class sets. ${filtered.length} match.`
+            : `${filtered.length} scales in this list.`}
         </p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', margin: '0.75rem 0' }}>
           <label style={FIELD_STYLE}>
-            View
+            Root
             <select
-              aria-label="Explorer view"
-              value={view}
-              onChange={(event) => {
-                const next = event.target.value as ScaleExplorerView;
-                setView(next);
-                setPage(0);
-                if (next === 'tonic-fixed' && selectedMask === EMPTY_SET_MASK) setSelectedMask(1);
-              }}
+              aria-label="Fretboard root"
+              value={String(rootPc)}
+              onChange={(event) => setRootPc(Number(event.target.value))}
             >
-              <option value="all">All pitch-class sets</option>
-              <option value="tonic-fixed">Tonic-fixed collections</option>
-            </select>
-          </label>
-          <label style={FIELD_STYLE}>
-            Cardinality
-            <select
-              aria-label="Pitch-class cardinality"
-              value={cardinality}
-              onChange={(event) => {
-                setCardinality(event.target.value);
-                setPage(0);
-              }}
-            >
-              <option value="">Any</option>
-              {Array.from({ length: 13 }, (_, size) => (
-                <option key={size} value={String(size)}>{size}</option>
+              {PENTATONIC_NOTE_CHOICES.map((name, index) => (
+                <option key={name} value={String(index)}>{name}</option>
               ))}
             </select>
           </label>
           <label style={FIELD_STYLE}>
-            Family
+            Catalogue
             <select
-              aria-label="Collection family"
-              value={family}
+              aria-label="Scale catalogue"
+              value={browse}
               onChange={(event) => {
-                setFamily(event.target.value);
+                setBrowse(event.target.value as ScaleBrowseGroup);
                 setPage(0);
               }}
             >
-              <option value="">Any</option>
-              {families.map((name) => (
-                <option key={name} value={name}>{name}</option>
-              ))}
-            </select>
-          </label>
-          <label style={FIELD_STYLE}>
-            Status
-            <select
-              aria-label="Curation status"
-              value={status}
-              onChange={(event) => {
-                setStatus(event.target.value);
-                setPage(0);
-              }}
-            >
-              <option value="">Any</option>
-              {statuses.map((name) => (
-                <option key={name} value={name}>{name}</option>
+              {SCALE_BROWSE_GROUPS.map((group) => (
+                <option key={group.id} value={group.id}>{group.label}</option>
               ))}
             </select>
           </label>
@@ -297,14 +310,82 @@ export function PracticeStudioPage() {
             <input
               aria-label="Search pitch classes, identifier, or name"
               value={search}
-              placeholder="Pitch classes, id, or name"
+              placeholder="Name, notes, or identifier"
               onChange={(event) => {
                 setSearch(event.target.value);
                 setPage(0);
               }}
             />
           </label>
+          <button type="button" data-testid="play-scale" onClick={playScale}>
+            Play Scale
+          </button>
+          {bhlHandoff ? (
+            <button
+              type="button"
+              data-testid="develop-in-bhl"
+              className="secondary"
+              onClick={() => {
+                storeHexatonicHandoff(bhlHandoff);
+                navigateToRoute('bhl');
+              }}
+            >
+              Develop in BHL Composer
+            </button>
+          ) : null}
         </div>
+        {browse === 'set-theory' && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', margin: '0.75rem 0' }}>
+            <label style={FIELD_STYLE}>
+              Cardinality
+              <select
+                aria-label="Pitch-class cardinality"
+                value={cardinality}
+                onChange={(event) => {
+                  setCardinality(event.target.value);
+                  setPage(0);
+                }}
+              >
+                <option value="">Any</option>
+                {Array.from({ length: 13 }, (_, size) => (
+                  <option key={size} value={String(size)}>{size}</option>
+                ))}
+              </select>
+            </label>
+            <label style={FIELD_STYLE}>
+              Family
+              <select
+                aria-label="Collection family"
+                value={family}
+                onChange={(event) => {
+                  setFamily(event.target.value);
+                  setPage(0);
+                }}
+              >
+                <option value="">Any</option>
+                {families.map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+            </label>
+            <label style={FIELD_STYLE}>
+              Status
+              <select
+                aria-label="Curation status"
+                value={status}
+                onChange={(event) => {
+                  setStatus(event.target.value);
+                  setPage(0);
+                }}
+              >
+                <option value="">Any</option>
+                {statuses.map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+        )}
         <ul data-testid="explorer-page" style={{ listStyle: 'none', padding: 0, margin: 0, maxHeight: '16rem', overflow: 'auto', border: '1px solid var(--border)', borderRadius: '8px' }}>
           {paged.rows.map((entry) => {
             const active = entry.mask === selectedMask;
@@ -326,10 +407,12 @@ export function PracticeStudioPage() {
                     color: 'inherit',
                   }}
                 >
-                  <span style={{ fontFamily: 'ui-monospace, monospace' }}>{entry.mask}</span>
-                  {' · '}
-                  {explorerRowLabel(entry)}
-                  {entry.registrations.length === 0 ? ` · ${MATHEMATICAL_SET_STATUS}` : ''}
+                  <strong>{musicianScaleName(entry)}</strong>
+                  {musicianIntervalFormula(entry) ? ` · ${musicianIntervalFormula(entry)}` : ''}
+                  {browse === 'set-theory'
+                    ? ` · ${entry.mask}${entry.math.computedForte.number ? ` · ${entry.math.computedForte.number}` : ''}`
+                    : ''}
+                  {entry.registrations.length === 0 && browse === 'set-theory' ? ` · ${MATHEMATICAL_SET_STATUS}` : ''}
                 </button>
               </li>
             );
@@ -349,65 +432,66 @@ export function PracticeStudioPage() {
       </section>
 
       <section aria-labelledby="scale-detail-heading" data-testid="scale-detail" style={{ marginTop: '1.25rem' }}>
-        <h3 id="scale-detail-heading">Scale details</h3>
+        <h3 id="scale-detail-heading">Notes</h3>
         {!selectedVisible && (
-          <p style={{ fontSize: '0.85rem' }}>The selected set is outside the current filters. The detail stays on that set.</p>
+          <p style={{ fontSize: '0.85rem' }}>The selected scale is outside the current list. The fretboard stays on that scale.</p>
         )}
-        <dl style={{ display: 'grid', gridTemplateColumns: '9rem 1fr', gap: '0.35rem 0.75rem', fontSize: '0.9rem' }}>
-          <dt>Pitch classes</dt>
-          <dd style={{ margin: 0 }}>{selected.pitchClassId || '—'}</dd>
-          <dt>Spelling</dt>
-          <dd style={{ margin: 0 }}>{selected.intervalsFromC.map((interval) => interval.spelling).join(' ') || '—'}</dd>
-          <dt>Cardinality</dt>
-          <dd style={{ margin: 0 }}>{selected.cardinality}</dd>
-          <dt>12-bit mask</dt>
-          <dd style={{ margin: 0 }}>{selected.mask}</dd>
-          <dt>Tonic-fixed</dt>
-          <dd style={{ margin: 0 }}>{selected.tonicFixed ? 'Yes. Pitch class 0 is in the set.' : 'No. Pitch class 0 is not in the set.'}</dd>
-          <dt>Intervals from C</dt>
-          <dd style={{ margin: 0 }}>
-            {selected.intervalsFromC.length === 0
-              ? 'None'
-              : selected.intervalsFromC.map((interval) => `${interval.semitones} ${interval.spelling}`).join(', ')}
-          </dd>
-          <dt>Forte class</dt>
-          <dd style={{ margin: 0 }}>
-            {selected.forte
-              ? `${selected.forte.forte} · ${selected.forte.status}. Hexachord catalogue label. Not a scale name.`
-              : 'No hexachord catalogue label on this cardinality.'}
-          </dd>
-          <dt>Computed Forte</dt>
-          <dd style={{ margin: 0 }} data-testid="computed-forte">
-            {`${selected.math.computedForte.number}${selected.math.computedForte.inversion ? ` ${selected.math.computedForte.inversion}` : ''}${selected.math.computedForte.z ? ' · Z-related' : ''}. Interval vector ${selected.math.intervalVector.join('')}.`}
-          </dd>
-          <dt>Steps</dt>
-          <dd style={{ margin: 0 }}>{selected.math.stepPattern ? selected.math.stepPattern.join('-') : 'No tonic-fixed step pattern.'}</dd>
-          <dt>Rahn prime mask</dt>
-          <dd style={{ margin: 0 }}>{selected.math.primeMaskRahn}</dd>
-          <dt>Forte prime mask</dt>
-          <dd style={{ margin: 0 }}>{selected.math.primeMaskForte}</dd>
-          <dt>Transposition class</dt>
-          <dd style={{ margin: 0 }}>{selected.math.tnClassMask}</dd>
-          <dt>Zeitler / Tonal number</dt>
-          <dd style={{ margin: 0 }} data-testid="root-msb-number">
-            {`${selected.math.rootMsbNumber}. Root is the high bit. This is not the Ian Ring id.`}
-          </dd>
-          <dt>Ian Ring</dt>
-          <dd style={{ margin: 0 }}>
-            {selected.math.ianRing ? (
-              <a data-testid="ian-ring-link" href={selected.math.ianRing.url} target="_blank" rel="noreferrer">
-                {selected.math.ianRing.url}
-              </a>
-            ) : (
-              'No page. Ian Ring publishes links for tonic-fixed sets only.'
-            )}
-          </dd>
-        </dl>
-        {selected.math.modeMasks.length > 0 && (
-          <p style={{ fontSize: '0.85rem' }} data-testid="mode-masks">
-            {`Modes, each member moved to pitch class 0: ${selected.math.modeMasks.join(', ')}. Transposition is separate. T1 is mask ${transposeMask(selected.mask, 1)}.`}
-          </p>
-        )}
+        <p style={{ fontSize: '0.95rem' }}>
+          {soundingNames.join(' ') || 'No notes.'}
+          {board.soundingPitchClassId ? ` · ${board.soundingPitchClassId}` : ''}
+        </p>
+        <details data-testid="about-this-scale">
+          <summary>About this scale</summary>
+          <dl style={{ display: 'grid', gridTemplateColumns: '9rem 1fr', gap: '0.35rem 0.75rem', fontSize: '0.9rem' }}>
+            <dt>Pitch classes</dt>
+            <dd style={{ margin: 0 }}>{selected.pitchClassId || '—'}</dd>
+            <dt>Spelling from C</dt>
+            <dd style={{ margin: 0 }}>{selected.intervalsFromC.map((interval) => interval.spelling).join(' ') || '—'}</dd>
+            <dt>Cardinality</dt>
+            <dd style={{ margin: 0 }}>{selected.cardinality}</dd>
+            <dt>12-bit mask</dt>
+            <dd style={{ margin: 0 }}>{selected.mask}</dd>
+            <dt>Tonic-fixed</dt>
+            <dd style={{ margin: 0 }}>{selected.tonicFixed ? 'Yes. Pitch class 0 is in the set.' : 'No. Pitch class 0 is not in the set.'}</dd>
+            <dt>Forte class</dt>
+            <dd style={{ margin: 0 }}>
+              {selected.forte
+                ? `${selected.forte.forte} · ${selected.forte.status}. Hexachord catalogue label. Not a scale name.`
+                : 'No hexachord catalogue label on this cardinality.'}
+            </dd>
+            <dt>Computed Forte</dt>
+            <dd style={{ margin: 0 }} data-testid="computed-forte">
+              {`${selected.math.computedForte.number}${selected.math.computedForte.inversion ? ` ${selected.math.computedForte.inversion}` : ''}${selected.math.computedForte.z ? ' · Z-related' : ''}. Interval vector ${selected.math.intervalVector.join('')}.`}
+            </dd>
+            <dt>Steps</dt>
+            <dd style={{ margin: 0 }}>{selected.math.stepPattern ? selected.math.stepPattern.join('-') : 'No tonic-fixed step pattern.'}</dd>
+            <dt>Rahn prime mask</dt>
+            <dd style={{ margin: 0 }}>{selected.math.primeMaskRahn}</dd>
+            <dt>Forte prime mask</dt>
+            <dd style={{ margin: 0 }}>{selected.math.primeMaskForte}</dd>
+            <dt>Transposition class</dt>
+            <dd style={{ margin: 0 }}>{selected.math.tnClassMask}</dd>
+            <dt>Zeitler / Tonal number</dt>
+            <dd style={{ margin: 0 }} data-testid="root-msb-number">
+              {`${selected.math.rootMsbNumber}. Root is the high bit. This is not the Ian Ring id.`}
+            </dd>
+            <dt>Ian Ring</dt>
+            <dd style={{ margin: 0 }}>
+              {selected.math.ianRing ? (
+                <a data-testid="ian-ring-link" href={selected.math.ianRing.url} target="_blank" rel="noreferrer">
+                  {selected.math.ianRing.url}
+                </a>
+              ) : (
+                'No page. Ian Ring publishes links for tonic-fixed sets only.'
+              )}
+            </dd>
+          </dl>
+          {selected.math.modeMasks.length > 0 && (
+            <p style={{ fontSize: '0.85rem' }} data-testid="mode-masks">
+              {`Modes, each member moved to pitch class 0: ${selected.math.modeMasks.join(', ')}. Transposition is separate. T1 is mask ${transposeMask(selected.mask, 1)}.`}
+            </p>
+          )}
+        </details>
         <h4 style={{ marginBottom: '0.35rem' }}>Registered collections</h4>
         {selected.registrations.length === 0 ? (
           <p data-testid="mathematical-set-note">{MATHEMATICAL_SET_STATUS}. Computed pitch-class subset. No musical name.</p>
@@ -458,22 +542,13 @@ export function PracticeStudioPage() {
         <h3 id="fretboard-heading">Guitar fretboard</h3>
         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
           {board.tuning.label}. Open strings {board.tuning.strings.join(' ')}.
-          Green dots are the selected root. Amber dots are the other pitch classes in the set.
-          A dot is a pitch-class location. It is not a CAGED shape and it is not a fingering.
+          Dots are pitch locations, not a fingering.
         </p>
+        <ul data-testid="fretboard-legend" style={{ fontSize: '0.9rem', paddingLeft: '1.1rem' }}>
+          <li>Root: filled circle.</li>
+          <li>Scale tone: square.</li>
+        </ul>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', margin: '0.75rem 0' }}>
-          <label style={FIELD_STYLE}>
-            Root
-            <select
-              aria-label="Fretboard root"
-              value={String(rootPc)}
-              onChange={(event) => setRootPc(Number(event.target.value))}
-            >
-              {PENTATONIC_NOTE_CHOICES.map((name, index) => (
-                <option key={name} value={String(index)}>{name}</option>
-              ))}
-            </select>
-          </label>
           <label style={{ ...FIELD_STYLE, flex: '1 1 14rem' }}>
             Tuning
             <select
@@ -552,12 +627,10 @@ export function PracticeStudioPage() {
           </label>
         </div>
         {board.limitation && (
-          <p data-testid="fretboard-limitation" style={{ fontSize: '0.85rem' }}>{board.limitation}</p>
+          <p data-testid="fretboard-limitation" style={{ fontSize: '0.85rem' }}>{plainLimitation(board.limitation)}</p>
         )}
-        <p data-testid="position-status" style={{ fontSize: '0.85rem' }}>{board.positionStatus}</p>
-        <p data-testid="fingering-status" style={{ fontSize: '0.85rem' }}>{board.fingeringStatus}</p>
         <p data-testid="sounding-pitch-classes" style={{ fontSize: '0.85rem' }}>
-          Sounding pitch classes {board.soundingPitchClassId || '—'}. Root {board.rootSpelling}.
+          Notes {soundingNames.join(' ') || '—'}. Root {board.rootSpelling}. Pitch classes {board.soundingPitchClassId || '—'}.
         </p>
         <div style={{ width: '100%', maxWidth: '100%', overflowX: 'auto' }}>
           <FretboardPanel
@@ -566,11 +639,17 @@ export function PracticeStudioPage() {
             frets={board.fretWindowValid ? { from: board.fretFrom, to: board.fretTo } : SCALE_FRET_WINDOW}
             positionLock
             darkMode
+            scaleMarkerShapes
             onFretClick={onFretClick}
             playbackNotes={playbackNotes}
           />
         </div>
-        <p data-testid="fret-marker-count" style={{ fontSize: '0.85rem' }}>{board.notes.length} fret markers.</p>
+        <p data-testid="fret-marker-count" style={{ fontSize: '0.85rem' }}>{board.notes.length} notes in this window.</p>
+        <details>
+          <summary>Position and fingering</summary>
+          <p data-testid="position-status" style={{ fontSize: '0.85rem' }}>{plainLimitation(board.positionStatus)}</p>
+          <p data-testid="fingering-status" style={{ fontSize: '0.85rem' }}>{plainLimitation(board.fingeringStatus)}</p>
+        </details>
         <div data-testid="fret-inspection" style={{ fontSize: '0.9rem', marginTop: '0.75rem' }}>
           <h4 style={{ marginBottom: '0.35rem' }}>Fret inspection</h4>
           {!inspection && <p>Click a fret. The readout shows that cell’s sounding pitch and its interval from the root.</p>}
@@ -588,7 +667,7 @@ export function PracticeStudioPage() {
               <dd style={{ margin: 0 }}>{inspection.visible ? 'Inside the fret window.' : 'Outside the fret window.'}</dd>
               <dt>Guitar range</dt>
               <dd style={{ margin: 0 }}>
-                {inspection.inGuitarRange ? 'Inside guitarRange().' : 'Outside guitarRange(). Not a playable note.'}
+                {inspection.inGuitarRange ? 'Inside the playable guitar range.' : 'Outside the playable guitar range.'}
               </dd>
               <dt>Possible positions</dt>
               <dd style={{ margin: 0 }}>
@@ -633,58 +712,63 @@ export function PracticeStudioPage() {
               ))}
             </select>
           </label>
-          <label style={FIELD_STYLE}>
-            Bars
-            <select
-              aria-label="Exercise bars"
-              value={String(exerciseBars)}
-              onChange={(event) => setExerciseBars(Number(event.target.value) as PracticeExerciseBarCount)}
-            >
-              {PRACTICE_EXERCISE_BAR_COUNTS.map((count) => (
-                <option key={count} value={String(count)}>{count}</option>
-              ))}
-            </select>
-          </label>
-          <label style={FIELD_STYLE}>
-            Metre
-            <select
-              aria-label="Exercise metre"
-              value={exerciseMetre}
-              onChange={(event) => setExerciseMetre(event.target.value as PracticeExerciseMetreId)}
-            >
-              {PRACTICE_EXERCISE_METRES.map((metre) => (
-                <option key={metre.id} value={metre.id}>{metre.id}</option>
-              ))}
-            </select>
-          </label>
-          <label style={FIELD_STYLE}>
-            Tempo
-            <input
-              aria-label="Exercise tempo"
-              type="number"
-              min={40}
-              max={240}
-              step={1}
-              value={exerciseTempo}
-              onChange={(event) => {
-              const bpm = Number(event.target.value);
-              setExerciseTempo(bpm);
-              setExercise((current) => (current ? { ...current, tempoBpm: bpm } : current));
-              setScoreXml((current) => (current ? withPracticeTempo(current, bpm) : current));
-            }}
-            />
-          </label>
-          <label style={FIELD_STYLE}>
-            Seed
-            <input
-              aria-label="Exercise seed"
-              type="number"
-              step={1}
-              value={exerciseSeed}
-              onChange={(event) => setExerciseSeed(Number(event.target.value))}
-            />
-          </label>
         </div>
+        <details>
+          <summary>More exercise controls</summary>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', margin: '0.75rem 0' }}>
+            <label style={FIELD_STYLE}>
+              Bars
+              <select
+                aria-label="Exercise bars"
+                value={String(exerciseBars)}
+                onChange={(event) => setExerciseBars(Number(event.target.value) as PracticeExerciseBarCount)}
+              >
+                {PRACTICE_EXERCISE_BAR_COUNTS.map((count) => (
+                  <option key={count} value={String(count)}>{count}</option>
+                ))}
+              </select>
+            </label>
+            <label style={FIELD_STYLE}>
+              Metre
+              <select
+                aria-label="Exercise metre"
+                value={exerciseMetre}
+                onChange={(event) => setExerciseMetre(event.target.value as PracticeExerciseMetreId)}
+              >
+                {PRACTICE_EXERCISE_METRES.map((metre) => (
+                  <option key={metre.id} value={metre.id}>{metre.id}</option>
+                ))}
+              </select>
+            </label>
+            <label style={FIELD_STYLE}>
+              Tempo
+              <input
+                aria-label="Exercise tempo"
+                type="number"
+                min={40}
+                max={240}
+                step={1}
+                value={exerciseTempo}
+                onChange={(event) => {
+                  const bpm = Number(event.target.value);
+                  setExerciseTempo(bpm);
+                  setExercise((current) => (current ? { ...current, tempoBpm: bpm } : current));
+                  setScoreXml((current) => (current ? withPracticeTempo(current, bpm) : current));
+                }}
+              />
+            </label>
+            <label style={FIELD_STYLE}>
+              Seed
+              <input
+                aria-label="Exercise seed"
+                type="number"
+                step={1}
+                value={exerciseSeed}
+                onChange={(event) => setExerciseSeed(Number(event.target.value))}
+              />
+            </label>
+          </div>
+        </details>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <button type="button" data-testid="generate-exercise" onClick={() => runExercise(exerciseSeed)}>
             Generate
@@ -761,10 +845,11 @@ export function PracticeStudioPage() {
         <ScorePreview musicXml={scoreXml} />
         <ScoreAudition
           musicXml={scoreXml}
-          label={exercise?.title ?? 'Exercise'}
+          label={exercise?.title ?? `${rootName} ${scaleTitle}`}
           loop={loop}
           repeat={repeatCount}
           metronome={metronome}
+          playRequest={playRequest}
           onSound={(midi) => {
             const hit = board.locations.find((location) => location.midi === midi)
               ?? board.locations.find((location) => location.midi % 12 === ((midi % 12) + 12) % 12);

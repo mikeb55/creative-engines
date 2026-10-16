@@ -987,3 +987,131 @@ function mod(value: number, size: number): number {
   if (size <= 0) return 0;
   return ((value % size) + size) % size;
 }
+
+function nextMidiAtOrAbove(pitchClass: number, floor: number, ceiling: number): number | null {
+  const target = mod12(pitchClass);
+  for (let midi = Math.ceil(floor); midi <= ceiling; midi += 1) {
+    if (mod12(midi) === target && inGuitarRange(midi)) return midi;
+  }
+  return null;
+}
+
+/**
+ * One octave up and back on the shared exercise exporter.
+ * The playback engine has one line, so this does not add a drone.
+ */
+export function buildPracticeScaleAudition(input: {
+  entry: ScaleExplorerEntry;
+  rootPc: number;
+  title: string;
+  tempoBpm: number;
+}): PracticeExercise {
+  const rootPc = mod12(input.rootPc);
+  const sounding = transposeCollection(input.entry.pitchClasses, rootPc);
+  const ordered = orderedFromRoot(sounding, rootPc);
+  const validationErrors: string[] = [];
+  const guitarNotes = ['Scale audition walks up one octave and back. No drone is added.'];
+  const tempo = normalTempo(input.tempoBpm, validationErrors);
+  const scale = scaleStamp(input.entry, rootPc, sounding);
+  const [low, high] = guitarRange();
+  const base: PracticeExercise = {
+    available: false,
+    unavailableReason: null,
+    title: input.title,
+    family: 'scale-pathways',
+    familyLabel: 'Scale',
+    detail: 'up and back',
+    difficulty: 'beginner',
+    practiceDifficulty: 'SPARSE',
+    bars: 4,
+    metreId: '4/4',
+    beats: 4,
+    beatType: 4,
+    tempoBpm: tempo,
+    seed: 1,
+    scale,
+    tuningId: 'standard',
+    position: null,
+    positionApplied: false,
+    events: [],
+    pitchSequence: '',
+    rhythmSummary: '',
+    guitarNotes,
+    validationErrors,
+    reused: ['inGuitarRange'],
+  };
+  if (ordered.length === 0) return refuse(base, 'The empty set has no scale to play.');
+  let anchor: number | null = null;
+  for (let midi = low; midi <= high; midi += 1) {
+    if (mod12(midi) !== rootPc || !inGuitarRange(midi) || !inGuitarRange(midi + 12)) continue;
+    if (anchor === null || Math.abs(midi - 64) < Math.abs(anchor - 64)) anchor = midi;
+  }
+  if (anchor === null) return refuse(base, 'This scale does not fit one octave inside the guitar range.');
+  const ascent: number[] = [anchor];
+  let floor = anchor + 1;
+  for (const pitchClass of ordered.slice(1)) {
+    const midi = nextMidiAtOrAbove(pitchClass, floor, anchor + 12);
+    if (midi === null) return refuse(base, 'This scale does not fit one octave inside the guitar range.');
+    ascent.push(midi);
+    floor = midi + 1;
+  }
+  if (ascent[ascent.length - 1] !== anchor + 12) {
+    if (!inGuitarRange(anchor + 12)) return refuse(base, 'This scale does not fit one octave inside the guitar range.');
+    ascent.push(anchor + 12);
+  }
+  const descent = ascent.slice(0, -1).reverse();
+  const midis = [...ascent, ...descent];
+  const events: PracticeExerciseEvent[] = [];
+  let noteIndex = 0;
+  for (let bar = 1; bar <= 2; bar += 1) {
+    for (let slot = 0; slot < 8; slot += 1) {
+      const startBeat = slot * 0.5;
+      const midi = midis[noteIndex];
+      if (midi === undefined) events.push(restEvent(bar, startBeat, 0.5));
+      else events.push(noteEvent(bar, startBeat, 0.5, [midi]));
+      noteIndex += 1;
+    }
+  }
+  events.push(restEvent(3, 0, 4), restEvent(4, 0, 4));
+  const context: BuildContext = {
+    request: {
+      entry: input.entry,
+      rootPc,
+      family: 'scale-pathways',
+      difficulty: 'beginner',
+      bars: 4,
+      metreId: '4/4',
+      tempoBpm: tempo,
+      seed: 1,
+      tuning: {
+        requestedId: 'standard',
+        tuningId: 'standard',
+        standardSolver: true,
+        openMidi: openStringMidisForTuning('standard'),
+        limitation: null,
+      },
+      position: null,
+    },
+    sounding,
+    scale,
+    metre: PRACTICE_EXERCISE_METRES[0]!,
+    practiceDifficulty: 'SPARSE',
+    position: { applied: false, window: null },
+    guitarNotes,
+    validationErrors,
+    reused: ['inGuitarRange'],
+  };
+  const checked = checkEvents(events, context);
+  if (checked.validationErrors.length > 0) {
+    return refuse({ ...base, validationErrors: checked.validationErrors, guitarNotes: checked.guitarNotes }, checked.validationErrors[0]!);
+  }
+  return {
+    ...base,
+    available: true,
+    events: checked.events,
+    pitchSequence: pitchSequence(checked.events),
+    rhythmSummary: 'Eighth notes up one octave and back. Two bars of rest follow.',
+    guitarNotes: checked.guitarNotes,
+    validationErrors: [],
+  };
+}

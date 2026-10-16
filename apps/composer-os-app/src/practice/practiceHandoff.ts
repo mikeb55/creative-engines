@@ -1,5 +1,9 @@
-import { CHROMATIC_MASK_COUNT, getScaleExplorerEntry, type ScaleRegistration, type ScaleRegistryId } from './scaleExplorer';
+import { canonicalPitchSetId } from '@composer-os/core/pentatonic/pitch';
+import { resolveBhlHexatonicColour, type BhlHexatonicFamily } from '@composer-os/core/bhl/bhlHexatonicColour';
+import type { BhlHexatonicHandoff } from '../bhl/bhlHexatonicHandoff';
+import { CHROMATIC_MASK_COUNT, getScaleExplorerEntry, type ScaleExplorerEntry, type ScaleRegistration, type ScaleRegistryId } from './scaleExplorer';
 import { transposeMask } from './scaleGlossary';
+import { transposeCollection } from './practiceFretboard';
 
 export const PRACTICE_HANDOFF_KEY = 'practice-studio-handoff';
 
@@ -138,6 +142,37 @@ export function storePracticeHandoff(input: PracticeHandoff): PracticeHandoffRes
   handoffStorage()?.setItem(PRACTICE_HANDOFF_KEY, JSON.stringify(copy));
   remember(copy);
   return { ok: true, handoff: copy };
+}
+
+const BHL_FAMILY_BY_REGISTRY: Partial<Record<ScaleRegistryId, BhlHexatonicFamily>> = {
+  'hexatonic-scalar': 'scalar',
+  'hexatonic-wps': 'wps',
+  'hexatonic-provisional': 'provisional',
+  'hexatonic-advanced': 'advanced',
+};
+
+/**
+ * Outbound BHL handoff. Returned only when the composer's reference note is this root
+ * and the resolved pitch-class set is the set on the fretboard.
+ */
+export function practiceBhlHandoff(entry: ScaleExplorerEntry, rootPc: number): BhlHexatonicHandoff | null {
+  const sounding = canonicalPitchSetId(transposeCollection(entry.pitchClasses, rootPc));
+  const ranked = [...entry.registrations].sort((left, right) => {
+    const order = ['hexatonic-scalar', 'hexatonic-wps', 'hexatonic-provisional', 'hexatonic-advanced'];
+    return order.indexOf(left.registry) - order.indexOf(right.registry);
+  });
+  for (const registration of ranked) {
+    const family = BHL_FAMILY_BY_REGISTRY[registration.registry];
+    if (!family) continue;
+    try {
+      const colour = resolveBhlHexatonicColour({ family, id: registration.id, referencePc: rootPc });
+      if (canonicalPitchSetId(colour.pitchClasses) !== sounding) continue;
+      return { family, id: registration.id, referencePc: rootPc };
+    } catch {
+      continue;
+    }
+  }
+  return null;
 }
 
 export function takePracticeHandoff(): PracticeHandoffResult | null {
