@@ -8,7 +8,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { apiBhlCatalog, apiBhlCompose, apiBhlOpenProject, apiBhlSaveProject } from '../../app-api/bhlApp';
 import { bhlPentatonicPitchClasses, bhlColourRelations } from '../../core/bhl/bhlResources';
-import { readBhlRiffCell } from '../../core/bhl/bhlRiffRhythm';
+import { placeBhlRiffRhythm, readBhlRiffCell, type BhlRiffCell } from '../../core/bhl/bhlRiffRhythm';
+import { parseScoreDocument, partElements, partNames } from '../../core/performance-composer/pcScore';
+import type { BhlBassBar } from '../../core/bhl/bhlRhythm';
 import { listPentatonicColourResources } from '../../core/pentatonic/colourRegistry';
 import { BHL_WORLD_IDS } from '../../core/bhl/bhlWorlds';
 import { sha256File } from '../../core/bhl/bhlIngest';
@@ -212,5 +214,244 @@ assert.equal(stored.riff.rhythmSource, 'riff');
 assert.equal(stored.riff.pitchSource, 'riff');
 const disk = loadBhlProject(projectPath);
 assert.equal(disk.ok, true);
+assert.equal(sha256File(SOURCE), before);
+
+const sameCell = apiBhlCompose({
+  sourcePath: SOURCE,
+  span: SPAN,
+  seed: 3340,
+  world: 'A',
+  musical: { riff: { pitchSource: 'riff', rhythmSource: 'riff', pitchSeed: 17, rhythmSeed: 99, transform: 'original', displacementQuarters: 0.5 } },
+});
+assert.equal(sameCell.ok, true);
+if (!sameCell.ok) throw new Error('same cell');
+assert.equal(attacks(sameCell.events), attacks(both.events));
+
+const coreB = apiBhlCompose({
+  sourcePath: SOURCE,
+  span: SPAN,
+  seed: 3340,
+  world: 'A',
+  musical: { riff: { pitchSource: 'riff', rhythmSource: 'core-b', pitchSeed: 17, rhythmSeed: 1, transform: 'original', displacementQuarters: 0.5 } },
+});
+assert.equal(coreB.ok, true);
+if (!coreB.ok) throw new Error('core-b');
+assert.notEqual(attacks(coreB.events), attacks(both.events));
+assert.notEqual(attacks(coreB.events), attacks(mixed.events));
+assert.deepEqual(tops(coreB.events).slice(0, 2), tops(both.events).slice(0, 2));
+assert.ok(!coreB.xml.includes('Cmaj7'));
+
+function transformed(transform: 'diminish' | 'fragment' | 'rest' | 'augment') {
+  const row = apiBhlCompose({
+    sourcePath: SOURCE,
+    span: SPAN,
+    seed: 3340,
+    world: 'A',
+    musical: { riff: { ...musical.riff, transform } },
+  });
+  assert.equal(row.ok, true, transform);
+  if (!row.ok) throw new Error(transform);
+  return row;
+}
+const diminished = transformed('diminish');
+const fragmented = transformed('fragment');
+const rested = transformed('rest');
+assert.notEqual(attacks(diminished.events), attacks(both.events));
+assert.notEqual(attacks(fragmented.events), attacks(both.events));
+assert.notEqual(attacks(rested.events), attacks(both.events));
+assert.notEqual(attacks(diminished.events), attacks(fragmented.events));
+assert.notEqual(attacks(rested.events), attacks(fragmented.events));
+assert.ok(diminished.events.some((event) => event.quarters <= 0.5));
+assert.ok((diminished.rhythmNotes ?? []).some((line) => /Diminution|Withheld|not quantised/i.test(line)));
+assert.ok((fragmented.rhythmNotes ?? []).some((line) => /Fragment|unstated/i.test(line)));
+assert.ok((rested.rhythmNotes ?? []).some((line) => /rest/i.test(line)));
+
+for (const world of ['B', 'C', 'D', 'F'] as const) {
+  const row = apiBhlCompose({
+    sourcePath: SOURCE,
+    span: SPAN,
+    seed: 3340,
+    world,
+    musical: { pentatonic: { archetypeId: 'hirajoshi', referenceNote: 'C', relationshipId: 'home' } },
+  });
+  assert.equal(row.ok, true, world);
+  if (!row.ok) throw new Error(world);
+  assert.match(row.colourConstraint ?? '', new RegExp(`World ${world}`));
+  assert.doesNotMatch(row.colourConstraint ?? '', /Major Pentatonic C/);
+}
+
+const invented = apiBhlCompose({
+  sourcePath: SOURCE,
+  span: SPAN,
+  seed: 3340,
+  world: 'E',
+  musical: { pentatonic: { archetypeId: 'not_a_real_colour', referenceNote: 'C', relationshipId: 'home' } },
+});
+assert.equal(invented.ok, false);
+if (invented.ok) throw new Error('invented colour must fail');
+assert.match(invented.error, /not in the colour registry/);
+
+function notePrint(xml: string, role: 'bass' | 'guitar'): string {
+  const doc = parseScoreDocument(xml);
+  const names = partNames(doc);
+  const pattern = role === 'bass' ? /bass|cello|contrabass/i : /guitar|gtr/i;
+  const part = partElements(doc).find((candidate) => pattern.test(`${names.get(candidate.getAttribute('id') ?? '') ?? ''} ${candidate.getAttribute('id') ?? ''}`));
+  if (!part) throw new Error(`missing ${role}`);
+  const notes = [...part.getElementsByTagName('note')];
+  return notes.map((note) => {
+    const rest = note.getElementsByTagName('rest').length > 0;
+    const step = note.getElementsByTagName('step')[0]?.textContent ?? '';
+    const octave = note.getElementsByTagName('octave')[0]?.textContent ?? '';
+    const duration = note.getElementsByTagName('duration')[0]?.textContent ?? '';
+    const voice = note.getElementsByTagName('voice')[0]?.textContent ?? '1';
+    return `${voice}:${rest ? 'rest' : `${step}${octave}`}:${duration}`;
+  }).join('|');
+}
+const album = fs.readFileSync(SOURCE, 'utf8');
+assert.equal(notePrint(both.xml, 'bass'), notePrint(album, 'bass'));
+
+function bassBar(bar: number, quarters: number): BhlBassBar {
+  return {
+    bar,
+    quarters,
+    attacks: [0],
+    rests: [],
+    notes: [{ onset: 0, quarters, midi: 36, pitchClass: 0 }],
+    pitchClasses: [0],
+    rootPc: 0,
+  };
+}
+const mixedMetre = placeBhlRiffRhythm({
+  cell: readBhlRiffCell('core', 17),
+  transform: 'continue',
+  displacementQuarters: 0,
+  bars: [bassBar(1, 5), bassBar(2, 3), bassBar(3, 3.5), bassBar(4, 4)],
+  regions: [{ id: 'all', bars: [1, 2, 3, 4], dialogue: 'answer-after-bass', rhythmTransform: 'state-onsets' }],
+  divisionsByBar: new Map([[1, 2], [2, 2], [3, 2], [4, 2]]),
+  protectedBars: [],
+});
+assert.equal(mixedMetre.plans.length, 4);
+const lengths = [5, 3, 3.5, 4];
+mixedMetre.plans.forEach((plan, index) => {
+  plan.onsets.forEach((onset, note) => {
+    const duration = plan.durations[note] ?? 0;
+    assert.ok(onset + duration <= lengths[index]! + 1e-4, `bar ${plan.bar} spills`);
+    assert.ok(Math.abs(onset * 2 - Math.round(onset * 2)) < 1e-3);
+    assert.ok(Math.abs(duration * 2 - Math.round(duration * 2)) < 1e-3);
+  });
+});
+assert.ok(mixedMetre.placed > 0);
+
+const fine: BhlRiffCell = {
+  source: 'generateRiffCoreMotif',
+  seed: 1,
+  bars: [{ quarters: 4, slots: [{ startBeat: 0, duration: 0.25, rest: false }, { startBeat: 0.25, duration: 3.75, rest: true }] }],
+  syncopated: false,
+  groups: ['bar 1: 1'],
+  accents: null,
+  articulations: null,
+  unavailable: [],
+  phraseBoundaryBars: [1],
+};
+assert.throws(
+  () => placeBhlRiffRhythm({
+    cell: fine,
+    transform: 'original',
+    displacementQuarters: 0,
+    bars: [bassBar(1, 4)],
+    regions: [{ id: 'all', bars: [1], dialogue: 'answer-after-bass', rhythmTransform: 'state-onsets' }],
+    divisionsByBar: new Map([[1, 2]]),
+    protectedBars: [],
+  }),
+  /not quantised/,
+);
+
+const metres: Array<[number, number, number]> = [[4, 4, 16], [5, 4, 20], [3, 4, 12], [7, 8, 14], [4, 4, 16], [5, 4, 20], [3, 4, 12], [4, 4, 16]];
+function mixedXml(): string {
+  const guitar: string[] = [];
+  const bass: string[] = [];
+  metres.forEach(([beats, beatType, ticks], index) => {
+    const bar = index + 1;
+    const attributes = `<attributes><divisions>4</divisions><key><fifths>0</fifths></key><time><beats>${beats}</beats><beat-type>${beatType}</beat-type></time>`;
+    const clefG = bar === 1 ? '<clef><sign>G</sign><line>2</line></clef></attributes>' : '</attributes>';
+    const clefB = bar === 1 ? '<clef><sign>F</sign><line>4</line></clef></attributes>' : '</attributes>';
+    const head = bar === 1 ? attributes : attributes;
+    guitar.push(`<measure number="${bar}">${head}${clefG}<note><rest/><duration>${ticks}</duration><voice>1</voice><type>whole</type></note></measure>`);
+    bass.push(`<measure number="${bar}">${head}${clefB}<note><pitch><step>C</step><octave>2</octave></pitch><duration>${ticks}</duration><voice>1</voice><type>whole</type></note></measure>`);
+  });
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="3.1">
+  <work><work-title>BHL mixed metre probe</work-title></work>
+  <movement-title>CANDIDATE FOR AUDITION — NOT MUSICALLY APPROVED</movement-title>
+  <part-list>
+    <score-part id="G"><part-name>Electric Guitar</part-name></score-part>
+    <score-part id="B"><part-name>Upright Bass</part-name></score-part>
+  </part-list>
+  <part id="G">${guitar.join('')}</part>
+  <part id="B">${bass.join('')}</part>
+</score-partwise>`;
+}
+const mixedPath = path.join(os.tmpdir(), 'bhl-batch-d-mixed-metre.musicxml');
+fs.writeFileSync(mixedPath, mixedXml());
+const mixedCompose = apiBhlCompose({
+  sourcePath: mixedPath,
+  span: { from: 1, to: 8 },
+  seed: 3340,
+  world: 'A',
+  musical: { riff: { pitchSource: 'world', rhythmSource: 'riff', pitchSeed: 17, rhythmSeed: 99, transform: 'continue', displacementQuarters: 0.5 } },
+});
+assert.equal(mixedCompose.ok, true);
+if (!mixedCompose.ok) throw new Error(mixedCompose.error);
+assert.match(mixedCompose.xml, /<beats>5<\/beats>/);
+assert.match(mixedCompose.xml, /<beats>7<\/beats>/);
+assert.match(mixedCompose.xml, /<beat-type>8<\/beat-type>/);
+assert.equal(notePrint(mixedCompose.xml, 'bass'), notePrint(mixedXml(), 'bass'));
+const barQuarters = [4, 5, 3, 3.5, 4, 5, 3, 4];
+for (const event of mixedCompose.events) {
+  const room = barQuarters[event.bar - 1];
+  assert.ok(room !== undefined);
+  assert.ok(event.onsetQuarters + event.quarters <= room + 1e-4, `mixed bar ${event.bar}`);
+}
+assert.ok(mixedCompose.events.length > 0);
+assert.ok(mixedCompose.events.some((event) => event.bar === 2));
+assert.ok(mixedCompose.events.some((event) => event.bar === 4));
+assert.ok(!mixedCompose.xml.includes('Cmaj7'));
+
+const coreProject = path.join(projectDir, 'core-b-project.bhl.json');
+if (fs.existsSync(coreProject)) fs.unlinkSync(coreProject);
+const coreSaved = apiBhlSaveProject({
+  path: coreProject,
+  overwrite: false,
+  project: {
+    format: 'bhl-project',
+    version: 1,
+    id: 'batch-d-core-b',
+    title: 'Batch D core B',
+    savedAt: new Date().toISOString(),
+    notes: 'CANDIDATE FOR AUDITION — NOT MUSICALLY APPROVED',
+    mode: 'import',
+    source: { path: SOURCE, sha256: before },
+    span: SPAN,
+    world: 'E',
+    settings: {
+      seed: 3340,
+      musical: {
+        riff: { pitchSource: 'riff', rhythmSource: 'core-b', pitchSeed: 17, rhythmSeed: 29, transform: 'diminish', displacementQuarters: 0.5 },
+        pentatonic: { archetypeId: 'mixolydian_pentatonic', referenceNote: 'G', relationshipId: 'home', contrastId: 'iwato' },
+      },
+    },
+    candidates: [],
+    selectedCandidateId: null,
+  },
+});
+assert.equal(coreSaved.ok, true);
+const coreOpened = apiBhlOpenProject({ path: coreProject });
+assert.equal(coreOpened.ok, true);
+if (!coreOpened.ok) throw new Error('core open');
+const storedRiff = coreOpened.project.settings.musical as { riff: { rhythmSource: string; transform: string }; pentatonic: { archetypeId: string; contrastId: string } };
+assert.equal(storedRiff.riff.rhythmSource, 'core-b');
+assert.equal(storedRiff.riff.transform, 'diminish');
+assert.equal(storedRiff.pentatonic.archetypeId, 'mixolydian_pentatonic');
+assert.equal(storedRiff.pentatonic.contrastId, 'iwato');
 assert.equal(sha256File(SOURCE), before);
 console.log('PASS bhl batch D');

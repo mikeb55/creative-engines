@@ -19,10 +19,11 @@ Examples live in `~/Downloads/BHL-Composer/Batch-D-Complete/`. The page is `#/bh
 ## Riff rhythm
 
 - **Does:** Places real onsets, durations, and rests. Core cells come from `rhythmPattern`. The other-riff cell comes from `buildMultiBarRhythm` (sixteenth grid, medium, 4 bars, neutral). Syncopation uses `hasSyncopation`. Groups are contiguous notes. Phrase end is the varied last bar of a multi-bar cell.
-- **Control:** `Riff rhythm` (`#bhl-rhythm-source`): `BHL rhythm`, `Same riff's rhythm`, `Another riff's rhythm`. `Rhythm seed` (`#bhl-rhythm-seed`) feeds the other-riff cell.
+- **Control:** `Riff rhythm` (`#bhl-rhythm-source`): `BHL rhythm`, `This riff's rhythm`, `Another core cell`, `Multi-bar engine rhythm`. `Rhythm seed` (`#bhl-rhythm-seed`) is shown only for another core cell and the multi-bar engine. This riff's rhythm uses the pitch seed. A different rhythm seed does not change it.
 - **Input:** Locked span, metre taken from the bass bars, score divisions taken from the lock (Wrong Turning guitar divisions are 4).
 - **Result:** When the source is a riff, those attacks replace the BHL rhythm menu. `01-riff-pitch-bhl-rhythm.musicxml` keeps playing after bar 33. `01-riff-pitch-original-rhythm.musicxml` does not.
 - **Example:** `03-riff-a-pitch-engine-rhythm-seed-29.musicxml` — pitch seed 17. The rhythm is not a second corpus riff. `other-riff` calls `buildMultiBarRhythm` with engine seed 29. There is no riff id. Bar 33 durations are 8, 6, 2 divisions, which is not the core eighth cell. The earlier filename `03-riff-a-pitch-riff-b-rhythm` was renamed because “Riff B” named a corpus riff that does not exist.
+- **Second core cell:** `Another core cell` (`core-b`) calls `generateRiffCoreMotif` at the rhythm seed. `09-riff-a-pitch-core-b-rhythm.musicxml` uses pitch seed 17 and rhythm seed 1. Seed 29 happens to share the seed-17 rhythm, so it is not used as the contrasting cell. Attacks differ from the pitch cell and from the multi-bar engine cell.
 - **Limit:** Accents and articulations are absent from the riff data and are not invented. A note finer than the division grid, or one that cannot cross the bar whole, is named and left out. It is not quantised. Leave-space, handoff, silence windows, and protected guitar bars beat the imported grid. Protected bass is never rewritten.
 - **Handoff:** Direct.
 
@@ -80,7 +81,7 @@ Examples live in `~/Downloads/BHL-Composer/Batch-D-Complete/`. The page is `#/bh
 
 - **Control:** Existing BHL project save and open.
 - **Result:** `musical.riff` and `pentatonic.contrastId` round-trip in format `bhl-project` version 1. Opening a project writes those values back onto the controls.
-- **Example:** `08-saved-integrated-project.bhl.json` and `integrated-project.bhl.json`.
+- **Example:** `08-saved-integrated-project.bhl.json` and `integrated-project.bhl.json` store riff pitch with riff rhythm. `13-saved-core-b-project.bhl.json` stores rhythm source `core-b`, transform `continue`, G mixolydian pentatonic, and contrast Iwato. `core-b-project.bhl.json` is the API round-trip and stores transform `diminish`.
 - **Limit:** The live `#/bhl` click-through was not run in a browser in this pass. The API save/open test did run.
 
 ## What was checked
@@ -90,6 +91,15 @@ Examples live in `~/Downloads/BHL-Composer/Batch-D-Complete/`. The page is `#/bh
 - PDF and MSCZ for 01 (both rhythms), 03, 04, 05, and 07. Files start with `%PDF-1.4` or are MSCZ archives. MuseScore then exited 134 on shutdown. The files were already written.
 - Album SHA-256 unchanged: `01383c35b0eddc74442ba056cec297e36c045e130f6990865732fcac3aafcb48`.
 - PDF and MSCZ for examples 02 and 06 were written in this closure. Every PDF in the folder has 6 pages. Every MSCZ passes `unzip -t` and contains its `.mscx`. MuseScore exited 134 after those files were already written. That is a shutdown crash.
+
+## Closure checks
+
+- Diminution, fragmentation, and rest insertion write different attack lists from the original cell and from each other. Examples: `10-diminution.musicxml`, `11-fragment.musicxml`, `11-rest.musicxml`. A duration finer than the division grid is named and left out. It is not quantised. If every attack is too fine, generation reports that the rhythm did not fit.
+- Mixed metre keeps each bar's length. `12-mixed-metre.musicxml` is 4/4, 5/4, 3/4, 7/8, then the same pattern again. Guitar voice 1 sums to 16, 20, 12, 14, 16, 20, 12, 16 ticks at divisions 4. Bass notes match the source file. The riff cell itself is still a 4-beat cell. The Riff Engine does not supply a mixed-metre cell. MuseScore 4 wrote `12-mixed-metre.pdf` (1 page, `%PDF-1.4`) and `12-mixed-metre.mscz`. The PNG shows 4/4, 5/4, 3/4, 7/8, 4/4, 5/4, 3/4, 4/4, with bass whole notes under the guitar. The movement title is clipped at the left margin. MuseScore then exited 134 on shutdown after some later exports. That is a shutdown crash. The files that were already written stayed.
+- Worlds B, C, D, and F name the world in the colour constraint for Hirajoshi. The message does not relabel that colour as major pentatonic.
+- An unknown collection id fails. It is not replaced with major or minor.
+- Album SHA-256 after these checks: `01383c35b0eddc74442ba056cec297e36c045e130f6990865732fcac3aafcb48`.
+- Compatible and contrasting collections are listed on the page from the registry intervals before Generate. After Generate, the transfer readout repeats the server list.
 
 ## Known gaps (not fixed)
 
