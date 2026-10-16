@@ -14,6 +14,7 @@ export type AppRouteId =
   | 'bhl'
   | 'practice'
   | 'evaluation'
+  | 'develop'
   | 'wwh-v8'
   | 'guide'
   | 'credits';
@@ -35,6 +36,7 @@ const ROUTE_PATHS: Record<AppRouteId, string> = {
   bhl: '/bhl',
   practice: '/practice',
   evaluation: '/evaluation',
+  develop: '/develop',
   'wwh-v8': '/wwh-v8',
   guide: '/guide',
   credits: '/credits',
@@ -154,6 +156,8 @@ export function routeNavLabel(route: AppRouteId): string {
       return 'Practice & Scales Studio';
     case 'evaluation':
       return 'Evaluation';
+    case 'develop':
+      return 'Development Studio';
     case 'wwh-v8':
       return 'Performance Composer';
     case 'guide':
@@ -181,4 +185,4 @@ export const ROUTE_HASH_SEGMENTS: readonly string[] = PRIMARY_NAV_ROUTES.filter(
   (id) => id !== 'home'
 )
   .map((id) => pathForRoute(id).replace(/^\//, ''))
-  .concat(['composer-engines', 'slonimsky-etudes', 'pentatonic', 'hexatonic', 'bhl', 'practice', 'evaluation', 'wwh-v8', 'guide', 'credits']);
+  .concat(['composer-engines', 'slonimsky-etudes', 'pentatonic', 'hexatonic', 'bhl', 'practice', 'evaluation', 'develop', 'wwh-v8', 'guide', 'credits']);

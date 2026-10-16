@@ -138,6 +138,9 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     if (path === '/hexatonic/laboratory/save') return ipcInvoke<T>('composer-os-api:hexatonic-laboratory-save', body ?? {});
     if (path === '/hexatonic/laboratory/open') return ipcInvoke<T>('composer-os-api:hexatonic-laboratory-open', body ?? {});
     if (path === '/evaluation/score') return ipcInvoke<T>('composer-os-api:evaluation-score', body ?? {});
+    if (path === '/develop/discover') return ipcInvoke<T>('composer-os-api:develop-discover', body ?? {});
+    if (path === '/develop/voice') return ipcInvoke<T>('composer-os-api:develop-voice', body ?? {});
+    if (path === '/develop/coherence') return ipcInvoke<T>('composer-os-api:develop-coherence', body ?? {});
     if (path === '/evaluation/compare') return ipcInvoke<T>('composer-os-api:evaluation-compare', body ?? {});
     if (path === '/evaluation/review/create') return ipcInvoke<T>('composer-os-api:evaluation-review-create', body ?? {});
     if (path === '/evaluation/review/save') return ipcInvoke<T>('composer-os-api:evaluation-review-save', body ?? {});
@@ -402,6 +405,9 @@ export const api = {
   hexatonicSaveLaboratory: (body: Record<string, unknown>) => post<Record<string, unknown>>('/hexatonic/laboratory/save', body),
   hexatonicOpenLaboratory: (body: Record<string, unknown>) => post<Record<string, unknown>>('/hexatonic/laboratory/open', body),
   evaluateMusicalScore: (body: Record<string, unknown>) => post<Record<string, unknown>>('/evaluation/score', body),
+  developDiscover: (body: Record<string, unknown>) => post<Record<string, unknown>>('/develop/discover', body),
+  developVoice: (body: Record<string, unknown>) => post<Record<string, unknown>>('/develop/voice', body),
+  developCoherence: (body: Record<string, unknown>) => post<Record<string, unknown>>('/develop/coherence', body),
   compareMusicalScores: (body: Record<string, unknown>) => post<Record<string, unknown>>('/evaluation/compare', body),
   createHumanReview: (body: Record<string, unknown>) => post<Record<string, unknown>>('/evaluation/review/create', body),
   saveHumanReview: (body: Record<string, unknown>) => post<Record<string, unknown>>('/evaluation/review/save', body),

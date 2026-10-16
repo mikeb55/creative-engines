@@ -7,7 +7,7 @@ import { transposeCollection } from './practiceFretboard';
 
 export const PRACTICE_HANDOFF_KEY = 'practice-studio-handoff';
 
-export type PracticeHandoffSource = 'generate' | 'bhl' | 'hexatonic' | 'pentatonic';
+export type PracticeHandoffSource = 'generate' | 'bhl' | 'hexatonic' | 'pentatonic' | 'develop';
 
 export interface PracticeHandoff {
   source: PracticeHandoffSource;
@@ -24,7 +24,7 @@ export interface PracticeHandoff {
 
 export type PracticeHandoffResult = { ok: true; handoff: PracticeHandoff } | { ok: false; error: string };
 
-const SOURCES = new Set<PracticeHandoffSource>(['generate', 'bhl', 'hexatonic', 'pentatonic']);
+const SOURCES = new Set<PracticeHandoffSource>(['generate', 'bhl', 'hexatonic', 'pentatonic', 'develop']);
 
 let held: PracticeHandoff | null = null;
 

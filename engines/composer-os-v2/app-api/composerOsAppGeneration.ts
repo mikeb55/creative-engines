@@ -1486,6 +1486,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     beatlesFormTemplate: req.beatlesFormTemplate,
     beatlesMelodicLens: req.beatlesMelodicLens,
     radioheadMelodicContext: req.radioheadMelodicContext,
+    motifOpsEnabled: req.motifOps?.enabled === true,
     stylePairing: req.stylePairing
       ? {
           songwriterStyle: req.stylePairing.songwriterStyle,

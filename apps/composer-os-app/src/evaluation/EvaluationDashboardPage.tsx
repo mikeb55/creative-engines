@@ -16,6 +16,7 @@ export const EVALUATION_VIEWS = [
   { id: 'rhythm', label: '3 Rhythm, Form and Interaction' },
   { id: 'comparison', label: '4 Candidate Comparison' },
   { id: 'review', label: '5 BMEF Human Review' },
+  { id: 'coherence', label: '6 Coherence' },
 ] as const;
 
 export type EvaluationViewId = (typeof EVALUATION_VIEWS)[number]['id'];
@@ -69,6 +70,48 @@ type Loaded = {
     bmef: { machineRatings: null; machineDecision: null };
   };
 };
+
+type CoherenceView = {
+  version?: string;
+  musicalQualityScore: null;
+  musicallyApproved?: false;
+  discovered?: string[];
+  notes?: string[];
+  hooks?: Array<{ hookId: string; firstBar: number; returns: Array<{ bar: number; identity: string; similarity: number }> }>;
+  independence?: { pairs?: Array<{ pair: [string, string]; motion: { parallel: number }; parallelPerfectRuns: Array<{ startBar: number; length: number; interval: string }> }>; notes?: string[] } | null;
+  absences?: Array<{ cellId: string; fromBar: number; toBar: number }>;
+};
+
+function CoherencePanel({ receipt }: { receipt?: { coherence?: CoherenceView | null } }) {
+  const coherence = receipt?.coherence ?? null;
+  return (
+    <div data-testid="evaluation-view-panel-coherence">
+      <h3>Coherence</h3>
+      <p data-testid="evaluation-not-approved">Not musically approved</p>
+      <p>These counts describe returns, motion, and absence. They do not decide the music.</p>
+      {!coherence && <p data-testid="evaluation-coherence-empty">Load a score to see coherence evidence.</p>}
+      {coherence && (
+        <>
+          <p data-testid="evaluation-coherence-score">musicalQualityScore {String(coherence.musicalQualityScore)}</p>
+          <p>Discovered cells: {coherence.discovered?.join(', ') || 'none'}</p>
+          {(coherence.notes ?? []).map((note) => (
+            <p key={note} data-testid="evaluation-coherence-note">{note}</p>
+          ))}
+          {(coherence.hooks ?? []).map((hook) => (
+            <p key={hook.hookId}>
+              {hook.hookId} first appears in bar {hook.firstBar}. Returns: {hook.returns.map((item) => `bar ${item.bar} ${item.identity}`).join(', ') || 'none'}.
+            </p>
+          ))}
+          {(coherence.absences ?? []).map((absence) => (
+            <p key={`${absence.cellId}-${absence.fromBar}`}>
+              {absence.cellId} is absent from bar {absence.fromBar} to bar {absence.toBar}.
+            </p>
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
 
 const CHECK_LABELS: Record<string, string> = {
   parse: 'Parse and structural integrity',
@@ -134,6 +177,7 @@ export function EvaluationDashboardPage({ transport }: { transport?: EvaluationT
     setFieldFamily(handoff.fieldFamily || 'hexatonic');
     setFieldPcs(handoff.fieldPcs);
     setHandoffNote(handoff.provisional ? `${handoff.status}. This hand-off does not accept the music.` : 'Technical evidence only. No artistic score.');
+    if (handoff.view === 'coherence') setView('coherence');
   }, []);
 
   async function readDesktopFile(): Promise<void> {
@@ -391,6 +435,9 @@ export function EvaluationDashboardPage({ transport }: { transport?: EvaluationT
             })}
           />
         </div>
+      )}
+      {view === 'coherence' && (
+        <CoherencePanel receipt={loaded?.receipt as { coherence?: CoherenceView | null } | undefined} />
       )}
       {view === 'review' && (
         <div data-testid="evaluation-view-panel-review">

@@ -13,6 +13,7 @@ import type {
 } from './themeGenome';
 import type { VoiceRuleBundle } from '../composer/voiceRuleBundle';
 import { applyVoiceBundleMelodicPolicy } from '../composer/voiceBundleMotif';
+import { applyBudgetOperators } from '../motif-ops/budget';
 
 function intervalsFromPitches(pitches: number[]): number[] {
   const out: number[] = [];
@@ -435,7 +436,8 @@ export function buildThemeGenome(
   voiceId: string,
   seed: number,
   existingPool?: MotifPool,
-  voiceBundle?: VoiceRuleBundle | null
+  voiceBundle?: VoiceRuleBundle | null,
+  motifOps = false,
 ): ThemeGenome {
   const canon = normalizeSongwriterStyleKey(voiceId) ?? voiceId;
   const generationId = `mal-gen_${canon}_${seed}`;
@@ -446,6 +448,7 @@ export function buildThemeGenome(
   if (voiceBundle) {
     primary = applyVoiceBundleMelodicPolicy(primary, voiceBundle);
   }
+  if (motifOps) primary = applyBudgetOperators(primary, true);
   const secondary = secondaryFromPrimary(primary, `${primary.id}_secondary`);
   const cadentialTail = cadentialFromPrimary(primary);
   const bridgeCell = bridgeFromVoicing(primary, secondary);

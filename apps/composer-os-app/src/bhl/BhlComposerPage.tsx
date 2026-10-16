@@ -158,6 +158,23 @@ function editsFrom(plan: Plan): Record<string, RegionEdit> {
   return out;
 }
 
+function DevelopBhlBanner() {
+  const raw = typeof sessionStorage === 'undefined' ? null : sessionStorage.getItem('develop-bhl-handoff');
+  if (!raw) return null;
+  let parsed: { label?: string; xml?: string } | null = null;
+  try {
+    parsed = JSON.parse(raw) as { label?: string; xml?: string };
+  } catch {
+    return null;
+  }
+  if (!parsed?.xml) return null;
+  return (
+    <p data-testid="bhl-develop-handoff">
+      Development Studio sent {parsed.label || 'a score'}. Import that MusicXML in section 1. Not musically approved.
+    </p>
+  );
+}
+
 export function BhlComposerPage() {
   const [sourcePath, setSourcePath] = useState('');
   const [spanFrom, setSpanFrom] = useState(33);
@@ -815,6 +832,7 @@ export function BhlComposerPage() {
   return (
     <div data-testid="bhl-page" style={{ display: 'grid', gap: '0.75rem' }}>
       <h2 style={{ margin: 0 }}>BHL Composer</h2>
+      <DevelopBhlBanner />
       <p style={{ margin: 0, color: 'var(--text-muted)' }} data-testid="bhl-status">
         {status}
       </p>

@@ -15,6 +15,7 @@ export interface EvaluationHandoff {
   fieldPcs: string;
   provisional: boolean;
   status: string;
+  view?: 'coherence';
 }
 
 /** Survives React StrictMode’s mount → cleanup → mount so the second read still sees the payload. */

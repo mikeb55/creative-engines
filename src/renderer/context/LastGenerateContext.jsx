@@ -19,6 +19,7 @@ export function LastGenerateProvider({ children }) {
   const [playbackBeat, setPlaybackBeat] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [generatedAt, setGeneratedAt] = useState(null);
+  const [musicXml, setMusicXml] = useState(null);
 
   const publishGridFromXml = useCallback((xml, bpm, timeSig) => {
     if (!xml || typeof xml !== 'string' || !xml.trim()) {
@@ -26,6 +27,7 @@ export function LastGenerateProvider({ children }) {
       return;
     }
     const data = parseXmlToGridData(xml, bpm, timeSig);
+    setMusicXml(xml);
     setGridData(data.notes?.length > 0 ? data : null);
     setGeneratedAt(new Date().toISOString());
     setPlaybackBeat(0);
@@ -33,6 +35,7 @@ export function LastGenerateProvider({ children }) {
 
   const clearGrid = useCallback(() => {
     setGridData(null);
+    setMusicXml(null);
     setGeneratedAt(null);
     setPlaybackBeat(0);
     setIsPlaying(false);
@@ -44,12 +47,13 @@ export function LastGenerateProvider({ children }) {
       playbackBeat,
       isPlaying,
       generatedAt,
+      musicXml,
       publishGridFromXml,
       setPlaybackBeat,
       setIsPlaying,
       clearGrid,
     }),
-    [gridData, playbackBeat, isPlaying, generatedAt, publishGridFromXml, clearGrid]
+    [gridData, playbackBeat, isPlaying, generatedAt, musicXml, publishGridFromXml, clearGrid]
   );
 
   return <LastGenerateContext.Provider value={value}>{children}</LastGenerateContext.Provider>;

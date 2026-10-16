@@ -10,6 +10,7 @@ import { HexatonicEnginePage } from './hexatonic/HexatonicEnginePage';
 import { BhlComposerPage } from './bhl/BhlComposerPage';
 import { PracticeStudioPage } from './practice/PracticeStudioPage';
 import { EvaluationDashboardPage } from './evaluation/EvaluationDashboardPage';
+import { DevelopmentStudioPage } from './develop/DevelopmentStudioPage';
 import { WwhPerformanceV8 } from './pages/WwhPerformanceV8';
 import { RiffGenPage } from './pages/RiffGenPage';
 import { ArrangerTab } from './components/Arranger/ArrangerTab';
@@ -532,6 +533,13 @@ export default function App() {
             Evaluation
           </button>
           <button
+            className={tab === 'develop' ? '' : 'secondary'}
+            onClick={() => goToTab('develop')}
+            type="button"
+          >
+            Development Studio
+          </button>
+          <button
             className={tab === 'slonimsky-etudes' ? '' : 'secondary'}
             onClick={() => goToTab('slonimsky-etudes')}
             type="button"
@@ -584,6 +592,7 @@ export default function App() {
       {tab === 'bhl' && <BhlComposerPage />}
       {tab === 'practice' && <PracticeStudioPage />}
       {tab === 'evaluation' && <EvaluationDashboardPage />}
+      {tab === 'develop' && <DevelopmentStudioPage />}
       {tab === 'wwh-v8' && <WwhPerformanceV8 />}
       {tab === 'slonimsky-etudes' && <SlonimskyEtudes />}
       {tab === 'guide' && <UserGuide />}

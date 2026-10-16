@@ -40,6 +40,7 @@ import {
   apiBhlScratch,
 } from '../../../engines/composer-os-v2/app-api/bhlApp';
 import { apiCompareMusicalScores, apiCreateHumanReview, apiEvaluateMusicalScore, apiOpenHumanReview, apiSaveHumanReview } from '../../../engines/composer-os-v2/app-api/evaluationApp';
+import { apiDevelopCoherence, apiDevelopDiscover, apiDevelopVoice } from '../../../engines/composer-os-v2/app-api/developApp';
 import { apiPentatonicOpenProject, apiPentatonicSaveProject } from '../../../engines/composer-os-v2/app-api/pentatonicProjectApp';
 import {
   apiHexatonicOpenLaboratoryReview,
@@ -430,6 +431,9 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
   ipcMain.handle('composer-os-api:hexatonic-laboratory-open', (_e, body: unknown) => apiHexatonicOpenLaboratoryReview(body));
   ipcMain.handle('composer-os-api:bhl-scratch', (_e, body: unknown) => apiBhlScratch(body));
   ipcMain.handle('composer-os-api:evaluation-score', (_e, body: unknown) => apiEvaluateMusicalScore(body));
+  ipcMain.handle('composer-os-api:develop-discover', (_e, body: unknown) => apiDevelopDiscover(body));
+  ipcMain.handle('composer-os-api:develop-voice', (_e, body: unknown) => apiDevelopVoice(body));
+  ipcMain.handle('composer-os-api:develop-coherence', (_e, body: unknown) => apiDevelopCoherence(body));
   ipcMain.handle('composer-os-api:evaluation-compare', (_e, body: unknown) => apiCompareMusicalScores(body));
   ipcMain.handle('composer-os-api:evaluation-review-create', (_e, body: unknown) => apiCreateHumanReview(body));
   ipcMain.handle('composer-os-api:evaluation-review-save', (_e, body: unknown) => apiSaveHumanReview(body));

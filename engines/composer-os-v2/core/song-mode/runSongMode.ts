@@ -65,6 +65,8 @@ export interface SongModeRunInput {
   beatlesFormTemplate?: BeatlesFormTemplateId;
   /** Radiohead — RH_MEL_05 acoustic vs electronic (`planMelodyBehaviour`). */
   radioheadMelodicContext?: 'acoustic' | 'electronic';
+  /** V3.3 shared motif operators. Omitted or false leaves generator cells unchanged. */
+  motifOpsEnabled?: boolean;
 }
 
 export interface SongModeRunManifestHints {
@@ -142,6 +144,7 @@ export function runSongMode(input: SongModeRunInput): SongModeRunResult {
     beatlesFormTemplate: primaryResolved === 'beatles' ? beatlesTpl : undefined,
     songTotalBars: sectionBarTarget,
     radioheadMelodicContext: input.radioheadMelodicContext,
+    motifOpsEnabled: input.motifOpsEnabled === true,
   });
   const lead = buildLeadSheetContractFromCompiled(compiled);
 

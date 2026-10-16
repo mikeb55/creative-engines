@@ -331,6 +331,8 @@ export interface GenerateRequest {
   bpm?: number;
   /** Bar count for planning modes that support it (`big_band`, `string_quartet`; echoed elsewhere). Song/Form duo presets: 8, 16, 24, 32, 40, 48, 56, 64. */
   totalBars?: number;
+  /** V3.3 motivic operators inside Song Mode. Default off. */
+  motifOps?: { enabled?: boolean };
   /** Big Band only — drum intensity policy tier. Default `standard`. */
   drumIntensity?: 'sparse' | 'standard' | 'driving';
   /**

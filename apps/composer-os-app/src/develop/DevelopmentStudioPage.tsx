@@ -1,0 +1,248 @@
+/**
+ * Development Studio. Load a cell, transform it, voice it, hand it on.
+ * Nothing on this page is musically approved.
+ */
+import { useMemo, useState } from 'react';
+import { buildChain } from '@composer-os/core/motif-ops/developmentChain';
+import { C_MAJOR_FIELD, type Motif, type OperatorId } from '@composer-os/core/motif-ops/types';
+import { useLastGenerate } from '@renderer/context/LastGenerateContext';
+import { navigateToRoute } from '../router/appRouter';
+import { api } from '../services/api';
+import { storePracticeHandoff } from '../practice/practiceHandoff';
+import { storeEvaluationHandoff } from '../bhl/bhlHexatonicHandoff';
+import { play } from '../playback/playbackEngine';
+import { ScorePreview } from '../score/ScorePreview';
+
+const OPERATORS: Array<{ op: OperatorId; label: string; params?: Record<string, number | string> }> = [
+  { op: 'invert', label: 'Turn upside down', params: { axis: 60 } },
+  { op: 'retrograde', label: 'Backwards' },
+  { op: 'augment', label: 'Stretch', params: { factor: 2 } },
+  { op: 'diminish', label: 'Squeeze', params: { factor: 2 } },
+  { op: 'fragment-head', label: 'Take the start', params: { count: 2 } },
+  { op: 'fragment-tail', label: 'Take the end', params: { count: 2 } },
+  { op: 'sequence-real', label: 'Step it up', params: { steps: 2, count: 1 } },
+  { op: 'expand-intervals', label: 'Widen', params: { amount: 1, mode: 'field' } },
+  { op: 'contract-intervals', label: 'Narrow', params: { amount: 1, mode: 'field' } },
+  { op: 'displace', label: 'Shift the beat', params: { beats: 0.5 } },
+  { op: 'insert-rest', label: 'Add a breath', params: { duration: 1, index: 1 } },
+  { op: 'register-lift', label: 'Lift', params: { octaves: 1 } },
+  { op: 'liquidate', label: 'Wind down', params: { n: 1, count: 3 } },
+];
+
+const SOURCES = [
+  ['barry-harris', 'Barry Harris'],
+  ['triad-pair', 'Triad pair'],
+  ['unrelated-triads', 'Unrelated triads'],
+  ['shell-dyads', 'Shells'],
+  ['upper-structure', 'Upper structures'],
+] as const;
+
+function emptyMotif(): Motif {
+  return {
+    id: 'm1',
+    field: C_MAJOR_FIELD,
+    events: [
+      { onset: 0, duration: 1, midi: 60 },
+      { onset: 1, duration: 0.5, midi: 62 },
+      { onset: 1.5, duration: 0.5, midi: 64 },
+      { onset: 2, duration: 2, midi: 67 },
+    ],
+  };
+}
+
+function motifFromChain(root: Motif, plan: Array<{ op: OperatorId; params?: Record<string, number | string> }>): Motif {
+  if (!plan.length) return root;
+  const chain = buildChain(root, plan);
+  return chain.results[chain.results.length - 1] ?? root;
+}
+
+export function DevelopmentStudioPage() {
+  const last = useLastGenerate() as { musicXml?: string | null };
+  const [xml, setXml] = useState('');
+  const [label, setLabel] = useState('Development cell');
+  const [root, setRoot] = useState<Motif>(emptyMotif);
+  const [plan, setPlan] = useState<Array<{ op: OperatorId; params?: Record<string, number | string> }>>([]);
+  const [source, setSource] = useState<(typeof SOURCES)[number][0]>('triad-pair');
+  const [tuningId, setTuningId] = useState('standard');
+  const [triads, setTriads] = useState('C D');
+  const [symbol, setSymbol] = useState('Cmaj7');
+  const [voicedXml, setVoicedXml] = useState('');
+  const [gripText, setGripText] = useState('');
+  const [found, setFound] = useState<string[]>([]);
+  const [error, setError] = useState('');
+  const current = useMemo(() => motifFromChain(root, plan), [root, plan]);
+  const chain = useMemo(() => buildChain(root, plan), [root, plan]);
+
+  function loadText(text: string, name: string) {
+    setXml(text);
+    setLabel(name);
+    setError('');
+  }
+
+  async function playMotif(motif: Motif) {
+    const notes = motif.events
+      .filter((event) => event.midi !== null)
+      .map((event) => ({
+        pitch: event.midi!,
+        startBeat: event.onset,
+        duration: event.duration,
+        barIndex: Math.floor(event.onset / 4),
+      }));
+    await play({ notes, bpm: 96, beatsPerBar: 4, totalBars: Math.max(1, Math.ceil((notes.at(-1)?.startBeat ?? 1) / 4)) }, () => undefined);
+  }
+
+  async function findCells() {
+    const sourceXml = xml || last.musicXml || '';
+    if (!sourceXml.trim()) {
+      setError('Load MusicXML before asking for cells.');
+      return;
+    }
+    const result = await api.developDiscover({ xml: sourceXml });
+    const row = result as { ok?: boolean; error?: string; discovery?: { patterns?: Array<{ id: string }> } };
+    if (!row.ok) {
+      setError(row.error || 'Discovery did not run.');
+      return;
+    }
+    setFound((row.discovery?.patterns ?? []).map((pattern) => pattern.id));
+    setError('');
+  }
+
+  async function harmonise() {
+    const result = await api.developVoice({
+      melody: current.events,
+      harmony: [{ onset: 0, symbol, triads: triads.split(/\s+/).filter(Boolean) }],
+      source,
+      tuningId,
+      maxVoices: 3,
+      voiceEvery: 'each-note',
+    });
+    const row = result as {
+      ok?: boolean;
+      error?: string;
+      result?: { musicXml: string; grips: Array<{ onset: number; midis: number[]; span: number; stretch: boolean }>; unvoiced: Array<{ onset: number; reason: string }>; rejected: Array<{ onset: number; reason: string }> };
+    };
+    if (!row.ok || !row.result) {
+      setError(row.error || 'Voicing did not run.');
+      return;
+    }
+    setVoicedXml(row.result.musicXml);
+    const lines = [
+      ...row.result.grips.map((grip) => `onset ${grip.onset}: ${grip.midis.join(' ')} span ${grip.span}${grip.stretch ? ' stretch' : ''}`),
+      ...row.result.unvoiced.map((item) => `unvoiced onset ${item.onset}: ${item.reason}`),
+      ...row.result.rejected.map((item) => `rejected onset ${item.onset}: ${item.reason}`),
+    ];
+    setGripText(lines.join('\n'));
+    setError('');
+  }
+
+  function exportXml(text: string, name: string) {
+    const blob = new Blob([text], { type: 'application/vnd.recordare.musicxml+xml' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = name;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }
+
+  const handoffXml = voicedXml || xml;
+
+  return (
+    <section data-testid="develop-page" style={{ display: 'grid', gap: '0.8rem', maxWidth: '54rem' }}>
+      <h2 style={{ margin: 0 }}>Development Studio</h2>
+      <p data-testid="develop-not-approved" style={{ margin: 0 }}>Not musically approved</p>
+      <p style={{ margin: 0 }}>Load, select a cell, develop it, harmonise it, then send or export. The melody note stays the top note.</p>
+      {error ? <p data-testid="develop-error">{error}</p> : null}
+
+      <section>
+        <h3>Load</h3>
+        <button type="button" data-testid="develop-load-generate" onClick={() => loadText(last.musicXml || '', 'Latest Generate')}>
+          Latest Generate
+        </button>
+        <label htmlFor="develop-file">
+          Open MusicXML
+          <input id="develop-file" data-testid="develop-file" type="file" accept=".musicxml,.xml" onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            void file.text().then((text) => loadText(text, file.name));
+          }} />
+        </label>
+        <textarea data-testid="develop-xml" value={xml} rows={4} onChange={(event) => setXml(event.target.value)} />
+      </section>
+
+      <section>
+        <h3>Cell</h3>
+        <button type="button" onClick={() => void findCells()}>Found in this score</button>
+        <p data-testid="develop-found">{found.join(', ') || 'No discovered cell yet.'}</p>
+        <p>Working cell: {current.events.map((event) => event.midi ?? 'rest').join(' ')}</p>
+      </section>
+
+      <section>
+        <h3>Develop</h3>
+        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+          {OPERATORS.map((item) => (
+            <button key={item.label} type="button" onClick={() => setPlan((rows) => [...rows, { op: item.op, params: item.params }])}>
+              {item.label}
+            </button>
+          ))}
+          <button type="button" className="secondary" onClick={() => { setPlan([]); setRoot(emptyMotif()); }}>Make another</button>
+        </div>
+        <div data-testid="develop-lineage" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+          {chain.lineageIds.map((id, index) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => void playMotif(index === 0 ? root : chain.results[index - 1]!)}
+            >
+              {id} Play
+            </button>
+          ))}
+        </div>
+        <p>{chain.steps.map((step) => step.op).join(' → ') || 'No step yet.'}</p>
+      </section>
+
+      <section>
+        <h3>Harmonise</h3>
+        <label htmlFor="develop-source">
+          Source
+          <select id="develop-source" value={source} onChange={(event) => setSource(event.target.value as (typeof SOURCES)[number][0])}>
+            {SOURCES.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+          </select>
+        </label>
+        <label htmlFor="develop-tuning">
+          Tuning
+          <input id="develop-tuning" value={tuningId} onChange={(event) => setTuningId(event.target.value)} />
+        </label>
+        <label htmlFor="develop-triads">
+          Triads
+          <input id="develop-triads" value={triads} onChange={(event) => setTriads(event.target.value)} />
+        </label>
+        <label htmlFor="develop-symbol">
+          Symbol
+          <input id="develop-symbol" value={symbol} onChange={(event) => setSymbol(event.target.value)} />
+        </label>
+        <button type="button" data-testid="develop-harmonise" onClick={() => void harmonise()}>Harmonise</button>
+        <pre data-testid="develop-grips">{gripText}</pre>
+        <ScorePreview musicXml={voicedXml || null} />
+      </section>
+
+      <section>
+        <h3>Send</h3>
+        <button type="button" onClick={() => {
+          storePracticeHandoff({ source: 'develop', label, musicXml: handoffXml || null, collectionId: null, registry: null, referencePc: null, status: 'Not musically approved', seed: null, mask: null, tuningId });
+          navigateToRoute('practice');
+        }}>Practice this</button>
+        <button type="button" onClick={() => {
+          if (handoffXml) exportXml(handoffXml, `${label}.musicxml`);
+          sessionStorage.setItem('develop-bhl-handoff', JSON.stringify({ label, xml: handoffXml }));
+          navigateToRoute('bhl');
+        }}>Open in BHL</button>
+        <button type="button" onClick={() => {
+          if (!handoffXml) return;
+          storeEvaluationHandoff({ label, xml: handoffXml, fieldLabel: '', fieldFamily: 'other', fieldPcs: '', provisional: true, status: 'Not musically approved', view: 'coherence' });
+          navigateToRoute('evaluation');
+        }}>Evaluate</button>
+        <button type="button" data-testid="develop-export" onClick={() => handoffXml && exportXml(handoffXml, `${label}.musicxml`)}>Export MusicXML</button>
+      </section>
+    </section>
+  );
+}

@@ -3801,6 +3801,8 @@ export interface BuildCompiledSongParams {
   songTotalBars?: number;
   /** Radiohead Song Mode — RH_MEL_05 acoustic vs electronic (`planMelodyBehaviour`). */
   radioheadMelodicContext?: 'acoustic' | 'electronic';
+  /** V3.3 motif operators. Default off. Existing cells stay unchanged when this is omitted. */
+  motifOpsEnabled?: boolean;
 }
 
 export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong {
@@ -3903,7 +3905,13 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
     params.harmonicVoice != null && String(params.harmonicVoice).trim() !== ''
       ? String(params.harmonicVoice).trim()
       : resolution.primaryId;
-  const themeGenome = buildThemeGenome(themeVoiceKey, params.seed, undefined, voiceBundleForCompile);
+  const themeGenome = buildThemeGenome(
+    themeVoiceKey,
+    params.seed,
+    undefined,
+    voiceBundleForCompile,
+    params.motifOpsEnabled === true,
+  );
 
   let harmonicScenesForMal: ReturnType<typeof buildHarmonicScenesFromFormPlan> | undefined;
   if (formSectionsForMal?.length && voiceBundleForCompile) {
