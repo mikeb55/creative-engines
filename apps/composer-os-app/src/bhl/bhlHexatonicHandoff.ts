@@ -37,13 +37,20 @@ function rememberEvaluation(value: EvaluationHandoff): EvaluationHandoff {
   return value;
 }
 
+/** Node vitest and non-browser hosts have no sessionStorage. Browser and jsdom still use it. */
+function handoffStorage(): Storage | null {
+  if (typeof sessionStorage === 'undefined') return null;
+  return sessionStorage;
+}
+
 export function storeHexatonicHandoff(value: BhlHexatonicHandoff): void {
-  sessionStorage.setItem(BHL_HEXATONIC_HANDOFF_KEY, JSON.stringify(value));
+  handoffStorage()?.setItem(BHL_HEXATONIC_HANDOFF_KEY, JSON.stringify(value));
 }
 
 export function takeHexatonicHandoff(): BhlHexatonicHandoff | null {
-  const raw = sessionStorage.getItem(BHL_HEXATONIC_HANDOFF_KEY);
-  sessionStorage.removeItem(BHL_HEXATONIC_HANDOFF_KEY);
+  const storage = handoffStorage();
+  const raw = storage?.getItem(BHL_HEXATONIC_HANDOFF_KEY) ?? null;
+  storage?.removeItem(BHL_HEXATONIC_HANDOFF_KEY);
   if (!raw) return heldHexatonic;
   const parsed = JSON.parse(raw) as BhlHexatonicHandoff;
   if (parsed.family !== 'scalar' && parsed.family !== 'wps' && parsed.family !== 'provisional' && parsed.family !== 'advanced') return null;
@@ -52,12 +59,13 @@ export function takeHexatonicHandoff(): BhlHexatonicHandoff | null {
 }
 
 export function storeEvaluationHandoff(value: EvaluationHandoff): void {
-  sessionStorage.setItem(EVALUATION_HANDOFF_KEY, JSON.stringify(value));
+  handoffStorage()?.setItem(EVALUATION_HANDOFF_KEY, JSON.stringify(value));
 }
 
 export function takeEvaluationHandoff(): EvaluationHandoff | null {
-  const raw = sessionStorage.getItem(EVALUATION_HANDOFF_KEY);
-  sessionStorage.removeItem(EVALUATION_HANDOFF_KEY);
+  const storage = handoffStorage();
+  const raw = storage?.getItem(EVALUATION_HANDOFF_KEY) ?? null;
+  storage?.removeItem(EVALUATION_HANDOFF_KEY);
   if (!raw) return heldEvaluation;
   const parsed = JSON.parse(raw) as EvaluationHandoff;
   if (typeof parsed.xml !== 'string' || !parsed.xml.trim()) return null;
