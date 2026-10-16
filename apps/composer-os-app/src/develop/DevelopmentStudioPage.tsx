@@ -10,8 +10,9 @@ import { navigateToRoute } from '../router/appRouter';
 import { api } from '../services/api';
 import { storePracticeHandoff } from '../practice/practiceHandoff';
 import { storeEvaluationHandoff } from '../bhl/bhlHexatonicHandoff';
-import { play } from '../playback/playbackEngine';
+import { play, sequenceFromTimedNotes } from '../playback/playbackEngine';
 import { ScorePreview } from '../score/ScorePreview';
+import { ScoreAudition } from '../score/ScoreAudition';
 
 const OPERATORS: Array<{ op: OperatorId; label: string; params?: Record<string, number | string> }> = [
   { op: 'invert', label: 'Turn upside down', params: { axis: 60 } },
@@ -80,15 +81,7 @@ export function DevelopmentStudioPage() {
   }
 
   async function playMotif(motif: Motif) {
-    const notes = motif.events
-      .filter((event) => event.midi !== null)
-      .map((event) => ({
-        pitch: event.midi!,
-        startBeat: event.onset,
-        duration: event.duration,
-        barIndex: Math.floor(event.onset / 4),
-      }));
-    await play({ notes, bpm: 96, beatsPerBar: 4, totalBars: Math.max(1, Math.ceil((notes.at(-1)?.startBeat ?? 1) / 4)) }, () => undefined);
+    await play(sequenceFromTimedNotes(motif.events, 96, 4), () => undefined);
   }
 
   async function findCells() {
@@ -167,6 +160,7 @@ export function DevelopmentStudioPage() {
           }} />
         </label>
         <textarea data-testid="develop-xml" value={xml} rows={4} onChange={(event) => setXml(event.target.value)} />
+        <ScoreAudition musicXml={xml} label={label || 'Imported score'} />
       </section>
 
       <section>
@@ -223,6 +217,7 @@ export function DevelopmentStudioPage() {
         <button type="button" data-testid="develop-harmonise" onClick={() => void harmonise()}>Harmonise</button>
         <pre data-testid="develop-grips">{gripText}</pre>
         <ScorePreview musicXml={voicedXml || null} />
+        <ScoreAudition musicXml={voicedXml || null} label="Chord melody" />
       </section>
 
       <section>

@@ -29,7 +29,13 @@ function clearScheduledIds(transport: ReturnType<typeof Tone.getTransport>): voi
  * Await this before {@link play}; do not schedule Transport until it resolves.
  */
 export async function initPlayback(): Promise<void> {
+  // Import-time Tone.start() resumes a dummy context. Touch the real context first.
+  Tone.getContext();
   await Tone.start();
+  const raw = Tone.getContext().rawContext as { state?: string } | undefined;
+  if (raw?.state && raw.state !== 'running') {
+    throw new Error(`Audio context is ${raw.state}. Playback did not start.`);
+  }
 }
 
 export type PlayOptions = {
@@ -53,6 +59,40 @@ export interface PlannedPlayback {
 
 export function barQuarterSpan(seq: PlaybackSequence): number {
   return seq.barQuarters ?? seq.beatsPerBar;
+}
+
+/**
+ * Motif onsets are quarter-lengths from the start of the cell.
+ * barIndex is 1-based. startBeat is the position inside that bar.
+ * A 0-based bar index schedules every note before the transport starts.
+ */
+export function sequenceFromTimedNotes(
+  events: readonly { onset: number; duration: number; midi: number | null }[],
+  bpm = 96,
+  beatsPerBar = 4
+): PlaybackSequence {
+  const safeBeats = Math.max(1, beatsPerBar);
+  const notes: PlaybackSequence['notes'] = [];
+  let endQuarter = 0;
+  for (const event of events) {
+    if (typeof event.midi !== 'number' || event.midi <= 0) continue;
+    const barIndex = Math.floor(event.onset / safeBeats) + 1;
+    const startBeat = event.onset - (barIndex - 1) * safeBeats;
+    endQuarter = Math.max(endQuarter, event.onset + event.duration);
+    notes.push({
+      pitch: event.midi,
+      startBeat,
+      duration: event.duration,
+      barIndex,
+    });
+  }
+  return {
+    notes,
+    bpm,
+    beatsPerBar: safeBeats,
+    totalBars: Math.max(1, Math.ceil(endQuarter / safeBeats)),
+    barQuarters: safeBeats,
+  };
 }
 
 /** Quarter-grid schedule for one shared Transport. No audio objects. */
@@ -107,7 +147,12 @@ export async function play(
   onBeat: (beat: number) => void,
   options?: PlayOptions
 ): Promise<void> {
+  Tone.getContext();
   await Tone.start();
+  const raw = Tone.getContext().rawContext as { state?: string } | undefined;
+  if (raw?.state && raw.state !== 'running') {
+    throw new Error(`Audio context is ${raw.state}. Playback did not start.`);
+  }
   stop();
 
   if (!seq.notes.length) {

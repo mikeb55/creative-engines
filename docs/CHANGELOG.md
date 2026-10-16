@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- **Shared Tone.js playback** — Development Studio motif Play used a 0-based bar index, so every note was scheduled before the transport and stayed silent. Motif onsets now land on bar 1 beat positions. Imported MusicXML and the chord-melody score use the same Play / Stop / Replay player as Practice Studio. `play` resumes the real audio context and refuses to start while that context is suspended.
+
 - **Generate UI tests** — `homeGenerateUi.test.ts` opens the Generate tab, mocks `@stringsync/vexml` the way the audition tests do, and matches the current Try Another signature, `buildStylePairingPayload` wiring, and LeadSheet writer roster. 44/44 pass. No Generate page behaviour change.
 
 ### Changed
