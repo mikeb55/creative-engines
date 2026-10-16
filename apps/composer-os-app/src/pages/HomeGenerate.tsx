@@ -6,6 +6,7 @@ import {
   playAuditionSequence,
   stop,
 } from '../playback';
+import { storePracticeHandoff } from '../practice/practiceHandoff';
 import type { PlaybackSequence } from '../playback';
 import { api, displayOutputPath, isDesktopIpc, type OutputDirectoryResponse } from '../services/api';
 import type { AnalyticalModeResult, MusicContext } from '@composer-os/core/music-context/musicContextTypes';
@@ -13330,6 +13331,34 @@ export function HomeGenerate({
                 onClick={() => handleDownloadGenerateXml()}
               >
                 {isDesktopIpc() ? 'Save a copy…' : 'Download XML'}
+              </button>
+            ) : null}
+            {showDownloadGenerateXml ? (
+              <button
+                type="button"
+                data-testid="generate-practice-handoff"
+                onClick={() => {
+                  const xml = result?.xml ?? '';
+                  const sent = storePracticeHandoff({
+                    source: 'generate',
+                    label: outputLabel || 'Generate',
+                    musicXml: xml,
+                    collectionId: null,
+                    registry: null,
+                    referencePc: null,
+                    status: null,
+                    seed: typeof baseSeed === 'number' ? baseSeed : null,
+                    mask: null,
+                    tuningId: alternateTuningEnabled ? sharedTuningPresetId : 'standard',
+                  });
+                  if (!sent.ok) {
+                    setError(sent.error);
+                    return;
+                  }
+                  window.location.hash = '#/practice';
+                }}
+              >
+                Practice this score
               </button>
             ) : null}
             <button type="button" className="secondary" onClick={() => openFolder()}>

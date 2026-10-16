@@ -25,6 +25,7 @@ import { parseXmlToPlaybackSequence } from '../playback/musicXmlToPlaybackSequen
 import { api } from '../services/api';
 import { PentatonicColourRegistry } from './PentatonicColourRegistry';
 import { exportPentatonicMusicXml } from './exportPentatonicMusicXml';
+import { storePracticeHandoff } from '../practice/practiceHandoff';
 
 function restoredProjectProof(project: PentatonicProjectV1): string {
   const music = project.phrase?.music[0];
@@ -578,6 +579,36 @@ export function PentatonicWorkflowPanel() {
           }}
         >
           Generate path
+        </button>
+        <button
+          type="button"
+          data-testid="pentatonic-practice-handoff"
+          onClick={() => {
+            if (manualArchetype === 'NONE') {
+              setError('Unsupported practice source: NONE.');
+              return;
+            }
+            const root = PENTATONIC_NOTE_CHOICES.indexOf(manualRef as (typeof PENTATONIC_NOTE_CHOICES)[number]);
+            const sent = storePracticeHandoff({
+              source: 'pentatonic',
+              label: getPentatonicColourResource(manualArchetype)?.displayName ?? manualArchetype,
+              musicXml: null,
+              collectionId: manualArchetype,
+              registry: 'pentatonic-colour',
+              referencePc: root >= 0 ? root : null,
+              status: null,
+              seed: routeSeed,
+              mask: null,
+              tuningId: null,
+            });
+            if (!sent.ok) {
+              setError(sent.error);
+              return;
+            }
+            window.location.hash = '#/practice';
+          }}
+        >
+          Practice this collection
         </button>
       </div>
       <p data-testid="pentatonic-retention-setting" style={{ margin: 0 }}>

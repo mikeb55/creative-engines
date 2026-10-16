@@ -486,7 +486,8 @@ Registry: `sqVrbProfileRegistry.ts` (16 ids) + **bartÃ³k** native bundle (not 
 
 ## Current (as of 2026-07-01 snapshot)
 
-- **Practice & Scales Studio V3.2-E (2026-10-16):** playback, metronome, loop, repeat, notation preview, `practice-session` version 1, and MusicXML export. Handoffs from Generate, BHL, Hexatonic, and Pentatonic wait for V3.2-F. Detail: `docs/V3.2-E-PRACTICE-SESSION-IMPLEMENTATION.md`.
+- **Practice & Scales Studio V3.2-F (2026-10-16):** Generate, BHL, Hexatonic, and Pentatonic handoffs into `#/practice`. Detail: `docs/V3.2-F-PRACTICE-INTEGRATION-IMPLEMENTATION.md`.
+- **Practice & Scales Studio V3.2-E (2026-10-16):** playback, metronome, loop, repeat, notation preview, `practice-session` version 1, and MusicXML export. Detail: `docs/V3.2-E-PRACTICE-SESSION-IMPLEMENTATION.md`.
 - **Practice & Scales Studio glossary (2026-10-16):** 4,096 computed pitch-class identities, Forte numbers for all cardinalities, and 85 MIT-licensed Tonal.js names. Ian Ring links only for odd masks. No Zeitler or Ian Ring name import. Playback and sessions still wait for V3.2-E. Detail: `docs/V3.2-SCALE-GLOSSARY-IMPLEMENTATION.md`.
 - **Practice & Scales Studio V3.2-D (2026-10-16):** `#/practice` generates pathways, cells, pentatonic studies, vault dyads/triads, established BHL colour studies, and BHL rhythm studies from the selected scale. Seeds repeat. Playback, sessions, and MusicXML wait for V3.2-E. Detail: `docs/V3.2-D-PRACTICE-GENERATOR-IMPLEMENTATION.md`.
 - **Practice & Scales Studio V3.2-C (2026-10-16):** `#/practice` fretboard follows the selected pitch-class set. Root, catalogued tunings, pitch or interval labels, fret window, and a standard-tuning position window are live. Alternate tunings are not fingered. Audition, generator, metronome, and sessions wait. Detail: `docs/V3.2-C-FRETBOARD-IMPLEMENTATION.md`.

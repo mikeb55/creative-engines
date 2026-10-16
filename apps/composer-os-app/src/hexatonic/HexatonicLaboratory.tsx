@@ -39,6 +39,9 @@ import { api } from '../services/api';
 import { ScoreAudition } from '../score/ScoreAudition';
 import { ScorePreview } from '../score/ScorePreview';
 import { storeHexatonicHandoff } from '../bhl/bhlHexatonicHandoff';
+import { storePracticeHandoff, type PracticeHandoff } from '../practice/practiceHandoff';
+import type { ScaleRegistryId } from '../practice/scaleExplorer';
+import { maskFromPitchClasses } from '../practice/scaleGlossary';
 
 const ANSWERS: LaboratoryAnswer[] = ['UNDECIDED', 'YES', 'NO'];
 const DECISIONS: LaboratoryDecision[] = ['UNDECIDED', 'KEEP', 'REFINE', 'REJECT'];
@@ -204,6 +207,7 @@ export function HexatonicLaboratory() {
   const [triadSide, setTriadSide] = useState<'left' | 'right'>('left');
   const [neighbourKey, setNeighbourKey] = useState<string | null>(null);
   const [review, setReview] = useState<CoreLaboratoryReview>(() => blankCoreLaboratoryReview());
+  const [practiceError, setPracticeError] = useState('');
   const [status, setStatus] = useState<string | null>(null);
   const [path, setPath] = useState('');
   const analysis = analyses.find((row) => row.candidate.id === selected) ?? analyses[0]!;
@@ -535,6 +539,45 @@ export function HexatonicLaboratory() {
               >
                 {browser.current.compose && browser.current.family !== 'explorer' ? 'Compose with this colour' : 'Explorer stays out of the composer'}
               </button>
+              <button
+                type="button"
+                data-testid="hex-practice-handoff"
+                onClick={() => {
+                  const family = browser.current.family;
+                  const registry: ScaleRegistryId | null =
+                    family === 'scalar'
+                      ? 'hexatonic-scalar'
+                      : family === 'wps'
+                        ? 'hexatonic-wps'
+                        : family === 'provisional'
+                          ? 'hexatonic-provisional'
+                          : family === 'advanced'
+                            ? 'hexatonic-advanced'
+                            : null;
+                  const payload: PracticeHandoff = {
+                    source: 'hexatonic',
+                    label: browser.current.label,
+                    musicXml: browserXml || null,
+                    collectionId: registry ? browser.current.id : null,
+                    registry,
+                    referencePc: 0,
+                    status: browser.current.status,
+                    seed: null,
+                    mask: maskFromPitchClasses(browser.current.pcs),
+                    tuningId: null,
+                  };
+                  const sent = storePracticeHandoff(payload);
+                  if (!sent.ok) {
+                    setPracticeError(sent.error);
+                    return;
+                  }
+                  setPracticeError('');
+                  window.location.hash = '#/practice';
+                }}
+              >
+                Practice this collection
+              </button>
+              {practiceError ? <p data-testid="hex-practice-error">{practiceError}</p> : null}
               <ScoreAudition musicXml={browserXml} label={`${browser.current.label} · ${browser.current.status}`} />
               <ScorePreview musicXml={browserXml} />
             </section>

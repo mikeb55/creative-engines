@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FretboardPanel, type FretboardCell, type FretboardNote } from '../components/music/FretboardPanel';
 import { ScoreAudition } from '../score/ScoreAudition';
 import { ScorePreview } from '../score/ScorePreview';
@@ -46,6 +46,7 @@ import {
 import { practiceExerciseToMusicXml, withPracticeTempo } from './practiceExerciseMusicXml';
 import { openPracticeFile, revealPracticeFile, writePracticeFile } from './practiceExport';
 import { readPracticeSession, sealPracticeSession } from './practiceSession';
+import { takePracticeHandoff, type PracticeHandoff } from './practiceHandoff';
 
 const TUNING_CHOICES = practiceTuningChoices();
 const ZONE_LABELS: Record<string, string> = {
@@ -89,6 +90,31 @@ export function PracticeStudioPage() {
   const [sessionStatus, setSessionStatus] = useState('');
   const [writtenPath, setWrittenPath] = useState<string | null>(null);
   const [playbackNotes, setPlaybackNotes] = useState<FretboardNote[]>([]);
+  const [handoff, setHandoff] = useState<PracticeHandoff | null>(null);
+
+  useEffect(() => {
+    const taken = takePracticeHandoff();
+    if (!taken) return;
+    if (!taken.ok) {
+      setSessionStatus(taken.error);
+      return;
+    }
+    const next = taken.handoff;
+    setHandoff(next);
+    if (next.mask !== null) setSelectedMask(next.mask);
+    if (next.referencePc !== null) setRootPc(next.referencePc);
+    if (next.tuningId) setTuningId(next.tuningId);
+    if (next.seed !== null) setExerciseSeed(next.seed);
+    if (next.musicXml) {
+      setScoreXml(next.musicXml);
+      setExercise(null);
+    }
+    setSessionStatus(
+      next.status
+        ? `Imported ${next.source}. Status ${next.status}. Source file was not written.`
+        : `Imported ${next.source}. Source file was not written.`,
+    );
+  }, []);
 
   const families = useMemo(() => scaleExplorerFamilies(), []);
   const statuses = useMemo(() => scaleExplorerStatuses(), []);
@@ -182,6 +208,16 @@ export function PracticeStudioPage() {
       <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
         Scale inspection on the guitar fretboard. Mathematical pitch-class sets stay unnamed unless a registry already names them.
       </p>
+      {handoff ? (
+        <p data-testid="practice-handoff" style={{ fontSize: '0.85rem' }}>
+          {handoff.source} · {handoff.label}
+          {handoff.mask !== null ? ` · mask ${handoff.mask}` : ''}
+          {handoff.referencePc !== null ? ` · root ${handoff.referencePc}` : ''}
+          {handoff.tuningId ? ` · tuning ${handoff.tuningId}` : ''}
+          {handoff.status ? ` · status ${handoff.status}` : ''}
+          {' · source file unchanged'}
+        </p>
+      ) : null}
 
       <section aria-labelledby="scale-explorer-heading" style={{ marginTop: '1rem' }}>
         <h3 id="scale-explorer-heading" style={{ marginBottom: '0.35rem' }}>Scale Explorer</h3>

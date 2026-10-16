@@ -224,7 +224,7 @@ describe('practice studio route', () => {
     const text = textOf(tree);
     expect(text).toContain('4096 pitch-class sets');
     expect(text).toContain('Practice Generator');
-    expect(text).toContain('Unavailable');
+    expect(text).toContain('Save session');
     expect(text).toContain('Practice Session');
     expect(text).toContain('MATHEMATICAL SET');
     expect(tree.root.findByProps({ 'data-testid': 'fret-marker-count' }).children).toEqual(['0', ' fret markers.']);

@@ -31,6 +31,9 @@ function collectionPcs(intervals: readonly number[] | undefined, reference: stri
 import { listBhlHexatonicChoices, resolveBhlHexatonicColour, type BhlHexatonicFamily } from '@composer-os/core/bhl/bhlHexatonicColour';
 import { api, isDesktopIpc } from '../services/api';
 import { storeEvaluationHandoff, takeHexatonicHandoff } from './bhlHexatonicHandoff';
+import { storePracticeHandoff } from '../practice/practiceHandoff';
+import { maskFromPitchClasses } from '../practice/scaleGlossary';
+import type { ScaleRegistryId } from '../practice/scaleExplorer';
 import { ScoreAudition } from '../score/ScoreAudition';
 import { ScorePreview } from '../score/ScorePreview';
 import { BhlEvidencePanel, type BhlComparisonView, type BhlEvidenceView, type BhlIntentView } from './BhlEvidencePanel';
@@ -1637,6 +1640,48 @@ export function BhlComposerPage() {
           }}
         >
           Send to Evaluation Dashboard
+        </button>
+        <button
+          type="button"
+          data-testid="bhl-practice-handoff"
+          disabled={!selectedCandidateXml}
+          onClick={() => {
+            let colour: ReturnType<typeof resolveBhlHexatonicColour> | null = null;
+            try {
+              colour = hexFamily && hexId ? resolveBhlHexatonicColour({ family: hexFamily, id: hexId, referencePc: hexReference }) : null;
+            } catch {
+              colour = null;
+            }
+            const registry: ScaleRegistryId | null =
+              colour?.family === 'scalar'
+                ? 'hexatonic-scalar'
+                : colour?.family === 'wps'
+                  ? 'hexatonic-wps'
+                  : colour?.family === 'provisional'
+                    ? 'hexatonic-provisional'
+                    : colour?.family === 'advanced'
+                      ? 'hexatonic-advanced'
+                      : null;
+            const sent = storePracticeHandoff({
+              source: 'bhl',
+              label: selectedCandidateLabel || 'BHL candidate',
+              musicXml: selectedCandidateXml,
+              collectionId: registry ? hexId : null,
+              registry,
+              referencePc: colour ? hexReference : null,
+              status: colour?.status ?? null,
+              seed: null,
+              mask: colour ? maskFromPitchClasses(colour.pitchClasses) : null,
+              tuningId: null,
+            });
+            if (!sent.ok) {
+              setError(sent.error);
+              return;
+            }
+            window.location.hash = '#/practice';
+          }}
+        >
+          Practice this candidate
         </button>
         {compareText ? (
           <pre data-testid="bhl-compare-text" style={{ whiteSpace: 'pre-wrap', margin: 0 }}>
