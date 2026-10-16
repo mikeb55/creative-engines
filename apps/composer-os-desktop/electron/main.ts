@@ -19,6 +19,12 @@ import {
   resolveBuildStampPath,
 } from './config';
 import {
+  desktopChannelIdentity,
+  devDocumentsExportRoot,
+  devUserDataPath,
+  loadDesktopChannel,
+} from './desktopChannel';
+import {
   verifyUiBundleAtPath,
   type ComposerOsUiStamp,
   type UiBundleVerifyFail,
@@ -39,6 +45,17 @@ function loadEnv(): void {
   console.log('[main] envPath:', envPath, 'ANTHROPIC_API_KEY present:', !!process.env.ANTHROPIC_API_KEY);
 }
 loadEnv();
+
+const desktopChannel = loadDesktopChannel();
+const desktopIdentity = desktopChannelIdentity(desktopChannel);
+if (desktopChannel === 'dev') {
+  app.setName(desktopIdentity.productName);
+  app.setPath('userData', devUserDataPath(app.getPath('appData')));
+  if (!process.env.COMPOSER_OS_OUTPUT_DIR?.trim()) {
+    process.env.COMPOSER_OS_OUTPUT_DIR = devDocumentsExportRoot();
+  }
+}
+console.log('[desktop-channel]', desktopChannel, desktopIdentity.appId);
 
 /** Packaged builds always use full React UI (`resources/ui`). */
 if (app.isPackaged) {
@@ -89,16 +106,16 @@ ipcMain.handle('composer-os:get-startup-state', (): StartupState => startupState
 ipcMain.handle('composer-os:get-desktop-meta', () => ({
   packaged: app.isPackaged,
   version: app.getVersion(),
-  productName: DESKTOP_PRODUCT_NAME,
-  appId: DESKTOP_APP_ID,
+  productName: desktopIdentity.productName,
+  appId: desktopIdentity.appId,
   exePath: app.getPath('exe'),
   integration: 'ipc' as const,
 }));
 
 ipcMain.handle('composer-os:get-ui-provenance', () => ({
   verified: cachedUiStamp !== null,
-  productName: DESKTOP_PRODUCT_NAME,
-  appId: DESKTOP_APP_ID,
+  productName: desktopIdentity.productName,
+  appId: desktopIdentity.appId,
   desktopVersion: app.getVersion(),
   uiBundlePath: cachedUiPath,
   uiProductId: cachedUiStamp?.productId ?? null,
@@ -497,9 +514,9 @@ async function launchApp(): Promise<void> {
 
 if (gotLock) {
   app.whenReady().then(() => {
-    app.setName(DESKTOP_PRODUCT_NAME);
+    app.setName(desktopIdentity.productName);
     if (process.platform === 'win32') {
-      app.setAppUserModelId(DESKTOP_APP_ID);
+      app.setAppUserModelId(desktopIdentity.appId);
     }
     launchApp().catch((err) => {
       console.error(err);

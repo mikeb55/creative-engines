@@ -2,6 +2,7 @@
  * Bundled separately (esbuild) — registers Composer OS API IPC; no HTTP server.
  */
 import { app, shell, type IpcMain } from 'electron';
+import { documentsSaveBase, loadDesktopChannel } from './desktopChannel';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import path from 'path';
@@ -169,7 +170,7 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
       if (normalized.some((seg) => seg === '..')) {
         return { ok: false, error: 'invalid path' };
       }
-      const base = app.getPath('documents');
+      const base = documentsSaveBase(app.getPath('documents'), loadDesktopChannel());
       const full = path.resolve(path.join(base, ...normalized));
       const docResolved = path.resolve(base);
       const relToDoc = path.relative(docResolved, full);

@@ -12,6 +12,7 @@
     "desktop:package": "tsx install/bumpDesktopVersionCli.ts && npm run desktop:build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win && tsx install/logReleaseArtifactsCli.ts && tsx install/pruneOldPortableExesCli.ts && tsx install/verifyStableBuildOutputCli.ts",
     "desktop:package-no-bump": "npm run desktop:build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --config.directories.output=release-build && node -e \"const fs=require('fs');fs.mkdirSync('release',{recursive:true});fs.copyFileSync('release-build/Composer-OS.exe','release/Composer-OS.exe');try{fs.copyFileSync('release-build/Composer-OS-Setup.exe','release/Composer-OS-Setup.exe')}catch(e){}\" && tsx install/logReleaseArtifactsCli.ts",
     "desktop:package:mac": "npm run desktop:build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac",
+    "desktop:package:mac:dev": "npm run build:electron && npm run build:desktop-ipc && swift scripts/render-dev-icon.swift resources/icon.png resources/icon-dev.png && cross-env COMPOSER_OS_PACK_CHANNEL=dev CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --dir --config.directories.output=release-v32-dev-candidate --config.appId=com.mikeb55.composeros.dev --config.productName=Composer\\ OS\\ DEV --config.mac.icon=resources/icon-dev.png && cross-env COMPOSER_OS_PACK_CHANNEL=dev node scripts/writeDesktopChannel.js \"release-v32-dev-candidate/mac-arm64/Composer OS DEV.app\"",
     "desktop:install:mac": "tsx install/installComposerOsDesktopMac.ts",
     "desktop:create-launcher:mac": "tsx install/createDesktopLauncherMacCli.ts",
     "predist": "node scripts/kill-running-desktop.js",
@@ -72,6 +73,7 @@
       "resources/ui/**/*"
     ],
     "beforePack": "./scripts/ensure-root-env.js",
+    "afterPack": "./scripts/writeDesktopChannel.js",
     "extraResources": [
       {
         "from": "resources/riff-phrase-corpus",
