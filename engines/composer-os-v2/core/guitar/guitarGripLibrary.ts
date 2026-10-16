@@ -50,7 +50,7 @@ function parseScientificToMidi(note: string): number | null {
  * any other `tuningId` loads {@link getAlternateGuitarTuningPreset} (Sonic Youth,
  * Joni, etc.); unknown id or parse failure → standard E open midis.
  */
-function openStringMidisForTuning(tuningId: string): number[] {
+export function openStringMidisForTuning(tuningId: string): number[] {
   if (tuningId === 'standard') {
     return [...STANDARD_OPEN_MIDIS];
   }

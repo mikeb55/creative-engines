@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
-import { FretboardPanel } from '../components/music/FretboardPanel';
+import { useCallback, useMemo, useState } from 'react';
+import { FretboardPanel, type FretboardCell } from '../components/music/FretboardPanel';
+import { PENTATONIC_NOTE_CHOICES } from '@composer-os/core/pentatonic/pitch';
 import { navigateToRoute } from '../router/appRouter';
 import {
   CHROMATIC_MASK_COUNT,
@@ -16,10 +17,25 @@ import {
   type ScaleExplorerView,
 } from './scaleExplorer';
 import {
+  FRET_MAX,
+  PRACTICE_FRET_MAX_VISIBLE,
+  PRACTICE_FRET_MIN,
   SCALE_FRET_WINDOW,
-  STANDARD_TUNING_LABEL,
-  standardTuningPitchClassMarkers,
-} from './standardFretMarkers';
+  STANDARD_TUNING_ID,
+  buildPracticeFretboard,
+  inspectFretCell,
+  practiceTuningChoices,
+  romanPosition,
+} from './practiceFretboard';
+
+const TUNING_CHOICES = practiceTuningChoices();
+const ZONE_LABELS: Record<string, string> = {
+  jazz_sophisticated: 'Jazz / sophisticated',
+  sonic_youth_noise: 'Sonic Youth / noise',
+  joni_mitchell: 'Joni Mitchell',
+  hybrid_harmonic: 'Hybrid / harmonic',
+  other: 'Other catalogued tunings',
+};
 
 const FIELD_STYLE = { display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '13px' } as const;
 
@@ -31,6 +47,13 @@ export function PracticeStudioPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [selectedMask, setSelectedMask] = useState(EMPTY_SET_MASK);
+  const [rootPc, setRootPc] = useState(0);
+  const [tuningId, setTuningId] = useState(STANDARD_TUNING_ID);
+  const [labelMode, setLabelMode] = useState<'pitch' | 'interval'>('pitch');
+  const [fretFrom, setFretFrom] = useState<number>(SCALE_FRET_WINDOW.from);
+  const [fretTo, setFretTo] = useState<number>(SCALE_FRET_WINDOW.to);
+  const [position, setPosition] = useState<number | null>(null);
+  const [selectedCell, setSelectedCell] = useState<FretboardCell | null>(null);
 
   const families = useMemo(() => scaleExplorerFamilies(), []);
   const statuses = useMemo(() => scaleExplorerStatuses(), []);
@@ -48,14 +71,43 @@ export function PracticeStudioPage() {
   const paged = pageScaleExplorer(filtered, page);
   const selected = getScaleExplorerEntry(selectedMask);
   const selectedVisible = filtered.some((entry) => entry.mask === selectedMask);
-  const markers = standardTuningPitchClassMarkers(selected.pitchClasses);
+  const board = useMemo(
+    () =>
+      buildPracticeFretboard({
+        pitchClasses: selected.pitchClasses,
+        rootPc,
+        tuningId,
+        fretFrom,
+        fretTo,
+        position,
+        labelMode,
+      }),
+    [selected.pitchClasses, rootPc, tuningId, fretFrom, fretTo, position, labelMode]
+  );
+  const inspection = useMemo(
+    () =>
+      selectedCell
+        ? inspectFretCell(
+            board.tuning,
+            selectedCell,
+            board.rootPc,
+            board.soundingPitchClasses,
+            board.fretWindowValid ? { from: board.fretFrom, to: board.fretTo } : null
+          )
+        : null,
+    [selectedCell, board]
+  );
+  const onFretClick = useCallback((cell: FretboardCell) => {
+    setSelectedCell(cell);
+  }, []);
   const pages = ['#/pentatonic', '#/hexatonic'] as const;
+  const tuningZones = ['jazz_sophisticated', 'sonic_youth_noise', 'joni_mitchell', 'hybrid_harmonic', 'other'] as const;
 
   return (
     <div data-testid="practice-studio">
       <h2 style={{ marginTop: 0 }}>Practice &amp; Scales Studio</h2>
       <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-        Read-only scale inspection. Mathematical pitch-class sets stay unnamed unless a registry already names them.
+        Scale inspection on the guitar fretboard. Mathematical pitch-class sets stay unnamed unless a registry already names them.
       </p>
 
       <section aria-labelledby="scale-explorer-heading" style={{ marginTop: '1rem' }}>
@@ -248,23 +300,159 @@ export function PracticeStudioPage() {
       </section>
 
       <section aria-labelledby="fretboard-heading" data-testid="fretboard-preview" style={{ marginTop: '1.25rem' }}>
-        <h3 id="fretboard-heading">Guitar fretboard preview</h3>
+        <h3 id="fretboard-heading">Guitar fretboard</h3>
         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-          Standard tuning {STANDARD_TUNING_LABEL}. Frets {SCALE_FRET_WINDOW.from}–{SCALE_FRET_WINDOW.to}.
-          Dots mark every fret whose pitch class is in the selected set.
-          The dot colour is the fretboard panel marker. It is not a scale degree, a CAGED shape, or a fingering.
-          Read-only.
+          {board.tuning.label}. Open strings {board.tuning.strings.join(' ')}.
+          Green dots are the selected root. Amber dots are the other pitch classes in the set.
+          A dot is a pitch-class location. It is not a CAGED shape and it is not a fingering.
         </p>
-        <div style={{ overflowX: 'auto' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', margin: '0.75rem 0' }}>
+          <label style={FIELD_STYLE}>
+            Root
+            <select
+              aria-label="Fretboard root"
+              value={String(rootPc)}
+              onChange={(event) => setRootPc(Number(event.target.value))}
+            >
+              {PENTATONIC_NOTE_CHOICES.map((name, index) => (
+                <option key={name} value={String(index)}>{name}</option>
+              ))}
+            </select>
+          </label>
+          <label style={{ ...FIELD_STYLE, flex: '1 1 14rem' }}>
+            Tuning
+            <select
+              aria-label="Guitar tuning"
+              value={tuningId}
+              onChange={(event) => setTuningId(event.target.value)}
+            >
+              {tuningZones.map((zone) => {
+                const group = TUNING_CHOICES.filter((choice) => choice.zone === zone);
+                if (group.length === 0) return null;
+                return (
+                  <optgroup key={zone} label={ZONE_LABELS[zone]}>
+                    {group.map((choice) => (
+                      <option key={choice.id} value={choice.id}>
+                        {choice.label} ({choice.stringsLabel})
+                      </option>
+                    ))}
+                  </optgroup>
+                );
+              })}
+            </select>
+          </label>
+          <label style={FIELD_STYLE}>
+            Dot labels
+            <select
+              aria-label="Fretboard label mode"
+              value={labelMode}
+              onChange={(event) => setLabelMode(event.target.value as 'pitch' | 'interval')}
+            >
+              <option value="pitch">Pitch names</option>
+              <option value="interval">Intervals from root</option>
+            </select>
+          </label>
+          <label style={FIELD_STYLE}>
+            Fret from
+            <input
+              aria-label="Fret range start"
+              type="number"
+              min={PRACTICE_FRET_MIN}
+              max={PRACTICE_FRET_MAX_VISIBLE}
+              value={fretFrom}
+              onChange={(event) => setFretFrom(Number(event.target.value))}
+              style={{ width: '4.5rem' }}
+            />
+          </label>
+          <label style={FIELD_STYLE}>
+            Fret to
+            <input
+              aria-label="Fret range end"
+              type="number"
+              min={PRACTICE_FRET_MIN}
+              max={PRACTICE_FRET_MAX_VISIBLE}
+              value={fretTo}
+              onChange={(event) => setFretTo(Number(event.target.value))}
+              style={{ width: '4.5rem' }}
+            />
+          </label>
+          <label style={FIELD_STYLE}>
+            Position filter
+            <select
+              aria-label="Position filter"
+              value={position === null ? '' : String(position)}
+              disabled={!board.tuning.standardSolver}
+              onChange={(event) => {
+                const value = event.target.value;
+                setPosition(value === '' ? null : Number(value));
+              }}
+            >
+              <option value="">Off</option>
+              {Array.from({ length: FRET_MAX + 1 }, (_, fret) => (
+                <option key={fret} value={String(fret)}>
+                  {fret === 0 ? 'Open strings (position 0)' : `Lowest fret ${romanPosition(fret)}`}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        {board.limitation && (
+          <p data-testid="fretboard-limitation" style={{ fontSize: '0.85rem' }}>{board.limitation}</p>
+        )}
+        <p data-testid="position-status" style={{ fontSize: '0.85rem' }}>{board.positionStatus}</p>
+        <p data-testid="fingering-status" style={{ fontSize: '0.85rem' }}>{board.fingeringStatus}</p>
+        <p data-testid="sounding-pitch-classes" style={{ fontSize: '0.85rem' }}>
+          Sounding pitch classes {board.soundingPitchClassId || '—'}. Root {board.rootSpelling}.
+        </p>
+        <div style={{ width: '100%', maxWidth: '100%', overflowX: 'auto' }}>
           <FretboardPanel
-            notes={markers}
-            tuning={['E2', 'A2', 'D3', 'G3', 'B3', 'E4']}
-            frets={SCALE_FRET_WINDOW}
+            notes={board.notes}
+            tuning={[...board.tuning.strings]}
+            frets={board.fretWindowValid ? { from: board.fretFrom, to: board.fretTo } : SCALE_FRET_WINDOW}
             positionLock
             darkMode
+            onFretClick={onFretClick}
           />
         </div>
-        <p data-testid="fret-marker-count" style={{ fontSize: '0.85rem' }}>{markers.length} fret markers.</p>
+        <p data-testid="fret-marker-count" style={{ fontSize: '0.85rem' }}>{board.notes.length} fret markers.</p>
+        <div data-testid="fret-inspection" style={{ fontSize: '0.9rem', marginTop: '0.75rem' }}>
+          <h4 style={{ marginBottom: '0.35rem' }}>Fret inspection</h4>
+          {!inspection && <p>Click a fret. The readout shows that cell’s sounding pitch and its interval from the root.</p>}
+          {inspection && (
+            <dl style={{ display: 'grid', gridTemplateColumns: '11rem 1fr', gap: '0.35rem 0.75rem' }}>
+              <dt>Cell</dt>
+              <dd style={{ margin: 0 }}>String index {inspection.stringIndex}, fret {inspection.fret}</dd>
+              <dt>Sounding pitch</dt>
+              <dd style={{ margin: 0 }}>{inspection.scientific} · MIDI {inspection.midi} · pitch class {inspection.pitchClass}</dd>
+              <dt>Interval from root</dt>
+              <dd style={{ margin: 0 }}>{inspection.intervalSemitones} semitones from {board.rootSpelling}</dd>
+              <dt>Selected set</dt>
+              <dd style={{ margin: 0 }}>{inspection.inSelectedSet ? 'In the selected set.' : 'Outside the selected set.'}</dd>
+              <dt>Visible range</dt>
+              <dd style={{ margin: 0 }}>{inspection.visible ? 'Inside the fret window.' : 'Outside the fret window.'}</dd>
+              <dt>Guitar range</dt>
+              <dd style={{ margin: 0 }}>
+                {inspection.inGuitarRange ? 'Inside guitarRange().' : 'Outside guitarRange(). Not a playable note.'}
+              </dd>
+              <dt>Possible positions</dt>
+              <dd style={{ margin: 0 }}>
+                {inspection.possiblePositions.length === 0
+                  ? 'None. Open strings and frets above 15 are not a fretted position window.'
+                  : inspection.possiblePositions.map((fret) => romanPosition(fret)).join(', ')}
+              </dd>
+              <dt>Fingering</dt>
+              <dd style={{ margin: 0 }}>{inspection.fingering}</dd>
+            </dl>
+          )}
+        </div>
+      </section>
+
+      <section aria-labelledby="fretboard-audition-heading" data-testid="fretboard-audition" style={{ marginTop: '1.25rem' }}>
+        <h3 id="fretboard-audition-heading">Audition</h3>
+        <p>
+          Deferred to V3.2-E. ScoreAudition plays a MusicXML score on the shared Tone.js transport.
+          This page has no exercise score, so no note is sent to that transport and no second synth is started.
+        </p>
       </section>
 
       <section aria-labelledby="practice-generator-heading" data-testid="practice-generator" style={{ marginTop: '1.25rem' }}>

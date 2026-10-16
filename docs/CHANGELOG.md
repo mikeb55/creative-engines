@@ -14,6 +14,8 @@
 
 ### Added
 
+- **Practice & Scales Studio V3.2-C** — `#/practice` fretboard follows the selected Scale Explorer set. Root, tuning, pitch or interval labels, fret window, and a standard-tuning position window are on the page. Open-string MIDI comes from `openStringMidisForTuning`. `pcFretboard` checks one clicked pitch in standard tuning and is not called for any other tuning. Note playback stays deferred. Detail: `docs/V3.2-C-FRETBOARD-IMPLEMENTATION.md`.
+
 - **Practice & Scales Studio V3.2-B** — `#/practice` opens a read-only Scale Explorer. It lists 4,096 pitch-class masks, with a tonic-fixed view of the 2,048 masks that contain pitch class 0. Registered names, families, and statuses are read from the pentatonic path registry, the 20-colour vocabulary, the hexatonic scalars, the WPS pairs, the 12 provisional Core candidates, and the 3 advanced colours. A six-note set can show its existing Forte class. The guitar panel marks those pitch classes on standard tuning. Practice Generator and Practice Session stay unavailable. Detail: `docs/V3.2-B-SCALE-EXPLORER-IMPLEMENTATION.md`.
 
 - **Hexatonic H6-C2 advanced collections** — Forte 6-13, 6-23, and 6-28 are admitted as `ADVANCED — NOT MUSICALLY APPROVED` and stay out of the Core. Sus2, sus4, and quartal trichord pairs link to an existing colour when the pitch-class union matches. They do not create a second collection id. The complete 50-hexachord Explorer stays a laboratory filter. Forte 6-7 and 6-38 are the suspended/quartal-only classes. A single BHL Generate stamps `strategy: null` and `hexatonicWriting: colour-remap` because that path remaps pitches and does not run Dialogue, Liquid, or Sparse. Candidate sets still stamp the strategy they ran.

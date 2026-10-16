@@ -29,6 +29,13 @@ export type FretboardNote = {
   isActive?: boolean;
   /** When `showBeatLegality` is on, drives marker shape/fill (defaults to strong). */
   beatLegality?: 'strong' | 'weak' | 'syncopated' | 'approachOnly';
+  /** Short text drawn inside the dot. Empty when omitted. */
+  label?: string;
+};
+
+export type FretboardCell = {
+  stringIndex: number;
+  fret: number;
 };
 
 export type FretboardPanelProps = {
@@ -41,6 +48,8 @@ export type FretboardPanelProps = {
   /** When true, vary marker appearance by `beatLegality` on each note. */
   showBeatLegality?: boolean;
   onNoteClick?: (note: FretboardNote) => void;
+  /** Fires for any fret the board reports, including a fret with no dot. */
+  onFretClick?: (cell: FretboardCell) => void;
   /** Current beat index during playback (0-based). Undefined = no playback overlay. */
   playbackBeat?: number;
   /** Notes currently sounding — always drawn on top with glow; ignores `activeLayers`. */
@@ -137,6 +146,7 @@ type DotDatum = {
   beatLegality?: 'strong' | 'weak' | 'syncopated' | 'approachOnly';
   trail?: boolean;
   playback?: boolean;
+  label?: string;
 };
 
 type FretboardApi = import('@moonwave99/fretboard.js').Fretboard;
@@ -152,6 +162,7 @@ export function FretboardPanel({
   activeLayers = ALL_LAYERS,
   showBeatLegality = false,
   onNoteClick,
+  onFretClick,
   playbackBeat,
   playbackNotes,
   trailNotes,
@@ -203,6 +214,7 @@ export function FretboardPanel({
         fret: n.fret,
         role: n.role,
         disabled: n.isActive === false,
+        ...(n.label ? { label: n.label } : {}),
         ...(showBeatLegality ? { beatLegality: n.beatLegality ?? 'strong' } : {}),
       });
     }
@@ -270,6 +282,15 @@ export function FretboardPanel({
         board.style({ filter: { role }, fill: ROLE_COLORS[role] });
       });
 
+      if (dots.some((dot) => dot.label)) {
+        board.style({
+          filter: (datum: DotDatum) => Boolean(datum.label),
+          text: (datum: DotDatum) => datum.label ?? '',
+          fontSize: 11,
+          fontFill: '#111111',
+        });
+      }
+
       board.style({
         filter: (d: DotDatum) => d.trail === true,
         opacity: 0.3,
@@ -302,7 +323,7 @@ export function FretboardPanel({
         });
       }
 
-      if (onNoteClick) {
+      if (onNoteClick || onFretClick) {
         const svgWrap = boardMountRef.current.querySelector('.fretboard-html-wrapper');
         if (svgWrap instanceof HTMLElement) {
           svgWrap.style.cursor = 'pointer';
@@ -318,8 +339,17 @@ export function FretboardPanel({
           const fret = pos.fret;
           if (libString == null || fret == null) return;
           const stringIndex = 6 - libString;
-          const k = `${stringIndex}:${fret}`;
-          const hit = poolKeys.get(k);
+          if (
+            onFretClick &&
+            stringIndex >= 0 &&
+            stringIndex < tuning.length &&
+            fret >= rangeFrom &&
+            fret <= rangeTo
+          ) {
+            onFretClick({ stringIndex, fret });
+          }
+          if (!onNoteClick) return;
+          const hit = poolKeys.get(`${stringIndex}:${fret}`);
           if (hit) onNoteClick(hit);
         });
       }
@@ -341,6 +371,7 @@ export function FretboardPanel({
     mergedDots,
     showBeatLegality,
     onNoteClick,
+    onFretClick,
     playbackNotes,
     visibleNotes,
     positionLock,
