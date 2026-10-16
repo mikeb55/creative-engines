@@ -24,6 +24,7 @@ import {
   devUserDataPath,
   loadDesktopChannel,
 } from './desktopChannel';
+import { releaseDisplayForChannel } from './releaseIdentity';
 import {
   verifyUiBundleAtPath,
   type ComposerOsUiStamp,
@@ -103,14 +104,32 @@ if (!gotLock) {
 
 ipcMain.handle('composer-os:get-startup-state', (): StartupState => startupState);
 
-ipcMain.handle('composer-os:get-desktop-meta', () => ({
-  packaged: app.isPackaged,
-  version: app.getVersion(),
-  productName: desktopIdentity.productName,
-  appId: desktopIdentity.appId,
-  exePath: app.getPath('exe'),
-  integration: 'ipc' as const,
-}));
+function readBuildStampGitCommit(): string | null {
+  const stampPath = resolveBuildStampPath();
+  if (!stampPath) return null;
+  try {
+    const stamp = JSON.parse(fs.readFileSync(stampPath, 'utf-8')) as { gitCommit?: unknown };
+    return typeof stamp.gitCommit === 'string' && stamp.gitCommit.trim() ? stamp.gitCommit.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+ipcMain.handle('composer-os:get-desktop-meta', () => {
+  const release = releaseDisplayForChannel(desktopChannel);
+  return {
+    packaged: app.isPackaged,
+    version: app.getVersion(),
+    productName: desktopIdentity.productName,
+    appId: desktopIdentity.appId,
+    exePath: app.getPath('exe'),
+    integration: 'ipc' as const,
+    channel: desktopChannel,
+    releaseLabel: release.releaseLabel,
+    displayTitle: release.windowTitle,
+    gitCommit: readBuildStampGitCommit(),
+  };
+});
 
 ipcMain.handle('composer-os:get-ui-provenance', () => ({
   verified: cachedUiStamp !== null,
@@ -251,7 +270,7 @@ function createWindowShell(): BrowserWindow {
   const preloadPath = path.join(__dirname, 'preload.js');
   const iconPath = getWindowIconPath();
   const win = new BrowserWindow({
-    title: `Composer OS - v${app.getVersion()}`,
+    title: releaseDisplayForChannel(desktopChannel).windowTitle,
     width: 900,
     height: 700,
     minWidth: 600,

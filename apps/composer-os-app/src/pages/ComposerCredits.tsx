@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 function parseEmbeddedUiStamp(): {
   appShellVersion: string;
   buildTimestamp: string;
   gitCommit: string;
+  stableTitle: string | null;
+  devTitle: string | null;
 } | null {
   try {
     const raw = import.meta.env.VITE_COMPOSER_OS_UI_STAMP_JSON;
@@ -12,12 +14,20 @@ function parseEmbeddedUiStamp(): {
       appShellVersion?: string;
       buildTimestamp?: string;
       gitCommit?: string;
+      releaseIdentity?: {
+        stable?: { windowTitle?: string };
+        dev?: { windowTitle?: string };
+      };
     };
     if (!o.appShellVersion || !o.buildTimestamp) return null;
+    const stableTitle = o.releaseIdentity?.stable?.windowTitle;
+    const devTitle = o.releaseIdentity?.dev?.windowTitle;
     return {
       appShellVersion: o.appShellVersion,
       buildTimestamp: o.buildTimestamp,
       gitCommit: typeof o.gitCommit === 'string' ? o.gitCommit : '',
+      stableTitle: typeof stableTitle === 'string' ? stableTitle : null,
+      devTitle: typeof devTitle === 'string' ? devTitle : null,
     };
   } catch {
     return null;
@@ -29,6 +39,15 @@ function parseEmbeddedUiStamp(): {
  */
 export function ComposerCredits() {
   const stamp = parseEmbeddedUiStamp();
+  const [desktopTitle, setDesktopTitle] = useState<string | null>(null);
+  const [desktopGit, setDesktopGit] = useState<string | null>(null);
+  useEffect(() => {
+    if (!window.composerOsDesktop?.getDesktopMeta) return;
+    void window.composerOsDesktop.getDesktopMeta().then((meta) => {
+      setDesktopTitle(meta.displayTitle ?? null);
+      setDesktopGit(meta.gitCommit ?? null);
+    });
+  }, []);
   const section: React.CSSProperties = { marginBottom: '1.5rem' };
   const h2: React.CSSProperties = { fontSize: '1.1rem', margin: '0 0 0.5rem' };
   const p: React.CSSProperties = { margin: '0.35rem 0', lineHeight: 1.5, color: 'var(--text-muted)' };
@@ -55,10 +74,22 @@ export function ComposerCredits() {
       <section style={section}>
         <h3 style={h2}>Build fingerprint (packaged UI)</h3>
         {stamp ? (
-          <p style={p}>
-            <strong>UI bundle:</strong> v{stamp.appShellVersion} · {stamp.buildTimestamp}
-            {stamp.gitCommit ? ` · git ${stamp.gitCommit.slice(0, 7)}` : ''}
-          </p>
+          <>
+            <p style={p}>
+              <strong>Release:</strong> {desktopTitle ?? stamp.stableTitle ?? 'Composer OS'}
+            </p>
+            <p style={p}>
+              <strong>Git build stamp:</strong> {desktopGit || stamp.gitCommit || '—'}
+            </p>
+            <p style={p}>
+              <strong>UI bundle:</strong> package {stamp.appShellVersion} · {stamp.buildTimestamp}
+            </p>
+            {stamp.stableTitle && stamp.devTitle && (
+              <p style={p}>
+                STABLE {stamp.stableTitle}. DEV {stamp.devTitle}.
+              </p>
+            )}
+          </>
         ) : (
           <p style={p}>
             No embedded stamp (typical in local <code style={{ fontFamily: 'monospace', fontSize: '0.85em' }}>npm run dev</code>

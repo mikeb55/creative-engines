@@ -129,8 +129,17 @@ export function DiagnosticsPanel({ lastGeneration }: { lastGeneration: LastGener
                   <strong style={{ color: 'var(--text)' }}>Executable:</strong> {desktopMeta.exePath}
                 </p>
               )}
+              {desktopMeta?.displayTitle && (
+                <p style={{ margin: '0.25rem 0' }}>
+                  <strong style={{ color: 'var(--text)' }}>Release:</strong> {desktopMeta.displayTitle}
+                </p>
+              )}
               <p style={{ margin: '0.25rem 0', wordBreak: 'break-word' }}>
-                <strong style={{ color: 'var(--text)' }}>Desktop app version:</strong> {provenance.desktopVersion}
+                <strong style={{ color: 'var(--text)' }}>Package version:</strong> {provenance.desktopVersion}
+              </p>
+              <p style={{ margin: '0.25rem 0', wordBreak: 'break-all' }}>
+                <strong style={{ color: 'var(--text)' }}>Git build stamp:</strong>{' '}
+                {desktopMeta?.gitCommit || provenance.uiGitCommit || '—'}
               </p>
               <p style={{ margin: '0.25rem 0' }}>
                 <strong style={{ color: 'var(--text)' }}>UI bundle version:</strong>{' '}

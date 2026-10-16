@@ -20,6 +20,10 @@ declare global {
         appId: string;
         exePath: string;
         integration: 'ipc';
+        channel?: 'stable' | 'dev';
+        releaseLabel?: string;
+        displayTitle?: string;
+        gitCommit?: string | null;
       }>;
       getUiProvenance: () => Promise<{
         verified: boolean;

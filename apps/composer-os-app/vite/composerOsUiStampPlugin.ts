@@ -10,6 +10,11 @@ import type { Plugin } from 'vite';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+export type ReleaseChannelIdentity = {
+  releaseLabel: string;
+  windowTitle: string;
+};
+
 export type ComposerOsUiStamp = {
   productId: string;
   productName: string;
@@ -17,6 +22,10 @@ export type ComposerOsUiStamp = {
   buildTimestamp: string;
   gitCommit: string;
   supportedPages: string[];
+  releaseIdentity: {
+    stable: ReleaseChannelIdentity;
+    dev: ReleaseChannelIdentity;
+  };
 };
 
 const SUPPORTED_PAGES = ['Generate', 'Presets', 'Style Stack', 'Outputs', 'Diagnostics'] as const;
@@ -31,6 +40,15 @@ export function resolveAppShellVersion(appRoot: string): string {
   const pkgPath = path.join(appRoot, 'package.json');
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8')) as { version: string };
   return pkg.version;
+}
+
+function readReleaseIdentity(appRoot: string): ComposerOsUiStamp['releaseIdentity'] {
+  const identityPath = path.join(appRoot, '..', 'composer-os-desktop', 'electron', 'releaseIdentity.json');
+  const raw = JSON.parse(fs.readFileSync(identityPath, 'utf-8')) as ComposerOsUiStamp['releaseIdentity'];
+  if (!raw.stable?.windowTitle || !raw.dev?.windowTitle) {
+    throw new Error(`releaseIdentity.json is incomplete: ${identityPath}`);
+  }
+  return raw;
 }
 
 function buildStamp(appRoot: string): ComposerOsUiStamp {
@@ -49,6 +67,7 @@ function buildStamp(appRoot: string): ComposerOsUiStamp {
     buildTimestamp: new Date().toISOString(),
     gitCommit,
     supportedPages: [...SUPPORTED_PAGES],
+    releaseIdentity: readReleaseIdentity(appRoot),
   };
 }
 

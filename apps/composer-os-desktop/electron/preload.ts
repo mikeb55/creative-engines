@@ -16,6 +16,10 @@ contextBridge.exposeInMainWorld('composerOsDesktop', {
     appId: string;
     exePath: string;
     integration: 'ipc';
+    channel: 'stable' | 'dev';
+    releaseLabel: string;
+    displayTitle: string;
+    gitCommit: string | null;
   }> => ipcRenderer.invoke('composer-os:get-desktop-meta'),
   getUiProvenance: (): Promise<{
     verified: boolean;

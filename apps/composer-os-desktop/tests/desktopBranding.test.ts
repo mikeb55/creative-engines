@@ -9,8 +9,8 @@ const desktopRoot = path.resolve(__dirname, '..');
 describe('Desktop branding (Composer OS)', () => {
   it('BrowserWindow title includes Composer OS and desktop version marker', () => {
     const mainSrc = fs.readFileSync(path.join(desktopRoot, 'electron', 'main.ts'), 'utf-8');
-    expect(mainSrc).toContain('Composer OS - v${app.getVersion()}');
-    expect(mainSrc).toContain("app.getVersion()");
+    expect(mainSrc).toContain('releaseDisplayForChannel(desktopChannel).windowTitle');
+    expect(mainSrc).toContain('app.getVersion()');
     expect(mainSrc).not.toMatch(/Composer Studio/i);
   });
 

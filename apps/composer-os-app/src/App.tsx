@@ -378,6 +378,7 @@ function parseEmbeddedUiStamp(): {
   appShellVersion: string;
   buildTimestamp: string;
   gitCommit: string;
+  releaseTitle: string | null;
 } | null {
   try {
     const raw = import.meta.env.VITE_COMPOSER_OS_UI_STAMP_JSON;
@@ -386,12 +387,15 @@ function parseEmbeddedUiStamp(): {
       appShellVersion?: string;
       buildTimestamp?: string;
       gitCommit?: string;
+      releaseIdentity?: { stable?: { windowTitle?: string } };
     };
     if (!o.appShellVersion || !o.buildTimestamp) return null;
+    const stableTitle = o.releaseIdentity?.stable?.windowTitle;
     return {
       appShellVersion: o.appShellVersion,
       buildTimestamp: o.buildTimestamp,
       gitCommit: typeof o.gitCommit === 'string' ? o.gitCommit : '',
+      releaseTitle: typeof stableTitle === 'string' && stableTitle.trim() ? stableTitle.trim() : null,
     };
   } catch {
     return null;
@@ -402,7 +406,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>(() => ensureHashRoute());
   const [refreshOutputs, setRefreshOutputs] = useState(0);
   const [lastGeneration, setLastGeneration] = useState<LastGenerationSummary>({ status: 'none' });
-  const [desktopVersion, setDesktopVersion] = useState<string | null>(null);
+  const [desktopDisplayTitle, setDesktopDisplayTitle] = useState<string | null>(null);
   const embeddedStamp = parseEmbeddedUiStamp();
 
   const goToTab = useCallback((next: Tab) => {
@@ -423,11 +427,13 @@ export default function App() {
   useEffect(() => {
     if (window.composerOsDesktop?.getDesktopMeta) {
       void window.composerOsDesktop.getDesktopMeta().then((m) => {
-        setDesktopVersion(m.version);
-        document.title = `Composer OS - v${m.version}`;
+        if (m.displayTitle) {
+          setDesktopDisplayTitle(m.displayTitle);
+          document.title = m.displayTitle;
+        }
       });
-    } else if (embeddedStamp) {
-      document.title = `Composer OS - v${embeddedStamp.appShellVersion}`;
+    } else if (embeddedStamp?.releaseTitle) {
+      document.title = embeddedStamp.releaseTitle;
     }
   }, [embeddedStamp]);
 
@@ -461,12 +467,14 @@ export default function App() {
     <div style={{ maxWidth: 720, margin: '0 auto', padding: '1.5rem' }}>
       <header style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
         <h1 style={{ margin: 0, fontSize: '1.5rem' }}>
-          {desktopVersion ? `Composer OS - v${desktopVersion}` : 'Composer OS'}
+          {desktopDisplayTitle
+            ?? (typeof window !== 'undefined' && window.composerOsDesktop ? 'Composer OS' : embeddedStamp?.releaseTitle)
+            ?? 'Composer OS'}
         </h1>
         {embeddedStamp && (
           <p style={{ margin: '0.35rem 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-            UI bundle · v{embeddedStamp.appShellVersion} · {embeddedStamp.buildTimestamp}
-            {embeddedStamp.gitCommit ? ` · ${embeddedStamp.gitCommit.slice(0, 7)}` : ''}
+            Build {embeddedStamp.buildTimestamp}
+            {embeddedStamp.gitCommit ? ` · git ${embeddedStamp.gitCommit.slice(0, 7)}` : ''}
           </p>
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>

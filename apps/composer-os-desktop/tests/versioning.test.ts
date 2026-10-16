@@ -1,5 +1,5 @@
 /**
- * Desktop semver is the product version source; window title and artifacts follow it.
+ * Desktop package semver is the installer number. The window title follows releaseIdentity.json.
  */
 import * as fs from 'fs';
 import * as path from 'path';
@@ -23,16 +23,19 @@ describe('Composer OS Desktop versioning', () => {
     expect(pkg.build.nsis.artifactName).toBe('Composer-OS-Setup.exe');
   });
 
-  it('BrowserWindow title uses Composer OS - v{version} pattern', () => {
+  it('BrowserWindow title uses the release identity, not the package semver', () => {
     const mainSrc = fs.readFileSync(path.join(desktopRoot, 'electron', 'main.ts'), 'utf-8');
-    expect(mainSrc).toContain('Composer OS - v${app.getVersion()}');
+    expect(mainSrc).toContain('releaseDisplayForChannel(desktopChannel).windowTitle');
+    expect(mainSrc).not.toContain('Composer OS - v${app.getVersion()}');
   });
 
-  it('web shell header shows Composer OS - v when desktop version is available', () => {
+  it('web shell header shows the desktop release title', () => {
     const appSrc = fs.readFileSync(
       path.join(desktopRoot, '..', 'composer-os-app', 'src', 'App.tsx'),
       'utf-8'
     );
-    expect(appSrc).toContain('Composer OS - v${desktopVersion}');
+    expect(appSrc).toContain('document.title = m.displayTitle');
+    expect(appSrc).toContain('desktopDisplayTitle');
+    expect(appSrc).not.toContain('Composer OS - v${desktopVersion}');
   });
 });

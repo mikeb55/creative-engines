@@ -36,9 +36,14 @@ for (const p of [ipcPath, apiPath]) {
   }
 }
 
+const releaseIdentity = JSON.parse(
+  fs.readFileSync(path.join(desktopRoot, 'electron', 'releaseIdentity.json'), 'utf-8')
+);
+
 const stamp = {
   schema: 'composer-os-build-stamp/v1',
   desktopPackageVersion: pkg.version,
+  releaseIdentity,
   generatedAt: new Date().toISOString(),
   gitCommit: gitCommit(),
   ipcBundle: {

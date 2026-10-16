@@ -99,6 +99,10 @@
         "to": "composer-os-build-stamp.json"
       },
       {
+        "from": "electron/releaseIdentity.json",
+        "to": "releaseIdentity.json"
+      },
+      {
         "from": "resources/open-folder-helpers.cjs",
         "to": "open-folder-helpers.cjs"
       },
