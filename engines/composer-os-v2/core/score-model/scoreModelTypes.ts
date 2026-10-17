@@ -6,6 +6,7 @@
 import type { WybleConsumptionReceipt } from '../wyble/wybleConsumptionReceipt';
 import type { BarMeterMap } from '../rhythm/barMeterTypes';
 import type { SonicYouthExtension } from './sonicYouthChordTypes';
+import type { Technique, Transposition } from '../instruments/instrumentTypes';
 
 /**
  * MusicXML divisions per quarter note (fixed; Sibelius-safe integer tick grid).
@@ -25,6 +26,53 @@ export const MEASURE_TICKS_4_4 = MEASURE_DIVISIONS;
 
 /** Articulation metadata (performance pass / expressive feel). */
 export type Articulation = 'staccato' | 'tenuto' | 'accent';
+
+/** V3.4 notation. Unused unless a note sets `notation`. */
+export type ArticulationV34 = Articulation | 'marcato' | 'staccatissimo' | 'accent_staccato';
+
+export interface HarmonicNotation {
+  kind: 'natural' | 'artificial';
+  touchedMidi?: number;
+}
+
+export interface NoteNotationV34 {
+  articulations?: ArticulationV34[];
+  slur?: 'start' | 'stop' | 'continue';
+  technique?: Technique;
+  harmonic?: HarmonicNotation;
+  tremolo?: { type: 'single' | 'unmeasured'; marks?: 1 | 2 | 3 };
+  divisi?: { group: string; index: number };
+}
+
+export type DynamicMark = 'ppp' | 'pp' | 'p' | 'mp' | 'mf' | 'f' | 'ff' | 'fff' | 'sfz' | 'fp';
+
+export interface PartDynamicEvent {
+  bar: number;
+  /** 0-based quarter offset inside the bar. 0 is the downbeat. */
+  beat: number;
+  mark?: DynamicMark;
+  wedge?: 'crescendo' | 'diminuendo' | 'stop';
+}
+
+export type TempoBeatUnit = 'quarter' | 'half' | 'eighth' | 'dotted-quarter';
+
+export interface TempoMapEvent {
+  bar: number;
+  /** 0-based quarter offset inside the bar. 0 is the downbeat. */
+  beat: number;
+  /** Beats of `beatUnit` per minute. */
+  bpm: number;
+  beatUnit: TempoBeatUnit;
+  label?: string;
+}
+
+export interface TimecodeMark {
+  bar: number;
+  /** 0-based quarter offset inside the bar. 0 is the downbeat. */
+  beat: number;
+  smpte: string;
+  label: string;
+}
 
 /** Playback / feel metadata (does not change bar structure). */
 export interface FeelProfile {
@@ -57,6 +105,10 @@ export interface NoteEvent {
    * When absent, the existing key-signature enharmonic rule is unchanged.
    */
   spelling?: { step: string; alter: number };
+  /**
+   * V3.4 optional notation. Absent means the existing articulation export is unchanged.
+   */
+  notation?: NoteNotationV34;
 }
 
 /** Rest event. */
@@ -215,6 +267,22 @@ export interface ScoreModel {
    * Keys are part ids; values are semitone offsets (negative = written pitch sounds lower).
    */
   exportPartTransposeSemitones?: Record<string, number>;
+  /**
+   * V3.4 full MusicXML transposition. When a part id is present here, it replaces
+   * `exportPartTransposeSemitones` for that part. Absent leaves the chromatic element unchanged.
+   */
+  exportPartTranspose?: Record<string, Transposition>;
+  /**
+   * V3.4 per-part dynamics and hairpins. Absent leaves `measureDynamicsMarkings` on part 0 only.
+   * Beat 0 is the downbeat.
+   */
+  partDynamics?: Record<string, PartDynamicEvent[]>;
+  /**
+   * V3.4 tempo map. Absent or empty keeps the single score tempo direction.
+   */
+  tempoMap?: TempoMapEvent[];
+  /** V3.4 timecode words above part 0. Absent means no timecode directions. */
+  timecodeMarks?: TimecodeMark[];
   /**
    * When set, MusicXML export emits repeat barlines at the given measures (see `musicxmlExporter`).
    * Generators may omit; pipeline/tests attach for repeat truth.

@@ -101,10 +101,19 @@ export function runV33AdvancedCompositionTests(): Array<{ name: string; ok: bool
     assert.equal(roleOf('Cello'), 'cello');
     assert.equal(roleOf('Piano'), 'piano');
     assert.equal(roleOf('Soprano Voice'), 'voice');
-    assert.equal(roleOf('Alto Sax'), 'wind');
-    assert.equal(roleOf('Bassoon'), 'wind');
-    assert.equal(roleOf('Tenor Trombone'), 'brass');
-    assert.equal(roleOf('Drum Kit'), 'other');
+    assert.equal(roleOf('Alto Sax'), 'saxophone');
+    assert.equal(roleOf('Bassoon'), 'bassoon');
+    assert.equal(roleOf('Tenor Trombone'), 'trombone');
+    assert.equal(roleOf('Drum Kit'), 'percussion');
+    assert.equal(roleOf('Flute'), 'flute');
+    assert.equal(roleOf('Oboe'), 'oboe');
+    assert.equal(roleOf('Clarinet'), 'clarinet');
+    assert.equal(roleOf('Horn in F'), 'horn');
+    assert.equal(roleOf('Trumpet'), 'trumpet');
+    assert.equal(roleOf('Tuba'), 'tuba');
+    assert.equal(roleOf('Harp'), 'harp');
+    assert.equal(roleOf('Synth Pad'), 'synth');
+    assert.equal(roleOf('English Horn'), 'wind');
   });
 
   check('N1 exposes 19 operators', () => {

@@ -16,6 +16,14 @@ import type {
 } from '../score-model/scoreModelTypes';
 import { DIVISIONS, MEASURE_DIVISIONS } from '../score-model/scoreModelTypes';
 import { buildHarmonyXmlLine } from './chordSymbolMusicXml';
+import {
+  v34NoteDirections,
+  v34NotationsXml,
+  v34PartDynamicXml,
+  v34TempoDirectionXml,
+  v34TimecodeDirectionXml,
+  v34TransposeXml,
+} from './v34NotationXml';
 
 /** Mid-measure harmony: sequential rests/notes already advance the XML cursor — no &lt;offset&gt; in &lt;harmony&gt; (invalid in MusicXML 3.1 partwise / Sibelius). */
 function buildHarmonyXmlLineWithOffset(chordSymbol: string, _offsetTicks: number): string {
@@ -1397,7 +1405,10 @@ function eventsToXml(
           const pitchXml = `<pitch><step>${step}</step>${alterEl}<octave>${octave}</octave></pitch>`;
           const art = (note as { articulation?: string }).articulation;
           const durationAccent = (note as { durationAccent?: 'none' | 'stress' }).durationAccent;
-          const notationsEl = buildArticulationNotations(art, durationAccent);
+          const notationsEl = note.notation
+            ? v34NotationsXml(note.notation, art, durationAccent)
+            : buildArticulationNotations(art, durationAccent);
+          if (note.notation) xml += v34NoteDirections(note.notation, 0);
           const vel = (note as { velocity?: number }).velocity;
           const dynAttr =
             vel !== undefined
@@ -1620,9 +1631,11 @@ ${partList}
           const hideKey = ks?.hideKeySignature ?? false;
           const printAttr = hideKey ? ' print-object="no"' : '';
           const meter0 = resolveMeterForBar(1, opts.barMeterMap);
+          const fullTranspose = score.exportPartTranspose?.[part.id];
           const transposeSemi = score.exportPartTransposeSemitones?.[part.id];
-          const transposeXml =
-            transposeSemi !== undefined
+          const transposeXml = fullTranspose
+            ? v34TransposeXml(fullTranspose)
+            : transposeSemi !== undefined
               ? `      <transpose><chromatic>${transposeSemi}</chromatic></transpose>\n`
               : '';
           const stavesAndClefXml = guitarInstrumentGroupTabExport
@@ -1652,7 +1665,7 @@ ${stavesAndClefXml}${transposeXml}    </attributes>
 `;
         }
 
-        if (i === 0 && partIndex === 0) {
+        if (i === 0 && partIndex === 0 && !(score.tempoMap && score.tempoMap.length > 0)) {
           const bpm = resolveExportBpm(opts, score);
           const feelDirectionTypeXml =
             score.feelProfile != null
@@ -1760,6 +1773,25 @@ ${feelDirectionTypeXml}      <sound tempo="${bpm}"/>
       </direction-type>
     </direction>
 `;
+          }
+        }
+
+        if (score.partDynamics) {
+          const partDynamicEvents = score.partDynamics[part.id];
+          if (partDynamicEvents) {
+            for (const dynamicEvent of partDynamicEvents) {
+              if (dynamicEvent.bar === measureNumber) xml += v34PartDynamicXml(dynamicEvent);
+            }
+          }
+        }
+        if (partIndex === 0 && score.tempoMap && score.tempoMap.length > 0) {
+          for (const tempoEvent of score.tempoMap) {
+            if (tempoEvent.bar === measureNumber) xml += v34TempoDirectionXml(tempoEvent);
+          }
+        }
+        if (partIndex === 0 && score.timecodeMarks && score.timecodeMarks.length > 0) {
+          for (const timecode of score.timecodeMarks) {
+            if (timecode.bar === measureNumber) xml += v34TimecodeDirectionXml(timecode);
           }
         }
 

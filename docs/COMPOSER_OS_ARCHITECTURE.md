@@ -1,5 +1,9 @@
 # Composer OS â€” Architecture
 
+## V3.4 Stage A — notation and instruments
+
+Stage A adds an opt-in instrument catalogue (`core/instruments/`) and optional MusicXML for slurs, techniques, per-part dynamics, full transposition, tempo maps, and timecode words. `exportPartTransposeSemitones` still writes a chromatic-only `<transpose>` when the new transposition object is absent. Evaluation `roleOf` can name flute, oboe, clarinet, bassoon, horn, trumpet, trombone, tuba, saxophone, harp, percussion, and synth. No preset calls an orchestrator. Stage B is not in this build.
+
 ## V3.3 Advanced Composition
 
 V3.3 does not add a theory engine. `core/motif-ops/` is the shared operator library and the development-chain record. `core/chord-melody/radicalChordMelody.ts` voices under a melody that it does not change, and it reuses Barry Harris only when that source is requested. `musical-evaluation/voiceRelations.ts`, `independenceReport.ts`, `hookEvidence.ts`, and `coherenceReport.ts` describe a score. The Evaluation dashboard reads the coherence section. `#/develop` calls those modules and the existing Practice, BHL, and Evaluation hand-offs. `GenerateRequest.motifOps` defaults off, so Song Mode cells stay on the previous path.

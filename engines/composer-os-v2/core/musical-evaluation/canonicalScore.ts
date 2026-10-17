@@ -27,6 +27,18 @@ export type InstrumentRole =
   | 'voice'
   | 'wind'
   | 'brass'
+  | 'flute'
+  | 'oboe'
+  | 'clarinet'
+  | 'bassoon'
+  | 'horn'
+  | 'trumpet'
+  | 'trombone'
+  | 'tuba'
+  | 'saxophone'
+  | 'harp'
+  | 'percussion'
+  | 'synth'
   | 'other';
 
 export interface WrittenPitch {
@@ -162,8 +174,21 @@ export function sha256Text(text: string): string {
 
 export function roleOf(name: string): InstrumentRole {
   const text = name.trim();
-  if (/sax|flute|clarinet|oboe|bassoon|piccolo|english\s*horn|recorder/i.test(text)) return 'wind';
-  if (/trumpet|trombone|tuba|cornet|flugel|brass|\bhorn\b/i.test(text)) return 'brass';
+  if (/synth/i.test(text)) return 'synth';
+  if (/sax/i.test(text)) return 'saxophone';
+  if (/flute|piccolo/i.test(text)) return 'flute';
+  if (/english\s*horn|recorder/i.test(text)) return 'wind';
+  if (/oboe/i.test(text)) return 'oboe';
+  if (/clarinet/i.test(text)) return 'clarinet';
+  if (/bassoon/i.test(text)) return 'bassoon';
+  if (/trumpet|cornet/i.test(text)) return 'trumpet';
+  if (/flugel/i.test(text)) return 'brass';
+  if (/trombone/i.test(text)) return 'trombone';
+  if (/tuba/i.test(text)) return 'tuba';
+  if (/\bhorn\b/i.test(text)) return 'horn';
+  if (/\bharp\b/i.test(text)) return 'harp';
+  if (/timpani|percussion|drum|cymbal|glockenspiel|vibraphone|xylophone|marimba|snare/i.test(text)) return 'percussion';
+  if (/\bbrass\b/i.test(text)) return 'brass';
   if (/contrabass|double\s*bass|upright\s*bass|bass\s*guitar|\bbass\b/i.test(text)) return 'bass';
   if (/guitar/i.test(text)) return 'guitar';
   if (/violin/i.test(text)) return 'violin';
