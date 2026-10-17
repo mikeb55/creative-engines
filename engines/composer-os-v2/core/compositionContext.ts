@@ -482,6 +482,17 @@ export interface GenerationMetadata {
   songModeHookFirstIdentity?: boolean;
   /** Song Mode: compact hook cell (contour dirs + variation dimension) for receipts / debugging. */
   songModeHookCellSummary?: string;
+  /**
+   * Reich/Glass Song Mode process cell. First half phases the cell; second half appends notes.
+   * Pitches come from `preferredIntervalSets` and the opening abstract pitch.
+   */
+  reichGlassMotifReceipt?: {
+    cellPitches: number[];
+    intervals: number[];
+    repeats: number;
+    reichBars: string;
+    glassBars: string;
+  };
   /** Song Mode: 1–3 abstract core motifs (interval/rhythm/contour/tags). */
   songModeCoreMotifs?: CoreMotif[];
   /** Song Mode: motif count (Motif Engine v2 uses 1). */

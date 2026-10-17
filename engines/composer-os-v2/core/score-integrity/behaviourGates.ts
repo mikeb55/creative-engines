@@ -377,19 +377,33 @@ export function runBehaviourGates(
     presetId: opts?.presetId,
     zappaStructuralRelax: bassStructuralRelax,
   });
-  if (!bassIdentity.valid) {
+  /**
+   * Reich/Glass pattern-bass repeats a cell on purpose (`patternIntegrityMinRepeats`).
+   * The jazz anti-loop lines are the wrong contract for that process. Other bass checks stay.
+   */
+  const reichGlassPatternBass =
+    isGuitarBassDuoFamily(opts?.presetId) &&
+    opts?.compositionContext?.generationMetadata?.songwriterStyleId === 'reich_glass';
+  const bassIdentityErrors = reichGlassPatternBass
+    ? bassIdentity.errors.filter(
+        (e) =>
+          !e.includes(bassRhythmicCellSubstr) &&
+          !e.includes('identical contour reused too broadly'),
+      )
+    : bassIdentity.errors;
+  if (bassIdentityErrors.length > 0) {
     if (styleTransferPreserveMelodyRelax) {
-      const blocking = bassIdentity.errors.filter((e) => !e.includes(bassRhythmicCellSubstr));
-      const rhythmic = bassIdentity.errors.filter((e) => e.includes(bassRhythmicCellSubstr));
+      const blocking = bassIdentityErrors.filter((e) => !e.includes(bassRhythmicCellSubstr));
+      const rhythmic = bassIdentityErrors.filter((e) => e.includes(bassRhythmicCellSubstr));
       if (songMode) duoIdentityWarnings.push(...rhythmic);
       errors.push(...blocking);
     } else {
-      errors.push(...bassIdentity.errors);
+      errors.push(...bassIdentityErrors);
     }
   }
   const bassIdentityValid = styleTransferPreserveMelodyRelax
-    ? bassIdentity.errors.filter((e) => !e.includes(bassRhythmicCellSubstr)).length === 0
-    : bassIdentity.valid;
+    ? bassIdentityErrors.filter((e) => !e.includes(bassRhythmicCellSubstr)).length === 0
+    : bassIdentityErrors.length === 0;
 
   const phraseAuthority = validateDuoPhraseAuthority(score, {
     presetId: opts?.presetId,

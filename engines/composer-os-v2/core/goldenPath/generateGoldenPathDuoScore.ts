@@ -792,6 +792,7 @@ import {
   SONG_MODE_MOTIF_BAR_17,
 } from './songModeHookIdentity';
 import { recomputeSongModeHookMotifShapesFromScore } from '../motif/songModeMotifEngineV2';
+import { applyReichGlassSongModeProcessCell } from './reichGlassProcessCell';
 import { extractMotifAssetsFromCoreMotifs } from '../motif-plus/motifExtractor';
 import { planMotifReuse } from '../motif-plus/motifReusePlanner';
 import { applySongModePhraseEngineV1, applySongModePhraseEndLandingRepair } from './songModePhraseEngineV1';
@@ -9274,6 +9275,7 @@ export function generateGoldenPathDuoScore(
         if (bi >= 0) afterExpressive.parts[bi] = bassPhraseV2;
       }
     }
+    applyReichGlassSongModeProcessCell(afterExpressive, context);
   }
   if (
     isGuitarBassDuoFamily(context.presetId) &&

@@ -18,6 +18,8 @@
 
 ### Fixed
 
+- **Composer OS V3.4 E1 checkpoint 2C — Reich/Glass motif cell.** Song Mode `reich_glass` was still the swing abstract grid: two semitone notes, and the 16th phase nudge in the duo colour pass never ran. The guitar line is now one cell from `preferredIntervalSets` `[2, 3, 4, 7]`, anchored on the opening abstract pitch. Bars 1–16 repeat it and rotate it by one place after `patternIntegrityMinRepeats` (4). The fourth bar of each group holds the last pitch so the existing jazz phrase-boundary gate still sees a boundary. Bars 17–32 keep those pitches and append one note every four bars. Pattern-bass repetition is no longer scored as a jazz loop. The global motif gate is unchanged. No new phasing engine.
+
 - **Composer OS V3.4 E1 checkpoint 2B — harmonic lock authority.** Song Mode was running the VoiceRuleBundle duration hold after the bar symbol was already chosen. Ligeti and `reich_glass` share a 4-bar minimum, so both rewrote the same spine into the same held chords and failed the lock. Satie's slice was then held again, so bar 13 of the score disagreed with `satieEffectiveHarmonyBars`. The duo path now keeps Ligeti, a locked `reich_glass` spine, and the Satie / Steve Reich / Philip Glass slices out of that second hold. Bundle minimums are unchanged. No new phrase planner, VRB, or process engine.
 
 - **Shared Tone.js playback** — Development Studio motif Play used a 0-based bar index, so every note was scheduled before the transport and stayed silent. Motif onsets now land on bar 1 beat positions. Imported MusicXML and the chord-melody score use the same Play / Stop / Replay player as Practice Studio. `play` resumes the real audio context and refuses to start while that context is suspended.

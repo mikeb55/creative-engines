@@ -450,6 +450,54 @@ export function runV34E1PhrasePlannerTests(): Row[] {
       seconds === 120,
   );
 
+  for (const seed of [76017, 76018] as const) {
+    const lockedOpts = songOpts('reich_glass', {
+      harmonyMode: 'custom_locked',
+      lockedHarmonyBarsRaw: LOCKED,
+      parsedChordBars: LOCKED,
+      chordProgressionText: LOCKED.join('|'),
+    });
+    const run = runGoldenPathOnce(seed, lockedOpts);
+    const again = runGoldenPathOnce(seed, lockedOpts);
+    const bar1 = pitches(run.score, 0);
+    const steps = intervals(bar1.slice(0, 4)).map((step) => Math.abs(step));
+    const bar5 = pitches(run.score, 4);
+    const bar17 = pitches(run.score, 16);
+    const bar21 = pitches(run.score, 20);
+    t(
+      `reich_glass seed ${seed} locked generation succeeds`,
+      run.success === true &&
+        run.mxValidationPassed === true &&
+        run.strictBarMathPassed === true &&
+        chordsOf(run.score) === LOCKED.join('|') &&
+        eventDigest(run.score) === eventDigest(again.score),
+    );
+    t(
+      `reich_glass seed ${seed} bar 1 cell uses intervals 2, 3, 4, 7`,
+      bar1.length >= 8 && steps.every((step) => [2, 3, 4, 7].includes(step)),
+    );
+    t(
+      `reich_glass seed ${seed} phases that cell at bar 5 and grows it after bar 16`,
+      bar5[0] === bar1[1] &&
+        bar5.join(',') !== bar1.join(',') &&
+        bar17.join(',') === bar1.slice(0, 3).join(',') &&
+        bar21.length === bar17.length + 1,
+    );
+  }
+  const reichOff = runGoldenPathOnce(
+    76017,
+    songOpts('reich_glass', {
+      harmonyMode: 'custom_locked',
+      lockedHarmonyBarsRaw: LOCKED,
+      parsedChordBars: LOCKED,
+      chordProgressionText: LOCKED.join('|'),
+    }),
+  );
+  t(
+    'reich_glass does not turn the phrase planner on',
+    reichOff.context.generationMetadata.e1PhrasePlannerReceipt?.status !== 'applied',
+  );
+
   if (process.env.COMPOSER_OS_E1_WRITE === '1') {
     const dir = path.resolve(__dirname, '../../../docs/v3.4-e1-checkpoint1');
     fs.mkdirSync(dir, { recursive: true });
