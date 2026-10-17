@@ -4,6 +4,8 @@
 
 ### Added
 
+- **Composer OS V3.4 E1 checkpoint 2A — reconnect existing rules.** The opt-in planner now delays Andrew Hill's repeated cell by the existing `rhythmicDisplacementBias` (`round(bias × 2)` eighths; shipped 0.65 still waits one eighth). Flag-off output, harmony symbols, and the other five pilots stay as they were. Songwriter `intervalPreference` is still only a label, so pitches were not rewritten from it. Bartók aksak `[4, 2, 3]` is nine 16th pulses and is not forced into 4/4.
+
 - **Composer OS V3.4 E1 checkpoint 1 — shared phrase planner.** Opt-in `e1PhrasePlanner` (default off) rewrites guitar and bass notes for Barry, Hill, Bartók, Wheeler, Hall, and Shorter. Each pilot gets its own phrase rule: sustained line, displaced cell, grouped cells, collection continuity, statement/rest/answer, or motif hold with late bass. Harmony slices, Stage D blends, BHL, and the Zappa and Fripp paths stay as they were. Diagnostic MusicXML is in `docs/v3.4-e1-checkpoint1/`. These are research approximations, not artistic approval.
 
 - **Composer OS V3.4 Stage C correction — Pierrot piano.** The catalogue now includes Piano, sounding A0–C8 (MIDI 21–108), from the VSL 88-key compass. Pierrot exports flute, B-flat clarinet, violin, cello, and piano. Piano harmony is a close voicing from the selected field. Harmony pitch-class choice mixes the seed so fields whose length divides 3296 no longer make seeds 3340 and 44 identical. Density, register, and texture planners still ignore the seed.

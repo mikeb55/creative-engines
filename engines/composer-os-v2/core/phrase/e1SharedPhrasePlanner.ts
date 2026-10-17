@@ -7,11 +7,12 @@
 import { applyOperator } from '../motif-ops/operators';
 import type { Motif, MotifNoteEvent } from '../motif-ops/types';
 import { chordTonesFromSymbol, noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
+import { HILL_SLICE_PARAMETERS } from '../song-mode/andrewHillSlice';
 import { normalizeSongwriterStyleKey } from '../song-mode/songwriterStyleProfiles';
 import type { NoteEvent, RestEvent, ScoreEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import { validateStrictBarMath } from '../score-integrity/strictBarMath';
 
-export const E1_PHRASE_PLANNER_VERSION = 'e1-checkpoint1-1';
+export const E1_PHRASE_PLANNER_VERSION = 'e1-checkpoint2a-1';
 
 export const E1_PILOT_IDS = [
   'john_barry',
@@ -37,6 +38,10 @@ export interface E1PhrasePlannerReceipt {
   operators: string[];
   transform: string;
   reason?: string;
+  /** Andrew Hill HI-1. Present only when that pilot is applied. */
+  hillRhythmicDisplacementBias?: number;
+  /** Eighths the Hill cell waits before its second statement. */
+  hillDisplaceEighths?: number;
 }
 
 const RULE: Record<E1PilotId, E1PhrasePlannerReceipt['ruleId']> = {
@@ -66,6 +71,21 @@ export interface E1PhrasePlannerRequest {
   songwriterId?: string | null;
   ablate?: E1Ablation;
   leadSheetLocked?: boolean;
+  /**
+   * Andrew Hill only. Omitted means `HILL_SLICE_PARAMETERS.rhythmicDisplacementBias`.
+   * Golden path passes the value the Hill slice already wrote.
+   */
+  hillRhythmicDisplacementBias?: number;
+}
+
+/**
+ * Map Hill's 0–1 displacement bias onto eighth-note delay of the repeated cell.
+ * 0 stays on the beat. 1 waits two eighths. The shipped 0.65 waits one eighth.
+ */
+export function e1HillDisplaceEighths(bias: number): number {
+  if (!Number.isFinite(bias)) return 1;
+  const clamped = Math.min(1, Math.max(0, bias));
+  return Math.round(clamped * 2);
 }
 
 function mod12(n: number): number {
@@ -421,6 +441,7 @@ function buildVoices(
   chords: Array<{ rootPc: number; fifthPc: number }>,
   seed: number,
   transform: boolean,
+  hillDisplaceEighths: number,
 ): { lead: Span[]; bass: Span[]; operators: string[]; transform: string } {
   const barCount = chords.length;
   const total = barCount * 8;
@@ -464,12 +485,15 @@ function buildVoices(
     operators.push('invert');
     transformLabel = transform ? 'return restores eighth alignment' : 'displaced repeat';
     for (let bar = 0; bar + 3 < barCount; bar += 4) {
-      const displace = transform && bar * 8 >= half ? 0 : 1;
+      const displace = transform && bar * 8 >= half ? 0 : hillDisplaceEighths;
       const pair = hillPair(cell.midis, inverted.midis, displace, chords, bar);
       lead.push(...pair.lead);
       bass.push(...pair.bass);
     }
   } else if (profile === 'bartok') {
+    // BA-1 keeps its own 4/4 eighth groups. The aksak default vector is
+    // [4, 2, 3] on a 16th pulse (nine pulses, cell B1). A 4/4 bar holds
+    // sixteen 16ths. That vector is not placed, truncated, or rescaled here.
     const cell = operatedMidis(chromatic, [], GUITAR_LOW, GUITAR_HIGH);
     const inverted = operatedMidis(chromatic, [{ op: 'invert' }], GUITAR_LOW, GUITAR_HIGH);
     operators.push('invert');
@@ -583,7 +607,16 @@ export function applyE1SharedPhrasePlanner(
   }
   const chordsBefore = guitar.measures.map((measure) => measure.chord ?? '');
   const chords = guitar.measures.map((measure) => chordAt(measure.chord));
-  const built = buildVoices(profileId, chords, request.seed, request.ablate !== 'transform');
+  const hillBias =
+    request.hillRhythmicDisplacementBias ?? HILL_SLICE_PARAMETERS.rhythmicDisplacementBias;
+  const hillDisplaceEighths = profileId === 'andrew_hill' ? e1HillDisplaceEighths(hillBias) : 0;
+  const built = buildVoices(
+    profileId,
+    chords,
+    request.seed,
+    request.ablate !== 'transform',
+    hillDisplaceEighths,
+  );
   let lead = built.lead;
   let bassSpans = built.bass;
   const roots = chords.map((chord) => chord.rootPc);
@@ -630,6 +663,9 @@ export function applyE1SharedPhrasePlanner(
       status: 'applied',
       operators: built.operators,
       transform: built.transform,
+      ...(profileId === 'andrew_hill'
+        ? { hillRhythmicDisplacementBias: hillBias, hillDisplaceEighths }
+        : {}),
     },
   };
 }

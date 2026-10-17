@@ -10,7 +10,9 @@ import { runGoldenPathOnce, type RunGoldenPathOptions } from '../core/goldenPath
 import { validateStrictBarMath } from '../core/score-integrity/strictBarMath';
 import { validateMusicXmlSchema } from '../core/export/musicxmlValidation';
 import { exportScoreModelToMusicXml } from '../core/export/musicxmlExporter';
-import { applyE1SharedPhrasePlanner } from '../core/phrase/e1SharedPhrasePlanner';
+import { applyE1SharedPhrasePlanner, e1HillDisplaceEighths } from '../core/phrase/e1SharedPhrasePlanner';
+import { HILL_SLICE_PARAMETERS } from '../core/song-mode/andrewHillSlice';
+import { BARTOK_BULGARIAN_AKSAK_CELL_SPECS, BARTOK_BULGARIAN_AKSAK_DEFAULT_POLICY } from '../core/rhythm/bartokBulgarianAksakRhythmEngine';
 import type { ScoreModel } from '../core/score-model/scoreModelTypes';
 import type { E1Ablation } from '../core/phrase/e1SharedPhrasePlanner';
 
@@ -203,6 +205,49 @@ export function runV34E1PhrasePlannerTests(): Row[] {
     'Hill return restores downbeat alignment',
     leadNotes(hill)[16]?.[0]?.startBeat === 0 && leadNotes(hill)[17]?.[0]?.startBeat === 0,
   );
+  const hillReceipt = openOn.get('andrew_hill')!.context.generationMetadata.e1PhrasePlannerReceipt;
+  t(
+    'Hill planner reads the slice displacement bias',
+    hillReceipt?.hillRhythmicDisplacementBias === HILL_SLICE_PARAMETERS.rhythmicDisplacementBias &&
+      hillReceipt?.hillDisplaceEighths === e1HillDisplaceEighths(HILL_SLICE_PARAMETERS.rhythmicDisplacementBias) &&
+      e1HillDisplaceEighths(0.65) === 1,
+  );
+  const hillSource = openOff.get('andrew_hill')!.score;
+  const hillBias0 = applyE1SharedPhrasePlanner(hillSource, {
+    seed: 76017,
+    songwriterId: 'andrew_hill',
+    hillRhythmicDisplacementBias: 0,
+  });
+  const hillBias1 = applyE1SharedPhrasePlanner(hillSource, {
+    seed: 76017,
+    songwriterId: 'andrew_hill',
+    hillRhythmicDisplacementBias: 1,
+  });
+  const hillOnset = (score: ScoreModel) => leadNotes(score)[1]?.[0]?.startBeat;
+  const hillBias0Xml = exportScoreModelToMusicXml(hillBias0.score);
+  const hillBias1Xml = exportScoreModelToMusicXml(hillBias1.score);
+  t('Hill bias 0 puts the repeated cell on the beat', hillBias0.receipt.status === 'applied' && hillOnset(hillBias0.score) === 0);
+  t(
+    'Hill bias 1 delays the repeated cell by two eighths',
+    hillBias1.receipt.status === 'applied' && hillOnset(hillBias1.score) === 1,
+  );
+  t(
+    'Hill bias changes the onset and keeps the cell pitches',
+    hillOnset(hillBias0.score) !== hillOnset(hillBias1.score) &&
+      pitches(hillBias0.score, 0).join(',') === pitches(hillBias1.score, 0).join(',') &&
+      pitches(hillBias0.score, 1).join(',') === pitches(hillBias1.score, 1).join(','),
+  );
+  t(
+    'Hill bias keeps chord symbols and valid MusicXML',
+    chordsOf(hillBias0.score) === chordsOf(hillSource) &&
+      chordsOf(hillBias1.score) === chordsOf(hillSource) &&
+      validateStrictBarMath(hillBias0.score).valid &&
+      validateStrictBarMath(hillBias1.score).valid &&
+      hillBias0Xml.success === true &&
+      hillBias1Xml.success === true &&
+      validateMusicXmlSchema(hillBias0Xml.xml ?? '').valid &&
+      validateMusicXmlSchema(hillBias1Xml.xml ?? '').valid,
+  );
 
   const bartok = openOn.get('bartok')!.score;
   const bartokDur = leadNotes(bartok)[0]?.map((note) => note.duration).join(',') ?? '';
@@ -210,6 +255,18 @@ export function runV34E1PhrasePlannerTests(): Row[] {
   t('Bartók states a short-long group', bartokDur === '1,1,1.5,0.5');
   t('Bartók return reverses the group', bartokReturn === '0.5,1.5,1,1');
   t('Bartók bass enters after the lead', part(bartok, 'acoustic_upright_bass')?.measures[0]?.events[0]?.kind === 'rest');
+  const aksak = BARTOK_BULGARIAN_AKSAK_CELL_SPECS.B1;
+  t(
+    'Bartók aksak default is nine 16th pulses',
+    BARTOK_BULGARIAN_AKSAK_DEFAULT_POLICY.pulseBase === '16th' &&
+      BARTOK_BULGARIAN_AKSAK_DEFAULT_POLICY.subgroupVector.join('+') === '4+2+3' &&
+      aksak.totalPulses === 9 &&
+      aksak.vector[0]! + aksak.vector[1]! + aksak.vector[2]! === 9,
+  );
+  t(
+    'Bartók 4/4 planner does not adopt the nine-pulse group',
+    bartokDur !== '1,0.5,0.75' && bartokDur === '1,1,1.5,0.5',
+  );
   t(
     'Bartók answer is an inversion, not a copy',
     intervals(pitches(bartok, 0)).join(',') !==
@@ -248,6 +305,13 @@ export function runV34E1PhrasePlannerTests(): Row[] {
     const barrySeed = runGoldenPathOnce(seed, songOpts('john_barry', { e1PhrasePlanner: true }));
     const again = runGoldenPathOnce(seed, songOpts('john_barry', { e1PhrasePlanner: true }));
     t(`Barry seed ${seed} is deterministic`, eventDigest(barrySeed.score) === eventDigest(again.score));
+    const hillSeed = runGoldenPathOnce(seed, songOpts('andrew_hill', { e1PhrasePlanner: true }));
+    const hillAgain = runGoldenPathOnce(seed, songOpts('andrew_hill', { e1PhrasePlanner: true }));
+    t(
+      `Hill seed ${seed} keeps the one-eighth displacement`,
+      eventDigest(hillSeed.score) === eventDigest(hillAgain.score) &&
+        leadNotes(hillSeed.score)[1]?.[0]?.startBeat === 0.5,
+    );
   }
   const barryA = runGoldenPathOnce(76017, songOpts('john_barry', { e1PhrasePlanner: true }));
   const barryB = runGoldenPathOnce(76018, songOpts('john_barry', { e1PhrasePlanner: true }));

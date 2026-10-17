@@ -3547,11 +3547,14 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     score = appendArtRockBandDrumsToScore(score, appliedContext, true);
   }
   if (options?.e1PhrasePlanner === true) {
+    const hillBias =
+      appliedContext.generationMetadata?.andrewHillDiagnostics?.sliceParameters?.rhythmicDisplacementBias;
     const planned = applyE1SharedPhrasePlanner(score, {
       seed,
       songwriterId: appliedContext.generationMetadata?.songwriterStyleId,
       ablate: options.e1PhrasePlannerAblate,
       leadSheetLocked: (options.songModeLeadSheetMelodyAnchors?.length ?? 0) > 0,
+      ...(typeof hillBias === 'number' ? { hillRhythmicDisplacementBias: hillBias } : {}),
     });
     score = planned.score;
     appliedContext.generationMetadata = {
