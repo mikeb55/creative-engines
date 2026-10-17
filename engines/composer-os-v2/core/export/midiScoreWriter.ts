@@ -223,15 +223,17 @@ export function writeScoreModelMidiFile(score: ScoreModel, outputPath: string, o
 
         const durStr = `t${durTicks}`;
         for (const pitch of pitches) {
-          track.addEvent(
-            new MidiWriter.NoteEvent({
-              pitch,
-              startTick,
-              duration: durStr,
-              channel,
-              velocity,
-            })
-          );
+          const noteEvent = new MidiWriter.NoteEvent({
+            pitch,
+            startTick,
+            duration: durStr,
+            channel,
+            velocity,
+          });
+          // midi-writer-js stores `startTick || null`. Tick 0 is dropped, and the note
+          // is then queued after the previous sequential note instead of on the downbeat.
+          if (startTick === 0) noteEvent.tick = 0;
+          track.addEvent(noteEvent);
         }
       }
     }

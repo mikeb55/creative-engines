@@ -10,6 +10,7 @@ describe('API client', () => {
     expect(typeof api.getStyleModules).toBe('function');
     expect(typeof api.getOutputDirectory).toBe('function');
     expect(typeof api.generate).toBe('function');
+    expect(typeof api.composePiano).toBe('function');
     expect(typeof api.getOutputs).toBe('function');
     expect(typeof api.openOutputFolder).toBe('function');
     expect(typeof api.getDiagnostics).toBe('function');

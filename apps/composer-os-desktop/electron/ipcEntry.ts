@@ -51,6 +51,7 @@ import {
 import { writePentatonicDesktopMusicXml } from './pentatonicDesktopExport';
 import { writeHexatonicDesktopMusicXml } from './hexatonicDesktopExport';
 import { openOutputFolderRoute } from '../../../scripts/openOutputFolderRoute';
+import { persistPianoComposition } from '../../../engines/composer-os-v2/app-api/pianoCompositionPersist';
 import {
   hydrateAnthropicKeyFromAllSources,
   saveAnthropicApiKeyToSecretStore,
@@ -395,6 +396,9 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
       else delete process.env.COMPOSER_OS_IPC_GENERATE_BODY_JSON;
     }
   });
+  ipcMain.handle('composer-os-api:compose-piano', (_e, body: unknown) =>
+    Promise.resolve(persistPianoComposition(body, outputDir))
+  );
   ipcMain.handle('composer-os-api:get-outputs', () => apiListOutputs(outputDir));
   ipcMain.handle('composer-os-api:get-output-directory', () => apiGetOutputDirectory(outputDir));
   ipcMain.handle('composer-os-api:get-diagnostics', () => apiGetDiagnostics(outputDir, 0));

@@ -52,6 +52,7 @@ import {
   apiHexatonicSaveProject,
 } from '../engines/composer-os-v2/app-api/hexatonicProjectApp';
 import { openOutputFolderRoute } from './openOutputFolderRoute';
+import { attachPianoComposeRoute } from './pianoComposeRoute';
 import { resolveDownloadFileTarget, sendDownloadFile } from './downloadFileRoute';
 import type { GenerateRequest } from '../engines/composer-os-v2/app-api/appApiTypes';
 
@@ -165,6 +166,8 @@ app.post('/api/generate', (req: Request, res: Response) => {
     });
   }
 });
+
+attachPianoComposeRoute(app, OUTPUT_DIR);
 
 app.get('/api/outputs', (_req: Request, res: Response) => {
   try {

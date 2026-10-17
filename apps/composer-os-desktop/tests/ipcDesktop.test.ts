@@ -29,6 +29,25 @@ describe('Desktop IPC clean-room (static)', () => {
     expect(pre).toContain("'ipc'");
   });
 
+  it('ipc entry registers solo piano compose without apiGenerate', () => {
+    const ipc = fs.readFileSync(path.join(desktopRoot, 'electron', 'ipcEntry.ts'), 'utf-8');
+    const api = fs.readFileSync(
+      path.join(desktopRoot, '..', 'composer-os-app', 'src', 'services', 'api.ts'),
+      'utf-8'
+    );
+    const http = fs.readFileSync(
+      path.join(desktopRoot, '..', '..', 'scripts', 'startComposerOsAppApi.ts'),
+      'utf-8'
+    );
+    expect(ipc).toContain("ipcMain.handle('composer-os-api:compose-piano'");
+    expect(ipc).toContain('persistPianoComposition(body, outputDir)');
+    expect(ipc).not.toMatch(/composer-os-api:compose-piano[\s\S]{0,180}apiGenerate/);
+    expect(api).toContain("'/piano/compose'");
+    expect(api).toContain('composer-os-api:compose-piano');
+    expect(http).toContain('attachPianoComposeRoute(app, OUTPUT_DIR)');
+    expect(http).not.toContain("app.post('/api/piano/compose'");
+  });
+
   it('ipc entry registers runtime build info handler', () => {
     const ipc = fs.readFileSync(path.join(desktopRoot, 'electron', 'ipcEntry.ts'), 'utf-8');
     expect(ipc).toContain('composer-os-api:get-runtime-build-info');

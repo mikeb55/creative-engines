@@ -11,6 +11,7 @@ export type AppRouteId =
   | 'slonimsky-etudes'
   | 'pentatonic'
   | 'hexatonic'
+  | 'solo-piano'
   | 'bhl'
   | 'practice'
   | 'evaluation'
@@ -33,6 +34,7 @@ const ROUTE_PATHS: Record<AppRouteId, string> = {
   'slonimsky-etudes': '/slonimsky-etudes',
   pentatonic: '/pentatonic',
   hexatonic: '/hexatonic',
+  'solo-piano': '/solo-piano',
   bhl: '/bhl',
   practice: '/practice',
   evaluation: '/evaluation',
@@ -150,6 +152,8 @@ export function routeNavLabel(route: AppRouteId): string {
       return 'Pentatonic';
     case 'hexatonic':
       return 'Hexatonic';
+    case 'solo-piano':
+      return 'Solo Piano';
     case 'bhl':
       return 'BHL';
     case 'practice':
@@ -185,4 +189,4 @@ export const ROUTE_HASH_SEGMENTS: readonly string[] = PRIMARY_NAV_ROUTES.filter(
   (id) => id !== 'home'
 )
   .map((id) => pathForRoute(id).replace(/^\//, ''))
-  .concat(['composer-engines', 'slonimsky-etudes', 'pentatonic', 'hexatonic', 'bhl', 'practice', 'evaluation', 'develop', 'wwh-v8', 'guide', 'credits']);
+  .concat(['composer-engines', 'slonimsky-etudes', 'pentatonic', 'hexatonic', 'solo-piano', 'bhl', 'practice', 'evaluation', 'develop', 'wwh-v8', 'guide', 'credits']);

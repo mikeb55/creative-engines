@@ -5,7 +5,7 @@
  * Every pitch of every decomposed segment receives sound ties and notation ties.
  */
 
-import type { MeasureModel, NoteEvent, PartModel, ScoreEvent } from '../score-model/scoreModelTypes';
+import { DIVISIONS, type MeasureModel, type NoteEvent, type PartModel, type PianoPedalEvent, type ScoreEvent } from '../score-model/scoreModelTypes';
 import { pianoStaffForVoice } from '../piano/pianoTypes';
 import {
   beatSpanToTicks,
@@ -176,4 +176,16 @@ export function pianoGrandStaffEventsToXml(
     }
   }
   return xml;
+}
+
+export function pianoPedalDirectionXml(event: PianoPedalEvent): string {
+  const offset = event.beat > 0
+    ? `      <offset>${Math.round(event.beat * DIVISIONS)}</offset>\n`
+    : '';
+  return `    <direction placement="below">
+      <direction-type>
+        <pedal type="${event.type}" line="yes"/>
+      </direction-type>
+${offset}    </direction>
+`;
 }

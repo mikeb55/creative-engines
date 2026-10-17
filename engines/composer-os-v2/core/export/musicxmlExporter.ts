@@ -49,7 +49,7 @@ import {
 import { applyContextPitchSpellings, midiToPitch, noteXmlPitchedFragment, noteXmlRestFragment, pitchPartsForExport } from './musicXmlNoteFragment';
 import { logGuitarVoice2CheckpointFromScore } from '../goldenPath/phaseAGuitarPolyphonyProbe';
 import { assertNoteXmlCanonicalChildOrder, assertSibeliusExportMeasureStructure } from './exportMeasureStructureAssert';
-import { pianoGrandStaffEventsToXml } from './pianoGrandStaffXml';
+import { pianoGrandStaffEventsToXml, pianoPedalDirectionXml } from './pianoGrandStaffXml';
 import { validateMusicXml } from '../../../../src/utils/musicXmlValidator';
 import type { GuitarVoicing } from '../composer/guitarVoicingEngine';
 import { GUITAR_STANDARD_OPEN_STRING_MIDI } from '../composer/guitarVoicingEngine';
@@ -1814,6 +1814,11 @@ ${feelDirectionTypeXml}      <sound tempo="${bpm}"/>
             for (const dynamicEvent of partDynamicEvents) {
               if (dynamicEvent.bar === measureNumber) xml += v34PartDynamicXml(dynamicEvent);
             }
+          }
+        }
+        if (part.pianoGrandStaff && score.pianoPedal) {
+          for (const pedalEvent of score.pianoPedal) {
+            if (pedalEvent.bar === measureNumber) xml += pianoPedalDirectionXml(pedalEvent);
           }
         }
         if (partIndex === 0 && score.tempoMap && score.tempoMap.length > 0) {

@@ -56,6 +56,14 @@ export interface PartDynamicEvent {
   wedge?: 'crescendo' | 'diminuendo' | 'stop';
 }
 
+/** Piano grand-staff sustain pedal. Absent leaves MusicXML and MIDI pedal-free. */
+export interface PianoPedalEvent {
+  bar: number;
+  /** Quarter offset inside the bar. The right barline is beat 4. */
+  beat: number;
+  type: 'start' | 'stop' | 'change';
+}
+
 export type TempoBeatUnit = 'quarter' | 'half' | 'eighth' | 'dotted-quarter';
 
 export interface TempoMapEvent {
@@ -300,6 +308,11 @@ export interface ScoreModel {
    * Beat 0 is the downbeat.
    */
   partDynamics?: Record<string, PartDynamicEvent[]>;
+  /**
+   * Sustain-pedal directions for a piano grand staff.
+   * Absent leaves export unchanged.
+   */
+  pianoPedal?: PianoPedalEvent[];
   /**
    * V3.4 tempo map. Absent or empty keeps the single score tempo direction.
    */

@@ -3,9 +3,11 @@
  */
 
 import { createHash } from 'node:crypto';
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { apiComposePianoV1 } from '../app-api/pianoCompositionApp';
+import { pianoMidiNotes, writePianoScoreMidi } from '../core/piano/pianoMidi';
 import { exportScoreModelToMusicXml } from '../core/export/musicxmlExporter';
 import { assertSibeliusExportMeasureStructure } from '../core/export/exportMeasureStructureAssert';
 import { validateExportedMusicXmlBarMath } from '../core/export/validateMusicXmlBarMath';
@@ -298,6 +300,66 @@ export function runPianoCompositionV1Tests(): Row[] {
     );
     const brokenParity = comparePianoScoreToXml(composed.score, stripped);
     rows.push(row('missing chord-follower tie fails parity', stripped !== composed.xml && brokenParity.ok === false));
+
+    const midiDir = mkdtempSync(join(tmpdir(), 'piano-v1-parity-'));
+    const midiPath = join(midiDir, 'seed76018.mid');
+    const scoreBeforeMidi = JSON.stringify(composed.score);
+    writePianoScoreMidi(composed.score, midiPath);
+    const replayPath = join(midiDir, 'seed76018-replay.mid');
+    writePianoScoreMidi(replay.score, replayPath);
+    const midi = pianoMidiNotes(midiPath);
+    const replayMidi = pianoMidiNotes(replayPath);
+    const soundingKey = (midiNumber: number, onsetQuarters: number, durationQuarters: number) => (
+      `${midiNumber}:${Math.round(onsetQuarters * midi.ppq)}:${Math.round(durationQuarters * midi.ppq)}`
+    );
+    const xmlKeys = oracle.sounding
+      .filter((event) => !event.rest && event.midi !== null)
+      .map((event) => soundingKey(event.midi ?? 0, event.onset, event.duration))
+      .sort();
+    const midiKeys = midi.notes.map((note) => `${note.midi}:${note.ticks}:${note.durationTicks}`).sort();
+    const replayKeys = replayMidi.notes.map((note) => `${note.midi}:${note.ticks}:${note.durationTicks}`).sort();
+    const lhBar1 = part.measures[0]!.events.find((event) => event.kind === 'note' && event.voice === 3);
+    const lhTieStart = part.measures[6]!.events.find((event) => event.kind === 'note' && event.voice === 3);
+    const lhTieStop = part.measures[7]!.events.find((event) => event.kind === 'note' && event.voice === 3);
+    rows.push(row(
+      'bar 1 LH bass onset matches score XML and MIDI',
+      lhBar1?.kind === 'note'
+        && lhBar1.pitch === 50
+        && lhBar1.startBeat === 0
+        && lhBar1.duration === 4
+        && xmlKeys.includes(soundingKey(50, 0, 4))
+        && midiKeys.includes(soundingKey(50, 0, 4))
+        && !midiKeys.includes('50:480:1920'),
+    ));
+    rows.push(row(
+      'bars 7-8 LH dyad tie is one sounding attack',
+      lhTieStart?.kind === 'note'
+        && lhTieStop?.kind === 'note'
+        && lhTieStart.notation?.tie === 'start'
+        && lhTieStop.notation?.tie === 'stop'
+        && lhTieStart.duration === 4
+        && lhTieStop.duration === 2
+        && JSON.stringify(lhTieStart.pitches) === JSON.stringify([45, 52])
+        && JSON.stringify(lhTieStop.pitches) === JSON.stringify([45, 52])
+        && xmlKeys.includes(soundingKey(45, 24, 6))
+        && xmlKeys.includes(soundingKey(52, 24, 6))
+        && midiKeys.includes(soundingKey(45, 24, 6))
+        && midiKeys.includes(soundingKey(52, 24, 6))
+        && !midiKeys.some((key) => key.startsWith('45:13440:') || key.startsWith('52:13440:')),
+    ));
+    rows.push(row(
+      'full sounding MIDI matches XML',
+      midi.ppq === 480 && JSON.stringify(midiKeys) === JSON.stringify(xmlKeys),
+      `xml ${xmlKeys.length} midi ${midiKeys.length}`,
+    ));
+    rows.push(row(
+      'MIDI regeneration is deterministic and leaves the score unchanged',
+      JSON.stringify(replayKeys) === JSON.stringify(midiKeys)
+        && JSON.stringify(composed.score) === scoreBeforeMidi
+        && composed.xml.includes('<voice>1</voice>')
+        && composed.xml.includes('<voice>3</voice>')
+        && midi.pedal.length === 0,
+    ));
 
     const outDir = resolve(__dirname, '../../../.tmp-piano-v1');
     mkdirSync(outDir, { recursive: true });

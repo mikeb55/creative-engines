@@ -119,6 +119,9 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     if (path === '/generate-comping') {
       return ipcInvoke<T>('composer-os-api:generate-comping', body ?? {});
     }
+    if (path === '/piano/compose') {
+      return ipcInvoke<T>('composer-os-api:compose-piano', body ?? {});
+    }
     if (path === '/bhl/defaults') return ipcInvoke<T>('composer-os-api:bhl-defaults', body ?? {});
     if (path === '/bhl/inspect') return ipcInvoke<T>('composer-os-api:bhl-inspect', body ?? {});
     if (path === '/bhl/compose') return ipcInvoke<T>('composer-os-api:bhl-compose', body ?? {});
@@ -285,6 +288,24 @@ export const api = {
   getOutputDirectory: () => get<OutputDirectoryResponse>('/output-directory'),
   getDiagnostics: () => get<DiagnosticsResponse>('/diagnostics'),
   generate: (req: Record<string, unknown>) => post<Record<string, unknown>>('/generate', req),
+  composePiano: (req: Record<string, unknown>) =>
+    post<{
+      ok: boolean;
+      code?: string;
+      error?: string;
+      filepath?: string;
+      midiFilepath?: string;
+      outputDirectory?: string;
+      elapsedSeconds?: number;
+      soundingAttacks?: number;
+      seedEffect?: string;
+      bars?: number;
+      tempo?: number;
+      title?: string;
+      innerVoice?: boolean;
+      pedalEventCount?: number;
+      validation?: { oracleOk?: boolean; errors?: string[] };
+    }>('/piano/compose', req),
   generateWayneShorter: (body: {
     title: string;
     seed?: number;
