@@ -315,6 +315,9 @@ export interface GenerationMetadata {
   generatedAt: string;
   /** V3.4 E1 — opt-in shared phrase planner. Absent unless the request enables it. */
   e1PhrasePlannerReceipt?: import('./phrase/e1SharedPhrasePlanner').E1PhrasePlannerReceipt;
+  /** V3.4 E1 checkpoint 3B. Absent unless the request sets `e1VoiceRelations`. */
+  e1VoiceRelations?: boolean;
+  e1VoiceRelationsReceipt?: import('./song-mode/e1Checkpoint3bPitchMembership').E1VoiceRelationsReceipt;
   /** Optional era hint (e.g. style pairing); set from `RunGoldenPathOptions.era` for downstream use. */
   era?: string;
   durationMs?: number;

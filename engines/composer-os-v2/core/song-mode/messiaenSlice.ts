@@ -8,6 +8,8 @@ import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { isProtectedBar } from '../score-integrity/identityLock';
+import { MESSIAEN_MODES } from '../harmony/pitchFieldResolver';
+import type { MessiaenModeId } from '../harmony/pitchFieldSpineTypes';
 
 export type { MessiaenPeriodMode } from '../compositionContext';
 
@@ -305,4 +307,19 @@ export function finalizeMessiaenMetadata(metadata: GenerationMetadata, acc: Mess
   ]
     .filter(Boolean)
     .join('; ');
+}
+
+/**
+ * Pitch classes for a slice mode key such as `mode2_t2`.
+ * Transposition index is 1-based: t1 is the unshifted mode in {@link MESSIAEN_MODES}.
+ * `birdsong_chromatic` and any other key return null. This checkpoint does not invent birdsong pitches.
+ */
+export function messiaenGovernedPitchClasses(activeMode: string | undefined): number[] | null {
+  const match = /^mode([1-7])_t(\d+)$/.exec(activeMode ?? '');
+  if (!match) return null;
+  const modeId = Number(match[1]) as MessiaenModeId;
+  const shift = Number(match[2]) - 1;
+  const base = MESSIAEN_MODES[modeId];
+  if (!base || shift < 0) return null;
+  return base.map((pc) => (pc + shift) % 12);
 }

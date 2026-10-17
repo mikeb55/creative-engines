@@ -865,3 +865,26 @@ export function finalizeDebussyMetadata(
   metadata.debussyDiagnostics = { ...d };
   metadata.debussySliceReceipt = receipt;
 }
+
+const DEBUSSY_PENTATONIC = [0, 2, 4, 7, 9] as const;
+const WHOLE_TONE_EVEN = [0, 2, 4, 6, 8, 10] as const;
+const WHOLE_TONE_ODD = [1, 3, 5, 7, 9, 11] as const;
+
+/**
+ * Collection already chosen by the harmony slice.
+ * Pentatonic wins when both receipts exist, because that pass runs later and rewrites the symbol.
+ * Returns null when neither field was selected.
+ */
+export function debussyGoverningCollection(
+  bar: number,
+  symbol: string,
+  receipts: readonly string[],
+): number[] | null {
+  const pentatonic = receipts.includes(`db:pentatonic@bar${bar}`);
+  const wholeTone = receipts.includes(`db:whole_tone@bar${bar}`);
+  if (!pentatonic && !wholeTone) return null;
+  const root = harmonyRootPc(symbol);
+  if (root === undefined) return null;
+  if (pentatonic) return DEBUSSY_PENTATONIC.map((step) => (root + step) % 12);
+  return root % 2 === 0 ? [...WHOLE_TONE_EVEN] : [...WHOLE_TONE_ODD];
+}

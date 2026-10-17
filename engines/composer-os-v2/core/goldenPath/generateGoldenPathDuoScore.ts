@@ -793,6 +793,7 @@ import {
 } from './songModeHookIdentity';
 import { recomputeSongModeHookMotifShapesFromScore } from '../motif/songModeMotifEngineV2';
 import { applyReichGlassSongModeProcessCell } from './reichGlassProcessCell';
+import { applyE1Checkpoint3bPitchMembership } from '../song-mode/e1Checkpoint3bPitchMembership';
 import { extractMotifAssetsFromCoreMotifs } from '../motif-plus/motifExtractor';
 import { planMotifReuse } from '../motif-plus/motifReusePlanner';
 import { applySongModePhraseEngineV1, applySongModePhraseEndLandingRepair } from './songModePhraseEngineV1';
@@ -9301,11 +9302,26 @@ export function generateGoldenPathDuoScore(
     }
   }
   grooveScaffoldPass(afterExpressive, context, context.song);
+  const wantVaultResnap =
+    isStandardGuitarBassDuo(context.presetId) &&
+    context.generationMetadata?.duoVaultMotifEnabled !== false;
+  const wantVoiceRelations = context.generationMetadata?.e1VoiceRelations === true;
   const duoVaultFinalReSnapTelemetry = finalizeAndSealDuoScoreBarMath(afterExpressive, context.presetId, {
     vaultFinalResnap:
-      isStandardGuitarBassDuo(context.presetId) &&
-      context.generationMetadata?.duoVaultMotifEnabled !== false
-        ? (s) => applyDuoVaultFinalResnapPass(s, context)
+      wantVaultResnap || wantVoiceRelations
+        ? (score) => {
+            const telemetry = wantVaultResnap
+              ? applyDuoVaultFinalResnapPass(score, context)
+              : { correctionsNeeded: 0, alreadyCompliant: 0, declinedNotesChecked: 0, byBar: [] };
+            if (wantVoiceRelations && context.generationMetadata) {
+              const membership = applyE1Checkpoint3bPitchMembership(score, context);
+              context.generationMetadata = {
+                ...context.generationMetadata,
+                e1VoiceRelationsReceipt: membership,
+              };
+            }
+            return telemetry;
+          }
         : undefined,
   });
   if (zappaFerocitySoloLane && context.generationMetadata?.soloLine) {

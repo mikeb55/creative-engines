@@ -38,11 +38,12 @@
 | **Bacharach / Monk / Joni / SY / Zappa (premium-melody roster)** | **Registry placeholders only** â€” Song Mode slices **shipped**; premium-melody **not started** |
 | **V88 â€” BartÃ³k CLE pitch scoring** | **FROZEN** â€” eval **8.0/10** seed **61234**; **`bartokClePitchScoringGoldenMaster`** in smoke |
 | **Musician shell (desktop v1)** | **SHIPPED** â€” default **`Composer-OS.exe`** plain HTML UI; **32-bar Song Mode**; registry-driven composer list; **`COMPOSER_OS_FULL_UI=1`** â†’ React Generate |
-| **Smoke tier** | **`npm run test:composer-smoke`** — **980** PASS rows / **147** suites (2026-10-17; V3.4 E1 checkpoint 3A). Known fail **5** (tracked). Unexpected fail **0**. |
+| **Smoke tier** | **`npm run test:composer-smoke`** — **995** PASS rows / **148** suites (2026-10-17; V3.4 E1 checkpoint 3B). Known fail **5** (tracked). Unexpected fail **0**. |
 | **V3.4 E1 checkpoint 1** | **SHIPPED (opt-in)** — shared phrase planner for Barry, Hill, Bartók, Wheeler, Hall, Shorter. Default off. Harmony slices and Stage D unchanged. Evidence: `docs/v3.4-e1-checkpoint1/`. |
 | **V3.4 E1 checkpoint 2A** | **PARTIAL** — Hill `rhythmicDisplacementBias` now sets HI-1 onset delay. Interval-preference tags and Bartók aksak `[4, 2, 3]` (nine 16ths) stay unconnected. Default off. |
 | **V3.4 E1 checkpoint 2C** | **SHIPPED** — Song Mode `reich_glass` guitar uses one cell from `preferredIntervalSets`. Bars 1–16 phase it. Bars 17–32 append notes. Planner stays off. |
 | **V3.4 E1 checkpoint 3A** | **PARTIAL** — Strayhorn unlocked ii–V–I roots are tritone-defused; `custom_locked` symbols stay exact. Bartók aksak `[4, 2, 3]` (nine 16ths) is not placed in the 4/4 duo. |
+| **V3.4 E1 checkpoint 3B** | **PARTIAL** — Debussy and Messiaen pitch membership is opt-in and default off. Pärt M/T stays blocked by Song Mode motif and bass-identity gates. |
 | **V3.4 Stage A** | **SHIPPED** — instrument catalogue, opt-in MusicXML notation, full transposition, tempo map, evaluation roles. |
 | **V3.4 Stage C** | **SHIPPED** — opt-in chamber Orchestrate writes string quartet, Pierrot (flute, B-flat clarinet, violin, cello, piano), wind quintet, and chamber orchestra parts. Piano hard range is sounding A0–C8. Spec: `docs/V3.4-ADVANCED-ARRANGING-ORCHESTRATION-SPEC.md`. |
 | **V3.4 Stage D** | **SHIPPED** — Song Mode phrase-block composer-profile blend, BPM passthrough, Duo songwriter rejection, Metheny Duo bass-cell repair. Ravel harmony stays unsupported. Polychords not in this stage. |

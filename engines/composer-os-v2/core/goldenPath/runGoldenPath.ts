@@ -1325,6 +1325,11 @@ export interface RunGoldenPathOptions {
   e1PhrasePlanner?: boolean;
   /** Disable one planner feature. Ignored when the planner is off. */
   e1PhrasePlannerAblate?: 'rhythm' | 'motif' | 'rests' | 'transform' | 'secondary';
+  /**
+   * V3.4 E1 checkpoint 3B — opt-in pitch membership for Debussy collections and Messiaen modes.
+   * Omitted or false leaves those note events unchanged. Pärt M/T is not gated by this flag.
+   */
+  e1VoiceRelations?: boolean;
   /** Set by blend routing. Weight 0 and unsupported secondaries do not change primary notes. */
   composerProfileBlend?: ComposerProfileBlendReceipt;
   /** Song Mode: optional author overlay id (for inspectability metadata). */
@@ -2933,6 +2938,12 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   const sectionPlanForVariations =
     appliedContext.generationMetadata?.mosaicSectionPlan ?? options?.mosaicSectionPlan ?? [];
   let score: ScoreModel | undefined;
+  if (options?.e1VoiceRelations === true) {
+    appliedContext.generationMetadata = {
+      ...appliedContext.generationMetadata,
+      e1VoiceRelations: true,
+    };
+  }
   try {
     if (options?.debugFixtureMode === 'indie_dual_guitar_tuning_proof') {
       score = buildIndieDualGuitarTuningFixtureScore();
