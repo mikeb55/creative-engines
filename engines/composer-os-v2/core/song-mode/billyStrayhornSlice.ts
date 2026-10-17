@@ -194,6 +194,67 @@ function looksBareMinor(symbol: string): boolean {
   return !/[79]|11|13|maj|6/.test(rest);
 }
 
+function fourthOrFifthRootMotion(left: string, right: string): boolean {
+  const a = harmonyRootPc(left);
+  const b = harmonyRootPc(right);
+  if (a === undefined || b === undefined) return false;
+  const delta = (b - a + 12) % 12;
+  return delta === 5 || delta === 7;
+}
+
+function isMinorSeventhFamily(symbol: string): boolean {
+  const tl = parseChordSymbol(stemOnly(symbol)).harmonyPart.toLowerCase();
+  if (/maj|dim|ø|aug|sus|m6|mmaj|m\(maj/.test(tl)) return false;
+  return /min11|min9|min7|m11|m9|m7/.test(tl);
+}
+
+function isMajorLanding(symbol: string): boolean {
+  const tl = parseChordSymbol(stemOnly(symbol)).harmonyPart.toLowerCase();
+  if (/dim|ø|aug|sus|m(?!aj)/.test(tl)) return false;
+  if (looksPlainDominantSeventh(symbol)) return false;
+  return /maj|Δ/.test(tl) || /[a-g][#b]?$/.test(stemOnly(symbol).replace(/\s/g, '').toLowerCase());
+}
+
+/**
+ * R320 guard. Existing colour passes move some roots and still leave an
+ * inherited m7 → dominant → major chain when each root moves by a fourth or fifth.
+ * Tritone-reinterpret the middle dominant. If that bar is identity-locked, plane
+ * the minor chord down a whole step as m6(9). Protected bars stay put.
+ */
+function applyStrayhornIiViRootMotionGuard(
+  out: string[],
+  receipts: string[],
+  tb: number,
+  context: CompositionContext
+): void {
+  for (let start = 1; start <= tb - 2; start++) {
+    const minor = out[start - 1];
+    const dominant = out[start];
+    const landing = out[start + 1];
+    if (!minor || !dominant || !landing) continue;
+    if (!isMinorSeventhFamily(minor) || !looksPlainDominantSeventh(dominant) || !isMajorLanding(landing)) {
+      continue;
+    }
+    if (!fourthOrFifthRootMotion(minor, dominant) || !fourthOrFifthRootMotion(dominant, landing)) continue;
+    const dominantBar = start + 1;
+    if (!isProtectedBar(dominantBar, context)) {
+      const domPc = harmonyRootPc(dominant);
+      if (domPc === undefined) continue;
+      out[start] = `${pitchClassToSharpName((domPc + 6) % 12)}7(b9,13)${slashTail(dominant)}`;
+      receipts.push(`bs:iiVI_defused@bar${dominantBar}`);
+      continue;
+    }
+    if (!isProtectedBar(start, context)) {
+      const minorPc = harmonyRootPc(minor);
+      if (minorPc === undefined) continue;
+      out[start - 1] = `${pitchClassToSharpName((minorPc + 10) % 12)}m6(9)${slashTail(minor)}`;
+      receipts.push(`bs:iiVI_defused@bar${start}`);
+      continue;
+    }
+    receipts.push(`bs:iiVI_unresolved@bar${start}`);
+  }
+}
+
 function isMinorishChord(symbol: string): boolean {
   const tl = parseChordSymbol(stemOnly(symbol)).harmonyPart.toLowerCase();
   if (/maj|Δ|sus|dim|ø|aug/.test(tl)) return false;
@@ -554,6 +615,20 @@ export function precomputeBillyStrayhornEffectiveHarmonyBars(context: Compositio
   const guards: BillyStrayhornAntiElaborationGuards = { bareMajorRaised: 0 };
   const positions = computeStrayhornPhrasePositions(tb, seed, params.phraseArcLength);
 
+  const lockedBars = context.lockedHarmonyBarsRaw;
+  const harmonyLocked =
+    (context.generationMetadata?.harmonyModeRequested ?? context.harmonyModeRequested) ===
+      'custom_locked' &&
+    Array.isArray(lockedBars) &&
+    lockedBars.length === tb;
+  if (harmonyLocked) {
+    genMeta.billyStrayhornEffectiveHarmonyBars = [...lockedBars];
+    genMeta.billyStrayhornDeviceReceipts = ['bs:locked_authority'];
+    genMeta.billyStrayhornAntiElaborationGuards = guards;
+    genMeta.strayhornClosedBlockBars = [];
+    return;
+  }
+
   const raw: string[] = [];
   for (let b = 1; b <= tb; b++) {
     const rawIn = resolveBarSymbol(context, b).symbol;
@@ -584,6 +659,7 @@ export function precomputeBillyStrayhornEffectiveHarmonyBars(context: Compositio
 
   /* Piece-final only: bias toward Strayhorn parallel-planing landings that already pass fBT. */
   biasBillyStrayhornFinalBarIdiomaticOpen(out, seed, tb, receipts, context, tonicPc);
+  applyStrayhornIiViRootMotionGuard(out, receipts, tb, context);
 
   genMeta.billyStrayhornEffectiveHarmonyBars = out;
   genMeta.billyStrayhornDeviceReceipts = receipts;
