@@ -3,13 +3,28 @@
  * Does not validate full schema — only sibling order / obvious scope errors we can detect cheaply.
  */
 
+export interface SibeliusExportMeasureStructureOptions {
+  /**
+   * Parts exported under the explicit piano grand-staff contract.
+   * Those parts still require a backup per extra voice layer. They do not use the
+   * single-staff “exactly one backup” rule.
+   */
+  pianoGrandStaffPartIds?: readonly string[];
+}
+
 /**
  * Throws if exported XML violates measure-level rules for single-staff multi-voice + harmony.
  * - &lt;backup&gt; must not appear inside a &lt;note&gt; element.
  * - Beat-1 &lt;harmony&gt; (when present) must appear before the first &lt;note&gt; in that measure.
  * - &lt;backup&gt; (when present) must appear after the first &lt;note&gt; (voice-1 layer started).
+ * - Ordinary dual-voice parts still require exactly one backup.
+ * - Piano grand-staff parts require voiceCount − 1 backups and a staff tag on every note.
  */
-export function assertSibeliusExportMeasureStructure(xml: string): void {
+export function assertSibeliusExportMeasureStructure(
+  xml: string,
+  options?: SibeliusExportMeasureStructureOptions,
+): void {
+  const pianoIds = new Set(options?.pianoGrandStaffPartIds ?? []);
   const errors: string[] = [];
 
   if (/<note\b[^>]*>(?:(?!<\/note>).)*<backup\b/.test(xml)) {
@@ -22,6 +37,10 @@ export function assertSibeliusExportMeasureStructure(xml: string): void {
     const partId = idMatch?.[1] ?? '';
     const measures = [...pb.matchAll(/<measure\b[^>]*number="(\d+)"[^>]*>([\s\S]*?)<\/measure>/g)];
     const anyVoice2InPart = measures.some((row) => /<voice>2<\/voice>/.test(row[2] ?? ''));
+    const pianoContract = pianoIds.has(partId);
+    if (pianoContract && !/<staves>2<\/staves>/.test(pb)) {
+      errors.push(`part ${partId}: piano grand staff requires <staves>2</staves>`);
+    }
     for (const m of measures) {
       const measureNum = m[1]!;
       const inner = m[2] ?? '';
@@ -38,7 +57,24 @@ export function assertSibeliusExportMeasureStructure(xml: string): void {
           errors.push(`part ${partId} measure ${measureNum}: <backup> before first <note>`);
         }
       }
-      if (anyVoice2InPart) {
+      if (pianoContract) {
+        const backupCount = (inner.match(/<backup>/g) ?? []).length;
+        const voiceNums = [...inner.matchAll(/<voice>(\d+)<\/voice>/g)].map((vm) => Number(vm[1]));
+        const voicesUsed = new Set(voiceNums.filter((v) => Number.isFinite(v) && v >= 1));
+        const expectedBackups = voicesUsed.size > 1 ? voicesUsed.size - 1 : 0;
+        if (backupCount !== expectedBackups) {
+          errors.push(
+            `part ${partId} measure ${measureNum}: piano grand staff requires ${expectedBackups} <backup> for ${voicesUsed.size} voices (found ${backupCount})`
+          );
+        }
+        const noteBlocks = inner.match(/<note\b[^>]*>[\s\S]*?<\/note>/g) ?? [];
+        for (const noteXml of noteBlocks) {
+          if (!/<staff>\d+<\/staff>/.test(noteXml)) {
+            errors.push(`part ${partId} measure ${measureNum}: piano grand staff note missing <staff>`);
+            break;
+          }
+        }
+      } else if (anyVoice2InPart) {
         const backupCount = (inner.match(/<backup>/g) ?? []).length;
         const voiceNums = [...inner.matchAll(/<voice>(\d+)<\/voice>/g)].map((vm) => Number(vm[1]));
         const voicesUsed = new Set(voiceNums.filter((v) => Number.isFinite(v) && v >= 1));

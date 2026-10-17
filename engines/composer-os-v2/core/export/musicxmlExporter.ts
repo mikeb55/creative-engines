@@ -49,6 +49,7 @@ import {
 import { applyContextPitchSpellings, midiToPitch, noteXmlPitchedFragment, noteXmlRestFragment, pitchPartsForExport } from './musicXmlNoteFragment';
 import { logGuitarVoice2CheckpointFromScore } from '../goldenPath/phaseAGuitarPolyphonyProbe';
 import { assertNoteXmlCanonicalChildOrder, assertSibeliusExportMeasureStructure } from './exportMeasureStructureAssert';
+import { pianoGrandStaffEventsToXml } from './pianoGrandStaffXml';
 import { validateMusicXml } from '../../../../src/utils/musicXmlValidator';
 import type { GuitarVoicing } from '../composer/guitarVoicingEngine';
 import { GUITAR_STANDARD_OPEN_STRING_MIDI } from '../composer/guitarVoicingEngine';
@@ -236,6 +237,7 @@ const PART_ABBREV: Record<string, string> = {
   sq_piano: 'Pno.',
   guitar: 'Gtr.',
   bass: 'Bas.',
+  piano: 'Pno.',
   solo: 'Solo',
   zappa_solo: 'Elec.',
 };
@@ -1662,7 +1664,12 @@ ${partList}
             : transposeSemi !== undefined
               ? `      <transpose><chromatic>${transposeSemi}</chromatic></transpose>\n`
               : '';
-          const stavesAndClefXml = guitarInstrumentGroupTabExport
+          const stavesAndClefXml = part.pianoGrandStaff
+            ? `      <staves>2</staves>
+      <clef number="1"><sign>G</sign><line>2</line></clef>
+      <clef number="2"><sign>F</sign><line>4</line></clef>
+`
+            : guitarInstrumentGroupTabExport
             ? `      <staves>2</staves>
       <clef number="1"><sign>G</sign><line>2</line></clef>
       <clef number="2"><sign>TAB</sign><line>5</line></clef>
@@ -1734,7 +1741,8 @@ ${feelDirectionTypeXml}      <sound tempo="${bpm}"/>
             part.id === 'solo' ||
             part.id === 'zappa_solo' ||
             isBigBandPianoPart(part) ||
-            isStringQuartetPianoPart(part));
+            isStringQuartetPianoPart(part) ||
+            part.pianoGrandStaff != null);
         if (writesLeadSheetHarmony) {
           if (
             part.id === 'guitar' &&
@@ -1854,7 +1862,9 @@ ${feelDirectionTypeXml}      <sound tempo="${bpm}"/>
                 ? grooveDrumsEventsToXml(m, i, part, decompose, measureCapacity)
               : guitarInstrumentGroupTabExport
                 ? guitarInstrumentGroupTabEventsToXml(m, i, part, decompose, opts, preferFlats, measureCapacity)
-                : eventsToXml(m, i, part, decompose, opts, preferFlats, forceDualVoiceSecondLayer, measureCapacity);
+                : part.pianoGrandStaff
+                  ? pianoGrandStaffEventsToXml(m, i, part, decompose, preferFlats, measureCapacity)
+                  : eventsToXml(m, i, part, decompose, opts, preferFlats, forceDualVoiceSecondLayer, measureCapacity);
         if (score.repeatMarkers && scoreHasRepeatMarker(score, measureNumber, 'repeat_end')) {
           xml += `    <barline location="right"><bar-style>light-heavy</bar-style><repeat direction="backward"/></barline>\n`;
         }
@@ -1866,7 +1876,9 @@ ${feelDirectionTypeXml}      <sound tempo="${bpm}"/>
     xml += `</score-partwise>
 `;
     xml = applyContextPitchSpellings(xml, score.pitchClassSpelling);
-    assertSibeliusExportMeasureStructure(xml);
+    assertSibeliusExportMeasureStructure(xml, {
+      pianoGrandStaffPartIds: score.parts.filter((p) => p.pianoGrandStaff).map((p) => p.id),
+    });
     assertNoteXmlCanonicalChildOrder(xml);
     if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'production') {
       const result = validateMusicXml(xml);

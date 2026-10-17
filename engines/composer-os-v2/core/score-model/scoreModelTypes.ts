@@ -195,6 +195,15 @@ export interface MeasureModel {
 /** Duo-electric / arrangement shaping (optional; golden-path Indie separate route uses this first). */
 export type DuoElectricVoiceRole = 'chordal' | 'balanced' | 'melodic';
 
+/**
+ * Opt-in grand staff. Absent leaves clef, staves and voice export unchanged.
+ * Voice 1 = RH melody, staff 1. Voice 2 = optional RH inner strand, staff 1. Voice 3 = LH, staff 2.
+ */
+export interface PianoGrandStaffV1 {
+  kind: 'grand-staff-v1';
+  innerVoiceEnabled: boolean;
+}
+
 /** One part (e.g. guitar, bass). */
 export interface PartModel {
   id: string;
@@ -202,6 +211,8 @@ export interface PartModel {
   instrumentIdentity: string;
   midiProgram: number;
   clef: 'treble' | 'bass';
+  /** Explicit piano grand-staff contract. Does not apply to guitar, TAB or renamed keyboard parts. */
+  pianoGrandStaff?: PianoGrandStaffV1;
   measures: MeasureModel[];
   /** Song Mode keyboard-centric writer: export harmony staff as Piano / keys comp (same event layout as duo guitar). */
   songModePresentAsPianoComp?: boolean;
