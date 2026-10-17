@@ -4,6 +4,10 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import {
+  colourSecondaryBlendGuitarPhrase,
+  installComposerProfileHarmonyBlend,
+} from '../song-mode/composerProfileHarmonyBlend';
 import { composerForBar, isMosaicModeActive } from '../mosaic-mode/mosaicBarHelpers';
 import {
   createHarmonyAccumulatorForComposer,
@@ -4644,6 +4648,8 @@ function buildGuitarPart(
     }
   }
 
+  installComposerProfileHarmonyBlend(context);
+
   const seed = context.seed;
   const songwriterMelodyProfile = buildSongwriterMelodyProfile(resolveDuoSlonimskyWriterId(genMeta), seed);
   const hints = readStyleHints(context);
@@ -6993,7 +6999,19 @@ function buildBassPart(
        * `validateBassIdentity` rhythmic-cell fail. Narrow break for those VRB ids only —
        * adjacent anti-duplicate (2-bar) + triple (3-bar) so both Once and seed-sweep stay clean.
        */
-      if (engineVrbId === 'bacharach' || engineVrbId === 'oliver_nelson' || engineVrbId === 'jamerson') {
+      const colourDuoBassCell =
+        !context.generationMetadata?.songModeHookFirstIdentity &&
+        (engineVrbId === 'pat_metheny' ||
+          engineVrbId === 'debussy' ||
+          engineVrbId === 'wayne_shorter' ||
+          engineVrbId === 'joni_mitchell' ||
+          engineVrbId === 'gil_evans');
+      if (
+        engineVrbId === 'bacharach' ||
+        engineVrbId === 'oliver_nelson' ||
+        engineVrbId === 'jamerson' ||
+        colourDuoBassCell
+      ) {
         applyBassRhythmTripleFingerprintBreak(m, measures, {
           rootClamped,
           third,
@@ -8715,6 +8733,7 @@ export function generateGoldenPathDuoScore(
       logEcmInternalPhaseProbe(probeEcm, 'before_metheny_development');
       logEcmInternalPhaseProbe(probeEcm, 'after_metheny_development');
     }
+    colourSecondaryBlendGuitarPhrase(guitarPart, context);
     const phraseGuitarContours = computePhraseGuitarContours(guitarPart, tb);
     logEcmInternalPhaseProbe(probeEcm, 'before_buildBassPart');
     bassPart = buildBassPart(

@@ -5,7 +5,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N rows (M suites)` in the smoke summary, then sync **N** + **M** into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): full **829** PASS rows, **145** suites; fast subset unchanged until refreshed.
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): full **863** PASS rows, **146** suites; fast subset unchanged until refreshed.
  *
  * **Fast subset:** `COMPOSER_OS_SMOKE_TIER=fast` or `npm run test:composer-smoke-fast` — skips `SMOKE_FAST_EXCLUDE` suites (local dev).
  * **Full tier (default / CI):** unset or `COMPOSER_OS_SMOKE_TIER=full` — all suites in `smokeSuites`.
@@ -121,6 +121,7 @@ import { runHarmonySpineLockSmokeTests } from './harmonySpineLock.smoke.test';
 import { runOutputValidationSmokeTests } from './outputValidationSmoke.test';
 import { runV33AdvancedCompositionTests } from './v33AdvancedComposition.test';
 import { runV34StageCTests } from './v34StageC.test';
+import { runV34StageDProfileBlendTests } from './v34StageDProfileBlend.test';
 import { runSqSwingRhythmTests } from './sqSwingRhythm.test';
 import { runPorterGershwinDistinctionTests } from './porterGershwinDistinction.test';
 import { runSqAntimetricRhythmTests } from './sqAntimetricRhythm.test';
@@ -352,6 +353,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Output validation — MIDI + MusicXML structural', run: runOutputValidationSmokeTests },
   { label: 'V3.3 advanced composition foundations', run: runV33AdvancedCompositionTests },
   { label: 'V3.4 Stage C chamber orchestration', run: runV34StageCTests },
+  { label: 'V3.4 Stage D profile blending', run: runV34StageDProfileBlendTests },
 ];
 
 function toRows(results: { name: string; ok: boolean }[] | { ok: boolean; name: string }[]): Row[] {

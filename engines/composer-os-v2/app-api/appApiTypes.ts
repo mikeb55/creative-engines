@@ -444,8 +444,13 @@ export interface GenerateRequest {
   stochasticRenderOrdinal?: number;
   /** Song Mode primary songwriter id (e.g. `beatles`). */
   primarySongwriterStyle?: string;
-  /** Song Mode: secondary songwriter id — blended ~35% with primary in `resolveSongwritingStyles`. */
+  /** Song Mode: secondary songwriter id — blended with primary. Omitted weight stays 0.35. */
   secondarySongwriterStyle?: string;
+  /**
+   * Song Mode secondary share, 0–1. 0 keeps primary-only notes. 1 uses the secondary slice
+   * when that slice exists. Omitted keeps 0.35.
+   */
+  songwriterBlendWeight?: number;
   /** Song Mode: lyric author overlay (`AuthorRuleId`), e.g. `jimmy_webb`. */
   authorOverlay?: string;
   /** Song Mode: classical song / lieder overlay (`ClassicalSongRuleId`), e.g. `schubert`. */

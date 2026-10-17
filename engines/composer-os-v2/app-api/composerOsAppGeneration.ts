@@ -1482,6 +1482,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     musicXmlLeadSheet: musicXmlLeadSheetForSongMode,
     primarySongwriterStyle: req.primarySongwriterStyle,
     secondarySongwriterStyle: secondarySw,
+    songwriterBlendWeight: req.songwriterBlendWeight,
     authorOverlay: authorOv as AuthorRuleId | undefined,
     beatlesFormTemplate: req.beatlesFormTemplate,
     beatlesMelodicLens: req.beatlesMelodicLens,
@@ -1775,6 +1776,8 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     importHarmonyMode: normalizedImportHarmonyMode,
     harmonyBlend: harmonyBlendRaw,
     secondarySongwriterStyle: secondarySw,
+    songwriterBlendWeight: req.songwriterBlendWeight,
+    ...(typeof req.bpm === 'number' && Number.isFinite(req.bpm) && req.bpm > 0 ? { bpm: req.bpm } : {}),
     authorOverlay: authorOv,
     classicalOverlay: classicalOv,
     alternateGuitarTuning: alternateGuitarTuningForGoldenPath,
@@ -2027,10 +2030,17 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   gp.runManifest.importHarmonyLockedBarsCount = importHarmonyLockedBarsCount;
   const resolvedSongModeStyle = sm.compiledSong.songwriting?.resolvedStyle;
   if (resolvedSongModeStyle) {
+    const blendReceipt = gp.context.generationMetadata.composerProfileBlend;
     gp.context.generationMetadata.songModeProfileRuleDiagnostics = {
-      styleProfile: req.styleProfile ?? 'STYLE_ECM',
-      primarySongwriterStyleId: resolvedSongModeStyle.primaryId,
-      secondarySongwriterStyleId: resolvedSongModeStyle.secondaryId,
+      styleProfile: gp.context.generationMetadata.styleProfile ?? req.styleProfile ?? 'STYLE_ECM',
+      primarySongwriterStyleId: (blendReceipt?.requestedPrimaryId ??
+        resolvedSongModeStyle.primaryId) as typeof resolvedSongModeStyle.primaryId,
+      secondarySongwriterStyleId:
+        blendReceipt?.status === 'primary_only'
+          ? null
+          : ((blendReceipt?.requestedSecondaryId ?? resolvedSongModeStyle.secondaryId) as
+              | typeof resolvedSongModeStyle.secondaryId
+              | null),
       authorOverlayId: resolvedSongModeStyle.authorOverlayId,
       classicalOverlayId: resolvedSongModeStyle.classicalOverlayId,
       styleFingerprint: resolvedSongModeStyle.styleFingerprint,
@@ -2039,6 +2049,9 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       bacharachSongModeRuleBundleId: gp.context.generationMetadata.bacharachSongModeRuleBundleId,
       behaviourSourceIds:
         gp.context.generationMetadata.songModeSectionBehaviourDescriptors?.map((d) => d.sliceId) ?? [],
+      composerProfileBlendStatus: blendReceipt?.status,
+      composerProfileBlendWeight: blendReceipt?.weight,
+      composerProfileBlendReason: blendReceipt?.reason,
     };
     gp.runManifest.songModeProfileRuleDiagnostics = gp.context.generationMetadata.songModeProfileRuleDiagnostics;
   }
@@ -2313,7 +2326,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
       styleStackPrimaryDisplayName: gp.context.generationMetadata.styleStackPrimaryDisplayName,
       userSelectedStyleDisplayNames: gp.context.generationMetadata.userSelectedStyleDisplayNames,
       userExplicitPrimaryStyle: gp.context.generationMetadata.userExplicitPrimaryStyle,
-      styleProfile: req.styleProfile ?? 'STYLE_ECM',
+      styleProfile: gp.context.generationMetadata.styleProfile ?? req.styleProfile ?? 'STYLE_ECM',
       chordProgressionSubmittedRaw: gp.runManifest.chordProgressionSubmittedRaw,
       parsedChordBarsSnapshot: gp.runManifest.parsedChordBarsSnapshot,
       pipelineTruthInputStage: gp.runManifest.pipelineTruthInputStage,

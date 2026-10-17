@@ -33,6 +33,8 @@ import type { SongHook } from './songHookTypes';
 import type { SongSectionKind, SongSectionPlan, SongVoiceType } from './songModeTypes';
 import { DEFAULT_SONG_VOICE_TYPE } from './songModeTypes';
 import { resolveSongwritingStyles } from './songwriterStyleResolver';
+import { harmonySliceBlendSupported } from './composerProfileBlendIds';
+import { normalizeSongwriterStyleKey } from './songwriterStyleProfiles';
 import type { AuthorRuleId, ClassicalSongRuleId, SongwriterRuleId } from './songwritingResearchTypes';
 import type { StylePairingInput } from '../style-pairing/stylePairingTypes';
 import { resolveStylePairing } from '../style-pairing/stylePairingResolver';
@@ -3785,6 +3787,7 @@ export interface BuildCompiledSongParams {
   researchPathOverride?: string;
   primarySongwriterStyle?: SongwriterRuleId | string | null;
   secondarySongwriterStyle?: SongwriterRuleId | string | null;
+  songwriterBlendWeight?: number;
   authorOverlay?: AuthorRuleId | null;
   classicalOverlay?: ClassicalSongRuleId | null;
   /** Optional songwriter ↔ arranger pairing (metadata + light contrast nudge). */
@@ -3810,11 +3813,17 @@ export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong
   const research = params.researchPathOverride
     ? loadSongwritingResearchFromPath(params.researchPathOverride)
     : loadSongwritingResearchFromEnvOrDefault();
+  const secondaryKey =
+    typeof params.secondarySongwriterStyle === 'string'
+      ? normalizeSongwriterStyleKey(params.secondarySongwriterStyle)
+      : (params.secondarySongwriterStyle ?? null);
+  const secondaryHarmonySupported = !secondaryKey || harmonySliceBlendSupported(secondaryKey);
   const resolution = resolveSongwritingStyles({
     primary: params.primarySongwriterStyle ?? undefined,
     secondary: params.secondarySongwriterStyle ?? undefined,
     authorOverlay: params.authorOverlay ?? undefined,
     classicalOverlay: params.classicalOverlay ?? undefined,
+    blendWeight: secondaryHarmonySupported ? params.songwriterBlendWeight : 0,
   });
   const hookPlan = planHookMetadata(params.seed, params.sections, resolution.primaryId);
   const chorusPlan = planChorusMetadata(params.sections, resolution.primaryId);

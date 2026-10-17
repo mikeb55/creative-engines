@@ -11,6 +11,7 @@ import {
   type SongwriterStyleProfile,
   normalizeSongwriterStyleKey,
 } from './songwriterStyleProfiles';
+import { blendSongwriterProfiles, resolveSongwriterBlendWeight } from './composerProfileBlendIds';
 
 export interface SongwriterStyleResolutionInput {
   /** When omitted, uses `DEFAULT_PRIMARY_SONGWRITER_STYLE`. */
@@ -18,6 +19,8 @@ export interface SongwriterStyleResolutionInput {
   secondary?: string | SongwriterRuleId | null;
   authorOverlay?: AuthorRuleId | null;
   classicalOverlay?: ClassicalSongRuleId | null;
+  /** Secondary share. Omitted with a secondary id keeps 0.35. */
+  blendWeight?: number;
 }
 
 export interface ResolvedSongwritingStyle {
@@ -37,36 +40,7 @@ function clamp01(n: number): number {
 }
 
 function blendProfiles(a: SongwriterStyleProfile, b: SongwriterStyleProfile, weightB: number): SongwriterStyleProfile {
-  const w = clamp01(weightB);
-  const blend = (
-    ka:
-      | 'lineVsCellEmphasis'
-      | 'harmonyColourBias'
-      | 'formRegularity'
-      | 'prosodyInfluence'
-      | 'hookRepetitionBias'
-      | 'phraseRegularity'
-      | 'hookReturnVariation'
-      | 'harmonicSpeed'
-      | 'sectionContrast'
-      | 'syncopationBias'
-      | 'densityBias'
-  ) =>
-    a[ka] * (1 - w) + b[ka] * w;
-  return {
-    id: a.id,
-    lineVsCellEmphasis: blend('lineVsCellEmphasis'),
-    harmonyColourBias: blend('harmonyColourBias'),
-    formRegularity: blend('formRegularity'),
-    prosodyInfluence: blend('prosodyInfluence'),
-    hookRepetitionBias: blend('hookRepetitionBias'),
-    phraseRegularity: blend('phraseRegularity'),
-    hookReturnVariation: blend('hookReturnVariation'),
-    harmonicSpeed: blend('harmonicSpeed'),
-    sectionContrast: blend('sectionContrast'),
-    syncopationBias: blend('syncopationBias'),
-    densityBias: blend('densityBias'),
-  };
+  return blendSongwriterProfiles(a, b, weightB);
 }
 
 /**
@@ -150,7 +124,8 @@ export function resolveSongwritingStyles(input: SongwriterStyleResolutionInput):
 
   const p1 = SONGWRITER_STYLE_PROFILES[primaryId];
   const p2 = secondaryId ? SONGWRITER_STYLE_PROFILES[secondaryId] : null;
-  const blendedProfile = p2 ? blendProfiles(p1, p2, 0.35) : { ...p1 };
+  const blendWeight = p2 ? resolveSongwriterBlendWeight(input.blendWeight, true) : 0;
+  const blendedProfile = p2 && blendWeight > 0 ? blendProfiles(p1, p2, blendWeight) : { ...p1 };
 
   if (authorOverlayId) {
     const ao = resolveAuthorOverlay(authorOverlayId);

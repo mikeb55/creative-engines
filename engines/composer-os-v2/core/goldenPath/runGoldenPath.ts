@@ -213,6 +213,10 @@ import { normalizeSongwriterStyleKey } from '../song-mode/songwriterStyleProfile
 import type { AlternateGuitarTuningResolved } from '../song-mode/alternateGuitarTunings';
 import { styleProfileSupportsAlternateGuitarTuning } from '../song-mode/alternateGuitarTunings';
 import {
+  routeSongwriterBlendOptions,
+  type ComposerProfileBlendReceipt,
+} from '../song-mode/composerProfileBlendIds';
+import {
   appendSongModeStyleSurfaceNotes,
   applyBacharachSongModeSurfaceV1,
   applyBacharachStyleSurface,
@@ -352,8 +356,16 @@ function augmentGuitarBassDuoReceiptMetadata(ctx: CompositionContext, styleStack
     ? ([styleStack.primary, styleStack.secondary, styleStack.colour].filter(Boolean) as string[])
     : [];
   const userSelectedStyleDisplayNames = ids.map((id) => getStyleModuleDisplayName(id));
+  const sliceId = ctx.generationMetadata.songwriterStyleId;
+  const blend = ctx.generationMetadata.composerProfileBlend;
   ctx.generationMetadata.styleGrammarLabel =
-    'Duo default jazz grammar (Barry Harris–derived internal rules)';
+    ctx.generationMetadata.songModeHookFirstIdentity && sliceId
+      ? blend?.status === 'phrase_block'
+        ? `Song Mode harmony slice blend (${blend.requestedPrimaryId} + ${blend.requestedSecondaryId})`
+        : blend?.status === 'unsupported_secondary'
+          ? `Song Mode harmony slice (${sliceId}); secondary ${blend.requestedSecondaryId} unsupported`
+          : `Song Mode harmony slice (${sliceId})`
+      : 'Duo default jazz grammar (Barry Harris–derived internal rules)';
   ctx.generationMetadata.harmonySourceUsed = ctx.generationMetadata.harmonySource;
   ctx.generationMetadata.styleStackPrimaryModuleId = primary;
   ctx.generationMetadata.styleStackPrimaryDisplayName = getStyleModuleDisplayName(primary);
@@ -1303,6 +1315,10 @@ export interface RunGoldenPathOptions {
   harmonyBlend?: number;
   /** Song Mode: optional secondary songwriter style key (for inspectability metadata). */
   secondarySongwriterStyle?: string;
+  /** Secondary share of a Song Mode composer-profile blend. Omitted keeps 0.35. */
+  songwriterBlendWeight?: number;
+  /** Set by blend routing. Weight 0 and unsupported secondaries do not change primary notes. */
+  composerProfileBlend?: ComposerProfileBlendReceipt;
   /** Song Mode: optional author overlay id (for inspectability metadata). */
   authorOverlay?: string;
   /** Song Mode v1 (Indie Art Pop): resolved optional alternate tuning envelope. */
@@ -2224,6 +2240,7 @@ function wireResolvedBarMeterMapToContext(
  * For `custom_locked` / parsed text, pass `parsedChordBars` + `lockedHarmonyBarsRaw` as `runGoldenPath` does after its resolve step; text alone is not enough.
  */
 export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions): GoldenPathResult {
+  options = routeSongwriterBlendOptions(options);
   const errors: string[] = [];
   let songModePhraseWarnings: string[] = [];
   const isIndieTuningFixture = options?.debugFixtureMode === 'indie_dual_guitar_tuning_proof';
@@ -2508,6 +2525,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       secondary: options.secondarySongwriterStyle,
       authorOverlay: options.authorOverlay as AuthorRuleId | undefined,
       classicalOverlay: options.classicalOverlay as ClassicalSongRuleId | undefined,
+      blendWeight: options.songwriterBlendWeight,
     });
     const p = resolution.blendedProfile;
     context.generationMetadata = {
@@ -2527,14 +2545,25 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       bacharachModalMixtureLevel: p.bacharachModalMixtureLevel ?? 0,
       bacharachCadentialAmbiguity: p.bacharachCadentialAmbiguity ?? 0,
       bacharachPedalUsage: p.bacharachPedalUsage ?? 0,
+      composerProfileBlend: options.composerProfileBlend,
       songModeProfileRuleDiagnostics: {
         styleProfile: context.generationMetadata.styleProfile,
-        primarySongwriterStyleId: resolution.primaryId,
-        secondarySongwriterStyleId: resolution.secondaryId,
+        primarySongwriterStyleId: options.composerProfileBlend?.requestedPrimaryId
+          ? (options.composerProfileBlend.requestedPrimaryId as typeof resolution.primaryId)
+          : resolution.primaryId,
+        secondarySongwriterStyleId:
+          options.composerProfileBlend?.status === 'primary_only'
+            ? null
+            : options.composerProfileBlend
+              ? (options.composerProfileBlend.requestedSecondaryId as typeof resolution.secondaryId)
+              : resolution.secondaryId,
         authorOverlayId: resolution.authorOverlayId,
         classicalOverlayId: resolution.classicalOverlayId,
         styleFingerprint: resolution.styleFingerprint,
         resolvedRuleIds: resolution.resolvedRuleIds,
+        composerProfileBlendStatus: options.composerProfileBlend?.status,
+        composerProfileBlendWeight: options.composerProfileBlend?.weight,
+        composerProfileBlendReason: options.composerProfileBlend?.reason,
       },
       jobimMode: resolution.primaryId === 'antonio_carlos_jobim',
     };

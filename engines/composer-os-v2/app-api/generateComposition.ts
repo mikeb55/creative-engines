@@ -418,6 +418,43 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
       },
     };
   }
+  const duoPrimarySw = typeof req.primarySongwriterStyle === 'string' ? req.primarySongwriterStyle.trim() : '';
+  const duoSecondarySw =
+    typeof req.secondarySongwriterStyle === 'string' ? req.secondarySongwriterStyle.trim() : '';
+  const duoZappaForward = duoPrimarySw.toLowerCase() === 'frank_zappa';
+  const duoSongwriterClaimIsBandOrMosaic =
+    req.bandModeEnabled === true ||
+    (Array.isArray(req.mosaicSectionPlan) && req.mosaicSectionPlan.length > 0);
+  if (duo && (duoPrimarySw || duoSecondarySw) && !duoZappaForward && !duoSongwriterClaimIsBandOrMosaic) {
+    const err =
+      `Guitar/Bass Duo does not apply songwriter profiles ` +
+      `(primary=${duoPrimarySw || '-'}, secondary=${duoSecondarySw || '-'}). ` +
+      `Those ids were not applied. Use Song Mode for composer-profile blending.`;
+    return {
+      success: false,
+      error: err,
+      composerOsVersion: COMPOSER_OS_VERSION,
+      productKind: 'musicxml',
+      validation: {
+        integrityPassed: false,
+        behaviourGatesPassed: false,
+        mxValidationPassed: false,
+        strictBarMathPassed: false,
+        exportRoundTripPassed: false,
+        exportIntegrityPassed: false,
+        instrumentMetadataPassed: false,
+        sibeliusSafe: false,
+        readiness: { shareable: false, release: 0, mx: 0 },
+        errors: [err],
+      },
+      runManifest: {
+        seed: req.seed,
+        presetId: req.presetId,
+        activeModules: [],
+        timestamp: new Date().toISOString(),
+      },
+    };
+  }
   const result =
     sectionRegen && sectionRegen.ok
       ? sectionRegen.result
@@ -479,6 +516,7 @@ export function generateComposition(req: GenerateRequest, outputDir: string): Ge
                   : {}),
               }
             : {}),
+          ...(typeof req.bpm === 'number' && Number.isFinite(req.bpm) && req.bpm > 0 ? { bpm: req.bpm } : {}),
           ...(typeof req.stochasticVariance === 'number' ? { stochasticVariance: req.stochasticVariance } : {}),
           ...(typeof req.stochasticRenderOrdinal === 'number'
             ? { stochasticRenderOrdinal: req.stochasticRenderOrdinal }

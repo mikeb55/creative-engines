@@ -778,7 +778,12 @@ export interface GenerationMetadata {
     songwriterCompProfileId?: SongwriterRuleId;
     bacharachSongModeRuleBundleId?: string;
     behaviourSourceIds?: string[];
+    composerProfileBlendStatus?: 'primary_only' | 'phrase_block' | 'secondary_authoritative' | 'unsupported_secondary';
+    composerProfileBlendWeight?: number;
+    composerProfileBlendReason?: string;
   };
+  /** Song Mode phrase-block blend of two harmony slices. Absent when no secondary was requested. */
+  composerProfileBlend?: import('./song-mode/composerProfileBlendIds').ComposerProfileBlendReceipt;
   /** Fagen-only keys-comp musical augmentations — inspectable objective metrics for A/B tooling. */
   fagenKeysCompMusicalDiagnostics?: {
     rhythmPatternFamily: string;

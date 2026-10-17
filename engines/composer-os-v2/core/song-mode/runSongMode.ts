@@ -49,6 +49,8 @@ export interface SongModeRunInput {
   /** Default `beatles` when omitted. Must not be `null`. */
   primarySongwriterStyle?: SongwriterRuleId | string | null;
   secondarySongwriterStyle?: SongwriterRuleId | string | null;
+  /** Secondary share. Omitted keeps 0.35 when a secondary id is set. */
+  songwriterBlendWeight?: number;
   authorOverlay?: AuthorRuleId | null;
   classicalOverlay?: ClassicalSongRuleId | null;
   /** Optional songwriter ↔ arranger pairing (additive metadata). */
@@ -135,6 +137,7 @@ export function runSongMode(input: SongModeRunInput): SongModeRunResult {
     researchPathOverride: input.researchPathOverride,
     primarySongwriterStyle: input.primarySongwriterStyle ?? undefined,
     secondarySongwriterStyle: secondaryTrimmed,
+    songwriterBlendWeight: input.songwriterBlendWeight,
     authorOverlay: authorTrimmed,
     classicalOverlay: input.classicalOverlay ?? undefined,
     stylePairing: input.stylePairing ?? undefined,
