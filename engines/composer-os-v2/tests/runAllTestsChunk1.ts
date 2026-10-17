@@ -6,6 +6,7 @@ import { runConductorTests } from './conductor.test';
 import { runRhythmEngineTests } from './rhythmEngine.test';
 import { runAfrobeatRhythmEngineTests } from './afrobeatRhythmEngine.test';
 import { runBartokBulgarianAksakRhythmEngineTests } from './bartokBulgarianAksakRhythmEngine.test';
+import { runBartokB1NativeAksakTests } from './bartokB1NativeAksak.test';
 import { runFreeProportionalRhythmEngineTests } from './freeProportionalRhythmEngine.test';
 import { runBaroqueDanceRhythmEngineTests } from './baroqueDanceRhythmEngine.test';
 import { runReichPhasingGridRhythmEngineTests } from './reichPhasingGridRhythmEngine.test';
@@ -68,6 +69,7 @@ const suites: SuiteEntry[] = [
   { name: 'Rhythm Engine', run: runRhythmEngineTests },
   { name: 'Afrobeat rhythm engine (Tony Allen grids)', run: runAfrobeatRhythmEngineTests },
   { name: 'Bartók Bulgarian aksak SQ rhythm engine', run: runBartokBulgarianAksakRhythmEngineTests },
+  { name: 'Bartók B1 native 9/16', run: runBartokB1NativeAksakTests },
   { name: 'Free / proportional SQ rhythm engine', run: runFreeProportionalRhythmEngineTests },
   { name: 'Baroque dance SQ rhythm engine', run: runBaroqueDanceRhythmEngineTests },
   { name: 'Reich phasing grid SQ rhythm engine', run: runReichPhasingGridRhythmEngineTests },

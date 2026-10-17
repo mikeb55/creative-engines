@@ -185,6 +185,11 @@ export interface MeasureModel {
   measureBeatSpanQuarters?: number;
   /** Optional duo narrative tag (peak bar, handoff, final cadence). */
   momentTag?: MomentTag;
+  /**
+   * Bartók B1 opt-in only. Sixteenth snap for this bar, and undotted splits of one
+   * note stay one sounding attack. Absent leaves the existing eighth seal unchanged.
+   */
+  b1PulsePreserve?: true;
 }
 
 /** Duo-electric / arrangement shaping (optional; golden-path Indie separate route uses this first). */

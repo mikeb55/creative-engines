@@ -78,6 +78,14 @@ export interface DuoAttackGridValidationResult {
   errors: string[];
 }
 
+function isSixteenthSlot(beats: number, barSpanQuarters: number): boolean {
+  const slots = Math.max(0, Math.round(barSpanQuarters * 4));
+  for (let i = 0; i < slots; i++) {
+    if (Math.abs(beats - i * 0.25) < EPS) return true;
+  }
+  return false;
+}
+
 function checkMeasureAttacks(
   partId: string,
   m: MeasureModel,
@@ -85,6 +93,16 @@ function checkMeasureAttacks(
 ): void {
   const num = m.index;
   const span = measureBeatSpanQuartersOf(m);
+  if (m.b1PulsePreserve) {
+    for (const e of m.events) {
+      if (e.kind !== 'note' && e.kind !== 'rest') continue;
+      const sb = (e as { startBeat: number }).startBeat;
+      if (!isSixteenthSlot(sb, span)) {
+        errors.push(`Duo attack grid: ${partId} bar ${num} ${e.kind} start ${sb} not on 16th grid span ${span} beats`);
+      }
+    }
+    return;
+  }
   const gridLabel =
     span === BEATS_PER_MEASURE ? '{0,0.5,…,3.5}' : `eighth grid span ${span} beats`;
   for (const e of m.events) {

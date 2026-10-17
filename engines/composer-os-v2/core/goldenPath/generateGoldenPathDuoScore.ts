@@ -4,6 +4,7 @@
  */
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
+import { applyBartokB1NativeAksak, confirmBartokB1Finalisation } from '../rhythm/bartokBulgarianAksakRhythmEngine';
 import {
   colourSecondaryBlendGuitarPhrase,
   installComposerProfileHarmonyBlend,
@@ -9286,6 +9287,7 @@ export function generateGoldenPathDuoScore(
   ) {
     applyWybleDuoVelocityPolicy(afterExpressive);
   }
+  applyBartokB1NativeAksak(afterExpressive, context);
   stampAllMeasuresBeatSpansFromContext(afterExpressive, context);
   if (isFrankZappaSongwriterId(context.generationMetadata?.songwriterStyleId)) {
     const map = effectiveBarMeterMapForDuo(context);
@@ -9324,6 +9326,13 @@ export function generateGoldenPathDuoScore(
           }
         : undefined,
   });
+  const b1Receipt = context.generationMetadata?.bartokB1Receipt;
+  if (b1Receipt?.status === 'applied' && context.generationMetadata) {
+    context.generationMetadata = {
+      ...context.generationMetadata,
+      bartokB1Receipt: confirmBartokB1Finalisation(afterExpressive, b1Receipt),
+    };
+  }
   if (zappaFerocitySoloLane && context.generationMetadata?.soloLine) {
     afterExpressive = mergeZappaSoloPart(afterExpressive, context.generationMetadata.soloLine);
     const zappaSoloPart = afterExpressive.parts.find((p) => p.id === 'zappa_solo');

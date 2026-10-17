@@ -318,6 +318,14 @@ export interface GenerationMetadata {
   /** V3.4 E1 checkpoint 3B. Absent unless the request sets `e1VoiceRelations`. */
   e1VoiceRelations?: boolean;
   e1VoiceRelationsReceipt?: import('./song-mode/e1Checkpoint3bPitchMembership').E1VoiceRelationsReceipt;
+  /**
+   * V3.4 Bartók B1. Absent unless the request sets `bartokB1Aksak`.
+   * Does not select `sq_vrb_bartok` and does not run when the flag is off.
+   */
+  bartokB1Aksak?: boolean;
+  /** 1-based bars that receive native 9/16 B1 events. */
+  bartokB1Bars?: number[];
+  bartokB1Receipt?: import('./rhythm/bartokBulgarianAksakRhythmEngine').BartokB1NativeReceipt;
   /** Optional era hint (e.g. style pairing); set from `RunGoldenPathOptions.era` for downstream use. */
   era?: string;
   durationMs?: number;

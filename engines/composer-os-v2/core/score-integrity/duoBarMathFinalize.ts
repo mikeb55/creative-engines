@@ -46,7 +46,25 @@ function decomposeIntoUndottedPieces(total: number): number[] {
   return out;
 }
 
-function expandVoiceEventsUndotted(events: ScoreEvent[]): ScoreEvent[] {
+type NoteTie = 'start' | 'stop' | 'continue';
+
+/**
+ * Fragments of one note. Ties come from the split itself, not from a neighbouring
+ * note that happens to share a pitch.
+ */
+function tieForSplitFragment(original: NoteTie | undefined, index: number, count: number): NoteTie | undefined {
+  if (count === 1) return original;
+  const incoming = original === 'stop' || original === 'continue';
+  const outgoing = original === 'start' || original === 'continue';
+  const tieIn = incoming || index > 0;
+  const tieOut = outgoing || index < count - 1;
+  if (tieIn && tieOut) return 'continue';
+  if (tieOut) return 'start';
+  if (tieIn) return 'stop';
+  return undefined;
+}
+
+function expandVoiceEventsUndotted(events: ScoreEvent[], preserveSoundingTies: boolean): ScoreEvent[] {
   const sorted = [...events].sort((a, b) => a.startBeat - b.startBeat);
   const out: ScoreEvent[] = [];
   for (const e of sorted) {
@@ -57,10 +75,24 @@ function expandVoiceEventsUndotted(events: ScoreEvent[]): ScoreEvent[] {
     if (e.kind === 'note') {
       const n = e as NoteEvent;
       pieces.forEach((piece, i) => {
-        const nn = createNote(n.pitch, t, piece, voice, n.motifRef);
+        const nn = createNote(
+          n.pitch,
+          t,
+          piece,
+          voice,
+          n.motifRef,
+          preserveSoundingTies && n.pitches ? [...n.pitches] : undefined,
+        );
         if (i === 0) {
           if (n.articulation) nn.articulation = n.articulation;
           if (n.velocity !== undefined) nn.velocity = n.velocity;
+          if (n.spelling) nn.spelling = { ...n.spelling };
+          if (n.durationAccent) nn.durationAccent = n.durationAccent;
+          if (n.notation) nn.notation = { ...n.notation };
+        }
+        if (preserveSoundingTies && pieces.length > 1) {
+          const tie = tieForSplitFragment(n.notation?.tie, i, pieces.length);
+          if (tie) nn.notation = { ...(nn.notation ?? {}), tie };
         }
         out.push(nn);
         t = snapSixteenthBeat(t + piece);
@@ -103,8 +135,9 @@ function expandUndottedPreferredInMeasure(m: MeasureModel): void {
     byVoice.get(v)!.push(e);
   }
   const rebuilt: ScoreEvent[] = [];
+  const preserveSoundingTies = m.b1PulsePreserve === true;
   for (const v of [...byVoice.keys()].sort((a, b) => a - b)) {
-    rebuilt.push(...expandVoiceEventsUndotted(byVoice.get(v)!));
+    rebuilt.push(...expandVoiceEventsUndotted(byVoice.get(v)!, preserveSoundingTies));
   }
   m.events = rebuilt;
 }
@@ -239,6 +272,9 @@ function rebuildMonophonicVoiceLine(
       const nn = createNote(n.pitch, sb, dur, voice, n.motifRef, n.pitches ? [...n.pitches] : undefined);
       if (n.articulation) nn.articulation = n.articulation;
       if (n.velocity !== undefined) nn.velocity = n.velocity;
+      if (n.spelling) nn.spelling = { ...n.spelling };
+      if (n.durationAccent) nn.durationAccent = n.durationAccent;
+      if (n.notation) nn.notation = { ...n.notation };
       out.push(nn);
     } else if (e.kind === 'chord') {
       const c = e as ChordEvent;
@@ -322,7 +358,8 @@ export function finalizeScoreBarMathPerVoice(score: ScoreModel): void {
     const forceBassMono = p.instrumentIdentity === 'acoustic_upright_bass';
     const partMode: RhythmSnapMode = p.id === 'groove_drums' ? 'quarter' : mode;
     for (const m of p.measures) {
-      finalizeMeasureBarMathPerVoice(m, { forceBassMonoVoice1: forceBassMono, rhythmSnap: partMode });
+      const rhythmSnap: RhythmSnapMode = m.b1PulsePreserve ? 'quarter' : partMode;
+      finalizeMeasureBarMathPerVoice(m, { forceBassMonoVoice1: forceBassMono, rhythmSnap });
     }
   }
 }
@@ -446,6 +483,7 @@ function restoreGuitarBar25HookPitchesFromBar1(score: ScoreModel, presetId?: str
   const m1 = guitar.measures.find((x) => x.index === 1);
   const m25 = guitar.measures.find((x) => x.index === 25);
   if (!m1 || !m25) return;
+  if (m1.b1PulsePreserve || m25.b1PulsePreserve) return;
   const chord1 = m1.chord ?? 'Cmaj7';
   const chord25 = m25.chord ?? chord1;
   const n1 = m1.events
@@ -505,6 +543,7 @@ function clampGuitarBar24LastNoteOctaveBeforeBar25(score: ScoreModel): void {
   const m24 = guitar.measures.find((x) => x.index === 24);
   const m25 = guitar.measures.find((x) => x.index === 25);
   if (!m24 || !m25) return;
+  if (m24.b1PulsePreserve || m25.b1PulsePreserve) return;
   const notes24 = m24.events
     .filter((e) => e.kind === 'note')
     .sort((a, b) => a.startBeat - b.startBeat) as NoteEvent[];

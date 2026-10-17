@@ -872,7 +872,7 @@ export function applyDuoVaultFinalResnapPass(
 
   for (const rec of receipts) {
     const measure = guitar.measures.find((m) => m.index === rec.bar);
-    if (!measure) continue;
+    if (!measure || measure.b1PulsePreserve) continue;
     const row = getOrCreateReSnapBarTelemetry(byBar, rec.bar);
     const resolved = resolveReceiptV1Event(measure, rec);
     if (!resolved) continue;
@@ -918,7 +918,7 @@ export function applyDuoVaultFinalResnapPass(
 
   for (const d of declined) {
     const measure = guitar.measures.find((m) => m.index === d.bar);
-    if (!measure) continue;
+    if (!measure || measure.b1PulsePreserve) continue;
     const row = getOrCreateReSnapBarTelemetry(byBar, d.bar);
     row.declinedNotesChecked++;
 

@@ -1330,6 +1330,13 @@ export interface RunGoldenPathOptions {
    * Omitted or false leaves those note events unchanged. Pärt M/T is not gated by this flag.
    */
   e1VoiceRelations?: boolean;
+  /**
+   * V3.4 Bartók B1 — opt-in 9/16 `4+2+3` sixteenth attacks on `bartokB1Bars`.
+   * Omitted or false leaves the 4/4 Song Mode line unchanged.
+   */
+  bartokB1Aksak?: boolean;
+  /** 1-based bars. Required when `bartokB1Aksak` is true. */
+  bartokB1Bars?: number[];
   /** Set by blend routing. Weight 0 and unsupported secondaries do not change primary notes. */
   composerProfileBlend?: ComposerProfileBlendReceipt;
   /** Song Mode: optional author overlay id (for inspectability metadata). */
@@ -2942,6 +2949,13 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
     appliedContext.generationMetadata = {
       ...appliedContext.generationMetadata,
       e1VoiceRelations: true,
+    };
+  }
+  if (options?.bartokB1Aksak === true) {
+    appliedContext.generationMetadata = {
+      ...appliedContext.generationMetadata,
+      bartokB1Aksak: true,
+      bartokB1Bars: options.bartokB1Bars,
     };
   }
   try {
