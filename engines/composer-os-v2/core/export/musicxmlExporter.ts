@@ -192,6 +192,9 @@ function instrumentSoundXmlForPart(p: PartModel): string {
   if (isRiffOverdrivenSoloPart(p)) {
     return `<instrument-sound>${RIFF_SOLO_GUITAR_SOUND_ID}</instrument-sound>`;
   }
+  if (p.catalogueInstrumentSound) {
+    return `<instrument-sound>${escapeXml(p.catalogueInstrumentSound)}</instrument-sound>`;
+  }
   return '';
 }
 
@@ -337,6 +340,25 @@ function buildArticulationNotations(
   return `<notations><articulations>${tags.join('')}</articulations></notations>`;
 }
 
+function explicitTieXml(
+  kind: 'start' | 'stop' | 'continue' | undefined,
+  index: number,
+  count: number,
+): string {
+  if (!kind) return '';
+  const atStart = index === 0;
+  const atEnd = index === count - 1;
+  if (kind === 'start' && atStart) return '<tie type="start"/>';
+  if (kind === 'stop' && atEnd) return '<tie type="stop"/>';
+  if (kind === 'continue') {
+    if (atStart && atEnd) return '<tie type="stop"/><tie type="start"/>';
+    if (atStart) return '<tie type="stop"/>';
+    if (atEnd) return '<tie type="start"/>';
+    return '<tie type="stop"/><tie type="start"/>';
+  }
+  return '';
+}
+
 function emitPitchedTicks(
   parts: number[],
   voice: number,
@@ -345,14 +367,15 @@ function emitPitchedTicks(
   dynAttr: string,
   chordXml = '',
   stemXml?: string,
-  staffXml?: string
+  staffXml?: string,
+  explicitTie?: 'start' | 'stop' | 'continue',
 ): string {
   let xml = '';
   const n = parts.length;
   for (let i = 0; i < n; i++) {
     const t = parts[i]!;
     const spec = tickSpecForLength(t);
-    const tie = tieXmlForSplitIndex(i, n);
+    const tie = `${tieXmlForSplitIndex(i, n)}${explicitTieXml(explicitTie, i, n)}`;
     xml += noteXmlPitchedFragment({
       dynamicsAttr: dynAttr,
       chordXml,
@@ -1422,7 +1445,8 @@ function eventsToXml(
             dynAttr,
             gi > 0 ? '<chord/>' : '',
             stemXml,
-            staffPolyphonyXml
+            staffPolyphonyXml,
+            note.notation?.tie,
           );
           const stack = note.pitches;
           if (stack && stack.length > 1 && parts.length === 1) {

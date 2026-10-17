@@ -7,4 +7,7 @@ export type EnsembleFamily =
   | 'chamber'
   | 'big_band'
   | 'string_quartet'
-  | 'songwriting_lead_sheet';
+  | 'songwriting_lead_sheet'
+  | 'pierrot'
+  | 'wind_quintet'
+  | 'chamber_orchestra';

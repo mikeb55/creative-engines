@@ -42,6 +42,8 @@ export interface NoteNotationV34 {
   harmonic?: HarmonicNotation;
   tremolo?: { type: 'single' | 'unmeasured'; marks?: 1 | 2 | 3 };
   divisi?: { group: string; index: number };
+  /** Present only when a note is tied across a bar. Absent leaves export ties unchanged. */
+  tie?: 'start' | 'stop' | 'continue';
 }
 
 export type DynamicMark = 'ppp' | 'pp' | 'p' | 'mp' | 'mf' | 'f' | 'ff' | 'fff' | 'sfz' | 'fp';
@@ -204,6 +206,11 @@ export interface PartModel {
   voiceRole?: DuoElectricVoiceRole;
   /** 0–1: probability roll for adding chord tones on voice 2 from voice-1 anchors (deterministic per bar). */
   chordBias?: number;
+  /**
+   * V3.4 catalogue `<instrument-sound>` id.
+   * Absent leaves the existing instrument-sound export unchanged.
+   */
+  catalogueInstrumentSound?: string;
 }
 
 /** MusicXML key signature line (additive; does not change harmony generation). */

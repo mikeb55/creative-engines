@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="3.1">
+  <work><work-title>Orchestration wind_quintet</work-title></work>
+  <part-list>
+    <score-part id="fl">
+      <part-name>Concert Flute</part-name>
+      <score-instrument id="fl-I1"><instrument-name>Concert Flute</instrument-name>
+        <instrument-sound>wind.flutes.flute</instrument-sound></score-instrument>
+      <midi-instrument id="fl-I1">
+        <midi-program>74</midi-program>
+      </midi-instrument>
+    </score-part>
+    <score-part id="ob">
+      <part-name>Oboe</part-name>
+      <score-instrument id="ob-I1"><instrument-name>Oboe</instrument-name>
+        <instrument-sound>wind.reed.oboe</instrument-sound></score-instrument>
+      <midi-instrument id="ob-I1">
+        <midi-program>69</midi-program>
+      </midi-instrument>
+    </score-part>
+    <score-part id="cl">
+      <part-name>Clarinet in B-flat</part-name>
+      <score-instrument id="cl-I1"><instrument-name>Clarinet in B-flat</instrument-name>
+        <instrument-sound>wind.reed.clarinet.bflat</instrument-sound></score-instrument>
+      <midi-instrument id="cl-I1">
+        <midi-program>72</midi-program>
+      </midi-instrument>
+    </score-part>
+    <score-part id="hn">
+      <part-name>Horn in F</part-name>
+      <score-instrument id="hn-I1"><instrument-name>Horn in F</instrument-name>
+        <instrument-sound>brass.french-horn</instrument-sound></score-instrument>
+      <midi-instrument id="hn-I1">
+        <midi-program>61</midi-program>
+      </midi-instrument>
+    </score-part>
+    <score-part id="bn">
+      <part-name>Bassoon</part-name>
+      <score-instrument id="bn-I1"><instrument-name>Bassoon</instrument-name>
+        <instrument-sound>wind.reed.bassoon</instrument-sound></score-instrument>
+      <midi-instrument id="bn-I1">
+        <midi-program>71</midi-program>
+      </midi-instrument>
+    </score-part>
+  </part-list>
+  <part id="fl">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>G</sign><line>2</line></clef>
+    </attributes>
+    <direction placement="above">
+      <direction-type>
+        <metronome>
+          <beat-unit>quarter</beat-unit>
+          <per-minute>96</per-minute>
+        </metronome>
+      </direction-type>
+      <sound tempo="96"/>
+    </direction>
+        <note><pitch><step>C</step><octave>5</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note><pitch><step>D</step><octave>5</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note><pitch><step>E</step><octave>5</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note><pitch><step>G</step><octave>5</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+  </measure>
+  </part>
+  <part id="ob">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>G</sign><line>2</line></clef>
+    </attributes>
+        <note><rest/><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note><pitch><step>D</step><octave>4</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+  </measure>
+  </part>
+  <part id="cl">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>G</sign><line>2</line></clef>
+      <transpose><diatonic>-1</diatonic><chromatic>-2</chromatic><octave-change>0</octave-change></transpose>
+    </attributes>
+        <note><rest/><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note><pitch><step>F</step><alter>1</alter><octave>4</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+  </measure>
+  </part>
+  <part id="hn">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>G</sign><line>2</line></clef>
+      <transpose><diatonic>-4</diatonic><chromatic>-7</chromatic><octave-change>0</octave-change></transpose>
+    </attributes>
+        <note><rest/><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note><pitch><step>D</step><octave>5</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+  </measure>
+  </part>
+  <part id="bn">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>F</sign><line>4</line></clef>
+    </attributes>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  </part>
+</score-partwise>

@@ -4,9 +4,13 @@
 
 Stage A adds an opt-in instrument catalogue (`core/instruments/`) and optional MusicXML for slurs, techniques, per-part dynamics, full transposition, tempo maps, and timecode words. `exportPartTransposeSemitones` still writes a chromatic-only `<transpose>` when the new transposition object is absent. Evaluation `roleOf` can name flute, oboe, clarinet, bassoon, horn, trumpet, trombone, tuba, saxophone, harp, percussion, and synth. No preset calls an orchestrator.
 
+## V3.4 Stage C — chamber Orchestrate
+
+`core/orchestrate/` converts an existing score into string quartet, Pierrot, wind quintet, or chamber orchestra parts. It runs only through `app-api/orchestrateApp.ts` when `enabled` is true. The melody keeps its pitch-class sequence, intervals, and rhythm. A whole phrase may move by octaves when the carrier cannot hold it, and the receipt stores `octaveShift`. Notes outside a catalogue hard range stay put and are flagged. Piano is not in the catalogue, so the Pierrot piano desk is omitted and no range is invented. Counterlines are motif-ops chains accepted only when the co-onset and parallel-perfect filters pass. Harmony notes are filled from the selected source: the score, `buildBhlWorldField`, a pentatonic archetype, a hexatonic scalar, or `getVoiceRuleBundle`. Density, register, and texture planners are called and affect accompaniment placement. New ensemble family profiles `pierrot`, `wind_quintet`, and `chamber_orchestra` have no preset ids. `musicalQualityScore` stays null and `musicallyApproved` stays false. Stage D is not in this build.
+
 ## V3.4 Stage B — orchestration evidence
 
-`musical-evaluation/orchestrationReport.ts` reads an existing score and reports range extrema, catalogue transposition, Rimsky-Korsakov loud and soft balance weights, unison and octave doubling runs, vertical spacing, activity, and concurrent, sequential, and segmental texture labels. The Evaluation dashboard adds tab **7 Orchestration**. The report does not rewrite notes. `musicalQualityScore` stays null and `musicallyApproved` stays false. Comfort ranges, saxophone and string weights, melody choice, dynamic-band mapping, and texture assignment rules are marked as inference. Stage C is not in this build.
+`musical-evaluation/orchestrationReport.ts` reads an existing score and reports range extrema, catalogue transposition, Rimsky-Korsakov loud and soft balance weights, unison and octave doubling runs, vertical spacing, activity, and concurrent, sequential, and segmental texture labels. The Evaluation dashboard adds tab **7 Orchestration**. The report does not rewrite notes. `musicalQualityScore` stays null and `musicallyApproved` stays false. Comfort ranges, saxophone and string weights, melody choice, dynamic-band mapping, and texture assignment rules are marked as inference. Big-band transposition declarations remain incomplete in that report.
 
 ## V3.3 Advanced Composition
 

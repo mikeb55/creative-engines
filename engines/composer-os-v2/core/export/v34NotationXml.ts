@@ -98,7 +98,11 @@ export function v34NotationsXml(
     }
   }
   if (durationAccent === 'stress') articulations.push('<stress/>');
+  const tied: string[] = [];
+  if (notation.tie === 'start' || notation.tie === 'stop') tied.push(`<tied type="${notation.tie}"/>`);
+  if (notation.tie === 'continue') tied.push('<tied type="stop"/>', '<tied type="start"/>');
   const chunks: string[] = [];
+  if (tied.length) chunks.push(tied.join(''));
   if (slurs.length) chunks.push(slurs.join(''));
   if (ornaments.length) chunks.push(`<ornaments>${ornaments.join('')}</ornaments>`);
   if (technical.length) chunks.push(`<technical>${technical.join('')}</technical>`);

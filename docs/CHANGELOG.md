@@ -4,7 +4,9 @@
 
 ### Added
 
-- **Composer OS V3.4 Stage B — orchestration evidence.** Read-only report for range, written and sounding transposition, Rimsky-Korsakov balance weights, doubling, spacing, activity, and texture labels. Evaluation dashboard tab **7 Orchestration**. Scores are not rewritten. `musicalQualityScore` stays null and `musicallyApproved` stays false. Specification: `docs/V3.4-ADVANCED-ARRANGING-ORCHESTRATION-SPEC.md`. Stage C is not started.
+- **Composer OS V3.4 Stage C — chamber Orchestrate.** Opt-in transformer writes real parts for string quartet, Pierrot (piano omitted: no catalogue range), wind quintet, and chamber orchestra. Melody pitch classes, intervals, and rhythm stay; only a whole-phrase octave shift is allowed, and it is recorded. Counterlines come from motif-ops. Harmony fill calls BHL, pentatonic, hexatonic, or an SQ voice bundle only when that source is selected. `apiOrchestrate` stays off unless `enabled` is true. No preset calls it. Specification: `docs/V3.4-ADVANCED-ARRANGING-ORCHESTRATION-SPEC.md`. Stage D is not started.
+
+- **Composer OS V3.4 Stage B — orchestration evidence.** Read-only report for range, written and sounding transposition, Rimsky-Korsakov balance weights, doubling, spacing, activity, and texture labels. Evaluation dashboard tab **7 Orchestration**. Scores are not rewritten. `musicalQualityScore` stays null and `musicallyApproved` stays false. Specification: `docs/V3.4-ADVANCED-ARRANGING-ORCHESTRATION-SPEC.md`. Big-band transposition declarations stay incomplete.
 
 - **Composer OS V3.4 Stage A — notation and instruments.** Opt-in catalogue, MusicXML notation, full transposition, tempo map, and orchestral evaluation roles. New score fields stay off unless set, and existing export hashes are unchanged when they are absent. Specification: `docs/V3.4-ADVANCED-ARRANGING-ORCHESTRATION-SPEC.md`.
 

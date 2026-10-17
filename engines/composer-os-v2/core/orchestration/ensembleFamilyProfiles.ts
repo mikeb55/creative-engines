@@ -141,6 +141,93 @@ const stringQuartet: EnsembleFamilyProfile = {
   requireBassAnchor: true,
 };
 
+const pierrot: EnsembleFamilyProfile = {
+  family: 'pierrot',
+  defaultRoleTendencies: {
+    lead: 0.9,
+    support: 0.7,
+    pad: 0.45,
+    counterline: 0.7,
+    bass_anchor: 0.9,
+    inner_motion: 0.65,
+    silence: 0.15,
+  },
+  densityTendencies: {
+    opening: 'sparse',
+    development: 'moderate',
+    climax: 'dense',
+    release: 'sparse',
+  },
+  registerDefaults: {
+    melodicLead: 'high',
+    harmonicBass: 'bass',
+    innerHarmony: 'middle',
+    pad: 'middle',
+  },
+  textureConstraints: { maxForegroundLines: 2, allowSilence: true },
+  compatiblePresetIds: [],
+  allowedRoles: ['lead', 'support', 'pad', 'counterline', 'bass_anchor', 'inner_motion', 'silence'],
+  requireBassAnchor: true,
+};
+
+const windQuintet: EnsembleFamilyProfile = {
+  family: 'wind_quintet',
+  defaultRoleTendencies: {
+    lead: 0.9,
+    support: 0.75,
+    pad: 0.4,
+    counterline: 0.7,
+    bass_anchor: 0.95,
+    inner_motion: 0.6,
+    silence: 0.12,
+  },
+  densityTendencies: {
+    opening: 'sparse',
+    development: 'moderate',
+    climax: 'dense',
+    release: 'sparse',
+  },
+  registerDefaults: {
+    melodicLead: 'high',
+    harmonicBass: 'bass',
+    innerHarmony: 'middle',
+    pad: 'middle',
+  },
+  textureConstraints: { maxForegroundLines: 2, allowSilence: true },
+  compatiblePresetIds: [],
+  allowedRoles: ['lead', 'support', 'pad', 'counterline', 'bass_anchor', 'inner_motion', 'silence'],
+  requireBassAnchor: true,
+};
+
+const chamberOrchestra: EnsembleFamilyProfile = {
+  family: 'chamber_orchestra',
+  defaultRoleTendencies: {
+    lead: 0.85,
+    support: 0.8,
+    pad: 0.55,
+    counterline: 0.75,
+    bass_anchor: 1,
+    inner_motion: 0.7,
+    silence: 0.2,
+  },
+  densityTendencies: {
+    opening: 'sparse',
+    development: 'moderate',
+    climax: 'dense',
+    release: 'sparse',
+  },
+  registerDefaults: {
+    melodicLead: 'high',
+    harmonicBass: 'sub_bass',
+    innerHarmony: 'middle',
+    pad: 'low',
+  },
+  textureConstraints: { maxForegroundLines: 3, allowSilence: true },
+  compatiblePresetIds: [],
+  allowedRoles: ['lead', 'support', 'pad', 'counterline', 'bass_anchor', 'inner_motion', 'silence'],
+  requireBassAnchor: true,
+};
+
 const songwritingLeadSheet: EnsembleFamilyProfile = {
   family: 'songwriting_lead_sheet',
   defaultRoleTendencies: {
@@ -175,6 +262,9 @@ const PROFILES: Record<EnsembleFamily, EnsembleFamilyProfile> = {
   big_band: bigBand,
   string_quartet: stringQuartet,
   songwriting_lead_sheet: songwritingLeadSheet,
+  pierrot,
+  wind_quintet: windQuintet,
+  chamber_orchestra: chamberOrchestra,
 };
 
 export function getEnsembleFamilyProfile(family: EnsembleFamily): EnsembleFamilyProfile {
