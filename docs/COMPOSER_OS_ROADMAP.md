@@ -38,7 +38,8 @@
 | **Bacharach / Monk / Joni / SY / Zappa (premium-melody roster)** | **Registry placeholders only** â€” Song Mode slices **shipped**; premium-melody **not started** |
 | **V88 â€” BartÃ³k CLE pitch scoring** | **FROZEN** â€” eval **8.0/10** seed **61234**; **`bartokClePitchScoringGoldenMaster`** in smoke |
 | **Musician shell (desktop v1)** | **SHIPPED** â€” default **`Composer-OS.exe`** plain HTML UI; **32-bar Song Mode**; registry-driven composer list; **`COMPOSER_OS_FULL_UI=1`** â†’ React Generate |
-| **Smoke tier** | **`npm run test:composer-smoke`** — **863** PASS rows / **146** suites (2026-10-17; V3.4 Stage D profile blending). Known fail **5** (tracked). Unexpected fail **0**. |
+| **Smoke tier** | **`npm run test:composer-smoke`** — **960** PASS rows / **147** suites (2026-10-17; V3.4 E1 shared phrase planner). Known fail **5** (tracked). Unexpected fail **0**. |
+| **V3.4 E1 checkpoint 1** | **SHIPPED (opt-in)** — shared phrase planner for Barry, Hill, Bartók, Wheeler, Hall, Shorter. Default off. Harmony slices and Stage D unchanged. Evidence: `docs/v3.4-e1-checkpoint1/`. |
 | **V3.4 Stage A** | **SHIPPED** — instrument catalogue, opt-in MusicXML notation, full transposition, tempo map, evaluation roles. |
 | **V3.4 Stage C** | **SHIPPED** — opt-in chamber Orchestrate writes string quartet, Pierrot (flute, B-flat clarinet, violin, cello, piano), wind quintet, and chamber orchestra parts. Piano hard range is sounding A0–C8. Spec: `docs/V3.4-ADVANCED-ARRANGING-ORCHESTRATION-SPEC.md`. |
 | **V3.4 Stage D** | **SHIPPED** — Song Mode phrase-block composer-profile blend, BPM passthrough, Duo songwriter rejection, Metheny Duo bass-cell repair. Ravel harmony stays unsupported. Polychords not in this stage. |

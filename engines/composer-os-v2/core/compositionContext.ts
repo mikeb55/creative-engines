@@ -313,6 +313,8 @@ export type ImportHarmonyLeadSheetAdaptDetail =
 /** Generation metadata. */
 export interface GenerationMetadata {
   generatedAt: string;
+  /** V3.4 E1 — opt-in shared phrase planner. Absent unless the request enables it. */
+  e1PhrasePlannerReceipt?: import('./phrase/e1SharedPhrasePlanner').E1PhrasePlannerReceipt;
   /** Optional era hint (e.g. style pairing); set from `RunGoldenPathOptions.era` for downstream use. */
   era?: string;
   durationMs?: number;

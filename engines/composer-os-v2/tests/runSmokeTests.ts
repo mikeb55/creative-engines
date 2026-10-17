@@ -122,6 +122,7 @@ import { runOutputValidationSmokeTests } from './outputValidationSmoke.test';
 import { runV33AdvancedCompositionTests } from './v33AdvancedComposition.test';
 import { runV34StageCTests } from './v34StageC.test';
 import { runV34StageDProfileBlendTests } from './v34StageDProfileBlend.test';
+import { runV34E1PhrasePlannerTests } from './v34E1PhrasePlanner.test';
 import { runSqSwingRhythmTests } from './sqSwingRhythm.test';
 import { runPorterGershwinDistinctionTests } from './porterGershwinDistinction.test';
 import { runSqAntimetricRhythmTests } from './sqAntimetricRhythm.test';
@@ -354,6 +355,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'V3.3 advanced composition foundations', run: runV33AdvancedCompositionTests },
   { label: 'V3.4 Stage C chamber orchestration', run: runV34StageCTests },
   { label: 'V3.4 Stage D profile blending', run: runV34StageDProfileBlendTests },
+  { label: 'V3.4 E1 shared phrase planner', run: runV34E1PhrasePlannerTests },
 ];
 
 function toRows(results: { name: string; ok: boolean }[] | { ok: boolean; name: string }[]): Row[] {

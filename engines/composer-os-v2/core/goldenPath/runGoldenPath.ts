@@ -84,6 +84,7 @@ import {
   sectionHarmonyBars,
 } from '../score-model/scoreModelAssembler';
 import { exportScoreModelToMusicXml } from '../export/musicxmlExporter';
+import { applyE1SharedPhrasePlanner } from '../phrase/e1SharedPhrasePlanner';
 import {
   assertExportTruth,
   buildSpineSymbolsForExportTruth,
@@ -1317,6 +1318,13 @@ export interface RunGoldenPathOptions {
   secondarySongwriterStyle?: string;
   /** Secondary share of a Song Mode composer-profile blend. Omitted keeps 0.35. */
   songwriterBlendWeight?: number;
+  /**
+   * V3.4 E1 checkpoint 1 — shared phrase planner for six pilot profiles.
+   * Omitted or false leaves existing note events unchanged.
+   */
+  e1PhrasePlanner?: boolean;
+  /** Disable one planner feature. Ignored when the planner is off. */
+  e1PhrasePlannerAblate?: 'rhythm' | 'motif' | 'rests' | 'transform' | 'secondary';
   /** Set by blend routing. Weight 0 and unsupported secondaries do not change primary notes. */
   composerProfileBlend?: ComposerProfileBlendReceipt;
   /** Song Mode: optional author overlay id (for inspectability metadata). */
@@ -3537,6 +3545,25 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
   }
   if (options?.bandModeEnabled === true && !mixedPresetAssembled) {
     score = appendArtRockBandDrumsToScore(score, appliedContext, true);
+  }
+  if (options?.e1PhrasePlanner === true) {
+    const planned = applyE1SharedPhrasePlanner(score, {
+      seed,
+      songwriterId: appliedContext.generationMetadata?.songwriterStyleId,
+      ablate: options.e1PhrasePlannerAblate,
+      leadSheetLocked: (options.songModeLeadSheetMelodyAnchors?.length ?? 0) > 0,
+    });
+    score = planned.score;
+    appliedContext.generationMetadata = {
+      ...appliedContext.generationMetadata,
+      e1PhrasePlannerReceipt: planned.receipt,
+    };
+    if (planned.receipt.status === 'applied') {
+      const plannedMath = validateStrictBarMath(score);
+      if (!plannedMath.valid) {
+        errors.push(...plannedMath.errors);
+      }
+    }
   }
   const barMeterForMusicXml =
     appliedContext.barMeterMap ?? appliedContext.generationMetadata?.barMeterMap;

@@ -1,0 +1,385 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="3.1">
+  <work><work-title>jim_hall</work-title></work>
+  <part-list>
+    <score-part id="guitar">
+      <part-name>Clean Electric Guitar</part-name>
+      <part-abbreviation>Gtr.</part-abbreviation>
+      <score-instrument id="P1-I1">
+        <instrument-name>Electric Guitar</instrument-name>
+        <instrument-sound>strings.guitar.electric</instrument-sound>
+      </score-instrument>
+      <midi-instrument id="P1-I1">
+        <midi-channel>1</midi-channel>
+        <midi-program>28</midi-program>
+        <volume>80</volume>
+        <pan>0</pan>
+      </midi-instrument>
+    </score-part>
+    <score-part id="bass">
+      <part-name>Upright Bass</part-name>
+      <part-abbreviation>Bas.</part-abbreviation>
+      <score-instrument id="bass-I1"><instrument-name>Upright Bass</instrument-name>
+        <instrument-sound>strings.bass</instrument-sound></score-instrument>
+      <midi-instrument id="bass-I1">
+        <midi-program>33</midi-program>
+      </midi-instrument>
+    </score-part>
+  </part-list>
+  <part id="guitar">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key print-object="no"><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>G</sign><line>2</line></clef>
+    </attributes>
+    <direction placement="above">
+      <direction-type>
+        <metronome>
+          <beat-unit>quarter</beat-unit>
+          <per-minute>120</per-minute>
+        </metronome>
+      </direction-type>
+      <direction-type>
+        <words font-style="italic">Medium feel; straight 8ths</words>
+      </direction-type>
+      <sound tempo="120"/>
+    </direction>
+    <harmony placement="above"><root><root-step>D</root-step></root><kind text="min9">minor-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+    <direction placement="above"><direction-type><rehearsal enclosure="rectangle">A</rehearsal></direction-type></direction>
+    <direction placement="above"><direction-type><words>Key signature suppressed (user: none)</words></direction-type></direction>
+        <note><pitch><step>D</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>E</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>A</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type></note>
+  </measure>
+  <measure number="2">
+    <harmony placement="above"><root><root-step>G</root-step></root><kind text="13">dominant-13th</kind><degree print-object="no"><degree-value>13</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="3">
+    <harmony placement="above"><root><root-step>C</root-step></root><kind text="maj9">major-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+        <note><pitch><step>D</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>E</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>A</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type></note>
+  </measure>
+  <measure number="4">
+    <harmony placement="above"><root><root-step>A</root-step></root><kind text="7alt">other</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>-1</degree-alter><degree-type>alter</degree-type></degree><degree print-object="no"><degree-value>9</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree><degree print-object="no"><degree-value>5</degree-value><degree-alter>-1</degree-alter><degree-type>alter</degree-type></degree><degree print-object="no"><degree-value>5</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree></harmony>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="5">
+    <harmony placement="above"><root><root-step>D</root-step></root><kind text="min9">minor-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+        <note><pitch><step>D</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>E</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>A</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type></note>
+  </measure>
+  <measure number="6">
+    <harmony placement="above"><root><root-step>G</root-step></root><kind text="13">dominant-13th</kind><degree print-object="no"><degree-value>13</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="7">
+    <harmony placement="above"><root><root-step>C</root-step></root><kind text="maj9">major-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+        <note><pitch><step>D</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>E</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>A</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type></note>
+  </measure>
+  <measure number="8">
+    <harmony placement="above"><root><root-step>A</root-step></root><kind text="7alt">other</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>-1</degree-alter><degree-type>alter</degree-type></degree><degree print-object="no"><degree-value>9</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree><degree print-object="no"><degree-value>5</degree-value><degree-alter>-1</degree-alter><degree-type>alter</degree-type></degree><degree print-object="no"><degree-value>5</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree></harmony>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="9">
+    <harmony placement="above"><root><root-step>E</root-step></root><kind text="min9">minor-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+    <direction placement="above"><direction-type><rehearsal enclosure="rectangle">A&apos;</rehearsal></direction-type></direction>
+        <note><pitch><step>D</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>E</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>A</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type></note>
+  </measure>
+  <measure number="10">
+    <harmony placement="above"><root><root-step>A</root-step></root><kind text="13">dominant-13th</kind><degree print-object="no"><degree-value>13</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="11">
+    <harmony placement="above"><root><root-step>D</root-step></root><kind text="maj9">major-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+        <note><pitch><step>D</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>E</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>A</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type></note>
+  </measure>
+  <measure number="12">
+    <harmony placement="above"><root><root-step>B</root-step></root><kind text="7alt">other</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>-1</degree-alter><degree-type>alter</degree-type></degree><degree print-object="no"><degree-value>9</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree><degree print-object="no"><degree-value>5</degree-value><degree-alter>-1</degree-alter><degree-type>alter</degree-type></degree><degree print-object="no"><degree-value>5</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree></harmony>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="13">
+    <harmony placement="above"><root><root-step>E</root-step></root><kind text="min9">minor-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+        <note><pitch><step>D</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>E</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>A</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type></note>
+  </measure>
+  <measure number="14">
+    <harmony placement="above"><root><root-step>A</root-step></root><kind text="13">dominant-13th</kind><degree print-object="no"><degree-value>13</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="15">
+    <harmony placement="above"><root><root-step>D</root-step></root><kind text="maj9">major-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+        <note><pitch><step>D</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>E</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>A</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type></note>
+  </measure>
+  <measure number="16">
+    <harmony placement="above"><root><root-step>B</root-step></root><kind text="7alt">other</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>-1</degree-alter><degree-type>alter</degree-type></degree><degree print-object="no"><degree-value>9</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree><degree print-object="no"><degree-value>5</degree-value><degree-alter>-1</degree-alter><degree-type>alter</degree-type></degree><degree print-object="no"><degree-value>5</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree></harmony>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="17">
+    <harmony placement="above"><root><root-step>G</root-step></root><kind text="min9">minor-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+    <direction placement="above"><direction-type><rehearsal enclosure="rectangle">B</rehearsal></direction-type></direction>
+        <note><pitch><step>D</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>E</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>A</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type></note>
+  </measure>
+  <measure number="18">
+    <harmony placement="above"><root><root-step>C</root-step></root><kind text="13">dominant-13th</kind><degree print-object="no"><degree-value>13</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="19">
+    <harmony placement="above"><root><root-step>F</root-step></root><kind text="maj9">major-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+        <note><pitch><step>D</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>E</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>A</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type></note>
+  </measure>
+  <measure number="20">
+    <harmony placement="above"><root><root-step>D</root-step></root><kind text="7alt">other</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>-1</degree-alter><degree-type>alter</degree-type></degree><degree print-object="no"><degree-value>9</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree><degree print-object="no"><degree-value>5</degree-value><degree-alter>-1</degree-alter><degree-type>alter</degree-type></degree><degree print-object="no"><degree-value>5</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree></harmony>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="21">
+    <harmony placement="above"><root><root-step>G</root-step></root><kind text="min9">minor-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+        <note><pitch><step>D</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>E</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>A</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type></note>
+  </measure>
+  <measure number="22">
+    <harmony placement="above"><root><root-step>C</root-step></root><kind text="13">dominant-13th</kind><degree print-object="no"><degree-value>13</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="23">
+    <harmony placement="above"><root><root-step>F</root-step></root><kind text="maj9">major-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+        <note><pitch><step>D</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>E</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>A</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type></note>
+  </measure>
+  <measure number="24">
+    <harmony placement="above"><root><root-step>D</root-step></root><kind text="7alt">other</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>-1</degree-alter><degree-type>alter</degree-type></degree><degree print-object="no"><degree-value>9</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree><degree print-object="no"><degree-value>5</degree-value><degree-alter>-1</degree-alter><degree-type>alter</degree-type></degree><degree print-object="no"><degree-value>5</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree></harmony>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="25">
+    <harmony placement="above"><root><root-step>D</root-step></root><kind text="min9">minor-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+    <direction placement="above"><direction-type><rehearsal enclosure="rectangle">A&apos;&apos;</rehearsal></direction-type></direction>
+        <note><pitch><step>D</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>E</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>A</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type></note>
+  </measure>
+  <measure number="26">
+    <harmony placement="above"><root><root-step>G</root-step></root><kind text="13">dominant-13th</kind><degree print-object="no"><degree-value>13</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="27">
+    <harmony placement="above"><root><root-step>C</root-step></root><kind text="maj9">major-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+        <note><pitch><step>D</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>E</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>A</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type></note>
+  </measure>
+  <measure number="28">
+    <harmony placement="above"><root><root-step>A</root-step></root><kind text="7alt">other</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>-1</degree-alter><degree-type>alter</degree-type></degree><degree print-object="no"><degree-value>9</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree><degree print-object="no"><degree-value>5</degree-value><degree-alter>-1</degree-alter><degree-type>alter</degree-type></degree><degree print-object="no"><degree-value>5</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree></harmony>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="29">
+    <harmony placement="above"><root><root-step>D</root-step></root><kind text="min9">minor-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+        <note><pitch><step>D</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>E</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>A</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type></note>
+  </measure>
+  <measure number="30">
+    <harmony placement="above"><root><root-step>G</root-step></root><kind text="13">dominant-13th</kind><degree print-object="no"><degree-value>13</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="31">
+    <harmony placement="above"><root><root-step>C</root-step></root><kind text="maj9">major-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+        <note><pitch><step>D</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>E</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>A</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type></note>
+  </measure>
+  <measure number="32">
+    <harmony placement="above"><root><root-step>D</root-step></root><kind text="maj9">major-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  </part>
+  <part id="bass">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key print-object="no"><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>F</sign><line>4</line></clef>
+    </attributes>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="2">
+        <note><pitch><step>D</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>E</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+  </measure>
+  <measure number="3">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="4">
+        <note><pitch><step>D</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>E</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+  </measure>
+  <measure number="5">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="6">
+        <note><pitch><step>D</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>E</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+  </measure>
+  <measure number="7">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="8">
+        <note><pitch><step>D</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>E</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+  </measure>
+  <measure number="9">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="10">
+        <note><pitch><step>D</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>E</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+  </measure>
+  <measure number="11">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="12">
+        <note><pitch><step>D</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>E</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+  </measure>
+  <measure number="13">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="14">
+        <note><pitch><step>D</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>E</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+  </measure>
+  <measure number="15">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="16">
+        <note><pitch><step>D</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>E</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+  </measure>
+  <measure number="17">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="18">
+        <note><pitch><step>D</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>C</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+  </measure>
+  <measure number="19">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="20">
+        <note><pitch><step>D</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>C</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+  </measure>
+  <measure number="21">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="22">
+        <note><pitch><step>D</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>C</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+  </measure>
+  <measure number="23">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="24">
+        <note><pitch><step>D</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>C</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+  </measure>
+  <measure number="25">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="26">
+        <note><pitch><step>D</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>C</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+  </measure>
+  <measure number="27">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="28">
+        <note><pitch><step>D</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>C</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+  </measure>
+  <measure number="29">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="30">
+        <note><pitch><step>D</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>C</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+  </measure>
+  <measure number="31">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="32">
+        <note><pitch><step>D</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>C</step><octave>3</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+  </measure>
+  </part>
+</score-partwise>
