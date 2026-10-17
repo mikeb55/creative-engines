@@ -26,6 +26,7 @@ import { analyseHarmony, type DeclaredField, type MusicalFinding } from './harmo
 import { analyseRhythm, EXPERIMENTAL_RHYTHM_METRICS } from './rhythmEvidence';
 import { runTechnicalChecks, type TechnicalCheckRequest, type TechnicalReport } from './technicalChecks';
 import { buildCoherenceReport, type CoherenceReport } from './coherenceReport';
+import { buildOrchestrationReport, type OrchestrationReport } from './orchestrationReport';
 
 export const RECEIPT_VERSION = 'musical-evaluation-receipt-2';
 
@@ -74,6 +75,7 @@ export interface EvidenceReceipt {
   } | null;
   humanJudgement: null;
   coherence: CoherenceReport | null;
+  orchestration: OrchestrationReport | null;
   unsupportedMetrics: string[];
   preserved: {
     pentatonicColours: number;
@@ -139,6 +141,14 @@ function coherenceFor(xml: string): CoherenceReport | null {
   }
 }
 
+function orchestrationFor(xml: string): OrchestrationReport | null {
+  try {
+    return buildOrchestrationReport({ xml });
+  } catch {
+    return null;
+  }
+}
+
 function seal(body: Omit<EvidenceReceipt, 'receiptSha256'>): EvidenceReceipt {
   const receiptSha256 = sha256Text(canonicalJson(body));
   return { ...body, receiptSha256 };
@@ -162,6 +172,7 @@ export function evaluateScore(request: EvaluationRequest): EvidenceReceipt {
     comparison: null,
     humanJudgement: null,
     coherence: coherenceFor(request.score.xml),
+    orchestration: orchestrationFor(request.score.xml),
     unsupportedMetrics: [...rhythm.unsupportedMetrics],
     preserved: preserved(),
     bmef: {
@@ -247,6 +258,7 @@ export function compareScores(request: ComparisonRequest): EvidenceReceipt {
     },
     humanJudgement: null,
     coherence: coherenceFor(request.scores[0]!.xml),
+    orchestration: null,
     unsupportedMetrics: [...new Set([...rhythm.unsupportedMetrics, ...EXPERIMENTAL_RHYTHM_METRICS])],
     preserved: preserved(),
     bmef: {

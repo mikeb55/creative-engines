@@ -4,7 +4,9 @@
 
 ### Added
 
-- **Composer OS V3.4 Stage A — notation and instruments.** Opt-in catalogue, MusicXML notation, full transposition, tempo map, and orchestral evaluation roles. New score fields stay off unless set, and existing export hashes are unchanged when they are absent. Specification: `docs/V3.4-ADVANCED-ARRANGING-ORCHESTRATION-SPEC.md`. Stage B is not started.
+- **Composer OS V3.4 Stage B — orchestration evidence.** Read-only report for range, written and sounding transposition, Rimsky-Korsakov balance weights, doubling, spacing, activity, and texture labels. Evaluation dashboard tab **7 Orchestration**. Scores are not rewritten. `musicalQualityScore` stays null and `musicallyApproved` stays false. Specification: `docs/V3.4-ADVANCED-ARRANGING-ORCHESTRATION-SPEC.md`. Stage C is not started.
+
+- **Composer OS V3.4 Stage A — notation and instruments.** Opt-in catalogue, MusicXML notation, full transposition, tempo map, and orchestral evaluation roles. New score fields stay off unless set, and existing export hashes are unchanged when they are absent. Specification: `docs/V3.4-ADVANCED-ARRANGING-ORCHESTRATION-SPEC.md`.
 
 ### Fixed
 

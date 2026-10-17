@@ -17,6 +17,7 @@ export const EVALUATION_VIEWS = [
   { id: 'comparison', label: '4 Candidate Comparison' },
   { id: 'review', label: '5 BMEF Human Review' },
   { id: 'coherence', label: '6 Coherence' },
+  { id: 'orchestration', label: '7 Orchestration' },
 ] as const;
 
 export type EvaluationViewId = (typeof EVALUATION_VIEWS)[number]['id'];
@@ -81,6 +82,126 @@ type CoherenceView = {
   independence?: { pairs?: Array<{ pair: [string, string]; motion: { parallel: number }; parallelPerfectRuns: Array<{ startBar: number; length: number; interval: string }> }>; notes?: string[] } | null;
   absences?: Array<{ cellId: string; fromBar: number; toBar: number }>;
 };
+
+type OrchestrationView = {
+  version?: string;
+  musicalQualityScore: null;
+  musicallyApproved?: false;
+  notes?: string[];
+  rangeUse?: Array<{ partId: string; lowest: number; highest: number; outsideHard: number; outsideComfort: number }>;
+  transpositionChecks?: Array<{ partId: string; declared: { diatonic: number; chromatic: number; octaveChange: number } | null; expected: { diatonic: number; chromatic: number; octaveChange: number }; matches: boolean }>;
+  balanceByBar?: Array<{ bar: number; dynamicBand: string; melodyWeight: number; accompanimentWeight: number }>;
+  doublingRuns?: Array<{ parts: [string, string]; interval: string; startBar: number; bars: number }>;
+  spacing?: Array<{ bar: number; beat: number; lowestInterval: number; lowestPitch: number; widestInnerGap: number }>;
+  activity?: Array<{ partId: string; notesPerBar: number[]; restBars: number[] }>;
+  textureStates?: Array<{ startBar: number; endBar: number; label: string }>;
+  concurrentTextures?: Array<{ bar: number; label: string }>;
+  segmentalEvents?: Array<{ bar: number; label: string }>;
+};
+
+function transposeText(value: { diatonic: number; chromatic: number; octaveChange: number } | null): string {
+  if (!value) return 'none';
+  return `${value.diatonic}, ${value.chromatic}, ${value.octaveChange}`;
+}
+
+function OrchestrationPanel({ receipt }: { receipt?: { orchestration?: OrchestrationView | null } }) {
+  const report = receipt?.orchestration ?? null;
+  const flaggedSpacing = (report?.spacing ?? []).filter((row) => row.widestInnerGap > 12 || (row.lowestInterval <= 4 && row.lowestPitch <= 52));
+  return (
+    <div data-testid="evaluation-view-panel-orchestration">
+      <h3>Orchestration</h3>
+      <p data-testid="evaluation-orchestration-not-approved">Not musically approved</p>
+      <p>These rows describe range, transposition, balance, doubling, spacing, activity, and texture. They do not rewrite the score.</p>
+      {!report && <p data-testid="evaluation-orchestration-empty">Load a score to see orchestration evidence.</p>}
+      {report && (
+        <>
+          <p data-testid="evaluation-orchestration-score">musicalQualityScore {String(report.musicalQualityScore)}</p>
+          <p data-testid="evaluation-orchestration-version">{report.version}</p>
+          {(report.notes ?? []).map((note) => (
+            <p key={note} data-testid="evaluation-orchestration-note">{note}</p>
+          ))}
+          <h4>Range</h4>
+          <table data-testid="evaluation-orchestration-ranges">
+            <thead>
+              <tr><th>Part</th><th>Lowest</th><th>Highest</th><th>Outside hard</th><th>Outside comfort</th></tr>
+            </thead>
+            <tbody>
+              {(report.rangeUse ?? []).map((row) => (
+                <tr key={row.partId} data-testid="evaluation-orchestration-range">
+                  <td>{row.partId}</td><td>{row.lowest}</td><td>{row.highest}</td><td>{row.outsideHard}</td><td>{row.outsideComfort}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <h4>Transposition</h4>
+          <table data-testid="evaluation-orchestration-transpositions">
+            <thead>
+              <tr><th>Part</th><th>Declared</th><th>Catalogue</th><th>Match</th></tr>
+            </thead>
+            <tbody>
+              {(report.transpositionChecks ?? []).map((row) => (
+                <tr key={row.partId} data-testid="evaluation-orchestration-transposition" data-match={String(row.matches)}>
+                  <td>{row.partId}</td><td>{transposeText(row.declared)}</td><td>{transposeText(row.expected)}</td><td>{row.matches ? 'yes' : 'no'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <h4>Balance</h4>
+          <p>Weights are horn units. Loud brass and woodwind weights follow Rimsky-Korsakov, chapter I. Saxophone and string weights are inference.</p>
+          <table data-testid="evaluation-orchestration-balance">
+            <thead>
+              <tr><th>Bar</th><th>Band</th><th>Melody</th><th>Accompaniment</th></tr>
+            </thead>
+            <tbody>
+              {(report.balanceByBar ?? []).map((row) => (
+                <tr key={row.bar} data-testid="evaluation-orchestration-balance-row" data-bar={row.bar}>
+                  <td>{row.bar}</td><td>{row.dynamicBand}</td><td>{row.melodyWeight}</td><td>{row.accompanimentWeight}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <h4>Doubling</h4>
+          {(report.doublingRuns ?? []).length === 0 && <p>No unison or octave doubling run.</p>}
+          {(report.doublingRuns ?? []).map((run) => (
+            <p key={`${run.parts.join('-')}-${run.startBar}`} data-testid="evaluation-orchestration-doubling">
+              {run.parts[0]} and {run.parts[1]} in {run.interval} from bar {run.startBar} for {run.bars} bar{run.bars === 1 ? '' : 's'}.
+            </p>
+          ))}
+          <h4>Spacing</h4>
+          <p data-testid="evaluation-orchestration-spacing-count">{report.spacing?.length ?? 0} verticals measured. {flaggedSpacing.length} meet an inference threshold.</p>
+          {flaggedSpacing.slice(0, 8).map((row) => (
+            <p key={`${row.bar}-${row.beat}-${row.lowestPitch}`} data-testid="evaluation-orchestration-spacing">
+              Bar {row.bar} beat {row.beat}: lowest interval {row.lowestInterval}, lowest pitch {row.lowestPitch}, widest inner gap {row.widestInnerGap}.
+            </p>
+          ))}
+          <h4>Activity</h4>
+          {(report.activity ?? []).map((row) => (
+            <p key={row.partId} data-testid="evaluation-orchestration-activity">
+              {row.partId}: notes per bar {row.notesPerBar.join(', ') || 'none'}; rest bars {row.restBars.join(', ') || 'none'}.
+            </p>
+          ))}
+          <h4>Texture</h4>
+          <p>Sequential labels describe the span. Concurrent labels describe one bar. Segmental labels describe a change.</p>
+          {(report.textureStates ?? []).map((row) => (
+            <p key={`${row.label}-${row.startBar}`} data-testid="evaluation-orchestration-texture">
+              {row.label} from bar {row.startBar} to bar {row.endBar}.
+            </p>
+          ))}
+          {(report.concurrentTextures ?? []).map((row) => (
+            <p key={`concurrent-${row.bar}`} data-testid="evaluation-orchestration-concurrent">
+              Bar {row.bar}: {row.label}.
+            </p>
+          ))}
+          {(report.segmentalEvents ?? []).map((row) => (
+            <p key={`segment-${row.bar}-${row.label}`} data-testid="evaluation-orchestration-segment">
+              Bar {row.bar}: {row.label}.
+            </p>
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
 
 function CoherencePanel({ receipt }: { receipt?: { coherence?: CoherenceView | null } }) {
   const coherence = receipt?.coherence ?? null;
@@ -438,6 +559,9 @@ export function EvaluationDashboardPage({ transport }: { transport?: EvaluationT
       )}
       {view === 'coherence' && (
         <CoherencePanel receipt={loaded?.receipt as { coherence?: CoherenceView | null } | undefined} />
+      )}
+      {view === 'orchestration' && (
+        <OrchestrationPanel receipt={loaded?.receipt as { orchestration?: OrchestrationView | null } | undefined} />
       )}
       {view === 'review' && (
         <div data-testid="evaluation-view-panel-review">
