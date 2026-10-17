@@ -13,6 +13,8 @@ import type { BigBandFormPlan, BigBandSectionPlan } from '../core/big-band/bigBa
 import type { BigBandInstrumentSection } from '../core/big-band/bigBandSectionTypes';
 import type { BigBandRoleType } from '../core/big-band/bigBandTypes';
 import { exportScoreModelToMusicXml } from '../core/export/musicxmlExporter';
+import { validateMusicXmlSchema } from '../core/export/musicxmlValidation';
+import { getInstrument } from '../core/instruments/instrumentCatalogue';
 import { runGoldenPathOnce } from '../core/goldenPath/runGoldenPath';
 import { resolveCatalogueInstrument } from '../core/orchestrate/ensembleTemplates';
 import { orchestrate, soundingLine } from '../core/orchestrate/orchestrate';
@@ -173,8 +175,11 @@ export function runV34StageCTests(): Array<{ name: string; ok: boolean; detail?:
     assert.match(missing.omission ?? '', /no V3.4 catalogue entry/);
     assert.doesNotMatch(missing.omission ?? '', /\d+\s*[–-]\s*\d+/);
     const piano = resolveCatalogueInstrument('piano');
-    assert.equal(piano.spec, null);
-    assert.match(piano.omission ?? '', /No range was invented/);
+    assert.equal(piano.omission, null);
+    assert.deepEqual(piano.spec?.soundingHardRange, [21, 108]);
+    assert.equal(piano.spec?.displayName, 'Piano');
+    assert.equal(piano.spec?.instrumentSound, 'keyboard.piano');
+    assert.equal(getInstrument('piano').comfortInferred, true);
   });
 
   check('T9 melody octave shift onto double bass', () => {
@@ -353,14 +358,63 @@ export function runV34StageCTests(): Array<{ name: string; ok: boolean; detail?:
     assert.equal(left.ok && right.ok, true);
     if (!left.ok || !right.ok) return;
     assert.equal(left.musicXml, right.musicXml);
-    assert.ok(left.receipt.omissions.some((row) => row.instrumentId === 'piano'));
-    assert.doesNotMatch(left.musicXml, /<part-name>Piano<\/part-name>/);
+    assert.equal(left.receipt.omissions.some((row) => row.instrumentId === 'piano'), false);
+    assert.match(left.musicXml, /<part-name>Piano<\/part-name>/);
+    assert.match(left.musicXml, /<instrument-sound>keyboard\.piano<\/instrument-sound>/);
     assert.equal(apiOrchestrate({ enabled: false, sourceMusicXml: xml, template: 'pierrot', plan, seed: 44, preserveMelody: true }).ok, false);
     const api = apiOrchestrate(request(xml, 'pierrot', plan, 44));
     assert.equal(api.ok, true);
     if (!api.ok) return;
     assert.equal(api.musicXml, left.musicXml);
     save('pierrot-fixture.musicxml', left.musicXml);
+  });
+
+  check('Pierrot writes five sounding parts and distinct seeds diverge', () => {
+    const xml = sourceXml([
+      { id: 'gtr', name: 'Guitar', events: melody },
+      { id: 'bass', name: 'Bass', events: [{ midi: 48, duration: 2 }, { midi: 43, duration: 2 }] },
+    ]);
+    const plan = [colour({
+      melodyCarriers: ['fl'],
+      endBar: 1,
+      density: 'medium',
+      harmonySource: 'bhl_world',
+      harmonyParam: 'C',
+      counterlineFrom: { motifId: 'm1', chain: ['invert'], offsetBeats: 1 },
+    })];
+    const first = orchestrate(request(xml, 'pierrot', plan, 44));
+    const again = orchestrate(request(xml, 'pierrot', plan, 44));
+    const other = orchestrate(request(xml, 'pierrot', plan, 3340));
+    assert.equal(first.ok && again.ok && other.ok, true);
+    if (!first.ok || !again.ok || !other.ok) return;
+    assert.equal(first.musicXml, again.musicXml);
+    assert.notEqual(first.musicXml, other.musicXml);
+    assert.equal(first.receipt.omissions.length, 0);
+    assert.equal(first.score.parts.length, 5);
+    const names = ['Concert Flute', 'Clarinet in B-flat', 'Violin', 'Cello', 'Piano'];
+    assert.deepEqual(first.score.parts.map((part) => part.name), names);
+    for (const part of first.score.parts) {
+      const line = soundingLine(first.musicXml, part.id);
+      assert.ok(line.length > 0, part.id);
+    }
+    assert.deepEqual(soundingLine(first.musicXml, 'fl').map((note) => note.midi), [72, 74, 76, 79]);
+    assert.deepEqual(soundingLine(other.musicXml, 'fl').map((note) => note.midi), [72, 74, 76, 79]);
+    assert.deepEqual(soundingLine(first.musicXml, 'vc').map((note) => note.midi), [48, 43]);
+    const piano = soundingLine(first.musicXml, 'pn');
+    const hard = getInstrument('piano').soundingHardRange!;
+    assert.ok(piano.length >= 2);
+    assert.ok(piano.every((note) => note.midi >= hard[0] && note.midi <= hard[1]));
+    assert.match(first.musicXml, /<chord\/>/);
+    const schema = validateMusicXmlSchema(first.musicXml);
+    assert.equal(schema.valid, true, schema.errors.join('; '));
+    const quartetPlan = [colour({ melodyCarriers: ['vn1'], endBar: 1, harmonySource: 'bhl_world', harmonyParam: 'C' })];
+    const quartetA = orchestrate(request(xml, 'string_quartet', quartetPlan, 44));
+    const quartetB = orchestrate(request(xml, 'string_quartet', quartetPlan, 3340));
+    assert.equal(quartetA.ok && quartetB.ok, true);
+    if (!quartetA.ok || !quartetB.ok) return;
+    assert.notEqual(quartetA.musicXml, quartetB.musicXml);
+    assert.deepEqual(soundingLine(quartetA.musicXml, 'vn1').map((note) => note.midi), soundingLine(quartetB.musicXml, 'vn1').map((note) => note.midi));
+    save('pierrot-five.musicxml', first.musicXml);
   });
 
   check('generated duo arrangements, stage B evidence, and legacy fingerprints', () => {
@@ -403,7 +457,12 @@ export function runV34StageCTests(): Array<{ name: string; ok: boolean; detail?:
       const evidence = buildOrchestrationReport({ xml: result.musicXml });
       assert.equal(evidence.musicalQualityScore, null);
       assert.equal(evidence.musicallyApproved, false);
-      assert.ok(evidence.rangeUse.length >= 4);
+      assert.ok(evidence.rangeUse.length >= (template === 'pierrot' ? 5 : 4));
+      if (template === 'pierrot') {
+        assert.equal(result.score.parts.length, 5);
+        assert.ok(result.score.parts.every((part) => soundingLine(result.musicXml, part.id).length > 0));
+        assert.equal(result.receipt.omissions.length, 0);
+      }
       const again = orchestrate(request(source, template, plan, 3340));
       assert.equal(again.ok, true);
       if (!again.ok) return;

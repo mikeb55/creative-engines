@@ -38,9 +38,9 @@
 | **Bacharach / Monk / Joni / SY / Zappa (premium-melody roster)** | **Registry placeholders only** â€” Song Mode slices **shipped**; premium-melody **not started** |
 | **V88 â€” BartÃ³k CLE pitch scoring** | **FROZEN** â€” eval **8.0/10** seed **61234**; **`bartokClePitchScoringGoldenMaster`** in smoke |
 | **Musician shell (desktop v1)** | **SHIPPED** â€” default **`Composer-OS.exe`** plain HTML UI; **32-bar Song Mode**; registry-driven composer list; **`COMPOSER_OS_FULL_UI=1`** â†’ React Generate |
-| **Smoke tier** | **`npm run test:composer-smoke`** — **829** PASS rows / **145** suites (2026-10-17; V3.4 Stage C). Known fail **5** (tracked). Unexpected fail **0**. |
+| **Smoke tier** | **`npm run test:composer-smoke`** — **830** PASS rows / **145** suites (2026-10-17; V3.4 Stage C piano correction). Known fail **5** (tracked). Unexpected fail **0**. |
 | **V3.4 Stage A** | **SHIPPED** — instrument catalogue, opt-in MusicXML notation, full transposition, tempo map, evaluation roles. |
-| **V3.4 Stage C** | **SHIPPED** — opt-in chamber Orchestrate writes string quartet, Pierrot, wind quintet, and chamber orchestra parts. Piano has no catalogue range and is omitted. Stage D not started. Spec: `docs/V3.4-ADVANCED-ARRANGING-ORCHESTRATION-SPEC.md`. |
+| **V3.4 Stage C** | **SHIPPED** — opt-in chamber Orchestrate writes string quartet, Pierrot (flute, B-flat clarinet, violin, cello, piano), wind quintet, and chamber orchestra parts. Piano hard range is sounding A0–C8. Stage D not started. Spec: `docs/V3.4-ADVANCED-ARRANGING-ORCHESTRATION-SPEC.md`. |
 | **V3.4 Stage B** | **SHIPPED** — orchestration evidence report and Evaluation tab. No score rewrite. Big-band transposition declarations stay incomplete. Spec: `docs/V3.4-ADVANCED-ARRANGING-ORCHESTRATION-SPEC.md`. |
 
 **Evans Musician bridge â€” DONE (2026-06-14):** **`beMusicianPremiumMelodyBridge`** wired behind Evans-only **`musicianPremiumMelody`** + Musician IPC; 32-bar tiling + co-onset seam repair merged (**`2c7bb23d`**); premium-melody fingerprint reaches final **`song_mode`** compiled/export XML on Musician/desktop path; golden oracles **byte-identical**.

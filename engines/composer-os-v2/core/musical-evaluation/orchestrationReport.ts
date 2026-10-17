@@ -135,6 +135,7 @@ function catalogueForName(name: string): InstrumentSpec | null {
   if (/glockenspiel/i.test(text)) return byId('glockenspiel');
   if (/celesta/i.test(text)) return byId('celesta');
   if (/timpani/i.test(text)) return byId('timpani');
+  if (/\bpiano\b/i.test(text)) return byId('piano');
   return null;
 }
 

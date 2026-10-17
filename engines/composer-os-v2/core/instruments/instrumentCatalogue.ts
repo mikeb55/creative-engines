@@ -3,6 +3,8 @@
  * Hard ranges are the sounding limits stated in docs/V3.4-ADVANCED-ARRANGING-ORCHESTRATION-SPEC.md.
  * Comfort ranges are inference and are marked comfortInferred.
  * Instruments with no numeric range in that document are omitted rather than filled in.
+ * Piano is the exception: the specification names the Pierrot desk and gives no MIDI span.
+ * The span below is the standard 88-key compass, not a guessed orchestral working range.
  */
 
 import type { InstrumentSpec, Technique, Transposition } from './instrumentTypes';
@@ -23,6 +25,8 @@ const VSL_TROMBONE = 'https://www.vsl.co.at/academy/brass/tenor-trombone';
 const VSL_TUBA = 'https://www.vsl.co.at/academy/brass/bass-tuba';
 const ORCH_LIB = 'https://www.orchestralibrary.com/reftables/rang.html';
 const SOUNDS_XML = 'https://www.w3.org/2021/06/musicxml40/listings/sounds.xml/';
+const VSL_PIANO_IPN = 'https://www.vsl.co.at/instruments/synchron/fx-piano';
+const VSL_PIANO_RANGE = 'https://www.vsl.co.at/de/instruments/synchronized/special-keyboards';
 
 const BOWED: readonly Technique[] = [
   'arco',
@@ -368,6 +372,27 @@ export const INSTRUMENT_CATALOGUE: readonly InstrumentSpec[] = [
     maxSimultaneous: 2,
     balanceClass: 'other',
     sources: [ORCH_LIB, SOUNDS_XML],
+  }),
+  spec({
+    id: 'piano',
+    displayName: 'Piano',
+    family: 'keyboard',
+    /**
+     * Sounding A0–C8. VSL IPN sets middle C to C4 and calls the A below piano C1 “A0”.
+     * VSL lists keyboard range A0–C8. This catalogue’s middle C is MIDI 60, so A0 is 21 and C8 is 108.
+     * The big-band comp snap 55–84 is a writing register, not this hard range.
+     */
+    soundingHardRange: [21, 108],
+    soundingComfortRange: [21, 108],
+    comfortInferred: true,
+    transposition: CONCERT_TRANSPOSITION,
+    clefs: ['treble', 'bass'],
+    instrumentSound: 'keyboard.piano',
+    midiProgram: 0,
+    techniques: [],
+    maxSimultaneous: 10,
+    balanceClass: 'other',
+    sources: [VSL_PIANO_IPN, VSL_PIANO_RANGE, SOUNDS_XML],
   }),
   spec({
     id: 'celesta',

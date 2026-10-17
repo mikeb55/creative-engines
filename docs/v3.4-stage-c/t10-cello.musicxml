@@ -69,7 +69,7 @@
       <clef><sign>G</sign><line>2</line></clef>
     </attributes>
         <note><rest/><duration>480</duration><voice>1</voice><type>quarter</type></note>
-        <note><pitch><step>D</step><octave>4</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note><pitch><step>C</step><octave>4</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
         <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
   </measure>
   </part>

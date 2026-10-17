@@ -173,10 +173,11 @@ export function runV34StageBTests(): Array<{ name: string; ok: boolean; detail?:
     const piano = buildOrchestrationReport({
       xml: score([{ id: 'Pn', name: 'Piano', measures: [bar(1, whole('C', 4))] }]),
     });
-    assert.equal(piano.rangeUse.length, 0);
-    assert.match(piano.notes.join('\n'), /no V3.4 catalogue entry/);
-    assert.equal(piano.transpositionChecks[0]?.matches, false);
-    assert.equal(piano.balanceByBar[0]?.melodyWeight, 0);
+    assert.equal(piano.rangeUse.length, 1);
+    assert.equal(piano.rangeUse[0]?.outsideHard, 0);
+    assert.equal(piano.rangeUse[0]?.lowest, 60);
+    assert.equal(piano.transpositionChecks[0]?.matches, true);
+    assert.equal(piano.balanceByBar[0]?.melodyWeight, 1);
     assert.equal(piano.balanceByBar[0]?.accompanimentWeight, 0);
   });
 

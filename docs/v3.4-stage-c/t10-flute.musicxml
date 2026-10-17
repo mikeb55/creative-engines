@@ -78,7 +78,7 @@
       <clef><sign>G</sign><line>2</line></clef>
     </attributes>
         <note><rest/><duration>480</duration><voice>1</voice><type>quarter</type></note>
-        <note><pitch><step>D</step><octave>4</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note><pitch><step>C</step><octave>4</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
         <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
   </measure>
   </part>
@@ -108,7 +108,7 @@
       <transpose><diatonic>-4</diatonic><chromatic>-7</chromatic><octave-change>0</octave-change></transpose>
     </attributes>
         <note><rest/><duration>480</duration><voice>1</voice><type>quarter</type></note>
-        <note><pitch><step>D</step><octave>5</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note><pitch><step>G</step><octave>4</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
         <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
   </measure>
   </part>

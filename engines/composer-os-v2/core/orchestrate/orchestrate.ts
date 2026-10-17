@@ -27,7 +27,7 @@ import type { RegisterBand } from '../orchestration/orchestrationTypes';
 import { getPentatonicArchetype } from '../pentatonic/registry';
 import { planBassRegisterMap, planGuitarRegisterMap } from '../register-map/registerMapPlanner';
 import type { SectionWithRole } from '../section-roles/sectionRoleTypes';
-import type { NoteEvent, PartModel, RestEvent, ScoreEvent, ScoreModel } from '../score-model/scoreModelTypes';
+import type { ChordEvent, NoteEvent, PartModel, RestEvent, ScoreEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import {
   extractQuartetBarsFromStringParts,
   quartetBarsHaveParallelMotionViolation,
@@ -310,6 +310,36 @@ function attacksFor(requested: OrchestrateDensity, planner: DensityLevel): numbe
   return [0.25, 0.75, 1.25, 1.75, 2.25, 2.75, 3.25, 3.75];
 }
 
+/**
+ * Harmony pitch-class slot. Density, register, and texture planners do not read the seed.
+ * A linear `seed % length` collides when the field length divides the seed difference
+ * (3340 and 44 collide on every field whose length divides 3296, including BHL world C).
+ * This mix stays inside the field. The same seed still picks the same slot.
+ */
+function fieldSlot(seed: number, bar: number, partIndex: number, attackIndex: number, tone: number, length: number): number {
+  let x = (Math.trunc(seed) ^ Math.imul(bar + 1, 0x9e3779b1) ^ Math.imul(partIndex + 1, 0x85ebca6b) ^ Math.imul(attackIndex + 1, 0xc2b2ae35) ^ Math.imul(tone + 1, 0x27d4eb2f)) >>> 0;
+  x = Math.imul(x ^ (x >>> 16), 0x7feb352d);
+  x = Math.imul(x ^ (x >>> 15), 0x846ca68b);
+  x = (x ^ (x >>> 16)) >>> 0;
+  return x % length;
+}
+
+function selectFieldPitchClasses(
+  pitchClasses: readonly number[],
+  count: number,
+  seed: number,
+  bar: number,
+  partIndex: number,
+  attackIndex: number,
+): number[] {
+  const chosen: number[] = [];
+  for (let tone = 0; tone < pitchClasses.length && chosen.length < count; tone += 1) {
+    const pc = pitchClasses[fieldSlot(seed, bar, partIndex, attackIndex, tone, pitchClasses.length)]!;
+    if (!chosen.includes(pc)) chosen.push(pc);
+  }
+  return chosen;
+}
+
 function placePitch(pc: number, target: number, range: [number, number]): number | null {
   let best: number | null = null;
   for (let midi = range[0]; midi <= range[1]; midi += 1) {
@@ -409,22 +439,46 @@ function eventsForBar(notes: readonly LogicalNote[], bar: number, barLength: num
     .sort((a, b) => a.onset - b.onset);
   const events: ScoreEvent[] = [];
   let cursor = 0;
-  for (const note of inBar) {
+  let index = 0;
+  while (index < inBar.length) {
+    const note = inBar[index]!;
+    let next = index + 1;
+    const stack = [note];
+    while (
+      next < inBar.length
+      && Math.abs(inBar[next]!.onset - note.onset) <= 0.001
+      && Math.abs(inBar[next]!.duration - note.duration) <= 0.001
+    ) {
+      stack.push(inBar[next]!);
+      next += 1;
+    }
     if (note.onset > cursor + 0.001) {
       events.push({ kind: 'rest', startBeat: q(cursor), duration: q(note.onset - cursor), voice: 1 });
     }
-    const written = soundingToWritten(note.sounding, CONCERT_TRANSPOSITION);
-    const event: NoteEvent = {
-      kind: 'note',
-      pitch: note.sounding,
-      startBeat: q(note.onset),
-      duration: note.duration,
-      voice: 1,
-      spelling: { step: written.step, alter: written.alter },
-    };
-    if (note.tie) event.notation = { tie: note.tie };
-    events.push(event);
+    if (stack.length === 1) {
+      const written = soundingToWritten(note.sounding, CONCERT_TRANSPOSITION);
+      const event: NoteEvent = {
+        kind: 'note',
+        pitch: note.sounding,
+        startBeat: q(note.onset),
+        duration: note.duration,
+        voice: 1,
+        spelling: { step: written.step, alter: written.alter },
+      };
+      if (note.tie) event.notation = { tie: note.tie };
+      events.push(event);
+    } else {
+      const chord: ChordEvent = {
+        kind: 'chord',
+        pitches: [...new Set(stack.map((item) => item.sounding))].sort((a, b) => a - b),
+        startBeat: q(note.onset),
+        duration: note.duration,
+        voice: 1,
+      };
+      events.push(chord);
+    }
     cursor = q(note.onset + note.duration);
+    index = next;
   }
   if (cursor < barLength - 0.001) {
     events.push({ kind: 'rest', startBeat: q(cursor), duration: q(barLength - cursor), voice: 1 } satisfies RestEvent);
@@ -435,6 +489,12 @@ function eventsForBar(notes: readonly LogicalNote[], bar: number, barLength: num
 function writtenEvents(notes: readonly LogicalNote[], bar: number, barLength: number, spec: InstrumentSpec): ScoreEvent[] {
   const events = eventsForBar(notes, bar, barLength);
   return events.map((event) => {
+    if (event.kind === 'chord') {
+      return {
+        ...event,
+        pitches: event.pitches.map((pitch) => soundingToWritten(pitch, spec.transposition).midi),
+      };
+    }
     if (event.kind !== 'note') return event;
     const written = soundingToWritten(event.pitch, spec.transposition);
     return {
@@ -770,23 +830,41 @@ export function orchestrate(request: OrchestrateRequest): OrchestrateResult {
       if (hard[0] >= 55) target = Math.round((section.registerCentre + guitarMid) / 2);
       if (hard[1] <= 70) target = Math.round((section.registerCentre + bassMid) / 2);
       const list = harmonyNotes.get(part.partId) ?? [];
+      const voices = part.spec.maxSimultaneous >= 10 ? Math.min(3, part.spec.maxSimultaneous, field.pitchClasses.length) : 1;
       attacks.forEach((beat, attackIndex) => {
-        const pc = field.pitchClasses[Math.abs((request.seed + bar * 13 + partIndex * 5 + attackIndex) % field.pitchClasses.length)]!;
+        const classes = selectFieldPitchClasses(field.pitchClasses, voices, request.seed, bar, partIndex, attackIndex);
         const duration = q(Math.min(spacing, source.barLength - beat));
-        const midi = placePitch(pc, target, range);
-        if (midi === null) {
+        const placed: number[] = [];
+        classes.forEach((pc, tone) => {
+          const aim = tone === 0 && classes.length > 1 ? target - 12 : target;
+          const midi = placePitch(pc, aim, range);
+          if (midi === null) {
+            flagged.push({
+              bar,
+              beat: beat + 1,
+              partId: part.partId,
+              kind: 'outside_hard_range',
+              detail: `No ${part.spec.displayName} pitch in ${range[0]}–${range[1]} fits pitch class ${pc}. The tone was omitted.`,
+            });
+            return;
+          }
+          if (placed.includes(midi)) return;
+          placed.push(midi);
+          list.push(...sliceNote((bar - 1) * source.barLength + beat, duration, midi, source.barLength));
+        });
+        if (placed.length > part.spec.maxSimultaneous) {
           flagged.push({
             bar,
             beat: beat + 1,
             partId: part.partId,
-            kind: 'outside_hard_range',
-            detail: `No ${part.spec.displayName} pitch in ${range[0]}–${range[1]} fits pitch class ${pc}. The tone was omitted.`,
+            kind: 'too_many_notes',
+            detail: `${part.spec.displayName} sounded ${placed.length} notes. Catalogue maxSimultaneous is ${part.spec.maxSimultaneous}.`,
           });
-          return;
         }
-        list.push(...sliceNote((bar - 1) * source.barLength + beat, duration, midi, source.barLength));
-        const row = provenance.find((item) => item.detail === field.detail);
-        if (row) row.influenced = true;
+        if (placed.length) {
+          const row = provenance.find((item) => item.detail === field.detail);
+          if (row) row.influenced = true;
+        }
       });
       harmonyNotes.set(part.partId, list);
     });
