@@ -14,6 +14,9 @@ import { apiComposePianoV1 } from './pianoCompositionApp';
 export const PIANO_FIXTURE_SEED_EFFECT =
   'Seed parity changes the left-hand bar 4 figure and the inner-voice pitch.';
 
+export const PIANO_GENERAL_SEED_EFFECT =
+  'Seed changes the opening rhythm, contour and left-hand figuration. The same seed and inputs repeat.';
+
 export const PIANO_COFFEE_RUN_SEED_EFFECT =
   'This cue ignores seed for note events. 76018 and 76019 match. Inner voice changes bars 17–18.';
 
@@ -56,8 +59,11 @@ function barCount(score: ScoreModel): number {
   return score.parts[0]?.measures.length ?? 0;
 }
 
-function pieceSlug(filmCue: unknown): 'piano-v1-fixture' | 'coffee-run-variation' {
-  return filmCue === 'coffee-run-variation' ? 'coffee-run-variation' : 'piano-v1-fixture';
+function pieceSlug(body: unknown): 'piano-v1-fixture' | 'coffee-run-variation' | 'general-piano-v1' {
+  const request = body as { filmCue?: unknown; generalPianoV1?: unknown };
+  if (request.filmCue === 'coffee-run-variation') return 'coffee-run-variation';
+  if (request.generalPianoV1 === true) return 'general-piano-v1';
+  return 'piano-v1-fixture';
 }
 
 export function persistPianoComposition(body: unknown, outputDir: string): PianoPersistResult {
@@ -66,13 +72,15 @@ export function persistPianoComposition(body: unknown, outputDir: string): Piano
     return { ok: false, code: composed.code, error: composed.error };
   }
 
-  const request = body as { seed?: unknown; innerVoice?: unknown; filmCue?: unknown };
+  const request = body as { seed?: unknown; innerVoice?: unknown; filmCue?: unknown; generalPianoV1?: unknown };
   const seed = request.seed;
   const innerVoice = request.innerVoice !== false;
-  const piece = pieceSlug(request.filmCue);
+  const piece = pieceSlug(body);
   const libraryRoot = resolveComposerLibraryRoot(outputDir);
   const outputDirectory = path.resolve(libraryRoot, PIANO_OUTPUT_FOLDER_NAME);
-  const base = `${piece}-seed${String(seed)}-${innerVoice ? 'inner' : 'no-inner'}`;
+  const base = piece === 'general-piano-v1'
+    ? `general-piano-v1-seed${String(seed)}-${barCount(composed.score)}bars-${composed.score.tempo ?? 0}bpm`
+    : `${piece}-seed${String(seed)}-${innerVoice ? 'inner' : 'no-inner'}`;
   const filepath = path.join(outputDirectory, `${base}.musicxml`);
   const midiFilepath = path.join(outputDirectory, `${base}.mid`);
   const xmlPartial = `${filepath}.partial`;
@@ -103,7 +111,11 @@ export function persistPianoComposition(body: unknown, outputDir: string): Piano
       outputDirectory,
       elapsedSeconds: composed.elapsedSeconds,
       soundingAttacks: composed.soundingAttacks,
-      seedEffect: piece === 'coffee-run-variation' ? PIANO_COFFEE_RUN_SEED_EFFECT : PIANO_FIXTURE_SEED_EFFECT,
+      seedEffect: piece === 'coffee-run-variation'
+        ? PIANO_COFFEE_RUN_SEED_EFFECT
+        : piece === 'general-piano-v1'
+          ? PIANO_GENERAL_SEED_EFFECT
+          : PIANO_FIXTURE_SEED_EFFECT,
       bars: barCount(composed.score),
       tempo: composed.score.tempo ?? 64,
       title: composed.score.title,

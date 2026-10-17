@@ -4,8 +4,9 @@
  */
 
 import { composeCoffeeRunVariation } from '../core/piano/coffeeRunVariation';
+import { composeGeneralPianoV1 } from '../core/piano/generalPianoWriter';
 import { composePianoV1, type PianoComposeResult } from '../core/piano/pianoWriter';
-import type { PianoLockedEvent } from '../core/piano/pianoTypes';
+import type { GeneralPianoBarCount, GeneralPianoCentre, PianoLockedEvent } from '../core/piano/pianoTypes';
 import { PIANO_V1_BARS } from '../core/piano/pianoTypes';
 
 function isLock(value: unknown): value is PianoLockedEvent {
@@ -29,9 +30,55 @@ export function apiComposePianoV1(body: unknown): PianoComposeResult {
     innerVoice?: unknown;
     lockedEvents?: unknown;
     filmCue?: unknown;
+    generalPianoV1?: unknown;
+    tonalCentre?: unknown;
+    harmony?: unknown;
+    metre?: unknown;
+    meter?: unknown;
+    timeSignature?: unknown;
   };
   if (typeof request.seed !== 'number' || !Number.isInteger(request.seed)) {
     return { ok: false, code: 'bad_request', error: 'Piano composition V1 needs an integer seed.' };
+  }
+  if (request.lockedEvents !== undefined && (!Array.isArray(request.lockedEvents) || !request.lockedEvents.every(isLock))) {
+    return { ok: false, code: 'bad_request', error: 'Locked piano events are malformed.' };
+  }
+  if (request.generalPianoV1 === true) {
+    if (request.filmCue !== undefined) {
+      return { ok: false, code: 'bad_request', error: 'General piano V1 does not take a film cue.' };
+    }
+    const metre = request.metre;
+    const meter = request.meter;
+    if (metre !== undefined && metre !== '4/4') {
+      return { ok: false, code: 'bad_request', error: 'General piano V1 supports 4/4 only.' };
+    }
+    if (meter !== undefined && meter !== '4/4') {
+      return { ok: false, code: 'bad_request', error: 'General piano V1 supports 4/4 only.' };
+    }
+    const signature = request.timeSignature;
+    if (signature !== undefined) {
+      const time = signature as { beats?: unknown; beatType?: unknown };
+      if (time.beats !== 4 || time.beatType !== 4) {
+        return { ok: false, code: 'bad_request', error: 'General piano V1 supports 4/4 only.' };
+      }
+    }
+    if (request.bars !== 8 && request.bars !== 16 && request.bars !== 24) {
+      return { ok: false, code: 'bad_request', error: 'General piano V1 accepts 8, 16 or 24 bars.' };
+    }
+    if (request.tonalCentre !== 'C' && request.tonalCentre !== 'Am') {
+      return { ok: false, code: 'bad_request', error: 'General piano V1 tonal centre must be C or Am.' };
+    }
+    if (!Array.isArray(request.harmony) || request.harmony.some((symbol) => typeof symbol !== 'string')) {
+      return { ok: false, code: 'bad_request', error: 'General piano V1 needs one chord symbol for every bar.' };
+    }
+    return composeGeneralPianoV1({
+      seed: request.seed,
+      bars: request.bars as GeneralPianoBarCount,
+      tempo: typeof request.tempo === 'number' ? request.tempo : Number.NaN,
+      tonalCentre: request.tonalCentre as GeneralPianoCentre,
+      harmony: request.harmony,
+      lockedEvents: request.lockedEvents as PianoLockedEvent[] | undefined,
+    });
   }
   if (request.filmCue !== undefined && request.filmCue !== 'coffee-run-variation') {
     return { ok: false, code: 'bad_request', error: 'Unknown piano film cue.' };

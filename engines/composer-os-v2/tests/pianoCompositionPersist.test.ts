@@ -161,6 +161,24 @@ export async function runPianoCompositionPersistTests(): Promise<Row[]> {
     page.includes('Seed parity changes some note events.')
       && page.includes('Seed changes do not change its notes. It is a fixed composition.'),
   ));
+  rows.push(row(
+    'page exposes General Piano V1 controls on the existing solo piano route',
+    page.includes('General Piano Composition V1')
+      && page.includes('Piano V1 fixture — 8 bars')
+      && page.includes('Coffee Run — Variation — 24 bars')
+      && page.includes("body.generalPianoV1 = true")
+      && page.includes("body.metre = '4/4'")
+      && page.includes('data-testid="solo-piano-bars"')
+      && page.includes('data-testid="solo-piano-tempo"')
+      && page.includes('data-testid="solo-piano-centre"')
+      && page.includes('data-testid="solo-piano-harmony"')
+      && page.includes('data-testid="solo-piano-download-xml"')
+      && page.includes('data-testid="solo-piano-download-midi"')
+      && page.includes('data-testid="solo-piano-validation-errors"')
+      && page.includes('api.composePiano(body)')
+      && !page.includes('api.generate(')
+      && !page.includes('apiGenerate'),
+  ));
 
   const fixtureDir = freshDir();
   const fixture = persistPianoComposition({ pianoCompositionV1: true, seed: 76018, innerVoice: true }, fixtureDir);
@@ -302,6 +320,16 @@ export async function runPianoCompositionPersistTests(): Promise<Row[]> {
   try {
     const httpFixture = await postPiano(server.port, { pianoCompositionV1: true, seed: 76018, innerVoice: true });
     const httpBad = await postPiano(server.port, { pianoCompositionV1: true, seed: 76018, tempo: 72 });
+    const httpGeneral = await postPiano(server.port, {
+      pianoCompositionV1: true,
+      generalPianoV1: true,
+      seed: 76018,
+      bars: 16,
+      tempo: 96,
+      tonalCentre: 'C',
+      harmony: ['Cmaj7', 'Am7', 'Dm7', 'G7', 'Fmaj7', 'Em7', 'Dm7', 'Cmaj7', 'Cmaj7', 'Am7', 'Dm7', 'G7', 'Cmaj7', 'Dm7', 'Cmaj7', 'Cmaj7'],
+      metre: '4/4',
+    });
     rows.push(row(
       'HTTP route writes the fixture and rejects tempo 72',
       httpFixture.status === 200
@@ -311,6 +339,17 @@ export async function runPianoCompositionPersistTests(): Promise<Row[]> {
         && httpBad.json.ok === false
         && Boolean(httpBad.json.ok === false && httpBad.json.error),
       httpBad.json.ok ? '' : httpBad.json.error,
+    ));
+    rows.push(row(
+      'HTTP route writes a 16-bar general piano score at tempo 96',
+      httpGeneral.status === 200
+        && httpGeneral.json.ok
+        && httpGeneral.json.ok
+        && httpGeneral.json.bars === 16
+        && httpGeneral.json.tempo === 96
+        && httpGeneral.json.filepath.includes('general-piano-v1-seed76018-16bars-96bpm.musicxml')
+        && fs.existsSync(httpGeneral.json.midiFilepath),
+      httpGeneral.json.ok ? httpGeneral.json.filepath : httpGeneral.json.error,
     ));
   } finally {
     await new Promise<void>((resolve, reject) => {

@@ -31,6 +31,14 @@ export const PIANO_V1_BARS = 8;
 export const PIANO_V1_TEMPO = 64;
 export const PIANO_V1_SEEDS = [76018, 76019] as const;
 
+/** Opt-in general piano writer. The 8-bar fixture does not read these. */
+export const GENERAL_PIANO_BAR_COUNTS = [8, 16, 24] as const;
+export const GENERAL_PIANO_TEMPO_MIN = 48;
+export const GENERAL_PIANO_TEMPO_MAX = 120;
+export const GENERAL_PIANO_CENTRES = ['C', 'Am'] as const;
+export type GeneralPianoBarCount = (typeof GENERAL_PIANO_BAR_COUNTS)[number];
+export type GeneralPianoCentre = (typeof GENERAL_PIANO_CENTRES)[number];
+
 export function pianoGrandStaffConfig(innerVoiceEnabled: boolean): PianoGrandStaffV1 {
   return { kind: 'grand-staff-v1', innerVoiceEnabled };
 }

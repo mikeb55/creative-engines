@@ -245,3 +245,76 @@ export function validateLockedEventPlayable(lock: PianoLockedEvent): PianoCheckR
 export function quarterTicks(): number {
   return DIVISIONS;
 }
+
+/**
+ * Tie grammar for piano voices.
+ * A continuation needs the attack that started it.
+ * Two attacks of the same voice and pitch at one onset are a duplicated attack.
+ */
+export function validatePianoTies(score: ScoreModel): PianoCheckResult {
+  const errors: string[] = [];
+  const part = score.parts.find((item) => item.pianoGrandStaff);
+  if (!part) return { ok: false, errors: ['piano part missing'] };
+  interface Atom {
+    onset: number;
+    end: number;
+    tie?: 'start' | 'stop' | 'continue';
+    pitch: number;
+    voice: number;
+  }
+  const atoms: Atom[] = [];
+  for (const measure of part.measures) {
+    const origin = (measure.index - 1) * 4;
+    for (const event of measure.events) {
+      if (!isNote(event)) continue;
+      for (const pitch of notePitches(event)) {
+        atoms.push({
+          onset: origin + event.startBeat,
+          end: origin + event.startBeat + event.duration,
+          tie: event.notation?.tie,
+          pitch,
+          voice: event.voice ?? 1,
+        });
+      }
+    }
+  }
+  const groups = new Map<string, Atom[]>();
+  for (const atom of atoms) {
+    const key = `${atom.voice}|${atom.pitch}`;
+    const list = groups.get(key) ?? [];
+    list.push(atom);
+    groups.set(key, list);
+  }
+  for (const [key, list] of groups) {
+    list.sort((a, b) => a.onset - b.onset || a.end - b.end);
+    const seen = new Set<number>();
+    for (const atom of list) {
+      if (atom.tie === 'stop' || atom.tie === 'continue') continue;
+      const stamp = Math.round(atom.onset * 1000);
+      if (seen.has(stamp)) errors.push(`duplicated tie attack ${key} at beat ${atom.onset}`);
+      seen.add(stamp);
+    }
+    for (let index = 0; index < list.length; index += 1) {
+      const atom = list[index]!;
+      if (atom.tie === 'stop' || atom.tie === 'continue') {
+        const prev = list[index - 1];
+        const joined = Boolean(
+          prev
+          && Math.abs(prev.end - atom.onset) < 1e-4
+          && (prev.tie === 'start' || prev.tie === 'continue'),
+        );
+        if (!joined) errors.push(`missing tie attack before ${key} at beat ${atom.onset}`);
+      }
+      if (atom.tie === 'start' || atom.tie === 'continue') {
+        const next = list[index + 1];
+        const joined = Boolean(
+          next
+          && Math.abs(atom.end - next.onset) < 1e-4
+          && (next.tie === 'stop' || next.tie === 'continue'),
+        );
+        if (!joined) errors.push(`missing tie continuation after ${key} at beat ${atom.onset}`);
+      }
+    }
+  }
+  return { ok: errors.length === 0, errors };
+}

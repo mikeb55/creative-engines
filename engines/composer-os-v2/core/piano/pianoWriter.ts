@@ -60,6 +60,15 @@ export interface PianoCompositionPlan {
   innerVoiceEnabled: boolean;
   textures: PianoLhTexture[];
   modalTones: { bar: number; pitch: number; role: 'modal' }[];
+  /** Present only on the opt-in general piano path. */
+  general?: {
+    tonalCentre: 'C' | 'Am';
+    metre: '4/4';
+    phases: string[];
+    openingIntervals: number[];
+    returnIntervals: number[];
+    developmentDurations: number[];
+  };
 }
 
 export interface PianoLockSnapshot {
