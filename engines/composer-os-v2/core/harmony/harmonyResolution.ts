@@ -40,6 +40,7 @@ import { isJohnnyMandelHarmonicPath } from '../song-mode/johnnyMandelSlice';
 import { isMarrHarmonicPath } from '../song-mode/marrMelodicSlice';
 import { isRalphTownerHarmonicPath } from '../song-mode/ralphTownerSlice';
 import { isSatieHarmonicPath } from '../song-mode/satieSlice';
+import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
 import { isColePorterHarmonicPath } from '../song-mode/colePorterSlice';
 import { isBacharachHarmonicPath } from '../song-mode/bacharachSlice';
 import { isBarryHarrisHarmonicPath } from '../song-mode/barryHarrisSlice';
@@ -1356,14 +1357,68 @@ function verlaineAuthoritativeSpineChord(
   return false;
 }
 
+function sliceBarIsSymbol(bars: unknown, barIndex: number, totalBars: number, sym: string): boolean {
+  return Array.isArray(bars) && bars.length === totalBars && bars[barIndex - 1] === sym;
+}
+
+/**
+ * Chord-hold overlay is style-blind. These three Song Mode paths already have an authority
+ * that the hold was replacing:
+ * - Satie / Steve Reich / Philip Glass slices (stasis, phase-hold, pedal) — a second hold
+ *   disagrees with the slice (Satie bar 13).
+ * - Ligeti on the duo — the SQ 4-bar chord hold is the same sampler as `reich_glass`, so
+ *   Song Mode chords coincided. Ligeti research treats that window as a field cap, not a
+ *   chord-symbol grammar.
+ * - `reich_glass` when the bar symbol is already the full-form lock — the same sampler was
+ *   dropping locked chords. Slice holds on `steve_reich` / `philip_glass` stay above.
+ */
+function skipVoiceBundleChordHold(
+  barIndex: number,
+  sym: string,
+  context: CompositionContext,
+  rhythmBundle: { voiceId?: string } | undefined,
+): boolean {
+  if (verlaineAuthoritativeSpineChord(barIndex, sym, context)) return true;
+  const meta = context.generationMetadata;
+  const tb = context.form.totalBars;
+  if (barIndex < 1 || barIndex > tb) return false;
+  if (!isGuitarBassDuoFamily(context.presetId)) return false;
+
+  if (isSatieHarmonicPath(meta)) {
+    if (sliceBarIsSymbol(meta.satieEffectiveHarmonyBars, barIndex, tb, sym)) return true;
+    // Slice precompute reads getChordForBar before effective bars exist. The hold was
+    // rewriting the locked sequence before Satie stasis / planing could see it.
+    if (isAuthoritativeLockedHarmonyFullForm(context)) {
+      const locked = context.lockedHarmonyBarsRaw;
+      if (locked && lockedHarmonyChordSymbolsEquivalent(sym, locked[barIndex - 1] ?? '')) return true;
+    }
+  }
+  if (
+    isSteveReichHarmonicPath(meta) &&
+    sliceBarIsSymbol(meta.steveReichEffectiveHarmonyBars, barIndex, tb, sym)
+  ) {
+    return true;
+  }
+  if (
+    isPhilipGlassHarmonicPath(meta) &&
+    sliceBarIsSymbol(meta.philipGlassEffectiveHarmonyBars, barIndex, tb, sym)
+  ) {
+    return true;
+  }
+
+  const voiceId = rhythmBundle?.voiceId;
+  if (voiceId === 'ligeti') return true;
+
+  if (voiceId === 'reich_glass' && isAuthoritativeLockedHarmonyFullForm(context)) {
+    const locked = context.lockedHarmonyBarsRaw;
+    return !!locked && lockedHarmonyChordSymbolsEquivalent(sym, locked[barIndex - 1] ?? '');
+  }
+  return false;
+}
+
 /** Authoritative chord symbol per bar — slice/locked/plan resolution plus VoiceRuleBundle harmonic rhythm overlay. */
 export function getChordForBar(barIndex: number, context: CompositionContext): string {
   const sym = resolveChordSymbolAuthoritativeForBar(barIndex, context);
-  /**
-   * Verlaine harmonic-voice chords are pre-resolved and authoritative; the rhythm-hold overlay is
-   * style-blind and was overwriting them with a stale anchor from an earlier bar.
-   */
-  const skipRhythmOverlay = verlaineAuthoritativeSpineChord(barIndex, sym, context);
   let rhythmBundle = context.voiceBundle;
   if (perSectionVrbResolutionEnabled() && hasExplicitPerSectionVrbAssignment(context)) {
     const wire = readSqToBbVrbWire(context);
@@ -1375,6 +1430,11 @@ export function getChordForBar(barIndex: number, context: CompositionContext): s
   }
   rhythmBundle =
     resolveVoiceBundleForBarWithSectionArchitecture(barIndex, context, rhythmBundle) ?? rhythmBundle;
+  /**
+   * Verlaine, and the Ligeti / Reich-Glass / Satie guards in skipVoiceBundleChordHold, keep a
+   * style-blind duration hold from replacing an already authoritative bar symbol.
+   */
+  const skipRhythmOverlay = skipVoiceBundleChordHold(barIndex, sym, context, rhythmBundle);
   const afterRhythm = skipRhythmOverlay
     ? sym
     : applyVoiceBundleHarmonicRhythm(barIndex, sym, context, rhythmBundle);

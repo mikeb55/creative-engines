@@ -18,6 +18,8 @@
 
 ### Fixed
 
+- **Composer OS V3.4 E1 checkpoint 2B — harmonic lock authority.** Song Mode was running the VoiceRuleBundle duration hold after the bar symbol was already chosen. Ligeti and `reich_glass` share a 4-bar minimum, so both rewrote the same spine into the same held chords and failed the lock. Satie's slice was then held again, so bar 13 of the score disagreed with `satieEffectiveHarmonyBars`. The duo path now keeps Ligeti, a locked `reich_glass` spine, and the Satie / Steve Reich / Philip Glass slices out of that second hold. Bundle minimums are unchanged. No new phrase planner, VRB, or process engine.
+
 - **Shared Tone.js playback** — Development Studio motif Play used a 0-based bar index, so every note was scheduled before the transport and stayed silent. Motif onsets now land on bar 1 beat positions. Imported MusicXML and the chord-melody score use the same Play / Stop / Replay player as Practice Studio. `play` resumes the real audio context and refuses to start while that context is suspended.
 
 - **Generate UI tests** — `homeGenerateUi.test.ts` opens the Generate tab, mocks `@stringsync/vexml` the way the audition tests do, and matches the current Try Another signature, `buildStylePairingPayload` wiring, and LeadSheet writer roster. 44/44 pass. No Generate page behaviour change.
