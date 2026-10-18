@@ -90,11 +90,14 @@ export function runV34E1Checkpoint3bTests(): Row[] {
     const run = runGoldenPathOnce(seed, songOpts('arvo_part'));
     const again = runGoldenPathOnce(seed, songOpts('arvo_part'));
     t(
-      `Pärt seed ${seed} stays deterministic and is blocked by Song Mode motif and bass-identity gates`,
-      run.success === false &&
+      `Pärt seed ${seed} stays deterministic and exports an M/T score`,
+      run.success === true &&
         eventDigest(run.score) === eventDigest(again.score) &&
-        run.errors.some((error) => error.includes('motif-mapped notes')) &&
-        run.errors.some((error) => error.includes('Bass identity')),
+        run.strictBarMathPassed === true &&
+        !!run.xml &&
+        validateMusicXmlSchema(run.xml).valid &&
+        !run.errors.some((error) => error.includes('motif-mapped notes')) &&
+        !run.errors.some((error) => error.includes('Bass identity')),
     );
   }
 

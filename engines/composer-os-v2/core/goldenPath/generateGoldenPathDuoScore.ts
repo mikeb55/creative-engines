@@ -8809,7 +8809,8 @@ export function generateGoldenPathDuoScore(
     context.presetId !== 'ecm_chamber' &&
     context.presetId !== GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID &&
     !useIndieDualGuitar &&
-    !isLineFirstDuoAbstractContext(context)
+    !isLineFirstDuoAbstractContext(context) &&
+    context.generationMetadata?.songwriterStyleId !== 'arvo_part'
   ) {
     const duoIntentRegisterScore = createScore(plans.scoreTitle, [guitarPart, bassPart], { tempo: opts?.bpm ?? 120 });
     applyDuoIntentRegisterOwnership(duoIntentRegisterScore, context);
@@ -8982,7 +8983,7 @@ export function generateGoldenPathDuoScore(
       rawScore.sectionArchitectureTuningByBarByPartId = tuningByBar;
     }
   }
-  if (context.presetId !== 'ecm_chamber') {
+  if (context.presetId !== 'ecm_chamber' && context.generationMetadata?.songwriterStyleId !== 'arvo_part') {
     applyCadenzaPass(rawScore, context, context.seed);
   }
   if (useIndieDualGuitar) {
@@ -9308,9 +9309,11 @@ export function generateGoldenPathDuoScore(
     isStandardGuitarBassDuo(context.presetId) &&
     context.generationMetadata?.duoVaultMotifEnabled !== false;
   const wantVoiceRelations = context.generationMetadata?.e1VoiceRelations === true;
+  const wantPartTintinnabuli =
+    context.generationMetadata?.songwriterStyleId === 'arvo_part' && isGuitarBassDuoFamily(context.presetId);
   const duoVaultFinalReSnapTelemetry = finalizeAndSealDuoScoreBarMath(afterExpressive, context.presetId, {
     vaultFinalResnap:
-      wantVaultResnap || wantVoiceRelations
+      wantVaultResnap || wantVoiceRelations || wantPartTintinnabuli
         ? (score) => {
             const telemetry = wantVaultResnap
               ? applyDuoVaultFinalResnapPass(score, context)
@@ -9321,6 +9324,18 @@ export function generateGoldenPathDuoScore(
                 ...context.generationMetadata,
                 e1VoiceRelationsReceipt: membership,
               };
+            }
+            if (wantPartTintinnabuli) {
+              const guitarFinal = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+              const bassFinal = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+              if (guitarFinal && bassFinal) {
+                applyArvoPartTintinnabuliToDuoScore(guitarFinal, bassFinal, context, {
+                  guitarMap: plans.guitarMap,
+                  bassMap: plans.bassMap,
+                  walkLow,
+                  bassCeiling,
+                });
+              }
             }
             return telemetry;
           }

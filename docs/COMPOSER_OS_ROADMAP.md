@@ -48,8 +48,9 @@
 | **V3.4 E1 checkpoint 2C** | **SHIPPED** — Song Mode `reich_glass` guitar uses one cell from `preferredIntervalSets`. Bars 1–16 phase it. Bars 17–32 append notes. Planner stays off. |
 | **V3.4 E1 checkpoint 3A** | **PARTIAL** — Strayhorn unlocked ii–V–I roots are tritone-defused; `custom_locked` symbols stay exact. Bartók aksak `[4, 2, 3]` (nine 16ths) is not placed in the 4/4 duo. |
 | **V3.4 Bartók B1** | **PASS** — opt-in `bartokB1Aksak` writes `4+2+3` sixteenths as real 9/16 Song Mode attacks. Flag off stays 4/4. |
-| **V3.4 E1 checkpoint 3B** | **PARTIAL** — Debussy and Messiaen pitch membership is opt-in and default off. Pärt M/T stays blocked by Song Mode motif and bass-identity gates. |
+| **V3.4 E1 checkpoint 3B** | **PARTIAL** — Debussy and Messiaen pitch membership is opt-in and default off. At 3B, Pärt M/T was blocked by Song Mode motif and bass-identity gates. |
 | **V3.4 E1 checkpoint 3C** | **TECHNICAL PASS, NOT MUSICAL ACCEPTANCE** — opt-in Herrmann, Ravel, and Dutilleux note grammars on the existing motif operators. Default off. Evidence: `docs/v3.4-e1-checkpoint3c/`. |
+| **V3.4 Pärt M/T repair** | **TECHNICAL PASS, NOT MUSICAL ACCEPTANCE** — guitar and bass M/T is the exported note authority for `arvo_part`. Scoped motif and bass exemptions only. Listening and artistic approval remain pending. Evidence: `docs/v3.4-part-mt/`. |
 | **V3.4 Stage A** | **SHIPPED** — instrument catalogue, opt-in MusicXML notation, full transposition, tempo map, evaluation roles. |
 | **V3.4 Stage C** | **SHIPPED** — opt-in chamber Orchestrate writes string quartet, Pierrot (flute, B-flat clarinet, violin, cello, piano), wind quintet, and chamber orchestra parts. Piano hard range is sounding A0–C8. Spec: `docs/V3.4-ADVANCED-ARRANGING-ORCHESTRATION-SPEC.md`. |
 | **V3.4 Stage D** | **SHIPPED** — Song Mode phrase-block composer-profile blend, BPM passthrough, Duo songwriter rejection, Metheny Duo bass-cell repair. Ravel harmony stays unsupported. Polychords not in this stage. |

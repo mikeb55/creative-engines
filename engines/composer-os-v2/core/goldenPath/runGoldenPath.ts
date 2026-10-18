@@ -86,6 +86,7 @@ import {
 import { exportScoreModelToMusicXml } from '../export/musicxmlExporter';
 import { applyE1SharedPhrasePlanner } from '../phrase/e1SharedPhrasePlanner';
 import { applyE1ComposerLanguage, validateE1ComposerLanguageFinalOutput } from '../phrase/e1Checkpoint3cComposerLanguage';
+import { arvoPartLockedBarMotifIssueIsWarning } from '../song-mode/arvoPartSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
 import {
   assertExportTruth,
@@ -3126,6 +3127,7 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       const zappaMotifPhraseRelax = isFrankZappaSongwriterId(
         appliedContext.generationMetadata?.songwriterStyleId
       );
+      const arvoPartLockRelax = appliedContext.generationMetadata?.songwriterStyleId === 'arvo_part';
       const styleTransferPreserveMelodyRelax =
         appliedContext.generationMetadata?.styleTransferResult != null &&
         options?.preserveMelody !== false;
@@ -3145,7 +3147,8 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
           issue.includes(slidingMotifCoverageWarning) ||
           (zappaMotifPhraseRelax && issue.includes('consecutive bars without motif-mapped notes')) ||
           (styleTransferPreserveMelodyRelax &&
-            issue.includes('consecutive bars without motif-mapped notes'));
+            issue.includes('consecutive bars without motif-mapped notes')) ||
+          (arvoPartLockRelax && arvoPartLockedBarMotifIssueIsWarning(issue));
         if (routeToPhraseWarnings) {
           songModePhraseWarnings = [...(songModePhraseWarnings ?? []), issue];
         } else {

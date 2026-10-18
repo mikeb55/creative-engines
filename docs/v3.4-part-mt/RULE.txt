@@ -1,0 +1,13 @@
+Pärt M/T repair examples
+Guitar and upright bass. Technical evidence for later listening. Not musical approval.
+
+Für Alina posture — M1 below
+M1 below. Melody is the diatonic cell. Tintinnabuli is the nearest triad tone under the melody, inside the bass range. On every second bar of the phrase the bass enters one beat later, so the melody holds alone. Every fourth bar is silence. The next phrase transposes the cell. Bars 1 and 25 stay the Song Mode identity lock.
+MusicXML: fur-alina-m1-below-seed3340.musicxml
+MIDI: fur-alina-m1-below-seed3340.mid
+
+Spiegel posture — M2
+M2. The same diatonic melody carries two tintinnabuli voices: the nearest triad tone above it on the guitar, and the nearest triad tone below it on the bass. The lower voice enters after the melody on the first note of the bar. The cell moves in halves and quarters, then a silent bar, then a three-note cadence. The next phrase uses the next cell. Bars 1 and 25 stay the Song Mode identity lock.
+MusicXML: spiegel-m2-seed3341.musicxml
+MIDI: spiegel-m2-seed3341.mid
+

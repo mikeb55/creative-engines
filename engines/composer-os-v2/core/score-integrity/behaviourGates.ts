@@ -384,13 +384,25 @@ export function runBehaviourGates(
   const reichGlassPatternBass =
     isGuitarBassDuoFamily(opts?.presetId) &&
     opts?.compositionContext?.generationMetadata?.songwriterStyleId === 'reich_glass';
-  const bassIdentityErrors = reichGlassPatternBass
+  /**
+   * Tintinnabuli T stays on one triad tone while M moves. The jazz checker also
+   * scores roots against a fixed progression, not the sounding triad.
+   */
+  const arvoTintinnabuliBass =
+    isGuitarBassDuoFamily(opts?.presetId) &&
+    opts?.compositionContext?.generationMetadata?.songwriterStyleId === 'arvo_part';
+  const bassIdentityErrors = (reichGlassPatternBass
     ? bassIdentity.errors.filter(
         (e) =>
           !e.includes(bassRhythmicCellSubstr) &&
           !e.includes('identical contour reused too broadly'),
       )
-    : bassIdentity.errors;
+    : bassIdentity.errors
+  ).filter(
+    (e) =>
+      !arvoTintinnabuliBass ||
+      (!e.includes('identical contour reused too broadly') && !e.includes('excessive root-only chain')),
+  );
   if (bassIdentityErrors.length > 0) {
     if (styleTransferPreserveMelodyRelax) {
       const blocking = bassIdentityErrors.filter((e) => !e.includes(bassRhythmicCellSubstr));

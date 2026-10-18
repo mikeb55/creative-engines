@@ -459,6 +459,12 @@ export function finalizeAndSealDuoScoreBarMath(
   clampCleanElectricGuitarNotesToHardRange(score);
   clampUprightBassNotesToHardRange(score);
   const reSnapTelemetry = opts?.vaultFinalResnap?.(score);
+  const undotAfterFinalPitch = validateSibeliusUndottedBeatAtoms(score);
+  if (!undotAfterFinalPitch.valid) {
+    throw new Error(
+      `Undotted beat atoms failed after final pitch pass: ${undotAfterFinalPitch.errors.join('; ')}`
+    );
+  }
   const v = validateStrictBarMath(score);
   if (!v.valid) {
     throw new Error(`Bar math enforcement failed after finalize: ${v.errors.join('; ')}`);

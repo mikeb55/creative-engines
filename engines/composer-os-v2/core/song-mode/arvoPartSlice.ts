@@ -19,14 +19,14 @@ import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
+import { lockedHarmonyChordSymbolsEquivalent } from '../harmony/chordProgressionParser';
 import { isProtectedBar } from '../score-integrity/identityLock';
-import type { PartModel, MeasureModel } from '../score-model/scoreModelTypes';
+import type { PartModel } from '../score-model/scoreModelTypes';
 import { createNote, createRest, addEvent } from '../score-model/scoreEventBuilder';
 import { measureBeatSpanQuartersOf } from '../score-model/measureBeatSpan';
 import { normalizeMeasureToEighthBeatGrid } from '../score-integrity/duoEighthBeatGrid';
 import { clampPitch } from '../goldenPath/guitarBassDuoHarmony';
 import type { InstrumentRegisterMap } from '../register-map/registerMapTypes';
-import { selectMotifTransform, type SectionRole } from './motifMutationEngine';
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 
@@ -150,16 +150,6 @@ function sectionLabelForBar(bar: number, context: CompositionContext): string {
   return s?.label ?? 'A';
 }
 
-function tintinnabuliSectionRole(bar: number, tb: number, label: string): SectionRole {
-  const L = label.trim();
-  const up = L.toUpperCase();
-  if (bar >= tb - 2 && tb >= 16) return 'coda';
-  if (up.includes('BRIDGE')) return 'bridge';
-  if (up === 'B' || up.includes('CHORUS')) return 'B';
-  if (up.includes('A2') || up.includes('VERSE 2')) return 'A2';
-  return 'A';
-}
-
 function scaleDegreesDiatonic(rootPc: number, quality: 'major' | 'minor'): number[] {
   const intervals =
     quality === 'minor' ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11];
@@ -179,47 +169,39 @@ function midiForDegree(idx: number, scalePcs: number[], preferMidi: number, low:
   return clampPitch(m, low, high);
 }
 
-function collectTriadMidis(triadSym: string, low: number, high: number): number[] {
-  const pcs = triadChordTonePcs(triadSym);
-  const out: number[] = [];
-  for (let m = low - 12; m <= high + 24; m++) {
-    if (pcs.includes(((m % 12) + 12) % 12)) out.push(m);
-  }
-  return out.sort((a, b) => a - b);
+function pitchClassOf(midi: number): number {
+  return ((midi % 12) + 12) % 12;
 }
 
-function nearestTriadStrictAbove(mMidi: number, candidates: number[]): number {
-  const above = candidates.filter((t) => t > mMidi);
-  if (above.length > 0) return above.reduce((a, b) => (b - mMidi < a - mMidi ? b : a));
-  const pcs = [...new Set(candidates.map((c) => ((c % 12) + 12) % 12))];
-  let best = mMidi + 24;
-  for (const pc of pcs) {
-    let m = mMidi + 1;
-    for (let k = 0; k < 36; k++, m++) {
-      if (((m % 12) + 12) % 12 === pc) {
-        if (m > mMidi && m < best) best = m;
-        break;
-      }
-    }
+/** Nearest triad pitch strictly above or below `melody`, inside the voice range. No non-triad fallback. */
+function nearestTriadTone(
+  melody: number,
+  triadPcs: number[],
+  direction: 'above' | 'below',
+  low: number,
+  high: number,
+): number | null {
+  if (triadPcs.length === 0 || low > high) return null;
+  const step = direction === 'above' ? 1 : -1;
+  for (let midi = melody + step; direction === 'above' ? midi <= high : midi >= low; midi += step) {
+    if (midi < low || midi > high) continue;
+    if (triadPcs.includes(pitchClassOf(midi))) return midi;
   }
-  return best <= mMidi + 23 ? best : mMidi + 4;
+  return null;
 }
 
-function nearestTriadStrictBelow(mMidi: number, candidates: number[]): number {
-  const below = candidates.filter((t) => t < mMidi);
-  if (below.length > 0) return below.reduce((a, b) => (mMidi - b < mMidi - a ? b : a));
-  const pcs = [...new Set(candidates.map((c) => ((c % 12) + 12) % 12))];
-  let best = mMidi - 24;
-  for (const pc of pcs) {
-    let m = mMidi - 1;
-    for (let k = 0; k < 36; k++, m--) {
-      if (((m % 12) + 12) % 12 === pc) {
-        if (m < mMidi && m > best) best = m;
-        break;
-      }
+function rootMidiInRange(rootPc: number, low: number, high: number, prefer: number): number | null {
+  let best: number | null = null;
+  let distance = 99;
+  for (let midi = low; midi <= high; midi++) {
+    if (pitchClassOf(midi) !== rootPc) continue;
+    const next = Math.abs(midi - prefer);
+    if (best === null || next < distance) {
+      best = midi;
+      distance = next;
     }
   }
-  return best >= mMidi - 23 ? best : mMidi - 4;
+  return best;
 }
 
 function resolveTintParams(
@@ -255,18 +237,9 @@ function resolveTintParams(
   return { rootPc, triadQuality, position, mode, effectiveTriadSym };
 }
 
-function degreeDeltaFromTransform(
-  tr: ReturnType<typeof selectMotifTransform>,
-  dir: -1 | 1,
-  u: number
-): number {
-  if (tr === 'fragmentation' && u < 0.38) return 0;
-  if (tr === 'contour_inversion') return -dir;
-  if (tr === 'sequence' || tr === 'registral_displacement') return dir;
-  if (tr === 'augmentation') return u < 0.78 ? dir : dir * 2;
-  if (tr === 'diminution') return u < 0.55 ? dir : 0;
-  if (tr === 'rhythmic_displacement') return u < 0.5 ? dir : 0;
-  return u < 0.58 ? dir : 0;
+/** Bar 1 is a locked two-note cell. These two motif lines are warnings for arvo_part only. */
+export function arvoPartLockedBarMotifIssueIsWarning(issue: string): boolean {
+  return issue.includes('bar 1 identity cell is weak') || issue.includes('bar 1 lacks a featured leap');
 }
 
 /** Canonical songwriter id + VRB voiceId — normalizeHarmonicVoiceId does not unify these. */
@@ -527,9 +500,104 @@ export interface ArvoPartTintinnabuliApplyOpts {
   bassCeiling: number;
 }
 
+type TintAttack = { beat: number; dur: number; cellIndex: number };
+
+const PHRASE_CELLS: readonly (readonly number[])[] = [
+  [0, 1, 2, 1],
+  [0, 2, 1, 0],
+  [2, 1, 0, 2],
+  [0, 1, 3, 2],
+];
+
+function attacksForContext(ctx: ArvoPartContextMode, bar: number): TintAttack[] {
+  const mod = ((bar % 4) + 4) % 4;
+  if (mod === 3) return [];
+  if (mod === 0) {
+    return [
+      { beat: 0, dur: 1, cellIndex: 0 },
+      { beat: 1, dur: 1, cellIndex: 1 },
+      { beat: 2, dur: 2, cellIndex: 2 },
+    ];
+  }
+  if (ctx === 'fratres') {
+    if (mod === 1) {
+      return [
+        { beat: 0, dur: 0.5, cellIndex: 0 },
+        { beat: 0.5, dur: 0.5, cellIndex: 1 },
+        { beat: 1, dur: 0.5, cellIndex: 2 },
+        { beat: 1.5, dur: 0.5, cellIndex: 3 },
+        { beat: 2, dur: 0.5, cellIndex: 0 },
+        { beat: 3, dur: 0.5, cellIndex: 1 },
+        { beat: 3.5, dur: 0.5, cellIndex: 2 },
+      ];
+    }
+    return [
+      { beat: 0, dur: 0.5, cellIndex: 0 },
+      { beat: 0.5, dur: 0.5, cellIndex: 1 },
+      { beat: 1, dur: 0.5, cellIndex: 2 },
+      { beat: 2, dur: 1, cellIndex: 3 },
+      { beat: 3, dur: 1, cellIndex: 0 },
+    ];
+  }
+  if (ctx === 'spiegel') {
+    if (mod === 1) {
+      return [
+        { beat: 0, dur: 1, cellIndex: 0 },
+        { beat: 1, dur: 1, cellIndex: 1 },
+        { beat: 2, dur: 2, cellIndex: 2 },
+      ];
+    }
+    return [
+      { beat: 0, dur: 2, cellIndex: 0 },
+      { beat: 2, dur: 2, cellIndex: 1 },
+    ];
+  }
+  if (mod === 1) {
+    return [
+      { beat: 0, dur: 2, cellIndex: 0 },
+      { beat: 2, dur: 2, cellIndex: 1 },
+    ];
+  }
+  return [{ beat: 0, dur: 4, cellIndex: 0 }];
+}
+
+function degreeForBar(bar: number, cellIndex: number): number {
+  const phrase = Math.floor((bar - 1) / 4);
+  const cell = PHRASE_CELLS[phrase % PHRASE_CELLS.length]!;
+  const shift = phrase % 3;
+  return (cell[cellIndex % cell.length]! + shift) % 7;
+}
+
+function scaleQualityForSymbol(symbol: string, declared: 'major' | 'minor'): 'major' | 'minor' {
+  const head = harmonyHead(symbol).toLowerCase();
+  if (/dim|°/.test(head)) return 'minor';
+  if (/aug|\+/.test(head)) return 'major';
+  return declared;
+}
+
+type TimedPitch = { start: number; dur: number; pitch: number | null };
+
+function eventsForVoice(slots: TimedPitch[], span: number, voice: number, motif: boolean) {
+  const events = [];
+  const sorted = [...slots].sort((a, b) => a.start - b.start);
+  let cursor = 0;
+  for (const slot of sorted) {
+    if (slot.start > cursor + 1e-4) {
+      events.push(createRest(cursor, slot.start - cursor, voice));
+    }
+    if (slot.pitch == null) events.push(createRest(slot.start, slot.dur, voice));
+    else events.push(createNote(slot.pitch, slot.start, slot.dur, voice, motif && voice === 1 ? 'song_motif_1' : undefined));
+    cursor = slot.start + slot.dur;
+  }
+  if (span - cursor > 1e-4) events.push(createRest(cursor, span - cursor, voice));
+  return events;
+}
+
 /**
- * Replace duo guitar/bass note events with real tintinnabuli layers (M stepwise diatonic; T triad tones).
- * Call after guitar + bass parts exist; before overlap thinning / Wyble coupling for this slice.
+ * Replace duo guitar/bass note events with tintinnabuli layers.
+ * M is a diatonic phrase cell. T is the nearest triad tone in the chosen direction.
+ * Bars 1 and 25, and any other identity-locked bar, stay untouched.
+ * 4/4 only. Other metres stay untouched.
  */
 export function applyArvoPartTintinnabuliToDuoScore(
   guitar: PartModel,
@@ -537,99 +605,118 @@ export function applyArvoPartTintinnabuliToDuoScore(
   context: CompositionContext,
   opts: ArvoPartTintinnabuliApplyOpts
 ): void {
-  const seed = context.seed;
   const tb = context.form.totalBars;
   const md = context.generationMetadata as GenerationMetadata;
   const beatReceipts: string[] = [];
-
-  const getRegisterForBar = (bar: number): [number, number] => {
-    const label = sectionLabelForBar(bar, context);
-    const plan = opts.guitarMap.sections.find((s) => s.sectionLabel === label);
-    return plan?.preferredZone ?? [55, 79];
-  };
-  const getBassRegisterForBar = (bar: number): [number, number] => {
-    const label = sectionLabelForBar(bar, context);
-    const plan = opts.bassMap.sections.find((s) => s.sectionLabel === label);
-    return plan?.preferredZone ?? [40, 55];
-  };
-
-  let degreeIdx = Math.floor(seededUnit(seed, 0, 889001) * 7);
-  let dir: -1 | 1 = seededUnit(seed, 0, 889002) < 0.5 ? -1 : 1;
+  md.arvoPartDeviceReceipts = (md.arvoPartDeviceReceipts ?? []).filter((receipt) => !receipt.includes('ap:d1_tintinnabuli'));
+  const ctxMode: ArvoPartContextMode = md.arvoPartContext ?? 'fur_alina';
   let prevMidi = 64;
 
+  const zone = (bar: number, map: InstrumentRegisterMap, fallback: [number, number]): [number, number] => {
+    const label = sectionLabelForBar(bar, context);
+    const plan = map.sections.find((s) => s.sectionLabel === label);
+    return plan?.preferredZone ?? fallback;
+  };
+
   for (let bar = 1; bar <= tb; bar++) {
+    const gm = guitar.measures.find((m) => m.index === bar);
+    const bm = bass.measures.find((m) => m.index === bar);
+    if (!gm || !bm) continue;
     const eff =
       md.arvoPartEffectiveHarmonyBars?.[bar - 1] ?? stripChordToTriad(resolveBarSymbol(context, bar).symbol);
     const chordSym = substituteBarSymbolForArvo(context, eff);
     const triSym = stripChordToTriad(chordSym);
     const tint = resolveTintParams(context, triSym);
     const { rootPc, triadQuality, position, mode, effectiveTriadSym } = tint;
-    const scalePcs = scaleDegreesDiatonic(rootPc, triadQuality);
+    if (isProtectedBar(bar, context) || Math.abs(measureBeatSpanQuartersOf(gm) - 4) > 1e-4) {
+      if (!lockedHarmonyChordSymbolsEquivalent(gm.chord ?? '', eff)) gm.chord = eff;
+      if (!lockedHarmonyChordSymbolsEquivalent(bm.chord ?? '', eff)) bm.chord = eff;
+      continue;
+    }
+    const span = measureBeatSpanQuartersOf(gm);
+    const quality = scaleQualityForSymbol(effectiveTriadSym, triadQuality);
+    const scalePcs = scaleDegreesDiatonic(rootPc, quality);
+    const triadPcs = triadChordTonePcs(effectiveTriadSym);
 
-    const [gLow, gHigh] = getRegisterForBar(bar);
-    const [bLowRaw, bHighRaw] = getBassRegisterForBar(bar);
-    const bLow = Math.max(opts.walkLow, bLowRaw);
-    const bHigh = Math.min(opts.bassCeiling, bHighRaw);
-
-    const role = tintinnabuliSectionRole(bar, tb, sectionLabelForBar(bar, context));
-
-    const gm = guitar.measures.find((m) => m.index === bar);
-    const bm = bass.measures.find((m) => m.index === bar);
-    if (!gm || !bm) continue;
+    const [gZoneLow, gZoneHigh] = zone(bar, opts.guitarMap, [55, 79]);
+    const gLow = Math.max(55, Math.min(gZoneLow, 72));
+    const gHigh = Math.min(79, Math.max(gZoneHigh, gLow + 7));
+    const bLow = Math.max(40, Math.min(opts.walkLow, 45));
+    const bHigh = Math.min(52, Math.max(opts.bassCeiling, bLow + 7));
 
     gm.chord = effectiveTriadSym;
     bm.chord = effectiveTriadSym;
 
-    const span = measureBeatSpanQuartersOf(gm);
-    const beats = Math.max(1, Math.round(span));
-    const qdur = span / beats;
+    const attacks = attacksForContext(ctxMode, bar);
+    const oblique = bar % 4 === 2;
+    const melody: TimedPitch[] = [];
+    const above: TimedPitch[] = [];
+    const below: TimedPitch[] = [];
+    let placedAbove = false;
+    let placedBelow = false;
 
-    gm.events = [];
-    bm.events = [];
-
-    const gTriMidis = collectTriadMidis(effectiveTriadSym, gLow, gHigh);
-    const bTriMidis = collectTriadMidis(effectiveTriadSym, bLow, bHigh);
-
-    for (let bi = 0; bi < beats; bi++) {
-      const beat = bi;
-      const tr = selectMotifTransform(role, seed + bar * 7919 + beat * 17);
-      const u = seededUnit(seed, bar, 889100 + beat);
-      const delta = degreeDeltaFromTransform(tr, dir, u);
-      degreeIdx = Math.max(0, Math.min(6, degreeIdx + delta));
-      const mMidi = midiForDegree(degreeIdx, scalePcs, prevMidi, gLow, gHigh);
-      prevMidi = mMidi;
-
-      const st = bi * qdur;
-      const dur = Math.min(qdur, span - st);
-      if (dur <= 1e-4) continue;
-
-      addEvent(gm, createNote(mMidi, st, dur, 1));
-
-      const posBeat: ArvoPartTintinnabuliPosition =
-        position === 'alternating' ? (beat % 2 === 0 ? 'above' : 'below') : position;
-
-      if (mode === 'M2') {
-        const tAbove = nearestTriadStrictAbove(mMidi, gTriMidis);
-        const tBelow = nearestTriadStrictBelow(mMidi, bTriMidis);
-        addEvent(gm, createNote(tAbove, st, dur, 2));
-        addEvent(bm, createNote(tBelow, st, dur, 1));
-        beatReceipts.push(
-          `ap:d1_tintinnabuli|bar${bar}|beat${beat}|m=${mMidi}|t_above=${tAbove}|t_below=${tBelow}|mode=M2`
-        );
-      } else if (posBeat === 'above') {
-        const tAbove = nearestTriadStrictAbove(mMidi, gTriMidis);
-        addEvent(gm, createNote(tAbove, st, dur, 2));
-        addEvent(bm, createRest(st, dur, 1));
-        beatReceipts.push(`ap:d1_tintinnabuli|bar${bar}|beat${beat}|m=${mMidi}|t=${tAbove}|pos=above`);
-      } else if (posBeat === 'below') {
-        const tBelow = nearestTriadStrictBelow(mMidi, bTriMidis);
-        addEvent(bm, createNote(tBelow, st, dur, 1));
-        beatReceipts.push(`ap:d1_tintinnabuli|bar${bar}|beat${beat}|m=${mMidi}|t=${tBelow}|pos=below`);
+    attacks.forEach((attack, index) => {
+      const degree = degreeForBar(bar, attack.cellIndex);
+      let mMidi = midiForDegree(degree, scalePcs, prevMidi, gLow, gHigh);
+      const pos: 'above' | 'below' | 'both' =
+        mode === 'M2' ? 'both' : position === 'alternating' ? (index % 2 === 0 ? 'above' : 'below') : position;
+      const needAbove = pos === 'above' || pos === 'both';
+      const needBelow = pos === 'below' || pos === 'both';
+      for (let shift = 0; shift < 3; shift++) {
+        const candidate = mMidi - shift * 12;
+        if (candidate < gLow || candidate > gHigh) continue;
+        const aboveOk = !needAbove || nearestTriadTone(candidate, triadPcs, 'above', gLow, gHigh) != null;
+        const belowOk = !needBelow || nearestTriadTone(candidate, triadPcs, 'below', bLow, bHigh) != null;
+        if (aboveOk && belowOk) {
+          mMidi = candidate;
+          break;
+        }
       }
+      mMidi = clampPitch(mMidi, gLow, gHigh);
+      prevMidi = mMidi;
+      melody.push({ start: attack.beat, dur: attack.dur, pitch: mMidi });
 
-      dir = seededUnit(seed, bar, 889200 + beat) < 0.5 ? (-1 as const) : (1 as const);
+      if (needAbove) {
+        const tAbove = nearestTriadTone(mMidi, triadPcs, 'above', gLow, gHigh);
+        if (tAbove != null) {
+          above.push({ start: attack.beat, dur: attack.dur, pitch: tAbove });
+          placedAbove = true;
+          beatReceipts.push(
+            `ap:d1_tintinnabuli|bar${bar}|beat${attack.beat}|m=${mMidi}|t=${tAbove}|pos=above|mode=${mode}`,
+          );
+        }
+      }
+      if (needBelow) {
+        const shiftBass = index === 0 && (mode === 'M2' || oblique);
+        const delay = !shiftBass ? 0 : attack.dur >= 4 ? 2 : attack.dur >= 2 ? 1 : attack.dur >= 1 ? 0.5 : 0;
+        const start = attack.beat + delay;
+        const dur = attack.dur - delay;
+        if (dur > 1e-4) {
+          const tBelow = nearestTriadTone(mMidi, triadPcs, 'below', bLow, bHigh);
+          if (tBelow != null) {
+            below.push({ start, dur, pitch: tBelow });
+            placedBelow = true;
+            beatReceipts.push(
+              `ap:d1_tintinnabuli|bar${bar}|beat${start}|m=${mMidi}|t=${tBelow}|pos=below|mode=${mode}`,
+            );
+          }
+        }
+      }
+    });
+
+    if (!placedBelow && mode === 'M1' && position === 'above' && attacks.length > 0) {
+      const pedal = rootMidiInRange(rootPc, bLow, bHigh, 43);
+      if (pedal != null) {
+        const start = oblique ? 1 : 0;
+        below.push({ start, dur: 2, pitch: pedal });
+        placedBelow = true;
+        beatReceipts.push(`ap:d1_tintinnabuli|bar${bar}|beat${start}|m=pedal|t=${pedal}|pos=pedal|mode=M1`);
+      }
     }
 
+    gm.events = eventsForVoice(melody, span, 1, true);
+    if (placedAbove) gm.events.push(...eventsForVoice(above, span, 2, false));
+    bm.events = eventsForVoice(below, span, 1, false);
     normalizeMeasureToEighthBeatGrid(gm);
     normalizeMeasureToEighthBeatGrid(bm);
   }
