@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { HarmonyLabPanel } from '../../../apps/composer-os-app/src/harmony-lab/HarmonyLabPanel';
 import { BigBandPanel } from '../components/BigBandPanel';
 import { StringQuartetPanel } from '../components/StringQuartetPanel';
 import { ContrapuntalPanel } from '../components/ContrapuntalPanel';
@@ -43,6 +44,9 @@ export function EnsembleWorkspace() {
       <p style={{ marginTop: 0, fontSize: '0.85rem', color: 'var(--text-muted, #888)' }}>
         Ensemble and counterpoint controls. Settings flow into Generate as config payloads.
       </p>
+      <CollapsiblePanel title="Harmony Lab" defaultOpen>
+        <HarmonyLabPanel />
+      </CollapsiblePanel>
       <CollapsiblePanel title="Big Band" defaultOpen={false}>
         <BigBandPanel />
       </CollapsiblePanel>
